@@ -847,7 +847,7 @@ BOOLEAN btif_storage_is_device_bonded(bt_bdaddr_t *remote_bd_addr)
        (btif_config_exist(bdstr, "LinkKeyType")))
         return TRUE;
     else
-        return TRUE;
+        return FALSE;
 }
 
 /*******************************************************************************

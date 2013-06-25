@@ -279,10 +279,20 @@ static void process_service_search (tCONN_CB *p_ccb, UINT16 trans_num,
             return;
         }
 
+        if (p_req != p_req_end)
+        {
+            sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_PDU_SIZE, SDP_TEXT_BAD_HEADER);
+            return;
+        }
         rem_handles = num_rsp_handles - cont_offset;    /* extract the remaining handles */
     }
     else
     {
+        if (p_req+1 != p_req_end)
+        {
+            sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_PDU_SIZE, SDP_TEXT_BAD_HEADER);
+            return;
+        }
         rem_handles = num_rsp_handles;
         cont_offset = 0;
         p_ccb->cont_offset = 0;
@@ -421,6 +431,11 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
                                     SDP_TEXT_BAD_CONT_INX);
             return;
         }
+        if (p_req != p_req_end)
+        {
+            sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_PDU_SIZE, SDP_TEXT_BAD_HEADER);
+            return;
+        }
         is_cont = TRUE;
 
         /* Initialise for continuation response */
@@ -428,6 +443,12 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
         attr_seq.attr_entry[p_ccb->cont_info.next_attr_index].start =
             p_ccb->cont_info.next_attr_start_id;
     } else {
+        if (p_req+1 != p_req_end)
+        {
+            sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_PDU_SIZE, SDP_TEXT_BAD_HEADER);
+            return;
+        }
+
         p_ccb->cont_offset = 0;
         p_rsp = &p_ccb->rsp_list[3];    /* Leave space for data elem descr */
 
@@ -661,6 +682,11 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
                                      SDP_TEXT_BAD_CONT_INX);
             return;
         }
+        if (p_req != p_req_end)
+        {
+            sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_PDU_SIZE, SDP_TEXT_BAD_HEADER);
+            return;
+        }
         is_cont = TRUE;
 
         /* Initialise for continuation response */
@@ -668,6 +694,12 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
         attr_seq.attr_entry[p_ccb->cont_info.next_attr_index].start =
             p_ccb->cont_info.next_attr_start_id;
     } else {
+        if (p_req+1 != p_req_end)
+        {
+            sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_PDU_SIZE, SDP_TEXT_BAD_HEADER);
+            return;
+        }
+
         p_ccb->cont_offset = 0;
         p_rsp = &p_ccb->rsp_list[3];    /* Leave space for data elem descr */
 

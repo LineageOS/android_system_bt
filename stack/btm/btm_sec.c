@@ -3470,12 +3470,12 @@ False-positive: evt_data.bd_addr is set at the beginning with:     STREAM_TO_BDA
             if (btm_cb.security_mode == BTM_SEC_MODE_SC)
             {
                 /* SC only mode device requires MITM protection */
-                evt_data.auth_req = BTM_AUTH_SP_YES;
+                evt_data.auth_req = BTM_AUTH_SPGB_YES;
             }
             else
             {
                 evt_data.auth_req = (p_dev_rec->p_cur_service->security_flags &
-                                     BTM_SEC_OUT_MITM)? BTM_AUTH_SP_YES : BTM_AUTH_SP_NO;
+                                     BTM_SEC_OUT_MITM)? BTM_AUTH_SPGB_YES : BTM_AUTH_SPGB_NO;
             }
         }
     }
@@ -4029,8 +4029,23 @@ void btm_sec_auth_complete (UINT16 handle, UINT8 status)
     }
 
     if (!p_dev_rec)
-        return;
+    {
+        /* check if the handle is BTM_INVALID_HCI_HANDLE */
+        if(handle == BTM_INVALID_HCI_HANDLE)
+        {
+            /* get the device with auth type as BTM_SEC_STATE_AUTHENTICATING */
+            p_dev_rec = btm_sec_find_dev_by_sec_state(BTM_SEC_STATE_AUTHENTICATING);
 
+            if ( p_dev_rec && (btm_cb.api.p_auth_complete_callback))
+            {
+                (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr,
+                        p_dev_rec->dev_class,
+                        p_dev_rec->sec_bd_name, status);
+                BTM_TRACE_DEBUG("btm_sec_auth_complete: Invalid Handle, send Auth failure");
+            }
+        }
+        return;
+    }
     /* keep the old sm4 flag and clear the retry bit in control block */
     old_sm4 = p_dev_rec->sm4;
     p_dev_rec->sm4 &= ~BTM_SM4_RETRY;
