@@ -154,6 +154,10 @@
 #define BTA_AV_CO_CP_SCMS_T  FALSE
 #endif
 
+#ifndef BTA_AV_DISCONNECT_IF_NO_SCMS_T
+#define BTA_AV_DISCONNECT_IF_NO_SCMS_T  FALSE
+#endif
+
 /* This feature is used to eanble interleaved scan*/
 #ifndef BTA_HOST_INTERLEAVE_SEARCH
 #define BTA_HOST_INTERLEAVE_SEARCH FALSE
