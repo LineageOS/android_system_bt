@@ -2,6 +2,10 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
+ifeq ($(BOARD_USES_LEGACY_ALSA_AUDIO),true)
+	LOCAL_CFLAGS += -DSAMPLE_RATE_48K
+endif
+
 LOCAL_SRC_FILES := \
 	audio_a2dp_hw.c
 
