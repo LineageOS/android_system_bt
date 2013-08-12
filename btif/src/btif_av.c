@@ -156,6 +156,7 @@ extern void btif_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data);
 extern BOOLEAN btif_rc_get_connected_peer(BD_ADDR peer_addr);
 extern UINT8 btif_rc_get_connected_peer_handle(void);
 extern void btif_rc_check_handle_pending_play (BD_ADDR peer_addr, BOOLEAN bSendToApp);
+extern BOOLEAN btif_hf_is_call_idle();
 
 /*****************************************************************************
 ** Local helper functions
@@ -682,6 +683,13 @@ static BOOLEAN btif_av_state_opened_handler(btif_sm_event_t event, void *p_data)
 
             if ((p_av->start.status == BTA_SUCCESS) && (p_av->start.suspending == TRUE))
                 return TRUE;
+
+            /* if remote tries to start a2dp when call is in progress, suspend it right away */
+            if ((!(btif_av_cb.flags & BTIF_AV_FLAG_PENDING_START)) && (!btif_hf_is_call_idle())) {
+                BTIF_TRACE_EVENT("%s: trigger suspend as call is in progress!!", __FUNCTION__);
+                btif_dispatch_sm_event(BTIF_AV_SUSPEND_STREAM_REQ_EVT, NULL, 0);
+            }
+
 
             /* if remote tries to start a2dp when DUT is a2dp source
              * then suspend. In case a2dp is sink and call is active
