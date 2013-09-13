@@ -730,6 +730,11 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
                     bta_sys_add_uuid(UUID_SERVCLASS_AUDIO_SINK);
 #endif
                 }
+
+                /* start listening when A2DP is registered */
+                if (bta_av_cb.features & BTA_AV_FEAT_RCTG)
+                    bta_av_rc_create(&bta_av_cb, AVCT_ACP, p_scb->hdi, BTA_AV_NUM_LINKS + 1);
+
                 /* if the AV and AVK are both supported, it cannot support the CT role */
                 if (bta_av_cb.features & (BTA_AV_FEAT_RCCT))
                 {
@@ -755,10 +760,7 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
                 }
             }
             bta_av_cb.reg_audio |= BTA_AV_HNDL_TO_MSK(p_scb->hdi);
-            /* start listening when A2DP is registered */
-            if (bta_av_cb.features & BTA_AV_FEAT_RCTG)
-                bta_av_rc_create(&bta_av_cb, AVCT_ACP, p_scb->hdi, BTA_AV_NUM_LINKS + 1);
-            APPL_TRACE_DEBUG("reg_audio: 0x%x",bta_av_cb.reg_audio);
+            APPL_TRACE_DEBUG("reg_audio: 0x%x", bta_av_cb.reg_audio);
         }
         else
         {

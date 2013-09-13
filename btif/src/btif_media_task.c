@@ -489,6 +489,14 @@ static void btif_recv_ctrl_data(void)
             }
             break;
 
+        case A2DP_CTRL_CMD_CHECK_STREAM_STARTED:
+
+            if((btif_av_stream_started_ready() == TRUE))
+                a2dp_cmd_acknowledge(A2DP_CTRL_ACK_SUCCESS);
+            else
+                a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
+            break;
+
         case A2DP_CTRL_CMD_START:
             /* Don't sent START request to stack while we are in call.
                Some headsets like the Sony MW600, don't allow AVDTP START
@@ -2716,6 +2724,11 @@ BOOLEAN btif_media_aa_read_feeding(tUIPC_CH_ID channel_id)
             sizeof(up_sampled_buffer) - btif_media_cb.media_feeding_state.pcm.aa_feed_residue,
             &src_size_used);
 
+#if (defined(DEBUG_MEDIA_AV_FLOW) && (DEBUG_MEDIA_AV_FLOW == TRUE))
+    APPL_TRACE_DEBUG("btif_media_aa_read_feeding readsz:%d src_size_used:%d dst_size_used:%d",
+            read_size, src_size_used, dst_size_used);
+#endif
+
     /* update the residue */
     btif_media_cb.media_feeding_state.pcm.aa_feed_residue += dst_size_used;
 
@@ -2738,6 +2751,11 @@ BOOLEAN btif_media_aa_read_feeding(tUIPC_CH_ID channel_id)
         return TRUE;
     }
 
+#if (defined(DEBUG_MEDIA_AV_FLOW) && (DEBUG_MEDIA_AV_FLOW == TRUE))
+    APPL_TRACE_DEBUG("btif_media_aa_read_feeding residue:%d, dst_size_used %d, bytes_needed %d",
+            btif_media_cb.media_feeding_state.pcm.aa_feed_residue, dst_size_used, bytes_needed);
+#endif
+
     return FALSE;
 }
 
@@ -2756,6 +2774,10 @@ static void btif_media_aa_prep_sbc_2_send(UINT8 nb_frame)
     UINT16 blocm_x_subband = btif_media_cb.encoder.s16NumOfSubBands *
                              btif_media_cb.encoder.s16NumOfBlocks;
 
+#if (defined(DEBUG_MEDIA_AV_FLOW) && (DEBUG_MEDIA_AV_FLOW == TRUE))
+    APPL_TRACE_DEBUG("btif_media_aa_prep_sbc_2_send nb_frame %d, TxAaQ %d",
+                       nb_frame, btif_media_cb.TxAaQ.count);
+#endif
     while (nb_frame)
     {
         if (NULL == (p_buf = GKI_getpoolbuf(BTIF_MEDIA_AA_POOL_ID)))

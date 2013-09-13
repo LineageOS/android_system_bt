@@ -219,12 +219,14 @@ static const struct {
 static const UINT8 rc_white_addr_prefix[][3] = {
     {0x94, 0xCE, 0x2C}, // Sony SBH50
     {0x30, 0x17, 0xC8}, // Sony wm600
-    {0x1C, 0x48, 0xF9}, // Jabra Pulse
-    {0x00, 0x0C, 0x8A}, // Bose
+    {0x00, 0x15, 0x83}, // BlueSoleil dongle
+    {0x00, 0x80, 0x98}, // PTS dongle
+    {0x48, 0xC1, 0xAC}, // Plantronics Backbeat Go
+    {0x00, 0x1B, 0xDC}, // PTS dongle 2
+    {0x00, 0x19, 0x8E}, // Demant
     {0x04, 0x88, 0xE2}, // Apple
-    {0x00, 0x1B, 0xDC}, // PTS
-    {0x48, 0xC1, 0xAC}, // Plantronics
-    {0x00, 0x19, 0x8E}  // Demant
+    {0x00, 0x0C, 0x8A}, // Bose
+    {0x1C, 0x48, 0xF9}  // Jabra Pulse
 };
 
 static const char* rc_white_name[] = {
@@ -351,7 +353,7 @@ int uinput_create(char *name)
     }
     memset(&dev, 0, sizeof(dev));
     if (name)
-        strncpy(dev.name, name, UINPUT_MAX_NAME_SIZE-1);
+        strlcpy(dev.name, name, UINPUT_MAX_NAME_SIZE);
 
     dev.id.bustype = BUS_BLUETOOTH;
     dev.id.vendor  = 0x0000;
@@ -376,6 +378,8 @@ int uinput_create(char *name)
         close(fd);
         return -1;
     }
+    BTIF_TRACE_IMP("AVRCP: input device opened.. Delay 30 ms");
+    GKI_delay (30);
     return fd;
 }
 
@@ -418,10 +422,14 @@ void handle_rc_features(int index)
 {
     if (bt_rc_callbacks != NULL)
     {
-    btrc_remote_features_t rc_features = BTRC_FEAT_NONE;
-    bt_bdaddr_t rc_addr;
-    bt_bdaddr_t avdtp_addr;
-    bdstr_t addr1, addr2;
+        /*Enabling Absolute volume and other avrcp TG specific features only if A2dp Src and
+        Avrcp TG role is activated along with Avrcp CT. Check for bt_rc_callbacks not equal to
+        null assures that avrcp TG service is up
+        */
+        btrc_remote_features_t rc_features = BTRC_FEAT_NONE;
+        bt_bdaddr_t rc_addr;
+        bt_bdaddr_t avdtp_addr;
+        bdstr_t addr1, addr2;
 
         bdcpy(rc_addr.address, btif_rc_cb[index].rc_addr);
         avdtp_addr = btif_av_get_addr(btif_rc_cb[index].rc_addr);
@@ -449,15 +457,15 @@ void handle_rc_features(int index)
         {
             rc_features |= BTRC_FEAT_METADATA;
         }
-        BTIF_TRACE_DEBUG("%s: rc_features=0x%x", __FUNCTION__, rc_features);
+        BTIF_TRACE_IMP("%s: rc_features=0x%x", __FUNCTION__, rc_features);
         if (btif_rc_cb[index].rc_connected)
         {
-            BTIF_TRACE_DEBUG("%s: update App on supported features", __FUNCTION__);
+            BTIF_TRACE_IMP("%s: update App on supported features", __FUNCTION__);
             HAL_CBACK(bt_rc_callbacks, remote_features_cb, &rc_addr, rc_features)
         }
         else
         {
-            BTIF_TRACE_DEBUG("%s: skipping feature update to App", __FUNCTION__);
+            BTIF_TRACE_IMP("%s: skipping feature update to App", __FUNCTION__);
         }
 #if (AVRC_ADV_CTRL_INCLUDED == TRUE)
         BTIF_TRACE_DEBUG("Checking for feature flags in btif_rc_handler with label %d",
@@ -888,9 +896,10 @@ void handle_rc_passthrough_cmd ( tBTA_AV_REMOTE_CMD *p_remote_cmd)
         }
     }
 
-    if ((p_remote_cmd->rc_id == BTA_AV_RC_STOP) && (!btif_av_stream_started_ready()))
+    if(!btif_av_is_connected())
     {
-        APPL_TRACE_WARNING("%s: Stream suspended, ignore STOP cmd",__FUNCTION__);
+        APPL_TRACE_WARNING("%s: AVDT not open, discarding pass-through command: %d",
+                                                        __FUNCTION__, p_remote_cmd->rc_id);
         return;
     }
 
@@ -1159,9 +1168,9 @@ UINT8 handle_get_folder_item_mediaplyerlist_cmd (tBTA_AV_BROWSE_MSG *pbrowse_msg
     //Check length
     p_length = &pbrowse_msg->p_msg->browse.p_browse_data[1];
     BE_STREAM_TO_UINT16(length, p_length);
-    if (length != 10) //Refer to spec
+    if (length < 10)
     {
-        BTIF_TRACE_ERROR("GET_FOLDER_ITEMS: length error: =%d",length);
+        BTIF_TRACE_ERROR("GET_FOLDER_ITEMS: length error: =%d", length);
         return TRUE;
     }
     else
@@ -1244,7 +1253,7 @@ UINT8 handle_get_folder_item_filesystem_cmd (tBTA_AV_BROWSE_MSG *pbrowse_msg, tA
     {
         BTIF_TRACE_DEBUG("No attribute requested");
     }
-    else
+    else if (attr_count <= AVRC_MAX_ELEM_ATTR_SIZE)
     {
         p_data = &pbrowse_msg->p_msg->browse.p_browse_data[13];
         for (xx = 0; xx < attr_count; xx++)
@@ -1508,9 +1517,17 @@ void btif_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data)
         break;
         case BTA_AV_BROWSE_MSG_EVT:
         {
-            BTIF_TRACE_DEBUG("BTA_AV_BROWSE_MSG_EVT  label:%d handle:%d", p_data->browse_msg.label,
-                p_data->browse_msg.rc_handle);
-            handle_rc_browsemsg_cmd(&(p_data->browse_msg));
+            if (bt_rc_callbacks != NULL)
+            {
+                BTIF_TRACE_DEBUG("BTA_AV_BROWSE_MSG_EVT  label:%d handle:%d",
+                                                p_data->browse_msg.label,
+                                                p_data->browse_msg.rc_handle);
+                handle_rc_browsemsg_cmd(&(p_data->browse_msg));
+            }
+            else
+            {
+                BTIF_TRACE_ERROR("AVRCP TG role not up, drop browse commands");
+            }
         }
         break;
         default:
@@ -2536,7 +2553,7 @@ static bt_status_t get_player_app_value_rsp(btrc_player_settings_t *p_vals, bt_b
     {
         avrc_rsp.get_cur_app_val.status = AVRC_STS_BAD_PARAM;
     }
-    else
+    else if (p_vals->num_attr <= BTRC_MAX_APP_SETTINGS)
     {
         memset(app_sett, 0, sizeof(tAVRC_APP_SETTING)*p_vals->num_attr );
         //update num_val
@@ -2786,6 +2803,10 @@ static bt_status_t register_notification_rsp(btrc_event_id_t event_id,
     {
         case BTRC_EVT_PLAY_STATUS_CHANGED:
             avrc_rsp.reg_notif.param.play_status = p_param->play_status;
+            /* Clear remote suspend flag, as remote device issues
+             * suspend within 3s after pause, and DUT within 3s
+             * initiates Play
+            */
             if (avrc_rsp.reg_notif.param.play_status == PLAY_STATUS_PLAYING)
                 btif_av_clear_remote_suspend_flag();
             break;

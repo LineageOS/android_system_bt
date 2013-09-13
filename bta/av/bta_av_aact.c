@@ -399,7 +399,7 @@ static BOOLEAN bta_av_next_getcap(tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
                 i = p_scb->num_seps;
                 break;
             }
-            if (p_scb->avdt_version >= AVDT_VERSION_SYNC)
+            if ((p_scb->avdt_version >= AVDT_VERSION_SYNC) && (a2d_get_avdt_sdp_ver() >= AVDT_VERSION_SYNC) )
             {
                 p_req = AVDT_GetAllCapReq;
             }
@@ -1052,7 +1052,7 @@ void bta_av_do_disc_a2d (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
         p_scb->uuid_int = p_data->api_open.uuid;
         /* only one A2D find service is active at a time */
         bta_av_cb.handle = p_scb->hndl;
-        APPL_TRACE_DEBUG("Skip Sdp for incoming A2dp connection");
+        APPL_TRACE_IMP("Skip Sdp for incoming A2dp connection");
         bta_av_a2d_sdp_cback(TRUE, &a2d_ser);
     }
     else
@@ -1120,6 +1120,7 @@ void bta_av_cleanup(tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     p_scb->cur_psc_mask = 0;
     p_scb->wait = 0;
     p_scb->num_disc_snks = 0;
+    p_scb->coll_mask = 0;
     p_scb->skip_sdp = FALSE;
     bta_sys_stop_timer(&p_scb->timer);
     if (p_scb->deregistring)
@@ -1183,8 +1184,18 @@ void bta_av_config_ind (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     p_scb->codec_type = p_evt_cfg->codec_info[BTA_AV_CODEC_TYPE_IDX];
     bta_av_save_addr(p_scb, p_data->str_msg.bd_addr);
 
-    /* Clear collision mask */
-    p_scb->coll_mask = 0;
+
+    if (p_scb->coll_mask & BTA_AV_COLL_API_CALLED)
+    {
+        APPL_TRACE_DEBUG(" bta_av_config_ind ReSetting collision mask  ");
+        /* Clear collision mask */
+        p_scb->coll_mask = 0;
+    }
+    else
+    {
+        APPL_TRACE_WARNING(" bta_av_config_ind config_ind called before Open");
+        p_scb->coll_mask |= BTA_AV_COLL_SETCONFIG_IND;
+    }
     bta_sys_stop_timer(&bta_av_cb.acp_sig_tmr);
     /* As there is no API currently to check if the
      * timer is active, p_cback is used to identify
@@ -1442,8 +1453,8 @@ void bta_av_str_opened (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     if(mtu == 0 || mtu > p_scb->stream_mtu)
         mtu = p_scb->stream_mtu;
 
-    /* Set the media channel as medium priority */
-    L2CA_SetTxPriority(p_scb->l2c_cid, L2CAP_CHNL_PRIORITY_MEDIUM);
+    /* Set the media channel as high priority */
+    L2CA_SetTxPriority(p_scb->l2c_cid, L2CAP_CHNL_PRIORITY_HIGH);
     L2CA_SetChnlFlushability (p_scb->l2c_cid, TRUE);
 
     bta_sys_conn_open(BTA_ID_AV, p_scb->hdi, p_scb->peer_addr);
@@ -3193,6 +3204,14 @@ void bta_av_open_at_inc (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
 
     memcpy (&(p_scb->open_api), &(p_data->api_open), sizeof(tBTA_AV_API_OPEN));
 
+    if (p_scb->coll_mask & BTA_AV_COLL_SETCONFIG_IND)
+    {
+        APPL_TRACE_WARNING(" SetConfig is already called, timer stopped");
+        /* make mask 0, timer shld have already been closed in setconfig_ind */
+        p_scb->coll_mask = 0;
+        return;
+    }
+
     if (p_scb->coll_mask & BTA_AV_COLL_INC_TMR)
     {
         p_scb->coll_mask |= BTA_AV_COLL_API_CALLED;
@@ -3204,6 +3223,7 @@ void bta_av_open_at_inc (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     {
         /* SNK did not start signalling, API was called N seconds timeout. */
         /* We need to switch to INIT state and start opening connection. */
+        APPL_TRACE_ERROR(" bta_av_open_at_inc ReSetting collision mask  ");
         p_scb->coll_mask = 0;
         bta_av_set_scb_sst_init (p_scb);
 

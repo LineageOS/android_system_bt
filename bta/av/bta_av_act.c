@@ -110,6 +110,7 @@ void bta_av_del_rc(tBTA_AV_RCB *p_rcb)
 {
     tBTA_AV_SCB  *p_scb;
     UINT8        rc_handle;      /* connected AVRCP handle */
+    UINT16       status;
 
     p_scb = NULL;
     if(p_rcb->handle != BTA_AV_RC_HANDLE_NONE)
@@ -145,7 +146,12 @@ void bta_av_del_rc(tBTA_AV_RCB *p_rcb)
             p_rcb->lidx = 0;
         }
         /* else ACP && connected. do not clear the handle yet */
-        AVRC_Close(rc_handle);
+        status = AVRC_Close(rc_handle);
+        if(status != AVRC_SUCCESS)
+        {
+            APPL_TRACE_ERROR("bta_av_del_rc: Error in AVRC_Close %d", status);
+        }
+
         if (rc_handle == bta_av_cb.rc_acp_handle)
             bta_av_cb.rc_acp_handle = BTA_AV_RC_HANDLE_NONE;
         APPL_TRACE_EVENT("end del_rc handle: %d status=0x%x, rc_acp_handle:%d, lidx:%d",
@@ -1918,8 +1924,17 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
     }
 
     APPL_TRACE_DEBUG("rc_handle %d", rc_handle);
-    /* check peer version and whether support CT and TG role */
-    peer_features = bta_av_check_peer_features (UUID_SERVCLASS_AV_REMOTE_CONTROL);
+    if ((p_cb->features & BTA_AV_FEAT_RCCT) && !(p_cb->features & BTA_AV_FEAT_RCTG))
+    {
+        /* In this case we are AVRCP controller and A2DP Sink. We shld check for TG
+         * on remote */
+        peer_features = bta_av_check_peer_features (UUID_SERVCLASS_AV_REM_CTRL_TARGET);
+    }
+    else
+    {
+        /* check peer version and whether support CT and TG role */
+        peer_features = bta_av_check_peer_features (UUID_SERVCLASS_AV_REMOTE_CONTROL);
+    }
     if ((p_cb->features & BTA_AV_FEAT_ADV_CTRL) && ((peer_features&BTA_AV_FEAT_ADV_CTRL) == 0))
     {
         /* if we support advance control and peer does not, check their support on TG role
@@ -1945,7 +1960,20 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
                 if(p_lcb)
                 {
                     rc_handle = bta_av_rc_create(p_cb, AVCT_INT, (UINT8)(p_scb->hdi + 1), p_lcb->lidx);
-                    p_cb->rcb[rc_handle].peer_features = peer_features;
+                    if(rc_handle != BTA_AV_RC_HANDLE_NONE)
+                    {
+                        p_cb->rcb[rc_handle].peer_features = peer_features;
+                    }
+                    else
+                    {
+                        /* cannot create valid rc_handle for current device */
+                        APPL_TRACE_ERROR(" No link resources available");
+                        p_scb->use_rc = FALSE;
+                        bdcpy(rc_open.peer_addr, p_scb->peer_addr);
+                        rc_open.peer_features = 0;
+                        rc_open.status = BTA_AV_FAIL_RESOURCES;
+                        (*p_cb->p_cback)(BTA_AV_RC_CLOSE_EVT, (tBTA_AV *) &rc_open);
+                    }
                 }
 #if (BT_USE_TRACES == TRUE || BT_TRACE_APPL == TRUE)
                 else
