@@ -1,5 +1,7 @@
 /******************************************************************************
  *
+ *  Copyright (c) 2013, The Linux Foundation. All rights reserved.
+ *  Not a Contribution.
  *  Copyright (c) 2014 The Android Open Source Project
  *  Copyright (C) 2009-2012 Broadcom Corporation
  *
@@ -51,6 +53,10 @@
 #include "bta_hh_api.h"
 #include "btif_hh.h"
 #include "osi/include/log.h"
+#include "bta_hd_api.h"
+#include "btif_hd.h"
+
+#include <cutils/log.h>
 
 /************************************************************************************
 **  Constants & Macros
@@ -1660,3 +1666,76 @@ BOOLEAN btif_storage_is_fixed_pin_zeros_keyboard(bt_bdaddr_t *remote_bd_addr)
 
 }
 
+/*******************************************************************************
+** Function         btif_storage_load_hidd
+**
+** Description      Loads hidd bonded device and "plugs" it into hidd
+**
+** Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
+**
+*******************************************************************************/
+bt_status_t btif_storage_load_hidd(void)
+{
+    bt_bdaddr_t bd_addr;
+
+    for (const btif_config_section_iter_t *iter = btif_config_section_begin();
+		iter != btif_config_section_end(); iter = btif_config_section_next(iter)) {
+        const char *name = btif_config_section_name(iter);
+        if (!string_is_bdaddr(name))
+            continue;
+
+        BTIF_TRACE_DEBUG("Remote device:%s", name);
+        int value;
+        if(btif_in_fetch_bonded_device(name) == BT_STATUS_SUCCESS)
+        {
+            if(btif_config_get_int(name, "HidDeviceCabled", &value))
+            {
+
+                string_to_bdaddr(name, &bd_addr);
+                BTA_HdAddDevice(bd_addr.address);
+                break;
+            }
+        }
+    }
+
+    return BT_STATUS_SUCCESS;
+}
+
+/*******************************************************************************
+**
+** Function         btif_storage_set_hidd
+**
+** Description      Stores hidd bonded device info in nvram.
+**
+** Returns          BT_STATUS_SUCCESS
+**
+*******************************************************************************/
+bt_status_t btif_storage_set_hidd(bt_bdaddr_t *remote_bd_addr)
+{
+    bdstr_t bdstr = {0};
+    bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
+    btif_config_set_int(bdstr, "HidDeviceCabled", 1);
+    btif_config_save();
+    return BT_STATUS_SUCCESS;
+}
+
+
+/*******************************************************************************
+**
+** Function         btif_storage_remove_hidd
+**
+** Description      Removes hidd bonded device info from nvram
+**
+** Returns          BT_STATUS_SUCCESS
+**
+*******************************************************************************/
+bt_status_t btif_storage_remove_hidd(bt_bdaddr_t *remote_bd_addr)
+{
+    bdstr_t bdstr;
+    bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
+
+    btif_config_remove(bdstr, "HidDeviceCabled");
+    btif_config_save();
+
+    return BT_STATUS_SUCCESS;
+}

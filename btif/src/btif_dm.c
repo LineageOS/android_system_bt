@@ -1,5 +1,7 @@
 /******************************************************************************
  *
+ *  Copyright (c) 2013, The Linux Foundation. All rights reserved.
+ *  Not a Contribution.
  *  Copyright (C) 2009-2012 Broadcom Corporation
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,6 +49,7 @@
 #include "btif_dm.h"
 #include "btif_storage.h"
 #include "btif_hh.h"
+#include "btif_hd.h"
 #include "btif_config.h"
 #include "btif_sdp.h"
 #include "bta_gatt_api.h"
@@ -219,6 +222,7 @@ extern bt_status_t btif_hh_execute_service(BOOLEAN b_enable);
 extern bt_status_t btif_hf_client_execute_service(BOOLEAN b_enable);
 extern bt_status_t btif_sdp_execute_service(BOOLEAN b_enable);
 extern int btif_hh_connect(bt_bdaddr_t *bd_addr);
+extern bt_status_t btif_hd_execute_service(BOOLEAN b_enable);
 extern void bta_gatt_convert_uuid16_to_uuid128(UINT8 uuid_128[LEN_UUID_128], UINT16 uuid_16);
 
 
@@ -283,6 +287,10 @@ bt_status_t btif_in_execute_service_request(tBTA_SERVICE_ID service_id,
          case BTA_SDP_SERVICE_ID:
          {
              btif_sdp_execute_service(b_enable);
+         }break;
+         case BTA_HIDD_SERVICE_ID:
+         {
+              btif_hd_execute_service(b_enable);
          }break;
          default:
               BTIF_TRACE_ERROR("%s: Unknown service being enabled", __FUNCTION__);
@@ -1731,6 +1739,12 @@ static void btif_dm_upstreams_evt(UINT16 event, char* p_param)
             /*special handling for HID devices */
             #if (defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE))
             btif_hh_remove_device(bd_addr);
+            #endif
+            #if (defined(BTA_HD_INCLUDED) && (BTA_HD_INCLUDED == TRUE))
+            btif_hd_remove_device(bd_addr);
+            #endif
+            #if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
+            btif_storage_remove_ble_bonding_keys(&bd_addr);
             #endif
             btif_storage_remove_bonded_device(&bd_addr);
             bond_state_changed(BT_STATUS_SUCCESS, &bd_addr, BT_BOND_STATE_NONE);

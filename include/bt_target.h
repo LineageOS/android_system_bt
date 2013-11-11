@@ -1,5 +1,7 @@
 /******************************************************************************
  *
+ *  Copyright (c) 2013, The Linux Foundation. All rights reserved.
+ *  Not a Contribution.
  *  Copyright (c) 2014 The Android Open Source Project
  *  Copyright (C) 1999-2012 Broadcom Corporation
  *
@@ -61,6 +63,18 @@
 
 #ifndef BTA_PAN_INCLUDED
 #define BTA_PAN_INCLUDED TRUE
+#endif
+
+#ifndef BTA_FS_INCLUDED
+#define BTA_FS_INCLUDED TRUE
+#endif
+
+#ifndef BTA_AC_INCLUDED
+#define BTA_AC_INCLUDED FALSE
+#endif
+
+#ifndef BTA_HD_INCLUDED
+#define BTA_HD_INCLUDED TRUE
 #endif
 
 #ifndef BTA_HH_INCLUDED
@@ -1440,6 +1454,11 @@ Range: 2 octets
 **
 ******************************************************************************/
 
+/* HID Device Role Included */
+#ifndef HID_DEV_INCLUDED
+#define HID_DEV_INCLUDED             TRUE
+#endif
+
 #ifndef HID_DEV_SUBCLASS
 #define HID_DEV_SUBCLASS            COD_MINOR_POINTING
 #endif
@@ -1450,6 +1469,14 @@ Range: 2 octets
 
 #ifndef HID_INTERRUPT_POOL_ID
 #define HID_INTERRUPT_POOL_ID           2
+#endif
+
+#ifndef HID_DEV_MTU_SIZE
+#define HID_DEV_MTU_SIZE                 64
+#endif
+
+#ifndef HID_DEV_FLUSH_TO
+#define HID_DEV_FLUSH_TO                 0xffff
 #endif
 
 /*************************************************************************
