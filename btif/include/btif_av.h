@@ -161,6 +161,22 @@ BOOLEAN btif_av_is_peer_edr(void);
 **
 ** Returns          Void
 ********************************************************************************/
+
 void btif_av_clear_remote_suspend_flag(void);
+
+/*******************************************************************************
+**
+** Function         btif_av_peer_supports_3mbps
+**
+** Description      Check if the connected a2dp device supports
+**                  3mbps edr. Only when connected this function
+**                  will accurately provide a true capability of
+**                  remote peer. If not connected it will always be false.
+**
+** Returns          TRUE if remote device is EDR and supports 3mbps
+**
+*******************************************************************************/
+BOOLEAN btif_av_peer_supports_3mbps(void);
+
 
 #endif /* BTIF_AV_H */
