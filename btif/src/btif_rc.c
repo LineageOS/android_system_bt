@@ -865,6 +865,18 @@ BOOLEAN btif_rc_get_connected_peer(BD_ADDR peer_addr)
 
 /***************************************************************************
  **
+ ** Function       btif_rc_get_connected_peer_handle
+ **
+ ** Description    Fetches the connected headset's handle if any
+ **
+ ***************************************************************************/
+UINT8 btif_rc_get_connected_peer_handle(void)
+{
+    return btif_rc_cb.rc_handle;
+}
+
+/***************************************************************************
+ **
  ** Function       btif_rc_check_handle_pending_play
  **
  ** Description    Clears the queued PLAY command. if bSend is TRUE, forwards to app
