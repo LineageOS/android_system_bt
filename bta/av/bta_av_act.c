@@ -1502,6 +1502,9 @@ void bta_av_sig_chg(tBTA_AV_DATA *p_data)
                          */
                         bta_av_signalling_timer(NULL);
 
+                        APPL_TRACE_DEBUG("%s: Re-start timer for AVDTP service", __func__);
+                        bta_sys_conn_open(BTA_ID_AV, p_cb->p_scb[xx]->app_id,
+                                p_cb->p_scb[xx]->peer_addr);
                         /* Possible collision : need to avoid outgoing processing while the timer is running */
                         p_cb->p_scb[xx]->coll_mask = BTA_AV_COLL_INC_TMR;
                         alarm_set_on_queue(p_cb->accept_signalling_timer,
@@ -1543,6 +1546,13 @@ void bta_av_sig_chg(tBTA_AV_DATA *p_data)
             /* clean up ssm  */
             for(xx=0; xx < BTA_AV_NUM_STRS; xx++)
             {
+
+                if ((p_cb->p_scb[xx]) &&
+                        (bdcmp(p_cb->p_scb[xx]->peer_addr, p_data->str_msg.bd_addr) == 0))
+                {
+                    APPL_TRACE_DEBUG("%s: Closing timer for AVDTP service", __func__);
+                    bta_sys_conn_close(BTA_ID_AV, p_cb->p_scb[xx]->app_id,p_cb->p_scb[xx]->peer_addr);
+                }
                 mask = 1 << (xx + 1);
                 if (((mask & p_lcb->conn_msk) || bta_av_cb.conn_lcb) && (p_cb->p_scb[xx]) &&
                     (bdcmp(p_cb->p_scb[xx]->peer_addr, p_data->str_msg.bd_addr) == 0))
