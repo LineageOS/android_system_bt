@@ -798,6 +798,10 @@
 #define TIMER_PARAM_TYPE    UINT32
 #endif
 
+#ifndef HCI_RAW_CMD_INCLUDED
+#define HCI_RAW_CMD_INCLUDED    TRUE
+#endif
+
 /******************************************************************************
 **
 ** BLE
