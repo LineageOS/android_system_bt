@@ -184,6 +184,11 @@ BT_OCTET16 ble_encryption_key_value; /* BLE encryption key */
 
 #endif  /* BLE_INCLUDED */
 
+#if HCI_RAW_CMD_INCLUDED == TRUE
+    tBTM_RAW_CMPL_CB     *p_hci_evt_cb;       /* Callback function to be called when
+                                                HCI event is received successfully */
+#endif
+
     tBTM_IO_CAP          loc_io_caps;       /* IO capability of the local device */
     tBTM_AUTH_REQ        loc_auth_req;      /* the auth_req flag  */
     BOOLEAN              secure_connections_only;    /* Rejects service level 0 connections if */
@@ -1051,6 +1056,10 @@ extern BOOLEAN btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC *p_dev_rec);
 extern void btm_ble_resolving_list_remove_dev(tBTM_SEC_DEV_REC *p_dev_rec);
 #endif  /* BLE_INCLUDED */
 
+/* HCI event handler */
+#if HCI_RAW_CMD_INCLUDED == TRUE
+extern void btm_hci_event(UINT8 *p, UINT8 event_code, UINT8 param_len);
+#endif
 /* Vendor Specific Command complete evt handler */
 extern void btm_vsc_complete (UINT8 *p, UINT16 cc_opcode, UINT16 evt_len,
                               tBTM_CMPL_CB *p_vsc_cplt_cback);

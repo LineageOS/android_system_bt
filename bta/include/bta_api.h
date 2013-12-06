@@ -967,6 +967,9 @@ typedef struct
     tBTA_DM_BLE_PF_ADV_TRACK_ENTRIES num_of_tracking_entries;
 } tBTA_DM_BLE_PF_FILT_PARAMS;
 
+/* HCI RAW Command Callback */
+typedef tBTM_RAW_CMPL_CB        tBTA_RAW_CMPL_CBACK;
+
 /* Search callback events */
 #define BTA_DM_INQ_RES_EVT              0       /* Inquiry result for a peer device. */
 #define BTA_DM_INQ_CMPL_EVT             1       /* Inquiry complete. */
@@ -1394,6 +1397,20 @@ extern void BTA_DmSetDeviceName(char *p_name);
 **
 *******************************************************************************/
 extern void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode, tBTA_DM_CONN conn_mode, UINT8 pairable_mode, UINT8 conn_filter);
+
+/*******************************************************************************
+**
+** Function         BTA_DmHciRawCommand
+**
+** Description      This function sends the HCI RAW command
+**                  to the controller
+**
+**
+** Returns          tBTA_STATUS
+**
+*******************************************************************************/
+extern tBTA_STATUS BTA_DmHciRawCommand (UINT16 opcode, UINT8 param_len,UINT8 *p_param_buf, tBTA_RAW_CMPL_CBACK *p_cback);
+
 
 /*******************************************************************************
 **

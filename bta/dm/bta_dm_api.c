@@ -194,6 +194,43 @@ void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode, tBTA_DM_CONN conn_mode, UINT8 p
 
 /*******************************************************************************
 **
+** Function         BTA_DmHciRawCommand
+**
+** Description      This function sends the HCI Raw  command
+**                  to the controller
+**
+**
+** Returns          tBTA_STATUS
+**
+*******************************************************************************/
+tBTA_STATUS BTA_DmHciRawCommand (UINT16 opcode, UINT8 param_len,
+                                         UINT8 *p_param_buf,
+                                         tBTA_RAW_CMPL_CBACK *p_cback)
+{
+
+    tBTA_DM_API_RAW_COMMAND    *p_msg;
+    UINT16 size;
+
+    size = sizeof (tBTA_DM_API_RAW_COMMAND) + param_len;
+    p_msg = (tBTA_DM_API_RAW_COMMAND *) osi_malloc(size);
+    if (p_msg != NULL)
+    {
+        p_msg->hdr.event = BTA_DM_API_HCI_RAW_COMMAND_EVT;
+        p_msg->opcode = opcode;
+        p_msg->param_len = param_len;
+        p_msg->p_param_buf = (UINT8 *)(p_msg + 1);
+        p_msg->p_cback = p_cback;
+
+        memcpy (p_msg->p_param_buf, p_param_buf, param_len);
+
+        bta_sys_sendmsg(p_msg);
+    }
+    return BTA_SUCCESS;
+
+}
+
+/*******************************************************************************
+**
 ** Function         BTA_DmSearch
 **
 ** Description      This function searches for peer Bluetooth devices. It performs

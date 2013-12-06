@@ -110,6 +110,14 @@ typedef struct
     UINT8   *p_param_buf;
 } tBTM_VSC_CMPL;
 
+/* Structure returned with HCI Raw Command complete callback */
+typedef struct
+{
+    UINT8  event_code;
+    UINT8  param_len;
+    UINT8   *p_param_buf;
+} tBTM_RAW_CMPL;
+
 #define  BTM_VSC_CMPL_DATA_SIZE  (BTM_MAX_VENDOR_SPECIFIC_LEN + sizeof(tBTM_VSC_CMPL))
 /**************************************************
 **  Device Control and General Callback Functions
@@ -148,6 +156,11 @@ typedef void (tBTM_CMPL_CB) (void *p1);
 ** BTM function is complete. The pointer contains the address of any returned data.
 */
 typedef void (tBTM_VSC_CMPL_CB) (tBTM_VSC_CMPL *p1);
+
+/* HCI RAW CMD callback function for notifying an application that a synchronous
+** BTM function is complete. The pointer contains the address of any returned data.
+*/
+typedef void (tBTM_RAW_CMPL_CB) (tBTM_RAW_CMPL *p1);
 
 /* Callback for apps to check connection and inquiry filters.
 ** Parameters are the BD Address of remote and the Dev Class of remote.
@@ -2036,6 +2049,18 @@ extern tBTM_DEV_STATUS_CB *BTM_RegisterForDeviceStatusNotif (tBTM_DEV_STATUS_CB 
 *******************************************************************************/
 extern tBTM_STATUS BTM_RegisterForVSEvents (tBTM_VS_EVT_CB *p_cb, BOOLEAN is_register);
 
+
+/*******************************************************************************
+**
+** Function         BTM_Hci_Raw_Command
+**
+** Description      Send a HCI RAW started testingcommand to the controller.
+**
+*******************************************************************************/
+extern tBTM_STATUS BTM_Hci_Raw_Command(UINT16 opcode,
+                                                         UINT8 param_len,
+                                                         UINT8 *p_param_buf,
+                                                         tBTM_RAW_CMPL_CB *p_cb);
 
 /*******************************************************************************
 **

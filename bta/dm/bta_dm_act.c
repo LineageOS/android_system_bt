@@ -662,7 +662,28 @@ void bta_dm_set_visibility(tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
-** Function         bta_dm_process_remove_device
+** Function         bta_dm_hci_raw_command
+**
+** Description      Send a HCI RAW command to the controller
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_hci_raw_command (tBTA_DM_MSG *p_data)
+{
+    tBTM_STATUS status;
+    APPL_TRACE_API("bta_dm_hci_raw_command");
+    status = BTM_Hci_Raw_Command(p_data->btc_command.opcode,p_data->btc_command.param_len,p_data->btc_command.p_param_buf, p_data->btc_command.p_cback);
+
+}
+
+/*******************************************************************************
+**
+** Function         bta_dm_process_remove_deviced
+**
+**
+** Returns          void
 **
 ** Description      Removes device, Disconnects ACL link if required.
 ****
