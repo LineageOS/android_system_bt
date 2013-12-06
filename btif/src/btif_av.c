@@ -1456,3 +1456,31 @@ void btif_av_clear_remote_suspend_flag(void)
     BTIF_TRACE_DEBUG("%s: flag :%x",__func__, btif_av_cb.flags);
     btif_av_cb.flags &= ~BTIF_AV_FLAG_REMOTE_SUSPEND;
 }
+
+/*******************************************************************************
+**
+** Function         btif_av_move_idle
+**
+** Description      Opening state is intermediate state. It cannot handle
+**                  incoming/outgoing connect/disconnect requests.When ACL
+**                  is disconnected and we are in opening state then move back
+**                  to idle state which is proper to handle connections.
+**
+** Returns          Void
+**
+*******************************************************************************/
+void btif_av_move_idle(bt_bdaddr_t bd_addr)
+{
+    /* inform the application that ACL is disconnected and move to idle state */
+    btif_sm_state_t state = btif_sm_get_state(btif_av_cb.sm_handle);
+    BTIF_TRACE_DEBUG("ACL Disconnected state %d  is same device %d",state,
+            memcmp (&bd_addr, &(btif_av_cb.peer_bda), sizeof(bd_addr)));
+    if (state == BTIF_AV_STATE_OPENING &&
+            (memcmp (&bd_addr, &(btif_av_cb.peer_bda), sizeof(bd_addr)) == 0))
+    {
+        BTIF_TRACE_DEBUG("Moving State from Opening to Idle due to ACL disconnect");
+        btif_report_connection_state(BTAV_CONNECTION_STATE_DISCONNECTED,
+                &(btif_av_cb.peer_bda));
+        btif_sm_change_state(btif_av_cb.sm_handle, BTIF_AV_STATE_IDLE);
+    }
+}
