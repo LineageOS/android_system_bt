@@ -842,16 +842,17 @@ typedef struct
 /* Busy-Level shall have the inquiry_paging mask set when
  * inquiry/paging is in progress, Else the number of ACL links */
 #define BTM_BL_INQUIRY_PAGING_MASK 0x10
-#define BTM_BL_INQUIRY_STARTED   (BTM_BL_INQUIRY_PAGING_MASK | 0x1)
-#define BTM_BL_INQUIRY_CANCELLED (BTM_BL_INQUIRY_PAGING_MASK | 0x2)
-#define BTM_BL_INQUIRY_COMPLETE  (BTM_BL_INQUIRY_PAGING_MASK | 0x3)
-#define BTM_BL_PAGING_STARTED    (BTM_BL_INQUIRY_PAGING_MASK | 0x4)
-#define BTM_BL_PAGING_COMPLETE   (BTM_BL_INQUIRY_PAGING_MASK | 0x5)
+#define BTM_BL_INQUIRY_STARTED   (BTM_BL_INQUIRY_PAGING_MASK | 0x5)
+#define BTM_BL_INQUIRY_CANCELLED (BTM_BL_INQUIRY_PAGING_MASK | 0x6)
+#define BTM_BL_INQUIRY_COMPLETE  (BTM_BL_INQUIRY_PAGING_MASK | 0x7)
+#define BTM_BL_PAGING_STARTED    (BTM_BL_INQUIRY_PAGING_MASK | 0x8)
+#define BTM_BL_PAGING_COMPLETE   (BTM_BL_INQUIRY_PAGING_MASK | 0x9)
 /* the data type associated with BTM_BL_UPDATE_EVT */
 typedef struct
 {
     tBTM_BL_EVENT   event;  /* The event reported. */
-    UINT8           busy_level;/* when paging or inquiring, level is 10.
+    UINT8           busy_level;/* when paging or inquiring, level is between
+                                  21 to 25 as max ACL links can be 20.
                                 * Otherwise, the number of ACL links. */
     UINT8           busy_level_flags; /* Notifies actual inquiry/page activities */
 } tBTM_BL_UPDATE_DATA;
