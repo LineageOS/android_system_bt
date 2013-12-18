@@ -337,7 +337,6 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
             /* if BR/EDR do something more */
             if (transport == BT_TRANSPORT_BR_EDR)
             {
-                btsnd_hcic_read_rmt_clk_offset (p->hci_handle);
                 btsnd_hcic_rmt_ver_req (p->hci_handle);
             }
             p_dev_rec = btm_find_dev_by_handle (hci_handle);
@@ -394,11 +393,7 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
                     btm_establish_continue(p);
                 }
             }
-            else
 #endif
-            {
-                btm_read_remote_features (p->hci_handle);
-            }
 
             /* read page 1 - on rmt feature event for buffer reasons */
             return;
@@ -1034,6 +1029,11 @@ void btm_read_remote_version_complete (UINT8 *p)
                 STREAM_TO_UINT8  (p_acl_cb->lmp_version, p);
                 STREAM_TO_UINT16 (p_acl_cb->manufacturer, p);
                 STREAM_TO_UINT16 (p_acl_cb->lmp_subversion, p);
+                if (p_acl_cb->transport == BT_TRANSPORT_BR_EDR)
+                {
+                    BTM_TRACE_DEBUG("Calling btm_read_remote_features");
+                    btm_read_remote_features (p_acl_cb->hci_handle);
+                }
             }
 
 #if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
@@ -1051,7 +1051,6 @@ void btm_read_remote_version_complete (UINT8 *p)
     }
 }
 
-
 /*******************************************************************************
 **
 ** Function         btm_process_remote_ext_features
@@ -1067,6 +1066,7 @@ void btm_process_remote_ext_features (tACL_CONN *p_acl_cb, UINT8 num_read_pages)
     UINT16              handle = p_acl_cb->hci_handle;
     tBTM_SEC_DEV_REC    *p_dev_rec = btm_find_dev_by_handle (handle);
     UINT8               page_idx;
+    UINT8             status;
 
     BTM_TRACE_DEBUG ("btm_process_remote_ext_features");
 
@@ -1092,6 +1092,12 @@ void btm_process_remote_ext_features (tACL_CONN *p_acl_cb, UINT8 num_read_pages)
                 HCI_FEATURE_BYTES_PER_PAGE);
     }
 
+    if (!(p_dev_rec->sec_flags & BTM_SEC_NAME_KNOWN) || p_dev_rec->is_originator)
+    {
+        BTM_TRACE_DEBUG ("Calling Next Security Procedure");
+        if ((status = btm_sec_execute_procedure (p_dev_rec)) != BTM_CMD_STARTED)
+            btm_sec_dev_rec_cback_event (p_dev_rec, status , FALSE);
+    }
     const UINT8 req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
 
     /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
@@ -1338,24 +1344,28 @@ void btm_establish_continue (tACL_CONN *p_acl_cb)
                 BTM_SetLinkPolicy (p_acl_cb->remote_addr, &btm_cb.btm_def_link_policy);
         }
 #endif
-        p_acl_cb->link_up_issued = TRUE;
-
-        /* If anyone cares, tell him database changed */
-        if (btm_cb.p_bl_changed_cb)
+        if(p_acl_cb->link_up_issued == FALSE)
         {
-            evt_data.event = BTM_BL_CONN_EVT;
-            evt_data.conn.p_bda = p_acl_cb->remote_addr;
-            evt_data.conn.p_bdn = p_acl_cb->remote_name;
-            evt_data.conn.p_dc  = p_acl_cb->remote_dc;
-            evt_data.conn.p_features = p_acl_cb->peer_lmp_features[HCI_EXT_FEATURES_PAGE_0];
+
+            p_acl_cb->link_up_issued = TRUE;
+
+            /* If anyone cares, tell him database changed */
+            if (btm_cb.p_bl_changed_cb)
+            {
+                evt_data.event = BTM_BL_CONN_EVT;
+                evt_data.conn.p_bda = p_acl_cb->remote_addr;
+                evt_data.conn.p_bdn = p_acl_cb->remote_name;
+                evt_data.conn.p_dc  = p_acl_cb->remote_dc;
+                evt_data.conn.p_features = p_acl_cb->peer_lmp_features[HCI_EXT_FEATURES_PAGE_0];
 #if BLE_INCLUDED == TRUE
-            evt_data.conn.handle = p_acl_cb->hci_handle;
-            evt_data.conn.transport = p_acl_cb->transport;
+                evt_data.conn.handle = p_acl_cb->hci_handle;
+                evt_data.conn.transport = p_acl_cb->transport;
 #endif
 
-            (*btm_cb.p_bl_changed_cb)(&evt_data);
-        }
-        btm_acl_update_busy_level (BTM_BLI_ACL_UP_EVT);
+                (*btm_cb.p_bl_changed_cb)(&evt_data);
+            }
+            btm_acl_update_busy_level (BTM_BLI_ACL_UP_EVT);
+       }
 }
 
 
