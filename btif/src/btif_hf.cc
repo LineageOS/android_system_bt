@@ -155,6 +155,7 @@ static const char* dump_hf_call_state(bthf_call_state_t call_state) {
     CASE_RETURN_STR(BTHF_CALL_STATE_INCOMING)
     CASE_RETURN_STR(BTHF_CALL_STATE_WAITING)
     CASE_RETURN_STR(BTHF_CALL_STATE_ACTIVE)
+    CASE_RETURN_STR(BTHF_CALL_STATE_DISCONNECTED)
     default:
       return "UNKNOWN CALL STATE";
   }
@@ -1200,6 +1201,9 @@ bt_status_t HeadsetInterface::PhoneStateChange(
             !(num_active + num_held))
           ag_res.audio_handle = btif_hf_cb[idx].handle;
         res = BTA_AG_OUT_CALL_ALERT_RES;
+        break;
+      case BTHF_CALL_STATE_DISCONNECTED:
+        res = 0;
         break;
       default:
         BTIF_TRACE_ERROR("%s: Incorrect new ringing call state", __func__);
