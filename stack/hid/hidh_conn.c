@@ -856,6 +856,7 @@ static void hidh_l2cif_data_ind (UINT16 l2cap_cid, BT_HDR *p_msg)
 
 
     case HID_TRANS_DATA:
+        HIDH_TRACE_VERBOSE ("HID-Host hidh_l2cif_data_ind [l2cap_cid=0x%04x], ttype=%02x]", l2cap_cid, ttype);
         evt = (hh_cb.devices[dhandle].conn.intr_cid == l2cap_cid) ?
                     HID_HDEV_EVT_INTR_DATA : HID_HDEV_EVT_CTRL_DATA;
         hh_cb.callback(dhandle, hh_cb.devices[dhandle].addr, evt, rep_type, p_msg);

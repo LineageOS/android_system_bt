@@ -52,6 +52,12 @@
 #if (PAN_INCLUDED==TRUE)
 #include "pan_api.h"
 #endif
+#if (HID_HOST_INCLUDED==TRUE)
+#include "hidh_api.h"
+#endif
+#if (HID_DEV_INCLUDED==TRUE)
+#include "hidd_api.h"
+#endif
 #include "sdp_api.h"
 
 #if (BLE_INCLUDED==TRUE)
@@ -151,6 +157,9 @@ static tBTTRC_FUNC_MAP bttrc_set_level_map[] = {
   {BTTRC_ID_STK_BNEP, BTTRC_ID_STK_BNEP, BNEP_SetTraceLevel, "TRC_BNEP", DEFAULT_CONF_TRACE_LEVEL},
 #endif
   {BTTRC_ID_STK_BTM_ACL, BTTRC_ID_STK_BTM_SEC, BTM_SetTraceLevel, "TRC_BTM", DEFAULT_CONF_TRACE_LEVEL},
+#if (HID_HOST_INCLUDED==TRUE)
+  {BTTRC_ID_STK_HID, BTTRC_ID_STK_HID, HID_HostSetTraceLevel, "TRC_HID_HOST", DEFAULT_CONF_TRACE_LEVEL},
+#endif
   {BTTRC_ID_STK_GAP, BTTRC_ID_STK_GAP, GAP_SetTraceLevel, "TRC_GAP", DEFAULT_CONF_TRACE_LEVEL},
 #if (PAN_INCLUDED==TRUE)
   {BTTRC_ID_STK_PAN, BTTRC_ID_STK_PAN, PAN_SetTraceLevel, "TRC_PAN", DEFAULT_CONF_TRACE_LEVEL},
@@ -159,6 +168,9 @@ static tBTTRC_FUNC_MAP bttrc_set_level_map[] = {
 #if (BLE_INCLUDED==TRUE)
   {BTTRC_ID_STK_GATT, BTTRC_ID_STK_GATT, GATT_SetTraceLevel, "TRC_GATT", DEFAULT_CONF_TRACE_LEVEL},
   {BTTRC_ID_STK_SMP, BTTRC_ID_STK_SMP, SMP_SetTraceLevel, "TRC_SMP", DEFAULT_CONF_TRACE_LEVEL},
+#endif
+#if (HID_DEV_INCLUDED==TRUE)
+  {BTTRC_ID_STK_HIDD, BTTRC_ID_STK_HIDD, HID_DevSetTraceLevel, "TRC_HID_DEV", DEFAULT_CONF_TRACE_LEVEL},
 #endif
 
   /* LayerIDs for BTA, currently everything maps onto appl_trace_level.

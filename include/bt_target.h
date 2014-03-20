@@ -1613,6 +1613,16 @@ GKI Buffer Pool ID used to hold MPS segments during SDU reassembly
 #define MCA_FCR_RX_POOL_ID      HCI_ACL_POOL_ID
 #endif
 
+/* TRUE, to allow JV to create L2CAP connection on SDP PSM. */
+#ifndef SDP_FOR_JV_INCLUDED
+#define SDP_FOR_JV_INCLUDED         FALSE
+#endif
+
+/* Inquiry duration in 1.28 second units. */
+#ifndef SDP_DEBUG
+#define SDP_DEBUG                   TRUE
+#endif
+
 /*
 GKI Buffer Pool ID used to hold MPS segments used in (re)transmissions.
 L2CAP_DEFAULT_ERM_POOL_ID is specified to use the HCI ACL data pool.
