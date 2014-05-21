@@ -54,6 +54,10 @@
 #define BTA_AV_ACP_SIG_TIME_VAL 2000
 #endif
 
+#ifndef AVRC_MIN_META_CMD_LEN
+#define AVRC_MIN_META_CMD_LEN 20
+#endif
+
 static void bta_av_acp_sig_timer_cback (TIMER_LIST_ENT *p_tle);
 
 /*******************************************************************************
@@ -782,6 +786,15 @@ tBTA_AV_EVT bta_av_proc_meta_cmd(tAVRC_RESPONSE  *p_rc_rsp, tBTA_AV_RC_MSG *p_ms
     pdu = *(p_vendor->p_vendor_data);
     p_rc_rsp->pdu = pdu;
     *p_ctype = AVRC_RSP_REJ;
+    /* Check for valid Meta Length, AVRCP minimum Meta command length 20 */
+    if ((AVRC_MIN_META_CMD_LEN + p_vendor->vendor_len) > AVRC_META_CMD_POOL_SIZE)
+    {
+        /* reject it */
+        evt = 0;
+        p_rc_rsp->rsp.status = AVRC_STS_BAD_PARAM;
+        APPL_TRACE_ERROR("Bailing out: Invalid meta-command length: %d", p_vendor->vendor_len);
+        return evt;
+    }
     /* Metadata messages only use PANEL sub-unit type */
     if (p_vendor->hdr.subunit_type != AVRC_SUB_PANEL)
     {
