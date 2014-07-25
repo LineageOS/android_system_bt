@@ -1581,6 +1581,19 @@ Range: 2 octets
 #define AVRC_CTLR_INCLUDED          TRUE
 #endif
 
+#ifndef SDP_AVRCP_1_5
+#define SDP_AVRCP_1_5               TRUE
+
+#if  SDP_AVRCP_1_5    == TRUE
+#ifndef AVCT_BROWSE_INCLUDED
+#define AVCT_BROWSE_INCLUDED        TRUE
+#else
+#ifndef AVCT_BROWSE_INCLUDED
+#define AVCT_BROWSE_INCLUDED        FALSE
+#endif
+#endif
+#endif
+#endif
 /******************************************************************************
 **
 ** MCAP
