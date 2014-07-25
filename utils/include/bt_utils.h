@@ -37,6 +37,11 @@ typedef enum {
     TASK_HIGH_MAX
 } tHIGH_PRIORITY_TASK;
 
+/* Run-time configuration file to store AVRCP version info*/
+#ifndef AVRC_PEER_VERSION_CONF_FILE
+#define AVRC_PEER_VERSION_CONF_FILE "/data/misc/bluedroid/avrc_peer_entries.conf"
+#endif
+
 /*******************************************************************************
 **  Functions
 ********************************************************************************/

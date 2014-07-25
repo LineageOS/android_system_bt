@@ -491,6 +491,7 @@ const char *dump_rc_event(UINT8 event)
         CASE_RETURN_STR(BTA_AV_VENDOR_RSP_EVT)
         CASE_RETURN_STR(BTA_AV_META_MSG_EVT)
         CASE_RETURN_STR(BTA_AV_RC_FEAT_EVT)
+        CASE_RETURN_STR(BTA_AV_BROWSE_MSG_EVT)
         default:
             return "UNKNOWN_EVENT";
    }
@@ -509,7 +510,7 @@ const char * dump_rc_notification_event_id(UINT8 event_id)
         CASE_RETURN_STR(AVRC_EVT_SYSTEM_STATUS_CHANGE)
         CASE_RETURN_STR(AVRC_EVT_APP_SETTING_CHANGE)
         CASE_RETURN_STR(AVRC_EVT_VOLUME_CHANGE)
-
+        CASE_RETURN_STR(AVRC_EVT_NOW_PLAYING_CHANGE)
         default:
             return "Unhandled Event ID";
     }

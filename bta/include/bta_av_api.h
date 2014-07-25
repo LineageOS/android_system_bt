@@ -67,6 +67,7 @@ typedef UINT8 tBTA_AV_STATUS;
 #define BTA_AV_FEAT_APP_SETTING 0x2000  /* Player app setting support */
 
 /* Internal features */
+#define BTA_AV_FEAT_AVRC_UI_UPDATE 0x4000 /* Update UI to show notification for browsing capable remote*/
 #define BTA_AV_FEAT_NO_SCO_SSPD 0x8000  /* Do not suspend av streaming as to AG events(SCO or Call) */
 
 typedef UINT16 tBTA_AV_FEAT;
@@ -254,8 +255,9 @@ typedef UINT8 tBTA_AV_ERR;
 #define BTA_AV_MEDIA_SINK_CFG_EVT    20 /* command to configure codec */
 #define BTA_AV_MEDIA_DATA_EVT   21      /* sending data to Media Task */
 #define BTA_AV_OFFLOAD_START_RSP_EVT 22 /* a2dp offload start response */
+#define BTA_AV_BROWSE_MSG_EVT   23      /* Browse MSG EVT */
 /* Max BTA event */
-#define BTA_AV_MAX_EVT          23
+#define BTA_AV_MAX_EVT          24
 
 
 typedef UINT8 tBTA_AV_EVT;
@@ -415,6 +417,14 @@ typedef struct
     tAVRC_MSG       *p_msg;
 } tBTA_AV_META_MSG;
 
+/*data associated with BTA_AV_BROWSE_MSG_EVT */
+typedef struct
+{
+    UINT8           rc_handle;
+    UINT8           label;
+    tAVRC_MSG       *p_msg;
+}tBTA_AV_BROWSE_MSG;
+
 /* data associated with BTA_AV_PENDING_EVT */
 typedef struct
 {
@@ -450,6 +460,7 @@ typedef union
     tBTA_AV_SUSPEND     suspend;
     tBTA_AV_PEND        pend;
     tBTA_AV_META_MSG    meta_msg;
+    tBTA_AV_BROWSE_MSG  browse_msg;
     tBTA_AV_REJECT      reject;
     tBTA_AV_RC_FEAT     rc_feat;
     tBTA_AV_STATUS      status;

@@ -116,6 +116,7 @@ else\
     case BTA_AV_REMOTE_CMD_EVT: \
     case BTA_AV_VENDOR_CMD_EVT: \
     case BTA_AV_META_MSG_EVT: \
+    case BTA_AV_BROWSE_MSG_EVT: \
     case BTA_AV_RC_FEAT_EVT: \
     case BTA_AV_REMOTE_RSP_EVT: \
     { \
@@ -451,6 +452,7 @@ static BOOLEAN btif_av_state_idle_handler(btif_sm_event_t event, void *p_data)
         case BTA_AV_META_MSG_EVT:
         case BTA_AV_RC_FEAT_EVT:
         case BTA_AV_REMOTE_RSP_EVT:
+        case BTA_AV_BROWSE_MSG_EVT:
             btif_rc_handler(event, (tBTA_AV*)p_data);
             break;
 
@@ -1159,6 +1161,25 @@ void btif_av_event_deep_copy(UINT16 event, char *p_dest, char *p_src)
                 }
             }
             break;
+        case BTA_AV_BROWSE_MSG_EVT:
+            if (av_src->browse_msg.p_msg)
+            {
+                av_dest->browse_msg.p_msg = osi_calloc(sizeof(tAVRC_MSG));
+                assert(av_dest->browse_msg.p_msg);
+                memcpy(av_dest->browse_msg.p_msg, av_src->browse_msg.p_msg, sizeof(tAVRC_MSG));
+
+                if (av_src->browse_msg.p_msg->browse.p_browse_data &&
+                    av_src->browse_msg.p_msg->browse.browse_len)
+                {
+                    av_dest->browse_msg.p_msg->browse.p_browse_data = osi_calloc(
+                        av_src->browse_msg.p_msg->browse.browse_len);
+                    assert(av_dest->browse_msg.p_msg->browse.p_browse_data);
+                    memcpy(av_dest->browse_msg.p_msg->browse.p_browse_data,
+                        av_src->browse_msg.p_msg->browse.p_browse_data,
+                        av_src->browse_msg.p_msg->browse.browse_len);
+                }
+            }
+            break;
 
         default:
             break;
@@ -1177,6 +1198,18 @@ static void btif_av_event_free_data(btif_sm_event_t event, void *p_data)
                 if (av->meta_msg.p_msg) {
                     osi_free(av->meta_msg.p_msg->vendor.p_vendor_data);
                     osi_free_and_reset((void **)&av->meta_msg.p_msg);
+                }
+            }
+            break;
+        case BTA_AV_BROWSE_MSG_EVT:
+            {
+                tBTA_AV *av = (tBTA_AV*)p_data;
+
+                if (av->browse_msg.p_msg)
+                {
+                    if (av->browse_msg.p_msg->browse.p_browse_data)
+                        osi_free(av->browse_msg.p_msg->browse.p_browse_data);
+                    osi_free(av->browse_msg.p_msg);
                 }
             }
             break;
