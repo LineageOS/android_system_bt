@@ -48,6 +48,7 @@ typedef enum {
     BTIF_AV_OFFLOAD_START_REQ_EVT,
     BTIF_AV_SINK_FOCUS_REQ_EVT,
     BTIF_AV_CLEANUP_REQ_EVT,
+    BTIF_AV_UPDATE_ENCODER_REQ_EVT,
 } btif_av_sm_event_t;
 
 
