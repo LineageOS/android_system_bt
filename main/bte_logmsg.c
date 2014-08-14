@@ -137,6 +137,7 @@ static const char * const bt_layer_tags[] = {
 static uint8_t BTAPP_SetTraceLevel(uint8_t new_level);
 static uint8_t BTIF_SetTraceLevel(uint8_t new_level);
 static uint8_t BTU_SetTraceLevel(uint8_t new_level);
+static uint8_t AUDIO_Latency_SetTraceLevel(uint8_t new_level);
 
 /* make sure list is order by increasing layer id!!! */
 static tBTTRC_FUNC_MAP bttrc_set_level_map[] = {
@@ -171,6 +172,9 @@ static tBTTRC_FUNC_MAP bttrc_set_level_map[] = {
 #endif
 #if (HID_DEV_INCLUDED==TRUE)
   {BTTRC_ID_STK_HIDD, BTTRC_ID_STK_HIDD, HID_DevSetTraceLevel, "TRC_HID_DEV", DEFAULT_CONF_TRACE_LEVEL},
+#endif
+#if (BT_TRACE_LATENCY_AUDIO == TRUE)
+    {BTTRC_ID_LATENCY_AUDIO, BTTRC_ID_LATENCY_AUDIO, AUDIO_Latency_SetTraceLevel, "TRC_LATENCY_AUDIO", DEFAULT_CONF_TRACE_LEVEL},
 #endif
 
   /* LayerIDs for BTA, currently everything maps onto appl_trace_level.
@@ -229,10 +233,18 @@ static uint8_t BTIF_SetTraceLevel(uint8_t new_level) {
   return btif_trace_level;
 }
 
+static uint8_t AUDIO_Latency_SetTraceLevel( uint8_t new_level )
+{
+    if (new_level != 0xFF)
+    audio_latency_trace_level = new_level;
+
+    return (audio_latency_trace_level);
+}
+
+
 static uint8_t BTU_SetTraceLevel(uint8_t new_level) {
   if (new_level != 0xFF)
     btu_cb.trace_level = new_level;
-
   return btu_cb.trace_level;
 }
 
@@ -260,6 +272,7 @@ static future_t *init(void) {
   load_levels_from_config(stack_config->get_all());
   return NULL;
 }
+
 
 const module_t bte_logmsg_module = {
   .name = BTE_LOGMSG_MODULE,

@@ -220,7 +220,7 @@ static void bta_av_rc_ctrl_cback(UINT8 handle, UINT8 event, UINT16 result, BD_AD
 #if (defined(BTA_AV_MIN_DEBUG_TRACES) && BTA_AV_MIN_DEBUG_TRACES == TRUE)
     APPL_TRACE_EVENT("rc_ctrl handle: %d event=0x%x", handle, event);
 #else
-    APPL_TRACE_EVENT("bta_av_rc_ctrl_cback handle: %d event=0x%x", handle, event);
+    BTIF_TRACE_IMP("bta_av_rc_ctrl_cback handle: %d event=0x%x", handle, event);
 #endif
     if (event == AVRC_OPEN_IND_EVT)
     {
@@ -261,7 +261,7 @@ static void bta_av_rc_msg_cback(UINT8 handle, UINT8 label, UINT8 opcode, tAVRC_M
     UINT8           *p_data_src = NULL;
     UINT16          data_len = 0;
 
-    APPL_TRACE_DEBUG("%s handle: %u opcode=0x%x", __func__, handle, opcode);
+    BTIF_TRACE_IMP("%s handle: %u opcode=0x%x", __func__, handle, opcode);
 
     /* Determine the size of the buffer we need */
     if (opcode == AVRC_OP_VENDOR && p_msg->vendor.p_vendor_data != NULL) {
@@ -863,7 +863,7 @@ tBTA_AV_EVT bta_av_proc_meta_cmd(tAVRC_RESPONSE  *p_rc_rsp, tBTA_AV_RC_MSG *p_ms
         }
     }
 #else
-    APPL_TRACE_DEBUG("AVRCP 1.3 Metadata not supporteed. Reject command.");
+    BTIF_TRACE_IMP("AVRCP 1.3 Metadata not supporteed. Reject command.");
     /* reject invalid message without reporting to app */
     evt = 0;
     p_rc_rsp->rsp.status = AVRC_STS_BAD_CMD;
@@ -1440,7 +1440,8 @@ void bta_av_sig_chg(tBTA_AV_DATA *p_data)
     UINT8   mask;
     tBTA_AV_LCB *p_lcb = NULL;
 
-    APPL_TRACE_DEBUG("bta_av_sig_chg event: %d", event);
+    BTIF_TRACE_IMP("%s bta_av_sig_chg event: %d",
+            __FUNCTION__, event);
     if(event == AVDT_CONNECT_IND_EVT)
     {
         p_lcb = bta_av_find_lcb(p_data->str_msg.bd_addr, BTA_AV_LCB_FIND);

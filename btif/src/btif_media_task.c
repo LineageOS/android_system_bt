@@ -25,6 +25,10 @@
  **                 audio & video processing
  **
  ******************************************************************************/
+//#define BT_AUDIO_SYSTRACE_LOG 
+#ifdef BT_AUDIO_SYSTRACE_LOG 
+#define ATRACE_TAG ATRACE_TAG_ALWAYS
+#endif 
 
 #define LOG_TAG "bt_btif_media"
 
@@ -83,6 +87,11 @@
 OI_CODEC_SBC_DECODER_CONTEXT context;
 OI_UINT32 contextData[CODEC_DATA_WORDS(2, SBC_CODEC_FAST_FILTER_BUFFERS)];
 OI_INT16 pcmData[15*SBC_MAX_SAMPLES_PER_FRAME*SBC_MAX_CHANNELS];
+#endif
+
+#ifdef BT_AUDIO_SYSTRACE_LOG
+#include <cutils/trace.h>
+#define PERF_SYSTRACE 1
 #endif
 
 /*****************************************************************************
@@ -328,10 +337,23 @@ static UINT64 time_now_us()
 
 static void log_tstamps_us(char *comment)
 {
+    #define USEC_PER_MSEC 1000L
     static UINT64 prev_us = 0;
     const UINT64 now_us = time_now_us();
-    APPL_TRACE_DEBUG("[%s] ts %08llu, diff : %08llu, queue sz %d", comment, now_us, now_us - prev_us,
+    static UINT64 diff_us = 0;
+
+    diff_us = now_us - prev_us;
+    if ((diff_us / USEC_PER_MSEC) > (BTIF_MEDIA_TIME_TICK + 10))
+    {
+        APPL_TRACE_ERROR("[%s] ts %08llu, diff : %08llu, queue sz %d", comment, now_us, diff_us,
                 GKI_queue_length(&btif_media_cb.TxAaQ));
+    }
+    else
+    {
+        APPL_TRACE_DEBUG("[%s] ts %08llu, diff : %08llu, queue sz %d", comment, now_us, diff_us,
+                GKI_queue_length(&btif_media_cb.TxAaQ));
+    }
+
     prev_us = now_us;
 }
 
@@ -1357,7 +1379,9 @@ static void btif_media_task_handle_inc_media(tBT_SBC_HDR*p_msg)
         p_msg->len = sbc_frame_len + 1;
     }
 
+
     UIPC_Send(UIPC_CH_ID_AV_AUDIO, 0, (UINT8 *)pcmData, (2*sizeof(pcmData) - availPcmBytes));
+
 }
 #endif
 
@@ -2366,6 +2390,9 @@ BOOLEAN btif_media_aa_read_feeding(tUIPC_CH_ID channel_id)
     INT32   fract_max;
     INT32   fract_threshold;
     UINT32  nb_byte_read;
+    #ifdef BT_AUDIO_SYSTRACE_LOG
+    char trace_buf[512];
+    #endif
 
     /* Get the SBC sampling rate */
     switch (btif_media_cb.encoder.s16SamplingFreq)
@@ -2455,6 +2482,19 @@ BOOLEAN btif_media_aa_read_feeding(tUIPC_CH_ID channel_id)
     {
         APPL_TRACE_WARNING("### UNDERRUN :: ONLY READ %d BYTES OUT OF %d ###",
                 nb_byte_read, read_size);
+        #ifdef BT_AUDIO_SYSTRACE_LOG
+        snprintf(trace_buf, 32, "A2DP UNDERRUN read %ld ", nb_byte_read);
+
+        if (PERF_SYSTRACE)
+        {
+            ATRACE_BEGIN(trace_buf);
+        }
+
+        if (PERF_SYSTRACE)
+        {
+            ATRACE_END();
+        }
+        #endif
 
         if (nb_byte_read == 0)
             return FALSE;
@@ -2660,6 +2700,9 @@ static void btif_media_send_aa_frame(void)
 {
     UINT8 nb_frame_2_send;
 
+    #ifdef BT_AUDIO_SYSTRACE_LOG
+    char trace_buf[1024];
+    #endif
     /* get the number of frame to send */
     nb_frame_2_send = btif_get_num_aa_frame();
 
@@ -2671,6 +2714,22 @@ static void btif_media_send_aa_frame(void)
 
     /* send it */
     LOG_VERBOSE("btif_media_send_aa_frame : send %d frames", nb_frame_2_send);
+    #ifdef BT_AUDIO_SYSTRACE_LOG
+    snprintf(trace_buf, 32, "btif_media_send_aa_frame:");
+    if (PERF_SYSTRACE)
+    {
+        ATRACE_BEGIN(trace_buf);
+    }
+    #endif
+
+    /* send it */
+
+    #ifdef BT_AUDIO_SYSTRACE_LOG
+    if (PERF_SYSTRACE)
+    {
+        ATRACE_END();
+    }
+    #endif
     bta_av_ci_src_data_ready(BTA_AV_CHNL_AUDIO);
 }
 
