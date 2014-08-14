@@ -58,6 +58,7 @@ extern thread_t *bt_workqueue_thread;
 /* TODO Hard-coded trace levels -  Needs to be configurable */
 UINT8 appl_trace_level = BT_TRACE_LEVEL_WARNING; //APPL_INITIAL_TRACE_LEVEL;
 UINT8 btif_trace_level = BT_TRACE_LEVEL_WARNING;
+UINT8 audio_latency_trace_level = BT_TRACE_LEVEL_WARNING;
 
 // Communication queue between btu_task and bta.
 extern fixed_queue_t *btu_bta_msg_queue;

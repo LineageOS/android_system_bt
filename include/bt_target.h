@@ -148,6 +148,15 @@
 #define BT_USE_TRACES  TRUE
 #endif
 
+#ifndef BT_TRACE_BTIF
+#define BT_TRACE_BTIF  TRUE
+#endif
+
+
+#ifndef BT_TRACE_LATENCY_AUDIO
+#define BT_TRACE_LATENCY_AUDIO  TRUE
+#endif
+
 #ifndef BT_TRACE_VERBOSE
 #define BT_TRACE_VERBOSE  FALSE
 #endif
