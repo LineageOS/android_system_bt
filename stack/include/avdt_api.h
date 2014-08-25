@@ -420,6 +420,20 @@ extern "C"
 
 /*******************************************************************************
 **
+** Function         AVDT_Init
+**
+** Description      This function is called to initialize the control block
+**                  for this layer.  It must be called before accessing any
+**                  other API functions for this layer.  It is typically called
+**                  once during the start up of the stack.
+**
+** Returns          void
+**
+*******************************************************************************/
+void AVDT_Init(void);
+
+/*******************************************************************************
+**
 ** Function         AVDT_Register
 **
 ** Description      This is the system level registration function for the
@@ -449,6 +463,32 @@ extern void AVDT_Register(tAVDT_REG *p_reg, tAVDT_CTRL_CBACK *p_cback);
 *******************************************************************************/
 extern void AVDT_Deregister(void);
 
+
+/*******************************************************************************
+**
+** Function         AVDT_UpdateServiceBusyState
+**
+** Description      This function is used to set the service busy state
+**                  during outgoing connection to properly handle the
+**                  connections in upper layers.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void AVDT_UpdateServiceBusyState(BOOLEAN state);
+
+/*******************************************************************************
+**
+** Function         AVDT_GetServiceBusyState
+**
+** Description      This function is used to get the service busy state
+**
+**
+** Returns          outgoing connection in progress or not
+**
+*******************************************************************************/
+BOOLEAN AVDT_GetServiceBusyState(void);
 
 /*******************************************************************************
 **

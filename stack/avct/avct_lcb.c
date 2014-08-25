@@ -234,7 +234,7 @@ void avct_lcb_event(tAVCT_LCB *p_lcb, UINT8 event, tAVCT_LCB_EVT *p_data)
     /* execute action functions */
     for (i = 0; i < AVCT_LCB_ACTIONS; i++)
     {
-        if ((action = state_table[event][i]) != AVCT_LCB_IGNORE)
+        if ((action = state_table[event][i]) < AVCT_LCB_IGNORE)
         {
             (*avct_lcb_action[action])(p_lcb, p_data);
         }
@@ -277,7 +277,7 @@ void avct_bcb_event(tAVCT_BCB *p_bcb, UINT8 event, tAVCT_LCB_EVT *p_data)
     /* execute action functions */
     for (i = 0; i < AVCT_LCB_ACTIONS; i++)
     {
-        if ((action = state_table[event][i]) != AVCT_LCB_IGNORE)
+        if ((action = state_table[event][i]) < AVCT_LCB_IGNORE)
         {
             (*avct_bcb_action[action])(p_bcb, p_data);
         }
@@ -581,9 +581,11 @@ tAVCT_CCB *avct_lcb_has_pid(tAVCT_LCB *p_lcb, UINT16 pid)
     {
         if (p_ccb->allocated && (p_ccb->p_lcb == p_lcb) && (p_ccb->cc.pid == pid))
         {
+            AVCT_TRACE_DEBUG("avct_lcb_has_pid, found");
             return p_ccb;
         }
     }
+    AVCT_TRACE_WARNING("avct_lcb_has_pid, not found");
     return NULL;
 }
 

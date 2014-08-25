@@ -256,9 +256,9 @@ typedef UINT8 tBTA_AV_ERR;
 #define BTA_AV_MEDIA_DATA_EVT   21      /* sending data to Media Task */
 #define BTA_AV_OFFLOAD_START_RSP_EVT 22 /* a2dp offload start response */
 #define BTA_AV_BROWSE_MSG_EVT   23      /* Browse MSG EVT */
+#define BTA_AV_ROLE_CHANGED_EVT     24
 /* Max BTA event */
-#define BTA_AV_MAX_EVT          24
-
+#define BTA_AV_MAX_EVT          25
 
 typedef UINT8 tBTA_AV_EVT;
 
@@ -291,6 +291,7 @@ typedef struct
     BOOLEAN         starting;
     tBTA_AV_EDR     edr;        /* 0, if peer device does not support EDR */
     UINT8           sep;        /*  sep type of peer device */
+    UINT8           role;       /* 0x00 master, 0x01 slave , 0xFF unkown*/
 } tBTA_AV_OPEN;
 
 /* data associated with BTA_AV_CLOSE_EVT */
@@ -308,6 +309,7 @@ typedef struct
     tBTA_AV_STATUS  status;
     BOOLEAN         initiator; /* TRUE, if local device initiates the START */
     BOOLEAN         suspending;
+    UINT8           role;       /* 0x00 master, 0x01 slave , 0xFF unkown*/
 } tBTA_AV_START;
 
 /* data associated with BTA_AV_SUSPEND_EVT */
@@ -429,6 +431,7 @@ typedef struct
 typedef struct
 {
     BD_ADDR         bd_addr;
+    tBTA_AV_HNDL    hndl;    /* Handle associated with the stream. */
 } tBTA_AV_PEND;
 
 /* data associated with BTA_AV_REJECT_EVT */
@@ -438,6 +441,13 @@ typedef struct
     tBTA_AV_HNDL    hndl;       /* Handle associated with the stream that rejected the connection. */
 } tBTA_AV_REJECT;
 
+/* data associated with BTA_AV_ROLE_CHANGED */
+typedef struct
+{
+    BD_ADDR  bd_addr;
+    UINT8    new_role;
+    tBTA_AV_HNDL    hndl;       /* Handle associated with role change event */
+} tBTA_AV_ROLE_CHANGED;
 
 /* union of data associated with AV callback */
 typedef union
@@ -464,6 +474,7 @@ typedef union
     tBTA_AV_REJECT      reject;
     tBTA_AV_RC_FEAT     rc_feat;
     tBTA_AV_STATUS      status;
+    tBTA_AV_ROLE_CHANGED role_changed;
 } tBTA_AV;
 
 typedef struct
@@ -646,25 +657,36 @@ void BTA_AvEnable_Sink(int enable);
 **
 ** Function         BTA_AvStart
 **
-** Description      Start audio/video stream data transfer.
+** Description      Start audio/video stream data transfer on the AV handle.
 **
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_AvStart(void);
+void BTA_AvStart(tBTA_AV_HNDL hndl);
 
 /*******************************************************************************
 **
 ** Function         BTA_AvStop
 **
-** Description      Stop audio/video stream data transfer.
+** Description      Stop audio/video stream data transfer on the AV handle.
 **                  If suspend is TRUE, this function sends AVDT suspend signal
 **                  to the connected peer(s).
 **
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_AvStop(BOOLEAN suspend);
+void BTA_AvStop(BOOLEAN suspend, tBTA_AV_HNDL handle);
+
+/*******************************************************************************
+**
+** Function         BTA_AvEnableMultiCast
+**
+** Description      Enable/disable Avdtp MultiCast
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_AvEnableMultiCast(BOOLEAN state, tBTA_AV_HNDL handle);
 
 /*******************************************************************************
 **

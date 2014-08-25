@@ -764,57 +764,6 @@ static tAVRC_STS avrc_bld_set_absolute_volume_rsp(uint8_t abs_vol, BT_HDR *p_pkt
     return AVRC_STS_NO_ERROR;
 }
 
-/*****************************************************************************
-**
-** Function      avrc_bld_set_address_player_rsp
-**
-** Description   This function builds the set address player response
-**
-** Returns       AVRC_STS_NO_ERROR, if the response is build successfully
-**               Otherwise, the error code.
-**
-******************************************************************************/
-static tAVRC_STS avrc_bld_set_address_player_rsp(tAVRC_RSP *p_rsp, BT_HDR *p_pkt)
-{
-    UINT8   *p_data, *p_start;
-    tAVRC_STS status = AVRC_STS_NO_ERROR;
-
-    AVRC_TRACE_API(" avrc_bld_set_address_player_rsp");
-    p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
-    /* To calculate length */
-    p_data = p_start + 2;
-    /* add fixed lenth status(1) */
-    UINT16_TO_BE_STREAM(p_data, 1);
-    UINT8_TO_BE_STREAM(p_data, p_rsp->status);
-    p_pkt->len = (p_data - p_start);
-    return status;
-}
-
-/*****************************************************************************
-**
-** Function      avrc_bld_play_item_rsp
-**
-** Description   This function builds the play item response
-**
-** Returns       AVRC_STS_NO_ERROR, if the response is build successfully
-**               Otherwise, the error code.
-**
-******************************************************************************/
-static tAVRC_STS avrc_bld_play_item_rsp(tAVRC_RSP *p_rsp, BT_HDR *p_pkt)
-{
-    UINT8   *p_data, *p_start;
-    tAVRC_STS status = AVRC_STS_NO_ERROR;
-
-    AVRC_TRACE_API(" avrc_bld_play_item_rsp");
-    p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
-    /* To calculate length */
-    p_data = p_start + 2;
-    /* add fixed lenth status(1) */
-    UINT16_TO_BE_STREAM(p_data, 1);
-    UINT8_TO_BE_STREAM(p_data, p_rsp->status);
-    p_pkt->len = (p_data - p_start);
-    return status;
-}
 
 /*******************************************************************************
 **
@@ -854,9 +803,8 @@ tAVRC_STS avrc_bld_group_navigation_rsp (UINT16 navi_id, BT_HDR *p_pkt)
 static tAVRC_STS  avrc_bld_folder_item_values_rsp(tAVRC_GET_ITEMS_RSP *p_rsp, BT_HDR *p_pkt )
 {
     UINT8 *p_data, *p_start, *p_length, *p_media_element_len;
-    UINT8 *item_length;
     UINT16 itemlength, param_length;
-    UINT16 length = 0, item_numb = 0, i, xx, media_attr_count;
+    UINT16 item_numb = 0, i, xx, media_attr_count;
 
     AVRC_TRACE_DEBUG(" avrc_bld_folder_item_values_rsp offset :x%x", p_pkt->offset);
     p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
@@ -971,8 +919,6 @@ static tAVRC_STS avrc_bld_change_path_rsp (tAVRC_CHG_PATH_RSP *p_rsp, BT_HDR *p_
 {
     UINT8 *p_data, *p_start;
     UINT16 param_len; /* parameter length feild of Rsp */
-    UINT8 folder_index = 0;
-
 
     AVRC_TRACE_DEBUG("avrc_bld_change_path_rsp offset :x%x", p_pkt->offset);
 
@@ -1350,12 +1296,12 @@ static BT_HDR *avrc_bld_init_browse_rsp_buffer(tAVRC_RESPONSE *p_rsp)
 {
     UINT16 offset = AVCT_BROWSE_OFFSET;
     UINT16 chnl = AVCT_DATA_BROWSE;
-    UINT16 len  = AVRC_BROWSE_POOL_SIZE;
+    UINT16 len  = BT_DEFAULT_BUFFER_SIZE;
     BT_HDR *p_pkt = NULL;
 
     AVRC_TRACE_API("avrc_bld_init_browse_rsp_buffer ");
     /* allocate and initialize the buffer */
-    p_pkt = (BT_HDR *)GKI_getbuf(len);
+    p_pkt = (BT_HDR *)osi_malloc(len);
 
     if (p_pkt != NULL)
     {
@@ -1435,7 +1381,7 @@ tAVRC_STS AVRC_BldBrowseResponse( UINT8 handle, tAVRC_RESPONSE *p_rsp, BT_HDR **
     }
     if (alloc && (status != AVRC_STS_NO_ERROR) )
     {
-        GKI_freebuf(p_pkt);
+        osi_free_and_reset((void **)&p_pkt);
         *pp_pkt = NULL;
         AVRC_TRACE_ERROR("### error status:%d",status);
     }

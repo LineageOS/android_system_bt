@@ -181,8 +181,17 @@ void avdt_l2c_connect_ind_cback(BD_ADDR bd_addr, UINT16 lcid, UINT16 psm, UINT8 
     tBTM_STATUS rc;
     UNUSED(psm);
 
+    /* Check if outgoing connection is in progress
+     * if yes, reject incoming connection at L2CAP
+     * level itself.
+     */
+    if(avdt_cb.conn_in_progress == TRUE)
+    {
+        AVDT_TRACE_WARNING("connect_ind: outgoing conn in progress: Reject incoming conn");
+        result = L2CAP_CONN_NO_RESOURCES;
+    }
     /* do we already have a control channel for this peer? */
-    if ((p_ccb = avdt_ccb_by_bd(bd_addr)) == NULL)
+    else if ((p_ccb = avdt_ccb_by_bd(bd_addr)) == NULL)
     {
         /* no, allocate ccb */
         if ((p_ccb = avdt_ccb_alloc(bd_addr)) == NULL)

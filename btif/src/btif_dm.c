@@ -214,6 +214,8 @@ static size_t btif_events_end_index = 0;
 ******************************************************************************/
 static btif_dm_pairing_cb_t pairing_cb;
 static btif_dm_oob_cb_t     oob_cb;
+static UINT16 num_active_br_edr_links;
+static UINT16 num_active_le_links;
 static void btif_dm_generic_evt(UINT16 event, char* p_param);
 static void btif_dm_cb_create_bond(bt_bdaddr_t *bd_addr, tBTA_TRANSPORT transport);
 static void btif_dm_cb_hid_remote_name(tBTM_REMOTE_DEV_NAME *p_remote_name);
@@ -252,6 +254,8 @@ extern bt_status_t btif_sdp_execute_service(BOOLEAN b_enable);
 extern int btif_hh_connect(bt_bdaddr_t *bd_addr);
 extern void bta_gatt_convert_uuid16_to_uuid128(UINT8 uuid_128[LEN_UUID_128], UINT16 uuid_16);
 extern void btif_av_move_idle(bt_bdaddr_t bd_addr);
+extern void btif_av_trigger_suspend();
+extern BOOLEAN btif_av_get_ongoing_multicast();
 
 /******************************************************************************
 **  Functions
@@ -1932,6 +1936,33 @@ static void btif_dm_upstreams_evt(UINT16 event, char* p_param)
             bdcpy(bd_addr.address, p_data->link_up.bd_addr);
             BTIF_TRACE_DEBUG("BTA_DM_LINK_UP_EVT. Sending BT_ACL_STATE_CONNECTED");
 
+            if(p_data->link_up.link_type == BT_TRANSPORT_LE)
+            {
+                num_active_le_links++;
+                BTIF_TRACE_DEBUG("num_active_le_links is %d ",
+                    num_active_le_links);
+            }
+
+            if(p_data->link_up.link_type == BT_TRANSPORT_BR_EDR)
+            {
+                num_active_br_edr_links++;
+                BTIF_TRACE_DEBUG("num_active_br_edr_links is %d ",
+                    num_active_br_edr_links);
+            }
+            /* When tuchtones are enabled and 2 EDR HS are connected, if new
+             * connection is initated, then tuch tones are send to both connected HS
+             * over A2dp.Stream will be suspended after 3 secs and if remote has
+             * initiated play in this duartion, multicast must not be enabled with
+             * 3 ACL's, hence trigger a2dp suspend.
+             * During active muisc streaming no new connection can happen, hence
+             * We will get this only when multistreaming is happening due to tuchtones
+             */
+            if (btif_av_get_ongoing_multicast())
+            {
+                // trigger a2dp suspend
+                btif_av_trigger_suspend();
+            }
+
             btif_update_remote_version_property(&bd_addr);
 
             HAL_CBACK(bt_hal_cbacks, acl_state_changed_cb, BT_STATUS_SUCCESS,
@@ -1940,7 +1971,23 @@ static void btif_dm_upstreams_evt(UINT16 event, char* p_param)
 
         case BTA_DM_LINK_DOWN_EVT:
             bdcpy(bd_addr.address, p_data->link_down.bd_addr);
+
             btm_set_bond_type_dev(p_data->link_down.bd_addr, BOND_TYPE_UNKNOWN);
+
+            BTIF_TRACE_DEBUG("BTA_DM_LINK_DOWN_EVT. Sending BT_ACL_STATE_DISCONNECTED");
+            if (num_active_le_links > 0 &&
+                p_data->link_down.link_type == BT_TRANSPORT_LE)
+            {
+                num_active_le_links--;
+                BTIF_TRACE_DEBUG("num_active_le_links is %d ",num_active_le_links);
+            }
+
+            if (num_active_br_edr_links > 0 &&
+                p_data->link_down.link_type == BT_TRANSPORT_BR_EDR)
+            {
+                num_active_br_edr_links--;
+                BTIF_TRACE_DEBUG("num_active_br_edr_links is %d ",num_active_br_edr_links);
+            }
             btif_av_move_idle(bd_addr);
             BTIF_TRACE_DEBUG("BTA_DM_LINK_DOWN_EVT. Sending BT_ACL_STATE_DISCONNECTED");
             HAL_CBACK(bt_hal_cbacks, acl_state_changed_cb, BT_STATUS_SUCCESS,
@@ -3578,6 +3625,10 @@ bt_status_t btif_le_test_mode(uint16_t opcode, uint8_t *buf, uint8_t len)
 
 void btif_dm_on_disable()
 {
+    /* Cleanup static variables.*/
+    num_active_br_edr_links = 0;
+    num_active_le_links = 0;
+
     /* cancel any pending pairing requests */
     if (pairing_cb.state == BT_BOND_STATE_BONDING)
     {
@@ -3724,3 +3775,34 @@ void btif_debug_bond_event_dump(int fd) {
     }
     pthread_mutex_unlock(&bond_event_lock);
 }
+
+/*******************************************************************************
+**
+** Function        btif_dm_get_br_edr_links.
+**
+** Description     Returns number of active BR/EDR links.
+**
+** Returns         UINT16
+**
+*******************************************************************************/
+UINT16 btif_dm_get_br_edr_links()
+{
+    BTIF_TRACE_DEBUG("BR/EDR Link count: %d", num_active_br_edr_links);
+    return num_active_br_edr_links;
+}
+
+/*******************************************************************************
+**
+** Function        btif_dm_get_le_links.
+**
+** Description     Returns number of active  LE links.
+**
+** Returns         UINT16
+**
+*******************************************************************************/
+UINT16 btif_dm_get_le_links()
+{
+    BTIF_TRACE_DEBUG("LE Link count: %d", num_active_le_links);
+    return num_active_le_links;
+}
+

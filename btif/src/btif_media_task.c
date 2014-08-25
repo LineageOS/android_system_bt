@@ -614,6 +614,14 @@ static void btif_recv_ctrl_data(void)
             }
             break;
 
+        case A2DP_CTRL_CMD_CHECK_STREAM_STARTED:
+
+            if((btif_av_stream_started_ready() == TRUE))
+                a2dp_cmd_acknowledge(A2DP_CTRL_ACK_SUCCESS);
+            else
+                a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
+            break;
+
         case A2DP_CTRL_CMD_START:
             /* Don't sent START request to stack while we are in call.
                Some headsets like the Sony MW600, don't allow AVDTP START
@@ -632,7 +640,20 @@ static void btif_recv_ctrl_data(void)
                 break;
             }
 
-            if (btif_av_stream_ready() == TRUE)
+            /* In Dual A2dp, first check for started state of stream
+            * as we dont want to START again as while doing Handoff
+            * the stack state will be started, so it is not needed
+            * to send START again, just open the media socket
+            * and ACK the audio HAL.*/
+            if (btif_av_stream_started_ready())
+            {
+                /* already started, setup audio data channel listener
+                * and ack back immediately */
+                UIPC_Open(UIPC_CH_ID_AV_AUDIO, btif_a2dp_data_cb);
+
+                a2dp_cmd_acknowledge(A2DP_CTRL_ACK_SUCCESS);
+            }
+            else if (btif_av_stream_ready() == TRUE)
             {
                 /* setup audio data channel listener */
                 UIPC_Open(UIPC_CH_ID_AV_AUDIO, btif_a2dp_data_cb);
@@ -644,14 +665,6 @@ static void btif_recv_ctrl_data(void)
                 if (btif_media_cb.peer_sep == AVDT_TSEP_SRC)
                     a2dp_cmd_acknowledge(A2DP_CTRL_ACK_SUCCESS);
 #endif
-            }
-            else if (btif_av_stream_started_ready())
-            {
-                /* already started, setup audio data channel listener
-                   and ack back immediately */
-                UIPC_Open(UIPC_CH_ID_AV_AUDIO, btif_a2dp_data_cb);
-
-                a2dp_cmd_acknowledge(A2DP_CTRL_ACK_SUCCESS);
             }
             else
             {
@@ -887,6 +900,17 @@ static void btif_a2dp_encoder_update(void)
     btif_media_task_enc_update_req(&msg);
 }
 
+bool btif_a2dp_is_media_task_stopped(void)
+{
+    if (media_task_running != MEDIA_TASK_STATE_OFF)
+    {
+        APPL_TRACE_ERROR("btif_a2dp_is_media_task_stopped: %d",
+                                            media_task_running);
+        return false;
+    }
+    return true;
+}
+
 bool btif_a2dp_start_media_task(void)
 {
     if (media_task_running != MEDIA_TASK_STATE_OFF)
@@ -898,6 +922,8 @@ bool btif_a2dp_start_media_task(void)
     APPL_TRACE_IMP("## A2DP START MEDIA THREAD ##");
 
     btif_media_cmd_msg_queue = fixed_queue_new(SIZE_MAX);
+    if (btif_media_cmd_msg_queue == NULL)
+        goto error_exit;
 
     /* start a2dp media task */
     worker_thread = thread_new_sized("media_worker", MAX_MEDIA_WORKQUEUE_SEM_COUNT);
@@ -921,7 +947,15 @@ bool btif_a2dp_start_media_task(void)
 
 void btif_a2dp_stop_media_task(void)
 {
-    APPL_TRACE_IMP("## A2DP STOP MEDIA THREAD ##");
+    APPL_TRACE_DEBUG("## A2DP STOP MEDIA THREAD ##");
+    if (media_task_running != MEDIA_TASK_STATE_ON)
+    {
+        APPL_TRACE_ERROR("warning: media task cleanup state: %d",
+                                        media_task_running);
+        return;
+    }
+    /* make sure no channels are restarted while shutting down */
+    media_task_running = MEDIA_TASK_STATE_SHUTTING_DOWN;
 
     // Stop timer
     alarm_free(btif_media_cb.media_alarm);
@@ -929,10 +963,12 @@ void btif_a2dp_stop_media_task(void)
 
     // Exit thread
     fixed_queue_free(btif_media_cmd_msg_queue, NULL);
-    btif_media_cmd_msg_queue = NULL;
     thread_post(worker_thread, btif_media_thread_cleanup, NULL);
     thread_free(worker_thread);
+
     worker_thread = NULL;
+    btif_media_cmd_msg_queue = NULL;
+    APPL_TRACE_DEBUG("## A2DP MEDIA THREAD STOPPED ##");
 }
 
 /*****************************************************************************
@@ -964,7 +1000,7 @@ void btif_a2dp_on_init(void)
 **
 *******************************************************************************/
 
-void btif_a2dp_setup_codec(void)
+tBTIF_STATUS btif_a2dp_setup_codec(void)
 {
     tBTIF_AV_MEDIA_FEEDINGS media_feeding;
     tBTIF_STATUS status;
@@ -992,8 +1028,13 @@ void btif_a2dp_setup_codec(void)
         /* Send message to Media task to configure transcoding */
         btif_media_task_audio_feeding_init_req(&mfeed);
     }
+    else
+    {
+        status = BTIF_ERROR_SRV_AV_FEEDING_NOT_SUPPORTED;
+    }
 
     mutex_global_unlock();
+	    return status;
 }
 
 
@@ -1333,7 +1374,8 @@ void btif_a2dp_set_audio_focus_state(btif_media_audio_focus_state state)
 
     p_buf->focus_state = state;
     p_buf->hdr.event = BTIF_MEDIA_AUDIO_SINK_SET_FOCUS_STATE;
-    fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
+    if (btif_media_cmd_msg_queue != NULL)
+        fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
 }
 
 void btif_a2dp_set_audio_track_gain(float gain)
@@ -1462,12 +1504,11 @@ static void btif_media_thread_init(UNUSED_ATTR void *context) {
 
   raise_priority_a2dp(TASK_HIGH_MEDIA);
   media_task_running = MEDIA_TASK_STATE_ON;
+  APPL_TRACE_DEBUG(" btif_media_thread_init complete");
 }
 
 static void btif_media_thread_cleanup(UNUSED_ATTR void *context) {
   APPL_TRACE_IMP(" btif_media_thread_cleanup");
-  /* make sure no channels are restarted while shutting down */
-  media_task_running = MEDIA_TASK_STATE_SHUTTING_DOWN;
 
   /* this calls blocks until uipc is fully closed */
   UIPC_Close(UIPC_CH_ID_ALL);
@@ -1481,6 +1522,7 @@ static void btif_media_thread_cleanup(UNUSED_ATTR void *context) {
 
   /* Clear media task flag */
   media_task_running = MEDIA_TASK_STATE_OFF;
+  APPL_TRACE_DEBUG(" btif_media_thread_cleanup complete");
 }
 
 /*******************************************************************************
@@ -1497,8 +1539,9 @@ BOOLEAN btif_media_task_send_cmd_evt(UINT16 Evt)
     BT_HDR *p_buf = osi_malloc(sizeof(BT_HDR));
 
     p_buf->event = Evt;
-    fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
 
+    if (btif_media_cmd_msg_queue != NULL)
+        fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
     return TRUE;
 }
 
@@ -1657,8 +1700,9 @@ BOOLEAN btif_media_task_enc_init_req(tBTIF_MEDIA_INIT_AUDIO *p_msg)
 
     memcpy(p_buf, p_msg, sizeof(tBTIF_MEDIA_INIT_AUDIO));
     p_buf->hdr.event = BTIF_MEDIA_SBC_ENC_INIT;
-    fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
 
+    if (btif_media_cmd_msg_queue != NULL)
+        fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
     return TRUE;
 }
 
@@ -1678,8 +1722,9 @@ BOOLEAN btif_media_task_enc_update_req(tBTIF_MEDIA_UPDATE_AUDIO *p_msg)
 
     memcpy(p_buf, p_msg, sizeof(tBTIF_MEDIA_UPDATE_AUDIO));
     p_buf->hdr.event = BTIF_MEDIA_SBC_ENC_UPDATE;
-    fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
 
+    if (btif_media_cmd_msg_queue != NULL)
+        fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
     return TRUE;
 }
 
@@ -1699,8 +1744,9 @@ BOOLEAN btif_media_task_audio_feeding_init_req(tBTIF_MEDIA_INIT_AUDIO_FEEDING *p
 
     memcpy(p_buf, p_msg, sizeof(tBTIF_MEDIA_INIT_AUDIO_FEEDING));
     p_buf->hdr.event = BTIF_MEDIA_AUDIO_FEEDING_INIT;
-    fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
 
+    if (btif_media_cmd_msg_queue != NULL)
+        fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
     return TRUE;
 }
 
@@ -1718,8 +1764,9 @@ BOOLEAN btif_media_task_start_aa_req(void)
     BT_HDR *p_buf = osi_malloc(sizeof(BT_HDR));
 
     p_buf->event = BTIF_MEDIA_START_AA_TX;
-    fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
 
+    if (btif_media_cmd_msg_queue != NULL)
+        fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
     return TRUE;
 }
 
@@ -1769,8 +1816,9 @@ BOOLEAN btif_media_task_aa_rx_flush_req(void)
 
     BT_HDR *p_buf = osi_malloc(sizeof(BT_HDR));
     p_buf->event = BTIF_MEDIA_FLUSH_AA_RX;
-    fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
 
+    if (btif_media_cmd_msg_queue != NULL)
+        fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
     return TRUE;
 }
 

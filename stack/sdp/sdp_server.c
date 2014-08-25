@@ -722,14 +722,9 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     }
     if (is_avrcp_fallback)
     {
-#if (defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE))
-        /* Update AVRCP version back to 1.6 */
-        p_attr->value_ptr[PROFILE_VERSION_POSITION] = 0x06;
-#else
 #if (defined(SDP_AVRCP_1_5) && (SDP_AVRCP_1_5 == TRUE))
         /* Update AVRCP version back to 1.5 */
         p_attr->value_ptr[PROFILE_VERSION_POSITION] = 0x05;
-#endif
 #endif
         is_avrcp_fallback = FALSE;
     }
@@ -851,7 +846,6 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     BOOLEAN         maxxed_out = FALSE, is_cont = FALSE;
     BOOLEAN         is_avrcp_fallback = FALSE;
     BOOLEAN         is_avrcp_browse_bit_reset = FALSE;
-    BOOLEAN         is_avrcp_ca_bit_reset = FALSE;
     BOOLEAN         is_hfp_fallback = FALSE;
     UINT8           *p_seq_start;
     UINT16          seq_len, attr_len;
@@ -1025,14 +1019,9 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
                 }
                 if (is_avrcp_fallback)
                 {
-#if (defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE))
-                    /* Update AVRCP version back to 1.6 */
-                    p_attr->value_ptr[PROFILE_VERSION_POSITION] = 0x06;
-#else
 #if (defined(SDP_AVRCP_1_5) && (SDP_AVRCP_1_5 == TRUE))
                     /* Update AVRCP version back to 1.5 */
                     p_attr->value_ptr[PROFILE_VERSION_POSITION] = 0x05;
-#endif
 #endif
                     is_avrcp_fallback = FALSE;
                 }
@@ -1155,7 +1144,7 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     }
 
     /* Get a buffer to use to build the response */
-    BT_HDR *p_buf = (BT_HDR *)osi_malloc(SDP_DATA_BUF_SIZE);
+    p_buf = (BT_HDR *)osi_malloc(SDP_DATA_BUF_SIZE);
     p_buf->offset = L2CAP_MIN_OFFSET;
     p_rsp = p_rsp_start = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 

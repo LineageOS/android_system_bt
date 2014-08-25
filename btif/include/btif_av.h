@@ -50,6 +50,8 @@ typedef enum {
     BTIF_AV_SINK_FOCUS_REQ_EVT,
     BTIF_AV_CLEANUP_REQ_EVT,
     BTIF_AV_UPDATE_ENCODER_REQ_EVT,
+    BTIF_AV_INIT_REQ_EVT,
+	
 } btif_av_sm_event_t;
 
 
@@ -79,7 +81,7 @@ btif_sm_handle_t btif_av_get_sm_handle(void);
 **
 *******************************************************************************/
 
-bt_bdaddr_t btif_av_get_addr(void);
+bt_bdaddr_t btif_av_get_addr(BD_ADDR address);
 
 /*******************************************************************************
 ** Function         btif_av_is_sink_enabled
@@ -203,6 +205,18 @@ void btif_queue_focus_request(void);
 ** Returns          Void
 ********************************************************************************/
 void btif_av_clear_remote_suspend_flag(void);
+
+/*******************************************************************************
+**
+** Function         btif_av_any_br_peer
+**
+** Description      Check if the any of connected devices is BR device.
+**
+** Returns          TRUE if connected to any BR device, FALSE otherwise.
+**
+*******************************************************************************/
+
+BOOLEAN btif_av_any_br_peer(void);
 
 /*******************************************************************************
 **

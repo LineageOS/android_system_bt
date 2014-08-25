@@ -552,6 +552,7 @@ typedef struct {
     tAVDT_SCB_ACTION    *p_scb_act;             /* pointer to SCB action functions */
     tAVDT_CTRL_CBACK    *p_conn_cback;          /* connection callback function */
     UINT8               trace_level;            /* trace level */
+    BOOLEAN             conn_in_progress;       /* outgoing connection in progress */
 } tAVDT_CB;
 
 

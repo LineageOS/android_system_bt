@@ -106,7 +106,8 @@ enum
     BTA_AV_AVDT_RPT_CONN_EVT,
 #endif
     BTA_AV_API_START_EVT,       /* the following 2 events must be in the same order as the *AP_*EVT */
-    BTA_AV_API_STOP_EVT
+    BTA_AV_API_STOP_EVT,
+    BTA_AV_ENABLE_MULTICAST_EVT /* Event for enable and disable multicast */
 };
 
 /* events for AV control block state machine */
@@ -118,13 +119,13 @@ enum
 
 /* events that do not go through state machine */
 #define BTA_AV_FIRST_NSM_EVT    BTA_AV_API_ENABLE_EVT
-#define BTA_AV_LAST_NSM_EVT     BTA_AV_API_STOP_EVT
+#define BTA_AV_LAST_NSM_EVT     BTA_AV_ENABLE_MULTICAST_EVT
 
 /* API events passed to both SSMs (by bta_av_api_to_ssm) */
 #define BTA_AV_FIRST_A2S_API_EVT    BTA_AV_API_START_EVT
 #define BTA_AV_FIRST_A2S_SSM_EVT    BTA_AV_AP_START_EVT
 
-#define BTA_AV_LAST_EVT             BTA_AV_API_STOP_EVT
+#define BTA_AV_LAST_EVT             BTA_AV_ENABLE_MULTICAST_EVT
 
 /* maximum number of SEPS in stream discovery results */
 #define BTA_AV_NUM_SEPS         32
@@ -153,7 +154,6 @@ enum
 /* these bits are defined for bta_av_cb.multi_av */
 #define BTA_AV_MULTI_AV_SUPPORTED   0x01
 #define BTA_AV_MULTI_AV_IN_USE      0x02
-
 
 /*****************************************************************************
 **  Data types
@@ -242,6 +242,13 @@ typedef struct
     BOOLEAN             suspend;
     BOOLEAN             flush;
 } tBTA_AV_API_STOP;
+
+/* data type for BTA_AV_ENABLE_MULTICAST_EVT */
+typedef struct
+{
+    BT_HDR              hdr;
+    BOOLEAN             is_multicast_enabled;
+} tBTA_AV_ENABLE_MULTICAST;
 
 /* data type for BTA_AV_API_DISCONNECT_EVT */
 typedef struct
@@ -434,6 +441,7 @@ typedef union
     tBTA_AV_SDP_RES         sdp_res;
     tBTA_AV_API_META_RSP    api_meta_rsp;
     tBTA_AV_API_STATUS_RSP  api_status_rsp;
+    tBTA_AV_ENABLE_MULTICAST  multicast_state;
 } tBTA_AV_DATA;
 
 typedef void (tBTA_AV_VDP_DATA_ACT)(void *p_scb);
@@ -473,6 +481,7 @@ typedef union
 /* Bitmap for collision, coll_mask */
 #define BTA_AV_COLL_INC_TMR             0x01 /* Timer is running for incoming L2C connection */
 #define BTA_AV_COLL_API_CALLED          0x02 /* API open was called while incoming timer is running */
+#define BTA_AV_COLL_SETCONFIG_IND    0x04 /* SetConfig indication has been called by remote */
 
 /* type for AV stream control block */
 typedef struct
@@ -649,7 +658,7 @@ extern void bta_av_set_scb_sst_init (tBTA_AV_SCB *p_scb);
 extern BOOLEAN bta_av_is_scb_init (tBTA_AV_SCB *p_scb);
 extern void bta_av_set_scb_sst_incoming (tBTA_AV_SCB *p_scb);
 extern tBTA_AV_LCB * bta_av_find_lcb(BD_ADDR addr, UINT8 op);
-
+extern BOOLEAN bta_av_is_multicast_enabled();
 
 /* main functions */
 extern void bta_av_api_deregister(tBTA_AV_DATA *p_data);

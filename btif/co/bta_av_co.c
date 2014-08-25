@@ -1492,7 +1492,16 @@ BOOLEAN bta_av_co_audio_codec_supported(tBTIF_STATUS *p_status)
                     APPL_TRACE_DEBUG("bta_av_co_audio_codec_supported sink %d of peer %d doesn't support cp",
                             snk_index, index);
                     *p_status = BTIF_ERROR_SRV_AV_CP_NOT_SUPPORTED;
+#if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
+                    if (!bta_av_co_audio_codec_build_config(p_sink->codec_caps, codec_cfg))
+                    {
+                        APPL_TRACE_DEBUG2("%s:index %d doesn't support codec", __FUNCTION__, index);
+                        return FALSE;
+                    }
+                    return TRUE;
+#else
                     return FALSE;
+#endif
                 }
 
                 /* Build the codec configuration for this sink */
@@ -1687,6 +1696,7 @@ BOOLEAN bta_av_co_audio_get_sbc_config(tA2D_SBC_CIE *p_sbc_config, UINT16 *p_min
                 p_peer = &bta_av_co_cb.peers[index];
                 if (p_peer->opened)
                 {
+                    APPL_TRACE_EVENT("bta_av_co_audio_get_sbc_config on index= %d", index);
                     if (p_peer->mtu < *p_minmtu)
                     {
                         *p_minmtu = p_peer->mtu;
@@ -1697,6 +1707,7 @@ BOOLEAN bta_av_co_audio_get_sbc_config(tA2D_SBC_CIE *p_sbc_config, UINT16 *p_min
                         if (p_sink->codec_type == A2D_MEDIA_CT_SBC)
                         {
                             /* Update the bitpool boundaries of the current config */
+                            APPL_TRACE_EVENT("Update the bitpool boundaries on index= %d", jndex);
                             p_sbc_config->min_bitpool =
                                BTA_AV_CO_MAX(p_sink->codec_caps[BTA_AV_CO_SBC_MIN_BITPOOL_OFF],
                                              p_sbc_config->min_bitpool);
@@ -1717,6 +1728,7 @@ BOOLEAN bta_av_co_audio_get_sbc_config(tA2D_SBC_CIE *p_sbc_config, UINT16 *p_min
     if (!result)
     {
         /* Not SBC, still return the default values */
+        APPL_TRACE_EVENT("Not SBC, still return the default values");
         *p_sbc_config = btif_av_sbc_default_config;
     }
     mutex_global_unlock();

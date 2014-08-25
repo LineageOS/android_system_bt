@@ -174,6 +174,7 @@ static const char* dump_a2dp_ctrl_event(char event)
         CASE_RETURN_STR(A2DP_CTRL_CMD_START)
         CASE_RETURN_STR(A2DP_CTRL_CMD_STOP)
         CASE_RETURN_STR(A2DP_CTRL_CMD_SUSPEND)
+        CASE_RETURN_STR(A2DP_CTRL_CMD_CHECK_STREAM_STARTED)
         default:
             return "UNKNOWN MSG ID";
     }
@@ -649,6 +650,17 @@ static int suspend_audio_datapath(struct a2dp_stream_common *common, bool standb
 }
 
 
+static int check_a2dp_stream_started(struct a2dp_stream_out *out)
+{
+   if (a2dp_command(&out->common, A2DP_CTRL_CMD_CHECK_STREAM_STARTED) < 0)
+   {
+       INFO("Btif not in stream state");
+       return -1;
+   }
+   return 0;
+}
+
+
 /*****************************************************************************
 **
 **  audio output callbacks
@@ -848,8 +860,6 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
     if (!params)
       return status;
 
-    pthread_mutex_lock(&out->common.lock);
-
     /* dump params */
     hash_map_utils_dump_string_keys_string_values(params);
 
@@ -858,27 +868,42 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
     if (keyval && strcmp(keyval, "true") == 0)
     {
         DEBUG("stream closing, disallow any writes");
+            pthread_mutex_lock(&out->common.lock);
         out->common.state = AUDIO_A2DP_STATE_STOPPING;
+            pthread_mutex_unlock(&out->common.lock);
     }
 
     keyval = (char *)hash_map_get(params, "A2dpSuspended");
 
     if (keyval && strcmp(keyval, "true") == 0)
     {
+        pthread_mutex_lock(&out->common.lock);
         if (out->common.state == AUDIO_A2DP_STATE_STARTED)
             status = suspend_audio_datapath(&out->common, false);
+        else
+        {
+                if (check_a2dp_stream_started(out) == 0)
+                   /*Btif and A2dp HAL state can be out of sync
+                    *check state of btif and suspend audio.
+                    *Happens when remote initiates start.*/
+                    status = suspend_audio_datapath(&out->common, false);
+                else
+                    out->common.state = AUDIO_A2DP_STATE_SUSPENDED;
+        }
+        pthread_mutex_unlock(&out->common.lock);
     }
     else
     {
+        pthread_mutex_lock(&out->common.lock);
         /* Do not start the streaming automatically. If the phone was streaming
          * prior to being suspended, the next out_write shall trigger the
          * AVDTP start procedure */
         if (out->common.state == AUDIO_A2DP_STATE_SUSPENDED)
             out->common.state = AUDIO_A2DP_STATE_STANDBY;
         /* Irrespective of the state, return 0 */
+        pthread_mutex_unlock(&out->common.lock);
     }
 
-    pthread_mutex_unlock(&out->common.lock);
     hash_map_free(params);
 
     return status;

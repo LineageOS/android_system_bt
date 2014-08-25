@@ -186,7 +186,6 @@ static BT_HDR *avct_bcb_msg_asmbl(tAVCT_BCB *p_bcb, BT_HDR *p_buf)
     UINT8   *p;
     UINT8   pkt_type;
     BT_HDR  *p_ret;
-    UINT16  buf_len;
 
     /* parse the message header */
     AVCT_TRACE_DEBUG("bcb_msg_asmbl peer_mtu:%x, ch_lcid:%x",p_bcb->peer_mtu, \
@@ -198,7 +197,7 @@ static BT_HDR *avct_bcb_msg_asmbl(tAVCT_BCB *p_bcb, BT_HDR *p_buf)
     /* quick sanity check on length */
     if (p_buf->len < avct_lcb_pkt_type_len[pkt_type])
     {
-        GKI_freebuf(p_buf);
+        osi_free_and_reset((void**)&p_buf);
         AVCT_TRACE_WARNING("### Bad length during reassembly");
         p_ret = NULL;
     }
@@ -214,7 +213,7 @@ static BT_HDR *avct_bcb_msg_asmbl(tAVCT_BCB *p_bcb, BT_HDR *p_buf)
     }
     else
     {
-        GKI_freebuf(p_buf);
+        osi_free_and_reset((void**)&p_buf);
         p_ret =NULL;
         AVCT_TRACE_WARNING("### Got Fragmented packet");
     }
@@ -278,7 +277,6 @@ void avct_bcb_chnl_open(tAVCT_BCB *p_bcb, tAVCT_LCB_EVT *p_data)
 ******************************************************************************/
 void avct_close_bcb(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
 {
-    int               i;
     tAVCT_BCB        *p_bcb = NULL;
 
     AVCT_TRACE_DEBUG("avct_close_bcb");
@@ -353,8 +351,10 @@ void avct_lcb_open_ind(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
         if (p_ccb->allocated)
         {
             /* if bound to this lcb send connect confirm event */
+            AVCT_TRACE_DEBUG("avct_lcb_open_ind, %d", p_ccb->allocated);
             if (p_ccb->p_lcb == p_lcb)
             {
+                AVCT_TRACE_DEBUG("avct_lcb_open_ind, bind true");
                 bind = TRUE;
                 L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH);
                 p_ccb->cc.p_ctrl_cback(avct_ccb_to_idx(p_ccb), AVCT_CONNECT_CFM_EVT,
@@ -365,6 +365,7 @@ void avct_lcb_open_ind(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
                      (avct_lcb_has_pid(p_lcb, p_ccb->cc.pid) == NULL))
             {
                 /* bind ccb to lcb and send connect ind event */
+                AVCT_TRACE_DEBUG("avct_lcb_open_ind, bind and update");
                 bind = TRUE;
                 p_ccb->p_lcb = p_lcb;
                 L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH);
@@ -377,6 +378,7 @@ void avct_lcb_open_ind(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
     /* if no ccbs bound to this lcb, disconnect */
     if (bind == FALSE)
     {
+        AVCT_TRACE_DEBUG("avct_lcb_open_ind, send disconnect");
         avct_lcb_event(p_lcb, AVCT_LCB_INT_CLOSE_EVT, p_data);
     }
 }
@@ -536,7 +538,7 @@ void avct_bcb_close_ind(tAVCT_BCB *p_bcb, tAVCT_LCB_EVT *p_data)
         {
             //set avct_cb.bcb to 0
             memset(p_ccb->p_bcb, 0 ,sizeof(tAVCT_BCB));
-            p_ccb->p_bcb == NULL;
+            p_ccb->p_bcb = NULL;
             AVCT_TRACE_DEBUG("**close_ind");
         }
     }
@@ -825,20 +827,20 @@ void avct_lcb_cong_ind(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
 *******************************************************************************/
 void avct_bcb_cong_ind(tAVCT_BCB *p_bcb, tAVCT_LCB_EVT *p_data)
 {
-    int           i;
     UINT8         event;
     BT_HDR       *p_buf;
 
     AVCT_TRACE_DEBUG("avct_bcb_cong_ind");
     if (p_bcb != NULL)
     {
-        AVCT_TRACE_DEBUG("avct_bcb_cong_ind = %d",p_data->cong);
-        /* set event */
+        AVCT_TRACE_DEBUG("avct_bcb_cong_ind = %d", p_data->cong);
+
         event = (p_data->cong) ? AVCT_CONG_IND_EVT : AVCT_UNCONG_IND_EVT;
         p_bcb->cong = p_data->cong;
-        if (p_bcb->cong == FALSE && GKI_getfirst(&p_bcb->tx_q))
+        if (p_bcb->cong == FALSE && !fixed_queue_is_empty(p_bcb->tx_q))
         {
-            while (!p_bcb->cong && (p_buf = (BT_HDR *)GKI_dequeue(&p_bcb->tx_q)) != NULL)
+            while (!p_bcb->cong &&
+                   (p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_bcb->tx_q)) != NULL)
             {
                 if (L2CA_DataWrite(p_bcb->ch_lcid, p_buf) == L2CAP_DW_CONGESTED)
                 {
@@ -886,7 +888,7 @@ void avct_lcb_discard_msg(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
 void avct_bcb_discard_msg(tAVCT_BCB *p_bcb, tAVCT_LCB_EVT *p_data)
 {
     AVCT_TRACE_ERROR("### avct_bcb_discard_msg");
-    GKI_freebuf(p_data->ul_msg.p_buf);
+    osi_free_and_reset((void**)&p_data->ul_msg.p_buf);
 }
 #endif
 
@@ -1019,8 +1021,6 @@ void avct_bcb_send_msg(tAVCT_BCB *p_bcb, tAVCT_LCB_EVT *p_data)
     UINT8           pkt_type;
     UINT8           *p;
     BT_HDR          *p_buf;
-    UINT8           nosp = 0; /* number of subsequent packets */
-    UINT16          buf_size = p_bcb->peer_mtu + L2CAP_MIN_OFFSET + BT_HDR_SIZE;
     /* store msg len */
     curr_msg_len = p_data->ul_msg.p_buf->len;
     AVCT_TRACE_DEBUG("avct_bcb_send_msg  length: %x",curr_msg_len);
@@ -1046,7 +1046,7 @@ void avct_bcb_send_msg(tAVCT_BCB *p_bcb, tAVCT_LCB_EVT *p_data)
         if (p_bcb->cong == TRUE)
         {
             AVCT_TRACE_ERROR("L2CAP congestion");
-            GKI_enqueue (&p_bcb->tx_q, p_buf);
+            fixed_queue_enqueue(p_bcb->tx_q, p_buf);
         }
         else
         {
@@ -1099,7 +1099,7 @@ void avct_bcb_free_msg_ind(tAVCT_BCB *p_bcb, tAVCT_LCB_EVT *p_data)
 {
     AVCT_TRACE_DEBUG("avct_bcb_free_msg_ind");
     if (p_data)
-        GKI_freebuf(p_data->p_buf);
+        osi_free_and_reset((void**)&p_data->p_buf);
 
 }
 #endif
@@ -1225,7 +1225,7 @@ void avct_bcb_msg_ind(tAVCT_BCB *p_bcb, tAVCT_LCB_EVT *p_data)
     if (cr_ipid == AVCT_CR_IPID_INVALID)
     {
         AVCT_TRACE_WARNING("### Invalid cr_ipid", cr_ipid);
-        GKI_freebuf(p_data->p_buf);
+        osi_free_and_reset((void**)&p_data->p_buf);
         return;
     }
     /* parse and lookup PID */
@@ -1234,7 +1234,7 @@ void avct_bcb_msg_ind(tAVCT_BCB *p_bcb, tAVCT_LCB_EVT *p_data)
     if (p_lcb == NULL)
     {
         AVCT_TRACE_ERROR("### Error lcb is NULL");
-        GKI_freebuf(p_data->p_buf);
+        osi_free_and_reset((void**)&p_data->p_buf);
     }
     else
     {
@@ -1260,11 +1260,11 @@ void avct_bcb_msg_ind(tAVCT_BCB *p_bcb, tAVCT_LCB_EVT *p_data)
         {
             /* PID not found; drop message */
             AVCT_TRACE_WARNING("### No ccb for PID=%x", pid);
-            GKI_freebuf(p_data->p_buf);
+            osi_free_and_reset((void**)&p_data->p_buf);
             /* if command send reject */
             if (cr_ipid == AVCT_CMD)
             {
-                if ((p_buf = (BT_HDR *) GKI_getpoolbuf(AVCT_CMD_POOL_ID)) != NULL)
+                if ((p_buf = (BT_HDR *) osi_malloc(AVCT_CMD_BUF_SIZE)) != NULL)
                 {
                     p_buf->len = AVCT_HDR_LEN_SINGLE;
                     p_buf->offset = AVCT_MSG_OFFSET - AVCT_HDR_LEN_SINGLE;

@@ -1194,9 +1194,11 @@
 #define AVDT_NUM_LINKS              2
 #endif
 
-/* Number of simultaneous stream endpoints. */
+/* Number of simultaneous stream endpoints.
+ * Audio*2 + Video*2 + 1 Additional
+ */
 #ifndef AVDT_NUM_SEPS
-#define AVDT_NUM_SEPS               3
+#define AVDT_NUM_SEPS               5
 #endif
 
 /* Number of transport channels setup by AVDT for all media streams */
@@ -1408,9 +1410,36 @@
 #define AVCT_NUM_LINKS              2
 #endif
 
-/* Number of simultaneous AVCTP connections. */
+/* Number of simultaneous AVCTP connections.
+ * Audio*2 + Video*2 + 1 Additional */
 #ifndef AVCT_NUM_CONN
-#define AVCT_NUM_CONN               3
+#define AVCT_NUM_CONN               5
+#endif
+
+/* Buffer size to reassemble the SDU. */
+#ifndef AVCT_BR_USER_RX_BUF_SIZE
+#define AVCT_BR_USER_RX_BUF_SIZE    BT_DEFAULT_BUFFER_SIZE
+#endif
+
+/* Buffer size to hold the SDU. */
+#ifndef AVCT_BR_USER_TX_BUF_SIZE
+#define AVCT_BR_USER_TX_BUF_SIZE    BT_DEFAULT_BUFFER_SIZE
+#endif
+
+/*
+ * Buffer size used to hold MPS segments during SDU reassembly
+ */
+#ifndef AVCT_BR_FCR_RX_BUF_SIZE
+#define AVCT_BR_FCR_RX_BUF_SIZE     BT_DEFAULT_BUFFER_SIZE
+#endif
+
+/*
+ * Default buffer size used to hold MPS segments used in (re)transmissions.
+ * The size of each buffer must be able to hold the maximum MPS segment size
+ * passed in tL2CAP_FCR_OPTIONS plus BT_HDR (8) + HCI preamble (4) +
+ * L2CAP_MIN_OFFSET (11 - as of BT 2.1 + EDR Spec).+1452 */
+#ifndef AVCT_BR_FCR_TX_BUF_SIZE
+#define AVCT_BR_FCR_TX_BUF_SIZE     BT_DEFAULT_BUFFER_SIZE
 #endif
 
 /******************************************************************************
@@ -1457,6 +1486,7 @@
 #ifndef MCA_CTRL_MTU
 #define MCA_CTRL_MTU    60
 #endif
+
 
 /* The maximum number of registered MCAP instances. */
 #ifndef MCA_NUM_REGS

@@ -172,7 +172,7 @@ static const UINT8 bta_av_sst_incoming[][BTA_AV_NUM_COLS] =
 /* STR_DISC_OK_EVT */       {BTA_AV_DISC_RES_AS_ACP,BTA_AV_SIGNORE,        BTA_AV_INCOMING_SST },
 /* STR_DISC_FAIL_EVT */     {BTA_AV_SIGNORE,        BTA_AV_SIGNORE,        BTA_AV_INCOMING_SST },
 /* STR_GETCAP_OK_EVT */     {BTA_AV_SAVE_CAPS,      BTA_AV_SIGNORE,        BTA_AV_INCOMING_SST },
-/* STR_GETCAP_FAIL_EVT */   {BTA_AV_SIGNORE,        BTA_AV_SIGNORE,        BTA_AV_INCOMING_SST },
+/* STR_GETCAP_FAIL_EVT */   {BTA_AV_OPEN_FAILED,    BTA_AV_SIGNORE,        BTA_AV_CLOSING_SST },
 /* STR_OPEN_OK_EVT */       {BTA_AV_STR_OPENED,     BTA_AV_SIGNORE,        BTA_AV_OPEN_SST },
 /* STR_OPEN_FAIL_EVT */     {BTA_AV_SIGNORE,        BTA_AV_SIGNORE,        BTA_AV_INCOMING_SST },
 /* STR_START_OK_EVT */      {BTA_AV_SIGNORE,        BTA_AV_SIGNORE,        BTA_AV_INCOMING_SST },
@@ -463,6 +463,43 @@ void bta_av_ssm_execute(tBTA_AV_SCB *p_scb, UINT16 event, tBTA_AV_DATA *p_data)
     state_table = bta_av_sst_tbl[p_scb->state];
 
     event -= BTA_AV_FIRST_SSM_EVT;
+
+    if((p_scb->state != BTA_AV_OPENING_SST) &&
+        (state_table[event][BTA_AV_SNEXT_STATE] == BTA_AV_OPENING_SST))
+    {
+        AVDT_UpdateServiceBusyState(TRUE);
+    }
+    else if(AVDT_GetServiceBusyState() == TRUE)
+    {
+        BOOLEAN keep_busy = TRUE;
+
+        for (xx = 0; xx < BTA_AV_NUM_STRS; xx++)
+        {
+            if (bta_av_cb.p_scb[xx])
+            {
+                if ((bta_av_cb.p_scb[xx]->state == BTA_AV_OPENING_SST) &&
+                    (bta_av_cb.p_scb[xx] != p_scb))
+                {
+                    /* There is other SCB in opening state
+                     * keep the service state in progress
+                     */
+                    APPL_TRACE_VERBOSE("SCB in opening state. Keep Busy");
+                    keep_busy = TRUE;
+                    break;
+                }
+                else if ((bta_av_cb.p_scb[xx]->state == BTA_AV_OPENING_SST) &&
+                    (bta_av_cb.p_scb[xx] == p_scb) &&
+                    (state_table[event][BTA_AV_SNEXT_STATE] != BTA_AV_OPENING_SST))
+                {
+                    keep_busy = FALSE;
+                }
+            }
+        }
+        if (keep_busy == FALSE)
+        {
+            AVDT_UpdateServiceBusyState(FALSE);
+        }
+    }
 
     /* set next state */
     p_scb->state = state_table[event][BTA_AV_SNEXT_STATE];
