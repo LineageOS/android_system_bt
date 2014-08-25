@@ -235,12 +235,13 @@ void BTA_AvDisconnect(BD_ADDR bd_addr)
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_AvStart(void)
+void BTA_AvStart(tBTA_AV_HNDL handle)
 {
     BT_HDR  *p_buf;
 
     if ((p_buf = (BT_HDR *) GKI_getbuf(sizeof(BT_HDR))) != NULL)
     {
+        p_buf->layer_specific   = handle;
         p_buf->event = BTA_AV_API_START_EVT;
         bta_sys_sendmsg(p_buf);
     }
@@ -281,15 +282,38 @@ void BTA_AvEnable_Sink(int enable)
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_AvStop(BOOLEAN suspend)
+void BTA_AvStop(BOOLEAN suspend, tBTA_AV_HNDL handle)
 {
     tBTA_AV_API_STOP  *p_buf;
 
     if ((p_buf = (tBTA_AV_API_STOP *) GKI_getbuf(sizeof(tBTA_AV_API_STOP))) != NULL)
     {
         p_buf->hdr.event = BTA_AV_API_STOP_EVT;
+        p_buf->hdr.layer_specific   = handle;
         p_buf->flush   = TRUE;
         p_buf->suspend = suspend;
+        bta_sys_sendmsg(p_buf);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         BTA_AvEnableMultiCast
+**
+** Description      Enable/Disable Avdtp MultiCast
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_AvEnableMultiCast(BOOLEAN state, tBTA_AV_HNDL handle)
+{
+    tBTA_AV_ENABLE_MULTICAST  *p_buf;
+
+    if ((p_buf = (tBTA_AV_ENABLE_MULTICAST *) GKI_getbuf(sizeof(tBTA_AV_ENABLE_MULTICAST))) != NULL)
+    {
+        p_buf->hdr.event = BTA_AV_ENABLE_MULTICAST_EVT;
+        p_buf->hdr.layer_specific   = handle;
+        p_buf->is_multicast_enabled = state;
         bta_sys_sendmsg(p_buf);
     }
 }

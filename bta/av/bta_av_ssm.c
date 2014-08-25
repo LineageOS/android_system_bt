@@ -450,6 +450,43 @@ void bta_av_ssm_execute(tBTA_AV_SCB *p_scb, UINT16 event, tBTA_AV_DATA *p_data)
 
     event -= BTA_AV_FIRST_SSM_EVT;
 
+    if((p_scb->state != BTA_AV_OPENING_SST) &&
+        (state_table[event][BTA_AV_SNEXT_STATE] == BTA_AV_OPENING_SST))
+    {
+        AVDT_UpdateServiceBusyState(TRUE);
+    }
+    else if(AVDT_GetServiceBusyState() == TRUE)
+    {
+        BOOLEAN keep_busy = TRUE;
+
+        for (xx = 0; xx < BTA_AV_NUM_STRS; xx++)
+        {
+            if (bta_av_cb.p_scb[xx])
+            {
+                if ((bta_av_cb.p_scb[xx]->state == BTA_AV_OPENING_SST) &&
+                    (bta_av_cb.p_scb[xx] != p_scb))
+                {
+                    /* There is other SCB in opening state
+                     * keep the service state in progress
+                     */
+                    APPL_TRACE_VERBOSE("SCB in opening state. Keep Busy");
+                    keep_busy = TRUE;
+                    break;
+                }
+                else if ((bta_av_cb.p_scb[xx]->state == BTA_AV_OPENING_SST) &&
+                    (bta_av_cb.p_scb[xx] == p_scb) &&
+                    (state_table[event][BTA_AV_SNEXT_STATE] != BTA_AV_OPENING_SST))
+                {
+                    keep_busy = FALSE;
+                }
+            }
+        }
+        if (keep_busy == FALSE)
+        {
+            AVDT_UpdateServiceBusyState(FALSE);
+        }
+    }
+
     /* set next state */
     p_scb->state = state_table[event][BTA_AV_SNEXT_STATE];
 

@@ -360,8 +360,10 @@ void avct_lcb_open_ind(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
         if (p_ccb->allocated)
         {
             /* if bound to this lcb send connect confirm event */
+            AVCT_TRACE_DEBUG("avct_lcb_open_ind, %d", p_ccb->allocated);
             if (p_ccb->p_lcb == p_lcb)
             {
+                AVCT_TRACE_DEBUG("avct_lcb_open_ind, bind true");
                 bind = TRUE;
                 L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH);
                 p_ccb->cc.p_ctrl_cback(avct_ccb_to_idx(p_ccb), AVCT_CONNECT_CFM_EVT,
@@ -372,6 +374,7 @@ void avct_lcb_open_ind(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
                      (avct_lcb_has_pid(p_lcb, p_ccb->cc.pid) == NULL))
             {
                 /* bind ccb to lcb and send connect ind event */
+                AVCT_TRACE_DEBUG("avct_lcb_open_ind, bind and update");
                 bind = TRUE;
                 p_ccb->p_lcb = p_lcb;
                 L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH);
@@ -384,6 +387,7 @@ void avct_lcb_open_ind(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
     /* if no ccbs bound to this lcb, disconnect */
     if (bind == FALSE)
     {
+        AVCT_TRACE_DEBUG("avct_lcb_open_ind, send disconnect");
         avct_lcb_event(p_lcb, AVCT_LCB_INT_CLOSE_EVT, p_data);
     }
 }

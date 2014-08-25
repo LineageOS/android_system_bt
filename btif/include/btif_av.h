@@ -32,6 +32,7 @@
 #include "btif_sm.h"
 #include "bta_av_api.h"
 
+#define BTIF_RC_HANDLE_NONE 0xFF
 
 /*******************************************************************************
 **  Type definitions for callback functions
@@ -74,7 +75,7 @@ btif_sm_handle_t btif_av_get_sm_handle(void);
 **
 *******************************************************************************/
 
-bt_bdaddr_t btif_av_get_addr(void);
+bt_bdaddr_t btif_av_get_addr(BD_ADDR address);
 
 /*******************************************************************************
 **
@@ -163,6 +164,18 @@ BOOLEAN btif_av_is_peer_edr(void);
 ********************************************************************************/
 
 void btif_av_clear_remote_suspend_flag(void);
+
+/*******************************************************************************
+**
+** Function         btif_av_any_br_peer
+**
+** Description      Check if the any of connected devices is BR device.
+**
+** Returns          TRUE if connected to any BR device, FALSE otherwise.
+**
+*******************************************************************************/
+
+BOOLEAN btif_av_any_br_peer(void);
 
 /*******************************************************************************
 **

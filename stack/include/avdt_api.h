@@ -457,6 +457,32 @@ extern void AVDT_Deregister(void);
 
 /*******************************************************************************
 **
+** Function         AVDT_UpdateServiceBusyState
+**
+** Description      This function is used to set the service busy state
+**                  during outgoing connection to properly handle the
+**                  connections in upper layers.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void AVDT_UpdateServiceBusyState(BOOLEAN state);
+
+/*******************************************************************************
+**
+** Function         AVDT_GetServiceBusyState
+**
+** Description      This function is used to get the service busy state
+**
+**
+** Returns          outgoing connection in progress or not
+**
+*******************************************************************************/
+BOOLEAN AVDT_GetServiceBusyState(void);
+
+/*******************************************************************************
+**
 ** Function         AVDT_SINK_Activate
 **
 ** Description      Activate SEP of A2DP Sink. In Use parameter is adjusted.

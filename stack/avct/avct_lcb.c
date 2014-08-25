@@ -590,9 +590,11 @@ tAVCT_CCB *avct_lcb_has_pid(tAVCT_LCB *p_lcb, UINT16 pid)
     {
         if (p_ccb->allocated && (p_ccb->p_lcb == p_lcb) && (p_ccb->cc.pid == pid))
         {
+            AVCT_TRACE_DEBUG("avct_lcb_has_pid, found");
             return p_ccb;
         }
     }
+    AVCT_TRACE_WARNING("avct_lcb_has_pid, not found");
     return NULL;
 }
 

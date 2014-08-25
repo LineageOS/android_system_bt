@@ -58,6 +58,17 @@
 #define AVRC_MIN_META_CMD_LEN 20
 #endif
 
+/* state machine states */
+enum
+{
+    BTA_AV_INIT_SST,
+    BTA_AV_INCOMING_SST,
+    BTA_AV_OPENING_SST,
+    BTA_AV_OPEN_SST,
+    BTA_AV_RCFG_SST,
+    BTA_AV_CLOSING_SST
+};
+
 static void bta_av_acp_sig_timer_cback (TIMER_LIST_ENT *p_tle);
 
 /*******************************************************************************
@@ -581,11 +592,15 @@ void bta_av_rc_opened(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
     {
         /* we have not done SDP on peer RC capabilities.
          * peer must have initiated the RC connection */
-        if (p_cb->features & BTA_AV_FEAT_RCCT)
-            rc_open.peer_features |= BTA_AV_FEAT_RCTG;
-        if (p_cb->features & BTA_AV_FEAT_RCTG)
+        /*To update default features based on the local features we support*/
+        if (bta_av_cb.features & BTA_AV_FEAT_RCTG)
+        {
             rc_open.peer_features |= BTA_AV_FEAT_RCCT;
-
+        }
+        if (bta_av_cb.features & BTA_AV_FEAT_RCCT)
+        {
+            rc_open.peer_features |= BTA_AV_FEAT_RCTG;
+        }
         bta_av_rc_disc(disc);
     }
     (*p_cb->p_cback)(BTA_AV_RC_OPEN_EVT, (tBTA_AV *) &rc_open);
@@ -1532,15 +1547,50 @@ void bta_av_sig_chg(tBTA_AV_DATA *p_data)
         p_lcb = bta_av_find_lcb(p_data->str_msg.bd_addr, BTA_AV_LCB_FIND);
         if(!p_lcb)
         {
+            if (p_cb->conn_lcb > 0)
+            {
+                APPL_TRACE_DEBUG("Already connected to LCBs: 0x%x", p_cb->conn_lcb);
+            }
+            /* Check if busy processing a connection, if yes, Reject the
+             * new incoming connection.
+             * This is very rare case to happen as the timeout to start
+             * signalling procedure is just 2 sec.
+             * Also sink initiators will have retry machanism.
+             * Even though busy flag is set during outgoing connection to
+             * reject incoming connection at L2CAP connect request, there
+             * is a chance to get here if the incoming connection has passed
+             * the L2CAP connection stage.
+             */
+            if((p_data->hdr.offset == AVDT_ACP) &&
+                ((p_cb->acp_sig_tmr.p_cback != NULL) ||
+                (AVDT_GetServiceBusyState() == TRUE)))
+            {
+                APPL_TRACE_ERROR("%s Incoming conn while processing another.. Reject",
+                    __FUNCTION__);
+                AVDT_DisconnectReq (p_data->str_msg.bd_addr, NULL);
+                return;
+            }
+
             /* if the address does not have an LCB yet, alloc one */
             for(xx=0; xx<BTA_AV_NUM_LINKS; xx++)
             {
                 mask = 1 << xx;
-                APPL_TRACE_DEBUG("conn_lcb: 0x%x", p_cb->conn_lcb);
+                APPL_TRACE_DEBUG("The current conn_lcb: 0x%x", p_cb->conn_lcb);
 
                 /* look for a p_lcb with its p_scb registered */
                 if((!(mask & p_cb->conn_lcb)) && (p_cb->p_scb[xx] != NULL))
                 {
+                    /* Check if the SCB is Free before using for
+                     * ACP connection
+                     */
+                    if ((p_data->hdr.offset == AVDT_ACP) &&
+                        (p_cb->p_scb[xx]->state != BTA_AV_INIT_SST))
+                    {
+                        APPL_TRACE_DEBUG("SCB in use %d", xx);
+                        continue;
+                    }
+
+                    APPL_TRACE_DEBUG("Found a free p_lcb : 0x%x", xx);
                     p_lcb = &p_cb->lcb[xx];
                     p_lcb->lidx = xx + 1;
                     bdcpy(p_lcb->addr, p_data->str_msg.bd_addr);
@@ -1662,6 +1712,9 @@ void bta_av_sig_timer(tBTA_AV_DATA *p_data)
             {
                 bta_sys_start_timer(&p_cb->sig_tmr, BTA_AV_SIG_TIMER_EVT, BTA_AV_SIG_TIME_VAL);
                 bdcpy(pend.bd_addr, p_lcb->addr);
+                APPL_TRACE_DEBUG("bta_av_sig_timer on IDX = %d",xx);
+                //Copy the handle of SCB
+                pend.hndl = p_cb->p_scb[xx]->hndl;
                 (*p_cb->p_cback)(BTA_AV_PENDING_EVT, (tBTA_AV *) &pend);
             }
         }
@@ -1684,6 +1737,19 @@ static void bta_av_acp_sig_timer_cback (TIMER_LIST_ENT *p_tle)
     tBTA_AV_CB  *p_cb = &bta_av_cb;
     tBTA_AV_SCB *p_scb = NULL;
     tBTA_AV_API_OPEN  *p_buf;
+
+    /* Clean up p_cback in AV Control Block to
+     * indicate that device is not busy processing
+     * incoming connection.
+     * This assignment is safe here as there is only
+     * one task context(BTU) executing this callback
+     * and bta_av_sig_chg.
+     * As there is no API currently to check if the
+     * timer is active, p_cback is used to identify
+     * the state of acp_sig_tmr. NULL means not active
+     */
+    p_cb->acp_sig_tmr.p_cback = NULL;
+
     if (inx < BTA_AV_NUM_STRS)
     {
         p_scb = p_cb->p_scb[inx];

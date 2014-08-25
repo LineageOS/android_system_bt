@@ -248,6 +248,20 @@ void avct_l2c_br_connect_ind_cback(BD_ADDR bd_addr, UINT16 lcid, UINT16 psm, UIN
     }
     else
     {
+        /* We will only support one browsing connection.
+        * Second incoming BR conn is rejected.*/
+        for (index = 0; index < AVCT_NUM_LINKS; index++)
+        {
+            p_bcb = &avct_cb.bcb[index];
+            if (p_bcb && p_bcb->allocated)
+            {
+                AVCT_TRACE_ERROR("Browsing already connected to other device");
+                AVCT_TRACE_ERROR("Reject Browsing connection:%d", p_bcb->allocated);
+                result = L2CAP_CONN_NO_RESOURCES;
+                L2CA_ErtmConnectRsp (bd_addr, id, lcid, result, L2CAP_CONN_OK, &ertm_info);
+                return;
+            }
+        }
         index = (UINT8) (p_lcb - &avct_cb.lcb[0]); //calculate offset.
         AVCT_TRACE_DEBUG("index value = %d",index);
         p_bcb   = &avct_cb.bcb[index];
