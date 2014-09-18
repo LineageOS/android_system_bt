@@ -411,9 +411,12 @@ BOOLEAN check_cod_hid(const bt_bdaddr_t *remote_bdaddr, uint32_t cod)
                                 &prop_name) == BT_STATUS_SUCCESS)
     {
         BTIF_TRACE_DEBUG("%s: remote_cod = 0x%06x", __FUNCTION__, remote_cod);
-        if ((remote_cod & 0x700) == cod)
+        if ((remote_cod & 0x700) == cod) {
+            BTIF_TRACE_DEBUG("%s: returning TRUE", __FUNCTION__);
             return TRUE;
+        }
     }
+    BTIF_TRACE_DEBUG("%s: returning FALSE", __FUNCTION__);
     return FALSE;
 }
 

@@ -158,6 +158,7 @@ extern void btif_dm_cb_remove_bond(bt_bdaddr_t *bd_addr);
 extern BOOLEAN check_cod_hid(const bt_bdaddr_t *remote_bdaddr, uint32_t cod);
 extern int  scru_ascii_2_hex(char *p_ascii, int len, UINT8 *p_hex);
 extern void btif_dm_hh_open_failed(bt_bdaddr_t *bdaddr);
+extern void btif_hd_service_registration();
 
 /*****************************************************************************
 **  Local Function prototypes
@@ -167,6 +168,7 @@ static void toggle_os_keylockstates(int fd, int changedkeystates);
 static void sync_lockstate_on_connect(btif_hh_device_t *p_dev);
 //static void hh_update_keyboard_lockstates(btif_hh_device_t *p_dev);
 void btif_hh_tmr_hdlr(TIMER_LIST_ENT *tle);
+void bte_hh_evt(tBTA_HH_EVT event, tBTA_HH *p_data);
 
 
 /************************************************************************************
@@ -708,6 +710,31 @@ void btif_hh_setreport(btif_hh_device_t *p_dev, bthh_report_type_t r_type, UINT1
     BTA_HhSetReport(p_dev->dev_handle, r_type, p_buf);
 }
 
+/*******************************************************************************
+**
+** Function         btif_hh_service_registration
+**
+** Description      Registers or derigisters the hid host service
+**
+** Returns          none
+**
+*******************************************************************************/
+void btif_hh_service_registration(BOOLEAN enable)
+{
+    BTIF_TRACE_API("%s", __FUNCTION__);
+
+    BTIF_TRACE_API("enable = %d", enable);
+    if (enable)
+    {
+        BTA_HhEnable(BTA_SEC_ENCRYPT, bte_hh_evt);
+    }
+    else
+    {
+        btif_hh_cb.service_dereg_active = TRUE;
+        BTA_HhDisable();
+    }
+}
+
 /*****************************************************************************
 **   Section name (Group of functions)
 *****************************************************************************/
@@ -735,7 +762,8 @@ static void btif_hh_upstreams_evt(UINT16 event, char* p_param)
     int i;
     int len, tmplen;
 
-    BTIF_TRACE_DEBUG("%s: event=%s", __FUNCTION__, dump_hh_event(event));
+    BTIF_TRACE_DEBUG("%s: event=%s dereg = %d", __FUNCTION__, dump_hh_event(event),
+        btif_hh_cb.service_dereg_active);
 
     switch (event)
     {
@@ -755,6 +783,12 @@ static void btif_hh_upstreams_evt(UINT16 event, char* p_param)
 
         case BTA_HH_DISABLE_EVT:
             btif_hh_cb.status = BTIF_HH_DISABLED;
+            if (btif_hh_cb.service_dereg_active)
+            {
+                BTIF_TRACE_WARNING("BTA_HH_DISABLE_EVT: enabling HID Device service");
+                btif_hd_service_registration();
+                btif_hh_cb.service_dereg_active = FALSE;
+            }
             if (p_data->status == BTA_HH_OK) {
                 int i;
                 //Clear the control block
@@ -1075,12 +1109,10 @@ static void btif_hh_upstreams_evt(UINT16 event, char* p_param)
                 LOG_INFO("BTA_HH API_ERR");
                 break;
 
-
-
-            default:
-                BTIF_TRACE_WARNING("%s: Unhandled event: %d", __FUNCTION__, event);
-                break;
-        }
+        default:
+            BTIF_TRACE_WARNING("%s: Unhandled event: %d", __FUNCTION__, event);
+            break;
+    }
 }
 
 /*******************************************************************************
@@ -1093,7 +1125,7 @@ static void btif_hh_upstreams_evt(UINT16 event, char* p_param)
 **
 *******************************************************************************/
 
-static void bte_hh_evt(tBTA_HH_EVT event, tBTA_HH *p_data)
+void bte_hh_evt(tBTA_HH_EVT event, tBTA_HH *p_data)
 {
     bt_status_t status;
     int param_len = 0;
@@ -1724,21 +1756,23 @@ static bt_status_t send_data (bt_bdaddr_t *bd_addr, char* data)
 *******************************************************************************/
 static void  cleanup( void )
 {
-    BTIF_TRACE_EVENT("%s", __FUNCTION__);
     btif_hh_device_t *p_dev;
     int i;
 
-    if (bt_hh_callbacks)
-    {
-        btif_disable_service(BTA_HID_SERVICE_ID);
-        bt_hh_callbacks = NULL;
-    }
-
+    BTIF_TRACE_EVENT("hh:%s: ", __FUNCTION__);
     if (btif_hh_cb.status == BTIF_HH_DISABLED) {
         BTIF_TRACE_WARNING("%s: HH disabling or disabled already, status = %d", __FUNCTION__, btif_hh_cb.status);
         return;
     }
-    btif_hh_cb.status = BTIF_HH_DISABLING;
+    if (bt_hh_callbacks)
+    {
+        btif_hh_cb.status = BTIF_HH_DISABLING;
+        /* update flag, not to enable hid device service now as BT is switching off */
+        btif_hh_cb.service_dereg_active = FALSE;
+        btif_disable_service(BTA_HID_SERVICE_ID);
+        bt_hh_callbacks = NULL;
+    }
+
     for (i = 0; i < BTIF_HH_MAX_HID; i++) {
          p_dev = &btif_hh_cb.devices[i];
          if (p_dev->dev_status != BTHH_CONN_STATE_UNKNOWN && p_dev->fd >= 0) {

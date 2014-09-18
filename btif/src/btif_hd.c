@@ -37,13 +37,26 @@
 
 #include "bta_api.h"
 #include "bta_hd_api.h"
+#include "bta_hh_api.h"
 
 #include "btif_common.h"
 #include "btif_util.h"
 #include "btif_storage.h"
 #include "btif_hd.h"
 
+#define BTIF_HD_APP_NAME_LEN 50
+#define BTIF_HD_APP_DESCRIPTION_LEN 50
+#define BTIF_HD_APP_PROVIDER_LEN 50
+#define BTIF_HD_APP_DESCRIPTOR_LEN 2048
+
+#define COD_HID_KEYBOARD        0x0540
+#define COD_HID_POINTING        0x0580
+#define COD_HID_COMBO           0x05C0
+#define COD_HID_MAJOR           0x0500
+
 extern BOOLEAN bta_dm_check_if_only_hd_connected(BD_ADDR peer_addr);
+extern BOOLEAN check_cod_hid(const bt_bdaddr_t *remote_bdaddr, uint32_t cod);
+extern void btif_hh_service_registration(BOOLEAN enable);
 
 /* HD request events */
 typedef enum
@@ -54,6 +67,9 @@ typedef enum
 btif_hd_cb_t btif_hd_cb;
 
 static bthd_callbacks_t *bt_hd_callbacks = NULL;
+static tBTA_HD_APP_INFO app_info;
+static tBTA_HD_QOS_INFO in_qos;
+static tBTA_HD_QOS_INFO out_qos;
 
 static void intr_data_copy_cb(UINT16 event, char *p_dst, char *p_src)
 {
@@ -97,6 +113,21 @@ static void set_report_copy_cb(UINT16 event, char *p_dst, char *p_src)
     p_dst_data->p_data = p_data;
 }
 
+static void btif_hd_free_buf()
+{
+    if (app_info.descriptor.dsc_list)
+        GKI_freebuf(app_info.descriptor.dsc_list);
+    if (app_info.p_description)
+        GKI_freebuf(app_info.p_description);
+    if (app_info.p_name)
+        GKI_freebuf(app_info.p_name);
+    if (app_info.p_provider)
+        GKI_freebuf(app_info.p_provider);
+    app_info.descriptor.dsc_list = NULL;
+    app_info.p_description = NULL;
+    app_info.p_name = NULL;
+    app_info.p_provider = NULL;
+}
 
 /*******************************************************************************
 **
@@ -136,6 +167,12 @@ static void btif_hd_upstreams_evt(UINT16 event, char* p_param)
             {
                 btif_storage_load_hidd();
                 btif_hd_cb.status = BTIF_HD_ENABLED;
+                /* Register the app if not yet registered */
+                if (!btif_hd_cb.app_registered)
+                {
+                    BTA_HdRegisterApp(&app_info, &in_qos, &out_qos);
+                    btif_hd_free_buf();
+                }
             }
             else
             {
@@ -147,6 +184,13 @@ static void btif_hd_upstreams_evt(UINT16 event, char* p_param)
         case BTA_HD_DISABLE_EVT:
             BTIF_TRACE_DEBUG("%s: status=%d", __FUNCTION__, p_data->status);
             btif_hd_cb.status = BTIF_HD_DISABLED;
+            if (btif_hd_cb.service_dereg_active)
+            {
+                BTIF_TRACE_WARNING("registering hid host now");
+                btif_hh_service_registration(TRUE);
+                btif_hd_cb.service_dereg_active = FALSE;
+            }
+            btif_hd_free_buf();
             if (p_data->status == BTA_HD_OK)
                 memset(&btif_hd_cb, 0, sizeof(btif_hd_cb));
             else
@@ -164,22 +208,51 @@ static void btif_hd_upstreams_evt(UINT16 event, char* p_param)
 
                 btif_hd_cb.app_registered = TRUE;
                 HAL_CBACK(bt_hd_callbacks, application_state_cb, addr, BTHD_APP_STATE_REGISTERED);
-        }
+            }
             break;
 
         case BTA_HD_UNREGISTER_APP_EVT:
             btif_hd_cb.app_registered = FALSE;
             HAL_CBACK(bt_hd_callbacks, application_state_cb, NULL, BTHD_APP_STATE_NOT_REGISTERED);
+            if (btif_hd_cb.service_dereg_active)
+            {
+                BTIF_TRACE_WARNING("disabling hid device service now");
+                btif_hd_free_buf();
+                BTA_HdDisable();
+            }
             break;
 
         case BTA_HD_OPEN_EVT:
-            btif_storage_set_hidd((bt_bdaddr_t*) &p_data->conn.bda);
+            {
+                bt_bdaddr_t *addr = (bt_bdaddr_t*) &p_data->conn.bda;
+                BTIF_TRACE_WARNING("BTA_HD_OPEN_EVT, address (%02x:%02x:%02x:%02x:%02x:%02x)",
+                    addr->address[0], addr->address[1], addr->address[2],
+                    addr->address[3], addr->address[4], addr->address[5]);
+                /* Check if the connection is from hid host and not hid device */
+                if (check_cod_hid(addr, COD_HID_MAJOR))
+                {
+                    /* Incoming connection from hid device, reject it */
+                    BTIF_TRACE_WARNING("remote device is not hid host, disconnecting");
+                    btif_hd_cb.forced_disc = TRUE;
+                    BTA_HdDisconnect();
+                    break;
+                }
+                btif_storage_set_hidd((bt_bdaddr_t*) &p_data->conn.bda);
 
-            HAL_CBACK(bt_hd_callbacks, connection_state_cb, (bt_bdaddr_t*) &p_data->conn.bda,
-                BTHD_CONN_STATE_CONNECTED);
+                HAL_CBACK(bt_hd_callbacks, connection_state_cb, (bt_bdaddr_t*) &p_data->conn.bda,
+                    BTHD_CONN_STATE_CONNECTED);
+            }
             break;
 
         case BTA_HD_CLOSE_EVT:
+             if (btif_hd_cb.forced_disc)
+             {
+                 bt_bdaddr_t *addr = (bt_bdaddr_t*) &p_data->conn.bda;
+                 BTIF_TRACE_WARNING("remote device was forcefully disconnected");
+                 btif_hd_remove_device(*addr);
+                 btif_hd_cb.forced_disc = FALSE;
+                 break;
+             }
              HAL_CBACK(bt_hd_callbacks, connection_state_cb, (bt_bdaddr_t*) &p_data->conn.bda,
                 BTHD_CONN_STATE_DISCONNECTED);
              break;
@@ -321,10 +394,12 @@ static bt_status_t init(bthd_callbacks_t* callbacks )
 *******************************************************************************/
 static void  cleanup(void)
 {
-    BTIF_TRACE_API("%s", __FUNCTION__);
+    BTIF_TRACE_API("hd:%s", __FUNCTION__);
 
     if (bt_hd_callbacks)
     {
+        /* update flag, not to enable hid host service now as BT is switching off */
+        btif_hd_cb.service_dereg_active = FALSE;
         btif_disable_service(BTA_HIDD_SERVICE_ID);
         bt_hd_callbacks = NULL;
     }
@@ -342,9 +417,6 @@ static void  cleanup(void)
 static bt_status_t register_app(bthd_app_param_t *p_app_param, bthd_qos_param_t *p_in_qos,
                                             bthd_qos_param_t *p_out_qos)
 {
-    tBTA_HD_APP_INFO app_info;
-    tBTA_HD_QOS_INFO in_qos;
-    tBTA_HD_QOS_INFO out_qos;
 
     BTIF_TRACE_API("%s", __FUNCTION__);
 
@@ -354,18 +426,33 @@ static bt_status_t register_app(bthd_app_param_t *p_app_param, bthd_qos_param_t 
         return BT_STATUS_BUSY;
     }
 
-    if (btif_hd_cb.status != BTIF_HD_ENABLED)
-    {
-        BTIF_TRACE_WARNING("%s: BT-HD not enabled, status=%d", __FUNCTION__, btif_hd_cb.status);
-        return BT_STATUS_NOT_READY;
+    app_info.p_name = GKI_getbuf(BTIF_HD_APP_NAME_LEN);
+    if (app_info.p_name == NULL)
+        return BT_STATUS_NOMEM;
+    memcpy(app_info.p_name, p_app_param->name, BTIF_HD_APP_NAME_LEN);
+    app_info.p_description = GKI_getbuf(BTIF_HD_APP_DESCRIPTION_LEN);
+    if (app_info.p_description == NULL) {
+        GKI_freebuf(app_info.p_name);
+        return BT_STATUS_NOMEM;
     }
-
-    app_info.p_name = p_app_param->name;
-    app_info.p_description = p_app_param->description;
-    app_info.p_provider = p_app_param->provider;
+    memcpy(app_info.p_description, p_app_param->description, BTIF_HD_APP_DESCRIPTION_LEN);
+    app_info.p_provider = GKI_getbuf(BTIF_HD_APP_PROVIDER_LEN);
+    if (app_info.p_provider == NULL) {
+        GKI_freebuf(app_info.p_name);
+        GKI_freebuf(app_info.p_description);
+        return BT_STATUS_NOMEM;
+    }
+    memcpy(app_info.p_provider, p_app_param->provider, BTIF_HD_APP_PROVIDER_LEN);
     app_info.subclass = p_app_param->subclass;
     app_info.descriptor.dl_len = p_app_param->desc_list_len;
-    app_info.descriptor.dsc_list = p_app_param->desc_list;
+    app_info.descriptor.dsc_list = GKI_getbuf(app_info.descriptor.dl_len);
+    if (app_info.descriptor.dsc_list == NULL) {
+        GKI_freebuf(app_info.p_name);
+        GKI_freebuf(app_info.p_description);
+        GKI_freebuf(app_info.p_provider);
+        return BT_STATUS_NOMEM;
+    }
+    memcpy(app_info.descriptor.dsc_list, p_app_param->desc_list, p_app_param->desc_list_len);
 
     in_qos.service_type = p_in_qos->service_type;
     in_qos.token_rate = p_in_qos->token_rate;
@@ -381,7 +468,9 @@ static bt_status_t register_app(bthd_app_param_t *p_app_param, bthd_qos_param_t 
     out_qos.access_latency = p_out_qos->access_latency;
     out_qos.delay_variation = p_out_qos->delay_variation;
 
-    BTA_HdRegisterApp(&app_info, &in_qos, &out_qos);
+    /* register HID Device with L2CAP and unregister HID Host with L2CAP */
+    /* Disable HH */
+    btif_hh_service_registration(FALSE);
 
     return BT_STATUS_SUCCESS;
 }
@@ -411,6 +500,13 @@ static bt_status_t unregister_app(void)
         return BT_STATUS_NOT_READY;
     }
 
+    if (btif_hd_cb.service_dereg_active)
+    {
+        BTIF_TRACE_WARNING("%s: BT-HD deregistering in progress", __FUNCTION__);
+        return BT_STATUS_BUSY;
+    }
+
+    btif_hd_cb.service_dereg_active = TRUE;
     BTA_HdUnregisterApp();
 
     return BT_STATUS_SUCCESS;
@@ -478,9 +574,9 @@ static bt_status_t disconnect(void)
 
 /*******************************************************************************
 **
-** Function         register_app
+** Function         send_report
 **
-** Description      Registers HID Device application
+** Description      Sends Reports to hid host
 **
 ** Returns          bt_status_t
 **
@@ -609,9 +705,7 @@ bt_status_t btif_hd_execute_service(BOOLEAN b_enable)
 {
     BTIF_TRACE_API("%s: b_enable=%d", __FUNCTION__, b_enable);
 
-     if (b_enable)
-         BTA_HdEnable(bte_hd_evt);
-     else
+     if (!b_enable)
          BTA_HdDisable();
 
      return BT_STATUS_SUCCESS;
@@ -631,3 +725,20 @@ const bthd_interface_t *btif_hd_get_interface()
     BTIF_TRACE_API("%s", __FUNCTION__);
     return &bthdInterface;
 }
+
+/*******************************************************************************
+**
+** Function         btif_hd_service_registration
+**
+** Description      Registers hid device service
+**
+** Returns          none
+**
+*******************************************************************************/
+void btif_hd_service_registration()
+{
+    BTIF_TRACE_API("%s", __FUNCTION__);
+    /* enable HD */
+    BTA_HdEnable(bte_hd_evt);
+}
+

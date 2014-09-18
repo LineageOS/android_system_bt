@@ -57,9 +57,9 @@ typedef tHID_DEV_DSCP_INFO tBTA_HD_DEV_DESCR;
 
 typedef struct
 {
-    const char          *p_name;
-    const char          *p_description;
-    const char          *p_provider;
+    char                *p_name;
+    char                *p_description;
+    char                *p_provider;
     UINT8               subclass;
     tBTA_HD_DEV_DESCR   descriptor;
 } tBTA_HD_APP_INFO;

@@ -38,10 +38,13 @@ typedef struct
 {
     BTIF_HD_STATUS  status;
     BOOLEAN         app_registered;
+    BOOLEAN         service_dereg_active;
+    BOOLEAN         forced_disc;
 } btif_hd_cb_t;
 
 extern btif_hd_cb_t btif_hd_cb;
 
 extern void btif_hd_remove_device(bt_bdaddr_t bd_addr);
+extern void btif_hd_service_registration();
 
 #endif
