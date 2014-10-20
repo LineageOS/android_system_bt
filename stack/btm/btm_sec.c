@@ -3431,7 +3431,11 @@ void btm_io_capabilities_req (UINT8 *p)
         case BTM_PAIR_STATE_INCOMING_SSP:
             is_orig = FALSE;
 
-            if (btm_cb.pairing_flags & BTM_PAIR_FLAGS_PEER_STARTED_DD)
+            if (BTM_AUTH_SP_YES == p_dev_rec->rmt_auth_req)
+            {
+                evt_data.auth_req = BTM_AUTH_SP_YES;
+            }
+            else if (btm_cb.pairing_flags & BTM_PAIR_FLAGS_PEER_STARTED_DD)
             {
                 /* acceptor in dedicated bonding */
                 evt_data.auth_req = BTM_DEFAULT_DD_AUTH_REQ;

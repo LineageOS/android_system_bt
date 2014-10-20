@@ -135,6 +135,7 @@ void btsock_rfc_cleanup(void) {
     if (rfc_slots[i].id)
       cleanup_rfc_slot(&rfc_slots[i]);
     list_free(rfc_slots[i].incoming_queue);
+    rfc_slots[i].incoming_queue = NULL;
   }
   pthread_mutex_unlock(&slot_lock);
 }
@@ -526,7 +527,9 @@ static void cleanup_rfc_slot(rfc_slot_t *slot) {
   }
 
   free_rfc_slot_scn(slot);
-  list_clear(slot->incoming_queue);
+  if (slot->incoming_queue) {
+    list_clear(slot->incoming_queue);
+  }
 
   slot->rfc_port_handle = 0;
   memset(&slot->f, 0, sizeof(slot->f));
