@@ -221,6 +221,15 @@ static void hidh_l2cif_connect_ind (BD_ADDR  bd_addr, UINT16 l2cap_cid, UINT16 p
     p_hcon = &hh_cb.devices[i].conn;
     p_dev  = &hh_cb.devices[i];
 
+    /* Stop the retry timer if active */
+#if (HID_HOST_MAX_CONN_RETRY > 0)
+#if (HID_HOST_REPAGE_WIN > 0)
+    HIDH_TRACE_DEBUG ("HID-Host stopping retry timer as l2cap is connected from remote side");
+    p_dev->conn_tries = HID_HOST_MAX_CONN_RETRY+1;
+    btu_stop_timer(&(p_dev->conn.timer_entry));
+#endif
+#endif
+
     /* Check we are in the correct state for this */
     if (psm == HID_PSM_INTERRUPT)
     {
@@ -301,10 +310,14 @@ static void hidh_l2cif_connect_ind (BD_ADDR  bd_addr, UINT16 l2cap_cid, UINT16 p
 *******************************************************************************/
 void hidh_proc_repage_timeout (TIMER_LIST_ENT *p_tle)
 {
-    hidh_conn_initiate( (UINT8) p_tle->param ) ;
-    hh_cb.devices[p_tle->param].conn_tries++;
-    hh_cb.callback( (UINT8) p_tle->param, hh_cb.devices[p_tle->param].addr,
-                    HID_HDEV_EVT_RETRYING, hh_cb.devices[p_tle->param].conn_tries, NULL ) ;
+    HIDH_TRACE_DEBUG ("HID-Host Connection retry timeout fired");
+    if (HID_SUCCESS == hidh_conn_initiate( (UINT8) p_tle->param ))
+    {
+        hh_cb.devices[p_tle->param].conn_tries++;
+        HIDH_TRACE_DEBUG ("HID-Host Connection retrying hid connection");
+        hh_cb.callback( (UINT8) p_tle->param, hh_cb.devices[p_tle->param].addr,
+                        HID_HDEV_EVT_RETRYING, hh_cb.devices[p_tle->param].conn_tries, NULL ) ;
+    }
 }
 
 /*******************************************************************************
@@ -411,6 +424,7 @@ static void hidh_l2cif_connect_cfm (UINT16 l2cap_cid, UINT16 result)
 #endif
         {
             reason = HID_L2CAP_CONN_FAIL | (UINT32) result ;
+            HIDH_TRACE_WARNING ("HID-Host: l2cap connect failed, reason = %d", reason);
             hh_cb.callback( dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE, reason, NULL ) ;
         }
         return;
@@ -495,6 +509,7 @@ static void hidh_l2cif_config_ind (UINT16 l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
                 reason = HID_L2CAP_REQ_FAIL ;
                 p_hcon->conn_state = HID_CONN_STATE_UNUSED;
                 hidh_conn_disconnect (dhandle);
+                HIDH_TRACE_WARNING ("HID-Host: l2cap config failed, reason = %d", reason);
                 hh_cb.callback( dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE, reason, NULL ) ;
                 return;
             }
@@ -555,6 +570,7 @@ static void hidh_l2cif_config_cfm (UINT16 l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
     {
         hidh_conn_disconnect (dhandle);
         reason = HID_L2CAP_CFG_FAIL | (UINT32) p_cfg->result ;
+        HIDH_TRACE_WARNING ("HID-Host: l2cap config ind failed, reason = %d", reason);
         hh_cb.callback( dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE, reason, NULL ) ;
         return;
     }
@@ -573,6 +589,7 @@ static void hidh_l2cif_config_cfm (UINT16 l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
                 reason = HID_L2CAP_REQ_FAIL ;
                 p_hcon->conn_state = HID_CONN_STATE_UNUSED;
                 hidh_conn_disconnect (dhandle);
+                HIDH_TRACE_WARNING ("HID-Host: l2cap config ind failed 2, reason = %d", reason);
                 hh_cb.callback( dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE, reason, NULL ) ;
                 return;
             }
@@ -647,6 +664,8 @@ static void hidh_l2cif_disconnect_ind (UINT16 l2cap_cid, BOOLEAN ack_needed)
         if( !ack_needed )
             disc_res = btm_get_acl_disc_reason_code();
 
+        HIDH_TRACE_EVENT ("HID-Host: acl disconnect reason %d", disc_res);
+
 #if (HID_HOST_MAX_CONN_RETRY > 0)
         if( (disc_res == HCI_ERR_CONNECTION_TOUT || disc_res == HCI_ERR_UNSPECIFIED) &&
             (!(hh_cb.devices[dhandle].attr_mask & HID_RECONN_INIT)) &&
@@ -654,6 +673,7 @@ static void hidh_l2cif_disconnect_ind (UINT16 l2cap_cid, BOOLEAN ack_needed)
         {
             hh_cb.devices[dhandle].conn_tries = 0;
             hh_cb.devices[dhandle].conn.timer_entry.param = (UINT32) dhandle;
+            HIDH_TRACE_EVENT ("HID-Host: starting timer for reconnection");
             btu_start_timer (&(hh_cb.devices[dhandle].conn.timer_entry), BTU_TTYPE_HID_HOST_REPAGE_TO, HID_HOST_REPAGE_WIN);
             hh_cb.callback( dhandle,  hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE, disc_res, NULL);
         }
@@ -675,7 +695,7 @@ static void hidh_l2cif_disconnect_ind (UINT16 l2cap_cid, BOOLEAN ack_needed)
             {
                 hid_close_evt_reason = HID_ERR_AUTH_FAILED;
             }
-
+            HIDH_TRACE_EVENT ("HID-Host: disconnect ind, reason = %d", hid_close_evt_reason);
             hh_cb.callback( dhandle,  hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE, hid_close_evt_reason, NULL ) ;
         }
     }
@@ -725,6 +745,7 @@ static void hidh_l2cif_disconnect_cfm (UINT16 l2cap_cid, UINT16 result)
     {
         hh_cb.devices[dhandle].state = HID_DEV_NO_CONN;
         p_hcon->conn_state = HID_CONN_STATE_UNUSED;
+        HIDH_TRACE_EVENT ("HID-Host: disconnect cfm, reason = %d", p_hcon->disc_reason);
         hh_cb.callback( dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE, p_hcon->disc_reason, NULL ) ;
     }
 }
@@ -1010,7 +1031,10 @@ tHID_STATUS hidh_conn_initiate (UINT8 dhandle)
     tHID_HOST_DEV_CTB *p_dev = &hh_cb.devices[dhandle];
 
     if( p_dev->conn.conn_state != HID_CONN_STATE_UNUSED )
+    {
+        HIDH_TRACE_WARNING ("HID-Host connection state not unused (%d)", p_dev->conn.conn_state);
         return( HID_ERR_CONN_IN_PROCESS );
+    }
 
     p_dev->conn.ctrl_cid = 0;
     p_dev->conn.intr_cid = 0;
@@ -1032,6 +1056,7 @@ tHID_STATUS hidh_conn_initiate (UINT8 dhandle)
         HIDH_TRACE_WARNING ("HID-Host Originate failed");
         hh_cb.callback( dhandle,  hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE,
                                 HID_ERR_L2CAP_FAILED, NULL ) ;
+        return HID_ERR_L2CAP_FAILED;
     }
     else
     {
@@ -1088,8 +1113,10 @@ static void hidh_conn_retry(  UINT8 dhandle )
     p_dev->conn.conn_state = HID_CONN_STATE_UNUSED;
     p_dev->conn.timer_entry.param = (UINT32) dhandle;
 #if (HID_HOST_REPAGE_WIN > 0)
+    HIDH_TRACE_DEBUG ("HID-Host starting timer of %d sec", BTU_TTYPE_HID_HOST_REPAGE_TO);
     btu_start_timer (&(p_dev->conn.timer_entry), BTU_TTYPE_HID_HOST_REPAGE_TO, HID_HOST_REPAGE_WIN);
 #else
+    HIDH_TRACE_DEBUG ("HID-Host calling timeout function");
     hidh_proc_repage_timeout( &(p_dev->conn.timer_entry) );
 #endif
 }

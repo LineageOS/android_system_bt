@@ -291,6 +291,8 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB *p_cb, UINT16 event, tBTA_HH_DATA * p_data
         /* BTA HH enabled already? otherwise ignore the event although it's bad*/
         if (bta_hh_cb.p_cback != NULL && p_data != NULL)
         {
+            APPL_TRACE_ERROR("bta_hh_sm_execute: event = %0x, BTA_HH_API_OPEN_EVT = %x",
+                event, BTA_HH_API_OPEN_EVT);
             switch (event)
             {
             /* no control block available for new connection */
@@ -353,6 +355,13 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB *p_cb, UINT16 event, tBTA_HH_DATA * p_data
 
                 cback_data.dev_status.status = BTA_HH_ERR_HDL;
                 cback_data.dev_status.handle = (UINT8)p_data->api_sndcmd.hdr.layer_specific;
+                break;
+
+            case BTA_HH_API_GET_DSCP_EVT:
+                cback_event = BTA_HH_CLOSE_EVT;
+
+                cback_data.dev_status.status = BTA_HH_ERR_HDL;
+                cback_data.dev_status.handle = (UINT8)p_data->hdr.layer_specific;
                 break;
 
             default:
@@ -476,6 +485,12 @@ BOOLEAN bta_hh_hdl_event(BT_HDR *p_msg)
             }
             else
                 index = bta_hh_dev_handle_to_cb_idx((UINT8)p_msg->layer_specific);
+
+            if (p_msg->event == BTA_HH_INT_CLOSE_EVT && index == BTA_HH_IDX_INVALID)
+            {
+                /* Special handling for vc unplug event before device is opened */
+                index = bta_hh_find_cb(((tBTA_HH_CBACK_DATA *)p_msg)->addr);
+            }
 
             if ((index != BTA_HH_IDX_INVALID)  && (index < BTA_HH_MAX_DEVICE))
                 p_cb = &bta_hh_cb.kdev[index];
