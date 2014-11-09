@@ -50,7 +50,7 @@
 
 /* This feature is used to update any QCOM related changes in the stack*/
 #ifndef BLUETOOTH_QTI_SW
-#define BLUETOOTH_QTI_SW TRUE
+#define BLUETOOTH_QTI_SW FALSE
 #endif
 
 #ifndef BTUI_OPS_FORMATS
