@@ -23,6 +23,10 @@ ifeq ($(BLUETOOTH_HCI_USE_MCT),true)
 LOCAL_CFLAGS += -DHCI_USE_MCT
 endif
 
+ifeq ($(TARGET_BUILD_VARIANT), userdebug)
+    LOCAL_CFLAGS += -DBTSNOOP_DEFAULT=TRUE
+endif
+
 LOCAL_CFLAGS += -std=c99 $(bdroid_CFLAGS)
 
 LOCAL_C_INCLUDES += \

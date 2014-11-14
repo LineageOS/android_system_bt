@@ -19,6 +19,9 @@
 #define LOG_TAG "bt_snoop_net"
 
 #include <assert.h>
+#include <cutils/sockets.h>
+#include <sys/un.h>
+#include <sys/poll.h>
 #include <errno.h>
 #include <netinet/in.h>
 #include <pthread.h>
@@ -42,7 +45,36 @@ static pthread_t listen_thread_;
 static bool listen_thread_valid_ = false;
 static pthread_mutex_t client_socket_lock_ = PTHREAD_MUTEX_INITIALIZER;
 static int listen_socket_ = -1;
-static int client_socket_ = -1;
+int client_socket_btsnoop = -1;
+
+/*
+    local socket for writing from different process
+    to limit blocking of HCI threads.
+*/
+#define LOCAL_SOCKET_NAME "bthcitraffic"
+static int listen_socket_local_ = -1;
+
+static int local_socket_create(void) {
+  int conn_sk, length;
+
+  listen_socket_local_ = socket(AF_LOCAL, SOCK_STREAM, 0);
+  if(listen_socket_local_ < 0) {
+    return -1;
+  }
+
+  if(socket_local_server_bind(listen_socket_local_, LOCAL_SOCKET_NAME,
+      ANDROID_SOCKET_NAMESPACE_ABSTRACT) < 0) {
+    LOG_ERROR("Failed to create Local Socket (%s)", strerror(errno));
+    return -1;
+  }
+
+  if (listen(listen_socket_local_, 1) < 0) {
+    LOG_ERROR("Local socket listen failed (%s)", strerror(errno));
+    close(listen_socket_local_);
+    return -1;
+  }
+  return listen_socket_local_;
+}
 
 void btsnoop_net_open() {
   listen_thread_valid_ = (pthread_create(&listen_thread_, NULL, listen_fn_, NULL) == 0);
@@ -56,31 +88,49 @@ void btsnoop_net_open() {
 void btsnoop_net_close() {
   if (listen_thread_valid_) {
     shutdown(listen_socket_, SHUT_RDWR);
+    shutdown(listen_socket_local_, SHUT_RDWR);
     pthread_join(listen_thread_, NULL);
-    safe_close_(&client_socket_);
+    safe_close_(&client_socket_btsnoop);
     listen_thread_valid_ = false;
   }
 }
 
 void btsnoop_net_write(const void *data, size_t length) {
+  ssize_t ret;
+
   pthread_mutex_lock(&client_socket_lock_);
-  if (client_socket_ != -1) {
-    if (send(client_socket_, data, length, 0) == -1 && errno == ECONNRESET) {
-      safe_close_(&client_socket_);
-    }
+  if (client_socket_btsnoop != -1) {
+    do {
+      if ((ret = send(client_socket_btsnoop, data, length, 0)) == -1 && errno == ECONNRESET) {
+        safe_close_(&client_socket_btsnoop);
+        LOG_INFO("%s conn closed", __func__);
+      }
+      if (ret < length) {
+        LOG_ERROR("%s: send : not able to write complete packet", __func__);
+      }
+      length -= ret;
+    } while ((length > 0) && (ret != -1));
   }
+
   pthread_mutex_unlock(&client_socket_lock_);
 }
 
 static void *listen_fn_(UNUSED_ATTR void *context) {
+  ssize_t ret;
+  fd_set sock_fds;
+  int fd_max, retval;
 
   prctl(PR_SET_NAME, (unsigned long)LISTEN_THREAD_NAME_, 0, 0, 0);
+
+  FD_ZERO(&sock_fds);
 
   listen_socket_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (listen_socket_ == -1) {
     LOG_ERROR("%s socket creation failed: %s", __func__, strerror(errno));
     goto cleanup;
   }
+  FD_SET(listen_socket_, &sock_fds);
+  fd_max = listen_socket_;
 
   int enable = 1;
   if (setsockopt(listen_socket_, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) == -1) {
@@ -102,27 +152,71 @@ static void *listen_fn_(UNUSED_ATTR void *context) {
     goto cleanup;
   }
 
+  if (local_socket_create() != -1) {
+    if (listen_socket_local_ > fd_max) {
+      fd_max = listen_socket_local_;
+    }
+    FD_SET(listen_socket_local_, &sock_fds);
+  }
+
   for (;;) {
-    int client_socket = accept(listen_socket_, NULL, NULL);
-    if (client_socket == -1) {
-      if (errno == EINVAL || errno == EBADF) {
+    int client_socket = -1;
+
+    LOG_DEBUG("waiting for client connection");
+
+    if ((retval = select(fd_max + 1, &sock_fds, NULL, NULL, NULL)) == -1) {
+      LOG_ERROR("%s select failed %s", __func__, strerror(errno));
+      goto cleanup;
+    }
+
+    if(retval == 2) {
+        LOG_INFO("%s sockets shutdown :", __func__);
         break;
+    }
+
+    if (FD_ISSET(listen_socket_, &sock_fds)) {
+      client_socket = accept(listen_socket_, NULL, NULL);
+      if (client_socket == -1) {
+        if (errno == EINVAL || errno == EBADF) {
+          LOG_WARN("%s error accepting TCP socket: %s", __func__, strerror(errno));
+          break;
+        }
+        LOG_WARN("%s error accepting TCP socket: %s", __func__, strerror(errno));
+        continue;
       }
-      LOG_WARN("%s error accepting socket: %s", __func__, strerror(errno));
-      continue;
+    } else if (FD_ISSET(listen_socket_local_, &sock_fds)){
+      struct sockaddr_un cliaddr;
+      int length;
+
+      client_socket = accept(listen_socket_local_, (struct sockaddr *)&cliaddr, &length);
+      if (client_socket == -1) {
+        if (errno == EINVAL || errno == EBADF) {
+          LOG_WARN("%s error accepting LOCAL socket: %s", __func__, strerror(errno));
+          break;
+        }
+        LOG_WARN("%s error accepting LOCAL socket: %s", __func__, strerror(errno));
+        continue;
+      }
     }
 
     /* When a new client connects, we have to send the btsnoop file header. This allows
        a decoder to treat the session as a new, valid btsnoop file. */
     pthread_mutex_lock(&client_socket_lock_);
-    safe_close_(&client_socket_);
-    client_socket_ = client_socket;
-    send(client_socket_, "btsnoop\0\0\0\0\1\0\0\x3\xea", 16, 0);
+    safe_close_(&client_socket_btsnoop);
+    client_socket_btsnoop = client_socket;
+    ret = send(client_socket_btsnoop, "btsnoop\0\0\0\0\1\0\0\x3\xea", 16, 0);
     pthread_mutex_unlock(&client_socket_lock_);
+
+    FD_ZERO(&sock_fds);
+    FD_SET(listen_socket_, &sock_fds);
+    if(listen_socket_local_ != -1) {
+        FD_SET(listen_socket_local_, &sock_fds);
+    }
   }
 
 cleanup:
   safe_close_(&listen_socket_);
+  safe_close_(&listen_socket_local_);
   return NULL;
 }
 

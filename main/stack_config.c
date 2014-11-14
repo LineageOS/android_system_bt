@@ -26,6 +26,8 @@
 
 const char *BTSNOOP_LOG_PATH_KEY = "BtSnoopFileName";
 const char *BTSNOOP_TURNED_ON_KEY = "BtSnoopLogOutput";
+const char *BTSNOOP_EXT_DUMP_KEY = "BtSnoopExtDump";
+const char *BTSNOOP_CONFIG_FROM_FILE_KEY = "BtSnoopConfigFromFile";
 const char *BTSNOOP_SHOULD_SAVE_LAST_KEY = "BtSnoopSaveLog";
 const char *TRACE_CONFIG_ENABLED_KEY = "TraceConf";
 
@@ -82,6 +84,11 @@ static bool get_trace_config_enabled(void) {
   return config_get_bool(config, CONFIG_DEFAULT_SECTION, TRACE_CONFIG_ENABLED_KEY, false);
 }
 
+static void get_btsnoop_ext_options(bool *hci_ext_dump_enabled, bool *btsnoop_conf_from_file) {
+  *hci_ext_dump_enabled = config_get_bool(config, CONFIG_DEFAULT_SECTION, BTSNOOP_EXT_DUMP_KEY, false);
+  *btsnoop_conf_from_file = config_get_bool(config, CONFIG_DEFAULT_SECTION, BTSNOOP_CONFIG_FROM_FILE_KEY, false);
+}
+
 static config_t *get_all(void) {
   return config;
 }
@@ -89,6 +96,7 @@ static config_t *get_all(void) {
 const stack_config_t interface = {
   get_btsnoop_log_path,
   get_btsnoop_turned_on,
+  get_btsnoop_ext_options,
   get_btsnoop_should_save_last,
   get_trace_config_enabled,
   get_all
