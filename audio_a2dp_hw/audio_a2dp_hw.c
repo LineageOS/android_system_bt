@@ -196,7 +196,7 @@ static void ts_error_log(char *tag, int val, int buff_size, struct a2dp_config c
     prev = now;
     if(diff_us > (calc_audiotime (cfg, buff_size) + 10000L))
     {
-       ERROR("[%s] ts %08lld, diff %08lld, val %d %d", tag, now_us, diff_us, val, buff_size);
+       DEBUG("[%s] ts %08lld, diff %08lld, val %d %d", tag, now_us, diff_us, val, buff_size);
     }
 }
 
