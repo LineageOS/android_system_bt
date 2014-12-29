@@ -685,7 +685,9 @@ static ssize_t out_write(struct audio_stream_out *stream, const void* buffer,
     }
     #endif
 
+#if 0
     ts_error_log("a2dp_out_write", bytes, out->common.buffer_sz, out->common.cfg);
+#endif
 
     pthread_mutex_unlock(&out->common.lock);
 
