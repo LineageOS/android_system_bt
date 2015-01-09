@@ -115,12 +115,22 @@ void reactor_free(reactor_t *reactor) {
 
 reactor_status_t reactor_start(reactor_t *reactor) {
   assert(reactor != NULL);
-  return run_reactor(reactor, 0);
+  if(reactor)
+     return run_reactor(reactor, 0);
+  else {
+     ALOGE("%s :reactor is NULL",__func__);
+     return REACTOR_STATUS_ERROR;
+  }
 }
 
 reactor_status_t reactor_run_once(reactor_t *reactor) {
   assert(reactor != NULL);
-  return run_reactor(reactor, 1);
+  if(reactor)
+     return run_reactor(reactor, 1);
+  else {
+     ALOGE("%s :reactor is NULL",__func__);
+     return REACTOR_STATUS_ERROR;
+  }
 }
 
 void reactor_stop(reactor_t *reactor) {
@@ -195,6 +205,10 @@ bool reactor_change_registration(reactor_object_t *object,
 
 void reactor_unregister(reactor_object_t *obj) {
   assert(obj != NULL);
+  if(!obj) {
+     ALOGE("%s :obj is NULL",__func__);
+     return;
+  }
 
   reactor_t *reactor = obj->reactor;
 
@@ -229,6 +243,10 @@ void reactor_unregister(reactor_object_t *obj) {
 // |reactor| may not be NULL.
 static reactor_status_t run_reactor(reactor_t *reactor, int iterations) {
   assert(reactor != NULL);
+  if(!reactor) {
+     ALOGE("%s :reactor is NULL",__func__);
+     return REACTOR_STATUS_ERROR;
+  }
 
   reactor->run_thread = pthread_self();
   reactor->is_running = true;
