@@ -75,6 +75,20 @@ extern INT16 utl_str2int(const char *p_s);
 
 /*******************************************************************************
 **
+** Function         utl_str2int32
+**
+** Description      This utility function converts a character string to an
+**                  int32.  Acceptable values in string are 0-9.  If
+**                  invalid string or string value too large, -1 is returned.
+**
+**
+** Returns          int32_t value or -1 on error.
+**
+*******************************************************************************/
+extern INT32 utl_str2int32(const char *p_s);
+
+/*******************************************************************************
+**
 ** Function         utl_strucmp
 **
 ** Description      This utility function compares two strings in uppercase.
