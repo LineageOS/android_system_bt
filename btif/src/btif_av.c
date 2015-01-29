@@ -230,6 +230,17 @@ static void btif_initiate_av_open_timer_timeout(UNUSED_ATTR void *data)
     /* is there at least one RC connection - There should be */
     if (btif_rc_get_connected_peer(peer_addr)) {
        BTIF_TRACE_DEBUG("%s Issuing connect to the remote RC peer", __FUNCTION__);
+       btif_sm_state_t state = btif_sm_get_state(btif_av_cb.sm_handle);
+       if ((state == BTIF_AV_STATE_STARTED) || (state == BTIF_AV_STATE_OPENED) ||
+           (state == BTIF_AV_STATE_OPENING)) {
+           if(bdcmp(btif_av_cb.peer_bda.address, peer_addr))
+           {
+               BTIF_TRACE_DEBUG("%s A2DP Connection Already UP", __FUNCTION__);
+               BTA_AvCloseRc(btif_rc_get_connected_peer_handle());
+               BTIF_TRACE_WARNING("%s Disconnecting AVRCP", __FUNCTION__);
+               return;
+           }
+       }
        /* In case of AVRCP connection request, we will initiate SRC connection */
        connect_req.target_bda = (bt_bdaddr_t*)&peer_addr;
        if(bt_av_sink_callbacks != NULL)
@@ -480,6 +491,20 @@ static BOOLEAN btif_av_state_opening_handler(btif_sm_event_t event, void *p_data
     BTIF_TRACE_DEBUG("%s event:%s flags %x", __FUNCTION__,
                      dump_av_sm_event_name(event), btif_av_cb.flags);
 
+    if (event == BTA_AV_RC_OPEN_EVT)
+    {
+        tBTA_AV *p_av = (tBTA_AV*)p_data;
+        if(bdcmp(btif_av_cb.peer_bda.address, p_av->rc_open.peer_addr))
+        {
+            BTIF_TRACE_WARNING("%s A2dp connected to other device, close this Avrcp", __FUNCTION__);
+            BTA_AvCloseRc(p_av->rc_open.rc_handle);
+        }
+        else
+        {
+            BTIF_TRACE_DEBUG("%s A2dp connected to same device, continue with Avrcp", __FUNCTION__);
+        }
+    }
+
     switch (event)
     {
         case BTIF_SM_ENTER_EVT:
@@ -720,6 +745,19 @@ static BOOLEAN btif_av_state_opened_handler(btif_sm_event_t event, void *p_data)
         btif_av_cb.flags &= ~BTIF_AV_FLAG_REMOTE_SUSPEND;
     }
 
+    if (event == BTA_AV_RC_OPEN_EVT)
+    {
+        if(bdcmp(btif_av_cb.peer_bda.address, p_av->rc_open.peer_addr))
+        {
+            BTIF_TRACE_WARNING("%s A2dp connected to other device, close this Avrcp", __FUNCTION__);
+            BTA_AvCloseRc(p_av->rc_open.rc_handle);
+        }
+        else
+        {
+            BTIF_TRACE_DEBUG("%s A2dp connected to same device, continue with Avrcp", __FUNCTION__);
+        }
+    }
+
     switch (event)
     {
         case BTIF_SM_ENTER_EVT:
@@ -879,6 +917,20 @@ static BOOLEAN btif_av_state_started_handler(btif_sm_event_t event, void *p_data
 
     BTIF_TRACE_DEBUG("%s event:%s flags %x", __FUNCTION__,
                      dump_av_sm_event_name(event), btif_av_cb.flags);
+
+
+    if (event == BTA_AV_RC_OPEN_EVT)
+    {
+        if(bdcmp(btif_av_cb.peer_bda.address, p_av->rc_open.peer_addr))
+        {
+            BTIF_TRACE_WARNING("%s A2dp connected to other device, close this Avrcp", __FUNCTION__);
+            BTA_AvCloseRc(p_av->rc_open.rc_handle);
+        }
+        else
+        {
+            BTIF_TRACE_DEBUG("%s A2dp connected to same device, continue with Avrcp", __FUNCTION__);
+        }
+    }
 
     switch (event)
     {
