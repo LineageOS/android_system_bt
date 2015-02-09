@@ -215,6 +215,8 @@ extern void bta_pan_conn_close(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data);
 extern void bta_pan_writebuf(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data);
 extern void bta_pan_write_buf(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data);
 extern void bta_pan_free_buf(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data);
+extern void bta_pan_pm_conn_idle(tBTA_PAN_SCB *p_scb);
+extern void bta_pan_pm_conn_busy(tBTA_PAN_SCB *p_scb);
 
 
 #endif /* BTA_PAN_INT_H */

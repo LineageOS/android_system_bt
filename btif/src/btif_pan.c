@@ -548,7 +548,9 @@ static int forward_bnep(tETH_HDR* eth_hdr, BT_HDR *hdr) {
         if (handle != (UINT16)-1 &&
                 (broadcast || memcmp(btpan_cb.conns[i].eth_addr, eth_hdr->h_dest, sizeof(BD_ADDR)) == 0
                  || memcmp(btpan_cb.conns[i].peer, eth_hdr->h_dest, sizeof(BD_ADDR)) == 0)) {
+            BTA_PanSetPmState(handle, BTA_PAN_PM_CONN_BUSY);
             int result = PAN_WriteBuf(handle, eth_hdr->h_dest, eth_hdr->h_src, ntohs(eth_hdr->h_proto), hdr, 0);
+            BTA_PanSetPmState(handle, BTA_PAN_PM_CONN_IDLE);
             switch (result) {
                 case PAN_Q_SIZE_EXCEEDED:
                     return FORWARD_CONGEST;

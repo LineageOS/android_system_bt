@@ -52,7 +52,7 @@
  ** Returns     void
  **
  *******************************************************************************/
-static void bta_pan_pm_conn_busy(tBTA_PAN_SCB *p_scb)
+void bta_pan_pm_conn_busy(tBTA_PAN_SCB *p_scb)
 {
     if ((p_scb != NULL) && (p_scb->state != BTA_PAN_IDLE_ST))
         bta_sys_busy(BTA_ID_PAN, p_scb->app_id, p_scb->bd_addr);
@@ -69,7 +69,7 @@ static void bta_pan_pm_conn_busy(tBTA_PAN_SCB *p_scb)
  ** Returns     void
  **
  *******************************************************************************/
-static void bta_pan_pm_conn_idle(tBTA_PAN_SCB *p_scb)
+void bta_pan_pm_conn_idle(tBTA_PAN_SCB *p_scb)
 {
     if ((p_scb != NULL) && (p_scb->state != BTA_PAN_IDLE_ST))
         bta_sys_idle(BTA_ID_PAN, p_scb->app_id, p_scb->bd_addr);

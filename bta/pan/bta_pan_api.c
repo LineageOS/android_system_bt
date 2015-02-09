@@ -209,6 +209,42 @@ void BTA_PanClose(UINT16 handle)
         bta_sys_sendmsg(p_buf);
     }
 }
+
+
+/*******************************************************************************
+**
+** Function         BTA_PanSetPmState
+**
+** Description      Set PM State for PAN connection.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_PanSetPmState(UINT16 handle, tBTA_PAN_PM_CONN_STATE state)
+{
+    tBTA_PAN_SCB * p_scb;
+
+    p_scb = bta_pan_scb_by_handle(handle);
+    APPL_TRACE_DEBUG("%s: (state: %d)", __func__, state);
+
+    switch (state)
+    {
+        case BTA_PAN_PM_CONN_BUSY:
+            bta_pan_pm_conn_busy(p_scb);
+            break;
+
+        case BTA_PAN_PM_CONN_IDLE:
+            bta_pan_pm_conn_idle(p_scb);
+            break;
+
+        default:
+            APPL_TRACE_WARNING("%s: (state: %d): unhandled state", __func__, state);
+            break;
+    }
+
+}
+
 #else
 
 void BTA_PanEnable(tBTA_PAN_CBACK p_cback)
@@ -239,6 +275,12 @@ void BTA_PanOpen(BD_ADDR bd_addr, tBTA_PAN_ROLE local_role, tBTA_PAN_ROLE peer_r
 void BTA_PanClose(UINT16 handle)
 {
     UNUSED(handle);
+}
+
+void BTA_PanSetPmState(UINT16 handle, tBTA_PAN_PM_CONN_STATE state)
+{
+    UNUSED(handle);
+    UNUSED(state);
 }
 
 #endif /* BTA_PAN_INCLUDED */

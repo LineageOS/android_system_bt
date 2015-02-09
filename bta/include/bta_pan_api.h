@@ -56,6 +56,22 @@ typedef UINT8 tBTA_PAN_EVT;
 
 typedef UINT8   tBTA_PAN_ROLE;
 
+/*PAN pm connection states */
+enum
+{
+    BTA_PAN_PM_CONN_OPEN = 0,   /* Connection opened state */
+    BTA_PAN_PM_CONN_CLOSE,      /* Connection closed state */
+    BTA_PAN_PM_APP_OPEN,        /* Application opened state */
+    BTA_PAN_PM_APP_CLOSE,       /* Application closed state */
+    BTA_PAN_PM_SCO_OPEN,        /* SCO connection opened state */
+    BTA_PAN_PM_SCO_CLOSE,       /* SCO connection opened state */
+    BTA_PAN_PM_CONN_IDLE,       /* Connection idle state */
+    BTA_PAN_PM_CONN_BUSY,       /* Connection busy state */
+    BTA_PAN_PM_MAX_CONN_STATE   /* Max number of connection state */
+};
+typedef UINT8 tBTA_PAN_PM_CONN_STATE;
+
+
 /*  information regarding PAN roles */
 typedef struct
 {
@@ -192,6 +208,18 @@ void BTA_PanOpen(BD_ADDR bd_addr, tBTA_PAN_ROLE    local_role, tBTA_PAN_ROLE  pe
 *******************************************************************************/
 extern void BTA_PanClose(UINT16 handle);
 
+
+/*******************************************************************************
+**
+** Function         BTA_PanSetPmState
+**
+** Description      Set PM State for PAN connection.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_PanSetPmState(UINT16 handle, tBTA_PAN_PM_CONN_STATE state);
 
 #ifdef __cplusplus
 }
