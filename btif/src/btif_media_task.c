@@ -102,6 +102,14 @@ OI_INT16 pcmData[15*SBC_MAX_SAMPLES_PER_FRAME*SBC_MAX_CHANNELS];
 #include "bta_api.h"
 #endif
 
+#ifdef HAVE_ANDROID_OS
+#include <linux/ioctl.h>
+#include <linux/rtc.h>
+#include <utils/Atomic.h>
+#include <linux/android_alarm.h>
+#include <fcntl.h>
+#endif
+
 
 /*****************************************************************************
  **  Constants
@@ -400,7 +408,26 @@ static thread_t *worker_thread;
 static UINT64 time_now_us()
 {
     struct timespec ts_now;
+
+#ifdef HAVE_ANDROID_OS
+    static int s_fd = -1;
+    int result;
+
+    if (s_fd == -1) {
+        int fd = open("/dev/alarm", O_RDONLY);
+        if (android_atomic_cmpxchg(-1, fd, &s_fd)) {
+            close(fd);
+        }
+    }
+
+    result = ioctl(s_fd,
+            ANDROID_ALARM_GET_TIME(ANDROID_ALARM_ELAPSED_REALTIME), &ts_now);
+    if (result != 0) {
+#endif
     clock_gettime(CLOCK_BOOTTIME, &ts_now);
+#ifdef HAVE_ANDROID_OS
+    }
+#endif
     return ((UINT64)ts_now.tv_sec * USEC_PER_SEC) + ((UINT64)ts_now.tv_nsec / 1000);
 }
 
