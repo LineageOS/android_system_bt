@@ -23,6 +23,8 @@
  ******************************************************************************/
 #include <string.h>
 #include "bt_target.h"
+#include "gki.h"
+#include "utl.h"
 #include "sdpdefs.h"
 #include "a2d_api.h"
 #include "a2d_int.h"
@@ -112,6 +114,7 @@ static void a2d_sdp_cback(UINT16 status)
     }
 
     a2d_cb.find.service_uuid = 0;
+    utl_freebuf((void**)&a2d_cb.find.p_db);
     /* return info from sdp record in app callback function */
     if (a2d_cb.find.p_cback != NULL)
     {
@@ -279,7 +282,7 @@ tA2D_STATUS A2D_FindService(UINT16 service_uuid, BD_ADDR bd_addr,
 
     A2D_TRACE_API("A2D_FindService uuid: %x", service_uuid);
     if( (service_uuid != UUID_SERVCLASS_AUDIO_SOURCE && service_uuid != UUID_SERVCLASS_AUDIO_SINK) ||
-        p_db == NULL || p_db->p_db == NULL || p_cback == NULL)
+        p_db == NULL || p_cback == NULL)
         return A2D_INVALID_PARAMS;
 
     if( a2d_cb.find.service_uuid == UUID_SERVCLASS_AUDIO_SOURCE ||
@@ -296,18 +299,20 @@ tA2D_STATUS A2D_FindService(UINT16 service_uuid, BD_ADDR bd_addr,
         p_db->num_attr = A2D_NUM_ATTR;
     }
 
-    result = SDP_InitDiscoveryDb(p_db->p_db, p_db->db_len, 1, &uuid_list, p_db->num_attr,
+    if(a2d_cb.find.p_db == NULL)
+        a2d_cb.find.p_db = (tSDP_DISCOVERY_DB*)GKI_getbuf(p_db->db_len);
+    if(a2d_cb.find.p_db != NULL)
+        result = SDP_InitDiscoveryDb(a2d_cb.find.p_db, p_db->db_len, 1, &uuid_list, p_db->num_attr,
                                  p_db->p_attrs);
 
     if (result == TRUE)
     {
         /* store service_uuid and discovery db pointer */
-        a2d_cb.find.p_db = p_db->p_db;
         a2d_cb.find.service_uuid = service_uuid;
         a2d_cb.find.p_cback = p_cback;
 
         /* perform service search */
-        result = SDP_ServiceSearchAttributeRequest(bd_addr, p_db->p_db, a2d_sdp_cback);
+        result = SDP_ServiceSearchAttributeRequest(bd_addr, a2d_cb.find.p_db, a2d_sdp_cback);
         if(FALSE == result)
         {
             a2d_cb.find.service_uuid = 0;

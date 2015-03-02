@@ -1030,34 +1030,27 @@ void bta_av_do_disc_a2d (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     }
     else
     {
-        /* allocate discovery database */
-        if (p_scb->p_disc_db == NULL)
-        {
-            p_scb->p_disc_db = (tSDP_DISCOVERY_DB *) GKI_getbuf(BTA_AV_DISC_BUF_SIZE);
-        }
 
         /* only one A2D find service is active at a time */
         bta_av_cb.handle = p_scb->hndl;
 
-        if(p_scb->p_disc_db)
-        {
             /* set up parameters */
-            db_params.db_len = BTA_AV_DISC_BUF_SIZE;
-            db_params.num_attr = 3;
-            db_params.p_db = p_scb->p_disc_db;
-            db_params.p_attrs = attr_list;
-            p_scb->uuid_int = p_data->api_open.uuid;
-            if (p_scb->uuid_int == UUID_SERVCLASS_AUDIO_SINK)
-                sdp_uuid = UUID_SERVCLASS_AUDIO_SOURCE;
-            else if (p_scb->uuid_int == UUID_SERVCLASS_AUDIO_SOURCE)
-                sdp_uuid = UUID_SERVCLASS_AUDIO_SINK;
+        db_params.db_len = BTA_AV_DISC_BUF_SIZE;
+        db_params.num_attr = 3;
+        db_params.p_db = NULL; // we will allocate memory in Stack
+        db_params.p_attrs = attr_list;
+        p_scb->uuid_int = p_data->api_open.uuid;
+        p_scb->sdp_discovery_started = TRUE;
+        if (p_scb->uuid_int == UUID_SERVCLASS_AUDIO_SINK)
+            sdp_uuid = UUID_SERVCLASS_AUDIO_SOURCE;
+        else if (p_scb->uuid_int == UUID_SERVCLASS_AUDIO_SOURCE)
+            sdp_uuid = UUID_SERVCLASS_AUDIO_SINK;
 
-            APPL_TRACE_DEBUG("uuid_int 0x%x, Doing SDP For 0x%x", p_scb->uuid_int, sdp_uuid);
-            if(A2D_FindService(sdp_uuid, p_scb->peer_addr, &db_params,
-                            bta_av_a2d_sdp_cback) == A2D_SUCCESS)
-            {
-                return;
-            }
+        APPL_TRACE_DEBUG("uuid_int 0x%x, Doing SDP For 0x%x", p_scb->uuid_int, sdp_uuid);
+        if(A2D_FindService(sdp_uuid, p_scb->peer_addr, &db_params,
+                        bta_av_a2d_sdp_cback) == A2D_SUCCESS)
+        {
+            return;
         }
 
         /* when the code reaches here, either the DB is NULL
@@ -1086,7 +1079,7 @@ void bta_av_cleanup(tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
 
     /* free any buffers */
     utl_freebuf((void **) &p_scb->p_cap);
-    utl_freebuf((void **) &p_scb->p_disc_db);
+    p_scb->sdp_discovery_started = FALSE;
     p_scb->avdt_version = 0;
 
     /* initialize some control block variables */
@@ -1135,7 +1128,7 @@ void bta_av_cleanup(tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
 void bta_av_free_sdb(tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
 {
     UNUSED(p_data);
-    utl_freebuf((void **) &p_scb->p_disc_db);
+    p_scb->sdp_discovery_started = FALSE;
 }
 
 /*******************************************************************************
@@ -1584,7 +1577,7 @@ void bta_av_connect_req (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
 {
     UNUSED(p_data);
 
-    utl_freebuf((void **) &p_scb->p_disc_db);
+    p_scb->sdp_discovery_started = FALSE;
 
     if (p_scb->coll_mask & BTA_AV_COLL_INC_TMR)
     {
@@ -1611,7 +1604,7 @@ void bta_av_sdp_failed (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     if (!p_scb->open_status)
         p_scb->open_status = BTA_AV_FAIL_SDP;
 
-    utl_freebuf((void **) &p_scb->p_disc_db);
+    p_scb->sdp_discovery_started = TRUE;
     bta_av_str_closed(p_scb, p_data);
 }
 
