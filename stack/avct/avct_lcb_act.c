@@ -356,11 +356,14 @@ void avct_lcb_open_ind(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
 
     for (i = 0; i < AVCT_NUM_CONN; i++, p_ccb++)
     {
+        AVCT_TRACE_DEBUG("avct_lcb_open_ind, %d", p_ccb->allocated);
         /* if ccb allocated and */
         if (p_ccb->allocated)
         {
             /* if bound to this lcb send connect confirm event */
-            AVCT_TRACE_DEBUG("avct_lcb_open_ind, %d", p_ccb->allocated);
+            AVCT_TRACE_DEBUG("profile id 0x%0X : role %s" , p_ccb->cc.pid,
+                (p_ccb->cc.role) ? "AVCT_ACP" : "AVCT_INT");
+
             if (p_ccb->p_lcb == p_lcb)
             {
                 AVCT_TRACE_DEBUG("avct_lcb_open_ind, bind true");
@@ -374,7 +377,7 @@ void avct_lcb_open_ind(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
                      (avct_lcb_has_pid(p_lcb, p_ccb->cc.pid) == NULL))
             {
                 /* bind ccb to lcb and send connect ind event */
-                AVCT_TRACE_DEBUG("avct_lcb_open_ind, bind and update");
+                AVCT_TRACE_DEBUG("avct_lcb_open_ind, bind and update : index %d", i);
                 bind = TRUE;
                 p_ccb->p_lcb = p_lcb;
                 L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH);

@@ -1608,6 +1608,10 @@ Range: 2 octets
 **
 ******************************************************************************/
 
+#ifndef AVCT_INCLUDED
+#define AVCT_INCLUDED               TRUE
+#endif
+
 /* Number of simultaneous ACL links to different peer devices. */
 #ifndef AVCT_NUM_LINKS
 #define AVCT_NUM_LINKS              2
@@ -1624,6 +1628,10 @@ Range: 2 octets
 ** AVRCP
 **
 ******************************************************************************/
+
+#ifndef AVRC_INCLUDED
+#define AVRC_INCLUDED               TRUE
+#endif
 
 #ifndef AVRC_METADATA_INCLUDED
 #define AVRC_METADATA_INCLUDED      TRUE

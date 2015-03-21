@@ -39,6 +39,28 @@
 tAVDT_CB avdt_cb;
 #endif
 
+/*******************************************************************************
+**
+** Function         AVDT_Init
+**
+** Description      This function is called to initialize the control block
+**                  for this layer.  It must be called before accessing any
+**                  other API functions for this layer.  It is typically called
+**                  once during the start up of the stack.
+**
+** Returns          void
+**
+*******************************************************************************/
+void AVDT_Init(void)
+{
+    memset(&avdt_cb, 0, sizeof(tAVDT_CB));
+
+#if defined(AVDT_INITIAL_TRACE_LEVEL)
+    avdt_cb.trace_level = AVDT_INITIAL_TRACE_LEVEL;
+#else
+    avdt_cb.trace_level = BT_TRACE_LEVEL_NONE;
+#endif
+}
 
 /*******************************************************************************
 **

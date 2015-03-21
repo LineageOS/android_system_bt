@@ -2706,6 +2706,7 @@ bt_status_t btif_av_execute_service(BOOLEAN b_enable)
 #endif
         for (i = 0; i < btif_max_av_clients; i++)
         {
+            BTIF_TRACE_DEBUG("%s: BTA_AvRegister : %d", __FUNCTION__, i);
             BTA_AvRegister(BTA_AV_CHNL_AUDIO, BTIF_AV_SERVICE_NAME, 0, bte_av_media_callback,
             UUID_SERVCLASS_AUDIO_SOURCE);
         }

@@ -38,6 +38,31 @@
 tAVCT_CB avct_cb;
 #endif
 
+
+/*******************************************************************************
+**
+** Function         AVCT_Init
+**
+** Description      This function is called to initialize the control block
+**                  for this layer.  It must be called before accessing any
+**                  other API functions for this layer.  It is typically called
+**                  once during the start up of the stack.
+**
+** Returns          void
+**
+*******************************************************************************/
+void AVCT_Init(void)
+{
+    /* initialize AVCTP data structures */
+    memset(&avct_cb, 0, sizeof(tAVCT_CB));
+
+#if defined(AVCT_INITIAL_TRACE_LEVEL)
+    avct_cb.trace_level = AVCT_INITIAL_TRACE_LEVEL;
+#else
+    avct_cb.trace_level = BT_TRACE_LEVEL_NONE;
+#endif
+}
+
 /*******************************************************************************
 **
 ** Function         AVCT_Register
@@ -65,9 +90,6 @@ void AVCT_Register(UINT16 mtu, UINT16 mtu_br, UINT8 sec_mask)
     BTM_SetSecurityLevel(TRUE, "", BTM_SEC_SERVICE_AVCTP, sec_mask, AVCT_PSM, 0, 0);
     BTM_SetSecurityLevel(FALSE, "", BTM_SEC_SERVICE_AVCTP, sec_mask, AVCT_PSM, 0, 0);
 
-    /* initialize AVCTP data structures */
-    memset(&avct_cb, 0, sizeof(tAVCT_CB));
-
 #if (AVCT_BROWSE_INCLUDED == TRUE)
     /* Include the browsing channel which uses eFCR */
     L2CA_Register(AVCT_BR_PSM, (tL2CAP_APPL_INFO *) &avct_l2c_br_appl);
@@ -78,12 +100,6 @@ void AVCT_Register(UINT16 mtu, UINT16 mtu_br, UINT8 sec_mask)
     if (mtu_br < AVCT_MIN_BROWSE_MTU)
         mtu_br = AVCT_MIN_BROWSE_MTU;
     avct_cb.mtu_br = mtu_br;
-#endif
-
-#if defined(AVCT_INITIAL_TRACE_LEVEL)
-    avct_cb.trace_level = AVCT_INITIAL_TRACE_LEVEL;
-#else
-    avct_cb.trace_level = BT_TRACE_LEVEL_NONE;
 #endif
 
     if (mtu < AVCT_MIN_CONTROL_MTU)
@@ -478,5 +494,34 @@ UINT16 AVCT_MsgReq(UINT8 handle, UINT8 label, UINT8 cr, BT_HDR *p_msg)
         }
     }
     return result;
+}
+
+/******************************************************************************
+**
+** Function         AVCT_SetTraceLevel
+**
+** Description      Sets the trace level for AVCT. If 0xff is passed, the
+**                  current trace level is returned.
+**
+**                  Input Parameters:
+**                      new_level:  The level to set the AVCT tracing to:
+**                      0xff-returns the current setting.
+**                      0-turns off tracing.
+**                      >= 1-Errors.
+**                      >= 2-Warnings.
+**                      >= 3-APIs.
+**                      >= 4-Events.
+**                      >= 5-Debug.
+**
+** Returns          The new trace level or current trace level if
+**                  the input parameter is 0xff.
+**
+******************************************************************************/
+UINT8 AVCT_SetTraceLevel (UINT8 new_level)
+{
+    if (new_level != 0xFF)
+        avct_cb.trace_level = new_level;
+
+    return (avct_cb.trace_level);
 }
 

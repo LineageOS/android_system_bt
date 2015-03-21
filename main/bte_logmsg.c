@@ -144,6 +144,9 @@ static tBTTRC_FUNC_MAP bttrc_set_level_map[] = {
   {BTTRC_ID_STK_BTU, BTTRC_ID_STK_HCI, BTU_SetTraceLevel, "TRC_HCI", DEFAULT_CONF_TRACE_LEVEL},
   {BTTRC_ID_STK_L2CAP, BTTRC_ID_STK_L2CAP, L2CA_SetTraceLevel, "TRC_L2CAP", DEFAULT_CONF_TRACE_LEVEL},
   {BTTRC_ID_STK_RFCOMM, BTTRC_ID_STK_RFCOMM_DATA, PORT_SetTraceLevel, "TRC_RFCOMM", DEFAULT_CONF_TRACE_LEVEL},
+#if (AVCT_INCLUDED==TRUE)
+  {BTTRC_ID_STK_AVCT, BTTRC_ID_STK_AVCT, AVCT_SetTraceLevel, "TRC_AVCT", DEFAULT_CONF_TRACE_LEVEL},
+#endif
 #if (AVDT_INCLUDED==TRUE)
   {BTTRC_ID_STK_AVDT, BTTRC_ID_STK_AVDT, AVDT_SetTraceLevel, "TRC_AVDT", DEFAULT_CONF_TRACE_LEVEL},
 #endif
@@ -252,10 +255,11 @@ static void load_levels_from_config(const config_t *config) {
   assert(config != NULL);
 
   for (tBTTRC_FUNC_MAP *functions = &bttrc_set_level_map[0]; functions->trc_name; ++functions) {
-    LOG_INFO("BTE_InitTraceLevels -- %s", functions->trc_name);
     int value = config_get_int(config, CONFIG_DEFAULT_SECTION, functions->trc_name, -1);
     if (value != -1)
       functions->trace_level = value;
+
+    LOG_INFO("BTE_InitTraceLevels -- %s : Level %d", functions->trc_name, functions->trace_level);
 
     if (functions->p_f)
       functions->p_f(functions->trace_level);
