@@ -168,6 +168,10 @@
 #define BTA_HOST_INTERLEAVE_SEARCH FALSE
 #endif
 
+#ifndef BTA_SKIP_BLE_START_ENCRYPTION
+#define BTA_SKIP_BLE_START_ENCRYPTION FALSE
+#endif
+
 #ifndef BT_USE_TRACES
 #define BT_USE_TRACES  TRUE
 #endif
@@ -626,6 +630,16 @@
 /* Include Out-of-Band implementation for Simple Pairing */
 #ifndef BTM_OOB_INCLUDED
 #define BTM_OOB_INCLUDED                TRUE
+#endif
+
+/* Include No MITM/No Bonding/No Keys implementation for Simple Pairing */
+#ifndef BTM_NO_MITM_NO_BONDING_INCLUDED
+#define BTM_NO_MITM_NO_BONDING_INCLUDED  FALSE
+#endif
+
+/* Include No MITM implementation for Simple Pairing */
+#ifndef BTM_NO_MITM_INCLUDED
+#define BTM_NO_MITM_INCLUDED  FALSE
 #endif
 
 /* TRUE to include Sniff Subrating */

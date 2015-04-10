@@ -59,8 +59,10 @@ LOCAL_SRC_FILES += \
     ../btif/src/btif_rfcomm.c \
     ../btif/src/btif_mcap.c \
     ../btif/src/btif_l2cap.c \
-    ../btif/src/btif_stack_log.c
-
+    ../btif/src/btif_stack_log.c \
+    ../btif/src/btif_gatt_qual.c \
+    ../btif/src/btif_gap.c \
+    ../btif/src/btif_smp.c
 ifeq ($(BOARD_USES_WIPOWER), true)
     LOCAL_SRC_FILES += \
         ../wipowerif/src/wipower.c
