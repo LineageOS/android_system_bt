@@ -566,6 +566,14 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
     registr.app_id = p_data->api_reg.app_id;
     registr.chnl   = (tBTA_AV_CHNL)p_data->hdr.layer_specific;
     profile_initialized = p_data->api_reg.service_uuid;
+    if(profile_initialized == UUID_SERVCLASS_AUDIO_SINK)
+    {
+        p_bta_av_cfg  = (tBTA_AV_CFG *) &bta_avk_cfg;
+    }
+    else if(profile_initialized == UUID_SERVCLASS_AUDIO_SOURCE)
+    {
+        p_bta_av_cfg  = (tBTA_AV_CFG *) &bta_av_cfg;
+    }
     do
     {
         p_scb = bta_av_alloc_scb(registr.chnl);
@@ -609,7 +617,7 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
 #endif
 
                 bta_ar_reg_avrc(UUID_SERVCLASS_AV_REM_CTRL_TARGET, "AV Remote Control Target", NULL,
-                                p_bta_av_cfg->avrc_tg_cat, BTA_ID_AV);
+                     p_bta_av_cfg->avrc_tg_cat, BTA_ID_AV,(bta_av_cb.features & BTA_AV_FEAT_BROWSE));
 #endif
             }
 
@@ -755,7 +763,7 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
 #if( defined BTA_AR_INCLUDED ) && (BTA_AR_INCLUDED == TRUE)
                     /* create an SDP record as AVRC CT. */
                     bta_ar_reg_avrc(UUID_SERVCLASS_AV_REMOTE_CONTROL, NULL, NULL,
-                           p_bta_av_cfg->avrc_ct_cat, BTA_ID_AV);
+                    p_bta_av_cfg->avrc_ct_cat, BTA_ID_AV,(bta_av_cb.features & BTA_AV_FEAT_BROWSE));
 #endif
                 }
             }

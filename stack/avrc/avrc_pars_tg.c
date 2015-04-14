@@ -1,5 +1,7 @@
 /******************************************************************************
  *
+ *  Copyright (c) 2015, The Linux Foundation. All rights reserved.
+ *  Not a Contribution
  *  Copyright (C) 2003-2013 Broadcom Corporation
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,6 +29,67 @@
 *****************************************************************************/
 #if (AVRC_METADATA_INCLUDED == TRUE)
 
+#if (AVRC_CTLR_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         avrc_ctrl_pars_vendor_cmd
+**
+** Description      This function parses the vendor specific commands defined by
+**                  Bluetooth SIG for AVRCP Conroller.
+**
+** Returns          AVRC_STS_NO_ERROR, if the message in p_data is parsed successfully.
+**                  Otherwise, the error code defined by AVRCP 1.4
+**
+*******************************************************************************/
+static tAVRC_STS avrc_ctrl_pars_vendor_cmd(tAVRC_MSG_VENDOR *p_msg, tAVRC_COMMAND *p_result,
+                                      UINT8 *p_buf, UINT16 buf_len)
+{
+    tAVRC_STS  status = AVRC_STS_NO_ERROR;
+    UINT8   *p = p_msg->p_vendor_data;
+    UINT16  len;
+
+    p_result->pdu = *p++;
+    AVRC_TRACE_DEBUG("avrc_ctrl_pars_vendor_cmd() pdu:0x%x", p_result->pdu);
+    if (!AVRC_IsValidAvcType (p_result->pdu, p_msg->hdr.ctype))
+    {
+        AVRC_TRACE_DEBUG("avrc_ctrl_pars_vendor_cmd() detects wrong AV/C type!");
+        status = AVRC_STS_BAD_CMD;
+    }
+
+    p++; /* skip the reserved byte */
+    BE_STREAM_TO_UINT16 (len, p);
+    if ((len+4) != (p_msg->vendor_len))
+    {
+        status = AVRC_STS_INTERNAL_ERR;
+    }
+
+    if (status != AVRC_STS_NO_ERROR)
+        return status;
+
+    switch (p_result->pdu)
+    {
+    case AVRC_PDU_SET_ABSOLUTE_VOLUME:
+    {
+        if(len!=1)
+            status = AVRC_STS_INTERNAL_ERR;
+        else
+        {
+            BE_STREAM_TO_UINT8 (p_result->volume.volume, p);
+            p_result->volume.volume = AVRC_MAX_VOLUME & p_result->volume.volume;
+        }
+        break;
+    }
+    case AVRC_PDU_REGISTER_NOTIFICATION:    /* 0x31 */
+        BE_STREAM_TO_UINT8 (p_result->reg_notif.event_id, p);
+        BE_STREAM_TO_UINT32 (p_result->reg_notif.param, p);
+        break;
+    default:
+        status = AVRC_STS_BAD_CMD;
+        break;
+    }
+    return status;
+}
+#endif
 /*******************************************************************************
 **
 ** Function         avrc_pars_vendor_cmd
@@ -299,7 +362,43 @@ static tAVRC_STS avrc_pars_vendor_cmd(tAVRC_MSG_VENDOR *p_msg, tAVRC_COMMAND *p_
 
     return status;
 }
+#if (AVRC_CTLR_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         AVRC_Ctrl_ParsCommand
+**
+** Description      This function is used to parse cmds received for CTRL
+**                  Currently it is for SetAbsVolume and Volume Change Notification..
+**
+** Returns          AVRC_STS_NO_ERROR, if the message in p_data is parsed successfully.
+**                  Otherwise, the error code defined by AVRCP 1.4
+**
+*******************************************************************************/
+tAVRC_STS AVRC_Ctrl_ParsCommand (tAVRC_MSG *p_msg, tAVRC_COMMAND *p_result, UINT8 *p_buf, UINT16 buf_len)
+{
+    tAVRC_STS  status = AVRC_STS_INTERNAL_ERR;
+    UINT16  id;
 
+    if (p_msg && p_result)
+    {
+        switch (p_msg->hdr.opcode)
+        {
+        case AVRC_OP_VENDOR:     /*  0x00    Vendor-dependent commands */
+            status = avrc_ctrl_pars_vendor_cmd(&p_msg->vendor, p_result, p_buf, buf_len);
+            break;
+
+        default:
+            AVRC_TRACE_ERROR("AVRC_ParsCommand() unknown opcode:0x%x", p_msg->hdr.opcode);
+            break;
+        }
+        p_result->cmd.opcode = p_msg->hdr.opcode;
+        p_result->cmd.status = status;
+    }
+    BTIF_TRACE_IMP("AVRC_Ctrl_ParsCommand() return status:0x%x",
+            __FUNCTION__, status);
+    return status;
+}
+#endif
 /*******************************************************************************
 **
 ** Function         AVRC_ParsCommand

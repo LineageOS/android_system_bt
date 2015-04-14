@@ -1350,6 +1350,7 @@ void bta_av_setconfig_rsp (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     UINT8   *p_seid = p_data->ci_setconfig.p_seid;
     int     i;
     UINT8   local_sep;
+    tBTA_AV_MEDIA av_sink_codec_info;
 
     /* we like this codec_type. find the sep_idx */
     local_sep = bta_av_get_scb_sep_type(p_scb,avdt_handle);
@@ -1357,9 +1358,12 @@ void bta_av_setconfig_rsp (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     APPL_TRACE_DEBUG("bta_av_setconfig_rsp: sep_idx: %d cur_psc_mask:0x%x", p_scb->sep_idx, p_scb->cur_psc_mask);
 
     if ((AVDT_TSEP_SNK == local_sep) && (p_data->ci_setconfig.err_code == AVDT_SUCCESS) &&
-                                     (p_scb->seps[p_scb->sep_idx].p_app_data_cback != NULL))
+                                     (p_scb->seps[p_scb->sep_idx].p_app_data_cback != NULL)) {
+        memcpy(av_sink_codec_info.avk_config.bd_addr,p_scb->peer_addr,sizeof(BD_ADDR));
+        av_sink_codec_info.avk_config.codec_info = p_scb->cfg.codec_info;
         p_scb->seps[p_scb->sep_idx].p_app_data_cback(BTA_AV_MEDIA_SINK_CFG_EVT,
-                                              (tBTA_AV_MEDIA*)p_scb->cfg.codec_info);
+                                              &av_sink_codec_info);
+    }
 
 
     AVDT_ConfigRsp(p_scb->avdt_handle, p_scb->avdt_label, p_data->ci_setconfig.err_code,
@@ -1944,6 +1948,7 @@ void bta_av_getcap_results (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     UINT8       media_type;
     tAVDT_SEP_INFO  *p_info = &p_scb->sep_info[p_scb->sep_info_idx];
     UINT16 uuid_int; /* UUID for which connection was initiatied */
+    tBTA_AV_MEDIA av_sink_codec_info;
 
     memcpy(&cfg, &p_scb->cfg, sizeof(tAVDT_CFG));
     cfg.num_codec = 1;
@@ -1988,8 +1993,10 @@ void bta_av_getcap_results (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
             (p_scb->seps[p_scb->sep_idx].p_app_data_cback != NULL))
         {
             APPL_TRACE_DEBUG(" Configure Deoder for Sink Connection ");
+            memcpy(av_sink_codec_info.avk_config.bd_addr,p_scb->peer_addr,sizeof(BD_ADDR));
+            av_sink_codec_info.avk_config.codec_info = p_scb->cfg.codec_info;
             p_scb->seps[p_scb->sep_idx].p_app_data_cback(BTA_AV_MEDIA_SINK_CFG_EVT,
-                     (tBTA_AV_MEDIA*)p_scb->cfg.codec_info);
+                     &av_sink_codec_info);
         }
 
         if ((uuid_int == UUID_SERVCLASS_AUDIO_SOURCE) &&

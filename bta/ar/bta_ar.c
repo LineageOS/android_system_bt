@@ -243,7 +243,7 @@ void bta_ar_dereg_avct(tBTA_SYS_ID sys_id)
 **
 ******************************************************************************/
 void bta_ar_reg_avrc(UINT16 service_uuid, char *service_name, char *provider_name,
-					 UINT16 categories, tBTA_SYS_ID sys_id)
+                     UINT16 categories, tBTA_SYS_ID sys_id, BOOLEAN browse_supported)
 {
     UINT8   mask = bta_ar_id (sys_id);
     UINT8   temp[8], *p;
@@ -257,20 +257,22 @@ void bta_ar_reg_avrc(UINT16 service_uuid, char *service_name, char *provider_nam
         {
             bta_ar_cb.tg_registered = mask;
             bta_ar_cb.sdp_tg_handle = SDP_CreateRecord();
-            AVRC_AddRecord(service_uuid, service_name, provider_name, categories, bta_ar_cb.sdp_tg_handle);
+            AVRC_AddRecord(service_uuid, service_name, provider_name, categories, bta_ar_cb.sdp_tg_handle, browse_supported);
             bta_sys_add_uuid(service_uuid);
         }
         /* only one TG is allowed (first-come, first-served).
          * If sdp_tg_handle is non-0, ignore this request */
     }
-    else if ((service_uuid == UUID_SERVCLASS_AV_REMOTE_CONTROL) || (service_uuid == UUID_SERVCLASS_AV_REM_CTRL_CONTROL))
+    else if ((service_uuid == UUID_SERVCLASS_AV_REMOTE_CONTROL)||
+             (service_uuid == UUID_SERVCLASS_AV_REM_CTRL_CONTROL))
     {
         bta_ar_cb.ct_categories [mask - 1] = categories;
         categories = bta_ar_cb.ct_categories[0]|bta_ar_cb.ct_categories[1];
         if (bta_ar_cb.sdp_ct_handle == 0)
         {
             bta_ar_cb.sdp_ct_handle = SDP_CreateRecord();
-            AVRC_AddRecord(service_uuid, service_name, provider_name, categories, bta_ar_cb.sdp_ct_handle);
+            AVRC_AddRecord(service_uuid, service_name, provider_name, categories,
+                                              bta_ar_cb.sdp_ct_handle, browse_supported);
             bta_sys_add_uuid(service_uuid);
         }
         else

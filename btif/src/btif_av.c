@@ -113,6 +113,7 @@ typedef struct
 {
     int sample_rate;
     int channel_count;
+    UINT8 peer_bd[6];
 } btif_av_sink_config_req_t;
 
 /*****************************************************************************
@@ -149,6 +150,7 @@ else\
     case BTA_AV_META_MSG_EVT: \
     case BTA_AV_BROWSE_MSG_EVT: \
     case BTA_AV_RC_FEAT_EVT: \
+    case BTA_AV_REMOTE_RSP_EVT: \
     { \
          btif_rc_handler(e, d);\
     }break; \
@@ -430,13 +432,12 @@ static BOOLEAN btif_av_state_idle_handler(btif_sm_event_t event, void *p_data, i
              * for device priority for first device and we cannot queue
              * incoming connections requests.
              */
-            BTIF_TRACE_DEBUG("Check A2dp priority of device at index: %d", index);
+
             if (idle_rc_event != 0)
             {
                 BTIF_TRACE_DEBUG("Processing another RC Event ");
                 return FALSE;
             }
-            idle_rc_event = event;
             memcpy(&idle_rc_data, ((tBTA_AV*)p_data), sizeof(tBTA_AV));
             if (event == BTA_AV_RC_OPEN_EVT)
             {
@@ -469,10 +470,35 @@ static BOOLEAN btif_av_state_idle_handler(btif_sm_event_t event, void *p_data, i
             }
             if (bt_av_sink_callbacks != NULL)
             {
-                BTA_AvOpen(btif_av_cb[index].peer_bda.address, btif_av_cb[index].bta_handle,
+                if(event == BTA_AV_PENDING_EVT)
+                {
+                    BTA_AvOpen(btif_av_cb[index].peer_bda.address, btif_av_cb[index].bta_handle,
                        TRUE, BTA_SEC_NONE, UUID_SERVCLASS_AUDIO_SINK);
+                }
+                else if(event == BTA_AV_RC_OPEN_EVT)
+                {
+                    memset(&tle_av_open_on_rc, 0, sizeof(tle_av_open_on_rc));
+                    tle_av_open_on_rc.param = (UINT32)btif_initiate_av_open_tmr_hdlr;
+                    btu_start_timer(&tle_av_open_on_rc, BTU_TTYPE_USER_FUNC,
+                            BTIF_TIMEOUT_AV_OPEN_ON_RC_SECS);
+                    btif_rc_handler(event, p_data);
+                }
             }
             break;
+
+        case BTIF_AV_SINK_CONFIG_REQ_EVT:
+        {
+            btif_av_sink_config_req_t req;
+            // copy to avoid alignment problems
+            memcpy(&req, p_data, sizeof(req));
+
+            BTIF_TRACE_WARNING("BTIF_AV_SINK_CONFIG_REQ_EVT %d %d", req.sample_rate,
+                    req.channel_count);
+            if (bt_av_sink_callbacks != NULL) {
+                HAL_CBACK(bt_av_sink_callbacks, audio_config_cb, &(req.peer_bd),
+                        req.sample_rate, req.channel_count);
+            }
+        } break;
 
         case BTA_AV_OPEN_EVT:
         {
@@ -640,14 +666,14 @@ static BOOLEAN btif_av_state_opening_handler(btif_sm_event_t event, void *p_data
                 /* Multicast: Check if connected to AVRC only device
                  * disconnect when Dual A2DP/Multicast is supported.
                  */
-                if ((btif_max_av_clients >= 2) || (p_bta_data->open.status != BTA_AV_FAIL_SDP))
+                if ((btif_max_av_clients >= 2))
                 {
                     BD_ADDR peer_addr;
                     if ((btif_rc_get_connected_peer(peer_addr))
                         &&(!bdcmp(btif_av_cb[index].peer_bda.address, peer_addr)))
                     {
-                        /* Disconnect AVRCP connection, if Remote has
-                         * both AVRCP and A2DP
+                        /* Disconnect AVRCP connection, if A2DP
+                         * conneciton failed, for any reason
                          */
                         BTIF_TRACE_WARNING(" Disconnecting AVRCP ");
                         BTA_AvCloseRc(btif_rc_get_connected_peer_handle(peer_addr));
@@ -1989,13 +2015,14 @@ static void bte_av_media_callback(tBTA_AV_EVT event, tBTA_AV_MEDIA *p_data)
 
     if (event == BTA_AV_MEDIA_SINK_CFG_EVT) {
         /* send a command to BT Media Task */
-        btif_reset_decoder((UINT8*)p_data);
-
-        a2d_status = A2D_ParsSbcInfo(&sbc_cie, (UINT8 *)p_data, FALSE);
+        btif_reset_decoder((UINT8*)(p_data->avk_config.codec_info));
+        a2d_status = A2D_ParsSbcInfo(&sbc_cie, (UINT8 *)(p_data->avk_config.codec_info), FALSE);
         if (a2d_status == A2D_SUCCESS) {
             /* Switch to BTIF context */
             config_req.sample_rate = btif_a2dp_get_track_frequency(sbc_cie.samp_freq);
             config_req.channel_count = btif_a2dp_get_track_channel_count(sbc_cie.ch_mode);
+            memcpy(config_req.peer_bd,(UINT8*)(p_data->avk_config.bd_addr),
+                                                              sizeof(config_req.peer_bd));
             btif_transfer_context(btif_av_handle_event, BTIF_AV_SINK_CONFIG_REQ_EVT,
                                      (char*)&config_req, sizeof(config_req), NULL);
         }
@@ -2658,9 +2685,11 @@ bt_status_t btif_av_execute_service(BOOLEAN b_enable)
         * handle this request in order to allow incoming connections to succeed.
         * We need to put this back once support for this is added */
 
-        /* Added BTA_AV_FEAT_NO_SCO_SSPD - this ensures that the BTA does not
-        * auto-suspend av streaming on AG events(SCO or Call). The suspend shall
-        * be initiated by the app/audioflinger layers */
+         /* Added BTA_AV_FEAT_NO_SCO_SSPD - this ensures that the BTA does not
+          * auto-suspend av streaming on AG events(SCO or Call). The suspend shall
+          * be initiated by the app/audioflinger layers */
+         /* Support for browsing for SDP record should work only if we enable BROWSE
+          * while registering. */
 #if (AVRC_METADATA_INCLUDED == TRUE)
         BTA_AvEnable(BTA_SEC_AUTHENTICATE,
             BTA_AV_FEAT_RCTG|BTA_AV_FEAT_METADATA|BTA_AV_FEAT_VENDOR|BTA_AV_FEAT_NO_SCO_SSPD
@@ -2668,6 +2697,7 @@ bt_status_t btif_av_execute_service(BOOLEAN b_enable)
 #if (AVRC_ADV_CTRL_INCLUDED == TRUE)
             |BTA_AV_FEAT_RCCT
             |BTA_AV_FEAT_ADV_CTRL
+			|BTA_AV_FEAT_BROWSE
 #endif
             ,bte_av_callback);
 #else
@@ -2707,8 +2737,10 @@ bt_status_t btif_av_sink_execute_service(BOOLEAN b_enable)
          /* Added BTA_AV_FEAT_NO_SCO_SSPD - this ensures that the BTA does not
           * auto-suspend av streaming on AG events(SCO or Call). The suspend shall
           * be initiated by the app/audioflinger layers */
-        BTA_AvEnable(BTA_SEC_AUTHENTICATE, BTA_AV_FEAT_NO_SCO_SSPD|BTA_AV_FEAT_RCCT,
-                                                                    bte_av_callback);
+         BTA_AvEnable(BTA_SEC_AUTHENTICATE, BTA_AV_FEAT_NO_SCO_SSPD|BTA_AV_FEAT_RCCT|
+                                            BTA_AV_FEAT_METADATA|BTA_AV_FEAT_VENDOR|
+                                            BTA_AV_FEAT_ADV_CTRL|BTA_AV_FEAT_RCTG,
+                                                                        bte_av_callback);
          BTA_AvRegister(BTA_AV_CHNL_AUDIO, BTIF_AVK_SERVICE_NAME, 0, bte_av_media_callback,
                                                                 UUID_SERVCLASS_AUDIO_SINK);
      }

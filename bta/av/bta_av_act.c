@@ -1,5 +1,7 @@
 /******************************************************************************
  *
+ *  Copyright (c) 2015, The Linux Foundation. All rights reserved.
+ *  Not a Contribution
  *  Copyright (C) 2004-2012 Broadcom Corporation
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,6 +42,9 @@
 #define LOG_TAG "bt_bta_av"
 #include "osi/include/log.h"
 
+#if (AVRC_CTLR_INCLUDED == TRUE)
+#include <cutils/properties.h>
+#endif
 /*****************************************************************************
 **  Constants
 *****************************************************************************/
@@ -597,16 +602,14 @@ void bta_av_rc_opened(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
     if(rc_open.peer_features == 0)
     {
         /* we have not done SDP on peer RC capabilities.
-         * peer must have initiated the RC connection */
-        /*To update default features based on the local features we support*/
-        if (bta_av_cb.features & BTA_AV_FEAT_RCTG)
-        {
-            rc_open.peer_features |= BTA_AV_FEAT_RCCT;
-        }
-        if (bta_av_cb.features & BTA_AV_FEAT_RCCT)
-        {
+         * peer must have initiated the RC connection
+         * We Don't have SDP records of Peer, so we by
+         * default will take values depending upon registered
+         * features */
+        if (p_cb->features & BTA_AV_FEAT_RCCT)
             rc_open.peer_features |= BTA_AV_FEAT_RCTG;
-        }
+        if (p_cb->features & BTA_AV_FEAT_RCTG)
+            rc_open.peer_features |= BTA_AV_FEAT_RCCT;
         bta_av_rc_disc(disc);
     }
     (*p_cb->p_cback)(BTA_AV_RC_OPEN_EVT, (tBTA_AV *) &rc_open);
@@ -978,6 +981,7 @@ void bta_av_rc_msg(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
 #if (AVRC_METADATA_INCLUDED == TRUE)
     UINT8       ctype = 0;
     tAVRC_RESPONSE  rc_rsp;
+    char value[PROPERTY_VALUE_MAX];
 
     rc_rsp.rsp.status = BTA_AV_STS_NO_RSP;
 #endif
@@ -1002,6 +1006,15 @@ void bta_av_rc_msg(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
                         p_data->rc_msg.msg.pass.p_pass_data, is_inquiry);
 #endif
             }
+#if (AVRC_CTLR_INCLUDED == TRUE)
+            else if (((p_data->rc_msg.msg.pass.op_id == AVRC_ID_VOL_UP)||
+                      (p_data->rc_msg.msg.pass.op_id == AVRC_ID_VOL_DOWN))&&
+                     ((property_get("bluetooth.pts.avrcp_ct.support", value, "false"))&&
+                      (!strcmp(value, "true"))))
+            {
+                p_data->rc_msg.msg.hdr.ctype = BTA_AV_RSP_ACCEPT;
+            }
+#endif
             else
             {
                 p_data->rc_msg.msg.hdr.ctype = bta_av_op_supported(p_data->rc_msg.msg.pass.op_id, is_inquiry);
@@ -1069,7 +1082,7 @@ void bta_av_rc_msg(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
         }
         /* else if configured to support vendor specific and it's a response */
         else if ((p_cb->features & BTA_AV_FEAT_VENDOR) &&
-                 p_data->rc_msg.msg.hdr.ctype >= AVRC_RSP_ACCEPT)
+                 p_data->rc_msg.msg.hdr.ctype >= AVRC_RSP_NOT_IMPL)
         {
 #if (AVRC_METADATA_INCLUDED == TRUE)
             if ((p_cb->features & BTA_AV_FEAT_METADATA) &&
@@ -1851,7 +1864,8 @@ tBTA_AV_FEAT bta_av_check_peer_features (UINT16 service_uuid)
         if (( SDP_FindAttributeInRec(p_rec, ATTR_ID_BT_PROFILE_DESC_LIST)) != NULL)
         {
             /* get profile version (if failure, version parameter is not updated) */
-            SDP_FindProfileVersionInRec(p_rec, UUID_SERVCLASS_AV_REMOTE_CONTROL, &peer_rc_version);
+            SDP_FindProfileVersionInRec(p_rec, UUID_SERVCLASS_AV_REMOTE_CONTROL,
+                                                                &peer_rc_version);
             APPL_TRACE_DEBUG("peer_rc_version 0x%x", peer_rc_version);
 
             if (peer_rc_version >= AVRC_REV_1_3)
@@ -1867,6 +1881,81 @@ tBTA_AV_FEAT bta_av_check_peer_features (UINT16 service_uuid)
                     categories = p_attr->attr_value.v.u16;
                     if (categories & AVRC_SUPF_CT_BROWSE)
                         peer_features |= (BTA_AV_FEAT_BROWSE);
+                }
+            }
+        }
+    }
+    APPL_TRACE_DEBUG("peer_features:x%x", peer_features);
+    return peer_features;
+}
+
+/*******************************************************************************
+**
+** Function         bta_avk_check_peer_features
+**
+** Description      check supported features on the peer device from the SDP record
+**                  and return the feature mask
+**
+** Returns          tBTA_AV_FEAT peer device feature mask
+**
+*******************************************************************************/
+tBTA_AV_FEAT bta_avk_check_peer_features (UINT16 service_uuid)
+{
+    tBTA_AV_FEAT peer_features = 0;
+    tBTA_AV_CB   *p_cb = &bta_av_cb;
+    tSDP_DISC_REC       *p_rec = NULL;
+    tSDP_DISC_ATTR      *p_attr;
+    UINT16              peer_rc_version=0;
+    UINT16              categories = 0;
+    BOOLEAN             val;
+
+    APPL_TRACE_DEBUG("bta_avk_check_peer_features service_uuid:x%x", service_uuid);
+    /* loop through all records we found */
+    while (TRUE)
+    {
+        /* get next record; if none found, we're done */
+        if ((p_rec = SDP_FindServiceInDb(p_cb->p_disc_db, service_uuid, p_rec)) == NULL)
+        {
+            break;
+        }
+        APPL_TRACE_DEBUG(" found Service record for x%x", service_uuid);
+
+        if (( SDP_FindAttributeInRec(p_rec, ATTR_ID_SERVICE_CLASS_ID_LIST)) != NULL)
+        {
+            /* find peer features */
+            if (SDP_FindServiceInDb(p_cb->p_disc_db, UUID_SERVCLASS_AV_REMOTE_CONTROL, NULL))
+            {
+                peer_features |= BTA_AV_FEAT_RCCT;
+            }
+            if (SDP_FindServiceInDb(p_cb->p_disc_db, UUID_SERVCLASS_AV_REM_CTRL_TARGET, NULL))
+            {
+                peer_features |= BTA_AV_FEAT_RCTG;
+            }
+        }
+
+        if (( SDP_FindAttributeInRec(p_rec, ATTR_ID_BT_PROFILE_DESC_LIST)) != NULL)
+        {
+            /* get profile version (if failure, version parameter is not updated) */
+            val = SDP_FindProfileVersionInRec(p_rec, UUID_SERVCLASS_AV_REMOTE_CONTROL, &peer_rc_version);
+            APPL_TRACE_DEBUG("peer_rc_version for TG 0x%x, profile_found %d", peer_rc_version, val);
+
+            if (peer_rc_version >= AVRC_REV_1_3)
+                peer_features |= (BTA_AV_FEAT_VENDOR | BTA_AV_FEAT_METADATA);
+
+            /*
+             * Though Absolute Volume came after in 1.4 and above, but there are few devices
+             * in market which supports absolute Volume and they are still 1.3
+             * TO avoid IOT issuses with those devices, we check for 1.3 as minimum version
+             */
+            if (peer_rc_version >= AVRC_REV_1_3)
+            {
+                /* get supported categories */
+                if ((p_attr = SDP_FindAttributeInRec(p_rec,
+                                ATTR_ID_SUPPORTED_FEATURES)) != NULL)
+                {
+                    categories = p_attr->attr_value.v.u16;
+                    if (categories & AVRC_SUPF_CT_CAT2)
+                        peer_features |= (BTA_AV_FEAT_ADV_CTRL);
                 }
             }
         }
@@ -1893,7 +1982,7 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
     tBTA_AV_RC_OPEN rc_open;
     tBTA_AV_RC_FEAT rc_feat;
     UINT8               rc_handle;
-    tBTA_AV_FEAT        peer_features;  /* peer features mask */
+    tBTA_AV_FEAT        peer_features = 0;  /* peer features mask */
     UNUSED(p_data);
 
     APPL_TRACE_DEBUG("bta_av_rc_disc_done disc:x%x", p_cb->disc);
@@ -1915,7 +2004,9 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
             p_scb = p_cb->p_scb[(p_cb->disc & BTA_AV_HNDL_MSK) - 1];
         }
         if (p_scb)
+        {
             rc_handle = p_scb->rc_handle;
+        }
         else
         {
             p_cb->disc = 0;
@@ -1924,22 +2015,23 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
     }
 
     APPL_TRACE_DEBUG("rc_handle %d", rc_handle);
-    if ((p_cb->features & BTA_AV_FEAT_RCCT) && !(p_cb->features & BTA_AV_FEAT_RCTG))
+    if (p_cb->sdp_a2d_snk_handle)
     {
-        /* In this case we are AVRCP controller and A2DP Sink. We shld check for TG
-         * on remote */
-        peer_features = bta_av_check_peer_features (UUID_SERVCLASS_AV_REM_CTRL_TARGET);
+        /* This is Sink + CT + TG(Abs Vol) */
+        peer_features = bta_avk_check_peer_features(UUID_SERVCLASS_AV_REM_CTRL_TARGET);
+        if (BTA_AV_FEAT_ADV_CTRL & bta_avk_check_peer_features(UUID_SERVCLASS_AV_REMOTE_CONTROL))
+            peer_features |= (BTA_AV_FEAT_ADV_CTRL|BTA_AV_FEAT_RCCT);
     }
-    else
+    else if(p_cb->sdp_a2d_handle)
     {
         /* check peer version and whether support CT and TG role */
         peer_features = bta_av_check_peer_features (UUID_SERVCLASS_AV_REMOTE_CONTROL);
-    }
-    if ((p_cb->features & BTA_AV_FEAT_ADV_CTRL) && ((peer_features&BTA_AV_FEAT_ADV_CTRL) == 0))
-    {
-        /* if we support advance control and peer does not, check their support on TG role
-         * some implementation uses 1.3 on CT ans 1.4 on TG */
-        peer_features |= bta_av_check_peer_features (UUID_SERVCLASS_AV_REM_CTRL_TARGET);
+        if ((p_cb->features & BTA_AV_FEAT_ADV_CTRL) && ((peer_features&BTA_AV_FEAT_ADV_CTRL) == 0))
+        {
+            /* if we support advance control and peer does not, check their support on TG role
+             * some implementation uses 1.3 on CT ans 1.4 on TG */
+            peer_features |= bta_av_check_peer_features (UUID_SERVCLASS_AV_REM_CTRL_TARGET);
+        }
     }
 
     p_cb->disc = 0;
@@ -1998,6 +2090,17 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
         p_cb->rcb[rc_handle].peer_features = peer_features;
         rc_feat.rc_handle =  rc_handle;
         rc_feat.peer_features = peer_features;
+        if (p_scb == NULL)
+        {
+            /*
+             * In case scb is not created by the time we are done with SDP
+             * we still need to send RC feature event. So we need to get BD
+             * from Message
+             */
+            bdcpy(rc_feat.peer_addr, p_cb->lcb[p_cb->rcb[rc_handle].lidx].addr);
+        }
+        else
+            bdcpy(rc_feat.peer_addr, p_scb->peer_addr);
         (*p_cb->p_cback)(BTA_AV_RC_FEAT_EVT, (tBTA_AV *) &rc_feat);
     }
 }

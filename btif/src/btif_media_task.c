@@ -25,10 +25,10 @@
  **                 audio & video processing
  **
  ******************************************************************************/
-//#define BT_AUDIO_SYSTRACE_LOG 
-#ifdef BT_AUDIO_SYSTRACE_LOG 
+//#define BT_AUDIO_SYSTRACE_LOG
+#ifdef BT_AUDIO_SYSTRACE_LOG
 #define ATRACE_TAG ATRACE_TAG_ALWAYS
-#endif 
+#endif
 
 #define LOG_TAG "bt_btif_media"
 
@@ -201,14 +201,14 @@ enum {
    but due to link flow control or thread preemption in lower
    layers we might need to temporarily buffer up data */
 /* 18 frames is equivalent to 6.89*18*2.9 ~= 360 ms @ 44.1 khz, 20 ms mediatick */
-#define MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ 18
+#define MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ 10
 #ifndef MAX_PCM_FRAME_NUM_PER_TICK
 #define MAX_PCM_FRAME_NUM_PER_TICK     14
 #endif
 #define MAX_PCM_ITER_NUM_PER_TICK     3
 
 /* In case of A2DP SINK, we will delay start by 5 AVDTP Packets*/
-#define MAX_A2DP_DELAYED_START_FRAME_COUNT 5
+#define MAX_A2DP_DELAYED_START_FRAME_COUNT 3
 #define PACKET_PLAYED_PER_TICK_48 8
 #define PACKET_PLAYED_PER_TICK_44 7
 #define PACKET_PLAYED_PER_TICK_32 5
@@ -2007,7 +2007,8 @@ void btif_a2dp_set_peer_sep(UINT8 sep) {
 }
 
 static void btif_decode_alarm_cb(UNUSED_ATTR void *context) {
-  thread_post(worker_thread, btif_media_task_avk_handle_timer, NULL);
+    if(worker_thread != NULL)
+        thread_post(worker_thread, btif_media_task_avk_handle_timer, NULL);
 }
 
 static void btif_media_task_aa_handle_stop_decoding(void) {
@@ -2522,18 +2523,24 @@ UINT8 btif_media_sink_enque_buf(BT_HDR *p_pkt)
 
     if(btif_media_cb.rx_flush == TRUE) /* Flush enabled, do not enque*/
         return GKI_queue_length(&btif_media_cb.RxSbcQ);
-    if(GKI_queue_length(&btif_media_cb.RxSbcQ) == MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ)
+    if(GKI_queue_length(&btif_media_cb.RxSbcQ) >= MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ)
     {
-        GKI_freebuf(GKI_dequeue(&(btif_media_cb.RxSbcQ)));
+        btif_media_flush_q(&(btif_media_cb.RxSbcQ));
     }
 
     BTIF_TRACE_VERBOSE("btif_media_sink_enque_buf + ");
     /* allocate and Queue this buffer */
-    if ((p_msg = (tBT_SBC_HDR *) GKI_getbuf(sizeof(tBT_SBC_HDR) +
-                        p_pkt->offset+ p_pkt->len)) != NULL)
+    if ((p_msg = (tBT_SBC_HDR *)GKI_getbuf(sizeof(tBT_SBC_HDR) + p_pkt->len)) != NULL)
     {
-        memcpy(p_msg, p_pkt, (sizeof(BT_HDR) + p_pkt->offset + p_pkt->len));
-        p_msg->num_frames_to_be_processed = (*((UINT8*)(p_msg + 1) + p_msg->offset)) & 0x0f;
+        UINT8 *p_dest;
+
+        p_dest = (UINT8*)(p_msg + 1);
+        memcpy(p_dest, (UINT8*)(p_pkt + 1) + p_pkt->offset, p_pkt->len);
+
+        p_msg->num_frames_to_be_processed = p_dest[0] & 0x0f;
+        p_msg->len = p_pkt->len;
+        p_msg->offset = 0;
+
         BTIF_TRACE_VERBOSE("btif_media_sink_enque_buf + ", p_msg->num_frames_to_be_processed);
         GKI_enqueue(&(btif_media_cb.RxSbcQ), p_msg);
         if(GKI_queue_length(&btif_media_cb.RxSbcQ) == MAX_A2DP_DELAYED_START_FRAME_COUNT)

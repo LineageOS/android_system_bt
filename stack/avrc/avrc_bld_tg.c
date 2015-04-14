@@ -530,7 +530,6 @@ static tAVRC_STS avrc_bld_get_play_status_rsp (tAVRC_GET_PLAY_STATUS_RSP *p_rsp,
 
     return AVRC_STS_NO_ERROR;
 }
-
 /*******************************************************************************
 **
 ** Function         avrc_bld_notify_rsp
@@ -549,7 +548,7 @@ static tAVRC_STS avrc_bld_notify_rsp (tAVRC_REG_NOTIF_RSP *p_rsp, BT_HDR *p_pkt)
     UINT8   xx;
     tAVRC_STS status = AVRC_STS_NO_ERROR;
 
-    AVRC_TRACE_API("avrc_bld_notify_rsp");
+    AVRC_TRACE_API("avrc_bld_notify_rsp event_id %d",p_rsp->event_id);
 
     p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
     p_data = p_len = p_start + 2; /* pdu + rsvd */
@@ -656,7 +655,10 @@ static tAVRC_STS avrc_bld_notify_rsp (tAVRC_REG_NOTIF_RSP *p_rsp, BT_HDR *p_pkt)
     case AVRC_EVT_NOW_PLAYING_CHANGE:
         len = EVT_NOW_PLAYING_CHANGE_RSP_LENGTH;
         break;
-
+    case AVRC_EVT_VOLUME_CHANGE:
+        len = 2;
+        UINT8_TO_BE_STREAM(p_data, (AVRC_MAX_VOLUME & p_rsp->param.volume));
+        break;
     default:
         status = AVRC_STS_BAD_PARAM;
         AVRC_TRACE_ERROR("unknown event_id");
@@ -741,6 +743,31 @@ static tAVRC_STS avrc_bld_play_item_rsp(tAVRC_RSP *p_rsp, BT_HDR *p_pkt)
     return status;
 }
 
+/*****************************************************************************
+**
+** Function      avrc_bld_set_absolute_volume_rsp
+**
+** Description   This function builds the set absolute volume response
+**
+** Returns       AVRC_STS_NO_ERROR, if the response is build successfully
+**               Otherwise, the error code.
+**
+******************************************************************************/
+static tAVRC_STS avrc_bld_set_absolute_volume_rsp(uint8_t abs_vol, BT_HDR *p_pkt)
+{
+    UINT8   *p_data, *p_start;
+    tAVRC_STS status = AVRC_STS_NO_ERROR;
+
+    AVRC_TRACE_API(" avrc_bld_play_item_rsp");
+    p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
+    /* To calculate length */
+    p_data = p_start + 2;
+    /* add fixed lenth status(1) */
+    UINT16_TO_BE_STREAM(p_data, 1);
+    UINT8_TO_BE_STREAM(p_data, abs_vol);
+    p_pkt->len = (p_data - p_start);
+    return status;
+}
 /*******************************************************************************
 **
 ** Function         avrc_bld_group_navigation_rsp
@@ -1257,6 +1284,10 @@ tAVRC_STS AVRC_BldResponse( UINT8 handle, tAVRC_RESPONSE *p_rsp, BT_HDR **pp_pkt
 
     case AVRC_PDU_PLAY_ITEM:
         status = avrc_bld_play_item_rsp(&p_rsp->play_item, p_pkt);
+        break;
+
+    case AVRC_PDU_SET_ABSOLUTE_VOLUME:
+        status = avrc_bld_set_absolute_volume_rsp(p_rsp->volume.volume, p_pkt);
         break;
     }
 

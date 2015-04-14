@@ -557,6 +557,7 @@ const char*  dump_rc_pdu(UINT8 pdu)
         CASE_RETURN_STR(AVRC_PDU_SET_ABSOLUTE_VOLUME)
         CASE_RETURN_STR(AVRC_PDU_SET_ADDRESSED_PLAYER)
         CASE_RETURN_STR(AVRC_PDU_CHANGE_PATH)
+        CASE_RETURN_STR(AVRC_PDU_GET_CAPABILITIES)
         default:
             return "Unknown PDU";
     }

@@ -616,6 +616,8 @@ extern tBTA_AV_CB *bta_av_cb_ptr;
 
 /* config struct */
 extern tBTA_AV_CFG *p_bta_av_cfg;
+extern const tBTA_AV_CFG bta_avk_cfg;
+extern const tBTA_AV_CFG bta_av_cfg;
 
 /* rc id config struct */
 extern UINT16 *p_bta_av_rc_id;
