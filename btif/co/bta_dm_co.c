@@ -31,15 +31,15 @@
 
 tBTE_APPL_CFG bte_appl_cfg =
 {
-#if SMP_INCLUDED == TRUE && SMP_LE_SC_INCLUDED == TRUE
-    BTA_LE_AUTH_REQ_SC_MITM_BOND, //Authentication requirements
+#if SMP_INCLUDED == TRUE
+    BTA_LE_AUTH_REQ_SC_MITM_BOND, // Authentication requirements
 #else
-    BTM_AUTH_SPGB_YES,  // Authentication requirements
+    BTM_AUTH_SPGB_YES,            // Authentication requirements
 #endif
-    BTM_LOCAL_IO_CAPS_BLE, // I/O capabilities
-    7,                  // Initiaor key size
-    7,                  // Responder key size
-    16                  // Maximum key size
+    BTM_LOCAL_IO_CAPS_BLE,
+    BTM_BLE_INITIATOR_KEY_SIZE,
+    BTM_BLE_RESPONDER_KEY_SIZE,
+    BTM_BLE_MAX_KEY_SIZE
 };
 #endif
 
@@ -426,10 +426,10 @@ void bta_dm_co_ble_io_req(BD_ADDR bd_addr,  tBTA_IO_CAP *p_io_cap,
     if (bte_appl_cfg.ble_io_cap <=4)
         *p_io_cap = bte_appl_cfg.ble_io_cap;
 
-    if (bte_appl_cfg.ble_init_key<=7)
+    if (bte_appl_cfg.ble_init_key <= BTM_BLE_INITIATOR_KEY_SIZE)
         *p_init_key = bte_appl_cfg.ble_init_key;
 
-    if (bte_appl_cfg.ble_resp_key<=7)
+    if (bte_appl_cfg.ble_resp_key <= BTM_BLE_RESPONDER_KEY_SIZE)
         *p_resp_key = bte_appl_cfg.ble_resp_key;
 
     if (bte_appl_cfg.ble_max_key_size > 7 && bte_appl_cfg.ble_max_key_size <= 16)

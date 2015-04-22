@@ -995,6 +995,7 @@ tBTM_STATUS btm_sec_bond_by_transport (BD_ADDR bd_addr, tBT_TRANSPORT transport,
 #if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
     if (transport == BT_TRANSPORT_LE)
     {
+        btm_ble_init_pseudo_addr (p_dev_rec, bd_addr);
         p_dev_rec->sec_flags &= ~ BTM_SEC_LE_MASK;
 
         if (SMP_Pair(bd_addr) == SMP_STARTED)
@@ -4058,20 +4059,25 @@ void btm_sec_auth_complete (UINT16 handle, UINT8 status)
         else
         {
             BTM_TRACE_DEBUG ("TRYING TO DECIDE IF CAN USE SMP_BR_CHNL");
-            if (p_dev_rec->new_encryption_key_is_p256 && (btm_sec_use_smp_br_chnl(p_dev_rec)))
+            if (p_dev_rec->new_encryption_key_is_p256 && (btm_sec_use_smp_br_chnl(p_dev_rec))
+                /* no LE keys are available, do deriving */
+                 && (!(p_dev_rec->sec_flags &BTM_SEC_LE_LINK_KEY_KNOWN) ||
+                /* or BR key is higher security than existing LE keys */
+                 (!(p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_AUTHED) &&
+                 (p_dev_rec->sec_flags & BTM_SEC_LINK_KEY_AUTHED))))
             {
                 BTM_TRACE_DEBUG ("link encrypted afer dedic bonding can use SMP_BR_CHNL");
 
                 if (btm_sec_is_master(p_dev_rec))
                 {
-                    // Encryption is required to start SM over BR/EDR.
-                    // Indicate that this is encryption after authentication.
+                    // Encryption is required to start SM over BR/EDR
+                    // indicate that this is encryption after authentication
                     BTM_SetEncryption(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR, NULL, NULL);
                 }
             }
-
             l2cu_start_post_bond_timer (p_dev_rec->hci_handle);
         }
+
         return;
     }
 
@@ -4150,7 +4156,8 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
 
     /* For transaction collision we need to wait and repeat.  There is no need */
     /* for random timeout because only slave should receive the result */
-    if ((status == HCI_ERR_LMP_ERR_TRANS_COLLISION) || (status == HCI_ERR_DIFF_TRANSACTION_COLLISION))
+    if ((status == HCI_ERR_LMP_ERR_TRANS_COLLISION) ||
+        (status == HCI_ERR_DIFF_TRANSACTION_COLLISION))
     {
         btm_sec_auth_collision(handle);
         return;
@@ -4181,15 +4188,14 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
     BTM_TRACE_DEBUG ("after update p_dev_rec->sec_flags=0x%x", p_dev_rec->sec_flags );
 
 #if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
-    if (acl_idx != MAX_L2CAP_LINKS )
+    if (acl_idx != MAX_L2CAP_LINKS)
         p_acl = &btm_cb.acl_db[acl_idx];
 
     btm_sec_check_pending_enc_req (p_dev_rec, p_acl->transport, encr_enable);
 
     if (p_acl && p_acl->transport == BT_TRANSPORT_LE)
     {
-        if (status == HCI_ERR_KEY_MISSING ||
-            status == HCI_ERR_AUTH_FAILURE ||
+        if (status == HCI_ERR_KEY_MISSING || status == HCI_ERR_AUTH_FAILURE ||
             status == HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE)
         {
             p_dev_rec->sec_flags &= ~ (BTM_SEC_LE_LINK_KEY_KNOWN);
@@ -4199,29 +4205,44 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
         return;
     }
     else
+    {
         /* BR/EDR connection, update the encryption key size to be 16 as always */
         p_dev_rec->enc_key_size = 16;
+    }
 
-    BTM_TRACE_DEBUG ("in btm_sec_encrypt_change new_encr_key_256 is %d",
-                       p_dev_rec->new_encryption_key_is_p256);
+     BTM_TRACE_DEBUG ("in %s new_encr_key_256 is %d",
+                       __func__, p_dev_rec->new_encryption_key_is_p256);
 
     if ((status == HCI_SUCCESS) && encr_enable && (p_dev_rec->hci_handle == handle))
     {
         if (p_dev_rec->new_encryption_key_is_p256)
         {
             if (btm_sec_use_smp_br_chnl(p_dev_rec) &&
-                btm_sec_is_master(p_dev_rec))
+                btm_sec_is_master(p_dev_rec) &&
+                /* if LE key is not known, do deriving */
+                (!(p_dev_rec->sec_flags &BTM_SEC_LE_LINK_KEY_KNOWN) ||
+                /* or BR key is higher security than existing LE keys */
+                 (!(p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_AUTHED)
+                 && (p_dev_rec->sec_flags & BTM_SEC_LINK_KEY_AUTHED))))
             {
                 /* BR/EDR is encrypted with LK that can be used to derive LE LTK */
                 p_dev_rec->new_encryption_key_is_p256 = FALSE;
 
-                BTM_TRACE_DEBUG ("btm_sec_encrypt_change start SM over BR/EDR");
-                SMP_BR_PairWith(p_dev_rec->bd_addr);
+                if (p_dev_rec->no_smp_on_br)
+                {
+                    BTM_TRACE_DEBUG ("%s NO SM over BR/EDR", __func__);
+                }
+                else
+                {
+                    BTM_TRACE_DEBUG ("%s start SM over BR/EDR", __func__);
+                    SMP_BR_PairWith(p_dev_rec->bd_addr);
+                }
             }
         }
         else
-        {   /* BR/EDR is successfully encrypted. Correct LK type if needed
-              (BR/EDR LK derived from LE LTK was used for encryption) */
+        {
+            // BR/EDR is successfully encrypted. Correct LK type if needed
+            // (BR/EDR LK derived from LE LTK was used for encryption)
             if ((encr_enable == 1)  && /* encryption is ON for SSP */
                 /* LK type is for BR/EDR SC */
                 (p_dev_rec->link_key_type == BTM_LKEY_TYPE_UNAUTH_COMB_P_256 ||
@@ -4254,7 +4275,6 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
     }
 
     p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
-
     /* If encryption setup failed, notify the waiting layer */
     if (status != HCI_SUCCESS)
     {
@@ -4264,7 +4284,6 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
 
     /* Encryption setup succeeded, execute the next security procedure, if any */
     status = (UINT8)btm_sec_execute_procedure (p_dev_rec);
-
     /* If there is no next procedure, or procedure failed to start, notify the caller */
     if (status != BTM_CMD_STARTED)
         btm_sec_dev_rec_cback_event (p_dev_rec, status, FALSE);
@@ -4808,23 +4827,22 @@ void btm_sec_link_key_notification (UINT8 *p_bda, UINT8 *p_link_key, UINT8 key_t
                                                    p_link_key, p_dev_rec->link_key_type);
         }
     }
-#if BTM_CROSS_TRANSP_KEY_DERIVATION == TRUE
     else
     {
         if ((p_dev_rec->link_key_type == BTM_LKEY_TYPE_UNAUTH_COMB_P_256) ||
             (p_dev_rec->link_key_type == BTM_LKEY_TYPE_AUTH_COMB_P_256))
         {
-             p_dev_rec->new_encr_key_256 = TRUE;
+             p_dev_rec->new_encryption_key_is_p256 = TRUE;
              BTM_TRACE_DEBUG ("%s set new_encr_key_256 to %d",
-                               __func__, p_dev_rec->new_encr_key_256);
+                               __func__, p_dev_rec->new_encryption_key_is_p256);
         }
     }
-#endif
 
     /* If name is not known at this point delay calling callback until the name is   */
     /* resolved. Unless it is a HID Device and we really need to send all link keys. */
     if ((!(p_dev_rec->sec_flags & BTM_SEC_NAME_KNOWN)
-        &&  ((p_dev_rec->dev_class[1] & BTM_COD_MAJOR_CLASS_MASK) != BTM_COD_MAJOR_PERIPHERAL)) )
+        &&  ((p_dev_rec->dev_class[1] & BTM_COD_MAJOR_CLASS_MASK) != BTM_COD_MAJOR_PERIPHERAL))
+        && !ltk_derived_lk)
     {
         BTM_TRACE_EVENT ("btm_sec_link_key_notification()  Delayed BDA: %08x%04x Type:%d",
                           (p_bda[0]<<24) + (p_bda[1]<<16) + (p_bda[2]<<8) + p_bda[3],
@@ -4846,7 +4864,9 @@ void btm_sec_link_key_notification (UINT8 *p_bda, UINT8 *p_link_key, UINT8 key_t
     /* If its not us who perform authentication, we should tell stackserver */
     /* that some authentication has been completed                          */
     /* This is required when different entities receive link notification and auth complete */
-    if (!(p_dev_rec->security_required & BTM_SEC_OUT_AUTHENTICATE))
+    if (!(p_dev_rec->security_required & BTM_SEC_OUT_AUTHENTICATE)
+        /* for derived key, always send authentication callback for BR channel */
+         || ltk_derived_lk)
     {
         if (btm_cb.api.p_auth_complete_callback)
             (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr, p_dev_rec->dev_class,
@@ -4860,8 +4880,17 @@ void btm_sec_link_key_notification (UINT8 *p_bda, UINT8 *p_link_key, UINT8 key_t
     {
         if (btm_cb.api.p_link_key_callback)
         {
-            (*btm_cb.api.p_link_key_callback) (p_bda, p_dev_rec->dev_class,  p_dev_rec->sec_bd_name,
-                                               p_link_key, p_dev_rec->link_key_type);
+            if (ltk_derived_lk)
+            {
+                BTM_TRACE_DEBUG ("btm_sec_link_key_notification()  LTK derived LK is saved already"
+                                    " (key_type = %d)", p_dev_rec->link_key_type);
+            }
+            else
+            {
+                (*btm_cb.api.p_link_key_callback) (p_bda, p_dev_rec->dev_class,
+                                                   p_dev_rec->sec_bd_name,
+                                                   p_link_key, p_dev_rec->link_key_type);
+            }
         }
     }
 }
@@ -5839,12 +5868,15 @@ static char *btm_pair_state_descr (tBTM_PAIRING_STATE state)
 void btm_sec_dev_rec_cback_event (tBTM_SEC_DEV_REC *p_dev_rec, UINT8 res, BOOLEAN is_le_transport)
 {
     tBTM_SEC_CALLBACK   *p_callback = p_dev_rec->p_callback;
-    tBT_TRANSPORT transport = is_le_transport ? BT_TRANSPORT_LE : BT_TRANSPORT_BR_EDR;
 
     if (p_dev_rec->p_callback)
     {
         p_dev_rec->p_callback = NULL;
-        (*p_callback) (p_dev_rec->bd_addr, transport, p_dev_rec->p_ref_data, res);
+
+        if (is_le_transport)
+           (*p_callback) (p_dev_rec->ble.pseudo_addr, BT_TRANSPORT_LE, p_dev_rec->p_ref_data, res);
+        else
+           (*p_callback) (p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR, p_dev_rec->p_ref_data, res);
     }
 
     btm_sec_check_pending_reqs();
@@ -6214,11 +6246,8 @@ BOOLEAN btm_sec_is_le_capable_dev (BD_ADDR bda)
     BOOLEAN le_capable = FALSE;
 
 #if (BLE_INCLUDED== TRUE)
-    if (p_dev_rec && ((p_dev_rec->device_type == BT_DEVICE_TYPE_DUMO) ||
-         (p_dev_rec->device_type == BT_DEVICE_TYPE_BLE) ) )
-    {
+    if (p_dev_rec && (p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) == BT_DEVICE_TYPE_BLE)
         le_capable  = TRUE;
-    }
 #endif
     return le_capable;
 }

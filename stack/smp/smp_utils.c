@@ -942,6 +942,7 @@ void smp_proc_pairing_cmpl(tSMP_CB *p_cb)
     SMP_TRACE_DEBUG ("smp_proc_pairing_cmpl ");
 
     evt_data.cmplt.reason = p_cb->status;
+    evt_data.cmplt.smp_over_br = p_cb->smp_over_br;
 
     if (p_cb->status == SMP_SUCCESS)
         evt_data.cmplt.sec_level = p_cb->sec_level;

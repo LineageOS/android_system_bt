@@ -1926,8 +1926,26 @@ BOOLEAN smp_calculate_f6(UINT8 *w, UINT8 *n1, UINT8 *n2, UINT8 *r, UINT8 *iocap,
 BOOLEAN smp_calculate_link_key_from_long_term_key(tSMP_CB *p_cb)
 {
     tBTM_SEC_DEV_REC *p_dev_rec;
+    BD_ADDR bda_for_lk;
+    tBLE_ADDR_TYPE conn_addr_type;
 
     SMP_TRACE_DEBUG ("%s", __func__);
+
+    if (p_cb->id_addr_rcvd && p_cb->id_addr_type == BLE_ADDR_PUBLIC)
+    {
+        SMP_TRACE_DEBUG ("Use rcvd identity address as BD_ADDR of LK rcvd identity address");
+        memcpy(bda_for_lk, p_cb->id_addr, BD_ADDR_LEN);
+    }
+    else if ((BTM_ReadRemoteConnectionAddr(p_cb->pairing_bda, bda_for_lk, &conn_addr_type)) &&
+              conn_addr_type == BLE_ADDR_PUBLIC)
+    {
+        SMP_TRACE_DEBUG ("Use rcvd connection address as BD_ADDR of LK");
+    }
+    else
+    {
+        SMP_TRACE_WARNING ("Don't have peer public address to associate with LK");
+        return FALSE;
+    }
 
     if ((p_dev_rec = btm_find_dev (p_cb->pairing_bda)) == NULL)
     {
@@ -1989,7 +2007,7 @@ BOOLEAN smp_calculate_link_key_from_long_term_key(tSMP_CB *p_cb)
         p = notif_link_key;
         ARRAY16_TO_STREAM(p, link_key);
 
-        btm_sec_link_key_notification (p_cb->pairing_bda, notif_link_key, link_key_type);
+        btm_sec_link_key_notification (bda_for_lk, notif_link_key, link_key_type);
 
         SMP_TRACE_EVENT ("%s is completed", __func__);
     }

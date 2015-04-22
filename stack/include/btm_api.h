@@ -1399,6 +1399,10 @@ typedef UINT8 tBTM_IO_CAP;
 #define BTM_AUTH_BONDS      6   /* the general/dedicated bonding bits  */
 #define BTM_AUTH_YN_BIT     1   /* this is the Yes or No bit  */
 
+#define BTM_BLE_INITIATOR_KEY_SIZE 15
+#define BTM_BLE_RESPONDER_KEY_SIZE 15
+#define BTM_BLE_MAX_KEY_SIZE       16
+
 typedef UINT8 tBTM_AUTH_REQ;
 
 enum
@@ -1613,9 +1617,10 @@ typedef struct
 /* data type for tBTM_LE_COMPLT */
 typedef struct
 {
-    UINT8       reason;
-    UINT8       sec_level;
-    BOOLEAN     is_pair_cancel;
+    UINT8 reason;
+    UINT8 sec_level;
+    BOOLEAN is_pair_cancel;
+    BOOLEAN smp_over_br;
 }tBTM_LE_COMPLT;
 #endif
 

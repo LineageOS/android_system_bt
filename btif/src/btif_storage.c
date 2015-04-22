@@ -27,6 +27,7 @@
  *
  *
  */
+#include <assert.h>
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
@@ -215,6 +216,7 @@ static void btif_in_split_uuids_string_to_list(char *str, bt_uuid_t *p_uuid,
     } while (*p_start != 0);
     *p_num_uuid = num;
 }
+
 static int prop2cfg(bt_bdaddr_t *remote_bd_addr, bt_property_t *prop)
 {
     bdstr_t bdstr = {0};
@@ -307,6 +309,7 @@ static int prop2cfg(bt_bdaddr_t *remote_bd_addr, bt_property_t *prop)
     }
     return TRUE;
 }
+
 static int cfg2prop(bt_bdaddr_t *remote_bd_addr, bt_property_t *prop)
 {
     bdstr_t bdstr = {0};
@@ -542,19 +545,44 @@ static bt_status_t btif_in_fetch_bonded_devices(btif_bonded_devices_t *p_bonded_
     return BT_STATUS_SUCCESS;
 }
 
-/************************************************************************************
-**  Externs
-************************************************************************************/
+static void btif_read_le_key(const uint8_t key_type, const size_t key_len, bt_bdaddr_t bd_addr,
+                 const uint8_t addr_type, const bool add_key, bool *device_added, bool *key_found)
+{
+    assert(device_added);
+    assert(key_found);
 
-/************************************************************************************
-**  Functions
-************************************************************************************/
+    char buffer[100];
+    memset(buffer, 0, sizeof(buffer));
 
-/** functions are synchronous.
- * functions can be called by both internal modules such as BTIF_DM and by external entiries from HAL via BTIF_context_switch
- * For OUT parameters,  caller is expected to provide the memory.
- * Caller is expected to provide a valid pointer to 'property->value' based on the property->type
- */
+    if (btif_storage_get_ble_bonding_key(&bd_addr, key_type, buffer, key_len) == BT_STATUS_SUCCESS)
+    {
+        if (add_key)
+        {
+            BD_ADDR bta_bd_addr;
+            bdcpy(bta_bd_addr, bd_addr.address);
+
+            if (!device_added)
+            {
+                BTA_DmAddBleDevice(bta_bd_addr, addr_type, BT_DEVICE_TYPE_BLE);
+                *device_added = true;
+            }
+            BTA_DmAddBleKey(bta_bd_addr, (tBTA_LE_KEY_VALUE *)buffer, key_type);
+        }
+
+        *key_found = true;
+    }
+}
+
+/*******************************************************************************
+ * Functions
+ *
+ * Functions are synchronous and can be called by both from internal modules
+ * such as BTIF_DM and by external entiries from HAL via BTIF_context_switch.
+ * For OUT parameters, the caller is expected to provide the memory.
+ * Caller is expected to provide a valid pointer to 'property->value' based on
+ * the property->type.
+ *******************************************************************************/
+
 /*******************************************************************************
 **
 ** Function         btif_storage_get_adapter_property
@@ -1153,197 +1181,59 @@ bt_status_t btif_storage_remove_ble_local_keys(void)
     return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
-bt_status_t btif_in_fetch_bonded_ble_device(const char *remote_bd_addr,int add, btif_bonded_devices_t *p_bonded_devices)
+bt_status_t btif_in_fetch_bonded_ble_device(const char *remote_bd_addr, int add, btif_bonded_devices_t *p_bonded_devices)
 {
     int device_type;
     int addr_type;
-    char buf[100];
     UINT32 i;
     bt_bdaddr_t bd_addr;
     BD_ADDR bta_bd_addr;
-    BOOLEAN is_device_added =FALSE;
-    BOOLEAN key_found = FALSE;
-    tBTA_LE_KEY_VALUE *p;
+    bool device_added = false;
+    bool key_found = false;
 
-    if(!btif_config_get_int(remote_bd_addr,"DevType", &device_type))
+    if (!btif_config_get_int(remote_bd_addr, "DevType", &device_type))
         return BT_STATUS_FAIL;
-    if(device_type == BT_DEVICE_TYPE_BLE)
+
+    if ((device_type & BT_DEVICE_TYPE_BLE) == BT_DEVICE_TYPE_BLE)
     {
-            BTIF_TRACE_DEBUG("%s %s found a BLE device", __FUNCTION__,remote_bd_addr);
-            string_to_bdaddr(remote_bd_addr, &bd_addr);
-            bdcpy(bta_bd_addr, bd_addr.address);
-            if (btif_storage_get_remote_addr_type(&bd_addr, &addr_type) != BT_STATUS_SUCCESS)
-            {
-                return BT_STATUS_FAIL;
-            }
+        BTIF_TRACE_DEBUG("%s Found a LE device: %s", __func__, remote_bd_addr);
 
-            memset(buf, 0, sizeof(buf));
-            if (btif_storage_get_ble_bonding_key(&bd_addr,
-                                                 BTIF_DM_LE_KEY_PENC,
-                                                 buf,
-                                                 sizeof(btif_dm_ble_penc_keys_t)) == BT_STATUS_SUCCESS)
-            {
-                if(add)
-                {
-                    if (!is_device_added)
-                    {
-                        BTA_DmAddBleDevice(bta_bd_addr, addr_type, BT_DEVICE_TYPE_BLE);
-                        is_device_added = TRUE;
-                    }
-                    p = (tBTA_LE_KEY_VALUE *)buf;
-                    for (i=0; i<16; i++)
-                    {
-                        BTIF_TRACE_DEBUG("penc_key.ltk[%d]=0x%02x",i,p->penc_key.ltk[i]);
-                    }
-                    for (i=0; i<8; i++)
-                    {
-                        BTIF_TRACE_DEBUG("penc_key.rand[%d]=0x%02x",i,p->penc_key.rand[i]);
-                    }
-                    BTIF_TRACE_DEBUG("p->penc_key.ediv=0x%04x",p->penc_key.ediv);
-                    BTIF_TRACE_DEBUG("p->penc_key.sec_level=0x%02x",p->penc_key.sec_level);
-                    BTIF_TRACE_DEBUG("p->penc_key.key_size=0x%02x",p->penc_key.key_size);
-                    BTA_DmAddBleKey (bta_bd_addr, (tBTA_LE_KEY_VALUE *)buf, BTIF_DM_LE_KEY_PENC);
-                }
-                key_found = TRUE;
-            }
+        string_to_bdaddr(remote_bd_addr, &bd_addr);
+        bdcpy(bta_bd_addr, bd_addr.address);
 
-            memset(buf, 0, sizeof(buf));
-            if (btif_storage_get_ble_bonding_key(&bd_addr,
-                                                 BTIF_DM_LE_KEY_PID,
-                                                 buf,
-                                                 sizeof(btif_dm_ble_pid_keys_t)) == BT_STATUS_SUCCESS)
-            {
-                if(add)
-                {
-                    if (!is_device_added)
-                    {
-                        BTA_DmAddBleDevice(bta_bd_addr, addr_type, BT_DEVICE_TYPE_BLE);
-                        is_device_added = TRUE;
-                    }
-                    p = (tBTA_LE_KEY_VALUE *)buf;
-                    for (i=0; i<16; i++)
-                    {
-                        BTIF_TRACE_DEBUG("p->pid_key.irk[%d]=0x%02x"
-                                            ,i,p->pid_key.irk[i]);
-                    }
-                    BTIF_TRACE_DEBUG("p->pid_key.addr_type=%d",p->pid_key.addr_type);
-                    for (i=0; i<BD_ADDR_LEN; i++)
-                    {
-                        BTIF_TRACE_DEBUG("p->pid_key.static_addr[%d]=%02x"
-                                            ,i,p->pid_key.static_addr[i]);
-                    }
+        if (btif_storage_get_remote_addr_type(&bd_addr, &addr_type) != BT_STATUS_SUCCESS)
+        {
+            addr_type = BLE_ADDR_PUBLIC;
+            btif_storage_set_remote_addr_type(&bd_addr, BLE_ADDR_PUBLIC);
+        }
 
-                    BTA_DmAddBleKey (bta_bd_addr, (tBTA_LE_KEY_VALUE *)buf, BTIF_DM_LE_KEY_PID);
-                }
-                key_found = TRUE;
-            }
+        btif_read_le_key(BTIF_DM_LE_KEY_PENC, sizeof(btif_dm_ble_penc_keys_t),
+                         bd_addr, addr_type, add, &device_added, &key_found);
 
-            if (btif_storage_get_ble_bonding_key(&bd_addr, BTIF_DM_LE_KEY_LID, buf,
-                                    sizeof(btif_dm_ble_pid_keys_t))== BT_STATUS_SUCCESS)
-            {
-                if(add)
-                {
-                    if (!is_device_added)
-                    {
-                        BTA_DmAddBleDevice(bta_bd_addr, addr_type, BT_DEVICE_TYPE_BLE);
-                        is_device_added = TRUE;
-                    }
-                    p = (tBTA_LE_KEY_VALUE *)buf;
-                    for (i=0; i<BD_ADDR_LEN; i++)
-                    {
-                        BTIF_TRACE_DEBUG("p->pid_key.static_addr[%d]=%02x"
-                                            ,i,p->pid_key.static_addr[i]);
-                    }
+        btif_read_le_key(BTIF_DM_LE_KEY_PID, sizeof(btif_dm_ble_pid_keys_t),
+                         bd_addr, addr_type, add, &device_added, &key_found);
 
-                    BTA_DmAddBleKey (bta_bd_addr, (tBTA_LE_KEY_VALUE *)buf, BTIF_DM_LE_KEY_LID);
-                }
-                key_found = TRUE;
-            }
+        btif_read_le_key(BTIF_DM_LE_KEY_LID, sizeof(btif_dm_ble_pid_keys_t),
+                         bd_addr, addr_type, add, &device_added, &key_found);
 
-            memset(buf, 0, sizeof(buf));
-            if (btif_storage_get_ble_bonding_key(&bd_addr,
-                                                 BTIF_DM_LE_KEY_PCSRK,
-                                                 buf,
-                                                 sizeof(btif_dm_ble_pcsrk_keys_t)) == BT_STATUS_SUCCESS)
-            {
-                if(add)
-                {
-                    if (!is_device_added)
-                    {
-                        BTA_DmAddBleDevice(bta_bd_addr, addr_type, BT_DEVICE_TYPE_BLE);
-                        is_device_added = TRUE;
-                    }
+        btif_read_le_key(BTIF_DM_LE_KEY_PCSRK, sizeof(btif_dm_ble_pcsrk_keys_t),
+                         bd_addr, addr_type, add, &device_added, &key_found);
 
-                    p = (tBTA_LE_KEY_VALUE *)buf;
-                    for (i=0; i<16; i++)
-                    {
-                        BTIF_TRACE_DEBUG("p->pcsrk_key.csrk[%d]=0x%02x",i, p->psrk_key.csrk[i]);
-                    }
-                    BTIF_TRACE_DEBUG("p->pcsrk_key.counter=0x%08x",p->psrk_key.counter);
-                    BTIF_TRACE_DEBUG("p->pcsrk_key.sec_level=0x%02x",p->psrk_key.sec_level);
+        btif_read_le_key(BTIF_DM_LE_KEY_LENC, sizeof(btif_dm_ble_lenc_keys_t),
+                         bd_addr, addr_type, add, &device_added, &key_found);
 
-                    BTA_DmAddBleKey (bta_bd_addr, (tBTA_LE_KEY_VALUE *)buf, BTIF_DM_LE_KEY_PCSRK);
-                }
-                key_found = TRUE;
-            }
+        btif_read_le_key(BTIF_DM_LE_KEY_LCSRK, sizeof(btif_dm_ble_lcsrk_keys_t),
+                         bd_addr, addr_type, add, &device_added, &key_found);
 
-            memset(buf, 0, sizeof(buf));
-            if (btif_storage_get_ble_bonding_key(&bd_addr,
-                                                 BTIF_DM_LE_KEY_LENC,
-                                                 buf,
-                                                 sizeof(btif_dm_ble_lenc_keys_t)) == BT_STATUS_SUCCESS)
-            {
-                if(add)
-                {
-                    if (!is_device_added)
-                    {
-                        BTA_DmAddBleDevice(bta_bd_addr, addr_type, BT_DEVICE_TYPE_BLE);
-                        is_device_added = TRUE;
-                    }
-                    p = (tBTA_LE_KEY_VALUE *)buf;
-                    BTIF_TRACE_DEBUG("p->lenc_key.div=0x%04x",p->lenc_key.div);
-                    BTIF_TRACE_DEBUG("p->lenc_key.key_size=0x%02x",p->lenc_key.key_size);
-                    BTIF_TRACE_DEBUG("p->lenc_key.sec_level=0x%02x",p->lenc_key.sec_level);
+        // Fill in the bonded devices
+        if (device_added)
+        {
+            memcpy(&p_bonded_devices->devices[p_bonded_devices->num_devices++], &bd_addr, sizeof(bt_bdaddr_t));
+            btif_gatts_add_bonded_dev_from_nv(bta_bd_addr);
+        }
 
-                    BTA_DmAddBleKey (bta_bd_addr, (tBTA_LE_KEY_VALUE *)buf, BTIF_DM_LE_KEY_LENC);
-                }
-                key_found = TRUE;
-            }
-
-            memset(buf, 0, sizeof(buf));
-            if (btif_storage_get_ble_bonding_key(&bd_addr,
-                                                 BTIF_DM_LE_KEY_LCSRK,
-                                                 buf,
-                                                 sizeof(btif_dm_ble_lcsrk_keys_t)) == BT_STATUS_SUCCESS)
-            {
-                if(add)
-                {
-                    if (!is_device_added)
-                    {
-                        BTA_DmAddBleDevice(bta_bd_addr, addr_type, BT_DEVICE_TYPE_BLE);
-                        is_device_added = TRUE;
-                    }
-                    p = (tBTA_LE_KEY_VALUE *)buf;
-                    BTIF_TRACE_DEBUG("p->lcsrk_key.div=0x%04x",p->lcsrk_key.div);
-                    BTIF_TRACE_DEBUG("p->lcsrk_key.counter=0x%08x",p->lcsrk_key.counter);
-                    BTIF_TRACE_DEBUG("p->lcsrk_key.sec_level=0x%02x",p->lcsrk_key.sec_level);
-
-                    BTA_DmAddBleKey (bta_bd_addr, (tBTA_LE_KEY_VALUE *)buf, BTIF_DM_LE_KEY_LCSRK);
-                }
-                key_found = TRUE;
-            }
-
-            /* Fill in the bonded devices */
-            if (is_device_added)
-            {
-                memcpy(&p_bonded_devices->devices[p_bonded_devices->num_devices++], &bd_addr, sizeof(bt_bdaddr_t));
-                btif_gatts_add_bonded_dev_from_nv(bta_bd_addr);
-            }
-
-            if(key_found)
-                return BT_STATUS_SUCCESS;
-            else
-                return BT_STATUS_FAIL;
+        if (key_found)
+            return BT_STATUS_SUCCESS;
     }
     return BT_STATUS_FAIL;
 }

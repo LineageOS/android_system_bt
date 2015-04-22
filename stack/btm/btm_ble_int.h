@@ -290,42 +290,43 @@ typedef struct
     /*****************************************************
     **      BLE Inquiry
     *****************************************************/
-    tBTM_BLE_INQ_CB     inq_var;
+    tBTM_BLE_INQ_CB inq_var;
 
     /* observer callback and timer */
     tBTM_INQ_RESULTS_CB *p_obs_results_cb;
-    tBTM_CMPL_CB        *p_obs_cmpl_cb;
-    TIMER_LIST_ENT      obs_timer_ent;
+    tBTM_CMPL_CB *p_obs_cmpl_cb;
+    TIMER_LIST_ENT obs_timer_ent;
 
     /* background connection procedure cb value */
-    tBTM_BLE_CONN_TYPE  bg_conn_type;
-    UINT16              scan_int;
-    UINT16              scan_win;
-    tBTM_BLE_SEL_CBACK  *p_select_cback;
+    tBTM_BLE_CONN_TYPE bg_conn_type;
+    UINT16 scan_int;
+    UINT16 scan_win;
+    tBTM_BLE_SEL_CBACK *p_select_cback;
 
     /* white list information */
     UINT8                   white_list_avail_size;
     tBTM_BLE_WL_STATE       wl_state;
 
-    BUFFER_Q                conn_pending_q;
-    tBTM_BLE_CONN_ST        conn_state;
+    BUFFER_Q conn_pending_q;
+    tBTM_BLE_CONN_ST conn_state;
 
     /* random address management control block */
-    tBTM_LE_RANDOM_CB   addr_mgnt_cb;
+    tBTM_LE_RANDOM_CB addr_mgnt_cb;
 
-    BOOLEAN          enabled;
+    BOOLEAN enabled;
 
 #if BLE_PRIVACY_SPT == TRUE
-    BOOLEAN             mixed_mode; /* privacy 1.2 mixed mode is on or not */
-    tBTM_PRIVACY_MODE   privacy_mode;               /* privacy mode */
-    UINT8               resolving_list_avail_size;     /* resolving list available size */
-    tBTM_BLE_RESOLVE_Q   resolving_list_pend_q;
+    BOOLEAN mixed_mode; /* privacy 1.2 mixed mode is on or not */
+    tBTM_PRIVACY_MODE privacy_mode;               /* privacy mode */
+    UINT8 resolving_list_avail_size;     /* resolving list available size */
+    UINT8 *irk_list_mask;     /* IRK list availability mask, up to max entry bits */
+    tBTM_BLE_RESOLVE_Q resolving_list_pend_q;
 #endif
-    tBTM_BLE_WL_OP  wl_op_q[BTM_BLE_MAX_BG_CONN_DEV_NUM];
+    tBTM_BLE_WL_OP wl_op_q[BTM_BLE_MAX_BG_CONN_DEV_NUM];
 
     /* current BLE link state */
-    tBTM_BLE_STATE_MASK           cur_states;  /* bit mask of tBTM_BLE_STATE */
-    UINT8  link_count[2];    /* total link count master and slave*/
+    tBTM_BLE_STATE_MASK cur_states;  /* bit mask of tBTM_BLE_STATE */
+    UINT8 link_count[2];    /* total link count master and slave*/
 } tBTM_BLE_CB;
 
 #ifdef __cplusplus

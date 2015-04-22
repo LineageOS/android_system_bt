@@ -203,6 +203,14 @@ typedef UINT8 tSMP_KEYS;
 #define SMP_SEC_DEFAULT_KEY      (SMP_SEC_KEY_TYPE_ENC | SMP_SEC_KEY_TYPE_ID | \
                                   SMP_SEC_KEY_TYPE_CSRK | SMP_SEC_KEY_TYPE_LK)
 
+#define SMP_SC_KEY_STARTED      0   /* passkey entry started */
+#define SMP_SC_KEY_ENTERED      1   /* passkey digit entered */
+#define SMP_SC_KEY_ERASED       2   /* passkey digit erased */
+#define SMP_SC_KEY_CLEARED      3   /* passkey cleared */
+#define SMP_SC_KEY_COMPLT       4   /* passkey entry completed */
+#define SMP_SC_KEY_OUT_OF_RANGE 5   /* out of range */
+typedef UINT8 tSMP_SC_KEY_TYPE;
+
 /* data type for BTM_SP_IO_REQ_EVT */
 typedef struct
 {
@@ -216,9 +224,10 @@ typedef struct
 
 typedef struct
 {
-    tSMP_STATUS       reason;
-    tSMP_SEC_LEVEL    sec_level;
-    BOOLEAN     is_pair_cancel;
+    tSMP_STATUS reason;
+    tSMP_SEC_LEVEL sec_level;
+    BOOLEAN is_pair_cancel;
+    BOOLEAN smp_over_br;
 } tSMP_CMPL;
 
 typedef struct

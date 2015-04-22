@@ -46,7 +46,7 @@ const tSMP_ACT smp_distribute_act [] =
     smp_generate_ltk,
     smp_send_id_info,
     smp_generate_csrk,
-    smp_derive_link_key_from_long_term_key
+    smp_set_derive_link_key
 };
 
 /*******************************************************************************
@@ -58,7 +58,8 @@ static void smp_update_key_mask (tSMP_CB *p_cb, UINT8 key_type, BOOLEAN recv)
     SMP_TRACE_DEBUG("%s before update role=%d recv=%d local_i_key = %02x, local_r_key = %02x",
         __func__, p_cb->role, recv, p_cb->local_i_key, p_cb->local_r_key);
 
-    if (((p_cb->le_secure_connections_mode_is_used) || (p_cb->smp_over_br)) &&
+    if (((p_cb->le_secure_connections_mode_is_used) ||
+        (p_cb->smp_over_br)) &&
         ((key_type == SMP_SEC_KEY_TYPE_ENC) || (key_type == SMP_SEC_KEY_TYPE_LK)))
     {
         /* in LE SC mode LTK, CSRK and BR/EDR LK are derived locally instead of
@@ -176,11 +177,9 @@ void smp_send_app_cback(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
                         p_cb->local_r_key &= ~SMP_SEC_KEY_TYPE_LK;
                     }
 
-#if BTM_CROSS_TRANSP_KEY_DERIVATION == FALSE
                     SMP_TRACE_WARNING ("Cross transport key derivation is not supported");
                     p_cb->local_i_key &= ~SMP_SEC_KEY_TYPE_LK;
                     p_cb->local_r_key &= ~SMP_SEC_KEY_TYPE_LK;
-#endif
 
                     SMP_TRACE_WARNING("set auth_req: 0x%02x, local_i_key: 0x%02x, local_r_key: 0x%02x",
                         p_cb->loc_auth_req, p_cb->local_i_key, p_cb->local_r_key);
@@ -986,6 +985,11 @@ void smp_proc_id_addr(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     STREAM_TO_BDADDR(pid_key.static_addr, p);
     memcpy(pid_key.irk, p_cb->tk, BT_OCTET16_LEN);
 
+    /* to use as BD_ADDR for lk derived from ltk */
+    p_cb->id_addr_rcvd = TRUE;
+    p_cb->id_addr_type = pid_key.addr_type;
+    memcpy(p_cb->id_addr, pid_key.static_addr, BD_ADDR_LEN);
+
     /* store the ID key from peer device */
     if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND))
         btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PID,
@@ -1217,8 +1221,8 @@ void smp_key_distribution(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     SMP_TRACE_DEBUG("%s role=%d (0-master) r_keys=0x%x i_keys=0x%x",
                       __func__, p_cb->role, p_cb->local_r_key, p_cb->local_i_key);
 
-    if (p_cb->role == HCI_ROLE_SLAVE||
-        (!p_cb->local_r_key && p_cb->role == HCI_ROLE_MASTER))
+    if (p_cb->role == HCI_ROLE_SLAVE ||
+       (!p_cb->local_r_key && p_cb->role == HCI_ROLE_MASTER))
     {
         smp_key_pick_key(p_cb, p_data);
     }
@@ -1228,6 +1232,12 @@ void smp_key_distribution(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
         /* state check to prevent re-entrant */
         if (smp_get_state() == SMP_STATE_BOND_PENDING)
         {
+            if (p_cb->derive_lk)
+            {
+                smp_derive_link_key_from_long_term_key(p_cb, NULL);
+                p_cb->derive_lk = FALSE;
+            }
+
             if (p_cb->total_tx_unacked == 0)
                 smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
             else
@@ -1976,6 +1986,25 @@ void smp_process_secure_connection_long_term_key(void)
 
 /*******************************************************************************
 **
+** Function         smp_set_derive_link_key
+**
+** Description      This function is called to set flag that indicates that
+**                  BR/EDR LK has to be derived from LTK after all keys are
+**                  distributed.
+**
+** Returns          void
+**
+*******************************************************************************/
+void smp_set_derive_link_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
+{
+    SMP_TRACE_DEBUG ("%s", __func__);
+    p_cb->derive_lk = TRUE;
+    smp_update_key_mask (p_cb, SMP_SEC_KEY_TYPE_LK, FALSE);
+    smp_key_distribution(p_cb, NULL);
+}
+
+/*******************************************************************************
+**
 ** Function         smp_derive_link_key_from_long_term_key
 **
 ** Description      This function is called to derive BR/EDR LK from LTK.
@@ -1996,7 +2025,6 @@ void smp_derive_link_key_from_long_term_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data
     }
 
     smp_update_key_mask (p_cb, SMP_SEC_KEY_TYPE_LK, FALSE);
-
     SMP_TRACE_DEBUG("%s successfully completed", __FUNCTION__);
     smp_key_distribution(p_cb, NULL);
 }

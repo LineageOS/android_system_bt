@@ -2279,10 +2279,8 @@ static void bta_dm_discover_device(BD_ADDR remote_bd_addr)
                                     bta_dm_search_cb.services_to_search
                                     );
             }
-            if (transport == BT_TRANSPORT_LE)            /*
-            if ( bta_dm_search_cb.p_btm_inq_info != NULL &&
-                 bta_dm_search_cb.p_btm_inq_info->results.device_type == BT_DEVICE_TYPE_BLE &&
-                 (bta_dm_search_cb.services_to_search & BTA_BLE_SERVICE_MASK))*/
+
+            if (transport == BT_TRANSPORT_LE)
             {
                 if (bta_dm_search_cb.services_to_search & BTA_BLE_SERVICE_MASK)
                 {
@@ -2730,14 +2728,15 @@ static UINT8  bta_dm_new_link_key_cback(BD_ADDR bd_addr, DEV_CLASS dev_class,
         memcpy(p_auth_cmpl->key, key, LINK_KEY_LEN);
         sec_event.auth_cmpl.fail_reason = HCI_SUCCESS;
 
+        // Report the BR link key based on the BR/EDR address and type
+        BTM_ReadDevInfo(bd_addr, &sec_event.auth_cmpl.dev_type, &sec_event.auth_cmpl.addr_type);
+
         if(bta_dm_cb.p_sec_cback)
-        {
             bta_dm_cb.p_sec_cback(event, &sec_event);
-        }
     }
     else
     {
-        APPL_TRACE_WARNING(" bta_dm_new_link_key_cback() Received AMP Key??  ");
+        APPL_TRACE_WARNING("%s() Received AMP Key", __func__);
     }
 
     return BTM_CMD_STARTED;
@@ -2766,18 +2765,14 @@ static UINT8 bta_dm_authentication_complete_cback(BD_ADDR bd_addr, DEV_CLASS dev
         memcpy(sec_event.auth_cmpl.bd_name, bd_name, (BD_NAME_LEN-1));
         sec_event.auth_cmpl.bd_name[BD_NAME_LEN-1] = 0;
 
-/*      taken care of by memset [above]
-        sec_event.auth_cmpl.key_present = FALSE;
-        sec_event.auth_cmpl.success = FALSE;
-*/
+        // Report the BR link key based on the BR/EDR address and type
+        BTM_ReadDevInfo(bd_addr, &sec_event.auth_cmpl.dev_type, &sec_event.auth_cmpl.addr_type);
         sec_event.auth_cmpl.fail_reason = (UINT8)result;
-        if(bta_dm_cb.p_sec_cback)
-        {
-            bta_dm_cb.p_sec_cback(BTA_DM_AUTH_CMPL_EVT, &sec_event);
-        }
-        /* delete this device entry from Sec Dev DB */
-        bta_dm_remove_sec_dev_entry(bd_addr);
 
+        if(bta_dm_cb.p_sec_cback)
+            bta_dm_cb.p_sec_cback(BTA_DM_AUTH_CMPL_EVT, &sec_event);
+
+        bta_dm_remove_sec_dev_entry(bd_addr);
     }
 
     return BTM_SUCCESS;
@@ -4390,7 +4385,7 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
 
         case BTM_LE_COMPLT_EVT:
             bdcpy(sec_event.auth_cmpl.bd_addr, bda);
-            BTM_ReadDevInfo(bda, &dev_type, &sec_event.auth_cmpl.addr_type);
+            BTM_ReadDevInfo(bda, &sec_event.auth_cmpl.dev_type, &sec_event.auth_cmpl.addr_type);
             p_name = BTM_SecReadDevName(bda);
             if (p_name != NULL)
             {
@@ -5417,7 +5412,7 @@ static void bta_dm_gatt_disc_complete(UINT16 conn_id, tBTA_GATT_STATUS status)
             /* make sure the string is terminated */
             p_msg->disc_result.result.disc_res.bd_name[BD_NAME_LEN-1] = 0;
 
-            p_msg->disc_result.result.disc_res.device_type = BT_DEVICE_TYPE_BLE;
+            p_msg->disc_result.result.disc_res.device_type |= BT_DEVICE_TYPE_BLE;
             if ( bta_dm_search_cb.ble_raw_used > 0 )
             {
                 p_msg->disc_result.result.disc_res.p_raw_data = GKI_getbuf(bta_dm_search_cb.ble_raw_used);

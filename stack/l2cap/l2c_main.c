@@ -186,6 +186,11 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
     STREAM_TO_UINT16 (l2cap_len, p);
     STREAM_TO_UINT16 (rcv_cid, p);
 
+   /* for BLE channel, always notify connection when ACL data received on the link */
+   if (p_lcb && p_lcb->transport == BT_TRANSPORT_LE && p_lcb->link_state != LST_DISCONNECTING)
+      /* only process fixed channel data as channel open indication when link is not in disconnecting mode */
+        l2cble_notify_le_connection(p_lcb->remote_bd_addr);
+
     /* Find the CCB for this CID */
     if (rcv_cid >= L2CAP_BASE_APPL_CID)
     {
@@ -261,14 +266,10 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
         counter_add("l2cap.fix.rx.pkts", 1);
         /* If no CCB for this channel, allocate one */
         if (p_lcb &&
-            /* discard fixed channel data when link is disconnecting */
+            /* only process fixed channel data when link is open or wait for data indication */
             (p_lcb->link_state != LST_DISCONNECTING) &&
-            l2cu_initialize_fixed_ccb (p_lcb, rcv_cid,
-                &l2cb.fixed_reg[rcv_cid - L2CAP_FIRST_FIXED_CHNL].fixed_chnl_opts))
+            l2cu_initialize_fixed_ccb (p_lcb, rcv_cid, &l2cb.fixed_reg[rcv_cid - L2CAP_FIRST_FIXED_CHNL].fixed_chnl_opts))
         {
-#if(defined BLE_INCLUDED && (BLE_INCLUDED == TRUE))
-            l2cble_notify_le_connection(p_lcb->remote_bd_addr);
-#endif
             p_ccb = p_lcb->p_fixed_ccbs[rcv_cid - L2CAP_FIRST_FIXED_CHNL];
 
             if (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE)

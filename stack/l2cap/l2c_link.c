@@ -424,16 +424,21 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
         if (p_lcb->ccb_queue.p_first_ccb != NULL || p_lcb->p_pending_ccb)
         {
             L2CAP_TRACE_DEBUG("l2c_link_hci_disc_comp: Restarting pending ACL request");
+            transport = p_lcb->transport;
 #if BLE_INCLUDED == TRUE
             /* for LE link, always drop and re-open to ensure to get LE remote feature */
             if (p_lcb->transport == BT_TRANSPORT_LE)
             {
-                BD_ADDR bd_addr;
-                memcpy(bd_addr, p_lcb->remote_bd_addr, BD_ADDR_LEN);
-                l2cu_release_lcb (p_lcb);
-                // make sure Tx credit allocation is redistributed in between links by calling l2cu_allocate_lcb
-                p_lcb = l2cu_allocate_lcb (bd_addr, FALSE, BT_TRANSPORT_LE);
-                transport = BT_TRANSPORT_LE;
+                l2cb.is_ble_connecting = FALSE;
+                btm_acl_removed (p_lcb->remote_bd_addr, p_lcb->transport);
+                /* Release any held buffers */
+                BT_HDR *p_buf;
+                while (!list_is_empty(p_lcb->link_xmit_data_q))
+                {
+                    p_buf = list_front(p_lcb->link_xmit_data_q);
+                    list_remove(p_lcb->link_xmit_data_q, p_buf);
+                    GKI_freebuf(p_buf);
+                }
             }
             else
 #endif

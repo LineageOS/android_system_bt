@@ -467,6 +467,7 @@ typedef struct
 
 typedef struct
 {
+    BD_ADDR pseudo_addr; /* LE pseudo address of the device if different from device address  */
     tBLE_ADDR_TYPE      ble_addr_type;  /* LE device type: public or random address */
     tBLE_ADDR_TYPE      static_addr_type;   /* static address type */
     BD_ADDR             static_addr;    /* static address */
@@ -585,6 +586,9 @@ typedef struct
                                                     ** Link encrypted with such LK can be used
                                                     ** for SM over BR/EDR.
                                                     */
+    BOOLEAN no_smp_on_br;       /* if set to TRUE then SMP on BR/EDR doesn't */
+                                /* work, i.e. link keys crosspairing */
+                                /* SC BR/EDR->SC LE doesn't happen */
 #endif
 
 // btla-specific ++
@@ -1004,10 +1008,10 @@ extern void btm_read_local_name_complete (UINT8 *p, UINT16 evt_len);
 extern void btm_ble_add_2_white_list_complete(UINT8 status);
 extern void btm_ble_remove_from_white_list_complete(UINT8 *p, UINT16 evt_len);
 extern void btm_ble_clear_white_list_complete(UINT8 *p, UINT16 evt_len);
+extern BOOLEAN btm_ble_addr_resolvable(BD_ADDR rpa, tBTM_SEC_DEV_REC *p_dev_rec);
 extern tBTM_STATUS btm_ble_read_resolving_list_entry(tBTM_SEC_DEV_REC *p_dev_rec);
 extern BOOLEAN btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC *p_dev_rec);
 extern void btm_ble_resolving_list_remove_dev(tBTM_SEC_DEV_REC *p_dev_rec);
-extern tBTM_STATUS btm_ble_read_resolving_list_entry(tBTM_SEC_DEV_REC *p_dev_rec);
 #endif  /* BLE_INCLUDED */
 
 /* Vendor Specific Command complete evt handler */
@@ -1070,7 +1074,9 @@ extern void btm_sec_set_peer_sec_caps (tACL_CONN *p_acl_cb, tBTM_SEC_DEV_REC *p_
 extern void  btm_sec_clear_ble_keys (tBTM_SEC_DEV_REC  *p_dev_rec);
 extern  BOOLEAN btm_sec_find_bonded_dev (UINT8 start_idx, UINT8 *p_found_idx, tBTM_SEC_DEV_REC **p_rec);
 extern BOOLEAN btm_sec_is_a_bonded_dev (BD_ADDR bda);
+extern void btm_consolidate_dev(tBTM_SEC_DEV_REC *p_target_rec);
 extern BOOLEAN btm_sec_is_le_capable_dev (BD_ADDR bda);
+extern BOOLEAN btm_ble_init_pseudo_addr (tBTM_SEC_DEV_REC *p_dev_rec, BD_ADDR new_pseudo_addr);
 #endif /* BLE_INCLUDED */
 
 extern tINQ_DB_ENT *btm_inq_db_new (BD_ADDR p_bda);

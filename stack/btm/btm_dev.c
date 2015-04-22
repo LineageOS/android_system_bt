@@ -155,6 +155,7 @@ BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name,
 #endif
 
     p_dev_rec->rmt_io_caps = io_cap;
+    p_dev_rec->device_type |= BT_DEVICE_TYPE_BREDR;
 
     return(TRUE);
 }
@@ -427,21 +428,82 @@ tBTM_SEC_DEV_REC *btm_find_dev_by_handle (UINT16 handle)
 ** Returns          Pointer to the record or NULL
 **
 *******************************************************************************/
-tBTM_SEC_DEV_REC *btm_find_dev (BD_ADDR bd_addr)
+tBTM_SEC_DEV_REC *btm_find_dev(BD_ADDR bd_addr)
 {
     tBTM_SEC_DEV_REC *p_dev_rec = &btm_cb.sec_dev_rec[0];
-    int i;
 
     if (bd_addr)
     {
-        for (i = 0; i < BTM_SEC_MAX_DEVICE_RECORDS; i++, p_dev_rec++)
+        for (uint8_t i = 0; i < BTM_SEC_MAX_DEVICE_RECORDS; i++, p_dev_rec++)
         {
-            if ((p_dev_rec->sec_flags & BTM_SEC_IN_USE)
-                && (!memcmp (p_dev_rec->bd_addr, bd_addr, BD_ADDR_LEN)))
-                return(p_dev_rec);
+            if (p_dev_rec->sec_flags & BTM_SEC_IN_USE)
+            {
+                if (!memcmp (p_dev_rec->bd_addr, bd_addr, BD_ADDR_LEN))
+                    return(p_dev_rec);
+
+                // If a LE random address is looking for device record
+                if (!memcmp(p_dev_rec->ble.pseudo_addr, bd_addr, BD_ADDR_LEN))
+                    return (p_dev_rec);
+
+                if (btm_ble_addr_resolvable(bd_addr, p_dev_rec))
+                    return(p_dev_rec);
+            }
         }
     }
     return(NULL);
+}
+
+/*******************************************************************************
+**
+** Function         btm_consolidate_dev
+**
+** Description      combine security records if identified as same peer
+**
+** Returns          none
+**
+*******************************************************************************/
+void btm_consolidate_dev(tBTM_SEC_DEV_REC *p_target_rec)
+{
+    tBTM_SEC_DEV_REC *p_dev_rec = &btm_cb.sec_dev_rec[0];
+    tBTM_SEC_DEV_REC temp_rec = *p_target_rec;
+    BD_ADDR dummy_bda = {0};
+
+    BTM_TRACE_DEBUG("%s", __func__);
+
+    for (uint8_t i = 0; i < BTM_SEC_MAX_DEVICE_RECORDS; i++, p_dev_rec++)
+    {
+        if (p_target_rec!= p_dev_rec && p_dev_rec->sec_flags & BTM_SEC_IN_USE)
+        {
+            if (!memcmp (p_dev_rec->bd_addr, p_target_rec->bd_addr, BD_ADDR_LEN))
+            {
+                memcpy(p_target_rec, p_dev_rec, sizeof(tBTM_SEC_DEV_REC));
+                p_target_rec->ble = temp_rec.ble;
+                p_target_rec->enc_key_size = temp_rec.enc_key_size;
+                p_target_rec->ble_hci_handle = temp_rec.ble_hci_handle;
+                p_target_rec->conn_params = temp_rec.conn_params;
+                p_target_rec->device_type |= temp_rec.device_type;
+                p_target_rec->sec_flags |= temp_rec.sec_flags;
+
+                p_target_rec->new_encryption_key_is_p256 = temp_rec.new_encryption_key_is_p256;
+                p_target_rec->no_smp_on_br = temp_rec.no_smp_on_br;
+                /* mark the combined record as unused */
+                p_dev_rec->sec_flags &= ~BTM_SEC_IN_USE;
+                break;
+            }
+
+            /* an RPA device entry is a duplicate of the target record */
+            if (btm_ble_addr_resolvable(p_dev_rec->bd_addr, p_target_rec))
+            {
+                if (memcmp(p_target_rec->ble.pseudo_addr, p_dev_rec->bd_addr, BD_ADDR_LEN) == 0)
+                {
+                    p_target_rec->ble.ble_addr_type = p_dev_rec->ble.ble_addr_type;
+                    p_target_rec->device_type |= p_dev_rec->device_type;
+                    p_dev_rec->sec_flags &= ~BTM_SEC_IN_USE;
+                }
+                break;
+            }
+        }
+    }
 }
 
 /*******************************************************************************

@@ -125,11 +125,10 @@ BOOLEAN BTM_SecAddBleDevice (BD_ADDR bd_addr, BD_NAME bd_name, tBT_DEVICE_TYPE d
         BCM_STRNCPY_S ((char *)p_dev_rec->sec_bd_name, sizeof (p_dev_rec->sec_bd_name),
                        (char *)bd_name, BTM_MAX_REM_BD_NAME_LEN);
     }
-    p_dev_rec->device_type = dev_type;
+    p_dev_rec->device_type |= dev_type;
     p_dev_rec->ble.ble_addr_type = addr_type;
-    BTM_TRACE_DEBUG ("p_dev_rec->device_type =0x%x  addr_type=0x%x sec_flags=0x%x",
-                      dev_type,  addr_type, p_dev_rec->sec_flags);
 
+    memcpy (p_dev_rec->ble.pseudo_addr, bd_addr, BD_ADDR_LEN);
     /* sync up with the Inq Data base*/
     p_info = BTM_InqDbRead(bd_addr);
     if (p_info)
@@ -1395,7 +1394,7 @@ void btm_ble_link_encrypted(BD_ADDR bd_addr, UINT8 encr_enable)
 
     }
     /* to notify GATT to send data if any request is pending */
-    gatt_notify_enc_cmpl(p_dev_rec->bd_addr);
+    gatt_notify_enc_cmpl(p_dev_rec->ble.pseudo_addr);
 }
 
 /*******************************************************************************

@@ -262,6 +262,74 @@ static BOOLEAN btm_ble_proc_resolve_x(tSMP_ENC *p)
     }
     return FALSE;
 }
+
+/*******************************************************************************
+**
+** Function         btm_ble_init_pseudo_addr
+**
+** Description      This function is used to initialize pseudo address.
+**                  If pseudo address is not available, use dummy address
+**
+** Returns          TRUE is updated; FALSE otherwise.
+**
+*******************************************************************************/
+BOOLEAN btm_ble_init_pseudo_addr (tBTM_SEC_DEV_REC *p_dev_rec, BD_ADDR new_pseudo_addr)
+{
+    BD_ADDR dummy_bda = {0};
+
+    if (memcmp(p_dev_rec->ble.pseudo_addr, dummy_bda, BD_ADDR_LEN) == 0)
+    {
+        memcpy(p_dev_rec->ble.pseudo_addr, new_pseudo_addr, BD_ADDR_LEN);
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+/*******************************************************************************
+**
+** Function         btm_ble_addr_resolvable
+**
+** Description      This function checks if a RPA is resolvable by the device key.
+**
+** Returns          TRUE is resolvable; FALSE otherwise.
+**
+*******************************************************************************/
+BOOLEAN btm_ble_addr_resolvable (BD_ADDR rpa, tBTM_SEC_DEV_REC *p_dev_rec)
+{
+    BOOLEAN rt = FALSE;
+
+    if (!BTM_BLE_IS_RESOLVE_BDA(rpa))
+        return rt;
+
+    UINT8 rand[3];
+    tSMP_ENC output;
+    if ((p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) &&
+        (p_dev_rec->ble.key_type & BTM_LE_KEY_PID))
+    {
+        BTM_TRACE_DEBUG("%s try to resolve", __func__);
+        /* use the 3 MSB of bd address as prand */
+        rand[0] = rpa[2];
+        rand[1] = rpa[1];
+        rand[2] = rpa[0];
+
+        /* generate X = E irk(R0, R1, R2) and R is random address 3 LSO */
+        SMP_Encrypt(p_dev_rec->ble.keys.irk, BT_OCTET16_LEN,
+                    &rand[0], 3, &output);
+
+        rand[0] = rpa[5];
+        rand[1] = rpa[4];
+        rand[2] = rpa[3];
+
+        if (!memcmp(output.param_buf, &rand[0], 3))
+        {
+            btm_ble_init_pseudo_addr (p_dev_rec, rpa);
+            rt = TRUE;
+        }
+    }
+    return rt;
+}
+
 /*******************************************************************************
 **
 ** Function         btm_ble_match_random_bda
@@ -276,23 +344,24 @@ static BOOLEAN btm_ble_proc_resolve_x(tSMP_ENC *p)
 static BOOLEAN btm_ble_match_random_bda(UINT16 rec_index)
 {
 #if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
-    tBTM_SEC_DEV_REC    *p_dev_rec;
-    tBTM_LE_RANDOM_CB   *p_mgnt_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
-    UINT8       rand[3];
-    tSMP_ENC    output;
-
     /* use the 3 MSB of bd address as prand */
+
+    tBTM_LE_RANDOM_CB *p_mgnt_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
+    UINT8 rand[3];
     rand[0] = p_mgnt_cb->random_bda[2];
     rand[1] = p_mgnt_cb->random_bda[1];
     rand[2] = p_mgnt_cb->random_bda[0];
 
-    BTM_TRACE_EVENT("btm_ble_match_random_bda rec_index = %d", rec_index);
+    BTM_TRACE_EVENT("%s rec_index = %d", __func__, rec_index);
 
     if (rec_index < BTM_SEC_MAX_DEVICE_RECORDS)
     {
+        tSMP_ENC output;
+        tBTM_SEC_DEV_REC *p_dev_rec;
         p_dev_rec = &btm_cb.sec_dev_rec[rec_index];
 
-        BTM_TRACE_DEBUG("sec_flags = %02x device_type = %d", p_dev_rec->sec_flags, p_dev_rec->device_type);
+        BTM_TRACE_DEBUG("sec_flags = %02x device_type = %d", p_dev_rec->sec_flags,
+                        p_dev_rec->device_type);
 
         if ((p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) &&
             (p_dev_rec->ble.key_type & BTM_LE_KEY_PID))
@@ -370,7 +439,7 @@ tBLE_ADDR_TYPE btm_ble_map_bda_to_conn_bda(BD_ADDR bd_addr)
     tBTM_SEC_DEV_REC    *p_dev_rec = NULL;
     BTM_TRACE_EVENT ("btm_ble_map_bda_to_conn_bda");
     if ((p_dev_rec = btm_find_dev (bd_addr)) != NULL &&
-        p_dev_rec->device_type == BT_DEVICE_TYPE_BLE)
+        (p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) == BT_DEVICE_TYPE_BLE)
     {
         if (p_dev_rec->ble.ble_addr_type != BLE_ADDR_PUBLIC)
         {
@@ -439,8 +508,12 @@ BOOLEAN btm_identity_addr_to_random_pseudo(BD_ADDR bd_addr, UINT8 *p_addr_type, 
 
         /* assign the original address to be the current report address */
         memcpy(bd_addr, p_dev_rec->bd_addr, BD_ADDR_LEN);
-        *p_addr_type = p_dev_rec->ble.ble_addr_type;
 
+        /* assign the original address to be the current report address */
+        if (!btm_ble_init_pseudo_addr (p_dev_rec, bd_addr))
+            memcpy(bd_addr, p_dev_rec->ble.pseudo_addr, BD_ADDR_LEN);
+
+        *p_addr_type = p_dev_rec->ble.ble_addr_type;
         return TRUE;
     }
 #endif
@@ -487,8 +560,8 @@ void btm_ble_refresh_peer_resolvable_private_addr(BD_ADDR pseudo_bda, BD_ADDR rp
                                                   UINT8 rra_type)
 {
 #if BLE_PRIVACY_SPT == TRUE
-    UINT8               rra_dummy = FALSE;
-    BD_ADDR             dummy_bda = {0};
+    UINT8 rra_dummy = FALSE;
+    BD_ADDR dummy_bda = {0};
 
     if (memcmp(dummy_bda, rpa, BD_ADDR_LEN) == 0)
         rra_dummy = TRUE;
@@ -515,7 +588,10 @@ void btm_ble_refresh_peer_resolvable_private_addr(BD_ADDR pseudo_bda, BD_ADDR rp
                     __func__, p_sec_rec->ble.active_addr_type);
 
     /* connection refresh remote address */
-    tACL_CONN *p_acl = p_acl = btm_bda_to_acl(p_sec_rec->bd_addr, BT_TRANSPORT_LE);
+    tACL_CONN *p_acl = btm_bda_to_acl(p_sec_rec->bd_addr, BT_TRANSPORT_LE);
+    if (p_acl == NULL)
+        p_acl = btm_bda_to_acl(p_sec_rec->ble.pseudo_addr, BT_TRANSPORT_LE);
+
     if (p_acl != NULL)
     {
         if (rra_type == BTM_BLE_ADDR_PSEUDO)

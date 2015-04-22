@@ -270,6 +270,10 @@ typedef struct
     UINT8           trace_level;
     BD_ADDR         pairing_bda;
     tSMP_STATE      state;
+    BOOLEAN         derive_lk;
+    BOOLEAN         id_addr_rcvd;
+    tBLE_ADDR_TYPE  id_addr_type;
+    BD_ADDR         id_addr;
     BOOLEAN         smp_over_br;
     tSMP_BR_STATE   br_state;           /* if SMP over BR/ERD has priority over SMP */
     UINT8           failure;
@@ -305,8 +309,9 @@ typedef struct
                                             /* either in Secure Connections mode or not at all */
     tSMP_ASSO_MODEL selected_association_model;
     BOOLEAN         le_secure_connections_mode_is_used;
-    tBTM_SP_KEY_TYPE  local_keypress_notification;
-    tBTM_SP_KEY_TYPE  peer_keypress_notification;
+    BOOLEAN le_sc_kp_notif_is_used;
+    tSMP_SC_KEY_TYPE local_keypress_notification;
+    tSMP_SC_KEY_TYPE peer_keypress_notification;
     UINT8           round;       /* authentication stage 1 round for passkey association model */
     UINT32          number_to_display;
     BT_OCTET16      mac_key;
@@ -447,9 +452,10 @@ extern void smp_wait_for_both_public_keys(tSMP_CB *p_cb, tSMP_INT_DATA *p_data);
 extern void smp_start_passkey_verification(tSMP_CB *p_cb, tSMP_INT_DATA *p_data);
 extern void smp_process_secure_connection_oob_data(tSMP_CB *p_cb, tSMP_INT_DATA *p_data);
 extern void smp_process_secure_connection_long_term_key(void);
-extern void smp_derive_link_key_from_long_term_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data);
 extern void smp_set_local_oob_keys(tSMP_CB *p_cb, tSMP_INT_DATA *p_data);
 extern void smp_set_local_oob_random_commitment(tSMP_CB *p_cb, tSMP_INT_DATA *p_data);
+extern void smp_set_derive_link_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data);
+extern void smp_derive_link_key_from_long_term_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data);
 extern void smp_br_process_pairing_command(tSMP_CB *p_cb, tSMP_INT_DATA *p_data);
 extern void smp_br_process_security_grant(tSMP_CB *p_cb, tSMP_INT_DATA *p_data);
 extern void smp_br_process_slave_keys_response(tSMP_CB *p_cb, tSMP_INT_DATA *p_data);
