@@ -63,7 +63,21 @@ typedef enum {
   // re-transmissions after switching to 2DH packets.
   //
   // Disable 3Mbps packets and use only 2Mbps packets for ACL links when streaming audio.
-  INTEROP_2MBPS_LINK_ONLY
+  INTEROP_2MBPS_LINK_ONLY,
+
+  // Some HID devices have proven problematic behaviour if SDP is initiated again
+  // while HID connection is in progress or if more than 1 SDP connection is created
+  // with those HID devices rsulting in issues of connection failure with such devices.
+  // To avoid degrading the user experience with those devices, SDP is not attempted
+  // as part of pairing process.
+  INTEROP_DISABLE_SDP_AFTER_PAIRING,
+
+  // Some HID pointing devices have proven problematic behaviour if pairing is initiated with
+  // them, resulting in no response for authentication request and ultimately resulting
+  // in connection failure.
+  // To avoid degrading the user experience with those devices, authentication request
+  // is not requested explictly.
+  INTEROP_DISABLE_AUTH_FOR_HID_POINTING,
 } interop_feature_t;
 
 // Check if a given |addr| matches a known interoperability workaround as identified
@@ -79,6 +93,19 @@ bool interop_match_addr(const interop_feature_t feature, const bt_bdaddr_t *addr
 // function will return true.
 // |name| cannot be null and must be null terminated.
 bool interop_match_name(const interop_feature_t feature, const char *name);
+
+// Check if a given remote device |name| matches a known interoperability workaround.
+// Name comparisons are case sensitive and do not allow for partial matches. As in, if
+// |name| is "TEST" and a workaround exists for "TESTING", then this function will
+// return false. But, if |name| is "TESTING" and a workaround exists for "TEST", this
+// function will return true.
+// |name| cannot be null and must be null terminated.
+bool interop_match_name(const interop_feature_t feature, const char *name);
+
+// Check if a given |manufacturer| matches a known interoperability workaround as identified
+// by the |interop_feature_t| enum. This API is used for manufacturer based lookups
+// where more information is not available.
+bool interop_match_manufacturer(const interop_feature_t feature, uint16_t manufacturer);
 
 // Add a dynamic interop database entry for a device matching the first |length| bytes
 // of |addr|, implementing the workaround identified by |feature|. |addr| may not be

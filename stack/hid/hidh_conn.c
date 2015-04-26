@@ -45,6 +45,7 @@
 
 #include "osi/include/osi.h"
 
+#include "device/include/interop.h"
 
 extern fixed_queue_t *btu_general_alarm_queue;
 
@@ -279,12 +280,22 @@ static void hidh_l2cif_connect_ind (BD_ADDR  bd_addr, UINT16 l2cap_cid, UINT16 p
         p_hcon->disc_reason = HID_L2CAP_CONN_FAIL;  /* In case disconnection occurs before security is completed, then set CLOSE_EVT reason code to 'connection failure' */
 
         p_hcon->conn_state = HID_CONN_STATE_SECURITY;
-        if(btm_sec_mx_access_request (p_dev->addr, HID_PSM_CONTROL,
-            FALSE, BTM_SEC_PROTO_HID,
-            (p_dev->attr_mask & HID_SEC_REQUIRED) ? HID_SEC_CHN : HID_NOSEC_CHN,
-            &hidh_sec_check_complete_term, p_dev) == BTM_CMD_STARTED)
+        if (!interop_match_addr(INTEROP_DISABLE_AUTH_FOR_HID_POINTING, (bt_bdaddr_t*)p_dev->addr))
         {
+            if(btm_sec_mx_access_request (p_dev->addr, HID_PSM_CONTROL,
+                FALSE, BTM_SEC_PROTO_HID,
+                (p_dev->attr_mask & HID_SEC_REQUIRED) ? HID_SEC_CHN : HID_NOSEC_CHN,
+                &hidh_sec_check_complete_term, p_dev) == BTM_CMD_STARTED)
+            {
+                L2CA_ConnectRsp (bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_PENDING, L2CAP_CONN_OK);
+            }
+        }
+        else
+        {
+            /* device is blacklisted, don't perform authentication */
             L2CA_ConnectRsp (bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_PENDING, L2CAP_CONN_OK);
+            hidh_sec_check_complete_term(p_dev->addr, BT_TRANSPORT_BR_EDR,
+                p_dev, BTM_SUCCESS);
         }
 
         return;
@@ -451,10 +462,19 @@ static void hidh_l2cif_connect_cfm (UINT16 l2cap_cid, UINT16 result)
         p_hcon->conn_state = HID_CONN_STATE_SECURITY;
         p_hcon->disc_reason = HID_L2CAP_CONN_FAIL;  /* In case disconnection occurs before security is completed, then set CLOSE_EVT reason code to "connection failure" */
 
-        btm_sec_mx_access_request (p_dev->addr, HID_PSM_CONTROL,
-            TRUE, BTM_SEC_PROTO_HID,
-            (p_dev->attr_mask & HID_SEC_REQUIRED) ? HID_SEC_CHN : HID_NOSEC_CHN,
-            &hidh_sec_check_complete_orig, p_dev);
+        if (!interop_match_addr(INTEROP_DISABLE_AUTH_FOR_HID_POINTING, (bt_bdaddr_t *)p_dev->addr))
+        {
+            btm_sec_mx_access_request (p_dev->addr, HID_PSM_CONTROL,
+                TRUE, BTM_SEC_PROTO_HID,
+                (p_dev->attr_mask & HID_SEC_REQUIRED) ? HID_SEC_CHN : HID_NOSEC_CHN,
+                &hidh_sec_check_complete_orig, p_dev);
+        }
+        else
+        {
+            /* device is blacklisted, don't perform authentication */
+             hidh_sec_check_complete_orig(p_dev->addr, BT_TRANSPORT_BR_EDR,
+                p_dev, BTM_SUCCESS);
+        }
     }
     else
     {

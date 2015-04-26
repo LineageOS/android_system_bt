@@ -150,6 +150,7 @@ extern BOOLEAN check_cod(const bt_bdaddr_t *remote_bdaddr, uint32_t cod);
 extern void btif_dm_cb_remove_bond(bt_bdaddr_t *bd_addr);
 extern BOOLEAN check_cod_hid(const bt_bdaddr_t *remote_bdaddr);
 extern int  scru_ascii_2_hex(char *p_ascii, int len, UINT8 *p_hex);
+extern void btif_dm_hh_open_success(bt_bdaddr_t *bdaddr);
 extern void btif_dm_hh_open_failed(bt_bdaddr_t *bdaddr);
 
 /*****************************************************************************
@@ -793,6 +794,7 @@ static void btif_hh_upstreams_evt(UINT16 event, char* p_param)
                     BTA_HhClose(p_data->conn.handle);
                 }
                 else {
+                    btif_dm_hh_open_success((bt_bdaddr_t*)p_data->conn.bda);
                     BTIF_TRACE_WARNING("BTA_HH_OPEN_EVT: Found device...Getting dscp info for handle ... %d",p_data->conn.handle);
                     memcpy(&(p_dev->bd_addr), p_data->conn.bda, BD_ADDR_LEN);
                     btif_hh_cb.status = BTIF_HH_DEV_CONNECTED;

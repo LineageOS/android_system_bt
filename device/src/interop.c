@@ -62,6 +62,23 @@ bool interop_match_name(const interop_feature_t feature, const char *name) {
     if (feature == interop_name_database[i].feature &&
         strlen(name) >= interop_name_database[i].length &&
         strncmp(name, interop_name_database[i].name, interop_name_database[i].length) == 0) {
+      LOG_WARN(LOG_TAG, "%s() Device with name: %s is a match for interop workaround %s", __func__,
+          name, interop_feature_string_(feature));
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool interop_match_manufacturer(const interop_feature_t feature, uint16_t manufacturer) {
+  const size_t db_size = sizeof(interop_manufacturer_database) / sizeof(interop_manufacturer_t);
+
+  for (size_t i = 0; i != db_size; ++i) {
+    if (feature == interop_manufacturer_database[i].feature &&
+        manufacturer == interop_manufacturer_database[i].manufacturer) {
+      LOG_WARN(LOG_TAG, "%s() Device with manufacturer id: %d is a match for interop "
+        "workaround %s", __func__, manufacturer, interop_feature_string_(feature));
       return true;
     }
   }
@@ -115,6 +132,8 @@ static const char* interop_feature_string_(const interop_feature_t feature) {
     CASE_RETURN_STR(INTEROP_DISABLE_AUTO_PAIRING)
     CASE_RETURN_STR(INTEROP_KEYBOARD_REQUIRES_FIXED_PIN)
     CASE_RETURN_STR(INTEROP_2MBPS_LINK_ONLY)
+    CASE_RETURN_STR(INTEROP_DISABLE_SDP_AFTER_PAIRING)
+    CASE_RETURN_STR(INTEROP_DISABLE_AUTH_FOR_HID_POINTING)
   }
 
   return "UNKNOWN";
