@@ -31,6 +31,8 @@ static const char* interop_feature_string(const interop_feature_t feature) {
   switch (feature) {
     CASE_RETURN_STR(INTEROP_DISABLE_LE_SECURE_CONNECTIONS)
     CASE_RETURN_STR(INTEROP_AUTO_RETRY_PAIRING)
+    CASE_RETURN_STR(INTEROP_DISABLE_SDP_AFTER_PAIRING)
+    CASE_RETURN_STR(INTEROP_DISABLE_AUTH_FOR_HID_POINTING)
   }
 
   return "UNKNOWN";
@@ -38,16 +40,16 @@ static const char* interop_feature_string(const interop_feature_t feature) {
 
 // Interface functions
 
-bool interop_match(const interop_feature_t feature, const bt_bdaddr_t *addr) {
+bool interop_addr_match(const interop_feature_t feature, const bt_bdaddr_t *addr) {
   assert(addr);
 
-  const size_t db_size = sizeof(interop_database) / sizeof(interop_entry_t);
+  const size_t db_size = sizeof(interop_addr_database) / sizeof(interop_addr_t);
 
   for (size_t i = 0; i != db_size; ++i) {
-    if (feature == interop_database[i].feature &&
-        memcmp(addr, &interop_database[i].addr, interop_database[i].len) == 0) {
+    if (feature == interop_addr_database[i].feature &&
+        memcmp(addr, &interop_addr_database[i].addr, interop_addr_database[i].len) == 0) {
       char bdstr[20] = {0};
-      LOG_WARN("%s() Device %s is a match for interop workaround %s", __func__,
+      LOG_WARN("%s() Device %s is a match for interop addr workaround %s", __func__,
           bdaddr_to_string(addr, bdstr, sizeof(bdstr)), interop_feature_string(feature));
       return true;
     }
@@ -55,3 +57,40 @@ bool interop_match(const interop_feature_t feature, const bt_bdaddr_t *addr) {
 
   return false;
 }
+
+bool interop_name_match(const interop_feature_t feature, const char *name) {
+  assert(name);
+
+  const size_t db_size = sizeof(interop_name_database) / sizeof(interop_name_t);
+
+  for (size_t i = 0; i != db_size; ++i) {
+    if (feature == interop_name_database[i].feature &&
+        strncmp(name, interop_name_database[i].name, strlen(name)) == 0) {
+      char bdstr[20] = {0};
+      LOG_WARN("%s() Device with name: %s is a match for interop name workaround %s", __func__,
+          name, interop_feature_string(feature));
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool interop_manufacturer_match(const interop_feature_t feature, uint16_t manufacturer) {
+  assert(manufacturer);
+
+  const size_t db_size = sizeof(interop_manufctr_database) / sizeof(interop_manufacturer_t);
+
+  for (size_t i = 0; i != db_size; ++i) {
+    if (feature == interop_manufctr_database[i].feature &&
+        manufacturer == interop_manufctr_database[i].manufacturer) {
+      char bdstr[20] = {0};
+    LOG_WARN("%s() Device with manufacturer id: %d is a match for interop manufacturer"
+        "workaround %s", __func__, manufacturer, interop_feature_string(feature));
+      return true;
+    }
+  }
+
+  return false;
+}
+
