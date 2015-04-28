@@ -22,15 +22,18 @@
  *
  ******************************************************************************/
 
+#include <assert.h>
 #include <string.h>
 
+#include "device/include/controller.h"
+#include "osi/include/allocator.h"
+#include "osi/include/hash_map.h"
 #include "bt_types.h"
 #include "btu.h"
 #include "btm_int.h"
 #include "l2c_int.h"
 #include "hcimsgs.h"
 #include "bt_utils.h"
-#include "device/include/controller.h"
 
 #ifndef BTM_BLE_SCAN_PARAM_TOUT
 #define BTM_BLE_SCAN_PARAM_TOUT      50    /* 50 seconds */
@@ -40,6 +43,70 @@
 
 static void btm_suspend_wl_activity(tBTM_BLE_WL_STATE wl_state);
 static void btm_resume_wl_activity(tBTM_BLE_WL_STATE wl_state);
+
+// Unfortunately (for now?) we have to maintain a copy of the device whitelist
+// on the host to determine if a device is pending to be connected or not. This
+// controls whether the host should keep trying to scan for whitelisted
+// peripherals or not.
+// TODO: Move all of this to controller/le/background_list or similar?
+static const size_t background_connection_buckets = 42;
+static hash_map_t *background_connections = NULL;
+
+typedef struct background_connection_t {
+  bt_bdaddr_t address;
+} background_connection_t;
+
+static bool bdaddr_equality_fn(const void *x, const void *y) {
+  return bdaddr_equals((bt_bdaddr_t *)x, (bt_bdaddr_t *)y);
+}
+
+static void background_connections_lazy_init()
+{
+  if (!background_connections) {
+    background_connections = hash_map_new(background_connection_buckets,
+                                      hash_function_bdaddr, NULL, osi_free, bdaddr_equality_fn);
+    assert(background_connections);
+  }
+}
+
+static void background_connection_add(bt_bdaddr_t *address) {
+  assert(address);
+  background_connections_lazy_init();
+  background_connection_t *connection = hash_map_get(background_connections, address);
+  if (!connection) {
+    connection = osi_calloc(sizeof(background_connection_t));
+    connection->address = *address;
+    hash_map_set(background_connections, address, connection);
+  }
+}
+
+static void background_connection_remove(bt_bdaddr_t *address) {
+  if (address && background_connections)
+    hash_map_erase(background_connections, address);
+}
+
+static void background_connections_clear() {
+  if (background_connections)
+    hash_map_clear(background_connections);
+}
+
+static bool background_connections_pending_cb(hash_map_entry_t *hash_entry, void *context) {
+  bool *pending_connections = context;
+  background_connection_t *connection = hash_entry->data;
+  const bool connected = BTM_IsAclConnectionUp(connection->address.address, BT_TRANSPORT_LE);
+  if (!connected) {
+    *pending_connections = true;
+    return false;
+  }
+  return true;
+}
+
+static bool background_connections_pending() {
+  bool pending_connections = false;
+  if (background_connections)
+    hash_map_foreach(background_connections, background_connections_pending_cb, &pending_connections);
+  return pending_connections;
+}
 
 /*******************************************************************************
 **
@@ -78,7 +145,6 @@ BOOLEAN btm_add_dev_to_controller (BOOLEAN to_add, BD_ADDR bd_addr)
     if (p_dev_rec != NULL &&
         p_dev_rec->device_type & BT_DEVICE_TYPE_BLE)
     {
-
         if (to_add)
         {
             if (p_dev_rec->ble.ble_addr_type == BLE_ADDR_PUBLIC || !BTM_BLE_IS_RESOLVE_BDA(bd_addr))
@@ -196,6 +262,11 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr)
         return FALSE;
     }
 
+    if (to_add)
+        background_connection_add((bt_bdaddr_t*)bd_addr);
+    else
+        background_connection_remove((bt_bdaddr_t*)bd_addr);
+
     btm_suspend_wl_activity(p_cb->wl_state);
     btm_enq_wl_dev_operation(to_add, bd_addr);
     btm_resume_wl_activity(p_cb->wl_state);
@@ -213,6 +284,7 @@ void btm_ble_clear_white_list (void)
 {
     BTM_TRACE_EVENT ("btm_ble_clear_white_list");
     btsnd_hcic_ble_clear_white_list();
+    background_connections_clear();
 }
 
 /*******************************************************************************
@@ -277,14 +349,6 @@ void btm_ble_remove_from_white_list_complete(UINT8 *p, UINT16 evt_len)
         ++btm_cb.ble_ctr_cb.white_list_avail_size;
 }
 
-static UINT8 btm_ble_count_dev_in_whitelist(void)
-{
-    const uint8_t white_list_size = controller_get_interface()->get_ble_white_list_size();
-    if (white_list_size == 0)
-        return 0;
-    return white_list_size - btm_cb.ble_ctr_cb.white_list_avail_size;
-}
-
 /*******************************************************************************
 **
 ** Function         btm_ble_start_auto_conn
@@ -308,7 +372,7 @@ BOOLEAN btm_ble_start_auto_conn(BOOLEAN start)
 
     if (start)
     {
-        if (p_cb->conn_state == BLE_CONN_IDLE && btm_ble_count_dev_in_whitelist() > 0
+        if (p_cb->conn_state == BLE_CONN_IDLE && background_connections_pending()
             && btm_ble_topology_check(BTM_BLE_STATE_INIT))
         {
             p_cb->wl_state  |= BTM_BLE_WL_INIT;
@@ -422,9 +486,8 @@ BOOLEAN btm_ble_start_select_conn(BOOLEAN start,tBTM_BLE_SEL_CBACK   *p_select_c
                 BTM_TRACE_ERROR("peripheral device cannot initiate passive scan for a selective connection");
                 return FALSE;
             }
-            else if (btm_ble_count_dev_in_whitelist() > 0)
+            else if (background_connections_pending())
             {
-
                 if (!btsnd_hcic_ble_set_scan_enable(TRUE, TRUE)) /* duplicate filtering enabled */
                     return FALSE;
 
