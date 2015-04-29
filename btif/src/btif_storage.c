@@ -561,11 +561,15 @@ static void btif_read_le_key(const uint8_t key_type, const size_t key_len, bt_bd
             BD_ADDR bta_bd_addr;
             bdcpy(bta_bd_addr, bd_addr.address);
 
-            if (!device_added)
+            if (!*device_added)
             {
                 BTA_DmAddBleDevice(bta_bd_addr, addr_type, BT_DEVICE_TYPE_BLE);
                 *device_added = true;
             }
+
+            char bd_str[20] = {0};
+            BTIF_TRACE_DEBUG("%s() Adding key type %d for %s", __func__,
+                key_type, bdaddr_to_string(&bd_addr, bd_str, sizeof(bd_str)));
             BTA_DmAddBleKey(bta_bd_addr, (tBTA_LE_KEY_VALUE *)buffer, key_type);
         }
 
