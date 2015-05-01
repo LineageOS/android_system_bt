@@ -741,6 +741,12 @@ void btif_a2dp_stop_media_task(void)
 {
     APPL_TRACE_EVENT("## A2DP STOP MEDIA THREAD ##");
 
+    // Stop timer
+    alarm_free(btif_media_cb.media_alarm);
+    btif_media_cb.media_alarm = NULL;
+    btif_media_cb.is_tx_timer = FALSE;
+
+    // Exit thread
     fixed_queue_free(btif_media_cmd_msg_queue, NULL);
     thread_post(worker_thread, btif_media_thread_cleanup, NULL);
     thread_free(worker_thread);
