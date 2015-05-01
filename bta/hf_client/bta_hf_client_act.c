@@ -761,3 +761,45 @@ void bta_hf_client_binp(char *number)
 
     (*bta_hf_client_cb.p_cback)(BTA_HF_CLIENT_BINP_EVT, &evt);
 }
+
+/*******************************************************************************
+**
+** Function         bta_hf_client_cgmi
+**
+** Description      Send CGMI event to application.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_hf_client_cgmi(char *str)
+{
+    tBTA_HF_CLIENT evt;
+
+    memset(&evt, 0, sizeof(evt));
+
+    strlcpy(evt.cgmi.name, str, BTA_HF_CLIENT_MANUFACTURER_ID + 1);
+
+    (*bta_hf_client_cb.p_cback)(BTA_HF_CLIENT_CGMI_EVT, &evt);
+}
+
+/*******************************************************************************
+**
+** Function         bta_hf_client_cgmm
+**
+** Description      Send CGMM event to application.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_hf_client_cgmm(char *str)
+{
+    tBTA_HF_CLIENT evt;
+
+    memset(&evt, 0, sizeof(evt));
+
+    strlcpy(evt.cgmm.model, str, BTA_HF_CLIENT_MANUFACTURER_MODEL + 1);
+
+    (*bta_hf_client_cb.p_cback)(BTA_HF_CLIENT_CGMM_EVT, &evt);
+}

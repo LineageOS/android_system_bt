@@ -899,6 +899,12 @@ static void btif_hf_client_upstreams_evt(UINT16 event, char* p_param)
         case BTA_HF_CLIENT_RING_INDICATION:
             HAL_CBACK(bt_hf_client_callbacks, ring_indication_cb);
             break;
+        case BTA_HF_CLIENT_CGMI_EVT:
+            HAL_CBACK(bt_hf_client_callbacks, cgmi_cb, p_data->cgmi.name);
+            break;
+        case BTA_HF_CLIENT_CGMM_EVT:
+            HAL_CBACK(bt_hf_client_callbacks, cgmm_cb, p_data->cgmm.model);
+            break;
         default:
             BTIF_TRACE_WARNING("%s: Unhandled event: %d", __FUNCTION__, event);
             break;

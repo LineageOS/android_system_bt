@@ -542,6 +542,8 @@ static void send_post_slc_cmd(void)
     bta_hf_client_send_at_cops(FALSE);
     bta_hf_client_send_at_btrh(TRUE, 0);
     bta_hf_client_send_at_clip(TRUE);
+    bta_hf_client_send_at_cgmi(TRUE);
+    bta_hf_client_send_at_cgmm(TRUE);
 }
 
 /*******************************************************************************
