@@ -568,12 +568,12 @@ void bta_av_rc_opened(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
     if (rc_open.peer_features == 0)
     {
         /* we have not done SDP on peer RC capabilities.
-         * peer must have initiated the RC connection
-         * We Don't have SDP records of Peer, so we by
-         * default will take values depending upon registered
-         * features */
+         * peer must have initiated the RC connection */
+        if (p_cb->features & BTA_AV_FEAT_RCCT)
+            rc_open.peer_features |= BTA_AV_FEAT_RCTG;
         if (p_cb->features & BTA_AV_FEAT_RCTG)
             rc_open.peer_features |= BTA_AV_FEAT_RCCT;
+
         bta_av_rc_disc(disc);
     }
     (*p_cb->p_cback)(BTA_AV_RC_OPEN_EVT, (tBTA_AV *) &rc_open);
