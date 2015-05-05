@@ -945,7 +945,7 @@ bt_status_t btif_hf_client_execute_service(BOOLEAN b_enable)
      {
           /* Enable and register with BTA-HFClient */
           BTA_HfClientEnable(bte_hf_client_evt);
-          if (strcmp(btif_hf_client_version, "1.6") == 0)
+          if (strtof(btif_hf_client_version, NULL) >= 1.6)
           {
               BTIF_TRACE_EVENT("Support Codec Nego. %d ", BTIF_HF_CLIENT_FEATURES);
               BTA_HfClientRegister(BTIF_HF_CLIENT_SECURITY, BTIF_HF_CLIENT_FEATURES,

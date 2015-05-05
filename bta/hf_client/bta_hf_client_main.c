@@ -388,7 +388,7 @@ static void bta_hf_client_api_enable(tBTA_HF_CLIENT_DATA *p_data)
 
     /* check if mSBC support enabled */
     osi_property_get("ro.bluetooth.hfp.ver", value, "0");
-    if (strcmp(value,"1.6") == 0)
+    if (strtof(value, NULL) >= 1.6)
     {
        bta_hf_client_cb.msbc_enabled = TRUE;
     }
