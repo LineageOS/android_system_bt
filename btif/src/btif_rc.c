@@ -530,11 +530,10 @@ void handle_rc_features(BD_ADDR bd_addr)
                BTIF_TRACE_DEBUG("%s register_volumechange already in progress for label %d",
                                   __FUNCTION__, btif_rc_cb.rc_vol_label);
                return;
-            }
-            else
+            } else {
               status=get_transaction(&p_transaction);
+            }
          }
-
          if (BT_STATUS_SUCCESS == status && NULL!=p_transaction)
          {
             btif_rc_cb.rc_vol_label=p_transaction->lbl;
@@ -542,6 +541,13 @@ void handle_rc_features(BD_ADDR bd_addr)
          }
        }
 #endif
+    }
+    else {
+        /*Disable all TG related bits if AVRCP TG feature is not enabled*/
+        BTIF_TRACE_WARNING("Avrcp TG role not enabled, disabling TG specific featuremask");
+        btif_rc_cb.rc_features &= ~BTA_AV_FEAT_ADV_CTRL;
+        btif_rc_cb.rc_features &= ~BTA_AV_FEAT_BROWSE;
+        btif_rc_cb.rc_features &= ~BTA_AV_FEAT_METADATA;
     }
 }
 
@@ -1114,6 +1120,7 @@ void btif_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data)
             else
             {
                 BTIF_TRACE_ERROR("Neither CTRL, nor TG is up, drop meta commands");
+                osi_free(p_data->meta_msg.p_msg);
             }
         }
         break;
