@@ -382,7 +382,7 @@ static void bta_hf_client_api_enable(tBTA_HF_CLIENT_DATA *p_data)
 
     /* check if mSBC support enabled */
     property_get("ro.bluetooth.hfp.ver", value, "0");
-    if (strcmp(value,"1.6") == 0)
+    if (strtof(value, NULL) >= 1.6)
     {
        bta_hf_client_cb.msbc_enabled = TRUE;
     }
@@ -536,6 +536,8 @@ static void send_post_slc_cmd(void)
     bta_hf_client_send_at_cops(FALSE);
     bta_hf_client_send_at_btrh(TRUE, 0);
     bta_hf_client_send_at_clip(TRUE);
+    bta_hf_client_send_at_cgmi(TRUE);
+    bta_hf_client_send_at_cgmm(TRUE);
 }
 
 /*******************************************************************************

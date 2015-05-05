@@ -262,6 +262,8 @@ extern void bta_hf_client_send_at_cnum(void);
 extern void bta_hf_client_send_at_nrec(void);
 extern void bta_hf_client_send_at_binp(UINT32 action);
 extern void bta_hf_client_send_at_bia(void);
+extern void bta_hf_client_send_at_cgmi(BOOLEAN query);
+extern void bta_hf_client_send_at_cgmm(BOOLEAN query);
 
 /* Action functions */
 extern void bta_hf_client_register(tBTA_HF_CLIENT_DATA *p_data);
@@ -288,6 +290,8 @@ extern void bta_hf_client_at_result(tBTA_HF_CLIENT_AT_RESULT_TYPE type, UINT16 c
 extern void bta_hf_client_clcc(UINT32 idx, BOOLEAN incoming, UINT8 status, BOOLEAN mpty, char *number);
 extern void bta_hf_client_cnum(char *number, UINT16 service);
 extern void bta_hf_client_binp(char *number);
+extern void bta_hf_client_cgmi(char *str);
+extern void bta_hf_client_cgmm(char *str);
 
 /* Commands handling functions */
 extern void bta_hf_client_dial(tBTA_HF_CLIENT_DATA *p_data);
