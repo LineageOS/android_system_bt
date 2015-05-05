@@ -49,6 +49,7 @@
 **  Constants & Macros
 ******************************************************************************/
 #define BTIF_AV_SERVICE_NAME "Advanced Audio"
+#define BTIF_AVK_SERVICE_NAME "Advanced Audio Sink"
 
 #define BTIF_TIMEOUT_AV_OPEN_ON_RC_SECS  2
 
@@ -1072,21 +1073,18 @@ static void bte_av_media_callback(tBTA_AV_EVT event, tBTA_AV_MEDIA *p_data)
 **
 *******************************************************************************/
 
-bt_status_t btif_av_init()
+bt_status_t btif_av_init(int service_id)
 {
     if (btif_av_cb.sm_handle == NULL)
     {
         if (!btif_a2dp_start_media_task())
             return BT_STATUS_FAIL;
 
+        btif_enable_service(service_id);
+
         /* Also initialize the AV state machine */
         btif_av_cb.sm_handle =
                 btif_sm_init((const btif_sm_handler_t*)btif_av_state_handlers, BTIF_AV_STATE_IDLE);
-
-        btif_enable_service(BTA_A2DP_SOURCE_SERVICE_ID);
-#if (BTA_AV_SINK_INCLUDED == TRUE)
-        btif_enable_service(BTA_A2DP_SINK_SERVICE_ID);
-#endif
 
         btif_a2dp_on_init();
     }
@@ -1108,7 +1106,7 @@ static bt_status_t init_src(btav_callbacks_t* callbacks)
 {
     BTIF_TRACE_EVENT("%s()", __func__);
 
-    bt_status_t status = btif_av_init();
+    bt_status_t status = btif_av_init(BTA_A2DP_SOURCE_SERVICE_ID);
     if (status == BT_STATUS_SUCCESS)
         bt_av_src_callbacks = callbacks;
 
@@ -1129,7 +1127,7 @@ static bt_status_t init_sink(btav_callbacks_t* callbacks)
 {
     BTIF_TRACE_EVENT("%s()", __func__);
 
-    bt_status_t status = btif_av_init();
+    bt_status_t status = btif_av_init(BTA_A2DP_SINK_SERVICE_ID);
     if (status == BT_STATUS_SUCCESS)
         bt_av_sink_callbacks = callbacks;
 
@@ -1203,16 +1201,13 @@ static bt_status_t disconnect(bt_bdaddr_t *bd_addr)
 ** Returns          None
 **
 *******************************************************************************/
-static void cleanup(void)
+static void cleanup(int service_uuid)
 {
     BTIF_TRACE_EVENT("%s", __FUNCTION__);
 
     btif_a2dp_stop_media_task();
 
-    btif_disable_service(BTA_A2DP_SOURCE_SERVICE_ID);
-#if (BTA_AV_SINK_INCLUDED == TRUE)
-    btif_disable_service(BTA_A2DP_SINK_SERVICE_ID);
-#endif
+    btif_disable_service(service_uuid);
 
     /* Also shut down the AV state machine */
     btif_sm_shutdown(btif_av_cb.sm_handle);
@@ -1226,7 +1221,7 @@ static void cleanup_src(void) {
     {
         bt_av_src_callbacks = NULL;
         if (bt_av_sink_callbacks == NULL)
-            cleanup();
+            cleanup(BTA_A2DP_SOURCE_SERVICE_ID);
     }
 }
 
@@ -1237,7 +1232,7 @@ static void cleanup_sink(void) {
     {
         bt_av_sink_callbacks = NULL;
         if (bt_av_src_callbacks == NULL)
-            cleanup();
+            cleanup(BTA_A2DP_SINK_SERVICE_ID);
     }
 }
 
@@ -1393,7 +1388,8 @@ bt_status_t btif_av_execute_service(BOOLEAN b_enable)
          BTA_AvEnable(BTA_SEC_AUTHENTICATE, (BTA_AV_FEAT_RCTG | BTA_AV_FEAT_NO_SCO_SSPD),
                       bte_av_callback);
 #endif
-         BTA_AvRegister(BTA_AV_CHNL_AUDIO, BTIF_AV_SERVICE_NAME, 0, bte_av_media_callback);
+         BTA_AvRegister(BTA_AV_CHNL_AUDIO, BTIF_AV_SERVICE_NAME, 0, bte_av_media_callback,
+                                                             UUID_SERVCLASS_AUDIO_SOURCE);
      }
      else {
          BTA_AvDeregister(btif_av_cb.bta_handle);
@@ -1413,12 +1409,22 @@ bt_status_t btif_av_execute_service(BOOLEAN b_enable)
 *******************************************************************************/
 bt_status_t btif_av_sink_execute_service(BOOLEAN b_enable)
 {
-#if (BTA_AV_SINK_INCLUDED == TRUE)
-    BTA_AvEnable_Sink(b_enable);
-#endif
-    return BT_STATUS_SUCCESS;
+     if (b_enable)
+     {
+         /* Added BTA_AV_FEAT_NO_SCO_SSPD - this ensures that the BTA does not
+          * auto-suspend av streaming on AG events(SCO or Call). The suspend shall
+          * be initiated by the app/audioflinger layers */
+         BTA_AvEnable(BTA_SEC_AUTHENTICATE, BTA_AV_FEAT_NO_SCO_SSPD|BTA_AV_FEAT_RCCT,
+                                                                        bte_av_callback);
+         BTA_AvRegister(BTA_AV_CHNL_AUDIO, BTIF_AVK_SERVICE_NAME, 0, bte_av_media_callback,
+                                                                UUID_SERVCLASS_AUDIO_SINK);
+     }
+     else {
+         BTA_AvDeregister(btif_av_cb.bta_handle);
+         BTA_AvDisable();
+     }
+     return BT_STATUS_SUCCESS;
 }
-
 /*******************************************************************************
 **
 ** Function         btif_av_get_src_interface
