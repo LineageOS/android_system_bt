@@ -79,13 +79,15 @@
 #define BTPAN_LOCAL_ROLE (BTPAN_ROLE_PANU | BTPAN_ROLE_PANNAP)
 #endif
 
-#define asrt(s) if(!(s)) BTIF_TRACE_ERROR("btif_pan: ## %s assert %s failed at line:%d ##",__FUNCTION__, #s, __LINE__)
+#define asrt(s) if (!(s)) BTIF_TRACE_ERROR("btif_pan: ## %s assert %s failed at line:%d ##",__FUNCTION__, #s, __LINE__)
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 btpan_cb_t btpan_cb;
 
-static int jni_initialized, stack_initialized;
+static bool jni_initialized;
+static bool stack_initialized;
+
 static bt_status_t btpan_jni_init(const btpan_callbacks_t* callbacks);
 static void btpan_jni_cleanup();
 static bt_status_t btpan_connect(const bt_bdaddr_t *bd_addr, int local_role, int remote_role);
@@ -125,15 +127,15 @@ btpan_interface_t *btif_pan_get_interface()
 void btif_pan_init()
 {
     BTIF_TRACE_DEBUG("jni_initialized = %d, btpan_cb.enabled:%d", jni_initialized, btpan_cb.enabled);
-    stack_initialized = TRUE;
+    stack_initialized = true;
+
     if (jni_initialized && !btpan_cb.enabled)
     {
         BTIF_TRACE_DEBUG("Enabling PAN....");
         memset(&btpan_cb, 0, sizeof(btpan_cb));
         btpan_cb.tap_fd = INVALID_FD;
         btpan_cb.flow = 1;
-        int i;
-        for(i = 0; i < MAX_PAN_CONNS; i++)
+        for (int i = 0; i < MAX_PAN_CONNS; i++)
             btpan_cleanup_conn(&btpan_cb.conns[i]);
         BTA_PanEnable(bta_pan_callback);
         btpan_cb.enabled = 1;
@@ -157,23 +159,23 @@ static void pan_disable()
 
 void btif_pan_cleanup()
 {
-    if(stack_initialized)
-    {
-        //bt is shuting down, invalid all bta pan handles
-        int i;
-        for(i = 0; i < MAX_PAN_CONNS; i++)
-            btpan_cleanup_conn(&btpan_cb.conns[i]);
-        pan_disable();
-    }
-    stack_initialized = FALSE;
+    if (!stack_initialized)
+        return;
+
+    // Bluetooth is shuting down, invalidate all BTA PAN handles
+    for (int i = 0; i < MAX_PAN_CONNS; i++)
+        btpan_cleanup_conn(&btpan_cb.conns[i]);
+
+    pan_disable();
+    stack_initialized = false;
 }
 
 static btpan_callbacks_t callback;
 static bt_status_t btpan_jni_init(const btpan_callbacks_t* callbacks)
 {
     BTIF_TRACE_DEBUG("stack_initialized = %d, btpan_cb.enabled:%d", stack_initialized, btpan_cb.enabled);
-    jni_initialized = TRUE;
-    if (stack_initialized && !btpan_cb.enabled)
+    jni_initialized = true;
+    if (!stack_initialized && !btpan_cb.enabled)
         btif_pan_init();
     callback = *callbacks;
     return BT_STATUS_SUCCESS;
@@ -182,21 +184,17 @@ static bt_status_t btpan_jni_init(const btpan_callbacks_t* callbacks)
 static void btpan_jni_cleanup()
 {
     pan_disable();
-    jni_initialized = FALSE;
+    jni_initialized = false;
 }
 
 static inline int bta_role_to_btpan(int bta_pan_role)
 {
     int btpan_role = 0;
     BTIF_TRACE_DEBUG("bta_pan_role:0x%x", bta_pan_role);
-    if(bta_pan_role & PAN_ROLE_NAP_SERVER)
-    {
+    if (bta_pan_role & PAN_ROLE_NAP_SERVER)
         btpan_role |= BTPAN_ROLE_PANNAP;
-    }
-    if(bta_pan_role & PAN_ROLE_CLIENT)
-    {
+    if (bta_pan_role & PAN_ROLE_CLIENT)
         btpan_role |= BTPAN_ROLE_PANU;
-    }
     return btpan_role;
 }
 
@@ -204,14 +202,10 @@ static inline int btpan_role_to_bta(int btpan_role)
 {
     int bta_pan_role = PAN_ROLE_INACTIVE;
     BTIF_TRACE_DEBUG("btpan_role:0x%x", btpan_role);
-    if(btpan_role & BTPAN_ROLE_PANNAP)
-    {
+    if (btpan_role & BTPAN_ROLE_PANNAP)
         bta_pan_role |= PAN_ROLE_NAP_SERVER;
-    }
-    if(btpan_role & BTPAN_ROLE_PANU)
-    {
+    if (btpan_role & BTPAN_ROLE_PANU)
         bta_pan_role |= PAN_ROLE_CLIENT;
-    }
     return bta_pan_role;
 }
 
@@ -277,7 +271,7 @@ static void btif_in_pan_generic_evt(UINT16 event, char *p_param)
 static bt_status_t btpan_disconnect(const bt_bdaddr_t *bd_addr)
 {
     btpan_conn_t* conn = btpan_find_conn_addr(bd_addr->address);
-    if(conn && conn->handle >= 0)
+    if (conn && conn->handle >= 0)
     {
         BTA_PanClose(conn->handle);
         /* Inform the application that the disconnect has been initiated successfully */
@@ -291,15 +285,15 @@ static bt_status_t btpan_disconnect(const bt_bdaddr_t *bd_addr)
 static int pan_pth = -1;
 void create_tap_read_thread(int tap_fd)
 {
-    if(pan_pth < 0)
+    if (pan_pth < 0)
         pan_pth = btsock_thread_create(btpan_tap_fd_signaled, NULL);
-    if(pan_pth >= 0)
+    if (pan_pth >= 0)
         btsock_thread_add_fd(pan_pth, tap_fd, 0, SOCK_THREAD_FD_RD, 0);
 }
 
 void destroy_tap_read_thread(void)
 {
-    if(pan_pth >= 0)
+    if (pan_pth >= 0)
     {
         btsock_thread_exit(pan_pth);
         pan_pth = -1;
@@ -312,14 +306,14 @@ static int tap_if_up(const char *devname, const bt_bdaddr_t *addr)
     int sk, err;
 
     sk = socket(AF_INET, SOCK_DGRAM, 0);
-    if(sk < 0)
-        return -1 ;
+    if (sk < 0)
+        return -1;
 
     //set mac addr
     memset(&ifr, 0, sizeof(ifr));
     strncpy(ifr.ifr_name, devname, IFNAMSIZ - 1);
     err = ioctl(sk, SIOCGIFHWADDR, &ifr);
-    if(err < 0)
+    if (err < 0)
     {
         BTIF_TRACE_ERROR("Could not get network hardware for interface:%s, errno:%s", devname, strerror(errno));
         close(sk);
@@ -373,8 +367,8 @@ static int tap_if_down(const char *devname)
     int sk;
 
     sk = socket(AF_INET, SOCK_DGRAM, 0);
-    if(sk < 0)
-        return -1 ;
+    if (sk < 0)
+        return -1;
 
     memset(&ifr, 0, sizeof(ifr));
     strncpy(ifr.ifr_name, devname, IF_NAMESIZE - 1);
@@ -407,8 +401,8 @@ int btpan_tap_open()
 
     /* open the clone device */
 
-    if( (fd = open(clonedev, O_RDWR)) < 0 ) {
-
+    if ((fd = open(clonedev, O_RDWR)) < 0)
+    {
         BTIF_TRACE_DEBUG("could not open %s, err:%d", clonedev, errno);
         return fd;
     }
@@ -419,13 +413,13 @@ int btpan_tap_open()
     strncpy(ifr.ifr_name, TAP_IF_NAME, IFNAMSIZ);
 
     /* try to create the device */
-    if( (err = ioctl(fd, TUNSETIFF, (void *) &ifr)) < 0 )
+    if ((err = ioctl(fd, TUNSETIFF, (void *) &ifr)) < 0)
     {
         BTIF_TRACE_DEBUG("ioctl error:%d, errno:%s", err, strerror(errno));
         close(fd);
         return err;
     }
-    if(tap_if_up(TAP_IF_NAME, controller_get_interface()->get_address()) == 0)
+    if (tap_if_up(TAP_IF_NAME, controller_get_interface()->get_address()) == 0)
     {
         int flags = fcntl(fd, F_GETFL, 0);
         fcntl(fd, F_SETFL, flags | O_NONBLOCK);
@@ -441,7 +435,7 @@ int btpan_tap_send(int tap_fd, const BD_ADDR src, const BD_ADDR dst, UINT16 prot
 {
     UNUSED(ext);
     UNUSED(forward);
-    if(tap_fd != INVALID_FD)
+    if (tap_fd != INVALID_FD)
     {
         tETH_HDR eth_hdr;
         memcpy(&eth_hdr.h_dest, dst, ETH_ADDR_LEN);
@@ -449,7 +443,7 @@ int btpan_tap_send(int tap_fd, const BD_ADDR src, const BD_ADDR dst, UINT16 prot
         eth_hdr.h_proto = htons(proto);
         char packet[2000];
         memcpy(packet, &eth_hdr, sizeof(tETH_HDR));
-        if(len > 2000)
+        if (len > 2000)
         {
             LOG_ERROR("btpan_tap_send eth packet size:%d is exceeded limit!", len);
             return -1;
@@ -467,34 +461,36 @@ int btpan_tap_send(int tap_fd, const BD_ADDR src, const BD_ADDR dst, UINT16 prot
 
 int btpan_tap_close(int fd)
 {
-    if(tap_if_down(TAP_IF_NAME) == 0)
+    if (tap_if_down(TAP_IF_NAME) == 0)
         close(fd);
-    if(pan_pth >= 0)
+    if (pan_pth >= 0)
         btsock_thread_wakeup(pan_pth);
     return 0;
 }
 
 btpan_conn_t * btpan_find_conn_handle(UINT16 handle)
 {
-    int i;
-    for(i = 0; i < MAX_PAN_CONNS; i++)
-        if(btpan_cb.conns[i].handle == handle)
+    for (int i = 0; i < MAX_PAN_CONNS; i++)
+    {
+        if (btpan_cb.conns[i].handle == handle)
             return &btpan_cb.conns[i];
+    }
     return NULL;
 }
 
 btpan_conn_t* btpan_find_conn_addr(const BD_ADDR addr)
 {
-    int i;
-    for(i = 0; i < MAX_PAN_CONNS; i++)
-        if(memcmp(btpan_cb.conns[i].peer, addr, sizeof(BD_ADDR)) == 0)
+    for (int i = 0; i < MAX_PAN_CONNS; i++)
+    {
+        if (memcmp(btpan_cb.conns[i].peer, addr, sizeof(BD_ADDR)) == 0)
             return &btpan_cb.conns[i];
+    }
     return NULL;
 }
 
 static void btpan_cleanup_conn(btpan_conn_t* conn)
 {
-    if(conn)
+    if (conn)
     {
         conn->handle = -1;
         conn->state = -1;
@@ -504,13 +500,12 @@ static void btpan_cleanup_conn(btpan_conn_t* conn)
     }
 }
 
-btpan_conn_t* btpan_new_conn(int handle, const BD_ADDR addr, int local_role, int remote_role )
+btpan_conn_t* btpan_new_conn(int handle, const BD_ADDR addr, int local_role, int remote_role)
 {
-    int i;
-    for(i = 0; i < MAX_PAN_CONNS; i++)
+    for (int i = 0; i < MAX_PAN_CONNS; i++)
     {
         BTIF_TRACE_DEBUG("conns[%d]:%d", i, btpan_cb.conns[i].handle);
-        if(btpan_cb.conns[i].handle == -1)
+        if (btpan_cb.conns[i].handle == -1)
         {
             BTIF_TRACE_DEBUG("handle:%d, local_role:%d, remote_role:%d", handle, local_role, remote_role);
 
@@ -537,7 +532,7 @@ void btpan_close_handle(btpan_conn_t *p)
 static inline bool should_forward(tETH_HDR* hdr)
 {
     uint16_t proto = ntohs(hdr->h_proto);
-    if(proto == ETH_P_IP || proto == ETH_P_ARP || proto == ETH_P_IPV6)
+    if (proto == ETH_P_IP || proto == ETH_P_ARP || proto == ETH_P_IPV6)
         return true;
     BTIF_TRACE_DEBUG("unknown proto:%x", proto);
     return false;
@@ -545,10 +540,10 @@ static inline bool should_forward(tETH_HDR* hdr)
 
 static int forward_bnep(tETH_HDR* eth_hdr, BT_HDR *hdr) {
     int broadcast = eth_hdr->h_dest[0] & 1;
-    int i;
 
     // Find the right connection to send this frame over.
-    for (i = 0; i < MAX_PAN_CONNS; i++) {
+    for (int i = 0; i < MAX_PAN_CONNS; i++)
+    {
         UINT16 handle = btpan_cb.conns[i].handle;
         if (handle != (UINT16)-1 &&
                 (broadcast || memcmp(btpan_cb.conns[i].eth_addr, eth_hdr->h_dest, sizeof(BD_ADDR)) == 0
@@ -571,6 +566,7 @@ static int forward_bnep(tETH_HDR* eth_hdr, BT_HDR *hdr) {
 static void bta_pan_callback_transfer(UINT16 event, char *p_param)
 {
     tBTA_PAN *p_data = (tBTA_PAN *)p_param;
+
     switch(event)
     {
         case BTA_PAN_ENABLE_EVT:
@@ -612,7 +608,7 @@ static void bta_pan_callback_transfer(UINT16 event, char *p_param)
                 btpan_conn_t *conn = btpan_find_conn_handle(p_data->open.handle);
 
                 LOG_VERBOSE("%s pan connection open status: %d", __func__, p_data->open.status);
-                if(p_data->open.status == BTA_PAN_SUCCESS)
+                if (p_data->open.status == BTA_PAN_SUCCESS)
                 {
                     state = BTPAN_STATE_CONNECTED;
                     status = BT_STATUS_SUCCESS;
@@ -637,7 +633,7 @@ static void bta_pan_callback_transfer(UINT16 event, char *p_param)
 
                 LOG_INFO("%s: event = BTA_PAN_CLOSE_EVT handle %d", __FUNCTION__, p_data->close.handle);
 
-                if(conn && conn->handle >= 0)
+                if (conn && conn->handle >= 0)
                 {
                     int btpan_conn_local_role = bta_role_to_btpan(conn->local_role);
                     int btpan_remote_role = bta_role_to_btpan(conn->remote_role);
@@ -671,7 +667,7 @@ static void btu_exec_tap_fd_read(void *p_param) {
     // Don't occupy BTU context too long, avoid GKI buffer overruns and
     // give other profiles a chance to run by limiting the amount of memory
     // PAN can use from the shared pool buffer.
-    for(int i = 0; i < PAN_POOL_MAX && btif_is_enabled() && btpan_cb.flow; i++) {
+    for (int i = 0; i < PAN_POOL_MAX && btif_is_enabled() && btpan_cb.flow; i++) {
         BT_HDR *buffer = (BT_HDR *)GKI_getpoolbuf(PAN_POOL_ID);
         if (!buffer) {
             BTIF_TRACE_WARNING("%s unable to allocate buffer for packet.", __func__);
@@ -730,7 +726,7 @@ static void btu_exec_tap_fd_read(void *p_param) {
         ufd.fd = fd;
         ufd.events = POLLIN;
         ufd.revents = 0;
-        if(poll(&ufd, 1, 0) <= 0 || IS_EXCEPTION(ufd.revents))
+        if (poll(&ufd, 1, 0) <= 0 || IS_EXCEPTION(ufd.revents))
             break;
     }
     //add fd back to monitor thread
@@ -738,13 +734,14 @@ static void btu_exec_tap_fd_read(void *p_param) {
 }
 
 static void btif_pan_close_all_conns() {
-    int i;
     if (!stack_initialized)
         return;
 
-    for (i = 0; i < MAX_PAN_CONNS; ++i)
+    for (int i = 0; i < MAX_PAN_CONNS; ++i)
+    {
         if (btpan_cb.conns[i].handle != -1)
             BTA_PanClose(btpan_cb.conns[i].handle);
+    }
 }
 
 static void btpan_tap_fd_signaled(int fd, int type, int flags, uint32_t user_id) {
@@ -756,10 +753,10 @@ static void btpan_tap_fd_signaled(int fd, int type, int flags, uint32_t user_id)
         return;
     }
 
-    if(flags & SOCK_THREAD_FD_EXCEPTION) {
+    if (flags & SOCK_THREAD_FD_EXCEPTION) {
         btpan_cb.tap_fd = INVALID_FD;
         btpan_tap_close(fd);
         btif_pan_close_all_conns();
-    } else if(flags & SOCK_THREAD_FD_RD)
+    } else if (flags & SOCK_THREAD_FD_RD)
         bta_dmexecutecallback(btu_exec_tap_fd_read, (void *)fd);
 }
