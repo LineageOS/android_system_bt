@@ -304,9 +304,6 @@ int uinput_create(char *name)
     for (x = 0; key_map[x].name != NULL; x++)
         ioctl(fd, UI_SET_KEYBIT, key_map[x].mapped_id);
 
-    for(x = 0; x < KEY_MAX; x++)
-        ioctl(fd, UI_SET_KEYBIT, x);
-
     if (ioctl(fd, UI_DEV_CREATE, NULL) < 0) {
         BTIF_TRACE_ERROR("%s Unable to create uinput device", __FUNCTION__);
         close(fd);
