@@ -401,6 +401,7 @@ static void btgatts_handle_event(uint16_t event, char* p_param)
             // Mark background connections
             if (!p_cb->is_direct)
                 BTA_DmBleSetBgConnType(BTM_BLE_CONN_AUTO, NULL);
+            BTIF_TRACE_DEBUG ("%s, device type: %d", __func__, device_type);
 
             switch(device_type)
             {
@@ -418,10 +419,6 @@ static void btgatts_handle_event(uint16_t event, char* p_param)
                     else
                         transport = BTA_GATT_TRANSPORT_BR_EDR;
                     break;
-
-                default:
-                    BTIF_TRACE_ERROR (" GATT Open :Invalid device type %d",device_type);
-                    return;
             }
 
             // Connect!
