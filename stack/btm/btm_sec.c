@@ -4608,11 +4608,8 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
             p_dev_rec->sec_flags &= ~ (BTM_SEC_LE_LINK_KEY_KNOWN);
             p_dev_rec->ble.key_type = BTM_LE_KEY_NONE;
         }
-        else if (status == HCI_ERR_KEY_MISSING)
-        {
-            btm_sec_disconnect(handle, status);
-        }
-        btm_ble_link_encrypted(p_dev_rec->ble.pseudo_addr, encr_enable);
+        BTM_TRACE_DEBUG ("%s encryption result = %d", __func__, status);
+        btm_ble_link_encrypted(p_dev_rec->bd_addr, encr_enable, status);
         return;
     }
     else
@@ -5187,7 +5184,10 @@ void btm_sec_disconnected (UINT16 handle, UINT8 reason)
     {
         p_dev_rec->p_callback = NULL; /* when the peer device time out the authentication before
                                          we do, this call back must be reset here */
-        (*p_callback) (p_dev_rec->bd_addr, transport, p_dev_rec->p_ref_data, BTM_ERR_PROCESSING);
+        if (reason == HCI_ERR_KEY_MISSING)
+            (*p_callback) (p_dev_rec->bd_addr, transport, p_dev_rec->p_ref_data, BTM_ERR_KEY_MISSING);
+        else
+            (*p_callback) (p_dev_rec->bd_addr, transport, p_dev_rec->p_ref_data, BTM_ERR_PROCESSING);
     }
 
     BTM_TRACE_EVENT("%s after update sec_flags=0x%x", __func__, p_dev_rec->sec_flags);

@@ -4316,6 +4316,9 @@ void bta_dm_encrypt_cback(BD_ADDR bd_addr, tBT_TRANSPORT transport, void *p_ref_
         case BTM_BUSY:
             bta_status = BTA_BUSY;
             break;
+        case BTM_ERR_KEY_MISSING:
+            bta_status = BTA_ERR_KEY_MISSING;
+            break;
         default:
             bta_status = BTA_FAILURE;
             break;
