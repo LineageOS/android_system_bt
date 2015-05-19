@@ -68,6 +68,11 @@ void module_management_stop(void) {
 }
 
 /* TODO: remove these externs and explicit checks once dlsym is fixed */
+/* TODO:
+ *  (cont.) It looks like the dlsym bug is fixed now. However, without
+ *  the code below (i.e. the module being referenced), the linker strips
+ *  the module and thus dlsym will fail.
+ */
 extern module_t bt_utils_module;
 extern module_t btif_config_module;
 extern module_t controller_module;
@@ -77,10 +82,13 @@ extern module_t stack_config_module;
 extern module_t btsnoop_module;
 extern module_t hci_module;
 extern module_t bte_logmsg_module;
+extern module_t osi_module;
 
 const module_t *get_module(const char *name) {
   module_t* module = (module_t *)dlsym(RTLD_DEFAULT, name);
   if (module) return module;
+
+  LOG_ERROR("%s dlsym() came up empty...", __func__);
 
   if (!strcmp(name, "bt_utils_module")) return &bt_utils_module;
   if (!strcmp(name, "btif_config_module")) return &btif_config_module;
@@ -91,6 +99,7 @@ const module_t *get_module(const char *name) {
   if (!strcmp(name, "btsnoop_module")) return &btsnoop_module;
   if (!strcmp(name, "hci_module")) return &hci_module;
   if (!strcmp(name, "bte_logmsg_module")) return &bte_logmsg_module;
+  if (!strcmp(name, "osi_module")) return &osi_module;
 
   return NULL;
 }
