@@ -1873,11 +1873,15 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
         if (status != HCI_ERR_DIRECTED_ADVERTISING_TIMEOUT)
         {
             btm_ble_set_conn_st(BLE_CONN_IDLE);
+#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
             btm_ble_disable_resolving_list(BTM_BLE_RL_INIT, TRUE);
+#endif
         }
         else
         {
+#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
             btm_ble_disable_resolving_list(BTM_BLE_RL_ADV, TRUE);
+#endif
         }
     }
 
@@ -2408,11 +2412,13 @@ static void btm_ble_process_irk(tSMP_ENC *p)
         memcpy(btm_cb.devcb.id_keys.irk, p->param_buf, BT_OCTET16_LEN);
         btm_notify_new_key(BTM_BLE_KEY_TYPE_ID);
 
+#if BLE_PRIVACY_SPT == TRUE
         /* if privacy is enabled, new RPA should be calculated */
         if (btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE)
         {
             btm_gen_resolvable_private_addr((void *)btm_gen_resolve_paddr_low);
         }
+#endif
     }
     else
     {

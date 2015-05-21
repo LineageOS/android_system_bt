@@ -473,7 +473,9 @@ tBTM_STATUS BTM_BleBroadcast(BOOLEAN start)
     else if (!start)
     {
         status = btm_ble_stop_adv();
+#if BLE_PRIVACY_SPT == TRUE
         btm_ble_disable_resolving_list(BTM_BLE_RL_ADV, TRUE);
+#endif
     }
     else
     {
@@ -1772,7 +1774,9 @@ tBTM_STATUS btm_ble_set_discoverability(UINT16 combined_mode)
     }
     else
     {
+#if BLE_PRIVACY_SPT == TRUE
         btm_ble_disable_resolving_list(BTM_BLE_RL_ADV, TRUE);
+#endif
     }
 
     /* set up stop advertising timer */
@@ -1872,7 +1876,9 @@ tBTM_STATUS btm_ble_set_connectability(UINT16 combined_mode)
     }
     else
     {
+#if BLE_PRIVACY_SPT == TRUE
         btm_ble_disable_resolving_list(BTM_BLE_RL_ADV, TRUE);
+#endif
     }
     return status;
 }

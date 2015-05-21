@@ -353,7 +353,9 @@ void l2cble_scanner_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE type,
 
     btm_ble_set_conn_st(BLE_CONN_IDLE);
 
+#if BLE_PRIVACY_SPT == TRUE
     btm_ble_disable_resolving_list(BTM_BLE_RL_INIT, TRUE);
+#endif
 }
 
 
@@ -420,7 +422,9 @@ void l2cble_advertiser_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE typ
 
     btm_acl_created (bda, NULL, p_dev_rec->sec_bd_name, handle, p_lcb->link_role, BT_TRANSPORT_LE);
 
+#if BLE_PRIVACY_SPT == TRUE
     btm_ble_disable_resolving_list(BTM_BLE_RL_ADV, TRUE);
+#endif
 
     p_lcb->peer_chnl_mask[0] = L2CAP_FIXED_CHNL_ATT_BIT | L2CAP_FIXED_CHNL_BLE_SIG_BIT | L2CAP_FIXED_CHNL_SMP_BIT;
 
