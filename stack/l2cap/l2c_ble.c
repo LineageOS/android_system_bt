@@ -807,7 +807,9 @@ void l2cble_advertiser_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE typ
     }
 
     /* when adv and initiating are both active, cancel the direct connection */
-    if (l2cb.is_ble_connecting && memcmp(bda, l2cb.ble_connecting_bda, BD_ADDR_LEN) == 0)
+    if (l2cb.is_ble_connecting &&
+        ((memcmp(bda, l2cb.ble_connecting_bda, BD_ADDR_LEN) == 0) ||
+          memcmp(p_dev_rec->ble.static_addr, l2cb.ble_connecting_bda, BD_ADDR_LEN) == 0))
     {
         L2CA_CancelBleConnectReq(bda);
     }
