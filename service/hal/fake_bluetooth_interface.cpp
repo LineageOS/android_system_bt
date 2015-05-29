@@ -74,7 +74,8 @@ bt_interface_t fake_bt_iface = {
   nullptr, /* dump */
   nullptr, /* config clear */
   nullptr, /* interop_database_clear */
-  nullptr  /* interop_database_add */
+  nullptr, /* interop_database_add */
+  nullptr  /* bt test app interface */
 };
 
 }  // namespace

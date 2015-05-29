@@ -63,7 +63,10 @@ btifCommonSrc += \
   src/btif_storage.c \
   src/btif_uid.c \
   src/btif_util.c \
-  src/stack_manager.c
+  src/stack_manager.c \
+  src/btif_rfcomm.c \
+  src/btif_mcap.c \
+  src/btif_l2cap.c
 
 # Callouts
 btifCommonSrc += \
