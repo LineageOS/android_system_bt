@@ -76,7 +76,39 @@ typedef enum {
 }profileName;
 typedef enum {
     TEST_APP_RFCOMM,
+    TEST_APP_MCAP
 } test_app_profile;
+
+typedef struct
+{
+    size_t    size;
+    void (*Init)(void);
+    tMCA_HANDLE (*Register)(tMCA_REG *p_reg, tMCA_CTRL_CBACK *p_cback);
+    void        (*Deregister)(tMCA_HANDLE handle);
+    tMCA_RESULT (*CreateDep)(tMCA_HANDLE handle, tMCA_DEP *p_dep, tMCA_CS *p_cs);
+    tMCA_RESULT (*DeleteDep)(tMCA_HANDLE handle, tMCA_DEP dep);
+    tMCA_RESULT (*ConnectReq)(tMCA_HANDLE handle, BD_ADDR bd_addr,
+                                          UINT16 ctrl_psm,
+                                          UINT16 sec_mask);
+    tMCA_RESULT (*DisconnectReq)(tMCA_CL mcl);
+    tMCA_RESULT (*CreateMdl)(tMCA_CL mcl, tMCA_DEP dep, UINT16 data_psm,
+                                         UINT16 mdl_id, UINT8 peer_dep_id,
+                                         UINT8 cfg, const tMCA_CHNL_CFG *p_chnl_cfg);
+    tMCA_RESULT (*CreateMdlRsp)(tMCA_CL mcl, tMCA_DEP dep,
+                                            UINT16 mdl_id, UINT8 cfg, UINT8 rsp_code,
+                                            const tMCA_CHNL_CFG *p_chnl_cfg);
+    tMCA_RESULT (*CloseReq)(tMCA_DL mdl);
+    tMCA_RESULT (*ReconnectMdl)(tMCA_CL mcl, tMCA_DEP dep, UINT16 data_psm,
+                                            UINT16 mdl_id, const tMCA_CHNL_CFG *p_chnl_cfg);
+    tMCA_RESULT (*ReconnectMdlRsp)(tMCA_CL mcl, tMCA_DEP dep,
+                                               UINT16 mdl_id, UINT8 rsp_code,
+                                               const tMCA_CHNL_CFG *p_chnl_cfg);
+    tMCA_RESULT (*DataChnlCfg)(tMCA_CL mcl, const tMCA_CHNL_CFG *p_chnl_cfg);
+    tMCA_RESULT (*Abort)(tMCA_CL mcl);
+    tMCA_RESULT (*Delete)(tMCA_CL mcl, UINT16 mdl_id);
+    tMCA_RESULT (*WriteReq)(tMCA_DL mdl, BT_HDR *p_pkt);
+    UINT16 (*GetL2CapChannel) (tMCA_DL mdl);
+}btmcap_interface_t;
 
 /** Bluetooth RFC tool commands */
 typedef enum {
