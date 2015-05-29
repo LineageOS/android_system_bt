@@ -61,6 +61,8 @@
 #include "osi/include/log.h"
 #include "stack_manager.h"
 #include "btif_config.h"
+#include "l2cdefs.h"
+#include "l2c_api.h"
 
 #if TEST_APP_INTERFACE == TRUE
 #include <bt_testapp.h>
@@ -121,6 +123,7 @@ extern btrc_interface_t *btif_rc_ctrl_get_interface();
 extern btsdp_interface_t *btif_sdp_get_interface();
 
 #if TEST_APP_INTERFACE == TRUE
+extern const btl2cap_interface_t *btif_l2cap_get_interface(void);
 extern const btrfcomm_interface_t *btif_rfcomm_get_interface(void);
 extern const btmcap_interface_t *btif_mcap_get_interface(void);
 #endif
@@ -403,6 +406,8 @@ static const void* get_testapp_interface(int test_app_profile)
         return NULL;
     }
     switch(test_app_profile) {
+        case TEST_APP_L2CAP:
+            return btif_l2cap_get_interface();
         case TEST_APP_RFCOMM:
             return btif_rfcomm_get_interface();
         case TEST_APP_MCAP:

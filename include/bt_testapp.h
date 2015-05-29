@@ -75,9 +75,53 @@ typedef enum {
     NOT_SUPPORTED,
 }profileName;
 typedef enum {
+    TEST_APP_L2CAP,
     TEST_APP_RFCOMM,
     TEST_APP_MCAP
 } test_app_profile;
+typedef struct {
+
+    /** set to sizeof(Btl2capInterface) */
+    size_t          size;
+    /** Register the L2cap callbacks  */
+    bt_status_t (*Init)(tL2CAP_APPL_INFO* callbacks);
+    bt_status_t (*RegisterPsm)(UINT16 psm, BOOLEAN conn_type, UINT16 sec_level);
+    bt_status_t (*Deregister)(UINT16 psm);
+    UINT16      (*AllocatePsm)(void);
+    UINT16      (*Connect)(UINT16 psm, bt_bdaddr_t *bd_addr);
+    BOOLEAN     (*ConnectRsp)(BD_ADDR p_bd_addr, UINT8 id, UINT16 lcid, UINT16 result, UINT16 status);
+    UINT16      (*ErtmConnectReq)(UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_ERTM_INFO *p_ertm_info);
+    BOOLEAN     (*ErtmConnectRsp)(BD_ADDR p_bd_addr, UINT8 id, UINT16 lcid,
+                                             UINT16 result, UINT16 status,
+                                             tL2CAP_ERTM_INFO *p_ertm_info);
+    BOOLEAN     (*ConfigReq)(UINT16 cid, tL2CAP_CFG_INFO *p_cfg);
+    BOOLEAN     (*ConfigRsp)(UINT16 cid, tL2CAP_CFG_INFO *p_cfg);
+    BOOLEAN     (*DisconnectReq)(UINT16 cid);
+    BOOLEAN     (*DisconnectRsp)(UINT16 cid);
+    UINT8       (*DataWrite)(UINT16 cid, char *p_data, UINT32 len);
+    BOOLEAN     (*Ping)(BD_ADDR p_bd_addr, tL2CA_ECHO_RSP_CB *p_cb);
+    BOOLEAN     (*Echo)(BD_ADDR p_bd_addr, BT_HDR *p_data, tL2CA_ECHO_DATA_CB *p_callback);
+    BOOLEAN     (*SetIdleTimeout)(UINT16 cid, UINT16 timeout, BOOLEAN is_global);
+    BOOLEAN     (*SetIdleTimeoutByBdAddr)(BD_ADDR bd_addr, UINT16 timeout);
+    UINT8       (*SetDesireRole)(UINT8 new_role);
+	void        (*SetSecConnOnlyMode)(BOOLEAN secvalue);
+    UINT16      (*LocalLoopbackReq)(UINT16 psm, UINT16 handle, BD_ADDR p_bd_addr);
+    UINT16      (*FlushChannel)(UINT16 lcid, UINT16 num_to_flush);
+    BOOLEAN     (*SetAclPriority)(BD_ADDR bd_addr, UINT8 priority);
+    BOOLEAN     (*FlowControl)(UINT16 cid, BOOLEAN data_enabled);
+    BOOLEAN     (*SendTestSFrame)(UINT16 cid, BOOLEAN rr_or_rej, UINT8 back_track);
+    BOOLEAN     (*SetTxPriority)(UINT16 cid, tL2CAP_CHNL_PRIORITY priority);
+    BOOLEAN     (*RegForNoCPEvt)(tL2CA_NOCP_CB *p_cb, BD_ADDR p_bda);
+    BOOLEAN     (*SetChnlDataRate)(UINT16 cid, tL2CAP_CHNL_DATA_RATE tx, tL2CAP_CHNL_DATA_RATE rx);
+    BOOLEAN     (*SetFlushTimeout)(BD_ADDR bd_addr, UINT16 flush_tout);
+    UINT8       (*DataWriteEx)(UINT16 cid, BT_HDR *p_data, UINT16 flags);
+    BOOLEAN     (*SetChnlFlushability)(UINT16 cid, BOOLEAN is_flushable);
+    BOOLEAN     (*GetPeerFeatures)(BD_ADDR bd_addr, UINT32 *p_ext_feat, UINT8 *p_chnl_mask);
+    BOOLEAN     (*GetBDAddrbyHandle)(UINT16 handle, BD_ADDR bd_addr);
+    UINT8       (*GetChnlFcrMode)(UINT16 lcid);
+    UINT16      (*SendFixedChnlData)(UINT16 fixed_cid, BD_ADDR rem_bda, BT_HDR *p_buf);
+    void  (*Cleanup)(void);
+} btl2cap_interface_t;
 
 typedef struct
 {
