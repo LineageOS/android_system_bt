@@ -580,9 +580,9 @@ tBTM_STATUS BTM_CreateSco (BD_ADDR remote_bda, BOOLEAN is_orig, UINT16 pkt_types
     tACL_CONN        *p_acl;
 
 #if (BTM_SCO_WAKE_PARKED_LINK == TRUE)
-    tBTM_PM_MODE      md;
     tBTM_PM_PWR_MD    pm;
-#else  // BTM_SCO_WAKE_PARKED_LINK
+    tBTM_PM_STATE     State;
+#else
     UINT8             mode;
 #endif  // BTM_SCO_WAKE_PARKED_LINK
 
@@ -629,10 +629,12 @@ tBTM_STATUS BTM_CreateSco (BD_ADDR remote_bda, BOOLEAN is_orig, UINT16 pkt_types
                 {
                     /* can not create SCO link if in park mode */
 #if BTM_SCO_WAKE_PARKED_LINK == TRUE
-                    if(BTM_ReadPowerMode(remote_bda, &md) == BTM_SUCCESS)
+                    if((btm_read_power_mode_state(p->esco.data.bd_addr, &State) == BTM_SUCCESS))
                     {
-                        if (md == BTM_PM_MD_PARK || md == BTM_PM_MD_SNIFF)
+                        if (State == BTM_PM_ST_SNIFF || State == BTM_PM_ST_PARK ||
+                            State == BTM_PM_ST_PENDING)
                         {
+                            BTM_TRACE_DEBUG("In sniff,park or pend mode: %d", State);
                             memset( (void*)&pm, 0, sizeof(pm));
                             pm.mode = BTM_PM_MD_ACTIVE;
                             BTM_SetPowerMode(BTM_PM_SET_ONLY_ID, remote_bda, &pm);
