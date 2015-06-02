@@ -2725,6 +2725,12 @@ static UINT8 check_for_max_number_of_frames_per_packet()
     return result;
 }
 
+static inline UINT64 now_us_rounded_to_nearest_tick(void)
+{
+    UINT32 tick_us = BTIF_MEDIA_TIME_TICK * 1000;
+    return (time_now_us() + tick_us/2) / tick_us * tick_us;
+}
+
 /*******************************************************************************
  **
  ** Function         btif_get_num_aa_frame
@@ -2750,7 +2756,7 @@ static void btif_get_num_aa_frame(UINT8 *num_of_iterations, UINT8 *num_of_frames
             APPL_TRACE_DEBUG("pcm_bytes_per_frame %u", pcm_bytes_per_frame);
 
             UINT32 us_this_tick = BTIF_MEDIA_TIME_TICK * 1000;
-            UINT64 now_us = time_now_us();
+            UINT64 now_us = now_us_rounded_to_nearest_tick();
             if (last_frame_us != 0)
                 us_this_tick = (now_us - last_frame_us);
             last_frame_us = now_us;
