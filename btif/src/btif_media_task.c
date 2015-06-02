@@ -234,7 +234,14 @@ enum {
 /* 18 frames is equivalent to 6.89*18*2.9 ~= 360 ms @ 44.1 khz, 20 ms mediatick */
 #define MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ 10
 #ifndef MAX_PCM_FRAME_NUM_PER_TICK
+#ifdef SAMPLE_RATE_48K
+/* If a frame is 512 bytes and a tick is 3840 bytes (48K) then allow up to
+ * two full ticks to be sent per tick which is 9680 / 512 = 18
+ */
+#define MAX_PCM_FRAME_NUM_PER_TICK     18
+#else
 #define MAX_PCM_FRAME_NUM_PER_TICK     14
+#endif
 #endif
 #define MAX_PCM_ITER_NUM_PER_TICK     3
 
