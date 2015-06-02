@@ -25,7 +25,7 @@
 
 #define CLNT_IF_IDX 0
 #define INST_ID_IDX 1
-#define INST_ID_IDX_MAX INST_ID_IDX + 1
+#define INST_ID_IDX_MAX (INST_ID_IDX + 1)
 #define INVALID_ADV_INST -1
 #define STD_ADV_INSTID 0
 
