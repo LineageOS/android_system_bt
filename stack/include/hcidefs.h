@@ -367,6 +367,12 @@
 /* Extended BLE Scan parameters OCF */
 #define HCI_BLE_EXTENDED_SCAN_PARAMS_OCF  (0x0160 | HCI_GRP_VENDOR_SPECIFIC)
 
+/* VOIP Network Wifi OCF */
+#define HCI_VSC_VOIP_NETWORK_WIFI_OCF   (0x001C | HCI_GRP_VENDOR_SPECIFIC)
+
+/* subcode for VOIP Network Wifi */
+#define HCI_VSC_SUBCODE_VOIP_NETWORK_WIFI               0x01
+
 /* subcode for multi adv feature */
 #define BTM_BLE_MULTI_ADV_SET_PARAM                     0x01
 #define BTM_BLE_MULTI_ADV_WRITE_ADV_DATA                0x02
