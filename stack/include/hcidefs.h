@@ -373,6 +373,12 @@
 /* Controller debug info OCF */
 #define HCI_CONTROLLER_DEBUG_INFO_OCF     (0x015B | HCI_GRP_VENDOR_SPECIFIC)
 
+/* VOIP Network Wifi OCF */
+#define HCI_VSC_VOIP_NETWORK_WIFI_OCF   (0x001C | HCI_GRP_VENDOR_SPECIFIC)
+
+/* subcode for VOIP Network Wifi */
+#define HCI_VSC_SUBCODE_VOIP_NETWORK_WIFI               0x01
+
 /* subcode for multi adv feature */
 #define BTM_BLE_MULTI_ADV_SET_PARAM                     0x01
 #define BTM_BLE_MULTI_ADV_WRITE_ADV_DATA                0x02
