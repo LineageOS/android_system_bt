@@ -541,6 +541,28 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
                 transport = BT_TRANSPORT_LE;
             }
 #endif
+            if (p_lcb->transport == BT_TRANSPORT_BR_EDR)
+            {
+                if (p_lcb->sent_not_acked > 0)
+                {
+                    l2cb.controller_xmit_window += p_lcb->sent_not_acked;
+                    if (l2cb.controller_xmit_window > l2cb.num_lm_acl_bufs)
+                    {
+                        l2cb.controller_xmit_window = l2cb.num_lm_acl_bufs;
+                    }
+                    p_lcb->sent_not_acked = 0;
+                }
+                p_lcb->partial_segment_being_sent = FALSE;
+
+                /* Stop the link connect timer if sent */
+                if (p_lcb->w4_info_rsp)
+                {
+                    btu_stop_timer (&p_lcb->info_timer_entry);
+                    p_lcb->w4_info_rsp = FALSE;
+                }
+
+                btm_acl_removed(p_lcb->remote_bd_addr, BT_TRANSPORT_BR_EDR);
+            }
             if (l2cu_create_conn(p_lcb, transport))
                 lcb_is_free = FALSE; /* still using this lcb */
         }
