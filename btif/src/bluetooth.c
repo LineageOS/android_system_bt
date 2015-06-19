@@ -64,6 +64,9 @@
 #include "btif/include/btif_debug_conn.h"
 #include "btif/include/btif_media.h"
 
+#include <logging.h>
+
+
 /************************************************************************************
 **  Static variables
 ************************************************************************************/
@@ -104,6 +107,8 @@ extern btrc_interface_t *btif_rc_get_interface();
 extern btrc_interface_t *btif_rc_ctrl_get_interface();
 /*SDP search client*/
 extern btsdp_interface_t *btif_sdp_get_interface();
+
+extern const btstacklog_interface_t *btif_stack_log_interface(void);
 
 /************************************************************************************
 **  Functions
@@ -380,6 +385,9 @@ static const void* get_profile_interface (const char *profile_id)
 
     if (is_profile(profile_id, BT_PROFILE_SOCKETS_ID))
         return btif_sock_get_interface();
+
+    if (is_profile(profile_id, "LOG_ID"))
+        return btif_stack_log_interface();
 
     if (is_profile(profile_id, BT_PROFILE_PAN_ID))
         return btif_pan_get_interface();

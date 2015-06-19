@@ -485,6 +485,12 @@ void bta_dm_disable (tBTA_DM_MSG *p_data)
     BTM_BleClearBgConnDev();
 #endif
 
+#ifdef QLOGKIT_USERDEBUG
+    /* Disable SOC Logging */
+    UINT8       param[5] = {0x10,0x02,0x00,0x00,0x01};
+    BTM_VendorSpecificCommand(HCI_VS_HOST_LOG_OPCODE,5,param,NULL);
+#endif
+
     if(BTM_GetNumAclLinks()==0)
     {
 #if (defined(BTA_DISABLE_DELAY) && BTA_DISABLE_DELAY > 0)

@@ -9,6 +9,12 @@ else
   bluetooth_CFLAGS += -DHAS_NO_BDROID_BUILDCFG
 endif
 
+ifeq ($(TARGET_BUILD_VARIANT),userdebug)
+ifneq ($(BOARD_HAS_QCA_BT_ROME),true))
+bdroid_CFLAGS += -DQLOGKIT_USERDEBUG
+endif
+endif
+
 ifneq ($(BOARD_BLUETOOTH_BDROID_HCILP_INCLUDED),)
   bluetooth_CFLAGS += -DHCILP_INCLUDED=$(BOARD_BLUETOOTH_BDROID_HCILP_INCLUDED)
 endif

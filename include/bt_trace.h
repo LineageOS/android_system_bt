@@ -120,6 +120,7 @@ static const char BTE_LOGMSG_MODULE[] = "bte_logmsg_module";
 #define BTTRC_PARAM_UINT8                  1
 #define BTTRC_PARAM_UINT16                 2
 #define BTTRC_PARAM_UINT32                 3
+extern void BTA_setStackLog( const char* log_layer, int log_level);
 
 /* Enables or disables verbose trace information. */
 #ifndef BT_TRACE_VERBOSE

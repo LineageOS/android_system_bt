@@ -105,6 +105,12 @@ static future_t *start_up(void) {
 
   packet_parser->parse_generic_command_complete(response);
 
+  #ifdef QLOGKIT_USERDEBUG
+  /* Enable SOC Logging */
+  UINT8       param[5] = {0x10,0x03,0x00,0x00,0x01};
+  BTM_VendorSpecificCommand(HCI_VS_HOST_LOG_OPCODE,5,param,NULL);
+  #endif
+
   // Read the local version info off the controller next, including
   // information such as manufacturer and supported HCI version
   response = AWAIT_COMMAND(packet_factory->make_read_local_version_info());
