@@ -268,11 +268,9 @@ static future_t *init(void) {
     LOG_INFO("[bttrc] using compile default trace settings");
     return NULL;
   }
-
   load_levels_from_config(stack_config->get_all());
   return NULL;
 }
-
 
 const module_t bte_logmsg_module = {
   .name = BTE_LOGMSG_MODULE,
@@ -285,3 +283,43 @@ const module_t bte_logmsg_module = {
     NULL
   }
 };
+
+/********************************************************************************
+ **
+ **    Function Name:    BTA_setStackLog
+ **
+ **    Purpose:          Set the trace level of the different layers of stack
+                         based on the stack layer and level as input
+ **
+ **    Input Parameters: const char* log_layer, int log_level
+                         Example : TRC_HCI, 5
+ **
+ **    Returns:          void
+ **
+ *********************************************************************************/
+
+void BTA_setStackLog( const char* log_layer, int log_level)
+{
+    const tBTTRC_FUNC_MAP *p_f_map;
+    int new_level = 0;
+    int layer_found = 0;
+    p_f_map = &bttrc_set_level_map[0];
+
+    while ( 0 != p_f_map->layer_id_start )
+    {
+
+        if( (NULL != p_f_map->p_f) && !strcmp( p_f_map->trc_name, log_layer))
+        {
+            new_level = p_f_map->p_f(log_level);
+            LOG_INFO("BTA_setStackLog: New trace level set for layer %s is %d", log_layer, new_level);
+            layer_found = 1;
+            break;
+        }
+        p_f_map++;
+    }
+
+    if ( layer_found == 0 )
+    {
+        LOG_INFO("BTA_setStackLog: Unable to set Layer %s with level %d. Layer not found", log_layer, log_level);
+    }
+}

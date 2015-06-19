@@ -58,7 +58,8 @@ LOCAL_SRC_FILES += \
     ../btif/src/stack_manager.c \
     ../btif/src/btif_rfcomm.c \
     ../btif/src/btif_mcap.c \
-    ../btif/src/btif_l2cap.c
+    ../btif/src/btif_l2cap.c \
+    ../btif/src/btif_stack_log.c
 
 ifeq ($(BOARD_USES_WIPOWER), true)
     LOCAL_SRC_FILES += \

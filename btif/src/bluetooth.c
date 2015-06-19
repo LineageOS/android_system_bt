@@ -67,6 +67,7 @@
 #if TEST_APP_INTERFACE == TRUE
 #include <bt_testapp.h>
 #endif
+#include <logging.h>
 
 /************************************************************************************
 **  Constants & Macros
@@ -127,6 +128,7 @@ extern const btl2cap_interface_t *btif_l2cap_get_interface(void);
 extern const btrfcomm_interface_t *btif_rfcomm_get_interface(void);
 extern const btmcap_interface_t *btif_mcap_get_interface(void);
 #endif
+extern const btstacklog_interface_t *btif_stack_log_interface(void);
 
 /************************************************************************************
 **  Functions
@@ -362,6 +364,9 @@ static const void* get_profile_interface (const char *profile_id)
 
     if (is_profile(profile_id, BT_PROFILE_SOCKETS_ID))
         return btif_sock_get_interface();
+
+    if (is_profile(profile_id, "LOG_ID"))
+        return btif_stack_log_interface();
 
     if (is_profile(profile_id, BT_PROFILE_PAN_ID))
         return btif_pan_get_interface();
