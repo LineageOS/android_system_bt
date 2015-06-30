@@ -1521,10 +1521,10 @@ tBTM_STATUS BTM_SetEncryption (BD_ADDR bd_addr, tBT_TRANSPORT transport, tBTM_SE
 
     if ((transport == BT_TRANSPORT_BR_EDR &&
          (p_dev_rec->sec_flags &  BTM_SEC_ENCRYPTED))
-#if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
+/*#if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
          || (transport == BT_TRANSPORT_LE &&
            (p_dev_rec->sec_flags & BTM_SEC_LE_ENCRYPTED))
-#endif
+#endif*/
           )
     {
         BTM_TRACE_EVENT ("Security Manager: BTM_SetEncryption already encrypted");
@@ -4578,11 +4578,15 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
 
     if (p_acl && p_acl->transport == BT_TRANSPORT_LE)
     {
-        if (status == HCI_ERR_KEY_MISSING || status == HCI_ERR_AUTH_FAILURE ||
+        if (status == HCI_ERR_AUTH_FAILURE ||
             status == HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE)
         {
             p_dev_rec->sec_flags &= ~ (BTM_SEC_LE_LINK_KEY_KNOWN);
             p_dev_rec->ble.key_type = BTM_LE_KEY_NONE;
+        }
+        else if (status == HCI_ERR_KEY_MISSING)
+        {
+            btm_sec_disconnect(handle, status);
         }
         btm_ble_link_encrypted(p_dev_rec->ble.pseudo_addr, encr_enable);
         return;
