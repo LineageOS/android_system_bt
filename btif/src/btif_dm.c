@@ -49,39 +49,11 @@
 #include "btif_hh.h"
 #include "btif_config.h"
 #include "btif_sdp.h"
-
 #include "bta_gatt_api.h"
+#include "device/include/interop.h"
 #include "include/stack_config.h"
-
 #include "osi/include/log.h"
 #include "osi/include/allocator.h"
-
-/******************************************************************************
-**  Device specific workarounds
-******************************************************************************/
-
-/**
- * The devices below have proven problematic during the pairing process, often
- * requiring multiple retries to complete pairing. To avoid degrading the user
- * experience for other devices, explicitely blacklist troubled devices here.
- */
-static const UINT8 blacklist_pairing_retries[][3] = {
-    {0x9C, 0xDF, 0x03} // BMW car kits (Harman/Becker)
-};
-
-BOOLEAN blacklistPairingRetries(BD_ADDR bd_addr)
-{
-    const unsigned blacklist_size = sizeof(blacklist_pairing_retries)
-        / sizeof(blacklist_pairing_retries[0]);
-    for (unsigned i = 0; i != blacklist_size; ++i)
-    {
-        if (blacklist_pairing_retries[i][0] == bd_addr[0] &&
-            blacklist_pairing_retries[i][1] == bd_addr[1] &&
-            blacklist_pairing_retries[i][2] == bd_addr[2])
-            return TRUE;
-    }
-    return FALSE;
-}
 
 /******************************************************************************
 **  Constants & Macros
@@ -1184,7 +1156,8 @@ static void btif_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
         switch(p_auth_cmpl->fail_reason)
         {
             case HCI_ERR_PAGE_TIMEOUT:
-                if (blacklistPairingRetries(bd_addr.address) && pairing_cb.timeout_retries)
+                if (interop_match(INTEROP_AUTO_RETRY_PAIRING, &bd_addr)
+                    && pairing_cb.timeout_retries)
                 {
                     BTIF_TRACE_WARNING("%s() - Pairing timeout; retrying (%d) ...", __FUNCTION__, pairing_cb.timeout_retries);
                     --pairing_cb.timeout_retries;
