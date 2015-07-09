@@ -57,6 +57,11 @@ LOCAL_SRC_FILES += \
     ../btif/src/btif_util.c \
     ../btif/src/stack_manager.c
 
+ifeq ($(BOARD_USES_WIPOWER), true)
+    LOCAL_SRC_FILES += \
+        ../wipowerif/src/wipower.c
+endif
+
 # callouts
 LOCAL_SRC_FILES+= \
     ../btif/co/bta_ag_co.c \
@@ -113,6 +118,10 @@ LOCAL_C_INCLUDES+= . \
 	$(bdroid_C_INCLUDES) \
 	external/tinyxml2 \
 	external/zlib
+
+ifeq ($(BOARD_USES_WIPOWER), true)
+    LOCAL_C_INCLUDES+= $(LOCAL_PATH)/../wipowerif/include
+endif
 
 LOCAL_CFLAGS += -DBUILDCFG $(bdroid_CFLAGS) -Wno-error=maybe-uninitialized -Wno-error=uninitialized -Wno-error=unused-parameter
 LOCAL_CONLYFLAGS := -std=c99

@@ -17,6 +17,10 @@ ifneq ($(TARGET_BUILD_VARIANT),user)
 bdroid_CFLAGS += -DBLUEDROID_DEBUG
 endif
 
+ifeq ($(BOARD_USES_WIPOWER), true)
+bdroid_CFLAGS  += -DWIPOWER_SUPPORTED
+endif
+
 bdroid_CFLAGS += \
   -Wall \
   -Wno-unused-parameter \

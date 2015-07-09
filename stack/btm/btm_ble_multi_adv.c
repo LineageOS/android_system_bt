@@ -42,11 +42,21 @@
 #define BTM_BLE_MULTI_ADV_CB_EVT_MASK   0xF0
 #define BTM_BLE_MULTI_ADV_SUBCODE_MASK  0x0F
 
+#ifdef WIPOWER_SUPPORTED
+#define WIPOWER_16_UUID_LSB 0xFE
+#define WIPOWER_16_UUID_MSB 0xFF
+static bool is_wipower_adv = false;
+#endif
+
 /************************************************************************************
 **  Static variables
 ************************************************************************************/
 tBTM_BLE_MULTI_ADV_CB  btm_multi_adv_cb;
 tBTM_BLE_MULTI_ADV_INST_IDX_Q btm_multi_adv_idx_q;
+
+#ifdef WIPOWER_SUPPORTED
+UINT8 wipower_inst_id = BTM_BLE_MULTI_ADV_DEFAULT_STD;
+#endif
 
 /************************************************************************************
 **  Externs
@@ -690,6 +700,13 @@ tBTM_STATUS BTM_BleCfgAdvInstData (UINT8 inst_id, BOOLEAN is_scan_rsp,
     btm_ble_build_adv_data(&data_mask, &pp, p_data);
     *p_len = (UINT8)(pp - param - 2);
     UINT8_TO_STREAM(pp_temp, inst_id);
+#ifdef WIPOWER_SUPPORTED
+    if (param[7] == WIPOWER_16_UUID_LSB && param[8] == WIPOWER_16_UUID_MSB)
+    {
+        is_wipower_adv = true;
+        wipower_inst_id = inst_id;
+    }
+#endif
 
     if ((rt = BTM_VendorSpecificCommand (HCI_BLE_MULTI_ADV_OCF,
                                     (UINT8)BTM_BLE_MULTI_ADV_WRITE_DATA_LEN,
@@ -783,7 +800,13 @@ void btm_ble_multi_adv_vse_cback(UINT8 len, UINT8 *p)
             adv_inst !=  BTM_BLE_MULTI_ADV_DEFAULT_STD)
         {
             BTM_TRACE_EVENT("btm_ble_multi_adv_reenable called");
-            btm_ble_multi_adv_reenable(adv_inst);
+#ifdef WIPOWER_SUPPORTED
+            if (!(is_wipower_adv && (adv_inst == wipower_inst_id))) {
+                btm_ble_multi_adv_reenable(adv_inst);
+            }
+#else
+                btm_ble_multi_adv_reenable(adv_inst);
+#endif
         }
         /* re-enable connectibility */
         else if (adv_inst == BTM_BLE_MULTI_ADV_DEFAULT_STD)
@@ -855,6 +878,10 @@ void btm_ble_multi_adv_init()
 *******************************************************************************/
 void btm_ble_multi_adv_cleanup(void)
 {
+#ifdef WIPOWER_SUPPORTED
+    is_wipower_adv = false;
+    wipower_inst_id = BTM_BLE_MULTI_ADV_DEFAULT_STD;
+#endif
     if (btm_multi_adv_cb.p_adv_inst)
         GKI_freebuf(btm_multi_adv_cb.p_adv_inst);
 
