@@ -468,6 +468,7 @@ static void btif_hf_upstreams_evt(UINT16 event, char* p_param)
     tBTA_AG *p_data = (tBTA_AG *)p_param;
     bdstr_t bdstr;
     int idx = p_data->hdr.handle - 1;
+    BOOLEAN ignore_rfc_fail = false;
 
     BTIF_TRACE_DEBUG("%s: event=%s", __FUNCTION__, dump_hf_event(event));
 
@@ -500,6 +501,18 @@ static void btif_hf_upstreams_evt(UINT16 event, char* p_param)
             }
             else if (btif_hf_cb[idx].state == BTHF_CONNECTION_STATE_CONNECTING)
             {
+                /* In Multi-hf, if outgoing RFCOMM connection fails due to collision,
+                 * ignore the failure if HF is already connected.
+                 */
+                if ( (btif_max_hf_clients > 1) &&
+                     (p_data->open.status == BTA_AG_FAIL_RFCOMM) &&
+                     (is_connected(&btif_hf_cb[idx].connected_bda)) )
+                {
+                     BTIF_TRACE_WARNING("%s: Ignoring RFCOMM failure due to collision for dev %s",
+                          __FUNCTION__, bdaddr_to_string(&btif_hf_cb[idx].connected_bda, bdstr, sizeof(bdstr)));
+                     ignore_rfc_fail = true;
+                }
+
                 btif_hf_cb[idx].state = BTHF_CONNECTION_STATE_DISCONNECTED;
             }
             else
@@ -510,8 +523,11 @@ static void btif_hf_upstreams_evt(UINT16 event, char* p_param)
                 break;
             }
 
-            HAL_CBACK(bt_hf_callbacks, connection_state_cb, btif_hf_cb[idx].state,
+            if (ignore_rfc_fail != true)
+            {
+                HAL_CBACK(bt_hf_callbacks, connection_state_cb, btif_hf_cb[idx].state,
                                                         &btif_hf_cb[idx].connected_bda);
+            }
 
             if (btif_hf_cb[idx].state == BTHF_CONNECTION_STATE_DISCONNECTED)
                 bdsetany(btif_hf_cb[idx].connected_bda.address);

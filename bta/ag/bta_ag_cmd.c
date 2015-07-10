@@ -1430,6 +1430,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
                 {
                     if (!bta_ag_parse_bind(p_scb, p_arg))
                     {
+                        event = 0;
                         bta_ag_send_error(p_scb, BTA_AG_ERR_INV_CHAR_IN_TSTR);
                     }
                     else

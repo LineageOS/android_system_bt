@@ -886,7 +886,7 @@ static void bta_dm_pm_ssr(BD_ADDR peer_addr)
         if (bta_dm_pm_is_sco_active())
         {
             int idx = bta_dm_get_sco_index();
-            if (idx != -1)
+            if (idx != -1 && idx < bta_dm_conn_srvcs.count)
             {
                 if (bdcmp(bta_dm_conn_srvcs.conn_srvc[idx].peer_bdaddr, peer_addr) == 0)
                 {
