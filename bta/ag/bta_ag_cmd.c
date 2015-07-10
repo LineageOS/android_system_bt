@@ -776,7 +776,7 @@ static tBTA_AG_PEER_CODEC bta_ag_parse_bac(tBTA_AG_SCB *p_scb, char *p_s)
             case UUID_CODEC_MSBC:   retval |= BTA_AG_CODEC_MSBC;     break;
             default:
                 APPL_TRACE_ERROR("Unknown Codec UUID(%d) received", uuid_codec);
-                return BTA_AG_CODEC_NONE;
+                break;
         }
 
         if (cont)
@@ -1433,6 +1433,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
                 {
                     if (!bta_ag_parse_bind(p_scb, p_arg))
                     {
+                        event = 0;
                         bta_ag_send_error(p_scb, BTA_AG_ERR_INV_CHAR_IN_TSTR);
                     }
                     else

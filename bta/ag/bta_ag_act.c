@@ -340,6 +340,9 @@ void bta_ag_disc_fail(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 
     /* reinitialize stuff */
 
+    /* clear the remote BD address */
+    bdcpy(p_scb->peer_addr, bd_addr_null);
+
     /* call open cback w. failure */
     bta_ag_cback_open(p_scb, NULL, BTA_AG_FAIL_SDP);
 }
