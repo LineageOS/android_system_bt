@@ -30,6 +30,7 @@ static const interop_entry_t interop_database[] = {
   // Nexus Remote (Spike)
   // Note: May affect other Asus brand devices
   {{0x38, 0x2c, 0x4a, 0,0,0}, 3, INTEROP_DISABLE_LE_SECURE_CONNECTIONS},
+  {{0x08, 0x62, 0x66, 0,0,0}, 3, INTEROP_DISABLE_LE_SECURE_CONNECTIONS},
 
   // BMW car kits (Harman/Becker)
   {{0x9c, 0xdf, 0x03, 0,0,0}, 3, INTEROP_AUTO_RETRY_PAIRING}
