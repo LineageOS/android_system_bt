@@ -1973,6 +1973,7 @@ UINT8 btm_proc_smp_cback(tSMP_EVT event, BD_ADDR bd_addr, tSMP_EVT_DATA *p_data)
 {
     tBTM_SEC_DEV_REC    *p_dev_rec = btm_find_dev (bd_addr);
     UINT8 res = 0;
+    BOOLEAN skip_cmpl_cback = FALSE;
 
     BTM_TRACE_DEBUG ("btm_proc_smp_cback event = %d", event);
 
@@ -2003,12 +2004,22 @@ UINT8 btm_proc_smp_cback(tSMP_EVT event, BD_ADDR bd_addr, tSMP_EVT_DATA *p_data)
                     break;
                 }
                 memcpy (btm_cb.pairing_bda, bd_addr, BD_ADDR_LEN);
+                btm_cb.pairing_state = BTM_PAIR_STATE_WAIT_AUTH_COMPLETE;
                 p_dev_rec->sec_state = BTM_SEC_STATE_AUTHENTICATING;
                 btm_cb.pairing_flags |= BTM_PAIR_FLAGS_LE_ACTIVE;
                 /* fall through */
 
             case SMP_COMPLT_EVT:
-                if (btm_cb.api.p_le_callback)
+                if(event == SMP_COMPLT_EVT)
+                {
+                    if ((p_data->cmplt.reason == SMP_SUCCESS && p_data->cmplt.sec_level == 0)||
+                       (btm_cb.pairing_state == BTM_PAIR_STATE_IDLE))
+                    {
+                        BTM_TRACE_DEBUG("%s, SMP CMPL due to encryption", __func__);
+                        skip_cmpl_cback = TRUE;
+                    }
+                }
+                if (btm_cb.api.p_le_callback && !skip_cmpl_cback)
                 {
                     /* the callback function implementation may change the IO capability... */
                     BTM_TRACE_DEBUG ("btm_cb.api.p_le_callback=0x%x", btm_cb.api.p_le_callback );
