@@ -61,7 +61,7 @@ static const tBTA_PBS_CFG bta_pbs_cfg = {
   BTA_PBS_REALM_CHARSET,                          // realm_charset: Server only
   BTA_PBS_USERID_REQ,                             // userid_req: Server only
   (BTA_PBS_SUPF_DOWNLOAD | BTA_PBS_SURF_BROWSE),  // supported_features
-  BTA_PBS_REPOSIT_LOCAL,                          // supported_repositories
+  (BTA_PBS_REPOSIT_LOCAL  | BTA_PBS_REPOSIT_SIM), // supported_repositories
 };
 
 // object format lookup table
