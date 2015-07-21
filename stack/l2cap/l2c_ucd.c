@@ -101,7 +101,11 @@ static void l2c_ucd_data_ind_cback (BD_ADDR rem_bda, BT_HDR *p_buf)
     p_buf->offset += L2CAP_UCD_OVERHEAD;
     p_buf->len    -= L2CAP_UCD_OVERHEAD;
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    if ((p_rcb = l2cu_find_rcb_by_psm (psm, BT_TRANSPORT_BR_EDR)) == NULL)
+#else
     if ((p_rcb = l2cu_find_rcb_by_psm (psm)) == NULL)
+#endif
     {
         L2CAP_TRACE_ERROR ("L2CAP - no RCB for l2c_ucd_data_ind_cback, PSM: 0x%04x", psm);
         GKI_freebuf (p_buf);
@@ -212,7 +216,11 @@ BOOLEAN L2CA_UcdRegister ( UINT16 psm, tL2CAP_UCD_CB_INFO *p_cb_info )
         return (FALSE);
     }
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    if ((p_rcb = l2cu_find_rcb_by_psm (psm, BT_TRANSPORT_BR_EDR)) == NULL)
+#else
     if ((p_rcb = l2cu_find_rcb_by_psm (psm)) == NULL)
+#endif
     {
         L2CAP_TRACE_ERROR ("L2CAP - no RCB for L2CA_UcdRegister, PSM: 0x%04x", psm);
         return (FALSE);
@@ -222,9 +230,17 @@ BOOLEAN L2CA_UcdRegister ( UINT16 psm, tL2CAP_UCD_CB_INFO *p_cb_info )
     p_rcb->ucd.cb_info = *p_cb_info;
 
     /* check if master rcb is created for UCD */
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    if ((p_rcb = l2cu_find_rcb_by_psm (L2C_UCD_RCB_ID, BT_TRANSPORT_BR_EDR)) == NULL)
+#else
     if ((p_rcb = l2cu_find_rcb_by_psm (L2C_UCD_RCB_ID)) == NULL)
+#endif
     {
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+        if ((p_rcb = l2cu_allocate_rcb (L2C_UCD_RCB_ID, BT_TRANSPORT_BR_EDR)) == NULL)
+#else
         if ((p_rcb = l2cu_allocate_rcb (L2C_UCD_RCB_ID)) == NULL)
+#endif
         {
             L2CAP_TRACE_ERROR ("L2CAP - no RCB available for L2CA_UcdRegister");
             return (FALSE);
@@ -270,7 +286,11 @@ BOOLEAN L2CA_UcdDeregister ( UINT16 psm )
 
     L2CAP_TRACE_API  ("L2CA_UcdDeregister()  PSM: 0x%04x", psm);
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    if ((p_rcb = l2cu_find_rcb_by_psm (psm, BT_TRANSPORT_BR_EDR)) == NULL)
+#else
     if ((p_rcb = l2cu_find_rcb_by_psm (psm)) == NULL)
+#endif
     {
         L2CAP_TRACE_ERROR ("L2CAP - no RCB for L2CA_UcdDeregister, PSM: 0x%04x", psm);
         return (FALSE);
@@ -288,7 +308,11 @@ BOOLEAN L2CA_UcdDeregister ( UINT16 psm )
     }
 
     /* delete master rcb for UCD */
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    if ((p_rcb = l2cu_find_rcb_by_psm (L2C_UCD_RCB_ID, BT_TRANSPORT_BR_EDR)) != NULL)
+#else
     if ((p_rcb = l2cu_find_rcb_by_psm (L2C_UCD_RCB_ID)) != NULL)
+#endif
     {
         l2cu_release_rcb (p_rcb);
     }
@@ -334,8 +358,13 @@ BOOLEAN L2CA_UcdDiscover ( UINT16 psm, BD_ADDR rem_bda, UINT8 info_type )
                       (rem_bda[4]<<8)+rem_bda[5], info_type);
 
     /* Fail if the PSM is not registered */
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    if (((p_rcb = l2cu_find_rcb_by_psm (psm, BT_TRANSPORT_BR_EDR)) == NULL)
+        ||( p_rcb->ucd.state == L2C_UCD_STATE_UNUSED ))
+#else
     if (((p_rcb = l2cu_find_rcb_by_psm (psm)) == NULL)
         ||( p_rcb->ucd.state == L2C_UCD_STATE_UNUSED ))
+#endif
     {
         L2CAP_TRACE_WARNING ("L2CAP - no RCB for L2CA_UcdDiscover, PSM: 0x%04x", psm);
         return (FALSE);
@@ -401,8 +430,13 @@ UINT16 L2CA_UcdDataWrite (UINT16 psm, BD_ADDR rem_bda, BT_HDR *p_buf, UINT16 fla
                       (rem_bda[4]<<8)+rem_bda[5]);
 
     /* Fail if the PSM is not registered */
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    if (((p_rcb = l2cu_find_rcb_by_psm (psm, BT_TRANSPORT_BR_EDR)) == NULL)
+        ||( p_rcb->ucd.state == L2C_UCD_STATE_UNUSED ))
+#else
     if (((p_rcb = l2cu_find_rcb_by_psm (psm)) == NULL)
         ||( p_rcb->ucd.state == L2C_UCD_STATE_UNUSED ))
+#endif
     {
         L2CAP_TRACE_WARNING ("L2CAP - no RCB for L2CA_UcdDataWrite, PSM: 0x%04x", psm);
         GKI_freebuf (p_buf);
@@ -609,7 +643,11 @@ static BOOLEAN l2c_ucd_connect ( BD_ADDR rem_bda )
             /* Set the default channel priority value to use */
             l2cu_change_pri_ccb (p_ccb, L2CAP_UCD_CH_PRIORITY);
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+            if ((p_rcb = l2cu_find_rcb_by_psm (L2C_UCD_RCB_ID, BT_TRANSPORT_BR_EDR)) == NULL)
+#else
             if ((p_rcb = l2cu_find_rcb_by_psm (L2C_UCD_RCB_ID)) == NULL)
+#endif
             {
                 L2CAP_TRACE_WARNING ("L2CAP - no UCD registered, l2c_ucd_connect");
                 return (FALSE);
@@ -906,8 +944,13 @@ BOOLEAN l2c_ucd_check_rx_pkts(tL2C_LCB  *p_lcb, BT_HDR *p_msg)
     tL2C_CCB   *p_ccb;
     tL2C_RCB   *p_rcb;
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    if (((p_ccb = l2cu_find_ccb_by_cid (p_lcb, L2CAP_CONNECTIONLESS_CID)) != NULL)
+      ||((p_rcb = l2cu_find_rcb_by_psm (L2C_UCD_RCB_ID, BT_TRANSPORT_BR_EDR)) != NULL))
+#else
     if (((p_ccb = l2cu_find_ccb_by_cid (p_lcb, L2CAP_CONNECTIONLESS_CID)) != NULL)
       ||((p_rcb = l2cu_find_rcb_by_psm (L2C_UCD_RCB_ID)) != NULL))
+#endif
     {
         if (p_ccb == NULL)
         {

@@ -1284,7 +1284,14 @@ static char *l2c_csm_get_event_name (UINT16 event)
 void l2c_enqueue_peer_data (tL2C_CCB *p_ccb, BT_HDR *p_buf)
 {
     UINT8       *p;
-
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    if( (BT_TRANSPORT_LE == l2cu_get_chnl_transport(p_ccb)) &&
+        (p_ccb->is_le_coc == TRUE))
+    {
+        p_buf->event = 0;
+    }
+    else
+#endif
     if (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE)
     {
         p_buf->event = 0;

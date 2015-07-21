@@ -73,6 +73,11 @@ static const tL2CAP_APPL_INFO dyn_info =
     gatt_l2cif_data_ind_cback,
     gatt_l2cif_congest_cback,
     NULL
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    ,
+    NULL,
+    NULL
+#endif
 } ;
 
 #if GATT_DYNAMIC_MEMORY == FALSE

@@ -225,6 +225,357 @@ UINT16 L2CA_GetDisconnectReason (BD_ADDR remote_bda, tBT_TRANSPORT transport)
 
     return reason;
 }
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+/*******************************************************************************
+**
+** Function         L2CA_LE_Register
+**
+** Description      Other layers call this function to register for LE L2CAP
+**                  services.
+**
+** Returns          PSM to use or zero if error. Typically, the PSM returned
+**                  is the same as was passed in.
+**
+*******************************************************************************/
+UINT16 L2CA_LE_Register (UINT16 psm, tL2CAP_APPL_INFO *p_cb_info)
+{
+    tL2C_RCB    *p_rcb;
+
+    L2CAP_TRACE_API ("LE-L2CAP: %s called for PSM: 0x%04x", __FUNCTION__, psm);
+
+    /* Verify that the required callback info has been filled */
+
+    if ((!p_cb_info->pL2CA_LE_ConnectInd_Cb)
+     || (!p_cb_info->pL2CA_LE_ConnectCfm_Cb)
+     || (!p_cb_info->pL2CA_DataInd_Cb)
+     || (!p_cb_info->pL2CA_DisconnectInd_Cb)
+     || (!p_cb_info->pL2CA_DisconnectCfm_Cb))
+    {
+        L2CAP_TRACE_ERROR ("LE-L2CAP: no cb registering PSM: 0x%04x", psm);
+        return (0);
+    }
+
+    /* Verify PSM is valid */
+    if (L2C_LE_INVALID_PSM(psm))
+    {
+        L2CAP_TRACE_ERROR ("LE-L2CAP: invalid PSM value, PSM: 0x%04x", psm);
+        return (0);
+    }
+
+    /* If registration block already there, just overwrite it */
+    if ((p_rcb = l2cu_find_rcb_by_psm (psm, BT_TRANSPORT_LE)) == NULL)
+    {
+        if ((p_rcb = l2cu_allocate_rcb (psm, BT_TRANSPORT_LE)) == NULL)
+        {
+            L2CAP_TRACE_WARNING ("LE-L2CAP: no RCB available, PSM: 0x%04x ", psm);
+            return (0);
+        }
+    }
+
+    p_rcb->api      = *p_cb_info;
+    p_rcb->real_psm = psm;
+
+    return (psm);
+}
+
+/*******************************************************************************
+**
+** Function         L2CA_LE_Deregister
+**
+** Description      Other layers call this function to de-register for L2CAP
+**                  services.
+**
+** Returns          void
+**
+*******************************************************************************/
+void L2CA_LE_Deregister (UINT16 psm)
+{
+    tL2C_RCB    *p_rcb;
+    tL2C_CCB    *p_ccb;
+    tL2C_LCB    *p_lcb;
+    int         ii;
+
+    L2CAP_TRACE_API ("LE-L2CAP: L2CA_LE_Deregister() called for PSM: 0x%04x", psm);
+
+    if ((p_rcb = l2cu_find_rcb_by_psm (psm, BT_TRANSPORT_LE)) != NULL)
+    {
+        p_lcb = &l2cb.lcb_pool[0];
+        for (ii = 0; ii < MAX_L2CAP_LINKS; ii++, p_lcb++)
+        {
+            if (p_lcb->in_use)
+            {
+                if (((p_ccb = p_lcb->ccb_queue.p_first_ccb) == NULL)
+                 || (p_lcb->link_state == LST_DISCONNECTING))
+                    continue;
+
+                if ((p_ccb->in_use) &&
+                    ((p_ccb->chnl_state == CST_W4_L2CAP_DISCONNECT_RSP) ||
+                     (p_ccb->chnl_state == CST_W4_L2CA_DISCONNECT_RSP)))
+                    continue;
+
+                if (p_ccb->p_rcb == p_rcb)
+                    l2c_le_csm_execute (p_ccb, L2CEVT_L2CA_DISCONNECT_REQ, NULL);
+            }
+        }
+        l2cu_release_rcb (p_rcb);
+    }
+    else
+    {
+        L2CAP_TRACE_WARNING ("LE-L2CAP: - PSM: 0x%04x not found for deregistration", psm);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         LE_L2CA_CreditBasedConn_Req
+**
+** Description      This function used to send the LE CB connection request
+**
+** Returns          local cid
+**
+*******************************************************************************/
+UINT16 L2CA_LE_CreditBasedConn_Req (BD_ADDR rem_bda, tL2CAP_LE_CONN_INFO *conn_info)
+{
+    tL2C_LCB        *p_lcb;
+    tL2C_CCB        *p_ccb;
+    tL2C_RCB        *p_rcb;
+    UINT16          max_mtu;
+
+    /* Fail if we have not established communications with the controller */
+    if (!conn_info || !BTM_IsDeviceUp())
+    {
+        L2CAP_TRACE_WARNING ("LE-L2CAP: Device not ready/No conn info");
+        return (0);
+    }
+    /* Fail if the PSM is not registered */
+    if ((p_rcb = l2cu_find_rcb_by_psm (conn_info->le_psm, BT_TRANSPORT_LE)) == NULL)
+    {
+        L2CAP_TRACE_WARNING ("LE-L2CAP: no RCB for PSM: 0x%04x", conn_info->le_psm);
+        return (0);
+    }
+
+    max_mtu = (GKI_get_pool_bufsize (HCI_LE_ACL_POOL_ID) -
+                            L2CAP_LE_MIN_OFFSET - L2CAP_SDU_LEN_OFFSET);
+
+    /* mtu check */
+    if((conn_info->le_mtu < L2CAP_LE_MIN_MTU) ||
+       (conn_info->le_mtu > max_mtu))
+    {
+        L2CAP_TRACE_WARNING ("LE-L2CAP: Invalid MTU size");
+        L2CAP_TRACE_WARNING ("LE-L2CAP: mtu should be in the range 23 to %d", max_mtu);
+        return (0);
+    }
+
+    /* mps check */
+    if((conn_info->le_mps < L2CAP_LE_MIN_MTU) ||
+       (conn_info->le_mps > conn_info->le_mtu) ||
+       (conn_info->le_mps > L2CAP_LE_FLOWCTL_MAX_MPS))
+    {
+        L2CAP_TRACE_WARNING ("LE-L2CAP: Invalid MPS size");
+        L2CAP_TRACE_WARNING ("LE-L2CAP: mps should be in the range 23 to %d", conn_info->le_mtu);
+        return (0);
+    }
+    /* First, see if we already have a link to the remote */
+    if ((p_lcb = l2cu_find_lcb_by_bd_addr (rem_bda, BT_TRANSPORT_LE)) == NULL)
+    {
+        /* No link. Get an LCB and start link establishment */
+        if ( ((p_lcb = l2cu_allocate_lcb (rem_bda, FALSE, BT_TRANSPORT_LE)) == NULL)
+         ||  (l2cu_create_conn(p_lcb, BT_TRANSPORT_LE) == FALSE) )
+        {
+            L2CAP_TRACE_WARNING ("LE-L2CAP: conn not started for PSM: 0x%04x  p_lcb: 0x%08x",
+                                                                conn_info->le_psm, p_lcb);
+            return (0);
+        }
+    }
+
+    /* Allocate a channel control block */
+    if ((p_ccb = l2cu_allocate_ccb (p_lcb, 0)) == NULL)
+    {
+        L2CAP_TRACE_WARNING ("LE-L2CAP: no CCB for PSM: 0x%04x", conn_info->le_psm);
+        return (0);
+    }
+
+    /* make the channel as LE COC channel */
+    p_ccb->is_le_coc = TRUE;
+    /* Save registration info */
+    p_ccb->p_rcb = p_rcb;
+
+    if (conn_info)
+    {
+        p_ccb->le_loc_conn_info.le_psm = conn_info->le_psm;
+        p_ccb->le_loc_conn_info.le_mtu = conn_info->le_mtu;
+        p_ccb->le_loc_conn_info.le_mps = conn_info->le_mps;
+        p_ccb->le_loc_conn_info.init_credits = conn_info->init_credits;
+        p_ccb->le_loc_conn_info.credits = conn_info->init_credits;
+    }
+    /* If link is up, start the L2CAP connection */
+    if (p_lcb->link_state == LST_CONNECTED)
+    {
+        l2c_le_csm_execute (p_ccb, L2CEVT_L2CA_LE_CONNECT_REQ, NULL);
+    }
+    else if (p_lcb->link_state == LST_DISCONNECTING)
+    {
+        L2CAP_TRACE_DEBUG ("LE-L2CAP: link disconnecting: RETRY LATER");
+
+        /* Save ccb to pending list so that it can restarted */
+        p_lcb->p_pending_ccb = p_ccb;
+    }
+
+    L2CAP_TRACE_API ("LE-L2CAP: (psm: 0x%04x) returned CID: 0x%04x", conn_info->le_psm,
+                                                                    p_ccb->local_cid);
+
+    /* Return the local CID as our handle */
+    return (p_ccb->local_cid);
+
+}
+/*******************************************************************************
+**
+** Function         L2CA_LE_CreditBasedConn_Rsp
+**
+** Description      This function enables the LE credit based connection response
+**
+** Returns
+**
+*******************************************************************************/
+BOOLEAN L2CA_LE_CreditBasedConn_Rsp (BD_ADDR p_bd_addr, UINT8 identifier,
+                                      UINT16 lcid, tL2CAP_LE_CONN_INFO *conn_info)
+{
+    tL2C_LCB        *p_lcb;
+    tL2C_CCB        *p_ccb;
+    UINT16          max_mtu;
+
+    L2CAP_TRACE_WARNING ("LE-L2CAP: %s CID: 0x%04x Result: %d  BDA: %08x%04x ",
+                      __FUNCTION__, lcid, conn_info->result,
+                      (p_bd_addr[0]<<24)+(p_bd_addr[1]<<16)+(p_bd_addr[2]<<8)+p_bd_addr[3],
+                      (p_bd_addr[4]<<8)+p_bd_addr[5]);
+
+    if(conn_info == NULL)
+    {
+        return (FALSE);
+    }
+
+    /* First, find the link control block */
+    if ((p_lcb = l2cu_find_lcb_by_bd_addr (p_bd_addr, BT_TRANSPORT_LE)) == NULL)
+    {
+        /* No link. Get an LCB and start link establishment */
+        L2CAP_TRACE_WARNING ("LE-L2CAP: no LCB for L2CA_LE_CreditBasedConn_Rsp");
+        return (FALSE);
+    }
+
+    /* Now, find the channel control block */
+    if ((p_ccb = l2cu_find_ccb_by_cid (p_lcb, lcid)) == NULL)
+    {
+        L2CAP_TRACE_WARNING ("LE-L2CAP: no CCB for L2CA_LE_CreditBasedConn_Rsp");
+        return (FALSE);
+    }
+
+    max_mtu = (GKI_get_pool_bufsize (HCI_LE_ACL_POOL_ID) -
+                            L2CAP_LE_MIN_OFFSET - L2CAP_SDU_LEN_OFFSET);
+
+    /* mtu check */
+    if((conn_info->le_mtu < L2CAP_LE_MIN_MTU) ||
+       (conn_info->le_mtu > max_mtu))
+    {
+        L2CAP_TRACE_WARNING ("LE-L2CAP: Invalid MTU size");
+        L2CAP_TRACE_WARNING ("LE-L2CAP: mtu should be in the range 23 to %d", max_mtu);
+        return (0);
+    }
+
+    /* mps check */
+    if((conn_info->le_mps < L2CAP_LE_MIN_MTU) ||
+       (conn_info->le_mps > conn_info->le_mtu) ||
+       (conn_info->le_mps > L2CAP_LE_FLOWCTL_MAX_MPS))
+    {
+        L2CAP_TRACE_WARNING ("LE-L2CAP: Invalid MPS size");
+        L2CAP_TRACE_WARNING ("LE-L2CAP: mps should be in the range 23 to %d",
+                                                        conn_info->le_mtu);
+        return (0);
+    }
+
+    /* The IDs must match */
+    if (p_ccb->remote_id != identifier)
+    {
+        L2CAP_TRACE_WARNING ("LE-L2CAP: identifier is not matched  p_ccb->remote_id: %d"\
+                                    "identifier: %d", p_ccb->remote_id, identifier);
+        return (FALSE);
+    }
+
+    if (conn_info)
+    {
+        p_ccb->le_loc_conn_info.le_psm = conn_info->le_psm;
+        p_ccb->le_loc_conn_info.le_mtu = conn_info->le_mtu;
+        p_ccb->le_loc_conn_info.le_mps = conn_info->le_mps;
+        p_ccb->le_loc_conn_info.init_credits = conn_info->init_credits;
+        p_ccb->le_loc_conn_info.credits = conn_info->init_credits;
+        p_ccb->le_loc_conn_info.result = conn_info->result;
+    }
+
+    if (conn_info->result == L2CAP_LE_CONN_OK)
+        l2c_le_csm_execute (p_ccb, L2CEVT_L2CA_LE_CONNECT_RSP, NULL);
+    else
+        l2c_le_csm_execute (p_ccb, L2CEVT_L2CA_LE_CONNECT_RSP_NEG, NULL);
+
+    return (TRUE);
+}
+
+/*******************************************************************************
+**
+** Function         L2CA_LE_SetFlowControlCredits
+**
+** Description      This function sets the credits for LE incase credits did
+**                  not set during the LE connection establishment.
+**
+** Returns
+**
+*******************************************************************************/
+BOOLEAN L2CA_LE_SetFlowControlCredits (UINT16 cid, UINT16 credits)
+{
+    tL2C_CCB  *p_ccb;
+    L2CAP_TRACE_WARNING ("LE-L2CAP: %s credits: %d  CID: 0x%04x", __FUNCTION__,
+                                                                credits, cid);
+
+    /* Find the channel control block. We don't know the link it is on. */
+    if ((p_ccb = l2cu_find_ccb_by_cid (NULL, cid)) == NULL)
+    {
+        L2CAP_TRACE_WARNING ("LE-L2CAP: no CCB found");
+        return (FALSE);
+    }
+
+    if ((BT_TRANSPORT_LE != l2cu_get_chnl_transport(p_ccb)) ||
+                                (p_ccb->is_le_coc == FALSE))
+    {
+        L2CAP_TRACE_EVENT ("LE-L2CAP: not a LE COC channel");
+        return (FALSE);
+    }
+
+    /* check for initial credits set to zero */
+    if( (!p_ccb->le_loc_conn_info.init_credits) &&
+        (credits >= L2CAP_LE_FLOWCTL_MIN_CREDITS) &&
+        (p_ccb->chnl_state == CST_OPEN) )
+    {
+        p_ccb->le_loc_conn_info.init_credits = credits;
+        l2c_le_send_credits (p_ccb);
+        return TRUE;
+    }
+    else if (p_ccb->le_loc_conn_info.init_credits)
+    {
+        if (p_ccb->le_loc_conn_info.init_credits > p_ccb->le_loc_conn_info.credits)
+        {
+            l2cu_send_peer_le_credit_based_flow_ctrl(p_ccb,
+              p_ccb->le_loc_conn_info.init_credits - p_ccb->le_loc_conn_info.credits);
+            return (TRUE);
+        }
+        else
+        {
+            return (FALSE);
+        }
+    }
+    else
+    {
+        return (FALSE);
+    }
+}
+#endif /* LE_L2CAP_CFC_INCLUDED */
 
 /*******************************************************************************
 **
@@ -239,6 +590,9 @@ void l2cble_notify_le_connection (BD_ADDR bda)
 {
     tL2C_LCB *p_lcb = l2cu_find_lcb_by_bd_addr (bda, BT_TRANSPORT_LE);
     tACL_CONN *p_acl = btm_bda_to_acl(bda, BT_TRANSPORT_LE) ;
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    tL2C_CCB            *p_ccb;
+#endif
 
     if (p_lcb != NULL && p_acl != NULL && p_lcb->link_state != LST_CONNECTED)
     {
@@ -246,6 +600,14 @@ void l2cble_notify_le_connection (BD_ADDR bda)
         btm_establish_continue(p_acl);
         /* update l2cap link status and send callback */
         p_lcb->link_state = LST_CONNECTED;
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+        L2CAP_TRACE_DEBUG ("LE-L2CAP: %s Notifying connection completed", __FUNCTION__);
+        for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; p_ccb = p_ccb->p_next_ccb)
+        {
+            l2c_le_csm_execute (p_ccb, L2CEVT_LP_CONNECT_CFM, NULL);
+        }
+#endif
+
         l2cu_process_fixed_chnl_resp (p_lcb);
     }
 }
@@ -379,6 +741,9 @@ void l2cble_advertiser_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE typ
     UNUSED(conn_interval);
     UNUSED(conn_latency);
     UNUSED(conn_timeout);
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    tL2C_CCB            *p_ccb;
+#endif
 
     /* See if we have a link control block for the remote device */
     p_lcb = l2cu_find_lcb_by_bd_addr (bda, BT_TRANSPORT_LE);
@@ -431,6 +796,13 @@ void l2cble_advertiser_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE typ
     if (!HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(controller_get_interface()->get_features_ble()->as_array))
     {
         p_lcb->link_state = LST_CONNECTED;
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+        L2CAP_TRACE_DEBUG ("LE-L2CAP: %s Notifying connection completed", __FUNCTION__);
+        for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; p_ccb = p_ccb->p_next_ccb)
+        {
+            l2c_le_csm_execute (p_ccb, L2CEVT_LP_CONNECT_CFM, NULL);
+        }
+#endif
         l2cu_process_fixed_chnl_resp (p_lcb);
     }
 
@@ -599,6 +971,16 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
     UINT16          cmd_len;
     UINT16          min_interval, max_interval, latency, timeout;
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    UINT16          lcid, rcid, credits, max_credits;
+    tL2C_LE_CB_CONN_REQ    le_cb_conn_req;
+    tL2C_LE_CB_CONN_RSP    le_cb_conn_rsp;
+    tL2C_LE_CB_FLOW_CTRL   le_cb_flow_ctrl;
+    tL2CAP_LE_CONN_INFO   le_con_info;
+    tL2C_CCB               *p_ccb;
+    tL2C_RCB               *p_rcb;
+#endif /* LE_L2CAP_CFC_INCLUDED */
+
     p_pkt_end = p + pkt_len;
 
     STREAM_TO_UINT8  (cmd_code, p);
@@ -665,7 +1047,185 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         case L2CAP_CMD_BLE_UPDATE_RSP:
             p += 2;
             break;
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+        case LE_L2CAP_CMD_CB_CONN_REQ:
+            STREAM_TO_UINT16 (le_cb_conn_req.le_psm, p);
+            STREAM_TO_UINT16 (le_cb_conn_req.scid, p);
+            STREAM_TO_UINT16 (le_cb_conn_req.mtu, p);
+            STREAM_TO_UINT16 (le_cb_conn_req.mps, p);
+            STREAM_TO_UINT16 (le_cb_conn_req.init_credits, p);
 
+            if(p_lcb->link_state != LST_CONNECTED)
+            {
+                tBTM_SEC_DEV_REC *p_dev_rec = btm_find_or_alloc_dev (p_lcb->remote_bd_addr);
+                if(p_dev_rec)
+                {
+                    L2CAP_TRACE_WARNING ("LE-L2CAP: Creating thr ACL for LE COC channel");
+                    btm_acl_created (p_lcb->remote_bd_addr, NULL, p_dev_rec->sec_bd_name,
+                        p_lcb->handle,p_lcb->link_role, BT_TRANSPORT_LE);
+                    l2cble_notify_le_connection(p_lcb->remote_bd_addr);
+                }
+            }
+            /* mtu/mps check */
+            if((le_cb_conn_req.mtu < L2CAP_LE_MIN_MTU) ||
+               (le_cb_conn_req.mps > le_cb_conn_req.mtu) ||
+               (le_cb_conn_req.mps > L2CAP_LE_FLOWCTL_MAX_MPS))
+            {
+                L2CAP_TRACE_WARNING ("LE-L2CAP: Invalid MTU/MPS size");
+                l2cu_le_reject_connection (p_lcb, id, L2CAP_LE_CONN_NO_RESOURCES);
+                break;
+            }
+
+            if ((p_rcb = l2cu_find_rcb_by_psm (le_cb_conn_req.le_psm, BT_TRANSPORT_LE)) == NULL)
+            {
+                L2CAP_TRACE_WARNING ("LE-L2CAP: rcvd le credit based conn req for unknown PSM: %d",
+                                                                        le_cb_conn_req.le_psm);
+                l2cu_le_reject_connection (p_lcb, id, L2CAP_LE_CONN_NO_PSM);
+                break;
+            }
+            else
+            {
+                if (!p_rcb->api.pL2CA_LE_ConnectInd_Cb)
+                {
+                    L2CAP_TRACE_WARNING ("LE-L2CAP: rcvd conn req for outgoing-only connection PSM: %d",
+                                                                           le_cb_conn_req.le_psm);
+                    l2cu_le_reject_connection (p_lcb, id, L2CAP_LE_CONN_NO_PSM);
+                    break;
+                }
+            }
+            if ((p_ccb = l2cu_allocate_ccb (p_lcb, 0)) == NULL)
+            {
+                L2CAP_TRACE_ERROR ("LE-L2CAP: unable to allocate CCB");
+                l2cu_le_reject_connection (p_lcb, id, L2CAP_LE_CONN_NO_RESOURCES);
+                break;
+            }
+            /* make the channel as LE COC channel */
+            p_ccb->is_le_coc = TRUE;
+            p_ccb->remote_id = id;
+            p_ccb->p_rcb = p_rcb;
+            p_ccb->remote_cid = le_cb_conn_req.scid;
+
+            /* Save all connection params */
+            p_ccb->le_rmt_conn_info.le_psm = le_cb_conn_req.le_psm;
+            p_ccb->le_rmt_conn_info.le_mtu = le_cb_conn_req.mtu;
+            p_ccb->le_rmt_conn_info.le_mps = le_cb_conn_req.mps;
+            p_ccb->le_rmt_conn_info.init_credits = le_cb_conn_req.init_credits;
+            p_ccb->le_rmt_conn_info.credits = le_cb_conn_req.init_credits;
+
+            l2c_le_csm_execute(p_ccb, L2CEVT_L2CAP_LE_CONNECT_REQ, NULL);
+            break;
+
+        case LE_L2CAP_CMD_CB_CONN_RSP:       /* Got Credit Based L2CAP Connect Rsp from peer device */
+            STREAM_TO_UINT16 (le_cb_conn_rsp.dcid, p);
+            STREAM_TO_UINT16 (le_cb_conn_rsp.mtu, p);
+            STREAM_TO_UINT16 (le_cb_conn_rsp.mps, p);
+            STREAM_TO_UINT16 (le_cb_conn_rsp.init_credits, p);
+            STREAM_TO_UINT16 (le_cb_conn_rsp.result, p);
+
+            if ((p_ccb = l2cu_find_ccb_by_local_id (p_lcb, id)) == NULL)
+            {
+                L2CAP_TRACE_WARNING ("LE-L2CAP: no CCB for conn rsp, CID: %d ", le_cb_conn_rsp.dcid);
+                break;
+            }
+
+            p_ccb->remote_cid = le_cb_conn_rsp.dcid;
+
+            if (le_cb_conn_rsp.result == L2CAP_LE_CONN_OK)
+            {
+                p_ccb->le_rmt_conn_info.le_mtu = le_cb_conn_rsp.mtu;
+                p_ccb->le_rmt_conn_info.le_mps = le_cb_conn_rsp.mps;
+                p_ccb->le_rmt_conn_info.init_credits = le_cb_conn_rsp.init_credits;
+                p_ccb->le_rmt_conn_info.credits = le_cb_conn_rsp.init_credits;
+                p_ccb->le_rmt_conn_info.result = le_cb_conn_rsp.result;
+
+                /* save psm from local chnl info */
+                p_ccb->le_rmt_conn_info.le_psm = p_ccb->le_loc_conn_info.le_psm;
+
+                l2c_le_csm_execute(p_ccb, L2CEVT_L2CAP_LE_CONNECT_RSP, NULL);
+
+                if((p_ccb->le_rmt_conn_info.le_mtu < L2CAP_LE_MIN_MTU) ||
+                   (p_ccb->le_rmt_conn_info.le_mps > p_ccb->le_rmt_conn_info.le_mtu) ||
+                   (p_ccb->le_rmt_conn_info.le_mps > L2CAP_LE_FLOWCTL_MAX_MPS))
+                {
+                    L2CAP_TRACE_WARNING ("LE-L2CAP: Invalid MTU/MPS size, disconnect channel");
+                    l2c_le_csm_execute(p_ccb, L2CEVT_L2CA_DISCONNECT_REQ, NULL);
+                    break;
+                }
+            }
+            else
+            {
+                p_ccb->le_rmt_conn_info.result = le_cb_conn_rsp.result;
+                l2c_le_csm_execute(p_ccb, L2CEVT_L2CAP_LE_CONNECT_RSP_NEG, &le_cb_conn_rsp);
+            }
+
+            break;
+
+        case LE_L2CAP_CMD_CB_FLOW_CTRL:
+            STREAM_TO_UINT16 (rcid, p);
+            STREAM_TO_UINT16 (credits, p);
+            L2CAP_TRACE_DEBUG("LE-L2CAP: rcid 0x%4.4x credits 0x%4.4x", rcid, credits);
+
+            if ((p_ccb = l2cu_find_ccb_by_remote_cid (p_lcb, rcid)) == NULL)
+            {
+                L2CAP_TRACE_WARNING ("LE-L2CAP: no CCB for LE_L2CAP_CMD_CB_FLOW_CTRL, CID: %d ",
+                                                                  le_cb_conn_rsp.dcid);
+                break;
+            }
+            max_credits = L2CAP_LE_FLOWCTL_MAX_CREDITS - p_ccb->le_rmt_conn_info.credits;
+
+            if(!credits)
+            {
+                /* ignore the packet if credits are 0 */
+                break;
+            }
+            if (credits > max_credits)
+            {
+                L2CAP_TRACE_ERROR("LE-L2CAP: LE credits overflow");
+                l2c_le_csm_execute(p_ccb, L2CEVT_L2CA_DISCONNECT_REQ, NULL);
+                break;
+            }
+            p_ccb->le_rmt_conn_info.credits += credits;
+
+            /* Clearing the channel congestion if it is already congested */
+            if (p_ccb->cong_sent)
+            {
+                l2cu_check_channel_congestion (p_ccb);
+            }
+
+            if(p_ccb->le_rmt_conn_info.credits)
+            {
+                l2c_link_check_send_pkts (p_ccb->p_lcb, NULL, NULL);
+            }
+            break;
+        case L2CAP_CMD_DISC_REQ:
+            STREAM_TO_UINT16 (lcid, p);
+            STREAM_TO_UINT16 (rcid, p);
+
+            if ((p_ccb = l2cu_find_ccb_by_cid (p_lcb, lcid)) != NULL)
+            {
+                if (p_ccb->remote_cid == rcid)
+                {
+                    p_ccb->remote_id = id;
+                    l2c_le_csm_execute (p_ccb, L2CEVT_L2CAP_DISCONNECT_REQ, &le_con_info);
+                }
+            }
+            else
+                l2cu_send_peer_disc_rsp (p_lcb, id, lcid, rcid);
+
+            break;
+        case L2CAP_CMD_DISC_RSP:
+            STREAM_TO_UINT16 (rcid, p);
+            STREAM_TO_UINT16 (lcid, p);
+
+            if ((p_ccb = l2cu_find_ccb_by_cid (p_lcb, lcid)) != NULL)
+            {
+                if ((p_ccb->remote_cid == rcid) && (p_ccb->local_id == id))
+                {
+                    l2c_le_csm_execute (p_ccb, L2CEVT_L2CAP_DISCONNECT_RSP, &le_con_info);
+                }
+            }
+            break;
+#endif /* LE_L2CAP_CFC_INCLUDED */
         default:
             L2CAP_TRACE_WARNING ("L2CAP - LE - unknown cmd code: %d", cmd_code);
             l2cu_send_peer_cmd_reject (p_lcb, L2CAP_CMD_REJ_NOT_UNDERSTOOD, id, 0, 0);

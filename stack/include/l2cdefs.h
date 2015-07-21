@@ -41,6 +41,14 @@
 #define L2CAP_CMD_BLE_UPDATE_REQ            0x12
 #define L2CAP_CMD_BLE_UPDATE_RSP            0x13
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+/* LE L2CAP Signaling Commands */
+#define LE_L2CAP_CMD_CB_CONN_REQ            0x14    /* LE credit based connect request */
+#define LE_L2CAP_CMD_CB_CONN_RSP            0x15    /* LE credit based connect response */
+#define LE_L2CAP_CMD_CB_FLOW_CTRL           0x16    /* LE credit based flow control */
+#endif /* LE_L2CAP_CFC_INCLUDED */
+
+
 
 /* Define some packet and header lengths
 */
@@ -68,6 +76,12 @@
 
 #define L2CAP_CMD_BLE_UPD_REQ_LEN   8       /* Min and max interval, latency, tout  */
 #define L2CAP_CMD_BLE_UPD_RSP_LEN   2       /* Result                               */
+
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+#define LE_L2CAP_CMD_CB_CONN_REQ_LEN   10  /* LE_PSM, Source CID, MTU, MPS, Initial Credits */
+#define LE_L2CAP_CMD_CB_CONN_RSP_LEN   10  /* Dest CID, MTU, MPS, Initial Credits, Result */
+#define LE_L2CAP_CMD_CB_FLOW_CTRL_LEN   4  /* CID, Credits */
+#endif /* LE_L2CAP_CFC_INCLUDED */
 
 
 /* Define the packet boundary flags
@@ -97,6 +111,16 @@
 #define L2CAP_CONN_NO_LINK           255        /* Add a couple of our own for internal use */
 #define L2CAP_CONN_CANCEL            256        /* L2CAP connection cancelled */
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+#define L2CAP_LE_CONN_OK                       0x0000   /* Connection successful */
+#define L2CAP_LE_CONN_NO_PSM                   0x0002   /* Connection refused - LE_PSM not supported */
+#define L2CAP_LE_CONN_NO_RESOURCES             0x0004   /* Connection refused - no resources available */
+#define L2CAP_LE_CONN_INSUFFI_AUTHENTICATION   0x0005   /* Connection refused - insufficient authentication */
+#define L2CAP_LE_CONN_INSUFFI_AUTHORIZATION    0x0006   /* Connection refused - insufficient authorization */
+#define L2CAP_LE_CONN_INSUFFI_ENCRYPT_KEY_SIZE 0x0007   /* Connection refused - insufficient encryption key size */
+#define L2CAP_LE_CONN_INSUFFI_ENCRYPT          0x0008   /* Connection refused - insufficient encryption */
+/**** 0x0001, 0x0003, 0x0009-0xFFFF are Reserved */
+#endif /* LE_L2CAP_CFC_INCLUDED */
 
 /* Define L2CAP Move Channel Response result codes
 */
@@ -212,6 +236,15 @@
 #define L2CAP_DEFAULT_LATENCY           0xFFFFFFFF
 #define L2CAP_DEFAULT_DELAY             0xFFFFFFFF
 #define L2CAP_DEFAULT_FCS               L2CAP_CFG_FCS_USE
+
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+#define L2CAP_LE_DEFAULT_MAX_CREDITS        (10)  /* L2CAP LE COC default maximum credits */
+#define L2CAP_LE_MIN_MTU                    (23)  /* L2CAP LE COC minimum mtu size */
+#define L2CAP_LE_DEFAULT_MPS                (230) /* L2CAP LE COC default mps size */
+#define L2CAP_LE_FLOWCTL_MIN_CREDITS        (0x0001)
+#define L2CAP_LE_FLOWCTL_MAX_CREDITS        (0xffff)
+#define L2CAP_LE_FLOWCTL_MAX_MPS            (0xffff - 2)
+#endif /* LE_L2CAP_CFC_INCLUDED */
 
 
 /* Define the L2CAP disconnect result codes

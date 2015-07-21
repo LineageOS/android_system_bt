@@ -58,6 +58,11 @@ const tL2CAP_APPL_INFO avdt_l2c_appl = {
     avdt_l2c_data_ind_cback,
     avdt_l2c_congestion_ind_cback,
     NULL                /* tL2CA_TX_COMPLETE_CB */
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    ,
+    NULL,
+    NULL
+#endif
 };
 
 /*******************************************************************************

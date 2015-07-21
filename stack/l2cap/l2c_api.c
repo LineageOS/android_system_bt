@@ -89,7 +89,11 @@ UINT16 L2CA_Register (UINT16 psm, tL2CAP_APPL_INFO *p_cb_info)
     {
         for (vpsm = 0x1002; vpsm < 0x8000; vpsm += 2)
         {
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+            if ((p_rcb = l2cu_find_rcb_by_psm (vpsm,  BT_TRANSPORT_BR_EDR)) == NULL)
+#else
             if ((p_rcb = l2cu_find_rcb_by_psm (vpsm)) == NULL)
+#endif
                 break;
         }
 
@@ -97,9 +101,17 @@ UINT16 L2CA_Register (UINT16 psm, tL2CAP_APPL_INFO *p_cb_info)
     }
 
     /* If registration block already there, just overwrite it */
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    if ((p_rcb = l2cu_find_rcb_by_psm (vpsm, BT_TRANSPORT_BR_EDR)) == NULL)
+#else
     if ((p_rcb = l2cu_find_rcb_by_psm (vpsm)) == NULL)
+#endif
     {
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+        if ((p_rcb = l2cu_allocate_rcb (vpsm, BT_TRANSPORT_BR_EDR)) == NULL)
+#else
         if ((p_rcb = l2cu_allocate_rcb (vpsm)) == NULL)
+#endif
         {
             L2CAP_TRACE_WARNING ("L2CAP - no RCB available, PSM: 0x%04x  vPSM: 0x%04x", psm, vpsm);
             return (0);
@@ -133,7 +145,11 @@ void L2CA_Deregister (UINT16 psm)
 
     L2CAP_TRACE_API ("L2CAP - L2CA_Deregister() called for PSM: 0x%04x", psm);
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    if ((p_rcb = l2cu_find_rcb_by_psm (psm, BT_TRANSPORT_BR_EDR)) != NULL)
+#else
     if ((p_rcb = l2cu_find_rcb_by_psm (psm)) != NULL)
+#endif
     {
         p_lcb = &l2cb.lcb_pool[0];
         for (ii = 0; ii < MAX_L2CAP_LINKS; ii++, p_lcb++)
@@ -195,7 +211,11 @@ UINT16 L2CA_AllocatePSM(void)
             continue;
 
         /* make sure the newlly allocated psm is not used right now */
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+        if ((l2cu_find_rcb_by_psm (psm, BT_TRANSPORT_BR_EDR)) == NULL)
+#else
         if ((l2cu_find_rcb_by_psm (psm)) == NULL)
+#endif
             done = TRUE;
     }
     l2cb.dyn_psm = psm;
@@ -256,7 +276,11 @@ UINT16 L2CA_ErtmConnectReq (UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_ERTM_INFO *p_e
         return (0);
     }
     /* Fail if the PSM is not registered */
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    if ((p_rcb = l2cu_find_rcb_by_psm (psm, BT_TRANSPORT_BR_EDR)) == NULL)
+#else
     if ((p_rcb = l2cu_find_rcb_by_psm (psm)) == NULL)
+#endif
     {
         L2CAP_TRACE_WARNING ("L2CAP - no RCB for L2CA_conn_req, PSM: 0x%04x", psm);
         return (0);
@@ -598,6 +622,15 @@ BOOLEAN L2CA_DisconnectReq (UINT16 cid)
         return (FALSE);
     }
 
+
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    if((BT_TRANSPORT_LE == l2cu_get_chnl_transport(p_ccb)) &&
+       (p_ccb->is_le_coc == TRUE))
+    {
+        l2c_le_csm_execute (p_ccb, L2CEVT_L2CA_DISCONNECT_REQ, NULL);
+    }
+    else
+#endif
     l2c_csm_execute (p_ccb, L2CEVT_L2CA_DISCONNECT_REQ, NULL);
 
     return (TRUE);
@@ -627,6 +660,14 @@ BOOLEAN L2CA_DisconnectRsp (UINT16 cid)
         return (FALSE);
     }
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    if((BT_TRANSPORT_LE == l2cu_get_chnl_transport(p_ccb)) &&
+       (p_ccb->is_le_coc == TRUE))
+    {
+        l2c_le_csm_execute (p_ccb, L2CEVT_L2CA_DISCONNECT_RSP, NULL);
+    }
+    else
+#endif
     l2c_csm_execute (p_ccb, L2CEVT_L2CA_DISCONNECT_RSP, NULL);
 
     return (TRUE);
@@ -954,7 +995,11 @@ UINT16 L2CA_LocalLoopbackReq (UINT16 psm, UINT16 handle, BD_ADDR p_bd_addr)
     }
 
     /* Fail if the PSM is not registered */
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    if ((p_rcb = l2cu_find_rcb_by_psm (psm, BT_TRANSPORT_BR_EDR)) == NULL)
+#else
     if ((p_rcb = l2cu_find_rcb_by_psm (psm)) == NULL)
+#endif
     {
         L2CAP_TRACE_WARNING ("L2CAP - no RCB for L2CA_conn_req, PSM: %d", psm);
         return (0);

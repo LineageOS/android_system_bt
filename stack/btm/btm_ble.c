@@ -49,6 +49,7 @@ extern void smp_link_encrypted(BD_ADDR bda, UINT8 encr_enable);
 extern BOOLEAN smp_proc_ltk_request(BD_ADDR bda);
 #endif
 extern void gatt_notify_enc_cmpl(BD_ADDR bd_addr);
+
 /*******************************************************************************/
 /* External Function to be called by other modules                             */
 /*******************************************************************************/
@@ -1892,6 +1893,23 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
             btm_cb.ble_ctr_cb.inq_var.adv_mode  = BTM_BLE_ADV_DISABLE;
             btm_ble_disable_resolving_list(BTM_BLE_RL_ADV, TRUE);
+#endif
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+            tL2C_LCB    *p_lcb;
+            tL2C_CCB    *p_ccb;
+            handle = HCID_GET_HANDLE (handle);
+            p_lcb = l2cu_find_lcb_by_handle (handle);
+            /* Link is not connected. For all channels, send the event through */
+            /* their FSMs. The CCBs should remove themselves from the LCB     */
+            if(p_lcb)
+            {
+                for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; p_ccb = p_ccb->p_next_ccb)
+                {
+                    L2CAP_TRACE_DEBUG ("LE-L2CAP: %s Notifying connection Failed", __FUNCTION__);
+                    l2c_le_csm_execute (p_ccb, L2CEVT_LP_CONNECT_CFM_NEG, (void*)&status);
+                }
+                p_lcb->link_state = LST_DISCONNECTED;
+            }
 #endif
         }
     }

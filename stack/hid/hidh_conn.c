@@ -74,6 +74,11 @@ static const tL2CAP_APPL_INFO hst_reg_info =
     hidh_l2cif_data_ind,
     hidh_l2cif_cong_ind,
     NULL                        /* tL2CA_TX_COMPLETE_CB */
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    ,
+    NULL,
+    NULL
+#endif
 };
 
 /*******************************************************************************

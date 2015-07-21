@@ -38,6 +38,10 @@
 #include "btm_int.h"
 #include "btu.h"
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+#include <pthread.h>
+#endif
+
 /* Flag passed to retransmit_i_frames() when all packets should be retransmitted */
 #define L2C_FCR_RETX_ALL_PKTS   0xFF
 
@@ -93,6 +97,9 @@ static BOOLEAN retransmit_i_frames (tL2C_CCB *p_ccb, UINT8 tx_seq);
 static void    prepare_I_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf, BOOLEAN is_retransmission);
 static void    process_stream_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf);
 static BOOLEAN do_sar_reassembly (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_word);
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+static BOOLEAN do_le_reassembly (tL2C_CCB *p_ccb, BT_HDR *p_buf);
+#endif /* LE_L2CAP_CFC_INCLUDED */
 
 #if (L2CAP_ERTM_STATS == TRUE)
 static void l2c_fcr_collect_ack_delay (tL2C_CCB *p_ccb, UINT8 num_bufs_acked);
@@ -607,6 +614,36 @@ void l2c_fcr_send_S_frame (tL2C_CCB *p_ccb, UINT16 function_code, UINT16 pf_bit)
     }
 }
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+/*******************************************************************************
+**
+** Function         l2c_le_send_credits
+**
+** Description      This function defines the le flow control credit based
+**                  mechanishm.
+** Returns          -
+**
+*******************************************************************************/
+void l2c_le_send_credits (tL2C_CCB *p_ccb)
+{
+    UINT16   return_credits;
+
+    /* send credits to the remote only after the amount of credits falls
+     * below half of the initial amount.
+     */
+    if (p_ccb->le_loc_conn_info.credits >= (p_ccb->le_loc_conn_info.init_credits + 1) / 2)
+        return;
+
+    return_credits = p_ccb->le_loc_conn_info.init_credits - p_ccb->le_loc_conn_info.credits;
+
+    L2CAP_TRACE_WARNING("LE-L2CAP: return_credits = %d", return_credits);
+
+    p_ccb->le_loc_conn_info.credits += return_credits;
+
+    l2cu_send_peer_le_credit_based_flow_ctrl(p_ccb, return_credits);
+
+}
+#endif /* LE_L2CAP_CFC_INCLUDED */
 
 /*******************************************************************************
 **
@@ -1358,6 +1395,142 @@ static void process_stream_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf)
         }
     }
 }
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+/*******************************************************************************
+**
+** Function         l2c_le_proc_pdu
+**
+** Description      This function processes le frames in credit based flow ctrl
+**                  mode
+** Returns          TRUE if all OK, else FALSE
+**
+*******************************************************************************/
+BOOLEAN l2c_le_proc_pdu (tL2C_CCB *p_ccb, BT_HDR *p_buf)
+{
+    UINT8       *p;
+    UINT8 i =0;
+
+    if (!p_ccb->le_loc_conn_info.credits)
+    {
+        L2CAP_TRACE_ERROR("LE-L2CAP: No credits to receive LE L2CAP data");
+        l2cu_send_peer_disc_req (p_ccb);
+        return FALSE;
+    }
+
+    L2CAP_TRACE_DEBUG("LE-L2CAP: l2c_le_proc_pdu: le_mps %d p_buf->len %d",
+                            p_ccb->le_loc_conn_info.le_mps, p_buf->len);
+
+    if (p_ccb->le_loc_conn_info.le_mps < p_buf->len)
+    {
+        L2CAP_TRACE_ERROR("LE-L2CAP: Too big LE L2CAP PDU");
+        return FALSE;
+    }
+
+    p_ccb->le_loc_conn_info.credits--;
+    L2CAP_TRACE_DEBUG("LE-L2CAP: rx_credits %u -> %u", p_ccb->le_loc_conn_info.credits + 1,
+                                                        p_ccb->le_loc_conn_info.credits);
+    l2c_le_send_credits (p_ccb);
+
+    if (!do_le_reassembly (p_ccb, p_buf))
+    {
+        /* Some sort of LE reassembly error, so flush the queue */
+        if (p_ccb->fcrb.p_rx_sdu != NULL)
+        {
+            GKI_freebuf (p_ccb->fcrb.p_rx_sdu);
+            p_ccb->fcrb.p_rx_sdu = NULL;
+        }
+        /* TODO do we need to disconnect */
+    }
+    return TRUE;
+}
+
+
+/*******************************************************************************
+**
+** Function         do_le_reassembly
+**
+** Description      Process LE frames and reassemble based on SDU length.
+**
+** Returns          TRUE if all OK, else FALSE
+**
+*******************************************************************************/
+static BOOLEAN do_le_reassembly (tL2C_CCB *p_ccb, BT_HDR *p_buf)
+{
+    tL2C_FCRB   *p_fcrb = &p_ccb->fcrb;
+    BOOLEAN     packet_ok = TRUE;
+    BOOLEAN     pkt_segmented = TRUE;
+    UINT8       *p = ((UINT8 *)(p_buf + 1)) + p_buf->offset;
+
+    /* it's a first packet */
+    if (p_fcrb->p_rx_sdu == NULL)
+    {
+        /* Get the SDU length */
+        STREAM_TO_UINT16 (p_fcrb->rx_sdu_len, p);
+        p_buf->offset += 2;
+        p_buf->len    -= 2;
+
+        if (p_fcrb->rx_sdu_len > p_ccb->le_loc_conn_info.le_mtu)
+        {
+            L2CAP_TRACE_WARNING ("LE-L2CAP: SDU len: %u  larger than MTU: %u",
+                        p_fcrb->rx_sdu_len, p_ccb->le_loc_conn_info.le_mtu);
+            packet_ok = FALSE;
+        }
+        else if(p_fcrb->rx_sdu_len == p_buf->len)
+        {
+            L2CAP_TRACE_DEBUG ("LE-L2CAP: SDU Not segmented ");
+            pkt_segmented = FALSE;
+        }
+        else if ((p_fcrb->p_rx_sdu = (BT_HDR *)GKI_getpoolbuf (HCI_LE_ACL_POOL_ID)) == NULL)
+        {
+            L2CAP_TRACE_ERROR ("LE-L2CAP: no buffer for SDU start user_rx_pool_id:%d",
+                                                p_ccb->ertm_info.user_rx_pool_id);
+            packet_ok = FALSE;
+        }
+        else
+        {
+            p_fcrb->p_rx_sdu->offset = L2CAP_PKT_OVERHEAD;
+            p_fcrb->p_rx_sdu->len    = 0;
+        }
+    }
+
+    if ((packet_ok) && (pkt_segmented == TRUE))
+    {
+        if ((p_fcrb->p_rx_sdu->len + p_buf->len) > p_fcrb->rx_sdu_len)
+        {
+            L2CAP_TRACE_ERROR ("LE-L2CAP: SDU len exceeded Lengths: %u %u %u",
+                    p_fcrb->p_rx_sdu->len, p_buf->len, p_fcrb->rx_sdu_len);
+            packet_ok = FALSE;
+        }
+        else
+        {
+            memcpy (((UINT8 *) (p_fcrb->p_rx_sdu + 1)) + p_fcrb->p_rx_sdu->offset +
+                                p_fcrb->p_rx_sdu->len, p, p_buf->len);
+
+            p_fcrb->p_rx_sdu->len += p_buf->len;
+
+            GKI_freebuf (p_buf);
+            p_buf = NULL;
+
+            if (p_fcrb->p_rx_sdu->len == p_fcrb->rx_sdu_len)
+            {
+                p_buf            = p_fcrb->p_rx_sdu;
+                p_fcrb->p_rx_sdu = NULL;
+            }
+        }
+    }
+
+    if (packet_ok == FALSE)
+    {
+        GKI_freebuf (p_buf);
+    }
+    else if (p_buf != NULL)
+    {
+        l2c_le_csm_execute (p_ccb, L2CEVT_L2CAP_DATA, p_buf);
+    }
+
+    return (packet_ok);
+}
+#endif /* LE_L2CAP_CFC_INCLUDED */
 
 
 /*******************************************************************************

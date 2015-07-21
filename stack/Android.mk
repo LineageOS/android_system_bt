@@ -160,7 +160,8 @@ LOCAL_SRC_FILES:= \
     ./gap/gap_api.c \
     ./gap/gap_ble.c \
     ./gap/gap_conn.c \
-    ./gap/gap_utils.c
+    ./gap/gap_utils.c \
+    ./l2cap/l2c_le_csm.c
 
 LOCAL_MODULE := libbt-brcm_stack
 LOCAL_MODULE_TAGS := optional

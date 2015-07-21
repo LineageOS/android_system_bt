@@ -195,8 +195,13 @@ void MCA_Deregister(tMCA_HANDLE handle)
     {
         L2CA_Deregister(p_rcb->reg.ctrl_psm);
         L2CA_Deregister(p_rcb->reg.data_psm);
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+        btm_sec_clr_service_by_psm (p_rcb->reg.ctrl_psm, BT_TRANSPORT_BR_EDR);
+        btm_sec_clr_service_by_psm (p_rcb->reg.data_psm, BT_TRANSPORT_BR_EDR);
+#else
         btm_sec_clr_service_by_psm (p_rcb->reg.ctrl_psm);
         btm_sec_clr_service_by_psm (p_rcb->reg.data_psm);
+#endif
     }
     mca_rcb_dealloc(handle);
 }

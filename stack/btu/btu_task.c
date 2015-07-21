@@ -324,6 +324,11 @@ void btu_task_shut_down(UNUSED_ATTR void *context) {
 
   bta_sys_free();
   btu_free_core();
+
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    l2c_cleanup();
+#endif
+
 }
 
 /*******************************************************************************

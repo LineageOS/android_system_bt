@@ -55,8 +55,17 @@ BOOLEAN (APPL_AUTH_WRITE_EXCEPTION)(BD_ADDR bd_addr);
 /********************************************************************************
 **              L O C A L    F U N C T I O N     P R O T O T Y P E S            *
 *********************************************************************************/
-static tBTM_SEC_SERV_REC *btm_sec_find_first_serv (BOOLEAN is_originator, UINT16 psm);
+static tBTM_SEC_SERV_REC *btm_sec_find_first_serv (CONNECTION_TYPE conn_type, UINT16 psm
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+                          , tBT_TRANSPORT transport
+#endif
+       );
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+static tBTM_SEC_SERV_REC *btm_sec_find_next_serv (tBTM_SEC_SERV_REC *p_cur,
+                                                 tBT_TRANSPORT transport);
+#else
 static tBTM_SEC_SERV_REC *btm_sec_find_next_serv (tBTM_SEC_SERV_REC *p_cur);
+#endif
 static tBTM_SEC_SERV_REC *btm_sec_find_mx_serv (UINT8 is_originator, UINT16 psm,
                                                 UINT32 mx_proto_id,
                                                 UINT32 mx_chan_id);
@@ -90,9 +99,15 @@ static tBTM_STATUS btm_sec_send_hci_disconnect (tBTM_SEC_DEV_REC *p_dev_rec, UIN
 UINT8           btm_sec_start_role_switch (tBTM_SEC_DEV_REC *p_dev_rec);
 tBTM_SEC_DEV_REC *btm_sec_find_dev_by_sec_state (UINT8 state);
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+static BOOLEAN btm_sec_set_security_level (CONNECTION_TYPE conn_type, char *p_name, UINT8 service_id,
+                                           UINT16 sec_level, UINT16 psm, UINT32 mx_proto_id,
+                                           UINT32 mx_chan_id, tBT_TRANSPORT transport);
+#else
 static BOOLEAN  btm_sec_set_security_level ( CONNECTION_TYPE conn_type, char *p_name, UINT8 service_id,
                                             UINT16 sec_level, UINT16 psm, UINT32 mx_proto_id,
                                             UINT32 mx_chan_id);
+#endif
 
 static BOOLEAN btm_dev_authenticated(tBTM_SEC_DEV_REC *p_dev_rec);
 static BOOLEAN btm_dev_encrypted(tBTM_SEC_DEV_REC *p_dev_rec);
@@ -487,12 +502,101 @@ BOOLEAN BTM_SetSecurityLevel (BOOLEAN is_originator, char *p_name, UINT8 service
         conn_type = CONN_ORIENT_TERM;
 
     return(btm_sec_set_security_level (conn_type, p_name, service_id,
-                                       sec_level, psm, mx_proto_id, mx_chan_id));
+                                       sec_level, psm, mx_proto_id, mx_chan_id
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+                                       , BT_TRANSPORT_BR_EDR
+#endif
+                                      ));
 #else
     return(btm_sec_set_security_level (is_originator, p_name, service_id,
-                                       sec_level, psm, mx_proto_id, mx_chan_id));
+                                       sec_level, psm, mx_proto_id, mx_chan_id
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+                                       , BT_TRANSPORT_BR_EDR
+#endif
+                                      ));
 #endif
 }
+
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+
+/*******************************************************************************
+**
+** Function         BTM_SetBleSecurityLevel
+**
+** Description      Register service security level with Security Manager
+**
+** Parameters:      is_originator - TRUE if originating the connection, FALSE if not
+**                  p_name      - Name of the service relevant only if
+**                                authorization will show this name to user. ignored
+**                                if BTM_SEC_SERVICE_NAME_LEN is 0.
+**                  service_id  - service ID for the service passed to authorization callback
+**                  sec_level   - bit mask of the security features
+**                  psm         - L2CAP PSM
+**
+** Returns          TRUE if registered OK, else FALSE
+**
+*******************************************************************************/
+BOOLEAN BTM_SetBleSecurityLevel (BOOLEAN is_originator, char *p_name, UINT8 service_id,
+                              UINT16 sec_level, UINT16 psm)
+{
+    BTM_TRACE_API("LE-L2CAP: %s sec_level %d",__FUNCTION__, sec_level);
+    return(btm_sec_set_security_level (is_originator, p_name, service_id,
+                                       sec_level, psm, 0, 0, BT_TRANSPORT_LE));
+}
+
+/*******************************************************************************
+**
+** Function         BTM_SetBleEncKeySize
+**
+** Description      Register the required LE encryption key size with Security Manager
+**
+** Parameters:      p_name      - Name of the service relevant only if
+**                                authorization will show this name to user. ignored
+**                                if BTM_SEC_SERVICE_NAME_LEN is 0.
+**                  mx_proto_id - Protocol ID for the service passed
+**                  enc_key_size- required LE encryption key size
+**                  le_psm         - LE L2CAP PSM
+**
+** Returns          TRUE if registered OK, else FALSE
+**
+*******************************************************************************/
+BOOLEAN BTM_SetBleEncKeySize (char *p_name, UINT8 enc_key_size, UINT16 le_psm)
+{
+    tBTM_SEC_SERV_REC   *p_srec;
+    UINT16               index;
+    BOOLEAN              record_found = FALSE;
+
+    p_srec = &btm_cb.sec_serv_rec[0];
+
+
+    for (index = 0; index < BTM_SEC_MAX_SERVICE_RECORDS; index++, p_srec++)
+    {
+        /* Check if there is already a record for this service */
+        if (p_srec->security_flags & BTM_SEC_IN_USE)
+        {
+#if BTM_SEC_SERVICE_NAME_LEN > 0
+            if (p_srec->psm == le_psm                  &&
+                BT_TRANSPORT_LE == p_srec->transport   &&
+                (!strncmp (p_name, (char *) p_srec->orig_service_name,
+                           BTM_SEC_SERVICE_NAME_LEN) ||
+                 !strncmp (p_name, (char *) p_srec->term_service_name,
+                           BTM_SEC_SERVICE_NAME_LEN)))
+#else
+            if (p_srec->psm == psm                  &&
+                BT_TRANSPORT_LE == p_srec->transport &&
+                mx_proto_id == p_srec->mx_proto_id)
+#endif
+            {
+                p_srec->enc_key_size = enc_key_size;
+                record_found = TRUE;
+                break;
+            }
+        }
+    }
+    return record_found;
+}
+
+#endif
 
 /*******************************************************************************
 **
@@ -515,7 +619,11 @@ BOOLEAN BTM_SetSecurityLevel (BOOLEAN is_originator, char *p_name, UINT8 service
 *******************************************************************************/
 static BOOLEAN btm_sec_set_security_level (CONNECTION_TYPE conn_type, char *p_name, UINT8 service_id,
                                            UINT16 sec_level, UINT16 psm, UINT32 mx_proto_id,
-                                           UINT32 mx_chan_id)
+                                           UINT32 mx_chan_id
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+                                           , tBT_TRANSPORT transport
+#endif
+)
 {
     tBTM_SEC_SERV_REC   *p_srec;
     UINT16               index;
@@ -557,6 +665,9 @@ static BOOLEAN btm_sec_set_security_level (CONNECTION_TYPE conn_type, char *p_na
         {
 #if BTM_SEC_SERVICE_NAME_LEN > 0
             if (p_srec->psm == psm                  &&
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+                p_srec->transport == transport      &&
+#endif
                 p_srec->mx_proto_id == mx_proto_id  &&
                 service_id == p_srec->service_id    &&
                 (!strncmp (p_name, (char *) p_srec->orig_service_name,
@@ -599,6 +710,9 @@ static BOOLEAN btm_sec_set_security_level (CONNECTION_TYPE conn_type, char *p_na
     p_srec->psm         = psm;
     p_srec->service_id  = service_id;
     p_srec->mx_proto_id = mx_proto_id;
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    p_srec->transport = transport;
+#endif
 
     if (is_originator)
     {
@@ -753,6 +867,9 @@ UINT8 BTM_SecClrService (UINT8 service_id)
     {
         /* Delete services with specified name (if in use and not SDP) */
         if ((p_srec->security_flags & BTM_SEC_IN_USE) && (p_srec->psm != BT_PSM_SDP) &&
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+            (BT_TRANSPORT_BR_EDR == p_srec->transport) &&
+#endif
             (!service_id || (service_id == p_srec->service_id)))
         {
             BTM_TRACE_API("BTM_SEC_CLR[%d]: id %d", i, service_id);
@@ -783,7 +900,11 @@ UINT8 BTM_SecClrService (UINT8 service_id)
 ** Returns          Number of records that were freed.
 **
 *******************************************************************************/
-UINT8 btm_sec_clr_service_by_psm (UINT16 psm)
+UINT8 btm_sec_clr_service_by_psm (UINT16 psm
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+                                  , tBT_TRANSPORT  transport
+#endif
+                                 )
 {
     tBTM_SEC_SERV_REC   *p_srec = &btm_cb.sec_serv_rec[0];
     UINT8   num_freed = 0;
@@ -792,7 +913,11 @@ UINT8 btm_sec_clr_service_by_psm (UINT16 psm)
     for (i = 0; i < BTM_SEC_MAX_SERVICE_RECORDS; i++, p_srec++)
     {
         /* Delete services with specified name (if in use and not SDP) */
-        if ((p_srec->security_flags & BTM_SEC_IN_USE) && (p_srec->psm == psm) )
+        if ((p_srec->security_flags & BTM_SEC_IN_USE) && (p_srec->psm == psm)
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+            && (transport == p_srec->transport)
+#endif
+           )
         {
             BTM_TRACE_API("BTM_SEC_CLR[%d]: id %d ", i, p_srec->service_id);
             p_srec->security_flags = 0;
@@ -2097,6 +2222,159 @@ static void btm_sec_check_upgrade(tBTM_SEC_DEV_REC  *p_dev_rec, BOOLEAN is_origi
     }
 }
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+/*******************************************************************************
+ **
+ ** Function         btm_sec_l2cap_le_access_req
+ **
+ ** Description      This function is called by the LE L2CAP to grant permission to
+ **                  establish L2CAP connection to or from the peer device.
+ **
+ ** Parameters:      bd_addr       - Address of the peer device
+ **                  psm           - L2CAP PSM
+ **                  is_originator - TRUE if protocol above L2CAP originates
+ **                                  connection
+ **                  p_callback    - Pointer to callback function called if
+ **                                  this function returns PENDING after required
+ **                                  procedures are complete. MUST NOT BE NULL.
+ **
+ ** Returns          tBTM_STATUS
+ **
+ *******************************************************************************/
+
+int btm_sec_l2cap_le_access_req (BD_ADDR bd_addr, UINT16 psm, UINT16 handle,
+        CONNECTION_TYPE conn_type, tBTM_SEC_CALLBACK *p_callback, void *p_ref_data)
+{
+    tBTM_SEC_DEV_REC  *p_dev_rec;
+    tBTM_SEC_SERV_REC *p_serv_rec;
+    UINT16         security_required;
+    BOOLEAN is_originator = conn_type;
+    tBT_TRANSPORT transport = BT_TRANSPORT_LE;
+    tBTM_BLE_SEC_ACT    btm_ble_sec_act;
+
+    BTM_TRACE_DEBUG ("LE-L2CAP: %s is_originator:%d", __FUNCTION__, is_originator);
+
+    /* Find or get oldest record */
+    p_dev_rec = btm_find_or_alloc_dev (bd_addr);
+
+
+    p_dev_rec->ble_hci_handle = handle;
+    /* Find the service record for the PSM */
+    p_serv_rec = btm_sec_find_first_serv (conn_type, psm, transport);
+
+    /* If there is no application registered with this PSM do not allow connection */
+    if (!p_serv_rec)
+    {
+        BTM_TRACE_WARNING ("LE-L2CAP: PSM:%d no application registerd", psm);
+        if (p_callback)
+            (*p_callback) (bd_addr, transport, p_ref_data, BTM_BLE_NO_PSM);
+
+        return(BTM_BLE_NO_PSM);
+    }
+
+    security_required = p_serv_rec->security_flags;
+
+    BTM_TRACE_WARNING ("LE-L2CAP: Security Manager: l2cap_le_access_req PSM:%d Handle:%d"\
+            "State:%d Flags:0x%x Required:0x%x Service ID:%d", \
+            psm, handle, p_dev_rec->sec_state, p_dev_rec->sec_flags,  security_required,
+            p_serv_rec->service_id);
+
+    if (is_originator)
+    {
+        if (((security_required & BTM_SEC_OUT_AUTHENTICATE ) && !(p_dev_rec->sec_flags &
+                        (BTM_SEC_LE_LINK_KEY_AUTHED | BTM_SEC_LE_AUTHENTICATED))) ||
+                ((security_required & BTM_SEC_OUT_ENCRYPT) && !(p_dev_rec->sec_flags &
+                    BTM_SEC_LE_ENCRYPTED)))
+        {
+            btm_ble_sec_act = BTM_BLE_SEC_NONE;
+            tACL_CONN         *p = btm_bda_to_acl(bd_addr, transport);
+
+            if(p == NULL)
+            {
+                if (p_callback)
+                    (*p_callback) (bd_addr, transport, p_ref_data, BTM_UNKNOWN_ADDR);
+                return BTM_UNKNOWN_ADDR;
+            }
+            if( (security_required & BTM_SEC_OUT_AUTHENTICATE) || /* authenticated encryption */
+                    ((security_required & BTM_SEC_OUT_AUTHENTICATE) &&
+                     (security_required & BTM_SEC_OUT_ENCRYPT)) )
+            {
+                /* check if the device is not authenticated */
+                if(!(p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_AUTHED))
+                {
+                    btm_ble_sec_act = BTM_BLE_SEC_ENCRYPT_MITM;
+                }
+                /* check if the link is not encrypted */
+                else if(!(p_dev_rec->sec_flags & BTM_SEC_LE_ENCRYPTED))
+                {
+                    btm_ble_sec_act = BTM_BLE_SEC_ENCRYPT;
+                }
+            }
+            else if(security_required & BTM_SEC_OUT_ENCRYPT) /* unauthenticated encryption */
+            {
+                /* check if we know the link key of remote device */
+                if(!(p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_KNOWN))
+                {
+                    btm_ble_sec_act = BTM_BLE_SEC_ENCRYPT_NO_MITM;
+                }
+                /* check if the link is not encrypted */
+                else if( !(p_dev_rec->sec_flags & BTM_SEC_LE_ENCRYPTED))
+                {
+                    btm_ble_sec_act = BTM_BLE_SEC_ENCRYPT;
+                }
+            }
+            if(btm_ble_sec_act == BTM_BLE_SEC_NONE)
+            {
+                BTM_TRACE_WARNING ("LE-L2CAP: Security Manager: Succeded ");
+                if (p_callback)
+                    (*p_callback) (bd_addr, transport, p_ref_data, BTM_BLE_SUCCESS);
+                return BTM_BLE_SUCCESS;
+            }
+            else
+            {
+                /* Save pointer to service record */
+                p_dev_rec->p_cur_service = p_serv_rec;
+                p_dev_rec->p_ref_data = p_ref_data;
+                p_dev_rec->p_callback = p_callback;
+                BTM_TRACE_WARNING ("LE-L2CAP: Security Manager: starting security");
+                return btm_ble_set_encryption(bd_addr, &btm_ble_sec_act, p->link_role);
+            }
+        }
+        else
+        {
+            BTM_TRACE_WARNING ("LE-L2CAP: Security Manager: No security set ");
+            if (p_callback)
+                (*p_callback) (bd_addr, transport, p_ref_data, BTM_BLE_SUCCESS);
+            return BTM_BLE_SUCCESS;
+        }
+    }
+    else
+    {
+        if ((security_required & BTM_SEC_IN_AUTHENTICATE ) && !(p_dev_rec->sec_flags &
+                    (BTM_SEC_LE_LINK_KEY_AUTHED | BTM_SEC_LE_AUTHENTICATED)))
+        {
+            BTM_TRACE_ERROR( "LE-L2CAP: GATT_INSUF_AUTHENTICATION");
+            return L2CAP_LE_CONN_INSUFFI_AUTHENTICATION;
+        }
+        else if((security_required & BTM_SEC_IN_ENCRYPT) && !(p_dev_rec->sec_flags &
+                    BTM_SEC_LE_ENCRYPTED))
+        {
+            BTM_TRACE_ERROR( "LE-L2CAP: L2CAP_LE_CONN_INSUFFI_ENCRYPT");
+            return L2CAP_LE_CONN_INSUFFI_ENCRYPT;
+        }
+        else if((security_required & BTM_SEC_IN_ENCRYPT) && (p_dev_rec->sec_flags &
+                    BTM_SEC_LE_ENCRYPTED) && p_dev_rec->enc_key_size <
+                p_serv_rec->enc_key_size)
+        {
+            BTM_TRACE_ERROR( "LE-L2CAP: L2CAP_LE_CONN_INSUFFI_ENCRYPT_KEY_SIZE");
+            return L2CAP_LE_CONN_INSUFFI_ENCRYPT_KEY_SIZE;
+        }
+        return(BTM_BLE_SUCCESS);
+    }
+}
+
+#endif
+
 /*******************************************************************************
 **
 ** Function         btm_sec_l2cap_access_req
@@ -2158,7 +2436,11 @@ tBTM_STATUS btm_sec_l2cap_access_req (BD_ADDR bd_addr, UINT16 psm, UINT16 handle
     p_dev_rec->hci_handle = handle;
 
     /* Find the service record for the PSM */
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    p_serv_rec = btm_sec_find_first_serv (conn_type, psm, BT_TRANSPORT_BR_EDR);
+#else
     p_serv_rec = btm_sec_find_first_serv (conn_type, psm);
+#endif
 
     /* If there is no application registered with this PSM do not allow connection */
     if (!p_serv_rec)
@@ -2379,10 +2661,19 @@ tBTM_STATUS btm_sec_l2cap_access_req (BD_ADDR bd_addr, UINT16 psm, UINT16 handle
     /* If there are multiple service records used through the same PSM */
     /* leave security decision for the multiplexor on the top */
 #if (L2CAP_UCD_INCLUDED == TRUE)
-    if (((btm_sec_find_next_serv (p_serv_rec)) != NULL)
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    if (((btm_sec_find_next_serv (p_serv_rec, BT_TRANSPORT_BR_EDR)) != NULL)
         &&(!( conn_type & CONNECTION_TYPE_CONNLESS_MASK ))) /* if not UCD */
 #else
+    if (((btm_sec_find_next_serv (p_serv_rec)) != NULL)
+        &&(!( conn_type & CONNECTION_TYPE_CONNLESS_MASK ))) /* if not UCD */
+#endif
+#else
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    if ((btm_sec_find_next_serv (p_serv_rec, BT_TRANSPORT_BR_EDR)) != NULL)
+#else
     if ((btm_sec_find_next_serv (p_serv_rec)) != NULL)
+#endif
 #endif
     {
         BTM_TRACE_DEBUG ("no next_serv sm4:0x%x, chk:%d", p_dev_rec->sm4, chk_acp_auth_done);
@@ -5706,7 +5997,11 @@ BOOLEAN btm_sec_are_all_trusted(UINT32 p_mask[])
 ** Returns          Pointer to the record or NULL
 **
 *******************************************************************************/
-static tBTM_SEC_SERV_REC *btm_sec_find_first_serv (CONNECTION_TYPE conn_type, UINT16 psm)
+static tBTM_SEC_SERV_REC *btm_sec_find_first_serv (CONNECTION_TYPE conn_type, UINT16 psm
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+                          , tBT_TRANSPORT transport
+#endif
+       )
 {
     tBTM_SEC_SERV_REC *p_serv_rec = &btm_cb.sec_serv_rec[0];
     int i;
@@ -5732,7 +6027,11 @@ static tBTM_SEC_SERV_REC *btm_sec_find_first_serv (CONNECTION_TYPE conn_type, UI
     /* otherwise, just find the first record with the specified PSM */
     for (i = 0; i < BTM_SEC_MAX_SERVICE_RECORDS; i++, p_serv_rec++)
     {
-        if ( (p_serv_rec->security_flags & BTM_SEC_IN_USE) && (p_serv_rec->psm == psm) )
+        if ( (p_serv_rec->security_flags & BTM_SEC_IN_USE) &&
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+             (p_serv_rec->transport == transport) &&
+#endif
+             (p_serv_rec->psm == psm) )
             return(p_serv_rec);
     }
     return(NULL);
@@ -5749,7 +6048,11 @@ static tBTM_SEC_SERV_REC *btm_sec_find_first_serv (CONNECTION_TYPE conn_type, UI
 ** Returns          Pointer to the record or NULL
 **
 *******************************************************************************/
-static tBTM_SEC_SERV_REC *btm_sec_find_next_serv (tBTM_SEC_SERV_REC *p_cur)
+static tBTM_SEC_SERV_REC *btm_sec_find_next_serv (tBTM_SEC_SERV_REC *p_cur
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+                          , tBT_TRANSPORT transport
+#endif
+       )
 {
     tBTM_SEC_SERV_REC *p_serv_rec   = &btm_cb.sec_serv_rec[0];
     int               i;
@@ -5757,6 +6060,9 @@ static tBTM_SEC_SERV_REC *btm_sec_find_next_serv (tBTM_SEC_SERV_REC *p_cur)
     for (i = 0; i < BTM_SEC_MAX_SERVICE_RECORDS; i++, p_serv_rec++)
     {
         if ((p_serv_rec->security_flags & BTM_SEC_IN_USE)
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+            && (p_serv_rec->transport == transport)
+#endif
             && (p_serv_rec->psm == p_cur->psm) )
         {
             if (p_cur != p_serv_rec)

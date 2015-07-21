@@ -339,6 +339,11 @@ static tL2CAP_APPL_INFO l2test_l2c_appl = {
     l2test_l2c_data_ind_cb,
     l2test_l2c_congestion_ind_cb,
     l2test_l2c_tx_complete_cb
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    ,
+    NULL,
+    NULL
+#endif
 };
 
 

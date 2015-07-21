@@ -38,7 +38,9 @@
 ** HCI type(1), len(2), handle(2), L2CAP len(2) and CID(2) => 9
 */
 #define L2CAP_MIN_OFFSET    13     /* plus control(2), SDU length(2) */
-
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+#define L2CAP_LE_MIN_OFFSET    11     /* plus LE SDU length(2) */
+#endif
 /* Minimum offset for broadcast needs another two bytes for the PSM */
 #define L2CAP_BCST_MIN_OFFSET       11
 
@@ -125,6 +127,10 @@ typedef UINT8 tL2CAP_CHNL_DATA_RATE;
 #define L2C_INVALID_PSM(psm)    (((psm) & 0x0101) != 0x0001)
 #define L2C_IS_VALID_PSM(psm)   (((psm) & 0x0101) == 0x0001)
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+#define L2C_LE_INVALID_PSM(psm)    !((psm >= 0x0001) && (psm <= 0x00FF))
+#endif /* LE_L2CAP_CFC_INCLUDED */
+
 /*****************************************************************************
 **  Type Definitions
 *****************************************************************************/
@@ -165,6 +171,20 @@ typedef struct
     tHCI_EXT_FLOW_SPEC    ext_flow_spec;
     UINT16      flags;                  /* bit 0: 0-no continuation, 1-continuation */
 } tL2CAP_CFG_INFO;
+
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+/* Define a structure to hold the LE COC connection parameters.
+ */
+typedef struct
+{
+    UINT16      result;                 /* Only used in confirm messages */
+    UINT16      credits;                /* used to send the outstanding credits */
+    UINT16      le_psm;
+    UINT16      le_mps;
+    UINT16      le_mtu;
+    UINT16      init_credits;          /* initial credits */
+} tL2CAP_LE_CONN_INFO;
+#endif /* LE_L2CAP_CFC_INCLUDED */
 
 /* L2CAP channel configured field bitmap */
 #define L2CAP_CH_CFG_MASK_MTU           0x0001
@@ -282,6 +302,22 @@ typedef void (tL2CA_NOCP_CB) (BD_ADDR);
 */
 typedef void (tL2CA_TX_COMPLETE_CB) (UINT16, UINT16);
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+/* LE credit based Connection indication callback prototype. Parameters are
+**              BD Address of remote
+**              Local CID assigned to the connection
+**              Identifier that the remote sent
+**              LE connection info
+*/
+typedef void (tL2CA_LE_CONNECT_IND_CB) (BD_ADDR, UINT16, UINT8, tL2CAP_LE_CONN_INFO *);
+
+/* LE credit based Connection confirmation callback prototype. Parameters are
+**              Local CID
+**              LE connection info
+*/
+typedef void (tL2CA_LE_CONNECT_CFM_CB) (UINT16, tL2CAP_LE_CONN_INFO *);
+#endif /* LE_L2CAP_CFC_INCLUDED */
+
 /* Define the structure that applications use to register with
 ** L2CAP. This structure includes callback functions. All functions
 ** MUST be provided, with the exception of the "connect pending"
@@ -300,7 +336,10 @@ typedef struct
     tL2CA_DATA_IND_CB           *pL2CA_DataInd_Cb;
     tL2CA_CONGESTION_STATUS_CB  *pL2CA_CongestionStatus_Cb;
     tL2CA_TX_COMPLETE_CB        *pL2CA_TxComplete_Cb;
-
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    tL2CA_LE_CONNECT_IND_CB    *pL2CA_LE_ConnectInd_Cb;
+    tL2CA_LE_CONNECT_CFM_CB    *pL2CA_LE_ConnectCfm_Cb;
+#endif /* LE_L2CAP_CFC_INCLUDED */
 } tL2CAP_APPL_INFO;
 
 /* Define the structure that applications use to create or accept
@@ -1134,6 +1173,68 @@ extern UINT8 L2CA_GetBleConnRole (BD_ADDR bd_addr);
 *******************************************************************************/
 extern UINT16 L2CA_GetDisconnectReason (BD_ADDR remote_bda, tBT_TRANSPORT transport);
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+/*******************************************************************************
+**
+** Function         L2CA_LE_Register
+**
+** Description      Other layers call this function to register for LE L2CAP
+**                  services.
+**
+** Returns          PSM to use or zero if error. Typically, the PSM returned
+**                  is the same as was passed in.
+**
+*******************************************************************************/
+UINT16 L2CA_LE_Register (UINT16 psm, tL2CAP_APPL_INFO *p_cb_info);
+
+/*******************************************************************************
+**
+** Function         L2CA_LE_Deregister
+**
+** Description      Other layers call this function to deregister for LE L2CAP
+**                  services.
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void L2CA_LE_Deregister (UINT16 psm);
+
+/*******************************************************************************
+**
+** Function         L2CA_LE_CreditBasedConn_Req
+**
+** Description      This function used to send LE credit based connection request
+**
+** Returns          local cid
+**
+*******************************************************************************/
+extern UINT16 L2CA_LE_CreditBasedConn_Req (BD_ADDR rem_bda,
+                                    tL2CAP_LE_CONN_INFO *conn_info);
+
+/*******************************************************************************
+**
+** Function         L2CA_LE_CreditBasedConn_Rsp
+**
+** Description      This function used to send LE credit based connection response
+**
+** Returns
+**
+*******************************************************************************/
+extern BOOLEAN L2CA_LE_CreditBasedConn_Rsp (BD_ADDR p_bd_addr, UINT8 identifier,
+                                      UINT16 lcid, tL2CAP_LE_CONN_INFO *conn_info);
+
+/*******************************************************************************
+**
+** Function         L2CA_LE_SetFlowControlCredits
+**
+** Description      This function sets the credits for LE incase credits was
+**                  not set during the LE connection establishment.
+**
+** Returns
+**
+*******************************************************************************/
+BOOLEAN L2CA_LE_SetFlowControlCredits (UINT16 cid, UINT16 credits);
+#endif /* LE_L2CAP_CFC_INCLUDED */
 #endif /* (BLE_INCLUDED == TRUE) */
 
 #ifdef __cplusplus

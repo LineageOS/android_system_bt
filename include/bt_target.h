@@ -808,6 +808,32 @@
 #define BLE_INCLUDED            TRUE
 #endif
 
+/*LE_L2CAP_CODE*/
+/*LE Credit Based Flow Control Mode*/
+#if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
+#ifndef LE_L2CAP_CFC_INCLUDED
+#define LE_L2CAP_CFC_INCLUDED        TRUE
+#define HCI_LE_ACL_POOL_ID           GKI_POOL_ID_3
+
+/* The maximum number of simultaneous channels that L2CAP can support. */
+#ifndef MAX_L2CAP_CHANNELS
+#define MAX_L2CAP_CHANNELS          20
+#else
+#undef MAX_L2CAP_CHANNELS
+#define MAX_L2CAP_CHANNELS          20
+#endif
+
+/* The maximum number of simultaneous applications that can register with L2CAP. */
+#ifndef MAX_L2CAP_CLIENTS
+#define MAX_L2CAP_CLIENTS           MAX_L2CAP_CHANNELS - 1
+#else
+#undef MAX_L2CAP_CLIENTS
+#define MAX_L2CAP_CLIENTS           MAX_L2CAP_CHANNELS - 1
+#endif
+
+#endif  /*LE_L2CAP_CFC_INCLUDED */
+#endif /* BLE_INCLUDED */
+
 #ifndef BLE_ANDROID_CONTROLLER_SCAN_FILTER
 #define BLE_ANDROID_CONTROLLER_SCAN_FILTER            TRUE
 #endif

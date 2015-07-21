@@ -32,6 +32,10 @@
 #include "l2cdefs.h"
 #include "list.h"
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+#include <pthread.h>
+#endif
+
 #define L2CAP_MIN_MTU   48      /* Minimum acceptable MTU is 48 bytes */
 
 /* Timeouts. Since L2CAP works off a 1-second list, all are in seconds.
@@ -137,6 +141,14 @@ typedef enum
 
 #define L2CEVT_ACK_TIMEOUT            34          /* RR delay timeout                     */
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+#define L2CEVT_L2CAP_LE_CONNECT_REQ       35          /* Peer LE connection request             */
+#define L2CEVT_L2CAP_LE_CONNECT_RSP       36          /* Peer LE connection response            */
+#define L2CEVT_L2CAP_LE_CONNECT_RSP_NEG   37          /* Peer LE connection response(failed)    */
+#define L2CEVT_L2CA_LE_CONNECT_REQ        38          /* Upper layer LE connect request         */
+#define L2CEVT_L2CA_LE_CONNECT_RSP        39          /* Upper layer LE connect response        */
+#define L2CEVT_L2CA_LE_CONNECT_RSP_NEG    40          /* Upper layer LE connect response(failed)*/
+#endif
 
 /* Bitmask to skip over Broadcom feature reserved (ID) to avoid sending two
    successive ID values, '0' id only or both */
@@ -240,10 +252,40 @@ typedef struct
 #if (L2CAP_UCD_INCLUDED == TRUE)
     tL2C_UCD_REG            ucd;
 #endif
-
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    tBT_TRANSPORT       transport;
+#endif
     tL2CAP_APPL_INFO        api;
 } tL2C_RCB;
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+
+/* Define LE Credit Based Connect Req */
+typedef struct l2cap_le_cb_conn_req {
+    UINT16    le_psm;
+    UINT16    scid;
+    UINT16    mtu;
+    UINT16    mps;
+    UINT16    init_credits;
+} tL2C_LE_CB_CONN_REQ;
+
+/* Define LE Credit Based Connect Rsp */
+typedef struct l2cap_le_cb_conn_rsp {
+    UINT16    dcid;
+    UINT16    mtu;
+    UINT16    mps;
+    UINT16    init_credits;
+    UINT16    result;
+} tL2C_LE_CB_CONN_RSP;
+
+/* Define LE Credit Based Flow Control */
+typedef struct l2cap_le_cb_flow_ctrl {
+    UINT16    cid;
+    UINT16    credits;
+} tL2C_LE_CB_FLOW_CTRL;
+
+extern pthread_mutex_t lock_mutex_le_credits;
+#endif /* LE_L2CAP_CFC_INCLUDED */
 
 /* Define a channel control block (CCB). There may be many channel control blocks
 ** between the same two Bluetooth devices (i.e. on the same link).
@@ -314,6 +356,12 @@ typedef struct t_l2c_ccb
     UINT16              fixed_chnl_idle_tout;   /* Idle timeout to use for the fixed channel       */
 #endif
     UINT16              tx_data_len;
+
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    BOOLEAN                is_le_coc;
+    tL2CAP_LE_CONN_INFO    le_loc_conn_info;
+    tL2CAP_LE_CONN_INFO    le_rmt_conn_info;
+#endif /* LE_L2CAP_CFC_INCLUDED */
 } tL2C_CCB;
 
 /***********************************************************************
@@ -603,6 +651,20 @@ extern void l2cu_send_peer_ble_par_req (tL2C_LCB *p_lcb, UINT16 min_int, UINT16 
 extern void l2cu_send_peer_ble_par_rsp (tL2C_LCB *p_lcb, UINT16 reason, UINT8 rem_id);
 #endif
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+extern void l2c_cleanup (void);
+extern tBT_TRANSPORT l2cu_get_chnl_transport (tL2C_CCB *p_ccb);
+extern void l2cu_send_peer_le_credit_based_conn_req (tL2C_CCB *p_ccb);
+extern void l2cu_send_peer_le_credit_based_conn_rsp (tL2C_CCB *p_ccb, UINT8 result);
+extern void l2cu_send_peer_le_credit_based_flow_ctrl (tL2C_CCB *p_ccb, UINT16 credits);
+extern tL2C_CCB *l2cu_find_ccb_by_local_id (tL2C_LCB *p_lcb, UINT8 id);
+extern void l2cu_le_reject_connection (tL2C_LCB *p_lcb, UINT8 rem_id, UINT16 result);
+extern void l2c_le_send_credits (tL2C_CCB *p_ccb);
+extern void l2c_le_csm_execute (tL2C_CCB *p_ccb, UINT16 event, void *p_data);
+extern BOOLEAN l2c_le_proc_pdu (tL2C_CCB *p_ccb, BT_HDR *p_buf);
+extern BOOLEAN l2c_link_send_to_lower (tL2C_LCB *p_lcb, BT_HDR *p_buf);
+#endif /* LE_L2CAP_CFC_INCLUDED */
+
 extern BOOLEAN l2cu_initialize_fixed_ccb (tL2C_LCB *p_lcb, UINT16 fixed_cid, tL2CAP_FCR_OPTS *p_fcr);
 extern void    l2cu_no_dynamic_ccbs (tL2C_LCB *p_lcb);
 extern void    l2cu_process_fixed_chnl_resp (tL2C_LCB *p_lcb);
@@ -641,8 +703,16 @@ extern BOOLEAN  l2cu_check_feature_req (tL2C_LCB *p_lcb, UINT8 id, UINT8 *p_data
 extern void     l2cu_check_feature_rsp (tL2C_LCB *p_lcb, UINT8 id, UINT8 *p_data, UINT16 data_len);
 extern void     l2cu_send_feature_req (tL2C_CCB *p_ccb);
 
-extern tL2C_RCB *l2cu_allocate_rcb (UINT16 psm);
-extern tL2C_RCB *l2cu_find_rcb_by_psm (UINT16 psm);
+extern tL2C_RCB *l2cu_allocate_rcb (UINT16 psm
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+                           , tBT_TRANSPORT  transport
+#endif
+                            );
+extern tL2C_RCB *l2cu_find_rcb_by_psm (UINT16 psm
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+                           , tBT_TRANSPORT  transport
+#endif
+                            );
 extern void     l2cu_release_rcb (tL2C_RCB *p_rcb);
 
 extern UINT8    l2cu_process_peer_cfg_req (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg);
@@ -678,6 +748,10 @@ extern void     l2c_link_processs_num_bufs (UINT16 num_lm_acl_bufs);
 extern UINT8    l2c_link_pkts_rcvd (UINT16 *num_pkts, UINT16 *handles);
 extern void     l2c_link_role_changed (BD_ADDR bd_addr, UINT8 new_role, UINT8 hci_status);
 extern void     l2c_link_sec_comp (BD_ADDR p_bda, tBT_TRANSPORT trasnport, void *p_ref_data, UINT8 status);
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+extern void     l2c_le_link_sec_comp (BD_ADDR p_bda, tBT_TRANSPORT trasnport,
+                void *p_ref_data, UINT8 status);
+#endif
 extern void     l2c_link_segments_xmitted (BT_HDR *p_msg);
 extern void     l2c_pin_code_request (BD_ADDR bd_addr);
 extern void     l2c_link_adjust_chnl_allocation (void);

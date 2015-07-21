@@ -41,7 +41,11 @@
 #include "btm_api.h"
 #include "btm_int.h"
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+BOOLEAN l2c_link_send_to_lower (tL2C_LCB *p_lcb, BT_HDR *p_buf);
+#else
 static BOOLEAN l2c_link_send_to_lower (tL2C_LCB *p_lcb, BT_HDR *p_buf);
+#endif
 
 /*******************************************************************************
 **
@@ -279,6 +283,64 @@ BOOLEAN l2c_link_hci_conn_comp (UINT8 status, UINT16 handle, BD_ADDR p_bda)
     return (TRUE);
 }
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+/*******************************************************************************
+ **
+ ** Function         l2c_le_link_sec_comp
+ **
+ ** Description      This function is called when required security procedures
+ **                  are completed for LE-L2CAP.
+ **
+ ** Returns          void
+ **
+ *******************************************************************************/
+void l2c_le_link_sec_comp (BD_ADDR p_bda, tBT_TRANSPORT transport, void *p_ref_data, UINT8 status)
+{
+    tL2C_LCB               *p_lcb;
+    tL2C_CCB               *p_ccb;
+    tL2C_CCB               *p_next_ccb;
+    UINT8                  event;
+
+    L2CAP_TRACE_DEBUG ("LE-L2CAP: %s status=%d, transport=%d, p_ref_data=0x%x, ",
+            __FUNCTION__, status, transport, p_ref_data);
+
+    if (status == BTM_SUCCESS_NO_SECURITY)
+        status = BTM_BLE_SUCCESS;
+
+    p_lcb = l2cu_find_lcb_by_bd_addr (p_bda, transport);
+
+    /* If we don't have one, this is an error */
+    if (!p_lcb)
+    {
+        L2CAP_TRACE_WARNING ("LE-L2CAP: got sec_comp for unknown BD_ADDR");
+        return;
+    }
+
+    /* Match p_ccb with p_ref_data returned by sec manager */
+    for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; p_ccb = p_next_ccb)
+    {
+        p_next_ccb = p_ccb->p_next_ccb;
+
+        if (p_ccb == p_ref_data)
+        {
+            switch(status)
+            {
+                case BTM_BLE_SUCCESS:
+                    event = L2CEVT_SEC_COMP;
+                    break;
+
+                default:
+                    L2CAP_TRACE_ERROR ("LE-L2CAP: %s Sec Failed status",
+                                                __FUNCTION__, status);
+                    event = L2CEVT_SEC_COMP_NEG;
+            }
+            l2c_le_csm_execute (p_ccb, event, (void *) &status);
+            break;
+        }
+    }
+}
+#endif /* LE_L2CAP_CFC_INCLUDED */
+
 
 /*******************************************************************************
 **
@@ -404,6 +466,13 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
              */
             if (p_ccb != p_lcb->p_pending_ccb)
             {
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+                if((p_lcb->transport == BT_TRANSPORT_LE) && (p_ccb->is_le_coc == TRUE))
+                {
+                    l2c_le_csm_execute (p_ccb, L2CEVT_LP_DISCONNECT_IND, &reason);
+                }
+                else
+#endif
                 l2c_csm_execute (p_ccb, L2CEVT_LP_DISCONNECT_IND, &reason);
             }
             p_ccb = pn;
@@ -465,6 +534,13 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
           }
 #endif
         }
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+            if(p_lcb->p_pending_ccb && (p_lcb->transport == BT_TRANSPORT_LE) &&
+                (p_lcb->p_pending_ccb->is_le_coc))
+            {
+                transport = BT_TRANSPORT_LE;
+            }
+#endif
             if (l2cu_create_conn(p_lcb, transport))
                 lcb_is_free = FALSE; /* still using this lcb */
         }
@@ -552,7 +628,13 @@ void l2c_link_timeout (tL2C_LCB *p_lcb)
         for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; )
         {
             tL2C_CCB *pn = p_ccb->p_next_ccb;
-
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+            if((p_lcb->transport == BT_TRANSPORT_LE) && (p_ccb->is_le_coc == TRUE))
+            {
+                l2c_le_csm_execute (p_ccb, L2CEVT_LP_DISCONNECT_IND, NULL);
+            }
+            else
+#endif
             l2c_csm_execute (p_ccb, L2CEVT_LP_DISCONNECT_IND, NULL);
 
             p_ccb = pn;
@@ -588,7 +670,13 @@ void l2c_link_timeout (tL2C_LCB *p_lcb)
             for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; )
             {
                 tL2C_CCB *pn = p_ccb->p_next_ccb;
-
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+                if((p_lcb->transport == BT_TRANSPORT_LE) && (p_ccb->is_le_coc == TRUE))
+                {
+                    l2c_le_csm_execute (p_ccb, L2CEVT_LP_DISCONNECT_IND, NULL);
+                }
+                else
+#endif
                 l2c_csm_execute (p_ccb, L2CEVT_LP_DISCONNECT_IND, NULL);
 
                 p_ccb = pn;
@@ -862,6 +950,14 @@ void l2c_link_adjust_chnl_allocation (void)
         if (!p_ccb->in_use)
             continue;
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+        if((BT_TRANSPORT_LE == l2cu_get_chnl_transport(p_ccb)) && (p_ccb->is_le_coc))
+        {
+            /* low data rate is 1, medium is 2, high is 3 and no traffic is 0 */
+            weighted_chnls[HCI_LE_ACL_POOL_ID] += p_ccb->tx_data_rate + p_ccb->rx_data_rate;
+        }
+        else
+#endif
         if (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE)
         {
             weighted_chnls[p_ccb->ertm_info.user_tx_pool_id] += p_ccb->tx_data_rate;
@@ -913,7 +1009,17 @@ void l2c_link_adjust_chnl_allocation (void)
 
         if (!p_ccb->in_use)
             continue;
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+        if((BT_TRANSPORT_LE == l2cu_get_chnl_transport(p_ccb)) && (p_ccb->is_le_coc))
+        {
+            p_ccb->buff_quota = quota_per_weighted_chnls[HCI_LE_ACL_POOL_ID] * p_ccb->tx_data_rate;
 
+            L2CAP_TRACE_EVENT ("LE-L2CAP: CID:0x%04x LE TxPool:%u Priority:%u TxDataRate:%u Quota:%u",
+                                p_ccb->local_cid, HCI_LE_ACL_POOL_ID, p_ccb->ccb_priority,
+                                p_ccb->tx_data_rate, p_ccb->buff_quota);
+        }
+        else
+#endif
         if (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE)
         {
             p_ccb->buff_quota = quota_per_weighted_chnls[p_ccb->ertm_info.user_tx_pool_id] * p_ccb->tx_data_rate;
@@ -1275,7 +1381,11 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
 ** Returns          TRUE for success, FALSE for fail
 **
 *******************************************************************************/
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+BOOLEAN l2c_link_send_to_lower (tL2C_LCB *p_lcb, BT_HDR *p_buf)
+#else
 static BOOLEAN l2c_link_send_to_lower (tL2C_LCB *p_lcb, BT_HDR *p_buf)
+#endif
 {
     UINT16      num_segs;
     UINT16      xmit_window, acl_data_size;

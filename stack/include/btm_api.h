@@ -3285,6 +3285,44 @@ extern void BTM_SetPairableMode (BOOLEAN allow_pairing, BOOLEAN connect_only_pai
 *******************************************************************************/
 extern void BTM_SetSecureConnectionsOnly (BOOLEAN secure_connections_only_mode);
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+/*******************************************************************************
+**
+** Function         BTM_SetBleSecurityLevel
+**
+** Description      Register LE service security level with Security Manager
+**
+** Parameters:      is_originator - TRUE if originating the connection, FALSE if not
+**                  p_name      - Name of the service relevant only if
+**                                authorization will show this name to user. ignored
+**                                if BTM_SEC_SERVICE_NAME_LEN is 0.
+**                  service_id  - service ID for the service passed to authorization callback
+**                  sec_level   - bit mask of the security features
+**                  psm         - LE L2CAP PSM
+**
+** Returns          TRUE if registered OK, else FALSE
+**
+*******************************************************************************/
+BOOLEAN BTM_SetBleSecurityLevel (BOOLEAN is_originator, char *p_name, UINT8 service_id,
+                              UINT16 sec_level, UINT16 psm);
+
+/*******************************************************************************
+**
+** Function         BTM_SetBleEncKeySize
+**
+** Description      Register the required LE encryption key size with Security Manager
+**
+** Parameters:      p_name      - Name of the service relevant only
+**                  enc_key_size- required LE encryption key size
+**                  le_psm         - LE L2CAP PSM
+**
+** Returns          TRUE if registered OK, else FALSE
+**
+*******************************************************************************/
+BOOLEAN BTM_SetBleEncKeySize (char *p_name, UINT8 enc_key_size, UINT16 le_psm);
+#endif
+
+
 /*******************************************************************************
 **
 ** Function         BTM_SetSecurityLevel

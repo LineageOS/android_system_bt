@@ -80,6 +80,14 @@ static BOOLEAN L2cap_GetPeerFeatures (BD_ADDR bd_addr, UINT32 *p_ext_feat, UINT8
 static BOOLEAN L2cap_GetBDAddrbyHandle (UINT16 handle, BD_ADDR bd_addr);
 static UINT8 L2cap_GetChnlFcrMode (UINT16 lcid);
 static UINT16 L2cap_SendFixedChnlData (UINT16 fixed_cid, BD_ADDR rem_bda, BT_HDR *p_buf);
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+static bt_status_t L2cap_LE_Register (UINT16 le_psm, BOOLEAN ConnType, UINT16 SecLevel, UINT8 enc_key_size);
+static bt_status_t L2cap_LE_DeRegister (UINT16 psm);
+static UINT16 L2cap_LE_Connect(BD_ADDR address, tL2CAP_LE_CONN_INFO *conn_info);
+static BOOLEAN L2cap_LE_ConnectRsp (BD_ADDR p_bd_addr, UINT8 id, UINT16 lcid, tL2CAP_LE_CONN_INFO *conn_info);
+static BOOLEAN L2cap_LE_FlowControl (UINT16 lcid, UINT16 credits);
+static void L2cap_LE_freebuf(BT_HDR *p_buf);
+#endif
 
 static const btl2cap_interface_t btl2capInterface = {
     sizeof(btl2cap_interface_t),
@@ -118,6 +126,14 @@ static const btl2cap_interface_t btl2capInterface = {
     L2cap_GetChnlFcrMode,
     L2cap_SendFixedChnlData,
     NULL, // cleanup,
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    L2cap_LE_Register,
+    L2cap_LE_DeRegister,
+    L2cap_LE_Connect,
+    L2cap_LE_ConnectRsp,
+    L2cap_LE_FlowControl,
+    L2cap_LE_freebuf,
+#endif
 };
 
 const btl2cap_interface_t *btif_l2cap_get_interface(void)
@@ -176,6 +192,84 @@ static bt_status_t L2cap_Register (UINT16 psm, BOOLEAN ConnType, UINT16 SecLevel
     }
    return BT_STATUS_SUCCESS;
 }
+
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+/*******************************************************************************
+**
+** Function L2cap_LE_Register
+**
+** Description This function is called during the task startup
+** to register interface functions with L2CAP.
+**
+*******************************************************************************/
+static bt_status_t L2cap_LE_Register (UINT16 le_psm, BOOLEAN ConnType, UINT16 SecLevel,
+                                          UINT8 enc_key_size)
+{
+
+    BTIF_TRACE_DEBUG("LE-L2CAP: %s le_psm=%d, SecLevel=%d ", __FUNCTION__, le_psm, SecLevel);
+    if (!BTM_SetBleSecurityLevel (ConnType, "l2c_le_test", BTM_SEC_SERVICE_ATT,
+            SecLevel, le_psm))
+    {
+        BTIF_TRACE_ERROR("LE-L2CAP: BTM_SetSecurityLevel failed");
+        return BT_STATUS_FAIL;
+    }
+
+    if (!BTM_SetBleEncKeySize ("l2c_le_test", enc_key_size, le_psm))
+    {
+        BTIF_TRACE_ERROR("LE-L2CAP: BTM_SetBleEncKeySize failed");
+        return BT_STATUS_FAIL;
+    }
+
+    g_Psm = L2CA_LE_Register (le_psm, pl2test_l2c_appl);
+
+    if(0 == g_Psm) {
+        BTIF_TRACE_ERROR("LE-L2CAP: L2cap_LE_Register failed");
+        return BT_STATUS_FAIL;
+    }
+    return BT_STATUS_SUCCESS;
+}
+
+static UINT16 L2cap_LE_Connect(BD_ADDR address, tL2CAP_LE_CONN_INFO *conn_info)
+{
+    BTIF_TRACE_DEBUG("LE-L2CAP: %s:: %0x %0x %0x %0x %0x %0x", __FUNCTION__,
+    address[0], address[1], address[2],address[3],address[4],address[5]);
+
+    if (0 == (g_lcid = L2CA_LE_CreditBasedConn_Req (address, conn_info))) {
+        BTIF_TRACE_ERROR("LE-L2CAP: L2CA_LE_CreditBasedConn_Req failed for le_psm %d",
+        conn_info->le_psm);
+    }
+    return g_lcid;
+}
+
+static BOOLEAN L2cap_LE_ConnectRsp (BD_ADDR p_bd_addr, UINT8 id, UINT16 lcid,
+        tL2CAP_LE_CONN_INFO *conn_info)
+{
+    if (!L2CA_LE_CreditBasedConn_Rsp (p_bd_addr, id, lcid, conn_info)) {
+        BTIF_TRACE_ERROR("LE-L2CAP: L2CA_LE_CreditBasedConn_Rsp failed");
+        return BT_STATUS_FAIL;
+    }
+    return BT_STATUS_SUCCESS;
+}
+
+static BOOLEAN L2cap_LE_FlowControl (UINT16 lcid, UINT16 credits)
+{
+    if (!L2CA_LE_SetFlowControlCredits (lcid, credits)) {
+        BTIF_TRACE_ERROR("LE-L2CAP: L2CA_LE_SetFlowControlCredits failed");
+        return BT_STATUS_FAIL;
+    }
+    return BT_STATUS_SUCCESS;
+}
+static void L2cap_LE_freebuf (BT_HDR *p_buf)
+{
+    GKI_freebuf(p_buf);
+}
+
+static bt_status_t L2cap_LE_DeRegister (UINT16 psm)
+{
+    L2CA_LE_Deregister(psm);
+    return BT_STATUS_SUCCESS;
+}
+#endif /* LE_L2CAP_CFC_INCLUDED */
 
 static bt_status_t L2cap_DeRegister (UINT16 psm)
 {

@@ -452,6 +452,20 @@ typedef struct
     UINT8                   flag;
     UINT8                   tx_power;
 }tBTM_BLE_ADV_DATA;
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+enum
+{
+    BTM_BLE_SUCCESS               = 0,
+    BTM_BLE_NO_PSM                = 2,
+    BTM_BLE_NO_RESOURCES          = 4,
+    BTM_BLE_INSUFF_AUTHENTICATION = 5,
+    BTM_BLE_INSUFF_AUTHORIZATION  = 6,
+    BTM_BLE_INSUFF_ENCR_KEY_SIZE  = 7,
+    BTM_BLE_INSUFF_ENCRYPTION     = 8
+};
+
+typedef UINT8 tBTM_BLE_STATUS;
+#endif /* LE_L2CAP_CFC_INCLUDED */
 
 #ifndef BTM_BLE_MULTI_ADV_MAX
 #define BTM_BLE_MULTI_ADV_MAX   16 /* controller returned adv_inst_max should be less

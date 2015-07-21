@@ -440,6 +440,10 @@ typedef struct
     UINT8           orig_service_name[BTM_SEC_SERVICE_NAME_LEN + 1];
     UINT8           term_service_name[BTM_SEC_SERVICE_NAME_LEN + 1];
 #endif
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    UINT8          enc_key_size;        /* BLE encryption key size */
+    tBT_TRANSPORT transport;
+#endif
 } tBTM_SEC_SERV_REC;
 
 #if BLE_INCLUDED == TRUE
@@ -1111,7 +1115,14 @@ extern void  btm_read_local_oob_complete (UINT8 *p);
 extern void  btm_acl_resubmit_page (void);
 extern void  btm_acl_reset_paging (void);
 extern void  btm_acl_paging (BT_HDR *p, BD_ADDR dest);
+
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+UINT8 btm_sec_clr_service_by_psm (UINT16 psm, tBT_TRANSPORT  transport);
+int btm_sec_l2cap_le_access_req (BD_ADDR bd_addr, UINT16 psm, UINT16 handle,
+    CONNECTION_TYPE conn_type, tBTM_SEC_CALLBACK *p_callback, void *p_ref_data);
+#else
 extern UINT8 btm_sec_clr_service_by_psm (UINT16 psm);
+#endif
 extern void  btm_sec_clr_temp_auth_service (BD_ADDR bda);
 
 #ifdef __cplusplus

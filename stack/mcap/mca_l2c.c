@@ -46,6 +46,11 @@ const tL2CAP_APPL_INFO mca_l2c_int_appl =
     mca_l2c_data_ind_cback,
     mca_l2c_congestion_ind_cback,
 	NULL
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    ,
+    NULL,
+    NULL
+#endif
 };
 
 /* Control channel eL2CAP default options */

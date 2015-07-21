@@ -352,8 +352,6 @@ static BOOLEAN btm_ble_match_random_bda(UINT16 rec_index)
     rand[1] = p_mgnt_cb->random_bda[1];
     rand[2] = p_mgnt_cb->random_bda[0];
 
-    BTM_TRACE_EVENT("%s rec_index = %d", __func__, rec_index);
-
     if (rec_index < BTM_SEC_MAX_DEVICE_RECORDS)
     {
         tSMP_ENC output;
@@ -369,6 +367,9 @@ static BOOLEAN btm_ble_match_random_bda(UINT16 rec_index)
             /* generate X = E irk(R0, R1, R2) and R is random address 3 LSO */
             SMP_Encrypt(p_dev_rec->ble.keys.irk, BT_OCTET16_LEN,
                         &rand[0], 3, &output);
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+            BTM_TRACE_EVENT("btm_ble_match_random_bda matched rec_index = %d", rec_index);
+#endif
             return btm_ble_proc_resolve_x(&output);
         }
         else
