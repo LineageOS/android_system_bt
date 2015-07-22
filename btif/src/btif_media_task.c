@@ -1065,6 +1065,7 @@ void btif_a2dp_on_suspended(tBTA_AV_SUSPEND *p_av)
         btif_media_cb.rx_flush = TRUE;
         btif_media_task_aa_rx_flush_req();
         btif_media_task_aa_handle_stop_decoding();
+        UIPC_Close(UIPC_CH_ID_AV_AUDIO);
         return;
     }
 
@@ -1332,7 +1333,10 @@ static void btif_media_task_handle_inc_media(tBT_SBC_HDR*p_msg)
 
     // ignore data if no one is listening
     if (!btif_media_cb.data_channel_open)
+    {
+        APPL_TRACE_ERROR(" btif_media_task_handle_inc_media Channel not open, returning");
         return;
+    }
 
     APPL_TRACE_DEBUG("Number of sbc frames %d, frame_len %d", num_sbc_frames, sbc_frame_len);
 
