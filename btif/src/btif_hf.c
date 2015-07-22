@@ -39,6 +39,7 @@
 #include "btif_common.h"
 #include "btif_profile_queue.h"
 #include "btif_util.h"
+#include "device/include/controller.h"
 
 /************************************************************************************
 **  Constants & Macros
@@ -63,19 +64,6 @@
 #define BTIF_HF_SECURITY    (BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)
 #endif
 
-#if (BTM_WBS_INCLUDED == TRUE )
-#ifndef BTIF_HF_FEATURES
-#define BTIF_HF_FEATURES   ( BTA_AG_FEAT_3WAY | \
-                             BTA_AG_FEAT_ECNR   | \
-                             BTA_AG_FEAT_REJECT | \
-                             BTA_AG_FEAT_ECS    | \
-                             BTA_AG_FEAT_EXTERR | \
-                             BTA_AG_FEAT_BTRH   | \
-                             BTA_AG_FEAT_VREC   | \
-                             BTA_AG_FEAT_CODEC |\
-                             BTA_AG_FEAT_UNAT)
-#endif
-#else
 #ifndef BTIF_HF_FEATURES
 #define BTIF_HF_FEATURES   ( BTA_AG_FEAT_3WAY | \
                              BTA_AG_FEAT_ECNR   | \
@@ -85,7 +73,6 @@
                              BTA_AG_FEAT_BTRH   | \
                              BTA_AG_FEAT_VREC   | \
                              BTA_AG_FEAT_UNAT)
-#endif
 #endif
 
 #define BTIF_HF_CALL_END_TIMEOUT       6
@@ -94,6 +81,9 @@
 
 /* Number of BTIF-HF control blocks */
 #define BTIF_HF_NUM_CB       2
+
+/* Assigned number for mSBC codec */
+#define BTA_AG_MSBC_CODEC 5
 
 /* Max HF clients supported from App */
 UINT16 btif_max_hf_clients = 1;
@@ -122,6 +112,7 @@ UINT16 bthf_hf_id[BTIF_HF_NUM_CB] = {BTIF_HF_ID_1, BTIF_HF_ID_2,
 ************************************************************************************/
 static bthf_callbacks_t *bt_hf_callbacks = NULL;
 static int hf_idx = BTIF_HF_INVALID_IDX;
+static UINT32 btif_features = BTIF_HF_FEATURES;
 
 #define CHECK_BTHF_INIT() if (bt_hf_callbacks == NULL)\
     {\
@@ -176,7 +167,7 @@ static btif_hf_cb_t btif_hf_cb[BTIF_HF_NUM_CB];
 * codec unless this variable is set to TRUE.
 */
 #ifndef BTIF_HF_WBS_PREFERRED
-#define BTIF_HF_WBS_PREFERRED   FALSE
+#define BTIF_HF_WBS_PREFERRED  TRUE
 #endif
 
 BOOLEAN btif_conf_hf_force_wbs = BTIF_HF_WBS_PREFERRED;
@@ -1595,28 +1586,43 @@ static const bthf_interface_t bthfInterface = {
 *******************************************************************************/
 bt_status_t btif_hf_execute_service(BOOLEAN b_enable)
 {
-     char * p_service_names[] = BTIF_HF_SERVICE_NAMES;
-     int i;
-     if (b_enable)
-     {
-          /* Enable and register with BTA-AG */
-          BTA_AgEnable (BTA_AG_PARSE, bte_hf_evt);
-              for (i = 0; i < btif_max_hf_clients; i++)
-              {
-                  BTA_AgRegister(BTIF_HF_SERVICES, BTIF_HF_SECURITY,
-                      BTIF_HF_FEATURES, p_service_names, bthf_hf_id[i]);
-              }
-     }
-     else {
-         /* De-register AG */
-         for (i = 0; i < btif_max_hf_clients; i++)
-         {
-             BTA_AgDeregister(btif_hf_cb[i].handle);
-         }
-         /* Disable AG */
-         BTA_AgDisable();
-     }
-     return BT_STATUS_SUCCESS;
+    char * p_service_names[] = BTIF_HF_SERVICE_NAMES;
+    int i;
+    uint8_t no_of_codecs = 0;
+    uint8_t* codecs;
+    if (b_enable)
+    {
+        /* Enable and register with BTA-AG */
+        BTA_AgEnable (BTA_AG_PARSE, bte_hf_evt);
+        codecs = controller_get_interface()->get_local_supported_codecs(&no_of_codecs);
+        if (codecs != NULL)
+        {
+            for (i = 0; i < no_of_codecs; i++)
+            {
+                if (codecs[i] == BTA_AG_MSBC_CODEC)
+                {
+                    btif_features |= BTA_AG_FEAT_CODEC;
+                    break;
+                }
+            }
+        }
+
+        for (i = 0; i < btif_max_hf_clients; i++)
+        {
+            BTA_AgRegister(BTIF_HF_SERVICES, BTIF_HF_SECURITY,
+                btif_features, p_service_names, bthf_hf_id[i]);
+        }
+    }
+    else {
+        /* De-register AG */
+        for (i = 0; i < btif_max_hf_clients; i++)
+        {
+            BTA_AgDeregister(btif_hf_cb[i].handle);
+        }
+        /* Disable AG */
+        BTA_AgDisable();
+    }
+    return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
