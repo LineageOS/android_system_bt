@@ -71,6 +71,22 @@ static void parse_read_local_version_info_response(
   buffer_allocator->free(response);
 }
 
+static void parse_read_local_supported_codecs_response(
+    BT_HDR *response,
+    uint8_t *no_of_local_supported_codecs, uint8_t *local_supported_codecs) {
+  uint8_t i = 0;
+
+  uint8_t *stream = read_command_complete_header(response, HCI_READ_LOCAL_SUPPORTED_CODECS, 1 /* bytes after */);
+  assert(stream != NULL);
+  STREAM_TO_UINT8(*no_of_local_supported_codecs, stream);
+  for ( i = 0; i < *no_of_local_supported_codecs; i++)
+  {
+    STREAM_TO_UINT8(*local_supported_codecs, stream);
+    local_supported_codecs++;
+  }
+  buffer_allocator->free(response);
+}
+
 static void parse_read_bd_addr_response(
     BT_HDR *response,
     bt_bdaddr_t *address_ptr) {
@@ -236,7 +252,8 @@ static const hci_packet_parser_t interface = {
   parse_ble_read_supported_states_response,
   parse_ble_read_local_supported_features_response,
   parse_ble_read_resolving_list_size_response,
-  parse_ble_read_suggested_default_data_length_response
+  parse_ble_read_suggested_default_data_length_response,
+  parse_read_local_supported_codecs_response
 };
 
 const hci_packet_parser_t *hci_packet_parser_get_interface() {
