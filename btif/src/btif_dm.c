@@ -1423,9 +1423,9 @@ static void btif_dm_search_devices_evt (UINT16 event, char *p_param)
                 /* Verify if the device is dual mode in NVRAM */
                 int stored_device_type = 0;
                 if (btif_get_device_type(bdaddr.address, &stored_device_type) &&
-                    ((stored_device_type == BT_DEVICE_TYPE_BLE &&
+                    ((stored_device_type != BT_DEVICE_TYPE_BREDR &&
                         p_search_data->inq_res.device_type == BT_DEVICE_TYPE_BREDR) ||
-                     (stored_device_type == BT_DEVICE_TYPE_BREDR &&
+                     (stored_device_type != BT_DEVICE_TYPE_BLE &&
                         p_search_data->inq_res.device_type == BT_DEVICE_TYPE_BLE))) {
                     dev_type = BT_DEVICE_TYPE_DUMO;
                 } else {
