@@ -725,6 +725,7 @@ typedef struct
     UINT8           fail_reason;        /* The HCI reason/error code for when success=FALSE */
     tBLE_ADDR_TYPE  addr_type;          /* Peer device address type */
     tBT_DEVICE_TYPE dev_type;
+    BOOLEAN         smp_over_br;        /* SMP pairing done over BR/EDR link CID 7 */
 } tBTA_DM_AUTH_CMPL;
 
 
