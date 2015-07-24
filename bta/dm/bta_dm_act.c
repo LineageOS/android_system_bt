@@ -4579,6 +4579,7 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
             else
             {
                 sec_event.auth_cmpl.success = TRUE;
+                sec_event.auth_cmpl.smp_over_br = p_data->complt.smp_over_br;
                 if (!p_data->complt.smp_over_br)
                     GATT_ConfigServiceChangeCCC(bda, TRUE, BT_TRANSPORT_LE);
             }
