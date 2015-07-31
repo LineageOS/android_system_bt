@@ -29,6 +29,7 @@
 #include <hardware/bt_hf.h>
 #include <stdlib.h>
 #include <string.h>
+#include <cutils/properties.h>
 
 #define LOG_TAG "bt_btif_hf"
 #include "btif_common.h"
@@ -1896,6 +1897,7 @@ bt_status_t btif_hf_execute_service(BOOLEAN b_enable)
     int i;
     uint8_t no_of_codecs = 0;
     uint8_t* codecs;
+    char value[PROPERTY_VALUE_MAX];
     if (b_enable)
     {
         /* Enable and register with BTA-AG */
@@ -1911,6 +1913,13 @@ bt_status_t btif_hf_execute_service(BOOLEAN b_enable)
                     break;
                 }
             }
+        }
+        else
+        {
+            /* Read the property if local supported codecs commands is not supported */
+            if (property_get("ro.bluetooth.hfp.ver", value, "1.5") &&
+                     (!strcmp(value, "1.6") || !strcmp(value, "1.7")) )
+               btif_features |= BTA_AG_FEAT_CODEC;
         }
 
         for (i = 0; i < btif_max_hf_clients; i++)
