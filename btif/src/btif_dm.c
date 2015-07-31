@@ -3219,6 +3219,8 @@ void btif_dm_save_ble_bonding_keys(void)
                                          0);
     }
 
+    /* write bonded info immediately */
+    btif_config_flush();
 }
 
 
