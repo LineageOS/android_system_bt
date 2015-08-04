@@ -270,3 +270,22 @@ void bte_main_hci_send (BT_HDR *p_msg, UINT16 event)
         GKI_freebuf(p_msg);
     }
 }
+/******************************************************************************
+**
+** Function         bte_ssr_cleanup
+**
+** Description      sends PWR_OFF to vendor library so that harware would be
+**                  turned off as part of hardware subsystem crash
+**
+** Returns          None
+**
+******************************************************************************/
+void bte_ssr_cleanup(void)
+{
+    APPL_TRACE_DEBUG("%s", __FUNCTION__);
+    if (hci != NULL) {
+        hci->ssr_cleanup();
+    } else {
+        APPL_TRACE_ERROR("%s hci is NULL", __FUNCTION__);
+    }
+}

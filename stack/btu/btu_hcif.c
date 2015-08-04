@@ -1198,6 +1198,15 @@ static void btu_hcif_hardware_error_evt (UINT8 *p)
     /* Reset the controller */
     if (BTM_IsDeviceUp())
         BTM_DeviceReset (NULL);
+
+    if(*p == 0x0f)
+    {
+       HCI_TRACE_ERROR("Ctlr H/w error event - code:Tigger SSR");
+       bte_ssr_cleanup();
+       usleep(20000); /* 20 milliseconds */
+        /* Killing the process to force a restart as part of fault tolerance */
+       kill(getpid(), SIGKILL);
+    }
 }
 
 

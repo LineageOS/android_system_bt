@@ -180,6 +180,12 @@ static void cleanup(void) {
   stack_manager_get_interface()->clean_up_stack_async();
 }
 
+static void ssrcleanup(void)
+{
+    btif_ssr_cleanup();
+    return;
+}
+
 static int get_adapter_properties(void)
 {
     /* sanity check */
@@ -482,6 +488,7 @@ static const bt_interface_t bluetoothInterface = {
     enable,
     disable,
     cleanup,
+    ssrcleanup,
     get_adapter_properties,
     get_adapter_property,
     set_adapter_property,

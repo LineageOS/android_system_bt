@@ -44,6 +44,7 @@
 #include "packet_fragmenter.h"
 #include "osi/include/reactor.h"
 #include "vendor.h"
+#include "bt_target.h"
 
 // TODO(zachoverflow): remove this hack extern
 #include <hardware/bluetooth.h>
@@ -161,6 +162,8 @@ static bool filter_incoming_event(BT_HDR *packet);
 
 static serial_data_type_t event_to_data_type(uint16_t event);
 static waiting_command_t *get_waiting_command(command_opcode_t opcode);
+
+void ssr_cleanup (void);
 
 // Module lifecycle functions
 
@@ -517,7 +520,8 @@ static void command_timed_out(UNUSED_ATTR void *context) {
   }
 
   LOG_ERROR("%s restarting the bluetooth process.", __func__);
-  usleep(10000);
+  ssr_cleanup();
+  usleep(20000);
   kill(getpid(), SIGKILL);
 }
 
@@ -690,6 +694,18 @@ intercepted:;
   return true;
 }
 
+/** SSR cleanup is used in HW reset cases
+** which would close all the client channels
+** and turns off the chip*/
+void ssr_cleanup (void) {
+   LOG_INFO("%s", __func__);
+   if (vendor != NULL) {
+       vendor->ssr_cleanup();
+   } else {
+       LOG_ERROR("%s: vendor is NULL", __func__);
+   }
+}
+
 // Callback for the fragmenter to dispatch up a completely reassembled packet
 static void dispatch_reassembled(BT_HDR *packet) {
   // Events should already have been dispatched before this point
@@ -758,6 +774,7 @@ static void init_layer_interface() {
     interface.transmit_command = transmit_command;
     interface.transmit_command_futured = transmit_command_futured;
     interface.transmit_downward = transmit_downward;
+    interface.ssr_cleanup = ssr_cleanup;
     interface_created = true;
   }
 }
