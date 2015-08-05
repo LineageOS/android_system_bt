@@ -137,16 +137,14 @@ BOOLEAN BTA_JvIsEnable(void)
 **                  FALSE if not.
 **
 *******************************************************************************/
-BOOLEAN BTA_JvIsEncrypted(BD_ADDR bd_addr)
+BOOLEAN BTA_JvIsEncrypted(BD_ADDR bd_addr, UINT8 transport)
 {
     BOOLEAN is_encrypted = FALSE;
-    UINT8 sec_flags, le_flags;
+    UINT8 sec_flags;
 
-    if (BTM_GetSecurityFlags(bd_addr, &sec_flags) &&
-        BTM_GetSecurityFlagsByTransport(bd_addr, &le_flags, BT_TRANSPORT_LE))
+    if( BTM_GetSecurityFlagsByTransport(bd_addr, &sec_flags, transport))
     {
-        if(sec_flags & BTM_SEC_FLAG_ENCRYPTED ||
-           le_flags & BTM_SEC_FLAG_ENCRYPTED)
+        if(sec_flags & BTM_SEC_FLAG_ENCRYPTED)
             is_encrypted = TRUE;
     }
     return is_encrypted;

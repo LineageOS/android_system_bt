@@ -475,7 +475,7 @@ extern BOOLEAN BTA_JvIsEnable(void);
 **                  FALSE if not.
 **
 *******************************************************************************/
-extern BOOLEAN BTA_JvIsEncrypted(BD_ADDR bd_addr);
+extern BOOLEAN BTA_JvIsEncrypted(BD_ADDR bd_addr, UINT8 transport);
 
 /*******************************************************************************
 **
