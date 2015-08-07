@@ -705,14 +705,38 @@ BOOLEAN BTM_ReadConnectedTransportAddress(BD_ADDR remote_bda, tBT_TRANSPORT tran
             memset(remote_bda, 0, BD_ADDR_LEN);
         return FALSE;
     }
-
-    if (transport == BT_TRANSPORT_LE)
+    else if (transport == BT_TRANSPORT_LE)
     {
         memcpy(remote_bda, p_dev_rec->ble.pseudo_addr, BD_ADDR_LEN);
         if (btm_bda_to_acl(p_dev_rec->ble.pseudo_addr, transport) != NULL)
             return TRUE;
         else
             return FALSE;
+    }
+    else //INVALID transport , finding other device that doesnt match the address
+    {
+        if(memcmp(remote_bda, p_dev_rec->bd_addr, BD_ADDR_LEN))
+        {
+            memcpy(remote_bda, p_dev_rec->bd_addr, BD_ADDR_LEN);
+            if (btm_bda_to_acl(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR) != NULL)
+                return true;
+            else
+                return false;
+        }
+        else if(memcmp(remote_bda, p_dev_rec->ble.pseudo_addr, BD_ADDR_LEN))
+        {
+            memcpy(remote_bda, p_dev_rec->ble.pseudo_addr, BD_ADDR_LEN);
+            if (btm_bda_to_acl(p_dev_rec->ble.pseudo_addr, BT_TRANSPORT_LE) != NULL)
+                return true;
+            else
+                return false;
+        }
+        else
+        {
+            memset(remote_bda, 0, BD_ADDR_LEN);
+            return false;
+        }
+
     }
 
     return FALSE;

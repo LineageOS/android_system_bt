@@ -710,8 +710,7 @@ void bta_dm_remove_device(tBTA_DM_MSG *p_data)
     // if different address
     BOOLEAN continue_delete_other_dev = FALSE;
     if ((other_transport && (BTM_ReadConnectedTransportAddress(other_address, other_transport))) ||
-      (!other_transport && (BTM_ReadConnectedTransportAddress(other_address, BT_TRANSPORT_BR_EDR) ||
-       BTM_ReadConnectedTransportAddress(other_address, BT_TRANSPORT_LE))))
+      (!other_transport && (BTM_ReadConnectedTransportAddress(other_address, BT_TRANSPORT_INVALID))))
     {
         continue_delete_other_dev = FALSE;
         /* Take the link down first, and mark the device for removal when disconnected */
