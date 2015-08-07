@@ -758,10 +758,23 @@ static void process_ind_evt(tBTA_HF_CLIENT_IND *ind)
                 tle_hfp_client_open_SCO.param = (UINT32)btif_initiate_open_SCO_tmr_hdlr;
                 btu_start_timer(&tle_hfp_client_open_SCO, BTU_TTYPE_USER_FUNC,
                         BTIF_TIMEOUT_SCO_OPEN_ON_SECS);
+
+                /* for AT+CHLD=1, SCO is not disconnected when active call is ended.
+                 * Same SCO conn is used when held/waiting call become active. We
+                 * receive CIEV1,0 and CIEV1,1 in that order. SCO close timer will
+                 * start as soon as CIEV1,0 is received. Stop it since we received
+                 * CIEV1,1.
+                 */
+                if (tle_hfp_client_close_SCO.in_use)
+                {
+                    BTIF_TRACE_DEBUG("Call connected, stop SCO close timer");
+                    btu_stop_timer(&tle_hfp_client_close_SCO);
+                }
             }
             else
             {
-                if (tle_hfp_client_open_SCO.in_use) {
+                if (tle_hfp_client_open_SCO.in_use)
+                {
                     BTIF_TRACE_DEBUG("Call disconnected, stop SCO open timer");
                     btu_stop_timer(&tle_hfp_client_open_SCO);
                 }
