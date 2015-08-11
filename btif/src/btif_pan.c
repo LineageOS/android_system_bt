@@ -731,8 +731,10 @@ static void btu_exec_tap_fd_read(void *p_param) {
         if (poll(&ufd, 1, 0) <= 0 || IS_EXCEPTION(ufd.revents))
             break;
     }
-    //add fd back to monitor thread
-    btsock_thread_add_fd(pan_pth, fd, 0, SOCK_THREAD_FD_RD, 0);
+    if (btpan_cb.flow) {
+        //add fd back to monitor thread when the flow is on
+        btsock_thread_add_fd(pan_pth, fd, 0, SOCK_THREAD_FD_RD, 0);
+    }
 }
 
 static void btif_pan_close_all_conns() {
