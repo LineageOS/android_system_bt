@@ -174,6 +174,8 @@ static btif_hf_cb_t btif_hf_cb[BTIF_HF_NUM_CB];
 #endif
 
 BOOLEAN btif_conf_hf_force_wbs = BTIF_HF_WBS_PREFERRED;
+BOOLEAN send_bvra_other_index = FALSE;
+int bvra_other_index_state  = 0;
 
 /************************************************************************************
 **  Functions
@@ -202,6 +204,88 @@ static BOOLEAN is_connected(bt_bdaddr_t *bd_addr)
         return FALSE;
 }
 
+/*******************************************************************************
+**
+** Function         btif_hf_is_connected_on_other_idx
+**
+** Description      Checks if any other AV SCB is connected
+**
+** Returns          BOOLEAN
+**
+*******************************************************************************/
+
+BOOLEAN btif_hf_is_connected_on_other_idx(int current_index)
+{
+    int i;
+    for (i = 0; i < btif_max_hf_clients; i++)
+    {
+        if (i != current_index)
+        {
+            if ((btif_hf_cb[i].state == BTHF_CONNECTION_STATE_CONNECTED) ||
+                 (btif_hf_cb[i].state == BTHF_CONNECTION_STATE_SLC_CONNECTED))
+                return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+/*******************************************************************************
+**
+** Function         btif_hf_get_other_connected_index
+**
+** Description      Checks for other connected index
+**
+** Returns          Other connected index
+**
+*******************************************************************************/
+
+int btif_hf_get_other_connected_index(int current_index)
+{
+    int i;
+    for (i = 0; i < btif_max_hf_clients; i++)
+    {
+        if (i != current_index)
+        {
+            if ((btif_hf_cb[i].state == BTHF_CONNECTION_STATE_CONNECTED) ||
+                 (btif_hf_cb[i].state == BTHF_CONNECTION_STATE_SLC_CONNECTED))
+                return i;
+        }
+    }
+    return btif_max_hf_clients;
+}
+/*******************************************************************************
+**
+** Function         send_bvra_update
+**
+** Description      Internal function to updated other connected HS for BVRA state
+**
+** Returns          void
+**
+*******************************************************************************/
+static void send_bvra_update(int index)
+{
+    BTIF_TRACE_EVENT("connected %d",btif_hf_is_connected_on_other_idx(index));
+    if (btif_hf_is_connected_on_other_idx(index))
+    {
+        int other_idx = btif_hf_get_other_connected_index(index);
+        BTIF_TRACE_EVENT("other_idx %d",other_idx);
+        if (other_idx < btif_max_hf_clients &&
+                (btif_hf_cb[other_idx].peer_feat & BTA_AG_PEER_FEAT_VREC))
+        {
+            tBTA_AG_RES_DATA ag_res;
+            memset(&ag_res, 0, sizeof(ag_res));
+            ag_res.state = bvra_other_index_state;
+            BTIF_TRACE_EVENT("sending on idex %d",other_idx);
+            BTA_AgResult (btif_hf_cb[other_idx].handle,
+                    BTA_AG_BVRA_RES, &ag_res);
+        }
+        else
+        {
+            BTIF_TRACE_EVENT("Invalid connected index");
+        }
+    }
+
+}
 /*******************************************************************************
 **
 ** Function         btif_hf_idx_by_bdaddr
@@ -529,6 +613,9 @@ static void btif_hf_upstreams_evt(UINT16 event, char* p_param)
             HAL_CBACK(bt_hf_callbacks, vr_cmd_cb,
                 (p_data->val.num == 1) ? BTHF_VR_STATE_STARTED :
                       BTHF_VR_STATE_STOPPED, &btif_hf_cb[idx].connected_bda);
+            send_bvra_other_index = TRUE;
+            bvra_other_index_state = p_data->val.num;
+
             break;
 
         case BTA_AG_AT_NREC_EVT:
@@ -898,33 +985,29 @@ static bt_status_t disconnect_audio( bt_bdaddr_t *bd_addr )
 static bt_status_t start_voice_recognition(bt_bdaddr_t *bd_addr)
 {
     CHECK_BTHF_INIT();
-
-    int idx = btif_hf_idx_by_bdaddr(bd_addr);
-
-    if ((idx < 0) || (idx >= BTIF_HF_NUM_CB))
+    BOOLEAN is_success = FALSE;
+    for (int i = 0; i < btif_max_hf_clients; i++)
     {
-        BTIF_TRACE_ERROR("%s: Invalid index %d", __FUNCTION__, idx);
-        return BT_STATUS_FAIL;
-    }
-
-    if (is_connected(bd_addr) && (idx != BTIF_HF_INVALID_IDX))
-    {
-        if (btif_hf_cb[idx].peer_feat & BTA_AG_PEER_FEAT_VREC)
+        if (((btif_hf_cb[i].state == BTHF_CONNECTION_STATE_CONNECTED) ||
+                (btif_hf_cb[i].state == BTHF_CONNECTION_STATE_SLC_CONNECTED)) &&
+                btif_hf_cb[i].peer_feat & BTA_AG_PEER_FEAT_VREC)
         {
             tBTA_AG_RES_DATA ag_res;
             memset(&ag_res, 0, sizeof(ag_res));
             ag_res.state = 1;
-            BTA_AgResult (btif_hf_cb[idx].handle, BTA_AG_BVRA_RES, &ag_res);
-
-            return BT_STATUS_SUCCESS;
-        }
-        else
-        {
-            return BT_STATUS_UNSUPPORTED;
+            BTA_AgResult (btif_hf_cb[i].handle, BTA_AG_BVRA_RES, &ag_res);
+            is_success = TRUE;
         }
     }
 
-    return BT_STATUS_NOT_READY;
+    if (is_success)
+    {
+        return BT_STATUS_SUCCESS;
+    }
+    else
+    {
+        return BT_STATUS_NOT_READY;
+    }
 }
 
 /*******************************************************************************
@@ -939,33 +1022,29 @@ static bt_status_t start_voice_recognition(bt_bdaddr_t *bd_addr)
 static bt_status_t stop_voice_recognition(bt_bdaddr_t *bd_addr)
 {
     CHECK_BTHF_INIT();
-
-    int idx = btif_hf_idx_by_bdaddr(bd_addr);
-
-    if ((idx < 0) || (idx >= BTIF_HF_NUM_CB))
+    BOOLEAN is_success = FALSE;
+    for (int i = 0; i < btif_max_hf_clients; i++)
     {
-        BTIF_TRACE_ERROR("%s: Invalid index %d", __FUNCTION__, idx);
-        return BT_STATUS_FAIL;
-    }
-
-    if (is_connected(bd_addr) && (idx != BTIF_HF_INVALID_IDX))
-    {
-        if (btif_hf_cb[idx].peer_feat & BTA_AG_PEER_FEAT_VREC)
+        if (((btif_hf_cb[i].state == BTHF_CONNECTION_STATE_CONNECTED) ||
+                (btif_hf_cb[i].state == BTHF_CONNECTION_STATE_SLC_CONNECTED)) &&
+                btif_hf_cb[i].peer_feat & BTA_AG_PEER_FEAT_VREC)
         {
             tBTA_AG_RES_DATA ag_res;
             memset(&ag_res, 0, sizeof(ag_res));
             ag_res.state = 0;
-            BTA_AgResult (btif_hf_cb[idx].handle, BTA_AG_BVRA_RES, &ag_res);
-
-            return BT_STATUS_SUCCESS;
-        }
-        else
-        {
-            return BT_STATUS_UNSUPPORTED;
+            BTA_AgResult (btif_hf_cb[i].handle, BTA_AG_BVRA_RES, &ag_res);
+            is_success = TRUE;
         }
     }
 
-    return BT_STATUS_NOT_READY;
+    if (is_success)
+    {
+        return BT_STATUS_SUCCESS;
+    }
+    else
+    {
+        return BT_STATUS_NOT_READY;
+    }
 }
 
 /*******************************************************************************
@@ -1179,6 +1258,11 @@ static bt_status_t at_response(bthf_at_response_t response_code,
     {
         send_at_result((response_code == BTHF_AT_RESPONSE_OK) ? BTA_AG_OK_DONE
                         : BTA_AG_OK_ERROR, error_code, idx);
+        if (response_code == BTHF_AT_RESPONSE_OK && send_bvra_other_index)
+        {
+            send_bvra_update(idx);
+            send_bvra_other_index = FALSE;
+        }
         return BT_STATUS_SUCCESS;
     }
 
