@@ -267,7 +267,7 @@ static void bta_ag_sco_disc_cback(UINT16 sco_idx)
         /* Restore settings */
         if(bta_ag_cb.sco.p_curr_scb->inuse_codec == BTA_AG_CODEC_MSBC)
         {
-#if (BLUETOOTH_QCOM_SW == FALSE) /* This change is not needed.*/
+#if (BLUETOOTH_QTI_SW == FALSE) /* This change is not needed.*/
             /* set_sco_codec(BTM_SCO_CODEC_NONE); we should get a close */
             BTM_WriteVoiceSettings (BTM_VOICE_SETTING_CVSD);
 #endif
@@ -277,7 +277,7 @@ static void bta_ag_sco_disc_cback(UINT16 sco_idx)
                updating to the BT HOST.*/
             if (bta_ag_sco_is_opening (bta_ag_cb.sco.p_curr_scb))
             {
-#if (BLUETOOTH_QCOM_SW == FALSE) /* This change is not needed.*/
+#if (BLUETOOTH_QTI_SW == FALSE) /* This change is not needed.*/
                 if (bta_ag_cb.sco.p_curr_scb->codec_msbc_settings == BTA_AG_SCO_MSBC_SETTINGS_T2)
                 {
                      APPL_TRACE_DEBUG("Fallback to mSBC T1 settings");
@@ -593,7 +593,7 @@ static void bta_ag_create_sco(tBTA_AG_SCB *p_scb, BOOLEAN is_orig)
         bta_sys_sco_use(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
 
 #if (BTM_WBS_INCLUDED == TRUE )
-#if (BLUETOOTH_QCOM_SW == FALSE) /* These changes are not needed*/
+#if (BLUETOOTH_QTI_SW == FALSE) /* These changes are not needed*/
         /* Allow any platform specific pre-SCO set up to take place */
         bta_ag_co_audio_state(bta_ag_scb_to_idx(p_scb), p_scb->app_id, SCO_STATE_SETUP,
                 esco_codec);

@@ -43,8 +43,8 @@
 #endif
 
 /* This feature is used to update any QCOM related changes in the stack*/
-#ifndef BLUETOOTH_QCOM_SW
-#define BLUETOOTH_QCOM_SW TRUE
+#ifndef BLUETOOTH_QTI_SW
+#define BLUETOOTH_QTI_SW TRUE
 #endif
 
 #ifndef BTUI_OPS_FORMATS
@@ -335,7 +335,7 @@
 #define BTM_SCO_HCI_INCLUDED    FALSE   /* TRUE includes SCO over HCI code */
 #endif
 
-#if (BLUETOOTH_QCOM_SW == TRUE) /* Enable WBS only under this flag.*/
+#if (BLUETOOTH_QTI_SW == TRUE) /* Enable WBS only under this flag.*/
 #define BTM_WBS_INCLUDED            TRUE
 #else
 /* Includes WBS if TRUE */

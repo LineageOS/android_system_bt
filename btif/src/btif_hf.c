@@ -1357,7 +1357,7 @@ static bt_status_t phone_state_change(int num_active, int num_held, bthf_call_st
     else
         idx = btif_hf_latest_connected_idx();
 
-    BTIF_TRACE_DEBUG("phone_state_change: idx = %d", idx);
+    BTIF_TRACE_IMP("phone_state_change: idx = %d", idx);
 
     /* Check if SLC is connected */
     if (btif_hf_check_if_slc_connected() != BT_STATUS_SUCCESS)
@@ -1405,7 +1405,7 @@ static bt_status_t phone_state_change(int num_active, int num_held, bthf_call_st
     if ( ((num_active + num_held) > 0) && (btif_hf_cb[idx].num_active == 0) && (btif_hf_cb[idx].num_held == 0) &&
          (btif_hf_cb[idx].call_setup_state == BTHF_CALL_STATE_IDLE) )
     {
-        BTIF_TRACE_DEBUG("%s: Active/Held call notification received without call setup update",
+        BTIF_TRACE_IMP("%s: Active/Held call notification received without call setup update",
                           __FUNCTION__);
 
         memset(&ag_res, 0, sizeof(tBTA_AG_RES_DATA));
@@ -1484,14 +1484,27 @@ static bt_status_t phone_state_change(int num_active, int num_held, bthf_call_st
                 break;
             case BTHF_CALL_STATE_DIALING:
                 if (!(num_active + num_held))
+                {
                     ag_res.audio_handle = btif_hf_cb[idx].handle;
+                }
+                else
+                {
+                    BTIF_TRACE_DEBUG("%s: Already in a call, don't set audio handle", __FUNCTION__);
+                }
                 res = BTA_AG_OUT_CALL_ORIG_RES;
                 break;
             case BTHF_CALL_STATE_ALERTING:
                 /* if we went from idle->alert, force SCO setup here. dialing usually triggers it */
                 if ((btif_hf_cb[idx].call_setup_state == BTHF_CALL_STATE_IDLE) &&
                         !(num_active + num_held))
+                {
                     ag_res.audio_handle = btif_hf_cb[idx].handle;
+                }
+                else
+                {
+                    BTIF_TRACE_DEBUG("%s: Already in a call or prev call state was dialing,"
+                                                           " don't set audio handle", __FUNCTION__);
+                }
                 res = BTA_AG_OUT_CALL_ALERT_RES;
                 break;
             default:
@@ -1569,14 +1582,30 @@ update_call_states:
 *******************************************************************************/
 BOOLEAN btif_hf_is_call_idle()
 {
-    if (bt_hf_callbacks == NULL)
-        return TRUE;
+    int i, j = 1;
 
-    for (int i = 0; i < btif_max_hf_clients; ++i)
+    if (bt_hf_callbacks == NULL)
     {
-        if ((btif_hf_cb[i].call_setup_state != BTHF_CALL_STATE_IDLE)
-            || ((btif_hf_cb[i].num_held + btif_hf_cb[i].num_active) > 0))
-            return FALSE;
+        return TRUE;
+    }
+    for (i = 0; i < btif_max_hf_clients; i++)
+    {
+        BTIF_TRACE_EVENT("%s: call_setup_state: %d for handle: %d",
+              __FUNCTION__, btif_hf_cb[i].call_setup_state, btif_hf_cb[i].handle);
+        BTIF_TRACE_EVENT("num_held: %d, num_active: %d for handle: %d",
+                btif_hf_cb[i].num_held, btif_hf_cb[i].num_active, btif_hf_cb[i].handle);
+        j &= ((btif_hf_cb[i].call_setup_state == BTHF_CALL_STATE_IDLE) &&
+                ((btif_hf_cb[i].num_held + btif_hf_cb[i].num_active) == 0));
+    }
+
+    if (j)
+    {
+        BTIF_TRACE_EVENT("%s: call state idle ", __FUNCTION__);
+        return TRUE;
+    }
+    else
+    {
+        return FALSE;
     }
 
     return TRUE;
@@ -1694,7 +1723,7 @@ static bt_status_t bind_response(int anum, bthf_hf_indicator_status_t status,
 
         /* Format the response */
         BTIF_TRACE_EVENT("bind_response: anum : [%d] status %d ", anum, status);
-        xx = sprintf (ag_res.str, "%d,%d", anum, status);
+        xx = snprintf (ag_res.str, sizeof(ag_res.str), "%d,%d", anum, status);
 
         BTA_AgResult (btif_hf_cb[idx].handle, BTA_AG_BIND_RES, &ag_res);
 
@@ -1734,7 +1763,7 @@ static bt_status_t bind_string_response(const char* res,
         memset (&ag_res, 0, sizeof (ag_res));
 
         /* Format the response */
-        xx = sprintf (ag_res.str, "%s", res);
+        xx = snprintf (ag_res.str, sizeof(ag_res.str), "%s", res);
 
         BTA_AgResult (btif_hf_cb[idx].handle, BTA_AG_BIND_RES, &ag_res);
 

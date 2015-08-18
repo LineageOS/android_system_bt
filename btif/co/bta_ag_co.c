@@ -66,7 +66,7 @@ void bta_ag_co_audio_state(UINT16 handle, UINT8 app_id, UINT8 state, tBTA_AG_PEE
 void bta_ag_co_audio_state(UINT16 handle, UINT8 app_id, UINT8 state)
 #endif
 {
-#if (BLUETOOTH_QCOM_SW == TRUE)
+#if (BLUETOOTH_QTI_SW == TRUE)
     BTIF_TRACE_DEBUG("bta_ag_co_audio_state: handle %d, state %d", handle, state);
 #else
     switch (state)
