@@ -1419,6 +1419,8 @@ void bta_av_setconfig_rsp (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
             /* Make sure UUID has been initialized... */
             if (p_scb->uuid_int == 0)
                 p_scb->uuid_int = p_scb->open_api.uuid;
+            if (p_scb->uuid_int == 0)
+                p_scb->uuid_int = UUID_SERVCLASS_AUDIO_SOURCE;
             bta_av_next_getcap(p_scb, p_data);
         }
     }
