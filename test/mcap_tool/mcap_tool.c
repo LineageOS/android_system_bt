@@ -336,11 +336,11 @@ static void hex_dump(char *msg, void *data, int size, int trunc)
 
         /* store hex str (for left side) */
         snprintf(bytestr, sizeof(bytestr), "%02X ", *p);
-        strncat(hexstr, bytestr, sizeof(hexstr)-strlen(hexstr)-1);
+        strlcat(hexstr, bytestr, sizeof(hexstr)-strlen(hexstr)-1);
 
         /* store char str (for right side) */
         snprintf(bytestr, sizeof(bytestr), "%c", c);
-        strncat(charstr, bytestr, sizeof(charstr)-strlen(charstr)-1);
+        strlcat(charstr, bytestr, sizeof(charstr)-strlen(charstr)-1);
 
         if(n%16 == 0) {
             /* line completed */
@@ -349,8 +349,8 @@ static void hex_dump(char *msg, void *data, int size, int trunc)
             charstr[0] = 0;
         } else if(n%8 == 0) {
             /* half line: add whitespaces */
-            strncat(hexstr, "  ", sizeof(hexstr)-strlen(hexstr)-1);
-            strncat(charstr, " ", sizeof(charstr)-strlen(charstr)-1);
+            strlcat(hexstr, "  ", sizeof(hexstr)-strlen(hexstr)-1);
+            strlcat(charstr, " ", sizeof(charstr)-strlen(charstr)-1);
         }
         p++; /* next byte */
     }
@@ -519,13 +519,18 @@ static int create_cmdjob(char *cmd)
 {
     pthread_t thread_id;
     char *job_cmd;
-
     job_cmd = malloc(strlen(cmd)+1); /* freed in job handler */
-    strlcpy(job_cmd, cmd, strlen(job_cmd)+1);
+    if(job_cmd)
+    {
+        strlcpy(job_cmd, cmd, strlen(job_cmd)+1);
 
-    if (pthread_create(&thread_id, NULL,
+        if (pthread_create(&thread_id, NULL,
                        (void*)cmdjob_handler, (void*)job_cmd)!=0)
-      perror("pthread_create");
+        perror("pthread_create");
+    }
+    else
+        bdt_log("Mecap_test: Cannot Allocate memory for cmdjob");
+
 
     return 0;
 }
@@ -875,7 +880,7 @@ void do_help(char *p)
 
     while (console_cmd_list[i].name != NULL)
     {
-        pos = sprintf(line, "%s", (char*)console_cmd_list[i].name);
+        pos = snprintf(line, sizeof(line), "%s", (char*)console_cmd_list[i].name);
         bdt_log("%s %s\n", (char*)line, (char*)console_cmd_list[i].help);
         i++;
     }
@@ -1137,7 +1142,6 @@ int main (int argc, char * argv[])
 int GetBdAddr(char *p, bt_bdaddr_t *pbd_addr)
 {
     char Arr[13] = {0};
-    char *pszAddr = NULL;
     UINT8 k1 = 0;
     UINT8 k2 = 0;
     int i;
@@ -1152,13 +1156,10 @@ int GetBdAddr(char *p, bt_bdaddr_t *pbd_addr)
     {
         Arr[i] = tolower(Arr[i]);
     }
-    pszAddr = &Arr[0];
     for(i=0; i<6; i++)
     {
-        k1 = (UINT8) ( (*pszAddr >= 'a') ? ( 10 + (UINT8)( *pszAddr - 'a' )) : (*pszAddr - '0') );
-        pszAddr++;
-        k2 = (UINT8) ( (*pszAddr >= 'a') ? ( 10 + (UINT8)( *pszAddr - 'a' )) : (*pszAddr - '0') );
-        pszAddr++;
+        k1 = (UINT8) ( (Arr[i*2] >= 'a') ? ( 10 + (UINT8)( Arr[i*2] - 'a' )) : (Arr[i*2] - '0') );
+        k2 = (UINT8) ( (Arr[(i*2)+1] >= 'a') ? ( 10 + (UINT8)( Arr[(i*2)+1] - 'a' )) : (Arr[(i*2)+1] - '0') );
         if ( (k1>15)||(k2>15) )
         {
             return FALSE;
