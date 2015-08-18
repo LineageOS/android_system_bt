@@ -146,6 +146,9 @@ typedef struct {
 static const interop_manufacturer_t interop_manufacturer_database[] = {
   // Apple Devices
   {76, INTEROP_DISABLE_SDP_AFTER_PAIRING},
+
+  // Apple Devices
+  {76, INTEROP_DISABLE_SNIFF_DURING_SCO},
 };
 
 typedef struct {

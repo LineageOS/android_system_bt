@@ -84,6 +84,14 @@ typedef enum {
   // To avoid degrading the user experience with those devices, digitizer record
   // is removed from the report descriptor.
   INTEROP_REMOVE_HID_DIG_DESCRIPTOR,
+
+  // Some HID devices have problematic behaviour where when hid link is in Sniff
+  // and DUT is in Slave role for SCO link ( not eSCO) any solution cannot maintain
+  // the link as  SCO scheduling over a short period will overlap with Sniff link due to
+  // slave drift.
+  // To avoid degrading the user experience with those devices, sniff is disabled from
+  // link policy when sco is active, and enabled when sco is disabled.
+  INTEROP_DISABLE_SNIFF_DURING_SCO,
 } interop_feature_t;
 
 // Check if a given |addr| matches a known interoperability workaround as identified

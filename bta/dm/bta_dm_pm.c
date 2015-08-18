@@ -32,6 +32,7 @@
 #include "bta_dm_int.h"
 #include "btm_api.h"
 
+#include "device/include/interop.h"
 
 extern fixed_queue_t *btu_bta_alarm_queue;
 
@@ -507,6 +508,28 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
             {
                 APPL_TRACE_DEBUG("%s: SCO active, back to old SSR", __func__);
                 bta_dm_pm_ssr(peer_addr);
+            }
+        }
+    }
+
+    /* If HID connection open is received and SCO is already active.
+       disable snii link policy for some devices */
+    if ((status == BTA_SYS_CONN_OPEN) && (id == BTA_ID_HH) && bta_dm_pm_is_sco_active())
+    {
+        UINT16 manufacturer = 0;
+        UINT16  lmp_sub_version = 0;
+        UINT8 lmp_version = 0;
+        tBTA_DM_PEER_DEVICE *p_rem_dev = NULL;
+        if (BTM_ReadRemoteVersion(peer_addr, &lmp_version,
+            &manufacturer, &lmp_sub_version) == BTM_SUCCESS) {
+            p_rem_dev = bta_dm_find_peer_device(peer_addr);
+            /* Disable/Enable sniff policy on the HID link if sco Up/Down*/
+            if ((p_rem_dev) && interop_match_manufacturer(
+                INTEROP_DISABLE_SNIFF_DURING_SCO, manufacturer))
+            {
+                APPL_TRACE_DEBUG("%s: disable sniff for manufacturer:%d",
+                    __func__, manufacturer);
+                bta_dm_pm_set_sniff_policy(p_rem_dev, true);
             }
         }
     }
@@ -1241,8 +1264,27 @@ static void bta_dm_pm_hid_check(BOOLEAN bScoActive)
         /* check if an entry already present */
         if(bta_dm_conn_srvcs.conn_srvc[j].id == BTA_ID_HH )
         {
+            UINT16 manufacturer = 0;
+            UINT16  lmp_sub_version = 0;
+            UINT8 lmp_version = 0;
+            tBTA_DM_PEER_DEVICE *p_rem_dev = NULL;
             UINT8 *p = BTM_ReadLocalFeatures();
             bdcpy(peer_bdaddr, bta_dm_conn_srvcs.conn_srvc[j].peer_bdaddr);
+
+            if (BTM_ReadRemoteVersion(peer_bdaddr, &lmp_version,
+                &manufacturer, &lmp_sub_version) == BTM_SUCCESS) {
+                p_rem_dev = bta_dm_find_peer_device(peer_bdaddr);
+                /* Disable/Enable sniff policy on the HID link if sco Up/Down*/
+                if ((p_rem_dev) && interop_match_manufacturer(
+                    INTEROP_DISABLE_SNIFF_DURING_SCO, manufacturer))
+                {
+                    APPL_TRACE_DEBUG("%s: %s sniff for manufacturer:%d",
+                        __func__, bScoActive ? "disable" : "enable", manufacturer);
+                    bta_dm_pm_set_sniff_policy(p_rem_dev, bScoActive);
+                    if (!bScoActive)
+                        bta_dm_pm_sniff(p_rem_dev, (BTA_DM_PM_SNIFF2 & 0x0F));
+                }
+            }
 
             if((p != NULL && HCI_SNIFF_SUB_RATE_SUPPORTED(p))
                 &&((NULL != (p = BTM_ReadRemoteFeatures (peer_bdaddr)))
