@@ -33,6 +33,7 @@ static const char* interop_feature_string(const interop_feature_t feature) {
     CASE_RETURN_STR(INTEROP_AUTO_RETRY_PAIRING)
     CASE_RETURN_STR(INTEROP_DISABLE_SDP_AFTER_PAIRING)
     CASE_RETURN_STR(INTEROP_DISABLE_AUTH_FOR_HID_POINTING)
+    CASE_RETURN_STR(INTEROP_DISABLE_SNIFF_DURING_SCO)
   }
 
   return "UNKNOWN";
@@ -85,7 +86,7 @@ bool interop_manufacturer_match(const interop_feature_t feature, uint16_t manufa
     if (feature == interop_manufctr_database[i].feature &&
         manufacturer == interop_manufctr_database[i].manufacturer) {
       char bdstr[20] = {0};
-    LOG_WARN("%s() Device with manufacturer id: %d is a match for interop manufacturer"
+    LOG_WARN("%s() Device with manufacturer id: %d is a match for interop manufacturer "
         "workaround %s", __func__, manufacturer, interop_feature_string(feature));
       return true;
     }
