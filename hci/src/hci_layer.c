@@ -522,6 +522,12 @@ static void command_timed_out(UNUSED_ATTR void *context) {
   LOG_ERROR("%s restarting the bluetooth process.", __func__);
   ssr_cleanup();
   usleep(20000);
+  //Reset SOC status to trigger hciattach service
+  if (property_set("bluetooth.status", "off") < 0) {
+     LOG_ERROR("hci_cmd_timeout: Error resetting SOC status\n ");
+  } else {
+     LOG_ERROR("hci_cmd_timeout: SOC Status is reset\n ");
+  }
   kill(getpid(), SIGKILL);
 }
 

@@ -1207,7 +1207,16 @@ static void btu_hcif_hardware_error_evt (UINT8 *p)
        HCI_TRACE_ERROR("Ctlr H/w error event - code:Tigger SSR");
        bte_ssr_cleanup();
        usleep(20000); /* 20 milliseconds */
-        /* Killing the process to force a restart as part of fault tolerance */
+       //Reset SOC status to trigger hciattach service
+       if(property_set("bluetooth.status", "off") < 0)
+       {
+          ALOGE("SSR: Error resetting SOC status\n ");
+       }
+       else
+       {
+          ALOGE("SSR: SOC Status is reset\n ");
+       }
+       /* Killing the process to force a restart as part of fault tolerance */
        kill(getpid(), SIGKILL);
     }
 }
