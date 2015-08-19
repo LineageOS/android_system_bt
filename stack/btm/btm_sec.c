@@ -4522,6 +4522,7 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
 #if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
     tACL_CONN       *p_acl = NULL;
     UINT8           acl_idx = btm_handle_to_acl_index(handle);
+    BOOLEAN         derive_LTK = TRUE;
 #endif
     BTM_TRACE_EVENT ("Security Manager: encrypt_change status:%d State:%d, encr_enable = %d",
                       status, (p_dev_rec) ? p_dev_rec->sec_state : 0, encr_enable);
@@ -4597,7 +4598,13 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
 
     if ((status == HCI_SUCCESS) && encr_enable && (p_dev_rec->hci_handle == handle))
     {
-        if (p_dev_rec->new_encryption_key_is_p256)
+        /* check if LE LTK derivation is needed based on link key type */
+        if(p_dev_rec->rmt_auth_req == BTM_AUTH_SP_NO && btm_cb.devcb.loc_auth_req == BTM_AUTH_SP_NO)
+        {
+            derive_LTK = FALSE;
+            BTM_TRACE_DEBUG("%s skip derivation of LTK", __func__);
+        }
+        if (p_dev_rec->new_encryption_key_is_p256 && derive_LTK)
         {
             if (btm_sec_use_smp_br_chnl(p_dev_rec) &&
                 btm_sec_is_master(p_dev_rec) &&
