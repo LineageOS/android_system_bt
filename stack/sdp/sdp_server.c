@@ -66,7 +66,19 @@ static const UINT8 sdp_black_list_prefix[][3] = {{0x00, 0x1D, 0xBA},  /* JVC car
                                                  {0x00, 0x54, 0xAF},  /* Chrysler*/
                                                  {0x04, 0x88, 0xE2},  /* BeatsStudio Wireless*/
                                                  {0xA0, 0x14, 0x3D},  /* VW Sharen*/
-                                                 {0xE0, 0x75, 0x0A}   /* VW GOLF*/};
+                                                 {0x9C, 0xDF, 0x03},  /* BMW 62888*/
+                                                 {0xE0, 0x75, 0x0A},  /* VW GOLF*/
+                                                 {0x00, 0x24, 0x33},  /* Toyota Corolla */
+                                                 {0x0C, 0xD9, 0xC1}   /* Honda Accord */ };
+
+/* Few carkits supports AVRCP1.4 but not AVRCP1.5
+*  In that case fall back to 1.4 to support browsing
+*/
+static const UINT8 sdp_dev_support_avrcp_14[][3] = {{0x00, 0x02, 0x0C}, /*Clarion*/
+                                                    {0x20, 0x02, 0xAF}  /*Corolla*/};
+
+static const UINT8 sdp_hfp_black_list_prefix[][3] = {{0x94, 0x44, 0x44},  /* DUSTER carkit */
+                                                     {0x00, 0x0E, 0x9F}}; /* BMW 7 series carkit */
 
 /********************************************************************************/
 /*              L O C A L    F U N C T I O N     P R O T O T Y P E S            */
