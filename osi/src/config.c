@@ -184,8 +184,14 @@ void config_set_string(config_t *config, const char *section, const char *key, c
   section_t *sec = section_find(config, section);
   if (!sec) {
     sec = section_new(section);
+  if (sec)
     list_append(config->sections, sec);
+  else
+  {
+      ALOGE("%s: Unable to allocate memory for section", __func__);
+      return;
   }
+ }
 
   for (const list_node_t *node = list_begin(sec->entries); node != list_end(sec->entries); node = list_next(node)) {
     entry_t *entry = list_node(node);

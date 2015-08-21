@@ -257,11 +257,11 @@ static void hex_dump(char *msg, void *data, int size, int trunc)
 
         /* store hex str (for left side) */
         snprintf(bytestr, sizeof(bytestr), "%02X ", *p);
-        strncat(hexstr, bytestr, sizeof(hexstr)-strlen(hexstr)-1);
+        strlcat(hexstr, bytestr, sizeof(hexstr)-strlen(hexstr)-1);
 
         /* store char str (for right side) */
         snprintf(bytestr, sizeof(bytestr), "%c", c);
-        strncat(charstr, bytestr, sizeof(charstr)-strlen(charstr)-1);
+        strlcat(charstr, bytestr, sizeof(charstr)-strlen(charstr)-1);
 
         if(n%16 == 0) {
             /* line completed */
@@ -270,8 +270,8 @@ static void hex_dump(char *msg, void *data, int size, int trunc)
             charstr[0] = 0;
         } else if(n%8 == 0) {
             /* half line: add whitespaces */
-            strncat(hexstr, "  ", sizeof(hexstr)-strlen(hexstr)-1);
-            strncat(charstr, " ", sizeof(charstr)-strlen(charstr)-1);
+            strlcat(hexstr, "  ", sizeof(hexstr)-strlen(hexstr)-1);
+            strlcat(charstr, " ", sizeof(charstr)-strlen(charstr)-1);
         }
         p++; /* next byte */
     }

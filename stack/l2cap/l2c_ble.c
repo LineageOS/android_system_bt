@@ -877,7 +877,7 @@ static void l2cble_start_conn_update (tL2C_LCB *p_lcb)
             if (p_lcb->link_role == HCI_ROLE_MASTER
 #if (defined BLE_LLT_INCLUDED) && (BLE_LLT_INCLUDED == TRUE)
                 || (HCI_LE_CONN_PARAM_REQ_SUPPORTED(controller_get_interface()->get_features_ble()->as_array) &&
-                    HCI_LE_CONN_PARAM_REQ_SUPPORTED(p_acl_cb->peer_le_features))
+                    (p_acl_cb && HCI_LE_CONN_PARAM_REQ_SUPPORTED(p_acl_cb->peer_le_features)))
 #endif
                  )
             {
@@ -902,7 +902,7 @@ static void l2cble_start_conn_update (tL2C_LCB *p_lcb)
             if (p_lcb->link_role == HCI_ROLE_MASTER
 #if (defined BLE_LLT_INCLUDED) && (BLE_LLT_INCLUDED == TRUE)
                 || (HCI_LE_CONN_PARAM_REQ_SUPPORTED(controller_get_interface()->get_features_ble()->as_array) &&
-                    HCI_LE_CONN_PARAM_REQ_SUPPORTED(p_acl_cb->peer_le_features))
+                    (p_acl_cb && HCI_LE_CONN_PARAM_REQ_SUPPORTED(p_acl_cb->peer_le_features)))
 #endif
                  )
             {
