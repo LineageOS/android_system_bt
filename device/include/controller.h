@@ -76,6 +76,7 @@ typedef struct controller_t {
   uint8_t (*get_ble_resolving_list_max_size)(void);
   void (*set_ble_resolving_list_max_size)(int resolving_list_max_size);
   uint8_t *(*get_local_supported_codecs)(uint8_t *number_of_codecs);
+  bool (*supports_ble_offload_features)(void);
 } controller_t;
 
 const controller_t *controller_get_interface();
