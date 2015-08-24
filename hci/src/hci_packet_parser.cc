@@ -85,6 +85,20 @@ static void parse_read_local_supported_codecs_response(
   buffer_allocator->free(response);
 }
 
+static void parse_ble_read_offload_features_response(
+    BT_HDR *response,
+    bool *ble_offload_features_supported) {
+
+  uint8_t *stream = read_command_complete_header(response, NO_OPCODE_CHECKING, 0 /* bytes after */);
+  if(stream) {
+    *ble_offload_features_supported  = true;
+  } else {
+    *ble_offload_features_supported  = false;
+  }
+
+  buffer_allocator->free(response);
+}
+
 static void parse_read_bd_addr_response(BT_HDR* response,
                                         RawAddress* address_ptr) {
   uint8_t* stream = read_command_complete_header(
@@ -281,7 +295,8 @@ static const hci_packet_parser_t interface = {
     parse_ble_read_maximum_data_length_response,
     parse_ble_read_maximum_advertising_data_length,
     parse_ble_read_number_of_supported_advertising_sets,
-    parse_read_local_supported_codecs_response};
+    parse_read_local_supported_codecs_response,
+    parse_ble_read_offload_features_response};
 
 const hci_packet_parser_t* hci_packet_parser_get_interface() {
   buffer_allocator = buffer_allocator_get_interface();

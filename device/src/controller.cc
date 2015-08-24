@@ -77,6 +77,7 @@ static uint8_t number_of_local_supported_codecs = 0;
 
 static bool readable;
 static bool ble_supported;
+static bool ble_offload_features_supported;
 static bool simple_pairing_supported;
 static bool secure_connections_supported;
 
@@ -171,14 +172,19 @@ static future_t* start_up(void) {
     page_number++;
   }
 
+  // read BLE offload features support from controller
+  response = AWAIT_COMMAND(packet_factory->make_ble_read_offload_features_support());
+  packet_parser->parse_ble_read_offload_features_response(response, &ble_offload_features_supported);
 #if (SC_MODE_INCLUDED == TRUE)
-  secure_connections_supported =
-      HCI_SC_CTRLR_SUPPORTED(features_classic[2].as_array);
-  if (secure_connections_supported) {
-    response = AWAIT_COMMAND(
-        packet_factory->make_write_secure_connections_host_support(
-            HCI_SC_MODE_ENABLED));
-    packet_parser->parse_generic_command_complete(response);
+  if(ble_offload_features_supported) {
+    secure_connections_supported =
+        HCI_SC_CTRLR_SUPPORTED(features_classic[2].as_array);
+    if (secure_connections_supported) {
+      response = AWAIT_COMMAND(
+          packet_factory->make_write_secure_connections_host_support(
+              HCI_SC_MODE_ENABLED));
+      packet_parser->parse_generic_command_complete(response);
+    }
   }
 #endif
 
@@ -432,6 +438,12 @@ static bool supports_ble_periodic_advertising(void) {
   return HCI_LE_PERIODIC_ADVERTISING_SUPPORTED(features_ble.as_array);
 }
 
+static bool supports_ble_offload_features(void) {
+  assert(readable);
+  assert(ble_supported);
+  return ble_offload_features_supported;
+}
+
 static uint16_t get_acl_data_size_classic(void) {
   CHECK(readable);
   return acl_data_size_classic;
@@ -569,6 +581,7 @@ static const controller_t interface = {
     get_ble_resolving_list_max_size,
     set_ble_resolving_list_max_size,
     get_local_supported_codecs,
+    supports_ble_offload_features,
     get_le_all_initiating_phys};
 
 const controller_t* controller_get_interface() {
