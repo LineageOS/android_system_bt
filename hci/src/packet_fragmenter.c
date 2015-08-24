@@ -30,6 +30,7 @@
 #include "osi/include/osi.h"
 #include "osi/include/hash_functions.h"
 #include "osi/include/log.h"
+#include "gki.h"
 
 #define APPLY_CONTINUATION_FLAG(handle) (((handle) & 0xCFFF) | 0x1000)
 #define APPLY_START_FLAG(handle) (((handle) & 0xCFFF) | 0x2000)
@@ -144,14 +145,27 @@ static void reassemble_and_dispatch(UNUSED_ATTR BT_HDR *packet) {
         hash_map_erase(partial_packets, (void *)(uintptr_t)handle);
         buffer_allocator->free(partial_packet);
       }
+      /* check for invalid hci length */
+      if (acl_length < L2CAP_HEADER_SIZE) {
+          LOG_ERROR("%s HCI length %d .", __func__, packet->len);
+          buffer_allocator->free(packet);
+          return;
+      }
 
       uint16_t full_length = l2cap_length + L2CAP_HEADER_SIZE + HCI_ACL_PREAMBLE_SIZE;
-      if (full_length <= packet->len) {
-        if (full_length < packet->len)
-          LOG_WARN("%s found l2cap full length %d less than the hci length %d.", __func__, l2cap_length, packet->len);
 
-        callbacks->reassembled(packet);
-        return;
+      /* Buffer over flow or full packet + BT_HC_HDR_SIZE greater than GKI buffer */
+      if (((UINT16_MAX - l2cap_length) < (L2CAP_HEADER_SIZE + HCI_ACL_PREAMBLE_SIZE)) ||
+           ((full_length + sizeof(BT_HDR)) > GKI_MAX_BUF_SIZE) || (full_length < packet->len))
+      {
+          LOG_ERROR("%s Invalid L2cap length : %d :return .", __func__, l2cap_length);
+          buffer_allocator->free(packet);
+          return;
+      }
+      else if (full_length == packet->len) {
+          LOG_WARN("%s complete l2cap packet received:l2cap full length %d and hci length %d.", __func__, l2cap_length, packet->len);
+          callbacks->reassembled(packet);
+          return;
       }
 
       partial_packet = (BT_HDR *)buffer_allocator->alloc(full_length + sizeof(BT_HDR));
