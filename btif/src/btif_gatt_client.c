@@ -1491,7 +1491,7 @@ static void btgattc_handle_event(uint16_t event, char* p_param)
                     cond.srvc_uuid.p_uuid_mask = NULL;
                     if (p_adv_filt_cb->has_mask)
                     {
-                        btif_to_bta_uuid_mask(&uuid_mask, &p_adv_filt_cb->uuid_mask);
+                        btif_to_bta_uuid_mask(&uuid_mask, &p_adv_filt_cb->uuid_mask, &p_adv_filt_cb->uuid);
                         cond.srvc_uuid.p_uuid_mask = &uuid_mask;
                     }
                     BTA_DmBleCfgFilterCondition(p_adv_filt_cb->action,
