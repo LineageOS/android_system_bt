@@ -1460,16 +1460,27 @@
 #define AVRC_CTLR_INCLUDED          TRUE
 #endif
 
-#ifndef SDP_AVRCP_1_5
-#define SDP_AVRCP_1_5               TRUE
+#ifndef SDP_AVRCP_1_6
+#define SDP_AVRCP_1_6               TRUE
+#endif
 
-#if  SDP_AVRCP_1_5    == TRUE
+#ifndef  SDP_AVRCP_1_5
+#define SDP_AVRCP_1_5               FALSE
+#endif
+
+#if (defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE))
+#ifndef AVCT_COVER_ART_INCLUDED
+#define AVCT_COVER_ART_INCLUDED     TRUE
+#endif
+#endif
+
+#if ((defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE)) || \
+        (defined(SDP_AVRCP_1_5) && (SDP_AVRCP_1_5 == TRUE)))
 #ifndef AVCT_BROWSE_INCLUDED
 #define AVCT_BROWSE_INCLUDED        TRUE
 #else
 #ifndef AVCT_BROWSE_INCLUDED
 #define AVCT_BROWSE_INCLUDED        FALSE
-#endif
 #endif
 #endif
 #endif

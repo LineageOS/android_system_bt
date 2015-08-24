@@ -948,6 +948,7 @@ tBTA_AV_EVT bta_av_proc_browse_cmd(tAVRC_RESPONSE  *p_rc_rsp, tBTA_AV_RC_MSG *p_
         case AVRC_PDU_SET_BROWSED_PLAYER:
         case AVRC_PDU_CHANGE_PATH:
         case AVRC_PDU_GET_ITEM_ATTRIBUTES:
+        case AVRC_PDU_GET_TOTAL_NUMBER_OF_ITEMS:
             break;
         default:
             evt = 0;
@@ -1943,10 +1944,18 @@ tBTA_AV_FEAT bta_av_check_peer_features (UINT16 service_uuid)
                         peer_features |= (BTA_AV_FEAT_BROWSE);
                         APPL_TRACE_DEBUG("peer supports browsing");
                     }
+                    if (categories & AVRC_SUPF_CT_COVER_ART_GET_IMAGE &
+                        AVRC_SUPF_CT_COVER_ART_GET_THUMBNAIL)
+                    {
+                        peer_features |=  BTA_AV_FEAT_CA;
+                        APPL_TRACE_DEBUG("peer supports cover art");
+                    }
                 }
             }
-#if SDP_AVRCP_1_5 == TRUE
-            if ((peer_rc_version >= AVRC_REV_1_4) && (peer_features & BTA_AV_FEAT_BROWSE))
+#if ((defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE)) || \
+           (defined(SDP_AVRCP_1_5) && (SDP_AVRCP_1_5 == TRUE)))
+            if ((peer_rc_version >= AVRC_REV_1_4) &&
+                    ((peer_features & BTA_AV_FEAT_BROWSE) || (peer_features & BTA_AV_FEAT_CA)))
             {
                 BOOLEAN ret = FALSE;
                 APPL_TRACE_DEBUG("peer version to update: 0x%x", peer_rc_version);

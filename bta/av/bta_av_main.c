@@ -561,9 +561,21 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
 #endif
                 if (profile_initialized == UUID_SERVCLASS_AUDIO_SOURCE)
                 {
+#if (defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE))
+                    bta_ar_reg_avrc(UUID_SERVCLASS_AV_REM_CTRL_TARGET, "AV Remote Control Target",
+                                   NULL, p_bta_av_cfg->avrc_tg_cat, BTA_ID_AV,
+                                   (bta_av_cb.features & BTA_AV_FEAT_BROWSE), AVRC_REV_1_6);
+#else
+#if (defined(SDP_AVRCP_1_5) && (SDP_AVRCP_1_5 == TRUE))
+                    bta_ar_reg_avrc(UUID_SERVCLASS_AV_REM_CTRL_TARGET, "AV Remote Control Target",
+                                   NULL, p_bta_av_cfg->avrc_tg_cat, BTA_ID_AV,
+                                   (bta_av_cb.features & BTA_AV_FEAT_BROWSE), AVRC_REV_1_5);
+#else
                     bta_ar_reg_avrc(UUID_SERVCLASS_AV_REM_CTRL_TARGET, "AV Remote Control Target",
                                    NULL, p_bta_av_cfg->avrc_tg_cat, BTA_ID_AV,
                                    (bta_av_cb.features & BTA_AV_FEAT_BROWSE), AVRC_REV_1_3);
+#endif
+#endif
                 }
                 else if (profile_initialized == UUID_SERVCLASS_AUDIO_SINK)
                 {

@@ -60,6 +60,7 @@ typedef UINT8 tBTA_AV_STATUS;
 #define BTA_AV_FEAT_METADATA    0x0040  /* remote control Metadata Transfer command/response */
 #define BTA_AV_FEAT_MULTI_AV    0x0080  /* use multi-av, if controller supports it */
 #define BTA_AV_FEAT_BROWSE      0x0010  /* use browsing channel */
+#define BTA_AV_FEAT_CA          0x0020  /* use cover art */
 #define BTA_AV_FEAT_MASTER      0x0100  /* stream only as master role */
 #define BTA_AV_FEAT_ADV_CTRL    0x0200  /* remote control Advanced Control command/response */
 #define BTA_AV_FEAT_DELAY_RPT   0x0400  /* allow delay reporting */

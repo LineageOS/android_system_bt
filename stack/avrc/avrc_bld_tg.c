@@ -1036,6 +1036,35 @@ static tAVRC_STS avrc_bld_get_item_attrs_rsp (tAVRC_GET_ATTRS_RSP *p_rsp, BT_HDR
     return AVRC_STS_NO_ERROR;
 }
 
+/**************************************************************************************
+**
+** Function                  avrc_bld_change_path_rsp
+**
+** Description
+**
+** Returns
+**
+************************************************************************************/
+static tAVRC_STS avrc_bld_tot_num_items_rsp (tAVRC_GET_TOT_ITEMS_RSP *p_rsp, BT_HDR *p_pkt )
+{
+    UINT8 *p_data, *p_start;
+    UINT16 param_len; /* parameter length field of Rsp */
+
+    AVRC_TRACE_DEBUG("avrc_bld_tot_num_items_rsp offset :x%x", p_pkt->offset);
+
+    p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
+    p_data = p_start;
+    UINT8_TO_BE_STREAM(p_data, p_rsp->pdu);
+    param_len = 7; /* refer spec */
+    UINT16_TO_BE_STREAM(p_data, param_len);
+    UINT8_TO_BE_STREAM(p_data, p_rsp->status);
+    UINT16_TO_BE_STREAM(p_data, p_rsp->uid_counter);
+    UINT32_TO_BE_STREAM(p_data, p_rsp->num_items);
+    p_pkt->len  = p_data - p_start;
+    AVRC_TRACE_DEBUG("length = %d", p_pkt->len);
+    return AVRC_STS_NO_ERROR;
+}
+
 
 /*******************************************************************************
 **
@@ -1376,6 +1405,11 @@ tAVRC_STS AVRC_BldBrowseResponse( UINT8 handle, tAVRC_RESPONSE *p_rsp, BT_HDR **
         case AVRC_PDU_GET_ITEM_ATTRIBUTES:
             status = avrc_bld_get_item_attrs_rsp(&p_rsp->get_attrs, p_pkt);
             break;
+
+        case AVRC_PDU_GET_TOTAL_NUMBER_OF_ITEMS:
+            status = avrc_bld_tot_num_items_rsp(&p_rsp->get_tot_items, p_pkt);
+            break;
+
         default :
             break;
     }
