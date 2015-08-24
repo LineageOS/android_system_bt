@@ -77,6 +77,9 @@ typedef struct {
       BT_HDR* response, uint8_t* number_of_local_supported_codecs,
       uint8_t* local_supported_codecs);
 
+  void (*parse_ble_read_offload_features_response)(
+    BT_HDR *response,
+    bool *ble_offload_features_supported);
 } hci_packet_parser_t;
 
 const hci_packet_parser_t* hci_packet_parser_get_interface();
