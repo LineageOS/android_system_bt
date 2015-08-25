@@ -1240,7 +1240,8 @@ typedef UINT8 tBTM_LINK_KEY_TYPE;
 #define BTM_SEC_SERVICE_FIRST_EMPTY     54
 
 #ifndef BTM_SEC_MAX_SERVICES
-#define BTM_SEC_MAX_SERVICES            65
+/* accomadate other new profiles also */
+#define BTM_SEC_MAX_SERVICES            75
 #endif
 
 /************************************************************************************************
