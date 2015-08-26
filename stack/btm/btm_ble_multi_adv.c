@@ -753,7 +753,8 @@ tBTM_STATUS BTM_BleDisableAdvInstance (UINT8 inst_id)
 void btm_ble_multi_adv_vse_cback(UINT8 len, UINT8 *p)
 {
     UINT8   sub_event;
-    UINT8   adv_inst, conn_handle, idx;
+    UINT8   adv_inst, idx;
+    UINT16  conn_handle;
 
     /* Check if this is a BLE RSSI vendor specific event */
     STREAM_TO_UINT8(sub_event, p);
