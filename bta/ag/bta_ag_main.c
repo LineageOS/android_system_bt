@@ -319,6 +319,8 @@ static tBTA_AG_SCB *bta_ag_scb_alloc(void)
             p_scb->sco_idx = BTM_INVALID_SCO_INDEX;
 #if (BTM_WBS_INCLUDED == TRUE )
             p_scb->codec_updated = FALSE;
+            p_scb->peer_codecs = BTA_AG_CODEC_CVSD;
+            p_scb->sco_codec = BTA_AG_CODEC_CVSD;
 #endif
             /* set up timers */
             p_scb->act_timer.param = (UINT32) p_scb;

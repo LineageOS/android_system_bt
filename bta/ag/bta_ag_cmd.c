@@ -1411,7 +1411,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
             }
             else
             {
-                p_scb->peer_codecs = BTA_AG_CODEC_NONE;
+                p_scb->peer_codecs = BTA_AG_CODEC_CVSD;
                 APPL_TRACE_ERROR("Unexpected CMD:AT+BAC, Codec Negotiation is not supported");
             }
             break;

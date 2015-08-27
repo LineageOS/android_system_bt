@@ -382,8 +382,8 @@ void bta_ag_rfc_fail(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     p_scb->conn_service = 0;
     p_scb->peer_features = 0;
 #if (BTM_WBS_INCLUDED == TRUE )
-    p_scb->peer_codecs = BTA_AG_CODEC_NONE;
-    p_scb->sco_codec = BTA_AG_CODEC_NONE;
+    p_scb->peer_codecs = BTA_AG_CODEC_CVSD;
+    p_scb->sco_codec = BTA_AG_CODEC_CVSD;
 #endif
     p_scb->role = 0;
     p_scb->svc_conn = FALSE;
@@ -419,8 +419,8 @@ void bta_ag_rfc_close(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     p_scb->conn_service = 0;
     p_scb->peer_features = 0;
 #if (BTM_WBS_INCLUDED == TRUE )
-    p_scb->peer_codecs = BTA_AG_CODEC_NONE;
-    p_scb->sco_codec = BTA_AG_CODEC_NONE;
+    p_scb->peer_codecs = BTA_AG_CODEC_CVSD;
+    p_scb->sco_codec = BTA_AG_CODEC_CVSD;
     /* Clear these flags upon SLC teardown */
     p_scb->codec_updated = FALSE;
     p_scb->codec_fallback = FALSE;
