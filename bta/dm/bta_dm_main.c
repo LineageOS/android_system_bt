@@ -85,8 +85,8 @@ const tBTA_DM_ACTION bta_dm_action[] =
     bta_dm_security_grant,
     bta_dm_ble_set_bg_conn_type,
     bta_dm_ble_set_conn_params,  /* BTA_DM_API_BLE_CONN_PARAM_EVT */
-    bta_dm_ble_set_scan_params,  /* BTA_DM_API_BLE_SCAN_PARAM_EVT */
     bta_dm_ble_set_conn_scan_params,  /* BTA_DM_API_BLE_CONN_SCAN_PARAM_EVT */
+    bta_dm_ble_set_scan_params,  /* BTA_DM_API_BLE_SCAN_PARAM_EVT */
     bta_dm_ble_observe,
     bta_dm_ble_update_conn_params,   /* BTA_DM_API_UPDATE_CONN_PARAM_EVT */
 #if BLE_PRIVACY_SPT == TRUE
