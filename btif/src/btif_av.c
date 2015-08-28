@@ -666,7 +666,7 @@ static BOOLEAN btif_av_state_opening_handler(btif_sm_event_t event, void *p_data
                 /* Multicast: Check if connected to AVRC only device
                  * disconnect when Dual A2DP/Multicast is supported.
                  */
-                if ((btif_max_av_clients >= 2))
+                if ((btif_max_av_clients >= 2) || (p_bta_data->open.status != BTA_AV_FAIL_SDP))
                 {
                     BD_ADDR peer_addr;
                     if ((btif_rc_get_connected_peer(peer_addr))
