@@ -1590,6 +1590,10 @@ static void btif_av_handle_event(UINT16 event, char* p_param)
     switch (event)
     {
         /*events from Upper layer and Media Task*/
+        case BTIF_AV_CLEANUP_REQ_EVT: /*Clean up to be called on default index*/
+            BTIF_TRACE_EVENT("%s: BTIF_AV_CLEANUP_REQ_EVT", __FUNCTION__);
+            btif_a2dp_stop_media_task();
+            return;
         case BTIF_AV_CONNECT_REQ_EVT:
             break;
         case BTIF_AV_DISCONNECT_REQ_EVT:
@@ -2408,9 +2412,9 @@ static bt_status_t disconnect(bt_bdaddr_t *bd_addr)
 static void cleanup(int service_uuid)
 {
     int i;
-    BTIF_TRACE_EVENT("%s", __FUNCTION__);
+    BTIF_TRACE_IMP("AV %s", __FUNCTION__);
 
-    btif_a2dp_stop_media_task();
+    btif_transfer_context(btif_av_handle_event, BTIF_AV_CLEANUP_REQ_EVT, NULL, 0, NULL);
 
     btif_disable_service(service_uuid);
 
