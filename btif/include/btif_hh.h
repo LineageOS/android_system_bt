@@ -31,7 +31,12 @@
 **  Constants & Macros
 ********************************************************************************/
 
+#ifndef MAX_ACL_CONNECTIONS
 #define BTIF_HH_MAX_HID         8
+#else
+#define BTIF_HH_MAX_HID         MAX_ACL_CONNECTIONS
+#endif
+
 #define BTIF_HH_MAX_ADDED_DEV   32
 
 #define BTIF_HH_MAX_KEYSTATES            3
