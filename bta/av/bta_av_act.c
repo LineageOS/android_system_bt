@@ -337,13 +337,14 @@ UINT8 bta_av_rc_create(tBTA_AV_CB *p_cb, UINT8 role, UINT8 shdl, UINT8 lidx)
     tAVRC_CONN_CB ccb;
     BD_ADDR_PTR   bda = (BD_ADDR_PTR)bd_addr_any;
     UINT8         status = BTA_AV_RC_ROLE_ACP;
-    tBTA_AV_SCB  *p_scb = p_cb->p_scb[shdl - 1];
+    tBTA_AV_SCB  *p_scb;
     int i;
     UINT8   rc_handle;
     tBTA_AV_RCB *p_rcb;
 
     if(role == AVCT_INT)
     {
+        p_scb = p_cb->p_scb[shdl - 1];
         bda = p_scb->peer_addr;
         status = BTA_AV_RC_ROLE_INT;
     }
