@@ -438,8 +438,8 @@ static void btif_hf_upstreams_evt(UINT16 event, char* p_param)
             if (btif_hf_cb[idx].state == BTHF_CONNECTION_STATE_DISCONNECTED)
                 bdsetany(btif_hf_cb[idx].connected_bda.address);
 
-            if (p_data->open.status != BTA_AG_SUCCESS)
-                btif_queue_advance();
+            btif_queue_advance();
+
             break;
 
         case BTA_AG_CLOSE_EVT:
@@ -471,7 +471,6 @@ static void btif_hf_upstreams_evt(UINT16 event, char* p_param)
 
             HAL_CBACK(bt_hf_callbacks, connection_state_cb, btif_hf_cb[idx].state,
                              &btif_hf_cb[idx].connected_bda);
-            btif_queue_advance();
             break;
 
         case BTA_AG_AUDIO_OPEN_EVT:
