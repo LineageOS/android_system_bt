@@ -1029,6 +1029,7 @@ void BTM_PINCodeReply (BD_ADDR bd_addr, UINT8 res, UINT8 pin_len, UINT8 *p_pin, 
     if (trusted_mask)
         BTM_SEC_COPY_TRUSTED_DEVICE(trusted_mask, p_dev_rec->trusted_mask);
     p_dev_rec->sec_flags   |= BTM_SEC_LINK_KEY_AUTHED;
+    p_dev_rec->pin_code_length = pin_len;
     if (pin_len >= 16) {
         p_dev_rec->sec_flags |= BTM_SEC_16_DIGIT_PIN_AUTHED;
     }
@@ -1039,7 +1040,6 @@ void BTM_PINCodeReply (BD_ADDR bd_addr, UINT8 res, UINT8 pin_len, UINT8 *p_pin, 
     {
         /* This is start of the dedicated bonding if local device is 2.0 */
         btm_cb.pin_code_len = pin_len;
-        p_dev_rec->pin_code_length = pin_len;
         memcpy (btm_cb.pin_code, p_pin, pin_len);
 
         btm_cb.security_mode_changed = TRUE;
