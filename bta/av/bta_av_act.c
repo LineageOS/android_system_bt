@@ -1315,7 +1315,10 @@ void bta_av_conn_chg(tBTA_AV_DATA *p_data)
     BOOLEAN     chk_restore = FALSE;
 
     /* Validate array index*/
-    if (index < BTA_AV_NUM_STRS)
+    /* Fix for below klockwork issue
+     * Array 'p_scb' size is 2.
+     * Possible attempt to access element -1 of array 'p_scb' */
+    if (index >= 0 && index < BTA_AV_NUM_STRS)
     {
         p_scb = p_cb->p_scb[index];
     }
@@ -2000,7 +2003,10 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
     else
     {
         /* Validate array index*/
-        if (((p_cb->disc & BTA_AV_HNDL_MSK) - 1) < BTA_AV_NUM_STRS)
+        /* Fix for below klockwork issue
+         * Array 'p_scb' size is 2
+         * Possible attempt to access element -1 of array 'p_scb' */
+        if ((((p_cb->disc & BTA_AV_HNDL_MSK) - 1) < BTA_AV_NUM_STRS) && (((p_cb->disc & BTA_AV_HNDL_MSK) - 1) >= 0))
         {
             p_scb = p_cb->p_scb[(p_cb->disc & BTA_AV_HNDL_MSK) - 1];
         }

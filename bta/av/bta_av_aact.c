@@ -492,7 +492,11 @@ static void bta_av_proc_stream_evt(UINT8 handle, BD_ADDR bd_addr, UINT8 event, t
              * If we already have a signalling connection with the bd_addr and the streaming
              * SST is at INIT state, change it to INCOMING state to handle the signalling
              * from the 2nd SEP.                                                                */
-            if ((bta_av_find_lcb(bd_addr, BTA_AV_LCB_FIND) != NULL) && (bta_av_is_scb_init(p_scb)))
+            /* Fix for below klockwork issue
+             * Pointer 'bd_addr' checked for NULL at line 465 may be passed to function and
+             * may be dereferenced there by passing argument 1 to function 'bta_av_find_lcb' at line 500
+             * added another null check for below condition to get rid of kw error */
+            if (bd_addr != NULL && (bta_av_find_lcb(bd_addr, BTA_AV_LCB_FIND) != NULL) && (bta_av_is_scb_init(p_scb)))
             {
                 bta_av_set_scb_sst_incoming (p_scb);
 
@@ -564,7 +568,10 @@ static void bta_av_proc_stream_evt(UINT8 handle, BD_ADDR bd_addr, UINT8 event, t
 /* coverity[var_deref_model] */
 /* false-positive: bta_av_conn_cback only processes AVDT_CONNECT_IND_EVT and AVDT_DISCONNECT_IND_EVT event
  *                 these 2 events always have associated p_data */
-    if (p_data)
+/* Fix for below klockwork issue
+ * Pointer 'bd_addr' checked for NULL at line 465 may be passed to function and may be dereferenced there
+ * by passing argument 2 to function 'bta_av_conn_cback'. */
+    if (p_data && bd_addr)
     {
         bta_av_conn_cback(handle, bd_addr, event, p_data);
     }
@@ -2425,7 +2432,9 @@ void bta_av_start_ok (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     UINT8           new_role = p_scb->role;
     BT_HDR          hdr;
     UINT8           policy = HCI_ENABLE_SNIFF_MODE;
-    UINT8           cur_role;
+    /* Fix for below klockwork issue
+     * 'cur_role' might be used uninitialized in this function */
+    UINT8           cur_role = BTM_ROLE_UNDEFINED;
 
     APPL_TRACE_DEBUG("bta_av_start_ok wait:x%x, role:x%x", p_scb->wait, p_scb->role);
 

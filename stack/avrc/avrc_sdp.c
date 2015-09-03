@@ -86,6 +86,16 @@ const tSDP_PROTO_LIST_ELEM  avrc_add_proto_list [] =
 #endif
 #endif
 
+/* Fix for below klockwork issue.
+ * Address of a local variable is returned through formal argument 'p_db->p_attrs' in
+ * API AVRC_FindService, removed local declaration and defined globally */
+
+UINT16 a2d_attr_list[] = {ATTR_ID_SERVICE_CLASS_ID_LIST, /* update AVRC_NUM_ATTR, if changed */
+                          ATTR_ID_PROTOCOL_DESC_LIST,
+                          ATTR_ID_BT_PROFILE_DESC_LIST,
+                          ATTR_ID_SERVICE_NAME,
+                          ATTR_ID_SUPPORTED_FEATURES,
+                          ATTR_ID_PROVIDER_NAME};
 
 /******************************************************************************
 **
@@ -157,12 +167,9 @@ UINT16 AVRC_FindService(UINT16 service_uuid, BD_ADDR bd_addr,
 {
     tSDP_UUID   uuid_list;
     BOOLEAN     result = TRUE;
-    UINT16      a2d_attr_list[] = {ATTR_ID_SERVICE_CLASS_ID_LIST, /* update AVRC_NUM_ATTR, if changed */
-                                   ATTR_ID_PROTOCOL_DESC_LIST,
-                                   ATTR_ID_BT_PROFILE_DESC_LIST,
-                                   ATTR_ID_SERVICE_NAME,
-                                   ATTR_ID_SUPPORTED_FEATURES,
-                                   ATTR_ID_PROVIDER_NAME};
+    /* Fix for below klockwork issue.
+     * Address of a local variable is returned through formal argument 'p_db->p_attrs' in
+     * this function at line 190, removed local declaration and defined globally */
 
     AVRC_TRACE_API("AVRC_FindService uuid: %x", service_uuid);
     if( (service_uuid != UUID_SERVCLASS_AV_REM_CTRL_TARGET && service_uuid != UUID_SERVCLASS_AV_REMOTE_CONTROL) ||
