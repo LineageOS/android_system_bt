@@ -56,6 +56,19 @@ void uhid_set_non_blocking(int fd)
         APPL_TRACE_EVENT("%s() Setting non-blocking flag failed (%s)", __func__, strerror(errno));
 }
 
+static void lst_free_cb (void * rpt_id)
+{
+    UINT32 *p_rpt_id = (UINT32 *)rpt_id;
+
+    if (rpt_id == NULL)
+    return;
+
+    APPL_TRACE_DEBUG("%s: freeing report id %d",
+        __func__, (int)*p_rpt_id);
+    free(rpt_id);
+    rpt_id = NULL;
+}
+
 /*Internal function to perform UHID write and error checking*/
 static int uhid_write(int fd, const struct uhid_event *ev)
 {
@@ -84,15 +97,24 @@ static int uhid_read_event(btif_hh_device_t *p_dev)
     struct uhid_event ev;
     memset(&ev, 0, sizeof(ev));
 
+    if(!p_dev)
+    {
+        APPL_TRACE_ERROR("%s: Device not found", __func__)
+        return -1;
+    }
+
     ssize_t ret;
+
+    APPL_TRACE_DEBUG("%s: reading", __func__);
     OSI_NO_INTR(ret = read(p_dev->fd, &ev, sizeof(ev)));
+    APPL_TRACE_DEBUG("%s: read %d bytes", __func__, ret);
 
     if (ret == 0) {
-        APPL_TRACE_ERROR("%s: Read HUP on uhid-cdev %s", __FUNCTION__,
+        APPL_TRACE_ERROR("%s: Read HUP on uhid-cdev %s", __func__,
                                                  strerror(errno));
         return -EFAULT;
     } else if (ret < 0) {
-        APPL_TRACE_ERROR("%s: Cannot read uhid-cdev: %s", __FUNCTION__,
+        APPL_TRACE_ERROR("%s: Cannot read uhid-cdev: %s", __func__,
                                                 strerror(errno));
         return -errno;
     } else if ((ev.type == UHID_OUTPUT) || (ev.type==UHID_OUTPUT_EV)) {
@@ -100,11 +122,12 @@ static int uhid_read_event(btif_hh_device_t *p_dev)
         // ensure we read full event descriptor
         if (ret < (ssize_t)sizeof(ev)) {
             APPL_TRACE_ERROR("%s: Invalid size read from uhid-dev: %ld != %lu",
-                         __FUNCTION__, ret, sizeof(ev.type));
+                         __func__, ret, sizeof(ev.type));
             return -EFAULT;
         }
     }
 
+    APPL_TRACE_DEBUG("%s: received event = %d", __func__, ev.type);
     switch (ev.type) {
     case UHID_START:
         APPL_TRACE_DEBUG("UHID_START from uhid-dev\n");
@@ -125,7 +148,7 @@ static int uhid_read_event(btif_hh_device_t *p_dev)
     case UHID_OUTPUT:
         if (ret < (ssize_t)(sizeof(ev.type) + sizeof(ev.u.output))) {
             APPL_TRACE_ERROR("%s: Invalid size read from uhid-dev: %zd < %zu",
-                             __FUNCTION__, ret,
+                             __func__, ret,
                              sizeof(ev.type) + sizeof(ev.u.output));
             return -EFAULT;
         }
@@ -142,15 +165,60 @@ static int uhid_read_event(btif_hh_device_t *p_dev)
         else
             btif_hh_setreport(p_dev, BTHH_INPUT_REPORT,
                               ev.u.output.size, ev.u.output.data);
-           break;
+        break;
     case UHID_OUTPUT_EV:
         APPL_TRACE_DEBUG("UHID_OUTPUT_EV from uhid-dev\n");
         break;
-    case UHID_FEATURE:
-        APPL_TRACE_DEBUG("UHID_FEATURE from uhid-dev\n");
+    case UHID_SET_REPORT:
+        if (ret < (ssize_t)(sizeof(ev.type) + sizeof(ev.u.set_report))) {
+            APPL_TRACE_ERROR("%s: UHID_SET_REPORT: Invalid size read from "
+                "uhid-dev: %zd < %zu", __func__, ret,
+                sizeof(ev.type) + sizeof(ev.u.set_report));
+            return -EFAULT;
+        }
+        APPL_TRACE_DEBUG("UHID_SET_REPORT: Report type = %d, report_size = %d"
+                            ,ev.u.set_report.rtype, ev.u.set_report.size);
+        UINT32 *p_set_rpt_id = (UINT32 *)malloc(sizeof(UINT32));
+        if (!p_set_rpt_id) {
+          APPL_TRACE_ERROR("%s unable to allocate p_set_rpt_id", __func__);
+          return -ENOMEM;
+        }
+        *p_set_rpt_id = ev.u.set_report.id;
+        if (p_dev->set_rpt_id_list) {
+            if (!list_append(p_dev->set_rpt_id_list, (void *)p_set_rpt_id)) {
+                APPL_TRACE_ERROR("%s: list_append failed", __func__)
+                return -EFAULT;
+            }
+        }
+        if (ev.u.set_report.rtype == UHID_FEATURE_REPORT)
+            btif_hh_setreport(p_dev, BTHH_FEATURE_REPORT,
+                              ev.u.set_report.size, ev.u.set_report.data);
+        else if (ev.u.set_report.rtype == UHID_OUTPUT_REPORT)
+            btif_hh_setreport(p_dev, BTHH_OUTPUT_REPORT,
+                              ev.u.set_report.size, ev.u.set_report.data);
+        else
+            btif_hh_setreport(p_dev, BTHH_INPUT_REPORT,
+                              ev.u.set_report.size, ev.u.set_report.data);
         break;
-    case UHID_FEATURE_ANSWER:
-        APPL_TRACE_DEBUG("UHID_FEATURE_ANSWER from uhid-dev\n");
+    case UHID_GET_REPORT:
+        if (ret < (ssize_t)(sizeof(ev.type) + sizeof(ev.u.get_report))) {
+            APPL_TRACE_ERROR("%s: UHID_GET_REPORT: Invalid size read from "
+                "uhid-dev: %zd < %zu", __func__, ret,
+                sizeof(ev.type) + sizeof(ev.u.get_report));
+            return -EFAULT;
+        }
+        APPL_TRACE_DEBUG("UHID_GET_REPORT: Report type = %d",
+            ev.u.get_report.rtype);
+        p_dev->get_rpt_snt++;
+        if (ev.u.get_report.rtype == UHID_FEATURE_REPORT)
+            btif_hh_getreport(p_dev, BTHH_FEATURE_REPORT,
+                              ev.u.get_report.rnum, 0);
+        else if (ev.u.get_report.rtype == UHID_OUTPUT_REPORT)
+            btif_hh_getreport(p_dev, BTHH_OUTPUT_REPORT,
+                              ev.u.get_report.rnum, 0);
+        else
+            btif_hh_getreport(p_dev, BTHH_INPUT_REPORT,
+                              ev.u.get_report.rnum, 0);
         break;
 
     default:
@@ -282,7 +350,7 @@ void bta_hh_co_open(UINT8 dev_handle, UINT8 sub_class, tBTA_HH_ATTR_MASK attr_ma
 
     if (dev_handle == BTA_HH_INVALID_HANDLE) {
         APPL_TRACE_WARNING("%s: Oops, dev_handle (%d) is invalid...",
-                           __FUNCTION__, dev_handle);
+                           __func__, dev_handle);
         return;
     }
 
@@ -292,22 +360,22 @@ void bta_hh_co_open(UINT8 dev_handle, UINT8 sub_class, tBTA_HH_ATTR_MASK attr_ma
             p_dev->dev_handle == dev_handle) {
             // We found a device with the same handle. Must be a device reconnected.
             APPL_TRACE_WARNING("%s: Found an existing device with the same handle "
-                                                                "dev_status = %d",__FUNCTION__,
+                                                                "dev_status = %d",__func__,
                                                                 p_dev->dev_status);
-            APPL_TRACE_WARNING("%s:     bd_addr = [%02X:%02X:%02X:%02X:%02X:]", __FUNCTION__,
+            APPL_TRACE_WARNING("%s:     bd_addr = [%02X:%02X:%02X:%02X:%02X:]", __func__,
                  p_dev->bd_addr.address[0], p_dev->bd_addr.address[1], p_dev->bd_addr.address[2],
                  p_dev->bd_addr.address[3], p_dev->bd_addr.address[4]);
                  APPL_TRACE_WARNING("%s:     attr_mask = 0x%04x, sub_class = 0x%02x, app_id = %d",
-                                  __FUNCTION__, p_dev->attr_mask, p_dev->sub_class, p_dev->app_id);
+                                  __func__, p_dev->attr_mask, p_dev->sub_class, p_dev->app_id);
 
             if(p_dev->fd<0) {
                 p_dev->fd = open(dev_path, O_RDWR | O_CLOEXEC);
                 if (p_dev->fd < 0){
                     APPL_TRACE_ERROR("%s: Error: failed to open uhid, err:%s",
-                                                                    __FUNCTION__,strerror(errno));
+                                                                    __func__,strerror(errno));
                     return;
                 }else
-                    APPL_TRACE_DEBUG("%s: uhid fd = %d", __FUNCTION__, p_dev->fd);
+                    APPL_TRACE_DEBUG("%s: uhid fd = %d", __func__, p_dev->fd);
             }
 
             p_dev->hh_keep_polling = 1;
@@ -333,10 +401,10 @@ void bta_hh_co_open(UINT8 dev_handle, UINT8 sub_class, tBTA_HH_ATTR_MASK attr_ma
                 p_dev->fd = open(dev_path, O_RDWR | O_CLOEXEC);
                 if (p_dev->fd < 0){
                     APPL_TRACE_ERROR("%s: Error: failed to open uhid, err:%s",
-                                                                    __FUNCTION__,strerror(errno));
+                                                                    __func__,strerror(errno));
                     return;
                 }else{
-                    APPL_TRACE_DEBUG("%s: uhid fd = %d", __FUNCTION__, p_dev->fd);
+                    APPL_TRACE_DEBUG("%s: uhid fd = %d", __func__, p_dev->fd);
                     p_dev->hh_keep_polling = 1;
                     p_dev->hh_poll_thread_id = create_thread(btif_hh_poll_event_thread, p_dev);
                 }
@@ -348,12 +416,17 @@ void bta_hh_co_open(UINT8 dev_handle, UINT8 sub_class, tBTA_HH_ATTR_MASK attr_ma
     }
 
     if (p_dev == NULL) {
-        APPL_TRACE_ERROR("%s: Error: too many HID devices are connected", __FUNCTION__);
+        APPL_TRACE_ERROR("%s: Error: too many HID devices are connected", __func__);
         return;
     }
 
     p_dev->dev_status = BTHH_CONN_STATE_CONNECTED;
-    APPL_TRACE_DEBUG("%s: Return device status %d", __FUNCTION__, p_dev->dev_status);
+    APPL_TRACE_DEBUG("%s: allocating the set_rpt_id_list", __func__);
+    p_dev->set_rpt_id_list = list_new(lst_free_cb);
+    if (!p_dev->set_rpt_id_list) {
+        APPL_TRACE_ERROR("%s: unable to create list", __func__);
+    }
+    APPL_TRACE_DEBUG("%s: Return device status %d", __func__, p_dev->dev_status);
 }
 
 
@@ -374,18 +447,23 @@ void bta_hh_co_close(UINT8 dev_handle, UINT8 app_id)
     UINT32 i;
     btif_hh_device_t *p_dev = NULL;
 
-    APPL_TRACE_WARNING("%s: dev_handle = %d, app_id = %d", __FUNCTION__, dev_handle, app_id);
+    APPL_TRACE_WARNING("%s: dev_handle = %d, app_id = %d", __func__, dev_handle, app_id);
     if (dev_handle == BTA_HH_INVALID_HANDLE) {
-        APPL_TRACE_WARNING("%s: Oops, dev_handle (%d) is invalid...", __FUNCTION__, dev_handle);
+        APPL_TRACE_WARNING("%s: Oops, dev_handle (%d) is invalid...", __func__, dev_handle);
         return;
     }
 
     for (i = 0; i < BTIF_HH_MAX_HID; i++) {
         p_dev = &btif_hh_cb.devices[i];
+        if (p_dev->set_rpt_id_list && list_length(p_dev->set_rpt_id_list)) {
+            APPL_TRACE_DEBUG("%s: freeing the set_rpt_id_list", __func__);
+            list_free(p_dev->set_rpt_id_list);
+            p_dev->set_rpt_id_list = NULL;
+        }
         if (p_dev->dev_status != BTHH_CONN_STATE_UNKNOWN && p_dev->dev_handle == dev_handle) {
             APPL_TRACE_WARNING("%s: Found an existing device with the same handle "
                                                         "dev_status = %d, dev_handle =%d"
-                                                        ,__FUNCTION__,p_dev->dev_status
+                                                        ,__func__,p_dev->dev_status
                                                         ,p_dev->dev_handle);
             btif_hh_close_poll_thread(p_dev);
             break;
@@ -435,7 +513,6 @@ void bta_hh_co_data(UINT8 dev_handle, UINT8 *p_rpt, UINT16 len, tBTA_HH_PROTO_MO
     }
 }
 
-
 /*******************************************************************************
 **
 ** Function         bta_hh_co_send_hid_info
@@ -483,7 +560,11 @@ void bta_hh_co_send_hid_info(btif_hh_device_t *p_dev, char *dev_name, UINT16 ven
     ev.u.create.product = product_id;
     ev.u.create.version = version;
     ev.u.create.country = ctry_code;
+    // block write to uhid driver until create completes
+    p_dev->ready_for_data = FALSE;
     result = uhid_write(p_dev->fd, &ev);
+    // unblock write to uhid driver now
+    p_dev->ready_for_data = TRUE;
 
     APPL_TRACE_WARNING("%s: wrote descriptor to fd = %d, dscp_len = %d, result = %d", __FUNCTION__,
                                                                     p_dev->fd, dscp_len, result);
@@ -494,6 +575,90 @@ void bta_hh_co_send_hid_info(btif_hh_device_t *p_dev, char *dev_name, UINT16 ven
         /* The HID report descriptor is corrupted. Close the driver. */
         close(p_dev->fd);
         p_dev->fd = -1;
+    }
+}
+
+/*******************************************************************************
+**
+** Function         bta_hh_co_set_rpt_rsp
+**
+** Description      This callout function is executed by HH when Set Report Response is received
+**                      on Control Channel.
+**
+** Returns          void.
+**
+*******************************************************************************/
+void bta_hh_co_set_rpt_rsp(UINT8 dev_handle, UINT8 status)
+{
+    struct uhid_event ev;
+    btif_hh_device_t *p_dev;
+
+    APPL_TRACE_VERBOSE("%s: dev_handle = %d", __func__, dev_handle);
+
+    p_dev = btif_hh_find_connected_dev_by_handle(dev_handle);
+    if (p_dev == NULL) {
+        APPL_TRACE_WARNING("%s: Error: unknown HID device handle %d", __func__, dev_handle);
+        return;
+    }
+    // Send the HID report to the kernel.
+    if (p_dev->fd >= 0 && p_dev->set_rpt_id_list &&
+        list_length(p_dev->set_rpt_id_list)) {
+        memset(&ev, 0, sizeof(ev));
+        ev.type = UHID_SET_REPORT_REPLY;
+        /* get the report id from start of list */
+        UINT32 *set_report_reply_id = list_front(p_dev->set_rpt_id_list);
+        if (set_report_reply_id) {
+            ev.u.set_report_reply.id = *set_report_reply_id;
+            APPL_TRACE_VERBOSE("%s: set_report_reply_id = %d",
+                __func__, *(set_report_reply_id));
+            /* remove the entry from list now */
+            if (!list_remove(p_dev->set_rpt_id_list, set_report_reply_id)) {
+                APPL_TRACE_ERROR("%s: unable to remove set_report_reply_id = %d",
+                    __func__, *(set_report_reply_id));
+            }
+        }
+        ev.u.set_report_reply.err = status;
+        uhid_write(p_dev->fd, &ev);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         bta_hh_co_get_rpt_rsp
+**
+** Description      This callout function is executed by HH when Get Report Response is received
+**                      on Control Channel.
+**
+** Returns          void.
+**
+*******************************************************************************/
+void bta_hh_co_get_rpt_rsp(UINT8 dev_handle, UINT8 status, UINT8 *p_rpt, UINT16 len)
+{
+    struct uhid_event ev;
+    btif_hh_device_t *p_dev;
+
+    APPL_TRACE_VERBOSE("%s: dev_handle = %d", __func__, dev_handle);
+
+    p_dev = btif_hh_find_connected_dev_by_handle(dev_handle);
+    if (p_dev == NULL) {
+        APPL_TRACE_WARNING("%s: Error: unknown HID device handle %d", __func__, dev_handle);
+        return;
+    }
+    // Send the HID report to the kernel.
+    if (p_dev->fd >= 0 && p_dev->get_rpt_snt--) {
+        memset(&ev, 0, sizeof(ev));
+        ev.type = UHID_GET_REPORT_REPLY;
+        ev.u.get_report_reply.err = status;
+        ev.u.get_report_reply.size = len;
+        if (len > 0) {
+            if (len > UHID_DATA_MAX) {
+                APPL_TRACE_WARNING("%s: Report size greater than allowed size",
+                                   __func__);
+                return;
+            }
+            memcpy(ev.u.get_report_reply.data, p_rpt, len);
+        }
+        uhid_write(p_dev->fd, &ev);
     }
 }
 

@@ -696,6 +696,22 @@ void btif_hh_setreport(btif_hh_device_t *p_dev, bthh_report_type_t r_type, UINT1
     BTA_HhSetReport(p_dev->dev_handle, r_type, p_buf);
 }
 
+/*******************************************************************************
+**
+** Function         btif_hh_getreport
+**
+** Description      getreport initiated from the BTIF thread context
+**
+** Returns          void
+**
+*******************************************************************************/
+void btif_hh_getreport(btif_hh_device_t *p_dev, bthh_report_type_t r_type,
+                        UINT8 reportId, UINT16 bufferSize)
+
+{
+    BTA_HhGetReport(p_dev->dev_handle, r_type, reportId, bufferSize);
+}
+
 /*****************************************************************************
 **   Section name (Group of functions)
 *****************************************************************************/
