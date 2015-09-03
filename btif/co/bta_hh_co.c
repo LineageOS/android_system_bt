@@ -248,15 +248,48 @@ static int uhid_event(btif_hh_device_t *p_dev)
         else
             btif_hh_setreport(p_dev, BTHH_INPUT_REPORT,
                               ev.u.output.size, ev.u.output.data);
-           break;
+        break;
     case UHID_OUTPUT_EV:
         APPL_TRACE_DEBUG("UHID_OUTPUT_EV from uhid-dev\n");
         break;
-    case UHID_FEATURE:
-        APPL_TRACE_DEBUG("UHID_FEATURE from uhid-dev\n");
+    case UHID_SET_REPORT:
+        if (ret < (ssize_t)(sizeof(ev.type) + sizeof(ev.u.set_report))) {
+            APPL_TRACE_ERROR("%s: UHID_SET_REPORT: Invalid size read from "
+                "uhid-dev: %zd < %zu", __FUNCTION__, ret,
+                sizeof(ev.type) + sizeof(ev.u.set_report));
+            return -EFAULT;
+        }
+        APPL_TRACE_DEBUG("UHID_SET_REPORT: Report type = %d, report_size = %d"
+                            ,ev.u.set_report.rtype, ev.u.set_report.size);
+        p_dev->set_rpt_snt++;
+        if (ev.u.set_report.rtype == UHID_FEATURE_REPORT)
+            btif_hh_setreport(p_dev, BTHH_FEATURE_REPORT,
+                              ev.u.set_report.size, ev.u.set_report.data);
+        else if (ev.u.set_report.rtype == UHID_OUTPUT_REPORT)
+            btif_hh_setreport(p_dev, BTHH_OUTPUT_REPORT,
+                              ev.u.set_report.size, ev.u.set_report.data);
+        else
+            btif_hh_setreport(p_dev, BTHH_INPUT_REPORT,
+                              ev.u.set_report.size, ev.u.set_report.data);
         break;
-    case UHID_FEATURE_ANSWER:
-        APPL_TRACE_DEBUG("UHID_FEATURE_ANSWER from uhid-dev\n");
+    case UHID_GET_REPORT:
+        if (ret < (ssize_t)(sizeof(ev.type) + sizeof(ev.u.get_report))) {
+            APPL_TRACE_ERROR("%s: UHID_GET_REPORT: Invalid size read from "
+                "uhid-dev: %zd < %zu", __FUNCTION__, ret,
+                sizeof(ev.type) + sizeof(ev.u.get_report));
+            return -EFAULT;
+        }
+        APPL_TRACE_DEBUG("UHID_GET_REPORT: Report type = %d", ev.u.get_report.rtype);
+        p_dev->get_rpt_snt++;
+        if (ev.u.get_report.rtype == UHID_FEATURE_REPORT)
+            btif_hh_getreport(p_dev, BTHH_FEATURE_REPORT,
+                              ev.u.get_report.rnum, 0);
+        else if (ev.u.get_report.rtype == UHID_OUTPUT_REPORT)
+            btif_hh_getreport(p_dev, BTHH_OUTPUT_REPORT,
+                              ev.u.get_report.rnum, 0);
+        else
+            btif_hh_getreport(p_dev, BTHH_INPUT_REPORT,
+                              ev.u.get_report.rnum, 0);
         break;
 
     default:
@@ -594,6 +627,77 @@ void bta_hh_co_send_hid_info(btif_hh_device_t *p_dev, char *dev_name, UINT16 ven
         /* The HID report descriptor is corrupted. Close the driver. */
         close(p_dev->fd);
         p_dev->fd = -1;
+    }
+}
+
+/*******************************************************************************
+**
+** Function         bta_hh_co_set_rpt_rsp
+**
+** Description      This callout function is executed by HH when Set Report Response is received
+**                      on Control Channel.
+**
+** Returns          void.
+**
+*******************************************************************************/
+void bta_hh_co_set_rpt_rsp(UINT8 dev_handle, UINT8 status)
+{
+    struct uhid_event ev;
+    btif_hh_device_t *p_dev;
+
+    APPL_TRACE_VERBOSE("%s: dev_handle = %d", __FUNCTION__, dev_handle);
+
+    p_dev = btif_hh_find_connected_dev_by_handle(dev_handle);
+    if (p_dev == NULL) {
+        APPL_TRACE_WARNING("%s: Error: unknown HID device handle %d", __FUNCTION__, dev_handle);
+        return;
+    }
+    // Send the HID report to the kernel.
+    if (p_dev->fd >= 0 && p_dev->set_rpt_snt--) {
+        memset(&ev, 0, sizeof(ev));
+        ev.type = UHID_SET_REPORT_REPLY;
+        ev.u.set_report_reply.err = status;
+        uhid_write(p_dev->fd, &ev);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         bta_hh_co_get_rpt_rsp
+**
+** Description      This callout function is executed by HH when Get Report Response is received
+**                      on Control Channel.
+**
+** Returns          void.
+**
+*******************************************************************************/
+void bta_hh_co_get_rpt_rsp(UINT8 dev_handle, UINT8 status, UINT8 *p_rpt, UINT16 len)
+{
+    struct uhid_event ev;
+    btif_hh_device_t *p_dev;
+
+    APPL_TRACE_VERBOSE("%s: dev_handle = %d", __FUNCTION__, dev_handle);
+
+    p_dev = btif_hh_find_connected_dev_by_handle(dev_handle);
+    if (p_dev == NULL) {
+        APPL_TRACE_WARNING("%s: Error: unknown HID device handle %d", __FUNCTION__, dev_handle);
+        return;
+    }
+    // Send the HID report to the kernel.
+    if (p_dev->fd >= 0 && p_dev->get_rpt_snt--) {
+        memset(&ev, 0, sizeof(ev));
+        ev.type = UHID_GET_REPORT_REPLY;
+        ev.u.get_report_reply.err = status;
+        ev.u.get_report_reply.size = len;
+        if (len > 0) {
+            if (len > UHID_DATA_MAX) {
+                APPL_TRACE_WARNING("%s: Report size greater than allowed size",
+                                   __FUNCTION__);
+                return;
+            }
+            memcpy(ev.u.get_report_reply.data, p_rpt, len);
+        }
+        uhid_write(p_dev->fd, &ev);
     }
 }
 

@@ -713,6 +713,22 @@ void btif_hh_setreport(btif_hh_device_t *p_dev, bthh_report_type_t r_type, UINT1
 
 /*******************************************************************************
 **
+** Function         btif_btif_hh_setreport
+**
+** Description      setreport initiated from the BTIF thread context
+**
+** Returns          void
+**
+*******************************************************************************/
+void btif_hh_getreport(btif_hh_device_t *p_dev, bthh_report_type_t r_type,
+                        UINT8 reportId, UINT16 bufferSize)
+
+{
+    BTA_HhGetReport(p_dev->dev_handle, r_type, reportId, bufferSize);
+}
+
+/*******************************************************************************
+**
 ** Function         btif_hh_service_registration
 **
 ** Description      Registers or derigisters the hid host service
