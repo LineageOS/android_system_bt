@@ -53,8 +53,10 @@ class ConfigTest : public AllocationTestHarness {
     virtual void SetUp() {
       AllocationTestHarness::SetUp();
       FILE *fp = fopen(CONFIG_FILE, "wt");
-      fwrite(CONFIG_FILE_CONTENT, 1, sizeof(CONFIG_FILE_CONTENT), fp);
-      fclose(fp);
+      if (fp){
+          fwrite(CONFIG_FILE_CONTENT, 1, sizeof(CONFIG_FILE_CONTENT), fp);
+          fclose(fp);
+      }
     }
 };
 

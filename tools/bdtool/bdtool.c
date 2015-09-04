@@ -248,6 +248,7 @@ int main(int argc, char **argv) {
 
   CALL_AND_WAIT(bt_interface->disable(), adapter_state_changed);
   fprintf(stdout, "BT adapter is down\n");
+  return 0;
 }
 
 static void sig_handler(int signo) {

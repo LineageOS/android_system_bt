@@ -100,9 +100,13 @@ static bool set_wake_alarm(uint64_t delay_millis, bool should_wake, alarm_cb cb,
   new_value.it_value.tv_nsec = (delay_millis % 1000) * 1000 * 1000;
   new_value.it_interval.tv_sec = 0;
   new_value.it_interval.tv_nsec = 0;
-  timer_settime(*timer, 0, &new_value, NULL);
+  if(!timer){
+      return false;
+  } else {
+       timer_settime(*timer, 0, &new_value, NULL);
+       return true;
+  }
 
-  return true;
 }
 
 static int acquire_wake_lock(const char *lock_name) {

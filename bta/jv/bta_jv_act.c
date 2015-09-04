@@ -1005,6 +1005,7 @@ static void bta_jv_l2cap_client_cback(UINT16 gap_handle, UINT16 event)
 {
     tBTA_JV_L2C_CB  *p_cb = &bta_jv_cb.l2c_cb[gap_handle];
     tBTA_JV     evt_data;
+    UINT8 *p_bd_addr;
 
     if (gap_handle >= BTA_JV_MAX_L2C_CONN && !p_cb->p_cback)
         return;
@@ -1016,7 +1017,9 @@ static void bta_jv_l2cap_client_cback(UINT16 gap_handle, UINT16 event)
     switch (event)
     {
     case GAP_EVT_CONN_OPENED:
-        bdcpy(evt_data.l2c_open.rem_bda, GAP_ConnGetRemoteAddr(gap_handle));
+        p_bd_addr = GAP_ConnGetRemoteAddr(gap_handle);
+        if (NULL != p_bd_addr)
+            bdcpy(evt_data.l2c_open.rem_bda, p_bd_addr);
         evt_data.l2c_open.tx_mtu = GAP_ConnGetRemMtuSize(gap_handle);
         p_cb->state = BTA_JV_ST_CL_OPEN;
         p_cb->p_cback(BTA_JV_L2CAP_OPEN_EVT, &evt_data, p_cb->user_data);
@@ -1169,6 +1172,7 @@ static void bta_jv_l2cap_server_cback(UINT16 gap_handle, UINT16 event)
     tBTA_JV evt_data;
     tBTA_JV_L2CAP_CBACK *p_cback;
     void *user_data;
+    UINT8 *p_bd_addr;
 
     if (gap_handle >= BTA_JV_MAX_L2C_CONN && !p_cb->p_cback)
         return;
@@ -1180,7 +1184,9 @@ static void bta_jv_l2cap_server_cback(UINT16 gap_handle, UINT16 event)
     switch (event)
     {
     case GAP_EVT_CONN_OPENED:
-        bdcpy(evt_data.l2c_open.rem_bda, GAP_ConnGetRemoteAddr(gap_handle));
+        p_bd_addr = GAP_ConnGetRemoteAddr(gap_handle);
+        if (NULL != p_bd_addr)
+            bdcpy(evt_data.l2c_open.rem_bda, p_bd_addr);
         evt_data.l2c_open.tx_mtu = GAP_ConnGetRemMtuSize(gap_handle);
         p_cb->state = BTA_JV_ST_SR_OPEN;
         p_cb->p_cback(BTA_JV_L2CAP_OPEN_EVT, &evt_data, p_cb->user_data);
@@ -1830,8 +1836,12 @@ static void bta_jv_port_event_sr_cback(UINT32 code, UINT16 port_handle)
     tBTA_JV_RFC_CB  *p_cb = bta_jv_rfc_port_to_cb(port_handle);
     tBTA_JV evt_data;
 
-    if (NULL == p_cb || NULL == p_cb->p_cback)
+    if (NULL == p_cb || NULL == p_cb->p_cback || NULL == p_pcb)
+    {
+        APPL_TRACE_ERROR( "bta_jv_port_event_sr_cback, p_cb:%p, p_cb->p_cback:%p, p_pcb:%p",
+           p_cb, p_cb ? p_cb->p_cback : NULL, p_pcb);
         return;
+    }
 
     APPL_TRACE_DEBUG( "bta_jv_port_event_sr_cback code=x%x port_handle:%d handle:%d",
         code, port_handle, p_cb->handle);
@@ -2550,7 +2560,7 @@ static void fcchan_conn_chng_cbk(UINT16 chan, BD_ADDR bd_addr, BOOLEAN connected
         }
     }
 
-    if (call_init)
+    if (call_init && p_cback)
         p_cback(BTA_JV_L2CAP_CL_INIT_EVT, &init_evt, user_data);
 
     //call this with lock taken so socket does not disappear from under us */
