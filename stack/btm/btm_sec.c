@@ -6495,7 +6495,14 @@ static BOOLEAN btm_sec_queue_encrypt_request (BD_ADDR bd_addr, tBT_TRANSPORT tra
         p_e->psm  = 0;  /* if PSM 0, encryption request */
         p_e->p_callback  = p_callback;
         p_e->p_ref_data = (void *)(p_e + 1);
-        *(UINT8 *)p_e->p_ref_data = *(UINT8 *)(p_ref_data);
+        if(p_ref_data)
+        {
+            *(UINT8 *)p_e->p_ref_data = *(UINT8 *)(p_ref_data);
+        }
+        else
+        {
+            *(UINT8 *)p_e->p_ref_data = 0;
+        }
         p_e->transport  = transport;
         memcpy(p_e->bd_addr, bd_addr, BD_ADDR_LEN);
         GKI_enqueue(&btm_cb.sec_pending_q, p_e);
@@ -6576,7 +6583,8 @@ static void btm_sec_clean_pending_req_queue (BD_ADDR remote_bda, tBT_TRANSPORT t
 #endif
             )
         {
-            (*p_e->p_callback) (remote_bda, transport, p_e->p_ref_data, BTM_ERR_PROCESSING);
+            if(p_e->p_callback)
+                (*p_e->p_callback) (remote_bda, transport, p_e->p_ref_data, BTM_ERR_PROCESSING);
             GKI_remove_from_queue(bq, (void *)p_e);
         }
         p_e = (tBTM_SEC_QUEUE_ENTRY *) GKI_getnext ((void *)p_e);
@@ -6642,8 +6650,9 @@ static void btm_sec_check_pending_enc_req (tBTM_SEC_DEV_REC  *p_dev_rec, tBT_TRA
 #endif
                )
             {
-                (*p_e->p_callback) (p_dev_rec->bd_addr, transport, p_e->p_ref_data, res);
-                GKI_remove_from_queue(bq, (void *)p_e);
+                if(p_e->p_callback)
+                    (*p_e->p_callback) (p_dev_rec->bd_addr, transport, p_e->p_ref_data, res);
+                GKI_remove_from_queue(bq,(void *)p_e);
             }
         }
         p_e = (tBTM_SEC_QUEUE_ENTRY *) GKI_getnext ((void *)p_e);
