@@ -816,7 +816,7 @@ void smp_sm_event(tSMP_CB *p_cb, tSMP_EVENT event, void *p_data)
     /* execute action functions */
     for (i = 0; i < SMP_NUM_ACTIONS; i++)
     {
-        if ((action = state_table[entry-1][i]) != SMP_SM_NO_ACTION)
+        if ((action = state_table[entry-1][i]) < SMP_SM_NO_ACTION)
         {
             (*smp_sm_action[action])(p_cb, (tSMP_INT_DATA *)p_data);
         }
