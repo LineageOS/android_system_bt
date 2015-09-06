@@ -273,10 +273,10 @@ static bt_status_t btpan_disconnect(const bt_bdaddr_t *bd_addr)
     btpan_conn_t* conn = btpan_find_conn_addr(bd_addr->address);
     if (conn && conn->handle >= 0)
     {
-        BTA_PanClose(conn->handle);
         /* Inform the application that the disconnect has been initiated successfully */
         btif_transfer_context(btif_in_pan_generic_evt, BTIF_PAN_CB_DISCONNECTING,
                               (char *)bd_addr, sizeof(bt_bdaddr_t), NULL);
+        BTA_PanClose(conn->handle);
         return BT_STATUS_SUCCESS;
     }
     return BT_STATUS_FAIL;
@@ -488,6 +488,62 @@ btpan_conn_t* btpan_find_conn_addr(const BD_ADDR addr)
     return NULL;
 }
 
+static void btpan_open_conn(btpan_conn_t* conn, tBTA_PAN *p_data)
+{
+    BTIF_TRACE_API("btpan_open_conn: local_role:%d, peer_role: %d,  handle:%d, conn: %p",
+            p_data->open.local_role, p_data->open.peer_role, p_data->open.handle, conn);
+
+    if (conn == NULL)
+        conn = btpan_new_conn(p_data->open.handle, p_data->open.bd_addr, p_data->open.local_role,
+                p_data->open.peer_role);
+    if (conn)
+    {
+        BTIF_TRACE_DEBUG("btpan_open_conn:tap_fd:%d, open_count:%d, "
+                "conn->handle:%d should = handle:%d, local_role:%d, remote_role:%d",
+                btpan_cb.tap_fd, btpan_cb.open_count, conn->handle, p_data->open.handle,
+                conn->local_role, conn->remote_role);
+
+        btpan_cb.open_count++;
+        conn->handle = p_data->open.handle;
+        if (btpan_cb.tap_fd < 0)
+        {
+            btpan_cb.tap_fd = btpan_tap_open();
+            if(btpan_cb.tap_fd >= 0)
+                create_tap_read_thread(btpan_cb.tap_fd);
+        }
+
+        if (btpan_cb.tap_fd >= 0)
+        {
+            btpan_cb.flow = 1;
+            conn->state = PAN_STATE_OPEN;
+        }
+    }
+}
+
+static void btpan_close_conn(btpan_conn_t* conn)
+{
+    BTIF_TRACE_API("btpan_close_conn: %p",conn);
+
+    if (conn && conn->state == PAN_STATE_OPEN)
+    {
+        BTIF_TRACE_DEBUG("btpan_close_conn: PAN_STATE_OPEN");
+
+        conn->state = PAN_STATE_CLOSE;
+        btpan_cb.open_count--;
+
+        if (btpan_cb.open_count == 0)
+        {
+            destroy_tap_read_thread();
+            if (btpan_cb.tap_fd != INVALID_FD)
+            {
+                btpan_tap_close(btpan_cb.tap_fd);
+                btpan_cb.tap_fd = INVALID_FD;
+            }
+        }
+    }
+}
+
+
 static void btpan_cleanup_conn(btpan_conn_t* conn)
 {
     if (conn)
@@ -614,6 +670,7 @@ static void bta_pan_callback_transfer(UINT16 event, char *p_param)
                 {
                     state = BTPAN_STATE_CONNECTED;
                     status = BT_STATUS_SUCCESS;
+                    btpan_open_conn(conn, p_data);
                 }
                 else
                 {
@@ -634,6 +691,7 @@ static void bta_pan_callback_transfer(UINT16 event, char *p_param)
                 btpan_conn_t* conn = btpan_find_conn_handle(p_data->close.handle);
 
                 LOG_INFO("%s: event = BTA_PAN_CLOSE_EVT handle %d", __FUNCTION__, p_data->close.handle);
+                btpan_close_conn(conn);
 
                 if (conn && conn->handle >= 0)
                 {

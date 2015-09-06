@@ -554,7 +554,6 @@ void bta_pan_conn_open(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data)
     if(p_data->conn.result == PAN_SUCCESS)
     {
         data.status = BTA_PAN_SUCCESS;
-        bta_pan_co_open(p_scb->handle, p_scb->app_id, p_scb->local_role, p_scb->peer_role, p_scb->bd_addr);
         p_scb->pan_flow_enable = TRUE;
         p_scb->app_flow_enable = TRUE;
         bta_sys_conn_open(BTA_ID_PAN ,p_scb->app_id, p_scb->bd_addr);
@@ -589,7 +588,6 @@ void bta_pan_conn_close(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data)
 
     data.handle = p_data->hdr.layer_specific;
 
-
     bta_sys_conn_close( BTA_ID_PAN ,p_scb->app_id, p_scb->bd_addr);
 
     /* free all queued up data buffers */
@@ -597,8 +595,6 @@ void bta_pan_conn_close(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data)
         GKI_freebuf(p_buf);
 
     GKI_init_q(&p_scb->data_queue);
-
-    bta_pan_co_close(p_scb->handle, p_scb->app_id);
 
     bta_pan_scb_dealloc(p_scb);
 
