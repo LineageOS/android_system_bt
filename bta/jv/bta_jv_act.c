@@ -2048,6 +2048,13 @@ void bta_jv_rfcomm_write(tBTA_JV_MSG *p_data)
     tBTA_JV_PCB     *p_pcb = wc->p_pcb;
     tBTA_JV_RFCOMM_WRITE    evt_data;
 
+
+    if (p_pcb->state == BTA_JV_ST_NONE) {
+        APPL_TRACE_ERROR("bta_jv_rfcomm_write : Incorect state (%d) to write data, returning",
+            p_pcb->state);
+        return;
+    }
+
     evt_data.status = BTA_JV_FAILURE;
     evt_data.handle = p_cb->handle;
     evt_data.req_id = wc->req_id;
