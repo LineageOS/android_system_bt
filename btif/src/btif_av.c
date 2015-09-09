@@ -1515,14 +1515,6 @@ void btif_av_event_deep_copy(UINT16 event, char *p_dest, char *p_src)
             }
             break;
         case BTA_AV_BROWSE_MSG_EVT:
-            if (av_src->browse_msg.p_data && av_src->browse_msg.len)
-            {
-                av_dest->browse_msg.p_data = osi_calloc(av_src->browse_msg.len);
-                assert(av_dest->browse_msg.p_data);
-                memcpy(av_dest->browse_msg.p_data,
-                             av_src->browse_msg.p_data, av_src->browse_msg.len);
-            }
-
             if (av_src->browse_msg.p_msg)
             {
                 av_dest->browse_msg.p_msg = osi_calloc(sizeof(tAVRC_MSG));
@@ -1568,8 +1560,6 @@ static void btif_av_event_free_data(btif_sm_event_t event, void *p_data)
         case BTA_AV_BROWSE_MSG_EVT:
             {
                 tBTA_AV *av = (tBTA_AV*)p_data;
-                if (av->browse_msg.p_data)
-                    osi_free(av->browse_msg.p_data);
 
                 if (av->browse_msg.p_msg)
                 {

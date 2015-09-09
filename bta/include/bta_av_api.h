@@ -421,9 +421,7 @@ typedef struct
 typedef struct
 {
     UINT8           rc_handle;
-    UINT16          len;
     UINT8           label;
-    UINT8           *p_data;
     tAVRC_MSG       *p_msg;
 }tBTA_AV_BROWSE_MSG;
 
