@@ -163,7 +163,7 @@ static bool filter_incoming_event(BT_HDR *packet);
 static serial_data_type_t event_to_data_type(uint16_t event);
 static waiting_command_t *get_waiting_command(command_opcode_t opcode);
 
-void ssr_cleanup (void);
+void ssr_cleanup (int reason);
 
 // Module lifecycle functions
 
@@ -520,7 +520,7 @@ static void command_timed_out(UNUSED_ATTR void *context) {
   }
 
   LOG_ERROR("%s restarting the bluetooth process.", __func__);
-  ssr_cleanup();
+  ssr_cleanup(0x22);//SSR reasno 0x22 = CMD TO
   usleep(20000);
   //Reset SOC status to trigger hciattach service
   if (property_set("bluetooth.status", "off") < 0) {
@@ -703,10 +703,10 @@ intercepted:;
 /** SSR cleanup is used in HW reset cases
 ** which would close all the client channels
 ** and turns off the chip*/
-void ssr_cleanup (void) {
+void ssr_cleanup (int reason) {
    LOG_INFO("%s", __func__);
    if (vendor != NULL) {
-       vendor->ssr_cleanup();
+       vendor->ssr_cleanup(reason);
    } else {
        LOG_ERROR("%s: vendor is NULL", __func__);
    }

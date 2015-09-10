@@ -280,11 +280,11 @@ void bte_main_hci_send (BT_HDR *p_msg, UINT16 event)
 ** Returns          None
 **
 ******************************************************************************/
-void bte_ssr_cleanup(void)
+void bte_ssr_cleanup(int reason)
 {
     APPL_TRACE_DEBUG("%s", __FUNCTION__);
     if (hci != NULL) {
-        hci->ssr_cleanup();
+        hci->ssr_cleanup(reason);
     } else {
         APPL_TRACE_ERROR("%s hci is NULL", __FUNCTION__);
     }

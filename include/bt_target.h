@@ -1853,7 +1853,7 @@ The maximum number of payload octets that the local device can receive in a sing
 #define BTSNOOP_MEM TRUE
 #endif
 
-void bte_ssr_cleanup(void);
+void bte_ssr_cleanup(int reason);
 
 #include "bt_trace.h"
 

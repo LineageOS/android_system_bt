@@ -634,7 +634,7 @@ void btif_ssr_cleanup(void)
 {
    BTIF_TRACE_DEBUG("%s", __FUNCTION__);
    ssr_triggered = TRUE;
-   bte_ssr_cleanup();
+   bte_ssr_cleanup(0x11);//SSR reason 0x11 - ENABLE_TIMEOUT
 }
 
 /****************************************************************************

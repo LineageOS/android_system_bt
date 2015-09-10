@@ -69,7 +69,7 @@ typedef struct vendor_t{
   /** SSR cleanup is used in HW reset cases
   ** which would close all the client channels
   ** and turns off the chip*/
-  void (*ssr_cleanup) (void);
+  void (*ssr_cleanup) (int reason);
 } vendor_t;
 
 const vendor_t *vendor_get_interface();

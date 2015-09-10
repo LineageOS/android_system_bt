@@ -89,9 +89,9 @@ static void vendor_close(void) {
   lib_interface = NULL;
   lib_handle = NULL;
 }
-void vendor_ssrcleanup(void) {
+void vendor_ssrcleanup(int reason) {
   if (lib_interface)
-    lib_interface->ssr_cleanup();
+    lib_interface->ssr_cleanup(reason);
   else
     LOG_ERROR("%s lib_interface is NULL", __func__);
 
