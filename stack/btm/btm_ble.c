@@ -2010,7 +2010,7 @@ UINT8 btm_proc_smp_cback(tSMP_EVT event, BD_ADDR bd_addr, tSMP_EVT_DATA *p_data)
                 /* fall through */
 
             case SMP_COMPLT_EVT:
-                if(event == SMP_COMPLT_EVT)
+                if(event == SMP_COMPLT_EVT && !p_data->cmplt.smp_over_br)
                 {
                     if ((p_data->cmplt.reason == SMP_SUCCESS && p_data->cmplt.sec_level == 0)||
                        (btm_cb.pairing_state == BTM_PAIR_STATE_IDLE))
