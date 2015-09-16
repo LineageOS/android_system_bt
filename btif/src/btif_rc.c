@@ -196,6 +196,7 @@ typedef struct
 {
     pthread_mutex_t lbllock;
     rc_transaction_t transaction[MAX_TRANSACTIONS_PER_SESSION];
+    BOOLEAN lbllock_destroyed;
 } rc_device_t;
 
 rc_device_t device;
@@ -669,7 +670,8 @@ void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
     btif_rc_cb.rc_features = 0;
     btif_rc_cb.rc_vol_label=MAX_LABEL;
     btif_rc_cb.rc_volume=MAX_VOLUME;
-    init_all_transactions();
+    if (device.lbllock_destroyed != TRUE)
+        init_all_transactions();
     if (bt_rc_callbacks != NULL)
     {
         close_uinput();
@@ -4222,7 +4224,11 @@ void release_transaction(UINT8 lbl)
 *******************************************************************************/
 void lbl_destroy()
 {
-    pthread_mutex_destroy(&(device.lbllock));
+    if (!pthread_mutex_destroy(&(device.lbllock)))
+    {
+        device.lbllock_destroyed = TRUE;
+        BTIF_TRACE_EVENT(" %s: lbllock destroy success ", __FUNCTION__);
+    }
 }
 
 /*******************************************************************************
