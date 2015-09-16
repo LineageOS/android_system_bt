@@ -29,6 +29,7 @@
 *****************************************************************************/
 
 /* Profile revision numbers */
+#define AVRC_REV_INVALID    0x0000
 #define AVRC_REV_1_0        0x0100
 #define AVRC_REV_1_3        0x0103
 #define AVRC_REV_1_4        0x0104

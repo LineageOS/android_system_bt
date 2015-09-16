@@ -311,6 +311,8 @@ extern void     sdp_server_handle_client_req (tCONN_CB *p_ccb, BT_HDR *p_msg);
 #endif
 
 extern BOOLEAN sdp_dev_blacklisted_for_avrcp15 (BD_ADDR addr);
+extern int sdp_get_stored_avrc_tg_version(BD_ADDR addr);
+
 
 /* Functions provided by sdp_discovery.c
 */

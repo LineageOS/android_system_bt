@@ -80,6 +80,7 @@
 #define PLAY_STATUS_PLAYING 1
 #define MAX_CMD_QUEUE_LEN 15
 #define ERR_PLAYER_NOT_ADDRESED 0x13
+#define BTRC_FEAT_AVRC_UI_UPDATE 0x08
 
 #define CHECK_RC_CONNECTED                                                                  \
     int clients;                                                                           \
@@ -493,6 +494,10 @@ void handle_rc_features(int index)
         if (btif_rc_cb[index].rc_features & BTA_AV_FEAT_METADATA)
         {
             rc_features |= BTRC_FEAT_METADATA;
+        }
+        if (btif_rc_cb[index].rc_features & BTA_AV_FEAT_AVRC_UI_UPDATE)
+        {
+            rc_features |= BTRC_FEAT_AVRC_UI_UPDATE;
         }
         BTIF_TRACE_IMP("%s: rc_features=0x%x", __FUNCTION__, rc_features);
         if (btif_rc_cb[index].rc_connected)

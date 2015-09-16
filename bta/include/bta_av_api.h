@@ -66,6 +66,7 @@ typedef UINT8 tBTA_AV_STATUS;
 #define BTA_AV_FEAT_ACP_START   0x0800  /* start stream when 2nd SNK was accepted   */
 
 /* Internal features */
+#define BTA_AV_FEAT_AVRC_UI_UPDATE 0x4000 /* Update UI to show notification for browsing capable remote*/
 #define BTA_AV_FEAT_NO_SCO_SSPD 0x8000  /* Do not suspend av streaming as to AG events(SCO or Call) */
 
 typedef UINT16 tBTA_AV_FEAT;

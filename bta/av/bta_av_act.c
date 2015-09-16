@@ -28,6 +28,9 @@
 #include "bt_target.h"
 #if defined(BTA_AV_INCLUDED) && (BTA_AV_INCLUDED == TRUE)
 
+
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "bta_av_api.h"
 #include "bta_av_int.h"
@@ -38,6 +41,8 @@
 #if( defined BTA_AR_INCLUDED ) && (BTA_AR_INCLUDED == TRUE)
 #include "bta_ar_api.h"
 #endif
+#include "bt_utils.h"
+#include <errno.h>
 
 #define LOG_TAG "bt_bta_av"
 #include "osi/include/log.h"
@@ -72,6 +77,12 @@ enum
     BTA_AV_OPEN_SST,
     BTA_AV_RCFG_SST,
     BTA_AV_CLOSING_SST
+};
+
+struct blacklist_entry
+{
+    int ver;
+    char addr[3];
 };
 
 static void bta_av_acp_sig_timer_cback (TIMER_LIST_ENT *p_tle);
@@ -1821,6 +1832,58 @@ static void bta_av_acp_sig_timer_cback (TIMER_LIST_ENT *p_tle)
     }
 }
 
+BOOLEAN bta_av_check_store_avrc_tg_version(BD_ADDR addr, UINT16 ver)
+{
+    BOOLEAN is_present = FALSE;
+    struct blacklist_entry data;
+    FILE *fp;
+    BOOLEAN is_file_updated = FALSE;
+
+    APPL_TRACE_DEBUG("%s target BD Addr: %x:%x:%x", __func__,\
+                        addr[0], addr[1], addr[2]);
+    fp = fopen(AVRC_PEER_VERSION_CONF_FILE, "rb");
+    if (!fp)
+    {
+      APPL_TRACE_ERROR("%s unable to open AVRC Conf file for read: error: (%s)",\
+                                                        __func__, strerror(errno));
+    }
+    else
+    {
+        while (fread(&data, sizeof(data), 1, fp) != 0)
+        {
+            APPL_TRACE_DEBUG("Entry: addr = %x:%x:%x, ver = 0x%x",\
+                    data.addr[0], data.addr[1], data.addr[2], data.ver);
+            if(!memcmp(addr, data.addr, 3))
+            {
+                is_present = TRUE;
+                APPL_TRACE_DEBUG("Entry alreday present, bailing out");
+                break;
+            }
+        }
+        fclose(fp);
+    }
+
+    if (is_present == FALSE)
+    {
+        fp = fopen(AVRC_PEER_VERSION_CONF_FILE, "ab");
+        if (!fp)
+        {
+            APPL_TRACE_ERROR("%s unable to open AVRC Conf file for write: error: (%s)",\
+                                                              __func__, strerror(errno));
+        }
+        else
+        {
+            data.ver = ver;
+            memcpy(data.addr, (const char *)addr, 3);
+            APPL_TRACE_DEBUG("Avrcp version to store = 0x%x", ver);
+            fwrite(&data, sizeof(data), 1, fp);
+            fclose(fp);
+            is_file_updated = TRUE;
+        }
+    }
+    return is_file_updated;
+}
+
 /*******************************************************************************
 **
 ** Function         bta_av_check_peer_features
@@ -1837,7 +1900,7 @@ tBTA_AV_FEAT bta_av_check_peer_features (UINT16 service_uuid)
     tBTA_AV_CB   *p_cb = &bta_av_cb;
     tSDP_DISC_REC       *p_rec = NULL;
     tSDP_DISC_ATTR      *p_attr;
-    UINT16              peer_rc_version=0;
+    UINT16              peer_rc_version=0; /*Assuming Default peer version as 1.3*/
     UINT16              categories = 0;
 
     APPL_TRACE_DEBUG("bta_av_check_peer_features service_uuid:x%x", service_uuid);
@@ -1882,8 +1945,28 @@ tBTA_AV_FEAT bta_av_check_peer_features (UINT16 service_uuid)
                 {
                     categories = p_attr->attr_value.v.u16;
                     if (categories & AVRC_SUPF_CT_BROWSE)
+                    {
                         peer_features |= (BTA_AV_FEAT_BROWSE);
+                        APPL_TRACE_DEBUG("peer supports browsing");
+                    }
                 }
+            }
+            if ((peer_rc_version >= AVRC_REV_1_4) && (peer_features & BTA_AV_FEAT_BROWSE))
+            {
+                BOOLEAN ret = FALSE;
+                APPL_TRACE_DEBUG("peer version to update: 0x%x", peer_rc_version);
+                ret = bta_av_check_store_avrc_tg_version(p_rec->remote_bd_addr, peer_rc_version);
+                if (ret == TRUE)
+                {
+                    peer_features |= BTA_AV_FEAT_AVRC_UI_UPDATE;
+                    APPL_TRACE_DEBUG("update UI on peer repair request: 0x%x",
+                                    peer_features);
+                }
+            }
+            else
+            {
+                APPL_TRACE_DEBUG("No need to store peer version: 0x%x", peer_rc_version);
+                /*No need to update peer version as we send the default version as 1.3*/
             }
         }
     }
