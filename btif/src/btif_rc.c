@@ -170,6 +170,7 @@ typedef struct
 {
     pthread_mutex_t lbllock;
     rc_transaction_t transaction[MAX_TRANSACTIONS_PER_SESSION];
+    BOOLEAN lbllock_destroyed;
 } rc_device_t;
 
 
@@ -804,7 +805,7 @@ void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
     //CLose Uinput only when all RCs are disconnected
     is_connected = btif_rc_get_connection_state();
     BTIF_TRACE_DEBUG("RC connected : %d", is_connected);
-    if (is_connected != TRUE)
+    if (is_connected != TRUE && device.lbllock_destroyed != TRUE)
     {
         BTIF_TRACE_DEBUG("Clear UINPUT and transactions when zero RC left");
         init_all_transactions();
@@ -4780,7 +4781,11 @@ void release_transaction(UINT8 lbl)
 *******************************************************************************/
 void lbl_destroy()
 {
-    pthread_mutex_destroy(&(device.lbllock));
+    if (!pthread_mutex_destroy(&(device.lbllock)))
+    {
+        device.lbllock_destroyed = TRUE;
+        BTIF_TRACE_EVENT(" %s: lbllock destroy success ", __FUNCTION__);
+    }
 }
 
 /*******************************************************************************
