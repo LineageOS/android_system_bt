@@ -2400,6 +2400,17 @@ extern void BTA_VendorInit  (void);
 *******************************************************************************/
 extern void BTA_VendorCleanup (void);
 
+/*******************************************************************************
+**
+** Function         BTA_StopBleTimers
+**
+** Description      This function stops all BLE timers
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_StopBleTimers (void);
+
 #endif
 
 #ifdef __cplusplus

@@ -2171,4 +2171,20 @@ void BTA_VendorCleanup (void)
       btm_ble_multi_adv_cleanup();
 }
 
+/*******************************************************************************
+**
+** Function         BTA_StopBleTimers
+**
+** Description      This function stops all BLE timers
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_StopBleTimers (void)
+{
+   APPL_TRACE_API("BTA_StopBleTimers");
+   btm_ble_stop_local_rpa_timer();
+   btm_ble_stop_gap_timers();
+}
+
 #endif

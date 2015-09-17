@@ -586,6 +586,7 @@ void btif_disable_bluetooth_evt(void)
 
 #if (BLE_INCLUDED == TRUE)
      BTA_VendorCleanup();
+     BTA_StopBleTimers();
 #endif
 
      bte_main_disable();

@@ -469,6 +469,8 @@ extern void btm_ble_adv_filter_cleanup(void);
 extern BOOLEAN btm_ble_topology_check(tBTM_BLE_STATE_MASK request);
 extern BOOLEAN btm_ble_clear_topology_mask(tBTM_BLE_STATE_MASK request_state);
 extern BOOLEAN btm_ble_set_topology_mask(tBTM_BLE_STATE_MASK request_state);
+extern void btm_ble_stop_local_rpa_timer(void);
+extern void btm_ble_stop_gap_timers(void);
 
 #if BTM_BLE_CONFORMANCE_TESTING == TRUE
 extern void btm_ble_set_no_disc_if_pair_fail (BOOLEAN disble_disc);
