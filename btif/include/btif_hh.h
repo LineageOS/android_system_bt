@@ -64,6 +64,7 @@ typedef struct
     UINT8                         sub_class;
     UINT8                         app_id;
     int                           fd;
+    BOOLEAN                       ready_for_data;
     pthread_t                     hh_poll_thread_id;
     UINT8                         hh_keep_polling;
     BOOLEAN                       vup_timer_active;
