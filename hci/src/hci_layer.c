@@ -168,6 +168,9 @@ static serial_data_type_t event_to_data_type(uint16_t event);
 static waiting_command_t *get_waiting_command(command_opcode_t opcode);
 static void update_command_response_timer(void);
 
+static bool create_hw_reset_evt_packet(packet_receive_data_t *incoming);
+
+
 // Module lifecycle functions
 
 static future_t *start_up(void) {
@@ -565,8 +568,29 @@ static void command_timed_out(UNUSED_ATTR void *context) {
 static void hal_says_data_ready(serial_data_type_t type) {
   packet_receive_data_t *incoming = &incoming_packets[PACKET_TYPE_TO_INBOUND_INDEX(type)];
 
+#ifdef QCOM_WCN_SSR
+  uint8_t reset;
+#endif
+
   uint8_t byte;
   while (hal->read_data(type, &byte, 1) != 0) {
+#ifdef QCOM_WCN_SSR
+    reset = hal->dev_in_reset();
+    if (reset) {
+      incoming = &incoming_packets[PACKET_TYPE_TO_INBOUND_INDEX(type = DATA_TYPE_EVENT)];
+      if(!create_hw_reset_evt_packet(incoming))
+        break;
+      else {
+        //Reset SOC status to trigger hciattach service
+        if(property_set("bluetooth.status", "off") < 0) {
+            LOG_ERROR(LOG_TAG, "SSR: Error resetting SOC status\n ");
+        } else {
+            ALOGE("SSR: SOC Status is reset\n ");
+        }
+      }
+    } else
+#endif
+    {
     switch (incoming->state) {
       case BRAND_NEW:
         // Initialize and prepare to jump to the preamble reading state
@@ -585,6 +609,16 @@ static void hal_says_data_ready(serial_data_type_t type) {
           incoming->bytes_remaining = (type == DATA_TYPE_ACL) ? RETRIEVE_ACL_LENGTH(incoming->preamble) : byte;
 
           size_t buffer_size = BT_HDR_SIZE + incoming->index + incoming->bytes_remaining;
+
+          if (buffer_size > MCA_USER_RX_BUF_SIZE) {
+            LOG_ERROR(LOG_TAG, "%s buffer_size(%zu) exceeded allowed packet size, allocation not possible", __func__, buffer_size);
+            incoming = &incoming_packets[PACKET_TYPE_TO_INBOUND_INDEX(type = DATA_TYPE_EVENT)];
+            if(create_hw_reset_evt_packet(incoming))
+              break;
+            else
+              return;
+          }
+
           incoming->buffer = (BT_HDR *)buffer_allocator->alloc(buffer_size);
 
           if (!incoming->buffer) {
@@ -630,6 +664,7 @@ static void hal_says_data_ready(serial_data_type_t type) {
       case FINISHED:
         LOG_ERROR(LOG_TAG, "%s the state machine should not have been left in the finished state.", __func__);
         break;
+    }
     }
 
     if (incoming->state == FINISHED) {
@@ -827,6 +862,23 @@ void hci_layer_cleanup_interface() {
     interface.transmit_command_futured = NULL;
     interface.transmit_downward = NULL;
     interface_created = false;
+  }
+}
+static bool create_hw_reset_evt_packet(packet_receive_data_t *incoming) {
+  uint8_t dev_ssr_event[3] = { 0x10, 0x01, 0x0A };
+  incoming->buffer = (BT_HDR *)buffer_allocator->alloc(BT_HDR_SIZE + 3);
+  if (incoming->buffer) {
+    LOG_ERROR(LOG_TAG, "sending H/w error event to stack\n ");
+    incoming->buffer->offset = 0;
+    incoming->buffer->layer_specific = 0;
+    incoming->buffer->event = MSG_HC_TO_STACK_HCI_EVT;
+    incoming->index = 3;
+    memcpy(incoming->buffer->data, &dev_ssr_event, 3);
+    incoming->state = FINISHED;
+    return true;
+  } else {
+    LOG_ERROR(LOG_TAG, "error getting buffer for H/W event\n ");
+    return false;
   }
 }
 
