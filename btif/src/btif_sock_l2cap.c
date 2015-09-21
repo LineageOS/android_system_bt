@@ -634,7 +634,6 @@ static void on_l2cap_close(tBTA_JV_L2CAP_CLOSE * p_close, uint32_t id)
         APPL_TRACE_DEBUG("on_l2cap_close, slot id:%d, fd:%d, %s:%d, server:%d",
                 sock->id, sock->our_fd, sock->fixed_chan ? "fixed_chan" : "PSM",
                 sock->channel, sock->server);
-        sock->handle = 0;
         // TODO: This does not seem to be called...
         // I'm not sure if this will be called for non-server sockets?
         if(!sock->fixed_chan && (sock->server == TRUE)) {

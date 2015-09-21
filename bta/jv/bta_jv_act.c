@@ -407,6 +407,7 @@ tBTA_JV_STATUS bta_jv_free_l2c_cb(tBTA_JV_L2C_CB *p_cb)
     }
     p_cb->psm = 0;
     p_cb->state = BTA_JV_ST_NONE;
+    p_cb->cong = FALSE;
     bta_jv_free_sec_id(&p_cb->sec_id);
     p_cb->p_cback = NULL;
     return status;
