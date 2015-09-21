@@ -23,6 +23,10 @@ ifeq ($(BLUETOOTH_HCI_USE_MCT),true)
 LOCAL_CFLAGS += -DHCI_USE_MCT
 endif
 
+ifeq ($(QCOM_BT_USE_SMD_TTY),true)
+LOCAL_CFLAGS += -DQCOM_WCN_SSR
+endif
+
 ifeq ($(TARGET_BUILD_VARIANT), userdebug)
     LOCAL_CFLAGS += -DBTSNOOP_DEFAULT=TRUE
 endif

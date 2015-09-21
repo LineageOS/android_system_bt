@@ -32,6 +32,11 @@
 
 #define HCI_HAL_SERIAL_BUFFER_SIZE 1026
 
+#ifdef QCOM_WCN_SSR
+#include <termios.h>
+#include <sys/ioctl.h>
+#endif
+
 // Our interface and modules we import
 static const hci_hal_t interface;
 static const hci_hal_callbacks_t *callbacks;
@@ -125,6 +130,31 @@ static void hal_close() {
     uart_fds[i] = INVALID_FD;
 }
 
+#ifdef QCOM_WCN_SSR
+static bool hal_dev_in_reset()
+{
+  volatile int serial_bits;
+  bool dev_reset_done =0;
+  uint8_t retry_count = 0;
+  ioctl(uart_fds[CH_EVT], TIOCMGET, &serial_bits);
+  if (serial_bits & TIOCM_OUT2) {
+    while(serial_bits & TIOCM_OUT1) {
+      LOG_WARN("userial_device in reset \n");
+      sleep(2);
+      retry_count++;
+      ioctl(uart_fds[CH_EVT], TIOCMGET, &serial_bits);
+      if((serial_bits & TIOCM_OUT1))
+        dev_reset_done = 0;
+      else
+        dev_reset_done = 1;
+      if(retry_count == 6)
+        break;
+    }
+  }
+  return dev_reset_done;
+}
+#endif
+
 static size_t read_data(serial_data_type_t type, uint8_t *buffer, size_t max_size, bool block) {
   if (type == DATA_TYPE_ACL) {
     return eager_reader_read(acl_stream, buffer, max_size, block);
@@ -196,6 +226,9 @@ static const hci_hal_t interface = {
   read_data,
   packet_finished,
   transmit_data,
+#ifdef QCOM_WCN_SSR
+  hal_dev_in_reset
+#endif
 };
 
 const hci_hal_t *hci_hal_mct_get_interface() {

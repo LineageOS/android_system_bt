@@ -540,8 +540,33 @@ static void command_timed_out(UNUSED_ATTR void *context) {
 static void hal_says_data_ready(serial_data_type_t type) {
   packet_receive_data_t *incoming = &incoming_packets[PACKET_TYPE_TO_INBOUND_INDEX(type)];
 
+#ifdef QCOM_WCN_SSR
+  uint8_t dev_ssr_event[3] = { 0x10, 0x01, 0x0A };
+  uint8_t reset;
+#endif
+
   uint8_t byte;
   while (hal->read_data(type, &byte, 1, false) != 0) {
+#ifdef QCOM_WCN_SSR
+    reset = hal->dev_in_reset();
+    if (reset) {
+      incoming = &incoming_packets[PACKET_TYPE_TO_INBOUND_INDEX(type = DATA_TYPE_EVENT)];
+      incoming->buffer = (BT_HDR *)buffer_allocator->alloc(BT_HDR_SIZE + 3);
+      if (incoming->buffer) {
+        LOG_ERROR("sending H/w error event to stack\n ");
+        incoming->buffer->offset = 0;
+        incoming->buffer->layer_specific = 0;
+        incoming->buffer->event = MSG_HC_TO_STACK_HCI_EVT;
+        incoming->index = 3;
+        memcpy(incoming->buffer->data, &dev_ssr_event, 3);
+        incoming->state = FINISHED;
+      } else {
+        LOG_ERROR("error getting buffer for H/W event\n ");
+        break;
+      }
+    } else
+#endif
+    {
     switch (incoming->state) {
       case BRAND_NEW:
         // Initialize and prepare to jump to the preamble reading state
@@ -605,6 +630,7 @@ static void hal_says_data_ready(serial_data_type_t type) {
       case FINISHED:
         LOG_ERROR("%s the state machine should not have been left in the finished state.", __func__);
         break;
+    }
     }
 
     if (incoming->state == FINISHED) {
