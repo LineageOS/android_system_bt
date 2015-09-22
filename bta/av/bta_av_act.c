@@ -607,8 +607,6 @@ void bta_av_rc_opened(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
          * We Don't have SDP records of Peer, so we by
          * default will take values depending upon registered
          * features */
-        if (p_cb->features & BTA_AV_FEAT_RCCT)
-            rc_open.peer_features |= BTA_AV_FEAT_RCTG;
         if (p_cb->features & BTA_AV_FEAT_RCTG)
             rc_open.peer_features |= BTA_AV_FEAT_RCCT;
         bta_av_rc_disc(disc);

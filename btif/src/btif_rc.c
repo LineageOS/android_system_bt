@@ -730,21 +730,21 @@ void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open)
         /* on locally initiated connection we will get remote features as part of connect */
         if (btif_rc_cb[index].rc_features != 0)
             handle_rc_features(index);
-
+        BTIF_TRACE_DEBUG(" handle_rc_connect features %d ",btif_rc_cb[index].rc_features);
 #if (AVRC_CTLR_INCLUDED == TRUE)
+        if(bt_rc_ctrl_callbacks != NULL) {
+            HAL_CBACK(bt_rc_ctrl_callbacks, connection_state_cb, TRUE, &rc_addr);
+        }
         /* report connection state if remote device is AVRCP target */
         if ((btif_rc_cb[index].rc_features & BTA_AV_FEAT_RCTG)||
            ((btif_rc_cb[index].rc_features & BTA_AV_FEAT_RCCT)&&
             (btif_rc_cb[index].rc_features & BTA_AV_FEAT_ADV_CTRL)))
         {
-            HAL_CBACK(bt_rc_ctrl_callbacks, connection_state_cb, TRUE, &rc_addr);
             handle_rc_ctrl_features(index);
         }
 #endif
         /* on locally initiated connection we will get remote features as part of connect
         Delay this update till connection update reaches Apps*/
-        if (btif_rc_cb[index].rc_features != 0)
-            handle_rc_features(index);
     }
     else
     {
@@ -768,9 +768,8 @@ void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
     UINT8 index;
     BOOLEAN is_connected = 0;
 
-    BTIF_TRACE_IMP("%s: rc_handle: %d", __FUNCTION__, p_rc_close->rc_handle);
-
     index = btif_rc_get_idx_by_rc_handle(p_rc_close->rc_handle);
+    BTIF_TRACE_IMP("%s: rc_handle: %d index %d", __FUNCTION__, p_rc_close->rc_handle, index);
     if (index == btif_max_rc_clients)
     {
         BTIF_TRACE_ERROR("Got disconnect of unknown device");
@@ -784,15 +783,13 @@ void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
     }
 #if (AVRC_CTLR_INCLUDED == TRUE)
     bdcpy(rc_addr.address, btif_rc_cb[index].rc_addr);
+    features = btif_rc_cb[index].rc_features;
 #endif
     btif_rc_cb[index].rc_handle = BTIF_RC_HANDLE_NONE;
     btif_rc_cb[index].rc_connected = FALSE;
     bdcpy(rc_addr.address, btif_rc_cb[index].rc_addr);
     memset(btif_rc_cb[index].rc_addr, 0, sizeof(BD_ADDR));
     memset(btif_rc_cb[index].rc_notif, 0, sizeof(btif_rc_cb[index].rc_notif));
-#if (AVRC_CTLR_INCLUDED == TRUE)
-    features = btif_rc_cb[index].rc_features;
-#endif
     btif_rc_cb[index].rc_features = 0;
     btif_rc_cb[index].rc_vol_label = MAX_LABEL;
     btif_rc_cb[index].rc_volume = MAX_VOLUME;
@@ -811,8 +808,7 @@ void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
 
 #if (AVRC_CTLR_INCLUDED == TRUE)
     /* report connection state if device is AVRCP target */
-    if ((features & BTA_AV_FEAT_RCTG)||
-       ((features & BTA_AV_FEAT_RCCT)&&(features & BTA_AV_FEAT_ADV_CTRL)))
+    if (bt_rc_ctrl_callbacks != NULL)
     {
         HAL_CBACK(bt_rc_ctrl_callbacks, connection_state_cb, FALSE, &rc_addr);
     }
