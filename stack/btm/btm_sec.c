@@ -4422,7 +4422,7 @@ void btm_sec_auth_complete (UINT16 handle, UINT8 status)
     if (btm_cb.api.p_auth_complete_callback)
     {
         /* report the suthentication status */
-        if (old_state != BTM_PAIR_STATE_IDLE)
+        if ((old_state != BTM_PAIR_STATE_IDLE) ||(status !=HCI_SUCCESS ))
             (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr,
                                                     p_dev_rec->dev_class,
                                                     p_dev_rec->sec_bd_name, status);
