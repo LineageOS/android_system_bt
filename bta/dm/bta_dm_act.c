@@ -2314,10 +2314,12 @@ static void bta_dm_discover_device(BD_ADDR remote_bd_addr)
             /* check whether connection already exists to the device
                if connection exists, we don't have to wait for ACL
                link to go down to start search on next device */
-            if (BTM_IsAclConnectionUp(bta_dm_search_cb.peer_bdaddr, BT_TRANSPORT_BR_EDR))
-                bta_dm_search_cb.wait_disc = FALSE;
-            else
-                bta_dm_search_cb.wait_disc = TRUE;
+            if (transport == BT_TRANSPORT_BR_EDR) {
+                if (BTM_IsAclConnectionUp(bta_dm_search_cb.peer_bdaddr, BT_TRANSPORT_BR_EDR))
+                    bta_dm_search_cb.wait_disc = FALSE;
+                else
+                    bta_dm_search_cb.wait_disc = TRUE;
+            }
 
 #if (BLE_INCLUDED == TRUE && (defined BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE))
             if ( bta_dm_search_cb.p_btm_inq_info )
@@ -3294,7 +3296,8 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
         conn.link_down.link_type = p_data->acl_change.transport;
 #endif
 
-        if(bta_dm_search_cb.wait_disc && !bdcmp(bta_dm_search_cb.peer_bdaddr, p_bda))
+        if ((p_data->acl_change.transport == BT_TRANSPORT_BR_EDR) &&
+             bta_dm_search_cb.wait_disc && !bdcmp(bta_dm_search_cb.peer_bdaddr, p_bda))
         {
             bta_dm_search_cb.wait_disc = FALSE;
 

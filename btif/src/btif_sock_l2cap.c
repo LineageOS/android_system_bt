@@ -822,19 +822,21 @@ const tL2CAP_ERTM_INFO obex_l2c_etm_opt =
  * and this function is called with the newly allocated PSM.
  */
 void on_l2cap_psm_assigned(int id, int psm) {
-    l2cap_socket *sock;
     /* Setup ETM settings:
      *  mtu will be set below */
     pthread_mutex_lock(&state_lock);
-    sock = btsock_l2cap_find_by_id_l(id);
-    sock->channel = psm;
+    l2cap_socket *sock = btsock_l2cap_find_by_id_l(id);
 
-    if(btSock_start_l2cap_server_l(sock) != BT_STATUS_SUCCESS) {
-        btsock_l2cap_free_l(sock);
+    if (sock) {
+        sock->channel = psm;
+
+        if (btSock_start_l2cap_server_l(sock) != BT_STATUS_SUCCESS)
+            btsock_l2cap_free_l(sock);
+    } else {
+        APPL_TRACE_ERROR("%s: Error: sock is null", __func__);
     }
 
     pthread_mutex_unlock(&state_lock);
-
 }
 
 static bt_status_t btSock_start_l2cap_server_l(l2cap_socket *sock) {

@@ -1234,6 +1234,7 @@ static void btif_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
                 break;
 
             case HCI_ERR_PAIRING_NOT_ALLOWED:
+                btif_storage_remove_bonded_device(&bd_addr);
                 status = BT_STATUS_AUTH_REJECTED;
                 break;
 
@@ -1686,7 +1687,7 @@ static void btif_dm_upstreams_evt(UINT16 event, char* p_param)
              bt_status_t status;
              bt_property_t prop;
              prop.type = BT_PROPERTY_BDNAME;
-             prop.len = BD_NAME_LEN;
+             prop.len = BD_NAME_LEN + 1;
              prop.val = (void*)bdname;
 
              status = btif_storage_get_adapter_property(&prop);

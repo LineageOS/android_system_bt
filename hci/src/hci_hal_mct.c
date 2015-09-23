@@ -119,7 +119,11 @@ static void hal_close() {
   LOG_INFO(LOG_TAG, "%s", __func__);
 
   eager_reader_free(event_stream);
+  event_stream = NULL;
+
   eager_reader_free(acl_stream);
+  acl_stream = NULL;
+
   vendor->send_command(VENDOR_CLOSE_USERIAL, NULL);
 
   for (int i = 0; i < CH_MAX; i++)

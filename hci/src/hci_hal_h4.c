@@ -109,6 +109,8 @@ static void hal_close() {
   LOG_INFO(LOG_TAG, "%s", __func__);
 
   eager_reader_free(uart_stream);
+  uart_stream = NULL;
+
   vendor->send_command(VENDOR_CLOSE_USERIAL, NULL);
   uart_fd = INVALID_FD;
 }
