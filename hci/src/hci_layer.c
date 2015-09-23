@@ -410,13 +410,15 @@ static void firmware_config_callback(UNUSED_ATTR bool success) {
   firmware_is_configured = true;
   non_repeating_timer_cancel(startup_timer);
 
-  future_ready(startup_future, FUTURE_SUCCESS);
+  if (startup_future)
+    future_ready(startup_future, FUTURE_SUCCESS);
   startup_future = NULL;
 }
 
 static void startup_timer_expired(UNUSED_ATTR void *context) {
   LOG_ERROR("%s", __func__);
-  future_ready(startup_future, FUTURE_FAIL);
+  if (startup_future)
+    future_ready(startup_future, FUTURE_FAIL);
   startup_future = NULL;
 }
 
