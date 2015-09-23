@@ -1450,9 +1450,11 @@ static bt_status_t phone_state_change(int num_active, int num_held, bthf_call_st
 update_call_states:
     for (i = 0; i < btif_max_hf_clients; i++)
     {
-        btif_hf_cb[i].num_active = num_active;
-        btif_hf_cb[i].num_held = num_held;
-        btif_hf_cb[i].call_setup_state = call_setup_state;
+        if (btif_hf_cb[i].state == BTHF_CONNECTION_STATE_SLC_CONNECTED) {
+            btif_hf_cb[i].num_active = num_active;
+            btif_hf_cb[i].num_held = num_held;
+            btif_hf_cb[i].call_setup_state = call_setup_state;
+        }
     }
     return status;
 }
