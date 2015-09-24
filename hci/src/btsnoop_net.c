@@ -45,6 +45,10 @@ static int listen_socket_ = -1;
 static int client_socket_ = -1;
 
 void btsnoop_net_open() {
+#if (!defined(BT_NET_DEBUG) || (BT_NET_DEBUG != TRUE))
+  return;               // Disable using network sockets for security reasons
+#endif
+
   listen_thread_valid_ = (pthread_create(&listen_thread_, NULL, listen_fn_, NULL) == 0);
   if (!listen_thread_valid_) {
     LOG_ERROR("%s pthread_create failed: %s", __func__, strerror(errno));
@@ -54,6 +58,10 @@ void btsnoop_net_open() {
 }
 
 void btsnoop_net_close() {
+#if (!defined(BT_NET_DEBUG) || (BT_NET_DEBUG != TRUE))
+  return;               // Disable using network sockets for security reasons
+#endif
+
   if (listen_thread_valid_) {
     shutdown(listen_socket_, SHUT_RDWR);
     pthread_join(listen_thread_, NULL);
@@ -63,6 +71,10 @@ void btsnoop_net_close() {
 }
 
 void btsnoop_net_write(const void *data, size_t length) {
+#if (!defined(BT_NET_DEBUG) || (BT_NET_DEBUG != TRUE))
+  return;               // Disable using network sockets for security reasons
+#endif
+
   pthread_mutex_lock(&client_socket_lock_);
   if (client_socket_ != -1) {
     if (send(client_socket_, data, length, 0) == -1 && errno == ECONNRESET) {
