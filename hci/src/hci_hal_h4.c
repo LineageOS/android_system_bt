@@ -86,7 +86,8 @@ static bool hal_open() {
   return true;
 
 error:
-  interface.close();
+  vendor->send_command(VENDOR_CLOSE_USERIAL, NULL);
+  uart_fd = INVALID_FD;
   return false;
 }
 
