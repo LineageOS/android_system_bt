@@ -312,8 +312,12 @@ static void btif_initiate_av_open_tmr_hdlr(TIMER_LIST_ENT *tle)
                 return;
             }
             BTIF_TRACE_DEBUG("%s Issuing connect to the remote RC peer", __FUNCTION__);
-            /* In case of AVRCP connection request, we will initiate SRC connection */
-            btif_queue_connect(UUID_SERVCLASS_AUDIO_SOURCE, (bt_bdaddr_t*)&peer_addr, connect_int);
+            if(bt_av_sink_callbacks != NULL)
+                btif_queue_connect(UUID_SERVCLASS_AUDIO_SINK, (bt_bdaddr_t*)&peer_addr,
+                        connect_int);
+            if(bt_av_src_callbacks != NULL)
+                btif_queue_connect(UUID_SERVCLASS_AUDIO_SOURCE, (bt_bdaddr_t*)&peer_addr,
+                        connect_int);
         }
     }
     else
@@ -666,18 +670,15 @@ static BOOLEAN btif_av_state_opening_handler(btif_sm_event_t event, void *p_data
                 /* Multicast: Check if connected to AVRC only device
                  * disconnect when Dual A2DP/Multicast is supported.
                  */
-                if ((btif_max_av_clients >= 2) || (p_bta_data->open.status != BTA_AV_FAIL_SDP))
+                BD_ADDR peer_addr;
+                if ((btif_rc_get_connected_peer(peer_addr))
+                    &&(!bdcmp(btif_av_cb[index].peer_bda.address, peer_addr)))
                 {
-                    BD_ADDR peer_addr;
-                    if ((btif_rc_get_connected_peer(peer_addr))
-                        &&(!bdcmp(btif_av_cb[index].peer_bda.address, peer_addr)))
-                    {
-                        /* Disconnect AVRCP connection, if A2DP
-                         * conneciton failed, for any reason
-                         */
-                        BTIF_TRACE_WARNING(" Disconnecting AVRCP ");
-                        BTA_AvCloseRc(btif_rc_get_connected_peer_handle(peer_addr));
-                    }
+                    /* Disconnect AVRCP connection, if A2DP
+                     * conneciton failed, for any reason
+                     */
+                    BTIF_TRACE_WARNING(" Disconnecting AVRCP ");
+                    BTA_AvCloseRc(btif_rc_get_connected_peer_handle(peer_addr));
                 }
                 state = BTAV_CONNECTION_STATE_DISCONNECTED;
                 av_state  = BTIF_AV_STATE_IDLE;
@@ -801,7 +802,7 @@ static BOOLEAN btif_av_state_opening_handler(btif_sm_event_t event, void *p_data
             break;
 
         case BTA_AV_RC_OPEN_EVT:
-             btif_rc_handler(event, p_data);;
+            btif_rc_handler(event, p_data);;
             break;
 
         CHECK_RC_EVENT(event, p_data);
