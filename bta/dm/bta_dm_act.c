@@ -545,6 +545,7 @@ void bta_dm_set_dev_name (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_set_visibility(tBTA_DM_MSG *p_data)
 {
+#if BTA_GATT_INCLUDED == TRUE
     UINT16 window, interval;
     UINT16 le_disc_mode = BTM_BleReadDiscoverability();
     UINT16 disc_mode = BTM_ReadDiscoverability(&window, &interval);
@@ -607,7 +608,7 @@ void bta_dm_set_visibility(tBTA_DM_MSG *p_data)
     /* Change mode if either mode is not ignore */
     if (p_data->set_visibility.pair_mode != BTA_DM_IGNORE || p_data->set_visibility.conn_paired_only != BTA_DM_IGNORE)
         BTM_SetPairableMode((BOOLEAN)(!(bta_dm_cb.disable_pair_mode)),bta_dm_cb.conn_paired_only);
-
+#endif
 }
 
 /*******************************************************************************
@@ -694,16 +695,17 @@ void bta_dm_remove_device(tBTA_DM_MSG *p_data)
             if (!bdcmp(bta_dm_cb.device_list.peer_device[i].peer_bdaddr, p_dev->bd_addr))
             {
                 bta_dm_cb.device_list.peer_device[i].conn_state = BTA_DM_UNPAIRING;
+#if BTA_GATT_INCLUDED == TRUE
                 btm_remove_acl( p_dev->bd_addr, bta_dm_cb.device_list.peer_device[i].transport);
                 APPL_TRACE_DEBUG("%s:transport = %d", __func__,
                                   bta_dm_cb.device_list.peer_device[i].transport);
-
                 /* save the other transport to check if device is connected on other_transport */
                 if(bta_dm_cb.device_list.peer_device[i].transport == BT_TRANSPORT_LE)
                    other_transport = BT_TRANSPORT_BR_EDR;
                 else
                    other_transport = BT_TRANSPORT_LE;
                 break;
+#endif
             }
         }
     }
@@ -715,6 +717,7 @@ void bta_dm_remove_device(tBTA_DM_MSG *p_data)
     // If it is DUMO device and device is paired as different address, unpair that device
     // if different address
     BOOLEAN continue_delete_other_dev = FALSE;
+#if BTA_GATT_INCLUDED == TRUE
     if ((other_transport && (BTM_ReadConnectedTransportAddress(other_address, other_transport))) ||
       (!other_transport && (BTM_ReadConnectedTransportAddress(other_address, BT_TRANSPORT_INVALID))))
     {
@@ -725,7 +728,9 @@ void bta_dm_remove_device(tBTA_DM_MSG *p_data)
             if (!bdcmp(bta_dm_cb.device_list.peer_device[i].peer_bdaddr, other_address))
             {
                 bta_dm_cb.device_list.peer_device[i].conn_state = BTA_DM_UNPAIRING;
+#if BTA_GATT_INCLUDED == TRUE
                 btm_remove_acl(other_address,bta_dm_cb.device_list.peer_device[i].transport);
+#endif
                 break;
             }
         }
@@ -735,7 +740,7 @@ void bta_dm_remove_device(tBTA_DM_MSG *p_data)
         APPL_TRACE_DEBUG("%s: continue to delete the other dev ", __func__);
         continue_delete_other_dev = TRUE;
     }
-
+#endif
     /* Delete the device mentioned in the msg */
     if (continue_delete_dev)
         bta_dm_process_remove_device(p_dev->bd_addr);
@@ -2340,7 +2345,7 @@ static void bta_dm_discover_device(BD_ADDR remote_bd_addr)
         APPL_TRACE_DEBUG("%s appl_knows_rem_name %d", __func__,
                             bta_dm_search_cb.p_btm_inq_info->appl_knows_rem_name);
     }
-
+#if BTA_GATT_INCLUDED == TRUE
     if((bta_dm_search_cb.p_btm_inq_info)
        && (bta_dm_search_cb.p_btm_inq_info->results.device_type == BT_DEVICE_TYPE_BLE)
        && (bta_dm_search_cb.state == BTA_DM_SEARCH_ACTIVE))
@@ -2348,7 +2353,7 @@ static void bta_dm_discover_device(BD_ADDR remote_bd_addr)
         /* Do not perform RNR for LE devices at inquiry complete*/
         bta_dm_search_cb.name_discover_done = TRUE;
     }
-
+#endif
     /* if name discovery is not done and application needs remote name */
     if ((!bta_dm_search_cb.name_discover_done)
        && (( bta_dm_search_cb.p_btm_inq_info == NULL )

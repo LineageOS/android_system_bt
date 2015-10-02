@@ -127,7 +127,9 @@ extern const btl2cap_interface_t *btif_l2cap_get_interface(void);
 extern const btrfcomm_interface_t *btif_rfcomm_get_interface(void);
 extern const btmcap_interface_t *btif_mcap_get_interface(void);
 extern const btgatt_test_interface_t *btif_gatt_test_get_interface(void);
+#if SMP_INCLUDED == TRUE
 extern const btsmp_interface_t *btif_smp_get_interface(void);
+#endif
 extern const btgap_interface_t *btif_gap_get_interface(void);
 #endif
 extern const btstacklog_interface_t *btif_stack_log_interface(void);
@@ -428,7 +430,9 @@ static const void* get_testapp_interface(int test_app_profile)
         case TEST_APP_GATT:
            return btif_gatt_test_get_interface();
         case TEST_APP_SMP:
+#if SMP_INCLUDED == TRUE
            return btif_smp_get_interface();
+#endif
         case TEST_APP_GAP:
            return btif_gap_get_interface();
         default:
@@ -486,7 +490,6 @@ int le_test_mode(uint16_t opcode, uint8_t* buf, uint8_t len)
     return btif_le_test_mode(opcode, buf, len);
 }
 #endif
-
 int config_hci_snoop_log(uint8_t enable)
 {
     LOG_INFO("config_hci_snoop_log");

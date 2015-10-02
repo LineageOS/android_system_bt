@@ -350,7 +350,6 @@ BOOLEAN bta_dm_search_sm_execute(BT_HDR *p_msg)
 
     APPL_TRACE_EVENT("bta_dm_search_sm_execute state:%d, event:0x%x",
         bta_dm_search_cb.state, p_msg->event);
-
     /* look up the state table for the current state */
     state_table = bta_dm_search_st_tbl[bta_dm_search_cb.state];
 
