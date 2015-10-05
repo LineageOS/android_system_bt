@@ -137,7 +137,6 @@ void btu_general_alarm_ready(fixed_queue_t *queue, UNUSED_ATTR void *context) {
 
 void btu_oneshot_alarm_ready(fixed_queue_t *queue, UNUSED_ATTR void *context) {
     TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)fixed_queue_dequeue(queue);
-    btu_general_alarm_process(p_tle);
 
     switch (p_tle->event) {
 #if (defined(BLE_INCLUDED) && BLE_INCLUDED == TRUE)
@@ -396,7 +395,6 @@ static void btu_general_alarm_process(TIMER_LIST_ENT *p_tle) {
 #if (defined(BLE_INCLUDED) && BLE_INCLUDED == TRUE)
         case BTU_TTYPE_BLE_INQUIRY:
         case BTU_TTYPE_BLE_GAP_LIM_DISC:
-        case BTU_TTYPE_BLE_RANDOM_ADDR:
         case BTU_TTYPE_BLE_GAP_FAST_ADV:
         case BTU_TTYPE_BLE_OBSERVE:
             btm_ble_timeout(p_tle);
