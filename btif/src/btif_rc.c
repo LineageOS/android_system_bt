@@ -181,6 +181,7 @@ static int btif_max_rc_clients = 1;
 static const char* uinput_dev_path[] =
                        {"/dev/uinput", "/dev/input/uinput", "/dev/misc/uinput" };
 static int uinput_fd = -1;
+static BD_ADDR bd_null= {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 static int  send_event (int fd, uint16_t type, uint16_t code, int32_t value);
 static void send_key (int fd, uint16_t key, int pressed);
@@ -811,7 +812,11 @@ void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
         init_all_transactions();
         close_uinput();
     }
-
+    if (!bdcmp(bd_null, rc_addr.address))
+    {
+        BTIF_TRACE_DEBUG("Cleanup already done");
+        return;
+    }
 #if (AVRC_CTLR_INCLUDED == TRUE)
     /* report connection state if device is AVRCP target */
     if (bt_rc_ctrl_callbacks != NULL)
@@ -3900,15 +3905,15 @@ static void handle_avk_rc_metamsg_cmd(tBTA_AV_META_MSG *pmeta_msg)
 ***************************************************************************/
 static void cleanup(void)
 {
-    BTIF_TRACE_EVENT("## %s ##", __FUNCTION__);
+    BTIF_TRACE_EVENT("## RC:  %s ##", __FUNCTION__);
+    memset(&btif_rc_cb, 0, sizeof(btif_rc_cb_t));
     close_uinput();
     if (bt_rc_callbacks)
     {
         bt_rc_callbacks = NULL;
     }
-    memset(&btif_rc_cb, 0, sizeof(btif_rc_cb_t));
     lbl_destroy();
-    BTIF_TRACE_EVENT("## %s ## completed", __FUNCTION__);
+    BTIF_TRACE_EVENT("## RC: %s ## completed", __FUNCTION__);
 }
 
 /***************************************************************************
