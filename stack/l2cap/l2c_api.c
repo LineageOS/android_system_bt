@@ -1859,6 +1859,30 @@ UINT8 L2CA_DataWrite (UINT16 cid, BT_HDR *p_data)
     return l2c_data_write (cid, p_data, L2CAP_FLUSHABLE_CH_BASED);
 }
 
+#ifdef BTA_AV_SPLIT_A2DP_ENABLED
+/*******************************************************************************
+**
+** Function         L2CA_GetDestChannelID
+**
+** Description      Higher layers call this function to fetch destination channel id.
+**
+** Returns          Destination Channel ID
+**
+*******************************************************************************/
+UINT16 L2CA_GetDestChannelID (UINT16 cid)
+{
+    tL2C_CCB        *p_ccb;
+    L2CAP_TRACE_API ("L2CA_GetDestChannelID: local cid: %d", cid);
+
+    /* Find the channel control block. We don't know the link it is on. */
+    p_ccb = l2cu_find_ccb_by_cid (NULL, cid);
+    L2CAP_TRACE_DEBUG("local cid: %d, dest cid: %d",
+                p_ccb->local_cid, p_ccb->remote_cid);
+
+    return p_ccb->remote_cid;
+}
+#endif
+
 /*******************************************************************************
 **
 ** Function         L2CA_SetChnlFlushability
