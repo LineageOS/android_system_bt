@@ -35,7 +35,12 @@
 #define A2DP_CTRL_PATH "/data/misc/bluedroid/.a2dp_ctrl"
 #define A2DP_DATA_PATH "/data/misc/bluedroid/.a2dp_data"
 
+#ifndef BTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
 #define AUDIO_STREAM_DEFAULT_RATE          44100
+#else
+#define AUDIO_STREAM_DEFAULT_RATE          48000
+#endif
+
 #define AUDIO_STREAM_DEFAULT_FORMAT        AUDIO_FORMAT_PCM_16_BIT
 #define AUDIO_STREAM_DEFAULT_CHANNEL_FLAG  AUDIO_CHANNEL_OUT_STEREO
 

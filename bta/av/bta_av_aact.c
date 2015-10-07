@@ -69,7 +69,12 @@ extern BOOLEAN is_sniff_disabled;
 #endif
 
 static const size_t SBC_MAX_BITPOOL_OFFSET = 6;
+
+#ifdef BTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
+static const size_t SBC_MAX_BITPOOL = 51;
+#else
 static const size_t SBC_MAX_BITPOOL = 53;
+#endif
 
 /* ACL quota we are letting FW use for A2DP Offload Tx. */
 #define BTA_AV_A2DP_OFFLOAD_XMIT_QUOTA      4
@@ -1524,6 +1529,9 @@ void bta_av_str_opened (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
         open.status = BTA_AV_SUCCESS;
         open.starting = bta_av_chk_start(p_scb);
         open.edr    = 0;
+#ifdef BTA_AV_SPLIT_A2DP_ENABLED
+        open.stream_chnl_id = AVDT_GetStreamingDestChannelId(p_scb->l2c_cid);
+#endif
         // update Master/Slave Role for start
         if (BTM_GetRole (p_scb->peer_addr, &cur_role) == BTM_SUCCESS)
         {
@@ -1957,6 +1965,9 @@ void bta_av_open_failed (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
         open.status = BTA_AV_FAIL_GET_CAP;
         open.starting = bta_av_chk_start(p_scb);
         open.edr    = 0;
+#ifdef BTA_AV_SPLIT_A2DP_ENABLED
+        open.stream_chnl_id = 0;
+#endif
         // update Master/Slave Role for open event
         if (BTM_GetRole (p_scb->peer_addr, &cur_role) == BTM_SUCCESS)
         {

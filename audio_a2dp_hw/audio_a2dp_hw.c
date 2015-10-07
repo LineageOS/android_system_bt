@@ -582,6 +582,7 @@ static int start_audio_datapath(struct a2dp_stream_common *common)
         goto error;
     }
 
+#ifndef BTA_AV_SPLIT_A2DP_ENABLED
     /* connect socket if not yet connected */
     if (common->audio_fd == AUDIO_SKT_DISCONNECTED)
     {
@@ -591,8 +592,12 @@ static int start_audio_datapath(struct a2dp_stream_common *common)
             ERROR("Audiopath start failed - error opening data socket");
             goto error;
         }
+        common->state = AUDIO_A2DP_STATE_STARTED;
     }
+#else
     common->state = AUDIO_A2DP_STATE_STARTED;
+#endif
+
     return 0;
 
 error:
@@ -619,9 +624,11 @@ static int stop_audio_datapath(struct a2dp_stream_common *common)
 
     common->state = AUDIO_A2DP_STATE_STOPPED;
 
+#ifndef BTA_AV_SPLIT_A2DP_ENABLED
     /* disconnect audio path */
     skt_disconnect(common->audio_fd);
     common->audio_fd = AUDIO_SKT_DISCONNECTED;
+#endif
 
     return 0;
 }
@@ -641,10 +648,12 @@ static int suspend_audio_datapath(struct a2dp_stream_common *common, bool standb
     else
         common->state = AUDIO_A2DP_STATE_SUSPENDED;
 
+#ifndef BTA_AV_SPLIT_A2DP_ENABLED
     /* disconnect audio path */
     skt_disconnect(common->audio_fd);
 
     common->audio_fd = AUDIO_SKT_DISCONNECTED;
+#endif
 
     return 0;
 }
@@ -852,18 +861,66 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
 {
     struct a2dp_stream_out *out = (struct a2dp_stream_out *)stream;
 
-    INFO("state %d", out->common.state);
+    INFO("out_set_parameters: state %d", out->common.state);
 
     hash_map_t *params = hash_map_utils_new_from_string_params(kvpairs);
     int status = 0;
-
+    char *keyval;
     if (!params)
       return status;
 
     /* dump params */
     hash_map_utils_dump_string_keys_string_values(params);
 
-    char *keyval = (char *)hash_map_get(params, "closing");
+#ifdef BTA_AV_SPLIT_A2DP_ENABLED
+    keyval = (char *)hash_map_get(params, "A2dpStarted");
+
+    if (keyval >= 0)
+    {
+        INFO("out_set_parameters, param: A2dpStarted");
+        if (strcmp(keyval, "true") == 0)
+        {
+            INFO("out_set_parameters, value: true");
+            pthread_mutex_lock(&out->common.lock);
+            if (out->common.state == AUDIO_A2DP_STATE_SUSPENDED)
+            {
+                INFO("stream suspended");
+                status = -1;
+            }
+            else if ((out->common.state == AUDIO_A2DP_STATE_STOPPED) ||
+                (out->common.state == AUDIO_A2DP_STATE_STANDBY))
+            {
+                if (start_audio_datapath(&out->common) < 0)
+                {
+                    INFO("stream start failed");
+                    status = -1;
+                }
+            }
+            else if (out->common.state != AUDIO_A2DP_STATE_STARTED)
+            {
+                ERROR("stream not in stopped or standby");
+                status = -1;
+            }
+            pthread_mutex_unlock(&out->common.lock);
+            INFO("stream start completes with status: %d", status);
+        }
+        else if (strcmp(keyval, "false") == 0)
+        {
+            INFO("out_set_parameters, value: false");
+            pthread_mutex_lock(&out->common.lock);
+            if (out->common.state != AUDIO_A2DP_STATE_SUSPENDED)
+                status = suspend_audio_datapath(&out->common, true);
+            else
+            {
+                ERROR("stream alreday suspended");
+            }
+            pthread_mutex_unlock(&out->common.lock);
+            INFO("stream stop completes with status: %d", status);
+        }
+    }
+#endif
+
+    keyval = (char *)hash_map_get(params, "closing");
 
     if (keyval && strcmp(keyval, "true") == 0)
     {

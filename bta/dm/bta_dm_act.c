@@ -704,6 +704,25 @@ void bta_dm_hci_raw_command (tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
+** Function         bta_dm_vendor_spec_command
+**
+** Description      Send a vendor specific command to the controller
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_vendor_spec_command (tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("bta_dm_vendor_spec_command");
+    BTM_VendorSpecificCommand(p_data->vendor_command.opcode,
+                                       p_data->vendor_command.param_len,
+                                       p_data->vendor_command.p_param_buf,
+                                       p_data->vendor_command.p_cback);
+}
+
+/*******************************************************************************
+**
 ** Function         bta_dm_process_remove_deviced
 **
 **

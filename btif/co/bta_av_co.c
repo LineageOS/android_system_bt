@@ -70,7 +70,11 @@
 #define BTA_AV_CO_SBC_MIN_BITPOOL_OFF  5
 #define BTA_AV_CO_SBC_MAX_BITPOOL_OFF  6
 
+#ifdef BTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
+#define BTA_AV_CO_SBC_MAX_BITPOOL  51
+#else
 #define BTA_AV_CO_SBC_MAX_BITPOOL  53
+#endif
 
 /* SCMS-T protect info */
 const UINT8 bta_av_co_cp_scmst[BTA_AV_CP_INFO_LEN] = "\x02\x02\x00";
@@ -78,7 +82,11 @@ const UINT8 bta_av_co_cp_scmst[BTA_AV_CP_INFO_LEN] = "\x02\x02\x00";
 /* SBC SRC codec capabilities */
 const tA2D_SBC_CIE bta_av_co_sbc_caps =
 {
+#ifdef BTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
+    (A2D_SBC_IE_SAMP_FREQ_48), /* samp_freq */
+#else
     (A2D_SBC_IE_SAMP_FREQ_44), /* samp_freq */
+#endif
     (A2D_SBC_IE_CH_MD_JOINT), /* ch_mode */
     (A2D_SBC_IE_BLOCKS_16), /* block_len */
     (A2D_SBC_IE_SUBBAND_8), /* num_subbands */
@@ -100,7 +108,11 @@ const tA2D_SBC_CIE bta_av_co_sbc_sink_caps =
 };
 
 #if !defined(BTIF_AV_SBC_DEFAULT_SAMP_FREQ)
+#ifdef BTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
+#define BTIF_AV_SBC_DEFAULT_SAMP_FREQ A2D_SBC_IE_SAMP_FREQ_48
+#else
 #define BTIF_AV_SBC_DEFAULT_SAMP_FREQ A2D_SBC_IE_SAMP_FREQ_44
+#endif
 #endif
 
 /* Default SBC codec configuration */
