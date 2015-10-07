@@ -399,6 +399,13 @@ void bta_hh_start_sdp(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
         } else {
             status = BTA_HH_OK;
         }
+    } else if (bta_hh_cb.p_disc_db) {
+    /* It is possible that there is incoming/outgoing collision case. DUT initiated
+     * HID connection at same time remote has connected l2cap for HID control,
+     * so SDP would be in progress, when this flow reaches here. Just do nothing
+     * when the code reaches here, and ongoing SDP completion or failure will handle this case */
+        APPL_TRACE_DEBUG ("bta_hh_start_sdp:  ignoring as SDP already in progress");
+        return;
     }
 
     if (status != BTA_HH_OK)
