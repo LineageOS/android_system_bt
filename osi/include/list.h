@@ -11,6 +11,7 @@ typedef struct list_t list_t;
 
 typedef void (*list_free_cb)(void *data);
 typedef bool (*list_iter_cb)(void *data);
+typedef bool (*list_iter_cb_ext)(void *data, void *cb_data);
 
 // Returns a new, empty list. Returns NULL if not enough memory could be allocated
 // for the list structure. The returned list must be freed with |list_free|. The
@@ -79,6 +80,7 @@ void list_clear(list_t *list);
 // there will be no callback for the newly-inserted node. Neither |list| nor
 // |callback| may be NULL.
 void list_foreach(const list_t *list, list_iter_cb callback);
+void list_foreach_ext(const list_t *list, list_iter_cb_ext callback, void *cb_data);
 
 // Returns an iterator to the first element in |list|. |list| may not be NULL.
 // The returned iterator is valid as long as it does not equal the value returned
