@@ -8,11 +8,16 @@ LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH)/include \
 	$(LOCAL_PATH)/../btcore/include \
 	$(LOCAL_PATH)/../stack/include \
+	$(LOCAL_PATH)/../gki/common \
+	$(LOCAL_PATH)/../include \
 	$(LOCAL_PATH)/../ \
 	$(bluetooth_C_INCLUDES)
 
 LOCAL_SRC_FILES := \
-	./src/bt_utils.c
+        ./src/bt_utils.c
+
+LOCAL_STATIC_LIBRARIES := \
+        libosi
 
 LOCAL_MODULE := libbt-utils
 LOCAL_MODULE_TAGS := optional
