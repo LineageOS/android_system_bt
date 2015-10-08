@@ -21,6 +21,7 @@
 
 static const char BT_UTILS_MODULE[] = "bt_utils_module";
 
+#include <stdbool.h>
 /*******************************************************************************
 **  Type definitions
 ********************************************************************************/
@@ -45,7 +46,25 @@ typedef enum {
 **  Functions
 ********************************************************************************/
 
+typedef enum {
+    METHOD_BD = 0,
+    METHOD_NAME
+} tBLACKLIST_METHOD;
+
+#define MAX_NAME_LEN                  (50)
+#define IOT_DEV_BASE_CONF_FILE        "/etc/bluetooth/iot_devlist.conf"
+#define IOT_DEV_CONF_FILE             "/data/misc/bluedroid/iot_devlist.conf"
+#define IOT_DEV_CONF_BKP_FILE         "/data/misc/bluedroid/iot_devlist_bkp.conf"
+#define IOT_ROLE_CHANGE_BLACKLIST     "RoleChangeBlacklistAddr"
+#define COD_AUDIO_DEVICE              (0x200400)
 void raise_priority_a2dp(tHIGH_PRIORITY_TASK high_task);
 void adjust_priority_a2dp(int start);
+void load_iot_devlist(const char *filename);
+void unload_iot_devlist();
+bool is_device_present(char* header, unsigned char* device_details);
+bool add_iot_device(const char *filename, char* header,
+    unsigned char* device_details, tBLACKLIST_METHOD method_type);
+bool remove_iot_device(const char *filename, char* header,
+    unsigned char* device_details, tBLACKLIST_METHOD method_type);
 #define UNUSED(x) (void)(x)
 #endif /* BT_UTILS_H */
