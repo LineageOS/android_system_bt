@@ -37,6 +37,7 @@
 #include "sdp_api.h"
 #include "sdpint.h"
 #include "btu.h"
+#include <cutils/properties.h>
 
 /**********************************************************************
 **   C L I E N T    F U N C T I O N    P R O T O T Y P E S            *
@@ -1285,8 +1286,14 @@ UINT8 SDP_SetTraceLevel (UINT8 new_level)
 BOOLEAN SDP_Dev_Blacklisted_For_Avrcp15 (BD_ADDR addr)
 {
     int ver;
+    char a2dp_role[PROPERTY_VALUE_MAX] = "false";
     BOOLEAN ret = sdp_dev_blacklisted_for_avrcp15(addr);
+
     SDP_TRACE_ERROR("%s", __func__);
+    property_get("persist.service.bt.a2dp.sink", a2dp_role, "false");
+    if (!strncmp("true", a2dp_role, 4)) {
+        return ret;
+    }
     if (ret != TRUE)
     {
         ver = sdp_get_stored_avrc_tg_version (addr);
