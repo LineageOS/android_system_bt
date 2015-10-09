@@ -1015,7 +1015,8 @@ static bt_callbacks_t bt_callbacks = {
     NULL, /* thread_evt_cb */
     dut_mode_recv, /*dut_mode_recv_cb */
     le_test_mode, /* le_test_mode_cb */
-    NULL      /*energy_info_cb*/
+    NULL,      /*energy_info_cb*/
+    NULL   /*hci_event_recv_cb*/
 };
 
 static bt_os_callouts_t bt_os_callbacks = {
@@ -2406,7 +2407,7 @@ static int send_file(char *p)
     uint32_t seq = 0, itration = 1;
     int send_mode, fd, size;
     char filename[] = {0};
-    char *tmpBuf = NULL;
+    char tmpBuf[LE_ACL_MAX_BUFF_SIZE];
     UINT16 lcid;
 
     lcid = get_int(&p, -1);
@@ -2428,7 +2429,6 @@ static int send_file(char *p)
 
     printf("data_size(max patload size) = %ld, g_omtu(max ttansmission unit) = %d",
             data_size, g_omtu);
-    tmpBuf = malloc(data_size);
 
     printf("Filename for input data = %s \n", filename);
 
@@ -2456,7 +2456,6 @@ static int send_file(char *p)
 
     if (num_frames && g_delay && count && !(seq % count))
         usleep(g_delay);
-    free(tmpBuf);
     return TRUE;
 }
 
