@@ -2884,6 +2884,8 @@ static void btif_media_aa_prep_sbc_2_send(UINT8 nb_frame)
 
 static void btif_media_aa_prep_2_send(UINT8 nb_frame)
 {
+    UINT8* p_buf;
+
     // Check for TX queue overflow
 
     if (nb_frame > MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ)
@@ -2896,7 +2898,18 @@ static void btif_media_aa_prep_2_send(UINT8 nb_frame)
     }
 
     while (GKI_queue_length(&btif_media_cb.TxAaQ) > (MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ - nb_frame))
-        GKI_freebuf(GKI_dequeue(&(btif_media_cb.TxAaQ)));
+    {
+        p_buf = GKI_dequeue(&(btif_media_cb.TxAaQ));
+        if (p_buf)
+        {
+            GKI_freebuf(p_buf);
+        }
+        else {
+            APPL_TRACE_DEBUG("%s btif_media_cb.TxAaQ become empty", __func__);
+            break;
+        }
+    }
+
 
     // Transcode frame
 
