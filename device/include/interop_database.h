@@ -73,6 +73,9 @@ static const interop_addr_t interop_addr_database[] = {
 
   // Targus BT Laser Notebook Mouse
   {{0x00, 0x12, 0xA1,       0,0,0}, 3, INTEROP_DISABLE_AUTH_FOR_HID_POINTING},
+
+  // Fiat Carkit
+  {{0x00, 0x14, 0x09,       0,0,0}, 3, INTEROP_INCREASE_AG_CONN_TIMEOUT},
 };
 
 static const interop_name_t interop_name_database[] = {
