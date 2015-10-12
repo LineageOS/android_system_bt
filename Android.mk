@@ -10,7 +10,7 @@ else
 endif
 
 ifeq ($(TARGET_BUILD_VARIANT),userdebug)
-ifneq ($(BOARD_HAS_QCA_BT_ROME),true))
+ifneq ($(BOARD_HAS_QCA_BT_ROME),true)
 bdroid_CFLAGS += -DQLOGKIT_USERDEBUG
 endif
 endif
