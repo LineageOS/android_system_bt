@@ -2046,7 +2046,6 @@ bt_status_t btif_av_init(int service_id)
         if (!btif_a2dp_start_media_task())
             return BT_STATUS_FAIL;
         btif_av_cb[0].service = service_id;
-        btif_enable_service(service_id);
 
         /* Also initialize the AV state machine */
         for (i = 0; i < btif_max_av_clients; i++)
@@ -2054,6 +2053,8 @@ bt_status_t btif_av_init(int service_id)
             btif_av_cb[i].sm_handle = btif_sm_init((const btif_sm_handler_t*)btif_av_state_handlers,
                                                     BTIF_AV_STATE_IDLE, i);
         }
+
+        btif_enable_service(service_id);
         btif_a2dp_on_init();
     }
 
