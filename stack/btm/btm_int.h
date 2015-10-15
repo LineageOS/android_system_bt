@@ -551,6 +551,8 @@ typedef struct
     tBTM_BD_NAME    sec_bd_name;        /* User friendly name of the device. (may be truncated to save space in dev_rec table) */
     BD_FEATURES     features[HCI_EXT_FEATURES_PAGE_MAX + 1];           /* Features supported by the device */
     UINT8           num_read_pages;
+    UINT8           rnr_retry_cnt;
+    UINT8           cc_retry_cnt;
 
 #define BTM_SEC_STATE_IDLE               0
 #define BTM_SEC_STATE_AUTHENTICATING     1
@@ -855,7 +857,9 @@ typedef struct
     tBTM_RMT_NAME_CALLBACK  *p_rmt_name_callback[BTM_SEC_MAX_RMT_NAME_CALLBACKS];
 
     tBTM_SEC_DEV_REC        *p_collided_dev_rec;
+    tBTM_SEC_DEV_REC        *p_cc_retry_dev_rec;
     TIMER_LIST_ENT           sec_collision_tle;
+    TIMER_LIST_ENT           sec_cc_retry_tle;
     UINT32                   collision_start_time;
     UINT32                   max_collision_delay;
     UINT32                   dev_rec_count;      /* Counter used for device record timestamp */
