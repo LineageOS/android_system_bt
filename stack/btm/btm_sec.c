@@ -4647,7 +4647,7 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
             derive_LTK = FALSE;
             BTM_TRACE_DEBUG("%s skip derivation of LTK", __func__);
         }
-        if (p_dev_rec->new_encryption_key_is_p256 && derive_LTK)
+        if (p_dev_rec->new_encryption_key_is_p256)
         {
             if (btm_sec_use_smp_br_chnl(p_dev_rec) &&
                 btm_sec_is_master(p_dev_rec) &&
@@ -4655,7 +4655,7 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
                 (!(p_dev_rec->sec_flags &BTM_SEC_LE_LINK_KEY_KNOWN) ||
                 /* or BR key is higher security than existing LE keys */
                  (!(p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_AUTHED)
-                 && (p_dev_rec->sec_flags & BTM_SEC_LINK_KEY_AUTHED))))
+                 && (p_dev_rec->sec_flags & BTM_SEC_LINK_KEY_AUTHED))) && derive_LTK)
             {
                 /* BR/EDR is encrypted with LK that can be used to derive LE LTK */
                 p_dev_rec->new_encryption_key_is_p256 = FALSE;
