@@ -1237,7 +1237,8 @@ static void adev_close_output_stream(struct audio_hw_device *dev,
 
     #ifdef BT_AUDIO_SAMPLE_LOG
     ALOGV("close file output");
-    fclose (outputpcmsamplefile);
+    if (outputpcmsamplefile)
+        fclose (outputpcmsamplefile);
     #endif
 
     skt_disconnect(out->common.ctrl_fd);
