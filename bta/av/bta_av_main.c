@@ -1162,6 +1162,7 @@ BOOLEAN bta_av_switch_if_needed(tBTA_AV_SCB *p_scb)
     UINT8 role;
     BOOLEAN needed = FALSE;
     tBTA_AV_SCB *p_scbi;
+    tBTM_STATUS ret;
     int i;
     UINT8       mask;
 
@@ -1179,7 +1180,11 @@ BOOLEAN bta_av_switch_if_needed(tBTA_AV_SCB *p_scb)
             {
                 if (bta_av_cb.features & BTA_AV_FEAT_MASTER)
                     bta_sys_clear_policy(BTA_ID_AV, HCI_ENABLE_MASTER_SLAVE_SWITCH, p_scbi->peer_addr);
-                if (BTM_CMD_STARTED != BTM_SwitchRole(p_scbi->peer_addr, BTM_ROLE_MASTER, NULL))
+                ret = BTM_SwitchRole(p_scbi->peer_addr, BTM_ROLE_MASTER, NULL);
+                if (ret == BTM_REPEATED_ATTEMPTS)
+                    return FALSE;
+
+                if (BTM_CMD_STARTED != ret)
                 {
                     /* can not switch role on SCBI
                      * start the timer on SCB - because this function is ONLY called when SCB gets API_OPEN */
@@ -1209,6 +1214,7 @@ BOOLEAN bta_av_link_role_ok(tBTA_AV_SCB *p_scb, UINT8 bits)
 {
     UINT8 role;
     BOOLEAN is_ok = TRUE;
+    tBTM_STATUS ret;
 
     if (BTM_GetRole(p_scb->peer_addr, &role) == BTM_SUCCESS)
     {
@@ -1219,8 +1225,15 @@ BOOLEAN bta_av_link_role_ok(tBTA_AV_SCB *p_scb, UINT8 bits)
         {
             if (bta_av_cb.features & BTA_AV_FEAT_MASTER)
                 bta_sys_clear_policy(BTA_ID_AV, HCI_ENABLE_MASTER_SLAVE_SWITCH, p_scb->peer_addr);
+            ret = BTM_SwitchRole(p_scb->peer_addr, BTM_ROLE_MASTER, NULL);
+            /* We have already reached maximum attempts,
+             * If we try again it will anyways fail
+             * return from here
+             * */
+            if (ret == BTM_REPEATED_ATTEMPTS)
+                return TRUE;
 
-            if (BTM_CMD_STARTED != BTM_SwitchRole(p_scb->peer_addr, BTM_ROLE_MASTER, NULL))
+            if (BTM_CMD_STARTED != ret)
             {
                 /* can not switch role on SCB - start the timer on SCB */
             }
