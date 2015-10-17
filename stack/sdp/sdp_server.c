@@ -41,6 +41,7 @@
 #include "sdp_api.h"
 #include "sdpint.h"
 #include <errno.h>
+#include <cutils/properties.h>
 
 #if SDP_SERVER_ENABLED == TRUE
 
@@ -198,6 +199,7 @@ BOOLEAN sdp_dev_blacklisted_for_avrcp15 (BD_ADDR addr)
 ***************************************************************************************/
 BOOLEAN sdp_fallback_avrcp_version (tSDP_ATTRIBUTE *p_attr, BD_ADDR remote_address)
 {
+    char a2dp_role[PROPERTY_VALUE_MAX] = "false";
     if ((p_attr->id == ATTR_ID_BT_PROFILE_DESC_LIST) &&
         (p_attr->len >= SDP_PROFILE_DESC_LENGTH))
     {
@@ -213,24 +215,27 @@ BOOLEAN sdp_fallback_avrcp_version (tSDP_ATTRIBUTE *p_attr, BD_ADDR remote_addre
                          p_attr->value_ptr[PROFILE_VERSION_POSITION]);
                 return TRUE;
             }
-            ver = sdp_get_stored_avrc_tg_version (remote_address);
-            if (ver != AVRC_REV_INVALID)
-            {
-                SDP_TRACE_DEBUG("Stored AVRC TG version: 0x%x", ver);
-                p_attr->value_ptr[PROFILE_VERSION_POSITION] = (UINT8)(ver & 0x00ff);
-                SDP_TRACE_DEBUG("SDP Change AVRCP Version = 0x%x",
-                         p_attr->value_ptr[PROFILE_VERSION_POSITION]);
-                if (ver != AVRC_REV_1_5)
-                    return TRUE;
+            property_get("persist.service.bt.a2dp.sink", a2dp_role, "false");
+            if (!strncmp("false", a2dp_role, 5)) {
+                ver = sdp_get_stored_avrc_tg_version (remote_address);
+                if (ver != AVRC_REV_INVALID)
+                {
+                    SDP_TRACE_DEBUG("Stored AVRC TG version: 0x%x", ver);
+                    p_attr->value_ptr[PROFILE_VERSION_POSITION] = (UINT8)(ver & 0x00ff);
+                    SDP_TRACE_DEBUG("SDP Change AVRCP Version = 0x%x",
+                                 p_attr->value_ptr[PROFILE_VERSION_POSITION]);
+                    if (ver != AVRC_REV_1_5)
+                        return TRUE;
+                    else
+                        return FALSE;
+                }
                 else
-                    return FALSE;
-            }
-            else
-            {
-                p_attr->value_ptr[PROFILE_VERSION_POSITION] = 0x03; // Update AVRCP ver as 1.3
-                SDP_TRACE_DEBUG("Device not stored, Change AVRCP Version = 0x%x",
-                         p_attr->value_ptr[PROFILE_VERSION_POSITION]);
-                return TRUE;
+                {
+                    p_attr->value_ptr[PROFILE_VERSION_POSITION] = 0x03; // Update AVRCP ver as 1.3
+                    SDP_TRACE_DEBUG("Device not stored, Change AVRCP Version = 0x%x",
+                             p_attr->value_ptr[PROFILE_VERSION_POSITION]);
+                    return TRUE;
+                }
             }
         }
     }
