@@ -12,7 +12,7 @@ struct list_node_t {
 typedef struct list_t {
   list_node_t *head;
   list_node_t *tail;
-  size_t length;
+  volatile size_t length;
   list_free_cb free_cb;
   const allocator_t *allocator;
 } list_t;
