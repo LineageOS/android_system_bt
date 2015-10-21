@@ -726,7 +726,8 @@ bt_status_t btif_cleanup_bluetooth(void)
 static void btif_hci_event_cback ( tBTM_RAW_CMPL *p )
 {
     BTIF_TRACE_DEBUG("%s", __FUNCTION__);
-    if(p != NULL)
+    if((p != NULL) && (bt_hal_cbacks != NULL)
+          && (bt_hal_cbacks->hci_event_recv_cb != NULL))
     {
         HAL_CBACK(bt_hal_cbacks, hci_event_recv_cb, p->event_code, p->p_param_buf,
                                                                 p->param_len);
