@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 
 #include "osi/include/allocator.h"
 #include "osi/include/config.h"
@@ -307,6 +308,16 @@ error:;
   unlink(temp_filename);
   osi_free(temp_filename);
   return false;
+}
+
+void config_flush (const char *filename)
+{
+  int fd = open (filename, O_WRONLY | O_APPEND, 0660);
+  if (fd != -1)
+  {
+    fsync (fd);
+    close (fd);
+  }
 }
 
 static char *trim(char *str) {

@@ -357,6 +357,7 @@ void btif_config_flush(void) {
 
   pthread_mutex_lock(&lock);
   config_save(config, CONFIG_FILE_PATH);
+  config_flush(CONFIG_FILE_PATH);
   pthread_mutex_unlock(&lock);
 }
 
