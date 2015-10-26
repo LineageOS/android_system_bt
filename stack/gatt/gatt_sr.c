@@ -1081,6 +1081,40 @@ void gatts_process_read_by_type_req(tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len,
 
 /*******************************************************************************
 **
+** Function         gatts_write_attr_len_check
+**
+** Description      This function checks whether the PDU length of the write
+**                  attribute request is valid
+**
+** Returns          BOOLEAN
+**
+*******************************************************************************/
+BOOLEAN gatts_write_attr_len_check(UINT8 op_code, UINT16 len)
+{
+    BOOLEAN status = TRUE;
+
+    GATT_TRACE_DEBUG("%s", __func__);
+
+    switch (op_code)
+    {
+        case GATT_REQ_PREPARE_WRITE:
+            if(len < 3)
+                status = FALSE;
+            break;
+        case GATT_SIGN_CMD_WRITE:
+        case GATT_CMD_WRITE:
+        case GATT_REQ_WRITE:
+            if(len < 1)
+                status = FALSE;
+            break;
+        default:
+            status = FALSE;
+            break;
+    }
+    return status;
+}
+/*******************************************************************************
+**
 ** Function         gatts_process_write_req
 **
 ** Description      This function is called to process the write request
@@ -1100,6 +1134,13 @@ void gatts_process_write_req (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 handle,
     UINT16          conn_id;
 
     memset(&sr_data, 0, sizeof(tGATTS_DATA));
+
+    if(!gatts_write_attr_len_check(op_code, len))
+    {
+        GATT_TRACE_ERROR("Gatt write attr len check failed, sending error response" );
+        gatt_send_error_rsp (p_tcb, GATT_INVALID_PDU, op_code, handle, FALSE);
+        return;
+    }
 
     switch (op_code)
     {
