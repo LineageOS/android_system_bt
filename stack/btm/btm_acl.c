@@ -286,6 +286,7 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
 
 #endif
 #endif
+            p->switch_role_failed_attempts = 0;
             p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
 
             btm_pm_sm_alloc(xx);
@@ -674,6 +675,32 @@ tBTM_STATUS BTM_SwitchRole (BD_ADDR remote_bd_addr, UINT8 new_role, tBTM_CMPL_CB
         BTM_TRACE_DEBUG ("BTM_SwitchRole busy: %d",
                           p->switch_role_state);
         return(BTM_BUSY);
+    }
+
+    if (is_device_present(IOT_ROLE_CHANGE_BLACKLIST, remote_bd_addr))
+    {
+#if (defined(BTM_SAFE_REATTEMPT_ROLE_SWITCH) && BTM_SAFE_REATTEMPT_ROLE_SWITCH == TRUE)
+        p_dev_rec = btm_find_dev (remote_bd_addr);
+        if(!p_dev_rec || (p_dev_rec->switch_role_attempts >= BTM_MAX_BL_SW_ROLE_ATTEMPTS))
+        {
+            BTM_TRACE_DEBUG (" Below device is Blacklisted ....");
+            BTM_TRACE_DEBUG (" SwitchRole can't be initiated for 0x%02x%02x%02x%02x%02x%02x",
+                          remote_bd_addr[0], remote_bd_addr[1], remote_bd_addr[2],
+                          remote_bd_addr[3], remote_bd_addr[4], remote_bd_addr[5]);
+            return BTM_REPEATED_ATTEMPTS;
+        }
+        else
+        {
+            BTM_TRACE_DEBUG (" Device blacklisted, trying for role change again");
+            p_dev_rec->switch_role_attempts++;
+        }
+#else
+        BTM_TRACE_DEBUG (" Below device is Blacklisted ....");
+        BTM_TRACE_DEBUG (" SwitchRole can't be initiated for 0x%02x%02x%02x%02x%02x%02x",
+                remote_bd_addr[0], remote_bd_addr[1], remote_bd_addr[2],
+                remote_bd_addr[3], remote_bd_addr[4], remote_bd_addr[5]);
+        return BTM_REPEATED_ATTEMPTS;
+#endif
     }
 
     if ((status = BTM_ReadPowerMode(p->remote_addr, &pwr_mode)) != BTM_SUCCESS)
@@ -1479,6 +1506,62 @@ void btm_process_clk_off_comp_evt (UINT16 hci_handle, UINT16 clock_offset)
     /* Look up the connection by handle and set the current mode */
     if ((xx = btm_handle_to_acl_index(hci_handle)) < MAX_L2CAP_LINKS)
         btm_cb.acl_db[xx].clock_offset = clock_offset;
+}
+
+/*******************************************************************************
+**
+** Function         btm_blacklist_role_change_device
+**
+** Description      This function is used to blacklist the device if the role
+**                  switch fails for maximum number of times. It also removes
+**                  the device from black list if the role switch succedes.
+
+** Input Parms      bd_addr - remote BD addr
+**                  hci_status - role switch status
+**
+** Returns          void
+**
+*******************************************************************************/
+void btm_blacklist_role_change_device (BD_ADDR bd_addr, UINT8 hci_status)
+{
+    tACL_CONN  *p = btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
+    tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev (bd_addr);
+    UINT32 cod = 0;
+
+    if(!p || !p_dev_rec)
+    {
+        return;
+    }
+    cod = (p_dev_rec->dev_class[2]) | (p_dev_rec->dev_class[1] << 8) |
+          (p_dev_rec->dev_class[0] << 16);
+
+    /* check for carkits */
+    if ((hci_status != HCI_SUCCESS) &&
+        ((p->switch_role_state == BTM_ACL_SWKEY_STATE_SWITCHING) ||
+         (p->switch_role_state == BTM_ACL_SWKEY_STATE_IN_PROGRESS)) &&
+        ((cod & COD_AUDIO_DEVICE) == COD_AUDIO_DEVICE) &&
+        (!is_device_present(IOT_ROLE_CHANGE_BLACKLIST, bd_addr)))
+    {
+        p->switch_role_failed_attempts++;
+        if(p->switch_role_failed_attempts == BTM_MAX_SW_ROLE_FAILED_ATTEMPTS)
+        {
+            BTM_TRACE_WARNING ("btm_blacklist_device: BDA: %02x-%02x-%02x-%02x-%02x-%02x",
+                bd_addr[0], bd_addr[1], bd_addr[2], bd_addr[3], bd_addr[4], bd_addr[5]);
+            add_iot_device(IOT_DEV_CONF_FILE, IOT_ROLE_CHANGE_BLACKLIST,
+                            bd_addr, METHOD_BD);
+        }
+    }
+    else if(hci_status == HCI_SUCCESS)
+    {
+#if (defined(BTM_SAFE_REATTEMPT_ROLE_SWITCH) && BTM_SAFE_REATTEMPT_ROLE_SWITCH == TRUE)
+        if (is_device_present(IOT_ROLE_CHANGE_BLACKLIST, bd_addr))
+        {
+            remove_iot_device(IOT_DEV_CONF_FILE, IOT_ROLE_CHANGE_BLACKLIST,
+                            bd_addr, METHOD_BD);
+        }
+#endif
+        p->switch_role_failed_attempts = 0;
+    }
 }
 
 /*******************************************************************************
