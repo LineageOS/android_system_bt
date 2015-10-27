@@ -26,6 +26,7 @@
 
 #if defined(PAN_INCLUDED) && (PAN_INCLUDED == TRUE)
 
+#include "btu.h"
 #include "bta_api.h"
 #include "bta_sys.h"
 #include "gki.h"
@@ -33,6 +34,7 @@
 #include "bta_pan_api.h"
 #include "bta_pan_int.h"
 #include "bta_pan_co.h"
+#include "btm_api.h"
 #include <string.h>
 #include "utl.h"
 
@@ -40,6 +42,9 @@
 /* RX and TX data flow mask */
 #define BTA_PAN_RX_MASK              0x0F
 #define BTA_PAN_TX_MASK              0xF0
+
+/* Intermediate Idle timeout(s)  for TX/RX*/
+#define BTA_PAN_IDLE_TIMEOUT 1
 
 /*******************************************************************************
  **
@@ -55,7 +60,16 @@
 void bta_pan_pm_conn_busy(tBTA_PAN_SCB *p_scb)
 {
     if ((p_scb != NULL) && (p_scb->state != BTA_PAN_IDLE_ST))
-        bta_sys_busy(BTA_ID_PAN, p_scb->app_id, p_scb->bd_addr);
+    {
+        tBTM_PM_MODE    mode = BTM_PM_MD_ACTIVE;
+        if (BTM_ReadPowerMode(p_scb->bd_addr, &mode) == BTM_SUCCESS) {
+            if (mode == BTM_PM_MD_SNIFF) {
+                bta_sys_busy(BTA_ID_PAN, p_scb->app_id, p_scb->bd_addr);
+            } else {
+                APPL_TRACE_DEBUG("bta_pan_pm_conn_busy:power mode: %d", mode);
+            }
+        }
+    }
 }
 
 /*******************************************************************************
@@ -72,7 +86,16 @@ void bta_pan_pm_conn_busy(tBTA_PAN_SCB *p_scb)
 void bta_pan_pm_conn_idle(tBTA_PAN_SCB *p_scb)
 {
     if ((p_scb != NULL) && (p_scb->state != BTA_PAN_IDLE_ST))
-        bta_sys_idle(BTA_ID_PAN, p_scb->app_id, p_scb->bd_addr);
+    {
+        APPL_TRACE_DEBUG("bta_pan_pm_conn_idle, p_scb->is_idle_timer_started: %d",
+                p_scb->is_idle_timer_started);
+         if (p_scb->is_idle_timer_started == FALSE) {
+            // start intermediate idle timer for 1s
+            btu_start_timer(&p_scb->idle_tle, BTU_TTYPE_USER_FUNC,
+                    BTA_PAN_IDLE_TIMEOUT);
+            p_scb->is_idle_timer_started = TRUE;
+        }
+    }
 }
 
 /*******************************************************************************
@@ -442,6 +465,11 @@ void bta_pan_disable(void)
             while((p_buf = (BT_HDR *)GKI_dequeue(&p_scb->data_queue)) != NULL)
                 GKI_freebuf(p_buf);
 
+            if (p_scb->is_idle_timer_started == TRUE)
+            {
+                /* Ensure that timer is stopped */
+                btu_stop_timer (&p_scb->idle_tle);
+            }
             bta_pan_co_close(p_scb->handle, p_scb->app_id);
 
         }
@@ -763,6 +791,26 @@ void bta_pan_free_buf(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data)
 
     GKI_freebuf(p_data);
 
+}
+
+/*******************************************************************************
+**
+** Function         bta_pan_idle_timeout_handler
+**
+** Description      Bta pan specific idle timeout handler
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_pan_idle_timeout_handler(TIMER_LIST_ENT *tle) {
+    tBTA_PAN_SCB *p_scb = (tBTA_PAN_SCB *)tle->data;;
+    APPL_TRACE_DEBUG("%s p_scb: %p", __func__, p_scb);
+
+    if ((p_scb != NULL) && (p_scb->state != BTA_PAN_IDLE_ST)) {
+        p_scb->is_idle_timer_started = FALSE;
+        bta_sys_idle(BTA_ID_PAN, p_scb->app_id, p_scb->bd_addr);
+    }
 }
 
 #endif /* PAN_INCLUDED */
