@@ -5280,6 +5280,12 @@ void btm_sec_pin_code_request (UINT8 *p_bda)
         }
         else
         {
+            if ((p_dev_rec->sec_state == BTM_SEC_STATE_GETTING_NAME) &&
+                 (memcmp (p_dev_rec->bd_addr, p_bda, BD_ADDR_LEN) == 0))
+            {
+                BTM_TRACE_WARNING("RNR initiated by security module and in progress");
+                return;
+            }
             BTM_TRACE_EVENT ("btm_sec_pin_code_request going for remote name");
 
             /* We received PIN code request for the device with unknown name */
