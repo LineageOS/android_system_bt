@@ -125,3 +125,6 @@ const char *config_section_name(const config_section_node_t *iter);
 // and special formatting in the original file will be lost. Neither |config| nor
 // |filename| may be NULL.
 bool config_save(const config_t *config, const char *filename);
+
+// flush the cofig file immediately
+void config_flush (const char *filename);
