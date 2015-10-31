@@ -32,6 +32,9 @@
 #include <string.h>
 #include "bta_dm_int.h"
 #include "l2c_api.h"
+#include <hardware/bluetooth.h>
+
+#include "device/include/interop.h"
 
 /*****************************************************************************
 **  Constants
@@ -504,6 +507,7 @@ void bta_ag_rfc_close(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 *******************************************************************************/
 void bta_ag_rfc_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 {
+    int ag_conn_timeout = p_bta_ag_cfg->conn_tout;
     /* initialize AT feature variables */
     p_scb->clip_enabled = FALSE;
     p_scb->ccwa_enabled = FALSE;
@@ -526,10 +530,17 @@ void bta_ag_rfc_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 
     bta_ag_cback_open(p_scb, NULL, BTA_AG_SUCCESS);
 
+    if (interop_addr_match(INTEROP_INCREASE_AG_CONN_TIMEOUT,
+                            (const bt_bdaddr_t*)p_scb->peer_addr)) {
+        /* use higher value for ag conn timeout */
+        ag_conn_timeout = 20000;
+    }
+
+    APPL_TRACE_DEBUG ("bta_ag_rfc_open: ag_conn_timeout: %d", ag_conn_timeout);
     if (p_scb->conn_service == BTA_AG_HFP)
     {
         /* if hfp start timer for service level conn */
-        bta_sys_start_timer(&p_scb->act_timer, BTA_AG_SVC_TOUT_EVT, p_bta_ag_cfg->conn_tout);
+        bta_sys_start_timer(&p_scb->act_timer, BTA_AG_SVC_TOUT_EVT, ag_conn_timeout);
     }
     else
     {

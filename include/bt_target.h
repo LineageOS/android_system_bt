@@ -598,6 +598,11 @@
 #define BTM_MAX_VSE_CALLBACKS           3
 #endif
 
+/* Safe reattempt even after device is blacklisted for role switch */
+#ifndef BTM_SAFE_REATTEMPT_ROLE_SWITCH
+#define BTM_SAFE_REATTEMPT_ROLE_SWITCH TRUE
+#endif
+
 /******************************************
 **    Lisbon Features
 *******************************************/

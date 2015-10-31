@@ -47,6 +47,7 @@
 #define BTA_BUSY                3
 #define BTA_NO_RESOURCES        4
 #define BTA_WRONG_MODE          5
+#define BTA_ERR_KEY_MISSING     6
 
 typedef UINT8 tBTA_STATUS;
 
@@ -2399,6 +2400,17 @@ extern void BTA_VendorInit  (void);
 **
 *******************************************************************************/
 extern void BTA_VendorCleanup (void);
+
+/*******************************************************************************
+**
+** Function         BTA_StopBleTimers
+**
+** Description      This function stops all BLE timers
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_StopBleTimers (void);
 
 #endif
 

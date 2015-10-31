@@ -70,6 +70,12 @@
 #define BTE_DID_CONF_FILE "/etc/bluetooth/bt_did.conf"
 #endif
 
+#define VENDOR_PERSISTENCE_PATH    "/persist"
+#define VENDOR_BT_NV_FILE_NAME     ".bt_nv.bin"
+#define VENDOR_PAYLOAD_MAXLENGTH   (260)
+#define VENDOR_MAX_CMD_HDR_SIZE    (3)
+#define VENDOR_BD_ADDR_TYPE        (1)
+
 /************************************************************************************
 **  Local type definitions
 ************************************************************************************/
@@ -318,6 +324,61 @@ void btif_thread_post(thread_fn func, void *context) {
     thread_post(bt_jni_workqueue_thread, func, context);
 }
 
+static bool fetch_vendor_addr (bt_bdaddr_t *local_addr)
+{
+    int addr_fd, i;
+    int bytes_read = 0;
+    bool status = false;
+    unsigned char payload[VENDOR_PAYLOAD_MAXLENGTH];
+    unsigned char header[VENDOR_MAX_CMD_HDR_SIZE];
+    char filename[NAME_MAX];
+
+    snprintf(filename, NAME_MAX, "%s/%s",VENDOR_PERSISTENCE_PATH,VENDOR_BT_NV_FILE_NAME);
+    BTIF_TRACE_VERBOSE("Opening file '%s' for reading\n",filename);
+
+    /* Open the Vendor BD Addr file */
+    addr_fd = open(filename, O_RDONLY);
+    if(addr_fd < 0)
+    {
+        BTIF_TRACE_ERROR("Open of Vendor BD addr file failed\n");
+        return false;
+    }
+
+    while((bytes_read = read(addr_fd, header, VENDOR_MAX_CMD_HDR_SIZE)) &&
+            (bytes_read == 0 || bytes_read == VENDOR_MAX_CMD_HDR_SIZE))
+    {
+        if( VENDOR_BD_ADDR_TYPE == header[0])
+        {
+            if(read(addr_fd, local_addr, header[2]) == header[2])
+            {
+                BTIF_TRACE_WARNING("Read the Vendor BD addr from '%s'\n",filename);
+                status = true;
+            }
+        }
+        else
+        {
+            if(read(addr_fd, payload, header[2]) == header[2])
+            {
+                continue;
+            }
+        }
+    }
+
+    if (status) // swap bd address
+    {
+        char swap;
+
+        for (i = 0 ; i < 3; i++) {
+            swap = local_addr->address[i];
+            local_addr->address[i] = local_addr->address[5-i];
+            local_addr->address[5-i] = swap;
+        }
+    }
+
+    close(addr_fd);
+    return status;
+}
+
 static void btif_fetch_local_bdaddr(bt_bdaddr_t *local_addr)
 {
     char val[256];
@@ -368,6 +429,26 @@ static void btif_fetch_local_bdaddr(bt_bdaddr_t *local_addr)
         string_to_bdaddr(val, local_addr);
         valid_bda = TRUE;
         BTIF_TRACE_DEBUG("Got prior random BDA %02X:%02X:%02X:%02X:%02X:%02X",
+            local_addr->address[0], local_addr->address[1], local_addr->address[2],
+            local_addr->address[3], local_addr->address[4], local_addr->address[5]);
+    }
+
+    /* No factory BDADDR found. Look for BDA in ro.boot.btmacaddr */
+    if ((!valid_bda) && \
+        (property_get("ro.boot.btmacaddr", val, NULL)))
+    {
+        valid_bda = string_to_bdaddr(val, local_addr);
+        if (valid_bda) {
+            BTIF_TRACE_DEBUG("Got vendor BDA %02X:%02X:%02X:%02X:%02X:%02X",
+                local_addr->address[0], local_addr->address[1], local_addr->address[2],
+                local_addr->address[3], local_addr->address[4], local_addr->address[5]);
+        }
+    }
+
+    if (!valid_bda && fetch_vendor_addr(local_addr))
+    {
+        valid_bda = TRUE;
+        BTIF_TRACE_DEBUG("Got Vendor BDA %02X:%02X:%02X:%02X:%02X:%02X",
             local_addr->address[0], local_addr->address[1], local_addr->address[2],
             local_addr->address[3], local_addr->address[4], local_addr->address[5]);
     }
@@ -586,6 +667,7 @@ void btif_disable_bluetooth_evt(void)
 
 #if (BLE_INCLUDED == TRUE)
      BTA_VendorCleanup();
+     BTA_StopBleTimers();
 #endif
 
      bte_main_disable();

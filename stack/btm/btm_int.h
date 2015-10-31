@@ -101,6 +101,8 @@ typedef struct
 #define BTM_ACL_SWKEY_STATE_ENCRYPTION_ON       4
 #define BTM_ACL_SWKEY_STATE_IN_PROGRESS         5
     UINT8           switch_role_state;
+#define BTM_MAX_SW_ROLE_FAILED_ATTEMPTS         3
+    UINT8           switch_role_failed_attempts;
 
 #define BTM_ACL_ENCRYPT_STATE_IDLE              0
 #define BTM_ACL_ENCRYPT_STATE_ENCRYPT_OFF       1   /* encryption turning off */
@@ -551,6 +553,8 @@ typedef struct
     tBTM_BD_NAME    sec_bd_name;        /* User friendly name of the device. (may be truncated to save space in dev_rec table) */
     BD_FEATURES     features[HCI_EXT_FEATURES_PAGE_MAX + 1];           /* Features supported by the device */
     UINT8           num_read_pages;
+    UINT8           rnr_retry_cnt;
+    UINT8           cc_retry_cnt;
 
 #define BTM_SEC_STATE_IDLE               0
 #define BTM_SEC_STATE_AUTHENTICATING     1
@@ -623,6 +627,11 @@ typedef struct
 // btla-specific --
 #define BTM_SEC_NO_LAST_SERVICE_ID      0
     UINT8           last_author_service_id;         /* ID of last serviced authorized: Reset after each l2cap connection */
+
+#if (defined(BTM_SAFE_REATTEMPT_ROLE_SWITCH) && BTM_SAFE_REATTEMPT_ROLE_SWITCH == TRUE)
+#define BTM_MAX_BL_SW_ROLE_ATTEMPTS     1
+    UINT8           switch_role_attempts;
+#endif
 
 } tBTM_SEC_DEV_REC;
 
@@ -855,7 +864,9 @@ typedef struct
     tBTM_RMT_NAME_CALLBACK  *p_rmt_name_callback[BTM_SEC_MAX_RMT_NAME_CALLBACKS];
 
     tBTM_SEC_DEV_REC        *p_collided_dev_rec;
+    tBTM_SEC_DEV_REC        *p_cc_retry_dev_rec;
     TIMER_LIST_ENT           sec_collision_tle;
+    TIMER_LIST_ENT           sec_cc_retry_tle;
     UINT32                   collision_start_time;
     UINT32                   max_collision_delay;
     UINT32                   dev_rec_count;      /* Counter used for device record timestamp */
@@ -968,6 +979,7 @@ extern void         btm_read_link_quality_complete (UINT8 *p);
 extern tBTM_STATUS  btm_set_packet_types (tACL_CONN *p, UINT16 pkt_types);
 extern void         btm_process_clk_off_comp_evt (UINT16 hci_handle, UINT16 clock_offset);
 extern void         btm_acl_role_changed (UINT8 hci_status, BD_ADDR bd_addr, UINT8 new_role);
+extern void         btm_blacklist_role_change_device (BD_ADDR bd_addr, UINT8 hci_status);
 extern void         btm_acl_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable);
 extern UINT16       btm_get_acl_disc_reason_code (void);
 extern tBTM_STATUS  btm_remove_acl (BD_ADDR bd_addr, tBT_TRANSPORT transport);

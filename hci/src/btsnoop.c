@@ -203,6 +203,7 @@ static void update_logging() {
     logfile_fd = open(log_path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
     if (logfile_fd == INVALID_FD) {
       LOG_ERROR("%s unable to open '%s': %s", __func__, log_path, strerror(errno));
+      btsnoop_net_close();
       is_logging = false;
       return;
     }

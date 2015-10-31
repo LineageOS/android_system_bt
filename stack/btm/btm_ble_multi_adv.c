@@ -878,10 +878,20 @@ void btm_ble_multi_adv_init()
 *******************************************************************************/
 void btm_ble_multi_adv_cleanup(void)
 {
+    UINT8 inst_id;
 #ifdef WIPOWER_SUPPORTED
     is_wipower_adv = false;
     wipower_inst_id = BTM_BLE_MULTI_ADV_DEFAULT_STD;
 #endif
+    BTM_TRACE_EVENT("btm_ble_multi_adv_cleanup");
+    if((BTM_BleMaxMultiAdvInstanceCount() > 0) && (btm_multi_adv_cb.p_adv_inst != NULL))
+    {
+        BTM_TRACE_EVENT("Stopping multi adv rpa timers");
+        for(inst_id=0; inst_id < BTM_BleMaxMultiAdvInstanceCount(); inst_id++)
+        {
+            btu_stop_timer_oneshot(&btm_multi_adv_cb.p_adv_inst[inst_id].raddr_timer_ent);
+        }
+    }
     if (btm_multi_adv_cb.p_adv_inst)
         GKI_freebuf(btm_multi_adv_cb.p_adv_inst);
 

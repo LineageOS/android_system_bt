@@ -172,9 +172,7 @@ static int btif_get_conn_state_of_device(BD_ADDR address);
 static bt_status_t connect_int(bt_bdaddr_t *bd_addr, uint16_t uuid);
 static void btif_av_update_current_playing_device(int index);
 static void btif_av_check_rc_connection_priority(void *p_data);
-#ifdef AVK_BACKPORT
-void btif_av_request_audio_focus( BOOLEAN enable);
-#endif
+
 static const btif_sm_handler_t btif_av_state_handlers[] =
 {
     btif_av_state_idle_handler,
@@ -257,6 +255,9 @@ const char *dump_av_sm_event_name(btif_av_sm_event_t event)
         CASE_RETURN_STR(BTIF_AV_STOP_STREAM_REQ_EVT)
         CASE_RETURN_STR(BTIF_AV_SUSPEND_STREAM_REQ_EVT)
         CASE_RETURN_STR(BTIF_AV_SINK_CONFIG_REQ_EVT)
+#ifdef USE_AUDIO_TRACK
+        CASE_RETURN_STR(BTIF_AV_SINK_FOCUS_REQ_EVT)
+#endif
         default: return "UNKNOWN_EVENT";
    }
 }
@@ -1117,12 +1118,13 @@ static BOOLEAN btif_av_state_opened_handler(btif_sm_event_t event, void *p_data,
                 return FALSE;
             }
 
-#ifndef AVK_BACKPORT
             if (btif_av_cb[index].peer_sep == AVDT_TSEP_SRC)
             {
                 btif_a2dp_set_rx_flush(FALSE); /*  remove flush state, ready for streaming*/
-            }
+#ifdef USE_AUDIO_TRACK
+                audio_focus_status(BTIF_MEIDA_FOCUS_READY);
 #endif
+            }
 
             /* change state to started, send acknowledgement if start is pending */
             if (btif_av_cb[index].flags & BTIF_AV_FLAG_PENDING_START) {
@@ -1251,12 +1253,6 @@ static BOOLEAN btif_av_state_started_handler(btif_sm_event_t event, void *p_data
             /* increase the a2dp consumer task priority temporarily when start
             ** audio playing, to avoid overflow the audio packet queue. */
             adjust_priority_a2dp(TRUE);
-#ifdef AVK_BACKPORT
-            if (btif_av_cb[index].peer_sep == AVDT_TSEP_SRC)
-            {
-                btif_av_request_audio_focus(TRUE);
-            }
-#endif
             //Clear Dual Handoff for all SCBs
             for (i = 0; i < btif_max_av_clients; i++)
             {
@@ -1419,6 +1415,13 @@ static BOOLEAN btif_av_state_started_handler(btif_sm_event_t event, void *p_data
             /* suspend completed and state changed, clear pending status */
             btif_av_cb[index].flags &= ~BTIF_AV_FLAG_LOCAL_SUSPEND_PENDING;
             break;
+
+#ifdef USE_AUDIO_TRACK
+            case BTIF_AV_SINK_FOCUS_REQ_EVT:
+                HAL_CBACK(bt_av_sink_callbacks, audio_focus_request_cb,
+                                                   &(btif_av_cb[index].peer_bda));
+            break;
+#endif
 
         case BTA_AV_STOP_EVT:
 
@@ -2046,7 +2049,6 @@ bt_status_t btif_av_init(int service_id)
         if (!btif_a2dp_start_media_task())
             return BT_STATUS_FAIL;
         btif_av_cb[0].service = service_id;
-        btif_enable_service(service_id);
 
         /* Also initialize the AV state machine */
         for (i = 0; i < btif_max_av_clients; i++)
@@ -2054,6 +2056,8 @@ bt_status_t btif_av_init(int service_id)
             btif_av_cb[i].sm_handle = btif_sm_init((const btif_sm_handler_t*)btif_av_state_handlers,
                                                     BTIF_AV_STATE_IDLE, i);
         }
+
+        btif_enable_service(service_id);
         btif_a2dp_on_init();
     }
 
@@ -2139,38 +2143,7 @@ static bt_status_t init_sink(btav_callbacks_t* callbacks, int max,
     return status;
 }
 
-#ifdef AVK_BACKPORT
-/*******************************************************************************
-**
-** Function         suspend_sink
-**
-** Description      Suspends stream  in case of A2DP Sink
-**
-** Returns          None
-**
-*******************************************************************************/
-void suspend_sink()
-{
-    BTIF_TRACE_DEBUG(" suspend Stream Suspend called");
-    btif_dispatch_sm_event(BTIF_AV_SUSPEND_STREAM_REQ_EVT, NULL, 0);
-}
-
-
-/*******************************************************************************
-**
-** Function         resume_sink
-**
-** Description      Resumes stream  in case of A2DP Sink
-**
-** Returns          None
-**
-*******************************************************************************/
-void resume_sink()
-{
-    BTIF_TRACE_DEBUG(" resume Stream called");
-    btif_dispatch_sm_event(BTIF_AV_START_STREAM_REQ_EVT, NULL, 0);
-}
-
+#ifdef USE_AUDIO_TRACK
 /*******************************************************************************
 **
 ** Function         audio_focus_status
@@ -2180,38 +2153,24 @@ void resume_sink()
 ** Returns          None
 **
 *******************************************************************************/
-static void audio_focus_status(int state)
+void audio_focus_status(int state)
 {
-    BTIF_TRACE_DEBUG(" Audio focus Granted  %d ",state);
+    BTIF_TRACE_DEBUG(" audio_focus_status  %d ",state);
     btif_a2dp_set_audio_focus_state(state);
 }
+
 /*******************************************************************************
 **
-** Function         btif_av_request_audio_focus
+** Function         btif_queue_focus_rquest
 **
-** Description      Usend request to gain audio focus
+** Description      This is used to move context to btif and queue audio_focus_request
 **
-** Returns          void
+** Returns          none
 **
 *******************************************************************************/
-void btif_av_request_audio_focus( BOOLEAN enable)
+void btif_queue_focus_rquest(void)
 {
-    int i;
-    /* If we are in started state, suspend shld not have been initiated */
-    for (i = 0; i < btif_max_av_clients; i++)
-    {
-        if ((btif_av_cb[i].flags & BTIF_AV_FLAG_REMOTE_SUSPEND )||
-            (btif_av_cb[i].flags & BTIF_AV_FLAG_LOCAL_SUSPEND_PENDING))
-        {
-            return;
-        }
-    }
-
-    if (enable)
-    {
-        HAL_CBACK(bt_av_sink_callbacks, audio_focus_request_cb,
-          1, &(btif_av_cb[0].peer_bda));
-    }
+    btif_transfer_context(btif_av_handle_event, BTIF_AV_SINK_FOCUS_REQ_EVT, NULL, 0, NULL);
 }
 #endif
 
@@ -2513,6 +2472,10 @@ static const btav_interface_t bt_av_sink_interface = {
     sink_connect_src,
     disconnect,
     cleanup_sink,
+    NULL,
+#ifdef USE_AUDIO_TRACK
+    audio_focus_status,
+#endif
 };
 
 /*******************************************************************************

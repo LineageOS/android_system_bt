@@ -630,6 +630,25 @@ void btm_ble_refresh_local_resolvable_private_addr(BD_ADDR pseudo_addr,
     }
 #endif
 }
+/*******************************************************************************
+**
+** Function         btm_ble_stop_local_rpa_timer
+**
+** Description      This function stops LE central rpa timer.
+**
+** Returns          void
+**
+*******************************************************************************/
+void btm_ble_stop_local_rpa_timer ()
+{
+    tBTM_LE_RANDOM_CB *p_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
+    BTM_TRACE_EVENT ("btm_ble_stop_local_rpa_timer");
+    if(p_cb)
+    {
+        BTM_TRACE_EVENT("stopping timer for local rpa");
+        btu_stop_timer_oneshot(&p_cb->raddr_timer_ent);
+    }
+}
 #endif
 
 

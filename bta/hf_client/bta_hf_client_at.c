@@ -282,12 +282,14 @@ static void bta_hf_client_handle_ok()
     {
         case BTA_HF_CLIENT_AT_BIA:
         case BTA_HF_CLIENT_AT_BCC:
+        case BTA_HF_CLIENT_AT_CGMI:
+        case BTA_HF_CLIENT_AT_CGMM:
             break;
         case BTA_HF_CLIENT_AT_BCS:
             bta_hf_client_start_at_hold_timer();
             bta_hf_client_cb.scb.at_cb.current_cmd = BTA_HF_CLIENT_AT_NONE;
             return;
-        case BTA_HF_CLIENT_AT_CLIP: //last cmd is post slc seq
+        case BTA_HF_CLIENT_AT_CLIP:
             if (bta_hf_client_cb.scb.send_at_reply == FALSE)
             {
                 bta_hf_client_cb.scb.send_at_reply = TRUE;
@@ -296,7 +298,7 @@ static void bta_hf_client_handle_ok()
         case BTA_HF_CLIENT_AT_CGMI_QUERY:
             bta_hf_client_send_at_cgmi(FALSE);
             break;
-        case BTA_HF_CLIENT_AT_CGMM_QUERY:
+        case BTA_HF_CLIENT_AT_CGMM_QUERY:  //last cmd in post slc seq
             bta_hf_client_send_at_cgmm(FALSE);
             break;
         case BTA_HF_CLIENT_AT_NONE:
@@ -330,12 +332,13 @@ static void bta_hf_client_handle_error(tBTA_HF_CLIENT_AT_RESULT_TYPE type, UINT1
     switch(bta_hf_client_cb.scb.at_cb.current_cmd)
     {
         case BTA_HF_CLIENT_AT_BIA:
+        case BTA_HF_CLIENT_AT_CGMI_QUERY:
             break;
         case BTA_HF_CLIENT_AT_BCC:
         case BTA_HF_CLIENT_AT_BCS:
             bta_hf_client_cback_sco(BTA_HF_CLIENT_AUDIO_CLOSE_EVT);
             break;
-        case BTA_HF_CLIENT_AT_CLIP: //last cmd is post slc seq
+        case BTA_HF_CLIENT_AT_CGMM_QUERY: //last cmd in post slc seq
             if (bta_hf_client_cb.scb.send_at_reply == FALSE)
             {
                 bta_hf_client_cb.scb.send_at_reply = TRUE;

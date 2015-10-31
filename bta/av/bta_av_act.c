@@ -1902,6 +1902,7 @@ tBTA_AV_FEAT bta_av_check_peer_features (UINT16 service_uuid)
     tSDP_DISC_ATTR      *p_attr;
     UINT16              peer_rc_version=0; /*Assuming Default peer version as 1.3*/
     UINT16              categories = 0;
+    char a2dp_role[PROPERTY_VALUE_MAX] = "false";
 
     APPL_TRACE_DEBUG("bta_av_check_peer_features service_uuid:x%x", service_uuid);
     /* loop through all records we found */
@@ -1951,22 +1952,25 @@ tBTA_AV_FEAT bta_av_check_peer_features (UINT16 service_uuid)
                     }
                 }
             }
-            if ((peer_rc_version >= AVRC_REV_1_4) && (peer_features & BTA_AV_FEAT_BROWSE))
-            {
-                BOOLEAN ret = FALSE;
-                APPL_TRACE_DEBUG("peer version to update: 0x%x", peer_rc_version);
-                ret = bta_av_check_store_avrc_tg_version(p_rec->remote_bd_addr, peer_rc_version);
-                if (ret == TRUE)
+            property_get("persist.service.bt.a2dp.sink", a2dp_role, "false");
+            if (!strncmp("false", a2dp_role, 5)) {
+                if ((peer_rc_version >= AVRC_REV_1_4) && (peer_features & BTA_AV_FEAT_BROWSE))
                 {
-                    peer_features |= BTA_AV_FEAT_AVRC_UI_UPDATE;
-                    APPL_TRACE_DEBUG("update UI on peer repair request: 0x%x",
-                                    peer_features);
+                    BOOLEAN ret = FALSE;
+                    APPL_TRACE_DEBUG("peer version to update: 0x%x", peer_rc_version);
+                    ret = bta_av_check_store_avrc_tg_version(p_rec->remote_bd_addr, peer_rc_version);
+                    if (ret == TRUE)
+                    {
+                        peer_features |= BTA_AV_FEAT_AVRC_UI_UPDATE;
+                        APPL_TRACE_DEBUG("update UI on peer repair request: 0x%x",
+                                         peer_features);
+                    }
                 }
-            }
-            else
-            {
-                APPL_TRACE_DEBUG("No need to store peer version: 0x%x", peer_rc_version);
-                /*No need to update peer version as we send the default version as 1.3*/
+                else
+                {
+                    APPL_TRACE_DEBUG("No need to store peer version: 0x%x", peer_rc_version);
+                    /*No need to update peer version as we send the default version as 1.3*/
+                }
             }
         }
     }

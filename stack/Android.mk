@@ -164,6 +164,7 @@ LOCAL_SRC_FILES:= \
     ./l2cap/l2c_le_csm.c
 
 LOCAL_MODULE := libbt-brcm_stack
+LOCAL_CLANG := false
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_STATIC_LIBRARIES := libbt-hci

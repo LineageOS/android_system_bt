@@ -43,6 +43,7 @@ LOCAL_SRC_FILES += \
     ../btif/src/btif_media_task.c \
     ../btif/src/btif_pan.c \
     ../btif/src/btif_profile_queue.c \
+    ../btif/src/bluetoothTrack.cpp \
     ../btif/src/btif_rc.c \
     ../btif/src/btif_sm.c \
     ../btif/src/btif_sock.c \
@@ -147,7 +148,9 @@ LOCAL_SHARED_LIBRARIES := \
     libdl \
     liblog \
     libpower \
-    libz
+    libz \
+    libmedia \
+    libutils
 
 LOCAL_STATIC_LIBRARIES := \
     libtinyxml2 \
@@ -164,6 +167,7 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
     libosi
 
 LOCAL_MODULE := bluetooth.default
+LOCAL_CLANG := false
 LOCAL_MODULE_RELATIVE_PATH := hw
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_CLASS := SHARED_LIBRARIES

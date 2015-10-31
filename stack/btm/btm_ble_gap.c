@@ -3474,5 +3474,26 @@ BOOLEAN btm_ble_topology_check(tBTM_BLE_STATE_MASK request_state_mask)
     return rt;
 }
 
+/*******************************************************************************
+**
+** Function         btm_ble_stop_gap_timers
+**
+** Description      This function stops all BLE gap timers.
+**
+** Returns          void
+**
+*******************************************************************************/
+void btm_ble_stop_gap_timers(void)
+{
+    tBTM_BLE_CB *p_ble_cb = &btm_cb.ble_ctr_cb;
+    TIMER_LIST_ENT *p_obs_timer = &p_ble_cb->obs_timer_ent;
+    TIMER_LIST_ENT *p_inq_timer = &p_ble_cb->inq_var.inq_timer_ent;
+    TIMER_LIST_ENT *p_fast_adv_timer = &p_ble_cb->inq_var.fast_adv_timer;
+
+    BTM_TRACE_DEBUG("btm_ble_stop_gap_timers");
+    btu_stop_timer(p_obs_timer);
+    btu_stop_timer(p_inq_timer);
+    btu_stop_timer(p_fast_adv_timer);
+}
 
 #endif  /* BLE_INCLUDED */

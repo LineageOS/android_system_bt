@@ -47,6 +47,7 @@ typedef enum {
     BTIF_AV_SUSPEND_STREAM_REQ_EVT,
     BTIF_AV_SINK_CONFIG_REQ_EVT,
     BTIF_AV_CLEANUP_REQ_EVT,
+    BTIF_AV_SINK_FOCUS_REQ_EVT,
 } btif_av_sm_event_t;
 
 
@@ -154,6 +155,20 @@ BOOLEAN btif_av_is_connected(void);
 *******************************************************************************/
 
 BOOLEAN btif_av_is_peer_edr(void);
+
+#ifdef USE_AUDIO_TRACK
+/*******************************************************************************
+**
+** Function         btif_queue_focus_rquest
+**
+** Description      This is used to move context to btif and
+**                  queue audio_focus_request
+**
+** Returns          none
+**
+*******************************************************************************/
+void btif_queue_focus_rquest(void);
+#endif
 
 /******************************************************************************
 **

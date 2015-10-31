@@ -99,6 +99,21 @@ typedef struct
 } tBTIF_MEDIA_SINK_CFG_UPDATE;
 #endif
 
+#ifdef USE_AUDIO_TRACK
+typedef enum {
+        BTIF_MEDIA_FOCUS_IDLE = 0,
+        BTIF_MEIDA_FOCUS_READY,
+        BTIF_MEIDA_FOCUS_REQUESTED,
+        BTIF_MEIDA_FOCUS_GRANTED
+}btif_media_audio_focus_state;
+
+typedef struct
+{
+        BT_HDR hdr;
+        UINT8 focus_state;
+} tBTIF_MEDIA_SINK_FOCUS_UPDATE;
+#endif
+
 /*******************************************************************************
  **  Public functions
  *******************************************************************************/
@@ -278,5 +293,7 @@ void btif_reset_decoder(UINT8 *p_av);
 int btif_a2dp_get_track_frequency(UINT8 frequency);
 int btif_a2dp_get_track_channel_count(UINT8 channeltype);
 void btif_a2dp_set_peer_sep(UINT8 sep);
-
+#ifdef USE_AUDIO_TRACK
+void btif_a2dp_set_audio_focus_state(btif_media_audio_focus_state state);
+#endif
 #endif

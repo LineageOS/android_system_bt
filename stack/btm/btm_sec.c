@@ -51,6 +51,8 @@
 BOOLEAN (APPL_AUTH_WRITE_EXCEPTION)(BD_ADDR bd_addr);
 #endif
 
+#define RNR_MAX_RETRY_ATTEMPTS 1
+#define CC_MAX_RETRY_ATTEMPTS 1
 
 /********************************************************************************
 **              L O C A L    F U N C T I O N     P R O T O T Y P E S            *
@@ -3508,6 +3510,22 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
                 return;
             }
 
+            /* Handle RNR with retry mechanism */
+            if((status == HCI_ERR_PAGE_TIMEOUT) && (p_dev_rec->rnr_retry_cnt < RNR_MAX_RETRY_ATTEMPTS))
+            {
+                BTM_TRACE_WARNING ("btm_sec_rmt_name_request_complete() Retrying RNR due to page timeout");
+                if ((BTM_ReadRemoteDeviceName(p_bd_addr, NULL, BT_TRANSPORT_BR_EDR)) == BTM_CMD_STARTED)
+                {
+                    p_dev_rec->rnr_retry_cnt++;
+                    return;
+                }
+            }
+            else
+            {
+                BTM_TRACE_EVENT ("btm_sec_rmt_name_request_complete() reset RNR retry count ");
+                p_dev_rec->rnr_retry_cnt = 0;
+            }
+
             if (status != HCI_SUCCESS)
             {
                 btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE);
@@ -4608,11 +4626,8 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
             p_dev_rec->sec_flags &= ~ (BTM_SEC_LE_LINK_KEY_KNOWN);
             p_dev_rec->ble.key_type = BTM_LE_KEY_NONE;
         }
-        else if (status == HCI_ERR_KEY_MISSING)
-        {
-            btm_sec_disconnect(handle, status);
-        }
-        btm_ble_link_encrypted(p_dev_rec->ble.pseudo_addr, encr_enable);
+        BTM_TRACE_DEBUG ("%s encryption result = %d", __func__, status);
+        btm_ble_link_encrypted(p_dev_rec->bd_addr, encr_enable, status);
         return;
     }
     else
@@ -4734,6 +4749,40 @@ static void btm_sec_connect_after_reject_timeout (TIMER_LIST_ENT *p_tle)
         if (btm_cb.api.p_auth_complete_callback)
         (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr,  p_dev_rec->dev_class,
                                                 p_dev_rec->sec_bd_name, HCI_ERR_MEMORY_FULL);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         btm_sec_connect_after_cc_page_tout
+**
+** Description      This function is called to retry the connection if the
+**                  create connection fails as part of pairing procedure.
+**
+** Returns          Pointer to the TLE struct
+**
+*******************************************************************************/
+static void btm_sec_connect_after_cc_page_tout (TIMER_LIST_ENT *p_tle)
+{
+    tBTM_SEC_DEV_REC *p_dev_rec = btm_cb.p_cc_retry_dev_rec;
+    UNUSED(p_tle);
+
+    BTM_TRACE_EVENT ("btm_sec_connect_after_cc_page_tout()");
+    btm_cb.sec_cc_retry_tle.param = 0;
+    btm_cb.p_cc_retry_dev_rec = 0;
+
+    if ((btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
+        (memcmp (btm_cb.pairing_bda, p_dev_rec->bd_addr, BD_ADDR_LEN) == 0) &&
+         (btm_sec_dd_create_conn(p_dev_rec) != BTM_CMD_STARTED))
+    {
+        BTM_TRACE_WARNING ("Security Manager: btm_sec_connect_after_cc_page_tout: failed to start connection");
+
+        btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE);
+
+        if (btm_cb.api.p_auth_complete_callback)
+        (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr,  p_dev_rec->dev_class,
+                                                p_dev_rec->sec_bd_name, HCI_ERR_MEMORY_FULL);
+        btm_sec_dev_rec_cback_event (p_dev_rec, BTM_DEVICE_TIMEOUT, FALSE);
     }
 }
 
@@ -4887,12 +4936,28 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
 
             return;
         }
+        /* retry again */
+        else if((status == HCI_ERR_PAGE_TIMEOUT) &&
+                (btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD))
+        {
+            /* Handle CC with retry mechanism */
+            if(p_dev_rec->cc_retry_cnt < CC_MAX_RETRY_ATTEMPTS)
+            {
+                /* Start timer with 0 to initiate connection with new LCB */
+                btm_cb.p_cc_retry_dev_rec = p_dev_rec;
+                btm_cb.sec_cc_retry_tle.param = (UINT32) btm_sec_connect_after_cc_page_tout;
+                btu_start_timer (&btm_cb.sec_cc_retry_tle, BTU_TTYPE_USER_FUNC, 0);
+                p_dev_rec->cc_retry_cnt++;
+                return;
+            }
+        }
         /* wait for incoming connection without resetting pairing state */
         else if (status == HCI_ERR_CONNECTION_EXISTS)
         {
             BTM_TRACE_WARNING ("Security Manager: btm_sec_connected: Wait for incoming connection");
             return;
         }
+        p_dev_rec->cc_retry_cnt = 0;
 
         is_pairing_device = TRUE;
     }
@@ -5187,7 +5252,10 @@ void btm_sec_disconnected (UINT16 handle, UINT8 reason)
     {
         p_dev_rec->p_callback = NULL; /* when the peer device time out the authentication before
                                          we do, this call back must be reset here */
-        (*p_callback) (p_dev_rec->bd_addr, transport, p_dev_rec->p_ref_data, BTM_ERR_PROCESSING);
+        if (reason == HCI_ERR_KEY_MISSING)
+            (*p_callback) (p_dev_rec->bd_addr, transport, p_dev_rec->p_ref_data, BTM_ERR_KEY_MISSING);
+        else
+            (*p_callback) (p_dev_rec->bd_addr, transport, p_dev_rec->p_ref_data, BTM_ERR_PROCESSING);
     }
 
     BTM_TRACE_EVENT("%s after update sec_flags=0x%x", __func__, p_dev_rec->sec_flags);

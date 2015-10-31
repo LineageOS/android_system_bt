@@ -385,7 +385,7 @@ extern UINT8 btm_proc_smp_cback(tSMP_EVT event, BD_ADDR bd_addr, tSMP_EVT_DATA *
 extern tBTM_STATUS btm_ble_set_encryption (BD_ADDR bd_addr, void *p_ref_data, UINT8 link_role);
 extern void btm_ble_ltk_request(UINT16 handle, UINT8 rand[8], UINT16 ediv);
 extern tBTM_STATUS btm_ble_start_encrypt(BD_ADDR bda, BOOLEAN use_stk, BT_OCTET16 stk);
-extern void btm_ble_link_encrypted(BD_ADDR bd_addr, UINT8 encr_enable);
+extern void btm_ble_link_encrypted(BD_ADDR bd_addr, UINT8 encr_enable, UINT8 status);
 #endif
 
 /* LE device management functions */
@@ -469,6 +469,8 @@ extern void btm_ble_adv_filter_cleanup(void);
 extern BOOLEAN btm_ble_topology_check(tBTM_BLE_STATE_MASK request);
 extern BOOLEAN btm_ble_clear_topology_mask(tBTM_BLE_STATE_MASK request_state);
 extern BOOLEAN btm_ble_set_topology_mask(tBTM_BLE_STATE_MASK request_state);
+extern void btm_ble_stop_local_rpa_timer(void);
+extern void btm_ble_stop_gap_timers(void);
 
 #if BTM_BLE_CONFORMANCE_TESTING == TRUE
 extern void btm_ble_set_no_disc_if_pair_fail (BOOLEAN disble_disc);

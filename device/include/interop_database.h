@@ -54,6 +54,8 @@ static const interop_addr_t interop_addr_database[] = {
 
   // Dialog Keyboard/Mouse
   {{0x80, 0xea, 0xCa,       0,0,0}, 3, INTEROP_DISABLE_LE_SECURE_CONNECTIONS},
+  // Xiaomi Mi Band
+  {{0x88, 0x0f, 0x10,       0,0,0}, 3, INTEROP_DISABLE_LE_SECURE_CONNECTIONS},
 
   // BMW car kits (Harman/Becker)
   {{0x9c, 0xdf, 0x03,       0,0,0}, 3, INTEROP_AUTO_RETRY_PAIRING},
@@ -73,6 +75,9 @@ static const interop_addr_t interop_addr_database[] = {
 
   // Targus BT Laser Notebook Mouse
   {{0x00, 0x12, 0xA1,       0,0,0}, 3, INTEROP_DISABLE_AUTH_FOR_HID_POINTING},
+
+  // Fiat Carkit
+  {{0x00, 0x14, 0x09,       0,0,0}, 3, INTEROP_INCREASE_AG_CONN_TIMEOUT},
 };
 
 static const interop_name_t interop_name_database[] = {
