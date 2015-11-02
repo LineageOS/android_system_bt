@@ -348,6 +348,7 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
     UINT16 policy_setting;
     UINT8 *p = NULL;
     tBTA_DM_PEER_DEVICE *p_dev;
+    tBTA_DM_PM_REQ  pm_req = BTA_DM_PM_NEW_REQ;
 
 #if (BTM_SSR_INCLUDED == TRUE)
     int               index = BTA_DM_PM_SSR0;
@@ -459,6 +460,11 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
 
     /* stop timer */
     bta_dm_pm_stop_timer(peer_addr);
+    if (bta_dm_conn_srvcs.count > 0) {
+        pm_req = BTA_DM_PM_RESTART;
+        APPL_TRACE_DEBUG("bta_dm_pm_stop_timer for current service, restart other "
+            "service timers: count = %d", bta_dm_conn_srvcs.count);
+    }
 
     if(p_dev)
     {
@@ -541,7 +547,7 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
     }
 #endif
 
-    bta_dm_pm_set_mode(peer_addr, BTA_DM_PM_NO_ACTION, BTA_DM_PM_NEW_REQ);
+    bta_dm_pm_set_mode(peer_addr, BTA_DM_PM_NO_ACTION, pm_req);
 }
 
 
