@@ -459,7 +459,7 @@ BOOLEAN SDP_FindServiceUUIDInRec_128bit(tSDP_DISC_REC *p_rec, tBT_UUID * p_uuid)
             {
                 p_uuid->len = LEN_UUID_128;
                 for (uint8_t i = 0; i != LEN_UUID_128; ++i)
-                    p_uuid->uu.uuid128[i] = p_sattr->attr_value.v.array[LEN_UUID_128-i-1];
+                    p_uuid->uu.uuid128[i] = p_attr->attr_value.v.array[LEN_UUID_128-i-1];
                 return(TRUE);
             }
         }
