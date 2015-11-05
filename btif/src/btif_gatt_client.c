@@ -458,8 +458,6 @@ static void btif_gattc_update_properties ( btif_gattc_cb_t *p_btif_cb )
         btif_dm_update_ble_remote_properties( p_btif_cb->bd_addr.address,   bdname.name,
                                                p_btif_cb->device_type);
     }
-
-    btif_storage_set_remote_addr_type( &p_btif_cb->bd_addr, p_btif_cb->addr_type);
 }
 
 static void btif_gattc_upstreams_evt(uint16_t event, char* p_param)
@@ -643,6 +641,8 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param)
              BTIF_STORAGE_FILL_PROPERTY(&properties,
                         BT_PROPERTY_TYPE_OF_DEVICE, sizeof(dev_type), &dev_type);
              btif_storage_set_remote_device_property(&(p_btif_cb->bd_addr), &properties);
+
+            btif_storage_set_remote_addr_type( &p_btif_cb->bd_addr, p_btif_cb->addr_type);
 
             HAL_CBACK(bt_gatt_callbacks, client->scan_result_cb,
                       &p_btif_cb->bd_addr, p_btif_cb->rssi, p_btif_cb->value);
