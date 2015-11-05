@@ -27,9 +27,14 @@
 #include "osi/include/osi.h"
 #include "osi/include/log.h"
 #include "osi/include/reactor.h"
+#include "osi/include/thread.h"
 #include "vendor.h"
 
 #define HCI_HAL_SERIAL_BUFFER_SIZE 1026
+
+// Increased HCI thread priority to keep up with the audio sub-system
+// when streaming time sensitive data (A2DP).
+#define HCI_THREAD_PRIORITY -19
 
 // Our interface and modules we import
 static const hci_hal_t interface;
@@ -82,6 +87,10 @@ static bool hal_open() {
 
   stream_has_interpretation = false;
   eager_reader_register(uart_stream, thread_get_reactor(thread), event_uart_has_bytes, NULL);
+
+  // Raise thread priorities to keep up with audio
+  thread_set_priority(thread, HCI_THREAD_PRIORITY);
+  thread_set_priority(eager_reader_get_read_thread(uart_stream), HCI_THREAD_PRIORITY);
 
   return true;
 

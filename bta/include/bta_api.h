@@ -187,6 +187,7 @@ typedef UINT16 tBTA_SEC;
 /* Ignore for Discoverable, Connectable only for LE modes */
 #define BTA_DM_LE_IGNORE           0xFF00
 
+#define BTA_APP_ID_PAN_MULTI    0xFE    /* app id for pan multiple connection */
 #define BTA_ALL_APP_ID          0xFF
 
 /* Discoverable Modes */
@@ -254,6 +255,7 @@ typedef UINT8 tBTA_AUTH_RESP;
 #define BTA_ANY_ROLE          0x00
 #define BTA_MASTER_ROLE_PREF  0x01
 #define BTA_MASTER_ROLE_ONLY  0x02
+#define BTA_SLAVE_ROLE_ONLY   0x03     /* Used for PANU only, skip role switch to master */
 
 typedef UINT8 tBTA_PREF_ROLES;
 

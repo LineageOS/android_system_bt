@@ -131,6 +131,7 @@ static BOOLEAN ssr_triggered = FALSE;
 ************************************************************************************/
 static void btif_jni_associate(UNUSED_ATTR uint16_t event, UNUSED_ATTR char *p_param);
 static void btif_jni_disassociate(UNUSED_ATTR uint16_t event, UNUSED_ATTR char *p_param);
+static bool btif_fetch_property(const char *key, bt_bdaddr_t *addr);
 
 /* sends message to btif task */
 static void btif_sendmsg(void *p_msg);
@@ -379,9 +380,22 @@ static bool fetch_vendor_addr (bt_bdaddr_t *local_addr)
     return status;
 }
 
+static bool btif_fetch_property(const char *key, bt_bdaddr_t *addr) {
+    char val[PROPERTY_VALUE_MAX] = {0};
+
+    if (property_get(key, val, NULL)) {
+        if (string_to_bdaddr(val, addr)) {
+            BTIF_TRACE_DEBUG("%s: Got BDA %s", __func__, val);
+            return TRUE;
+        }
+        BTIF_TRACE_DEBUG("%s: System Property did not contain valid bdaddr", __func__);
+    }
+    return FALSE;
+}
+
 static void btif_fetch_local_bdaddr(bt_bdaddr_t *local_addr)
 {
-    char val[256];
+    char val[PROPERTY_VALUE_MAX] = {0};
     uint8_t valid_bda = FALSE;
     int val_size = 0;
     const uint8_t null_bdaddr[BD_ADDR_LEN] = {0,0,0,0,0,0};
@@ -391,22 +405,19 @@ static void btif_fetch_local_bdaddr(bt_bdaddr_t *local_addr)
     {
         int addr_fd;
 
-        BTIF_TRACE_DEBUG("local bdaddr is stored in %s", val);
+        BTIF_TRACE_DEBUG("%s, local bdaddr is stored in %s", __func__, val);
 
         if ((addr_fd = open(val, O_RDONLY)) != -1)
         {
             memset(val, 0, sizeof(val));
             read(addr_fd, val, FACTORY_BT_BDADDR_STORAGE_LEN);
-            string_to_bdaddr(val, local_addr);
             /* If this is not a reserved/special bda, then use it */
-            if (memcmp(local_addr->address, null_bdaddr, BD_ADDR_LEN) != 0)
+            if ((string_to_bdaddr(val, local_addr)) &&
+                (memcmp(local_addr->address, null_bdaddr, BD_ADDR_LEN) != 0))
             {
                 valid_bda = TRUE;
-                BTIF_TRACE_DEBUG("Got Factory BDA %02X:%02X:%02X:%02X:%02X:%02X",
-                    local_addr->address[0], local_addr->address[1], local_addr->address[2],
-                    local_addr->address[3], local_addr->address[4], local_addr->address[5]);
+                BTIF_TRACE_DEBUG("%s: Got Factory BDA %s", __func__, val);
             }
-
             close(addr_fd);
         }
     }
@@ -423,14 +434,13 @@ static void btif_fetch_local_bdaddr(bt_bdaddr_t *local_addr)
      }
 
     /* No factory BDADDR found. Look for previously generated random BDA */
-    if ((!valid_bda) && \
-        (property_get(PERSIST_BDADDR_PROPERTY, val, NULL)))
-    {
-        string_to_bdaddr(val, local_addr);
-        valid_bda = TRUE;
-        BTIF_TRACE_DEBUG("Got prior random BDA %02X:%02X:%02X:%02X:%02X:%02X",
-            local_addr->address[0], local_addr->address[1], local_addr->address[2],
-            local_addr->address[3], local_addr->address[4], local_addr->address[5]);
+    if (!valid_bda) {
+        valid_bda = btif_fetch_property(PERSIST_BDADDR_PROPERTY, local_addr);
+    }
+
+    /* No BDADDR found in file. Look for BDA in factory property */
+    if (!valid_bda) {
+        valid_bda = btif_fetch_property(FACTORY_BT_ADDR_PROPERTY, local_addr);
     }
 
     /* No factory BDADDR found. Look for BDA in ro.boot.btmacaddr */

@@ -170,8 +170,7 @@ void raise_priority_a2dp(tHIGH_PRIORITY_TASK high_task) {
     // its prio individually. All other threads can be dynamically adjusted voa
     // adjust_priority_a2dp()
 
-    if (high_task == TASK_HIGH_HCI_WORKER)
-       priority = ANDROID_PRIORITY_URGENT_AUDIO;
+    priority = ANDROID_PRIORITY_URGENT_AUDIO;
 
     if (setpriority(PRIO_PROCESS, tid, priority) < 0) {
         LOG_WARN("failed to change priority tid: %d to %d", tid, priority);
