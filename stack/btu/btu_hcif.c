@@ -1155,7 +1155,7 @@ static void btu_hcif_hardware_error_evt (UINT8 *p)
     if (BTM_IsDeviceUp())
         BTM_DeviceReset (NULL);
 
-    if(*p == 0x0f)
+    if(*p == 0x0f || (*p == 0x0a))
     {
        HCI_TRACE_ERROR("Ctlr H/w error event - code:Tigger SSR");
        bte_ssr_cleanup(0x33);//SSR reason 0x33 = HW ERR EVT
