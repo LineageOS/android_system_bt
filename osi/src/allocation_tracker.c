@@ -170,6 +170,13 @@ void *allocation_tracker_notify_free(uint8_t allocator_id, void *ptr) {
     assert(end_canary[i] == canary[i]);
   }
 
+  // free hash map entry to avoid memory leak on long run.
+  // double free detected with above assert(allocation)
+  // as the allocation entry will not present.
+#if (defined(OSI_ALLOC_TRACK_DOUBLE_FREE) && (OSI_ALLOC_TRACK_DOUBLE_FREE == FALSE))
+  hash_map_erase(allocations, ptr);
+#endif
+
   pthread_mutex_unlock(&lock);
 
   return ((char *)ptr) - canary_size;
