@@ -467,9 +467,9 @@ static void event_command_ready(fixed_queue_t *queue, UNUSED_ATTR void *context)
     pthread_mutex_unlock(&commands_pending_response_lock);
 
     // Send it off
-    low_power_manager->wake_assert();
+    low_power_manager->stop_idle_timer();
     packet_fragmenter->fragment_and_dispatch(wait_entry->command);
-    low_power_manager->transmit_done();
+    low_power_manager->start_idle_timer(false);
 
     non_repeating_timer_restart_if(command_response_timer, !list_is_empty(commands_pending_response));
   }

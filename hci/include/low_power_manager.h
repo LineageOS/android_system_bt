@@ -41,6 +41,9 @@ typedef struct low_power_manager_t {
   // Tell the low power manager that you're done transmitting data. Must be
   // called on the thread provided at initialization time.
   void (*transmit_done)(void);
+
+  void (*start_idle_timer)(bool check_LPM);
+  void (*stop_idle_timer)();
 } low_power_manager_t;
 
 const low_power_manager_t *low_power_manager_get_interface();
