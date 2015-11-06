@@ -22,6 +22,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define OSI_ALLOC_TRACK_DOUBLE_FREE FALSE
+
 typedef struct allocation_tracker_t allocation_tracker_t;
 typedef uint8_t allocator_id_t;
 
