@@ -404,6 +404,11 @@ static int cfg2prop(bt_bdaddr_t *remote_bd_addr, bt_property_t *prop)
             {
                 bt_uuid_t *p_uuid = (bt_uuid_t*)prop->val;
                 uint32_t num_uuids = 0;
+                if( strlen(value) < 1279)
+                {
+                    value[strlen(value)] = ' ';
+                    value[strlen(value)+1] = '\0';
+                }
                 btif_in_split_uuids_string_to_list(value, p_uuid, &num_uuids);
                 prop->len = num_uuids * sizeof(bt_uuid_t);
                 ret = TRUE;
