@@ -1707,6 +1707,8 @@ static void btif_av_handle_event(UINT16 event, char* p_param)
         btif_sm_dispatch(btif_av_cb[index].sm_handle, event, (void*)p_param);
     else
         BTIF_TRACE_ERROR("Unhandled Index = %d", index);
+    btif_av_event_free_data(event, p_param);
+
 }
 
 /*******************************************************************************
