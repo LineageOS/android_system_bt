@@ -30,6 +30,7 @@
 #include "btif_config.h"
 #include "btif_config_transcode.h"
 #include "btif_util.h"
+#include "btif_common.h"
 #include "osi/include/compat.h"
 #include "osi/include/config.h"
 #include "btcore/include/module.h"
@@ -42,7 +43,8 @@ static const char *CONFIG_FILE_PATH = "/data/misc/bluedroid/bt_config.conf";
 static const char *LEGACY_CONFIG_FILE_PATH = "/data/misc/bluedroid/bt_config.xml";
 static const period_ms_t CONFIG_SETTLE_PERIOD_MS = 3000;
 
-static void timer_config_save(void *data);
+static void timer_config_saving(void* data);
+static void timer_config_save(UINT16 event, char* p_param);
 
 // TODO(zachoverflow): Move these two functions out, because they are too specific for this file
 // {grumpy-cat/no, monty-python/you-make-me-sad}
@@ -346,7 +348,7 @@ void btif_config_save(void) {
   assert(alarm_timer != NULL);
   assert(config != NULL);
 
-  alarm_set(alarm_timer, CONFIG_SETTLE_PERIOD_MS, timer_config_save, NULL);
+  alarm_set(alarm_timer, CONFIG_SETTLE_PERIOD_MS, timer_config_saving, NULL);
 }
 
 void btif_config_flush(void) {
@@ -381,7 +383,14 @@ int btif_config_clear(void){
   return ret;
 }
 
-static void timer_config_save(UNUSED_ATTR void *data) {
+static void timer_config_saving(UNUSED_ATTR void* data) {
+  // calling file IO onto btif context instead of timer callback because
+  // it usually takes lots of time to be completed timer callback has big
+  // delayed during a2dp playback causing blip or choppiness.
+  btif_transfer_context(timer_config_save, 0, NULL, 0, NULL);
+}
+
+static void timer_config_save(UNUSED_ATTR UINT16 event, UNUSED_ATTR char* p_param) {
   assert(config != NULL);
   assert(alarm_timer != NULL);
 
