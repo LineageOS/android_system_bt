@@ -35,6 +35,7 @@
 #include "osi/include/semaphore.h"
 #include "osi/include/thread.h"
 
+
 struct alarm_t {
   // The lock is held while the callback for this alarm is being executed.
   // It allows us to release the coarse-grained monitor lock while a potentially
@@ -240,6 +241,12 @@ static bool lazy_initialize(void) {
     LOG_ERROR("%s unable to create alarm callback thread.", __func__);
     return false;
   }
+
+  // boost timer thread to high for getting alarm callback with priority
+  // during a2dp music playback, media task/btu/hci/event threads are all high priority
+  // but actual callback thread is remaining normal which mean it's possible not to
+  // schedule alarm callback in-time if system is busy
+  thread_set_priority(callback_thread, TIMER_CALLBACK_THREAD_PRIORITY);
 
   thread_post(callback_thread, callback_dispatch, NULL);
   return true;

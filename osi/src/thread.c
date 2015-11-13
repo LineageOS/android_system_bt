@@ -24,6 +24,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <sys/prctl.h>
+#include <sys/resource.h>
 #include <sys/types.h>
 
 #include "osi/include/allocator.h"
@@ -120,6 +121,20 @@ void thread_free(thread_t *thread) {
   fixed_queue_free(thread->work_queue, osi_free);
   reactor_free(thread->reactor);
   osi_free(thread);
+}
+
+bool thread_set_priority(thread_t *thread, int priority) {
+  if (!thread)
+    return false;
+
+  const int rc = setpriority(PRIO_PROCESS, thread->tid, priority);
+  if (rc < 0) {
+    LOG_ERROR("%s unable to set thread priority %d for tid %d, error %d",
+      __func__, priority, thread->tid, rc);
+    return false;
+  }
+
+  return true;
 }
 
 void thread_join(thread_t *thread) {
