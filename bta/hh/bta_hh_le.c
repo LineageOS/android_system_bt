@@ -2905,7 +2905,7 @@ void bta_hh_le_update_scpp(tBTA_HH_DEV_CB *p_dev_cb, tBTA_HH_DATA *p_buf)
     BTA_GATTC_WriteCharValue(p_dev_cb->conn_id,
                              &char_id,
                              BTA_GATTC_TYPE_WRITE_NO_RSP,
-                             2,
+                             4,
                              value,
                              BTA_GATT_AUTH_REQ_NONE);
 
@@ -2984,7 +2984,14 @@ static void bta_hh_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
 
 
         case BTA_GATTC_NOTIF_EVT: /* 10 */
-            bta_hh_le_input_rpt_notify(&p_data->notify);
+            p_dev_cb = bta_hh_le_find_dev_cb_by_conn_id(p_data->notify.conn_id);
+            if (p_dev_cb) {
+                if( p_data->notify.char_id.char_id.uuid.uu.uuid16 ==  GATT_UUID_SCAN_REFRESH ) {
+                    BTA_HhUpdateLeScanParam(p_dev_cb->hid_handle,BTM_BLE_SCAN_SLOW_INT_1,BTM_BLE_SCAN_SLOW_WIN_1);
+                }
+                else
+                    bta_hh_le_input_rpt_notify(&p_data->notify);
+            }
             break;
 
         case BTA_GATTC_ENC_CMPL_CB_EVT: /* 17 */
@@ -3034,6 +3041,7 @@ void bta_hh_le_hid_read_rpt_clt_cfg(BD_ADDR bd_addr, UINT8 srvc_inst)
                                p_rpt->uuid,
                                BTA_HH_LE_RPT_GET_RPT_INST_ID(p_rpt->inst_id),
                                GATT_UUID_CHAR_CLIENT_CONFIG);
+                break;
             }
         }
         if (p_rpt->index == BTA_HH_LE_RPT_MAX - 1)
@@ -3230,7 +3238,4 @@ static void bta_hh_process_cache_rpt (tBTA_HH_DEV_CB *p_cb,
 }
 
 #endif
-
-
-
 

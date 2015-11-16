@@ -85,6 +85,7 @@ BOOLEAN hci_blacklistted_for_role_switch (BD_ADDR addr)
     return FALSE;
 }
 
+#define HI_PRI_LINK_QUOTA 2 //Mininum ACL buffer quota for high priority link
 /*******************************************************************************
 **
 ** Function         l2c_link_hci_conn_req
@@ -898,6 +899,14 @@ void l2c_link_adjust_allocation (void)
     while ( (num_hipri_links * high_pri_link_quota + low_quota) > controller_xmit_quota )
         high_pri_link_quota--;
 
+    /*Adjust high pri link with min 3 buffers*/
+    if(num_hipri_links > 0)
+    {
+      if(high_pri_link_quota < HI_PRI_LINK_QUOTA)
+      {
+        high_pri_link_quota  = HI_PRI_LINK_QUOTA;
+      }
+    }
     /* Work out the xmit quota and buffer quota high and low priorities */
     hi_quota  = num_hipri_links * high_pri_link_quota;
     low_quota = (hi_quota < controller_xmit_quota) ? controller_xmit_quota - hi_quota : 1;
@@ -933,7 +942,7 @@ void l2c_link_adjust_allocation (void)
     /* Now, assign the quotas to each link */
     for (yy = 0, p_lcb = &l2cb.lcb_pool[0]; yy < MAX_L2CAP_LINKS; yy++, p_lcb++)
     {
-        if (p_lcb->in_use)
+        if (p_lcb->in_use && p_lcb->transport == BT_TRANSPORT_BR_EDR)
         {
             if (p_lcb->acl_priority == L2CAP_PRIORITY_HIGH)
             {

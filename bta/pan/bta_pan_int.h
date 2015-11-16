@@ -145,9 +145,11 @@ typedef struct
     BOOLEAN                 pan_flow_enable;/* BNEP flow control state */
     BOOLEAN                 app_flow_enable;/* Application flow control state */
     UINT8                   state;          /* State machine state */
-    tBTA_PAN_ROLE            local_role;     /* local role */
-    tBTA_PAN_ROLE            peer_role;      /* peer role */
-    UINT8                    app_id;         /* application id for the connection */
+    tBTA_PAN_ROLE           local_role;     /* local role */
+    tBTA_PAN_ROLE           peer_role;      /* peer role */
+    UINT8                   app_id;         /* application id for the connection */
+    BOOLEAN                 is_idle_timer_started; /* intermediate idle timer running status */
+    TIMER_LIST_ENT          idle_tle; /* intermediate idle timer for paricular scb */
 
 } tBTA_PAN_SCB;
 
@@ -217,6 +219,7 @@ extern void bta_pan_write_buf(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data);
 extern void bta_pan_free_buf(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data);
 extern void bta_pan_pm_conn_idle(tBTA_PAN_SCB *p_scb);
 extern void bta_pan_pm_conn_busy(tBTA_PAN_SCB *p_scb);
+extern void bta_pan_idle_timeout_handler(TIMER_LIST_ENT *tle);
 
 
 #endif /* BTA_PAN_INT_H */

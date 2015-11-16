@@ -501,10 +501,15 @@ static void device_found_cb(int num_properties, bt_property_t *properties)
     {
         if (properties[i].type == BT_PROPERTY_BDNAME)
         {
-            pthread_mutex_lock(&deviceCount_mutex);
-            deviceCount++;
             bdt_log("Device name is : %s\n",
                   (char*)properties[i].val);
+        }
+        if (properties[i].type == BT_PROPERTY_REMOTE_RSSI)
+        {
+            pthread_mutex_lock(&deviceCount_mutex);
+            deviceCount++;
+            bdt_log("Device RSSI VALUE is :%d\n",
+                   *(signed char*)properties[i].val);
             if (deviceCount > 0 && wantMore == 0)
             {
                 pthread_cond_signal(&deviceCount_cond);

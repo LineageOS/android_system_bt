@@ -463,6 +463,26 @@ static void btif_fetch_local_bdaddr(bt_bdaddr_t *local_addr)
             local_addr->address[3], local_addr->address[4], local_addr->address[5]);
     }
 
+    /* No factory BDADDR found. Look for BDA in ro.boot.btmacaddr */
+    if ((!valid_bda) && \
+        (property_get("ro.boot.btmacaddr", val, NULL)))
+    {
+        valid_bda = string_to_bdaddr(val, local_addr);
+        if (valid_bda) {
+            BTIF_TRACE_DEBUG("Got vendor BDA %02X:%02X:%02X:%02X:%02X:%02X",
+                local_addr->address[0], local_addr->address[1], local_addr->address[2],
+                local_addr->address[3], local_addr->address[4], local_addr->address[5]);
+        }
+    }
+
+    if (!valid_bda && fetch_vendor_addr(local_addr))
+    {
+        valid_bda = TRUE;
+        BTIF_TRACE_DEBUG("Got Vendor BDA %02X:%02X:%02X:%02X:%02X:%02X",
+            local_addr->address[0], local_addr->address[1], local_addr->address[2],
+            local_addr->address[3], local_addr->address[4], local_addr->address[5]);
+    }
+
     /* Generate new BDA if necessary */
     if (!valid_bda)
     {
@@ -747,7 +767,8 @@ void btif_ssr_cleanup(void)
 static void btif_hci_event_cback ( tBTM_RAW_CMPL *p )
 {
     BTIF_TRACE_DEBUG("%s", __FUNCTION__);
-    if(p != NULL)
+    if((p != NULL) && (bt_hal_cbacks != NULL)
+          && (bt_hal_cbacks->hci_event_recv_cb != NULL))
     {
         HAL_CBACK(bt_hal_cbacks, hci_event_recv_cb, p->event_code, p->p_param_buf,
                                                                 p->param_len);

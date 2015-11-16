@@ -402,6 +402,13 @@ static void gatt_cl_op_cmpl_cback (UINT16 conn_id, tGATTC_OPTYPE op,
         GATT_TRACE_DEBUG("%s() - ccc write status : %d", __FUNCTION__, status);
     }
 
+    /* Do not disconnect in case of notification or Indication (Unexpected events)*/
+    if (op == GATTC_OPTYPE_NOTIFICATION || op == GATTC_OPTYPE_INDICATION)
+    {
+        GATT_TRACE_DEBUG("%s: Unexpected event received. Ignore", __func__);
+        return;
+    }
+
     /* free the connection */
     gatt_config_ccc_complete (p_clcb);
 }
