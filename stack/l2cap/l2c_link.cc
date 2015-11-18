@@ -45,7 +45,8 @@
 
 extern fixed_queue_t* btu_general_alarm_queue;
 
-static bool l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf);
+static bool l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
+                                   tL2C_TX_COMPLETE_CB_INFO* p_cbi);
 
 /*******************************************************************************
  *
@@ -992,6 +993,9 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, tL2C_CCB* p_ccb, BT_HDR* p_buf) {
 
     /* Loop through, starting at the next */
     for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
+      /* Check for wraparound */
+      if (p_lcb == &l2cb.lcb_pool[MAX_L2CAP_LINKS]) p_lcb = &l2cb.lcb_pool[0];
+
       /* If controller window is full, nothing to do */
       if (((l2cb.controller_xmit_window == 0 ||
             (l2cb.round_robin_unacked >= l2cb.round_robin_quota)) &&
@@ -1000,9 +1004,6 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, tL2C_CCB* p_ccb, BT_HDR* p_buf) {
            (l2cb.ble_round_robin_unacked >= l2cb.ble_round_robin_quota ||
             l2cb.controller_le_xmit_window == 0)))
         break;
-
-      /* Check for wraparound */
-      if (p_lcb == &l2cb.lcb_pool[MAX_L2CAP_LINKS]) p_lcb = &l2cb.lcb_pool[0];
 
       if ((!p_lcb->in_use) || (p_lcb->partial_segment_being_sent) ||
           (p_lcb->link_state != LST_CONNECTED) ||
@@ -1013,16 +1014,17 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, tL2C_CCB* p_ccb, BT_HDR* p_buf) {
       if (!list_is_empty(p_lcb->link_xmit_data_q)) {
         p_buf = (BT_HDR*)list_front(p_lcb->link_xmit_data_q);
         list_remove(p_lcb->link_xmit_data_q, p_buf);
-        l2c_link_send_to_lower(p_lcb, p_buf);
+        l2c_link_send_to_lower(p_lcb, p_buf, NULL);
       } else if (single_write) {
         /* If only doing one write, break out */
         break;
       }
       /* If nothing on the link queue, check the channel queue */
       else {
-        p_buf = l2cu_get_next_buffer_to_send(p_lcb);
+        tL2C_TX_COMPLETE_CB_INFO cbi;
+        p_buf = l2cu_get_next_buffer_to_send(p_lcb, &cbi);
         if (p_buf != NULL) {
-          l2c_link_send_to_lower(p_lcb, p_buf);
+          l2c_link_send_to_lower(p_lcb, p_buf, &cbi);
         }
       }
     }
@@ -1055,7 +1057,7 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, tL2C_CCB* p_ccb, BT_HDR* p_buf) {
 
       p_buf = (BT_HDR*)list_front(p_lcb->link_xmit_data_q);
       list_remove(p_lcb->link_xmit_data_q, p_buf);
-      if (!l2c_link_send_to_lower(p_lcb, p_buf)) break;
+      if (!l2c_link_send_to_lower(p_lcb, p_buf, NULL)) break;
     }
 
     if (!single_write) {
@@ -1065,10 +1067,11 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, tL2C_CCB* p_ccb, BT_HDR* p_buf) {
               (l2cb.controller_le_xmit_window != 0 &&
                (p_lcb->transport == BT_TRANSPORT_LE))) &&
              (p_lcb->sent_not_acked < p_lcb->link_xmit_quota)) {
-        p_buf = l2cu_get_next_buffer_to_send(p_lcb);
+        tL2C_TX_COMPLETE_CB_INFO cbi;
+        p_buf = l2cu_get_next_buffer_to_send(p_lcb, &cbi);
         if (p_buf == NULL) break;
 
-        if (!l2c_link_send_to_lower(p_lcb, p_buf)) break;
+        if (!l2c_link_send_to_lower(p_lcb, p_buf, &cbi)) break;
       }
     }
 
@@ -1093,7 +1096,7 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, tL2C_CCB* p_ccb, BT_HDR* p_buf) {
  * Returns          true for success, false for fail
  *
  ******************************************************************************/
-static bool l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
+static bool l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf, tL2C_TX_COMPLETE_CB_INFO* p_cbi) {
   uint16_t num_segs;
   uint16_t xmit_window, acl_data_size;
   const controller_t* controller = controller_get_interface();
@@ -1182,6 +1185,9 @@ static bool l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
         l2cb.round_robin_unacked);
   }
 #endif
+
+  if (p_cbi)
+    l2cu_tx_complete(p_cbi);
 
   return true;
 }
