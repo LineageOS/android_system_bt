@@ -23,6 +23,9 @@
 
 #define THREAD_NAME_MAX 16
 
+// Increase callback thread priority to high
+#define TIMER_CALLBACK_THREAD_PRIORITY -19
+
 typedef struct reactor_t reactor_t;
 typedef struct thread_t thread_t;
 typedef void (*thread_fn)(void *context);
@@ -57,6 +60,11 @@ bool thread_post(thread_t *thread, thread_fn func, void *context);
 // after calling |thread_stop|. This function is guaranteed to not block.
 // |thread| may not be NULL.
 void thread_stop(thread_t *thread);
+
+// Attempts to sets the |priority| of a given |thread|.
+// The |thread| has to be running for this call to succeed.
+// Returns true on success.
+bool thread_set_priority(thread_t *thread, int priority);
 
 // Returns true if the current thread is the same as the one represented by |thread|.
 // |thread| may not be NULL.
