@@ -47,6 +47,7 @@
 
 #include "bt_target.h"
 #include "osi/include/fixed_queue.h"
+#include "osi/include/gettime.h"
 #include "gki.h"
 #include "bta_api.h"
 #include "btu.h"
@@ -354,7 +355,7 @@ static thread_t *worker_thread;
 static UINT64 time_now_us()
 {
     struct timespec ts_now;
-    clock_gettime(CLOCK_BOOTTIME, &ts_now);
+    gettime_now(&ts_now);
     return ((UINT64)ts_now.tv_sec * USEC_PER_SEC) + ((UINT64)ts_now.tv_nsec / 1000);
 }
 

@@ -39,6 +39,7 @@
 #include "hci/include/btsnoop_mem.h"
 #include "bt_types.h"
 #include "hci_layer.h"
+#include "osi/include/gettime.h"
 #include "osi/include/log.h"
 #include "stack_config.h"
 
@@ -231,7 +232,7 @@ static void btsnoop_write(const void *data, size_t length) {
 
 static uint64_t time_now_us() {
     struct timespec ts_now;
-    clock_gettime(CLOCK_BOOTTIME, &ts_now);
+    gettime_now(&ts_now);
     return ((uint64_t)ts_now.tv_sec * USEC_PER_SEC) + ((uint64_t)ts_now.tv_nsec / 1000);
 }
 

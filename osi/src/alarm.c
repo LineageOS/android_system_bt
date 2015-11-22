@@ -29,6 +29,7 @@
 
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
+#include "osi/include/gettime.h"
 #include "osi/include/list.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
@@ -249,7 +250,7 @@ static period_ms_t now(void) {
   assert(alarms != NULL);
 
   struct timespec ts;
-  if (clock_gettime(CLOCK_ID, &ts) == -1) {
+  if (gettime_now(&ts) == -1) {
     LOG_ERROR("%s unable to get current time: %s", __func__, strerror(errno));
     return 0;
   }
