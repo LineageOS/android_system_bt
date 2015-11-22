@@ -339,7 +339,7 @@ done:
     struct itimerspec time_to_expire;
     timer_gettime(timer, &time_to_expire);
     if (time_to_expire.it_value.tv_sec == 0 && time_to_expire.it_value.tv_nsec == 0) {
-      LOG_ERROR("%s alarm expiration too close for posix timers, switching to guns", __func__);
+      LOG_DEBUG("%s alarm expiration too close for posix timers, switching to guns", __func__);
       semaphore_post(alarm_expired);
     }
   }
