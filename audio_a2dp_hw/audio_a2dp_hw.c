@@ -194,7 +194,7 @@ static void ts_error_log(char *tag, int val, int buff_size, struct a2dp_config c
     prev = now;
     if(diff_us > (unsigned long long)(calc_audiotime (cfg, buff_size) + 10000L))
     {
-       ERROR("[%s] ts %08lld, diff %08lld, val %d %d", tag, now_us, diff_us, val, buff_size);
+       DEBUG("[%s] ts %08lld, diff %08lld, val %d %d", tag, now_us, diff_us, val, buff_size);
     }
 }
 
@@ -816,7 +816,7 @@ static uint32_t out_get_channels(const struct audio_stream *stream)
 {
     struct a2dp_stream_out *out = (struct a2dp_stream_out *)stream;
 
-    INFO("channels 0x%" PRIx32, out->common.cfg.channel_flags);
+    DEBUG("channels 0x%" PRIx32, out->common.cfg.channel_flags);
 
     return out->common.cfg.channel_flags;
 }
@@ -824,7 +824,7 @@ static uint32_t out_get_channels(const struct audio_stream *stream)
 static audio_format_t out_get_format(const struct audio_stream *stream)
 {
     struct a2dp_stream_out *out = (struct a2dp_stream_out *)stream;
-    INFO("format 0x%x", out->common.cfg.format);
+    DEBUG("format 0x%x", out->common.cfg.format);
     return out->common.cfg.format;
 }
 
