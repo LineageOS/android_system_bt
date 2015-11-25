@@ -37,7 +37,7 @@ future_t *osi_clean_up(void) {
   return future_new_immediate(FUTURE_SUCCESS);
 }
 
-const module_t osi_module = {
+EXPORT_SYMBOL const module_t osi_module = {
   .name = OSI_MODULE,
   .init = osi_init,
   .start_up = NULL,

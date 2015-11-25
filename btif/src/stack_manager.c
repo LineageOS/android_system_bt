@@ -95,6 +95,7 @@ static void event_init_stack(void *context) {
   if (!stack_is_initialized) {
     module_management_start();
 
+    module_init(get_module(OSI_MODULE));
     module_init(get_module(BT_UTILS_MODULE));
     module_init(get_module(BTIF_CONFIG_MODULE));
     btif_init_bluetooth();

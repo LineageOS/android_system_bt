@@ -967,6 +967,9 @@ UINT16 AVDT_WriteReqOpt(UINT8 handle, BT_HDR *p_pkt, UINT32 time_stamp, UINT8 m_
         evt.apiwrite.frag_q = fixed_queue_new(SIZE_MAX);
 #endif
         avdt_scb_event(p_scb, AVDT_SCB_API_WRITE_REQ_EVT, &evt);
+#if AVDT_MULTIPLEXING == TRUE
+        fixed_queue_free(evt.apiwrite.frag_q, NULL);
+#endif
     }
 
     return result;
