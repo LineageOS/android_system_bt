@@ -33,7 +33,8 @@
 typedef enum {
   MODULE_STATE_NONE = 0,
   MODULE_STATE_INITIALIZED = 1,
-  MODULE_STATE_STARTED = 2
+  MODULE_STATE_STARTED = 2,
+  MODULE_STATE_STARTUP_ERROR = 3
 } module_state_t;
 
 static const size_t number_of_metadata_buckets = 42;
@@ -97,6 +98,7 @@ bool module_start_up(const module_t *module) {
 
   if (!call_lifecycle_function(module->start_up)) {
     LOG_ERROR("%s failed to start up \"%s\"", __func__, module->name);
+    set_module_state(module, MODULE_STATE_STARTUP_ERROR);
     return false;
   }
 
@@ -108,7 +110,6 @@ void module_shut_down(const module_t *module) {
   assert(metadata != NULL);
   assert(module != NULL);
   module_state_t state = get_module_state(module);
-  assert(state <= MODULE_STATE_STARTED);
 
   // Only something to do if the module was actually started
   if (state < MODULE_STATE_STARTED)
