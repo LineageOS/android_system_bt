@@ -148,7 +148,8 @@ enum
     BTIF_MEDIA_VS_A2DP_WRITE_SBC_CFG_SUCCESS,
     BTIF_MEDIA_VS_A2DP_PREF_BIT_RATE_SUCCESS,
     BTIF_MEDIA_VS_A2DP_SET_SCMST_HDR_SUCCESS,
-    BTIF_MEDIA_VS_A2DP_STOP_FAILURE
+    BTIF_MEDIA_VS_A2DP_STOP_FAILURE,
+    BTIF_MEDIA_VS_A2DP_START_FAILURE
 #endif
 };
 
@@ -388,6 +389,7 @@ typedef struct
     BOOLEAN vs_configs_exchanged;
     BOOLEAN tx_started;
     BOOLEAN tx_stop_initiated;
+    BOOLEAN tx_start_initiated;
 #endif
 
 #endif
@@ -470,6 +472,7 @@ BOOLEAN btif_media_send_vendor_write_sbc_cfg();
 BOOLEAN btif_media_send_vendor_media_chn_cfg();
 BOOLEAN btif_media_send_vendor_stop();
 BOOLEAN btif_media_send_vendor_start();
+void disconnect_a2dp_on_vendor_start_failure();
 #endif
 
 
@@ -1961,17 +1964,32 @@ static void btif_media_thread_handle_cmd(fixed_queue_t *queue, UNUSED_ATTR void 
         btif_media_cb.tx_started = FALSE;
         btif_media_cb.tx_stop_initiated = FALSE;
         btif_media_cb.vs_configs_exchanged = FALSE;
+        btif_media_cb.tx_start_initiated = FALSE;
         break;
     case BTIF_MEDIA_START_VS_CMD:
-        btif_a2dp_encoder_update();
-        btif_media_start_vendor_command();
+        if (!btif_media_cb.tx_started && !btif_media_cb.tx_start_initiated)
+        {
+            btif_a2dp_encoder_update();
+            btif_media_start_vendor_command();
+        }
+        else
+            APPL_TRACE_IMP("ignore VS start request");
         break;
     case BTIF_MEDIA_STOP_VS_CMD:
-        btif_media_send_vendor_stop();
+        if (btif_media_cb.tx_started && !btif_media_cb.tx_stop_initiated)
+            btif_media_send_vendor_stop();
+        else
+            APPL_TRACE_IMP("ignore VS stop request");
         break;
     case BTIF_MEDIA_VS_A2DP_START_SUCCESS:
+        btif_media_cb.tx_start_initiated = FALSE;
         btif_media_cb.tx_started = TRUE;
         a2dp_cmd_acknowledge(A2DP_CTRL_ACK_SUCCESS);
+        break;
+    case BTIF_MEDIA_VS_A2DP_START_FAILURE:
+        btif_media_cb.tx_start_initiated = FALSE;
+        a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
+        disconnect_a2dp_on_vendor_start_failure();
         break;
     case BTIF_MEDIA_VS_A2DP_STOP_SUCCESS:
         btif_media_cb.tx_started = FALSE;
@@ -3945,6 +3963,15 @@ static void btif_media_send_aa_frame(uint64_t timestamp_us)
 #define VS_QHCI_A2DP_TRANSPORT_CONFIGURATION  0x07
 #define VS_QHCI_A2DP_WRITE_SCMS_T_CP          0x08
 
+void disconnect_a2dp_on_vendor_start_failure()
+{
+    bt_bdaddr_t bd_addr;
+    APPL_TRACE_IMP("disconnect_a2dp_on_vendor_start_failure");
+    btif_av_get_peer_addr(&bd_addr);
+    btif_dispatch_sm_event(BTIF_AV_DISCONNECT_REQ_EVT,(char*)&bd_addr,
+            sizeof(bt_bdaddr_t));
+}
+
 void btif_media_send_reset_vendor_state()
 {
     BT_HDR *p_buf;
@@ -3954,13 +3981,15 @@ void btif_media_send_reset_vendor_state()
         return;
     }
     p_buf->event = BTIF_MEDIA_RESET_VS_STATE;
-    fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
+    if (btif_media_cmd_msg_queue != NULL)
+        fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
 }
 
 void btif_media_start_vendor_command()
 {
     APPL_TRACE_IMP("btif_media_start_vendor_command_exchange:\
         vs_configs_exchanged:%u", btif_media_cb.vs_configs_exchanged);
+    btif_media_cb.tx_start_initiated = TRUE;
     if(btif_media_cb.vs_configs_exchanged)
     {
         btif_media_send_vendor_start();
@@ -3981,7 +4010,8 @@ void btif_media_on_start_vendor_command()
         return;
     }
     p_buf->event = BTIF_MEDIA_START_VS_CMD;
-    fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
+    if (btif_media_cmd_msg_queue != NULL)
+        fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
 }
 
 void btif_media_on_stop_vendor_command()
@@ -3995,7 +4025,8 @@ void btif_media_on_stop_vendor_command()
     }
     APPL_TRACE_IMP("btif_media_on_stop_vendor_command");
     p_buf->event = BTIF_MEDIA_STOP_VS_CMD;
-    fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
+    if (btif_media_cmd_msg_queue != NULL)
+        fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
 }
 
 void btif_media_a2dp_start_cb(tBTM_VSC_CMPL *param)
@@ -4009,15 +4040,32 @@ void btif_media_a2dp_start_cb(tBTM_VSC_CMPL *param)
     }
     APPL_TRACE_IMP("VS_QHCI_START_A2DP_MEDIA sent with error code: %u", status);
 
-    if ((!status) && (NULL != (p_buf = GKI_getbuf(sizeof(BT_HDR)))))
+    if (NULL != (p_buf = GKI_getbuf(sizeof(BT_HDR))))
     {
-        p_buf->event = BTIF_MEDIA_VS_A2DP_START_SUCCESS;
+        if (!status)
+            p_buf->event = BTIF_MEDIA_VS_A2DP_START_SUCCESS;
+        else
+            p_buf->event = BTIF_MEDIA_VS_A2DP_START_FAILURE;
+    }
+    else
+    {
+        APPL_TRACE_ERROR("Buffer allocation Failed");
+        a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
+        disconnect_a2dp_on_vendor_start_failure();
+        return;
+    }
+
+    if (btif_media_cmd_msg_queue != NULL)
+    {
         fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
     }
     else
     {
-        APPL_TRACE_ERROR("Error in processing Vendor command response");
-        a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
+        APPL_TRACE_ERROR("Message queue cleaned up");
+        if (!status)
+            a2dp_cmd_acknowledge(A2DP_CTRL_ACK_SUCCESS);
+        else
+            a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
     }
 }
 
@@ -4045,12 +4093,30 @@ void btif_media_a2dp_stop_cb(tBTM_VSC_CMPL *param)
     }
     APPL_TRACE_IMP("VS_QHCI_STOP_A2DP_MEDIA sent with error code: %u", status);
 
-    if ((!status) && (NULL != (p_buf = GKI_getbuf(sizeof(BT_HDR)))))
-        p_buf->event = BTIF_MEDIA_VS_A2DP_STOP_SUCCESS;
+    if (NULL != (p_buf = GKI_getbuf(sizeof(BT_HDR))))
+    {
+        if (!status)
+            p_buf->event = BTIF_MEDIA_VS_A2DP_STOP_SUCCESS;
+        else
+            p_buf->event = BTIF_MEDIA_VS_A2DP_STOP_FAILURE;
+    }
     else
-        p_buf->event = BTIF_MEDIA_VS_A2DP_STOP_FAILURE;
+    {
+        APPL_TRACE_ERROR("Buffer allocation Failed");
+        a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
+        return;
+    }
 
-    fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
+    if (btif_media_cmd_msg_queue != NULL)
+        fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
+    else
+    {
+        APPL_TRACE_ERROR("Message queue cleaned up");
+        if (!status)
+            a2dp_cmd_acknowledge(A2DP_CTRL_ACK_SUCCESS);
+        else
+            a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
+    }
 }
 
 BOOLEAN btif_media_send_vendor_stop()
@@ -4083,12 +4149,16 @@ void btif_media_a2dp_media_chn_cfg_cb(tBTM_VSC_CMPL *param)
     if ((!status) && (NULL != (p_buf = GKI_getbuf(sizeof(BT_HDR)))))
     {
         p_buf->event = BTIF_MEDIA_VS_A2DP_MEDIA_CHNL_CFG_SUCCESS;
-        fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
+        if (btif_media_cmd_msg_queue != NULL)
+            fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
+        else
+            a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
     }
     else
     {
         APPL_TRACE_ERROR("Error in processing Vendor command response");
         a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
+        disconnect_a2dp_on_vendor_start_failure();
     }
 }
 
@@ -4130,12 +4200,16 @@ void btif_media_a2dp_write_sbc_cfg_cb(tBTM_VSC_CMPL *param)
     if ((!status) && (NULL != (p_buf = GKI_getbuf(sizeof(BT_HDR)))))
     {
         p_buf->event = BTIF_MEDIA_VS_A2DP_WRITE_SBC_CFG_SUCCESS;
-        fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
+        if (btif_media_cmd_msg_queue != NULL)
+            fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
+        else
+            a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
     }
     else
     {
         APPL_TRACE_ERROR("Error in processing Vendor command response");
         a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
+        disconnect_a2dp_on_vendor_start_failure();
     }
 }
 
@@ -4195,12 +4269,16 @@ void btif_media_pref_bit_rate_cb(tBTM_VSC_CMPL *param)
     if ((!status) && (NULL != (p_buf = GKI_getbuf(sizeof(BT_HDR)))))
     {
         p_buf->event = BTIF_MEDIA_VS_A2DP_PREF_BIT_RATE_SUCCESS;
-        fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
+        if (btif_media_cmd_msg_queue != NULL)
+            fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
+        else
+            a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
     }
     else
     {
         APPL_TRACE_ERROR("Error in processing Vendor command response");
         a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
+        disconnect_a2dp_on_vendor_start_failure();
     }
 }
 
@@ -4232,12 +4310,16 @@ void btif_media_scmst_cb(tBTM_VSC_CMPL *param)
     if ((!status) && (NULL != (p_buf = GKI_getbuf(sizeof(BT_HDR)))))
     {
         p_buf->event = BTIF_MEDIA_VS_A2DP_SET_SCMST_HDR_SUCCESS;
-        fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
+        if (btif_media_cmd_msg_queue != NULL)
+            fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
+        else
+            a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
     }
     else
     {
         APPL_TRACE_ERROR("Error in processing Vendor command response");
         a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
+        disconnect_a2dp_on_vendor_start_failure();
     }
 }
 

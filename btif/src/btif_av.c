@@ -1150,9 +1150,18 @@ static BOOLEAN btif_av_state_opened_handler(btif_sm_event_t event, void *p_data,
                     }
                     else
                     {
-                        BTIF_TRACE_DEBUG("%s: trigger suspend as remote initiated!!",
-                            __FUNCTION__);
-                        btif_dispatch_sm_event(BTIF_AV_SUSPEND_STREAM_REQ_EVT, NULL, 0);
+                        if ((btif_av_cb[index].flags & BTIF_AV_FLAG_REMOTE_SUSPEND))
+                        {
+                            BTIF_TRACE_DEBUG("%s: clear remote suspend flag on remote start",
+                                __FUNCTION__);
+                            btif_av_cb[index].flags &= ~BTIF_AV_FLAG_REMOTE_SUSPEND;
+                        }
+                        else
+                        {
+                            BTIF_TRACE_DEBUG("%s: trigger suspend as remote initiated!!",
+                                __FUNCTION__);
+                            btif_dispatch_sm_event(BTIF_AV_SUSPEND_STREAM_REQ_EVT, NULL, 0);
+                        }
                     }
                 }
             }
