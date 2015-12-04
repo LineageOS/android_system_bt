@@ -545,19 +545,24 @@ void bta_dm_set_dev_name (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_set_visibility(tBTA_DM_MSG *p_data)
 {
-#if BTA_GATT_INCLUDED == TRUE
     UINT16 window, interval;
+#if BLE_INCLUDED == TRUE
     UINT16 le_disc_mode = BTM_BleReadDiscoverability();
+#endif
     UINT16 disc_mode = BTM_ReadDiscoverability(&window, &interval);
+#if BLE_INCLUDED == TRUE
     UINT16 le_conn_mode = BTM_BleReadConnectability();
+#endif
     UINT16 conn_mode = BTM_ReadConnectability(&window, &interval);
 
     /* set modes for Discoverability and connectability if not ignore */
     if (p_data->set_visibility.disc_mode != (BTA_DM_IGNORE | BTA_DM_LE_IGNORE))
     {
+#if BLE_INCLUDED == TRUE
         if ((p_data->set_visibility.disc_mode & BTA_DM_LE_IGNORE) == BTA_DM_LE_IGNORE)
             p_data->set_visibility.disc_mode =
                 ((p_data->set_visibility.disc_mode & ~BTA_DM_LE_IGNORE) | le_disc_mode);
+#endif
 
         if ((p_data->set_visibility.disc_mode & BTA_DM_IGNORE) == BTA_DM_IGNORE)
             p_data->set_visibility.disc_mode =
@@ -570,9 +575,11 @@ void bta_dm_set_visibility(tBTA_DM_MSG *p_data)
 
     if (p_data->set_visibility.conn_mode != (BTA_DM_IGNORE | BTA_DM_LE_IGNORE))
     {
+#if BLE_INCLUDED == TRUE
         if ((p_data->set_visibility.conn_mode & BTA_DM_LE_IGNORE) == BTA_DM_LE_IGNORE)
             p_data->set_visibility.conn_mode =
                 ((p_data->set_visibility.conn_mode & ~BTA_DM_LE_IGNORE) | le_conn_mode);
+#endif
 
         if ((p_data->set_visibility.conn_mode & BTA_DM_IGNORE) == BTA_DM_IGNORE)
             p_data->set_visibility.conn_mode =
@@ -608,7 +615,6 @@ void bta_dm_set_visibility(tBTA_DM_MSG *p_data)
     /* Change mode if either mode is not ignore */
     if (p_data->set_visibility.pair_mode != BTA_DM_IGNORE || p_data->set_visibility.conn_paired_only != BTA_DM_IGNORE)
         BTM_SetPairableMode((BOOLEAN)(!(bta_dm_cb.disable_pair_mode)),bta_dm_cb.conn_paired_only);
-#endif
 }
 
 /*******************************************************************************
