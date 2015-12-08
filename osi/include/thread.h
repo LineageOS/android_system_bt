@@ -23,6 +23,9 @@
 
 #define THREAD_NAME_MAX 16
 
+// Increase callback thread priority to high
+#define TIMER_CALLBACK_THREAD_PRIORITY -19
+
 typedef struct reactor_t reactor_t;
 typedef struct thread_t thread_t;
 typedef void (*thread_fn)(void *context);

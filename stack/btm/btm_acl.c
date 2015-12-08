@@ -54,16 +54,21 @@ static void btm_process_remote_ext_features (tACL_CONN *p_acl_cb, UINT8 num_read
 
 #define BTM_DEV_REPLY_TIMEOUT   3       /* 3 second timeout waiting for responses */
 
-/* Black listed car kits/headsets for role switch */
-static const UINT8 btm_role_switch_black_list_prefix[][3] = {{0x00, 0x0d, 0xfd}  /* MOT EQ5 */
+/* Black listed car kits/headsets for incoming role switch */
+static const UINT8 btm_role_switch_black_list_prefix1[][3] = {{0x00, 0x0d, 0xfd}  /* MOT EQ5 */
                                                              ,{0x00, 0x1b, 0xdc} /* BSHSBE20 */
                                                              ,{0x00, 0x07, 0x04} /* Infiniti G37 2011 */
                                                              ,{0xa4, 0x15, 0x66} /* Motorola Whisper */
                                                             };
+/* Black listed car kits/headsets for outgoing role switch */
+static const UINT8 btm_role_switch_black_list_prefix2[][3] = {{0xfc, 0xc2, 0xde}  /* Toyota Prius 2015 */
+                                                             ,{0x00, 0x26, 0xb4} /* NAC FORD,2013 Lincoln */
+                                                             ,{0x00, 0x04, 0x3e} /* OBU II Bluetooth dongle */
+                                                            };
 
 /*******************************************************************************
 **
-** Function         btm_blacklistted_for_role_switch
+** Function         btm_blacklistted_for_incoming_role_switch
 **
 ** Description      This function is called to find the blacklisted carkits
 **                  for role switch.
@@ -71,15 +76,41 @@ static const UINT8 btm_role_switch_black_list_prefix[][3] = {{0x00, 0x0d, 0xfd} 
 ** Returns          TRUE, if black listed
 **
 *******************************************************************************/
-BOOLEAN btm_blacklistted_for_role_switch (BD_ADDR addr)
+BOOLEAN btm_blacklistted_for_incoming_role_switch (BD_ADDR addr)
 {
     int blacklistsize = 0;
     int i =0;
 
-    blacklistsize = sizeof(btm_role_switch_black_list_prefix)/sizeof(btm_role_switch_black_list_prefix[0]);
+    blacklistsize = sizeof(btm_role_switch_black_list_prefix1)/sizeof(btm_role_switch_black_list_prefix1[0]);
     for (i=0; i < blacklistsize; i++)
     {
-        if (0 == memcmp(btm_role_switch_black_list_prefix[i], addr, 3))
+        if (0 == memcmp(btm_role_switch_black_list_prefix1[i], addr, 3))
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+/*******************************************************************************
+**
+** Function         btm_blacklistted_for_outgoing_role_switch
+**
+** Description      This function is called to find the blacklisted carkits
+**                  for role switch.
+**
+** Returns          TRUE, if black listed
+**
+*******************************************************************************/
+BOOLEAN btm_blacklistted_for_outgoing_role_switch (BD_ADDR addr)
+{
+    int blacklistsize = 0;
+    int i =0;
+
+    blacklistsize = sizeof(btm_role_switch_black_list_prefix2)/sizeof(btm_role_switch_black_list_prefix2[0]);
+    for (i=0; i < blacklistsize; i++)
+    {
+        if (0 == memcmp(btm_role_switch_black_list_prefix2[i], addr, 3))
         {
             return TRUE;
         }
@@ -658,7 +689,7 @@ tBTM_STATUS BTM_SwitchRole (BD_ADDR remote_bd_addr, UINT8 new_role, tBTM_CMPL_CB
         return(BTM_UNKNOWN_ADDR);
 
     /* Finished if already in desired role */
-    if (p->link_role == new_role)
+    if ((p->link_role == new_role) || btm_blacklistted_for_outgoing_role_switch(remote_bd_addr))
         return(BTM_SUCCESS);
 
 #if BTM_SCO_INCLUDED == TRUE
@@ -886,7 +917,7 @@ tBTM_STATUS BTM_SetLinkPolicy (BD_ADDR remote_bda, UINT16 *settings)
             *settings &= (~HCI_ENABLE_MASTER_SLAVE_SWITCH);
             BTM_TRACE_API ("BTM_SetLinkPolicy switch not supported (settings: 0x%04x)", *settings );
         }
-        if ( (*settings & HCI_ENABLE_MASTER_SLAVE_SWITCH) && (btm_blacklistted_for_role_switch(remote_bda)) )
+        if ( (*settings & HCI_ENABLE_MASTER_SLAVE_SWITCH) && (btm_blacklistted_for_incoming_role_switch(remote_bda)) )
         {
             *settings &= (~HCI_ENABLE_MASTER_SLAVE_SWITCH);
             BTM_TRACE_API ("BTM_SetLinkPolicy switch not supported (settings: 0x%04x)", *settings );

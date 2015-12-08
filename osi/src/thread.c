@@ -123,6 +123,20 @@ void thread_free(thread_t *thread) {
   osi_free(thread);
 }
 
+bool thread_set_priority(thread_t *thread, int priority) {
+  if (!thread)
+    return false;
+
+  const int rc = setpriority(PRIO_PROCESS, thread->tid, priority);
+  if (rc < 0) {
+    LOG_ERROR("%s unable to set thread priority %d for tid %d, error %d",
+      __func__, priority, thread->tid, rc);
+    return false;
+  }
+
+  return true;
+}
+
 void thread_join(thread_t *thread) {
   assert(thread != NULL);
 
@@ -165,20 +179,6 @@ void thread_stop(thread_t *thread) {
      return ;
   }
   reactor_stop(thread->reactor);
-}
-
-bool thread_set_priority(thread_t *thread, int priority) {
-  if (!thread)
-    return false;
-
-  const int rc = setpriority(PRIO_PROCESS, thread->tid, priority);
-  if (rc < 0) {
-    LOG_ERROR("%s unable to set thread priority %d for tid %d, error %d",
-      __func__, priority, thread->tid, rc);
-    return false;
-  }
-
-  return true;
 }
 
 bool thread_is_self(const thread_t *thread) {

@@ -70,7 +70,7 @@
 #define BTE_DID_CONF_FILE "/etc/bluetooth/bt_did.conf"
 #endif
 
-#define VENDOR_PERSISTENCE_PATH    "/persist"
+#define VENDOR_PERSISTENCE_PATH    "/persist/bluetooth"
 #define VENDOR_BT_NV_FILE_NAME     ".bt_nv.bin"
 #define VENDOR_PAYLOAD_MAXLENGTH   (260)
 #define VENDOR_MAX_CMD_HDR_SIZE    (3)
