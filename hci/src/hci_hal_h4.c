@@ -31,6 +31,7 @@
 #include "vendor.h"
 
 #define HCI_HAL_SERIAL_BUFFER_SIZE 1026
+#define HCI_BLE_EVENT 0x3e
 
 // Increased HCI thread priority to keep up with the audio sub-system
 // when streaming time sensitive data (A2DP).
@@ -47,6 +48,8 @@ static int uart_fd;
 static eager_reader_t *uart_stream;
 static serial_data_type_t current_data_type;
 static bool stream_has_interpretation;
+static bool stream_corruption_detected;
+static uint8_t stream_corruption_bytes_to_ignore;
 
 static void event_uart_has_bytes(eager_reader_t *reader, void *context);
 
@@ -86,6 +89,8 @@ static bool hal_open() {
   }
 
   stream_has_interpretation = false;
+  stream_corruption_detected = false;
+  stream_corruption_bytes_to_ignore = 0;
   eager_reader_register(uart_stream, thread_get_reactor(thread), event_uart_has_bytes, NULL);
 
   // Raise thread priorities to keep up with audio
@@ -185,6 +190,40 @@ static bool hal_dev_in_reset()
 
 // Internal functions
 
+// WORKAROUND:
+// As exhibited by b/23934838, during result-heavy LE scans, the UART byte
+// stream can get corrupted, leading to assertions caused by mis-interpreting
+// the bytes following the corruption.
+// This workaround looks for tell-tale signs of a BLE event and attempts to
+// skip the correct amount of bytes in the stream to re-synchronize onto
+// a packet boundary.
+// Function returns true if |byte_read| has been processed by the workaround.
+static bool stream_corrupted_during_le_scan_workaround(const uint8_t byte_read)
+{
+  if (!stream_corruption_detected && byte_read == HCI_BLE_EVENT) {
+    LOG_ERROR("%s HCI stream corrupted (message type 0x3E)!", __func__);
+    stream_corruption_detected = true;
+    return true;
+  }
+
+  if (stream_corruption_detected) {
+    if (stream_corruption_bytes_to_ignore == 0) {
+      stream_corruption_bytes_to_ignore = byte_read;
+      LOG_ERROR("%s About to skip %d bytes...", __func__, stream_corruption_bytes_to_ignore);
+    } else {
+      --stream_corruption_bytes_to_ignore;
+    }
+
+    if (stream_corruption_bytes_to_ignore == 0) {
+      LOG_ERROR("%s Back to our regularly scheduled program...", __func__);
+      stream_corruption_detected = false;
+    }
+    return true;
+  }
+
+  return false;
+}
+
 // See what data is waiting, and notify the upper layer
 static void event_uart_has_bytes(eager_reader_t *reader, UNUSED_ATTR void *context) {
   if (stream_has_interpretation) {
@@ -195,6 +234,10 @@ static void event_uart_has_bytes(eager_reader_t *reader, UNUSED_ATTR void *conte
       LOG_ERROR("%s could not read HCI message type", __func__);
       return;
     }
+
+    if (stream_corrupted_during_le_scan_workaround(type_byte))
+      return;
+
     if (type_byte < DATA_TYPE_ACL || type_byte > DATA_TYPE_EVENT) {
       LOG_ERROR("%s Unknown HCI message type. Dropping this byte 0x%x, min %x, max %x", __func__, type_byte, DATA_TYPE_ACL, DATA_TYPE_EVENT);
       return;

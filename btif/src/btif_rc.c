@@ -189,7 +189,6 @@ static int  uinput_driver_check();
 static int  uinput_create(char *name);
 static int  init_uinput (void);
 static void close_uinput (void);
-static BOOLEAN dev_blacklisted_for_absolute_volume(BD_ADDR peer_dev);
 #if (AVRC_CTLR_INCLUDED == TRUE)
 static BOOLEAN conn_status = FALSE;
 #endif
@@ -208,35 +207,6 @@ static const struct {
     { "REWIND",       AVRC_ID_REWIND,   KEY_REWIND,       0 },
     { "FAST FORWARD", AVRC_ID_FAST_FOR, KEY_FAST_FORWARD, 0 },
     { NULL,           0,                0,                0 }
-};
-
-/* the rc_black_addr_prefix and rc_white_addr_prefix are used to correct
- * IOP issues of absolute volume feature
- * We encoutered A2DP headsets/carkits advertising absolute volume but buggy.
- * We would like to blacklist those devices.
- * But we donot have a full list of the bad devices. So as a temp fix, we
- * are blacklisting all the devices except the devices we have well tested,
- * the ones in the whitelist.
- *
- * For now, only the rc_white_addr_prefix is used in the code while
- * rc_black_addr_prefix is kept here for future long term solution.
- */
-static const UINT8 rc_white_addr_prefix[][3] = {
-    {0x94, 0xCE, 0x2C}, // Sony SBH50
-    {0x30, 0x17, 0xC8}, // Sony wm600
-    {0x00, 0x15, 0x83}, // BlueSoleil dongle
-    {0x00, 0x80, 0x98}, // PTS dongle
-    {0x48, 0xC1, 0xAC}, // Plantronics Backbeat Go
-    {0x00, 0x1B, 0xDC}, // PTS dongle 2
-    {0x00, 0x19, 0x8E}, // Demant
-    {0x04, 0x88, 0xE2}, // Apple
-    {0x00, 0x0C, 0x8A}, // Bose
-    {0x1C, 0x48, 0xF9}  // Jabra Pulse
-};
-
-static const char* rc_white_name[] = {
-    "SBH50",
-    "MW600"
 };
 
 static void send_reject_response (UINT8 rc_handle, UINT8 label,
@@ -478,8 +448,7 @@ void handle_rc_features(int index)
                          bdaddr_to_string(&avdtp_addr, &addr1, sizeof(bdstr_t)),
                          bdaddr_to_string(&rc_addr, &addr2, sizeof(bdstr_t)) );
 
-        if (dev_blacklisted_for_absolute_volume(btif_rc_cb[index].rc_addr) ||
-            bdcmp(avdtp_addr.address, rc_addr.address))
+        if (bdcmp(avdtp_addr.address, rc_addr.address))
         {
             btif_rc_cb[index].rc_features &= ~BTA_AV_FEAT_ADV_CTRL;
         }
@@ -4791,44 +4760,4 @@ void lbl_destroy()
         device.lbllock_destroyed = TRUE;
         BTIF_TRACE_EVENT(" %s: lbllock destroy success ", __FUNCTION__);
     }
-}
-
-/*******************************************************************************
-**      Function       dev_blacklisted_for_absolute_volume
-**
-**      Description    Blacklist Devices that donot handle absolute volume well
-**                     We are blacklisting all the devices that are not in whitelist
-**
-**      Returns        True if the device is in the list
-*******************************************************************************/
-static BOOLEAN dev_blacklisted_for_absolute_volume(BD_ADDR peer_dev)
-{
-    int i;
-    char *dev_name_str = NULL;
-    int whitelist_size = sizeof(rc_white_addr_prefix)/sizeof(rc_white_addr_prefix[0]);
-
-    for (i = 0; i < whitelist_size; i++) {
-        if (rc_white_addr_prefix[i][0] == peer_dev[0] &&
-            rc_white_addr_prefix[i][1] == peer_dev[1] &&
-            rc_white_addr_prefix[i][2] == peer_dev[2]) {
-            BTIF_TRACE_DEBUG("whitelist absolute volume for %02x:%02x:%02x",
-                              peer_dev[0], peer_dev[1], peer_dev[2]);
-            return FALSE;
-        }
-    }
-
-    dev_name_str = BTM_SecReadDevName(peer_dev);
-    whitelist_size = sizeof(rc_white_name)/sizeof(char*);
-    if (dev_name_str != NULL) {
-        for (i = 0; i < whitelist_size; i++) {
-            if (strcmp(dev_name_str, rc_white_name[i]) == 0) {
-                BTIF_TRACE_DEBUG("whitelist absolute volume for %s", dev_name_str);
-                return FALSE;
-            }
-        }
-    }
-
-    BTIF_TRACE_WARNING("blacklist absolute volume for %02x:%02x:%02x, name = %s",
-                        peer_dev[0], peer_dev[1], peer_dev[2], dev_name_str);
-    return TRUE;
 }

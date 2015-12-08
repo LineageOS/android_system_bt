@@ -51,6 +51,18 @@ const tSMP_ACT smp_distribute_act [] =
     smp_set_derive_link_key
 };
 
+static bool lmp_version_below(BD_ADDR bda, uint8_t version)
+{
+    tACL_CONN *acl = btm_bda_to_acl(bda, BT_TRANSPORT_LE);
+    if (acl == NULL || acl->lmp_version == 0)
+    {
+        SMP_TRACE_WARNING("%s cannot retrieve LMP version...", __func__);
+        return false;
+    }
+    SMP_TRACE_WARNING("%s LMP version %d < %d", __func__, acl->lmp_version, version);
+    return acl->lmp_version < version;
+}
+
 /*******************************************************************************
 ** Function         smp_update_key_mask
 ** Description      This function updates the key mask for sending or receiving.
@@ -173,6 +185,7 @@ void smp_send_app_cback(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
                     }
 
                     if (!(p_cb->loc_auth_req & SMP_SC_SUPPORT_BIT)
+                        || lmp_version_below(p_cb->pairing_bda, HCI_PROTO_VERSION_4_2)
                         || interop_addr_match(INTEROP_DISABLE_LE_SECURE_CONNECTIONS,
                             (const bt_bdaddr_t *)&p_cb->pairing_bda))
                     {

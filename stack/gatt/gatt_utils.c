@@ -1497,7 +1497,7 @@ UINT32 gatt_add_sdp_record (tBT_UUID *p_uuid, UINT16 start_hdl, UINT16 end_hdl)
 
         case LEN_UUID_128:
             UINT8_TO_BE_STREAM (p, (UUID_DESC_TYPE << 3) | SIZE_SIXTEEN_BYTES);
-            ARRAY_TO_BE_STREAM (p, p_uuid->uu.uuid128, LEN_UUID_128);
+            ARRAY_TO_BE_STREAM_REVERSE (p, p_uuid->uu.uuid128, LEN_UUID_128);
             SDP_AddAttribute (sdp_handle, ATTR_ID_SERVICE_CLASS_ID_LIST, DATA_ELE_SEQ_DESC_TYPE,
                               (UINT32) (p - buff), buff);
             break;
