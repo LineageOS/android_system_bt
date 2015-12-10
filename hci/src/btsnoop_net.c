@@ -77,10 +77,6 @@ static int local_socket_create(void) {
 }
 
 void btsnoop_net_open() {
-#if (!defined(BT_NET_DEBUG) || (BT_NET_DEBUG != TRUE))
-  return;               // Disable using network sockets for security reasons
-#endif
-
   listen_thread_valid_ = (pthread_create(&listen_thread_, NULL, listen_fn_, NULL) == 0);
   if (!listen_thread_valid_) {
     LOG_ERROR("%s pthread_create failed: %s", __func__, strerror(errno));
@@ -90,12 +86,11 @@ void btsnoop_net_open() {
 }
 
 void btsnoop_net_close() {
-#if (!defined(BT_NET_DEBUG) || (BT_NET_DEBUG != TRUE))
-  return;               // Disable using network sockets for security reasons
-#endif
-
   if (listen_thread_valid_) {
+#if (defined(BT_NET_DEBUG) && (NET_DEBUG == TRUE))
+    // Disable using network sockets for security reasons
     shutdown(listen_socket_, SHUT_RDWR);
+#endif
     shutdown(listen_socket_local_, SHUT_RDWR);
     pthread_join(listen_thread_, NULL);
     safe_close_(&client_socket_btsnoop);
@@ -105,10 +100,6 @@ void btsnoop_net_close() {
 
 void btsnoop_net_write(const void *data, size_t length) {
   ssize_t ret;
-#if (!defined(BT_NET_DEBUG) || (BT_NET_DEBUG != TRUE))
-  return;               // Disable using network sockets for security reasons
-#endif
-
   pthread_mutex_lock(&client_socket_lock_);
   if (client_socket_btsnoop != -1) {
     do {
@@ -127,14 +118,15 @@ void btsnoop_net_write(const void *data, size_t length) {
 }
 
 static void *listen_fn_(UNUSED_ATTR void *context) {
-  ssize_t ret;
   fd_set sock_fds;
-  int fd_max, retval;
+  int fd_max = -1, retval;
 
   prctl(PR_SET_NAME, (unsigned long)LISTEN_THREAD_NAME_, 0, 0, 0);
 
   FD_ZERO(&sock_fds);
 
+#if (defined(BT_NET_DEBUG) && (NET_DEBUG == TRUE))
+  // Disable using network sockets for security reasons
   listen_socket_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (listen_socket_ == -1) {
     LOG_ERROR("%s socket creation failed: %s", __func__, strerror(errno));
@@ -162,12 +154,18 @@ static void *listen_fn_(UNUSED_ATTR void *context) {
     LOG_ERROR("%s unable to listen: %s", __func__, strerror(errno));
     goto cleanup;
   }
+#endif
 
   if (local_socket_create() != -1) {
     if (listen_socket_local_ > fd_max) {
       fd_max = listen_socket_local_;
     }
     FD_SET(listen_socket_local_, &sock_fds);
+  }
+
+  if (fd_max == -1) {
+    LOG_ERROR("%s No sockets to wait for conn..", __func__);
+    return NULL;
   }
 
   for (;;) {
@@ -180,12 +178,7 @@ static void *listen_fn_(UNUSED_ATTR void *context) {
       goto cleanup;
     }
 
-    if(retval == 2) {
-        LOG_INFO("%s sockets shutdown :", __func__);
-        break;
-    }
-
-    if (FD_ISSET(listen_socket_, &sock_fds)) {
+    if ((listen_socket_ != -1) && FD_ISSET(listen_socket_, &sock_fds)) {
       client_socket = accept(listen_socket_, NULL, NULL);
       if (client_socket == -1) {
         if (errno == EINVAL || errno == EBADF) {
@@ -195,7 +188,7 @@ static void *listen_fn_(UNUSED_ATTR void *context) {
         LOG_WARN("%s error accepting TCP socket: %s", __func__, strerror(errno));
         continue;
       }
-    } else if (FD_ISSET(listen_socket_local_, &sock_fds)){
+    } else if ((listen_socket_local_ != -1) && FD_ISSET(listen_socket_local_, &sock_fds)){
       struct sockaddr_un cliaddr;
       int length;
 
@@ -215,11 +208,13 @@ static void *listen_fn_(UNUSED_ATTR void *context) {
     pthread_mutex_lock(&client_socket_lock_);
     safe_close_(&client_socket_btsnoop);
     client_socket_btsnoop = client_socket;
-    ret = send(client_socket_btsnoop, "btsnoop\0\0\0\0\1\0\0\x3\xea", 16, 0);
+    send(client_socket_btsnoop, "btsnoop\0\0\0\0\1\0\0\x3\xea", 16, 0);
     pthread_mutex_unlock(&client_socket_lock_);
 
     FD_ZERO(&sock_fds);
-    FD_SET(listen_socket_, &sock_fds);
+    if(listen_socket_ != -1) {
+      FD_SET(listen_socket_, &sock_fds);
+    }
     if(listen_socket_local_ != -1) {
         FD_SET(listen_socket_local_, &sock_fds);
     }
