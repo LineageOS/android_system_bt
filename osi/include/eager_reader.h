@@ -23,6 +23,7 @@
 #include <stdint.h>
 
 #include "allocator.h"
+#include "osi/include/thread.h"
 
 typedef struct eager_reader_t eager_reader_t;
 typedef struct reactor_t reactor_t;
@@ -61,3 +62,7 @@ void eager_reader_unregister(eager_reader_t *reader);
 // but you should probably only be reading from one thread anyway,
 // otherwise the byte stream probably doesn't make sense.
 size_t eager_reader_read(eager_reader_t *reader, uint8_t *buffer, size_t max_size, bool block);
+
+// Returns the inbound read thread for a given |reader| or NULL if the thread
+// is not running.
+thread_t* eager_reader_get_read_thread(const eager_reader_t *reader);

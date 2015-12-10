@@ -35,6 +35,12 @@
 #include "osi/include/semaphore.h"
 #include "osi/include/thread.h"
 
+// Make callbacks run at high thread priority. Some callbacks are used for audio
+// related timer tasks as well as re-transmissions etc. Since we at this point
+// cannot differentiate what callback we are dealing with, assume high priority
+// for now.
+// TODO(eisenbach): Determine correct thread priority (from parent?/per alarm?)
+static const int CALLBACK_THREAD_PRIORITY_HIGH = -19;
 
 struct alarm_t {
   // The lock is held while the callback for this alarm is being executed.
@@ -246,8 +252,7 @@ static bool lazy_initialize(void) {
   // during a2dp music playback, media task/btu/hci/event threads are all high priority
   // but actual callback thread is remaining normal which mean it's possible not to
   // schedule alarm callback in-time if system is busy
-  thread_set_priority(callback_thread, TIMER_CALLBACK_THREAD_PRIORITY);
-
+  thread_set_priority(callback_thread, CALLBACK_THREAD_PRIORITY_HIGH);
   thread_post(callback_thread, callback_dispatch, NULL);
   return true;
 }

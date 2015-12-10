@@ -46,9 +46,6 @@ static const interop_addr_t interop_addr_database[] = {
   {{0xac, 0x9e, 0x17,       0,0,0}, 3, INTEROP_DISABLE_LE_SECURE_CONNECTIONS},
   {{0xf0, 0x79, 0x59,       0,0,0}, 3, INTEROP_DISABLE_LE_SECURE_CONNECTIONS},
 
-  // Polar Heart Rate Monitor
-  {{0x00, 0x22, 0xd0,       0,0,0}, 3, INTEROP_DISABLE_LE_SECURE_CONNECTIONS},
-
   // Motorola Key Link
   {{0x1c, 0x96, 0x5a,       0,0,0}, 3, INTEROP_DISABLE_LE_SECURE_CONNECTIONS},
 
@@ -56,6 +53,8 @@ static const interop_addr_t interop_addr_database[] = {
   {{0x80, 0xea, 0xCa,       0,0,0}, 3, INTEROP_DISABLE_LE_SECURE_CONNECTIONS},
   // Xiaomi Mi Band
   {{0x88, 0x0f, 0x10,       0,0,0}, 3, INTEROP_DISABLE_LE_SECURE_CONNECTIONS},
+  // Flic smart button
+  {{0x80, 0xe4, 0xda, 0x70,   0,0}, 4, INTEROP_DISABLE_LE_SECURE_CONNECTIONS},
 
   // BMW car kits (Harman/Becker)
   {{0x9c, 0xdf, 0x03,       0,0,0}, 3, INTEROP_AUTO_RETRY_PAIRING},

@@ -30,7 +30,6 @@
 #include "osi/include/osi.h"
 #include "osi/include/log.h"
 #include "osi/include/reactor.h"
-#include "osi/include/thread.h"
 
 #if !defined(EFD_SEMAPHORE)
 #  define EFD_SEMAPHORE (1 << 0)
@@ -210,6 +209,11 @@ size_t eager_reader_read(eager_reader_t *reader, uint8_t *buffer, size_t max_siz
   }
 
   return bytes_consumed;
+}
+
+thread_t* eager_reader_get_read_thread(const eager_reader_t *reader) {
+  assert(reader != NULL);
+  return reader->inbound_read_thread;
 }
 
 static bool has_byte(const eager_reader_t *reader) {

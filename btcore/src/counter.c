@@ -257,6 +257,10 @@ static bool counter_foreach_cb_(hash_map_entry_t *hash_map_entry, void *context)
 }
 
 static bool counter_socket_open(void) {
+#if (!defined(BT_NET_DEBUG) || (BT_NET_DEBUG != TRUE))
+  return true;          // Disable using network sockets for security reasons
+#endif
+
   assert(listen_socket_ == NULL);
   assert(thread_ == NULL);
   assert(clients_ == NULL);
@@ -294,6 +298,10 @@ error:;
 }
 
 static void counter_socket_close(void) {
+#if (!defined(BT_NET_DEBUG) || (BT_NET_DEBUG != TRUE))
+  return;               // Disable using network sockets for security reasons
+#endif
+
   socket_free(listen_socket_);
   thread_free(thread_);
   list_free(clients_);

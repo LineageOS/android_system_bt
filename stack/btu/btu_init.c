@@ -45,6 +45,10 @@
 #endif
 #endif
 
+// Increase BTU task thread priority to avoid pre-emption
+// of audio realated tasks.
+#define BTU_TASK_THREAD_PRIORITY -19
+
 extern fixed_queue_t *btif_msg_queue;
 
 // Communication queue from bta thread to bt_workqueue.
@@ -192,6 +196,8 @@ void BTU_StartUp(void)
     bt_workqueue_thread = thread_new(BT_WORKQUEUE_NAME);
     if (bt_workqueue_thread == NULL)
         goto error_exit;
+
+    thread_set_priority(bt_workqueue_thread, BTU_TASK_THREAD_PRIORITY);
 
     // Continue startup on bt workqueue thread.
     thread_post(bt_workqueue_thread, btu_task_start_up, NULL);

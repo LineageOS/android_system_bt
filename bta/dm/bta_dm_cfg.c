@@ -86,7 +86,11 @@ const tBTA_DM_CFG bta_dm_cfg =
 #define BTA_AV_ROLE BTA_MASTER_ROLE_PREF
 #endif
 
-#define BTA_DM_NUM_RM_ENTRY    4
+#ifndef BTA_PANU_ROLE
+/* By default, AV role (backward BTA_MASTER_ROLE_PREF) */
+#define BTA_PANU_ROLE BTA_SLAVE_ROLE_ONLY
+#endif
+#define BTA_DM_NUM_RM_ENTRY    6
 
 /* appids for PAN used by insight sample application
    these have to be same as defined in btui_int.h */
@@ -100,8 +104,10 @@ const tBTA_DM_CFG bta_dm_cfg =
 const tBTA_DM_RM bta_dm_rm_cfg[] =
 {
     {BTA_ID_SYS, BTA_DM_NUM_RM_ENTRY, BTA_DM_SCATTERNET},
-    {BTA_ID_PAN, BTUI_PAN_ID_NAP, BTA_MASTER_ROLE_ONLY},
-    {BTA_ID_PAN, BTUI_PAN_ID_GN, BTA_MASTER_ROLE_ONLY},
+    {BTA_ID_PAN, BTUI_PAN_ID_NAP, BTA_ANY_ROLE},
+    {BTA_ID_PAN, BTUI_PAN_ID_GN, BTA_ANY_ROLE},
+    {BTA_ID_PAN, BTA_APP_ID_PAN_MULTI, BTA_MASTER_ROLE_ONLY},
+    {BTA_ID_PAN, BTUI_PAN_ID_PANU, BTA_PANU_ROLE},
     {BTA_ID_HH,  BTA_ALL_APP_ID, BTA_HH_ROLE},
     {BTA_ID_AV,  BTA_ALL_APP_ID, BTA_AV_ROLE}
 };

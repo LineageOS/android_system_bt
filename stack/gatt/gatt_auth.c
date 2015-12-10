@@ -103,6 +103,11 @@ void gatt_verify_signature(tGATT_TCB *p_tcb, BT_HDR *p_buf)
     UINT8   *p, *p_orig = (UINT8 *)(p_buf + 1) + p_buf->offset;
     UINT32  counter;
 
+    if (p_buf->len < GATT_AUTH_SIGN_LEN + 4) {
+        GATT_TRACE_ERROR("%s: Data length %u less than expected %u",
+                         __func__, p_buf->len, GATT_AUTH_SIGN_LEN + 4);
+        return;
+    }
     cmd_len = p_buf->len - GATT_AUTH_SIGN_LEN + 4;
     p =  p_orig + cmd_len - 4;
     STREAM_TO_UINT32(counter, p);

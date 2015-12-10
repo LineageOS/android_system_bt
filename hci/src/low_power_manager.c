@@ -79,7 +79,6 @@ static void init(thread_t *post_thread) {
   thread = post_thread;
 
   vendor->set_callback(VENDOR_SET_LPM_MODE, vendor_enable_disable_callback);
-  vendor->send_command(VENDOR_GET_LPM_IDLE_TIMEOUT, &idle_timeout_ms);
 
   idle_alarm = alarm_new();
   if (!idle_alarm) {
@@ -121,7 +120,7 @@ static void wake_assert() {
 
 static void transmit_done() {
   transmit_is_done = true;
-  if (wake_state == LPM_WAKE_W4_TX_DONE) {
+  if (wake_state == LPM_WAKE_W4_TX_DONE || wake_state == LPM_WAKE_ASSERTED) {
     wake_state = LPM_WAKE_W4_TIMEOUT;
     start_idle_timer();
   }
@@ -147,6 +146,8 @@ static void enable(bool enable) {
   } else {
     uint8_t command = enable ? BT_VND_LPM_ENABLE : BT_VND_LPM_DISABLE;
     state = enable ? LPM_ENABLING : LPM_DISABLING;
+    if (state == LPM_ENABLING)
+        vendor->send_command(VENDOR_GET_LPM_IDLE_TIMEOUT, &idle_timeout_ms);
     vendor->send_async_command(VENDOR_SET_LPM_MODE, &command);
   }
 }

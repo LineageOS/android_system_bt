@@ -24,6 +24,9 @@
 #define HCI_PROTO_VERSION_2_0 0x03      /* Version for BT spec 2.0          */
 #define HCI_PROTO_VERSION_2_1 0x04      /* Version for BT spec 2.1 [Lisbon] */
 #define HCI_PROTO_VERSION_3_0 0x05      /* Version for BT spec 3.0          */
+#define HCI_PROTO_VERSION_4_0 0x06      /* Version for BT spec 4.0          */
+#define HCI_PROTO_VERSION_4_1 0x07      /* Version for BT spec 4.1          */
+#define HCI_PROTO_VERSION_4_2 0x08      /* Version for BT spec 4.2          */
 #define HCI_PROTO_REVISION    0x000C    /* Current implementation version   */
 /*
 **  Definitions for HCI groups

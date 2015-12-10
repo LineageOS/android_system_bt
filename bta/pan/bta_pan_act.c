@@ -318,6 +318,53 @@ static void bta_pan_mfilt_ind_cback(UINT16 handle, BOOLEAN indication,tBNEP_RESU
 
 /*******************************************************************************
 **
+** Function         bta_pan_has_multiple_connections
+**
+** Description      Check whether there are multiple GN/NAP connections to
+**                  different devices
+**
+**
+** Returns          BOOLEAN
+**
+*******************************************************************************/
+static BOOLEAN bta_pan_has_multiple_connections(UINT8 app_id)
+{
+    tBTA_PAN_SCB *p_scb = NULL;
+    BOOLEAN     found = FALSE;
+    BD_ADDR     bd_addr;
+
+    for (UINT8 index = 0; index < BTA_PAN_NUM_CONN; index++)
+    {
+        p_scb = &bta_pan_cb.scb[index];
+        if (p_scb->in_use == TRUE && app_id == p_scb->app_id)
+        {
+            /* save temp bd_addr */
+            bdcpy(bd_addr, p_scb->bd_addr);
+            found = TRUE;
+            break;
+        }
+    }
+
+    /* If cannot find a match then there is no connection at all */
+    if (found == FALSE)
+        return FALSE;
+
+    /* Find whether there is another connection with different device other than PANU.
+        Could be same service or different service */
+    for (UINT8 index = 0; index < BTA_PAN_NUM_CONN; index++)
+    {
+        p_scb = &bta_pan_cb.scb[index];
+        if (p_scb->in_use == TRUE && p_scb->app_id != bta_pan_cb.app_id[0] &&
+                bdcmp(bd_addr, p_scb->bd_addr))
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+/*******************************************************************************
+**
 ** Function         bta_pan_enable
 **
 ** Description
@@ -592,6 +639,18 @@ void bta_pan_conn_open(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data)
         data.status = BTA_PAN_FAIL;
     }
 
+    p_scb->pan_flow_enable = TRUE;
+    p_scb->app_flow_enable = TRUE;
+
+    /* If app_id is NAP/GN, check whether there are multiple connections.
+       If there are, provide a special app_id to dm to enforce master role only. */
+    if ((p_scb->app_id == bta_pan_cb.app_id[1] || p_scb->app_id == bta_pan_cb.app_id[2]) &&
+            bta_pan_has_multiple_connections(p_scb->app_id))
+    {
+        p_scb->app_id = BTA_APP_ID_PAN_MULTI;
+    }
+
+    bta_sys_conn_open(BTA_ID_PAN, p_scb->app_id, p_scb->bd_addr);
     bta_pan_cb.p_cback(BTA_PAN_OPEN_EVT, (tBTA_PAN *)&data);
 
 

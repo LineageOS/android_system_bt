@@ -3565,7 +3565,6 @@ static void bta_dm_disable_conn_down_timer_cback (TIMER_LIST_ENT *p_tle)
 *******************************************************************************/
 static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id, BD_ADDR peer_addr)
 {
-
     UINT8 j;
     tBTA_PREF_ROLES role;
     tBTA_DM_PEER_DEVICE *p_dev;
@@ -3619,7 +3618,11 @@ static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
         APPL_TRACE_WARNING("bta_dm_rm_cback:%d, status:%d", bta_dm_cb.cur_av_count, status);
     }
 
-    bta_dm_adjust_roles(FALSE);
+    /* Don't adjust roles for each busy/idle state transition to avoid
+       excessive switch requests when individual profile busy/idle status
+       changes */
+    if ((status != BTA_SYS_CONN_BUSY) && (status != BTA_SYS_CONN_IDLE))
+        bta_dm_adjust_roles(FALSE);
 }
 
 /*******************************************************************************
@@ -3734,7 +3737,7 @@ static void bta_dm_adjust_roles(BOOLEAN delay_role_switch)
                 }
 
                 if((bta_dm_cb.device_list.peer_device[i].pref_role == BTA_MASTER_ROLE_ONLY)
-                    || (bta_dm_cb.device_list.count > 1))
+                    || (br_count > 1))
                 {
 
                 /* Initiating immediate role switch with certain remote devices
@@ -3743,7 +3746,8 @@ static void bta_dm_adjust_roles(BOOLEAN delay_role_switch)
                   versions are stored in a blacklist and role switch with these devices are
                   delayed to avoid the collision with link encryption setup */
 
-                    if (delay_role_switch == FALSE)
+                    if (bta_dm_cb.device_list.peer_device[i].pref_role != BTA_SLAVE_ROLE_ONLY &&
+                            delay_role_switch == FALSE)
                     {
                         BTM_SwitchRole (bta_dm_cb.device_list.peer_device[i].peer_bdaddr,
                                         HCI_ROLE_MASTER, NULL);
