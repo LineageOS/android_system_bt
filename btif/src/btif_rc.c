@@ -36,6 +36,7 @@
 #include "btif_common.h"
 #include "btif_util.h"
 #include "btif_av.h"
+#include "device/include/interop.h"
 #include "hardware/bt_rc.h"
 #include "uinput.h"
 
@@ -324,11 +325,8 @@ void handle_rc_features()
     bt_bdaddr_t rc_addr;
     bdcpy(rc_addr.address, btif_rc_cb.rc_addr);
 
-    // TODO(eisenbach): If devices need to be blacklisted for absolute
-    // volume, it should be added to device/include/interop_database.h
-    // For now, everything goes... If blacklisting is necessary, exclude
-    // the following bit here:
-    //    btif_rc_cb.rc_features &= ~BTA_AV_FEAT_ADV_CTRL;
+    if (interop_match(INTEROP_DISABLE_ABSOLUTE_VOLUME, &rc_addr))
+        btif_rc_cb.rc_features &= ~BTA_AV_FEAT_ADV_CTRL;
 
     if (btif_rc_cb.rc_features & BTA_AV_FEAT_BROWSE)
     {

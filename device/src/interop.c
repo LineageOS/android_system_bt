@@ -96,6 +96,7 @@ static const char* interop_feature_string_(const interop_feature_t feature) {
   switch (feature) {
     CASE_RETURN_STR(INTEROP_DISABLE_LE_SECURE_CONNECTIONS)
     CASE_RETURN_STR(INTEROP_AUTO_RETRY_PAIRING)
+    CASE_RETURN_STR(INTEROP_DISABLE_ABSOLUTE_VOLUME)
   }
 
   return "UNKNOWN";

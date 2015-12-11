@@ -34,7 +34,12 @@ typedef enum {
   // requiring multiple retries to complete pairing. To avoid degrading the user
   // experience for those devices, automatically re-try pairing if page
   // timeouts are received during pairing.
-  INTEROP_AUTO_RETRY_PAIRING
+  INTEROP_AUTO_RETRY_PAIRING,
+
+  // Devices requiring this workaround do not handle Bluetooth Absolute Volume
+  // control correctly, leading to undesirable (potentially harmful) volume levels
+  // or general lack of controlability.
+  INTEROP_DISABLE_ABSOLUTE_VOLUME
 } interop_feature_t;
 
 // Check if a given |addr| matches a known interoperability workaround as identified

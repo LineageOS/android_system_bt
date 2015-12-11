@@ -43,5 +43,21 @@ static const interop_entry_t interop_database[] = {
   {{0x80, 0xe4, 0xda, 0x70,   0,0}, 4, INTEROP_DISABLE_LE_SECURE_CONNECTIONS},
 
   // BMW car kits (Harman/Becker)
-  {{0x9c, 0xdf, 0x03,       0,0,0}, 3, INTEROP_AUTO_RETRY_PAIRING}
+  {{0x9c, 0xdf, 0x03,       0,0,0}, 3, INTEROP_AUTO_RETRY_PAIRING},
+
+  // JayBird BlueBuds X - low granularity on volume control
+  {{0x44, 0x5e, 0xf3,       0,0,0}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
+
+  // LG Tone HBS-730 - unacceptably loud volume
+  {{0x00, 0x18, 0x6b,       0,0,0}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
+  {{0xb8, 0xad, 0x3e,       0,0,0}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
+
+  // LG Tone HV-800 - unacceptably loud volume
+  {{0xa0, 0xe9, 0xdb,       0,0,0}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
+
+  // SOL REPUBLIC Tracks Air - unable to adjust volume back off from max
+  {{0xa4, 0x15, 0x66,       0,0,0}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
+
+  // VW Car Kit - not enough granularity with volume
+  {{0x00, 0x26, 0x7e,       0,0,0}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
 };
