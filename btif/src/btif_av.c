@@ -34,6 +34,7 @@
 #include <system/audio.h>
 #include "hardware/bt_av.h"
 #include "osi/include/allocator.h"
+#include <cutils/properties.h>
 
 #define LOG_TAG "bt_btif_av"
 
@@ -366,6 +367,8 @@ static void btif_report_audio_state(btav_audio_state_t state, bt_bdaddr_t *bd_ad
 
 static BOOLEAN btif_av_state_idle_handler(btif_sm_event_t event, void *p_data, int index)
 {
+    char a2dp_role[PROPERTY_VALUE_MAX] = "false";
+
     BTIF_TRACE_IMP("%s event:%s flags %x on Index = %d", __FUNCTION__,
                      dump_av_sm_event_name(event), btif_av_cb[index].flags, index);
 
@@ -388,6 +391,14 @@ static BOOLEAN btif_av_state_idle_handler(btif_sm_event_t event, void *p_data, i
 #ifdef BTA_AV_SPLIT_A2DP_ENABLED
             btif_av_cb[index].channel_id = 0;
 #endif
+            property_get("persist.service.bt.a2dp.sink", a2dp_role, "false");
+            if (!strncmp("false", a2dp_role, 5)) {
+                btif_av_cb[index].peer_sep = AVDT_TSEP_SNK;
+                btif_a2dp_set_peer_sep(AVDT_TSEP_SNK);
+            } else {
+                btif_av_cb[index].peer_sep = AVDT_TSEP_SRC;
+                btif_a2dp_set_peer_sep(AVDT_TSEP_SRC);
+            }
             /* This API will be called twice at initialization
             ** Idle can be moved when device is disconnected too.
             ** Take care of other connected device here.*/
