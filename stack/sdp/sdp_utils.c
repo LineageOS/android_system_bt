@@ -1027,6 +1027,11 @@ UINT8 *sdpu_build_partial_attrib_entry (UINT8 *p_out, tSDP_ATTRIBUTE *p_attr, UI
     sdpu_build_attrib_entry(p_tmp_attr, p_attr);
     attr_len = sdpu_get_attrib_entry_len(p_attr);
 
+    if (len > SDP_MAX_ATTR_LEN)
+    {
+        SDP_TRACE_ERROR("sdpu_build_partial_attrib_entry len %d exceeds SDP_MAX_ATTR_LEN",len);
+        len = SDP_MAX_ATTR_LEN;
+    }
     len_to_copy = ((attr_len - *offset) < len) ? (attr_len - *offset): len;
     if(p_out)
     {
