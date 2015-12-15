@@ -45,12 +45,22 @@ static const vendor_t *vendor;
 static thread_t *thread; // Not owned by us
 
 static int uart_fds[CH_MAX];
+#if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
+static hci_reader_t *event_stream;
+static hci_reader_t *acl_stream;
+#else
 static eager_reader_t *event_stream;
 static eager_reader_t *acl_stream;
+#endif
 
 static uint16_t transmit_data_on(int fd, uint8_t *data, uint16_t length);
+#if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
+static void event_event_stream_has_bytes(void *context);
+static void event_acl_stream_has_bytes(void *context);
+#else
 static void event_event_stream_has_bytes(eager_reader_t *reader, void *context);
 static void event_acl_stream_has_bytes(eager_reader_t *reader, void *context);
+#endif
 
 // Interface functions
 
@@ -97,6 +107,21 @@ static bool hal_open() {
     goto error;
   }
 
+#if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
+  event_stream = hci_reader_new(uart_fds[CH_EVT], HCI_HAL_SERIAL_BUFFER_SIZE, SIZE_MAX,
+                                                 thread, event_event_stream_has_bytes);
+  if (!event_stream) {
+    LOG_ERROR("%s unable to create hci reader for the event uart serial port.", __func__);
+    goto error;
+  }
+
+  acl_stream = hci_reader_new(uart_fds[CH_ACL_IN], HCI_HAL_SERIAL_BUFFER_SIZE, SIZE_MAX,
+                                                    thread, event_acl_stream_has_bytes);
+  if (!acl_stream) {
+    LOG_ERROR("%s unable to create hci reader for the acl-in uart serial port.", __func__);
+    goto error;
+  }
+#else
   event_stream = eager_reader_new(uart_fds[CH_EVT], &allocator_malloc, HCI_HAL_SERIAL_BUFFER_SIZE, SIZE_MAX, "hci_mct");
   if (!event_stream) {
     LOG_ERROR("%s unable to create eager reader for the event uart serial port.", __func__);
@@ -104,13 +129,15 @@ static bool hal_open() {
   }
 
   acl_stream = eager_reader_new(uart_fds[CH_ACL_IN], &allocator_malloc, HCI_HAL_SERIAL_BUFFER_SIZE, SIZE_MAX, "hci_mct");
-  if (!event_stream) {
+  if (!acl_stream) {
     LOG_ERROR("%s unable to create eager reader for the acl-in uart serial port.", __func__);
     goto error;
   }
 
   eager_reader_register(event_stream, thread_get_reactor(thread), event_event_stream_has_bytes, NULL);
   eager_reader_register(acl_stream, thread_get_reactor(thread), event_acl_stream_has_bytes, NULL);
+
+#endif
 
   return true;
 
@@ -122,8 +149,14 @@ error:;
 static void hal_close() {
   LOG_INFO("%s", __func__);
 
+#if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
+  hci_reader_free(event_stream);
+  hci_reader_free(acl_stream);
+#else
   eager_reader_free(event_stream);
   eager_reader_free(acl_stream);
+#endif
+
   vendor->send_command(VENDOR_CLOSE_USERIAL, NULL);
 
   for (int i = 0; i < CH_MAX; i++)
@@ -156,11 +189,19 @@ static bool hal_dev_in_reset()
 #endif
 
 static size_t read_data(serial_data_type_t type, uint8_t *buffer, size_t max_size, bool block) {
+#if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
+  if (type == DATA_TYPE_ACL) {
+    return hci_reader_read(acl_stream, buffer, max_size);
+  } else if (type == DATA_TYPE_EVENT) {
+    return hci_reader_read(event_stream, buffer, max_size);
+  }
+#else
   if (type == DATA_TYPE_ACL) {
     return eager_reader_read(acl_stream, buffer, max_size, block);
   } else if (type == DATA_TYPE_EVENT) {
     return eager_reader_read(event_stream, buffer, max_size, block);
   }
+#endif
 
   LOG_ERROR("%s invalid data type: %d", __func__, type);
   return 0;
@@ -168,6 +209,25 @@ static size_t read_data(serial_data_type_t type, uint8_t *buffer, size_t max_siz
 
 static void packet_finished(UNUSED_ATTR serial_data_type_t type) {
   // not needed by this protocol
+#if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
+  hci_reader_t *stream = NULL;
+  if (type == DATA_TYPE_ACL) {
+    stream = acl_stream;
+  } else if (type == DATA_TYPE_EVENT) {
+    stream = event_stream;
+  }
+
+  if(!stream) {
+    LOG_ERROR("%s invalid data type: %d", __func__, type);
+    return;
+  }
+
+  if (stream->rd_ptr == stream->wr_ptr) {
+    stream->rd_ptr = stream->wr_ptr = 0;
+  } else {
+    callbacks->data_ready(type);
+  }
+#endif
 }
 
 static uint16_t transmit_data(serial_data_type_t type, uint8_t *data, uint16_t length) {
@@ -208,14 +268,45 @@ static uint16_t transmit_data_on(int fd, uint8_t *data, uint16_t length) {
   return transmitted_length;
 }
 
-static void event_event_stream_has_bytes(UNUSED_ATTR eager_reader_t *reader, UNUSED_ATTR void *context) {
+#if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
+static void event_event_stream_has_bytes(void *context) {
+  size_t bytes_read;
+  hci_reader_t *reader = (hci_reader_t *) context;
+  bytes_read = read(reader->inbound_fd, reader->data_buffer+reader->wr_ptr,
+                                    reader->buffer_size - reader->wr_ptr);
+  if (bytes_read <= 0) {
+    LOG_ERROR("%s could not read HCI message type", __func__);
+    return;
+  }
+  reader->wr_ptr += bytes_read;
   callbacks->data_ready(DATA_TYPE_EVENT);
 }
+#else
+static void event_event_stream_has_bytes(UNUSED_ATTR eager_reader_t *reader, UNUSED_ATTR void *context) {
+   callbacks->data_ready(DATA_TYPE_EVENT);
+}
+#endif
 
-static void event_acl_stream_has_bytes(UNUSED_ATTR eager_reader_t *reader, UNUSED_ATTR void *context) {
+#if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
+static void event_acl_stream_has_bytes(void *context) {
   // No real concept of incoming SCO typed data, just ACL
+  size_t bytes_read;
+  hci_reader_t *reader = (hci_reader_t *) context;
+  bytes_read = read(reader->inbound_fd, reader->data_buffer+reader->wr_ptr,
+                                  reader->buffer_size - reader->wr_ptr);
+  if (bytes_read <= 0) {
+    LOG_ERROR("%s could not read HCI message type", __func__);
+    return;
+  }
+  reader->wr_ptr += bytes_read;
   callbacks->data_ready(DATA_TYPE_ACL);
 }
+#else
+static void event_acl_stream_has_bytes(UNUSED_ATTR eager_reader_t *reader, UNUSED_ATTR void *context) {
+   // No real concept of incoming SCO typed data, just ACL
+   callbacks->data_ready(DATA_TYPE_ACL);
+}
+#endif
 
 static const hci_hal_t interface = {
   hal_init,
