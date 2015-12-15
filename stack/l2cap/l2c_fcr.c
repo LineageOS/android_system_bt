@@ -197,6 +197,37 @@ void l2c_fcr_start_timer (tL2C_CCB *p_ccb)
 
 /*******************************************************************************
 **
+** Function         l2c_fcr_restart_timer
+**
+** Description      This function starts the (monitor or retransmission) timer.
+**
+** Returns          -
+**
+*******************************************************************************/
+void l2c_fcr_restart_timer (tL2C_CCB *p_ccb)
+{
+    assert(p_ccb != NULL);
+    UINT32  tout;
+
+    /* The timers which are in milliseconds */
+    if (p_ccb->fcrb.wait_ack)
+    {
+        tout = (UINT32)p_ccb->our_cfg.fcr.mon_tout;
+    }
+    else
+    {
+        tout = (UINT32)p_ccb->our_cfg.fcr.rtrans_tout;
+    }
+
+    /* restart the mentioned timer */
+    alarm_set_on_queue(p_ccb->fcrb.mon_retrans_timer, tout,
+                       l2c_ccb_timer_timeout, p_ccb,
+                       btu_general_alarm_queue);
+}
+
+
+/*******************************************************************************
+**
 ** Function         l2c_fcr_stop_timer
 **
 ** Description      This function stops the (monitor or transmission) timer.
@@ -1029,8 +1060,6 @@ static BOOLEAN process_reqseq (tL2C_CCB *p_ccb, UINT16 ctrl_word)
         }
 
         /* If we are still in a wait_ack state, do not mess with the timer */
-        if (!p_ccb->fcrb.wait_ack)
-            l2c_fcr_stop_timer (p_ccb);
 
         /* Check if we need to call the "packet_sent" callback */
         if ( (p_ccb->p_rcb) && (p_ccb->p_rcb->api.pL2CA_TxComplete_Cb) && (full_sdus_xmitted) )
@@ -1046,8 +1075,15 @@ static BOOLEAN process_reqseq (tL2C_CCB *p_ccb, UINT16 ctrl_word)
     }
 
     /* If anything still waiting for ack, restart the timer if it was stopped */
-    if (!fixed_queue_is_empty(p_fcrb->waiting_for_ack_q))
-        l2c_fcr_start_timer(p_ccb);
+    if(!p_ccb->fcrb.wait_ack) {
+        if (!fixed_queue_is_empty(p_fcrb->waiting_for_ack_q)) {
+//            l2c_fcr_start_timer(p_ccb);
+            l2c_fcr_restart_timer (p_ccb);
+        }
+        else
+            l2c_fcr_stop_timer (p_ccb);
+    }
+
     return (TRUE);
 }
 
