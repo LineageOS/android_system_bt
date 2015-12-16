@@ -1017,7 +1017,7 @@ typedef struct
 {
 
   tBTA_DM_PM_ACTION   power_mode;
-  UINT16              timeout;
+  UINT32              timeout;
 
 } tBTA_DM_PM_ACTN;
 
