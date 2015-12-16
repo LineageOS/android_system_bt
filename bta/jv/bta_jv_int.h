@@ -103,6 +103,8 @@ typedef struct
     UINT8           state;      /* state: see above enum */
     tBTA_JV_PM_ID   app_id;     /* JV app specific id indicating power table to use */
     BD_ADDR         peer_bd_addr;    /* Peer BD address */
+    BOOLEAN         is_idle_timer_started; /* intermediate idle timer running status */
+    TIMER_LIST_ENT  idle_tle; /* intermediate idle timer for paricular scb */
 } tBTA_JV_PM_CB;
 
 enum
@@ -447,5 +449,6 @@ extern void bta_jv_l2cap_start_server_le (tBTA_JV_MSG *p_data);
 extern void bta_jv_l2cap_stop_server_le (tBTA_JV_MSG *p_data);
 extern void bta_jv_l2cap_write_fixed (tBTA_JV_MSG *p_data);
 extern void bta_jv_l2cap_close_fixed (tBTA_JV_MSG *p_data);
+extern void bta_jv_idle_timeout_handler(TIMER_LIST_ENT *tle);
 
 #endif /* BTA_JV_INT_H */
