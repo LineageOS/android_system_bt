@@ -31,9 +31,9 @@ ifeq ($(QCOM_BT_USE_SMD_TTY),true)
 LOCAL_CFLAGS += -DQCOM_WCN_SSR
 endif
 
-ifeq ($(TARGET_BUILD_VARIANT), userdebug)
-    LOCAL_CFLAGS += -DBTSNOOP_DEFAULT=TRUE
-endif
+#ifeq ($(TARGET_BUILD_VARIANT), userdebug)
+#    LOCAL_CFLAGS += -DBTSNOOP_DEFAULT=TRUE
+#endif
 
 LOCAL_CFLAGS += -std=c99 $(bdroid_CFLAGS)
 
