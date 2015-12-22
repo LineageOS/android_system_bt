@@ -34,7 +34,7 @@ LOCAL_C_INCLUDES += \
 
 LOCAL_MODULE := libbt-hci
 
-ifeq ($(TARGET_BUILD_VARIANT),userdebug)
+ifeq ($(TARGET_BUILD_VARIANT), eng)
     LOCAL_CFLAGS += -DBTSNOOP_DEFAULT=TRUE
 endif
 
