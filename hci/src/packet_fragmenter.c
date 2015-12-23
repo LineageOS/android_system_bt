@@ -163,7 +163,7 @@ static void reassemble_and_dispatch(UNUSED_ATTR BT_HDR *packet) {
           return;
       }
       else if (full_length == packet->len) {
-          LOG_WARN("%s complete l2cap packet received:l2cap full length %d and hci length %d.", __func__, l2cap_length, packet->len);
+          LOG_VERBOSE("%s complete l2cap packet received:l2cap full length %d and hci length %d.", __func__, l2cap_length, packet->len);
           callbacks->reassembled(packet);
           return;
       }

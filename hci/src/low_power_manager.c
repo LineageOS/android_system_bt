@@ -186,13 +186,13 @@ static void idle_timer_expired(UNUSED_ATTR void *context) {
 void start_idle_timer(bool check_LPM) {
   if (state == LPM_ENABLED || !check_LPM) {
     alarm_set(idle_alarm, idle_timeout_ms, idle_timer_expired, NULL);
-    LOG_DEBUG("%s check_LPM = %d", __func__, check_LPM);
+    LOG_VERBOSE("%s check_LPM = %d", __func__, check_LPM);
   }
 }
 
 void stop_idle_timer() {
   alarm_cancel(idle_alarm);
-  LOG_DEBUG("%s", __func__);
+  LOG_VERBOSE("%s", __func__);
 }
 
 static void event_disable(UNUSED_ATTR void *context) {
