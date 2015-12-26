@@ -1616,12 +1616,33 @@ static void btif_av_handle_event(UINT16 event, char* p_param)
     tBTA_AV *p_bta_data = (tBTA_AV*)p_param;
     bt_bdaddr_t * bt_addr;
     UINT8 role;
+    int uuid;
 
     switch (event)
     {
         /*events from Upper layer and Media Task*/
         case BTIF_AV_CLEANUP_REQ_EVT: /*Clean up to be called on default index*/
             BTIF_TRACE_EVENT("%s: BTIF_AV_CLEANUP_REQ_EVT", __FUNCTION__);
+            uuid = (int)*p_param;
+            if (uuid == BTA_A2DP_SOURCE_SERVICE_ID)
+            {
+                if (bt_av_src_callbacks)
+                {
+                    bt_av_src_callbacks = NULL;
+                    if (bt_av_sink_callbacks != NULL)
+                        break;
+                }
+            }
+            else
+            {
+                if (bt_av_sink_callbacks)
+                {
+                    bt_av_sink_callbacks = NULL;
+                    if (bt_av_src_callbacks != NULL)
+                        break;
+                }
+            }
+
             btif_a2dp_stop_media_task();
             return;
         case BTIF_AV_CONNECT_REQ_EVT:
@@ -2405,7 +2426,8 @@ static void cleanup(int service_uuid)
     int i;
     BTIF_TRACE_IMP("AV %s", __FUNCTION__);
 
-    btif_transfer_context(btif_av_handle_event, BTIF_AV_CLEANUP_REQ_EVT, NULL, 0, NULL);
+    btif_transfer_context(btif_av_handle_event, BTIF_AV_CLEANUP_REQ_EVT,
+            (char*)&service_uuid, sizeof(int), NULL);
 
     btif_disable_service(service_uuid);
 
@@ -2419,24 +2441,12 @@ static void cleanup(int service_uuid)
 
 static void cleanup_src(void) {
     BTIF_TRACE_EVENT("%s", __FUNCTION__);
-
-    if (bt_av_src_callbacks)
-    {
-        bt_av_src_callbacks = NULL;
-        if (bt_av_sink_callbacks == NULL)
-            cleanup(BTA_A2DP_SOURCE_SERVICE_ID);
-    }
+    cleanup(BTA_A2DP_SOURCE_SERVICE_ID);
 }
 
 static void cleanup_sink(void) {
     BTIF_TRACE_EVENT("%s", __FUNCTION__);
-
-    if (bt_av_sink_callbacks)
-    {
-        bt_av_sink_callbacks = NULL;
-        if (bt_av_src_callbacks == NULL)
-            cleanup(BTA_A2DP_SINK_SERVICE_ID);
-    }
+    cleanup(BTA_A2DP_SINK_SERVICE_ID);
 }
 
 static void allow_connection(int is_valid, bt_bdaddr_t *bd_addr)
