@@ -212,11 +212,11 @@ static future_t *start_up(void) {
 
     page_number++;
   }
-
+#if (BLE_INCLUDED == TRUE)
   // read BLE offload features support from controller
   response = AWAIT_COMMAND(packet_factory->make_ble_read_offload_features_support());
   packet_parser->parse_ble_read_offload_features_response(response, &ble_offload_features_supported);
-
+#endif
 #if (SC_MODE_INCLUDED == TRUE)
   if(ble_offload_features_supported) {
     secure_connections_supported = HCI_SC_CTRLR_SUPPORTED(features_classic[2].as_array);
