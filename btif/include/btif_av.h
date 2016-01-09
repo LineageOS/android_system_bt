@@ -207,5 +207,27 @@ BOOLEAN btif_av_any_br_peer(void);
 *******************************************************************************/
 BOOLEAN btif_av_peer_supports_3mbps(void);
 
+#ifdef BTA_AV_SPLIT_A2DP_ENABLED
+/******************************************************************************
+**
+** Function         btif_av_get_streaming_channel_id
+**
+** Description      Returns streaming channel id
+**
+** Returns          channel id
+********************************************************************************/
+UINT16 btif_av_get_streaming_channel_id(void);
+
+/******************************************************************************
+**
+** Function         btif_av_get_peer_addr
+**
+** Description     Returns peer device address
+**
+** Returns          peer address
+********************************************************************************/
+void btif_av_get_peer_addr(bt_bdaddr_t *peer_bda);
+
+#endif
 
 #endif /* BTIF_AV_H */

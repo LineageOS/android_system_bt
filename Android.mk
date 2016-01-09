@@ -28,6 +28,11 @@ ifeq ($(BOARD_USES_WIPOWER), true)
 bdroid_CFLAGS  += -DWIPOWER_SUPPORTED
 endif
 
+ifeq ($(strip $(AUDIO_FEATURE_ENABLED_SPLIT_A2DP)),true)
+  bdroid_CFLAGS += -DBTA_AV_SPLIT_A2DP_ENABLED
+  bdroid_CFLAGS += -DBTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
+endif
+
 bdroid_CFLAGS += \
   -Wall \
   -Wno-unused-parameter \

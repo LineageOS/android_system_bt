@@ -43,7 +43,6 @@ const char *dev_path = "/dev/uhid";
 static tBTA_HH_RPT_CACHE_ENTRY sReportCache[BTA_HH_NV_LOAD_MAX];
 #endif
 
-
 #define REPORT_DESC_REPORT_ID           0x05
 #define REPORT_DESC_DIGITIZER_PAGE      0x0D
 #define REPORT_DESC_START_COLLECTION    0xA1

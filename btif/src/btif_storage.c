@@ -187,6 +187,7 @@ bt_status_t btif_in_fetch_bonded_ble_device(const char *remote_bd_addr,int add,
                                               btif_bonded_devices_t *p_bonded_devices);
 bt_status_t btif_storage_get_remote_addr_type(bt_bdaddr_t *remote_bd_addr,
                                               int *addr_type);
+bt_status_t btif_storage_check_ble_keys(bt_bdaddr_t *remote_bd_addr);
 
 /************************************************************************************
 **  Static functions
@@ -404,6 +405,11 @@ static int cfg2prop(bt_bdaddr_t *remote_bd_addr, bt_property_t *prop)
             {
                 bt_uuid_t *p_uuid = (bt_uuid_t*)prop->val;
                 uint32_t num_uuids = 0;
+                if( strlen(value) < 1279)
+                {
+                    value[strlen(value)] = ' ';
+                    value[strlen(value)+1] = '\0';
+                }
                 btif_in_split_uuids_string_to_list(value, p_uuid, &num_uuids);
                 prop->len = num_uuids * sizeof(bt_uuid_t);
                 ret = TRUE;
@@ -1241,6 +1247,18 @@ bt_status_t btif_storage_remove_ble_local_keys(void)
     return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
+bt_status_t btif_storage_check_ble_keys(bt_bdaddr_t *remote_bd_addr)
+{
+    bdstr_t bdstr;
+    int ret = BT_STATUS_FAIL;
+
+    bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
+    BTIF_TRACE_DEBUG(" %s in bd addr:%s",__FUNCTION__, bdstr);
+    if(btif_config_exist(bdstr, "LE_KEY_PENC"))
+        ret = BT_STATUS_SUCCESS;
+    return ret;
+}
+
 bt_status_t btif_in_fetch_bonded_ble_device(const char *remote_bd_addr, int add, btif_bonded_devices_t *p_bonded_devices)
 {
     int device_type;
@@ -1254,11 +1272,12 @@ bt_status_t btif_in_fetch_bonded_ble_device(const char *remote_bd_addr, int add,
     if (!btif_config_get_int(remote_bd_addr, "DevType", &device_type))
         return BT_STATUS_FAIL;
 
-    if ((device_type & BT_DEVICE_TYPE_BLE) == BT_DEVICE_TYPE_BLE)
+    string_to_bdaddr(remote_bd_addr, &bd_addr);
+    if (((device_type & BT_DEVICE_TYPE_BLE) == BT_DEVICE_TYPE_BLE) ||
+            ((device_type == BT_DEVICE_TYPE_BREDR) && (btif_storage_check_ble_keys(&bd_addr) == BT_STATUS_SUCCESS)))
     {
         BTIF_TRACE_DEBUG("%s Found a LE device: %s", __func__, remote_bd_addr);
 
-        string_to_bdaddr(remote_bd_addr, &bd_addr);
         bdcpy(bta_bd_addr, bd_addr.address);
 
         if (btif_storage_get_remote_addr_type(&bd_addr, &addr_type) != BT_STATUS_SUCCESS)

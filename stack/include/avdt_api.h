@@ -939,6 +939,20 @@ extern UINT16 AVDT_GetL2CapChannel(UINT8 handle);
 *******************************************************************************/
 extern UINT16 AVDT_GetSignalChannel(UINT8 handle, BD_ADDR bd_addr);
 
+#ifdef BTA_AV_SPLIT_A2DP_ENABLED
+/*******************************************************************************
+**
+** Function         AVDT_GetStreamingDestChannel
+**
+** Description      Get the Dest L2CAP CID used by the stream channel.
+**
+** Returns          Destination CID.
+**
+*******************************************************************************/
+UINT16 AVDT_GetStreamingDestChannelId(UINT16 lcid);
+#endif
+
+
 /*******************************************************************************
 **
 ** Function         AVDT_WriteDataReq

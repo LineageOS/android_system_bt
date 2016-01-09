@@ -125,6 +125,7 @@ enum
     BTA_DM_API_REMOVE_ALL_ACL_EVT,
     BTA_DM_API_REMOVE_DEVICE_EVT,
     BTA_DM_API_HCI_RAW_COMMAND_EVT,
+    BTA_DM_API_VENDOR_SPECIFIC_COMMAND_EVT,
     BTA_DM_MAX_EVT
 };
 
@@ -179,6 +180,16 @@ typedef struct
     UINT8               *p_param_buf;
     tBTA_RAW_CMPL_CBACK *p_cback;
 } tBTA_DM_API_RAW_COMMAND;
+
+/* data type for BTA_DM_API_VENDOR_SPECIFIC_COMMAND_EVT */
+typedef struct
+{
+    BT_HDR              hdr;
+    UINT16              opcode;
+    UINT8               param_len;
+    UINT8               *p_param_buf;
+    tBTA_VENDOR_CMPL_CBACK *p_cback;
+} tBTA_DM_API_VENDOR_SPECIFIC_COMMAND;
 
 enum
 {
@@ -753,8 +764,8 @@ typedef union
 
     tBTA_DM_API_REMOVE_ACL              remove_acl;
     tBTA_DM_API_REMOVE_ALL_ACL          remove_all_acl;
-    tBTA_DM_API_RAW_COMMAND btc_command;
-
+    tBTA_DM_API_RAW_COMMAND             btc_command;
+    tBTA_DM_API_VENDOR_SPECIFIC_COMMAND vendor_command;
 } tBTA_DM_MSG;
 
 #ifndef MAX_ACL_CONNECTIONS

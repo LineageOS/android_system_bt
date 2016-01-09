@@ -1027,6 +1027,7 @@ void btm_read_remote_version_complete (UINT8 *p)
                 BTM_TRACE_WARNING ("btm_read_remote_version_complete lmp_version %d manufacturer %d lmp_subversion %d",
                                         p_acl_cb->lmp_version,p_acl_cb->manufacturer, p_acl_cb->lmp_subversion);
                 btm_read_remote_features (p_acl_cb->hci_handle);
+                break;
             }
 
 #if BLE_INCLUDED == TRUE

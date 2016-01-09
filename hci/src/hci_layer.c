@@ -568,6 +568,14 @@ static void hal_says_data_ready(serial_data_type_t type) {
         incoming->index = 3;
         memcpy(incoming->buffer->data, &dev_ssr_event, 3);
         incoming->state = FINISHED;
+
+        //Reset SOC status to trigger hciattach service
+        if(property_set("bluetooth.status", "off") < 0) {
+            LOG_ERROR("SSR: Error resetting SOC status\n ");
+        } else {
+            ALOGE("SSR: SOC Status is reset\n ");
+        }
+
       } else {
         LOG_ERROR("error getting buffer for H/W event\n ");
         break;

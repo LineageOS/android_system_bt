@@ -427,10 +427,11 @@ static void uipc_flush_locked(tUIPC_CH_ID ch_id)
         case UIPC_CH_ID_AV_CTRL:
             uipc_flush_ch_locked(UIPC_CH_ID_AV_CTRL);
             break;
-
+#ifndef BTA_AV_SPLIT_A2DP_ENABLED
         case UIPC_CH_ID_AV_AUDIO:
             uipc_flush_ch_locked(UIPC_CH_ID_AV_AUDIO);
             break;
+#endif
     }
 }
 
@@ -523,13 +524,17 @@ static void uipc_read_task(void *arg)
         /* check pending task events */
         uipc_check_task_flags_locked();
 
+#ifndef BTA_AV_SPLIT_A2DP_ENABLED
         /* make sure we service audio channel first */
         uipc_check_fd_locked(UIPC_CH_ID_AV_AUDIO);
+#endif
 
         /* check for other connections */
         for (ch_id = 0; ch_id < UIPC_CH_NUM; ch_id++)
         {
+#ifndef BTA_AV_SPLIT_A2DP_ENABLED
             if (ch_id != UIPC_CH_ID_AV_AUDIO)
+#endif
                 uipc_check_fd_locked(ch_id);
         }
 
@@ -633,9 +638,12 @@ BOOLEAN UIPC_Open(tUIPC_CH_ID ch_id, tUIPC_RCV_CBACK *p_cback)
             uipc_setup_server_locked(ch_id, A2DP_CTRL_PATH, p_cback);
             break;
 
+#ifndef BTA_AV_SPLIT_A2DP_ENABLED
         case UIPC_CH_ID_AV_AUDIO:
             uipc_setup_server_locked(ch_id, A2DP_DATA_PATH, p_cback);
             break;
+#endif
+
     }
 
     UIPC_UNLOCK();

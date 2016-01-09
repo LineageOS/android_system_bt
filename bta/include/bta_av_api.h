@@ -290,6 +290,9 @@ typedef struct
     tBTA_AV_EDR     edr;        /* 0, if peer device does not support EDR */
     UINT8           sep;        /*  sep type of peer device */
     UINT8           role;       /* 0x00 master, 0x01 slave , 0xFF unkown*/
+#ifdef BTA_AV_SPLIT_A2DP_ENABLED
+    UINT16          stream_chnl_id;
+#endif
 } tBTA_AV_OPEN;
 
 /* data associated with BTA_AV_CLOSE_EVT */
