@@ -1790,6 +1790,12 @@ void bta_ag_send_ring(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 {
     UNUSED(p_data);
 
+    if (p_scb->conn_service == BTA_AG_HFP && p_scb->callsetup_ind != BTA_AG_CALLSETUP_INCOMING)
+    {
+        APPL_TRACE_DEBUG("don't send the ring since there is no MT call setup");
+        return;
+    }
+
 #if defined(BTA_AG_MULTI_RESULT_INCLUDED) && (BTA_AG_MULTI_RESULT_INCLUDED == TRUE)
     tBTA_AG_MULTI_RESULT_CB m_res_cb;
 
