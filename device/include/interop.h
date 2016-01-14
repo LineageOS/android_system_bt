@@ -22,11 +22,13 @@
 
 #include "btcore/include/bdaddr.h"
 
+static const char INTEROP_MODULE[] = "interop_module";
+
 typedef enum {
   // Disable secure connections
   // This is for pre BT 4.1/2 devices that do not handle secure mode
   // very well.
-  INTEROP_DISABLE_LE_SECURE_CONNECTIONS,
+  INTEROP_DISABLE_LE_SECURE_CONNECTIONS = 0,
 
   // Some devices have proven problematic during the pairing process, often
   // requiring multiple retries to complete pairing. To avoid degrading the user
@@ -38,5 +40,13 @@ typedef enum {
 // Check if a given |addr| matches a known interoperability workaround as identified
 // by the |interop_feature_t| enum. This API is used for simple address based lookups
 // where more information is not available. No look-ups or random address resolution
-// is performed on |addr|.
+// are performed on |addr|.
 bool interop_match(const interop_feature_t feature, const bt_bdaddr_t *addr);
+
+// Add a dynamic interop database entry for a device matching the first |length| bytes
+// of |addr|, implementing the workaround identified by |feature|. |addr| may not be
+// null and |length| must be greater than 0 and less than sizeof(bt_bdaddr_t).
+void interop_database_add(const interop_feature_t feature, const bt_bdaddr_t *addr, size_t length);
+
+// Clear the dynamic portion of the interoperability workaround database.
+void interop_database_clear(void);

@@ -21,13 +21,78 @@
 #include <assert.h>
 #include <string.h> // For memcmp
 
+#include "btcore/include/module.h"
 #include "device/include/interop.h"
 #include "device/include/interop_database.h"
+#include "osi/include/allocator.h"
+#include "osi/include/list.h"
 #include "osi/include/log.h"
 
 #define CASE_RETURN_STR(const) case const: return #const;
 
-static const char* interop_feature_string(const interop_feature_t feature) {
+static list_t *interop_list = NULL;
+
+static const char* interop_feature_string_(const interop_feature_t feature);
+static void interop_free_entry_(void *data);
+static void interop_lazy_init_(void);
+static bool interop_match_fixed_(const interop_feature_t feature, const bt_bdaddr_t *addr);
+static bool interop_match_dynamic_(const interop_feature_t feature, const bt_bdaddr_t *addr);
+
+// Interface functions
+
+bool interop_match(const interop_feature_t feature, const bt_bdaddr_t *addr) {
+  assert(addr);
+
+  if (interop_match_fixed_(feature, addr) || interop_match_dynamic_(feature, addr)) {
+    char bdstr[20] = {0};
+    LOG_WARN("%s() Device %s is a match for interop workaround %s.",
+          __func__, bdaddr_to_string(addr, bdstr, sizeof(bdstr)),
+                        interop_feature_string_(feature));
+    return true;
+  }
+
+  return false;
+}
+
+void interop_database_add(const interop_feature_t feature, const bt_bdaddr_t *addr, size_t length) {
+  assert(addr);
+  assert(length > 0);
+  assert(length < sizeof(bt_bdaddr_t));
+
+  interop_entry_t *entry = osi_calloc(sizeof(interop_entry_t));
+  memcpy(&entry->addr, addr, length);
+  entry->feature = feature;
+  entry->length = length;
+
+  interop_lazy_init_();
+  list_append(interop_list, entry);
+}
+
+void interop_database_clear() {
+  if (interop_list)
+    list_clear(interop_list);
+}
+
+// Module life-cycle functions
+
+static future_t *interop_clean_up(void) {
+  list_free(interop_list);
+  interop_list = NULL;
+  return future_new_immediate(FUTURE_SUCCESS);
+}
+
+const module_t interop_module = {
+  .name = INTEROP_MODULE,
+  .init = NULL,
+  .start_up = NULL,
+  .shut_down = NULL,
+  .clean_up = interop_clean_up,
+  .dependencies = {NULL},
+};
+
+// Local functions
+
+static const char* interop_feature_string_(const interop_feature_t feature) {
   switch (feature) {
     CASE_RETURN_STR(INTEROP_DISABLE_LE_SECURE_CONNECTIONS)
     CASE_RETURN_STR(INTEROP_AUTO_RETRY_PAIRING)
@@ -36,19 +101,44 @@ static const char* interop_feature_string(const interop_feature_t feature) {
   return "UNKNOWN";
 }
 
-// Interface functions
+static void interop_free_entry_(void *data) {
+  interop_entry_t *entry = (interop_entry_t *)data;
+  osi_free(entry);
+}
 
-bool interop_match(const interop_feature_t feature, const bt_bdaddr_t *addr) {
+static void interop_lazy_init_(void) {
+  if (interop_list == NULL) {
+    interop_list = list_new(interop_free_entry_);
+  }
+}
+
+static bool interop_match_dynamic_(const interop_feature_t feature, const bt_bdaddr_t *addr) {
+  if (interop_list == NULL || list_length(interop_list) == 0)
+    return false;
+
+  const list_node_t *node = list_begin(interop_list);
+  while (node != list_end(interop_list)) {
+    interop_entry_t *entry = list_node(node);
+    assert(entry);
+
+    if (feature == entry->feature && memcmp(addr, &entry->addr, entry->length) == 0)
+      return true;
+
+    node = list_next(node);
+  }
+  return false;
+}
+
+static bool interop_match_fixed_(const interop_feature_t feature, const bt_bdaddr_t *addr) {
   assert(addr);
 
   const size_t db_size = sizeof(interop_database) / sizeof(interop_entry_t);
-
   for (size_t i = 0; i != db_size; ++i) {
     if (feature == interop_database[i].feature &&
-        memcmp(addr, &interop_database[i].addr, interop_database[i].len) == 0) {
+        memcmp(addr, &interop_database[i].addr, interop_database[i].length) == 0) {
       char bdstr[20] = {0};
       LOG_WARN("%s() Device %s is a match for interop workaround %s", __func__,
-          bdaddr_to_string(addr, bdstr, sizeof(bdstr)), interop_feature_string(feature));
+          bdaddr_to_string(addr, bdstr, sizeof(bdstr)), interop_feature_string_(feature));
       return true;
     }
   }
