@@ -126,7 +126,7 @@ int main(int argc, char* argv[]) {
     }
 
     LOG(ERROR) << "Starting Heart Rate server failed asynchronously";
-    main_loop.Quit();
+    main_loop.QuitWhenIdle();
   };
 
   // Create the Heart Rate server.
