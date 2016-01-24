@@ -76,6 +76,7 @@
 #endif  // BTE_DID_CONF_FILE
 
 #define VENDOR_PERSISTENCE_PATH    "/persist/bluetooth"
+#define VENDOR_PERSISTENCE_PATH_LEGACY       "/persist"
 #define VENDOR_BT_NV_FILE_NAME     ".bt_nv.bin"
 #define VENDOR_PAYLOAD_MAXLENGTH   (260)
 #define VENDOR_MAX_CMD_HDR_SIZE    (3)
@@ -345,6 +346,9 @@ static bool fetch_vendor_addr (bt_bdaddr_t *local_addr)
     char filename[NAME_MAX];
 
     snprintf(filename, NAME_MAX, "%s/%s",VENDOR_PERSISTENCE_PATH,VENDOR_BT_NV_FILE_NAME);
+    if (access(filename, R_OK) != 0) {
+        snprintf(filename, NAME_MAX, "%s/%s",VENDOR_PERSISTENCE_PATH_LEGACY,VENDOR_BT_NV_FILE_NAME);
+    }
     BTIF_TRACE_VERBOSE("Opening file '%s' for reading\n",filename);
 
     /* Open the Vendor BD Addr file */
