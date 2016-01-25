@@ -87,7 +87,7 @@
 #endif
 
 #ifndef BTA_AV_SINK_INCLUDED
-#define BTA_AV_SINK_INCLUDED TRUE
+#define BTA_AV_SINK_INCLUDED FALSE
 #endif
 
 #ifndef BTA_DISABLE_DELAY

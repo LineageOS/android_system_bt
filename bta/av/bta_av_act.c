@@ -1850,6 +1850,7 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
     }
 
     APPL_TRACE_DEBUG("%s rc_handle %d", __FUNCTION__, rc_handle);
+#if (BTA_AV_SINK_INCLUDED == TRUE)
     if (p_cb->sdp_a2d_snk_handle)
     {
         /* This is Sink + CT + TG(Abs Vol) */
@@ -1857,7 +1858,9 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
         if (BTA_AV_FEAT_ADV_CTRL & bta_avk_check_peer_features(UUID_SERVCLASS_AV_REMOTE_CONTROL))
             peer_features |= (BTA_AV_FEAT_ADV_CTRL|BTA_AV_FEAT_RCCT);
     }
-    else if (p_cb->sdp_a2d_handle)
+    else
+#endif
+    if (p_cb->sdp_a2d_handle)
     {
         /* check peer version and whether support CT and TG role */
         peer_features = bta_av_check_peer_features(UUID_SERVCLASS_AV_REMOTE_CONTROL);
