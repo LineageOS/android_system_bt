@@ -890,6 +890,7 @@ void BTM_PINCodeReply (BD_ADDR bd_addr, UINT8 res, UINT8 pin_len, UINT8 *p_pin, 
             btm_sec_change_pairing_state (BTM_PAIR_STATE_WAIT_AUTH_COMPLETE);
             btm_cb.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
 
+            LOG_INFO(LOG_TAG, "%s: Negative pin code reply: btm_cb.pairing_flags : %d", __func__, btm_cb.pairing_flags);
             btsnd_hcic_pin_code_neg_reply (bd_addr);
         }
         else
@@ -3452,6 +3453,7 @@ void btm_io_capabilities_req (UINT8 *p)
 Event uninit_use_in_call: Using uninitialized element of array "evt_data.bd_addr" in call to function "memcmp"
 False-positive: evt_data.bd_addr is set at the beginning with:     STREAM_TO_BDADDR (evt_data.bd_addr, p);
 */
+        LOG_INFO(LOG_TAG, "%s: btsnd_hcic_io_cap_req_neg_reply: err_code : %d" , __func__, err_code);
         btsnd_hcic_io_cap_req_neg_reply(evt_data.bd_addr, err_code);
         return;
     }
@@ -5006,6 +5008,7 @@ void btm_sec_link_key_request (UINT8 *p_bda)
     l2c_pin_code_request (p_bda);
 
     /* The link key is not in the database and it is not known to the manager */
+    LOG_INFO(LOG_TAG, "%s: btsnd_hcic_link_key_neg_reply: p_dev_rec->sec_flags : %d" , __func__, p_dev_rec->sec_flags);
     btsnd_hcic_link_key_neg_reply (p_bda);
 }
 
@@ -5046,7 +5049,10 @@ static void btm_sec_pairing_timeout(UNUSED_ATTR void *data)
 
         case BTM_PAIR_STATE_WAIT_LOCAL_PIN:
             if ( (btm_cb.pairing_flags & BTM_PAIR_FLAGS_PRE_FETCH_PIN) == 0)
+            {
+                LOG_INFO(LOG_TAG, "%s: btsnd_hcic_pin_code_neg_reply: btm_cb.pairing_flags : %d" , __func__, btm_cb.pairing_flags);
                 btsnd_hcic_pin_code_neg_reply (p_cb->pairing_bda);
+            }
             btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE);
             /* We need to notify the UI that no longer need the PIN */
             if (btm_cb.api.p_auth_complete_callback)
@@ -5072,6 +5078,7 @@ static void btm_sec_pairing_timeout(UNUSED_ATTR void *data)
 
 #if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
         case BTM_PAIR_STATE_KEY_ENTRY:
+            LOG_INFO(LOG_TAG, "%s: btsnd_hcic_user_passkey_neg_reply: BTM_LOCAL_IO_CAPS : %d" , __func__, BTM_LOCAL_IO_CAPS);
             btsnd_hcic_user_passkey_neg_reply(p_cb->pairing_bda);
             /* btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE); */
             break;
@@ -5157,6 +5164,7 @@ void btm_sec_pin_code_request (UINT8 *p_bda)
         if ( (memcmp (p_bda, btm_cb.pairing_bda, BD_ADDR_LEN) == 0)  &&
              (btm_cb.pairing_state == BTM_PAIR_STATE_WAIT_AUTH_COMPLETE) )
         {
+             LOG_INFO(LOG_TAG, "%s: btsnd_hcic_pin_code_neg_reply: btm_cb.pairing_state : %d", __func__, btm_cb.pairing_state);
              btsnd_hcic_pin_code_neg_reply (p_bda);
              return;
         }
@@ -5165,6 +5173,7 @@ void btm_sec_pin_code_request (UINT8 *p_bda)
         {
             BTM_TRACE_WARNING ("btm_sec_pin_code_request() rejected - state: %s",
                                 btm_pair_state_descr(btm_cb.pairing_state));
+            LOG_INFO(LOG_TAG,"%s btsnd_hcic_pin_code_neg_reply", __func__);
             btsnd_hcic_pin_code_neg_reply (p_bda);
             return;
         }
