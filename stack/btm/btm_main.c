@@ -67,8 +67,6 @@ void btm_init (void)
     btm_sco_init();                     /* SCO Database and Structures (If included) */
 #endif
 
-    btm_cb.sec_dev_rec = list_new(osi_free);
-
     btm_dev_init();                     /* Device Manager Structures & HCI_Reset */
 }
 

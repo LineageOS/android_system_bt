@@ -72,32 +72,50 @@ extern void gatt_notify_enc_cmpl(BD_ADDR bd_addr);
 BOOLEAN BTM_SecAddBleDevice (BD_ADDR bd_addr, BD_NAME bd_name, tBT_DEVICE_TYPE dev_type,
                              tBLE_ADDR_TYPE addr_type)
 {
-    BTM_TRACE_DEBUG ("%s: dev_type=0x%x", __func__, dev_type);
-    tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev(bd_addr);
+    tBTM_SEC_DEV_REC  *p_dev_rec;
+    UINT8               i = 0;
+    tBTM_INQ_INFO      *p_info=NULL;
 
-    if (!p_dev_rec) {
-        if (list_length(btm_cb.sec_dev_rec) > BTM_SEC_MAX_DEVICE_RECORDS) {
-            BTM_TRACE_ERROR("%s: %d max devices reached!", __func__, BTM_SEC_MAX_DEVICE_RECORDS);
-            return FALSE;
+    BTM_TRACE_DEBUG ("BTM_SecAddBleDevice dev_type=0x%x", dev_type);
+    p_dev_rec = btm_find_dev (bd_addr);
+
+    if (!p_dev_rec)
+    {
+        BTM_TRACE_DEBUG("Add a new device");
+
+        /* There is no device record, allocate one.
+         * If we can not find an empty spot for this one, let it fail. */
+        for (i = 0; i < BTM_SEC_MAX_DEVICE_RECORDS; i++)
+        {
+            if (!(btm_cb.sec_dev_rec[i].sec_flags & BTM_SEC_IN_USE))
+            {
+                BTM_TRACE_DEBUG ("allocate a new dev rec idx=0x%x ", i );
+                p_dev_rec = &btm_cb.sec_dev_rec[i];
+
+                /* Mark this record as in use and initialize */
+                memset (p_dev_rec, 0, sizeof (tBTM_SEC_DEV_REC));
+                p_dev_rec->sec_flags = BTM_SEC_IN_USE;
+                memcpy (p_dev_rec->bd_addr, bd_addr, BD_ADDR_LEN);
+                p_dev_rec->hci_handle = BTM_GetHCIConnHandle (bd_addr, BT_TRANSPORT_BR_EDR);
+                p_dev_rec->ble_hci_handle = BTM_GetHCIConnHandle (bd_addr, BT_TRANSPORT_LE);
+
+                /* update conn params, use default value for background connection params */
+                p_dev_rec->conn_params.min_conn_int     =
+                p_dev_rec->conn_params.max_conn_int     =
+                p_dev_rec->conn_params.supervision_tout =
+                p_dev_rec->conn_params.slave_latency    = BTM_BLE_CONN_PARAM_UNDEF;
+
+                BTM_TRACE_DEBUG ("hci_handl=0x%x ",  p_dev_rec->ble_hci_handle );
+                break;
+            }
         }
 
-        p_dev_rec = osi_malloc(sizeof(tBTM_SEC_DEV_REC));
-
-        /* Initialize this record */
-        memset(p_dev_rec, 0, sizeof (tBTM_SEC_DEV_REC));
-        list_append(btm_cb.sec_dev_rec, p_dev_rec);
-
-        memcpy(p_dev_rec->bd_addr, bd_addr, BD_ADDR_LEN);
-        p_dev_rec->hci_handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_BR_EDR);
-        p_dev_rec->ble_hci_handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
-
-        /* update conn params, use default value for background connection params */
-        p_dev_rec->conn_params.min_conn_int     = BTM_BLE_CONN_PARAM_UNDEF;
-        p_dev_rec->conn_params.max_conn_int     = BTM_BLE_CONN_PARAM_UNDEF;
-        p_dev_rec->conn_params.supervision_tout = BTM_BLE_CONN_PARAM_UNDEF;
-        p_dev_rec->conn_params.slave_latency    = BTM_BLE_CONN_PARAM_UNDEF;
-
-        BTM_TRACE_DEBUG("%s: Device added, handle=0x%x ", __func__, p_dev_rec->ble_hci_handle);
+        if (!p_dev_rec)
+            return(FALSE);
+    }
+    else
+    {
+        BTM_TRACE_DEBUG("Device already exist");
     }
 
     memset(p_dev_rec->sec_bd_name, 0, sizeof(tBTM_BD_NAME));
@@ -105,24 +123,24 @@ BOOLEAN BTM_SecAddBleDevice (BD_ADDR bd_addr, BD_NAME bd_name, tBT_DEVICE_TYPE d
     if (bd_name && bd_name[0])
     {
         p_dev_rec->sec_flags |= BTM_SEC_NAME_KNOWN;
-        BCM_STRNCPY_S((char *)p_dev_rec->sec_bd_name, sizeof(p_dev_rec->sec_bd_name),
-                      (char *)bd_name, BTM_MAX_REM_BD_NAME_LEN);
+        BCM_STRNCPY_S ((char *)p_dev_rec->sec_bd_name, sizeof (p_dev_rec->sec_bd_name),
+                       (char *)bd_name, BTM_MAX_REM_BD_NAME_LEN);
     }
     p_dev_rec->device_type |= dev_type;
     p_dev_rec->ble.ble_addr_type = addr_type;
 
-    memcpy(p_dev_rec->ble.pseudo_addr, bd_addr, BD_ADDR_LEN);
+    memcpy (p_dev_rec->ble.pseudo_addr, bd_addr, BD_ADDR_LEN);
     /* sync up with the Inq Data base*/
-    tBTM_INQ_INFO      *p_info = BTM_InqDbRead(bd_addr);
+    p_info = BTM_InqDbRead(bd_addr);
     if (p_info)
     {
         p_info->results.ble_addr_type = p_dev_rec->ble.ble_addr_type ;
         p_info->results.device_type = p_dev_rec->device_type;
-        BTM_TRACE_DEBUG("InqDb  device_type =0x%x  addr_type=0x%x",
-                         p_info->results.device_type, p_info->results.ble_addr_type);
+        BTM_TRACE_DEBUG ("InqDb  device_type =0x%x  addr_type=0x%x",
+                          p_info->results.device_type, p_info->results.ble_addr_type);
     }
 
-    return TRUE;
+    return(TRUE);
 }
 
 /*******************************************************************************

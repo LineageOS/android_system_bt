@@ -920,16 +920,6 @@ tBTM_STATUS BTM_BleSetConnectableMode(tBTM_BLE_CONN_MODE connectable_mode)
     return btm_ble_set_connectability( p_cb->connectable_mode);
 }
 
-static bool is_resolving_list_bit_set(void *data, void *context)
-{
-    tBTM_SEC_DEV_REC *p_dev_rec = data;
-
-    if (p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT != 0)
-        return false;
-
-    return true;
-}
-
 /*******************************************************************************
 **
 ** Function         btm_set_conn_mode_adv_init_addr
@@ -994,18 +984,23 @@ static UINT8 btm_set_conn_mode_adv_init_addr(tBTM_BLE_INQ_CB *p_cb,
     if ((btm_cb.ble_ctr_cb.privacy_mode ==  BTM_PRIVACY_1_2 && p_cb->afp != AP_SCAN_CONN_ALL) ||
         btm_cb.ble_ctr_cb.privacy_mode ==  BTM_PRIVACY_MIXED)
     {
-        list_node_t *n = list_foreach(btm_cb.sec_dev_rec, is_resolving_list_bit_set, NULL);
-        if (n) {
-            /* if enhanced privacy is required, set Identity address and matching IRK peer */
-            tBTM_SEC_DEV_REC  *p_dev_rec = list_node(n);
-            memcpy(p_peer_addr_ptr, p_dev_rec->ble.static_addr, BD_ADDR_LEN);
-            *p_peer_addr_type = p_dev_rec->ble.static_addr_type;
+        /* if enhanced privacy is required, set Identity address and matching IRK peer */
+        for (i = 0; i < BTM_SEC_MAX_DEVICE_RECORDS; i ++)
+        {
+            if ((btm_cb.sec_dev_rec[i].sec_flags & BTM_SEC_IN_USE) != 0 &&
+                (btm_cb.sec_dev_rec[i].ble.in_controller_list & BTM_RESOLVING_LIST_BIT) != 0)
+            {
+                memcpy(p_peer_addr_ptr, btm_cb.sec_dev_rec[i].ble.static_addr, BD_ADDR_LEN);
+                *p_peer_addr_type = btm_cb.sec_dev_rec[i].ble.static_addr_type;
+               break;
+            }
+        }
 
+        if (i != BTM_SEC_MAX_DEVICE_RECORDS)
             *p_own_addr_type = BLE_ADDR_RANDOM_ID;
-        } else {
+        else
             /* resolving list is empty, not enabled */
             *p_own_addr_type = BLE_ADDR_RANDOM;
-        }
     }
     /* privacy 1.1, or privacy 1.2, general discoverable/connectable mode, disable privacy in */
     /* controller fall back to host based privacy */

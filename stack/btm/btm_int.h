@@ -31,7 +31,6 @@
 
 #include "rfcdefs.h"
 #include "osi/include/alarm.h"
-#include "osi/include/list.h"
 #include "osi/include/fixed_queue.h"
 
 #include "btm_api.h"
@@ -863,7 +862,7 @@ typedef struct
     UINT16                   disc_handle;   /* for legacy devices */
     UINT8                    disc_reason;   /* for legacy devices */
     tBTM_SEC_SERV_REC        sec_serv_rec[BTM_SEC_MAX_SERVICE_RECORDS];
-    list_t                  *sec_dev_rec;   /* list of tBTM_SEC_DEV_REC */
+    tBTM_SEC_DEV_REC         sec_dev_rec[BTM_SEC_MAX_DEVICE_RECORDS];
     tBTM_SEC_SERV_REC       *p_out_serv;
     tBTM_MKEY_CALLBACK      *mkey_cback;
 

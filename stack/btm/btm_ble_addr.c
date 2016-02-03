@@ -207,12 +207,38 @@ void btm_gen_non_resolvable_private_addr (tBTM_BLE_ADDR_CBACK *p_cback, void *p)
 *******************************************************************************/
 /*******************************************************************************
 **
+** Function         btm_ble_resolve_address_cmpl
+**
+** Description      This function sends the random address resolving complete
+**                  callback.
+**
+** Returns          None.
+**
+*******************************************************************************/
+static void btm_ble_resolve_address_cmpl(void)
+{
+    tBTM_LE_RANDOM_CB   *p_mgnt_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
+    tBTM_SEC_DEV_REC    *p_dev_rec = NULL;
+
+    BTM_TRACE_EVENT ("btm_ble_resolve_address_cmpl p_mgnt_cb->index = %d", p_mgnt_cb->index);
+
+    if (p_mgnt_cb->index < BTM_SEC_MAX_DEVICE_RECORDS)
+    {
+        p_dev_rec = &btm_cb.sec_dev_rec[p_mgnt_cb->index];
+    }
+
+    p_mgnt_cb->busy = FALSE;
+
+    (* p_mgnt_cb->p_resolve_cback)(p_dev_rec, p_mgnt_cb->p);
+}
+/*******************************************************************************
+**
 ** Function         btm_ble_proc_resolve_x
 **
 ** Description      This function compares the X with random address 3 MSO bytes
-**                  to find a match.
+**                  to find a match, if not match, continue for next record.
 **
-** Returns          TRUE on match, FALSE otherwise
+** Returns          None.
 **
 *******************************************************************************/
 static BOOLEAN btm_ble_proc_resolve_x(tSMP_ENC *p)
@@ -231,6 +257,7 @@ static BOOLEAN btm_ble_proc_resolve_x(tSMP_ENC *p)
         {
             /* match is found */
             BTM_TRACE_EVENT ("match is found");
+            btm_ble_resolve_address_cmpl();
             return TRUE;
         }
     }
@@ -315,8 +342,9 @@ BOOLEAN btm_ble_addr_resolvable (BD_ADDR rpa, tBTM_SEC_DEV_REC *p_dev_rec)
 ** Returns          None.
 **
 *******************************************************************************/
-static BOOLEAN btm_ble_match_random_bda(void *data, void *context)
+static BOOLEAN btm_ble_match_random_bda(UINT16 rec_index)
 {
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
     /* use the 3 MSB of bd address as prand */
 
     tBTM_LE_RANDOM_CB *p_mgnt_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
@@ -325,23 +353,37 @@ static BOOLEAN btm_ble_match_random_bda(void *data, void *context)
     rand[1] = p_mgnt_cb->random_bda[1];
     rand[2] = p_mgnt_cb->random_bda[0];
 
-    BTM_TRACE_EVENT("%s next iteration", __func__);
+    BTM_TRACE_EVENT("%s rec_index = %d", __func__, rec_index);
 
-    tSMP_ENC output;
-    tBTM_SEC_DEV_REC *p_dev_rec = data;
+    if (rec_index < BTM_SEC_MAX_DEVICE_RECORDS)
+    {
+        tSMP_ENC output;
+        tBTM_SEC_DEV_REC *p_dev_rec;
+        p_dev_rec = &btm_cb.sec_dev_rec[rec_index];
 
-    BTM_TRACE_DEBUG("sec_flags = %02x device_type = %d", p_dev_rec->sec_flags,
-                    p_dev_rec->device_type);
+        BTM_TRACE_DEBUG("sec_flags = %02x device_type = %d", p_dev_rec->sec_flags,
+                        p_dev_rec->device_type);
 
-    if (!(p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) ||
-        !(p_dev_rec->ble.key_type & BTM_LE_KEY_PID))
+        if ((p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) &&
+            (p_dev_rec->ble.key_type & BTM_LE_KEY_PID))
+        {
+            /* generate X = E irk(R0, R1, R2) and R is random address 3 LSO */
+            SMP_Encrypt(p_dev_rec->ble.keys.irk, BT_OCTET16_LEN,
+                        &rand[0], 3, &output);
+            return btm_ble_proc_resolve_x(&output);
+        }
+        else
+        {
+            // not completed
+            return FALSE;
+        }
+    }
+    else /* no  match found */
+    {
+        btm_ble_resolve_address_cmpl();
         return TRUE;
-
-    /* generate X = E irk(R0, R1, R2) and R is random address 3 LSO */
-    SMP_Encrypt(p_dev_rec->ble.keys.irk, BT_OCTET16_LEN,
-                &rand[0], 3, &output);
-    // if it was match, finish iteration, otherwise continue
-    return !btm_ble_proc_resolve_x(&output);
+    }
+#endif
 }
 
 /*******************************************************************************
@@ -358,24 +400,28 @@ void btm_ble_resolve_random_addr(BD_ADDR random_bda, tBTM_BLE_RESOLVE_CBACK * p_
 {
     tBTM_LE_RANDOM_CB   *p_mgnt_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
 
-    BTM_TRACE_EVENT("%s", __func__);
-    if ( !p_mgnt_cb->busy) {
+    BTM_TRACE_EVENT ("btm_ble_resolve_random_addr");
+    if ( !p_mgnt_cb->busy)
+    {
         p_mgnt_cb->p = p;
         p_mgnt_cb->busy = TRUE;
+        p_mgnt_cb->index = 0;
+        p_mgnt_cb->p_resolve_cback = p_cback;
         memcpy(p_mgnt_cb->random_bda, random_bda, BD_ADDR_LEN);
         /* start to resolve random address */
         /* check for next security record */
-
-        list_node_t * n = list_foreach(btm_cb.sec_dev_rec, btm_ble_match_random_bda, NULL);
-        tBTM_SEC_DEV_REC *p_dev_rec = n ? list_node(n) : NULL;
-
-        BTM_TRACE_EVENT("%s:  %sresolved", __func__, (p_dev_rec == NULL ? "not " : ""));
-        p_mgnt_cb->busy = FALSE;
-
-        (*p_cback)(p_dev_rec, p);
-    } else {
-        (*p_cback)(NULL, p);
+        while (TRUE)
+        {
+            if (btm_ble_match_random_bda(p_mgnt_cb->index))
+            {
+                /* atch found or went through the list */
+                break;
+            }
+            p_mgnt_cb->index ++;
+        }
     }
+    else
+        (*p_cback)(NULL, p);
 }
 #endif
 
@@ -392,14 +438,20 @@ void btm_ble_resolve_random_addr(BD_ADDR random_bda, tBTM_BLE_RESOLVE_CBACK * p_
 tBTM_SEC_DEV_REC* btm_find_dev_by_identity_addr(BD_ADDR bd_addr, UINT8 addr_type)
 {
 #if BLE_PRIVACY_SPT == TRUE
-    list_node_t *end = list_end(btm_cb.sec_dev_rec);
-    for (list_node_t *node = list_begin(btm_cb.sec_dev_rec); node != end; node = list_next(node)) {
-        tBTM_SEC_DEV_REC *p_dev_rec = list_node(node);
-        if (memcmp(p_dev_rec->ble.static_addr, bd_addr, BD_ADDR_LEN) == 0) {
+    UINT8 i;
+    tBTM_SEC_DEV_REC *p_dev_rec = &btm_cb.sec_dev_rec[0];
+
+    for (i = 0; i < BTM_SEC_MAX_DEVICE_RECORDS; i ++, p_dev_rec ++)
+    {
+        if ((p_dev_rec->sec_flags & BTM_SEC_IN_USE) &&
+            memcmp(p_dev_rec->ble.static_addr, bd_addr, BD_ADDR_LEN) == 0)
+        {
             if ((p_dev_rec->ble.static_addr_type & (~BLE_ADDR_TYPE_ID_BIT)) !=
                 (addr_type & (~BLE_ADDR_TYPE_ID_BIT)))
+            {
                 BTM_TRACE_WARNING("%s find pseudo->random match with diff addr type: %d vs %d",
                     __func__, p_dev_rec->ble.static_addr_type, addr_type);
+            }
 
             /* found the match */
             return p_dev_rec;
