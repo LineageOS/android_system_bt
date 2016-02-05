@@ -891,6 +891,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
     val.hdr.app_id = p_scb->app_id;
     val.num = int_arg;
     bdcpy(val.bd_addr, p_scb->peer_addr);
+    memset(val.str, 0, sizeof(val.str));
     strlcpy(val.str, p_arg, BTA_AG_AT_MAX_LEN);
 
     event = bta_ag_hfp_cb_evt[cmd];
