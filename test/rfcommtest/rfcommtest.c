@@ -1018,7 +1018,7 @@ const t_cmd console_cmd_list[] =
 
 static void process_cmd(char *p, unsigned char is_job)
 {
-    char cmd[64];
+    char cmd[128];
     int i = 0;
     char *p_saved = p;
 
