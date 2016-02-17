@@ -27,6 +27,7 @@
 #define LOG_NDDEBUG 0
 #define LOG_TAG "bt_btif"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,12 +62,6 @@
 #include "btif/include/btif_debug_btsnoop.h"
 #include "btif/include/btif_debug_conn.h"
 #include "btif/include/btif_media.h"
-
-/************************************************************************************
-**  Constants & Macros
-************************************************************************************/
-
-#define is_profile(profile, str) ((strlen(str) == strlen(profile)) && strncmp((const char *)profile, str, strlen(str)) == 0)
 
 /************************************************************************************
 **  Static variables
@@ -114,6 +109,12 @@ extern btsdp_interface_t *btif_sdp_get_interface();
 
 static bool interface_ready(void) {
   return bt_hal_cbacks != NULL;
+}
+
+static bool is_profile(const char *p1, const char *p2) {
+  assert(p1);
+  assert(p2);
+  return strlen(p1) == strlen(p2) && strncmp(p1, p2, strlen(p2)) == 0;
 }
 
 /*****************************************************************************
@@ -327,11 +328,11 @@ static int read_energy_info()
 static void dump(int fd, const char **arguments)
 {
     if (arguments != NULL && arguments[0] != NULL) {
-      if (strncmp(arguments[0], "--proto-text", 11) == 0) {
+      if (strncmp(arguments[0], "--proto-text", 12) == 0) {
         metrics_print(fd, true);
         return;
       }
-      if (strncmp(arguments[0], "--proto-bin", 10) == 0) {
+      if (strncmp(arguments[0], "--proto-bin", 11) == 0) {
         metrics_write(fd, true);
         return;
       }

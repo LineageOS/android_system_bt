@@ -559,6 +559,7 @@ static BOOLEAN btm_sec_set_security_level (CONNECTION_TYPE conn_type, char *p_na
             if (p_srec->psm == psm                  &&
                 p_srec->mx_proto_id == mx_proto_id  &&
                 service_id == p_srec->service_id    &&
+                p_name                              &&
                 (!strncmp (p_name, (char *) p_srec->orig_service_name,
                            BTM_SEC_SERVICE_NAME_LEN) ||
                  !strncmp (p_name, (char *) p_srec->term_service_name,
