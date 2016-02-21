@@ -942,7 +942,11 @@ void l2c_link_adjust_allocation (void)
     /* Now, assign the quotas to each link */
     for (yy = 0, p_lcb = &l2cb.lcb_pool[0]; yy < MAX_L2CAP_LINKS; yy++, p_lcb++)
     {
-        if (p_lcb->in_use && p_lcb->transport == BT_TRANSPORT_BR_EDR)
+        if (p_lcb->in_use
+#if (BLE_INCLUDED == TRUE)
+                && p_lcb->transport == BT_TRANSPORT_BR_EDR
+#endif
+                )
         {
             if (p_lcb->acl_priority == L2CAP_PRIORITY_HIGH)
             {
