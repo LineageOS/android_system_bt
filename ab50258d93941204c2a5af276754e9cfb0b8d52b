@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ffb9cba7_fb9a57c3",
+        "filename": "stack/l2cap/l2c_utils.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2016-02-22T07:09:17Z",
+      "side": 1,
+      "message": "Are you sure? There\u0027s only one other instance of p_lcb-\u003etransport outside an BLE_INCLUDED ifdef.",
+      "revId": "ab50258d93941204c2a5af276754e9cfb0b8d52b",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
