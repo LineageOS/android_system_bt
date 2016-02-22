@@ -16,6 +16,24 @@
       "revId": "ab50258d93941204c2a5af276754e9cfb0b8d52b",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ffb9cba7_5bc28335",
+        "filename": "stack/l2cap/l2c_utils.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 9448
+      },
+      "writtenOn": "2016-02-22T14:58:54Z",
+      "side": 1,
+      "message": "The bug was introduced in here \nhttps://github.com/CyanogenMod/android_system_bt/commit/d8b7b666f04cdc4cdd67cd7e6c2a727bc14d67cc\nIt checks for the transport type but its never set when BLE_INCLUDED \u003d FALSE\nI have checked all instances where transport is set and either they are set correctly or transport is not defined out side BLE_INCLUDED",
+      "parentUuid": "ffb9cba7_fb9a57c3",
+      "revId": "ab50258d93941204c2a5af276754e9cfb0b8d52b",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
     }
   ]
 }
