@@ -467,7 +467,6 @@ void btu_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_sec) {
     LOG_ERROR("%s Unable to create alarm", __func__);
     return;
   }
-  alarm_cancel(alarm);
 
   p_tle->event = type;
   // NOTE: This value is in seconds but stored in a ticks field.
@@ -547,7 +546,6 @@ void btu_start_quick_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_ti
     LOG_ERROR("%s Unable to create alarm", __func__);
     return;
   }
-  alarm_cancel(alarm);
 
   p_tle->event = type;
   p_tle->ticks = timeout_ticks;
@@ -609,7 +607,6 @@ void btu_start_timer_oneshot(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_
     LOG_ERROR("%s Unable to create alarm", __func__);
     return;
   }
-  alarm_cancel(alarm);
 
   p_tle->event = type;
   p_tle->in_use = TRUE;
