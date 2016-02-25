@@ -416,17 +416,31 @@ static void event_finish_startup(UNUSED_ATTR void *context) {
 
 static void firmware_config_callback(UNUSED_ATTR bool success) {
   LOG_INFO(LOG_TAG, "%s", __func__);
-  firmware_is_configured = true;
+
   alarm_cancel(startup_timer);
 
+  pthread_mutex_lock(&commands_pending_response_lock);
+
+  if (startup_future == NULL) {
+    // The firmware configuration took too long - ignore the callback
+    pthread_mutex_unlock(&commands_pending_response_lock);
+    return;
+  }
+
+  firmware_is_configured = true;
   future_ready(startup_future, FUTURE_SUCCESS);
   startup_future = NULL;
+
+  pthread_mutex_unlock(&commands_pending_response_lock);
 }
 
 static void startup_timer_expired(UNUSED_ATTR void *context) {
   LOG_ERROR(LOG_TAG, "%s", __func__);
+
+  pthread_mutex_lock(&commands_pending_response_lock);
   future_ready(startup_future, FUTURE_FAIL);
   startup_future = NULL;
+  pthread_mutex_unlock(&commands_pending_response_lock);
 }
 
 // Postload functions
