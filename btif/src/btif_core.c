@@ -318,11 +318,13 @@ static void bt_jni_msg_ready(void *context) {
 
 void btif_sendmsg(void *p_msg)
 {
-    thread_post(bt_jni_workqueue_thread, bt_jni_msg_ready, p_msg);
+    if(bt_jni_workqueue_thread != NULL)
+       thread_post(bt_jni_workqueue_thread, bt_jni_msg_ready, p_msg);
 }
 
 void btif_thread_post(thread_fn func, void *context) {
-    thread_post(bt_jni_workqueue_thread, func, context);
+    if(bt_jni_workqueue_thread != NULL)
+       thread_post(bt_jni_workqueue_thread, func, context);
 }
 
 static bool fetch_vendor_addr (bt_bdaddr_t *local_addr)
