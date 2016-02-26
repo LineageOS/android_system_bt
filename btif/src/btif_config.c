@@ -44,7 +44,7 @@ static const char *LEGACY_CONFIG_FILE_PATH = "/data/misc/bluedroid/bt_config.xml
 static const period_ms_t CONFIG_SETTLE_PERIOD_MS = 3000;
 
 static void timer_config_save_cb(void *data);
-static void btif_config_write(void);
+static void btif_config_write(UINT16 event, char *p_param);
 static void btif_config_devcache_cleanup(void);
 
 // TODO(zachoverflow): Move these two functions out, because they are too specific for this file
@@ -360,7 +360,10 @@ void btif_config_flush(void) {
 
   alarm_cancel(alarm_timer);
 
-  btif_config_write();
+  btif_config_write(0, NULL);
+  pthread_mutex_lock(&lock);
+  config_flush(CONFIG_FILE_PATH);
+  pthread_mutex_unlock(&lock);
 }
 
 int btif_config_clear(void){
@@ -384,10 +387,13 @@ int btif_config_clear(void){
 }
 
 static void timer_config_save_cb(UNUSED_ATTR void *data) {
-  btif_config_write();
+  // calling file IO onto btif context instead of timer callback because
+  // it usually takes lots of time to be completed timer callback has big
+  // delayed during a2dp playback causing blip or choppiness.
+  btif_transfer_context(btif_config_write, 0, NULL, 0, NULL);
 }
 
-static void btif_config_write(void) {
+static void btif_config_write(UNUSED_ATTR UINT16 event, UNUSED_ATTR char *p_param) {
   assert(config != NULL);
   assert(alarm_timer != NULL);
 
