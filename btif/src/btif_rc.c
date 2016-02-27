@@ -1706,6 +1706,19 @@ void btif_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data)
     BTIF_TRACE_IMP ("%s event:%s", __FUNCTION__, dump_rc_event(event));
     switch (event)
     {
+        case BTIF_AV_CLEANUP_REQ_EVT:
+        {
+            memset(&btif_rc_cb, 0, sizeof(btif_rc_cb_t));
+            close_uinput();
+
+            if (bt_rc_callbacks)
+            {
+                bt_rc_callbacks = NULL;
+            }
+
+            lbl_destroy();
+        }break;
+
         case BTA_AV_RC_OPEN_EVT:
         {
             BTIF_TRACE_DEBUG("%s Peer_features:%x", __FUNCTION__, p_data->rc_open.peer_features);
@@ -5198,6 +5211,10 @@ static void handle_avk_rc_metamsg_cmd(tBTA_AV_META_MSG *pmeta_msg)
 }
 #endif
 
+static void btif_rc_handler_wrapper(UINT16 event, char* p_param)
+{
+    btif_rc_handler((tBTA_AV_EVT)event, (tBTA_AV *)p_param);
+}
 /***************************************************************************
 **
 ** Function         cleanup
@@ -5210,14 +5227,8 @@ static void handle_avk_rc_metamsg_cmd(tBTA_AV_META_MSG *pmeta_msg)
 static void cleanup()
 {
     BTIF_TRACE_EVENT("## RC:  %s ##", __FUNCTION__);
-    memset(&btif_rc_cb, 0, sizeof(btif_rc_cb_t));
-    close_uinput();
-    if (bt_rc_callbacks)
-    {
-        bt_rc_callbacks = NULL;
-    }
-    alarm_free(btif_rc_cb[0].rc_play_status_timer);
-    lbl_destroy();
+    btif_transfer_context(btif_rc_handler_wrapper, BTIF_AV_CLEANUP_REQ_EVT,
+            NULL, 0, NULL);
     BTIF_TRACE_EVENT("## RC: %s ## completed", __FUNCTION__);
 }
 
