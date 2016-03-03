@@ -206,6 +206,7 @@ enum {
 #define PACKET_PLAYED_PER_TICK_44 7
 #define PACKET_PLAYED_PER_TICK_32 5
 #define PACKET_PLAYED_PER_TICK_16 3
+#define MAX_MEDIA_WORKQUEUE_SEM_COUNT 1024
 
 /* Readability constants */
 #define SBC_FRAME_HEADER_SIZE_BYTES 4 // A2DP Spec v1.3, 12.4, Table 12.12
@@ -880,7 +881,7 @@ bool btif_a2dp_start_media_task(void)
     btif_media_cmd_msg_queue = fixed_queue_new(SIZE_MAX);
 
     /* start a2dp media task */
-    worker_thread = thread_new("media_worker");
+    worker_thread = thread_new_sized("media_worker", MAX_MEDIA_WORKQUEUE_SEM_COUNT);
     if (worker_thread == NULL)
         goto error_exit;
 
