@@ -43,8 +43,9 @@ static const char *CONFIG_FILE_PATH = "/data/misc/bluedroid/bt_config.conf";
 static const char *LEGACY_CONFIG_FILE_PATH = "/data/misc/bluedroid/bt_config.xml";
 static const period_ms_t CONFIG_SETTLE_PERIOD_MS = 3000;
 
-static void timer_config_saving(void* data);
-static void timer_config_save(UINT16 event, char* p_param);
+static void timer_config_save_cb(void *data);
+static void btif_config_write(void);
+static void btif_config_devcache_cleanup(void);
 
 // TODO(zachoverflow): Move these two functions out, because they are too specific for this file
 // {grumpy-cat/no, monty-python/you-make-me-sad}
@@ -108,6 +109,8 @@ static future_t *init(void) {
     if (config_save(config, CONFIG_FILE_PATH))
       unlink(LEGACY_CONFIG_FILE_PATH);
   }
+
+  btif_config_devcache_cleanup();
 
   // TODO(sharvil): use a non-wake alarm for this once we have
   // API support for it. There's no need to wake the system to
@@ -348,7 +351,7 @@ void btif_config_save(void) {
   assert(alarm_timer != NULL);
   assert(config != NULL);
 
-  alarm_set(alarm_timer, CONFIG_SETTLE_PERIOD_MS, timer_config_saving, NULL);
+  alarm_set(alarm_timer, CONFIG_SETTLE_PERIOD_MS, timer_config_save_cb, NULL);
 }
 
 void btif_config_flush(void) {
@@ -357,10 +360,8 @@ void btif_config_flush(void) {
 
   alarm_cancel(alarm_timer);
 
-  pthread_mutex_lock(&lock);
-  config_save(config, CONFIG_FILE_PATH);
   config_flush(CONFIG_FILE_PATH);
-  pthread_mutex_unlock(&lock);
+  btif_config_write();
 }
 
 int btif_config_clear(void){
@@ -383,52 +384,51 @@ int btif_config_clear(void){
   return ret;
 }
 
-static void timer_config_saving(UNUSED_ATTR void* data) {
-  // calling file IO onto btif context instead of timer callback because
-  // it usually takes lots of time to be completed timer callback has big
-  // delayed during a2dp playback causing blip or choppiness.
-  btif_transfer_context(timer_config_save, 0, NULL, 0, NULL);
+static void timer_config_save_cb(UNUSED_ATTR void *data) {
+  btif_config_write();
 }
 
-static void timer_config_save(UNUSED_ATTR UINT16 event, UNUSED_ATTR char* p_param) {
+static void btif_config_write(void) {
   assert(config != NULL);
   assert(alarm_timer != NULL);
 
-  // Garbage collection process: the config file accumulates
-  // cached information about remote devices during regular
-  // inquiry scans. We remove some of these junk entries
-  // so the file doesn't grow indefinitely. We have to take care
-  // to make sure we don't remove information about bonded
-  // devices (hence the check for link keys).
-  static const size_t CACHE_MAX = 256;
-  const char *keys[CACHE_MAX];
-  size_t num_keys = 0;
-  size_t total_candidates = 0;
+  btif_config_devcache_cleanup();
 
   pthread_mutex_lock(&lock);
-  for (const config_section_node_t *snode = config_section_begin(config); snode != config_section_end(config); snode = config_section_next(snode)) {
-    const char *section = config_section_name(snode);
-    if (!string_is_bdaddr(section))
-      continue;
-
-    if (config_has_key(config, section, "LinkKey") ||
-        config_has_key(config, section, "LE_KEY_PENC") ||
-        config_has_key(config, section, "LE_KEY_PID") ||
-        config_has_key(config, section, "LE_KEY_PCSRK") ||
-        config_has_key(config, section, "LE_KEY_LENC") ||
-        config_has_key(config, section, "LE_KEY_LCSRK"))
-      continue;
-
-    if (num_keys < CACHE_MAX)
-      keys[num_keys++] = section;
-
-    ++total_candidates;
-  }
-
-  if (total_candidates > CACHE_MAX * 2)
-    while (num_keys > 0)
-      config_remove_section(config, keys[--num_keys]);
-
   config_save(config, CONFIG_FILE_PATH);
+  pthread_mutex_unlock(&lock);
+}
+
+static void btif_config_devcache_cleanup(void) {
+  assert(config != NULL);
+
+  // The config accumulates cached information about remote
+  // devices during regular inquiry scans. We remove some of these
+  // so the cache doesn't grow indefinitely.
+  // We don't remove information about bonded devices (which have link keys).
+  static const size_t ADDRS_MAX = 512;
+  size_t total_addrs = 0;
+
+  pthread_mutex_lock(&lock);
+  const config_section_node_t *snode = config_section_begin(config);
+  while (snode != config_section_end(config)) {
+    const char *section = config_section_name(snode);
+    if (string_is_bdaddr(section)) {
+      ++total_addrs;
+
+      if ((total_addrs > ADDRS_MAX) &&
+          !config_has_key(config, section, "LinkKey") &&
+          !config_has_key(config, section, "LE_KEY_PENC") &&
+          !config_has_key(config, section, "LE_KEY_PID") &&
+          !config_has_key(config, section, "LE_KEY_PCSRK") &&
+          !config_has_key(config, section, "LE_KEY_LENC") &&
+          !config_has_key(config, section, "LE_KEY_LCSRK")) {
+        snode = config_section_next(snode);
+        config_remove_section(config, section);
+        continue;
+      }
+    }
+    snode = config_section_next(snode);
+  }
   pthread_mutex_unlock(&lock);
 }
