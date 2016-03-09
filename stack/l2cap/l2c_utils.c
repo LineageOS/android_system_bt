@@ -1674,16 +1674,22 @@ BOOLEAN l2cu_start_post_bond_timer (UINT16 handle)
 *******************************************************************************/
 void l2cu_release_ccb (tL2C_CCB *p_ccb)
 {
-    tL2C_LCB    *p_lcb = p_ccb->p_lcb;
-    tL2C_RCB    *p_rcb = p_ccb->p_rcb;
+    tL2C_LCB    *p_lcb = NULL;
+    tL2C_RCB    *p_rcb = NULL;
 
     L2CAP_TRACE_DEBUG ("l2cu_release_ccb: cid 0x%04x  in_use: %u", p_ccb->local_cid, p_ccb->in_use);
 
     /* If already released, could be race condition */
-    if (!p_ccb->in_use)
+    if (!p_ccb || !p_ccb->in_use)
         return;
+    p_lcb = p_ccb->p_lcb;
+    p_rcb = p_ccb->p_rcb;
 
+#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
+    if (p_rcb && p_lcb && (p_rcb->psm != p_rcb->real_psm))
+#else
     if (p_rcb && (p_rcb->psm != p_rcb->real_psm))
+#endif
     {
         btm_sec_clr_service_by_psm(p_rcb->psm);
     }
@@ -1695,7 +1701,8 @@ void l2cu_release_ccb (tL2C_CCB *p_ccb)
         p_ccb->should_free_rcb = false;
     }
 
-    btm_sec_clr_temp_auth_service (p_lcb->remote_bd_addr);
+    if(p_lcb)
+       btm_sec_clr_temp_auth_service (p_lcb->remote_bd_addr);
 
     /* Free the timer */
     alarm_free(p_ccb->l2c_ccb_timer);
