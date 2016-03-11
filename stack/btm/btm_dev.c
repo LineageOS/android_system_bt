@@ -152,9 +152,9 @@ BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name,
         if (pin_length >= 16 ||
             key_type == BTM_LKEY_TYPE_AUTH_COMB ||
             key_type == BTM_LKEY_TYPE_AUTH_COMB_P_256) {
-            // Set the fiag if the link key was made by using either a 16 digit
+            // Set the flag if the link key was made by using either a 16 digit
             // pin or MITM.
-            p_dev_rec->sec_flags |= BTM_SEC_16_DIGIT_PIN_AUTHED;
+            p_dev_rec->sec_flags |= BTM_SEC_16_DIGIT_PIN_AUTHED | BTM_SEC_LINK_KEY_AUTHED;
         }
     }
 

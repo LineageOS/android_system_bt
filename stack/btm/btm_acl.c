@@ -332,6 +332,7 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
             /* if BR/EDR do something more */
             if (transport == BT_TRANSPORT_BR_EDR)
             {
+                btsnd_hcic_read_rmt_clk_offset (p->hci_handle);
                 btsnd_hcic_rmt_ver_req (p->hci_handle);
             }
             p_dev_rec = btm_find_dev_by_handle (hci_handle);

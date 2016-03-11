@@ -2491,6 +2491,11 @@ static void btif_media_task_aa_start_tx(void)
     APPL_TRACE_IMP("btif_media_task_aa_start_tx is timer %d, feeding mode %d",
              btif_media_cb.is_tx_timer, btif_media_cb.feeding_mode);
 
+    if (btif_media_cb.is_tx_timer) {
+      LOG_WARN(LOG_TAG, "%s media alarm already running", __func__);
+      return;
+    }
+
     /* Use a timer to poll the UIPC, get rid of the UIPC call back */
     // UIPC_Ioctl(UIPC_CH_ID_AV_AUDIO, UIPC_REG_CBACK, NULL);
 
@@ -2512,7 +2517,8 @@ static void btif_media_task_aa_start_tx(void)
       return;
     }
 
-    alarm_set_periodic(btif_media_cb.media_alarm, BTIF_MEDIA_TIME_TICK, btif_media_task_alarm_cb, NULL);
+    alarm_set_periodic(btif_media_cb.media_alarm, BTIF_MEDIA_TIME_TICK,
+                       btif_media_task_alarm_cb, NULL);
 #endif
 }
 

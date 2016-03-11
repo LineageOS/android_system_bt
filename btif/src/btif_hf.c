@@ -1162,7 +1162,7 @@ static bt_status_t cops_response(const char *cops, bt_bdaddr_t *bd_addr)
         tBTA_AG_RES_DATA    ag_res;
 
         /* Format the response */
-        sprintf (ag_res.str, "0,0,\"%s\"", cops);
+        sprintf (ag_res.str, "0,0,\"%.16s\"", cops);
         ag_res.ok_flag = BTA_AG_OK_DONE;
 
         BTA_AgResult (btif_hf_cb[idx].handle, BTA_AG_COPS_RES, &ag_res);

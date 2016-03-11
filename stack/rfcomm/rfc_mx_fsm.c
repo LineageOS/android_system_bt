@@ -411,6 +411,7 @@ void rfc_mx_sm_state_wait_sabme (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
 
             p_mcb->state      = RFC_MX_STATE_CONNECTED;
             p_mcb->peer_ready = TRUE;
+            PORT_StartCnf (p_mcb, RFCOMM_SUCCESS);
         }
         return;
 
