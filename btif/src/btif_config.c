@@ -27,6 +27,7 @@
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
 #include "btcore/include/bdaddr.h"
+#include "btif_api.h"
 #include "btif_config.h"
 #include "btif_config_transcode.h"
 #include "btif_util.h"
@@ -45,6 +46,7 @@ static const period_ms_t CONFIG_SETTLE_PERIOD_MS = 3000;
 static void timer_config_save_cb(void *data);
 static void btif_config_write(void);
 static void btif_config_remove_unpaired(config_t *config);
+static void btif_config_remove_restricted(config_t *config);
 
 // TODO(zachoverflow): Move these two functions out, because they are too specific for this file
 // {grumpy-cat/no, monty-python/you-make-me-sad}
@@ -110,6 +112,10 @@ static future_t *init(void) {
   }
 
   btif_config_remove_unpaired(config);
+
+  // Cleanup temporary pairings if we have left guest mode
+  if (!is_restricted_mode())
+    btif_config_remove_restricted(config);
 
   // TODO(sharvil): use a non-wake alarm for this once we have
   // API support for it. There's no need to wake the system to
@@ -420,4 +426,20 @@ static void btif_config_remove_unpaired(config_t *conf) {
     }
     snode = config_section_next(snode);
   }
+}
+
+static void btif_config_remove_restricted(config_t* config) {
+  assert(config != NULL);
+
+  pthread_mutex_lock(&lock);
+  const config_section_node_t *snode = config_section_begin(config);
+  while (snode != config_section_end(config)) {
+    const char *section = config_section_name(snode);
+    if (string_is_bdaddr(section) && config_has_key(config, section, "Restricted")) {
+        BTIF_TRACE_DEBUG("%s: Removing restricted device %s", __func__, section);
+        config_remove_section(config, section);
+    }
+    snode = config_section_next(snode);
+  }
+  pthread_mutex_unlock(&lock);
 }
