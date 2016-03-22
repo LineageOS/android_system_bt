@@ -709,8 +709,13 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
                      * because we rely on feature bits being scanned by external
                      * devices more than the profile version itself.
                      */
-                    if ((profile_initialized == UUID_SERVCLASS_AUDIO_SOURCE) ||
-                        (profile_initialized == UUID_SERVCLASS_AUDIO_SINK))
+                    if (profile_initialized == UUID_SERVCLASS_AUDIO_SOURCE)
+                    {
+                        bta_ar_reg_avrc(UUID_SERVCLASS_AV_REMOTE_CONTROL, NULL, NULL,
+                        p_bta_av_cfg->avrc_ct_cat, BTA_ID_AV,
+                        (bta_av_cb.features & BTA_AV_FEAT_BROWSE), AVRC_REV_1_4);
+                    }
+                    if (profile_initialized == UUID_SERVCLASS_AUDIO_SINK)
                     {
                         bta_ar_reg_avrc(UUID_SERVCLASS_AV_REMOTE_CONTROL, NULL, NULL,
                         p_bta_av_cfg->avrc_ct_cat, BTA_ID_AV,

@@ -42,6 +42,8 @@
 tAVRC_CB avrc_cb;
 #endif
 
+/* update AVRC_NUM_PROTO_ELEMS if this constant is changed */
+
 /******************************************************************************
 **
 ** Function         avrc_sdp_cback
