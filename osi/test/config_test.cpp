@@ -80,6 +80,19 @@ TEST_F(ConfigTest, config_free_null) {
   config_free(NULL);
 }
 
+TEST_F(ConfigTest, config_new_clone) {
+  config_t *config = config_new(CONFIG_FILE);
+  config_t *clone = config_new_clone(config);
+
+  config_set_string(clone, CONFIG_DEFAULT_SECTION, "first_key", "not_value");
+
+  EXPECT_STRNE(config_get_string(config, CONFIG_DEFAULT_SECTION, "first_key", "one"),
+               config_get_string(clone, CONFIG_DEFAULT_SECTION, "first_key", "one"));
+
+  config_free(config);
+  config_free(clone);
+}
+
 TEST_F(ConfigTest, config_has_section) {
   config_t *config = config_new(CONFIG_FILE);
   EXPECT_TRUE(config_has_section(config, "DID"));
