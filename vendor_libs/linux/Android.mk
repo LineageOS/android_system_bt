@@ -31,6 +31,8 @@ LOCAL_C_INCLUDES += \
 LOCAL_SHARED_LIBRARIES := \
         libcutils
 
+LOCAL_STATIC_LIBRARIES := libosi
+
 LOCAL_MODULE := libbt-vendor
 LOCAL_MODULE_TAGS := optional
 

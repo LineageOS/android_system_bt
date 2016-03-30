@@ -401,6 +401,12 @@ static int bt_vendor_op(bt_vendor_opcode_t opcode, void *param)
   case BT_VND_OP_EPILOG:
     bt_vendor_callbacks->epilog_cb(BT_VND_OP_RESULT_SUCCESS);
     break;
+
+  case BT_VND_OP_A2DP_OFFLOAD_START:
+    break;
+
+  case BT_VND_OP_A2DP_OFFLOAD_STOP:
+    break;
   }
 
   LOG_INFO(LOG_TAG, "%s op %d retval %d", __func__, opcode, retval);
