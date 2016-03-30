@@ -241,6 +241,7 @@ static int uhid_event(btif_hh_device_t *p_dev)
         break;
     case UHID_OPEN:
         APPL_TRACE_DEBUG("UHID_OPEN from uhid-dev\n");
+        p_dev->ready_for_data = TRUE;
         break;
     case UHID_CLOSE:
         APPL_TRACE_DEBUG("UHID_CLOSE from uhid-dev\n");

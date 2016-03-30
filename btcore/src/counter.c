@@ -136,7 +136,9 @@ static future_t *counter_init(void) {
 
 static future_t *counter_clean_up(void) {
   counter_socket_close();
+  pthread_mutex_lock(&hash_map_lock_);
   hash_map_free(hash_map_counter_);
+  pthread_mutex_unlock(&hash_map_lock_);
   pthread_mutex_destroy(&hash_map_lock_);
   hash_map_counter_ = NULL;
   return future_new_immediate(FUTURE_SUCCESS);

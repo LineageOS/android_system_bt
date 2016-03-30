@@ -27,6 +27,7 @@
 #include <stdlib.h>
 
 #include "osi/include/allocator.h"
+#include "btu.h"
 #include "bt_types.h"
 #include "gki.h"
 #include "utl.h"
@@ -76,7 +77,6 @@ static struct fc_client *fc_clients;
 static struct fc_channel *fc_channels;
 static uint32_t fc_next_id;
 static pthread_once_t fc_init_once = PTHREAD_ONCE_INIT;
-
 
 static void fc_init_work(void)
 {
@@ -430,6 +430,13 @@ static void bta_jv_clear_pm_cb(tBTA_JV_PM_CB *p_pm_cb, BOOLEAN close_conn)
     /* needs to be called if registered with bta pm, otherwise we may run out of dm pm slots! */
     if (close_conn)
         bta_sys_conn_close(BTA_ID_JV, p_pm_cb->app_id, p_pm_cb->peer_bd_addr);
+
+    if (p_pm_cb->is_idle_timer_started == TRUE)
+    {
+        /* Ensure that timer is stopped */
+        btu_stop_timer (&p_pm_cb->idle_tle);
+        p_pm_cb->is_idle_timer_started = FALSE;
+    }
     p_pm_cb->state = BTA_JV_PM_FREE_ST;
     p_pm_cb->app_id = BTA_JV_PM_ALL;
     p_pm_cb->handle = BTA_JV_PM_HANDLE_CLEAR;
@@ -592,6 +599,10 @@ static tBTA_JV_PM_CB *bta_jv_alloc_set_pm_profile_cb(UINT32 jv_handle, tBTA_JV_P
         bta_jv_cb.pm_cb[i].app_id = app_id;
         bdcpy(bta_jv_cb.pm_cb[i].peer_bd_addr, peer_bd_addr);
         bta_jv_cb.pm_cb[i].state = BTA_JV_PM_IDLE_ST;
+        bta_jv_cb.pm_cb[i].is_idle_timer_started = FALSE;
+        bta_jv_cb.pm_cb[i].idle_tle.param = (UINT32) bta_jv_idle_timeout_handler;
+        bta_jv_cb.pm_cb[i].idle_tle.data = (UINT32) &bta_jv_cb.pm_cb[i];
+        APPL_TRACE_DEBUG("bta_jv_alloc_set_pm_profile_cb: %d, PM_cb: %p", i, &bta_jv_cb.pm_cb[i]);
         return &bta_jv_cb.pm_cb[i];
     }
     APPL_TRACE_WARNING("bta_jv_alloc_set_pm_profile_cb(jv_handle: 0x%x, app_id: %d) "
@@ -1400,7 +1411,7 @@ void bta_jv_l2cap_write(tBTA_JV_MSG *p_data)
            evt_data.status = BTA_JV_SUCCESS;
         }
         ls->p_cb->p_cback(BTA_JV_L2CAP_WRITE_EVT, (tBTA_JV *)&evt_data, ls->user_data);
-        bta_jv_set_pm_conn_state(ls->p_cb->p_pm_cb, BTA_JV_CONN_IDLE);
+        bta_jv_pm_conn_idle(ls->p_cb->p_pm_cb);
     } else {
         /* As this pointer is checked in the API function, this occurs only when the channel is
          * disconnected after the API function is called, but before the message is handled. */
@@ -1464,7 +1475,9 @@ static int bta_jv_port_data_co_cback(UINT16 port_handle, UINT8 *buf, UINT16 len,
         switch(type)
         {
             case DATA_CO_CALLBACK_TYPE_INCOMING:
+                bta_jv_pm_conn_busy(p_pcb->p_pm_cb);
                 ret = bta_co_rfc_data_incoming(p_pcb->user_data, (BT_HDR*)buf);
+                bta_jv_pm_conn_idle(p_pcb->p_pm_cb);
                 return ret;
             case DATA_CO_CALLBACK_TYPE_OUTGOING_SIZE:
                 return bta_co_rfc_data_outgoing_size(p_pcb->user_data, (int*)buf);
@@ -2258,7 +2271,17 @@ tBTA_JV_STATUS bta_jv_set_pm_conn_state(tBTA_JV_PM_CB *p_cb, const tBTA_JV_CONN_
 static void bta_jv_pm_conn_busy(tBTA_JV_PM_CB *p_cb)
 {
     if ((NULL != p_cb) && (BTA_JV_PM_IDLE_ST == p_cb->state))
-        bta_jv_pm_state_change(p_cb, BTA_JV_CONN_BUSY);
+    {
+        tBTM_PM_MODE    mode = BTM_PM_MD_ACTIVE;
+        if (BTM_ReadPowerMode(p_cb->peer_bd_addr, &mode) == BTM_SUCCESS) {
+            if (mode == BTM_PM_MD_SNIFF) {
+                bta_jv_pm_state_change(p_cb, BTA_JV_CONN_BUSY);
+            } else {
+                p_cb->state = BTA_JV_PM_BUSY_ST;
+                APPL_TRACE_DEBUG("bta_jv_pm_conn_busy:power mode: %d", mode);
+            }
+        }
+    }
 }
 
 /*******************************************************************************
@@ -2274,8 +2297,17 @@ static void bta_jv_pm_conn_busy(tBTA_JV_PM_CB *p_cb)
  *******************************************************************************/
 static void bta_jv_pm_conn_idle(tBTA_JV_PM_CB *p_cb)
 {
-    if ((NULL != p_cb) && (BTA_JV_PM_IDLE_ST != p_cb->state))
-        bta_jv_pm_state_change(p_cb, BTA_JV_CONN_IDLE);
+    if ((NULL != p_cb) && (BTA_JV_PM_IDLE_ST != p_cb->state)) {
+        APPL_TRACE_DEBUG("bta_jv_pm_conn_idle, p_cb->is_idle_timer_started: %d, p_cb: %p",
+                p_cb->is_idle_timer_started, p_cb);
+        p_cb->state = BTA_JV_PM_IDLE_ST;
+        if (p_cb->is_idle_timer_started == FALSE) {
+            // start intermediate idle timer for 1s
+            btu_start_timer(&p_cb->idle_tle, BTU_TTYPE_USER_FUNC,
+                    BTA_JV_IDLE_TIMEOUT);
+            p_cb->is_idle_timer_started = TRUE;
+        }
+    }
 }
 
 /*******************************************************************************
@@ -2753,3 +2785,34 @@ extern void bta_jv_l2cap_close_fixed (tBTA_JV_MSG *p_data)
     if (t)
         fcclient_free(t);
 }
+
+/*******************************************************************************
+**
+** Function         bta_jv_idle_timeout_handler
+**
+** Description      Bta JV specific idle timeout handler
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_jv_idle_timeout_handler(TIMER_LIST_ENT *tle) {
+    tBTA_JV_PM_CB *p_cb = (tBTA_JV_PM_CB *)tle->data;;
+    APPL_TRACE_DEBUG("%s p_cb: %p", __func__, p_cb);
+
+    if (NULL != p_cb) {
+        p_cb->is_idle_timer_started = FALSE;
+
+        tBTM_PM_MODE    mode = BTM_PM_MD_ACTIVE;
+        if (BTM_ReadPowerMode(p_cb->peer_bd_addr, &mode) == BTM_SUCCESS) {
+            if (mode == BTM_PM_MD_SNIFF) {
+                APPL_TRACE_WARNING("%s: %d", __func__, mode)
+                return;
+            } else {
+                APPL_TRACE_DEBUG("%s: %d", __func__, mode);
+            }
+        }
+        bta_jv_pm_state_change(p_cb, BTA_JV_CONN_IDLE);
+    }
+}
+

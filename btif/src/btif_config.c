@@ -388,9 +388,9 @@ int btif_config_clear(void){
 }
 
 static void timer_config_save_cb(UNUSED_ATTR void *data) {
-  // Moving file I/O to btif context instead of timer callback because
-  // it usually takes a lot of time to be completed, introducing
-  // delays during A2DP playback causing blips or choppiness.
+  // calling file IO onto btif context instead of timer callback because
+  // it usually takes lots of time to be completed timer callback has big
+  // delayed during a2dp playback causing blip or choppiness.
   btif_transfer_context(btif_config_write, 0, NULL, 0, NULL);
 }
 

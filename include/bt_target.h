@@ -534,7 +534,7 @@
 
 /* The number of security records for services. */
 #ifndef BTM_SEC_MAX_SERVICE_RECORDS
-#define BTM_SEC_MAX_SERVICE_RECORDS 32
+#define BTM_SEC_MAX_SERVICE_RECORDS 64
 #endif
 
 /* If True, force a retrieval of remote device name for each bond in case it's changed */

@@ -245,6 +245,7 @@ enum {
 #define PACKET_PLAYED_PER_TICK_32 5
 #define PACKET_PLAYED_PER_TICK_16 3
 
+#define MAX_MEDIA_WORKQUEUE_COUNT 1024
 typedef struct
 {
     UINT16 num_frames_to_be_processed;
@@ -855,7 +856,7 @@ bool btif_a2dp_start_media_task(void)
     btif_media_cmd_msg_queue = fixed_queue_new(SIZE_MAX);
 
     /* start a2dp media task */
-    worker_thread = thread_new("media_worker");
+    worker_thread = thread_new_sized("media_worker", MAX_MEDIA_WORKQUEUE_COUNT);
     if (worker_thread == NULL)
         goto error_exit;
 

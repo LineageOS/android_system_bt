@@ -1526,10 +1526,13 @@ void bta_av_disable(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
     UNUSED(p_data);
 
     p_cb->disabling = TRUE;
-
     bta_av_close_all_rc(p_cb);
 
-    utl_freebuf((void **) &p_cb->p_disc_db);
+    /*Cancel SDP if it had been started. */
+    if(p_cb->p_disc_db) {
+        (void)SDP_CancelServiceSearch (p_cb->p_disc_db);
+        utl_freebuf((void **) &p_cb->p_disc_db);
+    }
 
     /* disable audio/video - de-register all channels,
      * expect BTA_AV_DEREG_COMP_EVT when deregister is complete */

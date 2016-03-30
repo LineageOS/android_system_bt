@@ -284,6 +284,11 @@ static void btsock_l2cap_free_l(l2cap_socket *sock)
         } else {
             BTA_JvFreeChannel(sock->channel, BTA_JV_CONN_TYPE_L2CAP);
         }
+        if(!sock->fixed_chan) {
+           APPL_TRACE_DEBUG(" stopping l2cap server chnl %d", sock->channel);
+           BTA_JvL2capStopServer ( sock->channel, (void*)sock->id);
+        }
+
     }
 
     APPL_TRACE_DEBUG("SOCK_LIST: free(id = %d)", sock->id);
@@ -832,11 +837,14 @@ void on_l2cap_psm_assigned(int id, int psm) {
      *  mtu will be set below */
     pthread_mutex_lock(&state_lock);
     sock = btsock_l2cap_find_by_id_l(id);
-    sock->channel = psm;
+    if(sock) {
+        sock->channel = psm;
 
-    if(btSock_start_l2cap_server_l(sock) != BT_STATUS_SUCCESS) {
-        btsock_l2cap_free_l(sock);
-    }
+        if(btSock_start_l2cap_server_l(sock) != BT_STATUS_SUCCESS) {
+            btsock_l2cap_free_l(sock);
+        }
+    } else
+        APPL_TRACE_ERROR("Error: sock is null");
 
     pthread_mutex_unlock(&state_lock);
 
