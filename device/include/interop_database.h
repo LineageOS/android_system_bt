@@ -148,3 +148,15 @@ static const interop_manufacturer_t interop_manufacturer_database[] = {
   {76, INTEROP_DISABLE_SDP_AFTER_PAIRING},
 };
 
+typedef struct {
+  uint16_t vendor_id;
+  uint16_t product_id;
+  char name[40];
+  size_t length;
+  interop_feature_t feature;
+} interop_hid_multitouch_t;
+
+static const interop_hid_multitouch_t interop_hid_multitouch_database[] = {
+  // Moto KZ500 Keyboard
+  {0x22b8, 0x093d, "Motorola Keyboard KZ500 v122", 28, INTEROP_REMOVE_HID_DIG_DESCRIPTOR},
+};

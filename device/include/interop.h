@@ -78,6 +78,12 @@ typedef enum {
   // To avoid degrading the user experience with those devices, authentication request
   // is not requested explictly.
   INTEROP_DISABLE_AUTH_FOR_HID_POINTING,
+
+  // HID Keyboards that claim support for multitouch functionality have issue with
+  // normal functioning of keyboard because of issues in USB HID kernel driver.
+  // To avoid degrading the user experience with those devices, digitizer record
+  // is removed from the report descriptor.
+  INTEROP_REMOVE_HID_DIG_DESCRIPTOR,
 } interop_feature_t;
 
 // Check if a given |addr| matches a known interoperability workaround as identified
@@ -106,6 +112,13 @@ bool interop_match_name(const interop_feature_t feature, const char *name);
 // by the |interop_feature_t| enum. This API is used for manufacturer based lookups
 // where more information is not available.
 bool interop_match_manufacturer(const interop_feature_t feature, uint16_t manufacturer);
+
+
+// Check if a given |vendor_id, product_id, name| matches a known interoperability workaround
+// as identified by the |interop_feature_t| enum. This API is used for simple name based lookups
+// where more information is not available.
+bool interop_match_hid_multitouch(const interop_feature_t feature,
+        uint16_t vendor_id, uint16_t product_id, const char *name);
 
 // Add a dynamic interop database entry for a device matching the first |length| bytes
 // of |addr|, implementing the workaround identified by |feature|. |addr| may not be
