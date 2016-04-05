@@ -18,7 +18,9 @@
 
 #pragma once
 
+#ifndef REMOVE_EAGER_THREADS
 #define REMOVE_EAGER_THREADS TRUE
+#endif
 
 #if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
 #include "allocator.h"
