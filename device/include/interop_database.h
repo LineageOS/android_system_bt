@@ -114,6 +114,10 @@ static const interop_addr_entry_t interop_addr_database[] = {
 
   // Fiat Carkit
   {{{0x00, 0x14, 0x09,       0,0,0}}, 3, INTEROP_INCREASE_AG_CONN_TIMEOUT},
+
+  // Dialog Keyboard and mouse
+  {{{0x80, 0xea, 0xca,      0,0,0}}, 3, INTEROP_DISABLE_LE_SECURE_CONNECTIONS},
+
 };
 
 typedef struct {
