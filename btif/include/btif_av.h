@@ -80,6 +80,17 @@ btif_sm_handle_t btif_av_get_sm_handle(void);
 bt_bdaddr_t btif_av_get_addr(void);
 
 /*******************************************************************************
+** Function         btif_av_is_sink_enabled
+**
+** Description      Checks if A2DP Sink is enabled or not
+**
+** Returns          TRUE if A2DP Sink is enabled, false otherwise
+**
+*******************************************************************************/
+
+BOOLEAN btif_av_is_sink_enabled(void);
+
+/*******************************************************************************
 **
 ** Function         btif_av_stream_ready
 **

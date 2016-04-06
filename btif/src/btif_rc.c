@@ -457,7 +457,9 @@ void handle_rc_ctrl_features(BD_ADDR bd_addr)
              * update.
              */
             btif_rc_cb.rc_features_processed = TRUE;
-            getcapabilities_cmd (AVRC_CAP_COMPANY_ID);
+
+            if (btif_av_is_sink_enabled())
+                getcapabilities_cmd (AVRC_CAP_COMPANY_ID);
         }
         BTIF_TRACE_DEBUG("%s Update rc features to CTRL %d", __FUNCTION__, rc_features);
         HAL_CBACK(bt_rc_ctrl_callbacks, getrcfeatures_cb, &rc_addr, rc_features);
@@ -2090,8 +2092,8 @@ static void btif_rc_status_cmd_timeout_handler(UNUSED_ATTR uint16_t event,
         break;
 
     case AVRC_PDU_GET_PLAY_STATUS:
-        avrc_response.get_caps.status = BTIF_RC_STS_TIMEOUT;
-        handle_get_capability_response(&meta_msg, &avrc_response.get_caps);
+        avrc_response.get_play_status.status = BTIF_RC_STS_TIMEOUT;
+        handle_get_playstatus_response(&meta_msg, &avrc_response.get_play_status);
         break;
     }
     release_transaction(p_context->rc_status_cmd.label);
