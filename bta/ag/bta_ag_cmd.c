@@ -36,6 +36,7 @@
 #include "bt_common.h"
 #include "port_api.h"
 #include "utl.h"
+#include <cutils/properties.h>
 
 
 /*****************************************************************************
@@ -1006,6 +1007,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
     UINT32          i, ind_id;
     UINT32          bia_masked_out;
     tBTA_AG_FEAT  features;
+    char value[PROPERTY_VALUE_MAX];
 #if (BTM_WBS_INCLUDED == TRUE )
     tBTA_AG_PEER_CODEC  codec_type, codec_sent;
 #endif
@@ -1237,8 +1239,13 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
             /* if the devices does not support HFP 1.7, report DUT's HFP version as 1.6 */
             if (p_scb->peer_version < HFP_VERSION_1_7)
             {
-                features = features & ~(BTA_AG_FEAT_HFIND | BTA_AG_FEAT_S4);
-            }
+                /* For PTS keep flags as is */
+                if (property_get("bt.pts.certification", value, "false") &&
+                    strcmp(value, "true") != 0)
+                {
+                    features = features & ~(BTA_AG_FEAT_HFIND | BTA_AG_FEAT_S4);
+                }
+             }
             /* send BRSF, send OK */
             bta_ag_send_result(p_scb, BTA_AG_RES_BRSF, NULL,
                                (INT16) (p_scb->features & BTA_AG_BSRF_FEAT_SPEC));
@@ -2003,7 +2010,8 @@ void bta_ag_send_ring(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 {
     UNUSED(p_data);
 
-    if (p_scb->conn_service == BTA_AG_HFP && p_scb->callsetup_ind != BTA_AG_CALLSETUP_INCOMING)
+    if ((p_scb->conn_service == BTA_AG_HFP) &&
+         p_scb->callsetup_ind != BTA_AG_CALLSETUP_INCOMING)
     {
         APPL_TRACE_DEBUG("don't send the ring since there is no MT call setup");
         return;

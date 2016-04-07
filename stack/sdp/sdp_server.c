@@ -38,7 +38,7 @@
 
 #include "sdp_api.h"
 #include "sdpint.h"
-
+#include <cutils/properties.h>
 
 #if SDP_SERVER_ENABLED == TRUE
 
@@ -119,6 +119,7 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
 BOOLEAN sdp_change_hfp_version (tSDP_ATTRIBUTE *p_attr, BD_ADDR remote_address)
 {
     bool is_blacklisted = FALSE;
+    char value[PROPERTY_VALUE_MAX];
     if ((p_attr->id == ATTR_ID_BT_PROFILE_DESC_LIST) &&
         (p_attr->len >= SDP_PROFILE_DESC_LENGTH))
     {
@@ -129,7 +130,10 @@ BOOLEAN sdp_change_hfp_version (tSDP_ATTRIBUTE *p_attr, BD_ADDR remote_address)
             is_blacklisted = is_device_present(IOT_HFP_1_7_BLACKLIST, remote_address);
             SDP_TRACE_DEBUG("%s: HF version is 1.7 for BD addr: %x:%x:%x",\
                            __func__, remote_address[0], remote_address[1], remote_address[2]);
-            if (is_blacklisted)
+            /* For PTS we should show AG's HFP version as 1.7 */
+            if (is_blacklisted ||
+                (property_get("bt.pts.certification", value, "false") &&
+                strcmp(value, "true") == 0))
             {
                 p_attr->value_ptr[PROFILE_VERSION_POSITION] = 0x07; // Update HFP version as 1.7
                 SDP_TRACE_ERROR("SDP Change HFP Version = 0x%x",
