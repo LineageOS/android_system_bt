@@ -34,7 +34,7 @@
 ********************************************************************************/
 
 #define ASSERTC(cond, msg, val) if (!(cond)) { LOG_ERROR(LOG_TAG, \
-    "### ASSERT : %s line %d %s (%d) ###", __FILE__, __LINE__, msg, val);}
+    "### ASSERT : %s %s line %d %s (%d) ###", __FILE__, __func__, __LINE__, msg, val);}
 
 /* Calculate start of event enumeration; id is top 8 bits of event */
 #define BTIF_SIG_START(id)       ((id) << 8)

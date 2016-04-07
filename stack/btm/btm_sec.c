@@ -994,7 +994,11 @@ tBTM_STATUS btm_sec_bond_by_transport (BD_ADDR bd_addr, tBT_TRANSPORT transport,
     {
         return(BTM_NO_RESOURCES);
     }
-
+    if (!controller_get_interface()->get_is_ready())
+    {
+        BTM_TRACE_ERROR ("%s controller module is not ready", __func__);
+        return(BTM_NO_RESOURCES);
+    }
     BTM_TRACE_DEBUG ("before update sec_flags=0x%x", p_dev_rec->sec_flags);
 
     /* Finished if connection is active and already paired */
@@ -3003,6 +3007,7 @@ static tBTM_STATUS btm_sec_dd_create_conn (tBTM_SEC_DEV_REC *p_dev_rec)
     if (p_lcb && (p_lcb->link_state == LST_CONNECTED || p_lcb->link_state == LST_CONNECTING))
     {
        BTM_TRACE_WARNING("%s Connection already exists", __func__);
+       btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_PIN_REQ);
        return BTM_CMD_STARTED;
     }
 

@@ -649,7 +649,9 @@ static void bond_state_changed(bt_status_t status, bt_bdaddr_t *bd_addr, bt_bond
         pairing_cb.state = state;
         bdcpy(pairing_cb.bd_addr, bd_addr->address);
     } else {
-        if (!pairing_cb.sdp_attempts)
+        if ((!pairing_cb.sdp_attempts)&&
+            ((bdcmp(bd_addr->address, pairing_cb.bd_addr) == 0) ||
+             (bdcmp(bd_addr->address, pairing_cb.static_bdaddr.address) == 0)))
             memset(&pairing_cb, 0, sizeof(pairing_cb));
         else
             BTIF_TRACE_DEBUG("%s: BR-EDR service discovery active", __func__);
@@ -1684,10 +1686,11 @@ static void btif_dm_search_services_evt(UINT16 event, char *p_param)
              bt_uuid_t  uuid;
              int i = 0;
              int j = 15;
+             int num_properties = 0;
              if (p_data->disc_ble_res.service.uu.uuid16 == UUID_SERVCLASS_LE_HID)
              {
                 BTIF_TRACE_DEBUG("%s: Found HOGP UUID",__FUNCTION__);
-                bt_property_t prop;
+                bt_property_t prop[2];
                 bt_bdaddr_t bd_addr;
                 char temp[256];
                 bt_status_t ret;
@@ -1707,17 +1710,30 @@ static void btif_dm_search_services_evt(UINT16 event, char *p_param)
                 LOG_INFO(LOG_TAG, "%s uuid:%s", __func__, temp);
 
                 bdcpy(bd_addr.address, p_data->disc_ble_res.bd_addr);
-                prop.type = BT_PROPERTY_UUIDS;
-                prop.val = uuid.uu;
-                prop.len = MAX_UUID_SIZE;
+                prop[0].type = BT_PROPERTY_UUIDS;
+                prop[0].val = uuid.uu;
+                prop[0].len = MAX_UUID_SIZE;
 
                 /* Also write this to the NVRAM */
-                ret = btif_storage_set_remote_device_property(&bd_addr, &prop);
+                ret = btif_storage_set_remote_device_property(&bd_addr, &prop[0]);
                 ASSERTC(ret == BT_STATUS_SUCCESS, "storing remote services failed", ret);
+                num_properties++;
+
+                /* Remote name update */
+                if (strnlen((const char *) p_data->disc_ble_res.bd_name, BD_NAME_LEN))
+                {
+                    prop[1].type = BT_PROPERTY_BDNAME;
+                    prop[1].val = p_data->disc_ble_res.bd_name;
+                    prop[1].len = strnlen((char *)p_data->disc_ble_res.bd_name, BD_NAME_LEN);
+
+                    ret = btif_storage_set_remote_device_property(&bd_addr, &prop[1]);
+                    ASSERTC(ret == BT_STATUS_SUCCESS, "failed to save remote device property", ret);
+                    num_properties++;
+                }
 
                 /* Send the event to the BTIF */
                 HAL_CBACK(bt_hal_cbacks, remote_device_properties_cb,
-                                 BT_STATUS_SUCCESS, &bd_addr, 1, &prop);
+                                 BT_STATUS_SUCCESS, &bd_addr, num_properties, prop);
 
             }
         break;

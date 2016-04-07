@@ -640,6 +640,7 @@ extern void l2cu_send_peer_ble_credit_based_disconn_req(tL2C_CCB *p_ccb);
 extern BOOLEAN l2cu_initialize_fixed_ccb (tL2C_LCB *p_lcb, UINT16 fixed_cid, tL2CAP_FCR_OPTS *p_fcr);
 extern void    l2cu_no_dynamic_ccbs (tL2C_LCB *p_lcb);
 extern void    l2cu_process_fixed_chnl_resp (tL2C_LCB *p_lcb);
+extern BOOLEAN l2cu_is_ccb_active (tL2C_CCB *p_ccb);
 
 /* Functions provided by l2c_ucd.c
 ************************************

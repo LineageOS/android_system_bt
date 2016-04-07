@@ -3832,3 +3832,17 @@ void l2cu_check_channel_congestion (tL2C_CCB *p_ccb)
     }
 }
 
+/*******************************************************************************
+**
+** Function         l2cu_is_ccb_active
+**
+** Description      Check if Channel Control Block is in use or released
+**
+** Returns          BOOLEAN - TRUE if Channel Control Block is in use
+**                            FALSE if p_ccb is null or is released.
+**
+*******************************************************************************/
+BOOLEAN l2cu_is_ccb_active (tL2C_CCB *p_ccb)
+{
+    return (p_ccb && p_ccb->in_use);
+}

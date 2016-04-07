@@ -67,6 +67,11 @@ static char *l2c_csm_get_event_name (UINT16 event);
 *******************************************************************************/
 void l2c_csm_execute (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
 {
+    if (!l2cu_is_ccb_active(p_ccb)) {
+        L2CAP_TRACE_WARNING("%s This ccb is not in use, the event(%d) can't be processed", __func__, event);
+        return;
+    }
+
     switch (p_ccb->chnl_state)
     {
     case CST_CLOSED:
@@ -573,6 +578,7 @@ static void l2c_csm_w4_l2cap_connect_rsp (tL2C_CCB *p_ccb, UINT16 event, void *p
 {
     tL2C_CONN_INFO          *p_ci = (tL2C_CONN_INFO *)p_data;
     tL2CA_DISCONNECT_IND_CB *disconnect_ind = p_ccb->p_rcb->api.pL2CA_DisconnectInd_Cb;
+    tL2CA_DISCONNECT_CFM_CB *disconnect_cfm = p_ccb->p_rcb->api.pL2CA_DisconnectCfm_Cb;
     tL2CA_CONNECT_CFM_CB    *connect_cfm = p_ccb->p_rcb->api.pL2CA_ConnectCfm_Cb;
     UINT16                  local_cid = p_ccb->local_cid;
 
@@ -655,7 +661,14 @@ static void l2c_csm_w4_l2cap_connect_rsp (tL2C_CCB *p_ccb, UINT16 event, void *p
                                btu_general_alarm_queue);
         }
         else
+        {
             l2cu_release_ccb (p_ccb);
+            if(disconnect_cfm)
+            {
+                L2CAP_TRACE_API ("L2CAP - Calling DisconnectCfm_Cb(), CID: 0x%04x", local_cid);
+                (*disconnect_cfm)(local_cid, L2CAP_CONN_NO_LINK);
+            }
+        }
         break;
 
     case L2CEVT_L2CA_DATA_WRITE:                    /* Upper layer data to send */
