@@ -220,6 +220,13 @@ BOOLEAN l2c_link_hci_conn_comp (UINT8 status, UINT16 handle, BD_ADDR p_bda)
     if (!p_lcb)
     {
         L2CAP_TRACE_WARNING ("L2CAP got conn_comp for unknown BD_ADDR");
+
+        /* Connection complete received when no link control block is present for this address
+         * However ACL entry is already created
+         * Removing connection entry at ACL and sending disconnect because l2c and acl are out of sync */
+        btm_remove_acl(p_bda, BT_TRANSPORT_BR_EDR);
+        btm_acl_removed(p_bda, BT_TRANSPORT_BR_EDR);
+
         return (FALSE);
     }
 
