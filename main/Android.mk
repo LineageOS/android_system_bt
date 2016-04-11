@@ -96,7 +96,6 @@ LOCAL_MODULE_CLASS := SHARED_LIBRARIES
 LOCAL_LDLIBS := -Wl,-Bsymbolic,-Bsymbolic-functions
 
 LOCAL_REQUIRED_MODULES := \
-    auto_pair_devlist.conf \
     bt_did.conf \
     bt_stack.conf \
     libbt-hci \

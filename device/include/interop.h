@@ -24,6 +24,9 @@
 
 static const char INTEROP_MODULE[] = "interop_module";
 
+// NOTE:
+// Only add values at the end of this enum and do NOT delete values
+// as they may be used in dynamic device configuration.
 typedef enum {
   // Disable secure connections
   // This is for pre BT 4.1/2 devices that do not handle secure mode
@@ -39,14 +42,34 @@ typedef enum {
   // Devices requiring this workaround do not handle Bluetooth Absolute Volume
   // control correctly, leading to undesirable (potentially harmful) volume levels
   // or general lack of controlability.
-  INTEROP_DISABLE_ABSOLUTE_VOLUME
+  INTEROP_DISABLE_ABSOLUTE_VOLUME,
+
+  // Disable automatic pairing with headsets/car-kits
+  // Some car kits do not react kindly to a failed pairing attempt and
+  // do not allow immediate re-pairing. Blacklist these so that the initial
+  // pairing attempt makes it to the user instead.
+  INTEROP_DISABLE_AUTO_PAIRING,
+
+  // Use a fixed pin for specific keyboards
+  // Keyboards should use a variable pin at all times. However, some keyboards
+  // require a fixed pin of all 0000. This workaround enables auto pairing for
+  // those keyboards.
+  INTEROP_KEYBOARD_REQUIRES_FIXED_PIN
 } interop_feature_t;
 
 // Check if a given |addr| matches a known interoperability workaround as identified
 // by the |interop_feature_t| enum. This API is used for simple address based lookups
 // where more information is not available. No look-ups or random address resolution
 // are performed on |addr|.
-bool interop_match(const interop_feature_t feature, const bt_bdaddr_t *addr);
+bool interop_match_addr(const interop_feature_t feature, const bt_bdaddr_t *addr);
+
+// Check if a given remote device |name| matches a known interoperability workaround.
+// Name comparisons are case sensitive and do not allow for partial matches. As in, if
+// |name| is "TEST" and a workaround exists for "TESTING", then this function will
+// return false. But, if |name| is "TESTING" and a workaround exists for "TEST", this
+// function will return true.
+// |name| cannot be null and must be null terminated.
+bool interop_match_name(const interop_feature_t feature, const char *name);
 
 // Add a dynamic interop database entry for a device matching the first |length| bytes
 // of |addr|, implementing the workaround identified by |feature|. |addr| may not be

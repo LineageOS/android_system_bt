@@ -262,56 +262,6 @@ bt_status_t btif_storage_load_bonded_hid_info(void);
 *******************************************************************************/
 bt_status_t btif_storage_remove_hid_info(bt_bdaddr_t *remote_bd_addr);
 
-/*******************************************************************************
-**
-** Function         btif_storage_load_autopair_device_list
-**
-** Description      BTIF storage API - Populates auto pair device list
-**
-** Returns          BT_STATUS_SUCCESS if the auto pair blacklist is successfully populated
-**                  BT_STATUS_FAIL otherwise
-**
-*******************************************************************************/
-bt_status_t btif_storage_load_autopair_device_list();
-
-/*******************************************************************************
-**
-** Function         btif_storage_is_device_autopair_blacklisted
-**
-** Description      BTIF storage API  Checks if the given device is blacklisted for auto pairing
-**
-** Returns          TRUE if the device is found in the auto pair blacklist
-**                  FALSE otherwise
-**
-*******************************************************************************/
-
-BOOLEAN  btif_storage_is_device_autopair_blacklisted(bt_bdaddr_t *remote_bd_addr);
-
-/*******************************************************************************
-**
-** Function         btif_storage_add_device_to_autopair_blacklist
-**
-** Description      BTIF storage API - Add a remote device to the auto pairing blacklist
-**
-** Returns          BT_STATUS_SUCCESS if the device is successfully added to the auto pair blacklist
-**                  BT_STATUS_FAIL otherwise
-**
-*******************************************************************************/
-
-bt_status_t btif_storage_add_device_to_autopair_blacklist(bt_bdaddr_t *remote_bd_addr);
-
-/*******************************************************************************
-**
-** Function         btif_storage_is_fixed_pin_zeros_keyboard
-**
-** Description      BTIF storage API - checks if this device has fixed PIN key device list
-**
-** Returns          TRUE   if the device is found in the fixed pin keyboard device list
-**                  FALSE otherwise
-**
-*******************************************************************************/
-BOOLEAN btif_storage_is_fixed_pin_zeros_keyboard(bt_bdaddr_t *remote_bd_addr);
-
 #if (BLE_INCLUDED == TRUE)
 bt_status_t btif_storage_add_ble_bonding_key( bt_bdaddr_t *remote_bd_addr,
                                               char *key,

@@ -24,9 +24,9 @@ typedef struct {
   bt_bdaddr_t addr;
   size_t length;
   interop_feature_t feature;
-} interop_entry_t;
+} interop_addr_entry_t;
 
-static const interop_entry_t interop_database[] = {
+static const interop_addr_entry_t interop_addr_database[] = {
   // Nexus Remote (Spike)
   // Note: May affect other Asus brand devices
   {{{0x08, 0x62, 0x66,      0,0,0}}, 3, INTEROP_DISABLE_LE_SECURE_CONNECTIONS},
@@ -75,5 +75,26 @@ static const interop_entry_t interop_database[] = {
   {{{0x00, 0x14, 0xf1,      0,0,0}}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
 
   // VW Car Kit - not enough granularity with volume
-  {{{0x00, 0x26, 0x7e,      0,0,0}}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME}
+  {{{0x00, 0x26, 0x7e,      0,0,0}}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
+
+  // Subaru car kits (ALPS) - auto-pairing fails and rejects next pairing
+  {{{0xe0, 0x75, 0x0a,      0,0,0}}, 3, INTEROP_DISABLE_AUTO_PAIRING},
+
+  // Unknown keyboard (carried over from auto_pair_devlist.conf)
+  {{{0x00, 0x0F, 0xF6,      0,0,0}}, 3, INTEROP_KEYBOARD_REQUIRES_FIXED_PIN}
 };
+
+typedef struct {
+  char name[20];
+  size_t length;
+  interop_feature_t feature;
+} interop_name_entry_t;
+
+static const interop_name_entry_t interop_name_database[] = {
+  // Carried over from auto_pair_devlist.conf migration
+  {"BMW",     3, INTEROP_DISABLE_AUTO_PAIRING},
+  {"Audi",    4, INTEROP_DISABLE_AUTO_PAIRING},
+  {"Parrot",  6, INTEROP_DISABLE_AUTO_PAIRING},
+  {"Car",     3, INTEROP_DISABLE_AUTO_PAIRING}
+};
+

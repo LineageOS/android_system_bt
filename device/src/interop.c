@@ -40,7 +40,7 @@ static bool interop_match_dynamic_(const interop_feature_t feature, const bt_bda
 
 // Interface functions
 
-bool interop_match(const interop_feature_t feature, const bt_bdaddr_t *addr) {
+bool interop_match_addr(const interop_feature_t feature, const bt_bdaddr_t *addr) {
   assert(addr);
 
   if (interop_match_fixed_(feature, addr) || interop_match_dynamic_(feature, addr)) {
@@ -54,12 +54,27 @@ bool interop_match(const interop_feature_t feature, const bt_bdaddr_t *addr) {
   return false;
 }
 
+bool interop_match_name(const interop_feature_t feature, const char *name) {
+  assert(name);
+
+  const size_t db_size = sizeof(interop_name_database) / sizeof(interop_name_entry_t);
+  for (size_t i = 0; i != db_size; ++i) {
+    if (feature == interop_name_database[i].feature &&
+        strlen(name) >= interop_name_database[i].length &&
+        strncmp(name, interop_name_database[i].name, interop_name_database[i].length) == 0) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 void interop_database_add(const uint16_t feature, const bt_bdaddr_t *addr, size_t length) {
   assert(addr);
   assert(length > 0);
   assert(length < sizeof(bt_bdaddr_t));
 
-  interop_entry_t *entry = osi_calloc(sizeof(interop_entry_t));
+  interop_addr_entry_t *entry = osi_calloc(sizeof(interop_addr_entry_t));
   memcpy(&entry->addr, addr, length);
   entry->feature = feature;
   entry->length = length;
@@ -97,13 +112,15 @@ static const char* interop_feature_string_(const interop_feature_t feature) {
     CASE_RETURN_STR(INTEROP_DISABLE_LE_SECURE_CONNECTIONS)
     CASE_RETURN_STR(INTEROP_AUTO_RETRY_PAIRING)
     CASE_RETURN_STR(INTEROP_DISABLE_ABSOLUTE_VOLUME)
+    CASE_RETURN_STR(INTEROP_DISABLE_AUTO_PAIRING)
+    CASE_RETURN_STR(INTEROP_KEYBOARD_REQUIRES_FIXED_PIN)
   }
 
   return "UNKNOWN";
 }
 
 static void interop_free_entry_(void *data) {
-  interop_entry_t *entry = (interop_entry_t *)data;
+  interop_addr_entry_t *entry = (interop_addr_entry_t *)data;
   osi_free(entry);
 }
 
@@ -119,7 +136,7 @@ static bool interop_match_dynamic_(const interop_feature_t feature, const bt_bda
 
   const list_node_t *node = list_begin(interop_list);
   while (node != list_end(interop_list)) {
-    interop_entry_t *entry = list_node(node);
+    interop_addr_entry_t *entry = list_node(node);
     assert(entry);
 
     if (feature == entry->feature && memcmp(addr, &entry->addr, entry->length) == 0)
@@ -133,10 +150,10 @@ static bool interop_match_dynamic_(const interop_feature_t feature, const bt_bda
 static bool interop_match_fixed_(const interop_feature_t feature, const bt_bdaddr_t *addr) {
   assert(addr);
 
-  const size_t db_size = sizeof(interop_database) / sizeof(interop_entry_t);
+  const size_t db_size = sizeof(interop_addr_database) / sizeof(interop_addr_entry_t);
   for (size_t i = 0; i != db_size; ++i) {
-    if (feature == interop_database[i].feature &&
-        memcmp(addr, &interop_database[i].addr, interop_database[i].length) == 0) {
+    if (feature == interop_addr_database[i].feature &&
+        memcmp(addr, &interop_addr_database[i].addr, interop_addr_database[i].length) == 0) {
       return true;
     }
   }
