@@ -1180,20 +1180,6 @@ static void btif_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
         }
     }
 
-    // We could have received a new link key without going through the pairing flow.
-    // If so, we don't want to perform SDP or any other operations on the authenticated
-    // device.
-    if (bdcmp(p_auth_cmpl->bd_addr, pairing_cb.bd_addr) != 0) {
-      char address[32];
-      bt_bdaddr_t bt_bdaddr;
-
-      memcpy(bt_bdaddr.address, p_auth_cmpl->bd_addr,
-             sizeof(bt_bdaddr.address));
-      bdaddr_to_string(&bt_bdaddr, address, sizeof(address));
-      LOG_INFO(LOG_TAG, "%s skipping SDP since we did not initiate pairing to %s.", __func__, address);
-      return;
-    }
-
     // Skip SDP for certain  HID Devices
     if (p_auth_cmpl->success)
     {
