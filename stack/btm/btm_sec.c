@@ -3102,13 +3102,11 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
 
     if (p_dev_rec)
     {
-        BTM_TRACE_EVENT ("Security Manager: rmt_name_complete PairState: %s  RemName: %s  status: %d State:%d  p_dev_rec: 0x%08x ",
+        BTM_TRACE_EVENT ("%s PairState: %s  RemName: %s  status: %d State:%d  p_dev_rec: 0x%08x ", __func__,
                           btm_pair_state_descr (btm_cb.pairing_state), p_bd_name,
                           status, p_dev_rec->sec_state, p_dev_rec);
-    }
-    else
-    {
-        BTM_TRACE_EVENT ("Security Manager: rmt_name_complete PairState: %s  RemName: %s  status: %d",
+    } else {
+        BTM_TRACE_EVENT ("%s PairState: %s  RemName: %s  status: %d", __func__,
                           btm_pair_state_descr (btm_cb.pairing_state), p_bd_name,
                           status);
     }
@@ -3139,9 +3137,7 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
                 (*btm_cb.p_rmt_name_callback[i])(p_bd_addr, p_dev_rec->dev_class,
                                                  p_dev_rec->sec_bd_name);
         }
-    }
-    else
-    {
+    } else {
         dev_class[0] = 0;
         dev_class[1] = 0;
         dev_class[2] = 0;
@@ -3160,13 +3156,12 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
     if ( (btm_cb.pairing_state == BTM_PAIR_STATE_WAIT_LOCAL_PIN) && p_bd_addr
          &&  (memcmp (btm_cb.pairing_bda, p_bd_addr, BD_ADDR_LEN) == 0) )
     {
-        BTM_TRACE_EVENT ("btm_sec_rmt_name_request_complete() delayed pin now being requested flags:0x%x, (p_pin_callback=0x%p)", btm_cb.pairing_flags, btm_cb.api.p_pin_callback);
+        BTM_TRACE_EVENT ("%s() delayed pin now being requested flags:0x%x, (p_pin_callback=0x%p)",
+            __func__, btm_cb.pairing_flags, btm_cb.api.p_pin_callback);
 
-        if (((btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) == 0) &&
-            ((btm_cb.pairing_flags & BTM_PAIR_FLAGS_PIN_REQD) == 0) &&
-            btm_cb.api.p_pin_callback)
+        if ((btm_cb.pairing_flags & BTM_PAIR_FLAGS_PIN_REQD) == 0 && btm_cb.api.p_pin_callback)
         {
-            BTM_TRACE_EVENT ("btm_sec_rmt_name_request_complete() calling pin_callback");
+            BTM_TRACE_EVENT ("%s() calling pin_callback", __func__);
             btm_cb.pairing_flags |= BTM_PAIR_FLAGS_PIN_REQD;
             (*btm_cb.api.p_pin_callback) (p_dev_rec->bd_addr, p_dev_rec->dev_class, p_bd_name,
                     (p_dev_rec->p_cur_service==NULL) ? FALSE
@@ -3183,7 +3178,7 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
     {
         if (p_bd_addr && memcmp (btm_cb.pairing_bda, p_bd_addr, BD_ADDR_LEN) == 0)
         {
-            BTM_TRACE_EVENT ("btm_sec_rmt_name_request_complete() continue bonding sm4: 0x%04x, status:0x%x", p_dev_rec->sm4, status);
+            BTM_TRACE_EVENT ("%s() continue bonding sm4: 0x%04x, status:0x%x", __func__, p_dev_rec->sm4, status);
             if(btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_CANCEL_DD)
             {
                 btm_sec_bond_cancel_complete();
@@ -3205,12 +3200,10 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
             {
                 /* set the KNOWN flag only if BTM_PAIR_FLAGS_REJECTED_CONNECT is not set.*/
                 /* If it is set, there may be a race condition */
-                BTM_TRACE_DEBUG ("btm_sec_rmt_name_request_complete  IS_SM4_UNKNOWN Flags:0x%04x",
+                BTM_TRACE_DEBUG ("%s IS_SM4_UNKNOWN Flags:0x%04x", __func__,
                                    btm_cb.pairing_flags);
                 if ((btm_cb.pairing_flags & BTM_PAIR_FLAGS_REJECTED_CONNECT) == 0)
-                {
                     p_dev_rec->sm4 |= BTM_SM4_KNOWN;
-                }
             }
 
             BTM_TRACE_DEBUG("%s, SM4 Value: %x, Legacy:%d,IS SM4:%d, Unknown:%d",__FUNCTION__,
@@ -3226,12 +3219,12 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
                 /*  before originating  */
                 if (btm_cb.pairing_flags & BTM_PAIR_FLAGS_REJECTED_CONNECT)
                 {
-                    BTM_TRACE_WARNING ("btm_sec_rmt_name_request_complete: waiting HCI_Connection_Complete after rejecting connection");
+                    BTM_TRACE_WARNING ("%s: waiting HCI_Connection_Complete after rejecting connection", __func__);
                 }
                 /* Both we and the peer are 2.1 - continue to create connection */
                 else if (btm_sec_dd_create_conn(p_dev_rec) != BTM_CMD_STARTED)
                 {
-                    BTM_TRACE_WARNING ("btm_sec_rmt_name_request_complete: failed to start connection");
+                    BTM_TRACE_WARNING ("%s: failed to start connection", __func__);
 
                     btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE);
 
@@ -3241,11 +3234,8 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
                 }
             }
             return;
-        }
-        else
-        {
-            BTM_TRACE_WARNING ("btm_sec_rmt_name_request_complete: wrong BDA, retry with pairing BDA");
-
+        } else {
+            BTM_TRACE_WARNING ("%s: wrong BDA, retry with pairing BDA", __func__);
             BTM_ReadRemoteDeviceName (btm_cb.pairing_bda, NULL, BT_TRANSPORT_BR_EDR);
             return;
         }
