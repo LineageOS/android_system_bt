@@ -91,7 +91,11 @@ static void vendor_close(void) {
   lib_handle = NULL;
 }
 void vendor_ssrcleanup(int reason) {
-  if (lib_interface)
+  /* This is horrible. Not all implementations have this method (from ours,
+   * only 8992 appears to have it), so never try to call this on vendor
+   * libraries without a "complete" interface (since this is the last one) */
+  if (lib_interface && lib_interface->size >= 
+        (sizeof(bt_vendor_interface_t)))
     lib_interface->ssr_cleanup(reason);
   else
     LOG_ERROR("%s lib_interface is NULL", __func__);
