@@ -22,7 +22,7 @@
 
 typedef struct {
   bt_bdaddr_t addr;
-  uint8_t len;
+  size_t length;
   interop_feature_t feature;
 } interop_addr_t;
 
