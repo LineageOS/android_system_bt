@@ -289,7 +289,7 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB *p_cb, UINT16 event, tBTA_HH_DATA * p_data
     if (!p_cb)
     {
         /* BTA HH enabled already? otherwise ignore the event although it's bad*/
-        if (bta_hh_cb.p_cback != NULL)
+        if (bta_hh_cb.p_cback != NULL && p_data != NULL)
         {
             APPL_TRACE_ERROR("bta_hh_sm_execute: event = %0x, BTA_HH_API_OPEN_EVT = %x",
                 event, BTA_HH_API_OPEN_EVT);
@@ -395,7 +395,7 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB *p_cb, UINT16 event, tBTA_HH_DATA * p_data
 
         p_cb->state = state_table[event][BTA_HH_NEXT_STATE] ;
 
-        if ((action = state_table[event][BTA_HH_ACTION]) != BTA_HH_IGNORE)
+        if ((action = state_table[event][BTA_HH_ACTION]) < BTA_HH_IGNORE)
         {
             (*bta_hh_action[action])(p_cb, p_data);
         }
@@ -465,7 +465,7 @@ BOOLEAN bta_hh_hdl_event(BT_HDR *p_msg)
                       * So if REMOVE_DEVICE is called and in_use is FALSE then we should treat this as a NULL p_cb. Hence we
                       * force the index to be IDX_INVALID
                       */
-                    if ((index != BTA_HH_IDX_INVALID) &&
+                    if ((index != BTA_HH_IDX_INVALID) && (index < BTA_HH_MAX_DEVICE) &&
                         (bta_hh_cb.kdev[index].in_use == FALSE)) {
                         index = BTA_HH_IDX_INVALID;
                     }
