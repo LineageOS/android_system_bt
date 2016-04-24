@@ -338,7 +338,9 @@ const UINT8 bta_ag_callsetup_ind_tbl[] =
 
 static const UINT8 hfp_blacklist_for_version[][3] = {
     {0x94, 0x44, 0x44}, // Duster car kit
-    {0x00, 0x0e, 0x9f} // BMW 7 series car kit
+    {0x00, 0x0e, 0x9f}, // BMW 7 series car kit
+    {0x10, 0x08, 0xc1}, // Medianav 1
+    {0x00, 0x09, 0x93} // Medianav 1
 };
 
 /* blacklist devices which are in-compatible with hfp verision 1.7 */
