@@ -2893,13 +2893,14 @@ void btif_dispatch_sm_event(btif_av_sm_event_t event, void *p_data, int len)
 *******************************************************************************/
 bt_status_t btif_av_execute_service(BOOLEAN b_enable)
 {
-     int i;
-     BTIF_TRACE_IMP("%s: enable: %d", __FUNCTION__, b_enable);
-     if (b_enable)
-     {
-         /* TODO: Removed BTA_SEC_AUTHORIZE since the Java/App does not
-          * handle this request in order to allow incoming connections to succeed.
-          * We need to put this back once support for this is added */
+    int i;
+    btif_sm_state_t state;
+    BTIF_TRACE_IMP("%s: enable: %d", __FUNCTION__, b_enable);
+    if (b_enable)
+    {
+        /* TODO: Removed BTA_SEC_AUTHORIZE since the Java/App does not
+        * handle this request in order to allow incoming connections to succeed.
+        * We need to put this back once support for this is added */
 
         /* Added BTA_AV_FEAT_NO_SCO_SSPD - this ensures that the BTA does not
         * auto-suspend av streaming on AG events(SCO or Call). The suspend shall
@@ -2933,7 +2934,13 @@ bt_status_t btif_av_execute_service(BOOLEAN b_enable)
         {
             if (btif_av_cb[i].sm_handle != NULL)
             {
-                BTIF_TRACE_IMP("%s: shutting down AV SM", __FUNCTION__);
+                state = btif_sm_get_state(btif_av_cb[i].sm_handle);
+                if(state==BTIF_AV_STATE_OPENING)
+                {
+                    BTIF_TRACE_DEBUG("Moving State from Opening to Idle due to BT ShutDown");
+                    btif_sm_change_state(btif_av_cb[i].sm_handle, BTIF_AV_STATE_IDLE);
+                    btif_queue_advance();
+                }
                 btif_sm_shutdown(btif_av_cb[i].sm_handle);
                 btif_av_cb[i].sm_handle = NULL;
             }
