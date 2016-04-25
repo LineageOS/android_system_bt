@@ -76,7 +76,7 @@ BOOLEAN L2CA_CancelBleConnectReq (BD_ADDR rem_bda)
         p_lcb = l2cu_find_lcb_by_bd_addr(rem_bda, BT_TRANSPORT_LE);
         /* Do not remove lcb if an LE link is already up as a peripheral */
         if (p_lcb != NULL &&
-            !(p_lcb->link_role == HCI_ROLE_SLAVE && BTM_ACL_IS_CONNECTED(rem_bda)))
+            !(p_lcb->link_role == HCI_ROLE_SLAVE && btm_bda_to_acl(rem_bda, BT_TRANSPORT_LE)))
         {
             p_lcb->disc_reason = L2CAP_CONN_CANCEL;
             l2cu_release_lcb (p_lcb);
@@ -291,6 +291,11 @@ void l2cble_notify_le_connection (BD_ADDR bda)
         /* update l2cap link status and send callback */
         p_lcb->link_state = LST_CONNECTED;
         l2cu_process_fixed_chnl_resp (p_lcb);
+    }
+
+    if (p_lcb == NULL) {
+        L2CAP_TRACE_ERROR("%s, link control block is null", __func__);
+        return;
     }
 
     /* For all channels, send the event through their FSMs */
