@@ -45,6 +45,30 @@
       "revId": "5e58075d2a60772b8b40c07546a82c33f709ad88",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5faad753_663a51e8",
+        "filename": "bta/ag/bta_ag_cmd.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 1241,
+      "author": {
+        "id": 15255
+      },
+      "writtenOn": "2016-04-27T17:32:42Z",
+      "side": 1,
+      "message": "I reply to the two question\nbefore features \u003d BTA_AG_BSRF_FEAT_SPEC |  BTA_AG_PEER_FEAT_HFIND | BTA_AG_PEER_FEAT_S4\n And if the mac address is in the blacklist the two left bits are removed 0x800 and the 0x400\n\nIn the AT+BRSF the equivalent bit in the norm are 0x200 and 0x100\n\nThe two parts needs to have the same feature to be enabled. So the goal is to get this two bits to do a left shift of two to set the same reply bits\n\nI get the feature enabled in the (AT+BRSF \u0026 0x300) \u003c\u003c 2\nit the two bits are enabled we have 0x300 \u003c\u003c 2 \u003d 0xC00 which enable the  BTA_AG_PEER_FEAT_HFIND and BTA_AG_PEER_FEAT_S4 in answer that we want\nif we have only the 0x200 we have 0x200 \u003c\u003c 2 \u003d 0x800 which enable the BTA_AG_PEER_FEAT_S4 as you want\nIf we have only the 0x100 the result is 0x400 which enable the BTA_AG_PEER_FEAT_HFIND\nand if no bits are enabled we have 0\n\nBy this way we don\u0027t need to maintain a list of non compatible address which my point of view is wrong because the 3 left bytes is for a bluetooth harware constructor but it can sell to different vendor the material which can implement the new HFP 1.7 protocol or not.",
+      "parentUuid": "5faad753_e6fc0140",
+      "range": {
+        "startLine": 1241,
+        "startChar": 61,
+        "endLine": 1241,
+        "endChar": 64
+      },
+      "revId": "5e58075d2a60772b8b40c07546a82c33f709ad88",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
     }
   ]
 }
