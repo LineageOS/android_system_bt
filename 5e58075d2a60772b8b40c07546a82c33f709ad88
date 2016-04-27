@@ -69,6 +69,30 @@
       "revId": "5e58075d2a60772b8b40c07546a82c33f709ad88",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5faad753_21b1a390",
+        "filename": "bta/ag/bta_ag_cmd.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 1241,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2016-04-27T20:14:01Z",
+      "side": 1,
+      "message": "The peer feature list mask isn\u0027t exactly the same as the feature list. I\u0027m not sure it\u0027s safe in all circumstances to do a left shift by 2 to compensate.",
+      "parentUuid": "5faad753_663a51e8",
+      "range": {
+        "startLine": 1241,
+        "startChar": 61,
+        "endLine": 1241,
+        "endChar": 64
+      },
+      "revId": "5e58075d2a60772b8b40c07546a82c33f709ad88",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
     }
   ]
 }
