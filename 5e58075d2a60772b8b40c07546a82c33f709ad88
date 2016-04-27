@@ -93,6 +93,30 @@
       "revId": "5e58075d2a60772b8b40c07546a82c33f709ad88",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5faad753_01a8271d",
+        "filename": "bta/ag/bta_ag_cmd.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 1241,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2016-04-27T20:16:05Z",
+      "side": 1,
+      "message": "Hm, well, it\u0027s fine here since you are explicitly checking for those. Maybe you should add a comment explaining that the values happen to be 2 shifts off, or better yet, use the existing feature masks.",
+      "parentUuid": "5faad753_21b1a390",
+      "range": {
+        "startLine": 1241,
+        "startChar": 61,
+        "endLine": 1241,
+        "endChar": 64
+      },
+      "revId": "5e58075d2a60772b8b40c07546a82c33f709ad88",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
     }
   ]
 }
