@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5faad753_89475d1e",
+        "filename": "bta/ag/bta_ag_cmd.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 1241,
+      "author": {
+        "id": 4550
+      },
+      "writtenOn": "2016-04-27T21:19:19Z",
+      "side": 1,
+      "message": "Indentation for wrapped lines should be 8 spaces",
+      "range": {
+        "startLine": 1241,
+        "startChar": 12,
+        "endLine": 1241,
+        "endChar": 14
+      },
+      "revId": "d4146c32389fc9d1deb4da454d8e3516bb5407e3",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5faad753_295429ca",
+        "filename": "bta/ag/bta_ag_cmd.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 1241,
+      "author": {
+        "id": 4550
+      },
+      "writtenOn": "2016-04-27T21:19:19Z",
+      "side": 1,
+      "message": ") \u003c\u003c 2) (missing spaces)",
+      "range": {
+        "startLine": 1241,
+        "startChar": 60,
+        "endLine": 1241,
+        "endChar": 64
+      },
+      "revId": "d4146c32389fc9d1deb4da454d8e3516bb5407e3",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5faad753_694a2128",
+        "filename": "bta/ag/bta_ag_int.h",
+        "patchSetId": 7
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 4550
+      },
+      "writtenOn": "2016-04-27T21:19:19Z",
+      "side": 1,
+      "message": "Unnecessary change",
+      "revId": "d4146c32389fc9d1deb4da454d8e3516bb5407e3",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
