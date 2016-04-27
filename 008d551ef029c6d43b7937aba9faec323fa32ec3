@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5faad753_869d0d5b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2016-04-27T15:29:12Z",
+      "side": 1,
+      "message": "line length",
+      "revId": "008d551ef029c6d43b7937aba9faec323fa32ec3",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5faad753_c693054f",
+        "filename": "bta/ag/bta_ag_cmd.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1238,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2016-04-27T15:29:12Z",
+      "side": 1,
+      "message": "whitespace",
+      "revId": "008d551ef029c6d43b7937aba9faec323fa32ec3",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5faad753_6698116a",
+        "filename": "bta/ag/bta_ag_cmd.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1240,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2016-04-27T15:29:12Z",
+      "side": 1,
+      "message": "line length",
+      "revId": "008d551ef029c6d43b7937aba9faec323fa32ec3",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
