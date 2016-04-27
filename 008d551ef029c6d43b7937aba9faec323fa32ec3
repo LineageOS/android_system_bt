@@ -50,6 +50,23 @@
       "revId": "008d551ef029c6d43b7937aba9faec323fa32ec3",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5faad753_469f1550",
+        "filename": "bta/ag/bta_ag_int.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2016-04-27T15:29:28Z",
+      "side": 1,
+      "message": "unneeded whitespace change",
+      "revId": "008d551ef029c6d43b7937aba9faec323fa32ec3",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
     }
   ]
 }
