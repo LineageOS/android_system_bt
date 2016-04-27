@@ -336,32 +336,6 @@ const UINT8 bta_ag_callsetup_ind_tbl[] =
     0,                          /* BTA_AG_BIND_RES */
 };
 
-static const UINT8 hfp_blacklist_for_version[][3] = {
-    {0x94, 0x44, 0x44}, // Duster car kit
-    {0x00, 0x0e, 0x9f}, // BMW 7 series car kit
-    {0x10, 0x08, 0xc1}, // Medianav 1
-    {0x00, 0x09, 0x93}, // Medianav 1
-    {0xc8, 0x02, 0x10}, // Medianav 1
-    {0x00, 0x1e, 0xb2} // Medianav 1
-};
-
-/* blacklist devices which are in-compatible with hfp verision 1.7 */
-static BOOLEAN is_dev_blacklisted_for_hfpversion(BD_ADDR peer_dev)
-{
-    int i;
-    int blacklist_size =
-            sizeof(hfp_blacklist_for_version)/sizeof(hfp_blacklist_for_version[0]);
-    for(i = 0; i < blacklist_size; i++)
-    {
-        if (0 == memcmp(hfp_blacklist_for_version[i], peer_dev, 3))
-        {
-            APPL_TRACE_DEBUG("dev %02x:%02x:%02x:%02x:%02x:%02x blacklisted for hfp 1.7",
-                peer_dev[0], peer_dev[1], peer_dev[2], peer_dev[3], peer_dev[4], peer_dev[5]);
-            return TRUE;
-        }
-    }
-    return FALSE;
-}
 /*******************************************************************************
 **
 ** Function         bta_ag_send_result
@@ -1261,11 +1235,16 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
             /* store peer features */
             p_scb->peer_features = (UINT16) int_arg;
             features = p_scb->features & BTA_AG_BSRF_FEAT_SPEC;
-            /* if the devices is blacklisted, report DUT's HFP version as 1.6 */
-            if (is_dev_blacklisted_for_hfpversion(p_scb->peer_addr))
-            {
-                features = features & ~(BTA_AG_FEAT_HFIND | BTA_AG_FEAT_S4);
+
+            /* Remove HFP 1.7 feature if remote does not support it
+               or it is not enabled in incoming feature set */
+            if (!(p_scb->peer_features & BTA_AG_PEER_FEAT_HFIND)) {
+                features &= ~(BTA_AG_FEAT_HFIND);
             }
+            if (!(p_scb->peer_features & BTA_AG_PEER_FEAT_S4)) {
+                features &= ~(BTA_AG_FEAT_S4);
+            }
+
             /* send BRSF, send OK */
             bta_ag_send_result(p_scb, BTA_AG_RES_BRSF, NULL,
                                (INT16) features);
