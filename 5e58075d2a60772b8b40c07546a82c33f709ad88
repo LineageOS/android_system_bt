@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5faad753_2688d9c4",
+        "filename": "bta/ag/bta_ag_cmd.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 1241,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2016-04-27T16:40:59Z",
+      "side": 1,
+      "message": "I\u0027m not sure this statement is equivalent, do we only want to advertise the same things the peer does?",
+      "range": {
+        "startLine": 1240,
+        "startChar": 25,
+        "endLine": 1241,
+        "endChar": 60
+      },
+      "revId": "5e58075d2a60772b8b40c07546a82c33f709ad88",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5faad753_e6fc0140",
+        "filename": "bta/ag/bta_ag_cmd.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 1241,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2016-04-27T16:40:59Z",
+      "side": 1,
+      "message": "What\u0027s the shift for?",
+      "range": {
+        "startLine": 1241,
+        "startChar": 61,
+        "endLine": 1241,
+        "endChar": 64
+      },
+      "revId": "5e58075d2a60772b8b40c07546a82c33f709ad88",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
