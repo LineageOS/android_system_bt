@@ -32,6 +32,7 @@
 #include "btif_sm.h"
 #include "bta_av_api.h"
 
+#define BTIF_RC_HANDLE_NONE 0xFF
 
 /*******************************************************************************
 **  Type definitions for callback functions

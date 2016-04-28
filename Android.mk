@@ -21,6 +21,7 @@ endif
 
 ifneq ($(TARGET_BUILD_VARIANT),user)
 bluetooth_CFLAGS += -DBLUEDROID_DEBUG
+bluetooth_CFLAGS += -DUSE_AUDIO_TRACK
 endif
 
 bluetooth_CFLAGS += -DEXPORT_SYMBOL="__attribute__((visibility(\"default\")))"

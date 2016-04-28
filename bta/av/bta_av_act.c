@@ -572,12 +572,12 @@ void bta_av_rc_opened(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
     if (rc_open.peer_features == 0)
     {
         /* we have not done SDP on peer RC capabilities.
-         * peer must have initiated the RC connection */
-        if (p_cb->features & BTA_AV_FEAT_RCCT)
-            rc_open.peer_features |= BTA_AV_FEAT_RCTG;
+         * peer must have initiated the RC connection
+         * We Don't have SDP records of Peer, so we by
+         * default will take values depending upon registered
+         * features */
         if (p_cb->features & BTA_AV_FEAT_RCTG)
             rc_open.peer_features |= BTA_AV_FEAT_RCCT;
-
         bta_av_rc_disc(disc);
     }
     (*p_cb->p_cback)(BTA_AV_RC_OPEN_EVT, (tBTA_AV *) &rc_open);
@@ -1757,61 +1757,64 @@ tBTA_AV_FEAT bta_avk_check_peer_features (UINT16 service_uuid)
 {
     tBTA_AV_FEAT peer_features = 0;
     tBTA_AV_CB *p_cb = &bta_av_cb;
+    tSDP_DISC_REC *p_rec = NULL;
+    tSDP_DISC_ATTR *p_attr;
+    UINT16 peer_rc_version = 0;
+    UINT16 categories = 0;
+    BOOLEAN val;
 
     APPL_TRACE_DEBUG("%s service_uuid:x%x", __FUNCTION__, service_uuid);
-
-    /* loop through all records we found */
-    tSDP_DISC_REC *p_rec = SDP_FindServiceInDb(p_cb->p_disc_db, service_uuid, NULL);
-    while (p_rec)
+    /* get next record; if none found, we're done */
+    p_rec = SDP_FindServiceInDb(p_cb->p_disc_db, service_uuid, p_rec);
+    if (p_rec != NULL)
     {
-        APPL_TRACE_DEBUG("%s found Service record for x%x", __FUNCTION__, service_uuid);
+        APPL_TRACE_DEBUG(" %s found Service record for x%x", __FUNCTION__, service_uuid);
+        if (service_uuid == UUID_SERVCLASS_AV_REMOTE_CONTROL)
+             peer_features |= BTA_AV_FEAT_RCCT;
+        else if (service_uuid == UUID_SERVCLASS_AV_REM_CTRL_TARGET)
+             peer_features |= BTA_AV_FEAT_RCTG;
 
-        if (( SDP_FindAttributeInRec(p_rec, ATTR_ID_SERVICE_CLASS_ID_LIST)) != NULL)
-        {
-            /* find peer features */
-            if (SDP_FindServiceInDb(p_cb->p_disc_db, UUID_SERVCLASS_AV_REMOTE_CONTROL, NULL))
-            {
-                peer_features |= BTA_AV_FEAT_RCCT;
-            }
-            if (SDP_FindServiceInDb(p_cb->p_disc_db, UUID_SERVCLASS_AV_REM_CTRL_TARGET, NULL))
-            {
-                peer_features |= BTA_AV_FEAT_RCTG;
-            }
+         if ((SDP_FindAttributeInRec(p_rec, ATTR_ID_BT_PROFILE_DESC_LIST)) != NULL)
+         {
+             /* profile version (if failure, version parameter is not updated) */
+             val = SDP_FindProfileVersionInRec(p_rec,
+                       UUID_SERVCLASS_AV_REMOTE_CONTROL, &peer_rc_version);
+             APPL_TRACE_DEBUG("%s rc_version for TG 0x%x, profile_found %d", __FUNCTION__,
+                                                     peer_rc_version, val);
+
+             if (peer_rc_version < AVRC_REV_1_3)
+                return peer_features;
+
+             p_attr = SDP_FindAttributeInRec(p_rec, ATTR_ID_SUPPORTED_FEATURES);
+             if (p_attr == NULL)
+                 return peer_features;
+
+             categories = p_attr->attr_value.v.u16;
+
+             if (service_uuid == UUID_SERVCLASS_AV_REM_CTRL_TARGET)
+             {
+                 peer_features |= (BTA_AV_FEAT_VENDOR | BTA_AV_FEAT_METADATA);
+                 /* get supported categories */
+                 if (categories & AVRC_SUPF_CT_BROWSE)
+                     peer_features |= BTA_AV_FEAT_BROWSE;
+                 if (categories & AVRC_SUPF_CT_APP_SETTINGS)
+                     peer_features |= BTA_AV_FEAT_APP_SETTING;
+             }
+             /*
+              * Absolute Volume came after in 1.4 and above.
+              * but there are few devices in market which supports.
+              * absoluteVolume and they are still 1.3 To avoid inter-operatibility issuses with.
+              * those devices, we check for 1.3 as minimum version.
+              */
+             else if (service_uuid == UUID_SERVCLASS_AV_REMOTE_CONTROL)
+             {
+                 if (categories & AVRC_SUPF_CT_CAT2)
+                 {
+                     APPL_TRACE_DEBUG(" %s Remote supports ABS Vol", __FUNCTION__);
+                     peer_features |= BTA_AV_FEAT_ADV_CTRL;
+                 }
+             }
         }
-
-        if (( SDP_FindAttributeInRec(p_rec, ATTR_ID_BT_PROFILE_DESC_LIST)) != NULL)
-        {
-            /* get profile version (if failure, version parameter is not updated) */
-            UINT16 peer_rc_version = 0;
-            BOOLEAN val = SDP_FindProfileVersionInRec(
-                p_rec, UUID_SERVCLASS_AV_REMOTE_CONTROL, &peer_rc_version);
-            APPL_TRACE_DEBUG("%s peer_rc_version for TG 0x%x, profile_found %d",
-                             __FUNCTION__, peer_rc_version, val);
-
-            if (peer_rc_version >= AVRC_REV_1_3)
-                peer_features |= (BTA_AV_FEAT_VENDOR | BTA_AV_FEAT_METADATA);
-
-            /*
-             * Though Absolute Volume came after in 1.4 and above, but there are few devices
-             * in market which supports absolute Volume and they are still 1.3
-             * TO avoid IOT issuses with those devices, we check for 1.3 as minimum version
-             */
-            if (peer_rc_version >= AVRC_REV_1_3)
-            {
-                /* get supported categories */
-                tSDP_DISC_ATTR *p_attr = SDP_FindAttributeInRec(p_rec, ATTR_ID_SUPPORTED_FEATURES);
-                if (p_attr != NULL)
-                {
-                    UINT16 categories = p_attr->attr_value.v.u16;
-                    if (categories & AVRC_SUPF_CT_CAT2)
-                        peer_features |= (BTA_AV_FEAT_ADV_CTRL);
-                    if (categories & AVRC_SUPF_CT_APP_SETTINGS)
-                        peer_features |= (BTA_AV_FEAT_APP_SETTING);
-                }
-            }
-        }
-        /* get next record; if none found, we're done */
-        p_rec = SDP_FindServiceInDb(p_cb->p_disc_db, service_uuid, p_rec);
     }
     APPL_TRACE_DEBUG("%s peer_features:x%x", __FUNCTION__, peer_features);
     return peer_features;
@@ -1872,9 +1875,9 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
     if (p_cb->sdp_a2d_snk_handle)
     {
         /* This is Sink + CT + TG(Abs Vol) */
-        peer_features = bta_avk_check_peer_features(UUID_SERVCLASS_AV_REM_CTRL_TARGET);
-        if (BTA_AV_FEAT_ADV_CTRL & bta_avk_check_peer_features(UUID_SERVCLASS_AV_REMOTE_CONTROL))
-            peer_features |= (BTA_AV_FEAT_ADV_CTRL|BTA_AV_FEAT_RCCT);
+        peer_features = bta_avk_check_peer_features(UUID_SERVCLASS_AV_REMOTE_CONTROL);
+        peer_features |= bta_avk_check_peer_features(UUID_SERVCLASS_AV_REM_CTRL_TARGET);
+        APPL_TRACE_DEBUG("final rc_features %x", peer_features);
     }
     else
 #endif
