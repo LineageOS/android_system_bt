@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5faad753_128f162b",
+        "filename": "bta/ag/bta_ag_cmd.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 1247,
+      "author": {
+        "id": 15255
+      },
+      "writtenOn": "2016-04-28T18:14:11Z",
+      "side": 1,
+      "message": "I agree with it, it was my first change before the push",
+      "revId": "0ffc2ce03ff0455e0a65ed4e58a280c85b4c2184",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
