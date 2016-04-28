@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5faad753_12d7164e",
+        "filename": "bta/ag/bta_ag_int.h",
+        "patchSetId": 10
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2016-04-28T17:01:22Z",
+      "side": 0,
+      "message": "Admittedly, this is only used for that one instance, but let\u0027s make this less intrusive.",
+      "revId": "3a1764ba368768bea6fc80a14b9ffa975ab29a80",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
