@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5faad753_12a076f4",
+        "filename": "bta/ag/bta_ag_cmd.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 1243,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2016-04-28T16:43:17Z",
+      "side": 1,
+      "message": "Would prefer:\n\nif (p_scb-\u003epeer_features \u0026 BTA_AG_PEER_FEAT_HFIND)\n\nfeatures |\u003d BTA_AG_FEAT_HFID;\n\nif (p_scb-\u003epeer_features \u0026 BTA_AG_PEER_FEAT_S4)\n\nfeatures |\u003d BTA_AG_FEAT_S4\n\nfor readability.",
+      "revId": "d86ca4621ef09912a39cc4cc7e000926e3bc9018",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
