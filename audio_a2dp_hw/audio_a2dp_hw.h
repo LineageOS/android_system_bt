@@ -38,7 +38,43 @@
 #define AUDIO_STREAM_DEFAULT_RATE          44100
 #define AUDIO_STREAM_DEFAULT_FORMAT        AUDIO_FORMAT_PCM_16_BIT
 #define AUDIO_STREAM_DEFAULT_CHANNEL_FLAG  AUDIO_CHANNEL_OUT_STEREO
-#define AUDIO_STREAM_OUTPUT_BUFFER_SZ      (20*512)
+
+// AUDIO_STREAM_OUTPUT_BUFFER_SZ controls the size of the audio socket buffer.
+// If one assumes the write buffer is always full during normal BT playback,
+// then increasing this value increases our playback latency.
+//
+// FIXME: AUDIO_STREAM_OUTPUT_BUFFER_SZ should be controlled by the actual audio
+// sample rate rather than being constant.
+//
+// FIXME: The BT HAL should consume data at a constant rate.
+// AudioFlinger assumes that the HAL draws data at a constant rate, which is true
+// for most audio devices; however, the BT engine reads data at a variable rate
+// (over the short term), which confuses both AudioFlinger as well as applications
+// which deliver data at a (generally) fixed rate.
+//
+// 20 * 512 is not sufficient size to smooth the variability for some BT devices,
+// resulting in mixer sleep and throttling. We increase this to 28 * 512 to help
+// reduce the effect of variable data consumption.
+#define AUDIO_STREAM_OUTPUT_BUFFER_SZ      (28*512)
+
+// AUDIO_STREAM_OUTPUT_BUFFER_PERIODS controls how the socket buffer is divided
+// for AudioFlinger data delivery. The AudioFlinger mixer delivers data in chunks
+// of AUDIO_STREAM_OUTPUT_BUFFER_SZ / AUDIO_STREAM_OUTPUT_BUFFER_PERIODS. If
+// the number of periods is 2, the socket buffer represents "double buffering"
+// of the AudioFlinger mixer buffer.
+//
+// In general, AUDIO_STREAM_OUTPUT_BUFFER_PERIODS * 16 * 4 should be a divisor of
+// AUDIO_STREAM_OUTPUT_BUFFER_SZ.
+//
+// These values should be chosen such that
+//
+// AUDIO_STREAM_BUFFER_SIZE * 1000 / (AUDIO_STREAM_OUTPUT_BUFFER_PERIODS
+//         * AUDIO_STREAM_DEFAULT_RATE * 4) > 20 (ms)
+//
+// to avoid introducing the FastMixer in AudioFlinger. Using the FastMixer results in
+// unnecessary latency and CPU overhead for Bluetooth.
+#define AUDIO_STREAM_OUTPUT_BUFFER_PERIODS 4
+
 #define AUDIO_SKT_DISCONNECTED             (-1)
 
 typedef enum {

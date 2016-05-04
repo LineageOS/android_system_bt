@@ -638,10 +638,16 @@ static int out_set_sample_rate(struct audio_stream *stream, uint32_t rate)
 static size_t out_get_buffer_size(const struct audio_stream *stream)
 {
     struct a2dp_stream_out *out = (struct a2dp_stream_out *)stream;
+    // period_size is the AudioFlinger mixer buffer size.
+    const size_t period_size = out->common.buffer_sz / AUDIO_STREAM_OUTPUT_BUFFER_PERIODS;
+    const size_t mixer_unit_size = 16 /* frames */ * 4 /* framesize */;
 
-    DEBUG("buffer_size : %zu", out->common.buffer_sz);
+    DEBUG("socket buffer size: %zu  period size: %zu", out->common.buffer_sz, period_size);
+    if (period_size % mixer_unit_size != 0) {
+        ERROR("period size %zu not a multiple of %zu", period_size, mixer_unit_size);
+    }
 
-    return out->common.buffer_sz;
+    return period_size;
 }
 
 static uint32_t out_get_channels(const struct audio_stream *stream)

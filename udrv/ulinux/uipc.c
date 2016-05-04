@@ -193,6 +193,13 @@ static int accept_server_socket(int sfd)
          return -1;
     }
 
+    // match socket buffer size option with client
+    const int size = AUDIO_STREAM_OUTPUT_BUFFER_SZ;
+    int ret = setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (char*)&size, (int)sizeof(size));
+    if (ret < 0) {
+        BTIF_TRACE_ERROR("setsockopt failed (%s)", strerror(errno));
+    }
+
     //BTIF_TRACE_EVENT("new fd %d", fd);
 
     return fd;
