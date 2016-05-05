@@ -150,6 +150,7 @@ int RFCOMM_CreateConnection (UINT16 uuid, UINT8 scn, BOOLEAN is_server,
         {
             RFCOMM_TRACE_ERROR ("RFCOMM_CreateConnection - already opened state:%d, RFC state:%d, MCB state:%d",
                 p_port->state, p_port->rfc.state, p_port->rfc.p_mcb ? p_port->rfc.p_mcb->state : 0);
+            *p_handle = p_port->inx;
             return (PORT_ALREADY_OPENED);
         }
     }
