@@ -15,23 +15,71 @@
  *  limitations under the License.
  *
  ******************************************************************************/
-
+#include <cutils/properties.h>
+#include <utils/Log.h>
+#include <string.h>
 #include "hci_hal.h"
 #include "hci_internals.h"
 #if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
 #include <assert.h>
-#include <string.h>
 #include "osi/include/eager_reader.h"
 #include "osi/include/osi.h"
 #include "osi/include/log.h"
 #endif
 
+typedef enum {
+    BT_SOC_DEFAULT = 0,
+    BT_SOC_SMD = BT_SOC_DEFAULT,
+    BT_SOC_AR3K,
+    BT_SOC_ROME,
+    BT_SOC_CHEROKEE,
+    /* Add chipset type here */
+    BT_SOC_RESERVED
+} bt_soc_type;
+
+int soc_type;
+
+/* Get Bluetooth SoC type from system setting */
+static int get_bt_soc_type()
+{
+    int ret = 0;
+    char bt_soc_type[PROPERTY_VALUE_MAX];
+
+    ALOGI("bt-hci: get_bt_soc_type");
+
+    ret = property_get("qcom.bluetooth.soc", bt_soc_type, NULL);
+    if (ret != 0) {
+        ALOGI("qcom.bluetooth.soc set to %s\n", bt_soc_type);
+        if (!strncasecmp(bt_soc_type, "rome", sizeof("rome"))) {
+            return BT_SOC_ROME;
+        }
+        else if (!strncasecmp(bt_soc_type, "cherokee", sizeof("cherokee"))) {
+            return BT_SOC_CHEROKEE;
+        }
+        else if (!strncasecmp(bt_soc_type, "ath3k", sizeof("ath3k"))) {
+            return BT_SOC_AR3K;
+        }
+        else {
+            ALOGI("qcom.bluetooth.soc not set, so using default.\n");
+            return BT_SOC_DEFAULT;
+        }
+    }
+    else {
+        ALOGE("%s: Failed to get soc type", __FUNCTION__);
+        ret = BT_SOC_DEFAULT;
+    }
+
+    return ret;
+}
+
 const hci_hal_t *hci_hal_get_interface() {
-#if HCI_USE_MCT
-  return hci_hal_mct_get_interface();
-#else
-  return hci_hal_h4_get_interface();
-#endif
+    soc_type = get_bt_soc_type();
+
+    if (soc_type == BT_SOC_ROME || soc_type == BT_SOC_CHEROKEE) {
+        return hci_hal_h4_get_interface();
+    } else {
+        return hci_hal_mct_get_interface();
+    }
 }
 
 #if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
