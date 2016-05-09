@@ -849,7 +849,10 @@ void bta_ag_sm_execute(tBTA_AG_SCB *p_scb, UINT16 event, tBTA_AG_DATA *p_data)
     /* execute action functions */
     for (i = 0; i < BTA_AG_ACTIONS; i++)
     {
-        if ((action = state_table[event][i]) != BTA_AG_IGNORE)
+        /* Fix for below klockwork issue.
+         * Klockwork issue: Possible attempt to access element 33..255 of array 'bta_ag_action'
+         * whose size is 32 */
+        if (((action = state_table[event][i]) < BTA_AG_IGNORE) && (action >= 0))
         {
             (*bta_ag_action[action])(p_scb, p_data);
         }

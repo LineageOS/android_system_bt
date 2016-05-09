@@ -480,8 +480,11 @@ void bta_ag_do_disc(tBTA_AG_SCB *p_scb, tBTA_SERVICE_MASK service)
     if(db_inited)
     {
         /*Service discovery not initiated */
+        /*Fix for below Klockwork issue
+         *Array 'bta_ag_sdp_cback_tbl' size is 3
+         *Possible attempt to access element -1,3..USHRT_MAX-1 of array 'bta_ag_sdp_cback_tbl' */
         db_inited = SDP_ServiceSearchAttributeRequest(p_scb->peer_addr, p_scb->p_disc_db,
-                                      bta_ag_sdp_cback_tbl[bta_ag_scb_to_idx(p_scb) - 1]);
+                                      bta_ag_sdp_cback_tbl[(UINT16)(bta_ag_scb_to_idx(p_scb) - 1)]);
     }
 
     if(!db_inited)
