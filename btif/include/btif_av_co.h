@@ -202,4 +202,27 @@ BOOLEAN bta_av_co_peer_cp_supported(tBTA_AV_HNDL hndl);
  *******************************************************************************/
 BOOLEAN bta_av_co_get_remote_bitpool_pref(UINT8 *min, UINT8 *max);
 
+/*******************************************************************************
+ **
+ ** Function         bta_av_select_codec
+ **
+ ** Description      Select the current codec for the remote device selected
+ **                  for streaming.
+ **
+ ** Returns          Return current codec id
+ **
+ *******************************************************************************/
+UINT8 bta_av_select_codec(tBTA_AV_HNDL hdl);
+
+/*******************************************************************************
+ **
+ ** Function         bta_av_get_current_codec
+ **
+ ** Description      Get current codec id selected for streaming.
+ **
+ ** Returns          Return current codec id
+ **
+ *******************************************************************************/
+UINT8 bta_av_get_current_codec(void);
+
 #endif

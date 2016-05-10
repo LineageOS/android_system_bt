@@ -252,6 +252,9 @@ UINT16 btif_av_get_streaming_channel_id(void);
 ********************************************************************************/
 void btif_av_get_peer_addr(bt_bdaddr_t *peer_bda);
 
+#else
+#define btif_av_get_streaming_channel_id() (0)
+#define btif_av_get_peer_addr(peer_bda) (0)
 #endif
 
 #endif /* BTIF_AV_H */

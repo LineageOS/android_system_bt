@@ -288,12 +288,18 @@ bool btif_a2dp_start_media_task(void);
 void btif_a2dp_stop_media_task(void);
 bool btif_a2dp_is_media_task_stopped(void);
 void btif_a2dp_on_init(void);
-tBTIF_STATUS btif_a2dp_setup_codec(void);
+tBTIF_STATUS btif_a2dp_setup_codec(tBTA_AV_HNDL hdl);
 void btif_a2dp_update_codec(void);
 void btif_a2dp_on_idle(void);
 void btif_a2dp_on_open(void);
-BOOLEAN btif_a2dp_on_started(tBTA_AV_START *p_av, BOOLEAN pending_start);
+BOOLEAN btif_a2dp_on_started(tBTA_AV_START *p_av, BOOLEAN pending_start, tBTA_AV_HNDL hdl);
+#ifdef BTA_AV_SPLIT_A2DP_ENABLED
 void btif_media_on_stop_vendor_command();
+void btif_media_send_reset_vendor_state();
+#else
+#define btif_media_on_stop_vendor_command() (0)
+#define btif_media_send_reset_vendor_state() (0)
+#endif
 void btif_a2dp_ack_fail(void);
 void btif_a2dp_on_stop_req(void);
 void btif_a2dp_on_stopped(tBTA_AV_SUSPEND *p_av);

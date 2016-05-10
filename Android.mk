@@ -49,8 +49,9 @@ bluetooth_CFLAGS += \
   -DLOG_NDEBUG=1
 
 ifeq ($(strip $(AUDIO_FEATURE_ENABLED_SPLIT_A2DP)),true)
-  bdroid_CFLAGS += -DBTA_AV_SPLIT_A2DP_ENABLED
-  bdroid_CFLAGS += -DBTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
+bluetooth_CFLAGS += -DBTA_AV_SPLIT_A2DP_ENABLED
+bluetooth_CFLAGS += -DBTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
+bluetooth_CFLAGS += -DAPTX_48000
 endif
 
 bluetooth_CONLYFLAGS += -std=c99
