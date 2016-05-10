@@ -325,6 +325,17 @@ void l2cble_scanner_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE type,
     p_lcb->latency      =  conn_latency;
     p_lcb->conn_update_mask = L2C_BLE_NOT_DEFAULT_PARAM;
 
+    /* Tell BTM Acl management about the link */
+    btm_acl_created (bda, NULL, p_dev_rec->sec_bd_name, handle, p_lcb->link_role, BT_TRANSPORT_LE);
+
+    p_lcb->peer_chnl_mask[0] = L2CAP_FIXED_CHNL_ATT_BIT | L2CAP_FIXED_CHNL_BLE_SIG_BIT | L2CAP_FIXED_CHNL_SMP_BIT;
+
+    btm_ble_set_conn_st(BLE_CONN_IDLE);
+
+#if BLE_PRIVACY_SPT == TRUE
+    btm_ble_disable_resolving_list(BTM_BLE_RL_INIT, TRUE);
+#endif
+
     /* If there are any preferred connection parameters, set them now */
     if ( (p_dev_rec->conn_params.min_conn_int     >= BTM_BLE_CONN_INT_MIN ) &&
          (p_dev_rec->conn_params.min_conn_int     <= BTM_BLE_CONN_INT_MAX ) &&
@@ -355,17 +366,6 @@ void l2cble_scanner_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE type,
                                            p_dev_rec->conn_params.supervision_tout,
                                            0, 0);
     }
-
-    /* Tell BTM Acl management about the link */
-    btm_acl_created (bda, NULL, p_dev_rec->sec_bd_name, handle, p_lcb->link_role, BT_TRANSPORT_LE);
-
-    p_lcb->peer_chnl_mask[0] = L2CAP_FIXED_CHNL_ATT_BIT | L2CAP_FIXED_CHNL_BLE_SIG_BIT | L2CAP_FIXED_CHNL_SMP_BIT;
-
-    btm_ble_set_conn_st(BLE_CONN_IDLE);
-
-#if BLE_PRIVACY_SPT == TRUE
-    btm_ble_disable_resolving_list(BTM_BLE_RL_INIT, TRUE);
-#endif
 }
 
 
