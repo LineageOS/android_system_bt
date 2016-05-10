@@ -112,6 +112,8 @@ static const interop_addr_entry_t interop_addr_database[] = {
   // Bluetooth Keyboard
   {{{0x20, 0x4C, 0x10,       0,0,0}}, 3, INTEROP_DISABLE_SNIFF_DURING_SCO},
 
+  // Fiat Carkit
+  {{{0x00, 0x14, 0x09,       0,0,0}}, 3, INTEROP_INCREASE_AG_CONN_TIMEOUT},
 };
 
 typedef struct {
