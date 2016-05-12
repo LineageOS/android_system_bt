@@ -39,10 +39,8 @@ static void safe_close_(int *fd);
 static void *listen_fn_(void *context);
 
 static const char *LISTEN_THREAD_NAME_ = "btsnoop_net_listen";
-#if (defined(BT_NET_DEBUG) && (NET_DEBUG == TRUE))
 static const int LOCALHOST_ = 0x7F000001;
 static const int LISTEN_PORT_ = 8872;
-#endif
 
 static pthread_t listen_thread_;
 static bool listen_thread_valid_ = false;
@@ -130,7 +128,6 @@ static void *listen_fn_(UNUSED_ATTR void *context) {
 
   FD_ZERO(&sock_fds);
 
-#if (defined(BT_NET_DEBUG) && (NET_DEBUG == TRUE))
   // Disable using network sockets for security reasons
   listen_socket_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (listen_socket_ == -1) {
@@ -159,7 +156,6 @@ static void *listen_fn_(UNUSED_ATTR void *context) {
     LOG_ERROR(LOG_TAG, "%s unable to listen: %s", __func__, strerror(errno));
     goto cleanup;
   }
-#endif
 
   if (local_socket_create() != -1) {
     if (listen_socket_local_ > fd_max) {

@@ -30,7 +30,7 @@
 #include "mca_api.h"
 #include "mca_defs.h"
 #include "mca_int.h"
-
+#include <unistd.h>
 
 #include  "btu.h"
 
@@ -395,6 +395,9 @@ void mca_ccb_hdl_req(tMCA_CCB *p_ccb, tMCA_CCB_EVT *p_data)
                 case MCA_OP_MDL_DELETE_REQ:
                     /* delete the associated mdl */
                     mca_dcb_close_by_mdl_id(p_ccb, evt_data.hdr.mdl_id);
+#if (defined(MCA_DELAY_DELETE_MDL_RSP) && MCA_DELAY_DELETE_MDL_RSP == TRUE)
+                    sleep(5);
+#endif
                     send_rsp = TRUE;
                     break;
                 }
