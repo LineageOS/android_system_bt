@@ -972,7 +972,6 @@ tGATT_TCB * gatt_allocate_tcb_by_bdaddr(BD_ADDR bda, tBT_TRANSPORT transport)
             p_tcb->pending_ind_q = fixed_queue_new(SIZE_MAX);
             p_tcb->conf_timer = alarm_new("gatt.conf_timer");
             p_tcb->ind_ack_timer = alarm_new("gatt.ind_ack_timer");
-            p_tcb->sr_cmd.multi_rsp_q = fixed_queue_new(SIZE_MAX);
             p_tcb->in_use = TRUE;
             p_tcb->tcb_idx = i;
             p_tcb->transport = transport;

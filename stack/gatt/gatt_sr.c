@@ -122,13 +122,16 @@ static BOOLEAN process_read_multi_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS status,
                                        tGATTS_RSP *p_msg, UINT16 mtu)
 {
     UINT16          ii, total_len, len;
-    BT_HDR          *p_buf = (BT_HDR *)osi_malloc(sizeof(tGATTS_RSP));
     UINT8           *p;
     BOOLEAN         is_overflow = FALSE;
 
-    GATT_TRACE_DEBUG ("process_read_multi_rsp status=%d mtu=%d", status, mtu);
+    GATT_TRACE_DEBUG ("%s status=%d mtu=%d", __func__, status, mtu);
+
+    if (p_cmd->multi_rsp_q == NULL)
+        p_cmd->multi_rsp_q = fixed_queue_new(SIZE_MAX);
 
     /* Enqueue the response */
+    BT_HDR  *p_buf = (BT_HDR *)osi_malloc(sizeof(tGATTS_RSP));
     memcpy((void *)p_buf, (const void *)p_msg, sizeof(tGATTS_RSP));
     fixed_queue_enqueue(p_cmd->multi_rsp_q, p_buf);
 

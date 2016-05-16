@@ -403,7 +403,6 @@ BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr, tBT_TRANSPORT trans
                 GATT_TRACE_ERROR("gatt_connect failed");
                 fixed_queue_free(p_tcb->pending_enc_clcb, NULL);
                 fixed_queue_free(p_tcb->pending_ind_q, NULL);
-                fixed_queue_free(p_tcb->sr_cmd.multi_rsp_q, NULL);
                 memset(p_tcb, 0, sizeof(tGATT_TCB));
             }
             else
