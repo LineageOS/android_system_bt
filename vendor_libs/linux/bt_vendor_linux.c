@@ -30,6 +30,7 @@
 #include <sys/ioctl.h>
 
 #include "hci/include/bt_vendor_lib.h"
+#include "osi/include/osi.h"
 #include "osi/include/log.h"
 #include "osi/include/properties.h"
 
