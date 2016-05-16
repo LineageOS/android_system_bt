@@ -55,9 +55,10 @@
 #include "btsnoop.h"
 #include "btsnoop_mem.h"
 #include "bt_utils.h"
-#include "osi/include/osi.h"
+#include "device/include/interop.h"
 #include "osi/include/allocation_tracker.h"
 #include "osi/include/log.h"
+#include "osi/include/osi.h"
 #include "stack_manager.h"
 #include "btif_config.h"
 #include "l2cdefs.h"
@@ -557,6 +558,8 @@ static const bt_interface_t bluetoothInterface = {
 #else
     NULL,
 #endif
+    interop_database_clear,
+    interop_database_add,
 };
 
 const bt_interface_t* bluetooth__get_bluetooth_interface ()
