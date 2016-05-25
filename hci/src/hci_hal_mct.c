@@ -33,10 +33,8 @@
 
 #define HCI_HAL_SERIAL_BUFFER_SIZE 1026
 
-#ifdef QCOM_WCN_SSR
 #include <termios.h>
 #include <sys/ioctl.h>
-#endif
 
 // Our interface and modules we import
 static const hci_hal_t interface;
@@ -169,7 +167,6 @@ static void hal_close() {
     uart_fds[i] = INVALID_FD;
 }
 
-#ifdef QCOM_WCN_SSR
 static bool hal_dev_in_reset()
 {
   volatile int serial_bits;
@@ -196,7 +193,6 @@ static bool hal_dev_in_reset()
   }
   return dev_reset_done;
 }
-#endif
 
 static size_t read_data(serial_data_type_t type, uint8_t *buffer, size_t max_size) {
 #if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
@@ -328,9 +324,7 @@ static const hci_hal_t interface = {
   read_data,
   packet_finished,
   transmit_data,
-#ifdef QCOM_WCN_SSR
   hal_dev_in_reset
-#endif
 };
 
 const hci_hal_t *hci_hal_mct_get_interface() {

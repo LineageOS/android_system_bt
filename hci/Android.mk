@@ -21,10 +21,6 @@ LOCAL_SRC_FILES := \
     src/packet_fragmenter.c \
     src/vendor.c
 
-ifeq ($(QCOM_BT_USE_SMD_TTY),true)
-LOCAL_CFLAGS += -DQCOM_WCN_SSR
-endif
-
 LOCAL_C_INCLUDES += \
     $(LOCAL_PATH)/include \
     $(LOCAL_PATH)/.. \
