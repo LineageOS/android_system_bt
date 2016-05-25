@@ -1876,13 +1876,10 @@ static void btif_dm_upstreams_evt(UINT16 event, char* p_param)
             /* for each of the enabled services in the mask, trigger the profile
              * disable */
             service_mask = btif_get_enabled_services_mask();
-            for (i=0; i <= BTA_MAX_SERVICE_ID; i++)
+            if (service_mask &
+                (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(BTA_BLE_SERVICE_ID)))
             {
-                if (service_mask &
-                    (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(i)))
-                {
-                    btif_in_execute_service_request(i, FALSE);
-                }
+                btif_in_execute_service_request(BTA_BLE_SERVICE_ID, FALSE);
             }
             unload_iot_devlist();
             btif_disable_bluetooth_evt();

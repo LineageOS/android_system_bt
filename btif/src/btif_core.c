@@ -45,7 +45,6 @@
 #include "btif_api.h"
 #include "btif_av.h"
 #include "btif_config.h"
-#include "btif_config.h"
 #include "btif_pan.h"
 #include "btif_profile_queue.h"
 #include "btif_sock.h"
@@ -130,6 +129,8 @@ static UINT8 btif_dut_mode = 0;
 static thread_t *bt_jni_workqueue_thread;
 static const char *BT_JNI_WORKQUEUE_NAME = "bt_jni_workqueue";
 static uid_set_t* uid_set = NULL;
+
+static BOOLEAN ssr_triggered = FALSE;
 
 /************************************************************************************
 **  Static functions
@@ -552,6 +553,8 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status)
 
     BTIF_TRACE_DEBUG("%s: status %d, local bd [%s]", __FUNCTION__, status, bdstr);
 
+    ssr_triggered = FALSE;
+
     if (bdcmp(btif_local_bd_addr.address, controller->get_address()->address))
     {
         // TODO(zachoverflow): this whole code path seems like a bad time waiting to happen
@@ -663,7 +666,11 @@ bt_status_t btif_disable_bluetooth(void)
 void btif_disable_bluetooth_evt(void)
 {
     BTIF_TRACE_DEBUG("%s", __FUNCTION__);
-
+    if (ssr_triggered == TRUE)
+    {
+        BTIF_TRACE_DEBUG("%s SSR triggered,Ignore EVT",__FUNCTION__);
+        return;
+    }
 #if (defined(HCILP_INCLUDED) && HCILP_INCLUDED == TRUE)
     bte_main_enable_lpm(FALSE);
 #endif
@@ -706,6 +713,18 @@ bt_status_t btif_cleanup_bluetooth(void)
     BTIF_TRACE_DEBUG("%s done", __FUNCTION__);
 
     return BT_STATUS_SUCCESS;
+}
+
+/*******************************************************************************
+Function       btif_ssrcleanup
+Description   Trigger SSR when Disable timeout occured
+
+*******************************************************************************/
+void btif_ssr_cleanup(void)
+{
+   BTIF_TRACE_DEBUG("%s", __FUNCTION__);
+   ssr_triggered = TRUE;
+   bte_ssr_cleanup(0x11);//SSR reason 0x11 - ENABLE_TIMEOUT
 }
 
 /*******************************************************************************

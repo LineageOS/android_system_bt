@@ -44,9 +44,11 @@
 #include <hardware/bt_rc.h>
 #include <hardware/bt_sdp.h>
 #include <hardware/bt_sock.h>
+#include <hardware/bt_vendor.h>
 
 #include "bt_utils.h"
 #include "btif_api.h"
+#include "btif_common.h"
 #include "btif_debug.h"
 #include "btsnoop.h"
 #include "btsnoop_mem.h"
@@ -114,6 +116,8 @@ extern btrc_interface_t *btif_rc_get_interface();
 extern btrc_interface_t *btif_rc_ctrl_get_interface();
 /*SDP search client*/
 extern btsdp_interface_t *btif_sdp_get_interface();
+/* vendor  */
+extern btvendor_interface_t *btif_vendor_get_interface();
 
 extern const btstacklog_interface_t *btif_stack_log_interface(void);
 #if TEST_APP_INTERFACE == TRUE
@@ -429,6 +433,9 @@ static const void* get_profile_interface (const char *profile_id)
 
     if (is_profile(profile_id, BT_PROFILE_AV_RC_CTRL_ID))
         return btif_rc_ctrl_get_interface();
+
+    if (is_profile(profile_id, BT_PROFILE_VENDOR_ID))
+        return btif_vendor_get_interface();
 
     return NULL;
 }

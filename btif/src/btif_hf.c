@@ -1664,17 +1664,13 @@ BOOLEAN btif_hf_call_terminated_recently()
 *******************************************************************************/
 static void  cleanup( void )
 {
-    BTIF_TRACE_EVENT("%s", __FUNCTION__);
+    BTIF_TRACE_IMP("%s", __FUNCTION__);
 
-    if (bt_hf_callbacks)
-    {
 #if (defined(BTIF_HF_SERVICES) && (BTIF_HF_SERVICES & BTA_HFP_SERVICE_MASK))
-        btif_disable_service(BTA_HFP_SERVICE_ID);
+    btif_disable_service(BTA_HFP_SERVICE_ID);
 #else
-        btif_disable_service(BTA_HSP_SERVICE_ID);
+    btif_disable_service(BTA_HSP_SERVICE_ID);
 #endif
-        bt_hf_callbacks = NULL;
-    }
 }
 
 /*******************************************************************************
@@ -1896,6 +1892,9 @@ bt_status_t btif_hf_execute_service(BOOLEAN b_enable)
     uint8_t no_of_codecs = 0;
     uint8_t* codecs;
     char value[PROPERTY_VALUE_MAX];
+
+    BTIF_TRACE_IMP("%s: enable: %d", __FUNCTION__, b_enable);
+
     if (b_enable)
     {
         /* Enable and register with BTA-AG */
@@ -1927,6 +1926,11 @@ bt_status_t btif_hf_execute_service(BOOLEAN b_enable)
         }
     }
     else {
+        if (bt_hf_callbacks)
+        {
+            BTIF_TRACE_IMP("%s: setting call backs to NULL", __FUNCTION__);
+            bt_hf_callbacks = NULL;
+        }
         /* De-register AG */
         for (i = 0; i < btif_max_hf_clients; i++)
         {
@@ -1935,6 +1939,7 @@ bt_status_t btif_hf_execute_service(BOOLEAN b_enable)
         /* Disable AG */
         BTA_AgDisable();
     }
+    BTIF_TRACE_IMP("%s: enable: %d completed", __FUNCTION__, b_enable);
     return BT_STATUS_SUCCESS;
 }
 

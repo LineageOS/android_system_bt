@@ -640,11 +640,7 @@ static void  cleanup( void )
 {
     BTIF_TRACE_EVENT("%s", __FUNCTION__);
 
-    if (bt_hf_client_callbacks)
-    {
-        btif_disable_service(BTA_HFP_HS_SERVICE_ID);
-        bt_hf_client_callbacks = NULL;
-    }
+    btif_disable_service(BTA_HFP_HS_SERVICE_ID);
 }
 
 /*******************************************************************************
@@ -970,9 +966,15 @@ bt_status_t btif_hf_client_execute_service(BOOLEAN b_enable)
      }
      else
      {
+         if (bt_hf_client_callbacks)
+         {
+             BTIF_TRACE_IMP("%s: setting call backs to NULL", __FUNCTION__);
+             bt_hf_client_callbacks = NULL;
+         }
          BTA_HfClientDeregister(btif_hf_client_cb.handle);
          BTA_HfClientDisable();
      }
+     BTIF_TRACE_IMP("%s: enable: %d completed", __FUNCTION__, b_enable);
      return BT_STATUS_SUCCESS;
 }
 

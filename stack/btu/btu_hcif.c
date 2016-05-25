@@ -35,6 +35,7 @@
 #include "device/include/controller.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
+#include "osi/include/properties.h"
 #include "bt_types.h"
 #include "bt_utils.h"
 #include "btm_api.h"
@@ -1153,6 +1154,24 @@ static void btu_hcif_hardware_error_evt (UINT8 *p)
     /* Reset the controller */
     if (BTM_IsDeviceUp())
         BTM_DeviceReset (NULL);
+
+    if(*p == 0x0f)
+    {
+       HCI_TRACE_ERROR("Ctlr H/w error event - code:Tigger SSR");
+       bte_ssr_cleanup(0x33);//SSR reason 0x33 = HW ERR EVT
+       usleep(20000); /* 20 milliseconds */
+       //Reset SOC status to trigger hciattach service
+       if(osi_property_set("bluetooth.status", "off") < 0)
+       {
+          ALOGE("SSR: Error resetting SOC status\n ");
+       }
+       else
+       {
+          ALOGE("SSR: SOC Status is reset\n ");
+       }
+       /* Killing the process to force a restart as part of fault tolerance */
+       kill(getpid(), SIGKILL);
+    }
 }
 
 /*******************************************************************************

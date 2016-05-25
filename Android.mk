@@ -24,6 +24,10 @@ bluetooth_CFLAGS += -DBLUEDROID_DEBUG
 bluetooth_CFLAGS += -DUSE_AUDIO_TRACK
 endif
 
+ifeq ($(BOARD_HAS_QCA_BT_ROME),true)
+bluetooth_CFLAGS += -DQCA_BT_ROME
+endif
+
 bluetooth_CFLAGS += -DEXPORT_SYMBOL="__attribute__((visibility(\"default\")))"
 
 #

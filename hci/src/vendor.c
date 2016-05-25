@@ -90,6 +90,13 @@ static void vendor_close(void) {
   lib_interface = NULL;
   lib_handle = NULL;
 }
+void vendor_ssrcleanup(int reason) {
+  if (lib_interface)
+    lib_interface->ssr_cleanup(reason);
+  else
+    LOG_ERROR("%s lib_interface is NULL", __func__);
+
+}
 
 static int send_command(vendor_opcode_t opcode, void *param) {
   assert(lib_interface != NULL);
@@ -220,6 +227,7 @@ static const vendor_t interface = {
   send_command,
   send_async_command,
   set_callback,
+  vendor_ssrcleanup
 };
 
 const vendor_t *vendor_get_interface() {

@@ -397,6 +397,11 @@ typedef struct {
 
     /** Closes the interface */
     void  (*cleanup)(void);
+
+    /** SSR cleanup is used in HW reset cases
+     * which would close all the client channels
+     * and turns off the chip*/
+    void  (*ssr_cleanup)(int reason);
 } bt_vendor_interface_t;
 
 
