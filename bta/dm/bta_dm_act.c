@@ -2712,6 +2712,9 @@ static void bta_dm_pinname_cback (void *p_data)
         /* retrieve the loc and rmt caps */
         sec_event.cfm_req.loc_io_caps = bta_dm_cb.loc_io_caps;
         sec_event.cfm_req.rmt_io_caps = bta_dm_cb.rmt_io_caps;
+        sec_event.cfm_req.loc_auth_req = bta_dm_cb.loc_auth_req;
+        sec_event.cfm_req.rmt_auth_req = bta_dm_cb.rmt_auth_req;
+
     }
     else
     {
@@ -2931,6 +2934,11 @@ static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data)
           {
               bta_dm_cb.pin_evt = pin_evt;
               bdcpy(bta_dm_cb.pin_bd_addr, p_data->cfm_req.bd_addr);
+              bta_dm_cb.rmt_io_caps = sec_event.cfm_req.rmt_io_caps;
+              bta_dm_cb.loc_io_caps = sec_event.cfm_req.loc_io_caps;
+              bta_dm_cb.rmt_auth_req = sec_event.cfm_req.rmt_auth_req;
+              bta_dm_cb.loc_auth_req = sec_event.cfm_req.loc_auth_req;
+
               BTA_COPY_DEVICE_CLASS(bta_dm_cb.pin_dev_class, p_data->cfm_req.dev_class);
               if ((BTM_ReadRemoteDeviceName(p_data->cfm_req.bd_addr, bta_dm_pinname_cback,
                          BT_TRANSPORT_BR_EDR)) == BTM_CMD_STARTED)

@@ -898,7 +898,9 @@ typedef struct
     DEV_CLASS                   pin_dev_class;
     tBTA_DM_SEC_EVT             pin_evt;
     tBTA_IO_CAP                 loc_io_caps;    /* IO Capabilities of local device */
-    tBTA_AUTH_REQ               rmt_io_caps;    /* IO Capabilities of remote device */
+    tBTA_IO_CAP                 rmt_io_caps;    /* IO Capabilities of remote device */
+    tBTA_AUTH_REQ               loc_auth_req;   /* Authentication required for local device */
+    tBTA_AUTH_REQ               rmt_auth_req;
     UINT32          num_val;        /* the numeric value for comparison. If just_works, do not show this number to UI */
     BOOLEAN         just_works;     /* TRUE, if "Just Works" association model */
 #if ( BTA_EIR_CANNED_UUID_LIST != TRUE )
