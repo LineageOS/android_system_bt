@@ -1122,7 +1122,8 @@ BOOLEAN btif_media_task_clear_track(void)
     BT_HDR *p_buf = osi_malloc(sizeof(BT_HDR));
 
     p_buf->event = BTIF_MEDIA_AUDIO_SINK_CLEAR_TRACK;
-    fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
+    if (btif_media_cmd_msg_queue != NULL)
+        fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
 
     return TRUE;
 }
@@ -1149,8 +1150,8 @@ void btif_reset_decoder(UINT8 *p_av)
 
     memcpy(p_buf->codec_info,p_av, AVDT_CODEC_SIZE);
     p_buf->hdr.event = BTIF_MEDIA_AUDIO_SINK_CFG_UPDATE;
-
-    fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
+    if (btif_media_cmd_msg_queue != NULL)
+        fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
 }
 
 /*****************************************************************************

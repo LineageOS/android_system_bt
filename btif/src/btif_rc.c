@@ -302,9 +302,6 @@ static int  uinput_create(char *name);
 static int  init_uinput (void);
 static void close_uinput (void);
 static void sleep_ms(period_ms_t timeout_ms);
-#if (AVRC_CTLR_INCLUDED == TRUE)
-static BOOLEAN conn_status = FALSE;
-#endif
 
 static const struct {
     const char *name;
@@ -584,7 +581,9 @@ void handle_rc_ctrl_features(int index)
             }
         }
         BTIF_TRACE_DEBUG("%s Update rc features to CTRL %d", __FUNCTION__, rc_features);
-        HAL_CBACK(bt_rc_ctrl_callbacks, getrcfeatures_cb, &rc_addr, rc_features);
+        if (btif_av_is_sink_enabled()) {
+            HAL_CBACK(bt_rc_ctrl_callbacks, getrcfeatures_cb, &rc_addr, rc_features);
+        }
     }
 }
 #endif
@@ -605,10 +604,10 @@ void handle_rc_features(int index)
                          bdaddr_to_string(&avdtp_addr, addr1, sizeof(bdstr_t)),
                          bdaddr_to_string(&rc_addr, addr2, sizeof(bdstr_t)) );
 
-    	//if (interop_match(INTEROP_DISABLE_ABSOLUTE_VOLUME, &rc_addr)
- 	if ( absolute_volume_disabled()
- 	       || bdcmp(avdtp_addr.address, rc_addr.address))
- 	   		btif_rc_cb[index].rc_features &= ~BTA_AV_FEAT_ADV_CTRL;
+        //if (interop_match(INTEROP_DISABLE_ABSOLUTE_VOLUME, &rc_addr)
+        if (absolute_volume_disabled()
+            || bdcmp(avdtp_addr.address, rc_addr.address))
+            btif_rc_cb[index].rc_features &= ~BTA_AV_FEAT_ADV_CTRL;
 
         if (btif_rc_cb[index].rc_features & BTA_AV_FEAT_BROWSE)
         {
@@ -672,14 +671,6 @@ void handle_rc_features(int index)
             }
         }
 #endif
-    }
-    else
-    {
-        /*Disable all TG related bits if AVRCP TG feature is not enabled*/
-        BTIF_TRACE_WARNING("Avrcp TG role not enabled, disabling TG specific featuremask");
-        btif_rc_cb[index].rc_features &= ~BTA_AV_FEAT_ADV_CTRL;
-        btif_rc_cb[index].rc_features &= ~BTA_AV_FEAT_BROWSE;
-        btif_rc_cb[index].rc_features &= ~BTA_AV_FEAT_METADATA;
     }
 }
 
@@ -893,16 +884,18 @@ void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open)
             handle_rc_features(index);
         BTIF_TRACE_DEBUG(" handle_rc_connect features %d ",btif_rc_cb[index].rc_features);
 #if (AVRC_CTLR_INCLUDED == TRUE)
-        /* report connection state if device is AVRCP target */
-        if (btif_rc_cb[index].rc_features & BTA_AV_FEAT_RCTG)
+        btif_rc_cb[index].rc_playing_uid = RC_INVALID_TRACK_ID;
+        bdcpy(rc_addr.address, btif_rc_cb[index].rc_addr);
+        if (bt_rc_ctrl_callbacks != NULL)
         {
             HAL_CBACK(bt_rc_ctrl_callbacks, connection_state_cb, TRUE, &rc_addr);
-            conn_status = TRUE;
         }
-        else
+        /* report connection state if remote device is AVRCP target */
+        if ((btif_rc_cb[index].rc_features & BTA_AV_FEAT_RCTG)||
+           ((btif_rc_cb[index].rc_features & BTA_AV_FEAT_RCCT)&&
+            (btif_rc_cb[index].rc_features & BTA_AV_FEAT_ADV_CTRL)))
         {
-            BTIF_TRACE_ERROR("RC connection state not updated to upper layer");
-            conn_status = FALSE;
+            handle_rc_ctrl_features(index);
         }
 #endif
         /* on locally initiated connection we will get remote features as part of connect
@@ -1765,14 +1758,9 @@ void btif_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data)
             btif_rc_cb[index].rc_features = p_data->rc_feat.peer_features;
             handle_rc_features(index);
 #if (AVRC_CTLR_INCLUDED == TRUE)
-            bt_bdaddr_t rc_addr;
-            bdcpy(rc_addr.address, btif_rc_cb[index].rc_addr);
-            if (btif_rc_cb[index].rc_features & BTA_AV_FEAT_RCTG &&
-                btif_rc_cb[index].rc_connected == TRUE && conn_status == FALSE)
+            if ((btif_rc_cb[index].rc_connected == TRUE) && (bt_rc_ctrl_callbacks != NULL))
             {
-                BTIF_TRACE_DEBUG("Update RC Connection State");
-                HAL_CBACK(bt_rc_ctrl_callbacks, connection_state_cb, TRUE, &rc_addr);
-                conn_status = TRUE;
+                handle_rc_ctrl_features(index);
             }
 #endif
         }
@@ -5024,7 +5012,7 @@ static void handle_get_playstatus_response (tBTA_AV_META_MSG *pmeta_msg, tAVRC_G
     if (p_rsp->status == AVRC_STS_NO_ERROR)
     {
         HAL_CBACK(bt_rc_ctrl_callbacks, play_position_changed_cb,
-            &rc_addr, p_rsp->song_len, p_rsp->song_pos);
+            &rc_addr, p_rsp->song_len, p_rsp->song_pos, p_rsp->play_status);
     }
     else
     {
