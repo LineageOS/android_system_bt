@@ -371,27 +371,12 @@ static void gatt_disc_cmpl_cback (UINT16 conn_id, tGATT_DISC_TYPE disc_type, tGA
 **
 *******************************************************************************/
 static void gatt_cl_op_cmpl_cback (UINT16 conn_id, tGATTC_OPTYPE op,
-                                           tGATT_STATUS status, tGATT_CL_COMPLETE *p_data)
+                                   tGATT_STATUS status, tGATT_CL_COMPLETE *p_data)
 {
-    tGATT_PROFILE_CLCB *p_clcb = gatt_profile_find_clcb_by_conn_id(conn_id);
-
-    if (p_clcb == NULL)
-        return;
-
-    if (op == GATTC_OPTYPE_WRITE)
-    {
-        GATT_TRACE_DEBUG("%s() - ccc write status : %d", __FUNCTION__, status);
-    }
-
-    /* Do not disconnect in case of notification or Indication (Unexpected events)*/
-    if (op == GATTC_OPTYPE_NOTIFICATION || op == GATTC_OPTYPE_INDICATION)
-    {
-        GATT_TRACE_DEBUG("%s: Unexpected event received. Ignore", __func__);
-        return;
-    }
-
-    /* free the connection */
-    gatt_config_ccc_complete (p_clcb);
+    UNUSED(conn_id);
+    UNUSED(op);
+    UNUSED(status);
+    UNUSED(p_data);
 }
 
 /*******************************************************************************
