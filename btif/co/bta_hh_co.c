@@ -733,7 +733,7 @@ tBTA_HH_RPT_CACHE_ENTRY * bta_hh_le_co_cache_load (BD_ADDR remote_bda,
         remote_bda[3], remote_bda[4], remote_bda[5]);
 
     size_t len = btif_config_get_bin_length(bdstr, "HidReport");
-    if (!p_num_rpt && len < sizeof(tBTA_HH_RPT_CACHE_ENTRY))
+    if (!p_num_rpt || len < sizeof(tBTA_HH_RPT_CACHE_ENTRY))
         return NULL;
 
     if (len > sizeof(sReportCache))

@@ -973,6 +973,7 @@ static void btif_hh_upstreams_evt(UINT16 event, char* p_param)
                     bdcpy(bda, p_dev->bd_addr.address);
                     tBTA_HH_DEV_DSCP_INFO dscp_info;
                     bt_status_t ret;
+                    memset(&dscp_info, 0, sizeof(dscp_info));
                     bdcpy(bda, p_dev->bd_addr.address);
                     btif_hh_copy_hid_info(&dscp_info, &p_data->dscp_info);
                     BTIF_TRACE_DEBUG("BTA_HH_GET_DSCP_EVT:bda = %02x:%02x:%02x:%02x:%02x:%02x",
@@ -1353,6 +1354,8 @@ static bt_status_t set_info (bt_bdaddr_t *bd_addr, bthh_hid_info_t hid_info )
         BTIF_TRACE_ERROR("%s: Error, HH status = %d", __FUNCTION__, btif_hh_cb.status);
         return BT_STATUS_FAIL;
     }
+
+    memset(&dscp_info, 0, sizeof(dscp_info));
 
     dscp_info.vendor_id  = hid_info.vendor_id;
     dscp_info.product_id = hid_info.product_id;
