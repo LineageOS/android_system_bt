@@ -2174,6 +2174,8 @@ static void bta_dm_find_services ( BD_ADDR bd_addr)
     /* no more services to be discovered */
     if (bta_dm_search_cb.service_index >= BTA_MAX_SERVICE_ID) {
         tBTA_DM_MSG *p_msg = (tBTA_DM_MSG *)osi_malloc(sizeof(tBTA_DM_MSG));
+        /* initialize the data structure - includes p_raw_data and raw_data_size */
+        memset(&(p_msg->disc_result.result), 0, sizeof(tBTA_DM_DISC_RES));
         p_msg->hdr.event = BTA_DM_DISCOVERY_RESULT_EVT;
         p_msg->disc_result.result.disc_res.services = bta_dm_search_cb.services_found;
         bdcpy(p_msg->disc_result.result.disc_res.bd_addr, bta_dm_search_cb.peer_bdaddr);
