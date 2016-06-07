@@ -65,8 +65,6 @@ tBTA_STATUS BTA_EnableBluetooth(tBTA_DM_SEC_CBACK *p_cback)
     if (bta_dm_cb.disabling)
         return BTA_FAILURE;
 
-    bta_dm_init_cb();
-
     bta_sys_register(BTA_ID_DM, &bta_dm_reg );
     bta_sys_register(BTA_ID_DM_SEARCH, &bta_dm_search_reg );
 

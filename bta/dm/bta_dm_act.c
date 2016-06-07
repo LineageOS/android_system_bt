@@ -303,17 +303,6 @@ void bta_dm_enable(tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_init_cb(void)
 {
-    /*
-     * TODO: Should alarm_free() the bta_dm_cb timers during graceful
-     * shutdown.
-     */
-    alarm_free(bta_dm_cb.disable_timer);
-    alarm_free(bta_dm_cb.switch_delay_timer);
-    for (size_t i = 0; i < BTA_DM_NUM_PM_TIMER; i++) {
-        for (size_t j = 0; j < BTA_DM_PM_MODE_TIMER_MAX; j++) {
-            alarm_free(bta_dm_cb.pm_timer[i].timer[j]);
-        }
-    }
     memset(&bta_dm_cb, 0, sizeof(bta_dm_cb));
     bta_dm_cb.disable_timer = alarm_new("bta_dm.disable_timer");
     bta_dm_cb.switch_delay_timer = alarm_new("bta_dm.switch_delay_timer");
@@ -322,6 +311,32 @@ void bta_dm_init_cb(void)
             bta_dm_cb.pm_timer[i].timer[j] = alarm_new("bta_dm.pm_timer");
         }
     }
+}
+
+/*******************************************************************************
+**
+** Function         bta_dm_deinit_cb
+**
+** Description      De-initializes the bta_dm_cb control block
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_deinit_cb(void)
+{
+    /*
+     * TODO: Should alarm_free() the bta_dm_cb timers during graceful
+     * shutdown.
+     */
+    alarm_free(bta_dm_cb.disable_timer);
+    alarm_free(bta_dm_cb.switch_delay_timer);
+    for (size_t i = 0; i < BTA_DM_NUM_PM_TIMER; i++) {
+      for (size_t j = 0; j < BTA_DM_PM_MODE_TIMER_MAX; j++) {
+        alarm_free(bta_dm_cb.pm_timer[i].timer[j]);
+      }
+    }
+    memset(&bta_dm_cb, 0, sizeof(bta_dm_cb));
 }
 
 /*******************************************************************************
@@ -359,7 +374,12 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
             bta_dm_cb.p_sec_cback(BTA_DM_DISABLE_EVT, NULL);
 
         /* reinitialize the control block */
-        bta_dm_init_cb();
+        bta_dm_deinit_cb();
+
+        /* hw is ready, go on with BTA DM initialization */
+        alarm_free(bta_dm_search_cb.search_timer);
+        alarm_free(bta_dm_search_cb.gatt_close_timer);
+        memset(&bta_dm_search_cb, 0, sizeof(bta_dm_search_cb));
 
         /* unregister from SYS */
         bta_sys_hw_unregister( BTA_SYS_HW_BLUETOOTH );
@@ -382,8 +402,6 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
         bta_dm_cb.is_bta_dm_active = TRUE;
 
         /* hw is ready, go on with BTA DM initialization */
-        alarm_free(bta_dm_search_cb.search_timer);
-        alarm_free(bta_dm_search_cb.gatt_close_timer);
         memset(&bta_dm_search_cb, 0, sizeof(bta_dm_search_cb));
         /*
          * TODO: Should alarm_free() the bta_dm_search_cb timers during
