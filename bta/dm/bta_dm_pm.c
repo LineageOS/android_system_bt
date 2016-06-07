@@ -524,11 +524,15 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
             &manufacturer, &lmp_sub_version) == BTM_SUCCESS) {
             p_rem_dev = bta_dm_find_peer_device(peer_addr);
             /* Disable/Enable sniff policy on the HID link if sco Up/Down*/
-            if ((p_rem_dev) && interop_match_manufacturer(
-                INTEROP_DISABLE_SNIFF_DURING_SCO, manufacturer))
+            if ((p_rem_dev) && (interop_match_addr(
+                INTEROP_DISABLE_SNIFF_DURING_SCO, (const bt_bdaddr_t *)peer_addr) ||
+                interop_match_manufacturer(
+                INTEROP_DISABLE_SNIFF_DURING_SCO, manufacturer)))
             {
-                APPL_TRACE_DEBUG("%s: disable sniff for manufacturer:%d",
-                    __func__, manufacturer);
+                char buf[18];
+                APPL_TRACE_DEBUG("%s: disable sniff for manufacturer:%d addr = %s",
+                    __func__, manufacturer, bdaddr_to_string((const bt_bdaddr_t *)peer_addr,
+                    buf, sizeof(buf)));
                 bta_dm_pm_set_sniff_policy(p_rem_dev, true);
             }
         }
@@ -1275,11 +1279,15 @@ static void bta_dm_pm_hid_check(BOOLEAN bScoActive)
                 &manufacturer, &lmp_sub_version) == BTM_SUCCESS) {
                 p_rem_dev = bta_dm_find_peer_device(peer_bdaddr);
                 /* Disable/Enable sniff policy on the HID link if sco Up/Down*/
-                if ((p_rem_dev) && interop_match_manufacturer(
-                    INTEROP_DISABLE_SNIFF_DURING_SCO, manufacturer))
+                if ((p_rem_dev) && (interop_match_addr(
+                    INTEROP_DISABLE_SNIFF_DURING_SCO, (const bt_bdaddr_t *)peer_bdaddr) ||
+                    interop_match_manufacturer(
+                    INTEROP_DISABLE_SNIFF_DURING_SCO, manufacturer)))
                 {
+                    char buf[18];
                     APPL_TRACE_DEBUG("%s: %s sniff for manufacturer:%d",
-                        __func__, bScoActive ? "disable" : "enable", manufacturer);
+                        __func__, bScoActive ? "disable" : "enable", manufacturer,
+                        bdaddr_to_string((const bt_bdaddr_t *)peer_bdaddr, buf, sizeof(buf)));
                     bta_dm_pm_set_sniff_policy(p_rem_dev, bScoActive);
                     if (!bScoActive)
                         bta_dm_pm_sniff(p_rem_dev, (BTA_DM_PM_SNIFF2 & 0x0F));

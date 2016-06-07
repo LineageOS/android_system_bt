@@ -103,9 +103,15 @@ static const interop_addr_entry_t interop_addr_database[] = {
   {{{0x6c, 0x5d, 0x63,       0,0,0}}, 3, INTEROP_DISABLE_SDP_AFTER_PAIRING},
   // Microsoft Sculpt Touch Mouse
   {{{0x28, 0x18, 0x78,       0,0,0}}, 3, INTEROP_DISABLE_SDP_AFTER_PAIRING},
+  // Tero's Game Controller
+  {{{0x60, 0x45, 0xBD,       0,0,0}}, 3, INTEROP_DISABLE_SDP_AFTER_PAIRING},
 
   // Targus BT Laser Notebook Mouse
   {{{0x00, 0x12, 0xA1,       0,0,0}}, 3, INTEROP_DISABLE_AUTH_FOR_HID_POINTING},
+
+  // Bluetooth Keyboard
+  {{{0x20, 0x4C, 0x10,       0,0,0}}, 3, INTEROP_DISABLE_SNIFF_DURING_SCO},
+
 };
 
 typedef struct {
@@ -133,6 +139,7 @@ static const interop_name_entry_t interop_name_database[] = {
   {"Microsoft Bluetooth Notebook Mouse 5000", 39, INTEROP_DISABLE_SDP_AFTER_PAIRING},
   {"Logitech MX Revolution Mouse", 28, INTEROP_DISABLE_SDP_AFTER_PAIRING},
   {"Microsoft Sculpt Touch Mouse", 28, INTEROP_DISABLE_SDP_AFTER_PAIRING},
+  {"Tero's Game Controller", 22, INTEROP_DISABLE_SDP_AFTER_PAIRING},
 
   // HID Authentication Blacklist
   {"Targus BT Laser Notebook Mouse", 30, INTEROP_DISABLE_AUTH_FOR_HID_POINTING},
