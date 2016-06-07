@@ -20,6 +20,7 @@
 #define BT_TYPES_H
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdbool.h>
 
 #ifndef FALSE
@@ -730,6 +731,9 @@ static const BD_ADDR bd_addr_null= {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 *******************************************************************************/
 static inline void bdcpy(BD_ADDR a, const BD_ADDR b)
 {
+    if (a ==  NULL || b == NULL)
+       return;
+
     int i;
 
     for (i = BD_ADDR_LEN; i != 0; i--)

@@ -471,20 +471,24 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN *p_open, l2cap_socket 
 
     // Mutex locked by caller
     accept_rs = btsock_l2cap_alloc_l(sock->name, (const bt_bdaddr_t*)p_open->rem_bda, FALSE, 0);
-    accept_rs->connected = TRUE;
-    accept_rs->security = sock->security;
-    accept_rs->fixed_chan = sock->fixed_chan;
-    accept_rs->channel = sock->channel;
-    accept_rs->handle = sock->handle;
-    accept_rs->app_uid = sock->app_uid;
-    sock->handle = -1; /* We should no longer associate this handle with the server socket */
-    accept_rs->is_le_coc = sock->is_le_coc;
+    if (accept_rs) {
+        accept_rs->connected = TRUE;
+        accept_rs->security = sock->security;
+        accept_rs->fixed_chan = sock->fixed_chan;
+        accept_rs->channel = sock->channel;
+        accept_rs->handle = sock->handle;
+        accept_rs->app_uid = sock->app_uid;
+        sock->handle = -1; /* We should no longer associate this handle with the server socket */
+        accept_rs->is_le_coc = sock->is_le_coc;
 
     /* Swap IDs to hand over the GAP connection to the accepted socket, and start a new server on
        the newly create socket ID. */
-    new_listen_id = accept_rs->id;
-    accept_rs->id = sock->id;
-    sock->id = new_listen_id;
+        new_listen_id = accept_rs->id;
+        accept_rs->id = sock->id;
+        sock->id = new_listen_id;
+    } else {
+        APPL_TRACE_ERROR("Memory not allocated for accept_rs..");
+    }
 
     if (accept_rs) {
         //start monitor the socket

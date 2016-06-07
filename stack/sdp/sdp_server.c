@@ -30,6 +30,7 @@
 #include "bt_common.h"
 #include "bt_types.h"
 #include "bt_utils.h"
+#include "bt_trace.h"
 #include "btu.h"
 
 #include "l2cdefs.h"
@@ -919,7 +920,7 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     BOOLEAN         is_avrcp_browse_bit_reset = FALSE;
     BOOLEAN         is_hfp_fallback = FALSE;
     BOOLEAN         is_avrcp_ca_bit_reset = FALSE;
-    UINT8           *p_seq_start;
+    UINT8           *p_seq_start = NULL;
     UINT16          seq_len, attr_len;
     UNUSED(p_req_end);
 
@@ -1170,8 +1171,15 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
             seq_len = sdpu_get_attrib_seq_len(p_rec, &attr_seq_sav);
             if (seq_len != 0)
             {
-                UINT8_TO_BE_STREAM  (p_seq_start, (DATA_ELE_SEQ_DESC_TYPE << 3) | SIZE_IN_NEXT_WORD);
-                UINT16_TO_BE_STREAM (p_seq_start, seq_len);
+                if (p_seq_start)
+                {
+                    UINT8_TO_BE_STREAM  (p_seq_start, (DATA_ELE_SEQ_DESC_TYPE << 3) | SIZE_IN_NEXT_WORD);
+                    UINT16_TO_BE_STREAM (p_seq_start, seq_len);
+                }
+                else
+                {
+                    SDP_TRACE_DEBUG("SDP service and attribute rsp: Attribute sequence p_seq_start is NULL");
+                }
 
                 if (maxxed_out)
                     p_ccb->cont_info.last_attr_seq_desc_sent = TRUE;

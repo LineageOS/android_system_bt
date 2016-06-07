@@ -211,10 +211,12 @@ static BOOLEAN btm_dev_16_digit_authenticated(tBTM_SEC_DEV_REC *p_dev_rec)
 *******************************************************************************/
 static BOOLEAN btm_serv_trusted(tBTM_SEC_DEV_REC *p_dev_rec, tBTM_SEC_SERV_REC *p_serv_rec)
 {
-    if(BTM_SEC_IS_SERVICE_TRUSTED(p_dev_rec->trusted_mask, p_serv_rec->service_id))
+    if(p_serv_rec->service_id < BTM_SEC_MAX_SERVICES && BTM_SEC_IS_SERVICE_TRUSTED(p_dev_rec->trusted_mask, p_serv_rec->service_id))
     {
         return(TRUE);
     }
+    else
+        BTM_TRACE_ERROR("BTM_Sec: Service Id: %d not found", p_serv_rec->service_id);
     return(FALSE);
 }
 
@@ -1547,8 +1549,10 @@ void BTM_ConfirmReqReply(tBTM_STATUS res, BD_ADDR bd_addr)
         if (res == BTM_SUCCESS)
         {
             if ((p_dev_rec = btm_find_dev (bd_addr)) != NULL)
+            {
                 p_dev_rec->sec_flags |= BTM_SEC_LINK_KEY_AUTHED;
                 p_dev_rec->sec_flags |= BTM_SEC_16_DIGIT_PIN_AUTHED;
+            }
         }
 
         btsnd_hcic_user_conf_reply (bd_addr, TRUE);
@@ -5472,8 +5476,7 @@ static tBTM_STATUS btm_sec_execute_procedure (tBTM_SEC_DEV_REC *p_dev_rec)
     {
         BTM_TRACE_EVENT ("service id:%d, is trusted:%d",
                           p_dev_rec->p_cur_service->service_id,
-                          (BTM_SEC_IS_SERVICE_TRUSTED(p_dev_rec->trusted_mask,
-                                                      p_dev_rec->p_cur_service->service_id)));
+                          btm_serv_trusted(p_dev_rec,p_dev_rec->p_cur_service));
         if ((btm_sec_are_all_trusted(p_dev_rec->trusted_mask) == FALSE) &&
             (p_dev_rec->p_cur_service->service_id < BTM_SEC_MAX_SERVICES) &&
             (BTM_SEC_IS_SERVICE_TRUSTED(p_dev_rec->trusted_mask,

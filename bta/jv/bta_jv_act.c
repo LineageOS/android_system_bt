@@ -1797,9 +1797,6 @@ static void bta_jv_port_event_sr_cback(UINT32 code, UINT16 port_handle)
     tBTA_JV_RFC_CB  *p_cb = bta_jv_rfc_port_to_cb(port_handle);
     tBTA_JV evt_data;
 
-    /* Fix for below klockwork issue
-     * Pointer 'p_pcb' returned from call to function 'bta_jv_rfc_port_to_pcb' at line 1804
-     * may be NULL and may be dereferenced at line 1811*/
     if (NULL == p_cb || NULL == p_cb->p_cback || NULL == p_pcb)
         return;
 
@@ -2503,9 +2500,6 @@ static void fcchan_conn_chng_cbk(UINT16 chan, BD_ADDR bd_addr, BOOLEAN connected
         }
     }
 
-    /* Fix for below klockwork issue
-     * Null pointer 'p_cback' that comes from line 2438
-     * may be dereferenced at line 2494*/
     if (call_init && p_cback)
         p_cback(BTA_JV_L2CAP_CL_INIT_EVT, &init_evt, user_data);
 
@@ -2597,9 +2591,6 @@ void bta_jv_l2cap_connect_le(tBTA_JV_MSG *p_data)
     }
     if (call_init_f)
         cc->p_cback(BTA_JV_L2CAP_CL_INIT_EVT, &evt, cc->user_data);
-    /* Fix for below klockwork issue
-     * Pointer 't' checked for NULL at line 2576
-     * will be dereferenced at line 2588*/
     if (t)
         t->init_called = TRUE;
 }

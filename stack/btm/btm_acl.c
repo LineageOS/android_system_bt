@@ -564,7 +564,7 @@ void btm_acl_device_down (void)
 void btm_acl_update_busy_level (tBTM_BLI_EVENT event)
 {
     tBTM_BL_UPDATE_DATA  evt;
-    UINT8 busy_level;
+    UINT8 busy_level = btm_cb.busy_level;
     BTM_TRACE_DEBUG ("btm_acl_update_busy_level");
     BOOLEAN old_inquiry_state = btm_cb.is_inquiry;
     switch (event)
@@ -1760,7 +1760,7 @@ BOOLEAN BTM_TryAllocateSCN(UINT8 scn)
     /* Make sure we don't exceed max port range.
      * Stack reserves scn 1 for HFP, HSP we still do the correct way.
      */
-    if ( (scn>=BTM_MAX_SCN) || (scn == 1) )
+    if ( (scn>=BTM_MAX_SCN) || (scn <= 1) )
         return FALSE;
 
     /* check if this port is available */
@@ -1785,7 +1785,7 @@ BOOLEAN BTM_TryAllocateSCN(UINT8 scn)
 BOOLEAN BTM_FreeSCN(UINT8 scn)
 {
     BTM_TRACE_DEBUG ("BTM_FreeSCN ");
-    if (scn <= BTM_MAX_SCN)
+    if (scn <= BTM_MAX_SCN && scn > 0)
     {
         btm_cb.btm_scn[scn-1] = FALSE;
         return(TRUE);

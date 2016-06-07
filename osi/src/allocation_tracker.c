@@ -133,10 +133,14 @@ void *allocation_tracker_notify_alloc(uint8_t allocator_id, void *ptr, size_t re
     hash_map_set(allocations, return_ptr, allocation);
   }
 
-  allocation->allocator_id = allocator_id;
-  allocation->freed = false;
-  allocation->size = requested_size;
-  allocation->ptr = return_ptr;
+  if (allocation) {
+    allocation->allocator_id = allocator_id;
+    allocation->freed = false;
+    allocation->size = requested_size;
+    allocation->ptr = return_ptr;
+  } else {
+    LOG_ERROR(LOG_TAG, "%s Memory not allocated for allocation." ,__func__);
+  }
 
   pthread_mutex_unlock(&lock);
 
