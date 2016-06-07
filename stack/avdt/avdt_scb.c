@@ -743,13 +743,20 @@ UINT8 avdt_scb_verify(tAVDT_CCB *p_ccb, UINT8 state, UINT8 *p_seid, UINT16 num_s
         switch (state) {
           case AVDT_VERIFY_OPEN:
           case AVDT_VERIFY_START:
-            if (p_scb->state != AVDT_SCB_OPEN_ST && p_scb->state != AVDT_SCB_STREAM_ST)
+            /* Fix for below klockwork issue
+             * Pointer 'p_scb' checked for NULL at line 736 may be dereferenced below at line 746.
+             * need to put NULL check for p_scb */
+            if (p_scb != NULL && p_scb->state != AVDT_SCB_OPEN_ST &&
+                p_scb->state != AVDT_SCB_STREAM_ST)
               *p_err_code = AVDT_ERR_BAD_STATE;
             break;
 
           case AVDT_VERIFY_SUSPEND:
           case AVDT_VERIFY_STREAMING:
-            if (p_scb->state != AVDT_SCB_STREAM_ST)
+            /* Fix for below klockwork issue
+             * Pointer 'p_scb' checked for NULL at line 736 may be dereferenced below at line 752.
+             * need to put NULL check for p_scb */
+            if (p_scb != NULL && p_scb->state != AVDT_SCB_STREAM_ST)
               *p_err_code = AVDT_ERR_BAD_STATE;
             break;
         }

@@ -1491,7 +1491,10 @@ static void bta_jv_port_mgmt_cl_cback(UINT32 code, UINT16 port_handle)
     tBTA_JV_RFCOMM_CBACK *p_cback;  /* the callback function */
 
     APPL_TRACE_DEBUG( "bta_jv_port_mgmt_cl_cback:code:%d, port_handle%d", code, port_handle);
-    if(NULL == p_cb || NULL == p_cb->p_cback)
+    /* Fix for below Klockwork issue
+     * Pointer 'p_pcb' returned from call to function 'bta_jv_rfc_port_to_pcb' at line 1490
+     * may be NULL and may be dereferenced at line 1500*/
+    if(NULL == p_cb || NULL == p_cb->p_cback || NULL == p_pcb)
         return;
 
     APPL_TRACE_DEBUG( "bta_jv_port_mgmt_cl_cback code=%d port_handle:%d handle:%d",
@@ -1542,8 +1545,11 @@ static void bta_jv_port_event_cl_cback(UINT32 code, UINT16 port_handle)
     tBTA_JV evt_data;
 
     APPL_TRACE_DEBUG( "bta_jv_port_event_cl_cback:%d", port_handle);
-    if (NULL == p_cb || NULL == p_cb->p_cback)
-        return;
+    /* Fix for below Klockwork issue
+     * Pointer 'p_pcb' returned from call to function 'bta_jv_rfc_port_to_pcb' at line 1547
+     * may be NULL and may be dereferenced at line 1554*/
+    if (NULL == p_cb || NULL == p_cb->p_cback || NULL == p_pcb)
+          return;
 
     APPL_TRACE_DEBUG( "bta_jv_port_event_cl_cback code=x%x port_handle:%d handle:%d",
         code, port_handle, p_cb->handle);
@@ -1723,12 +1729,12 @@ static void bta_jv_port_mgmt_sr_cback(UINT32 code, UINT16 port_handle)
     BD_ADDR rem_bda;
     UINT16 lcid;
     APPL_TRACE_DEBUG("bta_jv_port_mgmt_sr_cback, code:%d, port_handle:%d", code, port_handle);
-    if (NULL == p_cb || NULL == p_cb->p_cback)
-    {
-        APPL_TRACE_ERROR("bta_jv_port_mgmt_sr_cback, p_cb:%p, p_cb->p_cback%p",
-                p_cb, p_cb ? p_cb->p_cback : NULL);
+    /* Fix for below Klockwork issue
+     * Pointer 'p_pcb' returned from call to function 'bta_jv_rfc_port_to_pcb' at line 1729
+     * may be NULL and may be dereferenced at line 1738*/
+    if (NULL == p_cb || NULL == p_cb->p_cback || NULL == p_pcb)
         return;
-    }
+
     void *user_data = p_pcb->user_data;
     APPL_TRACE_DEBUG( "bta_jv_port_mgmt_sr_cback code=%d port_handle:0x%x handle:0x%x, p_pcb:%p, user:%d",
         code, port_handle, p_cb->handle, p_pcb, p_pcb->user_data);
@@ -1791,7 +1797,10 @@ static void bta_jv_port_event_sr_cback(UINT32 code, UINT16 port_handle)
     tBTA_JV_RFC_CB  *p_cb = bta_jv_rfc_port_to_cb(port_handle);
     tBTA_JV evt_data;
 
-    if (NULL == p_cb || NULL == p_cb->p_cback)
+    /* Fix for below klockwork issue
+     * Pointer 'p_pcb' returned from call to function 'bta_jv_rfc_port_to_pcb' at line 1804
+     * may be NULL and may be dereferenced at line 1811*/
+    if (NULL == p_cb || NULL == p_cb->p_cback || NULL == p_pcb)
         return;
 
     APPL_TRACE_DEBUG( "bta_jv_port_event_sr_cback code=x%x port_handle:%d handle:%d",
@@ -2494,7 +2503,10 @@ static void fcchan_conn_chng_cbk(UINT16 chan, BD_ADDR bd_addr, BOOLEAN connected
         }
     }
 
-    if (call_init)
+    /* Fix for below klockwork issue
+     * Null pointer 'p_cback' that comes from line 2438
+     * may be dereferenced at line 2494*/
+    if (call_init && p_cback)
         p_cback(BTA_JV_L2CAP_CL_INIT_EVT, &init_evt, user_data);
 
     //call this with lock taken so socket does not disappear from under us */
@@ -2521,10 +2533,15 @@ static void fcchan_data_cbk(UINT16 chan, BD_ADDR bd_addr, BT_HDR *p_buf)
             return;
         }
     }
-
-    sock_cback = t->p_cback;
-    sock_user_data = t->user_data;
-    evt_data.le_data_ind.handle = t->id;
+    /* Fix for below klockwork issue
+     * Null pointer 't' that comes from line 2508
+     * may be dereferenced at line 2525*/
+    if (t)
+    {
+       sock_cback = t->p_cback;
+       sock_user_data = t->user_data;
+       evt_data.le_data_ind.handle = t->id;
+    }
     evt_data.le_data_ind.p_buf = p_buf;
 
     if (sock_cback)
@@ -2580,7 +2597,11 @@ void bta_jv_l2cap_connect_le(tBTA_JV_MSG *p_data)
     }
     if (call_init_f)
         cc->p_cback(BTA_JV_L2CAP_CL_INIT_EVT, &evt, cc->user_data);
-    t->init_called = TRUE;
+    /* Fix for below klockwork issue
+     * Pointer 't' checked for NULL at line 2576
+     * will be dereferenced at line 2588*/
+    if (t)
+        t->init_called = TRUE;
 }
 
 

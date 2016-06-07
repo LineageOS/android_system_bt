@@ -214,7 +214,11 @@ void avdt_l2c_connect_ind_cback(BD_ADDR bd_addr, UINT16 lcid, UINT16 psm, UINT8 
             if (interop_match_addr(INTEROP_2MBPS_LINK_ONLY, (const bt_bdaddr_t *)&bd_addr)) {
                 // Disable 3DH packets for AVDT ACL to improve sensitivity on HS
                 tACL_CONN *p_acl_cb = btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
-                btm_set_packet_types(p_acl_cb, (btm_cb.btm_acl_pkt_types_supported |
+                /* Fix for below klockwork issue
+                 * Pointer 'p_acl_cb' returned from call to function 'btm_bda_to_acl' at line 216
+                 * may be NULL and will be dereferenced at line 217*/
+                if (p_acl_cb)
+                    btm_set_packet_types(p_acl_cb, (btm_cb.btm_acl_pkt_types_supported |
                                                 HCI_PKT_TYPES_MASK_NO_3_DH1 |
                                                 HCI_PKT_TYPES_MASK_NO_3_DH3 |
                                                 HCI_PKT_TYPES_MASK_NO_3_DH5));
@@ -342,7 +346,11 @@ void avdt_l2c_connect_cfm_cback(UINT16 lcid, UINT16 result)
                         if (interop_match_addr(INTEROP_2MBPS_LINK_ONLY, (const bt_bdaddr_t *) &p_ccb->peer_addr)) {
                             // Disable 3DH packets for AVDT ACL to improve sensitivity on HS
                             tACL_CONN *p_acl_cb = btm_bda_to_acl(p_ccb->peer_addr, BT_TRANSPORT_BR_EDR);
-                            btm_set_packet_types(p_acl_cb, (btm_cb.btm_acl_pkt_types_supported |
+                            /* Fix for below klockwork issue
+                             * Pointer 'p_acl_cb' returned from call to function 'btm_bda_to_acl' at line 344
+                             * may be NULL and will be dereferenced at line 345*/
+                            if (p_acl_cb)
+                                btm_set_packet_types(p_acl_cb, (btm_cb.btm_acl_pkt_types_supported |
                                                             HCI_PKT_TYPES_MASK_NO_3_DH1 |
                                                             HCI_PKT_TYPES_MASK_NO_3_DH3 |
                                                             HCI_PKT_TYPES_MASK_NO_3_DH5));

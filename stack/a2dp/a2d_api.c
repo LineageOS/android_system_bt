@@ -36,7 +36,16 @@
 #if A2D_DYNAMIC_MEMORY == FALSE
 tA2D_CB a2d_cb;
 #endif
-
+/* Fix for below klockwork issue.
+ * Address of a local variable is returned through formal argument 'p_db->p_attrs' in
+ * API A2D_FindService removed local declaration and defined globally renamed from a2d_attr_list
+ * to a2d_attribute_list as there is a conflict in another file avrc_sdp.c */
+UINT16 a2d_attribute_list[] = {ATTR_ID_SERVICE_CLASS_ID_LIST, /* update A2D_NUM_ATTR, if changed */
+                          ATTR_ID_BT_PROFILE_DESC_LIST,
+                          ATTR_ID_SUPPORTED_FEATURES,
+                          ATTR_ID_SERVICE_NAME,
+                          ATTR_ID_PROTOCOL_DESC_LIST,
+                          ATTR_ID_PROVIDER_NAME};
 
 /******************************************************************************
 **
@@ -273,12 +282,6 @@ tA2D_STATUS A2D_FindService(UINT16 service_uuid, BD_ADDR bd_addr,
 {
     tSDP_UUID   uuid_list;
     BOOLEAN     result = TRUE;
-    UINT16      a2d_attr_list[] = {ATTR_ID_SERVICE_CLASS_ID_LIST, /* update A2D_NUM_ATTR, if changed */
-                                   ATTR_ID_BT_PROFILE_DESC_LIST,
-                                   ATTR_ID_SUPPORTED_FEATURES,
-                                   ATTR_ID_SERVICE_NAME,
-                                   ATTR_ID_PROTOCOL_DESC_LIST,
-                                   ATTR_ID_PROVIDER_NAME};
 
     A2D_TRACE_API("A2D_FindService uuid: %x", service_uuid);
     if( (service_uuid != UUID_SERVCLASS_AUDIO_SOURCE && service_uuid != UUID_SERVCLASS_AUDIO_SINK) ||
@@ -295,7 +298,7 @@ tA2D_STATUS A2D_FindService(UINT16 service_uuid, BD_ADDR bd_addr,
 
     if(p_db->p_attrs == NULL || p_db->num_attr == 0)
     {
-        p_db->p_attrs  = a2d_attr_list;
+        p_db->p_attrs  = a2d_attribute_list;
         p_db->num_attr = A2D_NUM_ATTR;
     }
 

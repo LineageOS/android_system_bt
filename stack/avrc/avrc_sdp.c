@@ -46,6 +46,15 @@ tAVRC_CB avrc_cb;
 #define AVCT_CA_PSM     0X1021
 #endif
 
+/* Fix for below klockwork issue.
+ * Address of a local variable is returned through formal argument 'p_db->p_attrs' in
+ * API AVRC_FindService, removed local declaration and defined globally */
+UINT16 a2d_attr_list[] = {ATTR_ID_SERVICE_CLASS_ID_LIST, /* update AVRC_NUM_ATTR, if changed */
+                          ATTR_ID_PROTOCOL_DESC_LIST,
+                          ATTR_ID_BT_PROFILE_DESC_LIST,
+                          ATTR_ID_SERVICE_NAME,
+                          ATTR_ID_SUPPORTED_FEATURES,
+                          ATTR_ID_PROVIDER_NAME};
 /* update AVRC_NUM_PROTO_ELEMS if this constant is changed */
 
 /******************************************************************************
@@ -118,13 +127,6 @@ UINT16 AVRC_FindService(UINT16 service_uuid, BD_ADDR bd_addr,
 {
     tSDP_UUID   uuid_list;
     BOOLEAN     result = TRUE;
-    UINT16      a2d_attr_list[] = {ATTR_ID_SERVICE_CLASS_ID_LIST, /* update AVRC_NUM_ATTR, if changed */
-                                   ATTR_ID_PROTOCOL_DESC_LIST,
-                                   ATTR_ID_BT_PROFILE_DESC_LIST,
-                                   ATTR_ID_SERVICE_NAME,
-                                   ATTR_ID_SUPPORTED_FEATURES,
-                                   ATTR_ID_PROVIDER_NAME};
-
     AVRC_TRACE_API("AVRC_FindService uuid: %x", service_uuid);
     if( (service_uuid != UUID_SERVCLASS_AV_REM_CTRL_TARGET && service_uuid != UUID_SERVCLASS_AV_REMOTE_CONTROL) ||
         p_db == NULL || p_db->p_db == NULL || p_cback == NULL)

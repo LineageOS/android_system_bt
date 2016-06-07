@@ -1068,8 +1068,8 @@ static char *bta_hf_client_parse_clcc(char *buffer)
 {
     UINT16 idx, dir, status, mode, mpty;
     char numstr[33];     /* spec forces 32 chars, plus one for \0*/
-    UINT16 type;
     int res;
+    UINT16 type = 0;
     int offset = 0;
 
     AT_CHECK_EVENT(buffer, "+CLCC:");
