@@ -37,6 +37,15 @@ config_t *config_new_empty(void);
 // file on the filesystem.
 config_t *config_new(const char *filename);
 
+// Clones |src|, including all of it's sections, keys, and values.
+// Returns a new config which is a copy and separated from the original;
+// changes to the new config are not reflected in any way in the original.
+//
+// |src| must not be NULL
+// This function will not return NULL.
+// Clients must call config_free on the returned object.
+config_t *config_new_clone(const config_t *src);
+
 // Frees resources associated with the config file. No further operations may
 // be performed on the |config| object after calling this function. |config|
 // may be NULL.
