@@ -61,6 +61,7 @@
 #include "osi/include/osi.h"
 #include "stack_manager.h"
 #include "btif_config.h"
+#include "btif_storage.h"
 #include "l2cdefs.h"
 #include "l2c_api.h"
 
@@ -80,6 +81,7 @@
 ************************************************************************************/
 
 bt_callbacks_t *bt_hal_cbacks = NULL;
+bool restricted_mode = FALSE;
 
 /** Operating System specific callouts for resource management */
 bt_os_callouts_t *bt_os_callouts = NULL;
@@ -165,8 +167,10 @@ static int init(bt_callbacks_t *callbacks) {
   return BT_STATUS_SUCCESS;
 }
 
-static int enable(void) {
-  LOG_INFO("%s", __func__);
+static int enable(bool start_restricted) {
+  LOG_INFO(LOG_TAG, "%s: start restricted = %d", __func__, start_restricted);
+
+  restricted_mode = start_restricted;
 
   if (!interface_ready())
     return BT_STATUS_NOT_READY;
@@ -191,6 +195,10 @@ static void ssrcleanup(void)
 {
     btif_ssr_cleanup();
     return;
+}
+
+bool is_restricted_mode() {
+  return restricted_mode;
 }
 
 static int get_adapter_properties(void)
@@ -303,6 +311,9 @@ static int cancel_bond(const bt_bdaddr_t *bd_addr)
 
 static int remove_bond(const bt_bdaddr_t *bd_addr)
 {
+    if (is_restricted_mode() && !btif_storage_is_restricted_device(bd_addr))
+        return BT_STATUS_SUCCESS;
+
     /* sanity check */
     if (interface_ready() == FALSE)
         return BT_STATUS_NOT_READY;

@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
   }
 
   if (discover) {
-    CALL_AND_WAIT(bt_interface->enable(), adapter_state_changed);
+    CALL_AND_WAIT(bt_interface->enable(false), adapter_state_changed);
     fprintf(stdout, "BT adapter is up\n");
 
     fprintf(stdout, "Starting to start discovery\n");
@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
   }
 
   if (discoverable) {
-    CALL_AND_WAIT(bt_interface->enable(), adapter_state_changed);
+    CALL_AND_WAIT(bt_interface->enable(false), adapter_state_changed);
     fprintf(stdout, "BT adapter is up\n");
 
     bt_property_t *property = property_new_scan_mode(BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);
@@ -133,7 +133,7 @@ int main(int argc, char **argv) {
       exit(1);
     }
 
-    CALL_AND_WAIT(bt_interface->enable(), adapter_state_changed);
+    CALL_AND_WAIT(bt_interface->enable(false), adapter_state_changed);
     fprintf(stdout, "BT adapter is up\n");
 
     int rc = bt_interface->create_bond(&bt_remote_bdaddr, 0 /* UNKNOWN; Currently not documented :( */);
@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
   }
 
   if (up) {
-    CALL_AND_WAIT(bt_interface->enable(), adapter_state_changed);
+    CALL_AND_WAIT(bt_interface->enable(false), adapter_state_changed);
     fprintf(stdout, "BT adapter is up\n");
 
     fprintf(stdout, "Waiting for %d seconds\n", timeout_in_sec);
@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
   }
 
   if (get_name) {
-    CALL_AND_WAIT(bt_interface->enable(), adapter_state_changed);
+    CALL_AND_WAIT(bt_interface->enable(false), adapter_state_changed);
     fprintf(stdout, "BT adapter is up\n");
     int error;
     CALL_AND_WAIT(error = bt_interface->get_adapter_property(BT_PROPERTY_BDNAME), adapter_properties);
@@ -168,7 +168,7 @@ int main(int argc, char **argv) {
   }
 
   if (set_name) {
-    CALL_AND_WAIT(bt_interface->enable(), adapter_state_changed);
+    CALL_AND_WAIT(bt_interface->enable(false), adapter_state_changed);
     fprintf(stdout, "BT adapter is up\n");
 
     bt_property_t *property = property_new_name(bd_name);
@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
   }
 
   if (sco_listen) {
-    CALL_AND_WAIT(bt_interface->enable(), adapter_state_changed);
+    CALL_AND_WAIT(bt_interface->enable(false), adapter_state_changed);
     fprintf(stdout, "BT adapter is up\n");
 
     bt_property_t *property = property_new_scan_mode(BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);
@@ -221,7 +221,7 @@ int main(int argc, char **argv) {
       exit(1);
     }
 
-    CALL_AND_WAIT(bt_interface->enable(), adapter_state_changed);
+    CALL_AND_WAIT(bt_interface->enable(false), adapter_state_changed);
     fprintf(stdout, "BT adapter is up\n");
 
     const btsock_interface_t *sock = bt_interface->get_profile_interface(BT_PROFILE_SOCKETS_ID);
