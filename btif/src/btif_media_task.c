@@ -102,6 +102,10 @@ OI_INT16 pcmData[15*SBC_MAX_SAMPLES_PER_FRAME*SBC_MAX_CHANNELS];
 #include "bta_api.h"
 #endif
 
+#ifdef HAVE_ANDROID_OS
+extern int64_t _ZN7android15elapsedRealtimeEv();
+#endif
+
 
 /*****************************************************************************
  **  Constants
@@ -400,8 +404,12 @@ static thread_t *worker_thread;
 static UINT64 time_now_us()
 {
     struct timespec ts_now;
+#ifdef HAVE_ANDROID_OS
+    return (UINT64)_ZN7android15elapsedRealtimeEv();
+#else
     clock_gettime(CLOCK_BOOTTIME, &ts_now);
     return ((UINT64)ts_now.tv_sec * USEC_PER_SEC) + ((UINT64)ts_now.tv_nsec / 1000);
+#endif
 }
 
 static void log_tstamps_us(char *comment)
