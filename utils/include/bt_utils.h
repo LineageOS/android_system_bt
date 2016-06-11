@@ -72,15 +72,30 @@ bool remove_iot_device(const char *filename, char* header,
 
 #define USEC_PER_SEC 1000000L
 
+static inline uint64_t time_now_us();
+
 static inline void time_now_timespec(struct timespec *ts)
 {
+#ifdef HAVE_ANDROID_OS
+    uint64_t now_us;
+
+    now_us = time_now_us();
+    ts->tv_sec = now_us / USEC_PER_SEC;
+    ts->tv_nsec = (now_us % USEC_PER_SEC) * 1000;
+#else
     clock_gettime(CLOCK_BOOTTIME, ts);
+#endif
 }
 
 static inline uint64_t time_now_us()
 {
+#ifdef HAVE_ANDROID_OS
+    extern int64_t _ZN7android19elapsedRealtimeNanoEv();
+    return (uint64_t) _ZN7android19elapsedRealtimeNanoEv() / 1000;
+#else
     struct timespec ts_now;
     time_now_timespec(&ts_now);
     return ((uint64_t)ts_now.tv_sec * USEC_PER_SEC) + ((uint64_t)ts_now.tv_nsec / 1000);
+#endif
 }
 #endif /* BT_UTILS_H */
