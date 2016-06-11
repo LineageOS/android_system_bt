@@ -397,13 +397,6 @@ static thread_t *worker_thread;
  **  Misc helper functions
  *****************************************************************************/
 
-static UINT64 time_now_us()
-{
-    struct timespec ts_now;
-    clock_gettime(CLOCK_BOOTTIME, &ts_now);
-    return ((UINT64)ts_now.tv_sec * USEC_PER_SEC) + ((UINT64)ts_now.tv_nsec / 1000);
-}
-
 static void log_tstamps_us(char *comment)
 {
     #define USEC_PER_MSEC 1000L

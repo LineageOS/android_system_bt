@@ -391,7 +391,7 @@ static int btif_hf_latest_connected_idx()
       struct timespec         now, conn_time_delta;
       int latest_conn_idx = BTIF_HF_INVALID_IDX, i;
 
-      clock_gettime(CLOCK_MONOTONIC, &now);
+      time_now_timespec(&now);
       conn_time_delta.tv_sec = now.tv_sec;
 
       for (i = 0; i < btif_max_hf_clients; i++)
@@ -555,8 +555,7 @@ static void btif_hf_upstreams_evt(UINT16 event, char* p_param)
             break;
 
         case BTA_AG_CONN_EVT:
-            clock_gettime(CLOCK_MONOTONIC,
-                            &btif_hf_cb[idx].connected_timestamp);
+            time_now_timespec(&btif_hf_cb[idx].connected_timestamp);
             BTIF_TRACE_DEBUG("%s: BTA_AG_CONN_EVT, idx = %d ",
                                                 __FUNCTION__, idx);
             btif_hf_cb[idx].peer_feat = p_data->conn.peer_feat;
@@ -1402,7 +1401,7 @@ static bt_status_t phone_state_change(int num_active, int num_held, bthf_call_st
                  (btif_hf_cb[idx].num_active) ||(btif_hf_cb[idx].num_held))
         {
             BTIF_TRACE_DEBUG("%s: Record call termination timestamp", __FUNCTION__);
-            clock_gettime(CLOCK_MONOTONIC, &btif_hf_cb[0].call_end_timestamp);
+            time_now_timespec(&btif_hf_cb[0].call_end_timestamp);
         }
         BTA_AgResult (BTA_AG_HANDLE_ALL, BTA_AG_END_CALL_RES, NULL);
         hf_idx = BTIF_HF_INVALID_IDX;
@@ -1647,7 +1646,7 @@ BOOLEAN btif_hf_call_terminated_recently()
 {
       struct timespec         now;
 
-      clock_gettime(CLOCK_MONOTONIC, &now);
+      time_now_timespec(&now);
       if (now.tv_sec < btif_hf_cb[0].call_end_timestamp.tv_sec +
                                   BTIF_HF_CALL_END_TIMEOUT)
       {

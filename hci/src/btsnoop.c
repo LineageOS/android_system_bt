@@ -229,12 +229,6 @@ static void btsnoop_write(const void *data, size_t length) {
     write(logfile_fd, data, length);
 }
 
-static uint64_t time_now_us() {
-    struct timespec ts_now;
-    clock_gettime(CLOCK_BOOTTIME, &ts_now);
-    return ((uint64_t)ts_now.tv_sec * USEC_PER_SEC) + ((uint64_t)ts_now.tv_nsec / 1000);
-}
-
 static void btsnoop_write_packet(packet_type_t type, const uint8_t *packet, bool is_received) {
   int length_he = 0;
   int length;

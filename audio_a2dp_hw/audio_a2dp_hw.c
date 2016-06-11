@@ -188,7 +188,7 @@ static void ts_error_log(char *tag, int val, int buff_size, struct a2dp_config c
     unsigned long long now_us;
     unsigned long long diff_us;
 
-    clock_gettime(CLOCK_MONOTONIC, &now);
+    time_now_timespec(&now);
 
     now_us = now.tv_sec*USEC_PER_SEC + now.tv_nsec/1000;
 
@@ -211,7 +211,7 @@ static void ts_log(char *tag, int val, struct timespec *pprev_opt)
     UNUSED(tag);
     UNUSED(val);
 
-    clock_gettime(CLOCK_MONOTONIC, &now);
+    time_now_timespec(&now);
 
     now_us = now.tv_sec*USEC_PER_SEC + now.tv_nsec/1000;
 
@@ -991,7 +991,7 @@ static int out_get_presentation_position(const struct audio_stream_out *stream,
     uint64_t latency_frames = (uint64_t)out_get_latency(stream) * out->common.cfg.rate / 1000;
     if (out->frames_presented >= latency_frames) {
         *frames = out->frames_presented - latency_frames;
-        clock_gettime(CLOCK_MONOTONIC, timestamp); // could also be associated with out_write().
+        time_now_timespec(timestamp); // could also be associated with out_write().
         ret = 0;
     }
     pthread_mutex_unlock(&out->common.lock);

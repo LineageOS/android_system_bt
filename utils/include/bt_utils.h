@@ -67,4 +67,20 @@ bool add_iot_device(const char *filename, char* header,
 bool remove_iot_device(const char *filename, char* header,
     unsigned char* device_details, tBLACKLIST_METHOD method_type);
 #define UNUSED(x) (void)(x)
+
+#include <time.h>
+
+#define USEC_PER_SEC 1000000L
+
+static inline void time_now_timespec(struct timespec *ts)
+{
+    clock_gettime(CLOCK_BOOTTIME, ts);
+}
+
+static inline uint64_t time_now_us()
+{
+    struct timespec ts_now;
+    time_now_timespec(&ts_now);
+    return ((uint64_t)ts_now.tv_sec * USEC_PER_SEC) + ((uint64_t)ts_now.tv_nsec / 1000);
+}
 #endif /* BT_UTILS_H */
