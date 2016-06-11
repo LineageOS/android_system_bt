@@ -22,6 +22,30 @@
       "revId": "5069396af8bef3515802f2f5e8760e8038ca3637",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5faad753_f6b3d308",
+        "filename": "btif/src/btif_media_task.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 408,
+      "author": {
+        "id": 6351
+      },
+      "writtenOn": "2016-06-11T09:01:50Z",
+      "side": 1,
+      "message": "fyi, I think that this is returning ms instead of us which means you need elapsedRealtimeNano() / 1000 instead.",
+      "parentUuid": "5faad753_65c5ebf0",
+      "range": {
+        "startLine": 408,
+        "startChar": 11,
+        "endLine": 408,
+        "endChar": 19
+      },
+      "revId": "5069396af8bef3515802f2f5e8760e8038ca3637",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
     }
   ]
 }
