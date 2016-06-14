@@ -106,6 +106,29 @@ static UINT8 * avrc_get_data_ptr(BT_HDR *p_pkt)
 
 /******************************************************************************
 **
+** Function         avrc_get_packet_type
+**
+** Description      Gets a packet type for fragmanted packet.
+**
+** Returns          Type of fragmenatation packet.
+**
+******************************************************************************/
+static UINT8 avrc_get_packet_type(BT_HDR *pp_pkt)
+{
+    BT_HDR      *p_pkt = pp_pkt;
+    UINT8       *p_data;
+    UINT8       pkt_type;
+    p_data  = (UINT8 *)(p_pkt+1) + p_pkt->offset;
+    /* Skip over vendor header (ctype, subunit*, opcode, CO_ID) */
+    p_data += AVRC_VENDOR_HDR_SIZE;
+
+    pkt_type = *(p_data + 1) & AVRC_PKT_TYPE_MASK;
+
+    return pkt_type;
+}
+
+/******************************************************************************
+**
 ** Function         avrc_copy_packet
 **
 ** Description      Copies an AVRC packet to a new buffer. In the new buffer,
@@ -236,6 +259,7 @@ static BT_HDR * avrc_proc_vendor_command(UINT8 handle, UINT8 label,
     UINT8       *p_data;
     UINT8       *p_begin;
     UINT8       pkt_type;
+    UINT8       *p_rsp_data;
     BOOLEAN     abort_frag = FALSE;
     tAVRC_STS   status = AVRC_STS_NO_ERROR;
     tAVRC_FRAG_CB   *p_fcb;
@@ -316,15 +340,15 @@ static BT_HDR * avrc_proc_vendor_command(UINT8 handle, UINT8 label,
 
     if (status != AVRC_STS_NO_ERROR)
     {
-        /* use the current GKI buffer to build/send the reject message */
-        p_data = (UINT8 *)(p_pkt+1) + p_pkt->offset;
-        *p_data++ = AVRC_RSP_REJ;
-        p_data += AVRC_VENDOR_HDR_SIZE; /* pdu */
-        *p_data++ = 0;                  /* pkt_type */
-        UINT16_TO_BE_STREAM(p_data, 1); /* len */
-        *p_data++ = status;             /* error code */
-        p_pkt->len = AVRC_VENDOR_HDR_SIZE + 5;
-        p_rsp = p_pkt;
+        /* check for buffer size before modifing it */
+        p_rsp = avrc_copy_packet(p_pkt, AVRC_OP_REJ_MSG_LEN);
+        p_rsp_data = avrc_get_data_ptr(p_rsp);
+        *p_rsp_data++ = AVRC_RSP_REJ;
+        p_rsp_data += AVRC_VENDOR_HDR_SIZE; /* pdu 1 byte*/
+        *p_rsp_data++ = 0;                  /* pkt_type  1 byte*/
+        UINT16_TO_BE_STREAM(p_rsp_data, 1); /* len 2 byte */
+        *p_rsp_data++ = status;             /* error code 1 byte*/
+        p_rsp->len = AVRC_VENDOR_HDR_SIZE + 5;
     }
 
     return p_rsp;
@@ -579,7 +603,7 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
             msg.hdr.subunit_id      = p_data[1] & AVRC_SUBID_MASK;
             opcode                  = p_data[2];
         }
-
+        AVRC_TRACE_DEBUG("opcode %d",opcode);
         if ( ((avrc_cb.ccb[handle].control & AVRC_CT_TARGET) && (cr == AVCT_CMD)) ||
            ((avrc_cb.ccb[handle].control & AVRC_CT_CONTROL) && (cr == AVCT_RSP)) )
         {
@@ -672,6 +696,18 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
 
 #if (AVRC_METADATA_INCLUDED == TRUE)
                 UINT8 drop_code = 0;
+                if (p_msg->vendor_len > AVRC_META_CMD_BUF_SIZE)
+                {
+                    int packet_type = avrc_get_packet_type(p_pkt);
+                    AVRC_TRACE_DEBUG("packet_type %d", packet_type);
+                    //single packet size is greater then MTU size, reject it
+                    if (packet_type == AVRC_PKT_SINGLE)
+                    {
+                        AVRC_TRACE_ERROR("Incorrect lenght for single packet");
+                        reject = TRUE;
+                        break;
+                    }
+                }
                 drop_code = avrc_proc_far_msg(handle, label, cr, &p_pkt, p_msg);
                 if (drop_code > 0)
                     drop = TRUE;
@@ -786,7 +822,7 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
         opcode = p_data[0];
         AVRC_TRACE_DEBUG("opcode:%x, length:%x",opcode, p_pkt->len);
         /*Do sanity Check here*/
-        if (cr == AVCT_CMD)
+        if ((avrc_cb.ccb[handle].control & AVRC_CT_TARGET) && (cr == AVCT_CMD))
         {
             opcode  =  AVRC_OP_BROWSE;
             msg.browse.browse_len = p_pkt->len;

@@ -2279,10 +2279,6 @@ void bta_av_rc_closed(tBTA_AV_DATA *p_data)
             {
                 /* AVCT CCB is still there. dealloc */
                 bta_av_del_rc(p_rcb);
-
-                /* if the AVRCP is no longer listening, create the listening channel */
-                if (bta_av_cb.rc_acp_handle == BTA_AV_RC_HANDLE_NONE && bta_av_cb.features & BTA_AV_FEAT_RCTG)
-                    bta_av_rc_create(&bta_av_cb, AVCT_ACP, 0, BTA_AV_NUM_LINKS + 1);
             }
         }
         else if ((p_rcb->handle != BTA_AV_RC_HANDLE_NONE) && (p_rcb->status & BTA_AV_RC_CONN_MASK))

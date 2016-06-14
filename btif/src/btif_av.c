@@ -599,6 +599,8 @@ static BOOLEAN btif_av_state_idle_handler(btif_sm_event_t event, void *p_data, i
             else if ((btif_av_cb[index].peer_sep == AVDT_TSEP_SRC) &&
                     (p_bta_data->open.status == BTA_AV_SUCCESS))
             {
+                /* if queued PLAY command,  send it now */
+                btif_rc_check_handle_pending_play(p_bta_data->open.bd_addr, FALSE);
                 /* Bring up AVRCP connection too */
                 BTA_AvOpenRc(btif_av_cb[index].bta_handle);
             }
@@ -1652,13 +1654,13 @@ static void btif_av_handle_event(UINT16 event, char* p_param)
     switch (event)
     {
         case BTIF_AV_INIT_REQ_EVT:
-            BTIF_TRACE_DEBUG("%s: BTIF_AV_INIT_REQ_EVT", __FUNCTION__);
+            BTIF_TRACE_IMP("%s: BTIF_AV_INIT_REQ_EVT", __FUNCTION__);
             if(btif_a2dp_start_media_task())
                 btif_a2dp_on_init();
             break;
         /*events from Upper layer and Media Task*/
         case BTIF_AV_CLEANUP_REQ_EVT: /*Clean up to be called on default index*/
-            BTIF_TRACE_DEBUG("%s: BTIF_AV_CLEANUP_REQ_EVT", __FUNCTION__);
+            BTIF_TRACE_IMP("%s: BTIF_AV_CLEANUP_REQ_EVT", __FUNCTION__);
             uuid = (int)*p_param;
             if (uuid == BTA_A2DP_SOURCE_SERVICE_ID)
             {
@@ -2457,7 +2459,7 @@ static bt_status_t disconnect(bt_bdaddr_t *bd_addr)
 static void cleanup(int service_uuid)
 {
     int i;
-    BTIF_TRACE_EVENT("%s", __FUNCTION__);
+    BTIF_TRACE_IMP("AV %s", __FUNCTION__);
 
     btif_transfer_context(btif_av_handle_event, BTIF_AV_CLEANUP_REQ_EVT,
             (char*)&service_uuid, sizeof(int), NULL);

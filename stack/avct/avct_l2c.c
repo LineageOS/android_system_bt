@@ -288,10 +288,10 @@ void avct_l2c_br_connect_ind_cback(BD_ADDR bd_addr, UINT16 lcid, UINT16 psm, UIN
             p_bcb->ch_lcid =   lcid;     /*Updadate LCID so that on config associated bcb could be found*/
             ertm_info.preferred_mode    = L2CAP_FCR_ERTM_MODE;
             ertm_info.allowed_modes     = L2CAP_FCR_CHAN_OPT_ERTM;
-            ertm_info.user_rx_buf_size   = 4096;//AVCT_BR_USER_RX_BUF_SIZE;
-            ertm_info.user_tx_buf_size   = 4096;//AVCT_BR_USER_TX_BUF_SIZE;
-            ertm_info.fcr_rx_buf_size    = 4096;//AVCT_BR_FCR_RX_BUF_SIZE;
-            ertm_info.fcr_tx_buf_size    = 4096;//AVCT_BR_FCR_TX_BUF_SIZE;
+            ertm_info.user_rx_buf_size   = AVCT_BR_USER_RX_BUF_SIZE;
+            ertm_info.user_tx_buf_size   = AVCT_BR_USER_TX_BUF_SIZE;
+            ertm_info.fcr_rx_buf_size    = AVCT_BR_FCR_RX_BUF_SIZE;
+            ertm_info.fcr_tx_buf_size    = AVCT_BR_FCR_TX_BUF_SIZE;
             p_ertm_info                 = &ertm_info;
             L2CA_ErtmConnectRsp (bd_addr, id, lcid, result, L2CAP_CONN_OK, p_ertm_info);
         }

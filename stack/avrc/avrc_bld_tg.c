@@ -649,9 +649,6 @@ static tAVRC_STS avrc_bld_notify_rsp (tAVRC_REG_NOTIF_RSP *p_rsp, BT_HDR *p_pkt)
             status = AVRC_STS_BAD_PARAM;
         break;
 
-    case AVRC_EVT_VOLUME_CHANGE:
-        len = 2;
-        UINT8_TO_BE_STREAM(p_data, (AVRC_MAX_VOLUME & p_rsp->param.volume));
     case AVRC_EVT_AVAL_PLAYERS_CHANGE:
         len = EVT_AVAIL_PLAYER_CHANGE_RSP_LENGTH;
         break;
@@ -665,7 +662,10 @@ static tAVRC_STS avrc_bld_notify_rsp (tAVRC_REG_NOTIF_RSP *p_rsp, BT_HDR *p_pkt)
     case AVRC_EVT_NOW_PLAYING_CHANGE:
         len = EVT_NOW_PLAYING_CHANGE_RSP_LENGTH;
         break;
-
+    case AVRC_EVT_VOLUME_CHANGE:
+        len = 2;
+        UINT8_TO_BE_STREAM(p_data, (AVRC_MAX_VOLUME & p_rsp->param.volume));
+        break;
     default:
         status = AVRC_STS_BAD_PARAM;
         AVRC_TRACE_ERROR("%s unknown event_id", __func__);

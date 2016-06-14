@@ -366,8 +366,10 @@ static void rc_start_play_status_timer(void);
 static bool absolute_volume_disabled(void);
 static void btif_rc_upstreams_evt(UINT16 event, tAVRC_COMMAND* p_param, UINT8 ctype, UINT8 label,
                                     int index);
+#if (AVRC_ADV_CTRL_INCLUDED == TRUE)
 static void btif_rc_upstreams_rsp_evt(UINT16 event, tAVRC_RESPONSE *pavrc_resp, UINT8 ctype, UINT8 label,
                                     int index);
+#endif
 static bt_status_t set_addrplayer_rsp(btrc_status_t status_code, bt_bdaddr_t *bd_addr);
 static int btif_rc_get_idx_by_addr(BD_ADDR address);
 
@@ -394,7 +396,6 @@ static UINT8 btif_rc_get_idx_by_rc_handle(UINT8 rc_handle);
 ******************************************************************************/
 extern BOOLEAN btif_hf_call_terminated_recently();
 extern BOOLEAN check_cod(const bt_bdaddr_t *remote_bdaddr, uint32_t cod);
-
 extern void btif_get_latest_playing_device(BD_ADDR address); //get the Playing device address
 extern BOOLEAN btif_av_is_playing();
 extern BOOLEAN btif_av_is_device_connected(BD_ADDR address);
@@ -503,6 +504,8 @@ int uinput_create(char *name)
         close(fd);
         return -1;
     }
+    BTIF_TRACE_IMP("AVRCP: input device opened.. Delay 30 ms");
+    sleep_ms(30);
     return fd;
 }
 
@@ -604,9 +607,9 @@ void handle_rc_features(int index)
                          bdaddr_to_string(&avdtp_addr, addr1, sizeof(bdstr_t)),
                          bdaddr_to_string(&rc_addr, addr2, sizeof(bdstr_t)) );
 
-        //if (interop_match(INTEROP_DISABLE_ABSOLUTE_VOLUME, &rc_addr)
-        if (absolute_volume_disabled()
-            || bdcmp(avdtp_addr.address, rc_addr.address))
+        if (interop_match_addr(INTEROP_DISABLE_ABSOLUTE_VOLUME, &rc_addr)
+                || absolute_volume_disabled()
+                || bdcmp(avdtp_addr.address, rc_addr.address))
             btif_rc_cb[index].rc_features &= ~BTA_AV_FEAT_ADV_CTRL;
 
         if (btif_rc_cb[index].rc_features & BTA_AV_FEAT_BROWSE)
@@ -621,22 +624,20 @@ void handle_rc_features(int index)
         if (btif_rc_cb[index].rc_features & BTA_AV_FEAT_METADATA)
         {
             rc_features |= BTRC_FEAT_METADATA;
-            /* Mark rc features processed to avoid repeating
-             * the AVRCP procedure every time on receiving this
-             * update.
-             */
-            btif_rc_cb[index].rc_features_processed = TRUE;
-            getcapabilities_cmd (AVRC_CAP_COMPANY_ID);
         }
-        BTIF_TRACE_DEBUG("%s: rc_features=0x%x", __FUNCTION__, rc_features);
+        if (btif_rc_cb[index].rc_features & BTA_AV_FEAT_AVRC_UI_UPDATE)
+        {
+            rc_features |= BTRC_FEAT_AVRC_UI_UPDATE;
+        }
+        BTIF_TRACE_IMP("%s: rc_features=0x%x", __FUNCTION__, rc_features);
         if (btif_rc_cb[index].rc_connected)
         {
-            BTIF_TRACE_DEBUG("%s: update App on supported features", __FUNCTION__);
+            BTIF_TRACE_IMP("%s: update App on supported features", __FUNCTION__);
             HAL_CBACK(bt_rc_callbacks, remote_features_cb, &rc_addr, rc_features)
         }
         else
         {
-            BTIF_TRACE_DEBUG("%s: skipping feature update to App", __FUNCTION__);
+            BTIF_TRACE_IMP("%s: skipping feature update to App", __FUNCTION__);
         }
 #if (AVRC_ADV_CTRL_INCLUDED == TRUE)
         BTIF_TRACE_DEBUG("Checking for feature flags in btif_rc_handler with label %d",
@@ -3555,6 +3556,7 @@ static bt_status_t get_itemattr_rsp(uint8_t num_attr, btrc_element_attr_val_t *p
     UINT32 i;
     tAVRC_ATTR_ENTRY element_attrs[MAX_ELEM_ATTR_SIZE];
     int valid_attr, rc_index = btif_rc_get_idx_by_addr(bd_addr->address);
+    CHECK_RC_CONNECTED
 
     valid_attr = 0;
     if (rc_index == btif_max_rc_clients)
@@ -3563,7 +3565,7 @@ static bt_status_t get_itemattr_rsp(uint8_t num_attr, btrc_element_attr_val_t *p
         return BT_STATUS_FAIL;
     }
     BTIF_TRACE_DEBUG("- %s on index = %d", __FUNCTION__, rc_index);
-    CHECK_RC_CONNECTED
+
     memset(element_attrs, 0, sizeof(tAVRC_ATTR_ENTRY) * num_attr);
 
     if (num_attr == 0)
