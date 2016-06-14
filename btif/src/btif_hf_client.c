@@ -738,7 +738,7 @@ static void btif_hf_client_upstreams_evt(UINT16 event, char* p_param)
     tBTA_HF_CLIENT *p_data = (tBTA_HF_CLIENT *)p_param;
     bdstr_t bdstr;
 
-    BTIF_TRACE_DEBUG("%s: event=%s (%u)", __FUNCTION__, dump_hf_client_event(event), event);
+    BTIF_TRACE_IMP("%s: event=%s (%u)", __FUNCTION__, dump_hf_client_event(event), event);
 
     switch (event)
     {
