@@ -36,6 +36,7 @@
 #include "osi/include/log.h"
 #include "stack/l2cap/l2c_int.h"
 #include "utl.h"
+#include "btm_int.h"
 
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
 #include "bta_hh_int.h"
@@ -801,6 +802,9 @@ void bta_gattc_close(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 
     if (p_clcb->transport == BTA_TRANSPORT_BR_EDR)
         bta_sys_conn_close( BTA_ID_GATTC ,BTA_ALL_APP_ID, p_clcb->bda);
+
+    if (!btm_sec_is_a_bonded_dev(p_clcb->bda))
+        BTA_GATTC_Refresh(p_clcb->bda);
 
     bta_gattc_clcb_dealloc(p_clcb);
 

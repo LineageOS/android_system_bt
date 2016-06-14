@@ -1629,6 +1629,10 @@ void bta_gattc_cache_reset(BD_ADDR server_bda)
     BTIF_TRACE_DEBUG("%s", __func__);
     char fname[255] = {0};
     bta_gattc_generate_cache_file_name(fname, server_bda);
+
+    if(!remove(fname))
+        BTIF_TRACE_DEBUG("%s GATT cache deleted successfully", __func__);
+
     unlink(fname);
 }
 #endif /* BTA_GATT_INCLUDED */
