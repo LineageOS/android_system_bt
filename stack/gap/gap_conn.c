@@ -1201,6 +1201,7 @@ static void gap_release_ccb (tGAP_CCB *p_ccb)
     UINT16       xx;
     UINT16      psm = p_ccb->psm;
     UINT8       service_id = p_ccb->service_id;
+    tGAP_CCB    *p_ccb_local = NULL;
 
     /* Drop any buffers we may be holding */
     p_ccb->rx_queue_size = 0;
@@ -1218,10 +1219,13 @@ static void gap_release_ccb (tGAP_CCB *p_ccb)
     p_ccb->con_state = GAP_CCB_STATE_IDLE;
 
     /* If no-one else is using the PSM, deregister from L2CAP */
-    for (xx = 0, p_ccb = gap_cb.conn.ccb_pool; xx < GAP_MAX_CONNECTIONS; xx++, p_ccb++)
+    for (xx = 0, p_ccb_local = gap_cb.conn.ccb_pool; xx < GAP_MAX_CONNECTIONS; xx++, p_ccb_local++)
     {
-        if ((p_ccb->con_state != GAP_CCB_STATE_IDLE) && (p_ccb->psm == psm))
+        if ((p_ccb_local->con_state != GAP_CCB_STATE_IDLE) && (p_ccb_local->psm == psm))
+        {
+            GAP_TRACE_WARNING(" %s :  %d  PSM is already in use", __func__,p_ccb_local->psm);
             return;
+        }
     }
 
     /* Free the security record for this PSM */
