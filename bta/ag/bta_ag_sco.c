@@ -284,6 +284,10 @@ static void bta_ag_sco_disc_cback(UINT16 sco_idx)
                      bta_ag_cb.sco.p_curr_scb->codec_msbc_settings = BTA_AG_SCO_MSBC_SETTINGS_T1;
                 }
                 else
+                {
+                    APPL_TRACE_DEBUG("Fallback to CVSD settings");
+                    bta_ag_cb.sco.p_curr_scb->codec_fallback = TRUE;
+                }
 #else
                 {
                     APPL_TRACE_DEBUG("Fallback to CVSD settings");
