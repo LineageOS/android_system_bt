@@ -64,7 +64,7 @@ TEST_F(ReactorTest, reactor_start_wait_stop) {
   reactor_t *reactor = reactor_new();
 
   spawn_reactor_thread(reactor);
-  usleep(50 * 1000);
+  TEMP_FAILURE_RETRY(usleep(50 * 1000));
   EXPECT_TRUE(thread_running);
 
   reactor_stop(reactor);
@@ -108,7 +108,7 @@ TEST_F(ReactorTest, reactor_unregister_from_separate_thread) {
 
   reactor_object_t *object = reactor_register(reactor, fd, NULL, NULL, NULL);
   spawn_reactor_thread(reactor);
-  usleep(50 * 1000);
+  TEMP_FAILURE_RETRY(usleep(50 * 1000));
   reactor_unregister(object);
 
   reactor_stop(reactor);

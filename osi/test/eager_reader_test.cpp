@@ -126,7 +126,7 @@ TEST_F(EagerReaderTest, test_small_data) {
   thread_t *read_thread = thread_new("read_thread");
   eager_reader_register(reader, thread_get_reactor(read_thread), expect_data, (void *)small_data);
 
-  write(pipefd[1], small_data, strlen(small_data));
+  TEMP_FAILURE_RETRY(write(pipefd[1], small_data, strlen(small_data)));
 
   semaphore_wait(done);
   eager_reader_free(reader);
@@ -139,7 +139,7 @@ TEST_F(EagerReaderTest, test_large_data_multibyte) {
   thread_t *read_thread = thread_new("read_thread");
   eager_reader_register(reader, thread_get_reactor(read_thread), expect_data_multibyte, (void *)large_data);
 
-  write(pipefd[1], large_data, strlen(large_data));
+  TEMP_FAILURE_RETRY(write(pipefd[1], large_data, strlen(large_data)));
 
   semaphore_wait(done);
   eager_reader_free(reader);

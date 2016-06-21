@@ -76,7 +76,7 @@ void GKI_delay(UINT32 timeout_ms) {
 
   int err;
   do {
-    err = nanosleep(&delay, &delay);
+    err = TEMP_FAILURE_RETRY(nanosleep(&delay, &delay));
   } while (err == -1 && errno == EINTR);
 }
 

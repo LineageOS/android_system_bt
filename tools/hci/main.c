@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <hardware/bluetooth.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -149,16 +150,16 @@ static bool write_hci_command(hci_packet_t type, const void *packet, size_t leng
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = htonl(0x7F000001);
   addr.sin_port = htons(8873);
-  if (connect(sock, (const struct sockaddr *)&addr, sizeof(addr)) == -1)
+  if (TEMP_FAILURE_RETRY(connect(sock, (const struct sockaddr *)&addr, sizeof(addr))) == -1)
     goto error;
 
-  if (send(sock, &type, 1, 0) != 1)
+  if (TEMP_FAILURE_RETRY(send(sock, &type, 1, 0)) != 1)
     goto error;
 
-  if (send(sock, &length, 2, 0) != 2)
+  if (TEMP_FAILURE_RETRY(send(sock, &length, 2, 0)) != 2)
     goto error;
 
-  if (send(sock, packet, length, 0) != (ssize_t)length)
+  if (TEMP_FAILURE_RETRY(send(sock, packet, length, 0)) != (ssize_t)length)
     goto error;
 
   close(sock);
