@@ -117,7 +117,7 @@ static alarm_t *av_open_on_rc_timer = NULL;
 static btif_av_cb_t btif_av_cb[BTIF_AV_NUM_CB];
 static btif_sm_event_t idle_rc_event;
 static tBTA_AV idle_rc_data;
-static int btif_max_av_clients = 1;
+int btif_max_av_clients = 1;
 static BOOLEAN enable_multicast = FALSE;
 static BOOLEAN is_multicast_supported = FALSE;
 static BOOLEAN multicast_disabled = FALSE;

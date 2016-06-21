@@ -1,4 +1,9 @@
 /******************************************************************************
+ *  Copyright (c) 2016, The Linux Foundation. All rights reserved.
+ *
+ *  Not a contribution.
+ ******************************************************************************/
+/******************************************************************************
  *
  *  Copyright (C) 2014 Google, Inc.
  *
@@ -122,7 +127,7 @@ static void wake_assert() {
 
 static void transmit_done() {
   transmit_is_done = true;
-  if (wake_state == LPM_WAKE_W4_TX_DONE || wake_state == LPM_WAKE_ASSERTED) {
+  if (wake_state == LPM_WAKE_W4_TX_DONE) {
     wake_state = LPM_WAKE_W4_TIMEOUT;
     start_idle_timer();
   }

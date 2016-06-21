@@ -111,6 +111,7 @@ btifCommonIncludes := \
   $(LOCAL_PATH)/../audio_a2dp_hw \
   $(LOCAL_PATH)/../utils/include \
   $(bluetooth_C_INCLUDES) \
+  $(TARGET_OUT_HEADERS)/bt/hci_qcomm_init/aptX \
   external/tinyxml2 \
   external/zlib
 
@@ -128,6 +129,9 @@ LOCAL_MODULE := libbtif
 LOCAL_CFLAGS += $(bluetooth_CFLAGS) -DBUILDCFG
 LOCAL_CONLYFLAGS += $(bluetooth_CONLYFLAGS)
 LOCAL_CPPFLAGS += $(bluetooth_CPPFLAGS)
+
+LOCAL_MULTILIB := 32
+LOCAL_SHARED_LIBRARIES += libaptXScheduler
 
 include $(BUILD_STATIC_LIBRARY)
 

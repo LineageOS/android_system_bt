@@ -1,4 +1,10 @@
 /******************************************************************************
+ *  Copyright (c) 2016, The Linux Foundation. All rights reserved.
+ *
+ *  Not a contribution.
+ ******************************************************************************/
+
+/******************************************************************************
  *
  *  Copyright (C) 2009-2012 Broadcom Corporation
  *
@@ -54,7 +60,9 @@
 /* Transcoding definition for TxTranscoding and RxTranscoding */
 #define BTIF_MEDIA_TRSCD_OFF             0
 #define BTIF_MEDIA_TRSCD_PCM_2_SBC       1  /* Tx */
+#define BTIF_MEDIA_TRSCD_PCM_2_APTX      2
 
+extern int btif_max_av_clients;                      /* maximum number of AV clients supported */
 
 /*******************************************************************************
  **  Data types
@@ -72,6 +80,9 @@ typedef struct
         UINT8 NumOfBlocks; /* 4, 8, 12 or 16*/
         UINT8 AllocationMethod; /* loudness or SNR*/
         UINT16 MtuSize; /* peer mtu size */
+        UINT8 CodecType; /* SBC or Non-A2DP */
+        UINT8 BluetoothVendorID; /* Bluetooth Vendor ID */
+        UINT8 BluetoothCodecID; /* Bluetooth Codec ID */
 } tBTIF_MEDIA_INIT_AUDIO;
 
 #if (BTA_AV_INCLUDED == TRUE)
@@ -82,6 +93,9 @@ typedef struct
         UINT16 MinMtuSize; /* Minimum peer mtu size */
         UINT8 MaxBitPool; /* Maximum peer bitpool */
         UINT8 MinBitPool; /* Minimum peer bitpool */
+        UINT8 CodecType; /* SBC or Non-A2DP */
+        UINT8 BluetoothVendorID; /* Bluetooth Vendor ID */
+        UINT8 BluetoothCodecID; /* Bluetooth Codec ID */
 } tBTIF_MEDIA_UPDATE_AUDIO;
 
 /* tBTIF_MEDIA_INIT_AUDIO_FEEDING msg structure */

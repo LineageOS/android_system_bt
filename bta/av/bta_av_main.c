@@ -1,4 +1,9 @@
 /******************************************************************************
+ *  Copyright (c) 2016, The Linux Foundation. All rights reserved.
+ *
+ *  Not a contribution.
+ ******************************************************************************/
+/******************************************************************************
  *
  *  Copyright (C) 2004-2012 Broadcom Corporation
  *
@@ -40,6 +45,8 @@
 #if( defined BTA_AR_INCLUDED ) && (BTA_AR_INCLUDED == TRUE)
 #include "bta_ar_api.h"
 #endif
+
+#include "aptXCaps.h"
 
 /*****************************************************************************
 ** Constants and types
@@ -667,11 +674,21 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
 
             /* keep the configuration in the stream control block */
             memcpy(&p_scb->cfg, &cs.cfg, sizeof(tAVDT_CFG));
-            if ((*bta_av_a2d_cos.init)(&codec_type, cs.cfg.codec_info,
-                &cs.cfg.num_protect, cs.cfg.protect_info, index) == TRUE)
+            while (index < BTA_AV_MAX_SEPS &&
+                   (*bta_av_a2d_cos.init)(&codec_type, cs.cfg.codec_info,
+                    &cs.cfg.num_protect, cs.cfg.protect_info, index) == TRUE)
             {
                 if(AVDT_CreateStream(&p_scb->seps[index].av_handle, &cs) == AVDT_SUCCESS)
                 {
+                   UINT8* ptr = cs.cfg.codec_info;
+                   tA2D_APTX_CIE* codecInfo = (tA2D_APTX_CIE*) &ptr[3];
+                   UINT8 vendorId = codecInfo->vendorId;
+                   UINT8 codecId = codecInfo->codecId;
+
+                   p_scb->seps[index].vendorId = vendorId;
+                   p_scb->seps[index].codecId = codecId;
+                   APPL_TRACE_DEBUG("%s audio[%x] vendorId: %x codecId: %x", __func__,
+                        index, p_scb->seps[index].vendorId, p_scb->seps[index].codecId);
                     p_scb->seps[index].codec_type = codec_type;
                     p_scb->seps[index].tsep = cs.tsep;
                     if(cs.tsep == AVDT_TSEP_SNK)
@@ -679,7 +696,9 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
                     else
                         p_scb->seps[index].p_app_data_cback = NULL; /* In case of A2DP SOURCE we don't need a callback to handle media packets */
 
-                }
+                   index++;
+                } else
+                    break;
             }
 
             if(!bta_av_cb.reg_audio)
