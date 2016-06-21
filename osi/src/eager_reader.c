@@ -228,7 +228,7 @@ static bool has_byte(const eager_reader_t *reader) {
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
 
-  select(reader->bytes_available_fd + 1, &read_fds, NULL, NULL, &timeout);
+  TEMP_FAILURE_RETRY(select(reader->bytes_available_fd + 1, &read_fds, NULL, NULL, &timeout));
   return FD_ISSET(reader->bytes_available_fd, &read_fds);
 }
 
@@ -244,7 +244,7 @@ static void inbound_data_waiting(void *context) {
   buffer->length = 0;
   buffer->offset = 0;
 
-  int bytes_read = read(reader->inbound_fd, buffer->data, reader->buffer_size);
+  int bytes_read = TEMP_FAILURE_RETRY(read(reader->inbound_fd, buffer->data, reader->buffer_size));
   if (bytes_read > 0) {
     // Save the data for later
     buffer->length = bytes_read;

@@ -840,7 +840,7 @@ static sent_status_t send_data_to_app(int fd, BT_HDR *p_buf) {
   if (p_buf->len == 0)
     return SENT_ALL;
 
-  ssize_t sent = send(fd, p_buf->data + p_buf->offset, p_buf->len, MSG_DONTWAIT);
+  ssize_t sent = TEMP_FAILURE_RETRY(send(fd, p_buf->data + p_buf->offset, p_buf->len, MSG_DONTWAIT));
 
   if (sent == -1) {
     if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
@@ -903,11 +903,9 @@ void btsock_rfc_signaled(UNUSED_ATTR int fd, int flags, uint32_t user_id) {
     if (slot->f.connected) {
       // Make sure there's data pending in case the peer closed the socket.
       int size = 0;
-      if (!(flags & SOCK_THREAD_FD_EXCEPTION) || (ioctl(slot->fd, FIONREAD, &size) == 0 && size))
-        //unlock before BTA_JvRfcommWrite to avoid deadlock on concurrnet multi rfcomm connectoins
-        //concurrnet multi rfcomm connectoins
-        pthread_mutex_unlock(&slot_lock);
+      if (!(flags & SOCK_THREAD_FD_EXCEPTION) || (TEMP_FAILURE_RETRY(ioctl(slot->fd, FIONREAD, &size)) == 0 && size)) {
         BTA_JvRfcommWrite(slot->rfc_handle, slot->id);
+      }
     } else {
       LOG_ERROR("%s socket signaled for read while disconnected, slot: %d, channel: %d", __func__, slot->id, slot->scn);
       need_close = true;
@@ -925,7 +923,7 @@ void btsock_rfc_signaled(UNUSED_ATTR int fd, int flags, uint32_t user_id) {
   if (need_close || (flags & SOCK_THREAD_FD_EXCEPTION)) {
     // Clean up if there's no data pending.
     int size = 0;
-    if (need_close || ioctl(slot->fd, FIONREAD, &size) != 0 || !size)
+    if (need_close || TEMP_FAILURE_RETRY(ioctl(slot->fd, FIONREAD, &size)) != 0 || !size)
       cleanup_rfc_slot(slot);
   }
 
@@ -979,7 +977,7 @@ int bta_co_rfc_data_outgoing_size(void *user_data, int *size) {
   if (!slot)
     goto out;
 
-  if (ioctl(slot->fd, FIONREAD, size) == 0) {
+  if (TEMP_FAILURE_RETRY(ioctl(slot->fd, FIONREAD, size)) == 0) {
     ret = true;
   } else {
     LOG_ERROR("%s unable to determine bytes remaining to be read on fd %d: %s", __func__, slot->fd, strerror(errno));
@@ -1000,7 +998,7 @@ int bta_co_rfc_data_outgoing(void *user_data, uint8_t *buf, uint16_t size) {
   if (!slot)
     goto out;
 
-  int received = recv(slot->fd, buf, size, 0);
+  int received = TEMP_FAILURE_RETRY(recv(slot->fd, buf, size, 0));
   if(received == size) {
     ret = true;
   } else {

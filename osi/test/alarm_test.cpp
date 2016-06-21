@@ -32,7 +32,7 @@ static int cb_counter;
 static const uint64_t EPSILON_MS = 5;
 
 static void msleep(uint64_t ms) {
-  usleep(ms * 1000);
+  TEMP_FAILURE_RETRY(usleep(ms * 1000));
 }
 
 class AlarmTest : public AlarmTestHarness {

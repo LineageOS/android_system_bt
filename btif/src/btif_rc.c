@@ -28,6 +28,7 @@
  *  Description:   Bluetooth AVRC implementation
  *
  *****************************************************************************/
+#include <errno.h>
 #include <hardware/bluetooth.h>
 #include <fcntl.h>
 #include <string.h>
@@ -317,7 +318,7 @@ int send_event (int fd, uint16_t type, uint16_t code, int32_t value)
     event.code  = code;
     event.value = value;
 
-    return write(fd, &event, sizeof(event));
+    return TEMP_FAILURE_RETRY(write(fd, &event, sizeof(event)));
 }
 
 void send_key (int fd, uint16_t key, int pressed)
@@ -356,7 +357,7 @@ int uinput_create(char *name)
 
     for(x=0; x < MAX_UINPUT_PATHS; x++)
     {
-        fd = open(uinput_dev_path[x], O_RDWR);
+        fd = TEMP_FAILURE_RETRY(open(uinput_dev_path[x], O_RDWR));
         if (fd < 0)
             continue;
         break;
@@ -374,20 +375,20 @@ int uinput_create(char *name)
     dev.id.product = 0x0000;
     dev.id.version = 0x0000;
 
-    if (write(fd, &dev, sizeof(dev)) < 0) {
+    if (TEMP_FAILURE_RETRY(write(fd, &dev, sizeof(dev))) < 0) {
         BTIF_TRACE_ERROR("%s Unable to write device information", __FUNCTION__);
         close(fd);
         return -1;
     }
 
-    ioctl(fd, UI_SET_EVBIT, EV_KEY);
-    ioctl(fd, UI_SET_EVBIT, EV_REL);
-    ioctl(fd, UI_SET_EVBIT, EV_SYN);
+    TEMP_FAILURE_RETRY(ioctl(fd, UI_SET_EVBIT, EV_KEY));
+    TEMP_FAILURE_RETRY(ioctl(fd, UI_SET_EVBIT, EV_REL));
+    TEMP_FAILURE_RETRY(ioctl(fd, UI_SET_EVBIT, EV_SYN));
 
     for (x = 0; key_map[x].name != NULL; x++)
-        ioctl(fd, UI_SET_KEYBIT, key_map[x].mapped_id);
+        TEMP_FAILURE_RETRY(ioctl(fd, UI_SET_KEYBIT, key_map[x].mapped_id));
 
-    if (ioctl(fd, UI_DEV_CREATE, NULL) < 0) {
+    if (TEMP_FAILURE_RETRY(ioctl(fd, UI_DEV_CREATE, NULL)) < 0) {
         BTIF_TRACE_ERROR("%s Unable to create uinput device", __FUNCTION__);
         close(fd);
         return -1;
@@ -425,7 +426,7 @@ void close_uinput (void)
     // Since we support Dual AVRCP conn now.
     BTIF_TRACE_DEBUG("%s", __FUNCTION__);
     if (uinput_fd > 0) {
-        ioctl(uinput_fd, UI_DEV_DESTROY);
+        TEMP_FAILURE_RETRY(ioctl(uinput_fd, UI_DEV_DESTROY));
 
         close(uinput_fd);
         uinput_fd = -1;
