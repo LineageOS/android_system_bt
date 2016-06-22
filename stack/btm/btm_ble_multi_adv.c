@@ -17,6 +17,7 @@
  ******************************************************************************/
 
 #include <string.h>
+#include <pthread.h>
 
 #include "bt_target.h"
 #include "device/include/controller.h"
@@ -47,6 +48,7 @@
 ************************************************************************************/
 tBTM_BLE_MULTI_ADV_CB  btm_multi_adv_cb;
 tBTM_BLE_MULTI_ADV_INST_IDX_Q btm_multi_adv_idx_q;
+pthread_mutex_t btm_multi_adv_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /************************************************************************************
 **  Externs
@@ -54,6 +56,16 @@ tBTM_BLE_MULTI_ADV_INST_IDX_Q btm_multi_adv_idx_q;
 extern fixed_queue_t *btu_general_alarm_queue;
 extern void btm_ble_update_dmt_flag_bits(UINT8 *flag_value,
                                                const UINT16 connect_mode, const UINT16 disc_mode);
+
+static inline BOOLEAN is_btm_multi_adv_cb_valid()
+{
+    if (!btm_multi_adv_cb.p_adv_inst ||
+        !btm_multi_adv_cb.op_q.p_sub_code ||
+        !btm_multi_adv_cb.op_q.p_inst_id)
+        return FALSE;
+    else
+        return TRUE;
+}
 
 /*******************************************************************************
 **
@@ -125,6 +137,9 @@ void btm_ble_multi_adv_vsc_cmpl_cback (tBTM_VSC_CMPL *p_params)
     STREAM_TO_UINT8(status, p);
     STREAM_TO_UINT8(subcode, p);
 
+    pthread_mutex_lock(&btm_multi_adv_lock);
+    if (!is_btm_multi_adv_cb_valid())
+        goto error;
     btm_ble_multi_adv_deq_op_q(&opcode, &inst_id, &cb_evt);
 
     BTM_TRACE_DEBUG("op_code = %02x inst_id = %d cb_evt = %02x", opcode, inst_id, cb_evt);
@@ -132,7 +147,7 @@ void btm_ble_multi_adv_vsc_cmpl_cback (tBTM_VSC_CMPL *p_params)
     if (opcode != subcode || inst_id == 0)
     {
         BTM_TRACE_ERROR("get unexpected VSC cmpl, expect: %d get: %d",subcode,opcode);
-        return;
+        goto error;
     }
 
     p_inst = &btm_multi_adv_cb.p_adv_inst[inst_id - 1];
@@ -181,6 +196,9 @@ void btm_ble_multi_adv_vsc_cmpl_cback (tBTM_VSC_CMPL *p_params)
     {
         (p_inst->p_cback)(cb_evt, inst_id, p_inst->p_ref, status);
     }
+
+error:
+    pthread_mutex_unlock(&btm_multi_adv_lock);
     return;
 }
 
@@ -851,6 +869,7 @@ void btm_ble_multi_adv_init()
 *******************************************************************************/
 void btm_ble_multi_adv_cleanup(void)
 {
+    pthread_mutex_lock(&btm_multi_adv_lock);
     if (btm_multi_adv_cb.p_adv_inst) {
         for (size_t i = 0; i < btm_cb.cmn_ble_vsc_cb.adv_inst_max; i++) {
             alarm_free(btm_multi_adv_cb.p_adv_inst[i].adv_raddr_timer);
@@ -860,6 +879,7 @@ void btm_ble_multi_adv_cleanup(void)
 
     osi_free_and_reset((void **)&btm_multi_adv_cb.op_q.p_sub_code);
     osi_free_and_reset((void **)&btm_multi_adv_cb.op_q.p_inst_id);
+    pthread_mutex_unlock(&btm_multi_adv_lock);
 }
 
 /*******************************************************************************
