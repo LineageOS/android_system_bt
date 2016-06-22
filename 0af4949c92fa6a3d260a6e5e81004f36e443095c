@@ -22,6 +22,30 @@
       "revId": "0af4949c92fa6a3d260a6e5e81004f36e443095c",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5faad753_3c57f35a",
+        "filename": "hci/src/vendor.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2016-06-22T00:31:19Z",
+      "side": 1,
+      "message": "I think we can leave it to minimize the diff.",
+      "parentUuid": "5faad753_dc681f1e",
+      "range": {
+        "startLine": 101,
+        "startChar": 4,
+        "endLine": 101,
+        "endChar": 52
+      },
+      "revId": "0af4949c92fa6a3d260a6e5e81004f36e443095c",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
     }
   ]
 }
