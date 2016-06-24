@@ -1251,6 +1251,13 @@ typedef UINT8 tBTA_DM_PM_ACTION;
 #define BTA_DM_PM_SNIFF5_TIMEOUT 0
 #endif
 
+#ifndef BTA_DM_PM_SNIFF6_MAX
+#define BTA_DM_PM_SNIFF6_MAX     30
+#define BTA_DM_PM_SNIFF6_MIN     10
+#define BTA_DM_PM_SNIFF6_ATTEMPT 4
+#define BTA_DM_PM_SNIFF6_TIMEOUT 1
+#endif
+
 #ifndef BTA_DM_PM_PARK_MAX
 #define BTA_DM_PM_PARK_MAX       800
 #define BTA_DM_PM_PARK_MIN       400
