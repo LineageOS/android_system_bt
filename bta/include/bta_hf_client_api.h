@@ -26,6 +26,7 @@
 #define BTA_HF_CLIENT_API_H
 
 #include "bta_api.h"
+#define SNIFF_DISABLE  0
 
 /*****************************************************************************
 **  Constants and data types
@@ -262,6 +263,8 @@ typedef union
 } tBTA_HF_CLIENT;
 
 typedef UINT32 tBTA_HF_CLIENT_FEAT;
+
+extern BOOLEAN is_sniff_disabled;
 
 /* HF Client callback */
 typedef void (tBTA_HF_CLIENT_CBACK)(tBTA_HF_CLIENT_EVT event, tBTA_HF_CLIENT *p_data);

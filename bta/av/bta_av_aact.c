@@ -48,6 +48,7 @@
 #include "bta_ar_api.h"
 #endif
 
+extern BOOLEAN is_sniff_disabled;
 /*****************************************************************************
 **  Constants
 *****************************************************************************/
@@ -2204,6 +2205,9 @@ void bta_av_str_stopped (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     BT_HDR  *p_buf;
     UINT8 policy = HCI_ENABLE_SNIFF_MODE;
 
+    if (is_sniff_disabled == true)
+        policy = 0;
+
     APPL_TRACE_ERROR("bta_av_str_stopped:audio_open_cnt=%d, p_data %x",
             bta_av_cb.audio_open_cnt, p_data);
 
@@ -2683,7 +2687,12 @@ void bta_av_start_failed (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
         notify_start_failed(p_scb);
     }
 
-    bta_sys_set_policy(BTA_ID_AV, (HCI_ENABLE_SNIFF_MODE|HCI_ENABLE_MASTER_SLAVE_SWITCH), p_scb->peer_addr);
+    // if sniff is disabled in hf client, don't enable it again
+    if (is_sniff_disabled == true)
+        bta_sys_set_policy(BTA_ID_AV, HCI_ENABLE_MASTER_SLAVE_SWITCH, p_scb->peer_addr);
+    else
+        bta_sys_set_policy(BTA_ID_AV, (HCI_ENABLE_SNIFF_MODE|HCI_ENABLE_MASTER_SLAVE_SWITCH), p_scb->peer_addr);
+
     p_scb->sco_suspend = FALSE;
 }
 
@@ -2702,6 +2711,9 @@ void bta_av_str_closed (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     tBTA_AV_EVT event;
     UINT16      mtu;
     UINT8 policy = HCI_ENABLE_SNIFF_MODE;
+
+    if (is_sniff_disabled == true)
+        policy = 0;
 
     if ((bta_av_cb.features & BTA_AV_FEAT_MASTER) == 0 || bta_av_cb.audio_open_cnt == 1)
         policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
@@ -2788,6 +2800,9 @@ void bta_av_suspend_cfm (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     UINT8           err_code = p_data->str_msg.msg.hdr.err_code;
     UINT8 policy = HCI_ENABLE_SNIFF_MODE;
 
+    if (is_sniff_disabled == true)
+        policy = 0;
+
     APPL_TRACE_DEBUG ("bta_av_suspend_cfm:audio_open_cnt = %d, err_code = %d",
         bta_av_cb.audio_open_cnt, err_code);
 
@@ -2831,6 +2846,7 @@ void bta_av_suspend_cfm (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     bta_sys_idle(BTA_ID_AV, p_scb->hdi, p_scb->peer_addr);
     if ((bta_av_cb.features & BTA_AV_FEAT_MASTER) == 0 || bta_av_cb.audio_open_cnt == 1)
         policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
+
     bta_sys_set_policy(BTA_ID_AV, policy, p_scb->peer_addr);
 
     /* in case that we received suspend_ind, we may need to call co_stop here */
