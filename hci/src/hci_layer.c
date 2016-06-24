@@ -118,6 +118,8 @@ static const uint32_t EPILOG_TIMEOUT_MS = 3000;
 static const uint32_t COMMAND_PENDING_TIMEOUT_MS = 8000;
 
 extern int soc_type;
+static uint32_t HARDWARE_ERROR_TIMEOUT_MS = 2000;
+
 // Our interface
 static bool interface_created;
 static hci_t interface;
@@ -139,6 +141,7 @@ static thread_t *thread; // We own this
 static volatile bool firmware_is_configured = false;
 static alarm_t *epilog_timer;
 static alarm_t *startup_timer;
+static alarm_t *hardware_error_timer;
 
 // Outbound-related
 static int command_credits = 1;
@@ -167,6 +170,7 @@ static void sco_config_callback(bool success);
 static void event_epilog(void *context);
 static void epilog_finished_callback(bool success);
 static void epilog_timer_expired(void *context);
+static void hardware_error_timer_expired(void *context);
 
 static void event_command_ready(fixed_queue_t *queue, void *context);
 static void event_packet_ready(fixed_queue_t *queue, void *context);
@@ -501,6 +505,15 @@ static void epilog_timer_expired(UNUSED_ATTR void *context) {
   thread_stop(thread);
 }
 
+static void hardware_error_timer_expired(UNUSED_ATTR void *context) {
+  LOG_INFO("%s", __func__);
+  alarm_free(hardware_error_timer);
+  hardware_error_timer = NULL;
+  ssr_cleanup(0x33);//SSR reason 0x33 = HW ERR EVT
+  usleep(20000);
+  kill(getpid(), SIGKILL);
+}
+
 // Command/packet transmitting functions
 
 static void event_command_ready(fixed_queue_t *queue, UNUSED_ATTR void *context) {
@@ -570,13 +583,32 @@ static void command_timed_out(UNUSED_ATTR void *context) {
 
   LOG_ERROR("%s restarting the bluetooth process.", __func__);
   ssr_cleanup(0x22);//SSR reasno 0x22 = CMD TO
-  usleep(20000);
+
   //Reset SOC status to trigger hciattach service
   if (property_set("bluetooth.status", "off") < 0) {
      LOG_ERROR(LOG_TAG, "hci_cmd_timeout: Error resetting SOC status\n ");
   } else {
      LOG_ERROR(LOG_TAG, "hci_cmd_timeout: SOC Status is reset\n ");
   }
+
+  if (soc_type == BT_SOC_ROME || soc_type == BT_SOC_CHEROKEE) {
+    char value[PROPERTY_VALUE_MAX] = {0};
+    if( property_get("wc_transport.force_special_byte", value, "false") && !strcmp(value,"true")) {
+      hardware_error_timer = alarm_new("hci.hardware_error_timer");
+      if (!hardware_error_timer) {
+        LOG_ERROR("%s unable to create hardware error timer.", __func__);
+        usleep(2000000);
+        kill(getpid(), SIGKILL);
+      }
+      if(soc_type == BT_SOC_ROME)
+        HARDWARE_ERROR_TIMEOUT_MS = 2000000;
+      else if(soc_type == BT_SOC_CHEROKEE)
+        HARDWARE_ERROR_TIMEOUT_MS = 5000000;
+      alarm_set(hardware_error_timer, HARDWARE_ERROR_TIMEOUT_MS, hardware_error_timer_expired, NULL);
+      return;
+    }
+  }
+  usleep(20000);
   kill(getpid(), SIGKILL);
 }
 
