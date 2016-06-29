@@ -71,6 +71,19 @@ typedef struct {
     bool device_found;
 } iot_input_param;
 
+typedef struct {
+    bt_soc_type soc_type;
+    char* soc_name;
+} soc_type_node;
+
+static soc_type_node soc_type_entries[] = {
+                           { BT_SOC_SMD , "smd" },
+                           { BT_SOC_AR3K , "ath3k" },
+                           { BT_SOC_ROME , "rome" },
+                           { BT_SOC_CHEROKEE , "cherokee" },
+                           { BT_SOC_RESERVED , "" }
+                                       };
+
 static list_t *iot_header_queue = NULL;
 #define MAX_LINE 2048
 #define MAX_ADDR_STR_LEN 9
@@ -83,7 +96,10 @@ static BOOLEAN g_DoSchedulingGroup[TASK_HIGH_MAX];
 static pthread_mutex_t         gIdxLock;
 static int g_TaskIdx;
 static int g_TaskIDs[TASK_HIGH_MAX];
+static bt_soc_type soc_type;
 #define INVALID_TASK_ID  (-1)
+
+static void init_soc_type();
 
 static future_t *init(void) {
   int i;
@@ -98,6 +114,7 @@ static future_t *init(void) {
   pthread_mutexattr_init(&lock_attr);
   pthread_mutex_init(&gIdxLock, &lock_attr);
   pthread_mutex_init(&iot_mutex_lock, NULL);
+  init_soc_type();
   return NULL;
 }
 
@@ -1062,4 +1079,51 @@ bool remove_iot_device(const char *filename, char* header,
     rename(IOT_DEV_CONF_BKP_FILE, filename);
     pthread_mutex_unlock(&iot_mutex_lock);
     return true;
+}
+
+/*****************************************************************************
+**
+** Function        init_soc_type
+**
+** Description     Get Bluetooth SoC type from system setting and stores it
+**                 in soc_type.
+**
+** Returns         void.
+**
+*******************************************************************************/
+static void init_soc_type()
+{
+    int ret = 0;
+    char bt_soc_type[PROPERTY_VALUE_MAX];
+
+    ALOGI("init_soc_type");
+
+    soc_type = BT_SOC_DEFAULT;
+    ret = property_get("qcom.bluetooth.soc", bt_soc_type, NULL);
+    if (ret != 0) {
+        int i;
+        ALOGI("qcom.bluetooth.soc set to %s\n", bt_soc_type);
+        for ( i = BT_SOC_AR3K ; i < BT_SOC_RESERVED ; i++ )
+        {
+            char* soc_name = soc_type_entries[i].soc_name;
+            if (!strcmp(bt_soc_type, soc_name)) {
+                soc_type = soc_type_entries[i].soc_type;
+                break;
+            }
+        }
+    }
+}
+
+/*****************************************************************************
+**
+** Function        get_soc_type
+**
+** Description     This function is used to get the Bluetooth SoC type.
+**
+** Returns         bt_soc_type.
+**
+*******************************************************************************/
+bt_soc_type get_soc_type()
+{
+    return soc_type;
 }
