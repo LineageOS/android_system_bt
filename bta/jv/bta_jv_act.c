@@ -418,11 +418,8 @@ static void bta_jv_clear_pm_cb(tBTA_JV_PM_CB *p_pm_cb, BOOLEAN close_conn)
     if (close_conn)
         bta_sys_conn_close(BTA_ID_JV, p_pm_cb->app_id, p_pm_cb->peer_bd_addr);
 
-    if (alarm_is_scheduled(p_pm_cb->idle_timer))
-    {
-        /* Ensure that timer is stopped */
-        alarm_cancel(p_pm_cb->idle_timer);
-    }
+    /* Ensure that timer is stopped */
+    alarm_cancel(p_pm_cb->idle_timer);
     p_pm_cb->state = BTA_JV_PM_FREE_ST;
     p_pm_cb->app_id = BTA_JV_PM_ALL;
     p_pm_cb->handle = BTA_JV_PM_HANDLE_CLEAR;
@@ -2180,6 +2177,8 @@ static void bta_jv_pm_conn_busy(tBTA_JV_PM_CB *p_cb)
                 p_cb->state = BTA_JV_PM_BUSY_ST;
                 APPL_TRACE_DEBUG("bta_jv_pm_conn_busy:power mode: %d", mode);
             }
+        } else {
+          bta_jv_pm_state_change(p_cb, BTA_JV_CONN_BUSY);
         }
     }
 }
@@ -2202,9 +2201,9 @@ static void bta_jv_pm_conn_idle(tBTA_JV_PM_CB *p_cb)
         p_cb->state = BTA_JV_PM_IDLE_ST;
             // start intermediate idle timer for 1s
         if (!alarm_is_scheduled(p_cb->idle_timer)) {
-            alarm_set_on_queue(p_cb->idle_timer, BTA_JV_IDLE_TIMEOUT,
+            alarm_set_on_queue(p_cb->idle_timer, BTA_JV_IDLE_TIMEOUT_MS,
                    bta_jv_idle_timeout_handler, p_cb, btu_general_alarm_queue);
-	}
+        }
     }
 }
 
@@ -2697,9 +2696,9 @@ void bta_jv_idle_timeout_handler(void *tle) {
             if (mode == BTM_PM_MD_SNIFF) {
                 APPL_TRACE_WARNING("%s: %d", __func__, mode)
                 return;
-            } else {
-                APPL_TRACE_DEBUG("%s: %d", __func__, mode);
             }
+        } else {
+            APPL_TRACE_DEBUG("%s: Read power mode failed %d", __func__, mode);
         }
         bta_jv_pm_state_change(p_cb, BTA_JV_CONN_IDLE);
     }
