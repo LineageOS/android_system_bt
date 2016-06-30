@@ -423,6 +423,9 @@ void btm_ble_multi_adv_gen_rpa_cmpl(tBTM_RAND_ENC *p)
         }
     }
 
+    pthread_mutex_lock(&btm_multi_adv_lock);
+    if (!is_btm_multi_adv_cb_valid())
+        goto error;
     p_inst = &(btm_multi_adv_cb.p_adv_inst[index]);
 
     BTM_TRACE_EVENT ("btm_ble_multi_adv_gen_rpa_cmpl inst_id = %d", p_inst->inst_id);
@@ -454,6 +457,8 @@ void btm_ble_multi_adv_gen_rpa_cmpl(tBTM_RAND_ENC *p)
             btm_ble_multi_adv_write_rpa(p_inst, p_inst->rpa);
         }
     }
+error:
+    pthread_mutex_unlock(&btm_multi_adv_lock);
 #endif
 }
 
