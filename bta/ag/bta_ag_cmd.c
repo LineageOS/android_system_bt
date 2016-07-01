@@ -1248,7 +1248,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
              }
             /* send BRSF, send OK */
             bta_ag_send_result(p_scb, BTA_AG_RES_BRSF, NULL,
-                               (INT16) (p_scb->features & BTA_AG_BSRF_FEAT_SPEC));
+                               (INT16) features);
             bta_ag_send_ok(p_scb);
             break;
 

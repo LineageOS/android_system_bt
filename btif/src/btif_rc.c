@@ -477,7 +477,7 @@ int uinput_create(char *name)
     }
     memset(&dev, 0, sizeof(dev));
     if (name)
-        strncpy(dev.name, name, UINPUT_MAX_NAME_SIZE-1);
+        strlcpy(dev.name, name, UINPUT_MAX_NAME_SIZE-1);
 
     dev.id.bustype = BUS_BLUETOOTH;
     dev.id.vendor  = 0x0000;
@@ -2745,7 +2745,9 @@ static void rc_ctrl_procedure_complete ()
             AVRC_MEDIA_ATTR_ID_GENRE,
             AVRC_MEDIA_ATTR_ID_PLAYING_TIME
             };
-    get_element_attribute_cmd (AVRC_MAX_NUM_MEDIA_ATTR_ID, attr_list);
+    /* Fix for below Klowkwork Issue at line 2748
+     * Array 'attr_list' of size 7 may use index value(s) 7 */
+    get_element_attribute_cmd (sizeof(attr_list)/sizeof(UINT32), attr_list);
 }
 
 /***************************************************************************
@@ -4504,7 +4506,9 @@ static void handle_notification_response (tBTA_AV_META_MSG *pmeta_msg, tAVRC_REG
                 }
                 UINT8 *p_data = p_rsp->param.track;
                 BE_STREAM_TO_UINT64(btif_rc_cb[0].rc_playing_uid, p_data);
-                get_element_attribute_cmd (AVRC_MAX_NUM_MEDIA_ATTR_ID, attr_list);
+                /* Fix for below Klowkwork Issue at line 4509
+                 * Array 'attr_list' of size 7 may use index value(s) 7 */
+                get_element_attribute_cmd (sizeof(attr_list)/sizeof(UINT32), attr_list);
                 break;
 
             case AVRC_EVT_APP_SETTING_CHANGE:
@@ -4989,7 +4993,9 @@ static void handle_get_elem_attr_response (tBTA_AV_META_MSG *pmeta_msg,
             AVRC_MEDIA_ATTR_ID_GENRE,
             AVRC_MEDIA_ATTR_ID_PLAYING_TIME
             };
-        get_element_attribute_cmd (AVRC_MAX_NUM_MEDIA_ATTR_ID, attr_list);
+        /* Fix for below Klowkwork Issue at line 4996
+         * Array 'attr_list' of size 7 may use index value(s) 7 */
+        get_element_attribute_cmd (sizeof(attr_list)/sizeof(UINT32), attr_list);
     } else {
         BTIF_TRACE_ERROR("%s: Error in get element attr procedure %d",
                          __func__, p_rsp->status);
