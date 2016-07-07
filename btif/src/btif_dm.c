@@ -923,7 +923,6 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ *p_pin_req)
     if (pairing_cb.is_local_initiated && (p_pin_req->min_16_digit == FALSE))
     {
         if (check_cod(&bd_addr, COD_AV_HEADSETS) ||
-            check_cod(&bd_addr, COD_AV_HANDSFREE) ||
             check_cod(&bd_addr, COD_AV_HEADPHONES) ||
             check_cod(&bd_addr, COD_AV_PORTABLE_AUDIO) ||
             check_cod(&bd_addr, COD_AV_HIFI_AUDIO) ||
