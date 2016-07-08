@@ -3277,9 +3277,9 @@ void btif_av_move_idle(bt_bdaddr_t bd_addr)
     if (state == BTIF_AV_STATE_OPENING &&
             (memcmp (&bd_addr, &(btif_av_cb[index].peer_bda), sizeof(bd_addr)) == 0))
     {
-        BTIF_TRACE_DEBUG("Moving State from Opening to Idle due to ACL disconnect");
+        BTIF_TRACE_DEBUG("Moving BTIF State from Opening to Idle due to ACL disconnect");
         btif_report_connection_state(BTAV_CONNECTION_STATE_DISCONNECTED, &(btif_av_cb[index].peer_bda));
-
+        BTA_AvClose(btif_av_cb[index].bta_handle);
         btif_sm_change_state(btif_av_cb[index].sm_handle, BTIF_AV_STATE_IDLE);
         btif_queue_advance();
     }
