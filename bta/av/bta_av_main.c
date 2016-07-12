@@ -504,8 +504,9 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
     char            *p_service_name;
     tBTA_AV_CODEC   codec_type;
     tBTA_UTL_COD    cod;
-    UINT8           index = 0;
-    UINT8           xx;
+    UINT8           startIndex = 0;
+    UINT8           endIndex = 0;
+    UINT8           index;
     UINT16          profile_initialized;
 
     memset(&cs,0,sizeof(tAVDT_CS));
@@ -657,46 +658,54 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
             if (profile_initialized == UUID_SERVCLASS_AUDIO_SOURCE)
             {
                 cs.tsep = AVDT_TSEP_SRC;
-                index = 0;
+                startIndex = BTIF_SV_AV_AA_SBC_INDEX;
+                endIndex = BTIF_SV_AV_AA_SRC_SEP_INDEX;
             }
             else if (profile_initialized == UUID_SERVCLASS_AUDIO_SINK)
             {
                 cs.tsep = AVDT_TSEP_SNK;
                 cs.p_data_cback = bta_av_stream_data_cback;
-                index = 1;
+                startIndex = BTIF_SV_AV_AA_SBC_SINK_INDEX;
+                endIndex = BTIF_SV_AV_AA_SNK_SEP_INDEX;
             }
 
             /* Initialize Handles to zero */
-            for(xx=0; xx<BTA_AV_MAX_SEPS; xx++)
+            for(index = 0; index < (endIndex - startIndex); index++)
             {
-                p_scb->seps[xx].av_handle = 0;
+                p_scb->seps[index].av_handle = 0;
             }
 
             /* keep the configuration in the stream control block */
             memcpy(&p_scb->cfg, &cs.cfg, sizeof(tAVDT_CFG));
-            while (index < BTA_AV_MAX_SEPS &&
+            index = startIndex;
+            while (index < endIndex &&
                    (*bta_av_a2d_cos.init)(&codec_type, cs.cfg.codec_info,
                     &cs.cfg.num_protect, cs.cfg.protect_info, index) == TRUE)
             {
-                if(AVDT_CreateStream(&p_scb->seps[index].av_handle, &cs) == AVDT_SUCCESS)
+                if(AVDT_CreateStream(&p_scb->seps[index - startIndex].av_handle, &cs) ==
+                                                                            AVDT_SUCCESS)
                 {
-                   UINT8* ptr = cs.cfg.codec_info;
-                   tA2D_APTX_CIE* codecInfo = (tA2D_APTX_CIE*) &ptr[3];
-                   UINT8 vendorId = codecInfo->vendorId;
-                   UINT8 codecId = codecInfo->codecId;
+                   if ((profile_initialized == UUID_SERVCLASS_AUDIO_SOURCE) &&
+                                        (index == BTIF_SV_AV_AA_APTX_INDEX))
+                   {
+                       UINT8* ptr = cs.cfg.codec_info;
+                       tA2D_APTX_CIE* codecInfo = (tA2D_APTX_CIE*) &ptr[3];
+                       UINT8 vendorId = codecInfo->vendorId;
+                       UINT8 codecId = codecInfo->codecId;
 
-                   p_scb->seps[index].vendorId = vendorId;
-                   p_scb->seps[index].codecId = codecId;
-                   APPL_TRACE_DEBUG("%s audio[%x] vendorId: %x codecId: %x", __func__,
-                        index, p_scb->seps[index].vendorId, p_scb->seps[index].codecId);
-                    p_scb->seps[index].codec_type = codec_type;
-                    p_scb->seps[index].tsep = cs.tsep;
+                       p_scb->seps[index - startIndex].vendorId = vendorId;
+                       p_scb->seps[index - startIndex].codecId = codecId;
+                       APPL_TRACE_DEBUG("%s audio[%x] vendorId: %x codecId: %x", __func__,
+                            index, p_scb->seps[index - startIndex].vendorId,
+                            p_scb->seps[index - startIndex].codecId);
+                    }
+                    p_scb->seps[index - startIndex].codec_type = codec_type;
+                    p_scb->seps[index - startIndex].tsep = cs.tsep;
                     if(cs.tsep == AVDT_TSEP_SNK)
-                        p_scb->seps[index].p_app_data_cback = p_data->api_reg.p_app_data_cback;
+                        p_scb->seps[index - startIndex].p_app_data_cback = p_data->api_reg.p_app_data_cback;
                     else
-                        p_scb->seps[index].p_app_data_cback = NULL; /* In case of A2DP SOURCE we don't need a callback to handle media packets */
-
-                   index++;
+                        p_scb->seps[index - startIndex].p_app_data_cback = NULL; /* In case of A2DP SOURCE we don't need a callback to handle media packets */
+                    index++;
                 } else
                     break;
             }

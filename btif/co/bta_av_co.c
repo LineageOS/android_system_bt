@@ -152,8 +152,10 @@ typedef struct
 typedef struct
 {
     BD_ADDR         addr;               /* address of audio/video peer */
-    tBTA_AV_CO_SINK snks[BTIF_SV_AV_AA_SEP_INDEX]; /* array of supported sinks */
-    tBTA_AV_CO_SINK srcs[BTIF_SV_AV_AA_SEP_INDEX]; /* array of supported srcs */
+    /* array of supported sinks */
+    tBTA_AV_CO_SINK snks[BTIF_SV_AV_AA_SRC_SEP_INDEX - BTIF_SV_AV_AA_SBC_INDEX];
+    /* array of supported srcs */
+    tBTA_AV_CO_SINK srcs[BTIF_SV_AV_AA_SNK_SEP_INDEX - BTIF_SV_AV_AA_SBC_SINK_INDEX];
     UINT8           num_snks;           /* total number of sinks at peer */
     UINT8           num_srcs;           /* total number of srcs at peer */
     UINT8           num_seps;           /* total number of seids at peer */
