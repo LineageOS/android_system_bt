@@ -116,7 +116,8 @@ btifCommonIncludes := \
   $(bluetooth_C_INCLUDES) \
   $(TARGET_OUT_HEADERS)/bt/hci_qcomm_init/aptX \
   external/tinyxml2 \
-  external/zlib
+  external/zlib \
+  vendor/qcom/opensource/bluetooth/hal/include
 
 # libbtif static library for target
 # ========================================================

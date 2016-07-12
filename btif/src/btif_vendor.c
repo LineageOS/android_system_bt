@@ -26,8 +26,7 @@
  *
  ***********************************************************************************/
 
-#include <hardware/bluetooth.h>
-#include <hardware/bt_vendor.h>
+#include <hardware/vendor.h>
 #include <stdlib.h>
 #include <string.h>
 

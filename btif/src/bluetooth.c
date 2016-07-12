@@ -43,7 +43,7 @@
 #include <hardware/bt_rc.h>
 #include <hardware/bt_sdp.h>
 #include <hardware/bt_sock.h>
-#include <hardware/bt_vendor.h>
+#include <hardware/vendor.h>
 
 #include "bt_utils.h"
 #include "btif_api.h"
