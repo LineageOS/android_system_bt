@@ -69,6 +69,7 @@ static const UINT8 btm_role_switch_black_list_prefix2[][3] = {{0xfc, 0xc2, 0xde}
                                                              ,{0x00, 0x26, 0xb4} /* NAC FORD,2013 Lincoln */
                                                              ,{0x00, 0x04, 0x3e} /* OBU II Bluetooth dongle */
                                                              ,{0x00, 0x23, 0x01}  /* Roman R9020 */
+                                                             ,{0x00, 0x26, 0xb4} /* NAC FORD,2013 Lincoln */
                                                             };
 
 /*******************************************************************************
