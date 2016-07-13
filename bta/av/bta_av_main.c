@@ -46,7 +46,7 @@
 #include "bta_ar_api.h"
 #endif
 
-#include "aptXCaps.h"
+#include "a2d_aptx.h"
 
 /*****************************************************************************
 ** Constants and types

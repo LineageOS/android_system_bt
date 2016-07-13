@@ -53,8 +53,7 @@ LOCAL_C_INCLUDES+= . \
 	$(LOCAL_PATH)/../utils/include \
 	$(bluetooth_C_INCLUDES) \
 	external/tinyxml2 \
-	external/zlib \
-	$(call include-path-for, audio-utils)
+	external/zlib
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
@@ -66,17 +65,6 @@ LOCAL_SHARED_LIBRARIES := \
     libmedia \
     libutils \
     libchrome
-
-LOCAL_MULTILIB := 32
-LOCAL_SHARED_LIBRARIES += libaudioutils
-LOCAL_SHARED_LIBRARIES += libaptXScheduler
-
-ifeq ($(SCMS_T), true)
-   $(info "SCMS-T content protection enabled")
-else
-  $(info "SCMS-T content protection not enabled")
-endif
-
 
 LOCAL_STATIC_LIBRARIES := \
     libtinyxml2 \

@@ -38,6 +38,7 @@ LOCAL_C_INCLUDES:= \
 LOCAL_SRC_FILES:= \
     ./a2dp/a2d_api.c \
     ./a2dp/a2d_sbc.c \
+    ./a2dp/a2d_aptx.c \
     ./avrc/avrc_api.c \
     ./avrc/avrc_sdp.c \
     ./avrc/avrc_opt.c \
@@ -153,8 +154,6 @@ LOCAL_MODULE := libbt-stack
 LOCAL_STATIC_LIBRARIES := libbt-hci
 LOCAL_SHARED_LIBRARIES := libcutils
 
-LOCAL_MULTILIB := 32
-LOCAL_SHARED_LIBRARIES += libaptXScheduler
 
 LOCAL_CFLAGS += $(bluetooth_CFLAGS)
 LOCAL_CONLYFLAGS += $(bluetooth_CONLYFLAGS)

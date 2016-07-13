@@ -42,6 +42,7 @@
 #include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <dlfcn.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -50,9 +51,11 @@
 
 #include <hardware/bluetooth.h>
 
+#include "bt_utils.h"
 #include "a2d_api.h"
 #include "a2d_int.h"
 #include "a2d_sbc.h"
+#include "a2d_aptx.h"
 #include "audio_a2dp_hw.h"
 #include "bt_target.h"
 #include "bta_api.h"
@@ -79,8 +82,6 @@
 
 #if (BTA_AV_INCLUDED == TRUE)
 #include "sbc_encoder.h"
-#include "aptXCaps.h"
-#include "aptXScheduler.h"
 #endif
 
 #if (BTA_AV_SINK_INCLUDED == TRUE)
@@ -338,7 +339,7 @@ typedef struct
     tBTIF_AV_MEDIA_FEEDINGS_STATE media_feeding_state;
     SBC_ENC_PARAMS encoder;
     UINT16 offset;
-    APTX_ENC_PARAMS aptxEncoderParams;
+    A2D_APTX_ENC_PARAMS aptxEncoderParams;
     UINT16 as16PcmBuffer[1024];
     UINT8 busy_level;
     void* av_sm_hdl;
@@ -405,7 +406,7 @@ static void btif_media_task_handle_inc_media(tBT_SBC_HDR*p_msg);
 
 BOOLEAN bta_av_co_audio_get_codec_config(UINT8 *p_config, UINT16 *p_minmtu, UINT8 type);
 UINT8 bta_av_get_current_codec();
-static thread_t *aptx_thread;
+static thread_t *aptx_thread = NULL;
 
 #if (BTA_AV_INCLUDED == TRUE)
 static void btif_media_send_aa_frame(uint64_t timestamp_us);
@@ -437,6 +438,24 @@ static thread_t *worker_thread;
 
 BOOLEAN bta_av_co_audio_get_codec_config(UINT8 *p_config, UINT16 *p_minmtu, UINT8 type);
 UINT8 bta_av_get_current_codec();
+
+const char *A2D_APTX_SCHED_LIB_NAME = "libaptXScheduler.so";
+BOOLEAN btif_check_and_init_aptX();
+int (*A2D_aptx_sched_init)(void);
+A2D_AptXThreadFn (*A2D_aptx_sched_start)(void *encoder,
+                   A2D_AptXCodecType aptX_codec_type, BOOLEAN use_SCMS_T,
+                   UINT16 sample_rate, UINT8 format_bits, UINT8 channel,
+                   A2D_AptXReadFn read_fn, A2D_AptXBufferSendFn send_fn,
+                   A2D_AptXSetPriorityFn set_priority_fn, BOOLEAN test,
+                   BOOLEAN trace);
+BOOLEAN (*A2D_aptx_sched_stop)(void);
+void (*A2D_aptx_sched_deinit)(void);
+UINT8 (*bta_av_aptx_cfg_in_cap)(UINT8 *p_cfg, tA2D_APTX_CIE *p_cap);
+UINT8 (*A2D_ParsAptxInfo)(tA2D_APTX_CIE *p_ie, UINT8 *p_info,
+                              BOOLEAN for_caps);
+void *A2dAptXSchedLibHandle = NULL;
+BOOLEAN isA2dAptXEnabled = false;
+
 
 /*****************************************************************************
  **  Misc helper functions
@@ -821,31 +840,31 @@ static BOOLEAN btif_media_task_is_aptx_configured()
     BOOLEAN result = FALSE;
     UINT8 codectype = bta_av_get_current_codec();
 
-    if (codectype == NON_A2DP_MEDIA_CT)
+    if (codectype == A2D_NON_A2DP_MEDIA_CT)
     {
         UINT8* ptr = bta_av_get_current_codecInfo();
         if (ptr)
         {
             tA2D_APTX_CIE* codecInfo = (tA2D_APTX_CIE*) &ptr[3];
-            if (codecInfo && codecInfo->vendorId == QTI_APTX_VENDOR_ID && codecInfo->codecId == QTI_APTX_CODEC_ID_BLUETOOTH)
+            if (codecInfo && codecInfo->vendorId == A2D_APTX_VENDOR_ID && codecInfo->codecId == A2D_APTX_CODEC_ID_BLUETOOTH)
                 result = TRUE;
         }
     }
     return result;
 }
 
-AptX_codec_type btif_media_task_get_aptX_codec_type()
+A2D_AptXCodecType btif_media_task_get_aptX_codec_type()
 {
-    AptX_codec_type codec = APTX_CODEC_NONE;
+    A2D_AptXCodecType codec = APTX_CODEC_NONE;
     UINT8 a2dp_codectype = bta_av_get_current_codec();
 
-    if (a2dp_codectype == NON_A2DP_MEDIA_CT)
+    if (a2dp_codectype == A2D_NON_A2DP_MEDIA_CT)
     {
         UINT8* ptr = bta_av_get_current_codecInfo();
         if (ptr)
         {
             tA2D_APTX_CIE* codecInfo = (tA2D_APTX_CIE*) &ptr[3];
-            if (codecInfo && codecInfo->vendorId == QTI_APTX_VENDOR_ID && codecInfo->codecId == QTI_APTX_CODEC_ID_BLUETOOTH)
+            if (codecInfo && codecInfo->vendorId == A2D_APTX_VENDOR_ID && codecInfo->codecId == A2D_APTX_CODEC_ID_BLUETOOTH)
                 codec = APTX_CODEC;
         }
     }
@@ -898,7 +917,7 @@ static void btif_a2dp_encoder_init(void)
 
     UINT8 codectype;
     codectype = bta_av_get_current_codec();
-    if (NON_A2DP_MEDIA_CT == codectype)
+    if (A2D_NON_A2DP_MEDIA_CT == codectype)
     {
         UINT8* ptr = bta_av_get_current_codecInfo();
         if (ptr)
@@ -908,16 +927,16 @@ static void btif_a2dp_encoder_init(void)
             APPL_TRACE_DEBUG("%s codecId = %d", __func__, codecInfo->codecId);
             APPL_TRACE_DEBUG("%s vendorId = %x", __func__, codecInfo->vendorId);
 
-            if (codecInfo && codecInfo->vendorId == QTI_APTX_VENDOR_ID
-                    && codecInfo->codecId == QTI_APTX_CODEC_ID_BLUETOOTH)
+            if (codecInfo && codecInfo->vendorId == A2D_APTX_VENDOR_ID
+                    && codecInfo->codecId == A2D_APTX_CODEC_ID_BLUETOOTH)
             {
                 btif_media_cb.offset = BTIF_MEDIA_AA_APTX_OFFSET;
                 tA2D_APTX_CIE aptx_config;
                 ALOGI("%s Selected Codec aptX", __func__);
                 aptx_config.vendorId = codecInfo->vendorId;
                 aptx_config.codecId = codecInfo->codecId;
-                bta_av_co_audio_get_codec_config((UINT8*)&aptx_config, &minmtu, NON_A2DP_MEDIA_CT);
-                msg.CodecType = NON_A2DP_MEDIA_CT;
+                bta_av_co_audio_get_codec_config((UINT8*)&aptx_config, &minmtu, A2D_NON_A2DP_MEDIA_CT);
+                msg.CodecType = A2D_NON_A2DP_MEDIA_CT;
                 msg.SamplingFreq = aptx_config.sampleRate;
                 msg.ChannelMode = aptx_config.channelMode;
                 msg.BluetoothVendorID = aptx_config.vendorId;
@@ -926,7 +945,7 @@ static void btif_a2dp_encoder_init(void)
                 return;
             }
         }
-    }/* if ( NON_A2DP_MEDIA_CT == codectype) */
+    }/* if ( A2D_NON_A2DP_MEDIA_CT == codectype) */
 
     ALOGI("%s Selected Codec SBC", __func__);
 
@@ -959,20 +978,20 @@ static void btif_a2dp_encoder_update(void)
 
     UINT8 codectype = 0;
     codectype = bta_av_get_current_codec();
-    if (codectype == NON_A2DP_MEDIA_CT)
+    if (codectype == A2D_NON_A2DP_MEDIA_CT)
     {
         UINT8* ptr = bta_av_get_current_codecInfo();
         if (ptr)
         {
             codecInfo = (tA2D_APTX_CIE*) &ptr[3];
-            if (codecInfo && codecInfo->vendorId == QTI_APTX_VENDOR_ID && codecInfo->codecId == QTI_APTX_CODEC_ID_BLUETOOTH)
+            if (codecInfo && codecInfo->vendorId == A2D_APTX_VENDOR_ID && codecInfo->codecId == A2D_APTX_CODEC_ID_BLUETOOTH)
             {
                 APPL_TRACE_DEBUG("%s aptX", __func__);
                 tA2D_APTX_CIE aptx_config;
                 aptx_config.vendorId = codecInfo->vendorId;
                 aptx_config.codecId = codecInfo->codecId;
-                bta_av_co_audio_get_codec_config((UINT8*)&aptx_config, &minmtu, NON_A2DP_MEDIA_CT );
-                msg.CodecType = NON_A2DP_MEDIA_CT;
+                bta_av_co_audio_get_codec_config((UINT8*)&aptx_config, &minmtu, A2D_NON_A2DP_MEDIA_CT );
+                msg.CodecType = A2D_NON_A2DP_MEDIA_CT;
                 msg.BluetoothVendorID = aptx_config.vendorId;
                 msg.BluetoothCodecID = aptx_config.codecId;
             }
@@ -1038,6 +1057,116 @@ bool btif_a2dp_is_media_task_stopped(void)
     return true;
 }
 
+// returns true if aptX codec initialization succeeds, false otherwise
+BOOLEAN btif_check_and_init_aptX(void)
+{
+    APPL_TRACE_DEBUG("btif_check_and_init_aptX");
+
+    if (A2dAptXSchedLibHandle == NULL)
+    {
+        A2dAptXSchedLibHandle = dlopen(A2D_APTX_SCHED_LIB_NAME, RTLD_NOW);
+
+        if (!A2dAptXSchedLibHandle)
+        {
+            APPL_TRACE_ERROR("btif_check_and_init_aptX: aptX scheduler library missing");
+            goto error_exit;
+        }
+
+        A2D_aptx_sched_init = (int (*)(void))dlsym(A2dAptXSchedLibHandle,
+                                                   "aptx_scheduler_init");
+        if (!A2D_aptx_sched_init)
+        {
+            APPL_TRACE_ERROR("btif_check_and_init_aptX: aptX scheduler init missing");
+            goto error_exit;
+        }
+
+        A2D_aptx_sched_start = (A2D_AptXThreadFn (*)(void*, A2D_AptXCodecType, BOOLEAN,
+                                        UINT16, UINT8, UINT8, A2D_AptXReadFn,
+                                        A2D_AptXBufferSendFn,
+                                        A2D_AptXSetPriorityFn, BOOLEAN,
+                                        BOOLEAN))dlsym(A2dAptXSchedLibHandle,
+                                        "aptx_scheduler_start");
+        if (!A2D_aptx_sched_start)
+        {
+            APPL_TRACE_ERROR("btif_check_and_init_aptX: aptX scheduler start missing");
+            goto error_exit;
+        }
+
+        A2D_aptx_sched_stop = (BOOLEAN (*)(void))dlsym(A2dAptXSchedLibHandle,
+                                                       "aptx_scheduler_stop");
+        if (!A2D_aptx_sched_stop)
+        {
+            APPL_TRACE_ERROR("btif_check_and_init_aptX: aptX scheduler stop missing");
+            goto error_exit;
+        }
+
+        A2D_aptx_sched_deinit = (void (*)(void))dlsym(A2dAptXSchedLibHandle,
+                                                      "aptx_scheduler_deinit");
+        if (!A2D_aptx_sched_deinit)
+        {
+            APPL_TRACE_ERROR("btif_check_and_init_aptX: aptX scheduler deinit missing");
+            goto error_exit;
+        }
+
+        A2D_ParsAptxInfo = (UINT8 (*)(tA2D_APTX_CIE *,
+                                      UINT8 *,
+                                      BOOLEAN))dlsym(A2dAptXSchedLibHandle,
+                                      "A2D_ParsAptxInfo");
+        if (!A2D_ParsAptxInfo)
+        {
+            APPL_TRACE_ERROR("btif_check_and_init_aptX: parse aptx info missing");
+            goto error_exit;
+        }
+
+        bta_av_aptx_cfg_in_cap = (UINT8 (*)(UINT8 *,
+                                            tA2D_APTX_CIE *))dlsym(A2dAptXSchedLibHandle,
+                                                                   "bta_av_aptx_cfg_in_cap");
+        if (!bta_av_aptx_cfg_in_cap)
+        {
+            APPL_TRACE_ERROR("btif_check_and_init_aptX: aptX cfg in cap missing");
+            goto error_exit;
+        }
+
+        if (A2D_aptx_sched_init())
+        {
+            APPL_TRACE_ERROR("btif_check_and_init_aptX: aptX scheduler init failed");
+            goto error_exit;
+        }
+    }
+
+    return true;
+
+ error_exit:;
+    if (A2dAptXSchedLibHandle)
+    {
+       dlclose(A2dAptXSchedLibHandle);
+       A2dAptXSchedLibHandle = NULL;
+    }
+    return false;
+
+}
+
+void btif_aptX_deinit(void)
+{
+    APPL_TRACE_DEBUG("btif_aptX_deinit");
+
+    if (isA2dAptXEnabled && A2dAptXSchedLibHandle)
+    {
+       if (aptx_thread)
+       {
+          A2D_aptx_sched_stop();
+          thread_free(aptx_thread);
+          aptx_thread = NULL;
+       }
+       A2D_aptx_sched_deinit();
+       dlclose(A2dAptXSchedLibHandle);
+       A2dAptXSchedLibHandle = NULL;
+       isA2dAptXEnabled = false;
+    }
+
+    return;
+}
+
 bool btif_a2dp_start_media_task(void)
 {
     if (media_task_running != MEDIA_TASK_STATE_OFF)
@@ -1061,6 +1190,9 @@ bool btif_a2dp_start_media_task(void)
         thread_get_reactor(worker_thread),
         btif_media_thread_handle_cmd,
         NULL);
+
+    // Check if aptX codec is supported
+    isA2dAptXEnabled = btif_check_and_init_aptX();
 
     thread_post(worker_thread, btif_media_thread_init, NULL);
     APPL_TRACE_IMP("## A2DP MEDIA THREAD STARTED ##");
@@ -1092,6 +1224,9 @@ void btif_a2dp_stop_media_task(void)
     fixed_queue_free(btif_media_cmd_msg_queue, NULL);
     thread_post(worker_thread, btif_media_thread_cleanup, NULL);
     thread_free(worker_thread);
+
+    // uninitialize aptX
+    btif_aptX_deinit();
 
     worker_thread = NULL;
     btif_media_cmd_msg_queue = NULL;
@@ -2042,12 +2177,12 @@ static void btif_media_task_enc_init(BT_HDR *p_msg)
 
     btif_media_cb.timestamp = 0;
 
-    if (pInitAudio->CodecType == NON_A2DP_MEDIA_CT)
+    if (pInitAudio->CodecType == A2D_NON_A2DP_MEDIA_CT)
     {
         APPL_TRACE_EVENT("%s BluetoothVendorID %x, BluetoothCodecID %d", __func__,
                      pInitAudio->BluetoothVendorID, pInitAudio->BluetoothCodecID);
-        if ((pInitAudio->BluetoothVendorID == QTI_APTX_VENDOR_ID)
-                && (pInitAudio->BluetoothCodecID == QTI_APTX_CODEC_ID_BLUETOOTH))  /* aptX Classic */
+        if ((pInitAudio->BluetoothVendorID == A2D_APTX_VENDOR_ID)
+                && (pInitAudio->BluetoothCodecID == A2D_APTX_CODEC_ID_BLUETOOTH))  /* aptX Classic */
         {
             btif_media_cb.aptxEncoderParams.s16SamplingFreq= pInitAudio->SamplingFreq;
             btif_media_cb.aptxEncoderParams.s16ChannelMode = pInitAudio->ChannelMode;
@@ -2118,13 +2253,13 @@ static void btif_media_task_enc_update(BT_HDR *p_msg)
                      pUpdateAudio->MinBitPool);
 
     /* Only update the bitrate and MTU size while timer is running to make sure it has been initialized */
-    if (pUpdateAudio->CodecType == NON_A2DP_MEDIA_CT)
+    if (pUpdateAudio->CodecType == A2D_NON_A2DP_MEDIA_CT)
     {
         APPL_TRACE_EVENT("%s BluetoothVendorID %x, BluetoothCodecID %d", __func__,
                      pUpdateAudio->BluetoothVendorID, pUpdateAudio->BluetoothCodecID);
 
-        if ((pUpdateAudio->BluetoothVendorID == QTI_APTX_VENDOR_ID)
-           && (pUpdateAudio->BluetoothCodecID == QTI_APTX_CODEC_ID_BLUETOOTH))  /* aptX Classic */
+        if ((pUpdateAudio->BluetoothVendorID == A2D_APTX_VENDOR_ID)
+           && (pUpdateAudio->BluetoothCodecID == A2D_APTX_CODEC_ID_BLUETOOTH))  /* aptX Classic */
         {
             APPL_TRACE_DEBUG("%s aptX ", __func__);
             btif_media_cb.TxAaMtuSize = ((BTIF_MEDIA_AA_BUF_SIZE - BTIF_MEDIA_AA_APTX_OFFSET - sizeof(BT_HDR)) < pUpdateAudio->MinMtuSize) ?
@@ -2382,11 +2517,11 @@ static void btif_media_task_pcm2aptx_init(tBTIF_MEDIA_INIT_AUDIO_FEEDING * p_fee
         case 32000:
         case 48000:
             /* For these sampling_freq the AV connection must be 48000 */
-            if (btif_media_cb.aptxEncoderParams.s16SamplingFreq != QTI_APTX_SAMPLERATE_48000)
+            if (btif_media_cb.aptxEncoderParams.s16SamplingFreq != A2D_APTX_SAMPLERATE_48000)
             {
                 /* Reconfiguration needed at 48000 */
                 APPL_TRACE_DEBUG("%s Reconfiguration needed at 48000", __func__);
-                btif_media_cb.aptxEncoderParams.s16SamplingFreq = QTI_APTX_SAMPLERATE_48000;
+                btif_media_cb.aptxEncoderParams.s16SamplingFreq = A2D_APTX_SAMPLERATE_48000;
                 reconfig_needed = TRUE;
             }
             break;
@@ -2395,11 +2530,11 @@ static void btif_media_task_pcm2aptx_init(tBTIF_MEDIA_INIT_AUDIO_FEEDING * p_fee
         case 22050:
         case 44100:
             /* For these sampling_freq the AV connection must be 44100 */
-            if (btif_media_cb.aptxEncoderParams.s16SamplingFreq != QTI_APTX_SAMPLERATE_44100)
+            if (btif_media_cb.aptxEncoderParams.s16SamplingFreq != A2D_APTX_SAMPLERATE_44100)
             {
                 /* Reconfiguration needed at 44100 */
                 APPL_TRACE_DEBUG("%s Reconfiguration needed at 44100", __func__);
-                btif_media_cb.aptxEncoderParams.s16SamplingFreq = QTI_APTX_SAMPLERATE_44100;
+                btif_media_cb.aptxEncoderParams.s16SamplingFreq = A2D_APTX_SAMPLERATE_44100;
                 reconfig_needed = TRUE;
             }
             break;
@@ -2409,10 +2544,10 @@ static void btif_media_task_pcm2aptx_init(tBTIF_MEDIA_INIT_AUDIO_FEEDING * p_fee
         }
 
     /* Some AV Headsets do not support Mono => always ask for Stereo */
-    if (btif_media_cb.aptxEncoderParams.s16ChannelMode ==  QTI_APTX_CHANNELS_MONO)
+    if (btif_media_cb.aptxEncoderParams.s16ChannelMode ==  A2D_APTX_CHANNELS_MONO)
     {
         APPL_TRACE_DEBUG("%s Reconfiguration needed in Stereo", __func__);
-        btif_media_cb.aptxEncoderParams.s16ChannelMode = QTI_APTX_CHANNELS_STEREO;
+        btif_media_cb.aptxEncoderParams.s16ChannelMode = A2D_APTX_CHANNELS_STEREO;
         reconfig_needed = TRUE;
     }
 
@@ -2454,7 +2589,7 @@ static void btif_media_task_audio_feeding_init(BT_HDR *p_msg)
             UINT8 codectype;
             codectype = bta_av_get_current_codec();
 
-            if ( NON_A2DP_MEDIA_CT == codectype)
+            if (A2D_NON_A2DP_MEDIA_CT == codectype)
             {
                 UINT8* ptr = bta_av_get_current_codecInfo();
                 if (ptr)
@@ -2467,7 +2602,7 @@ static void btif_media_task_audio_feeding_init(BT_HDR *p_msg)
                       APPL_TRACE_DEBUG("%s vendorId = %x ", __func__, codecInfo->vendorId);
                    }
 
-                   if (codecInfo && codecInfo->vendorId == QTI_APTX_VENDOR_ID && codecInfo->codecId == QTI_APTX_CODEC_ID_BLUETOOTH)     /* aptX Classic */
+                   if (codecInfo && codecInfo->vendorId == A2D_APTX_VENDOR_ID && codecInfo->codecId == A2D_APTX_CODEC_ID_BLUETOOTH)     /* aptX Classic */
                    {
                       APPL_TRACE_DEBUG("%s aptX", __func__);
                       btif_media_cb.TxTranscoding = BTIF_MEDIA_TRSCD_PCM_2_APTX;
@@ -2854,18 +2989,18 @@ static void btif_media_task_aa_start_tx(void)
     /* Reset the media feeding state */
     btif_media_task_feeding_state_reset();
 
-    if (btif_media_task_is_aptx_configured()) {
+    if (isA2dAptXEnabled && btif_media_task_is_aptx_configured()) {
 #if (BTA_AV_CO_CP_SCMS_T == TRUE)
       BOOLEAN use_SCMS_T = true;
 #else
       BOOLEAN use_SCMS_T = false;
 #endif
-      AptX_codec_type aptX_codec_type = btif_media_task_get_aptX_codec_type();
+      A2D_AptXCodecType aptX_codec_type = btif_media_task_get_aptX_codec_type();
 
       BOOLEAN test = false;
       BOOLEAN trace = false;
 
-      thread_fn aptx_thread_fn = aptx_scheduler_start(btif_media_cb.aptxEncoderParams.encoder,
+      A2D_AptXThreadFn aptx_thread_fn = A2D_aptx_sched_start(btif_media_cb.aptxEncoderParams.encoder,
                    aptX_codec_type,
                    use_SCMS_T,
                    btif_media_cb.media_feeding.cfg.pcm.sampling_freq,
@@ -2913,7 +3048,7 @@ static void btif_media_task_aa_stop_tx(void)
 
     const bool send_ack = alarm_is_scheduled(btif_media_cb.media_alarm);
 
-    if (aptx_scheduler_stop())
+    if (isA2dAptXEnabled && A2D_aptx_sched_stop())
     {
       thread_free(aptx_thread);
       aptx_thread = NULL;
