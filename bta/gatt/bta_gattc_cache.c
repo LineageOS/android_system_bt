@@ -1327,6 +1327,7 @@ void bta_gattc_get_gatt_db(UINT16 conn_id, UINT16 start_handle, UINT16 end_handl
     if (!p_clcb->p_srcb || p_clcb->p_srcb->p_srvc_list || /* no active discovery */
         !p_clcb->p_srcb->p_srvc_cache) {
         APPL_TRACE_ERROR("No server cache available");
+        return;
     }
 
     bta_gattc_get_gatt_db_impl(p_clcb->p_srcb, start_handle, end_handle, db, count);
