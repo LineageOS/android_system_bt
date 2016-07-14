@@ -258,7 +258,7 @@ static int prop2cfg(bt_bdaddr_t *remote_bd_addr, bt_property_t *prop)
 
     /* save changes if the device was bonded */
     if (btif_in_fetch_bonded_device(bdstr) == BT_STATUS_SUCCESS) {
-      btif_config_save();
+      btif_config_flush();
     }
 
     return TRUE;
