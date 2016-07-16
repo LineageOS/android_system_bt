@@ -5411,7 +5411,7 @@ static bt_status_t get_player_app_setting_cmd(uint8_t num_attrib, uint8_t* attri
      avrc_cmd.get_cur_app_val.num_attr = num_attrib;
      avrc_cmd.get_cur_app_val.pdu = AVRC_PDU_GET_CUR_PLAYER_APP_VALUE;
 
-     for (count = 0; count < num_attrib; count++)
+     for (count = 0; (count < num_attrib) && (count < AVRC_MAX_APP_ATTR_SIZE); count++)
      {
          avrc_cmd.get_cur_app_val.attrs[count] = attrib_ids[count];
      }
