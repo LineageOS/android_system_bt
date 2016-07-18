@@ -1856,8 +1856,7 @@ void bta_dm_sdp_result (tBTA_DM_MSG *p_data)
             bta_dm_search_cb.wait_disc = FALSE;
 
         /* not able to connect go to next device */
-        GKI_freebuf(bta_dm_search_cb.p_sdp_db);
-        bta_dm_search_cb.p_sdp_db = NULL;
+        bta_dm_free_sdp_db(NULL);
 
         BTM_SecDeleteRmtNameNotifyCallback(&bta_dm_service_search_remname_cback);
 
@@ -2106,12 +2105,7 @@ void bta_dm_search_cancel_cmpl (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_search_cancel_transac_cmpl(tBTA_DM_MSG *p_data)
 {
-    UNUSED(p_data);
-    if(bta_dm_search_cb.p_sdp_db)
-    {
-        GKI_freebuf(bta_dm_search_cb.p_sdp_db);
-        bta_dm_search_cb.p_sdp_db = NULL;
-    }
+    bta_dm_free_sdp_db(p_data);
 
     bta_dm_search_cancel_notify(NULL);
 }
