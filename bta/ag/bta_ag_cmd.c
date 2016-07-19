@@ -1246,6 +1246,18 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
                     features = features & ~(BTA_AG_FEAT_HFIND | BTA_AG_FEAT_S4);
                 }
              }
+             else if ((p_scb->peer_version == HFP_VERSION_1_7) &&
+                      (p_scb->peer_features & (~BTA_AG_PEER_FEAT_HFIND)))
+             {
+                APPL_TRACE_WARNING("%s: Remote is hfp 1.7 but does not support HF indicators" \
+                                     "unset hf indicator bit from BRSF", __func__);
+                /* For PTS keep flags as is */
+                if (property_get("bt.pts.certification", value, "false") &&
+                    strcmp(value, "true") != 0)
+                {
+                    features = features & ~(BTA_AG_FEAT_HFIND);
+                }
+             }
             /* send BRSF, send OK */
             bta_ag_send_result(p_scb, BTA_AG_RES_BRSF, NULL,
                                (INT16) features);
