@@ -1216,6 +1216,9 @@ void btif_a2dp_stop_media_task(void)
     /* make sure no channels are restarted while shutting down */
     media_task_running = MEDIA_TASK_STATE_SHUTTING_DOWN;
 
+    // uninitialize aptX
+    btif_aptX_deinit();
+
     // Stop timer
     alarm_free(btif_media_cb.media_alarm);
     btif_media_cb.media_alarm = NULL;
@@ -1224,9 +1227,6 @@ void btif_a2dp_stop_media_task(void)
     fixed_queue_free(btif_media_cmd_msg_queue, NULL);
     thread_post(worker_thread, btif_media_thread_cleanup, NULL);
     thread_free(worker_thread);
-
-    // uninitialize aptX
-    btif_aptX_deinit();
 
     worker_thread = NULL;
     btif_media_cmd_msg_queue = NULL;
