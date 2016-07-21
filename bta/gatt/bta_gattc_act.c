@@ -692,6 +692,7 @@ void bta_gattc_cancel_open(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 void bta_gattc_conn(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 {
     tBTA_GATTC_IF   gatt_if;
+    BT_HDR  buf;
     APPL_TRACE_DEBUG("bta_gattc_conn server cache state=%d",p_clcb->p_srcb->state);
 
     if (p_data != NULL)
@@ -724,7 +725,17 @@ void bta_gattc_conn(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
                 }
             }
             else /* cache is building */
-                p_clcb->state = BTA_GATTC_DISCOVER_ST;
+            {
+                if(p_clcb->p_srcb->state == BTA_GATTC_SERV_LOAD)
+                {
+                    bta_gattc_reset_discover_st(p_clcb->p_srcb, BTA_GATT_OK);
+                    buf.event = BTA_GATTC_API_CLOSE_EVT;
+                    buf.layer_specific = p_clcb->bta_conn_id;
+                    bta_gattc_close(p_clcb, (tBTA_GATTC_DATA *)&buf);
+                }
+                else
+                    p_clcb->state = BTA_GATTC_DISCOVER_ST;
+            }
         }
 
         else
