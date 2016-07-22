@@ -4466,7 +4466,11 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
 
         case BTM_LE_NC_REQ_EVT:
             bdcpy(sec_event.key_notif.bd_addr, bda);
-            strlcpy((char*)sec_event.key_notif.bd_name, bta_dm_get_remname(), (BD_NAME_LEN));
+            char* bd_name = BTM_SecReadDevName(bda);
+            if (bd_name)
+                strlcpy((char*)sec_event.key_notif.bd_name, bd_name, (BD_NAME_LEN));
+            else
+                strlcpy((char*)sec_event.key_notif.bd_name, bta_dm_get_remname(), (BD_NAME_LEN));
             sec_event.key_notif.passkey = p_data->key_notif;
             bta_dm_cb.p_sec_cback(BTA_DM_BLE_NC_REQ_EVT, &sec_event);
             break;
