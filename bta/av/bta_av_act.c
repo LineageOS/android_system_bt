@@ -1613,6 +1613,8 @@ static void bta_av_accept_signalling_timer_cback(void *data)
 
             if (bta_av_is_scb_opening(p_scb))
             {
+                APPL_TRACE_DEBUG("%s: stream state opening: SDP started = %d",
+                                 __func__, p_scb->sdp_discovery_started);
                 if (p_scb->sdp_discovery_started)
                 {
                     /* We are still doing SDP. Run the timer again. */
@@ -1634,6 +1636,7 @@ static void bta_av_accept_signalling_timer_cback(void *data)
             {
                 /* Stay in incoming state if SNK does not start signalling */
 
+                APPL_TRACE_DEBUG("%s: stream state incoming", __func__);
                 /* API open was called right after SNK opened L2C connection. */
                 if (p_scb->coll_mask & BTA_AV_COLL_API_CALLED)
                 {

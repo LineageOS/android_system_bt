@@ -1044,13 +1044,21 @@ static BOOLEAN btif_av_state_started_handler(btif_sm_event_t event, void *p_data
 
 static void btif_av_handle_event(UINT16 event, char* p_param)
 {
+    BTIF_TRACE_EVENT("%s event:%s", __func__,
+                     dump_av_sm_event_name((btif_av_sm_event_t)event));
     switch(event)
     {
         case BTIF_AV_CLEANUP_REQ_EVT:
-            BTIF_TRACE_EVENT("%s: BTIF_AV_CLEANUP_REQ_EVT", __FUNCTION__);
             btif_a2dp_stop_media_task();
             break;
 
+        case BTA_AV_REGISTER_EVT:
+            if (btif_av_cb.sm_handle == NULL)
+            {
+                btif_av_cb.bta_handle = ((tBTA_AV*)p_param)->registr.hndl;
+                BTIF_TRACE_DEBUG("%s: BTA AV Handle updated", __func__);
+            }
+            /* FALLTHROUGH */
         default:
             btif_sm_dispatch(btif_av_cb.sm_handle, event, (void*)p_param);
             btif_av_event_free_data(event, p_param);
