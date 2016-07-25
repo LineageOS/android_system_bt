@@ -417,7 +417,7 @@ BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr, tBT_TRANSPORT trans
 
     if (ret)
     {
-        gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, TRUE, FALSE);
+        gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, TRUE, TRUE);
     }
 
     return ret;

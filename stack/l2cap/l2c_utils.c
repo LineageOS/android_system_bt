@@ -2870,13 +2870,17 @@ void l2cu_no_dynamic_ccbs (tL2C_LCB *p_lcb)
         }
     }
 
+    if (timeout_ms == (1000) * (0xFFFF))
+        start_timeout = false;
+
     if (start_timeout) {
-        L2CAP_TRACE_DEBUG("%s starting IDLE timeout: %d ms", __func__,
+        L2CAP_TRACE_DEBUG("%s starting IDLE timeout: %llu ms", __func__,
                           timeout_ms);
         alarm_set_on_queue(p_lcb->l2c_lcb_timer, timeout_ms,
                            l2c_lcb_timer_timeout, p_lcb,
                            btu_general_alarm_queue);
     } else {
+        L2CAP_TRACE_DEBUG("%s, alarm cancel", __func__);
         alarm_cancel(p_lcb->l2c_lcb_timer);
     }
 }
