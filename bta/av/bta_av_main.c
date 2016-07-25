@@ -41,6 +41,7 @@
 #include "l2c_api.h"
 #include "l2cdefs.h"
 #include "utl.h"
+#include "btm_int.h"
 
 #if( defined BTA_AR_INCLUDED ) && (BTA_AR_INCLUDED == TRUE)
 #include "bta_ar_api.h"
@@ -1186,7 +1187,8 @@ BOOLEAN bta_av_switch_if_needed(tBTA_AV_SCB *p_scb)
                 if (bta_av_cb.features & BTA_AV_FEAT_MASTER)
                     bta_sys_clear_policy(BTA_ID_AV, HCI_ENABLE_MASTER_SLAVE_SWITCH, p_scbi->peer_addr);
                 ret = BTM_SwitchRole(p_scbi->peer_addr, BTM_ROLE_MASTER, NULL);
-                if (ret == BTM_REPEATED_ATTEMPTS)
+                if ((ret == BTM_REPEATED_ATTEMPTS) ||
+                   ((ret == BTM_NO_RESOURCES) && btm_is_sco_active_by_bdaddr(p_scbi->peer_addr)))
                     return FALSE;
 
                 if (BTM_CMD_STARTED != ret)
@@ -1237,7 +1239,8 @@ BOOLEAN bta_av_link_role_ok(tBTA_AV_SCB *p_scb, UINT8 bits)
              * If we try again it will anyways fail
              * return from here
              * */
-            if (ret == BTM_REPEATED_ATTEMPTS)
+            if ((ret == BTM_REPEATED_ATTEMPTS) ||
+                ((ret == BTM_NO_RESOURCES) && btm_is_sco_active_by_bdaddr(p_scb->peer_addr)))
                 return TRUE;
 
             if (BTM_CMD_STARTED != ret)
