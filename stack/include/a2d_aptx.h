@@ -105,7 +105,7 @@ extern "C"
 #endif
 extern UINT8 A2D_BldAptxInfo(UINT8 media_type, tA2D_APTX_CIE *p_ie,
                              UINT8 *p_result);
-extern UINT8 (*A2D_ParsAptxInfo)(tA2D_APTX_CIE *p_ie, UINT8 *p_info,
+extern UINT8 A2D_ParsAptxInfo(tA2D_APTX_CIE *p_ie, UINT8 *p_info,
                               BOOLEAN for_caps);
 extern int (*A2D_aptx_sched_init)(void);
 extern A2D_AptXThreadFn (*A2D_aptx_sched_start)(void *encoder,
@@ -118,7 +118,7 @@ extern A2D_AptXThreadFn (*A2D_aptx_sched_start)(void *encoder,
                           BOOLEAN test, BOOLEAN trace);
 extern BOOLEAN (*A2D_aptx_sched_stop)(void);
 extern void (*A2D_aptx_sched_deinit)(void);
-extern UINT8 (*bta_av_aptx_cfg_in_cap)(UINT8 *p_cfg, tA2D_APTX_CIE *p_cap);
+extern UINT8 a2d_av_aptx_cfg_in_cap(UINT8 *p_cfg, tA2D_APTX_CIE *p_cap);
 
 #ifdef __cplusplus
 }

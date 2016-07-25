@@ -450,9 +450,6 @@ A2D_AptXThreadFn (*A2D_aptx_sched_start)(void *encoder,
                    BOOLEAN trace);
 BOOLEAN (*A2D_aptx_sched_stop)(void);
 void (*A2D_aptx_sched_deinit)(void);
-UINT8 (*bta_av_aptx_cfg_in_cap)(UINT8 *p_cfg, tA2D_APTX_CIE *p_cap);
-UINT8 (*A2D_ParsAptxInfo)(tA2D_APTX_CIE *p_ie, UINT8 *p_info,
-                              BOOLEAN for_caps);
 void *A2dAptXSchedLibHandle = NULL;
 BOOLEAN isA2dAptXEnabled = false;
 
@@ -1105,25 +1102,6 @@ BOOLEAN btif_check_and_init_aptX(void)
         if (!A2D_aptx_sched_deinit)
         {
             APPL_TRACE_ERROR("btif_check_and_init_aptX: aptX scheduler deinit missing");
-            goto error_exit;
-        }
-
-        A2D_ParsAptxInfo = (UINT8 (*)(tA2D_APTX_CIE *,
-                                      UINT8 *,
-                                      BOOLEAN))dlsym(A2dAptXSchedLibHandle,
-                                      "A2D_ParsAptxInfo");
-        if (!A2D_ParsAptxInfo)
-        {
-            APPL_TRACE_ERROR("btif_check_and_init_aptX: parse aptx info missing");
-            goto error_exit;
-        }
-
-        bta_av_aptx_cfg_in_cap = (UINT8 (*)(UINT8 *,
-                                            tA2D_APTX_CIE *))dlsym(A2dAptXSchedLibHandle,
-                                                                   "bta_av_aptx_cfg_in_cap");
-        if (!bta_av_aptx_cfg_in_cap)
-        {
-            APPL_TRACE_ERROR("btif_check_and_init_aptX: aptX cfg in cap missing");
             goto error_exit;
         }
 

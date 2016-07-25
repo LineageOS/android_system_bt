@@ -1688,7 +1688,7 @@ static BOOLEAN bta_av_co_audio_media_supports_config(UINT8 codec_type, const UIN
         if (codecId ==  A2D_APTX_CODEC_ID_BLUETOOTH && vendorId == A2D_APTX_VENDOR_ID)
         {
             APPL_TRACE_DEBUG("%s tA2D_APTX_CIE aptX", __func__);
-            if (bta_av_aptx_cfg_in_cap((UINT8 *)p_codec_cfg, (tA2D_APTX_CIE *)&bta_av_co_aptx_caps))
+            if (a2d_av_aptx_cfg_in_cap((UINT8 *)p_codec_cfg, (tA2D_APTX_CIE *)&bta_av_co_aptx_caps))
             {
                 APPL_TRACE_DEBUG("%s aptX", __func__);
                 return FALSE;

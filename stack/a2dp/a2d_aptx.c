@@ -49,10 +49,9 @@
 ** Function         A2D_BldAptxInfo
 **
 ******************************************************************************/
-
 UINT8 A2D_BldAptxInfo(UINT8 media_type, tA2D_APTX_CIE *p_ie, UINT8 *p_result)
 {
-    A2D_TRACE_API("A2D_BldAptxInfo - MediaType:%d", media_type);
+    A2D_TRACE_API("%s: - MediaType:%d", __func__, media_type);
 
     UINT8 status = 0;
     status = A2D_SUCCESS;
@@ -66,6 +65,98 @@ UINT8 A2D_BldAptxInfo(UINT8 media_type, tA2D_APTX_CIE *p_ie, UINT8 *p_result)
     *p_result++ = (UINT8)(p_ie->codecId & 0x00FF);
     *p_result++ = (UINT8)(p_ie->codecId & 0xFF00) >> 8;
     *p_result++ = p_ie->sampleRate | p_ie->channelMode;
+
+    return status;
+}
+
+/******************************************************************************
+**
+** Function         A2D_ParsAptxInfo
+**
+******************************************************************************/
+tA2D_STATUS A2D_ParsAptxInfo(tA2D_APTX_CIE *p_ie, UINT8 *p_info, BOOLEAN for_caps)
+{
+    tA2D_STATUS status;
+    UINT8   losc;
+    UINT8   mt;
+
+    A2D_TRACE_API("%s: - MediaType:%d", __func__, for_caps);
+
+    if (p_ie == NULL || p_info == NULL)
+    {
+        A2D_TRACE_ERROR("A2D_ParsAptxInfo - Invalid Params");
+        status = A2D_INVALID_PARAMS;
+    }
+    else
+    {
+        losc    = *p_info++;
+        mt      = *p_info++;
+        A2D_TRACE_DEBUG("%s: losc %d, mt %02x", __func__, losc, mt);
+
+        /* If the function is called for the wrong Media Type or Media Codec Type */
+        if (losc != A2D_APTX_CODEC_LEN || *p_info != A2D_NON_A2DP_MEDIA_CT) {
+            A2D_TRACE_ERROR("%s: wrong media type %02x", __func__, *p_info);
+            status = A2D_WRONG_CODEC;
+        }
+        else
+        {
+            p_info++;
+            p_ie->vendorId = (*p_info & 0x000000FF) |
+                             (*(p_info+1) << 8    & 0x0000FF00) |
+                             (*(p_info+2) << 16  & 0x00FF0000) |
+                             (*(p_info+3) << 24  & 0xFF000000);
+            p_info = p_info+4;
+            p_ie->codecId = (*p_info & 0x00FF) |(*(p_info+1) << 8 & 0xFF00);
+            p_info = p_info+2;
+            p_ie->channelMode= *p_info & 0x0F;
+            p_ie->sampleRate = *p_info & 0xF0;
+
+            status = A2D_SUCCESS;
+
+            if (for_caps == FALSE)
+            {
+                if (A2D_BitsSet(p_ie->sampleRate) != A2D_SET_ONE_BIT)
+                    status = A2D_BAD_SAMP_FREQ;
+                if (A2D_BitsSet(p_ie->channelMode) != A2D_SET_ONE_BIT)
+                    status = A2D_BAD_CH_MODE;
+            }
+        }
+    }
+    return status;
+}
+
+/*******************************************************************************
+**
+** Function         a2d_av_aptx_cfg_in_cap
+**
+** Description      This function checks whether an aptX codec configuration
+**                  is allowable for the given codec capabilities.
+**
+** Returns          0 if ok, nonzero if error.
+**
+*******************************************************************************/
+UINT8 a2d_av_aptx_cfg_in_cap(UINT8 *p_cfg, tA2D_APTX_CIE *p_cap)
+{
+    UINT8           status = 0;
+    tA2D_APTX_CIE   cfg_cie;
+
+    A2D_TRACE_API("%s", __func__);
+
+    /* parse configuration */
+    if ((status = A2D_ParsAptxInfo(&cfg_cie, p_cfg, FALSE)) != 0)
+    {
+        A2D_TRACE_ERROR("%s:, aptx parse failed", __func__);
+        return status;
+    }
+
+    /* verify that each parameter is in range */
+
+    /* sampling frequency */
+    if ((cfg_cie.sampleRate & p_cap->sampleRate) == 0)
+        status = A2D_NS_SAMP_FREQ;
+    /* channel mode */
+    else if ((cfg_cie.channelMode & p_cap->channelMode) == 0)
+        status = A2D_NS_CH_MODE;
 
     return status;
 }
