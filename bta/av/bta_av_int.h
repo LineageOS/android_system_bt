@@ -187,6 +187,8 @@ typedef void (*tBTA_AV_CO_STOP) (tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type);
 typedef void * (*tBTA_AV_CO_DATAPATH) (tBTA_AV_CODEC codec_type,
                                        UINT32 *p_len, UINT32 *p_timestamp);
 typedef void (*tBTA_AV_CO_DELAY) (tBTA_AV_HNDL hndl, UINT16 delay);
+typedef BOOLEAN (*tBTA_AV_CO_OFFLOAD_SUPPORT) (void);
+typedef BOOLEAN (*tBTA_AV_CO_OFFLOAD_CAP) (int codec);
 
 /* the call-out functions for one stream */
 typedef struct
@@ -201,6 +203,8 @@ typedef struct
     tBTA_AV_CO_STOP     stop;
     tBTA_AV_CO_DATAPATH data;
     tBTA_AV_CO_DELAY    delay;
+    tBTA_AV_CO_OFFLOAD_SUPPORT offload;
+    tBTA_AV_CO_OFFLOAD_CAP cap;
 } tBTA_AV_CO_FUNCTS;
 
 /* data type for BTA_AV_API_ENABLE_EVT */
