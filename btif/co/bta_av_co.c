@@ -115,6 +115,10 @@ const tA2D_SBC_CIE bta_av_co_sbc_sink_caps =
 #endif
 #endif
 
+/* A2dp offload capabilities */
+#define SBC  0
+#define APTX 1
+#define AAC  2
 /* Default SBC codec configuration */
 const tA2D_SBC_CIE btif_av_sbc_default_config =
 {
@@ -1519,9 +1523,6 @@ static BOOLEAN bta_av_co_audio_sink_supports_cp(const tBTA_AV_CO_SINK *p_sink)
  ** Returns          TRUE if the connection supports this codec, FALSE otherwise
  **
  *******************************************************************************/
-#define SBC  0
-#define APTX 1
-#define AAC  2
 static BOOLEAN bta_av_co_audio_peer_supports_codec(tBTA_AV_CO_PEER *p_peer, UINT8 *p_snk_index)
 {
     int index;

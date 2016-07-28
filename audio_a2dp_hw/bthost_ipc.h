@@ -40,8 +40,9 @@
 #define A2DP_DATA_PATH "/data/misc/bluedroid/.a2dp_data"
 
 typedef enum {
-    A2DP_CTRL_GET_CODEC_CONFIG = 11,
+    A2DP_CTRL_GET_CODEC_CONFIG = 15,
     A2DP_CTRL_GET_MULTICAST_STATUS,
+    A2DP_CTRL_GET_CONNECTION_STATUS,
 } tA2DP_CTRL_EXT_CMD;
 
 /*

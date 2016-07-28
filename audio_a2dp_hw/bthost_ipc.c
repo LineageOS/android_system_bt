@@ -58,7 +58,7 @@ static int bt_split_a2dp_enabled = 0;
 /*****************************************************************************
 **  Constants & Macros
 ******************************************************************************/
-#define STREAM_START_MAX_RETRY_COUNT 50
+#define STREAM_START_MAX_RETRY_COUNT 80 /* Retry for 8sec to address IOT issue*/
 #define CTRL_CHAN_RETRY_COUNT 3
 #define USEC_PER_SEC 1000000L
 #define SOCK_SEND_TIMEOUT_MS 2000  /* Timeout for sending */
@@ -114,6 +114,7 @@ static const char* dump_a2dp_ctrl_event(char event)
         CASE_RETURN_STR(A2DP_CTRL_CMD_CHECK_STREAM_STARTED)
         CASE_RETURN_STR(A2DP_CTRL_GET_CODEC_CONFIG)
         CASE_RETURN_STR(A2DP_CTRL_GET_MULTICAST_STATUS)
+        CASE_RETURN_STR(A2DP_CTRL_GET_CONNECTION_STATUS)
         default:
             return "UNKNOWN MSG ID";
     }
@@ -818,18 +819,26 @@ int check_a2dp_stream_started(struct a2dp_stream_common *common)
    }
    return 0;
 }
-
+static int check_a2dp_open_ready(struct a2dp_stream_common *common)
+{
+    if (a2dp_command(common, A2DP_CTRL_GET_CONNECTION_STATUS) < 0)
+    {
+        INFO("No active a2dp connection");
+        return -1;
+    }
+    return 0;
+}
 int audio_open_ctrl_path()
 {
     INFO("%s",__func__);
     a2dp_open_ctrl_path(&audio_stream);
     if (audio_stream.ctrl_fd != AUDIO_SKT_DISCONNECTED)
     {
-        INFO("control path opend successfull");
+        INFO("control path opened successfull");
         return 0;
     }
     else
-        INFO("control path opend successfull");
+        INFO("control path open failed");
     return -1;
 }
 
@@ -843,7 +852,19 @@ int audio_start_stream()
         INFO("stream suspended");
         return -1;
     }
-
+    /* Sanity check if the ctrl_fd is valid. If audio_stream_close is not called
+     * from audio hal previously when BT is turned off or device is disconnecte,
+     * and tries to start stream again.
+     */
+    if (check_a2dp_open_ready(&audio_stream) < 0)
+    {
+        if (audio_stream.ctrl_fd != AUDIO_SKT_DISCONNECTED)
+        {
+            ERROR("BTIF is not ready to start stream");
+            return -1;
+        }
+        /* Try to start stream to recover from ctrl skt disconnect*/
+    }
     for (i = 0; i < STREAM_START_MAX_RETRY_COUNT; i++)
     {
         if (start_audio_datapath(&audio_stream) == 0)
@@ -908,7 +929,7 @@ int audio_stop_stream()
     INFO("%s",__func__);
     if (suspend_audio_datapath(&audio_stream, true) == 0)
     {
-        INFO("audio start stream successful");
+        INFO("audio stop stream successful");
         return 0;
     }
     audio_stream.state = AUDIO_A2DP_STATE_STOPPED;

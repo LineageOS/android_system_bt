@@ -646,6 +646,7 @@ static const char* dump_a2dp_ctrl_event(UINT8 event)
         CASE_RETURN_STR(A2DP_CTRL_CMD_OFFLOAD_NOT_SUPPORTED)
         CASE_RETURN_STR(A2DP_CTRL_GET_CODEC_CONFIG)
         CASE_RETURN_STR(A2DP_CTRL_GET_MULTICAST_STATUS)
+        CASE_RETURN_STR(A2DP_CTRL_GET_CONNECTION_STATUS)
         default:
             return "UNKNOWN MSG ID";
     }
@@ -871,6 +872,13 @@ static void btif_recv_ctrl_data(void)
             uint8_t i = 0;
             UIPC_Read(UIPC_CH_ID_AV_CTRL, NULL, &idx, 1);
             memset(param,0,20);
+
+            if (btif_av_stream_started_ready() == FALSE)
+            {
+                BTIF_TRACE_ERROR("A2DP_CTRL_GET_CODEC_CONFIG: stream not started");
+                a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
+                break;
+            }
             /*
             If multicast is supported, codec config will be queried
             successively for num of playing devices
@@ -886,7 +894,10 @@ static void btif_recv_ctrl_data(void)
 
                 bta_hdl = btif_av_get_av_hdl_from_idx(idx);
                 if (bta_hdl < 0)
+                {
                     a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
+                    break;
+                }
                 //TODO Maintain selected codec info for Multicast with different codecs
             }
             else //get playing device hdl
@@ -975,6 +986,15 @@ static void btif_recv_ctrl_data(void)
             BTIF_TRACE_ERROR("Split A2DP not supported");
             bt_split_a2dp_enabled = FALSE; //Change to FALSE later
             a2dp_cmd_acknowledge(A2DP_CTRL_ACK_SUCCESS);
+            break;
+        case A2DP_CTRL_GET_CONNECTION_STATUS:
+            if (btif_av_is_connected())
+            {
+                BTIF_TRACE_DEBUG("got valid connection");
+                a2dp_cmd_acknowledge(A2DP_CTRL_ACK_SUCCESS);
+            }
+            else
+                a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
             break;
         default:
             APPL_TRACE_ERROR("UNSUPPORTED CMD (%d)", cmd);
@@ -1687,6 +1707,15 @@ BOOLEAN btif_a2dp_on_started(tBTA_AV_START *p_av, BOOLEAN pending_start, tBTA_AV
             {
                 /* we were remotely started,  make sure codec
                    is setup before datapath is started */
+                if (bt_split_a2dp_enabled)
+                {
+                    if (btif_media_cb.peer_sep == AVDT_TSEP_SNK)
+                    {
+                        APPL_TRACE_IMP("Initiate VSC exchange on remote start");
+                        btif_media_on_start_vendor_command();
+                    }
+                }
+                else
                     btif_a2dp_setup_codec(hdl);
             }
 
@@ -3416,7 +3445,16 @@ static void btif_media_task_aa_stop_tx(void)
         if (btif_media_cb.tx_started && !btif_media_cb.tx_stop_initiated)
             btif_media_send_vendor_stop();
         else
-            a2dp_cmd_acknowledge(A2DP_CTRL_ACK_SUCCESS);
+        {
+            if (btif_media_cb.a2dp_cmd_pending == A2DP_CTRL_CMD_STOP ||
+                btif_media_cb.a2dp_cmd_pending == A2DP_CTRL_CMD_SUSPEND)
+                a2dp_cmd_acknowledge(A2DP_CTRL_ACK_SUCCESS);
+            else
+            {
+                BTIF_TRACE_ERROR("Invalid cmd pending for ack");
+                a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
+            }
+        }
     }
 }
 

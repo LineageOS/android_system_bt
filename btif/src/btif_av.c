@@ -3605,12 +3605,22 @@ BOOLEAN btif_av_is_codec_offload_supported(int codec)
 BOOLEAN btif_av_is_under_handoff()
 {
     int i;
+    btif_sm_state_t state = BTIF_AV_STATE_IDLE;
+
     BTIF_TRACE_DEBUG("btif_av_is_under_handoff");
 
     for (i = 0; i < btif_max_av_clients; i++)
     {
-        if (btif_av_cb[i].dual_handoff)
+        state = btif_sm_get_state(btif_av_cb[i].sm_handle);
+        if (btif_av_cb[i].dual_handoff &&
+            (state == BTIF_AV_STATE_STARTED || state == BTIF_AV_STATE_OPENED))
+        {
+            /* If a2dp reconfigure is triggered when playing device disconnect is
+             * initiated locally then return false, otherwise wait till the suspend cfm
+             * is received from the remote.
+             */
             return TRUE;
+        }
     }
     return FALSE;
 }
