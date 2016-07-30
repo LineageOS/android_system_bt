@@ -39,6 +39,7 @@
 #include "bt_common.h"
 #include "btif_av_api.h"
 #include "audio_a2dp_hw.h"
+#include "a2d_aac.h"
 
 /*******************************************************************************
  **  Constants
@@ -83,6 +84,11 @@ typedef struct
         UINT8 CodecType; /* SBC or Non-A2DP */
         UINT8 BluetoothVendorID; /* Bluetooth Vendor ID */
         UINT8 BluetoothCodecID; /* Bluetooth Codec ID */
+#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
+        UINT8 ObjectType;
+        UINT32 bit_rate;
+        UINT8 vbr;
+#endif
 } tBTIF_MEDIA_INIT_AUDIO;
 
 #if (BTA_AV_INCLUDED == TRUE)

@@ -109,7 +109,11 @@ typedef UINT8 tBTA_AV_HNDL;
 #endif
 
 #ifndef BTA_AV_MAX_SEPS
+#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
+#define BTA_AV_MAX_SEPS         3
+#else
 #define BTA_AV_MAX_SEPS         2
+#endif
 #endif
 
 #ifndef BTA_AV_MAX_A2DP_MTU

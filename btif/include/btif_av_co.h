@@ -30,7 +30,6 @@
 /*******************************************************************************
 **  Constants & Macros
 ********************************************************************************/
-
 /*******************************************************************************
 **  Functions
 ********************************************************************************/
@@ -154,6 +153,20 @@ BOOLEAN bta_av_co_audio_get_codec_config(UINT8 *p_sbc_config, UINT16 *p_minmtu, 
  **
  *******************************************************************************/
 BOOLEAN bta_av_co_audio_get_sbc_config(tA2D_SBC_CIE *p_sbc_config, UINT16 *p_minmtu);
+#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
+/*******************************************************************************
+ **
+ ** Function         bta_av_co_audio_get_aac_config
+ **
+ ** Description      Retrieves the AAC codec configuration.  If the codec in use
+ **                  is not AAC, return the default SBC codec configuration.
+ **
+ ** Returns          TRUE if codec is AAC, FALSE otherwise
+ **
+ *******************************************************************************/
+BOOLEAN bta_av_co_audio_get_aac_config(tA2D_AAC_CIE *p_aac_config, UINT16 *p_minmtu);
+#endif
+
 
 /*******************************************************************************
  **
