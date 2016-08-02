@@ -634,7 +634,7 @@ static void hal_says_data_ready(serial_data_type_t type) {
 
   uint8_t byte;
   while (hal->read_data(type, &byte, 1) != 0) {
-    if (soc_type == BT_SOC_ROME || soc_type == BT_SOC_CHEROKEE) {
+    if (soc_type == BT_SOC_SMD) {
         reset = hal->dev_in_reset();
         if (reset) {
             incoming = &incoming_packets[PACKET_TYPE_TO_INBOUND_INDEX(type = DATA_TYPE_EVENT)];
@@ -648,85 +648,10 @@ static void hal_says_data_ready(serial_data_type_t type) {
                     ALOGE("SSR: SOC Status is reset\n ");
                 }
             }
-        } else {
-            switch (incoming->state) {
-            case BRAND_NEW:
-                // Initialize and prepare to jump to the preamble reading state
-                incoming->bytes_remaining = preamble_sizes[PACKET_TYPE_TO_INDEX(type)];
-                memset(incoming->preamble, 0, PREAMBLE_BUFFER_SIZE);
-                incoming->index = 0;
-                incoming->state = PREAMBLE;
-                // INTENTIONAL FALLTHROUGH
-            case PREAMBLE:
-                incoming->preamble[incoming->index] = byte;
-                incoming->index++;
-                incoming->bytes_remaining--;
-
-                if (incoming->bytes_remaining == 0) {
-                    // For event and sco preambles, the last byte we read is the length
-                    incoming->bytes_remaining = (type == DATA_TYPE_ACL) ? RETRIEVE_ACL_LENGTH(incoming->preamble) : byte;
-
-                    size_t buffer_size = BT_HDR_SIZE + incoming->index + incoming->bytes_remaining;
-
-                    if (buffer_size > MCA_USER_RX_BUF_SIZE) {
-                        LOG_ERROR(LOG_TAG, "%s buffer_size(%zu) exceeded allowed packet size, allocation not possible", __func__, buffer_size);
-                        incoming = &incoming_packets[PACKET_TYPE_TO_INBOUND_INDEX(type = DATA_TYPE_EVENT)];
-                        if(create_hw_reset_evt_packet(incoming))
-                            break;
-                        else
-                            return;
-                    }
-
-                    incoming->buffer = (BT_HDR *)buffer_allocator->alloc(buffer_size);
-
-                    if (!incoming->buffer) {
-                        LOG_ERROR(LOG_TAG, "%s error getting buffer for incoming packet of type %d and size %zd", __func__, type, buffer_size);
-                        // Can't read any more of this current packet, so jump out
-                        incoming->state = incoming->bytes_remaining == 0 ? BRAND_NEW : IGNORE;
-                        break;
-                    }
-
-                    // Initialize the buffer
-                    incoming->buffer->offset = 0;
-                    incoming->buffer->layer_specific = 0;
-                    incoming->buffer->event = outbound_event_types[PACKET_TYPE_TO_INDEX(type)];
-                    memcpy(incoming->buffer->data, incoming->preamble, incoming->index);
-
-                    incoming->state = incoming->bytes_remaining > 0 ? BODY : FINISHED;
-                }
-
-                break;
-            case BODY:
-                incoming->buffer->data[incoming->index] = byte;
-                incoming->index++;
-                incoming->bytes_remaining--;
-
-                size_t bytes_read = hal->read_data(type, (incoming->buffer->data + incoming->index), incoming->bytes_remaining);
-                incoming->index += bytes_read;
-                incoming->bytes_remaining -= bytes_read;
-
-                incoming->state = incoming->bytes_remaining == 0 ? FINISHED : incoming->state;
-                break;
-            case IGNORE:
-                incoming->bytes_remaining--;
-                if (incoming->bytes_remaining == 0) {
-                    incoming->state = BRAND_NEW;
-                    // Don't forget to let the hal know we finished the packet we were ignoring.
-                    // Otherwise we'll get out of sync with hals that embed extra information
-                    // in the uart stream (like H4). #badnewsbears
-                    hal->packet_finished(type);
-                    return;
-                }
-
-                break;
-            case FINISHED:
-                LOG_ERROR(LOG_TAG, "%s the state machine should not have been left in the finished state.", __func__);
-                break;
-            }
         }
-    } else {
+    }
 
-        switch (incoming->state) {
+    switch (incoming->state) {
         case BRAND_NEW:
             // Initialize and prepare to jump to the preamble reading state
             incoming->bytes_remaining = preamble_sizes[PACKET_TYPE_TO_INDEX(type)];
@@ -799,7 +724,6 @@ static void hal_says_data_ready(serial_data_type_t type) {
         case FINISHED:
             LOG_ERROR(LOG_TAG, "%s the state machine should not have been left in the finished state.", __func__);
             break;
-        }
     }
 
     if (incoming->state == FINISHED) {
