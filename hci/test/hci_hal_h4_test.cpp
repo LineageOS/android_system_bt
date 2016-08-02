@@ -183,26 +183,26 @@ static void expect_socket_data(int fd, char first_byte, char *data) {
     fd_set read_fds;
     FD_ZERO(&read_fds);
     FD_SET(fd, &read_fds);
-    select(fd + 1, &read_fds, NULL, NULL, NULL);
+    TEMP_FAILURE_RETRY(select(fd + 1, &read_fds, NULL, NULL, NULL));
 
     char byte;
-    read(fd, &byte, 1);
+    TEMP_FAILURE_RETRY(read(fd, &byte, 1));
 
     EXPECT_EQ(i == 0 ? first_byte : data[i - 1], byte);
   }
 }
 
 static void write_packet(int fd, char first_byte, char *data) {
-  write(fd, &first_byte, 1);
-  write(fd, data, strlen(data));
+  TEMP_FAILURE_RETRY(write(fd, &first_byte, 1));
+  TEMP_FAILURE_RETRY(write(fd, data, strlen(data)));
 }
 
 static void write_packet_reentry(int fd, char first_byte, char *data) {
-  write(fd, &first_byte, 1);
+  TEMP_FAILURE_RETRY(write(fd, &first_byte, 1));
 
   int length = strlen(data);
   for (int i = 0; i < length; i++) {
-    write(fd, &data[i], 1);
+    TEMP_FAILURE_RETRY(write(fd, &data[i], 1));
     semaphore_wait(reentry_semaphore);
   }
 }
@@ -252,7 +252,7 @@ TEST_F(HciHalH4Test, test_type_byte_only_must_not_signal_data_ready) {
   reset_for(type_byte_only);
 
   char byte = DATA_TYPE_ACL;
-  write(sockfd[1], &byte, 1);
+  TEMP_FAILURE_RETRY(write(sockfd[1], &byte, 1));
 
   fd_set read_fds;
 
@@ -265,6 +265,6 @@ TEST_F(HciHalH4Test, test_type_byte_only_must_not_signal_data_ready) {
     timeout.tv_sec = 0;
     timeout.tv_usec = 0;
 
-    select(sockfd[0] + 1, &read_fds, NULL, NULL, &timeout);
+    TEMP_FAILURE_RETRY(select(sockfd[0] + 1, &read_fds, NULL, NULL, &timeout));
   } while(FD_ISSET(sockfd[0], &read_fds));
 }
