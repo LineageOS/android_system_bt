@@ -949,7 +949,10 @@ void bta_av_co_audio_setconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
                 APPL_TRACE_DEBUG("%s codecId = %d", __func__, codecId);
                 APPL_TRACE_DEBUG("%s vendorId = %x", __func__, vendorId);
 
-                if ((codec_type != A2D_NON_A2DP_MEDIA_CT) || memcmp(p_codec_info, bta_av_co_cb.codec_cfg->info, 5))
+                if ((codec_type != A2D_NON_A2DP_MEDIA_CT) ||
+                    (codecId != A2D_APTX_CODEC_ID_BLUETOOTH) ||
+                    (vendorId != A2D_APTX_VENDOR_ID) ||
+                    memcmp(p_codec_info, bta_av_co_cb.codec_cfg_aptx.info, 5))
                 {
                     APPL_TRACE_DEBUG("%s recfg_needed", __func__);
                     recfg_needed = TRUE;
@@ -960,7 +963,7 @@ void bta_av_co_audio_setconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
                     recfg_needed = TRUE;
                 }
 
-                if (codecId == A2D_APTX_CODEC_ID_BLUETOOTH)
+                if ((codecId == A2D_APTX_CODEC_ID_BLUETOOTH) && (vendorId == A2D_APTX_VENDOR_ID))
                 {
                     APPL_TRACE_DEBUG("%s aptX", __func__);
                     bta_av_co_cb.codec_cfg_aptx_setconfig.id = A2D_NON_A2DP_MEDIA_CT;
