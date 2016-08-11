@@ -179,6 +179,7 @@ static void bta_av_sco_chg_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8
 static void bta_av_sys_rs_cback (tBTA_SYS_CONN_STATUS status,UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
 
 static void bta_av_api_enable_multicast(tBTA_AV_DATA *p_data);
+static void bta_av_api_update_max_av_clients(tBTA_AV_DATA * p_data);
 
 /* action functions */
 const tBTA_AV_NSM_ACT bta_av_nsm_act[] =
@@ -202,6 +203,7 @@ const tBTA_AV_NSM_ACT bta_av_nsm_act[] =
 #endif
     bta_av_api_to_ssm,              /* BTA_AV_API_START_EVT */
     bta_av_api_to_ssm,              /* BTA_AV_API_STOP_EVT */
+    bta_av_api_update_max_av_clients,
     bta_av_api_enable_multicast,    /* BTA_AV_ENABLE_MULTICAST_EVT */
 };
 
@@ -926,6 +928,22 @@ static void bta_av_api_enable_multicast(tBTA_AV_DATA *p_data)
 {
     is_multicast_enabled = p_data->multicast_state.is_multicast_enabled;
     APPL_TRACE_DEBUG("is_multicast_enabled :%d", is_multicast_enabled);
+}
+
+/*******************************************************************************
+**
+** Function         bta_av_api_update_max_av_client
+**
+** Description      Update max simultaneous AV connections supported
+**
+** Returns          void
+**
+*******************************************************************************/
+static void bta_av_api_update_max_av_clients(tBTA_AV_DATA *p_data)
+{
+    int bta_av_max_clients = p_data->max_av_clients.max_clients;
+    APPL_TRACE_DEBUG("bta_av_max_clients:%d",bta_av_max_clients);
+    AVDT_UpdateMaxAvClients(bta_av_max_clients);
 }
 
 /*******************************************************************************
