@@ -3309,9 +3309,12 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
         {
             if (bta_dm_cb.device_list.count < BTA_DM_NUM_PEER_DEVICE)
             {
+                /* new acl connection,reset new peer device */
+                memset(&bta_dm_cb.device_list.peer_device[i], 0, sizeof(bta_dm_cb.device_list.peer_device[i]));
                 bdcpy(bta_dm_cb.device_list.peer_device[bta_dm_cb.device_list.count].peer_bdaddr, p_bda);
                 bta_dm_cb.device_list.peer_device[bta_dm_cb.device_list.count].link_policy = bta_dm_cb.cur_policy;
                 bta_dm_cb.device_list.count++;
+                APPL_TRACE_ERROR("%s new acl connetion:count = %d", __func__, bta_dm_cb.device_list.count);
 #if BLE_INCLUDED == TRUE
                 bta_dm_cb.device_list.peer_device[i].conn_handle = p_data->acl_change.handle;
                 if (p_data->acl_change.transport == BT_TRANSPORT_LE)
@@ -3362,10 +3365,12 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
 
             conn.link_down.is_removed = bta_dm_cb.device_list.peer_device[i].remove_dev_pending;
 
-            for(; i<bta_dm_cb.device_list.count ; i++)
+            /* acl disconnection,remove peer device entry and reset last entry */
+            for(; i < (bta_dm_cb.device_list.count - 1); i++)
             {
                 memcpy(&bta_dm_cb.device_list.peer_device[i], &bta_dm_cb.device_list.peer_device[i+1], sizeof(bta_dm_cb.device_list.peer_device[i]));
             }
+            memset(&bta_dm_cb.device_list.peer_device[i], 0, sizeof(bta_dm_cb.device_list.peer_device[i]));
             break;
         }
         if(bta_dm_cb.device_list.count)
