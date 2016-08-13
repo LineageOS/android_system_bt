@@ -477,7 +477,6 @@ void btm_consolidate_dev(tBTM_SEC_DEV_REC *p_target_rec)
             list_remove(btm_cb.sec_dev_rec, p_dev_rec);
 
             p_dev_rec->bond_type = BOND_TYPE_UNKNOWN;
-            break;
         }
 
         /* an RPA device entry is a duplicate of the target record */
@@ -493,7 +492,6 @@ void btm_consolidate_dev(tBTM_SEC_DEV_REC *p_target_rec)
 
                 p_dev_rec->bond_type = BOND_TYPE_UNKNOWN;
             }
-            break;
         }
     }
 #endif
