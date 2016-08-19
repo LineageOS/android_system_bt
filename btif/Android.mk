@@ -116,8 +116,15 @@ btifCommonIncludes := \
   $(bluetooth_C_INCLUDES) \
   $(TARGET_OUT_HEADERS)/bt/hci_qcomm_init/aptX \
   external/tinyxml2 \
-  external/zlib \
-  vendor/qcom/opensource/bluetooth/hal/include
+  external/zlib
+
+ifneq ($(TARGET_SUPPORTS_WEARABLES),true)
+btifCommonIncludes += \
+   vendor/qcom/opensource/bluetooth/hal/include
+else
+btifCommonIncludes += \
+   device/qcom/msm8909w/opensource/bluetooth/hal/include
+endif
 
 # libbtif static library for target
 # ========================================================
