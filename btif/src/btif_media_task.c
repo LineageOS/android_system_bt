@@ -2055,6 +2055,11 @@ static void btif_media_thread_handle_cmd(fixed_queue_t *queue, UNUSED_ATTR void 
     case BTIF_MEDIA_STOP_VS_CMD:
         if (btif_media_cb.tx_started && !btif_media_cb.tx_stop_initiated)
             btif_media_send_vendor_stop();
+        else if(btif_media_cb.tx_start_initiated && !btif_media_cb.tx_started)
+        {
+            APPL_TRACE_IMP("Suspend Req when VSC exchange in progress,reset VSC");
+            btif_media_send_reset_vendor_state();
+        }
         else
             APPL_TRACE_IMP("ignore VS stop request");
         break;
@@ -2096,8 +2101,14 @@ static void btif_media_thread_handle_cmd(fixed_queue_t *queue, UNUSED_ATTR void 
 #if (BTA_AV_CO_CP_SCMS_T == TRUE)
         btif_media_send_vendor_scmst_hdr();
 #else
-        if (!btif_media_cb.vs_configs_exchanged)
+        if (!btif_media_cb.vs_configs_exchanged &&
+              btif_media_cb.tx_start_initiated)
             btif_media_cb.vs_configs_exchanged = TRUE;
+        else
+        {
+            APPL_TRACE_ERROR("Dont send start,stream suspended")
+            break;
+        }
         btif_media_send_vendor_start();
 #endif
         break;
@@ -2121,8 +2132,14 @@ static void btif_media_thread_handle_cmd(fixed_queue_t *queue, UNUSED_ATTR void 
         break;
 #if (BTA_AV_CO_CP_SCMS_T == TRUE)
     case BTIF_MEDIA_VS_A2DP_SET_SCMST_HDR_SUCCESS:
-        if (!btif_media_cb.vs_configs_exchanged)
+        if (!btif_media_cb.vs_configs_exchanged &&
+              btif_media_cb.tx_start_initiated)
             btif_media_cb.vs_configs_exchanged = TRUE;
+        else
+        {
+            APPL_TRACE_ERROR("Dont send start,stream suspended")
+            break;
+        }
         btif_media_send_vendor_start();
         break;
 #endif
