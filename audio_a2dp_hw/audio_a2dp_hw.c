@@ -883,7 +883,7 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
 #ifdef BTA_AV_SPLIT_A2DP_ENABLED
     keyval = (char *)hash_map_get(params, "A2dpStarted");
 
-    if (keyval >= 0)
+    if (keyval != NULL)
     {
         INFO("out_set_parameters, param: A2dpStarted");
         if (strcmp(keyval, "true") == 0)
