@@ -704,6 +704,17 @@ void BTA_AvEnableMultiCast(BOOLEAN state, tBTA_AV_HNDL handle);
 
 /*******************************************************************************
 **
+** Function         BTA_AvUpdateMaxAVClient
+**
+** Description      Update max simultaneous AV connections supported
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_AvUpdateMaxAVClient(UINT8 max_clients);
+
+/*******************************************************************************
+**
 ** Function         BTA_AvReconfig
 **
 ** Description      Reconfigure the audio/video stream.

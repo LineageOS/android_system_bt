@@ -2921,6 +2921,7 @@ bt_status_t btif_av_execute_service(BOOLEAN b_enable)
             BTA_AvRegister(BTA_AV_CHNL_AUDIO, BTIF_AV_SERVICE_NAME, 0, bte_av_media_callback,
             UUID_SERVCLASS_AUDIO_SOURCE);
         }
+        BTA_AvUpdateMaxAVClient(btif_max_av_clients);
     }
     else
     {

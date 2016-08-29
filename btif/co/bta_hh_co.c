@@ -250,8 +250,24 @@ static int uhid_read_event(btif_hh_device_t *p_dev)
             btif_hh_setreport(p_dev, BTHH_FEATURE_REPORT,
                               ev.u.output.size, ev.u.output.data);
         else if(ev.u.output.rtype == UHID_OUTPUT_REPORT)
+        {
+            if (ev.u.output.size == BTIF_HH_OUTPUT_REPORT_SIZE &&
+                !memcmp(&p_dev->last_output_rpt_data, &ev.u.output.data,
+                BTIF_HH_OUTPUT_REPORT_SIZE)) {
+                /* Last output report same as current output report, don't inform to remote
+                 * device as this could be the case when reports are being sent due to
+                 * device suspend/resume. If same output report is sent to remote device
+                 * device which uses UART as transport might not be able to suspend at all
+                 * leading to higher battery drain.
+                 */
+                APPL_TRACE_VERBOSE("UHID_OUTPUT: data same returning");
+                return 0;
+            }
+            /* Copy new output report data for future tracking */
+            memcpy(&p_dev->last_output_rpt_data, &ev.u.output.data, ev.u.output.size);
             btif_hh_setreport(p_dev, BTHH_OUTPUT_REPORT,
                               ev.u.output.size, ev.u.output.data);
+        }
         else
             btif_hh_setreport(p_dev, BTHH_INPUT_REPORT,
                               ev.u.output.size, ev.u.output.data);
@@ -512,6 +528,7 @@ void bta_hh_co_open(UINT8 dev_handle, UINT8 sub_class, tBTA_HH_ATTR_MASK attr_ma
 
     p_dev->dev_status = BTHH_CONN_STATE_CONNECTED;
     APPL_TRACE_DEBUG("%s: allocating the set_rpt_id_list", __func__);
+    memset(&p_dev->last_output_rpt_data, 0, BTIF_HH_OUTPUT_REPORT_SIZE);
     p_dev->set_rpt_id_list = list_new(lst_free_cb);
     if (!p_dev->set_rpt_id_list) {
         APPL_TRACE_ERROR("%s: unable to create list", __func__);
@@ -555,6 +572,7 @@ void bta_hh_co_close(UINT8 dev_handle, UINT8 app_id)
                                                         "dev_status = %d, dev_handle =%d"
                                                         ,__func__,p_dev->dev_status
                                                         ,p_dev->dev_handle);
+            memset(&p_dev->last_output_rpt_data, 0, BTIF_HH_OUTPUT_REPORT_SIZE);
             btif_hh_close_poll_thread(p_dev);
             break;
         }
