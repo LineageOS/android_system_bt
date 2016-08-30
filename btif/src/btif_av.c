@@ -51,6 +51,7 @@
 /* Now supports Two AV connections. */
 #define BTIF_AV_NUM_CB       2
 #define HANDLE_TO_INDEX(x) ((x & BTA_AV_HNDL_MSK) - 1)
+#define INVALID_INDEX        -1
 
 typedef enum {
     BTIF_AV_STATE_IDLE = 0x0,
@@ -225,7 +226,7 @@ void btif_av_update_multicast_state(int index);
 BOOLEAN btif_av_get_ongoing_multicast();
 tBTA_AV_HNDL btif_av_get_playing_device_hdl();
 tBTA_AV_HNDL btif_av_get_av_hdl_from_idx(UINT8 idx);
-UINT8 btif_av_get_other_connected_idx(int current_index);
+int btif_av_get_other_connected_idx(int current_index);
 #ifdef BTA_AV_SPLIT_A2DP_ENABLED
 BOOLEAN btif_av_is_codec_offload_supported(int codec);
 int btif_av_get_current_playing_dev_idx();
@@ -1475,7 +1476,7 @@ static BOOLEAN btif_av_state_started_handler(btif_sm_event_t event, void *p_data
                 btif_av_is_connected_on_other_idx(index))
             {
                 BTIF_TRACE_DEBUG("%s: Notify framework to reconfig",__func__);
-                uint8_t idx = btif_av_get_other_connected_idx(index);
+                int idx = btif_av_get_other_connected_idx(index);
                 HAL_CBACK(bt_av_src_callbacks, reconfig_a2dp_trigger_cb, 1,
                                                 &(btif_av_cb[idx].peer_bda));
             }
@@ -2478,7 +2479,9 @@ void btif_av_trigger_dual_handoff(BOOLEAN handoff, BD_ADDR address)
     {
         btif_media_send_reset_vendor_state();
         next_idx = btif_av_get_other_connected_idx(index);
-        if (next_idx != btif_max_av_clients)
+        /* Fix for below Klockwork Issue
+        Array 'btif_av_cb' of size 2 may use index value(s) -1 */
+        if (next_idx != INVALID_INDEX && next_idx != btif_max_av_clients)
         {
             HAL_CBACK(bt_av_src_callbacks, reconfig_a2dp_trigger_cb, 1,
                                     &(btif_av_cb[next_idx].peer_bda));
@@ -3066,7 +3069,7 @@ BOOLEAN btif_av_is_connected_on_other_idx(int current_index)
 ** Returns          BOOLEAN
 **
 *******************************************************************************/
-UINT8 btif_av_get_other_connected_idx(int current_index)
+int btif_av_get_other_connected_idx(int current_index)
 {
     //return true if other IDx is connected
     btif_sm_state_t state = BTIF_AV_STATE_IDLE;
@@ -3081,7 +3084,7 @@ UINT8 btif_av_get_other_connected_idx(int current_index)
                 return i;
         }
     }
-    return -1;
+    return INVALID_INDEX;
 }
 
 /*******************************************************************************
