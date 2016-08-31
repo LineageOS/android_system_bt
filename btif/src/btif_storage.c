@@ -162,9 +162,10 @@ extern void btif_gatts_add_bonded_dev_from_nv(BD_ADDR bda);
 /************************************************************************************
 **  Internal Functions
 ************************************************************************************/
-
+#if (BLE_INCLUDED == TRUE)
 static bt_status_t btif_in_fetch_bonded_ble_device(const char *remote_bd_addr,int add,
                                               btif_bonded_devices_t *p_bonded_devices);
+#endif
 static bt_status_t btif_in_fetch_bonded_device(const char *bdstr);
 
 /************************************************************************************
@@ -442,7 +443,9 @@ static bt_status_t btif_in_fetch_bonded_devices(btif_bonded_devices_t *p_bonded_
     memset(p_bonded_devices, 0, sizeof(btif_bonded_devices_t));
 
     BOOLEAN bt_linkkey_file_found=FALSE;
+#if BLE_INCLUDED == TRUE
     int device_type;
+#endif
 
     for (const btif_config_section_iter_t *iter = btif_config_section_begin(); iter != btif_config_section_end(); iter = btif_config_section_next(iter)) {
         const char *name = btif_config_section_name(iter);
@@ -497,6 +500,7 @@ static bt_status_t btif_in_fetch_bonded_devices(btif_bonded_devices_t *p_bonded_
     return BT_STATUS_SUCCESS;
 }
 
+#if ((defined BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
 static void btif_read_le_key(const uint8_t key_type, const size_t key_len, bt_bdaddr_t bd_addr,
                  const uint8_t addr_type, const bool add_key, bool *device_added, bool *key_found)
 {
@@ -505,7 +509,6 @@ static void btif_read_le_key(const uint8_t key_type, const size_t key_len, bt_bd
 
     char buffer[100];
     memset(buffer, 0, sizeof(buffer));
-
     if (btif_storage_get_ble_bonding_key(&bd_addr, key_type, buffer, key_len) == BT_STATUS_SUCCESS)
     {
         if (add_key)
@@ -528,7 +531,7 @@ static void btif_read_le_key(const uint8_t key_type, const size_t key_len, bt_bd
         *key_found = true;
     }
 }
-
+#endif
 /*******************************************************************************
  * Functions
  *

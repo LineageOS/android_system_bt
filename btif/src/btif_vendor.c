@@ -76,11 +76,13 @@ static void btif_vendor_bredr_cleanup_event(UINT16 event, char *p_param)
     service_mask = btif_get_enabled_services_mask();
     for (i = 0; i <= BTA_MAX_SERVICE_ID; i++)
     {
+#if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE
         if (i != BTA_BLE_SERVICE_ID && (service_mask &
               (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(i))))
         {
             btif_in_execute_service_request(i, FALSE);
         }
+#endif
     }
     HAL_CBACK(bt_vendor_callbacks, bredr_cleanup_cb, true);
 }

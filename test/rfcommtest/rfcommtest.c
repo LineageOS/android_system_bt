@@ -534,11 +534,12 @@ static void dut_mode_recv(uint16_t opcode, uint8_t *buf, uint8_t len)
 {
     bdt_log("DUT MODE RECV : NOT IMPLEMENTED");
 }
-
+#if BLE_INCLUDED == TRUE
 static void le_test_mode(bt_status_t status, uint16_t packet_count)
 {
     bdt_log("LE TEST MODE END status:%s number_of_packets:%d", dump_bt_status(status), packet_count);
 }
+#endif
 
 static void device_found_cb(int num_properties, bt_property_t *properties)
 {

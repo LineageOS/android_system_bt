@@ -132,8 +132,10 @@ static void bta_dm_ctrl_features_rd_cmpl_cback(tBTM_STATUS result);
 
 static void bta_dm_reset_sec_dev_pending(BD_ADDR remote_bd_addr);
 static void bta_dm_remove_sec_dev_entry(BD_ADDR remote_bd_addr);
+#if (BLE_INCLUDED == TRUE)
 static void bta_dm_observe_results_cb(tBTM_INQ_RESULTS *p_inq, UINT8 *p_eir);
 static void bta_dm_observe_cmpl_cb(void * p_result);
+#endif
 static void bta_dm_delay_role_switch_cback(void *data);
 extern void sdpu_uuid16_to_uuid128(UINT16 uuid16, UINT8* p_uuid128);
 static void bta_dm_disable_timer_cback(void *data);
@@ -378,7 +380,9 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
 
         /* hw is ready, go on with BTA DM initialization */
         alarm_free(bta_dm_search_cb.search_timer);
+#if ((defined BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE))
         alarm_free(bta_dm_search_cb.gatt_close_timer);
+#endif
         memset(&bta_dm_search_cb, 0, sizeof(bta_dm_search_cb));
 
         /* unregister from SYS */
@@ -409,8 +413,10 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
          */
         bta_dm_search_cb.search_timer =
           alarm_new("bta_dm_search.search_timer");
+#if ((defined BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE))
         bta_dm_search_cb.gatt_close_timer =
           alarm_new("bta_dm_search.gatt_close_timer");
+#endif
 
         memset(&bta_dm_conn_srvcs, 0, sizeof(bta_dm_conn_srvcs));
         memset(&bta_dm_di_cb, 0, sizeof(tBTA_DM_DI_CB));
@@ -781,7 +787,9 @@ void bta_dm_remove_device(tBTA_DM_MSG *p_data)
 
     /* If ACL exists for the device in the remove_bond message*/
     BOOLEAN continue_delete_dev = FALSE;
+#if (defined(BTA_GATT_INCLUDED) && BTA_GATT_INCLUDED)
     UINT8 other_transport = BT_TRANSPORT_INVALID;
+#endif
     remove_iot_device(IOT_DEV_CONF_FILE, IOT_ROLE_CHANGE_BLACKLIST,p_dev->bd_addr, METHOD_BD);
 
     if (BTM_IsAclConnectionUp(p_dev->bd_addr, BT_TRANSPORT_LE) ||
@@ -3385,7 +3393,6 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
              (bta_dm_cb.device_list.le_count))
             bta_dm_cb.device_list.le_count--;
         conn.link_down.link_type = p_data->acl_change.transport;
-#endif
 
         if ((p_data->acl_change.transport == BT_TRANSPORT_BR_EDR) &&
              bta_dm_search_cb.wait_disc && !bdcmp(bta_dm_search_cb.peer_bdaddr, p_bda))
@@ -3400,7 +3407,7 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
             }
 
         }
-
+#endif
         if(bta_dm_cb.disabling)
         {
             if(!BTM_GetNumAclLinks())

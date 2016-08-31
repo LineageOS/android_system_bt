@@ -6381,7 +6381,9 @@ BOOLEAN btm_sec_is_a_bonded_dev (BD_ADDR bda)
 *******************************************************************************/
 BOOLEAN btm_sec_is_le_capable_dev (BD_ADDR bda)
 {
+#if (BLE_INCLUDED== TRUE)
     tBTM_SEC_DEV_REC *p_dev_rec= btm_find_dev (bda);
+#endif
     BOOLEAN le_capable = FALSE;
 
 #if (BLE_INCLUDED== TRUE)
