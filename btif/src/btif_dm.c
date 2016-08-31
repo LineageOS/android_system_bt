@@ -228,12 +228,12 @@ static void btif_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl);
 static void btif_dm_ble_passkey_req_evt(tBTA_DM_PIN_REQ *p_pin_req);
 static void btif_dm_ble_key_nc_req_evt(tBTA_DM_SP_KEY_NOTIF *p_notif_req) ;
 static void btif_dm_ble_oob_req_evt(tBTA_DM_SP_RMT_OOB *req_oob_type);
-#endif
 
 static void bte_scan_filt_param_cfg_evt(UINT8 action_type,
                                            tBTA_DM_BLE_PF_AVBL_SPACE avbl_space,
                                            tBTA_DM_BLE_REF_VALUE ref_value,
                                            tBTA_STATUS status);
+#endif
 
 static char* btif_get_default_local_name();
 
@@ -1474,7 +1474,9 @@ static void btif_dm_search_devices_evt (UINT16 event, char *p_param)
                 bt_device_type_t dev_type;
                 uint32_t num_properties = 0;
                 bt_status_t status;
+#if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
                 int addr_type = 0;
+#endif
 
                 memset(properties, 0, sizeof(properties));
                 /* BD_ADDR */
@@ -1887,11 +1889,13 @@ static void btif_dm_upstreams_evt(UINT16 event, char* p_param)
             /* for each of the enabled services in the mask, trigger the profile
              * disable */
             service_mask = btif_get_enabled_services_mask();
+#if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE
             if (service_mask &
                 (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(BTA_BLE_SERVICE_ID)))
             {
                 btif_in_execute_service_request(BTA_BLE_SERVICE_ID, FALSE);
             }
+#endif
             unload_iot_devlist();
             btif_disable_bluetooth_evt();
             break;
@@ -1959,7 +1963,7 @@ static void btif_dm_upstreams_evt(UINT16 event, char* p_param)
         case BTA_DM_LINK_UP_EVT:
             bdcpy(bd_addr.address, p_data->link_up.bd_addr);
             BTIF_TRACE_DEBUG("BTA_DM_LINK_UP_EVT. Sending BT_ACL_STATE_CONNECTED");
-
+#if BLE_INCLUDED == TRUE
             if(p_data->link_up.link_type == BT_TRANSPORT_LE)
             {
                 num_active_le_links++;
@@ -1973,6 +1977,7 @@ static void btif_dm_upstreams_evt(UINT16 event, char* p_param)
                 BTIF_TRACE_DEBUG("num_active_br_edr_links is %d ",
                     num_active_br_edr_links);
             }
+#endif
             /* When tuchtones are enabled and 2 EDR HS are connected, if new
              * connection is initated, then tuch tones are send to both connected HS
              * over A2dp.Stream will be suspended after 3 secs and if remote has
@@ -1999,6 +2004,7 @@ static void btif_dm_upstreams_evt(UINT16 event, char* p_param)
             btm_set_bond_type_dev(p_data->link_down.bd_addr, BOND_TYPE_UNKNOWN);
 
             BTIF_TRACE_DEBUG("BTA_DM_LINK_DOWN_EVT. Sending BT_ACL_STATE_DISCONNECTED");
+#if BLE_INCLUDED == TRUE
             if (num_active_le_links > 0 &&
                 p_data->link_down.link_type == BT_TRANSPORT_LE)
             {
@@ -2012,6 +2018,7 @@ static void btif_dm_upstreams_evt(UINT16 event, char* p_param)
                 num_active_br_edr_links--;
                 BTIF_TRACE_DEBUG("num_active_br_edr_links is %d ",num_active_br_edr_links);
             }
+#endif
             btif_av_move_idle(bd_addr);
             BTIF_TRACE_DEBUG("BTA_DM_LINK_DOWN_EVT. Sending BT_ACL_STATE_DISCONNECTED");
             HAL_CBACK(bt_hal_cbacks, acl_state_changed_cb, BT_STATUS_SUCCESS,
@@ -2418,7 +2425,6 @@ static void bta_energy_info_cb(tBTA_DM_BLE_TX_TIME_MS tx_time, tBTA_DM_BLE_RX_TI
     btif_transfer_context(btif_dm_upstreams_evt, BTA_DM_ENER_INFO_READ,
                           (char*) &btif_cb, sizeof(btif_activity_energy_info_cb_t), NULL);
 }
-#endif
 
 /*******************************************************************************
 **
@@ -2445,7 +2451,7 @@ static void bte_scan_filt_param_cfg_evt(UINT8 action_type,
         BTIF_TRACE_DEBUG("%s", __FUNCTION__);
     }
 }
-
+#endif
 /*****************************************************************************
 **
 **   btif api functions (no context switch)
@@ -2465,7 +2471,9 @@ bt_status_t btif_dm_start_discovery(void)
 {
     tBTA_DM_INQ inq_params;
     tBTA_SERVICE_MASK services = 0;
+#if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
     tBTA_DM_BLE_PF_FILT_PARAMS adv_filt_param;
+#endif
 
     BTIF_TRACE_EVENT("%s : pairing_cb.state: 0x%x", __FUNCTION__, pairing_cb.state);
 
@@ -2918,10 +2926,10 @@ bt_status_t btif_dm_get_remote_services_by_transport(bt_bdaddr_t *remote_addr, c
     mask_ext.num_uuid = 0;
     mask_ext.p_uuid = NULL;
     mask_ext.srvc_mask = BTA_ALL_SERVICE_MASK;
-
+#if ((defined BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
     BTA_DmDiscoverByTransport(remote_addr->address, &mask_ext,
                    bte_dm_search_services_evt, TRUE, transport);
-
+#endif
     return BT_STATUS_SUCCESS;
 }
 
@@ -3153,29 +3161,36 @@ BOOLEAN btif_dm_get_smp_config(tBTE_APPL_CFG* p_cfg) {
 
     char conf[64];
     const char* recv = stack_config_get_interface()->get_pts_smp_options();
+#if ((BLE_INCLUDED == TRUE) && (SMP_INCLUDED == TRUE))
     char* pch;
     char* endptr;
+#endif
 
     strncpy(conf, recv, 64);
     conf[63] = 0; // null terminate
 
+#if ((BLE_INCLUDED == TRUE) && (SMP_INCLUDED == TRUE))
     if ((pch = strtok(conf, ",")) != NULL)
         p_cfg->ble_auth_req = (UINT8) strtoul(pch, &endptr, 16);
+
     else
         return FALSE;
 
     if ((pch = strtok(NULL, ",")) != NULL)
         p_cfg->ble_io_cap =  (UINT8) strtoul(pch, &endptr, 16);
+
     else
         return FALSE;
 
     if ((pch = strtok(NULL, ",")) != NULL)
         p_cfg->ble_init_key =  (UINT8) strtoul(pch, &endptr, 16);
+
     else
         return FALSE;
 
     if ((pch = strtok(NULL, ",")) != NULL)
         p_cfg->ble_resp_key =  (UINT8) strtoul(pch, &endptr, 16);
+
     else
         return FALSE;
 
@@ -3183,7 +3198,7 @@ BOOLEAN btif_dm_get_smp_config(tBTE_APPL_CFG* p_cfg) {
         p_cfg->ble_max_key_size =  (UINT8) strtoul(pch, &endptr, 16);
     else
         return FALSE;
-
+#endif
     return TRUE;
 }
 

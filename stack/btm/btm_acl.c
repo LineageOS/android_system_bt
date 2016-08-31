@@ -51,7 +51,10 @@
 
 extern fixed_queue_t *btu_general_alarm_queue;
 
+#if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
 static void btm_read_remote_features (UINT16 handle);
+#endif
+
 static void btm_read_remote_ext_features (UINT16 handle, UINT8 page_number);
 static void btm_process_remote_ext_features (tACL_CONN *p_acl_cb, UINT8 num_read_pages);
 
@@ -1030,11 +1033,13 @@ void btm_read_remote_version_complete (UINT8 *p)
                 STREAM_TO_UINT8  (p_acl_cb->lmp_version, p);
                 STREAM_TO_UINT16 (p_acl_cb->manufacturer, p);
                 STREAM_TO_UINT16 (p_acl_cb->lmp_subversion, p);
+#if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
                 if (p_acl_cb->transport == BT_TRANSPORT_BR_EDR)
                 {
                     BTM_TRACE_DEBUG("Calling btm_read_remote_features");
                     btm_read_remote_features (p_acl_cb->hci_handle);
                 }
+#endif
             }
 
 #if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
@@ -1112,7 +1117,7 @@ void btm_process_remote_ext_features (tACL_CONN *p_acl_cb, UINT8 num_read_pages)
     }
 }
 
-
+#if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
 /*******************************************************************************
 **
 ** Function         btm_read_remote_features
@@ -1144,7 +1149,7 @@ void btm_read_remote_features (UINT16 handle)
     /* because we don't know whether the remote support extended feature command */
     btsnd_hcic_rmt_features_req (handle);
 }
-
+#endif
 
 /*******************************************************************************
 **

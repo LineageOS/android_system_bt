@@ -17,8 +17,13 @@
  ******************************************************************************/
 
 #pragma once
+#ifdef HAS_BDROID_BUILDCFG
+#include "bdroid_buildcfg.h"
+#endif
 
+#ifndef REMOVE_EAGER_THREADS
 #define REMOVE_EAGER_THREADS TRUE
+#endif
 
 #if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
 #include "osi/include/allocator.h"
