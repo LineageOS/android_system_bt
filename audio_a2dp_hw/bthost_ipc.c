@@ -49,7 +49,9 @@
 #include "osi/include/osi.h"
 #include "osi/include/socket_utils/sockets.h"
 
-
+#ifdef LOG_TAG
+#undef LOG_TAG
+#endif
 #define LOG_TAG "bthost_ipc"
 #include "osi/include/log.h"
 
@@ -720,7 +722,6 @@ int a2dp_read_codec_config(struct a2dp_stream_common *common,uint8_t idx)
 int a2dp_get_multicast_status(struct a2dp_stream_common *common, uint8_t *mcast_status,
                                uint8_t *num_dev)
 {
-    char cmd = A2DP_CTRL_GET_MULTICAST_STATUS;
     INFO("%s",__func__);
     if (a2dp_command(common,A2DP_CTRL_GET_MULTICAST_STATUS) < 0)
     {
@@ -977,7 +978,7 @@ int audio_start_stream()
             INFO("control path is disconnected");
             break;
         }
-        INFO("%s: a2dp stream not started,wait 100mse & retry");
+        INFO("%s: a2dp stream not started,wait 100mse & retry", __func__);
         usleep(100000);
     }
     if (audio_stream.state != AUDIO_A2DP_STATE_STARTED)
@@ -1067,9 +1068,6 @@ void clear_a2dpsuspend_flag()
 void * audio_get_codec_config(uint8_t *multicast_status, uint8_t *num_dev,
                               audio_format_t *codec_type)
 {
-    char *p_common_cfg = &audio_stream.codec_cfg[0];
-    int i;
-
     INFO("%s: state = %s",__func__,dump_a2dp_hal_state(audio_stream.state));
 
     a2dp_get_multicast_status(&audio_stream, multicast_status,num_dev);

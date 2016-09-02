@@ -154,7 +154,7 @@ typedef struct {
     int (*a2dp_read_audio_config)(struct a2dp_stream_common *common);
     int (*skt_read)(int fd,void *buf, size_t bytes);
     int (*skt_write)(int fd,const void *buf, size_t bytes);
-    void (*skt_disconnect)(int fd);
+    int (*skt_disconnect)(int fd);
     int (*a2dp_command)(struct a2dp_stream_common *common,char cmd);
     int (*audio_stream_open)(void);
     int (*audio_stream_close)(void);

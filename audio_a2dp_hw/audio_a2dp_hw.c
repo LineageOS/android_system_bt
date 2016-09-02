@@ -172,11 +172,12 @@ static const char* dump_a2dp_ctrl_event(char event)
 static int calc_audiotime(struct a2dp_config cfg, int bytes)
 {
     int chan_count = popcount(cfg.channel_flags);
+    int bytes_per_sample = 4;
 
-    ASSERTC(cfg.format == AUDIO_FORMAT_PCM_16_BIT,
+    ASSERTC(cfg.format == AUDIO_FORMAT_PCM_8_24_BIT,
             "unsupported sample sz", cfg.format);
 
-    return bytes*(1000000/(chan_count*2))/cfg.rate;
+    return (int)(((int64_t)bytes * (1000000 / (chan_count * bytes_per_sample))) / cfg.rate);
 }
 
 static void ts_error_log(char *tag, int val, int buff_size, struct a2dp_config cfg)
@@ -1382,7 +1383,7 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
     a2dp_stream_common_init(&out->common);
 #endif
     out->common.cfg.channel_flags = AUDIO_STREAM_DEFAULT_CHANNEL_FLAG;
-    out->common.cfg.format = AUDIO_STREAM_DEFAULT_FORMAT;
+    out->common.cfg.format = AUDIO_FORMAT_PCM_8_24_BIT;
     out->common.cfg.rate = AUDIO_STREAM_DEFAULT_RATE;
 
    /* set output config values */

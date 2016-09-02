@@ -114,9 +114,9 @@ btifCommonIncludes := \
   $(LOCAL_PATH)/../audio_a2dp_hw \
   $(LOCAL_PATH)/../utils/include \
   $(bluetooth_C_INCLUDES) \
-  $(TARGET_OUT_HEADERS)/bt/hci_qcomm_init/aptX \
   external/tinyxml2 \
-  external/zlib
+  external/zlib \
+  $(call include-path-for, audio-utils)
 
 ifneq ($(TARGET_SUPPORTS_WEARABLES),true)
 btifCommonIncludes += \

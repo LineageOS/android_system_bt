@@ -1,4 +1,4 @@
-/******************************************************************************
+ /******************************************************************************
  *  Copyright (c) 2016, The Linux Foundation. All rights reserved.
  *
  *  Not a contribution.
@@ -138,7 +138,7 @@
 #endif
 
 #ifndef BTIF_A2DP_SRC_BIT_DEPTH
-#define BTIF_A2DP_SRC_BIT_DEPTH 16
+#define BTIF_A2DP_SRC_BIT_DEPTH 32
 #endif
 
 #ifndef BTIF_A2DP_SRC_NUM_CHANNELS
@@ -1210,9 +1210,9 @@
  */
 #ifndef AVDT_NUM_SEPS
 #if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-#define AVDT_NUM_SEPS               7
+#define AVDT_NUM_SEPS               9
 #else
-#define AVDT_NUM_SEPS               5
+#define AVDT_NUM_SEPS               7
 #endif
 #endif
 

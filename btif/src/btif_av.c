@@ -3493,6 +3493,19 @@ BOOLEAN btif_av_get_ongoing_multicast()
 
 /******************************************************************************
 **
+** Function        btif_av_is_multicast_supported
+**
+** Description     Returns TRUE if multicast is supported
+**
+** Returns         BOOLEAN
+******************************************************************************/
+BOOLEAN btif_av_is_multicast_supported()
+{
+    return is_multicast_supported;
+}
+
+/******************************************************************************
+**
 ** Function        btif_av_is_offload_supported
 **
 ** Description     Returns split mode status
