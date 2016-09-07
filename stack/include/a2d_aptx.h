@@ -95,6 +95,8 @@ typedef struct  {
 extern const char* A2D_APTX_SCHED_LIB_NAME;
 extern void *A2dAptXSchedLibHandle;
 extern BOOLEAN isA2dAptXEnabled;
+extern thread_t *A2d_aptx_thread;
+extern A2D_AptXThreadFn A2d_aptx_thread_fn;
 
 /*****************************************************************************
 **  external function declarations
@@ -119,6 +121,8 @@ extern A2D_AptXThreadFn (*A2D_aptx_sched_start)(void *encoder,
 extern BOOLEAN (*A2D_aptx_sched_stop)(void);
 extern void (*A2D_aptx_sched_deinit)(void);
 extern UINT8 a2d_av_aptx_cfg_in_cap(UINT8 *p_cfg, tA2D_APTX_CIE *p_cap);
+extern BOOLEAN A2D_check_and_init_aptX();
+extern void A2D_deinit_aptX();
 
 #ifdef __cplusplus
 }
