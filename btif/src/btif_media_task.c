@@ -1159,6 +1159,7 @@ static void btif_a2dp_encoder_init(tBTA_AV_HNDL hdl)
                 bta_av_co_audio_get_codec_config((UINT8*)&aptx_config, &minmtu, A2D_NON_A2DP_MEDIA_CT);
                 msg.CodecType = A2D_NON_A2DP_MEDIA_CT;
                 msg.SamplingFreq = aptx_config.sampleRate;
+                msg.MtuSize = minmtu;
                 msg.ChannelMode = aptx_config.channelMode;
                 msg.BluetoothVendorID = aptx_config.vendorId;
                 msg.BluetoothCodecID = aptx_config.codecId;
@@ -1262,10 +1263,8 @@ static void btif_a2dp_encoder_update(void)
     }
 
     msg.MinMtuSize = minmtu;
-    /* Fix for below Klockwork Issue
-     * msg.MaxBitPool' might be used uninitialized in this function.
-     * msg.MinBitPool' might be used uninitialized in this function*/
-    if (bt_split_a2dp_enabled && codectype != A2D_NON_A2DP_MEDIA_CT)
+
+    if (bt_split_a2dp_enabled)
     {
         btif_media_cb.max_bitpool = msg.MaxBitPool;
         btif_media_cb.min_bitpool = msg.MinBitPool;
@@ -2511,10 +2510,11 @@ static void btif_media_task_enc_update(BT_HDR *p_msg)
             btif_media_cb.TxAaMtuSize = ((BTIF_MEDIA_AA_BUF_SIZE - BTIF_MEDIA_AA_APTX_OFFSET - sizeof(BT_HDR)) < pUpdateAudio->MinMtuSize) ?
                                                   (BTIF_MEDIA_AA_BUF_SIZE - BTIF_MEDIA_AA_APTX_OFFSET - sizeof(BT_HDR)) : pUpdateAudio->MinMtuSize;
             APPL_TRACE_DEBUG("%s : aptX btif_media_cb.TxAaMtuSize %d", __func__, btif_media_cb.TxAaMtuSize);
+            return;
+        } else {
+            /* do nothing, fall through to SBC */
         }
-        return;
     }
-    else
     {
         if (!pstrEncParams->s16NumOfSubBands)
         {
@@ -3246,6 +3246,7 @@ static void btif_media_task_aa_start_tx(void)
           BOOLEAN use_SCMS_T = false;
 #endif
           A2D_AptXCodecType aptX_codec_type = btif_media_task_get_aptX_codec_type();
+          BOOLEAN is_24bit_audio = false;
 
           BOOLEAN test = false;
           BOOLEAN trace = false;
@@ -3253,9 +3254,11 @@ static void btif_media_task_aa_start_tx(void)
           A2d_aptx_thread_fn = A2D_aptx_sched_start(btif_media_cb.aptxEncoderParams.encoder,
                    aptX_codec_type,
                    use_SCMS_T,
+                   is_24bit_audio,
                    btif_media_cb.media_feeding.cfg.pcm.sampling_freq,
                    btif_media_cb.media_feeding.cfg.pcm.bit_per_sample,
                    UIPC_CH_ID_AV_AUDIO,
+                   btif_media_cb.TxAaMtuSize,
                    UIPC_Read,
                    btif_media_task_cb_packet_send,
                    raise_priority_a2dp,

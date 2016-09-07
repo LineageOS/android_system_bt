@@ -51,17 +51,17 @@ void *A2dAptXSchedLibHandle = NULL;
 thread_t *A2d_aptx_thread = NULL;
 BOOLEAN isA2dAptXEnabled = FALSE;
 
-int (*A2D_aptx_sched_init)(void);
+int (*A2D_aptx_encoder_init)(void);
 A2D_AptXThreadFn (*A2D_aptx_sched_start)(void *encoder,
-                          A2D_AptXCodecType aptX_codec_type,
-                          BOOLEAN use_SCMS_T, UINT16 sample_rate,
-                          UINT8 format_bits, UINT8 channel,
-                          A2D_AptXReadFn read_fn,
-                          A2D_AptXBufferSendFn send_fn,
-                          A2D_AptXSetPriorityFn set_priority_fn,
-                          BOOLEAN test, BOOLEAN trace);
+                        A2D_AptXCodecType aptX_codec_type,
+                        BOOLEAN use_SCMS_T, BOOLEAN is_24bit_audio,
+                        UINT16 sample_rate, UINT8 format_bits,
+                        UINT8 channel, UINT16 MTU, A2D_AptXReadFn read_fn,
+                        A2D_AptXBufferSendFn send_fn,
+                        A2D_AptXSetPriorityFn set_priority_fn,
+                        BOOLEAN test, BOOLEAN trace);
 BOOLEAN (*A2D_aptx_sched_stop)(void);
-void (*A2D_aptx_sched_deinit)(void);
+void (*A2D_aptx_encoder_deinit)(void);
 A2D_AptXThreadFn A2d_aptx_thread_fn;
 
 /******************************************************************************
@@ -193,7 +193,7 @@ UINT8 a2d_av_aptx_cfg_in_cap(UINT8 *p_cfg, tA2D_APTX_CIE *p_cap)
 *******************************************************************************/
 BOOLEAN A2D_check_and_init_aptX(void)
 {
-    A2D_TRACE_DEBUG("A2D_check_and_init_aptx");
+    A2D_TRACE_DEBUG("%s", __func__);
 
     if (A2dAptXSchedLibHandle == NULL)
     {
@@ -201,27 +201,28 @@ BOOLEAN A2D_check_and_init_aptX(void)
 
         if (!A2dAptXSchedLibHandle)
         {
-            A2D_TRACE_ERROR("A2D_check_and_init_aptX: aptX scheduler library missing");
+            A2D_TRACE_ERROR("%s: aptX scheduler library missing", __func__);
             goto error_exit;
         }
 
-        A2D_aptx_sched_init = (int (*)(void))dlsym(A2dAptXSchedLibHandle,
-                                                   "aptx_scheduler_init");
-        if (!A2D_aptx_sched_init)
+        A2D_aptx_encoder_init = (int (*)(void))dlsym(A2dAptXSchedLibHandle,
+                                                   "aptx_encoder_init");
+        if (!A2D_aptx_encoder_init)
         {
-            A2D_TRACE_ERROR("A2D_check_and_init_aptX: aptX scheduler init missing");
+            A2D_TRACE_ERROR("%s: aptX encoder init missing", __func__);
             goto error_exit;
         }
 
         A2D_aptx_sched_start = (A2D_AptXThreadFn (*)(void*, A2D_AptXCodecType, BOOLEAN,
-                                        UINT16, UINT8, UINT8, A2D_AptXReadFn,
+                                        BOOLEAN, UINT16, UINT8, UINT8, UINT16, A2D_AptXReadFn,
                                         A2D_AptXBufferSendFn,
                                         A2D_AptXSetPriorityFn, BOOLEAN,
                                         BOOLEAN))dlsym(A2dAptXSchedLibHandle,
                                         "aptx_scheduler_start");
+
         if (!A2D_aptx_sched_start)
         {
-            A2D_TRACE_ERROR("A2D_check_and_init_aptX: aptX scheduler start missing");
+            A2D_TRACE_ERROR("%s: aptX scheduler start missing", __func__);
             goto error_exit;
         }
 
@@ -229,21 +230,21 @@ BOOLEAN A2D_check_and_init_aptX(void)
                                                        "aptx_scheduler_stop");
         if (!A2D_aptx_sched_stop)
         {
-            A2D_TRACE_ERROR("A2D_check_and_init_aptX: aptX scheduler stop missing");
+            A2D_TRACE_ERROR("%s: aptX scheduler stop missing", __func__);
             goto error_exit;
         }
 
-        A2D_aptx_sched_deinit = (void (*)(void))dlsym(A2dAptXSchedLibHandle,
-                                                      "aptx_scheduler_deinit");
-        if (!A2D_aptx_sched_deinit)
+        A2D_aptx_encoder_deinit = (void (*)(void))dlsym(A2dAptXSchedLibHandle,
+                                                      "aptx_encoder_deinit");
+        if (!A2D_aptx_encoder_deinit)
         {
-            A2D_TRACE_ERROR("A2D_check_and_init_aptX: aptX scheduler deinit missing");
+            A2D_TRACE_ERROR("%s: aptX encoder deinit missing ", __func__);
             goto error_exit;
         }
 
-        if (A2D_aptx_sched_init())
+        if (A2D_aptx_encoder_init())
         {
-            A2D_TRACE_ERROR("A2D_check_and_init_aptX: aptX scheduler init failed");
+            A2D_TRACE_ERROR("%s: aptX encoder init failed - %s", __func__, dlerror());
             goto error_exit;
         }
     }
@@ -263,7 +264,7 @@ BOOLEAN A2D_check_and_init_aptX(void)
 
 /*******************************************************************************
 **
-** Function         A2D_aptX_deinit
+** Function         A2D_deinit_aptX
 **
 ** Description      This function de-initialized aptX
 **
@@ -272,7 +273,7 @@ BOOLEAN A2D_check_and_init_aptX(void)
 *******************************************************************************/
 void A2D_deinit_aptX(void)
 {
-    A2D_TRACE_DEBUG("A2D_aptX_deinit");
+    A2D_TRACE_DEBUG("%s", __func__);
 
     if (isA2dAptXEnabled && A2dAptXSchedLibHandle)
     {
@@ -284,7 +285,7 @@ void A2D_deinit_aptX(void)
            A2d_aptx_thread = NULL;
        }
 
-       A2D_aptx_sched_deinit();
+       A2D_aptx_encoder_deinit();
        dlclose(A2dAptXSchedLibHandle);
        A2dAptXSchedLibHandle = NULL;
        isA2dAptXEnabled = false;
