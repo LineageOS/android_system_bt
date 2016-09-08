@@ -95,13 +95,13 @@ struct alarm_t {
 // unit tests to run faster. It should not be modified by production code.
 int64_t TIMER_INTERVAL_FOR_WAKELOCK_IN_MS = 3000;
 static const clockid_t CLOCK_ID = CLOCK_BOOTTIME;
-#if 0
+
 #if defined(KERNEL_MISSING_CLOCK_BOOTTIME_ALARM) && (KERNEL_MISSING_CLOCK_BOOTTIME_ALARM == TRUE)
 static const clockid_t CLOCK_ID_ALARM = CLOCK_BOOTTIME;
 #else
 static const clockid_t CLOCK_ID_ALARM = CLOCK_BOOTTIME_ALARM;
 #endif
-#endif
+
 // This mutex ensures that the |alarm_set|, |alarm_cancel|, and alarm callback
 // functions execute serially and not concurrently. As a result, this mutex
 // also protects the |alarms| list.
@@ -342,7 +342,7 @@ static bool lazy_initialize(void) {
     goto error;
   timer_initialized = true;
 
-  if (!timer_create_internal(CLOCK_REALTIME, &wakeup_timer))
+  if (!timer_create_internal(CLOCK_ID_ALARM, &wakeup_timer))
     goto error;
   wakeup_timer_initialized = true;
 
