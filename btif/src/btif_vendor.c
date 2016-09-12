@@ -33,7 +33,6 @@
 #define LOG_TAG "bt_btif_vendor"
 
 #include <cutils/properties.h>
-#include "bt_utils.h"
 #include "btif_common.h"
 #include "btif_util.h"
 #include "btif_profile_queue.h"
@@ -63,9 +62,9 @@ static bt_status_t init( btvendor_callbacks_t* callbacks)
 static void ssrcleanup(void)
 {
     LOG_INFO(LOG_TAG,"ssrcleanup");
-    int soc_type = get_soc_type();
-    if (soc_type == BT_SOC_ROME || soc_type == BT_SOC_CHEROKEE)
-        btif_ssr_cleanup();
+#ifdef QCA_BT_ROME
+    btif_ssr_cleanup();
+#endif
     return;
 }
 
