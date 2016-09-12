@@ -66,6 +66,8 @@ void allocation_tracker_init(void) {
   if (allocations)
     return;
 
+  LOG_INFO("allocation_tracker","%s: function addr = %p", __func__,
+                                            (void *)allocation_tracker_init);
   canary_size = strlen(canary);
 
   pthread_mutex_init(&lock, NULL);

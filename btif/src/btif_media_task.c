@@ -1277,8 +1277,10 @@ static void btif_a2dp_encoder_update(void)
     }
 
     msg.MinMtuSize = minmtu;
-
-    if (bt_split_a2dp_enabled)
+    /* Fix for below Klockwork Issue
+     * msg.MaxBitPool' might be used uninitialized in this function.
+     * msg.MinBitPool' might be used uninitialized in this function*/
+    if (bt_split_a2dp_enabled && codectype != A2D_NON_A2DP_MEDIA_CT)
     {
         btif_media_cb.max_bitpool = msg.MaxBitPool;
         btif_media_cb.min_bitpool = msg.MinBitPool;
@@ -2613,11 +2615,10 @@ static void btif_media_task_enc_update(BT_HDR *p_msg)
             btif_media_cb.TxAaMtuSize = ((BTIF_MEDIA_AA_BUF_SIZE - BTIF_MEDIA_AA_APTX_OFFSET - sizeof(BT_HDR)) < pUpdateAudio->MinMtuSize) ?
                                                   (BTIF_MEDIA_AA_BUF_SIZE - BTIF_MEDIA_AA_APTX_OFFSET - sizeof(BT_HDR)) : pUpdateAudio->MinMtuSize;
             APPL_TRACE_DEBUG("%s : aptX btif_media_cb.TxAaMtuSize %d", __func__, btif_media_cb.TxAaMtuSize);
-            return;
-        } else {
-            /* do nothing, fall through to SBC */
         }
+        return;
     }
+    else
     {
         if (!pstrEncParams->s16NumOfSubBands)
         {

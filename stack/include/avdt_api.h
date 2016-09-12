@@ -994,6 +994,17 @@ extern UINT16 AVDT_SetMediaBuf(UINT8 handle, UINT8 *p_buf, UINT32 buf_len);
 extern UINT16 AVDT_SendReport(UINT8 handle, AVDT_REPORT_TYPE type,
                               tAVDT_REPORT_DATA *p_data);
 
+/*******************************************************************************
+**
+** Function         AVDT_UpdateMaxAvClients
+**
+** Description      Update max simultaneous AV connections supported
+**
+** Returns
+**
+*******************************************************************************/
+extern void AVDT_UpdateMaxAvClients(UINT8 num_clients);
+
 /******************************************************************************
 **
 ** Function         AVDT_SetTraceLevel

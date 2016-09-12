@@ -113,6 +113,7 @@ enum
 #endif
     BTA_AV_API_START_EVT,       /* the following 2 events must be in the same order as the *AP_*EVT */
     BTA_AV_API_STOP_EVT,
+    BTA_AV_UPDATE_MAX_AV_CLIENTS_EVT,
     BTA_AV_ENABLE_MULTICAST_EVT /* Event for enable and disable multicast */
 };
 
@@ -255,6 +256,13 @@ typedef struct
     BT_HDR              hdr;
     BOOLEAN             is_multicast_enabled;
 } tBTA_AV_ENABLE_MULTICAST;
+
+/* data type for BTA_AV_UPDATE_MAX_AV_CLIENTS_EVTT */
+typedef struct
+{
+    BT_HDR              hdr;
+    UINT8               max_clients;
+} tBTA_AV_MAX_CLIENT;
 
 /* data type for BTA_AV_API_DISCONNECT_EVT */
 typedef struct
@@ -450,6 +458,7 @@ typedef union
     tBTA_AV_API_META_RSP    api_meta_rsp;
     tBTA_AV_API_STATUS_RSP  api_status_rsp;
     tBTA_AV_ENABLE_MULTICAST  multicast_state;
+    tBTA_AV_MAX_CLIENT      max_av_clients;
 } tBTA_AV_DATA;
 
 typedef void (tBTA_AV_VDP_DATA_ACT)(void *p_scb);

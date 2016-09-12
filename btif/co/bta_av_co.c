@@ -1996,7 +1996,15 @@ UINT8 bta_av_select_codec(UINT8 hdl)
         APPL_TRACE_ERROR("%s hdl = %d",__func__,hdl);
         /* Retrieve the peer info */
         p_peer = bta_av_co_get_peer(hdl);
-        bta_av_co_audio_peer_supports_codec(p_peer,&index);
+        /* Fix for below KW Issue
+           Pointer 'p_peer' returned from call to function 'bta_av_co_get_peer' at line
+           1993 may be NULL, will be passed to function and may be dereferenced there
+           by passing argument 1 to function 'bta_av_co_audio_peer_supports_codec' at
+           line 2001.*/
+        if (p_peer != NULL)
+        {
+            bta_av_co_audio_peer_supports_codec(p_peer,&index);
+        }
         return bta_av_co_cb.codec_cfg->id;
     }
 }

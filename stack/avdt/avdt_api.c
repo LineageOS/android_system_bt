@@ -1368,7 +1368,19 @@ UINT16 AVDT_SendReport(UINT8 handle, AVDT_REPORT_TYPE type,
     return result;
 }
 #endif
-
+/*******************************************************************************
+**
+** Function         AVDT_UpdateMaxAvClients
+**
+** Description      Update max simultaneous AV connections supported
+**
+** Returns          void
+**
+*******************************************************************************/
+void AVDT_UpdateMaxAvClients(UINT8 max_clients)
+{
+    avdt_scb_set_max_av_client(max_clients);
+}
 /******************************************************************************
 **
 ** Function         AVDT_SetTraceLevel
