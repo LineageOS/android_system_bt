@@ -401,4 +401,28 @@ extern void bta_av_co_audio_delay(tBTA_AV_HNDL hndl, UINT16 delay);
 *******************************************************************************/
 extern void bta_av_co_video_delay(tBTA_AV_HNDL hndl, UINT16 delay);
 
+/*******************************************************************************
+**
+** Function         bta_av_co_audio_is_offload_supported
+**
+** Description      This function is called by AV to check if DUT is in offload
+**                  mode.
+**
+** Returns          TRUE if offload is enabled, FALSE otherwise
+**
+*******************************************************************************/
+extern BOOLEAN bta_av_co_audio_is_offload_supported(void);
+
+/*******************************************************************************
+**
+** Function         bta_av_co_audio_is_codec_supported
+**
+** Description      This function is called by AV to check if corresponding
+**                  codec is supported in offload mode.
+**
+** Returns          TRUE if codec is supported in offload, FALSE otherwise
+**
+*******************************************************************************/
+extern BOOLEAN bta_av_co_audio_is_codec_supported(int codec);
+
 #endif /* BTA_AV_CO_H */

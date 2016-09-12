@@ -73,6 +73,14 @@
 #define BTA_AV_RS_TIME_VAL     1000
 #endif
 
+/* offload codecs support */
+enum
+{
+    APTX = 1,
+    AAC,
+    APTX_HD
+};
+
 /* state machine states */
 enum
 {
@@ -685,6 +693,43 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
                    (*bta_av_a2d_cos.init)(&codec_type, cs.cfg.codec_info,
                     &cs.cfg.num_protect, cs.cfg.protect_info, index) == TRUE)
             {
+                if ((*bta_av_a2d_cos.offload)() ==  TRUE)
+                {
+                    if(codec_type == A2D_NON_A2DP_MEDIA_CT)
+                    {
+
+                       UINT8* ptr = cs.cfg.codec_info;
+                       tA2D_APTX_CIE* codecInfo = (tA2D_APTX_CIE*) &ptr[3];
+                       UINT8 vendorId = codecInfo->vendorId;
+                       UINT8 codecId = codecInfo->codecId;
+
+                       if (vendorId == A2D_APTX_VENDOR_ID &&
+                           codecId == A2D_APTX_CODEC_ID_BLUETOOTH)
+                       {
+                           if((*bta_av_a2d_cos.cap)(APTX) != TRUE)
+                           {
+                               index++;
+                               continue;
+                           }
+                           else
+                               APPL_TRACE_DEBUG("%s:codec supported",__func__)
+                       }
+                    }
+                    else if (codec_type == AAC)
+                    {
+                        if ((*bta_av_a2d_cos.cap)(AAC) != TRUE)
+                        {
+                            index++;
+                            continue;
+                        }
+                    }
+                }
+                else if((codec_type == A2D_NON_A2DP_MEDIA_CT) && (A2D_check_and_init_aptX() == false))
+                {
+                   index++;
+                   continue;
+                }
+
                 if(AVDT_CreateStream(&p_scb->seps[index - startIndex].av_handle, &cs) ==
                                                                             AVDT_SUCCESS)
                 {
@@ -808,6 +853,9 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
 void bta_av_api_deregister(tBTA_AV_DATA *p_data)
 {
     tBTA_AV_SCB *p_scb = bta_av_hndl_to_scb(p_data->hdr.layer_specific);
+
+    // de-initialize aptX
+    A2D_deinit_aptX();
 
     if(p_scb)
     {

@@ -3470,6 +3470,19 @@ BOOLEAN btif_av_get_ongoing_multicast()
     }
 }
 
+/******************************************************************************
+**
+** Function        btif_av_is_offload_supported
+**
+** Description     Returns split mode status
+**
+** Returns         TRUE if split mode is enabled, FALSE otherwise
+********************************************************************************/
+BOOLEAN btif_av_is_offload_supported()
+{
+    return bt_split_a2dp_enabled;
+}
+
 #ifdef BTA_AV_SPLIT_A2DP_ENABLED
 int btif_av_get_current_playing_dev_idx(void)
 {
