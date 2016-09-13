@@ -96,6 +96,11 @@ typedef enum {
   //Few carkits take long time to start sending AT commands
   //Increase AG_CONN TIMEOUT so that AG connection go through
   INTEROP_INCREASE_AG_CONN_TIMEOUT,
+
+  // Some HOGP devices do not respond well when we switch from default LE conn parameters
+  // to preferred conn params immediately post connection. Disable automatic switching to
+  // preferred conn params for such devices and allow them to explicity ask for it.
+  INTEROP_DISABLE_LE_CONN_PREFERRED_PARAMS,
 } interop_feature_t;
 
 // Check if a given |addr| matches a known interoperability workaround as identified

@@ -33,6 +33,7 @@
 
 #include "bt_types.h"
 #include "bt_utils.h"
+#include "btif/include/btif_storage.h"
 #include "btm_ble_api.h"
 #include "btm_int.h"
 #include "btu.h"
@@ -120,6 +121,37 @@ BOOLEAN BTM_SecAddBleDevice (BD_ADDR bd_addr, BD_NAME bd_name, tBT_DEVICE_TYPE d
     }
 
     return TRUE;
+}
+
+/*******************************************************************************
+**
+** Function         BTM_GetRemoteDeviceName
+**
+** Description      This function is called to get the dev name of remote device
+**                  from NV
+**
+** Returns          TRUE if success; otherwise failed.
+**
+*******************************************************************************/
+BOOLEAN BTM_GetRemoteDeviceName(BD_ADDR bda, BD_NAME bd_name)
+{
+    BTM_TRACE_DEBUG("%s", __func__);
+    BOOLEAN ret = FALSE;
+    bt_bdname_t bdname;
+    bt_property_t prop_name;
+    bt_bdaddr_t bd_addr;
+    bdcpy(bd_addr.address, bda);
+
+    BTIF_STORAGE_FILL_PROPERTY(&prop_name, BT_PROPERTY_BDNAME,
+                          sizeof(bt_bdname_t), &bdname);
+    if (btif_storage_get_remote_device_property(
+        &bd_addr, &prop_name) == BT_STATUS_SUCCESS)
+    {
+        APPL_TRACE_DEBUG("%s, NV name = %s", __func__, bdname.name);
+        strlcpy((char*) bd_name, (char*) bdname.name, BD_NAME_LEN);
+        ret = TRUE;
+    }
+    return ret;
 }
 
 /*******************************************************************************
@@ -2744,6 +2776,7 @@ void btm_ble_set_keep_rfu_in_auth_req(BOOLEAN keep_rfu)
     BTM_TRACE_DEBUG ("btm_ble_set_keep_rfu_in_auth_req keep_rfus=%d", keep_rfu);
     btm_cb.devcb.keep_rfu_in_auth_req = keep_rfu;
 }
+
 
 #endif /* BTM_BLE_CONFORMANCE_TESTING */
 
