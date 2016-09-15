@@ -2076,7 +2076,16 @@ static void btif_media_thread_handle_cmd(fixed_queue_t *queue, UNUSED_ATTR void 
           to connect to second other device
         */
         btif_media_send_reset_vendor_state();
-        a2dp_cmd_acknowledge(A2DP_CTRL_ACK_SUCCESS);
+        if (btif_media_cb.a2dp_cmd_pending == A2DP_CTRL_CMD_SUSPEND ||
+            btif_media_cb.a2dp_cmd_pending == A2DP_CTRL_CMD_STOP)
+        {
+            a2dp_cmd_acknowledge(A2DP_CTRL_ACK_SUCCESS);
+        }
+        else
+        {
+            APPL_TRACE_ERROR("wrong cmd pending");
+            a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
+        }
         break;
     case BTIF_MEDIA_VS_A2DP_STOP_FAILURE:
         btif_media_cb.tx_stop_initiated = FALSE;
