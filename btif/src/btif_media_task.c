@@ -61,12 +61,14 @@
 #include "a2d_int.h"
 #include "a2d_sbc.h"
 #include "a2d_aptx.h"
+#include "a2d_aac.h"
 #include "audio_a2dp_hw.h"
 #include "bt_target.h"
 #include "bta_api.h"
 #include "bta_av_api.h"
 #include "bta_av_ci.h"
 #include "bta_av_sbc.h"
+#include "bta_av_aac.h"
 #include "bta_sys.h"
 #include "bta_sys_int.h"
 #include "btif_av.h"
@@ -181,6 +183,12 @@ enum {
 #define BTIF_MEDIA_AA_SBC_OFFSET (AVDT_MEDIA_OFFSET + BTA_AV_SBC_HDR_SIZE + 1)
 #else
 #define BTIF_MEDIA_AA_SBC_OFFSET (AVDT_MEDIA_OFFSET + BTA_AV_SBC_HDR_SIZE)
+#endif
+
+#if (BTA_AV_CO_CP_SCMS_T == TRUE)
+#define BTIF_MEDIA_AA_AAC_OFFSET (AVDT_MEDIA_OFFSET + BTA_AV_AAC_HDR_SIZE + 1)
+#else
+#define BTIF_MEDIA_AA_AAC_OFFSET (AVDT_MEDIA_OFFSET + BTA_AV_AAC_HDR_SIZE)
 #endif
 
 #if (BTA_AV_CO_CP_SCMS_T == TRUE)
@@ -899,6 +907,14 @@ static void btif_recv_ctrl_data(void)
                 A2D_BldSbcInfo(AVDT_MEDIA_AUDIO,&codec_cfg,&param[1]);
                 bitrate = btif_media_cb.encoder.u16BitRate * 1000;
             }
+#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
+            else if (codec_id == BTIF_AV_CODEC_M24) {
+                tA2D_AAC_CIE aac_cfg;
+                bta_av_co_audio_get_aac_config(&aac_cfg, &min_mtu);
+                A2D_BldAacInfo(AVDT_MEDIA_AUDIO,&aac_cfg,&param[1]);
+                bitrate = btif_media_cb.encoder.u16BitRate * 1000;
+            }
+#endif
             else if (codec_id == A2D_NON_A2DP_MEDIA_CT) //this is changed to non-a2dp VS codec
             {
                //ADD APTX support
@@ -913,7 +929,7 @@ static void btif_recv_ctrl_data(void)
                 {
                     tA2D_APTX_CIE* codecInfo = 0;
                     codecInfo = (tA2D_APTX_CIE*) &ptr[3];
-                    if (codecInfo && codecInfo->vendorId == A2D_APTX_VENDOR_ID 
+                    if (codecInfo && codecInfo->vendorId == A2D_APTX_VENDOR_ID
                         && codecInfo->codecId == A2D_APTX_CODEC_ID_BLUETOOTH)
                     {
                         tA2D_APTX_CIE aptx_config;
@@ -1116,7 +1132,9 @@ static void btif_a2dp_encoder_init(tBTA_AV_HNDL hdl)
     tBTIF_MEDIA_INIT_AUDIO msg;
     tA2D_SBC_CIE sbc_config;
     tA2D_APTX_CIE* codecInfo = 0;
-
+#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
+    tA2D_AAC_CIE aac_config;
+#endif
     /* lookup table for converting channel mode */
     UINT16 codec_mode_tbl[5] = { SBC_JOINT_STEREO, SBC_STEREO, SBC_DUAL, 0, SBC_MONO };
 
@@ -1169,6 +1187,22 @@ static void btif_a2dp_encoder_init(tBTA_AV_HNDL hdl)
         }
     }/* if ( A2D_NON_A2DP_MEDIA_CT == codectype) */
 
+
+#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
+    if (BTIF_AV_CODEC_M24 == codectype) {
+        ALOGI("%s Selected Codec AAC", __func__);
+        bta_av_co_audio_get_codec_config ((UINT8*)&aac_config, &minmtu, BTIF_AV_CODEC_M24);
+        msg.ObjectType = aac_config.object_type;
+        msg.ChannelMode = (aac_config.channels == A2D_AAC_IE_CHANNELS_2) ? SBC_STEREO : SBC_MONO;
+        msg.SamplingFreq =  freq_block_tbl[aac_config.samp_freq >> 5];
+        msg.MtuSize = minmtu;
+        msg.CodecType = BTIF_AV_CODEC_M24;
+        msg.bit_rate = aac_config.bit_rate;
+        btif_media_task_enc_init_req(&msg);
+        return;
+    }
+#endif
+
     ALOGI("%s Selected Codec SBC", __func__);
 
     /* Retrieve the current SBC configuration (default if currently not used) */
@@ -1191,6 +1225,9 @@ static void btif_a2dp_encoder_update(void)
 {
     UINT16 minmtu = 0;
     tA2D_SBC_CIE sbc_config;
+#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
+    tA2D_AAC_CIE aac_config;
+#endif
     tBTIF_MEDIA_UPDATE_AUDIO msg;
     UINT8 pref_min;
     UINT8 pref_max;
@@ -1218,7 +1255,17 @@ static void btif_a2dp_encoder_update(void)
                 msg.BluetoothCodecID = aptx_config.codecId;
             }
         } /* if (ptr) */
-    } else {
+    }
+#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
+    else if (codectype == BTIF_AV_CODEC_M24) {
+        bta_av_co_audio_get_aac_config(&aac_config, &minmtu);
+
+        APPL_TRACE_DEBUG("btif_a2dp_encoder_update: AAC object_type :%d channels :%d",
+                aac_config.object_type, aac_config.channels);
+        msg.CodecType = BTIF_AV_CODEC_M24;
+    }
+#endif
+    else {
 
         /* Retrieve the current SBC configuration (default if currently not used) */
         bta_av_co_audio_get_sbc_config(&sbc_config, &minmtu);
@@ -2055,6 +2102,11 @@ static void btif_media_thread_handle_cmd(fixed_queue_t *queue, UNUSED_ATTR void 
     case BTIF_MEDIA_STOP_VS_CMD:
         if (btif_media_cb.tx_started && !btif_media_cb.tx_stop_initiated)
             btif_media_send_vendor_stop();
+        else if(btif_media_cb.tx_start_initiated && !btif_media_cb.tx_started)
+        {
+            APPL_TRACE_IMP("Suspend Req when VSC exchange in progress,reset VSC");
+            btif_media_send_reset_vendor_state();
+        }
         else
             APPL_TRACE_IMP("ignore VS stop request");
         break;
@@ -2096,8 +2148,14 @@ static void btif_media_thread_handle_cmd(fixed_queue_t *queue, UNUSED_ATTR void 
 #if (BTA_AV_CO_CP_SCMS_T == TRUE)
         btif_media_send_vendor_scmst_hdr();
 #else
-        if (!btif_media_cb.vs_configs_exchanged)
+        if (!btif_media_cb.vs_configs_exchanged &&
+              btif_media_cb.tx_start_initiated)
             btif_media_cb.vs_configs_exchanged = TRUE;
+        else
+        {
+            APPL_TRACE_ERROR("Dont send start,stream suspended")
+            break;
+        }
         btif_media_send_vendor_start();
 #endif
         break;
@@ -2121,8 +2179,14 @@ static void btif_media_thread_handle_cmd(fixed_queue_t *queue, UNUSED_ATTR void 
         break;
 #if (BTA_AV_CO_CP_SCMS_T == TRUE)
     case BTIF_MEDIA_VS_A2DP_SET_SCMST_HDR_SUCCESS:
-        if (!btif_media_cb.vs_configs_exchanged)
+        if (!btif_media_cb.vs_configs_exchanged &&
+              btif_media_cb.tx_start_initiated)
             btif_media_cb.vs_configs_exchanged = TRUE;
+        else
+        {
+            APPL_TRACE_ERROR("Dont send start,stream suspended")
+            break;
+        }
         btif_media_send_vendor_start();
         break;
 #endif
@@ -2447,7 +2511,16 @@ static void btif_media_task_enc_init(BT_HDR *p_msg)
             /* do nothing, fall through to SBC */
         }
     }
-
+#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
+    else if (pInitAudio->CodecType == BTIF_AV_CODEC_M24) {
+        /*AAC is supported only in split mode, so only update the
+          required MTU size for AAC to send down to FW via VSC*/
+        btif_media_cb.TxAaMtuSize =  ((BTIF_MEDIA_AA_BUF_SIZE-BTIF_MEDIA_AA_AAC_OFFSET-sizeof(BT_HDR))
+            < pInitAudio->MtuSize) ? (BTIF_MEDIA_AA_BUF_SIZE - BTIF_MEDIA_AA_AAC_OFFSET
+            - sizeof(BT_HDR)) : pInitAudio->MtuSize;
+        return;
+    }
+#endif
     /* SBC encoder config (enforced even if not used) */
     btif_media_cb.encoder.s16ChannelMode = pInitAudio->ChannelMode;
     btif_media_cb.encoder.s16NumOfSubBands = pInitAudio->NumOfSubBands;
@@ -2524,6 +2597,17 @@ static void btif_media_task_enc_update(BT_HDR *p_msg)
             /* do nothing, fall through to SBC */
         }
     }
+#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
+    else if (pUpdateAudio->CodecType == BTIF_AV_CODEC_M24) {
+       APPL_TRACE_EVENT("%s AAC" , __func__);
+       btif_media_cb.TxAaMtuSize = ((BTIF_MEDIA_AA_BUF_SIZE -
+                                      BTIF_MEDIA_AA_AAC_OFFSET - sizeof(BT_HDR))
+                < pUpdateAudio->MinMtuSize) ? (BTIF_MEDIA_AA_BUF_SIZE - BTIF_MEDIA_AA_AAC_OFFSET
+                - sizeof(BT_HDR)) : pUpdateAudio->MinMtuSize;
+       return;
+    }
+#endif
+    else
     {
         if (!pstrEncParams->s16NumOfSubBands)
         {
@@ -2870,6 +2954,7 @@ static void btif_media_task_audio_feeding_init(BT_HDR *p_msg)
                    }
                 }
             }
+
             btif_media_cb.TxTranscoding = BTIF_MEDIA_TRSCD_PCM_2_SBC;
             btif_media_task_pcm2sbc_init(p_feeding);
             break;

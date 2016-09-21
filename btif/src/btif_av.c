@@ -2966,6 +2966,9 @@ bt_status_t btif_av_execute_service(BOOLEAN b_enable)
 *******************************************************************************/
 bt_status_t btif_av_sink_execute_service(BOOLEAN b_enable)
 {
+     int i;
+     BTIF_TRACE_IMP("%s: enable: %d", __FUNCTION__, b_enable);
+
      if (b_enable)
      {
          /* Added BTA_AV_FEAT_NO_SCO_SSPD - this ensures that the BTA does not
@@ -2979,9 +2982,20 @@ bt_status_t btif_av_sink_execute_service(BOOLEAN b_enable)
                                                                 UUID_SERVCLASS_AUDIO_SINK);
      }
      else {
-         BTA_AvDeregister(btif_av_cb[0].bta_handle);
-         BTA_AvDisable();
+         /* Also shut down the AV state machine */
+        for (i = 0; i < btif_max_av_clients; i++ )
+        {
+            if (btif_av_cb[i].sm_handle != NULL)
+            {
+                BTIF_TRACE_IMP("%s: shutting down AV SM", __FUNCTION__);
+                btif_sm_shutdown(btif_av_cb[i].sm_handle);
+                btif_av_cb[i].sm_handle = NULL;
+            }
+        }
+        BTA_AvDeregister(btif_av_cb[0].bta_handle);
+        BTA_AvDisable();
      }
+     BTIF_TRACE_IMP("%s: enable: %d completed", __FUNCTION__, b_enable);
      return BT_STATUS_SUCCESS;
 }
 

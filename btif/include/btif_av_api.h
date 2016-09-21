@@ -51,7 +51,7 @@
 /* Codec type */
 #define BTIF_AV_CODEC_NONE       0xF1
 #define BTIF_AV_CODEC_SBC        A2D_MEDIA_CT_SBC        /* SBC media codec type */
-
+#define BTIF_AV_CODEC_M24        A2D_MEDIA_CT_M24        /* AAC media codec type */
 #define BTIF_AV_CODEC_PCM        0x5                     /* Raw PCM */
 
 typedef UINT8 tBTIF_AV_CODEC_ID;
