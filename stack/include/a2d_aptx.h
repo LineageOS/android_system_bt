@@ -80,7 +80,6 @@ typedef struct
     UINT8  future2;
 } tA2D_APTX_CIE;
 
-
 typedef struct  {
     INT16 s16SamplingFreq;  /* 16k, 32k, 44.1k or 48k*/
     INT16 s16ChannelMode;   /* mono, dual, streo or joint streo*/
@@ -95,6 +94,8 @@ typedef struct  {
 extern const char* A2D_APTX_SCHED_LIB_NAME;
 extern void *A2dAptXSchedLibHandle;
 extern BOOLEAN isA2dAptXEnabled;
+extern thread_t *A2d_aptx_thread;
+extern A2D_AptXThreadFn A2d_aptx_thread_fn;
 
 /*****************************************************************************
 **  external function declarations
@@ -107,18 +108,20 @@ extern UINT8 A2D_BldAptxInfo(UINT8 media_type, tA2D_APTX_CIE *p_ie,
                              UINT8 *p_result);
 extern UINT8 A2D_ParsAptxInfo(tA2D_APTX_CIE *p_ie, UINT8 *p_info,
                               BOOLEAN for_caps);
-extern int (*A2D_aptx_sched_init)(void);
+extern int (*A2D_aptx_encoder_init)(void);
 extern A2D_AptXThreadFn (*A2D_aptx_sched_start)(void *encoder,
                           A2D_AptXCodecType aptX_codec_type,
-                          BOOLEAN use_SCMS_T, UINT16 sample_rate,
-                          UINT8 format_bits, UINT8 channel,
-                          A2D_AptXReadFn read_fn,
+                          BOOLEAN use_SCMS_T, BOOLEAN is_24bit_audio,
+                          UINT16 sample_rate, UINT8 format_bits,
+                          UINT8 channel, UINT16 mtu, A2D_AptXReadFn read_fn,
                           A2D_AptXBufferSendFn send_fn,
                           A2D_AptXSetPriorityFn set_priority_fn,
                           BOOLEAN test, BOOLEAN trace);
 extern BOOLEAN (*A2D_aptx_sched_stop)(void);
-extern void (*A2D_aptx_sched_deinit)(void);
+extern void (*A2D_aptx_encoder_deinit)(void);
 extern UINT8 a2d_av_aptx_cfg_in_cap(UINT8 *p_cfg, tA2D_APTX_CIE *p_cap);
+extern BOOLEAN A2D_check_and_init_aptX();
+extern void A2D_deinit_aptX();
 
 #ifdef __cplusplus
 }

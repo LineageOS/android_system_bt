@@ -236,6 +236,7 @@ extern BOOLEAN btif_av_is_codec_offload_supported(int codec);
 #else
 #define btif_av_is_codec_offload_supported(codec) (0)
 #endif
+extern BOOLEAN btif_av_is_offload_supported();
 extern BOOLEAN bt_split_a2dp_enabled;
 /*******************************************************************************
  **
@@ -2288,4 +2289,34 @@ BOOLEAN bta_av_co_get_remote_bitpool_pref(UINT8 *min, UINT8 *max)
     *max = bta_av_co_cb.codec_cfg_setconfig->info[BTA_AV_CO_SBC_MAX_BITPOOL_OFF];
 
     return TRUE;
+}
+
+/*******************************************************************************
+**
+** Function         bta_av_co_audio_is_offload_supported
+**
+** Description      This function is called by AV to check if DUT is in offload
+**                  mode.
+**
+** Returns          TRUE if offload is enabled, FALSE otherwise
+**
+*******************************************************************************/
+BOOLEAN bta_av_co_audio_is_offload_supported(void)
+{
+    return btif_av_is_offload_supported();
+}
+
+/*******************************************************************************
+**
+** Function         bta_av_co_audio_is_codec_supported
+**
+** Description      This function is called by AV to check if corresponding
+**                  codec is supported in offload mode.
+**
+** Returns          TRUE if codec is supported in offload, FALSE otherwise
+**
+*******************************************************************************/
+BOOLEAN bta_av_co_audio_is_codec_supported(int codec)
+{
+    return btif_av_is_codec_offload_supported(codec);
 }
