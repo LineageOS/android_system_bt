@@ -1477,8 +1477,13 @@ static BOOLEAN btif_av_state_started_handler(btif_sm_event_t event, void *p_data
             {
                 BTIF_TRACE_DEBUG("%s: Notify framework to reconfig",__func__);
                 int idx = btif_av_get_other_connected_idx(index);
-                HAL_CBACK(bt_av_src_callbacks, reconfig_a2dp_trigger_cb, 1,
-                                                &(btif_av_cb[idx].peer_bda));
+                /* Fix for below Klockwork Issue
+                 * Array 'btif_av_cb' of size 2 may use index value(s) -1 */
+                if (idx != INVALID_INDEX)
+                {
+                    HAL_CBACK(bt_av_src_callbacks, reconfig_a2dp_trigger_cb, 1,
+                                                    &(btif_av_cb[idx].peer_bda));
+                }
             }
             break;
 
@@ -2221,8 +2226,10 @@ static void bte_av_media_callback(tBTA_AV_EVT event, tBTA_AV_MEDIA *p_data)
 static void a2dp_offload_codec_cap_parser(const char *value)
 {
     char *tok = NULL;
-
-    tok = strtok((char*)value,"-");
+    char *tmp_token = NULL;
+    /* Fix for below Klockwork Issue
+     * 'strtok' has been deprecated; replace it with a safe function. */
+    tok = strtok_r((char*)value, "-", &tmp_token);
     while (tok != NULL)
     {
         if (strcmp(tok,"sbc") == 0)
@@ -2240,7 +2247,7 @@ static void a2dp_offload_codec_cap_parser(const char *value)
             BTIF_TRACE_ERROR("%s: AAC offload supported",__func__);
             btif_av_codec_offload.aac_offload = TRUE;
         }
-        tok = strtok(NULL,"-");
+        tok = strtok_r(NULL, "-", &tmp_token);
     };
 }
 
