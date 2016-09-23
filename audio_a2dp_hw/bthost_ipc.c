@@ -421,8 +421,10 @@ static void* a2dp_codec_parser(uint8_t *codec_cfg, audio_format_t *codec_type)
             default:
                  ERROR("Unknown channel mode");
         }
-        if (*codec_type == AUDIO_FORMAT_APTX_HD)
+        if (*codec_type == AUDIO_FORMAT_APTX_HD) {
+            p_cfg += 4;
             len -= 4;//ignore 4 bytes not used
+        }
         if (len == 0)
             INFO("Codec config copied");
 
