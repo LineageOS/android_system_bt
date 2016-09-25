@@ -76,8 +76,11 @@ typedef struct hci_hal_t {
   // header that prefixes data you're sending.
   uint16_t (*transmit_data)(serial_data_type_t type, uint8_t *data, uint16_t length);
 
+#ifdef QCOM_WCN_SSR
   // to detect the SSR in PR controller
   bool (*dev_in_reset)(void);
+#endif
+
 } hci_hal_t;
 
 // Gets the correct hal implementation, as compiled for.
