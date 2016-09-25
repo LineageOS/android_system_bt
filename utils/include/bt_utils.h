@@ -53,7 +53,7 @@ typedef enum {
 
 typedef enum {
     BT_SOC_DEFAULT = 0,
-    BT_SOC_SMD = BT_SOC_DEFAULT,
+    BT_SOC_SMD,
     BT_SOC_AR3K,
     BT_SOC_ROME,
     BT_SOC_CHEROKEE,
