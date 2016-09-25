@@ -16,6 +16,24 @@
       "revId": "b4ecdd3d1f6db8bce1885f6da6a2490cfb596294",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1fa4df85_83ada332",
+        "filename": "btif/src/btif_vendor.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 7880
+      },
+      "writtenOn": "2016-09-25T08:32:17Z",
+      "side": 0,
+      "message": "Define BOARD_HAS_QCA_BT_ROME in the board config; all usages of QCA_BT_ROME apply to cherokee as well.",
+      "parentUuid": "1fa4df85_638987c8",
+      "revId": "b4ecdd3d1f6db8bce1885f6da6a2490cfb596294",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
     }
   ]
 }
