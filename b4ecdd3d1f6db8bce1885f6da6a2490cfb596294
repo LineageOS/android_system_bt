@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1fa4df85_638987c8",
+        "filename": "btif/src/btif_vendor.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 4550
+      },
+      "writtenOn": "2016-09-25T08:12:21Z",
+      "side": 0,
+      "message": "This change will break devices using cherokee BT",
+      "revId": "b4ecdd3d1f6db8bce1885f6da6a2490cfb596294",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
