@@ -227,10 +227,12 @@ done:;
   return transmitted_length;
 }
 
+#ifdef QCOM_WCN_SSR
 static bool hal_dev_in_reset()
 {
     return false;
 }
+#endif
 
 // Internal functions
 
@@ -330,7 +332,9 @@ static const hci_hal_t interface = {
   read_data,
   packet_finished,
   transmit_data,
+#ifdef QCOM_WCN_SSR
   hal_dev_in_reset
+#endif
 };
 
 const hci_hal_t *hci_hal_h4_get_interface() {
