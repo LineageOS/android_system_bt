@@ -15,27 +15,23 @@
  *  limitations under the License.
  *
  ******************************************************************************/
-#include <string.h>
+
 #include "hci_hal.h"
 #include "hci_internals.h"
-#include "bt_utils.h"
 #if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
 #include <assert.h>
+#include <string.h>
 #include "osi/include/eager_reader.h"
 #include "osi/include/osi.h"
 #include "osi/include/log.h"
 #endif
 
-bt_soc_type soc_type;
-
 const hci_hal_t *hci_hal_get_interface() {
-    soc_type = get_soc_type();
-
-    if (soc_type == BT_SOC_ROME || soc_type == BT_SOC_CHEROKEE) {
-        return hci_hal_h4_get_interface();
-    } else {
-        return hci_hal_mct_get_interface();
-    }
+#if HCI_USE_MCT
+  return hci_hal_mct_get_interface();
+#else
+  return hci_hal_h4_get_interface();
+#endif
 }
 
 #if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
