@@ -158,6 +158,41 @@ void sdpu_release_ccb (tCONN_CB *p_ccb)
     osi_free_and_reset((void **)&p_ccb->rsp_list);
 }
 
+/*******************************************************************************
+**
+** Function         sdpu_update_ccb_cont_info
+**
+** Description      This function updates CCB's continuation information in the
+**                  case of a record being moved up one place in DB following
+**                  deletion of a record above.
+**
+** Returns          void
+**
+*******************************************************************************/
+void sdpu_update_ccb_cont_info (UINT32 handle)
+{
+    UINT16       xx;
+    tCONN_CB     *p_ccb;
+
+    /* Look through each connection control block */
+    for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++)
+    {
+        if ((p_ccb->con_state != SDP_STATE_IDLE) && (p_ccb->cont_info.curr_sdp_rec) && (p_ccb->cont_info.curr_sdp_rec->record_handle == handle))
+        {
+            if (handle == sdp_cb.server_db.record[0].record_handle)
+            {
+                /* The record is moved to the top of database. Resetting the prev_sdp_rec to NULL */
+                p_ccb->cont_info.curr_sdp_rec = NULL;
+                p_ccb->cont_info.prev_sdp_rec = NULL;
+            }
+            else
+            {
+                p_ccb->cont_info.curr_sdp_rec -= 1;
+                p_ccb->cont_info.prev_sdp_rec = p_ccb->cont_info.curr_sdp_rec -1;
+            }
+        }
+    }
+}
 
 /*******************************************************************************
 **
