@@ -906,7 +906,17 @@ static void btif_recv_ctrl_data(void)
 
             a2dp_cmd_acknowledge(A2DP_CTRL_ACK_SUCCESS);
             BTIF_TRACE_DEBUG("codec_id = %x",codec_id);
-            if (codec_id == BTIF_AV_CODEC_SBC)
+
+            if (get_soc_type() == BT_SOC_SMD)
+            {
+                //For Pronto PLs Audio pumps raw PCM data for others its encoded data to SOC
+                param[1] = 4; //RAW PCM
+                param[2] = AVDT_MEDIA_AUDIO;
+                param[3] = BTIF_AV_CODEC_PCM;
+                param[4] = btif_media_cb.media_feeding.cfg.pcm.sampling_freq;
+                param[5] = btif_media_cb.media_feeding.cfg.pcm.num_channel;
+            }
+            else if (codec_id == BTIF_AV_CODEC_SBC)
             {
                 tA2D_SBC_CIE codec_cfg;
                 bta_av_co_audio_get_sbc_config(&codec_cfg, &min_mtu);
@@ -4381,11 +4391,14 @@ void btif_media_start_vendor_command()
     }
     else
     {
-#if 0
-        btif_media_send_vendor_write_sbc_cfg();
-#else
-        btif_media_send_vendor_selected_codec();
-#endif
+        if (get_soc_type() == BT_SOC_SMD)
+        {
+            btif_media_send_vendor_write_sbc_cfg();
+        }
+        else
+        {
+            btif_media_send_vendor_selected_codec();
+        }
     }
 }
 
