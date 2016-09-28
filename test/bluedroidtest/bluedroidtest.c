@@ -125,7 +125,7 @@ static void bdt_shutdown(void)
 static void config_permissions(void)
 {
     struct __user_cap_header_struct header;
-    struct __user_cap_data_struct cap;
+    struct __user_cap_data_struct cap[2];
 
     bdt_log("set_aid_and_cap : pid %d, uid %d gid %d", getpid(), getuid(), getgid());
 
@@ -136,17 +136,25 @@ static void config_permissions(void)
     setuid(AID_BLUETOOTH);
     setgid(AID_BLUETOOTH);
 
-    header.version = _LINUX_CAPABILITY_VERSION;
+    header.version = _LINUX_CAPABILITY_VERSION_3;
 
-    cap.effective = cap.permitted =  cap.inheritable =
-                    1 << CAP_NET_RAW |
-                    1 << CAP_NET_ADMIN |
-                    1 << CAP_NET_BIND_SERVICE |
-                    1 << CAP_SYS_RAWIO |
-                    1 << CAP_SYS_NICE |
-                    1 << CAP_SETGID;
+    cap[CAP_TO_INDEX(CAP_NET_RAW)].permitted |= CAP_TO_MASK(CAP_NET_RAW);
+    cap[CAP_TO_INDEX(CAP_NET_ADMIN)].permitted |= CAP_TO_MASK(CAP_NET_ADMIN);
+    cap[CAP_TO_INDEX(CAP_NET_BIND_SERVICE)].permitted |= CAP_TO_MASK(CAP_NET_BIND_SERVICE);
+    cap[CAP_TO_INDEX(CAP_SYS_RAWIO)].permitted |= CAP_TO_MASK(CAP_SYS_RAWIO);
+    cap[CAP_TO_INDEX(CAP_SYS_NICE)].permitted |= CAP_TO_MASK(CAP_SYS_NICE);
+    cap[CAP_TO_INDEX(CAP_SETGID)].permitted |= CAP_TO_MASK(CAP_SETGID);
+    cap[CAP_TO_INDEX(CAP_WAKE_ALARM)].permitted |= CAP_TO_MASK(CAP_WAKE_ALARM);
 
-    capset(&header, &cap);
+    cap[CAP_TO_INDEX(CAP_NET_RAW)].effective |= CAP_TO_MASK(CAP_NET_RAW);
+    cap[CAP_TO_INDEX(CAP_NET_ADMIN)].effective |= CAP_TO_MASK(CAP_NET_ADMIN);
+    cap[CAP_TO_INDEX(CAP_NET_BIND_SERVICE)].effective |= CAP_TO_MASK(CAP_NET_BIND_SERVICE);
+    cap[CAP_TO_INDEX(CAP_SYS_RAWIO)].effective |= CAP_TO_MASK(CAP_SYS_RAWIO);
+    cap[CAP_TO_INDEX(CAP_SYS_NICE)].effective |= CAP_TO_MASK(CAP_SYS_NICE);
+    cap[CAP_TO_INDEX(CAP_SETGID)].effective |= CAP_TO_MASK(CAP_SETGID);
+    cap[CAP_TO_INDEX(CAP_WAKE_ALARM)].effective |= CAP_TO_MASK(CAP_WAKE_ALARM);
+
+    capset(&header, &cap[0]);
     setgroups(sizeof(groups)/sizeof(groups[0]), groups);
 }
 
