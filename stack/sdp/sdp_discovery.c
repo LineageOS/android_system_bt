@@ -347,7 +347,7 @@ static void process_service_search_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
 #if (SDP_RAW_DATA_INCLUDED == TRUE)
 static void sdp_copy_raw_data (tCONN_CB *p_ccb, BOOLEAN offset)
 {
-    unsigned int    cpy_len;
+    unsigned int    cpy_len, rem_len;
     UINT32          list_len;
     UINT8           *p;
     UINT8           type;
@@ -377,6 +377,12 @@ static void sdp_copy_raw_data (tCONN_CB *p_ccb, BOOLEAN offset)
         if(list_len && list_len < cpy_len )
         {
             cpy_len = list_len;
+        }
+        rem_len = SDP_MAX_LIST_BYTE_COUNT - (unsigned int) (p - &p_ccb->rsp_list[0]);
+        if (cpy_len > rem_len)
+        {
+            SDP_TRACE_WARNING("rem_len :%d less than cpy_len:%d", rem_len, cpy_len);
+            cpy_len = rem_len;
         }
 #if (SDP_DEBUG_RAW == TRUE)
         SDP_TRACE_WARNING("list_len :%d cpy_len:%d raw_size:%d raw_used:%d",

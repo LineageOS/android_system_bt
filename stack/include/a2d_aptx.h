@@ -60,8 +60,7 @@
 typedef enum {
     APTX_CODEC_NONE=0,
     APTX_CODEC,
-    APTX_CODEC_LL,
-    APTX_CODEC_HD,
+    APTX_HD_CODEC,
 } A2D_AptXCodecType;
 
 typedef void (*A2D_AptXThreadFn)(void *context);
@@ -122,6 +121,7 @@ extern void (*A2D_aptx_encoder_deinit)(void);
 extern UINT8 a2d_av_aptx_cfg_in_cap(UINT8 *p_cfg, tA2D_APTX_CIE *p_cap);
 extern BOOLEAN A2D_check_and_init_aptX();
 extern void A2D_deinit_aptX();
+extern void A2D_close_aptX();
 
 #ifdef __cplusplus
 }
