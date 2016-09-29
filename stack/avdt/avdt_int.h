@@ -616,7 +616,8 @@ extern tAVDT_SCB *avdt_scb_by_hdl(UINT8 hdl);
 extern UINT8 avdt_scb_verify(tAVDT_CCB *p_ccb, UINT8 state, UINT8 *p_seid, UINT16 num_seid, UINT8 *p_err_code);
 extern void avdt_scb_peer_seid_list(tAVDT_MULTI *p_multi);
 extern UINT32 avdt_scb_gen_ssrc(tAVDT_SCB *p_scb);
-
+extern void avdt_scb_set_max_av_client(UINT8 num_clients);
+extern UINT8 avdt_scb_get_max_av_client(void);
 /* SCB action functions */
 extern void avdt_scb_hdl_abort_cmd(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data);
 extern void avdt_scb_hdl_abort_rsp(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data);

@@ -73,6 +73,14 @@
 #define BTA_AV_RS_TIME_VAL     1000
 #endif
 
+/* offload codecs support */
+enum
+{
+    APTX = 1,
+    AAC,
+    APTX_HD
+};
+
 /* state machine states */
 enum
 {
@@ -179,6 +187,7 @@ static void bta_av_sco_chg_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8
 static void bta_av_sys_rs_cback (tBTA_SYS_CONN_STATUS status,UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
 
 static void bta_av_api_enable_multicast(tBTA_AV_DATA *p_data);
+static void bta_av_api_update_max_av_clients(tBTA_AV_DATA * p_data);
 
 /* action functions */
 const tBTA_AV_NSM_ACT bta_av_nsm_act[] =
@@ -202,6 +211,7 @@ const tBTA_AV_NSM_ACT bta_av_nsm_act[] =
 #endif
     bta_av_api_to_ssm,              /* BTA_AV_API_START_EVT */
     bta_av_api_to_ssm,              /* BTA_AV_API_STOP_EVT */
+    bta_av_api_update_max_av_clients,
     bta_av_api_enable_multicast,    /* BTA_AV_ENABLE_MULTICAST_EVT */
 };
 
@@ -683,6 +693,43 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
                    (*bta_av_a2d_cos.init)(&codec_type, cs.cfg.codec_info,
                     &cs.cfg.num_protect, cs.cfg.protect_info, index) == TRUE)
             {
+                if ((*bta_av_a2d_cos.offload)() ==  TRUE)
+                {
+                    if(codec_type == A2D_NON_A2DP_MEDIA_CT)
+                    {
+
+                       UINT8* ptr = cs.cfg.codec_info;
+                       tA2D_APTX_CIE* codecInfo = (tA2D_APTX_CIE*) &ptr[3];
+                       UINT8 vendorId = codecInfo->vendorId;
+                       UINT8 codecId = codecInfo->codecId;
+
+                       if (vendorId == A2D_APTX_VENDOR_ID &&
+                           codecId == A2D_APTX_CODEC_ID_BLUETOOTH)
+                       {
+                           if((*bta_av_a2d_cos.cap)(APTX) != TRUE)
+                           {
+                               index++;
+                               continue;
+                           }
+                           else
+                               APPL_TRACE_DEBUG("%s:codec supported",__func__)
+                       }
+                    }
+                    else if (codec_type == AAC)
+                    {
+                        if ((*bta_av_a2d_cos.cap)(AAC) != TRUE)
+                        {
+                            index++;
+                            continue;
+                        }
+                    }
+                }
+                else if((codec_type == A2D_NON_A2DP_MEDIA_CT) && (A2D_check_and_init_aptX() == false))
+                {
+                   index++;
+                   continue;
+                }
+
                 if(AVDT_CreateStream(&p_scb->seps[index - startIndex].av_handle, &cs) ==
                                                                             AVDT_SUCCESS)
                 {
@@ -807,6 +854,9 @@ void bta_av_api_deregister(tBTA_AV_DATA *p_data)
 {
     tBTA_AV_SCB *p_scb = bta_av_hndl_to_scb(p_data->hdr.layer_specific);
 
+    // de-initialize aptX
+    A2D_deinit_aptX();
+
     if(p_scb)
     {
         p_scb->deregistring = TRUE;
@@ -926,6 +976,22 @@ static void bta_av_api_enable_multicast(tBTA_AV_DATA *p_data)
 {
     is_multicast_enabled = p_data->multicast_state.is_multicast_enabled;
     APPL_TRACE_DEBUG("is_multicast_enabled :%d", is_multicast_enabled);
+}
+
+/*******************************************************************************
+**
+** Function         bta_av_api_update_max_av_client
+**
+** Description      Update max simultaneous AV connections supported
+**
+** Returns          void
+**
+*******************************************************************************/
+static void bta_av_api_update_max_av_clients(tBTA_AV_DATA *p_data)
+{
+    int bta_av_max_clients = p_data->max_av_clients.max_clients;
+    APPL_TRACE_DEBUG("bta_av_max_clients:%d",bta_av_max_clients);
+    AVDT_UpdateMaxAvClients(bta_av_max_clients);
 }
 
 /*******************************************************************************

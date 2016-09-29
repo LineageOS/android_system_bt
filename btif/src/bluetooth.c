@@ -48,6 +48,7 @@
 #include "bt_utils.h"
 #include "btif_api.h"
 #include "btif_common.h"
+#include "device/include/controller.h"
 #include "btif_debug.h"
 #include "btsnoop.h"
 #include "btsnoop_mem.h"
@@ -527,6 +528,8 @@ int config_hci_snoop_log(uint8_t enable)
         return BT_STATUS_NOT_READY;
 
     btsnoop_get_interface()->set_api_wants_to_log(enable);
+    controller_get_static_interface()->enable_soc_logging(enable);
+
     return BT_STATUS_SUCCESS;
 }
 

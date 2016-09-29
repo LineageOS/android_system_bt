@@ -38,7 +38,7 @@
 #define BTIF_HH_KEYSTATE_MASK_NUMLOCK    0x01
 #define BTIF_HH_KEYSTATE_MASK_CAPSLOCK   0x02
 #define BTIF_HH_KEYSTATE_MASK_SCROLLLOCK 0x04
-
+#define BTIF_HH_OUTPUT_REPORT_SIZE       2
 
 /*******************************************************************************
 **  Type definitions and return values
@@ -71,6 +71,7 @@ typedef struct
     list_t                        *set_rpt_id_list; // Owns a collection of set_rpt_id objects.
     UINT8                         get_rpt_snt;
     BOOLEAN                       local_vup; // Indicated locally initiated VUP
+    UINT8                         last_output_rpt_data[BTIF_HH_OUTPUT_REPORT_SIZE];
 } btif_hh_device_t;
 
 /* Control block to maintain properties of devices */

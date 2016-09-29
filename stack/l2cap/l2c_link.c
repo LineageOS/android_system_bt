@@ -59,6 +59,8 @@ static const UINT8 hci_role_switch_black_list_prefix[][3] = {{0x00, 0x26, 0xb4} 
                                                              ,{0xa4, 0x15, 0x66} /* Motorola Boom */
                                                              ,{0xd0, 0x13, 0x1e} /* Samsung keyboard */
                                                              ,{0x1c, 0x48, 0xf9} /* Jabra Storm */
+                                                             ,{0x8f, 0x20, 0xb4} /* BT1719 */
+                                                             ,{0xa8, 0xb9, 0xb3} /* Sonata CarKit */
                                                             };
 
 /*******************************************************************************

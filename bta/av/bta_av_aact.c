@@ -105,7 +105,9 @@ const tBTA_AV_CO_FUNCTS bta_av_a2d_cos =
     bta_av_co_audio_start,
     bta_av_co_audio_stop,
     bta_av_co_audio_src_data_path,
-    bta_av_co_audio_delay
+    bta_av_co_audio_delay,
+    bta_av_co_audio_is_offload_supported,
+    bta_av_co_audio_is_codec_supported
 };
 
 /* ssm action functions for audio stream */

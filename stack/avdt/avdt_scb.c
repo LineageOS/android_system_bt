@@ -511,7 +511,7 @@ const tAVDT_SCB_ST_TBL avdt_scb_st_tbl[] = {
     avdt_scb_st_closing
 };
 
-
+UINT8 max_av_clients = 1;
 /*******************************************************************************
 **
 ** Function         avdt_scb_event
@@ -793,5 +793,33 @@ void avdt_scb_peer_seid_list(tAVDT_MULTI *p_multi)
             p_multi->seid_list[i] = p_scb->peer_seid;
         }
     }
+}
+
+/*******************************************************************************
+**
+** Function         avdt_scb_max_av_client
+**
+** Description      Update max simultaneous AV connections supported
+**
+** Returns          Nothing.
+**
+*******************************************************************************/
+void avdt_scb_set_max_av_client(UINT8 max_clients)
+{
+    max_av_clients = max_clients;
+}
+
+/*******************************************************************************
+**
+** Function         avdt_scb_get_max_av_client
+**
+** Description      Return max simultaneous AV connections supported
+**
+** Returns          max av clients supported
+**
+*******************************************************************************/
+UINT8 avdt_scb_get_max_av_client()
+{
+    return max_av_clients;
 }
 

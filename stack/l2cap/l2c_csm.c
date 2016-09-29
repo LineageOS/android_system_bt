@@ -1150,7 +1150,7 @@ static void l2c_csm_open (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
         tempstate = p_ccb->chnl_state;
         tempcfgdone = p_ccb->config_done;
         p_ccb->chnl_state = CST_CONFIG;
-        p_ccb->config_done &= ~CFG_DONE_MASK;
+        p_ccb->config_done &= ~IB_CFG_DONE;
 
         alarm_set_on_queue(p_ccb->l2c_ccb_timer,
                            L2CAP_CHNL_CFG_TIMEOUT_MS,

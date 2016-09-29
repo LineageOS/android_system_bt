@@ -236,6 +236,7 @@ extern BOOLEAN btif_av_is_codec_offload_supported(int codec);
 #else
 #define btif_av_is_codec_offload_supported(codec) (0)
 #endif
+extern BOOLEAN btif_av_is_offload_supported();
 extern BOOLEAN bt_split_a2dp_enabled;
 /*******************************************************************************
  **
@@ -1996,7 +1997,15 @@ UINT8 bta_av_select_codec(UINT8 hdl)
         APPL_TRACE_ERROR("%s hdl = %d",__func__,hdl);
         /* Retrieve the peer info */
         p_peer = bta_av_co_get_peer(hdl);
-        bta_av_co_audio_peer_supports_codec(p_peer,&index);
+        /* Fix for below KW Issue
+           Pointer 'p_peer' returned from call to function 'bta_av_co_get_peer' at line
+           1993 may be NULL, will be passed to function and may be dereferenced there
+           by passing argument 1 to function 'bta_av_co_audio_peer_supports_codec' at
+           line 2001.*/
+        if (p_peer != NULL)
+        {
+            bta_av_co_audio_peer_supports_codec(p_peer,&index);
+        }
         return bta_av_co_cb.codec_cfg->id;
     }
 }
@@ -2280,4 +2289,34 @@ BOOLEAN bta_av_co_get_remote_bitpool_pref(UINT8 *min, UINT8 *max)
     *max = bta_av_co_cb.codec_cfg_setconfig->info[BTA_AV_CO_SBC_MAX_BITPOOL_OFF];
 
     return TRUE;
+}
+
+/*******************************************************************************
+**
+** Function         bta_av_co_audio_is_offload_supported
+**
+** Description      This function is called by AV to check if DUT is in offload
+**                  mode.
+**
+** Returns          TRUE if offload is enabled, FALSE otherwise
+**
+*******************************************************************************/
+BOOLEAN bta_av_co_audio_is_offload_supported(void)
+{
+    return btif_av_is_offload_supported();
+}
+
+/*******************************************************************************
+**
+** Function         bta_av_co_audio_is_codec_supported
+**
+** Description      This function is called by AV to check if corresponding
+**                  codec is supported in offload mode.
+**
+** Returns          TRUE if codec is supported in offload, FALSE otherwise
+**
+*******************************************************************************/
+BOOLEAN bta_av_co_audio_is_codec_supported(int codec)
+{
+    return btif_av_is_codec_offload_supported(codec);
 }

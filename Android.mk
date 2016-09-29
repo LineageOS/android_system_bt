@@ -11,7 +11,7 @@ endif
 
 ifeq ($(TARGET_BUILD_VARIANT),userdebug)
 ifneq ($(BOARD_HAS_QCA_BT_ROME),true)
-bdroid_CFLAGS += -DQLOGKIT_USERDEBUG
+bluetooth_CFLAGS += -DQLOGKIT_USERDEBUG
 endif
 endif
 
@@ -21,8 +21,9 @@ endif
 
 ifeq ($(TARGET_BUILD_VARIANT),eng)
 bluetooth_CFLAGS += -DBLUEDROID_DEBUG
-bluetooth_CFLAGS += -DUSE_AUDIO_TRACK
 endif
+
+bluetooth_CFLAGS += -DUSE_AUDIO_TRACK
 
 bluetooth_CFLAGS += -DEXPORT_SYMBOL="__attribute__((visibility(\"default\")))"
 

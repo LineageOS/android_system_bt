@@ -42,7 +42,6 @@
 #include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <dlfcn.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -51,6 +50,12 @@
 
 #include <hardware/bluetooth.h>
 
+#include "osi/include/alarm.h"
+#include "osi/include/fixed_queue.h"
+#include "osi/include/log.h"
+#include "osi/include/metrics.h"
+#include "osi/include/mutex.h"
+#include "osi/include/thread.h"
 #include "bt_utils.h"
 #include "a2d_api.h"
 #include "a2d_int.h"
@@ -73,12 +78,6 @@
 #include "bt_common.h"
 #include "device/include/controller.h"
 #include "l2c_api.h"
-#include "osi/include/alarm.h"
-#include "osi/include/fixed_queue.h"
-#include "osi/include/log.h"
-#include "osi/include/metrics.h"
-#include "osi/include/mutex.h"
-#include "osi/include/thread.h"
 
 #if (BTA_AV_INCLUDED == TRUE)
 #include "sbc_encoder.h"
@@ -512,20 +511,6 @@ static thread_t *worker_thread;
 
 BOOLEAN bta_av_co_audio_get_codec_config(UINT8 *p_config, UINT16 *p_minmtu, UINT8 type);
 UINT8 bta_av_get_current_codec();
-
-const char *A2D_APTX_SCHED_LIB_NAME = "libaptXScheduler.so";
-BOOLEAN btif_check_and_init_aptX();
-int (*A2D_aptx_sched_init)(void);
-A2D_AptXThreadFn (*A2D_aptx_sched_start)(void *encoder,
-                   A2D_AptXCodecType aptX_codec_type, BOOLEAN use_SCMS_T,
-                   UINT16 sample_rate, UINT8 format_bits, UINT8 channel,
-                   A2D_AptXReadFn read_fn, A2D_AptXBufferSendFn send_fn,
-                   A2D_AptXSetPriorityFn set_priority_fn, BOOLEAN test,
-                   BOOLEAN trace);
-BOOLEAN (*A2D_aptx_sched_stop)(void);
-void (*A2D_aptx_sched_deinit)(void);
-void *A2dAptXSchedLibHandle = NULL;
-BOOLEAN isA2dAptXEnabled = false;
 
 extern BOOLEAN bt_split_a2dp_enabled;
 extern int btif_max_av_clients;
@@ -1174,6 +1159,7 @@ static void btif_a2dp_encoder_init(tBTA_AV_HNDL hdl)
                 bta_av_co_audio_get_codec_config((UINT8*)&aptx_config, &minmtu, A2D_NON_A2DP_MEDIA_CT);
                 msg.CodecType = A2D_NON_A2DP_MEDIA_CT;
                 msg.SamplingFreq = aptx_config.sampleRate;
+                msg.MtuSize = minmtu;
                 msg.ChannelMode = aptx_config.channelMode;
                 msg.BluetoothVendorID = aptx_config.vendorId;
                 msg.BluetoothCodecID = aptx_config.codecId;
@@ -1301,97 +1287,6 @@ bool btif_a2dp_is_media_task_stopped(void)
     return true;
 }
 
-// returns true if aptX codec initialization succeeds, false otherwise
-BOOLEAN btif_check_and_init_aptX(void)
-{
-    APPL_TRACE_DEBUG("btif_check_and_init_aptX");
-
-    if (A2dAptXSchedLibHandle == NULL)
-    {
-        A2dAptXSchedLibHandle = dlopen(A2D_APTX_SCHED_LIB_NAME, RTLD_NOW);
-
-        if (!A2dAptXSchedLibHandle)
-        {
-            APPL_TRACE_ERROR("btif_check_and_init_aptX: aptX scheduler library missing");
-            goto error_exit;
-        }
-
-        A2D_aptx_sched_init = (int (*)(void))dlsym(A2dAptXSchedLibHandle,
-                                                   "aptx_scheduler_init");
-        if (!A2D_aptx_sched_init)
-        {
-            APPL_TRACE_ERROR("btif_check_and_init_aptX: aptX scheduler init missing");
-            goto error_exit;
-        }
-
-        A2D_aptx_sched_start = (A2D_AptXThreadFn (*)(void*, A2D_AptXCodecType, BOOLEAN,
-                                        UINT16, UINT8, UINT8, A2D_AptXReadFn,
-                                        A2D_AptXBufferSendFn,
-                                        A2D_AptXSetPriorityFn, BOOLEAN,
-                                        BOOLEAN))dlsym(A2dAptXSchedLibHandle,
-                                        "aptx_scheduler_start");
-        if (!A2D_aptx_sched_start)
-        {
-            APPL_TRACE_ERROR("btif_check_and_init_aptX: aptX scheduler start missing");
-            goto error_exit;
-        }
-
-        A2D_aptx_sched_stop = (BOOLEAN (*)(void))dlsym(A2dAptXSchedLibHandle,
-                                                       "aptx_scheduler_stop");
-        if (!A2D_aptx_sched_stop)
-        {
-            APPL_TRACE_ERROR("btif_check_and_init_aptX: aptX scheduler stop missing");
-            goto error_exit;
-        }
-
-        A2D_aptx_sched_deinit = (void (*)(void))dlsym(A2dAptXSchedLibHandle,
-                                                      "aptx_scheduler_deinit");
-        if (!A2D_aptx_sched_deinit)
-        {
-            APPL_TRACE_ERROR("btif_check_and_init_aptX: aptX scheduler deinit missing");
-            goto error_exit;
-        }
-
-        if (A2D_aptx_sched_init())
-        {
-            APPL_TRACE_ERROR("btif_check_and_init_aptX: aptX scheduler init failed");
-            goto error_exit;
-        }
-    }
-
-    return true;
-
- error_exit:;
-    if (A2dAptXSchedLibHandle)
-    {
-       dlclose(A2dAptXSchedLibHandle);
-       A2dAptXSchedLibHandle = NULL;
-    }
-    return false;
-
-}
-
-void btif_aptX_deinit(void)
-{
-    APPL_TRACE_DEBUG("btif_aptX_deinit");
-
-    if (isA2dAptXEnabled && A2dAptXSchedLibHandle)
-    {
-       if (aptx_thread)
-       {
-          A2D_aptx_sched_stop();
-          thread_free(aptx_thread);
-          aptx_thread = NULL;
-       }
-       A2D_aptx_sched_deinit();
-       dlclose(A2dAptXSchedLibHandle);
-       A2dAptXSchedLibHandle = NULL;
-       isA2dAptXEnabled = false;
-    }
-
-    return;
-}
-
 bool btif_a2dp_start_media_task(void)
 {
     if (media_task_running != MEDIA_TASK_STATE_OFF)
@@ -1416,9 +1311,6 @@ bool btif_a2dp_start_media_task(void)
         btif_media_thread_handle_cmd,
         NULL);
 
-    // Check if aptX codec is supported
-    isA2dAptXEnabled = btif_check_and_init_aptX();
-
     thread_post(worker_thread, btif_media_thread_init, NULL);
     APPL_TRACE_IMP("## A2DP MEDIA THREAD STARTED ##");
 
@@ -1441,8 +1333,13 @@ void btif_a2dp_stop_media_task(void)
     /* make sure no channels are restarted while shutting down */
     media_task_running = MEDIA_TASK_STATE_SHUTTING_DOWN;
 
-    // uninitialize aptX
-    btif_aptX_deinit();
+    // remove aptX thread
+    if (A2d_aptx_thread)
+    {
+        A2D_aptx_sched_stop();
+        thread_free(A2d_aptx_thread);
+        A2d_aptx_thread = NULL;
+    }
 
     // Stop timer
     alarm_free(btif_media_cb.media_alarm);
@@ -2179,7 +2076,16 @@ static void btif_media_thread_handle_cmd(fixed_queue_t *queue, UNUSED_ATTR void 
           to connect to second other device
         */
         btif_media_send_reset_vendor_state();
-        a2dp_cmd_acknowledge(A2DP_CTRL_ACK_SUCCESS);
+        if (btif_media_cb.a2dp_cmd_pending == A2DP_CTRL_CMD_SUSPEND ||
+            btif_media_cb.a2dp_cmd_pending == A2DP_CTRL_CMD_STOP)
+        {
+            a2dp_cmd_acknowledge(A2DP_CTRL_ACK_SUCCESS);
+        }
+        else
+        {
+            APPL_TRACE_ERROR("wrong cmd pending");
+            a2dp_cmd_acknowledge(A2DP_CTRL_ACK_FAILURE);
+        }
         break;
     case BTIF_MEDIA_VS_A2DP_STOP_FAILURE:
         btif_media_cb.tx_stop_initiated = FALSE;
@@ -3349,28 +3255,30 @@ static void btif_media_task_aa_start_tx(void)
           BOOLEAN use_SCMS_T = false;
 #endif
           A2D_AptXCodecType aptX_codec_type = btif_media_task_get_aptX_codec_type();
+          BOOLEAN is_24bit_audio = false;
 
           BOOLEAN test = false;
           BOOLEAN trace = false;
 
-          A2D_AptXThreadFn aptx_thread_fn = A2D_aptx_sched_start(btif_media_cb.aptxEncoderParams.encoder,
-                       aptX_codec_type,
-                       use_SCMS_T,
-                       btif_media_cb.media_feeding.cfg.pcm.sampling_freq,
-                       btif_media_cb.media_feeding.cfg.pcm.bit_per_sample,
-                       UIPC_CH_ID_AV_AUDIO,
-                       UIPC_Read,
-                       btif_media_task_cb_packet_send,
-                       raise_priority_a2dp,
-                       test,
-                       trace);
+          A2d_aptx_thread_fn = A2D_aptx_sched_start(btif_media_cb.aptxEncoderParams.encoder,
+                   aptX_codec_type,
+                   use_SCMS_T,
+                   is_24bit_audio,
+                   btif_media_cb.media_feeding.cfg.pcm.sampling_freq,
+                   btif_media_cb.media_feeding.cfg.pcm.bit_per_sample,
+                   UIPC_CH_ID_AV_AUDIO,
+                   btif_media_cb.TxAaMtuSize,
+                   UIPC_Read,
+                   btif_media_task_cb_packet_send,
+                   raise_priority_a2dp,
+                   test,
+                   trace);
 
-          aptx_thread = thread_new("aptx_media_worker");
-          if (aptx_thread ) {
-             thread_post(aptx_thread, aptx_thread_fn, NULL);
+          A2d_aptx_thread = thread_new("aptx_media_worker");
+          if (A2d_aptx_thread ) {
+             thread_post(A2d_aptx_thread, A2d_aptx_thread_fn, NULL);
           }
-        } else
-        {
+        } else {
             APPL_TRACE_EVENT("starting timer %dms", BTIF_MEDIA_TIME_TICK);
 
             alarm_free(btif_media_cb.media_alarm);

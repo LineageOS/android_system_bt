@@ -64,6 +64,8 @@
 /******************************************************************************
 **  Constants & Macros
 ******************************************************************************/
+#define BTIF_DM_GET_REMOTE_PROP(b,t,v,l,p) \
+      {p.type=t;p.val=v;p.len=l;btif_storage_get_remote_device_property(b,&p);}
 
 #define COD_MASK                            0x07FF
 
@@ -855,6 +857,21 @@ static void btif_dm_cb_create_bond(bt_bdaddr_t *bd_addr, tBTA_TRANSPORT transpor
 *******************************************************************************/
 void btif_dm_cb_remove_bond(bt_bdaddr_t *bd_addr)
 {
+     bt_bdname_t alias;
+     bt_property_t properties[1];
+     uint32_t num_properties = 0;
+     memset(&alias, 0, sizeof(alias));
+     BTIF_DM_GET_REMOTE_PROP(bd_addr, BT_PROPERTY_REMOTE_FRIENDLY_NAME,
+            &alias, sizeof(alias), properties[num_properties]);
+
+     if(alias.name[0] != '\0') {
+         properties[0].type = BT_PROPERTY_REMOTE_FRIENDLY_NAME;
+         properties[0].val = (void *) "";
+         properties[0].len = 1;
+
+         btif_storage_set_remote_device_property(bd_addr, &properties[0]);
+     }
+
      /*special handling for HID devices */
      /*  VUP needs to be sent if its a HID Device. The HID HOST module will check if there
      is a valid hid connection with this bd_addr. If yes VUP will be issued.*/
@@ -1477,6 +1494,10 @@ static void btif_dm_search_devices_evt (UINT16 event, char *p_param)
 #if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
                 int addr_type = 0;
 #endif
+                bt_bdname_t alias;
+                memset(&alias, 0, sizeof(alias));
+                BTIF_DM_GET_REMOTE_PROP(&bdaddr, BT_PROPERTY_REMOTE_FRIENDLY_NAME,
+                        &alias, sizeof(alias), properties[num_properties]);
 
                 memset(properties, 0, sizeof(properties));
                 /* BD_ADDR */
@@ -1485,7 +1506,14 @@ static void btif_dm_search_devices_evt (UINT16 event, char *p_param)
                 num_properties++;
                 /* BD_NAME */
                 /* Don't send BDNAME if it is empty */
-                if (bdname.name[0])
+                /* send alias name as the name if alias name present */
+                if(alias.name[0] != '\0') {
+                    BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties],
+                                               BT_PROPERTY_BDNAME,
+                                               strlen((char *)alias.name), &alias);
+                    num_properties++;
+                }
+                else if (bdname.name[0])
                 {
                     if((check_eir_is_remote_name_short(p_search_data) == TRUE) &&
                        (btif_storage_is_device_bonded(&bdaddr) == TRUE))
