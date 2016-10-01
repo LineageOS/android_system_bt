@@ -132,7 +132,6 @@ bt_status_t btsock_rfc_init(int poll_thread_handle, uid_set_t* set) {
 
 void btsock_rfc_cleanup(void) {
   pth = -1;
-  uid_set = NULL;
 
   pthread_mutex_lock(&slot_lock);
   for (size_t i = 0; i < ARRAY_SIZE(rfc_slots); ++i) {
