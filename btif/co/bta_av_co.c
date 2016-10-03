@@ -122,9 +122,10 @@ const tA2D_SBC_CIE bta_av_co_sbc_sink_caps =
 #endif
 
 /* A2dp offload capabilities */
-#define SBC  0
-#define APTX 1
-#define AAC  2
+#define SBC    0
+#define APTX   1
+#define AAC    2
+#define APTXHD 3
 /* Default SBC codec configuration */
 const tA2D_SBC_CIE btif_av_sbc_default_config =
 {
@@ -170,7 +171,11 @@ const tA2D_APTX_HD_CIE bta_av_co_aptx_hd_caps =
 {
     A2D_APTX_HD_VENDOR_ID,
     A2D_APTX_HD_CODEC_ID_BLUETOOTH,
+#ifndef BTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
     A2D_APTX_HD_SAMPLERATE_44100,
+#else
+    A2D_APTX_HD_SAMPLERATE_48000,
+#endif
     A2D_APTX_HD_CHANNELS_STEREO,
     A2D_APTX_HD_ACL_SPRINT_RESERVED0,
     A2D_APTX_HD_ACL_SPRINT_RESERVED1,
@@ -183,7 +188,11 @@ const tA2D_APTX_HD_CIE btif_av_aptx_hd_default_config =
 {
     A2D_APTX_HD_VENDOR_ID,
     A2D_APTX_HD_CODEC_ID_BLUETOOTH,
+#ifndef BTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
     A2D_APTX_HD_SAMPLERATE_44100,
+#else
+    A2D_APTX_HD_SAMPLERATE_48000,
+#endif
     A2D_APTX_HD_CHANNELS_STEREO,
     A2D_APTX_HD_ACL_SPRINT_RESERVED0,
     A2D_APTX_HD_ACL_SPRINT_RESERVED1,
@@ -1698,13 +1707,13 @@ static BOOLEAN bta_av_co_audio_peer_supports_codec(tBTA_AV_CO_PEER *p_peer, UINT
  * multicast is not supported for aptX
  */
     if ((!bt_split_a2dp_enabled && isA2dAptXEnabled && (btif_av_is_multicast_supported() == FALSE)) ||
-        (bt_split_a2dp_enabled && btif_av_is_codec_offload_supported(APTX)))
+        (bt_split_a2dp_enabled && (btif_av_is_codec_offload_supported(APTX)|| btif_av_is_codec_offload_supported(APTXHD))))
     {
         UINT16 codecId;
         UINT32 vendorId;
         UINT8* aptx_capabilities;
 
-        if (isA2dAptXHdEnabled) {
+        if ((bt_split_a2dp_enabled && btif_av_is_codec_offload_supported(APTXHD)) || isA2dAptXHdEnabled) {
             for (index = 0; index < p_peer->num_sup_snks; index++)
             {
                 if (p_peer->snks[index].codec_type == A2D_NON_A2DP_MEDIA_CT)
