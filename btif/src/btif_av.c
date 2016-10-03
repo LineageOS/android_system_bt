@@ -117,12 +117,14 @@ typedef struct
     BOOLEAN sbc_offload;
     BOOLEAN aptx_offload;
     BOOLEAN aac_offload;
+    BOOLEAN aptxhd_offload;
 } btif_av_a2dp_offloaded_codec_cap_t;
 
 typedef enum {
     SBC,
     APTX,
     AAC,
+    APTXHD,
 }btif_av_codec_list;
 
 /*****************************************************************************
@@ -299,6 +301,7 @@ const char *dump_av_codec_name(btif_av_codec_list codec)
         CASE_RETURN_STR(SBC)
         CASE_RETURN_STR(APTX)
         CASE_RETURN_STR(AAC)
+        CASE_RETURN_STR(APTXHD)
         default: return "UNKNOWN_CODEC";
     }
 }
@@ -2247,6 +2250,11 @@ static void a2dp_offload_codec_cap_parser(const char *value)
             BTIF_TRACE_ERROR("%s: AAC offload supported",__func__);
             btif_av_codec_offload.aac_offload = TRUE;
         }
+        else if (strcmp(tok,"aptxhd") == 0)
+        {
+            BTIF_TRACE_ERROR("%s: APTXHD offload supported",__func__);
+            btif_av_codec_offload.aptxhd_offload = TRUE;
+        }
         tok = strtok_r(NULL, "-", &tmp_token);
     };
 }
@@ -3645,10 +3653,13 @@ BOOLEAN btif_av_is_codec_offload_supported(int codec)
         case AAC:
             ret = btif_av_codec_offload.aac_offload;
             break;
+        case APTXHD:
+            ret = btif_av_codec_offload.aptxhd_offload;
+            break;
         default:
             ret = FALSE;
     }
-    BTIF_TRACE_DEBUG("btif_av_is_codec_offload_supported %s code supported = %d",dump_av_codec_name(codec),ret);
+    BTIF_TRACE_DEBUG("btif_av_is_codec_offload_supported %s codec supported = %d",dump_av_codec_name(codec),ret);
     return ret;
 }
 

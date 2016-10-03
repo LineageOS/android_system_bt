@@ -4312,6 +4312,8 @@ static void btif_media_send_aa_frame(uint64_t timestamp_us)
 #define A2DP_CODEC_AAC      2
 /* Below type is not defined in spec, it is for our convenience */
 #define A2DP_CODEC_APTX     8
+
+#define A2DP_CODEC_APTX_HD  9
 /* Need to check if we need a different type for APTX low latency
  * or just we can handle with reducing the MTU updated in media
  * channel configuration.
@@ -4324,6 +4326,7 @@ static void btif_media_send_aa_frame(uint64_t timestamp_us)
 #define A2DP_TRANSPORT_STREAM_TYPE_SBC      0
 #define A2DP_TRANSPORT_STREAM_TYPE_AAC      2
 #define A2DP_TRANSPORT_STREAM_TYPE_APTX     8
+#define A2DP_TRANSPORT_STREAM_TYPE_APTX_HD  9
 
 void disconnect_a2dp_on_vendor_start_failure()
 {
@@ -4506,8 +4509,16 @@ BOOLEAN btif_media_send_vendor_selected_codec()
     UINT16 index = 0;
 
     codec_type = bta_av_co_get_current_codec();
-    if (codec_type == A2D_NON_A2DP_MEDIA_CT)
-        codec_type = A2DP_CODEC_APTX;
+    if (codec_type == A2D_NON_A2DP_MEDIA_CT) {
+        UINT8* ptr = bta_av_co_get_current_codecInfo();
+        if (ptr) {
+            tA2D_APTX_CIE* codecInfo = (tA2D_APTX_CIE*) &ptr[BTA_AV_CFG_START_IDX];
+            if (codecInfo && codecInfo->vendorId == A2D_APTX_VENDOR_ID && codecInfo->codecId == A2D_APTX_CODEC_ID_BLUETOOTH)
+                   codec_type = A2DP_CODEC_APTX;
+            else if (codecInfo && codecInfo->vendorId == A2D_APTX_HD_VENDOR_ID && codecInfo->codecId == A2D_APTX_HD_CODEC_ID_BLUETOOTH)
+                   codec_type = A2DP_CODEC_APTX_HD;
+        }
+    }
 
     APPL_TRACE_IMP("btif_media_send_selected_codec: codec: %d", codec_type);
     param[index++] = VS_QHCI_A2DP_SELECTED_CODEC;
@@ -4566,8 +4577,18 @@ BOOLEAN btif_media_send_vendor_transport_cfg()
     UINT8 stream_type;
     APPL_TRACE_IMP("btif_media_send_vendor_transport_cfg: codec: %d", codec_type);
     stream_type = codec_type;
-    if (codec_type == A2D_NON_A2DP_MEDIA_CT)
-        stream_type = A2DP_TRANSPORT_STREAM_TYPE_APTX;
+
+    if (codec_type == A2D_NON_A2DP_MEDIA_CT) {
+        UINT8* ptr = bta_av_co_get_current_codecInfo();
+        if (ptr) {
+            tA2D_APTX_CIE* codecInfo = (tA2D_APTX_CIE*) &ptr[BTA_AV_CFG_START_IDX];
+            if (codecInfo && codecInfo->vendorId == A2D_APTX_VENDOR_ID && codecInfo->codecId == A2D_APTX_CODEC_ID_BLUETOOTH)
+                  stream_type = A2DP_TRANSPORT_STREAM_TYPE_APTX;
+            else if (codecInfo && codecInfo->vendorId == A2D_APTX_HD_VENDOR_ID && codecInfo->codecId == A2D_APTX_HD_CODEC_ID_BLUETOOTH)
+                  stream_type = A2DP_TRANSPORT_STREAM_TYPE_APTX_HD;
+        }
+    }
+
     param[0] = VS_QHCI_A2DP_TRANSPORT_CONFIGURATION;
     param[1] = A2DP_TRANSPORT_TYPE_SLIMBUS;
     param[2] = stream_type;

@@ -80,7 +80,7 @@ enum
 {
     APTX = 1,
     AAC,
-    APTX_HD
+    APTXHD
 };
 
 /* state machine states */
@@ -709,19 +709,36 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
                        {
                            if((*bta_av_a2d_cos.cap)(APTX) != TRUE)
                            {
+                               APPL_TRACE_DEBUG("%s: aptx-Classic offload codec not supported",__func__);
                                index++;
                                continue;
                            }
                            else
-                               APPL_TRACE_DEBUG("%s:codec supported",__func__)
+                               APPL_TRACE_DEBUG("%s:aptx-Classic offload codec supported",__func__)
+                       } else {
+                           if (codecId == A2D_APTX_HD_CODEC_ID_BLUETOOTH &&
+                                  vendorId == A2D_APTX_HD_VENDOR_ID ) {
+                               if((*bta_av_a2d_cos.cap)(APTXHD) != TRUE)
+                               {
+                                   APPL_TRACE_DEBUG("%s: aptx-HD offload codec not supported",__func__)
+                                   index++;
+                                   continue;
+                               }
+                               else
+                                   APPL_TRACE_DEBUG("%s: aptx-HD offload codec supported",__func__)
+
+                           }
                        }
                     }
                     else if (codec_type == AAC)
                     {
                         if ((*bta_av_a2d_cos.cap)(AAC) != TRUE)
                         {
+                            APPL_TRACE_DEBUG("%s: AAC offload codec not supported",__func__);
                             index++;
                             continue;
+                        } else {
+                            APPL_TRACE_DEBUG("%s: AAC offload codec supported",__func__);
                         }
                     }
                 } else if (codec_type == A2D_NON_A2DP_MEDIA_CT) {
