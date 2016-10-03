@@ -178,7 +178,9 @@ static void event_shut_down_stack(UNUSED_ATTR void *context) {
   module_shut_down(get_module(CONTROLLER_MODULE)); // Doesn't do any work, just puts it in a restartable state
 
   LOG_INFO(LOG_TAG, "%s finished", __func__);
+  hack_future = future_new();
   btif_thread_post(event_signal_stack_down, NULL);
+  future_await(hack_future);
 }
 
 static void ensure_stack_is_not_running(void) {
@@ -224,6 +226,7 @@ static void event_signal_stack_up(UNUSED_ATTR void *context) {
 
 static void event_signal_stack_down(UNUSED_ATTR void *context) {
   HAL_CBACK(bt_hal_cbacks, adapter_state_changed_cb, BT_STATE_OFF);
+  future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
 }
 
 static void ensure_manager_initialized(void) {
