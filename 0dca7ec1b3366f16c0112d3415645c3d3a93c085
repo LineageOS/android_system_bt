@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ff2e2bb8_e23d5b2d",
+        "filename": "utils/src/bt_utils.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2016-10-03T21:00:32Z",
+      "side": 1,
+      "message": "This is actually at index 0, not at index BT_SOC_SMD. If we wanted to refactor this we could delete the soc_type_node struct altogether and rely on having a simple array to associate BT_SOC_* with their string equivalents.",
+      "range": {
+        "startLine": 80,
+        "startChar": 27,
+        "endLine": 80,
+        "endChar": 50
+      },
+      "revId": "0dca7ec1b3366f16c0112d3415645c3d3a93c085",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
