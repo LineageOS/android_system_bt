@@ -39,6 +39,7 @@
 #include "bt_common.h"
 #include "btif_av_api.h"
 #include "audio_a2dp_hw.h"
+#include "a2d_aac.h"
 
 /*******************************************************************************
  **  Constants
@@ -61,8 +62,7 @@
 #define BTIF_MEDIA_TRSCD_OFF             0
 #define BTIF_MEDIA_TRSCD_PCM_2_SBC       1  /* Tx */
 #define BTIF_MEDIA_TRSCD_PCM_2_APTX      2
-
-extern int btif_max_av_clients;                      /* maximum number of AV clients supported */
+#define BTIF_MEDIA_TRSCD_PCM_2_APTX_HD   3
 
 /*******************************************************************************
  **  Data types
@@ -81,8 +81,13 @@ typedef struct
         UINT8 AllocationMethod; /* loudness or SNR*/
         UINT16 MtuSize; /* peer mtu size */
         UINT8 CodecType; /* SBC or Non-A2DP */
-        UINT8 BluetoothVendorID; /* Bluetooth Vendor ID */
-        UINT8 BluetoothCodecID; /* Bluetooth Codec ID */
+        UINT32 BluetoothVendorID; /* Bluetooth Vendor ID */
+        UINT16 BluetoothCodecID; /* Bluetooth Codec ID */
+#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
+        UINT8 ObjectType;
+        UINT32 bit_rate;
+        UINT8 vbr;
+#endif
 } tBTIF_MEDIA_INIT_AUDIO;
 
 #if (BTA_AV_INCLUDED == TRUE)
@@ -94,8 +99,8 @@ typedef struct
         UINT8 MaxBitPool; /* Maximum peer bitpool */
         UINT8 MinBitPool; /* Minimum peer bitpool */
         UINT8 CodecType; /* SBC or Non-A2DP */
-        UINT8 BluetoothVendorID; /* Bluetooth Vendor ID */
-        UINT8 BluetoothCodecID; /* Bluetooth Codec ID */
+        UINT32 BluetoothVendorID; /* Bluetooth Vendor ID */
+        UINT16 BluetoothCodecID; /* Bluetooth Codec ID */
 } tBTIF_MEDIA_UPDATE_AUDIO;
 
 /* tBTIF_MEDIA_INIT_AUDIO_FEEDING msg structure */

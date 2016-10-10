@@ -49,7 +49,9 @@
 #include "osi/include/osi.h"
 #include "osi/include/socket_utils/sockets.h"
 
-
+#ifdef LOG_TAG
+#undef LOG_TAG
+#endif
 #define LOG_TAG "bthost_ipc"
 #include "osi/include/log.h"
 
@@ -89,6 +91,7 @@ struct a2dp_stream_common audio_stream;
 
 audio_sbc_encoder_config sbc_codec;
 audio_aptx_encoder_config aptx_codec;
+audio_aac_encoder_config aac_codec;
 /*****************************************************************************
 **  Externs
 ******************************************************************************/
@@ -269,8 +272,105 @@ static void* a2dp_codec_parser(uint8_t *codec_cfg, audio_format_t *codec_type)
         sbc_codec.bitrate |= (*p_cfg++ << 16);
         sbc_codec.bitrate |= (*p_cfg++ << 24);
         *codec_type = AUDIO_FORMAT_SBC;
-        INFO("Done copying full codec config");
+        INFO("SBC: Done copying full codec config");
         return ((void *)(&sbc_codec));
+    } else if (codec_cfg[CODEC_OFFSET] == CODEC_TYPE_AAC)
+    {
+        uint16_t aac_samp_freq = 0;
+        uint32_t aac_bit_rate = 0;
+        memset(&aac_codec,0,sizeof(audio_aac_encoder_config));
+        p_cfg++;//skip dev idx
+        len = *p_cfg++;
+        p_cfg++;//skip media type
+        len--;
+        p_cfg++;//skip codec type
+        len--;
+        byte = *p_cfg++;
+        len--;
+        switch (byte & A2D_AAC_IE_OBJ_TYPE_MSK)
+        {
+            case A2D_AAC_IE_OBJ_TYPE_MPEG_2_AAC_LC:
+                aac_codec.enc_mode = AUDIO_FORMAT_AAC_SUB_LC;
+                break;
+            case A2D_AAC_IE_OBJ_TYPE_MPEG_4_AAC_LC:
+                aac_codec.enc_mode = AUDIO_FORMAT_AAC_SUB_LC;
+                break;
+            case A2D_AAC_IE_OBJ_TYPE_MPEG_4_AAC_LTP:
+                aac_codec.enc_mode = AUDIO_FORMAT_AAC_SUB_LTP;
+                break;
+            case A2D_AAC_IE_OBJ_TYPE_MPEG_4_AAC_SCA:
+                aac_codec.enc_mode = AUDIO_FORMAT_AAC_SUB_SCALABLE;
+                break;
+            default:
+                ERROR("Unknown encoder mode");
+        }
+        //USE 0 (AAC_LC) as hardcoded value till Audio
+        //define constants
+        aac_codec.enc_mode = 0;
+        //USE LOAS(1) or LATM(4) hardcoded values till
+        //Audio define proper constants
+        aac_codec.format_flag = 4;
+        byte = *p_cfg++;
+        len--;
+        aac_samp_freq = byte << 8; //1st byte of sample_freq
+        byte = *p_cfg++;
+        len--;
+        aac_samp_freq |= byte & 0x00F0; //1st nibble of second byte of samp_freq
+
+        switch (aac_samp_freq) {
+            case 0x8000: aac_codec.sampling_rate = 8000; break;
+            case 0x4000: aac_codec.sampling_rate = 11025; break;
+            case 0x2000: aac_codec.sampling_rate = 12000; break;
+            case 0x1000: aac_codec.sampling_rate = 16000; break;
+            case 0x0800: aac_codec.sampling_rate = 22050; break;
+            case 0x0400: aac_codec.sampling_rate = 24000; break;
+            case 0x0200: aac_codec.sampling_rate = 32000; break;
+            case 0x0100: aac_codec.sampling_rate = 44100; break;
+            case 0x0080: aac_codec.sampling_rate = 48000; break;
+            case 0x0040: aac_codec.sampling_rate = 64000; break;
+            case 0x0020: aac_codec.sampling_rate = 88200; break;
+            case 0x0010: aac_codec.sampling_rate = 96000; break;
+            default:
+                ERROR("Invalid sample_freq: %x", aac_samp_freq);
+        }
+
+        switch (byte & A2D_AAC_IE_CHANNELS_MSK)
+        {
+            case A2D_AAC_IE_CHANNELS_1:
+                 aac_codec.channels = 1;
+                 break;
+            case A2D_AAC_IE_CHANNELS_2:
+                 aac_codec.channels = 2;
+                 break;
+            default:
+                 ERROR("Unknow channel mode");
+        }
+        byte = *p_cfg++; //Move to VBR byte
+        len--;
+        switch (byte & A2D_AAC_IE_VBR_MSK)
+        {
+            case A2D_AAC_IE_VBR:
+                break;
+            default:
+                ERROR("VBR not supported");
+        }
+        aac_bit_rate = 0x7F&byte;
+        //Move it 2nd byte of 32 bit word. leaving the VBR bit
+        aac_bit_rate = aac_bit_rate << 16;
+        byte = *p_cfg++; //Move to 2nd byteof bitrate
+        len--;
+
+        //Move it to 3rd byte of 32bit word
+        aac_bit_rate |= 0x0000FF00 & (((uint32_t)byte)<<8);
+        byte = *p_cfg++; //Move to 3rd byte of bitrate
+        len--;
+
+        aac_bit_rate |= 0x000000FF & (((uint32_t)byte));
+        aac_codec.bitrate = aac_bit_rate;
+
+        *codec_type = AUDIO_FORMAT_AAC;
+        INFO("AAC: Done copying full codec config");
+        return ((void *)(&aac_codec));
     }
     else if (codec_cfg[CODEC_OFFSET] == NON_A2DP_CODEC_TYPE)
     {
@@ -321,8 +421,10 @@ static void* a2dp_codec_parser(uint8_t *codec_cfg, audio_format_t *codec_type)
             default:
                  ERROR("Unknown channel mode");
         }
-        if (*codec_type == AUDIO_FORMAT_APTX_HD)
+        if (*codec_type == AUDIO_FORMAT_APTX_HD) {
+            p_cfg += 4;
             len -= 4;//ignore 4 bytes not used
+        }
         if (len == 0)
             INFO("Codec config copied");
 
@@ -332,6 +434,8 @@ static void* a2dp_codec_parser(uint8_t *codec_cfg, audio_format_t *codec_type)
         aptx_codec.bitrate |= (*p_cfg++ << 8);
         aptx_codec.bitrate |= (*p_cfg++ << 16);
         aptx_codec.bitrate |= (*p_cfg++ << 24);
+
+        INFO("APTx: Done copying full codec config");
         return ((void *)&aptx_codec);
     }
     return NULL;
@@ -620,7 +724,6 @@ int a2dp_read_codec_config(struct a2dp_stream_common *common,uint8_t idx)
 int a2dp_get_multicast_status(struct a2dp_stream_common *common, uint8_t *mcast_status,
                                uint8_t *num_dev)
 {
-    char cmd = A2DP_CTRL_GET_MULTICAST_STATUS;
     INFO("%s",__func__);
     if (a2dp_command(common,A2DP_CTRL_GET_MULTICAST_STATUS) < 0)
     {
@@ -877,7 +980,7 @@ int audio_start_stream()
             INFO("control path is disconnected");
             break;
         }
-        INFO("%s: a2dp stream not started,wait 100mse & retry");
+        INFO("%s: a2dp stream not started,wait 100mse & retry", __func__);
         usleep(100000);
     }
     if (audio_stream.state != AUDIO_A2DP_STATE_STARTED)
@@ -933,7 +1036,7 @@ int audio_stop_stream()
         return 0;
     }
     audio_stream.state = AUDIO_A2DP_STATE_STOPPED;
-    return -1; 
+    return -1;
 }
 
 int audio_suspend_stream()
@@ -967,9 +1070,6 @@ void clear_a2dpsuspend_flag()
 void * audio_get_codec_config(uint8_t *multicast_status, uint8_t *num_dev,
                               audio_format_t *codec_type)
 {
-    char *p_common_cfg = &audio_stream.codec_cfg[0];
-    int i;
-
     INFO("%s: state = %s",__func__,dump_a2dp_hal_state(audio_stream.state));
 
     a2dp_get_multicast_status(&audio_stream, multicast_status,num_dev);

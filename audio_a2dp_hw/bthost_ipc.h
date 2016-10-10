@@ -101,6 +101,20 @@ codec specific definitions
 #define A2D_APTX_CHAN_STEREO     0x02
 #define A2D_APTX_CHAN_MONO       0x01
 
+
+#define A2D_AAC_IE_OBJ_TYPE_MSK                0xF0    /* b7-b4 Object Type */
+#define A2D_AAC_IE_OBJ_TYPE_MPEG_2_AAC_LC      0x80    /* b7:MPEG-2 AAC LC */
+#define A2D_AAC_IE_OBJ_TYPE_MPEG_4_AAC_LC      0x40    /* b7:MPEG-4 AAC LC */
+#define A2D_AAC_IE_OBJ_TYPE_MPEG_4_AAC_LTP     0x20    /* b7:MPEG-4 AAC LTP */
+#define A2D_AAC_IE_OBJ_TYPE_MPEG_4_AAC_SCA     0x10    /* b7:MPEG-4 AAC SCALABLE */
+
+#define A2D_AAC_IE_CHANNELS_MSK                0x0C
+#define A2D_AAC_IE_CHANNELS_1                  0x08    /* Channel 1 */
+#define A2D_AAC_IE_CHANNELS_2                  0x04    /* Channel 2 */
+
+#define A2D_AAC_IE_VBR_MSK                     0x80
+#define A2D_AAC_IE_VBR                         0x80    /* supported */
+
 typedef struct {
     uint8_t  codec_type;
     uint8_t  dev_idx;
@@ -140,7 +154,7 @@ typedef struct {
     int (*a2dp_read_audio_config)(struct a2dp_stream_common *common);
     int (*skt_read)(int fd,void *buf, size_t bytes);
     int (*skt_write)(int fd,const void *buf, size_t bytes);
-    void (*skt_disconnect)(int fd);
+    int (*skt_disconnect)(int fd);
     int (*a2dp_command)(struct a2dp_stream_common *common,char cmd);
     int (*audio_stream_open)(void);
     int (*audio_stream_close)(void);

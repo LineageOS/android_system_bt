@@ -494,6 +494,10 @@ extern BOOLEAN btsnd_hcic_delete_stored_key (BD_ADDR bd_addr, BOOLEAN delete_all
 #define HCI_DELETE_KEY_ALL_FLAG_OFF     6
                                                                 /* Delete Stored Key */
 
+extern BOOLEAN btsnd_hcic_reset(UINT8 local_controller_id);    /* Reset */
+
+#define HCIC_PARAM_SIZE_RESET           0                       /* Reset */
+
                                                                 /* Change Local Name */
 extern BOOLEAN btsnd_hcic_change_name(BD_NAME name);
 

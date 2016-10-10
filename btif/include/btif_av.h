@@ -257,4 +257,26 @@ void btif_av_get_peer_addr(bt_bdaddr_t *peer_bda);
 #define btif_av_get_peer_addr(peer_bda) (0)
 #endif
 
+/*******************************************************************************
+**
+** Function         btif_av_get_multicast_state
+**
+** Description      Check if A2DP multicast is enabled
+**
+** Returns          TRUE if a2dp multicast is enabled
+**
+*******************************************************************************/
+BOOLEAN btif_av_get_multicast_state();
+
+/*******************************************************************************
+**
+** Function         btif_av_is_multicast_supported
+**
+** Description      Check if A2DP multicast is supported
+**
+** Returns          TRUE if a2dp multicast is supported
+**
+*******************************************************************************/
+BOOLEAN btif_av_is_multicast_supported();
+
 #endif /* BTIF_AV_H */

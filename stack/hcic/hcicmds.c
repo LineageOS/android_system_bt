@@ -726,6 +726,21 @@ BOOLEAN btsnd_hcic_write_def_policy_set (UINT16 settings)
     return (TRUE);
 }
 
+BOOLEAN btsnd_hcic_reset (UINT8 local_controller_id)
+{
+    BT_HDR *p = (BT_HDR *)osi_malloc(HCI_CMD_BUF_SIZE);
+    UINT8 *pp = (UINT8 *)(p + 1);
+
+    p->len    = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_RESET;
+    p->offset = 0;
+
+    UINT16_TO_STREAM (pp, HCI_RESET);
+    UINT8_TO_STREAM (pp, HCIC_PARAM_SIZE_RESET);
+
+    btu_hcif_send_cmd (local_controller_id,  p);
+    return (TRUE);
+}
+
 BOOLEAN btsnd_hcic_set_event_filter (UINT8 filt_type, UINT8 filt_cond_type,
                                      UINT8 *filt_cond, UINT8 filt_cond_len)
 {

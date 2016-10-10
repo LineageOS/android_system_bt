@@ -31,6 +31,7 @@
 #include "btm_api.h"
 #include "btm_ble_api.h"
 #include "btm_int.h"
+#include "device/include/interop.h"
 #include "osi/include/log.h"
 #include "srvc_api.h"
 #include "stack/include/l2c_api.h"
@@ -1736,6 +1737,7 @@ void bta_hh_w4_le_read_char_cmpl(tBTA_HH_DEV_CB *p_dev_cb, tBTA_HH_DATA *p_buf)
 {
     tBTA_GATTC_READ     * p_data = (tBTA_GATTC_READ *)p_buf;
     UINT8               *pp ;
+    BD_NAME             bdname;
 
     const tBTA_GATTC_CHARACTERISTIC *p_char = BTA_GATTC_GetCharacteristic(p_dev_cb->conn_id,
                                                                           p_data->handle);
@@ -1766,7 +1768,12 @@ void bta_hh_w4_le_read_char_cmpl(tBTA_HH_DEV_CB *p_dev_cb, tBTA_HH_DATA *p_buf)
             tout = BTM_BLE_CONN_TIMEOUT_MIN_DEF;
 
         BTM_BleSetPrefConnParams (p_dev_cb->addr, min, max, latency, tout);
-        L2CA_UpdateBleConnParams(p_dev_cb->addr, min, max, latency, tout);
+
+        if (!BTM_GetRemoteDeviceName(p_dev_cb->addr, bdname) || !*bdname ||
+        (!interop_match_name(INTEROP_DISABLE_LE_CONN_PREFERRED_PARAMS, (const char*) bdname)))
+        {
+            L2CA_UpdateBleConnParams(p_dev_cb->addr, min, max, latency, tout);
+        }
     }
     else
     {

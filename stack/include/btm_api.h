@@ -197,6 +197,7 @@ typedef UINT8 (tBTM_FILTER_CB) (BD_ADDR bd_addr, DEV_CLASS dc);
 #define BTM_BLE_MAX_CONNECTABLE      BTM_BLE_CONNECTABLE
 #define BTM_BLE_CONNECTABLE_MASK    (BTM_BLE_NON_CONNECTABLE | BTM_BLE_CONNECTABLE)
 
+#define BTM_BLE_ADV_STOP            2
 /* Inquiry modes
  * Note: These modes are associated with the inquiry active values (BTM_*ACTIVE) */
 #define BTM_INQUIRY_NONE            0
@@ -1932,6 +1933,17 @@ extern "C" {
 *******************************************************************************/
 extern void BTM_DeviceReset (tBTM_CMPL_CB *p_cb);
 
+
+/*******************************************************************************
+**
+** Function         BTM_HCI_Reset
+**
+** Description      This function is called to send reset command to the controller.
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTM_HCI_Reset (void);
 
 /*******************************************************************************
 **

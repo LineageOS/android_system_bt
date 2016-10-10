@@ -36,6 +36,7 @@ const char *PTS_LE_CONN_UPDATED_DISABLED = "PTS_DisableConnUpdates";
 const char *PTS_DISABLE_SDP_LE_PAIR = "PTS_DisableSDPOnLEPair";
 const char *PTS_SMP_PAIRING_OPTIONS_KEY = "PTS_SmpOptions";
 const char *PTS_SMP_FAILURE_CASE_KEY = "PTS_SmpFailureCase";
+const char *PTS_LE_NONCONN_ADV_MODE = "PTS_EnableNonConnAdvMode";
 
 static config_t *config;
 
@@ -121,6 +122,10 @@ static void get_btsnoop_ext_options(bool *hci_ext_dump_enabled, bool *btsnoop_co
   *btsnoop_conf_from_file = config_get_bool(config, CONFIG_DEFAULT_SECTION, BTSNOOP_CONFIG_FROM_FILE_KEY, false);
 }
 
+static bool get_pts_le_nonconn_adv_enabled(void) {
+  return config_get_bool(config, CONFIG_DEFAULT_SECTION, PTS_LE_NONCONN_ADV_MODE, false);
+}
+
 static config_t *get_all(void) {
   return config;
 }
@@ -136,6 +141,7 @@ const stack_config_t interface = {
   get_pts_crosskey_sdp_disable,
   get_pts_smp_options,
   get_pts_smp_failure_case,
+  get_pts_le_nonconn_adv_enabled,
   get_all
 };
 
