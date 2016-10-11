@@ -764,6 +764,11 @@
 #define BLE_MAX_L2CAP_CLIENTS           15
 #endif
 
+#ifndef BLE_HH_QUALIFICATION_ENABLED
+#define BLE_HH_QUALIFICATION_ENABLED        FALSE
+#endif
+
+
 /******************************************************************************
 **
 ** ATT/GATT Protocol/Profile Settings
