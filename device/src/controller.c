@@ -88,15 +88,22 @@ static bool secure_connections_supported;
 
 void send_soc_log_command(bool value) {
   int soc_type = get_soc_type();
-  UINT8 param[5] = {0x10,0x03,0x00,0x00,0x01};
-  if (!value)
+  UINT8 param[5] = {0x10, 0x03, 0x00, 0x00, 0x01};
+  UINT8 param_cherokee[2] = {0x14, 0x01};
+  if (!value) {
     // Disable SoC logging
     param[1] = 0x02;
+    param_cherokee[1] = 0x00;
+  }
 
   if (soc_type == BT_SOC_SMD) {
     LOG_INFO(LOG_TAG, "%s for BT_SOC_SMD.", __func__);
-    BTM_VendorSpecificCommand(HCI_VS_HOST_LOG_OPCODE,5,param,NULL);
+    BTM_VendorSpecificCommand(HCI_VS_HOST_LOG_OPCODE, 5, param, NULL);
+  } else if (soc_type == BT_SOC_CHEROKEE) {
+    LOG_INFO(LOG_TAG, "%s for BT_SOC_CHEROKEE.", __func__);
+    BTM_VendorSpecificCommand(HCI_VS_HOST_LOG_OPCODE, 2, param_cherokee, NULL);
   }
+
 }
 
 static future_t *start_up(void) {
