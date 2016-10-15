@@ -315,8 +315,11 @@ void A2D_close_aptX(void)
     // de-initialize aptX
     A2D_deinit_aptX();
 
-    dlclose(A2dAptXSchedLibHandle);
-    A2dAptXSchedLibHandle = NULL;
+    if (A2dAptXSchedLibHandle)
+    {
+       dlclose(A2dAptXSchedLibHandle);
+       A2dAptXSchedLibHandle = NULL;
+    }
 
     return;
 }

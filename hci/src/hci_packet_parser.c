@@ -37,9 +37,10 @@ static uint8_t *read_command_complete_header(
   size_t minimum_bytes_after);
 
 static void parse_generic_command_complete(BT_HDR *response) {
-  read_command_complete_header(response, NO_OPCODE_CHECKING, 0 /* bytes after */);
-
-  buffer_allocator->free(response);
+  if (response) {
+      read_command_complete_header(response, NO_OPCODE_CHECKING, 0 /* bytes after */);
+      buffer_allocator->free(response);
+  }
 }
 
 static void parse_read_buffer_size_response(
