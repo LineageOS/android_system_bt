@@ -1581,7 +1581,9 @@ static BOOLEAN btif_av_state_started_handler(btif_sm_event_t event, void *p_data
                 if (enable_multicast == FALSE)
                 {
                     APPL_TRACE_WARNING("other Idx is connected, move to SUSPENDED");
-                    btif_rc_send_pause_command();
+                    if (!bt_split_a2dp_enabled) {
+                        btif_rc_send_pause_command();
+                    }
                     btif_a2dp_on_stopped(&p_av->suspend);
                 }
             }
@@ -1597,6 +1599,23 @@ static BOOLEAN btif_av_state_started_handler(btif_sm_event_t event, void *p_data
             /* if stop was successful, change state to open */
             if (p_av->suspend.status == BTA_AV_SUCCESS)
                 btif_sm_change_state(btif_av_cb[index].sm_handle, BTIF_AV_STATE_OPENED);
+
+            if (bt_split_a2dp_enabled &&
+                btif_av_is_connected_on_other_idx(index))
+            {
+               /*Fake handoff state to switch streaming to other coddeced
+                  device */
+                btif_av_cb[index].dual_handoff = TRUE;
+                BTIF_TRACE_DEBUG("%s: Notify framework to reconfig",__func__);
+                int idx = btif_av_get_other_connected_idx(index);
+                /* Fix for below Klockwork Issue
+                 * Array 'btif_av_cb' of size 2 may use index value(s) -1 */
+                if (idx != INVALID_INDEX)
+                {
+                    HAL_CBACK(bt_av_src_callbacks, reconfig_a2dp_trigger_cb, 1,
+                                                    &(btif_av_cb[idx].peer_bda));
+                }
+            }
 
             break;
 
