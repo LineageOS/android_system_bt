@@ -86,7 +86,7 @@
 #define A2D_BAD_CP_FORMAT     0xE1  /* The format of Content Protection Service Capability/Content Protection Scheme Dependent Data is not correct. */
 
 
-#define A2D_NON_A2DP_MEDIA_CT 0xff  /* NON A2DP media codec */
+#define A2D_NON_A2DP_MEDIA_CT 0xFF  /* NON A2DP media codec */
 
 typedef UINT8 tA2D_STATUS;
 

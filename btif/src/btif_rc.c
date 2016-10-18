@@ -401,7 +401,6 @@ extern BOOLEAN btif_av_is_playing();
 extern BOOLEAN btif_av_is_device_connected(BD_ADDR address);
 extern void btif_av_trigger_dual_handoff(BOOLEAN handoff, BD_ADDR address);
 extern BOOLEAN btif_hf_is_call_idle();
-extern BOOLEAN btif_av_get_multicast_state();
 extern BOOLEAN btif_av_is_current_device(BD_ADDR address);
 extern UINT16 btif_av_get_num_connected_devices(void);
 extern UINT16 btif_av_get_num_playing_devices(void);

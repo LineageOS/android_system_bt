@@ -172,11 +172,12 @@ static const char* dump_a2dp_ctrl_event(char event)
 static int calc_audiotime(struct a2dp_config cfg, int bytes)
 {
     int chan_count = popcount(cfg.channel_flags);
+    int bytes_per_sample = 4;
 
-    ASSERTC(cfg.format == AUDIO_FORMAT_PCM_16_BIT,
+    ASSERTC(cfg.format == AUDIO_FORMAT_PCM_8_24_BIT,
             "unsupported sample sz", cfg.format);
 
-    return bytes*(1000000/(chan_count*2))/cfg.rate;
+    return (int)(((int64_t)bytes * (1000000 / (chan_count * bytes_per_sample))) / cfg.rate);
 }
 
 static void ts_error_log(char *tag, int val, int buff_size, struct a2dp_config cfg)
@@ -945,45 +946,48 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
 
     keyval = (char *)hash_map_get(params, "A2dpSuspended");
 
-    if (keyval && strcmp(keyval, "true") == 0)
+    if (keyval)
     {
-        pthread_mutex_lock(&out->common.lock);
-        if (out->common.state == AUDIO_A2DP_STATE_STARTED)
-#ifdef BT_HOST_IPC_ENABLED
-            status = ipc_if->suspend_audio_datapath(&out->common, false);
-#else
-            status = suspend_audio_datapath(&out->common, false);
-#endif
-        else
+        if (strcmp(keyval, "true") == 0) 
         {
-#ifdef BT_HOST_IPC_ENABLED
-            if (ipc_if->check_a2dp_stream_started(&out->common) == 0)
-#else
-            if (check_a2dp_stream_started(out) == 0)
-#endif
-               /*Btif and A2dp HAL state can be out of sync
-                *check state of btif and suspend audio.
-                *Happens when remote initiates start.*/
+            pthread_mutex_lock(&out->common.lock);
+            if (out->common.state == AUDIO_A2DP_STATE_STARTED)
 #ifdef BT_HOST_IPC_ENABLED
                 status = ipc_if->suspend_audio_datapath(&out->common, false);
 #else
                 status = suspend_audio_datapath(&out->common, false);
 #endif
             else
-                out->common.state = AUDIO_A2DP_STATE_SUSPENDED;
+            {
+#ifdef BT_HOST_IPC_ENABLED
+                if (ipc_if->check_a2dp_stream_started(&out->common) == 0)
+#else
+                if (check_a2dp_stream_started(out) == 0)
+#endif
+                   /*Btif and A2dp HAL state can be out of sync
+                    *check state of btif and suspend audio.
+                    *Happens when remote initiates start.*/
+#ifdef BT_HOST_IPC_ENABLED
+                    status = ipc_if->suspend_audio_datapath(&out->common, false);
+#else
+                    status = suspend_audio_datapath(&out->common, false);
+#endif
+                else
+                    out->common.state = AUDIO_A2DP_STATE_SUSPENDED;
+            }
+            pthread_mutex_unlock(&out->common.lock);
         }
-        pthread_mutex_unlock(&out->common.lock);
-    }
-    else
-    {
-        pthread_mutex_lock(&out->common.lock);
-        /* Do not start the streaming automatically. If the phone was streaming
-         * prior to being suspended, the next out_write shall trigger the
-         * AVDTP start procedure */
-        if (out->common.state == AUDIO_A2DP_STATE_SUSPENDED)
-            out->common.state = AUDIO_A2DP_STATE_STANDBY;
-        /* Irrespective of the state, return 0 */
-        pthread_mutex_unlock(&out->common.lock);
+        else
+        {
+            pthread_mutex_lock(&out->common.lock);
+            /* Do not start the streaming automatically. If the phone was streaming
+             * prior to being suspended, the next out_write shall trigger the
+             * AVDTP start procedure */
+            if (out->common.state == AUDIO_A2DP_STATE_SUSPENDED)
+                out->common.state = AUDIO_A2DP_STATE_STANDBY;
+            /* Irrespective of the state, return 0 */
+            pthread_mutex_unlock(&out->common.lock);
+        }
     }
 
     hash_map_free(params);
@@ -1376,7 +1380,7 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
     a2dp_stream_common_init(&out->common);
 #endif
     out->common.cfg.channel_flags = AUDIO_STREAM_DEFAULT_CHANNEL_FLAG;
-    out->common.cfg.format = AUDIO_STREAM_DEFAULT_FORMAT;
+    out->common.cfg.format = AUDIO_FORMAT_PCM_8_24_BIT;
     out->common.cfg.rate = AUDIO_STREAM_DEFAULT_RATE;
 
    /* set output config values */

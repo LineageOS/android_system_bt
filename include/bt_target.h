@@ -1,4 +1,4 @@
-/******************************************************************************
+ /******************************************************************************
  *  Copyright (c) 2016, The Linux Foundation. All rights reserved.
  *
  *  Not a contribution.
@@ -142,7 +142,7 @@
 #endif
 
 #ifndef BTIF_A2DP_SRC_BIT_DEPTH
-#define BTIF_A2DP_SRC_BIT_DEPTH 16
+#define BTIF_A2DP_SRC_BIT_DEPTH 32
 #endif
 
 #ifndef BTIF_A2DP_SRC_NUM_CHANNELS
@@ -178,6 +178,11 @@
 #ifndef HL_INCLUDED
 #define HL_INCLUDED  TRUE
 #endif
+
+#ifndef AAC_ENCODER_INCLUDED
+#define AAC_ENCODER_INCLUDED   TRUE
+#endif
+
 
 #ifndef AG_VOICE_SETTINGS
 #define AG_VOICE_SETTINGS  HCI_DEFAULT_VOICE_SETTINGS
@@ -1208,7 +1213,11 @@
  * Audio*2 + Video*2 + 1 Additional
  */
 #ifndef AVDT_NUM_SEPS
-#define AVDT_NUM_SEPS               5
+#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
+#define AVDT_NUM_SEPS               9
+#else
+#define AVDT_NUM_SEPS               7
+#endif
 #endif
 
 /* Number of transport channels setup by AVDT for all media streams */
@@ -1407,6 +1416,10 @@
  */
 #ifndef A2D_INCLUDED
 #define A2D_INCLUDED            TRUE
+#endif
+
+#ifndef A2D_M24_INCLUDED
+#define A2D_M24_INCLUDED    A2D_INCLUDED
 #endif
 
 /******************************************************************************

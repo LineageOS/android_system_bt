@@ -30,7 +30,6 @@
 /*******************************************************************************
 **  Constants & Macros
 ********************************************************************************/
-
 /*******************************************************************************
 **  Functions
 ********************************************************************************/
@@ -112,25 +111,25 @@ BOOLEAN bta_av_co_audio_set_codec(const tBTIF_AV_MEDIA_FEEDINGS *p_feeding, tBTI
 
 /*******************************************************************************
  **
- ** Function         bta_av_get_current_codec
+ ** Function         bta_av_co_get_current_codec
  **
  ** Description      Get the current codec type.
  **
  ** Returns          Codec Type Value
  **
  *******************************************************************************/
-UINT8 bta_av_get_current_codec();
+UINT8 bta_av_co_get_current_codec();
 
 /*******************************************************************************
  **
- ** Function         bta_av_get_current_codecInfo
+ ** Function         bta_av_co_get_current_codecInfo
  **
  ** Description      Get the current codec Info.
  **
  ** Returns          Returns  pointer to Info
  **
  *******************************************************************************/
-UINT8* bta_av_get_current_codecInfo();
+UINT8* bta_av_co_get_current_codecInfo();
 
 /*******************************************************************************
  **
@@ -154,6 +153,20 @@ BOOLEAN bta_av_co_audio_get_codec_config(UINT8 *p_sbc_config, UINT16 *p_minmtu, 
  **
  *******************************************************************************/
 BOOLEAN bta_av_co_audio_get_sbc_config(tA2D_SBC_CIE *p_sbc_config, UINT16 *p_minmtu);
+#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
+/*******************************************************************************
+ **
+ ** Function         bta_av_co_audio_get_aac_config
+ **
+ ** Description      Retrieves the AAC codec configuration.  If the codec in use
+ **                  is not AAC, return the default SBC codec configuration.
+ **
+ ** Returns          TRUE if codec is AAC, FALSE otherwise
+ **
+ *******************************************************************************/
+BOOLEAN bta_av_co_audio_get_aac_config(tA2D_AAC_CIE *p_aac_config, UINT16 *p_minmtu);
+#endif
+
 
 /*******************************************************************************
  **
@@ -213,16 +226,5 @@ BOOLEAN bta_av_co_get_remote_bitpool_pref(UINT8 *min, UINT8 *max);
  **
  *******************************************************************************/
 UINT8 bta_av_select_codec(tBTA_AV_HNDL hdl);
-
-/*******************************************************************************
- **
- ** Function         bta_av_get_current_codec
- **
- ** Description      Get current codec id selected for streaming.
- **
- ** Returns          Return current codec id
- **
- *******************************************************************************/
-UINT8 bta_av_get_current_codec(void);
 
 #endif

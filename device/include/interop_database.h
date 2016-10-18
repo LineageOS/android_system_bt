@@ -149,6 +149,10 @@ static const interop_name_entry_t interop_name_database[] = {
 
   // HID Authentication Blacklist
   {"Targus BT Laser Notebook Mouse", 30, INTEROP_DISABLE_AUTH_FOR_HID_POINTING},
+
+  //Below devices reject connection updated with preferred
+  {"BSMBB09DS", 9, INTEROP_DISABLE_LE_CONN_PREFERRED_PARAMS},
+  {"ELECOM", 6, INTEROP_DISABLE_LE_CONN_PREFERRED_PARAMS},
 };
 
 typedef struct {

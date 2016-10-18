@@ -238,7 +238,7 @@ Event uninit_use_in_call: Using uninitialized value "settings.min" in call to fu
         p_ccb->chnl_state = CST_W4_L2CAP_CONNECT_RSP;
 
         /* Wait for the info resp in this state before sending connect req (if needed) */
-        if ((!p_ccb->p_lcb->w4_info_rsp) || (BT_PSM_SDP == p_ccb->p_rcb->psm))
+        if (!p_ccb->p_lcb->w4_info_rsp)
         {
             /* Need to have at least one compatible channel to continue */
             if (!l2c_fcr_chk_chan_modes(p_ccb))

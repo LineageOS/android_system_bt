@@ -176,6 +176,7 @@ typedef struct
     tGATT_STATUS (*cExecuteWrite) (UINT16 conn_id, BOOLEAN is_execute);
     tGATT_STATUS (*cSendHandleValueConfirm) (UINT16 conn_id, UINT16 handle);
     void (*cSetIdleTimeout)(BD_ADDR bd_addr, UINT16 idle_tout);
+    void (*cSetVisibility) (UINT16 disc_mode, UINT16 conn_mode);
 
     //GATT Server APIs
     //TODO - Add api on the need basis

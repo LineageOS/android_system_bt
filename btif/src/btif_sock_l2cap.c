@@ -90,7 +90,7 @@ typedef struct l2cap_socket {
 
 static bt_status_t btSock_start_l2cap_server_l(l2cap_socket *sock);
 
-static pthread_mutex_t state_lock;
+static pthread_mutex_t state_lock = PTHREAD_MUTEX_INITIALIZER;
 
 l2cap_socket *socks = NULL;
 static uid_set_t* uid_set = NULL;
@@ -367,7 +367,6 @@ fail_sockpair:
 bt_status_t btsock_l2cap_init(int handle, uid_set_t* set)
 {
     APPL_TRACE_DEBUG("%s handle = %d", __func__);
-    pthread_mutex_init(&state_lock, NULL);
     pthread_mutex_lock(&state_lock);
     pth = handle;
     socks = NULL;
@@ -384,7 +383,6 @@ bt_status_t btsock_l2cap_cleanup()
     while (socks)
         btsock_l2cap_free_l(socks);
     pthread_mutex_unlock(&state_lock);
-    pthread_mutex_destroy(&state_lock);
 
     return BT_STATUS_SUCCESS;
 }

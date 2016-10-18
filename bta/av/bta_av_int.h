@@ -422,8 +422,8 @@ typedef struct
     tBTA_AV_CODEC       codec_type;        /* codec type */
     UINT8               tsep;              /* SEP type of local SEP */
     tBTA_AV_DATA_CBACK  *p_app_data_cback; /* Application callback for media packets */
-    UINT8               vendorId;          /* vendorId type */
-    UINT8               codecId;           /* codecId type */
+    UINT32              vendorId;          /* vendorId type */
+    UINT16              codecId;           /* codecId type */
 } tBTA_AV_SEP;
 
 

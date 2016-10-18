@@ -57,6 +57,7 @@ LOCAL_SRC_FILES:= \
     ./av/bta_av_cfg.c \
     ./av/bta_av_ssm.c \
     ./av/bta_av_sbc.c \
+    ./av/bta_av_aac.c \
     ./ar/bta_ar.c \
     ./hl/bta_hl_act.c \
     ./hl/bta_hl_api.c \
@@ -95,7 +96,6 @@ LOCAL_C_INCLUDES+= . \
                    $(LOCAL_PATH)/../udrv/include \
                    $(LOCAL_PATH)/../vnd/include \
                    $(LOCAL_PATH)/../utils/include \
-                   $(TARGET_OUT_HEADERS)/bt/hci_qcomm_init/aptX \
                    $(bluetooth_C_INCLUDES)
 
 LOCAL_CFLAGS += $(bluetooth_CFLAGS) -DBUILDCFG

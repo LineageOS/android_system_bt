@@ -609,6 +609,7 @@ static void alarm_queue_ready(fixed_queue_t *queue,
     alarm->deadline = 0;
     alarm->callback = NULL;
     alarm->data = NULL;
+    alarm->queue = NULL;
   }
 
   pthread_mutex_lock(&alarm->callback_lock);
