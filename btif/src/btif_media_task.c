@@ -454,7 +454,6 @@ static void btif_media_task_handle_inc_media(tBT_SBC_HDR*p_msg);
 #endif
 
 BOOLEAN bta_av_co_audio_get_codec_config(UINT8 *p_config, UINT16 *p_minmtu, UINT8 type);
-static thread_t *aptx_thread = NULL;
 
 #if (BTA_AV_INCLUDED == TRUE)
 static void btif_media_send_aa_frame(uint64_t timestamp_us);
@@ -3534,8 +3533,8 @@ static void btif_media_task_aa_stop_tx(void)
 
         if (isA2dAptXEnabled && A2D_aptx_sched_stop())
         {
-            thread_free(aptx_thread);
-            aptx_thread = NULL;
+            thread_free(A2d_aptx_thread);
+            A2d_aptx_thread = NULL;
         }
         else
         {
@@ -3564,7 +3563,7 @@ static void btif_media_task_aa_stop_tx(void)
         btif_media_cb.tx_flush = 0;
         last_frame_us = 0;
 
-       /* Reset the media feeding state */
+       /* Reset the media feeding state. */
         btif_media_task_feeding_state_reset();
     }
     else
