@@ -949,10 +949,33 @@ static void btif_recv_ctrl_data(void)
                         BTIF_TRACE_DEBUG("sample rate  = %x",aptx_config.sampleRate);
                         BTIF_TRACE_DEBUG("ch mode  = %x",aptx_config.channelMode);
                         A2D_BldAptxInfo(AVDT_MEDIA_AUDIO,&aptx_config,&param[1]);
-                    }
+
+                        /* For aptxClassic BR = (Sampl_Rate * PCM_DEPTH * CHNL)/Compression_Ratio */
+                        bitrate = ((btif_media_cb.media_feeding.cfg.pcm.sampling_freq * 16 * 2)/4);
+                    } else {
+                        tA2D_APTX_HD_CIE* cI = 0;
+                        cI = (tA2D_APTX_HD_CIE*) &ptr[BTA_AV_CFG_START_IDX];
+                        if (cI && cI->vendorId == A2D_APTX_HD_VENDOR_ID
+                        && cI->codecId == A2D_APTX_HD_CODEC_ID_BLUETOOTH)
+                        {
+                            tA2D_APTX_HD_CIE aptxhd_config;
+                            memset(&aptxhd_config,0,sizeof(tA2D_APTX_HD_CIE));
+                            aptxhd_config.vendorId = codecInfo->vendorId;
+                            aptxhd_config.codecId = codecInfo->codecId;
+                            aptxhd_config.sampleRate = codecInfo->sampleRate;
+                            aptxhd_config.channelMode = codecInfo->channelMode;
+                            BTIF_TRACE_DEBUG("vendor id = %x",aptxhd_config.vendorId);
+                            BTIF_TRACE_DEBUG("codec id = %x",aptxhd_config.codecId);
+                            BTIF_TRACE_DEBUG("sample rate  = %x",aptxhd_config.sampleRate);
+                            BTIF_TRACE_DEBUG("ch mode  = %x",aptxhd_config.channelMode);
+                            A2D_BldAptx_hdInfo(AVDT_MEDIA_AUDIO,&aptxhd_config,&param[1]);
+
+                            /* For aptxHD BR = (Sampl_Rate * PCM_DEPTH * CHNL)/Compression_Ratio,
+                               derived from classic */
+                            bitrate = ((btif_media_cb.media_feeding.cfg.pcm.sampling_freq * 16 * 2)/4);
+                       }
+                   }
                 }
-                /* For aptxClassic BR = (Sampl_Rate * PCM_DEPTH * CHNL)/Compression_Ratio */
-                bitrate = ((btif_media_cb.media_feeding.cfg.pcm.sampling_freq * 16 * 2)/4);
             }
             param[0] = btif_get_latest_playing_device_idx();
             i = param[1] + 2; //LOSC
