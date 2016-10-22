@@ -670,6 +670,7 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
 
         /* Reset continuation parameters in p_ccb */
         p_ccb->cont_info.prev_sdp_rec = NULL;
+        p_ccb->cont_info.curr_sdp_rec = NULL;
         p_ccb->cont_info.next_attr_index = 0;
         p_ccb->cont_info.attr_offset = 0;
     }
@@ -994,6 +995,7 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
 
         /* Reset continuation parameters in p_ccb */
         p_ccb->cont_info.prev_sdp_rec = NULL;
+        p_ccb->cont_info.curr_sdp_rec = NULL;
         p_ccb->cont_info.next_attr_index = 0;
         p_ccb->cont_info.last_attr_seq_desc_sent = FALSE;
         p_ccb->cont_info.attr_offset = 0;
@@ -1002,6 +1004,7 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     /* Get a list of handles that match the UUIDs given to us */
     for (p_rec = sdp_db_service_search (p_ccb->cont_info.prev_sdp_rec, &uid_seq); p_rec; p_rec = sdp_db_service_search (p_rec, &uid_seq))
     {
+        p_ccb->cont_info.curr_sdp_rec = p_rec;
         /* Allow space for attribute sequence type and length */
         p_seq_start = p_rsp;
         if (p_ccb->cont_info.last_attr_seq_desc_sent == FALSE)

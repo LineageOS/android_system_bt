@@ -2185,25 +2185,25 @@ static void bta_jv_pm_conn_busy(tBTA_JV_PM_CB *p_cb)
 {
     if ((NULL != p_cb) && (BTA_JV_PM_IDLE_ST == p_cb->state))
     {
-        if (alarm_is_scheduled(p_cb->idle_timer))
-        {
-            alarm_cancel(p_cb->idle_timer);
-            p_cb->state = BTA_JV_PM_BUSY_ST;
-        }
-        else
-        {
-            APPL_TRACE_DEBUG("bta_jv_pm_conn_busy");
-            bta_jv_pm_state_change(p_cb, BTA_JV_CONN_BUSY);
+        tBTM_PM_MODE    mode = BTM_PM_MD_ACTIVE;
+        if (BTM_ReadPowerMode(p_cb->peer_bd_addr, &mode) == BTM_SUCCESS) {
+            if (mode == BTM_PM_MD_SNIFF) {
+                bta_jv_pm_state_change(p_cb, BTA_JV_CONN_BUSY);
+            } else {
+                p_cb->state = BTA_JV_PM_BUSY_ST;
+                APPL_TRACE_DEBUG("bta_jv_pm_conn_busy:power mode: %d", mode);
+            }
+        } else {
+          bta_jv_pm_state_change(p_cb, BTA_JV_CONN_BUSY);
         }
     }
-
 }
 
 /*******************************************************************************
  **
- ** Function    bta_jv_pm_conn_idle
+ ** Function    bta_jv_pm_conn_busy
  **
- ** Description set pm connection idle state (input param safe)
+ ** Description set pm connection busy state (input param safe)
  **
  ** Params      p_cb: pm control block of jv connection
  **
@@ -2215,9 +2215,11 @@ static void bta_jv_pm_conn_idle(tBTA_JV_PM_CB *p_cb)
     if ((NULL != p_cb) && (BTA_JV_PM_IDLE_ST != p_cb->state)) {
         APPL_TRACE_DEBUG("bta_jv_pm_conn_idle, p_cb: %p", p_cb);
         p_cb->state = BTA_JV_PM_IDLE_ST;
-        /* start intermediate idle timer for 1s */
-        alarm_set_on_queue(p_cb->idle_timer, BTA_JV_IDLE_TIMEOUT_MS,
-              bta_jv_idle_timeout_handler, p_cb, btu_general_alarm_queue);
+            // start intermediate idle timer for 1s
+        if (!alarm_is_scheduled(p_cb->idle_timer)) {
+            alarm_set_on_queue(p_cb->idle_timer, BTA_JV_IDLE_TIMEOUT_MS,
+                   bta_jv_idle_timeout_handler, p_cb, btu_general_alarm_queue);
+        }
     }
 }
 
@@ -2708,8 +2710,18 @@ extern void bta_jv_l2cap_close_fixed (tBTA_JV_MSG *p_data)
 void bta_jv_idle_timeout_handler(void *tle) {
     tBTA_JV_PM_CB *p_cb = (tBTA_JV_PM_CB *)tle;;
     APPL_TRACE_DEBUG("%s p_cb: %p", __func__, p_cb);
-    if ((NULL != p_cb) && (BTA_JV_PM_IDLE_ST == p_cb->state))
-    {
+
+    if (NULL != p_cb) {
+
+        tBTM_PM_MODE    mode = BTM_PM_MD_ACTIVE;
+        if (BTM_ReadPowerMode(p_cb->peer_bd_addr, &mode) == BTM_SUCCESS) {
+            if (mode == BTM_PM_MD_SNIFF) {
+                APPL_TRACE_WARNING("%s: %d", __func__, mode)
+                return;
+            }
+        } else {
+            APPL_TRACE_DEBUG("%s: Read power mode failed %d", __func__, mode);
+        }
         bta_jv_pm_state_change(p_cb, BTA_JV_CONN_IDLE);
     }
 }

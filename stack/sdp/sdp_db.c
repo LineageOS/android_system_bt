@@ -353,6 +353,8 @@ BOOLEAN SDP_DeleteRecord (UINT32 handle)
                 for (yy = xx; yy < sdp_cb.server_db.num_records; yy++, p_rec++)
                 {
                     *p_rec = *(p_rec + 1);
+                    /* Adjust continuation info in the CCB */
+                    sdpu_update_ccb_cont_info(p_rec->record_handle);
 
                     /* Adjust the attribute value pointer for each attribute */
                     for (zz = 0; zz < p_rec->num_attributes; zz++)

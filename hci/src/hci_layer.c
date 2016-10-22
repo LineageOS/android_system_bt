@@ -852,6 +852,7 @@ void ssr_cleanup (int reason) {
    }
    if (vendor != NULL) {
        vendor->ssr_cleanup(reason);
+       hal->close(); //clean up the UART stream
    } else {
        LOG_ERROR("%s: vendor is NULL", __func__);
    }

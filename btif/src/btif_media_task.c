@@ -1155,6 +1155,7 @@ static void btif_a2dp_encoder_init(tBTA_AV_HNDL hdl)
 
     btif_media_cb.aptxEncoderParams.encoder = 0;
 
+    memset(&msg, 0, sizeof(msg));
 #if (BTA_AV_CO_CP_SCMS_T == TRUE)
     ALOGI("%s SCMS_T ENABLED", __func__);
 #else
@@ -1343,17 +1344,17 @@ static void btif_a2dp_encoder_update(void)
         }
 
         msg.CodecType = BTIF_AV_CODEC_SBC;
+
+        if (bt_split_a2dp_enabled)
+        {
+            btif_media_cb.max_bitpool = msg.MaxBitPool;
+            btif_media_cb.min_bitpool = msg.MinBitPool;
+            APPL_TRACE_DEBUG("Updated min_bitpool: 0x%x max_bitpool: 0x%x",
+                btif_media_cb.min_bitpool, btif_media_cb.max_bitpool);
+        }
     }
 
     msg.MinMtuSize = minmtu;
-
-    if (bt_split_a2dp_enabled)
-    {
-        btif_media_cb.max_bitpool = msg.MaxBitPool;
-        btif_media_cb.min_bitpool = msg.MinBitPool;
-        APPL_TRACE_DEBUG("Updated min_bitpool: 0x%x max_bitpool: 0x%x",
-            btif_media_cb.min_bitpool, btif_media_cb.max_bitpool);
-    }
 
     /* Update the media task to encode SBC properly */
     btif_media_task_enc_update_req(&msg);

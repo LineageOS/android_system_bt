@@ -21,9 +21,6 @@
 
 #include "osi/include/allocator.h"
 #include "osi/include/allocation_tracker.h"
-#include "osi/include/log.h"
-
-#define TAG   "bt_allocator"
 
 static const allocator_id_t alloc_allocator_id = 42;
 
@@ -39,11 +36,6 @@ char *osi_strdup(const char *str) {
       size);
   if (!new_string)
     return NULL;
-#ifdef BLUEDROID_DEBUG
-  LOG_INFO(TAG, "osi_strdup size 0x%zx ptr = %p caller = %p ",
-          real_size, new_string,
-          (void *)__builtin_return_address(0));
-#endif
 
   memcpy(new_string, str, size);
   return new_string;
@@ -65,11 +57,6 @@ char *osi_strndup(const char *str, size_t len) {
   if (!new_string)
     return NULL;
 
-#ifdef BLUEDROID_DEBUG
-  LOG_INFO(TAG, "osi_strndup size 0x%zx ptr = %p caller = %p ",
-          real_size, new_string,
-          (void *)__builtin_return_address(0));
-#endif
   memcpy(new_string, str, size);
   new_string[size] = '\0';
   return new_string;
@@ -79,49 +66,23 @@ void *osi_malloc(size_t size) {
   size_t real_size = allocation_tracker_resize_for_canary(size);
   void *ptr = malloc(real_size);
   assert(ptr);
-#ifdef BLUEDROID_DEBUG
-  void *ptr_alloc =
-            allocation_tracker_notify_alloc(alloc_allocator_id, ptr, size);
-  LOG_INFO(TAG, "osi_malloc size 0x%zx ptr = %p caller = %p ",
-          real_size, ptr_alloc,
-          (void *)__builtin_return_address(0));
-  return ptr_alloc;
-#else
   return allocation_tracker_notify_alloc(alloc_allocator_id, ptr, size);
-#endif
 }
 
 void *osi_calloc(size_t size) {
   size_t real_size = allocation_tracker_resize_for_canary(size);
   void *ptr = calloc(1, real_size);
   assert(ptr);
-#ifdef BLUEDROID_DEBUG
-  void *ptr_alloc =
-            allocation_tracker_notify_alloc(alloc_allocator_id, ptr, size);
-  LOG_INFO(TAG, "osi_calloc size 0x%zx ptr = %p caller = %p ",
-          real_size, ptr_alloc,
-          (void *)__builtin_return_address(0));
-  return ptr_alloc;
-#else
   return allocation_tracker_notify_alloc(alloc_allocator_id, ptr, size);
-#endif
 }
 
 void osi_free(void *ptr) {
-#ifdef BLUEDROID_DEBUG
-  LOG_INFO(TAG, "osi_free ptr = %p caller = %p ", ptr,
-                                          (void *)__builtin_return_address(0));
-#endif
   free(allocation_tracker_notify_free(alloc_allocator_id, ptr));
 }
 
 void osi_free_and_reset(void **p_ptr)
 {
   assert(p_ptr != NULL);
-#ifdef BLUEDROID_DEBUG
-  LOG_INFO(TAG, "osi_free_and_reset ptr = %p caller = %p ", *p_ptr,
-                                          (void *)__builtin_return_address(0));
-#endif
   osi_free(*p_ptr);
   *p_ptr = NULL;
 }
