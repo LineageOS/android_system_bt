@@ -407,6 +407,7 @@ typedef struct
     BOOLEAN tx_started;
     BOOLEAN tx_stop_initiated;
     BOOLEAN tx_start_initiated;
+    BOOLEAN tx_enc_update_initiated;
 //#endif
 
 #endif
@@ -945,7 +946,7 @@ static void btif_recv_ctrl_data(void)
                 {
                     tA2D_APTX_CIE* codecInfo = 0;
                     codecInfo = (tA2D_APTX_CIE*) &ptr[BTA_AV_CFG_START_IDX];
-                    if (codecInfo && codecInfo->vendorId == A2D_APTX_VENDOR_ID 
+                    if (codecInfo && codecInfo->vendorId == A2D_APTX_VENDOR_ID
                         && codecInfo->codecId == A2D_APTX_CODEC_ID_BLUETOOTH)
                     {
                         tA2D_APTX_CIE aptx_config;
@@ -1292,6 +1293,7 @@ static void btif_a2dp_encoder_update(void)
     tA2D_APTX_CIE* codecInfo = 0;
 
     APPL_TRACE_DEBUG("btif_a2dp_encoder_update");
+    btif_media_cb.tx_enc_update_initiated = TRUE;
 
     UINT8 codectype = 0;
     codectype = bta_av_co_get_current_codec();
@@ -2163,9 +2165,11 @@ static void btif_media_thread_handle_cmd(fixed_queue_t *queue, UNUSED_ATTR void 
         btif_media_cb.tx_stop_initiated = FALSE;
         btif_media_cb.vs_configs_exchanged = FALSE;
         btif_media_cb.tx_start_initiated = FALSE;
+        btif_media_cb.tx_enc_update_initiated = FALSE;
         break;
     case BTIF_MEDIA_START_VS_CMD:
-        if (!btif_media_cb.tx_started && !btif_media_cb.tx_start_initiated)
+        if (!btif_media_cb.tx_started
+             && (!btif_media_cb.tx_start_initiated || btif_media_cb.tx_enc_update_initiated))
         {
             btif_a2dp_encoder_update();
             btif_media_start_vendor_command();
@@ -2176,7 +2180,8 @@ static void btif_media_thread_handle_cmd(fixed_queue_t *queue, UNUSED_ATTR void 
     case BTIF_MEDIA_STOP_VS_CMD:
         if (btif_media_cb.tx_started && !btif_media_cb.tx_stop_initiated)
             btif_media_send_vendor_stop();
-        else if(btif_media_cb.tx_start_initiated && !btif_media_cb.tx_started)
+        else if((btif_media_cb.tx_start_initiated || btif_media_cb.tx_enc_update_initiated)
+                && !btif_media_cb.tx_started)
         {
             APPL_TRACE_IMP("Suspend Req when VSC exchange in progress,reset VSC");
             btif_media_send_reset_vendor_state();
@@ -4385,6 +4390,7 @@ void btif_media_start_vendor_command()
     APPL_TRACE_IMP("btif_media_start_vendor_command_exchange:\
         vs_configs_exchanged:%u", btif_media_cb.vs_configs_exchanged);
     btif_media_cb.tx_start_initiated = TRUE;
+    btif_media_cb.tx_enc_update_initiated = FALSE;
     if(btif_media_cb.vs_configs_exchanged)
     {
         btif_media_send_vendor_start();
