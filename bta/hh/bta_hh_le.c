@@ -803,7 +803,7 @@ void bta_hh_le_register_input_notif(tBTA_HH_DEV_CB *p_dev_cb, UINT8 proto_mode, 
                 if (p_rpt->uuid == GATT_UUID_HID_REPORT &&
                     p_rpt->client_cfg_value == BTA_GATT_CLT_CONFIG_NOTIFICATION)
                 {
-                    APPL_TRACE_DEBUG("---> Deregister Report ID: %d", p_rpt->rpt_id);
+                    APPL_TRACE_DEBUG("%s ---> Deregister Report ID: %d", __func__, p_rpt->rpt_id);
                     BTA_GATTC_DeregisterForNotifications(bta_hh_cb.gatt_if, p_dev_cb->addr,
                                                          p_rpt->char_inst_id);
                 }
@@ -811,7 +811,7 @@ void bta_hh_le_register_input_notif(tBTA_HH_DEV_CB *p_dev_cb, UINT8 proto_mode, 
                 else if (p_rpt->uuid == GATT_UUID_HID_BT_KB_INPUT ||
                          p_rpt->uuid == GATT_UUID_HID_BT_MOUSE_INPUT)
                 {
-                    APPL_TRACE_DEBUG("<--- Register Boot Report ID: %d", p_rpt->rpt_id);
+                    APPL_TRACE_DEBUG("%s <--- Register Boot Report ID: %d", __func__, p_rpt->rpt_id);
                     BTA_GATTC_RegisterForNotifications(bta_hh_cb.gatt_if, p_dev_cb->addr,
                                                        p_rpt->char_inst_id);
                 }
@@ -823,14 +823,14 @@ void bta_hh_le_register_input_notif(tBTA_HH_DEV_CB *p_dev_cb, UINT8 proto_mode, 
                     p_rpt->client_cfg_value == BTA_GATT_CLT_CONFIG_NOTIFICATION)
                 {
 
-                    APPL_TRACE_DEBUG("---> Deregister Boot Report ID: %d", p_rpt->rpt_id);
+                    APPL_TRACE_DEBUG("%s ---> Deregister Boot Report ID: %d", __func__, p_rpt->rpt_id);
                     BTA_GATTC_DeregisterForNotifications(bta_hh_cb.gatt_if, p_dev_cb->addr,
                                                          p_rpt->char_inst_id);
                 }
                 else if (p_rpt->uuid == GATT_UUID_HID_REPORT &&
                          p_rpt->client_cfg_value == BTA_GATT_CLT_CONFIG_NOTIFICATION)
                 {
-                    APPL_TRACE_DEBUG("<--- Register Report ID: %d", p_rpt->rpt_id);
+                    APPL_TRACE_DEBUG("%s <--- Register Report ID: %d", __func__, p_rpt->rpt_id);
                     BTA_GATTC_RegisterForNotifications(bta_hh_cb.gatt_if, p_dev_cb->addr,
                                                        p_rpt->char_inst_id);
                 }
@@ -840,6 +840,41 @@ void bta_hh_le_register_input_notif(tBTA_HH_DEV_CB *p_dev_cb, UINT8 proto_mode, 
         }
     }
 }
+
+/*******************************************************************************
+**
+** Function         bta_hh_le_deregister_input_notif
+**
+** Description      Deregister all notifications
+**
+*******************************************************************************/
+void bta_hh_le_deregister_input_notif(tBTA_HH_DEV_CB *p_dev_cb)
+{
+    tBTA_HH_LE_RPT  *p_rpt = &p_dev_cb->hid_srvc.report[0];
+
+    for (UINT8 i = 0; i < BTA_HH_LE_RPT_MAX; i++, p_rpt++)
+    {
+        if (p_rpt->rpt_type == BTA_HH_RPTT_INPUT)
+        {
+            if (p_rpt->uuid == GATT_UUID_HID_REPORT &&
+                p_rpt->client_cfg_value == BTA_GATT_CLT_CONFIG_NOTIFICATION)
+            {
+                APPL_TRACE_DEBUG("%s ---> Deregister Report ID: %d", __func__, p_rpt->rpt_id);
+                BTA_GATTC_DeregisterForNotifications(bta_hh_cb.gatt_if, p_dev_cb->addr,
+                                                    p_rpt->char_inst_id);
+            }
+            else if ((p_rpt->uuid == GATT_UUID_HID_BT_KB_INPUT ||
+                p_rpt->uuid == GATT_UUID_HID_BT_MOUSE_INPUT) &&
+                p_rpt->client_cfg_value == BTA_GATT_CLT_CONFIG_NOTIFICATION)
+            {
+                APPL_TRACE_DEBUG("%s ---> Deregister Boot Report ID: %d", __func__, p_rpt->rpt_id);
+                BTA_GATTC_DeregisterForNotifications(bta_hh_cb.gatt_if, p_dev_cb->addr,
+                                                    p_rpt->char_inst_id);
+            }
+        }
+    }
+}
+
 
 /*******************************************************************************
 **
@@ -2215,6 +2250,8 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
 {
     tBTA_HH_CBDATA          disc_dat = {BTA_HH_OK, 0};
 
+    /* deregister all notification */
+    bta_hh_le_deregister_input_notif(p_cb);
     /* finaliza device driver */
     bta_hh_co_close(p_cb->hid_handle, p_cb->app_id);
     /* update total conn number */

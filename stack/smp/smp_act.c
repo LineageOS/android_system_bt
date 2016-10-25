@@ -24,6 +24,8 @@
 #include "stack/smp/smp_int.h"
 #include "utils/include/bt_utils.h"
 
+extern fixed_queue_t *btu_general_alarm_queue;
+
 #if SMP_INCLUDED == TRUE
 const UINT8 smp_association_table[2][SMP_IO_CAP_MAX][SMP_IO_CAP_MAX] =
 {
@@ -553,6 +555,9 @@ void smp_proc_pair_fail(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
     SMP_TRACE_DEBUG("%s", __func__);
     p_cb->status = *(UINT8 *)p_data;
+
+    /* Cancel pending auth complete timer if set */
+    alarm_cancel(p_cb->delayed_auth_timer_ent);
 }
 
 /*******************************************************************************
@@ -1287,7 +1292,6 @@ void smp_key_pick_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_key_distribution(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
-    UINT8   reason = SMP_SUCCESS;
     SMP_TRACE_DEBUG("%s role=%d (0-master) r_keys=0x%x i_keys=0x%x",
                       __func__, p_cb->role, p_cb->local_r_key, p_cb->local_i_key);
 
@@ -1309,9 +1313,22 @@ void smp_key_distribution(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
             }
 
             if (p_cb->total_tx_unacked == 0)
-                smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
-            else
+            {
+                /*
+                 * Instead of declaring authorization complete immediately,
+                 * delay the event from being sent by SMP_DELAYED_AUTH_TIMEOUT_MS.
+                 * This allows the slave to send over Pairing Failed if the
+                 * last key is rejected.  During this waiting window, the
+                 * state should remain in SMP_STATE_BOND_PENDING.
+                 */
+                if (!alarm_is_scheduled(p_cb->delayed_auth_timer_ent)) {
+                    SMP_TRACE_DEBUG("%s delaying auth complete.", __func__);
+                    alarm_set_on_queue(p_cb->delayed_auth_timer_ent, SMP_DELAYED_AUTH_TIMEOUT_MS,
+                                       smp_delayed_auth_complete_timeout, NULL, btu_general_alarm_queue);
+                }
+            } else {
                 p_cb->wait_for_authorization_complete = TRUE;
+            }
         }
     }
 }

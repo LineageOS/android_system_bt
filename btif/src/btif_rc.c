@@ -377,7 +377,6 @@ static int btif_rc_get_idx_by_addr(BD_ADDR address);
 static void send_browsemsg_rsp (UINT8 rc_handle, UINT8 label,
     tBTA_AV_CODE code, tAVRC_RESPONSE *pmetamsg_resp);
 
-
 /*****************************************************************************
 **  Static variables
 ******************************************************************************/

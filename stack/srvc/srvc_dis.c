@@ -472,7 +472,7 @@ BOOLEAN DIS_ReadDISInfo(BD_ADDR peer_bda, tDIS_READ_CBACK *p_cback, tDIS_ATTR_MA
 
     if (conn_id == GATT_INVALID_CONN_ID)
     {
-        return GATT_Connect(srvc_eng_cb.gatt_if, peer_bda, TRUE, BT_TRANSPORT_LE);
+        return GATT_Connect(srvc_eng_cb.gatt_if, peer_bda, TRUE, BT_TRANSPORT_LE, false);
     }
 
     return dis_gatt_c_read_dis_req(conn_id);

@@ -627,6 +627,27 @@ UNUSED_ATTR static const char *dump_media_event(UINT16 event)
     }
 }
 
+#if 0
+static void btm_read_rssi_cb(void *data)
+{
+    assert(data);
+
+    tBTM_RSSI_RESULTS *result = (tBTM_RSSI_RESULTS*)data;
+    if (result->status != BTM_SUCCESS)
+    {
+        LOG_ERROR(LOG_TAG, "%s unable to read remote RSSI (status %d)",
+            __func__, result->status);
+        return;
+    }
+
+    char temp_buffer[20] = {0};
+    LOG_WARN(LOG_TAG, "%s device: %s, rssi: %d", __func__,
+        bdaddr_to_string((bt_bdaddr_t *)result->rem_bda, temp_buffer,
+            sizeof(temp_buffer)),
+        result->rssi);
+}
+#endif
+
 /*****************************************************************************
  **  A2DP CTRL PATH
  *****************************************************************************/
@@ -4212,13 +4233,19 @@ static void btif_media_aa_prep_2_send(UINT8 nb_frame, uint64_t timestamp_us)
         APPL_TRACE_WARNING("%s() - TX queue buffer count %d/%d", __func__,
                            fixed_queue_length(btif_media_cb.TxAaQ),
                            MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ - nb_frame);
+        // Keep track of drop-outs
         btif_media_cb.stats.tx_queue_dropouts++;
         btif_media_cb.stats.tx_queue_last_dropouts_us = timestamp_us;
 
+        // Flush all queued buffers...
         while (fixed_queue_length(btif_media_cb.TxAaQ)) {
             btif_media_cb.stats.tx_queue_total_dropped_messages++;
             osi_free(fixed_queue_try_dequeue(btif_media_cb.TxAaQ));
         }
+
+        // Request RSSI for log purposes if we had to flush buffers
+        //bt_bdaddr_t peer_bda = btif_av_get_addr();
+        //BTM_ReadRSSI(peer_bda.address, btm_read_rssi_cb);
     }
 
     // Transcode frame

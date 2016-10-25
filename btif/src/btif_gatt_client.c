@@ -1025,6 +1025,9 @@ static void bta_track_adv_event_cb(tBTA_DM_BLE_TRACK_ADV_DATA *p_track_adv_data)
 
 static void btm_read_rssi_cb (tBTM_RSSI_RESULTS *p_result)
 {
+    if (!p_result)
+      return;
+
     btif_gattc_cb_t btif_cb;
 
     bdcpy(btif_cb.bd_addr.address, p_result->rem_bda);

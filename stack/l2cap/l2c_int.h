@@ -768,7 +768,8 @@ extern void l2cble_conn_comp (UINT16 handle, UINT8 role, BD_ADDR bda, tBLE_ADDR_
 extern BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb);
 extern void l2cble_notify_le_connection (BD_ADDR bda);
 extern void l2c_ble_link_adjust_allocation (void);
-extern void l2cble_process_conn_update_evt (UINT16 handle, UINT8 status);
+extern void l2cble_process_conn_update_evt (UINT16 handle, UINT8 status,
+                        UINT16 interval, UINT16 latency, UINT16 timeout);
 
 extern void l2cble_credit_based_conn_req (tL2C_CCB *p_ccb);
 extern void l2cble_credit_based_conn_res (tL2C_CCB *p_ccb, UINT16 result);

@@ -55,6 +55,8 @@ bt_bdaddr_t btif_local_bd_addr;
 #define PREAMBLE_BUFFER_SIZE 4 // max preamble size, ACL
 #define RETRIEVE_ACL_LENGTH(preamble) ((((preamble)[3]) << 8) | (preamble)[2])
 
+#define BT_HCI_TIMEOUT_TAG_NUM 1010000
+
 static const uint8_t preamble_sizes[] = {
   HCI_COMMAND_PREAMBLE_SIZE,
   HCI_ACL_PREAMBLE_SIZE,
@@ -590,6 +592,7 @@ static void command_timed_out(UNUSED_ATTR void *context) {
     // We shouldn't try to recover the stack from this command timeout.
     // If it's caused by a software bug, fix it. If it's a hardware bug, fix it.
     LOG_ERROR(LOG_TAG, "%s hci layer timeout waiting for response to a command. opcode: 0x%x", __func__, wait_entry->opcode);
+    LOG_EVENT_INT(BT_HCI_TIMEOUT_TAG_NUM, wait_entry->opcode);
   }
 
   LOG_ERROR("%s restarting the bluetooth process.", __func__);

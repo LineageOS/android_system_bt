@@ -307,6 +307,8 @@ const char* dump_hf_event(UINT16 event)
         CASE_RETURN_STR(BTA_AG_AT_CBC_EVT)
         CASE_RETURN_STR(BTA_AG_AT_BAC_EVT)
         CASE_RETURN_STR(BTA_AG_AT_BCS_EVT)
+        CASE_RETURN_STR(BTA_AG_AT_BIND_EVT)
+        CASE_RETURN_STR(BTA_AG_AT_BIEV_EVT)
 
         default:
             return "UNKNOWN MSG ID";

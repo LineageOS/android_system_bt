@@ -1638,6 +1638,9 @@ static BOOLEAN btif_av_state_started_handler(btif_sm_event_t event, void *p_data
     return TRUE;
 }
 
+/*****************************************************************************
+**  Local event handlers
+******************************************************************************/
 
 void btif_av_event_deep_copy(UINT16 event, char *p_dest, char *p_src)
 {

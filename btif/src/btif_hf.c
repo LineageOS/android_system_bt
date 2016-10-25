@@ -65,6 +65,7 @@
 #define BTIF_HF_SECURITY    (BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)
 #endif
 
+#if (BTM_WBS_INCLUDED == TRUE )
 #ifndef BTIF_HF_FEATURES
 #define BTIF_HF_FEATURES   ( BTA_AG_FEAT_3WAY | \
                              BTA_AG_FEAT_ECNR   | \
@@ -73,7 +74,24 @@
                              BTA_AG_FEAT_EXTERR | \
                              BTA_AG_FEAT_BTRH   | \
                              BTA_AG_FEAT_VREC   | \
+                             BTA_AG_FEAT_CODEC |\
+                             BTA_AG_FEAT_HF_IND | \
+                             BTA_AG_FEAT_ESCO   | \
                              BTA_AG_FEAT_UNAT)
+#endif
+#else
+#ifndef BTIF_HF_FEATURES
+#define BTIF_HF_FEATURES   ( BTA_AG_FEAT_3WAY | \
+                             BTA_AG_FEAT_ECNR   | \
+                             BTA_AG_FEAT_REJECT | \
+                             BTA_AG_FEAT_ECS    | \
+                             BTA_AG_FEAT_EXTERR | \
+                             BTA_AG_FEAT_BTRH   | \
+                             BTA_AG_FEAT_VREC   | \
+                             BTA_AG_FEAT_HF_IND | \
+                             BTA_AG_FEAT_ESCO   | \
+                             BTA_AG_FEAT_UNAT)
+#endif
 #endif
 
 #define BTIF_HF_CALL_END_TIMEOUT       6
@@ -715,6 +733,21 @@ static void btif_hf_upstreams_evt(UINT16 event, char* p_param)
                         BTHF_WBS_YES : BTHF_WBS_NO, &btif_hf_cb[idx].connected_bda);
             break;
 
+        case BTA_AG_AT_BIND_EVT:
+            if (p_data->val.hdr.status == BTA_AG_SUCCESS)
+            {
+                HAL_CBACK(bt_hf_callbacks, bind_cb,p_data->val.str,
+                                                &btif_hf_cb[idx].connected_bda);
+            }
+            break;
+
+        case BTA_AG_AT_BIEV_EVT:
+            if (p_data->val.hdr.status == BTA_AG_SUCCESS)
+            {
+                HAL_CBACK(bt_hf_callbacks, biev_cb, (bthf_hf_ind_type_t)p_data->val.lidx, (int)p_data->val.num,
+                              &btif_hf_cb[idx].connected_bda);
+            }
+            break;
         default:
             BTIF_TRACE_WARNING("%s: Unhandled event: %d", __FUNCTION__, event);
             break;
@@ -1189,6 +1222,33 @@ static bt_status_t cind_response(int svc, int num_active, int num_held,
     }
 
     return BT_STATUS_FAIL;
+}
+
+/*******************************************************************************
+**
+** Function         bind_response
+**
+** Description      Send +BIND response
+**
+** Returns          bt_status_t
+**
+*******************************************************************************/
+static bt_status_t bind_response(bthf_hf_ind_type_t ind_id, bthf_hf_ind_status_t ind_status,
+                                 bt_bdaddr_t * bd_addr)
+{
+    CHECK_BTHF_INIT();
+
+    int index = btif_hf_idx_by_bdaddr(bd_addr);
+    if (!is_connected(bd_addr) || index == BTIF_HF_INVALID_IDX)
+        return BT_STATUS_FAIL;
+
+    tBTA_AG_RES_DATA ag_res;
+    memset(&ag_res, 0, sizeof(ag_res));
+    ag_res.ind.id = ind_id;
+    ag_res.ind.on_demand = (ind_status == BTHF_HF_IND_ENABLED);
+
+    BTA_AgResult(btif_hf_cb[index].handle, BTA_AG_BIND_RES, &ag_res);
+    return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
@@ -1767,6 +1827,7 @@ static const bthf_interface_t bthfInterface = {
     cleanup,
     configure_wbs,
     voip_network_type_wifi,
+    bind_response,
 };
 
 /*******************************************************************************
