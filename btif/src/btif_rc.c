@@ -3097,10 +3097,9 @@ static bt_status_t get_element_attr_rsp(uint8_t num_attr, btrc_element_attr_val_
     tAVRC_RESPONSE avrc_rsp;
     UINT32 i;
     tAVRC_ATTR_ENTRY element_attrs[MAX_ELEM_ATTR_SIZE];
-    int rc_index, valid_attr;
+    int rc_index;
     CHECK_RC_CONNECTED
 
-    valid_attr = 0;
     rc_index = btif_rc_get_idx_by_addr(bd_addr->address);
     if (rc_index == btif_max_rc_clients)
     {
@@ -3109,32 +3108,28 @@ static bt_status_t get_element_attr_rsp(uint8_t num_attr, btrc_element_attr_val_
     }
     BTIF_TRACE_DEBUG("- %s on index = %d", __FUNCTION__, rc_index);
 
-    memset(element_attrs, 0, sizeof(tAVRC_ATTR_ENTRY) * num_attr);
-
-    if (num_attr == 0)
+    if (num_attr == 0 || num_attr > MAX_ELEM_ATTR_SIZE)
     {
         avrc_rsp.get_play_status.status = AVRC_STS_BAD_PARAM;
     }
     else
     {
+        memset(element_attrs, 0, sizeof(tAVRC_ATTR_ENTRY) * num_attr);
         for (i=0; i<num_attr; i++)
         {
-            if ((UINT16)strlen((char *)p_attrs[i].text) != 0) {
-                element_attrs[valid_attr].attr_id = p_attrs[i].attr_id;
-                element_attrs[valid_attr].name.charset_id = AVRC_CHARSET_ID_UTF8;
-                element_attrs[valid_attr].name.str_len = (UINT16)strlen((char *)p_attrs[i].text);
-                element_attrs[valid_attr].name.p_str = p_attrs[i].text;
-                BTIF_TRACE_DEBUG("%s attr_id:0x%x, charset_id:0x%x, str_len:%d, str:%s",
-                    __FUNCTION__, (unsigned int)element_attrs[valid_attr].attr_id,
-                    element_attrs[valid_attr].name.charset_id,
-                    element_attrs[valid_attr].name.str_len,
-                    element_attrs[valid_attr].name.p_str);
-                valid_attr++;
-            }
+            element_attrs[i].attr_id = p_attrs[i].attr_id;
+            element_attrs[i].name.charset_id = AVRC_CHARSET_ID_UTF8;
+            element_attrs[i].name.str_len = (UINT16)strlen((char *)p_attrs[i].text);
+            element_attrs[i].name.p_str = p_attrs[i].text;
+            BTIF_TRACE_DEBUG("%s attr_id:0x%x, charset_id:0x%x, str_len:%d, str:%s",
+                __FUNCTION__, (unsigned int)element_attrs[i].attr_id,
+                element_attrs[i].name.charset_id,
+                element_attrs[i].name.str_len,
+                element_attrs[i].name.p_str);
         }
         avrc_rsp.get_play_status.status = AVRC_STS_NO_ERROR;
     }
-    avrc_rsp.get_elem_attrs.num_attr = valid_attr;
+    avrc_rsp.get_elem_attrs.num_attr = num_attr;
     avrc_rsp.get_elem_attrs.p_attrs = element_attrs;
     avrc_rsp.get_elem_attrs.pdu = AVRC_PDU_GET_ELEMENT_ATTR;
     avrc_rsp.get_elem_attrs.opcode = opcode_from_pdu(AVRC_PDU_GET_ELEMENT_ATTR);
@@ -3569,10 +3564,9 @@ static bt_status_t get_itemattr_rsp(uint8_t num_attr, btrc_element_attr_val_t *p
     tAVRC_RESPONSE avrc_rsp;
     UINT32 i;
     tAVRC_ATTR_ENTRY element_attrs[MAX_ELEM_ATTR_SIZE];
-    int valid_attr, rc_index = btif_rc_get_idx_by_addr(bd_addr->address);
+    int rc_index = btif_rc_get_idx_by_addr(bd_addr->address);
     CHECK_RC_CONNECTED
 
-    valid_attr = 0;
     if (rc_index == btif_max_rc_clients)
     {
         BTIF_TRACE_ERROR("%s: on unknown index", __FUNCTION__);
@@ -3580,32 +3574,28 @@ static bt_status_t get_itemattr_rsp(uint8_t num_attr, btrc_element_attr_val_t *p
     }
     BTIF_TRACE_DEBUG("- %s on index = %d", __FUNCTION__, rc_index);
 
-    memset(element_attrs, 0, sizeof(tAVRC_ATTR_ENTRY) * num_attr);
-
-    if (num_attr == 0)
+    if (num_attr == 0 || num_attr > MAX_ELEM_ATTR_SIZE)
     {
         avrc_rsp.get_attrs.status = AVRC_STS_INTERNAL_ERR;
     }
     else
     {
+        memset(element_attrs, 0, sizeof(tAVRC_ATTR_ENTRY) * num_attr);
         for (i=0; i<num_attr; i++)
         {
-            if ((UINT16)strlen((char *)p_attrs[i].text) != 0) {
-                element_attrs[valid_attr].attr_id = p_attrs[i].attr_id;
-                element_attrs[valid_attr].name.charset_id = AVRC_CHARSET_ID_UTF8;
-                element_attrs[valid_attr].name.str_len = (UINT16)strlen((char *)p_attrs[i].text);
-                element_attrs[valid_attr].name.p_str = p_attrs[i].text;
-                BTIF_TRACE_DEBUG("%s attr_id:0x%x, charset_id:0x%x, str_len:%d, str:%s",
-                    __FUNCTION__, (unsigned int)element_attrs[valid_attr].attr_id,
-                    element_attrs[valid_attr].name.charset_id,
-                    element_attrs[valid_attr].name.str_len,
-                    element_attrs[valid_attr].name.p_str);
-                valid_attr++;
-            }
+            element_attrs[i].attr_id = p_attrs[i].attr_id;
+            element_attrs[i].name.charset_id = AVRC_CHARSET_ID_UTF8;
+            element_attrs[i].name.str_len = (UINT16)strlen((char *)p_attrs[i].text);
+            element_attrs[i].name.p_str = p_attrs[i].text;
+            BTIF_TRACE_DEBUG("%s attr_id:0x%x, charset_id:0x%x, str_len:%d, str:%s",
+                __FUNCTION__, (unsigned int)element_attrs[i].attr_id,
+                element_attrs[i].name.charset_id,
+                element_attrs[i].name.str_len,
+                element_attrs[i].name.p_str);
         }
         avrc_rsp.get_attrs.status = AVRC_STS_NO_ERROR;
     }
-    avrc_rsp.get_attrs.attr_count = valid_attr;
+    avrc_rsp.get_attrs.attr_count = num_attr;
     avrc_rsp.get_attrs.p_attr_list = element_attrs;
     avrc_rsp.get_attrs.pdu = AVRC_PDU_GET_ITEM_ATTRIBUTES;
     avrc_rsp.get_attrs.opcode = opcode_from_pdu(AVRC_PDU_GET_ITEM_ATTRIBUTES);
