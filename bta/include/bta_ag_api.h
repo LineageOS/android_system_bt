@@ -42,9 +42,7 @@
 #define BTA_AG_FEAT_ECC     0x00000080   /* Enhanced Call Control */
 #define BTA_AG_FEAT_EXTERR  0x00000100   /* Extended error codes */
 #define BTA_AG_FEAT_CODEC   0x00000200   /* Codec Negotiation */
-#define BTA_AG_FEAT_HFIND   0x00000400   /* HF indicators */
-#define BTA_AG_FEAT_S4      0x00000800   /* ESCO S4 link setting */
-#define BTA_AG_FEAT_VOIP    0x00001000   /* VoIP call */
+#define BTA_AG_FEAT_VOIP    0x00000400   /* VoIP call */
 /* Proprietary features: using 31 ~ 16 bits */
 #define BTA_AG_FEAT_BTRH    0x00010000   /* CCAP incoming call hold */
 #define BTA_AG_FEAT_UNAT    0x00020000   /* Pass unknown AT commands to application */
@@ -100,8 +98,6 @@ typedef UINT8 tBTA_AG_STATUS;
 #define BTA_AG_IN_CALL_HELD_RES     19  /* Incoming call held */
 #define BTA_AG_UNAT_RES             20  /* Response to unknown AT command event */
 #define BTA_AG_MULTI_CALL_RES       21  /* SLC at three way call */
-#define BTA_AG_BIND_RES             22  /* Send indicator response for AT+BIND */
-
 
 typedef UINT8 tBTA_AG_RES;
 
@@ -114,9 +110,7 @@ typedef UINT8 tBTA_AG_RES;
 #define BTA_AG_PEER_FEAT_ECS        0x0020  /* Enhanced Call Status */
 #define BTA_AG_PEER_FEAT_ECC        0x0040  /* Enhanced Call Control */
 #define BTA_AG_PEER_FEAT_CODEC      0x0080  /* Codec Negotiation */
-#define BTA_AG_PEER_FEAT_HFIND      0x0100  /* HF indicators */
-#define BTA_AG_PEER_FEAT_S4         0x0200  /* ESCO S4 link settings */
-#define BTA_AG_PEER_FEAT_VOIP       0x0400  /* VoIP call */
+#define BTA_AG_PEER_FEAT_VOIP       0x0100  /* VoIP call */
 
 typedef UINT16 tBTA_AG_PEER_FEAT;
 
@@ -127,10 +121,6 @@ typedef UINT16 tBTA_AG_PEER_FEAT;
 #define BTA_AG_CODEC_CVSD           BTM_SCO_CODEC_CVSD      /* CVSD */
 #define BTA_AG_CODEC_MSBC           BTM_SCO_CODEC_MSBC      /* mSBC */
 typedef UINT16 tBTA_AG_PEER_CODEC;
-
-/* HFP peer supported HF indicator assigned numbers */
-#define BTM_AG_HFIND_NONE                      0
-#define BTA_AG_HFIND_ENHANCED_SAFETY           1      /* Enhanced Safety HF indicator */
 
 /* HFP errcode - Set when BTA_AG_OK_ERROR is returned in 'ok_flag' */
 #define BTA_AG_ERR_PHONE_FAILURE    0       /* Phone Failure */
@@ -211,13 +201,6 @@ typedef UINT16 tBTA_AG_PEER_CODEC;
 #define BTA_AG_AT_MAX_LEN           256
 #endif
 
-/* AT command argument capabilities */
-#define BTA_AG_AT_NONE          0x01        /* no argument */
-#define BTA_AG_AT_SET           0x02        /* set value */
-#define BTA_AG_AT_READ          0x04        /* read value */
-#define BTA_AG_AT_TEST          0x08        /* test value range */
-#define BTA_AG_AT_FREE          0x10        /* freeform argument */
-
 /* data associated with BTA_AG_IND_RES */
 typedef struct
 {
@@ -271,10 +254,6 @@ typedef struct
 #define BTA_AG_AT_CBC_EVT       25 /* Battery Level report from HF */
 #define BTA_AG_AT_BAC_EVT       26 /* avablable codec */
 #define BTA_AG_AT_BCS_EVT       27 /* Codec select */
-#define BTA_AG_AT_BIND_EVT      28 /* Read HF indicators supported values */
-#define BTA_AG_AT_BIEV_EVT      29 /* HF indicator value update from HF*/
-
-
 
 typedef UINT8 tBTA_AG_EVT;
 

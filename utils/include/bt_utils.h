@@ -66,7 +66,6 @@ typedef enum {
 #define IOT_DEV_CONF_FILE             "/data/misc/bluedroid/iot_devlist.conf"
 #define IOT_DEV_CONF_BKP_FILE         "/data/misc/bluedroid/iot_devlist_bkp.conf"
 #define IOT_ROLE_CHANGE_BLACKLIST     "RoleChangeBlacklistAddr"
-#define IOT_HFP_1_7_BLACKLIST          "Hfp1_7BlacklistAddr"
 #define COD_AUDIO_DEVICE              (0x200400)
 void raise_priority_a2dp(tHIGH_PRIORITY_TASK high_task);
 void adjust_priority_a2dp(int start);

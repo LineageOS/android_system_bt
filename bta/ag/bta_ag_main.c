@@ -962,7 +962,6 @@ static char *bta_ag_evt_str(UINT16 event, tBTA_AG_RES result)
         case BTA_AG_CALL_CANCEL_RES:    return ("AT Result  BTA_AG_CALL_CANCEL_RES");
         case BTA_AG_END_CALL_RES:       return ("AT Result  BTA_AG_END_CALL_RES");
         case BTA_AG_UNAT_RES:           return ("AT Result  BTA_AG_UNAT_RES");
-        case BTA_AG_BIND_RES:           return ("AT Result  BTA_AG_BIND_RES");
         default:                        return ("Unknown AG Result");
         }
     case BTA_AG_API_SETCODEC_EVT:

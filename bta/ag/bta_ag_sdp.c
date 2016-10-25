@@ -23,9 +23,6 @@
  *
  ******************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
 #include <string.h>
 #include "bta_api.h"
 #include "bta_sys.h"
@@ -35,7 +32,6 @@
 #include "btm_api.h"
 #include "bt_common.h"
 #include "utl.h"
-#include "bt_utils.h"
 
 /* Number of protocol elements in protocol element list. */
 #define BTA_AG_NUM_PROTO_ELEMS      2
@@ -393,20 +389,6 @@ BOOLEAN bta_ag_sdp_find_attr(tBTA_AG_SCB *p_scb, tBTA_SERVICE_MASK service)
                 if (p_scb->peer_features == 0)
                     p_scb->peer_features = p_attr->attr_value.v.u16;
 #endif
-            }
-
-            /* Remote supports 1.7, store it in the file */
-            if (p_scb->peer_version == HFP_VERSION_1_7)
-            {
-                bool ret = FALSE;
-                /* Check if the device is already part of the list, if not store it */
-                ret = is_device_present(IOT_HFP_1_7_BLACKLIST, p_scb->peer_addr);
-
-                if (ret == FALSE)
-                {
-                   add_iot_device(IOT_DEV_CONF_FILE, IOT_HFP_1_7_BLACKLIST,
-                                  p_scb->peer_addr, METHOD_BD);
-                }
             }
         }
         else    /* HSP */

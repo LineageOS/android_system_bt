@@ -453,7 +453,6 @@ void bta_ag_rfc_close(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     p_scb->post_sco = BTA_AG_POST_SCO_NONE;
     p_scb->svc_conn = FALSE;
     p_scb->hsp_version = HSP_VERSION_1_2;
-    p_scb->slc_pend_open = FALSE;
     bta_ag_at_reinit(&p_scb->at_cb);
 
     /* stop timers */
