@@ -172,7 +172,13 @@ static void* a2dp_codec_parser(uint8_t *codec_cfg, audio_format_t *codec_type)
     char byte,len;
     uint8_t *p_cfg = codec_cfg;
     INFO("%s",__func__);
-    if (codec_cfg[CODEC_OFFSET] == CODEC_TYPE_SBC)
+    if (codec_cfg[CODEC_OFFSET] == CODEC_TYPE_PCM)
+    {
+        *codec_type = AUDIO_FORMAT_PCM_16_BIT;
+        //For the time being Audio does not require any param to be passed for PCM so returning null
+        return NULL;
+    }
+    else if (codec_cfg[CODEC_OFFSET] == CODEC_TYPE_SBC)
     {
         memset(&sbc_codec,0,sizeof(audio_sbc_encoder_config));
         p_cfg++;//skip dev idx
