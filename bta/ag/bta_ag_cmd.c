@@ -302,8 +302,9 @@ const UINT8 bta_ag_trans_result[] =
     0,                  /* BTA_AG_CALL_CANCEL_RES */
     0,                  /* BTA_AG_END_CALL_RES */
     0,                  /* BTA_AG_IN_CALL_HELD_RES */
+    BTA_AG_RES_UNAT,    /* BTA_AG_UNAT_RES */
+    0,                  /* BTA_AG_MULTI_CALL_RES */
     BTA_AG_RES_BIND,    /* BTA_AG_BIND_RES */
-    BTA_AG_RES_UNAT     /* BTA_AG_UNAT_RES */
 };
 
 /* callsetup indicator value lookup table */
