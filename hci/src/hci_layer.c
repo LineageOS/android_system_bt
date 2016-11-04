@@ -111,9 +111,17 @@ typedef enum {
     BT_SOC_RESERVED
 } bt_soc_type;
 
+typedef enum {
+  LPM_CONFIG_ALL,
+  LPM_CONFIG_TX,
+  LPM_CONFIG_NONE
+} low_power_config_t;
+
 // Using a define here, because it can be stringified for the property lookup
 #define DEFAULT_STARTUP_TIMEOUT_MS 8000
 #define STRING_VALUE_OF(x) #x
+
+low_power_config_t lpm_config = LPM_CONFIG_NONE;
 
 static const uint32_t EPILOG_TIMEOUT_MS = 3000;
 static const uint32_t COMMAND_PENDING_TIMEOUT_MS = 8000;
@@ -198,6 +206,22 @@ static future_t *start_up(void) {
   // This value can change when you get a command complete or command status event.
   command_credits = 1;
   firmware_is_configured = false;
+
+  char prop_lpm_config[PROPERTY_VALUE_MAX];
+  osi_property_get("persist.service.bdroid.lpmcfg", prop_lpm_config, "all");
+  if (!strcmp(prop_lpm_config, "all")) {
+     // LPM configured for both Tx and Rx channels
+     lpm_config = LPM_CONFIG_ALL;
+  }
+  else if (!strcmp(prop_lpm_config, "tx")) {
+     // LPM configured for Tx channel only
+     lpm_config = LPM_CONFIG_TX;
+  }
+  else {
+     lpm_config = LPM_CONFIG_NONE;
+  }
+
+  LOG_INFO(LOG_TAG, "%s lpm configure value = %d.", __func__, lpm_config);
 
   pthread_mutex_init(&commands_pending_response_lock, NULL);
 
@@ -534,9 +558,21 @@ static void event_command_ready(fixed_queue_t *queue, UNUSED_ATTR void *context)
     pthread_mutex_unlock(&commands_pending_response_lock);
 
     // Send it off
-    low_power_manager->wake_assert();
+    if (LPM_CONFIG_TX == lpm_config) {
+        low_power_manager->stop_idle_timer();;
+    }
+    else {
+        low_power_manager->wake_assert();
+    }
+
     packet_fragmenter->fragment_and_dispatch(wait_entry->command);
-    low_power_manager->transmit_done();
+
+    if (LPM_CONFIG_TX == lpm_config) {
+        low_power_manager->start_idle_timer(false);
+    }
+    else {
+        low_power_manager->transmit_done();
+    }
 
     update_command_response_timer();
   }
