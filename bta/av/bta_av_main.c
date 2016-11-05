@@ -763,6 +763,10 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
                              continue;
                         }
                     }
+                } else if (codec_type == AAC) {
+                    //Don't add AAC in Non split mode
+                    index++;
+                    continue;
                 }
 
                 if(AVDT_CreateStream(&p_scb->seps[index - startIndex].av_handle, &cs) ==
