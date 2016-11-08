@@ -1182,3 +1182,15 @@ UINT16 AVRC_PassRsp(UINT8 handle, UINT8 label, tAVRC_MSG_PASS *p_msg)
     return AVRC_NO_RESOURCES;
 }
 
+/******************************************************************************
+**
+** Function         AVRC_CheckIncomfingConn
+**
+** Description      Check for incoming connection in progress
+**
+** Returns          TRUE if incoming ocnnection in progress, FALSE otherwise
+******************************************************************************/
+BOOLEAN AVRC_CheckIncomingConn(BD_ADDR peer_addr)
+{
+    return AVCT_CheckIncomingConn(peer_addr);
+}
