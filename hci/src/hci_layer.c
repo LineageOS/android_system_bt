@@ -119,7 +119,6 @@ static const uint32_t EPILOG_TIMEOUT_MS = 3000;
 static const uint32_t COMMAND_PENDING_TIMEOUT_MS = 8000;
 
 extern int soc_type;
-static uint32_t HARDWARE_ERROR_TIMEOUT_MS = 2000;
 
 // Our interface
 static bool interface_created;
@@ -604,18 +603,23 @@ static void command_timed_out(UNUSED_ATTR void *context) {
 
   if (soc_type == BT_SOC_ROME || soc_type == BT_SOC_CHEROKEE) {
     char value[PROPERTY_VALUE_MAX] = {0};
-    if( property_get("wc_transport.force_special_byte", value, "false") && !strcmp(value,"true")) {
+    uint32_t hardware_error_timeout_ms = 2000;
+    bool enabled = false;
+#ifdef ENABLE_DBG_FLAGS
+    enabled = true;
+#endif
+    if (property_get("wc_transport.force_special_byte", value, NULL))
+      enabled = (strcmp(value, "false") == 0) ? false : true;
+    if (enabled) {
       hardware_error_timer = alarm_new("hci.hardware_error_timer");
       if (!hardware_error_timer) {
         LOG_ERROR("%s unable to create hardware error timer.", __func__);
         usleep(2000000);
         kill(getpid(), SIGKILL);
       }
-      if(soc_type == BT_SOC_ROME)
-        HARDWARE_ERROR_TIMEOUT_MS = 2000000;
-      else if(soc_type == BT_SOC_CHEROKEE)
-        HARDWARE_ERROR_TIMEOUT_MS = 5000000;
-      alarm_set(hardware_error_timer, HARDWARE_ERROR_TIMEOUT_MS, hardware_error_timer_expired, NULL);
+      if(soc_type == BT_SOC_CHEROKEE)
+        hardware_error_timeout_ms = 5000;
+      alarm_set(hardware_error_timer, hardware_error_timeout_ms, hardware_error_timer_expired, NULL);
       return;
     }
   }
@@ -852,7 +856,6 @@ void ssr_cleanup (int reason) {
    }
    if (vendor != NULL) {
        vendor->ssr_cleanup(reason);
-       hal->close(); //clean up the UART stream
    } else {
        LOG_ERROR("%s: vendor is NULL", __func__);
    }
