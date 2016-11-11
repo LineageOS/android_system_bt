@@ -365,11 +365,11 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(
 
         if (len <= 0)
         {
-            p_result->get_elem_attrs.num_attr = 0;
+            p_result->get_attrs.num_attrs = 0;
             break;
         }
         BE_STREAM_TO_UINT8(num_attrs, p);
-        p_result->get_elem_attrs.num_attr = num_attrs;
+        p_result->get_attrs.num_attrs = num_attrs;
         if (num_attrs)
         {
             tAVRC_ATTR_ENTRY *p_attrs =
@@ -383,7 +383,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(
                     BE_STREAM_TO_ARRAY(p, p_attrs[i].name.p_str, p_attrs[i].name.str_len);
                 }
             }
-            p_result->get_elem_attrs.p_attrs = p_attrs;
+            p_result->get_attrs.p_attrs = p_attrs;
         }
     }
         break;
