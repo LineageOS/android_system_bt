@@ -445,71 +445,6 @@ static tAVRC_STS avrc_bld_inform_battery_status_rsp (tAVRC_RSP *p_rsp, BT_HDR *p
 
 /*******************************************************************************
 **
-** Function         avrc_bld_get_elem_attrs_rsp
-**
-** Description      This function builds the Get Element Attributes
-**                  response.
-**
-** Returns          AVRC_STS_NO_ERROR, if the response is built successfully
-**                  Otherwise, the error code.
-**
-*******************************************************************************/
-static tAVRC_STS avrc_bld_get_elem_attrs_rsp (tAVRC_GET_ELEM_ATTRS_RSP *p_rsp, BT_HDR *p_pkt)
-{
-    UINT8   *p_data, *p_start, *p_len, *p_count;
-    UINT16  len;
-    UINT8   xx;
-
-    AVRC_TRACE_API("%s", __func__);
-    if (!p_rsp->p_attrs)
-    {
-        AVRC_TRACE_ERROR("%s NULL parameter", __func__);
-        return AVRC_STS_BAD_PARAM;
-    }
-
-    /* get the existing length, if any, and also the num attributes */
-    p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
-    p_data = p_len = p_start + 2; /* pdu + rsvd */
-
-    BE_STREAM_TO_UINT16(len, p_data);
-    p_count = p_data;
-
-    if (len == 0)
-    {
-        *p_count = 0;
-        p_data++;
-    }
-    else
-    {
-        p_data = p_start + p_pkt->len;
-    }
-
-    for (xx=0; xx<p_rsp->num_attr; xx++)
-    {
-        if (!AVRC_IS_VALID_MEDIA_ATTRIBUTE(p_rsp->p_attrs[xx].attr_id))
-        {
-            AVRC_TRACE_ERROR("%s invalid attr id[%d]: %d",
-                             __func__, xx, p_rsp->p_attrs[xx].attr_id);
-            continue;
-        }
-        if ( !p_rsp->p_attrs[xx].name.p_str )
-        {
-            p_rsp->p_attrs[xx].name.str_len = 0;
-        }
-        UINT32_TO_BE_STREAM(p_data, p_rsp->p_attrs[xx].attr_id);
-        UINT16_TO_BE_STREAM(p_data, p_rsp->p_attrs[xx].name.charset_id);
-        UINT16_TO_BE_STREAM(p_data, p_rsp->p_attrs[xx].name.str_len);
-        ARRAY_TO_BE_STREAM(p_data, p_rsp->p_attrs[xx].name.p_str, p_rsp->p_attrs[xx].name.str_len);
-        (*p_count)++;
-    }
-    len = p_data - p_count;
-    UINT16_TO_BE_STREAM(p_len, len);
-    p_pkt->len = (p_data - p_start);
-    return AVRC_STS_NO_ERROR;
-}
-
-/*******************************************************************************
-**
 ** Function         avrc_bld_get_play_status_rsp
 **
 ** Description      This function builds the Get Play Status
@@ -982,56 +917,97 @@ static tAVRC_STS avrc_bld_set_browse_player_rsp (tAVRC_SET_BR_PLAYER_RSP *p_rsp,
 
 /*******************************************************************************
 **
-** Function         avrc_bld_get_item_attrs_rsp
+** Function         avrc_bld_get_attrs_rsp
 **
-** Description      This function builds the Get Item Attributes
-**                  response.
+** Description      This function builds the Get Item Attributes or
+**                  Get Element Attributes response,
+**
+**                  The Get Item Attributes message goes through the
+**                  Browsing channel (already specified in the |p_pkt|)
 **
 ** Returns          AVRC_STS_NO_ERROR, if the response is built successfully
+**                  AVRC_STS_INTERNAL_ERR, if the given buffer does not have enough room
 **                  Otherwise, the error code.
 **
 *******************************************************************************/
-static tAVRC_STS avrc_bld_get_item_attrs_rsp (tAVRC_GET_ATTRS_RSP *p_rsp, BT_HDR *p_pkt)
+static tAVRC_STS avrc_bld_get_attrs_rsp (tAVRC_GET_ATTRS_RSP *p_rsp, BT_HDR *p_pkt)
 {
-    UINT8   *p_data, *p_start;
-    UINT16  param_len;
-    UINT8   xx;
-
-    AVRC_TRACE_API("avrc_bld_get_item_attrs_rsp");
-    if (!p_rsp->p_attr_list)
+    uint8_t   *p_data, *p_start;
+    uint8_t   *p_len;
+    uint16_t  len_left;
+    uint8_t   *p_num;
+    uint16_t  mtu;
+    AVRC_TRACE_API("%s", __func__);
+    /* calculate the buffer size needed and validate the parameters */
+    if (!p_rsp || !p_rsp->p_attrs)
     {
-        AVRC_TRACE_ERROR("avrc_bld_get_item_attrs_rsp NULL parameter");
+        AVRC_TRACE_ERROR("NULL p_attrs");
         return AVRC_STS_BAD_PARAM;
     }
-
-    /* get the existing length, if any, and also the num attributes */
-    p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
-    p_data = p_start;
-    UINT8_TO_BE_STREAM(p_data, p_rsp->pdu);
-
-    param_len = 2; /* for status and num_attr*/
-    for(xx = 0; xx < p_rsp->attr_count; xx++)
+    /* check the length before adding the attr to the message */
+    uint16_t len = 2;
+    for (uint8_t xx = 0; xx < p_rsp->num_attrs; xx++)
     {
-        /* 8 for attr_id, char_set_id, attr_value_len */
-        param_len = param_len + 8 + p_rsp->p_attr_list[xx].name.str_len;
-    }
-    AVRC_TRACE_API(" param_len = %d ", param_len);
-    UINT16_TO_BE_STREAM(p_data, param_len);
-    UINT8_TO_BE_STREAM(p_data, p_rsp->status);
-    UINT8_TO_BE_STREAM(p_data, p_rsp->attr_count);
-
-    for (xx=0; xx < p_rsp->attr_count; xx++)
-    {
-        if ( !p_rsp->p_attr_list[xx].name.p_str )
+        if(p_rsp->p_attrs[xx].name.p_str == 0 ||
+            !AVRC_IS_VALID_MEDIA_ATTRIBUTE(p_rsp->p_attrs[xx].attr_id))
         {
-            p_rsp->p_attr_list[xx].name.str_len = 0;
+            AVRC_TRACE_ERROR("[%d] NULL p_attrs str or bad attr_id:%d", xx,
+                p_rsp->p_attrs[xx].attr_id);
+            return AVRC_STS_BAD_PARAM;
         }
-        UINT32_TO_BE_STREAM(p_data, p_rsp->p_attr_list[xx].attr_id);
-        UINT16_TO_BE_STREAM(p_data, p_rsp->p_attr_list[xx].name.charset_id);
-        UINT16_TO_BE_STREAM(p_data, p_rsp->p_attr_list[xx].name.str_len);
-        ARRAY_TO_BE_STREAM(p_data, p_rsp->p_attr_list[xx].name.p_str, \
-                                    p_rsp->p_attr_list[xx].name.str_len);
+        len += (p_rsp->p_attrs[xx].name.str_len + 8);
     }
+    len_left = BT_DEFAULT_BUFFER_SIZE - BT_HDR_SIZE;
+    p_data = (uint8_t *)(p_pkt + 1);
+    BE_STREAM_TO_UINT16 (mtu, p_data);
+    if (len_left > mtu)
+    {
+        len_left = mtu;
+    }
+    len_left = len_left - p_pkt->offset - p_pkt->len;
+    AVRC_TRACE_DEBUG("len_left:%d, mtu:%d len needed:%d", len_left, mtu, len);
+    if (len_left < 11) /* 11 is 4/attr_id + 2/charset_id + 2/str_len + 3/1st timer/attr cnt & len */
+    {
+        return AVRC_STS_INTERNAL_ERR;
+    }
+    if (len > len_left)
+    {
+        AVRC_TRACE_ERROR("The buffer does not have enough room to hold the given data.");
+    }
+    /* get the existing length, if any, and also the num attributes */
+    p_start = (uint8_t *)(p_pkt + 1) + p_pkt->offset;
+    p_data = p_len = p_start + 1; /* pdu */
+    /* the existing len */
+    BE_STREAM_TO_UINT16(len, p_data);
+    p_num = p_data + 1;
+    if (len == 0)
+    {
+        /* first time initialize the attribute count */
+        UINT8_TO_BE_STREAM(p_data, p_rsp->status);
+        *p_num = 0;
+        p_data++;
+        len = 2;
+        len_left -= 3;
+    }
+    else
+    {
+        p_data = p_start + p_pkt->len;
+    }
+    for (uint8_t xx = 0; (xx < p_rsp->num_attrs) && (len_left > 9); xx++)
+    {
+        (*p_num)++;
+        UINT32_TO_BE_STREAM(p_data, p_rsp->p_attrs[xx].attr_id);
+        UINT16_TO_BE_STREAM(p_data, p_rsp->p_attrs[xx].name.charset_id);
+        UINT16_TO_BE_STREAM(p_data, p_rsp->p_attrs[xx].name.str_len);
+        len_left -= 8;
+        if (p_rsp->p_attrs[xx].name.str_len > len_left)
+            p_rsp->p_attrs[xx].name.str_len = len_left;
+        ARRAY_TO_BE_STREAM(p_data, p_rsp->p_attrs[xx].name.p_str,
+            p_rsp->p_attrs[xx].name.str_len);
+        len_left -= p_rsp->p_attrs[xx].name.str_len;
+        len += (p_rsp->p_attrs[xx].name.str_len + 8);
+    }
+    UINT16_TO_BE_STREAM(p_len, len);
     p_pkt->len = (p_data - p_start);
     return AVRC_STS_NO_ERROR;
 }
@@ -1270,7 +1246,8 @@ tAVRC_STS AVRC_BldResponse( UINT8 handle, tAVRC_RESPONSE *p_rsp, BT_HDR **pp_pkt
         break;
 
     case AVRC_PDU_GET_ELEMENT_ATTR:
-        status = avrc_bld_get_elem_attrs_rsp(&p_rsp->get_elem_attrs, p_pkt);
+    case AVRC_PDU_GET_ITEM_ATTRIBUTES:
+        status = avrc_bld_get_attrs_rsp(&p_rsp->get_attrs, p_pkt);
         break;
 
     case AVRC_PDU_GET_PLAY_STATUS:
@@ -1281,15 +1258,15 @@ tAVRC_STS AVRC_BldResponse( UINT8 handle, tAVRC_RESPONSE *p_rsp, BT_HDR **pp_pkt
         status = avrc_bld_notify_rsp(&p_rsp->reg_notif, p_pkt);
         break;
 
-    case AVRC_PDU_REQUEST_CONTINUATION_RSP:     /*        0x40 */
+    case AVRC_PDU_REQUEST_CONTINUATION_RSP:
         status = avrc_bld_next_rsp(&p_rsp->continu, p_pkt);
         break;
 
-    case AVRC_PDU_ABORT_CONTINUATION_RSP:       /*          0x41 */
+    case AVRC_PDU_ABORT_CONTINUATION_RSP:
         status = avrc_bld_next_rsp(&p_rsp->abort, p_pkt);
         break;
 
-    case AVRC_PDU_SET_ADDRESSED_PLAYER: /*PDU 0x60*/
+    case AVRC_PDU_SET_ADDRESSED_PLAYER:
         status = avrc_bld_set_address_player_rsp(&p_rsp->addr_player, p_pkt);
         break;
 
@@ -1400,10 +1377,6 @@ tAVRC_STS AVRC_BldBrowseResponse( UINT8 handle, tAVRC_RESPONSE *p_rsp, BT_HDR **
 
         case AVRC_PDU_CHANGE_PATH:
             status = avrc_bld_change_path_rsp(&p_rsp->chg_path, p_pkt);
-            break;
-
-        case AVRC_PDU_GET_ITEM_ATTRIBUTES:
-            status = avrc_bld_get_item_attrs_rsp(&p_rsp->get_attrs, p_pkt);
             break;
 
         case AVRC_PDU_GET_TOTAL_NUMBER_OF_ITEMS:

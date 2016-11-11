@@ -1263,16 +1263,6 @@ typedef struct
     tAVRC_APP_SETTING_TEXT   *p_attrs;
 } tAVRC_GET_APP_ATTR_TXT_RSP;
 
-/* GetElemAttrs */
-typedef struct
-{
-    UINT8       pdu;
-    tAVRC_STS   status;
-    UINT8       opcode;         /* Op Code (copied from avrc_cmd.opcode by AVRC_BldResponse user. invalid one to generate according to pdu) */
-    UINT8       num_attr;
-    tAVRC_ATTR_ENTRY   *p_attrs;
-} tAVRC_GET_ELEM_ATTRS_RSP;
-
 /* GetPlayStatus */
 typedef struct
 {
@@ -1369,14 +1359,14 @@ typedef struct
     UINT32              num_items;
 } tAVRC_CHG_PATH_RSP;
 
-/* GetItemAttrs */
+/* GetItemAttrs, GetElemAttrs */
 typedef struct
 {
     UINT8               pdu;
     tAVRC_STS           status;
     UINT8               opcode;         /* Op Code (copied from avrc_cmd.opcode by AVRC_BldResponse user. invalid one to generate according to pdu) */
-    UINT8               attr_count;
-    tAVRC_ATTR_ENTRY    *p_attr_list;
+    uint8_t             num_attrs;
+    tAVRC_ATTR_ENTRY    *p_attrs;
 } tAVRC_GET_ATTRS_RSP;
 
 /* Search */
@@ -1419,7 +1409,6 @@ typedef union
     tAVRC_GET_APP_ATTR_TXT_RSP      get_app_val_txt;        /* GetAppValueTxt */
     tAVRC_RSP                       inform_charset;         /* InformCharset */
     tAVRC_RSP                       inform_battery_status;  /* InformBatteryStatus */
-    tAVRC_GET_ELEM_ATTRS_RSP        get_elem_attrs;         /* GetElemAttrs */
     tAVRC_GET_PLAY_STATUS_RSP       get_play_status;        /* GetPlayStatus */
     tAVRC_REG_NOTIF_RSP             reg_notif;              /* RegNotify */
     tAVRC_RSP                       continu;                /* Continue */
@@ -1430,7 +1419,7 @@ typedef union
     tAVRC_SET_BR_PLAYER_RSP         br_player;              /* SetBrowsedPlayer */
     tAVRC_GET_ITEMS_RSP             get_items;              /* GetFolderItems */
     tAVRC_CHG_PATH_RSP              chg_path;               /* ChangePath */
-    tAVRC_GET_ATTRS_RSP             get_attrs;              /* GetItemAttrs */
+    tAVRC_GET_ATTRS_RSP             get_attrs;              /* GetItemAttrs, GetElemAttrs */
     tAVRC_SEARCH_RSP                search;                 /* Search */
     tAVRC_RSP                       play_item;              /* PlayItem */
     tAVRC_RSP                       add_to_play;            /* AddToNowPlaying */
