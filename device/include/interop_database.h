@@ -122,6 +122,9 @@ static const interop_addr_entry_t interop_addr_database[] = {
   // For a more specific black listing(e.g. just for Mercedes), both BD addr
   // and device name has to be added for AVRCP 1.3 blacklisting
   {{{0xa0, 0x56, 0xb2,      0,0,0}}, 3, INTEROP_ADV_AVRCP_VER_1_3},
+
+  // Mazda Atenza
+  {{{0x04, 0xf8, 0xc2,      0,0,0}}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
 };
 
 typedef struct {
