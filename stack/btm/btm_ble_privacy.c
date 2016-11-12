@@ -775,8 +775,8 @@ BOOLEAN btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC *p_dev_rec)
 
     /* only add RPA enabled device into resolving list */
     if (p_dev_rec != NULL && /* RPA is being used and PID is known */
-       ((p_dev_rec->ble.key_type & BTM_LE_KEY_PID) != 0) &&
-       (BTM_BLE_IS_RESOLVE_BDA(p_dev_rec->bd_addr) && p_dev_rec->ble.ble_addr_type != BLE_ADDR_PUBLIC))
+       ((p_dev_rec->ble.key_type & BTM_LE_KEY_PID) != 0 ||
+       (p_dev_rec->ble.key_type & BTM_LE_KEY_LID) != 0))
     {
         if (!(p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) &&
             btm_ble_brcm_find_resolving_pending_entry(p_dev_rec->bd_addr,

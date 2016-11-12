@@ -112,7 +112,7 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
                 }
 
                 return;
-            } else {
+            } else if (handle != 0xedc) {    /* Handle 0xedc used for SOC Logging */
                 L2CAP_TRACE_ERROR ("L2CAP - rcvd ACL for unknown handle:%d ls:%d cid:%d"
                         " opcode:%d cur count:%d", handle, p_msg->layer_specific, rcv_cid,
                         cmd_code, list_length(l2cb.rcv_pending_q));
