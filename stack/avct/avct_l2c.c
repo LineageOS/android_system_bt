@@ -556,6 +556,11 @@ void avct_l2c_config_ind_cback(UINT16 lcid, tL2CAP_CFG_INFO *p_cfg)
         }
         AVCT_TRACE_DEBUG("ch_state cfi: %d ", p_lcb->ch_state);
     }
+    else
+    {
+        AVCT_TRACE_ERROR("%s: p_lcb is null",__func__);
+        L2CA_DisconnectReq(lcid);
+    }
 }
 
 #if (AVCT_BROWSE_INCLUDED == TRUE)

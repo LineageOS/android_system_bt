@@ -326,6 +326,18 @@ UINT8 AVCT_SetTraceLevel (UINT8 new_level);
 *******************************************************************************/
 extern BOOLEAN avct_get_peer_addr_by_ccb (UINT8 idx, BD_ADDR addr);
 
+/*******************************************************************************
+**
+** Function         AVCT_CheckIncomingConn
+**
+**
+** Description      Check if remote AVCTP incoming connection in progress
+**
+** Returns          TRUE if icoming connection is in progress,
+**
+*******************************************************************************/
+extern BOOLEAN AVCT_CheckIncomingConn(BD_ADDR peer_addr);
+
 #ifdef __cplusplus
 }
 #endif
