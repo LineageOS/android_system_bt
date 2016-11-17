@@ -694,7 +694,7 @@ int a2dp_read_codec_config(struct a2dp_stream_common *common,uint8_t idx)
     cmd[0] = A2DP_CTRL_GET_CODEC_CONFIG;
     cmd[1] = idx;
     INFO("%s",__func__);
-    memset(p_codec_cfg,0,20);
+    memset(p_codec_cfg,0,MAX_CODEC_CFG_SIZE);
     INFO("%s",__func__);
 
     if (send(common->ctrl_fd, cmd, 2,  MSG_NOSIGNAL) == -1)

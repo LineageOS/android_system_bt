@@ -124,6 +124,7 @@ struct a2dp_config {
 };
 
 /* move ctrl_fd outside output stream and keep open until HAL unloaded ? */
+#define  MAX_CODEC_CFG_SIZE  30
 
 struct a2dp_stream_common {
     pthread_mutex_t         lock;
@@ -132,7 +133,7 @@ struct a2dp_stream_common {
     size_t                  buffer_sz;
     struct a2dp_config      cfg;
     a2dp_state_t            state;
-    uint8_t                 codec_cfg[20];
+    uint8_t                 codec_cfg[MAX_CODEC_CFG_SIZE];
 };
 /*****************************************************************************
 **  Type definitions for callback functions

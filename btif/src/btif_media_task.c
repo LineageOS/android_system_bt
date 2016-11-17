@@ -867,11 +867,11 @@ static void btif_recv_ctrl_data(void)
         case A2DP_CTRL_GET_CODEC_CONFIG:
         {
             UINT16 min_mtu;
-            uint8_t param[20],idx,bta_hdl,codec_id = 0;
+            uint8_t param[MAX_CODEC_CFG_SIZE],idx,bta_hdl,codec_id = 0;
             uint32_t bitrate = 0;
             uint8_t i = 0;
             UIPC_Read(UIPC_CH_ID_AV_CTRL, NULL, &idx, 1);
-            memset(param,0,20);
+            memset(param,0,MAX_CODEC_CFG_SIZE);
 
             if (btif_av_stream_started_ready() == FALSE)
             {
