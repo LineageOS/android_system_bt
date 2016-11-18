@@ -679,6 +679,18 @@ extern BOOLEAN AVRC_IsValidAvcType(UINT8 pdu_id, UINT8 avc_type);
 *******************************************************************************/
 extern BOOLEAN AVRC_IsValidPlayerAttr(UINT8 attr);
 
+/*******************************************************************************
+**
+** Function         AVRC_CheckIncomingConn
+**
+** Description      Check if AVRC incoming connection in progress
+**
+**
+** Returns          returns TRUE if incoming connection in progress
+**
+*******************************************************************************/
+extern BOOLEAN AVRC_CheckIncomingConn(BD_ADDR peer_addr);
+
 #ifdef __cplusplus
 }
 #endif
