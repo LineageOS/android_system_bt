@@ -153,6 +153,10 @@ static const interop_name_entry_t interop_name_database[] = {
   //Below devices reject connection updated with preferred
   {"BSMBB09DS", 9, INTEROP_DISABLE_LE_CONN_PREFERRED_PARAMS},
   {"ELECOM", 6, INTEROP_DISABLE_LE_CONN_PREFERRED_PARAMS},
+
+  // HID Moto KZ500 Keyboard - Problematic SDP digitizer descriptor
+  {"Motorola Keyboard KZ500", 23, INTEROP_REMOVE_HID_DIG_DESCRIPTOR},
+  {"Motorola Keyboard KZ500 v122", 28, INTEROP_REMOVE_HID_DIG_DESCRIPTOR},
 };
 
 typedef struct {
@@ -171,12 +175,10 @@ static const interop_manufacturer_t interop_manufacturer_database[] = {
 typedef struct {
   uint16_t vendor_id;
   uint16_t product_id;
-  char name[40];
-  size_t length;
   interop_feature_t feature;
 } interop_hid_multitouch_t;
 
 static const interop_hid_multitouch_t interop_hid_multitouch_database[] = {
-  // Moto KZ500 Keyboard
-  {0x22b8, 0x093d, "Motorola Keyboard KZ500 v122", 28, INTEROP_REMOVE_HID_DIG_DESCRIPTOR},
+  // HID Moto KZ500 Keyboard - Problematic SDP digitizer descriptor
+  {0x22b8, 0x093d, INTEROP_REMOVE_HID_DIG_DESCRIPTOR},
 };

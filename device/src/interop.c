@@ -86,21 +86,16 @@ bool interop_match_manufacturer(const interop_feature_t feature, uint16_t manufa
   return false;
 }
 
-bool interop_match_hid_multitouch(const interop_feature_t feature,
-        uint16_t vendor_id, uint16_t product_id, const char *name) {
-  assert(name);
-
+bool interop_match_vendor_product_ids(const interop_feature_t feature,
+        uint16_t vendor_id, uint16_t product_id) {
   const size_t db_size = sizeof(interop_hid_multitouch_database) / sizeof(interop_hid_multitouch_t);
 
   for (size_t i = 0; i != db_size; ++i) {
     if (vendor_id == interop_hid_multitouch_database[i].vendor_id &&
-        product_id == interop_hid_multitouch_database[i].product_id &&
-        strlen(name) >= interop_hid_multitouch_database[i].length &&
-        strncmp(name, interop_hid_multitouch_database[i].name,
-        interop_hid_multitouch_database[i].length) == 0) {
-      LOG_WARN(LOG_TAG, "%s() Device with vendor_id: %d product_id: %d name %s is a match for "
-          "interop hid multitouch workaround %s", __func__, vendor_id, product_id,
-          name, interop_feature_string_(feature));
+        product_id == interop_hid_multitouch_database[i].product_id) {
+      LOG_WARN(LOG_TAG, "%s() Device with vendor_id: %d product_id: %d is a match for "
+          "interop workaround %s", __func__, vendor_id, product_id,
+          interop_feature_string_(feature));
       return true;
     }
   }
