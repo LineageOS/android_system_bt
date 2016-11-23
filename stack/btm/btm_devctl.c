@@ -437,6 +437,11 @@ static void btm_decode_ext_features_page (UINT8 page_number, const UINT8 *p_feat
         /* Nothing to do for page 2 */
         break;
 
+    /* Extended Page 3 */
+    case HCI_EXT_FEATURES_PAGE_3:
+        /* Nothing to do for page 3 */
+        break;
+
     default:
         BTM_TRACE_ERROR("btm_decode_ext_features_page page=%d unknown", page_number);
         break;
