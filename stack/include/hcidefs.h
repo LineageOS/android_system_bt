@@ -1450,7 +1450,8 @@ typedef struct
 #define HCI_EXT_FEATURES_PAGE_0     0       /* Extended Feature Page 0 (regular features) */
 #define HCI_EXT_FEATURES_PAGE_1     1       /* Extended Feature Page 1 */
 #define HCI_EXT_FEATURES_PAGE_2     2       /* Extended Feature Page 2 */
-#define HCI_EXT_FEATURES_PAGE_MAX   HCI_EXT_FEATURES_PAGE_2
+#define HCI_EXT_FEATURES_PAGE_3     3       /* Extended Feature Page 3 */
+#define HCI_EXT_FEATURES_PAGE_MAX   HCI_EXT_FEATURES_PAGE_3
 
 #define HCI_FEATURE_BYTES_PER_PAGE      8
 
