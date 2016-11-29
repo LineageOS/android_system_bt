@@ -565,14 +565,16 @@ static void event_command_ready(fixed_queue_t *queue, UNUSED_ATTR void *context)
         low_power_manager->wake_assert();
     }
 
-    packet_fragmenter->fragment_and_dispatch(wait_entry->command);
-
     if (LPM_CONFIG_TX == lpm_config) {
         low_power_manager->start_idle_timer(false);
     }
     else {
         low_power_manager->transmit_done();
     }
+
+    packet_fragmenter->fragment_and_dispatch(wait_entry->command);
+
+
 
     update_command_response_timer();
   }
