@@ -120,7 +120,15 @@ extern BOOLEAN (*A2D_aptx_sched_stop)(void);
 extern void (*A2D_aptx_encoder_deinit)(void);
 extern UINT8 a2d_av_aptx_cfg_in_cap(UINT8 *p_cfg, tA2D_APTX_CIE *p_cap);
 extern BOOLEAN A2D_check_and_init_aptX();
+extern void A2D_start_aptX(void *encoder, A2D_AptXCodecType aptX_codec_type,
+                        BOOLEAN use_SCMS_T, BOOLEAN is_24bit_audio,
+                        UINT16 sample_rate, UINT8 format_bits,
+                        UINT8 channel, UINT16 MTU, A2D_AptXReadFn read_fn,
+                        A2D_AptXBufferSendFn send_fn,
+                        A2D_AptXSetPriorityFn set_priority_fn,
+                        BOOLEAN test, BOOLEAN trace);
 extern void A2D_deinit_aptX();
+extern void A2D_stop_aptX (void);
 extern void A2D_close_aptX();
 
 #ifdef __cplusplus
