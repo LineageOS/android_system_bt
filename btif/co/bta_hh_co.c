@@ -652,8 +652,9 @@ void bta_hh_co_send_hid_info(btif_hh_device_t *p_dev, char *dev_name, UINT16 ven
                                                                     vendor_id, product_id,
                                                                     version, ctry_code);
 
-    if (interop_match_hid_multitouch(INTEROP_REMOVE_HID_DIG_DESCRIPTOR, vendor_id, product_id,
-        dev_name))
+    if (interop_match_vendor_product_ids(INTEROP_REMOVE_HID_DIG_DESCRIPTOR,
+        vendor_id, product_id) ||
+        interop_match_name(INTEROP_REMOVE_HID_DIG_DESCRIPTOR, dev_name))
         remove_digitizer_descriptor(&p_dscp, (UINT16 *)&dscp_len);
 
     //Create and send hid descriptor to kernel
