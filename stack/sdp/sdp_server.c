@@ -689,11 +689,13 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
         (defined(SDP_AVRCP_1_5) && (SDP_AVRCP_1_5 == TRUE)))
             /* Check for UUID Remote Control and Remote BD address  */
             is_avrcp_fallback = sdp_fallback_avrcp_version (p_attr, p_ccb->device_address);
+#if (defined(AVCT_BROWSE_INCLUDED)&&(AVCT_BROWSE_INCLUDED == TRUE))
             is_avrcp_browse_bit_reset = sdp_reset_avrcp_browsing_bit(
                         p_rec->attribute[1], p_attr, p_ccb->device_address);
 #if (defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE))
             is_avrcp_ca_bit_reset = sdp_reset_avrcp_cover_art_bit(
                         p_rec->attribute[1], p_attr, p_ccb->device_address);
+#endif
 #endif
 #endif
             is_hfp_fallback = sdp_change_hfp_version (p_attr, p_ccb->device_address);
@@ -1035,11 +1037,13 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
         (defined(SDP_AVRCP_1_5) && (SDP_AVRCP_1_5 == TRUE)))
                 /* Check for UUID Remote Control and Remote BD address  */
                 is_avrcp_fallback = sdp_fallback_avrcp_version (p_attr, p_ccb->device_address);
+#if (defined(AVCT_BROWSE_INCLUDED)&&(AVCT_BROWSE_INCLUDED == TRUE))
                 is_avrcp_browse_bit_reset = sdp_reset_avrcp_browsing_bit(
                             p_rec->attribute[1], p_attr, p_ccb->device_address);
 #if (defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE))
                 is_avrcp_ca_bit_reset = sdp_reset_avrcp_cover_art_bit(
                             p_rec->attribute[1], p_attr, p_ccb->device_address);
+#endif
 #endif
 #endif
                 is_hfp_fallback = sdp_change_hfp_version (p_attr, p_ccb->device_address);
