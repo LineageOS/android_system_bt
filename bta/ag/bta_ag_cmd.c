@@ -1944,8 +1944,8 @@ void bta_ag_hfp_result(tBTA_AG_SCB *p_scb, tBTA_AG_API_RESULT *p_result)
 
        default:
             break;
+        }
     }
-}
 
 
 /*******************************************************************************

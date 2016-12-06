@@ -235,24 +235,26 @@ static void gatt_connect_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_id,
 {
     UNUSED(gatt_if);
 
-    GATT_TRACE_EVENT("%s: from %08x%04x connected:%d conn_id=%d reason = 0x%04x", __func__,
-                      (bda[0]<<24)+(bda[1]<<16)+(bda[2]<<8)+bda[3],
-                      (bda[4]<<8)+bda[5], connected, conn_id, reason);
+    GATT_TRACE_EVENT ("%s: from %08x%04x connected:%d conn_id=%d reason = 0x%04x", __FUNCTION__,
+                       (bda[0]<<24)+(bda[1]<<16)+(bda[2]<<8)+bda[3],
+                       (bda[4]<<8)+bda[5], connected, conn_id, reason);
 
     tGATT_PROFILE_CLCB *p_clcb = gatt_profile_find_clcb_by_bd_addr(bda, transport);
-    if (connected) {
-        if (p_clcb == NULL)
-            p_clcb = gatt_profile_clcb_alloc(conn_id, bda, transport);
+    if (p_clcb == NULL)
+        return;
 
-        if (p_clcb == NULL)
-            return;
-
+    if (connected)
+    {
+        p_clcb->conn_id = conn_id;
         p_clcb->connected = TRUE;
-        p_clcb->ccc_stage = GATT_SVC_CHANGED_SERVICE;
-        gatt_cl_start_config_ccc(p_clcb);
+
+        if (p_clcb->ccc_stage == GATT_SVC_CHANGED_CONNECTING)
+        {
+            p_clcb->ccc_stage ++;
+            gatt_cl_start_config_ccc(p_clcb);
+        }
     } else {
-        if (p_clcb != NULL)
-            gatt_profile_clcb_dealloc(p_clcb);
+        gatt_profile_clcb_dealloc(p_clcb);
     }
 }
 
@@ -455,7 +457,7 @@ void GATT_ConfigServiceChangeCCC (BD_ADDR remote_bda, BOOLEAN enable, tBT_TRANSP
         p_clcb->connected = TRUE;
     }
     /* hold the link here */
-    GATT_Connect(gatt_cb.gatt_if, remote_bda, TRUE, transport);
+    GATT_Connect(gatt_cb.gatt_if, remote_bda, TRUE, transport, true);
     p_clcb->ccc_stage = GATT_SVC_CHANGED_CONNECTING;
 
     if (!p_clcb->connected)

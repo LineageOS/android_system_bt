@@ -123,6 +123,10 @@ void btm_ble_batchscan_filter_track_adv_vse_cback(UINT8 len, UINT8 *p)
 
         BTM_TRACE_EVENT("track_adv_vse_cback called: %d, %d, %d", adv_data.filt_index,
                          adv_data.addr_type, adv_data.advertiser_state);
+
+        // Make sure the device is known
+        BTM_SecAddBleDevice(adv_data.bd_addr.address, NULL, BT_DEVICE_TYPE_BLE, adv_data.addr_type);
+
         ble_advtrack_cb.p_track_cback(&adv_data);
         return;
     }

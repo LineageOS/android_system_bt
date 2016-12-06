@@ -103,7 +103,7 @@ static const tBTM_ESCO_PARAMS bta_ag_esco_params[BTA_AG_NUM_CODECS] =
         BTM_64KBITS_RATE,                   /* RX Bandwidth (64 kbits/sec)              */
         0x000a,                             /* 10 ms (HS/HF can use EV3, 2-EV3, 3-EV3)  */
         BTM_VOICE_SETTING_CVSD,             /* Inp Linear, Air CVSD, 2s Comp, 16bit     */
-       (BTM_SCO_PKT_TYPES_MASK_HV1      +  /* Packet Types                             */
+       (BTM_SCO_PKT_TYPES_MASK_HV1      +   /* Packet Types                             */
         BTM_SCO_PKT_TYPES_MASK_HV2      +
         BTM_SCO_PKT_TYPES_MASK_HV3      +
         BTM_SCO_PKT_TYPES_MASK_EV3      +

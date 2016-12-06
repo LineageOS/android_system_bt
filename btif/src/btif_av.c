@@ -1657,7 +1657,6 @@ static BOOLEAN btif_av_state_started_handler(btif_sm_event_t event, void *p_data
     return TRUE;
 }
 
-
 void btif_av_event_deep_copy(UINT16 event, char *p_dest, char *p_src)
 {
     tBTA_AV *av_src = (tBTA_AV *)p_src;

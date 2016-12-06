@@ -672,8 +672,7 @@ static ssize_t out_write(struct audio_stream_out *stream, const void* buffer,
                          size_t bytes)
 {
     struct a2dp_stream_out *out = (struct a2dp_stream_out *)stream;
-    int sent;
-    int us_delay;
+    int sent = -1;
     #ifdef BT_AUDIO_SYSTRACE_LOG
     char trace_buf[512];
     #endif
@@ -683,8 +682,8 @@ static ssize_t out_write(struct audio_stream_out *stream, const void* buffer,
     pthread_mutex_lock(&out->common.lock);
     if (out->common.state == AUDIO_A2DP_STATE_SUSPENDED ||
             out->common.state == AUDIO_A2DP_STATE_STOPPING) {
-        INFO("stream suspended or closing");
-        goto error;
+        DEBUG("stream suspended or closing");
+        goto finish;
     }
 
     /* only allow autostarting if we are in stopped or standby */
@@ -697,13 +696,13 @@ static ssize_t out_write(struct audio_stream_out *stream, const void* buffer,
         if (start_audio_datapath(&out->common) < 0)
 #endif
         {
-            goto error;
+            goto finish;
         }
     }
     else if (out->common.state != AUDIO_A2DP_STATE_STARTED)
     {
         ERROR("stream not in stopped or standby");
-        goto error;
+        goto finish;
     }
     #ifdef BT_AUDIO_SAMPLE_LOG
     if (outputpcmsamplefile)
@@ -752,25 +751,23 @@ static ssize_t out_write(struct audio_stream_out *stream, const void* buffer,
         } else {
             ERROR("write failed : stream suspended, avoid resetting state");
         }
-        goto error;
+        goto finish;
     }
 
+finish: ;
     const size_t frames = bytes / audio_stream_out_frame_size(stream);
     out->frames_rendered += frames;
     out->frames_presented += frames;
     pthread_mutex_unlock(&out->common.lock);
-    return bytes;
 
-error:
-    pthread_mutex_unlock(&out->common.lock);
-    us_delay = calc_audiotime(out->common.cfg, bytes);
-
-    DEBUG("emulate a2dp write delay (%d us)", us_delay);
-
-    usleep(us_delay);
+    // If send didn't work out, sleep to emulate write delay.
+    if (sent == -1) {
+        const int us_delay = calc_audiotime(out->common.cfg, bytes);
+        DEBUG("emulate a2dp write delay (%d us)", us_delay);
+        usleep(us_delay);
+    }
     return bytes;
 }
-
 
 static uint32_t out_get_sample_rate(const struct audio_stream *stream)
 {

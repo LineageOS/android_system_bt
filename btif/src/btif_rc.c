@@ -377,6 +377,7 @@ static int btif_rc_get_idx_by_addr(BD_ADDR address);
 static void send_browsemsg_rsp (UINT8 rc_handle, UINT8 label,
     tBTA_AV_CODE code, tAVRC_RESPONSE *pmetamsg_resp);
 
+static char const* key_id_to_str(uint16_t id);
 
 /*****************************************************************************
 **  Static variables
@@ -439,7 +440,7 @@ void send_key (int fd, uint16_t key, int pressed)
         return;
     }
 
-    BTIF_TRACE_IMP("AVRCP: Send key %d (%d) fd=%d", key, pressed, fd);
+    LOG_INFO(LOG_TAG, "AVRCP: Send key %s (%d) fd=%d", key_id_to_str(key), pressed, fd);
     send_event(fd, EV_KEY, key, pressed);
     send_event(fd, EV_SYN, SYN_REPORT, 0);
 }
@@ -6183,4 +6184,12 @@ static bool absolute_volume_disabled() {
         return true;
     }
     return false;
+}
+
+static char const* key_id_to_str(uint16_t id) {
+    for (int i = 0; key_map[i].name != NULL; i++) {
+        if (id == key_map[i].mapped_id)
+            return key_map[i].name;
+    }
+    return "UNKNOWN KEY";
 }

@@ -301,6 +301,7 @@ typedef struct
     tBTA_AG_SCO_MSBC_SETTINGS codec_msbc_settings; /* settings to be used for the impending eSCO */
 #endif
     BOOLEAN             slc_pend_open;  /* SLC is pending open */
+
 } tBTA_AG_SCB;
 
 /* type for sco data */

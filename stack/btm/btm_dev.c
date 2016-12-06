@@ -37,8 +37,6 @@
 #include "hcidefs.h"
 #include "l2c_api.h"
 
-static tBTM_SEC_DEV_REC *btm_find_oldest_dev (void);
-
 /*******************************************************************************
 **
 ** Function         BTM_SecAddDevice
@@ -63,22 +61,12 @@ BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name,
                           LINK_KEY link_key, UINT8 key_type, tBTM_IO_CAP io_cap,
                           UINT8 pin_length)
 {
-    tBTM_SEC_DEV_REC  *p_dev_rec;
-    int               i, j;
-    BOOLEAN           found = FALSE;
-
     BTM_TRACE_API("%s: link key type:%x", __func__, key_type);
-    p_dev_rec = btm_find_dev (bd_addr);
+
+    tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev (bd_addr);
     if (!p_dev_rec)
     {
-        if (list_length(btm_cb.sec_dev_rec) > BTM_SEC_MAX_DEVICE_RECORDS) {
-            BTM_TRACE_DEBUG("%s: Max devices reached!", __func__);
-            return FALSE;
-        }
-
-        BTM_TRACE_DEBUG ("%s: allocate a new dev rec", __func__);
-        p_dev_rec = osi_calloc(sizeof(tBTM_SEC_DEV_REC));
-        list_append(btm_cb.sec_dev_rec, p_dev_rec);
+        p_dev_rec = btm_sec_allocate_dev_rec();
 
         memcpy (p_dev_rec->bd_addr, bd_addr, BD_ADDR_LEN);
         p_dev_rec->hci_handle = BTM_GetHCIConnHandle (bd_addr, BT_TRANSPORT_BR_EDR);
@@ -88,10 +76,18 @@ BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name,
         /* update conn params, use default value for background connection params */
         memset(&p_dev_rec->conn_params, 0xff, sizeof(tBTM_LE_CONN_PRAMS));
 #endif
-    }
+    } else {
+        /* "Bump" timestamp for existing record */
+        p_dev_rec->timestamp = btm_cb.dev_rec_count++;
 
-    p_dev_rec->bond_type = BOND_TYPE_UNKNOWN;           /* Default value */
-    p_dev_rec->timestamp = btm_cb.dev_rec_count++;
+        /* TODO(eisenbach):
+         * Small refactor, but leaving original logic for now.
+         * On the surface, this does not make any sense at all. Why change the
+         * bond state for an existing device here? This logic should be verified
+         * as part of a larger refactor.
+         */
+        p_dev_rec->bond_type = BOND_TYPE_UNKNOWN;
+    }
 
     if (dev_class)
         memcpy (p_dev_rec->dev_class, dev_class, DEV_CLASS_LEN);
@@ -108,26 +104,23 @@ BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name,
     p_dev_rec->num_read_pages = 0;
     if (features)
     {
+        BOOLEAN found = FALSE;
         memcpy (p_dev_rec->features, features, sizeof (p_dev_rec->features));
-        for (i = HCI_EXT_FEATURES_PAGE_MAX; i >= 0; i--)
+        for (int i = HCI_EXT_FEATURES_PAGE_MAX; !found && i >= 0; i--)
         {
-            for (j = 0; j < HCI_FEATURE_BYTES_PER_PAGE; j++)
+            for (int j = 0; j < HCI_FEATURE_BYTES_PER_PAGE; j++)
             {
                 if (p_dev_rec->features[i][j] != 0)
                 {
                     found = TRUE;
+                    p_dev_rec->num_read_pages = i + 1;
                     break;
                 }
             }
-            if (found)
-            {
-                p_dev_rec->num_read_pages = i + 1;
-                break;
-            }
         }
-    }
-    else
+    } else {
         memset (p_dev_rec->features, 0, sizeof (p_dev_rec->features));
+    }
 
     BTM_SEC_COPY_TRUSTED_DEVICE(trusted_mask, p_dev_rec->trusted_mask);
 
@@ -177,8 +170,6 @@ BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name,
 *******************************************************************************/
 BOOLEAN BTM_SecDeleteDevice (BD_ADDR bd_addr)
 {
-    tBTM_SEC_DEV_REC *p_dev_rec;
-
     if (BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE) ||
         BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_BR_EDR))
     {
@@ -186,7 +177,8 @@ BOOLEAN BTM_SecDeleteDevice (BD_ADDR bd_addr)
         return FALSE;
     }
 
-    if ((p_dev_rec = btm_find_dev(bd_addr)) != NULL)
+    tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev(bd_addr);
+    if (p_dev_rec != NULL)
     {
         btm_sec_free_dev(p_dev_rec);
         /* Tell controller to get rid of the link key, if it has one stored */
@@ -194,6 +186,25 @@ BOOLEAN BTM_SecDeleteDevice (BD_ADDR bd_addr)
     }
 
     return TRUE;
+}
+
+/*******************************************************************************
+**
+** Function         BTM_SecClearSecurityFlags
+**
+** Description      Reset the security flags (mark as not-paired) for a given
+**                  remove device.
+**
+*******************************************************************************/
+extern void BTM_SecClearSecurityFlags (BD_ADDR bd_addr)
+{
+    tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev(bd_addr);
+    if (p_dev_rec == NULL)
+        return;
+
+    p_dev_rec->sec_flags = 0;
+    p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
+    p_dev_rec->sm4 = BTM_SM4_UNKNOWN;
 }
 
 /*******************************************************************************
@@ -240,20 +251,10 @@ bool is_bd_addr_equal(void *data, void *context)
 *******************************************************************************/
 tBTM_SEC_DEV_REC *btm_sec_alloc_dev (BD_ADDR bd_addr)
 {
-    tBTM_SEC_DEV_REC *p_dev_rec = NULL;
     tBTM_INQ_INFO    *p_inq_info;
     BTM_TRACE_EVENT ("btm_sec_alloc_dev");
 
-    if (list_length(btm_cb.sec_dev_rec) > BTM_SEC_MAX_DEVICE_RECORDS) {
-        p_dev_rec = btm_find_oldest_dev();
-    } else {
-        BTM_TRACE_DEBUG ("allocate a new dev rec");
-        p_dev_rec = osi_calloc(sizeof(tBTM_SEC_DEV_REC));
-        list_append(btm_cb.sec_dev_rec, p_dev_rec);
-    }
-
-    p_dev_rec->bond_type = BOND_TYPE_UNKNOWN;           /* Default value */
-    p_dev_rec->sec_flags = BTM_SEC_IN_USE;
+    tBTM_SEC_DEV_REC *p_dev_rec = btm_sec_allocate_dev_rec();
 
     /* Check with the BT manager if details about remote device are known */
     /* outgoing connection */
@@ -280,7 +281,6 @@ tBTM_SEC_DEV_REC *btm_sec_alloc_dev (BD_ADDR bd_addr)
     p_dev_rec->ble_hci_handle = BTM_GetHCIConnHandle (bd_addr, BT_TRANSPORT_LE);
 #endif
     p_dev_rec->hci_handle = BTM_GetHCIConnHandle (bd_addr, BT_TRANSPORT_BR_EDR);
-    p_dev_rec->timestamp = btm_cb.dev_rec_count++;
 
     return(p_dev_rec);
 }
@@ -302,11 +302,8 @@ void btm_sec_free_dev (tBTM_SEC_DEV_REC *p_dev_rec)
 #if BLE_INCLUDED == TRUE
     /* Clear out any saved BLE keys */
     btm_sec_clear_ble_keys (p_dev_rec);
-    /* clear the ble block */
-    memset(&p_dev_rec->ble, 0, sizeof(tBTM_SEC_BLE));
 #endif
-
-
+    list_remove(btm_cb.sec_dev_rec, p_dev_rec);
 }
 
 /*******************************************************************************
@@ -490,8 +487,6 @@ void btm_consolidate_dev(tBTM_SEC_DEV_REC *p_target_rec)
 
                 /* remove the combined record */
                 list_remove(btm_cb.sec_dev_rec, p_dev_rec);
-
-                p_dev_rec->bond_type = BOND_TYPE_UNKNOWN;
             }
         }
     }
@@ -523,48 +518,79 @@ tBTM_SEC_DEV_REC *btm_find_or_alloc_dev (BD_ADDR bd_addr)
 
 /*******************************************************************************
 **
-** Function         btm_find_oldest_dev
+** Function         btm_find_oldest_dev_rec
 **
 ** Description      Locates the oldest device in use. It first looks for
 **                  the oldest non-paired device.  If all devices are paired it
-**                  deletes the oldest paired device.
+**                  returns the oldest paired device.
 **
 ** Returns          Pointer to the record or NULL
 **
 *******************************************************************************/
-tBTM_SEC_DEV_REC *btm_find_oldest_dev (void)
+static tBTM_SEC_DEV_REC* btm_find_oldest_dev_rec (void)
 {
     tBTM_SEC_DEV_REC *p_oldest = NULL;
-    UINT32       ot = 0xFFFFFFFF;
+    UINT32       ts_oldest = 0xFFFFFFFF;
     tBTM_SEC_DEV_REC *p_oldest_paired = NULL;
-    UINT32       ot_paired = 0xFFFFFFFF;
+    UINT32       ts_oldest_paired = 0xFFFFFFFF;
 
-    /* First look for the non-paired devices for the oldest entry */
     list_node_t *end = list_end(btm_cb.sec_dev_rec);
     for (list_node_t *node = list_begin(btm_cb.sec_dev_rec); node != end; node = list_next(node)) {
         tBTM_SEC_DEV_REC *p_dev_rec = list_node(node);
-        /* Device is not paired */
-        if ((p_dev_rec->sec_flags & (BTM_SEC_LINK_KEY_KNOWN |BTM_SEC_LE_LINK_KEY_KNOWN)) == 0) {
-            if (p_dev_rec->timestamp < ot) {
+
+        if ((p_dev_rec->sec_flags & (BTM_SEC_LINK_KEY_KNOWN | BTM_SEC_LE_LINK_KEY_KNOWN)) == 0) {
+            // Device is not paired
+            if (p_dev_rec->timestamp < ts_oldest) {
                 p_oldest = p_dev_rec;
-                ot       = p_dev_rec->timestamp;
+                ts_oldest = p_dev_rec->timestamp;
             }
-            continue;
+        } else {
+            // Paired device
+            if (p_dev_rec->timestamp < ts_oldest_paired) {
+                p_oldest_paired = p_dev_rec;
+                ts_oldest_paired = p_dev_rec->timestamp;
+            }
         }
-
-        if (p_dev_rec->timestamp < ot_paired) {
-            p_oldest_paired = p_dev_rec;
-            ot_paired       = p_dev_rec->timestamp;
-        }
-
     }
 
-    /* if non-paired device return oldest */
-    if (ot != 0xFFFFFFFF)
-        return(p_oldest);
+    // If we did not find any non-paired devices, use the oldest paired one...
+    if (ts_oldest == 0xFFFFFFFF)
+        p_oldest = p_oldest_paired;
 
-    /* only paired devices present, return oldest */
-    return p_oldest_paired;
+    return p_oldest;
+}
+
+/*******************************************************************************
+**
+** Function         btm_sec_allocate_dev_rec
+**
+** Description      Attempts to allocate a new device record. If we have
+**                  exceeded the maximum number of allowable records to
+**                  allocate, the oldest record will be deleted to make room
+**                  for the new record.
+**
+** Returns          Pointer to the newly allocated record
+**
+*******************************************************************************/
+tBTM_SEC_DEV_REC* btm_sec_allocate_dev_rec(void)
+{
+    tBTM_SEC_DEV_REC *p_dev_rec = NULL;
+
+    if (list_length(btm_cb.sec_dev_rec) > BTM_SEC_MAX_DEVICE_RECORDS)
+    {
+        p_dev_rec = btm_find_oldest_dev_rec();
+        list_remove(btm_cb.sec_dev_rec, p_dev_rec);
+    }
+
+    p_dev_rec = osi_calloc(sizeof(tBTM_SEC_DEV_REC));
+    list_append(btm_cb.sec_dev_rec, p_dev_rec);
+
+    // Initialize defaults
+    p_dev_rec->sec_flags = BTM_SEC_IN_USE;
+    p_dev_rec->bond_type = BOND_TYPE_UNKNOWN;
+    p_dev_rec->timestamp = btm_cb.dev_rec_count++;
+
+    return p_dev_rec;
 }
 
 /*******************************************************************************
