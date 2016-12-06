@@ -31,6 +31,7 @@
 #include "hcidefs.h"
 #include "btm_ble_api.h"
 #include "btm_int.h"
+#include "btm_int_types.h"
 
 #if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
 #include "smp_api.h"
@@ -132,7 +133,7 @@ extern void btm_ble_dequeue_direct_conn_req(BD_ADDR rem_bda);
 /* BLE address management */
 extern void btm_gen_resolvable_private_addr (void *p_cmd_cplt_cback);
 extern void btm_gen_non_resolvable_private_addr (tBTM_BLE_ADDR_CBACK *p_cback, void *p);
-extern void btm_ble_resolve_random_addr(BD_ADDR random_bda, tBTM_BLE_RESOLVE_CBACK * p_cback, void *p);
+extern tBTM_SEC_DEV_REC* btm_ble_resolve_random_addr(BD_ADDR random_bda);
 extern void btm_gen_resolve_paddr_low(tBTM_RAND_ENC *p);
 
 /*  privacy function */
