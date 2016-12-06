@@ -865,7 +865,7 @@ void bta_hh_le_register_input_notif(tBTA_HH_DEV_CB *p_dev_cb, UINT8 srvc_inst,
 *******************************************************************************/
 void bta_hh_le_deregister_input_notif(tBTA_HH_DEV_CB *p_dev_cb)
 {
-    tBTA_HH_LE_RPT  *p_rpt = &p_dev_cb->hid_srvc.report[0];
+    tBTA_HH_LE_RPT  *p_rpt = &p_dev_cb->hid_srvc[p_dev_cb->cur_srvc_index].report[0];
 
     for (UINT8 i = 0; i < BTA_HH_LE_RPT_MAX; i++, p_rpt++)
     {

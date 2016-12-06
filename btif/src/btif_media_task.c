@@ -4260,7 +4260,7 @@ static void btif_media_aa_prep_sbc_2_send(UINT8 nb_frame,
 static void btif_media_aa_prep_2_send(UINT8 nb_frame, uint64_t timestamp_us)
 {
     // Check for TX queue overflow
-
+    BD_ADDR peer_bda;
     if (nb_frame > MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ)
         nb_frame = MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ;
 
@@ -4280,8 +4280,8 @@ static void btif_media_aa_prep_2_send(UINT8 nb_frame, uint64_t timestamp_us)
         }
 
         // Request RSSI for log purposes if we had to flush buffers
-        bt_bdaddr_t peer_bda = btif_av_get_addr();
-        BTM_ReadRSSI(peer_bda.address, btm_read_rssi_cb);
+        btif_av_get_addr(peer_bda);
+        BTM_ReadRSSI(peer_bda, btm_read_rssi_cb);
     }
 
     // Transcode frame
