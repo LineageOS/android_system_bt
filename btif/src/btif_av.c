@@ -778,11 +778,20 @@ static BOOLEAN btif_av_state_opening_handler(btif_sm_event_t event, void *p_data
                 if ((btif_rc_get_connected_peer(peer_addr))
                     &&(!bdcmp(btif_av_cb[index].peer_bda.address, peer_addr)))
                 {
-                    /* Disconnect AVRCP connection, if A2DP
-                     * conneciton failed, for any reason
+                    /* Do not disconnect AVRCP connection if A2DP
+                     * connection failed due to SDP failure since remote
+                     * may not support A2DP. In such case we will keep
+                     * AVRCP only connection.
                      */
-                    BTIF_TRACE_WARNING(" Disconnecting AVRCP ");
-                    BTA_AvCloseRc(btif_rc_get_connected_peer_handle(peer_addr));
+                    if (p_bta_data->open.status != BTA_AV_FAIL_SDP)
+                    {
+                        BTIF_TRACE_WARNING("Disconnecting AVRCP ");
+                        BTA_AvCloseRc(btif_rc_get_connected_peer_handle(peer_addr));
+                    }
+                    else
+                    {
+                        BTIF_TRACE_WARNING("Keep AVRCP only connection");
+                    }
                 }
                 state = BTAV_CONNECTION_STATE_DISCONNECTED;
                 av_state  = BTIF_AV_STATE_IDLE;
@@ -1078,7 +1087,6 @@ static BOOLEAN btif_av_state_opened_handler(btif_sm_event_t event, void *p_data,
             break;
 
         case BTIF_SM_EXIT_EVT:
-            btif_av_cb[index].flags &= ~BTIF_AV_FLAG_PENDING_START;
             break;
 
         case BTIF_AV_START_STREAM_REQ_EVT:
@@ -1214,18 +1222,6 @@ static BOOLEAN btif_av_state_opened_handler(btif_sm_event_t event, void *p_data,
                 }
             }
 
-            /*  In case peer is A2DP SRC we do not want to ack commands on UIPC*/
-            if (btif_av_cb[index].peer_sep == AVDT_TSEP_SNK)
-            {
-                if (btif_a2dp_on_started(&p_av->start,
-                    ((btif_av_cb[index].flags & BTIF_AV_FLAG_PENDING_START) != 0),
-                      btif_av_cb[index].bta_handle))
-                {
-                    /* only clear pending flag after acknowledgement */
-                    btif_av_cb[index].flags &= ~BTIF_AV_FLAG_PENDING_START;
-                }
-            }
-
             /* remain in open state if status failed */
             /* Multicast-soft Handoff:
              * START failed, cleanup Handoff flag.
@@ -1234,6 +1230,18 @@ static BOOLEAN btif_av_state_opened_handler(btif_sm_event_t event, void *p_data,
             {
                 int i;
 
+                /* In case peer is A2DP SRC we do not want to ack commands on UIPC */
+                if (btif_av_cb[index].peer_sep == AVDT_TSEP_SNK)
+                {
+                    if (btif_a2dp_on_started(&p_av->start,
+                        ((btif_av_cb[index].flags & BTIF_AV_FLAG_PENDING_START) != 0),
+                        btif_av_cb[index].bta_handle))
+                    {
+                        /* only clear pending flag after acknowledgement */
+                        btif_av_cb[index].flags &= ~BTIF_AV_FLAG_PENDING_START;
+                    }
+                }
+                /* Clear dual handoff flag */
                 for (i = 0; i < btif_max_av_clients; i++)
                 {
                     btif_av_cb[i].dual_handoff = FALSE;
@@ -1248,12 +1256,6 @@ static BOOLEAN btif_av_state_opened_handler(btif_sm_event_t event, void *p_data,
             }
 #endif
 
-            /* change state to started, send acknowledgement if start is pending */
-            if (btif_av_cb[index].flags & BTIF_AV_FLAG_PENDING_START) {
-                if (btif_av_cb[index].peer_sep == AVDT_TSEP_SNK)
-                    btif_a2dp_on_started(NULL, TRUE, btif_av_cb[index].bta_handle);
-                /* pending start flag will be cleared when exit current state */
-            }
             btif_sm_change_state(btif_av_cb[index].sm_handle, BTIF_AV_STATE_STARTED);
 
         } break;
@@ -1295,7 +1297,7 @@ static BOOLEAN btif_av_state_opened_handler(btif_sm_event_t event, void *p_data,
             /* change state to idle, send acknowledgement if start is pending */
             if (btif_av_cb[index].flags & BTIF_AV_FLAG_PENDING_START) {
                 btif_a2dp_ack_fail();
-                /* pending start flag will be cleared when exit current state */
+                btif_av_cb[index].flags &= ~BTIF_AV_FLAG_PENDING_START;
             }
 
             btif_sm_change_state(btif_av_cb[index].sm_handle, BTIF_AV_STATE_IDLE);
@@ -1371,6 +1373,25 @@ static BOOLEAN btif_av_state_started_handler(btif_sm_event_t event, void *p_data
     switch (event)
     {
         case BTIF_SM_ENTER_EVT:
+            /*Ack from entry point of started handler instead of open state to avoid race condition*/
+            if (btif_av_cb[index].peer_sep == AVDT_TSEP_SNK)
+            {
+                if (btif_a2dp_on_started(&p_av->start,
+                    ((btif_av_cb[index].flags & BTIF_AV_FLAG_PENDING_START) != 0),
+                      btif_av_cb[index].bta_handle))
+                {
+                    /* only clear pending flag after acknowledgement */
+                    btif_av_cb[index].flags &= ~BTIF_AV_FLAG_PENDING_START;
+                }
+            }
+
+            /* Already changed state to started, send acknowledgement if start is pending */
+            if (btif_av_cb[index].flags & BTIF_AV_FLAG_PENDING_START) {
+                if (btif_av_cb[index].peer_sep == AVDT_TSEP_SNK)
+                    btif_a2dp_on_started(NULL, TRUE, btif_av_cb[index].bta_handle);
+                btif_av_cb[index].flags &= ~BTIF_AV_FLAG_PENDING_START;
+            }
+
             /* we are again in started state, clear any remote suspend flags */
             btif_av_cb[index].flags &= ~BTIF_AV_FLAG_REMOTE_SUSPEND;
 
