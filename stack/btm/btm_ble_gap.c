@@ -729,51 +729,6 @@ extern UINT8  BTM_BleMaxMultiAdvInstanceCount(void)
         btm_cb.cmn_ble_vsc_cb.adv_inst_max : BTM_BLE_MULTI_ADV_MAX;
 }
 
-#if BLE_PRIVACY_SPT == TRUE
-/*******************************************************************************
-**
-** Function         btm_ble_resolve_random_addr_on_adv
-**
-** Description      resolve random address complete callback.
-**
-** Returns          void
-**
-*******************************************************************************/
-static void btm_ble_resolve_random_addr_on_adv(void * p_rec, void *p)
-{
-    tBTM_SEC_DEV_REC    *match_rec = (tBTM_SEC_DEV_REC *) p_rec;
-    UINT8       addr_type = BLE_ADDR_RANDOM;
-    BD_ADDR     bda;
-    UINT8       *pp = (UINT8 *)p + 1;
-    UINT8           evt_type;
-
-    BTM_TRACE_EVENT ("btm_ble_resolve_random_addr_on_adv ");
-
-    STREAM_TO_UINT8    (evt_type, pp);
-    STREAM_TO_UINT8    (addr_type, pp);
-    STREAM_TO_BDADDR   (bda, pp);
-
-    if (match_rec)
-    {
-        BTM_TRACE_DEBUG("Random match");
-        match_rec->ble.active_addr_type = BTM_BLE_ADDR_RRA;
-        memcpy(match_rec->ble.cur_rand_addr, bda, BD_ADDR_LEN);
-
-        if (btm_ble_init_pseudo_addr(match_rec, bda))
-        {
-            memcpy(bda, match_rec->bd_addr, BD_ADDR_LEN);
-        } else {
-            // Assign the original address to be the current report address
-            memcpy(bda, match_rec->ble.pseudo_addr, BD_ADDR_LEN);
-        }
-    }
-
-    btm_ble_process_adv_pkt_cont(bda, addr_type, evt_type, pp);
-
-    return;
-}
-#endif
-
 /*******************************************************************************
 **
 ** Function         BTM_BleLocalPrivacyEnabled
@@ -2766,11 +2721,26 @@ void btm_ble_process_adv_pkt (UINT8 *p_data)
         /* always do RRA resolution on host */
         if (!match && BTM_BLE_IS_RESOLVE_BDA(bda))
         {
-            btm_ble_resolve_random_addr(bda, btm_ble_resolve_random_addr_on_adv, p_data);
+            tBTM_SEC_DEV_REC* match_rec = btm_ble_resolve_random_addr(bda);
+            if (match_rec)
+            {
+                BTM_TRACE_DEBUG("Random match");
+                match_rec->ble.active_addr_type = BTM_BLE_ADDR_RRA;
+                memcpy(match_rec->ble.cur_rand_addr, bda, BD_ADDR_LEN);
+
+                if (btm_ble_init_pseudo_addr(match_rec, bda))
+                {
+                    memcpy(bda, match_rec->bd_addr, BD_ADDR_LEN);
+                }
+                else
+                {
+                    // Assign the original address to be the current report address
+                    memcpy(bda, match_rec->ble.pseudo_addr, BD_ADDR_LEN);
+                }
+            }
         }
-        else
 #endif
-            btm_ble_process_adv_pkt_cont(bda, addr_type, evt_type, p);
+        btm_ble_process_adv_pkt_cont(bda, addr_type, evt_type, p);
 
         STREAM_TO_UINT8(data_len, p);
 
