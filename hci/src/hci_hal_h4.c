@@ -38,6 +38,8 @@
 // when streaming time sensitive data (A2DP).
 #define HCI_THREAD_PRIORITY -19
 
+#define BT_HCI_UNKNOWN_MESSAGE_TYPE_NUM 1010002
+
 // Our interface and modules we import
 static const hci_hal_t interface;
 static const hci_hal_callbacks_t *callbacks;
@@ -311,7 +313,10 @@ static void event_uart_has_bytes(eager_reader_t *reader, UNUSED_ATTR void *conte
       return;
 
     if (type_byte < DATA_TYPE_ACL || type_byte > DATA_TYPE_EVENT) {
-      LOG_ERROR(LOG_TAG, "%s Unknown HCI message type. Dropping this byte 0x%x, min %x, max %x", __func__, type_byte, DATA_TYPE_ACL, DATA_TYPE_EVENT);
+      LOG_ERROR(LOG_TAG, "%s Unknown HCI message type 0x%x (min=0x%x max=0x%x). Aborting...",
+                __func__, type_byte, DATA_TYPE_ACL, DATA_TYPE_EVENT);
+      LOG_EVENT_INT(BT_HCI_UNKNOWN_MESSAGE_TYPE_NUM, type_byte);
+      assert(false && "Unknown HCI message type");
       return;
     }
 

@@ -717,6 +717,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             {
                 p_clcb->p_srcb->state = BTA_GATTC_SERV_LOAD;
                 if (bta_gattc_cache_load(p_clcb)) {
+                    p_clcb->p_srcb->state = BTA_GATTC_SERV_IDLE;
                     bta_gattc_reset_discover_st(p_clcb->p_srcb, BTA_GATT_OK);
                 } else {
                     p_clcb->p_srcb->state = BTA_GATTC_SERV_DISC;

@@ -1502,8 +1502,6 @@ void smp_pairing_cmpl(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
     if (p_cb->total_tx_unacked == 0)
     {
-        /* update connection parameter to remote preferred */
-        L2CA_EnableUpdateBleConnParams(p_cb->pairing_bda, TRUE);
         /* process the pairing complete */
         smp_proc_pairing_cmpl(p_cb);
     }
@@ -1542,8 +1540,11 @@ void smp_idle_terminate(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_fast_conn_param(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
-    /* disable connection parameter update */
-    L2CA_EnableUpdateBleConnParams(p_cb->pairing_bda, FALSE);
+    /* Disable L2CAP connection parameter updates while bonding since
+       some peripherals are not able to revert to fast connection parameters
+       during the start of service discovery. Connection paramter updates
+       get enabled again once service discovery completes. */
+    L2CA_EnableUpdateBleConnParams(p_cb->pairing_bda, false);
 }
 
 /*******************************************************************************

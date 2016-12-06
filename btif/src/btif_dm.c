@@ -1747,6 +1747,10 @@ static void btif_dm_search_services_evt(UINT16 event, char *p_param)
             /* fixme */
         break;
 
+        case BTA_DM_SEARCH_CANCEL_CMPL_EVT:
+            /* no-op */
+        break;
+
 #if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
         case BTA_DM_DISC_BLE_RES_EVT:
              BTIF_TRACE_DEBUG("%s:, services 0x%x)", __FUNCTION__,
