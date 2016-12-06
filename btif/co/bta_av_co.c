@@ -1357,6 +1357,8 @@ void bta_av_co_audio_delay(tBTA_AV_HNDL hndl, UINT16 delay)
 static BOOLEAN bta_av_co_audio_codec_build_config(const UINT8 *p_codec_caps, UINT8 *p_codec_cfg)
 {
     FUNC_TRACE();
+    tA2D_AAC_CIE peer_aac_cfg;
+    tA2D_AAC_CIE aac_cfg_selected;
 
     memset(p_codec_cfg, 0, AVDT_CODEC_SIZE);
 
@@ -1380,6 +1382,17 @@ static BOOLEAN bta_av_co_audio_codec_build_config(const UINT8 *p_codec_caps, UIN
     case BTIF_AV_CODEC_M24:
         /*  only copy the relevant portions for this codec to avoid issues when
             comparing codec configs covering larger codec sets than SBC (7 bytes) */
+        A2D_ParsAacInfo (&peer_aac_cfg ,(UINT8*)p_codec_caps, FALSE);
+        A2D_ParsAacInfo (&aac_cfg_selected ,bta_av_co_cb.codec_cfg->info, FALSE);
+
+        aac_cfg_selected.bit_rate =
+                        BTA_AV_CO_MIN(peer_aac_cfg.bit_rate,
+                                      aac_cfg_selected.bit_rate);
+        APPL_TRACE_EVENT("%s AAC bitrate selected %d", __func__,
+                                      aac_cfg_selected.bit_rate);
+        //update with new value
+        A2D_BldAacInfo (AVDT_MEDIA_AUDIO, &aac_cfg_selected, bta_av_co_cb.codec_cfg->info);
+
         memcpy(p_codec_cfg, bta_av_co_cb.codec_cfg->info, A2D_AAC_INFO_LEN+1);
         APPL_TRACE_DEBUG("%s AAC", __func__);
         break;

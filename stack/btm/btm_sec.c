@@ -55,6 +55,9 @@ extern fixed_queue_t *btu_general_alarm_queue;
 BOOLEAN (APPL_AUTH_WRITE_EXCEPTION)(BD_ADDR bd_addr);
 #endif
 
+#define RNR_MAX_RETRY_ATTEMPTS 1
+#define CC_MAX_RETRY_ATTEMPTS 1
+
 /********************************************************************************
 **              L O C A L    F U N C T I O N     P R O T O T Y P E S            *
 *********************************************************************************/
@@ -3190,6 +3193,22 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
                 return;
             }
 
+            /* Handle RNR with retry mechanism */
+            if((status == HCI_ERR_PAGE_TIMEOUT) && (p_dev_rec->rnr_retry_cnt < RNR_MAX_RETRY_ATTEMPTS))
+            {
+                BTM_TRACE_WARNING ("btm_sec_rmt_name_request_complete() Retrying RNR due to page timeout");
+                if ((BTM_ReadRemoteDeviceName(p_bd_addr, NULL, BT_TRANSPORT_BR_EDR)) == BTM_CMD_STARTED)
+                {
+                    p_dev_rec->rnr_retry_cnt++;
+                    return;
+                }
+            }
+            else
+            {
+                BTM_TRACE_EVENT ("btm_sec_rmt_name_request_complete() reset RNR retry count ");
+                p_dev_rec->rnr_retry_cnt = 0;
+            }
+
             if (status != HCI_SUCCESS)
             {
                 btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE);
@@ -4397,6 +4416,38 @@ static void btm_sec_connect_after_reject_timeout(UNUSED_ATTR void *data)
 
 /*******************************************************************************
 **
+** Function         btm_sec_connect_after_cc_page_tout
+**
+** Description      This function is called to retry the connection if the
+**                  create connection fails as part of pairing procedure.
+**
+** Returns          Pointer to the TLE struct
+**
+*******************************************************************************/
+static void btm_sec_connect_after_cc_page_tout (UNUSED_ATTR void *data)
+{
+    tBTM_SEC_DEV_REC *p_dev_rec = btm_cb.p_cc_retry_dev_rec;
+
+    BTM_TRACE_EVENT("%s", __func__);
+    btm_cb.p_cc_retry_dev_rec = 0;
+
+    if ((btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
+        (memcmp (btm_cb.pairing_bda, p_dev_rec->bd_addr, BD_ADDR_LEN) == 0) &&
+         (btm_sec_dd_create_conn(p_dev_rec) != BTM_CMD_STARTED))
+    {
+        BTM_TRACE_WARNING ("Security Manager: btm_sec_connect_after_cc_page_tout: failed to start connection");
+
+        btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE);
+
+        if (btm_cb.api.p_auth_complete_callback)
+        (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr,  p_dev_rec->dev_class,
+                                                p_dev_rec->sec_bd_name, HCI_ERR_MEMORY_FULL);
+        btm_sec_dev_rec_cback_event (p_dev_rec, BTM_DEVICE_TIMEOUT, FALSE);
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         btm_sec_connected
 **
 ** Description      This function is when a connection to the peer device is
@@ -4547,12 +4598,31 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
 
             return;
         }
+        /* retry again */
+        else if((status == HCI_ERR_PAGE_TIMEOUT) &&
+                (btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD))
+        {
+            /* Handle CC with retry mechanism */
+            if(p_dev_rec->cc_retry_cnt < CC_MAX_RETRY_ATTEMPTS)
+            {
+                /* Start timer with 0 to initiate connection with new LCB */
+                btm_cb.p_cc_retry_dev_rec = p_dev_rec;
+
+                alarm_set_on_queue(btm_cb.sec_collision_timer, 0,
+                                   btm_sec_connect_after_cc_page_tout,
+                                   NULL, btu_general_alarm_queue);
+
+                p_dev_rec->cc_retry_cnt++;
+                return;
+            }
+        }
         /* wait for incoming connection without resetting pairing state */
         else if (status == HCI_ERR_CONNECTION_EXISTS)
         {
             BTM_TRACE_WARNING ("Security Manager: btm_sec_connected: Wait for incoming connection");
             return;
         }
+        p_dev_rec->cc_retry_cnt = 0;
 
         is_pairing_device = TRUE;
     }

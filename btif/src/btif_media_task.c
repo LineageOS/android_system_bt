@@ -407,6 +407,7 @@ typedef struct
     BOOLEAN tx_started;
     BOOLEAN tx_stop_initiated;
     BOOLEAN tx_start_initiated;
+    BOOLEAN tx_enc_update_initiated;
 //#endif
 
 #endif
@@ -865,11 +866,11 @@ static void btif_recv_ctrl_data(void)
         case A2DP_CTRL_GET_CODEC_CONFIG:
         {
             UINT16 min_mtu;
-            uint8_t param[20],idx,bta_hdl,codec_id = 0;
+            uint8_t param[MAX_CODEC_CFG_SIZE],idx,bta_hdl,codec_id = 0;
             uint32_t bitrate = 0;
             uint8_t i = 0;
             UIPC_Read(UIPC_CH_ID_AV_CTRL, NULL, &idx, 1);
-            memset(param,0,20);
+            memset(param,0,MAX_CODEC_CFG_SIZE);
 
             if (btif_av_stream_started_ready() == FALSE)
             {
@@ -905,7 +906,17 @@ static void btif_recv_ctrl_data(void)
 
             a2dp_cmd_acknowledge(A2DP_CTRL_ACK_SUCCESS);
             BTIF_TRACE_DEBUG("codec_id = %x",codec_id);
-            if (codec_id == BTIF_AV_CODEC_SBC)
+
+            if (get_soc_type() == BT_SOC_SMD)
+            {
+                //For Pronto PLs Audio pumps raw PCM data for others its encoded data to SOC
+                param[1] = 4; //RAW PCM
+                param[2] = AVDT_MEDIA_AUDIO;
+                param[3] = BTIF_AV_CODEC_PCM;
+                param[4] = btif_media_cb.media_feeding.cfg.pcm.sampling_freq;
+                param[5] = btif_media_cb.media_feeding.cfg.pcm.num_channel;
+            }
+            else if (codec_id == BTIF_AV_CODEC_SBC)
             {
                 tA2D_SBC_CIE codec_cfg;
                 bta_av_co_audio_get_sbc_config(&codec_cfg, &min_mtu);
@@ -934,7 +945,7 @@ static void btif_recv_ctrl_data(void)
                 {
                     tA2D_APTX_CIE* codecInfo = 0;
                     codecInfo = (tA2D_APTX_CIE*) &ptr[BTA_AV_CFG_START_IDX];
-                    if (codecInfo && codecInfo->vendorId == A2D_APTX_VENDOR_ID 
+                    if (codecInfo && codecInfo->vendorId == A2D_APTX_VENDOR_ID
                         && codecInfo->codecId == A2D_APTX_CODEC_ID_BLUETOOTH)
                     {
                         tA2D_APTX_CIE aptx_config;
@@ -948,10 +959,33 @@ static void btif_recv_ctrl_data(void)
                         BTIF_TRACE_DEBUG("sample rate  = %x",aptx_config.sampleRate);
                         BTIF_TRACE_DEBUG("ch mode  = %x",aptx_config.channelMode);
                         A2D_BldAptxInfo(AVDT_MEDIA_AUDIO,&aptx_config,&param[1]);
-                    }
+
+                        /* For aptxClassic BR = (Sampl_Rate * PCM_DEPTH * CHNL)/Compression_Ratio */
+                        bitrate = ((btif_media_cb.media_feeding.cfg.pcm.sampling_freq * 16 * 2)/4);
+                    } else {
+                        tA2D_APTX_HD_CIE* cI = 0;
+                        cI = (tA2D_APTX_HD_CIE*) &ptr[BTA_AV_CFG_START_IDX];
+                        if (cI && cI->vendorId == A2D_APTX_HD_VENDOR_ID
+                        && cI->codecId == A2D_APTX_HD_CODEC_ID_BLUETOOTH)
+                        {
+                            tA2D_APTX_HD_CIE aptxhd_config;
+                            memset(&aptxhd_config,0,sizeof(tA2D_APTX_HD_CIE));
+                            aptxhd_config.vendorId = codecInfo->vendorId;
+                            aptxhd_config.codecId = codecInfo->codecId;
+                            aptxhd_config.sampleRate = codecInfo->sampleRate;
+                            aptxhd_config.channelMode = codecInfo->channelMode;
+                            BTIF_TRACE_DEBUG("vendor id = %x",aptxhd_config.vendorId);
+                            BTIF_TRACE_DEBUG("codec id = %x",aptxhd_config.codecId);
+                            BTIF_TRACE_DEBUG("sample rate  = %x",aptxhd_config.sampleRate);
+                            BTIF_TRACE_DEBUG("ch mode  = %x",aptxhd_config.channelMode);
+                            A2D_BldAptx_hdInfo(AVDT_MEDIA_AUDIO,&aptxhd_config,&param[1]);
+
+                            /* For aptxHD BR = (Sampl_Rate * PCM_DEPTH * CHNL)/Compression_Ratio,
+                               derived from classic */
+                            bitrate = ((btif_media_cb.media_feeding.cfg.pcm.sampling_freq * 16 * 2)/4);
+                       }
+                   }
                 }
-                /* For aptxClassic BR = (Sampl_Rate * PCM_DEPTH * CHNL)/Compression_Ratio */
-                bitrate = ((btif_media_cb.media_feeding.cfg.pcm.sampling_freq * 16 * 2)/4);
             }
             param[0] = btif_get_latest_playing_device_idx();
             i = param[1] + 2; //LOSC
@@ -1258,6 +1292,7 @@ static void btif_a2dp_encoder_update(void)
     tA2D_APTX_CIE* codecInfo = 0;
 
     APPL_TRACE_DEBUG("btif_a2dp_encoder_update");
+    btif_media_cb.tx_enc_update_initiated = TRUE;
 
     UINT8 codectype = 0;
     codectype = bta_av_co_get_current_codec();
@@ -2129,9 +2164,11 @@ static void btif_media_thread_handle_cmd(fixed_queue_t *queue, UNUSED_ATTR void 
         btif_media_cb.tx_stop_initiated = FALSE;
         btif_media_cb.vs_configs_exchanged = FALSE;
         btif_media_cb.tx_start_initiated = FALSE;
+        btif_media_cb.tx_enc_update_initiated = FALSE;
         break;
     case BTIF_MEDIA_START_VS_CMD:
-        if (!btif_media_cb.tx_started && !btif_media_cb.tx_start_initiated)
+        if (!btif_media_cb.tx_started
+             && (!btif_media_cb.tx_start_initiated || btif_media_cb.tx_enc_update_initiated))
         {
             btif_a2dp_encoder_update();
             btif_media_start_vendor_command();
@@ -2142,7 +2179,8 @@ static void btif_media_thread_handle_cmd(fixed_queue_t *queue, UNUSED_ATTR void 
     case BTIF_MEDIA_STOP_VS_CMD:
         if (btif_media_cb.tx_started && !btif_media_cb.tx_stop_initiated)
             btif_media_send_vendor_stop();
-        else if(btif_media_cb.tx_start_initiated && !btif_media_cb.tx_started)
+        else if((btif_media_cb.tx_start_initiated || btif_media_cb.tx_enc_update_initiated)
+                && !btif_media_cb.tx_started)
         {
             APPL_TRACE_IMP("Suspend Req when VSC exchange in progress,reset VSC");
             btif_media_send_reset_vendor_state();
@@ -4351,17 +4389,21 @@ void btif_media_start_vendor_command()
     APPL_TRACE_IMP("btif_media_start_vendor_command_exchange:\
         vs_configs_exchanged:%u", btif_media_cb.vs_configs_exchanged);
     btif_media_cb.tx_start_initiated = TRUE;
+    btif_media_cb.tx_enc_update_initiated = FALSE;
     if(btif_media_cb.vs_configs_exchanged)
     {
         btif_media_send_vendor_start();
     }
     else
     {
-#if 0
-        btif_media_send_vendor_write_sbc_cfg();
-#else
-        btif_media_send_vendor_selected_codec();
-#endif
+        if (get_soc_type() == BT_SOC_SMD)
+        {
+            btif_media_send_vendor_write_sbc_cfg();
+        }
+        else
+        {
+            btif_media_send_vendor_selected_codec();
+        }
     }
 }
 

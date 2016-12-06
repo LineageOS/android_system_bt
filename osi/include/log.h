@@ -17,6 +17,12 @@
  ******************************************************************************/
 
 #pragma once
+#include <string.h>
+#include <stdbool.h>
+#include "include/bt_logger_lib.h"
+
+extern bt_logger_interface_t *logger_interface;
+extern bool bt_logger_enabled;
 
 /*
  * TODO(armansito): Work-around until we figure out a way to generate logs in a
@@ -39,14 +45,16 @@
 
 #include <cutils/log.h>
 
+//#define VNDLOG(tag, fmt, ## args) if(logger_interface)logger_interface->send_log_data(tag, fmt, ## args)
+
 #if LOG_NDEBUG
 #define LOG_VERBOSE(...) ((void)0)
 #else  // LOG_NDEBUG
 #define LOG_VERBOSE(tag, fmt, args...) ALOG(LOG_VERBOSE, tag, fmt, ## args)
 #endif  // !LOG_NDEBUG
-#define LOG_DEBUG(tag, fmt, args...)   ALOG(LOG_DEBUG, tag, fmt, ## args )
-#define LOG_INFO(tag, fmt, args...)    ALOG(LOG_INFO, tag, fmt, ## args)
-#define LOG_WARN(tag, fmt, args...)    ALOG(LOG_WARN, tag, fmt, ## args)
-#define LOG_ERROR(tag, fmt, args...)   ALOG(LOG_ERROR, tag, fmt, ## args)
+#define LOG_DEBUG(tag, fmt, args...)   {if(logger_interface)logger_interface->send_log_data(tag, fmt, ## args);ALOG(LOG_DEBUG, tag, fmt, ## args);}
+#define LOG_INFO(tag, fmt, args...)    {if(logger_interface)logger_interface->send_log_data(tag, fmt, ## args);ALOG(LOG_INFO, tag, fmt, ## args);}
+#define LOG_WARN(tag, fmt, args...)    {if(logger_interface)logger_interface->send_log_data(tag, fmt, ## args);ALOG(LOG_WARN, tag, fmt, ## args);}
+#define LOG_ERROR(tag, fmt, args...)   {if(logger_interface)logger_interface->send_log_data(tag, fmt, ## args);ALOG(LOG_ERROR, tag, fmt, ## args);}
 
 #endif  /* defined(OS_GENERIC) */

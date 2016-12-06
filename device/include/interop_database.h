@@ -118,6 +118,13 @@ static const interop_addr_entry_t interop_addr_database[] = {
   // Dialog Keyboard and mouse
   {{{0x80, 0xea, 0xca,      0,0,0}}, 3, INTEROP_DISABLE_LE_SECURE_CONNECTIONS},
 
+  // Marvel CK used in Mercedes C300/BMW 640i
+  // For a more specific black listing(e.g. just for Mercedes), both BD addr
+  // and device name has to be added for AVRCP 1.3 blacklisting
+  {{{0xa0, 0x56, 0xb2,      0,0,0}}, 3, INTEROP_ADV_AVRCP_VER_1_3},
+
+  // Mazda Atenza
+  {{{0x04, 0xf8, 0xc2,      0,0,0}}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
 };
 
 typedef struct {
@@ -157,6 +164,7 @@ static const interop_name_entry_t interop_name_database[] = {
   // HID Moto KZ500 Keyboard - Problematic SDP digitizer descriptor
   {"Motorola Keyboard KZ500", 23, INTEROP_REMOVE_HID_DIG_DESCRIPTOR},
   {"Motorola Keyboard KZ500 v122", 28, INTEROP_REMOVE_HID_DIG_DESCRIPTOR},
+  {"MB Bluetooth", 12, INTEROP_ADV_AVRCP_VER_1_3},
 };
 
 typedef struct {

@@ -766,8 +766,12 @@ typedef union
     tBTA_DM_API_VENDOR_SPECIFIC_COMMAND vendor_command;
 } tBTA_DM_MSG;
 
-
+#ifndef MAX_ACL_CONNECTIONS
 #define BTA_DM_NUM_PEER_DEVICE 7
+#else
+#define BTA_DM_NUM_PEER_DEVICE  MAX_ACL_CONNECTIONS
+#endif
+
 
 #define BTA_DM_NOT_CONNECTED  0
 #define BTA_DM_CONNECTED      1
