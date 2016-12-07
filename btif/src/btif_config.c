@@ -52,6 +52,8 @@
 #include <cutils/properties.h>
 #endif  /* !defined(OS_GENERIC) */
 
+#define BT_CONFIG_SOURCE_TAG_NUM 1010001
+
 #define INFO_SECTION "Info"
 #define FILE_TIMESTAMP "TimeCreated"
 #define FILE_SOURCE "FileSource"
@@ -200,6 +202,8 @@ static future_t *init(void) {
     LOG_ERROR(LOG_TAG, "%s unable to create alarm.", __func__);
     goto error;
   }
+
+  LOG_EVENT_INT(BT_CONFIG_SOURCE_TAG_NUM, btif_config_source);
 
   pthread_mutex_unlock(&lock);
   return future_new_immediate(FUTURE_SUCCESS);

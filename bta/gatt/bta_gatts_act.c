@@ -689,7 +689,7 @@ void bta_gatts_open (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA * p_msg)
     {
         /* should always get the connection ID */
         if (GATT_Connect(p_rcb->gatt_if, p_msg->api_open.remote_bda,
-                        p_msg->api_open.is_direct, p_msg->api_open.transport))
+                        p_msg->api_open.is_direct, p_msg->api_open.transport, false))
         {
             status = BTA_GATT_OK;
 

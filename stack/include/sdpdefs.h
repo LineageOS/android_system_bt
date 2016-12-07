@@ -281,6 +281,9 @@
 #define UUID_CODEC_MSBC                         0x0002   /* mSBC */
 #endif
 
+#define UUID_HF_IND_ENHANCED_DRIVER_SAFETY      0x0001   /* Assigned number for Enhanced Safety */
+#define UUID_HF_IND_BATTERY_LEVEL_STATUS        0x0002   /* Assigned number for Battery Status */
+
 /* Define all the 'Descriptor Type' values.
 */
 #define  NULL_DESC_TYPE                     0

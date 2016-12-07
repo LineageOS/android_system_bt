@@ -532,7 +532,7 @@ extern void gatt_free(void);
 
 /* from gatt_main.c */
 extern BOOLEAN gatt_disconnect (tGATT_TCB *p_tcb);
-extern BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr, tBT_TRANSPORT transport);
+extern BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr, tBT_TRANSPORT transport, bool opportunistic);
 extern BOOLEAN gatt_connect (BD_ADDR rem_bda,  tGATT_TCB *p_tcb, tBT_TRANSPORT transport);
 extern void gatt_data_process (tGATT_TCB *p_tcb, BT_HDR *p_buf);
 extern void gatt_update_app_use_link_flag ( tGATT_IF gatt_if, tGATT_TCB *p_tcb, BOOLEAN is_add, BOOLEAN check_acl_link);

@@ -375,6 +375,30 @@ void smp_rsp_timeout(UNUSED_ATTR void *data)
 
 /*******************************************************************************
 **
+** Function         smp_delayed_auth_complete_timeout
+**
+** Description      Called when no pairing failed command received within timeout
+**                  period.
+**
+** Returns          void
+**
+*******************************************************************************/
+void smp_delayed_auth_complete_timeout(UNUSED_ATTR void *data)
+{
+    /*
+     * Waited for potential pair failure. Send SMP_AUTH_CMPL_EVT if
+     * the state is still in bond pending.
+     */
+    if (smp_get_state() == SMP_STATE_BOND_PENDING)
+    {
+        UINT8 reason = SMP_SUCCESS;
+        SMP_TRACE_EVENT("%s sending delayed auth complete.", __func__);
+        smp_sm_event(&smp_cb, SMP_AUTH_CMPL_EVT, &reason);
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         smp_build_pairing_req_cmd
 **
 ** Description      Build pairing request command.
@@ -842,10 +866,12 @@ void smp_cb_cleanup(tSMP_CB   *p_cb)
     SMP_TRACE_EVENT("smp_cb_cleanup");
 
     alarm_free(p_cb->smp_rsp_timer_ent);
+    alarm_free(p_cb->delayed_auth_timer_ent);
     memset(p_cb, 0, sizeof(tSMP_CB));
     p_cb->p_callback = p_callback;
     p_cb->trace_level = trace_level;
     p_cb->smp_rsp_timer_ent = alarm_new("smp.smp_rsp_timer_ent");
+    p_cb->delayed_auth_timer_ent = alarm_new("smp.delayed_auth_timer_ent");
 }
 
 /*******************************************************************************
