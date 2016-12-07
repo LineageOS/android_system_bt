@@ -45,7 +45,7 @@ extern "C" {
 
 extern void btm_ble_adv_raddr_timer_timeout(void *data);
 extern void btm_ble_refresh_raddr_timer_timeout(void *data);
-extern void btm_ble_process_adv_pkt (UINT8 *p);
+extern void btm_ble_process_adv_pkt (UINT8 len, UINT8 *p);
 extern void btm_ble_proc_scan_rsp_rpt (UINT8 *p);
 extern tBTM_STATUS btm_ble_read_remote_name(BD_ADDR remote_bda, tBTM_INQ_INFO *p_cur, tBTM_CMPL_CB *p_cb);
 extern BOOLEAN btm_ble_cancel_remote_name(BD_ADDR remote_bda);
