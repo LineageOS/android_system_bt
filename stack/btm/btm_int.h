@@ -105,6 +105,8 @@ extern void btm_process_clk_off_comp_evt(uint16_t hci_handle,
                                          uint16_t clock_offset);
 extern void btm_acl_role_changed(uint8_t hci_status, BD_ADDR bd_addr,
                                  uint8_t new_role);
+extern void btm_blacklist_role_change_device(BD_ADDR bd_addr,
+                                             uint8_t hci_status);
 extern void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
                                    uint8_t encr_enable);
 extern uint16_t btm_get_acl_disc_reason_code(void);
