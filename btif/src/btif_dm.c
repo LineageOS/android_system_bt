@@ -1051,7 +1051,6 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ *p_pin_req)
             return;
         }
         if (check_cod(&bd_addr, COD_AV_HEADSETS) ||
-            check_cod(&bd_addr, COD_AV_HANDSFREE) ||
             check_cod(&bd_addr, COD_AV_HEADPHONES) ||
             check_cod(&bd_addr, COD_AV_PORTABLE_AUDIO) ||
             check_cod(&bd_addr, COD_AV_HIFI_AUDIO) ||
@@ -1716,6 +1715,10 @@ static void btif_dm_search_services_evt(UINT16 event, char *p_param)
 
         case BTA_DM_DISC_CMPL_EVT:
             /* fixme */
+        break;
+
+        case BTA_DM_SEARCH_CANCEL_CMPL_EVT:
+            /* no-op */
         break;
 
 #if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
@@ -3354,6 +3357,8 @@ static void btif_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
         {
             case BTA_DM_AUTH_SMP_PAIR_AUTH_FAIL:
             case BTA_DM_AUTH_SMP_CONFIRM_VALUE_FAIL:
+            case BTA_DM_AUTH_SMP_UNKNOWN_ERR:
+            case BTA_DM_AUTH_SMP_CONN_TOUT:
                 btif_dm_remove_ble_bonding_keys();
                 status = BT_STATUS_AUTH_FAILURE;
                 break;

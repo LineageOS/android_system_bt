@@ -45,6 +45,7 @@
 #define BTA_AG_FEAT_HFIND   0x00000400   /* HF indicators */
 #define BTA_AG_FEAT_S4      0x00000800   /* ESCO S4 link setting */
 #define BTA_AG_FEAT_VOIP    0x00001000   /* VoIP call */
+
 /* Proprietary features: using 31 ~ 16 bits */
 #define BTA_AG_FEAT_BTRH    0x00010000   /* CCAP incoming call hold */
 #define BTA_AG_FEAT_UNAT    0x00020000   /* Pass unknown AT commands to application */
@@ -75,6 +76,7 @@ typedef UINT8 tBTA_AG_STATUS;
  * SCO_NO_CHANGE is used for changing sco behavior
  * They donot interfere with each other
  */
+
 #define BTA_AG_HANDLE_SCO_NO_CHANGE 0xFFFF
 
 /* AG result codes used with BTA_AgResult */
@@ -388,6 +390,7 @@ typedef void (tBTA_AG_CBACK)(tBTA_AG_EVT event, tBTA_AG *p_data);
 #define BTA_AG_BEARER_RES1          5   /* Reserved     */
 #define BTA_AG_BEARER_RES2          6   /* Reserved     */
 #define BTA_AG_BEARER_RES3          7   /* Reserved     */
+
 
 /* AG configuration structure */
 typedef struct

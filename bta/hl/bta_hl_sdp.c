@@ -179,7 +179,7 @@ tBTA_HL_STATUS bta_hl_sdp_update (UINT8 app_id)
     UINT8                           data_exchange_spec = BTA_HL_SDP_IEEE_11073_20601;
     UINT8                           mcap_sup_proc = BTA_HL_MCAP_SUP_PROC_MASK;
     UINT16                          profile_uuid = UUID_SERVCLASS_HDP_PROFILE;
-    UINT16                          version = BTA_HL_VERSION_01_00;
+    UINT16                          version = BTA_HL_VERSION;
     UINT8                           num_services=1;
     tBTA_HL_APP_CB                  *p_cb = BTA_HL_GET_APP_CB_PTR(0);
     BOOLEAN                         result = TRUE;
@@ -382,7 +382,7 @@ tBTA_HL_STATUS bta_hl_sdp_register (UINT8 app_idx)
     UINT8                           data_exchange_spec = BTA_HL_SDP_IEEE_11073_20601;
     UINT8                           mcap_sup_proc = BTA_HL_MCAP_SUP_PROC_MASK;
     UINT16                          profile_uuid = UUID_SERVCLASS_HDP_PROFILE;
-    UINT16                          version = BTA_HL_VERSION_01_00;
+    UINT16                          version = BTA_HL_VERSION;
     UINT8                           num_services=1;
     tBTA_HL_APP_CB                  *p_cb = BTA_HL_GET_APP_CB_PTR(app_idx);
     BOOLEAN                         result = TRUE;

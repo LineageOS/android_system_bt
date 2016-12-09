@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <cutils/properties.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_av.h>
 #include <hardware/bt_gatt.h>
@@ -44,6 +45,9 @@
 #include <hardware/bt_sdp.h>
 #include <hardware/bt_sock.h>
 #include <hardware/vendor.h>
+#ifdef WIPOWER_SUPPORTED
+#include <hardware/wipower.h>
+#endif
 
 #include "bt_utils.h"
 #include "btif_api.h"
@@ -67,6 +71,7 @@
 #include "btif/include/btif_media.h"
 #include "l2cdefs.h"
 #include "l2c_api.h"
+#include "stack_config.h"
 
 #if TEST_APP_INTERFACE == TRUE
 #include <bt_testapp.h>
@@ -113,6 +118,9 @@ extern btgatt_interface_t *btif_gatt_get_interface();
 /* avrc target */
 extern btrc_interface_t *btif_rc_get_interface();
 /* avrc controller */
+#ifdef WIPOWER_SUPPORTED
+extern wipower_interface_t *get_wipower_interface();
+#endif
 extern btrc_interface_t *btif_rc_ctrl_get_interface();
 /*SDP search client*/
 extern btsdp_interface_t *btif_sdp_get_interface();
@@ -143,6 +151,20 @@ static bool is_profile(const char *p1, const char *p2) {
   return strlen(p1) == strlen(p2) && strncmp(p1, p2, strlen(p2)) == 0;
 }
 
+void get_logger_config_value()
+{
+  bool hci_ext_dump_enabled = false;
+  bool btsnoop_conf_from_file = false;
+  stack_config_get_interface()->get_btsnoop_ext_options(&hci_ext_dump_enabled, &btsnoop_conf_from_file);
+
+  /* ToDo: Chnage dependency to work on one config option*/
+  if(!btsnoop_conf_from_file)
+    hci_ext_dump_enabled = true;
+
+  if(hci_ext_dump_enabled)
+        bt_logger_enabled = true;
+}
+
 /*****************************************************************************
 **
 **   BLUETOOTH HAL INTERFACE FUNCTIONS
@@ -161,6 +183,10 @@ static int init(bt_callbacks_t *callbacks) {
 
   bt_hal_cbacks = callbacks;
   stack_manager_get_interface()->init_stack();
+  get_logger_config_value();
+
+  if(bt_logger_enabled)
+    property_set("bluetooth.startbtlogger", "true");
   btif_debug_init();
   return BT_STATUS_SUCCESS;
 }
@@ -187,6 +213,9 @@ static int disable(void) {
 
 static void cleanup(void) {
   stack_manager_get_interface()->clean_up_stack();
+
+  if(bt_logger_enabled)
+    property_set("bluetooth.startbtlogger", "false");
 }
 
 bool is_restricted_mode() {
@@ -433,6 +462,11 @@ static const void* get_profile_interface (const char *profile_id)
 
     if (is_profile(profile_id, BT_PROFILE_AV_RC_ID))
         return btif_rc_get_interface();
+
+#ifdef WIPOWER_SUPPORTED
+    if (is_profile(profile_id, BT_PROFILE_WIPOWER_VENDOR_ID))
+        return get_wipower_interface();
+#endif
 
     if (is_profile(profile_id, BT_PROFILE_AV_RC_CTRL_ID))
         return btif_rc_ctrl_get_interface();

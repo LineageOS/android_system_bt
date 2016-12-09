@@ -51,6 +51,7 @@ extern void smp_link_encrypted(BD_ADDR bda, UINT8 encr_enable);
 extern BOOLEAN smp_proc_ltk_request(BD_ADDR bda);
 #endif
 extern void gatt_notify_enc_cmpl(BD_ADDR bd_addr);
+
 /*******************************************************************************/
 /* External Function to be called by other modules                             */
 /*******************************************************************************/
@@ -74,16 +75,11 @@ BOOLEAN BTM_SecAddBleDevice (BD_ADDR bd_addr, BD_NAME bd_name, tBT_DEVICE_TYPE d
                              tBLE_ADDR_TYPE addr_type)
 {
     BTM_TRACE_DEBUG ("%s: dev_type=0x%x", __func__, dev_type);
-    tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev(bd_addr);
 
-    if (!p_dev_rec) {
-        if (list_length(btm_cb.sec_dev_rec) > BTM_SEC_MAX_DEVICE_RECORDS) {
-            BTM_TRACE_ERROR("%s: %d max devices reached!", __func__, BTM_SEC_MAX_DEVICE_RECORDS);
-            return FALSE;
-        }
-
-        p_dev_rec = osi_calloc(sizeof(tBTM_SEC_DEV_REC));
-        list_append(btm_cb.sec_dev_rec, p_dev_rec);
+    tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev(bd_addr);
+    if (!p_dev_rec)
+    {
+        p_dev_rec = btm_sec_allocate_dev_rec();
 
         memcpy(p_dev_rec->bd_addr, bd_addr, BD_ADDR_LEN);
         p_dev_rec->hci_handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_BR_EDR);

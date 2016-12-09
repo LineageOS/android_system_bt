@@ -77,7 +77,7 @@ BOOLEAN L2CA_CancelBleConnectReq (BD_ADDR rem_bda)
         p_lcb = l2cu_find_lcb_by_bd_addr(rem_bda, BT_TRANSPORT_LE);
         /* Do not remove lcb if an LE link is already up as a peripheral */
         if (p_lcb != NULL &&
-            !(p_lcb->link_role == HCI_ROLE_SLAVE && btm_bda_to_acl(rem_bda, BT_TRANSPORT_LE)))
+            !(p_lcb->link_role == HCI_ROLE_SLAVE && btm_bda_to_acl(rem_bda, BT_TRANSPORT_LE) != NULL))
         {
             p_lcb->disc_reason = L2CAP_CONN_CANCEL;
             l2cu_release_lcb (p_lcb);
@@ -295,16 +295,13 @@ void l2cble_notify_le_connection (BD_ADDR bda)
         l2cu_process_fixed_chnl_resp (p_lcb);
     }
 
-    if (p_lcb == NULL) {
-        L2CAP_TRACE_ERROR("%s, link control block is null", __func__);
-        return;
-    }
-
-    /* For all channels, send the event through their FSMs */
-    for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; p_ccb = p_ccb->p_next_ccb)
-    {
-        if (p_ccb->chnl_state == CST_CLOSED)
-            l2c_csm_execute (p_ccb, L2CEVT_LP_CONNECT_CFM, NULL);
+    if (p_lcb != NULL) {
+        /* For all channels, send the event through their FSMs */
+        for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; p_ccb = p_ccb->p_next_ccb)
+        {
+            if (p_ccb->chnl_state == CST_CLOSED)
+                l2c_csm_execute (p_ccb, L2CEVT_LP_CONNECT_CFM, NULL);
+        }
     }
 
 
@@ -593,17 +590,16 @@ static void l2cble_start_conn_update (tL2C_LCB *p_lcb)
 ** Returns          void
 **
 *******************************************************************************/
-void l2cble_process_conn_update_evt (UINT16 handle, UINT8 status)
+void l2cble_process_conn_update_evt (UINT16 handle, UINT8 status,
+                  UINT16 interval, UINT16 latency, UINT16 timeout)
 {
-    tL2C_LCB *p_lcb;
-
-    L2CAP_TRACE_DEBUG("l2cble_process_conn_update_evt");
+    L2CAP_TRACE_DEBUG("%s", __func__);
 
     /* See if we have a link control block for the remote device */
-    p_lcb = l2cu_find_lcb_by_handle(handle);
+    tL2C_LCB *p_lcb = l2cu_find_lcb_by_handle(handle);
     if (!p_lcb)
     {
-        L2CAP_TRACE_WARNING("l2cble_process_conn_update_evt: Invalid handle: %d", handle);
+        L2CAP_TRACE_WARNING("%s: Invalid handle: %d", __func__, handle);
         return;
     }
 
@@ -611,13 +607,14 @@ void l2cble_process_conn_update_evt (UINT16 handle, UINT8 status)
 
     if (status != HCI_SUCCESS)
     {
-        L2CAP_TRACE_WARNING("l2cble_process_conn_update_evt: Error status: %d", status);
+        L2CAP_TRACE_WARNING("%s: Error status: %d", __func__, status);
     }
 
     l2cble_start_conn_update(p_lcb);
 
-    L2CAP_TRACE_DEBUG("l2cble_process_conn_update_evt: conn_update_mask=%d", p_lcb->conn_update_mask);
+    L2CAP_TRACE_DEBUG("%s: conn_update_mask=%d", __func__, p_lcb->conn_update_mask);
 }
+
 /*******************************************************************************
 **
 ** Function         l2cble_process_sig_cmd

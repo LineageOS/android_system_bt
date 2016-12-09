@@ -499,6 +499,29 @@ UINT16 AVCT_MsgReq(UINT8 handle, UINT8 label, UINT8 cr, BT_HDR *p_msg)
     return result;
 }
 
+/*******************************************************************************
+**
+** Function         AVCT_CheckIncomingConn
+**
+** Description      Check for incoming connection in progress
+**
+** Return           TRUE if incoming connection in progress, FALSE otherwise
+******************************************************************************/
+BOOLEAN AVCT_CheckIncomingConn(BD_ADDR peer_addr)
+{
+    tAVCT_LCB *p_lcb;
+
+    p_lcb = avct_lcb_by_bd(peer_addr);
+    if (p_lcb != NULL)
+    {
+        if (p_lcb->ch_state != AVCT_CH_IDLE)
+        {
+            AVCT_TRACE_ERROR("%s: Incoming AVCT connection in progress",__func__);
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
 /******************************************************************************
 **
 ** Function         AVCT_SetTraceLevel

@@ -737,6 +737,7 @@ static void btif_hf_upstreams_evt(UINT16 event, char* p_param)
         case BTA_AG_AT_BIEV_EVT:
             HAL_CBACK(bt_hf_callbacks, biev_cmd_cb, p_data->val.str,
                                                &btif_hf_cb[idx].connected_bda);
+
             break;
         default:
             BTIF_TRACE_WARNING("%s: Unhandled event: %d", __FUNCTION__, event);

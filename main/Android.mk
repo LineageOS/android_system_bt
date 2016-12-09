@@ -26,6 +26,11 @@ LOCAL_SRC_FILES+= \
 LOCAL_SRC_FILES+= \
 	../udrv/ulinux/uipc.c
 
+ifeq ($(BOARD_USES_WIPOWER),true)
+LOCAL_SRC_FILES += \
+	../../../vendor/qcom/opensource/bluetooth/wipower-host/core/src/wipower.c
+endif
+
 LOCAL_C_INCLUDES+= . \
 	$(LOCAL_PATH)/../ \
 	$(LOCAL_PATH)/../bta/include \
@@ -55,6 +60,12 @@ LOCAL_C_INCLUDES+= . \
 	external/tinyxml2 \
     external/zlib \
     $(call include-path-for, audio-utils)
+
+ifeq ($(BOARD_USES_WIPOWER),true)
+LOCAL_C_INCLUDES+= \
+	vendor/qcom/opensource/bluetooth/hal/include \
+	vendor/qcom/opensource/bluetooth/wipower-host/core/include
+endif
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \

@@ -65,6 +65,10 @@
 #define BTA_AV_ACCEPT_SIGNALLING_TIMEOUT_MS     (2 * 1000)      /* 2 seconds */
 #endif
 
+#ifndef AVRC_CONNECT_RETRY_DELAY_MS
+#define AVRC_CONNECT_RETRY_DELAY_MS 2000
+#endif
+
 extern fixed_queue_t *btu_bta_alarm_queue;
 
 static void bta_av_accept_signalling_timer_cback(void *data);
@@ -1793,6 +1797,8 @@ static void bta_av_accept_signalling_timer_cback(void *data)
 
             if (bta_av_is_scb_opening(p_scb))
             {
+                APPL_TRACE_DEBUG("%s: stream state opening: SDP started = %d",
+                                 __func__, p_scb->sdp_discovery_started);
                 if (p_scb->sdp_discovery_started)
                 {
                     /* We are still doing SDP. Run the timer again. */
@@ -1814,6 +1820,7 @@ static void bta_av_accept_signalling_timer_cback(void *data)
             {
                 /* Stay in incoming state if SNK does not start signalling */
 
+                APPL_TRACE_DEBUG("%s: stream state incoming", __func__);
                 /* API open was called right after SNK opened L2C connection. */
                 if (p_scb->coll_mask & BTA_AV_COLL_API_CALLED)
                 {
@@ -2113,6 +2120,15 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
     }
 
     APPL_TRACE_DEBUG("%s rc_handle %d", __FUNCTION__, rc_handle);
+    if (rc_handle == BTA_AV_RC_HANDLE_NONE)
+    {
+        if (AVRC_CheckIncomingConn(p_scb->peer_addr) == TRUE)
+        {
+            bta_sys_start_timer(p_scb->avrc_ct_timer, AVRC_CONNECT_RETRY_DELAY_MS,
+                                   BTA_AV_SDP_AVRC_DISC_EVT,p_scb->hndl);
+        }
+    }
+
 #if (BTA_AV_SINK_INCLUDED == TRUE)
     if (p_cb->sdp_a2d_snk_handle)
     {

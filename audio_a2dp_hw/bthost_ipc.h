@@ -54,6 +54,7 @@ codec specific definitions
 #define CODEC_OFFSET 3
 #define VENDOR_ID_OFFSET 4
 #define CODEC_ID_OFFSET (VENDOR_ID_OFFSET + 4)
+#define CODEC_TYPE_PCM 0x05
 
 #ifndef VENDOR_APTX
 #define VENDOR_APTX 0x4F

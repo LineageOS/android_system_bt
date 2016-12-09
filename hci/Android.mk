@@ -19,7 +19,8 @@ LOCAL_SRC_FILES := \
     src/hci_packet_parser.c \
     src/low_power_manager.c \
     src/packet_fragmenter.c \
-    src/vendor.c
+    src/vendor.c \
+    ../EventLogTags.logtags
 
 LOCAL_C_INCLUDES += \
     $(LOCAL_PATH)/include \
@@ -35,6 +36,10 @@ LOCAL_MODULE := libbt-hci
 
 ifeq ($(TARGET_BUILD_VARIANT),userdebug)
     LOCAL_CFLAGS += -DBTSNOOP_DEFAULT=TRUE
+endif
+
+ifneq (,$(filter userdebug eng,$(TARGET_BUILD_VARIANT)))
+LOCAL_CFLAGS += -DENABLE_DBG_FLAGS
 endif
 
 LOCAL_CFLAGS += $(bluetooth_CFLAGS)

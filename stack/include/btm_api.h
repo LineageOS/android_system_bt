@@ -3362,6 +3362,15 @@ extern BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class,
 *******************************************************************************/
 extern BOOLEAN BTM_SecDeleteDevice (BD_ADDR bd_addr);
 
+/*******************************************************************************
+**
+** Function         BTM_SecClearSecurityFlags
+**
+** Description      Reset the security flags (mark as not-paired) for a given
+**                  remove device.
+**
+*******************************************************************************/
+extern void BTM_SecClearSecurityFlags (BD_ADDR bd_addr);
 
 /*******************************************************************************
 **

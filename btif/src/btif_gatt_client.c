@@ -497,6 +497,12 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param)
             break;
         }
 
+        case BTA_GATTC_SEARCH_RES_EVT:
+        {
+            /* Do nothing */
+            break;
+        }
+
         case BTA_GATTC_READ_DESCR_EVT:
         {
             btgatt_read_params_t data;
@@ -1025,6 +1031,9 @@ static void bta_track_adv_event_cb(tBTA_DM_BLE_TRACK_ADV_DATA *p_track_adv_data)
 
 static void btm_read_rssi_cb (tBTM_RSSI_RESULTS *p_result)
 {
+    if (!p_result)
+      return;
+
     btif_gattc_cb_t btif_cb;
 
     bdcpy(btif_cb.bd_addr.address, p_result->rem_bda);

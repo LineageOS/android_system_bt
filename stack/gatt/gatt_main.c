@@ -276,49 +276,25 @@ BOOLEAN gatt_disconnect (tGATT_TCB *p_tcb)
 **
 ** Description      Update the application use link status
 **
-** Returns          void.
+** Returns          true if any modifications are made, false otherwise.
 **
 *******************************************************************************/
-void gatt_update_app_hold_link_status (tGATT_IF gatt_if, tGATT_TCB *p_tcb, BOOLEAN is_add)
+BOOLEAN gatt_update_app_hold_link_status(tGATT_IF gatt_if, tGATT_TCB *p_tcb, BOOLEAN is_add)
 {
-    UINT8 i;
-    BOOLEAN found=FALSE;
-
-    if (p_tcb == NULL)
-    {
-        GATT_TRACE_ERROR("gatt_update_app_hold_link_status p_tcb=NULL");
-        return;
-    }
-
-
-    for (i=0; i<GATT_MAX_APPS; i++)
-    {
-        if (p_tcb->app_hold_link[i] ==  gatt_if)
-        {
-            found = TRUE;
-            if (!is_add)
-            {
-                p_tcb->app_hold_link[i] = 0;
-                break;
-            }
+    for (int i=0; i<GATT_MAX_APPS; i++) {
+        if (p_tcb->app_hold_link[i] == 0 && is_add) {
+            p_tcb->app_hold_link[i] = gatt_if;
+            GATT_TRACE_DEBUG("%s: added gatt_if=%d idx=%d ", __func__, gatt_if, i);
+            return TRUE;
+        } else if (p_tcb->app_hold_link[i] == gatt_if && !is_add) {
+            p_tcb->app_hold_link[i] = 0;
+            GATT_TRACE_DEBUG("%s: removed gatt_if=%d idx=%d", __func__, gatt_if, i);
+            return TRUE;
         }
     }
 
-    if (!found && is_add)
-    {
-        for (i=0; i<GATT_MAX_APPS; i++)
-        {
-            if (p_tcb->app_hold_link[i] ==  0)
-            {
-                p_tcb->app_hold_link[i] = gatt_if;
-                found = TRUE;
-                break;
-            }
-        }
-    }
-
-    GATT_TRACE_DEBUG("gatt_update_app_hold_link_status found=%d[1-found] idx=%d gatt_if=%d is_add=%d", found, i, gatt_if, is_add);
-
+    GATT_TRACE_DEBUG("%s: gatt_if=%d not found; is_add=%d", __func__, gatt_if, is_add);
+    return FALSE;
 }
 
 /*******************************************************************************
@@ -331,34 +307,37 @@ void gatt_update_app_hold_link_status (tGATT_IF gatt_if, tGATT_TCB *p_tcb, BOOLE
 ** Returns          void.
 **
 *******************************************************************************/
-void gatt_update_app_use_link_flag (tGATT_IF gatt_if, tGATT_TCB *p_tcb, BOOLEAN is_add, BOOLEAN check_acl_link)
+void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB *p_tcb, BOOLEAN is_add,
+                                   BOOLEAN check_acl_link)
 {
-    GATT_TRACE_DEBUG("gatt_update_app_use_link_flag  is_add=%d chk_link=%d",
-                      is_add, check_acl_link);
+    GATT_TRACE_DEBUG("%s: is_add=%d chk_link=%d", __func__, is_add, check_acl_link);
 
-    gatt_update_app_hold_link_status(gatt_if, p_tcb, is_add);
+    if (!p_tcb)
+        return;
 
-    if (check_acl_link &&
-        p_tcb &&
-         p_tcb->att_lcid == L2CAP_ATT_CID && /* only update link idle timer for fixed channel */
-        (BTM_GetHCIConnHandle(p_tcb->peer_bda, p_tcb->transport) != GATT_INVALID_ACL_HANDLE))
-    {
-        if (is_add)
-        {
-            GATT_TRACE_DEBUG("GATT disables link idle timer");
-            /* acl link is connected disable the idle timeout */
-            GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_NO_IDLE_TIMEOUT, p_tcb->transport);
-        }
-        else
-        {
-            if (!gatt_num_apps_hold_link(p_tcb))
-            {
-                /* acl link is connected but no application needs to use the link
-                   so set the timeout value to GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP seconds */
-                GATT_TRACE_DEBUG("GATT starts link idle timer =%d sec", GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP);
-                GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP, p_tcb->transport);
-            }
+    // If we make no modification, i.e. kill app that was never connected to a device,
+    // skip updating the device state.
+    if (!gatt_update_app_hold_link_status(gatt_if, p_tcb, is_add))
+        return;
 
+    if (!check_acl_link ||
+            p_tcb->att_lcid != L2CAP_ATT_CID || /* only update link idle timer for fixed channel */
+            (BTM_GetHCIConnHandle(p_tcb->peer_bda, p_tcb->transport) == GATT_INVALID_ACL_HANDLE)) {
+        return;
+    }
+
+    if (is_add) {
+        GATT_TRACE_DEBUG("%s: disable link idle timer", __func__);
+        /* acl link is connected disable the idle timeout */
+        GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_NO_IDLE_TIMEOUT, p_tcb->transport);
+    } else {
+        if (!gatt_num_apps_hold_link(p_tcb)) {
+            /* acl link is connected but no application needs to use the link
+               so set the timeout value to GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP seconds */
+            GATT_TRACE_DEBUG("%s: start link idle timer =%d sec", __func__,
+                             GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP);
+            GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP,
+                                p_tcb->transport);
         }
     }
 }
@@ -372,7 +351,8 @@ void gatt_update_app_use_link_flag (tGATT_IF gatt_if, tGATT_TCB *p_tcb, BOOLEAN 
 ** Returns          void.
 **
 *******************************************************************************/
-BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr, tBT_TRANSPORT transport)
+BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr,
+                          tBT_TRANSPORT transport, BOOLEAN opportunistic)
 {
     BOOLEAN     ret = FALSE;
     tGATT_TCB   *p_tcb;
@@ -419,7 +399,11 @@ BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr, tBT_TRANSPORT trans
 
     if (ret)
     {
-        gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, TRUE, TRUE);
+        if (!opportunistic)
+            gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, TRUE, FALSE);
+        else
+            GATT_TRACE_DEBUG("%s: connection is opportunistic, not updating app usage",
+                            __func__);
     }
 
     return ret;
