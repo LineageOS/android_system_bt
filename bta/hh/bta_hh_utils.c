@@ -507,7 +507,12 @@ void bta_hh_cleanup_disable(tBTA_HH_STATUS status)
     for (xx = 0; xx < BTA_HH_MAX_DEVICE; xx ++) {
         osi_free_and_reset((void **)&bta_hh_cb.kdev[xx].dscp_info.descriptor.dsc_list);
     }
-    osi_free_and_reset((void **)&bta_hh_cb.p_disc_db);
+
+    if (bta_hh_cb.p_disc_db) {
+        /* Cancel SDP if it had been started. */
+        (void)SDP_CancelServiceSearch (bta_hh_cb.p_disc_db);
+        osi_free_and_reset((void **)&bta_hh_cb.p_disc_db);
+    }
 
     (* bta_hh_cb.p_cback)(BTA_HH_DISABLE_EVT, (tBTA_HH *)&status);
     /* all connections are down, no waiting for diconnect */
