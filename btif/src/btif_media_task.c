@@ -1139,11 +1139,14 @@ static BOOLEAN btif_media_task_is_aptx_configured()
         UINT8* ptr = bta_av_co_get_current_codecInfo();
         if (ptr) {
             tA2D_APTX_CIE* codecInfo = (tA2D_APTX_CIE*) &ptr[BTA_AV_CFG_START_IDX];
+            /* Fix for below Klockwork Issue
+             * Pointer 'codecInfo' checked for NULL at line 1089 may be dereferenced at line 1092.*/
             if ((codecInfo && codecInfo->vendorId == A2D_APTX_VENDOR_ID && codecInfo->codecId == A2D_APTX_CODEC_ID_BLUETOOTH)
-                || (codecInfo && codecInfo->vendorId == A2D_APTX_HD_VENDOR_ID && codecInfo->codecId == A2D_APTX_HD_CODEC_ID_BLUETOOTH))
+                || (codecInfo && codecInfo->vendorId == A2D_APTX_HD_VENDOR_ID && codecInfo->codecId == A2D_APTX_HD_CODEC_ID_BLUETOOTH)) {
                 APPL_TRACE_DEBUG("%s codecId %d", __func__, codecInfo->codecId);
                 APPL_TRACE_DEBUG("%s vendorId %x", __func__, codecInfo->vendorId);
                 result = TRUE;
+            }
         }
     }
     return result;
