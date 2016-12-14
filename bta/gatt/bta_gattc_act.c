@@ -1838,7 +1838,7 @@ void bta_gattc_process_indicate(UINT16 conn_id, tGATTC_OPTYPE op, tGATT_CL_COMPL
         /* Not a service change indication, check for an unallocated HID conn */
         if (bta_hh_le_is_hh_gatt_if(gatt_if) && !p_clcb)
         {
-            APPL_TRACE_ERROR("%s, ignore HID ind/notificiation", __func__);
+            APPL_TRACE_DEBUG("%s, ignore HID ind/notificiation", __func__);
             return;
         }
         /* if app registered for the notification */
