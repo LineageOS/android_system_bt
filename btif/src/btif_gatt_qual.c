@@ -74,7 +74,7 @@ void Gatt_StartIf(tGATT_IF gatt_if)
 BOOLEAN Gatt_Connect (tGATT_IF gatt_if, BD_ADDR bd_addr, BOOLEAN is_direct,tBT_TRANSPORT transport)
 {
     BOOLEAN     Ret = 0;
-    Ret = GATT_Connect(gatt_if, bd_addr, is_direct,BT_TRANSPORT_LE);
+    Ret = GATT_Connect(gatt_if, bd_addr, is_direct,BT_TRANSPORT_LE, false);
     printf("%s::Ret=%d,gatt_if=%d, is_direct=%d \n", __FUNCTION__, Ret, gatt_if, is_direct);
     return Ret;
 }

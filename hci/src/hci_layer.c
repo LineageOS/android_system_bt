@@ -55,6 +55,8 @@ bt_bdaddr_t btif_local_bd_addr;
 #define PREAMBLE_BUFFER_SIZE 4 // max preamble size, ACL
 #define RETRIEVE_ACL_LENGTH(preamble) ((((preamble)[3]) << 8) | (preamble)[2])
 
+#define BT_HCI_TIMEOUT_TAG_NUM 1010000
+
 static const uint8_t preamble_sizes[] = {
   HCI_COMMAND_PREAMBLE_SIZE,
   HCI_ACL_PREAMBLE_SIZE,
@@ -127,7 +129,6 @@ static const uint32_t EPILOG_TIMEOUT_MS = 3000;
 static const uint32_t COMMAND_PENDING_TIMEOUT_MS = 8000;
 
 extern int soc_type;
-static uint32_t HARDWARE_ERROR_TIMEOUT_MS = 2000;
 
 // Our interface
 static bool interface_created;
@@ -565,14 +566,16 @@ static void event_command_ready(fixed_queue_t *queue, UNUSED_ATTR void *context)
         low_power_manager->wake_assert();
     }
 
-    packet_fragmenter->fragment_and_dispatch(wait_entry->command);
-
     if (LPM_CONFIG_TX == lpm_config) {
         low_power_manager->start_idle_timer(false);
     }
     else {
         low_power_manager->transmit_done();
     }
+
+    packet_fragmenter->fragment_and_dispatch(wait_entry->command);
+
+
 
     update_command_response_timer();
   }
@@ -626,6 +629,7 @@ static void command_timed_out(UNUSED_ATTR void *context) {
     // We shouldn't try to recover the stack from this command timeout.
     // If it's caused by a software bug, fix it. If it's a hardware bug, fix it.
     LOG_ERROR(LOG_TAG, "%s hci layer timeout waiting for response to a command. opcode: 0x%x", __func__, wait_entry->opcode);
+    LOG_EVENT_INT(BT_HCI_TIMEOUT_TAG_NUM, wait_entry->opcode);
   }
 
   LOG_ERROR("%s restarting the bluetooth process.", __func__);
@@ -640,18 +644,23 @@ static void command_timed_out(UNUSED_ATTR void *context) {
 
   if (soc_type == BT_SOC_ROME || soc_type == BT_SOC_CHEROKEE) {
     char value[PROPERTY_VALUE_MAX] = {0};
-    if( property_get("wc_transport.force_special_byte", value, "false") && !strcmp(value,"true")) {
+    uint32_t hardware_error_timeout_ms = 2000;
+    bool enabled = false;
+#ifdef ENABLE_DBG_FLAGS
+    enabled = true;
+#endif
+    if (property_get("wc_transport.force_special_byte", value, NULL))
+      enabled = (strcmp(value, "false") == 0) ? false : true;
+    if (enabled) {
       hardware_error_timer = alarm_new("hci.hardware_error_timer");
       if (!hardware_error_timer) {
         LOG_ERROR("%s unable to create hardware error timer.", __func__);
         usleep(2000000);
         kill(getpid(), SIGKILL);
       }
-      if(soc_type == BT_SOC_ROME)
-        HARDWARE_ERROR_TIMEOUT_MS = 2000000;
-      else if(soc_type == BT_SOC_CHEROKEE)
-        HARDWARE_ERROR_TIMEOUT_MS = 5000000;
-      alarm_set(hardware_error_timer, HARDWARE_ERROR_TIMEOUT_MS, hardware_error_timer_expired, NULL);
+      if(soc_type == BT_SOC_CHEROKEE)
+        hardware_error_timeout_ms = 5000;
+      alarm_set(hardware_error_timer, hardware_error_timeout_ms, hardware_error_timer_expired, NULL);
       return;
     }
   }
@@ -847,9 +856,9 @@ static bool filter_incoming_event(BT_HDR *packet) {
     // If a command generates a command status event, it won't be getting a command complete event
 
     wait_entry = get_waiting_command(opcode);
-    if (!wait_entry)
+    if (!wait_entry) {
       LOG_WARN(LOG_TAG, "%s command status event with no matching command. opcode: 0x%x", __func__, opcode);
-    else if (wait_entry->status_callback)
+    } else if (wait_entry->status_callback)
       wait_entry->status_callback(status, wait_entry->command, wait_entry->context);
 
     goto intercepted;
@@ -888,7 +897,6 @@ void ssr_cleanup (int reason) {
    }
    if (vendor != NULL) {
        vendor->ssr_cleanup(reason);
-       hal->close(); //clean up the UART stream
    } else {
        LOG_ERROR("%s: vendor is NULL", __func__);
    }

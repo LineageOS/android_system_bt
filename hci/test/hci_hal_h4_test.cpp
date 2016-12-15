@@ -192,17 +192,18 @@ static void expect_socket_data(int fd, char first_byte, char *data) {
   }
 }
 
-static void write_packet(int fd, char first_byte, char *data) {
+static void write_packet(int fd, char first_byte, const void *data,
+                         size_t datalen) {
   write(fd, &first_byte, 1);
-  write(fd, data, strlen(data));
+  write(fd, data, datalen);
 }
 
-static void write_packet_reentry(int fd, char first_byte, char *data) {
+static void write_packet_reentry(int fd, char first_byte, const void *data,
+                                 size_t datalen) {
   write(fd, &first_byte, 1);
 
-  int length = strlen(data);
-  for (int i = 0; i < length; i++) {
-    write(fd, &data[i], 1);
+  for (size_t i = 0; i < datalen; i++) {
+    write(fd, static_cast<const uint8_t *>(data) + i, 1);
     semaphore_wait(reentry_semaphore);
   }
 }
@@ -226,10 +227,11 @@ TEST_F(HciHalH4Test, test_transmit) {
 TEST_F(HciHalH4Test, test_read_synchronous) {
   reset_for(read_synchronous);
 
-  write_packet(sockfd[1], DATA_TYPE_ACL, acl_data);
-  write_packet(sockfd[1], HCI_BLE_EVENT, corrupted_data);
-  write_packet(sockfd[1], DATA_TYPE_SCO, sco_data);
-  write_packet(sockfd[1], DATA_TYPE_EVENT, event_data);
+  write_packet(sockfd[1], DATA_TYPE_ACL, acl_data, strlen(acl_data));
+  write_packet(sockfd[1], HCI_BLE_EVENT, corrupted_data,
+               sizeof(corrupted_data));
+  write_packet(sockfd[1], DATA_TYPE_SCO, sco_data, strlen(sco_data));
+  write_packet(sockfd[1], DATA_TYPE_EVENT, event_data, strlen(event_data));
 
   // Wait for all data to be received before calling the test good
   semaphore_wait(done);
@@ -242,7 +244,8 @@ TEST_F(HciHalH4Test, test_read_async_reentry) {
   reentry_semaphore = semaphore_new(0);
   reentry_i = 0;
 
-  write_packet_reentry(sockfd[1], DATA_TYPE_ACL, sample_data3);
+  write_packet_reentry(sockfd[1], DATA_TYPE_ACL, sample_data3,
+                       strlen(sample_data3));
 
   // write_packet_reentry ensures the data has been received
   semaphore_free(reentry_semaphore);

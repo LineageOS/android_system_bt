@@ -202,10 +202,10 @@ static int bt_vendor_wait_hcidev(void)
     }
 
     if (fds[0].revents & POLLIN) {
-      n = read(fd, &ev, sizeof(struct mgmt_pkt));
+      OSI_NO_INTR(n = read(fd, &ev, sizeof(struct mgmt_pkt)));
       if (n < 0) {
-        LOG_ERROR(LOG_TAG,
-                  "Error reading control channel");
+        LOG_ERROR(LOG_TAG, "Error reading control channel: %s",
+                  strerror(errno));
         ret = -1;
         break;
       }

@@ -614,8 +614,11 @@ typedef struct
 /* BLE related definition */
 
 #define BTA_DM_AUTH_FAIL_BASE                   (HCI_ERR_MAX_ERR + 10)
-#define BTA_DM_AUTH_CONVERT_SMP_CODE(x)        (BTA_DM_AUTH_FAIL_BASE + (x))
-#define BTA_DM_AUTH_SMP_PASSKEY_FAIL             BTA_DM_AUTH_CONVERT_SMP_CODE (SMP_PASSKEY_ENTRY_FAIL)
+
+/* Converts SMP error codes defined in smp_api.h to SMP auth fail reasons below. */
+#define BTA_DM_AUTH_CONVERT_SMP_CODE(x)         (BTA_DM_AUTH_FAIL_BASE + (x))
+
+#define BTA_DM_AUTH_SMP_PASSKEY_FAIL            (BTA_DM_AUTH_FAIL_BASE + SMP_PASSKEY_ENTRY_FAIL)
 #define BTA_DM_AUTH_SMP_OOB_FAIL                (BTA_DM_AUTH_FAIL_BASE + SMP_OOB_FAIL)
 #define BTA_DM_AUTH_SMP_PAIR_AUTH_FAIL          (BTA_DM_AUTH_FAIL_BASE + SMP_PAIR_AUTH_FAIL)
 #define BTA_DM_AUTH_SMP_CONFIRM_VALUE_FAIL      (BTA_DM_AUTH_FAIL_BASE + SMP_CONFIRM_VALUE_ERR)
@@ -632,6 +635,7 @@ typedef struct
 #define BTA_DM_AUTH_SMP_BUSY                    (BTA_DM_AUTH_FAIL_BASE + SMP_BUSY)
 #define BTA_DM_AUTH_SMP_ENC_FAIL                (BTA_DM_AUTH_FAIL_BASE + SMP_ENC_FAIL)
 #define BTA_DM_AUTH_SMP_RSP_TIMEOUT             (BTA_DM_AUTH_FAIL_BASE + SMP_RSP_TIMEOUT)
+#define BTA_DM_AUTH_SMP_CONN_TOUT               (BTA_DM_AUTH_FAIL_BASE + SMP_CONN_TOUT)
 
 /* connection parameter boundary value and dummy value */
 #define BTA_DM_BLE_SCAN_INT_MIN          BTM_BLE_SCAN_INT_MIN

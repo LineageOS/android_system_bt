@@ -1720,9 +1720,10 @@ void bta_av_connect_req(tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     {
         /* SNK initiated L2C connection while SRC was doing SDP.    */
         /* Wait until timeout to check if SNK starts signalling.    */
-        APPL_TRACE_EVENT("bta_av_connect_req: coll_mask = 0x%2X", p_scb->coll_mask);
+        APPL_TRACE_EVENT("%s: coll_mask = 0x%2X", __func__, p_scb->coll_mask);
         p_scb->coll_mask |= BTA_AV_COLL_API_CALLED;
-        APPL_TRACE_EVENT("bta_av_connect_req: updated coll_mask = 0x%2X", p_scb->coll_mask);
+        APPL_TRACE_EVENT("%s: updated coll_mask = 0x%2X", __func__,
+                         p_scb->coll_mask);
         return;
     }
 

@@ -519,7 +519,7 @@ void bta_gattc_open(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 
     /* open/hold a connection */
     if (!GATT_Connect(p_clcb->p_rcb->client_if, p_data->api_conn.remote_bda,
-                      TRUE, p_data->api_conn.transport))
+                      true, p_data->api_conn.transport, false))
     {
         APPL_TRACE_ERROR("Connection open failure");
 
@@ -559,7 +559,7 @@ void bta_gattc_init_bk_conn(tBTA_GATTC_API_OPEN *p_data, tBTA_GATTC_RCB *p_clreg
     if (bta_gattc_mark_bg_conn(p_data->client_if, p_data->remote_bda, TRUE, FALSE))
     {
         /* always call open to hold a connection */
-        if (!GATT_Connect(p_data->client_if, p_data->remote_bda, FALSE, p_data->transport))
+        if (!GATT_Connect(p_data->client_if, p_data->remote_bda, false, p_data->transport, false))
         {
             uint8_t *bda = (uint8_t *)p_data->remote_bda;
             status = BTA_GATT_ERROR;
@@ -717,6 +717,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             {
                 p_clcb->p_srcb->state = BTA_GATTC_SERV_LOAD;
                 if (bta_gattc_cache_load(p_clcb)) {
+                    p_clcb->p_srcb->state = BTA_GATTC_SERV_IDLE;
                     bta_gattc_reset_discover_st(p_clcb->p_srcb, BTA_GATT_OK);
                 } else {
                     p_clcb->p_srcb->state = BTA_GATTC_SERV_DISC;
