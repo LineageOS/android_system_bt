@@ -174,8 +174,6 @@ typedef struct {
   alarm_t* refresh_raddr_timer;
 } tBTM_LE_RANDOM_CB;
 
-#define BTM_BLE_MAX_BG_CONN_DEV_NUM 10
-
 typedef struct {
   uint16_t min_conn_int;
   uint16_t max_conn_int;
@@ -194,7 +192,6 @@ typedef struct {
 /* white list using state as a bit mask */
 #define BTM_BLE_WL_IDLE 0
 #define BTM_BLE_WL_INIT 1
-#define BTM_BLE_WL_ADV 4
 typedef uint8_t tBTM_BLE_WL_STATE;
 
 /* resolving list using state as a bit mask */
@@ -300,7 +297,6 @@ typedef struct {
   uint32_t scan_win;
 
   /* white list information */
-  uint8_t white_list_avail_size;
   tBTM_BLE_WL_STATE wl_state;
 
   fixed_queue_t* conn_pending_q;
@@ -320,8 +316,6 @@ typedef struct {
   uint8_t* irk_list_mask; /* IRK list availability mask, up to max entry bits */
   tBTM_BLE_RL_STATE rl_state; /* Resolving list state */
 #endif
-
-  tBTM_BLE_WL_OP wl_op_q[BTM_BLE_MAX_BG_CONN_DEV_NUM];
 
   /* current BLE link state */
   tBTM_BLE_STATE_MASK cur_states; /* bit mask of tBTM_BLE_STATE */
