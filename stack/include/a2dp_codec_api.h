@@ -453,8 +453,11 @@ typedef uint32_t (*a2dp_source_read_callback_t)(uint8_t* p_buf, uint32_t len);
 // responsible for freeing |p_buf|.
 // |frames_n| is the number of audio frames in |p_buf| - it is used for
 // statistics purpose.
+// |num_bytes| is the number of audio bytes in |p_buf| - it is used for
+// delay reporting.
 // Returns true if the packet was enqueued, otherwise false.
-typedef bool (*a2dp_source_enqueue_callback_t)(BT_HDR* p_buf, size_t frames_n);
+typedef bool (*a2dp_source_enqueue_callback_t)(BT_HDR* p_buf, size_t frames_n,
+                                               uint32_t num_bytes);
 
 //
 // A2DP encoder callbacks interface.

@@ -84,7 +84,7 @@
 #endif
 
 #ifndef AVDT_VERSION
-#define AVDT_VERSION 0x0102
+#define AVDT_VERSION 0x0103
 #endif
 
 #ifndef BTA_AG_AT_MAX_LEN
