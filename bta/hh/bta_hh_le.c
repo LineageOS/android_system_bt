@@ -2239,6 +2239,11 @@ void bta_hh_le_input_rpt_notify(tBTA_GATTC_NOTIFY *p_data)
     const tBTA_GATTC_CHARACTERISTIC *p_char = BTA_GATTC_GetCharacteristic(p_dev_cb->conn_id,
                                                                           p_data->handle);
 
+    if (p_char == NULL) {
+        APPL_TRACE_ERROR("%s: notification received for Unknown Characteristic,handle: 0x%04x",
+            __func__, p_data->handle);
+        return;
+    }
     app_id= p_dev_cb->app_id;
 
     if (p_char->uuid.uu.uuid16 == GATT_UUID_SCAN_REFRESH) {
