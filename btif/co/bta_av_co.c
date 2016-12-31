@@ -301,7 +301,7 @@ static BOOLEAN bta_av_co_audio_codec_build_config(const UINT8 *p_codec_caps, UIN
 static void bta_av_co_audio_peer_reset_config(tBTA_AV_CO_PEER *p_peer);
 static BOOLEAN bta_av_co_cp_is_scmst(const UINT8 *p_protectinfo);
 static BOOLEAN bta_av_co_audio_sink_has_scmst(const tBTA_AV_CO_SINK *p_sink);
-static BOOLEAN bta_av_co_audio_peer_supports_codec(tBTA_AV_CO_PEER *p_peer, UINT8 *p_snk_index);
+static BOOLEAN bta_av_co_audio_peer_supports_codec(tBTA_AV_CO_PEER *p_peer, UINT8 *p_snk_index, UINT8 *p_codec_type);
 static BOOLEAN bta_av_co_audio_media_supports_config(UINT8 codec_type, const UINT8 *p_codec_cfg);
 static BOOLEAN bta_av_co_audio_sink_supports_config(UINT8 codec_type, const UINT8 *p_codec_cfg);
 static BOOLEAN bta_av_co_audio_peer_src_supports_codec(tBTA_AV_CO_PEER *p_peer, UINT8 *p_src_index);
@@ -849,7 +849,7 @@ UINT8 bta_av_co_audio_getconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
         mutex_global_lock();
 
         /* Find a sink that matches the codec config */
-        if (bta_av_co_audio_peer_supports_codec(p_peer, &index))
+        if (bta_av_co_audio_peer_supports_codec(p_peer, &index, NULL))
         {
             /* stop fetching caps once we retrieved a supported codec */
             if (p_peer->acp)
@@ -1011,7 +1011,7 @@ void bta_av_co_audio_setconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
             switch (codec_type)
             {
             case BTIF_AV_CODEC_SBC:
-                if ((codec_type != BTA_AV_CODEC_SBC) || memcmp(p_codec_info, bta_av_co_cb.codec_cfg->info, 5))
+                if ((codec_type != BTA_AV_CODEC_SBC) || memcmp(p_codec_info, bta_av_co_cb.codec_cfg_sbc.info, 5))
                 {
                     recfg_needed = TRUE;
                 }
@@ -1706,14 +1706,20 @@ static BOOLEAN bta_av_co_audio_sink_supports_cp(const tBTA_AV_CO_SINK *p_sink)
  ** Returns          TRUE if the connection supports this codec, FALSE otherwise
  **
  *******************************************************************************/
-static BOOLEAN bta_av_co_audio_peer_supports_codec(tBTA_AV_CO_PEER *p_peer, UINT8 *p_snk_index)
+static BOOLEAN bta_av_co_audio_peer_supports_codec(tBTA_AV_CO_PEER *p_peer, UINT8 *p_snk_index, UINT8 *p_codec_type)
 {
     int index;
     UINT8 codec_type;
     FUNC_TRACE();
 
-    /* Configure the codec type to look for */
     codec_type = bta_av_co_cb.codec_cfg->id;
+
+    /* Configure the codec type to look for */
+    if (p_codec_type != NULL)
+    {
+        APPL_TRACE_DEBUG("%s incoming codec_type = %d", __func__, *p_codec_type);
+        APPL_TRACE_DEBUG("%s SEP codec_type = %d", __func__, codec_type);
+    }
 
 /* Check for aptX HD before aptX Classic as
  * this is order of priority, if supported return true.
@@ -1729,7 +1735,8 @@ static BOOLEAN bta_av_co_audio_peer_supports_codec(tBTA_AV_CO_PEER *p_peer, UINT
         if ((bt_split_a2dp_enabled && btif_av_is_codec_offload_supported(APTXHD)) || isA2dAptXHdEnabled) {
             for (index = 0; index < p_peer->num_sup_snks; index++)
             {
-                if (p_peer->snks[index].codec_type == A2D_NON_A2DP_MEDIA_CT)
+                if (((p_codec_type != NULL) && (p_peer->snks[index].codec_type == *p_codec_type)) ||
+                    ((p_codec_type == NULL) && (p_peer->snks[index].codec_type == A2D_NON_A2DP_MEDIA_CT)))
                 {
                     aptx_capabilities = &(p_peer->snks[index].codec_caps[0]);
                     codecId = ((tA2D_APTX_HD_CIE*)aptx_capabilities)->codecId;
@@ -1766,7 +1773,8 @@ static BOOLEAN bta_av_co_audio_peer_supports_codec(tBTA_AV_CO_PEER *p_peer, UINT
 
         for (index = 0; index < p_peer->num_sup_snks; index++)
         {
-            if (p_peer->snks[index].codec_type == A2D_NON_A2DP_MEDIA_CT)
+            if (((p_codec_type != NULL) && (p_peer->snks[index].codec_type == *p_codec_type)) ||
+                ((p_codec_type == NULL) && (p_peer->snks[index].codec_type == A2D_NON_A2DP_MEDIA_CT)))
             {
                 aptx_capabilities = &(p_peer->snks[index].codec_caps[0]);
                 codecId = ((tA2D_APTX_CIE*)aptx_capabilities)->codecId;
@@ -1808,7 +1816,8 @@ static BOOLEAN bta_av_co_audio_peer_supports_codec(tBTA_AV_CO_PEER *p_peer, UINT
         {
             APPL_TRACE_DEBUG("%s AAC: index: %d, codec_type: %d", __func__, index, p_peer->snks[index].codec_type);
 
-               if (p_peer->snks[index].codec_type == bta_av_co_cb.codec_cfg_aac.id)
+               if (((p_codec_type != NULL) && (p_peer->snks[index].codec_type == *p_codec_type)) ||
+                   ((p_codec_type == NULL) && (p_peer->snks[index].codec_type == bta_av_co_cb.codec_cfg_aac.id)))
                {
                    switch (p_peer->snks[index].codec_type)
                    {
@@ -1844,8 +1853,9 @@ static BOOLEAN bta_av_co_audio_peer_supports_codec(tBTA_AV_CO_PEER *p_peer, UINT
 
     for (index = 0; index < p_peer->num_sup_snks; index++)
     {
-        if (p_peer->snks[index].codec_type == codec_type ||
-            p_peer->snks[index].codec_type == bta_av_co_cb.codec_cfg_sbc.id)
+        if (((p_codec_type != NULL) && (p_peer->snks[index].codec_type == *p_codec_type)) ||
+            ((p_codec_type == NULL) && (p_peer->snks[index].codec_type == codec_type ||
+            p_peer->snks[index].codec_type == bta_av_co_cb.codec_cfg_sbc.id)))
         {
             switch (p_peer->snks[index].codec_type)
             {
@@ -2055,8 +2065,22 @@ BOOLEAN bta_av_co_audio_codec_supported(tBTIF_STATUS *p_status)
         p_peer = &bta_av_co_cb.peers[index];
         if (p_peer->opened)
         {
-            if (bta_av_co_audio_peer_supports_codec(p_peer, &snk_index))
+            if (bta_av_co_audio_peer_supports_codec(p_peer, &snk_index, NULL))
             {
+                APPL_TRACE_DEBUG("%s current_codec_id: %x", __func__, bta_av_co_cb.current_codec_id);
+                p_scb_codec_type = bta_av_get_codec_type();
+                APPL_TRACE_DEBUG("%s p_scb_codec_type: %x", __func__, p_scb_codec_type);
+                APPL_TRACE_DEBUG("%s current_sink_index: %x", __func__, snk_index);
+                if (bta_av_co_cb.current_codec_id != p_scb_codec_type)
+                {
+                    APPL_TRACE_WARNING("%s Mismatch found in selected codec and configured codec type", __func__);
+                    if (!bta_av_co_audio_peer_supports_codec(p_peer, &snk_index, &p_scb_codec_type))
+                    {
+                        APPL_TRACE_ERROR("bta_av_co_audio_codec_supported index %d doesn't support codec", index);
+                        return FALSE;
+                    }
+                    APPL_TRACE_WARNING("%s current_sink_index changed to: %x", __func__, snk_index);
+                }
                 p_sink = &p_peer->snks[snk_index];
 
                 /* Check that this sink is compatible with the CP */
@@ -2330,7 +2354,7 @@ UINT8 bta_av_select_codec(UINT8 hdl)
            line 2001.*/
         if (p_peer != NULL)
         {
-            bta_av_co_audio_peer_supports_codec(p_peer,&index);
+            bta_av_co_audio_peer_supports_codec(p_peer,&index, NULL);
         }
         return bta_av_co_cb.codec_cfg->id;
     }
