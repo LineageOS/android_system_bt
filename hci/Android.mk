@@ -22,6 +22,14 @@ LOCAL_SRC_FILES := \
     src/vendor.c \
     ../EventLogTags.logtags
 
+ifeq ($(BLUETOOTH_HCI_USE_RTK_H5),true)
+LOCAL_CFLAGS += -DHCI_USE_RTK_H5
+LOCAL_SRC_FILES += \
+    src/bt_list.c \
+    src/bt_skbuff.c \
+    src/hci_h5.c
+endif
+
 LOCAL_C_INCLUDES += \
     $(LOCAL_PATH)/include \
     $(LOCAL_PATH)/.. \
