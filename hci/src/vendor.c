@@ -94,7 +94,7 @@ void vendor_ssrcleanup(int reason) {
   /* This is horrible. Not all implementations have this method (from ours,
    * only 8992 appears to have it), so never try to call this on vendor
    * libraries without a "complete" interface (since this is the last one) */
-  if (lib_interface && lib_interface->size >= 
+  if (lib_interface && lib_interface->size >=
         (sizeof(bt_vendor_interface_t)))
     lib_interface->ssr_cleanup(reason);
   else
@@ -188,7 +188,11 @@ static void transmit_completed_callback(BT_HDR *response, void *context) {
 // Called back from vendor library when it wants to send an HCI command.
 static uint8_t transmit_cb(UNUSED_ATTR uint16_t opcode, void *buffer, tINT_CMD_CBACK callback) {
   assert(hci != NULL);
+#ifdef BLUETOOTH_RTK
+  hci->transmit_int_command(opcode, (BT_HDR *)buffer, callback);
+#else
   hci->transmit_command((BT_HDR *)buffer, transmit_completed_callback, NULL, callback);
+#endif
   return true;
 }
 
