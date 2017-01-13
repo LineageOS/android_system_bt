@@ -368,11 +368,10 @@
 #define BTM_SCO_HCI_INCLUDED    FALSE   /* TRUE includes SCO over HCI code */
 #endif
 
-#if (BLUETOOTH_QTI_SW == TRUE) /* Enable WBS only under this flag.*/
-#define BTM_WBS_INCLUDED            TRUE
-#else
-/* Includes WBS if TRUE */
 #ifndef BTM_WBS_INCLUDED
+#if (BLUETOOTH_QTI_SW == TRUE) /* Enable WBS by default only under this flag.*/
+#define BTM_WBS_INCLUDED        TRUE
+#else
 #define BTM_WBS_INCLUDED        FALSE   /* TRUE includes WBS code */
 #endif
 #endif
