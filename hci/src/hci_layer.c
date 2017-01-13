@@ -132,8 +132,8 @@ static const allocator_t *buffer_allocator;
 static const btsnoop_t *btsnoop;
 static const hci_hal_t *hal;
 #ifdef BLUETOOTH_RTK
-static const tHCI_IF *hci_h5;
-extern const hci_hal_t *hci_get_h5_interface();
+const tHCI_IF hci_h5_func_table;
+static const tHCI_IF *hci_h5 = &hci_h5_func_table;
 #endif
 static const hci_hal_callbacks_t hal_callbacks;
 static const hci_inject_t *hci_inject;
@@ -973,6 +973,9 @@ static waiting_command_t *get_waiting_command(command_opcode_t opcode) {
   return NULL;
 }
 
+#ifdef BLUETOOTH_RTK
+UNUSED_ATTR
+#endif
 static void update_command_response_timer(void) {
   if (list_is_empty(commands_pending_response)) {
     alarm_cancel(command_response_timer);
@@ -1022,6 +1025,10 @@ void hci_layer_cleanup_interface() {
     interface_created = false;
   }
 }
+
+#ifdef BLUETOOTH_RTK
+UNUSED_ATTR
+#endif
 static bool create_hw_reset_evt_packet(packet_receive_data_t *incoming) {
   uint8_t dev_ssr_event[3] = { 0x10, 0x01, 0x0A };
   incoming->buffer = (BT_HDR *)buffer_allocator->alloc(BT_HDR_SIZE + 3);
@@ -1064,9 +1071,6 @@ const hci_t *hci_layer_get_interface() {
   vendor = vendor_get_interface();
   low_power_manager = low_power_manager_get_interface();
 
-#ifdef BLUETOOTH_RTK
-  hci_h5 =  hci_get_h5_interface();
-#endif
   init_layer_interface();
   return &interface;
 }

@@ -26,7 +26,7 @@ typedef void (*transmit_finished_cb)(BT_HDR *packet, bool all_fragments_sent);
 typedef void (*packet_reassembled_cb)(BT_HDR *packet);
 typedef void (*packet_fragmented_cb)(BT_HDR *packet, bool send_transmit_finished);
 #ifdef BLUETOOTH_RTK
-typedef void (*filter_incoming_event_cb)(BT_HDR *packet);
+typedef bool (*filter_incoming_event_cb)(BT_HDR *packet);
 #endif
 
 typedef struct {

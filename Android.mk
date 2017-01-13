@@ -49,6 +49,12 @@ bluetooth_CFLAGS += \
   -UNDEBUG \
   -DLOG_NDEBUG=1
 
+ifeq ($(BOARD_HAVE_BLUETOOTH_RTK),true)
+bluetooth_CFLAGS += \
+  -Wno-unused-variable \
+  -Wno-unused-value
+endif
+
 ifeq ($(strip $(AUDIO_FEATURE_ENABLED_SPLIT_A2DP)),true)
 bluetooth_CFLAGS += -DBTA_AV_SPLIT_A2DP_ENABLED
 bluetooth_CFLAGS += -DBTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ

@@ -99,19 +99,19 @@ typedef void (* p_callback)(void *p_mem);
 typedef void (*tINT_CMD_CBACK)(void *p_mem);
 
 /* Initialize transport's control block */
-typedef void (*tHCI_INIT)(tINT_CMD_CBACK p_cback, const allocator_t *bufalloc);
+typedef void (*tHCI_INIT)(const void *p_cback, const allocator_t *bufalloc);
 
 /* Do transport's control block clean-up */
 typedef void (*tHCI_CLEANUP)(void);
 
 /* Send HCI command/data to the transport */
-typedef void (*tHCI_SEND)(HC_BT_HDR *p_msg);
+typedef void (*tHCI_SEND)(BT_HDR *p_msg);
 
 /* Handler for HCI upstream path */
-typedef uint16_t (*tHCI_RCV)(uint16_t *byte);
+typedef void (*tHCI_RCV)(uint8_t *byte);
 
 /* Handler for sending HCI command from the local module */
-typedef uint8_t (*tHCI_SEND_INT)(uint16_t opcode, HC_BT_HDR *p_buf, \
+typedef uint8_t (*tHCI_SEND_INT)(uint16_t opcode, BT_HDR *p_buf, \
                                   tINT_CMD_CBACK p_cback);
 
 /* Handler for getting acl data length */

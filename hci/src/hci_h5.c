@@ -12,7 +12,7 @@ Major Change History:
       When             Who       What
     ---------------------------------------------------------------
 	2015-12-15      lamparten   modified
-	
+
 Notes:
        This is designed for UART H5 HCI Interface in Android 6.0.
 *****************************************************************************/
@@ -24,10 +24,10 @@ Notes:
 #include <utils/Log.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <bt_types.h>
 #include "bt_hci_bdroid.h"
 #include "hci_layer.h"
 #include "userial.h"
-#include "gki.h"
 #include <termios.h>
 #include <errno.h>
 #include "bt_skbuff.h"
@@ -239,7 +239,7 @@ static volatile uint16_t h5_ready_events = 0;
 /* Control block for HCISU_H5 */
 typedef struct HCI_H5_CB
 {
-    HC_BT_HDR *p_rcv_msg;          /* Buffer to hold current rx HCI message */
+    BT_HDR *p_rcv_msg;              /* Buffer to hold current rx HCI message */
     uint16_t rcv_len;               /* Size of current incoming message */
     uint8_t rcv_msg_type;           /* Current incoming message type */
 //    tHCI_H4_RCV_STATE rcv_state;    /* Receive state of current rx message */
@@ -338,7 +338,6 @@ static struct patch_struct rtk_patch;
 **  Externs
 ******************************************************************************/
 
-extern BUFFER_Q tx_q;
 extern void rtk_parse_internal_event_intercept(uint8_t *p_msg);
 extern void rtk_parse_l2cap_data(uint8_t *pp, uint8_t direction);
 extern void rtk_parse_command(uint8_t *pp);
@@ -346,7 +345,7 @@ void btsnoop_init(void);
 void btsnoop_close(void);
 void btsnoop_cleanup (void);
 
-uint8_t hci_h5_send_int_cmd(uint16_t opcode, HC_BT_HDR *p_buf, \
+uint8_t hci_h5_send_int_cmd(uint16_t opcode, BT_HDR *p_buf, \
                                   tINT_CMD_CBACK p_cback);
 void lpm_wake_assert(void);
 void lpm_tx_done(uint8_t is_tx_done);
@@ -443,7 +442,7 @@ H5LogMsg(const char *fmt_str, ...)
 }
 
 /* Copy, swap, convert BD Address */
-static inline int bacmp(bdaddr_t *ba1, bdaddr_t *ba2)
+static UNUSED_ATTR inline int bacmp(bdaddr_t *ba1, bdaddr_t *ba2)
 {
     return memcmp(ba1, ba2, sizeof(bdaddr_t));
 }
@@ -838,7 +837,7 @@ static __inline uint16_t __get_unaligned_cpu16(const void *p)
 }
 
 
-static __inline uint16_t get_unaligned_be16(const void *p)
+static UNUSED_ATTR __inline uint16_t get_unaligned_be16(const void *p)
 {
     return __get_unaligned_cpu16((const uint8_t *)p);
 }
@@ -1184,7 +1183,7 @@ static void h5_remove_acked_pkt(tHCI_H5_CB *h5)
 *
 */
 
-static void hci_h5_send_pure_ack(void)
+static UNUSED_ATTR void hci_h5_send_pure_ack(void)
 {
 
     //convert h4 data to h5
@@ -1383,7 +1382,7 @@ static void rtk_notify_hw_h5_init_result(uint8_t result)
 {
 #if 0
         uint16_t len = 0;
-        HC_BT_HDR *pH5InitResultPkt = NULL;
+        BT_HDR *pH5InitResultPkt = NULL;
         uint8_t * p = NULL;
         unsigned char h5InitOk[6] = {0x0e, 0x04, 0x02, 0xEE, 0xFC, 0x00};
 
@@ -1391,7 +1390,7 @@ static void rtk_notify_hw_h5_init_result(uint8_t result)
         if (bt_hc_cbacks)
         {
             len = BT_HC_HDR_SIZE + sizeof(h5InitOk);
-            pH5InitResultPkt = (HC_BT_HDR *) bt_hc_cbacks->alloc(len);
+            pH5InitResultPkt = (BT_HDR *) bt_hc_cbacks->alloc(len);
         }
 
         if (pH5InitResultPkt)
@@ -1818,7 +1817,7 @@ uint8_t internal_event_intercept_h5(void)
             H5LogMsg("CommandCompleteEvent for command (0x%04X)", opcode);
             if (opcode == p_cb->int_cmd[p_cb->int_cmd_rd_idx].opcode)
             {
-				//ONLY HANDLE H5 INIT CMD COMMAND COMPLETE EVT 
+				//ONLY HANDLE H5 INIT CMD COMMAND COMPLETE EVT
             	h5_int_command = 1;
 				H5LogMsg("CommandCompleteEvent for command 1 (0x%04X)", opcode);
                 if(opcode == 0xFC17)
@@ -1851,19 +1850,19 @@ uint8_t internal_event_intercept_h5(void)
 			hci_layer_callbacks->filter_incoming_event(p_cb->p_rcv_msg);
     }
 #endif
-#if 0	
+#if 0
     if (event_code == HCI_COMMAND_COMPLETE_EVT)
     {
     	internal_command = 1;
         num_hci_cmd_pkts = *p++;
         STREAM_TO_UINT16(opcode, p);
 		H5LogMsg("event_code(0x%x)  opcode (0x%x) p_cb->int_cmd_rsp_pending %d", event_code,opcode,p_cb->int_cmd_rsp_pending);
-//1. Hanle  H5 INIT CMD COMMAND COMPLETE EVT 2 . Others 
+//1. Hanle  H5 INIT CMD COMMAND COMPLETE EVT 2 . Others
 		if (p_cb->int_cmd_rsp_pending > 0) {
       		H5LogMsg("CommandCompleteEvent for command (0x%04X) p_cb->int_cmd[p_cb->int_cmd_rd_idx].opcode (0x%04X)", opcode ,p_cb->int_cmd[p_cb->int_cmd_rd_idx].opcode);
       		if (opcode == p_cb->int_cmd[p_cb->int_cmd_rd_idx].opcode) {
-				//ONLY HANDLE H5 INIT CMD COMMAND COMPLETE EVT 
-				h5_int_command = 1; 
+				//ONLY HANDLE H5 INIT CMD COMMAND COMPLETE EVT
+				h5_int_command = 1;
                 if(opcode == 0xFC17)
                 {
                     //need to set a timer, add wait for retransfer packet from controller.
@@ -1938,7 +1937,7 @@ uint8_t internal_event_intercept_h5(void)
 		//Cmd comp event and status event callback
 		if(h5_int_command == 0)
 	    	hci_layer_callbacks->filter_incoming_event(p_cb->p_rcv_msg);
-    }	
+    }
 #endif
     else if (event_code == HCI_COMMAND_STATUS_EVT)
     {
@@ -2168,7 +2167,7 @@ static void hci_recv_frame(sk_buff *skb, uint8_t pkt_type)
     //we only intercept evt packet here
     if(pkt_type == HCI_EVENT_PKT)
     {
- 
+
         intercepted = internal_event_intercept_h5();
     }
 
@@ -2214,8 +2213,8 @@ uint8_t hci_rx_dispatch_by_handle(sk_buff* rx_skb)
     rx_skb_data_len = skb_get_data_length(rx_skb);
 
     //print snoop log
-    HC_BT_HDR *p_rcv_msg = NULL;          /* Buffer to hold current rx HCI message */
-	p_rcv_msg = (HC_BT_HDR *) buffer_allocator->alloc(BT_HC_HDR_SIZE + rx_skb_data_len);
+    BT_HDR *p_rcv_msg = NULL;          /* Buffer to hold current rx HCI message */
+	p_rcv_msg = (BT_HDR *) buffer_allocator->alloc(BT_HC_HDR_SIZE + rx_skb_data_len);
 	if (p_rcv_msg != NULL)
 	{
 		/* Initialize buffer with received h5 data */
@@ -2224,7 +2223,7 @@ uint8_t hci_rx_dispatch_by_handle(sk_buff* rx_skb)
 		p_rcv_msg->event = MSG_HC_TO_STACK_HCI_ACL;
 		p_rcv_msg->len = rx_skb_data_len;
 		memcpy((uint8_t *)(p_rcv_msg + 1), rx_skb_data, rx_skb_data_len);
-//use the hci_layer interface 
+//use the hci_layer interface
 		btsnoop->capture(p_rcv_msg, TRUE);
 		buffer_allocator->free(p_rcv_msg);
 	}
@@ -2416,11 +2415,11 @@ static void h5_complete_rx_pkt(tHCI_H5_CB *h5)
             sk_buff * skb_complete_pkt = h5->rx_skb;
 
             /* Allocate a buffer for message */
- 
-            len = BT_HC_HDR_SIZE + skb_get_data_length(skb_complete_pkt);
-            h5->p_rcv_msg = (HC_BT_HDR *) buffer_allocator->alloc(len);
 
-			
+            len = BT_HC_HDR_SIZE + skb_get_data_length(skb_complete_pkt);
+            h5->p_rcv_msg = (BT_HDR *) buffer_allocator->alloc(len);
+
+
             if (h5->p_rcv_msg)
             {
                 /* Initialize buffer with received h5 data */
@@ -2638,7 +2637,7 @@ void get_acl_data_length_cback_h5(void *p_mem)
 {
     uint8_t     *p, status;
     uint16_t    opcode, len=0;
-    HC_BT_HDR   *p_buf = (HC_BT_HDR *) p_mem;
+    BT_HDR   *p_buf = (BT_HDR *) p_mem;
 
     p = (uint8_t *)(p_buf + 1) + 3;
     STREAM_TO_UINT16(opcode, p)
@@ -2889,7 +2888,7 @@ void hci_h5_init(const packet_fragmenter_callbacks_t *result_callbacks,const all
 
   	hal = hci_hal_get_interface();
   	btsnoop = btsnoop_get_interface();
-	
+
 }
 
 /*******************************************************************************
@@ -2910,7 +2909,7 @@ void hci_h5_cleanup(void)
     rtk_h5.cleanuping = 1;
 
 
-	
+
     //btsnoop_cleanup();
 
     h5_free_data_retrans_timer();
@@ -2964,7 +2963,7 @@ void hci_h5_cleanup(void)
 ** Returns         None
 **
 *******************************************************************************/
-void hci_h5_send_msg(HC_BT_HDR *p_msg)
+void hci_h5_send_msg(BT_HDR *p_msg)
 {
     uint8_t type = 0;
     uint16_t handle;
@@ -2986,7 +2985,7 @@ void hci_h5_send_msg(HC_BT_HDR *p_msg)
     HCI_CONN * hci_conn = NULL;
 
     H5LogMsg("hci_h5_send_msg, 1 len =%d", p_msg->len);
-	H5LogMsg("p_msg->layer_specific 0x%04X, lay_spec:0x%04X",p_msg->layer_specific,lay_spec);
+    H5LogMsg("p_msg->layer_specific 0x%04X",p_msg->layer_specific);
 
     if (event == MSG_STACK_TO_HC_HCI_ACL)
        type = HCI_ACLDATA_PKT;
@@ -3102,7 +3101,7 @@ void hci_h5_send_msg(HC_BT_HDR *p_msg)
 
                     if (hci_layer_callbacks)
                     {
-//For Acl sent partially , enqueue the  first acl_pkt_size to h5_enqueue, callback the rest of the Acl data to upstack to resend it 
+//For Acl sent partially , enqueue the  first acl_pkt_size to h5_enqueue, callback the rest of the Acl data to upstack to resend it
         				hci_layer_callbacks->transmit_finished(p_msg, false);
 //                        bt_hc_cbacks->tx_result((TRANSAC) p_msg, \
 //                                                    (char *) (p_msg + 1), \
@@ -3178,15 +3177,15 @@ void hci_h5_send_msg(HC_BT_HDR *p_msg)
     btsnoop->capture(p_msg, FALSE);
 
 	 H5LogMsg("p_msg->layer_specific 0x%04X, lay_spec:0x%04X",p_msg->layer_specific,lay_spec);
-        if ((event == MSG_STACK_TO_HC_HCI_CMD)) {
-//For int_cm as H5 INIT cmd and Coex cmd ... just free it, while hold the other CMD 
+        if (event == MSG_STACK_TO_HC_HCI_CMD) {
+//For int_cm as H5 INIT cmd and Coex cmd ... just free it, while hold the other CMD
 			if((rtk_h5.int_cmd_rsp_pending > 0) && (p_msg->layer_specific == lay_spec)){
 			H5LogMsg("For int_cm as H5 INIT cmd and Coex cmd ... just free it lay_spec:0x%04X");
             /* dealloc buffer of internal command */
 			buffer_allocator->free(p_msg);
         	}
         }else {
-//For Acl sent complete, just free it 
+//For Acl sent complete, just free it
 			buffer_allocator->free(p_msg);
         }
 
@@ -3206,13 +3205,9 @@ void hci_h5_send_msg(HC_BT_HDR *p_msg)
 **
 *******************************************************************************/
 //change to  hal_says_data_ready
-void  hci_h5_receive_msg(uint8_t *byte)
+void hci_h5_receive_msg(uint8_t *byte)
 {
-		uint8_t     h5_byte;
-		H5LogMsg("hci_h5_receive_msg byte:%d",*byte);
-		h5_byte  = *byte;
-		H5LogMsg("hci_h5_receive_msg byte:%d",h5_byte);
-        h5_recv(&rtk_h5, &h5_byte, 1);
+    h5_recv(&rtk_h5, byte, 1);
 }
 
 
@@ -3226,7 +3221,7 @@ void  hci_h5_receive_msg(uint8_t *byte)
 ** Returns         TRUE/FALSE
 **
 *******************************************************************************/
-uint8_t hci_h5_send_int_cmd(uint16_t opcode, HC_BT_HDR *p_buf, \
+uint8_t hci_h5_send_int_cmd(uint16_t opcode, BT_HDR *p_buf, \
                                   tINT_CMD_CBACK p_cback)
 {
    // uint8_t * p =  (uint8_t *) (p_buf + 1);
@@ -3297,12 +3292,12 @@ uint8_t hci_h5_send_int_cmd(uint16_t opcode, HC_BT_HDR *p_buf, \
 void hci_h5_get_acl_data_length(void)
 {
 #if 0
-    HC_BT_HDR  *p_buf = NULL;
+    BT_HDR  *p_buf = NULL;
     uint8_t     *p, ret;
 
     if (bt_hc_cbacks)
     {
-        p_buf = (HC_BT_HDR *) bt_hc_cbacks->alloc(BT_HC_HDR_SIZE + \
+        p_buf = (BT_HDR *) bt_hc_cbacks->alloc(BT_HC_HDR_SIZE + \
                                                        HCI_CMD_PREAMBLE_SIZE);
 
 
@@ -3341,7 +3336,7 @@ void hci_h5_get_acl_data_length(void)
 static timer_t OsAllocateTimer(int signo)
 {
     struct sigevent sigev;
-    timer_t timerid = -1;
+    timer_t timerid = NULL;
 
     // Create the POSIX timer to generate signo
     sigev.sigev_notify = SIGEV_SIGNAL;
@@ -3357,7 +3352,7 @@ static timer_t OsAllocateTimer(int signo)
     else
     {
         ALOGE("timer_create error!");
-        return -1;
+        return NULL;
     }
 }
 
@@ -3689,16 +3684,10 @@ int h5_stop_hw_init_ready_timer()
 
 const tHCI_IF hci_h5_func_table =
 {
-    hci_h5_init,
+    (tHCI_INIT)hci_h5_init,
     hci_h5_cleanup,
     hci_h5_send_msg,
     hci_h5_send_int_cmd,
     hci_h5_get_acl_data_length,
     hci_h5_receive_msg
 };
-
-const hci_hal_t *hci_get_h5_interface() {  
-  return &hci_h5_func_table;
-}
-
-

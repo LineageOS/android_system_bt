@@ -32,6 +32,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <time.h>
+#include <bt_types.h>
 
 #include <hardware/bluetooth.h>
 
