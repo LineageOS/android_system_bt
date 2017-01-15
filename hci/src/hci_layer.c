@@ -164,7 +164,9 @@ static int hci_state;
 static future_t *shut_down();
 
 static void event_finish_startup(void *context);
+#ifndef BLUEDROID_ENABLE_V4L2
 static void firmware_config_callback(bool success);
+#endif
 static void startup_timer_expired(void *context);
 
 static void event_postload(void *context);
@@ -273,13 +275,17 @@ static future_t *start_up(void) {
   hal->init(&hal_callbacks, thread);
   low_power_manager->init(thread);
 
-  vendor->set_callback(VENDOR_CONFIGURE_FIRMWARE, firmware_config_callback);
   vendor->set_callback(VENDOR_CONFIGURE_SCO, sco_config_callback);
   vendor->set_callback(VENDOR_DO_EPILOG, epilog_finished_callback);
 
   if (!hci_inject->open(&interface)) {
     // TODO(sharvil): gracefully propagate failures from this layer.
   }
+
+#ifdef BLUEDROID_ENABLE_V4L2
+  LOG_DEBUG(LOG_TAG, "%s: Power control is taken care by User Interface module",  __func__ );
+#else
+  vendor->set_callback(VENDOR_CONFIGURE_FIRMWARE, firmware_config_callback);
 
   int power_state = BT_VND_PWR_OFF;
 #if (defined (BT_CLEAN_TURN_ON_DISABLED) && BT_CLEAN_TURN_ON_DISABLED == TRUE)
@@ -296,6 +302,7 @@ static future_t *start_up(void) {
 #endif
   power_state = BT_VND_PWR_ON;
   vendor->send_command(VENDOR_CHIP_POWER_CONTROL, &power_state);
+#endif
 
   LOG_DEBUG(LOG_TAG, "%s starting async portion", __func__);
   thread_post(thread, event_finish_startup, NULL);
@@ -347,9 +354,12 @@ static future_t *shut_down() {
   low_power_manager->cleanup();
   hal->close();
 
+#ifndef BLUEDROID_ENABLE_V4L2
   // Turn off the chip
   int power_state = BT_VND_PWR_OFF;
   vendor->send_command(VENDOR_CHIP_POWER_CONTROL, &power_state);
+#endif
+
   vendor->close();
 
   thread_free(thread);
@@ -444,10 +454,21 @@ static void transmit_downward(data_dispatcher_type_t type, void *data) {
 
 static void event_finish_startup(UNUSED_ATTR void *context) {
   LOG_INFO(LOG_TAG, "%s", __func__);
+#ifdef BLUEDROID_ENABLE_V4L2
+  if (hal->open() > 0) {
+    LOG_DEBUG(LOG_TAG, "%s: ****************V4L2_ENABLED*****************", __func__);
+    command_credits = 1;
+    alarm_cancel(startup_timer);
+    future_ready(startup_future, FUTURE_SUCCESS);
+    startup_future = 0;
+  }
+#else
   hal->open();
   vendor->send_async_command(VENDOR_CONFIGURE_FIRMWARE, NULL);
+#endif
 }
 
+#ifndef BLUEDROID_ENABLE_V4L2
 static void firmware_config_callback(UNUSED_ATTR bool success) {
   LOG_INFO(LOG_TAG, "%s", __func__);
 
@@ -467,6 +488,7 @@ static void firmware_config_callback(UNUSED_ATTR bool success) {
 
   pthread_mutex_unlock(&commands_pending_response_lock);
 }
+#endif
 
 static void startup_timer_expired(UNUSED_ATTR void *context) {
   LOG_ERROR(LOG_TAG, "%s", __func__);

@@ -76,6 +76,7 @@ typedef struct {
     char* soc_name;
 } soc_type_node;
 
+#ifndef BLUEDROID_ENABLE_V4L2
 static soc_type_node soc_type_entries[] = {
                            { BT_SOC_SMD , "smd" },
                            { BT_SOC_AR3K , "ath3k" },
@@ -83,6 +84,7 @@ static soc_type_node soc_type_entries[] = {
                            { BT_SOC_CHEROKEE , "cherokee" },
                            { BT_SOC_RESERVED , "" }
                                        };
+#endif
 
 static list_t *iot_header_queue = NULL;
 #define MAX_LINE 2048
@@ -1093,6 +1095,7 @@ bool remove_iot_device(const char *filename, char* header,
 *******************************************************************************/
 static void init_soc_type()
 {
+#ifndef BLUEDROID_ENABLE_V4L2
     int ret = 0;
     char bt_soc_type[PROPERTY_VALUE_MAX];
 
@@ -1112,6 +1115,9 @@ static void init_soc_type()
             }
         }
     }
+#else
+    soc_type = BT_SOC_V4L2;
+#endif
 }
 
 /*****************************************************************************
