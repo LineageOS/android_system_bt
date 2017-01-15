@@ -13,6 +13,7 @@ LOCAL_SRC_FILES := \
     src/hci_hal.c \
     src/hci_hal_h4.c \
     src/hci_hal_mct.c \
+    src/hci_hal_v4l2.c \
     src/hci_inject.c \
     src/hci_layer.c \
     src/hci_packet_factory.c \

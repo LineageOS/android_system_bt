@@ -149,6 +149,7 @@ static void btif_sendmsg(void *p_msg);
 extern fixed_queue_t *btu_hci_msg_queue;
 
 extern void bte_load_did_conf(const char *p_path);
+extern bool v4l2_enabled;
 
 /** TODO: Move these to _common.h */
 void bte_main_boot_entry(void);
@@ -594,7 +595,8 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status)
 
     bte_main_postload_cfg();
 #if (defined(HCILP_INCLUDED) && HCILP_INCLUDED == TRUE)
-    bte_main_enable_lpm(TRUE);
+    if (!v4l2_enabled)
+       bte_main_enable_lpm(TRUE);
 #endif
     /* add passing up bd address as well ? */
 
@@ -676,7 +678,8 @@ void btif_disable_bluetooth_evt(void)
         return;
     }
 #if (defined(HCILP_INCLUDED) && HCILP_INCLUDED == TRUE)
-    bte_main_enable_lpm(FALSE);
+    if (!v4l2_enabled)
+       bte_main_enable_lpm(FALSE);;
 #endif
 
      bte_main_disable();

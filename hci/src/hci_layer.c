@@ -190,6 +190,7 @@ static bool create_hw_reset_evt_packet(packet_receive_data_t *incoming);
 
 void ssr_cleanup (int reason);
 
+bool v4l2_enabled = false;
 // Module lifecycle functions
 
 static future_t *start_up(void) {
@@ -271,31 +272,35 @@ static future_t *start_up(void) {
 
   vendor->open(btif_local_bd_addr.address, &interface);
   hal->init(&hal_callbacks, thread);
-  low_power_manager->init(thread);
 
-  vendor->set_callback(VENDOR_CONFIGURE_FIRMWARE, firmware_config_callback);
   vendor->set_callback(VENDOR_CONFIGURE_SCO, sco_config_callback);
   vendor->set_callback(VENDOR_DO_EPILOG, epilog_finished_callback);
-
   if (!hci_inject->open(&interface)) {
     // TODO(sharvil): gracefully propagate failures from this layer.
   }
 
-  int power_state = BT_VND_PWR_OFF;
-#if (defined (BT_CLEAN_TURN_ON_DISABLED) && BT_CLEAN_TURN_ON_DISABLED == TRUE)
-  LOG_WARN(LOG_TAG, "%s not turning off the chip before turning on.", __func__);
-  // So apparently this hack was needed in the past because a Wingray kernel driver
-  // didn't handle power off commands in a powered off state correctly.
+  if (v4l2_enabled) {
+    LOG_DEBUG(LOG_TAG, "%s: Power control is taken care by User Interface module",  __func__ );
+  } else {
+    vendor->set_callback(VENDOR_CONFIGURE_FIRMWARE, firmware_config_callback);
+    low_power_manager->init(thread);
 
-  // The comment in the old code said the workaround should be removed when the
-  // problem was fixed. Sadly, I have no idea if said bug was fixed or if said
-  // kernel is still in use, so we must leave this here for posterity. #sadpanda
+    int power_state = BT_VND_PWR_OFF;
+#if (defined (BT_CLEAN_TURN_ON_DISABLED) && BT_CLEAN_TURN_ON_DISABLED == TRUE)
+    LOG_WARN(LOG_TAG, "%s not turning off the chip before turning on.", __func__);
+    // So apparently this hack was needed in the past because a Wingray kernel driver
+    // didn't handle power off commands in a powered off state correctly.
+
+    // The comment in the old code said the workaround should be removed when the
+    // problem was fixed. Sadly, I have no idea if said bug was fixed or if said
+    // kernel is still in use, so we must leave this here for posterity. #sadpanda
 #else
-  // cycle power on the chip to ensure it has been reset
-  vendor->send_command(VENDOR_CHIP_POWER_CONTROL, &power_state);
+    // cycle power on the chip to ensure it has been reset
+    vendor->send_command(VENDOR_CHIP_POWER_CONTROL, &power_state);
 #endif
-  power_state = BT_VND_PWR_ON;
-  vendor->send_command(VENDOR_CHIP_POWER_CONTROL, &power_state);
+    power_state = BT_VND_PWR_ON;
+    vendor->send_command(VENDOR_CHIP_POWER_CONTROL, &power_state);
+  }
 
   LOG_DEBUG(LOG_TAG, "%s starting async portion", __func__);
   thread_post(thread, event_finish_startup, NULL);
@@ -343,13 +348,15 @@ static future_t *shut_down() {
   command_response_timer = NULL;
   alarm_free(startup_timer);
   startup_timer = NULL;
-
-  low_power_manager->cleanup();
   hal->close();
 
-  // Turn off the chip
-  int power_state = BT_VND_PWR_OFF;
-  vendor->send_command(VENDOR_CHIP_POWER_CONTROL, &power_state);
+  if (!v4l2_enabled) {
+    low_power_manager->cleanup();
+    // Turn off the chip
+    int power_state = BT_VND_PWR_OFF;
+    vendor->send_command(VENDOR_CHIP_POWER_CONTROL, &power_state);
+  }
+
   vendor->close();
 
   thread_free(thread);
@@ -444,8 +451,18 @@ static void transmit_downward(data_dispatcher_type_t type, void *data) {
 
 static void event_finish_startup(UNUSED_ATTR void *context) {
   LOG_INFO(LOG_TAG, "%s", __func__);
-  hal->open();
-  vendor->send_async_command(VENDOR_CONFIGURE_FIRMWARE, NULL);
+  if ( v4l2_enabled ) {
+    if (hal->open() > 0) {
+       LOG_DEBUG(LOG_TAG, "%s: ****************V4L2_ENABLED*****************", __func__);
+       command_credits = 1;
+       alarm_cancel(startup_timer);
+       future_ready(startup_future, FUTURE_SUCCESS);
+       startup_future = 0;
+    }
+  } else {
+    hal->open();
+    vendor->send_async_command(VENDOR_CONFIGURE_FIRMWARE, NULL);
+  }
 }
 
 static void firmware_config_callback(UNUSED_ATTR bool success) {
@@ -536,8 +553,12 @@ static void event_command_ready(fixed_queue_t *queue, UNUSED_ATTR void *context)
     pthread_mutex_unlock(&commands_pending_response_lock);
 
     // Send it off
+  if (!v4l2_enabled)
     low_power_manager->wake_assert();
+
     packet_fragmenter->fragment_and_dispatch(wait_entry->command);
+
+  if (!v4l2_enabled)
     low_power_manager->transmit_done();
 
     update_command_response_timer();
@@ -552,9 +573,13 @@ static void event_packet_ready(fixed_queue_t *queue, UNUSED_ATTR void *context) 
   // The queue may be the command queue or the packet queue, we don't care
   BT_HDR *packet = (BT_HDR *)fixed_queue_dequeue(queue);
 
-  low_power_manager->wake_assert();
+  if (!v4l2_enabled)
+    low_power_manager->wake_assert();
+
   packet_fragmenter->fragment_and_dispatch(packet);
-  low_power_manager->transmit_done();
+
+  if (!v4l2_enabled)
+    low_power_manager->transmit_done();
 }
 
 // Callback for the fragmenter to send a fragment
@@ -942,9 +967,11 @@ static void update_command_response_timer(void) {
 
 static void init_layer_interface() {
   if (!interface_created) {
-    interface.send_low_power_command = low_power_manager->post_command;
-    interface.do_postload = do_postload;
 
+    if (!v4l2_enabled)
+      interface.send_low_power_command = low_power_manager->post_command;
+
+    interface.do_postload = do_postload;
     // It's probably ok for this to live forever. It's small and
     // there's only one instance of the hci interface.
     interface.event_dispatcher = data_dispatcher_new("hci_layer");
@@ -1006,15 +1033,27 @@ static const packet_fragmenter_callbacks_t packet_fragmenter_callbacks = {
 };
 
 const hci_t *hci_layer_get_interface() {
+  if (access("/sys/devices/platform/bcm_ldisc/install", R_OK))
+  {
+    LOG_DEBUG(LOG_TAG, "V4L2 modules unavailable. Falling back to legacy BT");
+    v4l2_enabled = false;
+  }
+  else
+  {
+    v4l2_enabled = true;
+  }
+
   buffer_allocator = buffer_allocator_get_interface();
   hal = hci_hal_get_interface();
   btsnoop = btsnoop_get_interface();
   hci_inject = hci_inject_get_interface();
   packet_fragmenter = packet_fragmenter_get_interface();
   vendor = vendor_get_interface();
-  low_power_manager = low_power_manager_get_interface();
+  if (!v4l2_enabled)
+    low_power_manager = low_power_manager_get_interface();
 
   init_layer_interface();
+
   return &interface;
 }
 
@@ -1033,7 +1072,8 @@ const hci_t *hci_layer_get_test_interface(
   hci_inject = hci_inject_interface;
   packet_fragmenter = packet_fragmenter_interface;
   vendor = vendor_interface;
-  low_power_manager = low_power_manager_interface;
+  if (!v4l2_enabled)
+    low_power_manager = low_power_manager_interface;
 
   init_layer_interface();
   return &interface;

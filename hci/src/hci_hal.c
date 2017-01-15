@@ -30,12 +30,15 @@ bt_soc_type soc_type;
 
 const hci_hal_t *hci_hal_get_interface() {
     soc_type = get_soc_type();
-
-    if (soc_type == BT_SOC_ROME || soc_type == BT_SOC_CHEROKEE
+    if (!v4l2_enabled) {
+        if (soc_type == BT_SOC_ROME || soc_type == BT_SOC_CHEROKEE
             || soc_type == BT_SOC_AR3K || soc_type == BT_SOC_DEFAULT) {
-        return hci_hal_h4_get_interface();
+            return hci_hal_h4_get_interface();
+        } else {
+            return hci_hal_mct_get_interface();
+        }
     } else {
-        return hci_hal_mct_get_interface();
+        return hci_hal_v4l2_get_interface();
     }
 }
 
