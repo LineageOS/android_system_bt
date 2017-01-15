@@ -102,6 +102,8 @@ extern fixed_queue_t *btif_msg_queue;
 
 extern thread_t *bt_workqueue_thread;
 
+extern bool v4l2_enabled;
+
 static void btu_hci_msg_process(BT_HDR *p_msg);
 
 void btu_hci_msg_ready(fixed_queue_t *queue, UNUSED_ATTR void *context) {
@@ -231,7 +233,7 @@ void btu_task_shut_down(UNUSED_ATTR void *context) {
 void btu_check_bt_sleep (void)
 {
     // TODO(zachoverflow) take pending commands into account?
-    if (l2cb.controller_xmit_window == l2cb.num_lm_acl_bufs)
+    if (l2cb.controller_xmit_window == l2cb.num_lm_acl_bufs && !v4l2_enabled)
     {
         bte_main_lpm_allow_bt_device_sleep();
     }
