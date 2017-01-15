@@ -23,6 +23,10 @@ ifeq ($(TARGET_BUILD_VARIANT),eng)
 bluetooth_CFLAGS += -DBLUEDROID_DEBUG
 endif
 
+ifeq ($(BOARD_HAVE_BCM_FM), true)
+bluetooth_CFLAGS += -DBLUEDROID_ENABLE_V4L2
+endif
+
 bluetooth_CFLAGS += -DUSE_AUDIO_TRACK
 
 bluetooth_CFLAGS += -DEXPORT_SYMBOL="__attribute__((visibility(\"default\")))"
