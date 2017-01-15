@@ -88,3 +88,6 @@ const hci_hal_t *hci_hal_h4_get_test_interface(vendor_t *vendor_interface);
 
 const hci_hal_t *hci_hal_mct_get_interface(void);
 const hci_hal_t *hci_hal_mct_get_test_interface(vendor_t *vendor_interface);
+
+const hci_hal_t *hci_hal_v4l2_get_interface(void);
+const hci_hal_t *hci_hal_v4l2_get_test_interface(vendor_t *vendor_interface);
