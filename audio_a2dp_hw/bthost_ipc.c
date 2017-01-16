@@ -713,7 +713,8 @@ int a2dp_read_codec_config(struct a2dp_stream_common *common,uint8_t idx)
         ERROR("%s: Failed to get ack",__func__);
         return -1;
     }
-    if (a2dp_ctrl_receive(common, &len, 1) < 0)
+    if ((a2dp_ctrl_receive(common, &len, 1) < 0) ||
+        (len <= 0) || (len > MAX_CODEC_CFG_SIZE))
         return -1;
     if (a2dp_ctrl_receive(common, p_codec_cfg, len) < 0)
         return -1;
