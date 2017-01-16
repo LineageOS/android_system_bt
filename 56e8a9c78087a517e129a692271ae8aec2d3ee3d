@@ -94,6 +94,30 @@
     },
     {
       "key": {
+        "uuid": "ba3e81b7_4a5ab784",
+        "filename": "hci/src/hci_hal_v4l2.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1187
+      },
+      "writtenOn": "2017-01-16T20:35:45Z",
+      "side": 1,
+      "message": "Origin Not exist. It\u0027s partially from  hci_hal_h4.c",
+      "parentUuid": "ba3e81b7_aaeec3b2",
+      "range": {
+        "startLine": 3,
+        "startChar": 0,
+        "endLine": 5,
+        "endChar": 65
+      },
+      "revId": "56e8a9c78087a517e129a692271ae8aec2d3ee3d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ba3e81b7_4a0cf794",
         "filename": "hci/src/hci_layer.c",
         "patchSetId": 5
@@ -117,6 +141,30 @@
     },
     {
       "key": {
+        "uuid": "ba3e81b7_ea504b60",
+        "filename": "hci/src/hci_layer.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 290,
+      "author": {
+        "id": 1187
+      },
+      "writtenOn": "2017-01-16T20:35:45Z",
+      "side": 1,
+      "message": "With v4l2, kernel directly control power management of bluetooth and fm.",
+      "parentUuid": "ba3e81b7_4a0cf794",
+      "range": {
+        "startLine": 290,
+        "startChar": 52,
+        "endLine": 290,
+        "endChar": 76
+      },
+      "revId": "56e8a9c78087a517e129a692271ae8aec2d3ee3d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ba3e81b7_0a26ef16",
         "filename": "hci/src/hci_layer.c",
         "patchSetId": 5
@@ -128,6 +176,30 @@
       "writtenOn": "2017-01-16T20:29:47Z",
       "side": 1,
       "message": "Same here, it might end up cleaner if you provided your own implementation of low_power_manager instead of littering \u0027if (v4l2_enabled)\u0027 all over the code.",
+      "range": {
+        "startLine": 291,
+        "startChar": 4,
+        "endLine": 291,
+        "endChar": 21
+      },
+      "revId": "56e8a9c78087a517e129a692271ae8aec2d3ee3d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba3e81b7_4ad197cc",
+        "filename": "hci/src/hci_layer.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1187
+      },
+      "writtenOn": "2017-01-16T20:35:45Z",
+      "side": 1,
+      "message": "This way how Broadcom do in new closed bt hal. I just reversed it as is.",
+      "parentUuid": "ba3e81b7_0a26ef16",
       "range": {
         "startLine": 291,
         "startChar": 4,
