@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ba3e81b7_2a03f374",
+        "filename": "btif/src/btif_core.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 597,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2017-01-16T20:29:47Z",
+      "side": 1,
+      "message": "Both of these conditions are expected to be true here?",
+      "range": {
+        "startLine": 597,
+        "startChar": 0,
+        "endLine": 597,
+        "endChar": 55
+      },
+      "revId": "56e8a9c78087a517e129a692271ae8aec2d3ee3d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba3e81b7_8a041f7f",
+        "filename": "btif/src/btif_core.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 682,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2017-01-16T20:29:47Z",
+      "side": 1,
+      "message": "Extra semicolon",
+      "range": {
+        "startLine": 682,
+        "startChar": 34,
+        "endLine": 682,
+        "endChar": 35
+      },
+      "revId": "56e8a9c78087a517e129a692271ae8aec2d3ee3d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba3e81b7_eaf4cb88",
+        "filename": "hci/src/hci_hal.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2017-01-16T20:29:47Z",
+      "side": 1,
+      "message": "Can we switch the check so if (v4l2_enabled) will get you hci_hal_v4l2_get_interface?",
+      "range": {
+        "startLine": 33,
+        "startChar": 4,
+        "endLine": 33,
+        "endChar": 24
+      },
+      "revId": "56e8a9c78087a517e129a692271ae8aec2d3ee3d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba3e81b7_aaeec3b2",
+        "filename": "hci/src/hci_hal_v4l2.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2017-01-16T20:29:47Z",
+      "side": 1,
+      "message": "What\u0027s the origin of this code?",
+      "range": {
+        "startLine": 3,
+        "startChar": 0,
+        "endLine": 5,
+        "endChar": 65
+      },
+      "revId": "56e8a9c78087a517e129a692271ae8aec2d3ee3d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba3e81b7_4a0cf794",
+        "filename": "hci/src/hci_layer.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 290,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2017-01-16T20:29:47Z",
+      "side": 1,
+      "message": "I think it might be cleaner if you hooked this function, or provided your own implementation?",
+      "range": {
+        "startLine": 290,
+        "startChar": 52,
+        "endLine": 290,
+        "endChar": 76
+      },
+      "revId": "56e8a9c78087a517e129a692271ae8aec2d3ee3d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba3e81b7_0a26ef16",
+        "filename": "hci/src/hci_layer.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2017-01-16T20:29:47Z",
+      "side": 1,
+      "message": "Same here, it might end up cleaner if you provided your own implementation of low_power_manager instead of littering \u0027if (v4l2_enabled)\u0027 all over the code.",
+      "range": {
+        "startLine": 291,
+        "startChar": 4,
+        "endLine": 291,
+        "endChar": 21
+      },
+      "revId": "56e8a9c78087a517e129a692271ae8aec2d3ee3d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba3e81b7_6a17bba4",
+        "filename": "hci/src/hci_layer.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 459,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2017-01-16T20:29:47Z",
+      "side": 1,
+      "message": "What\u0027s with the extra spacing here?",
+      "range": {
+        "startLine": 459,
+        "startChar": 6,
+        "endLine": 459,
+        "endChar": 7
+      },
+      "revId": "56e8a9c78087a517e129a692271ae8aec2d3ee3d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
