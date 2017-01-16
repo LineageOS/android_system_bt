@@ -212,6 +212,30 @@
     },
     {
       "key": {
+        "uuid": "ba3e81b7_eaaccb37",
+        "filename": "hci/src/hci_layer.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2017-01-16T20:37:50Z",
+      "side": 1,
+      "message": "It would be easier to separate the codepath. We don\u0027t have to do the same (poor) flow control Broadcom did.",
+      "parentUuid": "ba3e81b7_4ad197cc",
+      "range": {
+        "startLine": 291,
+        "startChar": 4,
+        "endLine": 291,
+        "endChar": 21
+      },
+      "revId": "56e8a9c78087a517e129a692271ae8aec2d3ee3d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ba3e81b7_6a17bba4",
         "filename": "hci/src/hci_layer.c",
         "patchSetId": 5
