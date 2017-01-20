@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9a437d4f_d2c66249",
+        "filename": "hci/src/hci_layer.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2017-01-20T05:36:32Z",
+      "side": 1,
+      "message": "Can no-oping this be handled by the vendor module instead of here?",
+      "range": {
+        "startLine": 288,
+        "startChar": 10,
+        "endLine": 288,
+        "endChar": 22
+      },
+      "revId": "c7129ac5315fd27f2bc3f4490c2b090fd463facd",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
