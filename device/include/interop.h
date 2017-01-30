@@ -105,6 +105,11 @@ typedef enum {
   // Few remote devices do not understand AVRCP version greater than 1.3. For these
   // devices, we would like to blacklist them and advertise AVRCP version as 1.3
   INTEROP_ADV_AVRCP_VER_1_3,
+
+  // Disable profile connection for headsets/car-kits
+  // Some car kits going bad state when DUT initiate profile connection in collision scenerio
+  // Hence don't initaite profile level connections and wait for incoming connetcion
+  INTEROP_DISABLE_CONNECTION_AFTER_COLLISION,
 } interop_feature_t;
 
 // Check if a given |addr| matches a known interoperability workaround as identified
