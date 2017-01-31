@@ -14,11 +14,15 @@ cc_defaults {
 // Source variables
 // ========================================================
 btserviceDaemonSrc = [
+    "a2dp_sink.cc",
     "adapter.cc",
+    "avrcp_control.cc",
     "daemon.cc",
     "gatt_client.cc",
     "gatt_server.cc",
     "gatt_server_old.cc",
+    "hal/bluetooth_av_interface.cc",
+    "hal/bluetooth_avrcp_interface.cc",
     "hal/bluetooth_gatt_interface.cc",
     "hal/bluetooth_interface.cc",
     "ipc/ipc_handler.cc",
@@ -36,6 +40,8 @@ btserviceLinuxSrc = [
 ]
 
 btserviceBinderDaemonSrc = [
+    "ipc/binder/bluetooth_a2dp_sink_binder_server.cc",
+    "ipc/binder/bluetooth_avrcp_control_binder_server.cc",
     "ipc/binder/bluetooth_binder_server.cc",
     "ipc/binder/bluetooth_gatt_client_binder_server.cc",
     "ipc/binder/bluetooth_gatt_server_binder_server.cc",
@@ -49,8 +55,10 @@ btserviceBinderDaemonSrc = [
 // Main unit test sources. These get built for host and target.
 // ========================================================
 btserviceBaseTestSrc = [
+    "hal/fake_bluetooth_av_interface.cc",
     "hal/fake_bluetooth_gatt_interface.cc",
     "hal/fake_bluetooth_interface.cc",
+    "test/a2dp_sink_unittest.cc",
     "test/adapter_unittest.cc",
     "test/advertise_data_unittest.cc",
     "test/fake_hal_util.cc",
@@ -109,6 +117,7 @@ cc_test {
         "libgmock",
         "liblog",
         "libbluetooth-types",
+        "libutils",
     ],
     host_supported: true,
     target: {
@@ -124,7 +133,6 @@ cc_test {
             ],
             shared_libs: [
                 "libbinder",
-                "libutils",
             ],
         },
         host: {
