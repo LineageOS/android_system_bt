@@ -673,6 +673,9 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
                 if (min_interval < BTM_BLE_CONN_INT_MIN_LIMIT)
                     min_interval = BTM_BLE_CONN_INT_MIN_LIMIT;
 
+                if (max_interval < BTM_BLE_CONN_INT_MIN_LIMIT)
+                    max_interval = BTM_BLE_CONN_INT_MIN_LIMIT;
+
                 if (min_interval < BTM_BLE_CONN_INT_MIN || min_interval > BTM_BLE_CONN_INT_MAX ||
                     max_interval < BTM_BLE_CONN_INT_MIN || max_interval > BTM_BLE_CONN_INT_MAX ||
                     latency  > BTM_BLE_CONN_LATENCY_MAX ||
