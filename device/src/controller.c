@@ -184,8 +184,10 @@ static future_t *start_up(void) {
     page_number++;
   }
 
+  ble_offload_features_supported = false;
+
   // read BLE offload features support from controller
-  response = AWAIT_COMMAND(packet_factory->make_ble_read_offload_features_support());
+  /*response = AWAIT_COMMAND(packet_factory->make_ble_read_offload_features_support());
   packet_parser->parse_ble_read_offload_features_response(response, &ble_offload_features_supported);
 
 #if (SC_MODE_INCLUDED == TRUE)
@@ -196,7 +198,7 @@ static future_t *start_up(void) {
       packet_parser->parse_generic_command_complete(response);
     }
   }
-#endif
+#endif*/
 
 #if (BLE_INCLUDED == TRUE)
   ble_supported = last_features_classic_page_index >= 1 && HCI_LE_HOST_SUPPORTED(features_classic[1].as_array);
