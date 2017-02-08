@@ -125,6 +125,8 @@ static const interop_addr_entry_t interop_addr_database[] = {
 
   // Mazda Atenza
   {{{0x04, 0xf8, 0xc2,      0,0,0}}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
+  // HONDA HFT
+  {{{0xA0, 0x14, 0x3D,      0,0,0}}, 3, INTEROP_DISABLE_CONNECTION_AFTER_COLLISION},
 };
 
 typedef struct {
