@@ -19,6 +19,7 @@
 #ifndef BT_VENDOR_LIB_H
 #define BT_VENDOR_LIB_H
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <sys/cdefs.h>
 #include <sys/types.h>
@@ -240,6 +241,7 @@ typedef struct {
   uint16_t handle;
   uint16_t peer_codec;
   uint16_t state;
+  bool use_enhanced_sco;
 } bt_vendor_op_audio_state_t;
 
 /*
