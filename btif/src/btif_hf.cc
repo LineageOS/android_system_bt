@@ -67,21 +67,12 @@
 #define BTIF_HF_SECURITY (BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)
 #endif
 
-#if (BTM_WBS_INCLUDED == TRUE)
 #ifndef BTIF_HF_FEATURES
 #define BTIF_HF_FEATURES                                       \
   (BTA_AG_FEAT_3WAY | BTA_AG_FEAT_ECNR | BTA_AG_FEAT_REJECT |  \
    BTA_AG_FEAT_ECS | BTA_AG_FEAT_EXTERR | BTA_AG_FEAT_VREC |   \
    BTA_AG_FEAT_CODEC | BTA_AG_FEAT_HF_IND | BTA_AG_FEAT_ESCO | \
    BTA_AG_FEAT_UNAT)
-#endif
-#else
-#ifndef BTIF_HF_FEATURES
-#define BTIF_HF_FEATURES                                      \
-  (BTA_AG_FEAT_3WAY | BTA_AG_FEAT_ECNR | BTA_AG_FEAT_REJECT | \
-   BTA_AG_FEAT_ECS | BTA_AG_FEAT_EXTERR | BTA_AG_FEAT_VREC | \
-   BTA_AG_FEAT_HF_IND | BTA_AG_FEAT_ESCO | BTA_AG_FEAT_UNAT)
-#endif
 #endif
 
 /* HF features supported at runtime */
@@ -508,7 +499,6 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
                 &btif_hf_cb[idx].connected_bda);
       break;
 
-#if (BTM_WBS_INCLUDED == TRUE)
     case BTA_AG_WBS_EVT:
       BTIF_TRACE_DEBUG(
           "BTA_AG_WBS_EVT Set codec status %d codec %d 1=CVSD 2=MSBC",
@@ -524,7 +514,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
                   &btif_hf_cb[idx].connected_bda);
       }
       break;
-#endif
+
     /* Java needs to send OK/ERROR for these commands */
     case BTA_AG_AT_CHLD_EVT:
       HAL_CBACK(bt_hf_callbacks, chld_cmd_cb,
@@ -557,7 +547,6 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
       break;
     case BTA_AG_AT_BAC_EVT:
       BTIF_TRACE_DEBUG("AG Bitmap of peer-codecs %d", p_data->val.num);
-#if (BTM_WBS_INCLUDED == TRUE)
       /* If the peer supports mSBC and the BTIF prefferred codec is also mSBC,
       then
       we should set the BTA AG Codec to mSBC. This would trigger a +BCS to mSBC
@@ -573,7 +562,6 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
                          __func__);
         BTA_AgSetCodec(btif_hf_cb[idx].handle, BTA_AG_CODEC_CVSD);
       }
-#endif
       break;
     case BTA_AG_AT_BCS_EVT:
       BTIF_TRACE_DEBUG("AG final seleded codec is %d 1=CVSD 2=MSBC",
