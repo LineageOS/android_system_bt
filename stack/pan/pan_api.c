@@ -407,6 +407,7 @@ tPAN_RESULT PAN_Connect (BD_ADDR rem_bda, UINT8 src_role, UINT8 dst_role, UINT16
     result = BNEP_Connect (rem_bda, &src_uuid, &dst_uuid, &(pcb->handle));
     if (result != BNEP_SUCCESS)
     {
+        pan_cb.num_conns--;
         pan_release_pcb (pcb);
         return result;
     }
