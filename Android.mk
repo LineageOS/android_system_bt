@@ -23,10 +23,6 @@ endif
 
 bluetooth_CFLAGS += -DUSE_AUDIO_TRACK
 
-ifeq ($(BOARD_USES_WIPOWER),true)
-bluetooth_CFLAGS += -DWIPOWER_SUPPORTED
-endif
-
 bluetooth_CFLAGS += -DEXPORT_SYMBOL="__attribute__((visibility(\"default\")))"
 
 #

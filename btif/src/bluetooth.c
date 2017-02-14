@@ -45,9 +45,6 @@
 #include <hardware/bt_sdp.h>
 #include <hardware/bt_sock.h>
 #include <hardware/vendor.h>
-#ifdef WIPOWER_SUPPORTED
-#include <hardware/wipower.h>
-#endif
 
 #include "bt_utils.h"
 #include "btif_api.h"
@@ -118,9 +115,6 @@ extern btgatt_interface_t *btif_gatt_get_interface();
 /* avrc target */
 extern btrc_interface_t *btif_rc_get_interface();
 /* avrc controller */
-#ifdef WIPOWER_SUPPORTED
-extern wipower_interface_t *get_wipower_interface();
-#endif
 extern btrc_interface_t *btif_rc_ctrl_get_interface();
 /*SDP search client*/
 extern btsdp_interface_t *btif_sdp_get_interface();
@@ -462,11 +456,6 @@ static const void* get_profile_interface (const char *profile_id)
 
     if (is_profile(profile_id, BT_PROFILE_AV_RC_ID))
         return btif_rc_get_interface();
-
-#ifdef WIPOWER_SUPPORTED
-    if (is_profile(profile_id, BT_PROFILE_WIPOWER_VENDOR_ID))
-        return get_wipower_interface();
-#endif
 
     if (is_profile(profile_id, BT_PROFILE_AV_RC_CTRL_ID))
         return btif_rc_ctrl_get_interface();
