@@ -157,10 +157,6 @@ static const interop_name_entry_t interop_name_database[] = {
   // HID Authentication Blacklist
   {"Targus BT Laser Notebook Mouse", 30, INTEROP_DISABLE_AUTH_FOR_HID_POINTING},
 
-  //Below devices reject connection updated with preferred
-  {"BSMBB09DS", 9, INTEROP_DISABLE_LE_CONN_PREFERRED_PARAMS},
-  {"ELECOM", 6, INTEROP_DISABLE_LE_CONN_PREFERRED_PARAMS},
-
   // HID Moto KZ500 Keyboard - Problematic SDP digitizer descriptor
   {"Motorola Keyboard KZ500", 23, INTEROP_REMOVE_HID_DIG_DESCRIPTOR},
   {"Motorola Keyboard KZ500 v122", 28, INTEROP_REMOVE_HID_DIG_DESCRIPTOR},
