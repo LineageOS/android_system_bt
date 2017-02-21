@@ -856,9 +856,9 @@ static bool filter_incoming_event(BT_HDR *packet) {
     // If a command generates a command status event, it won't be getting a command complete event
 
     wait_entry = get_waiting_command(opcode);
-    if (!wait_entry) {
+    if (!wait_entry)
       LOG_WARN(LOG_TAG, "%s command status event with no matching command. opcode: 0x%x", __func__, opcode);
-    } else if (wait_entry->status_callback)
+    else if (wait_entry->status_callback)
       wait_entry->status_callback(status, wait_entry->command, wait_entry->context);
 
     goto intercepted;

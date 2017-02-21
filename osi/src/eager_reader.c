@@ -259,9 +259,9 @@ static void inbound_data_waiting(void *context) {
     // the semaphore by the number of bytes we just read
     eventfd_write(reader->bytes_available_fd, bytes_read);
   } else {
-    if (bytes_read == 0){
+    if (bytes_read == 0)
       LOG_WARN(LOG_TAG, "%s fd said bytes existed, but none were found.", __func__);
-    } else
+    else
       LOG_WARN(LOG_TAG, "%s unable to read from file descriptor: %s", __func__, strerror(errno));
 
     reader->allocator->free(buffer);

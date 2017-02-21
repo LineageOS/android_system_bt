@@ -25,7 +25,6 @@
 #include <stdarg.h>
 #include <sys/time.h>
 #include <time.h>
-#include <dlfcn.h>
 
 #include "avrc_api.h"
 #include "bta_api.h"
@@ -66,10 +65,6 @@
 #ifndef BTE_LOG_BUF_SIZE
 #define BTE_LOG_BUF_SIZE  1024
 #endif
-
-#define VND_PKT_SIZE_BLOCKS 4
-#define VND_PKT_HEADER_SIZE 5 //(VND_PKT_SIZE_BLOCKS + 1)
-#define VND_PKT_BODY_SIZE 1021
 
 #define BTE_LOG_MAX_SIZE  (BTE_LOG_BUF_SIZE - 12)
 
@@ -201,21 +196,6 @@ void LogMsg(uint32_t trace_set_mask, const char *fmt_str, ...) {
       LOG_ERROR(bt_layer_tags[trace_layer], "%s", buffer);      /* we should never get this */
       break;
   }
-}
-
-void vnd_LogMsg(uint32_t trace_set_mask, const char *fmt_str, ...) {
-  int trace_layer = TRACE_GET_LAYER(trace_set_mask);
-  const char *tag;
-  if (trace_layer >= TRACE_LAYER_MAX_NUM)
-    trace_layer = 0;
-
-  tag = bt_layer_tags[trace_layer];
-
-  va_list ap;
-  va_start(ap, fmt_str);
-  if(logger_interface)
-    logger_interface->send_log_msg(tag, fmt_str, ap);
-  va_end(ap);
 }
 
 /* this function should go into BTAPP_DM for example */

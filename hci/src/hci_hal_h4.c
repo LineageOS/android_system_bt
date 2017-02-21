@@ -159,11 +159,10 @@ static size_t read_data(serial_data_type_t type, uint8_t *buffer, size_t max_siz
 }
 
 static void packet_finished(serial_data_type_t type) {
-  if (!stream_has_interpretation) {
+  if (!stream_has_interpretation)
     LOG_ERROR(LOG_TAG, "%s with no existing stream interpretation.", __func__);
-  } else if (current_data_type != type) {
+  else if (current_data_type != type)
     LOG_ERROR(LOG_TAG, "%s with different type than existing interpretation.", __func__);
-  }
 
 #if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
   if (uart_stream->rd_ptr == uart_stream->wr_ptr) {

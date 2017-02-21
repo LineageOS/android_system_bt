@@ -44,8 +44,6 @@ extern "C" {
 #include "osi/include/osi.h"
 }  // extern "C"
 
-bt_logger_interface_t *logger_interface = NULL;
-
 namespace {
 
 const size_t kMaxGattAttributeSize = 512;
