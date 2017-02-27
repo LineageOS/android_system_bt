@@ -1278,6 +1278,23 @@ static void btif_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
     // Skip SDP for certain  HID Devices
     if (p_auth_cmpl->success)
     {
+        // We could have received a new link key without going through the pairing flow.
+        // If so, we don't want to perform SDP or any other operations on the authenticated
+        // device. Also, make sure that the link key is not derived from secure LTK, because
+        // we will need to perform SDP in case of link key derivation to allow bond state change
+        // notification for the BR/EDR transport so that the subsequent BR/EDR connections
+        // to the remote can use the derived link key.
+        if ((bdcmp(p_auth_cmpl->bd_addr, pairing_cb.bd_addr) != 0) &&
+              (!pairing_cb.ble.is_penc_key_rcvd)) {
+            char address[32];
+            bt_bdaddr_t bt_bdaddr;
+
+            memcpy(bt_bdaddr.address, p_auth_cmpl->bd_addr,
+                  sizeof(bt_bdaddr.address));
+            bdaddr_to_string(&bt_bdaddr, address, sizeof(address));
+            LOG_INFO(LOG_TAG, "%s skipping SDP since we did not initiate pairing to %s.", __func__, address);
+            return;
+        }
 #if BLE_INCLUDED == TRUE
         btif_storage_set_remote_addr_type(&bd_addr, p_auth_cmpl->addr_type);
 #endif
