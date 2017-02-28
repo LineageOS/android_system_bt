@@ -367,6 +367,11 @@ typedef UINT8   tBTM_BLE_AD_TYPE;
 #define BTM_BLE_ADV_TX_POWER_MAX        4           /* maximum tx power */
 typedef UINT8 tBTM_BLE_ADV_TX_POWER;
 
+/* Subevent code for LE Connection Complete event */
+#if (BLE_PRIVACY_SPT == TRUE )
+#define BTM_BLE_ENHC_CONN_SUB_CODE 0x0A
+#endif
+
 /* adv tx power in dBm */
 typedef struct
 {
