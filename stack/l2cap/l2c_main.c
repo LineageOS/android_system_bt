@@ -28,6 +28,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <log/log.h>
+
 #include "bt_target.h"
 #include "btm_int.h"
 #include "btu.h"
@@ -132,6 +134,14 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
     STREAM_TO_UINT16 (hci_len, p);
     p_msg->offset += 4;
 
+    if (hci_len < L2CAP_PKT_OVERHEAD) {
+        /* Must receive at least the L2CAP length and CID */
+        L2CAP_TRACE_WARNING ("L2CAP - got incorrect hci header");
+        android_errorWriteLog(0x534e4554, "34946955");
+        osi_free(p_msg);
+        return;
+    }
+
     /* Extract the length and CID */
     STREAM_TO_UINT16 (l2cap_len, p);
     STREAM_TO_UINT16 (rcv_cid, p);
@@ -154,17 +164,8 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
         }
     }
 
-    if (hci_len >= L2CAP_PKT_OVERHEAD)  /* Must receive at least the L2CAP length and CID.*/
-    {
-        p_msg->len    = hci_len - L2CAP_PKT_OVERHEAD;
-        p_msg->offset += L2CAP_PKT_OVERHEAD;
-    }
-    else
-    {
-        L2CAP_TRACE_WARNING ("L2CAP - got incorrect hci header" );
-        osi_free(p_msg);
-        return;
-    }
+    p_msg->len    = hci_len - L2CAP_PKT_OVERHEAD;
+    p_msg->offset += L2CAP_PKT_OVERHEAD;
 
     if (l2cap_len != p_msg->len)
     {
