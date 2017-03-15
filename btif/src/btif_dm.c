@@ -1398,6 +1398,7 @@ static void btif_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
             case HCI_ERR_INSUFFCIENT_SECURITY:
             case HCI_ERR_PEER_USER:
             case HCI_ERR_UNSPECIFIED:
+            case HCI_ERR_REPEATED_ATTEMPTS:
                 BTIF_TRACE_DEBUG(" %s() Authentication fail reason %d",
                     __FUNCTION__, p_auth_cmpl->fail_reason);
                 if (pairing_cb.autopair_attempts  == 1)
