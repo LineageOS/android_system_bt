@@ -1732,6 +1732,12 @@ void bta_hh_le_proc_get_rpt_cmpl(tBTA_HH_DEV_CB *p_dev_cb, tBTA_GATTC_READ *p_da
     const tBTA_GATTC_CHARACTERISTIC *p_char = BTA_GATTC_GetCharacteristic(p_dev_cb->conn_id,
                                                                           p_data->handle);
 
+    if (p_char == NULL) {
+        APPL_TRACE_ERROR("%s: report cmpl for Unknown Characteristic,handle: 0x%04x",
+            __func__, p_data->handle);
+        return;
+    }
+
     memset(&hs_data, 0, sizeof(hs_data));
     hs_data.status  = BTA_HH_ERR;
     hs_data.handle  = p_dev_cb->hid_handle;
@@ -2031,6 +2037,11 @@ void bta_hh_w4_le_write_cmpl(tBTA_HH_DEV_CB *p_dev_cb, tBTA_HH_DATA *p_buf)
 
     const tBTA_GATTC_CHARACTERISTIC *p_char = BTA_GATTC_GetCharacteristic(p_dev_cb->conn_id,
                                                                           p_data->handle);
+    if (p_char == NULL) {
+        APPL_TRACE_ERROR("%s: write cmpl for Unknown Characteristic,handle: 0x%04x",
+            __func__, p_data->handle);
+        return;
+    }
 
     if (p_char->uuid.uu.uuid16 == GATT_UUID_HID_PROTO_MODE)
     {
@@ -2061,6 +2072,12 @@ void bta_hh_le_write_cmpl(tBTA_HH_DEV_CB *p_dev_cb, tBTA_HH_DATA *p_buf)
 
     const tBTA_GATTC_CHARACTERISTIC *p_char = BTA_GATTC_GetCharacteristic(p_dev_cb->conn_id,
                                                                           p_data->handle);
+
+    if (p_char == NULL) {
+        APPL_TRACE_ERROR("%s: write cmpl for Unknown Characteristic,handle: 0x%04x",
+            __func__, p_data->handle);
+        return;
+    }
 
 #if BTA_HH_DEBUG
     APPL_TRACE_DEBUG("bta_hh_le_write_cmpl w4_evt: %d", p_dev_cb->w4_evt);
