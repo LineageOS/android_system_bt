@@ -128,10 +128,11 @@ typedef uint8_t tSMP_OOB_DATA_TYPE;
 #define SMP_AUTH_YN_BIT (1 << 2)
 #define SMP_SC_SUPPORT_BIT (1 << 3)
 #define SMP_KP_SUPPORT_BIT (1 << 4)
+#define SMP_H7_SUPPORT_BIT (1 << 5)
 
 #define SMP_AUTH_MASK                                         \
   (SMP_AUTH_GEN_BOND | SMP_AUTH_YN_BIT | SMP_SC_SUPPORT_BIT | \
-   SMP_KP_SUPPORT_BIT)
+   SMP_KP_SUPPORT_BIT | SMP_H7_SUPPORT_BIT)
 
 #define SMP_AUTH_BOND SMP_AUTH_GEN_BOND
 
@@ -149,18 +150,20 @@ typedef uint8_t tSMP_OOB_DATA_TYPE;
 #define SMP_AUTH_GB_IOCAP (SMP_AUTH_GEN_BOND | SMP_AUTH_YN_BIT)
 
 /* Secure Connections, no MITM, no Bonding */
-#define SMP_AUTH_SC_ENC_ONLY (SMP_SC_SUPPORT_BIT)
+#define SMP_AUTH_SC_ENC_ONLY (SMP_H7_SUPPORT_BIT | SMP_SC_SUPPORT_BIT)
 
 /* Secure Connections, no MITM, Bonding */
-#define SMP_AUTH_SC_GB (SMP_SC_SUPPORT_BIT | SMP_AUTH_GEN_BOND)
+#define SMP_AUTH_SC_GB \
+  (SMP_H7_SUPPORT_BIT | SMP_SC_SUPPORT_BIT | SMP_AUTH_GEN_BOND)
 
 /* Secure Connections, MITM, no Bonding */
 #define SMP_AUTH_SC_MITM_NB \
-  (SMP_SC_SUPPORT_BIT | SMP_AUTH_YN_BIT | SMP_AUTH_NO_BOND)
+  (SMP_H7_SUPPORT_BIT | SMP_SC_SUPPORT_BIT | SMP_AUTH_YN_BIT | SMP_AUTH_NO_BOND)
 
 /* Secure Connections, MITM, Bonding */
-#define SMP_AUTH_SC_MITM_GB \
-  (SMP_SC_SUPPORT_BIT | SMP_AUTH_YN_BIT | SMP_AUTH_GEN_BOND)
+#define SMP_AUTH_SC_MITM_GB                                    \
+  (SMP_H7_SUPPORT_BIT | SMP_SC_SUPPORT_BIT | SMP_AUTH_YN_BIT | \
+   SMP_AUTH_GEN_BOND)
 
 /* All AuthReq RFU bits are set to 1 - NOTE: reserved bit in Bonding_Flags is
  * not set */
