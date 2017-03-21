@@ -39,7 +39,7 @@ int osi_rand(void) {
   if (rand_fd == INVALID_FD) {
     LOG_ERROR(LOG_TAG, "%s can't open rand fd %s: %s ", __func__, RANDOM_PATH,
               strerror(errno));
-    CHECK(0);
+    CHECK(rand_fd != INVALID_FD);
   }
 
   ssize_t read_bytes = read(rand_fd, &rand, sizeof(rand));
