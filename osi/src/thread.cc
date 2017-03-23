@@ -159,6 +159,23 @@ bool thread_set_priority(thread_t* thread, int priority) {
   return true;
 }
 
+bool thread_set_rt_priority(thread_t* thread, int priority) {
+  if (!thread) return false;
+
+  struct sched_param rt_params;
+  rt_params.sched_priority = priority;
+
+  const int rc = sched_setscheduler(thread->tid, SCHED_FIFO, &rt_params);
+  if (rc != 0) {
+    LOG_ERROR(LOG_TAG,
+              "%s unable to set SCHED_FIFO priority %d for tid %d, error %s",
+              __func__, priority, thread->tid, strerror(errno));
+    return false;
+  }
+
+  return true;
+}
+
 bool thread_is_self(const thread_t* thread) {
   CHECK(thread != NULL);
   return !!pthread_equal(pthread_self(), thread->pthread);
