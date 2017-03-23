@@ -125,6 +125,9 @@ typedef enum {
 
 low_power_config_t lpm_config = LPM_CONFIG_NONE;
 
+// RT priority for HCI thread
+static const int BT_HCI_RT_PRIORITY = 1;
+
 static const uint32_t EPILOG_TIMEOUT_MS = 3000;
 static const uint32_t COMMAND_PENDING_TIMEOUT_MS = 8000;
 
@@ -272,6 +275,9 @@ static future_t *start_up(void) {
   if (!thread) {
     LOG_ERROR(LOG_TAG, "%s unable to create thread.", __func__);
     goto error;
+  }
+  if (!thread_set_rt_priority(thread, BT_HCI_RT_PRIORITY)) {
+    LOG_ERROR(LOG_TAG, "%s unable to make thread RT.", __func__);
   }
 
   commands_pending_response = list_new(NULL);

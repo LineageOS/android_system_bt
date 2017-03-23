@@ -1398,9 +1398,6 @@ static BOOLEAN btif_av_state_started_handler(btif_sm_event_t event, void *p_data
             btif_report_audio_state(BTAV_AUDIO_STATE_STARTED, &(btif_av_cb[index].peer_bda));
             btif_av_cb[index].is_device_playing = TRUE;
 
-            /* increase the a2dp consumer task priority temporarily when start
-            ** audio playing, to avoid overflow the audio packet queue. */
-            adjust_priority_a2dp(TRUE);
 #ifdef AVK_BACKPORT
             if (btif_av_cb[index].peer_sep == AVDT_TSEP_SRC)
             {
@@ -1420,9 +1417,6 @@ static BOOLEAN btif_av_state_started_handler(btif_sm_event_t event, void *p_data
             break;
 
         case BTIF_SM_EXIT_EVT:
-            /* restore the a2dp consumer task priority when stop audio playing. */
-            adjust_priority_a2dp(FALSE);
-
             break;
 
         case BTIF_AV_START_STREAM_REQ_EVT:
