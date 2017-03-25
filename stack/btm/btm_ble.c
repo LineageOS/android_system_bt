@@ -1802,17 +1802,25 @@ static void btm_ble_resolve_random_addr_on_conn_cmpl(void * p_rec, void *p_data)
 {
     UINT8   *p = (UINT8 *)p_data;
     tBTM_SEC_DEV_REC    *match_rec = (tBTM_SEC_DEV_REC *) p_rec;
-    UINT8       role, bda_type;
+    UINT8       role, bda_type, sub_code;
     UINT16      handle;
     BD_ADDR     bda;
+    BD_ADDR     local_rpa, peer_rpa;
     UINT16      conn_interval, conn_latency, conn_timeout;
     BOOLEAN     match = FALSE;
 
+    --p;
+    STREAM_TO_UINT8(sub_code, p);
     ++p;
     STREAM_TO_UINT16   (handle, p);
     STREAM_TO_UINT8    (role, p);
     STREAM_TO_UINT8    (bda_type, p);
     STREAM_TO_BDADDR   (bda, p);
+    if (sub_code == BTM_BLE_ENHC_CONN_SUB_CODE)
+    {
+        STREAM_TO_BDADDR   (local_rpa, p);
+        STREAM_TO_BDADDR   (peer_rpa, p);
+    }
     STREAM_TO_UINT16   (conn_interval, p);
     STREAM_TO_UINT16   (conn_latency, p);
     STREAM_TO_UINT16   (conn_timeout, p);

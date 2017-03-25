@@ -35,7 +35,7 @@
 #include "btm_int.h"
 #include "btu.h"
 #include "hcimsgs.h"
-
+#include "device/include/interop.h"
 
 extern fixed_queue_t *btu_general_alarm_queue;
 
@@ -193,6 +193,7 @@ static void l2c_csm_closed (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
     case L2CEVT_LP_CONNECT_CFM_NEG:                     /* Link failed          */
         /* Disconnect unless ACL collision and upper layer wants to handle it */
         if (p_ci->status != HCI_ERR_CONNECTION_EXISTS
+            || interop_match_addr(INTEROP_DISABLE_CONNECTION_AFTER_COLLISION, (const bt_bdaddr_t *)&p_ccb->p_lcb->remote_bd_addr)
             || !btm_acl_notif_conn_collision(p_ccb->p_lcb->remote_bd_addr))
         {
             L2CAP_TRACE_API ("L2CAP - Calling ConnectCfm_Cb(), CID: 0x%04x  Status: %d", p_ccb->local_cid, p_ci->status);
