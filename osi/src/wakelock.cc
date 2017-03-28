@@ -33,6 +33,7 @@
 #include <mutex>
 #include <string>
 
+#include "base/logging.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
 #include "osi/include/log.h"
@@ -198,6 +199,7 @@ static void wakelock_initialize_native(void) {
   if (wake_lock_fd == INVALID_FD) {
     LOG_ERROR(LOG_TAG, "%s can't open wake lock %s: %s", __func__,
               wake_lock_path.c_str(), strerror(errno));
+    CHECK(wake_lock_fd != INVALID_FD);
   }
 
   if (wake_unlock_path.empty()) wake_unlock_path = DEFAULT_WAKE_UNLOCK_PATH;
@@ -206,6 +208,7 @@ static void wakelock_initialize_native(void) {
   if (wake_unlock_fd == INVALID_FD) {
     LOG_ERROR(LOG_TAG, "%s can't open wake unlock %s: %s", __func__,
               wake_unlock_path.c_str(), strerror(errno));
+    CHECK(wake_unlock_fd != INVALID_FD);
   }
 }
 
