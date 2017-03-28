@@ -445,18 +445,12 @@ static void bta_hf_client_handle_bcs(tBTA_HF_CLIENT_CB* client_cb,
                                      uint32_t codec) {
   APPL_TRACE_DEBUG("%s: codec: %u sco listen state: %d", __func__, codec,
                    client_cb->sco_state);
-
-  // Only send acceptance for the codec request if we are ready to accept the
-  // SCO connection. sco_state is set to listen when the upper layer calls for
-  // audio connection.
-  if (client_cb->sco_state == BTA_HF_CLIENT_SCO_LISTEN_ST) {
-    if (codec == BTM_SCO_CODEC_CVSD || codec == BTM_SCO_CODEC_MSBC) {
-      client_cb->negotiated_codec = codec;
-      bta_hf_client_send_at_bcs(client_cb, codec);
-    } else {
-      client_cb->negotiated_codec = BTM_SCO_CODEC_CVSD;
-      bta_hf_client_send_at_bac(client_cb);
-    }
+  if (codec == BTM_SCO_CODEC_CVSD || codec == BTM_SCO_CODEC_MSBC) {
+    client_cb->negotiated_codec = codec;
+    bta_hf_client_send_at_bcs(client_cb, codec);
+  } else {
+    client_cb->negotiated_codec = BTM_SCO_CODEC_CVSD;
+    bta_hf_client_send_at_bac(client_cb);
   }
 }
 
