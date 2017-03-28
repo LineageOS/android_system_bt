@@ -157,13 +157,11 @@ static void reassemble_and_dispatch(UNUSED_ATTR BT_HDR* packet) {
           l2cap_length + L2CAP_HEADER_SIZE + HCI_ACL_PREAMBLE_SIZE;
 
       // Check for buffer overflow and that the full packet size + BT_HDR size
-      // is less than
-      // the max buffer size
+      // is less than the max buffer size
       if (check_uint16_overflow(l2cap_length,
                                 (L2CAP_HEADER_SIZE + HCI_ACL_PREAMBLE_SIZE)) ||
           ((full_length + sizeof(BT_HDR)) > BT_DEFAULT_BUFFER_SIZE)) {
-        LOG_ERROR(LOG_TAG,
-                  "%s L2CAP packet has invalid length (%d). Dropping it.",
+        LOG_ERROR(LOG_TAG, "%s Dropping L2CAP packet with invalid length (%d).",
                   __func__, l2cap_length);
         buffer_allocator->free(packet);
         return;
