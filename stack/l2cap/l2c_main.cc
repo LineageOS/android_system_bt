@@ -815,10 +815,8 @@ void l2c_init(void) {
                                   L2CAP_FIXED_CHNL_SMP_BIT;
 
   l2cb.rcv_pending_q = list_new(NULL);
-  if (l2cb.rcv_pending_q == NULL)
-    LOG_ERROR(LOG_TAG,
-              "%s unable to allocate memory for link layer control block",
-              __func__);
+  CHECK(l2cb.rcv_pending_q != NULL);
+
   l2cb.receive_hold_timer = alarm_new("l2c.receive_hold_timer");
 }
 
