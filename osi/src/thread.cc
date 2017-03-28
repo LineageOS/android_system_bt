@@ -191,7 +191,7 @@ static void* run_thread(void* start_arg) {
   }
   thread->tid = gettid();
 
-  LOG_WARN(LOG_TAG, "%s: thread id %d, thread name %s started", __func__,
+  LOG_INFO(LOG_TAG, "%s: thread id %d, thread name %s started", __func__,
            thread->tid, thread->name);
 
   semaphore_post(start->start_sem);
