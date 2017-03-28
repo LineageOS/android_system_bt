@@ -330,10 +330,23 @@ static void bta_hf_client_sco_event(tBTA_HF_CLIENT_CB* client_cb,
   switch (client_cb->sco_state) {
     case BTA_HF_CLIENT_SCO_SHUTDOWN_ST:
       switch (event) {
+        // For WBS we only listen to SCO requests. Even for outgoing SCO
+        // requests we first do a AT+BCC and wait for remote to initiate SCO
         case BTA_HF_CLIENT_SCO_LISTEN_E:
           /* create sco listen connection */
           bta_hf_client_sco_create(client_cb, false);
           client_cb->sco_state = BTA_HF_CLIENT_SCO_LISTEN_ST;
+          break;
+
+        // For non WBS cases and enabling outgoing SCO requests we need to force
+        // open a SCO channel
+        case BTA_HF_CLIENT_SCO_OPEN_E:
+          /* remove listening connection */
+          bta_hf_client_sco_remove(client_cb);
+
+          /* create sco connection to peer */
+          bta_hf_client_sco_create(client_cb, true);
+          client_cb->sco_state = BTA_HF_CLIENT_SCO_OPENING_ST;
           break;
 
         default:
@@ -345,10 +358,6 @@ static void bta_hf_client_sco_event(tBTA_HF_CLIENT_CB* client_cb,
 
     case BTA_HF_CLIENT_SCO_LISTEN_ST:
       switch (event) {
-        case BTA_HF_CLIENT_SCO_LISTEN_E:
-          /* Ignore */
-          break;
-
         case BTA_HF_CLIENT_SCO_OPEN_E:
           /* remove listening connection */
           bta_hf_client_sco_remove(client_cb);
@@ -396,8 +405,8 @@ static void bta_hf_client_sco_event(tBTA_HF_CLIENT_CB* client_cb,
 
         case BTA_HF_CLIENT_SCO_CONN_CLOSE_E:
           /* sco failed; create sco listen connection */
-          bta_hf_client_sco_create(client_cb, false);
-          client_cb->sco_state = BTA_HF_CLIENT_SCO_LISTEN_ST;
+          // bta_hf_client_sco_create(client_cb, false);
+          client_cb->sco_state = BTA_HF_CLIENT_SCO_SHUTDOWN_ST;
           break;
 
         default:
