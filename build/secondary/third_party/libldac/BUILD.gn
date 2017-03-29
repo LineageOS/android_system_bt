@@ -14,8 +14,12 @@
 #  limitations under the License.
 #
 
-config("libldacBT_config") {
+config("libldacBT_enc_config") {
   include_dirs = [ "inc" ]
+}
+
+config("libldacBT_abr_config") {
+  include_dirs = [ "abr/inc", "inc" ]
 }
 
 shared_library("libldacBT_enc") {
@@ -24,7 +28,19 @@ shared_library("libldacBT_enc") {
     "src/ldacBT.c",
   ]
 
-  public_configs = [ ":libldacBT_config" ]
+  public_configs = [ ":libldacBT_enc_config" ]
+
+  cflags = [ "-O2" ]
+
+  defines = [ "EXPORT_SYMBOL=" ]
+}
+
+shared_library("libldacBT_abr") {
+  sources = [
+    "abr/src/ldacBT_abr.c",
+  ]
+
+  public_configs = [ ":libldacBT_abr_config" ]
 
   cflags = [ "-O2" ]
 
