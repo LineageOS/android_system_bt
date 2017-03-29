@@ -181,6 +181,7 @@ static_library("stack") {
   deps = [
     "//third_party/libchrome:base",
     "//third_party/libldac:libldacBT_enc",
+    "//third_party/libldac:libldacBT_abr",
     "//third_party/aac:libFraunhoferAAC",
   ]
 }
