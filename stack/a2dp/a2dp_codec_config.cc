@@ -418,6 +418,23 @@ bool A2dpCodecs::setCodecUserConfig(
   *p_restart_output = false;
   *p_config_updated = false;
 
+  LOG_DEBUG(
+      LOG_TAG,
+      "%s: Configuring: codec_type=%d codec_priority=%d "
+      "sample_rate=0x%x bits_per_sample=0x%x "
+      "channel_mode=0x%x codec_specific_1=%" PRIi64
+      " "
+      "codec_specific_2=%" PRIi64
+      " "
+      "codec_specific_3=%" PRIi64
+      " "
+      "codec_specific_4=%" PRIi64,
+      __func__, codec_user_config.codec_type, codec_user_config.codec_priority,
+      codec_user_config.sample_rate, codec_user_config.bits_per_sample,
+      codec_user_config.channel_mode, codec_user_config.codec_specific_1,
+      codec_user_config.codec_specific_2, codec_user_config.codec_specific_3,
+      codec_user_config.codec_specific_4);
+
   if (codec_user_config.codec_type < BTAV_A2DP_CODEC_INDEX_MAX) {
     auto iter = indexed_codecs_.find(codec_user_config.codec_type);
     if (iter == indexed_codecs_.end()) goto fail;
@@ -427,7 +444,6 @@ bool A2dpCodecs::setCodecUserConfig(
     a2dp_codec_config = current_codec_config_;
   }
   if (a2dp_codec_config == nullptr) goto fail;
-  current_codec_config_ = a2dp_codec_config;
 
   // Reuse the existing codec audio config
   codec_audio_config = a2dp_codec_config->getCodecAudioConfig();
@@ -437,42 +453,67 @@ bool A2dpCodecs::setCodecUserConfig(
           p_restart_input, p_restart_output, p_config_updated)) {
     goto fail;
   }
-  CHECK(current_codec_config_ != nullptr);
 
-  // If the codec has changed because of priority, update the priorities
-  // and restart the connection
+  // Update the codec priorities, and eventually restart the connection
+  // if a new codec needs to be selected.
   do {
+    // Update the codec priority
     btav_a2dp_codec_priority_t old_priority =
         a2dp_codec_config->codecPriority();
     btav_a2dp_codec_priority_t new_priority = codec_user_config.codec_priority;
-    if (old_priority == new_priority) break;  // No change in priority
-    *p_config_updated = true;
     a2dp_codec_config->setCodecPriority(new_priority);
     // Get the actual (recomputed) priority
     new_priority = a2dp_codec_config->codecPriority();
-    if (old_priority > new_priority) {
-      // The priority has become lower. If this was the previous codec, restart
-      // the connection to re-elect a new codec.
-      if (a2dp_codec_config == last_codec_config) {
+
+    // Check if there was no previous codec
+    if (last_codec_config == nullptr) {
+      current_codec_config_ = a2dp_codec_config;
+      *p_restart_output = true;
+      break;
+    }
+
+    // Check if the priority of the current codec was updated
+    if (a2dp_codec_config == last_codec_config) {
+      if (old_priority == new_priority) break;  // No change in priority
+
+      *p_config_updated = true;
+      if (new_priority < old_priority) {
+        // The priority has become lower - restart the connection to
+        // select a new codec.
         *p_restart_output = true;
       }
       break;
     }
-    // The priority has become higher. If this was not the previous codec,
-    // and the new priority is higher than the current codec, restart the
-    // connection to re-elect a new codec.
-    if ((a2dp_codec_config == last_codec_config) ||
-        (last_codec_config == nullptr)) {
+
+    if (new_priority <= old_priority) {
+      // No change in priority, or the priority has become lower.
+      // This wasn't the current codec, so we shouldn't select a new codec.
+      if (*p_restart_input || *p_restart_output ||
+          (old_priority != new_priority)) {
+        *p_config_updated = true;
+      }
+      *p_restart_input = false;
+      *p_restart_output = false;
       break;
     }
-    if (new_priority < last_codec_config->codecPriority()) break;
-    last_codec_config->setDefaultCodecPriority();
-    *p_restart_output = true;
 
+    *p_config_updated = true;
+    if (new_priority >= last_codec_config->codecPriority()) {
+      // The new priority is higher than the current codec. Restart the
+      // connection to select a new codec.
+      current_codec_config_ = a2dp_codec_config;
+      last_codec_config->setDefaultCodecPriority();
+      *p_restart_output = true;
+    }
   } while (false);
   ordered_source_codecs_.sort(compare_codec_priority);
 
   if (*p_restart_input || *p_restart_output) *p_config_updated = true;
+
+  LOG_DEBUG(LOG_TAG,
+            "%s: Configured: restart_input = %d restart_output = %d "
+            "config_updated = %d",
+            __func__, *p_restart_input, *p_restart_output, *p_config_updated);
 
   return true;
 

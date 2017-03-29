@@ -448,7 +448,7 @@ tA2DP_STATUS bta_av_co_audio_getconfig(tBTA_AV_HNDL hndl, uint8_t* p_codec_info,
 
   const tBTA_AV_CO_SINK* p_sink = bta_av_co_audio_set_codec(p_peer);
   if (p_sink == NULL) {
-    APPL_TRACE_ERROR("%s: cannot setup codec for the peer SINK", __func__);
+    APPL_TRACE_ERROR("%s: cannot set up codec for the peer SINK", __func__);
     return A2DP_FAIL;
   }
 
@@ -1085,7 +1085,8 @@ bool bta_av_co_set_codec_user_config(
     p_sink = p_peer->p_sink;
   }
   if (p_sink == nullptr) {
-    APPL_TRACE_ERROR("%s: cannot find peer SEP to configure", __func__);
+    APPL_TRACE_ERROR("%s: cannot find peer SEP to configure for codec type %d",
+                     __func__, codec_user_config.codec_type);
     success = false;
     goto done;
   }
@@ -1106,9 +1107,12 @@ bool bta_av_co_set_codec_user_config(
     if (p_peer->cp_active) num_protect = AVDT_CP_INFO_LEN;
 #endif
 
-    p_peer->p_sink = p_sink;
-    bta_av_co_save_new_codec_config(p_peer, result_codec_config,
-                                    p_sink->num_protect, p_sink->protect_info);
+    p_sink = bta_av_co_audio_set_codec(p_peer);
+    if (p_sink == NULL) {
+      APPL_TRACE_ERROR("%s: cannot set up codec for the peer SINK", __func__);
+      success = false;
+      goto done;
+    }
     APPL_TRACE_DEBUG("%s: call BTA_AvReconfig(x%x)", __func__, p_peer->handle);
     BTA_AvReconfig(p_peer->handle, true, p_sink->sep_info_idx,
                    p_peer->codec_config, num_protect, bta_av_co_cp_scmst);
