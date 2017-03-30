@@ -420,6 +420,12 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
                      base::Bind(&BTM_BleReadScanReports, (uint8_t)scan_mode,
                                 Bind(bta_batch_scan_reports_cb, client_if)));
   }
+
+  void StartSync(uint8_t sid, bt_bdaddr_t address, uint16_t skip,
+                 uint16_t timeout, StartSyncCb start_cb, SyncReportCb report_cb,
+                 SyncLostCb lost_cb) override {}
+
+  void StopSync(uint16_t handle) override {}
 };
 
 BleScannerInterface* btLeScannerInstance = nullptr;
