@@ -78,9 +78,8 @@ namespace {
 void DoNothing(uint8_t) {}
 void DoNothing2(uint8_t, uint8_t) {}
 
-bool is_legacy_connectable(uint16_t advertising_event_properties) {
-  if (((advertising_event_properties & 0x10) != 0) &&
-      ((advertising_event_properties & 0x01) != 0)) {
+bool is_connectable(uint16_t advertising_event_properties) {
+  if ((advertising_event_properties & 0x01) != 0) {
     return true;
   }
   return false;
@@ -566,8 +565,7 @@ class BleAdvertisingManagerImpl
     AdvertisingInstance* p_inst = &adv_inst[inst_id];
     VLOG(1) << "is_scan_rsp = " << is_scan_rsp;
 
-    if (!is_scan_rsp &&
-        is_legacy_connectable(p_inst->advertising_event_properties)) {
+    if (!is_scan_rsp && is_connectable(p_inst->advertising_event_properties)) {
       uint8_t flags_val = BTM_GENERAL_DISCOVERABLE;
 
       if (p_inst->timeout_s) flags_val = BTM_LIMITED_DISCOVERABLE;
