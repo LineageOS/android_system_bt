@@ -142,6 +142,11 @@ static void update_logging() {
   bool should_log = module_started && (logging_enabled_via_api ||
                                        stack_config->get_btsnoop_turned_on());
 
+  if (module_started && !should_log) {
+    LOG_INFO(LOG_TAG, "Deleting snoop log if it exists");
+    remove(stack_config->get_btsnoop_log_path());
+  }
+
   if (should_log == is_logging) return;
 
   is_logging = should_log;
