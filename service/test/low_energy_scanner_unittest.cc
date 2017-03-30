@@ -67,6 +67,10 @@ class MockScannerHandler : public BleScannerInterface {
 
   MOCK_METHOD2(BatchscanReadReports, void(int client_if, int scan_mode));
 
+  MOCK_METHOD7(StartSync, void(uint8_t, bt_bdaddr_t, uint16_t, uint16_t,
+                               StartSyncCb, SyncReportCb, SyncLostCb));
+  MOCK_METHOD1(StopSync, void(uint16_t));
+
   void ScanFilterAddRemove(int action, int filt_type, int filt_index,
                            int company_id, int company_id_mask,
                            const bt_uuid_t* p_uuid,
