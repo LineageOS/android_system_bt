@@ -357,7 +357,7 @@ void RegisterClientCallback(int status, int client_if, bt_uuid_t* app_uuid) {
 
   g_internal->gatt->advertiser->Enable(
       0 /* std_inst */, true, base::Bind(&EnableAdvertisingCallback),
-      0 /* no timeout */, base::Bind(&DoNothing));
+      0 /* no duration */, 0 /* no maxExtAdvEvent*/, base::Bind(&DoNothing));
 }
 
 void ServiceStoppedCallback(int status, int server_if, int srvc_handle) {
