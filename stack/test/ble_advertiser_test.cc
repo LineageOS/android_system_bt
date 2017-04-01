@@ -239,7 +239,7 @@ TEST_F(BleAdvertisingManagerTest, test_android_flow) {
   BleAdvertisingManager::Get()->Enable(
       advertiser_id, true,
       base::Bind(&BleAdvertisingManagerTest::EnableCb, base::Unretained(this)),
-      0, base::Callback<void(uint8_t)>());
+      0, 0, base::Callback<void(uint8_t)>());
   ::testing::Mock::VerifyAndClearExpectations(hci_mock.get());
 
   enable_cb.Run(0);
