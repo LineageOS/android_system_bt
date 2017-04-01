@@ -134,7 +134,8 @@ LowEnergyAdvertiser::~LowEnergyAdvertiser() {
 
   // Stop advertising and ignore the result.
   hal::BluetoothGattInterface::Get()->GetAdvertiserHALInterface()->Enable(
-      advertiser_id_, false, base::Bind(&DoNothing), 0, base::Bind(&DoNothing));
+      advertiser_id_, false, base::Bind(&DoNothing), 0, 0,
+      base::Bind(&DoNothing));
   hal::BluetoothGattInterface::Get()->GetAdvertiserHALInterface()->Unregister(
       advertiser_id_);
 }
@@ -205,8 +206,8 @@ bool LowEnergyAdvertiser::StopAdvertising(const StatusCallback& callback) {
       advertiser_id_, false,
       base::Bind(&LowEnergyAdvertiser::EnableCallback, base::Unretained(this),
                  false, advertiser_id_),
-      0, base::Bind(&LowEnergyAdvertiser::EnableCallback,
-                    base::Unretained(this), false, advertiser_id_));
+      0, 0, base::Bind(&LowEnergyAdvertiser::EnableCallback,
+                       base::Unretained(this), false, advertiser_id_));
 
   // OK to set this at the end since we're still holding |adv_fields_lock_|.
   adv_stop_callback_.reset(new StatusCallback(callback));

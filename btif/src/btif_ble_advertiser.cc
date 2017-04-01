@@ -131,7 +131,8 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface {
   }
 
   void Enable(uint8_t advertiser_id, bool enable, StatusCallback cb,
-              int timeout_s, StatusCallback timeout_cb) override {
+              uint16_t duration, uint8_t maxExtAdvEvents,
+              StatusCallback timeout_cb) override {
     VLOG(1) << __func__ << " advertiser_id: " << +advertiser_id
             << " ,enable: " << enable;
 
@@ -139,8 +140,8 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface {
         FROM_HERE,
         Bind(&BleAdvertisingManager::Enable,
              base::Unretained(BleAdvertisingManager::Get()), advertiser_id,
-             enable, jni_thread_wrapper(FROM_HERE, cb), timeout_s,
-             jni_thread_wrapper(FROM_HERE, timeout_cb)));
+             enable, jni_thread_wrapper(FROM_HERE, cb), duration,
+             maxExtAdvEvents, jni_thread_wrapper(FROM_HERE, timeout_cb)));
   }
 
   void StartAdvertising(uint8_t advertiser_id, StatusCallback cb,
@@ -159,7 +160,7 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface {
              base::Unretained(BleAdvertisingManager::Get()), advertiser_id,
              jni_thread_wrapper(FROM_HERE, cb), base::Owned(p_params),
              std::move(advertise_data), std::move(scan_response_data),
-             timeout_s, jni_thread_wrapper(FROM_HERE, timeout_cb)));
+             timeout_s * 100, jni_thread_wrapper(FROM_HERE, timeout_cb)));
   }
 
   void StartAdvertisingSet(IdTxPowerStatusCallback cb,
@@ -167,7 +168,8 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface {
                            std::vector<uint8_t> advertise_data,
                            std::vector<uint8_t> scan_response_data,
                            PeriodicAdvertisingParameters periodic_params,
-                           std::vector<uint8_t> periodic_data, int timeout_s,
+                           std::vector<uint8_t> periodic_data,
+                           uint16_t duration, uint8_t maxExtAdvEvents,
                            IdStatusCallback timeout_cb) override {
     VLOG(1) << __func__;
 
@@ -183,8 +185,8 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface {
              base::Unretained(BleAdvertisingManager::Get()),
              jni_thread_wrapper(FROM_HERE, cb), base::Owned(p_params),
              std::move(advertise_data), std::move(scan_response_data),
-             base::Owned(p_periodic_params), std::move(periodic_data),
-             timeout_s, jni_thread_wrapper(FROM_HERE, timeout_cb)));
+             base::Owned(p_periodic_params), std::move(periodic_data), duration,
+             maxExtAdvEvents, jni_thread_wrapper(FROM_HERE, timeout_cb)));
   }
 
   void SetPeriodicAdvertisingParameters(
