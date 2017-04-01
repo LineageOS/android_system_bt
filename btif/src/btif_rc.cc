@@ -495,15 +495,7 @@ void handle_rc_features(btif_rc_device_cb_t* p_dev) {
   bdcpy(rc_addr.address, p_dev->rc_addr);
   bdstr_t addr1, addr2;
 
-  if (bt_rc_callbacks == NULL) {
-    BTIF_TRACE_ERROR("%s: bt_rc_callbacks NULL, disabling TG role for %s",
-                     __func__,
-                     bdaddr_to_string(&rc_addr, addr2, sizeof(addr2)));
-    p_dev->rc_features &= ~BTA_AV_FEAT_ADV_CTRL;
-    p_dev->rc_features &= ~BTA_AV_FEAT_BROWSE;
-    p_dev->rc_features &= ~BTA_AV_FEAT_METADATA;
-    return;
-  }
+  CHECK(bt_rc_callbacks);
 
   btrc_remote_features_t rc_features = BTRC_FEAT_NONE;
   bt_bdaddr_t avdtp_addr = btif_av_get_addr();
@@ -1054,7 +1046,9 @@ void btif_rc_handler(tBTA_AV_EVT event, tBTA_AV* p_data) {
       }
 
       p_dev->rc_features = p_data->rc_feat.peer_features;
-      handle_rc_features(p_dev);
+      if (bt_rc_callbacks != NULL) {
+        handle_rc_features(p_dev);
+      }
 
       if ((p_dev->rc_connected) && (bt_rc_ctrl_callbacks != NULL)) {
         handle_rc_ctrl_features(p_dev);
