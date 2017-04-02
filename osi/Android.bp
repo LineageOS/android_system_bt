@@ -108,6 +108,7 @@ cc_library_static {
 // ========================================================
 cc_test {
     name: "net_test_osi",
+    test_suites: ["device-tests"],
     defaults: ["fluoride_osi_defaults"],
     host_supported: true,
     srcs: [
