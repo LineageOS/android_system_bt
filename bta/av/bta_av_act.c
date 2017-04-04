@@ -391,9 +391,9 @@ UINT8 bta_av_rc_create(tBTA_AV_CB *p_cb, UINT8 role, UINT8 shdl, UINT8 lidx)
         /* this LIDX is reserved for the AVRCP ACP connection */
         p_cb->rc_acp_handle = p_rcb->handle;
         p_cb->rc_acp_idx = (i + 1);
-        APPL_TRACE_DEBUG("rc_acp_handle:%d idx:%d", p_cb->rc_acp_handle, p_cb->rc_acp_idx);
+        APPL_TRACE_IMP("rc_acp_handle: %d idx: %d", p_cb->rc_acp_handle, p_cb->rc_acp_idx);
     }
-    APPL_TRACE_DEBUG("create %d, role: %d, shdl:%d, rc_handle:%d, lidx:%d, status:0x%x",
+    APPL_TRACE_IMP("bta_av_rc_create %d, role: %d, shdl:%d, rc_handle:%d, lidx:%d, status:0x%x",
         i, role, shdl, p_rcb->handle, lidx, p_rcb->status);
 
     return rc_handle;
@@ -2323,6 +2323,9 @@ void bta_av_rc_closed(tBTA_AV_DATA *p_data)
         bdcpy(rc_close.peer_addr, p_msg->peer_addr);
     }
     (*p_cb->p_cback)(BTA_AV_RC_CLOSE_EVT, (tBTA_AV *) &rc_close);
+    if (bta_av_cb.rc_acp_handle == BTA_AV_RC_HANDLE_NONE
+                    && bta_av_cb.features & BTA_AV_FEAT_RCTG)
+        bta_av_rc_create(&bta_av_cb, AVCT_ACP, 0, BTA_AV_NUM_LINKS + 1);
 }
 
 /*******************************************************************************
