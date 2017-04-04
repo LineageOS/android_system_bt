@@ -288,6 +288,17 @@ BOOLEAN btif_storage_is_restricted_device(const bt_bdaddr_t *remote_bd_addr);
 
 /*******************************************************************************
 **
+** Function         btif_storage_get_num_bonded_devices
+**
+** Description      BTIF storage API - Gets the number of bonded devices
+**
+** Returns          the number of bonded devices
+**
+*******************************************************************************/
+int btif_storage_get_num_bonded_devices(void);
+
+/*******************************************************************************
+**
 ** Function         btif_storage_is_wiimote
 **
 ** Description      BTIF storage API - checks if this device is a wiimote

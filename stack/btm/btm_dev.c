@@ -422,12 +422,12 @@ bool is_address_equal(void *data, void *context)
 ** Returns          Pointer to the record or NULL
 **
 *******************************************************************************/
-tBTM_SEC_DEV_REC *btm_find_dev(BD_ADDR bd_addr)
+tBTM_SEC_DEV_REC *btm_find_dev(const BD_ADDR bd_addr)
 {
     if (!bd_addr)
         return NULL;
 
-    list_node_t *n = list_foreach(btm_cb.sec_dev_rec, is_address_equal, bd_addr);
+    list_node_t *n = list_foreach(btm_cb.sec_dev_rec, is_address_equal, (void*)bd_addr);
     if (n)
         return list_node(n);
 

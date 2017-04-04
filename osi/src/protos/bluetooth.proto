@@ -24,6 +24,21 @@ message BluetoothLog {
 
   // Scan event information.
   repeated ScanEvent scan_event = 4;
+
+  // Number of bonded devices.
+  optional int32 num_bonded_devices = 5;
+
+  // Number of BluetoothSession including discarded ones beyond capacity
+  optional int64 num_bluetooth_session = 6;
+
+  // Number of PairEvent including discarded ones beyond capacity
+  optional int64 num_pair_event = 7;
+
+  // Number of WakeEvent including discarded ones beyond capacity
+  optional int64 num_wake_event = 8;
+
+  // Number of ScanEvent including discarded ones beyond capacity
+  optional int64 num_scan_event = 9;
 }
 
 // The information about the device.
@@ -63,6 +78,17 @@ message BluetoothSession {
      CONNECTION_TECHNOLOGY_TYPE_BREDR = 2;
   }
 
+  enum DisconnectReasonType {
+    UNKNOWN = 0;
+
+    // A metrics dump takes a snapshot of current Bluetooth session and thus
+    // is not a real disconnect, but a discontinuation in metrics logging.
+    // This enum indicates this situation.
+    METRICS_DUMP = 1;
+
+    NEXT_START_WITHOUT_END_PREVIOUS = 2;
+  }
+
   // Duration of the session.
   optional int64 session_duration_sec = 2;
 
@@ -70,7 +96,7 @@ message BluetoothSession {
   optional ConnectionTechnologyType connection_technology_type = 3;
 
   // Reason for disconnecting.
-  optional string disconnect_reason = 4;
+  optional string disconnect_reason = 4 [deprecated=true];
 
   // The information about the device which it is connected to.
   optional DeviceInfo device_connected_to = 5;
@@ -78,8 +104,11 @@ message BluetoothSession {
   // The information about the RFComm session.
   optional RFCommSession rfcomm_session = 6;
 
-  // The information about the A2DP session.
+  // The information about the A2DP audio session.
   optional A2DPSession a2dp_session = 7;
+
+  // Numeric reason for disconnecting as defined in metrics.h
+  optional DisconnectReasonType disconnect_reason_type = 8;
 }
 
 message RFCommSession {
@@ -91,7 +120,7 @@ message RFCommSession {
   optional int32 tx_bytes = 2;
 }
 
-// Session information that gets logged for every A2DP session.
+// Session information that gets logged for A2DP session.
 message A2DPSession {
 
   // Media timer in milliseconds.
@@ -114,6 +143,9 @@ message A2DPSession {
 
   // Buffer underruns count.
   optional int32 buffer_underruns_count = 7;
+
+  // Total audio time in this A2DP session
+  optional int64 audio_duration_millis = 8;
 }
 
 message PairEvent {
