@@ -2,6 +2,7 @@
 // ========================================================
 cc_test {
     name: "net_test_bluetooth",
+    test_suites: ["device-tests"],
     defaults: ["fluoride_defaults"],
     include_dirs: ["system/bt"],
     srcs: [
