@@ -45,6 +45,7 @@ cc_library_static {
 // ========================================================
 cc_test {
     name: "net_test_hci",
+    test_suites: ["device-tests"],
     defaults: ["libbt-hci_defaults"],
     local_include_dirs: [
         "include",
