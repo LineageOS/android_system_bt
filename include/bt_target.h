@@ -1684,4 +1684,15 @@ The maximum number of payload octets that the local device can receive in a sing
 
 #include "bt_trace.h"
 
+/******************************************************************************
+**
+** Wear
+**
+******************************************************************************/
+
+/* Enable/disable LE IO capability overriding to no-input-no-output on first bond */
+#ifndef WEAR_LE_IO_CAP_OVERRIDE
+#define WEAR_LE_IO_CAP_OVERRIDE FALSE
+#endif
+
 #endif /* BT_TARGET_H */

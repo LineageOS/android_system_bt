@@ -230,6 +230,7 @@ static void btif_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl);
 static void btif_dm_ble_passkey_req_evt(tBTA_DM_PIN_REQ *p_pin_req);
 static void btif_dm_ble_key_nc_req_evt(tBTA_DM_SP_KEY_NOTIF *p_notif_req) ;
 static void btif_dm_ble_oob_req_evt(tBTA_DM_SP_RMT_OOB *req_oob_type);
+static void btif_dm_ble_sc_oob_req_evt(tBTA_DM_SP_RMT_OOB *req_oob_type);
 #endif
 
 static void bte_scan_filt_param_cfg_evt(UINT8 action_type,
@@ -818,7 +819,15 @@ static void btif_dm_cb_create_bond(bt_bdaddr_t *bd_addr, tBTA_TRANSPORT transpor
         }
         if (btif_storage_get_remote_addr_type(bd_addr, &addr_type) != BT_STATUS_SUCCESS)
         {
-            btif_storage_set_remote_addr_type(bd_addr, BLE_ADDR_PUBLIC);
+
+            // Try to read address type. OOB pairing might have set it earlier, but
+            // didn't store it, it defaults to BLE_ADDR_PUBLIC
+            uint8_t tmp_dev_type;
+            uint8_t tmp_addr_type;
+            BTM_ReadDevInfo(bd_addr->address, &tmp_dev_type, &tmp_addr_type);
+            addr_type = tmp_addr_type;
+
+            btif_storage_set_remote_addr_type(bd_addr, addr_type);
         }
     }
     if((btif_config_get_int((char const *)&bdstr,"DevType", &device_type) &&
@@ -1878,7 +1887,7 @@ static void btif_dm_upstreams_evt(UINT16 event, char* p_param)
     uint32_t i;
     bt_bdaddr_t bd_addr;
 
-    BTIF_TRACE_EVENT("btif_dm_upstreams_cback  ev: %s", dump_dm_event(event));
+    BTIF_TRACE_EVENT("%s: ev: %s", __func__, dump_dm_event(event));
 
     switch (event)
     {
@@ -2161,6 +2170,10 @@ static void btif_dm_upstreams_evt(UINT16 event, char* p_param)
         case BTA_DM_BLE_OOB_REQ_EVT:
             BTIF_TRACE_DEBUG("BTA_DM_BLE_OOB_REQ_EVT. ");
             btif_dm_ble_oob_req_evt(&p_data->rmt_oob);
+            break;
+        case BTA_DM_BLE_SC_OOB_REQ_EVT:
+            BTIF_TRACE_DEBUG("BTA_DM_BLE_SC_OOB_REQ_EVT. ");
+            btif_dm_ble_sc_oob_req_evt(&p_data->rmt_oob);
             break;
         case BTA_DM_BLE_LOCAL_IR_EVT:
             BTIF_TRACE_DEBUG("BTA_DM_BLE_LOCAL_IR_EVT. ");
@@ -2629,6 +2642,19 @@ bt_status_t btif_dm_create_bond_out_of_band(const bt_bdaddr_t *bd_addr, int tran
 {
     bdcpy(oob_cb.bdaddr, bd_addr->address);
     memcpy(&oob_cb.oob_data, oob_data, sizeof(bt_out_of_band_data_t));
+
+    uint8_t empty[] = {0, 0, 0, 0, 0, 0, 0};
+    // If LE Bluetooth Device Address is provided, use provided address type
+    // value.
+    if (memcmp(oob_data->le_bt_dev_addr, empty, 7) != 0) {
+        /* byte no 7 is address type in LE Bluetooth Address OOB data */
+        uint8_t address_type = oob_data->le_bt_dev_addr[6];
+        if (address_type == BLE_ADDR_PUBLIC || address_type == BLE_ADDR_RANDOM) {
+            // bd_addr->address is already reversed, so use it instead of
+            // oob_data->le_bt_dev_addr
+            BTM_SecAddBleDevice(bd_addr->address, NULL, BT_DEVICE_TYPE_BLE, address_type);
+        }
+    }
 
     bdstr_t bdstr;
     BTIF_TRACE_EVENT("%s: bd_addr=%s, transport=%d", __FUNCTION__, bdaddr_to_string(bd_addr, bdstr, sizeof(bdstr)), transport);
@@ -3102,29 +3128,36 @@ void btif_dm_set_oob_for_le_io_req(BD_ADDR bd_addr, tBTA_OOB_DATA  *p_has_oob_da
                                    tBTA_LE_AUTH_REQ *p_auth_req)
 {
 
-    /* We currently support only Security Manager TK as OOB data for LE transport.
-       If it's not present mark no OOB data.
-     */
-    if (!is_empty_128bit(oob_cb.oob_data.sm_tk))
-    {
+    if (!is_empty_128bit(oob_cb.oob_data.le_sc_c) &&
+        !is_empty_128bit(oob_cb.oob_data.le_sc_r)) {
+        /* We have LE SC OOB data */
+
+        /* make sure OOB data is for this particular device */
+        if (memcmp(bd_addr, oob_cb.bdaddr, BD_ADDR_LEN) == 0) {
+            *p_auth_req = ((*p_auth_req) | BTM_LE_AUTH_REQ_SC_ONLY);
+            *p_has_oob_data = true;
+        } else {
+            *p_has_oob_data = false;
+            BTIF_TRACE_WARNING("%s: remote address didn't match OOB data address",
+                               __func__);
+        }
+    } else if (!is_empty_128bit(oob_cb.oob_data.sm_tk)) {
+        /* We have security manager TK */
+
         /* make sure OOB data is for this particular device */
         if (memcmp(bd_addr, oob_cb.bdaddr, BD_ADDR_LEN) == 0) {
             // When using OOB with TK, SC Secure Connections bit must be disabled.
             tBTA_LE_AUTH_REQ mask = ~BTM_LE_AUTH_REQ_SC_ONLY;
             *p_auth_req = ((*p_auth_req) & mask);
 
-            *p_has_oob_data = TRUE;
-        }
-        else
-        {
-            *p_has_oob_data = FALSE;
+            *p_has_oob_data = true;
+        } else {
+            *p_has_oob_data = false;
             BTIF_TRACE_WARNING("%s: remote address didn't match OOB data address",
                                __func__);
         }
-    }
-    else
-    {
-        *p_has_oob_data = FALSE;
+    } else {
+        *p_has_oob_data = false;
     }
     BTIF_TRACE_DEBUG("%s *p_has_oob_data=%d", __func__, *p_has_oob_data);
 }
@@ -3625,10 +3658,9 @@ static void btif_dm_ble_oob_req_evt(tBTA_DM_SP_RMT_OOB *req_oob_type)
 
     bt_bdaddr_t bd_addr;
     bdcpy(bd_addr.address, req_oob_type->bd_addr);
-
-    /* We currently support only Security Manager TK as OOB data. We already
-     * checked if it's present in btif_dm_set_oob_for_le_io_req, but check here
-     * again. If it's not present do nothing, pairing will timeout.
+    /* We already checked if OOB data is present in
+     * btif_dm_set_oob_for_le_io_req, but check here again. If it's not present
+     * do nothing, pairing will timeout.
      */
     if (is_empty_128bit(oob_cb.oob_data.sm_tk)) {
         return;
@@ -3650,6 +3682,44 @@ static void btif_dm_ble_oob_req_evt(tBTA_DM_SP_RMT_OOB *req_oob_type)
     pairing_cb.is_le_nc = FALSE;
 
     BTM_BleOobDataReply(req_oob_type->bd_addr, 0, 16, oob_cb.oob_data.sm_tk);
+}
+
+
+static void btif_dm_ble_sc_oob_req_evt(tBTA_DM_SP_RMT_OOB *req_oob_type)
+{
+    BTIF_TRACE_DEBUG("%s", __func__);
+
+    bt_bdaddr_t bd_addr;
+    bdcpy(bd_addr.address, req_oob_type->bd_addr);
+
+    /* We already checked if OOB data is present in
+     * btif_dm_set_oob_for_le_io_req, but check here again. If it's not present
+     * do nothing, pairing will timeout.
+     */
+    if (is_empty_128bit(oob_cb.oob_data.le_sc_c) &&
+        is_empty_128bit(oob_cb.oob_data.le_sc_r)) {
+        BTIF_TRACE_WARNING("%s: LE SC OOB data is empty", __func__);
+        return;
+    }
+
+    /* make sure OOB data is for this particular device */
+    if (memcmp(req_oob_type->bd_addr, oob_cb.bdaddr, BD_ADDR_LEN) != 0) {
+        BTIF_TRACE_WARNING("%s: remote address didn't match OOB data address", __func__);
+        return;
+    }
+
+    /* Remote name update */
+    btif_update_remote_properties(req_oob_type->bd_addr , req_oob_type->bd_name,
+                                          NULL, BT_DEVICE_TYPE_BLE);
+
+    bond_state_changed(BT_STATUS_SUCCESS, &bd_addr, BT_BOND_STATE_BONDING);
+    pairing_cb.is_ssp = false;
+    pairing_cb.is_le_only = true; //TODO: we can derive classic pairing from this one
+    pairing_cb.is_le_nc = false;
+
+    BTM_BleSecureConnectionOobDataReply(req_oob_type->bd_addr,
+                                        oob_cb.oob_data.le_sc_c,
+                                        oob_cb.oob_data.le_sc_r);
 }
 
 void btif_dm_update_ble_remote_properties( BD_ADDR bd_addr, BD_NAME bd_name,
@@ -3797,7 +3867,7 @@ static void btif_stats_add_bond_event(const bt_bdaddr_t *bd_addr,
     uint32_t cod = get_cod(bd_addr);
     uint64_t ts = event->timestamp.tv_sec * 1000 +
                   event->timestamp.tv_nsec / 1000000;
-    metrics_pair_event(0, ts, cod, device_type);
+    metrics_log_pair_event(0, ts, cod, device_type);
 
     pthread_mutex_unlock(&bond_event_lock);
 }

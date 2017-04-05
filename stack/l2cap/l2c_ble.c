@@ -33,6 +33,7 @@
 #include "device/include/controller.h"
 #include "device/include/interop.h"
 #include "stack_config.h"
+#include "btif_debug_l2c.h"
 
 #if (BLE_INCLUDED == TRUE)
 
@@ -234,42 +235,6 @@ UINT16 L2CA_GetDisconnectReason (BD_ADDR remote_bda, tBT_TRANSPORT transport)
     return reason;
 }
 
-void l2cble_use_preferred_conn_params(BD_ADDR bda) {
-    tL2C_LCB *p_lcb = l2cu_find_lcb_by_bd_addr (bda, BT_TRANSPORT_LE);
-    tBTM_SEC_DEV_REC    *p_dev_rec = btm_find_or_alloc_dev (bda);
-
-    /* If there are any preferred connection parameters, set them now */
-    if ( (p_dev_rec->conn_params.min_conn_int     >= BTM_BLE_CONN_INT_MIN ) &&
-         (p_dev_rec->conn_params.min_conn_int     <= BTM_BLE_CONN_INT_MAX ) &&
-         (p_dev_rec->conn_params.max_conn_int     >= BTM_BLE_CONN_INT_MIN ) &&
-         (p_dev_rec->conn_params.max_conn_int     <= BTM_BLE_CONN_INT_MAX ) &&
-         (p_dev_rec->conn_params.slave_latency    <= BTM_BLE_CONN_LATENCY_MAX ) &&
-         (p_dev_rec->conn_params.supervision_tout >= BTM_BLE_CONN_SUP_TOUT_MIN) &&
-         (p_dev_rec->conn_params.supervision_tout <= BTM_BLE_CONN_SUP_TOUT_MAX) &&
-         ((p_lcb->min_interval < p_dev_rec->conn_params.min_conn_int &&
-          p_dev_rec->conn_params.min_conn_int != BTM_BLE_CONN_PARAM_UNDEF) ||
-          (p_lcb->min_interval > p_dev_rec->conn_params.max_conn_int) ||
-          (p_lcb->latency > p_dev_rec->conn_params.slave_latency) ||
-          (p_lcb->timeout > p_dev_rec->conn_params.supervision_tout)))
-    {
-        L2CAP_TRACE_DEBUG ("%s: HANDLE=%d min_conn_int=%d max_conn_int=%d slave_latency=%d supervision_tout=%d", __func__,
-                            p_lcb->handle, p_dev_rec->conn_params.min_conn_int, p_dev_rec->conn_params.max_conn_int,
-                            p_dev_rec->conn_params.slave_latency, p_dev_rec->conn_params.supervision_tout);
-
-        p_lcb->min_interval = p_dev_rec->conn_params.min_conn_int;
-        p_lcb->max_interval = p_dev_rec->conn_params.max_conn_int;
-        p_lcb->timeout      = p_dev_rec->conn_params.supervision_tout;
-        p_lcb->latency      = p_dev_rec->conn_params.slave_latency;
-
-        btsnd_hcic_ble_upd_ll_conn_params (p_lcb->handle,
-                                           p_dev_rec->conn_params.min_conn_int,
-                                           p_dev_rec->conn_params.max_conn_int,
-                                           p_dev_rec->conn_params.slave_latency,
-                                           p_dev_rec->conn_params.supervision_tout,
-                                           0, 0);
-    }
-}
-
 /*******************************************************************************
 **
 ** Function l2cble_notify_le_connection
@@ -308,7 +273,7 @@ void l2cble_notify_le_connection (BD_ADDR bda)
     if (!BTM_GetRemoteDeviceName(bda, bdname) || !*bdname ||
         (!interop_match_name(INTEROP_DISABLE_LE_CONN_PREFERRED_PARAMS, (const char*) bdname)))
     {
-        l2cble_use_preferred_conn_params(bda);
+        //l2cble_use_preferred_conn_params(bda);
     }
 }
 
@@ -578,6 +543,14 @@ static void l2cble_start_conn_update (tL2C_LCB *p_lcb)
             p_lcb->conn_update_mask |= L2C_BLE_NOT_DEFAULT_PARAM;
         }
     }
+
+    /* Record the BLE connection update request. */
+    if (p_lcb->conn_update_mask & L2C_BLE_UPDATE_PENDING) {
+      bt_bdaddr_t bd_addr;
+      bdcpy(bd_addr.address, p_lcb->remote_bd_addr);
+      btif_debug_ble_connection_update_request(bd_addr, min_conn_int, max_conn_int, slave_latency,
+          supervision_tout);
+    }
 }
 
 /*******************************************************************************
@@ -611,6 +584,12 @@ void l2cble_process_conn_update_evt (UINT16 handle, UINT8 status,
     }
 
     l2cble_start_conn_update(p_lcb);
+
+    /* Record the BLE connection update response. */
+    bt_bdaddr_t bd_addr;
+    bdcpy(bd_addr.address, p_lcb->remote_bd_addr);
+    btif_debug_ble_connection_update_response(bd_addr, status, interval,
+        latency, timeout);
 
     L2CAP_TRACE_DEBUG("%s: conn_update_mask=%d", __func__, p_lcb->conn_update_mask);
 }

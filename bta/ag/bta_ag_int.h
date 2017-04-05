@@ -28,6 +28,7 @@
 #include "bta_api.h"
 #include "bta_ag_api.h"
 #include "bta_ag_at.h"
+#include "osi/include/log.h"
 
 /* Send RING & CLIP in one AT cmd */
 #ifndef BTA_AG_MULTI_RESULT_INCLUDED
