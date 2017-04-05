@@ -150,6 +150,10 @@ struct a2dp_stream_in {
  *****************************************************************************/
 
 static size_t out_get_buffer_size(const struct audio_stream* stream);
+static size_t audio_stream_compute_buffer_size(
+    btav_a2dp_codec_sample_rate_t codec_sample_rate,
+    btav_a2dp_codec_bits_per_sample_t codec_bits_per_sample,
+    btav_a2dp_codec_channel_mode_t codec_channel_mode);
 
 /*****************************************************************************
  *  Externs
@@ -607,6 +611,9 @@ static int a2dp_read_output_audio_config(
     common->cfg.rate = stream_config.rate;
     common->cfg.channel_mask = stream_config.channel_mask;
     common->cfg.format = stream_config.format;
+    common->buffer_sz = audio_stream_compute_buffer_size(
+        codec_config->sample_rate, codec_config->bits_per_sample,
+        codec_config->channel_mode);
   }
 
   INFO(
@@ -712,8 +719,8 @@ static void a2dp_open_ctrl_path(struct a2dp_stream_common* common) {
   /* retry logic to catch any timing variations on control channel */
   for (i = 0; i < CTRL_CHAN_RETRY_COUNT; i++) {
     /* connect control channel if not already connected */
-    if ((common->ctrl_fd = skt_connect(A2DP_CTRL_PATH, common->buffer_sz)) >
-        0) {
+    if ((common->ctrl_fd = skt_connect(
+             A2DP_CTRL_PATH, AUDIO_STREAM_CONTROL_OUTPUT_BUFFER_SZ)) > 0) {
       /* success, now check if stack is ready */
       if (check_a2dp_ready(common) == 0) break;
 
@@ -925,6 +932,106 @@ static size_t out_get_buffer_size(const struct audio_stream* stream) {
   }
 
   return period_size;
+}
+
+static size_t audio_stream_compute_buffer_size(
+    btav_a2dp_codec_sample_rate_t codec_sample_rate,
+    btav_a2dp_codec_bits_per_sample_t codec_bits_per_sample,
+    btav_a2dp_codec_channel_mode_t codec_channel_mode) {
+  size_t buffer_sz = AUDIO_STREAM_OUTPUT_BUFFER_SZ;  // Default value
+  const uint32_t time_period_ms = 20;                // Conservative 20ms
+  uint32_t sample_rate;
+  uint32_t bits_per_sample;
+  uint32_t number_of_channels;
+
+  // Check the codec config sample rate
+  switch (codec_sample_rate) {
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_44100:
+      sample_rate = 44100;
+      break;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_48000:
+      sample_rate = 48000;
+      break;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_88200:
+      sample_rate = 88200;
+      break;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_96000:
+      sample_rate = 96000;
+      break;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_176400:
+      sample_rate = 176400;
+      break;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_192000:
+      sample_rate = 192000;
+      break;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_NONE:
+    default:
+      ERROR("Invalid sample rate: 0x%x", codec_sample_rate);
+      return buffer_sz;
+  }
+
+  // Check the codec config bits per sample
+  switch (codec_bits_per_sample) {
+    case BTAV_A2DP_CODEC_BITS_PER_SAMPLE_16:
+      bits_per_sample = 16;
+      break;
+    case BTAV_A2DP_CODEC_BITS_PER_SAMPLE_24:
+      bits_per_sample = 24;
+      break;
+    case BTAV_A2DP_CODEC_BITS_PER_SAMPLE_32:
+      bits_per_sample = 32;
+      break;
+    case BTAV_A2DP_CODEC_BITS_PER_SAMPLE_NONE:
+    default:
+      ERROR("Invalid bits per sample: 0x%x", codec_bits_per_sample);
+      return buffer_sz;
+  }
+
+  // Check the codec config channel mode
+  switch (codec_channel_mode) {
+    case BTAV_A2DP_CODEC_CHANNEL_MODE_MONO:
+      number_of_channels = 1;
+      break;
+    case BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO:
+      number_of_channels = 2;
+      break;
+    case BTAV_A2DP_CODEC_CHANNEL_MODE_NONE:
+    default:
+      ERROR("Invalid channel mode: 0x%x", codec_channel_mode);
+      return buffer_sz;
+  }
+
+  //
+  // The buffer size is computed by using the following formula:
+  //
+  // AUDIO_STREAM_OUTPUT_BUFFER_SIZE =
+  //    (TIME_PERIOD_MS * AUDIO_STREAM_OUTPUT_BUFFER_PERIODS *
+  //     SAMPLE_RATE_HZ * NUMBER_OF_CHANNELS * (BITS_PER_SAMPLE / 8)) / 1000
+  //
+  // AUDIO_STREAM_OUTPUT_BUFFER_PERIODS controls how the socket buffer is
+  // divided for AudioFlinger data delivery. The AudioFlinger mixer delivers
+  // data in chunks of
+  // (AUDIO_STREAM_OUTPUT_BUFFER_SIZE / AUDIO_STREAM_OUTPUT_BUFFER_PERIODS) .
+  // If the number of periods is 2, the socket buffer represents "double
+  // buffering" of the AudioFlinger mixer buffer.
+  //
+  // Furthermore, the AudioFlinger expects the buffer size to be a multiple
+  // of 16 frames.
+  const size_t divisor = (AUDIO_STREAM_OUTPUT_BUFFER_PERIODS * 16 *
+                          number_of_channels * bits_per_sample) /
+                         8;
+
+  buffer_sz = (time_period_ms * AUDIO_STREAM_OUTPUT_BUFFER_PERIODS *
+               sample_rate * number_of_channels * (bits_per_sample / 8)) /
+              1000;
+
+  // Adjust the buffer size so it can be divided by the divisor
+  const size_t remainder = buffer_sz % divisor;
+  if (remainder != 0) {
+    buffer_sz += divisor - remainder;
+  }
+
+  return buffer_sz;
 }
 
 static uint32_t out_get_channels(const struct audio_stream* stream) {
@@ -1434,8 +1541,11 @@ static int adev_open_output_stream(struct audio_hw_device* dev,
     config->channel_mask =
         out_get_channels((const struct audio_stream*)&out->stream);
 
-    INFO("Output stream config: format=0x%x sample_rate=%d channel_mask=0x%x",
-         config->format, config->sample_rate, config->channel_mask);
+    INFO(
+        "Output stream config: format=0x%x sample_rate=%d channel_mask=0x%x "
+        "buffer_sz=%zu",
+        config->format, config->sample_rate, config->channel_mask,
+        out->common.buffer_sz);
   }
   *stream_out = &out->stream;
   a2dp_dev->output = out;
