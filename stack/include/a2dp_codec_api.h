@@ -32,7 +32,7 @@
 #include <hardware/bt_av.h>
 
 #include "a2dp_api.h"
-#include "audio_a2dp_hw/audio_a2dp_hw.h"
+#include "audio_a2dp_hw/include/audio_a2dp_hw.h"
 #include "avdt_api.h"
 #include "osi/include/time.h"
 

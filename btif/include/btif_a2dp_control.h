@@ -20,7 +20,7 @@
 #ifndef BTIF_A2DP_CONTROL_H
 #define BTIF_A2DP_CONTROL_H
 
-#include "audio_a2dp_hw/audio_a2dp_hw.h"
+#include "audio_a2dp_hw/include/audio_a2dp_hw.h"
 
 // Initialize the A2DP control module. It should be called during the
 // startup stage of A2DP streaming.

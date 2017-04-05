@@ -40,7 +40,6 @@
 #include <mutex>
 
 #include <hardware/audio.h>
-#include <hardware/bt_av.h>
 #include <hardware/hardware.h>
 #include <system/audio.h>
 
@@ -150,10 +149,6 @@ struct a2dp_stream_in {
  *****************************************************************************/
 
 static size_t out_get_buffer_size(const struct audio_stream* stream);
-static size_t audio_stream_compute_buffer_size(
-    btav_a2dp_codec_sample_rate_t codec_sample_rate,
-    btav_a2dp_codec_bits_per_sample_t codec_bits_per_sample,
-    btav_a2dp_codec_channel_mode_t codec_channel_mode);
 
 /*****************************************************************************
  *  Externs
@@ -611,7 +606,7 @@ static int a2dp_read_output_audio_config(
     common->cfg.rate = stream_config.rate;
     common->cfg.channel_mask = stream_config.channel_mask;
     common->cfg.format = stream_config.format;
-    common->buffer_sz = audio_stream_compute_buffer_size(
+    common->buffer_sz = audio_a2dp_hw_stream_compute_buffer_size(
         codec_config->sample_rate, codec_config->bits_per_sample,
         codec_config->channel_mode);
   }
@@ -922,24 +917,19 @@ static size_t out_get_buffer_size(const struct audio_stream* stream) {
   // period_size is the AudioFlinger mixer buffer size.
   const size_t period_size =
       out->common.buffer_sz / AUDIO_STREAM_OUTPUT_BUFFER_PERIODS;
-  const size_t mixer_unit_size = 16 /* frames */ * 4 /* framesize */;
 
   DEBUG("socket buffer size: %zu  period size: %zu", out->common.buffer_sz,
         period_size);
-  if (period_size % mixer_unit_size != 0) {
-    ERROR("period size %zu not a multiple of %zu", period_size,
-          mixer_unit_size);
-  }
 
   return period_size;
 }
 
-static size_t audio_stream_compute_buffer_size(
+size_t audio_a2dp_hw_stream_compute_buffer_size(
     btav_a2dp_codec_sample_rate_t codec_sample_rate,
     btav_a2dp_codec_bits_per_sample_t codec_bits_per_sample,
     btav_a2dp_codec_channel_mode_t codec_channel_mode) {
   size_t buffer_sz = AUDIO_STREAM_OUTPUT_BUFFER_SZ;  // Default value
-  const uint32_t time_period_ms = 20;                // Conservative 20ms
+  const uint64_t time_period_ms = 20;                // Conservative 20ms
   uint32_t sample_rate;
   uint32_t bits_per_sample;
   uint32_t number_of_channels;

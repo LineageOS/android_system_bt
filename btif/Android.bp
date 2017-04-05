@@ -19,7 +19,6 @@ btifCommonIncludes = [
     "system/bt/vnd/include",
     "system/bt/embdrv/sbc/encoder/include",
     "system/bt/embdrv/sbc/decoder/include",
-    "system/bt/audio_a2dp_hw",
     "system/bt/utils/include",
 ]
 
