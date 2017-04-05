@@ -76,6 +76,10 @@
 #define AVRCP_1_5_STRING "avrcp15"
 #endif
 
+#ifndef AVRCP_1_4_STRING
+#define AVRCP_1_4_STRING "avrcp14"
+#endif
+
 /* state machine states */
 enum { BTA_AV_INIT_ST, BTA_AV_OPEN_ST };
 
@@ -477,7 +481,8 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
         if (profile_initialized == UUID_SERVCLASS_AUDIO_SOURCE) {
           // This check can override the AVRCP profile version with a property
           char avrcp_version[PROPERTY_VALUE_MAX] = {0};
-          osi_property_get(AVRCP_VERSION_PROPERTY, avrcp_version, "");
+          osi_property_get(AVRCP_VERSION_PROPERTY, avrcp_version,
+                           AVRCP_1_4_STRING);
           LOG_INFO(LOG_TAG, "AVRCP version used for sdp: \"%s\"",
                    avrcp_version);
 
