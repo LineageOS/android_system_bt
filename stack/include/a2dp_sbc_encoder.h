@@ -60,9 +60,4 @@ period_ms_t a2dp_sbc_get_encoder_interval_ms(void);
 // |timestamp_us| is the current timestamp (in microseconds).
 void a2dp_sbc_send_frames(uint64_t timestamp_us);
 
-// Dump SBC codec-related statistics.
-// |fd| is the file descriptor to use to dump the statistics information
-// in user-friendly test format.
-void a2dp_sbc_debug_codec_dump(int fd);
-
 #endif  // A2DP_SBC_ENCODER_H

@@ -23,6 +23,7 @@
 #include "a2dp_codec_api.h"
 
 #include <base/logging.h>
+#include <inttypes.h>
 
 #include "a2dp_aac.h"
 #include "a2dp_sbc.h"
@@ -280,6 +281,130 @@ bool A2dpCodecConfig::setCodecUserConfig(
   if (*p_restart_input || *p_restart_output) *p_config_updated = true;
 
   return true;
+}
+
+bool A2dpCodecConfig::codecConfigIsValid(
+    const btav_a2dp_codec_config_t& codec_config) {
+  return (codec_config.codec_type < BTAV_A2DP_CODEC_INDEX_MAX) &&
+         (codec_config.sample_rate != BTAV_A2DP_CODEC_SAMPLE_RATE_NONE) &&
+         (codec_config.bits_per_sample !=
+          BTAV_A2DP_CODEC_BITS_PER_SAMPLE_NONE) &&
+         (codec_config.channel_mode != BTAV_A2DP_CODEC_CHANNEL_MODE_NONE);
+}
+
+std::string A2dpCodecConfig::codecConfig2Str(
+    const btav_a2dp_codec_config_t& codec_config) {
+  std::string result;
+
+  if (!codecConfigIsValid(codec_config)) return "Invalid";
+
+  result.append("Rate=");
+  result.append(codecSampleRate2Str(codec_config.sample_rate));
+  result.append(" Bits=");
+  result.append(codecBitsPerSample2Str(codec_config.bits_per_sample));
+  result.append(" Mode=");
+  result.append(codecChannelMode2Str(codec_config.channel_mode));
+
+  return result;
+}
+
+std::string A2dpCodecConfig::codecSampleRate2Str(
+    btav_a2dp_codec_sample_rate_t codec_sample_rate) {
+  std::string result;
+
+  if (codec_sample_rate & BTAV_A2DP_CODEC_SAMPLE_RATE_44100) {
+    if (!result.empty()) result += "|";
+    result += "44100";
+  }
+  if (codec_sample_rate & BTAV_A2DP_CODEC_SAMPLE_RATE_48000) {
+    if (!result.empty()) result += "|";
+    result += "48000";
+  }
+  if (codec_sample_rate & BTAV_A2DP_CODEC_SAMPLE_RATE_88200) {
+    if (!result.empty()) result += "|";
+    result += "88200";
+  }
+  if (codec_sample_rate & BTAV_A2DP_CODEC_SAMPLE_RATE_96000) {
+    if (!result.empty()) result += "|";
+    result += "96000";
+  }
+  if (codec_sample_rate & BTAV_A2DP_CODEC_SAMPLE_RATE_176400) {
+    if (!result.empty()) result += "|";
+    result += "176400";
+  }
+  if (codec_sample_rate & BTAV_A2DP_CODEC_SAMPLE_RATE_192000) {
+    if (!result.empty()) result += "|";
+    result += "192000";
+  }
+  if (result.empty()) {
+    std::stringstream ss;
+    ss << "UnknownSampleRate(0x" << std::hex << codec_sample_rate << ")";
+    ss >> result;
+  }
+
+  return result;
+}
+
+std::string A2dpCodecConfig::codecBitsPerSample2Str(
+    btav_a2dp_codec_bits_per_sample_t codec_bits_per_sample) {
+  std::string result;
+
+  if (codec_bits_per_sample & BTAV_A2DP_CODEC_BITS_PER_SAMPLE_16) {
+    if (!result.empty()) result += "|";
+    result += "16";
+  }
+  if (codec_bits_per_sample & BTAV_A2DP_CODEC_BITS_PER_SAMPLE_24) {
+    if (!result.empty()) result += "|";
+    result += "24";
+  }
+  if (codec_bits_per_sample & BTAV_A2DP_CODEC_BITS_PER_SAMPLE_32) {
+    if (!result.empty()) result += "|";
+    result += "32";
+  }
+  if (result.empty()) {
+    std::stringstream ss;
+    ss << "UnknownBitsPerSample(0x" << std::hex << codec_bits_per_sample << ")";
+    ss >> result;
+  }
+
+  return result;
+}
+
+std::string A2dpCodecConfig::codecChannelMode2Str(
+    btav_a2dp_codec_channel_mode_t codec_channel_mode) {
+  std::string result;
+
+  if (codec_channel_mode & BTAV_A2DP_CODEC_CHANNEL_MODE_MONO) {
+    if (!result.empty()) result += "|";
+    result += "MONO";
+  }
+  if (codec_channel_mode & BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO) {
+    if (!result.empty()) result += "|";
+    result += "STEREO";
+  }
+  if (result.empty()) {
+    std::stringstream ss;
+    ss << "UnknownChannelMode(0x" << std::hex << codec_channel_mode << ")";
+    ss >> result;
+  }
+
+  return result;
+}
+
+void A2dpCodecConfig::debug_codec_dump(int fd) {
+  std::string result;
+  dprintf(fd, "\nA2DP %s State:\n", name().c_str());
+  dprintf(fd, "  Priority: %d\n", codecPriority());
+  dprintf(fd, "  Encoder interval (ms): %" PRIu64 "\n", encoderIntervalMs());
+
+  result = codecConfig2Str(getCodecConfig());
+  dprintf(fd, "  Config: %s\n", result.c_str());
+
+  result = codecConfig2Str(getCodecSelectableCapability());
+  dprintf(fd, "  Selectable: %s\n", result.c_str());
+
+  result = codecConfig2Str(getCodecLocalCapability());
+  dprintf(fd, "  Local capability: %s\n", result.c_str());
 }
 
 //
@@ -666,6 +791,23 @@ bool A2dpCodecs::getCodecConfigAndCapabilities(
   *p_codecs_selectable_capabilities = codecs_capabilities;
 
   return true;
+}
+
+void A2dpCodecs::debug_codec_dump(int fd) {
+  std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
+  dprintf(fd, "\nA2DP Codecs State:\n");
+
+  // Print the current codec name
+  if (current_codec_config_ != nullptr) {
+    dprintf(fd, "  Current Codec: %s\n", current_codec_config_->name().c_str());
+  } else {
+    dprintf(fd, "  Current Codec: None\n");
+  }
+
+  // Print the codec-specific state
+  for (auto codec_config : ordered_source_codecs_) {
+    codec_config->debug_codec_dump(fd);
+  }
 }
 
 tA2DP_CODEC_TYPE A2DP_GetCodecType(const uint8_t* p_codec_info) {

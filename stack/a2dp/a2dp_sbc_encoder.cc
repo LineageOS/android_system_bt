@@ -32,12 +32,6 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 
-#define STATS_UPDATE_MAX(current_value_storage, new_value) \
-  do {                                                     \
-    if ((new_value) > (current_value_storage))             \
-      (current_value_storage) = (new_value);               \
-  } while (0)
-
 /* Buffer pool */
 #define A2DP_SBC_BUFFER_SIZE BT_DEFAULT_BUFFER_SIZE
 
@@ -88,13 +82,16 @@ typedef struct {
 typedef struct {
   uint64_t session_start_us;
 
-  size_t media_read_total_expected_frames;
-  size_t media_read_max_expected_frames;
-  size_t media_read_expected_count;
+  size_t media_read_total_expected_packets;
+  size_t media_read_total_expected_reads_count;
+  size_t media_read_total_expected_read_bytes;
 
-  size_t media_read_total_limited_frames;
-  size_t media_read_max_limited_frames;
-  size_t media_read_limited_count;
+  size_t media_read_total_dropped_packets;
+  size_t media_read_total_actual_reads_count;
+  size_t media_read_total_actual_read_bytes;
+
+  size_t media_read_total_expected_frames;
+  size_t media_read_total_dropped_frames;
 } a2dp_sbc_encoder_stats_t;
 
 typedef struct {
@@ -452,10 +449,7 @@ static void a2dp_sbc_get_num_frame_iteration(uint8_t* num_of_iterations,
   projected_nof =
       a2dp_sbc_encoder_cb.feeding_state.counter / pcm_bytes_per_frame;
   // Update the stats
-  STATS_UPDATE_MAX(a2dp_sbc_encoder_cb.stats.media_read_max_expected_frames,
-                   projected_nof);
   a2dp_sbc_encoder_cb.stats.media_read_total_expected_frames += projected_nof;
-  a2dp_sbc_encoder_cb.stats.media_read_expected_count++;
 
   if (projected_nof > MAX_PCM_FRAME_NUM_PER_TICK) {
     LOG_WARN(LOG_TAG, "%s: limiting frames to be sent from %d to %d", __func__,
@@ -463,10 +457,7 @@ static void a2dp_sbc_get_num_frame_iteration(uint8_t* num_of_iterations,
 
     // Update the stats
     size_t delta = projected_nof - MAX_PCM_FRAME_NUM_PER_TICK;
-    a2dp_sbc_encoder_cb.stats.media_read_limited_count++;
-    a2dp_sbc_encoder_cb.stats.media_read_total_limited_frames += delta;
-    STATS_UPDATE_MAX(a2dp_sbc_encoder_cb.stats.media_read_max_limited_frames,
-                     delta);
+    a2dp_sbc_encoder_cb.stats.media_read_total_dropped_frames += delta;
 
     projected_nof = MAX_PCM_FRAME_NUM_PER_TICK;
   }
@@ -512,6 +503,11 @@ static void a2dp_sbc_get_num_frame_iteration(uint8_t* num_of_iterations,
     if (projected_nof > MAX_PCM_FRAME_NUM_PER_TICK) {
       LOG_ERROR(LOG_TAG, "%s: Audio Congestion (frames: %d > max (%d))",
                 __func__, projected_nof, MAX_PCM_FRAME_NUM_PER_TICK);
+
+      // Update the stats
+      size_t delta = projected_nof - MAX_PCM_FRAME_NUM_PER_TICK;
+      a2dp_sbc_encoder_cb.stats.media_read_total_dropped_frames += delta;
+
       projected_nof = MAX_PCM_FRAME_NUM_PER_TICK;
       a2dp_sbc_encoder_cb.feeding_state.counter =
           noi * projected_nof * pcm_bytes_per_frame;
@@ -535,18 +531,19 @@ static void a2dp_sbc_encode_frames(uint8_t nb_frame) {
   uint8_t last_frame_len = 0;
   while (nb_frame) {
     BT_HDR* p_buf = (BT_HDR*)osi_malloc(A2DP_SBC_BUFFER_SIZE);
-
-    /* Init buffer */
     p_buf->offset = A2DP_SBC_OFFSET;
     p_buf->len = 0;
     p_buf->layer_specific = 0;
+    a2dp_sbc_encoder_cb.stats.media_read_total_expected_packets++;
 
     do {
       /* Fill allocated buffer with 0 */
       memset(a2dp_sbc_encoder_cb.pcmBuffer, 0,
              blocm_x_subband * p_encoder_params->s16NumOfChannels);
 
-      /* Read PCM data and upsample them if needed */
+      //
+      // Read the PCM data and encode it. If necessary, upsample the data.
+      //
       if (a2dp_sbc_read_feeding()) {
         uint8_t* output = (uint8_t*)(p_buf + 1) + p_buf->offset + p_buf->len;
         int16_t* input = a2dp_sbc_encoder_cb.pcmBuffer;
@@ -585,6 +582,7 @@ static void a2dp_sbc_encode_frames(uint8_t nb_frame) {
       remain_nb_frame = nb_frame;
       if (!a2dp_sbc_encoder_cb.enqueue_callback(p_buf, done_nb_frame)) return;
     } else {
+      a2dp_sbc_encoder_cb.stats.media_read_total_dropped_packets++;
       osi_free(p_buf);
     }
   }
@@ -629,17 +627,23 @@ static bool a2dp_sbc_read_feeding(void) {
       break;
   }
 
+  a2dp_sbc_encoder_cb.stats.media_read_total_expected_reads_count++;
   if (sbc_sampling == a2dp_sbc_encoder_cb.feeding_params.sample_rate) {
     read_size =
         bytes_needed - a2dp_sbc_encoder_cb.feeding_state.aa_feed_residue;
+    a2dp_sbc_encoder_cb.stats.media_read_total_expected_read_bytes += read_size;
     nb_byte_read = a2dp_sbc_encoder_cb.read_callback(
         ((uint8_t*)a2dp_sbc_encoder_cb.pcmBuffer) +
             a2dp_sbc_encoder_cb.feeding_state.aa_feed_residue,
         read_size);
+    a2dp_sbc_encoder_cb.stats.media_read_total_actual_read_bytes +=
+        nb_byte_read;
+
     if (nb_byte_read != read_size) {
       a2dp_sbc_encoder_cb.feeding_state.aa_feed_residue += nb_byte_read;
       return false;
     }
+    a2dp_sbc_encoder_cb.stats.media_read_total_actual_reads_count++;
     a2dp_sbc_encoder_cb.feeding_state.aa_feed_residue = 0;
     return true;
   }
@@ -686,10 +690,12 @@ static bool a2dp_sbc_read_feeding(void) {
   read_size = src_samples;
   read_size *= a2dp_sbc_encoder_cb.feeding_params.channel_count;
   read_size *= (a2dp_sbc_encoder_cb.feeding_params.bits_per_sample / 8);
+  a2dp_sbc_encoder_cb.stats.media_read_total_expected_read_bytes += read_size;
 
   /* Read Data from UIPC channel */
   nb_byte_read =
       a2dp_sbc_encoder_cb.read_callback((uint8_t*)read_buffer, read_size);
+  a2dp_sbc_encoder_cb.stats.media_read_total_actual_read_bytes += nb_byte_read;
 
   if (nb_byte_read < read_size) {
     if (nb_byte_read == 0) return false;
@@ -698,6 +704,7 @@ static bool a2dp_sbc_read_feeding(void) {
     memset(((uint8_t*)read_buffer) + nb_byte_read, 0, read_size - nb_byte_read);
     nb_byte_read = read_size;
   }
+  a2dp_sbc_encoder_cb.stats.media_read_total_actual_reads_count++;
 
   /* Initialize PCM up-sampling engine */
   a2dp_sbc_init_up_sample(a2dp_sbc_encoder_cb.feeding_params.sample_rate,
@@ -879,36 +886,36 @@ static uint32_t a2dp_sbc_frame_length(void) {
   return frame_len;
 }
 
-void a2dp_sbc_debug_codec_dump(int fd) {
+period_ms_t A2dpCodecConfigSbc::encoderIntervalMs() const {
+  return a2dp_sbc_get_encoder_interval_ms();
+}
+
+void A2dpCodecConfigSbc::debug_codec_dump(int fd) {
   a2dp_sbc_encoder_stats_t* stats = &a2dp_sbc_encoder_cb.stats;
-  size_t ave_size;
 
-  dprintf(fd, "\nA2DP SBC State:\n");
+  A2dpCodecConfig::debug_codec_dump(fd);
 
-  ave_size = 0;
-  if (stats->media_read_expected_count != 0) {
-    ave_size = stats->media_read_total_expected_frames /
-               stats->media_read_expected_count;
-  }
   dprintf(fd,
-          "  Frames expected (total/max/ave)                         : %zu / "
-          "%zu / %zu\n",
+          "  Packet counts (expected/dropped)                        : %zu / "
+          "%zu\n",
+          stats->media_read_total_expected_packets,
+          stats->media_read_total_dropped_packets);
+
+  dprintf(fd,
+          "  PCM read counts (expected/actual)                       : %zu / "
+          "%zu\n",
+          stats->media_read_total_expected_reads_count,
+          stats->media_read_total_actual_reads_count);
+
+  dprintf(fd,
+          "  PCM read bytes (expected/actual)                        : %zu / "
+          "%zu\n",
+          stats->media_read_total_expected_read_bytes,
+          stats->media_read_total_actual_read_bytes);
+
+  dprintf(fd,
+          "  Frames counts (expected/dropped)                        : %zu / "
+          "%zu\n",
           stats->media_read_total_expected_frames,
-          stats->media_read_max_expected_frames, ave_size);
-
-  ave_size = 0;
-  if (stats->media_read_limited_count != 0) {
-    ave_size = stats->media_read_total_limited_frames /
-               stats->media_read_limited_count;
-  }
-  dprintf(fd,
-          "  Frames limited (total/max/ave)                          : %zu / "
-          "%zu / %zu\n",
-          stats->media_read_total_limited_frames,
-          stats->media_read_max_limited_frames, ave_size);
-
-  dprintf(
-      fd,
-      "  Counts (expected/limited)                               : %zu / %zu\n",
-      stats->media_read_expected_count, stats->media_read_limited_count);
+          stats->media_read_total_dropped_frames);
 }

@@ -470,25 +470,29 @@ static size_t aptx_hd_encode_24bit(tAPTX_HD_FRAMING_PARAMS* framing_params,
   return pcm_bytes_encoded;
 }
 
-void a2dp_vendor_aptx_hd_debug_codec_dump(int fd) {
+period_ms_t A2dpCodecConfigAptxHd::encoderIntervalMs() const {
+  return a2dp_vendor_aptx_hd_get_encoder_interval_ms();
+}
+
+void A2dpCodecConfigAptxHd::debug_codec_dump(int fd) {
   a2dp_aptx_hd_encoder_stats_t* stats = &a2dp_aptx_hd_encoder_cb.stats;
 
-  dprintf(fd, "\nA2DP aptX-HD State:\n");
+  A2dpCodecConfig::debug_codec_dump(fd);
 
   dprintf(fd,
-          "  Packets expected/dropped                                : %zu / "
+          "  Packet counts (expected/dropped)                        : %zu / "
           "%zu\n",
           stats->media_read_total_expected_packets,
           stats->media_read_total_dropped_packets);
 
   dprintf(fd,
-          "  PCM reads count expected/actual                         : %zu / "
+          "  PCM read counts (expected/actual)                       : %zu / "
           "%zu\n",
           stats->media_read_total_expected_reads_count,
           stats->media_read_total_actual_reads_count);
 
   dprintf(fd,
-          "  PCM read bytes expected/actual                          : %zu / "
+          "  PCM read bytes (expected/actual)                        : %zu / "
           "%zu\n",
           stats->media_read_total_expected_read_bytes,
           stats->media_read_total_actual_read_bytes);
