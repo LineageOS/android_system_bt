@@ -192,7 +192,7 @@ static void parse_ble_read_maximum_advertising_data_length(
   uint8_t* stream = read_command_complete_header(
       response, HCI_LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH,
       2 /* bytes after */);
-  STREAM_TO_UINT8(*ble_maximum_advertising_data_length_ptr, stream);
+  STREAM_TO_UINT16(*ble_maximum_advertising_data_length_ptr, stream);
 
   buffer_allocator->free(response);
 }
