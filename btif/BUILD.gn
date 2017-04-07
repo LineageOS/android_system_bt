@@ -16,7 +16,7 @@
 
 static_library("btif") {
   sources = [
-    "//audio_a2dp_hw/audio_a2dp_hw_utils.cc",
+    "//audio_a2dp_hw/src/audio_a2dp_hw_utils.cc",
     "src/btif_a2dp.cc",
     "src/btif_a2dp_control.cc",
     "src/btif_a2dp_sink.cc",
@@ -78,7 +78,6 @@ static_library("btif") {
   include_dirs = [
     "include",
     "//",
-    "//audio_a2dp_hw",
     "//bta/include",
     "//bta/sys",
     "//btcore/include",

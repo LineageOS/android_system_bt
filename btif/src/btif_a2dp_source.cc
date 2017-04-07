@@ -24,7 +24,7 @@
 #include <string.h>
 #include <algorithm>
 
-#include "audio_a2dp_hw.h"
+#include "audio_a2dp_hw/include/audio_a2dp_hw.h"
 #include "bt_common.h"
 #include "bta_av_ci.h"
 #include "btcore/include/bdaddr.h"
