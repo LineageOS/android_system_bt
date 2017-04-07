@@ -676,6 +676,7 @@ extern void btsnd_hcic_vendor_spec_cmd(void* buffer, uint16_t opcode,
 
 #define HCIC_PARAM_SIZE_BLE_ADD_DEV_RESOLVING_LIST (7 + HCIC_BLE_IRK_SIZE * 2)
 #define HCIC_PARAM_SIZE_BLE_RM_DEV_RESOLVING_LIST 7
+#define HCIC_PARAM_SIZE_BLE_SET_PRIVACY_MODE 8
 #define HCIC_PARAM_SIZE_BLE_CLEAR_RESOLVING_LIST 0
 #define HCIC_PARAM_SIZE_BLE_READ_RESOLVING_LIST_SIZE 0
 #define HCIC_PARAM_SIZE_BLE_READ_RESOLVABLE_ADDR_PEER 7
@@ -834,6 +835,10 @@ extern void btsnd_hcic_ble_add_device_resolving_list(
 
 extern void btsnd_hcic_ble_rm_device_resolving_list(uint8_t addr_type_peer,
                                                     BD_ADDR bda_peer);
+
+extern void btsnd_hcic_ble_set_privacy_mode(uint8_t addr_type_peer,
+                                            BD_ADDR bda_peer,
+                                            uint8_t privacy_type);
 
 extern void btsnd_hcic_ble_clear_resolving_list(void);
 
