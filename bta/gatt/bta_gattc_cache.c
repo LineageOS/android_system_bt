@@ -1565,7 +1565,7 @@ bool bta_gattc_cache_load(tBTA_GATTC_CLCB *p_clcb)
 
     attr = osi_malloc(sizeof(tBTA_GATTC_NV_ATTR) * num_attr);
 
-    if (fread(attr, sizeof(tBTA_GATTC_NV_ATTR), 0xFF, fd) != num_attr) {
+    if (fread(attr, sizeof(tBTA_GATTC_NV_ATTR), num_attr, fd) != num_attr) {
         APPL_TRACE_ERROR("%s: can't read GATT attributes: %s", __func__, fname);
         goto done;
     }
