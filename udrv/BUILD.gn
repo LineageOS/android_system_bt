@@ -23,7 +23,6 @@ source_set("udrv") {
     "include",
     "uipc",
     "//",
-    "//audio_a2dp_hw",
     "//include",
     "//stack/include",
     "//utils/include",

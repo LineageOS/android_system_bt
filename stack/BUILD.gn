@@ -195,7 +195,6 @@ executable("stack_unittests") {
   include_dirs = [
     "include",
     "//",
-    "//audio_a2dp_hw",
     "//bta/include",
     "//bta/sys",
     "//btcore/include",

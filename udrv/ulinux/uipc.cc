@@ -40,7 +40,7 @@
 #include <unistd.h>
 #include <mutex>
 
-#include "audio_a2dp_hw.h"
+#include "audio_a2dp_hw/include/audio_a2dp_hw.h"
 #include "bt_common.h"
 #include "bt_types.h"
 #include "bt_utils.h"
