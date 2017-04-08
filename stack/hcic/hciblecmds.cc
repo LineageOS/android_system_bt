@@ -595,6 +595,23 @@ void btsnd_hcic_ble_rm_device_resolving_list(uint8_t addr_type_peer,
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
+void btsnd_hcic_ble_set_privacy_mode(uint8_t addr_type_peer, BD_ADDR bda_peer,
+                                     uint8_t privacy_type) {
+  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
+  uint8_t* pp = (uint8_t*)(p + 1);
+
+  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_BLE_SET_PRIVACY_MODE;
+  p->offset = 0;
+
+  UINT16_TO_STREAM(pp, HCI_BLE_SET_PRIVACY_MODE);
+  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_BLE_SET_PRIVACY_MODE);
+  UINT8_TO_STREAM(pp, addr_type_peer);
+  BDADDR_TO_STREAM(pp, bda_peer);
+  UINT8_TO_STREAM(pp, privacy_type);
+
+  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
 void btsnd_hcic_ble_clear_resolving_list(void) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
