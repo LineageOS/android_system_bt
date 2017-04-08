@@ -1175,8 +1175,14 @@ tSMP_ASSO_MODEL smp_select_association_model(tSMP_CB* p_cb) {
     p_cb->le_secure_connections_mode_is_used = true;
   }
 
-  SMP_TRACE_DEBUG("use_sc_process = %d",
-                  p_cb->le_secure_connections_mode_is_used);
+  if ((p_cb->peer_auth_req & SMP_H7_SUPPORT_BIT) &&
+      (p_cb->loc_auth_req & SMP_H7_SUPPORT_BIT)) {
+    p_cb->key_derivation_h7_used = TRUE;
+  }
+
+  SMP_TRACE_DEBUG("use_sc_process = %d, h7 use = %d",
+                  p_cb->le_secure_connections_mode_is_used,
+                  p_cb->key_derivation_h7_used);
 
   if (p_cb->le_secure_connections_mode_is_used) {
     model = smp_select_association_model_secure_connections(p_cb);
