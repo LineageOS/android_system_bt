@@ -57,7 +57,7 @@ static void btm_gen_resolve_paddr_cmpl(tSMP_ENC* p) {
     p_cb->private_addr[4] = p->param_buf[1];
     p_cb->private_addr[3] = p->param_buf[2];
     /* set it to controller */
-    btsnd_hcic_ble_set_random_addr(p_cb->private_addr);
+    btm_ble_set_random_address(p_cb->private_addr);
 
     p_cb->own_addr_type = BLE_ADDR_RANDOM;
 
