@@ -23,7 +23,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "audio_a2dp_hw.h"
+#include "audio_a2dp_hw/include/audio_a2dp_hw.h"
 #include "bt_common.h"
 #include "btif_a2dp.h"
 #include "btif_a2dp_control.h"
