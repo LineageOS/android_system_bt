@@ -2,6 +2,7 @@
 
 known_tests=(
   bluetoothtbd_test
+  net_test_audio_a2dp_hw
   net_test_bluetooth
   net_test_btcore
   net_test_bta

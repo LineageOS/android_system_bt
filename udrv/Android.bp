@@ -7,7 +7,6 @@ cc_library_static {
     include_dirs: [
       "system/bt",
       "system/bt/include",
-      "system/bt/audio_a2dp_hw",
       "system/bt/utils/include",
       "system/bt/stack/include",
     ],
