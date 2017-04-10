@@ -68,7 +68,7 @@ class A2dpCodecConfig {
   btav_a2dp_codec_priority_t codecPriority() const { return codec_priority_; }
 
   // Copies out the current OTA codec config to |p_codec_info|.
-  // Returns true if the current codec config is valied and copied,
+  // Returns true if the current codec config is valid and copied,
   // otherwise false.
   bool copyOutOtaCodecConfig(uint8_t* p_codec_info);
 
@@ -186,6 +186,46 @@ class A2dpCodecConfig {
 
   // Checks whether the internal state is valid
   virtual bool isValid() const;
+
+  // Returns the encoder's periodic interval (in milliseconds).
+  virtual period_ms_t encoderIntervalMs() const = 0;
+
+  // Checks whether the A2DP Codec Configuration is valid.
+  // Returns true if A2DP Codec Configuration stored in |codec_config|
+  // is valid, otherwise false.
+  static bool codecConfigIsValid(const btav_a2dp_codec_config_t& codec_config);
+
+  // Gets the string representation of A2DP Codec Configuration.
+  // Returns the string representation of A2DP Codec Configuration stored
+  // in |codec_config|. The format is:
+  // "Rate=44100|48000 Bits=16|24 Mode=MONO|STEREO"
+  static std::string codecConfig2Str(
+      const btav_a2dp_codec_config_t& codec_config);
+
+  // Gets the string representation of A2DP Codec Sample Rate.
+  // Returns the string representation of A2DP Codec Sample Rate stored
+  // in |codec_sample_rate|. If there are multiple values stored in
+  // |codec_sample_rate|, the return string format is "rate1|rate2|rate3".
+  static std::string codecSampleRate2Str(
+      btav_a2dp_codec_sample_rate_t codec_sample_rate);
+
+  // Gets the string representation of A2DP Codec Bits Per Sample.
+  // Returns the string representation of A2DP Codec Bits Per Sample stored
+  // in |codec_bits_per_sample|. If there are multiple values stored in
+  // |codec_bits_per_sample|, the return string format is "bits1|bits2|bits3".
+  static std::string codecBitsPerSample2Str(
+      btav_a2dp_codec_bits_per_sample_t codec_bits_per_sample);
+
+  // Gets the string representation of A2DP Codec Channel Mode.
+  // Returns the string representation of A2DP Channel Mode stored
+  // in |codec_channel_mode|. If there are multiple values stored in
+  // |codec_channel_mode|, the return string format is "mode1|mode2|mode3".
+  static std::string codecChannelMode2Str(
+      btav_a2dp_codec_channel_mode_t codec_channel_mode);
+
+  // Dumps codec-related information.
+  // The information is written in user-friendly form to file descriptor |fd|.
+  virtual void debug_codec_dump(int fd);
 
   std::recursive_mutex codec_mutex_;
   const btav_a2dp_codec_index_t codec_index_;  // The unique codec index
@@ -356,6 +396,10 @@ class A2dpCodecs {
       std::vector<btav_a2dp_codec_config_t>* p_codecs_local_capabilities,
       std::vector<btav_a2dp_codec_config_t>* p_codecs_selectable_capabilities);
 
+  // Dumps codec-related information.
+  // The information is written in user-friendly form to file descriptor |fd|.
+  void debug_codec_dump(int fd);
+
  private:
   struct CompareBtBdaddr
       : public std::binary_function<bt_bdaddr_t, bt_bdaddr_t, bool> {
@@ -437,11 +481,6 @@ typedef struct {
 
   // Set transmit queue length for the A2DP encoder.
   void (*set_transmit_queue_length)(size_t transmit_queue_length);
-
-  // Dump codec-related statistics.
-  // |fd| is the file descriptor to use to dump the statistics information
-  // in user-friendly test format.
-  void (*debug_codec_dump)(int fd);
 } tA2DP_ENCODER_INTERFACE;
 
 // Gets the A2DP codec type.

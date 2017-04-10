@@ -58,9 +58,4 @@ period_ms_t a2dp_vendor_aptx_hd_get_encoder_interval_ms(void);
 // |timestamp_us| is the current timestamp (in microseconds).
 void a2dp_vendor_aptx_hd_send_frames(uint64_t timestamp_us);
 
-// Dump aptX-HD codec-related statistics.
-// |fd| is the file descriptor to use to dump the statistics information
-// in user-friendly test format.
-void a2dp_vendor_aptx_hd_debug_codec_dump(int fd);
-
 #endif  // A2DP_VENDOR_APTX_HD_ENCODER_H
