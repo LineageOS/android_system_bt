@@ -78,6 +78,7 @@ static_library("btif") {
   include_dirs = [
     "include",
     "//",
+    "//audio_a2dp_hw/include",
     "//bta/include",
     "//bta/sys",
     "//btcore/include",
