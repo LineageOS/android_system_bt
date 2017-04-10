@@ -98,7 +98,9 @@ struct AdvertisingInstance {
   }
 };
 
+#if (BLE_PRIVACY_SPT == TRUE)
 void btm_ble_adv_raddr_timer_timeout(void* data);
+#endif
 
 void DoNothing(uint8_t) {}
 void DoNothing2(uint8_t, uint8_t) {}
@@ -831,10 +833,12 @@ class BleAdvertisingManagerImpl
 
 BleAdvertisingManager* instance;
 
+#if (BLE_PRIVACY_SPT == TRUE)
 void btm_ble_adv_raddr_timer_timeout(void* data) {
   ((BleAdvertisingManagerImpl*)BleAdvertisingManager::Get())
       ->ConfigureRpa((AdvertisingInstance*)data, base::Bind(DoNothing));
 }
+#endif
 }  // namespace
 
 void BleAdvertisingManager::Initialize(BleAdvertiserHciInterface* interface) {
