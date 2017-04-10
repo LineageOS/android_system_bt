@@ -26,6 +26,7 @@
 #include "btm_ble_api.h"
 #include "btm_int_types.h"
 #include "device/include/controller.h"
+#include "hcidefs.h"
 
 #define BTM_BLE_MULTI_ADV_SET_RANDOM_ADDR_LEN 8
 #define BTM_BLE_MULTI_ADV_ENB_LEN 3
@@ -209,6 +210,12 @@ class BleAdvertiserVscHciInterfaceImpl : public BleAdvertiserHciInterface {
               uint8_t max_extended_advertising_events,
               status_cb command_complete) override {
     VLOG(1) << __func__;
+
+    if (max_extended_advertising_events) {
+      command_complete.Run(HCI_ERR_ILLEGAL_PARAMETER_FMT);
+      return;
+    }
+
     uint8_t param[BTM_BLE_MULTI_ADV_ENB_LEN];
     memset(param, 0, BTM_BLE_MULTI_ADV_ENB_LEN);
 
@@ -399,6 +406,12 @@ class BleAdvertiserLegacyHciInterfaceImpl : public BleAdvertiserHciInterface {
               uint8_t max_extended_advertising_events,
               status_cb command_complete) override {
     VLOG(1) << __func__;
+
+    if (max_extended_advertising_events) {
+      command_complete.Run(HCI_ERR_ILLEGAL_PARAMETER_FMT);
+      return;
+    }
+
     uint8_t param[HCIC_PARAM_SIZE_WRITE_ADV_ENABLE];
 
     uint8_t* pp = param;
