@@ -1632,11 +1632,12 @@ tBTA_AV_FEAT bta_av_check_peer_features(uint16_t service_uuid) {
         peer_features |= (BTA_AV_FEAT_VENDOR | BTA_AV_FEAT_METADATA);
 
       if (peer_rc_version >= AVRC_REV_1_4) {
-        peer_features |= (BTA_AV_FEAT_ADV_CTRL);
         /* get supported categories */
         p_attr = SDP_FindAttributeInRec(p_rec, ATTR_ID_SUPPORTED_FEATURES);
         if (p_attr != NULL) {
           categories = p_attr->attr_value.v.u16;
+          if (categories & AVRC_SUPF_CT_CAT2)
+            peer_features |= (BTA_AV_FEAT_ADV_CTRL);
           if (categories & AVRC_SUPF_CT_BROWSE)
             peer_features |= (BTA_AV_FEAT_BROWSE);
         }
