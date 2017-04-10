@@ -97,8 +97,8 @@ static const tA2DP_ENCODER_INTERFACE a2dp_encoder_interface_sbc = {
     a2dp_sbc_feeding_flush,
     a2dp_sbc_get_encoder_interval_ms,
     a2dp_sbc_send_frames,
-    nullptr,  // set_transmit_queue_length
-    a2dp_sbc_debug_codec_dump};
+    nullptr  // set_transmit_queue_length
+};
 
 static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilitySbc(
     const tA2DP_SBC_CIE* p_cap, const uint8_t* p_codec_info,
@@ -1637,4 +1637,9 @@ bool A2dpCodecConfigSbcSink::updateEncoderUserConfig(
     UNUSED_ATTR bool* p_config_updated) {
   // TODO: This method applies only to Source codecs
   return false;
+}
+
+period_ms_t A2dpCodecConfigSbcSink::encoderIntervalMs() const {
+  // TODO: This method applies only to Source codecs
+  return 0;
 }

@@ -57,9 +57,4 @@ period_ms_t a2dp_aac_get_encoder_interval_ms(void);
 // |timestamp_us| is the current timestamp (in microseconds).
 void a2dp_aac_send_frames(uint64_t timestamp_us);
 
-// Dump AAC codec-related statistics.
-// |fd| is the file descriptor to use to dump the statistics information
-// in user-friendly test format.
-void a2dp_aac_debug_codec_dump(int fd);
-
 #endif  // A2DP_AAC_ENCODER_H
