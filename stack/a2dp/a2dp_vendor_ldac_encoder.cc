@@ -98,12 +98,6 @@ static tLDAC_ALTER_EQMID_PRIORITY ldac_alter_eqmid_priority_func;
 static tLDAC_GET_EQMID ldac_get_eqmid_func;
 static tLDAC_GET_ERROR_CODE ldac_get_error_code_func;
 
-#define STATS_UPDATE_MAX(current_value_storage, new_value) \
-  do {                                                     \
-    if ((new_value) > (current_value_storage))             \
-      (current_value_storage) = (new_value);               \
-  } while (0)
-
 // A2DP LDAC encoder interval in milliseconds
 #define A2DP_LDAC_ENCODER_INTERVAL_MS 20
 #define A2DP_LDAC_MEDIA_BYTES_PER_FRAME 128
@@ -613,17 +607,19 @@ static void a2dp_ldac_encode_frames(uint8_t nb_frame) {
   int32_t encode_count = 0;
   int32_t out_frames = 0;
   int written = 0;
+
   while (nb_frame) {
     BT_HDR* p_buf = (BT_HDR*)osi_malloc(BT_DEFAULT_BUFFER_SIZE);
-
-    /* Init buffer */
     p_buf->offset = A2DP_LDAC_OFFSET;
     p_buf->len = 0;
     p_buf->layer_specific = 0;
+    a2dp_ldac_encoder_cb.stats.media_read_total_expected_packets++;
 
     count = 0;
     do {
-      /* Read PCM data */
+      //
+      // Read the PCM data and encode it
+      //
       if (a2dp_ldac_read_feeding(read_buffer)) {
         uint8_t* packet = (uint8_t*)(p_buf + 1) + p_buf->offset + p_buf->len;
         if (a2dp_ldac_encoder_cb.ldac_handle == NULL) {
@@ -674,6 +670,7 @@ static void a2dp_ldac_encode_frames(uint8_t nb_frame) {
       remain_nb_frame = nb_frame;
       if (!a2dp_ldac_encoder_cb.enqueue_callback(p_buf, done_nb_frame)) return;
     } else {
+      a2dp_ldac_encoder_cb.stats.media_read_total_dropped_packets++;
       osi_free(p_buf);
     }
   }
@@ -684,9 +681,13 @@ static bool a2dp_ldac_read_feeding(uint8_t* read_buffer) {
                        a2dp_ldac_encoder_cb.feeding_params.channel_count *
                        a2dp_ldac_encoder_cb.feeding_params.bits_per_sample / 8;
 
+  a2dp_ldac_encoder_cb.stats.media_read_total_expected_reads_count++;
+  a2dp_ldac_encoder_cb.stats.media_read_total_expected_read_bytes += read_size;
+
   /* Read Data from UIPC channel */
   uint32_t nb_byte_read =
       a2dp_ldac_encoder_cb.read_callback(read_buffer, read_size);
+  a2dp_ldac_encoder_cb.stats.media_read_total_actual_read_bytes += nb_byte_read;
 
   if (nb_byte_read < read_size) {
     if (nb_byte_read == 0) return false;
@@ -695,6 +696,8 @@ static bool a2dp_ldac_read_feeding(uint8_t* read_buffer) {
     memset(((uint8_t*)read_buffer) + nb_byte_read, 0, read_size - nb_byte_read);
     nb_byte_read = read_size;
   }
+  a2dp_ldac_encoder_cb.stats.media_read_total_actual_reads_count++;
+
   return true;
 }
 
@@ -717,35 +720,40 @@ void a2dp_vendor_ldac_set_transmit_queue_length(size_t transmit_queue_length) {
   a2dp_ldac_encoder_cb.TxQueueLength = transmit_queue_length;
 }
 
-void a2dp_vendor_ldac_debug_codec_dump(int fd) {
+period_ms_t A2dpCodecConfigLdac::encoderIntervalMs() const {
+  return a2dp_vendor_ldac_get_encoder_interval_ms();
+}
+
+void A2dpCodecConfigLdac::debug_codec_dump(int fd) {
   a2dp_ldac_encoder_stats_t* stats = &a2dp_ldac_encoder_cb.stats;
   tA2DP_LDAC_ENCODER_PARAMS* p_encoder_params =
       &a2dp_ldac_encoder_cb.ldac_encoder_params;
 
-  dprintf(fd, "\nA2DP LDAC State:\n");
+  A2dpCodecConfig::debug_codec_dump(fd);
 
   dprintf(fd,
-          "  Packets expected/dropped                                : %zu / "
+          "  Packet counts (expected/dropped)                        : %zu / "
           "%zu\n",
           stats->media_read_total_expected_packets,
           stats->media_read_total_dropped_packets);
 
   dprintf(fd,
-          "  PCM reads count expected/actual                         : %zu / "
+          "  PCM read counts (expected/actual)                       : %zu / "
           "%zu\n",
           stats->media_read_total_expected_reads_count,
           stats->media_read_total_actual_reads_count);
 
   dprintf(fd,
-          "  PCM read bytes expected/actual                          : %zu / "
+          "  PCM read bytes (expected/actual)                        : %zu / "
           "%zu\n",
           stats->media_read_total_expected_read_bytes,
           stats->media_read_total_actual_read_bytes);
 
   dprintf(
-      fd, "\nA2DP LDAC current quality mode:  %s\n",
+      fd, "  LDAC quality mode                                       : %s\n",
       quality_mode_index_to_name(p_encoder_params->quality_mode_index).c_str());
 
-  dprintf(fd, "\nA2DP LDAC saved transmit queue length:  %zu\n",
+  dprintf(fd,
+          "  LDAC saved transmit queue length                        : %zu\n",
           a2dp_ldac_encoder_cb.TxQueueLength);
 }

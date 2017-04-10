@@ -61,9 +61,4 @@ void a2dp_vendor_ldac_send_frames(uint64_t timestamp_us);
 // Set transmit queue length for the A2DP LDAC ABR(Adaptive Bit Rate) mechanism.
 void a2dp_vendor_ldac_set_transmit_queue_length(size_t transmit_queue_length);
 
-// Dump LDAC codec-related statistics.
-// |fd| is the file descriptor to use to dump the statistics information
-// in user-friendly test format.
-void a2dp_vendor_ldac_debug_codec_dump(int fd);
-
 #endif  // A2DP_VENDOR_LDAC_ENCODER_H

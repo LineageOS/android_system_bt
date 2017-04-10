@@ -1024,8 +1024,10 @@ void btif_a2dp_source_debug_dump(int fd) {
   //
   // Codec-specific stats
   //
-  if (btif_a2dp_source_cb.encoder_interface != NULL)
-    btif_a2dp_source_cb.encoder_interface->debug_codec_dump(fd);
+  A2dpCodecs* a2dp_codecs = bta_av_get_a2dp_codecs();
+  if (a2dp_codecs != nullptr) {
+    a2dp_codecs->debug_codec_dump(fd);
+  }
 }
 
 void btif_a2dp_source_update_metrics(void) {
