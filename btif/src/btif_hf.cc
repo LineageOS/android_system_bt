@@ -41,6 +41,7 @@
 #include "btif_hf.h"
 #include "btif_profile_queue.h"
 #include "btif_util.h"
+#include "osi/include/properties.h"
 
 /*******************************************************************************
  *  Constants & Macros
@@ -83,6 +84,9 @@
    BTA_AG_FEAT_UNAT)
 #endif
 #endif
+
+/* HF features supported at runtime */
+static uint32_t btif_hf_features = BTIF_HF_FEATURES;
 
 #define BTIF_HF_CALL_END_TIMEOUT 6
 
@@ -671,6 +675,17 @@ static void btif_in_hf_generic_evt(uint16_t event, char* p_param) {
   }
 }
 
+static bool inband_ringing_property_enabled() {
+  char inband_ringing_flag[PROPERTY_VALUE_MAX] = {0};
+  osi_property_get("persist.bluetooth.enableinbandringing", inband_ringing_flag,
+                   "false");
+  if (strncmp(inband_ringing_flag, "true", 4) == 0) {
+    BTIF_TRACE_DEBUG("%s: In-band ringing enabled by property", __func__);
+    return true;
+  }
+  return false;
+}
+
 /*******************************************************************************
  *
  * Function         btif_hf_init
@@ -680,10 +695,20 @@ static void btif_in_hf_generic_evt(uint16_t event, char* p_param) {
  * Returns         bt_status_t
  *
  ******************************************************************************/
-static bt_status_t init(bthf_callbacks_t* callbacks, int max_hf_clients) {
+static bt_status_t init(bthf_callbacks_t* callbacks, int max_hf_clients,
+                        bool inband_ringing_supported) {
+  bool inband_ringing_property_enable = inband_ringing_property_enabled();
+  if (inband_ringing_supported && inband_ringing_property_enable) {
+    btif_hf_features |= BTA_AG_FEAT_INBAND;
+  } else {
+    btif_hf_features &= ~BTA_AG_FEAT_INBAND;
+  }
   btif_max_hf_clients = max_hf_clients;
-  BTIF_TRACE_DEBUG("%s - max_hf_clients=%d", __func__, btif_max_hf_clients);
-
+  BTIF_TRACE_DEBUG(
+      "%s: btif_hf_features=%zu, max_hf_clients=%d, "
+      "inband_ringing=[supported=%d, enabled=%d]",
+      __func__, btif_hf_features, btif_max_hf_clients, inband_ringing_supported,
+      inband_ringing_property_enable);
   bt_hf_callbacks = callbacks;
   memset(&btif_hf_cb, 0, sizeof(btif_hf_cb));
 
@@ -1331,10 +1356,11 @@ static bt_status_t phone_state_change(int num_active, int num_held,
       } break;
 
       case BTHF_CALL_STATE_INCOMING:
-        if (num_active || num_held)
+        if (num_active || num_held) {
           res = BTA_AG_CALL_WAIT_RES;
-        else
+        } else {
           res = BTA_AG_IN_CALL_RES;
+        }
         if (number) {
           int xx = 0;
           if ((type == BTHF_CALL_ADDRTYPE_INTERNATIONAL) && (*number != '+'))
@@ -1560,7 +1586,7 @@ bt_status_t btif_hf_execute_service(bool b_enable) {
     /* Enable and register with BTA-AG */
     BTA_AgEnable(BTA_AG_PARSE, bte_hf_evt);
     for (i = 0; i < btif_max_hf_clients; i++) {
-      BTA_AgRegister(BTIF_HF_SERVICES, BTIF_HF_SECURITY, BTIF_HF_FEATURES,
+      BTA_AgRegister(BTIF_HF_SERVICES, BTIF_HF_SECURITY, btif_hf_features,
                      p_service_names, bthf_hf_id[i]);
     }
   } else {
