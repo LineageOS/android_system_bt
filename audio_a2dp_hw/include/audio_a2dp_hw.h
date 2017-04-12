@@ -71,7 +71,7 @@
 //
 // to avoid introducing the FastMixer in AudioFlinger. Using the FastMixer
 // results in unnecessary latency and CPU overhead for Bluetooth.
-#define AUDIO_STREAM_OUTPUT_BUFFER_PERIODS 4
+#define AUDIO_STREAM_OUTPUT_BUFFER_PERIODS 2
 
 #define AUDIO_SKT_DISCONNECTED (-1)
 
