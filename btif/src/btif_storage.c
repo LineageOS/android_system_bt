@@ -1447,6 +1447,21 @@ bt_status_t btif_storage_remove_hid_info(bt_bdaddr_t *remote_bd_addr)
 
 /*******************************************************************************
 **
+** Function         btif_storage_get_num_bonded_devices
+**
+** Description      BTIF storage API - Gets the number of bonded devices
+**
+** Returns          the number of bonded devices
+**
+*******************************************************************************/
+int btif_storage_get_num_bonded_devices(void) {
+    btif_bonded_devices_t bonded_devices;
+    btif_in_fetch_bonded_devices(&bonded_devices, 0);
+    return bonded_devices.num_devices;
+}
+
+/*******************************************************************************
+**
 ** Function         btif_storage_read_hl_apps_cb
 **
 ** Description      BTIF storage API - Read HL application control block from NVRAM

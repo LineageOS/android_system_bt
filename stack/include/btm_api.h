@@ -2555,7 +2555,7 @@ extern UINT8 *BTM_ReadAllRemoteFeatures (BD_ADDR addr);
 ** Returns          pointer to entry, or NULL if not found
 **
 *******************************************************************************/
-extern tBTM_INQ_INFO *BTM_InqDbRead (BD_ADDR p_bda);
+extern tBTM_INQ_INFO *BTM_InqDbRead (const BD_ADDR p_bda);
 
 
 /*******************************************************************************
@@ -3761,7 +3761,7 @@ extern tBTM_STATUS BTM_SetSsrParams (BD_ADDR remote_bda, UINT16 max_lat,
 ** Returns          the handle of the connection, or 0xFFFF if none.
 **
 *******************************************************************************/
-extern UINT16 BTM_GetHCIConnHandle (BD_ADDR remote_bda, tBT_TRANSPORT transport);
+extern UINT16 BTM_GetHCIConnHandle (const BD_ADDR remote_bda, tBT_TRANSPORT transport);
 
 /*******************************************************************************
 **

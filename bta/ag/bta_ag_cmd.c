@@ -177,7 +177,7 @@ enum
     BTA_AG_RES_FMT_STR         /* string argument */
 };
 
-/* enumeration of AT result codes, matches constant table */
+/* Local AT command result codes not defined in bta_ag_api.h */
 enum
 {
     BTA_AG_RES_OK,
@@ -207,7 +207,7 @@ enum
 #if defined(BTA_HSP_RESULT_REPLACE_COLON) && (BTA_HSP_RESULT_REPLACE_COLON == TRUE)
 #define COLON_IDX_4_VGSVGM    4
 #endif
-/* AT result code constant table  (Indexed by result code) */
+/* AT result code constant table */
 const tBTA_AG_RESULT bta_ag_result_tbl[] =
 {
     {"OK",      BTA_AG_RES_FMT_NONE},
@@ -233,6 +233,7 @@ const tBTA_AG_RESULT bta_ag_result_tbl[] =
     {"",        BTA_AG_RES_FMT_STR},
     {"+BIND: ", BTA_AG_RES_FMT_STR},
 };
+
 
 const tBTA_AG_AT_CMD *bta_ag_at_tbl[BTA_AG_NUM_IDX] =
 {
@@ -350,10 +351,10 @@ const UINT8 bta_ag_callsetup_ind_tbl[] =
 static void bta_ag_send_result(tBTA_AG_SCB *p_scb, UINT8 code, char *p_arg,
                                INT16 int_arg)
 {
-    char    buf[BTA_AG_AT_MAX_LEN + 16];
-    char    *p = buf;
-    UINT16  len;
 
+    char buf[BTA_AG_AT_MAX_LEN + 16];
+    char *p = buf;
+    UINT16  len;
 #if defined(BTA_AG_RESULT_DEBUG) && (BTA_AG_RESULT_DEBUG == TRUE)
     memset(buf, NULL, sizeof(buf));
 #endif
@@ -364,7 +365,7 @@ static void bta_ag_send_result(tBTA_AG_SCB *p_scb, UINT8 code, char *p_arg,
     /* copy result code string */
     strlcpy(p, bta_ag_result_tbl[code].p_res, sizeof(buf) - 2);
 #if defined(BTA_HSP_RESULT_REPLACE_COLON) && (BTA_HSP_RESULT_REPLACE_COLON == TRUE)
-    if(p_scb->conn_service == BTA_AG_HSP)
+    if (p_scb->conn_service == BTA_AG_HSP)
     {
         /* If HSP then ":"symbol should be changed as "=" for HSP compatibility */
         switch(code)
@@ -972,7 +973,6 @@ void bta_ag_at_hsp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
                                 char *p_arg, INT16 int_arg)
 {
     tBTA_AG_VAL val;
-
     APPL_TRACE_DEBUG("AT cmd:%d arg_type:%d arg:%d arg:%s", cmd, arg_type,
                       int_arg, p_arg);
 
@@ -987,7 +987,6 @@ void bta_ag_at_hsp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
     /* call callback with event */
     (*bta_ag_cb.p_cback)(bta_ag_hsp_cb_evt[cmd], (tBTA_AG *) &val);
 }
-
 /*******************************************************************************
 **
 ** Function         bta_ag_at_hfp_cback
@@ -1368,6 +1367,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
 
         case BTA_AG_HF_CMD_CNUM:
             break;
+
         case BTA_AG_HF_CMD_CLCC:
             if(!(p_scb->features & BTA_AG_FEAT_ECS))
             {
@@ -1562,7 +1562,6 @@ void bta_ag_at_err_cback(tBTA_AG_SCB *p_scb, BOOLEAN unknown, char *p_arg)
 void bta_ag_hsp_result(tBTA_AG_SCB *p_scb, tBTA_AG_API_RESULT *p_result)
 {
     UINT8 code = bta_ag_trans_result[p_result->result];
-
     APPL_TRACE_DEBUG("bta_ag_hsp_result : res = %d", p_result->result);
 
     switch(p_result->result)

@@ -24,6 +24,9 @@
 #include "bta_dm_ci.h"
 #include "bt_utils.h"
 #include "btif_dm.h"
+#if (defined WEAR_LE_IO_CAP_OVERRIDE && WEAR_LE_IO_CAP_OVERRIDE == TRUE)
+#include "btif_storage.h"
+#endif
 #if (defined BLE_INCLUDED && BLE_INCLUDED == TRUE)
 #include "bte_appl.h"
 
@@ -408,7 +411,24 @@ void bta_dm_co_ble_io_req(BD_ADDR bd_addr,  tBTA_IO_CAP *p_io_cap,
                           tBTA_LE_KEY_TYPE  *p_resp_key )
 {
     UNUSED(bd_addr);
-    /* Retrieve the properties from file system if possible */
+
+
+#if (defined WEAR_LE_IO_CAP_OVERRIDE && WEAR_LE_IO_CAP_OVERRIDE == TRUE)
+    /*
+     * Note: This is a Wear-specific feature for iOS pairing.
+     *
+     * Set WearLeIoCap config to force local IO capability to be BTM_IO_CAP_NONE
+     * (No input, no output) for the first bond creation, that indirectly
+     * triggers Just Works pairing.
+     */
+    if (btif_storage_get_num_bonded_devices() == 0)
+        bte_appl_cfg.ble_io_cap = BTM_IO_CAP_NONE;
+#endif
+
+    /* For certification testing purpose, LE IO capability can also be specified with
+     * "PTS_SmpOptions" in the BT stack configuration file (i.e. bt_stack.conf).
+     * Note that if "PTS_SmpOptions" is set, it could override IO capability set above.
+     */
     tBTE_APPL_CFG nv_config;
     if(btif_dm_get_smp_config(&nv_config))
         bte_appl_cfg = nv_config;

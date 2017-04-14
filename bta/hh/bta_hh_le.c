@@ -2182,12 +2182,19 @@ void bta_hh_le_input_rpt_notify(tBTA_GATTC_NOTIFY *p_data)
 
     if (p_dev_cb == NULL)
     {
-        APPL_TRACE_ERROR("notification received from Unknown device");
+        APPL_TRACE_ERROR("%s: notification received from Unknown device, conn_id: 0x%04x",
+            __func__, p_data->conn_id);
         return;
     }
 
     const tBTA_GATTC_CHARACTERISTIC *p_char = BTA_GATTC_GetCharacteristic(p_dev_cb->conn_id,
                                                                           p_data->handle);
+    if (p_char == NULL)
+    {
+        APPL_TRACE_ERROR("%s: notification received for Unknown Characteristic, conn_id: 0x%04x, handle: 0x%04x",
+            __func__, p_dev_cb->conn_id, p_data->handle);
+        return;
+    }
 
     if (p_char == NULL) {
         APPL_TRACE_ERROR("%s: notification received for Unknown Characteristic,handle: 0x%04x",
@@ -2208,7 +2215,8 @@ void bta_hh_le_input_rpt_notify(tBTA_GATTC_NOTIFY *p_data)
                                         p_char->handle);
     if (p_rpt == NULL)
     {
-        APPL_TRACE_ERROR("notification received for Unknown Report");
+        APPL_TRACE_ERROR("%s: notification received for Unknown Report, uuid: 0x%04x, handle: 0x%04x",
+            __func__, p_char->uuid.uu.uuid16, p_char->handle);
         return;
     }
 
