@@ -152,6 +152,10 @@ const bt_interface_t* FakeBluetoothInterface::GetHALInterface() const {
   return &fake_bt_iface;
 }
 
+bt_callbacks_t* FakeBluetoothInterface::GetHALCallbacks() const {
+  return nullptr;
+}
+
 const bluetooth_device_t* FakeBluetoothInterface::GetHALAdapter() const {
   // TODO(armansito): Do something meaningful here to simulate test behavior.
   return nullptr;
