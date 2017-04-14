@@ -1148,6 +1148,7 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
     // Map the HCI fail reason  to  bt status
     switch (p_auth_cmpl->fail_reason) {
       case HCI_ERR_PAGE_TIMEOUT:
+      case HCI_ERR_LMP_RESPONSE_TIMEOUT:
         if (interop_match_addr(INTEROP_AUTO_RETRY_PAIRING, &bd_addr) &&
             pairing_cb.timeout_retries) {
           BTIF_TRACE_WARNING("%s() - Pairing timeout; retrying (%d) ...",
@@ -1164,10 +1165,6 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
       case HCI_ERR_PAIRING_NOT_ALLOWED:
         btif_storage_remove_bonded_device(&bd_addr);
         status = BT_STATUS_AUTH_REJECTED;
-        break;
-
-      case HCI_ERR_LMP_RESPONSE_TIMEOUT:
-        status = BT_STATUS_AUTH_FAILURE;
         break;
 
       /* map the auth failure codes, so we can retry pairing if necessary */

@@ -384,9 +384,10 @@ static void bta_dm_sys_hw_cback(tBTA_SYS_HW_EVT status) {
     bta_dm_cb.is_bta_dm_active = false;
   } else if (status == BTA_SYS_HW_ON_EVT) {
     /* FIXME: We should not unregister as the SYS shall invoke this callback on
-    * a H/W error.
-    * We need to revisit when this platform has more than one BLuetooth H/W chip
-    */
+     * a H/W error.
+     * We need to revisit when this platform has more than one BLuetooth H/W
+     * chip
+     */
     // bta_sys_hw_unregister( BTA_SYS_HW_BLUETOOTH);
 
     /* save security callback */
@@ -2606,7 +2607,11 @@ static uint8_t bta_dm_authentication_complete_cback(
     if (bta_dm_cb.p_sec_cback)
       bta_dm_cb.p_sec_cback(BTA_DM_AUTH_CMPL_EVT, &sec_event);
 
-    bta_dm_remove_sec_dev_entry(bd_addr);
+    if (result != HCI_ERR_LMP_RESPONSE_TIMEOUT &&
+        result != HCI_ERR_PAGE_TIMEOUT &&
+        result != HCI_ERR_CONN_FAILED_ESTABLISHMENT) {
+      bta_dm_remove_sec_dev_entry(bd_addr);
+    }
   }
 
   return BTM_SUCCESS;
@@ -2654,7 +2659,7 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
       sec_event.cfm_req.loc_io_caps = p_data->cfm_req.loc_io_caps;
       sec_event.cfm_req.rmt_io_caps = p_data->cfm_req.rmt_io_caps;
 
-/* continue to next case */
+    /* continue to next case */
     /* Passkey entry mode, mobile device with output capability is very
         unlikely to receive key request, so skip this event */
     /*case BTM_SP_KEY_REQ_EVT: */
@@ -4492,10 +4497,10 @@ static void bta_dm_gatt_disc_result(tBTA_GATT_ID service_id) {
   tBTA_DM_SEARCH result;
 
   /*
-      * This logic will not work for gatt case.  We are checking against the
+   * This logic will not work for gatt case.  We are checking against the
    * bluetooth profiles here
-      * just copy the GATTID in raw data field and send it across.
-      */
+   * just copy the GATTID in raw data field and send it across.
+   */
 
   if (bta_dm_search_cb.ble_raw_used + sizeof(tBTA_GATT_ID) <
       bta_dm_search_cb.ble_raw_size) {
