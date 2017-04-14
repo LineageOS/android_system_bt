@@ -108,6 +108,9 @@ class BluetoothInterface {
   // us. The behavior is undefined if "init" is called directly by upper layers.
   virtual const bt_interface_t* GetHALInterface() const = 0;
 
+  // Returns the HAL callbacks that have been initialized previously.
+  virtual bt_callbacks_t* GetHALCallbacks() const = 0;
+
   // The HAL module pointer that represents the underlying Bluetooth adapter.
   // This is implemented in and provided by the shared Bluetooth library, so
   // this isn't owned by us.
