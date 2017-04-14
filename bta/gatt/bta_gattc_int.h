@@ -109,7 +109,15 @@ typedef tBTA_GATTC_API_OPEN tBTA_GATTC_API_CANCEL_OPEN;
 typedef struct {
   BT_HDR hdr;
   tBTA_GATT_AUTH_REQ auth_req;
+
+  // read by handle data
   uint16_t handle;
+
+  // read by UUID data
+  tBT_UUID uuid;
+  uint16_t s_handle;
+  uint16_t e_handle;
+
   tBTA_GATTC_EVT cmpl_evt;
   GATT_READ_OP_CB read_cb;
   void* read_cb_data;
