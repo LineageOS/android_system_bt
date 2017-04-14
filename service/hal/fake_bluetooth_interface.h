@@ -62,6 +62,7 @@ class FakeBluetoothInterface : public BluetoothInterface {
   void AddObserver(Observer* observer) override;
   void RemoveObserver(Observer* observer) override;
   const bt_interface_t* GetHALInterface() const override;
+  bt_callbacks_t* GetHALCallbacks() const override;
   const bluetooth_device_t* GetHALAdapter() const override;
 
  private:

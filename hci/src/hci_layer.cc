@@ -224,10 +224,13 @@ static future_t* hci_module_shut_down() {
   LOG_INFO(LOG_TAG, "%s", __func__);
 
   // Free the timers
-  alarm_free(command_response_timer);
-  command_response_timer = NULL;
-  alarm_free(startup_timer);
-  startup_timer = NULL;
+  {
+    std::lock_guard<std::recursive_mutex> lock(commands_pending_response_mutex);
+    alarm_free(command_response_timer);
+    command_response_timer = NULL;
+    alarm_free(startup_timer);
+    startup_timer = NULL;
+  }
 
   // Stop the thread to prevent Send() calls.
   if (thread) {
@@ -533,6 +536,8 @@ static waiting_command_t* get_waiting_command(command_opcode_t opcode) {
 
 static void update_command_response_timer(void) {
   std::lock_guard<std::recursive_mutex> lock(commands_pending_response_mutex);
+
+  if (command_response_timer == NULL) return;
   if (list_is_empty(commands_pending_response)) {
     alarm_cancel(command_response_timer);
   } else {

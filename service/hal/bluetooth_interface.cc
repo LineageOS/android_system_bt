@@ -228,6 +228,8 @@ class BluetoothInterfaceImpl : public BluetoothInterface {
 
   const bt_interface_t* GetHALInterface() const override { return hal_iface_; }
 
+  bt_callbacks_t* GetHALCallbacks() const override { return &bt_callbacks; }
+
   const bluetooth_device_t* GetHALAdapter() const override {
     return hal_adapter_;
   }
