@@ -2657,6 +2657,7 @@ bt_status_t btif_dm_create_bond_out_of_band(const bt_bdaddr_t *bd_addr, int tran
     bdcpy(oob_cb.bdaddr, bd_addr->address);
     memcpy(&oob_cb.oob_data, oob_data, sizeof(bt_out_of_band_data_t));
 
+    #if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
     uint8_t empty[] = {0, 0, 0, 0, 0, 0, 0};
     // If LE Bluetooth Device Address is provided, use provided address type
     // value.
@@ -2669,6 +2670,7 @@ bt_status_t btif_dm_create_bond_out_of_band(const bt_bdaddr_t *bd_addr, int tran
             BTM_SecAddBleDevice(bd_addr->address, NULL, BT_DEVICE_TYPE_BLE, address_type);
         }
     }
+    #endif
 
     bdstr_t bdstr;
     BTIF_TRACE_EVENT("%s: bd_addr=%s, transport=%d", __FUNCTION__, bdaddr_to_string(bd_addr, bdstr, sizeof(bdstr)), transport);
