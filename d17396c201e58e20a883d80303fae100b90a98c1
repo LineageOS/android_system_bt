@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a4e6583_2e09cb2c",
+        "filename": "stack/btm/btm_acl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1009,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2017-04-16T17:13:05Z",
+      "side": 1,
+      "message": "Is this only being called from BLE_INCLUDED code?",
+      "range": {
+        "startLine": 1009,
+        "startChar": 5,
+        "endLine": 1009,
+        "endChar": 34
+      },
+      "revId": "d17396c201e58e20a883d80303fae100b90a98c1",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
