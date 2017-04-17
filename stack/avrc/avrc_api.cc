@@ -98,6 +98,7 @@ static void avrc_ctrl_cback(uint8_t handle, uint8_t event, uint16_t result,
       (event == AVCT_DISCONNECT_IND_EVT)) {
     avrc_flush_cmd_q(handle);
     alarm_free(avrc_cb.ccb_int[handle].tle);
+    avrc_cb.ccb_int[handle].tle = NULL;
   }
 }
 
@@ -116,6 +117,7 @@ void avrc_flush_cmd_q(uint8_t handle) {
 
   alarm_cancel(avrc_cb.ccb_int[handle].tle);
   fixed_queue_free(avrc_cb.ccb_int[handle].cmd_q, osi_free);
+  avrc_cb.ccb_int[handle].cmd_q = NULL;
 }
 
 /******************************************************************************
