@@ -25,9 +25,6 @@
 #include "osi/include/future.h"
 #include "osi/include/log.h"
 
-const char* BTSNOOP_LOG_PATH_KEY = "BtSnoopFileName";
-const char* BTSNOOP_TURNED_ON_KEY = "BtSnoopLogOutput";
-const char* BTSNOOP_SHOULD_SAVE_LAST_KEY = "BtSnoopSaveLog";
 const char* TRACE_CONFIG_ENABLED_KEY = "TraceConf";
 const char* PTS_SECURE_ONLY_MODE = "PTS_SecurePairOnly";
 const char* PTS_LE_CONN_UPDATED_DISABLED = "PTS_DisableConnUpdates";
@@ -74,22 +71,6 @@ EXPORT_SYMBOL extern const module_t stack_config_module = {
     .dependencies = {NULL}};
 
 // Interface functions
-
-static const char* get_btsnoop_log_path(void) {
-  return config_get_string(config, CONFIG_DEFAULT_SECTION, BTSNOOP_LOG_PATH_KEY,
-                           "/data/misc/bluetooth/logs/btsnoop_hci.log");
-}
-
-static bool get_btsnoop_turned_on(void) {
-  return config_get_bool(config, CONFIG_DEFAULT_SECTION, BTSNOOP_TURNED_ON_KEY,
-                         false);
-}
-
-static bool get_btsnoop_should_save_last(void) {
-  return config_get_bool(config, CONFIG_DEFAULT_SECTION,
-                         BTSNOOP_SHOULD_SAVE_LAST_KEY, false);
-}
-
 static bool get_trace_config_enabled(void) {
   return config_get_bool(config, CONFIG_DEFAULT_SECTION,
                          TRACE_CONFIG_ENABLED_KEY, false);
@@ -122,11 +103,12 @@ static int get_pts_smp_failure_case(void) {
 
 static config_t* get_all(void) { return config; }
 
-const stack_config_t interface = {
-    get_btsnoop_log_path,         get_btsnoop_turned_on,
-    get_btsnoop_should_save_last, get_trace_config_enabled,
-    get_pts_secure_only_mode,     get_pts_conn_updates_disabled,
-    get_pts_crosskey_sdp_disable, get_pts_smp_options,
-    get_pts_smp_failure_case,     get_all};
+const stack_config_t interface = {get_trace_config_enabled,
+                                  get_pts_secure_only_mode,
+                                  get_pts_conn_updates_disabled,
+                                  get_pts_crosskey_sdp_disable,
+                                  get_pts_smp_options,
+                                  get_pts_smp_failure_case,
+                                  get_all};
 
 const stack_config_t* stack_config_get_interface(void) { return &interface; }
