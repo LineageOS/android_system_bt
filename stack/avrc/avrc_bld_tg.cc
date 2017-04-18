@@ -1147,11 +1147,11 @@ static tAVRC_STS avrc_bld_get_item_attrs_rsp(tAVRC_GET_ATTRS_RSP* p_rsp,
   if (remaining_buffer_capacity > mtu) {
     remaining_buffer_capacity = mtu;
   }
-  AVRC_TRACE_DEBUG("%s remaining_buffer_capacity:%d, mtu:%d",
+  AVRC_TRACE_DEBUG("%s: remaining_buffer_capacity:%d, mtu:%d", __func__,
                    remaining_buffer_capacity, mtu);
   if (remaining_buffer_capacity < 5) {
-    AVRC_TRACE_ERROR("%s not enough buffer for packet header",
-                     remaining_buffer_capacity);
+    AVRC_TRACE_ERROR("%s: not enough space for packet header, remaining:%d < 5",
+                     __func__, remaining_buffer_capacity);
     return AVRC_STS_INTERNAL_ERR;
   }
   /* Get to the beginning of PDU */
