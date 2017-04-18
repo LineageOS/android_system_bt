@@ -39,8 +39,20 @@
 #include "hci/include/btsnoop_mem.h"
 #include "hci_layer.h"
 #include "osi/include/log.h"
+#include "osi/include/properties.h"
 #include "osi/include/time.h"
 #include "stack_config.h"
+
+// The number of of packets per btsnoop file before we rotate to the next
+// file. As of right now there are two snoop files that are rotated through.
+// The size can be dynamically configured by seting the relevant system
+// property
+#define DEFAULT_BTSNOOP_SIZE 0xffff
+
+#define BTSNOOP_ENABLE_PROPERTY "persist.bluetooth.btsnoopenable"
+#define BTSNOOP_PATH_PROPERTY "persist.bluetooth.btsnooppath"
+#define DEFAULT_BTSNOOP_PATH "/data/misc/bluetooth/logs/btsnoop_hci.log"
+#define BTSNOOP_MAX_PACKETS_PROPERTY "persist.bluetooth.btsnoopsize"
 
 typedef enum {
   kCommandPacket = 1,
@@ -52,35 +64,53 @@ typedef enum {
 // Epoch in microseconds since 01/01/0000.
 static const uint64_t BTSNOOP_EPOCH_DELTA = 0x00dcddb30f2f8000ULL;
 
-static const stack_config_t* stack_config;
-
 static int logfile_fd = INVALID_FD;
-static bool module_started;
-static bool is_logging;
-static bool logging_enabled_via_api;
 static std::mutex btsnoop_mutex;
+
+static int32_t packets_per_file;
+static int32_t packet_counter;
 
 // TODO(zachoverflow): merge btsnoop and btsnoop_net together
 void btsnoop_net_open();
 void btsnoop_net_close();
 void btsnoop_net_write(const void* data, size_t length);
 
+static void delete_btsnoop_files();
+static bool is_btsnoop_enabled();
+static char* get_btsnoop_log_path(char* log_path);
+static char* get_btsnoop_last_log_path(char* last_log_path, char* log_path);
+static void open_next_snoop_file();
 static void btsnoop_write_packet(packet_type_t type, uint8_t* packet,
                                  bool is_received, uint64_t timestamp_us);
-static void update_logging();
 
 // Module lifecycle functions
 
 static future_t* start_up(void) {
-  module_started = true;
-  update_logging();
+  std::lock_guard<std::mutex> lock(btsnoop_mutex);
+
+  if (!is_btsnoop_enabled()) {
+    delete_btsnoop_files();
+  } else {
+    open_next_snoop_file();
+    packets_per_file =
+        property_get_int32(BTSNOOP_MAX_PACKETS_PROPERTY, DEFAULT_BTSNOOP_SIZE);
+    btsnoop_net_open();
+  }
 
   return NULL;
 }
 
 static future_t* shut_down(void) {
-  module_started = false;
-  update_logging();
+  std::lock_guard<std::mutex> lock(btsnoop_mutex);
+
+  if (!is_btsnoop_enabled()) {
+    delete_btsnoop_files();
+  }
+
+  if (logfile_fd != INVALID_FD) close(logfile_fd);
+  logfile_fd = INVALID_FD;
+
+  btsnoop_net_close();
 
   return NULL;
 }
@@ -94,12 +124,6 @@ EXPORT_SYMBOL extern const module_t btsnoop_module = {
     .dependencies = {STACK_CONFIG_MODULE, NULL}};
 
 // Interface functions
-
-static void set_api_wants_to_log(bool value) {
-  logging_enabled_via_api = value;
-  update_logging();
-}
-
 static void capture(const BT_HDR* buffer, bool is_received) {
   uint8_t* p = const_cast<uint8_t*>(buffer->data + buffer->offset);
 
@@ -127,62 +151,69 @@ static void capture(const BT_HDR* buffer, bool is_received) {
   }
 }
 
-static const btsnoop_t interface = {set_api_wants_to_log, capture};
+static const btsnoop_t interface = {capture};
 
 const btsnoop_t* btsnoop_get_interface() {
-  stack_config = stack_config_get_interface();
   return &interface;
 }
 
 // Internal functions
+static void delete_btsnoop_files() {
+  LOG_VERBOSE(LOG_TAG, "Deleting snoop log if it exists");
+  char log_path[PROPERTY_VALUE_MAX];
+  char last_log_path[PROPERTY_VALUE_MAX + sizeof(".last")];
+  get_btsnoop_log_path(log_path);
+  get_btsnoop_last_log_path(last_log_path, log_path);
+  remove(log_path);
+  remove(last_log_path);
+}
 
-static void update_logging() {
-  std::lock_guard<std::mutex> lock(btsnoop_mutex);
+static bool is_btsnoop_enabled() {
+  char btsnoop_enabled[PROPERTY_VALUE_MAX] = {0};
+  osi_property_get(BTSNOOP_ENABLE_PROPERTY, btsnoop_enabled, "false");
+  return strncmp(btsnoop_enabled, "true", 4) == 0;
+}
 
-  bool should_log = module_started && (logging_enabled_via_api ||
-                                       stack_config->get_btsnoop_turned_on());
+static char* get_btsnoop_log_path(char* btsnoop_path) {
+  osi_property_get(BTSNOOP_PATH_PROPERTY, btsnoop_path, DEFAULT_BTSNOOP_PATH);
+  return btsnoop_path;
+}
 
-  if (module_started && !should_log) {
-    LOG_INFO(LOG_TAG, "Deleting snoop log if it exists");
-    remove(stack_config->get_btsnoop_log_path());
-  }
+static char* get_btsnoop_last_log_path(char* last_log_path,
+                                       char* btsnoop_path) {
+  snprintf(last_log_path, PROPERTY_VALUE_MAX + sizeof(".last"), "%s.last",
+           btsnoop_path);
+  return last_log_path;
+}
 
-  if (should_log == is_logging) return;
+static void open_next_snoop_file() {
+  packet_counter = 0;
 
-  is_logging = should_log;
-  if (should_log) {
-    const char* log_path = stack_config->get_btsnoop_log_path();
-
-    // Save the old log if configured to do so
-    if (stack_config->get_btsnoop_should_save_last()) {
-      char last_log_path[PATH_MAX];
-      snprintf(last_log_path, PATH_MAX, "%s.%" PRIu64, log_path,
-               time_gettimeofday_us());
-      if (!rename(log_path, last_log_path) && errno != ENOENT)
-        LOG_ERROR(LOG_TAG, "%s unable to rename '%s' to '%s': %s", __func__,
-                  log_path, last_log_path, strerror(errno));
-    }
-
-    mode_t prevmask = umask(0);
-    logfile_fd = open(log_path, O_WRONLY | O_CREAT | O_TRUNC,
-                      S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
-    if (logfile_fd == INVALID_FD) {
-      LOG_ERROR(LOG_TAG, "%s unable to open '%s': %s", __func__, log_path,
-                strerror(errno));
-      is_logging = false;
-      umask(prevmask);
-      return;
-    }
-    umask(prevmask);
-
-    write(logfile_fd, "btsnoop\0\0\0\0\1\0\0\x3\xea", 16);
-    btsnoop_net_open();
-  } else {
-    if (logfile_fd != INVALID_FD) close(logfile_fd);
-
+  if (logfile_fd != INVALID_FD) {
+    close(logfile_fd);
     logfile_fd = INVALID_FD;
-    btsnoop_net_close();
   }
+
+  char log_path[PROPERTY_VALUE_MAX];
+  char last_log_path[PROPERTY_VALUE_MAX + sizeof(".last")];
+  get_btsnoop_log_path(log_path);
+  get_btsnoop_last_log_path(last_log_path, log_path);
+
+  if (!rename(log_path, last_log_path) && errno != ENOENT)
+    LOG_ERROR(LOG_TAG, "%s unable to rename '%s' to '%s': %s", __func__,
+              log_path, last_log_path, strerror(errno));
+
+  mode_t prevmask = umask(0);
+  logfile_fd = open(log_path, O_WRONLY | O_CREAT | O_TRUNC,
+                    S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+  umask(prevmask);
+  if (logfile_fd == INVALID_FD) {
+    LOG_ERROR(LOG_TAG, "%s unable to open '%s': %s", __func__, log_path,
+              strerror(errno));
+    return;
+  }
+
+  write(logfile_fd, "btsnoop\0\0\0\0\1\0\0\x3\xea", 16);
 }
 
 typedef struct {
@@ -239,6 +270,11 @@ static void btsnoop_write_packet(packet_type_t type, uint8_t* packet,
   btsnoop_net_write(packet, length_he - 1);
 
   if (logfile_fd != INVALID_FD) {
+    packet_counter++;
+    if (packet_counter > packets_per_file) {
+      open_next_snoop_file();
+    }
+
     iovec iov[] = {{&header, sizeof(btsnoop_header_t)},
                    {reinterpret_cast<void*>(packet), length_he - 1}};
     TEMP_FAILURE_RETRY(writev(logfile_fd, iov, 2));
