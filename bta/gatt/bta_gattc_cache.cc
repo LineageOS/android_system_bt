@@ -1085,6 +1085,10 @@ void bta_gattc_fill_gatt_db_el(btgatt_db_element_t* p_attr,
   p_attr->end_handle = e_handle;
   p_attr->id = id;
   p_attr->properties = prop;
+
+  // Permissions are not discoverable using the attribute protocol.
+  // Core 5.0, Part F, 3.2.5 Attribute Permissions
+  p_attr->permissions = 0;
   bta_to_btif_uuid(&p_attr->uuid, &uuid);
 }
 
