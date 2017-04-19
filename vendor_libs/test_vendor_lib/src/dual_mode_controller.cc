@@ -25,7 +25,6 @@
 #include "base/json/json_reader.h"
 #include "base/values.h"
 #include "event_packet.h"
-#include "hci_transport.h"
 
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
