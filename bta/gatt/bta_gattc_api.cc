@@ -353,6 +353,30 @@ void BTA_GATTC_ReadCharacteristic(uint16_t conn_id, uint16_t handle,
   bta_sys_sendmsg(p_buf);
 }
 
+/**
+ * This function is called to read a value of characteristic with uuid equal to
+ * |uuid|
+ */
+void BTA_GATTC_ReadUsingCharUuid(uint16_t conn_id, tBT_UUID uuid,
+                                 uint16_t s_handle, uint16_t e_handle,
+                                 tBTA_GATT_AUTH_REQ auth_req,
+                                 GATT_READ_OP_CB callback, void* cb_data) {
+  tBTA_GATTC_API_READ* p_buf =
+      (tBTA_GATTC_API_READ*)osi_calloc(sizeof(tBTA_GATTC_API_READ));
+
+  p_buf->hdr.event = BTA_GATTC_API_READ_EVT;
+  p_buf->hdr.layer_specific = conn_id;
+  p_buf->auth_req = auth_req;
+  p_buf->handle = 0;
+  p_buf->uuid = uuid;
+  p_buf->s_handle = s_handle;
+  p_buf->e_handle = e_handle;
+  p_buf->read_cb = callback;
+  p_buf->read_cb_data = cb_data;
+
+  bta_sys_sendmsg(p_buf);
+}
+
 /*******************************************************************************
  *
  * Function         BTA_GATTC_ReadCharDescr
