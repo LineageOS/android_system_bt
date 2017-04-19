@@ -798,6 +798,10 @@ bool bta_ag_hdl_event(BT_HDR* p_msg) {
       bta_ag_api_result((tBTA_AG_DATA*)p_msg);
       break;
 
+    case BTA_AG_API_SET_SCO_ALLOWED_EVT:
+      bta_ag_set_sco_allowed((tBTA_AG_DATA*)p_msg);
+      break;
+
     /* all others reference scb by handle */
     default:
       p_scb = bta_ag_scb_by_idx(p_msg->layer_specific);

@@ -54,6 +54,8 @@ static char* bta_ag_sco_evt_str(uint8_t event);
 static char* bta_ag_sco_state_str(uint8_t state);
 #endif
 
+static bool sco_allowed = true;
+
 #define BTA_AG_NO_EDR_ESCO                                       \
   (ESCO_PKT_TYPES_MASK_NO_2_EV3 | ESCO_PKT_TYPES_MASK_NO_3_EV3 | \
    ESCO_PKT_TYPES_MASK_NO_2_EV5 | ESCO_PKT_TYPES_MASK_NO_3_EV5)
@@ -1192,6 +1194,11 @@ void bta_ag_sco_listen(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
 void bta_ag_sco_open(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
   uint8_t event;
 
+  if (!sco_allowed) {
+    APPL_TRACE_DEBUG("%s not opening sco, by policy", __func__);
+    return;
+  }
+
   /* if another scb using sco, this is a transfer */
   if (bta_ag_cb.sco.p_curr_scb != NULL && bta_ag_cb.sco.p_curr_scb != p_scb) {
     event = BTA_AG_SCO_XFER_E;
@@ -1394,6 +1401,11 @@ void bta_ag_ci_sco_data(UNUSED_ATTR tBTA_AG_SCB* p_scb,
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
   bta_ag_sco_event(p_scb, BTA_AG_SCO_CI_DATA_E);
 #endif
+}
+
+void bta_ag_set_sco_allowed(tBTA_AG_DATA* p_data) {
+  sco_allowed = ((tBTA_AG_API_SET_SCO_ALLOWED*)p_data)->value;
+  APPL_TRACE_DEBUG(sco_allowed ? "sco now allowed" : "sco now not allowed");
 }
 
 /*******************************************************************************
