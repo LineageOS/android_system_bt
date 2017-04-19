@@ -583,6 +583,7 @@ static void a2dp_aac_encode_frames(uint8_t nb_frame) {
         uint8_t* packet = (uint8_t*)(p_buf + 1) + p_buf->offset + p_buf->len;
         if (!a2dp_aac_encoder_cb.has_aac_handle) {
           LOG_ERROR(LOG_TAG, "%s: invalid AAC handle", __func__);
+          a2dp_aac_encoder_cb.stats.media_read_total_dropped_packets++;
           osi_free(p_buf);
           return;
         }
@@ -594,6 +595,7 @@ static void a2dp_aac_encode_frames(uint8_t nb_frame) {
         if (aac_error != AACENC_OK) {
           LOG_ERROR(LOG_TAG, "%s: AAC encoding error: 0x%x", __func__,
                     aac_error);
+          a2dp_aac_encoder_cb.stats.media_read_total_dropped_packets++;
           osi_free(p_buf);
           return;
         }
