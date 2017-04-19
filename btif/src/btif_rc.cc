@@ -1615,8 +1615,8 @@ static void btif_rc_upstreams_evt(uint16_t event, tAVRC_COMMAND* pavrc_cmd,
     case AVRC_PDU_GET_ITEM_ATTRIBUTES: {
       btrc_media_attr_t item_attrs[BTRC_MAX_ELEM_ATTR_SIZE];
       uint8_t num_attr = fill_attribute_id_array(
-          pavrc_cmd->get_elem_attrs.num_attr,
-          (btrc_media_attr_t*)pavrc_cmd->get_elem_attrs.attrs,
+          pavrc_cmd->get_attrs.attr_count,
+          (btrc_media_attr_t*)pavrc_cmd->get_attrs.p_attr_list,
           BTRC_MAX_ELEM_ATTR_SIZE, item_attrs);
       if (num_attr == 0) {
         BTIF_TRACE_ERROR(
