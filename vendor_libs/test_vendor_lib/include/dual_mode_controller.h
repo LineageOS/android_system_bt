@@ -27,7 +27,7 @@
 #include "base/time/time.h"
 #include "bt_address.h"
 #include "command_packet.h"
-#include "hci_transport.h"
+#include "event_packet.h"
 #include "test_channel_transport.h"
 
 namespace test_vendor_lib {
