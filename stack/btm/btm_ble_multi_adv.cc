@@ -160,6 +160,12 @@ class BleAdvertisingManagerImpl
 
   ~BleAdvertisingManagerImpl() { adv_inst.clear(); }
 
+  void GetOwnAddress(uint8_t inst_id, GetAddressCallback cb) override {
+    bt_bdaddr_t addr;
+    memcpy(addr.address, adv_inst[inst_id].own_address, BD_ADDR_LEN);
+    cb.Run(adv_inst[inst_id].own_address_type, addr);
+  }
+
   void ReadInstanceCountCb(uint8_t instance_count) {
     this->inst_count = instance_count;
     adv_inst.reserve(inst_count);
