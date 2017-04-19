@@ -777,6 +777,15 @@ void BTA_GATTC_ReadCharacteristic(uint16_t conn_id, uint16_t handle,
                                   tBTA_GATT_AUTH_REQ auth_req,
                                   GATT_READ_OP_CB callback, void* cb_data);
 
+/**
+ * This function is called to read a value of characteristic with uuid equal to
+ * |uuid|
+ */
+void BTA_GATTC_ReadUsingCharUuid(uint16_t conn_id, tBT_UUID uuid,
+                                 uint16_t s_handle, uint16_t e_handle,
+                                 tBTA_GATT_AUTH_REQ auth_req,
+                                 GATT_READ_OP_CB callback, void* cb_data);
+
 /*******************************************************************************
  *
  * Function         BTA_GATTC_ReadCharDescr

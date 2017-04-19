@@ -108,6 +108,7 @@ btgatt_client_interface_t fake_btgattc_iface = {
     nullptr,  // refresh
     nullptr,  // search_service
     nullptr,  // read_characteristic
+    nullptr,  // read_using_characteristic_uuid
     nullptr,  // write_characteristic
     nullptr,  // read_descriptor
     nullptr,  // write_descriptor

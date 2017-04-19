@@ -402,6 +402,32 @@ bt_status_t btif_gattc_read_char(int conn_id, uint16_t handle, int auth_req) {
                                auth_req, read_char_cb, nullptr));
 }
 
+void read_using_char_uuid_cb(uint16_t conn_id, tGATT_STATUS status,
+                             uint16_t handle, uint16_t len, uint8_t* value,
+                             void* data) {
+  btgatt_read_params_t* params = new btgatt_read_params_t;
+  params->value_type = 0x00 /* GATTC_READ_VALUE_TYPE_VALUE */;
+  params->status = status;
+  params->handle = handle;
+  params->value.len = len;
+  CHECK(len <= BTGATT_MAX_ATTR_LEN);
+  if (len > 0) memcpy(params->value.value, value, len);
+
+  CLI_CBACK_IN_JNI(read_characteristic_cb, conn_id, status,
+                   base::Owned(params));
+}
+
+bt_status_t btif_gattc_read_using_char_uuid(int conn_id, bt_uuid_t* uuid,
+                                            uint16_t s_handle,
+                                            uint16_t e_handle, int auth_req) {
+  CHECK_BTGATT_INIT();
+  tBT_UUID bt_uuid;
+  btif_to_bta_uuid(&bt_uuid, uuid);
+  return do_in_jni_thread(Bind(&BTA_GATTC_ReadUsingCharUuid, conn_id, bt_uuid,
+                               s_handle, e_handle, auth_req,
+                               read_using_char_uuid_cb, nullptr));
+}
+
 void read_desc_cb(uint16_t conn_id, tGATT_STATUS status, uint16_t handle,
                   uint16_t len, uint8_t* value, void* data) {
   btgatt_read_params_t* params = new btgatt_read_params_t;
@@ -584,6 +610,7 @@ const btgatt_client_interface_t btgattClientInterface = {
     btif_gattc_refresh,
     btif_gattc_search_service,
     btif_gattc_read_char,
+    btif_gattc_read_using_char_uuid,
     btif_gattc_write_char,
     btif_gattc_read_char_descr,
     btif_gattc_write_char_descr,
