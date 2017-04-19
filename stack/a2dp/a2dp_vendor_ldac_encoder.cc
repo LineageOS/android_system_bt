@@ -154,6 +154,7 @@ typedef struct {
   HANDLE_LDAC_ABR ldac_abr_handle;
   bool has_ldac_abr_handle;
   int last_ldac_abr_eqmid;
+  size_t ldac_abr_adjustments;
 
   tA2DP_FEEDING_PARAMS feeding_params;
   tA2DP_LDAC_ENCODER_PARAMS ldac_encoder_params;
@@ -291,6 +292,7 @@ void a2dp_vendor_ldac_encoder_init(
   a2dp_ldac_encoder_cb.ldac_abr_handle = NULL;
   a2dp_ldac_encoder_cb.has_ldac_abr_handle = false;
   a2dp_ldac_encoder_cb.last_ldac_abr_eqmid = -1;
+  a2dp_ldac_encoder_cb.ldac_abr_adjustments = 0;
 
   a2dp_ldac_encoder_cb.use_SCMS_T = false;  // TODO: should be a parameter
 #if (BTA_AV_CO_CP_SCMS_T == TRUE)
@@ -427,6 +429,8 @@ static void a2dp_vendor_ldac_encoder_update(uint16_t peer_mtu,
         a2dp_ldac_encoder_cb.ldac_abr_handle = a2dp_ldac_abr_get_handle();
         if (a2dp_ldac_encoder_cb.ldac_abr_handle != NULL) {
           a2dp_ldac_encoder_cb.has_ldac_abr_handle = true;
+          a2dp_ldac_encoder_cb.last_ldac_abr_eqmid = -1;
+          a2dp_ldac_encoder_cb.ldac_abr_adjustments = 0;
           a2dp_ldac_abr_init(a2dp_ldac_encoder_cb.ldac_abr_handle,
                              A2DP_LDAC_ENCODER_INTERVAL_MS);
         } else {
@@ -449,6 +453,7 @@ static void a2dp_vendor_ldac_encoder_update(uint16_t peer_mtu,
       a2dp_ldac_encoder_cb.ldac_abr_handle = NULL;
       a2dp_ldac_encoder_cb.has_ldac_abr_handle = false;
       a2dp_ldac_encoder_cb.last_ldac_abr_eqmid = -1;
+      a2dp_ldac_encoder_cb.ldac_abr_adjustments = 0;
     }
   }
 
@@ -533,10 +538,13 @@ void a2dp_vendor_ldac_send_frames(uint64_t timestamp_us) {
   for (uint8_t counter = 0; counter < nb_iterations; counter++) {
     if (a2dp_ldac_encoder_cb.has_ldac_abr_handle) {
       int flag_enable = 1;
+      int prev_eqmid = a2dp_ldac_encoder_cb.last_ldac_abr_eqmid;
       a2dp_ldac_encoder_cb.last_ldac_abr_eqmid =
           a2dp_ldac_abr_proc(a2dp_ldac_encoder_cb.ldac_handle,
                              a2dp_ldac_encoder_cb.ldac_abr_handle,
                              a2dp_ldac_encoder_cb.TxQueueLength, flag_enable);
+      if (prev_eqmid != a2dp_ldac_encoder_cb.last_ldac_abr_eqmid)
+        a2dp_ldac_encoder_cb.ldac_abr_adjustments++;
     }
     // Transcode frame and enqueue
     a2dp_ldac_encode_frames(nb_frame);
@@ -774,5 +782,8 @@ void A2dpCodecConfigLdac::debug_codec_dump(int fd) {
     dprintf(fd,
             "  LDAC adaptive bit rate encode quality mode index        : %d\n",
             a2dp_ldac_encoder_cb.last_ldac_abr_eqmid);
+    dprintf(fd,
+            "  LDAC adaptive bit rate adjustments                      : %zu\n",
+            a2dp_ldac_encoder_cb.ldac_abr_adjustments);
   }
 }
