@@ -107,6 +107,13 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface {
              base::Unretained(BleAdvertisingManager::Get()), advertiser_id));
   }
 
+  void GetOwnAddress(uint8_t advertiser_id, GetAddressCallback cb) override {
+    do_in_bta_thread(FROM_HERE,
+                     Bind(&BleAdvertisingManager::GetOwnAddress,
+                          base::Unretained(BleAdvertisingManager::Get()),
+                          advertiser_id, jni_thread_wrapper(FROM_HERE, cb)));
+  }
+
   void SetParameters(uint8_t advertiser_id, AdvertiseParameters params,
                      ParametersCallback cb) override {
     VLOG(1) << __func__;

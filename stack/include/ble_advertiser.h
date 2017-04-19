@@ -150,6 +150,10 @@ class BleAdvertisingManager {
   virtual void OnAdvertisingSetTerminated(
       uint8_t status, uint8_t advertising_handle, uint16_t connection_handle,
       uint8_t num_completed_extended_adv_events) = 0;
+
+  using GetAddressCallback =
+      base::Callback<void(uint8_t /* address_type*/, bt_bdaddr_t /*address*/)>;
+  virtual void GetOwnAddress(uint8_t inst_id, GetAddressCallback cb) = 0;
 };
 
 #endif  // BLE_ADVERTISER_H
