@@ -2750,7 +2750,8 @@ static void handle_rc_metamsg_rsp(tBTA_AV_META_MSG* pmeta_msg,
 
     if (AVRC_PDU_REGISTER_NOTIFICATION == avrc_response.rsp.pdu &&
         AVRC_EVT_VOLUME_CHANGE == avrc_response.reg_notif.event_id &&
-        (AVRC_RSP_REJ == pmeta_msg->code || AVRC_RSP_NOT_IMPL == pmeta_msg->code)) {
+        (AVRC_RSP_REJ == pmeta_msg->code ||
+         AVRC_RSP_NOT_IMPL == pmeta_msg->code)) {
       BTIF_TRACE_DEBUG("%s remove AbsoluteVolume feature flag.", __func__);
       p_dev->rc_features &= ~BTA_AV_FEAT_ADV_CTRL;
       handle_rc_features(p_dev);
