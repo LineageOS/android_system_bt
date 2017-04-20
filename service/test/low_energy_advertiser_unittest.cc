@@ -47,6 +47,7 @@ class MockAdvertiserHandler : public BleAdvertiserInterface {
 
   MOCK_METHOD1(RegisterAdvertiser, void(IdStatusCallback));
   MOCK_METHOD1(Unregister, void(uint8_t));
+  MOCK_METHOD2(GetOwnAddress, void(uint8_t, GetAddressCallback));
   MOCK_METHOD3(SetParameters,
                void(uint8_t, AdvertiseParameters, ParametersCallback));
   MOCK_METHOD4(SetData, void(int, bool, std::vector<uint8_t>, StatusCallback));
