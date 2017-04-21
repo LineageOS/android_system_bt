@@ -591,7 +591,7 @@ bt_status_t btif_dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len) {
 
 static bt_status_t btif_in_get_adapter_properties(void) {
   bt_property_t properties[6];
-  uint32_t num_props;
+  uint32_t num_props = 0;
 
   bt_bdaddr_t addr;
   bt_bdname_t name;
@@ -599,13 +599,17 @@ static bt_status_t btif_in_get_adapter_properties(void) {
   uint32_t disc_timeout;
   bt_bdaddr_t bonded_devices[BTM_SEC_MAX_DEVICE_RECORDS];
   bt_uuid_t local_uuids[BT_MAX_NUM_UUIDS];
-  num_props = 0;
+  bt_status_t status;
 
   /* BD_ADDR */
   BTIF_STORAGE_FILL_PROPERTY(&properties[num_props], BT_PROPERTY_BDADDR,
                              sizeof(addr), &addr);
-  btif_storage_get_adapter_property(&properties[num_props]);
-  num_props++;
+  status = btif_storage_get_adapter_property(&properties[num_props]);
+  // Add BT_PROPERTY_BDADDR property into list only when successful.
+  // Otherwise, skip this property entry.
+  if (status == BT_STATUS_SUCCESS) {
+    num_props++;
+  }
 
   /* BD_NAME */
   BTIF_STORAGE_FILL_PROPERTY(&properties[num_props], BT_PROPERTY_BDNAME,
