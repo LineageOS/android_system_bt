@@ -43,5 +43,8 @@ cc_test {
     shared_libs: [
         "liblog",
     ],
-    static_libs: ["audio.a2dp.default"],
+    static_libs: [
+        "audio.a2dp.default",
+        "libosi",
+    ],
 }
