@@ -1078,12 +1078,6 @@ static tAVRC_STS avrc_bld_get_folder_items_rsp(tAVRC_GET_ITEMS_RSP* p_rsp,
   UINT16_TO_BE_STREAM(p_len, len);
   p_pkt->len = (p_data - p_start);
 
-  if (p_rsp->item_count != xx) {
-    p_rsp->item_count = xx;
-    AVRC_TRACE_DEBUG("xx value = 0x%02X", xx);
-    if (status == AVRC_STS_NO_ERROR) status = AVRC_STS_INTERNAL_ERR;
-  }
-
   return status;
 }
 
