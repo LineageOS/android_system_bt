@@ -127,6 +127,13 @@ static const interop_addr_entry_t interop_addr_database[] = {
   {{{0x04, 0xf8, 0xc2,      0,0,0}}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
   // HONDA HFT
   {{{0xA0, 0x14, 0x3D,      0,0,0}}, 3, INTEROP_DISABLE_CONNECTION_AFTER_COLLISION},
+
+  // Land Rover Carkit(s)
+  {{{0x00, 0x00, 0x31,      0,0,0}}, 3, INTEROP_ADV_PBAP_VER_1_1},
+  {{{0x00, 0x00, 0x41,      0,0,0}}, 3, INTEROP_ADV_PBAP_VER_1_1},
+  {{{0x00, 0x00, 0x6a,      0,0,0}}, 3, INTEROP_ADV_PBAP_VER_1_1},
+  {{{0x00, 0x00, 0x7f,      0,0,0}}, 3, INTEROP_ADV_PBAP_VER_1_1},
+  {{{0x00, 0x01, 0x0a,      0,0,0}}, 3, INTEROP_ADV_PBAP_VER_1_1},
 };
 
 typedef struct {
@@ -167,6 +174,9 @@ static const interop_name_entry_t interop_name_database[] = {
   {"Motorola Keyboard KZ500", 23, INTEROP_REMOVE_HID_DIG_DESCRIPTOR},
   {"Motorola Keyboard KZ500 v122", 28, INTEROP_REMOVE_HID_DIG_DESCRIPTOR},
   {"MB Bluetooth", 12, INTEROP_ADV_AVRCP_VER_1_3},
+
+  // Land Rover Carkit
+  {"Discovery Sport", 15, INTEROP_ADV_PBAP_VER_1_1},
 };
 
 typedef struct {
