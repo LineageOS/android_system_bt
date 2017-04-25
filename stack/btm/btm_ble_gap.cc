@@ -2561,8 +2561,9 @@ void btm_ble_read_remote_features_complete(uint8_t* p) {
   handle = handle & 0x0FFF;  // only 12 bits meaningful
 
   if (status != HCI_SUCCESS) {
-    BTM_TRACE_ERROR("%s: failed for handle: 0x%04d", __func__, handle);
-    return;
+    BTM_TRACE_ERROR("%s: failed for handle: 0x%04d, status 0x%02x", __func__,
+                    handle, status);
+    if (status != HCI_ERR_UNSUPPORTED_REM_FEATURE) return;
   }
 
   int idx = btm_handle_to_acl_index(handle);
@@ -2571,7 +2572,9 @@ void btm_ble_read_remote_features_complete(uint8_t* p) {
     return;
   }
 
-  STREAM_TO_ARRAY(btm_cb.acl_db[idx].peer_le_features, p, BD_FEATURES_LEN);
+  if (status == HCI_SUCCESS) {
+    STREAM_TO_ARRAY(btm_cb.acl_db[idx].peer_le_features, p, BD_FEATURES_LEN);
+  }
 
   btsnd_hcic_rmt_ver_req(handle);
 }
