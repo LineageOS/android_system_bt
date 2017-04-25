@@ -359,6 +359,11 @@ static void btapp_gatts_cback(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 
 static void btgatts_handle_event(uint16_t event, char* p_param)
 {
+    if (!btif_is_enabled()) {
+       LOG_ERROR(LOG_TAG,"%s: bluetooth adapter not enabled",__FUNCTION__);
+       return;
+    }
+
     btif_gatts_cb_t* p_cb = (btif_gatts_cb_t*)p_param;
     if (!p_cb) return;
 
