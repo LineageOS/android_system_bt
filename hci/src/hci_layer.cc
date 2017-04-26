@@ -63,6 +63,9 @@ typedef struct {
 #define DEFAULT_STARTUP_TIMEOUT_MS 8000
 #define STRING_VALUE_OF(x) #x
 
+// RT priority for HCI thread
+static const int BT_HCI_RT_PRIORITY = 1;
+
 // Abort if there is no response to an HCI command.
 static const uint32_t COMMAND_PENDING_TIMEOUT_MS = 2000;
 
@@ -187,6 +190,9 @@ static future_t* hci_module_start_up(void) {
   if (!thread) {
     LOG_ERROR(LOG_TAG, "%s unable to create thread.", __func__);
     goto error;
+  }
+  if (!thread_set_rt_priority(thread, BT_HCI_RT_PRIORITY)) {
+    LOG_ERROR(LOG_TAG, "%s unable to make thread RT.", __func__);
   }
 
   commands_pending_response = list_new(NULL);
