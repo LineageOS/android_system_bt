@@ -66,7 +66,6 @@ bt_interface_t fake_bt_iface = {
     nullptr, /* dut_mode_configure */
     nullptr, /* dut_more_send */
     nullptr, /* le_test_mode */
-    nullptr, /* config_hci_snoop_log */
     nullptr, /* set_os_callouts */
     nullptr, /* read_energy_info */
     nullptr, /* dump */
