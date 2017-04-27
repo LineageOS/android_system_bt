@@ -929,17 +929,9 @@ static bool btif_av_state_started_handler(btif_sm_event_t event, void* p_data) {
        * see update_audio_focus_state()
        */
       btif_report_audio_state(BTAV_AUDIO_STATE_STARTED, &(btif_av_cb.peer_bda));
-
-      /* increase the a2dp consumer task priority temporarily when start
-      ** audio playing, to avoid overflow the audio packet queue. */
-      adjust_priority_a2dp(true);
-
       break;
 
     case BTIF_SM_EXIT_EVT:
-      /* restore the a2dp consumer task priority when stop audio playing. */
-      adjust_priority_a2dp(false);
-
       break;
 
     case BTIF_AV_START_STREAM_REQ_EVT:
