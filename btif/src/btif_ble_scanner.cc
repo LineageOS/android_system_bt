@@ -160,9 +160,19 @@ void bta_scan_results_cb_impl(bt_bdaddr_t bd_addr, tBT_DEVICE_TYPE device_type,
       btif_gattc_add_remote_bdaddr(bd_addr.address, addr_type);
 
       if (p_eir_remote_name) {
+        if (remote_name_len > BD_NAME_LEN + 1 ||
+            (remote_name_len == BD_NAME_LEN + 1 &&
+             p_eir_remote_name[BD_NAME_LEN] != '\0')) {
+          LOG_INFO(LOG_TAG,
+                   "%s dropping invalid packet - device name too long: %d",
+                   __func__, remote_name_len);
+          return;
+        }
+
         bt_bdname_t bdname;
         memcpy(bdname.name, p_eir_remote_name, remote_name_len);
-        bdname.name[remote_name_len] = '\0';
+        if (remote_name_len < BD_NAME_LEN + 1)
+          bdname.name[remote_name_len] = '\0';
 
         LOG_VERBOSE(LOG_TAG, "%s BLE device name=%s len=%d dev_type=%d",
                     __func__, bdname.name, remote_name_len, device_type);
