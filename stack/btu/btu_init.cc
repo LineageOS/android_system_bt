@@ -36,8 +36,9 @@
 #include "sdpint.h"
 #include "smp_int.h"
 
-// RT priority for audio-related tasks
-#define BTU_TASK_RT_PRIORITY 1
+// Increase BTU task thread priority to avoid pre-emption
+// of audio realated tasks.
+#define BTU_TASK_THREAD_PRIORITY (-19)
 
 extern fixed_queue_t* btif_msg_queue;
 
@@ -129,7 +130,7 @@ void BTU_StartUp(void) {
   bt_workqueue_thread = thread_new(BT_WORKQUEUE_NAME);
   if (bt_workqueue_thread == NULL) goto error_exit;
 
-  thread_set_rt_priority(bt_workqueue_thread, BTU_TASK_RT_PRIORITY);
+  thread_set_priority(bt_workqueue_thread, BTU_TASK_THREAD_PRIORITY);
 
   // Continue startup on bt workqueue thread.
   thread_post(bt_workqueue_thread, btu_task_start_up, NULL);
