@@ -716,6 +716,7 @@ uint8_t* bnep_process_control_packet(tBNEP_CONN* p_bcb, uint8_t* p,
   uint8_t control_type;
   bool bad_pkt = false;
   uint16_t len, ext_len = 0;
+  uint16_t rem_len_prev = *rem_len;
 
   if (is_ext) {
     ext_len = *p++;
@@ -802,7 +803,7 @@ uint8_t* bnep_process_control_packet(tBNEP_CONN* p_bcb, uint8_t* p,
       break;
   }
 
-  if (bad_pkt) {
+  if (bad_pkt || *rem_len > rem_len_prev) {
     BNEP_TRACE_ERROR("BNEP - bad ctl pkt length: %d", *rem_len);
     *rem_len = 0;
     return NULL;
