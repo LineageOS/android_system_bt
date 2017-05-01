@@ -137,7 +137,7 @@ static bool create_base_record(const uint32_t sdp_handle, const char *name,
   if (name[0] != '\0') {
     stage = "service_name";
     if (!SDP_AddAttribute(sdp_handle, ATTR_ID_SERVICE_NAME,
-                          TEXT_STR_DESC_TYPE, (uint32_t)(strlen(name) + 1),
+                          TEXT_STR_DESC_TYPE, (uint32_t)(strlen(name)),
                           (uint8_t *)name))
       goto error;
   }
