@@ -3062,10 +3062,18 @@ void bta_dm_acl_change(tBTA_DM_MSG* p_data) {
       conn.link_down.is_removed =
           bta_dm_cb.device_list.peer_device[i].remove_dev_pending;
 
-      for (; i < bta_dm_cb.device_list.count; i++) {
+      // Iterate to the one before the last when shrinking the list,
+      // otherwise we memcpy garbage data into the record.
+      // Then clear out the last item in the list since we are shrinking.
+      for (; i < bta_dm_cb.device_list.count - 1; i++) {
         memcpy(&bta_dm_cb.device_list.peer_device[i],
                &bta_dm_cb.device_list.peer_device[i + 1],
                sizeof(bta_dm_cb.device_list.peer_device[i]));
+      }
+      if (bta_dm_cb.device_list.count > 0) {
+        int clear_index = bta_dm_cb.device_list.count - 1;
+        memset(&bta_dm_cb.device_list.peer_device[clear_index], 0,
+               sizeof(bta_dm_cb.device_list.peer_device[clear_index]));
       }
       break;
     }
