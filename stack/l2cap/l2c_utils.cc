@@ -1622,6 +1622,12 @@ void l2cu_release_ccb(tL2C_CCB* p_ccb) {
   /* If no channels on the connection, start idle timeout */
   if ((p_lcb) && p_lcb->in_use && (p_lcb->link_state == LST_CONNECTED)) {
     if (!p_lcb->ccb_queue.p_first_ccb) {
+      // Closing a security channel on LE device should not start connection
+      // timeout
+      if (p_lcb->transport == BT_TRANSPORT_LE &&
+          p_ccb->local_cid == L2CAP_SMP_CID)
+        return;
+
       l2cu_no_dynamic_ccbs(p_lcb);
     } else {
       /* Link is still active, adjust channel quotas. */
