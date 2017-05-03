@@ -416,7 +416,7 @@ static int a2dp_command(struct a2dp_stream_common* common, tA2DP_CTRL_CMD cmd) {
   DEBUG("A2DP COMMAND %s", audio_a2dp_hw_dump_ctrl_event(cmd));
 
   if (common->ctrl_fd == AUDIO_SKT_DISCONNECTED) {
-    INFO("recovering from previous error");
+    INFO("starting up or recovering from previous error");
     a2dp_open_ctrl_path(common);
     if (common->ctrl_fd == AUDIO_SKT_DISCONNECTED) {
       ERROR("failure to open ctrl path");
@@ -711,11 +711,13 @@ static int a2dp_write_output_audio_config(struct a2dp_stream_common* common) {
 static void a2dp_open_ctrl_path(struct a2dp_stream_common* common) {
   int i;
 
+  if (common->ctrl_fd != AUDIO_SKT_DISCONNECTED) return;  // already connected
+
   /* retry logic to catch any timing variations on control channel */
   for (i = 0; i < CTRL_CHAN_RETRY_COUNT; i++) {
     /* connect control channel if not already connected */
     if ((common->ctrl_fd = skt_connect(
-             A2DP_CTRL_PATH, AUDIO_STREAM_CONTROL_OUTPUT_BUFFER_SZ)) > 0) {
+             A2DP_CTRL_PATH, AUDIO_STREAM_CONTROL_OUTPUT_BUFFER_SZ)) >= 0) {
       /* success, now check if stack is ready */
       if (check_a2dp_ready(common) == 0) break;
 
@@ -1500,6 +1502,7 @@ static int adev_open_output_stream(struct audio_hw_device* dev,
     ret = -1;
     goto err_open;
   }
+  // a2dp_read_output_audio_config() opens the socket control path (or fails)
 
   /* set output config values */
   if (config != nullptr) {
@@ -1539,13 +1542,6 @@ static int adev_open_output_stream(struct audio_hw_device* dev,
   }
   *stream_out = &out->stream;
   a2dp_dev->output = out;
-
-  a2dp_open_ctrl_path(&out->common);
-  if (out->common.ctrl_fd == AUDIO_SKT_DISCONNECTED) {
-    ERROR("ctrl socket failed to connect (%s)", strerror(errno));
-    ret = -1;
-    goto err_open;
-  }
 
   DEBUG("success");
   /* Delay to ensure Headset is in proper state when START is initiated from
@@ -1710,18 +1706,12 @@ static int adev_open_input_stream(struct audio_hw_device* dev,
   *stream_in = &in->stream;
   a2dp_dev->input = in;
 
-  a2dp_open_ctrl_path(&in->common);
-  if (in->common.ctrl_fd == AUDIO_SKT_DISCONNECTED) {
-    ERROR("ctrl socket failed to connect (%s)", strerror(errno));
-    ret = -1;
-    goto err_open;
-  }
-
   if (a2dp_read_input_audio_config(&in->common) < 0) {
     ERROR("a2dp_read_input_audio_config failed (%s)", strerror(errno));
     ret = -1;
     goto err_open;
   }
+  // a2dp_read_input_audio_config() opens socket control path (or fails)
 
   DEBUG("success");
   return 0;
