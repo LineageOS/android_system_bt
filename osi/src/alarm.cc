@@ -633,7 +633,7 @@ static bool timer_create_internal(const clockid_t clock_id, timer_t* timer) {
   memset(&sigevent, 0, sizeof(sigevent));
   sigevent.sigev_notify = SIGEV_THREAD;
   sigevent.sigev_notify_function = (void (*)(union sigval))timer_callback;
-  sigevent.sigev_notify_attributes = (void*)(&thread_attr);
+  sigevent.sigev_notify_attributes = &thread_attr;
   if (timer_create(clock_id, &sigevent, timer) == -1) {
     LOG_ERROR(LOG_TAG, "%s unable to create timer with clock %d: %s", __func__,
               clock_id, strerror(errno));
