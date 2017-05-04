@@ -65,7 +65,11 @@ typedef enum {
 
   // Disable 3Mbps packets and use only 2Mbps packets for ACL links when
   // streaming audio.
-  INTEROP_2MBPS_LINK_ONLY
+  INTEROP_2MBPS_LINK_ONLY,
+
+  // Do not use supervision timeout value received from preferred connection
+  // parameters, use 3s instead. Use with HID only.
+  INTEROP_HID_PREF_CONN_SUP_TIMEOUT_3S
 } interop_feature_t;
 
 // Check if a given |addr| matches a known interoperability workaround as
