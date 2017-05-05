@@ -1874,13 +1874,6 @@ extern tBTM_STATUS BTM_DeleteStoredLinkKey(BD_ADDR bd_addr, tBTM_CMPL_CB* p_cb);
  ******************************************************************************/
 extern tBTM_STATUS BTM_WriteEIR(BT_HDR* p_buff);
 
-/**
- * This function returns a pointer inside the |p_eir| array of length |eir_len|
- * where a field of |type| is located, together with its length in |p_length|
- */
-extern uint8_t* BTM_CheckEirData(uint8_t* p_eir, size_t eir_len, uint8_t type,
-                                 uint8_t* p_length);
-
 /*******************************************************************************
  *
  * Function         BTM_HasEirService

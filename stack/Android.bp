@@ -272,3 +272,20 @@ cc_test {
         "libgmock",
     ],
 }
+
+// Bluetooth stack advertise data parsing unit tests for target
+// =============================================================
+cc_test {
+    name: "net_test_stack_ad_parser",
+    defaults: ["fluoride_defaults"],
+    local_include_dirs: [
+        "include",
+    ],
+    srcs: [
+        "test/ad_parser_unittest.cc",
+    ],
+    static_libs: [
+        "liblog",
+        "libgmock",
+    ],
+}
