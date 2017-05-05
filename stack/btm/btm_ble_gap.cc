@@ -43,6 +43,7 @@
 #include "hcimsgs.h"
 #include "osi/include/osi.h"
 
+#include "advertise_data_parser.h"
 #include "btm_ble_int.h"
 #include "gatt_int.h"
 #include "gattdefs.h"
@@ -1093,41 +1094,6 @@ void BTM_BleWriteScanRsp(uint8_t* data, uint8_t length,
   p_adv_data_cback(BTM_SUCCESS);
 }
 
-/**
- * This function returns a pointer inside the |adv| where a field of |type| is
- * located, together with it' length in |p_length|
- **/
-const uint8_t* BTM_CheckAdvData(std::vector<uint8_t> const& adv, uint8_t type,
-                                uint8_t* p_length) {
-  BTM_TRACE_API("%s: type=0x%02x", __func__, type);
-
-  if (adv.empty()) {
-    *p_length = 0;
-    return NULL;
-  }
-
-  size_t position = 0;
-  uint8_t length = adv[position];
-
-  while (length > 0 && (position < adv.size())) {
-    uint8_t adv_type = adv[position + 1];
-
-    if (adv_type == type) {
-      /* length doesn't include itself */
-      *p_length = length - 1; /* minus the length of type */
-      return adv.data() + position + 2;
-    }
-
-    position += length + 1; /* skip the length of data */
-    if (position >= adv.size()) break;
-
-    length = adv[position];
-  }
-
-  *p_length = 0;
-  return NULL;
-}
-
 /*******************************************************************************
  *
  * Function         BTM__BLEReadDiscoverability
@@ -1707,8 +1673,8 @@ uint8_t btm_ble_is_discoverable(BD_ADDR bda,
   }
 
   if (!adv_data.empty()) {
-    const uint8_t* p_flag =
-        BTM_CheckAdvData(adv_data, BTM_BLE_AD_TYPE_FLAG, &data_len);
+    const uint8_t* p_flag = AdvertiseDataParser::GetFieldByType(
+        adv_data, BTM_BLE_AD_TYPE_FLAG, &data_len);
     if (p_flag != NULL) {
       flag = *p_flag;
 
@@ -1893,7 +1859,8 @@ void btm_ble_update_inq_result(tINQ_DB_ENT* p_i, uint8_t addr_type, BD_ADDR bda,
   p_i->inq_count = p_inq->inq_counter; /* Mark entry for current inquiry */
 
   if (!data.empty()) {
-    const uint8_t* p_flag = BTM_CheckAdvData(data, BTM_BLE_AD_TYPE_FLAG, &len);
+    const uint8_t* p_flag =
+        AdvertiseDataParser::GetFieldByType(data, BTM_BLE_AD_TYPE_FLAG, &len);
     if (p_flag != NULL) p_cur->flag = *p_flag;
   }
 
@@ -1905,13 +1872,14 @@ void btm_ble_update_inq_result(tINQ_DB_ENT* p_i, uint8_t addr_type, BD_ADDR bda,
      * Otherwise fall back to trying to infer if it is a HID device based on the
      * service class.
      */
-    const uint8_t* p_uuid16 =
-        BTM_CheckAdvData(data, BTM_BLE_AD_TYPE_APPEARANCE, &len);
+    const uint8_t* p_uuid16 = AdvertiseDataParser::GetFieldByType(
+        data, BTM_BLE_AD_TYPE_APPEARANCE, &len);
     if (p_uuid16 && len == 2) {
       btm_ble_appearance_to_cod((uint16_t)p_uuid16[0] | (p_uuid16[1] << 8),
                                 p_cur->dev_class);
     } else {
-      p_uuid16 = BTM_CheckAdvData(data, BTM_BLE_AD_TYPE_16SRV_CMPL, &len);
+      p_uuid16 = AdvertiseDataParser::GetFieldByType(
+          data, BTM_BLE_AD_TYPE_16SRV_CMPL, &len);
       if (p_uuid16 != NULL) {
         uint8_t i;
         for (i = 0; i + 2 <= len; i = i + 2) {
@@ -2159,6 +2127,12 @@ static void btm_ble_process_adv_pkt_cont(
     // If we didn't receive scan response yet, don't report the device.
     DVLOG(1) << " Waiting for scan response "
              << base::HexEncode(bda, BD_ADDR_LEN);
+    return;
+  }
+
+  if (!AdvertiseDataParser::IsValid(adv_data)) {
+    DVLOG(1) << __func__ << "Dropping bad advertisement packet: "
+             << base::HexEncode(adv_data.data(), adv_data.size());
     return;
   }
 
