@@ -37,12 +37,9 @@
 #include <unistd.h>
 #include <mutex>
 
-#ifdef OS_GENERIC
-#define ANDROID_PRIORITY_AUDIO -16
-#define ANDROID_PRIORITY_URGENT_AUDIO -19
-#else
+#define A2DP_RT_PRIORITY 1
+#ifndef OS_GENERIC
 #include <cutils/sched_policy.h>
-#include <utils/ThreadDefs.h>
 #endif
 
 #include "bt_types.h"
@@ -116,7 +113,6 @@ static void check_do_scheduling_group(void) {
 void raise_priority_a2dp(tHIGH_PRIORITY_TASK high_task) {
   int rc = 0;
   int tid = gettid();
-  int priority = ANDROID_PRIORITY_AUDIO;
 
   {
     std::lock_guard<std::mutex> lock(gIdxLock);
@@ -143,41 +139,17 @@ void raise_priority_a2dp(tHIGH_PRIORITY_TASK high_task) {
              errno);
   }
 
-  // always use urgent priority for HCI worker thread until we can adjust
-  // its prio individually. All other threads can be dynamically adjusted voa
-  // adjust_priority_a2dp()
+  // make A2DP threads use RT scheduling policy since they are part of the
+  // audio pipeline
+  {
+    struct sched_param rt_params;
+    rt_params.sched_priority = A2DP_RT_PRIORITY;
 
-  priority = ANDROID_PRIORITY_URGENT_AUDIO;
-
-  if (setpriority(PRIO_PROCESS, tid, priority) < 0) {
-    LOG_WARN(LOG_TAG, "failed to change priority tid: %d to %d", tid, priority);
-  }
-}
-
-/*****************************************************************************
- *
- * Function        adjust_priority_a2dp
- *
- * Description     Increase the a2dp consumer task priority temporarily when
- *                 audio starts playing to avoid overflowing the audio packet
- *                 queue. Restore the a2dp consumer task priority when audio
- *                 is not playing.
- *
- * Returns         void
- *
- ******************************************************************************/
-void adjust_priority_a2dp(int start) {
-  int priority = start ? ANDROID_PRIORITY_URGENT_AUDIO : ANDROID_PRIORITY_AUDIO;
-  int tid;
-  int i;
-
-  for (i = 0; i < TASK_HIGH_MAX; i++) {
-    tid = g_TaskIDs[i];
-    if (tid != INVALID_TASK_ID) {
-      if (setpriority(PRIO_PROCESS, tid, priority) < 0) {
-        LOG_WARN(LOG_TAG, "failed to change priority tid: %d to %d", tid,
-                 priority);
-      }
+    const int rc = sched_setscheduler(tid, SCHED_FIFO, &rt_params);
+    if (rc != 0) {
+      LOG_ERROR(LOG_TAG,
+                "%s unable to set SCHED_FIFO priority %d for tid %d, error %s",
+                __func__, A2DP_RT_PRIORITY, tid, strerror(errno));
     }
   }
 }
