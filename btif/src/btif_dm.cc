@@ -43,6 +43,7 @@
 
 #include <hardware/bluetooth.h>
 
+#include "advertise_data_parser.h"
 #include "bdaddr.h"
 #include "bt_common.h"
 #include "bta_closure_api.h"
@@ -52,11 +53,8 @@
 #include "btif_dm.h"
 #include "btif_hd.h"
 #include "btif_hh.h"
-#include "btif_hh.h"
 #include "btif_sdp.h"
 #include "btif_storage.h"
-#include "btif_storage.h"
-#include "btif_util.h"
 #include "btif_util.h"
 #include "btu.h"
 #include "device/include/controller.h"
@@ -344,16 +342,16 @@ bt_status_t btif_in_execute_service_request(tBTA_SERVICE_ID service_id,
 static bool check_eir_remote_name(tBTA_DM_SEARCH* p_search_data,
                                   uint8_t* p_remote_name,
                                   uint8_t* p_remote_name_len) {
-  uint8_t* p_eir_remote_name = NULL;
+  const uint8_t* p_eir_remote_name = NULL;
   uint8_t remote_name_len = 0;
 
   /* Check EIR for remote name and services */
   if (p_search_data->inq_res.p_eir) {
-    p_eir_remote_name = BTM_CheckEirData(
+    p_eir_remote_name = AdvertiseDataParser::GetFieldByType(
         p_search_data->inq_res.p_eir, p_search_data->inq_res.eir_len,
         BTM_EIR_COMPLETE_LOCAL_NAME_TYPE, &remote_name_len);
     if (!p_eir_remote_name) {
-      p_eir_remote_name = BTM_CheckEirData(
+      p_eir_remote_name = AdvertiseDataParser::GetFieldByType(
           p_search_data->inq_res.p_eir, p_search_data->inq_res.eir_len,
           BTM_EIR_SHORTENED_LOCAL_NAME_TYPE, &remote_name_len);
     }

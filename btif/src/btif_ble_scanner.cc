@@ -34,6 +34,7 @@
 
 #include <hardware/bt_gatt.h>
 
+#include "advertise_data_parser.h"
 #include "bta_api.h"
 #include "bta_closure_api.h"
 #include "bta_gatt_api.h"
@@ -147,11 +148,11 @@ void bta_scan_results_cb_impl(bt_bdaddr_t bd_addr, tBT_DEVICE_TYPE device_type,
   bt_device_type_t dev_type;
   bt_property_t properties;
 
-  const uint8_t* p_eir_remote_name = BTM_CheckAdvData(
+  const uint8_t* p_eir_remote_name = AdvertiseDataParser::GetFieldByType(
       value, BTM_EIR_COMPLETE_LOCAL_NAME_TYPE, &remote_name_len);
 
   if (p_eir_remote_name == NULL) {
-    p_eir_remote_name = BTM_CheckAdvData(
+    p_eir_remote_name = AdvertiseDataParser::GetFieldByType(
         value, BT_EIR_SHORTENED_LOCAL_NAME_TYPE, &remote_name_len);
   }
 
@@ -212,7 +213,8 @@ void bta_scan_results_cb(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH* p_data) {
     value.insert(value.begin(), p_data->inq_res.p_eir,
                  p_data->inq_res.p_eir + p_data->inq_res.eir_len);
 
-    if (BTM_CheckAdvData(value, BTM_EIR_COMPLETE_LOCAL_NAME_TYPE, &len)) {
+    if (AdvertiseDataParser::GetFieldByType(
+            value, BTM_EIR_COMPLETE_LOCAL_NAME_TYPE, &len)) {
       p_data->inq_res.remt_name_not_required = true;
     }
   }

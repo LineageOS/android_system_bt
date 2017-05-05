@@ -34,6 +34,7 @@
 #include "osi/include/osi.h"
 #include "osi/include/time.h"
 
+#include "advertise_data_parser.h"
 #include "bt_common.h"
 #include "bt_types.h"
 #include "btm_api.h"
@@ -118,10 +119,12 @@ static void btm_clr_inq_result_flt(void);
 
 static uint8_t btm_convert_uuid_to_eir_service(uint16_t uuid16);
 static void btm_set_eir_uuid(uint8_t* p_eir, tBTM_INQ_RESULTS* p_results);
-static uint8_t* btm_eir_get_uuid_list(uint8_t* p_eir, size_t eir_len,
-                                      uint8_t uuid_size, uint8_t* p_num_uuid,
-                                      uint8_t* p_uuid_list_type);
-static uint16_t btm_convert_uuid_to_uuid16(uint8_t* p_uuid, uint8_t uuid_size);
+static const uint8_t* btm_eir_get_uuid_list(uint8_t* p_eir, size_t eir_len,
+                                            uint8_t uuid_size,
+                                            uint8_t* p_num_uuid,
+                                            uint8_t* p_uuid_list_type);
+static uint16_t btm_convert_uuid_to_uuid16(const uint8_t* p_uuid,
+                                           uint8_t uuid_size);
 
 /*******************************************************************************
  *
@@ -2288,41 +2291,6 @@ tBTM_STATUS BTM_WriteEIR(BT_HDR* p_buff) {
   }
 }
 
-/**
- * This function returns a pointer inside the |p_eir| array of length |eir_len|
- * where a field of |type| is located, together with its length in |p_length|
- */
-uint8_t* BTM_CheckEirData(uint8_t* p_eir, size_t eir_len, uint8_t type,
-                          uint8_t* p_length) {
-  BTM_TRACE_API("%s: type=0x%02x", __func__, type);
-
-  if (eir_len == 0) {
-    *p_length = 0;
-    return NULL;
-  }
-
-  size_t position = 0;
-  uint8_t length = p_eir[position];
-
-  while (length > 0 && (position < eir_len)) {
-    uint8_t adv_type = p_eir[position + 1];
-
-    if (adv_type == type) {
-      /* length doesn't include itself */
-      *p_length = length - 1; /* minus the length of type */
-      return p_eir + position + 2;
-    }
-
-    position += length + 1; /* skip the length of data */
-    if (position >= eir_len) break;
-
-    length = p_eir[position];
-  }
-
-  *p_length = 0;
-  return NULL;
-}
-
 /*******************************************************************************
  *
  * Function         btm_convert_uuid_to_eir_service
@@ -2500,7 +2468,7 @@ uint8_t BTM_GetEirSupportedServices(uint32_t* p_eir_uuid, uint8_t** p,
 uint8_t BTM_GetEirUuidList(uint8_t* p_eir, size_t eir_len, uint8_t uuid_size,
                            uint8_t* p_num_uuid, uint8_t* p_uuid_list,
                            uint8_t max_num_uuid) {
-  uint8_t* p_uuid_data;
+  const uint8_t* p_uuid_data;
   uint8_t type;
   uint8_t yy, xx;
   uint16_t* p_uuid16 = (uint16_t*)p_uuid_list;
@@ -2561,10 +2529,11 @@ uint8_t BTM_GetEirUuidList(uint8_t* p_eir, size_t eir_len, uint8_t uuid_size,
  *                  beginning of UUID list in EIR - otherwise
  *
  ******************************************************************************/
-static uint8_t* btm_eir_get_uuid_list(uint8_t* p_eir, size_t eir_len,
-                                      uint8_t uuid_size, uint8_t* p_num_uuid,
-                                      uint8_t* p_uuid_list_type) {
-  uint8_t* p_uuid_data;
+static const uint8_t* btm_eir_get_uuid_list(uint8_t* p_eir, size_t eir_len,
+                                            uint8_t uuid_size,
+                                            uint8_t* p_num_uuid,
+                                            uint8_t* p_uuid_list_type) {
+  const uint8_t* p_uuid_data;
   uint8_t complete_type, more_type;
   uint8_t uuid_len;
 
@@ -2587,9 +2556,11 @@ static uint8_t* btm_eir_get_uuid_list(uint8_t* p_eir, size_t eir_len,
       break;
   }
 
-  p_uuid_data = BTM_CheckEirData(p_eir, eir_len, complete_type, &uuid_len);
+  p_uuid_data = AdvertiseDataParser::GetFieldByType(p_eir, eir_len,
+                                                    complete_type, &uuid_len);
   if (p_uuid_data == NULL) {
-    p_uuid_data = BTM_CheckEirData(p_eir, eir_len, more_type, &uuid_len);
+    p_uuid_data = AdvertiseDataParser::GetFieldByType(p_eir, eir_len, more_type,
+                                                      &uuid_len);
     *p_uuid_list_type = more_type;
   } else {
     *p_uuid_list_type = complete_type;
@@ -2612,7 +2583,8 @@ static uint8_t* btm_eir_get_uuid_list(uint8_t* p_eir, size_t eir_len,
  *                  UUID 16-bit - otherwise
  *
  ******************************************************************************/
-static uint16_t btm_convert_uuid_to_uuid16(uint8_t* p_uuid, uint8_t uuid_size) {
+static uint16_t btm_convert_uuid_to_uuid16(const uint8_t* p_uuid,
+                                           uint8_t uuid_size) {
   static const uint8_t base_uuid[LEN_UUID_128] = {
       0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x00, 0x00, 0x80,
       0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -2668,7 +2640,7 @@ static uint16_t btm_convert_uuid_to_uuid16(uint8_t* p_uuid, uint8_t uuid_size) {
  *
  ******************************************************************************/
 void btm_set_eir_uuid(uint8_t* p_eir, tBTM_INQ_RESULTS* p_results) {
-  uint8_t* p_uuid_data;
+  const uint8_t* p_uuid_data;
   uint8_t num_uuid;
   uint16_t uuid16;
   uint8_t yy;
