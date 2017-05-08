@@ -668,6 +668,14 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
           "initial credit = %d",
           mtu, mps, initial_credit);
 
+      p_ccb = l2cu_find_ccb_by_remote_cid(p_lcb, rcid);
+      if (p_ccb) {
+        L2CAP_TRACE_WARNING("L2CAP - rcvd conn req for duplicated cid: 0x%04x",
+                            rcid);
+        l2cu_reject_ble_connection(p_lcb, id, L2CAP_LE_SOURCE_CID_ALREADY_ALLOCATED);
+        break;
+      }
+
       p_rcb = l2cu_find_ble_rcb_by_psm(con_info.psm);
       if (p_rcb == NULL) {
         L2CAP_TRACE_WARNING("L2CAP - rcvd conn req for unknown PSM: 0x%04x",

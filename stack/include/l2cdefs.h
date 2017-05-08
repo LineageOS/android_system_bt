@@ -136,6 +136,7 @@
 #define L2CAP_LE_INSUFFICIENT_ENCRYP 8
 /* We don't like peer device response */
 #define L2CAP_LE_INVALID_SOURCE_CID 9
+#define L2CAP_LE_SOURCE_CID_ALREADY_ALLOCATED 0x0A
 
 /* Define L2CAP Move Channel Response result codes
 */
