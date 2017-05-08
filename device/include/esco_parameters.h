@@ -20,6 +20,15 @@
 
 #include <stdint.h>
 
+/*******************
+ * SCO Codec Types
+ *******************/
+typedef enum {
+  SCO_CODEC_NONE = 0x0000,
+  SCO_CODEC_CVSD = 0x0001,
+  SCO_CODEC_MSBC = 0x0002,
+} sco_codec_t;
+
 typedef enum {
   ESCO_CODEC_CVSD = 0,
   ESCO_CODEC_MSBC_T1,
@@ -122,10 +131,7 @@ typedef struct {
   esco_packet_types_t packet_types; /* Packet Types */
   esco_retransmission_effort_t
       retransmission_effort; /* 0x00-0x02, 0xFF don't care */
-} enhanced_esco_parameters_t;
-
-typedef esco_coding_id_format_t esco_coding_id_format_t;
-typedef enhanced_esco_parameters_t enh_esco_params_t;
+} enh_esco_params_t;
 
 // Get the enhanced eSCO configuration parameters for the provided |codec|
 enh_esco_params_t esco_parameters_for_codec(esco_codec_t codec);
