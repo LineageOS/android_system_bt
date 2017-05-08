@@ -18,11 +18,12 @@
 
 #pragma once
 
+#include <base/bind.h>
+#include <base/tracked_objects.h>
 #include <stdbool.h>
 
 #include "bt_types.h"
 #include "osi/include/allocator.h"
-#include "osi/include/data_dispatcher.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/future.h"
 #include "osi/include/osi.h"
@@ -67,12 +68,10 @@ typedef void (*command_status_cb)(uint8_t status, BT_HDR* command,
                                   void* context);
 
 typedef struct hci_t {
-  // Register with this data dispatcher to receive events flowing upward out of
-  // the HCI layer
-  data_dispatcher_t* event_dispatcher;
-
-  // Set the queue to receive ACL data in
-  void (*set_data_queue)(fixed_queue_t* queue);
+  // Set the callback that the HCI layer uses to send data upwards
+  void (*set_data_cb)(
+      base::Callback<void(const tracked_objects::Location&, BT_HDR*)>
+          send_data_cb);
 
   // Send a command through the HCI layer
   void (*transmit_command)(BT_HDR* command,
@@ -82,7 +81,7 @@ typedef struct hci_t {
   future_t* (*transmit_command_futured)(BT_HDR* command);
 
   // Send some data downward through the HCI layer
-  void (*transmit_downward)(data_dispatcher_type_t type, void* data);
+  void (*transmit_downward)(uint16_t type, void* data);
 } hci_t;
 
 const hci_t* hci_layer_get_interface();
@@ -91,5 +90,8 @@ const hci_t* hci_layer_get_test_interface(
     const allocator_t* buffer_allocator_interface,
     const btsnoop_t* btsnoop_interface,
     const packet_fragmenter_t* packet_fragmenter_interface);
+
+void post_to_hci_message_loop(const tracked_objects::Location& from_here,
+                              BT_HDR* p_msg);
 
 void hci_layer_cleanup_interface();
