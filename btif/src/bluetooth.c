@@ -68,6 +68,7 @@
 #include "btif_storage.h"
 #include "btif/include/btif_debug_btsnoop.h"
 #include "btif/include/btif_debug_conn.h"
+#include "btif/include/btif_debug_l2c.h"
 #include "btif/include/btif_media.h"
 #include "l2cdefs.h"
 #include "l2c_api.h"
@@ -392,20 +393,15 @@ static int read_energy_info()
 static void dump(int fd, const char **arguments)
 {
     if (arguments != NULL && arguments[0] != NULL) {
-      if (strncmp(arguments[0], "--proto-text", 12) == 0) {
-        btif_update_a2dp_metrics();
-        metrics_print(fd, true);
-        return;
-      }
       if (strncmp(arguments[0], "--proto-bin", 11) == 0) {
-        btif_update_a2dp_metrics();
-        metrics_write(fd, true);
+        metrics_write_base64(fd, true);
         return;
       }
     }
     btif_debug_conn_dump(fd);
     btif_debug_bond_event_dump(fd);
     btif_debug_a2dp_dump(fd);
+    btif_debug_l2c_dump(fd);
     btif_debug_config_dump(fd);
     wakelock_debug_dump(fd);
     alarm_debug_dump(fd);

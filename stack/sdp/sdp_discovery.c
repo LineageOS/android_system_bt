@@ -384,10 +384,11 @@ static void sdp_copy_raw_data (tCONN_CB *p_ccb, BOOLEAN offset)
             SDP_TRACE_WARNING("rem_len :%d less than cpy_len:%d", rem_len, cpy_len);
             cpy_len = rem_len;
         }
-#if (SDP_DEBUG_RAW == TRUE)
-        SDP_TRACE_WARNING("list_len :%d cpy_len:%d raw_size:%d raw_used:%d",
-            list_len, cpy_len, p_ccb->p_db->raw_size, p_ccb->p_db->raw_used);
-#endif
+        SDP_TRACE_WARNING(
+          "%s: list_len:%d cpy_len:%d p:%p p_ccb:%p p_db:%p raw_size:%d "
+          "raw_used:%d raw_data:%p",
+          __func__, list_len, cpy_len, p, p_ccb, p_ccb->p_db,
+          p_ccb->p_db->raw_size, p_ccb->p_db->raw_used, p_ccb->p_db->raw_data);
         memcpy (&p_ccb->p_db->raw_data[p_ccb->p_db->raw_used], p, cpy_len);
         p_ccb->p_db->raw_used += cpy_len;
     }

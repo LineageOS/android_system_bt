@@ -294,7 +294,7 @@ static void update_wakelock_acquired_stats(bt_status_t acquired_status) {
 
   pthread_mutex_unlock(&monitor);
 
-  metrics_wake_event(WAKE_EVENT_ACQUIRED, NULL, WAKE_LOCK_ID, now_ms);
+  metrics_log_wake_event(WAKE_EVENT_ACQUIRED, "", "", now_ms);
 }
 
 //
@@ -338,7 +338,7 @@ static void update_wakelock_released_stats(bt_status_t released_status) {
 
   pthread_mutex_unlock(&monitor);
 
-  metrics_wake_event(WAKE_EVENT_RELEASED, NULL, WAKE_LOCK_ID, now_ms);
+  metrics_log_wake_event(WAKE_EVENT_RELEASED, "", "", now_ms);
 }
 
 void wakelock_debug_dump(int fd) {

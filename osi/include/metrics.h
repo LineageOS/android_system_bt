@@ -20,6 +20,11 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+// Typedefs to hide protobuf definition to the rest of stack
+
 typedef enum {
   DEVICE_TYPE_UNKNOWN,
   DEVICE_TYPE_BREDR,
@@ -27,25 +32,11 @@ typedef enum {
   DEVICE_TYPE_DUMO,
 } device_type_t;
 
-// Record a pairing event at Unix epoch time |timestamp_ms|
-// |device_class| and |device_type| denote the type of device paired.
-// |disconnect_reason| is the HCI reason for pairing disconnection,
-// see stack/include/hcidefs.h
-void metrics_pair_event(uint32_t disconnect_reason, uint64_t timestamp_ms,
-                        uint32_t device_class, device_type_t device_type);
-
 typedef enum {
   WAKE_EVENT_UNKNOWN,
   WAKE_EVENT_ACQUIRED,
   WAKE_EVENT_RELEASED,
 } wake_event_type_t;
-
-// Record a wake event at Unix epoch time |timestamp_ms|.
-// |type| specifies whether it was acquired or relased,
-// |requestor| if provided is the service requesting the wake lock.
-// |name| is the name of the wake lock held.
-void metrics_wake_event(wake_event_type_t type, const char *requestor,
-                        const char *name, uint64_t timestamp_ms);
 
 typedef enum {
   SCAN_TYPE_UNKNOWN,
@@ -54,44 +45,52 @@ typedef enum {
   SCAN_TECH_TYPE_BOTH,
 } scan_tech_t;
 
-// Record a scan event at Unix epoch time |timestamp_ms|.
-// |start| is true if this is the beginning of the scan.
-// |initiator| is a unique ID identifying the app starting the scan.
-// |type| is whether the scan reports BR/EDR, LE, or both.
-// |results| is the number of results to be reported.
-void metrics_scan_event(bool start, const char *initator, scan_tech_t type,
-                        uint32_t results, uint64_t timestamp_ms);
+typedef enum {
+  CONNECTION_TECHNOLOGY_TYPE_UNKNOWN,
+  CONNECTION_TECHNOLOGY_TYPE_LE,
+  CONNECTION_TECHNOLOGY_TYPE_BREDR,
+} connection_tech_t;
 
-// Record A2DP session information.
-// |session_duration_sec| is the session duration (in seconds).
-// |device_class| is the device class of the paired device.
-// |media_timer_min_ms| is the minimum scheduled time (in milliseconds)
-// of the media timer.
-// |media_timer_max_ms| is the maximum scheduled time (in milliseconds)
-// of the media timer.
-// |media_timer_avg_ms| is the average scheduled time (in milliseconds)
-// of the media timer.
-// |buffer_overruns_max_count| - TODO - not clear what this is.
-// |buffer_overruns_total| is the number of times the media buffer with
-// audio data has overrun.
-// |buffer_underruns_average| - TODO - not clear what this is.
-// |buffer_underruns_count| is the number of times there was no enough
-// audio data to add to the media buffer.
-void metrics_a2dp_session(int64_t session_duration_sec,
-                          const char *disconnect_reason,
-                          uint32_t device_class,
-                          int32_t media_timer_min_ms,
-                          int32_t media_timer_max_ms,
-                          int32_t media_timer_avg_ms,
-                          int32_t buffer_overruns_max_count,
-                          int32_t buffer_overruns_total,
-                          float buffer_underruns_average,
-                          int32_t buffer_underruns_count);
+typedef enum {
+  DISCONNECT_REASON_UNKNOWN,
+  DISCONNECT_REASON_METRICS_DUMP,
+  DISCONNECT_REASON_NEXT_START_WITHOUT_END_PREVIOUS,
+} disconnect_reason_t;
 
-// Writes the metrics, in packed protobuf format, into the descriptor |fd|.
-// If |clear| is true, metrics events are cleared afterwards.
-void metrics_write(int fd, bool clear);
+typedef struct {
+  int64_t audio_duration_ms;
+  int32_t media_timer_min_ms;
+  int32_t media_timer_max_ms;
+  int32_t media_timer_avg_ms;
+  int64_t total_scheduling_count;
+  int32_t buffer_overruns_max_count;
+  int32_t buffer_overruns_total;
+  float buffer_underruns_average;
+  int32_t buffer_underruns_count;
+} A2dpSessionMetrics_t;
 
-// Writes the metrics, in human-readable protobuf format, into the descriptor
-// |fd|. If |clear| is true, metrics events are cleared afterwards.
-void metrics_print(int fd, bool clear);
+void metrics_log_pair_event(uint32_t disconnect_reason, uint64_t timestamp_ms,
+                    uint32_t device_class, device_type_t device_type);
+
+void metrics_log_wake_event(wake_event_type_t type, const char* requestor,
+                    const char* name, uint64_t timestamp_ms);
+
+void metrics_log_scan_event(bool start, const char* initator, scan_tech_t type,
+                    uint32_t results, uint64_t timestamp_ms);
+
+void metrics_log_bluetooth_session_start(connection_tech_t connection_tech_type,
+                                uint64_t timestamp_ms);
+
+void metrics_log_bluetooth_session_end(disconnect_reason_t disconnect_reason,
+  uint64_t timestamp_ms);
+
+void metrics_log_bluetooth_session_device_info(uint32_t device_class,
+                                     device_type_t device_type);
+
+void metrics_log_a2dp_session(A2dpSessionMetrics_t* metrics);
+
+void metrics_write_base64(int fd, bool clear);
+
+#ifdef __cplusplus
+}
+#endif

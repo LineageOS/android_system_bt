@@ -71,7 +71,9 @@ executable("net_test_osi") {
     "test/future_test.cpp",
     "test/hash_map_test.cpp",
     "test/hash_map_utils_test.cpp",
+    "test/leaky_bonded_queue_test.cpp",
     "test/list_test.cpp",
+    "test/metrics_test.cpp",
     "test/properties_test.cpp",
     "test/rand_test.cpp",
     "test/reactor_test.cpp",
@@ -88,6 +90,8 @@ executable("net_test_osi") {
   deps = [
     "//osi",
     "//third_party/googletest:gtest_main",
+    "//third_party/googletest:gmock_main",
+    "//third_party/libchrome:base",
   ]
 
   libs = [

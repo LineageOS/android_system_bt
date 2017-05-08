@@ -1131,7 +1131,7 @@ tBTM_STATUS  BTM_CancelRemoteDeviceName (void)
 ** Returns          pointer to entry, or NULL if not found
 **
 *******************************************************************************/
-tBTM_INQ_INFO *BTM_InqDbRead (BD_ADDR p_bda)
+tBTM_INQ_INFO *BTM_InqDbRead (const BD_ADDR p_bda)
 {
     BTM_TRACE_API ("BTM_InqDbRead: bd addr [%02x%02x%02x%02x%02x%02x]",
                p_bda[0], p_bda[1], p_bda[2], p_bda[3], p_bda[4], p_bda[5]);
@@ -1538,7 +1538,7 @@ BOOLEAN btm_inq_find_bdaddr (BD_ADDR p_bda)
 ** Returns          pointer to entry, or NULL if not found
 **
 *******************************************************************************/
-tINQ_DB_ENT *btm_inq_db_find (BD_ADDR p_bda)
+tINQ_DB_ENT *btm_inq_db_find (const BD_ADDR p_bda)
 {
     UINT16       xx;
     tINQ_DB_ENT  *p_ent = btm_cb.btm_inq_vars.inq_db;
