@@ -20,6 +20,7 @@
 
 #include "hci_layer.h"
 
+#include <base/location.h>
 #include <base/logging.h>
 #include "buffer_allocator.h"
 #include "osi/include/log.h"
@@ -39,7 +40,8 @@ using ::android::hardware::Void;
 using ::android::hardware::hidl_vec;
 
 extern void initialization_complete();
-extern void hci_event_received(BT_HDR* packet);
+extern void hci_event_received(const tracked_objects::Location& from_here,
+                               BT_HDR* packet);
 extern void acl_event_received(BT_HDR* packet);
 extern void sco_data_received(BT_HDR* packet);
 
@@ -73,7 +75,7 @@ class BluetoothHciCallbacks : public IBluetoothHciCallbacks {
 
   Return<void> hciEventReceived(const hidl_vec<uint8_t>& event) {
     BT_HDR* packet = WrapPacketAndCopy(MSG_HC_TO_STACK_HCI_EVT, event);
-    hci_event_received(packet);
+    hci_event_received(FROM_HERE, packet);
     return Void();
   }
 

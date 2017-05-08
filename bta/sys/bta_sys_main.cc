@@ -24,7 +24,9 @@
 
 #define LOG_TAG "bt_bta_sys_main"
 
+#include <base/bind.h>
 #include <base/logging.h>
+#include <base/threading/thread.h>
 #include <pthread.h>
 #include <string.h>
 
@@ -34,6 +36,7 @@
 #include "bta_sys.h"
 #include "bta_sys_int.h"
 #include "btm_api.h"
+#include "btu.h"
 #include "osi/include/alarm.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/log.h"
@@ -529,16 +532,23 @@ bool bta_sys_is_register(uint8_t id) { return bta_sys_cb.is_reg[id]; }
  *                  optimize sending of messages to BTA.  It is called by BTA
  *                  API functions and call-in functions.
  *
+ *                  TODO (apanicke): Add location object as parameter for easier
+ *                  future debugging when doing alarm refactor
+ *
  *
  * Returns          void
  *
  ******************************************************************************/
 void bta_sys_sendmsg(void* p_msg) {
-  // There is a race condition that occurs if the stack is shut down while
-  // there is a procedure in progress that can schedule a task via this
-  // message queue. This causes |btu_bta_msg_queue| to get cleaned up before
-  // it gets used here; hence we check for NULL before using it.
-  if (btu_bta_msg_queue) fixed_queue_enqueue(btu_bta_msg_queue, p_msg);
+  base::MessageLoop* bta_message_loop = get_message_loop();
+
+  if (!bta_message_loop || !bta_message_loop->task_runner().get()) {
+    APPL_TRACE_ERROR("%s: MessageLooper not initialized", __func__);
+    return;
+  }
+
+  bta_message_loop->task_runner()->PostTask(
+      FROM_HERE, base::Bind(&bta_sys_event, static_cast<BT_HDR*>(p_msg)));
 }
 
 /*******************************************************************************
@@ -557,6 +567,7 @@ void bta_sys_start_timer(alarm_t* alarm, period_ms_t interval, uint16_t event,
 
   p_buf->event = event;
   p_buf->layer_specific = layer_specific;
+
   alarm_set_on_queue(alarm, interval, bta_sys_sendmsg, p_buf,
                      btu_bta_alarm_queue);
 }
