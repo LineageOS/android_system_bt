@@ -212,10 +212,9 @@ bool SMP_PairCancel(BD_ADDR bd_addr) {
   bool status = false;
 
   // PTS SMP failure test cases
-  if (p_cb->cert_failure == 7)
-    err_code = SMP_PASSKEY_ENTRY_FAIL;
-  else if (p_cb->cert_failure == 8)
-    err_code = SMP_NUMERIC_COMPAR_FAIL;
+  if (p_cb->cert_failure == SMP_PASSKEY_ENTRY_FAIL ||
+      p_cb->cert_failure == SMP_NUMERIC_COMPAR_FAIL)
+    err_code = p_cb->cert_failure;
 
   BTM_TRACE_EVENT("SMP_CancelPair state=%d flag=0x%x ", p_cb->state,
                   p_cb->flags);
