@@ -18,6 +18,7 @@
  *
  **********************************************************************/
 #include <base/bind.h>
+#include <base/location.h>
 #include <base/logging.h>
 #include <base/threading/thread.h>
 #include <errno.h>
@@ -92,7 +93,8 @@ enum HciPacketType {
 };
 
 extern void initialization_complete();
-extern void hci_event_received(BT_HDR* packet);
+extern void hci_event_received(const tracked_objects::Location& from_here,
+                               BT_HDR* packet);
 extern void acl_event_received(BT_HDR* packet);
 extern void sco_data_received(BT_HDR* packet);
 
@@ -129,7 +131,7 @@ void monitor_socket(int ctrl_fd, int fd) {
     switch (type) {
       case HCI_PACKET_TYPE_COMMAND:
         packet->event = MSG_HC_TO_STACK_HCI_EVT;
-        hci_event_received(packet);
+        hci_event_received(FROM_HERE, packet);
         break;
       case HCI_PACKET_TYPE_ACL_DATA:
         packet->event = MSG_HC_TO_STACK_HCI_ACL;
@@ -141,7 +143,7 @@ void monitor_socket(int ctrl_fd, int fd) {
         break;
       case HCI_PACKET_TYPE_EVENT:
         packet->event = MSG_HC_TO_STACK_HCI_EVT;
-        hci_event_received(packet);
+        hci_event_received(FROM_HERE, packet);
         break;
       default:
         LOG(FATAL) << "Unexpected event type: " << +type;
