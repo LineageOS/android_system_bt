@@ -28,6 +28,7 @@
 extern fixed_queue_t* btu_general_alarm_queue;
 
 #define SMP_KEY_DIST_TYPE_MAX 4
+
 const tSMP_ACT smp_distribute_act[] = {smp_generate_ltk, smp_send_id_info,
                                        smp_generate_csrk,
                                        smp_set_derive_link_key};
@@ -44,37 +45,14 @@ static bool lmp_version_below(BD_ADDR bda, uint8_t version) {
 }
 
 static bool pts_test_send_authentication_complete_failure(tSMP_CB* p_cb) {
-  uint8_t reason = 0;
-
-  if (p_cb->cert_failure < 2 || p_cb->cert_failure > 6) return false;
-
-  SMP_TRACE_ERROR("%s failure case = %d", __func__, p_cb->cert_failure);
-
-  switch (p_cb->cert_failure) {
-    case 2:
-      reason = SMP_PAIR_AUTH_FAIL;
-      smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
-      break;
-    case 3:
-      reason = SMP_PAIR_FAIL_UNKNOWN;
-      smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
-      break;
-    case 4:
-      reason = SMP_PAIR_NOT_SUPPORT;
-      smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
-      break;
-    case 5:
-      reason = SMP_PASSKEY_ENTRY_FAIL;
-      smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
-      break;
-    case 6:
-      reason = SMP_REPEATED_ATTEMPTS;
-      smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
-      break;
+  uint8_t reason = p_cb->cert_failure;
+  if (reason == SMP_PAIR_AUTH_FAIL || reason == SMP_PAIR_FAIL_UNKNOWN ||
+      reason == SMP_PAIR_NOT_SUPPORT || reason == SMP_PASSKEY_ENTRY_FAIL ||
+      reason == SMP_REPEATED_ATTEMPTS) {
+    smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+    return true;
   }
-
-  return true;
-  ;
+  return false;
 }
 
 /*******************************************************************************
@@ -1556,9 +1534,18 @@ void smp_process_peer_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   SMP_TRACE_DEBUG("%s start ", __func__);
 
   // PTS Testing failure modes
-  if (p_cb->cert_failure == 1) {
+  if (p_cb->cert_failure == SMP_CONFIRM_VALUE_ERR) {
     SMP_TRACE_ERROR("%s failure case = %d", __func__, p_cb->cert_failure);
     reason = p_cb->failure = SMP_CONFIRM_VALUE_ERR;
+    smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+    return;
+  }
+  // PTS Testing failure modes (for LT)
+  if ((p_cb->cert_failure == SMP_NUMERIC_COMPAR_FAIL) &&
+      (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS) &&
+      (p_cb->role == HCI_ROLE_SLAVE)) {
+    SMP_TRACE_ERROR("%s failure case = %d", __func__, p_cb->cert_failure);
+    reason = p_cb->failure = SMP_NUMERIC_COMPAR_FAIL;
     smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
     return;
   }
@@ -1589,7 +1576,8 @@ void smp_process_peer_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
       break;
     case SMP_MODEL_SEC_CONN_PASSKEY_ENT:
     case SMP_MODEL_SEC_CONN_PASSKEY_DISP:
-      if (!smp_check_commitment(p_cb) && p_cb->cert_failure != 9) {
+      if (!smp_check_commitment(p_cb) &&
+          p_cb->cert_failure != SMP_NUMERIC_COMPAR_FAIL) {
         reason = p_cb->failure = SMP_CONFIRM_VALUE_ERR;
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
         break;
