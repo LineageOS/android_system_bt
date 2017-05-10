@@ -179,6 +179,17 @@ static uint16_t compute_service_size(btgatt_db_element_t* service, int count) {
 
   return db_size;
 }
+
+static bool is_gatt_attr_type(const tBT_UUID& uuid) {
+  if (uuid.len == LEN_UUID_16 && (uuid.uu.uuid16 == GATT_UUID_PRI_SERVICE ||
+                                  uuid.uu.uuid16 == GATT_UUID_SEC_SERVICE ||
+                                  uuid.uu.uuid16 == GATT_UUID_INCLUDE_SERVICE ||
+                                  uuid.uu.uuid16 == GATT_UUID_CHAR_DECLARE)) {
+    return true;
+  }
+  return false;
+}
+
 /*******************************************************************************
  *
  * Function         GATTS_AddService
@@ -297,9 +308,25 @@ uint16_t GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
         return GATT_INTERNAL_ERROR;
       }
 
+      if (is_gatt_attr_type(uuid)) {
+        GATT_TRACE_ERROR(
+            "%s: attept to add characteristic with UUID equal to GATT "
+            "Attribute Type 0x%04x ",
+            __func__, uuid.uu.uuid16);
+        return GATT_INTERNAL_ERROR;
+      }
+
       el->attribute_handle = gatts_add_characteristic(
           &p_list->svc_db, el->permissions, el->properties, &uuid);
     } else if (el->type == BTGATT_DB_DESCRIPTOR) {
+      if (is_gatt_attr_type(uuid)) {
+        GATT_TRACE_ERROR(
+            "%s: attept to add descriptor with UUID equal to GATT "
+            "Attribute Type 0x%04x ",
+            __func__, uuid.uu.uuid16);
+        return GATT_INTERNAL_ERROR;
+      }
+
       el->attribute_handle =
           gatts_add_char_descr(&p_list->svc_db, el->permissions, &uuid);
     } else if (el->type == BTGATT_DB_INCLUDED_SERVICE) {
