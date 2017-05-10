@@ -39,3 +39,18 @@ TEST_F(PropertiesTest, test_successfull_set_and_get_value) {
   osi_property_get("very.useful.set.test", received, NULL);
   ASSERT_STREQ(received, "nothing_interesting");
 }
+
+TEST_F(PropertiesTest, test_default_value_int32) {
+  int32_t value = 42;
+  int32_t rvalue = osi_property_get_int32("very.useful.test", value);
+  ASSERT_EQ(rvalue, value);
+}
+
+TEST_F(PropertiesTest, test_successfull_set_and_get_value_int32) {
+  char value[PROPERTY_VALUE_MAX] = "42";
+  int ret = osi_property_set("very.useful.set.test", value);
+  ASSERT_EQ(0, ret);
+
+  int32_t received = osi_property_get_int32("very.useful.set.test", 84);
+  ASSERT_EQ(received, 42);
+}
