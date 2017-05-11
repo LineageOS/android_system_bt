@@ -165,7 +165,6 @@ typedef uint16_t tBTA_AG_PEER_FEAT;
 
 /* HFP peer supported codec masks */
 // TODO(google) This should use common definitions
-// in hci/include/hci_audio.h
 #define BTA_AG_CODEC_NONE BTM_SCO_CODEC_NONE
 #define BTA_AG_CODEC_CVSD BTM_SCO_CODEC_CVSD /* CVSD */
 #define BTA_AG_CODEC_MSBC BTM_SCO_CODEC_MSBC /* mSBC */

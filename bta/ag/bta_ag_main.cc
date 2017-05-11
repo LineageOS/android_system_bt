@@ -81,7 +81,6 @@ enum {
   BTA_AG_SEND_RING,
   BTA_AG_CI_SCO_DATA,
   BTA_AG_CI_RX_DATA,
-  BTA_AG_CI_SCO_OPEN_CONTINUE,
   BTA_AG_RCVD_SLC_READY,
   BTA_AG_NUM_ACTIONS
 };
@@ -93,23 +92,17 @@ typedef void (*tBTA_AG_ACTION)(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 
 /* action functions */
 const tBTA_AG_ACTION bta_ag_action[] = {
-    bta_ag_register,       bta_ag_deregister,
-    bta_ag_start_open,     bta_ag_rfc_do_open,
-    bta_ag_rfc_do_close,   bta_ag_start_dereg,
-    bta_ag_start_close,    bta_ag_rfc_open,
-    bta_ag_open_fail,      bta_ag_rfc_acp_open,
-    bta_ag_rfc_close,      bta_ag_rfc_fail,
-    bta_ag_rfc_data,       bta_ag_disc_int_res,
-    bta_ag_disc_fail,      bta_ag_disc_acp_res,
-    bta_ag_free_db,        bta_ag_sco_conn_open,
-    bta_ag_sco_conn_close, bta_ag_sco_listen,
-    bta_ag_sco_open,       bta_ag_sco_close,
-    bta_ag_sco_shutdown,   bta_ag_post_sco_open,
-    bta_ag_post_sco_close, bta_ag_svc_conn_open,
-    bta_ag_result,         bta_ag_setcodec,
-    bta_ag_send_ring,      bta_ag_ci_sco_data,
-    bta_ag_ci_rx_data,     bta_ag_ci_sco_open_continue,
-    bta_ag_rcvd_slc_ready};
+    bta_ag_register,       bta_ag_deregister,    bta_ag_start_open,
+    bta_ag_rfc_do_open,    bta_ag_rfc_do_close,  bta_ag_start_dereg,
+    bta_ag_start_close,    bta_ag_rfc_open,      bta_ag_open_fail,
+    bta_ag_rfc_acp_open,   bta_ag_rfc_close,     bta_ag_rfc_fail,
+    bta_ag_rfc_data,       bta_ag_disc_int_res,  bta_ag_disc_fail,
+    bta_ag_disc_acp_res,   bta_ag_free_db,       bta_ag_sco_conn_open,
+    bta_ag_sco_conn_close, bta_ag_sco_listen,    bta_ag_sco_open,
+    bta_ag_sco_close,      bta_ag_sco_shutdown,  bta_ag_post_sco_open,
+    bta_ag_post_sco_close, bta_ag_svc_conn_open, bta_ag_result,
+    bta_ag_setcodec,       bta_ag_send_ring,     bta_ag_ci_sco_data,
+    bta_ag_ci_rx_data,     bta_ag_rcvd_slc_ready};
 
 /* state table information */
 #define BTA_AG_ACTIONS 2    /* number of actions */
@@ -141,9 +134,7 @@ const uint8_t bta_ag_st_init[][BTA_AG_NUM_COLS] = {
     /* RING_TOUT_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_INIT_ST},
     /* SVC_TOUT_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_INIT_ST},
     /* CI_SCO_DATA_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_INIT_ST},
-    /* CI_SLC_READY_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_INIT_ST},
-    /* CI_AUDIO_OPEN_CONTINUE_EVT */
-    {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_INIT_ST}};
+    /* CI_SLC_READY_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_INIT_ST}};
 
 /* state table for opening state */
 const uint8_t bta_ag_st_opening[][BTA_AG_NUM_COLS] = {
@@ -173,9 +164,7 @@ const uint8_t bta_ag_st_opening[][BTA_AG_NUM_COLS] = {
     /* RING_TOUT_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_OPENING_ST},
     /* SVC_TOUT_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_OPENING_ST},
     /* CI_SCO_DATA_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_OPENING_ST},
-    /* CI_SLC_READY_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_OPENING_ST},
-    /* CI_AUDIO_OPEN_CONTINUE_EVT */
-    {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_OPENING_ST}};
+    /* CI_SLC_READY_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_OPENING_ST}};
 
 /* state table for open state */
 const uint8_t bta_ag_st_open[][BTA_AG_NUM_COLS] = {
@@ -206,9 +195,7 @@ const uint8_t bta_ag_st_open[][BTA_AG_NUM_COLS] = {
     /* SVC_TOUT_EVT */ {BTA_AG_START_CLOSE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
     /* CI_SCO_DATA_EVT */ {BTA_AG_CI_SCO_DATA, BTA_AG_IGNORE, BTA_AG_OPEN_ST},
     /* CI_SLC_READY_EVT */
-    {BTA_AG_RCVD_SLC_READY, BTA_AG_IGNORE, BTA_AG_OPEN_ST},
-    /* CI_AUDIO_OPEN_CONTINUE_EVT */
-    {BTA_AG_CI_SCO_OPEN_CONTINUE, BTA_AG_IGNORE, BTA_AG_OPEN_ST}};
+    {BTA_AG_RCVD_SLC_READY, BTA_AG_IGNORE, BTA_AG_OPEN_ST}};
 
 /* state table for closing state */
 const uint8_t bta_ag_st_closing[][BTA_AG_NUM_COLS] = {
@@ -237,9 +224,7 @@ const uint8_t bta_ag_st_closing[][BTA_AG_NUM_COLS] = {
     /* RING_TOUT_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
     /* SVC_TOUT_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
     /* CI_SCO_DATA_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
-    /* CI_SLC_READY_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
-    /* CI_AUDIO_OPEN_CONTINUE_EVT */
-    {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST}};
+    /* CI_SLC_READY_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST}};
 
 /* type for state table */
 typedef const uint8_t (*tBTA_AG_ST_TBL)[BTA_AG_NUM_COLS];
@@ -292,7 +277,7 @@ static tBTA_AG_SCB* bta_ag_scb_alloc(void) {
   if (i == BTA_AG_NUM_SCB) {
     /* out of scbs */
     p_scb = NULL;
-    APPL_TRACE_WARNING("Out of ag scbs");
+    APPL_TRACE_WARNING("%s: Out of scbs", __func__);
   }
   return p_scb;
 }
@@ -739,21 +724,21 @@ void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event,
   if ((previous_event != BTA_AG_API_RESULT_EVT ||
        p_scb->state == BTA_AG_OPEN_ST) &&
       event != BTA_AG_CI_SCO_DATA_EVT) {
-    APPL_TRACE_EVENT("AG evt (hdl 0x%04x): State %d (%s), Event 0x%04x (%s)",
-                     bta_ag_scb_to_idx(p_scb), p_scb->state,
+    APPL_TRACE_EVENT("%s: Handle 0x%04x, State %d (%s), Event 0x%04x (%s)",
+                     __func__, bta_ag_scb_to_idx(p_scb), p_scb->state,
                      bta_ag_state_str(p_scb->state), event,
                      bta_ag_evt_str(event, p_data->api_result.result));
   }
 #else
   if (event != BTA_AG_CI_SCO_DATA_EVT) {
-    APPL_TRACE_EVENT("%s: AG evt (hdl 0x%04x): State %d, Event 0x%04x",
-                     __func__, bta_ag_scb_to_idx(p_scb), p_scb->state, event);
+    APPL_TRACE_EVENT("%s: Handle 0x%04x, State %d, Event 0x%04x", __func__,
+                     bta_ag_scb_to_idx(p_scb), p_scb->state, event);
   }
 #endif
 
   event &= 0x00FF;
   if (event >= (BTA_AG_MAX_EVT & 0x00FF)) {
-    APPL_TRACE_ERROR("AG evt out of range, ignoring...");
+    APPL_TRACE_ERROR("%s: event out of range, ignored", __func__);
     return;
   }
 
@@ -774,8 +759,8 @@ void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event,
   }
 #if (BTA_AG_DEBUG == TRUE)
   if (p_scb->state != previous_state) {
-    APPL_TRACE_EVENT("BTA AG State Change: [%s] -> [%s] after Event [%s]",
-                     bta_ag_state_str(previous_state),
+    APPL_TRACE_EVENT("%s: State Change: [%s] -> [%s] after Event [%s]",
+                     __func__, bta_ag_state_str(previous_state),
                      bta_ag_state_str(p_scb->state),
                      bta_ag_evt_str(previous_event, p_data->api_result.result));
   }
@@ -797,22 +782,18 @@ bool bta_ag_hdl_event(BT_HDR* p_msg) {
 
   APPL_TRACE_DEBUG("bta_ag_hdl_event: Event 0x%04x ", p_msg->event);
   switch (p_msg->event) {
-    /* handle enable event */
     case BTA_AG_API_ENABLE_EVT:
       bta_ag_api_enable((tBTA_AG_DATA*)p_msg);
       break;
 
-    /* handle disable event */
     case BTA_AG_API_DISABLE_EVT:
       bta_ag_api_disable((tBTA_AG_DATA*)p_msg);
       break;
 
-    /* handle register event */
     case BTA_AG_API_REGISTER_EVT:
       bta_ag_api_register((tBTA_AG_DATA*)p_msg);
       break;
 
-    /* handle result event */
     case BTA_AG_API_RESULT_EVT:
       bta_ag_api_result((tBTA_AG_DATA*)p_msg);
       break;
@@ -925,8 +906,6 @@ static char* bta_ag_evt_str(uint16_t event, tBTA_AG_RES result) {
       return "SCO data Callin";
     case BTA_AG_CI_SLC_READY_EVT:
       return "SLC Ready Callin";
-    case BTA_AG_CI_AUDIO_OPEN_CONTINUE_EVT:
-      return "Pre-SCO setup done. Continue Audio Open";
     default:
       return "Unknown AG Event";
   }
