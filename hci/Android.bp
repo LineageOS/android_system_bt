@@ -19,7 +19,6 @@ cc_library_static {
         "src/btsnoop_mem.cc",
         "src/btsnoop_net.cc",
         "src/buffer_allocator.cc",
-        "src/hci_audio.cc",
         "src/hci_inject.cc",
         "src/hci_layer.cc",
         "src/hci_layer_android.cc",

@@ -86,25 +86,3 @@ void bta_ag_ci_slc_ready(uint16_t handle) {
 
   bta_sys_sendmsg(p_buf);
 }
-
-/******************************************************************************
- *
- * Function         bta_ag_ci_audio_open_continue
- *
- * Description      This function is called to notify AG that pre-SCO vendor
- *                  setup is finished and the AG can move on and
- *                  send the rest of HCI commands meant to be sent to
- *                  create/accept a SCO connection with the peer device.
- *
- * Returns          void
- *
- *****************************************************************************/
-void bta_ag_ci_audio_open_continue(uint16_t handle, uint8_t status) {
-  tBTA_AG_DATA* p_buf;
-  if ((p_buf = (tBTA_AG_DATA*)osi_malloc(sizeof(tBTA_AG_DATA))) != NULL) {
-    p_buf->api_result.hdr.event = BTA_AG_CI_AUDIO_OPEN_CONTINUE_EVT;
-    p_buf->api_result.hdr.layer_specific = handle;
-    p_buf->api_result.result = status;
-    bta_sys_sendmsg(p_buf);
-  }
-}

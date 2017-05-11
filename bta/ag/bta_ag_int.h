@@ -95,7 +95,6 @@ enum {
   BTA_AG_SVC_TIMEOUT_EVT,
   BTA_AG_CI_SCO_DATA_EVT,
   BTA_AG_CI_SLC_READY_EVT,
-  BTA_AG_CI_AUDIO_OPEN_CONTINUE_EVT,
   BTA_AG_MAX_EVT,
 
   /* these events are handled outside of the state machine */
@@ -282,8 +281,6 @@ typedef struct {
   uint16_t cur_idx;         /* SCO handle */
   uint8_t state;            /* SCO state variable */
   bool is_local;            /* SCO connection initiated locally or remotely */
-  uint8_t set_audio_status; /* SCO variable for storing the status of the
-                           pre-SCO vendor setup (set_audio_state)*/
 } tBTA_AG_SCO_CB;
 
 /* type for AG control block */
@@ -382,8 +379,6 @@ extern void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 extern void bta_ag_rfc_data(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 extern void bta_ag_sco_listen(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 extern void bta_ag_sco_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_ci_sco_open_continue(tBTA_AG_SCB* p_scb,
-                                        tBTA_AG_DATA* p_data);
 extern void bta_ag_sco_close(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 extern void bta_ag_sco_codec_nego(tBTA_AG_SCB* p_scb, bool result);
 extern void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb);
