@@ -1123,7 +1123,7 @@ bool btif_rc_get_connected_peer(BD_ADDR peer_addr) {
     p_dev = get_connected_device(idx);
     if (p_dev != NULL && (p_dev->rc_connected == TRUE)) {
       bdcpy(peer_addr, p_dev->rc_addr);
-      return TRUE;
+      return true;
     }
   }
   return false;

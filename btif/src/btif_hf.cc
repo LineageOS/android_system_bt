@@ -547,14 +547,14 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
       break;
     case BTA_AG_AT_BAC_EVT:
       BTIF_TRACE_DEBUG("AG Bitmap of peer-codecs %d", p_data->val.num);
-      /* If the peer supports mSBC and the BTIF prefferred codec is also mSBC,
+      /* If the peer supports mSBC and the BTIF preferred codec is also mSBC,
       then
       we should set the BTA AG Codec to mSBC. This would trigger a +BCS to mSBC
       at the time
       of SCO connection establishment */
       if ((btif_conf_hf_force_wbs == true) &&
           (p_data->val.num & BTA_AG_CODEC_MSBC)) {
-        BTIF_TRACE_EVENT("%s btif_hf override-Preferred Codec to MSBC",
+        BTIF_TRACE_EVENT("%s: btif_hf override-Preferred Codec to MSBC",
                          __func__);
         BTA_AgSetCodec(btif_hf_cb[idx].handle, BTA_AG_CODEC_MSBC);
       } else {
@@ -564,12 +564,13 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
       }
       break;
     case BTA_AG_AT_BCS_EVT:
-      BTIF_TRACE_DEBUG("AG final seleded codec is %d 1=CVSD 2=MSBC",
-                       p_data->val.num);
-      /*  no BTHF_WBS_NONE case, becuase HF1.6 supported device can send BCS */
+      BTIF_TRACE_DEBUG("%s: AG final selected codec is 0x%02x 1=CVSD 2=MSBC",
+                       __func__, p_data->val.num);
+      /* No BTHF_WBS_NONE case, because HF1.6 supported device can send BCS */
+      /* Only CVSD is considered narrow band speech */
       HAL_CBACK(
           bt_hf_callbacks, wbs_cb,
-          (p_data->val.num == BTA_AG_CODEC_MSBC) ? BTHF_WBS_YES : BTHF_WBS_NO,
+          (p_data->val.num == BTA_AG_CODEC_CVSD) ? BTHF_WBS_NO : BTHF_WBS_YES,
           &btif_hf_cb[idx].connected_bda);
       break;
 
@@ -1297,7 +1298,7 @@ static bt_status_t phone_state_change(int num_active, int num_held,
     ag_res.audio_handle = BTA_AG_HANDLE_SCO_NO_CHANGE;
     /* Addition call setup with the Active call
     ** CIND response should have been updated.
-    ** just open SCO conenction.
+    ** just open SCO connection.
     */
     if (call_setup_state != BTHF_CALL_STATE_IDLE)
       res = BTA_AG_MULTI_CALL_RES;

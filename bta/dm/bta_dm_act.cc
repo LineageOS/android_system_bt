@@ -3928,11 +3928,11 @@ bool bta_dm_check_if_only_hd_connected(BD_ADDR peer_addr) {
         !bdcmp(bta_dm_conn_srvcs.conn_srvc[j].peer_bdaddr, peer_addr)) {
       APPL_TRACE_DEBUG("%s: Another profile (id=%d) is connected", __func__,
                        bta_dm_conn_srvcs.conn_srvc[j].id);
-      return FALSE;
+      return false;
     }
   }
 
-  return TRUE;
+  return true;
 }
 
 /*******************************************************************************
