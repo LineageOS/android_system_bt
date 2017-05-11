@@ -182,48 +182,6 @@ void bta_dm_co_rmt_oob(BD_ADDR bd_addr) {
 static void btui_sco_codec_callback(uint16_t event, uint16_t sco_handle) {
   bta_dm_sco_ci_data_ready(event, sco_handle);
 }
-/*******************************************************************************
- *
- * Function         bta_dm_sco_co_init
- *
- * Description      This function can be used by the phone to initialize audio
- *                  codec or for other initialization purposes before SCO
- *                  connection is opened.
- *
- *
- * Returns          tBTA_DM_SCO_ROUTE_TYPE: SCO routing configuration type.
- *
- ******************************************************************************/
-tBTA_DM_SCO_ROUTE_TYPE bta_dm_sco_co_init(uint32_t rx_bw, uint32_t tx_bw,
-                                          tBTA_CODEC_INFO* p_codec_type,
-                                          uint8_t app_id) {
-  tBTM_SCO_ROUTE_TYPE route = BTA_DM_SCO_ROUTE_PCM;
-
-  BTIF_TRACE_DEBUG("bta_dm_sco_co_init");
-
-  /* set up SCO routing configuration if SCO over HCI app ID is used and run
-     time
-      configuration is set to SCO over HCI */
-  /* HS invoke this call-out */
-  if (
-#if (BTA_HS_INCLUDED == TRUE)
-      (app_id == BTUI_DM_SCO_4_HS_APP_ID && btui_cfg.hs_sco_over_hci) ||
-#endif
-      /* AG invoke this call-out */
-      (app_id != BTUI_DM_SCO_4_HS_APP_ID && btui_cfg.ag_sco_over_hci)) {
-    route = btui_cb.sco_hci = BTA_DM_SCO_ROUTE_HCI;
-  }
-  /* no codec is is used for the SCO data */
-  if (p_codec_type->codec_type == BTA_SCO_CODEC_PCM &&
-      route == BTA_DM_SCO_ROUTE_HCI) {
-    /* initialize SCO codec */
-    if (!btui_sco_codec_init(rx_bw, tx_bw)) {
-      BTIF_TRACE_ERROR("codec initialization exception!");
-    }
-  }
-
-  return route;
-}
 
 /*******************************************************************************
  *

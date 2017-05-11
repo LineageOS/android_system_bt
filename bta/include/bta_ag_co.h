@@ -72,6 +72,18 @@ extern void bta_ag_co_audio_state(uint16_t handle, uint8_t app_id,
 
 /*******************************************************************************
  *
+ * Function         bta_ag_co_set_audio_state_complete
+ *
+ * Description      This function is called from Vendor module to update AG that
+ *                  the pre-SCO setup is done
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+extern void bta_ag_co_set_audio_state_complete(uint8_t status);
+
+/*******************************************************************************
+ *
  * Function         bta_ag_co_data_open
  *
  * Description      This function is executed by AG when a service level
