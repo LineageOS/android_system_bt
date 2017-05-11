@@ -22,17 +22,7 @@
 #include "bta/ag/bta_ag_int.h"
 #include "bta/include/bta_ag_api.h"
 #include "bta/include/bta_ag_ci.h"
-#include "hci/include/hci_audio.h"
 #include "osi/include/osi.h"
-
-typedef struct {
-  uint16_t handle;
-  sco_state_t sco_state;
-  bool in_use;
-} tBTA_AG_CO_CB;
-
-/* Control block instance */
-static tBTA_AG_CO_CB bta_ag_co_cb[BTA_AG_NUM_SCB];
 
 /*******************************************************************************
  *
@@ -48,97 +38,6 @@ static tBTA_AG_CO_CB bta_ag_co_cb[BTA_AG_NUM_SCB];
  *
  ******************************************************************************/
 void bta_ag_co_init(void) { BTM_WriteVoiceSettings(AG_VOICE_SETTINGS); }
-
-/*******************************************************************************
- *
- * Function         bta_ag_co_audio_state
- *
- * Description      This function is called by the AG before the audio
- *                  connection is brought up, after it comes up, and
- *                  after it goes down.
- *
- * Parameters       handle - handle of the AG instance
- *                  state - Audio state
- *                  codec - if WBS support is compiled in, codec to going to be
- *                      used is provided and when in SCO_STATE_SETUP,
- *                      BTM_I2SPCMConfig() must be called with the correct
- *                      platform parameters.
- *                      In the other states, codec type should not be ignored.
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_ag_co_audio_state(uint16_t handle, uint8_t app_id, uint8_t state,
-                           tBTA_AG_PEER_CODEC codec)
-{
-  BTIF_TRACE_DEBUG("bta_ag_co_audio_state: handle %d, state %d", handle, state);
-
-  bool bFound = false;
-  uint8_t pos;
-  for (int i = 0; i < BTA_AG_NUM_SCB; i++) {
-    if (bta_ag_co_cb[i].in_use && bta_ag_co_cb[i].handle == handle) {
-      bta_ag_co_cb[i].sco_state = (sco_state_t)state;
-      bFound = true;
-      pos = i;
-      break;
-    }
-  }
-  if (!bFound) {
-    for (int i = 0; i < BTA_AG_NUM_SCB; i++) {
-      if (!(bta_ag_co_cb[i].in_use)) {
-        bta_ag_co_cb[i].handle = handle;
-        bta_ag_co_cb[i].sco_state = (sco_state_t)state;
-        bta_ag_co_cb[i].in_use = true;
-        break;
-      }
-    }
-  }
-
-  switch (state) {
-    case SCO_STATE_OFF:
-      BTIF_TRACE_DEBUG(
-          "bta_ag_co_audio_state(handle %d)::Closed (OFF), codec: 0x%x", handle,
-          codec);
-      set_audio_state(handle, (sco_codec_t)codec, (sco_state_t)state);
-      break;
-    case SCO_STATE_OFF_TRANSFER:
-      BTIF_TRACE_DEBUG("bta_ag_co_audio_state(handle %d)::Closed (XFERRING)",
-                       handle);
-      if (bFound) {
-        bta_ag_co_cb[pos].in_use = false;
-      }
-      break;
-    case SCO_STATE_SETUP:
-      set_audio_state(handle, (sco_codec_t)codec, (sco_state_t)state);
-      break;
-    default:
-      break;
-  }
-  APPL_TRACE_DEBUG(
-      "bta_ag_co_audio_state(handle %d, app_id: %d, state %d, codec: 0x%x)",
-      handle, app_id, state, codec);
-}
-
-/*******************************************************************************
- *
- * Function         bta_ag_co_set_audio_state_complete
- *
- * Description      This function is called from Vendor module to update AG that
- *                  the pre-SCO setup is done
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_ag_co_set_audio_state_complete(uint8_t status) {
-  int idx = 0;
-  while (idx < BTA_AG_NUM_SCB) {
-    if (bta_ag_co_cb[idx].sco_state == SCO_STATE_SETUP) {
-      bta_ag_ci_audio_open_continue(bta_ag_co_cb[idx].handle, status);
-      break;
-    }
-    idx++;
-  }
-}
 
 /*******************************************************************************
  *

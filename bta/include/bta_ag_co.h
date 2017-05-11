@@ -25,7 +25,6 @@
 #define BTA_AG_CO_H
 
 #include "bta_ag_api.h"
-#include "hci/include/hci_audio.h"
 
 /*******************************************************************************
  *
@@ -41,41 +40,6 @@
  *
  ******************************************************************************/
 extern void bta_ag_co_init(void);
-
-/*******************************************************************************
- *
- * Function         bta_ag_co_audio_state
- *
- * Description      This function is called by the AG before the audio
- *                  connection
- *                  is brought up, after it comes up, and after it goes down.
- *
- * Parameters       handle - handle of the AG instance
- *                  state - Audio state
- *                  codec - if WBS support is compiled in, codec to going to be
- *                          used is provided and when in SCO_STATE_SETUP,
- *                          BTM_I2SPCMConfig() must be called with the correct
- *                          platform parameters. In the other states, codec type
- *                          should not be ignored
- *
- * Returns          void
- *
- ******************************************************************************/
-extern void bta_ag_co_audio_state(uint16_t handle, uint8_t app_id,
-                                  uint8_t state, tBTA_AG_PEER_CODEC codec);
-
-
-/*******************************************************************************
- *
- * Function         bta_ag_co_set_audio_state_complete
- *
- * Description      This function is called from Vendor module to update AG that
- *                  the pre-SCO setup is done
- *
- * Returns          void
- *
- ******************************************************************************/
-extern void bta_ag_co_set_audio_state_complete(uint8_t status);
 
 /*******************************************************************************
  *
