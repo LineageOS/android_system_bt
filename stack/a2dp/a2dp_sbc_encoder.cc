@@ -217,7 +217,7 @@ static void a2dp_sbc_encoder_update(uint16_t peer_mtu,
   tA2DP_FEEDING_PARAMS* p_feeding_params = &a2dp_sbc_encoder_cb.feeding_params;
   p_feeding_params->sample_rate = A2DP_GetTrackSampleRateSbc(p_codec_info);
   p_feeding_params->bits_per_sample =
-      A2DP_GetTrackBitsPerSampleSbc(p_codec_info);
+      a2dp_codec_config->getAudioBitsPerSample();
   p_feeding_params->channel_count = A2DP_GetTrackChannelCountSbc(p_codec_info);
   LOG_DEBUG(LOG_TAG, "%s: sample_rate=%u bits_per_sample=%u channel_count=%u",
             __func__, p_feeding_params->sample_rate,
