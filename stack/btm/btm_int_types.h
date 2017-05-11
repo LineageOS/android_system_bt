@@ -305,9 +305,8 @@ typedef void(tBTM_SCO_IND_CBACK)(uint16_t sco_inx);
   (HCI_PKT_TYPES_MASK_HV1 | HCI_PKT_TYPES_MASK_HV2 | HCI_PKT_TYPES_MASK_HV3)
 
 /* Mask defining only the SCO types of an esco packet type */
-#define BTM_ESCO_PKT_TYPE_MASK                                 \
-  (HCI_ESCO_PKT_TYPES_MASK_HV1 | HCI_ESCO_PKT_TYPES_MASK_HV2 | \
-   HCI_ESCO_PKT_TYPES_MASK_HV3)
+#define BTM_ESCO_PKT_TYPE_MASK \
+  (ESCO_PKT_TYPES_MASK_HV1 | ESCO_PKT_TYPES_MASK_HV2 | ESCO_PKT_TYPES_MASK_HV3)
 
 #define BTM_SCO_2_ESCO(scotype) \
   ((uint16_t)(((scotype)&BTM_SCO_PKT_TYPE_MASK) >> 5))
@@ -316,21 +315,21 @@ typedef void(tBTM_SCO_IND_CBACK)(uint16_t sco_inx);
 
 /* Define masks for supported and exception 2.0 SCO packet types
 */
-#define BTM_SCO_SUPPORTED_PKTS_MASK                            \
-  (HCI_ESCO_PKT_TYPES_MASK_HV1 | HCI_ESCO_PKT_TYPES_MASK_HV2 | \
-   HCI_ESCO_PKT_TYPES_MASK_HV3 | HCI_ESCO_PKT_TYPES_MASK_EV3 | \
-   HCI_ESCO_PKT_TYPES_MASK_EV4 | HCI_ESCO_PKT_TYPES_MASK_EV5)
+#define BTM_SCO_SUPPORTED_PKTS_MASK                    \
+  (ESCO_PKT_TYPES_MASK_HV1 | ESCO_PKT_TYPES_MASK_HV2 | \
+   ESCO_PKT_TYPES_MASK_HV3 | ESCO_PKT_TYPES_MASK_EV3 | \
+   ESCO_PKT_TYPES_MASK_EV4 | ESCO_PKT_TYPES_MASK_EV5)
 
-#define BTM_SCO_EXCEPTION_PKTS_MASK                                      \
-  (HCI_ESCO_PKT_TYPES_MASK_NO_2_EV3 | HCI_ESCO_PKT_TYPES_MASK_NO_3_EV3 | \
-   HCI_ESCO_PKT_TYPES_MASK_NO_2_EV5 | HCI_ESCO_PKT_TYPES_MASK_NO_3_EV5)
+#define BTM_SCO_EXCEPTION_PKTS_MASK                              \
+  (ESCO_PKT_TYPES_MASK_NO_2_EV3 | ESCO_PKT_TYPES_MASK_NO_3_EV3 | \
+   ESCO_PKT_TYPES_MASK_NO_2_EV5 | ESCO_PKT_TYPES_MASK_NO_3_EV5)
 
 #define BTM_SCO_ROUTE_UNKNOWN 0xff
 
 /* Define the structure that contains (e)SCO data */
 typedef struct {
   tBTM_ESCO_CBACK* p_esco_cback; /* Callback for eSCO events     */
-  tBTM_ESCO_PARAMS setup;
+  enh_esco_params_t setup;
   tBTM_ESCO_DATA data; /* Connection complete information */
   uint8_t hci_status;
 } tBTM_ESCO_INFO;
@@ -356,26 +355,17 @@ typedef struct {
   tBTM_SCO_IND_CBACK* app_sco_ind_cb;
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
   tBTM_SCO_DATA_CB* p_data_cb; /* Callback for SCO data over HCI */
-  uint32_t xmit_window_size;   /* Total SCO window in bytes  */
 #endif
   tSCO_CONN sco_db[BTM_MAX_SCO_LINKS];
-  tBTM_ESCO_PARAMS def_esco_parms;
-  BD_ADDR xfer_addr;
+  enh_esco_params_t def_esco_parms;
   uint16_t sco_disc_reason;
-  bool esco_supported; /* true if 1.2 cntlr AND supports eSCO links */
-  tBTM_SCO_TYPE desired_sco_mode;
-  tBTM_SCO_TYPE xfer_sco_type;
-  tBTM_SCO_PCM_PARAM sco_pcm_param;
-  tBTM_SCO_CODEC_TYPE codec_in_use; /* None, CVSD, MSBC, etc. */
-#if (BTM_SCO_HCI_INCLUDED == TRUE)
-  tBTM_SCO_ROUTE_TYPE sco_path;
-#endif
-
+  bool esco_supported;        /* true if 1.2 cntlr AND supports eSCO links */
+  esco_data_path_t sco_route; /* HCI, PCM, or TEST */
 } tSCO_CB;
 
 #if (BTM_SCO_INCLUDED == TRUE)
 extern void btm_set_sco_ind_cback(tBTM_SCO_IND_CBACK* sco_ind_cb);
-extern void btm_accept_sco_link(uint16_t sco_inx, tBTM_ESCO_PARAMS* p_setup,
+extern void btm_accept_sco_link(uint16_t sco_inx, enh_esco_params_t* p_setup,
                                 tBTM_SCO_CB* p_conn_cb, tBTM_SCO_CB* p_disc_cb);
 extern void btm_reject_sco_link(uint16_t sco_inx);
 extern void btm_sco_chk_pend_rolechange(uint16_t hci_handle);

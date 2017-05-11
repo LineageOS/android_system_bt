@@ -67,4 +67,18 @@ extern void bta_ag_ci_slc_ready(uint16_t handle);
  *****************************************************************************/
 extern void bta_ag_ci_wbs_command(uint16_t handle, char* p_data, uint16_t len);
 
+/******************************************************************************
+ *
+ * Function         bta_ag_ci_audio_open_continue
+ *
+ * Description      This function is called to notify AG that pre-SCO vendor
+ *                  setup is finished and the AG can move on and
+ *                  send the rest of HCI commands meant to be sent to
+ *                  create/accept a SCO connection with the peer device.
+ *
+ * Returns          void
+ *
+ *****************************************************************************/
+extern void bta_ag_ci_audio_open_continue(uint16_t handle, uint8_t status);
+
 #endif /* BTA_AG_CI_H */
