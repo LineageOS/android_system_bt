@@ -137,7 +137,6 @@ static sco_socket_t* sco_socket_establish_locked(bool is_listening,
   socket_t* socket = NULL;
   tBTM_STATUS status;
   enh_esco_params_t params;
-
   if (socketpair(AF_LOCAL, SOCK_STREAM, 0, pair) == -1) {
     LOG_ERROR(LOG_TAG, "%s unable to allocate socket pair: %s", __func__,
               strerror(errno));

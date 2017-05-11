@@ -140,6 +140,8 @@ static const enh_esco_params_t default_esco_parameters[ESCO_NUM_CODECS] = {
      .retransmission_effort = ESCO_RETRANSMISSION_QUALITY}};
 
 enh_esco_params_t esco_parameters_for_codec(esco_codec_t codec) {
-  CHECK(codec >= 0 && codec < ESCO_NUM_CODECS);
+  CHECK(codec >= 0) << "codec index " << (int)codec << "< 0";
+  CHECK(codec < ESCO_NUM_CODECS) << "codec index " << (int)codec << " > "
+                                 << ESCO_NUM_CODECS;
   return default_esco_parameters[codec];
 }
