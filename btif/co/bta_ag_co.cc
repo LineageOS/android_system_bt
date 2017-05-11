@@ -19,9 +19,20 @@
 #define LOG_TAG "bt_btif_bta_ag"
 
 #include "bta/include/bta_ag_co.h"
+#include "bta/ag/bta_ag_int.h"
 #include "bta/include/bta_ag_api.h"
+#include "bta/include/bta_ag_ci.h"
 #include "hci/include/hci_audio.h"
 #include "osi/include/osi.h"
+
+typedef struct {
+  uint16_t handle;
+  sco_state_t sco_state;
+  bool in_use;
+} tBTA_AG_CO_CB;
+
+/* Control block instance */
+static tBTA_AG_CO_CB bta_ag_co_cb[BTA_AG_NUM_SCB];
 
 /*******************************************************************************
  *
@@ -65,6 +76,28 @@ void bta_ag_co_audio_state(uint16_t handle, uint8_t app_id, uint8_t state)
 #endif
 {
   BTIF_TRACE_DEBUG("bta_ag_co_audio_state: handle %d, state %d", handle, state);
+
+  bool bFound = false;
+  uint8_t pos;
+  for (int i = 0; i < BTA_AG_NUM_SCB; i++) {
+    if (bta_ag_co_cb[i].in_use && bta_ag_co_cb[i].handle == handle) {
+      bta_ag_co_cb[i].sco_state = (sco_state_t)state;
+      bFound = true;
+      pos = i;
+      break;
+    }
+  }
+  if (!bFound) {
+    for (int i = 0; i < BTA_AG_NUM_SCB; i++) {
+      if (!(bta_ag_co_cb[i].in_use)) {
+        bta_ag_co_cb[i].handle = handle;
+        bta_ag_co_cb[i].sco_state = (sco_state_t)state;
+        bta_ag_co_cb[i].in_use = true;
+        break;
+      }
+    }
+  }
+
   switch (state) {
     case SCO_STATE_OFF:
 #if (BTM_WBS_INCLUDED == TRUE)
@@ -80,6 +113,9 @@ void bta_ag_co_audio_state(uint16_t handle, uint8_t app_id, uint8_t state)
     case SCO_STATE_OFF_TRANSFER:
       BTIF_TRACE_DEBUG("bta_ag_co_audio_state(handle %d)::Closed (XFERRING)",
                        handle);
+      if (bFound) {
+        bta_ag_co_cb[pos].in_use = false;
+      }
       break;
     case SCO_STATE_SETUP:
 #if (BTM_WBS_INCLUDED == TRUE)
@@ -100,6 +136,27 @@ void bta_ag_co_audio_state(uint16_t handle, uint8_t app_id, uint8_t state)
   APPL_TRACE_DEBUG("bta_ag_co_audio_state(handle %d, app_id: %d, state %d)",
                    handle, app_id, state);
 #endif
+}
+
+/*******************************************************************************
+ *
+ * Function         bta_ag_co_set_audio_state_complete
+ *
+ * Description      This function is called from Vendor module to update AG that
+ *                  the pre-SCO setup is done
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void bta_ag_co_set_audio_state_complete(uint8_t status) {
+  int idx = 0;
+  while (idx < BTA_AG_NUM_SCB) {
+    if (bta_ag_co_cb[idx].sco_state == SCO_STATE_SETUP) {
+      bta_ag_ci_audio_open_continue(bta_ag_co_cb[idx].handle, status);
+      break;
+    }
+    idx++;
+  }
 }
 
 /*******************************************************************************

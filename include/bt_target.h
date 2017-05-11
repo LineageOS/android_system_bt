@@ -104,10 +104,10 @@
 #endif
 
 #ifndef BTA_AG_SCO_PKT_TYPES
-#define BTA_AG_SCO_PKT_TYPES                                           \
-  (BTM_SCO_LINK_ONLY_MASK | BTM_SCO_PKT_TYPES_MASK_EV3 |               \
-   BTM_SCO_PKT_TYPES_MASK_NO_3_EV3 | BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 | \
-   BTM_SCO_PKT_TYPES_MASK_NO_3_EV5)
+#define BTA_AG_SCO_PKT_TYPES                                     \
+  (BTM_SCO_LINK_ONLY_MASK | ESCO_PKT_TYPES_MASK_EV3 |            \
+   ESCO_PKT_TYPES_MASK_NO_3_EV3 | ESCO_PKT_TYPES_MASK_NO_2_EV5 | \
+   ESCO_PKT_TYPES_MASK_NO_3_EV5)
 #endif
 
 #ifndef BTA_AV_RET_TOUT

@@ -95,6 +95,7 @@ enum {
   BTA_AG_SVC_TIMEOUT_EVT,
   BTA_AG_CI_SCO_DATA_EVT,
   BTA_AG_CI_SLC_READY_EVT,
+  BTA_AG_CI_AUDIO_OPEN_CONTINUE_EVT,
   BTA_AG_MAX_EVT,
 
   /* these events are handled outside of the state machine */
@@ -265,8 +266,10 @@ typedef struct {
   alarm_t* codec_negotiation_timer;
   tBTA_AG_PEER_CODEC peer_codecs; /* codecs for eSCO supported by the peer */
   tBTA_AG_PEER_CODEC sco_codec;   /* codec to be used for eSCO connection */
+#endif
   tBTA_AG_PEER_CODEC
       inuse_codec;     /* codec being used for the current SCO connection */
+#if (BTM_WBS_INCLUDED == TRUE)
   bool codec_updated;  /* set to true whenever the app updates codec type */
   bool codec_fallback; /* If sco nego fails for mSBC, fallback to CVSD */
   tBTA_AG_SCO_MSBC_SETTINGS
@@ -284,12 +287,13 @@ typedef struct {
 /* type for sco data */
 typedef struct {
   tBTM_ESCO_CONN_REQ_EVT_DATA conn_data; /* SCO data for pending conn request */
-  tBTA_AG_SCB* p_curr_scb; /* SCB associated with SCO connection */
-  tBTA_AG_SCB* p_xfer_scb; /* SCB associated with SCO transfer */
-  uint16_t cur_idx;        /* SCO handle */
-  uint8_t state;           /* SCO state variable */
-  bool param_updated;      /* if params were updated to non-default */
-  tBTM_ESCO_PARAMS params; /* ESCO parameters */
+  tBTA_AG_SCB* p_curr_scb;  /* SCB associated with SCO connection */
+  tBTA_AG_SCB* p_xfer_scb;  /* SCB associated with SCO transfer */
+  uint16_t cur_idx;         /* SCO handle */
+  uint8_t state;            /* SCO state variable */
+  bool is_local;            /* SCO connection initiated locally or remotely */
+  uint8_t set_audio_status; /* SCO variable for storing the status of the
+                           pre-SCO vendor setup (set_audio_state)*/
 } tBTA_AG_SCO_CB;
 
 /* type for AG control block */
@@ -388,6 +392,8 @@ extern void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 extern void bta_ag_rfc_data(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 extern void bta_ag_sco_listen(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 extern void bta_ag_sco_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
+extern void bta_ag_ci_sco_open_continue(tBTA_AG_SCB* p_scb,
+                                        tBTA_AG_DATA* p_data);
 extern void bta_ag_sco_close(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 #if (BTM_WBS_INCLUDED == TRUE)
 extern void bta_ag_sco_codec_nego(tBTA_AG_SCB* p_scb, bool result);
@@ -406,7 +412,6 @@ extern void bta_ag_send_bcs(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 #endif
 extern void bta_ag_send_ring(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 extern void bta_ag_ci_sco_data(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_set_esco_param(bool set_reset, tBTM_ESCO_PARAMS* param);
 extern void bta_ag_ci_rx_data(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 extern void bta_ag_rcvd_slc_ready(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 
