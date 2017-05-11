@@ -27,7 +27,7 @@
 
 #include "bt_target.h"
 #include "device/include/esco_parameters.h"
-#include "hcimsgs.h"
+#include "hcidefs.h"
 #include "sdp_api.h"
 
 #include "smp_api.h"
