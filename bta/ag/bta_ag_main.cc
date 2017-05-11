@@ -274,20 +274,16 @@ static tBTA_AG_SCB* bta_ag_scb_alloc(void) {
       /* initialize variables */
       p_scb->in_use = true;
       p_scb->sco_idx = BTM_INVALID_SCO_INDEX;
-#if (BTM_WBS_INCLUDED == TRUE)
       p_scb->codec_updated = false;
       p_scb->peer_codecs = BTA_AG_CODEC_CVSD;
       p_scb->sco_codec = BTA_AG_CODEC_CVSD;
-#endif
       /* set up timers */
       p_scb->ring_timer = alarm_new("bta_ag.scb_ring_timer");
       p_scb->collision_timer = alarm_new("bta_ag.scb_collision_timer");
-#if (BTM_WBS_INCLUDED == TRUE)
       p_scb->codec_negotiation_timer =
           alarm_new("bta_ag.scb_codec_negotiation_timer");
       /* set eSCO mSBC setting to T2 as the preferred */
       p_scb->codec_msbc_settings = BTA_AG_SCO_MSBC_SETTINGS_T2;
-#endif
       APPL_TRACE_DEBUG("bta_ag_scb_alloc %d", bta_ag_scb_to_idx(p_scb));
       break;
     }
@@ -319,9 +315,7 @@ void bta_ag_scb_dealloc(tBTA_AG_SCB* p_scb) {
 
   /* stop and free timers */
   alarm_free(p_scb->ring_timer);
-#if (BTM_WBS_INCLUDED == TRUE)
   alarm_free(p_scb->codec_negotiation_timer);
-#endif
   alarm_free(p_scb->collision_timer);
 
   /* initialize control block */
@@ -609,9 +603,7 @@ static void bta_ag_api_enable(tBTA_AG_DATA* p_data) {
   /* initialize control block */
   for (size_t i = 0; i < BTA_AG_NUM_SCB; i++) {
     alarm_free(bta_ag_cb.scb[i].ring_timer);
-#if (BTM_WBS_INCLUDED == TRUE)
     alarm_free(bta_ag_cb.scb[i].codec_negotiation_timer);
-#endif
     alarm_free(bta_ag_cb.scb[i].collision_timer);
   }
   memset(&bta_ag_cb, 0, sizeof(tBTA_AG_CB));
