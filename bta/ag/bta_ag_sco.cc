@@ -217,7 +217,7 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
 static void bta_ag_sco_read_cback(uint16_t sco_inx, BT_HDR* p_data,
                                   tBTM_SCO_DATA_FLAG status) {
   if (status != BTM_SCO_DATA_CORRECT) {
-    APPL_TRACE_DEBUG("bta_ag_sco_read_cback: status(%d)", status);
+    APPL_TRACE_DEBUG("%s: status %d", __func__, status);
   }
 
   /* Callout function must free the data. */
@@ -232,33 +232,26 @@ static void bta_ag_sco_read_cback(uint16_t sco_inx, BT_HDR* p_data,
  *                  If only_active is true, then SCO is only removed if
  *                  connected
  *
- * Returns          bool   - true if Sco removal was started
+ * Returns          bool   - true if SCO removal was started
  *
  ******************************************************************************/
 static bool bta_ag_remove_sco(tBTA_AG_SCB* p_scb, bool only_active) {
-  bool removed_started = false;
-  tBTM_STATUS status;
-
   if (p_scb->sco_idx != BTM_INVALID_SCO_INDEX) {
     if (!only_active || p_scb->sco_idx == bta_ag_cb.sco.cur_idx) {
-      status = BTM_RemoveSco(p_scb->sco_idx);
-
-      APPL_TRACE_DEBUG("%s: inx 0x%04x, status:0x%x", __func__, p_scb->sco_idx,
-                       status);
-
+      tBTM_STATUS status = BTM_RemoveSco(p_scb->sco_idx);
+      APPL_TRACE_DEBUG("%s: SCO index 0x%04x, status %d", __func__,
+                       p_scb->sco_idx, status);
       if (status == BTM_CMD_STARTED) {
-        /* Sco is connected; set current control block */
+        /* SCO is connected; set current control block */
         bta_ag_cb.sco.p_curr_scb = p_scb;
-
-        removed_started = true;
-      }
-      /* If no connection reset the sco handle */
-      else if ((status == BTM_SUCCESS) || (status == BTM_UNKNOWN_ADDR)) {
+        return true;
+      } else if ((status == BTM_SUCCESS) || (status == BTM_UNKNOWN_ADDR)) {
+        /* If no connection reset the SCO handle */
         p_scb->sco_idx = BTM_INVALID_SCO_INDEX;
       }
     }
   }
-  return removed_started;
+  return false;
 }
 
 /*******************************************************************************
@@ -292,8 +285,8 @@ static void bta_ag_esco_connreq_cback(tBTM_ESCO_EVT event,
         bta_ag_cb.sco.state = BTA_AG_SCO_OPENING_ST;
         bta_ag_cb.sco.p_curr_scb = p_scb;
         bta_ag_cb.sco.cur_idx = p_scb->sco_idx;
-      } else /* Begin a transfer: Close current SCO before responding */
-      {
+      } else {
+        /* Begin a transfer: Close current SCO before responding */
         APPL_TRACE_DEBUG("bta_ag_esco_connreq_cback: Begin XFER");
         bta_ag_cb.sco.p_xfer_scb = p_scb;
         bta_ag_cb.sco.conn_data = p_data->conn_evt;
@@ -309,17 +302,15 @@ static void bta_ag_esco_connreq_cback(tBTM_ESCO_EVT event,
           bta_ag_sco_conn_rsp(p_scb, &p_data->conn_evt);
         }
       }
-    }
-    /* If error occurred send reject response immediately */
-    else {
+    } else {
+      /* If error occurred send reject response immediately */
       APPL_TRACE_WARNING(
           "no scb for bta_ag_esco_connreq_cback or no resources");
       BTM_EScoConnRsp(p_data->conn_evt.sco_inx, HCI_ERR_HOST_REJECT_RESOURCES,
                       (enh_esco_params_t*)NULL);
     }
-  }
-  /* Received a change in the esco link */
-  else if (event == BTM_ESCO_CHG_EVT) {
+  } else if (event == BTM_ESCO_CHG_EVT) {
+    /* Received a change in the esco link */
     APPL_TRACE_EVENT(
         "%s: eSCO change event (inx %d): rtrans %d, "
         "rxlen %d, txlen %d, txint %d",
@@ -565,6 +556,7 @@ bool bta_ag_attempt_msbc_safe_settings(tBTA_AG_SCB* p_scb) {
  *
  ******************************************************************************/
 static void bta_ag_codec_negotiation_timer_cback(void* data) {
+  APPL_TRACE_DEBUG("%s", __func__);
   tBTA_AG_SCB* p_scb = (tBTA_AG_SCB*)data;
 
   /* Announce that codec negotiation failed. */
@@ -585,11 +577,12 @@ static void bta_ag_codec_negotiation_timer_cback(void* data) {
  *
  ******************************************************************************/
 void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
+  APPL_TRACE_DEBUG("%s", __func__);
   bta_ag_cb.sco.p_curr_scb = p_scb;
 
   if ((p_scb->codec_updated || p_scb->codec_fallback) &&
       (p_scb->peer_features & BTA_AG_PEER_FEAT_CODEC)) {
-    /* Change the power mode to Active until sco open is completed. */
+    /* Change the power mode to Active until SCO open is completed. */
     bta_sys_busy(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
 
     /* Send +BCS to the peer */
@@ -624,20 +617,19 @@ static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
   BT_HDR* p_buf;
 #endif
 
-#if BTA_AG_SCO_DEBUG == TRUE
+#if (BTA_AG_SCO_DEBUG == TRUE)
   uint8_t in_state = p_sco->state;
 
   if (event != BTA_AG_SCO_CI_DATA_E) {
-    APPL_TRACE_EVENT(
-        "%s: BTA ag sco evt (hdl 0x%04x): State %d (%s), Event %d (%s)",
-        __func__, p_scb->sco_idx, p_sco->state,
-        bta_ag_sco_state_str(p_sco->state), event, bta_ag_sco_evt_str(event));
+    APPL_TRACE_EVENT("%s: SCO Index 0x%04x, State %d (%s), Event %d (%s)",
+                     __func__, p_scb->sco_idx, p_sco->state,
+                     bta_ag_sco_state_str(p_sco->state), event,
+                     bta_ag_sco_evt_str(event));
   }
 #else
-
   if (event != BTA_AG_SCO_CI_DATA_E) {
-    APPL_TRACE_EVENT("%s: BTA ag sco evt (hdl 0x%04x): State %d, Event %d",
-                     __func__, p_scb->sco_idx, p_sco->state, event);
+    APPL_TRACE_EVENT("%s: SCO Index 0x%04x, State %d, Event %d", __func__,
+                     p_scb->sco_idx, p_sco->state, event);
   }
 #endif
 
@@ -1246,12 +1238,16 @@ void bta_ag_sco_close(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
  ******************************************************************************/
 void bta_ag_sco_codec_nego(tBTA_AG_SCB* p_scb, bool result) {
   if (result == true) {
-    /* Subsequent sco connection will skip codec negotiation */
+    /* Subsequent SCO connection will skip codec negotiation */
+    APPL_TRACE_DEBUG("%s: Succeeded for index 0x%04x", __func__,
+                     p_scb->sco_idx);
     p_scb->codec_updated = false;
-
     bta_ag_sco_event(p_scb, BTA_AG_SCO_CN_DONE_E);
-  } else /* codec negotiation failed */
+  } else {
+    /* codec negotiation failed */
+    APPL_TRACE_ERROR("%s: Failed for index 0x%04x", __func__, p_scb->sco_idx);
     bta_ag_sco_event(p_scb, BTA_AG_SCO_CLOSE_E);
+  }
 }
 
 /*******************************************************************************

@@ -1063,7 +1063,6 @@ void btsnd_hcic_enhanced_set_up_synchronous_connection(
 void btsnd_hcic_enhanced_accept_synchronous_connection(
     BD_ADDR bd_addr, enh_esco_params_t* p_params) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
-  ;
   uint8_t* pp = (uint8_t*)(p + 1);
 
   p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_ENH_ACC_ESCO_CONN;
