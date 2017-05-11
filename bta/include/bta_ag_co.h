@@ -61,14 +61,9 @@ extern void bta_ag_co_init(void);
  * Returns          void
  *
  ******************************************************************************/
-#if (BTM_WBS_INCLUDED == TRUE)
 extern void bta_ag_co_audio_state(uint16_t handle, uint8_t app_id,
                                   uint8_t state, tBTA_AG_PEER_CODEC codec);
 
-#else
-extern void bta_ag_co_audio_state(uint16_t handle, uint8_t app_id,
-                                  uint8_t state);
-#endif
 
 /*******************************************************************************
  *
