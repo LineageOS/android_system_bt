@@ -519,19 +519,6 @@ int A2DP_GetTrackSampleRateSbc(const uint8_t* p_codec_info) {
   return -1;
 }
 
-int A2DP_GetTrackBitsPerSampleSbc(const uint8_t* p_codec_info) {
-  tA2DP_SBC_CIE sbc_cie;
-
-  tA2DP_STATUS a2dp_status = A2DP_ParseInfoSbc(&sbc_cie, p_codec_info, false);
-  if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
-    return -1;
-  }
-
-  return 16;  // For SBC we always use 16 bits per audio sample
-}
-
 int A2DP_GetTrackChannelCountSbc(const uint8_t* p_codec_info) {
   tA2DP_SBC_CIE sbc_cie;
 

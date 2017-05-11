@@ -525,12 +525,6 @@ TEST_F(StackA2dpTest, test_a2dp_get_track_sample_rate) {
   EXPECT_EQ(A2DP_GetTrackSampleRate(codec_info_non_a2dp), -1);
 }
 
-TEST_F(StackA2dpTest, test_a2dp_get_track_bits_per_sample) {
-  EXPECT_EQ(A2DP_GetTrackBitsPerSample(codec_info_sbc), 16);
-  EXPECT_EQ(A2DP_GetTrackBitsPerSample(codec_info_aac), 16);
-  EXPECT_EQ(A2DP_GetTrackBitsPerSample(codec_info_non_a2dp), -1);
-}
-
 TEST_F(StackA2dpTest, test_a2dp_get_track_channel_count) {
   EXPECT_EQ(A2DP_GetTrackChannelCount(codec_info_sbc), 2);
   EXPECT_EQ(A2DP_GetTrackChannelCount(codec_info_aac), 2);
@@ -840,6 +834,7 @@ TEST_F(A2dpCodecConfigTest, setCodecConfig) {
   for (size_t i = 0; i < codec_info_sbc[0] + 1; i++) {
     EXPECT_EQ(codec_info_result[i], codec_info_sbc[i]);
   }
+  EXPECT_EQ(codec_config->getAudioBitsPerSample(), 16);
 
   // Create the codec capability - AAC
   memset(codec_info_result, 0, sizeof(codec_info_result));
@@ -856,6 +851,7 @@ TEST_F(A2dpCodecConfigTest, setCodecConfig) {
   for (size_t i = 0; i < codec_info_aac[0] + 1; i++) {
     EXPECT_EQ(codec_info_result[i], codec_info_aac[i]);
   }
+  EXPECT_EQ(codec_config->getAudioBitsPerSample(), 16);
 
   // Create the codec config - SBC
   memset(codec_info_result, 0, sizeof(codec_info_result));
