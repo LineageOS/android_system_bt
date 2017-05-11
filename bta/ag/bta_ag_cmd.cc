@@ -443,7 +443,6 @@ static uint8_t bta_ag_parse_chld(UNUSED_ATTR tBTA_AG_SCB* p_scb, char* p_s) {
   return (retval);
 }
 
-#if (BTM_WBS_INCLUDED == TRUE)
 /*******************************************************************************
  *
  * Function         bta_ag_parse_bac
@@ -492,7 +491,6 @@ static tBTA_AG_PEER_CODEC bta_ag_parse_bac(tBTA_AG_SCB* p_scb, char* p_s) {
 
   return (retval);
 }
-#endif
 
 /*******************************************************************************
  *
@@ -830,17 +828,14 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
   tBTA_AG_SCB* ag_scb;
   uint32_t i, ind_id;
   uint32_t bia_masked_out;
-#if (BTM_WBS_INCLUDED == TRUE)
-  tBTA_AG_PEER_CODEC codec_type, codec_sent;
-#endif
   if (p_arg == NULL) {
     APPL_TRACE_ERROR("%s: p_arg is null, send error and return", __func__);
     bta_ag_send_error(p_scb, BTA_AG_ERR_INV_CHAR_IN_TSTR);
     return;
   }
 
-  APPL_TRACE_DEBUG("HFP AT cmd:%d arg_type:%d arg:%d arg:%s", cmd, arg_type,
-                   int_arg, p_arg);
+  APPL_TRACE_DEBUG("%s: AT command %d, arg_type %d, int_arg %d, arg %s",
+                   __func__, cmd, arg_type, int_arg, p_arg);
 
   memset(&val, 0, sizeof(tBTA_AG_VAL));
   val.hdr.handle = bta_ag_scb_to_idx(p_scb);
@@ -1173,7 +1168,6 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
       }
       break;
 
-#if (BTM_WBS_INCLUDED == TRUE)
     case BTA_AG_AT_BAC_EVT:
       bta_ag_send_ok(p_scb);
 
@@ -1209,7 +1203,8 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
       }
       break;
 
-    case BTA_AG_AT_BCS_EVT:
+    case BTA_AG_AT_BCS_EVT: {
+      tBTA_AG_PEER_CODEC codec_type, codec_sent;
       bta_ag_send_ok(p_scb);
       alarm_cancel(p_scb->codec_negotiation_timer);
 
@@ -1239,12 +1234,11 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
       /* send final codec info to callback */
       val.num = codec_sent;
       break;
-
+    }
     case BTA_AG_LOCAL_EVT_BCC:
       bta_ag_send_ok(p_scb);
       bta_ag_sco_open(p_scb, NULL);
       break;
-#endif
 
     default:
       bta_ag_send_error(p_scb, BTA_AG_ERR_OP_NOT_SUPPORTED);
@@ -1684,7 +1678,6 @@ void bta_ag_result(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
   }
 }
 
-#if (BTM_WBS_INCLUDED == TRUE)
 /*******************************************************************************
  *
  * Function         bta_ag_send_bcs
@@ -1722,7 +1715,6 @@ void bta_ag_send_bcs(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
   APPL_TRACE_DEBUG("send +BCS codec is %d", codec_uuid);
   bta_ag_send_result(p_scb, BTA_AG_LOCAL_RES_BCS, NULL, codec_uuid);
 }
-#endif
 
 /*******************************************************************************
  *
