@@ -292,9 +292,7 @@ typedef struct {
 #define BTA_AG_MIC_EVT 8         /* Microphone volume changed */
 #define BTA_AG_AT_CKPD_EVT 9     /* CKPD from the HS */
 #define BTA_AG_DISABLE_EVT 30    /* AG disabled */
-#if (BTM_WBS_INCLUDED == TRUE)
 #define BTA_AG_WBS_EVT 31 /* SCO codec info */
-#endif
 /* Values below are for HFP only */
 #define BTA_AG_AT_A_EVT 10    /* Answer a call */
 #define BTA_AG_AT_D_EVT 11    /* Place a call using number or memory dial */

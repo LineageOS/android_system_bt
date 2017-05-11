@@ -341,10 +341,8 @@ void bta_ag_rfc_fail(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
   p_scb->conn_handle = 0;
   p_scb->conn_service = 0;
   p_scb->peer_features = 0;
-#if (BTM_WBS_INCLUDED == TRUE)
   p_scb->peer_codecs = BTA_AG_CODEC_CVSD;
   p_scb->sco_codec = BTA_AG_CODEC_CVSD;
-#endif
   p_scb->role = 0;
   p_scb->svc_conn = false;
   p_scb->hsp_version = HSP_VERSION_1_2;
@@ -376,14 +374,12 @@ void bta_ag_rfc_close(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
   /* reinitialize stuff */
   p_scb->conn_service = 0;
   p_scb->peer_features = 0;
-#if (BTM_WBS_INCLUDED == TRUE)
   p_scb->peer_codecs = BTA_AG_CODEC_CVSD;
   p_scb->sco_codec = BTA_AG_CODEC_CVSD;
   /* Clear these flags upon SLC teardown */
   p_scb->codec_updated = false;
   p_scb->codec_fallback = false;
   p_scb->codec_msbc_settings = BTA_AG_SCO_MSBC_SETTINGS_T2;
-#endif
   p_scb->role = 0;
   p_scb->post_sco = BTA_AG_POST_SCO_NONE;
   p_scb->svc_conn = false;
@@ -395,9 +391,7 @@ void bta_ag_rfc_close(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
 
   /* stop timers */
   alarm_cancel(p_scb->ring_timer);
-#if (BTM_WBS_INCLUDED == TRUE)
   alarm_cancel(p_scb->codec_negotiation_timer);
-#endif
 
   close.hdr.handle = bta_ag_scb_to_idx(p_scb);
   close.hdr.app_id = p_scb->app_id;
@@ -762,9 +756,7 @@ void bta_ag_svc_conn_open(tBTA_AG_SCB* p_scb,
     evt.hdr.app_id = p_scb->app_id;
     evt.peer_feat = p_scb->peer_features;
     bdcpy(evt.bd_addr, p_scb->peer_addr);
-#if (BTM_WBS_INCLUDED == TRUE)
     evt.peer_codec = p_scb->peer_codecs;
-#endif
 
     if ((p_scb->call_ind != BTA_AG_CALL_INACTIVE) ||
         (p_scb->callsetup_ind != BTA_AG_CALLSETUP_NONE)) {
@@ -834,7 +826,6 @@ void bta_ag_rcvd_slc_ready(tBTA_AG_SCB* p_scb,
  *
  ******************************************************************************/
 void bta_ag_setcodec(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
-#if (BTM_WBS_INCLUDED == TRUE)
   tBTA_AG_PEER_CODEC codec_type = p_data->api_setcodec.codec;
   tBTA_AG_VAL val;
 
@@ -864,5 +855,4 @@ void bta_ag_setcodec(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
   }
 
   (*bta_ag_cb.p_cback)(BTA_AG_WBS_EVT, (tBTA_AG*)&val);
-#endif
 }
