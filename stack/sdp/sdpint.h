@@ -301,6 +301,11 @@ extern void sdpu_uuid16_to_uuid128(UINT16 uuid16, UINT8* p_uuid128);
 extern tSDP_RECORD    *sdp_db_service_search (tSDP_RECORD *p_rec, tSDP_UUID_SEQ *p_seq);
 extern tSDP_RECORD    *sdp_db_find_record (UINT32 handle);
 extern tSDP_ATTRIBUTE *sdp_db_find_attr_in_rec (tSDP_RECORD *p_rec, UINT16 start_attr, UINT16 end_attr);
+extern BOOLEAN SDP_AddAttributetoRecord (tSDP_RECORD *p_rec, UINT16 attr_id, UINT8 attr_type,
+                                  UINT32 attr_len, UINT8 *p_val);
+extern BOOLEAN SDP_AddProfileDescriptorListtoRecord (tSDP_RECORD *p_rec, UINT16 profile_uuid,
+                                      UINT16 version);
+extern BOOLEAN SDP_DeleteAttributefromRecord (tSDP_RECORD *p_rec, UINT16 attr_id);
 
 
 /* Functions provided by sdp_server.c

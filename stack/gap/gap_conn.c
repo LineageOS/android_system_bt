@@ -931,7 +931,9 @@ static void gap_config_ind (UINT16 l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
     else
         local_mtu_size = L2CAP_MTU_SIZE;
 
-    if ((!p_cfg->mtu_present)||(p_cfg->mtu > local_mtu_size))
+    if (!p_cfg->mtu_present){
+     p_ccb->rem_mtu_size  = L2CAP_DEFAULT_MTU;
+   }else if (p_cfg->mtu > local_mtu_size)
     {
         p_ccb->rem_mtu_size = local_mtu_size;
     }
