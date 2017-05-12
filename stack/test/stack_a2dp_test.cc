@@ -867,6 +867,7 @@ TEST_F(A2dpCodecConfigTest, setCodecConfig) {
   for (size_t i = 0; i < codec_info_sbc[0] + 1; i++) {
     EXPECT_EQ(codec_info_result[i], codec_info_sbc[i]);
   }
+  EXPECT_FALSE(codec_config->useRtpHeaderMarkerBit());
 
   // Create the codec config - AAC
   memset(codec_info_result, 0, sizeof(codec_info_result));
@@ -882,6 +883,7 @@ TEST_F(A2dpCodecConfigTest, setCodecConfig) {
   for (size_t i = 0; i < codec_info_aac[0] + 1; i++) {
     EXPECT_EQ(codec_info_result[i], codec_info_aac[i]);
   }
+  EXPECT_TRUE(codec_config->useRtpHeaderMarkerBit());
 
   // Test invalid codec info
   uint8_t codec_info_sbc_test1[AVDT_CODEC_SIZE];

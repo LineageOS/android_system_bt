@@ -558,6 +558,8 @@ bool A2dpCodecConfigLdac::init() {
   return true;
 }
 
+bool A2dpCodecConfigLdac::useRtpHeaderMarkerBit() const { return false; }
+
 //
 // Selects the best sample rate from |sampleRate|.
 // The result is stored in |p_result| and |p_codec_config|.

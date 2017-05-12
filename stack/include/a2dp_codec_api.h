@@ -107,6 +107,13 @@ class A2dpCodecConfig {
   // or 0 if not configured.
   uint8_t getAudioBitsPerSample();
 
+  // Checks whether the codec uses the RTP Header Marker bit (see RFC 6416).
+  // NOTE: Even if the encoded data uses RTP headers, some codecs do not use
+  // the Marker bit - that bit is expected to be set to 0.
+  // Returns true if the encoded data packets have RTP headers, and
+  // the Marker bit in the header is set according to RFC 6416.
+  virtual bool useRtpHeaderMarkerBit() const = 0;
+
   // Checks whether |codec_config| is empty and contains no configuration.
   // Returns true if |codec_config| is empty, otherwise false.
   static bool isCodecConfigEmpty(const btav_a2dp_codec_config_t& codec_config);

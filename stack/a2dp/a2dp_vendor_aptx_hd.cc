@@ -453,6 +453,8 @@ bool A2dpCodecConfigAptxHd::init() {
   return true;
 }
 
+bool A2dpCodecConfigAptxHd::useRtpHeaderMarkerBit() const { return false; }
+
 //
 // Selects the best sample rate from |sampleRate|.
 // The result is stored in |p_result| and p_codec_config|.
