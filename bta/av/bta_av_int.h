@@ -482,6 +482,7 @@ typedef struct {
   uint8_t rc_handle; /* connected AVRCP handle */
   bool use_rc;       /* true if AVRCP is allowed */
   bool started;      /* true if stream started */
+  A2dpCodecConfig* current_codec; /* The current A2DP codec */
   uint8_t
       co_started;    /* non-zero, if stream started from call-out perspective */
   bool recfg_sup;    /* true if the first attempt to reconfigure the stream was

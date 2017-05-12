@@ -1056,6 +1056,8 @@ bool A2dpCodecConfigSbc::init() {
   return true;
 }
 
+bool A2dpCodecConfigSbc::useRtpHeaderMarkerBit() const { return false; }
+
 //
 // Selects the best sample rate from |samp_freq|.
 // The result is stored in |p_result| and |p_codec_config|.
@@ -1608,6 +1610,11 @@ bool A2dpCodecConfigSbcSink::init() {
   if (!isValid()) return false;
 
   return true;
+}
+
+bool A2dpCodecConfigSbcSink::useRtpHeaderMarkerBit() const {
+  // TODO: This method applies only to Source codecs
+  return false;
 }
 
 bool A2dpCodecConfigSbcSink::setCodecConfig(

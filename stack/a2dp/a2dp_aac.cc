@@ -706,6 +706,8 @@ bool A2dpCodecConfigAac::init() {
   return true;
 }
 
+bool A2dpCodecConfigAac::useRtpHeaderMarkerBit() const { return true; }
+
 //
 // Selects the best sample rate from |sampleRate|.
 // The result is stored in |p_result| and |p_codec_config|.
