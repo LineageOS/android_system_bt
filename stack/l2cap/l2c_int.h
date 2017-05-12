@@ -580,6 +580,7 @@ extern void l2c_process_held_packets(bool timed_out);
 /* Functions provided by l2c_utils.cc
  ***********************************
 */
+extern bool l2cu_can_allocate_lcb(void);
 extern tL2C_LCB* l2cu_allocate_lcb(BD_ADDR p_bd_addr, bool is_bonding,
                                    tBT_TRANSPORT transport);
 extern bool l2cu_start_post_bond_timer(uint16_t handle);
