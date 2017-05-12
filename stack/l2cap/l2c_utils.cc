@@ -43,6 +43,22 @@ extern fixed_queue_t* btu_general_alarm_queue;
 
 /*******************************************************************************
  *
+ * Function         l2cu_can_allocate_lcb
+ *
+ * Description      Look for an unused LCB
+ *
+ * Returns          true if there is space for one more lcb
+ *
+ ******************************************************************************/
+bool l2cu_can_allocate_lcb(void) {
+  for (int i = 0; i < MAX_L2CAP_LINKS; i++) {
+    if (!l2cb.lcb_pool[i].in_use) return true;
+  }
+  return false;
+}
+
+/*******************************************************************************
+ *
  * Function         l2cu_allocate_lcb
  *
  * Description      Look for an unused LCB
