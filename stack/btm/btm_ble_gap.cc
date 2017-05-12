@@ -2417,10 +2417,6 @@ tBTM_STATUS btm_ble_start_adv(void) {
     /* enable resolving list is desired */
     btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_ADV);
 #endif
-  if (p_cb->afp != AP_SCAN_CONN_ALL) {
-    btm_execute_wl_dev_operation();
-    btm_cb.ble_ctr_cb.wl_state |= BTM_BLE_WL_ADV;
-  }
 
   btsnd_hcic_ble_set_adv_enable(BTM_BLE_ADV_ENABLE);
   p_cb->adv_mode = BTM_BLE_ADV_ENABLE;
@@ -2445,7 +2441,6 @@ tBTM_STATUS btm_ble_stop_adv(void) {
 
     p_cb->fast_adv_on = false;
     p_cb->adv_mode = BTM_BLE_ADV_DISABLE;
-    btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_WL_ADV;
 
     /* clear all adv states */
     btm_ble_clear_topology_mask(BTM_BLE_STATE_ALL_ADV_MASK);
@@ -2674,6 +2669,10 @@ void btm_ble_update_mode_operation(uint8_t link_role, BD_ADDR bd_addr,
     btm_ble_set_connectability(btm_cb.btm_inq_vars.connectable_mode |
                                btm_cb.ble_ctr_cb.inq_var.connectable_mode);
   }
+
+  /* in case of disconnected, we must cancel bgconn and restart
+     in order to add back device to white list in order to reconnect */
+  btm_ble_bgconn_cancel_if_disconnected(bd_addr);
 
   /* when no connection is attempted, and controller is not rejecting last
      request
