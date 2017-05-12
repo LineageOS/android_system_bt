@@ -33,6 +33,7 @@
 #include "avdt_api.h"
 #include "bt_utils.h"
 #include "bta_av_int.h"
+#include "btif/include/btif_av_co.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
 #include "osi/include/osi.h"
@@ -1024,6 +1025,7 @@ void bta_av_cleanup(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   /* if de-registering shut everything down */
   msg.hdr.layer_specific = p_scb->hndl;
   p_scb->started = false;
+  p_scb->current_codec = nullptr;
   p_scb->cong = false;
   p_scb->role = role;
   p_scb->cur_psc_mask = 0;
@@ -1454,6 +1456,7 @@ void bta_av_do_close(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
 
   /* close stream */
   p_scb->started = false;
+  p_scb->current_codec = nullptr;
 
   /* drop the buffers queued in L2CAP */
   L2CA_FlushChannel(p_scb->l2c_cid, L2CAP_FLUSH_CHANS_ALL);
@@ -2095,10 +2098,14 @@ void bta_av_data_path(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   BT_HDR* p_buf = NULL;
   uint32_t timestamp;
   bool new_buf = false;
-  uint8_t m_pt = AVDT_MARKER_SET | 0x60;
+  uint8_t m_pt = 0x60;
   tAVDT_DATA_OPT_MASK opt;
 
   if (p_scb->cong) return;
+
+  if (p_scb->current_codec->useRtpHeaderMarkerBit()) {
+    m_pt |= AVDT_MARKER_SET;
+  }
 
   // Always get the current number of bufs que'd up
   p_scb->l2c_bufs =
@@ -2225,6 +2232,8 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
                    p_scb->role);
 
   p_scb->started = true;
+  p_scb->current_codec = bta_av_get_a2dp_current_codec();
+
   if (p_scb->sco_suspend) {
     p_scb->sco_suspend = false;
   }
