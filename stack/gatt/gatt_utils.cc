@@ -222,58 +222,19 @@ tGATTS_SRV_CHG* gatt_add_srv_chg_clt(tGATTS_SRV_CHG* p_srv_chg) {
   return p_buf;
 }
 
-/*******************************************************************************
- *
- * Function     gatt_alloc_hdl_buffer
- *
- * Description  Allocate a handle buufer
- *
- * Returns    Pointer to the allocated buffer, NULL no buffer available
- *
- ******************************************************************************/
-tGATT_HDL_LIST_ELEM* gatt_alloc_hdl_buffer(void) {
-  uint8_t i;
-  tGATT_CB* p_cb = &gatt_cb;
-  tGATT_HDL_LIST_ELEM* p_elem = &p_cb->hdl_list[0];
-
-  for (i = 0; i < GATT_MAX_SR_PROFILES; i++, p_elem++) {
-    if (!p_cb->hdl_list[i].in_use) {
-      memset(p_elem, 0, sizeof(tGATT_HDL_LIST_ELEM));
-      p_elem->in_use = true;
-      p_elem->svc_db.svc_buffer = fixed_queue_new(SIZE_MAX);
-      return p_elem;
-    }
-  }
-
-  return NULL;
-}
-
-/*******************************************************************************
- *
- * Function     gatt_find_hdl_buffer_by_handle
- *
- * Description  Find handle range buffer by service handle.
- *
- * Returns    Pointer to the buffer, NULL no buffer available
- *
- ******************************************************************************/
+/**
+ * Returns pointer to the handle range buffer starting at handle |handle|,
+ * nullptr
+ * if no buffer available
+ */
 tGATT_HDL_LIST_ELEM* gatt_find_hdl_buffer_by_handle(uint16_t handle) {
-  tGATT_HDL_LIST_INFO* p_list_info = &gatt_cb.hdl_list_info;
-  tGATT_HDL_LIST_ELEM* p_list = NULL;
-
-  p_list = p_list_info->p_first;
-
-  while (p_list != NULL) {
-    if (p_list->in_use && p_list->asgn_range.s_handle == handle) {
-      return (p_list);
-    }
-    p_list = p_list->p_next;
+  for (auto& elem : *gatt_cb.hdl_list_info) {
+    if (elem.asgn_range.s_handle == handle) return &elem;
   }
-  return NULL;
+
+  return nullptr;
 }
 /*******************************************************************************
- *
- * Function     gatt_find_hdl_buffer_by_app_id
  *
  * Description  Find handle range buffer by app ID, service and service instance
  *              ID.
@@ -281,306 +242,32 @@ tGATT_HDL_LIST_ELEM* gatt_find_hdl_buffer_by_handle(uint16_t handle) {
  * Returns    Pointer to the buffer, NULL no buffer available
  *
  ******************************************************************************/
-tGATT_HDL_LIST_ELEM* gatt_find_hdl_buffer_by_app_id(tBT_UUID* p_app_uuid128,
-                                                    tBT_UUID* p_svc_uuid,
-                                                    uint16_t start_handle) {
-  tGATT_HDL_LIST_INFO* p_list_info = &gatt_cb.hdl_list_info;
-  tGATT_HDL_LIST_ELEM* p_list = NULL;
-
-  p_list = p_list_info->p_first;
-
-  while (p_list != NULL) {
-    if (gatt_uuid_compare(*p_app_uuid128, p_list->asgn_range.app_uuid128) &&
-        gatt_uuid_compare(*p_svc_uuid, p_list->asgn_range.svc_uuid) &&
-        (start_handle == p_list->asgn_range.s_handle)) {
-      GATT_TRACE_DEBUG("Already allocated handles for this service before!!");
-      return (p_list);
+std::list<tGATT_HDL_LIST_ELEM>::iterator gatt_find_hdl_buffer_by_app_id(
+    tBT_UUID* p_app_uuid128, tBT_UUID* p_svc_uuid, uint16_t start_handle) {
+  auto end_it = gatt_cb.hdl_list_info->end();
+  auto it = gatt_cb.hdl_list_info->begin();
+  for (; it != end_it; it++) {
+    if (gatt_uuid_compare(*p_app_uuid128, it->asgn_range.app_uuid128) &&
+        gatt_uuid_compare(*p_svc_uuid, it->asgn_range.svc_uuid) &&
+        (start_handle == it->asgn_range.s_handle)) {
+      return it;
     }
-    p_list = p_list->p_next;
   }
-  return NULL;
+
+  return it;
 }
-/*******************************************************************************
- *
- * Function         gatt_free_hdl_buffer
- *
- * Description     free a handle buffer
- *
- * Returns       None
- *
- ******************************************************************************/
-void gatt_free_hdl_buffer(tGATT_HDL_LIST_ELEM* p) {
-  if (p) {
-    while (!fixed_queue_is_empty(p->svc_db.svc_buffer))
-      osi_free(fixed_queue_try_dequeue(p->svc_db.svc_buffer));
-    fixed_queue_free(p->svc_db.svc_buffer, NULL);
-    memset(p, 0, sizeof(tGATT_HDL_LIST_ELEM));
-  }
-}
-/*******************************************************************************
- *
- * Function         gatt_free_srvc_db_buffer_app_id
- *
- * Description      free the service attribute database buffers by the owner of
- *                  the service app ID.
- *
- * Returns       None
- *
- ******************************************************************************/
+
+/**
+ * free the service attribute database buffers by the owner of the service app
+ * ID.
+ */
 void gatt_free_srvc_db_buffer_app_id(tBT_UUID* p_app_id) {
-  tGATT_HDL_LIST_ELEM* p_elem = &gatt_cb.hdl_list[0];
-  uint8_t i;
-
-  for (i = 0; i < GATT_MAX_SR_PROFILES; i++, p_elem++) {
-    if (memcmp(p_app_id, &p_elem->asgn_range.app_uuid128, sizeof(tBT_UUID)) ==
-        0) {
-      while (!fixed_queue_is_empty(p_elem->svc_db.svc_buffer))
-        osi_free(fixed_queue_try_dequeue(p_elem->svc_db.svc_buffer));
-      fixed_queue_free(p_elem->svc_db.svc_buffer, NULL);
-      p_elem->svc_db.svc_buffer = NULL;
-
-      p_elem->svc_db.mem_free = 0;
-      p_elem->svc_db.p_attr_list = p_elem->svc_db.p_free_mem = NULL;
+  auto end_it = gatt_cb.hdl_list_info->end();
+  for (auto it = gatt_cb.hdl_list_info->begin(); it != end_it; it++) {
+    if (memcmp(p_app_id, &it->asgn_range.app_uuid128, sizeof(tBT_UUID)) == 0) {
+      it = gatt_cb.hdl_list_info->erase(it);
     }
   }
-}
-/*******************************************************************************
- *
- * Function        gatt_is_last_attribute
- *
- * Description     Check if this is the last attribute of the specified value
- *
- * Returns         true - yes this is the last attribute
- *
- ******************************************************************************/
-bool gatt_is_last_attribute(tGATT_SRV_LIST_INFO* p_list,
-                            tGATT_SRV_LIST_ELEM* p_start, tBT_UUID value) {
-  tGATT_SRV_LIST_ELEM* p_srv = p_start->p_next;
-  bool is_last_attribute = true;
-  tGATT_SR_REG* p_rcb = NULL;
-  tBT_UUID* p_svc_uuid;
-
-  p_list->p_last_primary = NULL;
-
-  while (p_srv) {
-    p_rcb = GATT_GET_SR_REG_PTR(p_srv->i_sreg);
-
-    p_svc_uuid = gatts_get_service_uuid(p_rcb->p_db);
-
-    if (gatt_uuid_compare(value, *p_svc_uuid)) {
-      is_last_attribute = false;
-      break;
-    }
-    p_srv = p_srv->p_next;
-  }
-
-  return is_last_attribute;
-}
-
-/*******************************************************************************
- *
- * Function         gatt_update_last_pri_srv_info
- *
- * Description     Update the the last primary info for the service list info
- *
- * Returns       None
- *
- ******************************************************************************/
-void gatt_update_last_pri_srv_info(tGATT_SRV_LIST_INFO* p_list) {
-  tGATT_SRV_LIST_ELEM* p_srv = p_list->p_first;
-
-  p_list->p_last_primary = NULL;
-
-  while (p_srv) {
-    if (p_srv->is_primary) {
-      p_list->p_last_primary = p_srv;
-    }
-    p_srv = p_srv->p_next;
-  }
-}
-/*******************************************************************************
- *
- * Function         gatts_update_srv_list_elem
- *
- * Description      update an element in the service list.
- *
- * Returns          None.
- *
- ******************************************************************************/
-void gatts_update_srv_list_elem(uint8_t i_sreg, UNUSED_ATTR uint16_t handle,
-                                bool is_primary) {
-  gatt_cb.srv_list[i_sreg].in_use = true;
-  gatt_cb.srv_list[i_sreg].i_sreg = i_sreg;
-  gatt_cb.srv_list[i_sreg].s_hdl = gatt_cb.sr_reg[i_sreg].s_hdl;
-  gatt_cb.srv_list[i_sreg].is_primary = is_primary;
-
-  return;
-}
-/*******************************************************************************
- *
- * Function  gatt_add_a_srv_to_list
- *
- * Description  add an service to the list in ascending
- *              order of the start handle
- *
- * Returns   bool    true-if add is successful
- *
- ******************************************************************************/
-bool gatt_add_a_srv_to_list(tGATT_SRV_LIST_INFO* p_list,
-                            tGATT_SRV_LIST_ELEM* p_new) {
-  tGATT_SRV_LIST_ELEM* p_old;
-
-  if (!p_new) {
-    GATT_TRACE_DEBUG("p_new==NULL");
-    return false;
-  }
-
-  if (!p_list->p_first) {
-    /* this is an empty list */
-    p_list->p_first = p_list->p_last = p_new;
-    p_new->p_next = p_new->p_prev = NULL;
-  } else {
-    p_old = p_list->p_first;
-    while (1) {
-      if (p_old == NULL) {
-        p_list->p_last->p_next = p_new;
-        p_new->p_prev = p_list->p_last;
-        p_new->p_next = NULL;
-        p_list->p_last = p_new;
-        break;
-      } else {
-        if (p_new->s_hdl < p_old->s_hdl) {
-          /* if not the first in list */
-          if (p_old->p_prev != NULL)
-            p_old->p_prev->p_next = p_new;
-          else
-            p_list->p_first = p_new;
-
-          p_new->p_prev = p_old->p_prev;
-          p_new->p_next = p_old;
-          p_old->p_prev = p_new;
-          break;
-        }
-      }
-      p_old = p_old->p_next;
-    }
-  }
-  p_list->count++;
-
-  gatt_update_last_pri_srv_info(p_list);
-  return true;
-}
-
-/*******************************************************************************
- *
- * Function  gatt_remove_a_srv_from_list
- *
- * Description  Remove a service from the list
- *
- * Returns   bool    true-if remove is successful
- *
- ******************************************************************************/
-bool gatt_remove_a_srv_from_list(tGATT_SRV_LIST_INFO* p_list,
-                                 tGATT_SRV_LIST_ELEM* p_remove) {
-  if (!p_remove || !p_list->p_first) {
-    GATT_TRACE_DEBUG("p_remove==NULL || p_list->p_first==NULL");
-    return false;
-  }
-
-  if (p_remove->p_prev == NULL) {
-    p_list->p_first = p_remove->p_next;
-    if (p_remove->p_next) p_remove->p_next->p_prev = NULL;
-  } else if (p_remove->p_next == NULL) {
-    p_list->p_last = p_remove->p_prev;
-    p_remove->p_prev->p_next = NULL;
-  } else {
-    p_remove->p_next->p_prev = p_remove->p_prev;
-    p_remove->p_prev->p_next = p_remove->p_next;
-  }
-  p_list->count--;
-  gatt_update_last_pri_srv_info(p_list);
-  return true;
-}
-
-/*******************************************************************************
- *
- * Function  gatt_add_an_item_to_list
- *
- * Description  add an service handle range to the list in decending
- *              order of the start handle
- *
- * Returns   bool    true-if add is successful
- *
- ******************************************************************************/
-bool gatt_add_an_item_to_list(tGATT_HDL_LIST_INFO* p_list,
-                              tGATT_HDL_LIST_ELEM* p_new) {
-  tGATT_HDL_LIST_ELEM* p_old;
-  if (!p_new) {
-    GATT_TRACE_DEBUG("p_new==NULL");
-    return false;
-  }
-
-  if (!p_list->p_first) {
-    /* this is an empty list */
-    p_list->p_first = p_list->p_last = p_new;
-    p_new->p_next = p_new->p_prev = NULL;
-  } else {
-    p_old = p_list->p_first;
-    while (1) {
-      if (p_old == NULL) {
-        p_list->p_last->p_next = p_new;
-        p_new->p_prev = p_list->p_last;
-        p_new->p_next = NULL;
-        p_list->p_last = p_new;
-
-        break;
-
-      } else {
-        if (p_new->asgn_range.s_handle > p_old->asgn_range.s_handle) {
-          if (p_old == p_list->p_first) p_list->p_first = p_new;
-
-          p_new->p_prev = p_old->p_prev;
-          p_new->p_next = p_old;
-
-          p_old->p_prev = p_new;
-          break;
-        }
-      }
-      p_old = p_old->p_next;
-    }
-  }
-  p_list->count++;
-  return true;
-}
-
-/*******************************************************************************
- *
- * Function  gatt_remove_an_item_from_list
- *
- * Description  Remove an service handle range from the list
- *
- * Returns   bool    true-if remove is successful
- *
- ******************************************************************************/
-bool gatt_remove_an_item_from_list(tGATT_HDL_LIST_INFO* p_list,
-                                   tGATT_HDL_LIST_ELEM* p_remove) {
-  if (!p_remove || !p_list->p_first) {
-    GATT_TRACE_DEBUG("p_remove==NULL || p_list->p_first==NULL");
-    return false;
-  }
-
-  if (p_remove->p_prev == NULL) {
-    p_list->p_first = p_remove->p_next;
-    if (p_remove->p_next) p_remove->p_next->p_prev = NULL;
-  } else if (p_remove->p_next == NULL) {
-    p_list->p_last = p_remove->p_prev;
-    p_remove->p_prev->p_next = NULL;
-  } else {
-    p_remove->p_next->p_prev = p_remove->p_prev;
-    p_remove->p_prev->p_next = p_remove->p_next;
-  }
-  p_list->count--;
-  return true;
 }
 
 /*******************************************************************************
@@ -1133,98 +820,25 @@ void gatt_ind_ack_timeout(void* data) {
 }
 /*******************************************************************************
  *
- * Function         gatt_sr_find_i_rcb_by_handle
- *
  * Description      Search for a service that owns a specific handle.
  *
  * Returns          GATT_MAX_SR_PROFILES if not found. Otherwise the index of
  *                  the service.
  *
  ******************************************************************************/
-uint8_t gatt_sr_find_i_rcb_by_handle(uint16_t handle) {
-  uint8_t i_rcb = 0;
+std::list<tGATT_SRV_LIST_ELEM>::iterator gatt_sr_find_i_rcb_by_handle(
+    uint16_t handle) {
+  auto it = gatt_cb.srv_list_info->begin();
 
-  for (; i_rcb < GATT_MAX_SR_PROFILES; i_rcb++) {
-    if (gatt_cb.sr_reg[i_rcb].in_use && gatt_cb.sr_reg[i_rcb].s_hdl <= handle &&
-        gatt_cb.sr_reg[i_rcb].e_hdl >= handle) {
-      break;
-    }
-  }
-  return i_rcb;
-}
-
-/*******************************************************************************
- *
- * Function         gatt_sr_find_i_rcb_by_handle
- *
- * Description      The function searches for a service that owns a specific
- *                  handle.
- *
- * Returns          0 if not found. Otherwise index of th eservice.
- *
- ******************************************************************************/
-uint8_t gatt_sr_find_i_rcb_by_app_id(tBT_UUID* p_app_uuid128,
-                                     tBT_UUID* p_svc_uuid,
-                                     uint16_t start_handle) {
-  uint8_t i_rcb = 0;
-  tGATT_SR_REG* p_sreg;
-  tBT_UUID* p_this_uuid;
-
-  for (i_rcb = 0, p_sreg = gatt_cb.sr_reg; i_rcb < GATT_MAX_SR_PROFILES;
-       i_rcb++, p_sreg++) {
-    if (p_sreg->in_use) {
-      p_this_uuid = gatts_get_service_uuid(p_sreg->p_db);
-
-      if (p_this_uuid && gatt_uuid_compare(*p_app_uuid128, p_sreg->app_uuid) &&
-          gatt_uuid_compare(*p_svc_uuid, *p_this_uuid) &&
-          (start_handle == p_sreg->s_hdl)) {
-        GATT_TRACE_ERROR("Active Service Found ");
-        gatt_dbg_display_uuid(*p_svc_uuid);
-
-        break;
-      }
-    }
-  }
-  return i_rcb;
-}
-/*******************************************************************************
- *
- * Function         gatt_sr_find_i_rcb_by_handle
- *
- * Description      The function searches for a service that owns a specific
- *                  handle.
- *
- * Returns          0 if not found. Otherwise index of th eservice.
- *
- ******************************************************************************/
-uint8_t gatt_sr_alloc_rcb(tGATT_HDL_LIST_ELEM* p_list) {
-  uint8_t ii = 0;
-  tGATT_SR_REG* p_sreg = NULL;
-
-  /*this is a new application servoce start */
-  for (ii = 0, p_sreg = gatt_cb.sr_reg; ii < GATT_MAX_SR_PROFILES;
-       ii++, p_sreg++) {
-    if (!p_sreg->in_use) {
-      memset(p_sreg, 0, sizeof(tGATT_SR_REG));
-
-      p_sreg->in_use = true;
-      memcpy(&p_sreg->app_uuid, &p_list->asgn_range.app_uuid128,
-             sizeof(tBT_UUID));
-
-      p_sreg->type = p_list->asgn_range.is_primary ? GATT_UUID_PRI_SERVICE
-                                                   : GATT_UUID_SEC_SERVICE;
-      p_sreg->s_hdl = p_list->asgn_range.s_handle;
-      p_sreg->e_hdl = p_list->asgn_range.e_handle;
-      p_sreg->p_db = &p_list->svc_db;
-
-      GATT_TRACE_DEBUG("total buffer in db [%d]",
-                       fixed_queue_length(p_sreg->p_db->svc_buffer));
-      break;
+  for (; it != gatt_cb.srv_list_info->end(); it++) {
+    if (it->s_hdl <= handle && it->e_hdl >= handle) {
+      return it;
     }
   }
 
-  return ii;
+  return it;
 }
+
 /*******************************************************************************
  *
  * Function         gatt_sr_get_sec_info
