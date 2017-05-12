@@ -683,12 +683,9 @@ extern uint8_t GATT_SetTraceLevel(uint8_t new_level);
  *                  instance
  *
  * Parameter        p_hndl_range:   pointer to allocated handles information
- *
- * Returns          true if handle range is added sucessfully; otherwise false.
- *
  ******************************************************************************/
 
-extern bool GATTS_AddHandleRange(tGATTS_HNDL_RANGE* p_hndl_range);
+extern void GATTS_AddHandleRange(tGATTS_HNDL_RANGE* p_hndl_range);
 
 /*******************************************************************************
  *
