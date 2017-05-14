@@ -138,6 +138,7 @@ extern void btm_ble_update_mode_operation(uint8_t link_role, BD_ADDR bda,
                                           uint8_t status);
 extern bool btm_execute_wl_dev_operation(void);
 extern void btm_ble_update_link_topology_mask(uint8_t role, bool increase);
+extern void btm_ble_bgconn_cancel_if_disconnected(BD_ADDR bd_addr);
 
 /* direct connection utility */
 extern bool btm_send_pending_direct_conn(void);

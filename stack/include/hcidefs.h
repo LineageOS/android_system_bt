@@ -1077,37 +1077,24 @@
             HCI_PKT_TYPES_MASK_DM3 | HCI_PKT_TYPES_MASK_DH3 |                 \
             HCI_PKT_TYPES_MASK_DM5 | HCI_PKT_TYPES_MASK_DH5)) != 0))
 
-/*
- * Definitions for eSCO packet type masks (BT1.2 and BT2.0 definitions)
-*/
-#define HCI_ESCO_PKT_TYPES_MASK_HV1 0x0001
-#define HCI_ESCO_PKT_TYPES_MASK_HV2 0x0002
-#define HCI_ESCO_PKT_TYPES_MASK_HV3 0x0004
-#define HCI_ESCO_PKT_TYPES_MASK_EV3 0x0008
-#define HCI_ESCO_PKT_TYPES_MASK_EV4 0x0010
-#define HCI_ESCO_PKT_TYPES_MASK_EV5 0x0020
-#define HCI_ESCO_PKT_TYPES_MASK_NO_2_EV3 0x0040
-#define HCI_ESCO_PKT_TYPES_MASK_NO_3_EV3 0x0080
-#define HCI_ESCO_PKT_TYPES_MASK_NO_2_EV5 0x0100
-#define HCI_ESCO_PKT_TYPES_MASK_NO_3_EV5 0x0200
-
 /* Packet type should be one of valid but at least one should be specified for
  * 1.2 */
-#define HCI_VALID_ESCO_PKT_TYPE(t)                                  \
-  (((((t) &                                                         \
-      ~(HCI_ESCO_PKT_TYPES_MASK_EV3 | HCI_ESCO_PKT_TYPES_MASK_EV4 | \
-        HCI_ESCO_PKT_TYPES_MASK_EV5)) == 0)) &&                     \
-   ((t) != 0))
+#define HCI_VALID_ESCO_PKT_TYPE(t)                                           \
+  (((((t) &                                                                  \
+      ~(HCI_ESCO_PKT_TYPES_MASK_EV3 | HCI_ESCO_PKT_TYPES_MASK_EV4 |          \
+        HCI_ESCO_PKT_TYPES_MASK_EV5)) == 0)) &&                              \
+   ((t) != 0)) /* Packet type should be one of valid but at least one should \
+                  be specified */
 
-#define HCI_VALID_ESCO_SCOPKT_TYPE(t)                               \
-  (((((t) &                                                         \
-      ~(HCI_ESCO_PKT_TYPES_MASK_HV1 | HCI_ESCO_PKT_TYPES_MASK_HV2 | \
-        HCI_ESCO_PKT_TYPES_MASK_HV3)) == 0)) &&                     \
+#define HCI_VALID_ESCO_SCOPKT_TYPE(t)                           \
+  (((((t) &                                                     \
+      ~(ESCO_PKT_TYPES_MASK_HV1 | HCI_ESCO_PKT_TYPES_MASK_HV2 | \
+        HCI_ESCO_PKT_TYPES_MASK_HV3)) == 0)) &&                 \
    ((t) != 0))
 
 #define HCI_VALID_SCO_ALL_PKT_TYPE(t)                                         \
   (((((t) &                                                                   \
-      ~(HCI_ESCO_PKT_TYPES_MASK_HV1 | HCI_ESCO_PKT_TYPES_MASK_HV2 |           \
+      ~(ESCO_PKT_TYPES_MASK_HV1 | HCI_ESCO_PKT_TYPES_MASK_HV2 |               \
         HCI_ESCO_PKT_TYPES_MASK_HV3 | HCI_ESCO_PKT_TYPES_MASK_EV3 |           \
         HCI_ESCO_PKT_TYPES_MASK_EV4 | HCI_ESCO_PKT_TYPES_MASK_EV5)) == 0)) && \
    ((t) != 0))
@@ -3006,13 +2993,13 @@ typedef struct {
 /* Supported Commands (Byte 29) */
 #define HCI_SUPP_COMMANDS_ENH_SETUP_SYNCH_CONN_MASK 0x08
 #define HCI_SUPP_COMMANDS_ENH_SETUP_SYNCH_CONN_OFF 29
-#define HCI_READ_ENH_SETUP_SYNCH_CONN_SUPPORTED(x)   \
+#define HCI_ENH_SETUP_SYNCH_CONN_SUPPORTED(x)        \
   ((x)[HCI_SUPP_COMMANDS_ENH_SETUP_SYNCH_CONN_OFF] & \
    HCI_SUPP_COMMANDS_ENH_SETUP_SYNCH_CONN_MASK)
 
 #define HCI_SUPP_COMMANDS_ENH_ACCEPT_SYNCH_CONN_MASK 0x10
 #define HCI_SUPP_COMMANDS_ENH_ACCEPT_SYNCH_CONN_OFF 29
-#define HCI_READ_ENH_ACCEPT_SYNCH_CONN_SUPPORTED(x)   \
+#define HCI_ENH_ACCEPT_SYNCH_CONN_SUPPORTED(x)        \
   ((x)[HCI_SUPP_COMMANDS_ENH_ACCEPT_SYNCH_CONN_OFF] & \
    HCI_SUPP_COMMANDS_ENH_ACCEPT_SYNCH_CONN_MASK)
 

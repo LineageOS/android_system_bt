@@ -36,11 +36,11 @@ class A2dpCodecConfigAptxHd : public A2dpCodecConfig {
                       uint8_t* p_result_codec_config) override;
 
  private:
+  bool useRtpHeaderMarkerBit() const override;
   bool updateEncoderUserConfig(
       const tA2DP_ENCODER_INIT_PEER_PARAMS* p_peer_params,
       bool* p_restart_input, bool* p_restart_output,
       bool* p_config_updated) override;
-
   void debug_codec_dump(int fd) override;
 };
 
@@ -87,12 +87,6 @@ bool A2DP_VendorCodecEqualsAptxHd(const uint8_t* p_codec_info_a,
 // Returns the track sample rate on success, or -1 if |p_codec_info|
 // contains invalid codec information.
 int A2DP_VendorGetTrackSampleRateAptxHd(const uint8_t* p_codec_info);
-
-// Gets the bits per audio sample for the A2DP aptX-HD codec.
-// |p_codec_info| is a pointer to the aptX-HD codec_info to decode.
-// Returns the bits per audio sample on success, or -1 if |p_codec_info|
-// contains invalid codec information.
-int A2DP_VendorGetTrackBitsPerSampleAptxHd(const uint8_t* p_codec_info);
 
 // Gets the channel count for the A2DP aptX-HD codec.
 // |p_codec_info| is a pointer to the aptX-HD codec_info to decode.

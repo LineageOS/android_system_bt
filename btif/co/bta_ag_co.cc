@@ -19,8 +19,9 @@
 #define LOG_TAG "bt_btif_bta_ag"
 
 #include "bta/include/bta_ag_co.h"
+#include "bta/ag/bta_ag_int.h"
 #include "bta/include/bta_ag_api.h"
-#include "hci/include/hci_audio.h"
+#include "bta/include/bta_ag_ci.h"
 #include "osi/include/osi.h"
 
 /*******************************************************************************
@@ -37,70 +38,6 @@
  *
  ******************************************************************************/
 void bta_ag_co_init(void) { BTM_WriteVoiceSettings(AG_VOICE_SETTINGS); }
-
-/*******************************************************************************
- *
- * Function         bta_ag_co_audio_state
- *
- * Description      This function is called by the AG before the audio
- *                  connection is brought up, after it comes up, and
- *                  after it goes down.
- *
- * Parameters       handle - handle of the AG instance
- *                  state - Audio state
- *                  codec - if WBS support is compiled in, codec to going to be
- *                      used is provided and when in SCO_STATE_SETUP,
- *                      BTM_I2SPCMConfig() must be called with the correct
- *                      platform parameters.
- *                      In the other states, codec type should not be ignored.
- *
- * Returns          void
- *
- ******************************************************************************/
-#if (BTM_WBS_INCLUDED == TRUE)
-void bta_ag_co_audio_state(uint16_t handle, uint8_t app_id, uint8_t state,
-                           tBTA_AG_PEER_CODEC codec)
-#else
-void bta_ag_co_audio_state(uint16_t handle, uint8_t app_id, uint8_t state)
-#endif
-{
-  BTIF_TRACE_DEBUG("bta_ag_co_audio_state: handle %d, state %d", handle, state);
-  switch (state) {
-    case SCO_STATE_OFF:
-#if (BTM_WBS_INCLUDED == TRUE)
-      BTIF_TRACE_DEBUG(
-          "bta_ag_co_audio_state(handle %d)::Closed (OFF), codec: 0x%x", handle,
-          codec);
-      set_audio_state(handle, (sco_codec_t)codec, (sco_state_t)state);
-#else
-      BTIF_TRACE_DEBUG("bta_ag_co_audio_state(handle %d)::Closed (OFF)",
-                       handle);
-#endif
-      break;
-    case SCO_STATE_OFF_TRANSFER:
-      BTIF_TRACE_DEBUG("bta_ag_co_audio_state(handle %d)::Closed (XFERRING)",
-                       handle);
-      break;
-    case SCO_STATE_SETUP:
-#if (BTM_WBS_INCLUDED == TRUE)
-      set_audio_state(handle, (sco_codec_t)codec, (sco_state_t)state);
-#else
-      set_audio_state(handle, (sco_codec_t)BTA_AG_CODEC_CVSD,
-                      (sco_state_t)state);
-#endif
-      break;
-    default:
-      break;
-  }
-#if (BTM_WBS_INCLUDED == TRUE)
-  APPL_TRACE_DEBUG(
-      "bta_ag_co_audio_state(handle %d, app_id: %d, state %d, codec: 0x%x)",
-      handle, app_id, state, codec);
-#else
-  APPL_TRACE_DEBUG("bta_ag_co_audio_state(handle %d, app_id: %d, state %d)",
-                   handle, app_id, state);
-#endif
-}
 
 /*******************************************************************************
  *

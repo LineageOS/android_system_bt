@@ -357,6 +357,16 @@ static bool supports_master_slave_role_switch(void) {
   return HCI_SWITCH_SUPPORTED(features_classic[0].as_array);
 }
 
+static bool supports_enhanced_setup_synchronous_connection(void) {
+  assert(readable);
+  return HCI_ENH_SETUP_SYNCH_CONN_SUPPORTED(supported_commands);
+}
+
+static bool supports_enhanced_accept_synchronous_connection(void) {
+  assert(readable);
+  return HCI_ENH_ACCEPT_SYNCH_CONN_SUPPORTED(supported_commands);
+}
+
 static bool supports_ble(void) {
   CHECK(readable);
   return ble_supported;
@@ -504,6 +514,8 @@ static const controller_t interface = {
     supports_rssi_with_inquiry_results,
     supports_extended_inquiry_response,
     supports_master_slave_role_switch,
+    supports_enhanced_setup_synchronous_connection,
+    supports_enhanced_accept_synchronous_connection,
 
     supports_ble,
     supports_ble_packet_extension,

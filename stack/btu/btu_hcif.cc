@@ -1126,13 +1126,14 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
 
 #if (BTM_SCO_INCLUDED == TRUE)
           case HCI_SETUP_ESCO_CONNECTION:
+          case HCI_ENH_SETUP_ESCO_CONNECTION:
             /* read handle out of stored command */
             if (p_cmd != NULL) {
               p_cmd++;
               STREAM_TO_UINT16(handle, p_cmd);
 
-              /* Determine if initial connection failed or is a change of setup
-               */
+              /* Determine if initial connection failed or is a change
+               * of setup */
               if (btm_is_sco_active(handle))
                 btm_esco_proc_conn_chg(status, handle, 0, 0, 0, 0);
               else

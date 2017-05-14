@@ -465,7 +465,7 @@ void bta_sys_event(BT_HDR* p_msg) {
   uint8_t id;
   bool freebuf = true;
 
-  APPL_TRACE_EVENT("BTA got event 0x%x", p_msg->event);
+  APPL_TRACE_EVENT("%s: Event 0x%x", __func__, p_msg->event);
 
   /* get subsystem id from event */
   id = (uint8_t)(p_msg->event >> 8);
@@ -474,7 +474,7 @@ void bta_sys_event(BT_HDR* p_msg) {
   if ((id < BTA_ID_MAX) && (bta_sys_cb.reg[id] != NULL)) {
     freebuf = (*bta_sys_cb.reg[id]->evt_hdlr)(p_msg);
   } else {
-    APPL_TRACE_WARNING("BTA got unregistered event id %d", id);
+    APPL_TRACE_WARNING("%s: Received unregistered event id %d", __func__, id);
   }
 
   if (freebuf) {
