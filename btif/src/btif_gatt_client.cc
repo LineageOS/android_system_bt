@@ -368,6 +368,15 @@ bt_status_t btif_gattc_search_service(int conn_id, bt_uuid_t* filter_uuid) {
   }
 }
 
+void btif_gattc_discover_service_by_uuid(int conn_id, bt_uuid_t* p_uuid) {
+  LOG_ASSERT(p_uuid);
+
+  tBT_UUID* uuid = new tBT_UUID;
+  btif_to_bta_uuid(uuid, p_uuid);
+  do_in_jni_thread(
+      Bind(&BTA_GATTC_DiscoverServiceByUuid, conn_id, base::Owned(uuid)));
+}
+
 void btif_gattc_get_gatt_db_impl(int conn_id) {
   btgatt_db_element_t* db = NULL;
   int count = 0;
@@ -609,6 +618,7 @@ const btgatt_client_interface_t btgattClientInterface = {
     btif_gattc_close,
     btif_gattc_refresh,
     btif_gattc_search_service,
+    btif_gattc_discover_service_by_uuid,
     btif_gattc_read_char,
     btif_gattc_read_using_char_uuid,
     btif_gattc_write_char,
