@@ -296,20 +296,6 @@ int A2DP_VendorGetTrackSampleRateAptx(const uint8_t* p_codec_info) {
   return -1;
 }
 
-int A2DP_VendorGetTrackBitsPerSampleAptx(const uint8_t* p_codec_info) {
-  tA2DP_APTX_CIE aptx_cie;
-
-  // Check whether the codec info contains valid data
-  tA2DP_STATUS a2dp_status = A2DP_ParseInfoAptx(&aptx_cie, p_codec_info, false);
-  if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
-    return -1;
-  }
-
-  return 16;  // For aptX we always use 16 bits per audio sample
-}
-
 int A2DP_VendorGetTrackChannelCountAptx(const uint8_t* p_codec_info) {
   tA2DP_APTX_CIE aptx_cie;
 
@@ -449,6 +435,8 @@ bool A2dpCodecConfigAptx::init() {
 
   return true;
 }
+
+bool A2dpCodecConfigAptx::useRtpHeaderMarkerBit() const { return false; }
 
 //
 // Selects the best sample rate from |sampleRate|.

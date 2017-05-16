@@ -25,25 +25,11 @@
 #define BTA_DM_CO_H
 
 #include "bta_sys.h"
+#include "btm_api.h"
 
 #ifndef BTA_SCO_OUT_PKT_SIZE
 #define BTA_SCO_OUT_PKT_SIZE BTM_SCO_DATA_SIZE_MAX
 #endif
-
-#define BTA_SCO_CODEC_PCM 0 /* used for regular SCO */
-#define BTA_SCO_CODEC_SBC 1 /* used for WBS */
-typedef uint8_t tBTA_SCO_CODEC_TYPE;
-
-#define BTA_DM_SCO_SAMP_RATE_8K 8000
-#define BTA_DM_SCO_SAMP_RATE_16K 16000
-
-/* SCO codec information */
-typedef struct { tBTA_SCO_CODEC_TYPE codec_type; } tBTA_CODEC_INFO;
-
-#define BTA_DM_SCO_ROUTE_PCM BTM_SCO_ROUTE_PCM
-#define BTA_DM_SCO_ROUTE_HCI BTM_SCO_ROUTE_HCI
-
-typedef tBTM_SCO_ROUTE_TYPE tBTA_DM_SCO_ROUTE_TYPE;
 
 /*****************************************************************************
  *  Function Declarations
@@ -134,25 +120,6 @@ extern void bta_dm_co_loc_oob(bool valid, BT_OCTET16 c, BT_OCTET16 r);
  *
  ******************************************************************************/
 extern void bta_dm_co_rmt_oob(BD_ADDR bd_addr);
-
-/*****************************************************************************
- *  SCO over HCI Function Declarations
- ****************************************************************************/
-/*******************************************************************************
- *
- * Function         bta_dm_sco_co_init
- *
- * Description      This function can be used by the phone to initialize audio
- *                  codec or for other initialization purposes before SCO
- *                  connection is opened.
- *
- *
- * Returns          Void.
- *
- ******************************************************************************/
-extern tBTA_DM_SCO_ROUTE_TYPE bta_dm_sco_co_init(uint32_t rx_bw, uint32_t tx_bw,
-                                                 tBTA_CODEC_INFO* p_codec_info,
-                                                 uint8_t app_id);
 
 /*******************************************************************************
  *

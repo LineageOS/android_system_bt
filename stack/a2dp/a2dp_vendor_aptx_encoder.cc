@@ -257,7 +257,7 @@ static void a2dp_vendor_aptx_encoder_update(uint16_t peer_mtu,
   p_feeding_params->sample_rate =
       A2DP_VendorGetTrackSampleRateAptx(p_codec_info);
   p_feeding_params->bits_per_sample =
-      A2DP_VendorGetTrackBitsPerSampleAptx(p_codec_info);
+      a2dp_codec_config->getAudioBitsPerSample();
   p_feeding_params->channel_count =
       A2DP_VendorGetTrackChannelCountAptx(p_codec_info);
   LOG_DEBUG(LOG_TAG, "%s: sample_rate=%u bits_per_sample=%u channel_count=%u",

@@ -132,6 +132,9 @@ void gatt_init(void) {
   gatt_cb.hdl_cfg.gatt_start_hdl = GATT_GATT_START_HANDLE;
   gatt_cb.hdl_cfg.gap_start_hdl = GATT_GAP_START_HANDLE;
   gatt_cb.hdl_cfg.app_start_hdl = GATT_APP_START_HANDLE;
+
+  gatt_cb.hdl_list_info = new std::list<tGATT_HDL_LIST_ELEM>();
+  gatt_cb.srv_list_info = new std::list<tGATT_SRV_LIST_ELEM>();
   gatt_profile_db_init();
 }
 
@@ -168,9 +171,11 @@ void gatt_free(void) {
     fixed_queue_free(gatt_cb.tcb[i].sr_cmd.multi_rsp_q, NULL);
     gatt_cb.tcb[i].sr_cmd.multi_rsp_q = NULL;
   }
-  for (i = 0; i < GATT_MAX_SR_PROFILES; i++) {
-    gatt_free_hdl_buffer(&gatt_cb.hdl_list[i]);
-  }
+
+  gatt_cb.hdl_list_info->clear();
+  gatt_cb.hdl_list_info = nullptr;
+  gatt_cb.srv_list_info->clear();
+  gatt_cb.srv_list_info = nullptr;
 }
 
 /*******************************************************************************

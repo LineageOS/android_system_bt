@@ -23,6 +23,7 @@
 #include <media/AudioTrack.h>
 #include <utils/StrongPointer.h>
 
+#include "bt_target.h"
 #include "osi/include/log.h"
 
 using namespace android;
