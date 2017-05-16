@@ -693,6 +693,13 @@ extern void BTA_GATTC_Close(uint16_t conn_id);
 extern void BTA_GATTC_ServiceSearchRequest(uint16_t conn_id,
                                            tBT_UUID* p_srvc_uuid);
 
+/**
+ * This function is called to send "Find service by UUID" request. Used only for
+ * PTS tests.
+ */
+extern void BTA_GATTC_DiscoverServiceByUuid(uint16_t conn_id,
+                                            tBT_UUID* p_srvc_uuid);
+
 /*******************************************************************************
  *
  * Function         BTA_GATTC_GetServices
