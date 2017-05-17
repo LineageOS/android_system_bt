@@ -519,19 +519,6 @@ int A2DP_GetTrackSampleRateSbc(const uint8_t* p_codec_info) {
   return -1;
 }
 
-int A2DP_GetTrackBitsPerSampleSbc(const uint8_t* p_codec_info) {
-  tA2DP_SBC_CIE sbc_cie;
-
-  tA2DP_STATUS a2dp_status = A2DP_ParseInfoSbc(&sbc_cie, p_codec_info, false);
-  if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
-    return -1;
-  }
-
-  return 16;  // For SBC we always use 16 bits per audio sample
-}
-
 int A2DP_GetTrackChannelCountSbc(const uint8_t* p_codec_info) {
   tA2DP_SBC_CIE sbc_cie;
 
@@ -1069,6 +1056,8 @@ bool A2dpCodecConfigSbc::init() {
   return true;
 }
 
+bool A2dpCodecConfigSbc::useRtpHeaderMarkerBit() const { return false; }
+
 //
 // Selects the best sample rate from |samp_freq|.
 // The result is stored in |p_result| and |p_codec_config|.
@@ -1260,6 +1249,17 @@ bool A2dpCodecConfigSbc::setCodecConfig(const uint8_t* p_peer_codec_info,
     LOG_ERROR(LOG_TAG, "%s: can't parse peer's Sink capabilities: error = %d",
               __func__, status);
     goto fail;
+  }
+  // Try using the prefered peer codec config (if valid), instead of the peer
+  // capability.
+  if (is_capability && A2DP_IsPeerSinkCodecValidSbc(ota_codec_peer_config_)) {
+    status = A2DP_ParseInfoSbc(&sink_info_cie, ota_codec_peer_config_, false);
+    if (status != A2DP_SUCCESS) {
+      // Use the peer codec capability
+      status =
+          A2DP_ParseInfoSbc(&sink_info_cie, p_peer_codec_info, is_capability);
+      CHECK(status == A2DP_SUCCESS);
+    }
   }
 
   //
@@ -1583,13 +1583,12 @@ bool A2dpCodecConfigSbc::setCodecConfig(const uint8_t* p_peer_codec_info,
   // Create a local copy of the peer codec capability/config, and the
   // result codec config.
   if (is_capability) {
-    status = A2DP_BuildInfoSbc(AVDT_MEDIA_TYPE_AUDIO, &sink_info_cie,
-                               ota_codec_peer_capability_);
+    memcpy(ota_codec_peer_capability_, p_peer_codec_info,
+           sizeof(ota_codec_peer_capability_));
   } else {
-    status = A2DP_BuildInfoSbc(AVDT_MEDIA_TYPE_AUDIO, &sink_info_cie,
-                               ota_codec_peer_config_);
+    memcpy(ota_codec_peer_config_, p_peer_codec_info,
+           sizeof(ota_codec_peer_config_));
   }
-  CHECK(status == A2DP_SUCCESS);
   status = A2DP_BuildInfoSbc(AVDT_MEDIA_TYPE_AUDIO, &result_config_cie,
                              ota_codec_config_);
   CHECK(status == A2DP_SUCCESS);
@@ -1621,6 +1620,11 @@ bool A2dpCodecConfigSbcSink::init() {
   if (!isValid()) return false;
 
   return true;
+}
+
+bool A2dpCodecConfigSbcSink::useRtpHeaderMarkerBit() const {
+  // TODO: This method applies only to Source codecs
+  return false;
 }
 
 bool A2dpCodecConfigSbcSink::setCodecConfig(

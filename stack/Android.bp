@@ -272,3 +272,51 @@ cc_test {
         "libgmock",
     ],
 }
+
+// Bluetooth stack advertise data parsing unit tests for target
+// =============================================================
+cc_test {
+    name: "net_test_stack_ad_parser",
+    defaults: ["fluoride_defaults"],
+    local_include_dirs: [
+        "include",
+    ],
+    srcs: [
+        "test/ad_parser_unittest.cc",
+    ],
+    static_libs: [
+        "liblog",
+        "libgmock",
+    ],
+}
+
+// Bluetooth stack message loop tests for target
+// ========================================================
+cc_test {
+    name: "net_test_btu_message_loop",
+    defaults: ["fluoride_defaults"],
+    local_include_dirs: [
+        "include",
+        "btm",
+    ],
+    include_dirs: [
+        "system/bt/",
+        "system/bt/include",
+        "system/bt/btcore/include",
+        "system/bt/bta/include",
+    ],
+    srcs: [
+        "btu/btu_task.cc",
+        "test/stack_btu_test.cc",
+    ],
+    shared_libs: [
+        "liblog",
+        "libcutils",
+        "libprotobuf-cpp-lite",
+    ],
+    static_libs: [
+        "libgmock",
+        "libosi",
+        "libbt-protos",
+    ],
+}

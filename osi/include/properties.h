@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <cstdint>
 #if defined(OS_GENERIC)
 #define PROPERTY_VALUE_MAX 92
 #else
@@ -35,3 +36,10 @@ int osi_property_get(const char* key, char* value, const char* default_value);
 // Write value of property associated with key |key| to |value|.
 // Returns 0 on success, < 0 on failure
 int osi_property_set(const char* key, const char* value);
+
+// Adapter function for property_get_int32 in
+// libcutils/include/cutils/properties.h
+//
+// returns the value of |key| truncated and coerced into an
+// int32_t. If the property is not set, then the |default_value| is used.
+int32_t osi_property_get_int32(const char* key, int32_t default_value);

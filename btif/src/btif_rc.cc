@@ -1123,7 +1123,7 @@ bool btif_rc_get_connected_peer(BD_ADDR peer_addr) {
     p_dev = get_connected_device(idx);
     if (p_dev != NULL && (p_dev->rc_connected == TRUE)) {
       bdcpy(peer_addr, p_dev->rc_addr);
-      return TRUE;
+      return true;
     }
   }
   return false;
@@ -2449,16 +2449,11 @@ static bt_status_t get_item_attr_rsp(bt_bdaddr_t* bd_addr,
 
   memset(item_attrs, 0, sizeof(tAVRC_ATTR_ENTRY) * num_attr);
 
-  if (num_attr == 0) {
-    avrc_rsp.get_attrs.status = AVRC_STS_INTERNAL_ERR;
-    BTIF_TRACE_ERROR("%s: num_attr in rsp is 0, sending internal error: 0x%02X",
-                     __func__, avrc_rsp.get_attrs.status);
-  } else {
-    avrc_rsp.get_attrs.status = status_code_map[rsp_status];
-    if (rsp_status == BTRC_STS_NO_ERROR) {
-      fill_avrc_attr_entry(item_attrs, num_attr, p_attrs);
-    }
+  avrc_rsp.get_attrs.status = status_code_map[rsp_status];
+  if (rsp_status == BTRC_STS_NO_ERROR) {
+    fill_avrc_attr_entry(item_attrs, num_attr, p_attrs);
   }
+
   avrc_rsp.get_attrs.num_attrs = num_attr;
   avrc_rsp.get_attrs.p_attrs = item_attrs;
   avrc_rsp.get_attrs.pdu = AVRC_PDU_GET_ITEM_ATTRIBUTES;

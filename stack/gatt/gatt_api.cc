@@ -60,6 +60,21 @@ uint8_t GATT_SetTraceLevel(uint8_t new_level) {
   return (gatt_cb.trace_level);
 }
 
+/**
+ * Add an service handle range to the list in decending order of the start
+ * handle. Return reference to the newly added element.
+ **/
+tGATT_HDL_LIST_ELEM& gatt_add_an_item_to_list(uint16_t s_handle) {
+  auto lst_ptr = gatt_cb.hdl_list_info;
+  auto it = lst_ptr->begin();
+  for (; it != lst_ptr->end(); it++) {
+    if (s_handle > it->asgn_range.s_handle) break;
+  }
+
+  auto rit = lst_ptr->emplace(it);
+  return *rit;
+}
+
 /*****************************************************************************
  *
  *                  GATT SERVER API
@@ -75,20 +90,10 @@ uint8_t GATT_SetTraceLevel(uint8_t new_level) {
  *
  * Parameter        p_hndl_range:   pointer to allocated handles information
  *
- * Returns          true if handle range is added sucessfully; otherwise false.
- *
- ******************************************************************************/
+ **/
 
-bool GATTS_AddHandleRange(tGATTS_HNDL_RANGE* p_hndl_range) {
-  tGATT_HDL_LIST_ELEM* p_buf;
-  bool status = false;
-
-  p_buf = gatt_alloc_hdl_buffer();
-  if (p_buf != NULL) {
-    p_buf->asgn_range = *p_hndl_range;
-    status = gatt_add_an_item_to_list(&gatt_cb.hdl_list_info, p_buf);
-  }
-  return status;
+void GATTS_AddHandleRange(tGATTS_HNDL_RANGE* p_hndl_range) {
+  gatt_add_an_item_to_list(p_hndl_range->s_handle);
 }
 
 /*******************************************************************************
@@ -179,6 +184,25 @@ static uint16_t compute_service_size(btgatt_db_element_t* service, int count) {
 
   return db_size;
 }
+
+static bool is_gatt_attr_type(const tBT_UUID& uuid) {
+  if (uuid.len == LEN_UUID_16 && (uuid.uu.uuid16 == GATT_UUID_PRI_SERVICE ||
+                                  uuid.uu.uuid16 == GATT_UUID_SEC_SERVICE ||
+                                  uuid.uu.uuid16 == GATT_UUID_INCLUDE_SERVICE ||
+                                  uuid.uu.uuid16 == GATT_UUID_CHAR_DECLARE)) {
+    return true;
+  }
+  return false;
+}
+
+/** Update the the last primary info for the service list info */
+static void gatt_update_last_pri_srv_info() {
+  gatt_cb.last_primary_s_handle = 0;
+
+  for (tGATT_SRV_LIST_ELEM& el : *gatt_cb.srv_list_info)
+    if (el.is_primary) gatt_cb.last_primary_s_handle = el.s_hdl;
+}
+
 /*******************************************************************************
  *
  * Function         GATTS_AddService
@@ -196,8 +220,6 @@ static uint16_t compute_service_size(btgatt_db_element_t* service, int count) {
  ******************************************************************************/
 uint16_t GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
                           int count) {
-  tGATT_HDL_LIST_INFO* p_list_info = &gatt_cb.hdl_list_info;
-  tGATT_HDL_LIST_ELEM* p_list = NULL;
   uint16_t s_hdl = 0;
   bool save_hdl = false;
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
@@ -225,9 +247,9 @@ uint16_t GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
              (svc_uuid.uu.uuid16 == UUID_SERVCLASS_GAP_SERVER)) {
     s_hdl = gatt_cb.hdl_cfg.gap_start_hdl;
   } else {
-    p_list = p_list_info->p_first;
-
-    if (p_list) s_hdl = p_list->asgn_range.e_handle + 1;
+    if (!gatt_cb.hdl_list_info->empty()) {
+      s_hdl = gatt_cb.hdl_list_info->front().asgn_range.e_handle + 1;
+    }
 
     if (s_hdl < gatt_cb.hdl_cfg.app_start_hdl)
       s_hdl = gatt_cb.hdl_cfg.app_start_hdl;
@@ -242,42 +264,25 @@ uint16_t GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
     return GATT_INTERNAL_ERROR;
   }
 
-  p_list = gatt_alloc_hdl_buffer();
-  if (p_list == NULL) {
-    /* No free entry */
-    GATT_TRACE_ERROR("GATTS_ReserveHandles: no free handle blocks");
-    return GATT_INTERNAL_ERROR;
-  }
-
-  p_list->asgn_range.app_uuid128 = *p_app_uuid128;
-  p_list->asgn_range.svc_uuid = svc_uuid;
-  p_list->asgn_range.s_handle = s_hdl;
-  p_list->asgn_range.e_handle = s_hdl + num_handles - 1;
-  p_list->asgn_range.is_primary = is_pri;
-
-  gatt_add_an_item_to_list(p_list_info, p_list);
+  tGATT_HDL_LIST_ELEM& list = gatt_add_an_item_to_list(s_hdl);
+  list.asgn_range.app_uuid128 = *p_app_uuid128;
+  list.asgn_range.svc_uuid = svc_uuid;
+  list.asgn_range.s_handle = s_hdl;
+  list.asgn_range.e_handle = s_hdl + num_handles - 1;
+  list.asgn_range.is_primary = is_pri;
 
   if (save_hdl) {
     if (gatt_cb.cb_info.p_nv_save_callback)
-      (*gatt_cb.cb_info.p_nv_save_callback)(true, &p_list->asgn_range);
+      (*gatt_cb.cb_info.p_nv_save_callback)(true, &list.asgn_range);
   }
 
-  if (!gatts_init_service_db(&p_list->svc_db, &svc_uuid, is_pri, s_hdl,
-                             num_handles)) {
-    GATT_TRACE_ERROR("GATTS_ReserveHandles: service DB initialization failed");
-    if (p_list) {
-      gatt_remove_an_item_from_list(p_list_info, p_list);
-      gatt_free_hdl_buffer(p_list);
-    }
-
-    return GATT_INTERNAL_ERROR;
-  }
+  gatts_init_service_db(list.svc_db, &svc_uuid, is_pri, s_hdl, num_handles);
 
   GATT_TRACE_DEBUG(
       "%d: handles needed:%u s_hdl=%u e_hdl=%u %s[%x] is_primary=%d", __func__,
-      num_handles, p_list->asgn_range.s_handle, p_list->asgn_range.e_handle,
-      ((p_list->asgn_range.svc_uuid.len == 2) ? "uuid16" : "uuid128"),
-      p_list->asgn_range.svc_uuid.uu.uuid16, p_list->asgn_range.is_primary);
+      num_handles, list.asgn_range.s_handle, list.asgn_range.e_handle,
+      ((list.asgn_range.svc_uuid.len == 2) ? "uuid16" : "uuid128"),
+      list.asgn_range.svc_uuid.uu.uuid16, list.asgn_range.is_primary);
 
   service->attribute_handle = s_hdl;
 
@@ -297,60 +302,97 @@ uint16_t GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
         return GATT_INTERNAL_ERROR;
       }
 
+      if (is_gatt_attr_type(uuid)) {
+        GATT_TRACE_ERROR(
+            "%s: attept to add characteristic with UUID equal to GATT "
+            "Attribute Type 0x%04x ",
+            __func__, uuid.uu.uuid16);
+        return GATT_INTERNAL_ERROR;
+      }
+
       el->attribute_handle = gatts_add_characteristic(
-          &p_list->svc_db, el->permissions, el->properties, &uuid);
+          list.svc_db, el->permissions, el->properties, uuid);
     } else if (el->type == BTGATT_DB_DESCRIPTOR) {
+      if (is_gatt_attr_type(uuid)) {
+        GATT_TRACE_ERROR(
+            "%s: attept to add descriptor with UUID equal to GATT "
+            "Attribute Type 0x%04x ",
+            __func__, uuid.uu.uuid16);
+        return GATT_INTERNAL_ERROR;
+      }
+
       el->attribute_handle =
-          gatts_add_char_descr(&p_list->svc_db, el->permissions, &uuid);
+          gatts_add_char_descr(list.svc_db, el->permissions, uuid);
     } else if (el->type == BTGATT_DB_INCLUDED_SERVICE) {
       tGATT_HDL_LIST_ELEM* p_incl_decl;
       p_incl_decl = gatt_find_hdl_buffer_by_handle(el->attribute_handle);
-      if (p_incl_decl == NULL) {
+      if (p_incl_decl == nullptr) {
         GATT_TRACE_DEBUG("Included Service not created");
         return GATT_INTERNAL_ERROR;
       }
 
       el->attribute_handle = gatts_add_included_service(
-          &p_list->svc_db, p_incl_decl->asgn_range.s_handle,
+          list.svc_db, p_incl_decl->asgn_range.s_handle,
           p_incl_decl->asgn_range.e_handle, p_incl_decl->asgn_range.svc_uuid);
     }
   }
 
-  tGATT_SR_REG* p_sreg;
-  uint8_t i_sreg;
-  tBT_UUID* p_uuid;
-
   GATT_TRACE_API("%s: service parsed correctly, now starting", __func__);
 
-  /*this is a new application servoce start */
-  i_sreg = gatt_sr_alloc_rcb(p_list);
-  if (i_sreg == GATT_MAX_SR_PROFILES) {
-    GATT_TRACE_ERROR("%s: no free server registration block", __func__);
-    return GATT_NO_RESOURCES;
+  /*this is a new application service start */
+
+  // find a place for this service in the list
+  auto lst_ptr = gatt_cb.srv_list_info;
+  auto it = lst_ptr->begin();
+  for (; it != lst_ptr->end(); it++) {
+    if (list.asgn_range.s_handle < it->s_hdl) break;
+  }
+  auto rit = lst_ptr->emplace(it);
+
+  tGATT_SRV_LIST_ELEM& elem = *rit;
+  elem.gatt_if = gatt_if;
+  elem.s_hdl = list.asgn_range.s_handle;
+  elem.e_hdl = list.asgn_range.e_handle;
+  elem.p_db = &list.svc_db;
+  elem.is_primary = list.asgn_range.is_primary;
+
+  memcpy(&elem.app_uuid, &list.asgn_range.app_uuid128, sizeof(tBT_UUID));
+  elem.type = list.asgn_range.is_primary ? GATT_UUID_PRI_SERVICE
+                                         : GATT_UUID_SEC_SERVICE;
+
+  if (elem.type == GATT_UUID_PRI_SERVICE) {
+    tBT_UUID* p_uuid = gatts_get_service_uuid(elem.p_db);
+    elem.sdp_handle = gatt_add_sdp_record(p_uuid, elem.s_hdl, elem.e_hdl);
+  } else {
+    elem.sdp_handle = 0;
   }
 
-  p_sreg = &gatt_cb.sr_reg[i_sreg];
-  p_sreg->gatt_if = gatt_if;
+  gatt_update_last_pri_srv_info();
 
-  if (p_sreg->type == GATT_UUID_PRI_SERVICE) {
-    p_uuid = gatts_get_service_uuid(p_sreg->p_db);
-    p_sreg->sdp_handle =
-        gatt_add_sdp_record(p_uuid, p_sreg->s_hdl, p_sreg->e_hdl);
-  }
-
-  gatts_update_srv_list_elem(i_sreg, p_sreg->s_hdl,
-                             p_list->asgn_range.is_primary);
-
-  gatt_add_a_srv_to_list(&gatt_cb.srv_list_info, &gatt_cb.srv_list[i_sreg]);
-
-  GATT_TRACE_DEBUG("%s: allocated i_sreg=%d ", __func__, i_sreg);
-  GATT_TRACE_DEBUG("%s: s_hdl=%d e_hdl=%d type=0x%x sdp_hdl=0x%x", __func__,
-                   p_sreg->s_hdl, p_sreg->e_hdl, p_sreg->type,
-                   p_sreg->sdp_handle);
+  GATT_TRACE_DEBUG("%s: allocated el: s_hdl=%d e_hdl=%d type=0x%x sdp_hdl=0x%x",
+                   __func__, elem.s_hdl, elem.e_hdl, elem.type,
+                   elem.sdp_handle);
 
   gatt_proc_srv_chg();
 
   return GATT_SERVICE_STARTED;
+}
+
+bool is_active_service(tBT_UUID* p_app_uuid128, tBT_UUID* p_svc_uuid,
+                       uint16_t start_handle) {
+  for (auto& info : *gatt_cb.srv_list_info) {
+    tBT_UUID* p_this_uuid = gatts_get_service_uuid(info.p_db);
+
+    if (p_this_uuid && gatt_uuid_compare(*p_app_uuid128, info.app_uuid) &&
+        gatt_uuid_compare(*p_svc_uuid, *p_this_uuid) &&
+        (start_handle == info.s_hdl)) {
+      GATT_TRACE_ERROR("Active Service Found ");
+      gatt_dbg_display_uuid(*p_svc_uuid);
+
+      return true;
+    }
+  }
+  return false;
 }
 
 /*******************************************************************************
@@ -369,43 +411,35 @@ uint16_t GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
  ******************************************************************************/
 bool GATTS_DeleteService(tGATT_IF gatt_if, tBT_UUID* p_svc_uuid,
                          uint16_t svc_inst) {
-  tGATT_HDL_LIST_INFO* p_list_info = &gatt_cb.hdl_list_info;
-  tGATT_HDL_LIST_ELEM* p_list = NULL;
-  uint8_t i_sreg;
-  tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
-  tBT_UUID* p_app_uuid128;
-
   GATT_TRACE_DEBUG("GATTS_DeleteService");
 
+  tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
   if (p_reg == NULL) {
     GATT_TRACE_ERROR("Applicaiton not foud");
     return false;
   }
-  p_app_uuid128 = &p_reg->app_uuid128;
 
-  p_list = gatt_find_hdl_buffer_by_app_id(p_app_uuid128, p_svc_uuid, svc_inst);
-  if (p_list == NULL) {
+  tBT_UUID* p_app_uuid128 = &p_reg->app_uuid128;
+  auto it = gatt_find_hdl_buffer_by_app_id(p_app_uuid128, p_svc_uuid, svc_inst);
+  if (it == gatt_cb.hdl_list_info->end()) {
     GATT_TRACE_ERROR("No Service found");
     return false;
   }
 
   gatt_proc_srv_chg();
 
-  i_sreg = gatt_sr_find_i_rcb_by_app_id(p_app_uuid128, p_svc_uuid, svc_inst);
-  if (i_sreg != GATT_MAX_SR_PROFILES) {
-    GATTS_StopService(gatt_cb.sr_reg[i_sreg].s_hdl);
+  if (is_active_service(p_app_uuid128, p_svc_uuid, svc_inst)) {
+    GATTS_StopService(it->asgn_range.s_handle);
   }
 
   GATT_TRACE_DEBUG("released handles s_hdl=%u e_hdl=%u",
-                   p_list->asgn_range.s_handle, p_list->asgn_range.e_handle);
+                   it->asgn_range.s_handle, it->asgn_range.e_handle);
 
-  if ((p_list->asgn_range.s_handle >= gatt_cb.hdl_cfg.app_start_hdl) &&
+  if ((it->asgn_range.s_handle >= gatt_cb.hdl_cfg.app_start_hdl) &&
       gatt_cb.cb_info.p_nv_save_callback)
-    (*gatt_cb.cb_info.p_nv_save_callback)(false, &p_list->asgn_range);
+    (*gatt_cb.cb_info.p_nv_save_callback)(false, &it->asgn_range);
 
-  gatt_remove_an_item_from_list(p_list_info, p_list);
-  gatt_free_hdl_buffer(p_list);
-
+  gatt_cb.hdl_list_info->erase(it);
   return true;
 }
 
@@ -421,22 +455,20 @@ bool GATTS_DeleteService(tGATT_IF gatt_if, tBT_UUID* p_svc_uuid,
  *
  ******************************************************************************/
 void GATTS_StopService(uint16_t service_handle) {
-  uint8_t ii = gatt_sr_find_i_rcb_by_handle(service_handle);
+  GATT_TRACE_API("%s: %u", __func__, service_handle);
 
-  GATT_TRACE_API("GATTS_StopService %u", service_handle);
-
-  /* Index 0 is reserved for GATT, and is never stopped */
-  if ((ii > 0) && (ii < GATT_MAX_SR_PROFILES) && (gatt_cb.sr_reg[ii].in_use)) {
-    if (gatt_cb.sr_reg[ii].sdp_handle) {
-      SDP_DeleteRecord(gatt_cb.sr_reg[ii].sdp_handle);
-    }
-    gatt_remove_a_srv_from_list(&gatt_cb.srv_list_info, &gatt_cb.srv_list[ii]);
-    gatt_cb.srv_list[ii].in_use = false;
-    memset(&gatt_cb.sr_reg[ii], 0, sizeof(tGATT_SR_REG));
-  } else {
-    GATT_TRACE_ERROR("GATTS_StopService service_handle: %u is not in use",
+  auto it = gatt_sr_find_i_rcb_by_handle(service_handle);
+  if (it == gatt_cb.srv_list_info->end()) {
+    GATT_TRACE_ERROR("%s: service_handle: %u is not in use", __func__,
                      service_handle);
   }
+
+  if (it->sdp_handle) {
+    SDP_DeleteRecord(it->sdp_handle);
+  }
+
+  gatt_cb.srv_list_info->erase(it);
+  gatt_update_last_pri_srv_info();
 }
 /*******************************************************************************
  *
@@ -1143,13 +1175,9 @@ tGATT_IF GATT_Register(tBT_UUID* p_app_uuid128, tGATT_CBACK* p_cb_info) {
  *
  ******************************************************************************/
 void GATT_Deregister(tGATT_IF gatt_if) {
-  tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
-  tGATT_TCB* p_tcb;
-  tGATT_CLCB* p_clcb;
-  uint8_t i, ii, j;
-  tGATT_SR_REG* p_sreg;
-
   GATT_TRACE_API("GATT_Deregister gatt_if=%d", gatt_if);
+
+  tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
   /* Index 0 is GAP and is never deregistered */
   if ((gatt_if == 0) || (p_reg == NULL)) {
     GATT_TRACE_ERROR("GATT_Deregister with invalid gatt_if: %u", gatt_if);
@@ -1161,11 +1189,9 @@ void GATT_Deregister(tGATT_IF gatt_if) {
     other application
     deregisteration need to bed performed in an orderly fashion
     no check for now */
-
-  for (ii = 0, p_sreg = gatt_cb.sr_reg; ii < GATT_MAX_SR_PROFILES;
-       ii++, p_sreg++) {
-    if (p_sreg->in_use && (p_sreg->gatt_if == gatt_if)) {
-      GATTS_StopService(p_sreg->s_hdl);
+  for (auto& el : *gatt_cb.srv_list_info) {
+    if (el.gatt_if == gatt_if) {
+      GATTS_StopService(el.s_hdl);
     }
   }
 
@@ -1174,13 +1200,15 @@ void GATT_Deregister(tGATT_IF gatt_if) {
 
   /* When an application deregisters, check remove the link associated with the
    * app */
-
+  tGATT_TCB* p_tcb;
+  int i, j;
   for (i = 0, p_tcb = gatt_cb.tcb; i < GATT_MAX_PHY_CHANNEL; i++, p_tcb++) {
     if (p_tcb->in_use) {
       if (gatt_get_ch_state(p_tcb) != GATT_CH_CLOSE) {
         gatt_update_app_use_link_flag(gatt_if, p_tcb, false, true);
       }
 
+      tGATT_CLCB* p_clcb;
       for (j = 0, p_clcb = &gatt_cb.clcb[j]; j < GATT_CL_MAX_LCB;
            j++, p_clcb++) {
         if (p_clcb->in_use && (p_clcb->p_reg->gatt_if == gatt_if) &&

@@ -27,6 +27,7 @@
 #include <fcntl.h>
 #include <inttypes.h>
 #include <malloc.h>
+#include <pthread.h>
 #include <signal.h>
 #include <string.h>
 #include <time.h>
@@ -44,12 +45,9 @@
 #include "osi/include/thread.h"
 #include "osi/include/wakelock.h"
 
-// Make callbacks run at high thread priority. Some callbacks are used for audio
-// related timer tasks as well as re-transmissions etc. Since we at this point
-// cannot differentiate what callback we are dealing with, assume high priority
-// for now.
-// TODO(eisenbach): Determine correct thread priority (from parent?/per alarm?)
-static const int CALLBACK_THREAD_PRIORITY_HIGH = -19;
+// Callback and timer threads should run at RT priority in order to ensure they
+// meet audio deadlines.  Use this priority for all audio/timer related thread.
+static const int THREAD_RT_PRIORITY = 1;
 
 typedef struct {
   size_t count;
@@ -314,7 +312,7 @@ static bool lazy_initialize(void) {
               __func__);
     goto error;
   }
-  thread_set_priority(default_callback_thread, CALLBACK_THREAD_PRIORITY_HIGH);
+  thread_set_rt_priority(default_callback_thread, THREAD_RT_PRIORITY);
   default_callback_queue = fixed_queue_new(SIZE_MAX);
   if (default_callback_queue == NULL) {
     LOG_ERROR(LOG_TAG, "%s unable to create default alarm callbacks queue.",
@@ -330,8 +328,7 @@ static bool lazy_initialize(void) {
     LOG_ERROR(LOG_TAG, "%s unable to create alarm callback thread.", __func__);
     goto error;
   }
-
-  thread_set_priority(dispatcher_thread, CALLBACK_THREAD_PRIORITY_HIGH);
+  thread_set_rt_priority(dispatcher_thread, THREAD_RT_PRIORITY);
   thread_post(dispatcher_thread, callback_dispatch, NULL);
   return true;
 
@@ -625,9 +622,18 @@ static bool timer_create_internal(const clockid_t clock_id, timer_t* timer) {
   CHECK(timer != NULL);
 
   struct sigevent sigevent;
+  // create timer with RT priority thread
+  pthread_attr_t thread_attr;
+  pthread_attr_init(&thread_attr);
+  pthread_attr_setschedpolicy(&thread_attr, SCHED_FIFO);
+  struct sched_param param;
+  param.sched_priority = THREAD_RT_PRIORITY;
+  pthread_attr_setschedparam(&thread_attr, &param);
+
   memset(&sigevent, 0, sizeof(sigevent));
   sigevent.sigev_notify = SIGEV_THREAD;
   sigevent.sigev_notify_function = (void (*)(union sigval))timer_callback;
+  sigevent.sigev_notify_attributes = &thread_attr;
   if (timer_create(clock_id, &sigevent, timer) == -1) {
     LOG_ERROR(LOG_TAG, "%s unable to create timer with clock %d: %s", __func__,
               clock_id, strerror(errno));

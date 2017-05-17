@@ -194,8 +194,8 @@ const uint8_t bta_ag_st_open[][BTA_AG_NUM_COLS] = {
     /* RING_TOUT_EVT */ {BTA_AG_SEND_RING, BTA_AG_IGNORE, BTA_AG_OPEN_ST},
     /* SVC_TOUT_EVT */ {BTA_AG_START_CLOSE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
     /* CI_SCO_DATA_EVT */ {BTA_AG_CI_SCO_DATA, BTA_AG_IGNORE, BTA_AG_OPEN_ST},
-    /* CI_SLC_READY_EVT */ {BTA_AG_RCVD_SLC_READY, BTA_AG_IGNORE,
-                            BTA_AG_OPEN_ST}};
+    /* CI_SLC_READY_EVT */
+    {BTA_AG_RCVD_SLC_READY, BTA_AG_IGNORE, BTA_AG_OPEN_ST}};
 
 /* state table for closing state */
 const uint8_t bta_ag_st_closing[][BTA_AG_NUM_COLS] = {
@@ -259,20 +259,16 @@ static tBTA_AG_SCB* bta_ag_scb_alloc(void) {
       /* initialize variables */
       p_scb->in_use = true;
       p_scb->sco_idx = BTM_INVALID_SCO_INDEX;
-#if (BTM_WBS_INCLUDED == TRUE)
       p_scb->codec_updated = false;
       p_scb->peer_codecs = BTA_AG_CODEC_CVSD;
       p_scb->sco_codec = BTA_AG_CODEC_CVSD;
-#endif
       /* set up timers */
       p_scb->ring_timer = alarm_new("bta_ag.scb_ring_timer");
       p_scb->collision_timer = alarm_new("bta_ag.scb_collision_timer");
-#if (BTM_WBS_INCLUDED == TRUE)
       p_scb->codec_negotiation_timer =
           alarm_new("bta_ag.scb_codec_negotiation_timer");
       /* set eSCO mSBC setting to T2 as the preferred */
       p_scb->codec_msbc_settings = BTA_AG_SCO_MSBC_SETTINGS_T2;
-#endif
       APPL_TRACE_DEBUG("bta_ag_scb_alloc %d", bta_ag_scb_to_idx(p_scb));
       break;
     }
@@ -281,7 +277,7 @@ static tBTA_AG_SCB* bta_ag_scb_alloc(void) {
   if (i == BTA_AG_NUM_SCB) {
     /* out of scbs */
     p_scb = NULL;
-    APPL_TRACE_WARNING("Out of ag scbs");
+    APPL_TRACE_WARNING("%s: Out of scbs", __func__);
   }
   return p_scb;
 }
@@ -304,9 +300,7 @@ void bta_ag_scb_dealloc(tBTA_AG_SCB* p_scb) {
 
   /* stop and free timers */
   alarm_free(p_scb->ring_timer);
-#if (BTM_WBS_INCLUDED == TRUE)
   alarm_free(p_scb->codec_negotiation_timer);
-#endif
   alarm_free(p_scb->collision_timer);
 
   /* initialize control block */
@@ -594,9 +588,7 @@ static void bta_ag_api_enable(tBTA_AG_DATA* p_data) {
   /* initialize control block */
   for (size_t i = 0; i < BTA_AG_NUM_SCB; i++) {
     alarm_free(bta_ag_cb.scb[i].ring_timer);
-#if (BTM_WBS_INCLUDED == TRUE)
     alarm_free(bta_ag_cb.scb[i].codec_negotiation_timer);
-#endif
     alarm_free(bta_ag_cb.scb[i].collision_timer);
   }
   memset(&bta_ag_cb, 0, sizeof(tBTA_AG_CB));
@@ -723,27 +715,30 @@ void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event,
   tBTA_AG_ST_TBL state_table;
   uint8_t action;
   int i;
-
 #if (BTA_AG_DEBUG == TRUE)
-  uint16_t in_event = event;
-  uint8_t in_state = p_scb->state;
+  uint16_t previous_event = event;
+  uint8_t previous_state = p_scb->state;
 
   /* Ignore displaying of AT results when not connected (Ignored in state
    * machine) */
-  if (in_event != BTA_AG_API_RESULT_EVT || p_scb->state == BTA_AG_OPEN_ST) {
-    APPL_TRACE_EVENT("AG evt (hdl 0x%04x): State %d (%s), Event 0x%04x (%s)",
-                     bta_ag_scb_to_idx(p_scb), p_scb->state,
+  if ((previous_event != BTA_AG_API_RESULT_EVT ||
+       p_scb->state == BTA_AG_OPEN_ST) &&
+      event != BTA_AG_CI_SCO_DATA_EVT) {
+    APPL_TRACE_EVENT("%s: Handle 0x%04x, State %d (%s), Event 0x%04x (%s)",
+                     __func__, bta_ag_scb_to_idx(p_scb), p_scb->state,
                      bta_ag_state_str(p_scb->state), event,
                      bta_ag_evt_str(event, p_data->api_result.result));
   }
 #else
-  APPL_TRACE_EVENT("AG evt (hdl 0x%04x): State %d, Event 0x%04x",
-                   bta_ag_scb_to_idx(p_scb), p_scb->state, event);
+  if (event != BTA_AG_CI_SCO_DATA_EVT) {
+    APPL_TRACE_EVENT("%s: Handle 0x%04x, State %d, Event 0x%04x", __func__,
+                     bta_ag_scb_to_idx(p_scb), p_scb->state, event);
+  }
 #endif
 
   event &= 0x00FF;
   if (event >= (BTA_AG_MAX_EVT & 0x00FF)) {
-    APPL_TRACE_ERROR("AG evt out of range, ignoring...");
+    APPL_TRACE_ERROR("%s: event out of range, ignored", __func__);
     return;
   }
 
@@ -763,10 +758,11 @@ void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event,
     }
   }
 #if (BTA_AG_DEBUG == TRUE)
-  if (p_scb->state != in_state) {
-    APPL_TRACE_EVENT("BTA AG State Change: [%s] -> [%s] after Event [%s]",
-                     bta_ag_state_str(in_state), bta_ag_state_str(p_scb->state),
-                     bta_ag_evt_str(in_event, p_data->api_result.result));
+  if (p_scb->state != previous_state) {
+    APPL_TRACE_EVENT("%s: State Change: [%s] -> [%s] after Event [%s]",
+                     __func__, bta_ag_state_str(previous_state),
+                     bta_ag_state_str(p_scb->state),
+                     bta_ag_evt_str(previous_event, p_data->api_result.result));
   }
 #endif
 }
@@ -786,22 +782,18 @@ bool bta_ag_hdl_event(BT_HDR* p_msg) {
 
   APPL_TRACE_DEBUG("bta_ag_hdl_event: Event 0x%04x ", p_msg->event);
   switch (p_msg->event) {
-    /* handle enable event */
     case BTA_AG_API_ENABLE_EVT:
       bta_ag_api_enable((tBTA_AG_DATA*)p_msg);
       break;
 
-    /* handle disable event */
     case BTA_AG_API_DISABLE_EVT:
       bta_ag_api_disable((tBTA_AG_DATA*)p_msg);
       break;
 
-    /* handle register event */
     case BTA_AG_API_REGISTER_EVT:
       bta_ag_api_register((tBTA_AG_DATA*)p_msg);
       break;
 
-    /* handle result event */
     case BTA_AG_API_RESULT_EVT:
       bta_ag_api_result((tBTA_AG_DATA*)p_msg);
       break;

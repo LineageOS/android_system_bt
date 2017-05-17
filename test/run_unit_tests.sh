@@ -11,8 +11,11 @@ known_tests=(
   net_test_hci
   net_test_stack
   net_test_stack_multi_adv
+  net_test_stack_ad_parser
   net_test_stack_smp
+  net_test_btu_message_loop
   net_test_osi
+  performance_test
 )
 
 known_remote_tests=(

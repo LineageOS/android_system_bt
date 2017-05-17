@@ -54,8 +54,7 @@ static const tA2DP_AAC_CIE a2dp_aac_caps = {
     // objectType
     A2DP_AAC_OBJECT_TYPE_MPEG2_LC,
     // sampleRate
-    (A2DP_AAC_SAMPLING_FREQ_44100 | A2DP_AAC_SAMPLING_FREQ_48000 |
-     A2DP_AAC_SAMPLING_FREQ_88200 | A2DP_AAC_SAMPLING_FREQ_96000),
+    (A2DP_AAC_SAMPLING_FREQ_44100 | A2DP_AAC_SAMPLING_FREQ_48000),
     // channelMode
     A2DP_AAC_CHANNEL_MODE_STEREO,
     // variableBitRateSupport
@@ -367,22 +366,6 @@ int A2DP_GetTrackSampleRateAac(const uint8_t* p_codec_info) {
   }
 
   return -1;
-}
-
-int A2DP_GetTrackBitsPerSampleAac(const uint8_t* p_codec_info) {
-  tA2DP_AAC_CIE aac_cie;
-
-  // Check whether the codec info contains valid data
-  tA2DP_STATUS a2dp_status = A2DP_ParseInfoAac(&aac_cie, p_codec_info, false);
-  if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
-    return -1;
-  }
-
-  // NOTE: Hard-coded value - currently the AAC encoder library
-  // is compiled with 16 bits per sample
-  return 16;
 }
 
 int A2DP_GetTrackChannelCountAac(const uint8_t* p_codec_info) {
@@ -722,6 +705,8 @@ bool A2dpCodecConfigAac::init() {
 
   return true;
 }
+
+bool A2dpCodecConfigAac::useRtpHeaderMarkerBit() const { return true; }
 
 //
 // Selects the best sample rate from |sampleRate|.

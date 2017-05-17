@@ -20,6 +20,7 @@
 #define BTM_API_TYPES_H
 
 #include "bt_target.h"
+#include "device/include/esco_parameters.h"
 #include "hcidefs.h"
 #include "smp_api_types.h"
 
@@ -910,33 +911,16 @@ typedef void(tBTM_ACL_DB_CHANGE_CB)(BD_ADDR p_bda, DEV_CLASS p_dc,
 /* Define first active SCO index */
 #define BTM_FIRST_ACTIVE_SCO_INDEX BTM_MAX_SCO_LINKS
 
-/* Define SCO packet types used in APIs */
-#define BTM_SCO_PKT_TYPES_MASK_HV1 HCI_ESCO_PKT_TYPES_MASK_HV1
-#define BTM_SCO_PKT_TYPES_MASK_HV2 HCI_ESCO_PKT_TYPES_MASK_HV2
-#define BTM_SCO_PKT_TYPES_MASK_HV3 HCI_ESCO_PKT_TYPES_MASK_HV3
-#define BTM_SCO_PKT_TYPES_MASK_EV3 HCI_ESCO_PKT_TYPES_MASK_EV3
-#define BTM_SCO_PKT_TYPES_MASK_EV4 HCI_ESCO_PKT_TYPES_MASK_EV4
-#define BTM_SCO_PKT_TYPES_MASK_EV5 HCI_ESCO_PKT_TYPES_MASK_EV5
-#define BTM_SCO_PKT_TYPES_MASK_NO_2_EV3 HCI_ESCO_PKT_TYPES_MASK_NO_2_EV3
-#define BTM_SCO_PKT_TYPES_MASK_NO_3_EV3 HCI_ESCO_PKT_TYPES_MASK_NO_3_EV3
-#define BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 HCI_ESCO_PKT_TYPES_MASK_NO_2_EV5
-#define BTM_SCO_PKT_TYPES_MASK_NO_3_EV5 HCI_ESCO_PKT_TYPES_MASK_NO_3_EV5
+#define BTM_SCO_LINK_ONLY_MASK \
+  (ESCO_PKT_TYPES_MASK_HV1 | ESCO_PKT_TYPES_MASK_HV2 | ESCO_PKT_TYPES_MASK_HV3)
 
-#define BTM_SCO_LINK_ONLY_MASK                               \
-  (BTM_SCO_PKT_TYPES_MASK_HV1 | BTM_SCO_PKT_TYPES_MASK_HV2 | \
-   BTM_SCO_PKT_TYPES_MASK_HV3)
-
-#define BTM_ESCO_LINK_ONLY_MASK                              \
-  (BTM_SCO_PKT_TYPES_MASK_EV3 | BTM_SCO_PKT_TYPES_MASK_EV4 | \
-   BTM_SCO_PKT_TYPES_MASK_EV5)
+#define BTM_ESCO_LINK_ONLY_MASK \
+  (ESCO_PKT_TYPES_MASK_EV3 | ESCO_PKT_TYPES_MASK_EV4 | ESCO_PKT_TYPES_MASK_EV5)
 
 #define BTM_SCO_LINK_ALL_PKT_MASK \
   (BTM_SCO_LINK_ONLY_MASK | BTM_ESCO_LINK_ONLY_MASK)
 
 #define BTM_VALID_SCO_ALL_PKT_TYPE HCI_VALID_SCO_ALL_PKT_TYPE
-
-/* Passed in BTM_CreateSco if the packet type parameter should be ignored */
-#define BTM_IGNORE_SCO_PKT_TYPE 0
 
 /***************
  *  SCO Types
@@ -946,30 +930,13 @@ typedef void(tBTM_ACL_DB_CHANGE_CB)(BD_ADDR p_bda, DEV_CLASS p_dc,
 typedef uint8_t tBTM_SCO_TYPE;
 
 /*******************
- * SCO Routing Path
- *******************/
-#define BTM_SCO_ROUTE_PCM HCI_BRCM_SCO_ROUTE_PCM
-#define BTM_SCO_ROUTE_HCI HCI_BRCM_SCO_ROUTE_HCI
-typedef uint8_t tBTM_SCO_ROUTE_TYPE;
-
-/*******************
  * SCO Codec Types
  *******************/
 // TODO(google) This should use common definitions
-// in hci/include/hci_audio.h
 #define BTM_SCO_CODEC_NONE 0x0000
 #define BTM_SCO_CODEC_CVSD 0x0001
 #define BTM_SCO_CODEC_MSBC 0x0002
 typedef uint16_t tBTM_SCO_CODEC_TYPE;
-
-/*******************
- * SCO Air Mode Types
- *******************/
-#define BTM_SCO_AIR_MODE_U_LAW 0
-#define BTM_SCO_AIR_MODE_A_LAW 1
-#define BTM_SCO_AIR_MODE_CVSD 2
-#define BTM_SCO_AIR_MODE_TRANSPNT 3
-typedef uint8_t tBTM_SCO_AIR_MODE_TYPE;
 
 /*******************
  * SCO Voice Settings
@@ -1000,20 +967,6 @@ typedef void(tBTM_SCO_CB)(uint16_t sco_inx);
 typedef void(tBTM_SCO_DATA_CB)(uint16_t sco_inx, BT_HDR* p_data,
                                tBTM_SCO_DATA_FLAG status);
 
-/******************
- *  eSCO Constants
- ******************/
-#define BTM_64KBITS_RATE 0x00001f40 /* 64 kbits/sec data rate */
-
-/* Retransmission effort */
-#define BTM_ESCO_RETRANS_OFF 0
-#define BTM_ESCO_RETRANS_POWER 1
-#define BTM_ESCO_RETRANS_QUALITY 2
-#define BTM_ESCO_RETRANS_DONTCARE 0xff
-
-/* Max Latency Don't Care */
-#define BTM_ESCO_MAX_LAT_DONTCARE 0xffff
-
 /***************
  *  eSCO Types
  ***************/
@@ -1022,20 +975,13 @@ typedef void(tBTM_SCO_DATA_CB)(uint16_t sco_inx, BT_HDR* p_data,
 #define BTM_ESCO_CONN_REQ_EVT 2
 typedef uint8_t tBTM_ESCO_EVT;
 
-/* Passed into BTM_SetEScoMode() */
+/* Structure passed with SCO change command and events.
+ * Used by both Sync and Enhanced sync messaging
+ */
 typedef struct {
-  uint32_t tx_bw;
-  uint32_t rx_bw;
-  uint16_t max_latency;
-  uint16_t voice_contfmt; /* Voice Settings or Content Format */
+  uint16_t max_latency_ms;
   uint16_t packet_types;
-  uint8_t retrans_effort;
-} tBTM_ESCO_PARAMS;
-
-typedef struct {
-  uint16_t max_latency;
-  uint16_t packet_types;
-  uint8_t retrans_effort;
+  uint8_t retransmission_effort;
 } tBTM_CHG_ESCO_PARAMS;
 
 /* Returned by BTM_ReadEScoLinkParms() */

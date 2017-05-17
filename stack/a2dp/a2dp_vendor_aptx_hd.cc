@@ -311,21 +311,6 @@ int A2DP_VendorGetTrackSampleRateAptxHd(const uint8_t* p_codec_info) {
   return -1;
 }
 
-int A2DP_VendorGetTrackBitsPerSampleAptxHd(const uint8_t* p_codec_info) {
-  tA2DP_APTX_HD_CIE aptx_hd_cie;
-
-  // Check whether the codec info contains valid data
-  tA2DP_STATUS a2dp_status =
-      A2DP_ParseInfoAptxHd(&aptx_hd_cie, p_codec_info, false);
-  if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
-    return -1;
-  }
-
-  return 24;  // For aptX-HD we always use 24 bits per audio sample
-}
-
 int A2DP_VendorGetTrackChannelCountAptxHd(const uint8_t* p_codec_info) {
   tA2DP_APTX_HD_CIE aptx_hd_cie;
 
@@ -467,6 +452,8 @@ bool A2dpCodecConfigAptxHd::init() {
 
   return true;
 }
+
+bool A2dpCodecConfigAptxHd::useRtpHeaderMarkerBit() const { return false; }
 
 //
 // Selects the best sample rate from |sampleRate|.

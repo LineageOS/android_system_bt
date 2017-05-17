@@ -54,8 +54,7 @@ static const tA2DP_LDAC_CIE a2dp_ldac_caps = {
     (A2DP_LDAC_SAMPLING_FREQ_44100 | A2DP_LDAC_SAMPLING_FREQ_48000 |
      A2DP_LDAC_SAMPLING_FREQ_88200 | A2DP_LDAC_SAMPLING_FREQ_96000),
     // channelMode
-    (A2DP_LDAC_CHANNEL_MODE_MONO | A2DP_LDAC_CHANNEL_MODE_DUAL |
-     A2DP_LDAC_CHANNEL_MODE_STEREO),
+    (A2DP_LDAC_CHANNEL_MODE_DUAL | A2DP_LDAC_CHANNEL_MODE_STEREO),
     // bits_per_sample
     (BTAV_A2DP_CODEC_BITS_PER_SAMPLE_16 | BTAV_A2DP_CODEC_BITS_PER_SAMPLE_24 |
      BTAV_A2DP_CODEC_BITS_PER_SAMPLE_32)};
@@ -331,30 +330,6 @@ int A2DP_VendorGetTrackSampleRateLdac(const uint8_t* p_codec_info) {
   return -1;
 }
 
-int A2DP_VendorGetTrackBitsPerSampleLdac(const uint8_t* p_codec_info) {
-  tA2DP_LDAC_CIE ldac_cie;
-
-  // Check whether the codec info contains valid data
-  tA2DP_STATUS a2dp_status = A2DP_ParseInfoLdac(&ldac_cie, p_codec_info, false);
-  if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
-    return -1;
-  }
-
-  switch (a2dp_ldac_caps.bits_per_sample) {
-    case BTAV_A2DP_CODEC_BITS_PER_SAMPLE_16:
-      return 16;
-    case BTAV_A2DP_CODEC_BITS_PER_SAMPLE_24:
-      return 24;
-    case BTAV_A2DP_CODEC_BITS_PER_SAMPLE_32:
-      return 32;
-    case BTAV_A2DP_CODEC_BITS_PER_SAMPLE_NONE:
-      break;
-  }
-  return -1;
-}
-
 int A2DP_VendorGetTrackChannelCountLdac(const uint8_t* p_codec_info) {
   tA2DP_LDAC_CIE ldac_cie;
 
@@ -581,6 +556,8 @@ bool A2dpCodecConfigLdac::init() {
 
   return true;
 }
+
+bool A2dpCodecConfigLdac::useRtpHeaderMarkerBit() const { return false; }
 
 //
 // Selects the best sample rate from |sampleRate|.

@@ -65,6 +65,13 @@ void thread_stop(thread_t* thread);
 // Returns true on success.
 bool thread_set_priority(thread_t* thread, int priority);
 
+// Attempts to set |thread| to the real-time SCHED_FIFO |priority|.
+// The |thread| has to be running for this call to succeed.
+// Priority values are valid in the range sched_get_priority_max(SCHED_FIFO)
+// to sched_get_priority_min(SCHED_FIFO).  Larger values are higher priority.
+// Returns true on success.
+bool thread_set_rt_priority(thread_t* thread, int priority);
+
 // Returns true if the current thread is the same as the one represented by
 // |thread|.
 // |thread| may not be NULL.

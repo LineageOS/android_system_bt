@@ -431,7 +431,8 @@ void btsnd_hcic_read_lmp_handle(uint16_t handle) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_setup_esco_conn(uint16_t handle, uint32_t tx_bw, uint32_t rx_bw,
+void btsnd_hcic_setup_esco_conn(uint16_t handle, uint32_t transmit_bandwidth,
+                                uint32_t receive_bandwidth,
                                 uint16_t max_latency, uint16_t voice,
                                 uint8_t retrans_effort, uint16_t packet_types) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
@@ -444,8 +445,8 @@ void btsnd_hcic_setup_esco_conn(uint16_t handle, uint32_t tx_bw, uint32_t rx_bw,
   UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_SETUP_ESCO);
 
   UINT16_TO_STREAM(pp, handle);
-  UINT32_TO_STREAM(pp, tx_bw);
-  UINT32_TO_STREAM(pp, rx_bw);
+  UINT32_TO_STREAM(pp, transmit_bandwidth);
+  UINT32_TO_STREAM(pp, receive_bandwidth);
   UINT16_TO_STREAM(pp, max_latency);
   UINT16_TO_STREAM(pp, voice);
   UINT8_TO_STREAM(pp, retrans_effort);
@@ -454,9 +455,10 @@ void btsnd_hcic_setup_esco_conn(uint16_t handle, uint32_t tx_bw, uint32_t rx_bw,
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_accept_esco_conn(BD_ADDR bd_addr, uint32_t tx_bw,
-                                 uint32_t rx_bw, uint16_t max_latency,
-                                 uint16_t content_fmt, uint8_t retrans_effort,
+void btsnd_hcic_accept_esco_conn(BD_ADDR bd_addr, uint32_t transmit_bandwidth,
+                                 uint32_t receive_bandwidth,
+                                 uint16_t max_latency, uint16_t content_fmt,
+                                 uint8_t retrans_effort,
                                  uint16_t packet_types) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
@@ -468,8 +470,8 @@ void btsnd_hcic_accept_esco_conn(BD_ADDR bd_addr, uint32_t tx_bw,
   UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_ACCEPT_ESCO);
 
   BDADDR_TO_STREAM(pp, bd_addr);
-  UINT32_TO_STREAM(pp, tx_bw);
-  UINT32_TO_STREAM(pp, rx_bw);
+  UINT32_TO_STREAM(pp, transmit_bandwidth);
+  UINT32_TO_STREAM(pp, receive_bandwidth);
   UINT16_TO_STREAM(pp, max_latency);
   UINT16_TO_STREAM(pp, content_fmt);
   UINT8_TO_STREAM(pp, retrans_effort);
@@ -1005,6 +1007,104 @@ void btsnd_hcic_io_cap_req_reply(BD_ADDR bd_addr, uint8_t capability,
   UINT8_TO_STREAM(pp, capability);
   UINT8_TO_STREAM(pp, oob_present);
   UINT8_TO_STREAM(pp, auth_req);
+
+  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+void btsnd_hcic_enhanced_set_up_synchronous_connection(
+    uint16_t conn_handle, enh_esco_params_t* p_params) {
+  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
+  uint8_t* pp = (uint8_t*)(p + 1);
+
+  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_ENH_SET_ESCO_CONN;
+  p->offset = 0;
+
+  UINT16_TO_STREAM(pp, HCI_ENH_SETUP_ESCO_CONNECTION);
+  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_ENH_SET_ESCO_CONN);
+
+  UINT16_TO_STREAM(pp, conn_handle);
+  UINT32_TO_STREAM(pp, p_params->transmit_bandwidth);
+  UINT32_TO_STREAM(pp, p_params->receive_bandwidth);
+  UINT8_TO_STREAM(pp, p_params->transmit_coding_format.coding_format);
+  UINT16_TO_STREAM(pp, p_params->transmit_coding_format.company_id);
+  UINT16_TO_STREAM(pp,
+                   p_params->transmit_coding_format.vendor_specific_codec_id);
+  UINT8_TO_STREAM(pp, p_params->receive_coding_format.coding_format);
+  UINT16_TO_STREAM(pp, p_params->receive_coding_format.company_id);
+  UINT16_TO_STREAM(pp,
+                   p_params->receive_coding_format.vendor_specific_codec_id);
+  UINT16_TO_STREAM(pp, p_params->transmit_codec_frame_size);
+  UINT16_TO_STREAM(pp, p_params->receive_codec_frame_size);
+  UINT32_TO_STREAM(pp, p_params->input_bandwidth);
+  UINT32_TO_STREAM(pp, p_params->output_bandwidth);
+  UINT8_TO_STREAM(pp, p_params->input_coding_format.coding_format);
+  UINT16_TO_STREAM(pp, p_params->input_coding_format.company_id);
+  UINT16_TO_STREAM(pp, p_params->input_coding_format.vendor_specific_codec_id);
+  UINT8_TO_STREAM(pp, p_params->output_coding_format.coding_format);
+  UINT16_TO_STREAM(pp, p_params->output_coding_format.company_id);
+  UINT16_TO_STREAM(pp, p_params->output_coding_format.vendor_specific_codec_id);
+  UINT16_TO_STREAM(pp, p_params->input_coded_data_size);
+  UINT16_TO_STREAM(pp, p_params->output_coded_data_size);
+  UINT8_TO_STREAM(pp, p_params->input_pcm_data_format);
+  UINT8_TO_STREAM(pp, p_params->output_pcm_data_format);
+  UINT8_TO_STREAM(pp, p_params->input_pcm_payload_msb_position);
+  UINT8_TO_STREAM(pp, p_params->output_pcm_payload_msb_position);
+  UINT8_TO_STREAM(pp, p_params->input_data_path);
+  UINT8_TO_STREAM(pp, p_params->output_data_path);
+  UINT8_TO_STREAM(pp, p_params->input_transport_unit_size);
+  UINT8_TO_STREAM(pp, p_params->output_transport_unit_size);
+  UINT16_TO_STREAM(pp, p_params->max_latency_ms);
+  UINT16_TO_STREAM(pp, p_params->packet_types);
+  UINT8_TO_STREAM(pp, p_params->retransmission_effort);
+
+  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+void btsnd_hcic_enhanced_accept_synchronous_connection(
+    BD_ADDR bd_addr, enh_esco_params_t* p_params) {
+  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
+  uint8_t* pp = (uint8_t*)(p + 1);
+
+  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_ENH_ACC_ESCO_CONN;
+  p->offset = 0;
+
+  UINT16_TO_STREAM(pp, HCI_ENH_ACCEPT_ESCO_CONNECTION);
+  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_ENH_ACC_ESCO_CONN);
+
+  BDADDR_TO_STREAM(pp, bd_addr);
+  UINT32_TO_STREAM(pp, p_params->transmit_bandwidth);
+  UINT32_TO_STREAM(pp, p_params->receive_bandwidth);
+  UINT8_TO_STREAM(pp, p_params->transmit_coding_format.coding_format);
+  UINT16_TO_STREAM(pp, p_params->transmit_coding_format.company_id);
+  UINT16_TO_STREAM(pp,
+                   p_params->transmit_coding_format.vendor_specific_codec_id);
+  UINT8_TO_STREAM(pp, p_params->receive_coding_format.coding_format);
+  UINT16_TO_STREAM(pp, p_params->receive_coding_format.company_id);
+  UINT16_TO_STREAM(pp,
+                   p_params->receive_coding_format.vendor_specific_codec_id);
+  UINT16_TO_STREAM(pp, p_params->transmit_codec_frame_size);
+  UINT16_TO_STREAM(pp, p_params->receive_codec_frame_size);
+  UINT32_TO_STREAM(pp, p_params->input_bandwidth);
+  UINT32_TO_STREAM(pp, p_params->output_bandwidth);
+  UINT8_TO_STREAM(pp, p_params->input_coding_format.coding_format);
+  UINT16_TO_STREAM(pp, p_params->input_coding_format.company_id);
+  UINT16_TO_STREAM(pp, p_params->input_coding_format.vendor_specific_codec_id);
+  UINT8_TO_STREAM(pp, p_params->output_coding_format.coding_format);
+  UINT16_TO_STREAM(pp, p_params->output_coding_format.company_id);
+  UINT16_TO_STREAM(pp, p_params->output_coding_format.vendor_specific_codec_id);
+  UINT16_TO_STREAM(pp, p_params->input_coded_data_size);
+  UINT16_TO_STREAM(pp, p_params->output_coded_data_size);
+  UINT8_TO_STREAM(pp, p_params->input_pcm_data_format);
+  UINT8_TO_STREAM(pp, p_params->output_pcm_data_format);
+  UINT8_TO_STREAM(pp, p_params->input_pcm_payload_msb_position);
+  UINT8_TO_STREAM(pp, p_params->output_pcm_payload_msb_position);
+  UINT8_TO_STREAM(pp, p_params->input_data_path);
+  UINT8_TO_STREAM(pp, p_params->output_data_path);
+  UINT8_TO_STREAM(pp, p_params->input_transport_unit_size);
+  UINT8_TO_STREAM(pp, p_params->output_transport_unit_size);
+  UINT16_TO_STREAM(pp, p_params->max_latency_ms);
+  UINT16_TO_STREAM(pp, p_params->packet_types);
+  UINT8_TO_STREAM(pp, p_params->retransmission_effort);
 
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }

@@ -38,6 +38,7 @@
 #include "btm_api.h"
 #include "btm_ble_api.h"
 #include "btm_int.h"
+#include "device/include/interop.h"
 #include "osi/include/log.h"
 #include "srvc_api.h"
 #include "stack/include/l2c_api.h"
@@ -1480,6 +1481,12 @@ void read_pref_conn_params_cb(uint16_t conn_id, tGATT_STATUS status,
   if (tout == BTM_BLE_CONN_PARAM_UNDEF) tout = BTM_BLE_CONN_TIMEOUT_DEF;
 
   tBTA_HH_DEV_CB* p_dev_cb = (tBTA_HH_DEV_CB*)data;
+
+  if (interop_match_addr(INTEROP_HID_PREF_CONN_SUP_TIMEOUT_3S,
+                         (bt_bdaddr_t*)&p_dev_cb->addr) == true) {
+    if (tout < 300) tout = 300;
+  }
+
   BTM_BleSetPrefConnParams(p_dev_cb->addr, min, max, latency, tout);
   L2CA_UpdateBleConnParams(p_dev_cb->addr, min, max, latency, tout);
 }
