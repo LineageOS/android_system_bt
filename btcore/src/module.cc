@@ -61,13 +61,11 @@ bool module_init(const module_t* module) {
   CHECK(module != NULL);
   CHECK(get_module_state(module) == MODULE_STATE_NONE);
 
-  LOG_INFO(LOG_TAG, "%s Initializing module \"%s\"", __func__, module->name);
   if (!call_lifecycle_function(module->init)) {
     LOG_ERROR(LOG_TAG, "%s Failed to initialize module \"%s\"", __func__,
               module->name);
     return false;
   }
-  LOG_INFO(LOG_TAG, "%s Initialized module \"%s\"", __func__, module->name);
 
   set_module_state(module, MODULE_STATE_INITIALIZED);
   return true;
