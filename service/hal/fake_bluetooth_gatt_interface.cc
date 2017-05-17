@@ -107,6 +107,7 @@ btgatt_client_interface_t fake_btgattc_iface = {
     FakeDisconnect,
     nullptr,  // refresh
     nullptr,  // search_service
+    nullptr,  // discover_service_by_uuid
     nullptr,  // read_characteristic
     nullptr,  // read_using_characteristic_uuid
     nullptr,  // write_characteristic
