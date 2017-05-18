@@ -85,6 +85,7 @@ static const packet_fragmenter_t* packet_fragmenter;
 
 static future_t* startup_future;
 static thread_t* thread;  // We own this
+static std::mutex message_loop_mutex;
 static base::MessageLoop* message_loop_ = nullptr;
 static base::RunLoop* run_loop_ = nullptr;
 
@@ -127,6 +128,7 @@ static const packet_fragmenter_callbacks_t packet_fragmenter_callbacks = {
     transmit_fragment, dispatch_reassembled, fragmenter_transmit_finished};
 
 void initialization_complete() {
+  std::lock_guard<std::mutex> lock(message_loop_mutex);
   message_loop_->task_runner()->PostTask(
       FROM_HERE, base::Bind(&event_finish_startup, nullptr));
 }
@@ -155,18 +157,23 @@ void sco_data_received(BT_HDR* packet) {
 static future_t* hci_module_shut_down();
 
 void message_loop_run(UNUSED_ATTR void* context) {
-  message_loop_ = new base::MessageLoop();
-  run_loop_ = new base::RunLoop();
+  {
+    std::lock_guard<std::mutex> lock(message_loop_mutex);
+    message_loop_ = new base::MessageLoop();
+    run_loop_ = new base::RunLoop();
+  }
 
   message_loop_->task_runner()->PostTask(FROM_HERE,
                                          base::Bind(&hci_initialize));
   run_loop_->Run();
 
-  delete message_loop_;
-  message_loop_ = nullptr;
-
-  delete run_loop_;
-  run_loop_ = nullptr;
+  {
+    std::lock_guard<std::mutex> lock(message_loop_mutex);
+    delete message_loop_;
+    message_loop_ = nullptr;
+    delete run_loop_;
+    run_loop_ = nullptr;
+  }
 }
 
 static future_t* hci_module_start_up(void) {
@@ -247,7 +254,10 @@ static future_t* hci_module_shut_down() {
     startup_timer = NULL;
   }
 
-  message_loop_->task_runner()->PostTask(FROM_HERE, run_loop_->QuitClosure());
+  {
+    std::lock_guard<std::mutex> lock(message_loop_mutex);
+    message_loop_->task_runner()->PostTask(FROM_HERE, run_loop_->QuitClosure());
+  }
 
   // Stop the thread to prevent Send() calls.
   if (thread) {
@@ -360,8 +370,15 @@ static void startup_timer_expired(UNUSED_ATTR void* context) {
 static void enqueue_command(waiting_command_t* wait_entry) {
   base::Closure callback = base::Bind(&event_command_ready, wait_entry);
 
-  std::lock_guard<std::mutex> lock(command_credits_mutex);
+  std::lock_guard<std::mutex> command_credits_lock(command_credits_mutex);
   if (command_credits > 0) {
+    std::lock_guard<std::mutex> message_loop_lock(message_loop_mutex);
+    if (message_loop_ == nullptr) {
+      // HCI Layer was shut down
+      buffer_allocator->free(wait_entry->command);
+      osi_free(wait_entry);
+      return;
+    }
     message_loop_->task_runner()->PostTask(FROM_HERE, std::move(callback));
     command_credits--;
   } else {
@@ -382,6 +399,12 @@ static void event_command_ready(waiting_command_t* wait_entry) {
 }
 
 static void enqueue_packet(void* packet) {
+  std::lock_guard<std::mutex> lock(message_loop_mutex);
+  if (message_loop_ == nullptr) {
+    // HCI Layer was shut down
+    buffer_allocator->free(packet);
+    return;
+  }
   message_loop_->task_runner()->PostTask(
       FROM_HERE, base::Bind(&event_packet_ready, packet));
 }
@@ -444,8 +467,13 @@ static void command_timed_out(UNUSED_ATTR void* context) {
 
 // Event/packet receiving functions
 void process_command_credits(int credits) {
-  std::lock_guard<std::mutex> lock(command_credits_mutex);
+  std::lock_guard<std::mutex> command_credits_lock(command_credits_mutex);
+  std::lock_guard<std::mutex> message_loop_lock(message_loop_mutex);
 
+  if (message_loop_ == nullptr) {
+    // HCI Layer was shut down
+    return;
+  }
   command_credits = credits;
   while (command_credits > 0 && command_queue.size() > 0) {
     message_loop_->task_runner()->PostTask(FROM_HERE,
