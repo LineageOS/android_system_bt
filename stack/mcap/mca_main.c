@@ -458,7 +458,7 @@ void mca_tc_data_ind(tMCA_TC_TBL *p_tbl, BT_HDR *p_buf)
     UINT8       *p;
     UINT8       rej_rsp_code = MCA_RSP_SUCCESS;
 
-    MCA_TRACE_DEBUG("%s() - tcid: %d, cb_idx: %d", __func__, p_tbl->tcid, p_tbl->cb_idx);
+    MCA_TRACE_DEBUG("%s: tcid: %d, cb_idx: %d", __func__, p_tbl->tcid, p_tbl->cb_idx);
 
     /* if control channel, handle control message */
     if (p_tbl->tcid == MCA_CTRL_TCID)
@@ -475,21 +475,21 @@ void mca_tc_data_ind(tMCA_TC_TBL *p_tbl, BT_HDR *p_buf)
             {
                 if (p_buf->len != mca_std_msg_len[*p])
                 {
-                    MCA_TRACE_ERROR ("$s() - opcode: %d required len: %d, got len: %d"
+                    MCA_TRACE_ERROR ("$s: opcode: 0x%02x required len: %d, got len: %d"
                       , __func__, *p, mca_std_msg_len[*p], p_buf->len);
                     rej_rsp_code = MCA_RSP_BAD_PARAM;
                 }
             }
             else if ((*p >= MCA_FIRST_SYNC_OP) && (*p <= MCA_LAST_SYNC_OP))
             {
-                MCA_TRACE_ERROR ("%s() - unsupported SYNC opcode: %d len:%d"
+                MCA_TRACE_ERROR ("%s: unsupported SYNC opcode: 0x%02x len:%d"
                     , __func__, *p, p_buf->len);
                 /* reject unsupported request */
                 rej_rsp_code = MCA_RSP_NO_SUPPORT;
             }
             else
             {
-                MCA_TRACE_ERROR ("%s() - bad opcode: %d len:%d", __func__, *p, p_buf->len);
+                MCA_TRACE_ERROR ("%s: bad opcode: 0x%02x len:%d", __func__, *p, p_buf->len);
                 /* reject unsupported request */
                 rej_rsp_code = MCA_RSP_BAD_OPCODE;
             }
