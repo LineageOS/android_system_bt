@@ -83,6 +83,7 @@ struct equal_to<bt_bdaddr_t> {
 
 namespace {
 
+// all access to this variable should be done on the jni thread
 std::unordered_set<bt_bdaddr_t> p_dev_cb;
 
 void btif_gattc_add_remote_bdaddr(BD_ADDR p_bda, uint8_t addr_type) {
@@ -258,15 +259,20 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
   }
 
   void Scan(bool start) override {
-    if (!start) {
-      do_in_bta_thread(FROM_HERE, Bind(&BTA_DmBleObserve, false, 0, nullptr));
-      return;
-    }
+    do_in_jni_thread(Bind(
+        [](bool start) {
+          if (!start) {
+            do_in_bta_thread(FROM_HERE,
+                             Bind(&BTA_DmBleObserve, false, 0, nullptr));
+            return;
+          }
 
-    btif_gattc_init_dev_cb();
-    do_in_bta_thread(FROM_HERE,
-                     Bind(&BTA_DmBleObserve, true, 0,
-                          (tBTA_DM_SEARCH_CBACK*)bta_scan_results_cb));
+          btif_gattc_init_dev_cb();
+          do_in_bta_thread(FROM_HERE,
+                           Bind(&BTA_DmBleObserve, true, 0,
+                                (tBTA_DM_SEARCH_CBACK*)bta_scan_results_cb));
+        },
+        start));
   }
 
   void ScanFilterParamSetup(
