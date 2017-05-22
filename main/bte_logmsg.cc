@@ -205,7 +205,6 @@ static void load_levels_from_config(const config_t* config) {
 
   for (tBTTRC_FUNC_MAP* functions = &bttrc_set_level_map[0];
        functions->trc_name; ++functions) {
-    LOG_INFO(LOG_TAG, "BTE_InitTraceLevels -- %s", functions->trc_name);
     int value =
         config_get_int(config, CONFIG_DEFAULT_SECTION, functions->trc_name, -1);
     if (value != -1) functions->trace_level = value;
