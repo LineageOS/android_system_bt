@@ -1790,68 +1790,6 @@ static bt_status_t bind_string_response(const char* res,
     return BT_STATUS_FAIL;
 }
 
-static void set_voip_network_type_wifi_hci_cmd_complete(tBTM_VSC_CMPL* p_data)
-{
-    UINT8         *stream,  status, subcmd;
-    UINT16        opcode, length;
-
-    if (p_data && (stream = (UINT8*)p_data->p_param_buf))
-    {
-        opcode = p_data->opcode;
-        length = p_data->param_len;
-        STREAM_TO_UINT8(status, stream);
-        STREAM_TO_UINT8(subcmd, stream);
-        BTIF_TRACE_DEBUG("%s opcode = 0x%04X, length = %d, status = %d, subcmd = %d",
-                __FUNCTION__, opcode, length, status, subcmd);
-        if (status == HCI_SUCCESS)
-        {
-            BTIF_TRACE_DEBUG("btm_SetVoipNetworkTypeWifi status success");
-        }
-    }
-}
-
-/*******************************************************************************
-**
-** Function         voip_network_type_wifi
-**
-** Description      BT app updates the connectivity network used for VOIP as Wifi
-**
-** Returns          bt_status_t
-**
-*******************************************************************************/
-static bt_status_t voip_network_type_wifi(bthf_voip_state_t isVoipStarted,
-                                          bthf_voip_call_network_type_t isNetworkWifi)
-{
-    UINT8           cmd[3], *p_cursor;
-    UINT8           sub_cmd = HCI_VSC_SUBCODE_VOIP_NETWORK_WIFI;
-    tBTM_STATUS     status = BTM_NO_RESOURCES;
-    int             idx = btif_hf_latest_connected_idx();
-
-    CHECK_BTHF_INIT();
-
-    if ((idx < 0) || (idx >= BTIF_HF_NUM_CB))
-    {
-        BTIF_TRACE_ERROR("%s: Invalid index %d", __FUNCTION__, idx);
-        return BT_STATUS_FAIL;
-    }
-
-    p_cursor = cmd;
-    memset(cmd, 0, 3);
-
-    *p_cursor++ = sub_cmd;
-    *p_cursor++ = isVoipStarted;
-    *p_cursor++ = isNetworkWifi;
-
-    if ((status = BTM_VendorSpecificCommand(HCI_VSC_VOIP_NETWORK_WIFI_OCF, sizeof(cmd),
-            cmd, set_voip_network_type_wifi_hci_cmd_complete)) != BTM_CMD_STARTED)
-    {
-        BTIF_TRACE_ERROR("%s: status %d", __FUNCTION__, status);
-        return BT_STATUS_FAIL;
-    }
-
-    return BT_STATUS_SUCCESS;
-
-}
 
 static const bthf_interface_t bthfInterface = {
     sizeof(bthfInterface),
@@ -1874,7 +1812,6 @@ static const bthf_interface_t bthfInterface = {
     configure_wbs,
     bind_response,
     bind_string_response,
-    voip_network_type_wifi,
 };
 
 /*******************************************************************************

@@ -375,12 +375,6 @@
 /* SOC Logging OCF */
 #define HCI_VS_HOST_LOG_OPCODE    (0x0017 | HCI_GRP_VENDOR_SPECIFIC)
 
-/* VOIP Network Wifi OCF */
-#define HCI_VSC_VOIP_NETWORK_WIFI_OCF   (0x001C | HCI_GRP_VENDOR_SPECIFIC)
-
-/* subcode for VOIP Network Wifi */
-#define HCI_VSC_SUBCODE_VOIP_NETWORK_WIFI               0x01
-
 /* subcode for multi adv feature */
 #define BTM_BLE_MULTI_ADV_SET_PARAM                     0x01
 #define BTM_BLE_MULTI_ADV_WRITE_ADV_DATA                0x02
