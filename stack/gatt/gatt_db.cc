@@ -722,8 +722,6 @@ static tGATT_ATTR& allocate_attr_in_db(tGATT_SVC_DB& db, const tBT_UUID& uuid,
 
   char uuid_str[37];
   uuid_to_str(attr.uuid, uuid_str, sizeof(uuid_str));
-  GATT_TRACE_ERROR("=====> handle = [0x%04x] uuid = [%s] perm=0x%02x ",
-                   attr.handle, uuid_str, attr.permission);
 
   return attr;
 }
