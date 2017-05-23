@@ -154,7 +154,6 @@ void mca_ccb_snd_req(tMCA_CCB* p_ccb, tMCA_CCB_EVT* p_data) {
 void mca_ccb_snd_rsp(tMCA_CCB* p_ccb, tMCA_CCB_EVT* p_data) {
   tMCA_CCB_MSG* p_msg = (tMCA_CCB_MSG*)p_data;
   uint8_t *p, *p_start;
-  bool chk_mdl = false;
   BT_HDR* p_pkt = (BT_HDR*)osi_malloc(MCA_CTRL_MTU);
 
   MCA_TRACE_DEBUG("%s cong=%d req=%d", __func__, p_ccb->cong, p_msg->op_code);
@@ -165,25 +164,28 @@ void mca_ccb_snd_rsp(tMCA_CCB* p_ccb, tMCA_CCB_EVT* p_data) {
   *p++ = p_msg->op_code;
   *p++ = p_msg->rsp_code;
   UINT16_TO_BE_STREAM(p, p_msg->mdl_id);
-  if (p_msg->op_code == MCA_OP_MDL_CREATE_RSP) {
-    *p++ = p_msg->param;
-    chk_mdl = true;
-  } else if (p_msg->op_code == MCA_OP_MDL_RECONNECT_RSP) {
-    chk_mdl = true;
+  // Only add extra parameters for MCA_RSP_SUCCESS message
+  if (p_msg->rsp_code == MCA_RSP_SUCCESS) {
+    // Append MDL configuration parameters
+    if (p_msg->op_code == MCA_OP_MDL_CREATE_RSP) {
+      *p++ = p_msg->param;
+    }
+    // Check MDL
+    if (p_msg->op_code == MCA_OP_MDL_CREATE_RSP ||
+        p_msg->op_code == MCA_OP_MDL_RECONNECT_RSP) {
+      mca_dcb_by_hdl(p_msg->dcb_idx);
+      BTM_SetSecurityLevel(false, "", BTM_SEC_SERVICE_MCAP_DATA,
+                           p_ccb->sec_mask, p_ccb->p_rcb->reg.data_psm,
+                           BTM_SEC_PROTO_MCA, p_msg->dcb_idx);
+      p_ccb->status = MCA_CCB_STAT_PENDING;
+      /* set p_tx_req to block API_REQ/API_RSP before DL is up */
+      osi_free_and_reset((void**)&p_ccb->p_tx_req);
+      p_ccb->p_tx_req = p_ccb->p_rx_msg;
+      p_ccb->p_rx_msg = NULL;
+      p_ccb->p_tx_req->dcb_idx = p_msg->dcb_idx;
+    }
   }
 
-  if (chk_mdl && p_msg->rsp_code == MCA_RSP_SUCCESS) {
-    mca_dcb_by_hdl(p_msg->dcb_idx);
-    BTM_SetSecurityLevel(false, "", BTM_SEC_SERVICE_MCAP_DATA, p_ccb->sec_mask,
-                         p_ccb->p_rcb->reg.data_psm, BTM_SEC_PROTO_MCA,
-                         p_msg->dcb_idx);
-    p_ccb->status = MCA_CCB_STAT_PENDING;
-    /* set p_tx_req to block API_REQ/API_RSP before DL is up */
-    osi_free_and_reset((void**)&p_ccb->p_tx_req);
-    p_ccb->p_tx_req = p_ccb->p_rx_msg;
-    p_ccb->p_rx_msg = NULL;
-    p_ccb->p_tx_req->dcb_idx = p_msg->dcb_idx;
-  }
   osi_free_and_reset((void**)&p_ccb->p_rx_msg);
   p_pkt->len = p - p_start;
   L2CA_DataWrite(p_ccb->lcid, p_pkt);
@@ -324,7 +326,8 @@ void mca_ccb_hdl_req(tMCA_CCB* p_ccb, tMCA_CCB_EVT* p_data) {
             evt_data.create_ind.cfg = *p++;
             p_rx_msg->mdep_id = evt_data.create_ind.dep_id;
             if (!mca_is_valid_dep_id(p_ccb->p_rcb, p_rx_msg->mdep_id)) {
-              MCA_TRACE_ERROR("not a valid local mdep id");
+              MCA_TRACE_ERROR("%s: Invalid local MDEP ID %d", __func__,
+                              p_rx_msg->mdep_id);
               reject_code = MCA_RSP_BAD_MDEP;
             } else if (mca_ccb_uses_mdl_id(p_ccb, evt_data.hdr.mdl_id)) {
               MCA_TRACE_DEBUG("the mdl_id is currently used in the CL(create)");
@@ -332,7 +335,8 @@ void mca_ccb_hdl_req(tMCA_CCB* p_ccb, tMCA_CCB_EVT* p_data) {
             } else {
               /* check if this dep still have MDL available */
               if (mca_dep_free_mdl(p_ccb, evt_data.create_ind.dep_id) == 0) {
-                MCA_TRACE_ERROR("the mdep is currently using max_mdl");
+                MCA_TRACE_ERROR("%s: MAX_MDL is used by MDEP %d", __func__,
+                                evt_data.create_ind.dep_id);
                 reject_code = MCA_RSP_MDEP_BUSY;
               }
             }
@@ -340,7 +344,8 @@ void mca_ccb_hdl_req(tMCA_CCB* p_ccb, tMCA_CCB_EVT* p_data) {
 
           case MCA_OP_MDL_RECONNECT_REQ:
             if (mca_ccb_uses_mdl_id(p_ccb, evt_data.hdr.mdl_id)) {
-              MCA_TRACE_ERROR("the mdl_id is currently used in the CL(reconn)");
+              MCA_TRACE_ERROR("%s: MDL_ID %d busy, in CL(reconn)", __func__,
+                              evt_data.hdr.mdl_id);
               reject_code = MCA_RSP_MDL_BUSY;
             }
             break;
@@ -367,17 +372,41 @@ void mca_ccb_hdl_req(tMCA_CCB* p_ccb, tMCA_CCB_EVT* p_data) {
     p = p_start = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
     *p++ = reject_opcode;
     *p++ = reject_code;
-    UINT16_TO_BE_STREAM(p, evt_data.hdr.mdl_id);
-    /*
-      if (((*p_start) == MCA_OP_MDL_CREATE_RSP) && (reject_code ==
-      MCA_RSP_SUCCESS))
-      {
-      *p++ = evt_data.create_ind.cfg;
-      }
-    */
-
-    p_buf->len = p - p_start;
-    L2CA_DataWrite(p_ccb->lcid, p_buf);
+    bool valid_response = true;
+    switch (reject_opcode) {
+      // Fill in the rest of standard opcode response packet with mdl_id
+      case MCA_OP_ERROR_RSP:
+      case MCA_OP_MDL_CREATE_RSP:
+      case MCA_OP_MDL_RECONNECT_RSP:
+      case MCA_OP_MDL_ABORT_RSP:
+      case MCA_OP_MDL_DELETE_RSP:
+        UINT16_TO_BE_STREAM(p, evt_data.hdr.mdl_id);
+        break;
+      // Fill in the rest of clock sync opcode response packet with 0
+      case MCA_OP_SYNC_CAP_RSP:
+        // Page 37/58 MCAP V1.0 Spec: Total length (9) - 2 = 7
+        memset(p, 0, 7);
+        p += 7;
+        break;
+      case MCA_OP_SYNC_SET_RSP:
+        // Page 39/58 MCAP V1.0 Spec: Total length (16) - 2 = 14
+        memset(p, 0, 14);
+        p += 14;
+        break;
+      default:
+        MCA_TRACE_ERROR("%s: reject_opcode 0x%02x not recognized", __func__,
+                        reject_opcode);
+        valid_response = false;
+        break;
+    }
+    if (valid_response) {
+      p_buf->len = p - p_start;
+      MCA_TRACE_ERROR("%s: reject_opcode=0x%02x, reject_code=0x%02x, length=%d",
+                      __func__, reject_opcode, reject_code, p_buf->len);
+      L2CA_DataWrite(p_ccb->lcid, p_buf);
+    } else {
+      osi_free(p_buf);
+    }
   }
 
   if (reject_code == MCA_RSP_SUCCESS) {
