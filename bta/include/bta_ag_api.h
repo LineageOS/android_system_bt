@@ -30,6 +30,20 @@
 /*****************************************************************************
 **  Constants and data types
 *****************************************************************************/
+#define HFP_VERSION_1_1         0x0101
+#define HFP_VERSION_1_5         0x0105
+#define HFP_VERSION_1_6         0x0106
+#define HFP_VERSION_1_7         0x0107
+
+#define HSP_VERSION_1_0         0x0100
+#define HSP_VERSION_1_2         0x0102
+
+/* Note, if you change the default version here, please also change the one in
+ * bta_hs_api.h, they are meant to be the same.
+ */
+#ifndef BTA_HFP_VERSION
+#define BTA_HFP_VERSION         HFP_VERSION_1_7
+#endif
 
 /* AG feature masks */
 #define BTA_AG_FEAT_3WAY    0x00000001   /* Three-way calling */
@@ -42,15 +56,20 @@
 #define BTA_AG_FEAT_ECC     0x00000080   /* Enhanced Call Control */
 #define BTA_AG_FEAT_EXTERR  0x00000100   /* Extended error codes */
 #define BTA_AG_FEAT_CODEC   0x00000200   /* Codec Negotiation */
-#define BTA_AG_FEAT_HFIND   0x00000400   /* HF indicators */
-#define BTA_AG_FEAT_S4      0x00000800   /* ESCO S4 link setting */
-#define BTA_AG_FEAT_VOIP    0x00001000   /* VoIP call */
+
+#define HFP_1_6_FEAT_MASK   0x000003FF   /* Valid feature bit mask for HFP 1.6 (and below) */
+
+/* HFP 1.7+ */
+#define BTA_AG_FEAT_HF_IND  0x00000400   /* HF Indicators */
+#define BTA_AG_FEAT_ESCO    0x00000800   /* eSCO S4 (and T2) setting supported */
+
 
 /* Proprietary features: using 31 ~ 16 bits */
 #define BTA_AG_FEAT_BTRH    0x00010000   /* CCAP incoming call hold */
 #define BTA_AG_FEAT_UNAT    0x00020000   /* Pass unknown AT commands to application */
 #define BTA_AG_FEAT_NOSCO   0x00040000   /* No SCO control performed by BTA AG */
 #define BTA_AG_FEAT_NO_ESCO 0x00080000   /* Do not allow or use eSCO */
+#define BTA_AG_FEAT_VOIP    0x00100000   /* VoIP call */
 
 typedef UINT32 tBTA_AG_FEAT;
 
@@ -66,6 +85,9 @@ typedef UINT8 tBTA_AG_PARSE_MODE;
 #define BTA_AG_FAIL_RFCOMM      2 /* Open failed due to RFCOMM */
 #define BTA_AG_FAIL_RESOURCES   3 /* out of resources failure  */
 
+/*Status to disallow passing AT Events after BTIF */
+
+#define BTA_AG_DISALLOW_AT      5
 typedef UINT8 tBTA_AG_STATUS;
 
 /* handle values used with BTA_AgResult */
@@ -76,6 +98,17 @@ typedef UINT8 tBTA_AG_STATUS;
  * SCO_NO_CHANGE is used for changing sco behavior
  * They donot interfere with each other
  */
+
+/* Number of supported HF indicators, there is one HF indicator so far i.e.
+                                                   enhanced driver status. */
+/* Number of supported HF indicators,
+   1 for Enhanced Safety Status
+   2 for Battery Level Status */
+#ifndef BTA_AG_NUM_LOCAL_HF_IND
+#define BTA_AG_NUM_LOCAL_HF_IND     2
+#endif
+
+
 
 #define BTA_AG_HANDLE_SCO_NO_CHANGE 0xFFFF
 
@@ -102,8 +135,7 @@ typedef UINT8 tBTA_AG_STATUS;
 #define BTA_AG_IN_CALL_HELD_RES     19  /* Incoming call held */
 #define BTA_AG_UNAT_RES             20  /* Response to unknown AT command event */
 #define BTA_AG_MULTI_CALL_RES       21  /* SLC at three way call */
-#define BTA_AG_BIND_RES             22  /* Send indicator response for AT+BIND */
-
+#define BTA_AG_BIND_RES             22  /* Activate/Deactivate HF indicator */
 
 typedef UINT8 tBTA_AG_RES;
 
@@ -116,11 +148,14 @@ typedef UINT8 tBTA_AG_RES;
 #define BTA_AG_PEER_FEAT_ECS        0x0020  /* Enhanced Call Status */
 #define BTA_AG_PEER_FEAT_ECC        0x0040  /* Enhanced Call Control */
 #define BTA_AG_PEER_FEAT_CODEC      0x0080  /* Codec Negotiation */
-#define BTA_AG_PEER_FEAT_HFIND      0x0100  /* HF indicators */
-#define BTA_AG_PEER_FEAT_S4         0x0200  /* ESCO S4 link settings */
-#define BTA_AG_PEER_FEAT_VOIP       0x0400  /* VoIP call */
+#define BTA_AG_PEER_FEAT_HF_IND     0x0100   /* HF Indicators */
+#define BTA_AG_PEER_FEAT_ESCO       0x0200   /* eSCO S4 (and T2) setting supported */
 
-typedef UINT16 tBTA_AG_PEER_FEAT;
+/* Proprietary features: using bits after 12 */
+#define BTA_AG_PEER_FEAT_UNAT       0x1000   /* Pass unknown AT command responses to application */
+#define BTA_AG_PEER_FEAT_VOIP       0x2000  /* VoIP call */
+
+typedef uint16_t tBTA_AG_PEER_FEAT;
 
 /* HFP peer supported codec masks */
 // TODO(google) This should use common definitions
@@ -129,10 +164,6 @@ typedef UINT16 tBTA_AG_PEER_FEAT;
 #define BTA_AG_CODEC_CVSD           BTM_SCO_CODEC_CVSD      /* CVSD */
 #define BTA_AG_CODEC_MSBC           BTM_SCO_CODEC_MSBC      /* mSBC */
 typedef UINT16 tBTA_AG_PEER_CODEC;
-
-/* HFP peer supported HF indicator assigned numbers */
-#define BTM_AG_HFIND_NONE                      0
-#define BTA_AG_HFIND_ENHANCED_SAFETY           1      /* Enhanced Safety HF indicator */
 
 /* HFP errcode - Set when BTA_AG_OK_ERROR is returned in 'ok_flag' */
 #define BTA_AG_ERR_PHONE_FAILURE    0       /* Phone Failure */
@@ -213,18 +244,12 @@ typedef UINT16 tBTA_AG_PEER_CODEC;
 #define BTA_AG_AT_MAX_LEN           256
 #endif
 
-/* AT command argument capabilities */
-#define BTA_AG_AT_NONE          0x01        /* no argument */
-#define BTA_AG_AT_SET           0x02        /* set value */
-#define BTA_AG_AT_READ          0x04        /* read value */
-#define BTA_AG_AT_TEST          0x08        /* test value range */
-#define BTA_AG_AT_FREE          0x10        /* freeform argument */
-
 /* data associated with BTA_AG_IND_RES */
 typedef struct
 {
-    UINT16          id;
-    UINT16          value;
+    uint16_t          id;
+    uint16_t          value;
+    bool              on_demand;
 } tBTA_AG_IND;
 
 /* data type for BTA_AgResult() */
@@ -273,10 +298,8 @@ typedef struct
 #define BTA_AG_AT_CBC_EVT       25 /* Battery Level report from HF */
 #define BTA_AG_AT_BAC_EVT       26 /* avablable codec */
 #define BTA_AG_AT_BCS_EVT       27 /* Codec select */
-#define BTA_AG_AT_BIND_EVT      28 /* Read HF indicators supported values */
-#define BTA_AG_AT_BIEV_EVT      29 /* HF indicator value update from HF*/
-
-
+#define BTA_AG_AT_BIND_EVT      28 /* HF indicator */
+#define BTA_AG_AT_BIEV_EVT      29 /* HF indicator updates from peer */
 
 typedef UINT8 tBTA_AG_EVT;
 
@@ -328,6 +351,7 @@ typedef struct
     char                str[BTA_AG_AT_MAX_LEN+1];
     UINT16              num;
     UINT8               idx;    /* call number used by CLCC and CHLD */
+    UINT16              lidx;    /* long index, ex, HF indicator */
 } tBTA_AG_VAL;
 
 /* union of data associated with AG callback */
@@ -391,13 +415,24 @@ typedef void (tBTA_AG_CBACK)(tBTA_AG_EVT event, tBTA_AG *p_data);
 #define BTA_AG_BEARER_RES2          6   /* Reserved     */
 #define BTA_AG_BEARER_RES3          7   /* Reserved     */
 
+/* type for HF indicator */
+typedef struct
+{
+    UINT16          ind_id;
+    BOOLEAN         is_supported;
+    BOOLEAN         is_enable;
+    UINT32          ind_min_val;
+    UINT32          ind_max_val;
+} tBTA_AG_HF_IND;
 
 /* AG configuration structure */
 typedef struct
 {
     char         *cind_info;
-    INT32        conn_tout;
-    UINT16       sco_pkt_types;
+    char         *bind_info;
+    uint8_t        num_local_hf_ind;
+    int32_t        conn_tout;
+    uint16_t       sco_pkt_types;
     char         *chld_val_ecc;
     char         *chld_val;
 } tBTA_AG_CFG;

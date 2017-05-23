@@ -68,46 +68,6 @@ INT16 utl_str2int(const char *p_s)
 
 /*******************************************************************************
 **
-** Function         utl_str2int32
-**
-** Description      This utility function converts a character string to an
-**                  int32.  Acceptable values in string are 0-9.  If invalid
-**                  string or string value too large, -1 is returned.  Leading
-**                  spaces are skipped.
-**
-**
-** Returns          int32_t value or -1 on error.
-**
-*******************************************************************************/
-INT32 utl_str2int32(const char *p_s)
-{
-    INT32   val = 0;
-
-    for (;*p_s == ' ' && *p_s != 0; p_s++);
-
-    if (*p_s == 0) return -1;
-
-    for (;;)
-    {
-        if ((*p_s < '0') || (*p_s > '9')) return -1;
-
-        val += (INT32) (*p_s++ - '0');
-
-        if (val > 65535) return -1;
-
-        if (*p_s == 0)
-        {
-            return val;
-        }
-        else
-        {
-            val *= 10;
-        }
-    }
-}
-
-/*******************************************************************************
-**
 ** Function         utl_strucmp
 **
 ** Description      This utility function compares two strings in uppercase.

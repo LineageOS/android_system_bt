@@ -290,46 +290,6 @@ BD_ADDR                                                                      rem
 
 /*************************************************************************************
 **
-** Function        sdp_change_hfp_version
-**
-** Description     Checks if UUID is AG_HANDSFREE, attribute id
-**                 is Profile descriptor list and remote BD address
-**                 matches device blacklist, change hfp version to 1.7
-**
-** Returns         BOOLEAN
-**
-***************************************************************************************/
-BOOLEAN sdp_change_hfp_version (tSDP_ATTRIBUTE *p_attr, BD_ADDR remote_address)
-{
-    bool is_blacklisted = FALSE;
-    char value[PROPERTY_VALUE_MAX];
-    if ((p_attr->id == ATTR_ID_BT_PROFILE_DESC_LIST) &&
-        (p_attr->len >= SDP_PROFILE_DESC_LENGTH))
-    {
-        /* As per current DB implementation UUID is condidered as 16 bit */
-        if (((p_attr->value_ptr[3] << 8) | (p_attr->value_ptr[4])) ==
-                UUID_SERVCLASS_HF_HANDSFREE)
-        {
-            is_blacklisted = is_device_present(IOT_HFP_1_7_BLACKLIST, remote_address);
-            SDP_TRACE_DEBUG("%s: HF version is 1.7 for BD addr: %x:%x:%x",\
-                           __func__, remote_address[0], remote_address[1], remote_address[2]);
-            /* For PTS we should show AG's HFP version as 1.7 */
-            if (is_blacklisted ||
-                (property_get("bt.pts.certification", value, "false") &&
-                 strcmp(value, "true") == 0))
-            {
-                p_attr->value_ptr[PROFILE_VERSION_POSITION] = 0x07; // Update HFP version as 1.7
-                SDP_TRACE_ERROR("SDP Change HFP Version = 0x%x",
-                         p_attr->value_ptr[PROFILE_VERSION_POSITION]);
-                return TRUE;
-            }
-        }
-    }
-    return FALSE;
-}
-
-/*************************************************************************************
-**
 ** Function        sdp_reset_avrcp_cover_art_bit
 **
 ** Description     Checks if Service Class ID is AV Remote Control TG, attribute id
@@ -595,7 +555,6 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     BOOLEAN         is_cont = FALSE;
     BOOLEAN         is_avrcp_fallback = FALSE;
     BOOLEAN         is_avrcp_browse_bit_reset = FALSE;
-    BOOLEAN         is_hfp_fallback = FALSE;
     BOOLEAN         is_avrcp_ca_bit_reset = FALSE;
     UINT16          attr_len;
 
@@ -696,7 +655,6 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
                         p_rec->attribute[1], p_attr, p_ccb->device_address);
 #endif
 #endif
-            is_hfp_fallback = sdp_change_hfp_version (p_attr, p_ccb->device_address);
             /* Check if attribute fits. Assume 3-byte value type/length */
             rem_len = max_list_len - (INT16) (p_rsp - &p_ccb->rsp_list[0]);
 
@@ -770,13 +728,6 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
                                         |= AVRCP_BROWSE_SUPPORT_BITMASK;
                 is_avrcp_browse_bit_reset = FALSE;
             }
-            if (is_hfp_fallback)
-            {
-                SDP_TRACE_ERROR("Restore HFP version to 1.6");
-                /* Update HFP version back to 1.6 */
-                p_attr->value_ptr[PROFILE_VERSION_POSITION] = 0x06;
-                is_hfp_fallback = FALSE;
-            }
             if (is_avrcp_ca_bit_reset)
             {
                 /* Restore Cover Art bit */
@@ -807,13 +758,6 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
         p_attr->value_ptr[AVRCP_SUPPORTED_FEATURES_POSITION]
                                     |= AVRCP_BROWSE_SUPPORT_BITMASK;
         is_avrcp_browse_bit_reset = FALSE;
-    }
-    if (is_hfp_fallback)
-    {
-        SDP_TRACE_ERROR("Restore HFP version to 1.6");
-        /* Update HFP version back to 1.6 */
-        p_attr->value_ptr[PROFILE_VERSION_POSITION] = 0x06;
-        is_hfp_fallback = FALSE;
     }
     if (is_avrcp_ca_bit_reset)
     {
@@ -926,7 +870,6 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     BOOLEAN         maxxed_out = FALSE, is_cont = FALSE;
     BOOLEAN         is_avrcp_fallback = FALSE;
     BOOLEAN         is_avrcp_browse_bit_reset = FALSE;
-    BOOLEAN         is_hfp_fallback = FALSE;
     BOOLEAN         is_avrcp_ca_bit_reset = FALSE;
     UINT8           *p_seq_start = NULL;
     UINT16          seq_len, attr_len;
@@ -1042,7 +985,6 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
                             p_rec->attribute[1], p_attr, p_ccb->device_address);
 #endif
 #endif
-                is_hfp_fallback = sdp_change_hfp_version (p_attr, p_ccb->device_address);
                 /* Check if attribute fits. Assume 3-byte value type/length */
                 rem_len = max_list_len - (INT16) (p_rsp - &p_ccb->rsp_list[0]);
 
@@ -1121,13 +1063,6 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
                                             |= AVRCP_BROWSE_SUPPORT_BITMASK;
                     is_avrcp_browse_bit_reset = FALSE;
                 }
-                if (is_hfp_fallback)
-                {
-                    SDP_TRACE_ERROR("Restore HFP version to 1.6");
-                    /* Update HFP version back to 1.6 */
-                    p_attr->value_ptr[PROFILE_VERSION_POSITION] = 0x06;
-                    is_hfp_fallback = FALSE;
-                }
                 if (is_avrcp_ca_bit_reset)
                 {
                     /* Restore Cover Art bit */
@@ -1158,13 +1093,6 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
             p_attr->value_ptr[AVRCP_SUPPORTED_FEATURES_POSITION]
                                     |= AVRCP_BROWSE_SUPPORT_BITMASK;
             is_avrcp_browse_bit_reset = FALSE;
-        }
-        if (is_hfp_fallback)
-        {
-            SDP_TRACE_ERROR("Restore HFP version to 1.6");
-            /* Update HFP version back to 1.6 */
-            p_attr->value_ptr[PROFILE_VERSION_POSITION] = 0x06;
-            is_hfp_fallback = FALSE;
         }
         if (is_avrcp_ca_bit_reset)
         {
