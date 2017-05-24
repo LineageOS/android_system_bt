@@ -511,4 +511,43 @@ extern tMCA_RESULT MCA_WriteReq(tMCA_DL mdl, BT_HDR* p_pkt);
  ******************************************************************************/
 extern uint16_t MCA_GetL2CapChannel(tMCA_DL mdl);
 
+/**
+ * The following definitions are for test interface only, they mirror function
+ * definitions above. This struct allows an external application to load and
+ * call these methods without linking against the core library.
+ */
+typedef struct {
+  size_t size;
+  void (*init)(void);
+  tMCA_HANDLE (*register_application)(tMCA_REG* p_reg,
+                                      tMCA_CTRL_CBACK* p_cback);
+  void (*deregister_application)(tMCA_HANDLE handle);
+  tMCA_RESULT (*create_mdep)(tMCA_HANDLE handle, tMCA_DEP* p_dep,
+                             tMCA_CS* p_cs);
+  tMCA_RESULT (*delete_mdep)(tMCA_HANDLE handle, tMCA_DEP dep);
+  tMCA_RESULT (*connect_mcl)(tMCA_HANDLE handle, BD_ADDR bd_addr,
+                             uint16_t ctrl_psm, uint16_t sec_mask);
+  tMCA_RESULT (*disconnect_mcl)(tMCA_CL mcl);
+  tMCA_RESULT (*create_mdl_request)(tMCA_CL mcl, tMCA_DEP dep,
+                                    uint16_t data_psm, uint16_t mdl_id,
+                                    uint8_t peer_dep_id, uint8_t cfg,
+                                    const tMCA_CHNL_CFG* p_chnl_cfg);
+  tMCA_RESULT (*create_mdl_response)(tMCA_CL mcl, tMCA_DEP dep, uint16_t mdl_id,
+                                     uint8_t cfg, uint8_t rsp_code,
+                                     const tMCA_CHNL_CFG* p_chnl_cfg);
+  tMCA_RESULT (*close_mdl_request)(tMCA_DL mdl);
+  tMCA_RESULT (*reconnect_mdl_request)(tMCA_CL mcl, tMCA_DEP dep,
+                                       uint16_t data_psm, uint16_t mdl_id,
+                                       const tMCA_CHNL_CFG* p_chnl_cfg);
+  tMCA_RESULT (*reconnect_mdl_response)(tMCA_CL mcl, tMCA_DEP dep,
+                                        uint16_t mdl_id, uint8_t rsp_code,
+                                        const tMCA_CHNL_CFG* p_chnl_cfg);
+  tMCA_RESULT (*data_channel_config)(tMCA_CL mcl,
+                                     const tMCA_CHNL_CFG* p_chnl_cfg);
+  tMCA_RESULT (*abort_mdl)(tMCA_CL mcl);
+  tMCA_RESULT (*delete_mdl)(tMCA_CL mcl, uint16_t mdl_id);
+  tMCA_RESULT (*write_mdl)(tMCA_DL mdl, BT_HDR* p_pkt);
+  uint16_t (*get_l2cap_channel)(tMCA_DL mdl);
+} btmcap_test_interface_t;
+
 #endif /* MCA_API_H */

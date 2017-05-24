@@ -66,6 +66,9 @@
 #include "osi/include/wakelock.h"
 #include "stack_manager.h"
 
+/* Test interface includes */
+#include "mca_api.h"
+
 /*******************************************************************************
  *  Static variables
  ******************************************************************************/
@@ -106,6 +109,9 @@ extern btrc_interface_t* btif_rc_get_interface();
 extern btrc_interface_t* btif_rc_ctrl_get_interface();
 /*SDP search client*/
 extern btsdp_interface_t* btif_sdp_get_interface();
+
+/* List all test interface here */
+extern btmcap_test_interface_t* stack_mcap_get_interface();
 
 /*******************************************************************************
  *  Functions
@@ -363,6 +369,9 @@ static const void* get_profile_interface(const char* profile_id) {
 
   if (is_profile(profile_id, BT_PROFILE_AV_RC_CTRL_ID))
     return btif_rc_ctrl_get_interface();
+
+  if (is_profile(profile_id, BT_TEST_INTERFACE_MCAP_ID))
+    return stack_mcap_get_interface();
 
   return NULL;
 }
