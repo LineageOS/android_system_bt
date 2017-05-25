@@ -87,15 +87,7 @@ tGAP_CLCB* gap_find_clcb_by_bd_addr(BD_ADDR bda) {
   return NULL;
 }
 
-/*******************************************************************************
- *
- * Function         gap_ble_find_clcb_by_conn_id
- *
- * Description      The function searches all LCB with macthing connection ID
- *
- * Returns          total number of clcb found.
- *
- ******************************************************************************/
+/* returns LCB with matching connection ID, or NULL if not found */
 tGAP_CLCB* gap_ble_find_clcb_by_conn_id(uint16_t conn_id) {
   uint8_t i_clcb;
   tGAP_CLCB* p_clcb = NULL;
@@ -107,7 +99,7 @@ tGAP_CLCB* gap_ble_find_clcb_by_conn_id(uint16_t conn_id) {
     }
   }
 
-  return p_clcb;
+  return NULL;
 }
 
 /*******************************************************************************
@@ -132,10 +124,10 @@ tGAP_CLCB* gap_clcb_alloc(BD_ADDR bda) {
       p_clcb->in_use = true;
       memcpy(p_clcb->bda, bda, BD_ADDR_LEN);
       p_clcb->pending_req_q = fixed_queue_new(SIZE_MAX);
-      break;
+      return p_clcb;
     }
   }
-  return p_clcb;
+  return NULL;
 }
 
 /*******************************************************************************
