@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright (C) 2009-2013 Broadcom Corporation
+ *  Copyright (C) 2017 The Android Open Source Project
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -75,46 +75,15 @@ typedef struct {
   tGAP_CCB ccb_pool[GAP_MAX_CONNECTIONS];
 } tGAP_CONN;
 
-#define GAP_MAX_CHAR_NUM 4
-
-typedef struct {
-  uint16_t handle;
-  uint16_t uuid;
-  tGAP_BLE_ATTR_VALUE attr_value;
-} tGAP_ATTR;
 /**********************************************************************
  * M A I N   C O N T R O L   B L O C K
  **********************************************************************/
 
-#define GAP_MAX_CL GATT_CL_MAX_LCB
-
-typedef struct {
-  uint16_t uuid;
-  tGAP_BLE_CMPL_CBACK* p_cback;
-} tGAP_BLE_REQ;
-
-typedef struct {
-  BD_ADDR bda;
-  tGAP_BLE_CMPL_CBACK* p_cback;
-  uint16_t conn_id;
-  uint16_t cl_op_uuid;
-  bool in_use;
-  bool connected;
-  fixed_queue_t* pending_req_q;
-
-} tGAP_CLCB;
-
 typedef struct {
   uint8_t trace_level;
-
 #if (GAP_CONN_INCLUDED == TRUE)
   tGAP_CONN conn;
 #endif
-
-  /* LE GAP attribute database */
-  tGAP_ATTR gatt_attr[GAP_MAX_CHAR_NUM];
-  tGAP_CLCB clcb[GAP_MAX_CL]; /* connection link*/
-  tGATT_IF gatt_if;
 } tGAP_CB;
 
 extern tGAP_CB gap_cb;
