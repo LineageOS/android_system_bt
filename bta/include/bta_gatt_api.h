@@ -639,10 +639,11 @@ extern void BTA_GATTC_AppDeregister(tBTA_GATTC_IF client_if);
  *
  ******************************************************************************/
 extern void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda,
-                           bool is_direct, tBTA_GATT_TRANSPORT transport);
+                           bool is_direct, tBTA_GATT_TRANSPORT transport,
+                           bool opportunistic);
 extern void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda,
                            bool is_direct, tBTA_GATT_TRANSPORT transport,
-                           uint8_t initiating_phys);
+                           uint8_t initiating_phys, bool opportunistic);
 
 /*******************************************************************************
  *

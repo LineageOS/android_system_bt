@@ -127,16 +127,20 @@ void BTA_GATTC_AppDeregister(tBTA_GATTC_IF client_if) {
  *                  transport: Transport to be used for GATT connection
  *                             (BREDR/LE)
  *                  initiating_phys: LE PHY to use, optional
+ *                  opportunistic: wether the connection shall be opportunistic,
+ *                                 and don't impact the disconnection timer
  *
  ******************************************************************************/
 void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, bool is_direct,
-                    tBTA_GATT_TRANSPORT transport) {
+                    tBTA_GATT_TRANSPORT transport, bool opportunistic) {
   uint8_t phy = controller_get_interface()->get_le_all_initiating_phys();
-  BTA_GATTC_Open(client_if, remote_bda, is_direct, transport, phy);
+  BTA_GATTC_Open(client_if, remote_bda, is_direct, transport, phy,
+                 opportunistic);
 }
 
 void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, bool is_direct,
-                    tBTA_GATT_TRANSPORT transport, uint8_t initiating_phys) {
+                    tBTA_GATT_TRANSPORT transport, uint8_t initiating_phys,
+                    bool opportunistic) {
   tBTA_GATTC_API_OPEN* p_buf =
       (tBTA_GATTC_API_OPEN*)osi_malloc(sizeof(tBTA_GATTC_API_OPEN));
 
@@ -145,6 +149,7 @@ void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, bool is_direct,
   p_buf->is_direct = is_direct;
   p_buf->transport = transport;
   p_buf->initiating_phys = initiating_phys;
+  p_buf->opportunistic = opportunistic;
   memcpy(p_buf->remote_bda, remote_bda, BD_ADDR_LEN);
 
   bta_sys_sendmsg(p_buf);
