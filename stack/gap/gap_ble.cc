@@ -540,6 +540,7 @@ void gap_ble_cl_op_cmpl(tGAP_CLCB* p_clcb, bool status, uint16_t len,
   /* if no further activity is requested in callback, drop the link */
   if (p_clcb->connected) {
     if (!gap_ble_send_cl_read_request(p_clcb)) {
+      GATT_Disconnect(p_clcb->conn_id);
       gap_ble_dealloc_clcb(p_clcb);
     }
   }
