@@ -432,7 +432,7 @@ void bta_gattc_open(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
 
   /* open/hold a connection */
   if (!GATT_Connect(p_clcb->p_rcb->client_if, p_data->api_conn.remote_bda, true,
-                    p_data->api_conn.transport, false,
+                    p_data->api_conn.transport, p_data->api_conn.opportunistic,
                     p_data->api_conn.initiating_phys)) {
     APPL_TRACE_ERROR("Connection open failure");
 
