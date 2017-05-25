@@ -676,8 +676,7 @@ bool gap_ble_accept_cl_operation(BD_ADDR peer_bda, uint16_t uuid,
                                 BT_TRANSPORT_LE))
     p_clcb->connected = true;
 
-  /* hold the link here */
-  if (!GATT_Connect(gap_cb.gatt_if, p_clcb->bda, true, BT_TRANSPORT_LE, false))
+  if (!GATT_Connect(gap_cb.gatt_if, p_clcb->bda, true, BT_TRANSPORT_LE, true))
     return started;
 
   /* enqueue the request */
