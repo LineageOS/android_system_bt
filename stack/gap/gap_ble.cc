@@ -15,23 +15,15 @@
  *  limitations under the License.
  *
  ******************************************************************************/
-#include "bt_target.h"
 
+#include <base/logging.h>
 #include <base/strings/stringprintf.h>
 #include <string.h>
 #include <array>
 #include <list>
 #include <queue>
-#include "bt_utils.h"
-#include "btcore/include/uuid.h"
-#include "btm_int.h"
 #include "gap_api.h"
-#include "gap_int.h"
 #include "gatt_api.h"
-#include "gatt_int.h"
-#include "gattdefs.h"
-#include "hcimsgs.h"
-#include "osi/include/osi.h"
 
 using base::StringPrintf;
 

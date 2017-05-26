@@ -20,15 +20,69 @@
 #include <string.h>
 #include "bt_target.h"
 #include "bt_utils.h"
+#include "btm_int.h"
 #include "btu.h"
-#include "gap_int.h"
+#include "gap_api.h"
 #include "l2c_int.h"
 #include "l2cdefs.h"
+#include "osi/include/fixed_queue.h"
 #include "osi/include/mutex.h"
-#include "osi/include/osi.h"
-#include "btm_int.h"
 
 using base::StringPrintf;
+
+/* Define the GAP Connection Control Block */
+typedef struct {
+#define GAP_CCB_STATE_IDLE 0
+#define GAP_CCB_STATE_LISTENING 1
+#define GAP_CCB_STATE_CONN_SETUP 2
+#define GAP_CCB_STATE_CFG_SETUP 3
+#define GAP_CCB_STATE_WAIT_SEC 4
+#define GAP_CCB_STATE_CONNECTED 5
+  uint8_t con_state;
+
+#define GAP_CCB_FLAGS_IS_ORIG 0x01
+#define GAP_CCB_FLAGS_HIS_CFG_DONE 0x02
+#define GAP_CCB_FLAGS_MY_CFG_DONE 0x04
+#define GAP_CCB_FLAGS_SEC_DONE 0x08
+#define GAP_CCB_FLAGS_CONN_DONE 0x0E
+  uint8_t con_flags;
+
+  uint8_t service_id;     /* Used by BTM */
+  uint16_t gap_handle;    /* GAP handle */
+  uint16_t connection_id; /* L2CAP CID */
+  bool rem_addr_specified;
+  uint8_t chan_mode_mask; /* Supported channel modes (FCR) */
+  BD_ADDR rem_dev_address;
+  uint16_t psm;
+  uint16_t rem_mtu_size;
+
+  bool is_congested;
+  fixed_queue_t* tx_queue; /* Queue of buffers waiting to be sent */
+  fixed_queue_t* rx_queue; /* Queue of buffers waiting to be read */
+
+  uint32_t rx_queue_size; /* Total data count in rx_queue */
+
+  tGAP_CONN_CALLBACK* p_callback; /* Users callback function */
+
+  tL2CAP_CFG_INFO cfg;              /* Configuration */
+  tL2CAP_ERTM_INFO ertm_info;       /* Pools and modes for ertm */
+  tBT_TRANSPORT transport;          /* Transport channel BR/EDR or BLE */
+  tL2CAP_LE_CFG_INFO local_coc_cfg; /* local configuration for LE Coc */
+  tL2CAP_LE_CFG_INFO peer_coc_cfg;  /* local configuration for LE Coc */
+} tGAP_CCB;
+
+typedef struct {
+#if (AMP_INCLUDED == TRUE)
+  tAMP_APPL_INFO reg_info;
+#else
+  tL2CAP_APPL_INFO reg_info; /* L2CAP Registration info */
+#endif
+  tGAP_CCB ccb_pool[GAP_MAX_CONNECTIONS];
+} tGAP_CONN;
+
+namespace {
+tGAP_CONN conn;
+}
 
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
@@ -60,35 +114,37 @@ static void gap_checks_con_flags(tGAP_CCB* p_ccb);
  *
  ******************************************************************************/
 void gap_conn_init(void) {
+  memset(&conn, 0, sizeof(tGAP_CONN));
+
 #if (AMP_INCLUDED == TRUE)
-  gap_cb.conn.reg_info.pAMP_ConnectInd_Cb = gap_connect_ind;
-  gap_cb.conn.reg_info.pAMP_ConnectCfm_Cb = gap_connect_cfm;
-  gap_cb.conn.reg_info.pAMP_ConnectPnd_Cb = NULL;
-  gap_cb.conn.reg_info.pAMP_ConfigInd_Cb = gap_config_ind;
-  gap_cb.conn.reg_info.pAMP_ConfigCfm_Cb = gap_config_cfm;
-  gap_cb.conn.reg_info.pAMP_DisconnectInd_Cb = gap_disconnect_ind;
-  gap_cb.conn.reg_info.pAMP_DisconnectCfm_Cb = NULL;
-  gap_cb.conn.reg_info.pAMP_QoSViolationInd_Cb = NULL;
-  gap_cb.conn.reg_info.pAMP_DataInd_Cb = gap_data_ind;
-  gap_cb.conn.reg_info.pAMP_CongestionStatus_Cb = gap_congestion_ind;
-  gap_cb.conn.reg_info.pAMP_TxComplete_Cb = NULL;
-  gap_cb.conn.reg_info.pAMP_MoveInd_Cb = NULL;
-  gap_cb.conn.reg_info.pAMP_MoveRsp_Cb = NULL;
-  gap_cb.conn.reg_info.pAMP_MoveCfm_Cb = NULL;     // gap_move_cfm
-  gap_cb.conn.reg_info.pAMP_MoveCfmRsp_Cb = NULL;  // gap_move_cfm_rsp
+  conn.reg_info.pAMP_ConnectInd_Cb = gap_connect_ind;
+  conn.reg_info.pAMP_ConnectCfm_Cb = gap_connect_cfm;
+  conn.reg_info.pAMP_ConnectPnd_Cb = NULL;
+  conn.reg_info.pAMP_ConfigInd_Cb = gap_config_ind;
+  conn.reg_info.pAMP_ConfigCfm_Cb = gap_config_cfm;
+  conn.reg_info.pAMP_DisconnectInd_Cb = gap_disconnect_ind;
+  conn.reg_info.pAMP_DisconnectCfm_Cb = NULL;
+  conn.reg_info.pAMP_QoSViolationInd_Cb = NULL;
+  conn.reg_info.pAMP_DataInd_Cb = gap_data_ind;
+  conn.reg_info.pAMP_CongestionStatus_Cb = gap_congestion_ind;
+  conn.reg_info.pAMP_TxComplete_Cb = NULL;
+  conn.reg_info.pAMP_MoveInd_Cb = NULL;
+  conn.reg_info.pAMP_MoveRsp_Cb = NULL;
+  conn.reg_info.pAMP_MoveCfm_Cb = NULL;     // gap_move_cfm
+  conn.reg_info.pAMP_MoveCfmRsp_Cb = NULL;  // gap_move_cfm_rsp
 
 #else
-  gap_cb.conn.reg_info.pL2CA_ConnectInd_Cb = gap_connect_ind;
-  gap_cb.conn.reg_info.pL2CA_ConnectCfm_Cb = gap_connect_cfm;
-  gap_cb.conn.reg_info.pL2CA_ConnectPnd_Cb = NULL;
-  gap_cb.conn.reg_info.pL2CA_ConfigInd_Cb = gap_config_ind;
-  gap_cb.conn.reg_info.pL2CA_ConfigCfm_Cb = gap_config_cfm;
-  gap_cb.conn.reg_info.pL2CA_DisconnectInd_Cb = gap_disconnect_ind;
-  gap_cb.conn.reg_info.pL2CA_DisconnectCfm_Cb = NULL;
-  gap_cb.conn.reg_info.pL2CA_QoSViolationInd_Cb = NULL;
-  gap_cb.conn.reg_info.pL2CA_DataInd_Cb = gap_data_ind;
-  gap_cb.conn.reg_info.pL2CA_CongestionStatus_Cb = gap_congestion_ind;
-  gap_cb.conn.reg_info.pL2CA_TxComplete_Cb = gap_tx_complete_ind;
+  conn.reg_info.pL2CA_ConnectInd_Cb = gap_connect_ind;
+  conn.reg_info.pL2CA_ConnectCfm_Cb = gap_connect_cfm;
+  conn.reg_info.pL2CA_ConnectPnd_Cb = NULL;
+  conn.reg_info.pL2CA_ConfigInd_Cb = gap_config_ind;
+  conn.reg_info.pL2CA_ConfigCfm_Cb = gap_config_cfm;
+  conn.reg_info.pL2CA_DisconnectInd_Cb = gap_disconnect_ind;
+  conn.reg_info.pL2CA_DisconnectCfm_Cb = NULL;
+  conn.reg_info.pL2CA_QoSViolationInd_Cb = NULL;
+  conn.reg_info.pL2CA_DataInd_Cb = gap_data_ind;
+  conn.reg_info.pL2CA_CongestionStatus_Cb = gap_congestion_ind;
+  conn.reg_info.pL2CA_TxComplete_Cb = gap_tx_complete_ind;
 #endif
 }
 
@@ -159,7 +215,8 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
   /* A client MUST have specified a bd addr to connect with */
   if (!p_ccb->rem_addr_specified && !is_server) {
     gap_release_ccb(p_ccb);
-    LOG(ERROR) <<"GAP ERROR: Client must specify a remote BD ADDR to connect to!";
+    LOG(ERROR)
+        << "GAP ERROR: Client must specify a remote BD ADDR to connect to!";
     return (GAP_INVALID_HANDLE);
   }
 
@@ -178,34 +235,34 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
 /* If originator, use a dynamic PSM */
 #if (AMP_INCLUDED == TRUE)
   if (!is_server)
-    gap_cb.conn.reg_info.pAMP_ConnectInd_Cb = NULL;
+    conn.reg_info.pAMP_ConnectInd_Cb = NULL;
   else
-    gap_cb.conn.reg_info.pAMP_ConnectInd_Cb = gap_connect_ind;
+    conn.reg_info.pAMP_ConnectInd_Cb = gap_connect_ind;
 #else
   if (!is_server)
-    gap_cb.conn.reg_info.pL2CA_ConnectInd_Cb = NULL;
+    conn.reg_info.pL2CA_ConnectInd_Cb = NULL;
   else
-    gap_cb.conn.reg_info.pL2CA_ConnectInd_Cb = gap_connect_ind;
+    conn.reg_info.pL2CA_ConnectInd_Cb = gap_connect_ind;
 #endif
 
   /* Register the PSM with L2CAP */
   if (transport == BT_TRANSPORT_BR_EDR) {
-    p_ccb->psm =
-        L2CA_REGISTER(psm, &gap_cb.conn.reg_info,
-                      AMP_AUTOSWITCH_ALLOWED | AMP_USE_AMP_IF_POSSIBLE);
+    p_ccb->psm = L2CA_REGISTER(
+        psm, &conn.reg_info, AMP_AUTOSWITCH_ALLOWED | AMP_USE_AMP_IF_POSSIBLE);
     if (p_ccb->psm == 0) {
-      LOG(ERROR) << StringPrintf("%s: Failure registering PSM 0x%04x", __func__, psm);
+      LOG(ERROR) << StringPrintf("%s: Failure registering PSM 0x%04x", __func__,
+                                 psm);
       gap_release_ccb(p_ccb);
       return (GAP_INVALID_HANDLE);
     }
   }
 
   if (transport == BT_TRANSPORT_LE) {
-    p_ccb->psm =
-        L2CA_REGISTER_COC(psm, &gap_cb.conn.reg_info,
-                          AMP_AUTOSWITCH_ALLOWED | AMP_USE_AMP_IF_POSSIBLE);
+    p_ccb->psm = L2CA_REGISTER_COC(
+        psm, &conn.reg_info, AMP_AUTOSWITCH_ALLOWED | AMP_USE_AMP_IF_POSSIBLE);
     if (p_ccb->psm == 0) {
-      LOG(ERROR) << StringPrintf("%s: Failure registering PSM 0x%04x", __func__, psm);
+      LOG(ERROR) << StringPrintf("%s: Failure registering PSM 0x%04x", __func__,
+                                 psm);
       gap_release_ccb(p_ccb);
       return (GAP_INVALID_HANDLE);
     }
@@ -387,7 +444,7 @@ int GAP_GetRxQueueCnt(uint16_t handle, uint32_t* p_rx_queue_count) {
 
   /* Check that handle is valid */
   if (handle < GAP_MAX_CONNECTIONS) {
-    p_ccb = &gap_cb.conn.ccb_pool[handle];
+    p_ccb = &conn.ccb_pool[handle];
 
     if (p_ccb->con_state == GAP_CCB_STATE_CONNECTED) {
       *p_rx_queue_count = p_ccb->rx_queue_size;
@@ -677,8 +734,7 @@ static void gap_connect_ind(BD_ADDR bd_addr, uint16_t l2cap_cid, uint16_t psm,
   tGAP_CCB* p_ccb;
 
   /* See if we have a CCB listening for the connection */
-  for (xx = 0, p_ccb = gap_cb.conn.ccb_pool; xx < GAP_MAX_CONNECTIONS;
-       xx++, p_ccb++) {
+  for (xx = 0, p_ccb = conn.ccb_pool; xx < GAP_MAX_CONNECTIONS; xx++, p_ccb++) {
     if ((p_ccb->con_state == GAP_CCB_STATE_LISTENING) && (p_ccb->psm == psm) &&
         ((p_ccb->rem_addr_specified == false) ||
          (!memcmp(bd_addr, p_ccb->rem_dev_address, BD_ADDR_LEN))))
@@ -687,8 +743,9 @@ static void gap_connect_ind(BD_ADDR bd_addr, uint16_t l2cap_cid, uint16_t psm,
 
   if (xx == GAP_MAX_CONNECTIONS) {
     LOG(WARNING) << "*******";
-    LOG(WARNING) << "WARNING: GAP Conn Indication for Unexpected Bd Addr...Disconnecting";
-    LOG(WARNING) <<"*******";
+    LOG(WARNING) << "WARNING: GAP Conn Indication for Unexpected Bd "
+                    "Addr...Disconnecting";
+    LOG(WARNING) << "*******";
 
     /* Disconnect because it is an unexpected connection */
     L2CA_DISCONNECT_REQ(l2cap_cid);
@@ -760,9 +817,8 @@ static void gap_checks_con_flags(tGAP_CCB* p_ccb) {
  * Returns          void
  *
  ******************************************************************************/
-static void gap_sec_check_complete(UNUSED_ATTR BD_ADDR bd_addr,
-                                   UNUSED_ATTR tBT_TRANSPORT transport,
-                                   void* p_ref_data, uint8_t res) {
+static void gap_sec_check_complete(BD_ADDR, tBT_TRANSPORT, void* p_ref_data,
+                                   uint8_t res) {
   tGAP_CCB* p_ccb = (tGAP_CCB*)p_ref_data;
 
   DVLOG(1) << StringPrintf(
@@ -1025,8 +1081,7 @@ static tGAP_CCB* gap_find_ccb_by_cid(uint16_t cid) {
   tGAP_CCB* p_ccb;
 
   /* Look through each connection control block */
-  for (xx = 0, p_ccb = gap_cb.conn.ccb_pool; xx < GAP_MAX_CONNECTIONS;
-       xx++, p_ccb++) {
+  for (xx = 0, p_ccb = conn.ccb_pool; xx < GAP_MAX_CONNECTIONS; xx++, p_ccb++) {
     if ((p_ccb->con_state != GAP_CCB_STATE_IDLE) &&
         (p_ccb->connection_id == cid))
       return (p_ccb);
@@ -1051,7 +1106,7 @@ static tGAP_CCB* gap_find_ccb_by_handle(uint16_t handle) {
 
   /* Check that handle is valid */
   if (handle < GAP_MAX_CONNECTIONS) {
-    p_ccb = &gap_cb.conn.ccb_pool[handle];
+    p_ccb = &conn.ccb_pool[handle];
 
     if (p_ccb->con_state != GAP_CCB_STATE_IDLE) return (p_ccb);
   }
@@ -1074,8 +1129,7 @@ static tGAP_CCB* gap_allocate_ccb(void) {
   tGAP_CCB* p_ccb;
 
   /* Look through each connection control block for a free one */
-  for (xx = 0, p_ccb = gap_cb.conn.ccb_pool; xx < GAP_MAX_CONNECTIONS;
-       xx++, p_ccb++) {
+  for (xx = 0, p_ccb = conn.ccb_pool; xx < GAP_MAX_CONNECTIONS; xx++, p_ccb++) {
     if (p_ccb->con_state == GAP_CCB_STATE_IDLE) {
       memset(p_ccb, 0, sizeof(tGAP_CCB));
       p_ccb->tx_queue = fixed_queue_new(SIZE_MAX);
@@ -1118,7 +1172,7 @@ static void gap_release_ccb(tGAP_CCB* p_ccb) {
   p_ccb->con_state = GAP_CCB_STATE_IDLE;
 
   /* If no-one else is using the PSM, deregister from L2CAP */
-  tGAP_CCB* p_ccb_local = gap_cb.conn.ccb_pool;
+  tGAP_CCB* p_ccb_local = conn.ccb_pool;
   for (uint16_t i = 0; i < GAP_MAX_CONNECTIONS; i++, p_ccb_local++) {
     if ((p_ccb_local->con_state != GAP_CCB_STATE_IDLE) &&
         (p_ccb_local->psm == p_ccb->psm)) {
@@ -1132,4 +1186,14 @@ static void gap_release_ccb(tGAP_CCB* p_ccb) {
   BTM_SecClrService(p_ccb->service_id);
   if (p_ccb->transport == BT_TRANSPORT_BR_EDR) L2CA_DEREGISTER(p_ccb->psm);
   if (p_ccb->transport == BT_TRANSPORT_LE) L2CA_DEREGISTER_COC(p_ccb->psm);
+}
+
+extern void gap_attr_db_init(void);
+
+/*
+ * This routine should not be called except once per stack invocation.
+ */
+void GAP_Init(void) {
+  gap_conn_init();
+  gap_attr_db_init();
 }
