@@ -24,28 +24,8 @@
 #include "gap_api.h"
 #include "gatt_api.h"
 #include "osi/include/fixed_queue.h"
-#define GAP_MAX_BLOCKS 2 /* Concurrent GAP commands pending at a time*/
-/* Define the Generic Access Profile control structure */
-typedef struct {
-  void* p_data;             /* Pointer to any data returned in callback */
-  tGAP_CALLBACK* gap_cback; /* Pointer to users callback function */
-  tGAP_CALLBACK* gap_inq_rslt_cback; /* Used for inquiry results */
-  uint16_t event;                    /* Passed back in the callback */
-  uint8_t index; /* Index of this control block and callback */
-  bool in_use;   /* True when structure is allocated */
-} tGAP_INFO;
 
-/* The control block for FindAddrByName (Only 1 active at a time) */
-typedef struct {
-  tGAP_CALLBACK* p_cback;
-  /* Pointer to the current inquiry database entry */
-  tBTM_INQ_INFO* p_cur_inq;
-  tGAP_FINDADDR_RESULTS results;
-  bool in_use;
-} tGAP_FINDADDR_CB;
-
-/* Define the GAP Connection Control Block.
-*/
+/* Define the GAP Connection Control Block */
 typedef struct {
 #define GAP_CCB_STATE_IDLE 0
 #define GAP_CCB_STATE_LISTENING 1
@@ -125,12 +105,7 @@ typedef struct {
 } tGAP_CLCB;
 
 typedef struct {
-  tGAP_INFO blk[GAP_MAX_BLOCKS];
-  tBTM_CMPL_CB* btm_cback[GAP_MAX_BLOCKS];
   uint8_t trace_level;
-  tGAP_FINDADDR_CB
-      findaddr_cb; /* Contains the control block for finding a device addr */
-  tBTM_INQ_INFO* cur_inqptr;
 
 #if (GAP_CONN_INCLUDED == TRUE)
   tGAP_CONN conn;
