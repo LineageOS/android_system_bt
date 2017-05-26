@@ -61,9 +61,6 @@ void GAP_Init(void) {
   gap_cb.trace_level = BT_TRACE_LEVEL_NONE; /* No traces */
 #endif
 
-#if (GAP_CONN_INCLUDED == TRUE)
   gap_conn_init();
-#endif
-
   gap_attr_db_init();
 }

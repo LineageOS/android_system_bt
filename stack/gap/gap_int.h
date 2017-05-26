@@ -81,14 +81,10 @@ typedef struct {
 
 typedef struct {
   uint8_t trace_level;
-#if (GAP_CONN_INCLUDED == TRUE)
   tGAP_CONN conn;
-#endif
 } tGAP_CB;
 
 extern tGAP_CB gap_cb;
-#if (GAP_CONN_INCLUDED == TRUE)
 extern void gap_conn_init(void);
-#endif
 extern void gap_attr_db_init(void);
 #endif

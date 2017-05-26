@@ -25,7 +25,6 @@
 #include "l2cdefs.h"
 #include "osi/include/mutex.h"
 #include "osi/include/osi.h"
-#if (GAP_CONN_INCLUDED == TRUE)
 #include "btm_int.h"
 
 /******************************************************************************/
@@ -1133,5 +1132,3 @@ static void gap_release_ccb(tGAP_CCB* p_ccb) {
   if (p_ccb->transport == BT_TRANSPORT_BR_EDR) L2CA_DEREGISTER(p_ccb->psm);
   if (p_ccb->transport == BT_TRANSPORT_LE) L2CA_DEREGISTER_COC(p_ccb->psm);
 }
-
-#endif /* GAP_CONN_INCLUDED */
