@@ -138,9 +138,6 @@
 #define BT_EVT_TO_OPP_SRVR_CMDS 0x3900
 #define BT_EVT_TO_OPP_CLNT_CMDS 0x3a00
 
-/* gap events */
-#define BT_EVT_TO_GAP_MSG 0x3b00
-
 /* for NFC                          */
 /************************************/
 /* NCI Command, Notification or Data*/
@@ -798,7 +795,6 @@ typedef uint8_t tBT_DEVICE_TYPE;
 #define TRACE_LAYER_TCS 0x000b0000
 #define TRACE_LAYER_OBEX 0x000c0000
 #define TRACE_LAYER_BTM 0x000d0000
-#define TRACE_LAYER_GAP 0x000e0000
 #define TRACE_LAYER_ICP 0x00110000
 #define TRACE_LAYER_HSP2 0x00120000
 #define TRACE_LAYER_SPP 0x00130000

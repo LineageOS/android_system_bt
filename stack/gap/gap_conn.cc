@@ -16,6 +16,7 @@
  *
  ******************************************************************************/
 
+#include <base/strings/stringprintf.h>
 #include <string.h>
 #include "bt_target.h"
 #include "bt_utils.h"
@@ -26,6 +27,8 @@
 #include "osi/include/mutex.h"
 #include "osi/include/osi.h"
 #include "btm_int.h"
+
+using base::StringPrintf;
 
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
@@ -132,7 +135,7 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
   tGAP_CCB* p_ccb;
   uint16_t cid;
 
-  GAP_TRACE_EVENT("GAP_CONN - Open Request");
+  DVLOG(1) << "GAP_CONN - Open Request";
 
   /* Allocate a new CCB. Return if none available. */
   p_ccb = gap_allocate_ccb();
@@ -156,8 +159,7 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
   /* A client MUST have specified a bd addr to connect with */
   if (!p_ccb->rem_addr_specified && !is_server) {
     gap_release_ccb(p_ccb);
-    GAP_TRACE_ERROR(
-        "GAP ERROR: Client must specify a remote BD ADDR to connect to!");
+    LOG(ERROR) <<"GAP ERROR: Client must specify a remote BD ADDR to connect to!";
     return (GAP_INVALID_HANDLE);
   }
 
@@ -192,7 +194,7 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
         L2CA_REGISTER(psm, &gap_cb.conn.reg_info,
                       AMP_AUTOSWITCH_ALLOWED | AMP_USE_AMP_IF_POSSIBLE);
     if (p_ccb->psm == 0) {
-      GAP_TRACE_ERROR("%s: Failure registering PSM 0x%04x", __func__, psm);
+      LOG(ERROR) << StringPrintf("%s: Failure registering PSM 0x%04x", __func__, psm);
       gap_release_ccb(p_ccb);
       return (GAP_INVALID_HANDLE);
     }
@@ -203,7 +205,7 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
         L2CA_REGISTER_COC(psm, &gap_cb.conn.reg_info,
                           AMP_AUTOSWITCH_ALLOWED | AMP_USE_AMP_IF_POSSIBLE);
     if (p_ccb->psm == 0) {
-      GAP_TRACE_ERROR("%s: Failure registering PSM 0x%04x", __func__, psm);
+      LOG(ERROR) << StringPrintf("%s: Failure registering PSM 0x%04x", __func__, psm);
       gap_release_ccb(p_ccb);
       return (GAP_INVALID_HANDLE);
     }
@@ -213,7 +215,7 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
   p_ccb->service_id = service_id;
   if (!BTM_SetSecurityLevel((uint8_t)!is_server, p_serv_name, p_ccb->service_id,
                             security, p_ccb->psm, 0, 0)) {
-    GAP_TRACE_ERROR("GAP_CONN - Security Error");
+    LOG(ERROR) << "GAP_CONN - Security Error";
     gap_release_ccb(p_ccb);
     return (GAP_INVALID_HANDLE);
   }
@@ -292,7 +294,7 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
 uint16_t GAP_ConnClose(uint16_t gap_handle) {
   tGAP_CCB* p_ccb = gap_find_ccb_by_handle(gap_handle);
 
-  GAP_TRACE_EVENT("GAP_CONN - close  handle: 0x%x", gap_handle);
+  DVLOG(1) << StringPrintf("GAP_CONN - close  handle: 0x%x", gap_handle);
 
   if (p_ccb) {
     /* Check if we have a connection ID */
@@ -362,7 +364,7 @@ uint16_t GAP_ConnReadData(uint16_t gap_handle, uint8_t* p_data,
 
   mutex_global_unlock();
 
-  GAP_TRACE_EVENT("GAP_ConnReadData - rx_queue_size left=%d, *p_len=%d",
+  DVLOG(1) << StringPrintf("GAP_ConnReadData - rx_queue_size left=%d, *p_len=%d",
                   p_ccb->rx_queue_size, *p_len);
 
   return (BT_PASS);
@@ -394,7 +396,7 @@ int GAP_GetRxQueueCnt(uint16_t handle, uint32_t* p_rx_queue_count) {
   } else
     rc = GAP_INVALID_HANDLE;
 
-  GAP_TRACE_EVENT("GAP_GetRxQueueCnt - rc = 0x%04x, rx_queue_count=%d", rc,
+  DVLOG(1) << StringPrintf("GAP_GetRxQueueCnt - rc = 0x%04x, rx_queue_count=%d", rc,
                   *p_rx_queue_count);
 
   return (rc);
@@ -480,7 +482,7 @@ uint16_t GAP_ConnWriteData(uint16_t gap_handle, uint8_t* p_data,
     max_len -= p_buf->len;
     p_data += p_buf->len;
 
-    GAP_TRACE_EVENT("GAP_WriteData %d bytes", p_buf->len);
+    DVLOG(1) << StringPrintf("GAP_WriteData %d bytes", p_buf->len);
 
     fixed_queue_enqueue(p_ccb->tx_queue, p_buf);
   }
@@ -580,10 +582,10 @@ uint16_t GAP_ConnSetIdleTimeout(uint16_t gap_handle, uint16_t timeout) {
 uint8_t* GAP_ConnGetRemoteAddr(uint16_t gap_handle) {
   tGAP_CCB* p_ccb = gap_find_ccb_by_handle(gap_handle);
 
-  GAP_TRACE_EVENT("GAP_ConnGetRemoteAddr gap_handle = %d", gap_handle);
+  DVLOG(1) << StringPrintf("GAP_ConnGetRemoteAddr gap_handle = %d", gap_handle);
 
   if ((p_ccb) && (p_ccb->con_state > GAP_CCB_STATE_LISTENING)) {
-    GAP_TRACE_EVENT(
+    DVLOG(1) << StringPrintf(
         "GAP_ConnGetRemoteAddr bda "
         ":0x%02x:0x%02x:0x%02x:0x%02x:0x%02x:0x%02x\n",
         p_ccb->rem_dev_address[0], p_ccb->rem_dev_address[1],
@@ -591,7 +593,7 @@ uint8_t* GAP_ConnGetRemoteAddr(uint16_t gap_handle) {
         p_ccb->rem_dev_address[4], p_ccb->rem_dev_address[5]);
     return (p_ccb->rem_dev_address);
   } else {
-    GAP_TRACE_EVENT("GAP_ConnGetRemoteAddr return Error ");
+    DVLOG(1) << StringPrintf("GAP_ConnGetRemoteAddr return Error ");
     return (NULL);
   }
 }
@@ -653,7 +655,7 @@ void gap_tx_complete_ind(uint16_t l2cap_cid, uint16_t sdu_sent) {
   if (p_ccb == NULL) return;
 
   if ((p_ccb->con_state == GAP_CCB_STATE_CONNECTED) && (sdu_sent == 0xFFFF)) {
-    GAP_TRACE_EVENT("%s: GAP_EVT_TX_EMPTY", __func__);
+    DVLOG(1) << StringPrintf("%s: GAP_EVT_TX_EMPTY", __func__);
     p_ccb->p_callback(p_ccb->gap_handle, GAP_EVT_TX_EMPTY);
   }
 }
@@ -684,10 +686,9 @@ static void gap_connect_ind(BD_ADDR bd_addr, uint16_t l2cap_cid, uint16_t psm,
   }
 
   if (xx == GAP_MAX_CONNECTIONS) {
-    GAP_TRACE_WARNING("*******");
-    GAP_TRACE_WARNING(
-        "WARNING: GAP Conn Indication for Unexpected Bd Addr...Disconnecting");
-    GAP_TRACE_WARNING("*******");
+    LOG(WARNING) << "*******";
+    LOG(WARNING) << "WARNING: GAP Conn Indication for Unexpected Bd Addr...Disconnecting";
+    LOG(WARNING) <<"*******";
 
     /* Disconnect because it is an unexpected connection */
     L2CA_DISCONNECT_REQ(l2cap_cid);
@@ -721,7 +722,7 @@ static void gap_connect_ind(BD_ADDR bd_addr, uint16_t l2cap_cid, uint16_t psm,
     gap_checks_con_flags(p_ccb);
   }
 
-  GAP_TRACE_EVENT("GAP_CONN - Rcvd L2CAP conn ind, CID: 0x%x",
+  DVLOG(1) << StringPrintf("GAP_CONN - Rcvd L2CAP conn ind, CID: 0x%x",
                   p_ccb->connection_id);
 
   /* Send a Configuration Request. */
@@ -740,7 +741,7 @@ static void gap_connect_ind(BD_ADDR bd_addr, uint16_t l2cap_cid, uint16_t psm,
  *
  ******************************************************************************/
 static void gap_checks_con_flags(tGAP_CCB* p_ccb) {
-  GAP_TRACE_EVENT("gap_checks_con_flags conn_flags:0x%x, ", p_ccb->con_flags);
+  DVLOG(1) << __func__ << " conn_flags:0x" << +p_ccb->con_flags;
   /* if all the required con_flags are set, report the OPEN event now */
   if ((p_ccb->con_flags & GAP_CCB_FLAGS_CONN_DONE) == GAP_CCB_FLAGS_CONN_DONE) {
     p_ccb->con_state = GAP_CCB_STATE_CONNECTED;
@@ -764,7 +765,7 @@ static void gap_sec_check_complete(UNUSED_ATTR BD_ADDR bd_addr,
                                    void* p_ref_data, uint8_t res) {
   tGAP_CCB* p_ccb = (tGAP_CCB*)p_ref_data;
 
-  GAP_TRACE_EVENT(
+  DVLOG(1) << StringPrintf(
       "gap_sec_check_complete conn_state:%d, conn_flags:0x%x, status:%d",
       p_ccb->con_state, p_ccb->con_flags, res);
   if (p_ccb->con_state == GAP_CCB_STATE_IDLE) return;
@@ -923,7 +924,7 @@ static void gap_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
 static void gap_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
   tGAP_CCB* p_ccb;
 
-  GAP_TRACE_EVENT("GAP_CONN - Rcvd L2CAP disc, CID: 0x%x", l2cap_cid);
+  DVLOG(1) << StringPrintf("GAP_CONN - Rcvd L2CAP disc, CID: 0x%x", l2cap_cid);
 
   /* Find CCB based on CID */
   p_ccb = gap_find_ccb_by_cid(l2cap_cid);
@@ -959,7 +960,7 @@ static void gap_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg) {
 
     p_ccb->rx_queue_size += p_msg->len;
     /*
-    GAP_TRACE_EVENT ("gap_data_ind - rx_queue_size=%d, msg len=%d",
+    DVLOG(1) << StringPrintf ("gap_data_ind - rx_queue_size=%d, msg len=%d",
                                    p_ccb->rx_queue_size, p_msg->len);
      */
 
@@ -983,7 +984,7 @@ static void gap_congestion_ind(uint16_t lcid, bool is_congested) {
   BT_HDR* p_buf;
   uint8_t status;
 
-  GAP_TRACE_EVENT("GAP_CONN - Rcvd L2CAP Is Congested (%d), CID: 0x%x",
+  DVLOG(1) << StringPrintf("GAP_CONN - Rcvd L2CAP Is Congested (%d), CID: 0x%x",
                   is_congested, lcid);
 
   /* Find CCB based on CID */
@@ -1121,8 +1122,8 @@ static void gap_release_ccb(tGAP_CCB* p_ccb) {
   for (uint16_t i = 0; i < GAP_MAX_CONNECTIONS; i++, p_ccb_local++) {
     if ((p_ccb_local->con_state != GAP_CCB_STATE_IDLE) &&
         (p_ccb_local->psm == p_ccb->psm)) {
-      GAP_TRACE_EVENT("%s :%d PSM is still in use, do not deregister",
-                      __func__, p_ccb_local->psm);
+      DVLOG(1) << __func__ << " : " << +p_ccb_local->psm
+              << " PSM is still in use, do not deregister";
       return;
     }
   }

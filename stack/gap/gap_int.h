@@ -20,7 +20,6 @@
 #define GAP_INT_H
 
 #include "bt_common.h"
-#include "bt_target.h"
 #include "gap_api.h"
 #include "gatt_api.h"
 #include "osi/include/fixed_queue.h"
@@ -80,7 +79,6 @@ typedef struct {
  **********************************************************************/
 
 typedef struct {
-  uint8_t trace_level;
   tGAP_CONN conn;
 } tGAP_CB;
 
