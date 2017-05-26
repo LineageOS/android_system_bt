@@ -72,11 +72,7 @@ typedef struct {
 } tGAP_CCB;
 
 typedef struct {
-#if (AMP_INCLUDED == TRUE)
-  tAMP_APPL_INFO reg_info;
-#else
   tL2CAP_APPL_INFO reg_info; /* L2CAP Registration info */
-#endif
   tGAP_CCB ccb_pool[GAP_MAX_CONNECTIONS];
 } tGAP_CONN;
 
@@ -115,25 +111,6 @@ static void gap_checks_con_flags(tGAP_CCB* p_ccb);
  ******************************************************************************/
 void gap_conn_init(void) {
   memset(&conn, 0, sizeof(tGAP_CONN));
-
-#if (AMP_INCLUDED == TRUE)
-  conn.reg_info.pAMP_ConnectInd_Cb = gap_connect_ind;
-  conn.reg_info.pAMP_ConnectCfm_Cb = gap_connect_cfm;
-  conn.reg_info.pAMP_ConnectPnd_Cb = NULL;
-  conn.reg_info.pAMP_ConfigInd_Cb = gap_config_ind;
-  conn.reg_info.pAMP_ConfigCfm_Cb = gap_config_cfm;
-  conn.reg_info.pAMP_DisconnectInd_Cb = gap_disconnect_ind;
-  conn.reg_info.pAMP_DisconnectCfm_Cb = NULL;
-  conn.reg_info.pAMP_QoSViolationInd_Cb = NULL;
-  conn.reg_info.pAMP_DataInd_Cb = gap_data_ind;
-  conn.reg_info.pAMP_CongestionStatus_Cb = gap_congestion_ind;
-  conn.reg_info.pAMP_TxComplete_Cb = NULL;
-  conn.reg_info.pAMP_MoveInd_Cb = NULL;
-  conn.reg_info.pAMP_MoveRsp_Cb = NULL;
-  conn.reg_info.pAMP_MoveCfm_Cb = NULL;     // gap_move_cfm
-  conn.reg_info.pAMP_MoveCfmRsp_Cb = NULL;  // gap_move_cfm_rsp
-
-#else
   conn.reg_info.pL2CA_ConnectInd_Cb = gap_connect_ind;
   conn.reg_info.pL2CA_ConnectCfm_Cb = gap_connect_cfm;
   conn.reg_info.pL2CA_ConnectPnd_Cb = NULL;
@@ -145,7 +122,6 @@ void gap_conn_init(void) {
   conn.reg_info.pL2CA_DataInd_Cb = gap_data_ind;
   conn.reg_info.pL2CA_CongestionStatus_Cb = gap_congestion_ind;
   conn.reg_info.pL2CA_TxComplete_Cb = gap_tx_complete_ind;
-#endif
 }
 
 /*******************************************************************************
@@ -232,18 +208,11 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
 
   p_ccb->p_callback = p_cb;
 
-/* If originator, use a dynamic PSM */
-#if (AMP_INCLUDED == TRUE)
-  if (!is_server)
-    conn.reg_info.pAMP_ConnectInd_Cb = NULL;
-  else
-    conn.reg_info.pAMP_ConnectInd_Cb = gap_connect_ind;
-#else
+  /* If originator, use a dynamic PSM */
   if (!is_server)
     conn.reg_info.pL2CA_ConnectInd_Cb = NULL;
   else
     conn.reg_info.pL2CA_ConnectInd_Cb = gap_connect_ind;
-#endif
 
   /* Register the PSM with L2CAP */
   if (transport == BT_TRANSPORT_BR_EDR) {
