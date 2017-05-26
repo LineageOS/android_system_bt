@@ -26,8 +26,10 @@
 
 #include "bt_common.h"
 #include "bt_utils.h"
+#include "btif_storage.h"
 #include "btm_ble_int.h"
 #include "btm_int.h"
+#include "device/include/interop.h"
 #include "gatt_int.h"
 #include "l2c_api.h"
 #include "osi/include/osi.h"
@@ -267,7 +269,8 @@ bool gatt_update_app_hold_link_status(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
                                       bool is_add) {
   for (int i = 0; i < GATT_MAX_APPS; i++) {
     if (p_tcb->app_hold_link[i] == gatt_if && is_add) {
-      GATT_TRACE_DEBUG("%s: gatt_if %d already exists at idx %d", __func__, gatt_if, i);
+      GATT_TRACE_DEBUG("%s: gatt_if %d already exists at idx %d", __func__,
+                       gatt_if, i);
       return true;
     }
   }
@@ -1100,6 +1103,20 @@ void gatt_init_srv_chg(void) {
   }
 }
 
+// Get the name of a device from btif for interop database matching.
+static bool get_stored_remote_name(BD_ADDR bda, char* name) {
+  bt_bdaddr_t bd_addr;
+  for (int i = 0; i < 6; i++) bd_addr.address[i] = bda[i];
+
+  bt_property_t property;
+  property.type = BT_PROPERTY_BDNAME;
+  property.len = BTM_MAX_REM_BD_NAME_LEN;
+  property.val = name;
+
+  return (btif_storage_get_remote_device_property(&bd_addr, &property) ==
+          BT_STATUS_SUCCESS);
+}
+
 /*******************************************************************************
  *
  * Function         gatt_proc_srv_chg
@@ -1112,7 +1129,6 @@ void gatt_init_srv_chg(void) {
 void gatt_proc_srv_chg(void) {
   uint8_t start_idx, found_idx;
   BD_ADDR bda;
-  bool srv_chg_ind_pending = false;
   tGATT_TCB* p_tcb;
   tBT_TRANSPORT transport;
 
@@ -1124,14 +1140,26 @@ void gatt_proc_srv_chg(void) {
     while (
         gatt_find_the_connected_bda(start_idx, bda, &found_idx, &transport)) {
       p_tcb = &gatt_cb.tcb[found_idx];
-      ;
-      srv_chg_ind_pending = gatt_is_srv_chg_ind_pending(p_tcb);
 
-      if (!srv_chg_ind_pending) {
-        gatt_send_srv_chg_ind(bda);
-      } else {
+      bool send_indication = true;
+
+      if (gatt_is_srv_chg_ind_pending(p_tcb)) {
+        send_indication = false;
         GATT_TRACE_DEBUG("discard srv chg - already has one in the queue");
       }
+
+      // Some LE GATT clients don't respond to service changed indications.
+      char remote_name[BTM_MAX_REM_BD_NAME_LEN] = "";
+      if (send_indication && get_stored_remote_name(bda, remote_name)) {
+        if (interop_match_name(INTEROP_GATTC_NO_SERVICE_CHANGED_IND,
+                               remote_name)) {
+          GATT_TRACE_DEBUG("discard srv chg - interop matched %s", remote_name);
+          send_indication = false;
+        }
+      }
+
+      if (send_indication) gatt_send_srv_chg_ind(bda);
+
       start_idx = ++found_idx;
     }
   }
