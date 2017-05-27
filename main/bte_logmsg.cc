@@ -32,7 +32,6 @@
 #include "bte.h"
 #include "btm_api.h"
 #include "btu.h"
-#include "gap_api.h"
 #include "l2c_api.h"
 #include "main_int.h"
 #include "osi/include/config.h"
@@ -123,8 +122,6 @@ static tBTTRC_FUNC_MAP bttrc_set_level_map[] = {
     {BTTRC_ID_STK_HID, BTTRC_ID_STK_HID, HID_HostSetTraceLevel, "TRC_HID_HOST",
      DEFAULT_CONF_TRACE_LEVEL},
 #endif
-    {BTTRC_ID_STK_GAP, BTTRC_ID_STK_GAP, GAP_SetTraceLevel, "TRC_GAP",
-     DEFAULT_CONF_TRACE_LEVEL},
 #if (PAN_INCLUDED == TRUE)
     {BTTRC_ID_STK_PAN, BTTRC_ID_STK_PAN, PAN_SetTraceLevel, "TRC_PAN",
      DEFAULT_CONF_TRACE_LEVEL},
