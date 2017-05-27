@@ -1313,7 +1313,7 @@ void bta_ag_hsp_result(tBTA_AG_SCB* p_scb, tBTA_AG_API_RESULT* p_result) {
       } else {
         /* else open sco, send ring after sco opened */
         /* HSPv1.2: AG shall not send RING if using in-band ring tone. */
-        if (p_scb->hsp_version >= HSP_VERSION_1_2) {
+        if (p_scb->peer_version >= HSP_VERSION_1_2) {
           p_scb->post_sco = BTA_AG_POST_SCO_NONE;
         } else {
           p_scb->post_sco = BTA_AG_POST_SCO_RING;

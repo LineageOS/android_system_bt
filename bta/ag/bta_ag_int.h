@@ -228,7 +228,7 @@ typedef struct {
   tBTA_AG_FEAT features;                /* features registered by application */
   tBTA_AG_PEER_FEAT peer_features;      /* peer device features */
   uint16_t peer_version;                /* profile version of peer device */
-  uint16_t hsp_version;                 /* HSP profile version */
+  uint16_t hsp_version;                 /* HSP profile version before SDP */
   uint16_t sco_idx;                     /* SCO handle */
   bool in_use;                          /* scb in use */
   bool dealloc;                         /* true if service shutting down */
