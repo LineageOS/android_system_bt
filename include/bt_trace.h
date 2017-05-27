@@ -55,7 +55,6 @@ static const char BTE_LOGMSG_MODULE[] = "bte_logmsg_module";
 #define BTTRC_ID_STK_CTP 26
 #define BTTRC_ID_STK_FTC 27
 #define BTTRC_ID_STK_FTS 28
-#define BTTRC_ID_STK_GAP 29
 #define BTTRC_ID_STK_HCRP 31
 #define BTTRC_ID_STK_ICP 32
 #define BTTRC_ID_STK_OPC 33
@@ -157,10 +156,6 @@ static const char BTE_LOGMSG_MODULE[] = "bte_logmsg_module";
 
 #ifndef SDP_INITIAL_TRACE_LEVEL
 #define SDP_INITIAL_TRACE_LEVEL BT_TRACE_LEVEL_WARNING
-#endif
-
-#ifndef GAP_INITIAL_TRACE_LEVEL
-#define GAP_INITIAL_TRACE_LEVEL BT_TRACE_LEVEL_WARNING
 #endif
 
 #ifndef BNEP_INITIAL_TRACE_LEVEL
@@ -338,28 +333,6 @@ static const char BTE_LOGMSG_MODULE[] = "bte_logmsg_module";
   {                                                                  \
     if (rfc_cb.trace_level >= BT_TRACE_LEVEL_DEBUG)                  \
       BT_TRACE(TRACE_LAYER_RFCOMM, TRACE_TYPE_DEBUG, ##__VA_ARGS__); \
-  }
-
-/* Generic Access Profile traces */
-#define GAP_TRACE_ERROR(...)                                      \
-  {                                                               \
-    if (gap_cb.trace_level >= BT_TRACE_LEVEL_ERROR)               \
-      BT_TRACE(TRACE_LAYER_GAP, TRACE_TYPE_ERROR, ##__VA_ARGS__); \
-  }
-#define GAP_TRACE_EVENT(...)                                      \
-  {                                                               \
-    if (gap_cb.trace_level >= BT_TRACE_LEVEL_EVENT)               \
-      BT_TRACE(TRACE_LAYER_GAP, TRACE_TYPE_EVENT, ##__VA_ARGS__); \
-  }
-#define GAP_TRACE_API(...)                                      \
-  {                                                             \
-    if (gap_cb.trace_level >= BT_TRACE_LEVEL_API)               \
-      BT_TRACE(TRACE_LAYER_GAP, TRACE_TYPE_API, ##__VA_ARGS__); \
-  }
-#define GAP_TRACE_WARNING(...)                                      \
-  {                                                                 \
-    if (gap_cb.trace_level >= BT_TRACE_LEVEL_WARNING)               \
-      BT_TRACE(TRACE_LAYER_GAP, TRACE_TYPE_WARNING, ##__VA_ARGS__); \
   }
 
 /* define traces for HID Host */

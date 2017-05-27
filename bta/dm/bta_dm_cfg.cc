@@ -434,9 +434,6 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
          {{BTA_DM_PM_SNIFF_A2DP_IDX, 10000},
           {BTA_DM_PM_NO_ACTION, 0}},                        /* idle */
          {{BTA_DM_PM_ACTIVE, 0}, {BTA_DM_PM_NO_ACTION, 0}}, /* busy */
-#if (AMP_INCLUDED == TRUE)
-         {{BTA_DM_PM_NO_ACTION, 0}, {BTA_DM_PM_NO_ACTION, 0}}, /* amp */
-#endif
          {{BTA_DM_PM_RETRY, 5000},
           {BTA_DM_PM_NO_ACTION, 0}} /* mode change retry */
      }}
@@ -456,9 +453,6 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
          {{BTA_DM_PM_NO_PREF, 0}, {BTA_DM_PM_NO_ACTION, 0}}, /* sco close */
          {{BTA_DM_PM_NO_PREF, 0}, {BTA_DM_PM_NO_ACTION, 0}}, /* idle */
          {{BTA_DM_PM_NO_PREF, 0}, {BTA_DM_PM_NO_ACTION, 0}}, /* busy */
-#if (AMP_INCLUDED == TRUE)
-         {{BTA_DM_PM_NO_PREF, 0}, {BTA_DM_PM_NO_ACTION, 0}}, /* amp */
-#endif
          {{BTA_DM_PM_RETRY, 5000},
           {BTA_DM_PM_NO_ACTION, 0}} /* mode change retry */
      }}
