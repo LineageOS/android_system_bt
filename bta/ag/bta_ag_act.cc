@@ -253,7 +253,7 @@ void bta_ag_disc_int_res(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
       bta_ag_do_disc(p_scb, p_scb->open_services);
     } else if ((p_scb->open_services & BTA_HSP_SERVICE_MASK) &&
                (p_scb->hsp_version == HSP_VERSION_1_2)) {
-      /* search for UUID_SERVCLASS_HEADSET for HSP 1.0 device */
+      /* search for UUID_SERVCLASS_HEADSET instead */
       p_scb->hsp_version = HSP_VERSION_1_0;
       bta_ag_do_disc(p_scb, p_scb->open_services);
     } else {
