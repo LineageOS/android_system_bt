@@ -15,4 +15,5 @@ subdirs = [
     "vendor_libs",
     "test",
     "udrv",
+    "tools",
 ]

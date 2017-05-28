@@ -69,7 +69,11 @@ typedef enum {
 
   // Do not use supervision timeout value received from preferred connection
   // parameters, use 3s instead. Use with HID only.
-  INTEROP_HID_PREF_CONN_SUP_TIMEOUT_3S
+  INTEROP_HID_PREF_CONN_SUP_TIMEOUT_3S,
+
+  // Do not send service changed indications (GATT client).
+  // This should be removed after the characteristic is implmeented b/62088395.
+  INTEROP_GATTC_NO_SERVICE_CHANGED_IND,
 } interop_feature_t;
 
 // Check if a given |addr| matches a known interoperability workaround as
