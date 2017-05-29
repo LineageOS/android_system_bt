@@ -1206,11 +1206,6 @@
 #define GAP_INCLUDED TRUE
 #endif
 
-/* This is set to enable use of GAP L2CAP connections. */
-#ifndef GAP_CONN_INCLUDED
-#define GAP_CONN_INCLUDED TRUE
-#endif
-
 /* The maximum number of simultaneous GAP L2CAP connections. */
 #ifndef GAP_MAX_CONNECTIONS
 #define GAP_MAX_CONNECTIONS 30

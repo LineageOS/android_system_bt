@@ -827,3 +827,29 @@ uint16_t MCA_GetL2CapChannel(tMCA_DL mdl) {
   if (p_dcb) lcid = p_dcb->lcid;
   return lcid;
 }
+
+static const btmcap_test_interface_t mcap_test_interface = {
+    sizeof(btmcap_test_interface_t),
+    MCA_Init,
+    MCA_Register,
+    MCA_Deregister,
+    MCA_CreateDep,
+    MCA_DeleteDep,
+    MCA_ConnectReq,
+    MCA_DisconnectReq,
+    MCA_CreateMdl,
+    MCA_CreateMdlRsp,
+    MCA_CloseReq,
+    MCA_ReconnectMdl,
+    MCA_ReconnectMdlRsp,
+    MCA_DataChnlCfg,
+    MCA_Abort,
+    MCA_Delete,
+    MCA_WriteReq,
+    MCA_GetL2CapChannel,
+};
+
+const btmcap_test_interface_t* stack_mcap_get_interface(void) {
+  BTIF_TRACE_EVENT("%s", __func__);
+  return &mcap_test_interface;
+}
