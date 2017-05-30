@@ -94,7 +94,7 @@ static bool gatt_sign_data(tGATT_CLCB* p_clcb) {
 void gatt_verify_signature(tGATT_TCB* p_tcb, BT_HDR* p_buf) {
   uint16_t cmd_len;
   uint8_t op_code;
-  uint8_t *p, *p_orig = (uint8_t *)(p_buf + 1) + p_buf->offset;
+  uint8_t *p, *p_orig = (uint8_t*)(p_buf + 1) + p_buf->offset;
   uint32_t counter;
 
   if (p_buf->len < GATT_AUTH_SIGN_LEN + 4) {
@@ -128,8 +128,7 @@ void gatt_verify_signature(tGATT_TCB* p_tcb, BT_HDR* p_buf) {
  ******************************************************************************/
 void gatt_sec_check_complete(bool sec_check_ok, tGATT_CLCB* p_clcb,
                              uint8_t sec_act) {
-  if (p_clcb && p_clcb->p_tcb &&
-      fixed_queue_is_empty(p_clcb->p_tcb->pending_enc_clcb)) {
+  if (p_clcb && p_clcb->p_tcb && p_clcb->p_tcb->pending_enc_clcb.empty()) {
     gatt_set_sec_act(p_clcb->p_tcb, GATT_SEC_NONE);
   }
 
@@ -152,48 +151,44 @@ void gatt_sec_check_complete(bool sec_check_ok, tGATT_CLCB* p_clcb,
  ******************************************************************************/
 void gatt_enc_cmpl_cback(BD_ADDR bd_addr, tBT_TRANSPORT transport,
                          UNUSED_ATTR void* p_ref_data, tBTM_STATUS result) {
-  tGATT_TCB* p_tcb;
-  uint8_t sec_flag;
-  bool status = false;
-
   GATT_TRACE_DEBUG("gatt_enc_cmpl_cback");
-  p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
-  if (p_tcb != NULL) {
-    if (gatt_get_sec_act(p_tcb) == GATT_SEC_ENC_PENDING) return;
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
+  if (!p_tcb) {
+    GATT_TRACE_ERROR("%s: enc callback for unknown bd_addr", __func__);
+    return;
+  }
 
-    tGATT_PENDING_ENC_CLCB* p_buf =
-        (tGATT_PENDING_ENC_CLCB*)fixed_queue_try_dequeue(
-            p_tcb->pending_enc_clcb);
-    if (p_buf != NULL) {
-      if (result == BTM_SUCCESS) {
-        if (gatt_get_sec_act(p_tcb) == GATT_SEC_ENCRYPT_MITM) {
-          BTM_GetSecurityFlagsByTransport(bd_addr, &sec_flag, transport);
+  if (gatt_get_sec_act(p_tcb) == GATT_SEC_ENC_PENDING) return;
 
-          if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED) {
-            status = true;
-          }
-        } else {
-          status = true;
-        }
-      }
-      gatt_sec_check_complete(status, p_buf->p_clcb, p_tcb->sec_act);
-      osi_free(p_buf);
-      /* start all other pending operation in queue */
-      for (size_t count = fixed_queue_length(p_tcb->pending_enc_clcb);
-           count > 0; count--) {
-        p_buf = (tGATT_PENDING_ENC_CLCB*)fixed_queue_try_dequeue(
-            p_tcb->pending_enc_clcb);
-        if (p_buf != NULL) {
-          gatt_security_check_start(p_buf->p_clcb);
-          osi_free(p_buf);
-        } else
-          break;
+  if (p_tcb->pending_enc_clcb.empty()) {
+    GATT_TRACE_ERROR("%s: no operation waiting for encrypting", __func__);
+    return;
+  }
+
+  tGATT_CLCB* p_clcb = p_tcb->pending_enc_clcb.front();
+  p_tcb->pending_enc_clcb.pop();
+
+  bool status = false;
+  if (result == BTM_SUCCESS) {
+    if (gatt_get_sec_act(p_tcb) == GATT_SEC_ENCRYPT_MITM) {
+      uint8_t sec_flag = 0;
+      BTM_GetSecurityFlagsByTransport(bd_addr, &sec_flag, transport);
+
+      if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED) {
+        status = true;
       }
     } else {
-      GATT_TRACE_ERROR("Unknown operation encryption completed");
+      status = true;
     }
-  } else {
-    GATT_TRACE_ERROR("enc callback for unknown bd_addr");
+  }
+
+  gatt_sec_check_complete(status, p_clcb, p_tcb->sec_act);
+
+  /* start all other pending operation in queue */
+  while (!p_tcb->pending_enc_clcb.empty()) {
+    tGATT_CLCB* p_clcb = p_tcb->pending_enc_clcb.front();
+    p_tcb->pending_enc_clcb.pop();
+    gatt_security_check_start(p_clcb);
   }
 }
 
@@ -208,37 +203,28 @@ void gatt_enc_cmpl_cback(BD_ADDR bd_addr, tBT_TRANSPORT transport,
  *
  ******************************************************************************/
 void gatt_notify_enc_cmpl(BD_ADDR bd_addr) {
-  tGATT_TCB* p_tcb;
-  uint8_t i = 0;
-
-  p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
-  if (p_tcb != NULL) {
-    for (i = 0; i < GATT_MAX_APPS; i++) {
-      if (gatt_cb.cl_rcb[i].in_use && gatt_cb.cl_rcb[i].app_cb.p_enc_cmpl_cb) {
-        (*gatt_cb.cl_rcb[i].app_cb.p_enc_cmpl_cb)(gatt_cb.cl_rcb[i].gatt_if,
-                                                  bd_addr);
-      }
-    }
-
-    if (gatt_get_sec_act(p_tcb) == GATT_SEC_ENC_PENDING) {
-      gatt_set_sec_act(p_tcb, GATT_SEC_NONE);
-
-      size_t count = fixed_queue_length(p_tcb->pending_enc_clcb);
-      for (; count > 0; count--) {
-        tGATT_PENDING_ENC_CLCB* p_buf =
-            (tGATT_PENDING_ENC_CLCB*)fixed_queue_try_dequeue(
-                p_tcb->pending_enc_clcb);
-        if (p_buf != NULL) {
-          gatt_security_check_start(p_buf->p_clcb);
-          osi_free(p_buf);
-        } else
-          break;
-      }
-    }
-  } else {
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
+  if (!p_tcb) {
     GATT_TRACE_DEBUG("notify GATT for encryption completion of unknown device");
+    return;
   }
-  return;
+
+  for (uint8_t i = 0; i < GATT_MAX_APPS; i++) {
+    if (gatt_cb.cl_rcb[i].in_use && gatt_cb.cl_rcb[i].app_cb.p_enc_cmpl_cb) {
+      (*gatt_cb.cl_rcb[i].app_cb.p_enc_cmpl_cb)(gatt_cb.cl_rcb[i].gatt_if,
+                                                bd_addr);
+    }
+  }
+
+  if (gatt_get_sec_act(p_tcb) == GATT_SEC_ENC_PENDING) {
+    gatt_set_sec_act(p_tcb, GATT_SEC_NONE);
+
+    while (!p_tcb->pending_enc_clcb.empty()) {
+      tGATT_CLCB* p_clcb = p_tcb->pending_enc_clcb.front();
+      p_tcb->pending_enc_clcb.pop();
+      gatt_security_check_start(p_clcb);
+    }
+  }
 }
 /*******************************************************************************
  *
@@ -270,16 +256,10 @@ tGATT_SEC_ACTION gatt_get_sec_act(tGATT_TCB* p_tcb) {
   }
   return sec_act;
 }
-/*******************************************************************************
- *
- * Function         gatt_determine_sec_act
- *
- * Description      This routine determine the security action based on
- *                  auth_request and current link status
- *
- * Returns          tGATT_SEC_ACTION security action
- *
- ******************************************************************************/
+/**
+ * This routine determine the security action based on auth_request and current
+ * link status. Returns tGATT_SEC_ACTION (security action)
+ */
 tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB* p_clcb) {
   tGATT_SEC_ACTION act = GATT_SEC_OK;
   uint8_t sec_flag;
@@ -455,10 +435,10 @@ bool gatt_security_check_start(tGATT_CLCB* p_clcb) {
           status = false;
         }
       }
-      if (status) gatt_add_pending_enc_channel_clcb(p_tcb, p_clcb);
+      if (status) p_tcb->pending_enc_clcb.push(p_clcb);
       break;
     case GATT_SEC_ENC_PENDING:
-      gatt_add_pending_enc_channel_clcb(p_tcb, p_clcb);
+      p_tcb->pending_enc_clcb.push(p_clcb);
       /* wait for link encrypotion to finish */
       break;
     default:

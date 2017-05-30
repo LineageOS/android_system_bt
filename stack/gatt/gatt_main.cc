@@ -95,7 +95,7 @@ void gatt_init(void) {
 
   GATT_TRACE_DEBUG("gatt_init()");
 
-  memset(&gatt_cb, 0, sizeof(tGATT_CB));
+  gatt_cb = tGATT_CB();
   memset(&fixed_reg, 0, sizeof(tL2CAP_FIXED_CHNL_REG));
 
 #if defined(GATT_INITIAL_TRACE_LEVEL)
@@ -158,8 +158,7 @@ void gatt_free(void) {
   fixed_queue_free(gatt_cb.srv_chg_clt_q, NULL);
   gatt_cb.srv_chg_clt_q = NULL;
   for (i = 0; i < GATT_MAX_PHY_CHANNEL; i++) {
-    fixed_queue_free(gatt_cb.tcb[i].pending_enc_clcb, NULL);
-    gatt_cb.tcb[i].pending_enc_clcb = NULL;
+    gatt_cb.tcb[i].pending_enc_clcb = std::queue<tGATT_CLCB*>();
 
     fixed_queue_free(gatt_cb.tcb[i].pending_ind_q, NULL);
     gatt_cb.tcb[i].pending_ind_q = NULL;
@@ -375,9 +374,8 @@ bool gatt_act_connect(tGATT_REG* p_reg, BD_ADDR bd_addr,
     if (p_tcb != NULL) {
       if (!gatt_connect(bd_addr, p_tcb, transport, initiating_phys)) {
         GATT_TRACE_ERROR("gatt_connect failed");
-        fixed_queue_free(p_tcb->pending_enc_clcb, NULL);
         fixed_queue_free(p_tcb->pending_ind_q, NULL);
-        memset(p_tcb, 0, sizeof(tGATT_TCB));
+        *p_tcb = tGATT_TCB();
       } else
         ret = true;
     } else {
