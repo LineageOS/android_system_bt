@@ -3723,7 +3723,7 @@ static void handle_app_attr_val_txt_response(
     }
     p_app_settings->ext_attr_index = 0;
 
-    for (xx = 0; xx < p_app_settings->num_attrs; xx++) {
+    for (xx = 0; xx < p_app_settings->num_attrs && xx < AVRC_MAX_APP_ATTR_SIZE; xx++) {
       attrs[xx] = p_app_settings->attrs[xx].attr_id;
     }
     HAL_CBACK(bt_rc_ctrl_callbacks, playerapplicationsetting_cb, &rc_addr,
@@ -3750,23 +3750,27 @@ static void handle_app_attr_val_txt_response(
 
   if (p_app_settings->ext_val_index < p_app_settings->num_ext_attrs) {
     attr_index = p_app_settings->ext_val_index;
-    for (xx = 0; xx < p_app_settings->ext_attrs[attr_index].num_val; xx++) {
+    for (xx = 0; xx < p_app_settings->ext_attrs[attr_index].num_val && xx < AVRC_MAX_APP_ATTR_SIZE; xx++) {
       vals[xx] = p_app_settings->ext_attrs[attr_index].ext_attr_val[xx].val;
     }
     get_player_app_setting_value_text_cmd(vals, xx, p_dev);
   } else {
     uint8_t x;
 
-    for (xx = 0; xx < p_app_settings->num_attrs; xx++) {
+    for (xx = 0; ((xx < AVRC_MAX_APP_ATTR_SIZE) && (xx < p_app_settings->num_attrs)); xx++) {
       attrs[xx] = p_app_settings->attrs[xx].attr_id;
     }
-    for (x = 0; x < p_app_settings->num_ext_attrs; x++) {
+    for (x = 0; ((xx + x < AVRC_MAX_APP_ATTR_SIZE) && (x < p_app_settings->num_ext_attrs)); x++) {
       attrs[xx + x] = p_app_settings->ext_attrs[x].attr_id;
     }
     HAL_CBACK(bt_rc_ctrl_callbacks, playerapplicationsetting_cb, &rc_addr,
               p_app_settings->num_attrs, p_app_settings->attrs,
               p_app_settings->num_ext_attrs, p_app_settings->ext_attrs);
-    get_player_app_setting_cmd(xx + x, attrs, p_dev);
+    if(xx+x > AVRC_MAX_APP_ATTR_SIZE) {
+      get_player_app_setting_cmd (AVRC_MAX_APP_ATTR_SIZE, attrs, p_dev);
+    } else {
+      get_player_app_setting_cmd(xx + x, attrs, p_dev);
+    }
 
     /* Free the application settings information after sending to
      * application.

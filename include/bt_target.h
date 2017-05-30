@@ -514,13 +514,13 @@
 
 /* The maximum number of simultaneous channels that L2CAP can support. */
 #ifndef MAX_L2CAP_CHANNELS
-#define MAX_L2CAP_CHANNELS 16
+#define MAX_L2CAP_CHANNELS 20
 #endif
 
 /* The maximum number of simultaneous applications that can register with L2CAP.
  */
 #ifndef MAX_L2CAP_CLIENTS
-#define MAX_L2CAP_CLIENTS 15
+#define MAX_L2CAP_CLIENTS 19
 #endif
 
 /* The number of seconds of link inactivity before a link is disconnected. */
@@ -567,7 +567,7 @@
 
 /* Whether link wants to be the master or the slave. */
 #ifndef L2CAP_DESIRED_LINK_ROLE
-#define L2CAP_DESIRED_LINK_ROLE HCI_ROLE_SLAVE
+#define L2CAP_DESIRED_LINK_ROLE HCI_ROLE_MASTER
 #endif
 
 /* Include Non-Flushable Packet Boundary Flag feature of Lisbon */

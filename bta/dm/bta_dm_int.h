@@ -635,6 +635,10 @@ typedef struct {
   BD_ADDR pin_bd_addr;
   DEV_CLASS pin_dev_class;
   tBTA_DM_SEC_EVT pin_evt;
+  tBTA_IO_CAP                 loc_io_caps;    /* IO Capabilities of local device */
+  tBTA_IO_CAP                 rmt_io_caps;    /* IO Capabilities of remote device */
+  tBTA_AUTH_REQ               loc_auth_req;   /* Authentication required for local device */
+  tBTA_AUTH_REQ               rmt_auth_req;   /* Authentication required for remote device */
   uint32_t num_val; /* the numeric value for comparison. If just_works, do not
                        show this number to UI */
   bool just_works;  /* true, if "Just Works" association model */

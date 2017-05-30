@@ -60,6 +60,16 @@
 extern void BTM_DeviceReset(tBTM_CMPL_CB* p_cb);
 
 /*******************************************************************************
+**
+** Function         BTM_HCI_Reset
+**
+** Description      This function is called to send reset command to the controller.
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTM_HCI_Reset (void);
+/*******************************************************************************
  *
  * Function         BTM_IsDeviceUp
  *

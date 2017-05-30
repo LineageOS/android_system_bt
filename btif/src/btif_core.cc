@@ -417,11 +417,12 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status) {
     /* init rfcomm & l2cap api */
     btif_sock_init(uid_set);
 
-    /* init pan */
-    btif_pan_init();
 
     /* load did configuration */
     bte_load_did_conf(BTE_DID_CONF_FILE);
+
+    /* init pan */
+    btif_pan_init();
 
 #ifdef BTIF_DM_OOB_TEST
     btif_dm_load_local_oob();

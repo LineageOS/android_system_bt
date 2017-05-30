@@ -241,7 +241,6 @@ void btm_acl_created(BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
 
       /* if BR/EDR do something more */
       if (transport == BT_TRANSPORT_BR_EDR) {
-        btsnd_hcic_read_rmt_clk_offset(p->hci_handle);
         btsnd_hcic_rmt_ver_req(p->hci_handle);
       }
       p_dev_rec = btm_find_dev_by_handle(hci_handle);
@@ -288,9 +287,8 @@ void btm_acl_created(BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
         } else {
           btm_establish_continue(p);
         }
-      } else {
-        btm_read_remote_features(p->hci_handle);
-      }
+      } 
+
 
       /* read page 1 - on rmt feature event for buffer reasons */
       return;
@@ -551,9 +549,9 @@ tBTM_STATUS BTM_SwitchRole(BD_ADDR remote_bd_addr, uint8_t new_role,
                 remote_bd_addr[0], remote_bd_addr[1], remote_bd_addr[2],
                 remote_bd_addr[3], remote_bd_addr[4], remote_bd_addr[5]);
 
-  /* Make sure the local device supports switching */
-  if (!controller_get_interface()->supports_master_slave_role_switch())
-    return (BTM_MODE_UNSUPPORTED);
+  /* Make sure the local/remote devices supports switching */
+  if (!btm_dev_support_switch(remote_bd_addr))
+    return(BTM_MODE_UNSUPPORTED);
 
   if (btm_cb.devcb.p_switch_role_cb && p_cb) {
     p_bda = btm_cb.devcb.switch_role_ref_data.remote_bd_addr;
@@ -882,7 +880,11 @@ void btm_read_remote_version_complete(uint8_t* p) {
         STREAM_TO_UINT8(p_acl_cb->lmp_version, p);
         STREAM_TO_UINT16(p_acl_cb->manufacturer, p);
         STREAM_TO_UINT16(p_acl_cb->lmp_subversion, p);
-      }
+        if (p_acl_cb->transport == BT_TRANSPORT_BR_EDR) {
+          BTM_TRACE_DEBUG("Calling btm_read_remote_features");
+          btm_read_remote_features (p_acl_cb->hci_handle);
+        }
+    }
 
       if (p_acl_cb->transport == BT_TRANSPORT_LE) {
         l2cble_notify_le_connection(p_acl_cb->remote_addr);
@@ -908,6 +910,7 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
   uint16_t handle = p_acl_cb->hci_handle;
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
   uint8_t page_idx;
+  uint8_t status;
 
   BTM_TRACE_DEBUG("btm_process_remote_ext_features");
 
@@ -931,6 +934,11 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
            HCI_FEATURE_BYTES_PER_PAGE);
   }
 
+  if (!(p_dev_rec->sec_flags & BTM_SEC_NAME_KNOWN) || p_dev_rec->is_originator) {
+    BTM_TRACE_DEBUG ("Calling Next Security Procedure");
+    if ((status = btm_sec_execute_procedure (p_dev_rec)) != BTM_CMD_STARTED)
+    btm_sec_dev_rec_cback_event (p_dev_rec, status , FALSE);
+  }
   const uint8_t req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
 
   /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
@@ -1175,21 +1183,24 @@ void btm_establish_continue(tACL_CONN* p_acl_cb) {
       BTM_SetLinkPolicy(p_acl_cb->remote_addr, &btm_cb.btm_def_link_policy);
   }
 #endif
-  p_acl_cb->link_up_issued = true;
+    if(p_acl_cb->link_up_issued == FALSE) {
 
-  /* If anyone cares, tell him database changed */
-  if (btm_cb.p_bl_changed_cb) {
-    evt_data.event = BTM_BL_CONN_EVT;
-    evt_data.conn.p_bda = p_acl_cb->remote_addr;
-    evt_data.conn.p_bdn = p_acl_cb->remote_name;
-    evt_data.conn.p_dc = p_acl_cb->remote_dc;
-    evt_data.conn.p_features = p_acl_cb->peer_lmp_feature_pages[0];
-    evt_data.conn.handle = p_acl_cb->hci_handle;
-    evt_data.conn.transport = p_acl_cb->transport;
+      p_acl_cb->link_up_issued = true;
 
-    (*btm_cb.p_bl_changed_cb)(&evt_data);
-  }
-  btm_acl_update_busy_level(BTM_BLI_ACL_UP_EVT);
+      /* If anyone cares, tell him database changed */
+      if (btm_cb.p_bl_changed_cb) {
+        evt_data.event = BTM_BL_CONN_EVT;
+        evt_data.conn.p_bda = p_acl_cb->remote_addr;
+        evt_data.conn.p_bdn = p_acl_cb->remote_name;
+        evt_data.conn.p_dc = p_acl_cb->remote_dc;
+        evt_data.conn.p_features = p_acl_cb->peer_lmp_feature_pages[0];
+        evt_data.conn.handle = p_acl_cb->hci_handle;
+        evt_data.conn.transport = p_acl_cb->transport;
+
+        (*btm_cb.p_bl_changed_cb)(&evt_data);
+      }
+      btm_acl_update_busy_level(BTM_BLI_ACL_UP_EVT);
+    }
 }
 
 /*******************************************************************************

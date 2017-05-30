@@ -651,6 +651,19 @@ void btsnd_hcic_write_def_policy_set(uint16_t settings) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
+void btsnd_hcic_reset (uint8_t local_controller_id) {
+  BT_HDR *p = (BT_HDR *)osi_malloc(HCI_CMD_BUF_SIZE);
+  uint8_t *pp = (uint8_t *)(p + 1);
+
+  p->len    = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_RESET;
+  p->offset = 0;
+
+  UINT16_TO_STREAM (pp, HCI_RESET);
+  UINT8_TO_STREAM (pp, HCIC_PARAM_SIZE_RESET);
+
+  btu_hcif_send_cmd (local_controller_id,  p);
+}
+
 void btsnd_hcic_set_event_filter(uint8_t filt_type, uint8_t filt_cond_type,
                                  uint8_t* filt_cond, uint8_t filt_cond_len) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);

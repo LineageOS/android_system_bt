@@ -31,10 +31,21 @@ typedef enum {
   TASK_HIGH_MAX
 } tHIGH_PRIORITY_TASK;
 
+typedef enum {
+    BT_SOC_DEFAULT = 0,
+    BT_SOC_SMD = BT_SOC_DEFAULT,
+    BT_SOC_AR3K,
+    BT_SOC_ROME,
+    BT_SOC_CHEROKEE,
+    /* Add chipset type here */
+    BT_SOC_RESERVED
+} bt_soc_type;
+
 /*******************************************************************************
  *  Functions
  ******************************************************************************/
 
 void raise_priority_a2dp(tHIGH_PRIORITY_TASK high_task);
+bt_soc_type get_soc_type();
 
 #endif /* BT_UTILS_H */

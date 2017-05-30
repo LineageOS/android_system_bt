@@ -41,6 +41,7 @@
 #include "hci_internals.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
+#include "bt_utils.h"
 #include "osi/include/alarm.h"
 #include "osi/include/list.h"
 #include "osi/include/log.h"
@@ -49,6 +50,8 @@
 #include "packet_fragmenter.h"
 
 #define BT_HCI_TIMEOUT_TAG_NUM 1010000
+
+bt_soc_type soc_type;
 
 extern void hci_initialize();
 extern void hci_transmit(BT_HDR* packet);
@@ -697,6 +700,7 @@ static void init_layer_interface() {
       LOG_ERROR(LOG_TAG, "%s could not create upward dispatcher.", __func__);
       return;
     }
+    soc_type = get_soc_type();
 
     interface.set_data_queue = set_data_queue;
     interface.transmit_command = transmit_command;

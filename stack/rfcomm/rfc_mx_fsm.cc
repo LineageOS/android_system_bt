@@ -368,6 +368,8 @@ void rfc_mx_sm_sabme_wait_ua(tRFC_MCB* p_mcb, uint16_t event,
  *
  ******************************************************************************/
 void rfc_mx_sm_state_wait_sabme(tRFC_MCB* p_mcb, uint16_t event, void* p_data) {
+  tPORT   *p_port;
+  int     i;
   RFCOMM_TRACE_EVENT("rfc_mx_sm_state_wait_sabme - evt:%d", event);
   switch (event) {
     case RFC_MX_EVENT_DISC_IND:
@@ -402,7 +404,13 @@ void rfc_mx_sm_state_wait_sabme(tRFC_MCB* p_mcb, uint16_t event, void* p_data) {
 
         p_mcb->state = RFC_MX_STATE_CONNECTED;
         p_mcb->peer_ready = true;
-        PORT_StartCnf(p_mcb, RFCOMM_SUCCESS);
+        p_port = &rfc_cb.port.port[0];
+        for (i = 0; i < MAX_RFC_PORTS; i++, p_port++) {
+          if (p_port->rfc.p_mcb == p_mcb) {
+             PORT_StartCnf (p_mcb, RFCOMM_SUCCESS);
+             break;
+          }
+        }
       }
       return;
 

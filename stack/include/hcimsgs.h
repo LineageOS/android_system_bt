@@ -485,6 +485,10 @@ extern void btsnd_hcic_delete_stored_key(BD_ADDR bd_addr, bool delete_all_flag);
 #define HCI_DELETE_KEY_ALL_FLAG_OFF 6
 /* Delete Stored Key */
 
+extern void btsnd_hcic_reset(uint8_t local_controller_id); /* Reset */
+
+#define HCIC_PARAM_SIZE_RESET 0 /* Reset */
+
 /* Change Local Name */
 extern void btsnd_hcic_change_name(BD_NAME name);
 

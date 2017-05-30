@@ -44,6 +44,7 @@
 #include "btif_util.h"
 #include "osi/include/allocator.h"
 #include "utl.h"
+#include "stack_manager.h"
 
 // Protects the sdp_slots array from concurrent access.
 static std::recursive_mutex sdp_lock;
@@ -242,6 +243,7 @@ static int free_sdp_slot(int id) {
 /***
  * Use this to get a reference to a SDP slot AND change the state to
  * SDP_RECORD_CREATE_INITIATED.
+ * Caller of this function should held mutex with sdp_lock
  */
 static const sdp_slot_t* start_create_sdp(int id) {
   if (id >= MAX_SDP_SLOTS) {
@@ -249,7 +251,6 @@ static const sdp_slot_t* start_create_sdp(int id) {
     return NULL;
   }
 
-  std::unique_lock<std::recursive_mutex> lock(sdp_lock);
   if (sdp_slots[id].state != SDP_RECORD_ALLOCED) {
     /* The record have been removed before this event occurred - e.g. deinit */
     APPL_TRACE_ERROR(
@@ -261,9 +262,10 @@ static const sdp_slot_t* start_create_sdp(int id) {
 
   return &(sdp_slots[id]);
 }
-
+/***
+ * Caller of this function should held mutex with sdp_lock
+***/
 static void set_sdp_handle(int id, int handle) {
-  std::unique_lock<std::recursive_mutex> lock(sdp_lock);
   sdp_slots[id].sdp_handle = handle;
   BTIF_TRACE_DEBUG("%s() id=%d to handle=0x%08x", __func__, id, handle);
 }
@@ -286,6 +288,11 @@ bt_status_t create_sdp_record(bluetooth_sdp_record* record,
 
 bt_status_t remove_sdp_record(int record_id) {
   int handle;
+
+  if (!stack_manager_get_interface()->get_stack_is_running()) {
+    BTIF_TRACE_DEBUG("Sdp Server %s - Stack closed", __FUNCTION__);
+    return BT_STATUS_FAIL;
+  }
 
   /* Get the Record handle, and free the slot */
   handle = free_sdp_slot(record_id);
@@ -315,6 +322,7 @@ void on_create_record_event(int id) {
    * 4) What to do at fail?
    * */
   BTIF_TRACE_DEBUG("Sdp Server %s", __func__);
+  std::unique_lock<std::recursive_mutex> lock(sdp_lock);
   const sdp_slot_t* sdp_slot = start_create_sdp(id);
   /* In the case we are shutting down, sdp_slot is NULL */
   if (sdp_slot != NULL) {

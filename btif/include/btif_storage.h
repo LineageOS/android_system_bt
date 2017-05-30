@@ -140,7 +140,18 @@ bt_status_t btif_storage_add_bonded_device(bt_bdaddr_t* remote_bd_addr,
 bt_status_t btif_storage_remove_bonded_device(bt_bdaddr_t* remote_bd_addr);
 
 /*******************************************************************************
- *
+**
+** Function         btif_storage_is_device_bonded
+**
+* Description      BTIF storage API - checks if device present in bonded list
+**
+** Returns         BT_STATUS_SUCCESS if the device bonded
+**                 BT_STATUS_FAIL otherwise
+**
+*******************************************************************************/
+bt_status_t btif_storage_is_device_bonded(bt_bdaddr_t *remote_bd_addr);
+/*******************************************************************************
+**
  * Function         btif_storage_remove_bonded_device
  *
  * Description      BTIF storage API - Deletes the bonded device from NVRAM

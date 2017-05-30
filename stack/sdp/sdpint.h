@@ -145,6 +145,8 @@ typedef struct {
                                   next cont. response */
   tSDP_RECORD* prev_sdp_rec; /* last sdp record that was completely sent in the
                                 response */
+  tSDP_RECORD* curr_sdp_rec; /* sdp record that is currently being sent in the
+                                response */
   bool last_attr_seq_desc_sent; /* whether attr seq length has been sent
                                    previously */
   uint16_t attr_offset; /* offset within the attr to keep trak of partial
@@ -249,6 +251,7 @@ extern tCONN_CB* sdpu_find_ccb_by_cid(uint16_t cid);
 extern tCONN_CB* sdpu_find_ccb_by_db(tSDP_DISCOVERY_DB* p_db);
 extern tCONN_CB* sdpu_allocate_ccb(void);
 extern void sdpu_release_ccb(tCONN_CB* p_ccb);
+extern void sdpu_update_ccb_cont_info (uint32_t handle);
 
 extern uint8_t* sdpu_build_attrib_seq(uint8_t* p_out, uint16_t* p_attr,
                                       uint16_t num_attrs);

@@ -206,6 +206,16 @@ void BTM_DeviceReset(UNUSED_ATTR tBTM_CMPL_CB* p_cb) {
                                      bt_workqueue_thread, reset_complete);
 }
 
+void BTM_HCI_Reset(void) {
+  /* Flush all ACL connections */
+  btm_acl_device_down();
+
+  /* Clear the callback, so application would not hang on reset */
+  btm_db_reset();
+
+  btsnd_hcic_reset(LOCAL_BR_EDR_CONTROLLER_ID);
+}
+
 /*******************************************************************************
  *
  * Function         BTM_IsDeviceUp
