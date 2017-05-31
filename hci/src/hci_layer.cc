@@ -53,6 +53,11 @@
 extern void hci_initialize();
 extern void hci_transmit(BT_HDR* packet);
 extern void hci_close();
+extern int hci_open_firmware_log_file();
+extern void hci_close_firmware_log_file(int fd);
+extern void hci_log_firmware_debug_packet(int fd, BT_HDR* packet);
+
+static int hci_firmware_log_fd = INVALID_FD;
 
 typedef struct {
   uint16_t opcode;
@@ -73,6 +78,7 @@ static const int BT_HCI_RT_PRIORITY = 1;
 
 // Abort if there is no response to an HCI command.
 static const uint32_t COMMAND_PENDING_TIMEOUT_MS = 2000;
+static const uint32_t COMMAND_TIMEOUT_RESTART_US = 500000;
 
 // Our interface
 static bool interface_created;
@@ -452,16 +458,51 @@ static void command_timed_out(UNUSED_ATTR void* context) {
         std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - wait_entry->timestamp)
             .count();
-    // We shouldn't try to recover the stack from this command timeout.
-    // If it's caused by a software bug, fix it. If it's a hardware bug, fix it.
     LOG_ERROR(LOG_TAG, "%s: Waited %d ms for a response to opcode: 0x%x",
               __func__, wait_time_ms, wait_entry->opcode);
+
+    // Dump the length field and the first byte of the payload, if present.
+    uint8_t* command = wait_entry->command->data + wait_entry->command->offset;
+    if (wait_entry->command->len > 3)
+      LOG_ERROR(LOG_TAG, "%s: Size %d Hex %02x %02x %02x %02x", __func__,
+                wait_entry->command->len, command[0], command[1], command[2],
+                command[3]);
+    else
+      LOG_ERROR(LOG_TAG, "%s: Size %d Hex %02x %02x %02x", __func__,
+                wait_entry->command->len, command[0], command[1], command[2]);
+
     LOG_EVENT_INT(BT_HCI_TIMEOUT_TAG_NUM, wait_entry->opcode);
     lock.unlock();
   }
 
-  LOG_ERROR(LOG_TAG, "%s restarting the bluetooth process.", __func__);
-  usleep(10000);
+  LOG_ERROR(LOG_TAG, "%s: requesting a firmware dump.", __func__);
+
+  /* Allocate a buffer to hold the HCI command. */
+  BT_HDR* bt_hdr =
+      static_cast<BT_HDR*>(osi_malloc(sizeof(BT_HDR) + HCIC_PREAMBLE_SIZE));
+
+  bt_hdr->len = HCIC_PREAMBLE_SIZE;
+  bt_hdr->event = MSG_STACK_TO_HC_HCI_CMD;
+  bt_hdr->offset = 0;
+
+  uint8_t* hci_packet = reinterpret_cast<uint8_t*>(bt_hdr + 1);
+
+  UINT16_TO_STREAM(hci_packet,
+                   HCI_GRP_VENDOR_SPECIFIC | HCI_CONTROLLER_DEBUG_INFO_OCF);
+  UINT8_TO_STREAM(hci_packet, 0);  // No parameters
+
+  hci_firmware_log_fd = hci_open_firmware_log_file();
+
+  transmit_fragment(bt_hdr, true);
+
+  osi_free(bt_hdr);
+
+  LOG_ERROR(LOG_TAG, "%s restarting the Bluetooth process.", __func__);
+  usleep(COMMAND_TIMEOUT_RESTART_US);
+  hci_close_firmware_log_file(hci_firmware_log_fd);
+
+  // We shouldn't try to recover the stack from this command timeout.
+  // If it's caused by a software bug, fix it. If it's a hardware bug, fix it.
   abort();
 }
 
@@ -544,6 +585,15 @@ static bool filter_incoming_event(BT_HDR* packet) {
     }
 
     goto intercepted;
+  } else if (event_code == HCI_VSE_SUBCODE_DEBUG_INFO_SUB_EVT) {
+    if (hci_firmware_log_fd == INVALID_FD)
+      hci_firmware_log_fd = hci_open_firmware_log_file();
+
+    if (hci_firmware_log_fd != INVALID_FD)
+      hci_log_firmware_debug_packet(hci_firmware_log_fd, packet);
+
+    buffer_allocator->free(packet);
+    return true;
   }
 
   return false;
