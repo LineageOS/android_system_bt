@@ -113,6 +113,7 @@ static base::Callback<void(const tracked_objects::Location&, BT_HDR*)>
 
 static bool filter_incoming_event(BT_HDR* packet);
 static waiting_command_t* get_waiting_command(command_opcode_t opcode);
+static int get_num_waiting_commands();
 
 static void event_finish_startup(void* context);
 static void startup_timer_expired(void* context);
@@ -445,35 +446,40 @@ static void fragmenter_transmit_finished(BT_HDR* packet,
   }
 }
 
-static void command_timed_out(UNUSED_ATTR void* context) {
+// Print debugging information and quit. Don't dereference original_wait_entry.
+static void command_timed_out(void* original_wait_entry) {
   std::unique_lock<std::recursive_mutex> lock(commands_pending_response_mutex);
 
-  if (list_is_empty(commands_pending_response)) {
-    LOG_ERROR(LOG_TAG, "%s with no commands pending response", __func__);
-  } else {
-    waiting_command_t* wait_entry = reinterpret_cast<waiting_command_t*>(
-        list_front(commands_pending_response));
+  LOG_ERROR(LOG_TAG, "%s: %d commands pending response", __func__,
+            get_num_waiting_commands());
+
+  for (const list_node_t* node = list_begin(commands_pending_response);
+       node != list_end(commands_pending_response); node = list_next(node)) {
+    waiting_command_t* wait_entry =
+        reinterpret_cast<waiting_command_t*>(list_node(node));
 
     int wait_time_ms =
         std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - wait_entry->timestamp)
             .count();
-    LOG_ERROR(LOG_TAG, "%s: Waited %d ms for a response to opcode: 0x%x",
-              __func__, wait_time_ms, wait_entry->opcode);
+    LOG_ERROR(LOG_TAG, "%s: Waited %d ms for a response to opcode: 0x%x %s",
+              __func__, wait_time_ms, wait_entry->opcode,
+              (wait_entry == original_wait_entry) ? "*matches timer*" : "");
 
     // Dump the length field and the first byte of the payload, if present.
     uint8_t* command = wait_entry->command->data + wait_entry->command->offset;
-    if (wait_entry->command->len > 3)
+    if (wait_entry->command->len > 3) {
       LOG_ERROR(LOG_TAG, "%s: Size %d Hex %02x %02x %02x %02x", __func__,
                 wait_entry->command->len, command[0], command[1], command[2],
                 command[3]);
-    else
+    } else {
       LOG_ERROR(LOG_TAG, "%s: Size %d Hex %02x %02x %02x", __func__,
                 wait_entry->command->len, command[0], command[1], command[2]);
+    }
 
     LOG_EVENT_INT(BT_HCI_TIMEOUT_TAG_NUM, wait_entry->opcode);
-    lock.unlock();
   }
+  lock.unlock();
 
   LOG_ERROR(LOG_TAG, "%s: requesting a firmware dump.", __func__);
 
@@ -515,7 +521,10 @@ void process_command_credits(int credits) {
     // HCI Layer was shut down
     return;
   }
-  command_credits = credits;
+
+  // Subtract commands in flight.
+  command_credits = credits - get_num_waiting_commands();
+
   while (command_credits > 0 && command_queue.size() > 0) {
     message_loop_->task_runner()->PostTask(FROM_HERE,
                                            std::move(command_queue.front()));
@@ -541,9 +550,10 @@ static bool filter_incoming_event(BT_HDR* packet) {
     STREAM_TO_UINT8(credits, stream);
     STREAM_TO_UINT16(opcode, stream);
 
+    wait_entry = get_waiting_command(opcode);
+
     process_command_credits(credits);
 
-    wait_entry = get_waiting_command(opcode);
     if (!wait_entry) {
       if (opcode != HCI_COMMAND_NONE) {
         LOG_WARN(LOG_TAG,
@@ -567,11 +577,12 @@ static bool filter_incoming_event(BT_HDR* packet) {
     STREAM_TO_UINT8(credits, stream);
     STREAM_TO_UINT16(opcode, stream);
 
-    process_command_credits(credits);
-
     // If a command generates a command status event, it won't be getting a
     // command complete event
     wait_entry = get_waiting_command(opcode);
+
+    process_command_credits(credits);
+
     if (!wait_entry) {
       LOG_WARN(
           LOG_TAG,
@@ -646,6 +657,11 @@ static waiting_command_t* get_waiting_command(command_opcode_t opcode) {
   return NULL;
 }
 
+static int get_num_waiting_commands() {
+  std::lock_guard<std::recursive_mutex> lock(commands_pending_response_mutex);
+  return list_length(commands_pending_response);
+}
+
 static void update_command_response_timer(void) {
   std::lock_guard<std::recursive_mutex> lock(commands_pending_response_mutex);
 
@@ -654,7 +670,7 @@ static void update_command_response_timer(void) {
     alarm_cancel(command_response_timer);
   } else {
     alarm_set(command_response_timer, COMMAND_PENDING_TIMEOUT_MS,
-              command_timed_out, NULL);
+              command_timed_out, list_front(commands_pending_response));
   }
 }
 
