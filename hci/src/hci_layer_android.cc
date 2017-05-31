@@ -24,11 +24,16 @@
 #include <base/logging.h>
 #include "buffer_allocator.h"
 #include "osi/include/log.h"
+#include "sys/stat.h"
+#include "sys/types.h"
 
 #include <android/hardware/bluetooth/1.0/IBluetoothHci.h>
 #include <android/hardware/bluetooth/1.0/IBluetoothHciCallbacks.h>
 #include <android/hardware/bluetooth/1.0/types.h>
 #include <hwbinder/ProcessState.h>
+
+#define LOG_PATH "/data/misc/bluetooth/logs/firmware_events.log"
+#define LAST_LOG_PATH "/data/misc/bluetooth/logs/firmware_events.log.last"
 
 using android::hardware::bluetooth::V1_0::IBluetoothHci;
 using android::hardware::bluetooth::V1_0::IBluetoothHciCallbacks;
@@ -134,4 +139,30 @@ void hci_transmit(BT_HDR* packet) {
       LOG_ERROR(LOG_TAG, "Unknown packet type (%d)", event);
       break;
   }
+}
+
+int hci_open_firmware_log_file() {
+  if (rename(LOG_PATH, LAST_LOG_PATH) == -1 && errno != ENOENT) {
+    LOG_ERROR(LOG_TAG, "%s unable to rename '%s' to '%s': %s", __func__,
+              LOG_PATH, LAST_LOG_PATH, strerror(errno));
+  }
+
+  mode_t prevmask = umask(0);
+  int logfile_fd = open(LOG_PATH, O_WRONLY | O_CREAT | O_TRUNC,
+                        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+  umask(prevmask);
+  if (logfile_fd == INVALID_FD) {
+    LOG_ERROR(LOG_TAG, "%s unable to open '%s': %s", __func__, LOG_PATH,
+              strerror(errno));
+  }
+
+  return logfile_fd;
+}
+
+void hci_close_firmware_log_file(int fd) {
+  if (fd != INVALID_FD) close(fd);
+}
+
+void hci_log_firmware_debug_packet(int fd, BT_HDR* packet) {
+  TEMP_FAILURE_RETRY(write(fd, packet->data, packet->len));
 }
