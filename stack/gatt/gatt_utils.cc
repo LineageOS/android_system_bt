@@ -1307,55 +1307,31 @@ bool gatt_find_app_hold_link(tGATT_TCB* p_tcb, uint8_t start_idx,
   return found;
 }
 
-/*******************************************************************************
- *
- * Function         gatt_cmd_enq
- *
- * Description      Enqueue this command.
- *
- * Returns          None.
- *
- ******************************************************************************/
-bool gatt_cmd_enq(tGATT_TCB& tcb, uint16_t clcb_idx, bool to_send,
+/** Enqueue this command */
+void gatt_cmd_enq(tGATT_TCB& tcb, uint16_t clcb_idx, bool to_send,
                   uint8_t op_code, BT_HDR* p_buf) {
-  tGATT_CMD_Q* p_cmd = &tcb.cl_cmd_q[tcb.next_slot_inq];
-
-  p_cmd->to_send = to_send; /* waiting to be sent */
-  p_cmd->op_code = op_code;
-  p_cmd->p_cmd = p_buf;
-  p_cmd->clcb_idx = clcb_idx;
+  tGATT_CMD_Q cmd;
+  cmd.to_send = to_send; /* waiting to be sent */
+  cmd.op_code = op_code;
+  cmd.p_cmd = p_buf;
+  cmd.clcb_idx = clcb_idx;
 
   if (!to_send) {
-    tcb.pending_cl_req = tcb.next_slot_inq;
+    // TODO: WTF why do we clear the queue here ?!
+    tcb.cl_cmd_q = std::queue<tGATT_CMD_Q>();
   }
 
-  tcb.next_slot_inq++;
-  tcb.next_slot_inq %= GATT_CL_MAX_LCB;
-
-  return true;
+  tcb.cl_cmd_q.push(cmd);
 }
 
-/*******************************************************************************
- *
- * Function         gatt_cmd_dequeue
- *
- * Description      dequeue the command in the client CCB command queue.
- *
- * Returns          total number of clcb found.
- *
- ******************************************************************************/
+/** dequeue the command in the client CCB command queue */
 tGATT_CLCB* gatt_cmd_dequeue(tGATT_TCB& tcb, uint8_t* p_op_code) {
-  tGATT_CMD_Q* p_cmd = &tcb.cl_cmd_q[tcb.pending_cl_req];
-  tGATT_CLCB* p_clcb = NULL;
+  if (tcb.cl_cmd_q.empty()) return nullptr;
 
-  if (tcb.pending_cl_req != tcb.next_slot_inq) {
-    p_clcb = &gatt_cb.clcb[p_cmd->clcb_idx];
-
-    *p_op_code = p_cmd->op_code;
-
-    tcb.pending_cl_req++;
-    tcb.pending_cl_req %= GATT_CL_MAX_LCB;
-  }
+  tGATT_CMD_Q cmd = tcb.cl_cmd_q.front();
+  tGATT_CLCB* p_clcb = &gatt_cb.clcb[cmd.clcb_idx];
+  *p_op_code = cmd.op_code;
+  tcb.cl_cmd_q.pop();
 
   return p_clcb;
 }
