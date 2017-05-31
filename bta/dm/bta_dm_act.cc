@@ -4647,9 +4647,15 @@ void btm_dm_start_gatt_discovery(BD_ADDR bd_addr) {
     memset(bta_dm_search_cb.pending_close_bda, 0, BD_ADDR_LEN);
     alarm_cancel(bta_dm_search_cb.gatt_close_timer);
     btm_dm_start_disc_gatt_services(bta_dm_search_cb.conn_id);
-  } else
-    BTA_GATTC_Open(bta_dm_search_cb.client_if, bd_addr, true,
-                   BTA_GATT_TRANSPORT_LE);
+  } else {
+    if (BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
+      BTA_GATTC_Open(bta_dm_search_cb.client_if, bd_addr, true,
+                     BTA_GATT_TRANSPORT_LE, true);
+    } else {
+      BTA_GATTC_Open(bta_dm_search_cb.client_if, bd_addr, true,
+                     BTA_GATT_TRANSPORT_LE, false);
+    }
+  }
 }
 
 /*******************************************************************************

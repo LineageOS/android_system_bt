@@ -150,10 +150,6 @@ typedef uint16_t tGATT_DISCONN_REASON;
 #define GATT_CL_MAX_LCB 22
 #endif
 
-#ifndef GATT_MAX_SCCB
-#define GATT_MAX_SCCB 10
-#endif
-
 /* GATT notification caching timer, default to be three seconds
 */
 #ifndef GATTC_NOTIF_TIMEOUT

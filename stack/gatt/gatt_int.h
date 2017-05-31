@@ -329,11 +329,6 @@ typedef struct {
 typedef struct { tGATT_CLCB* p_clcb; } tGATT_PENDING_ENC_CLCB;
 
 typedef struct {
-  uint16_t clcb_idx;
-  bool in_use;
-} tGATT_SCCB;
-
-typedef struct {
   uint16_t handle;
   uint16_t uuid;
   uint32_t service_change;
@@ -379,8 +374,6 @@ typedef struct {
   fixed_queue_t* srv_chg_clt_q; /* service change clients queue */
   tGATT_REG cl_rcb[GATT_MAX_APPS];
   tGATT_CLCB clcb[GATT_CL_MAX_LCB]; /* connection link control block*/
-  tGATT_SCCB sccb[GATT_MAX_SCCB];   /* sign complete callback function
-                                       GATT_MAX_SCCB <= GATT_CL_MAX_LCB */
   uint8_t trace_level;
   uint16_t def_mtu_size;
 
