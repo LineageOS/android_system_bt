@@ -392,3 +392,9 @@ static int rfkill(int block) {
   close(fd);
   return 0;
 }
+
+int hci_open_firmware_log_file() { return INVALID_FD; }
+
+void hci_close_firmware_log_file(int fd) {}
+
+void hci_log_firmware_debug_packet(int fd, BT_HDR* packet) {}
