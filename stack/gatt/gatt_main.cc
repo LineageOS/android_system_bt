@@ -524,7 +524,7 @@ void gatt_notify_conn_update(uint16_t handle, uint16_t interval,
 
   for (int i = 0; i < GATT_MAX_APPS; i++) {
     tGATT_REG* p_reg = &gatt_cb.cl_rcb[i];
-    if (p_reg->in_use && p_reg->app_cb.p_phy_update_cb) {
+    if (p_reg->in_use && p_reg->app_cb.p_conn_update_cb) {
       uint16_t conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, p_reg->gatt_if);
       (*p_reg->app_cb.p_conn_update_cb)(p_reg->gatt_if, conn_id, interval,
                                         latency, timeout, status);
