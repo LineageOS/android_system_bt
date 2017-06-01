@@ -423,6 +423,9 @@
 /* tracking sub event */
 #define HCI_VSE_SUBCODE_BLE_TRACKING_SUB_EVT 0x56 /* Tracking event */
 
+/* debug info sub event */
+#define HCI_VSE_SUBCODE_DEBUG_INFO_SUB_EVT 0x57
+
 /* LE supported states definition */
 #define HCI_LE_ADV_STATE 0x00000001
 #define HCI_LE_SCAN_STATE 0x00000002
