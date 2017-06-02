@@ -168,7 +168,7 @@ UINT16 GAP_ConnOpen (char *p_serv_name, UINT8 service_id, BOOLEAN is_server,
         p_ccb->cfg = *p_cfg;
 
     /* Configure L2CAP COC, if transport is LE */
-    if (p_cfg && transport == BT_TRANSPORT_LE)
+    if (transport == BT_TRANSPORT_LE)
     {
         p_ccb->local_coc_cfg.credits = L2CAP_LE_DEFAULT_CREDIT;
         p_ccb->local_coc_cfg.mtu = p_cfg->mtu;
@@ -1201,7 +1201,6 @@ static void gap_release_ccb (tGAP_CCB *p_ccb)
     UINT16       xx;
     UINT16      psm = p_ccb->psm;
     UINT8       service_id = p_ccb->service_id;
-    tGAP_CCB    *p_ccb_local = NULL;
 
     /* Drop any buffers we may be holding */
     p_ccb->rx_queue_size = 0;
@@ -1219,13 +1218,10 @@ static void gap_release_ccb (tGAP_CCB *p_ccb)
     p_ccb->con_state = GAP_CCB_STATE_IDLE;
 
     /* If no-one else is using the PSM, deregister from L2CAP */
-    for (xx = 0, p_ccb_local = gap_cb.conn.ccb_pool; xx < GAP_MAX_CONNECTIONS; xx++, p_ccb_local++)
+    for (xx = 0, p_ccb = gap_cb.conn.ccb_pool; xx < GAP_MAX_CONNECTIONS; xx++, p_ccb++)
     {
-        if ((p_ccb_local->con_state != GAP_CCB_STATE_IDLE) && (p_ccb_local->psm == psm))
-        {
-            GAP_TRACE_WARNING(" %s :  %d  PSM is already in use", __func__,p_ccb_local->psm);
+        if ((p_ccb->con_state != GAP_CCB_STATE_IDLE) && (p_ccb->psm == psm))
             return;
-        }
     }
 
     /* Free the security record for this PSM */

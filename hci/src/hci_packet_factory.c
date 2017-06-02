@@ -141,10 +141,6 @@ static BT_HDR *make_read_local_supported_codecs(void) {
     return make_command_no_params(HCI_READ_LOCAL_SUPPORTED_CODECS);
 }
 
-static BT_HDR *make_ble_read_offload_features_support(void) {
-    return make_command_no_params(HCI_BLE_VENDOR_CAP_OCF);
-}
-
 static BT_HDR *make_ble_set_event_mask(const bt_event_mask_t *event_mask) {
   uint8_t *stream;
   uint8_t parameter_size = sizeof(bt_event_mask_t);
@@ -202,8 +198,7 @@ static const hci_packet_factory_t interface = {
   make_ble_read_resolving_list_size,
   make_ble_read_suggested_default_data_length,
   make_ble_set_event_mask,
-  make_read_local_supported_codecs,
-  make_ble_read_offload_features_support
+  make_read_local_supported_codecs
 };
 
 const hci_packet_factory_t *hci_packet_factory_get_interface() {

@@ -197,37 +197,6 @@ void l2c_fcr_start_timer (tL2C_CCB *p_ccb)
 
 /*******************************************************************************
 **
-** Function         l2c_fcr_restart_timer
-**
-** Description      This function starts the (monitor or retransmission) timer.
-**
-** Returns          -
-**
-*******************************************************************************/
-void l2c_fcr_restart_timer (tL2C_CCB *p_ccb)
-{
-    assert(p_ccb != NULL);
-    UINT32  tout;
-
-    /* The timers which are in milliseconds */
-    if (p_ccb->fcrb.wait_ack)
-    {
-        tout = (UINT32)p_ccb->our_cfg.fcr.mon_tout;
-    }
-    else
-    {
-        tout = (UINT32)p_ccb->our_cfg.fcr.rtrans_tout;
-    }
-
-    /* restart the mentioned timer */
-    alarm_set_on_queue(p_ccb->fcrb.mon_retrans_timer, tout,
-                       l2c_ccb_timer_timeout, p_ccb,
-                       btu_general_alarm_queue);
-}
-
-
-/*******************************************************************************
-**
 ** Function         l2c_fcr_stop_timer
 **
 ** Description      This function stops the (monitor or transmission) timer.
@@ -1051,10 +1020,6 @@ static BOOLEAN process_reqseq (tL2C_CCB *p_ccb, UINT16 ctrl_word)
         for (xx = 0; xx < num_bufs_acked; xx++)
         {
             BT_HDR *p_tmp = (BT_HDR *)fixed_queue_try_dequeue(p_fcrb->waiting_for_ack_q);
-            if (p_tmp == NULL) {
-                L2CAP_TRACE_WARNING ("%s: Unable to dequeue", __func__);
-                return (FALSE);
-            }
             ls = p_tmp->layer_specific & L2CAP_FCR_SAR_BITS;
 
             if ( (ls == L2CAP_FCR_UNSEG_SDU) || (ls == L2CAP_FCR_END_SDU) )
@@ -1064,6 +1029,8 @@ static BOOLEAN process_reqseq (tL2C_CCB *p_ccb, UINT16 ctrl_word)
         }
 
         /* If we are still in a wait_ack state, do not mess with the timer */
+        if (!p_ccb->fcrb.wait_ack)
+            l2c_fcr_stop_timer (p_ccb);
 
         /* Check if we need to call the "packet_sent" callback */
         if ( (p_ccb->p_rcb) && (p_ccb->p_rcb->api.pL2CA_TxComplete_Cb) && (full_sdus_xmitted) )
@@ -1079,15 +1046,8 @@ static BOOLEAN process_reqseq (tL2C_CCB *p_ccb, UINT16 ctrl_word)
     }
 
     /* If anything still waiting for ack, restart the timer if it was stopped */
-    if(!p_ccb->fcrb.wait_ack) {
-        if (!fixed_queue_is_empty(p_fcrb->waiting_for_ack_q)) {
-//            l2c_fcr_start_timer(p_ccb);
-            l2c_fcr_restart_timer (p_ccb);
-        }
-        else
-            l2c_fcr_stop_timer (p_ccb);
-    }
-
+    if (!fixed_queue_is_empty(p_fcrb->waiting_for_ack_q))
+        l2c_fcr_start_timer(p_ccb);
     return (TRUE);
 }
 
@@ -1242,12 +1202,8 @@ static void process_i_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_word, B
             if (p_fcrb->srej_sent)
             {
                 /* If SREJ sent, save the frame for later processing as long as it is in sequence */
-                void * frame_msg = fixed_queue_try_peek_last(p_fcrb->srej_rcv_hold_q);
-                if (frame_msg == NULL) {
-                    L2CAP_TRACE_WARNING ("%s: Unable to process frame", __func__);
-                    return;
-                }
-                next_srej = (((BT_HDR *)frame_msg)->layer_specific + 1) & L2CAP_FCR_SEQ_MODULO;
+                next_srej = (((BT_HDR *)fixed_queue_try_peek_last(p_fcrb->srej_rcv_hold_q))->layer_specific + 1) & L2CAP_FCR_SEQ_MODULO;
+
                 if ( (tx_seq == next_srej) && (fixed_queue_length(p_fcrb->srej_rcv_hold_q) < p_ccb->our_cfg.fcr.tx_win_sz) )
                 {
                     /* If user gave us a pool for held rx buffers, use that */
@@ -1747,10 +1703,6 @@ BT_HDR *l2c_fcr_get_next_xmit_sdu_seg (tL2C_CCB *p_ccb, UINT16 max_packet_length
     }
 
     p_buf = (BT_HDR *)fixed_queue_try_peek_first(p_ccb->xmit_hold_q);
-    if (p_buf == NULL) {
-        L2CAP_TRACE_ERROR ("%s: L2CAP - fixed_queue_try_peek_first returned queue as empty", __func__);
-        return NULL;
-    }
 
     /* If there is more data than the MPS, it requires segmentation */
     if (p_buf->len > max_pdu)
@@ -1787,12 +1739,8 @@ BT_HDR *l2c_fcr_get_next_xmit_sdu_seg (tL2C_CCB *p_ccb, UINT16 max_packet_length
     }
     else    /* Use the original buffer if no segmentation, or the last segment */
     {
-        void *seg_msg = fixed_queue_try_dequeue(p_ccb->xmit_hold_q);
-        if (seg_msg == NULL) {
-            L2CAP_TRACE_WARNING ("%s: Unable to process frame", __func__);
-            return (NULL);
-        }
-        p_xmit = (BT_HDR *)seg_msg;
+        p_xmit = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->xmit_hold_q);
+
         if (p_xmit->event != 0)
             last_seg = TRUE;
 
@@ -1906,10 +1854,6 @@ BT_HDR *l2c_lcc_get_next_xmit_sdu_seg (tL2C_CCB *p_ccb, UINT16 max_packet_length
     UINT16      max_pdu = p_ccb->peer_conn_cfg.mps;
 
     p_buf = (BT_HDR *)fixed_queue_try_peek_first(p_ccb->xmit_hold_q);
-    if (p_buf == NULL) {
-        L2CAP_TRACE_ERROR ("%s: L2CAP - fixed_queue_try_peek_first returned queue as empty", __func__);
-        return (NULL);
-    }
 
     /* We are using the "event" field to tell is if we already started segmentation */
     if (p_buf->event == 0)

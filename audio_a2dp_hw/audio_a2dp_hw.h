@@ -1,9 +1,4 @@
 /******************************************************************************
- *  Copyright (C) 2016, The Linux Foundation. All rights reserved.
- *
- *  Not a Contribution
- *****************************************************************************/
-/******************************************************************************
  *
  *  Copyright (C) 2009-2012 Broadcom Corporation
  *
@@ -31,7 +26,7 @@
 
 #ifndef AUDIO_A2DP_HW_H
 #define AUDIO_A2DP_HW_H
-#include <pthread.h>
+
 /*****************************************************************************
 **  Constants & Macros
 ******************************************************************************/
@@ -40,12 +35,7 @@
 #define A2DP_CTRL_PATH "/data/misc/bluedroid/.a2dp_ctrl"
 #define A2DP_DATA_PATH "/data/misc/bluedroid/.a2dp_data"
 
-#ifndef BTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
 #define AUDIO_STREAM_DEFAULT_RATE          44100
-#else
-#define AUDIO_STREAM_DEFAULT_RATE          48000
-#endif
-
 #define AUDIO_STREAM_DEFAULT_FORMAT        AUDIO_FORMAT_PCM_16_BIT
 #define AUDIO_STREAM_DEFAULT_CHANNEL_FLAG  AUDIO_CHANNEL_OUT_STEREO
 
@@ -90,14 +80,11 @@
 typedef enum {
     A2DP_CTRL_CMD_NONE,
     A2DP_CTRL_CMD_CHECK_READY,
-    A2DP_CTRL_CMD_CHECK_STREAM_STARTED,
     A2DP_CTRL_CMD_START,
     A2DP_CTRL_CMD_STOP,
     A2DP_CTRL_CMD_SUSPEND,
     A2DP_CTRL_GET_AUDIO_CONFIG,
     A2DP_CTRL_CMD_OFFLOAD_START,
-    A2DP_CTRL_CMD_OFFLOAD_SUPPORTED,
-    A2DP_CTRL_CMD_OFFLOAD_NOT_SUPPORTED,
 } tA2DP_CTRL_CMD;
 
 typedef enum {
@@ -108,33 +95,6 @@ typedef enum {
 } tA2DP_CTRL_ACK;
 
 
-typedef enum {
-    AUDIO_A2DP_STATE_STARTING,
-    AUDIO_A2DP_STATE_STARTED,
-    AUDIO_A2DP_STATE_STOPPING,
-    AUDIO_A2DP_STATE_STOPPED,
-    AUDIO_A2DP_STATE_SUSPENDED, /* need explicit set param call to resume (suspend=false) */
-    AUDIO_A2DP_STATE_STANDBY    /* allows write to autoresume */
-} a2dp_state_t;
-
-struct a2dp_config {
-    uint32_t                rate;
-    uint32_t                channel_flags;
-    int                     format;
-};
-
-/* move ctrl_fd outside output stream and keep open until HAL unloaded ? */
-#define  MAX_CODEC_CFG_SIZE  30
-
-struct a2dp_stream_common {
-    pthread_mutex_t         lock;
-    int                     ctrl_fd;
-    int                     audio_fd;
-    size_t                  buffer_sz;
-    struct a2dp_config      cfg;
-    a2dp_state_t            state;
-    uint8_t                 codec_cfg[MAX_CODEC_CFG_SIZE];
-};
 /*****************************************************************************
 **  Type definitions for callback functions
 ******************************************************************************/

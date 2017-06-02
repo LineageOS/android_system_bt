@@ -207,7 +207,7 @@ tBTM_STATUS BTM_SetPowerMode (UINT8 pm_id, BD_ADDR remote_bda, tBTM_PM_PWR_MD *p
         /* check if the requested mode is supported */
         ind = mode - BTM_PM_MD_HOLD; /* make it base 0 */
         p_features = BTM_ReadLocalFeatures();
-        if(ind < BTM_PM_NUM_SET_MODES && !(p_features[ btm_pm_mode_off[ind] ] & btm_pm_mode_msk[ind] ) )
+        if( !(p_features[ btm_pm_mode_off[ind] ] & btm_pm_mode_msk[ind] ) )
             return BTM_MODE_UNSUPPORTED;
     }
 
@@ -386,7 +386,7 @@ void btm_pm_reset(void)
     tBTM_PM_STATUS_CBACK *cb = NULL;
 
     /* clear the pending request for application */
-    if( (btm_cb.pm_pend_id < BTM_PM_SET_ONLY_ID) &&
+    if( (btm_cb.pm_pend_id != BTM_PM_SET_ONLY_ID) &&
         (btm_cb.pm_reg_db[btm_cb.pm_pend_id].mask & BTM_PM_REG_NOTIF) )
     {
         cb = btm_cb.pm_reg_db[btm_cb.pm_pend_id].cback;
@@ -780,7 +780,7 @@ void btm_pm_proc_cmd_status(UINT8 status)
     }
 
     /* notify the caller is appropriate */
-    if( (btm_cb.pm_pend_id < BTM_PM_SET_ONLY_ID) &&
+    if( (btm_cb.pm_pend_id != BTM_PM_SET_ONLY_ID) &&
         (btm_cb.pm_reg_db[btm_cb.pm_pend_id].mask & BTM_PM_REG_NOTIF) )
     {
         (*btm_cb.pm_reg_db[btm_cb.pm_pend_id].cback)(btm_cb.acl_db[btm_cb.pm_pend_link].remote_addr, pm_status, 0, status);

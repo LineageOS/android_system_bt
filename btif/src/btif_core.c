@@ -45,6 +45,7 @@
 #include "btif_api.h"
 #include "btif_av.h"
 #include "btif_config.h"
+#include "btif_config.h"
 #include "btif_pan.h"
 #include "btif_profile_queue.h"
 #include "btif_sock.h"
@@ -74,13 +75,6 @@
 #define BTE_DID_CONF_FILE "/etc/bluetooth/bt_did.conf"
 #endif  // defined(OS_GENERIC)
 #endif  // BTE_DID_CONF_FILE
-
-#define VENDOR_PERSISTENCE_PATH    "/persist/bluetooth"
-#define VENDOR_PERSISTENCE_PATH_LEGACY       "/persist"
-#define VENDOR_BT_NV_FILE_NAME     ".bt_nv.bin"
-#define VENDOR_PAYLOAD_MAXLENGTH   (260)
-#define VENDOR_MAX_CMD_HDR_SIZE    (3)
-#define VENDOR_BD_ADDR_TYPE        (1)
 
 /************************************************************************************
 **  Local type definitions
@@ -130,8 +124,6 @@ static UINT8 btif_dut_mode = 0;
 static thread_t *bt_jni_workqueue_thread;
 static const char *BT_JNI_WORKQUEUE_NAME = "bt_jni_workqueue";
 static uid_set_t* uid_set = NULL;
-
-static BOOLEAN ssr_triggered = FALSE;
 
 /************************************************************************************
 **  Static functions
@@ -336,63 +328,6 @@ static bool btif_fetch_property(const char *key, bt_bdaddr_t *addr) {
     }
     return FALSE;
 }
-static bool fetch_vendor_addr (bt_bdaddr_t *local_addr)
-{
-    int addr_fd, i;
-    int bytes_read = 0;
-    bool status = false;
-    unsigned char payload[VENDOR_PAYLOAD_MAXLENGTH];
-    unsigned char header[VENDOR_MAX_CMD_HDR_SIZE];
-    char filename[NAME_MAX];
-
-    snprintf(filename, NAME_MAX, "%s/%s",VENDOR_PERSISTENCE_PATH,VENDOR_BT_NV_FILE_NAME);
-    if (access(filename, R_OK) != 0) {
-        snprintf(filename, NAME_MAX, "%s/%s",VENDOR_PERSISTENCE_PATH_LEGACY,VENDOR_BT_NV_FILE_NAME);
-    }
-    BTIF_TRACE_VERBOSE("Opening file '%s' for reading\n",filename);
-
-    /* Open the Vendor BD Addr file */
-    addr_fd = open(filename, O_RDONLY);
-    if(addr_fd < 0)
-    {
-        BTIF_TRACE_ERROR("Open of Vendor BD addr file failed\n");
-        return false;
-    }
-
-    while((bytes_read = read(addr_fd, header, VENDOR_MAX_CMD_HDR_SIZE)) &&
-            (bytes_read == 0 || bytes_read == VENDOR_MAX_CMD_HDR_SIZE))
-    {
-        if( VENDOR_BD_ADDR_TYPE == header[0])
-        {
-            if(read(addr_fd, local_addr, header[2]) == header[2])
-            {
-                BTIF_TRACE_WARNING("Read the Vendor BD addr from '%s'\n",filename);
-                status = true;
-            }
-        }
-        else
-        {
-            if(read(addr_fd, payload, header[2]) == header[2])
-            {
-                continue;
-            }
-        }
-    }
-
-    if (status) // swap bd address
-    {
-        char swap;
-
-        for (i = 0 ; i < 3; i++) {
-            swap = local_addr->address[i];
-            local_addr->address[i] = local_addr->address[5-i];
-            local_addr->address[5-i] = swap;
-        }
-    }
-
-    close(addr_fd);
-    return status;
-}
 
 static void btif_fetch_local_bdaddr(bt_bdaddr_t *local_addr)
 {
@@ -443,26 +378,6 @@ static void btif_fetch_local_bdaddr(bt_bdaddr_t *local_addr)
     /* No BDADDR found in file. Look for BDA in factory property */
     if (!valid_bda) {
         valid_bda = btif_fetch_property(FACTORY_BT_ADDR_PROPERTY, local_addr);
-    }
-
-    /* No factory BDADDR found. Look for BDA in ro.boot.btmacaddr */
-    if ((!valid_bda) && \
-        (property_get("ro.boot.btmacaddr", val, NULL)))
-    {
-        valid_bda = string_to_bdaddr(val, local_addr);
-        if (valid_bda) {
-            BTIF_TRACE_DEBUG("Got vendor BDA %02X:%02X:%02X:%02X:%02X:%02X",
-                local_addr->address[0], local_addr->address[1], local_addr->address[2],
-                local_addr->address[3], local_addr->address[4], local_addr->address[5]);
-        }
-    }
-
-    if (!valid_bda && fetch_vendor_addr(local_addr))
-    {
-        valid_bda = TRUE;
-        BTIF_TRACE_DEBUG("Got Vendor BDA %02X:%02X:%02X:%02X:%02X:%02X",
-            local_addr->address[0], local_addr->address[1], local_addr->address[2],
-            local_addr->address[3], local_addr->address[4], local_addr->address[5]);
     }
 
     /* Generate new BDA if necessary */
@@ -557,8 +472,6 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status)
 
     BTIF_TRACE_DEBUG("%s: status %d, local bd [%s]", __FUNCTION__, status, bdstr);
 
-    ssr_triggered = FALSE;
-
     if (bdcmp(btif_local_bd_addr.address, controller->get_address()->address))
     {
         // TODO(zachoverflow): this whole code path seems like a bad time waiting to happen
@@ -608,11 +521,11 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status)
         /* init rfcomm & l2cap api */
         btif_sock_init(uid_set);
 
-        /* load did configuration */
-        bte_load_did_conf(BTE_DID_CONF_FILE);
-
         /* init pan */
         btif_pan_init();
+
+        /* load did configuration */
+        bte_load_did_conf(BTE_DID_CONF_FILE);
 
 #ifdef BTIF_DM_OOB_TEST
         btif_dm_load_local_oob();
@@ -670,11 +583,7 @@ bt_status_t btif_disable_bluetooth(void)
 void btif_disable_bluetooth_evt(void)
 {
     BTIF_TRACE_DEBUG("%s", __FUNCTION__);
-    if (ssr_triggered == TRUE)
-    {
-        BTIF_TRACE_DEBUG("%s SSR triggered,Ignore EVT",__FUNCTION__);
-        return;
-    }
+
 #if (defined(HCILP_INCLUDED) && HCILP_INCLUDED == TRUE)
     bte_main_enable_lpm(FALSE);
 #endif
@@ -718,62 +627,6 @@ bt_status_t btif_cleanup_bluetooth(void)
 
     return BT_STATUS_SUCCESS;
 }
-
-/*******************************************************************************
-Function       btif_ssrcleanup
-Description   Trigger SSR when Disable timeout occured
-
-*******************************************************************************/
-void btif_ssr_cleanup(void)
-{
-   BTIF_TRACE_DEBUG("%s", __FUNCTION__);
-   ssr_triggered = TRUE;
-   bte_ssr_cleanup(0x11);//SSR reason 0x11 - ENABLE_TIMEOUT
-}
-
-/*******************************************************************************
-**
-**   BTIF Test Mode APIs
-**
-*****************************************************************************/
-#if HCI_RAW_CMD_INCLUDED == TRUE
-/*******************************************************************************
-**
-** Function         btif_hci_event_cback
-**
-** Description     Callback invoked on receiving HCI event
-**
-** Returns          None
-**
-*******************************************************************************/
-static void btif_hci_event_cback ( tBTM_RAW_CMPL *p )
-{
-    BTIF_TRACE_DEBUG("%s", __FUNCTION__);
-    if((p != NULL) && (bt_hal_cbacks != NULL)
-          && (bt_hal_cbacks->hci_event_recv_cb != NULL))
-    {
-        HAL_CBACK(bt_hal_cbacks, hci_event_recv_cb, p->event_code, p->p_param_buf,
-                                                                p->param_len);
-    }
-}
-
-/*******************************************************************************
-**
-** Function        btif_hci_cmd_send
-**
-** Description     Sends a HCI raw command to the controller
-**
-** Returns         BT_STATUS_SUCCESS on success
-**
-*******************************************************************************/
-bt_status_t btif_hci_cmd_send(uint16_t opcode, uint8_t *buf, uint8_t len)
-{
-    BTIF_TRACE_DEBUG("%s", __FUNCTION__);
-
-    BTM_Hci_Raw_Command(opcode, len, buf, btif_hci_event_cback);
-    return BT_STATUS_SUCCESS;
-}
-#endif
 
 /*******************************************************************************
 **

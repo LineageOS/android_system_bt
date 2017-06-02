@@ -37,7 +37,6 @@
 
 #if BT_TRACE_VERBOSE == TRUE
 
-
 /* verbose state strings for trace */
 const char * const avct_lcb_st_str[] = {
     "LCB_IDLE_ST",
@@ -113,27 +112,6 @@ const tAVCT_LCB_ACTION avct_lcb_action[] = {
     avct_lcb_dealloc,
     avct_lcb_free_msg_ind
 };
-
-#if (AVCT_BROWSE_INCLUDED == TRUE)
-const tAVCT_BCB_ACTION avct_bcb_action[] = {
-    avct_bcb_chnl_open,
-    avct_bcb_chnl_disc,
-    avct_bcb_send_msg,
-    avct_bcb_open_ind,
-    avct_bcb_open_fail,
-    avct_bcb_close_ind,
-    avct_bcb_close_cfm,
-    avct_bcb_msg_ind,
-    avct_bcb_cong_ind,
-    avct_bcb_bind_conn,
-    avct_bcb_bind_fail,
-    avct_bcb_unbind_disc,
-    avct_bcb_chk_disc,
-    avct_bcb_discard_msg,
-    avct_bcb_dealloc,
-    avct_bcb_free_msg_ind
-};
-#endif
 
 /* state table information */
 #define AVCT_LCB_ACTIONS            2       /* number of actions */
@@ -220,9 +198,9 @@ void avct_lcb_event(tAVCT_LCB *p_lcb, UINT8 event, tAVCT_LCB_EVT *p_data)
     int                 i;
 
 #if BT_TRACE_VERBOSE == TRUE
-    BTIF_TRACE_IMP("LCB lcb=%d event=%s state=%s", p_lcb->allocated, avct_lcb_evt_str[event], avct_lcb_st_str[p_lcb->state]);
+    AVCT_TRACE_EVENT("LCB lcb=%d event=%s state=%s", p_lcb->allocated, avct_lcb_evt_str[event], avct_lcb_st_str[p_lcb->state]);
 #else
-    BTIF_TRACE_IMP("LCB lcb=%d event=%d state=%d", p_lcb->allocated, event, p_lcb->state);
+    AVCT_TRACE_EVENT("LCB lcb=%d event=%d state=%d", p_lcb->allocated, event, p_lcb->state);
 #endif
 
     /* look up the state table for the current state */
@@ -234,7 +212,7 @@ void avct_lcb_event(tAVCT_LCB *p_lcb, UINT8 event, tAVCT_LCB_EVT *p_data)
     /* execute action functions */
     for (i = 0; i < AVCT_LCB_ACTIONS; i++)
     {
-        if ((action = state_table[event][i]) < AVCT_LCB_IGNORE)
+        if ((action = state_table[event][i]) != AVCT_LCB_IGNORE)
         {
             (*avct_lcb_action[action])(p_lcb, p_data);
         }
@@ -263,9 +241,9 @@ void avct_bcb_event(tAVCT_BCB *p_bcb, UINT8 event, tAVCT_LCB_EVT *p_data)
     int                 i;
 
 #if BT_TRACE_VERBOSE == TRUE
-    BTIF_TRACE_IMP("BCB lcb=%d event=%s state=%s", p_bcb->allocated, avct_lcb_evt_str[event], avct_lcb_st_str[p_bcb->state]);
+    AVCT_TRACE_EVENT("BCB lcb=%d event=%s state=%s", p_bcb->allocated, avct_lcb_evt_str[event], avct_lcb_st_str[p_bcb->state]);
 #else
-    BTIF_TRACE_IMP("BCB lcb=%d event=%d state=%d", p_bcb->allocated, event, p_bcb->state);
+    AVCT_TRACE_EVENT("BCB lcb=%d event=%d state=%d", p_bcb->allocated, event, p_bcb->state);
 #endif
 
     /* look up the state table for the current state */
@@ -277,7 +255,7 @@ void avct_bcb_event(tAVCT_BCB *p_bcb, UINT8 event, tAVCT_LCB_EVT *p_data)
     /* execute action functions */
     for (i = 0; i < AVCT_LCB_ACTIONS; i++)
     {
-        if ((action = state_table[event][i]) < AVCT_LCB_IGNORE)
+        if ((action = state_table[event][i]) != AVCT_LCB_IGNORE)
         {
             (*avct_bcb_action[action])(p_bcb, p_data);
         }
@@ -324,55 +302,6 @@ tAVCT_LCB *avct_lcb_by_bd(BD_ADDR bd_addr)
     return p_lcb;
 }
 
-#if (AVCT_BROWSE_INCLUDED == TRUE)
-/*****************************************************************************
-**
-** Function         avct_bcb_by_lcb
-**
-** Description      This function finds bcb associated to a lcb
-**
-** Returns          pointer to the bcb , or NULL if none found.
-**
-*******************************************************************************/
-tAVCT_BCB *avct_bcb_by_lcb(tAVCT_LCB *p_lcb)
-{
-    int         i;
-    tAVCT_CCB   *p_ccb = &avct_cb.ccb[0];
-    for (i = 0; i < AVCT_NUM_CONN; i++, p_ccb++)
-    {
-        AVCT_TRACE_DEBUG("avct_bcb_by_lcb %d , ccb ", p_ccb->allocated);
-        if ( p_ccb->p_lcb == p_lcb )
-        {
-            return avct_cb.ccb[i].p_bcb;
-        }
-    }
-    AVCT_TRACE_ERROR("###avct_bcb_by_lcb ERROR");
-    return NULL ;
-}
-
-/*****************************************************************************
-**
-** Function         avct_lcb_by_bcb
-**
-** Description      This
-**
-** Returns          pointer to the lcb, or NULL if none found.
-**
-*******************************************************************************/
-tAVCT_LCB *avct_lcb_by_bcb(tAVCT_BCB *p_bcb)
-{
-    tAVCT_CCB   *p_ccb = &avct_cb.ccb[0];
-    int         i;
-    for (i = 0; i < AVCT_NUM_CONN; i++)
-    {
-        AVCT_TRACE_DEBUG("avct_lcb_alloc= %d", p_bcb->allocated);
-        if(p_ccb[i].allocated && p_ccb[i].p_bcb == p_bcb)
-            return avct_cb.ccb[i].p_lcb;
-    }
-    AVCT_TRACE_ERROR("###avct_lcb_by_bcb ERROR");
-    return NULL ;
-}
-#endif
 /*******************************************************************************
 **
 ** Function         avct_lcb_alloc
@@ -445,55 +374,6 @@ void avct_lcb_dealloc(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
     memset(p_lcb, 0, sizeof(tAVCT_LCB));
 }
 
-#if  AVCT_BROWSE_INCLUDED
-
-/*******************************************************************************
-**
-** Function         avct_bcb_dealloc
-**
-** Description      Deallocate a browse control block.
-**
-**
-** Returns          void.
-**
-*******************************************************************************/
-void avct_bcb_dealloc(tAVCT_BCB *p_bcb, tAVCT_LCB_EVT *p_data)
-{
-    tAVCT_CCB   *p_ccb = &avct_cb.ccb[0];
-    BOOLEAN     found = FALSE;
-    int         i;
-
-    if (p_bcb != NULL)
-    {
-        AVCT_TRACE_DEBUG("avct_bcb_dealloc %d", p_bcb->allocated);
-        for (i = 0; i < AVCT_NUM_CONN; i++, p_ccb++)
-        {
-            /* if ccb allocated and */
-            if (p_ccb->allocated)
-            {
-                if (p_ccb->p_bcb == p_bcb)
-                {
-                    AVCT_TRACE_DEBUG("avct_lcb_dealloc used by ccb: %d", i);
-                    found = TRUE;
-                    break;
-                }
-            }
-        }
-
-        if (!found)
-        {
-           AVCT_TRACE_DEBUG("avct_bcb_dealloc now");
-           memset(p_bcb, 0, sizeof(tAVCT_BCB));
-        }
-    }
-    else
-    {
-        AVCT_TRACE_ERROR("### dealloc Null bcb");
-    }
-
-}
-
-#endif
 /*******************************************************************************
 **
 ** Function         avct_lcb_by_lcid
@@ -527,41 +407,6 @@ tAVCT_LCB *avct_lcb_by_lcid(UINT16 lcid)
     return p_lcb;
 }
 
-#if AVCT_BROWSE_INCLUDED
-/******************************************************************************
-**
-** Function         avct_bcb_by_lcid(UINT16 lcid);
-**
-** Description      Find the BCB associated with the L2CAP LCID
-**
-** Return           pointer to browse control block
-**
-*******************************************************************************/
-
-tAVCT_BCB *avct_bcb_by_lcid(UINT16 lcid)
-{
-    AVCT_TRACE_DEBUG("avct_bcb_by_lcid :=%x",lcid);
-    tAVCT_BCB  *p_bcb = &avct_cb.bcb[0];
-    int         i;
-
-    for (i = 0; i < AVCT_NUM_LINKS; i++, p_bcb++)
-    {
-        if (p_bcb->allocated && ((p_bcb->ch_lcid == lcid)))
-        {
-            AVCT_TRACE_DEBUG("avct_bcb_by_lcid :=%x",p_bcb->ch_lcid);
-            break;
-        }
-    }
-    if (i == AVCT_NUM_LINKS)
-    {
-        /*out of bcbs */
-        p_bcb = NULL;
-        AVCT_TRACE_WARNING("###No bcb for lcid %x", lcid);
-    }
-    return p_bcb;
-}
-
-#endif
 /*******************************************************************************
 **
 ** Function         avct_lcb_has_pid
@@ -581,11 +426,9 @@ tAVCT_CCB *avct_lcb_has_pid(tAVCT_LCB *p_lcb, UINT16 pid)
     {
         if (p_ccb->allocated && (p_ccb->p_lcb == p_lcb) && (p_ccb->cc.pid == pid))
         {
-            AVCT_TRACE_DEBUG("avct_lcb_has_pid, found");
             return p_ccb;
         }
     }
-    AVCT_TRACE_WARNING("avct_lcb_has_pid, not found");
     return NULL;
 }
 

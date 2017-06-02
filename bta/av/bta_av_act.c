@@ -29,9 +29,6 @@
 
 #if defined(BTA_AV_INCLUDED) && (BTA_AV_INCLUDED == TRUE)
 
-
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "avdt_api.h"
@@ -39,9 +36,6 @@
 #include "bta_av_int.h"
 #include "l2c_api.h"
 #include "osi/include/list.h"
-#include "bt_utils.h"
-#include <errno.h>
-
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
@@ -65,34 +59,9 @@
 #define BTA_AV_ACCEPT_SIGNALLING_TIMEOUT_MS     (2 * 1000)      /* 2 seconds */
 #endif
 
-#ifndef AVRC_CONNECT_RETRY_DELAY_MS
-#define AVRC_CONNECT_RETRY_DELAY_MS 2000
-#endif
-
 extern fixed_queue_t *btu_bta_alarm_queue;
 
 static void bta_av_accept_signalling_timer_cback(void *data);
-struct blacklist_entry
-{
-    int ver;
-    char addr[3];
-};
-
-
-#ifndef AVRC_MIN_META_CMD_LEN
-#define AVRC_MIN_META_CMD_LEN 20
-#endif
-
-/* state machine states */
-enum
-{
-    BTA_AV_INIT_SST,
-    BTA_AV_INCOMING_SST,
-    BTA_AV_OPENING_SST,
-    BTA_AV_OPEN_SST,
-    BTA_AV_RCFG_SST,
-    BTA_AV_CLOSING_SST
-};
 
 /*******************************************************************************
 **
@@ -251,7 +220,7 @@ static void bta_av_rc_ctrl_cback(UINT8 handle, UINT8 event, UINT16 result, BD_AD
 #if (defined(BTA_AV_MIN_DEBUG_TRACES) && BTA_AV_MIN_DEBUG_TRACES == TRUE)
     APPL_TRACE_EVENT("rc_ctrl handle: %d event=0x%x", handle, event);
 #else
-    BTIF_TRACE_IMP("bta_av_rc_ctrl_cback handle: %d event=0x%x", handle, event);
+    APPL_TRACE_EVENT("bta_av_rc_ctrl_cback handle: %d event=0x%x", handle, event);
 #endif
     if (event == AVRC_OPEN_IND_EVT)
     {
@@ -290,7 +259,7 @@ static void bta_av_rc_msg_cback(UINT8 handle, UINT8 label, UINT8 opcode, tAVRC_M
     UINT8           *p_data_src = NULL;
     UINT16          data_len = 0;
 
-    BTIF_TRACE_IMP("%s handle: %u opcode=0x%x", __func__, handle, opcode);
+    APPL_TRACE_DEBUG("%s handle: %u opcode=0x%x", __func__, handle, opcode);
 
     /* Determine the size of the buffer we need */
     if (opcode == AVRC_OP_VENDOR && p_msg->vendor.p_vendor_data != NULL) {
@@ -299,12 +268,7 @@ static void bta_av_rc_msg_cback(UINT8 handle, UINT8 label, UINT8 opcode, tAVRC_M
     } else if (opcode == AVRC_OP_PASS_THRU && p_msg->pass.p_pass_data != NULL) {
         p_data_src = p_msg->pass.p_pass_data;
         data_len = (UINT16) p_msg->pass.pass_len;
-    } else if (opcode == AVRC_OP_BROWSE && p_msg->browse.p_browse_data != NULL) {
-        APPL_TRACE_EVENT("bta_av_rc_msg_cback Browse Data");
-        p_data_src  = p_msg->browse.p_browse_data;
-        data_len = (UINT16) p_msg->browse.browse_len;
     }
-
 
     /* Create a copy of the message */
     tBTA_AV_RC_MSG *p_buf =
@@ -322,8 +286,6 @@ static void bta_av_rc_msg_cback(UINT8 handle, UINT8 label, UINT8 opcode, tAVRC_M
             p_buf->msg.vendor.p_vendor_data = p_data_dst;
         else if (opcode == AVRC_OP_PASS_THRU)
             p_buf->msg.pass.p_pass_data = p_data_dst;
-        else if (opcode == AVRC_OP_BROWSE)
-            p_buf->msg.browse.p_browse_data = p_data_dst;
     }
 
     bta_sys_sendmsg(p_buf);
@@ -343,14 +305,13 @@ UINT8 bta_av_rc_create(tBTA_AV_CB *p_cb, UINT8 role, UINT8 shdl, UINT8 lidx)
     tAVRC_CONN_CB ccb;
     BD_ADDR_PTR   bda = (BD_ADDR_PTR)bd_addr_any;
     UINT8         status = BTA_AV_RC_ROLE_ACP;
-    tBTA_AV_SCB  *p_scb;
+    tBTA_AV_SCB  *p_scb = p_cb->p_scb[shdl - 1];
     int i;
     UINT8   rc_handle;
     tBTA_AV_RCB *p_rcb;
 
     if (role == AVCT_INT)
     {
-        p_scb = p_cb->p_scb[shdl - 1];
         bda = p_scb->peer_addr;
         status = BTA_AV_RC_ROLE_INT;
     }
@@ -607,16 +568,12 @@ void bta_av_rc_opened(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
     if (rc_open.peer_features == 0)
     {
         /* we have not done SDP on peer RC capabilities.
-         * peer must have initiated the RC connection */
-        /*To update default features based on the local features we support*/
-        if (bta_av_cb.features & BTA_AV_FEAT_RCTG)
-        {
+         * peer must have initiated the RC connection
+         * We Don't have SDP records of Peer, so we by
+         * default will take values depending upon registered
+         * features */
+        if (p_cb->features & BTA_AV_FEAT_RCTG)
             rc_open.peer_features |= BTA_AV_FEAT_RCCT;
-        }
-        if (bta_av_cb.features & BTA_AV_FEAT_RCCT)
-        {
-            rc_open.peer_features |= BTA_AV_FEAT_RCTG;
-        }
         bta_av_rc_disc(disc);
     }
     (*p_cb->p_cback)(BTA_AV_RC_OPEN_EVT, (tBTA_AV *) &rc_open);
@@ -811,25 +768,15 @@ static tAVRC_STS bta_av_chk_notif_evt_id(tAVRC_MSG_VENDOR *p_vendor)
 tBTA_AV_EVT bta_av_proc_meta_cmd(tAVRC_RESPONSE  *p_rc_rsp, tBTA_AV_RC_MSG *p_msg, UINT8 *p_ctype)
 {
     tBTA_AV_EVT evt = BTA_AV_META_MSG_EVT;
-    UINT8       u8, pdu, *p, i;
+    UINT8       u8, pdu, *p;
     UINT16      u16;
     tAVRC_MSG_VENDOR    *p_vendor = &p_msg->msg.vendor;
-    BD_ADDR     addr;
-    BOOLEAN is_dev_avrcpv_blacklisted = FALSE;
 
 #if (AVRC_METADATA_INCLUDED == TRUE)
 
     pdu = *(p_vendor->p_vendor_data);
     p_rc_rsp->pdu = pdu;
     *p_ctype = AVRC_RSP_REJ;
-    /* Check for valid Meta Length, AVRCP minimum Meta command length 20 */
-    if ((AVRC_MIN_META_CMD_LEN + p_vendor->vendor_len) > AVRC_META_CMD_BUF_SIZE)
-    {
-        /* reject it */
-        p_rc_rsp->rsp.status = AVRC_STS_BAD_PARAM;
-        APPL_TRACE_ERROR("Bailing out: Invalid meta-command length: %d", p_vendor->vendor_len);
-        return 0;
-    }
     /* Metadata messages only use PANEL sub-unit type */
     if (p_vendor->hdr.subunit_type != AVRC_SUB_PANEL)
     {
@@ -875,31 +822,8 @@ tBTA_AV_EVT bta_av_proc_meta_cmd(tAVRC_RESPONSE  *p_rc_rsp, tBTA_AV_RC_MSG *p_ms
                 {
                     *p_ctype = AVRC_RSP_IMPL_STBL;
                     p_rc_rsp->get_caps.count = p_bta_av_cfg->num_evt_ids;
-                    /* DUT has blacklisted few remote dev for Avrcp Version hence
-                     * respose for event supported should not have AVRCP 1.5/1.4
-                     * version events
-                     */
-                    if (avct_get_peer_addr_by_ccb(p_msg->handle, addr) == TRUE)
-                    {
-                        is_dev_avrcpv_blacklisted = SDP_Dev_Blacklisted_For_Avrcp15(addr);
-                        BTIF_TRACE_ERROR("Blacklist for AVRCP1.5 = %d", is_dev_avrcpv_blacklisted);
-                    }
-                    BTIF_TRACE_DEBUG("Blacklist for AVRCP1.5 = %d", is_dev_avrcpv_blacklisted);
-                    if (is_dev_avrcpv_blacklisted == TRUE)
-                    {
-                        for (i = 0; i <= p_bta_av_cfg->num_evt_ids; ++i)
-                        {
-                           if (p_bta_av_cfg->p_meta_evt_ids[i] == AVRC_EVT_AVAL_PLAYERS_CHANGE)
-                              break;
-                        }
-                        p_rc_rsp->get_caps.count = i;
-                        memcpy(p_rc_rsp->get_caps.param.event_id, p_bta_av_cfg->p_meta_evt_ids, i);
-                    }
-                    else
-                    {
-                        memcpy(p_rc_rsp->get_caps.param.event_id, p_bta_av_cfg->p_meta_evt_ids,
-                               p_bta_av_cfg->num_evt_ids);
-                    }
+                    memcpy(p_rc_rsp->get_caps.param.event_id, p_bta_av_cfg->p_meta_evt_ids,
+                           p_bta_av_cfg->num_evt_ids);
                 }
                 else
                 {
@@ -920,46 +844,12 @@ tBTA_AV_EVT bta_av_proc_meta_cmd(tAVRC_RESPONSE  *p_rc_rsp, tBTA_AV_RC_MSG *p_ms
         }
     }
 #else
-    BTIF_TRACE_IMP("AVRCP 1.3 Metadata not supporteed. Reject command.");
+    APPL_TRACE_DEBUG("AVRCP 1.3 Metadata not supporteed. Reject command.");
     /* reject invalid message without reporting to app */
     evt = 0;
     p_rc_rsp->rsp.status = AVRC_STS_BAD_CMD;
 #endif
 
-    return evt;
-}
-
-/*****************************************************************************
-**
-** Function        bta_av_proc_browse_cmd
-**
-** Description     Process and AVRCP browse command from the peer
-**
-** Returns         status
-**
-****************************************************************************/
-tBTA_AV_EVT bta_av_proc_browse_cmd(tAVRC_RESPONSE  *p_rc_rsp, tBTA_AV_RC_MSG *p_msg)
-{
-    tBTA_AV_EVT evt = BTA_AV_BROWSE_MSG_EVT;
-    UINT8       pdu;
-    tAVRC_MSG_BROWSE *p_browse = &p_msg->msg.browse;
-
-    pdu = p_browse->p_browse_data[0];
-    APPL_TRACE_DEBUG("bta_av_proc_browse_cmd browse cmd: %x", pdu);
-    switch (pdu)
-    {
-        case AVRC_PDU_GET_FOLDER_ITEMS:
-        case AVRC_PDU_SET_BROWSED_PLAYER:
-        case AVRC_PDU_CHANGE_PATH:
-        case AVRC_PDU_GET_ITEM_ATTRIBUTES:
-        case AVRC_PDU_GET_TOTAL_NUMBER_OF_ITEMS:
-            break;
-        default:
-            evt = 0;
-            p_rc_rsp->rsp.status = AVRC_STS_BAD_CMD;
-            APPL_TRACE_ERROR("### Not supported cmd: %x", pdu);
-            break;
-    }
     return evt;
 }
 
@@ -987,7 +877,6 @@ void bta_av_rc_msg(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
 
     rc_rsp.rsp.status = BTA_AV_STS_NO_RSP;
 #endif
-    APPL_TRACE_DEBUG("bta_av_rc_msg opcode: %x",p_data->rc_msg.opcode);
 
     if (p_data->rc_msg.opcode == AVRC_OP_PASS_THRU)
     {
@@ -1128,25 +1017,6 @@ void bta_av_rc_msg(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
            AVRC_VendorRsp(p_data->rc_msg.handle, p_data->rc_msg.label, &p_data->rc_msg.msg.vendor);
         }
     }
-#if (AVCT_BROWSE_INCLUDED == TRUE)
-    else if (p_data->rc_msg.opcode == AVRC_OP_BROWSE )
-    {
-        APPL_TRACE_DEBUG("browse len PDU :%x",p_data->rc_msg.msg.browse.browse_len);
-        APPL_TRACE_DEBUG("browse  data:%x",p_data->rc_msg.msg.browse.p_browse_data[0]);
-        av.browse_msg.label = p_data->rc_msg.label;
-        av.browse_msg.p_msg = &p_data->rc_msg.msg;
-
-        evt = bta_av_proc_browse_cmd(&rc_rsp, &p_data->rc_msg);
-        if (evt == 0)
-        {
-            APPL_TRACE_ERROR("Browse PDU not supported");
-            rc_rsp.rsp.pdu    = AVRC_PDU_GENERAL_REJECT;
-            rc_rsp.rsp.status = AVRC_STS_BAD_CMD;
-            ctype = 0;
-            AVRC_BldBrowseResponse(0, &rc_rsp, &p_pkt);
-        }
-    }
-#endif
 #if (AVRC_METADATA_INCLUDED == TRUE)
     if (evt == 0 && rc_rsp.rsp.status != BTA_AV_STS_NO_RSP)
     {
@@ -1330,10 +1200,7 @@ void bta_av_conn_chg(tBTA_AV_DATA *p_data)
     BOOLEAN     chk_restore = FALSE;
 
     /* Validate array index*/
-    /* Fix for below klockwork issue
-     * Array 'p_scb' size is 2.
-     * Possible attempt to access element -1 of array 'p_scb' */
-    if (index >= 0 && index < BTA_AV_NUM_STRS)
+    if (index < BTA_AV_NUM_STRS)
     {
         p_scb = p_cb->p_scb[index];
     }
@@ -1534,10 +1401,7 @@ void bta_av_disable(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
 
     bta_av_close_all_rc(p_cb);
 
-    if(p_cb->p_disc_db) {
-	    (void)SDP_CancelServiceSearch (p_cb->p_disc_db);
-        osi_free_and_reset((void **)&p_cb->p_disc_db);
-    }
+    osi_free_and_reset((void **)&p_cb->p_disc_db);
 
     /* disable audio/video - de-register all channels,
      * expect BTA_AV_DEREG_COMP_EVT when deregister is complete */
@@ -1585,55 +1449,21 @@ void bta_av_sig_chg(tBTA_AV_DATA *p_data)
     UINT8   mask;
     tBTA_AV_LCB *p_lcb = NULL;
 
-    BTIF_TRACE_IMP("%s bta_av_sig_chg event: %d",
-            __FUNCTION__, event);
-    if(event == AVDT_CONNECT_IND_EVT)
+    APPL_TRACE_DEBUG("bta_av_sig_chg event: %d", event);
+    if (event == AVDT_CONNECT_IND_EVT)
     {
         p_lcb = bta_av_find_lcb(p_data->str_msg.bd_addr, BTA_AV_LCB_FIND);
         if (!p_lcb)
         {
-            if (p_cb->conn_lcb > 0)
-            {
-                APPL_TRACE_DEBUG("Already connected to LCBs: 0x%x", p_cb->conn_lcb);
-            }
-            /* Check if busy processing a connection, if yes, Reject the
-             * new incoming connection.
-             * This is very rare case to happen as the timeout to start
-             * signalling procedure is just 2 sec.
-             * Also sink initiators will have retry machanism.
-             * Even though busy flag is set during outgoing connection to
-             * reject incoming connection at L2CAP connect request, there
-             * is a chance to get here if the incoming connection has passed
-             * the L2CAP connection stage.
-             */
-            if((p_data->hdr.offset == AVDT_ACP) && (AVDT_GetServiceBusyState() == TRUE))
-            {
-                APPL_TRACE_ERROR("%s Incoming conn while processing another.. Reject",
-                    __FUNCTION__);
-                AVDT_DisconnectReq (p_data->str_msg.bd_addr, NULL);
-                return;
-            }
-
             /* if the address does not have an LCB yet, alloc one */
             for(xx=0; xx<BTA_AV_NUM_LINKS; xx++)
             {
                 mask = 1 << xx;
-                APPL_TRACE_DEBUG("The current conn_lcb: 0x%x", p_cb->conn_lcb);
+                APPL_TRACE_DEBUG("conn_lcb: 0x%x", p_cb->conn_lcb);
 
                 /* look for a p_lcb with its p_scb registered */
                 if ((!(mask & p_cb->conn_lcb)) && (p_cb->p_scb[xx] != NULL))
                 {
-                    /* Check if the SCB is Free before using for
-                     * ACP connection
-                     */
-                    if ((p_data->hdr.offset == AVDT_ACP) &&
-                        (p_cb->p_scb[xx]->state != BTA_AV_INIT_SST))
-                    {
-                        APPL_TRACE_DEBUG("SCB in use %d", xx);
-                        continue;
-                    }
-
-                    APPL_TRACE_DEBUG("Found a free p_lcb : 0x%x", xx);
                     p_lcb = &p_cb->lcb[xx];
                     p_lcb->lidx = xx + 1;
                     bdcpy(p_lcb->addr, p_data->str_msg.bd_addr);
@@ -1660,9 +1490,6 @@ void bta_av_sig_chg(tBTA_AV_DATA *p_data)
                          */
                         bta_av_signalling_timer(NULL);
 
-                        APPL_TRACE_DEBUG("%s: Re-start timer for AVDTP service", __func__);
-                        bta_sys_conn_open(BTA_ID_AV, p_cb->p_scb[xx]->app_id,
-                                p_cb->p_scb[xx]->peer_addr);
                         /* Possible collision : need to avoid outgoing processing while the timer is running */
                         p_cb->p_scb[xx]->coll_mask = BTA_AV_COLL_INC_TMR;
                         alarm_set_on_queue(p_cb->accept_signalling_timer,
@@ -1704,13 +1531,6 @@ void bta_av_sig_chg(tBTA_AV_DATA *p_data)
             /* clean up ssm  */
             for(xx=0; xx < BTA_AV_NUM_STRS; xx++)
             {
-
-                if ((p_cb->p_scb[xx]) &&
-                        (bdcmp(p_cb->p_scb[xx]->peer_addr, p_data->str_msg.bd_addr) == 0))
-                {
-                    APPL_TRACE_DEBUG("%s: Closing timer for AVDTP service", __func__);
-                    bta_sys_conn_close(BTA_ID_AV, p_cb->p_scb[xx]->app_id,p_cb->p_scb[xx]->peer_addr);
-                }
                 mask = 1 << (xx + 1);
                 if (((mask & p_lcb->conn_msk) || bta_av_cb.conn_lcb) && (p_cb->p_scb[xx]) &&
                     (bdcmp(p_cb->p_scb[xx]->peer_addr, p_data->str_msg.bd_addr) == 0))
@@ -1758,9 +1578,6 @@ void bta_av_signalling_timer(tBTA_AV_DATA *p_data)
                                     BTA_AV_SIGNALLING_TIMEOUT_MS,
                                     BTA_AV_SIGNALLING_TIMER_EVT, 0);
                 bdcpy(pend.bd_addr, p_lcb->addr);
-                APPL_TRACE_DEBUG("bta_av_sig_timer on IDX = %d",xx);
-                //Copy the handle of SCB
-                pend.hndl = p_cb->p_scb[xx]->hndl;
                 (*p_cb->p_cback)(BTA_AV_PENDING_EVT, (tBTA_AV *) &pend);
             }
         }
@@ -1782,7 +1599,6 @@ static void bta_av_accept_signalling_timer_cback(void *data)
     UINT32   inx = PTR_TO_UINT(data);
     tBTA_AV_CB  *p_cb = &bta_av_cb;
     tBTA_AV_SCB *p_scb = NULL;
-
     if (inx < BTA_AV_NUM_STRS)
     {
         p_scb = p_cb->p_scb[inx];
@@ -1837,58 +1653,6 @@ static void bta_av_accept_signalling_timer_cback(void *data)
     }
 }
 
-BOOLEAN bta_av_check_store_avrc_tg_version(BD_ADDR addr, UINT16 ver)
-{
-    BOOLEAN is_present = FALSE;
-    struct blacklist_entry data;
-    FILE *fp;
-    BOOLEAN is_file_updated = FALSE;
-
-    APPL_TRACE_DEBUG("%s target BD Addr: %x:%x:%x", __func__,\
-                        addr[0], addr[1], addr[2]);
-    fp = fopen(AVRC_PEER_VERSION_CONF_FILE, "rb");
-    if (!fp)
-    {
-      APPL_TRACE_ERROR("%s unable to open AVRC Conf file for read: error: (%s)",\
-                                                        __func__, strerror(errno));
-    }
-    else
-    {
-        while (fread(&data, sizeof(data), 1, fp) != 0)
-        {
-            APPL_TRACE_DEBUG("Entry: addr = %x:%x:%x, ver = 0x%x",\
-                    data.addr[0], data.addr[1], data.addr[2], data.ver);
-            if(!memcmp(addr, data.addr, 3))
-            {
-                is_present = TRUE;
-                APPL_TRACE_DEBUG("Entry alreday present, bailing out");
-                break;
-            }
-        }
-        fclose(fp);
-    }
-
-    if (is_present == FALSE)
-    {
-        fp = fopen(AVRC_PEER_VERSION_CONF_FILE, "ab");
-        if (!fp)
-        {
-            APPL_TRACE_ERROR("%s unable to open AVRC Conf file for write: error: (%s)",\
-                                                              __func__, strerror(errno));
-        }
-        else
-        {
-            data.ver = ver;
-            memcpy(data.addr, (const char *)addr, 3);
-            APPL_TRACE_DEBUG("Avrcp version to store = 0x%x", ver);
-            fwrite(&data, sizeof(data), 1, fp);
-            fclose(fp);
-            is_file_updated = TRUE;
-        }
-    }
-    return is_file_updated;
-}
-
 /*******************************************************************************
 **
 ** Function         bta_av_check_peer_features
@@ -1905,7 +1669,7 @@ tBTA_AV_FEAT bta_av_check_peer_features (UINT16 service_uuid)
     tBTA_AV_CB   *p_cb = &bta_av_cb;
     tSDP_DISC_REC       *p_rec = NULL;
     tSDP_DISC_ATTR      *p_attr;
-    UINT16              peer_rc_version=0; /*Assuming Default peer version as 1.3*/
+    UINT16              peer_rc_version=0;
     UINT16              categories = 0;
 
     APPL_TRACE_DEBUG("bta_av_check_peer_features service_uuid:x%x", service_uuid);
@@ -1950,39 +1714,9 @@ tBTA_AV_FEAT bta_av_check_peer_features (UINT16 service_uuid)
                 {
                     categories = p_attr->attr_value.v.u16;
                     if (categories & AVRC_SUPF_CT_BROWSE)
-                    {
                         peer_features |= (BTA_AV_FEAT_BROWSE);
-                        APPL_TRACE_DEBUG("peer supports browsing");
-                    }
-                    if (categories & AVRC_SUPF_CT_COVER_ART_GET_IMAGE &
-                        AVRC_SUPF_CT_COVER_ART_GET_THUMBNAIL)
-                    {
-                        peer_features |=  BTA_AV_FEAT_CA;
-                        APPL_TRACE_DEBUG("peer supports cover art");
-                    }
                 }
             }
-#if ((defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE)) || \
-           (defined(SDP_AVRCP_1_5) && (SDP_AVRCP_1_5 == TRUE)))
-            if ((peer_rc_version >= AVRC_REV_1_4) &&
-                    ((peer_features & BTA_AV_FEAT_BROWSE) || (peer_features & BTA_AV_FEAT_CA)))
-            {
-                BOOLEAN ret = FALSE;
-                APPL_TRACE_DEBUG("peer version to update: 0x%x", peer_rc_version);
-                ret = bta_av_check_store_avrc_tg_version(p_rec->remote_bd_addr, peer_rc_version);
-                if (ret == TRUE)
-                {
-                    peer_features |= BTA_AV_FEAT_AVRC_UI_UPDATE;
-                    APPL_TRACE_DEBUG("update UI on peer repair request: 0x%x",
-                                    peer_features);
-                }
-            }
-            else
-            {
-                APPL_TRACE_DEBUG("No need to store peer version: 0x%x", peer_rc_version);
-                /*No need to update peer version as we send the default version as 1.3*/
-            }
-#endif
         }
     }
     APPL_TRACE_DEBUG("peer_features:x%x", peer_features);
@@ -2003,64 +1737,61 @@ tBTA_AV_FEAT bta_avk_check_peer_features (UINT16 service_uuid)
 {
     tBTA_AV_FEAT peer_features = 0;
     tBTA_AV_CB *p_cb = &bta_av_cb;
-    tSDP_DISC_REC *p_rec = NULL;
-    tSDP_DISC_ATTR *p_attr;
-    UINT16 peer_rc_version = 0;
-    UINT16 categories = 0;
-    BOOLEAN val;
 
     APPL_TRACE_DEBUG("%s service_uuid:x%x", __FUNCTION__, service_uuid);
-    /* get next record; if none found, we're done */
-    p_rec = SDP_FindServiceInDb(p_cb->p_disc_db, service_uuid, p_rec);
-    if (p_rec != NULL)
+
+    /* loop through all records we found */
+    tSDP_DISC_REC *p_rec = SDP_FindServiceInDb(p_cb->p_disc_db, service_uuid, NULL);
+    while (p_rec)
     {
-        APPL_TRACE_DEBUG(" %s found Service record for x%x", __FUNCTION__, service_uuid);
-        if (service_uuid == UUID_SERVCLASS_AV_REMOTE_CONTROL)
-             peer_features |= BTA_AV_FEAT_RCCT;
-        else if (service_uuid == UUID_SERVCLASS_AV_REM_CTRL_TARGET)
-             peer_features |= BTA_AV_FEAT_RCTG;
+        APPL_TRACE_DEBUG("%s found Service record for x%x", __FUNCTION__, service_uuid);
 
-         if ((SDP_FindAttributeInRec(p_rec, ATTR_ID_BT_PROFILE_DESC_LIST)) != NULL)
-         {
-             /* profile version (if failure, version parameter is not updated) */
-             val = SDP_FindProfileVersionInRec(p_rec,
-                       UUID_SERVCLASS_AV_REMOTE_CONTROL, &peer_rc_version);
-             APPL_TRACE_DEBUG("%s rc_version for TG 0x%x, profile_found %d", __FUNCTION__,
-                                                     peer_rc_version, val);
-
-             if (peer_rc_version < AVRC_REV_1_3)
-                return peer_features;
-
-             p_attr = SDP_FindAttributeInRec(p_rec, ATTR_ID_SUPPORTED_FEATURES);
-             if (p_attr == NULL)
-                 return peer_features;
-
-             categories = p_attr->attr_value.v.u16;
-
-             if (service_uuid == UUID_SERVCLASS_AV_REM_CTRL_TARGET)
-             {
-                 peer_features |= (BTA_AV_FEAT_VENDOR | BTA_AV_FEAT_METADATA);
-                 /* get supported categories */
-                 if (categories & AVRC_SUPF_CT_BROWSE)
-                     peer_features |= BTA_AV_FEAT_BROWSE;
-                 if (categories & AVRC_SUPF_CT_APP_SETTINGS)
-                     peer_features |= BTA_AV_FEAT_APP_SETTING;
-             }
-             /*
-              * Absolute Volume came after in 1.4 and above.
-              * but there are few devices in market which supports.
-              * absoluteVolume and they are still 1.3 To avoid inter-operatibility issuses with.
-              * those devices, we check for 1.3 as minimum version.
-              */
-             else if (service_uuid == UUID_SERVCLASS_AV_REMOTE_CONTROL)
-             {
-                 if (categories & AVRC_SUPF_CT_CAT2)
-                 {
-                     APPL_TRACE_DEBUG(" %s Remote supports ABS Vol", __FUNCTION__);
-                     peer_features |= BTA_AV_FEAT_ADV_CTRL;
-                 }
-             }
+        if (( SDP_FindAttributeInRec(p_rec, ATTR_ID_SERVICE_CLASS_ID_LIST)) != NULL)
+        {
+            /* find peer features */
+            if (SDP_FindServiceInDb(p_cb->p_disc_db, UUID_SERVCLASS_AV_REMOTE_CONTROL, NULL))
+            {
+                peer_features |= BTA_AV_FEAT_RCCT;
+            }
+            if (SDP_FindServiceInDb(p_cb->p_disc_db, UUID_SERVCLASS_AV_REM_CTRL_TARGET, NULL))
+            {
+                peer_features |= BTA_AV_FEAT_RCTG;
+            }
         }
+
+        if (( SDP_FindAttributeInRec(p_rec, ATTR_ID_BT_PROFILE_DESC_LIST)) != NULL)
+        {
+            /* get profile version (if failure, version parameter is not updated) */
+            UINT16 peer_rc_version = 0;
+            BOOLEAN val = SDP_FindProfileVersionInRec(
+                p_rec, UUID_SERVCLASS_AV_REMOTE_CONTROL, &peer_rc_version);
+            APPL_TRACE_DEBUG("%s peer_rc_version for TG 0x%x, profile_found %d",
+                             __FUNCTION__, peer_rc_version, val);
+
+            if (peer_rc_version >= AVRC_REV_1_3)
+                peer_features |= (BTA_AV_FEAT_VENDOR | BTA_AV_FEAT_METADATA);
+
+            /*
+             * Though Absolute Volume came after in 1.4 and above, but there are few devices
+             * in market which supports absolute Volume and they are still 1.3
+             * TO avoid IOT issuses with those devices, we check for 1.3 as minimum version
+             */
+            if (peer_rc_version >= AVRC_REV_1_3)
+            {
+                /* get supported categories */
+                tSDP_DISC_ATTR *p_attr = SDP_FindAttributeInRec(p_rec, ATTR_ID_SUPPORTED_FEATURES);
+                if (p_attr != NULL)
+                {
+                    UINT16 categories = p_attr->attr_value.v.u16;
+                    if (categories & AVRC_SUPF_CT_CAT2)
+                        peer_features |= (BTA_AV_FEAT_ADV_CTRL);
+                    if (categories & AVRC_SUPF_CT_APP_SETTINGS)
+                        peer_features |= (BTA_AV_FEAT_APP_SETTING);
+                }
+            }
+        }
+        /* get next record; if none found, we're done */
+        p_rec = SDP_FindServiceInDb(p_cb->p_disc_db, service_uuid, p_rec);
     }
     APPL_TRACE_DEBUG("%s peer_features:x%x", __FUNCTION__, peer_features);
     return peer_features;
@@ -2101,10 +1832,7 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
     else
     {
         /* Validate array index*/
-        /* Fix for below klockwork issue
-         * Array 'p_scb' size is 2
-         * Possible attempt to access element -1 of array 'p_scb' */
-        if ((((p_cb->disc & BTA_AV_HNDL_MSK) - 1) < BTA_AV_NUM_STRS) && (((p_cb->disc & BTA_AV_HNDL_MSK) - 1) >= 0))
+        if (((p_cb->disc & BTA_AV_HNDL_MSK) - 1) < BTA_AV_NUM_STRS)
         {
             p_scb = p_cb->p_scb[(p_cb->disc & BTA_AV_HNDL_MSK) - 1];
         }
@@ -2120,22 +1848,13 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
     }
 
     APPL_TRACE_DEBUG("%s rc_handle %d", __FUNCTION__, rc_handle);
-    if (rc_handle == BTA_AV_RC_HANDLE_NONE)
-    {
-        if (AVRC_CheckIncomingConn(p_scb->peer_addr) == TRUE)
-        {
-            bta_sys_start_timer(p_scb->avrc_ct_timer, AVRC_CONNECT_RETRY_DELAY_MS,
-                                   BTA_AV_SDP_AVRC_DISC_EVT,p_scb->hndl);
-        }
-    }
-
 #if (BTA_AV_SINK_INCLUDED == TRUE)
     if (p_cb->sdp_a2d_snk_handle)
     {
         /* This is Sink + CT + TG(Abs Vol) */
-        peer_features = bta_avk_check_peer_features(UUID_SERVCLASS_AV_REMOTE_CONTROL);
-        peer_features |= bta_avk_check_peer_features(UUID_SERVCLASS_AV_REM_CTRL_TARGET);
-        APPL_TRACE_DEBUG("final rc_features %x", peer_features);
+        peer_features = bta_avk_check_peer_features(UUID_SERVCLASS_AV_REM_CTRL_TARGET);
+        if (BTA_AV_FEAT_ADV_CTRL & bta_avk_check_peer_features(UUID_SERVCLASS_AV_REMOTE_CONTROL))
+            peer_features |= (BTA_AV_FEAT_ADV_CTRL|BTA_AV_FEAT_RCCT);
     }
     else
 #endif
@@ -2170,20 +1889,7 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
                 if (p_lcb)
                 {
                     rc_handle = bta_av_rc_create(p_cb, AVCT_INT, (UINT8)(p_scb->hdi + 1), p_lcb->lidx);
-                    if(rc_handle != BTA_AV_RC_HANDLE_NONE)
-                    {
-                        p_cb->rcb[rc_handle].peer_features = peer_features;
-                    }
-                    else
-                    {
-                        /* cannot create valid rc_handle for current device */
-                        APPL_TRACE_ERROR(" No link resources available");
-                        p_scb->use_rc = FALSE;
-                        bdcpy(rc_open.peer_addr, p_scb->peer_addr);
-                        rc_open.peer_features = 0;
-                        rc_open.status = BTA_AV_FAIL_RESOURCES;
-                        (*p_cb->p_cback)(BTA_AV_RC_CLOSE_EVT, (tBTA_AV *) &rc_open);
-                    }
+                    p_cb->rcb[rc_handle].peer_features = peer_features;
                 }
 #if (BT_USE_TRACES == TRUE || BT_TRACE_APPL == TRUE)
                 else
@@ -2295,6 +2001,10 @@ void bta_av_rc_closed(tBTA_AV_DATA *p_data)
             {
                 /* AVCT CCB is still there. dealloc */
                 bta_av_del_rc(p_rcb);
+
+                /* if the AVRCP is no longer listening, create the listening channel */
+                if (bta_av_cb.rc_acp_handle == BTA_AV_RC_HANDLE_NONE && bta_av_cb.features & BTA_AV_FEAT_RCTG)
+                    bta_av_rc_create(&bta_av_cb, AVCT_ACP, 0, BTA_AV_NUM_LINKS + 1);
             }
         }
         else if ((p_rcb->handle != BTA_AV_RC_HANDLE_NONE) && (p_rcb->status & BTA_AV_RC_CONN_MASK))

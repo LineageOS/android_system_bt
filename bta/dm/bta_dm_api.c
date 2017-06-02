@@ -65,6 +65,8 @@ tBTA_STATUS BTA_EnableBluetooth(tBTA_DM_SEC_CBACK *p_cback)
     if (bta_dm_cb.disabling)
         return BTA_FAILURE;
 
+    bta_dm_init_cb();
+
     bta_sys_register(BTA_ID_DM, &bta_dm_reg );
     bta_sys_register(BTA_ID_DM_SEARCH, &bta_dm_search_reg );
 
@@ -188,95 +190,6 @@ void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode, tBTA_DM_CONN conn_mode, UINT8 p
     p_msg->conn_paired_only = conn_filter;
 
     bta_sys_sendmsg(p_msg);
-}
-
-/*******************************************************************************
-**
-** Function         BTA_DmHciRawCommand
-**
-** Description      This function sends the HCI Raw  command
-**                  to the controller
-**
-**
-** Returns          tBTA_STATUS
-**
-*******************************************************************************/
-tBTA_STATUS BTA_DmHciRawCommand (UINT16 opcode, UINT8 param_len,
-                                         UINT8 *p_param_buf,
-                                         tBTA_RAW_CMPL_CBACK *p_cback)
-{
-
-    tBTA_DM_API_RAW_COMMAND    *p_msg;
-    UINT16 size;
-
-    size = sizeof (tBTA_DM_API_RAW_COMMAND) + param_len;
-    p_msg = (tBTA_DM_API_RAW_COMMAND *) osi_malloc(size);
-    if (p_msg != NULL)
-    {
-        p_msg->hdr.event = BTA_DM_API_HCI_RAW_COMMAND_EVT;
-        p_msg->opcode = opcode;
-        p_msg->param_len = param_len;
-        p_msg->p_param_buf = (UINT8 *)(p_msg + 1);
-        p_msg->p_cback = p_cback;
-
-        memcpy (p_msg->p_param_buf, p_param_buf, param_len);
-
-        bta_sys_sendmsg(p_msg);
-    }
-    return BTA_SUCCESS;
-
-}
-
-/*******************************************************************************
-**
-** Function         BTA_DmVendorSpecificCommand
-**
-** Description      This function sends the vendor specific command
-**                  to the controller
-**
-**
-** Returns          tBTA_STATUS
-**
-*******************************************************************************/
-tBTA_STATUS BTA_DmVendorSpecificCommand (UINT16 opcode, UINT8 param_len,
-                                         UINT8 *p_param_buf,
-                                         tBTA_VENDOR_CMPL_CBACK *p_cback)
-{
-
-    tBTA_DM_API_VENDOR_SPECIFIC_COMMAND    *p_msg;
-    UINT16 size;
-
-    /* If p_cback is NULL, Notify application */
-    if (p_cback == NULL)
-    {
-        return (BTA_FAILURE);
-    }
-    else
-    {
-        size = sizeof (tBTA_DM_API_VENDOR_SPECIFIC_COMMAND) + param_len;
-        if ((p_msg = (tBTA_DM_API_VENDOR_SPECIFIC_COMMAND *) osi_malloc(size)) != NULL)
-        {
-            p_msg->hdr.event = BTA_DM_API_VENDOR_SPECIFIC_COMMAND_EVT;
-            p_msg->opcode = opcode;
-            p_msg->p_param_buf = (UINT8 *)(p_msg + 1);
-            p_msg->p_cback = p_cback;
-
-            if (p_param_buf && param_len)
-            {
-                memcpy (p_msg->p_param_buf, p_param_buf, param_len);
-                p_msg->param_len = param_len;
-            }
-            else
-            {
-                p_msg->param_len = 0;
-                p_msg->p_param_buf = NULL;
-
-            }
-
-            bta_sys_sendmsg(p_msg);
-        }
-        return (BTA_SUCCESS);
-    }
 }
 
 /*******************************************************************************

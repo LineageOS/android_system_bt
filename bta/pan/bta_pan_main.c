@@ -214,13 +214,12 @@ static void bta_pan_sm_execute(tBTA_PAN_SCB *p_scb, UINT16 event, tBTA_PAN_DATA 
     /* execute action functions */
     for (i = 0; i < BTA_PAN_ACTIONS; i++)
     {
-        if ((action = state_table[event][i]) < BTA_PAN_IGNORE)
+        if ((action = state_table[event][i]) != BTA_PAN_IGNORE)
         {
             (*bta_pan_action[action])(p_scb, p_data);
         }
         else
         {
-            APPL_TRACE_EVENT("action: %d", action);
             break;
         }
     }

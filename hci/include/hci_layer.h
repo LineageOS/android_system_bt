@@ -98,11 +98,6 @@ typedef struct hci_t {
 
   // Send some data downward through the HCI layer
   void (*transmit_downward)(data_dispatcher_type_t type, void *data);
-
-  /** SSR cleanup is used in HW reset cases
-  ** which would close all the client channels
-  ** and turns off the chip*/
-  void (*ssr_cleanup)(int reason);
 } hci_t;
 
 const hci_t *hci_layer_get_interface();

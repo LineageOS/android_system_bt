@@ -67,11 +67,6 @@ static char *l2c_csm_get_event_name (UINT16 event);
 *******************************************************************************/
 void l2c_csm_execute (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
 {
-    if (!l2cu_is_ccb_active(p_ccb)) {
-        L2CAP_TRACE_WARNING("%s This ccb is not in use, the event(%d) can't be processed", __func__, event);
-        return;
-    }
-
     switch (p_ccb->chnl_state)
     {
     case CST_CLOSED:
@@ -162,7 +157,7 @@ static void l2c_csm_closed (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
 #if (BT_TRACE_VERBOSE == TRUE)
     L2CAP_TRACE_EVENT ("L2CAP - LCID: 0x%04x  st: CLOSED  evt: %s", p_ccb->local_cid, l2c_csm_get_event_name (event));
 #else
-    L2CAP_TRACE_WARNING ("L2CAP - st: CLOSED evt: %d", event);
+    L2CAP_TRACE_EVENT ("L2CAP - st: CLOSED evt: %d", event);
 #endif
 
     switch (event)
@@ -177,10 +172,8 @@ static void l2c_csm_closed (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
         if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE)
         {
             p_ccb->chnl_state = CST_ORIG_W4_SEC_COMP;
-#if (BLE_INCLUDED == TRUE)
             l2ble_sec_access_req(p_ccb->p_lcb->remote_bd_addr, p_ccb->p_rcb->psm, TRUE,
                     &l2c_link_sec_comp, p_ccb);
-#endif
         }
         else
         {
@@ -205,10 +198,8 @@ static void l2c_csm_closed (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
         if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE)
         {
             p_ccb->chnl_state = CST_ORIG_W4_SEC_COMP;
-#if (BLE_INCLUDED == TRUE)
             l2ble_sec_access_req(p_ccb->p_lcb->remote_bd_addr, p_ccb->p_rcb->psm, TRUE,
                     &l2c_link_sec_comp, p_ccb);
-#endif
         }
         else
         {
@@ -270,10 +261,8 @@ Event uninit_use_in_call: Using uninitialized value "settings.min" in call to fu
         if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE)
         {
             p_ccb->chnl_state = CST_TERM_W4_SEC_COMP;
-#if (BLE_INCLUDED == TRUE)
              l2ble_sec_access_req(p_ccb->p_lcb->remote_bd_addr, p_ccb->p_rcb->psm, FALSE,
                     &l2c_link_sec_comp, p_ccb);
-#endif
         }
         else
         {
@@ -344,7 +333,7 @@ static void l2c_csm_orig_w4_sec_comp (tL2C_CCB *p_ccb, UINT16 event, void *p_dat
 #if (BT_TRACE_VERBOSE == TRUE)
     L2CAP_TRACE_EVENT ("L2CAP - LCID: 0x%04x  st: ORIG_W4_SEC_COMP  evt: %s", p_ccb->local_cid, l2c_csm_get_event_name (event));
 #else
-    L2CAP_TRACE_WARNING ("L2CAP - st: ORIG_W4_SEC_COMP evt: %d", event);
+    L2CAP_TRACE_EVENT ("L2CAP - st: ORIG_W4_SEC_COMP evt: %d", event);
 #endif
 
 #if (L2CAP_UCD_INCLUDED == TRUE)
@@ -371,10 +360,8 @@ static void l2c_csm_orig_w4_sec_comp (tL2C_CCB *p_ccb, UINT16 event, void *p_dat
     case L2CEVT_LP_CONNECT_CFM:                     /* Link came up         */
         if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE)
         {
-#if (BLE_INCLUDED == TRUE)
              l2ble_sec_access_req(p_ccb->p_lcb->remote_bd_addr, p_ccb->p_rcb->psm, FALSE,
                     &l2c_link_sec_comp, p_ccb);
-#endif
         }
         else
         {
@@ -392,9 +379,7 @@ static void l2c_csm_orig_w4_sec_comp (tL2C_CCB *p_ccb, UINT16 event, void *p_dat
                                L2CAP_CHNL_CONNECT_TIMEOUT_MS,
                                l2c_ccb_timer_timeout, p_ccb,
                                btu_general_alarm_queue);
-#if (BLE_INCLUDED == TRUE)
             l2cble_credit_based_conn_req (p_ccb);          /* Start Connection     */
-#endif
         }
         else
         {
@@ -462,7 +447,7 @@ static void l2c_csm_term_w4_sec_comp (tL2C_CCB *p_ccb, UINT16 event, void *p_dat
 #if (BT_TRACE_VERBOSE == TRUE)
     L2CAP_TRACE_EVENT ("L2CAP - LCID: 0x%04x  st: TERM_W4_SEC_COMP  evt: %s", p_ccb->local_cid, l2c_csm_get_event_name (event));
 #else
-    L2CAP_TRACE_WARNING ("L2CAP - st: TERM_W4_SEC_COMP evt: %d", event);
+    L2CAP_TRACE_EVENT ("L2CAP - st: TERM_W4_SEC_COMP evt: %d", event);
 #endif
 
 #if (L2CAP_UCD_INCLUDED == TRUE)
@@ -490,7 +475,7 @@ static void l2c_csm_term_w4_sec_comp (tL2C_CCB *p_ccb, UINT16 event, void *p_dat
         p_ccb->chnl_state = CST_W4_L2CA_CONNECT_RSP;
 
         /* Wait for the info resp in next state before sending connect ind (if needed) */
-        if ((!p_ccb->p_lcb->w4_info_rsp)||(BT_PSM_SDP == p_ccb->p_rcb->psm))
+        if (!p_ccb->p_lcb->w4_info_rsp)
         {
             /* Don't need to get info from peer or already retrieved so continue */
             alarm_set_on_queue(p_ccb->l2c_ccb_timer,
@@ -529,11 +514,9 @@ static void l2c_csm_term_w4_sec_comp (tL2C_CCB *p_ccb, UINT16 event, void *p_dat
         }
         else
         {
-#if (BLE_INCLUDED == TRUE)
             if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE)
                 l2cu_reject_ble_connection(p_ccb->p_lcb, p_ccb->remote_id, L2CAP_LE_INSUFFICIENT_AUTHENTICATION);
             else
-#endif
                 l2cu_send_peer_connect_rsp (p_ccb, L2CAP_CONN_SECURITY_BLOCK, 0);
             l2cu_release_ccb (p_ccb);
         }
@@ -590,14 +573,13 @@ static void l2c_csm_w4_l2cap_connect_rsp (tL2C_CCB *p_ccb, UINT16 event, void *p
 {
     tL2C_CONN_INFO          *p_ci = (tL2C_CONN_INFO *)p_data;
     tL2CA_DISCONNECT_IND_CB *disconnect_ind = p_ccb->p_rcb->api.pL2CA_DisconnectInd_Cb;
-    tL2CA_DISCONNECT_CFM_CB *disconnect_cfm = p_ccb->p_rcb->api.pL2CA_DisconnectCfm_Cb;
     tL2CA_CONNECT_CFM_CB    *connect_cfm = p_ccb->p_rcb->api.pL2CA_ConnectCfm_Cb;
     UINT16                  local_cid = p_ccb->local_cid;
 
 #if (BT_TRACE_VERBOSE == TRUE)
     L2CAP_TRACE_EVENT ("L2CAP - LCID: 0x%04x  st: W4_L2CAP_CON_RSP  evt: %s", p_ccb->local_cid, l2c_csm_get_event_name (event));
 #else
-    L2CAP_TRACE_WARNING ("L2CAP - st: W4_L2CAP_CON_RSP evt: %d", event);
+    L2CAP_TRACE_EVENT ("L2CAP - st: W4_L2CAP_CON_RSP evt: %d", event);
 #endif
 
     switch (event)
@@ -673,14 +655,7 @@ static void l2c_csm_w4_l2cap_connect_rsp (tL2C_CCB *p_ccb, UINT16 event, void *p
                                btu_general_alarm_queue);
         }
         else
-        {
             l2cu_release_ccb (p_ccb);
-            if(disconnect_cfm)
-            {
-                L2CAP_TRACE_API ("L2CAP - Calling DisconnectCfm_Cb(), CID: 0x%04x", local_cid);
-                (*disconnect_cfm)(local_cid, L2CAP_CONN_NO_LINK);
-            }
-        }
         break;
 
     case L2CEVT_L2CA_DATA_WRITE:                    /* Upper layer data to send */
@@ -733,7 +708,7 @@ static void l2c_csm_w4_l2ca_connect_rsp (tL2C_CCB *p_ccb, UINT16 event, void *p_
 #if (BT_TRACE_VERBOSE == TRUE)
     L2CAP_TRACE_EVENT ("L2CAP - LCID: 0x%04x  st: W4_L2CA_CON_RSP  evt: %s", p_ccb->local_cid, l2c_csm_get_event_name (event));
 #else
-    L2CAP_TRACE_WARNING ("L2CAP - st: W4_L2CA_CON_RSP evt: %d", event);
+    L2CAP_TRACE_EVENT ("L2CAP - st: W4_L2CA_CON_RSP evt: %d", event);
 #endif
 
     switch (event)
@@ -751,17 +726,13 @@ static void l2c_csm_w4_l2ca_connect_rsp (tL2C_CCB *p_ccb, UINT16 event, void *p_
             /* Result should be OK or Reject */
             if ((!p_ci) || (p_ci->l2cap_result == L2CAP_CONN_OK))
             {
-#if (BLE_INCLUDED == TRUE)
                 l2cble_credit_based_conn_res (p_ccb, L2CAP_CONN_OK);
-#endif
                 p_ccb->chnl_state = CST_OPEN;
                 alarm_cancel(p_ccb->l2c_ccb_timer);
             }
             else
             {
-#if (BLE_INCLUDED == TRUE)
                 l2cble_credit_based_conn_res (p_ccb, p_ci->l2cap_result);
-#endif
                 l2cu_release_ccb (p_ccb);
             }
         }
@@ -791,11 +762,9 @@ static void l2c_csm_w4_l2ca_connect_rsp (tL2C_CCB *p_ccb, UINT16 event, void *p_
 
     case L2CEVT_L2CA_CONNECT_RSP_NEG:
         p_ci = (tL2C_CONN_INFO *)p_data;
-#if (BLE_INCLUDED == TRUE)
         if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE)
             l2cble_credit_based_conn_res (p_ccb, p_ci->l2cap_result);
         else
-#endif
             l2cu_send_peer_connect_rsp (p_ccb, p_ci->l2cap_result, p_ci->l2cap_status);
         l2cu_release_ccb (p_ccb);
         break;
@@ -858,7 +827,7 @@ static void l2c_csm_config (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
 #if (BT_TRACE_VERBOSE == TRUE)
     L2CAP_TRACE_EVENT ("L2CAP - LCID: 0x%04x  st: CONFIG  evt: %s", p_ccb->local_cid, l2c_csm_get_event_name (event));
 #else
-    L2CAP_TRACE_WARNING ("L2CAP - st: CONFIG evt: %d", event);
+    L2CAP_TRACE_EVENT ("L2CAP - st: CONFIG evt: %d", event);
 #endif
 
     switch (event)
@@ -943,8 +912,8 @@ static void l2c_csm_config (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
                 }
             }
         }
-        L2CAP_TRACE_WARNING ("L2CAP-peer_Config_Rsp,Local CID: 0x%04x,Remote CID: 0x%04x,PSM: %d,peer MTU present: %d,peer MTU: %d",
-                               p_ccb->local_cid,p_ccb->remote_cid,p_ccb->p_rcb->psm ,p_ccb->peer_cfg.mtu_present,p_ccb->peer_cfg.mtu);
+
+        L2CAP_TRACE_API ("L2CAP - Calling Config_Rsp_Cb(), CID: 0x%04x", p_ccb->local_cid);
         (*p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb)(p_ccb->local_cid, p_cfg);
         break;
 
@@ -1031,8 +1000,6 @@ static void l2c_csm_config (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
         {
             l2c_link_check_send_pkts (p_ccb->p_lcb, NULL, NULL);
         }
-        L2CAP_TRACE_WARNING ("L2CAP-Upper layer Config_Rsp,Local CID: 0x%04x,Remote CID: 0x%04x,PSM: %d,our MTU present:%d,our MTU:%d",
-                              p_ccb->local_cid,p_ccb->remote_cid, p_ccb->p_rcb->psm, p_ccb->our_cfg.mtu_present,p_ccb->our_cfg.mtu);
         break;
 
     case L2CEVT_L2CA_CONFIG_RSP_NEG:               /* Upper layer config reject */
@@ -1150,7 +1117,7 @@ static void l2c_csm_open (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
         tempstate = p_ccb->chnl_state;
         tempcfgdone = p_ccb->config_done;
         p_ccb->chnl_state = CST_CONFIG;
-        p_ccb->config_done &= ~IB_CFG_DONE;
+        p_ccb->config_done &= ~CFG_DONE_MASK;
 
         alarm_set_on_queue(p_ccb->l2c_ccb_timer,
                            L2CAP_CHNL_CFG_TIMEOUT_MS,
@@ -1217,11 +1184,10 @@ static void l2c_csm_open (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
                 BTM_SetPowerMode (BTM_PM_SET_ONLY_ID, p_ccb->p_lcb->remote_bd_addr, &settings);
             }
         }
-#if (BLE_INCLUDED == TRUE)
+
         if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE)
             l2cble_send_peer_disc_req (p_ccb);
         else
-#endif
             l2cu_send_peer_disc_req (p_ccb);
 
         p_ccb->chnl_state = CST_W4_L2CAP_DISCONNECT_RSP;
@@ -1260,9 +1226,7 @@ static void l2c_csm_open (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
     case L2CEVT_L2CA_SEND_FLOW_CONTROL_CREDIT:
         L2CAP_TRACE_DEBUG("%s Sending credit",__func__);
         credit = (UINT16*)p_data;
-#if (BLE_INCLUDED == TRUE)
         l2cble_send_flow_control_credit(p_ccb, *credit);
-#endif
         break;
 
     case L2CEVT_L2CAP_RECV_FLOW_CONTROL_CREDIT:
@@ -1270,12 +1234,10 @@ static void l2c_csm_open (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
         L2CAP_TRACE_DEBUG("%s Credits received %d",__func__, *credit);
         if((p_ccb->peer_conn_cfg.credits + *credit) > L2CAP_LE_MAX_CREDIT)
         {
-#if (BLE_INCLUDED == TRUE)
             /* we have received credits more than max coc credits,
              * so disconnecting the Le Coc Channel
              */
             l2cble_send_peer_disc_req (p_ccb);
-#endif
         }
         else
         {
@@ -1305,7 +1267,7 @@ static void l2c_csm_w4_l2cap_disconnect_rsp (tL2C_CCB *p_ccb, UINT16 event, void
 #if (BT_TRACE_VERBOSE == TRUE)
     L2CAP_TRACE_EVENT ("L2CAP - LCID: 0x%04x  st: W4_L2CAP_DISC_RSP  evt: %s", p_ccb->local_cid, l2c_csm_get_event_name (event));
 #else
-    L2CAP_TRACE_WARNING ("L2CAP - st: W4_L2CAP_DISC_RSP evt: %d", event);
+    L2CAP_TRACE_EVENT ("L2CAP - st: W4_L2CAP_DISC_RSP evt: %d", event);
 #endif
 
     switch (event)
@@ -1370,7 +1332,7 @@ static void l2c_csm_w4_l2ca_disconnect_rsp (tL2C_CCB *p_ccb, UINT16 event, void 
 #if (BT_TRACE_VERBOSE == TRUE)
     L2CAP_TRACE_EVENT ("L2CAP - LCID: 0x%04x  st: W4_L2CA_DISC_RSP  evt: %s", p_ccb->local_cid, l2c_csm_get_event_name (event));
 #else
-    L2CAP_TRACE_WARNING ("L2CAP - st: W4_L2CA_DISC_RSP evt: %d", event);
+    L2CAP_TRACE_EVENT ("L2CAP - st: W4_L2CA_DISC_RSP evt: %d", event);
 #endif
 
     switch (event)

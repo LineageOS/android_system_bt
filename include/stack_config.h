@@ -32,7 +32,6 @@ static const char STACK_CONFIG_MODULE[] = "stack_config_module";
 typedef struct {
   const char *(*get_btsnoop_log_path)(void);
   bool (*get_btsnoop_turned_on)(void);
-  void (*get_btsnoop_ext_options)(bool *hci_ext_dump_enabled, bool *btsnoop_conf_from_file);
   bool (*get_btsnoop_should_save_last)(void);
   bool (*get_trace_config_enabled)(void);
   bool (*get_pts_secure_only_mode)(void);
@@ -40,7 +39,6 @@ typedef struct {
   bool (*get_pts_crosskey_sdp_disable)(void);
   const char* (*get_pts_smp_options)(void);
   int (*get_pts_smp_failure_case)(void);
-  bool (*get_pts_le_nonconn_adv_enabled)(void);
   config_t *(*get_all)(void);
 } stack_config_t;
 

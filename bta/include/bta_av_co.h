@@ -59,23 +59,6 @@ enum
     BTA_AV_CO_ST_STREAM
 };
 
-enum
-{
-    BTIF_SV_AV_AA_SBC_INDEX = 0,
-    BTIF_SV_AV_AA_APTX_INDEX,
-    BTIF_SV_AV_AA_APTX_HD_INDEX,
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-    BTIF_SV_AV_AA_AAC_INDEX,
-#endif
-    BTIF_SV_AV_AA_SRC_SEP_INDEX  /* Last index */
-};
-
-enum
-{
-    BTIF_SV_AV_AA_SBC_SINK_INDEX = BTIF_SV_AV_AA_SRC_SEP_INDEX,
-    BTIF_SV_AV_AA_SNK_SEP_INDEX  /* Last index */
-};
-
 
 /* data type for the Audio Codec Information*/
 typedef struct
@@ -404,29 +387,5 @@ extern void bta_av_co_audio_delay(tBTA_AV_HNDL hndl, UINT16 delay);
 **
 *******************************************************************************/
 extern void bta_av_co_video_delay(tBTA_AV_HNDL hndl, UINT16 delay);
-
-/*******************************************************************************
-**
-** Function         bta_av_co_audio_is_offload_supported
-**
-** Description      This function is called by AV to check if DUT is in offload
-**                  mode.
-**
-** Returns          TRUE if offload is enabled, FALSE otherwise
-**
-*******************************************************************************/
-extern BOOLEAN bta_av_co_audio_is_offload_supported(void);
-
-/*******************************************************************************
-**
-** Function         bta_av_co_audio_is_codec_supported
-**
-** Description      This function is called by AV to check if corresponding
-**                  codec is supported in offload mode.
-**
-** Returns          TRUE if codec is supported in offload, FALSE otherwise
-**
-*******************************************************************************/
-extern BOOLEAN bta_av_co_audio_is_codec_supported(int codec);
 
 #endif /* BTA_AV_CO_H */

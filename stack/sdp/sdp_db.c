@@ -353,8 +353,6 @@ BOOLEAN SDP_DeleteRecord (UINT32 handle)
                 for (yy = xx; yy < sdp_cb.server_db.num_records; yy++, p_rec++)
                 {
                     *p_rec = *(p_rec + 1);
-                    /* Adjust continuation info in the CCB */
-                    sdpu_update_ccb_cont_info(p_rec->record_handle);
 
                     /* Adjust the attribute value pointer for each attribute */
                     for (zz = 0; zz < p_rec->num_attributes; zz++)
@@ -873,14 +871,7 @@ BOOLEAN SDP_DeleteAttribute (UINT32 handle, UINT16 attr_id)
                 {
                     pad_ptr = p_attr->value_ptr;
                     len = p_attr->len;
-                    if (p_rec->free_pad_ptr + p_attr->len >= SDP_MAX_PAD_LEN)
-                    {
-                        SDP_TRACE_ERROR("Deleting attr_id 0x%04x len %d exceeds 600", attr_id, len);
-                        if (p_attr->type == TEXT_STR_DESC_TYPE)
-                            len = SDP_MAX_PAD_LEN - p_rec->free_pad_ptr;
-                        else
-                            len = 0;
-                    }
+
                     if (len)
                     {
                         for (yy = 0; yy < p_rec->num_attributes; yy++)

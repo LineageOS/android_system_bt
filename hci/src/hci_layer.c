@@ -80,12 +80,6 @@ typedef enum {
   FINISHED
 } receive_state_t;
 
-typedef enum {
-  HCI_SHUTDOWN,
-  HCI_STARTED,
-  HCI_READY
-} hci_layer_state;
-
 typedef struct {
   receive_state_t state;
   uint16_t bytes_remaining;
@@ -103,32 +97,12 @@ typedef struct {
   BT_HDR *command;
 } waiting_command_t;
 
-typedef enum {
-    BT_SOC_DEFAULT = 0,
-    BT_SOC_SMD,
-    BT_SOC_AR3K,
-    BT_SOC_ROME,
-    BT_SOC_CHEROKEE,
-    /* Add chipset type here */
-    BT_SOC_RESERVED
-} bt_soc_type;
-
-typedef enum {
-  LPM_CONFIG_ALL,
-  LPM_CONFIG_TX,
-  LPM_CONFIG_NONE
-} low_power_config_t;
-
 // Using a define here, because it can be stringified for the property lookup
 #define DEFAULT_STARTUP_TIMEOUT_MS 8000
 #define STRING_VALUE_OF(x) #x
 
-low_power_config_t lpm_config = LPM_CONFIG_NONE;
-
 static const uint32_t EPILOG_TIMEOUT_MS = 3000;
 static const uint32_t COMMAND_PENDING_TIMEOUT_MS = 8000;
-
-extern int soc_type;
 
 // Our interface
 static bool interface_created;
@@ -151,7 +125,6 @@ static thread_t *thread; // We own this
 static volatile bool firmware_is_configured = false;
 static alarm_t *epilog_timer;
 static alarm_t *startup_timer;
-static alarm_t *hardware_error_timer;
 
 // Outbound-related
 static int command_credits = 1;
@@ -167,7 +140,6 @@ static packet_receive_data_t incoming_packets[INBOUND_PACKET_TYPE_COUNT];
 // The hand-off point for data going to a higher layer, set by the higher layer
 static fixed_queue_t *upwards_data_queue;
 
-static int hci_state;
 static future_t *shut_down();
 
 static void event_finish_startup(void *context);
@@ -180,7 +152,6 @@ static void sco_config_callback(bool success);
 static void event_epilog(void *context);
 static void epilog_finished_callback(bool success);
 static void epilog_timer_expired(void *context);
-static void hardware_error_timer_expired(void *context);
 
 static void event_command_ready(fixed_queue_t *queue, void *context);
 static void event_packet_ready(fixed_queue_t *queue, void *context);
@@ -193,10 +164,6 @@ static serial_data_type_t event_to_data_type(uint16_t event);
 static waiting_command_t *get_waiting_command(command_opcode_t opcode);
 static void update_command_response_timer(void);
 
-static bool create_hw_reset_evt_packet(packet_receive_data_t *incoming);
-
-void ssr_cleanup (int reason);
-
 // Module lifecycle functions
 
 static future_t *start_up(void) {
@@ -207,22 +174,6 @@ static future_t *start_up(void) {
   // This value can change when you get a command complete or command status event.
   command_credits = 1;
   firmware_is_configured = false;
-
-  char prop_lpm_config[PROPERTY_VALUE_MAX];
-  osi_property_get("persist.service.bdroid.lpmcfg", prop_lpm_config, "all");
-  if (!strcmp(prop_lpm_config, "all")) {
-     // LPM configured for both Tx and Rx channels
-     lpm_config = LPM_CONFIG_ALL;
-  }
-  else if (!strcmp(prop_lpm_config, "tx")) {
-     // LPM configured for Tx channel only
-     lpm_config = LPM_CONFIG_TX;
-  }
-  else {
-     lpm_config = LPM_CONFIG_NONE;
-  }
-
-  LOG_INFO(LOG_TAG, "%s lpm configure value = %d.", __func__, lpm_config);
 
   pthread_mutex_init(&commands_pending_response_lock, NULL);
 
@@ -322,7 +273,6 @@ static future_t *start_up(void) {
 
   LOG_DEBUG(LOG_TAG, "%s starting async portion", __func__);
   thread_post(thread, event_finish_startup, NULL);
-  hci_state = HCI_STARTED;
   return local_startup_future;
 
 error:
@@ -345,8 +295,6 @@ static future_t *shut_down() {
 
     thread_join(thread);
   }
-
-  hci_state = HCI_SHUTDOWN;
 
   fixed_queue_free(command_queue, osi_free);
   command_queue = NULL;
@@ -410,11 +358,6 @@ static void transmit_command(
     command_complete_cb complete_callback,
     command_status_cb status_callback,
     void *context) {
-  if (hci_state < HCI_STARTED) {
-    LOG_ERROR("%s Returning, hci_layer not ready", __func__);
-    return;
-  }
-
   waiting_command_t *wait_entry = osi_calloc(sizeof(waiting_command_t));
 
   uint8_t *stream = command->data + command->offset;
@@ -452,14 +395,9 @@ static void transmit_downward(data_dispatcher_type_t type, void *data) {
   if (type == MSG_STACK_TO_HC_HCI_CMD) {
     // TODO(zachoverflow): eliminate this call
     transmit_command((BT_HDR *)data, NULL, NULL, NULL);
-    LOG_WARN("%s legacy transmit of command. Use transmit_command instead.", __func__);
+    LOG_WARN(LOG_TAG, "%s legacy transmit of command. Use transmit_command instead.", __func__);
   } else {
-    if (hci_state < HCI_STARTED) {
-      LOG_ERROR("%s Returning, hci_layer not ready", __func__);
-      return;
-    } else {
     fixed_queue_enqueue(packet_queue, data);
-    }
   }
 }
 
@@ -533,22 +471,9 @@ static void epilog_timer_expired(UNUSED_ATTR void *context) {
   thread_stop(thread);
 }
 
-static void hardware_error_timer_expired(UNUSED_ATTR void *context) {
-  LOG_INFO("%s", __func__);
-  alarm_free(hardware_error_timer);
-  hardware_error_timer = NULL;
-  ssr_cleanup(0x33);//SSR reason 0x33 = HW ERR EVT
-  usleep(20000);
-  kill(getpid(), SIGKILL);
-}
-
 // Command/packet transmitting functions
 
 static void event_command_ready(fixed_queue_t *queue, UNUSED_ATTR void *context) {
-  if (hci_state < HCI_STARTED) {
-    LOG_ERROR("%s Returning, hci_layer not ready", __func__);
-    return;
-  }
   if (command_credits > 0) {
     waiting_command_t *wait_entry = fixed_queue_dequeue(queue);
     command_credits--;
@@ -559,33 +484,15 @@ static void event_command_ready(fixed_queue_t *queue, UNUSED_ATTR void *context)
     pthread_mutex_unlock(&commands_pending_response_lock);
 
     // Send it off
-    if (LPM_CONFIG_TX == lpm_config) {
-        low_power_manager->stop_idle_timer();;
-    }
-    else {
-        low_power_manager->wake_assert();
-    }
-
-    if (LPM_CONFIG_TX == lpm_config) {
-        low_power_manager->start_idle_timer(false);
-    }
-    else {
-        low_power_manager->transmit_done();
-    }
-
+    low_power_manager->wake_assert();
     packet_fragmenter->fragment_and_dispatch(wait_entry->command);
-
-
+    low_power_manager->transmit_done();
 
     update_command_response_timer();
   }
 }
 
 static void event_packet_ready(fixed_queue_t *queue, UNUSED_ATTR void *context) {
-  if (hci_state < HCI_STARTED) {
-    LOG_ERROR("%s Returning, hci_layer not ready", __func__);
-    return;
-  }
   // The queue may be the command queue or the packet queue, we don't care
   BT_HDR *packet = (BT_HDR *)fixed_queue_dequeue(queue);
 
@@ -632,39 +539,8 @@ static void command_timed_out(UNUSED_ATTR void *context) {
     LOG_EVENT_INT(BT_HCI_TIMEOUT_TAG_NUM, wait_entry->opcode);
   }
 
-  LOG_ERROR("%s restarting the bluetooth process.", __func__);
-  ssr_cleanup(0x22);//SSR reasno 0x22 = CMD TO
-
-  //Reset SOC status to trigger hciattach service
-  if (property_set("bluetooth.status", "off") < 0) {
-     LOG_ERROR(LOG_TAG, "hci_cmd_timeout: Error resetting SOC status\n ");
-  } else {
-     LOG_ERROR(LOG_TAG, "hci_cmd_timeout: SOC Status is reset\n ");
-  }
-
-  if (soc_type == BT_SOC_ROME || soc_type == BT_SOC_CHEROKEE) {
-    char value[PROPERTY_VALUE_MAX] = {0};
-    uint32_t hardware_error_timeout_ms = 2000;
-    bool enabled = false;
-#ifdef ENABLE_DBG_FLAGS
-    enabled = true;
-#endif
-    if (property_get("wc_transport.force_special_byte", value, NULL))
-      enabled = (strcmp(value, "false") == 0) ? false : true;
-    if (enabled) {
-      hardware_error_timer = alarm_new("hci.hardware_error_timer");
-      if (!hardware_error_timer) {
-        LOG_ERROR("%s unable to create hardware error timer.", __func__);
-        usleep(2000000);
-        kill(getpid(), SIGKILL);
-      }
-      if(soc_type == BT_SOC_CHEROKEE)
-        hardware_error_timeout_ms = 5000;
-      alarm_set(hardware_error_timer, hardware_error_timeout_ms, hardware_error_timer_expired, NULL);
-      return;
-    }
-  }
-  usleep(20000);
+  LOG_ERROR(LOG_TAG, "%s restarting the bluetooth process.", __func__);
+  usleep(10000);
   kill(getpid(), SIGKILL);
 }
 
@@ -675,100 +551,71 @@ static void command_timed_out(UNUSED_ATTR void *context) {
 static void hal_says_data_ready(serial_data_type_t type) {
   packet_receive_data_t *incoming = &incoming_packets[PACKET_TYPE_TO_INBOUND_INDEX(type)];
 
-  uint8_t reset;
-
   uint8_t byte;
   while (hal->read_data(type, &byte, 1) != 0) {
-    if (soc_type == BT_SOC_SMD) {
-        reset = hal->dev_in_reset();
-        if (reset) {
-            incoming = &incoming_packets[PACKET_TYPE_TO_INBOUND_INDEX(type = DATA_TYPE_EVENT)];
-            if(!create_hw_reset_evt_packet(incoming))
-                break;
-            else {
-            //Reset SOC status to trigger hciattach service
-                if(property_set("bluetooth.status", "off") < 0) {
-                    LOG_ERROR(LOG_TAG, "SSR: Error resetting SOC status\n ");
-                } else {
-                    ALOGE("SSR: SOC Status is reset\n ");
-                }
-            }
-        }
-    }
-
     switch (incoming->state) {
-        case BRAND_NEW:
-            // Initialize and prepare to jump to the preamble reading state
-            incoming->bytes_remaining = preamble_sizes[PACKET_TYPE_TO_INDEX(type)];
-            memset(incoming->preamble, 0, PREAMBLE_BUFFER_SIZE);
-            incoming->index = 0;
-            incoming->state = PREAMBLE;
-            // INTENTIONAL FALLTHROUGH
-        case PREAMBLE:
-            incoming->preamble[incoming->index] = byte;
-            incoming->index++;
-            incoming->bytes_remaining--;
+      case BRAND_NEW:
+        // Initialize and prepare to jump to the preamble reading state
+        incoming->bytes_remaining = preamble_sizes[PACKET_TYPE_TO_INDEX(type)];
+        memset(incoming->preamble, 0, PREAMBLE_BUFFER_SIZE);
+        incoming->index = 0;
+        incoming->state = PREAMBLE;
+        // INTENTIONAL FALLTHROUGH
+      case PREAMBLE:
+        incoming->preamble[incoming->index] = byte;
+        incoming->index++;
+        incoming->bytes_remaining--;
 
-            if (incoming->bytes_remaining == 0) {
-                // For event and sco preambles, the last byte we read is the length
-                incoming->bytes_remaining = (type == DATA_TYPE_ACL) ? RETRIEVE_ACL_LENGTH(incoming->preamble) : byte;
+        if (incoming->bytes_remaining == 0) {
+          // For event and sco preambles, the last byte we read is the length
+          incoming->bytes_remaining = (type == DATA_TYPE_ACL) ? RETRIEVE_ACL_LENGTH(incoming->preamble) : byte;
 
-                size_t buffer_size = BT_HDR_SIZE + incoming->index + incoming->bytes_remaining;
+          size_t buffer_size = BT_HDR_SIZE + incoming->index + incoming->bytes_remaining;
+          incoming->buffer = (BT_HDR *)buffer_allocator->alloc(buffer_size);
 
-                if (buffer_size > MCA_USER_RX_BUF_SIZE) {
-                    LOG_ERROR(LOG_TAG, "%s buffer_size(%zu) exceeded allowed packet size, allocation not possible", __func__, buffer_size);
-                    incoming = &incoming_packets[PACKET_TYPE_TO_INBOUND_INDEX(type = DATA_TYPE_EVENT)];
-                    if(create_hw_reset_evt_packet(incoming))
-                        break;
-                    else
-                        return;
-                }
-
-                incoming->buffer = (BT_HDR *)buffer_allocator->alloc(buffer_size);
-
-                if (!incoming->buffer) {
-                    LOG_ERROR(LOG_TAG, "%s error getting buffer for incoming packet of type %d and size %zd", __func__, type, buffer_size);
-                    // Can't read any more of this current packet, so jump out
-                    incoming->state = incoming->bytes_remaining == 0 ? BRAND_NEW : IGNORE;
-                    break;
-                }
-
-                // Initialize the buffer
-                incoming->buffer->offset = 0;
-                incoming->buffer->layer_specific = 0;
-                incoming->buffer->event = outbound_event_types[PACKET_TYPE_TO_INDEX(type)];
-                memcpy(incoming->buffer->data, incoming->preamble, incoming->index);
-
-                incoming->state = incoming->bytes_remaining > 0 ? BODY : FINISHED;
-            }
-
+          if (!incoming->buffer) {
+            LOG_ERROR(LOG_TAG, "%s error getting buffer for incoming packet of type %d and size %zd", __func__, type, buffer_size);
+            // Can't read any more of this current packet, so jump out
+            incoming->state = incoming->bytes_remaining == 0 ? BRAND_NEW : IGNORE;
             break;
-        case BODY:
-            incoming->buffer->data[incoming->index] = byte;
-            incoming->index++;
-            incoming->bytes_remaining--;
+          }
 
-            size_t bytes_read = hal->read_data(type, (incoming->buffer->data + incoming->index), incoming->bytes_remaining);
-            incoming->index += bytes_read;
-            incoming->bytes_remaining -= bytes_read;
+          // Initialize the buffer
+          incoming->buffer->offset = 0;
+          incoming->buffer->layer_specific = 0;
+          incoming->buffer->event = outbound_event_types[PACKET_TYPE_TO_INDEX(type)];
+          memcpy(incoming->buffer->data, incoming->preamble, incoming->index);
 
-            incoming->state = incoming->bytes_remaining == 0 ? FINISHED : incoming->state;
-            break;
-        case IGNORE:
-            incoming->bytes_remaining--;
-            if (incoming->bytes_remaining == 0) {
-                incoming->state = BRAND_NEW;
-                // Don't forget to let the hal know we finished the packet we were ignoring.
-                // Otherwise we'll get out of sync with hals that embed extra information
-                // in the uart stream (like H4). #badnewsbears
-                hal->packet_finished(type);
-                return;
-            }
+          incoming->state = incoming->bytes_remaining > 0 ? BODY : FINISHED;
+        }
 
-            break;
-        case FINISHED:
-            LOG_ERROR(LOG_TAG, "%s the state machine should not have been left in the finished state.", __func__);
-            break;
+        break;
+      case BODY:
+        incoming->buffer->data[incoming->index] = byte;
+        incoming->index++;
+        incoming->bytes_remaining--;
+
+        size_t bytes_read = hal->read_data(type, (incoming->buffer->data + incoming->index), incoming->bytes_remaining);
+        incoming->index += bytes_read;
+        incoming->bytes_remaining -= bytes_read;
+
+        incoming->state = incoming->bytes_remaining == 0 ? FINISHED : incoming->state;
+        break;
+      case IGNORE:
+        incoming->bytes_remaining--;
+        if (incoming->bytes_remaining == 0) {
+          incoming->state = BRAND_NEW;
+          // Don't forget to let the hal know we finished the packet we were ignoring.
+          // Otherwise we'll get out of sync with hals that embed extra information
+          // in the uart stream (like H4). #badnewsbears
+          hal->packet_finished(type);
+          return;
+        }
+
+        break;
+      case FINISHED:
+        LOG_ERROR(LOG_TAG, "%s the state machine should not have been left in the finished state.", __func__);
+        break;
     }
 
     if (incoming->state == FINISHED) {
@@ -776,28 +623,18 @@ static void hal_says_data_ready(serial_data_type_t type) {
       btsnoop->capture(incoming->buffer, true);
 
       if (type != DATA_TYPE_EVENT) {
-        if(hci_state == HCI_READY) {
-          packet_fragmenter->reassemble_and_dispatch(incoming->buffer);
-        } else {
-          LOG_WARN("%s, Ignoring the ACL pkt received", __func__);
-          buffer_allocator->free(incoming->buffer);
-        }
+        packet_fragmenter->reassemble_and_dispatch(incoming->buffer);
       } else if (!filter_incoming_event(incoming->buffer)) {
-        if (hci_state == HCI_READY) {
-          // Dispatch the event by event code
-          uint8_t *stream = incoming->buffer->data;
-          uint8_t event_code;
-          STREAM_TO_UINT8(event_code, stream);
+        // Dispatch the event by event code
+        uint8_t *stream = incoming->buffer->data;
+        uint8_t event_code;
+        STREAM_TO_UINT8(event_code, stream);
 
-          data_dispatcher_dispatch(
-            interface.event_dispatcher,
-            event_code,
-            incoming->buffer
-          );
-        } else {
-          LOG_WARN("%s, Ignoring the event pkt received", __func__);
-          buffer_allocator->free(incoming->buffer);
-        }
+        data_dispatcher_dispatch(
+          interface.event_dispatcher,
+          event_code,
+          incoming->buffer
+        );
       }
 
       // We don't control the buffer anymore
@@ -828,10 +665,6 @@ static bool filter_incoming_event(BT_HDR *packet) {
   if (event_code == HCI_COMMAND_COMPLETE_EVT) {
     STREAM_TO_UINT8(command_credits, stream);
     STREAM_TO_UINT16(opcode, stream);
-
-    if (HCI_RESET == opcode) {
-      hci_state = HCI_READY;
-    }
 
     wait_entry = get_waiting_command(opcode);
     if (!wait_entry) {
@@ -886,22 +719,6 @@ intercepted:
   return true;
 }
 
-/** SSR cleanup is used in HW reset cases
-** which would close all the client channels
-** and turns off the chip*/
-void ssr_cleanup (int reason) {
-   LOG_INFO("%s", __func__);
-   if (hci_state < HCI_STARTED) {
-     LOG_ERROR("%s Returning, hci_layer already shut down", __func__);
-     return;
-   }
-   if (vendor != NULL) {
-       vendor->ssr_cleanup(reason);
-   } else {
-       LOG_ERROR("%s: vendor is NULL", __func__);
-   }
-}
-
 // Callback for the fragmenter to dispatch up a completely reassembled packet
 static void dispatch_reassembled(BT_HDR *packet) {
   // Events should already have been dispatched before this point
@@ -948,26 +765,6 @@ static waiting_command_t *get_waiting_command(command_opcode_t opcode) {
     pthread_mutex_unlock(&commands_pending_response_lock);
     return wait_entry;
   }
-  // look for any command complete with improper VS Opcode
-  for (const list_node_t *node = list_begin(commands_pending_response);
-      node != list_end(commands_pending_response);
-      node = list_next(node)) {
-    waiting_command_t *wait_entry = list_node(node);
-
-    if (wait_entry && (wait_entry->opcode != opcode) &&
-        (((wait_entry->opcode & HCI_GRP_VENDOR_SPECIFIC) == HCI_GRP_VENDOR_SPECIFIC) &&
-        ((opcode & HCI_GRP_VENDOR_SPECIFIC) == HCI_GRP_VENDOR_SPECIFIC))) {
-        LOG_DEBUG("%s VS event found treat it as valid 0x%x", __func__, opcode);
-    }
-    else {
-        continue;
-    }
-
-    list_remove(commands_pending_response, wait_entry);
-
-    pthread_mutex_unlock(&commands_pending_response_lock);
-    return wait_entry;
-  }
 
   pthread_mutex_unlock(&commands_pending_response_lock);
   return NULL;
@@ -999,7 +796,6 @@ static void init_layer_interface() {
     interface.transmit_command = transmit_command;
     interface.transmit_command_futured = transmit_command_futured;
     interface.transmit_downward = transmit_downward;
-    interface.ssr_cleanup = ssr_cleanup;
     interface_created = true;
   }
 }
@@ -1017,23 +813,6 @@ void hci_layer_cleanup_interface() {
     interface.transmit_command_futured = NULL;
     interface.transmit_downward = NULL;
     interface_created = false;
-  }
-}
-static bool create_hw_reset_evt_packet(packet_receive_data_t *incoming) {
-  uint8_t dev_ssr_event[3] = { 0x10, 0x01, 0x0A };
-  incoming->buffer = (BT_HDR *)buffer_allocator->alloc(BT_HDR_SIZE + 3);
-  if (incoming->buffer) {
-    LOG_ERROR(LOG_TAG, "sending H/w error event to stack\n ");
-    incoming->buffer->offset = 0;
-    incoming->buffer->layer_specific = 0;
-    incoming->buffer->event = MSG_HC_TO_STACK_HCI_EVT;
-    incoming->index = 3;
-    memcpy(incoming->buffer->data, &dev_ssr_event, 3);
-    incoming->state = FINISHED;
-    return true;
-  } else {
-    LOG_ERROR(LOG_TAG, "error getting buffer for H/W event\n ");
-    return false;
   }
 }
 

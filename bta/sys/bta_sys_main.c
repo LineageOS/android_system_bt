@@ -58,7 +58,6 @@ extern thread_t *bt_workqueue_thread;
 /* TODO Hard-coded trace levels -  Needs to be configurable */
 UINT8 appl_trace_level = BT_TRACE_LEVEL_WARNING; //APPL_INITIAL_TRACE_LEVEL;
 UINT8 btif_trace_level = BT_TRACE_LEVEL_WARNING;
-UINT8 audio_latency_trace_level = BT_TRACE_LEVEL_WARNING;
 
 // Communication queue between btu_task and bta.
 extern fixed_queue_t *btu_bta_msg_queue;
@@ -226,7 +225,7 @@ BOOLEAN bta_sys_sm_execute(BT_HDR *p_msg)
     /* execute action functions */
     for (i = 0; i < BTA_SYS_ACTIONS; i++)
     {
-        if ((action = state_table[p_msg->event & 0x00ff][i]) < BTA_SYS_IGNORE)
+        if ((action = state_table[p_msg->event & 0x00ff][i]) != BTA_SYS_IGNORE)
         {
             (*bta_sys_action[action])( (tBTA_SYS_HW_MSG*) p_msg);
         }

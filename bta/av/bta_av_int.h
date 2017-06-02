@@ -1,10 +1,4 @@
 /******************************************************************************
- *  Copyright (c) 2016, The Linux Foundation. All rights reserved.
- *
- *  Not a contribution.
- ******************************************************************************/
-
-/******************************************************************************
  *
  *  Copyright (C) 2004-2012 Broadcom Corporation
  *
@@ -112,9 +106,7 @@ enum
     BTA_AV_AVDT_RPT_CONN_EVT,
 #endif
     BTA_AV_API_START_EVT,       /* the following 2 events must be in the same order as the *AP_*EVT */
-    BTA_AV_API_STOP_EVT,
-    BTA_AV_UPDATE_MAX_AV_CLIENTS_EVT,
-    BTA_AV_ENABLE_MULTICAST_EVT /* Event for enable and disable multicast */
+    BTA_AV_API_STOP_EVT
 };
 
 /* events for AV control block state machine */
@@ -126,13 +118,13 @@ enum
 
 /* events that do not go through state machine */
 #define BTA_AV_FIRST_NSM_EVT    BTA_AV_API_ENABLE_EVT
-#define BTA_AV_LAST_NSM_EVT     BTA_AV_ENABLE_MULTICAST_EVT
+#define BTA_AV_LAST_NSM_EVT     BTA_AV_API_STOP_EVT
 
 /* API events passed to both SSMs (by bta_av_api_to_ssm) */
 #define BTA_AV_FIRST_A2S_API_EVT    BTA_AV_API_START_EVT
 #define BTA_AV_FIRST_A2S_SSM_EVT    BTA_AV_AP_START_EVT
 
-#define BTA_AV_LAST_EVT             BTA_AV_ENABLE_MULTICAST_EVT
+#define BTA_AV_LAST_EVT             BTA_AV_API_STOP_EVT
 
 /* maximum number of SEPS in stream discovery results */
 #define BTA_AV_NUM_SEPS         32
@@ -162,6 +154,7 @@ enum
 #define BTA_AV_MULTI_AV_SUPPORTED   0x01
 #define BTA_AV_MULTI_AV_IN_USE      0x02
 
+
 /*****************************************************************************
 **  Data types
 *****************************************************************************/
@@ -187,8 +180,6 @@ typedef void (*tBTA_AV_CO_STOP) (tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type);
 typedef void * (*tBTA_AV_CO_DATAPATH) (tBTA_AV_CODEC codec_type,
                                        UINT32 *p_len, UINT32 *p_timestamp);
 typedef void (*tBTA_AV_CO_DELAY) (tBTA_AV_HNDL hndl, UINT16 delay);
-typedef BOOLEAN (*tBTA_AV_CO_OFFLOAD_SUPPORT) (void);
-typedef BOOLEAN (*tBTA_AV_CO_OFFLOAD_CAP) (int codec);
 
 /* the call-out functions for one stream */
 typedef struct
@@ -203,8 +194,6 @@ typedef struct
     tBTA_AV_CO_STOP     stop;
     tBTA_AV_CO_DATAPATH data;
     tBTA_AV_CO_DELAY    delay;
-    tBTA_AV_CO_OFFLOAD_SUPPORT offload;
-    tBTA_AV_CO_OFFLOAD_CAP cap;
 } tBTA_AV_CO_FUNCTS;
 
 /* data type for BTA_AV_API_ENABLE_EVT */
@@ -253,20 +242,6 @@ typedef struct
     BOOLEAN             suspend;
     BOOLEAN             flush;
 } tBTA_AV_API_STOP;
-
-/* data type for BTA_AV_ENABLE_MULTICAST_EVT */
-typedef struct
-{
-    BT_HDR              hdr;
-    BOOLEAN             is_multicast_enabled;
-} tBTA_AV_ENABLE_MULTICAST;
-
-/* data type for BTA_AV_UPDATE_MAX_AV_CLIENTS_EVTT */
-typedef struct
-{
-    BT_HDR              hdr;
-    UINT8               max_clients;
-} tBTA_AV_MAX_CLIENT;
 
 /* data type for BTA_AV_API_DISCONNECT_EVT */
 typedef struct
@@ -422,8 +397,6 @@ typedef struct
     tBTA_AV_CODEC       codec_type;        /* codec type */
     UINT8               tsep;              /* SEP type of local SEP */
     tBTA_AV_DATA_CBACK  *p_app_data_cback; /* Application callback for media packets */
-    UINT32              vendorId;          /* vendorId type */
-    UINT16              codecId;           /* codecId type */
 } tBTA_AV_SEP;
 
 
@@ -461,8 +434,6 @@ typedef union
     tBTA_AV_SDP_RES         sdp_res;
     tBTA_AV_API_META_RSP    api_meta_rsp;
     tBTA_AV_API_STATUS_RSP  api_status_rsp;
-    tBTA_AV_ENABLE_MULTICAST  multicast_state;
-    tBTA_AV_MAX_CLIENT      max_av_clients;
 } tBTA_AV_DATA;
 
 typedef void (tBTA_AV_VDP_DATA_ACT)(void *p_scb);
@@ -502,7 +473,6 @@ typedef union
 /* Bitmap for collision, coll_mask */
 #define BTA_AV_COLL_INC_TMR             0x01 /* Timer is running for incoming L2C connection */
 #define BTA_AV_COLL_API_CALLED          0x02 /* API open was called while incoming timer is running */
-#define BTA_AV_COLL_SETCONFIG_IND    0x04 /* SetConfig indication has been called by remote */
 
 /* type for AV stream control block */
 typedef struct
@@ -631,7 +601,6 @@ typedef struct
     BOOLEAN             sco_occupied;   /* TRUE if SCO is being used or call is in progress */
     UINT8               audio_streams;  /* handle mask of streaming audio channels */
     UINT8               video_streams;  /* handle mask of streaming video channels */
-    UINT8               codec_type;     /* p_scb->codec_type */
 } tBTA_AV_CB;
 
 
@@ -680,7 +649,7 @@ extern void bta_av_set_scb_sst_init (tBTA_AV_SCB *p_scb);
 extern BOOLEAN bta_av_is_scb_init (tBTA_AV_SCB *p_scb);
 extern void bta_av_set_scb_sst_incoming (tBTA_AV_SCB *p_scb);
 extern tBTA_AV_LCB * bta_av_find_lcb(BD_ADDR addr, UINT8 op);
-extern BOOLEAN bta_av_is_multicast_enabled();
+
 
 /* main functions */
 extern void bta_av_api_deregister(tBTA_AV_DATA *p_data);

@@ -1,9 +1,4 @@
 /******************************************************************************
- *  Copyright (c) 2016, The Linux Foundation. All rights reserved.
- *
- *  Not a contribution.
- ******************************************************************************/
-/******************************************************************************
  *
  *  Copyright (C) 2002-2012 Broadcom Corporation
  *
@@ -68,7 +63,6 @@ const UINT8 avdt_scb_role_evt[] = {
     AVDT_CLOSE_IND_EVT,         /* AVDT_OPEN_ACP */
     AVDT_OPEN_CFM_EVT           /* AVDT_OPEN_INT */
 };
-
 
 /*******************************************************************************
 **
@@ -311,7 +305,6 @@ void avdt_scb_hdl_pkt_no_frag(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
         {
             /* report sequence number */
             p_data->p_pkt->layer_specific = seq;
-            APPL_TRACE_LATENCY_AUDIO("AVDTP Recv Packet, seq number %d", seq);
             (*p_scb->cs.p_data_cback)(avdt_scb_to_hdl(p_scb), p_data->p_pkt,
                 time_stamp, (UINT8)(m_pt | (marker<<7)));
         }

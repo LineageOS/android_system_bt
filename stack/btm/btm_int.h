@@ -104,8 +104,6 @@ typedef struct
 #define BTM_ACL_SWKEY_STATE_ENCRYPTION_ON       4
 #define BTM_ACL_SWKEY_STATE_IN_PROGRESS         5
     UINT8           switch_role_state;
-#define BTM_MAX_SW_ROLE_FAILED_ATTEMPTS         3
-    UINT8           switch_role_failed_attempts;
 
 #define BTM_ACL_ENCRYPT_STATE_IDLE              0
 #define BTM_ACL_ENCRYPT_STATE_ENCRYPT_OFF       1   /* encryption turning off */
@@ -183,11 +181,6 @@ BT_OCTET16 ble_encryption_key_value; /* BLE encryption key */
 #endif
 
 #endif  /* BLE_INCLUDED */
-
-#if HCI_RAW_CMD_INCLUDED == TRUE
-    tBTM_RAW_CMPL_CB     *p_hci_evt_cb;       /* Callback function to be called when
-                                                HCI event is received successfully */
-#endif
 
     tBTM_IO_CAP          loc_io_caps;       /* IO capability of the local device */
     tBTM_AUTH_REQ        loc_auth_req;      /* the auth_req flag  */
@@ -551,8 +544,6 @@ typedef struct
     tBTM_BD_NAME    sec_bd_name;        /* User friendly name of the device. (may be truncated to save space in dev_rec table) */
     BD_FEATURES     features[HCI_EXT_FEATURES_PAGE_MAX + 1];           /* Features supported by the device */
     UINT8           num_read_pages;
-    UINT8           rnr_retry_cnt;
-    UINT8           cc_retry_cnt;
 
 #define BTM_SEC_STATE_IDLE               0
 #define BTM_SEC_STATE_AUTHENTICATING     1
@@ -623,11 +614,6 @@ typedef struct
 #endif
 #define BTM_SEC_NO_LAST_SERVICE_ID      0
     UINT8           last_author_service_id;         /* ID of last serviced authorized: Reset after each l2cap connection */
-
-#if (defined(BTM_SAFE_REATTEMPT_ROLE_SWITCH) && BTM_SAFE_REATTEMPT_ROLE_SWITCH == TRUE)
-#define BTM_MAX_BL_SW_ROLE_ATTEMPTS     1
-    UINT8           switch_role_attempts;
-#endif
 
 } tBTM_SEC_DEV_REC;
 
@@ -862,7 +848,6 @@ typedef struct
 
     tBTM_SEC_DEV_REC        *p_collided_dev_rec;
     alarm_t                 *sec_collision_timer;
-    tBTM_SEC_DEV_REC        *p_cc_retry_dev_rec;
     UINT32                   collision_start_time;
     UINT32                   max_collision_delay;
     UINT32                   dev_rec_count;      /* Counter used for device record timestamp */
@@ -986,7 +971,6 @@ extern void         btm_read_link_quality_complete(UINT8 *p);
 extern tBTM_STATUS  btm_set_packet_types (tACL_CONN *p, UINT16 pkt_types);
 extern void         btm_process_clk_off_comp_evt (UINT16 hci_handle, UINT16 clock_offset);
 extern void         btm_acl_role_changed (UINT8 hci_status, BD_ADDR bd_addr, UINT8 new_role);
-extern void         btm_blacklist_role_change_device (BD_ADDR bd_addr, UINT8 hci_status);
 extern void         btm_acl_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable);
 extern UINT16       btm_get_acl_disc_reason_code (void);
 extern tBTM_STATUS  btm_remove_acl (BD_ADDR bd_addr, tBT_TRANSPORT transport);
@@ -1059,10 +1043,6 @@ extern BOOLEAN btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC *p_dev_rec);
 extern void btm_ble_resolving_list_remove_dev(tBTM_SEC_DEV_REC *p_dev_rec);
 #endif  /* BLE_INCLUDED */
 
-/* HCI event handler */
-#if HCI_RAW_CMD_INCLUDED == TRUE
-extern void btm_hci_event(UINT8 *p, UINT8 event_code, UINT8 param_len);
-#endif
 /* Vendor Specific Command complete evt handler */
 extern void btm_vsc_complete (UINT8 *p, UINT16 cc_opcode, UINT16 evt_len,
                               tBTM_CMPL_CB *p_vsc_cplt_cback);
@@ -1097,8 +1077,6 @@ extern tBTM_STATUS  btm_sec_l2cap_access_req (BD_ADDR bd_addr, UINT16 psm,
 extern tBTM_STATUS  btm_sec_mx_access_request (BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_originator,
                                         UINT32 mx_proto_id, UINT32 mx_chan_id,
                                         tBTM_SEC_CALLBACK *p_callback, void *p_ref_data);
-
-extern  tBTM_STATUS btm_sec_execute_procedure (tBTM_SEC_DEV_REC *p_dev_rec);
 extern void  btm_sec_conn_req (UINT8 *bda, UINT8 *dc);
 extern void btm_create_conn_cancel_complete (UINT8 *p);
 

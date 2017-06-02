@@ -127,20 +127,6 @@ extern "C"
 
 /*******************************************************************************
 **
-** Function         AVCT_Init
-**
-** Description      This function is called to initialize the control block
-**                  for this layer.  It must be called before accessing any
-**                  other API functions for this layer.  It is typically called
-**                  once during the start up of the stack.
-**
-** Returns          void
-**
-*******************************************************************************/
-void AVCT_Init(void);
-
-/*******************************************************************************
-**
 ** Function         AVCT_Register
 **
 ** Description      This is the system level registration function for the
@@ -284,59 +270,6 @@ extern UINT16 AVCT_GetPeerMtu (UINT8 handle);
 **
 *******************************************************************************/
 extern UINT16 AVCT_MsgReq(UINT8 handle, UINT8 label, UINT8 cr, BT_HDR *p_msg);
-
-
-
-/******************************************************************************
-**
-** Function         AVCT_SetTraceLevel
-**
-** Description      Sets the trace level for AVCT. If 0xff is passed, the
-**                  current trace level is returned.
-**
-**                  Input Parameters:
-**                      new_level:  The level to set the AVCT tracing to:
-**                      0xff-returns the current setting.
-**                      0-turns off tracing.
-**                      >= 1-Errors.
-**                      >= 2-Warnings.
-**                      >= 3-APIs.
-**                      >= 4-Events.
-**                      >= 5-Debug.
-**
-** Returns          The new trace level or current trace level if
-**                  the input parameter is 0xff.
-**
-******************************************************************************/
-UINT8 AVCT_SetTraceLevel (UINT8 new_level);
-
-
-/*******************************************************************************
-**
-** Function         avct_get_peer_addr_by_ccb
-**
-**
-** Description      Return peer BD address on ccb index (or handle).
-**
-**
-**
-**
-** Returns          BD Address.
-**
-*******************************************************************************/
-extern BOOLEAN avct_get_peer_addr_by_ccb (UINT8 idx, BD_ADDR addr);
-
-/*******************************************************************************
-**
-** Function         AVCT_CheckIncomingConn
-**
-**
-** Description      Check if remote AVCTP incoming connection in progress
-**
-** Returns          TRUE if icoming connection is in progress,
-**
-*******************************************************************************/
-extern BOOLEAN AVCT_CheckIncomingConn(BD_ADDR peer_addr);
 
 #ifdef __cplusplus
 }

@@ -388,7 +388,7 @@ static void bta_hf_client_api_enable(tBTA_HF_CLIENT_DATA *p_data)
 
     /* check if mSBC support enabled */
     osi_property_get("ro.bluetooth.hfp.ver", value, "0");
-    if (strtof(value, NULL) >= 1.6)
+    if (strcmp(value,"1.6") == 0)
     {
        bta_hf_client_cb.msbc_enabled = TRUE;
     }
@@ -511,7 +511,7 @@ void bta_hf_client_sm_execute(UINT16 event, tBTA_HF_CLIENT_DATA *p_data)
     /* execute action functions */
     for (i = 0; i < BTA_HF_CLIENT_ACTIONS; i++)
     {
-        if ((action = state_table[event][i]) < BTA_HF_CLIENT_IGNORE)
+        if ((action = state_table[event][i]) != BTA_HF_CLIENT_IGNORE)
         {
             (*bta_hf_client_action[action])(p_data);
         }
@@ -542,8 +542,6 @@ static void send_post_slc_cmd(void)
     bta_hf_client_send_at_cops(FALSE);
     bta_hf_client_send_at_btrh(TRUE, 0);
     bta_hf_client_send_at_clip(TRUE);
-    bta_hf_client_send_at_cgmi(TRUE);
-    bta_hf_client_send_at_cgmm(TRUE);
 }
 
 /*******************************************************************************

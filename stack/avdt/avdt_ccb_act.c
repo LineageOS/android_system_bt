@@ -178,38 +178,7 @@ void avdt_ccb_hdl_discover_cmd(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
             p_data->msg.discover_rsp.num_seps++;
         }
     }
-    /* adjust inuse. Mark all the SEP of a perticualr cluster in use
-     * if one of the SEP is in use to avoid incoming connection failure
-     */
-    if (p_data->msg.discover_rsp.num_seps > 2
-        && avdt_scb_get_max_av_client() > 1)
-    {
-        int i,j;
-        int num_sep = p_data->msg.discover_rsp.num_seps;
-        int num_stream  = avdt_scb_get_max_av_client();
-        int num_codecs = num_sep/num_stream;
-        BOOLEAN is_busy = false;
 
-        for (i = 0; i < num_sep; i += num_codecs)
-        {
-            is_busy = false;
-            for (j = i; j < (i+num_codecs); j++)
-            {
-                if (sep_info[j].in_use)
-                {
-                    is_busy = true;
-                    break;
-                }
-            }
-            if (is_busy)
-            {
-                for (j = i; j < (i+num_codecs); j++)
-                {
-                    sep_info[j].in_use = is_busy;
-                }
-            }
-        }
-    }
     /* send response */
     avdt_ccb_event(p_ccb, AVDT_CCB_API_DISCOVER_RSP_EVT, p_data);
 }

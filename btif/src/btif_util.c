@@ -50,7 +50,6 @@
 #include "btif_dm.h"
 #include "btu.h"
 #include "bt_common.h"
-#include "btif_av.h"
 
 /************************************************************************************
 **  Constants & Macros
@@ -492,8 +491,6 @@ const char *dump_rc_event(UINT8 event)
         CASE_RETURN_STR(BTA_AV_VENDOR_RSP_EVT)
         CASE_RETURN_STR(BTA_AV_META_MSG_EVT)
         CASE_RETURN_STR(BTA_AV_RC_FEAT_EVT)
-        CASE_RETURN_STR(BTA_AV_BROWSE_MSG_EVT)
-        CASE_RETURN_STR(BTIF_AV_CLEANUP_REQ_EVT)
         default:
             return "UNKNOWN_EVENT";
    }
@@ -512,7 +509,7 @@ const char * dump_rc_notification_event_id(UINT8 event_id)
         CASE_RETURN_STR(AVRC_EVT_SYSTEM_STATUS_CHANGE)
         CASE_RETURN_STR(AVRC_EVT_APP_SETTING_CHANGE)
         CASE_RETURN_STR(AVRC_EVT_VOLUME_CHANGE)
-        CASE_RETURN_STR(AVRC_EVT_NOW_PLAYING_CHANGE)
+
         default:
             return "Unhandled Event ID";
     }
@@ -539,11 +536,6 @@ const char*  dump_rc_pdu(UINT8 pdu)
         CASE_RETURN_STR(AVRC_PDU_SET_ADDRESSED_PLAYER)
         CASE_RETURN_STR(AVRC_PDU_CHANGE_PATH)
         CASE_RETURN_STR(AVRC_PDU_GET_CAPABILITIES)
-        CASE_RETURN_STR(AVRC_PDU_GET_ITEM_ATTRIBUTES)
-        CASE_RETURN_STR(AVRC_PDU_GET_FOLDER_ITEMS)
-        CASE_RETURN_STR(AVRC_PDU_SET_BROWSED_PLAYER)
-        CASE_RETURN_STR(AVRC_PDU_PLAY_ITEM)
-        CASE_RETURN_STR(AVRC_PDU_GET_TOTAL_NUMBER_OF_ITEMS)
         default:
             return "Unknown PDU";
     }

@@ -39,29 +39,6 @@
 tAVDT_CB avdt_cb;
 #endif
 
-/*******************************************************************************
-**
-** Function         AVDT_Init
-**
-** Description      This function is called to initialize the control block
-**                  for this layer.  It must be called before accessing any
-**                  other API functions for this layer.  It is typically called
-**                  once during the start up of the stack.
-**
-** Returns          void
-**
-*******************************************************************************/
-void AVDT_Init(void)
-{
-    memset(&avdt_cb, 0, sizeof(tAVDT_CB));
-
-#if defined(AVDT_INITIAL_TRACE_LEVEL)
-    avdt_cb.trace_level = AVDT_INITIAL_TRACE_LEVEL;
-#else
-    avdt_cb.trace_level = BT_TRACE_LEVEL_NONE;
-#endif
-}
-
 void avdt_ccb_idle_ccb_timer_timeout(void *data)
 {
     tAVDT_CCB *p_ccb = (tAVDT_CCB *)data;
@@ -167,40 +144,6 @@ void AVDT_Deregister(void)
 
 /*******************************************************************************
 **
-** Function         AVDT_UpdateServiceBusyState
-**
-** Description      This function is used to set the service busy state
-**                  during outgoing connection to properly handle the
-**                  connections in upper layers.
-**
-**
-** Returns          void
-**
-*******************************************************************************/
-void AVDT_UpdateServiceBusyState(BOOLEAN state)
-{
-    AVDT_TRACE_DEBUG("AVDT_UpdateServiceBusyState: %d", state);
-    avdt_cb.conn_in_progress = state;
-}
-
-/*******************************************************************************
-**
-** Function         AVDT_GetServiceBusyState
-**
-** Description      This function is used to get the service busy state
-**
-**
-** Returns          outgoing connection in progress or not
-**
-*******************************************************************************/
-BOOLEAN AVDT_GetServiceBusyState(void)
-{
-    AVDT_TRACE_DEBUG("AVDT_GetServiceBusyState: %d", avdt_cb.conn_in_progress);
-    return avdt_cb.conn_in_progress;
-}
-
-/*******************************************************************************
-**
 ** Function         AVDT_SINK_Activate
 **
 ** Description      Activate SEP of A2DP Sink. In Use parameter is adjusted.
@@ -294,19 +237,16 @@ UINT16 AVDT_CreateStream(UINT8 *p_handle, tAVDT_CS *p_cs)
     /* Verify parameters; if invalid, return failure */
     if (((p_cs->cfg.psc_mask & (~AVDT_PSC)) != 0) || (p_cs->p_ctrl_cback == NULL))
     {
-        AVDT_TRACE_ERROR("%s: bad param", __FUNCTION__);
         result = AVDT_BAD_PARAMS;
     }
     /* Allocate scb; if no scbs, return failure */
     else if ((p_scb = avdt_scb_alloc(p_cs)) == NULL)
     {
-        AVDT_TRACE_ERROR("%s: noresource", __FUNCTION__);
         result = AVDT_NO_RESOURCES;
     }
     else
     {
         *p_handle = avdt_scb_to_hdl(p_scb);
-        AVDT_TRACE_DEBUG("%s: allocated SCB", __FUNCTION__);
     }
     return result;
 }
@@ -1187,22 +1127,6 @@ UINT16 AVDT_GetSignalChannel(UINT8 handle, BD_ADDR bd_addr)
     return (lcid);
 }
 
-#ifdef BTA_AV_SPLIT_A2DP_ENABLED
-/*******************************************************************************
-**
-** Function         AVDT_GetStreamingDestChannel
-**
-** Description      Get the Dest L2CAP CID used by the stream channel.
-**
-** Returns          Destination CID.
-**
-*******************************************************************************/
-UINT16 AVDT_GetStreamingDestChannelId(UINT16 lcid)
-{
-    return L2CA_GetDestChannelID(lcid);
-}
-#endif
-
 #if AVDT_MULTIPLEXING == TRUE
 /*******************************************************************************
 **
@@ -1368,19 +1292,7 @@ UINT16 AVDT_SendReport(UINT8 handle, AVDT_REPORT_TYPE type,
     return result;
 }
 #endif
-/*******************************************************************************
-**
-** Function         AVDT_UpdateMaxAvClients
-**
-** Description      Update max simultaneous AV connections supported
-**
-** Returns          void
-**
-*******************************************************************************/
-void AVDT_UpdateMaxAvClients(UINT8 max_clients)
-{
-    avdt_scb_set_max_av_client(max_clients);
-}
+
 /******************************************************************************
 **
 ** Function         AVDT_SetTraceLevel

@@ -68,11 +68,6 @@ typedef struct vendor_t{
 
   // Registers a callback for an asynchronous vendor-specific command.
   void (*set_callback)(vendor_async_opcode_t opcode, vendor_cb callback);
-
-  /** SSR cleanup is used in HW reset cases
-  ** which would close all the client channels
-  ** and turns off the chip*/
-  void (*ssr_cleanup) (int reason);
 } vendor_t;
 
 const vendor_t *vendor_get_interface();

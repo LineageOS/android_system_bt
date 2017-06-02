@@ -23,7 +23,6 @@
  ******************************************************************************/
 #include "bt_target.h"
 #include "bt_utils.h"
-#include "stack_config.h"
 
 #if BLE_INCLUDED == TRUE
     #include <string.h>
@@ -2841,18 +2840,12 @@ BOOLEAN gatt_update_listen_mode(void)
 
         if (listening != GATT_LISTEN_TO_NONE)
         {
-           GATT_TRACE_DEBUG ("connectability =%d\n", connectability);
-           connectability |= BTM_BLE_CONNECTABLE;
+            connectability |= BTM_BLE_CONNECTABLE;
         }
         else
         {
             if ((connectability & BTM_BLE_CONNECTABLE) == 0)
-            {
-               if (stack_config_get_interface()->get_pts_le_nonconn_adv_enabled())
-                  connectability = BTM_BLE_ADV_STOP;
-               else
-                  connectability &= ~BTM_BLE_CONNECTABLE;
-            }
+            connectability &= ~BTM_BLE_CONNECTABLE;
         }
         /* turning on the adv now */
         btm_ble_set_connectability(connectability);

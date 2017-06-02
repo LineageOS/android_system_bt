@@ -34,7 +34,7 @@
 ********************************************************************************/
 
 #define ASSERTC(cond, msg, val) if (!(cond)) { LOG_ERROR(LOG_TAG, \
-    "### ASSERT : %s %s line %d %s (%d) ###", __FILE__, __func__, __LINE__, msg, val);}
+    "### ASSERT : %s line %d %s (%d) ###", __FILE__, __LINE__, msg, val);}
 
 /* Calculate start of event enumeration; id is top 8 bits of event */
 #define BTIF_SIG_START(id)       ((id) << 8)
@@ -215,7 +215,5 @@ void btif_remote_properties_evt(bt_status_t status, bt_bdaddr_t *remote_addr,
                                    uint32_t num_props, bt_property_t *p_props);
 
 void btif_init_ok(UNUSED_ATTR uint16_t event, UNUSED_ATTR char *p_param);
-
-void btif_ssr_cleanup(void);
 
 #endif /* BTIF_COMMON_H */

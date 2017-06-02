@@ -104,11 +104,8 @@ void bta_hh_api_enable(tBTA_HH_DATA *p_data)
     }
     else
 #endif
-    if (bta_hh_cb.p_cback)
-    {
         /* signal BTA call back event */
         (* bta_hh_cb.p_cback)(BTA_HH_ENABLE_EVT, (tBTA_HH *)&status);
-    }
 }
 /*******************************************************************************
 **
@@ -402,13 +399,6 @@ void bta_hh_start_sdp(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
         } else {
             status = BTA_HH_OK;
         }
-    } else if (bta_hh_cb.p_disc_db) {
-    /* It is possible that there is incoming/outgoing collision case. DUT initiated
-     * HID connection at same time remote has connected l2cap for HID control,
-     * so SDP would be in progress, when this flow reaches here. Just do nothing
-     * when the code reaches here, and ongoing SDP completion or failure will handle this case */
-        APPL_TRACE_DEBUG ("bta_hh_start_sdp:  ignoring as SDP already in progress");
-        return;
     }
 
     if (status != BTA_HH_OK)
@@ -685,7 +675,7 @@ void bta_hh_data_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA * p_data)
 **
 ** Function         bta_hh_handsk_act
 **
-** Description      HID Host process a handshake acknowledgement.
+** Description      HID Host process a handshake acknoledgement.
 **
 **
 ** Returns          void
@@ -717,8 +707,7 @@ void bta_hh_handsk_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA * p_data)
             /* if handshake gives an OK code for these transaction, fill in UNSUPT */
             if ((hs_data.status = bta_hh_get_trans_status(p_data->hid_cback.data)) == BTA_HH_OK)
                  hs_data.status = BTA_HH_HS_TRANS_NOT_SPT;
-            if (p_cb->w4_evt == BTA_HH_GET_RPT_EVT)
-                bta_hh_co_get_rpt_rsp(cback_data.handle, hs_data.status, NULL, 0);
+
             (* bta_hh_cb.p_cback)(p_cb->w4_evt, (tBTA_HH *)&hs_data);
             p_cb->w4_evt = 0;
             break;
@@ -729,8 +718,6 @@ void bta_hh_handsk_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA * p_data)
         case BTA_HH_SET_IDLE_EVT :
             cback_data.handle  = p_cb->hid_handle;
             cback_data.status = bta_hh_get_trans_status(p_data->hid_cback.data);
-            if (p_cb->w4_evt == BTA_HH_SET_RPT_EVT)
-                bta_hh_co_set_rpt_rsp(cback_data.handle, cback_data.status);
             (* bta_hh_cb.p_cback)(p_cb->w4_evt, (tBTA_HH *)&cback_data);
             p_cb->w4_evt = 0;
             break;
@@ -787,7 +774,6 @@ void bta_hh_ctrl_dat_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA * p_data)
         break;
     case BTA_HH_GET_RPT_EVT:
         hs_data.rsp_data.p_rpt_data = pdata;
-        bta_hh_co_get_rpt_rsp(hs_data.handle, hs_data.status, pdata->data, pdata->len);
         break;
     case BTA_HH_GET_PROTO_EVT:
         /* match up BTE/BTA report/boot mode def*/
@@ -841,25 +827,14 @@ void bta_hh_open_failure(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
     UINT32                  reason = p_data->hid_cback.data;    /* Reason for closing (32-bit) */
 
     memset(&conn_dat, 0, sizeof(tBTA_HH_CONN));
-    conn_dat.handle = p_cb->hid_handle;
-    conn_dat.status = (reason == HID_ERR_AUTH_FAILED) ?
+     conn_dat.handle = p_cb->hid_handle;
+     conn_dat.status = (reason == HID_ERR_AUTH_FAILED) ?
                                     BTA_HH_ERR_AUTH_FAILED : BTA_HH_ERR;
-    bdcpy(conn_dat.bda, p_cb->addr);
-    HID_HostCloseDev(p_cb->hid_handle);
+     bdcpy(conn_dat.bda, p_cb->addr);
+     HID_HostCloseDev(p_cb->hid_handle);
 
-#if BTA_HH_DEBUG
-    APPL_TRACE_DEBUG("bta_hh_open_failure: hid_handle = %d", p_cb->hid_handle);
-#endif
-
-    /* Report OPEN fail event */
-    (*bta_hh_cb.p_cback)(BTA_HH_OPEN_EVT, (tBTA_HH *)&conn_dat);
-
-    /* if virtually unplug, remove device */
-    if (p_cb->vp )
-    {
-        HID_HostRemoveDev( p_cb->hid_handle);
-        bta_hh_clean_up_kdev(p_cb);
-    }
+     /* Report OPEN fail event */
+     (*bta_hh_cb.p_cback)(BTA_HH_OPEN_EVT, (tBTA_HH *)&conn_dat);
 
 #if BTA_HH_DEBUG
     bta_hh_trace_dev_db();
@@ -898,10 +873,6 @@ void bta_hh_close_act (tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
     /* if HID_HDEV_EVT_VC_UNPLUG was received, report BTA_HH_VC_UNPLUG_EVT */
     UINT16     event = p_cb->vp ? BTA_HH_VC_UNPLUG_EVT : BTA_HH_CLOSE_EVT;
 
-#if BTA_HH_DEBUG
-    APPL_TRACE_DEBUG("bta_hh_close_act: reason = %d", reason);
-#endif
-
     disc_dat.handle = p_cb->hid_handle;
     disc_dat.status = p_data->hid_cback.data;
 
@@ -914,8 +885,6 @@ void bta_hh_close_act (tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
         conn_dat.handle = p_cb->hid_handle;
         conn_dat.status = (reason == HID_ERR_AUTH_FAILED) ? BTA_HH_ERR_AUTH_FAILED : BTA_HH_ERR;
         bdcpy(conn_dat.bda, p_cb->addr);
-        /* finalize device driver */
-        bta_hh_co_close(p_cb->hid_handle, p_cb->app_id);
         HID_HostCloseDev(p_cb->hid_handle);
 
         /* Report OPEN fail event */
@@ -929,7 +898,7 @@ void bta_hh_close_act (tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
     /* otherwise report CLOSE/VC_UNPLUG event */
     else
     {
-        /* finalize device driver */
+        /* finaliza device driver */
         bta_hh_co_close(p_cb->hid_handle, p_cb->app_id);
         /* inform role manager */
         bta_sys_conn_close( BTA_ID_HH ,p_cb->app_id, p_cb->addr);
@@ -1256,20 +1225,6 @@ static void bta_hh_cback (UINT8 dev_handle, BD_ADDR addr, UINT8 event,
             {
                bta_hh_cb.kdev[xx].vp = TRUE;
                break;
-            }
-        }
-        if (xx == BTA_HH_MAX_DEVICE)
-        {
-            for (xx = 0; xx < BTA_HH_MAX_DEVICE; xx++)
-            {
-                /* No device matched entry for VC, check if VC receivied in waitng for conn state */
-                APPL_TRACE_DEBUG("bta_hh_cb.kdev[xx].state = %d", bta_hh_cb.kdev[xx].state);
-                if (bta_hh_cb.kdev[xx].state == BTA_HH_W4_CONN_ST)
-                {
-                   bta_hh_cb.kdev[xx].hid_handle = dev_handle;
-                   bta_hh_cb.kdev[xx].vp = TRUE;
-                   break;
-                }
             }
         }
         break;

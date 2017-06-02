@@ -162,10 +162,9 @@ extern void btif_gatts_add_bonded_dev_from_nv(BD_ADDR bda);
 /************************************************************************************
 **  Internal Functions
 ************************************************************************************/
-#if (BLE_INCLUDED == TRUE)
+
 static bt_status_t btif_in_fetch_bonded_ble_device(const char *remote_bd_addr,int add,
                                               btif_bonded_devices_t *p_bonded_devices);
-#endif
 static bt_status_t btif_in_fetch_bonded_device(const char *bdstr);
 
 /************************************************************************************
@@ -196,12 +195,8 @@ static int prop2cfg(bt_bdaddr_t *remote_bd_addr, bt_property_t *prop)
             if(remote_bd_addr)
                 btif_config_set_str(bdstr,
                                 BTIF_STORAGE_PATH_REMOTE_NAME, value);
-            else
-            {
-                btif_config_set_str("Adapter",
+            else btif_config_set_str("Adapter",
                                 BTIF_STORAGE_KEY_ADAPTER_NAME, value);
-                btif_config_flush();
-            }
             break;
         case BT_PROPERTY_REMOTE_FRIENDLY_NAME:
             strncpy(value, (char*)prop->val, prop->len);
@@ -229,14 +224,14 @@ static int prop2cfg(bt_bdaddr_t *remote_bd_addr, bt_property_t *prop)
             uint32_t i;
             char buf[64];
             value[0] = 0;
-            int size = sizeof(value);
             for (i=0; i < (prop->len)/sizeof(bt_uuid_t); i++)
             {
                 bt_uuid_t *p_uuid = (bt_uuid_t*)prop->val + i;
                 memset(buf, 0, sizeof(buf));
                 uuid_to_string_legacy(p_uuid, buf);
-                strlcat(value, buf, size);
-                strlcat(value, " ", size);
+                strcat(value, buf);
+                //strcat(value, ";");
+                strcat(value, " ");
             }
             btif_config_set_str(bdstr, BTIF_STORAGE_PATH_REMOTE_SERVICE, value);
             break;
@@ -263,7 +258,7 @@ static int prop2cfg(bt_bdaddr_t *remote_bd_addr, bt_property_t *prop)
 
     /* save changes if the device was bonded */
     if (btif_in_fetch_bonded_device(bdstr) == BT_STATUS_SUCCESS) {
-      btif_config_flush();
+      btif_config_save();
     }
 
     return TRUE;
@@ -443,9 +438,7 @@ static bt_status_t btif_in_fetch_bonded_devices(btif_bonded_devices_t *p_bonded_
     memset(p_bonded_devices, 0, sizeof(btif_bonded_devices_t));
 
     BOOLEAN bt_linkkey_file_found=FALSE;
-#if BLE_INCLUDED == TRUE
     int device_type;
-#endif
 
     for (const btif_config_section_iter_t *iter = btif_config_section_begin(); iter != btif_config_section_end(); iter = btif_config_section_next(iter)) {
         const char *name = btif_config_section_name(iter);
@@ -500,7 +493,6 @@ static bt_status_t btif_in_fetch_bonded_devices(btif_bonded_devices_t *p_bonded_
     return BT_STATUS_SUCCESS;
 }
 
-#if ((defined BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
 static void btif_read_le_key(const uint8_t key_type, const size_t key_len, bt_bdaddr_t bd_addr,
                  const uint8_t addr_type, const bool add_key, bool *device_added, bool *key_found)
 {
@@ -509,6 +501,7 @@ static void btif_read_le_key(const uint8_t key_type, const size_t key_len, bt_bd
 
     char buffer[100];
     memset(buffer, 0, sizeof(buffer));
+
     if (btif_storage_get_ble_bonding_key(&bd_addr, key_type, buffer, key_len) == BT_STATUS_SUCCESS)
     {
         if (add_key)
@@ -531,7 +524,7 @@ static void btif_read_le_key(const uint8_t key_type, const size_t key_len, bt_bd
         *key_found = true;
     }
 }
-#endif
+
 /*******************************************************************************
  * Functions
  *
@@ -834,27 +827,6 @@ bt_status_t btif_storage_remove_bonded_device(bt_bdaddr_t *remote_bd_addr)
     btif_config_flush();
     return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 
-}
-
-/*******************************************************************************
-**
-** Function         btif_storage_is_device_bonded
-**
-** Description      BTIF storage API - checks if device present in bonded list
-**
-** Returns          TRUE if the device is bonded
-**                  FALSE otherwise
-**
-*******************************************************************************/
-BOOLEAN btif_storage_is_device_bonded(bt_bdaddr_t *remote_bd_addr)
-{
-    bdstr_t bdstr;
-    bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
-    if((btif_config_exist(bdstr, "LinkKey")) &&
-       (btif_config_exist(bdstr, "LinkKeyType")))
-        return TRUE;
-    else
-        return FALSE;
 }
 
 /*******************************************************************************
@@ -1519,37 +1491,4 @@ BOOLEAN btif_storage_is_restricted_device(const bt_bdaddr_t *remote_bd_addr)
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
 
     return btif_config_exist(bdstr, "Restricted");
-}
-
-static const char *wii_names[4] = {
-    "Nintendo RVL-CNT-01",		/* 1st gen */
-    "Nintendo RVL-CNT-01-TR",	/* 2nd gen */
-    "Nintendo RVL-CNT-01-UC",	/* Wii U Pro Controller */
-    "Nintendo RVL-WBC-01",		/* Balance Board */
-};
-
-/*******************************************************************************
-**
-** Function         btif_storage_is_wiimote
-**
-** Description      BTIF storage API - checks if this device is a wiimote
-**
-** Returns          TRUE   if the device is found in wiimote device list
-**                  FALSE otherwise
-**
-*******************************************************************************/
-BOOLEAN btif_storage_is_wiimote(bt_bdaddr_t *remote_bd_addr, bt_bdname_t *remote_bd_name)
-{
-    uint8_t wii_names_size = sizeof(wii_names) / sizeof(wii_names[0]);
-    uint8_t i = 0;
-
-    /* Check device name */
-    for (i = 0; i < wii_names_size; i++)
-    {
-        if (!strcmp((char*)remote_bd_name->name, wii_names[i]))
-            return TRUE;
-    }
-
-    return FALSE;
-
 }

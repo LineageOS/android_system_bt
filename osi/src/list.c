@@ -188,23 +188,6 @@ list_node_t *list_foreach(const list_t *list, list_iter_cb callback, void *conte
   return NULL;
 }
 
-// Iterates through the entire |list| and calls |callback| for each data element.
-// Passes the caller provided data along with node
-// If the list is empty, |callback| will never be called. It is safe to mutate the
-// list inside the callback. If an element is added before the node being visited,
-// there will be no callback for the newly-inserted node. Neither |list| nor
-// |callback| may be NULL.
-void list_foreach_ext(const list_t *list, list_iter_cb_ext callback, void *cb_data) {
-  assert(list != NULL);
-  assert(callback != NULL);
-  if (list)
-    for (list_node_t *node = list->head; node; ) {
-      list_node_t *next = node->next;
-      callback(node->data, cb_data);
-      node = next;
-    }
-}
-
 list_node_t *list_begin(const list_t *list) {
   assert(list != NULL);
   return list->head;

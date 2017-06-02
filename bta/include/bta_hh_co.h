@@ -76,30 +76,6 @@ extern void bta_hh_co_open(UINT8 dev_handle, UINT8 sub_class,
 *******************************************************************************/
 extern void bta_hh_co_close(UINT8 dev_handle, UINT8 app_id);
 
-/*******************************************************************************
-**
-** Function         bta_hh_co_set_rpt_rsp
-**
-** Description      This callout function is executed by HH when Set Report Response is received
-**                      on Control Channel.
-**
-** Returns          void.
-**
-*******************************************************************************/
-extern void bta_hh_co_set_rpt_rsp(UINT8 dev_handle, UINT8 status);
-
-/*******************************************************************************
-**
-** Function         bta_hh_co_get_rpt_rsp
-**
-** Description      This callout function is executed by HH when Get Report Response is received
-**                      on Control Channel.
-**
-** Returns          void.
-**
-*******************************************************************************/
-extern void bta_hh_co_get_rpt_rsp(UINT8 dev_handle, UINT8 status, UINT8 *p_rpt, UINT16 len);
-
 #if (BLE_INCLUDED == TRUE && BTA_HH_LE_INCLUDED == TRUE)
 /*******************************************************************************
 **

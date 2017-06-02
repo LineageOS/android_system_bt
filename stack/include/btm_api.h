@@ -110,14 +110,6 @@ typedef struct
     UINT8   *p_param_buf;
 } tBTM_VSC_CMPL;
 
-/* Structure returned with HCI Raw Command complete callback */
-typedef struct
-{
-    UINT8  event_code;
-    UINT8  param_len;
-    UINT8   *p_param_buf;
-} tBTM_RAW_CMPL;
-
 #define  BTM_VSC_CMPL_DATA_SIZE  (BTM_MAX_VENDOR_SPECIFIC_LEN + sizeof(tBTM_VSC_CMPL))
 /**************************************************
 **  Device Control and General Callback Functions
@@ -157,11 +149,6 @@ typedef void (tBTM_CMPL_CB) (void *p1);
 */
 typedef void (tBTM_VSC_CMPL_CB) (tBTM_VSC_CMPL *p1);
 
-/* HCI RAW CMD callback function for notifying an application that a synchronous
-** BTM function is complete. The pointer contains the address of any returned data.
-*/
-typedef void (tBTM_RAW_CMPL_CB) (tBTM_RAW_CMPL *p1);
-
 /* Callback for apps to check connection and inquiry filters.
 ** Parameters are the BD Address of remote and the Dev Class of remote.
 ** If the app returns none zero, the connection or inquiry result will be dropped.
@@ -197,7 +184,6 @@ typedef UINT8 (tBTM_FILTER_CB) (BD_ADDR bd_addr, DEV_CLASS dc);
 #define BTM_BLE_MAX_CONNECTABLE      BTM_BLE_CONNECTABLE
 #define BTM_BLE_CONNECTABLE_MASK    (BTM_BLE_NON_CONNECTABLE | BTM_BLE_CONNECTABLE)
 
-#define BTM_BLE_ADV_STOP            2
 /* Inquiry modes
  * Note: These modes are associated with the inquiry active values (BTM_*ACTIVE) */
 #define BTM_INQUIRY_NONE            0
@@ -849,8 +835,7 @@ typedef struct
 typedef struct
 {
     tBTM_BL_EVENT   event;  /* The event reported. */
-    UINT8           busy_level;/* when paging or inquiring, level is between
-                                  17 to 21 as the max links can be 16.
+    UINT8           busy_level;/* when paging or inquiring, level is 10.
                                 * Otherwise, the number of ACL links. */
     UINT8           busy_level_flags; /* Notifies actual inquiry/page activities */
 } tBTM_BL_UPDATE_DATA;
@@ -1936,17 +1921,6 @@ extern void BTM_DeviceReset (tBTM_CMPL_CB *p_cb);
 
 /*******************************************************************************
 **
-** Function         BTM_HCI_Reset
-**
-** Description      This function is called to send reset command to the controller.
-**
-** Returns          void
-**
-*******************************************************************************/
-extern void BTM_HCI_Reset (void);
-
-/*******************************************************************************
-**
 ** Function         BTM_IsDeviceUp
 **
 ** Description      This function is called to check if the device is up.
@@ -2061,18 +2035,6 @@ extern tBTM_DEV_STATUS_CB *BTM_RegisterForDeviceStatusNotif (tBTM_DEV_STATUS_CB 
 *******************************************************************************/
 extern tBTM_STATUS BTM_RegisterForVSEvents (tBTM_VS_EVT_CB *p_cb, BOOLEAN is_register);
 
-
-/*******************************************************************************
-**
-** Function         BTM_Hci_Raw_Command
-**
-** Description      Send a HCI RAW started testingcommand to the controller.
-**
-*******************************************************************************/
-extern tBTM_STATUS BTM_Hci_Raw_Command(UINT16 opcode,
-                                                         UINT8 param_len,
-                                                         UINT8 *p_param_buf,
-                                                         tBTM_RAW_CMPL_CB *p_cb);
 
 /*******************************************************************************
 **

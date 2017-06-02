@@ -58,17 +58,17 @@ BOOLEAN L2CA_CancelBleConnectReq (BD_ADDR rem_bda)
     /* There can be only one BLE connection request outstanding at a time */
     if (btm_ble_get_conn_st() == BLE_CONN_IDLE)
     {
-        L2CAP_TRACE_WARNING ("%s - no connection pending", __func__);
+        L2CAP_TRACE_WARNING ("L2CA_CancelBleConnectReq - no connection pending");
         return(FALSE);
     }
 
     if (memcmp (rem_bda, l2cb.ble_connecting_bda, BD_ADDR_LEN))
     {
-        L2CAP_TRACE_WARNING ("%s - different  BDA Connecting: %08x%04x  Cancel: %08x%04x", __func__,
+        L2CAP_TRACE_WARNING ("L2CA_CancelBleConnectReq - different  BDA Connecting: %08x%04x  Cancel: %08x%04x",
                               (l2cb.ble_connecting_bda[0]<<24)+(l2cb.ble_connecting_bda[1]<<16)+(l2cb.ble_connecting_bda[2]<<8)+l2cb.ble_connecting_bda[3],
                               (l2cb.ble_connecting_bda[4]<<8)+l2cb.ble_connecting_bda[5],
                               (rem_bda[0]<<24)+(rem_bda[1]<<16)+(rem_bda[2]<<8)+rem_bda[3], (rem_bda[4]<<8)+rem_bda[5]);
-        btm_ble_dequeue_direct_conn_req(rem_bda);
+
         return(FALSE);
     }
 

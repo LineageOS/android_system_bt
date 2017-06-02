@@ -50,7 +50,6 @@ typedef struct {
   void *context;
 } command_status_hack_t;
 
-void bte_ssr_cleanup(int reason);
 
 #ifdef __cplusplus
 extern "C" {

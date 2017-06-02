@@ -226,17 +226,6 @@ void BTM_DeviceReset (UNUSED_ATTR tBTM_CMPL_CB *p_cb) {
   );
 }
 
-void BTM_HCI_Reset(void)
-{
-  /* Flush all ACL connections */
-  btm_acl_device_down();
-
-  /* Clear the callback, so application would not hang on reset */
-  btm_db_reset();
-
-  btsnd_hcic_reset(LOCAL_BR_EDR_CONTROLLER_ID);
-}
-
 /*******************************************************************************
 **
 ** Function         BTM_IsDeviceUp
@@ -435,11 +424,6 @@ static void btm_decode_ext_features_page (UINT8 page_number, const UINT8 *p_feat
     /* Extended Page 2 */
     case HCI_EXT_FEATURES_PAGE_2:
         /* Nothing to do for page 2 */
-        break;
-
-    /* Extended Page 3 */
-    case HCI_EXT_FEATURES_PAGE_3:
-        /* Nothing to do for page 3 */
         break;
 
     default:
@@ -648,58 +632,6 @@ tBTM_DEV_STATUS_CB *BTM_RegisterForDeviceStatusNotif (tBTM_DEV_STATUS_CB *p_cb)
     return (p_prev);
 }
 
-
-/*******************************************************************************
-**
-** Function         BTM_Hci_Raw_Command
-**
-** Description      Send  HCI raw command to the controller.
-**
-** Returns
-**      BTM_SUCCESS         Command sent. Does not expect command complete
-**                              event. (command cmpl callback param is NULL)
-**      BTM_CMD_STARTED     Command sent. Waiting for command cmpl event.
-**
-**
-*******************************************************************************/
-tBTM_STATUS BTM_Hci_Raw_Command(UINT16 opcode, UINT8 param_len,
-                              UINT8 *p_param_buf, tBTM_RAW_CMPL_CB *p_cb)
-{
-    void *p_buf;
-#if HCI_RAW_CMD_INCLUDED == TRUE
-    tBTM_DEVCB  *p_devcb = &btm_cb.devcb;
-#endif
-
-    BTM_TRACE_EVENT ("BTM: BTM_Hci_Raw_Command: Opcode: 0x%04X, ParamLen: %i.",
-                      opcode, param_len);
-
-    /* Allocate a buffer to hold HCI command plus the callback function */
-    p_buf = osi_malloc((UINT16)(sizeof(BT_HDR) + sizeof (tBTM_CMPL_CB *) +
-                            param_len + HCIC_PREAMBLE_SIZE));
-    if (p_buf != NULL)
-    {
-        btsnd_hcic_raw_cmd (p_buf, opcode, param_len, p_param_buf, (void *)p_cb);
-
-        /* Return value */
-#if HCI_RAW_CMD_INCLUDED == TRUE
-        if (p_cb != NULL) {
-            if(p_cb != (p_devcb->p_hci_evt_cb)) {
-                p_devcb->p_hci_evt_cb = p_cb;
-            }
-            return BTM_CMD_STARTED;
-        }
-#else
-        if (p_cb != NULL)
-            return BTM_CMD_STARTED;
-#endif
-        else
-            return BTM_SUCCESS;
-    }
-    else
-        return BTM_NO_RESOURCES;
-
-}
-
 /*******************************************************************************
 **
 ** Function         BTM_VendorSpecificCommand
@@ -735,33 +667,6 @@ tBTM_STATUS BTM_VendorSpecificCommand(UINT16 opcode, UINT8 param_len,
         return (BTM_SUCCESS);
 }
 
-#if HCI_RAW_CMD_INCLUDED == TRUE
-/*******************************************************************************
-**
-** Function         btm_hci_event
-**
-** Description      This function is called when HCI event is received
-**                  from the HCI layer.
-**
-** Returns          void
-**
-*******************************************************************************/
-void btm_hci_event(UINT8 *p, UINT8 event_code, UINT8 param_len)
-{
-    tBTM_DEVCB     *p_devcb = &btm_cb.devcb;
-    tBTM_RAW_CMPL  raw_cplt_params;
-
-    /* If there was a callback address for raw cmd complete, call it */
-    if (p_devcb->p_hci_evt_cb)
-    {
-        /* Pass paramters to the callback function */
-        raw_cplt_params.event_code = event_code;   /* Number of bytes in return info */
-        raw_cplt_params.param_len = param_len;    /* Number of bytes in return info */
-        raw_cplt_params.p_param_buf = p;
-        (p_devcb->p_hci_evt_cb) (&raw_cplt_params);  /* Call the cmd complete callback function */
-    }
-}
-#endif
 
 /*******************************************************************************
 **

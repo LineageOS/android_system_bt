@@ -9,19 +9,13 @@ else
   bluetooth_CFLAGS += -DHAS_NO_BDROID_BUILDCFG
 endif
 
-ifeq ($(TARGET_BUILD_VARIANT),userdebug)
-bluetooth_CFLAGS += -DQLOGKIT_USERDEBUG
-endif
-
 ifneq ($(BOARD_BLUETOOTH_BDROID_HCILP_INCLUDED),)
   bluetooth_CFLAGS += -DHCILP_INCLUDED=$(BOARD_BLUETOOTH_BDROID_HCILP_INCLUDED)
 endif
 
-ifeq ($(TARGET_BUILD_VARIANT),eng)
+ifneq ($(TARGET_BUILD_VARIANT),user)
 bluetooth_CFLAGS += -DBLUEDROID_DEBUG
 endif
-
-bluetooth_CFLAGS += -DUSE_AUDIO_TRACK
 
 bluetooth_CFLAGS += -DEXPORT_SYMBOL="__attribute__((visibility(\"default\")))"
 
@@ -46,12 +40,6 @@ bluetooth_CFLAGS += \
   -Wno-unused-parameter \
   -UNDEBUG \
   -DLOG_NDEBUG=1
-
-ifeq ($(strip $(AUDIO_FEATURE_ENABLED_SPLIT_A2DP)),true)
-bluetooth_CFLAGS += -DBTA_AV_SPLIT_A2DP_ENABLED
-bluetooth_CFLAGS += -DBTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
-bluetooth_CFLAGS += -DAPTX_48000
-endif
 
 bluetooth_CONLYFLAGS += -std=c99
 bluetooth_CPPFLAGS :=

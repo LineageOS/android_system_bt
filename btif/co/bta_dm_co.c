@@ -30,11 +30,6 @@
 #if (defined BLE_INCLUDED && BLE_INCLUDED == TRUE)
 #include "bte_appl.h"
 
-#if (defined BTM_NO_MITM_NO_BONDING_INCLUDED && BTM_NO_MITM_NO_BONDING_INCLUDED == TRUE)
-tBTE_APPL_CFG bte_appl_cfg = { 0x0, 0x4, 0x0, 0x0, 0x10 };
-#elif (defined BTM_NO_MITM_INCLUDED && BTM_NO_MITM_INCLUDED == TRUE)
-tBTE_APPL_CFG bte_appl_cfg = { 0x1, 0x4, 0x7, 0x7, 0x10 };
-#else
 tBTE_APPL_CFG bte_appl_cfg =
 {
 #if SMP_INCLUDED == TRUE
@@ -47,7 +42,6 @@ tBTE_APPL_CFG bte_appl_cfg =
     BTM_BLE_RESPONDER_KEY_SIZE,
     BTM_BLE_MAX_KEY_SIZE
 };
-#endif
 #endif
 
 /*******************************************************************************

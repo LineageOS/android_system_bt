@@ -701,37 +701,6 @@ void btm_ble_enqueue_direct_conn_req(void *p_param)
 }
 /*******************************************************************************
 **
-** Function         btm_ble_dequeue_direct_conn_req
-**
-** Description      This function dequeues the direct connection request
-**
-** Returns          None.
-**
-*******************************************************************************/
-void btm_ble_dequeue_direct_conn_req(BD_ADDR rem_bda)
-{
-    if (fixed_queue_is_empty(btm_cb.ble_ctr_cb.conn_pending_q))
-        return;
-
-    list_t *list = fixed_queue_get_list(btm_cb.ble_ctr_cb.conn_pending_q);
-    for (const list_node_t *node = list_begin(list); node != list_end(list);
-            node = list_next(node)) {
-        tBTM_BLE_CONN_REQ *p_req = (tBTM_BLE_CONN_REQ *)list_node(node);
-        tL2C_LCB *p_lcb = (tL2C_LCB *)p_req->p_param;
-        if ((p_lcb == NULL) || (!p_lcb->in_use)) {
-            continue;
-        }
-        //If BD address matches
-        if (!memcmp (rem_bda, p_lcb->remote_bd_addr, BD_ADDR_LEN)) {
-            fixed_queue_try_remove_from_queue(btm_cb.ble_ctr_cb.conn_pending_q, p_req);
-            l2cu_release_lcb((tL2C_LCB *)p_req->p_param);
-            osi_free((void *)p_req);
-            break;
-        }
-    }
-}
-/*******************************************************************************
-**
 ** Function         btm_send_pending_direct_conn
 **
 ** Description      This function send the pending direct connection request in queue

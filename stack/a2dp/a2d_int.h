@@ -75,9 +75,6 @@ extern tA2D_CB *a2d_cb_ptr;
 /* Used only for conformance testing */
 extern void a2d_set_avdt_sdp_ver (UINT16 avdt_sdp_ver);
 
-/* Used to check local version of AVDTP */
-extern int a2d_get_avdt_sdp_ver ();
-
 #ifdef __cplusplus
 }
 #endif

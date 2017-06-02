@@ -20,7 +20,6 @@
 
 #include <arpa/inet.h>
 #include <assert.h>
-#include <cutils/properties.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
@@ -30,10 +29,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <sys/poll.h>
 #include <unistd.h>
 
 #include "bt_types.h"
@@ -54,19 +51,6 @@ typedef enum {
 static const uint64_t BTSNOOP_EPOCH_DELTA = 0x00dcddb30f2f8000ULL;
 
 static const stack_config_t *stack_config;
-extern int client_socket_btsnoop;
-static long int gmt_offset;
-#define USEC_PER_SEC 1000000L
-#define MAX_SNOOP_BUF_SIZE 1200
-
-// External BT snoop
-bool hci_ext_dump_enabled = false;
-
-/* snoop config from the config file, required for userdebug
-   build where snoop is enabled by default.
-   power/perf measurements need the snoop to be disabled.
-*/
-bool btsnoop_conf_from_file = false;
 
 static int logfile_fd = INVALID_FD;
 static bool module_started;
@@ -84,20 +68,7 @@ static void update_logging();
 // Module lifecycle functions
 
 static future_t *start_up(void) {
-  time_t t = time(NULL);
-  struct tm tm_cur;
-
-  localtime_r (&t, &tm_cur);
-  LOG_INFO(LOG_TAG, "%s Time GMT offset %ld\n", __func__, tm_cur.tm_gmtoff);
-  gmt_offset = tm_cur.tm_gmtoff;
-
   module_started = true;
-  stack_config->get_btsnoop_ext_options(&hci_ext_dump_enabled, &btsnoop_conf_from_file);
-#if (BTSNOOP_DEFAULT == TRUE)
-  if (btsnoop_conf_from_file == false) {
-    hci_ext_dump_enabled = true;
-  }
-#endif
   update_logging();
 
   return NULL;
@@ -105,9 +76,6 @@ static future_t *start_up(void) {
 
 static future_t *shut_down(void) {
   module_started = false;
-  if (hci_ext_dump_enabled == true) {
-    property_set("bluetooth.startbtsnoop", "false");
-  }
   update_logging();
 
   return NULL;
@@ -173,7 +141,6 @@ const btsnoop_t *btsnoop_get_interface() {
 static uint64_t btsnoop_timestamp(void) {
   struct timeval tv;
   gettimeofday(&tv, NULL);
-  tv.tv_sec += gmt_offset;
 
   // Timestamp is in microseconds.
   uint64_t timestamp = tv.tv_sec * 1000 * 1000LL;
@@ -184,7 +151,7 @@ static uint64_t btsnoop_timestamp(void) {
 
 static void update_logging() {
   bool should_log = module_started &&
-    (logging_enabled_via_api || stack_config->get_btsnoop_turned_on() || hci_ext_dump_enabled);
+    (logging_enabled_via_api || stack_config->get_btsnoop_turned_on());
 
   if (should_log == is_logging)
     return;
@@ -193,9 +160,6 @@ static void update_logging() {
   if (should_log) {
     btsnoop_net_open();
 
-    if (hci_ext_dump_enabled == true) {
-      property_set("bluetooth.startbtsnoop", "true");
-    }
     const char *log_path = stack_config->get_btsnoop_log_path();
 
     // Save the old log if configured to do so
@@ -228,37 +192,17 @@ static void update_logging() {
 }
 
 static void btsnoop_write(const void *data, size_t length) {
-  if (client_socket_btsnoop != -1) {
-    btsnoop_net_write(data, length);
-    /* skip writing to file if external client is connected*/
-    return;
-  }
-
   if (logfile_fd != INVALID_FD)
     write(logfile_fd, data, length);
-}
 
-#ifdef DEBUG_SNOOP
-static uint64_t time_now_us() {
-    struct timespec ts_now;
-    clock_gettime(CLOCK_BOOTTIME, &ts_now);
-    return ((uint64_t)ts_now.tv_sec * USEC_PER_SEC) + ((uint64_t)ts_now.tv_nsec / 1000);
+  btsnoop_net_write(data, length);
 }
-#endif
 
 static void btsnoop_write_packet(packet_type_t type, const uint8_t *packet, bool is_received) {
   int length_he = 0;
   int length;
   int flags;
   int drops = 0;
-  struct pollfd pfd;
-#ifdef DEBUG_SNOOP
-  uint64_t ts_begin;
-  uint64_t ts_end, ts_diff;
-#endif
-  uint8_t snoop_buf[MAX_SNOOP_BUF_SIZE] = {0};
-  uint32_t offset = 0;
-
   switch (type) {
     case kCommandPacket:
       length_he = packet[2] + 4;
@@ -288,73 +232,12 @@ static void btsnoop_write_packet(packet_type_t type, const uint8_t *packet, bool
   time_hi = htonl(time_hi);
   time_lo = htonl(time_lo);
 
-  /* store the length in both original and included fields */
-  memcpy(snoop_buf + offset, &length, 4);
-  offset += 4;
-  memcpy(snoop_buf + offset, &length, 4);
-  offset += 4;
-
-  /* flags:  */
-  memcpy(snoop_buf + offset, &flags, 4);
-  offset += 4;
-
-  /* drops: none */
-  memcpy(snoop_buf + offset, &drops, 4);
-  offset += 4;
-
-  /* time */
-  memcpy(snoop_buf + offset, &time_hi, 4);
-  offset += 4;
-  memcpy(snoop_buf + offset, &time_lo, 4);
-  offset = offset + 4;
-
-  snoop_buf[offset] = type;
-  offset += 1;
-  if (offset + length_he + 1 > MAX_SNOOP_BUF_SIZE) {
-    LOG_ERROR(LOG_TAG, "Bad packet length, downgrading the length to %d from %d",
-                                      MAX_SNOOP_BUF_SIZE - offset - 1, length_he);
-    length_he = MAX_SNOOP_BUF_SIZE - offset - 1;
-  }
-  memcpy(snoop_buf + offset, packet, length_he - 1);
-
-  if (client_socket_btsnoop != -1) {
-    pfd.fd = client_socket_btsnoop;
-    pfd.events = POLLOUT;
-#ifdef DEBUG_SNOOP
-    ts_begin = time_now_us();
-#endif
-
-    if (poll(&pfd, 1, 10) == 0) {
-      LOG_ERROR(LOG_TAG, "btsnoop poll : Taking more than 10 ms : skip dump");
-#ifdef DEBUG_SNOOP
-      ts_end = time_now_us();
-      ts_diff = ts_end - ts_begin;
-      if (ts_diff > 10000) {
-        LOG_ERROR(LOG_TAG, "btsnoop poll T/O : took more time %08lld us", ts_diff);
-      }
-#endif
-      return;
-    }
-
-#ifdef DEBUG_SNOOP
-    ts_end = time_now_us();
-    ts_diff = ts_end - ts_begin;
-    if (ts_diff > 10000) {
-      LOG_ERROR(LOG_TAG, "btsnoop poll : took more time %08lld us", ts_diff);
-    }
-#endif
-  }
-#ifdef DEBUG_SNOOP
-  ts_begin = time_now_us();
-#endif
-
-  btsnoop_write(snoop_buf, offset + length_he - 1);
-
-#ifdef DEBUG_SNOOP
-  ts_end = time_now_us();
-  ts_diff = ts_end - ts_begin;
-  if (ts_diff > 10000) {
-    LOG_ERROR(LOG_TAG, "btsnoop write : Write took more time %08lld us", ts_diff);
-  }
-#endif
+  btsnoop_write(&length, 4);
+  btsnoop_write(&length, 4);
+  btsnoop_write(&flags, 4);
+  btsnoop_write(&drops, 4);
+  btsnoop_write(&time_hi, 4);
+  btsnoop_write(&time_lo, 4);
+  btsnoop_write(&type, 1);
+  btsnoop_write(packet, length_he - 1);
 }

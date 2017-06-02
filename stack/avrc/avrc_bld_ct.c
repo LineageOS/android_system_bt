@@ -199,7 +199,7 @@ static tAVRC_STS avrc_bld_get_current_player_app_values_cmd(
     /* add length -*/
     UINT16_TO_BE_STREAM(p_data, param_len);
     UINT8_TO_BE_STREAM(p_data,num_attrib_id);
-    for(int count = 0; count < num_attrib_id && count < AVRC_MAX_APP_ATTR_SIZE; count ++)
+    for(int count = 0; count < num_attrib_id; count ++)
     {
         UINT8_TO_BE_STREAM(p_data,attrib_ids[count]);
     }
@@ -321,7 +321,7 @@ static tAVRC_STS avrc_bld_get_element_attr_cmd(BT_HDR * p_pkt, UINT8 num_attrib,
     UINT32_TO_BE_STREAM(p_data,0);
     UINT32_TO_BE_STREAM(p_data,0);
     UINT8_TO_BE_STREAM(p_data,num_attrib);
-    for(int count = 0; count < num_attrib && count < AVRC_MAX_ELEM_ATTR_SIZE; count ++)
+    for(int count = 0; count < num_attrib; count ++)
     {
         UINT32_TO_BE_STREAM(p_data,attrib_ids[count]);
     }
@@ -473,10 +473,6 @@ tAVRC_STS AVRC_BldCommand( tAVRC_COMMAND *p_cmd, BT_HDR **pp_pkt)
         status = avrc_bld_list_player_app_values_cmd(p_pkt,p_cmd->list_app_values.attr_id);
         break;
     case AVRC_PDU_GET_CUR_PLAYER_APP_VALUE:
-        /* Fix for below Klockwork Issue,taken care in the function
-         * defination avrc_bld_get_current_player_app_values_cmd()
-         * Array 'p_cmd->get_cur_app_val.attrs' of
-         * size 8 may use index value(s) 16..254*/
         status = avrc_bld_get_current_player_app_values_cmd(p_pkt,
              p_cmd->get_cur_app_val.num_attr,p_cmd->get_cur_app_val.attrs);
         break;
@@ -491,10 +487,6 @@ tAVRC_STS AVRC_BldCommand( tAVRC_COMMAND *p_cmd, BT_HDR **pp_pkt)
         avrc_bld_get_player_app_setting_value_text_cmd(p_pkt, &p_cmd->get_app_val_txt);
         break;
     case AVRC_PDU_GET_ELEMENT_ATTR:
-        /* Fix for below Klockwork Issue,taken care in the function
-         * defination avrc_bld_get_element_attr_cmd()
-         * Array 'p_cmd->get_elem_attrs.attrs' of
-         * size 8 may use index value(s) 8..254*/
         status = avrc_bld_get_element_attr_cmd(p_pkt,
               p_cmd->get_elem_attrs.num_attr,p_cmd->get_elem_attrs.attrs);
         break;

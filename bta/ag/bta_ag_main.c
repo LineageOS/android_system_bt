@@ -783,7 +783,7 @@ static void bta_ag_api_result(tBTA_AG_DATA *p_data)
     {
         if ((p_scb = bta_ag_scb_by_idx(p_data->hdr.layer_specific)) != NULL)
         {
-            APPL_TRACE_IMP("bta_ag_api_result: p_scb 0x%08x ", p_scb);
+            APPL_TRACE_DEBUG("bta_ag_api_result: p_scb 0x%08x ", p_scb);
             bta_ag_sm_execute(p_scb, BTA_AG_API_RESULT_EVT, p_data);
         }
     }
@@ -815,21 +815,23 @@ void bta_ag_sm_execute(tBTA_AG_SCB *p_scb, UINT16 event, tBTA_AG_DATA *p_data)
     tBTA_AG_ST_TBL      state_table;
     UINT8               action;
     int                 i;
+
+#if BTA_AG_DEBUG == TRUE
     UINT16  in_event = event;
     UINT8   in_state = p_scb->state;
 
+    /* Ignore displaying of AT results when not connected (Ignored in state machine) */
     if (in_event != BTA_AG_API_RESULT_EVT || p_scb->state == BTA_AG_OPEN_ST)
     {
-        #if BTA_AG_DEBUG == TRUE
-            APPL_TRACE_IMP("AG evt (hdl 0x%04x): State %d (%s), Event 0x%04x (%s)",
+        APPL_TRACE_EVENT("AG evt (hdl 0x%04x): State %d (%s), Event 0x%04x (%s)",
                            bta_ag_scb_to_idx(p_scb),
                            p_scb->state, bta_ag_state_str(p_scb->state),
                            event, bta_ag_evt_str(event, p_data->api_result.result));
-        #else
-           APPL_TRACE_IMP("AG evt (hdl 0x%04x): State %d, Event 0x%04x",
-                           bta_ag_scb_to_idx(p_scb), p_scb->state, event);
-        #endif
     }
+#else
+    APPL_TRACE_EVENT("AG evt (hdl 0x%04x): State %d, Event 0x%04x",
+                      bta_ag_scb_to_idx(p_scb), p_scb->state, event);
+#endif
 
     event &= 0x00FF;
     if (event >= (BTA_AG_MAX_EVT & 0x00FF))
@@ -847,10 +849,7 @@ void bta_ag_sm_execute(tBTA_AG_SCB *p_scb, UINT16 event, tBTA_AG_DATA *p_data)
     /* execute action functions */
     for (i = 0; i < BTA_AG_ACTIONS; i++)
     {
-        /* Fix for below klockwork issue.
-         * Klockwork issue: Possible attempt to access element 33..255 of array 'bta_ag_action'
-         * whose size is 32 */
-        if (((action = state_table[event][i]) < BTA_AG_IGNORE) && (action >= 0))
+        if ((action = state_table[event][i]) != BTA_AG_IGNORE)
         {
             (*bta_ag_action[action])(p_scb, p_data);
         }
@@ -859,18 +858,15 @@ void bta_ag_sm_execute(tBTA_AG_SCB *p_scb, UINT16 event, tBTA_AG_DATA *p_data)
             break;
         }
     }
+#if BTA_AG_DEBUG == TRUE
     if (p_scb->state != in_state)
     {
-        #if BTA_AG_DEBUG == TRUE
-            APPL_TRACE_IMP("BTA AG State Change: [%s] -> [%s] after Event [%s]",
+        APPL_TRACE_EVENT("BTA AG State Change: [%s] -> [%s] after Event [%s]",
                       bta_ag_state_str(in_state),
                       bta_ag_state_str(p_scb->state),
                       bta_ag_evt_str(in_event, p_data->api_result.result));
-        #else
-            APPL_TRACE_IMP("BTA AG State Change: [%d] -> [%d]",
-                              in_state, p_scb->state);
-        #endif
     }
+#endif
 }
 
 /*******************************************************************************
@@ -914,7 +910,7 @@ BOOLEAN bta_ag_hdl_event(BT_HDR *p_msg)
         default:
             if ((p_scb = bta_ag_scb_by_idx(p_msg->layer_specific)) != NULL)
             {
-                APPL_TRACE_IMP("bta_ag_hdl_event: p_scb 0x%08x ", p_scb);
+                APPL_TRACE_DEBUG("bta_ag_hdl_event: p_scb 0x%08x ", p_scb);
                 bta_ag_sm_execute(p_scb, p_msg->event, (tBTA_AG_DATA *) p_msg);
             }
             break;
@@ -962,7 +958,6 @@ static char *bta_ag_evt_str(UINT16 event, tBTA_AG_RES result)
         case BTA_AG_CALL_CANCEL_RES:    return ("AT Result  BTA_AG_CALL_CANCEL_RES");
         case BTA_AG_END_CALL_RES:       return ("AT Result  BTA_AG_END_CALL_RES");
         case BTA_AG_UNAT_RES:           return ("AT Result  BTA_AG_UNAT_RES");
-        case BTA_AG_BIND_RES:           return ("AT Result  BTA_AG_BIND_RES");
         default:                        return ("Unknown AG Result");
         }
     case BTA_AG_API_SETCODEC_EVT:

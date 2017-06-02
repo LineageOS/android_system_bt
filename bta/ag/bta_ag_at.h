@@ -47,6 +47,7 @@
 typedef struct
 {
     const char  *p_cmd;         /* AT command string */
+    size_t      command_id;     /* passed to the callback on p_cmd match */
     UINT8       arg_type;       /* allowable argument type syntax */
     UINT8       fmt;            /* whether arg is int or string */
     UINT8       min;            /* minimum value for int arg */
@@ -54,7 +55,7 @@ typedef struct
 } tBTA_AG_AT_CMD;
 
 /* callback function executed when command is parsed */
-typedef void (tBTA_AG_AT_CMD_CBACK)(void *p_user, UINT16 cmd, UINT8 arg_type,
+typedef void (tBTA_AG_AT_CMD_CBACK)(void *p_user, UINT16 command_id, UINT8 arg_type,
                                     char *p_arg, INT16 int_arg);
 
 /* callback function executed to send "ERROR" result code */

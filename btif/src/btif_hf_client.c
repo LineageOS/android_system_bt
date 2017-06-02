@@ -400,7 +400,7 @@ static bt_status_t dial(const char *number)
 {
     CHECK_BTHF_CLIENT_SLC_CONNECTED();
 
-    if (strcmp(number,"") != 0)
+    if (number)
     {
         BTA_HfClientSendAT(btif_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_ATD, 0, 0, number);
     }
@@ -640,7 +640,11 @@ static void  cleanup( void )
 {
     BTIF_TRACE_EVENT("%s", __FUNCTION__);
 
-    btif_disable_service(BTA_HFP_HS_SERVICE_ID);
+    if (bt_hf_client_callbacks)
+    {
+        btif_disable_service(BTA_HFP_HS_SERVICE_ID);
+        bt_hf_client_callbacks = NULL;
+    }
 }
 
 /*******************************************************************************
@@ -734,7 +738,7 @@ static void btif_hf_client_upstreams_evt(UINT16 event, char* p_param)
     tBTA_HF_CLIENT *p_data = (tBTA_HF_CLIENT *)p_param;
     bdstr_t bdstr;
 
-    BTIF_TRACE_IMP("%s: event=%s (%u)", __FUNCTION__, dump_hf_client_event(event), event);
+    BTIF_TRACE_DEBUG("%s: event=%s (%u)", __FUNCTION__, dump_hf_client_event(event), event);
 
     switch (event)
     {
@@ -895,12 +899,6 @@ static void btif_hf_client_upstreams_evt(UINT16 event, char* p_param)
         case BTA_HF_CLIENT_RING_INDICATION:
             HAL_CBACK(bt_hf_client_callbacks, ring_indication_cb);
             break;
-        case BTA_HF_CLIENT_CGMI_EVT:
-            HAL_CBACK(bt_hf_client_callbacks, cgmi_cb, p_data->cgmi.name);
-            break;
-        case BTA_HF_CLIENT_CGMM_EVT:
-            HAL_CBACK(bt_hf_client_callbacks, cgmm_cb, p_data->cgmm.model);
-            break;
         default:
             BTIF_TRACE_WARNING("%s: Unhandled event: %d", __FUNCTION__, event);
             break;
@@ -947,7 +945,7 @@ bt_status_t btif_hf_client_execute_service(BOOLEAN b_enable)
      {
           /* Enable and register with BTA-HFClient */
           BTA_HfClientEnable(bte_hf_client_evt);
-          if (strtof(btif_hf_client_version, NULL) >= 1.6)
+          if (strcmp(btif_hf_client_version, "1.6") == 0)
           {
               BTIF_TRACE_EVENT("Support Codec Nego. %d ", BTIF_HF_CLIENT_FEATURES);
               BTA_HfClientRegister(BTIF_HF_CLIENT_SECURITY, BTIF_HF_CLIENT_FEATURES,
@@ -966,15 +964,9 @@ bt_status_t btif_hf_client_execute_service(BOOLEAN b_enable)
      }
      else
      {
-         if (bt_hf_client_callbacks)
-         {
-             BTIF_TRACE_IMP("%s: setting call backs to NULL", __FUNCTION__);
-             bt_hf_client_callbacks = NULL;
-         }
          BTA_HfClientDeregister(btif_hf_client_cb.handle);
          BTA_HfClientDisable();
      }
-     BTIF_TRACE_IMP("%s: enable: %d completed", __FUNCTION__, b_enable);
      return BT_STATUS_SUCCESS;
 }
 

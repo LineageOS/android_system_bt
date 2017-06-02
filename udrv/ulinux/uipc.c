@@ -436,6 +436,7 @@ static void uipc_flush_locked(tUIPC_CH_ID ch_id)
         case UIPC_CH_ID_AV_CTRL:
             uipc_flush_ch_locked(UIPC_CH_ID_AV_CTRL);
             break;
+
         case UIPC_CH_ID_AV_AUDIO:
             uipc_flush_ch_locked(UIPC_CH_ID_AV_AUDIO);
             break;
@@ -643,7 +644,6 @@ BOOLEAN UIPC_Open(tUIPC_CH_ID ch_id, tUIPC_RCV_CBACK *p_cback)
         case UIPC_CH_ID_AV_AUDIO:
             uipc_setup_server_locked(ch_id, A2DP_DATA_PATH, p_cback);
             break;
-
     }
 
     UIPC_UNLOCK();

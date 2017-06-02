@@ -213,26 +213,20 @@ void config_set_string(config_t *config, const char *section, const char *key, c
   section_t *sec = section_find(config, section);
   if (!sec) {
     sec = section_new(section);
-    if (sec)
-      list_append(config->sections, sec);
-    else {
-      LOG_ERROR(LOG_TAG,"%s: Unable to allocate memory for section", __func__);
+    list_append(config->sections, sec);
+  }
+
+  for (const list_node_t *node = list_begin(sec->entries); node != list_end(sec->entries); node = list_next(node)) {
+    entry_t *entry = list_node(node);
+    if (!strcmp(entry->key, key)) {
+      osi_free(entry->value);
+      entry->value = osi_strdup(value);
+      return;
     }
   }
 
-  if (sec) {
-    for (const list_node_t *node = list_begin(sec->entries); node != list_end(sec->entries); node = list_next(node)) {
-      entry_t *entry = list_node(node);
-      if (!strcmp(entry->key, key)) {
-        osi_free(entry->value);
-        entry->value = osi_strdup(value);
-        return;
-      }
-    }
-
-    entry_t *entry = entry_new(key, value);
-    list_append(sec->entries, entry);
-  }
+  entry_t *entry = entry_new(key, value);
+  list_append(sec->entries, entry);
 }
 
 bool config_remove_section(config_t *config, const char *section) {

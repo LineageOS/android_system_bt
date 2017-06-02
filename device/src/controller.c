@@ -29,8 +29,6 @@
 #include "hcimsgs.h"
 #include "osi/include/future.h"
 #include "stack/include/btm_ble_api.h"
-#include "osi/include/log.h"
-#include "utils/include/bt_utils.h"
 
 const bt_event_mask_t BLE_EVENT_MASK = { "\x00\x00\x00\x00\x00\x00\x06\x7f" };
 
@@ -48,9 +46,6 @@ const uint8_t SCO_HOST_BUFFER_SIZE = 0xff;
 #define BLE_SUPPORTED_STATES_SIZE         8
 #define BLE_SUPPORTED_FEATURES_SIZE       8
 #define MAX_LOCAL_SUPPORTED_CODECS_SIZE   8
-#define UNUSED(x) (void)(x)
-
-static bool soc_logging_enabled_via_api;
 
 static const hci_t *hci;
 static const hci_packet_factory_t *packet_factory;
@@ -78,33 +73,12 @@ static uint8_t number_of_local_supported_codecs = 0;
 
 static bool readable;
 static bool ble_supported;
-static bool ble_offload_features_supported;
 static bool simple_pairing_supported;
 static bool secure_connections_supported;
 
 #define AWAIT_COMMAND(command) future_await(hci->transmit_command_futured(command))
 
 // Module lifecycle functions
-
-void send_soc_log_command(bool value) {
-  int soc_type = get_soc_type();
-  UINT8 param[5] = {0x10, 0x03, 0x00, 0x00, 0x01};
-  UINT8 param_cherokee[2] = {0x14, 0x01};
-  if (!value) {
-    // Disable SoC logging
-    param[1] = 0x02;
-    param_cherokee[1] = 0x00;
-  }
-
-  if (soc_type == BT_SOC_SMD) {
-    LOG_INFO(LOG_TAG, "%s for BT_SOC_SMD.", __func__);
-    BTM_VendorSpecificCommand(HCI_VS_HOST_LOG_OPCODE, 5, param, NULL);
-  } else if (soc_type == BT_SOC_CHEROKEE) {
-    LOG_INFO(LOG_TAG, "%s for BT_SOC_CHEROKEE.", __func__);
-    BTM_VendorSpecificCommand(HCI_VS_HOST_LOG_OPCODE, 2, param_cherokee, NULL);
-  }
-
-}
 
 static future_t *start_up(void) {
   BT_HDR *response;
@@ -130,16 +104,6 @@ static future_t *start_up(void) {
   );
 
   packet_parser->parse_generic_command_complete(response);
-
-  #ifdef QLOGKIT_USERDEBUG
-    send_soc_log_command(true);
-  #else
-    if (soc_logging_enabled_via_api) {
-      LOG_INFO(LOG_TAG, "%s for non-userdebug api = %d", __func__,
-                                           soc_logging_enabled_via_api);
-      send_soc_log_command(true);
-    }
-  #endif
 
   // Read the local version info off the controller next, including
   // information such as manufacturer and supported HCI version
@@ -212,18 +176,12 @@ static future_t *start_up(void) {
 
     page_number++;
   }
-#if (BLE_INCLUDED == TRUE)
-  // read BLE offload features support from controller
-  response = AWAIT_COMMAND(packet_factory->make_ble_read_offload_features_support());
-  packet_parser->parse_ble_read_offload_features_response(response, &ble_offload_features_supported);
-#endif
+
 #if (SC_MODE_INCLUDED == TRUE)
-  if(ble_offload_features_supported) {
-    secure_connections_supported = HCI_SC_CTRLR_SUPPORTED(features_classic[2].as_array);
-    if (secure_connections_supported) {
-      response = AWAIT_COMMAND(packet_factory->make_write_secure_connections_host_support(HCI_SC_MODE_ENABLED));
-      packet_parser->parse_generic_command_complete(response);
-    }
+  secure_connections_supported = HCI_SC_CTRLR_SUPPORTED(features_classic[2].as_array);
+  if (secure_connections_supported) {
+    response = AWAIT_COMMAND(packet_factory->make_write_secure_connections_host_support(HCI_SC_MODE_ENABLED));
+    packet_parser->parse_generic_command_complete(response);
   }
 #endif
 
@@ -316,16 +274,6 @@ EXPORT_SYMBOL const module_t controller_module = {
 };
 
 // Interface functions
-
-static void enable_soc_logging(bool value) {
-  UNUSED(soc_logging_enabled_via_api);
-#ifndef QLOGKIT_USERDEBUG
-  soc_logging_enabled_via_api = value;
-
-  if (readable)
-    send_soc_log_command(value);
-#endif
-}
 
 static bool get_is_ready(void) {
   return readable;
@@ -437,12 +385,6 @@ static bool supports_ble_connection_parameters_request(void) {
   return HCI_LE_CONN_PARAM_REQ_SUPPORTED(features_ble.as_array);
 }
 
-static bool supports_ble_offload_features(void) {
-  assert(readable);
-  assert(ble_supported);
-  return ble_offload_features_supported;
-}
-
 static uint16_t get_acl_data_size_classic(void) {
   assert(readable);
   return acl_data_size_classic;
@@ -503,10 +445,6 @@ static void set_ble_resolving_list_max_size(int resolving_list_max_size) {
   ble_resolving_list_max_size = resolving_list_max_size;
 }
 
-static const controller_static_t static_interface = {
-  enable_soc_logging
-};
-
 static const controller_t interface = {
   get_is_ready,
 
@@ -547,13 +485,8 @@ static const controller_t interface = {
 
   get_ble_resolving_list_max_size,
   set_ble_resolving_list_max_size,
-  get_local_supported_codecs,
-  supports_ble_offload_features
+  get_local_supported_codecs
 };
-
-const controller_static_t *controller_get_static_interface() {
-  return &static_interface;
-}
 
 const controller_t *controller_get_interface() {
   static bool loaded = false;

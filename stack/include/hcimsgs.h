@@ -494,10 +494,6 @@ extern BOOLEAN btsnd_hcic_delete_stored_key (BD_ADDR bd_addr, BOOLEAN delete_all
 #define HCI_DELETE_KEY_ALL_FLAG_OFF     6
                                                                 /* Delete Stored Key */
 
-extern BOOLEAN btsnd_hcic_reset(UINT8 local_controller_id);    /* Reset */
-
-#define HCIC_PARAM_SIZE_RESET           0                       /* Reset */
-
                                                                 /* Change Local Name */
 extern BOOLEAN btsnd_hcic_change_name(BD_NAME name);
 
@@ -633,8 +629,6 @@ extern BOOLEAN btsnd_hcic_write_inquiry_mode(UINT8 type);              /* Write 
 #define HCID_HEADER_SIZE      4
 
 #define HCID_GET_SCO_LEN(p)  (*((UINT8 *)((p) + 1) + p->offset + 2))
-extern void btsnd_hcic_raw_cmd (void *buffer, UINT16 opcode, UINT8 len,
-                                 UINT8 *p_data, void *p_cmd_cplt_cback);
 
 extern void btsnd_hcic_vendor_spec_cmd (void *buffer, UINT16 opcode,
                                         UINT8 len, UINT8 *p_data,

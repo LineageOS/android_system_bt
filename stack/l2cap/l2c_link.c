@@ -47,49 +47,6 @@ extern fixed_queue_t *btu_general_alarm_queue;
 
 static BOOLEAN l2c_link_send_to_lower (tL2C_LCB *p_lcb, BT_HDR *p_buf);
 
-/* Black listed car kits/headsets for role switch */
-static const UINT8 hci_role_switch_black_list_prefix[][3] = {{0x00, 0x26, 0xb4}  /* NAC FORD,2013 Lincoln */
-                                                             ,{0x00, 0x26, 0xe8} /* Nissan Murano */
-                                                             ,{0x00, 0x37, 0x6d} /* Lexus ES300h */
-                                                             ,{0x9c, 0x3a, 0xaf} /* SAMSUNG HM1900 */
-                                                             ,{0x00, 0x18, 0x91} /* WOOWI HERO */
-                                                             ,{0x0c, 0xe0, 0xe4} /* PLT_M70 */
-                                                             ,{0x00, 0x07, 0x04} /* Infiniti G37 2011 */
-                                                             ,{0x00, 0x23, 0x01} /* Roman R9020 */
-                                                             ,{0xa4, 0x15, 0x66} /* Motorola Boom */
-                                                             ,{0xd0, 0x13, 0x1e} /* Samsung keyboard */
-                                                             ,{0x1c, 0x48, 0xf9} /* Jabra Storm */
-                                                             ,{0x8f, 0x20, 0xb4} /* BT1719 */
-                                                             ,{0xa8, 0xb9, 0xb3} /* Sonata CarKit */
-                                                            };
-
-/*******************************************************************************
-**
-** Function         hci_blacklistted_for_role_switch
-**
-** Description      This function is called to find the blacklisted carkits
-**                  for role switch.
-**
-** Returns          TRUE, if black listed
-**
-*******************************************************************************/
-BOOLEAN hci_blacklistted_for_role_switch (BD_ADDR addr)
-{
-    int blacklistsize = 0;
-    int i =0;
-
-    blacklistsize = sizeof(hci_role_switch_black_list_prefix)/sizeof(hci_role_switch_black_list_prefix[0]);
-    for (i=0; i < blacklistsize; i++)
-    {
-        if (0 == memcmp(hci_role_switch_black_list_prefix[i], addr, 3))
-        {
-            return TRUE;
-        }
-    }
-    return FALSE;
-}
-
-#define HI_PRI_LINK_QUOTA 2 //Mininum ACL buffer quota for high priority link
 /*******************************************************************************
 **
 ** Function         l2c_link_hci_conn_req
@@ -145,10 +102,6 @@ BOOLEAN l2c_link_hci_conn_req (BD_ADDR bd_addr)
                 p_lcb->link_role = l2cu_get_conn_role(p_lcb);
         }
 
-        if ((p_lcb->link_role == BTM_ROLE_MASTER)&&(hci_blacklistted_for_role_switch(bd_addr))) {
-            p_lcb->link_role = BTM_ROLE_SLAVE;
-            L2CAP_TRACE_WARNING ("l2c_link_hci_conn_req:set link_role= %d",p_lcb->link_role);
-        }
 
         /* Tell the other side we accept the connection */
         btsnd_hcic_accept_conn (bd_addr, p_lcb->link_role);
@@ -222,13 +175,6 @@ BOOLEAN l2c_link_hci_conn_comp (UINT8 status, UINT16 handle, BD_ADDR p_bda)
     if (!p_lcb)
     {
         L2CAP_TRACE_WARNING ("L2CAP got conn_comp for unknown BD_ADDR");
-
-        /* Connection complete received when no link control block is present for this address
-         * However ACL entry is already created
-         * Removing connection entry at ACL and sending disconnect because l2c and acl are out of sync */
-        btm_remove_acl(p_bda, BT_TRANSPORT_BR_EDR);
-        btm_acl_removed(p_bda, BT_TRANSPORT_BR_EDR);
-
         return (FALSE);
     }
 
@@ -541,28 +487,6 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
           }
 #endif
         }
-            if (p_lcb->transport == BT_TRANSPORT_BR_EDR)
-            {
-                if (p_lcb->sent_not_acked > 0)
-                {
-                    l2cb.controller_xmit_window += p_lcb->sent_not_acked;
-                    if (l2cb.controller_xmit_window > l2cb.num_lm_acl_bufs)
-                    {
-                        l2cb.controller_xmit_window = l2cb.num_lm_acl_bufs;
-                    }
-                    p_lcb->sent_not_acked = 0;
-                }
-                p_lcb->partial_segment_being_sent = FALSE;
-
-                /* Stop the link connect timer if sent */
-                if (p_lcb->w4_info_rsp)
-                {
-                    alarm_cancel(p_lcb->l2c_lcb_timer);
-                    p_lcb->w4_info_rsp = FALSE;
-                }
-
-                btm_acl_removed(p_lcb->remote_bd_addr, BT_TRANSPORT_BR_EDR);
-            }
             if (l2cu_create_conn(p_lcb, transport))
                 lcb_is_free = FALSE; /* still using this lcb */
         }
@@ -851,14 +775,6 @@ void l2c_link_adjust_allocation (void)
     while ( (num_hipri_links * high_pri_link_quota + low_quota) > controller_xmit_quota )
         high_pri_link_quota--;
 
-    /*Adjust high pri link with min 3 buffers*/
-    if(num_hipri_links > 0)
-    {
-      if(high_pri_link_quota < HI_PRI_LINK_QUOTA)
-      {
-        high_pri_link_quota  = HI_PRI_LINK_QUOTA;
-      }
-    }
     /* Work out the xmit quota and buffer quota high and low priorities */
     hi_quota  = num_hipri_links * high_pri_link_quota;
     low_quota = (hi_quota < controller_xmit_quota) ? controller_xmit_quota - hi_quota : 1;

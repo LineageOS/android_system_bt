@@ -1,10 +1,4 @@
 /******************************************************************************
- *  Copyright (c) 2016, The Linux Foundation. All rights reserved.
- *
- *  Not a contribution.
- ******************************************************************************/
-
-/******************************************************************************
  *
  *  Copyright (C) 2002-2012 Broadcom Corporation
  *
@@ -52,12 +46,6 @@
 
 /* The index to access the codec type in codec_info[]. */
 #define AVDT_CODEC_TYPE_INDEX       2
-
-/* The index to access the vendorId in codec_info[]. */
-#define AVDT_VENDOR_ID_TYPE_INDEX    3
-
-/* The index to access the codecId in codec_info[]. */
-#define AVDT_CODEC_ID_TYPE_INDEX     7
 
 /* The size in bytes of a Adaptation Layer header. */
 #define AVDT_AL_HDR_SIZE         3
@@ -432,20 +420,6 @@ extern "C"
 
 /*******************************************************************************
 **
-** Function         AVDT_Init
-**
-** Description      This function is called to initialize the control block
-**                  for this layer.  It must be called before accessing any
-**                  other API functions for this layer.  It is typically called
-**                  once during the start up of the stack.
-**
-** Returns          void
-**
-*******************************************************************************/
-void AVDT_Init(void);
-
-/*******************************************************************************
-**
 ** Function         AVDT_Register
 **
 ** Description      This is the system level registration function for the
@@ -475,32 +449,6 @@ extern void AVDT_Register(tAVDT_REG *p_reg, tAVDT_CTRL_CBACK *p_cback);
 *******************************************************************************/
 extern void AVDT_Deregister(void);
 
-
-/*******************************************************************************
-**
-** Function         AVDT_UpdateServiceBusyState
-**
-** Description      This function is used to set the service busy state
-**                  during outgoing connection to properly handle the
-**                  connections in upper layers.
-**
-**
-** Returns          void
-**
-*******************************************************************************/
-void AVDT_UpdateServiceBusyState(BOOLEAN state);
-
-/*******************************************************************************
-**
-** Function         AVDT_GetServiceBusyState
-**
-** Description      This function is used to get the service busy state
-**
-**
-** Returns          outgoing connection in progress or not
-**
-*******************************************************************************/
-BOOLEAN AVDT_GetServiceBusyState(void);
 
 /*******************************************************************************
 **
@@ -946,20 +894,6 @@ extern UINT16 AVDT_GetL2CapChannel(UINT8 handle);
 *******************************************************************************/
 extern UINT16 AVDT_GetSignalChannel(UINT8 handle, BD_ADDR bd_addr);
 
-#ifdef BTA_AV_SPLIT_A2DP_ENABLED
-/*******************************************************************************
-**
-** Function         AVDT_GetStreamingDestChannel
-**
-** Description      Get the Dest L2CAP CID used by the stream channel.
-**
-** Returns          Destination CID.
-**
-*******************************************************************************/
-UINT16 AVDT_GetStreamingDestChannelId(UINT16 lcid);
-#endif
-
-
 /*******************************************************************************
 **
 ** Function         AVDT_SetMediaBuf
@@ -993,17 +927,6 @@ extern UINT16 AVDT_SetMediaBuf(UINT8 handle, UINT8 *p_buf, UINT32 buf_len);
 *******************************************************************************/
 extern UINT16 AVDT_SendReport(UINT8 handle, AVDT_REPORT_TYPE type,
                               tAVDT_REPORT_DATA *p_data);
-
-/*******************************************************************************
-**
-** Function         AVDT_UpdateMaxAvClients
-**
-** Description      Update max simultaneous AV connections supported
-**
-** Returns
-**
-*******************************************************************************/
-extern void AVDT_UpdateMaxAvClients(UINT8 num_clients);
 
 /******************************************************************************
 **

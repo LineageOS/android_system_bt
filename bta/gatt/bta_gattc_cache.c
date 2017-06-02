@@ -82,23 +82,11 @@ static char *bta_gattc_attr_type[] =
 };
 /* utility functions */
 
-bool display_cache_descriptor(void *data, void *context) {
-    tBTA_GATTC_DESCRIPTOR *p_desc = data;
-    APPL_TRACE_ERROR("Descriptor handle[%d] uuid[0x%04x]",
-                      p_desc->handle, p_desc->uuid.uu.uuid16);
-
-    return true;
-}
-
-bool display_cache_characteristic(void *data, void *context) {
-    tBTA_GATTC_CHARACTERISTIC *p_char = data;
-    APPL_TRACE_ERROR("Characteristic handle[%d] uuid[0x%04x] prop[0x%1x]",
-                      p_char->handle, p_char->uuid.uu.uuid16, p_char->properties);
-
-    if (p_char->descriptors != NULL) {
-        list_foreach(p_char->descriptors, display_cache_descriptor, NULL);
-    }
-
+bool display_cache_attribute(void *data, void *context) {
+    tBTA_GATTC_CACHE_ATTR *p_attr = data;
+    APPL_TRACE_ERROR("\t Attr handle[%d] uuid[0x%04x] type[%s] prop[0x%1x]",
+                      p_attr->handle, p_attr->uuid.uu.uuid16,
+                      bta_gattc_attr_type[p_attr->attr_type], p_attr->property);
     return true;
 }
 
@@ -111,7 +99,7 @@ bool display_cache_service(void *data, void *context) {
                       p_cur_srvc->handle);
 
     if (p_cur_srvc->characteristics != NULL) {
-        list_foreach(p_cur_srvc->characteristics, display_cache_characteristic, NULL);
+        list_foreach(p_cur_srvc->characteristics, display_cache_attribute, NULL);
     }
 
     return true;
@@ -521,8 +509,7 @@ static void bta_gattc_explore_srvc(UINT16 conn_id, tBTA_GATTC_SERV *p_srvc_cb)
     LOG_WARN(LOG_TAG, "%s no more services found", __func__);
 
 #if (defined BTA_GATT_DEBUG && BTA_GATT_DEBUG == TRUE)
-    if(p_srvc_cb->p_srvc_cache)
-        bta_gattc_display_cache_server(p_srvc_cb->p_srvc_cache);
+    bta_gattc_display_cache_server(p_srvc_cb->p_srvc_cache);
 #endif
     /* save cache to NV */
     p_clcb->p_srcb->state = BTA_GATTC_SERV_SAVE;
@@ -595,7 +582,7 @@ static void bta_gattc_char_dscpt_disc_cmpl(UINT16 conn_id, tBTA_GATTC_SERV *p_sr
 {
     tBTA_GATTC_ATTR_REC *p_rec = NULL;
 
-    if((p_srvc_cb->total_char != 0) && (-- p_srvc_cb->total_char > 0))
+    if (-- p_srvc_cb->total_char > 0)
     {
         p_rec = p_srvc_cb->p_srvc_list + (++ p_srvc_cb->cur_char_idx);
         /* add the next characteristic into cache */
@@ -605,8 +592,8 @@ static void bta_gattc_char_dscpt_disc_cmpl(UINT16 conn_id, tBTA_GATTC_SERV *p_sr
                                      &p_rec->uuid,
                                      p_rec->property);
 
-           /* start discoverying next characteristic for char descriptor */
-           bta_gattc_start_disc_char_dscp(conn_id, p_srvc_cb);
+        /* start discoverying next characteristic for char descriptor */
+        bta_gattc_start_disc_char_dscp(conn_id, p_srvc_cb);
     }
     else
     /* all characteristic has been explored, start with next service if any */
@@ -1341,7 +1328,6 @@ void bta_gattc_get_gatt_db(UINT16 conn_id, UINT16 start_handle, UINT16 end_handl
     if (!p_clcb->p_srcb || p_clcb->p_srcb->p_srvc_list || /* no active discovery */
         !p_clcb->p_srcb->p_srvc_cache) {
         APPL_TRACE_ERROR("No server cache available");
-        return;
     }
 
     bta_gattc_get_gatt_db_impl(p_clcb->p_srcb, start_handle, end_handle, db, count);
@@ -1644,10 +1630,6 @@ void bta_gattc_cache_reset(BD_ADDR server_bda)
     BTIF_TRACE_DEBUG("%s", __func__);
     char fname[255] = {0};
     bta_gattc_generate_cache_file_name(fname, server_bda);
-
-    if(!remove(fname))
-        BTIF_TRACE_DEBUG("%s GATT cache deleted successfully", __func__);
-
     unlink(fname);
 }
 #endif /* BTA_GATT_INCLUDED */

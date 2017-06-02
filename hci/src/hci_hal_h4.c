@@ -48,23 +48,13 @@ static const vendor_t *vendor;
 static thread_t *thread; // Not owned by us
 
 static int uart_fd;
-#if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
-static hci_reader_t *uart_stream;
-#else
 static eager_reader_t *uart_stream;
-#endif
 static serial_data_type_t current_data_type;
 static bool stream_has_interpretation;
 static bool stream_corruption_detected;
 static uint8_t stream_corruption_bytes_to_ignore;
 
-#if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
-static void event_uart_has_bytes(void *context);
-#else
 static void event_uart_has_bytes(eager_reader_t *reader, void *context);
-static bool stream_corrupted_during_le_scan_workaround(const uint8_t byte_read);
-#endif
-
 
 // Interface functions
 
@@ -95,28 +85,20 @@ static bool hal_open() {
     goto error;
   }
 
-#if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
-  uart_stream = hci_reader_new(uart_fd, HCI_HAL_SERIAL_BUFFER_SIZE, SIZE_MAX, thread, event_uart_has_bytes);
-  if (!uart_stream) {
-    LOG_ERROR("%s unable to create hci reader for the uart serial port.", __func__);
-    goto error;
-  }
-#else
   uart_stream = eager_reader_new(uart_fd, &allocator_malloc, HCI_HAL_SERIAL_BUFFER_SIZE, SIZE_MAX, "hci_single_channel");
   if (!uart_stream) {
     LOG_ERROR(LOG_TAG, "%s unable to create eager reader for the uart serial port.", __func__);
     goto error;
   }
-  eager_reader_register(uart_stream, thread_get_reactor(thread), event_uart_has_bytes, NULL);
-  thread_set_priority(eager_reader_get_read_thread(uart_stream), HCI_THREAD_PRIORITY);
-#endif
 
   stream_has_interpretation = false;
   stream_corruption_detected = false;
   stream_corruption_bytes_to_ignore = 0;
+  eager_reader_register(uart_stream, thread_get_reactor(thread), event_uart_has_bytes, NULL);
 
   // Raise thread priorities to keep up with audio
   thread_set_priority(thread, HCI_THREAD_PRIORITY);
+  thread_set_priority(eager_reader_get_read_thread(uart_stream), HCI_THREAD_PRIORITY);
 
   return true;
 
@@ -128,13 +110,7 @@ error:
 static void hal_close() {
   LOG_INFO(LOG_TAG, "%s", __func__);
 
-#if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
-  hci_reader_free(uart_stream);
-#else
   eager_reader_free(uart_stream);
-#endif
-  uart_stream = NULL;
-
   vendor->send_command(VENDOR_CLOSE_USERIAL, NULL);
   uart_fd = INVALID_FD;
 }
@@ -151,11 +127,7 @@ static size_t read_data(serial_data_type_t type, uint8_t *buffer, size_t max_siz
     return 0;
   }
 
-#if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
-  return hci_reader_read(uart_stream, buffer, max_size);
-#else
   return eager_reader_read(uart_stream, buffer, max_size);
-#endif
 }
 
 static void packet_finished(serial_data_type_t type) {
@@ -164,24 +136,7 @@ static void packet_finished(serial_data_type_t type) {
   else if (current_data_type != type)
     LOG_ERROR(LOG_TAG, "%s with different type than existing interpretation.", __func__);
 
-#if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
-  if (uart_stream->rd_ptr == uart_stream->wr_ptr) {
-    uart_stream->rd_ptr = uart_stream->wr_ptr = 0;
-    stream_has_interpretation = false;
-  } else {
-    uint8_t type_byte;
-    type_byte = uart_stream->data_buffer[uart_stream->rd_ptr++];
-    if (type_byte < DATA_TYPE_ACL || type_byte > DATA_TYPE_EVENT) {
-      LOG_ERROR("%s Unknown HCI message type. Dropping this byte 0x%x, min %x, max %x", __func__,
-                                                    type_byte, DATA_TYPE_ACL, DATA_TYPE_EVENT);
-      return;
-    }
-    current_data_type = type_byte;
-    callbacks->data_ready(current_data_type);
-  }
-#else
   stream_has_interpretation = false;
-#endif
 }
 
 static uint16_t transmit_data(serial_data_type_t type, uint8_t *data, uint16_t length) {
@@ -229,11 +184,6 @@ done:;
   return transmitted_length;
 }
 
-static bool hal_dev_in_reset()
-{
-    return false;
-}
-
 // Internal functions
 
 // WORKAROUND:
@@ -244,7 +194,6 @@ static bool hal_dev_in_reset()
 // skip the correct amount of bytes in the stream to re-synchronize onto
 // a packet boundary.
 // Function returns true if |byte_read| has been processed by the workaround.
-#if (!defined(REMOVE_EAGER_THREADS) || ((defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == FALSE))))
 static bool stream_corrupted_during_le_scan_workaround(const uint8_t byte_read)
 {
   if (!stream_corruption_detected && byte_read == HCI_BLE_EVENT) {
@@ -270,35 +219,8 @@ static bool stream_corrupted_during_le_scan_workaround(const uint8_t byte_read)
 
   return false;
 }
-#endif
+
 // See what data is waiting, and notify the upper layer
-#if (defined(REMOVE_EAGER_THREADS) && (REMOVE_EAGER_THREADS == TRUE))
-static void event_uart_has_bytes(void *context) {
-  uint8_t type_byte;
-  int bytes_read;
-  hci_reader_t *reader = (hci_reader_t *) context;
-  bytes_read = read(reader->inbound_fd, reader->data_buffer + reader->wr_ptr, reader->buffer_size - reader->wr_ptr);
-
-  if (bytes_read <= 0)  {
-    LOG_ERROR("%s could not read HCI message type", __func__);
-    return;
-  }
-  reader->wr_ptr += bytes_read;
-  if (!stream_has_interpretation) {
-    type_byte = reader->data_buffer[reader->rd_ptr++];
-
-    if (type_byte < DATA_TYPE_ACL || type_byte > DATA_TYPE_EVENT) {
-      LOG_ERROR("%s Unknown HCI message type. Dropping this byte 0x%x, min %x, max %x", __func__, type_byte, DATA_TYPE_ACL, DATA_TYPE_EVENT);
-      return;
-    }
-
-    stream_has_interpretation = true;
-    current_data_type = type_byte;
-  }
-
-  callbacks->data_ready(current_data_type);
-}
-#else
 static void event_uart_has_bytes(eager_reader_t *reader, UNUSED_ATTR void *context) {
   if (stream_has_interpretation) {
     callbacks->data_ready(current_data_type);
@@ -324,7 +246,6 @@ static void event_uart_has_bytes(eager_reader_t *reader, UNUSED_ATTR void *conte
     current_data_type = type_byte;
   }
 }
-#endif
 
 static const hci_hal_t interface = {
   hal_init,
@@ -335,7 +256,6 @@ static const hci_hal_t interface = {
   read_data,
   packet_finished,
   transmit_data,
-  hal_dev_in_reset
 };
 
 const hci_hal_t *hci_hal_h4_get_interface() {

@@ -36,7 +36,6 @@
 #include "osi/include/log.h"
 #include "stack/l2cap/l2c_int.h"
 #include "utl.h"
-#include "btm_int.h"
 
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
 #include "bta_hh_int.h"
@@ -692,7 +691,6 @@ void bta_gattc_cancel_open(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 void bta_gattc_conn(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 {
     tBTA_GATTC_IF   gatt_if;
-    BT_HDR  buf;
     APPL_TRACE_DEBUG("bta_gattc_conn server cache state=%d",p_clcb->p_srcb->state);
 
     if (p_data != NULL)
@@ -726,17 +724,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
                 }
             }
             else /* cache is building */
-            {
-                if(p_clcb->p_srcb->state == BTA_GATTC_SERV_LOAD)
-                {
-                    bta_gattc_reset_discover_st(p_clcb->p_srcb, BTA_GATT_OK);
-                    buf.event = BTA_GATTC_API_CLOSE_EVT;
-                    buf.layer_specific = p_clcb->bta_conn_id;
-                    bta_gattc_close(p_clcb, (tBTA_GATTC_DATA *)&buf);
-                }
-                else
-                    p_clcb->state = BTA_GATTC_DISCOVER_ST;
-            }
+                p_clcb->state = BTA_GATTC_DISCOVER_ST;
         }
 
         else
@@ -814,9 +802,6 @@ void bta_gattc_close(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 
     if (p_clcb->transport == BTA_TRANSPORT_BR_EDR)
         bta_sys_conn_close( BTA_ID_GATTC ,BTA_ALL_APP_ID, p_clcb->bda);
-
-    if (!btm_sec_is_a_bonded_dev(p_clcb->bda))
-        BTA_GATTC_Refresh(p_clcb->bda);
 
     bta_gattc_clcb_dealloc(p_clcb);
 
@@ -1835,12 +1820,6 @@ void bta_gattc_process_indicate(UINT16 conn_id, tGATTC_OPTYPE op, tGATT_CL_COMPL
     /* if non-service change indication/notification, forward to application */
     if (!bta_gattc_process_srvc_chg_ind(conn_id, p_clrcb, p_srcb, p_clcb, &notify, &p_data->att_value))
     {
-        /* Not a service change indication, check for an unallocated HID conn */
-        if (bta_hh_le_is_hh_gatt_if(gatt_if) && !p_clcb)
-        {
-            APPL_TRACE_DEBUG("%s, ignore HID ind/notificiation", __func__);
-            return;
-        }
         /* if app registered for the notification */
         if (bta_gattc_check_notif_registry(p_clrcb, p_srcb, &notify))
         {

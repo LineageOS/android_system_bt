@@ -75,9 +75,6 @@ typedef struct hci_hal_t {
   // This is safe in the bluetooth context, because there is always a buffer
   // header that prefixes data you're sending.
   uint16_t (*transmit_data)(serial_data_type_t type, uint8_t *data, uint16_t length);
-
-  // to detect the SSR in PR controller
-  bool (*dev_in_reset)(void);
 } hci_hal_t;
 
 // Gets the correct hal implementation, as compiled for.

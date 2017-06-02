@@ -287,12 +287,11 @@ void bta_ag_start_servers(tBTA_AG_SCB *p_scb, tBTA_SERVICE_MASK services)
         {
             BTM_SetSecurityLevel(FALSE, "", bta_ag_sec_id[i], p_scb->serv_sec_mask,
                 BT_PSM_RFCOMM, BTM_SEC_PROTO_RFCOMM, bta_ag_cb.profile[i].scn);
-            /* Fix for below klockwork issue
-             * Array 'bta_ag_mgmt_cback_tbl' size is 3.
-             * Possible attempt to access element -1,3..USHRT_MAX-1 of array 'bta_ag_mgmt_cback_tbl'. */
+
             bta_ag_port_status =  RFCOMM_CreateConnection(bta_ag_uuid[i], bta_ag_cb.profile[i].scn,
                 TRUE, BTA_AG_MTU, (UINT8 *) bd_addr_any, &(p_scb->serv_handle[i]),
-                bta_ag_mgmt_cback_tbl[(UINT16)(bta_ag_scb_to_idx(p_scb) - 1)]);
+                bta_ag_mgmt_cback_tbl[bta_ag_scb_to_idx(p_scb) - 1]);
+
             if( bta_ag_port_status  == PORT_SUCCESS )
             {
                 bta_ag_setup_port(p_scb, p_scb->serv_handle[i]);
@@ -370,15 +369,13 @@ void bta_ag_rfc_do_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 {
     BTM_SetSecurityLevel(TRUE, "", bta_ag_sec_id[p_scb->conn_service],
         p_scb->cli_sec_mask, BT_PSM_RFCOMM, BTM_SEC_PROTO_RFCOMM, p_scb->peer_scn);
-    /* Fix for below klockwork issue
-     * Array 'bta_ag_mgmt_cback_tbl' size is 3.
-     * Possible attempt to access element -1,3..USHRT_MAX-1 of array 'bta_ag_mgmt_cback_tbl' */
+
     if (RFCOMM_CreateConnection(bta_ag_uuid[p_scb->conn_service], p_scb->peer_scn,
             FALSE, BTA_AG_MTU, p_scb->peer_addr, &(p_scb->conn_handle),
-            bta_ag_mgmt_cback_tbl[(UINT16)(bta_ag_scb_to_idx(p_scb) - 1)]) == PORT_SUCCESS)
+            bta_ag_mgmt_cback_tbl[bta_ag_scb_to_idx(p_scb) - 1]) == PORT_SUCCESS)
     {
         bta_ag_setup_port(p_scb, p_scb->conn_handle);
-        APPL_TRACE_IMP("bta_ag_rfc_do_open : conn_handle = %d", p_scb->conn_handle);
+        APPL_TRACE_DEBUG("bta_ag_rfc_do_open : conn_handle = %d", p_scb->conn_handle);
     }
     /* RFCOMM create connection failed; send ourselves RFCOMM close event */
     else

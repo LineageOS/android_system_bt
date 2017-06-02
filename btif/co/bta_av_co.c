@@ -1,9 +1,4 @@
 /******************************************************************************
- *  Copyright (c) 2016, The Linux Foundation. All rights reserved.
- *
- *  Not a contribution.
- ******************************************************************************/
-/******************************************************************************
  *
  *  Copyright (C) 2004-2012 Broadcom Corporation
  *
@@ -39,18 +34,10 @@
 
 #include "btif_media.h"
 #include "sbc_encoder.h"
-#include "btif_av.h"
 #include "btif_av_co.h"
 #include "btif_util.h"
 #include "osi/include/mutex.h"
 
-#include "bt_utils.h"
-#include "a2d_aptx.h"
-#include "a2d_aptx_hd.h"
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-#include "a2d_aac.h"
-#include "bta_av_aac.h"
-#endif
 
 /*****************************************************************************
  **  Constants
@@ -76,11 +63,7 @@
 #define BTA_AV_CO_SBC_MIN_BITPOOL_OFF  5
 #define BTA_AV_CO_SBC_MAX_BITPOOL_OFF  6
 
-#ifdef BTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
-#define BTA_AV_CO_SBC_MAX_BITPOOL  51
-#else
 #define BTA_AV_CO_SBC_MAX_BITPOOL  53
-#endif
 
 /* SCMS-T protect info */
 const UINT8 bta_av_co_cp_scmst[BTA_AV_CP_INFO_LEN] = "\x02\x02\x00";
@@ -88,15 +71,11 @@ const UINT8 bta_av_co_cp_scmst[BTA_AV_CP_INFO_LEN] = "\x02\x02\x00";
 /* SBC SRC codec capabilities */
 const tA2D_SBC_CIE bta_av_co_sbc_caps =
 {
-#ifdef BTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
-    (A2D_SBC_IE_SAMP_FREQ_48), /* samp_freq */
-#else
     (A2D_SBC_IE_SAMP_FREQ_44), /* samp_freq */
-#endif
-    (A2D_SBC_IE_CH_MD_MONO | A2D_SBC_IE_CH_MD_STEREO | A2D_SBC_IE_CH_MD_JOINT | A2D_SBC_IE_CH_MD_DUAL), /* ch_mode */
-    (A2D_SBC_IE_BLOCKS_16 | A2D_SBC_IE_BLOCKS_12 | A2D_SBC_IE_BLOCKS_8 | A2D_SBC_IE_BLOCKS_4), /* block_len */
-    (A2D_SBC_IE_SUBBAND_4 | A2D_SBC_IE_SUBBAND_8), /* num_subbands */
-    (A2D_SBC_IE_ALLOC_MD_L | A2D_SBC_IE_ALLOC_MD_S), /* alloc_mthd */
+    (A2D_SBC_IE_CH_MD_JOINT), /* ch_mode */
+    (A2D_SBC_IE_BLOCKS_16), /* block_len */
+    (A2D_SBC_IE_SUBBAND_8), /* num_subbands */
+    (A2D_SBC_IE_ALLOC_MD_L), /* alloc_mthd */
     BTA_AV_CO_SBC_MAX_BITPOOL, /* max_bitpool */
     A2D_SBC_IE_MIN_BITPOOL /* min_bitpool */
 };
@@ -114,18 +93,9 @@ const tA2D_SBC_CIE bta_av_co_sbc_sink_caps =
 };
 
 #if !defined(BTIF_AV_SBC_DEFAULT_SAMP_FREQ)
-#ifdef BTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
-#define BTIF_AV_SBC_DEFAULT_SAMP_FREQ A2D_SBC_IE_SAMP_FREQ_48
-#else
 #define BTIF_AV_SBC_DEFAULT_SAMP_FREQ A2D_SBC_IE_SAMP_FREQ_44
 #endif
-#endif
 
-/* A2dp offload capabilities */
-#define SBC    0
-#define APTX   1
-#define AAC    2
-#define APTXHD 3
 /* Default SBC codec configuration */
 const tA2D_SBC_CIE btif_av_sbc_default_config =
 {
@@ -138,96 +108,6 @@ const tA2D_SBC_CIE btif_av_sbc_default_config =
     A2D_SBC_IE_MIN_BITPOOL          /* min_bitpool */
 };
 
-const tA2D_APTX_CIE bta_av_co_aptx_caps =
-{
-    A2D_APTX_VENDOR_ID,
-    A2D_APTX_CODEC_ID_BLUETOOTH,
-#ifndef BTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
-    A2D_APTX_SAMPLERATE_44100,
-#else
-    A2D_APTX_SAMPLERATE_48000,
-#endif
-    A2D_APTX_CHANNELS_STEREO,
-    A2D_APTX_FUTURE_1,
-    A2D_APTX_FUTURE_2
-};
-
-/* Default aptX codec configuration */
-const tA2D_APTX_CIE btif_av_aptx_default_config =
-{
-    A2D_APTX_VENDOR_ID,
-    A2D_APTX_CODEC_ID_BLUETOOTH,
-#ifndef BTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
-    A2D_APTX_SAMPLERATE_44100,
-#else
-    A2D_APTX_SAMPLERATE_48000,
-#endif
-    A2D_APTX_CHANNELS_STEREO,
-    A2D_APTX_FUTURE_1,
-    A2D_APTX_FUTURE_2
-};
-
-const tA2D_APTX_HD_CIE bta_av_co_aptx_hd_caps =
-{
-    A2D_APTX_HD_VENDOR_ID,
-    A2D_APTX_HD_CODEC_ID_BLUETOOTH,
-#ifndef BTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
-    A2D_APTX_HD_SAMPLERATE_44100,
-#else
-    A2D_APTX_HD_SAMPLERATE_48000,
-#endif
-    A2D_APTX_HD_CHANNELS_STEREO,
-    A2D_APTX_HD_ACL_SPRINT_RESERVED0,
-    A2D_APTX_HD_ACL_SPRINT_RESERVED1,
-    A2D_APTX_HD_ACL_SPRINT_RESERVED2,
-    A2D_APTX_HD_ACL_SPRINT_RESERVED3
-};
-
-/* Default aptX_hd codec configuration */
-const tA2D_APTX_HD_CIE btif_av_aptx_hd_default_config =
-{
-    A2D_APTX_HD_VENDOR_ID,
-    A2D_APTX_HD_CODEC_ID_BLUETOOTH,
-#ifndef BTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
-    A2D_APTX_HD_SAMPLERATE_44100,
-#else
-    A2D_APTX_HD_SAMPLERATE_48000,
-#endif
-    A2D_APTX_HD_CHANNELS_STEREO,
-    A2D_APTX_HD_ACL_SPRINT_RESERVED0,
-    A2D_APTX_HD_ACL_SPRINT_RESERVED1,
-    A2D_APTX_HD_ACL_SPRINT_RESERVED2,
-    A2D_APTX_HD_ACL_SPRINT_RESERVED3
-};
-
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-const tA2D_AAC_CIE bta_av_co_aac_caps =
-{
-    (A2D_AAC_IE_OBJ_TYPE_MPEG_2_AAC_LC|A2D_AAC_IE_OBJ_TYPE_MPEG_4_AAC_LC), /* obj type */
-#ifndef BTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
-    (A2D_AAC_IE_SAMP_FREQ_44100),
-#else
-    (A2D_AAC_IE_SAMP_FREQ_44100 | A2D_AAC_IE_SAMP_FREQ_48000),
-#endif
-    (A2D_AAC_IE_CHANNELS_1 | A2D_AAC_IE_CHANNELS_2 ), /* channels  */
-    A2D_AAC_IE_BIT_RATE, /* BIT RATE */
-    A2D_AAC_IE_VBR_NOT_SUPP  /* variable bit rate */
-};
-
-/* Default AAC codec configuration */
-const tA2D_AAC_CIE btif_av_aac_default_config =
-{
-    A2D_AAC_IE_OBJ_TYPE_MPEG_2_AAC_LC,  /* obj type */
-#ifndef BTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
-    A2D_AAC_IE_SAMP_FREQ_44100,         /* samp_freq */
-#else
-    A2D_AAC_IE_SAMP_FREQ_48000,         /* samp_freq */
-#endif
-    A2D_AAC_IE_CHANNELS_2,              /* channels  */
-    BTIF_AAC_DEFAULT_BIT_RATE,      /* bit rate */
-    A2D_AAC_IE_VBR_NOT_SUPP
-};
-#endif
 
 /*****************************************************************************
 **  Local data
@@ -245,10 +125,8 @@ typedef struct
 typedef struct
 {
     BD_ADDR         addr;               /* address of audio/video peer */
-    /* array of supported sinks */
-    tBTA_AV_CO_SINK snks[BTIF_SV_AV_AA_SRC_SEP_INDEX - BTIF_SV_AV_AA_SBC_INDEX];
-    /* array of supported srcs */
-    tBTA_AV_CO_SINK srcs[BTIF_SV_AV_AA_SNK_SEP_INDEX - BTIF_SV_AV_AA_SBC_SINK_INDEX];
+    tBTA_AV_CO_SINK snks[BTIF_SV_AV_AA_SEP_INDEX]; /* array of supported sinks */
+    tBTA_AV_CO_SINK srcs[BTIF_SV_AV_AA_SEP_INDEX]; /* array of supported srcs */
     UINT8           num_snks;           /* total number of sinks at peer */
     UINT8           num_srcs;           /* total number of srcs at peer */
     UINT8           num_seps;           /* total number of seids at peer */
@@ -278,19 +156,9 @@ typedef struct
     /* Connected peer information */
     tBTA_AV_CO_PEER peers[BTA_AV_NUM_STRS];
     /* Current codec configuration - access to this variable must be protected */
-    tBTIF_AV_CODEC_INFO* codec_cfg;
-    tBTIF_AV_CODEC_INFO* codec_cfg_setconfig; /* remote peer setconfig preference */
-    UINT8 current_codec_id;
-    tBTIF_AV_CODEC_INFO codec_cfg_sbc;
-    tBTIF_AV_CODEC_INFO codec_cfg_sbc_setconfig; /* remote peer setconfig preference (SBC) */
-    tBTIF_AV_CODEC_INFO codec_cfg_aptx;
-    tBTIF_AV_CODEC_INFO codec_cfg_aptx_setconfig; /* remote peer setconfig preference (aptX)*/
-    tBTIF_AV_CODEC_INFO codec_cfg_aptx_hd;
-    tBTIF_AV_CODEC_INFO codec_cfg_aptx_hd_setconfig; /* remote peer setconfig preference (aptX HD) */
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-    tBTIF_AV_CODEC_INFO codec_cfg_aac;
-    tBTIF_AV_CODEC_INFO codec_cfg_aac_setconfig; /* remote peer setconfig preference (AAC)*/
-#endif
+    tBTIF_AV_CODEC_INFO codec_cfg;
+    tBTIF_AV_CODEC_INFO codec_cfg_setconfig; /* remote peer setconfig preference */
+
     tBTA_AV_CO_CP cp;
 } tBTA_AV_CO_CB;
 
@@ -305,13 +173,9 @@ static BOOLEAN bta_av_co_audio_peer_supports_codec(tBTA_AV_CO_PEER *p_peer, UINT
 static BOOLEAN bta_av_co_audio_media_supports_config(UINT8 codec_type, const UINT8 *p_codec_cfg);
 static BOOLEAN bta_av_co_audio_sink_supports_config(UINT8 codec_type, const UINT8 *p_codec_cfg);
 static BOOLEAN bta_av_co_audio_peer_src_supports_codec(tBTA_AV_CO_PEER *p_peer, UINT8 *p_src_index);
-#ifdef BTA_AV_SPLIT_A2DP_ENABLED
-extern BOOLEAN btif_av_is_codec_offload_supported(int codec);
-#else
-#define btif_av_is_codec_offload_supported(codec) (0)
-#endif
-extern BOOLEAN btif_av_is_offload_supported();
-extern BOOLEAN bt_split_a2dp_enabled;
+
+
+
 /*******************************************************************************
  **
  ** Function         bta_av_co_cp_is_active
@@ -423,7 +287,7 @@ BOOLEAN bta_av_co_audio_init(UINT8 *p_codec_type, UINT8 *p_codec_info, UINT8 *p_
     *p_protect_info = 0;
 
     /* reset remote preference through setconfig */
-    bta_av_co_cb.codec_cfg_setconfig = NULL;
+    bta_av_co_cb.codec_cfg_setconfig.id = BTIF_AV_CODEC_NONE;
 
     switch (index)
     {
@@ -447,28 +311,6 @@ BOOLEAN bta_av_co_audio_init(UINT8 *p_codec_type, UINT8 *p_codec_info, UINT8 *p_
 
         /* Codec is valid */
         return TRUE;
-
-    case BTIF_SV_AV_AA_APTX_INDEX:
-        APPL_TRACE_DEBUG("%s aptX", __func__);
-        /* Set up for aptX codec */
-        *p_codec_type = A2D_NON_A2DP_MEDIA_CT;
-        A2D_BldAptxInfo(AVDT_MEDIA_AUDIO, (tA2D_APTX_CIE *) &bta_av_co_aptx_caps, p_codec_info);
-        return TRUE;
-
-    case BTIF_SV_AV_AA_APTX_HD_INDEX:
-        APPL_TRACE_DEBUG("%s aptX HD", __func__);
-        /* Set up for aptX HD codec */
-        *p_codec_type = A2D_NON_A2DP_MEDIA_CT;
-        A2D_BldAptx_hdInfo(AVDT_MEDIA_AUDIO, (tA2D_APTX_HD_CIE *) &bta_av_co_aptx_hd_caps, p_codec_info);
-        return TRUE;
-
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-    case BTIF_SV_AV_AA_AAC_INDEX:
-        APPL_TRACE_DEBUG("%s AAC", __func__);
-        *p_codec_type = BTA_AV_CODEC_M24;
-        A2D_BldAacInfo(AVDT_MEDIA_AUDIO, (tA2D_AAC_CIE *) &bta_av_co_aac_caps ,p_codec_info);
-        return TRUE;
-#endif
 #if (BTA_AV_SINK_INCLUDED == TRUE)
     case BTIF_SV_AV_AA_SBC_SINK_INDEX:
         *p_codec_type = BTA_AV_CODEC_SBC;
@@ -781,28 +623,7 @@ UINT8 bta_av_co_audio_getconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
     case BTA_AV_CODEC_SBC:
         supported = TRUE;
         break;
-    case A2D_NON_A2DP_MEDIA_CT:
-    {
-        UINT16 codecId = ((tA2D_APTX_CIE*)(&p_codec_info[BTA_AV_CFG_START_IDX]))->codecId;
-        UINT32 vendorId = ((tA2D_APTX_CIE*)(&p_codec_info[BTA_AV_CFG_START_IDX]))->vendorId;
-        APPL_TRACE_DEBUG("%s codecId = %d", __func__, codecId );
-        APPL_TRACE_DEBUG("%s vendorId = %x", __func__, vendorId );
 
-        if (codecId ==  A2D_APTX_CODEC_ID_BLUETOOTH && vendorId == A2D_APTX_VENDOR_ID) {
-            /* aptX */
-            supported = TRUE;
-        } else if (codecId ==  A2D_APTX_HD_CODEC_ID_BLUETOOTH && vendorId == A2D_APTX_HD_VENDOR_ID) {
-            /*	aptX HD	*/
-            supported = TRUE;
-        }
-        break;
-    }
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-    case BTA_AV_CODEC_M24:
-        APPL_TRACE_DEBUG("%s: AAC is supported", __func__);
-        supported = TRUE;
-        break;
-#endif
     default:
         break;
     }
@@ -812,21 +633,13 @@ UINT8 bta_av_co_audio_getconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
         /* If there is room for a new one */
         if (p_peer->num_sup_snks < BTA_AV_CO_NUM_ELEMENTS(p_peer->snks))
         {
-            int i = 0;
             p_sink = &p_peer->snks[p_peer->num_sup_snks++];
 
             APPL_TRACE_DEBUG("bta_av_co_audio_getconfig saved caps[%x:%x:%x:%x:%x:%x]",
                     p_codec_info[1], p_codec_info[2], p_codec_info[3],
                     p_codec_info[4], p_codec_info[5], p_codec_info[6]);
 
-            for (i = 0 ; i < AVDT_CODEC_SIZE; i++)
-                APPL_TRACE_DEBUG("%s p_codec_info[%d]: %x", __func__, i,  p_codec_info[i]);
-
-            if (codec_type == A2D_NON_A2DP_MEDIA_CT)
-                memcpy(p_sink->codec_caps, &p_codec_info[BTA_AV_CFG_START_IDX], AVDT_CODEC_SIZE);
-            else
-                memcpy(p_sink->codec_caps, p_codec_info, AVDT_CODEC_SIZE);
-
+            memcpy(p_sink->codec_caps, p_codec_info, AVDT_CODEC_SIZE);
             p_sink->codec_type = codec_type;
             p_sink->sep_info_idx = *p_sep_info_idx;
             p_sink->seid = seid;
@@ -863,13 +676,9 @@ UINT8 bta_av_co_audio_getconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
             /* Build the codec configuration for this sink */
             if (bta_av_co_audio_codec_build_config(p_sink->codec_caps, codec_cfg))
             {
-                int i = 0;
                 APPL_TRACE_DEBUG("bta_av_co_audio_getconfig reconfig p_codec_info[%x:%x:%x:%x:%x:%x]",
                         codec_cfg[1], codec_cfg[2], codec_cfg[3],
                         codec_cfg[4], codec_cfg[5], codec_cfg[6]);
-
-                for (i = 0 ; i < AVDT_CODEC_SIZE; i++)
-                    APPL_TRACE_DEBUG("%s p_codec_info[%d]: %x", __func__, i,  p_codec_info[i]);
 
                 /* Save the new configuration */
                 p_peer->p_snk = p_sink;
@@ -942,7 +751,7 @@ void bta_av_co_audio_setconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
 
     FUNC_TRACE();
 
-    APPL_TRACE_IMP("bta_av_co_audio_setconfig p_codec_info[%x:%x:%x:%x:%x:%x]",
+    APPL_TRACE_DEBUG("bta_av_co_audio_setconfig p_codec_info[%x:%x:%x:%x:%x:%x]",
             p_codec_info[1], p_codec_info[2], p_codec_info[3],
             p_codec_info[4], p_codec_info[5], p_codec_info[6]);
     APPL_TRACE_DEBUG("num_protect:0x%02x protect_info:0x%02x%02x%02x",
@@ -1008,10 +817,10 @@ void bta_av_co_audio_setconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
             mutex_global_lock();
 
             /* Check if the configuration matches the current codec config */
-            switch (codec_type)
+            switch (bta_av_co_cb.codec_cfg.id)
             {
             case BTIF_AV_CODEC_SBC:
-                if ((codec_type != BTA_AV_CODEC_SBC) || memcmp(p_codec_info, bta_av_co_cb.codec_cfg->info, 5))
+                if ((codec_type != BTA_AV_CODEC_SBC) || memcmp(p_codec_info, bta_av_co_cb.codec_cfg.info, 5))
                 {
                     recfg_needed = TRUE;
                 }
@@ -1022,74 +831,24 @@ void bta_av_co_audio_setconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
 
                 /* if remote side requests a restricted notify sinks preferred bitpool range as all other params are
                    already checked for validify */
-                APPL_TRACE_DEBUG("%s SBC", __func__);
                 APPL_TRACE_EVENT("remote peer setconfig bitpool range [%d:%d]",
                    p_codec_info[BTA_AV_CO_SBC_MIN_BITPOOL_OFF],
                    p_codec_info[BTA_AV_CO_SBC_MAX_BITPOOL_OFF] );
 
-                bta_av_co_cb.codec_cfg_sbc_setconfig.id = BTIF_AV_CODEC_SBC;
-                memcpy(bta_av_co_cb.codec_cfg_sbc_setconfig.info, p_codec_info, AVDT_CODEC_SIZE);
-                bta_av_co_cb.codec_cfg_setconfig = &bta_av_co_cb.codec_cfg_sbc_setconfig;
-                memcpy(bta_av_co_cb.codec_cfg_sbc.info, p_codec_info, AVDT_CODEC_SIZE);
-                memcpy(bta_av_co_cb.codec_cfg->info, p_codec_info, AVDT_CODEC_SIZE);
+                bta_av_co_cb.codec_cfg_setconfig.id = BTIF_AV_CODEC_SBC;
+                memcpy(bta_av_co_cb.codec_cfg_setconfig.info, p_codec_info, AVDT_CODEC_SIZE);
                 if(AVDT_TSEP_SNK == t_local_sep)
                 {
                     /* If Peer is SRC, and our cfg subset matches with what is requested by peer, then
                                          just accept what peer wants */
+                    memcpy(bta_av_co_cb.codec_cfg.info, p_codec_info, AVDT_CODEC_SIZE);
                     recfg_needed = FALSE;
                 }
                 break;
 
-            case A2D_NON_A2DP_MEDIA_CT:
-            {
-                UINT16 codecId;
-                UINT32 vendorId;
-                codecId = ((tA2D_APTX_CIE*)(&p_codec_info[BTA_AV_CFG_START_IDX]))->codecId;
-                vendorId = ((tA2D_APTX_CIE*)(&p_codec_info[BTA_AV_CFG_START_IDX]))->vendorId;
-                APPL_TRACE_DEBUG("%s codec_type = %x", __func__, codec_type);
-                APPL_TRACE_DEBUG("%s codecId = %d", __func__, codecId);
-                APPL_TRACE_DEBUG("%s vendorId = %x", __func__, vendorId);
 
-                if ((codec_type != A2D_NON_A2DP_MEDIA_CT) ||
-                    (codecId != A2D_APTX_CODEC_ID_BLUETOOTH) ||
-                    (vendorId != A2D_APTX_VENDOR_ID) ||
-                    memcmp(p_codec_info, bta_av_co_cb.codec_cfg_aptx.info, 5))
-                {
-                    APPL_TRACE_DEBUG("%s recfg_needed", __func__);
-                    recfg_needed = TRUE;
-                }
-                else if ((num_protect == 1) && (!bta_av_co_cb.cp.active))
-                {
-                    APPL_TRACE_DEBUG("%s recfg_needed", __func__);
-                    recfg_needed = TRUE;
-                }
-
-                if ((codecId == A2D_APTX_CODEC_ID_BLUETOOTH) && (vendorId == A2D_APTX_VENDOR_ID)) {
-                    APPL_TRACE_DEBUG("%s aptX", __func__);
-                    bta_av_co_cb.codec_cfg_aptx_setconfig.id = A2D_NON_A2DP_MEDIA_CT;
-                    memcpy(bta_av_co_cb.codec_cfg_aptx_setconfig.info, p_codec_info, AVDT_CODEC_SIZE);
-                    bta_av_co_cb.codec_cfg_setconfig = &bta_av_co_cb.codec_cfg_aptx_setconfig;
-                } else if ((codecId == A2D_APTX_HD_CODEC_ID_BLUETOOTH) && (vendorId == A2D_APTX_HD_VENDOR_ID)) {
-                    APPL_TRACE_DEBUG("%s aptX HD", __func__);
-                    bta_av_co_cb.codec_cfg_aptx_hd_setconfig.id = A2D_NON_A2DP_MEDIA_CT;
-                    memcpy(bta_av_co_cb.codec_cfg_aptx_hd_setconfig.info, p_codec_info, AVDT_CODEC_SIZE);
-                    bta_av_co_cb.codec_cfg_setconfig = &bta_av_co_cb.codec_cfg_aptx_hd_setconfig;
-                }
-                break;
-             }
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-            case BTA_AV_CODEC_M24:
-            {
-                APPL_TRACE_DEBUG("%s AAC", __func__);
-                bta_av_co_cb.codec_cfg_aac_setconfig.id = BTIF_AV_CODEC_M24;
-                memcpy(bta_av_co_cb.codec_cfg_aac_setconfig.info, p_codec_info, AVDT_CODEC_SIZE);
-                bta_av_co_cb.codec_cfg_setconfig = &bta_av_co_cb.codec_cfg_aac_setconfig;
-
-                APPL_TRACE_DEBUG("%s codec_type = %x", __func__, codec_type);
-            } break;
-#endif
             default:
-                APPL_TRACE_ERROR("bta_av_co_audio_setconfig unsupported cid %d", bta_av_co_cb.codec_cfg->id);
+                APPL_TRACE_ERROR("bta_av_co_audio_setconfig unsupported cid %d", bta_av_co_cb.codec_cfg.id);
                 recfg_needed = TRUE;
                 break;
             }
@@ -1105,7 +864,7 @@ void bta_av_co_audio_setconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
 
     if (status != A2D_SUCCESS)
     {
-        APPL_TRACE_ERROR("bta_av_co_audio_setconfig reject s=%d c=%d", status, category);
+        APPL_TRACE_DEBUG("bta_av_co_audio_setconfig reject s=%d c=%d", status, category);
 
         /* Call call-in rejecting the configuration */
         bta_av_ci_setconfig(hndl, status, category, 0, NULL, FALSE, avdt_handle);
@@ -1192,7 +951,7 @@ void bta_av_co_audio_close(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type, UINT16 m
     }
 
     /* reset remote preference through setconfig */
-    bta_av_co_cb.codec_cfg_setconfig = NULL;
+    bta_av_co_cb.codec_cfg_setconfig.id = BTIF_AV_CODEC_NONE;
 }
 
 /*******************************************************************************
@@ -1210,21 +969,14 @@ void bta_av_co_audio_start(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
                            UINT8 *p_codec_info, BOOLEAN *p_no_rtp_hdr)
 {
     UNUSED(hndl);
+    UNUSED(codec_type);
+    UNUSED(p_codec_info);
+    UNUSED(p_no_rtp_hdr);
 
     FUNC_TRACE();
 
     APPL_TRACE_DEBUG("bta_av_co_audio_start");
 
-    if (codec_type == A2D_NON_A2DP_MEDIA_CT) {
-        UINT16 codecId = ((tA2D_APTX_CIE*)(&p_codec_info[BTA_AV_CFG_START_IDX]))->codecId;
-        UINT32 vendorId = ((tA2D_APTX_CIE*)(&p_codec_info[BTA_AV_CFG_START_IDX]))->vendorId;
-
-        // for aptX, we only add RTP hdr along with CP
-        if (codecId == A2D_APTX_CODEC_ID_BLUETOOTH && vendorId == A2D_APTX_VENDOR_ID) {
-            if (!bta_av_co_cb.cp.active)
-                *p_no_rtp_hdr = TRUE;
-        }
-    }
 }
 
 /*******************************************************************************
@@ -1282,10 +1034,8 @@ void * bta_av_co_audio_src_data_path(tBTA_AV_CODEC codec_type, UINT32 *p_len,
             /* Set up packet header */
             bta_av_sbc_bld_hdr(p_buf, p_buf->layer_specific);
             break;
-        case A2D_NON_A2DP_MEDIA_CT:
-            /* Retrieve the timestamp information from the media packet */
-            *p_timestamp = *((UINT32 *) (p_buf + 1));
-            break;
+
+
         default:
             APPL_TRACE_ERROR("bta_av_co_audio_src_data_path Unsupported codec type (%d)", codec_type);
             break;
@@ -1357,67 +1107,26 @@ void bta_av_co_audio_delay(tBTA_AV_HNDL hndl, UINT16 delay)
 static BOOLEAN bta_av_co_audio_codec_build_config(const UINT8 *p_codec_caps, UINT8 *p_codec_cfg)
 {
     FUNC_TRACE();
-    tA2D_AAC_CIE peer_aac_cfg;
-    tA2D_AAC_CIE aac_cfg_selected;
 
     memset(p_codec_cfg, 0, AVDT_CODEC_SIZE);
 
-    switch (bta_av_co_cb.codec_cfg->id)
+    switch (bta_av_co_cb.codec_cfg.id)
     {
     case BTIF_AV_CODEC_SBC:
         /*  only copy the relevant portions for this codec to avoid issues when
             comparing codec configs covering larger codec sets than SBC (7 bytes) */
-        memcpy(p_codec_cfg, bta_av_co_cb.codec_cfg->info, BTA_AV_CO_SBC_MAX_BITPOOL_OFF+1);
+        memcpy(p_codec_cfg, bta_av_co_cb.codec_cfg.info, BTA_AV_CO_SBC_MAX_BITPOOL_OFF+1);
 
         /* Update the bit pool boundaries with the codec capabilities */
         p_codec_cfg[BTA_AV_CO_SBC_MIN_BITPOOL_OFF] = p_codec_caps[BTA_AV_CO_SBC_MIN_BITPOOL_OFF];
         p_codec_cfg[BTA_AV_CO_SBC_MAX_BITPOOL_OFF] = p_codec_caps[BTA_AV_CO_SBC_MAX_BITPOOL_OFF];
 
-        APPL_TRACE_DEBUG("%s SBC", __func__);
         APPL_TRACE_EVENT("bta_av_co_audio_codec_build_config : bitpool min %d, max %d",
                     p_codec_cfg[BTA_AV_CO_SBC_MIN_BITPOOL_OFF],
                     p_codec_caps[BTA_AV_CO_SBC_MAX_BITPOOL_OFF]);
         break;
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-    case BTIF_AV_CODEC_M24:
-        /*  only copy the relevant portions for this codec to avoid issues when
-            comparing codec configs covering larger codec sets than SBC (7 bytes) */
-        A2D_ParsAacInfo (&peer_aac_cfg ,(UINT8*)p_codec_caps, FALSE);
-        A2D_ParsAacInfo (&aac_cfg_selected ,bta_av_co_cb.codec_cfg->info, FALSE);
-
-        aac_cfg_selected.bit_rate =
-                        BTA_AV_CO_MIN(peer_aac_cfg.bit_rate,
-                                      aac_cfg_selected.bit_rate);
-        APPL_TRACE_EVENT("%s AAC bitrate selected %d", __func__,
-                                      aac_cfg_selected.bit_rate);
-        //update with new value
-        A2D_BldAacInfo (AVDT_MEDIA_AUDIO, &aac_cfg_selected, bta_av_co_cb.codec_cfg->info);
-
-        memcpy(p_codec_cfg, bta_av_co_cb.codec_cfg->info, A2D_AAC_INFO_LEN+1);
-        APPL_TRACE_DEBUG("%s AAC", __func__);
-        break;
-#endif
-    case A2D_NON_A2DP_MEDIA_CT:
-    {
-        UINT16 codecId;
-        UINT16 vendorId;
-        codecId = ((tA2D_APTX_CIE*)p_codec_caps)->codecId;
-        vendorId = ((tA2D_APTX_CIE*)p_codec_caps)->vendorId;
-        APPL_TRACE_DEBUG("%s codecId = %d", __func__, codecId);
-        APPL_TRACE_DEBUG("%s vendorId = %x", __func__, vendorId);
-
-        if ((codecId == A2D_APTX_CODEC_ID_BLUETOOTH) && (vendorId == A2D_APTX_VENDOR_ID)) {
-            memcpy(p_codec_cfg, bta_av_co_cb.codec_cfg->info, A2D_APTX_CODEC_LEN+1);
-            APPL_TRACE_DEBUG("%s aptX",__func__);
-        } else if ((codecId == A2D_APTX_HD_CODEC_ID_BLUETOOTH) && (vendorId == A2D_APTX_HD_VENDOR_ID)) {
-            memcpy(p_codec_cfg, bta_av_co_cb.codec_cfg->info, A2D_APTX_HD_CODEC_LEN+1);
-            APPL_TRACE_DEBUG("%s aptX HD",__func__);
-        }
-        break;
-    }
-
     default:
-        APPL_TRACE_ERROR("bta_av_co_audio_codec_build_config: unsupported codec id %d", bta_av_co_cb.codec_cfg->id);
+        APPL_TRACE_ERROR("bta_av_co_audio_codec_build_config: unsupported codec id %d", bta_av_co_cb.codec_cfg.id);
         return FALSE;
         break;
     }
@@ -1459,71 +1168,8 @@ static BOOLEAN bta_av_co_audio_codec_cfg_matches_caps(UINT8 codec_id, const UINT
             return FALSE;
         }
         break;
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-        /* in case of Sink we have to match if Src Cap is a subset of ours */
-    case BTA_AV_CODEC_M24:
-    {
-        tBTIF_AV_CODEC_INFO *p_local_aac_cfg = (tBTIF_AV_CODEC_INFO*)p_codec_cfg;
-        tA2D_AAC_CIE p_local_aac_caps;
-        tA2D_AAC_CIE p_snk_aac_caps;
 
-        if (A2D_ParsAacInfo(&p_local_aac_caps, (UINT8*)p_local_aac_cfg, FALSE) != A2D_SUCCESS) {
-            APPL_TRACE_ERROR("%s: A2D_BldAacInfo: LOCAL failed", __func__);
-        }
-        if (A2D_ParsAacInfo(&p_snk_aac_caps, (UINT8*)p_codec_cfg, FALSE) != A2D_SUCCESS) {
-            APPL_TRACE_ERROR("%s: A2D_BldAacInfo: SNK failed", __func__);
-        }
 
-        APPL_TRACE_EVENT("AAC obj_type: snk %x local %x",
-                         p_snk_aac_caps.object_type, p_local_aac_caps.object_type);
-        APPL_TRACE_EVENT("AAC samp_freq: snk %x local %x",
-                         p_snk_aac_caps.samp_freq, p_local_aac_caps.samp_freq);
-        APPL_TRACE_EVENT("AAC channels: snk %x local %x",
-                         p_snk_aac_caps.channels, p_local_aac_caps.channels);
-        APPL_TRACE_EVENT("AAC bit_rate: snk %x local %x",
-                         p_snk_aac_caps.bit_rate, p_local_aac_caps.bit_rate);
-        APPL_TRACE_EVENT("AAC vbr: snk %x local %x",
-                         p_snk_aac_caps.vbr, p_local_aac_caps.vbr);
-        return (((p_snk_aac_caps.object_type)&(p_local_aac_caps.object_type))&&
-               ((p_snk_aac_caps.samp_freq)&(p_local_aac_caps.samp_freq))&&
-               ((p_snk_aac_caps.channels)&(p_local_aac_caps.channels)));
-    }
-        break;
-#endif
-    case A2D_NON_A2DP_MEDIA_CT:
-    {
-        UINT16 codecId;
-        UINT32 vendorId;
-        UINT8* aptx_capabilities;
-
-        APPL_TRACE_DEBUG("%s aptX", __func__);
-        aptx_capabilities = &(((tBTA_AV_CO_SINK*)p_codec_cfg)->codec_caps[0]);
-        codecId = ((tA2D_APTX_CIE*)p_codec_caps)->codecId;
-        vendorId = ((tA2D_APTX_CIE*)p_codec_caps)->vendorId;
-        APPL_TRACE_DEBUG("%s codecId = %d", __func__, codecId);
-        APPL_TRACE_DEBUG("%s vendorId = %x", __func__, vendorId);
-
-        int i = 0;
-        for (i = 0 ; i < AVDT_CODEC_SIZE; i++)
-            APPL_TRACE_DEBUG("%s p_codec_cfg[%d]: %x", __func__, i,  p_codec_cfg[i]);
-
-        APPL_TRACE_EVENT("%s Caps -> sample rate/channel mode: %x configured %x", __func__, p_codec_caps[6], p_codec_cfg[9]);
-
-        if (((vendorId != ((tA2D_APTX_CIE*)(aptx_capabilities))->vendorId) || /*vendor id*/
-            (codecId !=  ((tA2D_APTX_CIE*)(aptx_capabilities))->codecId) || /*codec id*/
-            ((p_codec_caps[6] & p_codec_cfg[9]) == 0 ) /*sampling rate & channel mode*/
-           ))
-        {
-            APPL_TRACE_DEBUG("%s aptX config don't match", __func__);
-            APPL_TRACE_EVENT("%s Caps -> vendor id: %x %x %x %x", __func__, p_codec_caps[0], p_codec_caps[1], p_codec_caps[2], p_codec_caps[3]);
-            APPL_TRACE_EVENT("%s Configured: %x %x %x %x", __func__, p_codec_cfg[3], p_codec_cfg[4], p_codec_cfg[5], p_codec_cfg[6]);
-            APPL_TRACE_EVENT("%s Caps -> codec id: %x", __func__, p_codec_caps[4]);
-            APPL_TRACE_EVENT("%s Configured: %x ", __func__, p_codec_cfg[7]);
-            APPL_TRACE_EVENT("%s Caps -> Sample Rate/Channel Mode: %x Configured: %x", __func__, p_codec_caps[6], p_codec_cfg[9]);
-            return FALSE;
-        }
-        break;
-    }
     default:
         APPL_TRACE_ERROR("bta_av_co_audio_codec_cfg_matches_caps: unsupported codec id %d", codec_id);
         return FALSE;
@@ -1543,54 +1189,11 @@ static BOOLEAN bta_av_co_audio_codec_cfg_matches_caps(UINT8 codec_id, const UINT
  ** Returns          TRUE if the connection supports this codec, FALSE otherwise
  **
  *******************************************************************************/
-static BOOLEAN bta_av_co_audio_codec_match(const UINT8 *p_codec_caps, UINT8 codec_id)
+static BOOLEAN bta_av_co_audio_codec_match(const UINT8 *p_codec_caps)
 {
     FUNC_TRACE();
 
-    switch(codec_id)
-    {
-      case BTIF_AV_CODEC_SBC:
-        return bta_av_co_audio_codec_cfg_matches_caps(bta_av_co_cb.codec_cfg_sbc.id, p_codec_caps, bta_av_co_cb.codec_cfg_sbc.info);
-        break;
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-      case BTIF_AV_CODEC_M24:
-        return bta_av_co_audio_codec_cfg_matches_caps(bta_av_co_cb.codec_cfg_aac.id, p_codec_caps, bta_av_co_cb.codec_cfg_aac.info);
-        break;
-#endif
-     case A2D_NON_A2DP_MEDIA_CT:
-        {
-            UINT16 codecId;
-            UINT32 vendorId;
-            int i = 0;
-            for (i = 0 ; i < AVDT_CODEC_SIZE; i++)
-                APPL_TRACE_DEBUG("%s p_codec_caps[%d]: %x", __func__, i,  p_codec_caps[i]);
-
-            codecId = ((tA2D_APTX_CIE*)p_codec_caps)->codecId;
-            vendorId = ((tA2D_APTX_CIE*)p_codec_caps)->vendorId;
-            APPL_TRACE_DEBUG("%s codecId = %d ", __func__, codecId);
-            APPL_TRACE_DEBUG("%s vendorId = %x ", __func__, vendorId);
-
-            if (codecId ==  A2D_APTX_CODEC_ID_BLUETOOTH && vendorId == A2D_APTX_VENDOR_ID) {
-                /* aptX Classic */
-                APPL_TRACE_DEBUG("%s aptX", __func__);
-                return bta_av_co_audio_codec_cfg_matches_caps(bta_av_co_cb.codec_cfg_aptx.id, p_codec_caps, bta_av_co_cb.codec_cfg_aptx.info);
-                break;
-            } else if (codecId ==  A2D_APTX_HD_CODEC_ID_BLUETOOTH && vendorId == A2D_APTX_HD_VENDOR_ID) {
-                /* aptX HD */
-                APPL_TRACE_DEBUG("%s aptX HD", __func__);
-                return bta_av_co_audio_codec_cfg_matches_caps(bta_av_co_cb.codec_cfg_aptx_hd.id, p_codec_caps, bta_av_co_cb.codec_cfg_aptx_hd.info);
-                break;
-            } else {
-                APPL_TRACE_ERROR("%s incorrect codecId (%d)", __func__, codecId);
-                APPL_TRACE_ERROR("%s incorrect vendorId (%x)", __func__, vendorId);
-                break;
-            }
-        }
-    default:
-        return bta_av_co_audio_codec_cfg_matches_caps(bta_av_co_cb.codec_cfg_sbc.id, p_codec_caps, bta_av_co_cb.codec_cfg_sbc.info);
-        break;
-    }
-    return TRUE;
+    return bta_av_co_audio_codec_cfg_matches_caps(bta_av_co_cb.codec_cfg.id, p_codec_caps, bta_av_co_cb.codec_cfg.info);
 }
 
 /*******************************************************************************
@@ -1713,161 +1316,23 @@ static BOOLEAN bta_av_co_audio_peer_supports_codec(tBTA_AV_CO_PEER *p_peer, UINT
     FUNC_TRACE();
 
     /* Configure the codec type to look for */
-    codec_type = bta_av_co_cb.codec_cfg->id;
-
-/* Check for aptX HD before aptX Classic as
- * this is order of priority, if supported return true.
- * multicast is not supported for aptX
- */
-    if ((!bt_split_a2dp_enabled && isA2dAptXEnabled && (btif_av_is_multicast_supported() == FALSE)) ||
-        (bt_split_a2dp_enabled && (btif_av_is_codec_offload_supported(APTX)|| btif_av_is_codec_offload_supported(APTXHD))))
-    {
-        UINT16 codecId;
-        UINT32 vendorId;
-        UINT8* aptx_capabilities;
-
-        if ((bt_split_a2dp_enabled && btif_av_is_codec_offload_supported(APTXHD)) || isA2dAptXHdEnabled) {
-            for (index = 0; index < p_peer->num_sup_snks; index++)
-            {
-                if (p_peer->snks[index].codec_type == A2D_NON_A2DP_MEDIA_CT)
-                {
-                    aptx_capabilities = &(p_peer->snks[index].codec_caps[0]);
-                    codecId = ((tA2D_APTX_HD_CIE*)aptx_capabilities)->codecId;
-                    vendorId = ((tA2D_APTX_HD_CIE*)aptx_capabilities)->vendorId;
-                    int i = 0;
-                    for ( i = 0 ; i < AVDT_CODEC_SIZE; i++) {
-                        APPL_TRACE_DEBUG("%s codec_caps[%d]: %x", __func__, i, p_peer->snks[index].codec_caps[i]);
-                    }
-                    APPL_TRACE_DEBUG("%s codecId = %d", __func__, codecId);
-                    APPL_TRACE_DEBUG("%s vendorId = %x", __func__, vendorId);
-                    APPL_TRACE_DEBUG("%s p_peer->snks[index].codec_type = %x", __func__, p_peer->snks[index].codec_type );
-
-                    if (codecId ==  A2D_APTX_HD_CODEC_ID_BLUETOOTH && vendorId == A2D_APTX_HD_VENDOR_ID  )
-                    {
-                        if (p_snk_index)
-                            *p_snk_index = index;
-                        APPL_TRACE_DEBUG("%s aptX HD", __func__);
-
-                        if (bta_av_co_audio_codec_match(p_peer->snks[index].codec_caps, A2D_NON_A2DP_MEDIA_CT))
-                        {
-    #if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
-                            if (bta_av_co_audio_sink_has_scmst(&p_peer->snks[index]))
-    #endif
-                            {
-                                bta_av_co_cb.current_codec_id = bta_av_co_cb.codec_cfg_aptx_hd.id;
-                                bta_av_co_cb.codec_cfg = &bta_av_co_cb.codec_cfg_aptx_hd;
-                                return TRUE;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        for (index = 0; index < p_peer->num_sup_snks; index++)
-        {
-            if (p_peer->snks[index].codec_type == A2D_NON_A2DP_MEDIA_CT)
-            {
-                aptx_capabilities = &(p_peer->snks[index].codec_caps[0]);
-                codecId = ((tA2D_APTX_CIE*)aptx_capabilities)->codecId;
-                vendorId = ((tA2D_APTX_CIE*)aptx_capabilities)->vendorId;
-                int i = 0;
-                for ( i = 0 ; i < AVDT_CODEC_SIZE; i++) {
-                    APPL_TRACE_DEBUG("%s codec_caps[%d]: %x", __func__, i, p_peer->snks[index].codec_caps[i]);
-                }
-                APPL_TRACE_DEBUG("%s codecId = %d", __func__, codecId);
-                APPL_TRACE_DEBUG("%s vendorId = %x", __func__, vendorId);
-                APPL_TRACE_DEBUG("%s p_peer->snks[index].codec_type = %x", __func__, p_peer->snks[index].codec_type );
-
-                if (codecId ==  A2D_APTX_CODEC_ID_BLUETOOTH && vendorId == A2D_APTX_VENDOR_ID)
-                {
-                    if (p_snk_index)
-                        *p_snk_index = index;
-                    APPL_TRACE_DEBUG("%s aptX", __func__);
-
-                    if (bta_av_co_audio_codec_match(p_peer->snks[index].codec_caps, A2D_NON_A2DP_MEDIA_CT))
-                    {
-#if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
-                        if (bta_av_co_audio_sink_has_scmst(&p_peer->snks[index]))
-#endif
-                        {
-                            bta_av_co_cb.current_codec_id = bta_av_co_cb.codec_cfg_aptx.id;
-                            bta_av_co_cb.codec_cfg = &bta_av_co_cb.codec_cfg_aptx;
-                            return TRUE;
-                        }
-                    }
-                }
-            }
-        }
-    } else
-        APPL_TRACE_DEBUG("%s aptX is disabled", __func__);
-
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-    if (bt_split_a2dp_enabled && btif_av_is_codec_offload_supported(AAC)) {
-        for (index = 0; index < p_peer->num_sup_snks; index++)
-        {
-            APPL_TRACE_DEBUG("%s AAC: index: %d, codec_type: %d", __func__, index, p_peer->snks[index].codec_type);
-
-               if (p_peer->snks[index].codec_type == bta_av_co_cb.codec_cfg_aac.id)
-               {
-                   switch (p_peer->snks[index].codec_type)
-                   {
-                    case BTIF_AV_CODEC_M24:
-                        if (p_snk_index) *p_snk_index = index;
-                        APPL_TRACE_DEBUG("%s AAC", __func__);
-                        if (bta_av_co_audio_codec_match(p_peer->snks[index].codec_caps, BTIF_AV_CODEC_M24))
-                        {
-#if  defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
-                           if (bta_av_co_audio_sink_has_scmst(&p_peer->snks[index]))
-#endif
-                            {
-                                bta_av_co_cb.current_codec_id = bta_av_co_cb.codec_cfg_aac.id;
-                                bta_av_co_cb.codec_cfg = &bta_av_co_cb.codec_cfg_aac;
-
-                                APPL_TRACE_DEBUG("%s AAC matched", __func__);
-                                return TRUE;
-                            }
-                        }
-                        break;
-
-                    default:
-                       APPL_TRACE_ERROR("AAC: bta_av_co_audio_peer_supports_codec: unsupported codec id %d", bta_av_co_cb.codec_cfg->id);
-                       //Fall thru for further SBC check
-                       break;
-                   }
-              }
-        }
-    } else
-        APPL_TRACE_DEBUG("%s aptX is disabled", __func__);
-#endif
+    codec_type = bta_av_co_cb.codec_cfg.id;
 
 
     for (index = 0; index < p_peer->num_sup_snks; index++)
     {
-        if (p_peer->snks[index].codec_type == codec_type ||
-            p_peer->snks[index].codec_type == bta_av_co_cb.codec_cfg_sbc.id)
+        if (p_peer->snks[index].codec_type == codec_type)
         {
-            switch (p_peer->snks[index].codec_type)
+            switch (bta_av_co_cb.codec_cfg.id)
             {
             case BTIF_AV_CODEC_SBC:
                 if (p_snk_index) *p_snk_index = index;
-                APPL_TRACE_DEBUG("%s SBC", __func__);
-                if (bta_av_co_audio_codec_match(p_peer->snks[index].codec_caps, BTIF_AV_CODEC_SBC))
-                {
-#if  defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
-                    if (bta_av_co_audio_sink_has_scmst(&p_peer->snks[index]))
-#endif
-                    {
-                        bta_av_co_cb.current_codec_id = bta_av_co_cb.codec_cfg_sbc.id;
-                        bta_av_co_cb.codec_cfg = &bta_av_co_cb.codec_cfg_sbc;
-                        return TRUE;
-                    }
-                }
+                return bta_av_co_audio_codec_match(p_peer->snks[index].codec_caps);
                 break;
 
 
             default:
-                APPL_TRACE_ERROR("bta_av_co_audio_peer_supports_codec: unsupported codec id %d", bta_av_co_cb.codec_cfg->id);
+                APPL_TRACE_ERROR("bta_av_co_audio_peer_supports_codec: unsupported codec id %d", bta_av_co_cb.codec_cfg.id);
                 return FALSE;
                 break;
             }
@@ -1892,14 +1357,14 @@ static BOOLEAN bta_av_co_audio_peer_src_supports_codec(tBTA_AV_CO_PEER *p_peer, 
     FUNC_TRACE();
 
     /* Configure the codec type to look for */
-    codec_type = bta_av_co_cb.codec_cfg->id;
+    codec_type = bta_av_co_cb.codec_cfg.id;
 
 
     for (index = 0; index < p_peer->num_sup_srcs; index++)
     {
         if (p_peer->srcs[index].codec_type == codec_type)
         {
-            switch (bta_av_co_cb.codec_cfg->id)
+            switch (bta_av_co_cb.codec_cfg.id)
             {
             case BTIF_AV_CODEC_SBC:
                 if (p_src_index) *p_src_index = index;
@@ -1912,7 +1377,7 @@ static BOOLEAN bta_av_co_audio_peer_src_supports_codec(tBTA_AV_CO_PEER *p_peer, 
 
             default:
                 APPL_TRACE_ERROR("peer_src_supports_codec: unsupported codec id %d",
-                                                            bta_av_co_cb.codec_cfg->id);
+                                                            bta_av_co_cb.codec_cfg.id);
                 return FALSE;
                 break;
             }
@@ -1965,52 +1430,16 @@ static BOOLEAN bta_av_co_audio_media_supports_config(UINT8 codec_type, const UIN
 {
     FUNC_TRACE();
 
-    APPL_TRACE_DEBUG("%s codec_type = %x", __func__, codec_type);
-
-    UINT16 codecId;
-    UINT32 vendorId;
-    UINT8* aptx_capabilities;
-
     switch (codec_type)
     {
     case BTA_AV_CODEC_SBC:
         if (bta_av_sbc_cfg_in_cap((UINT8 *)p_codec_cfg, (tA2D_SBC_CIE *)&bta_av_co_sbc_caps))
         {
-            APPL_TRACE_DEBUG("%s SBC ",__func__);
             return FALSE;
         }
         break;
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-    case BTA_AV_CODEC_M24:
-        if (bta_av_aac_cfg_in_cap((UINT8 *)p_codec_cfg, (tA2D_AAC_CIE *)&bta_av_co_aac_caps))
-        {
-            APPL_TRACE_DEBUG("%s AAC ",__func__);
-            return FALSE;
-        }
-        break;
-#endif
-    case A2D_NON_A2DP_MEDIA_CT:
-        aptx_capabilities = &(((tBTA_AV_CO_SINK*)p_codec_cfg)->codec_caps[0]);
-        codecId = ((tA2D_APTX_CIE*)(aptx_capabilities))->codecId;
-        vendorId = ((tA2D_APTX_CIE*)(aptx_capabilities))->vendorId;
-        APPL_TRACE_DEBUG("%s codecId = %d ", __func__, codecId);
-        APPL_TRACE_DEBUG("%s vendorId = %x ", __func__, vendorId);
 
-        if (codecId ==  A2D_APTX_HD_CODEC_ID_BLUETOOTH && vendorId == A2D_APTX_HD_VENDOR_ID) {
-            APPL_TRACE_DEBUG("%s tA2D_APTX_CIE aptX HD", __func__);
-            if (a2d_av_aptx_hd_cfg_in_cap((UINT8 *)p_codec_cfg, (tA2D_APTX_HD_CIE *)&bta_av_co_aptx_hd_caps)) {
-                APPL_TRACE_DEBUG("%s aptX HD", __func__);
-                return FALSE;
-            }
-            break;
-        } else if (codecId ==  A2D_APTX_CODEC_ID_BLUETOOTH && vendorId == A2D_APTX_VENDOR_ID) {
-            APPL_TRACE_DEBUG("%s tA2D_APTX_CIE aptX", __func__);
-            if (a2d_av_aptx_cfg_in_cap((UINT8 *)p_codec_cfg, (tA2D_APTX_CIE *)&bta_av_co_aptx_caps)) {
-                APPL_TRACE_DEBUG("%s aptX", __func__);
-                return FALSE;
-            }
-            break;
-        }
+
     default:
         APPL_TRACE_ERROR("bta_av_co_audio_media_supports_config unsupported codec type %d", codec_type);
         return FALSE;
@@ -2040,9 +1469,7 @@ BOOLEAN bta_av_co_audio_codec_supported(tBTIF_STATUS *p_status)
 #if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
     BOOLEAN cp_active;
 #endif
-    UINT16 current_codec_id;
-    current_codec_id = bta_av_co_cb.current_codec_id;
-    UINT8 p_scb_codec_type = 0;
+
     FUNC_TRACE();
 
     APPL_TRACE_DEBUG("bta_av_co_audio_codec_supported");
@@ -2065,16 +1492,7 @@ BOOLEAN bta_av_co_audio_codec_supported(tBTIF_STATUS *p_status)
                     APPL_TRACE_DEBUG("bta_av_co_audio_codec_supported sink %d of peer %d doesn't support cp",
                             snk_index, index);
                     *p_status = BTIF_ERROR_SRV_AV_CP_NOT_SUPPORTED;
-#if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
-                    if (!bta_av_co_audio_codec_build_config(p_sink->codec_caps, codec_cfg))
-                    {
-                        APPL_TRACE_DEBUG("%s index %d doesn't support codec", __func__, index);
-                        return FALSE;
-                    }
-                    return TRUE;
-#else
                     return FALSE;
-#endif
                 }
 
                 /* Build the codec configuration for this sink */
@@ -2084,10 +1502,6 @@ BOOLEAN bta_av_co_audio_codec_supported(tBTIF_STATUS *p_status)
                     /* Check if this sink supports SCMS */
                     cp_active = bta_av_co_audio_sink_has_scmst(p_sink);
 #endif
-                    APPL_TRACE_DEBUG("%s current_codec_id: %x", __func__, bta_av_co_cb.current_codec_id);
-                    APPL_TRACE_DEBUG("%s p_scb_codec_type: %x", __func__, p_scb_codec_type);
-                    p_scb_codec_type = bta_av_get_codec_type();
-                    APPL_TRACE_DEBUG("%s p_scb_codec_type: %x", __func__, p_scb_codec_type);
                     /* Check if this is a new configuration (new sink or new config) */
                     if ((p_sink != p_peer->p_snk) ||
                         (memcmp(codec_cfg, p_peer->codec_cfg, AVDT_CODEC_SIZE))
@@ -2144,30 +1558,12 @@ void bta_av_co_audio_codec_reset(void)
     FUNC_TRACE();
 
     /* Reset the current configuration to SBC */
-    bta_av_co_cb.codec_cfg_sbc.id = BTIF_AV_CODEC_SBC;
-    if (A2D_BldSbcInfo(A2D_MEDIA_TYPE_AUDIO, (tA2D_SBC_CIE *)&btif_av_sbc_default_config, bta_av_co_cb.codec_cfg_sbc.info) != A2D_SUCCESS)
+    bta_av_co_cb.codec_cfg.id = BTIF_AV_CODEC_SBC;
+
+    if (A2D_BldSbcInfo(A2D_MEDIA_TYPE_AUDIO, (tA2D_SBC_CIE *)&btif_av_sbc_default_config, bta_av_co_cb.codec_cfg.info) != A2D_SUCCESS)
     {
         APPL_TRACE_ERROR("bta_av_co_audio_codec_reset A2D_BldSbcInfo failed");
-    } else
-        bta_av_co_cb.codec_cfg = &(bta_av_co_cb.codec_cfg_sbc);
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-    /* Reset the current configuration to AAC */
-    bta_av_co_cb.codec_cfg_aac.id = BTIF_AV_CODEC_M24;
-    if (A2D_BldAacInfo(A2D_MEDIA_TYPE_AUDIO, (tA2D_AAC_CIE *)&btif_av_aac_default_config, bta_av_co_cb.codec_cfg_aac.info) != A2D_SUCCESS)
-    {
-        APPL_TRACE_ERROR("bta_av_co_audio_codec_reset A2D_BldAacInfo failed");
-    } else
-        bta_av_co_cb.codec_cfg = &(bta_av_co_cb.codec_cfg_sbc);
-#endif
-    /* Reset the Current configuration to aptX */
-    bta_av_co_cb.codec_cfg_aptx.id = A2D_NON_A2DP_MEDIA_CT;
-    if (A2D_BldAptxInfo(A2D_MEDIA_TYPE_AUDIO, (tA2D_APTX_CIE *)&btif_av_aptx_default_config, bta_av_co_cb.codec_cfg_aptx.info) != A2D_SUCCESS)
-        APPL_TRACE_ERROR("%s A2D_BldAptxInfo failed", __func__);
-
-    /* Reset the Current configuration to aptX HD */
-    bta_av_co_cb.codec_cfg_aptx_hd.id = A2D_NON_A2DP_MEDIA_CT;
-    if (A2D_BldAptx_hdInfo(A2D_MEDIA_TYPE_AUDIO, (tA2D_APTX_HD_CIE *)&btif_av_aptx_hd_default_config, bta_av_co_cb.codec_cfg_aptx_hd.info) != A2D_SUCCESS)
-        APPL_TRACE_ERROR("%s A2D_BldAptx_hdInfo failed", __func__);
+    }
 
     mutex_global_unlock();
 }
@@ -2186,15 +1582,8 @@ void bta_av_co_audio_codec_reset(void)
 BOOLEAN bta_av_co_audio_set_codec(const tBTIF_AV_MEDIA_FEEDINGS *p_feeding, tBTIF_STATUS *p_status)
 {
     tA2D_SBC_CIE sbc_config;
-    tBTIF_AV_CODEC_INFO new_cfg_sbc;
-    tA2D_APTX_CIE aptx_config;
-    tBTIF_AV_CODEC_INFO new_cfg_aptx;
-    tA2D_APTX_HD_CIE aptx_hd_config;
-    tBTIF_AV_CODEC_INFO new_cfg_aptx_hd;
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-    tA2D_AAC_CIE aac_config;
-    tBTIF_AV_CODEC_INFO new_cfg_aac;
-#endif
+    tBTIF_AV_CODEC_INFO new_cfg;
+
     FUNC_TRACE();
 
     /* Check AV feeding is supported */
@@ -2206,7 +1595,7 @@ BOOLEAN bta_av_co_audio_set_codec(const tBTIF_AV_MEDIA_FEEDINGS *p_feeding, tBTI
     switch (p_feeding->format)
     {
     case BTIF_AV_CODEC_PCM:
-        new_cfg_sbc.id = BTIF_AV_CODEC_SBC;
+        new_cfg.id = BTIF_AV_CODEC_SBC;
 
         sbc_config = btif_av_sbc_default_config;
         if ((p_feeding->cfg.pcm.num_channel != 1) &&
@@ -2216,20 +1605,11 @@ BOOLEAN bta_av_co_audio_set_codec(const tBTIF_AV_MEDIA_FEEDINGS *p_feeding, tBTI
             return FALSE;
         }
         if ((p_feeding->cfg.pcm.bit_per_sample != 8) &&
-            (p_feeding->cfg.pcm.bit_per_sample != 16) &&
-            (p_feeding->cfg.pcm.bit_per_sample != 32))
+            (p_feeding->cfg.pcm.bit_per_sample != 16))
         {
             APPL_TRACE_ERROR("bta_av_co_audio_set_codec PCM sample size unsupported");
             return FALSE;
         }
-        new_cfg_aptx.id = A2D_NON_A2DP_MEDIA_CT;
-        aptx_config = btif_av_aptx_default_config;
-        new_cfg_aptx_hd.id = A2D_NON_A2DP_MEDIA_CT;
-        aptx_hd_config = btif_av_aptx_hd_default_config;
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-        new_cfg_aac.id = BTIF_AV_CODEC_M24;
-        aac_config = btif_av_aac_default_config;
-#endif
         switch (p_feeding->cfg.pcm.sampling_freq)
         {
         case 8000:
@@ -2239,22 +1619,12 @@ BOOLEAN bta_av_co_audio_set_codec(const tBTIF_AV_MEDIA_FEEDINGS *p_feeding, tBTI
         case 32000:
         case 48000:
             sbc_config.samp_freq = A2D_SBC_IE_SAMP_FREQ_48;
-            aptx_config.sampleRate = A2D_APTX_SAMPLERATE_48000;
-            aptx_hd_config.sampleRate = A2D_APTX_HD_SAMPLERATE_48000;
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-            aac_config.samp_freq = A2D_AAC_IE_SAMP_FREQ_48000;
-#endif
             break;
 
         case 11025:
         case 22050:
         case 44100:
             sbc_config.samp_freq = A2D_SBC_IE_SAMP_FREQ_44;
-            aptx_config.sampleRate = A2D_APTX_SAMPLERATE_44100;
-            aptx_hd_config.sampleRate = A2D_APTX_HD_SAMPLERATE_44100;
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-            aac_config.samp_freq = A2D_AAC_IE_SAMP_FREQ_44100;
-#endif
             break;
         default:
             APPL_TRACE_ERROR("bta_av_co_audio_set_codec PCM sampling frequency unsupported");
@@ -2262,28 +1632,11 @@ BOOLEAN bta_av_co_audio_set_codec(const tBTIF_AV_MEDIA_FEEDINGS *p_feeding, tBTI
             break;
         }
         /* Build the codec config */
-        if (A2D_BldSbcInfo(A2D_MEDIA_TYPE_AUDIO, &sbc_config, new_cfg_sbc.info) != A2D_SUCCESS)
+        if (A2D_BldSbcInfo(A2D_MEDIA_TYPE_AUDIO, &sbc_config, new_cfg.info) != A2D_SUCCESS)
         {
             APPL_TRACE_ERROR("bta_av_co_audio_set_codec A2D_BldSbcInfo failed");
             return FALSE;
         }
-        if (A2D_BldAptxInfo(A2D_MEDIA_TYPE_AUDIO, &aptx_config, new_cfg_aptx.info) != A2D_SUCCESS)
-        {
-            APPL_TRACE_ERROR("%s A2D_BldAptxInfo failed", __func__);
-            return FALSE;
-        }
-        if (A2D_BldAptx_hdInfo(A2D_MEDIA_TYPE_AUDIO, &aptx_hd_config, new_cfg_aptx_hd.info) != A2D_SUCCESS)
-        {
-            APPL_TRACE_ERROR("%s A2D_BldAptx_hdInfo failed", __func__);
-            return FALSE;
-        }
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-        if (A2D_BldAacInfo(A2D_MEDIA_TYPE_AUDIO, &aac_config, new_cfg_aac.info) != A2D_SUCCESS)
-        {
-            APPL_TRACE_ERROR("%s A2D_BldAacInfo failed", __func__);
-            return FALSE;
-        }
-#endif
         break;
 
 
@@ -2293,157 +1646,13 @@ BOOLEAN bta_av_co_audio_set_codec(const tBTIF_AV_MEDIA_FEEDINGS *p_feeding, tBTI
         break;
     }
 
-    /* The new config was correctly built. The default codec is set to be SBC */
-    bta_av_co_cb.codec_cfg_sbc = new_cfg_sbc;
-    bta_av_co_cb.codec_cfg = &bta_av_co_cb.codec_cfg_sbc;
-    bta_av_co_cb.codec_cfg_aptx= new_cfg_aptx;
-    bta_av_co_cb.codec_cfg_aptx_hd = new_cfg_aptx_hd;
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-    bta_av_co_cb.codec_cfg_aac = new_cfg_aac;
-#endif
+    /* The new config was correctly built */
+    bta_av_co_cb.codec_cfg = new_cfg;
+
 
     /* Check all devices support it */
     *p_status = BTIF_SUCCESS;
     return bta_av_co_audio_codec_supported(p_status);
-}
-
-UINT8 bta_av_select_codec(UINT8 hdl)
-{
-    if (NULL == bta_av_co_cb.codec_cfg)
-    {
-        // Some circumstances - bta_av_co functions are called before
-        // codec clock is initialised
-        APPL_TRACE_ERROR("%s hdl = %d, no codec configured", __func__, hdl);
-        return BTIF_AV_CODEC_NONE;
-    }
-    else
-    {
-        tBTA_AV_CO_PEER *p_peer;
-        UINT8 index;
-        APPL_TRACE_ERROR("%s hdl = %d",__func__,hdl);
-        /* Retrieve the peer info */
-        p_peer = bta_av_co_get_peer(hdl);
-        /* Fix for below KW Issue
-           Pointer 'p_peer' returned from call to function 'bta_av_co_get_peer' at line
-           1993 may be NULL, will be passed to function and may be dereferenced there
-           by passing argument 1 to function 'bta_av_co_audio_peer_supports_codec' at
-           line 2001.*/
-        if (p_peer != NULL)
-        {
-            bta_av_co_audio_peer_supports_codec(p_peer,&index);
-        }
-        return bta_av_co_cb.codec_cfg->id;
-    }
-}
-
-UINT8 bta_av_co_get_current_codec()
-{
-    // Some circumstances - bta_av_co functions are called before codec clock is initialised
-    if (NULL == bta_av_co_cb.codec_cfg)
-        return BTIF_AV_CODEC_NONE;
-    else
-        return bta_av_co_cb.codec_cfg->id;
-}
-
-UINT8* bta_av_co_get_current_codecInfo()
-{
-    // We assume that the configuration block is always valid when this is called.
-    return &bta_av_co_cb.codec_cfg->info[0];
-}
-
-/*******************************************************************************
- **
- ** Function         bta_av_co_audio_get_codec_config
- **
- ** Description      Retrieves the current codec configuration.  In case of failure return
- **                       the default SBC codec configuration.
- **
- ** Returns          TRUE if returned current codec config, FALSE otherwise
- **
- *******************************************************************************/
-BOOLEAN bta_av_co_audio_get_codec_config(UINT8 *p_config, UINT16 *p_minmtu, UINT8 type)
-{
-    BOOLEAN result = FALSE;
-    UINT8 index, jndex;
-    tBTA_AV_CO_PEER *p_peer;
-    tBTA_AV_CO_SINK *p_sink;
-    tA2D_SBC_CIE *sbc_config;
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-    tA2D_AAC_CIE *aac_config;
-#endif
-
-    APPL_TRACE_EVENT("%s codec 0x%x", __func__, bta_av_co_cb.codec_cfg->id);
-
-    /* Minimum MTU is by default very large */
-    *p_minmtu = 0xFFFF;
-
-    mutex_global_lock();
-    if (type == BTIF_AV_CODEC_SBC)
-    {
-        APPL_TRACE_DEBUG("%s SBC", __func__);
-        sbc_config = (tA2D_SBC_CIE *)p_config;
-        if (A2D_ParsSbcInfo(sbc_config, bta_av_co_cb.codec_cfg_sbc.info, FALSE) == A2D_SUCCESS)
-            result = TRUE;
-        else
-            memcpy((tA2D_SBC_CIE *) p_config, &btif_av_sbc_default_config, sizeof(tA2D_SBC_CIE));
-    } else if (type == A2D_NON_A2DP_MEDIA_CT && ((tA2D_APTX_CIE *)p_config)->vendorId == A2D_APTX_VENDOR_ID && ((tA2D_APTX_CIE *)p_config)->codecId == A2D_APTX_CODEC_ID_BLUETOOTH) {
-        APPL_TRACE_DEBUG("%s aptX", __func__);
-        tA2D_APTX_CIE *aptx_config = (tA2D_APTX_CIE *)p_config;
-        if (A2D_ParsAptxInfo(aptx_config, bta_av_co_cb.codec_cfg_aptx.info, FALSE) == A2D_SUCCESS)
-            result = TRUE;
-        else
-            memcpy((tA2D_APTX_CIE *) p_config, &btif_av_aptx_default_config, sizeof(tA2D_APTX_CIE));
-    } else if (type == A2D_NON_A2DP_MEDIA_CT && ((tA2D_APTX_HD_CIE *)p_config)->vendorId == A2D_APTX_HD_VENDOR_ID && ((tA2D_APTX_HD_CIE *)p_config)->codecId == A2D_APTX_HD_CODEC_ID_BLUETOOTH) {
-        APPL_TRACE_DEBUG("%s aptX HD", __func__);
-        tA2D_APTX_HD_CIE *aptx_hd_config = (tA2D_APTX_HD_CIE *)p_config;
-        if (A2D_ParsAptx_hdInfo(aptx_hd_config, bta_av_co_cb.codec_cfg_aptx_hd.info, FALSE) == A2D_SUCCESS)
-            result = TRUE;
-        else
-            memcpy((tA2D_APTX_HD_CIE *) p_config, &btif_av_aptx_hd_default_config, sizeof(tA2D_APTX_HD_CIE));
-    } else {
-        APPL_TRACE_DEBUG("%s vendorId: %d  codecId: %d\n", __func__, ((tA2D_APTX_CIE *)p_config)->vendorId, ((tA2D_APTX_CIE *)p_config)->codecId);
-    }
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-    if (type == BTIF_AV_CODEC_M24)
-    {
-        APPL_TRACE_DEBUG("%s AAC", __func__);
-        aac_config = (tA2D_AAC_CIE *)p_config;
-        if (A2D_ParsAacInfo(aac_config, bta_av_co_cb.codec_cfg_aac.info, FALSE) == A2D_SUCCESS)
-            result = TRUE;
-        else
-            memcpy((tA2D_AAC_CIE *) p_config, &btif_av_aac_default_config, sizeof(tA2D_AAC_CIE));
-    }
-#endif
-    for (index = 0; index < BTA_AV_CO_NUM_ELEMENTS(bta_av_co_cb.peers); index++)
-    {
-        p_peer = &bta_av_co_cb.peers[index];
-        if (p_peer->opened)
-        {
-            if (p_peer->mtu < *p_minmtu)
-                *p_minmtu = p_peer->mtu;
-
-            for (jndex = 0; jndex < p_peer->num_sup_snks; jndex++)
-            {
-                p_sink = &p_peer->snks[jndex];
-                if (type == BTIF_AV_CODEC_SBC && p_sink->codec_type == A2D_MEDIA_CT_SBC)
-                {
-                    /* Update the bitpool boundaries of the current config */
-                    sbc_config->min_bitpool =
-                        BTA_AV_CO_MAX(p_sink->codec_caps[BTA_AV_CO_SBC_MIN_BITPOOL_OFF],
-                                      sbc_config->min_bitpool);
-                    sbc_config->max_bitpool =
-                        BTA_AV_CO_MIN(p_sink->codec_caps[BTA_AV_CO_SBC_MAX_BITPOOL_OFF],
-                                      sbc_config->max_bitpool);
-                    APPL_TRACE_EVENT("%s sink bitpool min %d, max %d", __func__,
-                                      sbc_config->min_bitpool, sbc_config->max_bitpool);
-                    break;
-                }
-            }
-        }
-    }
-    mutex_global_unlock();
-
-    return result;
 }
 
 /*******************************************************************************
@@ -2463,22 +1672,21 @@ BOOLEAN bta_av_co_audio_get_sbc_config(tA2D_SBC_CIE *p_sbc_config, UINT16 *p_min
     tBTA_AV_CO_PEER *p_peer;
     tBTA_AV_CO_SINK *p_sink;
 
-    APPL_TRACE_EVENT("bta_av_co_cb.codec_cfg->id : codec 0x%x", bta_av_co_cb.codec_cfg->id);
+    APPL_TRACE_EVENT("bta_av_co_cb.codec_cfg.id : codec 0x%x", bta_av_co_cb.codec_cfg.id);
 
     /* Minimum MTU is by default very large */
     *p_minmtu = 0xFFFF;
 
     mutex_global_lock();
-    if (bta_av_co_cb.codec_cfg->id == BTIF_AV_CODEC_SBC)
+    if (bta_av_co_cb.codec_cfg.id == BTIF_AV_CODEC_SBC)
     {
-        if (A2D_ParsSbcInfo(p_sbc_config, bta_av_co_cb.codec_cfg->info, FALSE) == A2D_SUCCESS)
+        if (A2D_ParsSbcInfo(p_sbc_config, bta_av_co_cb.codec_cfg.info, FALSE) == A2D_SUCCESS)
         {
             for (index = 0; index < BTA_AV_CO_NUM_ELEMENTS(bta_av_co_cb.peers); index++)
             {
                 p_peer = &bta_av_co_cb.peers[index];
                 if (p_peer->opened)
                 {
-                    APPL_TRACE_EVENT("%s on index= %d", __func__, index);
                     if (p_peer->mtu < *p_minmtu)
                     {
                         *p_minmtu = p_peer->mtu;
@@ -2489,7 +1697,6 @@ BOOLEAN bta_av_co_audio_get_sbc_config(tA2D_SBC_CIE *p_sbc_config, UINT16 *p_min
                         if (p_sink->codec_type == A2D_MEDIA_CT_SBC)
                         {
                             /* Update the bitpool boundaries of the current config */
-                            APPL_TRACE_EVENT("%s Update the bitpool boundaries on index= %d", __func__, jndex);
                             p_sbc_config->min_bitpool =
                                BTA_AV_CO_MAX(p_sink->codec_caps[BTA_AV_CO_SBC_MIN_BITPOOL_OFF],
                                              p_sbc_config->min_bitpool);
@@ -2510,67 +1717,12 @@ BOOLEAN bta_av_co_audio_get_sbc_config(tA2D_SBC_CIE *p_sbc_config, UINT16 *p_min
     if (!result)
     {
         /* Not SBC, still return the default values */
-        APPL_TRACE_EVENT("%s Not SBC, still return the default values", __func__);
         *p_sbc_config = btif_av_sbc_default_config;
     }
     mutex_global_unlock();
 
     return result;
 }
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-/*******************************************************************************
- **
- ** Function         bta_av_co_audio_get_aac_config
- **
- ** Description      Retrieves the AAC codec configuration.  If the codec in use
- **                  is not AAC, return the default AAC codec configuration.
- **
- ** Returns          TRUE if codec is AAC, FALSE otherwise
- **
- *******************************************************************************/
-BOOLEAN bta_av_co_audio_get_aac_config(tA2D_AAC_CIE *p_aac_config, UINT16 *p_minmtu)
-{
-    BOOLEAN result = FALSE;
-    UINT8 index;
-    tBTA_AV_CO_PEER *p_peer;
-
-    APPL_TRACE_EVENT("bta_av_co_cb.codec_cfg->id : codec 0x%x", bta_av_co_cb.codec_cfg->id);
-
-    /* Minimum MTU is by default very large */
-    *p_minmtu = 0xFFFF;
-
-    mutex_global_lock();
-    if (bta_av_co_cb.codec_cfg->id == BTIF_AV_CODEC_M24)
-    {
-        if (A2D_ParsAacInfo(p_aac_config, bta_av_co_cb.codec_cfg->info, FALSE) == A2D_SUCCESS)
-        {
-            for (index = 0; index < BTA_AV_CO_NUM_ELEMENTS(bta_av_co_cb.peers); index++)
-            {
-                p_peer = &bta_av_co_cb.peers[index];
-                if (p_peer->opened)
-                {
-                    APPL_TRACE_EVENT("%s on index= %d", __func__, index);
-                    if (p_peer->mtu < *p_minmtu)
-                    {
-                        *p_minmtu = p_peer->mtu;
-                    }
-                }
-            }
-            result = TRUE;
-        }
-    }
-
-    if (!result)
-    {
-        /* Not AAC, still return the default values */
-        APPL_TRACE_EVENT("%s Not SBC, still return the default values", __func__);
-        *p_aac_config = btif_av_aac_default_config;
-    }
-    mutex_global_unlock();
-
-    return result;
-}
-#endif
 
 /*******************************************************************************
  **
@@ -2615,7 +1767,7 @@ void bta_av_co_init(void)
     /* Reset the control block */
     memset(&bta_av_co_cb, 0, sizeof(bta_av_co_cb));
 
-    bta_av_co_cb.codec_cfg_setconfig = NULL;
+    bta_av_co_cb.codec_cfg_setconfig.id = BTIF_AV_CODEC_NONE;
 
 #if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
     bta_av_co_cp_set_flag(BTA_AV_CP_SCMS_COPY_NEVER);
@@ -2681,41 +1833,11 @@ BOOLEAN bta_av_co_peer_cp_supported(tBTA_AV_HNDL hndl)
 BOOLEAN bta_av_co_get_remote_bitpool_pref(UINT8 *min, UINT8 *max)
 {
     /* check if remote peer did a set config */
-    if (bta_av_co_cb.codec_cfg_setconfig == NULL)
+    if (bta_av_co_cb.codec_cfg_setconfig.id == BTIF_AV_CODEC_NONE)
         return FALSE;
 
-    *min = bta_av_co_cb.codec_cfg_setconfig->info[BTA_AV_CO_SBC_MIN_BITPOOL_OFF];
-    *max = bta_av_co_cb.codec_cfg_setconfig->info[BTA_AV_CO_SBC_MAX_BITPOOL_OFF];
+    *min = bta_av_co_cb.codec_cfg_setconfig.info[BTA_AV_CO_SBC_MIN_BITPOOL_OFF];
+    *max = bta_av_co_cb.codec_cfg_setconfig.info[BTA_AV_CO_SBC_MAX_BITPOOL_OFF];
 
     return TRUE;
-}
-
-/*******************************************************************************
-**
-** Function         bta_av_co_audio_is_offload_supported
-**
-** Description      This function is called by AV to check if DUT is in offload
-**                  mode.
-**
-** Returns          TRUE if offload is enabled, FALSE otherwise
-**
-*******************************************************************************/
-BOOLEAN bta_av_co_audio_is_offload_supported(void)
-{
-    return btif_av_is_offload_supported();
-}
-
-/*******************************************************************************
-**
-** Function         bta_av_co_audio_is_codec_supported
-**
-** Description      This function is called by AV to check if corresponding
-**                  codec is supported in offload mode.
-**
-** Returns          TRUE if codec is supported in offload, FALSE otherwise
-**
-*******************************************************************************/
-BOOLEAN bta_av_co_audio_is_codec_supported(int codec)
-{
-    return btif_av_is_codec_offload_supported(codec);
 }

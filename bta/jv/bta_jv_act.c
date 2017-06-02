@@ -28,7 +28,6 @@
 #include <string.h>
 
 #include "osi/include/allocator.h"
-#include "btu.h"
 #include "bt_types.h"
 #include "bt_common.h"
 #include "utl.h"
@@ -50,7 +49,7 @@
 
 #include "osi/include/osi.h"
 
-extern fixed_queue_t *btu_general_alarm_queue;
+
 /* one of these exists for each client */
 struct fc_client {
     struct fc_client    *next_all_list;
@@ -417,9 +416,6 @@ static void bta_jv_clear_pm_cb(tBTA_JV_PM_CB *p_pm_cb, BOOLEAN close_conn)
     /* needs to be called if registered with bta pm, otherwise we may run out of dm pm slots! */
     if (close_conn)
         bta_sys_conn_close(BTA_ID_JV, p_pm_cb->app_id, p_pm_cb->peer_bd_addr);
-
-    /* Ensure that timer is stopped */
-    alarm_cancel(p_pm_cb->idle_timer);
     p_pm_cb->state = BTA_JV_PM_FREE_ST;
     p_pm_cb->app_id = BTA_JV_PM_ALL;
     p_pm_cb->handle = BTA_JV_PM_HANDLE_CLEAR;
@@ -580,9 +576,6 @@ static tBTA_JV_PM_CB *bta_jv_alloc_set_pm_profile_cb(UINT32 jv_handle, tBTA_JV_P
         bta_jv_cb.pm_cb[i].app_id = app_id;
         bdcpy(bta_jv_cb.pm_cb[i].peer_bd_addr, peer_bd_addr);
         bta_jv_cb.pm_cb[i].state = BTA_JV_PM_IDLE_ST;
-
-        bta_jv_cb.pm_cb[i].idle_timer = alarm_new("bta.jv_idle_timer");
-        APPL_TRACE_DEBUG("bta_jv_alloc_set_pm_profile_cb: %d, PM_cb: %p", i, &bta_jv_cb.pm_cb[i]);
         return &bta_jv_cb.pm_cb[i];
     }
     APPL_TRACE_WARNING("bta_jv_alloc_set_pm_profile_cb(jv_handle: 0x%x, app_id: %d) "
@@ -1122,8 +1115,7 @@ void bta_jv_l2cap_connect(tBTA_JV_MSG *p_data)
     }
 
     evt_data.handle = handle;
-    if(cc->p_cback)
-        cc->p_cback(BTA_JV_L2CAP_CL_INIT_EVT, (tBTA_JV *)&evt_data, cc->user_data);
+    cc->p_cback(BTA_JV_L2CAP_CL_INIT_EVT, (tBTA_JV *)&evt_data, cc->user_data);
 }
 
 
@@ -1288,8 +1280,7 @@ void bta_jv_l2cap_start_server(tBTA_JV_MSG *p_data)
         p_cb->psm = ls->local_psm;
     }
 
-    if(ls->p_cback)
-        ls->p_cback(BTA_JV_L2CAP_START_EVT, (tBTA_JV *)&evt_data, ls->user_data);
+    ls->p_cback(BTA_JV_L2CAP_START_EVT, (tBTA_JV *)&evt_data, ls->user_data);
 }
 
 /*******************************************************************************
@@ -1318,8 +1309,7 @@ void bta_jv_l2cap_stop_server(tBTA_JV_MSG *p_data)
             evt_data.handle = p_cb->handle;
             evt_data.status = bta_jv_free_l2c_cb(p_cb);
             evt_data.async = FALSE;
-            if(p_cback)
-                p_cback(BTA_JV_L2CAP_CLOSE_EVT, (tBTA_JV *)&evt_data, ls->user_data);
+            p_cback(BTA_JV_L2CAP_CLOSE_EVT, (tBTA_JV *)&evt_data, user_data);
             break;
         }
     }
@@ -1448,17 +1438,13 @@ static int bta_jv_port_data_co_cback(UINT16 port_handle, UINT8 *buf, UINT16 len,
 {
     tBTA_JV_RFC_CB  *p_cb = bta_jv_rfc_port_to_cb(port_handle);
     tBTA_JV_PCB     *p_pcb = bta_jv_rfc_port_to_pcb(port_handle);
-    int ret = 0;
     APPL_TRACE_DEBUG("%s, p_cb:%p, p_pcb:%p, len:%d, type:%d", __func__, p_cb, p_pcb, len, type);
     if (p_pcb != NULL)
     {
         switch(type)
         {
             case DATA_CO_CALLBACK_TYPE_INCOMING:
-                bta_jv_pm_conn_busy(p_pcb->p_pm_cb);
-                ret = bta_co_rfc_data_incoming(p_pcb->user_data, (BT_HDR*)buf);
-                bta_jv_pm_conn_idle(p_pcb->p_pm_cb);
-                return ret;
+                return bta_co_rfc_data_incoming(p_pcb->user_data, (BT_HDR*)buf);
             case DATA_CO_CALLBACK_TYPE_OUTGOING_SIZE:
                 return bta_co_rfc_data_outgoing_size(p_pcb->user_data, (int*)buf);
             case DATA_CO_CALLBACK_TYPE_OUTGOING:
@@ -1491,10 +1477,7 @@ static void bta_jv_port_mgmt_cl_cback(UINT32 code, UINT16 port_handle)
     tBTA_JV_RFCOMM_CBACK *p_cback;  /* the callback function */
 
     APPL_TRACE_DEBUG( "bta_jv_port_mgmt_cl_cback:code:%d, port_handle%d", code, port_handle);
-    /* Fix for below Klockwork issue
-     * Pointer 'p_pcb' returned from call to function 'bta_jv_rfc_port_to_pcb' at line 1490
-     * may be NULL and may be dereferenced at line 1500*/
-    if(NULL == p_cb || NULL == p_cb->p_cback || NULL == p_pcb)
+    if(NULL == p_cb || NULL == p_cb->p_cback)
         return;
 
     APPL_TRACE_DEBUG( "bta_jv_port_mgmt_cl_cback code=%d port_handle:%d handle:%d",
@@ -1545,11 +1528,8 @@ static void bta_jv_port_event_cl_cback(UINT32 code, UINT16 port_handle)
     tBTA_JV evt_data;
 
     APPL_TRACE_DEBUG( "bta_jv_port_event_cl_cback:%d", port_handle);
-    /* Fix for below Klockwork issue
-     * Pointer 'p_pcb' returned from call to function 'bta_jv_rfc_port_to_pcb' at line 1547
-     * may be NULL and may be dereferenced at line 1554*/
-    if (NULL == p_cb || NULL == p_cb->p_cback || NULL == p_pcb)
-          return;
+    if (NULL == p_cb || NULL == p_cb->p_cback)
+        return;
 
     APPL_TRACE_DEBUG( "bta_jv_port_event_cl_cback code=x%x port_handle:%d handle:%d",
         code, port_handle, p_cb->handle);
@@ -1729,12 +1709,12 @@ static void bta_jv_port_mgmt_sr_cback(UINT32 code, UINT16 port_handle)
     BD_ADDR rem_bda;
     UINT16 lcid;
     APPL_TRACE_DEBUG("bta_jv_port_mgmt_sr_cback, code:%d, port_handle:%d", code, port_handle);
-    /* Fix for below Klockwork issue
-     * Pointer 'p_pcb' returned from call to function 'bta_jv_rfc_port_to_pcb' at line 1729
-     * may be NULL and may be dereferenced at line 1738*/
-    if (NULL == p_cb || NULL == p_cb->p_cback || NULL == p_pcb)
+    if (NULL == p_cb || NULL == p_cb->p_cback)
+    {
+        APPL_TRACE_ERROR("bta_jv_port_mgmt_sr_cback, p_cb:%p, p_cb->p_cback%p",
+                p_cb, p_cb ? p_cb->p_cback : NULL);
         return;
-
+    }
     void *user_data = p_pcb->user_data;
     APPL_TRACE_DEBUG( "bta_jv_port_mgmt_sr_cback code=%d port_handle:0x%x handle:0x%x, p_pcb:%p, user:%d",
         code, port_handle, p_cb->handle, p_pcb, p_pcb->user_data);
@@ -1797,7 +1777,7 @@ static void bta_jv_port_event_sr_cback(UINT32 code, UINT16 port_handle)
     tBTA_JV_RFC_CB  *p_cb = bta_jv_rfc_port_to_cb(port_handle);
     tBTA_JV evt_data;
 
-    if (NULL == p_cb || NULL == p_cb->p_cback || NULL == p_pcb)
+    if (NULL == p_cb || NULL == p_cb->p_cback)
         return;
 
     APPL_TRACE_DEBUG( "bta_jv_port_event_sr_cback code=x%x port_handle:%d handle:%d",
@@ -2048,13 +2028,6 @@ void bta_jv_rfcomm_write(tBTA_JV_MSG *p_data)
     tBTA_JV_PCB     *p_pcb = wc->p_pcb;
     tBTA_JV_RFCOMM_WRITE    evt_data;
 
-
-    if (p_pcb->state == BTA_JV_ST_NONE) {
-        APPL_TRACE_ERROR("bta_jv_rfcomm_write : Incorect state (%d) to write data, returning",
-            p_pcb->state);
-        return;
-    }
-
     evt_data.status = BTA_JV_FAILURE;
     evt_data.handle = p_cb->handle;
     evt_data.req_id = wc->req_id;
@@ -2184,19 +2157,7 @@ tBTA_JV_STATUS bta_jv_set_pm_conn_state(tBTA_JV_PM_CB *p_cb, const tBTA_JV_CONN_
 static void bta_jv_pm_conn_busy(tBTA_JV_PM_CB *p_cb)
 {
     if ((NULL != p_cb) && (BTA_JV_PM_IDLE_ST == p_cb->state))
-    {
-        tBTM_PM_MODE    mode = BTM_PM_MD_ACTIVE;
-        if (BTM_ReadPowerMode(p_cb->peer_bd_addr, &mode) == BTM_SUCCESS) {
-            if (mode == BTM_PM_MD_SNIFF) {
-                bta_jv_pm_state_change(p_cb, BTA_JV_CONN_BUSY);
-            } else {
-                p_cb->state = BTA_JV_PM_BUSY_ST;
-                APPL_TRACE_DEBUG("bta_jv_pm_conn_busy:power mode: %d", mode);
-            }
-        } else {
-          bta_jv_pm_state_change(p_cb, BTA_JV_CONN_BUSY);
-        }
-    }
+        bta_jv_pm_state_change(p_cb, BTA_JV_CONN_BUSY);
 }
 
 /*******************************************************************************
@@ -2212,15 +2173,8 @@ static void bta_jv_pm_conn_busy(tBTA_JV_PM_CB *p_cb)
  *******************************************************************************/
 static void bta_jv_pm_conn_idle(tBTA_JV_PM_CB *p_cb)
 {
-    if ((NULL != p_cb) && (BTA_JV_PM_IDLE_ST != p_cb->state)) {
-        APPL_TRACE_DEBUG("bta_jv_pm_conn_idle, p_cb: %p", p_cb);
-        p_cb->state = BTA_JV_PM_IDLE_ST;
-            // start intermediate idle timer for 1s
-        if (!alarm_is_scheduled(p_cb->idle_timer)) {
-            alarm_set_on_queue(p_cb->idle_timer, BTA_JV_IDLE_TIMEOUT_MS,
-                   bta_jv_idle_timeout_handler, p_cb, btu_general_alarm_queue);
-        }
-    }
+    if ((NULL != p_cb) && (BTA_JV_PM_IDLE_ST != p_cb->state))
+        bta_jv_pm_state_change(p_cb, BTA_JV_CONN_IDLE);
 }
 
 /*******************************************************************************
@@ -2507,7 +2461,7 @@ static void fcchan_conn_chng_cbk(UINT16 chan, BD_ADDR bd_addr, BOOLEAN connected
         }
     }
 
-    if (call_init && p_cback)
+    if (call_init)
         p_cback(BTA_JV_L2CAP_CL_INIT_EVT, &init_evt, user_data);
 
     //call this with lock taken so socket does not disappear from under us */
@@ -2534,15 +2488,10 @@ static void fcchan_data_cbk(UINT16 chan, BD_ADDR bd_addr, BT_HDR *p_buf)
             return;
         }
     }
-    /* Fix for below klockwork issue
-     * Null pointer 't' that comes from line 2508
-     * may be dereferenced at line 2525*/
-    if (t)
-    {
-       sock_cback = t->p_cback;
-       sock_user_data = t->user_data;
-       evt_data.le_data_ind.handle = t->id;
-    }
+
+    sock_cback = t->p_cback;
+    sock_user_data = t->user_data;
+    evt_data.le_data_ind.handle = t->id;
     evt_data.le_data_ind.p_buf = p_buf;
 
     if (sock_cback)
@@ -2598,8 +2547,7 @@ void bta_jv_l2cap_connect_le(tBTA_JV_MSG *p_data)
     }
     if (call_init_f)
         cc->p_cback(BTA_JV_L2CAP_CL_INIT_EVT, &evt, cc->user_data);
-    if (t)
-        t->init_called = TRUE;
+    t->init_called = TRUE;
 }
 
 
@@ -2696,33 +2644,3 @@ extern void bta_jv_l2cap_close_fixed (tBTA_JV_MSG *p_data)
     if (t)
         fcclient_free(t);
 }
-
-/*******************************************************************************
-**
-** Function         bta_jv_idle_timeout_handler
-**
-** Description      Bta JV specific idle timeout handler
-**
-**
-** Returns          void
-**
-*******************************************************************************/
-void bta_jv_idle_timeout_handler(void *tle) {
-    tBTA_JV_PM_CB *p_cb = (tBTA_JV_PM_CB *)tle;;
-    APPL_TRACE_DEBUG("%s p_cb: %p", __func__, p_cb);
-
-    if (NULL != p_cb) {
-
-        tBTM_PM_MODE    mode = BTM_PM_MD_ACTIVE;
-        if (BTM_ReadPowerMode(p_cb->peer_bd_addr, &mode) == BTM_SUCCESS) {
-            if (mode == BTM_PM_MD_SNIFF) {
-                APPL_TRACE_WARNING("%s: %d", __func__, mode)
-                return;
-            }
-        } else {
-            APPL_TRACE_DEBUG("%s: Read power mode failed %d", __func__, mode);
-        }
-        bta_jv_pm_state_change(p_cb, BTA_JV_CONN_IDLE);
-    }
-}
-

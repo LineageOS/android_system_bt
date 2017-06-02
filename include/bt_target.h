@@ -1,9 +1,3 @@
- /******************************************************************************
- *  Copyright (c) 2016, The Linux Foundation. All rights reserved.
- *
- *  Not a contribution.
- ******************************************************************************/
-
 /******************************************************************************
  *
  *  Copyright (c) 2014 The Android Open Source Project
@@ -44,17 +38,8 @@
 #include "dyn_mem.h"    /* defines static and/or dynamic memory for components */
 
 //------------------Added from bdroid_buildcfg.h---------------------
-#ifndef I2SPCM_SLAVE_BRCM
-#define I2SPCM_SLAVE_BRCM FALSE
-#endif
-
 #ifndef L2CAP_EXTFEA_SUPPORTED_MASK
 #define L2CAP_EXTFEA_SUPPORTED_MASK (L2CAP_EXTFEA_ENH_RETRANS | L2CAP_EXTFEA_STREAM_MODE | L2CAP_EXTFEA_NO_CRC | L2CAP_EXTFEA_FIXED_CHNLS)
-#endif
-
-/* This feature is used to update any QCOM related changes in the stack*/
-#ifndef BLUETOOTH_QTI_SW
-#define BLUETOOTH_QTI_SW FALSE
 #endif
 
 #ifndef BTUI_OPS_FORMATS
@@ -102,7 +87,7 @@
 #endif
 
 #ifndef BTA_AV_SINK_INCLUDED
-#define BTA_AV_SINK_INCLUDED TRUE
+#define BTA_AV_SINK_INCLUDED FALSE
 #endif
 
 #ifndef BTA_DISABLE_DELAY
@@ -142,7 +127,7 @@
 #endif
 
 #ifndef BTIF_A2DP_SRC_BIT_DEPTH
-#define BTIF_A2DP_SRC_BIT_DEPTH 32
+#define BTIF_A2DP_SRC_BIT_DEPTH 16
 #endif
 
 #ifndef BTIF_A2DP_SRC_NUM_CHANNELS
@@ -158,15 +143,6 @@
 #define BT_USE_TRACES  TRUE
 #endif
 
-#ifndef BT_TRACE_BTIF
-#define BT_TRACE_BTIF  TRUE
-#endif
-
-
-#ifndef BT_TRACE_LATENCY_AUDIO
-#define BT_TRACE_LATENCY_AUDIO  TRUE
-#endif
-
 #ifndef BT_TRACE_VERBOSE
 #define BT_TRACE_VERBOSE  FALSE
 #endif
@@ -178,11 +154,6 @@
 #ifndef HL_INCLUDED
 #define HL_INCLUDED  TRUE
 #endif
-
-#ifndef AAC_ENCODER_INCLUDED
-#define AAC_ENCODER_INCLUDED   TRUE
-#endif
-
 
 #ifndef AG_VOICE_SETTINGS
 #define AG_VOICE_SETTINGS  HCI_DEFAULT_VOICE_SETTINGS
@@ -200,15 +171,6 @@
 
 //------------------End added from bdroid_buildcfg.h---------------------
 
-/******************************************************************************
-**
-** Test Application interface
-**
-******************************************************************************/
-
-#ifndef TEST_APP_INTERFACE
-#define TEST_APP_INTERFACE           FALSE
-#endif
 
 /******************************************************************************
 **
@@ -368,14 +330,10 @@
 #define BTM_SCO_HCI_INCLUDED    FALSE   /* TRUE includes SCO over HCI code */
 #endif
 
+/* Includes WBS if TRUE */
 #ifndef BTM_WBS_INCLUDED
-#if (BLUETOOTH_QTI_SW == TRUE) /* Enable WBS by default only under this flag.*/
-#define BTM_WBS_INCLUDED        TRUE
-#else
 #define BTM_WBS_INCLUDED        FALSE   /* TRUE includes WBS code */
 #endif
-#endif
-
 
 /*  This is used to work around a controller bug that doesn't like Disconnect
 **  issued while there is a role switch in progress
@@ -519,11 +477,6 @@
 #define BTM_MAX_VSE_CALLBACKS           3
 #endif
 
-/* Safe reattempt even after device is blacklisted for role switch */
-#ifndef BTM_SAFE_REATTEMPT_ROLE_SWITCH
-#define BTM_SAFE_REATTEMPT_ROLE_SWITCH TRUE
-#endif
-
 /******************************************
 **    Lisbon Features
 *******************************************/
@@ -578,16 +531,16 @@
 **
 ******************************************************************************/
 
+/* The maximum number of simultaneous links that L2CAP can support. */
+#ifndef MAX_ACL_CONNECTIONS
+#define MAX_L2CAP_LINKS             7
+#else
+#define MAX_L2CAP_LINKS             MAX_ACL_CONNECTIONS
+#endif
+
 /* The maximum number of simultaneous channels that L2CAP can support. */
 #ifndef MAX_L2CAP_CHANNELS
 #define MAX_L2CAP_CHANNELS          16
-#endif
-
-/* The maximum number of simultaneous links that L2CAP can support. */
-#ifndef MAX_L2CAP_CHANNELS
-#define MAX_L2CAP_LINKS             7
-#else
-#define MAX_L2CAP_LINKS             MAX_L2CAP_CHANNELS
 #endif
 
 /* The maximum number of simultaneous applications that can register with L2CAP. */
@@ -635,7 +588,7 @@
 
 /* Whether link wants to be the master or the slave. */
 #ifndef L2CAP_DESIRED_LINK_ROLE
-#define L2CAP_DESIRED_LINK_ROLE     HCI_ROLE_MASTER
+#define L2CAP_DESIRED_LINK_ROLE     HCI_ROLE_SLAVE
 #endif
 
 /* Include Non-Flushable Packet Boundary Flag feature of Lisbon */
@@ -712,11 +665,6 @@
 #endif
 
 
-
-#ifndef HCI_RAW_CMD_INCLUDED
-#define HCI_RAW_CMD_INCLUDED    TRUE
-#endif
-
 /******************************************************************************
 **
 ** BLE
@@ -766,11 +714,6 @@
 #ifndef BLE_MAX_L2CAP_CLIENTS
 #define BLE_MAX_L2CAP_CLIENTS           15
 #endif
-
-#ifndef BLE_HH_QUALIFICATION_ENABLED
-#define BLE_HH_QUALIFICATION_ENABLED        FALSE
-#endif
-
 
 /******************************************************************************
 **
@@ -828,11 +771,7 @@
 #endif
 
 #ifndef GATT_MAX_PHY_CHANNEL
-#ifndef MAX_L2CAP_CHANNELS
 #define GATT_MAX_PHY_CHANNEL        7
-#else
-#define GATT_MAX_PHY_CHANNEL        MAX_L2CAP_CHANNELS
-#endif
 #endif
 
 /* Used for conformance testing ONLY */
@@ -1217,15 +1156,9 @@
 #define AVDT_NUM_LINKS              2
 #endif
 
-/* Number of simultaneous stream endpoints.
- * Audio*2 + Video*2 + 1 Additional
- */
+/* Number of simultaneous stream endpoints. */
 #ifndef AVDT_NUM_SEPS
-#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
-#define AVDT_NUM_SEPS               9
-#else
-#define AVDT_NUM_SEPS               7
-#endif
+#define AVDT_NUM_SEPS               3
 #endif
 
 /* Number of transport channels setup by AVDT for all media streams */
@@ -1235,7 +1168,7 @@
 
 /* Maximum size in bytes of the codec capabilities information element. */
 #ifndef AVDT_CODEC_SIZE
-#define AVDT_CODEC_SIZE             20
+#define AVDT_CODEC_SIZE             10
 #endif
 
 /* Maximum size in bytes of the content protection information element. */
@@ -1400,11 +1333,7 @@
 #endif
 
 #ifndef HID_HOST_MAX_DEVICES
-#ifndef MAX_L2CAP_CHANNELS
 #define HID_HOST_MAX_DEVICES        7
-#else
-#define HID_HOST_MAX_DEVICES        MAX_L2CAP_CHANNELS
-#endif
 #endif
 
 #ifndef HID_HOST_MTU
@@ -1430,10 +1359,6 @@
 #define A2D_INCLUDED            TRUE
 #endif
 
-#ifndef A2D_M24_INCLUDED
-#define A2D_M24_INCLUDED    A2D_INCLUDED
-#endif
-
 /******************************************************************************
 **
 ** AVCTP
@@ -1445,36 +1370,9 @@
 #define AVCT_NUM_LINKS              2
 #endif
 
-/* Number of simultaneous AVCTP connections.
- * Audio*2 + Video*2 + 1 Additional */
+/* Number of simultaneous AVCTP connections. */
 #ifndef AVCT_NUM_CONN
-#define AVCT_NUM_CONN               5
-#endif
-
-/* Buffer size to reassemble the SDU. */
-#ifndef AVCT_BR_USER_RX_BUF_SIZE
-#define AVCT_BR_USER_RX_BUF_SIZE    BT_DEFAULT_BUFFER_SIZE
-#endif
-
-/* Buffer size to hold the SDU. */
-#ifndef AVCT_BR_USER_TX_BUF_SIZE
-#define AVCT_BR_USER_TX_BUF_SIZE    BT_DEFAULT_BUFFER_SIZE
-#endif
-
-/*
- * Buffer size used to hold MPS segments during SDU reassembly
- */
-#ifndef AVCT_BR_FCR_RX_BUF_SIZE
-#define AVCT_BR_FCR_RX_BUF_SIZE     BT_DEFAULT_BUFFER_SIZE
-#endif
-
-/*
- * Default buffer size used to hold MPS segments used in (re)transmissions.
- * The size of each buffer must be able to hold the maximum MPS segment size
- * passed in tL2CAP_FCR_OPTIONS plus BT_HDR (8) + HCI preamble (4) +
- * L2CAP_MIN_OFFSET (11 - as of BT 2.1 + EDR Spec).+1452 */
-#ifndef AVCT_BR_FCR_TX_BUF_SIZE
-#define AVCT_BR_FCR_TX_BUF_SIZE     BT_DEFAULT_BUFFER_SIZE
+#define AVCT_NUM_CONN               3
 #endif
 
 /******************************************************************************
@@ -1495,30 +1393,6 @@
 #define AVRC_CTLR_INCLUDED          TRUE
 #endif
 
-#ifndef SDP_AVRCP_1_6
-#define SDP_AVRCP_1_6               TRUE
-#endif
-
-#ifndef  SDP_AVRCP_1_5
-#define SDP_AVRCP_1_5               FALSE
-#endif
-
-#if (defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE))
-#ifndef AVCT_COVER_ART_INCLUDED
-#define AVCT_COVER_ART_INCLUDED     TRUE
-#endif
-#endif
-
-#if ((defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE)) || \
-        (defined(SDP_AVRCP_1_5) && (SDP_AVRCP_1_5 == TRUE)))
-#ifndef AVCT_BROWSE_INCLUDED
-#define AVCT_BROWSE_INCLUDED        TRUE
-#else
-#ifndef AVCT_BROWSE_INCLUDED
-#define AVCT_BROWSE_INCLUDED        FALSE
-#endif
-#endif
-#endif
 /******************************************************************************
 **
 ** MCAP
@@ -1532,7 +1406,6 @@
 #ifndef MCA_CTRL_MTU
 #define MCA_CTRL_MTU    60
 #endif
-
 
 /* The maximum number of registered MCAP instances. */
 #ifndef MCA_NUM_REGS
@@ -1624,11 +1497,6 @@ The maximum number of payload octets that the local device can receive in a sing
 */
 #ifndef MCA_FCR_OPT_MPS_SIZE
 #define MCA_FCR_OPT_MPS_SIZE            1000
-#endif
-
-/* Enable this flag if require ,default value is false */
-#ifndef MCA_DELAY_DELETE_MDL_RSP
-#define MCA_DELAY_DELETE_MDL_RSP FALSE
 #endif
 
 /******************************************************************************

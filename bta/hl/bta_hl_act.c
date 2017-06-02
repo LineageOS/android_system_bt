@@ -414,7 +414,7 @@ void bta_hl_dch_ci_get_tx_data(UINT8 app_idx, UINT8 mcl_idx, UINT8 mdl_idx,
     tBTA_HL_MCL_CB      *p_mcb  = BTA_HL_GET_MCL_CB_PTR(app_idx, mcl_idx);
     tBTA_HL_MDL_CB      *p_dcb  = BTA_HL_GET_MDL_CB_PTR(app_idx, mcl_idx, mdl_idx);
     tMCA_RESULT         result;
-    tBTA_HL_STATUS      status;
+    tBTA_HL_STATUS      status = BTA_HL_STATUS_OK;
     BOOLEAN             free_buf = FALSE;
     BOOLEAN             close_dch = FALSE;
     tBTA_HL             evt_data;
@@ -423,11 +423,7 @@ void bta_hl_dch_ci_get_tx_data(UINT8 app_idx, UINT8 mcl_idx, UINT8 mdl_idx,
 #if (BTA_HL_DEBUG == TRUE)
     APPL_TRACE_DEBUG("bta_hl_dch_ci_get_tx_data");
 #endif
-    if (p_data != NULL)
-    {
-        status = p_data->ci_get_put_data.status;
-        APPL_TRACE_WARNING("bta_hl_dch_ci_put_rx_data:status=%d", status);
-    }
+
     p_dcb->cout_oper &= ~BTA_HL_CO_GET_TX_DATA_MASK;
 
     if (p_dcb->close_pending)
@@ -439,10 +435,6 @@ void bta_hl_dch_ci_get_tx_data(UINT8 app_idx, UINT8 mcl_idx, UINT8 mdl_idx,
         {
             close_dch = TRUE;
         }
-    }
-    else if (status == BTA_HL_STATUS_FAIL)
-    {
-        free_buf = TRUE;
     }
     else
     {

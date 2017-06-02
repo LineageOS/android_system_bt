@@ -29,10 +29,6 @@
 
 static const char CONTROLLER_MODULE[] = "controller_module";
 
-typedef struct controller_static_t {
-  void (*enable_soc_logging) (bool value);
-} controller_static_t;
-
 typedef struct controller_t {
   bool (*get_is_ready)(void);
 
@@ -80,10 +76,7 @@ typedef struct controller_t {
   uint8_t (*get_ble_resolving_list_max_size)(void);
   void (*set_ble_resolving_list_max_size)(int resolving_list_max_size);
   uint8_t *(*get_local_supported_codecs)(uint8_t *number_of_codecs);
-  bool (*supports_ble_offload_features)(void);
 } controller_t;
-
-const controller_static_t *controller_get_static_interface();
 
 const controller_t *controller_get_interface();
 

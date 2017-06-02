@@ -21,7 +21,6 @@
 
 static const char BT_UTILS_MODULE[] = "bt_utils_module";
 
-#include <stdbool.h>
 /*******************************************************************************
 **  Type definitions
 ********************************************************************************/
@@ -37,46 +36,11 @@ typedef enum {
     TASK_HIGH_MAX
 } tHIGH_PRIORITY_TASK;
 
-/* Run-time configuration file to store AVRCP version info*/
-#ifndef AVRC_PEER_VERSION_CONF_FILE
-#define AVRC_PEER_VERSION_CONF_FILE "/data/misc/bluedroid/avrc_peer_entries.conf"
-#endif
-
 /*******************************************************************************
 **  Functions
 ********************************************************************************/
 
-typedef enum {
-    METHOD_BD = 0,
-    METHOD_NAME
-} tBLACKLIST_METHOD;
-
-typedef enum {
-    BT_SOC_DEFAULT = 0,
-    BT_SOC_SMD,
-    BT_SOC_AR3K,
-    BT_SOC_ROME,
-    BT_SOC_CHEROKEE,
-    /* Add chipset type here */
-    BT_SOC_RESERVED
-} bt_soc_type;
-
-#define MAX_NAME_LEN                  (50)
-#define IOT_DEV_BASE_CONF_FILE        "/etc/bluetooth/iot_devlist.conf"
-#define IOT_DEV_CONF_FILE             "/data/misc/bluedroid/iot_devlist.conf"
-#define IOT_DEV_CONF_BKP_FILE         "/data/misc/bluedroid/iot_devlist_bkp.conf"
-#define IOT_ROLE_CHANGE_BLACKLIST     "RoleChangeBlacklistAddr"
-#define IOT_HFP_1_7_BLACKLIST          "Hfp1_7BlacklistAddr"
-#define COD_AUDIO_DEVICE              (0x200400)
 void raise_priority_a2dp(tHIGH_PRIORITY_TASK high_task);
 void adjust_priority_a2dp(int start);
-void load_iot_devlist(const char *filename);
-void unload_iot_devlist();
-bool is_device_present(char* header, unsigned char* device_details);
-bool add_iot_device(const char *filename, char* header,
-    unsigned char* device_details, tBLACKLIST_METHOD method_type);
-bool remove_iot_device(const char *filename, char* header,
-    unsigned char* device_details, tBLACKLIST_METHOD method_type);
-bt_soc_type get_soc_type();
 #define UNUSED(x) (void)(x)
 #endif /* BT_UTILS_H */

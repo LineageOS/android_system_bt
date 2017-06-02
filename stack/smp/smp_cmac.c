@@ -134,7 +134,7 @@ static BOOLEAN cmac_aes_k_calculate(BT_OCTET16 key, UINT8 *p_signature, UINT16 t
     tSMP_ENC output;
     UINT8    i = 1, err = 0;
     UINT8    x[16] = {0};
-    UINT8   *p_mac = NULL;
+    UINT8   *p_mac;
 
     SMP_TRACE_EVENT ("cmac_aes_k_calculate ");
 
@@ -154,8 +154,6 @@ static BOOLEAN cmac_aes_k_calculate(BT_OCTET16 key, UINT8 *p_signature, UINT16 t
 
     if (!err)
     {
-        if (tlen > BT_OCTET16_LEN)
-           tlen = BT_OCTET16_LEN;
         p_mac = output.param_buf + (BT_OCTET16_LEN - tlen);
         memcpy(p_signature, p_mac, tlen);
 

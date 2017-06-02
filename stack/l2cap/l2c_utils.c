@@ -75,8 +75,8 @@ tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPOR
             p_lcb->idle_timeout    = l2cb.idle_timeout;
             p_lcb->id              = 1;                     /* spec does not allow '0' */
             p_lcb->is_bonding      = is_bonding;
-            p_lcb->transport       = transport;
 #if (BLE_INCLUDED == TRUE)
+            p_lcb->transport       = transport;
             p_lcb->tx_data_len     = controller_get_interface()->get_ble_default_data_packet_length();
             p_lcb->le_sec_pending_q = fixed_queue_new(SIZE_MAX);
 
@@ -252,7 +252,7 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
 
         (*p_cb) (L2CAP_PING_RESULT_NO_LINK);
     }
-#if (BLE_INCLUDED == TRUE)
+
     /* Check and release all the LE COC connections waiting for security */
     if (p_lcb->le_sec_pending_q)
     {
@@ -266,7 +266,6 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
         fixed_queue_free(p_lcb->le_sec_pending_q, NULL);
         p_lcb->le_sec_pending_q = NULL;
     }
-#endif
 }
 
 
@@ -1675,22 +1674,16 @@ BOOLEAN l2cu_start_post_bond_timer (UINT16 handle)
 *******************************************************************************/
 void l2cu_release_ccb (tL2C_CCB *p_ccb)
 {
-    tL2C_LCB    *p_lcb = NULL;
-    tL2C_RCB    *p_rcb = NULL;
+    tL2C_LCB    *p_lcb = p_ccb->p_lcb;
+    tL2C_RCB    *p_rcb = p_ccb->p_rcb;
 
     L2CAP_TRACE_DEBUG ("l2cu_release_ccb: cid 0x%04x  in_use: %u", p_ccb->local_cid, p_ccb->in_use);
 
     /* If already released, could be race condition */
-    if (!p_ccb || !p_ccb->in_use)
+    if (!p_ccb->in_use)
         return;
-    p_lcb = p_ccb->p_lcb;
-    p_rcb = p_ccb->p_rcb;
 
-#if (defined(LE_L2CAP_CFC_INCLUDED) && (LE_L2CAP_CFC_INCLUDED == TRUE))
-    if (p_rcb && p_lcb && (p_rcb->psm != p_rcb->real_psm))
-#else
     if (p_rcb && (p_rcb->psm != p_rcb->real_psm))
-#endif
     {
         btm_sec_clr_service_by_psm(p_rcb->psm);
     }
@@ -1702,8 +1695,7 @@ void l2cu_release_ccb (tL2C_CCB *p_ccb)
         p_ccb->should_free_rcb = false;
     }
 
-    if(p_lcb)
-       btm_sec_clr_temp_auth_service (p_lcb->remote_bd_addr);
+    btm_sec_clr_temp_auth_service (p_lcb->remote_bd_addr);
 
     /* Free the timer */
     alarm_free(p_ccb->l2c_ccb_timer);
@@ -1837,7 +1829,6 @@ tL2C_RCB *l2cu_allocate_rcb (UINT16 psm)
 *******************************************************************************/
 tL2C_RCB *l2cu_allocate_ble_rcb (UINT16 psm)
 {
-#if (BLE_INCLUDED == TRUE)
     tL2C_RCB    *p_rcb = &l2cb.ble_rcb_pool[0];
     UINT16      xx;
 
@@ -1853,7 +1844,7 @@ tL2C_RCB *l2cu_allocate_ble_rcb (UINT16 psm)
             return (p_rcb);
         }
     }
-#endif
+
     /* If here, no free RCB found */
     return (NULL);
 }
@@ -1943,7 +1934,6 @@ tL2C_RCB *l2cu_find_rcb_by_psm (UINT16 psm)
 *******************************************************************************/
 tL2C_RCB *l2cu_find_ble_rcb_by_psm (UINT16 psm)
 {
-#if (BLE_INCLUDED == TRUE)
     tL2C_RCB    *p_rcb = &l2cb.ble_rcb_pool[0];
     UINT16      xx;
 
@@ -1952,7 +1942,7 @@ tL2C_RCB *l2cu_find_ble_rcb_by_psm (UINT16 psm)
         if ((p_rcb->in_use) && (p_rcb->psm == psm))
             return (p_rcb);
     }
-#endif
+
     /* If here, no match found */
     return (NULL);
 }
@@ -2598,14 +2588,7 @@ BOOLEAN l2cu_set_acl_priority (BD_ADDR bd_addr, UINT8 priority, BOOLEAN reset_af
                 l2c_link_adjust_allocation();
             }
         }
-    } else {
-        if (p_lcb->acl_priority != priority)
-        {
-            p_lcb->acl_priority = priority;
-            l2c_link_adjust_allocation();
-        }
     }
-
     return(TRUE);
 }
 
@@ -2874,17 +2857,13 @@ void l2cu_no_dynamic_ccbs (tL2C_LCB *p_lcb)
         }
     }
 
-    if (timeout_ms == (1000) * (0xFFFF))
-        start_timeout = false;
-
     if (start_timeout) {
-        L2CAP_TRACE_DEBUG("%s starting IDLE timeout: %llu ms", __func__,
+        L2CAP_TRACE_DEBUG("%s starting IDLE timeout: %d ms", __func__,
                           timeout_ms);
         alarm_set_on_queue(p_lcb->l2c_lcb_timer, timeout_ms,
                            l2c_lcb_timer_timeout, p_lcb,
                            btu_general_alarm_queue);
     } else {
-        L2CAP_TRACE_DEBUG("%s, alarm cancel", __func__);
         alarm_cancel(p_lcb->l2c_lcb_timer);
     }
 }
@@ -3808,7 +3787,7 @@ void l2cu_check_channel_congestion (tL2C_CCB *p_ccb)
                 p_ccb->cong_sent = TRUE;
                 if (p_ccb->p_rcb && p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb)
                 {
-                    L2CAP_TRACE_WARNING ("L2CAP - Calling CongestionStatus_Cb (TRUE),CID:0x%04x,XmitQ:%u,Quota:%u",
+                    L2CAP_TRACE_DEBUG ("L2CAP - Calling CongestionStatus_Cb (TRUE),CID:0x%04x,XmitQ:%u,Quota:%u",
                         p_ccb->local_cid, q_count, p_ccb->buff_quota);
 
                     (*p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb)(p_ccb->local_cid, TRUE);
@@ -3846,17 +3825,3 @@ void l2cu_check_channel_congestion (tL2C_CCB *p_ccb)
     }
 }
 
-/*******************************************************************************
-**
-** Function         l2cu_is_ccb_active
-**
-** Description      Check if Channel Control Block is in use or released
-**
-** Returns          BOOLEAN - TRUE if Channel Control Block is in use
-**                            FALSE if p_ccb is null or is released.
-**
-*******************************************************************************/
-BOOLEAN l2cu_is_ccb_active (tL2C_CCB *p_ccb)
-{
-    return (p_ccb && p_ccb->in_use);
-}

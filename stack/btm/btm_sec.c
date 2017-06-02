@@ -55,9 +55,6 @@ extern fixed_queue_t *btu_general_alarm_queue;
 BOOLEAN (APPL_AUTH_WRITE_EXCEPTION)(BD_ADDR bd_addr);
 #endif
 
-#define RNR_MAX_RETRY_ATTEMPTS 1
-#define CC_MAX_RETRY_ATTEMPTS 1
-
 /********************************************************************************
 **              L O C A L    F U N C T I O N     P R O T O T Y P E S            *
 *********************************************************************************/
@@ -67,7 +64,7 @@ static tBTM_SEC_SERV_REC *btm_sec_find_mx_serv (UINT8 is_originator, UINT16 psm,
                                                 UINT32 mx_proto_id,
                                                 UINT32 mx_chan_id);
 
-
+static tBTM_STATUS btm_sec_execute_procedure (tBTM_SEC_DEV_REC *p_dev_rec);
 static BOOLEAN  btm_sec_start_get_name (tBTM_SEC_DEV_REC *p_dev_rec);
 static BOOLEAN  btm_sec_start_authentication (tBTM_SEC_DEV_REC *p_dev_rec);
 static BOOLEAN  btm_sec_start_encryption (tBTM_SEC_DEV_REC *p_dev_rec);
@@ -214,12 +211,10 @@ static BOOLEAN btm_dev_16_digit_authenticated(tBTM_SEC_DEV_REC *p_dev_rec)
 *******************************************************************************/
 static BOOLEAN btm_serv_trusted(tBTM_SEC_DEV_REC *p_dev_rec, tBTM_SEC_SERV_REC *p_serv_rec)
 {
-    if(p_serv_rec->service_id < BTM_SEC_MAX_SERVICES && BTM_SEC_IS_SERVICE_TRUSTED(p_dev_rec->trusted_mask, p_serv_rec->service_id))
+    if(BTM_SEC_IS_SERVICE_TRUSTED(p_dev_rec->trusted_mask, p_serv_rec->service_id))
     {
         return(TRUE);
     }
-    else
-        BTM_TRACE_ERROR("BTM_Sec: Service Id: %d not found", p_serv_rec->service_id);
     return(FALSE);
 }
 
@@ -610,7 +605,7 @@ static BOOLEAN btm_sec_set_security_level (CONNECTION_TYPE conn_type, char *p_na
     {
         p_srec->orig_mx_chan_id = mx_chan_id;
 #if BTM_SEC_SERVICE_NAME_LEN > 0
-        strlcpy ((char *)p_srec->orig_service_name, p_name, BTM_SEC_SERVICE_NAME_LEN + 1);
+        strlcpy ((char *)p_srec->orig_service_name, p_name, BTM_SEC_SERVICE_NAME_LEN);
 #endif
         /* clear out the old setting, just in case it exists */
 #if (L2CAP_UCD_INCLUDED == TRUE)
@@ -658,7 +653,7 @@ static BOOLEAN btm_sec_set_security_level (CONNECTION_TYPE conn_type, char *p_na
     {
         p_srec->term_mx_chan_id = mx_chan_id;
 #if BTM_SEC_SERVICE_NAME_LEN > 0
-        strlcpy ((char *)p_srec->term_service_name, p_name, BTM_SEC_SERVICE_NAME_LEN + 1);
+        strlcpy ((char *)p_srec->term_service_name, p_name, BTM_SEC_SERVICE_NAME_LEN);
 #endif
         /* clear out the old setting, just in case it exists */
 #if (L2CAP_UCD_INCLUDED == TRUE)
@@ -895,7 +890,6 @@ void BTM_PINCodeReply (BD_ADDR bd_addr, UINT8 res, UINT8 pin_len, UINT8 *p_pin, 
             btm_sec_change_pairing_state (BTM_PAIR_STATE_WAIT_AUTH_COMPLETE);
             btm_cb.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
 
-            LOG_INFO(LOG_TAG, "%s: Negative pin code reply: btm_cb.pairing_flags : %d", __func__, btm_cb.pairing_flags);
             btsnd_hcic_pin_code_neg_reply (bd_addr);
         }
         else
@@ -908,7 +902,6 @@ void BTM_PINCodeReply (BD_ADDR bd_addr, UINT8 res, UINT8 pin_len, UINT8 *p_pin, 
     if (trusted_mask)
         BTM_SEC_COPY_TRUSTED_DEVICE(trusted_mask, p_dev_rec->trusted_mask);
     p_dev_rec->sec_flags   |= BTM_SEC_LINK_KEY_AUTHED;
-    p_dev_rec->pin_code_length = pin_len;
     if (pin_len >= 16) {
         p_dev_rec->sec_flags |= BTM_SEC_16_DIGIT_PIN_AUTHED;
     }
@@ -919,6 +912,7 @@ void BTM_PINCodeReply (BD_ADDR bd_addr, UINT8 res, UINT8 pin_len, UINT8 *p_pin, 
     {
         /* This is start of the dedicated bonding if local device is 2.0 */
         btm_cb.pin_code_len = pin_len;
+        p_dev_rec->pin_code_length = pin_len;
         memcpy (btm_cb.pin_code, p_pin, pin_len);
 
         btm_cb.security_mode_changed = TRUE;
@@ -999,11 +993,7 @@ tBTM_STATUS btm_sec_bond_by_transport (BD_ADDR bd_addr, tBT_TRANSPORT transport,
     {
         return(BTM_NO_RESOURCES);
     }
-    if (!controller_get_interface()->get_is_ready())
-    {
-        BTM_TRACE_ERROR ("%s controller module is not ready", __func__);
-        return(BTM_NO_RESOURCES);
-    }
+
     BTM_TRACE_DEBUG ("before update sec_flags=0x%x", p_dev_rec->sec_flags);
 
     /* Finished if connection is active and already paired */
@@ -1552,10 +1542,8 @@ void BTM_ConfirmReqReply(tBTM_STATUS res, BD_ADDR bd_addr)
         if (res == BTM_SUCCESS)
         {
             if ((p_dev_rec = btm_find_dev (bd_addr)) != NULL)
-            {
                 p_dev_rec->sec_flags |= BTM_SEC_LINK_KEY_AUTHED;
                 p_dev_rec->sec_flags |= BTM_SEC_16_DIGIT_PIN_AUTHED;
-            }
         }
 
         btsnd_hcic_user_conf_reply (bd_addr, TRUE);
@@ -3014,7 +3002,6 @@ static tBTM_STATUS btm_sec_dd_create_conn (tBTM_SEC_DEV_REC *p_dev_rec)
     if (p_lcb && (p_lcb->link_state == LST_CONNECTED || p_lcb->link_state == LST_CONNECTING))
     {
        BTM_TRACE_WARNING("%s Connection already exists", __func__);
-       btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_PIN_REQ);
        return BTM_CMD_STARTED;
     }
 
@@ -3191,22 +3178,6 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
             {
                 btm_sec_bond_cancel_complete();
                 return;
-            }
-
-            /* Handle RNR with retry mechanism */
-            if((status == HCI_ERR_PAGE_TIMEOUT) && (p_dev_rec->rnr_retry_cnt < RNR_MAX_RETRY_ATTEMPTS))
-            {
-                BTM_TRACE_WARNING ("btm_sec_rmt_name_request_complete() Retrying RNR due to page timeout");
-                if ((BTM_ReadRemoteDeviceName(p_bd_addr, NULL, BT_TRANSPORT_BR_EDR)) == BTM_CMD_STARTED)
-                {
-                    p_dev_rec->rnr_retry_cnt++;
-                    return;
-                }
-            }
-            else
-            {
-                BTM_TRACE_EVENT ("btm_sec_rmt_name_request_complete() reset RNR retry count ");
-                p_dev_rec->rnr_retry_cnt = 0;
             }
 
             if (status != HCI_SUCCESS)
@@ -3481,7 +3452,6 @@ void btm_io_capabilities_req (UINT8 *p)
 Event uninit_use_in_call: Using uninitialized element of array "evt_data.bd_addr" in call to function "memcmp"
 False-positive: evt_data.bd_addr is set at the beginning with:     STREAM_TO_BDADDR (evt_data.bd_addr, p);
 */
-        LOG_INFO(LOG_TAG, "%s: btsnd_hcic_io_cap_req_neg_reply: err_code : %d" , __func__, err_code);
         btsnd_hcic_io_cap_req_neg_reply(evt_data.bd_addr, err_code);
         return;
     }
@@ -3498,12 +3468,12 @@ False-positive: evt_data.bd_addr is set at the beginning with:     STREAM_TO_BDA
             if (btm_cb.security_mode == BTM_SEC_MODE_SC)
             {
                 /* SC only mode device requires MITM protection */
-                evt_data.auth_req = BTM_AUTH_SPGB_YES;
+                evt_data.auth_req = BTM_AUTH_SP_YES;
             }
             else
             {
                 evt_data.auth_req = (p_dev_rec->p_cur_service->security_flags &
-                                     BTM_SEC_OUT_MITM)? BTM_AUTH_SPGB_YES : BTM_AUTH_SPGB_NO;
+                                     BTM_SEC_OUT_MITM)? BTM_AUTH_SP_YES : BTM_AUTH_SP_NO;
             }
         }
     }
@@ -4057,23 +4027,8 @@ void btm_sec_auth_complete (UINT16 handle, UINT8 status)
     }
 
     if (!p_dev_rec)
-    {
-        /* check if the handle is BTM_INVALID_HCI_HANDLE */
-        if(handle == BTM_INVALID_HCI_HANDLE)
-        {
-            /* get the device with auth type as BTM_SEC_STATE_AUTHENTICATING */
-            p_dev_rec = btm_sec_find_dev_by_sec_state(BTM_SEC_STATE_AUTHENTICATING);
-
-            if ( p_dev_rec && (btm_cb.api.p_auth_complete_callback))
-            {
-                (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr,
-                        p_dev_rec->dev_class,
-                        p_dev_rec->sec_bd_name, status);
-                BTM_TRACE_DEBUG("btm_sec_auth_complete: Invalid Handle, send Auth failure");
-            }
-        }
         return;
-    }
+
     /* keep the old sm4 flag and clear the retry bit in control block */
     old_sm4 = p_dev_rec->sm4;
     p_dev_rec->sm4 &= ~BTM_SM4_RETRY;
@@ -4116,7 +4071,7 @@ void btm_sec_auth_complete (UINT16 handle, UINT8 status)
     if (btm_cb.api.p_auth_complete_callback)
     {
         /* report the suthentication status */
-        if ((old_state != BTM_PAIR_STATE_IDLE) || (status != HCI_SUCCESS))
+        if (old_state != BTM_PAIR_STATE_IDLE)
             (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr,
                                                     p_dev_rec->dev_class,
                                                     p_dev_rec->sec_bd_name, status);
@@ -4416,38 +4371,6 @@ static void btm_sec_connect_after_reject_timeout(UNUSED_ATTR void *data)
 
 /*******************************************************************************
 **
-** Function         btm_sec_connect_after_cc_page_tout
-**
-** Description      This function is called to retry the connection if the
-**                  create connection fails as part of pairing procedure.
-**
-** Returns          Pointer to the TLE struct
-**
-*******************************************************************************/
-static void btm_sec_connect_after_cc_page_tout (UNUSED_ATTR void *data)
-{
-    tBTM_SEC_DEV_REC *p_dev_rec = btm_cb.p_cc_retry_dev_rec;
-
-    BTM_TRACE_EVENT("%s", __func__);
-    btm_cb.p_cc_retry_dev_rec = 0;
-
-    if ((btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
-        (memcmp (btm_cb.pairing_bda, p_dev_rec->bd_addr, BD_ADDR_LEN) == 0) &&
-         (btm_sec_dd_create_conn(p_dev_rec) != BTM_CMD_STARTED))
-    {
-        BTM_TRACE_WARNING ("Security Manager: btm_sec_connect_after_cc_page_tout: failed to start connection");
-
-        btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE);
-
-        if (btm_cb.api.p_auth_complete_callback)
-        (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr,  p_dev_rec->dev_class,
-                                                p_dev_rec->sec_bd_name, HCI_ERR_MEMORY_FULL);
-        btm_sec_dev_rec_cback_event (p_dev_rec, BTM_DEVICE_TIMEOUT, FALSE);
-    }
-}
-
-/*******************************************************************************
-**
 ** Function         btm_sec_connected
 **
 ** Description      This function is when a connection to the peer device is
@@ -4598,31 +4521,12 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
 
             return;
         }
-        /* retry again */
-        else if((status == HCI_ERR_PAGE_TIMEOUT) &&
-                (btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD))
-        {
-            /* Handle CC with retry mechanism */
-            if(p_dev_rec->cc_retry_cnt < CC_MAX_RETRY_ATTEMPTS)
-            {
-                /* Start timer with 0 to initiate connection with new LCB */
-                btm_cb.p_cc_retry_dev_rec = p_dev_rec;
-
-                alarm_set_on_queue(btm_cb.sec_collision_timer, 0,
-                                   btm_sec_connect_after_cc_page_tout,
-                                   NULL, btu_general_alarm_queue);
-
-                p_dev_rec->cc_retry_cnt++;
-                return;
-            }
-        }
         /* wait for incoming connection without resetting pairing state */
         else if (status == HCI_ERR_CONNECTION_EXISTS)
         {
             BTM_TRACE_WARNING ("Security Manager: btm_sec_connected: Wait for incoming connection");
             return;
         }
-        p_dev_rec->cc_retry_cnt = 0;
 
         is_pairing_device = TRUE;
     }
@@ -4660,6 +4564,7 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
                  (((status == HCI_ERR_AUTH_FAILURE)                      ||
                  (status == HCI_ERR_KEY_MISSING)                         ||
                  (status == HCI_ERR_HOST_REJECT_SECURITY)                ||
+                 (status == HCI_ERR_PAIRING_NOT_ALLOWED)                 ||
                  (status == HCI_ERR_UNIT_KEY_USED)                       ||
                  (status == HCI_ERR_PAIRING_WITH_UNIT_KEY_NOT_SUPPORTED) ||
                  (status == HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE)           ||
@@ -4774,6 +4679,11 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
     /* the name, or if we are originator because some procedure can have */
     /* been scheduled while connection was down */
     BTM_TRACE_DEBUG ("is_originator:%d ", p_dev_rec->is_originator);
+    if (!(p_dev_rec->sec_flags & BTM_SEC_NAME_KNOWN) || p_dev_rec->is_originator)
+    {
+        if ((res = btm_sec_execute_procedure (p_dev_rec)) != BTM_CMD_STARTED)
+            btm_sec_dev_rec_cback_event (p_dev_rec, res, FALSE);
+    }
     return;
 }
 
@@ -5097,7 +5007,6 @@ void btm_sec_link_key_request (UINT8 *p_bda)
     l2c_pin_code_request (p_bda);
 
     /* The link key is not in the database and it is not known to the manager */
-    LOG_INFO(LOG_TAG, "%s: btsnd_hcic_link_key_neg_reply: p_dev_rec->sec_flags : %d" , __func__, p_dev_rec->sec_flags);
     btsnd_hcic_link_key_neg_reply (p_bda);
 }
 
@@ -5138,10 +5047,7 @@ static void btm_sec_pairing_timeout(UNUSED_ATTR void *data)
 
         case BTM_PAIR_STATE_WAIT_LOCAL_PIN:
             if ( (btm_cb.pairing_flags & BTM_PAIR_FLAGS_PRE_FETCH_PIN) == 0)
-            {
-                LOG_INFO(LOG_TAG, "%s: btsnd_hcic_pin_code_neg_reply: btm_cb.pairing_flags : %d" , __func__, btm_cb.pairing_flags);
                 btsnd_hcic_pin_code_neg_reply (p_cb->pairing_bda);
-            }
             btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE);
             /* We need to notify the UI that no longer need the PIN */
             if (btm_cb.api.p_auth_complete_callback)
@@ -5167,7 +5073,6 @@ static void btm_sec_pairing_timeout(UNUSED_ATTR void *data)
 
 #if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
         case BTM_PAIR_STATE_KEY_ENTRY:
-            LOG_INFO(LOG_TAG, "%s: btsnd_hcic_user_passkey_neg_reply: BTM_LOCAL_IO_CAPS : %d" , __func__, BTM_LOCAL_IO_CAPS);
             btsnd_hcic_user_passkey_neg_reply(p_cb->pairing_bda);
             /* btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE); */
             break;
@@ -5253,7 +5158,6 @@ void btm_sec_pin_code_request (UINT8 *p_bda)
         if ( (memcmp (p_bda, btm_cb.pairing_bda, BD_ADDR_LEN) == 0)  &&
              (btm_cb.pairing_state == BTM_PAIR_STATE_WAIT_AUTH_COMPLETE) )
         {
-             LOG_INFO(LOG_TAG, "%s: btsnd_hcic_pin_code_neg_reply: btm_cb.pairing_state : %d", __func__, btm_cb.pairing_state);
              btsnd_hcic_pin_code_neg_reply (p_bda);
              return;
         }
@@ -5262,7 +5166,6 @@ void btm_sec_pin_code_request (UINT8 *p_bda)
         {
             BTM_TRACE_WARNING ("btm_sec_pin_code_request() rejected - state: %s",
                                 btm_pair_state_descr(btm_cb.pairing_state));
-            LOG_INFO(LOG_TAG,"%s btsnd_hcic_pin_code_neg_reply", __func__);
             btsnd_hcic_pin_code_neg_reply (p_bda);
             return;
         }
@@ -5354,12 +5257,6 @@ void btm_sec_pin_code_request (UINT8 *p_bda)
         }
         else
         {
-            if ((p_dev_rec->sec_state == BTM_SEC_STATE_GETTING_NAME) &&
-                 (memcmp (p_dev_rec->bd_addr, p_bda, BD_ADDR_LEN) == 0))
-            {
-                BTM_TRACE_WARNING("RNR initiated by security module and in progress");
-                return;
-            }
             BTM_TRACE_EVENT ("btm_sec_pin_code_request going for remote name");
 
             /* We received PIN code request for the device with unknown name */
@@ -5431,7 +5328,7 @@ void btm_sec_update_clock_offset (UINT16 handle, UINT16 clock_offset)
 **                  BTM_NO_RESOURCES  - permission declined
 **
 *******************************************************************************/
-extern tBTM_STATUS btm_sec_execute_procedure (tBTM_SEC_DEV_REC *p_dev_rec)
+static tBTM_STATUS btm_sec_execute_procedure (tBTM_SEC_DEV_REC *p_dev_rec)
 {
     BTM_TRACE_EVENT ("btm_sec_execute_procedure: Required:0x%x Flags:0x%x State:%d",
                       p_dev_rec->security_required, p_dev_rec->sec_flags, p_dev_rec->sec_state);
@@ -5541,7 +5438,8 @@ extern tBTM_STATUS btm_sec_execute_procedure (tBTM_SEC_DEV_REC *p_dev_rec)
     {
         BTM_TRACE_EVENT ("service id:%d, is trusted:%d",
                           p_dev_rec->p_cur_service->service_id,
-                          btm_serv_trusted(p_dev_rec,p_dev_rec->p_cur_service));
+                          (BTM_SEC_IS_SERVICE_TRUSTED(p_dev_rec->trusted_mask,
+                                                      p_dev_rec->p_cur_service->service_id)));
         if ((btm_sec_are_all_trusted(p_dev_rec->trusted_mask) == FALSE) &&
             (p_dev_rec->p_cur_service->service_id < BTM_SEC_MAX_SERVICES) &&
             (BTM_SEC_IS_SERVICE_TRUSTED(p_dev_rec->trusted_mask,
@@ -6381,9 +6279,7 @@ BOOLEAN btm_sec_is_a_bonded_dev (BD_ADDR bda)
 *******************************************************************************/
 BOOLEAN btm_sec_is_le_capable_dev (BD_ADDR bda)
 {
-#if (BLE_INCLUDED== TRUE)
     tBTM_SEC_DEV_REC *p_dev_rec= btm_find_dev (bda);
-#endif
     BOOLEAN le_capable = FALSE;
 
 #if (BLE_INCLUDED== TRUE)

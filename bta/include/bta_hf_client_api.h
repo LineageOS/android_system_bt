@@ -26,7 +26,6 @@
 #define BTA_HF_CLIENT_API_H
 
 #include "bta_api.h"
-#define SNIFF_DISABLE  0
 
 /*****************************************************************************
 **  Constants and data types
@@ -102,8 +101,6 @@ typedef UINT8 tBTA_HF_CLIENT_AT_RESULT_TYPE;
 #define BTA_HF_CLIENT_BSIR_EVT              19 /* in-band ring tone setting changed event */
 #define BTA_HF_CLIENT_BINP_EVT              20 /* binp number event */
 #define BTA_HF_CLIENT_RING_INDICATION       21 /* HF Client ring indication */
-#define BTA_HF_CLIENT_CGMI_EVT              22 /* AG manufacturer identification */
-#define BTA_HF_CLIENT_CGMM_EVT              23 /* AG manufacturer model */
 #define BTA_HF_CLIENT_DISABLE_EVT           30 /* HF Client disabled */
 
 typedef UINT8 tBTA_HF_CLIENT_EVT;
@@ -230,20 +227,6 @@ typedef struct
     UINT16                     value;
 } tBTA_HF_CLIENT_VAL;
 
-#define BTA_HF_CLIENT_MANUFACTURER_ID 2048
-/* data associated with BTA_HF_CLIENT_CGMI_EVT event */
-typedef struct
-{
-    char                       name[BTA_HF_CLIENT_MANUFACTURER_ID + 1];
-} tBTA_HF_CLIENT_CGMI;
-
-#define BTA_HF_CLIENT_MANUFACTURER_MODEL 2048
-/* data associated with BTA_HF_CLIENT_CGMI_EVT event */
-typedef struct
-{
-    char                       model[BTA_HF_CLIENT_MANUFACTURER_MODEL + 1];
-} tBTA_HF_CLIENT_CGMM;
-
 /* union of data associated with AG callback */
 typedef union
 {
@@ -258,13 +241,9 @@ typedef union
     tBTA_HF_CLIENT_AT_RESULT        result;
     tBTA_HF_CLIENT_CLCC             clcc;
     tBTA_HF_CLIENT_CNUM             cnum;
-    tBTA_HF_CLIENT_CGMI             cgmi;
-    tBTA_HF_CLIENT_CGMM             cgmm;
 } tBTA_HF_CLIENT;
 
 typedef UINT32 tBTA_HF_CLIENT_FEAT;
-
-extern BOOLEAN is_sniff_disabled;
 
 /* HF Client callback */
 typedef void (tBTA_HF_CLIENT_CBACK)(tBTA_HF_CLIENT_EVT event, tBTA_HF_CLIENT *p_data);

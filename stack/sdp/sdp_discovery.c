@@ -94,14 +94,10 @@ static UINT8 *sdpu_build_uuid_seq (UINT8 *p_out, UINT16 num_uuids, tSDP_UUID *p_
             UINT8_TO_BE_STREAM  (p_out, (UUID_DESC_TYPE << 3) | SIZE_FOUR_BYTES);
             UINT32_TO_BE_STREAM (p_out, p_uuid_list->uu.uuid32);
         }
-        else if (p_uuid_list->len == 16)
+        else
         {
             UINT8_TO_BE_STREAM (p_out, (UUID_DESC_TYPE << 3) | SIZE_SIXTEEN_BYTES);
             ARRAY_TO_BE_STREAM (p_out, p_uuid_list->uu.uuid128, p_uuid_list->len);
-        }
-        else
-        {
-            SDP_TRACE_ERROR("SDP: Passed Uuid is of Invalid length: %x",p_uuid_list->len);
         }
     }
 
@@ -347,7 +343,7 @@ static void process_service_search_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
 #if (SDP_RAW_DATA_INCLUDED == TRUE)
 static void sdp_copy_raw_data (tCONN_CB *p_ccb, BOOLEAN offset)
 {
-    unsigned int    cpy_len, rem_len;
+    unsigned int    cpy_len;
     UINT32          list_len;
     UINT8           *p;
     UINT8           type;
@@ -377,12 +373,6 @@ static void sdp_copy_raw_data (tCONN_CB *p_ccb, BOOLEAN offset)
         if(list_len && list_len < cpy_len )
         {
             cpy_len = list_len;
-        }
-        rem_len = SDP_MAX_LIST_BYTE_COUNT - (unsigned int) (p - &p_ccb->rsp_list[0]);
-        if (cpy_len > rem_len)
-        {
-            SDP_TRACE_WARNING("rem_len :%d less than cpy_len:%d", rem_len, cpy_len);
-            cpy_len = rem_len;
         }
         SDP_TRACE_WARNING(
           "%s: list_len:%d cpy_len:%d p:%p p_ccb:%p p_db:%p raw_size:%d "

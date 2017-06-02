@@ -32,9 +32,7 @@
 #include <string.h>
 #include "bta_dm_int.h"
 #include "l2c_api.h"
-#include <cutils/properties.h>
-#include <hardware/bluetooth.h>
-#include "device/include/interop.h"
+
 /*****************************************************************************
 **  Constants
 *****************************************************************************/
@@ -202,7 +200,6 @@ void bta_ag_start_dereg(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 void bta_ag_start_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 {
     BD_ADDR pending_bd_addr;
-    tBTA_AG_RFC     *p_buf;
 
     /* store parameters */
     if (p_data)
@@ -215,26 +212,6 @@ void bta_ag_start_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     /* Check if RFCOMM has any incoming connection to avoid collision. */
     if (PORT_IsOpening (pending_bd_addr))
     {
-        char value[PROPERTY_VALUE_MAX];
-        if (property_get("persist.bt.max.hs.connections", value, "") &&
-                     !strcmp(value, "2") )
-        {
-            // Abort the outgoing connection if incoming connection is from the same device
-            if (bdcmp (pending_bd_addr, p_scb->peer_addr) == 0)
-            {
-                APPL_TRACE_WARNING("%s: p_scb %x, abort outgoing conn, there is"\
-                    " an incoming conn from dev %x:%x:%x:%x:%x:%x", __func__,
-                    p_scb, p_scb->peer_addr[0], p_scb->peer_addr[1],
-                    p_scb->peer_addr[2], p_scb->peer_addr[3], p_scb->peer_addr[4],
-                    p_scb->peer_addr[5]);
-                // send ourselves close event for clean up
-                p_buf = (tBTA_AG_RFC *) osi_malloc(sizeof(tBTA_AG_RFC));
-                p_buf->hdr.event = BTA_AG_RFC_CLOSE_EVT;
-                p_buf->hdr.layer_specific = bta_ag_scb_to_idx(p_scb);
-                bta_sys_sendmsg(p_buf);
-                return;
-            }
-        }
         /* Let the incoming connection goes through.                        */
         /* Issue collision for this scb for now.                            */
         /* We will decide what to do when we find incoming connetion later. */
@@ -453,8 +430,10 @@ void bta_ag_rfc_close(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     p_scb->post_sco = BTA_AG_POST_SCO_NONE;
     p_scb->svc_conn = FALSE;
     p_scb->hsp_version = HSP_VERSION_1_2;
-    p_scb->slc_pend_open = FALSE;
     bta_ag_at_reinit(&p_scb->at_cb);
+
+    memset(&(p_scb->peer_hf_indicators), 0, sizeof(p_scb->peer_hf_indicators));
+    memset(&(p_scb->local_hf_indicators), 0, sizeof(p_scb->local_hf_indicators));
 
     /* stop timers */
     alarm_cancel(p_scb->ring_timer);
@@ -527,7 +506,6 @@ void bta_ag_rfc_close(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 *******************************************************************************/
 void bta_ag_rfc_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 {
-    int ag_conn_timeout = p_bta_ag_cfg->conn_tout;
     /* initialize AT feature variables */
     p_scb->clip_enabled = FALSE;
     p_scb->ccwa_enabled = FALSE;
@@ -550,15 +528,9 @@ void bta_ag_rfc_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 
     bta_ag_cback_open(p_scb, NULL, BTA_AG_SUCCESS);
 
-    if (interop_match_addr(INTEROP_INCREASE_AG_CONN_TIMEOUT,
-                            (const bt_bdaddr_t*)p_scb->peer_addr)) {
-       /* use higher value for ag conn timeout */
-       ag_conn_timeout = 20000;
-    }
-    APPL_TRACE_DEBUG ("bta_ag_rfc_open: ag_conn_timeout: %d", ag_conn_timeout);
     if (p_scb->conn_service == BTA_AG_HFP) {
         /* if hfp start timer for service level conn */
-        bta_sys_start_timer(p_scb->ring_timer, ag_conn_timeout,
+        bta_sys_start_timer(p_scb->ring_timer, p_bta_ag_cfg->conn_tout,
                             BTA_AG_SVC_TIMEOUT_EVT, bta_ag_scb_to_idx(p_scb));
     } else {
         /* else service level conn is open */
@@ -583,12 +555,11 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     tBTA_AG_SCB     *ag_scb, *other_scb;
     BD_ADDR         dev_addr;
     int             status;
-    tBTA_AG_RFC     *p_buf;
 
     /* set role */
     p_scb->role = BTA_AG_ACP;
 
-    APPL_TRACE_IMP ("bta_ag_rfc_acp_open: serv_handle0 = %d serv_handle1 = %d",
+    APPL_TRACE_DEBUG ("bta_ag_rfc_acp_open: serv_handle0 = %d serv_handle1 = %d",
                        p_scb->serv_handle[0], p_scb->serv_handle[1]);
 
     /* get bd addr of peer */
@@ -606,30 +577,8 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 
             if (bdcmp (dev_addr, ag_scb->peer_addr) == 0)
             {
-                char value[PROPERTY_VALUE_MAX];
-                /* Read the property if multi hf is enabled */
-                if (property_get("persist.bt.max.hs.connections", value, "") &&
-                     !strcmp(value, "2") )
-                {
-                    /* If incoming and outgoing device are same, nothing more to do.            */
-                    /* Outgoing conn will be aborted because we have successful incoming conn.  */
-                    APPL_TRACE_WARNING("%s: p_scb %x, abort outgoing conn,"\
-                      "there is an incoming conn from dev %x:%x:%x:%x:%x:%x",
-                      __func__, ag_scb, dev_addr[0], dev_addr[1], dev_addr[2],
-                      dev_addr[3], dev_addr[4], dev_addr[5]);
-                    if (ag_scb->conn_handle)
-                    {
-                        RFCOMM_RemoveConnection(ag_scb->conn_handle);
-                    }
-
-                    // send ourselves close event for clean up
-                    // move back to OPENING state from INIT state so that clean up is done
-                    ag_scb->state = 1;
-                    p_buf = (tBTA_AG_RFC *) osi_malloc(sizeof(tBTA_AG_RFC));
-                    p_buf->hdr.event = BTA_AG_RFC_CLOSE_EVT;
-                    p_buf->hdr.layer_specific = bta_ag_scb_to_idx(ag_scb);
-                    bta_sys_sendmsg(p_buf);
-                }
+                /* If incoming and outgoing device are same, nothing more to do.            */
+                /* Outgoing conn will be aborted because we have successful incoming conn.  */
             }
             else
             {
@@ -665,7 +614,7 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
         }
     }
 
-    APPL_TRACE_IMP ("bta_ag_rfc_acp_open: conn_service = %d conn_handle = %d",
+    APPL_TRACE_DEBUG ("bta_ag_rfc_acp_open: conn_service = %d conn_handle = %d",
                        p_scb->conn_service, p_scb->conn_handle);
 
     /* close any unopened server */
@@ -721,7 +670,7 @@ void bta_ag_rfc_data(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
         bta_ag_at_parse(&p_scb->at_cb, buf, len);
         if ((p_scb->sco_idx != BTM_INVALID_SCO_INDEX) && bta_ag_sco_is_open(p_scb))
         {
-            APPL_TRACE_IMP("bta_ag_rfc_data, change link policy for SCO");
+            APPL_TRACE_DEBUG ("%s change link policy for SCO", __func__);
             bta_sys_sco_open(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
         } else {
             bta_sys_idle(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
@@ -917,7 +866,7 @@ void bta_ag_ci_rx_data(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     PORT_WriteData(p_scb->conn_handle, p_data_area, strlen(p_data_area), &len);
     if ((p_scb->sco_idx != BTM_INVALID_SCO_INDEX) && bta_ag_sco_is_open(p_scb))
     {
-        APPL_TRACE_IMP("bta_ag_rfc_data, change link policy for SCO");
+        APPL_TRACE_DEBUG ("bta_ag_rfc_data, change link policy for SCO");
         bta_sys_sco_open(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
     }
     else
@@ -963,9 +912,6 @@ void bta_ag_setcodec(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 #if (BTM_WBS_INCLUDED == TRUE )
     tBTA_AG_PEER_CODEC codec_type = p_data->api_setcodec.codec;
     tBTA_AG_VAL        val;
-    val.hdr.handle = bta_ag_scb_to_idx(p_scb);
-    val.hdr.app_id = p_scb->app_id;
-    bdcpy(val.bd_addr, p_scb->peer_addr);
 
     /* Check if the requested codec type is valid */
     if((codec_type != BTA_AG_CODEC_NONE) &&

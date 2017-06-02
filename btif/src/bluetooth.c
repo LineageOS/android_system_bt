@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
 #include <hardware/bluetooth.h>
 #include <hardware/bt_av.h>
 #include <hardware/bt_gatt.h>
@@ -43,12 +44,9 @@
 #include <hardware/bt_rc.h>
 #include <hardware/bt_sdp.h>
 #include <hardware/bt_sock.h>
-#include <hardware/vendor.h>
 
 #include "bt_utils.h"
 #include "btif_api.h"
-#include "btif_common.h"
-#include "device/include/controller.h"
 #include "btif_debug.h"
 #include "btsnoop.h"
 #include "btsnoop_mem.h"
@@ -66,16 +64,6 @@
 #include "btif/include/btif_debug_conn.h"
 #include "btif/include/btif_debug_l2c.h"
 #include "btif/include/btif_media.h"
-#include "l2cdefs.h"
-#include "l2c_api.h"
-
-#if TEST_APP_INTERFACE == TRUE
-#include <bt_testapp.h>
-#endif
-
-
-#include <logging.h>
-
 
 /************************************************************************************
 **  Static variables
@@ -117,18 +105,6 @@ extern btrc_interface_t *btif_rc_get_interface();
 extern btrc_interface_t *btif_rc_ctrl_get_interface();
 /*SDP search client*/
 extern btsdp_interface_t *btif_sdp_get_interface();
-/* vendor  */
-extern btvendor_interface_t *btif_vendor_get_interface();
-
-extern const btstacklog_interface_t *btif_stack_log_interface(void);
-#if TEST_APP_INTERFACE == TRUE
-extern const btl2cap_interface_t *btif_l2cap_get_interface(void);
-extern const btrfcomm_interface_t *btif_rfcomm_get_interface(void);
-extern const btmcap_interface_t *btif_mcap_get_interface(void);
-extern const btgatt_test_interface_t *btif_gatt_test_get_interface(void);
-extern const btsmp_interface_t *btif_smp_get_interface(void);
-extern const btgap_interface_t *btif_gap_get_interface(void);
-#endif
 
 /************************************************************************************
 **  Functions
@@ -401,9 +377,6 @@ static const void* get_profile_interface (const char *profile_id)
     if (is_profile(profile_id, BT_PROFILE_SOCKETS_ID))
         return btif_sock_get_interface();
 
-    if (is_profile(profile_id, "LOG_ID"))
-        return btif_stack_log_interface();
-
     if (is_profile(profile_id, BT_PROFILE_PAN_ID))
         return btif_pan_get_interface();
 
@@ -433,40 +406,8 @@ static const void* get_profile_interface (const char *profile_id)
     if (is_profile(profile_id, BT_PROFILE_AV_RC_CTRL_ID))
         return btif_rc_ctrl_get_interface();
 
-    if (is_profile(profile_id, BT_PROFILE_VENDOR_ID))
-        return btif_vendor_get_interface();
-
     return NULL;
 }
-
-#if TEST_APP_INTERFACE == TRUE
-static const void* get_testapp_interface(int test_app_profile)
-{
-    ALOGI("get_testapp_interface %d", test_app_profile);
-
-    if (interface_ready() == FALSE) {
-        return NULL;
-    }
-    switch(test_app_profile) {
-        case TEST_APP_L2CAP:
-            return btif_l2cap_get_interface();
-        case TEST_APP_RFCOMM:
-            return btif_rfcomm_get_interface();
-        case TEST_APP_MCAP:
-           return btif_mcap_get_interface();
-        case TEST_APP_GATT:
-           return btif_gatt_test_get_interface();
-        case TEST_APP_SMP:
-           return btif_smp_get_interface();
-        case TEST_APP_GAP:
-           return btif_gap_get_interface();
-        default:
-            return NULL;
-    }
-    return NULL;
-}
-
-#endif //TEST_APP_INTERFACE
 
 int dut_mode_configure(uint8_t enable)
 {
@@ -490,19 +431,6 @@ int dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len)
     return btif_dut_mode_send(opcode, buf, len);
 }
 
-#if HCI_RAW_CMD_INCLUDED == TRUE
-int hci_cmd_send(uint16_t opcode, uint8_t* buf, uint8_t len)
-{
-    ALOGI("hci_cmd_send");
-
-    /* sanity check */
-    if (interface_ready() == FALSE)
-        return BT_STATUS_NOT_READY;
-
-    return btif_hci_cmd_send(opcode, buf, len);
-}
-#endif
-
 #if BLE_INCLUDED == TRUE
 int le_test_mode(uint16_t opcode, uint8_t* buf, uint8_t len)
 {
@@ -524,8 +452,6 @@ int config_hci_snoop_log(uint8_t enable)
         return BT_STATUS_NOT_READY;
 
     btsnoop_get_interface()->set_api_wants_to_log(enable);
-    controller_get_static_interface()->enable_soc_logging(enable);
-
     return BT_STATUS_SUCCESS;
 }
 
@@ -565,11 +491,6 @@ static const bt_interface_t bluetoothInterface = {
     get_profile_interface,
     dut_mode_configure,
     dut_mode_send,
-#if HCI_RAW_CMD_INCLUDED == TRUE
-    hci_cmd_send,
-#else
-    NULL,
-#endif
 #if BLE_INCLUDED == TRUE
     le_test_mode,
 #else
@@ -582,11 +503,6 @@ static const bt_interface_t bluetoothInterface = {
     config_clear,
     interop_database_clear,
     interop_database_add,
-#if TEST_APP_INTERFACE == TRUE
-    get_testapp_interface,
-#else
-    NULL,
-#endif
 };
 
 const bt_interface_t* bluetooth__get_bluetooth_interface ()

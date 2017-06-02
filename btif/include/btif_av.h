@@ -32,7 +32,6 @@
 #include "btif_sm.h"
 #include "bta_av_api.h"
 
-#define BTIF_RC_HANDLE_NONE 0xFF
 
 /*******************************************************************************
 **  Type definitions for callback functions
@@ -49,9 +48,6 @@ typedef enum {
     BTIF_AV_OFFLOAD_START_REQ_EVT,
     BTIF_AV_SINK_FOCUS_REQ_EVT,
     BTIF_AV_CLEANUP_REQ_EVT,
-    BTIF_AV_UPDATE_ENCODER_REQ_EVT,
-    BTIF_AV_INIT_REQ_EVT,
-	
 } btif_av_sm_event_t;
 
 
@@ -81,7 +77,7 @@ btif_sm_handle_t btif_av_get_sm_handle(void);
 **
 *******************************************************************************/
 
-bt_bdaddr_t btif_av_get_addr(BD_ADDR address);
+bt_bdaddr_t btif_av_get_addr(void);
 
 /*******************************************************************************
 ** Function         btif_av_is_sink_enabled
@@ -208,18 +204,6 @@ void btif_av_clear_remote_suspend_flag(void);
 
 /*******************************************************************************
 **
-** Function         btif_av_any_br_peer
-**
-** Description      Check if the any of connected devices is BR device.
-**
-** Returns          TRUE if connected to any BR device, FALSE otherwise.
-**
-*******************************************************************************/
-
-BOOLEAN btif_av_any_br_peer(void);
-
-/*******************************************************************************
-**
 ** Function         btif_av_peer_supports_3mbps
 **
 ** Description      Check if the connected A2DP device supports
@@ -230,53 +214,5 @@ BOOLEAN btif_av_any_br_peer(void);
 **
 *******************************************************************************/
 BOOLEAN btif_av_peer_supports_3mbps(void);
-
-#ifdef BTA_AV_SPLIT_A2DP_ENABLED
-/******************************************************************************
-**
-** Function         btif_av_get_streaming_channel_id
-**
-** Description      Returns streaming channel id
-**
-** Returns          channel id
-********************************************************************************/
-UINT16 btif_av_get_streaming_channel_id(void);
-
-/******************************************************************************
-**
-** Function         btif_av_get_peer_addr
-**
-** Description     Returns peer device address
-**
-** Returns          peer address
-********************************************************************************/
-void btif_av_get_peer_addr(bt_bdaddr_t *peer_bda);
-
-#else
-#define btif_av_get_streaming_channel_id() (0)
-#define btif_av_get_peer_addr(peer_bda) (0)
-#endif
-
-/*******************************************************************************
-**
-** Function         btif_av_get_multicast_state
-**
-** Description      Check if A2DP multicast is enabled
-**
-** Returns          TRUE if a2dp multicast is enabled
-**
-*******************************************************************************/
-BOOLEAN btif_av_get_multicast_state();
-
-/*******************************************************************************
-**
-** Function         btif_av_is_multicast_supported
-**
-** Description      Check if A2DP multicast is supported
-**
-** Returns          TRUE if a2dp multicast is supported
-**
-*******************************************************************************/
-BOOLEAN btif_av_is_multicast_supported();
 
 #endif /* BTIF_AV_H */

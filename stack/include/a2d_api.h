@@ -85,9 +85,6 @@
 #define A2D_BAD_CP_TYPE       0xE0  /* The requested CP Type is not supported. */
 #define A2D_BAD_CP_FORMAT     0xE1  /* The format of Content Protection Service Capability/Content Protection Scheme Dependent Data is not correct. */
 
-
-#define A2D_NON_A2DP_MEDIA_CT 0xFF  /* NON A2DP media codec */
-
 typedef UINT8 tA2D_STATUS;
 
 /* the return values from A2D_BitsSet() */
@@ -205,9 +202,6 @@ extern tA2D_STATUS A2D_AddRecord(UINT16 service_uuid, char *p_service_name, char
 ******************************************************************************/
 extern tA2D_STATUS A2D_FindService(UINT16 service_uuid, BD_ADDR bd_addr,
                                    tA2D_SDP_DB_PARAMS *p_db, tA2D_FIND_CBACK *p_cback);
-
-/* Used to check local version of AVDTP */
-extern int a2d_get_avdt_sdp_ver ();
 
 /******************************************************************************
 **

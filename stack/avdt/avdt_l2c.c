@@ -181,17 +181,8 @@ void avdt_l2c_connect_ind_cback(BD_ADDR bd_addr, UINT16 lcid, UINT16 psm, UINT8 
     tBTM_STATUS rc;
     UNUSED(psm);
 
-    /* Check if outgoing connection is in progress
-     * if yes, reject incoming connection at L2CAP
-     * level itself.
-     */
-    if(avdt_cb.conn_in_progress == TRUE)
-    {
-        AVDT_TRACE_WARNING("connect_ind: outgoing conn in progress: Reject incoming conn");
-        result = L2CAP_CONN_NO_RESOURCES;
-    }
     /* do we already have a control channel for this peer? */
-    else if ((p_ccb = avdt_ccb_by_bd(bd_addr)) == NULL)
+    if ((p_ccb = avdt_ccb_by_bd(bd_addr)) == NULL)
     {
         /* no, allocate ccb */
         if ((p_ccb = avdt_ccb_alloc(bd_addr)) == NULL)
@@ -214,11 +205,7 @@ void avdt_l2c_connect_ind_cback(BD_ADDR bd_addr, UINT16 lcid, UINT16 psm, UINT8 
             if (interop_match_addr(INTEROP_2MBPS_LINK_ONLY, (const bt_bdaddr_t *)&bd_addr)) {
                 // Disable 3DH packets for AVDT ACL to improve sensitivity on HS
                 tACL_CONN *p_acl_cb = btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
-                /* Fix for below klockwork issue
-                 * Pointer 'p_acl_cb' returned from call to function 'btm_bda_to_acl' at line 216
-                 * may be NULL and will be dereferenced at line 217*/
-                if (p_acl_cb)
-                    btm_set_packet_types(p_acl_cb, (btm_cb.btm_acl_pkt_types_supported |
+                btm_set_packet_types(p_acl_cb, (btm_cb.btm_acl_pkt_types_supported |
                                                 HCI_PKT_TYPES_MASK_NO_3_DH1 |
                                                 HCI_PKT_TYPES_MASK_NO_3_DH3 |
                                                 HCI_PKT_TYPES_MASK_NO_3_DH5));
@@ -346,11 +333,7 @@ void avdt_l2c_connect_cfm_cback(UINT16 lcid, UINT16 result)
                         if (interop_match_addr(INTEROP_2MBPS_LINK_ONLY, (const bt_bdaddr_t *) &p_ccb->peer_addr)) {
                             // Disable 3DH packets for AVDT ACL to improve sensitivity on HS
                             tACL_CONN *p_acl_cb = btm_bda_to_acl(p_ccb->peer_addr, BT_TRANSPORT_BR_EDR);
-                            /* Fix for below klockwork issue
-                             * Pointer 'p_acl_cb' returned from call to function 'btm_bda_to_acl' at line 344
-                             * may be NULL and will be dereferenced at line 345*/
-                            if (p_acl_cb)
-                                btm_set_packet_types(p_acl_cb, (btm_cb.btm_acl_pkt_types_supported |
+                            btm_set_packet_types(p_acl_cb, (btm_cb.btm_acl_pkt_types_supported |
                                                             HCI_PKT_TYPES_MASK_NO_3_DH1 |
                                                             HCI_PKT_TYPES_MASK_NO_3_DH3 |
                                                             HCI_PKT_TYPES_MASK_NO_3_DH5));

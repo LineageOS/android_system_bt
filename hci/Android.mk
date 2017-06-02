@@ -34,14 +34,9 @@ LOCAL_C_INCLUDES += \
 
 LOCAL_MODULE := libbt-hci
 
-ifeq ($(TARGET_BUILD_VARIANT), eng)
-    LOCAL_CFLAGS += -DBTSNOOP_DEFAULT=TRUE
+ifeq ($(BLUETOOTH_HCI_USE_MCT),true)
+LOCAL_CFLAGS += -DHCI_USE_MCT
 endif
-
-ifneq (,$(filter userdebug eng,$(TARGET_BUILD_VARIANT)))
-LOCAL_CFLAGS += -DENABLE_DBG_FLAGS
-endif
-
 LOCAL_CFLAGS += $(bluetooth_CFLAGS)
 LOCAL_CONLYFLAGS += $(bluetooth_CONLYFLAGS)
 LOCAL_CPPFLAGS += $(bluetooth_CPPFLAGS)

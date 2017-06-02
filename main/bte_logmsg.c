@@ -125,7 +125,6 @@ static const char * const bt_layer_tags[] = {
 static uint8_t BTAPP_SetTraceLevel(uint8_t new_level);
 static uint8_t BTIF_SetTraceLevel(uint8_t new_level);
 static uint8_t BTU_SetTraceLevel(uint8_t new_level);
-static uint8_t AUDIO_Latency_SetTraceLevel(uint8_t new_level);
 
 /* make sure list is order by increasing layer id!!! */
 static tBTTRC_FUNC_MAP bttrc_set_level_map[] = {
@@ -154,9 +153,6 @@ static tBTTRC_FUNC_MAP bttrc_set_level_map[] = {
 #if (BLE_INCLUDED==TRUE)
   {BTTRC_ID_STK_GATT, BTTRC_ID_STK_GATT, GATT_SetTraceLevel, "TRC_GATT", DEFAULT_CONF_TRACE_LEVEL},
   {BTTRC_ID_STK_SMP, BTTRC_ID_STK_SMP, SMP_SetTraceLevel, "TRC_SMP", DEFAULT_CONF_TRACE_LEVEL},
-#endif
-#if (BT_TRACE_LATENCY_AUDIO == TRUE)
-    {BTTRC_ID_LATENCY_AUDIO, BTTRC_ID_LATENCY_AUDIO, AUDIO_Latency_SetTraceLevel, "TRC_LATENCY_AUDIO", DEFAULT_CONF_TRACE_LEVEL},
 #endif
 
   /* LayerIDs for BTA, currently everything maps onto appl_trace_level.
@@ -213,15 +209,6 @@ static uint8_t BTIF_SetTraceLevel(uint8_t new_level) {
   return btif_trace_level;
 }
 
-static uint8_t AUDIO_Latency_SetTraceLevel( uint8_t new_level )
-{
-    if (new_level != 0xFF)
-    audio_latency_trace_level = new_level;
-
-    return (audio_latency_trace_level);
-}
-
-
 static uint8_t BTU_SetTraceLevel(uint8_t new_level) {
   if (new_level != 0xFF)
     btu_trace_level = new_level;
@@ -249,6 +236,7 @@ static future_t *init(void) {
     LOG_INFO(LOG_TAG, "using compile default trace settings");
     return NULL;
   }
+
   load_levels_from_config(stack_config->get_all());
   return NULL;
 }
@@ -264,43 +252,3 @@ EXPORT_SYMBOL const module_t bte_logmsg_module = {
     NULL
   }
 };
-
-/********************************************************************************
- **
- **    Function Name:    BTA_setStackLog
- **
- **    Purpose:          Set the trace level of the different layers of stack
-                         based on the stack layer and level as input
- **
- **    Input Parameters: const char* log_layer, int log_level
-                         Example : TRC_HCI, 5
- **
- **    Returns:          void
- **
- *********************************************************************************/
-
-void BTA_setStackLog( const char* log_layer, int log_level)
-{
-    const tBTTRC_FUNC_MAP *p_f_map;
-    int new_level = 0;
-    int layer_found = 0;
-    p_f_map = &bttrc_set_level_map[0];
-
-    while ( 0 != p_f_map->layer_id_start )
-    {
-
-        if( (NULL != p_f_map->p_f) && !strcmp( p_f_map->trc_name, log_layer))
-        {
-            new_level = p_f_map->p_f(log_level);
-            LOG_INFO("BTA_setStackLog: New trace level set for layer %s is %d", log_layer, new_level);
-            layer_found = 1;
-            break;
-        }
-        p_f_map++;
-    }
-
-    if ( layer_found == 0 )
-    {
-        LOG_INFO("BTA_setStackLog: Unable to set Layer %s with level %d. Layer not found", log_layer, log_level);
-    }
-}

@@ -68,9 +68,6 @@ typedef UINT8 tBTA_JV_STATUS;
 #define BTA_JV_LAST_SERVICE_ID  BTA_LAST_JV_SERVICE_ID
 #define BTA_JV_NUM_SERVICE_ID   (BTA_LAST_JV_SERVICE_ID - BTA_FIRST_JV_SERVICE_ID + 1)
 
-/* Intermediate Idle timeout(s) for TX/RX*/
-#define BTA_JV_IDLE_TIMEOUT_MS 1000
-
 /* Discoverable modes */
 enum
 {

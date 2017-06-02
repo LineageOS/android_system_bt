@@ -138,18 +138,6 @@ bt_status_t btif_storage_remove_bonded_device(bt_bdaddr_t *remote_bd_addr);
 
 /*******************************************************************************
 **
-** Function         btif_storage_is_device_bonded
-**
-* Description      BTIF storage API - checks if device present in bonded list
-**
-** Returns          TRUE if the device is bonded,
-**                  FALSE otherwise
-**
-*******************************************************************************/
-BOOLEAN btif_storage_is_device_bonded(bt_bdaddr_t *remote_bd_addr);
-
-/*******************************************************************************
-**
 ** Function         btif_storage_remove_bonded_device
 **
 ** Description      BTIF storage API - Deletes the bonded device from NVRAM
@@ -296,19 +284,6 @@ BOOLEAN btif_storage_is_restricted_device(const bt_bdaddr_t *remote_bd_addr);
 **
 *******************************************************************************/
 int btif_storage_get_num_bonded_devices(void);
-
-/*******************************************************************************
-**
-** Function         btif_storage_is_wiimote
-**
-** Description      BTIF storage API - checks if this device is a wiimote
-**
-** Returns          TRUE   if the device is found in wiimote device list
-**                  FALSE otherwise
-**
-*******************************************************************************/
-BOOLEAN btif_storage_is_wiimote(bt_bdaddr_t *remote_bd_addr, bt_bdname_t *remote_bd_name);
-
 #if (BLE_INCLUDED == TRUE)
 bt_status_t btif_storage_add_ble_bonding_key( bt_bdaddr_t *remote_bd_addr,
                                               char *key,

@@ -42,11 +42,6 @@
 
 /* Number of protocol elements in protocol element list. */
 #define AVRC_NUM_PROTO_ELEMS     2
-#if (defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE))
-#define AVRC_NUM_ADDL_PROTO_ELEMS     2
-#else
-#define AVRC_NUM_ADDL_PROTO_ELEMS     1
-#endif
 
 #ifndef AVRC_MIN_CMD_LEN
 #define AVRC_MIN_CMD_LEN    20
