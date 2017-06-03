@@ -102,27 +102,6 @@ void gatt_free_pending_ind(tGATT_TCB* p_tcb) {
 
 /*******************************************************************************
  *
- * Function         gatt_free_pending_enc_queue
- *
- * Description       Free all buffers in pending encyption queue
- *
- * Returns       None
- *
- ******************************************************************************/
-void gatt_free_pending_enc_queue(tGATT_TCB* p_tcb) {
-  GATT_TRACE_DEBUG("%s", __func__);
-
-  if (p_tcb->pending_enc_clcb == NULL) return;
-
-  /* release all queued indications */
-  while (!fixed_queue_is_empty(p_tcb->pending_enc_clcb))
-    osi_free(fixed_queue_try_dequeue(p_tcb->pending_enc_clcb));
-  fixed_queue_free(p_tcb->pending_enc_clcb, NULL);
-  p_tcb->pending_enc_clcb = NULL;
-}
-
-/*******************************************************************************
- *
  * Function         gatt_delete_dev_from_srv_chg_clt_list
  *
  * Description    Delete a device from the service changed client lit
@@ -449,26 +428,7 @@ tGATT_TCB* gatt_find_tcb_by_addr(BD_ADDR bda, tBT_TRANSPORT transport) {
 
   return p_tcb;
 }
-/*******************************************************************************
- *
- * Function         gatt_find_i_tcb_free
- *
- * Description      Search for an empty tcb entry, and return the index.
- *
- * Returns          GATT_INDEX_INVALID if not found. Otherwise index to the tcb.
- *
- ******************************************************************************/
-uint8_t gatt_find_i_tcb_free(void) {
-  uint8_t i = 0, j = GATT_INDEX_INVALID;
 
-  for (i = 0; i < GATT_MAX_PHY_CHANNEL; i++) {
-    if (!gatt_cb.tcb[i].in_use) {
-      j = i;
-      break;
-    }
-  }
-  return j;
-}
 /*******************************************************************************
  *
  * Function         gatt_allocate_tcb_by_bdaddr
@@ -479,33 +439,28 @@ uint8_t gatt_find_i_tcb_free(void) {
  *
  ******************************************************************************/
 tGATT_TCB* gatt_allocate_tcb_by_bdaddr(BD_ADDR bda, tBT_TRANSPORT transport) {
-  uint8_t i = 0;
-  bool allocated = false;
-  tGATT_TCB* p_tcb = NULL;
-
   /* search for existing tcb with matching bda    */
-  i = gatt_find_i_tcb_by_addr(bda, transport);
-  /* find free tcb */
-  if (i == GATT_INDEX_INVALID) {
-    i = gatt_find_i_tcb_free();
-    allocated = true;
-  }
-  if (i != GATT_INDEX_INVALID) {
-    p_tcb = &gatt_cb.tcb[i];
+  uint8_t j = gatt_find_i_tcb_by_addr(bda, transport);
+  if (j != GATT_INDEX_INVALID) return &gatt_cb.tcb[j];
 
-    if (allocated) {
-      memset(p_tcb, 0, sizeof(tGATT_TCB));
-      p_tcb->pending_enc_clcb = fixed_queue_new(SIZE_MAX);
-      p_tcb->pending_ind_q = fixed_queue_new(SIZE_MAX);
-      p_tcb->conf_timer = alarm_new("gatt.conf_timer");
-      p_tcb->ind_ack_timer = alarm_new("gatt.ind_ack_timer");
-      p_tcb->in_use = true;
-      p_tcb->tcb_idx = i;
-      p_tcb->transport = transport;
-    }
+  /* find free tcb */
+  for (int i = 0; i < GATT_MAX_PHY_CHANNEL; i++) {
+    tGATT_TCB* p_tcb = &gatt_cb.tcb[i];
+    if (p_tcb->in_use) continue;
+
+    *p_tcb = tGATT_TCB();
+
+    p_tcb->pending_ind_q = fixed_queue_new(SIZE_MAX);
+    p_tcb->conf_timer = alarm_new("gatt.conf_timer");
+    p_tcb->ind_ack_timer = alarm_new("gatt.ind_ack_timer");
+    p_tcb->in_use = true;
+    p_tcb->tcb_idx = i;
+    p_tcb->transport = transport;
     memcpy(p_tcb->peer_bda, bda, BD_ADDR_LEN);
+    return p_tcb;
   }
-  return p_tcb;
+
+  return NULL;
 }
 
 /*******************************************************************************
@@ -1608,7 +1563,6 @@ void gatt_cleanup_upon_disc(BD_ADDR bda, uint16_t reason,
     alarm_free(p_tcb->conf_timer);
     p_tcb->conf_timer = NULL;
     gatt_free_pending_ind(p_tcb);
-    gatt_free_pending_enc_queue(p_tcb);
     fixed_queue_free(p_tcb->sr_cmd.multi_rsp_q, NULL);
     p_tcb->sr_cmd.multi_rsp_q = NULL;
 
@@ -1622,7 +1576,7 @@ void gatt_cleanup_upon_disc(BD_ADDR bda, uint16_t reason,
                                    transport);
       }
     }
-    memset(p_tcb, 0, sizeof(tGATT_TCB));
+    *p_tcb = tGATT_TCB();
   }
   GATT_TRACE_DEBUG("exit gatt_cleanup_upon_disc ");
 }
@@ -1990,27 +1944,4 @@ bool gatt_update_auto_connect_dev(tGATT_IF gatt_if, bool add, BD_ADDR bd_addr) {
     ret = gatt_remove_bg_dev_from_list(p_reg, bd_addr);
   }
   return ret;
-}
-
-/*******************************************************************************
- *
- * Function     gatt_add_pending_new_srv_start
- *
- * Description  Add a pending new srv start to the new service start queue
- *
- * Returns    Pointer to the new service start buffer, NULL no buffer available
- *
- ******************************************************************************/
-tGATT_PENDING_ENC_CLCB* gatt_add_pending_enc_channel_clcb(tGATT_TCB* p_tcb,
-                                                          tGATT_CLCB* p_clcb) {
-  tGATT_PENDING_ENC_CLCB* p_buf =
-      (tGATT_PENDING_ENC_CLCB*)osi_malloc(sizeof(tGATT_PENDING_ENC_CLCB));
-
-  GATT_TRACE_DEBUG("%s", __func__);
-  GATT_TRACE_DEBUG("enqueue a new pending encryption channel clcb");
-
-  p_buf->p_clcb = p_clcb;
-  fixed_queue_enqueue(p_tcb->pending_enc_clcb, p_buf);
-
-  return p_buf;
 }
