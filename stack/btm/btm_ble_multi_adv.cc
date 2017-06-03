@@ -62,6 +62,7 @@ struct AdvertisingInstance {
   BD_ADDR own_address;
   MultiAdvCb timeout_cb;
   bool address_update_required;
+  bool periodic_enabled;
 
   /* When true, advertising set is enabled, or last scheduled call to "LE Set
    * Extended Advertising Set Enable" is to enable this advertising set. Any
@@ -88,6 +89,7 @@ struct AdvertisingInstance {
         own_address_type(0),
         own_address{0},
         address_update_required(false),
+        periodic_enabled(false),
         enable_status(false) {
     adv_raddr_timer = alarm_new_periodic("btm_ble.adv_raddr_timer");
   }
@@ -758,7 +760,27 @@ class BleAdvertisingManagerImpl
                                     MultiAdvCb cb) override {
     VLOG(1) << __func__ << " inst_id: " << +inst_id << ", enable: " << +enable;
 
-    GetHciInterface()->SetPeriodicAdvertisingEnable(enable, inst_id, cb);
+    AdvertisingInstance* p_inst = &adv_inst[inst_id];
+    if (!p_inst->in_use) {
+      LOG(ERROR) << "Invalid or not active instance";
+      cb.Run(BTM_BLE_MULTI_ADV_FAILURE);
+      return;
+    }
+
+    MultiAdvCb enable_cb = Bind(
+        [](AdvertisingInstance* p_inst, uint8_t enable, MultiAdvCb cb,
+           uint8_t status) {
+          VLOG(1) << "periodc adv enable cb: inst_id: " << +p_inst->inst_id
+                  << ", enable: " << +enable << ", status: " << std::hex
+                  << +status;
+          if (!status) p_inst->periodic_enabled = enable;
+
+          cb.Run(status);
+        },
+        p_inst, enable, std::move(cb));
+
+    GetHciInterface()->SetPeriodicAdvertisingEnable(enable, inst_id,
+                                                    std::move(enable_cb));
   }
 
   void Unregister(uint8_t inst_id) override {
@@ -773,6 +795,12 @@ class BleAdvertisingManagerImpl
     if (adv_inst[inst_id].IsEnabled()) {
       p_inst->enable_status = false;
       GetHciInterface()->Enable(false, inst_id, 0x00, 0x00, Bind(DoNothing));
+    }
+
+    if (p_inst->periodic_enabled) {
+      p_inst->periodic_enabled = false;
+      GetHciInterface()->SetPeriodicAdvertisingEnable(false, inst_id,
+                                                      Bind(DoNothing));
     }
 
     alarm_cancel(p_inst->adv_raddr_timer);
