@@ -522,10 +522,10 @@ tGATT_STATUS GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_handle,
       cmd_status = GATT_NO_RESOURCES;
     }
   } else {
-    p_msg = attp_build_sr_msg(p_tcb, GATT_HANDLE_VALUE_IND,
+    p_msg = attp_build_sr_msg(*p_tcb, GATT_HANDLE_VALUE_IND,
                               (tGATT_SR_MSG*)&indication);
     if (p_msg != NULL) {
-      cmd_status = attp_send_sr_msg(p_tcb, p_msg);
+      cmd_status = attp_send_sr_msg(*p_tcb, p_msg);
 
       if (cmd_status == GATT_SUCCESS || cmd_status == GATT_CONGESTED) {
         p_tcb->indicate_handle = indication.handle;
@@ -554,8 +554,6 @@ tGATT_STATUS GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_handle,
 tGATT_STATUS GATTS_HandleValueNotification(uint16_t conn_id,
                                            uint16_t attr_handle,
                                            uint16_t val_len, uint8_t* p_val) {
-  tGATT_STATUS cmd_sent = GATT_ILLEGAL_PARAMETER;
-  BT_HDR* p_buf;
   tGATT_VALUE notif;
   tGATT_IF gatt_if = GATT_GET_GATT_IF(conn_id);
   uint8_t tcb_idx = GATT_GET_TCB_IDX(conn_id);
@@ -570,20 +568,22 @@ tGATT_STATUS GATTS_HandleValueNotification(uint16_t conn_id,
     return (tGATT_STATUS)GATT_INVALID_CONN_ID;
   }
 
-  if (GATT_HANDLE_IS_VALID(attr_handle)) {
-    notif.handle = attr_handle;
-    notif.len = val_len;
-    memcpy(notif.value, p_val, val_len);
-    notif.auth_req = GATT_AUTH_REQ_NONE;
-    ;
-
-    p_buf = attp_build_sr_msg(p_tcb, GATT_HANDLE_VALUE_NOTIF,
-                              (tGATT_SR_MSG*)&notif);
-    if (p_buf != NULL) {
-      cmd_sent = attp_send_sr_msg(p_tcb, p_buf);
-    } else
-      cmd_sent = GATT_NO_RESOURCES;
+  if (!GATT_HANDLE_IS_VALID(attr_handle)) {
+    return GATT_ILLEGAL_PARAMETER;
   }
+
+  notif.handle = attr_handle;
+  notif.len = val_len;
+  memcpy(notif.value, p_val, val_len);
+  notif.auth_req = GATT_AUTH_REQ_NONE;
+
+  tGATT_STATUS cmd_sent;
+  BT_HDR* p_buf =
+      attp_build_sr_msg(*p_tcb, GATT_HANDLE_VALUE_NOTIF, (tGATT_SR_MSG*)&notif);
+  if (p_buf != NULL) {
+    cmd_sent = attp_send_sr_msg(*p_tcb, p_buf);
+  } else
+    cmd_sent = GATT_NO_RESOURCES;
   return cmd_sent;
 }
 
@@ -624,7 +624,7 @@ tGATT_STATUS GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id,
     return (GATT_WRONG_STATE);
   }
   /* Process App response */
-  cmd_sent = gatt_sr_process_app_rsp(p_tcb, gatt_if, trans_id,
+  cmd_sent = gatt_sr_process_app_rsp(*p_tcb, gatt_if, trans_id,
                                      p_tcb->sr_cmd.op_code, status, p_msg);
 
   return cmd_sent;
@@ -683,7 +683,7 @@ tGATT_STATUS GATTC_ConfigureMTU(uint16_t conn_id, uint16_t mtu) {
     p_clcb->p_tcb->payload_size = mtu;
     p_clcb->operation = GATTC_OPTYPE_CONFIG;
 
-    ret = attp_send_cl_msg(p_clcb->p_tcb, p_clcb->clcb_idx, GATT_REQ_MTU,
+    ret = attp_send_cl_msg(*p_clcb->p_tcb, p_clcb->clcb_idx, GATT_REQ_MTU,
                            (tGATT_CL_MSG*)&mtu);
   }
 
@@ -1016,7 +1016,7 @@ tGATT_STATUS GATTC_ExecuteWrite(uint16_t conn_id, bool is_execute) {
   if (p_clcb != NULL) {
     p_clcb->operation = GATTC_OPTYPE_EXE_WRITE;
     flag = is_execute ? GATT_PREP_WRITE_EXEC : GATT_PREP_WRITE_CANCEL;
-    gatt_send_queue_write_cancel(p_clcb->p_tcb, p_clcb, flag);
+    gatt_send_queue_write_cancel(*p_clcb->p_tcb, p_clcb, flag);
   } else {
     GATT_TRACE_ERROR("Unable to allocate client CB for conn_id %d ", conn_id);
     status = GATT_NO_RESOURCES;
@@ -1038,34 +1038,30 @@ tGATT_STATUS GATTC_ExecuteWrite(uint16_t conn_id, bool is_execute) {
  *
  ******************************************************************************/
 tGATT_STATUS GATTC_SendHandleValueConfirm(uint16_t conn_id, uint16_t handle) {
-  tGATT_STATUS ret = GATT_ILLEGAL_PARAMETER;
+  GATT_TRACE_API("%s conn_id=%d handle=0x%x", __func__, conn_id, handle);
+
   tGATT_TCB* p_tcb = gatt_get_tcb_by_idx(GATT_GET_TCB_IDX(conn_id));
-
-  GATT_TRACE_API("GATTC_SendHandleValueConfirm conn_id=%d handle=0x%x", conn_id,
-                 handle);
-
-  if (p_tcb) {
-    if (p_tcb->ind_count > 0) {
-      alarm_cancel(p_tcb->ind_ack_timer);
-
-      GATT_TRACE_DEBUG("notif_count=%d ", p_tcb->ind_count);
-      /* send confirmation now */
-      ret = attp_send_cl_msg(p_tcb, 0, GATT_HANDLE_VALUE_CONF,
-                             (tGATT_CL_MSG*)&handle);
-
-      p_tcb->ind_count = 0;
-
-    } else {
-      GATT_TRACE_DEBUG(
-          "GATTC_SendHandleValueConfirm - conn_id: %u - ignored not waiting "
-          "for indicaiton ack",
-          conn_id);
-      ret = GATT_SUCCESS;
-    }
-  } else {
-    GATT_TRACE_ERROR("GATTC_SendHandleValueConfirm - Unknown conn_id: %u",
-                     conn_id);
+  if (!p_tcb) {
+    GATT_TRACE_ERROR("%s - Unknown conn_id: %u", __func__, conn_id);
+    return GATT_ILLEGAL_PARAMETER;
   }
+
+  if (p_tcb->ind_count == 0) {
+    GATT_TRACE_DEBUG(
+        "%s - conn_id: %u - ignored not waiting for indicaiton ack", __func__,
+        conn_id);
+    return GATT_SUCCESS;
+  }
+
+  alarm_cancel(p_tcb->ind_ack_timer);
+
+  GATT_TRACE_DEBUG("notif_count=%d ", p_tcb->ind_count);
+  /* send confirmation now */
+  tGATT_STATUS ret = attp_send_cl_msg(*p_tcb, 0, GATT_HANDLE_VALUE_CONF,
+                                      (tGATT_CL_MSG*)&handle);
+
+  p_tcb->ind_count = 0;
+
   return ret;
 }
 
