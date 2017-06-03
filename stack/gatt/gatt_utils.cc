@@ -699,10 +699,10 @@ void gatt_start_conf_timer(tGATT_TCB* p_tcb) {
  * Returns          void
  *
  ******************************************************************************/
-void gatt_start_ind_ack_timer(tGATT_TCB* p_tcb) {
+void gatt_start_ind_ack_timer(tGATT_TCB& tcb) {
   /* start notification cache timer */
-  alarm_set_on_queue(p_tcb->ind_ack_timer, GATT_WAIT_FOR_RSP_TIMEOUT_MS,
-                     gatt_ind_ack_timeout, p_tcb, btu_general_alarm_queue);
+  alarm_set_on_queue(tcb.ind_ack_timer, GATT_WAIT_FOR_RSP_TIMEOUT_MS,
+                     gatt_ind_ack_timeout, &tcb, btu_general_alarm_queue);
 }
 
 /*******************************************************************************
@@ -726,7 +726,7 @@ void gatt_rsp_timeout(void* data) {
       p_clcb->retry_count < GATT_REQ_RETRY_LIMIT) {
     uint8_t rsp_code;
     GATT_TRACE_WARNING("%s retry discovery primary service", __func__);
-    if (p_clcb != gatt_cmd_dequeue(p_clcb->p_tcb, &rsp_code)) {
+    if (p_clcb != gatt_cmd_dequeue(*p_clcb->p_tcb, &rsp_code)) {
       GATT_TRACE_ERROR("%s command queue out of sync, disconnect", __func__);
     } else {
       p_clcb->retry_count++;
@@ -766,12 +766,11 @@ void gatt_indication_confirmation_timeout(void* data) {
  ******************************************************************************/
 void gatt_ind_ack_timeout(void* data) {
   tGATT_TCB* p_tcb = (tGATT_TCB*)data;
+  CHECK(p_tcb);
 
   GATT_TRACE_WARNING("%s send ack now", __func__);
-
-  if (p_tcb != NULL) p_tcb->ind_count = 0;
-
-  attp_send_cl_msg(p_tcb, 0, GATT_HANDLE_VALUE_CONF, NULL);
+  p_tcb->ind_count = 0;
+  attp_send_cl_msg(*p_tcb, 0, GATT_HANDLE_VALUE_CONF, NULL);
 }
 /*******************************************************************************
  *
@@ -853,7 +852,7 @@ void gatt_sr_send_req_callback(uint16_t conn_id, uint32_t trans_id,
  * Returns          void
  *
  ******************************************************************************/
-tGATT_STATUS gatt_send_error_rsp(tGATT_TCB* p_tcb, uint8_t err_code,
+tGATT_STATUS gatt_send_error_rsp(tGATT_TCB& tcb, uint8_t err_code,
                                  uint8_t op_code, uint16_t handle, bool deq) {
   tGATT_ERROR error;
   tGATT_STATUS status;
@@ -863,13 +862,13 @@ tGATT_STATUS gatt_send_error_rsp(tGATT_TCB* p_tcb, uint8_t err_code,
   error.reason = err_code;
   error.handle = handle;
 
-  p_buf = attp_build_sr_msg(p_tcb, GATT_RSP_ERROR, (tGATT_SR_MSG*)&error);
+  p_buf = attp_build_sr_msg(tcb, GATT_RSP_ERROR, (tGATT_SR_MSG*)&error);
   if (p_buf != NULL) {
-    status = attp_send_sr_msg(p_tcb, p_buf);
+    status = attp_send_sr_msg(tcb, p_buf);
   } else
     status = GATT_INSUF_RESOURCE;
 
-  if (deq) gatt_dequeue_sr_cmd(p_tcb);
+  if (deq) gatt_dequeue_sr_cmd(tcb);
 
   return status;
 }
@@ -1126,23 +1125,10 @@ uint8_t gatt_num_clcb_by_bd_addr(BD_ADDR bda) {
   return num;
 }
 
-/*******************************************************************************
- *
- * Function         gatt_sr_update_cback_cnt
- *
- * Description      The function searches all LCB with macthing bd address
- *
- * Returns          total number of clcb found.
- *
- ******************************************************************************/
-void gatt_sr_copy_prep_cnt_to_cback_cnt(tGATT_TCB* p_tcb) {
-  uint8_t i;
-
-  if (p_tcb) {
-    for (i = 0; i < GATT_MAX_APPS; i++) {
-      if (p_tcb->prep_cnt[i]) {
-        p_tcb->sr_cmd.cback_cnt[i] = 1;
-      }
+void gatt_sr_copy_prep_cnt_to_cback_cnt(tGATT_TCB& tcb) {
+  for (uint8_t i = 0; i < GATT_MAX_APPS; i++) {
+    if (tcb.prep_cnt[i]) {
+      tcb.sr_cmd.cback_cnt[i] = 1;
     }
   }
 }
@@ -1156,21 +1142,13 @@ void gatt_sr_copy_prep_cnt_to_cback_cnt(tGATT_TCB* p_tcb) {
  * Returns          True if thetotal application callback count is zero
  *
  ******************************************************************************/
-bool gatt_sr_is_cback_cnt_zero(tGATT_TCB* p_tcb) {
-  bool status = true;
-  uint8_t i;
-
-  if (p_tcb) {
-    for (i = 0; i < GATT_MAX_APPS; i++) {
-      if (p_tcb->sr_cmd.cback_cnt[i]) {
-        status = false;
-        break;
-      }
+bool gatt_sr_is_cback_cnt_zero(tGATT_TCB& tcb) {
+  for (uint8_t i = 0; i < GATT_MAX_APPS; i++) {
+    if (tcb.sr_cmd.cback_cnt[i]) {
+      return false;
     }
-  } else {
-    status = false;
   }
-  return status;
+  return true;
 }
 
 /*******************************************************************************
@@ -1182,21 +1160,13 @@ bool gatt_sr_is_cback_cnt_zero(tGATT_TCB* p_tcb) {
  * Returns          True no prepare write request
  *
  ******************************************************************************/
-bool gatt_sr_is_prep_cnt_zero(tGATT_TCB* p_tcb) {
-  bool status = true;
-  uint8_t i;
-
-  if (p_tcb) {
-    for (i = 0; i < GATT_MAX_APPS; i++) {
-      if (p_tcb->prep_cnt[i]) {
-        status = false;
-        break;
-      }
+bool gatt_sr_is_prep_cnt_zero(tGATT_TCB& tcb) {
+  for (uint8_t i = 0; i < GATT_MAX_APPS; i++) {
+    if (tcb.prep_cnt[i]) {
+      return false;
     }
-  } else {
-    status = false;
   }
-  return status;
+  return true;
 }
 
 /*******************************************************************************
@@ -1208,13 +1178,9 @@ bool gatt_sr_is_prep_cnt_zero(tGATT_TCB* p_tcb) {
  * Returns         None
  *
  ******************************************************************************/
-void gatt_sr_reset_cback_cnt(tGATT_TCB* p_tcb) {
-  uint8_t i;
-
-  if (p_tcb) {
-    for (i = 0; i < GATT_MAX_APPS; i++) {
-      p_tcb->sr_cmd.cback_cnt[i] = 0;
-    }
+void gatt_sr_reset_cback_cnt(tGATT_TCB& tcb) {
+  for (uint8_t i = 0; i < GATT_MAX_APPS; i++) {
+    tcb.sr_cmd.cback_cnt[i] = 0;
   }
 }
 
@@ -1227,12 +1193,9 @@ void gatt_sr_reset_cback_cnt(tGATT_TCB* p_tcb) {
  * Returns        None
  *
  ******************************************************************************/
-void gatt_sr_reset_prep_cnt(tGATT_TCB* p_tcb) {
-  uint8_t i;
-  if (p_tcb) {
-    for (i = 0; i < GATT_MAX_APPS; i++) {
-      p_tcb->prep_cnt[i] = 0;
-    }
+void gatt_sr_reset_prep_cnt(tGATT_TCB& tcb) {
+  for (uint8_t i = 0; i < GATT_MAX_APPS; i++) {
+    tcb.prep_cnt[i] = 0;
   }
 }
 
@@ -1245,20 +1208,18 @@ void gatt_sr_reset_prep_cnt(tGATT_TCB* p_tcb) {
  * Returns           None
  *
  ******************************************************************************/
-void gatt_sr_update_cback_cnt(tGATT_TCB* p_tcb, tGATT_IF gatt_if, bool is_inc,
+void gatt_sr_update_cback_cnt(tGATT_TCB& tcb, tGATT_IF gatt_if, bool is_inc,
                               bool is_reset_first) {
   uint8_t idx = ((uint8_t)gatt_if) - 1;
 
-  if (p_tcb) {
-    if (is_reset_first) {
-      gatt_sr_reset_cback_cnt(p_tcb);
-    }
-    if (is_inc) {
-      p_tcb->sr_cmd.cback_cnt[idx]++;
-    } else {
-      if (p_tcb->sr_cmd.cback_cnt[idx]) {
-        p_tcb->sr_cmd.cback_cnt[idx]--;
-      }
+  if (is_reset_first) {
+    gatt_sr_reset_cback_cnt(tcb);
+  }
+  if (is_inc) {
+    tcb.sr_cmd.cback_cnt[idx]++;
+  } else {
+    if (tcb.sr_cmd.cback_cnt[idx]) {
+      tcb.sr_cmd.cback_cnt[idx]--;
     }
   }
 }
@@ -1272,25 +1233,21 @@ void gatt_sr_update_cback_cnt(tGATT_TCB* p_tcb, tGATT_IF gatt_if, bool is_inc,
  * Returns           None
  *
  ******************************************************************************/
-void gatt_sr_update_prep_cnt(tGATT_TCB* p_tcb, tGATT_IF gatt_if, bool is_inc,
+void gatt_sr_update_prep_cnt(tGATT_TCB& tcb, tGATT_IF gatt_if, bool is_inc,
                              bool is_reset_first) {
   uint8_t idx = ((uint8_t)gatt_if) - 1;
 
-  GATT_TRACE_DEBUG(
-      "gatt_sr_update_prep_cnt tcb idx=%d gatt_if=%d is_inc=%d "
-      "is_reset_first=%d",
-      p_tcb->tcb_idx, gatt_if, is_inc, is_reset_first);
+  GATT_TRACE_DEBUG("%s tcb idx=%d gatt_if=%d is_inc=%d is_reset_first=%d",
+                   __func__, tcb.tcb_idx, gatt_if, is_inc, is_reset_first);
 
-  if (p_tcb) {
-    if (is_reset_first) {
-      gatt_sr_reset_prep_cnt(p_tcb);
-    }
-    if (is_inc) {
-      p_tcb->prep_cnt[idx]++;
-    } else {
-      if (p_tcb->prep_cnt[idx]) {
-        p_tcb->prep_cnt[idx]--;
-      }
+  if (is_reset_first) {
+    gatt_sr_reset_prep_cnt(tcb);
+  }
+  if (is_inc) {
+    tcb.prep_cnt[idx]++;
+  } else {
+    if (tcb.prep_cnt[idx]) {
+      tcb.prep_cnt[idx]--;
     }
   }
 }
@@ -1359,9 +1316,9 @@ bool gatt_find_app_hold_link(tGATT_TCB* p_tcb, uint8_t start_idx,
  * Returns          None.
  *
  ******************************************************************************/
-bool gatt_cmd_enq(tGATT_TCB* p_tcb, uint16_t clcb_idx, bool to_send,
+bool gatt_cmd_enq(tGATT_TCB& tcb, uint16_t clcb_idx, bool to_send,
                   uint8_t op_code, BT_HDR* p_buf) {
-  tGATT_CMD_Q* p_cmd = &p_tcb->cl_cmd_q[p_tcb->next_slot_inq];
+  tGATT_CMD_Q* p_cmd = &tcb.cl_cmd_q[tcb.next_slot_inq];
 
   p_cmd->to_send = to_send; /* waiting to be sent */
   p_cmd->op_code = op_code;
@@ -1369,11 +1326,11 @@ bool gatt_cmd_enq(tGATT_TCB* p_tcb, uint16_t clcb_idx, bool to_send,
   p_cmd->clcb_idx = clcb_idx;
 
   if (!to_send) {
-    p_tcb->pending_cl_req = p_tcb->next_slot_inq;
+    tcb.pending_cl_req = tcb.next_slot_inq;
   }
 
-  p_tcb->next_slot_inq++;
-  p_tcb->next_slot_inq %= GATT_CL_MAX_LCB;
+  tcb.next_slot_inq++;
+  tcb.next_slot_inq %= GATT_CL_MAX_LCB;
 
   return true;
 }
@@ -1387,17 +1344,17 @@ bool gatt_cmd_enq(tGATT_TCB* p_tcb, uint16_t clcb_idx, bool to_send,
  * Returns          total number of clcb found.
  *
  ******************************************************************************/
-tGATT_CLCB* gatt_cmd_dequeue(tGATT_TCB* p_tcb, uint8_t* p_op_code) {
-  tGATT_CMD_Q* p_cmd = &p_tcb->cl_cmd_q[p_tcb->pending_cl_req];
+tGATT_CLCB* gatt_cmd_dequeue(tGATT_TCB& tcb, uint8_t* p_op_code) {
+  tGATT_CMD_Q* p_cmd = &tcb.cl_cmd_q[tcb.pending_cl_req];
   tGATT_CLCB* p_clcb = NULL;
 
-  if (p_tcb->pending_cl_req != p_tcb->next_slot_inq) {
+  if (tcb.pending_cl_req != tcb.next_slot_inq) {
     p_clcb = &gatt_cb.clcb[p_cmd->clcb_idx];
 
     *p_op_code = p_cmd->op_code;
 
-    p_tcb->pending_cl_req++;
-    p_tcb->pending_cl_req %= GATT_CL_MAX_LCB;
+    tcb.pending_cl_req++;
+    tcb.pending_cl_req %= GATT_CL_MAX_LCB;
   }
 
   return p_clcb;
@@ -1412,9 +1369,9 @@ tGATT_CLCB* gatt_cmd_dequeue(tGATT_TCB* p_tcb, uint8_t* p_op_code) {
  * Returns          status code
  *
  ******************************************************************************/
-uint8_t gatt_send_write_msg(tGATT_TCB* p_tcb, uint16_t clcb_idx,
-                            uint8_t op_code, uint16_t handle, uint16_t len,
-                            uint16_t offset, uint8_t* p_data) {
+uint8_t gatt_send_write_msg(tGATT_TCB& tcb, uint16_t clcb_idx, uint8_t op_code,
+                            uint16_t handle, uint16_t len, uint16_t offset,
+                            uint8_t* p_data) {
   tGATT_CL_MSG msg;
 
   msg.attr_value.handle = handle;
@@ -1424,30 +1381,7 @@ uint8_t gatt_send_write_msg(tGATT_TCB* p_tcb, uint16_t clcb_idx,
   memcpy(msg.attr_value.value, p_data, len);
 
   /* write by handle */
-  return attp_send_cl_msg(p_tcb, clcb_idx, op_code, &msg);
-}
-
-/*******************************************************************************
- *
- * Function         gatt_act_send_browse
- *
- * Description      This function ends a browse command request, including read
- *                  information request and read by type request.
- *
- * Returns          status code
- *
- ******************************************************************************/
-uint8_t gatt_act_send_browse(tGATT_TCB* p_tcb, uint16_t index, uint8_t op,
-                             uint16_t s_handle, uint16_t e_handle,
-                             tBT_UUID uuid) {
-  tGATT_CL_MSG msg;
-
-  msg.browse.s_handle = s_handle;
-  msg.browse.e_handle = e_handle;
-  memcpy(&msg.browse.uuid, &uuid, sizeof(tBT_UUID));
-
-  /* write by handle */
-  return attp_send_cl_msg(p_tcb, index, op, &msg);
+  return attp_send_cl_msg(tcb, clcb_idx, op_code, &msg);
 }
 
 /*******************************************************************************
