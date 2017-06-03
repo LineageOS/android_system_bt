@@ -91,7 +91,7 @@ static bool gatt_sign_data(tGATT_CLCB* p_clcb) {
  * Returns
  *
  ******************************************************************************/
-void gatt_verify_signature(tGATT_TCB* p_tcb, BT_HDR* p_buf) {
+void gatt_verify_signature(tGATT_TCB& tcb, BT_HDR* p_buf) {
   uint16_t cmd_len;
   uint8_t op_code;
   uint8_t *p, *p_orig = (uint8_t*)(p_buf + 1) + p_buf->offset;
@@ -106,16 +106,15 @@ void gatt_verify_signature(tGATT_TCB* p_tcb, BT_HDR* p_buf) {
   p = p_orig + cmd_len - 4;
   STREAM_TO_UINT32(counter, p);
 
-  if (BTM_BleVerifySignature(p_tcb->peer_bda, p_orig, cmd_len, counter, p)) {
-    STREAM_TO_UINT8(op_code, p_orig);
-    gatt_server_handle_client_req(p_tcb, op_code, (uint16_t)(p_buf->len - 1),
-                                  p_orig);
-  } else {
+  if (!BTM_BleVerifySignature(tcb.peer_bda, p_orig, cmd_len, counter, p)) {
     /* if this is a bad signature, assume from attacker, ignore it  */
     GATT_TRACE_ERROR("Signature Verification Failed, data ignored");
+    return;
   }
 
-  return;
+  STREAM_TO_UINT8(op_code, p_orig);
+  gatt_server_handle_client_req(tcb, op_code, (uint16_t)(p_buf->len - 1),
+                                p_orig);
 }
 /*******************************************************************************
  *
@@ -344,11 +343,11 @@ tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB* p_clcb) {
  * Returns          tGATT_STATUS link encryption status
  *
  ******************************************************************************/
-tGATT_STATUS gatt_get_link_encrypt_status(tGATT_TCB* p_tcb) {
+tGATT_STATUS gatt_get_link_encrypt_status(tGATT_TCB& tcb) {
   tGATT_STATUS encrypt_status = GATT_NOT_ENCRYPTED;
   uint8_t sec_flag = 0;
 
-  BTM_GetSecurityFlagsByTransport(p_tcb->peer_bda, &sec_flag, p_tcb->transport);
+  BTM_GetSecurityFlagsByTransport(tcb.peer_bda, &sec_flag, tcb.transport);
 
   if ((sec_flag & BTM_SEC_FLAG_ENCRYPTED) &&
       (sec_flag & BTM_SEC_FLAG_LKEY_KNOWN)) {

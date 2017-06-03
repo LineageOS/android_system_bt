@@ -411,7 +411,7 @@ extern bool gatt_act_connect(tGATT_REG* p_reg, BD_ADDR bd_addr,
                              int8_t initiating_phys);
 extern bool gatt_connect(BD_ADDR rem_bda, tGATT_TCB* p_tcb,
                          tBT_TRANSPORT transport, uint8_t initiating_phys);
-extern void gatt_data_process(tGATT_TCB* p_tcb, BT_HDR* p_buf);
+extern void gatt_data_process(tGATT_TCB& p_tcb, BT_HDR* p_buf);
 extern void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
                                           bool is_add, bool check_acl_link);
 
@@ -428,12 +428,12 @@ extern void gatt_add_a_bonded_dev_for_srv_chg(BD_ADDR bda);
 extern uint16_t gatt_profile_find_conn_id_by_bd_addr(BD_ADDR bda);
 
 /* Functions provided by att_protocol.cc */
-extern tGATT_STATUS attp_send_cl_msg(tGATT_TCB* p_tcb, uint16_t clcb_idx,
+extern tGATT_STATUS attp_send_cl_msg(tGATT_TCB& tcb, uint16_t clcb_idx,
                                      uint8_t op_code, tGATT_CL_MSG* p_msg);
-extern BT_HDR* attp_build_sr_msg(tGATT_TCB* p_tcb, uint8_t op_code,
+extern BT_HDR* attp_build_sr_msg(tGATT_TCB& tcb, uint8_t op_code,
                                  tGATT_SR_MSG* p_msg);
-extern tGATT_STATUS attp_send_sr_msg(tGATT_TCB* p_tcb, BT_HDR* p_msg);
-extern tGATT_STATUS attp_send_msg_to_l2cap(tGATT_TCB* p_tcb, BT_HDR* p_toL2CAP);
+extern tGATT_STATUS attp_send_sr_msg(tGATT_TCB& tcb, BT_HDR* p_msg);
+extern tGATT_STATUS attp_send_msg_to_l2cap(tGATT_TCB& tcb, BT_HDR* p_toL2CAP);
 
 /* utility functions */
 extern uint8_t* gatt_dbg_op_name(uint8_t op_code);
@@ -452,8 +452,8 @@ extern void gatt_start_conf_timer(tGATT_TCB* p_tcb);
 extern void gatt_rsp_timeout(void* data);
 extern void gatt_indication_confirmation_timeout(void* data);
 extern void gatt_ind_ack_timeout(void* data);
-extern void gatt_start_ind_ack_timer(tGATT_TCB* p_tcb);
-extern tGATT_STATUS gatt_send_error_rsp(tGATT_TCB* p_tcb, uint8_t err_code,
+extern void gatt_start_ind_ack_timer(tGATT_TCB& tcb);
+extern tGATT_STATUS gatt_send_error_rsp(tGATT_TCB& tcb, uint8_t err_code,
                                         uint8_t op_code, uint16_t handle,
                                         bool deq);
 extern void gatt_dbg_display_uuid(tBT_UUID bt_uuid);
@@ -468,7 +468,7 @@ extern void gatt_set_srv_chg(void);
 extern void gatt_delete_dev_from_srv_chg_clt_list(BD_ADDR bd_addr);
 extern tGATT_VALUE* gatt_add_pending_ind(tGATT_TCB* p_tcb, tGATT_VALUE* p_ind);
 extern void gatt_free_srvc_db_buffer_app_id(tBT_UUID* p_app_id);
-extern bool gatt_cl_send_next_cmd_inq(tGATT_TCB* p_tcb);
+extern bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb);
 
 /* reserved handle list */
 extern std::list<tGATT_HDL_LIST_ELEM>::iterator gatt_find_hdl_buffer_by_app_id(
@@ -492,15 +492,15 @@ extern std::list<tGATT_SRV_LIST_ELEM>::iterator gatt_sr_find_i_rcb_by_handle(
 extern bool gatt_sr_find_i_rcb_by_app_id(tBT_UUID* p_app_uuid128,
                                          tBT_UUID* p_svc_uuid,
                                          uint16_t svc_inst);
-extern tGATT_STATUS gatt_sr_process_app_rsp(tGATT_TCB* p_tcb, tGATT_IF gatt_if,
+extern tGATT_STATUS gatt_sr_process_app_rsp(tGATT_TCB& tcb, tGATT_IF gatt_if,
                                             uint32_t trans_id, uint8_t op_code,
                                             tGATT_STATUS status,
                                             tGATTS_RSP* p_msg);
-extern void gatt_server_handle_client_req(tGATT_TCB* p_tcb, uint8_t op_code,
+extern void gatt_server_handle_client_req(tGATT_TCB& p_tcb, uint8_t op_code,
                                           uint16_t len, uint8_t* p_data);
 extern void gatt_sr_send_req_callback(uint16_t conn_id, uint32_t trans_id,
                                       uint8_t op_code, tGATTS_DATA* p_req_data);
-extern uint32_t gatt_sr_enqueue_cmd(tGATT_TCB* p_tcb, uint8_t op_code,
+extern uint32_t gatt_sr_enqueue_cmd(tGATT_TCB& tcb, uint8_t op_code,
                                     uint16_t handle);
 extern bool gatt_cancel_open(tGATT_IF gatt_if, BD_ADDR bda);
 extern void gatt_notify_phy_updated(tGATT_TCB* p_tcb, uint8_t tx_phy,
@@ -513,14 +513,14 @@ extern bool gatt_is_clcb_allocated(uint16_t conn_id);
 extern tGATT_CLCB* gatt_clcb_alloc(uint16_t conn_id);
 extern void gatt_clcb_dealloc(tGATT_CLCB* p_clcb);
 
-extern void gatt_sr_copy_prep_cnt_to_cback_cnt(tGATT_TCB* p_tcb);
-extern bool gatt_sr_is_cback_cnt_zero(tGATT_TCB* p_tcb);
-extern bool gatt_sr_is_prep_cnt_zero(tGATT_TCB* p_tcb);
-extern void gatt_sr_reset_cback_cnt(tGATT_TCB* p_tcb);
-extern void gatt_sr_reset_prep_cnt(tGATT_TCB* p_tcb);
-extern void gatt_sr_update_cback_cnt(tGATT_TCB* p_tcb, tGATT_IF gatt_if,
+extern void gatt_sr_copy_prep_cnt_to_cback_cnt(tGATT_TCB& p_tcb);
+extern bool gatt_sr_is_cback_cnt_zero(tGATT_TCB& p_tcb);
+extern bool gatt_sr_is_prep_cnt_zero(tGATT_TCB& p_tcb);
+extern void gatt_sr_reset_cback_cnt(tGATT_TCB& p_tcb);
+extern void gatt_sr_reset_prep_cnt(tGATT_TCB& tcb);
+extern void gatt_sr_update_cback_cnt(tGATT_TCB& p_tcb, tGATT_IF gatt_if,
                                      bool is_inc, bool is_reset_first);
-extern void gatt_sr_update_prep_cnt(tGATT_TCB* p_tcb, tGATT_IF gatt_if,
+extern void gatt_sr_update_prep_cnt(tGATT_TCB& tcb, tGATT_IF gatt_if,
                                     bool is_inc, bool is_reset_first);
 
 extern bool gatt_find_app_hold_link(tGATT_TCB* p_tcb, uint8_t start_idx,
@@ -535,8 +535,8 @@ extern tGATT_TCB* gatt_find_tcb_by_addr(BD_ADDR bda, tBT_TRANSPORT transport);
 extern bool gatt_send_ble_burst_data(BD_ADDR remote_bda, BT_HDR* p_buf);
 
 /* GATT client functions */
-extern void gatt_dequeue_sr_cmd(tGATT_TCB* p_tcb);
-extern uint8_t gatt_send_write_msg(tGATT_TCB* p_tcb, uint16_t clcb_idx,
+extern void gatt_dequeue_sr_cmd(tGATT_TCB& tcb);
+extern uint8_t gatt_send_write_msg(tGATT_TCB& p_tcb, uint16_t clcb_idx,
                                    uint8_t op_code, uint16_t handle,
                                    uint16_t len, uint16_t offset,
                                    uint8_t* p_data);
@@ -548,22 +548,19 @@ extern void gatt_end_operation(tGATT_CLCB* p_clcb, tGATT_STATUS status,
 extern void gatt_act_discovery(tGATT_CLCB* p_clcb);
 extern void gatt_act_read(tGATT_CLCB* p_clcb, uint16_t offset);
 extern void gatt_act_write(tGATT_CLCB* p_clcb, uint8_t sec_act);
-extern uint8_t gatt_act_send_browse(tGATT_TCB* p_tcb, uint16_t index,
-                                    uint8_t op, uint16_t s_handle,
-                                    uint16_t e_handle, tBT_UUID uuid);
-extern tGATT_CLCB* gatt_cmd_dequeue(tGATT_TCB* p_tcb, uint8_t* p_opcode);
-extern bool gatt_cmd_enq(tGATT_TCB* p_tcb, uint16_t clcb_idx, bool to_send,
+extern bool gatt_cmd_enq(tGATT_TCB& tcb, uint16_t clcb_idx, bool to_send,
                          uint8_t op_code, BT_HDR* p_buf);
-extern void gatt_client_handle_server_rsp(tGATT_TCB* p_tcb, uint8_t op_code,
+extern tGATT_CLCB* gatt_cmd_dequeue(tGATT_TCB& tcb, uint8_t* p_opcode);
+extern void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint8_t op_code,
                                           uint16_t len, uint8_t* p_data);
-extern void gatt_send_queue_write_cancel(tGATT_TCB* p_tcb, tGATT_CLCB* p_clcb,
+extern void gatt_send_queue_write_cancel(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
                                          tGATT_EXEC_FLAG flag);
 
 /* gatt_auth.cc */
 extern bool gatt_security_check_start(tGATT_CLCB* p_clcb);
-extern void gatt_verify_signature(tGATT_TCB* p_tcb, BT_HDR* p_buf);
+extern void gatt_verify_signature(tGATT_TCB& tcb, BT_HDR* p_buf);
 extern tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB* p_clcb);
-extern tGATT_STATUS gatt_get_link_encrypt_status(tGATT_TCB* p_tcb);
+extern tGATT_STATUS gatt_get_link_encrypt_status(tGATT_TCB& tcb);
 extern tGATT_SEC_ACTION gatt_get_sec_act(tGATT_TCB* p_tcb);
 extern void gatt_set_sec_act(tGATT_TCB* p_tcb, tGATT_SEC_ACTION sec_act);
 
@@ -579,12 +576,12 @@ extern uint16_t gatts_add_characteristic(tGATT_SVC_DB& db, tGATT_PERM perm,
 extern uint16_t gatts_add_char_descr(tGATT_SVC_DB& db, tGATT_PERM perm,
                                      tBT_UUID& dscp_uuid);
 extern tGATT_STATUS gatts_db_read_attr_value_by_type(
-    tGATT_TCB* p_tcb, tGATT_SVC_DB* p_db, uint8_t op_code, BT_HDR* p_rsp,
+    tGATT_TCB& tcb, tGATT_SVC_DB* p_db, uint8_t op_code, BT_HDR* p_rsp,
     uint16_t s_handle, uint16_t e_handle, tBT_UUID type, uint16_t* p_len,
     tGATT_SEC_FLAG sec_flag, uint8_t key_size, uint32_t trans_id,
     uint16_t* p_cur_handle);
 extern tGATT_STATUS gatts_read_attr_value_by_handle(
-    tGATT_TCB* p_tcb, tGATT_SVC_DB* p_db, uint8_t op_code, uint16_t handle,
+    tGATT_TCB& tcb, tGATT_SVC_DB* p_db, uint8_t op_code, uint16_t handle,
     uint16_t offset, uint8_t* p_value, uint16_t* p_len, uint16_t mtu,
     tGATT_SEC_FLAG sec_flag, uint8_t key_size, uint32_t trans_id);
 extern tGATT_STATUS gatts_write_attr_perm_check(
