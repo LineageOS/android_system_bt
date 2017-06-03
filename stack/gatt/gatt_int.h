@@ -260,8 +260,10 @@ typedef struct {
   bool is_primary;
 } tGATT_SRV_LIST_ELEM;
 
+struct tGATT_CLCB;
+
 typedef struct {
-  fixed_queue_t* pending_enc_clcb; /* pending encryption channel q */
+  std::queue<tGATT_CLCB*> pending_enc_clcb; /* pending encryption channel q */
   tGATT_SEC_ACTION sec_act;
   BD_ADDR peer_bda;
   tBT_TRANSPORT transport;
@@ -302,7 +304,7 @@ typedef struct {
   tGATT_DISC_RES result;
   bool wait_for_read_rsp;
 } tGATT_READ_INC_UUID128;
-typedef struct {
+struct tGATT_CLCB {
   tGATT_TCB* p_tcb; /* associated TCB of this CLCB */
   tGATT_REG* p_reg; /* owner of this CLCB */
   uint8_t sccb_idx;
@@ -323,10 +325,7 @@ typedef struct {
   bool in_use;
   alarm_t* gatt_rsp_timer_ent; /* peer response timer */
   uint8_t retry_count;
-
-} tGATT_CLCB;
-
-typedef struct { tGATT_CLCB* p_clcb; } tGATT_PENDING_ENC_CLCB;
+};
 
 typedef struct {
   uint16_t handle;
@@ -458,8 +457,6 @@ extern tGATT_STATUS gatt_send_error_rsp(tGATT_TCB* p_tcb, uint8_t err_code,
                                         uint8_t op_code, uint16_t handle,
                                         bool deq);
 extern void gatt_dbg_display_uuid(tBT_UUID bt_uuid);
-extern tGATT_PENDING_ENC_CLCB* gatt_add_pending_enc_channel_clcb(
-    tGATT_TCB* p_tcb, tGATT_CLCB* p_clcb);
 
 extern bool gatt_is_srv_chg_ind_pending(tGATT_TCB* p_tcb);
 extern tGATTS_SRV_CHG* gatt_is_bda_in_the_srv_chg_clt_list(BD_ADDR bda);
