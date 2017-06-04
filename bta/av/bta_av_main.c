@@ -1,4 +1,9 @@
 /******************************************************************************
+ *  Copyright (c) 2016, The Linux Foundation. All rights reserved.
+ *
+ *  Not a contribution.
+ ******************************************************************************/
+/******************************************************************************
  *
  *  Copyright (C) 2004-2012 Broadcom Corporation
  *
@@ -40,6 +45,8 @@
 #if( defined BTA_AR_INCLUDED ) && (BTA_AR_INCLUDED == TRUE)
 #include "bta_ar_api.h"
 #endif
+
+#include "a2d_aptx.h"
 
 /*****************************************************************************
 ** Constants and types
@@ -492,7 +499,9 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
     char            *p_service_name;
     tBTA_AV_CODEC   codec_type;
     tBTA_UTL_COD    cod;
-    UINT8           index = 0;
+    UINT8           startIndex = 0;
+    UINT8           endIndex = 0;
+    UINT8           index;
 
     memset(&cs,0,sizeof(tAVDT_CS));
 
@@ -628,36 +637,61 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
             if (profile_initialized == UUID_SERVCLASS_AUDIO_SOURCE)
             {
                 cs.tsep = AVDT_TSEP_SRC;
-                index = 0;
+                startIndex = BTIF_SV_AV_AA_SBC_INDEX;
+                endIndex = BTIF_SV_AV_AA_SRC_SEP_INDEX;
             }
             else if (profile_initialized == UUID_SERVCLASS_AUDIO_SINK)
             {
                 cs.tsep = AVDT_TSEP_SNK;
                 cs.p_data_cback = bta_av_stream_data_cback;
-                index = 1;
+                startIndex = BTIF_SV_AV_AA_SBC_SINK_INDEX;
+                endIndex = BTIF_SV_AV_AA_SNK_SEP_INDEX;
             }
 
             /* Initialize Handles to zero */
-            for (int xx=0; xx < BTA_AV_MAX_SEPS; xx++)
+            for(index = 0; index < (endIndex - startIndex); index++)
             {
-                p_scb->seps[xx].av_handle = 0;
+                p_scb->seps[index].av_handle = 0;
             }
 
             /* keep the configuration in the stream control block */
             memcpy(&p_scb->cfg, &cs.cfg, sizeof(tAVDT_CFG));
-            if ((*bta_av_a2d_cos.init)(&codec_type, cs.cfg.codec_info,
-                &cs.cfg.num_protect, cs.cfg.protect_info, index) == TRUE)
+            index = startIndex;
+            while (index < endIndex &&
+                   (*bta_av_a2d_cos.init)(&codec_type, cs.cfg.codec_info,
+                    &cs.cfg.num_protect, cs.cfg.protect_info, index) == TRUE)
             {
-                if(AVDT_CreateStream(&p_scb->seps[index].av_handle, &cs) == AVDT_SUCCESS)
+                if((codec_type == A2D_NON_A2DP_MEDIA_CT) && (A2D_check_and_init_aptX() == false))
                 {
-                    p_scb->seps[index].codec_type = codec_type;
-                    p_scb->seps[index].tsep = cs.tsep;
-                    if(cs.tsep == AVDT_TSEP_SNK)
-                        p_scb->seps[index].p_app_data_cback = p_data->api_reg.p_app_data_cback;
-                    else
-                        p_scb->seps[index].p_app_data_cback = NULL; /* In case of A2DP SOURCE we don't need a callback to handle media packets */
-
+                   index++;
+                   continue;
                 }
+
+                if(AVDT_CreateStream(&p_scb->seps[index - startIndex].av_handle, &cs) == AVDT_SUCCESS)
+                {
+                   if ((profile_initialized == UUID_SERVCLASS_AUDIO_SOURCE) &&
+                                        (index == BTIF_SV_AV_AA_APTX_INDEX))
+                   {
+                       UINT8* ptr = cs.cfg.codec_info;
+                       tA2D_APTX_CIE* codecInfo = (tA2D_APTX_CIE*) &ptr[3];
+                       UINT8 vendorId = codecInfo->vendorId;
+                       UINT8 codecId = codecInfo->codecId;
+
+                       p_scb->seps[index - startIndex].vendorId = vendorId;
+                       p_scb->seps[index - startIndex].codecId = codecId;
+                       APPL_TRACE_DEBUG("%s audio[%x] vendorId: %x codecId: %x", __func__,
+                            index, p_scb->seps[index - startIndex].vendorId,
+                            p_scb->seps[index - startIndex].codecId);
+                    }
+                    p_scb->seps[index - startIndex].codec_type = codec_type;
+                    p_scb->seps[index - startIndex].tsep = cs.tsep;
+                    if(cs.tsep == AVDT_TSEP_SNK)
+                        p_scb->seps[index - startIndex].p_app_data_cback = p_data->api_reg.p_app_data_cback;
+                    else
+                        p_scb->seps[index - startIndex].p_app_data_cback = NULL; /* In case of A2DP SOURCE we don't need a callback to handle media packets */
+                    index++;
+                } else
+                    break;
             }
 
             if(!bta_av_cb.reg_audio)
@@ -749,6 +783,9 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
 void bta_av_api_deregister(tBTA_AV_DATA *p_data)
 {
     tBTA_AV_SCB *p_scb = bta_av_hndl_to_scb(p_data->hdr.layer_specific);
+
+    // de-initialize aptX
+    A2D_deinit_aptX();
 
     if(p_scb)
     {

@@ -59,6 +59,19 @@ enum
     BTA_AV_CO_ST_STREAM
 };
 
+enum
+{
+    BTIF_SV_AV_AA_SBC_INDEX = 0,
+    BTIF_SV_AV_AA_APTX_INDEX,
+    BTIF_SV_AV_AA_SRC_SEP_INDEX  /* Last index */
+};
+
+enum
+{
+    BTIF_SV_AV_AA_SBC_SINK_INDEX = BTIF_SV_AV_AA_SRC_SEP_INDEX,
+    BTIF_SV_AV_AA_SNK_SEP_INDEX  /* Last index */
+};
+
 
 /* data type for the Audio Codec Information*/
 typedef struct
