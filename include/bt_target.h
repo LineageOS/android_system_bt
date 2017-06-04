@@ -1,4 +1,10 @@
 /******************************************************************************
+ *  Copyright (c) 2016, The Linux Foundation. All rights reserved.
+ *
+ *  Not a contribution.
+ ******************************************************************************/
+
+/******************************************************************************
  *
  *  Copyright (c) 2014 The Android Open Source Project
  *  Copyright (C) 1999-2012 Broadcom Corporation
@@ -127,7 +133,7 @@
 #endif
 
 #ifndef BTIF_A2DP_SRC_BIT_DEPTH
-#define BTIF_A2DP_SRC_BIT_DEPTH 16
+#define BTIF_A2DP_SRC_BIT_DEPTH 32
 #endif
 
 #ifndef BTIF_A2DP_SRC_NUM_CHANNELS
@@ -1158,7 +1164,7 @@
 
 /* Number of simultaneous stream endpoints. */
 #ifndef AVDT_NUM_SEPS
-#define AVDT_NUM_SEPS               3
+#define AVDT_NUM_SEPS               5
 #endif
 
 /* Number of transport channels setup by AVDT for all media streams */
@@ -1168,7 +1174,7 @@
 
 /* Maximum size in bytes of the codec capabilities information element. */
 #ifndef AVDT_CODEC_SIZE
-#define AVDT_CODEC_SIZE             10
+#define AVDT_CODEC_SIZE             20
 #endif
 
 /* Maximum size in bytes of the content protection information element. */

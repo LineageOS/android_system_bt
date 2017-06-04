@@ -109,7 +109,8 @@ btifCommonIncludes := \
   $(LOCAL_PATH)/../utils/include \
   $(bluetooth_C_INCLUDES) \
   external/tinyxml2 \
-  external/zlib
+  external/zlib \
+  $(call include-path-for, audio-utils)
 
 # libbtif static library for target
 # ========================================================

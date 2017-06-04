@@ -53,7 +53,8 @@ LOCAL_C_INCLUDES+= . \
 	$(LOCAL_PATH)/../utils/include \
 	$(bluetooth_C_INCLUDES) \
 	external/tinyxml2 \
-	external/zlib
+	external/zlib \
+	$(call include-path-for, audio-utils)
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
@@ -64,7 +65,8 @@ LOCAL_SHARED_LIBRARIES := \
     libprotobuf-cpp-full \
     libmedia \
     libutils \
-    libchrome
+    libchrome \
+    libaudioutils
 
 LOCAL_STATIC_LIBRARIES := \
     libtinyxml2 \

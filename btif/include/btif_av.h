@@ -215,4 +215,15 @@ void btif_av_clear_remote_suspend_flag(void);
 *******************************************************************************/
 BOOLEAN btif_av_peer_supports_3mbps(void);
 
+/*******************************************************************************
+**
+** Function         btif_av_get_multicast_state
+**
+** Description      Check if A2DP multicast is enabled
+**
+** Returns          TRUE if a2dp multicast is enabled
+**
+*******************************************************************************/
+BOOLEAN btif_av_get_multicast_state();
+
 #endif /* BTIF_AV_H */

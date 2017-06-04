@@ -1,4 +1,9 @@
 /******************************************************************************
+ *  Copyright (c) 2016, The Linux Foundation. All rights reserved.
+ *
+ *  Not a contribution.
+ ******************************************************************************/
+/******************************************************************************
  *
  *  Copyright (C) 2004-2012 Broadcom Corporation
  *
@@ -33,6 +38,8 @@
 #include "avdt_api.h"
 #include "bta_av_int.h"
 #include "bt_utils.h"
+#include "a2d_aptx.h"
+#include "a2d_aptx_hd.h"
 #include "l2cdefs.h"
 #include "l2c_api.h"
 #include "osi/include/properties.h"
@@ -255,7 +262,29 @@ static UINT8 bta_av_get_scb_handle(tBTA_AV_SCB *p_scb, UINT8 local_sep)
     for (int i = 0; i < BTA_AV_MAX_SEPS; i++) {
         if ((p_scb->seps[i].tsep == local_sep) &&
             (p_scb->seps[i].codec_type == p_scb->codec_type))
-            return (p_scb->seps[i].av_handle);
+        {
+            if (p_scb->seps[i].codec_type != A2D_NON_A2DP_MEDIA_CT)
+                return (p_scb->seps[i].av_handle);
+            else {
+                UINT8 losc = p_scb->cfg.codec_info[0];
+                if (losc == A2D_APTX_CODEC_LEN)
+                {
+                    tA2D_APTX_CIE aptx_config;
+                    if (A2D_ParsAptxInfo(&aptx_config, p_scb->cfg.codec_info, FALSE) == A2D_SUCCESS)
+                        if ((aptx_config.codecId == p_scb->seps[i].codecId) &&
+                            (aptx_config.vendorId == p_scb->seps[i].vendorId))
+                           return (p_scb->seps[i].av_handle);
+                } else if (losc == A2D_APTX_HD_CODEC_LEN)
+                {
+                    tA2D_APTX_HD_CIE aptx_config;
+                    if (A2D_ParsAptx_hdInfo(&aptx_config, p_scb->cfg.codec_info, FALSE) == A2D_SUCCESS)
+                        if ((aptx_config.codecId == p_scb->seps[i].codecId) &&
+                            (aptx_config.vendorId == p_scb->seps[i].vendorId))
+                           return (p_scb->seps[i].av_handle);
+                } else
+                    APPL_TRACE_DEBUG("%s: Invalid aptX Losc", __func__)
+            }
+        }
     }
     APPL_TRACE_DEBUG(" bta_av_get_scb_handle appropiate sep_type not found")
     return 0; /* return invalid handle */
@@ -747,9 +776,47 @@ static void bta_av_adjust_seps_idx(tBTA_AV_SCB *p_scb, UINT8 avdt_handle)
         if((p_scb->seps[i].av_handle && p_scb->codec_type == p_scb->seps[i].codec_type)
             && (p_scb->seps[i].av_handle == avdt_handle))
         {
-            p_scb->sep_idx = i;
-            p_scb->avdt_handle = p_scb->seps[i].av_handle;
-            break;
+            if (p_scb->seps[i].codec_type != A2D_NON_A2DP_MEDIA_CT)
+            {
+                p_scb->sep_idx      = i;
+                p_scb->avdt_handle  = p_scb->seps[i].av_handle;
+                break;
+            }
+            else {
+                UINT8 losc = p_scb->cfg.codec_info[0];
+                if (losc == A2D_APTX_CODEC_LEN)
+                {
+                    tA2D_APTX_CIE aptx_config;
+                    if (A2D_ParsAptxInfo(&aptx_config, p_scb->cfg.codec_info, FALSE) == A2D_SUCCESS) {
+                        APPL_TRACE_DEBUG("%s vendorId: %x codecId: %x", __func__, p_scb->seps[i].vendorId, p_scb->seps[i].codecId);
+                        if ((aptx_config.codecId == p_scb->seps[i].codecId) &&
+                            (aptx_config.vendorId == p_scb->seps[i].vendorId)) {
+                            APPL_TRACE_DEBUG("%s p_scb->sep_idx: %d", __func__, p_scb->sep_idx);
+                            p_scb->sep_idx = i;
+                            p_scb->avdt_handle = p_scb->seps[i].av_handle;
+                            APPL_TRACE_DEBUG("%s p_scb->sep_idx: %d", __func__, p_scb->sep_idx);
+                            APPL_TRACE_DEBUG("%s p_scb->avdt_handle: %d", __func__, p_scb->avdt_handle);
+                            break;
+                        }
+                    }
+                } else if (losc == A2D_APTX_HD_CODEC_LEN)
+                {
+                    tA2D_APTX_HD_CIE aptx_config;
+                    if (A2D_ParsAptx_hdInfo(&aptx_config, p_scb->cfg.codec_info, FALSE) == A2D_SUCCESS) {
+                        APPL_TRACE_DEBUG("%s vendorId: %x codecId: %x", __func__, p_scb->seps[i].vendorId, p_scb->seps[i].codecId);
+                        if ((aptx_config.codecId == p_scb->seps[i].codecId) &&
+                            (aptx_config.vendorId == p_scb->seps[i].vendorId)) {
+                            APPL_TRACE_DEBUG("%s p_scb->sep_idx: %d", __func__, p_scb->sep_idx);
+                            p_scb->sep_idx = i;
+                            p_scb->avdt_handle = p_scb->seps[i].av_handle;
+                            APPL_TRACE_DEBUG("%s p_scb->sep_idx: %d", __func__, p_scb->sep_idx);
+                            APPL_TRACE_DEBUG("%s p_scb->avdt_handle: %d", __func__, p_scb->avdt_handle);
+                            break;
+                        }
+                    }
+                } else
+                    APPL_TRACE_DEBUG("%s: Invalid aptX Losc", __func__)
+            }
         }
     }
 }
@@ -1406,7 +1473,7 @@ void bta_av_str_opened (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     p_scb->l2c_bufs = 0;
     p_scb->p_cos->open(p_scb->hndl,
         p_scb->codec_type, p_scb->cfg.codec_info, mtu);
-
+    bta_av_cb.codec_type = p_scb->codec_type;
     {
         /* TODO check if other audio channel is open.
          * If yes, check if reconfig is needed
@@ -1453,6 +1520,21 @@ void bta_av_str_opened (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
         APPL_TRACE_ERROR ("%s: Calling AVDT_AbortReq", __func__);
         AVDT_AbortReq(p_scb->avdt_handle);
     }
+}
+
+/*******************************************************************************
+**
+** Function         bta_av_get_codec_type
+**
+** Description      Returns the codec_type from the most recently used scb
+**
+** Returns          bta_av_cb.codec_type
+**
+*******************************************************************************/
+UINT8 bta_av_get_codec_type()
+{
+    APPL_TRACE_DEBUG("%s [bta_av_cb.codec_type] %x", __func__, bta_av_cb.codec_type);
+    return bta_av_cb.codec_type;
 }
 
 /*******************************************************************************
@@ -2940,7 +3022,7 @@ void bta_av_rcfg_open (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
         /* we may choose to use a different SEP at reconfig.
          * adjust the sep_idx now */
         bta_av_adjust_seps_idx(p_scb, bta_av_get_scb_handle(p_scb, AVDT_TSEP_SRC));
-
+        bta_av_cb.codec_type = p_scb->codec_type;
         /* open the stream with the new config */
         p_scb->sep_info_idx = p_scb->rcfg_idx;
         AVDT_OpenReq(p_scb->avdt_handle, p_scb->peer_addr,

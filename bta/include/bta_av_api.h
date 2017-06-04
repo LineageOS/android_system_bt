@@ -1,4 +1,10 @@
 /******************************************************************************
+ *  Copyright (c) 2016, The Linux Foundation. All rights reserved.
+ *
+ *  Not a contribution.
+ ******************************************************************************/
+
+/******************************************************************************
  *
  *  Copyright (C) 2004-2012 Broadcom Corporation
  *
@@ -89,15 +95,13 @@ typedef UINT8 tBTA_AV_HNDL;
 /* offset of codec type in codec info byte array */
 #define BTA_AV_CODEC_TYPE_IDX       AVDT_CODEC_TYPE_INDEX   /* 2 */
 
-
-
 /* maximum number of streams created: 1 for audio, 1 for video */
 #ifndef BTA_AV_NUM_STRS
 #define BTA_AV_NUM_STRS         2
 #endif
 
 #ifndef BTA_AV_MAX_SEPS
-#define BTA_AV_MAX_SEPS         2
+#define BTA_AV_MAX_SEPS         3
 #endif
 
 #ifndef BTA_AV_MAX_A2DP_MTU
@@ -125,6 +129,9 @@ typedef UINT8 tBTA_AV_CODEC;
 
 /* Company ID in BT assigned numbers */
 #define BTA_AV_BT_VENDOR_ID     VDP_BT_VENDOR_ID        /* Broadcom Corporation */
+
+/* Offset for codec configuration in codec info */
+#define BTA_AV_CFG_START_IDX    3
 
 /* vendor specific codec ID */
 #define BTA_AV_CODEC_ID_H264    VDP_CODEC_ID_H264       /* Non-VDP codec ID - H.264 */
@@ -834,6 +841,16 @@ void BTA_AvOffloadStart(tBTA_AV_HNDL hndl);
 *******************************************************************************/
 void BTA_AvOffloadStartRsp(tBTA_AV_HNDL hndl, tBTA_AV_STATUS status);
 
+/*******************************************************************************
+**
+** Function         bta_av_get_codec_type
+**
+** Description      Returns the codec_type from the most recently used scb
+**
+** Returns          A2D_NON_A2DP_MEDIA_CT or BTIF_AV_CODEC_SBC
+**
+*******************************************************************************/
+UINT8 bta_av_get_codec_type();
 
 #ifdef __cplusplus
 }
