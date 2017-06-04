@@ -95,6 +95,7 @@ LOCAL_C_INCLUDES+= . \
                    $(LOCAL_PATH)/../udrv/include \
                    $(LOCAL_PATH)/../vnd/include \
                    $(LOCAL_PATH)/../utils/include \
+                   $(TARGET_OUT_HEADERS)/bt/hci_qcomm_init/aptX \
                    $(bluetooth_C_INCLUDES)
 
 LOCAL_CFLAGS += $(bluetooth_CFLAGS) -DBUILDCFG

@@ -1,4 +1,10 @@
 /******************************************************************************
+ *  Copyright (c) 2016, The Linux Foundation. All rights reserved.
+ *
+ *  Not a contribution.
+ ******************************************************************************/
+
+/******************************************************************************
  *
  *  Copyright (C) 2004-2012 Broadcom Corporation
  *
@@ -89,7 +95,11 @@ typedef UINT8 tBTA_AV_HNDL;
 /* offset of codec type in codec info byte array */
 #define BTA_AV_CODEC_TYPE_IDX       AVDT_CODEC_TYPE_INDEX   /* 2 */
 
+/* offset of vendorId type in vendorId info byte array */
+#define BTA_AV_VENDOR_ID_TYPE_IDX    AVDT_VENDOR_ID_TYPE_INDEX   /* 3 */
 
+/* offset of codecId type in codecId info byte array */
+#define BTA_AV_CODEC_ID_TYPE_IDX     AVDT_CODEC_ID_TYPE_INDEX   /* 7 */
 
 /* maximum number of streams created: 1 for audio, 1 for video */
 #ifndef BTA_AV_NUM_STRS
