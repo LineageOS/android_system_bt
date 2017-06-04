@@ -1,4 +1,9 @@
 /******************************************************************************
+ *  Copyright (c) 2016, The Linux Foundation. All rights reserved.
+ *
+ *  Not a contribution.
+ ******************************************************************************/
+/******************************************************************************
  *
  *  Copyright (C) 2002-2012 Broadcom Corporation
  *
@@ -64,6 +69,9 @@ const UINT8 avdt_scb_role_evt[] = {
     AVDT_OPEN_CFM_EVT           /* AVDT_OPEN_INT */
 };
 
+extern UINT8* bta_av_get_current_codecInfo();
+
+#define NON_A2DP_MEDIA_CT 0xff
 /*******************************************************************************
 **
 ** Function         avdt_scb_gen_ssrc
@@ -1230,9 +1238,11 @@ void avdt_scb_hdl_write_req_no_frag(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
     }
     osi_free_and_reset((void **)&p_scb->p_pkt);
 
-    /* build a media packet */
-    /* Add RTP header if required */
-    if ( !(p_data->apiwrite.opt & AVDT_DATA_OPT_NO_RTP) )
+    /* build a media packet if the codec type is not aptX */
+#if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
+#else
+    if (p_data->apiwrite.m_pt != NON_A2DP_MEDIA_CT)
+#endif
     {
         ssrc = avdt_scb_gen_ssrc(p_scb);
 
