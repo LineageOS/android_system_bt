@@ -595,9 +595,9 @@ class BleAdvertiserHciExtendedImpl : public BleAdvertiserHciInterface {
 
     uint8_t* pp = param;
     UINT8_TO_STREAM(pp, handle);
-    UINT16_TO_STREAM(pp, periodic_properties);
     UINT16_TO_STREAM(pp, periodic_adv_int_min);
     UINT16_TO_STREAM(pp, periodic_adv_int_max);
+    UINT16_TO_STREAM(pp, periodic_properties);
 
     SendAdvCmd(FROM_HERE, HCI_LE_SET_PERIODIC_ADVERTISING_PARAM, param,
                HCI_LE_SET_PRIODIC_ADVERTISING_PARAM_LEN, command_complete);
