@@ -95,7 +95,7 @@ void gatt_init(void) {
 
   GATT_TRACE_DEBUG("gatt_init()");
 
-  memset(&gatt_cb, 0, sizeof(tGATT_CB));
+  gatt_cb = tGATT_CB();
   memset(&fixed_reg, 0, sizeof(tL2CAP_FIXED_CHNL_REG));
 
 #if defined(GATT_INITIAL_TRACE_LEVEL)
@@ -158,8 +158,7 @@ void gatt_free(void) {
   fixed_queue_free(gatt_cb.srv_chg_clt_q, NULL);
   gatt_cb.srv_chg_clt_q = NULL;
   for (i = 0; i < GATT_MAX_PHY_CHANNEL; i++) {
-    fixed_queue_free(gatt_cb.tcb[i].pending_enc_clcb, NULL);
-    gatt_cb.tcb[i].pending_enc_clcb = NULL;
+    gatt_cb.tcb[i].pending_enc_clcb = std::queue<tGATT_CLCB*>();
 
     fixed_queue_free(gatt_cb.tcb[i].pending_ind_q, NULL);
     gatt_cb.tcb[i].pending_ind_q = NULL;
@@ -375,9 +374,8 @@ bool gatt_act_connect(tGATT_REG* p_reg, BD_ADDR bd_addr,
     if (p_tcb != NULL) {
       if (!gatt_connect(bd_addr, p_tcb, transport, initiating_phys)) {
         GATT_TRACE_ERROR("gatt_connect failed");
-        fixed_queue_free(p_tcb->pending_enc_clcb, NULL);
         fixed_queue_free(p_tcb->pending_ind_q, NULL);
-        memset(p_tcb, 0, sizeof(tGATT_TCB));
+        *p_tcb = tGATT_TCB();
       } else
         ret = true;
     } else {
@@ -485,7 +483,7 @@ static void gatt_channel_congestion(tGATT_TCB* p_tcb, bool congested) {
 
   /* if uncongested, check to see if there is any more pending data */
   if (p_tcb != NULL && congested == false) {
-    gatt_cl_send_next_cmd_inq(p_tcb);
+    gatt_cl_send_next_cmd_inq(*p_tcb);
   }
   /* notifying all applications for the connection up event */
   for (i = 0, p_reg = gatt_cb.cl_rcb; i < GATT_MAX_APPS; i++, p_reg++) {
@@ -524,7 +522,7 @@ void gatt_notify_conn_update(uint16_t handle, uint16_t interval,
 
   for (int i = 0; i < GATT_MAX_APPS; i++) {
     tGATT_REG* p_reg = &gatt_cb.cl_rcb[i];
-    if (p_reg->in_use && p_reg->app_cb.p_phy_update_cb) {
+    if (p_reg->in_use && p_reg->app_cb.p_conn_update_cb) {
       uint16_t conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, p_reg->gatt_if);
       (*p_reg->app_cb.p_conn_update_cb)(p_reg->gatt_if, conn_id, interval,
                                         latency, timeout, status);
@@ -571,17 +569,15 @@ static void gatt_le_data_ind(uint16_t chan, BD_ADDR bd_addr, BT_HDR* p_buf) {
   tGATT_TCB* p_tcb;
 
   /* Find CCB based on bd addr */
-  if ((p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE)) != NULL &&
-      gatt_get_ch_state(p_tcb) >= GATT_CH_OPEN) {
-    gatt_data_process(p_tcb, p_buf);
-  } else {
-    osi_free(p_buf);
-
-    if (p_tcb != NULL) {
+  if ((p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE)) != NULL) {
+    if (gatt_get_ch_state(p_tcb) < GATT_CH_OPEN) {
       GATT_TRACE_WARNING("ATT - Ignored L2CAP data while in state: %d",
                          gatt_get_ch_state(p_tcb));
-    }
+    } else
+      gatt_data_process(*p_tcb, p_buf);
   }
+
+  osi_free(p_buf);
 }
 
 /*******************************************************************************
@@ -870,9 +866,10 @@ static void gatt_l2cif_data_ind_cback(uint16_t lcid, BT_HDR* p_buf) {
   if ((p_tcb = gatt_find_tcb_by_cid(lcid)) != NULL &&
       gatt_get_ch_state(p_tcb) == GATT_CH_OPEN) {
     /* process the data */
-    gatt_data_process(p_tcb, p_buf);
-  } else /* prevent buffer leak */
-    osi_free(p_buf);
+    gatt_data_process(*p_tcb, p_buf);
+  }
+
+  osi_free(p_buf);
 }
 
 /*******************************************************************************
@@ -948,36 +945,35 @@ static void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
  * Returns          void
  *
  ******************************************************************************/
-void gatt_data_process(tGATT_TCB* p_tcb, BT_HDR* p_buf) {
+void gatt_data_process(tGATT_TCB& tcb, BT_HDR* p_buf) {
   uint8_t* p = (uint8_t*)(p_buf + 1) + p_buf->offset;
   uint8_t op_code, pseudo_op_code;
-  uint16_t msg_len;
 
-  if (p_buf->len > 0) {
-    msg_len = p_buf->len - 1;
-    STREAM_TO_UINT8(op_code, p);
-
-    /* remove the two MSBs associated with sign write and write cmd */
-    pseudo_op_code = op_code & (~GATT_WRITE_CMD_MASK);
-
-    if (pseudo_op_code < GATT_OP_CODE_MAX) {
-      if (op_code == GATT_SIGN_CMD_WRITE) {
-        gatt_verify_signature(p_tcb, p_buf);
-      } else {
-        /* message from client */
-        if ((op_code % 2) == 0)
-          gatt_server_handle_client_req(p_tcb, op_code, msg_len, p);
-        else
-          gatt_client_handle_server_rsp(p_tcb, op_code, msg_len, p);
-      }
-    } else {
-      GATT_TRACE_ERROR("ATT - Rcvd L2CAP data, unknown cmd: 0x%x", op_code);
-    }
-  } else {
+  if (p_buf->len <= 0) {
     GATT_TRACE_ERROR("invalid data length, ignore");
+    return;
   }
 
-  osi_free(p_buf);
+  uint16_t msg_len = p_buf->len - 1;
+  STREAM_TO_UINT8(op_code, p);
+
+  /* remove the two MSBs associated with sign write and write cmd */
+  pseudo_op_code = op_code & (~GATT_WRITE_CMD_MASK);
+
+  if (pseudo_op_code >= GATT_OP_CODE_MAX) {
+    GATT_TRACE_ERROR("ATT - Rcvd L2CAP data, unknown cmd: 0x%x", op_code);
+    return;
+  }
+
+  if (op_code == GATT_SIGN_CMD_WRITE) {
+    gatt_verify_signature(tcb, p_buf);
+  } else {
+    /* message from client */
+    if ((op_code % 2) == 0)
+      gatt_server_handle_client_req(tcb, op_code, msg_len, p);
+    else
+      gatt_client_handle_server_rsp(tcb, op_code, msg_len, p);
+  }
 }
 
 /*******************************************************************************
