@@ -276,7 +276,7 @@ typedef struct {
   tGATT_CH_STATE ch_state;
   uint8_t ch_flags;
 
-  tGATT_IF app_hold_link[GATT_MAX_APPS];
+  std::unordered_set<uint8_t> app_hold_link;
 
   /* server needs */
   /* server response data */
@@ -518,9 +518,6 @@ extern void gatt_sr_update_cback_cnt(tGATT_TCB& p_tcb, tGATT_IF gatt_if,
 extern void gatt_sr_update_prep_cnt(tGATT_TCB& tcb, tGATT_IF gatt_if,
                                     bool is_inc, bool is_reset_first);
 
-extern bool gatt_find_app_hold_link(tGATT_TCB* p_tcb, uint8_t start_idx,
-                                    uint8_t* p_found_idx, tGATT_IF* p_gatt_if);
-extern uint8_t gatt_num_apps_hold_link(tGATT_TCB* p_tcb);
 extern uint8_t gatt_num_clcb_by_bd_addr(BD_ADDR bda);
 extern tGATT_TCB* gatt_find_tcb_by_cid(uint16_t lcid);
 extern tGATT_TCB* gatt_allocate_tcb_by_bdaddr(BD_ADDR bda,
