@@ -60,10 +60,7 @@ void BTA_GATTC_Disable(void) {
     return;
   }
 
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
-  p_buf->event = BTA_GATTC_API_DISABLE_EVT;
-
-  bta_sys_sendmsg(p_buf);
+  do_in_bta_thread(FROM_HERE, base::Bind(&bta_gattc_disable));
   bta_sys_deregister(BTA_ID_GATTC);
 }
 
@@ -92,6 +89,9 @@ void BTA_GATTC_AppRegister(tBTA_GATTC_CBACK* p_client_cb,
                                          p_client_cb, std::move(cb)));
 }
 
+static void app_deregister_impl(tBTA_GATTC_IF client_if) {
+  bta_gattc_deregister(bta_gattc_cl_get_regcb(client_if));
+}
 /*******************************************************************************
  *
  * Function         BTA_GATTC_AppDeregister
@@ -105,13 +105,7 @@ void BTA_GATTC_AppRegister(tBTA_GATTC_CBACK* p_client_cb,
  *
  ******************************************************************************/
 void BTA_GATTC_AppDeregister(tBTA_GATTC_IF client_if) {
-  tBTA_GATTC_API_DEREG* p_buf =
-      (tBTA_GATTC_API_DEREG*)osi_malloc(sizeof(tBTA_GATTC_API_DEREG));
-
-  p_buf->hdr.event = BTA_GATTC_API_DEREG_EVT;
-  p_buf->client_if = client_if;
-
-  bta_sys_sendmsg(p_buf);
+  do_in_bta_thread(FROM_HERE, base::Bind(&app_deregister_impl, client_if));
 }
 
 /*******************************************************************************
