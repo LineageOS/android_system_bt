@@ -732,12 +732,7 @@ tBTA_GATT_STATUS BTA_GATTC_DeregisterForNotifications(tBTA_GATTC_IF client_if,
  * Returns          void
  *
  ******************************************************************************/
-void BTA_GATTC_Refresh(const BD_ADDR remote_bda) {
-  tBTA_GATTC_API_OPEN* p_buf =
-      (tBTA_GATTC_API_OPEN*)osi_malloc(sizeof(tBTA_GATTC_API_OPEN));
-
-  p_buf->hdr.event = BTA_GATTC_API_REFRESH_EVT;
-  memcpy(p_buf->remote_bda, remote_bda, BD_ADDR_LEN);
-
-  bta_sys_sendmsg(p_buf);
+void BTA_GATTC_Refresh(const bt_bdaddr_t& remote_bda) {
+  do_in_bta_thread(FROM_HERE,
+                   base::Bind(&bta_gattc_process_api_refresh, remote_bda));
 }
