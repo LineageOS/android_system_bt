@@ -125,8 +125,6 @@ static const uint8_t bta_gattc_st_idle[][BTA_GATTC_NUM_COLS] = {
     /* BTA_GATTC_API_SEARCH_EVT         */ {BTA_GATTC_FAIL, BTA_GATTC_IDLE_ST},
     /* BTA_GATTC_API_CONFIRM_EVT        */ {BTA_GATTC_FAIL, BTA_GATTC_IDLE_ST},
     /* BTA_GATTC_API_READ_MULTI_EVT     */ {BTA_GATTC_FAIL, BTA_GATTC_IDLE_ST},
-    /* BTA_GATTC_API_REFRESH_EVT        */ {BTA_GATTC_IGNORE,
-                                            BTA_GATTC_IDLE_ST},
 
     /* BTA_GATTC_INT_CONN_EVT           */ {BTA_GATTC_CONN, BTA_GATTC_CONN_ST},
     /* BTA_GATTC_INT_DISCOVER_EVT       */ {BTA_GATTC_IGNORE,
@@ -169,8 +167,6 @@ static const uint8_t bta_gattc_st_w4_conn[][BTA_GATTC_NUM_COLS] = {
                                             BTA_GATTC_W4_CONN_ST},
     /* BTA_GATTC_API_READ_MULTI_EVT     */ {BTA_GATTC_FAIL,
                                             BTA_GATTC_W4_CONN_ST},
-    /* BTA_GATTC_API_REFRESH_EVT        */ {BTA_GATTC_IGNORE,
-                                            BTA_GATTC_W4_CONN_ST},
 
     /* BTA_GATTC_INT_CONN_EVT           */ {BTA_GATTC_CONN, BTA_GATTC_CONN_ST},
     /* BTA_GATTC_INT_DISCOVER_EVT       */ {BTA_GATTC_IGNORE,
@@ -208,8 +204,6 @@ static const uint8_t bta_gattc_st_connected[][BTA_GATTC_NUM_COLS] = {
     /* BTA_GATTC_API_CONFIRM_EVT        */ {BTA_GATTC_CONFIRM,
                                             BTA_GATTC_CONN_ST},
     /* BTA_GATTC_API_READ_MULTI_EVT     */ {BTA_GATTC_READ_MULTI,
-                                            BTA_GATTC_CONN_ST},
-    /* BTA_GATTC_API_REFRESH_EVT        */ {BTA_GATTC_IGNORE,
                                             BTA_GATTC_CONN_ST},
 
     /* BTA_GATTC_INT_CONN_EVT           */ {BTA_GATTC_IGNORE,
@@ -254,8 +248,6 @@ static const uint8_t bta_gattc_st_discover[][BTA_GATTC_NUM_COLS] = {
     /* BTA_GATTC_API_CONFIRM_EVT        */ {BTA_GATTC_CONFIRM,
                                             BTA_GATTC_DISCOVER_ST},
     /* BTA_GATTC_API_READ_MULTI_EVT     */ {BTA_GATTC_Q_CMD,
-                                            BTA_GATTC_DISCOVER_ST},
-    /* BTA_GATTC_API_REFRESH_EVT        */ {BTA_GATTC_IGNORE,
                                             BTA_GATTC_DISCOVER_ST},
 
     /* BTA_GATTC_INT_CONN_EVT           */ {BTA_GATTC_CONN,
@@ -376,10 +368,6 @@ bool bta_gattc_hdl_event(BT_HDR* p_msg) {
       bta_gattc_process_api_open_cancel((tBTA_GATTC_DATA*)p_msg);
       break;
 
-    case BTA_GATTC_API_REFRESH_EVT:
-      bta_gattc_process_api_refresh((tBTA_GATTC_DATA*)p_msg);
-      break;
-
     default:
       if (p_msg->event == BTA_GATTC_INT_CONN_EVT)
         p_clcb = bta_gattc_find_int_conn_clcb((tBTA_GATTC_DATA*)p_msg);
@@ -449,8 +437,6 @@ static char* gattc_evt_code(tBTA_GATTC_INT_EVT evt_code) {
       return "BTA_GATTC_OP_CMPL_EVT";
     case BTA_GATTC_INT_DISCONN_EVT:
       return "BTA_GATTC_INT_DISCONN_EVT";
-    case BTA_GATTC_API_REFRESH_EVT:
-      return "BTA_GATTC_API_REFRESH_EVT";
     case BTA_GATTC_API_CFG_MTU_EVT:
       return "BTA_GATTC_API_CFG_MTU_EVT";
     default:
