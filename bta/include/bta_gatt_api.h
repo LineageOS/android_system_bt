@@ -643,7 +643,7 @@ extern void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda,
                            bool opportunistic);
 extern void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda,
                            bool is_direct, tBTA_GATT_TRANSPORT transport,
-                           uint8_t initiating_phys, bool opportunistic);
+                           bool opportunistic, uint8_t initiating_phys);
 
 /*******************************************************************************
  *
