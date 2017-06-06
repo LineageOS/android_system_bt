@@ -201,6 +201,20 @@ source_set("base_sources") {
     "base/tracking_info.cc",
     "base/values.cc",
     "base/vlog.cc",
+
+    "dbus/bus.cc",
+    "dbus/dbus_statistics.cc",
+    "dbus/exported_object.cc",
+    "dbus/file_descriptor.cc",
+    "dbus/message.cc",
+    "dbus/object_manager.cc",
+    "dbus/object_path.cc",
+    "dbus/object_proxy.cc",
+    "dbus/property.cc",
+    "dbus/scoped_dbus_error.cc",
+    "dbus/string_util.cc",
+    "dbus/util.cc",
+    "dbus/values_util.cc"
   ]
 
   defines = [
@@ -219,7 +233,13 @@ source_set("base_sources") {
     "//third_party/libevent",
     "//third_party/libevent/include",
     "//third_party/libchrome/base",
+    "//third_party/libchrome/dbus",
     "//third_party/modp_b64",
+
+    # paths to dbus headers, can be obtained by "pkg-config --cflags dbus-1"
+    #TODO(jpawlowski) use pkg-config script like build/config/linux/pkg_config.gni
+    "/usr/include/dbus-1.0/",
+    "/usr/lib/x86_64-linux-gnu/dbus-1.0/include",
   ]
 }
 
@@ -228,6 +248,11 @@ config("libchrome_config") {
   include_dirs = [
     "//third_party/googletest/googletest/include",
     "//third_party/libchrome",
+
+    # paths to dbus headers, can be obtained by "pkg-config --cflags dbus-1"
+    #TODO(jpawlowski) use pkg-config script like build/config/linux/pkg_config.gni
+    "/usr/include/dbus-1.0/",
+    "/usr/lib/x86_64-linux-gnu/dbus-1.0/include",
  ]
 }
 
@@ -252,6 +277,7 @@ static_library("base") {
     "-levent",
     "-levent_core",
     "-lpthread",
+    "-ldbus-1",
   ]
 
   public_configs = [ ":libchrome_config" ]
