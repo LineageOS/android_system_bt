@@ -1363,23 +1363,21 @@ bool GATT_CancelConnect(tGATT_IF gatt_if, BD_ADDR bd_addr, bool is_direct) {
     } else {
       status = gatt_cancel_open(gatt_if, bd_addr);
     }
+
+    return status;
   } else {
     if (!gatt_if) {
-      if (gatt_get_num_apps_for_bg_dev(bd_addr)) {
-        while (gatt_find_app_for_bg_dev(bd_addr, &temp_gatt_if))
-          gatt_remove_bg_dev_for_app(temp_gatt_if, bd_addr);
-      } else {
+      if (!gatt_clear_bg_dev_for_addr(bd_addr)) {
         GATT_TRACE_ERROR(
             "GATT_CancelConnect -no app associated with the bg device for "
             "unconditional removal");
-        status = false;
+        return false;
       }
-    } else {
-      status = gatt_remove_bg_dev_for_app(gatt_if, bd_addr);
+      return true;
     }
+    return gatt_remove_bg_dev_for_app(gatt_if, bd_addr);
   }
 
-  return status;
 }
 
 /*******************************************************************************
