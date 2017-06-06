@@ -34,7 +34,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef OS_GENERIC
 #include <sys/capability.h>
+#endif
 #include <sys/prctl.h>
 #include <time.h>
 #include <unistd.h>
