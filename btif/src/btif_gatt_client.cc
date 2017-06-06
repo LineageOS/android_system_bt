@@ -349,10 +349,7 @@ bt_status_t btif_gattc_close(int client_if, const bt_bdaddr_t* bd_addr,
 
 bt_status_t btif_gattc_refresh(int client_if, const bt_bdaddr_t* bd_addr) {
   CHECK_BTGATT_INIT();
-  // Closure will own this value and free it.
-  uint8_t* address = new BD_ADDR;
-  bdcpy(address, bd_addr->address);
-  return do_in_jni_thread(Bind(&BTA_GATTC_Refresh, base::Owned(address)));
+  return do_in_jni_thread(Bind(&BTA_GATTC_Refresh, *bd_addr));
 }
 
 bt_status_t btif_gattc_search_service(int conn_id, bt_uuid_t* filter_uuid) {
