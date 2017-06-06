@@ -361,26 +361,12 @@ bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event,
  ******************************************************************************/
 bool bta_gattc_hdl_event(BT_HDR* p_msg) {
   tBTA_GATTC_CLCB* p_clcb = NULL;
-  tBTA_GATTC_RCB* p_clreg;
   bool rt = true;
 #if (BTA_GATT_DEBUG == TRUE)
   APPL_TRACE_DEBUG("bta_gattc_hdl_event: Event [%s]",
                    gattc_evt_code(p_msg->event));
 #endif
   switch (p_msg->event) {
-    case BTA_GATTC_API_DISABLE_EVT:
-      bta_gattc_disable();
-      break;
-
-    case BTA_GATTC_INT_START_IF_EVT:
-      bta_gattc_start_if((tBTA_GATTC_DATA*)p_msg);
-      break;
-
-    case BTA_GATTC_API_DEREG_EVT:
-      p_clreg = bta_gattc_cl_get_regcb(
-          ((tBTA_GATTC_DATA*)p_msg)->api_dereg.client_if);
-      bta_gattc_deregister(p_clreg);
-      break;
 
     case BTA_GATTC_API_OPEN_EVT:
       bta_gattc_process_api_open((tBTA_GATTC_DATA*)p_msg);
@@ -392,10 +378,6 @@ bool bta_gattc_hdl_event(BT_HDR* p_msg) {
 
     case BTA_GATTC_API_REFRESH_EVT:
       bta_gattc_process_api_refresh((tBTA_GATTC_DATA*)p_msg);
-      break;
-
-    case BTA_GATTC_ENC_CMPL_EVT:
-      bta_gattc_process_enc_cmpl((tBTA_GATTC_DATA*)p_msg);
       break;
 
     default:
@@ -467,14 +449,8 @@ static char* gattc_evt_code(tBTA_GATTC_INT_EVT evt_code) {
       return "BTA_GATTC_OP_CMPL_EVT";
     case BTA_GATTC_INT_DISCONN_EVT:
       return "BTA_GATTC_INT_DISCONN_EVT";
-    case BTA_GATTC_INT_START_IF_EVT:
-      return "BTA_GATTC_INT_START_IF_EVT";
-    case BTA_GATTC_API_DEREG_EVT:
-      return "BTA_GATTC_API_DEREG_EVT";
     case BTA_GATTC_API_REFRESH_EVT:
       return "BTA_GATTC_API_REFRESH_EVT";
-    case BTA_GATTC_API_DISABLE_EVT:
-      return "BTA_GATTC_API_DISABLE_EVT";
     case BTA_GATTC_API_CFG_MTU_EVT:
       return "BTA_GATTC_API_CFG_MTU_EVT";
     default:
