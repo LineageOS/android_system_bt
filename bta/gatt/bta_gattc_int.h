@@ -51,7 +51,6 @@ enum {
   BTA_GATTC_API_SEARCH_EVT,
   BTA_GATTC_API_CONFIRM_EVT,
   BTA_GATTC_API_READ_MULTI_EVT,
-  BTA_GATTC_API_REFRESH_EVT,
 
   BTA_GATTC_INT_CONN_EVT,
   BTA_GATTC_INT_DISCOVER_EVT,
@@ -395,7 +394,7 @@ extern void bta_gattc_send_open_cback(tBTA_GATTC_RCB* p_clreg,
                                       tBTA_GATT_STATUS status,
                                       BD_ADDR remote_bda, uint16_t conn_id,
                                       tBTA_TRANSPORT transport, uint16_t mtu);
-extern void bta_gattc_process_api_refresh(tBTA_GATTC_DATA* p_msg);
+extern void bta_gattc_process_api_refresh(bt_bdaddr_t remote_bda);
 extern void bta_gattc_cfg_mtu(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data);
 extern void bta_gattc_listen(tBTA_GATTC_DATA* p_msg);
 extern void bta_gattc_broadcast(tBTA_GATTC_DATA* p_msg);
