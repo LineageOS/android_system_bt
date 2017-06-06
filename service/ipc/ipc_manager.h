@@ -37,8 +37,9 @@ class IPCManager {
  public:
   // Possible IPC types.
   enum Type {
-    TYPE_LINUX,  // IPC based on a Linux sequential packet domain socket
-    TYPE_BINDER  // IPC based on the Binder
+    TYPE_LINUX,   // IPC based on a Linux sequential packet domain socket
+    TYPE_BINDER,  // IPC based on the Binder
+    TYPE_DBUS     // IPC based on the DBus
   };
 
   // Interface for observing events from an IPC mechanism. These methods will be
@@ -81,6 +82,7 @@ class IPCManager {
   // Returns true if an IPC type has been initialized.
   bool BinderStarted() const;
   bool LinuxStarted() const;
+  bool DBusStarted() const;
 
  private:
   IPCManager() = default;
@@ -89,6 +91,7 @@ class IPCManager {
   // owned by us.
   scoped_refptr<IPCHandler> binder_handler_;
   scoped_refptr<IPCHandler> linux_handler_;
+  scoped_refptr<IPCHandler> dbus_handler_;
 
   // The Bluetooth adapter instance. This is owned by Daemon so we keep a raw
   // pointer to it.
