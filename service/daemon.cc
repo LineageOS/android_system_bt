@@ -86,10 +86,20 @@ class DaemonImpl : public Daemon {
         LOG(ERROR) << "Failed to set up UNIX domain-socket IPCManager";
         return false;
       }
-    } else if (!ipc_manager_->Start(ipc::IPCManager::TYPE_BINDER, nullptr)) {
+      return true;
+    }
+
+#if !defined(OS_GENERIC)
+    if (!ipc_manager_->Start(ipc::IPCManager::TYPE_BINDER, nullptr)) {
       LOG(ERROR) << "Failed to set up Binder IPCManager";
       return false;
     }
+#else
+    if (!ipc_manager_->Start(ipc::IPCManager::TYPE_DBUS, nullptr)) {
+      LOG(ERROR) << "Failed to set up DBus IPCManager";
+      return false;
+    }
+#endif
 
     return true;
   }
