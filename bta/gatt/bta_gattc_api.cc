@@ -134,13 +134,13 @@ void BTA_GATTC_AppDeregister(tBTA_GATTC_IF client_if) {
 void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, bool is_direct,
                     tBTA_GATT_TRANSPORT transport, bool opportunistic) {
   uint8_t phy = controller_get_interface()->get_le_all_initiating_phys();
-  BTA_GATTC_Open(client_if, remote_bda, is_direct, transport, phy,
-                 opportunistic);
+  BTA_GATTC_Open(client_if, remote_bda, is_direct, transport, opportunistic,
+                 phy);
 }
 
 void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, bool is_direct,
-                    tBTA_GATT_TRANSPORT transport, uint8_t initiating_phys,
-                    bool opportunistic) {
+                    tBTA_GATT_TRANSPORT transport, bool opportunistic,
+                    uint8_t initiating_phys) {
   tBTA_GATTC_API_OPEN* p_buf =
       (tBTA_GATTC_API_OPEN*)osi_malloc(sizeof(tBTA_GATTC_API_OPEN));
 

@@ -310,7 +310,8 @@ void btif_gattc_open_impl(int client_if, BD_ADDR address, bool is_direct,
   // Connect!
   BTIF_TRACE_DEBUG("%s Transport=%d, device type=%d, phy=%d", __func__,
                    transport, device_type, initiating_phys);
-  BTA_GATTC_Open(client_if, address, is_direct, transport, initiating_phys);
+  BTA_GATTC_Open(client_if, address, is_direct, transport, false,
+                 initiating_phys);
 }
 
 bt_status_t btif_gattc_open(int client_if, const bt_bdaddr_t* bd_addr,
