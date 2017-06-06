@@ -1391,9 +1391,8 @@ static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, BD_ADDR bda) {
  * Returns          None.
  *
  ******************************************************************************/
-void bta_gattc_process_api_refresh(tBTA_GATTC_DATA* p_msg) {
-  tBTA_GATTC_SERV* p_srvc_cb =
-      bta_gattc_find_srvr_cache(p_msg->api_conn.remote_bda);
+void bta_gattc_process_api_refresh(bt_bdaddr_t remote_bda) {
+  tBTA_GATTC_SERV* p_srvc_cb = bta_gattc_find_srvr_cache(remote_bda.address);
   tBTA_GATTC_CLCB* p_clcb = &bta_gattc_cb.clcb[0];
   bool found = false;
   uint8_t i;
@@ -1419,7 +1418,7 @@ void bta_gattc_process_api_refresh(tBTA_GATTC_DATA* p_msg) {
     }
   }
   /* used to reset cache in application */
-  bta_gattc_cache_reset(p_msg->api_conn.remote_bda);
+  bta_gattc_cache_reset(remote_bda.address);
 }
 /*******************************************************************************
  *
