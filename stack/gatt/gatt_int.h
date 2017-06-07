@@ -195,10 +195,12 @@ typedef struct {
   uint8_t listening; /* if adv for all has been enabled */
 } tGATT_REG;
 
+struct tGATT_CLCB;
+
 /* command queue for each connection */
 typedef struct {
   BT_HDR* p_cmd;
-  uint16_t clcb_idx;
+  tGATT_CLCB* p_clcb;
   uint8_t op_code;
   bool to_send;
 } tGATT_CMD_Q;
@@ -261,8 +263,6 @@ typedef struct {
   bool is_primary;
 } tGATT_SRV_LIST_ELEM;
 
-struct tGATT_CLCB;
-
 typedef struct {
   std::queue<tGATT_CLCB*> pending_enc_clcb; /* pending encryption channel q */
   tGATT_SEC_ACTION sec_act;
@@ -310,7 +310,6 @@ struct tGATT_CLCB {
   uint8_t* p_attr_buf; /* attribute buffer for read multiple, prepare write */
   tBT_UUID uuid;
   uint16_t conn_id; /* connection handle */
-  uint16_t clcb_idx;
   uint16_t s_handle; /* starting handle of the active request */
   uint16_t e_handle; /* ending handle of the active request */
   uint16_t counter; /* used as offset, attribute length, num of prepare write */
@@ -425,7 +424,7 @@ extern void gatt_add_a_bonded_dev_for_srv_chg(BD_ADDR bda);
 extern uint16_t gatt_profile_find_conn_id_by_bd_addr(BD_ADDR bda);
 
 /* Functions provided by att_protocol.cc */
-extern tGATT_STATUS attp_send_cl_msg(tGATT_TCB& tcb, uint16_t clcb_idx,
+extern tGATT_STATUS attp_send_cl_msg(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
                                      uint8_t op_code, tGATT_CL_MSG* p_msg);
 extern BT_HDR* attp_build_sr_msg(tGATT_TCB& tcb, uint8_t op_code,
                                  tGATT_SR_MSG* p_msg);
@@ -444,7 +443,7 @@ extern void gatt_convert_uuid32_to_uuid128(uint8_t uuid_128[LEN_UUID_128],
                                            uint32_t uuid_32);
 extern void gatt_sr_get_sec_info(BD_ADDR rem_bda, tBT_TRANSPORT transport,
                                  uint8_t* p_sec_flag, uint8_t* p_key_size);
-extern void gatt_start_rsp_timer(uint16_t clcb_idx);
+extern void gatt_start_rsp_timer(tGATT_CLCB* p_clcb);
 extern void gatt_start_conf_timer(tGATT_TCB* p_tcb);
 extern void gatt_rsp_timeout(void* data);
 extern void gatt_indication_confirmation_timeout(void* data);
@@ -532,7 +531,7 @@ extern bool gatt_send_ble_burst_data(BD_ADDR remote_bda, BT_HDR* p_buf);
 
 /* GATT client functions */
 extern void gatt_dequeue_sr_cmd(tGATT_TCB& tcb);
-extern uint8_t gatt_send_write_msg(tGATT_TCB& p_tcb, uint16_t clcb_idx,
+extern uint8_t gatt_send_write_msg(tGATT_TCB& p_tcb, tGATT_CLCB* p_clcb,
                                    uint8_t op_code, uint16_t handle,
                                    uint16_t len, uint16_t offset,
                                    uint8_t* p_data);
@@ -545,7 +544,7 @@ extern void gatt_act_discovery(tGATT_CLCB* p_clcb);
 extern void gatt_act_read(tGATT_CLCB* p_clcb, uint16_t offset);
 extern void gatt_act_write(tGATT_CLCB* p_clcb, uint8_t sec_act);
 extern tGATT_CLCB* gatt_cmd_dequeue(tGATT_TCB& tcb, uint8_t* p_opcode);
-extern void gatt_cmd_enq(tGATT_TCB& tcb, uint16_t clcb_idx, bool to_send,
+extern void gatt_cmd_enq(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, bool to_send,
                          uint8_t op_code, BT_HDR* p_buf);
 extern void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint8_t op_code,
                                           uint16_t len, uint8_t* p_data);
