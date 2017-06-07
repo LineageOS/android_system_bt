@@ -1574,121 +1574,59 @@ void gatt_dbg_display_uuid(tBT_UUID bt_uuid) {
   GATT_TRACE_DEBUG("UUID=[%s]", str_buf);
 }
 
-/*******************************************************************************
- *
- * Function         gatt_is_bg_dev_for_app
- *
- * Description      Is this one of the background devices for the application
- *
- * Returns          true if it is, otherwise false
- *
- ******************************************************************************/
+/** Returns true if this is one of the background devices for the application,
+ * false otherwise */
 bool gatt_is_bg_dev_for_app(tGATT_BG_CONN_DEV* p_dev, tGATT_IF gatt_if) {
-  uint8_t i;
-
-  for (i = 0; i < GATT_MAX_APPS; i++) {
-    if (p_dev->in_use && (p_dev->gatt_if[i] == gatt_if)) {
-      return true;
-    }
-  }
-  return false;
+  return p_dev->gatt_if.count(gatt_if);
 }
-/*******************************************************************************
- *
- * Function         gatt_find_bg_dev
- *
- * Description      find background connection device from the list.
- *
- * Returns          pointer to the device record
- *
- ******************************************************************************/
+
+/** background connection device from the list. Returns pointer to the device
+ * record, or nullptr if not found */
 tGATT_BG_CONN_DEV* gatt_find_bg_dev(BD_ADDR remote_bda) {
-  tGATT_BG_CONN_DEV* p_dev_list = &gatt_cb.bgconn_dev[0];
-  uint8_t i;
-
-  for (i = 0; i < GATT_MAX_BG_CONN_DEV; i++, p_dev_list++) {
-    if (p_dev_list->in_use &&
-        !memcmp(p_dev_list->remote_bda, remote_bda, BD_ADDR_LEN)) {
-      return p_dev_list;
+  for (tGATT_BG_CONN_DEV& dev : gatt_cb.bgconn_dev) {
+    if (!memcmp(dev.remote_bda, remote_bda, BD_ADDR_LEN)) {
+      return &dev;
     }
   }
-  return NULL;
+  return nullptr;
 }
-/*******************************************************************************
- *
- * Function         gatt_alloc_bg_dev
- *
- * Description      allocate a background connection device record
- *
- * Returns          pointer to the device record
- *
- ******************************************************************************/
-tGATT_BG_CONN_DEV* gatt_alloc_bg_dev(BD_ADDR remote_bda) {
-  tGATT_BG_CONN_DEV* p_dev_list = &gatt_cb.bgconn_dev[0];
-  uint8_t i;
 
-  for (i = 0; i < GATT_MAX_BG_CONN_DEV; i++, p_dev_list++) {
-    if (!p_dev_list->in_use) {
-      p_dev_list->in_use = true;
-      memcpy(p_dev_list->remote_bda, remote_bda, BD_ADDR_LEN);
-
-      return p_dev_list;
+std::list<tGATT_BG_CONN_DEV>::iterator gatt_find_bg_dev_it(BD_ADDR remote_bda) {
+  auto& list = gatt_cb.bgconn_dev;
+  for (auto it = list.begin(); it != list.end(); it++) {
+    if (!memcmp(it->remote_bda, remote_bda, BD_ADDR_LEN)) {
+      return it;
     }
   }
-  return NULL;
+  return list.end();
 }
 
-/*******************************************************************************
- *
- * Function         gatt_add_bg_dev_list
- *
- * Description      Add/remove a device from the background connection list
- *
- * Returns          true if device added to the list; false failed
- *
- ******************************************************************************/
+/** Add a device from the background connection list.  Returns true if device
+ * added to the list, or already in list, false otherwise */
 bool gatt_add_bg_dev_list(tGATT_REG* p_reg, BD_ADDR bd_addr) {
   tGATT_IF gatt_if = p_reg->gatt_if;
-  tGATT_BG_CONN_DEV* p_dev = NULL;
-  uint8_t i;
-  bool ret = false;
 
-  p_dev = gatt_find_bg_dev(bd_addr);
-  if (p_dev == NULL) {
-    p_dev = gatt_alloc_bg_dev(bd_addr);
-  }
-
+  tGATT_BG_CONN_DEV* p_dev = gatt_find_bg_dev(bd_addr);
   if (p_dev) {
-    for (i = 0; i < GATT_MAX_APPS; i++) {
-      if (p_dev->gatt_if[i] == gatt_if) {
-        GATT_TRACE_ERROR("device already in iniator white list");
-        return true;
-      } else if (p_dev->gatt_if[i] == 0) {
-        p_dev->gatt_if[i] = gatt_if;
-        if (i == 0)
-          ret = BTM_BleUpdateBgConnDev(true, bd_addr);
-        else
-          ret = true;
-        break;
-      }
+    // device already in the whitelist, just add interested app to the list
+    if (!p_dev->gatt_if.insert(gatt_if).second) {
+      GATT_TRACE_ERROR("device already in iniator white list");
     }
-  } else {
-    GATT_TRACE_ERROR("no device record available");
-  }
 
-  return ret;
+    return true;
+  }
+  // the device is not in the whitelist
+
+  if (!BTM_BleUpdateBgConnDev(true, bd_addr)) return false;
+
+  gatt_cb.bgconn_dev.emplace_back();
+  tGATT_BG_CONN_DEV& dev = gatt_cb.bgconn_dev.back();
+  memcpy(dev.remote_bda, bd_addr, BD_ADDR_LEN);
+  dev.gatt_if.insert(gatt_if);
+  return true;
 }
 
-/*******************************************************************************
- *
- * Function         gatt_remove_bg_dev_for_app
- *
- * Description      Remove the application interface for the specified
- *                  background device
- *
- * Returns          Boolean
- *
- ******************************************************************************/
+/** Remove the application interface for the specified background device */
 bool gatt_remove_bg_dev_for_app(tGATT_IF gatt_if, BD_ADDR bd_addr) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
   bool status;
@@ -1698,130 +1636,43 @@ bool gatt_remove_bg_dev_for_app(tGATT_IF gatt_if, BD_ADDR bd_addr) {
   return status;
 }
 
-/*******************************************************************************
- *
- * Function         gatt_get_num_apps_for_bg_dev
- *
- * Description      Get the number of applciations for the specified background
- *                  device
- *
- * Returns          uint8_t total number fo applications
- *
- ******************************************************************************/
-uint8_t gatt_get_num_apps_for_bg_dev(BD_ADDR bd_addr) {
-  tGATT_BG_CONN_DEV* p_dev = NULL;
-  uint8_t i;
-  uint8_t cnt = 0;
+/** Removes all registrations for background connection for given device.
+ * Returns true if anything was removed, false otherwise */
+uint8_t gatt_clear_bg_dev_for_addr(BD_ADDR bd_addr) {
+  auto dev_it = gatt_find_bg_dev_it(bd_addr);
+  if (dev_it == gatt_cb.bgconn_dev.end()) return false;
 
-  p_dev = gatt_find_bg_dev(bd_addr);
-  if (p_dev != NULL) {
-    for (i = 0; i < GATT_MAX_APPS; i++) {
-      if (p_dev->gatt_if[i]) cnt++;
-    }
-  }
-  return cnt;
+  CHECK(BTM_BleUpdateBgConnDev(false, dev_it->remote_bda));
+  gatt_cb.bgconn_dev.erase(dev_it);
+  return true;
 }
 
-/*******************************************************************************
- *
- * Function         gatt_find_app_for_bg_dev
- *
- * Description      Find the application interface for the specified background
- *                  device
- *
- * Returns          Boolean
- *
- ******************************************************************************/
-bool gatt_find_app_for_bg_dev(BD_ADDR bd_addr, tGATT_IF* p_gatt_if) {
-  tGATT_BG_CONN_DEV* p_dev = NULL;
-  uint8_t i;
-  bool ret = false;
-
-  p_dev = gatt_find_bg_dev(bd_addr);
-  if (p_dev == NULL) {
-    return ret;
-  }
-
-  for (i = 0; i < GATT_MAX_APPS; i++) {
-    if (p_dev->gatt_if[i] != 0) {
-      *p_gatt_if = p_dev->gatt_if[i];
-      ret = true;
-      break;
-    }
-  }
-  return ret;
-}
-
-/*******************************************************************************
- *
- * Function         gatt_remove_bg_dev_from_list
- *
- * Description      add/remove device from the back ground connection device
- *                  list or listening to advertising list.
- *
- * Returns          pointer to the device record
- *
- ******************************************************************************/
+/** Remove device from the background connection device list or listening to
+ * advertising list.  Returns true if device was on the list and was succesfully
+ * removed */
 bool gatt_remove_bg_dev_from_list(tGATT_REG* p_reg, BD_ADDR bd_addr) {
   tGATT_IF gatt_if = p_reg->gatt_if;
-  tGATT_BG_CONN_DEV* p_dev = NULL;
-  uint8_t i, j;
-  bool ret = false;
+  auto dev_it = gatt_find_bg_dev_it(bd_addr);
+  if (dev_it == gatt_cb.bgconn_dev.end()) return false;
 
-  p_dev = gatt_find_bg_dev(bd_addr);
-  if (p_dev == NULL) {
-    return ret;
-  }
+  if (!dev_it->gatt_if.erase(gatt_if)) return false;
 
-  for (i = 0; i < GATT_MAX_APPS && (p_dev->gatt_if[i] > 0); i++) {
-    if (p_dev->gatt_if[i] == gatt_if) {
-      p_dev->gatt_if[i] = 0;
-      /* move all element behind one forward */
-      for (j = i + 1; j < GATT_MAX_APPS; j++)
-        p_dev->gatt_if[j - 1] = p_dev->gatt_if[j];
+  if (!dev_it->gatt_if.empty()) return true;
 
-      if (p_dev->gatt_if[0] == 0)
-        ret = BTM_BleUpdateBgConnDev(false, p_dev->remote_bda);
-      else
-        ret = true;
-
-      break;
-    }
-  }
-
-  if (i != GATT_MAX_APPS && p_dev->gatt_if[0] == 0) {
-    memset(p_dev, 0, sizeof(tGATT_BG_CONN_DEV));
-  }
-
-  return ret;
+  // no more apps interested - remove from whitelist and delete record
+  CHECK(BTM_BleUpdateBgConnDev(false, dev_it->remote_bda));
+  gatt_cb.bgconn_dev.erase(dev_it);
+  return true;
 }
-/*******************************************************************************
- *
- * Function         gatt_deregister_bgdev_list
- *
- * Description      deregister all related back ground connetion device.
- *
- * Returns          pointer to the device record
- *
- ******************************************************************************/
+/** deregister all related back ground connetion device. */
 void gatt_deregister_bgdev_list(tGATT_IF gatt_if) {
-  tGATT_BG_CONN_DEV* p_dev_list = &gatt_cb.bgconn_dev[0];
-  uint8_t i, j, k;
-
   /* update the BG conn device list */
-  for (i = 0; i < GATT_MAX_BG_CONN_DEV; i++, p_dev_list++) {
-    if (p_dev_list->in_use) {
-      for (j = 0; j < GATT_MAX_APPS; j++) {
-        if (p_dev_list->gatt_if[j] == 0) break;
-
-        if (p_dev_list->gatt_if[j] == gatt_if) {
-          for (k = j + 1; k < GATT_MAX_APPS; k++)
-            p_dev_list->gatt_if[k - 1] = p_dev_list->gatt_if[k];
-
-          if (p_dev_list->gatt_if[0] == 0)
-            BTM_BleUpdateBgConnDev(false, p_dev_list->remote_bda);
-        }
-      }
+  for (auto it = gatt_cb.bgconn_dev.begin(); it != gatt_cb.bgconn_dev.end();
+       it++) {
+    it->gatt_if.erase(gatt_if);
+    if (it->gatt_if.size() == 0) {
+      BTM_BleUpdateBgConnDev(false, it->remote_bda);
+      it = gatt_cb.bgconn_dev.erase(it);
     }
   }
 }
@@ -1835,10 +1686,7 @@ void gatt_deregister_bgdev_list(tGATT_IF gatt_if) {
  * Returns          pointer to the device record
  *
  ******************************************************************************/
-void gatt_reset_bgdev_list(void) {
-  memset(&gatt_cb.bgconn_dev, 0,
-         sizeof(tGATT_BG_CONN_DEV) * GATT_MAX_BG_CONN_DEV);
-}
+void gatt_reset_bgdev_list(void) { gatt_cb.bgconn_dev.clear(); }
 /*******************************************************************************
  *
  * Function         gatt_update_auto_connect_dev
@@ -1858,12 +1706,11 @@ bool gatt_update_auto_connect_dev(tGATT_IF gatt_if, bool add, BD_ADDR bd_addr) {
   tGATT_REG* p_reg;
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
 
-  GATT_TRACE_API("gatt_update_auto_connect_dev ");
+  GATT_TRACE_API("%s:", __func__);
   /* Make sure app is registered */
   p_reg = gatt_get_regcb(gatt_if);
   if (p_reg == NULL) {
-    GATT_TRACE_ERROR("gatt_update_auto_connect_dev - gatt_if is not registered",
-                     gatt_if);
+    GATT_TRACE_ERROR("%s - gatt_if is not registered", __func__, gatt_if);
     return (false);
   }
 
