@@ -299,7 +299,7 @@ void btif_gattc_open_impl(int client_if, BD_ADDR address, bool is_direct,
         break;
 
       case BT_DEVICE_TYPE_DUMO:
-        if (transport == GATT_TRANSPORT_LE)
+        if (transport_p == GATT_TRANSPORT_LE)
           transport = BTA_GATT_TRANSPORT_LE;
         else
           transport = BTA_GATT_TRANSPORT_BR_EDR;
