@@ -902,10 +902,9 @@ static void gatt_l2cif_congest_cback(uint16_t lcid, bool congested) {
 static void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
   uint8_t i;
   tGATT_REG* p_reg;
-  tGATT_BG_CONN_DEV* p_bg_dev = NULL;
   uint16_t conn_id;
 
-  p_bg_dev = gatt_find_bg_dev(p_tcb->peer_bda);
+  tGATT_BG_CONN_DEV* p_bg_dev = gatt_find_bg_dev(p_tcb->peer_bda);
 
   /* notifying all applications for the connection up event */
   for (i = 0, p_reg = gatt_cb.cl_rcb; i < GATT_MAX_APPS; i++, p_reg++) {
