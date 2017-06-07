@@ -1084,27 +1084,6 @@ tGATT_TCB* gatt_find_tcb_by_cid(uint16_t lcid) {
 
 /*******************************************************************************
  *
- * Function         gatt_num_apps_hold_link
- *
- * Description      The function find the number of applcaitions is holding the
- *                  link
- *
- * Returns          total number of applications holding this acl link.
- *
- ******************************************************************************/
-uint8_t gatt_num_apps_hold_link(tGATT_TCB* p_tcb) {
-  uint8_t i, num = 0;
-
-  for (i = 0; i < GATT_MAX_APPS; i++) {
-    if (p_tcb->app_hold_link[i]) num++;
-  }
-
-  GATT_TRACE_DEBUG("gatt_num_apps_hold_link   num=%d", num);
-  return num;
-}
-
-/*******************************************************************************
- *
  * Function         gatt_num_clcb_by_bd_addr
  *
  * Description      The function searches all LCB with macthing bd address
@@ -1271,38 +1250,13 @@ bool gatt_cancel_open(tGATT_IF gatt_if, BD_ADDR bda) {
       status = false;
     } else {
       gatt_update_app_use_link_flag(gatt_if, p_tcb, false, false);
-      if (!gatt_num_apps_hold_link(p_tcb)) {
+      if (p_tcb->app_hold_link.empty()) {
         gatt_disconnect(p_tcb);
       }
     }
   }
 
   return status;
-}
-
-/*******************************************************************************
- *
- * Function         gatt_find_app_hold_link
- *
- * Description      find the applicaiton that is holding the specified link
- *
- * Returns         Boolean
- *
- ******************************************************************************/
-bool gatt_find_app_hold_link(tGATT_TCB* p_tcb, uint8_t start_idx,
-                             uint8_t* p_found_idx, tGATT_IF* p_gatt_if) {
-  uint8_t i;
-  bool found = false;
-
-  for (i = start_idx; i < GATT_MAX_APPS; i++) {
-    if (p_tcb->app_hold_link[i]) {
-      *p_gatt_if = gatt_cb.clcb[i].p_reg->gatt_if;
-      *p_found_idx = i;
-      found = true;
-      break;
-    }
-  }
-  return found;
 }
 
 /** Enqueue this command */
