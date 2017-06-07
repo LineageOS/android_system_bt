@@ -229,7 +229,7 @@ bool bta_sys_sm_execute(BT_HDR* p_msg) {
   /* execute action functions */
   for (i = 0; i < BTA_SYS_ACTIONS; i++) {
     action = state_table[p_msg->event & 0x00ff][i];
-    if (action != BTA_SYS_IGNORE) {
+    if (action < BTA_SYS_IGNORE) {
       (*bta_sys_action[action])((tBTA_SYS_HW_MSG*)p_msg);
     } else {
       break;

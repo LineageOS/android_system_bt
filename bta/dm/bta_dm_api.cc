@@ -182,6 +182,42 @@ void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode, tBTA_DM_CONN conn_mode,
 }
 
 /*******************************************************************************
+**
+** Function         BTA_DmHciRawCommand
+**
+** Description      This function sends the HCI Raw  command
+**                  to the controller
+**
+**
+** Returns          tBTA_STATUS
+**
+*******************************************************************************/
+tBTA_STATUS BTA_DmHciRawCommand (uint16_t opcode, uint8_t param_len,
+                                         uint8_t *p_param_buf,
+                                         tBTA_RAW_CMPL_CBACK *p_cback)
+{
+
+  tBTA_DM_API_RAW_COMMAND *p_msg;
+  uint16_t size;
+
+  size = sizeof (tBTA_DM_API_RAW_COMMAND) + param_len;
+  p_msg = (tBTA_DM_API_RAW_COMMAND *) osi_malloc(size);
+  if (p_msg != NULL) {
+    p_msg->hdr.event = BTA_DM_API_HCI_RAW_COMMAND_EVT;
+    p_msg->opcode = opcode;
+    p_msg->param_len = param_len;
+    p_msg->p_param_buf = (uint8_t *)(p_msg + 1);
+    p_msg->p_cback = p_cback;
+
+    memcpy (p_msg->p_param_buf, p_param_buf, param_len);
+
+    bta_sys_sendmsg(p_msg);
+  }
+  return BTA_SUCCESS;
+
+}
+
+/*******************************************************************************
  *
  * Function         BTA_DmSearch
  *

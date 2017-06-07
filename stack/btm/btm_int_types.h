@@ -164,6 +164,10 @@ typedef struct {
   uint32_t test_local_sign_cntr;
 #endif
 
+#if HCI_RAW_CMD_INCLUDED == TRUE
+  tBTM_RAW_CMPL_CB     *p_hci_evt_cb;       /* Callback function to be called when
+                                                HCI event is received successfully */
+#endif
   tBTM_IO_CAP loc_io_caps;      /* IO capability of the local device */
   tBTM_AUTH_REQ loc_auth_req;   /* the auth_req flag  */
   bool secure_connections_only; /* Rejects service level 0 connections if */
@@ -869,3 +873,7 @@ typedef struct {
 typedef uint8_t tBTM_SEC_ACTION;
 
 #endif  // BTM_INT_TYPES_H
+/* HCI event handler */
+#if HCI_RAW_CMD_INCLUDED == TRUE
+extern void btm_hci_event(uint8_t *p, uint8_t event_code, uint8_t param_len);
+#endif

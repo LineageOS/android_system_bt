@@ -155,8 +155,8 @@ static BT_HDR* make_read_local_supported_codecs(void) {
   return make_command_no_params(HCI_READ_LOCAL_SUPPORTED_CODECS);
 }
 
-static BT_HDR* make_ble_read_offload_features_support(void) {
-    return make_command_no_params(HCI_BLE_VENDOR_CAP_OCF);
+static BT_HDR *make_ble_read_offload_features_support(void) {
+return make_command_no_params(HCI_BLE_VENDOR_CAP_OCF);
 }
 
 static BT_HDR* make_ble_set_event_mask(const bt_event_mask_t* event_mask) {

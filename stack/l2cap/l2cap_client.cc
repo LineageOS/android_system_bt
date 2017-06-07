@@ -105,6 +105,10 @@ l2cap_client_t* l2cap_client_new(const l2cap_client_callbacks_t* callbacks,
   }
 
   l2cap_client_t* ret = (l2cap_client_t*)osi_calloc(sizeof(l2cap_client_t));
+  if (ret == NULL) {
+    LOG_ERROR(LOG_TAG, "%s unable to allocate space for L2CAP client.", __func__);
+    return NULL;
+  }
 
   ret->callbacks = *callbacks;
   ret->context = context;

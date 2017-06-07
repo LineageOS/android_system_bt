@@ -206,10 +206,12 @@ static bool btm_dev_16_digit_authenticated(tBTM_SEC_DEV_REC* p_dev_rec) {
  ******************************************************************************/
 static bool btm_serv_trusted(tBTM_SEC_DEV_REC* p_dev_rec,
                              tBTM_SEC_SERV_REC* p_serv_rec) {
-  if (BTM_SEC_IS_SERVICE_TRUSTED(p_dev_rec->trusted_mask,
+  if (p_serv_rec->service_id < BTM_SEC_MAX_SERVICES && BTM_SEC_IS_SERVICE_TRUSTED(p_dev_rec->trusted_mask,
                                  p_serv_rec->service_id)) {
     return (true);
   }
+  else
+    BTM_TRACE_ERROR("BTM_Sec: Service Id: %d not found", p_serv_rec->service_id);
   return (false);
 }
 
@@ -3389,12 +3391,12 @@ void btm_io_capabilities_req(uint8_t* p) {
         (p_dev_rec->p_cur_service->security_flags & BTM_SEC_OUT_AUTHENTICATE)) {
       if (btm_cb.security_mode == BTM_SEC_MODE_SC) {
         /* SC only mode device requires MITM protection */
-        evt_data.auth_req = BTM_AUTH_SP_YES;
+        evt_data.auth_req = BTM_AUTH_SPGB_YES;
       } else {
         evt_data.auth_req =
             (p_dev_rec->p_cur_service->security_flags & BTM_SEC_OUT_MITM)
-                ? BTM_AUTH_SP_YES
-                : BTM_AUTH_SP_NO;
+                ? BTM_AUTH_SPGB_YES
+                : BTM_AUTH_SPGB_NO;
       }
     }
   }
@@ -3932,8 +3934,21 @@ void btm_sec_auth_complete(uint16_t handle, uint8_t status) {
     l2cu_start_post_bond_timer(p_dev_rec->hci_handle);
   }
 
-  if (!p_dev_rec) return;
+  if (!p_dev_rec) {
+  /* check if the handle is BTM_INVALID_HCI_HANDLE */
+    if(handle == BTM_INVALID_HCI_HANDLE) {
+      /* get the device with auth type as BTM_SEC_STATE_AUTHENTICATING */
+      p_dev_rec = btm_sec_find_dev_by_sec_state(BTM_SEC_STATE_AUTHENTICATING);
 
+      if ( p_dev_rec && (btm_cb.api.p_auth_complete_callback)) {
+        (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr,
+                                                p_dev_rec->dev_class,
+                                                p_dev_rec->sec_bd_name, status);
+        BTM_TRACE_DEBUG("btm_sec_auth_complete: Invalid Handle, send Auth failure");
+      }
+    }
+    return;
+  }
   /* keep the old sm4 flag and clear the retry bit in control block */
   old_sm4 = p_dev_rec->sm4;
   p_dev_rec->sm4 &= ~BTM_SM4_RETRY;
@@ -4441,7 +4456,6 @@ void btm_sec_connected(uint8_t* bda, uint16_t handle, uint8_t status,
              (((status == HCI_ERR_AUTH_FAILURE) ||
                (status == HCI_ERR_KEY_MISSING) ||
                (status == HCI_ERR_HOST_REJECT_SECURITY) ||
-               (status == HCI_ERR_PAIRING_NOT_ALLOWED) ||
                (status == HCI_ERR_UNIT_KEY_USED) ||
                (status == HCI_ERR_PAIRING_WITH_UNIT_KEY_NOT_SUPPORTED) ||
                (status == HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE) ||
@@ -5296,10 +5310,9 @@ extern tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
         (p_dev_rec->security_required & BTM_SEC_OUT_AUTHORIZE)) ||
        (!p_dev_rec->is_originator &&
         (p_dev_rec->security_required & BTM_SEC_IN_AUTHORIZE)))) {
-    BTM_TRACE_EVENT(
-        "service id:%d, is trusted:%d", p_dev_rec->p_cur_service->service_id,
-        (BTM_SEC_IS_SERVICE_TRUSTED(p_dev_rec->trusted_mask,
-                                    p_dev_rec->p_cur_service->service_id)));
+    BTM_TRACE_EVENT("service id:%d, is trusted:%d", 
+             p_dev_rec->p_cur_service->service_id,
+             btm_serv_trusted(p_dev_rec,p_dev_rec->p_cur_service));
     if ((btm_sec_are_all_trusted(p_dev_rec->trusted_mask) == false) &&
         (p_dev_rec->p_cur_service->service_id < BTM_SEC_MAX_SERVICES) &&
         (BTM_SEC_IS_SERVICE_TRUSTED(p_dev_rec->trusted_mask,

@@ -648,7 +648,25 @@ void bta_dm_set_visibility(tBTA_DM_MSG* p_data) {
   if (p_data->set_visibility.pair_mode != BTA_DM_IGNORE ||
       p_data->set_visibility.conn_paired_only != BTA_DM_IGNORE)
     BTM_SetPairableMode((bool)(!(bta_dm_cb.disable_pair_mode)),
-                        bta_dm_cb.conn_paired_only);
+                          bta_dm_cb.conn_paired_only);
+}
+
+/*******************************************************************************
+**
+** Function         bta_dm_hci_raw_command
+**
+** Description      Send a HCI RAW command to the controller
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_hci_raw_command (tBTA_DM_MSG *p_data)
+{
+    tBTM_STATUS status;
+    APPL_TRACE_API("bta_dm_hci_raw_command");
+    status = BTM_Hci_Raw_Command(p_data->btc_command.opcode,p_data->btc_command.param_len,p_data->btc_command.p_param_buf, p_data->btc_command.p_cback);
+
 }
 
 /*******************************************************************************
@@ -2149,11 +2167,13 @@ static void bta_dm_discover_device(BD_ADDR remote_bd_addr) {
       /* check whether connection already exists to the device
          if connection exists, we don't have to wait for ACL
          link to go down to start search on next device */
+    if (transport == BT_TRANSPORT_BR_EDR) {
       if (BTM_IsAclConnectionUp(bta_dm_search_cb.peer_bdaddr,
                                 BT_TRANSPORT_BR_EDR))
         bta_dm_search_cb.wait_disc = false;
       else
         bta_dm_search_cb.wait_disc = true;
+    }
 
       if (bta_dm_search_cb.p_btm_inq_info) {
         APPL_TRACE_DEBUG(
@@ -2711,6 +2731,9 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
            and initiate a name request with values from key_notif */
         if (p_data->key_notif.bd_name[0] == 0) {
           bta_dm_cb.pin_evt = pin_evt;
+          /* Store the local and remote io caps */
+          bta_dm_cb.loc_io_caps = sec_event.cfm_req.loc_io_caps;
+          bta_dm_cb.rmt_io_caps = sec_event.cfm_req.rmt_io_caps;
           bdcpy(bta_dm_cb.pin_bd_addr, p_data->key_notif.bd_addr);
           BTA_COPY_DEVICE_CLASS(bta_dm_cb.pin_dev_class,
                                 p_data->key_notif.dev_class);
@@ -3092,7 +3115,8 @@ void bta_dm_acl_change(tBTA_DM_MSG* p_data) {
       bta_dm_cb.device_list.le_count--;
     conn.link_down.link_type = p_data->acl_change.transport;
 
-    if (bta_dm_search_cb.wait_disc &&
+    if ((p_data->acl_change.transport == BT_TRANSPORT_BR_EDR) &&
+        bta_dm_search_cb.wait_disc &&
         !bdcmp(bta_dm_search_cb.peer_bdaddr, p_bda)) {
       bta_dm_search_cb.wait_disc = false;
 

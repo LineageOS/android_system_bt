@@ -3472,7 +3472,7 @@ void l2cu_check_channel_congestion(tL2C_CCB* p_ccb) {
       if (q_count > p_ccb->buff_quota) {
         p_ccb->cong_sent = true;
         if (p_ccb->p_rcb && p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb) {
-          L2CAP_TRACE_DEBUG(
+          L2CAP_TRACE_WARNING(
               "L2CAP - Calling CongestionStatus_Cb "
               "(true),CID:0x%04x,XmitQ:%u,Quota:%u",
               p_ccb->local_cid, q_count, p_ccb->buff_quota);

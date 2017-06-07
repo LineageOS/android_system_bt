@@ -91,6 +91,7 @@ const tBTA_DM_ACTION bta_dm_action[] = {
 
     bta_dm_remove_all_acl, /* BTA_DM_API_REMOVE_ALL_ACL_EVT */
     bta_dm_remove_device,  /* BTA_DM_API_REMOVE_DEVICE_EVT */
+    bta_dm_hci_raw_command, /* BTA_DM_API_HCI_RAW_COMMAND_EVT */
 };
 
 /* state machine action enumeration list */
@@ -333,7 +334,7 @@ bool bta_dm_search_sm_execute(BT_HDR* p_msg) {
   /* execute action functions */
   for (i = 0; i < BTA_DM_SEARCH_ACTIONS; i++) {
     action = state_table[p_msg->event & 0x00ff][i];
-    if (action != BTA_DM_SEARCH_IGNORE) {
+    if (action < BTA_DM_SEARCH_IGNORE) {
       (*bta_dm_search_action[action])((tBTA_DM_MSG*)p_msg);
     } else {
       break;

@@ -96,6 +96,7 @@ enum {
   BTA_DM_API_EXECUTE_CBACK_EVT,
   BTA_DM_API_REMOVE_ALL_ACL_EVT,
   BTA_DM_API_REMOVE_DEVICE_EVT,
+  BTA_DM_API_HCI_RAW_COMMAND_EVT,
   BTA_DM_MAX_EVT
 };
 
@@ -136,6 +137,15 @@ typedef struct {
   uint8_t conn_paired_only;
 } tBTA_DM_API_SET_VISIBILITY;
 
+/* data type for BTA_DM_API_HCI_RAW_COMMAND_EVT */
+typedef struct
+{
+  BT_HDR hdr;
+  uint16_t opcode;
+  uint8_t param_len;
+  uint8_t *p_param_buf;
+  tBTA_RAW_CMPL_CBACK *p_cback;
+} tBTA_DM_API_RAW_COMMAND;
 enum {
   BTA_DM_RS_NONE, /* straight API call */
   BTA_DM_RS_OK,   /* the role switch result - successful */
@@ -507,7 +517,7 @@ typedef union {
 
   tBTA_DM_API_REMOVE_ACL remove_acl;
   tBTA_DM_API_REMOVE_ALL_ACL remove_all_acl;
-
+  tBTA_DM_API_RAW_COMMAND btc_command;
 } tBTA_DM_MSG;
 
 #define BTA_DM_NUM_PEER_DEVICE 7
@@ -874,4 +884,5 @@ extern void bta_dm_disable_test_mode(tBTA_DM_MSG* p_data);
 extern void bta_dm_execute_callback(tBTA_DM_MSG* p_data);
 
 extern void bta_dm_remove_all_acl(tBTA_DM_MSG* p_data);
+extern void bta_dm_hci_raw_command(tBTA_DM_MSG *p_data);
 #endif /* BTA_DM_INT_H */

@@ -30,6 +30,7 @@
 #include "bt_common.h"
 #include "bt_types.h"
 #include "bt_utils.h"
+#include "bt_trace.h"
 #include "btu.h"
 
 #include "hcidefs.h"
@@ -224,9 +225,17 @@ static void process_service_search(tCONN_CB* p_ccb, uint16_t trans_num,
       return;
     }
 
+    if (p_req != p_req_end) {
+      sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_PDU_SIZE, SDP_TEXT_BAD_HEADER);
+      return;
+    }
     rem_handles =
         num_rsp_handles - cont_offset; /* extract the remaining handles */
   } else {
+    if (p_req+1 != p_req_end) {
+      sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_PDU_SIZE, SDP_TEXT_BAD_HEADER);
+      return;
+    }
     rem_handles = num_rsp_handles;
     cont_offset = 0;
     p_ccb->cont_offset = 0;
@@ -361,6 +370,10 @@ static void process_service_attr_req(tCONN_CB* p_ccb, uint16_t trans_num,
                               SDP_TEXT_BAD_CONT_INX);
       return;
     }
+    if (p_req != p_req_end) {
+      sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_PDU_SIZE, SDP_TEXT_BAD_HEADER);
+      return;
+    }
     is_cont = true;
 
     /* Initialise for continuation response */
@@ -368,6 +381,11 @@ static void process_service_attr_req(tCONN_CB* p_ccb, uint16_t trans_num,
     attr_seq.attr_entry[p_ccb->cont_info.next_attr_index].start =
         p_ccb->cont_info.next_attr_start_id;
   } else {
+    if (p_req+1 != p_req_end) {
+      sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_PDU_SIZE, SDP_TEXT_BAD_HEADER);
+      return;
+    }
+
     p_ccb->cont_offset = 0;
     p_rsp = &p_ccb->rsp_list[3]; /* Leave space for data elem descr */
 
@@ -526,7 +544,7 @@ static void process_service_search_attr_req(tCONN_CB* p_ccb, uint16_t trans_num,
   tSDP_ATTR_SEQ attr_seq, attr_seq_sav;
   tSDP_ATTRIBUTE* p_attr;
   bool maxxed_out = false, is_cont = false;
-  uint8_t* p_seq_start;
+  uint8_t* p_seq_start = NULL;
   uint16_t seq_len, attr_len;
 
   /* Extract the UUID sequence to search for */
@@ -572,6 +590,10 @@ static void process_service_search_attr_req(tCONN_CB* p_ccb, uint16_t trans_num,
                               SDP_TEXT_BAD_CONT_INX);
       return;
     }
+    if (p_req != p_req_end) {
+      sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_PDU_SIZE, SDP_TEXT_BAD_HEADER);
+      return;
+    }
     is_cont = true;
 
     /* Initialise for continuation response */
@@ -579,6 +601,10 @@ static void process_service_search_attr_req(tCONN_CB* p_ccb, uint16_t trans_num,
     attr_seq.attr_entry[p_ccb->cont_info.next_attr_index].start =
         p_ccb->cont_info.next_attr_start_id;
   } else {
+    if (p_req+1 != p_req_end) {
+      sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_PDU_SIZE, SDP_TEXT_BAD_HEADER);
+      return;
+    }
     p_ccb->cont_offset = 0;
     p_rsp = &p_ccb->rsp_list[3]; /* Leave space for data elem descr */
 
@@ -674,9 +700,13 @@ static void process_service_search_attr_req(tCONN_CB* p_ccb, uint16_t trans_num,
     if (p_ccb->cont_info.last_attr_seq_desc_sent == false) {
       seq_len = sdpu_get_attrib_seq_len(p_rec, &attr_seq_sav);
       if (seq_len != 0) {
+      if (p_seq_start) {
         UINT8_TO_BE_STREAM(p_seq_start,
                            (DATA_ELE_SEQ_DESC_TYPE << 3) | SIZE_IN_NEXT_WORD);
         UINT16_TO_BE_STREAM(p_seq_start, seq_len);
+      } else {
+        SDP_TRACE_DEBUG("SDP service and attribute rsp: Attribute sequence p_seq_start is NULL");
+      }
 
         if (maxxed_out) p_ccb->cont_info.last_attr_seq_desc_sent = true;
       } else

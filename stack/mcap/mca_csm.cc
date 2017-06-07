@@ -162,7 +162,7 @@ void mca_ccb_event(tMCA_CCB* p_ccb, uint8_t event, tMCA_CCB_EVT* p_data) {
 
   /* execute action functions */
   action = state_table[event][MCA_CCB_ACT_COL];
-  if (action != MCA_CCB_IGNORE) {
+  if (action < MCA_CCB_IGNORE) {
     (*mca_ccb_action[action])(p_ccb, p_data);
   }
 }
@@ -313,10 +313,16 @@ tMCA_CCB* mca_ccb_by_hdl(tMCA_CL mcl) {
 bool mca_ccb_uses_mdl_id(tMCA_CCB* p_ccb, uint16_t mdl_id) {
   bool uses = false;
   tMCA_DCB* p_dcb;
-  int i;
+  unsigned int i;
 
   i = mca_ccb_to_hdl(p_ccb) - 1;
-  p_dcb = &mca_cb.dcb[i * MCA_NUM_MDLS];
+
+  if (i*MCA_NUM_MDLS < MCA_NUM_DCBS) {
+    p_dcb = &mca_cb.dcb[i * MCA_NUM_MDLS];
+  } else {
+    MCA_TRACE_WARNING("dcb index out of range");
+    return uses;
+  }
   for (i = 0; i < MCA_NUM_MDLS; i++, p_dcb++) {
     if (p_dcb->state != MCA_DCB_NULL_ST && p_dcb->mdl_id == mdl_id) {
       uses = true;

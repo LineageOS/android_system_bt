@@ -29,6 +29,8 @@
 #include "hcimsgs.h"
 #include "osi/include/future.h"
 #include "stack/include/btm_ble_api.h"
+#include "osi/include/log.h"
+#include "utils/include/bt_utils.h"
 
 const bt_event_mask_t BLE_EVENT_MASK = {
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x1E, 0x7f}};
@@ -43,6 +45,7 @@ const uint8_t SCO_HOST_BUFFER_SIZE = 0xff;
 #define BLE_SUPPORTED_STATES_SIZE 8
 #define BLE_SUPPORTED_FEATURES_SIZE 8
 #define MAX_LOCAL_SUPPORTED_CODECS_SIZE 8
+#define UNUSED(x) (void)(x)
 
 static const hci_t* hci;
 static const hci_packet_factory_t* packet_factory;
@@ -277,7 +280,6 @@ EXPORT_SYMBOL extern const module_t controller_module = {
     .dependencies = {HCI_MODULE, NULL}};
 
 // Interface functions
-
 static bool get_is_ready(void) { return readable; }
 
 static const bt_bdaddr_t* get_address(void) {
@@ -396,6 +398,11 @@ static bool supports_ble_connection_parameters_request(void) {
   return HCI_LE_CONN_PARAM_REQ_SUPPORTED(features_ble.as_array);
 }
 
+static bool supports_ble_offload_features(void) {
+  assert(readable);
+  assert(ble_supported);
+  return ble_offload_features_supported;
+}
 static bool supports_ble_2m_phy(void) {
   CHECK(readable);
   CHECK(ble_supported);
