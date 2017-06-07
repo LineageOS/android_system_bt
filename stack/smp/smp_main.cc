@@ -996,7 +996,7 @@ void smp_sm_event(tSMP_CB* p_cb, tSMP_EVENT event, void* p_data) {
   /* execute action functions */
   for (i = 0; i < SMP_NUM_ACTIONS; i++) {
     action = state_table[entry - 1][i];
-    if (action != SMP_SM_NO_ACTION) {
+    if (action < SMP_SM_NO_ACTION) {
       (*smp_sm_action[action])(p_cb, (tSMP_INT_DATA*)p_data);
     } else {
       break;
@@ -1025,7 +1025,7 @@ const char* smp_get_state_name(tSMP_STATE state) {
 const char* smp_get_event_name(tSMP_EVENT event) {
   const char* p_str = smp_event_name[SMP_MAX_EVT];
 
-  if (event <= SMP_MAX_EVT) {
+  if (event && event <= SMP_MAX_EVT) {
     p_str = smp_event_name[event - 1];
   }
   return p_str;

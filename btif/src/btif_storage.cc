@@ -232,13 +232,13 @@ static int prop2cfg(bt_bdaddr_t* remote_bd_addr, bt_property_t* prop) {
       uint32_t i;
       char buf[64];
       value[0] = 0;
+      int size = sizeof(value);
       for (i = 0; i < (prop->len) / sizeof(bt_uuid_t); i++) {
         bt_uuid_t* p_uuid = (bt_uuid_t*)prop->val + i;
         memset(buf, 0, sizeof(buf));
         uuid_to_string_legacy(p_uuid, buf, sizeof(buf));
-        strcat(value, buf);
-        // strcat(value, ";");
-        strcat(value, " ");
+        strlcat(value, buf, size);
+        strlcat(value, " ", size);
       }
       btif_config_set_str(bdstr, BTIF_STORAGE_PATH_REMOTE_SERVICE, value);
       break;

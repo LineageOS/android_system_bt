@@ -61,7 +61,7 @@ uint16_t L2CA_Register(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info) {
   tL2C_RCB* p_rcb;
   uint16_t vpsm = psm;
 
-  L2CAP_TRACE_API("L2CAP - L2CA_Register() called for PSM: 0x%04x", psm);
+  L2CAP_TRACE_WARNING("L2CAP - L2CA_Register() called for PSM: 0x%04x", psm);
 
   /* Verify that the required callback info has been filled in
   **      Note:  Connection callbacks are required but not checked
@@ -125,7 +125,7 @@ void L2CA_Deregister(uint16_t psm) {
   tL2C_LCB* p_lcb;
   int ii;
 
-  L2CAP_TRACE_API("L2CAP - L2CA_Deregister() called for PSM: 0x%04x", psm);
+  L2CAP_TRACE_WARNING("L2CAP - L2CA_Deregister() called for PSM: 0x%04x", psm);
 
   p_rcb = l2cu_find_rcb_by_psm(psm);
   if (p_rcb != NULL) {
@@ -231,7 +231,7 @@ uint16_t L2CA_ErtmConnectReq(uint16_t psm, BD_ADDR p_bd_addr,
   tL2C_CCB* p_ccb;
   tL2C_RCB* p_rcb;
 
-  L2CAP_TRACE_API(
+  L2CAP_TRACE_WARNING(
       "L2CA_ErtmConnectReq()  PSM: 0x%04x  BDA: %08x%04x  p_ertm_info: 0x%08x "
       "allowed:0x%x preferred:%d",
       psm, (p_bd_addr[0] << 24) + (p_bd_addr[1] << 16) + (p_bd_addr[2] << 8) +
@@ -672,7 +672,7 @@ bool L2CA_ErtmConnectRsp(BD_ADDR p_bd_addr, uint8_t id, uint16_t lcid,
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
 
-  L2CAP_TRACE_API(
+  L2CAP_TRACE_WARNING(
       "L2CA_ErtmConnectRsp()  CID: 0x%04x  Result: %d  Status: %d  BDA: "
       "%08x%04x  p_ertm_info:0x%08x",
       lcid, result, status, (p_bd_addr[0] << 24) + (p_bd_addr[1] << 16) +
@@ -845,7 +845,7 @@ bool L2CA_ConfigRsp(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
 bool L2CA_DisconnectReq(uint16_t cid) {
   tL2C_CCB* p_ccb;
 
-  L2CAP_TRACE_API("L2CA_DisconnectReq()  CID: 0x%04x", cid);
+  L2CAP_TRACE_WARNING("L2CA_DisconnectReq()  CID: 0x%04x", cid);
 
   /* Find the channel control block. We don't know the link it is on. */
   p_ccb = l2cu_find_ccb_by_cid(NULL, cid);
@@ -872,7 +872,7 @@ bool L2CA_DisconnectReq(uint16_t cid) {
 bool L2CA_DisconnectRsp(uint16_t cid) {
   tL2C_CCB* p_ccb;
 
-  L2CAP_TRACE_API("L2CA_DisconnectRsp()  CID: 0x%04x", cid);
+  L2CAP_TRACE_WARNING("L2CA_DisconnectRsp()  CID: 0x%04x", cid);
 
   /* Find the channel control block. We don't know the link it is on. */
   p_ccb = l2cu_find_ccb_by_cid(NULL, cid);
@@ -1138,7 +1138,7 @@ uint8_t L2CA_SetTraceLevel(uint8_t new_level) {
  *
  ******************************************************************************/
 uint8_t L2CA_SetDesireRole(uint8_t new_role) {
-  L2CAP_TRACE_API("L2CA_SetDesireRole() new:x%x, disallow_switch:%d", new_role,
+  L2CAP_TRACE_WARNING("L2CA_SetDesireRole() new:x%x, disallow_switch:%d", new_role,
                   l2cb.disallow_switch);
 
   if (L2CAP_ROLE_CHECK_SWITCH != (L2CAP_ROLE_CHECK_SWITCH & new_role)) {
@@ -1249,7 +1249,7 @@ bool L2CA_FlowControl(uint16_t cid, bool data_enabled) {
   tL2C_CCB* p_ccb;
   bool on_off = !data_enabled;
 
-  L2CAP_TRACE_API("L2CA_FlowControl(%d)  CID: 0x%04x", on_off, cid);
+  L2CAP_TRACE_WARNING("L2CA_FlowControl(%d)  CID: 0x%04x", on_off, cid);
 
   /* Find the channel control block. We don't know the link it is on. */
   p_ccb = l2cu_find_ccb_by_cid(NULL, cid);

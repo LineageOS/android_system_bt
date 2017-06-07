@@ -1006,6 +1006,10 @@ static bool process_reqseq(tL2C_CCB* p_ccb, uint16_t ctrl_word) {
     for (xx = 0; xx < num_bufs_acked; xx++) {
       BT_HDR* p_tmp =
           (BT_HDR*)fixed_queue_try_dequeue(p_fcrb->waiting_for_ack_q);
+      if (p_tmp == NULL) {
+        L2CAP_TRACE_WARNING ("%s: Unable to dequeue", __func__);
+        return (FALSE);
+      }
       ls = p_tmp->layer_specific & L2CAP_FCR_SAR_BITS;
 
       if ((ls == L2CAP_FCR_UNSEG_SDU) || (ls == L2CAP_FCR_END_SDU))
@@ -1185,12 +1189,12 @@ static void process_i_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf, uint16_t ctrl_word,
       if (p_fcrb->srej_sent) {
         /* If SREJ sent, save the frame for later processing as long as it is in
          * sequence */
-        next_srej =
-            (((BT_HDR*)fixed_queue_try_peek_last(p_fcrb->srej_rcv_hold_q))
-                 ->layer_specific +
-             1) &
-            L2CAP_FCR_SEQ_MODULO;
-
+        void * frame_msg = fixed_queue_try_peek_last(p_fcrb->srej_rcv_hold_q);
+        if (frame_msg == NULL) {
+          L2CAP_TRACE_WARNING ("%s: Unable to process frame", __func__);
+          return;
+        }
+        next_srej = (((BT_HDR *)frame_msg)->layer_specific + 1) & L2CAP_FCR_SEQ_MODULO;
         if ((tx_seq == next_srej) &&
             (fixed_queue_length(p_fcrb->srej_rcv_hold_q) <
              p_ccb->our_cfg.fcr.tx_win_sz)) {
@@ -1675,6 +1679,10 @@ BT_HDR* l2c_fcr_get_next_xmit_sdu_seg(tL2C_CCB* p_ccb,
   }
 
   p_buf = (BT_HDR*)fixed_queue_try_peek_first(p_ccb->xmit_hold_q);
+  if (p_buf == NULL) {
+    L2CAP_TRACE_ERROR ("%s: L2CAP - fixed_queue_try_peek_first returned queue as empty", __func__);
+    return NULL;
+  }
 
   /* If there is more data than the MPS, it requires segmentation */
   if (p_buf->len > max_pdu) {
@@ -1708,9 +1716,14 @@ BT_HDR* l2c_fcr_get_next_xmit_sdu_seg(tL2C_CCB* p_ccb,
     }
   } else /* Use the original buffer if no segmentation, or the last segment */
   {
-    p_xmit = (BT_HDR*)fixed_queue_try_dequeue(p_ccb->xmit_hold_q);
-
-    if (p_xmit->event != 0) last_seg = true;
+    void *seg_msg = fixed_queue_try_dequeue(p_ccb->xmit_hold_q);
+    if (seg_msg == NULL) {
+      L2CAP_TRACE_WARNING ("%s: Unable to process frame", __func__);
+      return (NULL);
+    }
+    p_xmit = (BT_HDR *)seg_msg;
+    if (p_xmit->event != 0)
+    last_seg = TRUE;
 
     p_xmit->event = p_ccb->local_cid;
   }
@@ -1815,6 +1828,10 @@ BT_HDR* l2c_lcc_get_next_xmit_sdu_seg(tL2C_CCB* p_ccb,
   uint16_t max_pdu = p_ccb->peer_conn_cfg.mps;
 
   p_buf = (BT_HDR*)fixed_queue_try_peek_first(p_ccb->xmit_hold_q);
+  if (p_buf == NULL) {
+    L2CAP_TRACE_ERROR ("%s: L2CAP - fixed_queue_try_peek_first returned queue as empty", __func__);
+    return (NULL);
+  }
 
   /* We are using the "event" field to tell is if we already started
    * segmentation */

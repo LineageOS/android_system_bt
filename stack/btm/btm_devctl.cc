@@ -565,6 +565,56 @@ tBTM_DEV_STATUS_CB* BTM_RegisterForDeviceStatusNotif(tBTM_DEV_STATUS_CB* p_cb) {
   return (p_prev);
 }
 
+
+/*******************************************************************************
+**
+** Function         BTM_Hci_Raw_Command
+**
+** Description      Send  HCI raw command to the controller.
+**
+** Returns
+**      BTM_SUCCESS         Command sent. Does not expect command complete
+**                              event. (command cmpl callback param is NULL)
+**      BTM_CMD_STARTED     Command sent. Waiting for command cmpl event.
+**
+**
+*******************************************************************************/
+tBTM_STATUS BTM_Hci_Raw_Command(uint16_t opcode, uint8_t param_len,
+                              uint8_t *p_param_buf, tBTM_RAW_CMPL_CB *p_cb)
+{
+  void *p_buf;
+#if HCI_RAW_CMD_INCLUDED == TRUE
+  tBTM_DEVCB  *p_devcb = &btm_cb.devcb;
+#endif
+
+BTM_TRACE_EVENT ("BTM: BTM_Hci_Raw_Command: Opcode: 0x%04X, ParamLen: %i.",
+                   opcode, param_len);
+
+  /* Allocate a buffer to hold HCI command plus the callback function */
+  p_buf = osi_malloc((uint16_t)(sizeof(BT_HDR) + sizeof (tBTM_CMPL_CB *) +
+                          param_len + HCIC_PREAMBLE_SIZE));
+  if (p_buf != NULL) {
+    btsnd_hcic_raw_cmd (p_buf, opcode, param_len, p_param_buf, (void *)p_cb);
+
+    /* Return value */
+#if HCI_RAW_CMD_INCLUDED == TRUE
+    if (p_cb != NULL) {
+      if(p_cb != (p_devcb->p_hci_evt_cb)) {
+        p_devcb->p_hci_evt_cb = p_cb;
+      }
+            return BTM_CMD_STARTED;
+    }
+#else
+    if (p_cb != NULL)
+      return BTM_CMD_STARTED;
+#endif
+    else
+      return BTM_SUCCESS;
+  }
+  else
+    return BTM_NO_RESOURCES;
+
+}
 /*******************************************************************************
  *
  * Function         BTM_VendorSpecificCommand
@@ -589,6 +639,32 @@ void BTM_VendorSpecificCommand(uint16_t opcode, uint8_t param_len,
                              (void*)p_cb);
 }
 
+#if HCI_RAW_CMD_INCLUDED == TRUE
+/*******************************************************************************
+**
+** Function         btm_hci_event
+**
+** Description      This function is called when HCI event is received
+**                  from the HCI layer.
+**
+** Returns          void
+**
+*******************************************************************************/
+void btm_hci_event(uint8_t *p, uint8_t event_code, uint8_t param_len)
+{
+  tBTM_DEVCB     *p_devcb = &btm_cb.devcb;
+  tBTM_RAW_CMPL  raw_cplt_params;
+
+  /* If there was a callback address for raw cmd complete, call it */
+  if (p_devcb->p_hci_evt_cb) {
+    /* Pass paramters to the callback function */
+    raw_cplt_params.event_code = event_code;   /* Number of bytes in return info */
+    raw_cplt_params.param_len = param_len;    /* Number of bytes in return info */
+    raw_cplt_params.p_param_buf = p;
+    (p_devcb->p_hci_evt_cb) (&raw_cplt_params);  /* Call the cmd complete callback function */
+  }
+}
+#endif
 /*******************************************************************************
  *
  * Function         btm_vsc_complete

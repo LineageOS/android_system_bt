@@ -196,7 +196,7 @@ void btm_acl_created(BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
   tACL_CONN* p;
   uint8_t xx;
 
-  BTM_TRACE_DEBUG("btm_acl_created hci_handle=%d link_role=%d  transport=%d",
+  BTM_TRACE_WARNING("btm_acl_created hci_handle=%d link_role=%d  transport=%d",
                   hci_handle, link_role, transport);
   /* Ensure we don't have duplicates */
   p = btm_bda_to_acl(bda, transport);
@@ -438,46 +438,48 @@ void btm_acl_device_down(void) {
 void btm_acl_update_busy_level(tBTM_BLI_EVENT event) {
   bool old_inquiry_state = btm_cb.is_inquiry;
   tBTM_BL_UPDATE_DATA evt;
+  uint8_t busy_level = btm_cb.busy_level;
   evt.busy_level_flags = 0;
   switch (event) {
     case BTM_BLI_ACL_UP_EVT:
       BTM_TRACE_DEBUG("BTM_BLI_ACL_UP_EVT");
+      busy_level = BTM_GetNumAclLinks();
       break;
     case BTM_BLI_ACL_DOWN_EVT:
       BTM_TRACE_DEBUG("BTM_BLI_ACL_DOWN_EVT");
+      busy_level = BTM_GetNumAclLinks();
       break;
     case BTM_BLI_PAGE_EVT:
       BTM_TRACE_DEBUG("BTM_BLI_PAGE_EVT");
       btm_cb.is_paging = true;
       evt.busy_level_flags = BTM_BL_PAGING_STARTED;
+      busy_level = BTM_BL_PAGING_STARTED;
       break;
     case BTM_BLI_PAGE_DONE_EVT:
       BTM_TRACE_DEBUG("BTM_BLI_PAGE_DONE_EVT");
       btm_cb.is_paging = false;
       evt.busy_level_flags = BTM_BL_PAGING_COMPLETE;
+      busy_level = BTM_BL_PAGING_COMPLETE;
       break;
     case BTM_BLI_INQ_EVT:
       BTM_TRACE_DEBUG("BTM_BLI_INQ_EVT");
       btm_cb.is_inquiry = true;
       evt.busy_level_flags = BTM_BL_INQUIRY_STARTED;
+      busy_level = BTM_BL_INQUIRY_STARTED;
       break;
     case BTM_BLI_INQ_CANCEL_EVT:
       BTM_TRACE_DEBUG("BTM_BLI_INQ_CANCEL_EVT");
       btm_cb.is_inquiry = false;
       evt.busy_level_flags = BTM_BL_INQUIRY_CANCELLED;
+      busy_level = BTM_BL_INQUIRY_COMPLETE;
       break;
     case BTM_BLI_INQ_DONE_EVT:
       BTM_TRACE_DEBUG("BTM_BLI_INQ_DONE_EVT");
       btm_cb.is_inquiry = false;
       evt.busy_level_flags = BTM_BL_INQUIRY_COMPLETE;
+      busy_level = BTM_BL_INQUIRY_COMPLETE;
       break;
   }
-
-  uint8_t busy_level;
-  if (btm_cb.is_paging || btm_cb.is_inquiry)
-    busy_level = 10;
-  else
-    busy_level = BTM_GetNumAclLinks();
 
   if ((busy_level != btm_cb.busy_level) ||
       (old_inquiry_state != btm_cb.is_inquiry)) {
@@ -512,6 +514,10 @@ tBTM_STATUS BTM_GetRole(BD_ADDR remote_bd_addr, uint8_t* p_role) {
 
   /* Get the current role */
   *p_role = p->link_role;
+  BTM_TRACE_WARNING ("BTM: Local device role : 0x%02x", *p_role );
+  BTM_TRACE_WARNING ("BTM: RemBdAddr: %02x%02x%02x%02x%02x%02x",
+                           remote_bd_addr[0], remote_bd_addr[1], remote_bd_addr[2], remote_bd_addr[3],
+                           remote_bd_addr[4], remote_bd_addr[5]);
   return (BTM_SUCCESS);
 }
 
@@ -545,9 +551,6 @@ tBTM_STATUS BTM_SwitchRole(BD_ADDR remote_bd_addr, uint8_t new_role,
   tBTM_PM_MODE pwr_mode;
   tBTM_PM_PWR_MD settings;
   BD_ADDR_PTR p_bda;
-  BTM_TRACE_API("BTM_SwitchRole BDA: %02x-%02x-%02x-%02x-%02x-%02x",
-                remote_bd_addr[0], remote_bd_addr[1], remote_bd_addr[2],
-                remote_bd_addr[3], remote_bd_addr[4], remote_bd_addr[5]);
 
   /* Make sure the local/remote devices supports switching */
   if (!btm_dev_support_switch(remote_bd_addr))
@@ -624,6 +627,10 @@ tBTM_STATUS BTM_SwitchRole(BD_ADDR remote_bd_addr, uint8_t new_role,
     btm_cb.devcb.switch_role_ref_data.hci_status = HCI_ERR_UNSUPPORTED_VALUE;
     btm_cb.devcb.p_switch_role_cb = p_cb;
   }
+  BTM_TRACE_WARNING ("BTM_SwitchRole BDA: %02x-%02x-%02x-%02x-%02x-%02x",
+  remote_bd_addr[0], remote_bd_addr[1], remote_bd_addr[2],
+  remote_bd_addr[3], remote_bd_addr[4], remote_bd_addr[5]);
+  BTM_TRACE_WARNING ("Requested New Role: %d", new_role)
   return (BTM_CMD_STARTED);
 }
 
@@ -890,6 +897,11 @@ void btm_read_remote_version_complete(uint8_t* p) {
         l2cble_notify_le_connection(p_acl_cb->remote_addr);
         btm_use_preferred_conn_params(p_acl_cb->remote_addr);
       }
+        BTM_TRACE_WARNING ("btm_read_remote_version_complete: BDA: %02x-%02x-%02x-%02x-%02x-%02x",
+                             p_acl_cb->remote_addr[0], p_acl_cb->remote_addr[1], p_acl_cb->remote_addr[2],
+                             p_acl_cb->remote_addr[3], p_acl_cb->remote_addr[4], p_acl_cb->remote_addr[5]);
+        BTM_TRACE_WARNING ("btm_read_remote_version_complete lmp_version %d manufacturer %d lmp_subversion %d",
+                                       p_acl_cb->lmp_version,p_acl_cb->manufacturer, p_acl_cb->lmp_subversion);
       break;
     }
   }
@@ -1395,7 +1407,9 @@ void btm_acl_role_changed(uint8_t hci_status, BD_ADDR bd_addr,
   tBTM_SEC_DEV_REC* p_dev_rec;
   tBTM_BL_ROLE_CHG_DATA evt;
 
-  BTM_TRACE_DEBUG("btm_acl_role_changed");
+  BTM_TRACE_WARNING ("btm_acl_role_changed: BDA: %02x-%02x-%02x-%02x-%02x-%02x",
+        p_bda[0], p_bda[1], p_bda[2], p_bda[3], p_bda[4], p_bda[5]);
+  BTM_TRACE_WARNING ("btm_acl_role_changed: New role: %d", new_role);
   /* Ignore any stray events */
   if (p == NULL) {
     /* it could be a failure */
@@ -1514,7 +1528,7 @@ bool BTM_TryAllocateSCN(uint8_t scn) {
   /* Make sure we don't exceed max port range.
    * Stack reserves scn 1 for HFP, HSP we still do the correct way.
    */
-  if ((scn >= BTM_MAX_SCN) || (scn == 1)) return false;
+  if ((scn >= BTM_MAX_SCN) || (scn <= 1)) return false;
 
   /* check if this port is available */
   if (!btm_cb.btm_scn[scn - 1]) {
@@ -1536,7 +1550,7 @@ bool BTM_TryAllocateSCN(uint8_t scn) {
  ******************************************************************************/
 bool BTM_FreeSCN(uint8_t scn) {
   BTM_TRACE_DEBUG("BTM_FreeSCN ");
-  if (scn <= BTM_MAX_SCN) {
+  if (scn <= BTM_MAX_SCN && scn > 0) {
     btm_cb.btm_scn[scn - 1] = false;
     return (true);
   } else

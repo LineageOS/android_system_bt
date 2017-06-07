@@ -51,6 +51,10 @@ static void internal_write_ready(void* context);
 socket_t* socket_new(void) {
   socket_t* ret = (socket_t*)osi_calloc(sizeof(socket_t));
   int enable = 1;
+  if (ret == NULL) {
+    LOG_ERROR(LOG_TAG, "%s unable to allocate : %s", __func__, strerror(errno));
+    return NULL;
+  }
 
   ret->fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (ret->fd == INVALID_FD) {

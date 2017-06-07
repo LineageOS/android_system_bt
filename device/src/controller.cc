@@ -29,6 +29,8 @@
 #include "hcimsgs.h"
 #include "osi/include/future.h"
 #include "stack/include/btm_ble_api.h"
+#include "osi/include/log.h"
+#include "utils/include/bt_utils.h"
 
 const bt_event_mask_t BLE_EVENT_MASK = {
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x1E, 0x7f}};
@@ -43,6 +45,7 @@ const uint8_t SCO_HOST_BUFFER_SIZE = 0xff;
 #define BLE_SUPPORTED_STATES_SIZE 8
 #define BLE_SUPPORTED_FEATURES_SIZE 8
 #define MAX_LOCAL_SUPPORTED_CODECS_SIZE 8
+#define UNUSED(x) (void)(x)
 
 static const hci_t* hci;
 static const hci_packet_factory_t* packet_factory;

@@ -181,10 +181,12 @@ static future_t* init(void) {
   } else {
     time_t current_time = time(NULL);
     struct tm* time_created = localtime(&current_time);
-    strftime(btif_config_time_created, TIME_STRING_LENGTH, TIME_STRING_FORMAT,
-             time_created);
-    config_set_string(config, INFO_SECTION, FILE_TIMESTAMP,
-                      btif_config_time_created);
+    if (time_created) {
+      strftime(btif_config_time_created, TIME_STRING_LENGTH, TIME_STRING_FORMAT,
+               time_created);
+      config_set_string(config, INFO_SECTION, FILE_TIMESTAMP,
+                        btif_config_time_created);
+    }
   }
 
   // TODO(sharvil): use a non-wake alarm for this once we have

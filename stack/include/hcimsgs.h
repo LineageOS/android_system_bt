@@ -648,6 +648,8 @@ extern void btsnd_hcic_enhanced_accept_synchronous_connection(
 #define HCID_HEADER_SIZE 4
 
 #define HCID_GET_SCO_LEN(p) (*((uint8_t*)((p) + 1) + (p)->offset + 2))
+extern void btsnd_hcic_raw_cmd (void *buffer, uint16_t opcode, uint8_t len,
+                                 uint8_t *p_data, void *p_cmd_cplt_cback);
 
 extern void btsnd_hcic_vendor_spec_cmd(void* buffer, uint16_t opcode,
                                        uint8_t len, uint8_t* p_data,

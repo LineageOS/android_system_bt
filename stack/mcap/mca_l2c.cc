@@ -192,7 +192,7 @@ void mca_l2c_cconn_ind_cback(BD_ADDR bd_addr, uint16_t lcid, uint16_t psm,
 
     /* if result ok, proceed with connection and send L2CAP
        config req */
-    if (result == L2CAP_CONN_OK) {
+    if (result == L2CAP_CONN_OK && p_tbl) {
       /* set channel state */
       p_tbl->state = MCA_TC_ST_CFG;
 

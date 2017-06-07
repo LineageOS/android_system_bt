@@ -21,6 +21,14 @@ cc_library_static {
     shared_libs: [
         "liblog",
     ],
+
+//ifeq ($(strip $(TARGET_BUILD_VARIANT)),userdebug)
+//ifneq ($(strip $(BOARD_HAS_QTI_BT_ROME)),true))
+    cflags: [
+        "-DQLOGKIT_USERDEBUG",
+    ],
+//endif
+//endif
 }
 
 // Bluetooth device unit tests for target

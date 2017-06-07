@@ -69,7 +69,10 @@ thread_t* thread_new_sized(const char* name, size_t work_queue_capacity) {
   CHECK(work_queue_capacity != 0);
 
   thread_t* ret = static_cast<thread_t*>(osi_calloc(sizeof(thread_t)));
-
+  if (ret == NULL) {
+    LOG_ERROR(LOG_TAG, "%s unable to allocate memory" , __func__);
+    return NULL;
+  }
   ret->reactor = reactor_new();
   if (!ret->reactor) goto error;
 
