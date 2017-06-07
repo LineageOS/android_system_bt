@@ -109,7 +109,7 @@ void gatt_act_discovery(tGATT_CLCB* p_clcb) {
                p_clcb->uuid.len);
     }
 
-    st = attp_send_cl_msg(*p_clcb->p_tcb, p_clcb->clcb_idx, op_code, &cl_req);
+    st = attp_send_cl_msg(*p_clcb->p_tcb, p_clcb, op_code, &cl_req);
 
     if (st != GATT_SUCCESS && st != GATT_CMD_STARTED) {
       gatt_end_operation(p_clcb, GATT_ERROR, NULL);
@@ -191,7 +191,7 @@ void gatt_act_read(tGATT_CLCB* p_clcb, uint16_t offset) {
       break;
   }
 
-  if (op_code != 0) rt = attp_send_cl_msg(tcb, p_clcb->clcb_idx, op_code, &msg);
+  if (op_code != 0) rt = attp_send_cl_msg(tcb, p_clcb, op_code, &msg);
 
   if (op_code == 0 || (rt != GATT_SUCCESS && rt != GATT_CMD_STARTED)) {
     gatt_end_operation(p_clcb, rt, NULL);
@@ -218,7 +218,7 @@ void gatt_act_write(tGATT_CLCB* p_clcb, uint8_t sec_act) {
         p_clcb->s_handle = p_attr->handle;
         op_code = (sec_act == GATT_SEC_SIGN_DATA) ? GATT_SIGN_CMD_WRITE
                                                   : GATT_CMD_WRITE;
-        rt = gatt_send_write_msg(tcb, p_clcb->clcb_idx, op_code, p_attr->handle,
+        rt = gatt_send_write_msg(tcb, p_clcb, op_code, p_attr->handle,
                                  p_attr->len, 0, p_attr->value);
         break;
 
@@ -226,9 +226,8 @@ void gatt_act_write(tGATT_CLCB* p_clcb, uint8_t sec_act) {
         if (p_attr->len <= (tcb.payload_size - GATT_HDR_SIZE)) {
           p_clcb->s_handle = p_attr->handle;
 
-          rt = gatt_send_write_msg(tcb, p_clcb->clcb_idx, GATT_REQ_WRITE,
-                                   p_attr->handle, p_attr->len, 0,
-                                   p_attr->value);
+          rt = gatt_send_write_msg(tcb, p_clcb, GATT_REQ_WRITE, p_attr->handle,
+                                   p_attr->len, 0, p_attr->value);
         } else /* prepare write for long attribute */
         {
           gatt_send_prepare_write(tcb, p_clcb);
@@ -271,8 +270,7 @@ void gatt_send_queue_write_cancel(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
 
   GATT_TRACE_DEBUG("gatt_send_queue_write_cancel ");
 
-  rt = attp_send_cl_msg(tcb, p_clcb->clcb_idx, GATT_REQ_EXEC_WRITE,
-                        (tGATT_CL_MSG*)&flag);
+  rt = attp_send_cl_msg(tcb, p_clcb, GATT_REQ_EXEC_WRITE, (tGATT_CL_MSG*)&flag);
 
   if (rt != GATT_SUCCESS) {
     gatt_end_operation(p_clcb, rt, NULL);
@@ -348,8 +346,8 @@ void gatt_send_prepare_write(tGATT_TCB& tcb, tGATT_CLCB* p_clcb) {
 
   GATT_TRACE_DEBUG("offset =0x%x len=%d", offset, to_send);
 
-  rt = gatt_send_write_msg(tcb, p_clcb->clcb_idx, GATT_REQ_PREPARE_WRITE,
-                           p_attr->handle, to_send,         /* length */
+  rt = gatt_send_write_msg(tcb, p_clcb, GATT_REQ_PREPARE_WRITE, p_attr->handle,
+                           to_send,                         /* length */
                            offset,                          /* used as offset */
                            p_attr->value + p_attr->offset); /* data */
 
@@ -620,7 +618,7 @@ void gatt_process_notification(tGATT_TCB& tcb, uint8_t op_code, uint16_t len,
   if (!GATT_HANDLE_IS_VALID(value.handle)) {
     /* illegal handle, send ack now */
     if (op_code == GATT_HANDLE_VALUE_IND)
-      attp_send_cl_msg(tcb, 0, GATT_HANDLE_VALUE_CONF, NULL);
+      attp_send_cl_msg(tcb, nullptr, GATT_HANDLE_VALUE_CONF, NULL);
     return;
   }
 
@@ -656,7 +654,7 @@ void gatt_process_notification(tGATT_TCB& tcb, uint8_t op_code, uint16_t len,
     if (tcb.ind_count > 0)
       gatt_start_ind_ack_timer(tcb);
     else /* no app to indicate, or invalid handle */
-      attp_send_cl_msg(tcb, 0, GATT_HANDLE_VALUE_CONF, NULL);
+      attp_send_cl_msg(tcb, nullptr, GATT_HANDLE_VALUE_CONF, NULL);
   }
 
   encrypt_status = gatt_get_link_encrypt_status(tcb);
@@ -1029,7 +1027,7 @@ bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb) {
       return true;
     }
 
-    gatt_start_rsp_timer(cmd.clcb_idx);
+    gatt_start_rsp_timer(cmd.p_clcb);
     return true;
   }
 
@@ -1059,15 +1057,13 @@ void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint8_t op_code,
 
     if (p_clcb == NULL || (rsp_code != op_code && op_code != GATT_RSP_ERROR)) {
       GATT_TRACE_WARNING(
-          "ATT - Ignore wrong response. Receives (%02x) \
-                                Request(%02x) Ignored",
+          "ATT - Ignore wrong response. Receives (%02x) Request(%02x) Ignored",
           op_code, rsp_code);
-
       return;
-    } else {
-      alarm_cancel(p_clcb->gatt_rsp_timer_ent);
-      p_clcb->retry_count = 0;
     }
+
+    alarm_cancel(p_clcb->gatt_rsp_timer_ent);
+    p_clcb->retry_count = 0;
   }
   /* the size of the message may not be bigger than the local max PDU size*/
   /* The message has to be smaller than the agreed MTU, len does not count

@@ -657,8 +657,7 @@ bool gatt_parse_uuid_from_cmd(tBT_UUID* p_uuid_rec, uint16_t uuid_size,
  * Returns          void
  *
  ******************************************************************************/
-void gatt_start_rsp_timer(uint16_t clcb_idx) {
-  tGATT_CLCB* p_clcb = &gatt_cb.clcb[clcb_idx];
+void gatt_start_rsp_timer(tGATT_CLCB* p_clcb) {
   period_ms_t timeout_ms = GATT_WAIT_FOR_RSP_TIMEOUT_MS;
 
   if (p_clcb->operation == GATTC_OPTYPE_DISCOVERY &&
@@ -770,7 +769,7 @@ void gatt_ind_ack_timeout(void* data) {
 
   GATT_TRACE_WARNING("%s send ack now", __func__);
   p_tcb->ind_count = 0;
-  attp_send_cl_msg(*p_tcb, 0, GATT_HANDLE_VALUE_CONF, NULL);
+  attp_send_cl_msg(*p_tcb, nullptr, GATT_HANDLE_VALUE_CONF, NULL);
 }
 /*******************************************************************************
  *
@@ -1035,7 +1034,6 @@ tGATT_CLCB* gatt_clcb_alloc(uint16_t conn_id) {
 
       p_clcb->in_use = true;
       p_clcb->conn_id = conn_id;
-      p_clcb->clcb_idx = i;
       p_clcb->p_reg = p_reg;
       p_clcb->p_tcb = p_tcb;
       break;
@@ -1308,13 +1306,13 @@ bool gatt_find_app_hold_link(tGATT_TCB* p_tcb, uint8_t start_idx,
 }
 
 /** Enqueue this command */
-void gatt_cmd_enq(tGATT_TCB& tcb, uint16_t clcb_idx, bool to_send,
+void gatt_cmd_enq(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, bool to_send,
                   uint8_t op_code, BT_HDR* p_buf) {
   tGATT_CMD_Q cmd;
   cmd.to_send = to_send; /* waiting to be sent */
   cmd.op_code = op_code;
   cmd.p_cmd = p_buf;
-  cmd.clcb_idx = clcb_idx;
+  cmd.p_clcb = p_clcb;
 
   if (!to_send) {
     // TODO: WTF why do we clear the queue here ?!
@@ -1329,7 +1327,7 @@ tGATT_CLCB* gatt_cmd_dequeue(tGATT_TCB& tcb, uint8_t* p_op_code) {
   if (tcb.cl_cmd_q.empty()) return nullptr;
 
   tGATT_CMD_Q cmd = tcb.cl_cmd_q.front();
-  tGATT_CLCB* p_clcb = &gatt_cb.clcb[cmd.clcb_idx];
+  tGATT_CLCB* p_clcb = cmd.p_clcb;
   *p_op_code = cmd.op_code;
   tcb.cl_cmd_q.pop();
 
@@ -1345,7 +1343,7 @@ tGATT_CLCB* gatt_cmd_dequeue(tGATT_TCB& tcb, uint8_t* p_op_code) {
  * Returns          status code
  *
  ******************************************************************************/
-uint8_t gatt_send_write_msg(tGATT_TCB& tcb, uint16_t clcb_idx, uint8_t op_code,
+uint8_t gatt_send_write_msg(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, uint8_t op_code,
                             uint16_t handle, uint16_t len, uint16_t offset,
                             uint8_t* p_data) {
   tGATT_CL_MSG msg;
@@ -1357,7 +1355,7 @@ uint8_t gatt_send_write_msg(tGATT_TCB& tcb, uint16_t clcb_idx, uint8_t op_code,
   memcpy(msg.attr_value.value, p_data, len);
 
   /* write by handle */
-  return attp_send_cl_msg(tcb, clcb_idx, op_code, &msg);
+  return attp_send_cl_msg(tcb, p_clcb, op_code, &msg);
 }
 
 /*******************************************************************************
@@ -1459,8 +1457,7 @@ void gatt_cleanup_upon_disc(BD_ADDR bda, uint16_t reason,
       p_clcb = &gatt_cb.clcb[i];
       if (p_clcb->in_use && p_clcb->p_tcb == p_tcb) {
         alarm_cancel(p_clcb->gatt_rsp_timer_ent);
-        GATT_TRACE_DEBUG("found p_clcb conn_id=%d clcb_idx=%d", p_clcb->conn_id,
-                         p_clcb->clcb_idx);
+        GATT_TRACE_DEBUG("found p_clcb conn_id=%d", p_clcb->conn_id);
         if (p_clcb->operation != GATTC_OPTYPE_NONE)
           gatt_end_operation(p_clcb, GATT_ERROR, NULL);
 
