@@ -683,7 +683,7 @@ tGATT_STATUS GATTC_ConfigureMTU(uint16_t conn_id, uint16_t mtu) {
     p_clcb->p_tcb->payload_size = mtu;
     p_clcb->operation = GATTC_OPTYPE_CONFIG;
 
-    ret = attp_send_cl_msg(*p_clcb->p_tcb, p_clcb->clcb_idx, GATT_REQ_MTU,
+    ret = attp_send_cl_msg(*p_clcb->p_tcb, p_clcb, GATT_REQ_MTU,
                            (tGATT_CL_MSG*)&mtu);
   }
 
@@ -1057,7 +1057,7 @@ tGATT_STATUS GATTC_SendHandleValueConfirm(uint16_t conn_id, uint16_t handle) {
 
   GATT_TRACE_DEBUG("notif_count=%d ", p_tcb->ind_count);
   /* send confirmation now */
-  tGATT_STATUS ret = attp_send_cl_msg(*p_tcb, 0, GATT_HANDLE_VALUE_CONF,
+  tGATT_STATUS ret = attp_send_cl_msg(*p_tcb, nullptr, GATT_HANDLE_VALUE_CONF,
                                       (tGATT_CL_MSG*)&handle);
 
   p_tcb->ind_count = 0;
