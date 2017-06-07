@@ -35,6 +35,8 @@ source_set("service") {
     "gatt_server_old.cc",
     "hal/bluetooth_gatt_interface.cc",
     "hal/bluetooth_interface.cc",
+    "ipc/dbus/bluetooth_adapter.cc",
+    "ipc/dbus/ipc_handler_dbus.cc",
     "hal/fake_bluetooth_gatt_interface.cc",
     "hal/fake_bluetooth_interface.cc",
     "ipc/ipc_handler.cc",

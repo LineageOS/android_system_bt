@@ -326,6 +326,7 @@ tGATT_STATUS attp_send_msg_to_l2cap(tGATT_TCB& tcb, BT_HDR* p_toL2CAP) {
   if (tcb.att_lcid == L2CAP_ATT_CID)
     l2cap_ret = L2CA_SendFixedChnlData(L2CAP_ATT_CID, tcb.peer_bda, p_toL2CAP);
   else
+
     l2cap_ret = (uint16_t)L2CA_DataWrite(tcb.att_lcid, p_toL2CAP);
 
   if (l2cap_ret == L2CAP_DW_FAILED) {
@@ -430,13 +431,12 @@ tGATT_STATUS attp_send_sr_msg(tGATT_TCB& tcb, BT_HDR* p_msg) {
  *                  GATT_ERROR if command sending failure
  *
  ******************************************************************************/
-tGATT_STATUS attp_cl_send_cmd(tGATT_TCB& tcb, uint16_t clcb_idx,
+tGATT_STATUS attp_cl_send_cmd(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
                               uint8_t cmd_code, BT_HDR* p_cmd) {
   cmd_code &= ~GATT_AUTH_SIGN_MASK;
 
-  if (tcb.pending_cl_req != tcb.next_slot_inq &&
-      cmd_code != GATT_HANDLE_VALUE_CONF) {
-    gatt_cmd_enq(tcb, clcb_idx, true, cmd_code, p_cmd);
+  if (!tcb.cl_cmd_q.empty() && cmd_code != GATT_HANDLE_VALUE_CONF) {
+    gatt_cmd_enq(tcb, p_clcb, true, cmd_code, p_cmd);
     return GATT_CMD_STARTED;
   }
 
@@ -447,10 +447,12 @@ tGATT_STATUS attp_cl_send_cmd(tGATT_TCB& tcb, uint16_t clcb_idx,
   }
 
   /* do not enq cmd if handle value confirmation or set request */
-  if (cmd_code != GATT_HANDLE_VALUE_CONF && cmd_code != GATT_CMD_WRITE) {
-    gatt_start_rsp_timer(clcb_idx);
-    gatt_cmd_enq(tcb, clcb_idx, false, cmd_code, NULL);
+  if (cmd_code == GATT_HANDLE_VALUE_CONF || cmd_code == GATT_CMD_WRITE) {
+    return att_ret;
   }
+
+  gatt_start_rsp_timer(p_clcb);
+  gatt_cmd_enq(tcb, p_clcb, false, cmd_code, NULL);
   return att_ret;
 }
 
@@ -462,7 +464,7 @@ tGATT_STATUS attp_cl_send_cmd(tGATT_TCB& tcb, uint16_t clcb_idx,
  *                  message to server.
  *
  * Parameter        p_tcb: pointer to the connectino control block.
- *                  clcb_idx: clcb index
+ *                  p_clcb: clcb
  *                  op_code: message op code.
  *                  p_msg: pointer to message parameters structure.
  *
@@ -470,7 +472,7 @@ tGATT_STATUS attp_cl_send_cmd(tGATT_TCB& tcb, uint16_t clcb_idx,
  *
  *
  ******************************************************************************/
-tGATT_STATUS attp_send_cl_msg(tGATT_TCB& tcb, uint16_t clcb_idx,
+tGATT_STATUS attp_send_cl_msg(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
                               uint8_t op_code, tGATT_CL_MSG* p_msg) {
   BT_HDR* p_cmd = NULL;
   uint16_t offset = 0, handle;
@@ -545,5 +547,5 @@ tGATT_STATUS attp_send_cl_msg(tGATT_TCB& tcb, uint16_t clcb_idx,
 
   if (p_cmd == NULL) return GATT_NO_RESOURCES;
 
-  return attp_cl_send_cmd(tcb, clcb_idx, op_code, p_cmd);
+  return attp_cl_send_cmd(tcb, p_clcb, op_code, p_cmd);
 }

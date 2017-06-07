@@ -51,18 +51,12 @@ enum {
   BTA_GATTC_API_SEARCH_EVT,
   BTA_GATTC_API_CONFIRM_EVT,
   BTA_GATTC_API_READ_MULTI_EVT,
-  BTA_GATTC_API_REFRESH_EVT,
 
   BTA_GATTC_INT_CONN_EVT,
   BTA_GATTC_INT_DISCOVER_EVT,
   BTA_GATTC_DISCOVER_CMPL_EVT,
   BTA_GATTC_OP_CMPL_EVT,
-  BTA_GATTC_INT_DISCONN_EVT,
-
-  BTA_GATTC_INT_START_IF_EVT,
-  BTA_GATTC_API_DEREG_EVT,
-  BTA_GATTC_API_DISABLE_EVT,
-  BTA_GATTC_ENC_CMPL_EVT
+  BTA_GATTC_INT_DISCONN_EVT
 };
 typedef uint16_t tBTA_GATTC_INT_EVT;
 
@@ -87,14 +81,6 @@ typedef uint16_t tBTA_GATTC_INT_EVT;
 #define BTA_GATTC_WRITE_PREPARE GATT_WRITE_PREPARE
 
 /* internal strucutre for GATTC register API  */
-typedef struct {
-  BT_HDR hdr;
-  tBTA_GATTC_IF client_if;
-} tBTA_GATTC_INT_START_IF;
-
-typedef tBTA_GATTC_INT_START_IF tBTA_GATTC_API_DEREG;
-typedef tBTA_GATTC_INT_START_IF tBTA_GATTC_INT_DEREG;
-
 typedef struct {
   BT_HDR hdr;
   BD_ADDR remote_bda;
@@ -181,15 +167,8 @@ typedef struct {
   tGATT_DISCONN_REASON reason;
 } tBTA_GATTC_INT_CONN;
 
-typedef struct {
-  BT_HDR hdr;
-  BD_ADDR remote_bda;
-  tBTA_GATTC_IF client_if;
-} tBTA_GATTC_ENC_CMPL;
-
 typedef union {
   BT_HDR hdr;
-  tBTA_GATTC_API_DEREG api_dereg;
   tBTA_GATTC_API_OPEN api_conn;
   tBTA_GATTC_API_CANCEL_OPEN api_cancel_conn;
   tBTA_GATTC_API_READ api_read;
@@ -201,11 +180,6 @@ typedef union {
   tBTA_GATTC_API_CFG_MTU api_mtu;
   tBTA_GATTC_OP_CMPL op_cmpl;
   tBTA_GATTC_INT_CONN int_conn;
-  tBTA_GATTC_ENC_CMPL enc_cmpl;
-
-  tBTA_GATTC_INT_START_IF int_start_if;
-  tBTA_GATTC_INT_DEREG int_dereg;
-
 } tBTA_GATTC_DATA;
 
 /* GATT server cache on the client */
@@ -366,11 +340,9 @@ extern bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event,
 extern void bta_gattc_disable();
 extern void bta_gattc_register(tBT_UUID* p_app_uuid, tBTA_GATTC_CBACK* p_data,
                                BtaAppRegisterCallback cb);
-extern void bta_gattc_start_if(tBTA_GATTC_DATA* p_data);
 extern void bta_gattc_process_api_open(tBTA_GATTC_DATA* p_msg);
 extern void bta_gattc_process_api_open_cancel(tBTA_GATTC_DATA* p_msg);
 extern void bta_gattc_deregister(tBTA_GATTC_RCB* p_clreg);
-extern void bta_gattc_process_enc_cmpl(tBTA_GATTC_DATA* p_msg);
 
 /* function within state machine */
 extern void bta_gattc_open(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data);
@@ -422,7 +394,7 @@ extern void bta_gattc_send_open_cback(tBTA_GATTC_RCB* p_clreg,
                                       tBTA_GATT_STATUS status,
                                       BD_ADDR remote_bda, uint16_t conn_id,
                                       tBTA_TRANSPORT transport, uint16_t mtu);
-extern void bta_gattc_process_api_refresh(tBTA_GATTC_DATA* p_msg);
+extern void bta_gattc_process_api_refresh(bt_bdaddr_t remote_bda);
 extern void bta_gattc_cfg_mtu(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data);
 extern void bta_gattc_listen(tBTA_GATTC_DATA* p_msg);
 extern void bta_gattc_broadcast(tBTA_GATTC_DATA* p_msg);

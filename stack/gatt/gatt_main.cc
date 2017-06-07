@@ -266,29 +266,28 @@ bool gatt_disconnect(tGATT_TCB* p_tcb) {
  ******************************************************************************/
 bool gatt_update_app_hold_link_status(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
                                       bool is_add) {
-  for (int i = 0; i < GATT_MAX_APPS; i++) {
-    if (p_tcb->app_hold_link[i] == gatt_if && is_add) {
-      GATT_TRACE_DEBUG("%s: gatt_if %d already exists at idx %d", __func__,
-                       gatt_if, i);
-      return true;
+  auto& holders = p_tcb->app_hold_link;
+
+  if (is_add) {
+    auto ret = holders.insert(gatt_if);
+    if (ret.second) {
+      GATT_TRACE_DEBUG("%s: added gatt_if=%d", __func__, gatt_if);
+    } else {
+      GATT_TRACE_DEBUG("%s: attempt to add already existing gatt_if=%d",
+                       __func__, gatt_if);
     }
+    return true;
   }
 
-  for (int i = 0; i < GATT_MAX_APPS; i++) {
-    if (p_tcb->app_hold_link[i] == 0 && is_add) {
-      p_tcb->app_hold_link[i] = gatt_if;
-      GATT_TRACE_DEBUG("%s: added gatt_if=%d idx=%d ", __func__, gatt_if, i);
-      return true;
-    } else if (p_tcb->app_hold_link[i] == gatt_if && !is_add) {
-      p_tcb->app_hold_link[i] = 0;
-      GATT_TRACE_DEBUG("%s: removed gatt_if=%d idx=%d", __func__, gatt_if, i);
-      return true;
-    }
+  //! is_add
+  if (!holders.erase(gatt_if)) {
+    GATT_TRACE_DEBUG("%s: attempt to remove nonexisting gatt_if=%d", __func__,
+                     gatt_if);
+    return false;
   }
 
-  GATT_TRACE_DEBUG("%s: gatt_if=%d not found; is_add=%d", __func__, gatt_if,
-                   is_add);
-  return false;
+  GATT_TRACE_DEBUG("%s: removed gatt_if=%d", __func__, gatt_if);
+  return true;
 }
 
 /*******************************************************************************
@@ -327,7 +326,7 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
     GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_NO_IDLE_TIMEOUT,
                         p_tcb->transport);
   } else {
-    if (!gatt_num_apps_hold_link(p_tcb)) {
+    if (p_tcb->app_hold_link.empty()) {
       /* acl link is connected but no application needs to use the link
          so set the timeout value to GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP seconds
          */
@@ -361,7 +360,7 @@ bool gatt_act_connect(tGATT_REG* p_reg, BD_ADDR bd_addr,
     st = gatt_get_ch_state(p_tcb);
 
     /* before link down, another app try to open a GATT connection */
-    if (st == GATT_CH_OPEN && gatt_num_apps_hold_link(p_tcb) == 0 &&
+    if (st == GATT_CH_OPEN && p_tcb->app_hold_link.empty() &&
         transport == BT_TRANSPORT_LE) {
       if (!gatt_connect(bd_addr, p_tcb, transport, initiating_phys))
         ret = false;
@@ -902,10 +901,9 @@ static void gatt_l2cif_congest_cback(uint16_t lcid, bool congested) {
 static void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
   uint8_t i;
   tGATT_REG* p_reg;
-  tGATT_BG_CONN_DEV* p_bg_dev = NULL;
   uint16_t conn_id;
 
-  p_bg_dev = gatt_find_bg_dev(p_tcb->peer_bda);
+  tGATT_BG_CONN_DEV* p_bg_dev = gatt_find_bg_dev(p_tcb->peer_bda);
 
   /* notifying all applications for the connection up event */
   for (i = 0, p_reg = gatt_cb.cl_rcb; i < GATT_MAX_APPS; i++, p_reg++) {
@@ -921,7 +919,7 @@ static void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
     }
   }
 
-  if (gatt_num_apps_hold_link(p_tcb) && p_tcb->att_lcid == L2CAP_ATT_CID) {
+  if (!p_tcb->app_hold_link.empty() && p_tcb->att_lcid == L2CAP_ATT_CID) {
     /* disable idle timeout if one or more clients are holding the link disable
      * the idle timer */
     GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_NO_IDLE_TIMEOUT,

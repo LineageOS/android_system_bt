@@ -683,7 +683,7 @@ tGATT_STATUS GATTC_ConfigureMTU(uint16_t conn_id, uint16_t mtu) {
     p_clcb->p_tcb->payload_size = mtu;
     p_clcb->operation = GATTC_OPTYPE_CONFIG;
 
-    ret = attp_send_cl_msg(*p_clcb->p_tcb, p_clcb->clcb_idx, GATT_REQ_MTU,
+    ret = attp_send_cl_msg(*p_clcb->p_tcb, p_clcb, GATT_REQ_MTU,
                            (tGATT_CL_MSG*)&mtu);
   }
 
@@ -1057,7 +1057,7 @@ tGATT_STATUS GATTC_SendHandleValueConfirm(uint16_t conn_id, uint16_t handle) {
 
   GATT_TRACE_DEBUG("notif_count=%d ", p_tcb->ind_count);
   /* send confirmation now */
-  tGATT_STATUS ret = attp_send_cl_msg(*p_tcb, 0, GATT_HANDLE_VALUE_CONF,
+  tGATT_STATUS ret = attp_send_cl_msg(*p_tcb, nullptr, GATT_HANDLE_VALUE_CONF,
                                       (tGATT_CL_MSG*)&handle);
 
   p_tcb->ind_count = 0;
@@ -1327,59 +1327,49 @@ bool GATT_Connect(tGATT_IF gatt_if, BD_ADDR bd_addr, bool is_direct,
  *
  ******************************************************************************/
 bool GATT_CancelConnect(tGATT_IF gatt_if, BD_ADDR bd_addr, bool is_direct) {
-  tGATT_REG* p_reg;
-  tGATT_TCB* p_tcb;
-  bool status = true;
-  tGATT_IF temp_gatt_if;
-  uint8_t start_idx, found_idx;
+  GATT_TRACE_API("%s: gatt_if=%d", __func__, gatt_if);
 
-  GATT_TRACE_API("GATT_CancelConnect gatt_if=%d", gatt_if);
-
-  if (gatt_if != 0) {
-    p_reg = gatt_get_regcb(gatt_if);
-    if (p_reg == NULL) {
-      GATT_TRACE_ERROR("GATT_CancelConnect - gatt_if =%d is not registered",
-                       gatt_if);
-      return (false);
-    }
+  if (gatt_if && !gatt_get_regcb(gatt_if)) {
+    GATT_TRACE_ERROR("%s: gatt_if =%d is not registered", __func__, gatt_if);
+    return false;
   }
 
   if (is_direct) {
-    if (!gatt_if) {
-      GATT_TRACE_DEBUG("GATT_CancelConnect - unconditional");
-      start_idx = 0;
-      /* only LE connection can be cancelled */
-      p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
-      if (p_tcb && gatt_num_apps_hold_link(p_tcb)) {
-        while (status && gatt_find_app_hold_link(p_tcb, start_idx, &found_idx,
-                                                 &temp_gatt_if)) {
-          status = gatt_cancel_open(temp_gatt_if, bd_addr);
-          start_idx = ++found_idx;
-        }
-      } else {
-        GATT_TRACE_ERROR("GATT_CancelConnect - no app found");
-        status = false;
-      }
-    } else {
-      status = gatt_cancel_open(gatt_if, bd_addr);
+    if (gatt_if) {
+      return gatt_cancel_open(gatt_if, bd_addr);
     }
-  } else {
-    if (!gatt_if) {
-      if (gatt_get_num_apps_for_bg_dev(bd_addr)) {
-        while (gatt_find_app_for_bg_dev(bd_addr, &temp_gatt_if))
-          gatt_remove_bg_dev_for_app(temp_gatt_if, bd_addr);
-      } else {
-        GATT_TRACE_ERROR(
-            "GATT_CancelConnect -no app associated with the bg device for "
-            "unconditional removal");
-        status = false;
-      }
-    } else {
-      status = gatt_remove_bg_dev_for_app(gatt_if, bd_addr);
+
+    GATT_TRACE_DEBUG("%s: unconditional", __func__);
+    /* only LE connection can be cancelled */
+    tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
+    if (!p_tcb || p_tcb->app_hold_link.empty()) {
+      GATT_TRACE_ERROR("%s: no app found", __func__);
+      return false;
     }
+
+    for (auto it = p_tcb->app_hold_link.begin();
+         it != p_tcb->app_hold_link.end();) {
+      auto next = std::next(it);
+      // gatt_cancel_open modifies the app_hold_link.
+      if (!gatt_cancel_open(*it, bd_addr)) return false;
+
+      it = next;
+    }
+
+    return true;
+  }
+  // is not direct
+
+  if (gatt_if) return gatt_remove_bg_dev_for_app(gatt_if, bd_addr);
+
+  if (!gatt_clear_bg_dev_for_addr(bd_addr)) {
+    GATT_TRACE_ERROR(
+        "%s: no app associated with the bg device for unconditional removal",
+        __func__);
+    return false;
   }
 
-  return status;
+  return true;
 }
 
 /*******************************************************************************

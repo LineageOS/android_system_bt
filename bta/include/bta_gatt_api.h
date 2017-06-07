@@ -959,7 +959,7 @@ extern void BTA_GATTC_ReadMultiple(uint16_t conn_id,
  * Returns          void
  *
  ******************************************************************************/
-extern void BTA_GATTC_Refresh(const BD_ADDR remote_bda);
+extern void BTA_GATTC_Refresh(const bt_bdaddr_t& remote_bda);
 
 /*******************************************************************************
  *
