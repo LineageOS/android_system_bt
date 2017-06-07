@@ -434,8 +434,7 @@ tGATT_STATUS attp_cl_send_cmd(tGATT_TCB& tcb, uint16_t clcb_idx,
                               uint8_t cmd_code, BT_HDR* p_cmd) {
   cmd_code &= ~GATT_AUTH_SIGN_MASK;
 
-  if (tcb.pending_cl_req != tcb.next_slot_inq &&
-      cmd_code != GATT_HANDLE_VALUE_CONF) {
+  if (!tcb.cl_cmd_q.empty() && cmd_code != GATT_HANDLE_VALUE_CONF) {
     gatt_cmd_enq(tcb, clcb_idx, true, cmd_code, p_cmd);
     return GATT_CMD_STARTED;
   }
@@ -447,10 +446,12 @@ tGATT_STATUS attp_cl_send_cmd(tGATT_TCB& tcb, uint16_t clcb_idx,
   }
 
   /* do not enq cmd if handle value confirmation or set request */
-  if (cmd_code != GATT_HANDLE_VALUE_CONF && cmd_code != GATT_CMD_WRITE) {
-    gatt_start_rsp_timer(clcb_idx);
-    gatt_cmd_enq(tcb, clcb_idx, false, cmd_code, NULL);
+  if (cmd_code == GATT_HANDLE_VALUE_CONF || cmd_code == GATT_CMD_WRITE) {
+    return att_ret;
   }
+
+  gatt_start_rsp_timer(clcb_idx);
+  gatt_cmd_enq(tcb, clcb_idx, false, cmd_code, NULL);
   return att_ret;
 }
 
