@@ -399,7 +399,9 @@ void read_char_cb(uint16_t conn_id, tGATT_STATUS status, uint16_t handle,
   CHECK(len <= BTGATT_MAX_ATTR_LEN);
   if (len > 0) memcpy(params->value.value, value, len);
 
-  CLI_CBACK_IN_JNI(read_characteristic_cb, conn_id, status,
+  // clang-tidy analyzer complains about |params| is leaked.  It doesn't know
+  // that |param| will be freed by the callback function.
+  CLI_CBACK_IN_JNI(read_characteristic_cb, conn_id, status, /* NOLINT */
                    base::Owned(params));
 }
 
@@ -420,7 +422,9 @@ void read_using_char_uuid_cb(uint16_t conn_id, tGATT_STATUS status,
   CHECK(len <= BTGATT_MAX_ATTR_LEN);
   if (len > 0) memcpy(params->value.value, value, len);
 
-  CLI_CBACK_IN_JNI(read_characteristic_cb, conn_id, status,
+  // clang-tidy analyzer complains about |params| is leaked.  It doesn't know
+  // that |param| will be freed by the callback function.
+  CLI_CBACK_IN_JNI(read_characteristic_cb, conn_id, status, /* NOLINT */
                    base::Owned(params));
 }
 
@@ -445,7 +449,10 @@ void read_desc_cb(uint16_t conn_id, tGATT_STATUS status, uint16_t handle,
   CHECK(len <= BTGATT_MAX_ATTR_LEN);
   if (len > 0) memcpy(params->value.value, value, len);
 
-  CLI_CBACK_IN_JNI(read_descriptor_cb, conn_id, status, base::Owned(params));
+  // clang-tidy analyzer complains about |params| is leaked.  It doesn't know
+  // that |param| will be freed by the callback function.
+  CLI_CBACK_IN_JNI(read_descriptor_cb, conn_id, status,
+                   base::Owned(params)); /* NOLINT */
 }
 
 bt_status_t btif_gattc_read_char_descr(int conn_id, uint16_t handle,
