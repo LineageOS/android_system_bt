@@ -998,54 +998,42 @@ uint8_t gatt_cmd_to_rsp_code(uint8_t cmd_code) {
   }
   return rsp_code;
 }
-/*******************************************************************************
- *
- * Function         gatt_cl_send_next_cmd_inq
- *
- * Description      Find next command in queue and sent to server
- *
- * Returns          true if command sent, otherwise false.
- *
- ******************************************************************************/
+
+/** Find next command in queue and sent to server */
 bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb) {
-  tGATT_CMD_Q* p_cmd = &tcb.cl_cmd_q[tcb.pending_cl_req];
-  bool sent = false;
-  uint8_t rsp_code;
-  tGATT_CLCB* p_clcb = NULL;
-  tGATT_STATUS att_ret = GATT_SUCCESS;
+  while (!tcb.cl_cmd_q.empty()) {
+    tGATT_CMD_Q& cmd = tcb.cl_cmd_q.front();
+    if (!cmd.to_send || cmd.p_cmd == NULL) return false;
 
-  while (!sent && tcb.pending_cl_req != tcb.next_slot_inq && p_cmd->to_send &&
-         p_cmd->p_cmd != NULL) {
-    att_ret = attp_send_msg_to_l2cap(tcb, p_cmd->p_cmd);
-
-    if (att_ret == GATT_SUCCESS || att_ret == GATT_CONGESTED) {
-      sent = true;
-      p_cmd->to_send = false;
-      p_cmd->p_cmd = NULL;
-
-      /* dequeue the request if is write command or sign write */
-      if (p_cmd->op_code != GATT_CMD_WRITE &&
-          p_cmd->op_code != GATT_SIGN_CMD_WRITE) {
-        gatt_start_rsp_timer(p_cmd->clcb_idx);
-      } else {
-        p_clcb = gatt_cmd_dequeue(tcb, &rsp_code);
-
-        /* if no ack needed, keep sending */
-        if (att_ret == GATT_SUCCESS) sent = false;
-
-        p_cmd = &tcb.cl_cmd_q[tcb.pending_cl_req];
-        /* send command complete callback here */
-        gatt_end_operation(p_clcb, att_ret, NULL);
-      }
-    } else {
-      GATT_TRACE_ERROR("gatt_cl_send_next_cmd_inq: L2CAP sent error");
-
-      memset(p_cmd, 0, sizeof(tGATT_CMD_Q));
-      tcb.pending_cl_req++;
-      p_cmd = &tcb.cl_cmd_q[tcb.pending_cl_req];
+    tGATT_STATUS att_ret = attp_send_msg_to_l2cap(tcb, cmd.p_cmd);
+    if (att_ret != GATT_SUCCESS && att_ret != GATT_CONGESTED) {
+      GATT_TRACE_ERROR("%s: L2CAP sent error", __func__);
+      tcb.cl_cmd_q.pop();
+      continue;
     }
+
+    cmd.to_send = false;
+    cmd.p_cmd = NULL;
+
+    if (cmd.op_code == GATT_CMD_WRITE || cmd.op_code == GATT_SIGN_CMD_WRITE) {
+      /* dequeue the request if is write command or sign write */
+      uint8_t rsp_code;
+      tGATT_CLCB* p_clcb = gatt_cmd_dequeue(tcb, &rsp_code);
+
+      /* send command complete callback here */
+      gatt_end_operation(p_clcb, att_ret, NULL);
+
+      /* if no ack needed, keep sending */
+      if (att_ret == GATT_SUCCESS) continue;
+
+      return true;
+    }
+
+    gatt_start_rsp_timer(cmd.clcb_idx);
+    return true;
   }
-  return sent;
+
+  return false;
 }
 
 /*******************************************************************************
@@ -1062,9 +1050,9 @@ bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb) {
 void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint8_t op_code,
                                    uint16_t len, uint8_t* p_data) {
   tGATT_CLCB* p_clcb = NULL;
-  uint8_t rsp_code;
 
   if (op_code != GATT_HANDLE_VALUE_IND && op_code != GATT_HANDLE_VALUE_NOTIF) {
+    uint8_t rsp_code;
     p_clcb = gatt_cmd_dequeue(tcb, &rsp_code);
 
     rsp_code = gatt_cmd_to_rsp_code(rsp_code);

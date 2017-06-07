@@ -289,10 +289,8 @@ typedef struct {
   uint8_t prep_cnt[GATT_MAX_APPS];
   uint8_t ind_count;
 
-  tGATT_CMD_Q cl_cmd_q[GATT_CL_MAX_LCB];
+  std::queue<tGATT_CMD_Q> cl_cmd_q;
   alarm_t* ind_ack_timer; /* local app confirm to indication timer */
-  uint8_t pending_cl_req;
-  uint8_t next_slot_inq; /* index of next available slot in queue */
 
   bool in_use;
   uint8_t tcb_idx;
@@ -546,9 +544,9 @@ extern void gatt_end_operation(tGATT_CLCB* p_clcb, tGATT_STATUS status,
 extern void gatt_act_discovery(tGATT_CLCB* p_clcb);
 extern void gatt_act_read(tGATT_CLCB* p_clcb, uint16_t offset);
 extern void gatt_act_write(tGATT_CLCB* p_clcb, uint8_t sec_act);
-extern bool gatt_cmd_enq(tGATT_TCB& tcb, uint16_t clcb_idx, bool to_send,
-                         uint8_t op_code, BT_HDR* p_buf);
 extern tGATT_CLCB* gatt_cmd_dequeue(tGATT_TCB& tcb, uint8_t* p_opcode);
+extern void gatt_cmd_enq(tGATT_TCB& tcb, uint16_t clcb_idx, bool to_send,
+                         uint8_t op_code, BT_HDR* p_buf);
 extern void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint8_t op_code,
                                           uint16_t len, uint8_t* p_data);
 extern void gatt_send_queue_write_cancel(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
