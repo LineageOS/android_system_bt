@@ -241,10 +241,13 @@ std::list<tGATT_HDL_LIST_ELEM>::iterator gatt_find_hdl_buffer_by_app_id(
  * ID.
  */
 void gatt_free_srvc_db_buffer_app_id(tBT_UUID* p_app_id) {
-  auto end_it = gatt_cb.hdl_list_info->end();
-  for (auto it = gatt_cb.hdl_list_info->begin(); it != end_it; it++) {
+  auto it = gatt_cb.hdl_list_info->begin();
+  auto end = gatt_cb.hdl_list_info->end();
+  while (it != end) {
     if (memcmp(p_app_id, &it->asgn_range.app_uuid128, sizeof(tBT_UUID)) == 0) {
       it = gatt_cb.hdl_list_info->erase(it);
+    } else {
+      it++;
     }
   }
 }
@@ -1593,14 +1596,18 @@ bool gatt_remove_bg_dev_from_list(tGATT_REG* p_reg, BD_ADDR bd_addr) {
 }
 /** deregister all related back ground connetion device. */
 void gatt_deregister_bgdev_list(tGATT_IF gatt_if) {
+  auto it = gatt_cb.bgconn_dev.begin();
+  auto end = gatt_cb.bgconn_dev.end();
   /* update the BG conn device list */
-  for (auto it = gatt_cb.bgconn_dev.begin(); it != gatt_cb.bgconn_dev.end();
-       it++) {
+  while (it != end) {
     it->gatt_if.erase(gatt_if);
-    if (it->gatt_if.size() == 0) {
-      BTM_BleUpdateBgConnDev(false, it->remote_bda);
-      it = gatt_cb.bgconn_dev.erase(it);
+    if (it->gatt_if.size()) {
+      it++;
+      continue;
     }
+
+    BTM_BleUpdateBgConnDev(false, it->remote_bda);
+    it = gatt_cb.bgconn_dev.erase(it);
   }
 }
 
