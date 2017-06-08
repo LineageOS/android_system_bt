@@ -1034,45 +1034,46 @@ bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb) {
   return false;
 }
 
-/*******************************************************************************
- *
- * Function         gatt_client_handle_server_rsp
- *
- * Description      This function is called to handle the server response to
- *                  client.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
+/** This function is called to handle the server response to client */
 void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint8_t op_code,
                                    uint16_t len, uint8_t* p_data) {
-  tGATT_CLCB* p_clcb = NULL;
-
-  if (op_code != GATT_HANDLE_VALUE_IND && op_code != GATT_HANDLE_VALUE_NOTIF) {
-    uint8_t rsp_code;
-    p_clcb = gatt_cmd_dequeue(tcb, &rsp_code);
-
-    rsp_code = gatt_cmd_to_rsp_code(rsp_code);
-
-    if (p_clcb == NULL || (rsp_code != op_code && op_code != GATT_RSP_ERROR)) {
-      GATT_TRACE_WARNING(
-          "ATT - Ignore wrong response. Receives (%02x) Request(%02x) Ignored",
-          op_code, rsp_code);
+  if (op_code == GATT_HANDLE_VALUE_IND || op_code == GATT_HANDLE_VALUE_NOTIF) {
+    if (len >= tcb.payload_size) {
+      GATT_TRACE_ERROR("%s: invalid indicate pkt size: %d, PDU size: %d",
+                       __func__, len + 1, tcb.payload_size);
       return;
     }
 
-    alarm_cancel(p_clcb->gatt_rsp_timer_ent);
-    p_clcb->retry_count = 0;
+    gatt_process_notification(tcb, op_code, len, p_data);
+    return;
   }
+
+  uint8_t cmd_code = 0;
+  tGATT_CLCB* p_clcb = gatt_cmd_dequeue(tcb, &cmd_code);
+  uint8_t rsp_code = gatt_cmd_to_rsp_code(cmd_code);
+  if (!p_clcb || (rsp_code != op_code && op_code != GATT_RSP_ERROR)) {
+    GATT_TRACE_WARNING(
+        "ATT - Ignore wrong response. Receives (%02x) Request(%02x) Ignored",
+        op_code, rsp_code);
+    return;
+  }
+
+  if (!p_clcb->in_use) {
+    GATT_TRACE_WARNING("ATT - clcb already not in use, ignoring response");
+    gatt_cl_send_next_cmd_inq(tcb);
+    return;
+  }
+
+  alarm_cancel(p_clcb->gatt_rsp_timer_ent);
+  p_clcb->retry_count = 0;
+
   /* the size of the message may not be bigger than the local max PDU size*/
   /* The message has to be smaller than the agreed MTU, len does not count
    * op_code */
   if (len >= tcb.payload_size) {
-    GATT_TRACE_ERROR("invalid response/indicate pkt size: %d, PDU size: %d",
-                     len + 1, tcb.payload_size);
-    if (op_code != GATT_HANDLE_VALUE_NOTIF && op_code != GATT_HANDLE_VALUE_IND)
-      gatt_end_operation(p_clcb, GATT_ERROR, NULL);
+    GATT_TRACE_ERROR("%s: invalid response pkt size: %d, PDU size: %d",
+                     __func__, len + 1, tcb.payload_size);
+    gatt_end_operation(p_clcb, GATT_ERROR, NULL);
   } else {
     switch (op_code) {
       case GATT_RSP_ERROR:
@@ -1114,20 +1115,11 @@ void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint8_t op_code,
         gatt_end_operation(p_clcb, p_clcb->status, NULL);
         break;
 
-      case GATT_HANDLE_VALUE_NOTIF:
-      case GATT_HANDLE_VALUE_IND:
-        gatt_process_notification(tcb, op_code, len, p_data);
-        break;
-
       default:
-        GATT_TRACE_ERROR("Unknown opcode = %d", op_code);
+        GATT_TRACE_ERROR("%s: Unknown opcode = %d", __func__, op_code);
         break;
     }
   }
 
-  if (op_code != GATT_HANDLE_VALUE_IND && op_code != GATT_HANDLE_VALUE_NOTIF) {
-    gatt_cl_send_next_cmd_inq(tcb);
-  }
-
-  return;
+  gatt_cl_send_next_cmd_inq(tcb);
 }
