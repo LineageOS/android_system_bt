@@ -1042,6 +1042,7 @@ tGATT_CLCB* gatt_clcb_alloc(uint16_t conn_id) {
       break;
     }
   }
+
   return p_clcb;
 }
 
@@ -1386,63 +1387,50 @@ void gatt_end_operation(tGATT_CLCB* p_clcb, tGATT_STATUS status, void* p_data) {
         operation, p_disc_cmpl_cb, p_cmpl_cb);
 }
 
-/*******************************************************************************
- *
- * Function         gatt_cleanup_upon_disc
- *
- * Description      This function cleans up the control blocks when L2CAP
- *                  channel disconnect.
- *
- * Returns          16 bits uuid.
- *
- ******************************************************************************/
+/** This function cleans up the control blocks when L2CAP channel disconnect */
 void gatt_cleanup_upon_disc(BD_ADDR bda, uint16_t reason,
                             tBT_TRANSPORT transport) {
-  tGATT_TCB* p_tcb = NULL;
-  tGATT_CLCB* p_clcb;
-  uint8_t i;
-  uint16_t conn_id;
-  tGATT_REG* p_reg = NULL;
+  GATT_TRACE_DEBUG("%s", __func__);
 
-  GATT_TRACE_DEBUG("gatt_cleanup_upon_disc ");
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bda, transport);
+  if (!p_tcb) return;
 
-  p_tcb = gatt_find_tcb_by_addr(bda, transport);
-  if (p_tcb != NULL) {
-    GATT_TRACE_DEBUG("found p_tcb ");
-    gatt_set_ch_state(p_tcb, GATT_CH_CLOSE);
-    for (i = 0; i < GATT_CL_MAX_LCB; i++) {
-      p_clcb = &gatt_cb.clcb[i];
-      if (p_clcb->in_use && p_clcb->p_tcb == p_tcb) {
-        alarm_cancel(p_clcb->gatt_rsp_timer_ent);
-        GATT_TRACE_DEBUG("found p_clcb conn_id=%d", p_clcb->conn_id);
-        if (p_clcb->operation != GATTC_OPTYPE_NONE)
-          gatt_end_operation(p_clcb, GATT_ERROR, NULL);
+  gatt_set_ch_state(p_tcb, GATT_CH_CLOSE);
+  for (uint8_t i = 0; i < GATT_CL_MAX_LCB; i++) {
+    tGATT_CLCB* p_clcb = &gatt_cb.clcb[i];
+    if (!p_clcb->in_use || p_clcb->p_tcb != p_tcb) continue;
 
-        gatt_clcb_dealloc(p_clcb);
-      }
+    alarm_cancel(p_clcb->gatt_rsp_timer_ent);
+    GATT_TRACE_DEBUG("found p_clcb conn_id=%d", p_clcb->conn_id);
+    if (p_clcb->operation == GATTC_OPTYPE_NONE) {
+      gatt_clcb_dealloc(p_clcb);
+      continue;
     }
 
-    alarm_free(p_tcb->ind_ack_timer);
-    p_tcb->ind_ack_timer = NULL;
-    alarm_free(p_tcb->conf_timer);
-    p_tcb->conf_timer = NULL;
-    gatt_free_pending_ind(p_tcb);
-    fixed_queue_free(p_tcb->sr_cmd.multi_rsp_q, NULL);
-    p_tcb->sr_cmd.multi_rsp_q = NULL;
-
-    for (i = 0; i < GATT_MAX_APPS; i++) {
-      p_reg = &gatt_cb.cl_rcb[i];
-      if (p_reg->in_use && p_reg->app_cb.p_conn_cb) {
-        conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, p_reg->gatt_if);
-        GATT_TRACE_DEBUG("found p_reg tcb_idx=%d gatt_if=%d  conn_id=0x%x",
-                         p_tcb->tcb_idx, p_reg->gatt_if, conn_id);
-        (*p_reg->app_cb.p_conn_cb)(p_reg->gatt_if, bda, conn_id, false, reason,
-                                   transport);
-      }
-    }
-    *p_tcb = tGATT_TCB();
+    gatt_end_operation(p_clcb, GATT_ERROR, NULL);
   }
-  GATT_TRACE_DEBUG("exit gatt_cleanup_upon_disc ");
+
+  alarm_free(p_tcb->ind_ack_timer);
+  p_tcb->ind_ack_timer = NULL;
+  alarm_free(p_tcb->conf_timer);
+  p_tcb->conf_timer = NULL;
+  gatt_free_pending_ind(p_tcb);
+  fixed_queue_free(p_tcb->sr_cmd.multi_rsp_q, NULL);
+  p_tcb->sr_cmd.multi_rsp_q = NULL;
+
+  for (uint8_t i = 0; i < GATT_MAX_APPS; i++) {
+    tGATT_REG* p_reg = &gatt_cb.cl_rcb[i];
+    if (p_reg->in_use && p_reg->app_cb.p_conn_cb) {
+      uint16_t conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, p_reg->gatt_if);
+      GATT_TRACE_DEBUG("found p_reg tcb_idx=%d gatt_if=%d  conn_id=0x%x",
+                       p_tcb->tcb_idx, p_reg->gatt_if, conn_id);
+      (*p_reg->app_cb.p_conn_cb)(p_reg->gatt_if, bda, conn_id, false, reason,
+                                 transport);
+    }
+  }
+
+  *p_tcb = tGATT_TCB();
+  GATT_TRACE_DEBUG("%s: exit", __func__);
 }
 /*******************************************************************************
  *
