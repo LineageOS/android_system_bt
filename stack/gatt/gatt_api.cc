@@ -653,13 +653,10 @@ tGATT_STATUS GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id,
  *
  ******************************************************************************/
 tGATT_STATUS GATTC_ConfigureMTU(uint16_t conn_id, uint16_t mtu) {
-  uint8_t ret = GATT_NO_RESOURCES;
   tGATT_IF gatt_if = GATT_GET_GATT_IF(conn_id);
   uint8_t tcb_idx = GATT_GET_TCB_IDX(conn_id);
   tGATT_TCB* p_tcb = gatt_get_tcb_by_idx(tcb_idx);
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
-
-  tGATT_CLCB* p_clcb;
 
   GATT_TRACE_API("GATTC_ConfigureMTU conn_id=%d mtu=%d", conn_id, mtu);
 
@@ -678,16 +675,13 @@ tGATT_STATUS GATTC_ConfigureMTU(uint16_t conn_id, uint16_t mtu) {
     return GATT_BUSY;
   }
 
-  p_clcb = gatt_clcb_alloc(conn_id);
-  if (p_clcb != NULL) {
-    p_clcb->p_tcb->payload_size = mtu;
-    p_clcb->operation = GATTC_OPTYPE_CONFIG;
+  tGATT_CLCB* p_clcb = gatt_clcb_alloc(conn_id);
+  if (!p_clcb) return GATT_NO_RESOURCES;
 
-    ret = attp_send_cl_msg(*p_clcb->p_tcb, p_clcb, GATT_REQ_MTU,
-                           (tGATT_CL_MSG*)&mtu);
-  }
-
-  return ret;
+  p_clcb->p_tcb->payload_size = mtu;
+  p_clcb->operation = GATTC_OPTYPE_CONFIG;
+  return attp_send_cl_msg(*p_clcb->p_tcb, p_clcb, GATT_REQ_MTU,
+                          (tGATT_CL_MSG*)&mtu);
 }
 
 void read_phy_cb(
@@ -785,8 +779,6 @@ void GATTC_SetPreferredPHY(uint16_t conn_id, uint8_t tx_phy, uint8_t rx_phy,
  ******************************************************************************/
 tGATT_STATUS GATTC_Discover(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
                             tGATT_DISC_PARAM* p_param) {
-  tGATT_STATUS status = GATT_SUCCESS;
-  tGATT_CLCB* p_clcb;
   tGATT_IF gatt_if = GATT_GET_GATT_IF(conn_id);
   uint8_t tcb_idx = GATT_GET_TCB_IDX(conn_id);
   tGATT_TCB* p_tcb = gatt_get_tcb_by_idx(tcb_idx);
@@ -801,32 +793,29 @@ tGATT_STATUS GATTC_Discover(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
     return GATT_ILLEGAL_PARAMETER;
   }
 
+  if (!GATT_HANDLE_IS_VALID(p_param->s_handle) ||
+      !GATT_HANDLE_IS_VALID(p_param->e_handle) ||
+      /* search by type does not have a valid UUID param */
+      (disc_type == GATT_DISC_SRVC_BY_UUID && p_param->service.len == 0)) {
+    return GATT_ILLEGAL_PARAMETER;
+  }
+
   if (gatt_is_clcb_allocated(conn_id)) {
     GATT_TRACE_ERROR("GATTC_Discover GATT_BUSY conn_id = %d", conn_id);
     return GATT_BUSY;
   }
 
-  p_clcb = gatt_clcb_alloc(conn_id);
-  if (p_clcb != NULL) {
-    if (!GATT_HANDLE_IS_VALID(p_param->s_handle) ||
-        !GATT_HANDLE_IS_VALID(p_param->e_handle) ||
-        /* search by type does not have a valid UUID param */
-        (disc_type == GATT_DISC_SRVC_BY_UUID && p_param->service.len == 0)) {
-      gatt_clcb_dealloc(p_clcb);
-      return GATT_ILLEGAL_PARAMETER;
-    }
+  tGATT_CLCB* p_clcb = gatt_clcb_alloc(conn_id);
+  if (!p_clcb) return GATT_NO_RESOURCES;
 
-    p_clcb->operation = GATTC_OPTYPE_DISCOVERY;
-    p_clcb->op_subtype = disc_type;
-    p_clcb->s_handle = p_param->s_handle;
-    p_clcb->e_handle = p_param->e_handle;
-    p_clcb->uuid = p_param->service;
+  p_clcb->operation = GATTC_OPTYPE_DISCOVERY;
+  p_clcb->op_subtype = disc_type;
+  p_clcb->s_handle = p_param->s_handle;
+  p_clcb->e_handle = p_param->e_handle;
+  p_clcb->uuid = p_param->service;
 
-    gatt_act_discovery(p_clcb);
-  } else {
-    status = GATT_NO_RESOURCES;
-  }
-  return status;
+  gatt_act_discovery(p_clcb);
+  return GATT_SUCCESS;
 }
 
 /*******************************************************************************
@@ -845,8 +834,6 @@ tGATT_STATUS GATTC_Discover(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
  ******************************************************************************/
 tGATT_STATUS GATTC_Read(uint16_t conn_id, tGATT_READ_TYPE type,
                         tGATT_READ_PARAM* p_read) {
-  tGATT_STATUS status = GATT_SUCCESS;
-  tGATT_CLCB* p_clcb;
   tGATT_IF gatt_if = GATT_GET_GATT_IF(conn_id);
   uint8_t tcb_idx = GATT_GET_TCB_IDX(conn_id);
   tGATT_TCB* p_tcb = gatt_get_tcb_by_idx(tcb_idx);
@@ -866,48 +853,47 @@ tGATT_STATUS GATTC_Read(uint16_t conn_id, tGATT_READ_TYPE type,
     return GATT_BUSY;
   }
 
-  p_clcb = gatt_clcb_alloc(conn_id);
-  if (p_clcb != NULL) {
-    p_clcb->operation = GATTC_OPTYPE_READ;
-    p_clcb->op_subtype = type;
-    p_clcb->auth_req = p_read->by_handle.auth_req;
-    p_clcb->counter = 0;
+  tGATT_CLCB* p_clcb = gatt_clcb_alloc(conn_id);
+  if (!p_clcb) return GATT_NO_RESOURCES;
 
-    switch (type) {
-      case GATT_READ_BY_TYPE:
-      case GATT_READ_CHAR_VALUE:
-        p_clcb->s_handle = p_read->service.s_handle;
-        p_clcb->e_handle = p_read->service.e_handle;
-        memcpy(&p_clcb->uuid, &p_read->service.uuid, sizeof(tBT_UUID));
-        break;
-      case GATT_READ_MULTIPLE: {
-        p_clcb->s_handle = 0;
-        /* copy multiple handles in CB */
-        tGATT_READ_MULTI* p_read_multi =
-            (tGATT_READ_MULTI*)osi_malloc(sizeof(tGATT_READ_MULTI));
-        p_clcb->p_attr_buf = (uint8_t*)p_read_multi;
-        memcpy(p_read_multi, &p_read->read_multiple, sizeof(tGATT_READ_MULTI));
-        break;
-      }
-      case GATT_READ_BY_HANDLE:
-      case GATT_READ_PARTIAL:
-        memset(&p_clcb->uuid, 0, sizeof(tBT_UUID));
-        p_clcb->s_handle = p_read->by_handle.handle;
+  p_clcb->operation = GATTC_OPTYPE_READ;
+  p_clcb->op_subtype = type;
+  p_clcb->auth_req = p_read->by_handle.auth_req;
+  p_clcb->counter = 0;
 
-        if (type == GATT_READ_PARTIAL) {
-          p_clcb->counter = p_read->partial.offset;
-        }
-
-        break;
-      default:
-        break;
+  switch (type) {
+    case GATT_READ_BY_TYPE:
+    case GATT_READ_CHAR_VALUE:
+      p_clcb->s_handle = p_read->service.s_handle;
+      p_clcb->e_handle = p_read->service.e_handle;
+      memcpy(&p_clcb->uuid, &p_read->service.uuid, sizeof(tBT_UUID));
+      break;
+    case GATT_READ_MULTIPLE: {
+      p_clcb->s_handle = 0;
+      /* copy multiple handles in CB */
+      tGATT_READ_MULTI* p_read_multi =
+          (tGATT_READ_MULTI*)osi_malloc(sizeof(tGATT_READ_MULTI));
+      p_clcb->p_attr_buf = (uint8_t*)p_read_multi;
+      memcpy(p_read_multi, &p_read->read_multiple, sizeof(tGATT_READ_MULTI));
+      break;
     }
-    /* start security check */
-    gatt_security_check_start(p_clcb);
-  } else {
-    status = GATT_NO_RESOURCES;
+    case GATT_READ_BY_HANDLE:
+    case GATT_READ_PARTIAL:
+      memset(&p_clcb->uuid, 0, sizeof(tBT_UUID));
+      p_clcb->s_handle = p_read->by_handle.handle;
+
+      if (type == GATT_READ_PARTIAL) {
+        p_clcb->counter = p_read->partial.offset;
+      }
+
+      break;
+    default:
+      break;
   }
-  return status;
+
+  /* start security check */
+  gatt_security_check_start(p_clcb);
+  return GATT_SUCCESS;
 }
 
 /*******************************************************************************
@@ -926,9 +912,6 @@ tGATT_STATUS GATTC_Read(uint16_t conn_id, tGATT_READ_TYPE type,
  ******************************************************************************/
 tGATT_STATUS GATTC_Write(uint16_t conn_id, tGATT_WRITE_TYPE type,
                          tGATT_VALUE* p_write) {
-  tGATT_STATUS status = GATT_SUCCESS;
-  tGATT_CLCB* p_clcb;
-  tGATT_VALUE* p;
   tGATT_IF gatt_if = GATT_GET_GATT_IF(conn_id);
   uint8_t tcb_idx = GATT_GET_TCB_IDX(conn_id);
   tGATT_TCB* p_tcb = gatt_get_tcb_by_idx(tcb_idx);
@@ -947,26 +930,24 @@ tGATT_STATUS GATTC_Write(uint16_t conn_id, tGATT_WRITE_TYPE type,
     return GATT_BUSY;
   }
 
-  p_clcb = gatt_clcb_alloc(conn_id);
-  if (p_clcb != NULL) {
-    p_clcb->operation = GATTC_OPTYPE_WRITE;
-    p_clcb->op_subtype = type;
-    p_clcb->auth_req = p_write->auth_req;
+  tGATT_CLCB* p_clcb = gatt_clcb_alloc(conn_id);
+  if (!p_clcb) return GATT_NO_RESOURCES;
 
-    p_clcb->p_attr_buf = (uint8_t*)osi_malloc(sizeof(tGATT_VALUE));
-    memcpy(p_clcb->p_attr_buf, (void*)p_write, sizeof(tGATT_VALUE));
+  p_clcb->operation = GATTC_OPTYPE_WRITE;
+  p_clcb->op_subtype = type;
+  p_clcb->auth_req = p_write->auth_req;
 
-    p = (tGATT_VALUE*)p_clcb->p_attr_buf;
-    if (type == GATT_WRITE_PREPARE) {
-      p_clcb->start_offset = p_write->offset;
-      p->offset = 0;
-    }
+  p_clcb->p_attr_buf = (uint8_t*)osi_malloc(sizeof(tGATT_VALUE));
+  memcpy(p_clcb->p_attr_buf, (void*)p_write, sizeof(tGATT_VALUE));
 
-    gatt_security_check_start(p_clcb);
-  } else {
-    status = GATT_NO_RESOURCES;
+  tGATT_VALUE* p = (tGATT_VALUE*)p_clcb->p_attr_buf;
+  if (type == GATT_WRITE_PREPARE) {
+    p_clcb->start_offset = p_write->offset;
+    p->offset = 0;
   }
-  return status;
+
+  gatt_security_check_start(p_clcb);
+  return GATT_SUCCESS;
 }
 
 /*******************************************************************************
@@ -984,9 +965,6 @@ tGATT_STATUS GATTC_Write(uint16_t conn_id, tGATT_WRITE_TYPE type,
  *
  ******************************************************************************/
 tGATT_STATUS GATTC_ExecuteWrite(uint16_t conn_id, bool is_execute) {
-  tGATT_STATUS status = GATT_SUCCESS;
-  tGATT_CLCB* p_clcb;
-  tGATT_EXEC_FLAG flag;
   tGATT_IF gatt_if = GATT_GET_GATT_IF(conn_id);
   uint8_t tcb_idx = GATT_GET_TCB_IDX(conn_id);
   tGATT_TCB* p_tcb = gatt_get_tcb_by_idx(tcb_idx);
@@ -1005,16 +983,14 @@ tGATT_STATUS GATTC_ExecuteWrite(uint16_t conn_id, bool is_execute) {
     return GATT_BUSY;
   }
 
-  p_clcb = gatt_clcb_alloc(conn_id);
-  if (p_clcb != NULL) {
-    p_clcb->operation = GATTC_OPTYPE_EXE_WRITE;
-    flag = is_execute ? GATT_PREP_WRITE_EXEC : GATT_PREP_WRITE_CANCEL;
-    gatt_send_queue_write_cancel(*p_clcb->p_tcb, p_clcb, flag);
-  } else {
-    GATT_TRACE_ERROR("Unable to allocate client CB for conn_id %d ", conn_id);
-    status = GATT_NO_RESOURCES;
-  }
-  return status;
+  tGATT_CLCB* p_clcb = gatt_clcb_alloc(conn_id);
+  if (!p_clcb) return GATT_NO_RESOURCES;
+
+  p_clcb->operation = GATTC_OPTYPE_EXE_WRITE;
+  tGATT_EXEC_FLAG flag =
+      is_execute ? GATT_PREP_WRITE_EXEC : GATT_PREP_WRITE_CANCEL;
+  gatt_send_queue_write_cancel(*p_clcb->p_tcb, p_clcb, flag);
+  return GATT_SUCCESS;
 }
 
 /*******************************************************************************
