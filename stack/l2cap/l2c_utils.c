@@ -1753,6 +1753,12 @@ void l2cu_release_ccb (tL2C_CCB *p_ccb)
     {
         if (!p_lcb->ccb_queue.p_first_ccb)
         {
+            // Closing a security channel on LE device should not start connection
+            // timeout
+            if (p_lcb->transport == BT_TRANSPORT_LE &&
+                p_ccb->local_cid == L2CAP_SMP_CID)
+                return;
+            
             l2cu_no_dynamic_ccbs (p_lcb);
         }
         else
