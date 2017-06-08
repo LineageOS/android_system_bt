@@ -109,7 +109,7 @@ void gatt_act_discovery(tGATT_CLCB* p_clcb) {
                p_clcb->uuid.len);
     }
 
-    st = attp_send_cl_msg(*p_clcb->p_tcb, p_clcb->clcb_idx, op_code, &cl_req);
+    st = attp_send_cl_msg(*p_clcb->p_tcb, p_clcb, op_code, &cl_req);
 
     if (st != GATT_SUCCESS && st != GATT_CMD_STARTED) {
       gatt_end_operation(p_clcb, GATT_ERROR, NULL);
@@ -191,7 +191,7 @@ void gatt_act_read(tGATT_CLCB* p_clcb, uint16_t offset) {
       break;
   }
 
-  if (op_code != 0) rt = attp_send_cl_msg(tcb, p_clcb->clcb_idx, op_code, &msg);
+  if (op_code != 0) rt = attp_send_cl_msg(tcb, p_clcb, op_code, &msg);
 
   if (op_code == 0 || (rt != GATT_SUCCESS && rt != GATT_CMD_STARTED)) {
     gatt_end_operation(p_clcb, rt, NULL);
@@ -218,7 +218,7 @@ void gatt_act_write(tGATT_CLCB* p_clcb, uint8_t sec_act) {
         p_clcb->s_handle = p_attr->handle;
         op_code = (sec_act == GATT_SEC_SIGN_DATA) ? GATT_SIGN_CMD_WRITE
                                                   : GATT_CMD_WRITE;
-        rt = gatt_send_write_msg(tcb, p_clcb->clcb_idx, op_code, p_attr->handle,
+        rt = gatt_send_write_msg(tcb, p_clcb, op_code, p_attr->handle,
                                  p_attr->len, 0, p_attr->value);
         break;
 
@@ -226,9 +226,8 @@ void gatt_act_write(tGATT_CLCB* p_clcb, uint8_t sec_act) {
         if (p_attr->len <= (tcb.payload_size - GATT_HDR_SIZE)) {
           p_clcb->s_handle = p_attr->handle;
 
-          rt = gatt_send_write_msg(tcb, p_clcb->clcb_idx, GATT_REQ_WRITE,
-                                   p_attr->handle, p_attr->len, 0,
-                                   p_attr->value);
+          rt = gatt_send_write_msg(tcb, p_clcb, GATT_REQ_WRITE, p_attr->handle,
+                                   p_attr->len, 0, p_attr->value);
         } else /* prepare write for long attribute */
         {
           gatt_send_prepare_write(tcb, p_clcb);
@@ -271,8 +270,7 @@ void gatt_send_queue_write_cancel(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
 
   GATT_TRACE_DEBUG("gatt_send_queue_write_cancel ");
 
-  rt = attp_send_cl_msg(tcb, p_clcb->clcb_idx, GATT_REQ_EXEC_WRITE,
-                        (tGATT_CL_MSG*)&flag);
+  rt = attp_send_cl_msg(tcb, p_clcb, GATT_REQ_EXEC_WRITE, (tGATT_CL_MSG*)&flag);
 
   if (rt != GATT_SUCCESS) {
     gatt_end_operation(p_clcb, rt, NULL);
@@ -348,8 +346,8 @@ void gatt_send_prepare_write(tGATT_TCB& tcb, tGATT_CLCB* p_clcb) {
 
   GATT_TRACE_DEBUG("offset =0x%x len=%d", offset, to_send);
 
-  rt = gatt_send_write_msg(tcb, p_clcb->clcb_idx, GATT_REQ_PREPARE_WRITE,
-                           p_attr->handle, to_send,         /* length */
+  rt = gatt_send_write_msg(tcb, p_clcb, GATT_REQ_PREPARE_WRITE, p_attr->handle,
+                           to_send,                         /* length */
                            offset,                          /* used as offset */
                            p_attr->value + p_attr->offset); /* data */
 
@@ -620,7 +618,7 @@ void gatt_process_notification(tGATT_TCB& tcb, uint8_t op_code, uint16_t len,
   if (!GATT_HANDLE_IS_VALID(value.handle)) {
     /* illegal handle, send ack now */
     if (op_code == GATT_HANDLE_VALUE_IND)
-      attp_send_cl_msg(tcb, 0, GATT_HANDLE_VALUE_CONF, NULL);
+      attp_send_cl_msg(tcb, nullptr, GATT_HANDLE_VALUE_CONF, NULL);
     return;
   }
 
@@ -656,7 +654,7 @@ void gatt_process_notification(tGATT_TCB& tcb, uint8_t op_code, uint16_t len,
     if (tcb.ind_count > 0)
       gatt_start_ind_ack_timer(tcb);
     else /* no app to indicate, or invalid handle */
-      attp_send_cl_msg(tcb, 0, GATT_HANDLE_VALUE_CONF, NULL);
+      attp_send_cl_msg(tcb, nullptr, GATT_HANDLE_VALUE_CONF, NULL);
   }
 
   encrypt_status = gatt_get_link_encrypt_status(tcb);
@@ -998,54 +996,42 @@ uint8_t gatt_cmd_to_rsp_code(uint8_t cmd_code) {
   }
   return rsp_code;
 }
-/*******************************************************************************
- *
- * Function         gatt_cl_send_next_cmd_inq
- *
- * Description      Find next command in queue and sent to server
- *
- * Returns          true if command sent, otherwise false.
- *
- ******************************************************************************/
+
+/** Find next command in queue and sent to server */
 bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb) {
-  tGATT_CMD_Q* p_cmd = &tcb.cl_cmd_q[tcb.pending_cl_req];
-  bool sent = false;
-  uint8_t rsp_code;
-  tGATT_CLCB* p_clcb = NULL;
-  tGATT_STATUS att_ret = GATT_SUCCESS;
+  while (!tcb.cl_cmd_q.empty()) {
+    tGATT_CMD_Q& cmd = tcb.cl_cmd_q.front();
+    if (!cmd.to_send || cmd.p_cmd == NULL) return false;
 
-  while (!sent && tcb.pending_cl_req != tcb.next_slot_inq && p_cmd->to_send &&
-         p_cmd->p_cmd != NULL) {
-    att_ret = attp_send_msg_to_l2cap(tcb, p_cmd->p_cmd);
-
-    if (att_ret == GATT_SUCCESS || att_ret == GATT_CONGESTED) {
-      sent = true;
-      p_cmd->to_send = false;
-      p_cmd->p_cmd = NULL;
-
-      /* dequeue the request if is write command or sign write */
-      if (p_cmd->op_code != GATT_CMD_WRITE &&
-          p_cmd->op_code != GATT_SIGN_CMD_WRITE) {
-        gatt_start_rsp_timer(p_cmd->clcb_idx);
-      } else {
-        p_clcb = gatt_cmd_dequeue(tcb, &rsp_code);
-
-        /* if no ack needed, keep sending */
-        if (att_ret == GATT_SUCCESS) sent = false;
-
-        p_cmd = &tcb.cl_cmd_q[tcb.pending_cl_req];
-        /* send command complete callback here */
-        gatt_end_operation(p_clcb, att_ret, NULL);
-      }
-    } else {
-      GATT_TRACE_ERROR("gatt_cl_send_next_cmd_inq: L2CAP sent error");
-
-      memset(p_cmd, 0, sizeof(tGATT_CMD_Q));
-      tcb.pending_cl_req++;
-      p_cmd = &tcb.cl_cmd_q[tcb.pending_cl_req];
+    tGATT_STATUS att_ret = attp_send_msg_to_l2cap(tcb, cmd.p_cmd);
+    if (att_ret != GATT_SUCCESS && att_ret != GATT_CONGESTED) {
+      GATT_TRACE_ERROR("%s: L2CAP sent error", __func__);
+      tcb.cl_cmd_q.pop();
+      continue;
     }
+
+    cmd.to_send = false;
+    cmd.p_cmd = NULL;
+
+    if (cmd.op_code == GATT_CMD_WRITE || cmd.op_code == GATT_SIGN_CMD_WRITE) {
+      /* dequeue the request if is write command or sign write */
+      uint8_t rsp_code;
+      tGATT_CLCB* p_clcb = gatt_cmd_dequeue(tcb, &rsp_code);
+
+      /* send command complete callback here */
+      gatt_end_operation(p_clcb, att_ret, NULL);
+
+      /* if no ack needed, keep sending */
+      if (att_ret == GATT_SUCCESS) continue;
+
+      return true;
+    }
+
+    gatt_start_rsp_timer(cmd.p_clcb);
+    return true;
   }
-  return sent;
+
+  return false;
 }
 
 /*******************************************************************************
@@ -1062,24 +1048,22 @@ bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb) {
 void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint8_t op_code,
                                    uint16_t len, uint8_t* p_data) {
   tGATT_CLCB* p_clcb = NULL;
-  uint8_t rsp_code;
 
   if (op_code != GATT_HANDLE_VALUE_IND && op_code != GATT_HANDLE_VALUE_NOTIF) {
+    uint8_t rsp_code;
     p_clcb = gatt_cmd_dequeue(tcb, &rsp_code);
 
     rsp_code = gatt_cmd_to_rsp_code(rsp_code);
 
     if (p_clcb == NULL || (rsp_code != op_code && op_code != GATT_RSP_ERROR)) {
       GATT_TRACE_WARNING(
-          "ATT - Ignore wrong response. Receives (%02x) \
-                                Request(%02x) Ignored",
+          "ATT - Ignore wrong response. Receives (%02x) Request(%02x) Ignored",
           op_code, rsp_code);
-
       return;
-    } else {
-      alarm_cancel(p_clcb->gatt_rsp_timer_ent);
-      p_clcb->retry_count = 0;
     }
+
+    alarm_cancel(p_clcb->gatt_rsp_timer_ent);
+    p_clcb->retry_count = 0;
   }
   /* the size of the message may not be bigger than the local max PDU size*/
   /* The message has to be smaller than the agreed MTU, len does not count

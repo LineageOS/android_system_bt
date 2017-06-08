@@ -30,6 +30,7 @@
 #include <base/callback.h>
 #include "bt_common.h"
 #include "bt_target.h"
+#include "bta_closure_api.h"
 #include "bta_gattc_int.h"
 #include "bta_sys.h"
 #include "btif/include/btif_debug_conn.h"
@@ -157,15 +158,17 @@ void bta_gattc_disable() {
   }
 }
 
-/*******************************************************************************
- *
- * Function         bta_gattc_register
- *
- * Description      Register a GATT client application with BTA.
- *
- * Returns          void
- *
- ******************************************************************************/
+/** start an application interface */
+void bta_gattc_start_if(uint8_t client_if) {
+  if (!bta_gattc_cl_get_regcb(client_if)) {
+    APPL_TRACE_ERROR("Unable to start app.: Unknown interface =%d", client_if);
+    return;
+  }
+
+  GATT_StartIf(client_if);
+}
+
+/** Register a GATT client application with BTA */
 void bta_gattc_register(tBT_UUID* p_app_uuid, tBTA_GATTC_CBACK* p_cback,
                         BtaAppRegisterCallback cb) {
   tBTA_GATT_STATUS status = BTA_GATT_NO_RESOURCES;
@@ -192,12 +195,8 @@ void bta_gattc_register(tBT_UUID* p_app_uuid, tBTA_GATTC_CBACK* p_cback,
         /* BTA use the same client interface as BTE GATT statck */
         client_if = bta_gattc_cb.cl_rcb[i].client_if;
 
-        tBTA_GATTC_INT_START_IF* p_buf = (tBTA_GATTC_INT_START_IF*)osi_malloc(
-            sizeof(tBTA_GATTC_INT_START_IF));
-        p_buf->hdr.event = BTA_GATTC_INT_START_IF_EVT;
-        p_buf->client_if = bta_gattc_cb.cl_rcb[i].client_if;
+        do_in_bta_thread(FROM_HERE, base::Bind(&bta_gattc_start_if, client_if));
 
-        bta_sys_sendmsg(p_buf);
         status = BTA_GATT_OK;
         break;
       }
@@ -206,23 +205,7 @@ void bta_gattc_register(tBT_UUID* p_app_uuid, tBTA_GATTC_CBACK* p_cback,
 
   if (!cb.is_null()) cb.Run(client_if, status);
 }
-/*******************************************************************************
- *
- * Function         bta_gattc_start_if
- *
- * Description      start an application interface.
- *
- * Returns          none.
- *
- ******************************************************************************/
-void bta_gattc_start_if(tBTA_GATTC_DATA* p_msg) {
-  if (bta_gattc_cl_get_regcb(p_msg->int_start_if.client_if) != NULL) {
-    GATT_StartIf(p_msg->int_start_if.client_if);
-  } else {
-    APPL_TRACE_ERROR("Unable to start app.: Unknown interface =%d",
-                     p_msg->int_start_if.client_if);
-  }
-}
+
 /*******************************************************************************
  *
  * Function         bta_gattc_deregister
@@ -341,26 +324,18 @@ void bta_gattc_process_api_open_cancel(tBTA_GATTC_DATA* p_msg) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         bta_gattc_process_enc_cmpl
- *
- * Description      process encryption complete message.
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_gattc_process_enc_cmpl(tBTA_GATTC_DATA* p_msg) {
+/** process encryption complete message */
+void bta_gattc_process_enc_cmpl(tGATT_IF client_if, bt_bdaddr_t bda) {
   tBTA_GATTC_RCB* p_clreg;
   tBTA_GATTC cb_data;
 
-  p_clreg = bta_gattc_cl_get_regcb(p_msg->enc_cmpl.client_if);
+  p_clreg = bta_gattc_cl_get_regcb(client_if);
 
   if (p_clreg && p_clreg->p_cback) {
     memset(&cb_data, 0, sizeof(tBTA_GATTC));
 
-    cb_data.enc_cmpl.client_if = p_msg->enc_cmpl.client_if;
-    bdcpy(cb_data.enc_cmpl.remote_bda, p_msg->enc_cmpl.remote_bda);
+    cb_data.enc_cmpl.client_if = client_if;
+    memcpy(cb_data.enc_cmpl.remote_bda, bda.address, BD_ADDR_LEN);
 
     (*p_clreg->p_cback)(BTA_GATTC_ENC_CMPL_CB_EVT, &cb_data);
   }
@@ -1400,14 +1375,10 @@ static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, BD_ADDR bda) {
 
   APPL_TRACE_DEBUG("%s: cif = %d", __func__, gattc_if);
 
-  tBTA_GATTC_DATA* p_buf =
-      (tBTA_GATTC_DATA*)osi_calloc(sizeof(tBTA_GATTC_DATA));
-  p_buf->enc_cmpl.hdr.event = BTA_GATTC_ENC_CMPL_EVT;
-  p_buf->enc_cmpl.hdr.layer_specific = p_clcb->bta_conn_id;
-  p_buf->enc_cmpl.client_if = gattc_if;
-  bdcpy(p_buf->enc_cmpl.remote_bda, bda);
-
-  bta_sys_sendmsg(p_buf);
+  bt_bdaddr_t addr;
+  memcpy(addr.address, bda, BD_ADDR_LEN);
+  do_in_bta_thread(FROM_HERE,
+                   base::Bind(&bta_gattc_process_enc_cmpl, gattc_if, addr));
 }
 
 /*******************************************************************************
@@ -1420,9 +1391,8 @@ static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, BD_ADDR bda) {
  * Returns          None.
  *
  ******************************************************************************/
-void bta_gattc_process_api_refresh(tBTA_GATTC_DATA* p_msg) {
-  tBTA_GATTC_SERV* p_srvc_cb =
-      bta_gattc_find_srvr_cache(p_msg->api_conn.remote_bda);
+void bta_gattc_process_api_refresh(bt_bdaddr_t remote_bda) {
+  tBTA_GATTC_SERV* p_srvc_cb = bta_gattc_find_srvr_cache(remote_bda.address);
   tBTA_GATTC_CLCB* p_clcb = &bta_gattc_cb.clcb[0];
   bool found = false;
   uint8_t i;
@@ -1448,7 +1418,7 @@ void bta_gattc_process_api_refresh(tBTA_GATTC_DATA* p_msg) {
     }
   }
   /* used to reset cache in application */
-  bta_gattc_cache_reset(p_msg->api_conn.remote_bda);
+  bta_gattc_cache_reset(remote_bda.address);
 }
 /*******************************************************************************
  *

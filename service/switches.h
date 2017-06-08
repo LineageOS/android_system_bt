@@ -26,6 +26,7 @@ const char kHelpLong[] = "help";
 const char kHelpShort[] = "h";
 const char kAndroidIPCSocketSuffix[] = "android-ipc-socket-suffix";
 const char kCreateIPCSocketPath[] = "create-ipc-socket";
+const char kEnableOnStart[] = "enable-on-start";
 
 const char kHelpMessage[] =
     "\nBluetooth System Service\n"
@@ -36,6 +37,8 @@ const char kHelpMessage[] =
     "Mutually exclusive with --create-ipc-socket.\n"
     "\t--create-ipc-socket\t\tSocket path created for Unix domain socket based "
     "IPC. Mutually exclusive with --android-ipc-socket-suffix.\n"
+    "\t--enable-on-start (true|false)\tIf true, enable adapter as soon as the "
+    "daemon starts.\n"
     "\t--v\t\t\t\tLog verbosity level (e.g. -v=1)\n";
 
 }  // namespace switches

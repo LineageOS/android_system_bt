@@ -299,7 +299,7 @@ void btif_gattc_open_impl(int client_if, BD_ADDR address, bool is_direct,
         break;
 
       case BT_DEVICE_TYPE_DUMO:
-        if (transport == GATT_TRANSPORT_LE)
+        if (transport_p == GATT_TRANSPORT_LE)
           transport = BTA_GATT_TRANSPORT_LE;
         else
           transport = BTA_GATT_TRANSPORT_BR_EDR;
@@ -349,10 +349,7 @@ bt_status_t btif_gattc_close(int client_if, const bt_bdaddr_t* bd_addr,
 
 bt_status_t btif_gattc_refresh(int client_if, const bt_bdaddr_t* bd_addr) {
   CHECK_BTGATT_INIT();
-  // Closure will own this value and free it.
-  uint8_t* address = new BD_ADDR;
-  bdcpy(address, bd_addr->address);
-  return do_in_jni_thread(Bind(&BTA_GATTC_Refresh, base::Owned(address)));
+  return do_in_jni_thread(Bind(&BTA_GATTC_Refresh, *bd_addr));
 }
 
 bt_status_t btif_gattc_search_service(int conn_id, bt_uuid_t* filter_uuid) {
@@ -402,7 +399,9 @@ void read_char_cb(uint16_t conn_id, tGATT_STATUS status, uint16_t handle,
   CHECK(len <= BTGATT_MAX_ATTR_LEN);
   if (len > 0) memcpy(params->value.value, value, len);
 
-  CLI_CBACK_IN_JNI(read_characteristic_cb, conn_id, status,
+  // clang-tidy analyzer complains about |params| is leaked.  It doesn't know
+  // that |param| will be freed by the callback function.
+  CLI_CBACK_IN_JNI(read_characteristic_cb, conn_id, status, /* NOLINT */
                    base::Owned(params));
 }
 
@@ -423,7 +422,9 @@ void read_using_char_uuid_cb(uint16_t conn_id, tGATT_STATUS status,
   CHECK(len <= BTGATT_MAX_ATTR_LEN);
   if (len > 0) memcpy(params->value.value, value, len);
 
-  CLI_CBACK_IN_JNI(read_characteristic_cb, conn_id, status,
+  // clang-tidy analyzer complains about |params| is leaked.  It doesn't know
+  // that |param| will be freed by the callback function.
+  CLI_CBACK_IN_JNI(read_characteristic_cb, conn_id, status, /* NOLINT */
                    base::Owned(params));
 }
 
@@ -448,7 +449,10 @@ void read_desc_cb(uint16_t conn_id, tGATT_STATUS status, uint16_t handle,
   CHECK(len <= BTGATT_MAX_ATTR_LEN);
   if (len > 0) memcpy(params->value.value, value, len);
 
-  CLI_CBACK_IN_JNI(read_descriptor_cb, conn_id, status, base::Owned(params));
+  // clang-tidy analyzer complains about |params| is leaked.  It doesn't know
+  // that |param| will be freed by the callback function.
+  CLI_CBACK_IN_JNI(read_descriptor_cb, conn_id, status,
+                   base::Owned(params)); /* NOLINT */
 }
 
 bt_status_t btif_gattc_read_char_descr(int conn_id, uint16_t handle,
