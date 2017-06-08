@@ -903,10 +903,7 @@ tGATT_STATUS GATTC_Read(uint16_t conn_id, tGATT_READ_TYPE type,
         break;
     }
     /* start security check */
-    if (gatt_security_check_start(p_clcb) == false) {
-      status = GATT_NO_RESOURCES;
-      gatt_clcb_dealloc(p_clcb);
-    }
+    gatt_security_check_start(p_clcb);
   } else {
     status = GATT_NO_RESOURCES;
   }
@@ -965,11 +962,7 @@ tGATT_STATUS GATTC_Write(uint16_t conn_id, tGATT_WRITE_TYPE type,
       p->offset = 0;
     }
 
-    if (gatt_security_check_start(p_clcb) == false) {
-      status = GATT_NO_RESOURCES;
-    }
-
-    if (status == GATT_NO_RESOURCES) gatt_clcb_dealloc(p_clcb);
+    gatt_security_check_start(p_clcb);
   } else {
     status = GATT_NO_RESOURCES;
   }
