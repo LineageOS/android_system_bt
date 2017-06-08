@@ -62,8 +62,16 @@ class L2capSdu {
   // Returns a completed L2capSdu object.
   L2capSdu(std::vector<uint8_t> create_from);
 
-  // Adds an FCS to create_from and returns an L2capSdu object
   static L2capSdu L2capSduBuilder(std::vector<uint8_t> create_from);
+
+  // TODO: Remove this when the move to L2capSdu* is done
+  L2capSdu& operator=(L2capSdu obj1) {
+    sdu_data_.clear();
+
+    sdu_data_ = obj1.sdu_data_;
+
+    return *this;
+  }
 
   // Get a vector iterator that points to the first byte of the
   // L2CAP payload within an SDU. The offset parameter will be the
@@ -71,15 +79,14 @@ class L2capSdu {
   // be 6 bytes with the exception being the first SDU of a stream
   // of SDU packets where the first SDU packet will have an extra
   // two bytes and the offset should be 8 bytes.
-  auto get_payload_begin(const unsigned int offset) const {
-    return std::next(sdu_data_.begin(), offset);
-  }
+  std::vector<uint8_t>::const_iterator get_payload_begin(
+      const unsigned int offset) const;
 
   // Get a vector iterator that points to the last bytes of the
   // L2CAP payload within an SDU packet. There is no offset
   // parameter for this function because there will always be two
   // FCS bytes and nothing else at the end of each SDU.
-  auto get_payload_end() const { return std::prev(sdu_data_.end(), 2); }
+  std::vector<uint8_t>::const_iterator get_payload_end() const;
 
   // Get the FCS bytes from the end of the L2CAP payload of an SDU
   // packet.
