@@ -1085,6 +1085,13 @@ static bt_status_t bind_response(bthf_hf_ind_type_t ind_id,
   return BT_STATUS_SUCCESS;
 }
 
+static bt_status_t set_sco_allowed(bool value) {
+  CHECK_BTHF_INIT();
+
+  BTA_AgSetScoAllowed(value);
+  return BT_STATUS_SUCCESS;
+}
+
 /*******************************************************************************
  *
  * Function         formatted_at_response
@@ -1556,6 +1563,7 @@ static const bthf_interface_t bthfInterface = {
     cleanup,
     configure_wbs,
     bind_response,
+    set_sco_allowed,
 };
 
 /*******************************************************************************
