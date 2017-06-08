@@ -24,7 +24,7 @@
 
 namespace bluetooth {
 
-Settings::Settings() : initialized_(false) {}
+Settings::Settings() : initialized_(false), enable_on_start_(false) {}
 
 Settings::~Settings() {}
 
@@ -54,6 +54,16 @@ bool Settings::Init() {
       }
 
       android_ipc_socket_suffix_ = suffix;
+    } else if (iter.first == switches::kEnableOnStart) {
+      if (iter.second == "true") {
+        enable_on_start_ = true;
+      } else if (iter.second == "false") {
+        enable_on_start_ = false;
+      } else {
+        LOG(ERROR) << "Invalid value for " << switches::kEnableOnStart << ": "
+                   << iter.second << ". Expect 'true' or 'false'";
+        return false;
+      }
     }
     // Check for libbase logging switches. These get processed by
     // logging::InitLogging directly.
