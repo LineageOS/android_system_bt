@@ -1292,24 +1292,14 @@ tGATT_CLCB* gatt_cmd_dequeue(tGATT_TCB& tcb, uint8_t* p_op_code) {
   return p_clcb;
 }
 
-/*******************************************************************************
- *
- * Function         gatt_send_write_msg
- *
- * Description      This real function send out the ATT message for write.
- *
- * Returns          status code
- *
- ******************************************************************************/
+/** Send out the ATT message for write */
 uint8_t gatt_send_write_msg(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, uint8_t op_code,
                             uint16_t handle, uint16_t len, uint16_t offset,
                             uint8_t* p_data) {
   tGATT_CL_MSG msg;
-
   msg.attr_value.handle = handle;
   msg.attr_value.len = len;
   msg.attr_value.offset = offset;
-
   memcpy(msg.attr_value.value, p_data, len);
 
   /* write by handle */

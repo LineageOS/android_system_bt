@@ -198,61 +198,59 @@ void gatt_act_read(tGATT_CLCB* p_clcb, uint16_t offset) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         gatt_act_write
- *
- * Description      GATT write operation.
- *
- * Returns          void.
- *
- ******************************************************************************/
+/** GATT write operation */
 void gatt_act_write(tGATT_CLCB* p_clcb, uint8_t sec_act) {
   tGATT_TCB& tcb = *p_clcb->p_tcb;
-  uint8_t rt = GATT_SUCCESS, op_code = 0;
-  tGATT_VALUE* p_attr = (tGATT_VALUE*)p_clcb->p_attr_buf;
 
-  if (p_attr) {
-    switch (p_clcb->op_subtype) {
-      case GATT_WRITE_NO_RSP:
-        p_clcb->s_handle = p_attr->handle;
-        op_code = (sec_act == GATT_SEC_SIGN_DATA) ? GATT_SIGN_CMD_WRITE
-                                                  : GATT_CMD_WRITE;
-        rt = gatt_send_write_msg(tcb, p_clcb, op_code, p_attr->handle,
-                                 p_attr->len, 0, p_attr->value);
-        break;
+  CHECK(p_clcb->p_attr_buf);
+  tGATT_VALUE& attr = *((tGATT_VALUE*)p_clcb->p_attr_buf);
 
-      case GATT_WRITE:
-        if (p_attr->len <= (tcb.payload_size - GATT_HDR_SIZE)) {
-          p_clcb->s_handle = p_attr->handle;
-
-          rt = gatt_send_write_msg(tcb, p_clcb, GATT_REQ_WRITE, p_attr->handle,
-                                   p_attr->len, 0, p_attr->value);
-        } else /* prepare write for long attribute */
-        {
-          gatt_send_prepare_write(tcb, p_clcb);
+  switch (p_clcb->op_subtype) {
+    case GATT_WRITE_NO_RSP: {
+      p_clcb->s_handle = attr.handle;
+      uint8_t op_code = (sec_act == GATT_SEC_SIGN_DATA) ? GATT_SIGN_CMD_WRITE
+                                                        : GATT_CMD_WRITE;
+      uint8_t rt = gatt_send_write_msg(tcb, p_clcb, op_code, attr.handle,
+                                       attr.len, 0, attr.value);
+      if (rt != GATT_CMD_STARTED) {
+        if (rt != GATT_SUCCESS) {
+          GATT_TRACE_ERROR("gatt_act_write() failed op_code=0x%x rt=%d",
+                           op_code, rt);
         }
-        break;
+        gatt_end_operation(p_clcb, rt, NULL);
+      }
+      return;
+    }
 
-      case GATT_WRITE_PREPARE:
+    case GATT_WRITE: {
+      if (attr.len <= (tcb.payload_size - GATT_HDR_SIZE)) {
+        p_clcb->s_handle = attr.handle;
+
+        uint8_t rt = gatt_send_write_msg(tcb, p_clcb, GATT_REQ_WRITE,
+                                         attr.handle, attr.len, 0, attr.value);
+        if (rt != GATT_SUCCESS && rt != GATT_CMD_STARTED &&
+            rt != GATT_CONGESTED) {
+          if (rt != GATT_SUCCESS) {
+            GATT_TRACE_ERROR("gatt_act_write() failed op_code=0x%x rt=%d",
+                             GATT_REQ_WRITE, rt);
+          }
+          gatt_end_operation(p_clcb, rt, NULL);
+        }
+
+      } else {
+        /* prepare write for long attribute */
         gatt_send_prepare_write(tcb, p_clcb);
-        break;
-
-      default:
-        rt = GATT_INTERNAL_ERROR;
-        GATT_TRACE_ERROR("Unknown write type: %d", p_clcb->op_subtype);
-        break;
+      }
+      return;
     }
-  } else
-    rt = GATT_INTERNAL_ERROR;
 
-  if ((rt != GATT_SUCCESS && rt != GATT_CMD_STARTED && rt != GATT_CONGESTED) ||
-      (rt != GATT_CMD_STARTED && p_clcb->op_subtype == GATT_WRITE_NO_RSP)) {
-    if (rt != GATT_SUCCESS) {
-      GATT_TRACE_ERROR("gatt_act_write() failed op_code=0x%x rt=%d", op_code,
-                       rt);
-    }
-    gatt_end_operation(p_clcb, rt, NULL);
+    case GATT_WRITE_PREPARE:
+      gatt_send_prepare_write(tcb, p_clcb);
+      return;
+
+    default:
+      CHECK(false) << "Unknown write type" << p_clcb->op_subtype;
+      return;
   }
 }
 /*******************************************************************************
@@ -315,23 +313,14 @@ bool gatt_check_write_long_terminate(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
   }
   return false;
 }
-/*******************************************************************************
- *
- * Function         gatt_send_prepare_write
- *
- * Description      Send prepare write.
- *
- * Returns          void.
- *
- ******************************************************************************/
+
+/** Send prepare write */
 void gatt_send_prepare_write(tGATT_TCB& tcb, tGATT_CLCB* p_clcb) {
   tGATT_VALUE* p_attr = (tGATT_VALUE*)p_clcb->p_attr_buf;
-  uint16_t to_send, offset;
-  uint8_t rt = GATT_SUCCESS;
   uint8_t type = p_clcb->op_subtype;
 
-  GATT_TRACE_DEBUG("gatt_send_prepare_write type=0x%x", type);
-  to_send = p_attr->len - p_attr->offset;
+  GATT_TRACE_DEBUG("%s type=0x%x", __func__, type);
+  uint16_t to_send = p_attr->len - p_attr->offset;
 
   if (to_send > (tcb.payload_size -
                  GATT_WRITE_LONG_HDR_SIZE)) /* 2 = uint16_t offset bytes  */
@@ -339,22 +328,22 @@ void gatt_send_prepare_write(tGATT_TCB& tcb, tGATT_CLCB* p_clcb) {
 
   p_clcb->s_handle = p_attr->handle;
 
-  offset = p_attr->offset;
+  uint16_t offset = p_attr->offset;
   if (type == GATT_WRITE_PREPARE) {
     offset += p_clcb->start_offset;
   }
 
   GATT_TRACE_DEBUG("offset =0x%x len=%d", offset, to_send);
 
-  rt = gatt_send_write_msg(tcb, p_clcb, GATT_REQ_PREPARE_WRITE, p_attr->handle,
-                           to_send,                         /* length */
-                           offset,                          /* used as offset */
-                           p_attr->value + p_attr->offset); /* data */
+  uint8_t rt = gatt_send_write_msg(tcb, p_clcb, GATT_REQ_PREPARE_WRITE,
+                                   p_attr->handle, to_send, /* length */
+                                   offset,                  /* used as offset */
+                                   p_attr->value + p_attr->offset); /* data */
 
   /* remember the write long attribute length */
   p_clcb->counter = to_send;
 
-  if (rt != GATT_SUCCESS && rt != GATT_CMD_STARTED) {
+  if (rt != GATT_SUCCESS && rt != GATT_CMD_STARTED && rt != GATT_CONGESTED) {
     gatt_end_operation(p_clcb, rt, NULL);
   }
 }
