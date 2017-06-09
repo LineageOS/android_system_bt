@@ -995,8 +995,8 @@ bool smp_command_has_valid_fixed_length(tSMP_CB* p_cb) {
 
   if (p_cb->rcvd_cmd_len != smp_cmd_size_per_spec[cmd_code]) {
     SMP_TRACE_WARNING(
-        "Rcvd from the peer cmd 0x%02x with invalid length\
-            0x%02x (per spec the length is 0x%02x).",
+        "Rcvd from the peer cmd 0x%02x with invalid length "
+        "0x%02x (per spec the length is 0x%02x).",
         cmd_code, p_cb->rcvd_cmd_len, smp_cmd_size_per_spec[cmd_code]);
     return false;
   }
@@ -1030,24 +1030,24 @@ bool smp_pairing_request_response_parameters_are_valid(tSMP_CB* p_cb) {
 
   if (io_caps >= BTM_IO_CAP_MAX) {
     SMP_TRACE_WARNING(
-        "Rcvd from the peer cmd 0x%02x with IO Capabilty \
-            value (0x%02x) out of range).",
+        "Rcvd from the peer cmd 0x%02x with IO Capability "
+        "value (0x%02x) out of range).",
         p_cb->rcvd_cmd_code, io_caps);
     return false;
   }
 
   if (!((oob_flag == SMP_OOB_NONE) || (oob_flag == SMP_OOB_PRESENT))) {
     SMP_TRACE_WARNING(
-        "Rcvd from the peer cmd 0x%02x with OOB data flag value \
-            (0x%02x) out of range).",
+        "Rcvd from the peer cmd 0x%02x with OOB data flag value "
+        "(0x%02x) out of range).",
         p_cb->rcvd_cmd_code, oob_flag);
     return false;
   }
 
   if (!((bond_flag == SMP_AUTH_NO_BOND) || (bond_flag == SMP_AUTH_BOND))) {
     SMP_TRACE_WARNING(
-        "Rcvd from the peer cmd 0x%02x with Bonding_Flags value (0x%02x)\
-                           out of range).",
+        "Rcvd from the peer cmd 0x%02x with Bonding_Flags value (0x%02x) "
+        "out of range).",
         p_cb->rcvd_cmd_code, bond_flag);
     return false;
   }
@@ -1055,8 +1055,8 @@ bool smp_pairing_request_response_parameters_are_valid(tSMP_CB* p_cb) {
   if ((enc_size < SMP_ENCR_KEY_SIZE_MIN) ||
       (enc_size > SMP_ENCR_KEY_SIZE_MAX)) {
     SMP_TRACE_WARNING(
-        "Rcvd from the peer cmd 0x%02x with Maximum Encryption \
-            Key value (0x%02x) out of range).",
+        "Rcvd from the peer cmd 0x%02x with Maximum Encryption "
+        "Key value (0x%02x) out of range).",
         p_cb->rcvd_cmd_code, enc_size);
     return false;
   }
@@ -1080,8 +1080,8 @@ bool smp_pairing_keypress_notification_is_valid(tSMP_CB* p_cb) {
 
   if (keypress_notification >= BTM_SP_KEY_OUT_OF_RANGE) {
     SMP_TRACE_WARNING(
-        "Rcvd from the peer cmd 0x%02x with Pairing Keypress \
-            Notification value (0x%02x) out of range).",
+        "Rcvd from the peer cmd 0x%02x with Pairing Keypress "
+        "Notification value (0x%02x) out of range).",
         p_cb->rcvd_cmd_code, keypress_notification);
     return false;
   }
