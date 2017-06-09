@@ -26,6 +26,7 @@
 #include "srvc_battery_int.h"
 #include "srvc_dis_int.h"
 
+using base::StringPrintf;
 static void srvc_eng_s_request_cback(uint16_t conn_id, uint32_t trans_id,
                                      uint8_t op_code, tGATTS_DATA* p_data);
 static void srvc_eng_connect_cback(UNUSED_ATTR tGATT_IF gatt_if, BD_ADDR bda,
@@ -259,7 +260,8 @@ static void srvc_eng_s_request_cback(uint16_t conn_id, uint32_t trans_id,
   uint8_t act = SRVC_ACT_IGNORE;
   uint8_t clcb_idx = srvc_eng_find_clcb_idx_by_conn_id(conn_id);
 
-  GATT_TRACE_EVENT("srvc_eng_s_request_cback : recv type (0x%02x)", type);
+  VLOG(1) << StringPrintf("srvc_eng_s_request_cback : recv type (0x%02x)",
+                          type);
 
   memset(&rsp_msg, 0, sizeof(tGATTS_RSP));
 
@@ -280,15 +282,16 @@ static void srvc_eng_s_request_cback(uint16_t conn_id, uint32_t trans_id,
       break;
 
     case GATTS_REQ_TYPE_WRITE_EXEC:
-      GATT_TRACE_EVENT("Ignore GATT_REQ_EXEC_WRITE/WRITE_CMD");
+      VLOG(1) << "Ignore GATT_REQ_EXEC_WRITE/WRITE_CMD";
       break;
 
     case GATTS_REQ_TYPE_MTU:
-      GATT_TRACE_EVENT("Get MTU exchange new mtu size: %d", p_data->mtu);
+      VLOG(1) << "Get MTU exchange new mtu size: " << p_data->mtu;
       break;
 
     default:
-      GATT_TRACE_EVENT("Unknown/unexpected LE GAP ATT request: 0x%02x", type);
+      VLOG(1) << StringPrintf("Unknown/unexpected LE GAP ATT request: 0x%02x",
+                              type);
       break;
   }
 
@@ -311,11 +314,11 @@ static void srvc_eng_c_cmpl_cback(uint16_t conn_id, tGATTC_OPTYPE op,
                                   tGATT_CL_COMPLETE* p_data) {
   tSRVC_CLCB* p_clcb = srvc_eng_find_clcb_by_conn_id(conn_id);
 
-  GATT_TRACE_EVENT("srvc_eng_c_cmpl_cback() - op_code: 0x%02x  status: 0x%02x ",
-                   op, status);
+  VLOG(1) << StringPrintf(
+      "srvc_eng_c_cmpl_cback() - op_code: 0x%02x  status: 0x%02x ", op, status);
 
   if (p_clcb == NULL) {
-    GATT_TRACE_ERROR("srvc_eng_c_cmpl_cback received for unknown connection");
+    LOG(ERROR) << __func__ << " received for unknown connection";
     return;
   }
 
@@ -336,15 +339,15 @@ static void srvc_eng_connect_cback(UNUSED_ATTR tGATT_IF gatt_if, BD_ADDR bda,
                                    uint16_t conn_id, bool connected,
                                    tGATT_DISCONN_REASON reason,
                                    UNUSED_ATTR tBT_TRANSPORT transport) {
-  GATT_TRACE_EVENT(
-      "srvc_eng_connect_cback: from %08x%04x connected:%d conn_id=%d reason = "
-      "0x%04x",
-      (bda[0] << 24) + (bda[1] << 16) + (bda[2] << 8) + bda[3],
-      (bda[4] << 8) + bda[5], connected, conn_id, reason);
+  VLOG(1) << __func__
+          << StringPrintf(
+                 ": from %08x%04x connected:%d conn_id=%d reason = 0x%04x",
+                 (bda[0] << 24) + (bda[1] << 16) + (bda[2] << 8) + bda[3],
+                 (bda[4] << 8) + bda[5], connected, conn_id, reason);
 
   if (connected) {
     if (srvc_eng_clcb_alloc(conn_id, bda) == NULL) {
-      GATT_TRACE_ERROR("srvc_eng_connect_cback: no_resource");
+      LOG(ERROR) << __func__ << "srvc_eng_connect_cback: no_resource";
       return;
     }
   } else {
@@ -386,7 +389,7 @@ void srvc_eng_release_channel(uint16_t conn_id) {
   tSRVC_CLCB* p_clcb = srvc_eng_find_clcb_by_conn_id(conn_id);
 
   if (p_clcb == NULL) {
-    GATT_TRACE_ERROR("%s: invalid connection id %d", __func__, conn_id);
+    LOG(ERROR) << __func__ << ": invalid connection id " << conn_id;
     return;
   }
 
@@ -406,7 +409,7 @@ tGATT_STATUS srvc_eng_init(void) {
   tBT_UUID app_uuid = {LEN_UUID_16, {UUID_SERVCLASS_DEVICE_INFO}};
 
   if (srvc_eng_cb.enabled) {
-    GATT_TRACE_ERROR("DIS already initalized");
+    LOG(ERROR) << "DIS already initalized";
   } else {
     memset(&srvc_eng_cb, 0, sizeof(tSRVC_ENG_CB));
 
@@ -414,7 +417,7 @@ tGATT_STATUS srvc_eng_init(void) {
     srvc_eng_cb.gatt_if = GATT_Register(&app_uuid, &srvc_gatt_cback);
     GATT_StartIf(srvc_eng_cb.gatt_if);
 
-    GATT_TRACE_DEBUG("Srvc_Init:  gatt_if=%d  ", srvc_eng_cb.gatt_if);
+    VLOG(1) << "Srvc_Init:  gatt_if=" << +srvc_eng_cb.gatt_if;
 
     srvc_eng_cb.enabled = true;
     dis_cb.dis_read_uuid_idx = 0xff;

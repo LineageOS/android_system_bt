@@ -59,7 +59,6 @@
 #include "hidd_api.h"
 #endif
 
-#include "gatt_api.h"
 #include "smp_api.h"
 
 #ifndef DEFAULT_CONF_TRACE_LEVEL
@@ -127,8 +126,6 @@ static tBTTRC_FUNC_MAP bttrc_set_level_map[] = {
      DEFAULT_CONF_TRACE_LEVEL},
 #endif
     {BTTRC_ID_STK_SDP, BTTRC_ID_STK_SDP, SDP_SetTraceLevel, "TRC_SDP",
-     DEFAULT_CONF_TRACE_LEVEL},
-    {BTTRC_ID_STK_GATT, BTTRC_ID_STK_GATT, GATT_SetTraceLevel, "TRC_GATT",
      DEFAULT_CONF_TRACE_LEVEL},
     {BTTRC_ID_STK_SMP, BTTRC_ID_STK_SMP, SMP_SetTraceLevel, "TRC_SMP",
      DEFAULT_CONF_TRACE_LEVEL},
