@@ -429,7 +429,7 @@ void bta_ag_do_disc(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
   if (db_inited) {
     /*Service discovery not initiated */
     db_inited = SDP_ServiceSearchAttributeRequest(
-        p_scb->peer_addr, p_scb->p_disc_db,
+        to_BD_ADDR(p_scb->peer_addr), p_scb->p_disc_db,
         bta_ag_sdp_cback_tbl[bta_ag_scb_to_idx(p_scb) - 1]);
   }
 

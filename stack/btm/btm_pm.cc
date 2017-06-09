@@ -72,7 +72,7 @@ const uint8_t
         BTM_PM_GET_MD1,  BTM_PM_GET_MD2,  BTM_PM_GET_COMP};
 
 /* function prototype */
-static int btm_pm_find_acl_ind(BD_ADDR remote_bda);
+static int btm_pm_find_acl_ind(const bt_bdaddr_t& remote_bda);
 static tBTM_STATUS btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
                                      tBTM_PM_PWR_MD* p_mode);
 static const char* mode_to_string(tBTM_PM_MODE mode);
@@ -143,7 +143,7 @@ tBTM_STATUS BTM_PmRegister(uint8_t mask, uint8_t* p_pm_id,
  *                  BTM_UNKNOWN_ADDR if bd addr is not active or bad
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, BD_ADDR remote_bda,
+tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const bt_bdaddr_t& remote_bda,
                              tBTM_PM_PWR_MD* p_mode) {
   uint8_t* p_features;
   int ind, acl_ind;
@@ -155,10 +155,8 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, BD_ADDR remote_bda,
 
   if (p_mode == NULL) return BTM_ILLEGAL_VALUE;
 
-  BTM_TRACE_API("BTM_SetPowerMode: pm_id %d BDA: %08x mode:0x%x", pm_id,
-                (remote_bda[2] << 24) + (remote_bda[3] << 16) +
-                    (remote_bda[4] << 8) + remote_bda[5],
-                p_mode->mode);
+  VLOG(2) << __func__ << " pm_id " << pm_id << " BDA: " << remote_bda
+          << " mode:0x" << std::hex << p_mode->mode;
 
   /* take out the force bit */
   mode = p_mode->mode & ~BTM_PM_MD_FORCE;
@@ -248,7 +246,8 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, BD_ADDR remote_bda,
  *                  BTM_UNKNOWN_ADDR if bd addr is not active or bad
  *
  ******************************************************************************/
-tBTM_STATUS BTM_ReadPowerMode(BD_ADDR remote_bda, tBTM_PM_MODE* p_mode) {
+tBTM_STATUS BTM_ReadPowerMode(const bt_bdaddr_t& remote_bda,
+                              tBTM_PM_MODE* p_mode) {
   int acl_ind;
 
   acl_ind = btm_pm_find_acl_ind(remote_bda);
@@ -279,7 +278,7 @@ tBTM_STATUS BTM_ReadPowerMode(BD_ADDR remote_bda, tBTM_PM_MODE* p_mode) {
  *                  BTM_UNKNOWN_ADDR if bd addr is not active or bad
  *
  ******************************************************************************/
-tBTM_STATUS btm_read_power_mode_state(BD_ADDR remote_bda,
+tBTM_STATUS btm_read_power_mode_state(const bt_bdaddr_t& remote_bda,
                                       tBTM_PM_STATE* pmState) {
   int acl_ind = btm_pm_find_acl_ind(remote_bda);
 
@@ -307,7 +306,7 @@ tBTM_STATUS btm_read_power_mode_state(BD_ADDR remote_bda,
  *                  BTM_CMD_STORED if the command is stored
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SetSsrParams(BD_ADDR remote_bda, uint16_t max_lat,
+tBTM_STATUS BTM_SetSsrParams(const bt_bdaddr_t& remote_bda, uint16_t max_lat,
                              uint16_t min_rmt_to, uint16_t min_loc_to) {
 #if (BTM_SSR_INCLUDED == TRUE)
   int acl_ind;
@@ -393,12 +392,12 @@ void btm_pm_sm_alloc(uint8_t ind) {
  * Returns          void
  *
  ******************************************************************************/
-static int btm_pm_find_acl_ind(BD_ADDR remote_bda) {
+static int btm_pm_find_acl_ind(const bt_bdaddr_t& remote_bda) {
   tACL_CONN* p = &btm_cb.acl_db[0];
   uint8_t xx;
 
   for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p++) {
-    if ((p->in_use) && (!memcmp(p->remote_addr, remote_bda, BD_ADDR_LEN)) &&
+    if (p->in_use && p->remote_addr == remote_bda &&
         p->transport == BT_TRANSPORT_BR_EDR) {
 #if (BTM_PM_DEBUG == TRUE)
       BTM_TRACE_DEBUG("btm_pm_find_acl_ind ind:%d, st:%d", xx,

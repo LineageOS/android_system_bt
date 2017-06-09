@@ -178,8 +178,7 @@ void bta_scan_results_cb_impl(bt_bdaddr_t bd_addr, tBT_DEVICE_TYPE device_type,
 
         LOG_VERBOSE(LOG_TAG, "%s BLE device name=%s len=%d dev_type=%d",
                     __func__, bdname.name, remote_name_len, device_type);
-        btif_dm_update_ble_remote_properties(bd_addr.address, bdname.name,
-                                             device_type);
+        btif_dm_update_ble_remote_properties(bd_addr, bdname.name, device_type);
       }
     }
   }
@@ -221,9 +220,7 @@ void bta_scan_results_cb(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH* p_data) {
   }
 
   tBTA_DM_INQ_RES* r = &p_data->inq_res;
-  bt_bdaddr_t bdaddr;
-  bdcpy(bdaddr.address, r->bd_addr);
-  do_in_jni_thread(Bind(bta_scan_results_cb_impl, bdaddr, r->device_type,
+  do_in_jni_thread(Bind(bta_scan_results_cb_impl, r->bd_addr, r->device_type,
                         r->rssi, r->ble_addr_type, r->ble_evt_type,
                         r->ble_primary_phy, r->ble_secondary_phy,
                         r->ble_advertising_sid, r->ble_tx_power,

@@ -248,7 +248,7 @@ typedef union {
 #define SMP_ECNCRPYT_STATUS HCI_SUCCESS
 
 typedef struct {
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   BT_HDR* p_copy;
 } tSMP_REQ_Q_ENTRY;
 
@@ -257,12 +257,12 @@ typedef struct {
   tSMP_CALLBACK* p_callback;
   alarm_t* smp_rsp_timer_ent;
   uint8_t trace_level;
-  BD_ADDR pairing_bda;
+  bt_bdaddr_t pairing_bda;
   tSMP_STATE state;
   bool derive_lk;
   bool id_addr_rcvd;
   tBLE_ADDR_TYPE id_addr_type;
-  BD_ADDR id_addr;
+  bt_bdaddr_t id_addr;
   bool smp_over_br;
   tSMP_BR_STATE br_state; /* if SMP over BR/ERD has priority over SMP */
   uint8_t failure;
@@ -321,7 +321,7 @@ typedef struct {
   uint16_t ediv;
   BT_OCTET8 enc_rand;
   uint8_t addr_type;
-  BD_ADDR local_bda;
+  bt_bdaddr_t local_bda;
   bool is_pair_cancel;
   bool discard_sec_req;
   uint8_t rcvd_cmd_code;
@@ -464,7 +464,7 @@ extern void smp_br_pairing_complete(tSMP_CB* p_cb, tSMP_INT_DATA* p_data);
 
 /* smp_l2c */
 extern void smp_l2cap_if_init(void);
-extern void smp_data_ind(BD_ADDR bd_addr, BT_HDR* p_buf);
+extern void smp_data_ind(const bt_bdaddr_t& bd_addr, BT_HDR* p_buf);
 
 /* smp_util.cc */
 extern bool smp_send_cmd(uint8_t cmd_code, tSMP_CB* p_cb);
@@ -479,7 +479,7 @@ extern void smp_xor_128(BT_OCTET16 a, BT_OCTET16 b);
 extern bool smp_encrypt_data(uint8_t* key, uint8_t key_len, uint8_t* plain_text,
                              uint8_t pt_len, tSMP_ENC* p_out);
 extern bool smp_command_has_invalid_parameters(tSMP_CB* p_cb);
-extern void smp_reject_unexpected_pairing_command(BD_ADDR bd_addr);
+extern void smp_reject_unexpected_pairing_command(const bt_bdaddr_t& bd_addr);
 extern tSMP_ASSO_MODEL smp_select_association_model(tSMP_CB* p_cb);
 extern void smp_reverse_array(uint8_t* arr, uint8_t len);
 extern uint8_t smp_calculate_random_input(uint8_t* random, uint8_t round);

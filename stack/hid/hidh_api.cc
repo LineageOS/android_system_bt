@@ -522,7 +522,7 @@ tHID_STATUS HID_HostSetSecurityLevel(const char serv_name[], uint8_t sec_lvl) {
  ******************************************************************************/
 bool hid_known_hid_device(BD_ADDR bd_addr) {
   uint8_t i;
-  tBTM_INQ_INFO* p_inq_info = BTM_InqDbRead(bd_addr);
+  tBTM_INQ_INFO* p_inq_info = BTM_InqDbRead(from_BD_ADDR(bd_addr));
 
   if (!hh_cb.reg_flag) return false;
 
@@ -538,7 +538,7 @@ bool hid_known_hid_device(BD_ADDR bd_addr) {
     }
   } else {
     /* Look for this device in security device DB */
-    tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
+    tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(from_BD_ADDR(bd_addr));
     if ((p_dev_rec != NULL) &&
         ((p_dev_rec->dev_class[1] & BTM_COD_MAJOR_CLASS_MASK) ==
          BTM_COD_MAJOR_PERIPHERAL)) {

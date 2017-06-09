@@ -63,8 +63,9 @@ void bta_hf_client_start_close(tBTA_HF_CLIENT_DATA* p_data) {
   }
 
   /* Take the link out of sniff and set L2C idle time to 0 */
-  bta_dm_pm_active(client_cb->peer_addr);
-  L2CA_SetIdleTimeoutByBdAddr(client_cb->peer_addr, 0, BT_TRANSPORT_BR_EDR);
+  bta_dm_pm_active(from_BD_ADDR(client_cb->peer_addr));
+  L2CA_SetIdleTimeoutByBdAddr(from_BD_ADDR(client_cb->peer_addr), 0,
+                              BT_TRANSPORT_BR_EDR);
 
   /* if SCO is open close SCO and wait on RFCOMM close */
   if (client_cb->sco_state == BTA_HF_CLIENT_SCO_OPEN_ST) {

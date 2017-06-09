@@ -145,7 +145,7 @@ void port_select_mtu(tPORT* p_port) {
   /* Will select MTU only if application did not setup something */
   if (p_port->mtu == 0) {
     /* find packet size which connection supports */
-    packet_size = btm_get_max_packet_size(p_port->bd_addr);
+    packet_size = btm_get_max_packet_size(from_BD_ADDR(p_port->bd_addr));
     if (packet_size == 0) {
       /* something is very wrong */
       RFCOMM_TRACE_WARNING("port_select_mtu bad packet size");
@@ -257,7 +257,7 @@ void port_release_port(tPORT* p_port) {
       if (p_port->is_server) p_port->dlci &= 0xfe;
 
       p_port->local_ctrl.modem_signal = p_port->default_signal_state;
-      memcpy(p_port->bd_addr, BT_BD_ANY, BD_ADDR_LEN);
+      memcpy(p_port->bd_addr, BT_BD_ANY.address, BD_ADDR_LEN);
     } else {
       RFCOMM_TRACE_DEBUG("%s Clean-up handle: %d", __func__, p_port->inx);
       alarm_free(p_port->rfc.port_timer);

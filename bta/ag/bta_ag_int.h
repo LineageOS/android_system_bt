@@ -154,7 +154,7 @@ typedef struct {
 /* data type for BTA_AG_API_OPEN_EVT */
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   tBTA_SERVICE_MASK services;
   tBTA_SEC sec_mask;
 } tBTA_AG_API_OPEN;
@@ -225,7 +225,7 @@ typedef struct {
   char clip[BTA_AG_AT_MAX_LEN + 1];     /* number string used for CLIP */
   uint16_t serv_handle[BTA_AG_NUM_IDX]; /* RFCOMM server handles */
   tBTA_AG_AT_CB at_cb;                  /* AT command interpreter */
-  BD_ADDR peer_addr;                    /* peer bd address */
+  bt_bdaddr_t peer_addr;                /* peer bd address */
   tSDP_DISCOVERY_DB* p_disc_db;         /* pointer to discovery database */
   tBTA_SERVICE_MASK reg_services;       /* services specified in register API */
   tBTA_SERVICE_MASK open_services;      /* services specified in open API */
@@ -323,7 +323,7 @@ extern void bta_ag_scb_dealloc(tBTA_AG_SCB* p_scb);
 extern uint16_t bta_ag_scb_to_idx(tBTA_AG_SCB* p_scb);
 extern tBTA_AG_SCB* bta_ag_scb_by_idx(uint16_t idx);
 extern uint8_t bta_ag_service_to_idx(tBTA_SERVICE_MASK services);
-extern uint16_t bta_ag_idx_by_bdaddr(BD_ADDR peer_addr);
+extern uint16_t bta_ag_idx_by_bdaddr(const bt_bdaddr_t* peer_addr);
 extern bool bta_ag_other_scb_open(tBTA_AG_SCB* p_curr_scb);
 extern bool bta_ag_scb_open(tBTA_AG_SCB* p_curr_scb);
 extern tBTA_AG_SCB* bta_ag_get_other_idle_scb(tBTA_AG_SCB* p_curr_scb);

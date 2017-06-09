@@ -842,7 +842,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
   val.hdr.app_id = p_scb->app_id;
   val.hdr.status = BTA_AG_SUCCESS;
   val.num = int_arg;
-  bdcpy(val.bd_addr, p_scb->peer_addr);
+  val.bd_addr = p_scb->peer_addr;
   strlcpy(val.str, p_arg, sizeof(val.str));
 
   /**
@@ -1304,7 +1304,7 @@ void bta_ag_hsp_result(tBTA_AG_SCB* p_scb, tBTA_AG_API_RESULT* p_result) {
 
     case BTA_AG_IN_CALL_RES:
       /* tell sys to stop av if any */
-      bta_sys_sco_use(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
+      bta_sys_sco_use(BTA_ID_AG, p_scb->app_id, to_BD_ADDR(p_scb->peer_addr));
 
       /* if sco already opened or no inband ring send ring now */
       if (bta_ag_sco_is_open(p_scb) || !bta_ag_inband_enabled(p_scb) ||
@@ -1352,7 +1352,8 @@ void bta_ag_hsp_result(tBTA_AG_SCB* p_scb, tBTA_AG_API_RESULT* p_result) {
         bta_ag_sco_close(p_scb, (tBTA_AG_DATA*)p_result);
       } else {
         /* if av got suspended by this call, let it resume. */
-        bta_sys_sco_unuse(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
+        bta_sys_sco_unuse(BTA_ID_AG, p_scb->app_id,
+                          to_BD_ADDR(p_scb->peer_addr));
       }
       break;
 
@@ -1400,7 +1401,7 @@ void bta_ag_hfp_result(tBTA_AG_SCB* p_scb, tBTA_AG_API_RESULT* p_result) {
 
     case BTA_AG_IN_CALL_RES:
       /* tell sys to stop av if any */
-      bta_sys_sco_use(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
+      bta_sys_sco_use(BTA_ID_AG, p_scb->app_id, to_BD_ADDR(p_scb->peer_addr));
 
       /* store caller id string.
        * append type info at the end.
@@ -1527,7 +1528,8 @@ void bta_ag_hfp_result(tBTA_AG_SCB* p_scb, tBTA_AG_API_RESULT* p_result) {
         bta_ag_send_call_inds(p_scb, p_result->result);
 
         /* if av got suspended by this call, let it resume. */
-        bta_sys_sco_unuse(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
+        bta_sys_sco_unuse(BTA_ID_AG, p_scb->app_id,
+                          to_BD_ADDR(p_scb->peer_addr));
       }
       break;
 

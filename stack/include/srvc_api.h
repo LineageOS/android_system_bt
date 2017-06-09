@@ -75,13 +75,13 @@ typedef struct {
   uint8_t* data_string[DIS_MAX_STRING_DATA];
 } tDIS_VALUE;
 
-typedef void(tDIS_READ_CBACK)(BD_ADDR addr, tDIS_VALUE* p_dis_value);
+typedef void(tDIS_READ_CBACK)(const bt_bdaddr_t& addr, tDIS_VALUE* p_dis_value);
 
 /*****************************************************************************
  *  Data structure used by Battery Service
  ****************************************************************************/
 typedef struct {
-  BD_ADDR remote_bda;
+  bt_bdaddr_t remote_bda;
   bool need_rsp;
   uint16_t clt_cfg;
 } tBA_WRITE_DATA;
@@ -162,8 +162,8 @@ extern tDIS_STATUS DIS_SrUpdate(tDIS_ATTR_BIT dis_attr_bit, tDIS_ATTR* p_info);
  * Returns          void
  *
  ******************************************************************************/
-extern bool DIS_ReadDISInfo(BD_ADDR peer_bda, tDIS_READ_CBACK* p_cback,
-                            tDIS_ATTR_MASK mask);
+extern bool DIS_ReadDISInfo(const bt_bdaddr_t& peer_bda,
+                            tDIS_READ_CBACK* p_cback, tDIS_ATTR_MASK mask);
 
 /*******************************************************************************
  *      BATTERY SERVICE API

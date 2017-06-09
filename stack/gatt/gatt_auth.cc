@@ -150,10 +150,10 @@ void gatt_sec_check_complete(bool sec_check_ok, tGATT_CLCB* p_clcb,
  * Returns
  *
  ******************************************************************************/
-void gatt_enc_cmpl_cback(BD_ADDR bd_addr, tBT_TRANSPORT transport,
+void gatt_enc_cmpl_cback(const bt_bdaddr_t* bd_addr, tBT_TRANSPORT transport,
                          UNUSED_ATTR void* p_ref_data, tBTM_STATUS result) {
   VLOG(1) << StringPrintf("gatt_enc_cmpl_cback");
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(*bd_addr, transport);
   if (!p_tcb) {
     LOG(ERROR) << StringPrintf("%s: enc callback for unknown bd_addr",
                                __func__);
@@ -175,7 +175,7 @@ void gatt_enc_cmpl_cback(BD_ADDR bd_addr, tBT_TRANSPORT transport,
   if (result == BTM_SUCCESS) {
     if (gatt_get_sec_act(p_tcb) == GATT_SEC_ENCRYPT_MITM) {
       uint8_t sec_flag = 0;
-      BTM_GetSecurityFlagsByTransport(bd_addr, &sec_flag, transport);
+      BTM_GetSecurityFlagsByTransport(*bd_addr, &sec_flag, transport);
 
       if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED) {
         status = true;
@@ -205,7 +205,7 @@ void gatt_enc_cmpl_cback(BD_ADDR bd_addr, tBT_TRANSPORT transport,
  * Returns
  *
  ******************************************************************************/
-void gatt_notify_enc_cmpl(BD_ADDR bd_addr) {
+void gatt_notify_enc_cmpl(const bt_bdaddr_t& bd_addr) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
   if (!p_tcb) {
     VLOG(1) << StringPrintf(
