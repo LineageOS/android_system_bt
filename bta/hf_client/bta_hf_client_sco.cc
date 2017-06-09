@@ -236,30 +236,9 @@ static void bta_hf_client_sco_create(tBTA_HF_CLIENT_CB* client_cb,
 
   /* if initiating set current scb and peer bd addr */
   if (is_orig) {
-    /* Attempt to use eSCO if remote host supports HFP >= 1.5 */
-    if (client_cb->peer_version >= HFP_VERSION_1_5 &&
-        !client_cb->retry_with_sco_only) {
-      BTM_SetEScoMode(&params);
-      /* If ESCO or EDR ESCO, retry with SCO only in case of failure */
-      if ((params.packet_types & BTM_ESCO_LINK_ONLY_MASK) ||
-          !((params.packet_types &
-             ~(BTM_ESCO_LINK_ONLY_MASK | BTM_SCO_LINK_ONLY_MASK)) ^
-            BTA_HF_CLIENT_NO_EDR_ESCO)) {
-        client_cb->retry_with_sco_only = true;
-        APPL_TRACE_API("Setting retry_with_sco_only to true");
-      }
-    } else {
-      if (client_cb->retry_with_sco_only)
-        APPL_TRACE_API("retrying with SCO only");
-      client_cb->retry_with_sco_only = false;
-
-      BTM_SetEScoMode(&params);
-    }
-
+    BTM_SetEScoMode(&params);
     /* tell sys to stop av if any */
     bta_sys_sco_use(BTA_ID_HS, 1, client_cb->peer_addr);
-  } else {
-    client_cb->retry_with_sco_only = false;
   }
 
   p_bd_addr = client_cb->peer_addr;
@@ -583,8 +562,6 @@ void bta_hf_client_sco_conn_open(tBTA_HF_CLIENT_DATA* p_data) {
   } else {
     bta_hf_client_cback_sco(client_cb, BTA_HF_CLIENT_AUDIO_OPEN_EVT);
   }
-
-  client_cb->retry_with_sco_only = false;
 }
 
 /*******************************************************************************
@@ -611,26 +588,19 @@ void bta_hf_client_sco_conn_close(tBTA_HF_CLIENT_DATA* p_data) {
   /* clear current scb */
   client_cb->sco_idx = BTM_INVALID_SCO_INDEX;
 
-  /* retry_with_sco_only, will be set only when initiator
-  ** and HFClient is first trying to establish an eSCO connection */
-  if (client_cb->retry_with_sco_only && client_cb->svc_conn) {
-    bta_hf_client_sco_create(client_cb, true);
-  } else {
-    bta_hf_client_sco_event(client_cb, BTA_HF_CLIENT_SCO_CONN_CLOSE_E);
+  bta_hf_client_sco_event(client_cb, BTA_HF_CLIENT_SCO_CONN_CLOSE_E);
 
-    bta_sys_sco_close(BTA_ID_HS, 1, client_cb->peer_addr);
+  bta_sys_sco_close(BTA_ID_HS, 1, client_cb->peer_addr);
 
-    bta_sys_sco_unuse(BTA_ID_HS, 1, client_cb->peer_addr);
+  bta_sys_sco_unuse(BTA_ID_HS, 1, client_cb->peer_addr);
 
-    /* call app callback */
-    bta_hf_client_cback_sco(client_cb, BTA_HF_CLIENT_AUDIO_CLOSE_EVT);
+  /* call app callback */
+  bta_hf_client_cback_sco(client_cb, BTA_HF_CLIENT_AUDIO_CLOSE_EVT);
 
-    if (client_cb->sco_close_rfc == true) {
-      client_cb->sco_close_rfc = false;
-      bta_hf_client_rfc_do_close(p_data);
-    }
+  if (client_cb->sco_close_rfc == true) {
+    client_cb->sco_close_rfc = false;
+    bta_hf_client_rfc_do_close(p_data);
   }
-  client_cb->retry_with_sco_only = false;
 }
 
 /*******************************************************************************

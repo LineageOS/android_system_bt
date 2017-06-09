@@ -174,7 +174,6 @@ typedef struct {
   uint16_t sco_idx;                       /* SCO handle */
   uint8_t sco_state;                      /* SCO state variable */
   bool sco_close_rfc; /* true if also close RFCOMM after SCO */
-  bool retry_with_sco_only;
   tBTM_SCO_CODEC_TYPE negotiated_codec; /* negotiated codec */
   bool svc_conn;      /* set to true when service level connection is up */
   bool send_at_reply; /* set to true to notify framework about AT results */
