@@ -583,33 +583,6 @@ static const char BTE_LOGMSG_MODULE[] = "bte_logmsg_module";
       BT_TRACE(TRACE_LAYER_MCA, TRACE_TYPE_API, ##__VA_ARGS__); \
   }
 
-/* Define tracing for the ATT/GATT unit */
-#define GATT_TRACE_ERROR(...)                                     \
-  {                                                               \
-    if (gatt_cb.trace_level >= BT_TRACE_LEVEL_ERROR)              \
-      BT_TRACE(TRACE_LAYER_ATT, TRACE_TYPE_ERROR, ##__VA_ARGS__); \
-  }
-#define GATT_TRACE_WARNING(...)                                     \
-  {                                                                 \
-    if (gatt_cb.trace_level >= BT_TRACE_LEVEL_WARNING)              \
-      BT_TRACE(TRACE_LAYER_ATT, TRACE_TYPE_WARNING, ##__VA_ARGS__); \
-  }
-#define GATT_TRACE_API(...)                                     \
-  {                                                             \
-    if (gatt_cb.trace_level >= BT_TRACE_LEVEL_API)              \
-      BT_TRACE(TRACE_LAYER_ATT, TRACE_TYPE_API, ##__VA_ARGS__); \
-  }
-#define GATT_TRACE_EVENT(...)                                     \
-  {                                                               \
-    if (gatt_cb.trace_level >= BT_TRACE_LEVEL_EVENT)              \
-      BT_TRACE(TRACE_LAYER_ATT, TRACE_TYPE_EVENT, ##__VA_ARGS__); \
-  }
-#define GATT_TRACE_DEBUG(...)                                     \
-  {                                                               \
-    if (gatt_cb.trace_level >= BT_TRACE_LEVEL_DEBUG)              \
-      BT_TRACE(TRACE_LAYER_ATT, TRACE_TYPE_DEBUG, ##__VA_ARGS__); \
-  }
-
 /* Define tracing for the SMP unit */
 #define SMP_TRACE_ERROR(...)                                      \
   {                                                               \
