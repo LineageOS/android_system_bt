@@ -251,7 +251,6 @@ typedef struct {
   uint8_t roam_ind;         /* CIEV roam indicator value */
   uint8_t battchg_ind;      /* CIEV battery charge indicator value */
   uint8_t callheld_ind;     /* CIEV call held indicator value */
-  bool retry_with_sco_only; /* indicator to try with SCO only when eSCO fails */
   uint32_t bia_masked_out;  /* indicators HF does not want us to send */
   alarm_t* collision_timer;
   alarm_t* ring_timer;
