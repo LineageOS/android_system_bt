@@ -34,6 +34,8 @@
 #include "l2c_api.h"
 #include "osi/include/osi.h"
 
+using base::StringPrintf;
+
 /* Configuration flags. */
 #define GATT_L2C_CFG_IND_DONE (1 << 0)
 #define GATT_L2C_CFG_CFM_DONE (1 << 1)
@@ -93,16 +95,11 @@ tGATT_CB gatt_cb;
 void gatt_init(void) {
   tL2CAP_FIXED_CHNL_REG fixed_reg;
 
-  GATT_TRACE_DEBUG("gatt_init()");
+  VLOG(1) << __func__;
 
   gatt_cb = tGATT_CB();
   memset(&fixed_reg, 0, sizeof(tL2CAP_FIXED_CHNL_REG));
 
-#if defined(GATT_INITIAL_TRACE_LEVEL)
-  gatt_cb.trace_level = GATT_INITIAL_TRACE_LEVEL;
-#else
-  gatt_cb.trace_level = BT_TRACE_LEVEL_NONE; /* No traces */
-#endif
   gatt_cb.def_mtu_size = GATT_DEF_BLE_MTU_SIZE;
   gatt_cb.sign_op_queue = fixed_queue_new(SIZE_MAX);
   gatt_cb.srv_chg_clt_q = fixed_queue_new(SIZE_MAX);
@@ -123,7 +120,7 @@ void gatt_init(void) {
 
   /* Now, register with L2CAP for ATT PSM over BR/EDR */
   if (!L2CA_Register(BT_PSM_ATT, (tL2CAP_APPL_INFO*)&dyn_info)) {
-    GATT_TRACE_ERROR("ATT Dynamic Registration failed");
+    LOG(ERROR) << "ATT Dynamic Registration failed";
   }
 
   BTM_SetSecurityLevel(true, "", BTM_SEC_SERVICE_ATT, BTM_SEC_NONE, BT_PSM_ATT,
@@ -151,7 +148,7 @@ void gatt_init(void) {
  ******************************************************************************/
 void gatt_free(void) {
   int i;
-  GATT_TRACE_DEBUG("gatt_free()");
+  VLOG(1) << __func__;
 
   fixed_queue_free(gatt_cb.sign_op_queue, NULL);
   gatt_cb.sign_op_queue = NULL;
@@ -225,7 +222,7 @@ bool gatt_disconnect(tGATT_TCB* p_tcb) {
   bool ret = false;
   tGATT_CH_STATE ch_state;
 
-  GATT_TRACE_EVENT("%s", __func__);
+  VLOG(1) << __func__;
 
   if (p_tcb != NULL) {
     ret = true;
@@ -244,10 +241,10 @@ bool gatt_disconnect(tGATT_TCB* p_tcb) {
         if ((ch_state == GATT_CH_OPEN) || (ch_state == GATT_CH_CFG))
           ret = L2CA_DisconnectReq(p_tcb->att_lcid);
         else
-          GATT_TRACE_DEBUG("%s gatt_disconnect channel not opened", __func__);
+          VLOG(1) << __func__ << " gatt_disconnect channel not opened";
       }
     } else {
-      GATT_TRACE_DEBUG("%s already in closing state", __func__);
+      VLOG(1) << __func__ << " already in closing state";
     }
   }
 
@@ -268,25 +265,24 @@ bool gatt_update_app_hold_link_status(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
                                       bool is_add) {
   auto& holders = p_tcb->app_hold_link;
 
+  VLOG(1) << __func__;
   if (is_add) {
     auto ret = holders.insert(gatt_if);
     if (ret.second) {
-      GATT_TRACE_DEBUG("%s: added gatt_if=%d", __func__, gatt_if);
+      VLOG(1) << "added gatt_if=" << +gatt_if;
     } else {
-      GATT_TRACE_DEBUG("%s: attempt to add already existing gatt_if=%d",
-                       __func__, gatt_if);
+      VLOG(1) << "attempt to add already existing gatt_if=" << +gatt_if;
     }
     return true;
   }
 
   //! is_add
   if (!holders.erase(gatt_if)) {
-    GATT_TRACE_DEBUG("%s: attempt to remove nonexisting gatt_if=%d", __func__,
-                     gatt_if);
+    VLOG(1) << "attempt to remove nonexisting gatt_if=" << +gatt_if;
     return false;
   }
 
-  GATT_TRACE_DEBUG("%s: removed gatt_if=%d", __func__, gatt_if);
+  VLOG(1) << "removed gatt_if=" << +gatt_if;
   return true;
 }
 
@@ -303,8 +299,8 @@ bool gatt_update_app_hold_link_status(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
  ******************************************************************************/
 void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
                                    bool is_add, bool check_acl_link) {
-  GATT_TRACE_DEBUG("%s: is_add=%d chk_link=%d", __func__, is_add,
-                   check_acl_link);
+  VLOG(1) << StringPrintf("%s: is_add=%d chk_link=%d", __func__, is_add,
+                          check_acl_link);
 
   if (!p_tcb) return;
 
@@ -321,7 +317,7 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
   }
 
   if (is_add) {
-    GATT_TRACE_DEBUG("%s: disable link idle timer", __func__);
+    VLOG(1) << "disable link idle timer";
     /* acl link is connected disable the idle timeout */
     GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_NO_IDLE_TIMEOUT,
                         p_tcb->transport);
@@ -330,8 +326,8 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
       /* acl link is connected but no application needs to use the link
          so set the timeout value to GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP seconds
          */
-      GATT_TRACE_DEBUG("%s: start link idle timer =%d sec", __func__,
-                       GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP);
+      VLOG(1) << " start link idle timer = "
+              << GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP << " sec";
       GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP,
                           p_tcb->transport);
     }
@@ -372,14 +368,14 @@ bool gatt_act_connect(tGATT_REG* p_reg, BD_ADDR bd_addr,
     p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, transport);
     if (p_tcb != NULL) {
       if (!gatt_connect(bd_addr, p_tcb, transport, initiating_phys)) {
-        GATT_TRACE_ERROR("gatt_connect failed");
+        LOG(ERROR) << "gatt_connect failed";
         fixed_queue_free(p_tcb->pending_ind_q, NULL);
         *p_tcb = tGATT_TCB();
       } else
         ret = true;
     } else {
       ret = 0;
-      GATT_TRACE_ERROR("Max TCB for gatt_if [%d] reached.", p_reg->gatt_if);
+      LOG(ERROR) << "Max TCB for gatt_if [ " << +p_reg->gatt_if << "] reached.";
     }
   }
 
@@ -387,8 +383,8 @@ bool gatt_act_connect(tGATT_REG* p_reg, BD_ADDR bd_addr,
     if (!opportunistic)
       gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, false);
     else
-      GATT_TRACE_DEBUG(
-          "%s: connection is opportunistic, not updating app usage", __func__);
+      VLOG(1) << __func__
+              << ": connection is opportunistic, not updating app usage";
   }
 
   return ret;
@@ -413,7 +409,7 @@ static void gatt_le_connect_cback(uint16_t chan, BD_ADDR bd_addr,
   /* ignore all fixed channel connect/disconnect on BR/EDR link for GATT */
   if (transport == BT_TRANSPORT_BR_EDR) return;
 
-  GATT_TRACE_DEBUG(
+  VLOG(1) << StringPrintf(
       "GATT   ATT protocol channel with BDA: %08x%04x is %s",
       (bd_addr[0] << 24) + (bd_addr[1] << 16) + (bd_addr[2] << 8) + bd_addr[3],
       (bd_addr[4] << 8) + bd_addr[5],
@@ -456,12 +452,12 @@ static void gatt_le_connect_cback(uint16_t chan, BD_ADDR bd_addr,
           gatt_chk_srv_chg(p_srv_chg_clt);
         }
       } else {
-        GATT_TRACE_ERROR("CCB max out, no rsources");
+        LOG(ERROR) << "CCB max out, no rsources";
       }
     }
   } else {
     gatt_cleanup_upon_disc(bd_addr, reason, transport);
-    GATT_TRACE_DEBUG("ATT disconnected");
+    VLOG(1) << "ATT disconnected";
   }
 }
 
@@ -570,8 +566,8 @@ static void gatt_le_data_ind(uint16_t chan, BD_ADDR bd_addr, BT_HDR* p_buf) {
   /* Find CCB based on bd addr */
   if ((p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE)) != NULL) {
     if (gatt_get_ch_state(p_tcb) < GATT_CH_OPEN) {
-      GATT_TRACE_WARNING("ATT - Ignored L2CAP data while in state: %d",
-                         gatt_get_ch_state(p_tcb));
+      LOG(WARNING) << "ATT - Ignored L2CAP data while in state: "
+                   << +gatt_get_ch_state(p_tcb);
     } else
       gatt_data_process(*p_tcb, p_buf);
   }
@@ -597,7 +593,7 @@ static void gatt_l2cif_connect_ind_cback(BD_ADDR bd_addr, uint16_t lcid,
   tL2CAP_CFG_INFO cfg;
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_BR_EDR);
 
-  GATT_TRACE_ERROR("Connection indication cid = %d", lcid);
+  LOG(ERROR) << "Connection indication cid = " << +lcid;
   /* new connection ? */
   if (p_tcb == NULL) {
     /* allocate tcb */
@@ -647,9 +643,9 @@ static void gatt_l2cif_connect_cfm_cback(uint16_t lcid, uint16_t result) {
   /* look up clcb for this channel */
   p_tcb = gatt_find_tcb_by_cid(lcid);
   if (p_tcb != NULL) {
-    GATT_TRACE_DEBUG(
-        "gatt_l2c_connect_cfm_cback result: %d ch_state: %d, lcid:0x%x", result,
-        gatt_get_ch_state(p_tcb), p_tcb->att_lcid);
+    VLOG(1) << __func__
+            << StringPrintf(" result: %d ch_state: %d, lcid:0x%x", result,
+                            gatt_get_ch_state(p_tcb), p_tcb->att_lcid);
 
     /* if in correct state */
     if (gatt_get_ch_state(p_tcb) == GATT_CH_CONN) {
@@ -948,7 +944,7 @@ void gatt_data_process(tGATT_TCB& tcb, BT_HDR* p_buf) {
   uint8_t op_code, pseudo_op_code;
 
   if (p_buf->len <= 0) {
-    GATT_TRACE_ERROR("invalid data length, ignore");
+    LOG(ERROR) << "invalid data length, ignore";
     return;
   }
 
@@ -959,7 +955,8 @@ void gatt_data_process(tGATT_TCB& tcb, BT_HDR* p_buf) {
   pseudo_op_code = op_code & (~GATT_WRITE_CMD_MASK);
 
   if (pseudo_op_code >= GATT_OP_CODE_MAX) {
-    GATT_TRACE_ERROR("ATT - Rcvd L2CAP data, unknown cmd: 0x%x", op_code);
+    LOG(ERROR) << "ATT - Rcvd L2CAP data, unknown cmd: 0x" << std::hex
+               << op_code;
     return;
   }
 
@@ -1013,7 +1010,7 @@ void gatt_send_srv_chg_ind(BD_ADDR peer_bda) {
   uint8_t* p = handle_range;
   uint16_t conn_id;
 
-  GATT_TRACE_DEBUG("gatt_send_srv_chg_ind");
+  VLOG(1) << "gatt_send_srv_chg_ind";
 
   if (gatt_cb.handle_of_h_r) {
     conn_id = gatt_profile_find_conn_id_by_bd_addr(peer_bda);
@@ -1024,10 +1021,10 @@ void gatt_send_srv_chg_ind(BD_ADDR peer_bda) {
                                   GATT_SIZE_OF_SRV_CHG_HNDL_RANGE,
                                   handle_range);
     } else {
-      GATT_TRACE_ERROR("Unable to find conn_id for  %08x%04x ",
-                       (peer_bda[0] << 24) + (peer_bda[1] << 16) +
-                           (peer_bda[2] << 8) + peer_bda[3],
-                       (peer_bda[4] << 8) + peer_bda[5]);
+      LOG(ERROR) << StringPrintf("Unable to find conn_id for  %08x%04x ",
+                                 (peer_bda[0] << 24) + (peer_bda[1] << 16) +
+                                     (peer_bda[2] << 8) + peer_bda[3],
+                                 (peer_bda[4] << 8) + peer_bda[5]);
     }
   }
 }
@@ -1043,8 +1040,7 @@ void gatt_send_srv_chg_ind(BD_ADDR peer_bda) {
  *
  ******************************************************************************/
 void gatt_chk_srv_chg(tGATTS_SRV_CHG* p_srv_chg_clt) {
-  GATT_TRACE_DEBUG("gatt_chk_srv_chg srv_changed=%d",
-                   p_srv_chg_clt->srv_changed);
+  VLOG(1) << __func__ << " srv_changed=" << +p_srv_chg_clt->srv_changed;
 
   if (p_srv_chg_clt->srv_changed) {
     gatt_send_srv_chg_ind(p_srv_chg_clt->bda);
@@ -1068,14 +1064,13 @@ void gatt_init_srv_chg(void) {
   uint8_t num_clients, i;
   tGATTS_SRV_CHG srv_chg_clt;
 
-  GATT_TRACE_DEBUG("gatt_init_srv_chg");
+  VLOG(1) << __func__;
   if (gatt_cb.cb_info.p_srv_chg_callback) {
     status = (*gatt_cb.cb_info.p_srv_chg_callback)(
         GATTS_SRV_CHG_CMD_READ_NUM_CLENTS, NULL, &rsp);
 
     if (status && rsp.num_clients) {
-      GATT_TRACE_DEBUG("gatt_init_srv_chg num_srv_chg_clt_clients=%d",
-                       rsp.num_clients);
+      VLOG(1) << "num_srv_chg_clt_clients=" << +rsp.num_clients;
       num_clients = rsp.num_clients;
       i = 1; /* use one based index */
       while ((i <= num_clients) && status) {
@@ -1085,7 +1080,7 @@ void gatt_init_srv_chg(void) {
         if (status == true) {
           memcpy(&srv_chg_clt, &rsp.srv_chg, sizeof(tGATTS_SRV_CHG));
           if (gatt_add_srv_chg_clt(&srv_chg_clt) == NULL) {
-            GATT_TRACE_ERROR("Unable to add a service change client");
+            LOG(ERROR) << "Unable to add a service change client";
             status = false;
           }
         }
@@ -1093,7 +1088,7 @@ void gatt_init_srv_chg(void) {
       }
     }
   } else {
-    GATT_TRACE_DEBUG("gatt_init_srv_chg callback not registered yet");
+    VLOG(1) << __func__ << " callback not registered yet";
   }
 }
 
@@ -1126,7 +1121,7 @@ void gatt_proc_srv_chg(void) {
   tGATT_TCB* p_tcb;
   tBT_TRANSPORT transport;
 
-  GATT_TRACE_DEBUG("gatt_proc_srv_chg");
+  VLOG(1) << __func__;
 
   if (gatt_cb.cb_info.p_srv_chg_callback && gatt_cb.handle_of_h_r) {
     gatt_set_srv_chg();
@@ -1139,7 +1134,7 @@ void gatt_proc_srv_chg(void) {
 
       if (gatt_is_srv_chg_ind_pending(p_tcb)) {
         send_indication = false;
-        GATT_TRACE_DEBUG("discard srv chg - already has one in the queue");
+        VLOG(1) << "discard srv chg - already has one in the queue";
       }
 
       // Some LE GATT clients don't respond to service changed indications.
@@ -1147,7 +1142,7 @@ void gatt_proc_srv_chg(void) {
       if (send_indication && get_stored_remote_name(bda, remote_name)) {
         if (interop_match_name(INTEROP_GATTC_NO_SERVICE_CHANGED_IND,
                                remote_name)) {
-          GATT_TRACE_DEBUG("discard srv chg - interop matched %s", remote_name);
+          VLOG(1) << "discard srv chg - interop matched " << remote_name;
           send_indication = false;
         }
       }
@@ -1170,8 +1165,7 @@ void gatt_proc_srv_chg(void) {
  ******************************************************************************/
 void gatt_set_ch_state(tGATT_TCB* p_tcb, tGATT_CH_STATE ch_state) {
   if (p_tcb) {
-    GATT_TRACE_DEBUG("gatt_set_ch_state: old=%d new=%d", p_tcb->ch_state,
-                     ch_state);
+    VLOG(1) << __func__ << ": old=" << +p_tcb->ch_state << " new=" << ch_state;
     p_tcb->ch_state = ch_state;
   }
 }
@@ -1188,7 +1182,7 @@ void gatt_set_ch_state(tGATT_TCB* p_tcb, tGATT_CH_STATE ch_state) {
 tGATT_CH_STATE gatt_get_ch_state(tGATT_TCB* p_tcb) {
   tGATT_CH_STATE ch_state = GATT_CH_CLOSE;
   if (p_tcb) {
-    GATT_TRACE_DEBUG("gatt_get_ch_state: ch_state=%d", p_tcb->ch_state);
+    VLOG(1) << "gatt_get_ch_state: ch_state=" << +p_tcb->ch_state;
     ch_state = p_tcb->ch_state;
   }
   return ch_state;

@@ -28,6 +28,7 @@
 #include "srvc_dis_int.h"
 #include "srvc_eng_int.h"
 
+using base::StringPrintf;
 #define DIS_MAX_NUM_INC_SVR 0
 #define DIS_MAX_CHAR_NUM 9
 #define DIS_MAX_ATTR_NUM (DIS_MAX_CHAR_NUM * 2 + DIS_MAX_NUM_INC_SVR + 1)
@@ -167,7 +168,8 @@ uint8_t dis_read_attr_value(UNUSED_ATTR uint8_t clcb_idx, uint16_t handle,
             p_value->len -= offset;
             pp += offset;
             ARRAY_TO_STREAM(p, pp, p_value->len);
-            GATT_TRACE_EVENT("GATT_UUID_MANU_NAME len=0x%04x", p_value->len);
+            VLOG(1) << "GATT_UUID_MANU_NAME len=0x" << std::hex
+                    << +p_value->len;
           }
           break;
 
@@ -243,8 +245,8 @@ bool dis_gatt_c_read_dis_req(uint16_t conn_id) {
       if (GATTC_Read(conn_id, GATT_READ_BY_TYPE, &param) == GATT_SUCCESS)
         return true;
 
-      GATT_TRACE_ERROR("Read DISInfo: 0x%04x GATT_Read Failed",
-                       param.service.uuid.uu.uuid16);
+      LOG(ERROR) << "Read DISInfo: 0x" << std::hex
+                 << param.service.uuid.uu.uuid16 << "GATT_Read Failed";
     }
 
     dis_cb.dis_read_uuid_idx++;
@@ -270,10 +272,9 @@ void dis_c_cmpl_cback(tSRVC_CLCB* p_clcb, tGATTC_OPTYPE op, tGATT_STATUS status,
   uint8_t *pp = NULL, *p_str;
   uint16_t conn_id = p_clcb->conn_id;
 
-  GATT_TRACE_EVENT(
-      "dis_c_cmpl_cback() - op_code: 0x%02x  status: 0x%02x  \
-                        read_type: 0x%04x",
-      op, status, read_type);
+  VLOG(1) << __func__
+          << StringPrintf("op_code: 0x%02x  status: 0x%02x read_type: 0x%04x",
+                          op, status, read_type);
 
   if (op != GATTC_OPTYPE_READ) return;
 
@@ -282,7 +283,7 @@ void dis_c_cmpl_cback(tSRVC_CLCB* p_clcb, tGATTC_OPTYPE op, tGATT_STATUS status,
 
     switch (read_type) {
       case GATT_UUID_SYSTEM_ID:
-        GATT_TRACE_EVENT("DIS_ATTR_SYS_ID_BIT");
+        VLOG(1) << "DIS_ATTR_SYS_ID_BIT";
         if (p_data->att_value.len == DIS_SYSTEM_ID_SIZE) {
           p_clcb->dis_value.attr_mask |= DIS_ATTR_SYS_ID_BIT;
           /* save system ID*/
@@ -341,7 +342,7 @@ tDIS_STATUS DIS_SrInit(tDIS_ATTR_MASK dis_attr_mask) {
   tGATT_STATUS status;
 
   if (dis_cb.enabled) {
-    GATT_TRACE_ERROR("DIS already initalized");
+    LOG(ERROR) << "DIS already initalized";
     return DIS_SUCCESS;
   }
 
@@ -372,7 +373,7 @@ tDIS_STATUS DIS_SrInit(tDIS_ATTR_MASK dis_attr_mask) {
   status = GATTS_AddService(srvc_eng_cb.gatt_if, service,
                             sizeof(service) / sizeof(btgatt_db_element_t));
   if (status != GATT_SERVICE_STARTED) {
-    GATT_TRACE_ERROR("Can not create service, DIS_Init failed!");
+    LOG(ERROR) << "Can not create service, DIS_Init failed!";
     return GATT_ERROR;
   }
 
@@ -382,8 +383,9 @@ tDIS_STATUS DIS_SrInit(tDIS_ATTR_MASK dis_attr_mask) {
   for (int i = 0; i < DIS_MAX_CHAR_NUM; i++) {
     dis_cb.dis_attr[i].handle = service[i + 1].attribute_handle;
 
-    GATT_TRACE_DEBUG("%s:  handle of new attribute 0x%04 = x%d", __func__,
-                     dis_cb.dis_attr[i].uuid, dis_cb.dis_attr[i].handle);
+    VLOG(1) << StringPrintf("%s:  handle of new attribute 0x%04x = %d",
+                            __func__, dis_cb.dis_attr[i].uuid,
+                            dis_cb.dis_attr[i].handle);
   }
 
   dis_cb.enabled = true;
@@ -455,11 +457,12 @@ bool DIS_ReadDISInfo(BD_ADDR peer_bda, tDIS_READ_CBACK* p_cback,
 
   dis_cb.request_mask = mask;
 
-  GATT_TRACE_EVENT("DIS_ReadDISInfo() - BDA: %08x%04x  cl_read_uuid: 0x%04x",
-                   (peer_bda[0] << 24) + (peer_bda[1] << 16) +
-                       (peer_bda[2] << 8) + peer_bda[3],
-                   (peer_bda[4] << 8) + peer_bda[5],
-                   dis_attr_uuid[dis_cb.dis_read_uuid_idx]);
+  VLOG(1) << StringPrintf(
+      "DIS_ReadDISInfo() - BDA: %08x%04x  cl_read_uuid: 0x%04x",
+      (peer_bda[0] << 24) + (peer_bda[1] << 16) + (peer_bda[2] << 8) +
+          peer_bda[3],
+      (peer_bda[4] << 8) + peer_bda[5],
+      dis_attr_uuid[dis_cb.dis_read_uuid_idx]);
 
   GATT_GetConnIdIfConnected(srvc_eng_cb.gatt_if, peer_bda, &conn_id,
                             BT_TRANSPORT_LE);

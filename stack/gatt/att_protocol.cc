@@ -31,6 +31,7 @@
 #define GATT_OP_CODE_SIZE 1
 #define GATT_START_END_HANDLE_SIZE 4
 
+using base::StringPrintf;
 /**********************************************************************
  *   ATT protocl message building utility                              *
  **********************************************************************/
@@ -302,8 +303,8 @@ BT_HDR* attp_build_value_cmd(uint16_t payload_size, uint8_t op_code,
       /* update handle value pair length */
       if (op_code == GATT_RSP_READ_BY_TYPE) *p_pair_len = (len + 2);
 
-      GATT_TRACE_WARNING("attribute value too long, to be truncated to %d",
-                         len);
+      LOG(WARNING) << StringPrintf(
+          "attribute value too long, to be truncated to %d", len);
     }
 
     ARRAY_TO_STREAM(p, p_data, len);
@@ -330,11 +331,12 @@ tGATT_STATUS attp_send_msg_to_l2cap(tGATT_TCB& tcb, BT_HDR* p_toL2CAP) {
     l2cap_ret = (uint16_t)L2CA_DataWrite(tcb.att_lcid, p_toL2CAP);
 
   if (l2cap_ret == L2CAP_DW_FAILED) {
-    GATT_TRACE_ERROR("ATT   failed to pass msg:0x%0x to L2CAP",
-                     *((uint8_t*)(p_toL2CAP + 1) + p_toL2CAP->offset));
+    LOG(ERROR) << StringPrintf(
+        "ATT   failed to pass msg:0x%0x to L2CAP",
+        *((uint8_t*)(p_toL2CAP + 1) + p_toL2CAP->offset));
     return GATT_INTERNAL_ERROR;
   } else if (l2cap_ret == L2CAP_DW_CONGESTED) {
-    GATT_TRACE_DEBUG("ATT congested, message accepted");
+    VLOG(1) << StringPrintf("ATT congested, message accepted");
     return GATT_CONGESTED;
   }
   return GATT_SUCCESS;
@@ -355,7 +357,7 @@ BT_HDR* attp_build_sr_msg(tGATT_TCB& tcb, uint8_t op_code,
   switch (op_code) {
     case GATT_RSP_READ_BLOB:
     case GATT_RSP_PREPARE_WRITE:
-      GATT_TRACE_EVENT(
+      VLOG(1) << StringPrintf(
           "ATT_RSP_READ_BLOB/GATT_RSP_PREPARE_WRITE: len = %d offset = %d",
           p_msg->attr_value.len, p_msg->attr_value.offset);
       offset = p_msg->attr_value.offset;
@@ -389,11 +391,12 @@ BT_HDR* attp_build_sr_msg(tGATT_TCB& tcb, uint8_t op_code,
       break;
 
     default:
-      GATT_TRACE_DEBUG("attp_build_sr_msg: unknown op code = %d", op_code);
+      VLOG(1) << StringPrintf("attp_build_sr_msg: unknown op code = %d",
+                              op_code);
       break;
   }
 
-  if (!p_cmd) GATT_TRACE_ERROR("No resources");
+  if (!p_cmd) LOG(ERROR) << StringPrintf("No resources");
 
   return p_cmd;
 }
