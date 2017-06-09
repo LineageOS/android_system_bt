@@ -142,9 +142,9 @@ static void btif_av_event_free_data(btif_sm_event_t event, void* p_data);
  * Extern functions
  ************************************************************************/
 extern void btif_rc_handler(tBTA_AV_EVT event, tBTA_AV* p_data);
-extern bool btif_rc_get_connected_peer(BD_ADDR peer_addr);
-extern uint8_t btif_rc_get_connected_peer_handle(BD_ADDR peer_addr);
-extern void btif_rc_check_handle_pending_play(BD_ADDR peer_addr,
+extern bool btif_rc_get_connected_peer(bt_bdaddr_t* peer_addr);
+extern uint8_t btif_rc_get_connected_peer_handle(const bt_bdaddr_t& peer_addr);
+extern void btif_rc_check_handle_pending_play(const bt_bdaddr_t& peer_addr,
                                               bool bSendToApp);
 
 extern fixed_queue_t* btu_general_alarm_queue;
@@ -221,14 +221,14 @@ const char* dump_av_sm_event_name(btif_av_sm_event_t event) {
  *
  ******************************************************************************/
 static void btif_initiate_av_open_timer_timeout(UNUSED_ATTR void* data) {
-  BD_ADDR peer_addr;
+  bt_bdaddr_t peer_addr;
   btif_av_connect_req_t connect_req;
 
   /* is there at least one RC connection - There should be */
-  if (btif_rc_get_connected_peer(peer_addr)) {
+  if (btif_rc_get_connected_peer(&peer_addr)) {
     BTIF_TRACE_DEBUG("%s Issuing connect to the remote RC peer", __func__);
     /* In case of AVRCP connection request, we will initiate SRC connection */
-    connect_req.target_bda = (bt_bdaddr_t*)&peer_addr;
+    connect_req.target_bda = &peer_addr;
     if (bt_av_sink_callbacks != NULL)
       connect_req.uuid = UUID_SERVCLASS_AUDIO_SINK;
     else if (bt_av_src_callbacks != NULL)
@@ -455,7 +455,7 @@ static bool btif_av_state_idle_handler(btif_sm_event_t event, void* p_data) {
       if (btif_av_cb.peer_sep == AVDT_TSEP_SNK) {
         /* if queued PLAY command,  send it now */
         btif_rc_check_handle_pending_play(
-            p_bta_data->open.bd_addr,
+            from_BD_ADDR(p_bta_data->open.bd_addr),
             (p_bta_data->open.status == BTA_AV_SUCCESS));
       } else if ((btif_av_cb.peer_sep == AVDT_TSEP_SRC) &&
                  (p_bta_data->open.status == BTA_AV_SUCCESS)) {
@@ -542,10 +542,10 @@ static bool btif_av_state_opening_handler(btif_sm_event_t event, void* p_data) {
       } else {
         BTIF_TRACE_WARNING("BTA_AV_OPEN_EVT::FAILED status: %d",
                            p_bta_data->open.status);
-        BD_ADDR peer_addr;
+        bt_bdaddr_t peer_addr;
         uint8_t peer_handle = BTRC_HANDLE_NONE;
-        if ((btif_rc_get_connected_peer(peer_addr)) &&
-            (!bdcmp(btif_av_cb.peer_bda.address, peer_addr))) {
+        if (btif_rc_get_connected_peer(&peer_addr) &&
+            btif_av_cb.peer_bda == peer_addr) {
           /*
            * Disconnect AVRCP connection, if
            * A2DP conneciton failed, for any reason
@@ -567,7 +567,7 @@ static bool btif_av_state_opening_handler(btif_sm_event_t event, void* p_data) {
       if (btif_av_cb.peer_sep == AVDT_TSEP_SNK) {
         /* if queued PLAY command,  send it now */
         btif_rc_check_handle_pending_play(
-            p_bta_data->open.bd_addr,
+            from_BD_ADDR(p_bta_data->open.bd_addr),
             (p_bta_data->open.status == BTA_AV_SUCCESS));
       } else if ((btif_av_cb.peer_sep == AVDT_TSEP_SRC) &&
                  (p_bta_data->open.status == BTA_AV_SUCCESS)) {
