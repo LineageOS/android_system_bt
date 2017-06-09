@@ -177,7 +177,7 @@ uint16_t Battery_Instantiate(uint8_t app_id, tBA_REG_INFO* p_reg_info) {
   tBA_INST* p_inst;
 
   if (battery_cb.inst_id == BA_MAX_INT_NUM) {
-    GATT_TRACE_ERROR("MAX battery service has been reached");
+    LOG(ERROR) << "MAX battery service has been reached";
     return 0;
   }
 
@@ -235,7 +235,7 @@ uint16_t Battery_Instantiate(uint8_t app_id, tBA_REG_INFO* p_reg_info) {
 
   if (status != GATT_SUCCESS) {
     battery_cb.inst_id--;
-    GATT_TRACE_ERROR("%s: Failed to add battery servuce!", __func__);
+    LOG(ERROR) << __func__ << " Failed to add battery servuce!";
   }
 
   battery_cb.inst_id++;
