@@ -15,9 +15,11 @@
  */
 
 #define LOG_TAG "a2dp_vendor_ldac_encoder"
+#define ATRACE_TAG ATRACE_TAG_AUDIO
 
 #include "a2dp_vendor_ldac_encoder.h"
 
+#include <cutils/trace.h>
 #include <dlfcn.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -545,6 +547,7 @@ void a2dp_vendor_ldac_send_frames(uint64_t timestamp_us) {
                              a2dp_ldac_encoder_cb.TxQueueLength, flag_enable);
       if (prev_eqmid != a2dp_ldac_encoder_cb.last_ldac_abr_eqmid)
         a2dp_ldac_encoder_cb.ldac_abr_adjustments++;
+      ATRACE_INT("LDAC ABR level", a2dp_ldac_encoder_cb.last_ldac_abr_eqmid);
     }
     // Transcode frame and enqueue
     a2dp_ldac_encode_frames(nb_frame);
