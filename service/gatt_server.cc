@@ -18,23 +18,12 @@
 
 #include "service/common/bluetooth/util/address_helper.h"
 #include "service/logging_helpers.h"
+#include "stack/include/bt_types.h"
 
 using std::lock_guard;
 using std::mutex;
 
 namespace bluetooth {
-
-namespace {
-
-bool operator==(const bt_bdaddr_t& lhs, const bt_bdaddr_t& rhs) {
-  return memcmp(&lhs, &rhs, sizeof(lhs)) == 0;
-}
-
-bool operator!=(const bt_bdaddr_t& lhs, const bt_bdaddr_t& rhs) {
-  return !(lhs == rhs);
-}
-
-}  // namespace
 
 // GattServer implementation
 // ========================================================
