@@ -540,6 +540,26 @@ typedef struct {
 typedef uint8_t BD_ADDR[BD_ADDR_LEN]; /* Device address */
 typedef uint8_t* BD_ADDR_PTR;         /* Pointer to Device Address */
 
+#ifdef __cplusplus
+#include <base/strings/stringprintf.h>
+#include <hardware/bluetooth.h>
+
+inline bool operator==(const bt_bdaddr_t& lhs, const bt_bdaddr_t& rhs) {
+  return memcmp(&lhs, &rhs, sizeof(lhs)) == 0;
+}
+
+inline bool operator!=(const bt_bdaddr_t& lhs, const bt_bdaddr_t& rhs) {
+  return !(lhs == rhs);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const bt_bdaddr_t& a) {
+  os << base::StringPrintf("%02x:%02x:%02x:%02x:%02x:%02x", a.address[0],
+                           a.address[1], a.address[2], a.address[3],
+                           a.address[4], a.address[5]);
+  return os;
+}
+#endif
+
 #define AMP_KEY_TYPE_GAMP 0
 #define AMP_KEY_TYPE_WIFI 1
 #define AMP_KEY_TYPE_UWB 2
