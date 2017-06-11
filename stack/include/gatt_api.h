@@ -653,18 +653,6 @@ typedef struct {
  *  External Function Declarations
  ******************************************************************************/
 
-/*******************************************************************************
- *
- * Function         GATT_SetTraceLevel
- *
- * Description      This function sets the trace level.  If called with
- *                  a value of 0xFF, it simply returns the current trace level.
- *
- * Returns          The new or current trace level
- *
- ******************************************************************************/
-extern uint8_t GATT_SetTraceLevel(uint8_t new_level);
-
 /******************************************************************************/
 /* GATT Profile API Functions */
 /******************************************************************************/

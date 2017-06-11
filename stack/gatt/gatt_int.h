@@ -21,12 +21,12 @@
 
 #include "bt_target.h"
 
-#include "bt_trace.h"
 #include "btm_ble_api.h"
 #include "btu.h"
 #include "gatt_api.h"
 #include "osi/include/fixed_queue.h"
 
+#include <base/strings/stringprintf.h>
 #include <string.h>
 #include <list>
 #include <unordered_set>
@@ -370,7 +370,6 @@ typedef struct {
   fixed_queue_t* srv_chg_clt_q; /* service change clients queue */
   tGATT_REG cl_rcb[GATT_MAX_APPS];
   tGATT_CLCB clcb[GATT_CL_MAX_LCB]; /* connection link control block*/
-  uint8_t trace_level;
   uint16_t def_mtu_size;
 
 #if (GATT_CONFORMANCE_TESTING == TRUE)
@@ -549,9 +548,8 @@ extern void gatt_send_queue_write_cancel(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
                                          tGATT_EXEC_FLAG flag);
 
 /* gatt_auth.cc */
-extern bool gatt_security_check_start(tGATT_CLCB* p_clcb);
+extern void gatt_security_check_start(tGATT_CLCB* p_clcb);
 extern void gatt_verify_signature(tGATT_TCB& tcb, BT_HDR* p_buf);
-extern tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB* p_clcb);
 extern tGATT_STATUS gatt_get_link_encrypt_status(tGATT_TCB& tcb);
 extern tGATT_SEC_ACTION gatt_get_sec_act(tGATT_TCB* p_tcb);
 extern void gatt_set_sec_act(tGATT_TCB* p_tcb, tGATT_SEC_ACTION sec_act);

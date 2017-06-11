@@ -3241,6 +3241,11 @@ static tL2C_CCB* l2cu_get_next_channel(tL2C_LCB* p_lcb) {
 }
 #endif /* (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE) */
 
+void l2cu_tx_complete(tL2C_TX_COMPLETE_CB_INFO* p_cbi) {
+  if (p_cbi->cb != NULL)
+      p_cbi->cb(p_cbi->local_cid, p_cbi->num_sdu);
+}
+
 /******************************************************************************
  *
  * Function         l2cu_get_next_buffer_to_send
@@ -3251,13 +3256,15 @@ static tL2C_CCB* l2cu_get_next_channel(tL2C_LCB* p_lcb) {
  * Returns          pointer to buffer or NULL
  *
  ******************************************************************************/
-BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb) {
+BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb, tL2C_TX_COMPLETE_CB_INFO* p_cbi) {
   tL2C_CCB* p_ccb;
   BT_HDR* p_buf;
 
 /* Highest priority are fixed channels */
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
   int xx;
+
+  p_cbi->cb = NULL;
 
   for (xx = 0; xx < L2CAP_NUM_FIXED_CHNLS; xx++) {
     p_ccb = p_lcb->p_fixed_ccbs[xx];
@@ -3287,12 +3294,14 @@ BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb) {
       if (!fixed_queue_is_empty(p_ccb->xmit_hold_q)) {
         p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_ccb->xmit_hold_q);
         if (NULL == p_buf) {
-          L2CAP_TRACE_ERROR("l2cu_get_buffer_to_send: No data to be sent");
+          L2CAP_TRACE_ERROR("%s: No data to be sent", __func__);
           return (NULL);
         }
-        /* send tx complete */
-        if (l2cb.fixed_reg[xx].pL2CA_FixedTxComplete_Cb)
-          (*l2cb.fixed_reg[xx].pL2CA_FixedTxComplete_Cb)(p_ccb->local_cid, 1);
+
+        /* Prepare callback info for TX completion */
+        p_cbi->cb = l2cb.fixed_reg[xx].pL2CA_FixedTxComplete_Cb;
+        p_cbi->local_cid = p_ccb->local_cid;
+        p_cbi->num_sdu = 1;
 
         l2cu_check_channel_congestion(p_ccb);
         l2cu_set_acl_hci_header(p_buf, p_ccb);

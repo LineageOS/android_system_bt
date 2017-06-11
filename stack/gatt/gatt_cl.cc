@@ -42,6 +42,7 @@
 #define GATT_MTU_RSP_MIN_LEN 2
 #define GATT_READ_BY_TYPE_RSP_MIN_LEN 1
 
+using base::StringPrintf;
 /*******************************************************************************
  *                      G L O B A L      G A T T       D A T A                 *
  ******************************************************************************/
@@ -160,8 +161,8 @@ void gatt_act_read(tGATT_CLCB* p_clcb, uint16_t offset) {
         else
           p_clcb->first_read_blob_after_read = false;
 
-        GATT_TRACE_DEBUG("gatt_act_read first_read_blob_after_read=%d",
-                         p_clcb->first_read_blob_after_read);
+        VLOG(1) << __func__ << ": first_read_blob_after_read="
+                << p_clcb->first_read_blob_after_read;
         op_code = GATT_REQ_READ_BLOB;
         msg.read_blob.offset = offset;
         msg.read_blob.handle = p_clcb->s_handle;
@@ -187,7 +188,7 @@ void gatt_act_read(tGATT_CLCB* p_clcb, uint16_t offset) {
       break;
 
     default:
-      GATT_TRACE_ERROR("Unknown read type: %d", p_clcb->op_subtype);
+      LOG(ERROR) << "Unknown read type:" << +p_clcb->op_subtype;
       break;
   }
 
@@ -198,61 +199,60 @@ void gatt_act_read(tGATT_CLCB* p_clcb, uint16_t offset) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         gatt_act_write
- *
- * Description      GATT write operation.
- *
- * Returns          void.
- *
- ******************************************************************************/
+/** GATT write operation */
 void gatt_act_write(tGATT_CLCB* p_clcb, uint8_t sec_act) {
   tGATT_TCB& tcb = *p_clcb->p_tcb;
-  uint8_t rt = GATT_SUCCESS, op_code = 0;
-  tGATT_VALUE* p_attr = (tGATT_VALUE*)p_clcb->p_attr_buf;
 
-  if (p_attr) {
-    switch (p_clcb->op_subtype) {
-      case GATT_WRITE_NO_RSP:
-        p_clcb->s_handle = p_attr->handle;
-        op_code = (sec_act == GATT_SEC_SIGN_DATA) ? GATT_SIGN_CMD_WRITE
-                                                  : GATT_CMD_WRITE;
-        rt = gatt_send_write_msg(tcb, p_clcb, op_code, p_attr->handle,
-                                 p_attr->len, 0, p_attr->value);
-        break;
+  CHECK(p_clcb->p_attr_buf);
+  tGATT_VALUE& attr = *((tGATT_VALUE*)p_clcb->p_attr_buf);
 
-      case GATT_WRITE:
-        if (p_attr->len <= (tcb.payload_size - GATT_HDR_SIZE)) {
-          p_clcb->s_handle = p_attr->handle;
-
-          rt = gatt_send_write_msg(tcb, p_clcb, GATT_REQ_WRITE, p_attr->handle,
-                                   p_attr->len, 0, p_attr->value);
-        } else /* prepare write for long attribute */
-        {
-          gatt_send_prepare_write(tcb, p_clcb);
+  switch (p_clcb->op_subtype) {
+    case GATT_WRITE_NO_RSP: {
+      p_clcb->s_handle = attr.handle;
+      uint8_t op_code = (sec_act == GATT_SEC_SIGN_DATA) ? GATT_SIGN_CMD_WRITE
+                                                        : GATT_CMD_WRITE;
+      uint8_t rt = gatt_send_write_msg(tcb, p_clcb, op_code, attr.handle,
+                                       attr.len, 0, attr.value);
+      if (rt != GATT_CMD_STARTED) {
+        if (rt != GATT_SUCCESS) {
+          LOG(ERROR) << StringPrintf(
+              "gatt_act_write() failed op_code=0x%x rt=%d", op_code, rt);
         }
-        break;
+        gatt_end_operation(p_clcb, rt, NULL);
+      }
+      return;
+    }
 
-      case GATT_WRITE_PREPARE:
+    case GATT_WRITE: {
+      if (attr.len <= (tcb.payload_size - GATT_HDR_SIZE)) {
+        p_clcb->s_handle = attr.handle;
+
+        uint8_t rt = gatt_send_write_msg(tcb, p_clcb, GATT_REQ_WRITE,
+                                         attr.handle, attr.len, 0, attr.value);
+        if (rt != GATT_SUCCESS && rt != GATT_CMD_STARTED &&
+            rt != GATT_CONGESTED) {
+          if (rt != GATT_SUCCESS) {
+            LOG(ERROR) << StringPrintf(
+                "gatt_act_write() failed op_code=0x%x rt=%d", GATT_REQ_WRITE,
+                rt);
+          }
+          gatt_end_operation(p_clcb, rt, NULL);
+        }
+
+      } else {
+        /* prepare write for long attribute */
         gatt_send_prepare_write(tcb, p_clcb);
-        break;
-
-      default:
-        rt = GATT_INTERNAL_ERROR;
-        GATT_TRACE_ERROR("Unknown write type: %d", p_clcb->op_subtype);
-        break;
+      }
+      return;
     }
-  } else
-    rt = GATT_INTERNAL_ERROR;
 
-  if ((rt != GATT_SUCCESS && rt != GATT_CMD_STARTED && rt != GATT_CONGESTED) ||
-      (rt != GATT_CMD_STARTED && p_clcb->op_subtype == GATT_WRITE_NO_RSP)) {
-    if (rt != GATT_SUCCESS) {
-      GATT_TRACE_ERROR("gatt_act_write() failed op_code=0x%x rt=%d", op_code,
-                       rt);
-    }
-    gatt_end_operation(p_clcb, rt, NULL);
+    case GATT_WRITE_PREPARE:
+      gatt_send_prepare_write(tcb, p_clcb);
+      return;
+
+    default:
+      CHECK(false) << "Unknown write type" << p_clcb->op_subtype;
+      return;
   }
 }
 /*******************************************************************************
@@ -268,7 +268,7 @@ void gatt_send_queue_write_cancel(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
                                   tGATT_EXEC_FLAG flag) {
   uint8_t rt;
 
-  GATT_TRACE_DEBUG("gatt_send_queue_write_cancel ");
+  VLOG(1) << __func__;
 
   rt = attp_send_cl_msg(tcb, p_clcb, GATT_REQ_EXEC_WRITE, (tGATT_CL_MSG*)&flag);
 
@@ -291,7 +291,7 @@ bool gatt_check_write_long_terminate(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
   bool exec = false;
   tGATT_EXEC_FLAG flag = GATT_PREP_WRITE_EXEC;
 
-  GATT_TRACE_DEBUG("gatt_check_write_long_terminate ");
+  VLOG(1) << __func__;
   /* check the first write response status */
   if (p_rsp_value != NULL) {
     if (p_rsp_value->handle != p_attr->handle ||
@@ -315,23 +315,14 @@ bool gatt_check_write_long_terminate(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
   }
   return false;
 }
-/*******************************************************************************
- *
- * Function         gatt_send_prepare_write
- *
- * Description      Send prepare write.
- *
- * Returns          void.
- *
- ******************************************************************************/
+
+/** Send prepare write */
 void gatt_send_prepare_write(tGATT_TCB& tcb, tGATT_CLCB* p_clcb) {
   tGATT_VALUE* p_attr = (tGATT_VALUE*)p_clcb->p_attr_buf;
-  uint16_t to_send, offset;
-  uint8_t rt = GATT_SUCCESS;
   uint8_t type = p_clcb->op_subtype;
 
-  GATT_TRACE_DEBUG("gatt_send_prepare_write type=0x%x", type);
-  to_send = p_attr->len - p_attr->offset;
+  VLOG(1) << __func__ << StringPrintf(" type=0x%x", type);
+  uint16_t to_send = p_attr->len - p_attr->offset;
 
   if (to_send > (tcb.payload_size -
                  GATT_WRITE_LONG_HDR_SIZE)) /* 2 = uint16_t offset bytes  */
@@ -339,22 +330,22 @@ void gatt_send_prepare_write(tGATT_TCB& tcb, tGATT_CLCB* p_clcb) {
 
   p_clcb->s_handle = p_attr->handle;
 
-  offset = p_attr->offset;
+  uint16_t offset = p_attr->offset;
   if (type == GATT_WRITE_PREPARE) {
     offset += p_clcb->start_offset;
   }
 
-  GATT_TRACE_DEBUG("offset =0x%x len=%d", offset, to_send);
+  VLOG(1) << StringPrintf("offset =0x%x len=%d", offset, to_send);
 
-  rt = gatt_send_write_msg(tcb, p_clcb, GATT_REQ_PREPARE_WRITE, p_attr->handle,
-                           to_send,                         /* length */
-                           offset,                          /* used as offset */
-                           p_attr->value + p_attr->offset); /* data */
+  uint8_t rt = gatt_send_write_msg(tcb, p_clcb, GATT_REQ_PREPARE_WRITE,
+                                   p_attr->handle, to_send, /* length */
+                                   offset,                  /* used as offset */
+                                   p_attr->value + p_attr->offset); /* data */
 
   /* remember the write long attribute length */
   p_clcb->counter = to_send;
 
-  if (rt != GATT_SUCCESS && rt != GATT_CMD_STARTED) {
+  if (rt != GATT_SUCCESS && rt != GATT_CMD_STARTED && rt != GATT_CONGESTED) {
     gatt_end_operation(p_clcb, rt, NULL);
   }
 }
@@ -375,7 +366,7 @@ void gatt_process_find_type_value_rsp(UNUSED_ATTR tGATT_TCB& tcb,
   tGATT_DISC_RES result;
   uint8_t* p = p_data;
 
-  GATT_TRACE_DEBUG("gatt_process_find_type_value_rsp ");
+  VLOG(1) << __func__;
   /* unexpected response */
   if (p_clcb->operation != GATTC_OPTYPE_DISCOVERY ||
       p_clcb->op_subtype != GATT_DISC_SRVC_BY_UUID)
@@ -424,7 +415,7 @@ void gatt_process_read_info_rsp(UNUSED_ATTR tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
   uint8_t *p = p_data, uuid_len = 0, type;
 
   if (len < GATT_INFO_RSP_MIN_LEN) {
-    GATT_TRACE_ERROR("invalid Info Response PDU received, discard.");
+    LOG(ERROR) << "invalid Info Response PDU received, discard.";
     gatt_end_operation(p_clcb, GATT_INVALID_PDU, NULL);
     return;
   }
@@ -475,8 +466,8 @@ void gatt_proc_disc_error_rsp(UNUSED_ATTR tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
                               uint8_t reason) {
   tGATT_STATUS status = (tGATT_STATUS)reason;
 
-  GATT_TRACE_DEBUG("gatt_proc_disc_error_rsp reason: %02x cmd_code %04x",
-                   reason, opcode);
+  VLOG(1) << __func__
+          << StringPrintf("reason: %02x cmd_code %04x", reason, opcode);
 
   switch (opcode) {
     case GATT_REQ_READ_BY_GRP_TYPE:
@@ -485,11 +476,11 @@ void gatt_proc_disc_error_rsp(UNUSED_ATTR tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
     case GATT_REQ_FIND_INFO:
       if (reason == GATT_NOT_FOUND) {
         status = GATT_SUCCESS;
-        GATT_TRACE_DEBUG("Discovery completed");
+        VLOG(1) << "Discovery completed";
       }
       break;
     default:
-      GATT_TRACE_ERROR("Incorrect discovery opcode %04x", opcode);
+      LOG(ERROR) << StringPrintf("Incorrect discovery opcode %04x", opcode);
       break;
   }
 
@@ -513,7 +504,7 @@ void gatt_process_error_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
   uint16_t handle;
   tGATT_VALUE* p_attr = (tGATT_VALUE*)p_clcb->p_attr_buf;
 
-  GATT_TRACE_DEBUG("gatt_process_error_rsp ");
+  VLOG(1) << __func__;
   STREAM_TO_UINT8(opcode, p);
   STREAM_TO_UINT16(handle, p);
   STREAM_TO_UINT8(reason, p);
@@ -557,11 +548,11 @@ void gatt_process_prep_write_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
       .conn_id = p_clcb->conn_id, .auth_req = GATT_AUTH_REQ_NONE,
   };
 
-  GATT_TRACE_ERROR("value resp op_code = %s len = %d",
-                   gatt_dbg_op_name(op_code), len);
+  LOG(ERROR) << StringPrintf("value resp op_code = %s len = %d",
+                             gatt_dbg_op_name(op_code), len);
 
   if (len < GATT_PREP_WRITE_RSP_MIN_LEN) {
-    GATT_TRACE_ERROR("illegal prepare write response length, discard");
+    LOG(ERROR) << "illegal prepare write response length, discard";
     gatt_end_operation(p_clcb, GATT_INVALID_PDU, &value);
     return;
   }
@@ -603,10 +594,10 @@ void gatt_process_notification(tGATT_TCB& tcb, uint8_t op_code, uint16_t len,
                                       ? GATTC_OPTYPE_NOTIFICATION
                                       : GATTC_OPTYPE_INDICATION;
 
-  GATT_TRACE_DEBUG("gatt_process_notification ");
+  VLOG(1) << __func__;
 
   if (len < GATT_NOTIFICATION_MIN_LEN) {
-    GATT_TRACE_ERROR("illegal notification PDU length, discard");
+    LOG(ERROR) << "illegal notification PDU length, discard";
     return;
   }
 
@@ -629,10 +620,8 @@ void gatt_process_notification(tGATT_TCB& tcb, uint8_t op_code, uint16_t len,
          For now, just log the error reset the counter.
          Later we need to disconnect the link unconditionally.
       */
-      GATT_TRACE_ERROR(
-          "gatt_process_notification rcv Ind. but ind_count=%d (will reset "
-          "ind_count)",
-          tcb.ind_count);
+      LOG(ERROR) << __func__ << " rcv Ind. but ind_count=" << tcb.ind_count
+                 << " (will reset ind_count)";
     }
     tcb.ind_count = 0;
   }
@@ -692,8 +681,7 @@ void gatt_process_read_by_type_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
     return;
 
   if (len < GATT_READ_BY_TYPE_RSP_MIN_LEN) {
-    GATT_TRACE_ERROR(
-        "Illegal ReadByType/ReadByGroupType Response length, discard");
+    LOG(ERROR) << "Illegal ReadByType/ReadByGroupType Response length, discard";
     gatt_end_operation(p_clcb, GATT_INVALID_PDU, NULL);
     return;
   }
@@ -704,10 +692,11 @@ void gatt_process_read_by_type_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
     /* this is an error case that server's response containing a value length
        which is larger than MTU-2
        or value_len > message total length -1 */
-    GATT_TRACE_ERROR(
-        "gatt_process_read_by_type_rsp: Discard response op_code=%d "
-        "vale_len=%d > (MTU-2=%d or msg_len-1=%d)",
-        op_code, value_len, (tcb.payload_size - 2), (len - 1));
+    LOG(ERROR) << __func__
+               << StringPrintf(
+                      ": Discard response op_code=%d "
+                      "vale_len=%d > (MTU-2=%d or msg_len-1=%d)",
+                      op_code, value_len, (tcb.payload_size - 2), (len - 1));
     gatt_end_operation(p_clcb, GATT_ERROR, NULL);
     return;
   }
@@ -745,7 +734,7 @@ void gatt_process_read_by_type_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
         record_value.group_value.e_handle = handle;
         if (!gatt_parse_uuid_from_cmd(&record_value.group_value.service_type,
                                       value_len, &p)) {
-          GATT_TRACE_ERROR("discover all service response parsing failure");
+          LOG(ERROR) << "discover all service response parsing failure";
           break;
         }
       }
@@ -776,10 +765,9 @@ void gatt_process_read_by_type_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
         gatt_act_read(p_clcb, 0);
         return;
       } else {
-        GATT_TRACE_ERROR(
-            "gatt_process_read_by_type_rsp INCL_SRVC failed with invalid data "
-            "value_len=%d",
-            value_len);
+        LOG(ERROR) << __func__
+                   << ": INCL_SRVC failed with invalid data value_len="
+                   << +value_len;
         gatt_end_operation(p_clcb, GATT_INVALID_PDU, (void*)p);
         return;
       }
@@ -895,7 +883,7 @@ void gatt_process_read_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
         if (len == (tcb.payload_size -
                     1) && /* full packet for read or read blob rsp */
             len + offset < GATT_MAX_ATTR_LEN) {
-          GATT_TRACE_DEBUG(
+          VLOG(1) << StringPrintf(
               "full pkt issue read blob for remianing bytes old offset=%d "
               "len=%d new offset=%d",
               offset, len, p_clcb->counter);
@@ -906,8 +894,8 @@ void gatt_process_read_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
         }
       } else /* exception, should not happen */
       {
-        GATT_TRACE_ERROR("attr offset = %d p_attr_buf = %d ", offset,
-                         p_clcb->p_attr_buf);
+        LOG(ERROR) << "attr offset = " << +offset
+                   << " p_attr_buf = " << p_clcb->p_attr_buf;
         gatt_end_operation(p_clcb, GATT_NO_RESOURCES,
                            (void*)p_clcb->p_attr_buf);
       }
@@ -965,7 +953,7 @@ void gatt_process_mtu_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, uint16_t len,
   tGATT_STATUS status = GATT_SUCCESS;
 
   if (len < GATT_MTU_RSP_MIN_LEN) {
-    GATT_TRACE_ERROR("invalid MTU response PDU received, discard.");
+    LOG(ERROR) << "invalid MTU response PDU received, discard.";
     status = GATT_INVALID_PDU;
   } else {
     STREAM_TO_UINT16(mtu, p_data);
@@ -1005,7 +993,7 @@ bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb) {
 
     tGATT_STATUS att_ret = attp_send_msg_to_l2cap(tcb, cmd.p_cmd);
     if (att_ret != GATT_SUCCESS && att_ret != GATT_CONGESTED) {
-      GATT_TRACE_ERROR("%s: L2CAP sent error", __func__);
+      LOG(ERROR) << __func__ << ": L2CAP sent error";
       tcb.cl_cmd_q.pop();
       continue;
     }
@@ -1034,45 +1022,48 @@ bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb) {
   return false;
 }
 
-/*******************************************************************************
- *
- * Function         gatt_client_handle_server_rsp
- *
- * Description      This function is called to handle the server response to
- *                  client.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
+/** This function is called to handle the server response to client */
 void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint8_t op_code,
                                    uint16_t len, uint8_t* p_data) {
-  tGATT_CLCB* p_clcb = NULL;
-
-  if (op_code != GATT_HANDLE_VALUE_IND && op_code != GATT_HANDLE_VALUE_NOTIF) {
-    uint8_t rsp_code;
-    p_clcb = gatt_cmd_dequeue(tcb, &rsp_code);
-
-    rsp_code = gatt_cmd_to_rsp_code(rsp_code);
-
-    if (p_clcb == NULL || (rsp_code != op_code && op_code != GATT_RSP_ERROR)) {
-      GATT_TRACE_WARNING(
-          "ATT - Ignore wrong response. Receives (%02x) Request(%02x) Ignored",
-          op_code, rsp_code);
+  if (op_code == GATT_HANDLE_VALUE_IND || op_code == GATT_HANDLE_VALUE_NOTIF) {
+    if (len >= tcb.payload_size) {
+      LOG(ERROR) << StringPrintf(
+          "%s: invalid indicate pkt size: %d, PDU size: %d", __func__, len + 1,
+          tcb.payload_size);
       return;
     }
 
-    alarm_cancel(p_clcb->gatt_rsp_timer_ent);
-    p_clcb->retry_count = 0;
+    gatt_process_notification(tcb, op_code, len, p_data);
+    return;
   }
+
+  uint8_t cmd_code = 0;
+  tGATT_CLCB* p_clcb = gatt_cmd_dequeue(tcb, &cmd_code);
+  uint8_t rsp_code = gatt_cmd_to_rsp_code(cmd_code);
+  if (!p_clcb || (rsp_code != op_code && op_code != GATT_RSP_ERROR)) {
+    LOG(WARNING) << StringPrintf(
+        "ATT - Ignore wrong response. Receives (%02x) Request(%02x) Ignored",
+        op_code, rsp_code);
+    return;
+  }
+
+  if (!p_clcb->in_use) {
+    LOG(WARNING) << "ATT - clcb already not in use, ignoring response";
+    gatt_cl_send_next_cmd_inq(tcb);
+    return;
+  }
+
+  alarm_cancel(p_clcb->gatt_rsp_timer_ent);
+  p_clcb->retry_count = 0;
+
   /* the size of the message may not be bigger than the local max PDU size*/
   /* The message has to be smaller than the agreed MTU, len does not count
    * op_code */
   if (len >= tcb.payload_size) {
-    GATT_TRACE_ERROR("invalid response/indicate pkt size: %d, PDU size: %d",
-                     len + 1, tcb.payload_size);
-    if (op_code != GATT_HANDLE_VALUE_NOTIF && op_code != GATT_HANDLE_VALUE_IND)
-      gatt_end_operation(p_clcb, GATT_ERROR, NULL);
+    LOG(ERROR) << StringPrintf(
+        "%s: invalid response pkt size: %d, PDU size: %d", __func__, len + 1,
+        tcb.payload_size);
+    gatt_end_operation(p_clcb, GATT_ERROR, NULL);
   } else {
     switch (op_code) {
       case GATT_RSP_ERROR:
@@ -1114,20 +1105,11 @@ void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint8_t op_code,
         gatt_end_operation(p_clcb, p_clcb->status, NULL);
         break;
 
-      case GATT_HANDLE_VALUE_NOTIF:
-      case GATT_HANDLE_VALUE_IND:
-        gatt_process_notification(tcb, op_code, len, p_data);
-        break;
-
       default:
-        GATT_TRACE_ERROR("Unknown opcode = %d", op_code);
+        LOG(ERROR) << __func__ << ": Unknown opcode = " << std::hex << op_code;
         break;
     }
   }
 
-  if (op_code != GATT_HANDLE_VALUE_IND && op_code != GATT_HANDLE_VALUE_NOTIF) {
-    gatt_cl_send_next_cmd_inq(tcb);
-  }
-
-  return;
+  gatt_cl_send_next_cmd_inq(tcb);
 }
