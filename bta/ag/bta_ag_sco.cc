@@ -175,14 +175,20 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
         bta_ag_cb.sco.p_curr_scb->state = BTA_AG_SCO_CODEC_ST;
         if (bta_ag_cb.sco.p_curr_scb->codec_msbc_settings ==
             BTA_AG_SCO_MSBC_SETTINGS_T2) {
-          APPL_TRACE_DEBUG("%s: Fallback to mSBC T1 settings", __func__);
+          APPL_TRACE_WARNING(
+              "%s: eSCO/SCO failed to open, falling back to mSBC T1 settings",
+              __func__);
           bta_ag_cb.sco.p_curr_scb->codec_msbc_settings =
               BTA_AG_SCO_MSBC_SETTINGS_T1;
         } else {
-          APPL_TRACE_DEBUG("%s: Fallback to CVSD", __func__);
+          APPL_TRACE_WARNING(
+              "%s: eSCO/SCO failed to open, falling back to CVSD", __func__);
           bta_ag_cb.sco.p_curr_scb->codec_fallback = true;
         }
       }
+    } else if (bta_ag_sco_is_opening(bta_ag_cb.sco.p_curr_scb)) {
+      APPL_TRACE_ERROR("%s: eSCO/SCO failed to open, no more fall back",
+                       __func__);
     }
 
     bta_ag_cb.sco.p_curr_scb->inuse_codec = BTA_AG_CODEC_NONE;
@@ -352,6 +358,11 @@ static void bta_ag_cback_sco(tBTA_AG_SCB* p_scb, uint8_t event) {
  *
  ******************************************************************************/
 static void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
+  APPL_TRACE_DEBUG(
+      "%s: BEFORE codec_updated=%d, codec_fallback=%d, "
+      "sco_codec=%d, peer_codec=%d, msbc_settings=%d",
+      __func__, p_scb->codec_updated, p_scb->codec_fallback, p_scb->sco_codec,
+      p_scb->peer_codecs, p_scb->codec_msbc_settings);
   tBTA_AG_PEER_CODEC esco_codec = BTA_AG_CODEC_CVSD;
 
   /* Make sure this SCO handle is not already in use */
@@ -361,18 +372,15 @@ static void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
     return;
   }
 
-  APPL_TRACE_DEBUG("%s: Using enhanced SCO setup command %d", __func__,
-                   controller_get_interface()
-                       ->supports_enhanced_setup_synchronous_connection());
-
-  if ((p_scb->sco_codec == BTA_AG_CODEC_MSBC) && !p_scb->codec_fallback &&
-      !p_scb->retry_with_sco_only)
+  if ((p_scb->sco_codec == BTA_AG_CODEC_MSBC) && !p_scb->codec_fallback)
     esco_codec = BTA_AG_CODEC_MSBC;
 
   if (p_scb->codec_fallback) {
     p_scb->codec_fallback = false;
     /* Force AG to send +BCS for the next audio connection. */
     p_scb->codec_updated = true;
+    /* Reset mSBC settings to T2 for the next audio connection */
+    p_scb->codec_msbc_settings = BTA_AG_SCO_MSBC_SETTINGS_T2;
   }
 
   esco_codec_t codec_index = ESCO_CODEC_CVSD;
@@ -404,32 +412,9 @@ static void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
   /* If initiating, setup parameters to start SCO/eSCO connection */
   if (is_orig) {
     bta_ag_cb.sco.is_local = true;
-    /* Attempt to use eSCO if remote host supports HFP >= 1.5 */
-    /* HSP does not prohibit eSCO, but no official support, CVSD only */
-    if (p_scb->conn_service == BTA_AG_HFP &&
-        p_scb->peer_version >= HFP_VERSION_1_5 && !p_scb->retry_with_sco_only) {
-      BTM_SetEScoMode(&params);
-      /* If eSCO or EDR eSCO, retry with SCO only in case of failure */
-      if ((params.packet_types & BTM_ESCO_LINK_ONLY_MASK) ||
-          !((params.packet_types &
-             ~(BTM_ESCO_LINK_ONLY_MASK | BTM_SCO_LINK_ONLY_MASK)) ^
-            BTA_AG_NO_EDR_ESCO)) {
-        /* However, do not retry with SCO when using mSBC */
-        if (esco_codec != BTA_AG_CODEC_MSBC) {
-          p_scb->retry_with_sco_only = true;
-        }
-        APPL_TRACE_API("%s: eSCO supported, retry_with_sco_only=%d", __func__,
-                       p_scb->retry_with_sco_only);
-      }
-    } else {
-      APPL_TRACE_API("%s: eSCO not supported, retry_with_sco_only=%d", __func__,
-                     p_scb->retry_with_sco_only);
-      p_scb->retry_with_sco_only = false;
-      BTM_SetEScoMode(&params);
-    }
-
+    /* Set eSCO Mode */
+    BTM_SetEScoMode(&params);
     bta_ag_cb.sco.p_curr_scb = p_scb;
-
     /* save the current codec as sco_codec can be updated while SCO is open. */
     p_scb->inuse_codec = esco_codec;
 
@@ -441,7 +426,6 @@ static void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
   } else {
     /* Not initiating, go to listen mode */
     uint8_t* p_bd_addr = NULL;
-    p_scb->retry_with_sco_only = false;
     p_bd_addr = p_scb->peer_addr;
 
     tBTM_STATUS status =
@@ -454,6 +438,11 @@ static void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
                    __func__, is_orig, p_scb->sco_idx, status,
                    params.packet_types);
   }
+  APPL_TRACE_DEBUG(
+      "%s: AFTER codec_updated=%d, codec_fallback=%d, "
+      "sco_codec=%d, peer_codec=%d, msbc_settings=%d",
+      __func__, p_scb->codec_updated, p_scb->codec_fallback, p_scb->sco_codec,
+      p_scb->peer_codecs, p_scb->codec_msbc_settings);
 }
 
 /*******************************************************************************
@@ -524,25 +513,6 @@ static void bta_ag_create_pending_sco(tBTA_AG_SCB* p_scb, bool is_local) {
 
     BTM_EScoConnRsp(p_scb->sco_idx, HCI_SUCCESS, &params);
   }
-}
-
-/*******************************************************************************
- *
- * Function         bta_ag_attempt_msbc_safe_settings
- *
- * Description    Checks if ESCO connection needs to be attempted using mSBC
- *                T1(safe) settings
- *
- *
- * Returns          true if T1 settings has to be used, false otherwise
- *
- ******************************************************************************/
-bool bta_ag_attempt_msbc_safe_settings(tBTA_AG_SCB* p_scb) {
-  if (p_scb->svc_conn && p_scb->sco_codec == BTM_SCO_CODEC_MSBC &&
-      p_scb->codec_msbc_settings == BTA_AG_SCO_MSBC_SETTINGS_T1)
-    return true;
-  else
-    return false;
 }
 
 /*******************************************************************************
@@ -1289,7 +1259,6 @@ void bta_ag_sco_conn_open(tBTA_AG_SCB* p_scb,
   /* call app callback */
   bta_ag_cback_sco(p_scb, BTA_AG_AUDIO_OPEN_EVT);
 
-  p_scb->retry_with_sco_only = false;
   /* reset to mSBC T2 settings as the preferred */
   p_scb->codec_msbc_settings = BTA_AG_SCO_MSBC_SETTINGS_T2;
 }
@@ -1311,17 +1280,13 @@ void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb,
   p_scb->sco_idx = BTM_INVALID_SCO_INDEX;
 
   /* codec_fallback is set when AG is initiator and connection failed for mSBC.
-   */
-  /* OR if codec is msbc and T2 settings failed, then retry Safe T1 settings */
-  if ((p_scb->codec_fallback && p_scb->svc_conn) ||
-      bta_ag_attempt_msbc_safe_settings(p_scb)) {
+   * OR if codec is msbc and T2 settings failed, then retry Safe T1 settings */
+  if (p_scb->svc_conn &&
+      (p_scb->codec_fallback ||
+       (p_scb->sco_codec == BTM_SCO_CODEC_MSBC &&
+        p_scb->codec_msbc_settings == BTA_AG_SCO_MSBC_SETTINGS_T1))) {
     bta_ag_sco_event(p_scb, BTA_AG_SCO_REOPEN_E);
-  } else if (p_scb->retry_with_sco_only && p_scb->svc_conn) {
-    /* retry_with_sco_only is set when AG is initiator and connection failed for
-     * eSCO */
-    bta_ag_create_sco(p_scb, true);
-  }
-  else {
+  } else {
     /* Indicate if the closing of audio is because of transfer */
     bta_ag_sco_event(p_scb, BTA_AG_SCO_CONN_CLOSE_E);
 
@@ -1339,7 +1304,6 @@ void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb,
     bta_ag_cback_sco(p_scb, BTA_AG_AUDIO_CLOSE_EVT);
     p_scb->codec_msbc_settings = BTA_AG_SCO_MSBC_SETTINGS_T2;
   }
-  p_scb->retry_with_sco_only = false;
 }
 
 /*******************************************************************************
