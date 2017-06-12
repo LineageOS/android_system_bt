@@ -42,9 +42,7 @@
 tAVRC_CB avrc_cb;
 #endif
 
-#if (defined(AVCT_COVER_ART_INCLUDED) && (AVCT_COVER_ART_INCLUDED == TRUE))
 #define AVCT_CA_PSM     0X1021
-#endif
 
 /* Fix for below klockwork issue.
  * Address of a local variable is returned through formal argument 'p_db->p_attrs' in
