@@ -190,6 +190,8 @@ BOOLEAN sdp_dev_blacklisted_for_avrcp15 (BD_ADDR addr)
     return FALSE;
 }
 
+#if ((defined(SDP_AVRCP_1_6) && (SDP_AVRCP_1_6 == TRUE)) || \
+        (defined(SDP_AVRCP_1_5) && (SDP_AVRCP_1_5 == TRUE)))
 /*************************************************************************************
 **
 ** Function        sdp_fallback_avrcp_version
@@ -251,6 +253,7 @@ BOOLEAN sdp_fallback_avrcp_version (tSDP_ATTRIBUTE *p_attr, BD_ADDR remote_addre
     }
     return FALSE;
 }
+#endif
 
 /*************************************************************************************
 **
