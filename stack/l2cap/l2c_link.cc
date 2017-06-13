@@ -58,7 +58,7 @@ static bool l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
  * Returns          true, if accept conn
  *
  ******************************************************************************/
-bool l2c_link_hci_conn_req(BD_ADDR bd_addr) {
+bool l2c_link_hci_conn_req(const bt_bdaddr_t& bd_addr) {
   tL2C_LCB* p_lcb;
   tL2C_LCB* p_lcb_cur;
   int xx;
@@ -98,7 +98,7 @@ bool l2c_link_hci_conn_req(BD_ADDR bd_addr) {
     }
 
     /* Tell the other side we accept the connection */
-    btsnd_hcic_accept_conn(bd_addr, p_lcb->link_role);
+    btsnd_hcic_accept_conn(to_BD_ADDR(bd_addr), p_lcb->link_role);
 
     p_lcb->link_state = LST_CONNECTING;
 
@@ -119,7 +119,7 @@ bool l2c_link_hci_conn_req(BD_ADDR bd_addr) {
     else
       p_lcb->link_role = l2cu_get_conn_role(p_lcb);
 
-    btsnd_hcic_accept_conn(bd_addr, p_lcb->link_role);
+    btsnd_hcic_accept_conn(to_BD_ADDR(bd_addr), p_lcb->link_role);
 
     p_lcb->link_state = LST_CONNECTING;
     return (true);
@@ -146,7 +146,8 @@ bool l2c_link_hci_conn_req(BD_ADDR bd_addr) {
  * Returns          void
  *
  ******************************************************************************/
-bool l2c_link_hci_conn_comp(uint8_t status, uint16_t handle, BD_ADDR p_bda) {
+bool l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
+                            const bt_bdaddr_t& p_bda) {
   tL2C_CONN_INFO ci;
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
@@ -156,7 +157,7 @@ bool l2c_link_hci_conn_comp(uint8_t status, uint16_t handle, BD_ADDR p_bda) {
 
   /* Save the parameters */
   ci.status = status;
-  memcpy(ci.bd_addr, p_bda, BD_ADDR_LEN);
+  ci.bd_addr = p_bda;
 
   /* See if we have a link control block for the remote device */
   p_lcb = l2cu_find_lcb_by_bd_addr(ci.bd_addr, BT_TRANSPORT_BR_EDR);
@@ -272,8 +273,15 @@ bool l2c_link_hci_conn_comp(uint8_t status, uint16_t handle, BD_ADDR p_bda) {
  * Returns          void
  *
  ******************************************************************************/
-void l2c_link_sec_comp(BD_ADDR p_bda, UNUSED_ATTR tBT_TRANSPORT transport,
-                       void* p_ref_data, uint8_t status) {
+void l2c_link_sec_comp(const bt_bdaddr_t* p_bda,
+                       UNUSED_ATTR tBT_TRANSPORT transport, void* p_ref_data,
+                       uint8_t status) {
+  l2c_link_sec_comp2(*p_bda, transport, p_ref_data, status);
+}
+
+void l2c_link_sec_comp2(const bt_bdaddr_t& p_bda,
+                        UNUSED_ATTR tBT_TRANSPORT transport, void* p_ref_data,
+                        uint8_t status) {
   tL2C_CONN_INFO ci;
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
@@ -286,7 +294,7 @@ void l2c_link_sec_comp(BD_ADDR p_bda, UNUSED_ATTR tBT_TRANSPORT transport,
 
   /* Save the parameters */
   ci.status = status;
-  memcpy(ci.bd_addr, p_bda, BD_ADDR_LEN);
+  ci.bd_addr = p_bda;
 
   p_lcb = l2cu_find_lcb_by_bd_addr(p_bda, transport);
 
@@ -380,7 +388,7 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
 #if (BTM_SCO_INCLUDED == TRUE)
     if (p_lcb->transport == BT_TRANSPORT_BR_EDR)
       /* Tell SCO management to drop any SCOs on this ACL */
-      btm_sco_acl_removed(p_lcb->remote_bd_addr);
+      btm_sco_acl_removed(&p_lcb->remote_bd_addr);
 #endif
 
     /* If waiting for disconnect and reconnect is pending start the reconnect
@@ -634,7 +642,7 @@ void l2c_info_resp_timer_timeout(void* data) {
       /* Notify active channels that peer info is finished */
       if (p_lcb->ccb_queue.p_first_ccb) {
         ci.status = HCI_SUCCESS;
-        memcpy(ci.bd_addr, p_lcb->remote_bd_addr, sizeof(BD_ADDR));
+        ci.bd_addr = p_lcb->remote_bd_addr;
 
         for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb;
              p_ccb = p_ccb->p_next_ccb) {
@@ -848,7 +856,7 @@ uint8_t l2c_link_pkts_rcvd(UNUSED_ATTR uint16_t* num_pkts,
  * Returns          void
  *
  ******************************************************************************/
-void l2c_link_role_changed(BD_ADDR bd_addr, uint8_t new_role,
+void l2c_link_role_changed(const bt_bdaddr_t* bd_addr, uint8_t new_role,
                            uint8_t hci_status) {
   tL2C_LCB* p_lcb;
   int xx;
@@ -857,13 +865,13 @@ void l2c_link_role_changed(BD_ADDR bd_addr, uint8_t new_role,
    * invalid) */
   if (bd_addr) {
     /* If here came form hci role change event */
-    p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_BR_EDR);
+    p_lcb = l2cu_find_lcb_by_bd_addr(*bd_addr, BT_TRANSPORT_BR_EDR);
     if (p_lcb) {
       p_lcb->link_role = new_role;
 
       /* Reset high priority link if needed */
       if (hci_status == HCI_SUCCESS)
-        l2cu_set_acl_priority(bd_addr, p_lcb->acl_priority, true);
+        l2cu_set_acl_priority(*bd_addr, p_lcb->acl_priority, true);
     }
   }
 
@@ -888,7 +896,7 @@ void l2c_link_role_changed(BD_ADDR bd_addr, uint8_t new_role,
  * Returns          void
  *
  ******************************************************************************/
-void l2c_pin_code_request(BD_ADDR bd_addr) {
+void l2c_pin_code_request(const bt_bdaddr_t& bd_addr) {
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_BR_EDR);
 
   if ((p_lcb) && (!p_lcb->ccb_queue.p_first_ccb)) {
@@ -1096,7 +1104,8 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, tL2C_CCB* p_ccb, BT_HDR* p_buf) {
  * Returns          true for success, false for fail
  *
  ******************************************************************************/
-static bool l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf, tL2C_TX_COMPLETE_CB_INFO* p_cbi) {
+static bool l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
+                                   tL2C_TX_COMPLETE_CB_INFO* p_cbi) {
   uint16_t num_segs;
   uint16_t xmit_window, acl_data_size;
   const controller_t* controller = controller_get_interface();
@@ -1186,8 +1195,7 @@ static bool l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf, tL2C_TX_COMPL
   }
 #endif
 
-  if (p_cbi)
-    l2cu_tx_complete(p_cbi);
+  if (p_cbi) l2cu_tx_complete(p_cbi);
 
   return true;
 }

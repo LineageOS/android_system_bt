@@ -53,7 +53,7 @@
 #define COD_HID_COMBO 0x05C0
 #define COD_HID_MAJOR 0x0500
 
-extern bool bta_dm_check_if_only_hd_connected(BD_ADDR peer_addr);
+extern bool bta_dm_check_if_only_hd_connected(const bt_bdaddr_t& peer_addr);
 extern bool check_cod_hid(const bt_bdaddr_t* remote_bdaddr);
 extern void btif_hh_service_registration(bool enable);
 
@@ -253,10 +253,10 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
     case BTA_HD_VC_UNPLUG_EVT:
       HAL_CBACK(bt_hd_callbacks, connection_state_cb,
                 (bt_bdaddr_t*)&p_data->conn.bda, BTHD_CONN_STATE_DISCONNECTED);
-      if (bta_dm_check_if_only_hd_connected(p_data->conn.bda)) {
+      if (bta_dm_check_if_only_hd_connected(from_BD_ADDR(p_data->conn.bda))) {
         BTIF_TRACE_DEBUG("%s: Removing bonding as only HID profile connected",
                          __func__);
-        BTA_DmRemoveDevice((uint8_t*)&p_data->conn.bda);
+        BTA_DmRemoveDevice(from_BD_ADDR(p_data->conn.bda));
       } else {
         bt_bdaddr_t* bd_addr = (bt_bdaddr_t*)&p_data->conn.bda;
         BTIF_TRACE_DEBUG(

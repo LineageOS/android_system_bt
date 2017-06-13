@@ -167,7 +167,7 @@ tBNEP_RESULT BNEP_Connect(BD_ADDR p_rem_bda, tBT_UUID* src_uuid,
                    p_bcb->src_uuid.uu.uuid16);
 
 #if (BNEP_DO_AUTH_FOR_ROLE_SWITCH == TRUE)
-    btm_sec_mx_access_request(p_bcb->rem_bda, BT_PSM_BNEP, true,
+    btm_sec_mx_access_request(from_BD_ADDR(p_bcb->rem_bda), BT_PSM_BNEP, true,
                               BTM_SEC_PROTO_BNEP, bnep_get_uuid32(src_uuid),
                               &bnep_sec_check_complete, p_bcb);
 #else
@@ -179,7 +179,7 @@ tBNEP_RESULT BNEP_Connect(BD_ADDR p_rem_bda, tBT_UUID* src_uuid,
      */
     p_bcb->con_state = BNEP_STATE_CONN_START;
 
-    cid = L2CA_ConnectReq(BT_PSM_BNEP, p_bcb->rem_bda);
+    cid = L2CA_ConnectReq(BT_PSM_BNEP, from_BD_ADDR(p_bcb->rem_bda));
     if (cid != 0) {
       p_bcb->l2cap_cid = cid;
 

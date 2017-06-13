@@ -60,7 +60,7 @@ static void btif_gatts_check_init(void) {
  *  Externally called functions
  ****************************************************************************/
 
-void btif_gatts_add_bonded_dev_from_nv(BD_ADDR bda) {
+void btif_gatts_add_bonded_dev_from_nv(const bt_bdaddr_t& bda) {
   btif_gatts_srv_chg_cb_t* p_cb = &btif_gatts_srv_chg_cb;
   bool found = false;
   uint8_t i;
@@ -68,7 +68,7 @@ void btif_gatts_add_bonded_dev_from_nv(BD_ADDR bda) {
   btif_gatts_check_init();
 
   for (i = 0; i != p_cb->num_clients; ++i) {
-    if (!memcmp(p_cb->srv_chg[i].bda, bda, sizeof(BD_ADDR))) {
+    if (p_cb->srv_chg[i].bda == bda) {
       found = true;
       break;
     }
@@ -76,7 +76,7 @@ void btif_gatts_add_bonded_dev_from_nv(BD_ADDR bda) {
 
   if (!found) {
     if (p_cb->num_clients < BTIF_GATTS_MAX_SRV_CHG_CLT_SIZE) {
-      bdcpy(p_cb->srv_chg[p_cb->num_clients].bda, bda);
+      p_cb->srv_chg[p_cb->num_clients].bda = bda;
       p_cb->srv_chg[p_cb->num_clients].srv_changed = false;
       p_cb->num_clients++;
     }

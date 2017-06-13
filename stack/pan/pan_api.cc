@@ -348,7 +348,8 @@ tPAN_RESULT PAN_Connect(BD_ADDR rem_bda, uint8_t src_role, uint8_t dst_role,
     PAN_TRACE_ERROR("PAN Connection failed because of no resources");
     return PAN_NO_RESOURCES;
   }
-  BTM_SetOutService(rem_bda, BTM_SEC_SERVICE_BNEP_PANU, mx_chan_id);
+  BTM_SetOutService(from_BD_ADDR(rem_bda), BTM_SEC_SERVICE_BNEP_PANU,
+                    mx_chan_id);
 
   PAN_TRACE_API("PAN_Connect() for BD Addr %x.%x.%x.%x.%x.%x", rem_bda[0],
                 rem_bda[1], rem_bda[2], rem_bda[3], rem_bda[4], rem_bda[5]);

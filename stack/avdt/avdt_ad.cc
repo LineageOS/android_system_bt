@@ -517,7 +517,7 @@ void avdt_ad_open_req(uint8_t type, tAVDT_CCB* p_ccb, tAVDT_SCB* p_scb,
     p_tbl->state = AVDT_AD_ST_CONN;
 
     /* call l2cap connect req */
-    lcid = L2CA_ConnectReq(AVDT_PSM, p_ccb->peer_addr);
+    lcid = L2CA_ConnectReq(AVDT_PSM, from_BD_ADDR(p_ccb->peer_addr));
     if (lcid != 0) {
       /* if connect req ok, store tcid in lcid table  */
       avdt_cb.ad.lcid_tbl[lcid - L2CAP_BASE_APPL_CID] =

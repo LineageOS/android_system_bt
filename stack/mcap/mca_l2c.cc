@@ -66,7 +66,7 @@ const tL2CAP_FCR_OPTS mca_l2c_fcr_opts_def = {
  * Returns          void
  *
  ******************************************************************************/
-static void mca_sec_check_complete_term(BD_ADDR bd_addr,
+static void mca_sec_check_complete_term(const bt_bdaddr_t* bd_addr,
                                         UNUSED_ATTR tBT_TRANSPORT transport,
                                         void* p_ref_data, uint8_t res) {
   tMCA_TC_TBL* p_tbl = (tMCA_TC_TBL*)p_ref_data;
@@ -85,7 +85,7 @@ static void mca_sec_check_complete_term(BD_ADDR bd_addr,
     ertm_info.fcr_rx_buf_size = MCA_FCR_RX_BUF_SIZE;
     ertm_info.fcr_tx_buf_size = MCA_FCR_TX_BUF_SIZE;
     /* Send response to the L2CAP layer. */
-    L2CA_ErtmConnectRsp(bd_addr, p_tbl->id, p_tbl->lcid, L2CAP_CONN_OK,
+    L2CA_ErtmConnectRsp(*bd_addr, p_tbl->id, p_tbl->lcid, L2CAP_CONN_OK,
                         L2CAP_CONN_OK, &ertm_info);
 
     /* transition to configuration state */
@@ -95,7 +95,7 @@ static void mca_sec_check_complete_term(BD_ADDR bd_addr,
     mca_set_cfg_by_tbl(&cfg, p_tbl);
     L2CA_ConfigReq(p_tbl->lcid, &cfg);
   } else {
-    L2CA_ConnectRsp(bd_addr, p_tbl->id, p_tbl->lcid, L2CAP_CONN_SECURITY_BLOCK,
+    L2CA_ConnectRsp(*bd_addr, p_tbl->id, p_tbl->lcid, L2CAP_CONN_SECURITY_BLOCK,
                     L2CAP_CONN_OK);
     mca_tc_close_ind(p_tbl, L2CAP_CONN_SECURITY_BLOCK);
   }
@@ -111,7 +111,7 @@ static void mca_sec_check_complete_term(BD_ADDR bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-static void mca_sec_check_complete_orig(UNUSED_ATTR BD_ADDR bd_addr,
+static void mca_sec_check_complete_orig(UNUSED_ATTR const bt_bdaddr_t* bd_addr,
                                         UNUSED_ATTR tBT_TRANSPORT transport,
                                         void* p_ref_data, uint8_t res) {
   tMCA_TC_TBL* p_tbl = (tMCA_TC_TBL*)p_ref_data;
@@ -140,8 +140,8 @@ static void mca_sec_check_complete_orig(UNUSED_ATTR BD_ADDR bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-void mca_l2c_cconn_ind_cback(BD_ADDR bd_addr, uint16_t lcid, uint16_t psm,
-                             uint8_t id) {
+void mca_l2c_cconn_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
+                             uint16_t psm, uint8_t id) {
   tMCA_HANDLE handle = mca_handle_by_cpsm(psm);
   tMCA_CCB* p_ccb;
   tMCA_TC_TBL* p_tbl = NULL;
@@ -154,10 +154,10 @@ void mca_l2c_cconn_ind_cback(BD_ADDR bd_addr, uint16_t lcid, uint16_t psm,
                   id);
 
   /* do we already have a control channel for this peer? */
-  p_ccb = mca_ccb_by_bd(handle, bd_addr);
+  p_ccb = mca_ccb_by_bd(handle, to_BD_ADDR(bd_addr));
   if (p_ccb == NULL) {
     /* no, allocate ccb */
-    p_ccb = mca_ccb_alloc(handle, bd_addr);
+    p_ccb = mca_ccb_alloc(handle, to_BD_ADDR(bd_addr));
     if (p_ccb != NULL) {
       /* allocate and set up entry */
       p_ccb->lcid = lcid;
@@ -213,8 +213,8 @@ void mca_l2c_cconn_ind_cback(BD_ADDR bd_addr, uint16_t lcid, uint16_t psm,
  * Returns          void
  *
  ******************************************************************************/
-void mca_l2c_dconn_ind_cback(BD_ADDR bd_addr, uint16_t lcid, uint16_t psm,
-                             uint8_t id) {
+void mca_l2c_dconn_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
+                             uint16_t psm, uint8_t id) {
   tMCA_HANDLE handle = mca_handle_by_dpsm(psm);
   tMCA_CCB* p_ccb;
   tMCA_DCB* p_dcb;
@@ -226,7 +226,8 @@ void mca_l2c_dconn_ind_cback(BD_ADDR bd_addr, uint16_t lcid, uint16_t psm,
 
   MCA_TRACE_EVENT("mca_l2c_dconn_ind_cback: lcid:x%x psm:x%x ", lcid, psm);
 
-  if (((p_ccb = mca_ccb_by_bd(handle, bd_addr)) != NULL) && /* find the CCB */
+  if (((p_ccb = mca_ccb_by_bd(handle, to_BD_ADDR(bd_addr))) !=
+       NULL) && /* find the CCB */
       (p_ccb->status ==
        MCA_CCB_STAT_PENDING) && /* this CCB is expecting a MDL */
       (p_ccb->p_tx_req &&
@@ -311,9 +312,10 @@ void mca_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
             p_tbl->cfg_flags = MCA_L2C_CFG_CONN_INT;
 
             /* Check the security */
-            btm_sec_mx_access_request(p_ccb->peer_addr, p_ccb->ctrl_vpsm, true,
-                                      BTM_SEC_PROTO_MCA, p_tbl->tcid,
-                                      &mca_sec_check_complete_orig, p_tbl);
+            btm_sec_mx_access_request(from_BD_ADDR(p_ccb->peer_addr),
+                                      p_ccb->ctrl_vpsm, true, BTM_SEC_PROTO_MCA,
+                                      p_tbl->tcid, &mca_sec_check_complete_orig,
+                                      p_tbl);
           }
         }
       }
@@ -534,5 +536,5 @@ uint16_t mca_l2c_open_req(BD_ADDR bd_addr, uint16_t psm,
     ertm_info.fcr_rx_buf_size = MCA_FCR_RX_BUF_SIZE;
     ertm_info.fcr_tx_buf_size = MCA_FCR_TX_BUF_SIZE;
   }
-  return L2CA_ErtmConnectReq(psm, bd_addr, &ertm_info);
+  return L2CA_ErtmConnectReq(psm, from_BD_ADDR(bd_addr), &ertm_info);
 }

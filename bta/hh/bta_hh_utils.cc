@@ -61,7 +61,7 @@ uint8_t bta_hh_find_cb(BD_ADDR bda) {
   for (xx = 0; xx < BTA_HH_MAX_DEVICE; xx++) {
     /* check if any active/known devices is a match */
     if ((!bdcmp(bda, bta_hh_cb.kdev[xx].addr) &&
-         bdcmp(bda, bd_addr_null) != 0)) {
+         from_BD_ADDR(bda) != bd_addr_null)) {
 #if (BTA_HH_DEBUG == TRUE)
       APPL_TRACE_DEBUG("found kdev_cb[%d] hid_handle = %d ", xx,
                        bta_hh_cb.kdev[xx].hid_handle)
@@ -384,7 +384,8 @@ tBTA_HH_STATUS bta_hh_read_ssr_param(BD_ADDR bd_addr, uint16_t* p_max_ssr_lat,
       if (p_cb->kdev[i].dscp_info.ssr_max_latency == HID_SSR_PARAM_INVALID) {
         /* The default is calculated as half of link supervision timeout.*/
 
-        BTM_GetLinkSuperTout(p_cb->kdev[i].addr, &ssr_max_latency);
+        BTM_GetLinkSuperTout(from_BD_ADDR(p_cb->kdev[i].addr),
+                             &ssr_max_latency);
         ssr_max_latency = BTA_HH_GET_DEF_SSR_MAX_LAT(ssr_max_latency);
 
         /* per 1.1 spec, if the newly calculated max latency is greater than

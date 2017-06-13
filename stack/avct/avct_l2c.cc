@@ -37,8 +37,8 @@
 #define AVCT_L2C_CFG_CFM_DONE (1 << 1)
 
 /* callback function declarations */
-void avct_l2c_connect_ind_cback(BD_ADDR bd_addr, uint16_t lcid, uint16_t psm,
-                                uint8_t id);
+void avct_l2c_connect_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
+                                uint16_t psm, uint8_t id);
 void avct_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result);
 void avct_l2c_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
 void avct_l2c_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
@@ -99,17 +99,17 @@ static bool avct_l2c_is_passive(tAVCT_LCB* p_lcb) {
  * Returns          void
  *
  ******************************************************************************/
-void avct_l2c_connect_ind_cback(BD_ADDR bd_addr, uint16_t lcid,
+void avct_l2c_connect_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
                                 UNUSED_ATTR uint16_t psm, uint8_t id) {
   tAVCT_LCB* p_lcb;
   uint16_t result = L2CAP_CONN_OK;
   tL2CAP_CFG_INFO cfg;
 
   /* do we already have a channel for this peer? */
-  p_lcb = avct_lcb_by_bd(bd_addr);
+  p_lcb = avct_lcb_by_bd(to_BD_ADDR(bd_addr));
   if (p_lcb == NULL) {
     /* no, allocate lcb */
-    p_lcb = avct_lcb_alloc(bd_addr);
+    p_lcb = avct_lcb_alloc(to_BD_ADDR(bd_addr));
     if (p_lcb == NULL) {
       /* no ccb available, reject L2CAP connection */
       result = L2CAP_CONN_NO_RESOURCES;

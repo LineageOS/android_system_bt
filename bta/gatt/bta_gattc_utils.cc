@@ -26,6 +26,7 @@
 
 #include "bt_target.h"
 
+#include <base/logging.h>
 #include <string.h>
 
 #include "bt_common.h"
@@ -43,7 +44,7 @@ static const uint8_t base_uuid[LEN_UUID_128] = {
     0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x00, 0x00, 0x80,
     0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-static const BD_ADDR dummy_bda = {0, 0, 0, 0, 0, 0};
+static const bt_bdaddr_t dummy_bda = {.address = {0, 0, 0, 0, 0, 0}};
 
 /*******************************************************************************
  *
@@ -152,14 +153,14 @@ uint8_t bta_gattc_num_reg_app(void) {
  *
  ******************************************************************************/
 tBTA_GATTC_CLCB* bta_gattc_find_clcb_by_cif(uint8_t client_if,
-                                            BD_ADDR remote_bda,
+                                            const bt_bdaddr_t& remote_bda,
                                             tBTA_TRANSPORT transport) {
   tBTA_GATTC_CLCB* p_clcb = &bta_gattc_cb.clcb[0];
   uint8_t i;
 
   for (i = 0; i < BTA_GATTC_CLCB_MAX; i++, p_clcb++) {
     if (p_clcb->in_use && p_clcb->p_rcb->client_if == client_if &&
-        p_clcb->transport == transport && bdcmp(p_clcb->bda, remote_bda) == 0)
+        p_clcb->transport == transport && p_clcb->bda == remote_bda)
       return p_clcb;
   }
   return NULL;
@@ -193,7 +194,7 @@ tBTA_GATTC_CLCB* bta_gattc_find_clcb_by_conn_id(uint16_t conn_id) {
  *
  ******************************************************************************/
 tBTA_GATTC_CLCB* bta_gattc_clcb_alloc(tBTA_GATTC_IF client_if,
-                                      BD_ADDR remote_bda,
+                                      const bt_bdaddr_t& remote_bda,
                                       tBTA_TRANSPORT transport) {
   uint8_t i_clcb = 0;
   tBTA_GATTC_CLCB* p_clcb = NULL;
@@ -208,7 +209,7 @@ tBTA_GATTC_CLCB* bta_gattc_clcb_alloc(tBTA_GATTC_IF client_if,
       p_clcb->in_use = true;
       p_clcb->status = BTA_GATT_OK;
       p_clcb->transport = transport;
-      bdcpy(p_clcb->bda, remote_bda);
+      p_clcb->bda = remote_bda;
 
       p_clcb->p_rcb = bta_gattc_cl_get_regcb(client_if);
 
@@ -239,7 +240,7 @@ tBTA_GATTC_CLCB* bta_gattc_clcb_alloc(tBTA_GATTC_IF client_if,
  *
  ******************************************************************************/
 tBTA_GATTC_CLCB* bta_gattc_find_alloc_clcb(tBTA_GATTC_IF client_if,
-                                           BD_ADDR remote_bda,
+                                           const bt_bdaddr_t& remote_bda,
                                            tBTA_TRANSPORT transport) {
   tBTA_GATTC_CLCB* p_clcb;
 
@@ -297,12 +298,12 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB* p_clcb) {
  * Returns          pointer to the server cache.
  *
  ******************************************************************************/
-tBTA_GATTC_SERV* bta_gattc_find_srcb(BD_ADDR bda) {
+tBTA_GATTC_SERV* bta_gattc_find_srcb(const bt_bdaddr_t& bda) {
   tBTA_GATTC_SERV* p_srcb = &bta_gattc_cb.known_server[0];
   uint8_t i;
 
   for (i = 0; i < BTA_GATTC_KNOWN_SR_MAX; i++, p_srcb++) {
-    if (p_srcb->in_use && bdcmp(p_srcb->server_bda, bda) == 0) return p_srcb;
+    if (p_srcb->in_use && p_srcb->server_bda == bda) return p_srcb;
   }
   return NULL;
 }
@@ -316,12 +317,12 @@ tBTA_GATTC_SERV* bta_gattc_find_srcb(BD_ADDR bda) {
  * Returns          pointer to the server cache.
  *
  ******************************************************************************/
-tBTA_GATTC_SERV* bta_gattc_find_srvr_cache(BD_ADDR bda) {
+tBTA_GATTC_SERV* bta_gattc_find_srvr_cache(const bt_bdaddr_t& bda) {
   tBTA_GATTC_SERV* p_srcb = &bta_gattc_cb.known_server[0];
   uint8_t i;
 
   for (i = 0; i < BTA_GATTC_KNOWN_SR_MAX; i++, p_srcb++) {
-    if (bdcmp(p_srcb->server_bda, bda) == 0) return p_srcb;
+    if (p_srcb->server_bda == bda) return p_srcb;
   }
   return NULL;
 }
@@ -351,7 +352,7 @@ tBTA_GATTC_SERV* bta_gattc_find_scb_by_cid(uint16_t conn_id) {
  * Returns          pointer to the server cache.
  *
  ******************************************************************************/
-tBTA_GATTC_SERV* bta_gattc_srcb_alloc(BD_ADDR bda) {
+tBTA_GATTC_SERV* bta_gattc_srcb_alloc(const bt_bdaddr_t& bda) {
   tBTA_GATTC_SERV *p_tcb = &bta_gattc_cb.known_server[0], *p_recycle = NULL;
   bool found = false;
   uint8_t i;
@@ -378,7 +379,7 @@ tBTA_GATTC_SERV* bta_gattc_srcb_alloc(BD_ADDR bda) {
     memset(p_tcb, 0, sizeof(tBTA_GATTC_SERV));
 
     p_tcb->in_use = true;
-    bdcpy(p_tcb->server_bda, bda);
+    p_tcb->server_bda = bda;
   }
   return p_tcb;
 }
@@ -418,7 +419,7 @@ bool bta_gattc_check_notif_registry(tBTA_GATTC_RCB* p_clreg,
 
   for (i = 0; i < BTA_GATTC_NOTIF_REG_MAX; i++) {
     if (p_clreg->notif_reg[i].in_use &&
-        bdcmp(p_clreg->notif_reg[i].remote_bda, p_srcb->server_bda) == 0 &&
+        p_clreg->notif_reg[i].remote_bda == p_srcb->server_bda &&
         p_clreg->notif_reg[i].handle == p_notify->handle) {
       APPL_TRACE_DEBUG("Notification registered!");
       return true;
@@ -431,7 +432,7 @@ bool bta_gattc_check_notif_registry(tBTA_GATTC_RCB* p_clreg,
  * Function         bta_gattc_clear_notif_registration
  *
  * Description      Clear up the notification registration information by
- *                  BD_ADDR.
+ *                  bt_bdaddr_t.
  *                  Where handle is between start_handle and end_handle, and
  *                  start_handle and end_handle are boundaries of service
  *                  containing characteristic.
@@ -442,7 +443,7 @@ bool bta_gattc_check_notif_registry(tBTA_GATTC_RCB* p_clreg,
 void bta_gattc_clear_notif_registration(tBTA_GATTC_SERV* p_srcb,
                                         uint16_t conn_id, uint16_t start_handle,
                                         uint16_t end_handle) {
-  BD_ADDR remote_bda;
+  bt_bdaddr_t remote_bda;
   tBTA_GATTC_IF gatt_if;
   tBTA_GATTC_RCB* p_clrcb;
   uint8_t i;
@@ -454,7 +455,7 @@ void bta_gattc_clear_notif_registration(tBTA_GATTC_SERV* p_srcb,
     if (p_clrcb != NULL) {
       for (i = 0; i < BTA_GATTC_NOTIF_REG_MAX; i++) {
         if (p_clrcb->notif_reg[i].in_use &&
-            !bdcmp(p_clrcb->notif_reg[i].remote_bda, remote_bda)) {
+            p_clrcb->notif_reg[i].remote_bda == remote_bda) {
           /* It's enough to get service or characteristic handle, as
            * clear boundaries are always around service.
            */
@@ -481,18 +482,15 @@ void bta_gattc_clear_notif_registration(tBTA_GATTC_SERV* p_srcb,
  * Returns          true if success; false otherwise.
  *
  ******************************************************************************/
-bool bta_gattc_mark_bg_conn(tBTA_GATTC_IF client_if, BD_ADDR_PTR remote_bda_ptr,
-                            bool add) {
+bool bta_gattc_mark_bg_conn(tBTA_GATTC_IF client_if,
+                            const bt_bdaddr_t& remote_bda_ptr, bool add) {
   tBTA_GATTC_BG_TCK* p_bg_tck = &bta_gattc_cb.bg_track[0];
   uint8_t i = 0;
   tBTA_GATTC_CIF_MASK* p_cif_mask;
 
   for (i = 0; i < BTA_GATTC_KNOWN_SR_MAX; i++, p_bg_tck++) {
-    if (p_bg_tck->in_use &&
-        ((remote_bda_ptr != NULL &&
-          bdcmp(p_bg_tck->remote_bda, remote_bda_ptr) == 0) ||
-         (remote_bda_ptr == NULL &&
-          bdcmp(p_bg_tck->remote_bda, dummy_bda) == 0))) {
+    if (p_bg_tck->in_use && ((p_bg_tck->remote_bda == remote_bda_ptr) ||
+                             (p_bg_tck->remote_bda == dummy_bda))) {
       p_cif_mask = &p_bg_tck->cif_mask;
 
       if (add) /* mask on the cif bit */
@@ -511,12 +509,8 @@ bool bta_gattc_mark_bg_conn(tBTA_GATTC_IF client_if, BD_ADDR_PTR remote_bda_ptr,
     }
   }
   if (!add) {
-    if (remote_bda_ptr) {
-      bdstr_t bdstr = {0};
-      APPL_TRACE_ERROR(
-          "%s unable to find the bg connection mask for: %s", __func__,
-          bdaddr_to_string((bt_bdaddr_t*)remote_bda_ptr, bdstr, sizeof(bdstr)));
-    }
+    LOG(ERROR) << __func__ << " unable to find the bg connection mask for: "
+               << remote_bda_ptr;
     return false;
   } else /* adding a new device mask */
   {
@@ -524,10 +518,7 @@ bool bta_gattc_mark_bg_conn(tBTA_GATTC_IF client_if, BD_ADDR_PTR remote_bda_ptr,
          i < BTA_GATTC_KNOWN_SR_MAX; i++, p_bg_tck++) {
       if (!p_bg_tck->in_use) {
         p_bg_tck->in_use = true;
-        if (remote_bda_ptr)
-          bdcpy(p_bg_tck->remote_bda, remote_bda_ptr);
-        else
-          bdcpy(p_bg_tck->remote_bda, dummy_bda);
+        p_bg_tck->remote_bda = remote_bda_ptr;
 
         p_cif_mask = &p_bg_tck->cif_mask;
 
@@ -549,15 +540,15 @@ bool bta_gattc_mark_bg_conn(tBTA_GATTC_IF client_if, BD_ADDR_PTR remote_bda_ptr,
  * Returns          true if success; false otherwise.
  *
  ******************************************************************************/
-bool bta_gattc_check_bg_conn(tBTA_GATTC_IF client_if, BD_ADDR remote_bda,
-                             uint8_t role) {
+bool bta_gattc_check_bg_conn(tBTA_GATTC_IF client_if,
+                             const bt_bdaddr_t& remote_bda, uint8_t role) {
   tBTA_GATTC_BG_TCK* p_bg_tck = &bta_gattc_cb.bg_track[0];
   uint8_t i = 0;
   bool is_bg_conn = false;
 
   for (i = 0; i < BTA_GATTC_KNOWN_SR_MAX && !is_bg_conn; i++, p_bg_tck++) {
-    if (p_bg_tck->in_use && (bdcmp(p_bg_tck->remote_bda, remote_bda) == 0 ||
-                             bdcmp(p_bg_tck->remote_bda, dummy_bda) == 0)) {
+    if (p_bg_tck->in_use && (p_bg_tck->remote_bda == remote_bda ||
+                             p_bg_tck->remote_bda == dummy_bda)) {
       if (((p_bg_tck->cif_mask & (1 << (client_if - 1))) != 0) &&
           role == HCI_ROLE_MASTER)
         is_bg_conn = true;
@@ -575,7 +566,7 @@ bool bta_gattc_check_bg_conn(tBTA_GATTC_IF client_if, BD_ADDR remote_bda,
  *
  ******************************************************************************/
 void bta_gattc_send_open_cback(tBTA_GATTC_RCB* p_clreg, tBTA_GATT_STATUS status,
-                               BD_ADDR remote_bda, uint16_t conn_id,
+                               const bt_bdaddr_t& remote_bda, uint16_t conn_id,
                                tBTA_TRANSPORT transport, uint16_t mtu) {
   tBTA_GATTC cb_data;
 
@@ -587,7 +578,7 @@ void bta_gattc_send_open_cback(tBTA_GATTC_RCB* p_clreg, tBTA_GATT_STATUS status,
     cb_data.open.conn_id = conn_id;
     cb_data.open.mtu = mtu;
     cb_data.open.transport = transport;
-    bdcpy(cb_data.open.remote_bda, remote_bda);
+    cb_data.open.remote_bda = remote_bda;
 
     (*p_clreg->p_cback)(BTA_GATTC_OPEN_EVT, &cb_data);
   }
@@ -601,7 +592,7 @@ void bta_gattc_send_open_cback(tBTA_GATTC_RCB* p_clreg, tBTA_GATT_STATUS status,
  * Returns          pointer to the clcb
  *
  ******************************************************************************/
-tBTA_GATTC_CONN* bta_gattc_conn_alloc(BD_ADDR remote_bda) {
+tBTA_GATTC_CONN* bta_gattc_conn_alloc(const bt_bdaddr_t& remote_bda) {
   uint8_t i_conn = 0;
   tBTA_GATTC_CONN* p_conn = &bta_gattc_cb.conn_track[0];
 
@@ -612,7 +603,7 @@ tBTA_GATTC_CONN* bta_gattc_conn_alloc(BD_ADDR remote_bda) {
                        i_conn);
 #endif
       p_conn->in_use = true;
-      bdcpy(p_conn->remote_bda, remote_bda);
+      p_conn->remote_bda = remote_bda;
       return p_conn;
     }
   }
@@ -628,12 +619,12 @@ tBTA_GATTC_CONN* bta_gattc_conn_alloc(BD_ADDR remote_bda) {
  * Returns          pointer to the clcb
  *
  ******************************************************************************/
-tBTA_GATTC_CONN* bta_gattc_conn_find(BD_ADDR remote_bda) {
+tBTA_GATTC_CONN* bta_gattc_conn_find(const bt_bdaddr_t& remote_bda) {
   uint8_t i_conn = 0;
   tBTA_GATTC_CONN* p_conn = &bta_gattc_cb.conn_track[0];
 
   for (i_conn = 0; i_conn < BTA_GATTC_CONN_MAX; i_conn++, p_conn++) {
-    if (p_conn->in_use && bdcmp(remote_bda, p_conn->remote_bda) == 0) {
+    if (p_conn->in_use && remote_bda == p_conn->remote_bda) {
 #if (BTA_GATT_DEBUG == TRUE)
       APPL_TRACE_DEBUG("bta_gattc_conn_find: found conn_track[%d] matched",
                        i_conn);
@@ -653,7 +644,7 @@ tBTA_GATTC_CONN* bta_gattc_conn_find(BD_ADDR remote_bda) {
  * Returns          pointer to the clcb
  *
  ******************************************************************************/
-tBTA_GATTC_CONN* bta_gattc_conn_find_alloc(BD_ADDR remote_bda) {
+tBTA_GATTC_CONN* bta_gattc_conn_find_alloc(const bt_bdaddr_t& remote_bda) {
   tBTA_GATTC_CONN* p_conn = bta_gattc_conn_find(remote_bda);
 
   if (p_conn == NULL) {
@@ -671,12 +662,12 @@ tBTA_GATTC_CONN* bta_gattc_conn_find_alloc(BD_ADDR remote_bda) {
  * Returns          pointer to the clcb
  *
  ******************************************************************************/
-bool bta_gattc_conn_dealloc(BD_ADDR remote_bda) {
+bool bta_gattc_conn_dealloc(const bt_bdaddr_t& remote_bda) {
   tBTA_GATTC_CONN* p_conn = bta_gattc_conn_find(remote_bda);
 
   if (p_conn != NULL) {
     p_conn->in_use = false;
-    memset(p_conn->remote_bda, 0, BD_ADDR_LEN);
+    p_conn->remote_bda = {.address = {0}};
     return true;
   }
   return false;

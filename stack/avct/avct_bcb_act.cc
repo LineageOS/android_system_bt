@@ -96,7 +96,8 @@ void avct_bcb_chnl_open(tAVCT_BCB* p_bcb, UNUSED_ATTR tAVCT_LCB_EVT* p_data) {
   tAVCT_LCB* p_lcb = avct_lcb_by_bcb(p_bcb);
   tL2CAP_ERTM_INFO ertm_info;
 
-  BTM_SetOutService(p_lcb->peer_addr, BTM_SEC_SERVICE_AVCTP_BROWSE, 0);
+  BTM_SetOutService(from_BD_ADDR(p_lcb->peer_addr),
+                    BTM_SEC_SERVICE_AVCTP_BROWSE, 0);
 
   /* Set the FCR options: Browsing channel mandates ERTM */
   ertm_info.preferred_mode = avct_l2c_br_fcr_opts_def.mode;
@@ -108,8 +109,8 @@ void avct_bcb_chnl_open(tAVCT_BCB* p_bcb, UNUSED_ATTR tAVCT_LCB_EVT* p_data) {
 
   /* call l2cap connect req */
   p_bcb->ch_state = AVCT_CH_CONN;
-  p_bcb->ch_lcid =
-      L2CA_ErtmConnectReq(AVCT_BR_PSM, p_lcb->peer_addr, &ertm_info);
+  p_bcb->ch_lcid = L2CA_ErtmConnectReq(
+      AVCT_BR_PSM, from_BD_ADDR(p_lcb->peer_addr), &ertm_info);
   if (p_bcb->ch_lcid == 0) {
     /* if connect req failed, send ourselves close event */
     avct_bcb_event(p_bcb, AVCT_LCB_LL_CLOSE_EVT, (tAVCT_LCB_EVT*)&result);
