@@ -89,11 +89,8 @@ static char btif_config_time_created[TIME_STRING_LENGTH];
 // TODO(zachoverflow): Move these two functions out, because they are too
 // specific for this file
 // {grumpy-cat/no, monty-python/you-make-me-sad}
-bool btif_get_device_type(const BD_ADDR bd_addr, int* p_device_type) {
+bool btif_get_device_type(const bt_bdaddr_t& bda, int* p_device_type) {
   if (p_device_type == NULL) return false;
-
-  bt_bdaddr_t bda;
-  bdcpy(bda.address, bd_addr);
 
   bdstr_t bd_addr_str;
   bdaddr_to_string(&bda, bd_addr_str, sizeof(bd_addr_str));
@@ -105,11 +102,8 @@ bool btif_get_device_type(const BD_ADDR bd_addr, int* p_device_type) {
   return true;
 }
 
-bool btif_get_address_type(const BD_ADDR bd_addr, int* p_addr_type) {
+bool btif_get_address_type(const bt_bdaddr_t& bda, int* p_addr_type) {
   if (p_addr_type == NULL) return false;
-
-  bt_bdaddr_t bda;
-  bdcpy(bda.address, bd_addr);
 
   bdstr_t bd_addr_str;
   bdaddr_to_string(&bda, bd_addr_str, sizeof(bd_addr_str));

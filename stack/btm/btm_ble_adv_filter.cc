@@ -52,7 +52,7 @@
 
 tBTM_BLE_ADV_FILTER_CB btm_ble_adv_filt_cb;
 tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
-static const BD_ADDR na_bda = {0};
+static const bt_bdaddr_t& na_bda = {.address = {0}};
 
 static uint8_t btm_ble_cs_update_pf_counter(tBTM_BLE_SCAN_COND_OP action,
                                             uint8_t cond_type,
@@ -213,8 +213,7 @@ void btm_flt_update_cb(uint8_t expected_ocf, tBTM_BLE_PF_CFG_CBACK cb,
   BTM_TRACE_DEBUG("%s: Recd: %d, %d, %d, %d, %d", __func__, op_subcode,
                   expected_ocf, action, status, num_avail);
   if (HCI_SUCCESS == status) {
-    if (memcmp(&btm_ble_adv_filt_cb.cur_filter_target.bda, &na_bda,
-               BD_ADDR_LEN) == 0)
+    if (from_BD_ADDR(btm_ble_adv_filt_cb.cur_filter_target.bda) == na_bda)
       btm_ble_cs_update_pf_counter(action, cond_type, NULL, num_avail);
     else
       btm_ble_cs_update_pf_counter(
@@ -246,7 +245,7 @@ tBTM_BLE_PF_COUNT* btm_ble_find_addr_filter_counter(tBLE_BD_ADDR* p_le_bda) {
 
   for (i = 0; i < cmn_ble_vsc_cb.max_filter; i++, p_addr_filter++) {
     if (p_addr_filter->in_use &&
-        memcmp(p_le_bda->bda, p_addr_filter->bd_addr, BD_ADDR_LEN) == 0) {
+        from_BD_ADDR(p_le_bda->bda) == p_addr_filter->bd_addr) {
       return p_addr_filter;
     }
   }
@@ -263,14 +262,15 @@ tBTM_BLE_PF_COUNT* btm_ble_find_addr_filter_counter(tBLE_BD_ADDR* p_le_bda) {
  *                  otherwise.
  *
  ******************************************************************************/
-tBTM_BLE_PF_COUNT* btm_ble_alloc_addr_filter_counter(BD_ADDR bd_addr) {
+tBTM_BLE_PF_COUNT* btm_ble_alloc_addr_filter_counter(
+    const bt_bdaddr_t& bd_addr) {
   uint8_t i;
   tBTM_BLE_PF_COUNT* p_addr_filter =
       &btm_ble_adv_filt_cb.p_addr_filter_count[1];
 
   for (i = 0; i < cmn_ble_vsc_cb.max_filter; i++, p_addr_filter++) {
-    if (memcmp(na_bda, p_addr_filter->bd_addr, BD_ADDR_LEN) == 0) {
-      memcpy(p_addr_filter->bd_addr, bd_addr, BD_ADDR_LEN);
+    if (p_addr_filter->bd_addr == na_bda) {
+      p_addr_filter->bd_addr = bd_addr;
       p_addr_filter->in_use = true;
       return p_addr_filter;
     }
@@ -298,14 +298,13 @@ bool btm_ble_dealloc_addr_filter_counter(tBLE_BD_ADDR* p_bd_addr,
            sizeof(tBTM_BLE_PF_COUNT));
 
   for (i = 0; i < cmn_ble_vsc_cb.max_filter; i++, p_addr_filter++) {
-    if ((p_addr_filter->in_use) &&
-        (NULL == p_bd_addr ||
-         (NULL != p_bd_addr &&
-          memcmp(p_bd_addr->bda, p_addr_filter->bd_addr, BD_ADDR_LEN) == 0))) {
+    if (p_addr_filter->in_use &&
+        (!p_bd_addr ||
+         from_BD_ADDR(p_bd_addr->bda) == p_addr_filter->bd_addr)) {
       found = true;
       memset(p_addr_filter, 0, sizeof(tBTM_BLE_PF_COUNT));
 
-      if (NULL != p_bd_addr) break;
+      if (p_bd_addr) break;
     }
   }
   return found;
@@ -476,7 +475,8 @@ uint8_t btm_ble_cs_update_pf_counter(tBTM_BLE_SCAN_COND_OP action,
 
   if ((p_addr_filter = btm_ble_find_addr_filter_counter(p_bd_addr)) == NULL &&
       BTM_BLE_SCAN_COND_ADD == action) {
-    p_addr_filter = btm_ble_alloc_addr_filter_counter(p_bd_addr->bda);
+    p_addr_filter =
+        btm_ble_alloc_addr_filter_counter(from_BD_ADDR(p_bd_addr->bda));
   }
 
   if (NULL != p_addr_filter) {

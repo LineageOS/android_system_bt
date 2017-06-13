@@ -341,7 +341,7 @@ bt_status_t btif_dm_get_remote_service_record(bt_bdaddr_t* remote_addr,
  * Returns          bt_status_t
  *
  ******************************************************************************/
-bt_status_t btif_dm_get_remote_services(bt_bdaddr_t* remote_addr);
+bt_status_t btif_dm_get_remote_services(const bt_bdaddr_t& remote_addr);
 
 /*******************************************************************************
  *

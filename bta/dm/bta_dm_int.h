@@ -157,7 +157,7 @@ typedef struct {
 /* data type for BTA_DM_API_DISCOVER_EVT */
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   tBTA_SERVICE_MASK services;
   tBTA_DM_SEARCH_CBACK* p_cback;
   bool sdp_search;
@@ -170,7 +170,7 @@ typedef struct {
 /* data type for BTA_DM_API_DI_DISC_EVT */
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   tBTA_DISCOVERY_DB* p_sdp_db;
   uint32_t len;
   tBTA_DM_SEARCH_CBACK* p_cback;
@@ -179,21 +179,21 @@ typedef struct {
 /* data type for BTA_DM_API_BOND_EVT */
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   tBTA_TRANSPORT transport;
 } tBTA_DM_API_BOND;
 
 /* data type for BTA_DM_API_BOND_CANCEL_EVT */
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   tBTA_TRANSPORT transport;
 } tBTA_DM_API_BOND_CANCEL;
 
 /* data type for BTA_DM_API_PIN_REPLY_EVT */
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   bool accept;
   uint8_t pin_len;
   uint8_t p_pin[PIN_CODE_LEN];
@@ -205,14 +205,14 @@ typedef struct { BT_HDR hdr; } tBTA_DM_API_LOC_OOB;
 /* data type for BTA_DM_API_CONFIRM_EVT */
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   bool accept;
 } tBTA_DM_API_CONFIRM;
 
 /* data type for BTA_DM_CI_IO_REQ_EVT */
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   tBTA_IO_CAP io_cap;
   tBTA_OOB_DATA oob_data;
   tBTA_AUTH_REQ auth_req;
@@ -221,7 +221,7 @@ typedef struct {
 /* data type for BTA_DM_CI_RMT_OOB_EVT */
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   BT_OCTET16 c;
   BT_OCTET16 r;
   bool accept;
@@ -259,7 +259,7 @@ typedef struct {
   uint8_t busy_level_flags;
   bool is_new;
   uint8_t new_role;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   uint8_t hci_status;
   uint16_t handle;
   tBT_TRANSPORT transport;
@@ -268,7 +268,7 @@ typedef struct {
 /* data type for BTA_DM_PM_BTM_STATUS_EVT */
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   tBTM_PM_STATUS status;
   uint16_t value;
   uint8_t hci_status;
@@ -278,14 +278,14 @@ typedef struct {
 /* data type for BTA_DM_PM_TIMER_EVT */
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   tBTA_DM_PM_ACTION pm_request;
 } tBTA_DM_PM_TIMER;
 
 /* data type for BTA_DM_API_ADD_DEVICE_EVT */
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   DEV_CLASS dc;
   LINK_KEY link_key;
   tBTA_SERVICE_MASK tm;
@@ -303,7 +303,7 @@ typedef struct {
 /* data type for BTA_DM_API_REMOVE_ACL_EVT */
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
 } tBTA_DM_API_REMOVE_DEVICE;
 
 /* data type for BTA_DM_API_EXECUTE_CBACK_EVT */
@@ -319,12 +319,12 @@ typedef struct {
   tBTA_TRANSPORT transport;
   tBTA_DM_ENCRYPT_CBACK* p_callback;
   tBTA_DM_BLE_SEC_ACT sec_act;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
 } tBTA_DM_API_SET_ENCRYPTION;
 
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   tBTA_LE_KEY_VALUE blekey;
   tBTA_LE_KEY_TYPE key_type;
 
@@ -332,7 +332,7 @@ typedef struct {
 
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   tBT_DEVICE_TYPE dev_type;
   tBLE_ADDR_TYPE addr_type;
 
@@ -340,21 +340,21 @@ typedef struct {
 
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   bool accept;
   uint32_t passkey;
 } tBTA_DM_API_PASSKEY_REPLY;
 
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   tBTA_DM_BLE_SEC_GRANT res;
 } tBTA_DM_API_BLE_SEC_GRANT;
 
 /* set prefered BLE connection parameters for a device */
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR peer_bda;
+  bt_bdaddr_t peer_bda;
   uint16_t conn_int_min;
   uint16_t conn_int_max;
   uint16_t supervision_tout;
@@ -364,7 +364,7 @@ typedef struct {
 
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR peer_bda;
+  bt_bdaddr_t peer_bda;
   bool privacy_enable;
 
 } tBTA_DM_API_ENABLE_PRIVACY;
@@ -401,7 +401,7 @@ typedef struct {
 
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR remote_bda;
+  bt_bdaddr_t remote_bda;
   uint16_t tx_data_length;
 } tBTA_DM_API_BLE_SET_DATA_LENGTH;
 
@@ -421,10 +421,9 @@ typedef struct {
 /* data type for BTA_DM_API_REMOVE_ACL_EVT */
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   bool remove_dev;
   tBTA_TRANSPORT transport;
-
 } tBTA_DM_API_REMOVE_ACL;
 
 /* data type for BTA_DM_API_REMOVE_ALL_ACL_EVT */
@@ -435,7 +434,7 @@ typedef struct {
 } tBTA_DM_API_REMOVE_ALL_ACL;
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   uint16_t min_int;
   uint16_t max_int;
   uint16_t latency;
@@ -536,7 +535,7 @@ typedef uint8_t tBTA_DM_DEV_INFO;
 typedef uint8_t tBTA_DM_PM_REQ;
 
 typedef struct {
-  BD_ADDR peer_bdaddr;
+  bt_bdaddr_t peer_bdaddr;
   uint16_t link_policy;
   tBTA_DM_CONN_STATE conn_state;
   tBTA_PREF_ROLES pref_role;
@@ -562,7 +561,7 @@ typedef struct {
 } tBTA_DM_ACTIVE_LINK;
 
 typedef struct {
-  BD_ADDR peer_bdaddr;
+  bt_bdaddr_t peer_bdaddr;
   tBTA_SYS_ID id;
   uint8_t app_id;
   tBTA_SYS_CONN_STATUS state;
@@ -595,7 +594,7 @@ typedef struct {
   uint8_t pm_action[BTA_DM_PM_MODE_TIMER_MAX];
   uint8_t active; /* number of active timer */
 
-  BD_ADDR peer_bdaddr;
+  bt_bdaddr_t peer_bdaddr;
   bool in_use;
 } tBTA_PM_TIMER;
 
@@ -632,7 +631,7 @@ typedef struct {
   uint16_t inquiry_scan_window;
 
   /* Storage for pin code request parameters */
-  BD_ADDR pin_bd_addr;
+  bt_bdaddr_t pin_bd_addr;
   DEV_CLASS pin_dev_class;
   tBTA_DM_SEC_EVT pin_evt;
   uint32_t num_val; /* the numeric value for comparison. If just_works, do not
@@ -661,7 +660,7 @@ typedef struct {
   tBTA_SERVICE_MASK services_found;
   tSDP_DISCOVERY_DB* p_sdp_db;
   uint16_t state;
-  BD_ADDR peer_bdaddr;
+  bt_bdaddr_t peer_bdaddr;
   bool name_discover_done;
   BD_NAME peer_name;
   alarm_t* search_timer;
@@ -686,7 +685,8 @@ typedef struct {
   uint32_t ble_raw_size;
   uint32_t ble_raw_used;
   alarm_t* gatt_close_timer; /* GATT channel close delay timer */
-  BD_ADDR pending_close_bda; /* pending GATT channel remote device address */
+  bt_bdaddr_t
+      pending_close_bda; /* pending GATT channel remote device address */
 
 } tBTA_DM_SEARCH_CB;
 
@@ -861,7 +861,8 @@ extern void bta_dm_search_cancel_cmpl(tBTA_DM_MSG* p_data);
 extern void bta_dm_search_cancel_notify(tBTA_DM_MSG* p_data);
 extern void bta_dm_search_cancel_transac_cmpl(tBTA_DM_MSG* p_data);
 extern void bta_dm_disc_rmt_name(tBTA_DM_MSG* p_data);
-extern tBTA_DM_PEER_DEVICE* bta_dm_find_peer_device(const BD_ADDR peer_addr);
+extern tBTA_DM_PEER_DEVICE* bta_dm_find_peer_device(
+    const bt_bdaddr_t& peer_addr);
 
 void bta_dm_eir_update_uuid(uint16_t uuid16, bool adding);
 

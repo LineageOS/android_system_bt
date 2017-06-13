@@ -603,7 +603,7 @@ void bnep_process_setup_conn_req(tBNEP_CONN* p_bcb, uint8_t* p_setup,
   else
 #endif
     btm_sec_mx_access_request(
-        p_bcb->rem_bda, BT_PSM_BNEP, false, BTM_SEC_PROTO_BNEP,
+        from_BD_ADDR(p_bcb->rem_bda), BT_PSM_BNEP, false, BTM_SEC_PROTO_BNEP,
         bnep_get_uuid32(&(p_bcb->src_uuid)), &bnep_sec_check_complete, p_bcb);
 
   return;
@@ -1089,7 +1089,7 @@ void bnepu_send_peer_multicast_filter_rsp(tBNEP_CONN* p_bcb,
  * Returns          void
  *
  ******************************************************************************/
-void bnep_sec_check_complete(UNUSED_ATTR BD_ADDR bd_addr,
+void bnep_sec_check_complete(UNUSED_ATTR const bt_bdaddr_t* bd_addr,
                              UNUSED_ATTR tBT_TRANSPORT trasnport,
                              void* p_ref_data, uint8_t result) {
   tBNEP_CONN* p_bcb = (tBNEP_CONN*)p_ref_data;

@@ -40,13 +40,13 @@
 /*
  * Define Callback functions to be called by L2CAP
 */
-static void RFCOMM_ConnectInd(BD_ADDR bd_addr, uint16_t lcid, uint16_t psm,
-                              uint8_t id);
+static void RFCOMM_ConnectInd(const bt_bdaddr_t& bd_addr, uint16_t lcid,
+                              uint16_t psm, uint8_t id);
 static void RFCOMM_ConnectCnf(uint16_t lcid, uint16_t err);
 static void RFCOMM_ConfigInd(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
 static void RFCOMM_ConfigCnf(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
 static void RFCOMM_DisconnectInd(uint16_t lcid, bool is_clear);
-static void RFCOMM_QoSViolationInd(UNUSED_ATTR BD_ADDR bd_addr);
+static void RFCOMM_QoSViolationInd(UNUSED_ATTR const bt_bdaddr_t& bd_addr);
 static void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf);
 static void RFCOMM_CongestionStatusInd(uint16_t lcid, bool is_congested);
 
@@ -85,9 +85,9 @@ void rfcomm_l2cap_if_init(void) {
  *                  block and dispatch the event to it.
  *
  ******************************************************************************/
-void RFCOMM_ConnectInd(BD_ADDR bd_addr, uint16_t lcid, UNUSED_ATTR uint16_t psm,
-                       uint8_t id) {
-  tRFC_MCB* p_mcb = rfc_alloc_multiplexer_channel(bd_addr, false);
+void RFCOMM_ConnectInd(const bt_bdaddr_t& bd_addr, uint16_t lcid,
+                       UNUSED_ATTR uint16_t psm, uint8_t id) {
+  tRFC_MCB* p_mcb = rfc_alloc_multiplexer_channel(to_BD_ADDR(bd_addr), false);
 
   if ((p_mcb) && (p_mcb->state != RFC_MX_STATE_IDLE)) {
     /* if this is collision case */
@@ -184,8 +184,8 @@ void RFCOMM_ConnectCnf(uint16_t lcid, uint16_t result) {
 
       /* Peer gave up his connection request, make sure cleaning up L2CAP
        * channel */
-      L2CA_ConnectRsp(p_mcb->bd_addr, p_mcb->pending_id, p_mcb->pending_lcid,
-                      L2CAP_CONN_NO_RESOURCES, 0);
+      L2CA_ConnectRsp(from_BD_ADDR(p_mcb->bd_addr), p_mcb->pending_id,
+                      p_mcb->pending_lcid, L2CAP_CONN_NO_RESOURCES, 0);
 
       p_mcb->pending_lcid = 0;
     }
@@ -246,7 +246,7 @@ void RFCOMM_ConfigCnf(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
  *                  FSM.
  *
  ******************************************************************************/
-void RFCOMM_QoSViolationInd(UNUSED_ATTR BD_ADDR bd_addr) {}
+void RFCOMM_QoSViolationInd(UNUSED_ATTR const bt_bdaddr_t& bd_addr) {}
 
 /*******************************************************************************
  *

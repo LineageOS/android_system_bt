@@ -363,7 +363,8 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
 
     case BTA_AG_OPEN_EVT:
       if (p_data->open.status == BTA_AG_SUCCESS) {
-        bdcpy(btif_hf_cb[idx].connected_bda.address, p_data->open.bd_addr);
+        bdcpy(btif_hf_cb[idx].connected_bda.address,
+              to_BD_ADDR(p_data->open.bd_addr));
         btif_hf_cb[idx].state = BTHF_CONNECTION_STATE_CONNECTED;
         btif_hf_cb[idx].peer_feat = 0;
         clear_phone_state_multihf(idx);
@@ -742,7 +743,7 @@ static bt_status_t connect_int(bt_bdaddr_t* bd_addr, uint16_t uuid) {
     btif_hf_cb[i].state = BTHF_CONNECTION_STATE_CONNECTING;
     bdcpy(btif_hf_cb[i].connected_bda.address, bd_addr->address);
 
-    BTA_AgOpen(btif_hf_cb[i].handle, btif_hf_cb[i].connected_bda.address,
+    BTA_AgOpen(btif_hf_cb[i].handle, btif_hf_cb[i].connected_bda,
                BTIF_HF_SECURITY, BTIF_HF_SERVICES);
     return BT_STATUS_SUCCESS;
   }

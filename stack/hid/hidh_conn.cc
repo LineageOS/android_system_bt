@@ -52,8 +52,9 @@ static void hidh_conn_retry(uint8_t dhandle);
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
-static void hidh_l2cif_connect_ind(BD_ADDR bd_addr, uint16_t l2cap_cid,
-                                   uint16_t psm, uint8_t l2cap_id);
+static void hidh_l2cif_connect_ind(const bt_bdaddr_t& bd_addr,
+                                   uint16_t l2cap_cid, uint16_t psm,
+                                   uint8_t l2cap_id);
 static void hidh_l2cif_connect_cfm(uint16_t l2cap_cid, uint16_t result);
 static void hidh_l2cif_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
 static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
@@ -134,7 +135,7 @@ tHID_STATUS hidh_conn_disconnect(uint8_t dhandle) {
 
     /* Set l2cap idle timeout to 0 (so ACL link is disconnected
      * immediately after last channel is closed) */
-    L2CA_SetIdleTimeoutByBdAddr(hh_cb.devices[dhandle].addr, 0,
+    L2CA_SetIdleTimeoutByBdAddr(from_BD_ADDR(hh_cb.devices[dhandle].addr), 0,
                                 BT_TRANSPORT_BR_EDR);
     /* Disconnect both interrupt and control channels */
     if (p_hcon->intr_cid)
@@ -158,7 +159,7 @@ tHID_STATUS hidh_conn_disconnect(uint8_t dhandle) {
  *                  send security block L2C connection response.
  *
  ******************************************************************************/
-void hidh_sec_check_complete_term(UNUSED_ATTR BD_ADDR bd_addr,
+void hidh_sec_check_complete_term(UNUSED_ATTR const bt_bdaddr_t* bd_addr,
                                   UNUSED_ATTR tBT_TRANSPORT transport,
                                   void* p_ref_data, uint8_t res) {
   tHID_HOST_DEV_CTB* p_dev = (tHID_HOST_DEV_CTB*)p_ref_data;
@@ -171,8 +172,8 @@ void hidh_sec_check_complete_term(UNUSED_ATTR BD_ADDR bd_addr,
     p_dev->conn.conn_state = HID_CONN_STATE_CONNECTING_INTR;
 
     /* Send response to the L2CAP layer. */
-    L2CA_ConnectRsp(p_dev->addr, p_dev->conn.ctrl_id, p_dev->conn.ctrl_cid,
-                    L2CAP_CONN_OK, L2CAP_CONN_OK);
+    L2CA_ConnectRsp(from_BD_ADDR(p_dev->addr), p_dev->conn.ctrl_id,
+                    p_dev->conn.ctrl_cid, L2CAP_CONN_OK, L2CAP_CONN_OK);
 
     /* Send a Configuration Request. */
     L2CA_ConfigReq(p_dev->conn.ctrl_cid, &hh_cb.l2cap_cfg);
@@ -183,8 +184,9 @@ void hidh_sec_check_complete_term(UNUSED_ATTR BD_ADDR bd_addr,
     p_dev->conn.disc_reason =
         HID_ERR_AUTH_FAILED; /* Save reason for disconnecting */
     p_dev->conn.conn_state = HID_CONN_STATE_UNUSED;
-    L2CA_ConnectRsp(p_dev->addr, p_dev->conn.ctrl_id, p_dev->conn.ctrl_cid,
-                    L2CAP_CONN_SECURITY_BLOCK, L2CAP_CONN_OK);
+    L2CA_ConnectRsp(from_BD_ADDR(p_dev->addr), p_dev->conn.ctrl_id,
+                    p_dev->conn.ctrl_cid, L2CAP_CONN_SECURITY_BLOCK,
+                    L2CAP_CONN_OK);
   }
 }
 
@@ -199,8 +201,9 @@ void hidh_sec_check_complete_term(UNUSED_ATTR BD_ADDR bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-static void hidh_l2cif_connect_ind(BD_ADDR bd_addr, uint16_t l2cap_cid,
-                                   uint16_t psm, uint8_t l2cap_id) {
+static void hidh_l2cif_connect_ind(const bt_bdaddr_t& bd_addr,
+                                   uint16_t l2cap_cid, uint16_t psm,
+                                   uint8_t l2cap_id) {
   tHID_CONN* p_hcon;
   bool bAccept = true;
   uint8_t i = HID_HOST_MAX_DEVICES;
@@ -210,7 +213,8 @@ static void hidh_l2cif_connect_ind(BD_ADDR bd_addr, uint16_t l2cap_cid,
                    l2cap_cid);
 
   /* always add incoming connection device into HID database by default */
-  if (HID_HostAddDev(bd_addr, HID_SEC_REQUIRED, &i) != HID_SUCCESS) {
+  if (HID_HostAddDev(to_BD_ADDR(bd_addr), HID_SEC_REQUIRED, &i) !=
+      HID_SUCCESS) {
     L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_SECURITY_BLOCK, 0);
     return;
   }
@@ -260,7 +264,8 @@ static void hidh_l2cif_connect_ind(BD_ADDR bd_addr, uint16_t l2cap_cid,
 
     p_hcon->conn_state = HID_CONN_STATE_SECURITY;
     if (btm_sec_mx_access_request(
-            p_dev->addr, HID_PSM_CONTROL, false, BTM_SEC_PROTO_HID,
+            from_BD_ADDR(p_dev->addr), HID_PSM_CONTROL, false,
+            BTM_SEC_PROTO_HID,
             (p_dev->attr_mask & HID_SEC_REQUIRED) ? HID_SEC_CHN : HID_NOSEC_CHN,
             &hidh_sec_check_complete_term, p_dev) == BTM_CMD_STARTED) {
       L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_PENDING,
@@ -321,7 +326,7 @@ void hidh_try_repage(uint8_t dhandle) {
  * Returns          void
  *
  ******************************************************************************/
-void hidh_sec_check_complete_orig(UNUSED_ATTR BD_ADDR bd_addr,
+void hidh_sec_check_complete_orig(UNUSED_ATTR const bt_bdaddr_t* bd_addr,
                                   UNUSED_ATTR tBT_TRANSPORT transport,
                                   void* p_ref_data, uint8_t res) {
   tHID_HOST_DEV_CTB* p_dev = (tHID_HOST_DEV_CTB*)p_ref_data;
@@ -427,7 +432,7 @@ static void hidh_l2cif_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
                                                   to "connection failure" */
 
     btm_sec_mx_access_request(
-        p_dev->addr, HID_PSM_CONTROL, true, BTM_SEC_PROTO_HID,
+        from_BD_ADDR(p_dev->addr), HID_PSM_CONTROL, true, BTM_SEC_PROTO_HID,
         (p_dev->attr_mask & HID_SEC_REQUIRED) ? HID_SEC_CHN : HID_NOSEC_CHN,
         &hidh_sec_check_complete_orig, p_dev);
   } else {
@@ -492,8 +497,8 @@ static void hidh_l2cif_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
                                                     CLOSE_EVT: Connection
                                                     Attempt was made but failed
                                                     */
-      p_hcon->intr_cid =
-          L2CA_ConnectReq(HID_PSM_INTERRUPT, hh_cb.devices[dhandle].addr);
+      p_hcon->intr_cid = L2CA_ConnectReq(
+          HID_PSM_INTERRUPT, from_BD_ADDR(hh_cb.devices[dhandle].addr));
       if (p_hcon->intr_cid == 0) {
         HIDH_TRACE_WARNING("HID-Host INTR Originate failed");
         reason = HID_L2CAP_REQ_FAIL;
@@ -572,8 +577,8 @@ static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
                                                     CLOSE_EVT: Connection
                                                     Attempt was made but failed
                                                     */
-      p_hcon->intr_cid =
-          L2CA_ConnectReq(HID_PSM_INTERRUPT, hh_cb.devices[dhandle].addr);
+      p_hcon->intr_cid = L2CA_ConnectReq(
+          HID_PSM_INTERRUPT, from_BD_ADDR(hh_cb.devices[dhandle].addr));
       if (p_hcon->intr_cid == 0) {
         HIDH_TRACE_WARNING("HID-Host INTR Originate failed");
         reason = HID_L2CAP_REQ_FAIL;
@@ -875,7 +880,7 @@ tHID_STATUS hidh_conn_snd_data(uint8_t dhandle, uint8_t trans_type,
   uint8_t use_data = 0;
   bool blank_datc = false;
 
-  if (!BTM_IsAclConnectionUp(hh_cb.devices[dhandle].addr,
+  if (!BTM_IsAclConnectionUp(from_BD_ADDR(hh_cb.devices[dhandle].addr),
                              BT_TRANSPORT_BR_EDR)) {
     osi_free(buf);
     return HID_ERR_NO_CONNECTION;
@@ -1005,10 +1010,11 @@ tHID_STATUS hidh_conn_initiate(uint8_t dhandle) {
     service_id = BTM_SEC_SERVICE_HIDH_SEC_CTRL;
     mx_chan_id = HID_SEC_CHN;
   }
-  BTM_SetOutService(p_dev->addr, service_id, mx_chan_id);
+  BTM_SetOutService(from_BD_ADDR(p_dev->addr), service_id, mx_chan_id);
 
   /* Check if L2CAP started the connection process */
-  p_dev->conn.ctrl_cid = L2CA_ConnectReq(HID_PSM_CONTROL, p_dev->addr);
+  p_dev->conn.ctrl_cid =
+      L2CA_ConnectReq(HID_PSM_CONTROL, from_BD_ADDR(p_dev->addr));
   if (p_dev->conn.ctrl_cid == 0) {
     HIDH_TRACE_WARNING("HID-Host Originate failed");
     hh_cb.callback(dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE,

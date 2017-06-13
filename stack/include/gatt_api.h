@@ -561,8 +561,9 @@ typedef void(tGATT_CMPL_CBACK)(uint16_t conn_id, tGATTC_OPTYPE op,
                                tGATT_STATUS status, tGATT_CL_COMPLETE* p_data);
 
 /* Define a callback function when an initialized connection is established. */
-typedef void(tGATT_CONN_CBACK)(tGATT_IF gatt_if, BD_ADDR bda, uint16_t conn_id,
-                               bool connected, tGATT_DISCONN_REASON reason,
+typedef void(tGATT_CONN_CBACK)(tGATT_IF gatt_if, const bt_bdaddr_t& bda,
+                               uint16_t conn_id, bool connected,
+                               tGATT_DISCONN_REASON reason,
                                tBT_TRANSPORT transport);
 
 /* attribute request callback for ATT server */
@@ -573,7 +574,7 @@ typedef void(tGATT_REQ_CBACK)(uint16_t conn_id, uint32_t trans_id,
 typedef void(tGATT_CONGESTION_CBACK)(uint16_t conn_id, bool congested);
 
 /* Define a callback function when encryption is established. */
-typedef void(tGATT_ENC_CMPL_CB)(tGATT_IF gatt_if, BD_ADDR bda);
+typedef void(tGATT_ENC_CMPL_CB)(tGATT_IF gatt_if, const bt_bdaddr_t& bda);
 
 /* Define a callback function when phy is updated. */
 typedef void(tGATT_PHY_UPDATE_CB)(tGATT_IF gatt_if, uint16_t conn_id,
@@ -619,7 +620,7 @@ typedef struct {
 typedef uint8_t tGATTS_SRV_CHG_CMD;
 
 typedef struct {
-  BD_ADDR bda;
+  bt_bdaddr_t bda;
   bool srv_changed;
 } tGATTS_SRV_CHG;
 
@@ -919,7 +920,7 @@ extern tGATT_STATUS GATTC_SendHandleValueConfirm(uint16_t conn_id,
  * Returns          void
  *
  ******************************************************************************/
-extern void GATT_SetIdleTimeout(BD_ADDR bd_addr, uint16_t idle_tout,
+extern void GATT_SetIdleTimeout(const bt_bdaddr_t& bd_addr, uint16_t idle_tout,
                                 tGATT_TRANSPORT transport);
 
 /*******************************************************************************
@@ -986,11 +987,12 @@ extern void GATT_StartIf(tGATT_IF gatt_if);
  * Returns          true if connection started; else false
  *
  ******************************************************************************/
-extern bool GATT_Connect(tGATT_IF gatt_if, BD_ADDR bd_addr, bool is_direct,
-                         tBT_TRANSPORT transport, bool opportunistic);
-extern bool GATT_Connect(tGATT_IF gatt_if, BD_ADDR bd_addr, bool is_direct,
-                         tBT_TRANSPORT transport, bool opportunistic,
-                         uint8_t initiating_phys);
+extern bool GATT_Connect(tGATT_IF gatt_if, const bt_bdaddr_t& bd_addr,
+                         bool is_direct, tBT_TRANSPORT transport,
+                         bool opportunistic);
+extern bool GATT_Connect(tGATT_IF gatt_if, const bt_bdaddr_t& bd_addr,
+                         bool is_direct, tBT_TRANSPORT transport,
+                         bool opportunistic, uint8_t initiating_phys);
 
 /*******************************************************************************
  *
@@ -1009,7 +1011,7 @@ extern bool GATT_Connect(tGATT_IF gatt_if, BD_ADDR bd_addr, bool is_direct,
  * Returns          true if connection started; else false
  *
  ******************************************************************************/
-extern bool GATT_CancelConnect(tGATT_IF gatt_if, BD_ADDR bd_addr,
+extern bool GATT_CancelConnect(tGATT_IF gatt_if, const bt_bdaddr_t& bd_addr,
                                bool is_direct);
 
 /*******************************************************************************
@@ -1042,7 +1044,7 @@ extern tGATT_STATUS GATT_Disconnect(uint16_t conn_id);
  *
  ******************************************************************************/
 extern bool GATT_GetConnectionInfor(uint16_t conn_id, tGATT_IF* p_gatt_if,
-                                    BD_ADDR bd_addr,
+                                    bt_bdaddr_t& bd_addr,
                                     tBT_TRANSPORT* p_transport);
 
 /*******************************************************************************
@@ -1061,7 +1063,8 @@ extern bool GATT_GetConnectionInfor(uint16_t conn_id, tGATT_IF* p_gatt_if,
  * Returns          true the ligical link is connected
  *
  ******************************************************************************/
-extern bool GATT_GetConnIdIfConnected(tGATT_IF gatt_if, BD_ADDR bd_addr,
+extern bool GATT_GetConnIdIfConnected(tGATT_IF gatt_if,
+                                      const bt_bdaddr_t& bd_addr,
                                       uint16_t* p_conn_id,
                                       tBT_TRANSPORT transport);
 
@@ -1074,8 +1077,8 @@ extern bool GATT_GetConnIdIfConnected(tGATT_IF gatt_if, BD_ADDR bd_addr,
  * Returns          None.
  *
  ******************************************************************************/
-extern void GATT_ConfigServiceChangeCCC(BD_ADDR remote_bda, bool enable,
-                                        tBT_TRANSPORT transport);
+extern void GATT_ConfigServiceChangeCCC(const bt_bdaddr_t& remote_bda,
+                                        bool enable, tBT_TRANSPORT transport);
 
 // Enables the GATT profile on the device.
 // It clears out the control blocks, and registers with L2CAP.
@@ -1086,7 +1089,7 @@ extern void gatt_free(void);
 
 // Link encryption complete notification for all encryption process
 // initiated outside GATT.
-extern void gatt_notify_enc_cmpl(BD_ADDR bd_addr);
+extern void gatt_notify_enc_cmpl(const bt_bdaddr_t& bd_addr);
 
 // Reset bg device list.
 extern void gatt_reset_bgdev_list(void);

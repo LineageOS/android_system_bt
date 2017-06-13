@@ -768,27 +768,26 @@ tBTM_STATUS BTM_EnableTestMode(void) {
  *                                 the results
  *
  ******************************************************************************/
-tBTM_STATUS BTM_DeleteStoredLinkKey(BD_ADDR bd_addr, tBTM_CMPL_CB* p_cb) {
-  BD_ADDR local_bd_addr;
-  bool delete_all_flag = false;
-
+tBTM_STATUS BTM_DeleteStoredLinkKey(const bt_bdaddr_t* bd_addr,
+                                    tBTM_CMPL_CB* p_cb) {
   /* Check if the previous command is completed */
   if (btm_cb.devcb.p_stored_link_key_cmpl_cb) return (BTM_BUSY);
 
-  if (!bd_addr) {
-    /* This is to delete all link keys */
-    delete_all_flag = true;
-
-    /* We don't care the BD address. Just pass a non zero pointer */
-    bd_addr = local_bd_addr;
-  }
+  bool delete_all_flag = !bd_addr;
 
   BTM_TRACE_EVENT("BTM: BTM_DeleteStoredLinkKey: delete_all_flag: %s",
                   delete_all_flag ? "true" : "false");
 
-  /* Send the HCI command */
   btm_cb.devcb.p_stored_link_key_cmpl_cb = p_cb;
-  btsnd_hcic_delete_stored_key(bd_addr, delete_all_flag);
+  if (!bd_addr) {
+    /* This is to delete all link keys */
+    /* We don't care the BD address. Just pass a non zero pointer */
+    bt_bdaddr_t local_bd_addr{.address = {}};
+    btsnd_hcic_delete_stored_key(local_bd_addr, delete_all_flag);
+  } else {
+    btsnd_hcic_delete_stored_key(*bd_addr, delete_all_flag);
+  }
+
   return (BTM_SUCCESS);
 }
 

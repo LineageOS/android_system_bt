@@ -787,7 +787,7 @@ bool bta_av_chk_start(tBTA_AV_SCB* p_scb) {
           if (p_scbi->co_started != bta_av_cb.audio_open_cnt) {
             p_scbi->co_started = bta_av_cb.audio_open_cnt;
             L2CA_SetFlushTimeout(
-                p_scbi->peer_addr,
+                from_BD_ADDR(p_scbi->peer_addr),
                 p_bta_av_cfg->p_audio_flush_to[p_scbi->co_started - 1]);
           }
         }
@@ -871,7 +871,7 @@ static void bta_av_sys_rs_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status,
 
   /* restore role switch policy, if role switch failed */
   if ((HCI_SUCCESS != app_id) &&
-      (BTM_GetRole(peer_addr, &cur_role) == BTM_SUCCESS) &&
+      (BTM_GetRole(from_BD_ADDR(peer_addr), &cur_role) == BTM_SUCCESS) &&
       (cur_role == BTM_ROLE_SLAVE)) {
     bta_sys_set_policy(BTA_ID_AV, HCI_ENABLE_MASTER_SLAVE_SWITCH, peer_addr);
   }
@@ -976,15 +976,15 @@ bool bta_av_switch_if_needed(tBTA_AV_SCB* p_scb) {
         ((bta_av_cb.conn_audio & mask) || /* connected audio */
          (bta_av_cb.conn_video & mask)))  /* connected video */
     {
-      BTM_GetRole(p_scbi->peer_addr, &role);
+      BTM_GetRole(from_BD_ADDR(p_scbi->peer_addr), &role);
       /* this channel is open - clear the role switch link policy for this link
        */
       if (BTM_ROLE_MASTER != role) {
         if (bta_av_cb.features & BTA_AV_FEAT_MASTER)
           bta_sys_clear_policy(BTA_ID_AV, HCI_ENABLE_MASTER_SLAVE_SWITCH,
                                p_scbi->peer_addr);
-        if (BTM_CMD_STARTED !=
-            BTM_SwitchRole(p_scbi->peer_addr, BTM_ROLE_MASTER, NULL)) {
+        if (BTM_CMD_STARTED != BTM_SwitchRole(from_BD_ADDR(p_scbi->peer_addr),
+                                              BTM_ROLE_MASTER, NULL)) {
           /* can not switch role on SCBI
            * start the timer on SCB - because this function is ONLY called when
            * SCB gets API_OPEN */
@@ -1015,7 +1015,7 @@ bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits) {
   uint8_t role;
   bool is_ok = true;
 
-  if (BTM_GetRole(p_scb->peer_addr, &role) == BTM_SUCCESS) {
+  if (BTM_GetRole(from_BD_ADDR(p_scb->peer_addr), &role) == BTM_SUCCESS) {
     LOG_INFO(LOG_TAG, "%s hndl:x%x role:%d conn_audio:x%x bits:%d features:x%x",
              __func__, p_scb->hndl, role, bta_av_cb.conn_audio, bits,
              bta_av_cb.features);
@@ -1026,8 +1026,8 @@ bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits) {
         bta_sys_clear_policy(BTA_ID_AV, HCI_ENABLE_MASTER_SLAVE_SWITCH,
                              p_scb->peer_addr);
 
-      if (BTM_CMD_STARTED !=
-          BTM_SwitchRole(p_scb->peer_addr, BTM_ROLE_MASTER, NULL)) {
+      if (BTM_CMD_STARTED != BTM_SwitchRole(from_BD_ADDR(p_scb->peer_addr),
+                                            BTM_ROLE_MASTER, NULL)) {
         /* can not switch role on SCB - start the timer on SCB */
       }
       is_ok = false;
