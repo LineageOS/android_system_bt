@@ -439,7 +439,7 @@ tDIS_STATUS DIS_SrUpdate(tDIS_ATTR_BIT dis_attr_bit, tDIS_ATTR* p_info) {
  * Returns          void
  *
  ******************************************************************************/
-bool DIS_ReadDISInfo(BD_ADDR peer_bda, tDIS_READ_CBACK* p_cback,
+bool DIS_ReadDISInfo(const bt_bdaddr_t& peer_bda, tDIS_READ_CBACK* p_cback,
                      tDIS_ATTR_MASK mask) {
   uint16_t conn_id;
 
@@ -457,12 +457,9 @@ bool DIS_ReadDISInfo(BD_ADDR peer_bda, tDIS_READ_CBACK* p_cback,
 
   dis_cb.request_mask = mask;
 
-  VLOG(1) << StringPrintf(
-      "DIS_ReadDISInfo() - BDA: %08x%04x  cl_read_uuid: 0x%04x",
-      (peer_bda[0] << 24) + (peer_bda[1] << 16) + (peer_bda[2] << 8) +
-          peer_bda[3],
-      (peer_bda[4] << 8) + peer_bda[5],
-      dis_attr_uuid[dis_cb.dis_read_uuid_idx]);
+  VLOG(1) << __func__ << " BDA: " << peer_bda
+          << StringPrintf(" cl_read_uuid: 0x%04x",
+                          dis_attr_uuid[dis_cb.dis_read_uuid_idx]);
 
   GATT_GetConnIdIfConnected(srvc_eng_cb.gatt_if, peer_bda, &conn_id,
                             BT_TRANSPORT_LE);

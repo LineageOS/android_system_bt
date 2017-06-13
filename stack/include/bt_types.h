@@ -544,6 +544,9 @@ typedef uint8_t* BD_ADDR_PTR;         /* Pointer to Device Address */
 #include <base/strings/stringprintf.h>
 #include <hardware/bluetooth.h>
 
+static const bt_bdaddr_t bd_addr_null = {
+    .address = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
+
 inline bool operator==(const bt_bdaddr_t& lhs, const bt_bdaddr_t& rhs) {
   return memcmp(&lhs, &rhs, sizeof(lhs)) == 0;
 }
@@ -558,6 +561,14 @@ inline std::ostream& operator<<(std::ostream& os, const bt_bdaddr_t& a) {
                            a.address[4], a.address[5]);
   return os;
 }
+
+/*TODO(jpawlowski): These two helpers are used at the border between code where
+ * BD_ADDR is not used any more. Remove once BD_ADDR is no more */
+inline uint8_t* to_BD_ADDR(const bt_bdaddr_t& a) {
+  return const_cast<uint8_t*>((const uint8_t*)a.address);
+}
+inline const bt_bdaddr_t& from_BD_ADDR(BD_ADDR a) { return (bt_bdaddr_t&)*a; }
+
 #endif
 
 #define AMP_KEY_TYPE_GAMP 0
@@ -960,7 +971,6 @@ typedef uint8_t BD_ADDR[BD_ADDR_LEN];
 
 /* global constant for "any" bd addr */
 static const BD_ADDR bd_addr_any = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-static const BD_ADDR bd_addr_null = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 /*****************************************************************************
  *  Functions

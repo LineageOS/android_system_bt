@@ -327,7 +327,6 @@ tGATT_STATUS attp_send_msg_to_l2cap(tGATT_TCB& tcb, BT_HDR* p_toL2CAP) {
   if (tcb.att_lcid == L2CAP_ATT_CID)
     l2cap_ret = L2CA_SendFixedChnlData(L2CAP_ATT_CID, tcb.peer_bda, p_toL2CAP);
   else
-
     l2cap_ret = (uint16_t)L2CA_DataWrite(tcb.att_lcid, p_toL2CAP);
 
   if (l2cap_ret == L2CAP_DW_FAILED) {

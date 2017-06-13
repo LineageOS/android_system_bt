@@ -88,9 +88,9 @@ extern const btgatt_callbacks_t* bt_gatt_callbacks;
   0x40                             /* bit7, bit6 is 01 to be resolvable random \
                                       */
 #define BLE_RESOLVE_ADDR_MASK 0xc0 /* bit 6, and bit7 */
-#define BTM_BLE_IS_RESOLVE_BDA(x) \
-  (((x)[0] & BLE_RESOLVE_ADDR_MASK) == BLE_RESOLVE_ADDR_MSB)
-
+inline bool BTM_BLE_IS_RESOLVE_BDA(const bt_bdaddr_t& x) {
+  return ((x.address)[0] & BLE_RESOLVE_ADDR_MASK) == BLE_RESOLVE_ADDR_MSB;
+}
 namespace {
 
 uint8_t rssi_request_client_if;
@@ -118,7 +118,7 @@ void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
     case BTA_GATTC_NOTIF_EVT: {
       btgatt_notify_params_t data;
 
-      bdcpy(data.bda.address, p_data->notify.bda);
+      data.bda = p_data->notify.bda;
       memcpy(data.value, p_data->notify.value, p_data->notify.len);
 
       data.handle = p_data->notify.handle;
@@ -135,11 +135,10 @@ void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
     }
 
     case BTA_GATTC_OPEN_EVT: {
-      bt_bdaddr_t bda;
-      bdcpy(bda.address, p_data->open.remote_bda);
-
+      DVLOG(1) << "BTA_GATTC_OPEN_EVT " << p_data->open.remote_bda;
       HAL_CBACK(bt_gatt_callbacks, client->open_cb, p_data->open.conn_id,
-                p_data->open.status, p_data->open.client_if, &bda);
+                p_data->open.status, p_data->open.client_if,
+                &p_data->open.remote_bda);
 
       if (GATT_DEF_BLE_MTU_SIZE != p_data->open.mtu && p_data->open.mtu) {
         HAL_CBACK(bt_gatt_callbacks, client->configure_mtu_cb,
@@ -153,10 +152,9 @@ void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
     }
 
     case BTA_GATTC_CLOSE_EVT: {
-      bt_bdaddr_t bda;
-      bdcpy(bda.address, p_data->close.remote_bda);
       HAL_CBACK(bt_gatt_callbacks, client->close_cb, p_data->close.conn_id,
-                p_data->status, p_data->close.client_if, &bda);
+                p_data->status, p_data->close.client_if,
+                &p_data->close.remote_bda);
       break;
     }
 
@@ -210,7 +208,7 @@ void btm_read_rssi_cb(tBTM_RSSI_RESULTS* p_result) {
   if (!p_result) return;
 
   bt_bdaddr_t* addr = new bt_bdaddr_t;
-  bdcpy(addr->address, p_result->rem_bda);
+  *addr = p_result->rem_bda;
   CLI_CBACK_IN_JNI(read_remote_rssi_cb, rssi_request_client_if,
                    base::Owned(addr), p_result->rssi, p_result->status);
 }
@@ -254,7 +252,7 @@ bt_status_t btif_gattc_unregister_app(int client_if) {
   return do_in_jni_thread(Bind(&btif_gattc_unregister_app_impl, client_if));
 }
 
-void btif_gattc_open_impl(int client_if, BD_ADDR address, bool is_direct,
+void btif_gattc_open_impl(int client_if, bt_bdaddr_t address, bool is_direct,
                           int transport_p, int initiating_phys) {
   // Ensure device is in inquiry database
   int addr_type = 0;
@@ -278,7 +276,7 @@ void btif_gattc_open_impl(int client_if, BD_ADDR address, bool is_direct,
       BTM_BleGetVendorCapabilities(&vnd_capabilities);
       if (!vnd_capabilities.rpa_offloading) {
         HAL_CBACK(bt_gatt_callbacks, client->open_cb, 0, BT_STATUS_UNSUPPORTED,
-                  client_if, (bt_bdaddr_t*)&address);
+                  client_if, &address);
         return;
       }
     }
@@ -319,14 +317,11 @@ bt_status_t btif_gattc_open(int client_if, const bt_bdaddr_t* bd_addr,
                             int initiating_phys) {
   CHECK_BTGATT_INIT();
   // Closure will own this value and free it.
-  uint8_t* address = new BD_ADDR;
-  bdcpy(address, bd_addr->address);
-  return do_in_jni_thread(Bind(&btif_gattc_open_impl, client_if,
-                               base::Owned(address), is_direct, transport,
-                               initiating_phys));
+  return do_in_jni_thread(Bind(&btif_gattc_open_impl, client_if, *bd_addr,
+                               is_direct, transport, initiating_phys));
 }
 
-void btif_gattc_close_impl(int client_if, BD_ADDR address, int conn_id) {
+void btif_gattc_close_impl(int client_if, bt_bdaddr_t address, int conn_id) {
   // Disconnect established connections
   if (conn_id != 0)
     BTA_GATTC_Close(conn_id);
@@ -340,11 +335,8 @@ void btif_gattc_close_impl(int client_if, BD_ADDR address, int conn_id) {
 bt_status_t btif_gattc_close(int client_if, const bt_bdaddr_t* bd_addr,
                              int conn_id) {
   CHECK_BTGATT_INIT();
-  // Closure will own this value and free it.
-  uint8_t* address = new BD_ADDR;
-  bdcpy(address, bd_addr->address);
   return do_in_jni_thread(
-      Bind(&btif_gattc_close_impl, client_if, base::Owned(address), conn_id));
+      Bind(&btif_gattc_close_impl, client_if, *bd_addr, conn_id));
 }
 
 bt_status_t btif_gattc_refresh(int client_if, const bt_bdaddr_t* bd_addr) {
@@ -501,9 +493,10 @@ bt_status_t btif_gattc_execute_write(int conn_id, int execute) {
 }
 
 void btif_gattc_reg_for_notification_impl(tBTA_GATTC_IF client_if,
-                                          const BD_ADDR bda, uint16_t handle) {
-  tBTA_GATT_STATUS status = BTA_GATTC_RegisterForNotifications(
-      client_if, const_cast<uint8_t*>(bda), handle);
+                                          const bt_bdaddr_t bda,
+                                          uint16_t handle) {
+  tBTA_GATT_STATUS status =
+      BTA_GATTC_RegisterForNotifications(client_if, bda, handle);
 
   // TODO(jpawlowski): conn_id is currently unused
   HAL_CBACK(bt_gatt_callbacks, client->register_for_notification_cb,
@@ -515,18 +508,16 @@ bt_status_t btif_gattc_reg_for_notification(int client_if,
                                             uint16_t handle) {
   CHECK_BTGATT_INIT();
 
-  uint8_t* address = new BD_ADDR;
-  bdcpy(address, bd_addr->address);
   return do_in_jni_thread(
       Bind(base::IgnoreResult(&btif_gattc_reg_for_notification_impl), client_if,
-           base::Owned(address), handle));
+           *bd_addr, handle));
 }
 
 void btif_gattc_dereg_for_notification_impl(tBTA_GATTC_IF client_if,
-                                            const BD_ADDR bda,
+                                            const bt_bdaddr_t bda,
                                             uint16_t handle) {
-  tBTA_GATT_STATUS status = BTA_GATTC_DeregisterForNotifications(
-      client_if, const_cast<uint8_t*>(bda), handle);
+  tBTA_GATT_STATUS status =
+      BTA_GATTC_DeregisterForNotifications(client_if, bda, handle);
 
   // TODO(jpawlowski): conn_id is currently unused
   HAL_CBACK(bt_gatt_callbacks, client->register_for_notification_cb,
@@ -538,22 +529,17 @@ bt_status_t btif_gattc_dereg_for_notification(int client_if,
                                               uint16_t handle) {
   CHECK_BTGATT_INIT();
 
-  uint8_t* address = new BD_ADDR;
-  bdcpy(address, bd_addr->address);
   return do_in_jni_thread(
       Bind(base::IgnoreResult(&btif_gattc_dereg_for_notification_impl),
-           client_if, base::Owned(address), handle));
+           client_if, *bd_addr, handle));
 }
 
 bt_status_t btif_gattc_read_remote_rssi(int client_if,
                                         const bt_bdaddr_t* bd_addr) {
   CHECK_BTGATT_INIT();
   rssi_request_client_if = client_if;
-  // Closure will own this value and free it.
-  uint8_t* address = new BD_ADDR;
-  bdcpy(address, bd_addr->address);
-  return do_in_jni_thread(Bind(base::IgnoreResult(&BTM_ReadRSSI),
-                               base::Owned(address),
+
+  return do_in_jni_thread(Bind(base::IgnoreResult(&BTM_ReadRSSI), *bd_addr,
                                (tBTM_CMPL_CB*)btm_read_rssi_cb));
 }
 
@@ -566,12 +552,12 @@ bt_status_t btif_gattc_configure_mtu(int conn_id, int mtu) {
 void btif_gattc_conn_parameter_update_impl(bt_bdaddr_t addr, int min_interval,
                                            int max_interval, int latency,
                                            int timeout) {
-  if (BTA_DmGetConnectionState(addr.address))
-    BTA_DmBleUpdateConnectionParams(addr.address, min_interval, max_interval,
-                                    latency, timeout);
+  if (BTA_DmGetConnectionState(addr))
+    BTA_DmBleUpdateConnectionParams(addr, min_interval, max_interval, latency,
+                                    timeout);
   else
-    BTA_DmSetBlePrefConnParams(addr.address, min_interval, max_interval,
-                               latency, timeout);
+    BTA_DmSetBlePrefConnParams(addr, min_interval, max_interval, latency,
+                               timeout);
 }
 
 bt_status_t btif_gattc_conn_parameter_update(const bt_bdaddr_t* bd_addr,

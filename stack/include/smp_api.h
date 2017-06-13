@@ -75,7 +75,7 @@ extern bool SMP_Register(tSMP_CALLBACK* p_cback);
  * Returns          SMP_STARTED if bond started, else otherwise exception.
  *
  ******************************************************************************/
-extern tSMP_STATUS SMP_Pair(BD_ADDR bd_addr);
+extern tSMP_STATUS SMP_Pair(const bt_bdaddr_t& bd_addr);
 
 /*******************************************************************************
  *
@@ -87,7 +87,7 @@ extern tSMP_STATUS SMP_Pair(BD_ADDR bd_addr);
  *                  failure.
  *
  ******************************************************************************/
-extern tSMP_STATUS SMP_BR_PairWith(BD_ADDR bd_addr);
+extern tSMP_STATUS SMP_BR_PairWith(const bt_bdaddr_t& bd_addr);
 
 /*******************************************************************************
  *
@@ -98,7 +98,7 @@ extern tSMP_STATUS SMP_BR_PairWith(BD_ADDR bd_addr);
  * Returns          true - pairing cancelled
  *
  ******************************************************************************/
-extern bool SMP_PairCancel(BD_ADDR bd_addr);
+extern bool SMP_PairCancel(const bt_bdaddr_t& bd_addr);
 
 /*******************************************************************************
  *
@@ -114,7 +114,7 @@ extern bool SMP_PairCancel(BD_ADDR bd_addr);
  * Returns          None
  *
  ******************************************************************************/
-extern void SMP_SecurityGrant(BD_ADDR bd_addr, uint8_t res);
+extern void SMP_SecurityGrant(const bt_bdaddr_t& bd_addr, uint8_t res);
 
 /*******************************************************************************
  *
@@ -130,7 +130,8 @@ extern void SMP_SecurityGrant(BD_ADDR bd_addr, uint8_t res);
  *                             BTM_MAX_PASSKEY_VAL(999999(0xF423F)).
  *
  ******************************************************************************/
-extern void SMP_PasskeyReply(BD_ADDR bd_addr, uint8_t res, uint32_t passkey);
+extern void SMP_PasskeyReply(const bt_bdaddr_t& bd_addr, uint8_t res,
+                             uint32_t passkey);
 
 /*******************************************************************************
  *
@@ -144,7 +145,7 @@ extern void SMP_PasskeyReply(BD_ADDR bd_addr, uint8_t res, uint32_t passkey);
  *                  res          - comparison result SMP_SUCCESS if success
  *
  ******************************************************************************/
-extern void SMP_ConfirmReply(BD_ADDR bd_addr, uint8_t res);
+extern void SMP_ConfirmReply(const bt_bdaddr_t& bd_addr, uint8_t res);
 
 /*******************************************************************************
  *
@@ -158,8 +159,8 @@ extern void SMP_ConfirmReply(BD_ADDR bd_addr, uint8_t res);
  *                  p_data      - SM Randomizer  C.
  *
  ******************************************************************************/
-extern void SMP_OobDataReply(BD_ADDR bd_addr, tSMP_STATUS res, uint8_t len,
-                             uint8_t* p_data);
+extern void SMP_OobDataReply(const bt_bdaddr_t& bd_addr, tSMP_STATUS res,
+                             uint8_t len, uint8_t* p_data);
 
 /*******************************************************************************
  *
@@ -202,7 +203,7 @@ extern bool SMP_Encrypt(uint8_t* key, uint8_t key_len, uint8_t* plain_text,
  *                  value        - keypress notification parameter value
  *
  ******************************************************************************/
-extern void SMP_KeypressNotification(BD_ADDR bd_addr, uint8_t value);
+extern void SMP_KeypressNotification(const bt_bdaddr_t& bd_addr, uint8_t value);
 
 /*******************************************************************************
  *
@@ -220,11 +221,11 @@ extern bool SMP_CreateLocalSecureConnectionsOobData(
     tBLE_BD_ADDR* addr_to_send_to);
 
 // Called when LTK request is received from controller.
-extern bool smp_proc_ltk_request(BD_ADDR bda);
+extern bool smp_proc_ltk_request(const bt_bdaddr_t& bda);
 
 // Called when link is encrypted and notified to slave device.
 // Proceed to send LTK, DIV and ER to master if bonding the devices.
-extern void smp_link_encrypted(BD_ADDR bda, uint8_t encr_enable);
+extern void smp_link_encrypted(const bt_bdaddr_t& bda, uint8_t encr_enable);
 
 //
 // The AES-CMAC Generation Function with tlen implemented.

@@ -218,7 +218,7 @@ static bool btif_gatt_is_link_encrypted(BD_ADDR bd_addr) {
   return BTA_JvIsEncrypted(bd_addr);
 }
 
-static void btif_gatt_set_encryption_cb(UNUSED_ATTR BD_ADDR bd_addr,
+static void btif_gatt_set_encryption_cb(UNUSED_ATTR const bt_bdaddr_t& bd_addr,
                                         UNUSED_ATTR tBTA_TRANSPORT transport,
                                         tBTA_STATUS result) {
   if (result != BTA_SUCCESS && result != BTA_BUSY) {
@@ -228,24 +228,21 @@ static void btif_gatt_set_encryption_cb(UNUSED_ATTR BD_ADDR bd_addr,
 #endif
 
 #if (BLE_DELAY_REQUEST_ENC == FALSE)
-void btif_gatt_check_encrypted_link(BD_ADDR bd_addr,
+void btif_gatt_check_encrypted_link(bt_bdaddr_t bd_addr,
                                     tBTA_GATT_TRANSPORT transport_link) {
   char buf[100];
 
-  bt_bdaddr_t bda;
-  bdcpy(bda.address, bd_addr);
-
-  if ((btif_storage_get_ble_bonding_key(&bda, BTIF_DM_LE_KEY_PENC, buf,
+  if ((btif_storage_get_ble_bonding_key(&bd_addr, BTIF_DM_LE_KEY_PENC, buf,
                                         sizeof(tBTM_LE_PENC_KEYS)) ==
        BT_STATUS_SUCCESS) &&
-      !btif_gatt_is_link_encrypted(bd_addr)) {
+      !btif_gatt_is_link_encrypted(bd_addr.address)) {
     BTIF_TRACE_DEBUG("%s: transport = %d", __func__, transport_link);
     BTA_DmSetEncryption(bd_addr, transport_link, &btif_gatt_set_encryption_cb,
                         BTM_BLE_SEC_ENCRYPT);
   }
 }
 #else
-void btif_gatt_check_encrypted_link(UNUSED_ATTR BD_ADDR bd_addr,
+void btif_gatt_check_encrypted_link(UNUSED_ATTR bd_addr bd_addr,
                                     UNUSED_ATTR tBTA_GATT_TRANSPORT
                                         transport_link) {}
 #endif

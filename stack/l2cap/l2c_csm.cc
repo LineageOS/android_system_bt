@@ -169,7 +169,7 @@ static void l2c_csm_closed(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
       if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE) {
         p_ccb->chnl_state = CST_ORIG_W4_SEC_COMP;
         l2ble_sec_access_req(p_ccb->p_lcb->remote_bd_addr, p_ccb->p_rcb->psm,
-                             true, &l2c_link_sec_comp, p_ccb);
+                             true, &l2c_link_sec_comp2, p_ccb);
       } else {
         p_ccb->chnl_state = CST_ORIG_W4_SEC_COMP;
         btm_sec_l2cap_access_req(p_ccb->p_lcb->remote_bd_addr,
@@ -194,7 +194,7 @@ static void l2c_csm_closed(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
       if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE) {
         p_ccb->chnl_state = CST_ORIG_W4_SEC_COMP;
         l2ble_sec_access_req(p_ccb->p_lcb->remote_bd_addr, p_ccb->p_rcb->psm,
-                             true, &l2c_link_sec_comp, p_ccb);
+                             true, &l2c_link_sec_comp2, p_ccb);
       } else {
         /* Cancel sniff mode if needed */
         {
@@ -252,7 +252,7 @@ static void l2c_csm_closed(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
       if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE) {
         p_ccb->chnl_state = CST_TERM_W4_SEC_COMP;
         l2ble_sec_access_req(p_ccb->p_lcb->remote_bd_addr, p_ccb->p_rcb->psm,
-                             false, &l2c_link_sec_comp, p_ccb);
+                             false, &l2c_link_sec_comp2, p_ccb);
       } else {
         /* Cancel sniff mode if needed */
         {
@@ -343,7 +343,7 @@ static void l2c_csm_orig_w4_sec_comp(tL2C_CCB* p_ccb, uint16_t event,
     case L2CEVT_LP_CONNECT_CFM:  /* Link came up         */
       if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE) {
         l2ble_sec_access_req(p_ccb->p_lcb->remote_bd_addr, p_ccb->p_rcb->psm,
-                             false, &l2c_link_sec_comp, p_ccb);
+                             false, &l2c_link_sec_comp2, p_ccb);
       } else {
         btm_sec_l2cap_access_req(p_ccb->p_lcb->remote_bd_addr,
                                  p_ccb->p_rcb->psm, p_ccb->p_lcb->handle, true,

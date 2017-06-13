@@ -111,9 +111,10 @@ void rfc_port_sm_state_closed(tPORT* p_port, uint16_t event, void* p_data) {
   switch (event) {
     case RFC_EVENT_OPEN:
       p_port->rfc.state = RFC_STATE_ORIG_WAIT_SEC_CHECK;
-      btm_sec_mx_access_request(
-          p_port->rfc.p_mcb->bd_addr, BT_PSM_RFCOMM, true, BTM_SEC_PROTO_RFCOMM,
-          (uint32_t)(p_port->dlci / 2), &rfc_sec_check_complete, p_port);
+      btm_sec_mx_access_request(from_BD_ADDR(p_port->rfc.p_mcb->bd_addr),
+                                BT_PSM_RFCOMM, true, BTM_SEC_PROTO_RFCOMM,
+                                (uint32_t)(p_port->dlci / 2),
+                                &rfc_sec_check_complete, p_port);
       return;
 
     case RFC_EVENT_CLOSE:
@@ -133,8 +134,8 @@ void rfc_port_sm_state_closed(tPORT* p_port, uint16_t event, void* p_data) {
 
       /* Open will be continued after security checks are passed */
       p_port->rfc.state = RFC_STATE_TERM_WAIT_SEC_CHECK;
-      btm_sec_mx_access_request(p_port->rfc.p_mcb->bd_addr, BT_PSM_RFCOMM,
-                                false, BTM_SEC_PROTO_RFCOMM,
+      btm_sec_mx_access_request(from_BD_ADDR(p_port->rfc.p_mcb->bd_addr),
+                                BT_PSM_RFCOMM, false, BTM_SEC_PROTO_RFCOMM,
                                 (uint32_t)(p_port->dlci / 2),
                                 &rfc_sec_check_complete, p_port);
       return;
@@ -275,7 +276,7 @@ void rfc_port_sm_term_wait_sec_check(tPORT* p_port, uint16_t event,
       return;
 
     case RFC_EVENT_CLEAR:
-      btm_sec_abort_access_req(p_port->rfc.p_mcb->bd_addr);
+      btm_sec_abort_access_req(from_BD_ADDR(p_port->rfc.p_mcb->bd_addr));
       rfc_port_closed(p_port);
       return;
 
@@ -289,7 +290,7 @@ void rfc_port_sm_term_wait_sec_check(tPORT* p_port, uint16_t event,
       return;
 
     case RFC_EVENT_DISC:
-      btm_sec_abort_access_req(p_port->rfc.p_mcb->bd_addr);
+      btm_sec_abort_access_req(from_BD_ADDR(p_port->rfc.p_mcb->bd_addr));
       p_port->rfc.state = RFC_STATE_CLOSED;
       rfc_send_ua(p_port->rfc.p_mcb, p_port->dlci);
 
@@ -348,7 +349,7 @@ void rfc_port_sm_orig_wait_sec_check(tPORT* p_port, uint16_t event,
       return;
 
     case RFC_EVENT_CLOSE:
-      btm_sec_abort_access_req(p_port->rfc.p_mcb->bd_addr);
+      btm_sec_abort_access_req(from_BD_ADDR(p_port->rfc.p_mcb->bd_addr));
       rfc_port_closed(p_port);
       return;
 

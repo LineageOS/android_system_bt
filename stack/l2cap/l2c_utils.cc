@@ -66,7 +66,7 @@ bool l2cu_can_allocate_lcb(void) {
  * Returns          LCB address or NULL if none found
  *
  ******************************************************************************/
-tL2C_LCB* l2cu_allocate_lcb(BD_ADDR p_bd_addr, bool is_bonding,
+tL2C_LCB* l2cu_allocate_lcb(const bt_bdaddr_t& p_bd_addr, bool is_bonding,
                             tBT_TRANSPORT transport) {
   int xx;
   tL2C_LCB* p_lcb = &l2cb.lcb_pool[0];
@@ -77,7 +77,7 @@ tL2C_LCB* l2cu_allocate_lcb(BD_ADDR p_bd_addr, bool is_bonding,
       alarm_free(p_lcb->info_resp_timer);
       memset(p_lcb, 0, sizeof(tL2C_LCB));
 
-      memcpy(p_lcb->remote_bd_addr, p_bd_addr, BD_ADDR_LEN);
+      p_lcb->remote_bd_addr = p_bd_addr;
 
       p_lcb->in_use = true;
       p_lcb->link_state = LST_DISCONNECTED;
@@ -123,14 +123,12 @@ tL2C_LCB* l2cu_allocate_lcb(BD_ADDR p_bd_addr, bool is_bonding,
  * Returns          Nothing
  *
  ******************************************************************************/
-void l2cu_update_lcb_4_bonding(BD_ADDR p_bd_addr, bool is_bonding) {
+void l2cu_update_lcb_4_bonding(const bt_bdaddr_t& p_bd_addr, bool is_bonding) {
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(p_bd_addr, BT_TRANSPORT_BR_EDR);
 
   if (p_lcb) {
-    L2CAP_TRACE_DEBUG("l2cu_update_lcb_4_bonding  BDA: %08x%04x is_bonding: %d",
-                      (p_bd_addr[0] << 24) + (p_bd_addr[1] << 16) +
-                          (p_bd_addr[2] << 8) + p_bd_addr[3],
-                      (p_bd_addr[4] << 8) + p_bd_addr[5], is_bonding);
+    VLOG(1) << __func__ << " BDA: " << p_bd_addr
+            << " is_bonding: " << is_bonding;
     p_lcb->is_bonding = is_bonding;
   }
 }
@@ -180,7 +178,7 @@ void l2cu_release_lcb(tL2C_LCB* p_lcb) {
   }
 
   // Reset BLE connecting flag only if the address matches
-  if (!memcmp(l2cb.ble_connecting_bda, p_lcb->remote_bd_addr, BD_ADDR_LEN))
+  if (l2cb.ble_connecting_bda == p_lcb->remote_bd_addr)
     l2cb.is_ble_connecting = false;
 
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
@@ -260,13 +258,14 @@ void l2cu_release_lcb(tL2C_LCB* p_lcb) {
  * Returns          pointer to matched LCB, or NULL if no match
  *
  ******************************************************************************/
-tL2C_LCB* l2cu_find_lcb_by_bd_addr(BD_ADDR p_bd_addr, tBT_TRANSPORT transport) {
+tL2C_LCB* l2cu_find_lcb_by_bd_addr(const bt_bdaddr_t& p_bd_addr,
+                                   tBT_TRANSPORT transport) {
   int xx;
   tL2C_LCB* p_lcb = &l2cb.lcb_pool[0];
 
   for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
     if ((p_lcb->in_use) && p_lcb->transport == transport &&
-        (!memcmp(p_lcb->remote_bd_addr, p_bd_addr, BD_ADDR_LEN))) {
+        (p_lcb->remote_bd_addr == p_bd_addr)) {
       return (p_lcb);
     }
   }
@@ -2265,11 +2264,12 @@ bool l2cu_create_conn_after_switch(tL2C_LCB* p_lcb) {
     clock_offset = (p_dev_rec) ? p_dev_rec->clock_offset : 0;
   }
 
-  btsnd_hcic_create_conn(
-      p_lcb->remote_bd_addr, (HCI_PKT_TYPES_MASK_DM1 | HCI_PKT_TYPES_MASK_DH1 |
-                              HCI_PKT_TYPES_MASK_DM3 | HCI_PKT_TYPES_MASK_DH3 |
-                              HCI_PKT_TYPES_MASK_DM5 | HCI_PKT_TYPES_MASK_DH5),
-      page_scan_rep_mode, page_scan_mode, clock_offset, allow_switch);
+  btsnd_hcic_create_conn(to_BD_ADDR(p_lcb->remote_bd_addr),
+                         (HCI_PKT_TYPES_MASK_DM1 | HCI_PKT_TYPES_MASK_DH1 |
+                          HCI_PKT_TYPES_MASK_DM3 | HCI_PKT_TYPES_MASK_DH3 |
+                          HCI_PKT_TYPES_MASK_DM5 | HCI_PKT_TYPES_MASK_DH5),
+                         page_scan_rep_mode, page_scan_mode, clock_offset,
+                         allow_switch);
 
   btm_acl_update_busy_level(BTM_BLI_PAGE_EVT);
 
@@ -2359,7 +2359,7 @@ bool l2cu_lcb_disconnecting(void) {
  *
  ******************************************************************************/
 
-bool l2cu_set_acl_priority(BD_ADDR bd_addr, uint8_t priority,
+bool l2cu_set_acl_priority(const bt_bdaddr_t& bd_addr, uint8_t priority,
                            bool reset_after_rs) {
   tL2C_LCB* p_lcb;
   uint8_t* pp;
@@ -2431,7 +2431,7 @@ void l2cu_set_non_flushable_pbf(bool is_supported) {
  * Returns          void
  *
  ******************************************************************************/
-void l2cu_resubmit_pending_sec_req(BD_ADDR p_bda) {
+void l2cu_resubmit_pending_sec_req(const bt_bdaddr_t* p_bda) {
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
   tL2C_CCB* p_next_ccb;
@@ -2441,7 +2441,7 @@ void l2cu_resubmit_pending_sec_req(BD_ADDR p_bda) {
 
   /* If we are called with a BDA, only resubmit for that BDA */
   if (p_bda) {
-    p_lcb = l2cu_find_lcb_by_bd_addr(p_bda, BT_TRANSPORT_BR_EDR);
+    p_lcb = l2cu_find_lcb_by_bd_addr(*p_bda, BT_TRANSPORT_BR_EDR);
 
     /* If we don't have one, this is an error */
     if (p_lcb) {
@@ -3242,8 +3242,7 @@ static tL2C_CCB* l2cu_get_next_channel(tL2C_LCB* p_lcb) {
 #endif /* (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE) */
 
 void l2cu_tx_complete(tL2C_TX_COMPLETE_CB_INFO* p_cbi) {
-  if (p_cbi->cb != NULL)
-      p_cbi->cb(p_cbi->local_cid, p_cbi->num_sdu);
+  if (p_cbi->cb != NULL) p_cbi->cb(p_cbi->local_cid, p_cbi->num_sdu);
 }
 
 /******************************************************************************
@@ -3256,7 +3255,8 @@ void l2cu_tx_complete(tL2C_TX_COMPLETE_CB_INFO* p_cbi) {
  * Returns          pointer to buffer or NULL
  *
  ******************************************************************************/
-BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb, tL2C_TX_COMPLETE_CB_INFO* p_cbi) {
+BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb,
+                                     tL2C_TX_COMPLETE_CB_INFO* p_cbi) {
   tL2C_CCB* p_ccb;
   BT_HDR* p_buf;
 

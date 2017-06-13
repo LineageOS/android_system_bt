@@ -161,7 +161,7 @@ typedef struct {
  *  External functions
  ******************************************************************************/
 
-extern void btif_gatts_add_bonded_dev_from_nv(BD_ADDR bda);
+extern void btif_gatts_add_bonded_dev_from_nv(const bt_bdaddr_t& bda);
 
 /*******************************************************************************
  *  Internal Functions
@@ -178,7 +178,7 @@ static bool btif_has_ble_keys(const char* bdstr);
  *  Static functions
  ******************************************************************************/
 
-static int prop2cfg(bt_bdaddr_t* remote_bd_addr, bt_property_t* prop) {
+static int prop2cfg(const bt_bdaddr_t* remote_bd_addr, bt_property_t* prop) {
   bdstr_t bdstr = {0};
   if (remote_bd_addr) bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
   BTIF_TRACE_DEBUG("in, bd addr:%s, prop type:%d, len:%d", bdstr, prop->type,
@@ -264,7 +264,7 @@ static int prop2cfg(bt_bdaddr_t* remote_bd_addr, bt_property_t* prop) {
   return true;
 }
 
-static int cfg2prop(bt_bdaddr_t* remote_bd_addr, bt_property_t* prop) {
+static int cfg2prop(const bt_bdaddr_t* remote_bd_addr, bt_property_t* prop) {
   bdstr_t bdstr = {0};
   if (remote_bd_addr) bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
   BTIF_TRACE_DEBUG("in, bd addr:%s, prop type:%d, len:%d", bdstr, prop->type,
@@ -439,12 +439,12 @@ static bt_status_t btif_in_fetch_bonded_devices(
           if (btif_config_get_int(name, "DevClass", &cod))
             uint2devclass((uint32_t)cod, dev_class);
           btif_config_get_int(name, "PinLength", &pin_length);
-          BTA_DmAddDevice(bd_addr.address, dev_class, link_key, 0, 0,
+          BTA_DmAddDevice(bd_addr, dev_class, link_key, 0, 0,
                           (uint8_t)linkkey_type, 0, pin_length);
 
           if (btif_config_get_int(name, "DevType", &device_type) &&
               (device_type == BT_DEVICE_TYPE_DUMO)) {
-            btif_gatts_add_bonded_dev_from_nv(bd_addr.address);
+            btif_gatts_add_bonded_dev_from_nv(bd_addr);
           }
         }
         bt_linkkey_file_found = true;
@@ -475,18 +475,15 @@ static void btif_read_le_key(const uint8_t key_type, const size_t key_len,
   if (btif_storage_get_ble_bonding_key(&bd_addr, key_type, buffer, key_len) ==
       BT_STATUS_SUCCESS) {
     if (add_key) {
-      BD_ADDR bta_bd_addr;
-      bdcpy(bta_bd_addr, bd_addr.address);
-
       if (!*device_added) {
-        BTA_DmAddBleDevice(bta_bd_addr, addr_type, BT_DEVICE_TYPE_BLE);
+        BTA_DmAddBleDevice(bd_addr, addr_type, BT_DEVICE_TYPE_BLE);
         *device_added = true;
       }
 
       char bd_str[20] = {0};
       BTIF_TRACE_DEBUG("%s() Adding key type %d for %s", __func__, key_type,
                        bdaddr_to_string(&bd_addr, bd_str, sizeof(bd_str)));
-      BTA_DmAddBleKey(bta_bd_addr, (tBTA_LE_KEY_VALUE*)buffer, key_type);
+      BTA_DmAddBleKey(bd_addr, (tBTA_LE_KEY_VALUE*)buffer, key_type);
     }
 
     *key_found = true;
@@ -656,8 +653,8 @@ bt_status_t btif_storage_set_adapter_property(bt_property_t* property) {
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_get_remote_device_property(bt_bdaddr_t* remote_bd_addr,
-                                                    bt_property_t* property) {
+bt_status_t btif_storage_get_remote_device_property(
+    const bt_bdaddr_t* remote_bd_addr, bt_property_t* property) {
   return cfg2prop(remote_bd_addr, property) ? BT_STATUS_SUCCESS
                                             : BT_STATUS_FAIL;
 }
@@ -672,8 +669,8 @@ bt_status_t btif_storage_get_remote_device_property(bt_bdaddr_t* remote_bd_addr,
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_set_remote_device_property(bt_bdaddr_t* remote_bd_addr,
-                                                    bt_property_t* property) {
+bt_status_t btif_storage_set_remote_device_property(
+    const bt_bdaddr_t* remote_bd_addr, bt_property_t* property) {
   return prop2cfg(remote_bd_addr, property) ? BT_STATUS_SUCCESS
                                             : BT_STATUS_FAIL;
 }
@@ -690,7 +687,7 @@ bt_status_t btif_storage_set_remote_device_property(bt_bdaddr_t* remote_bd_addr,
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_add_remote_device(bt_bdaddr_t* remote_bd_addr,
+bt_status_t btif_storage_add_remote_device(const bt_bdaddr_t* remote_bd_addr,
                                            uint32_t num_properties,
                                            bt_property_t* properties) {
   uint32_t i = 0;
@@ -756,7 +753,8 @@ bt_status_t btif_storage_add_bonded_device(bt_bdaddr_t* remote_bd_addr,
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_remove_bonded_device(bt_bdaddr_t* remote_bd_addr) {
+bt_status_t btif_storage_remove_bonded_device(
+    const bt_bdaddr_t* remote_bd_addr) {
   bdstr_t bdstr;
   bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
   BTIF_TRACE_DEBUG("in bd addr:%s", bdstr);
@@ -1006,7 +1004,8 @@ bt_status_t btif_storage_get_ble_bonding_key(bt_bdaddr_t* remote_bd_addr,
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_remove_ble_bonding_keys(bt_bdaddr_t* remote_bd_addr) {
+bt_status_t btif_storage_remove_ble_bonding_keys(
+    const bt_bdaddr_t* remote_bd_addr) {
   bdstr_t bdstr;
   bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
   BTIF_TRACE_DEBUG(" %s in bd addr:%s", __func__, bdstr);
@@ -1124,7 +1123,6 @@ static bt_status_t btif_in_fetch_bonded_ble_device(
   int device_type;
   int addr_type;
   bt_bdaddr_t bd_addr;
-  BD_ADDR bta_bd_addr;
   bool device_added = false;
   bool key_found = false;
 
@@ -1136,7 +1134,6 @@ static bt_status_t btif_in_fetch_bonded_ble_device(
     BTIF_TRACE_DEBUG("%s Found a LE device: %s", __func__, remote_bd_addr);
 
     string_to_bdaddr(remote_bd_addr, &bd_addr);
-    bdcpy(bta_bd_addr, bd_addr.address);
 
     if (btif_storage_get_remote_addr_type(&bd_addr, &addr_type) !=
         BT_STATUS_SUCCESS) {
@@ -1166,7 +1163,7 @@ static bt_status_t btif_in_fetch_bonded_ble_device(
     if (device_added) {
       memcpy(&p_bonded_devices->devices[p_bonded_devices->num_devices++],
              &bd_addr, sizeof(bt_bdaddr_t));
-      btif_gatts_add_bonded_dev_from_nv(bta_bd_addr);
+      btif_gatts_add_bonded_dev_from_nv(bd_addr);
     }
 
     if (key_found) return BT_STATUS_SUCCESS;
@@ -1174,7 +1171,7 @@ static bt_status_t btif_in_fetch_bonded_ble_device(
   return BT_STATUS_FAIL;
 }
 
-bt_status_t btif_storage_set_remote_addr_type(bt_bdaddr_t* remote_bd_addr,
+bt_status_t btif_storage_set_remote_addr_type(const bt_bdaddr_t* remote_bd_addr,
                                               uint8_t addr_type) {
   bdstr_t bdstr;
   bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
@@ -1196,7 +1193,7 @@ bool btif_has_ble_keys(const char* bdstr) {
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_get_remote_addr_type(bt_bdaddr_t* remote_bd_addr,
+bt_status_t btif_storage_get_remote_addr_type(const bt_bdaddr_t* remote_bd_addr,
                                               int* addr_type) {
   bdstr_t bdstr;
   bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));

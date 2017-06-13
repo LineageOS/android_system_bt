@@ -270,7 +270,7 @@ typedef struct {
 
 /* Security Manager events - Called by the stack when Security Manager related
  * events occur.*/
-typedef uint8_t(tSMP_CALLBACK)(tSMP_EVT event, BD_ADDR bd_addr,
+typedef uint8_t(tSMP_CALLBACK)(tSMP_EVT event, const bt_bdaddr_t& bd_addr,
                                tSMP_EVT_DATA* p_data);
 
 /* callback function for CMAC algorithm

@@ -57,8 +57,8 @@ const uint16_t bnep_frame_hdr_sizes[] = {14, 1, 2, 8, 8};
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
-static void bnep_connect_ind(BD_ADDR bd_addr, uint16_t l2cap_cid, uint16_t psm,
-                             uint8_t l2cap_id);
+static void bnep_connect_ind(const bt_bdaddr_t& bd_addr, uint16_t l2cap_cid,
+                             uint16_t psm, uint8_t l2cap_id);
 static void bnep_connect_cfm(uint16_t l2cap_cid, uint16_t result);
 static void bnep_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
 static void bnep_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
@@ -114,14 +114,14 @@ tBNEP_RESULT bnep_register_with_l2cap(void) {
  * Returns          void
  *
  ******************************************************************************/
-static void bnep_connect_ind(BD_ADDR bd_addr, uint16_t l2cap_cid,
+static void bnep_connect_ind(const bt_bdaddr_t& bd_addr, uint16_t l2cap_cid,
                              UNUSED_ATTR uint16_t psm, uint8_t l2cap_id) {
-  tBNEP_CONN* p_bcb = bnepu_find_bcb_by_bd_addr(bd_addr);
+  tBNEP_CONN* p_bcb = bnepu_find_bcb_by_bd_addr(to_BD_ADDR(bd_addr));
 
   /* If we are not acting as server, or already have a connection, or have */
   /* no more resources to handle the connection, reject the connection.    */
   if (!(bnep_cb.profile_registered) || (p_bcb) ||
-      ((p_bcb = bnepu_allocate_bcb(bd_addr)) == NULL)) {
+      ((p_bcb = bnepu_allocate_bcb(to_BD_ADDR(bd_addr))) == NULL)) {
     L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_NO_PSM, 0);
     return;
   }
@@ -257,7 +257,7 @@ static void bnep_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
 
     if (p_bcb->con_flags & BNEP_FLAGS_IS_ORIG) {
       btm_sec_mx_access_request(
-          p_bcb->rem_bda, BT_PSM_BNEP, true, BTM_SEC_PROTO_BNEP,
+          from_BD_ADDR(p_bcb->rem_bda), BT_PSM_BNEP, true, BTM_SEC_PROTO_BNEP,
           bnep_get_uuid32(&(p_bcb->src_uuid)), &bnep_sec_check_complete, p_bcb);
     }
   }
@@ -300,8 +300,8 @@ static void bnep_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
                          btu_general_alarm_queue);
 
       if (p_bcb->con_flags & BNEP_FLAGS_IS_ORIG) {
-        btm_sec_mx_access_request(p_bcb->rem_bda, BT_PSM_BNEP, true,
-                                  BTM_SEC_PROTO_BNEP,
+        btm_sec_mx_access_request(from_BD_ADDR(p_bcb->rem_bda), BT_PSM_BNEP,
+                                  true, BTM_SEC_PROTO_BNEP,
                                   bnep_get_uuid32(&(p_bcb->src_uuid)),
                                   &bnep_sec_check_complete, p_bcb);
       }

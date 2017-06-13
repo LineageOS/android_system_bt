@@ -52,7 +52,7 @@
  * Returns          void.
  *
  ******************************************************************************/
-extern void bta_dm_co_io_req(BD_ADDR bd_addr, tBTA_IO_CAP* p_io_cap,
+extern void bta_dm_co_io_req(const bt_bdaddr_t& bd_addr, tBTA_IO_CAP* p_io_cap,
                              tBTA_OOB_DATA* p_oob_data,
                              tBTA_AUTH_REQ* p_auth_req, bool is_orig);
 
@@ -73,7 +73,7 @@ extern void bta_dm_co_io_req(BD_ADDR bd_addr, tBTA_IO_CAP* p_io_cap,
  * Returns          void.
  *
  ******************************************************************************/
-extern void bta_dm_co_io_rsp(BD_ADDR bd_addr, tBTA_IO_CAP io_cap,
+extern void bta_dm_co_io_rsp(const bt_bdaddr_t& bd_addr, tBTA_IO_CAP io_cap,
                              tBTA_OOB_DATA oob_data, tBTA_AUTH_REQ auth_req);
 
 /*******************************************************************************
@@ -89,7 +89,7 @@ extern void bta_dm_co_io_rsp(BD_ADDR bd_addr, tBTA_IO_CAP io_cap,
  * Returns          void.
  *
  ******************************************************************************/
-extern void bta_dm_co_lk_upgrade(BD_ADDR bd_addr, bool* p_upgrade);
+extern void bta_dm_co_lk_upgrade(const bt_bdaddr_t& bd_addr, bool* p_upgrade);
 
 /*******************************************************************************
  *
@@ -119,7 +119,7 @@ extern void bta_dm_co_loc_oob(bool valid, BT_OCTET16 c, BT_OCTET16 r);
  * Returns          void.
  *
  ******************************************************************************/
-extern void bta_dm_co_rmt_oob(BD_ADDR bd_addr);
+extern void bta_dm_co_rmt_oob(const bt_bdaddr_t& bd_addr);
 
 /*******************************************************************************
  *
@@ -189,7 +189,8 @@ extern void bta_dm_sco_co_in_data(BT_HDR* p_buf, tBTM_SCO_DATA_FLAG status);
  * Returns          void.
  *
  ******************************************************************************/
-extern void bta_dm_co_ble_io_req(BD_ADDR bd_addr, tBTA_IO_CAP* p_io_cap,
+extern void bta_dm_co_ble_io_req(const bt_bdaddr_t& bd_addr,
+                                 tBTA_IO_CAP* p_io_cap,
                                  tBTA_OOB_DATA* p_oob_data,
                                  tBTA_LE_AUTH_REQ* p_auth_req,
                                  uint8_t* p_max_key_size,
@@ -211,32 +212,5 @@ extern void bta_dm_co_ble_io_req(BD_ADDR bd_addr, tBTA_IO_CAP* p_io_cap,
 extern void bta_dm_co_ble_load_local_keys(
     tBTA_DM_BLE_LOCAL_KEY_MASK* p_key_mask, BT_OCTET16 er,
     tBTA_BLE_LOCAL_ID_KEYS* p_id_keys);
-
-/*******************************************************************************
- *
- * Function         bta_dm_co_ble_io_req
- *
- * Description      This callout function is executed by DM to get BLE IO
- *                  capabilities before SMP pairing gets going.
- *
- * Parameters       bd_addr  - The peer device
- *                  *p_io_cap - The local Input/Output capabilities
- *                  *p_oob_data - true, if OOB data is available for the peer
- *                                device.
- *                  *p_auth_req -  Auth request setting (Bonding and MITM
- *                                                       required or not)
- *                  *p_max_key_size - max key size local device supported.
- *                  *p_init_key - initiator keys.
- *                  *p_resp_key - responder keys.
- *
- * Returns          void.
- *
- ******************************************************************************/
-extern void bta_dm_co_ble_io_req(BD_ADDR bd_addr, tBTA_IO_CAP* p_io_cap,
-                                 tBTA_OOB_DATA* p_oob_data,
-                                 tBTA_LE_AUTH_REQ* p_auth_req,
-                                 uint8_t* p_max_key_size,
-                                 tBTA_LE_KEY_TYPE* p_init_key,
-                                 tBTA_LE_KEY_TYPE* p_resp_key);
 
 #endif /* BTA_DM_CO_H */

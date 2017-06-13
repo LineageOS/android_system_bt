@@ -150,7 +150,7 @@ static sco_socket_t* sco_socket_establish_locked(bool is_listening,
   }
 
   params = esco_parameters_for_codec(ESCO_CODEC_CVSD);
-  status = BTM_CreateSco((uint8_t*)bd_addr, !is_listening, params.packet_types,
+  status = BTM_CreateSco(bd_addr, !is_listening, params.packet_types,
                          &sco_socket->sco_handle, connect_completed_cb,
                          disconnect_completed_cb);
   if (status != BTM_CMD_STARTED) {
@@ -252,7 +252,7 @@ static void connection_request_cb(tBTM_ESCO_EVT event,
 
   sock_connect_signal_t connect_signal;
   connect_signal.size = sizeof(connect_signal);
-  memcpy(&connect_signal.bd_addr, conn_data->bd_addr, sizeof(bt_bdaddr_t));
+  connect_signal.bd_addr = conn_data->bd_addr;
   connect_signal.channel = 0;
   connect_signal.status = 0;
 

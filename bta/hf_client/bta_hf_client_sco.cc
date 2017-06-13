@@ -221,7 +221,6 @@ static void bta_hf_client_sco_disc_cback(uint16_t sco_idx) {
 static void bta_hf_client_sco_create(tBTA_HF_CLIENT_CB* client_cb,
                                      bool is_orig) {
   tBTM_STATUS status;
-  uint8_t* p_bd_addr = NULL;
 
   APPL_TRACE_DEBUG("%s: %d", __func__, is_orig);
 
@@ -241,11 +240,10 @@ static void bta_hf_client_sco_create(tBTA_HF_CLIENT_CB* client_cb,
     bta_sys_sco_use(BTA_ID_HS, 1, client_cb->peer_addr);
   }
 
-  p_bd_addr = client_cb->peer_addr;
-
-  status = BTM_CreateSco(p_bd_addr, is_orig, params.packet_types,
-                         &client_cb->sco_idx, bta_hf_client_sco_conn_cback,
-                         bta_hf_client_sco_disc_cback);
+  status =
+      BTM_CreateSco(&from_BD_ADDR(client_cb->peer_addr), is_orig,
+                    params.packet_types, &client_cb->sco_idx,
+                    bta_hf_client_sco_conn_cback, bta_hf_client_sco_disc_cback);
   if (status == BTM_CMD_STARTED && !is_orig) {
     if (!BTM_RegForEScoEvts(client_cb->sco_idx,
                             bta_hf_client_esco_connreq_cback))

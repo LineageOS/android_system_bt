@@ -86,11 +86,9 @@ static char* format_uuid(tBT_UUID bt_uuid, char* str_buf, size_t buf_size) {
   return str_buf;
 }
 
-static void btif_test_connect_cback(UNUSED_ATTR tGATT_IF gatt_if,
-                                    UNUSED_ATTR BD_ADDR bda, uint16_t conn_id,
-                                    bool connected,
-                                    UNUSED_ATTR tGATT_DISCONN_REASON reason,
-                                    UNUSED_ATTR tBT_TRANSPORT transport) {
+static void btif_test_connect_cback(tGATT_IF, const bt_bdaddr_t&,
+                                    uint16_t conn_id, bool connected,
+                                    tGATT_DISCONN_REASON, tBT_TRANSPORT) {
   LOG_DEBUG(LOG_TAG, "%s: conn_id=%d, connected=%d", __func__, conn_id,
             connected);
   test_cb.conn_id = connected ? conn_id : 0;
@@ -228,11 +226,11 @@ bt_status_t btif_gattc_test_command_impl(int command,
                 params->u2);
 
       if (params->u1 == BT_DEVICE_TYPE_BLE)
-        BTM_SecAddBleDevice(params->bda1->address, NULL, BT_DEVICE_TYPE_BLE,
+        BTM_SecAddBleDevice(*params->bda1, NULL, BT_DEVICE_TYPE_BLE,
                             params->u2);
 
-      if (!GATT_Connect(test_cb.gatt_if, params->bda1->address, true,
-                        BT_TRANSPORT_LE, false)) {
+      if (!GATT_Connect(test_cb.gatt_if, *params->bda1, true, BT_TRANSPORT_LE,
+                        false)) {
         LOG_ERROR(LOG_TAG, "%s: GATT_Connect failed!", __func__);
       }
       break;
