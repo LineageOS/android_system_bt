@@ -74,7 +74,7 @@ uint8_t battery_s_write_attr_value(uint8_t clcb_idx, tGATT_WRITE_REQ* p_value,
   for (i = 0; i < BA_MAX_INT_NUM; i++, p_inst++) {
     /* read battery level */
     if (handle == p_inst->clt_cfg_hdl) {
-      memcpy(cfg.remote_bda, srvc_eng_cb.clcb[clcb_idx].bda, BD_ADDR_LEN);
+      cfg.remote_bda = srvc_eng_cb.clcb[clcb_idx].bda;
       STREAM_TO_UINT16(cfg.clt_cfg, p);
 
       if (p_inst->p_cback) {
@@ -334,7 +334,8 @@ void Battery_Rsp(uint8_t app_id, tGATT_STATUS st, uint8_t event,
  * Description      Send battery level notification
  *
  ******************************************************************************/
-void Battery_Notify(uint8_t app_id, BD_ADDR remote_bda, uint8_t battery_level) {
+void Battery_Notify(uint8_t app_id, const bt_bdaddr_t& remote_bda,
+                    uint8_t battery_level) {
   tBA_INST* p_inst = &battery_cb.battery_inst[0];
   uint8_t i = 0;
 
@@ -356,7 +357,7 @@ void Battery_Notify(uint8_t app_id, BD_ADDR remote_bda, uint8_t battery_level) {
  * Returns          void
  *
  ******************************************************************************/
-bool Battery_ReadBatteryLevel(UNUSED_ATTR BD_ADDR peer_bda) {
+bool Battery_ReadBatteryLevel(const bt_bdaddr_t&) {
   /* to be implemented */
   return true;
 }

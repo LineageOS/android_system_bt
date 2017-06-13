@@ -62,10 +62,11 @@
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_enq_resolving_list_pending(BD_ADDR pseudo_bda, uint8_t op_code) {
+void btm_ble_enq_resolving_list_pending(const bt_bdaddr_t& pseudo_bda,
+                                        uint8_t op_code) {
   tBTM_BLE_RESOLVE_Q* p_q = &btm_cb.ble_ctr_cb.resolving_list_pend_q;
 
-  memcpy(p_q->resolve_q_random_pseudo[p_q->q_next], pseudo_bda, BD_ADDR_LEN);
+  p_q->resolve_q_random_pseudo[p_q->q_next] = pseudo_bda;
   p_q->resolve_q_action[p_q->q_next] = op_code;
   p_q->q_next++;
   p_q->q_next %= controller_get_interface()->get_ble_resolving_list_max_size();
@@ -83,13 +84,12 @@ void btm_ble_enq_resolving_list_pending(BD_ADDR pseudo_bda, uint8_t op_code) {
  * Returns          void
  *
  ******************************************************************************/
-bool btm_ble_brcm_find_resolving_pending_entry(BD_ADDR pseudo_addr,
+bool btm_ble_brcm_find_resolving_pending_entry(const bt_bdaddr_t& pseudo_addr,
                                                uint8_t action) {
   tBTM_BLE_RESOLVE_Q* p_q = &btm_cb.ble_ctr_cb.resolving_list_pend_q;
 
   for (uint8_t i = p_q->q_pending; i != p_q->q_next;) {
-    if (memcmp(p_q->resolve_q_random_pseudo[i], pseudo_addr, BD_ADDR_LEN) ==
-            0 &&
+    if (p_q->resolve_q_random_pseudo[i] == pseudo_addr &&
         action == p_q->resolve_q_action[i])
       return true;
 
@@ -111,13 +111,12 @@ bool btm_ble_brcm_find_resolving_pending_entry(BD_ADDR pseudo_addr,
  * Returns          void
  *
  ******************************************************************************/
-bool btm_ble_deq_resolving_pending(BD_ADDR pseudo_addr) {
+bool btm_ble_deq_resolving_pending(bt_bdaddr_t& pseudo_addr) {
   tBTM_BLE_RESOLVE_Q* p_q = &btm_cb.ble_ctr_cb.resolving_list_pend_q;
 
   if (p_q->q_next != p_q->q_pending) {
-    memcpy(pseudo_addr, p_q->resolve_q_random_pseudo[p_q->q_pending],
-           BD_ADDR_LEN);
-    memset(p_q->resolve_q_random_pseudo[p_q->q_pending], 0, BD_ADDR_LEN);
+    pseudo_addr = p_q->resolve_q_random_pseudo[p_q->q_pending];
+    p_q->resolve_q_random_pseudo[p_q->q_pending] = {.address = {0}};
     p_q->q_pending++;
     p_q->q_pending %=
         controller_get_interface()->get_ble_resolving_list_max_size();
@@ -185,7 +184,7 @@ uint8_t btm_ble_find_irk_index(void) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_update_resolving_list(BD_ADDR pseudo_bda, bool add) {
+void btm_ble_update_resolving_list(const bt_bdaddr_t& pseudo_bda, bool add) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(pseudo_bda);
   if (p_dev_rec == NULL) return;
 
@@ -269,7 +268,7 @@ void btm_ble_add_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len) {
 
   BTM_TRACE_DEBUG("%s status = %d", __func__, status);
 
-  BD_ADDR pseudo_bda;
+  bt_bdaddr_t pseudo_bda;
   if (!btm_ble_deq_resolving_pending(pseudo_bda)) {
     BTM_TRACE_DEBUG("no pending resolving list operation");
     return;
@@ -303,7 +302,7 @@ void btm_ble_add_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len) {
  ******************************************************************************/
 void btm_ble_remove_resolving_list_entry_complete(uint8_t* p,
                                                   uint16_t evt_len) {
-  BD_ADDR pseudo_bda;
+  bt_bdaddr_t pseudo_bda;
   uint8_t status;
 
   STREAM_TO_UINT8(status, p);
@@ -337,7 +336,7 @@ void btm_ble_remove_resolving_list_entry_complete(uint8_t* p,
  ******************************************************************************/
 void btm_ble_read_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len) {
   uint8_t status, rra_type = BTM_BLE_ADDR_PSEUDO;
-  BD_ADDR rra, pseudo_bda;
+  bt_bdaddr_t rra, pseudo_bda;
 
   STREAM_TO_UINT8(status, p);
 
@@ -353,12 +352,11 @@ void btm_ble_read_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len) {
     if (evt_len > 8) {
       /* skip subcode, index, IRK value, address type, identity addr type */
       p += (2 + 16 + 1 + 6);
-      STREAM_TO_BDADDR(rra, p);
+      STREAM_TO_BDADDR(to_BD_ADDR(rra), p);
 
-      BTM_TRACE_ERROR("%s peer_addr: %02x:%02x:%02x:%02x:%02x:%02x", __func__,
-                      rra[0], rra[1], rra[2], rra[3], rra[4], rra[5]);
+      VLOG(2) << __func__ << " peer_addr: " << rra;
     } else {
-      STREAM_TO_BDADDR(rra, p);
+      STREAM_TO_BDADDR(to_BD_ADDR(rra), p);
     }
     btm_ble_refresh_peer_resolvable_private_addr(pseudo_bda, rra, rra_type);
   }
@@ -424,7 +422,7 @@ tBTM_STATUS btm_ble_remove_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_rec) {
 
     UINT8_TO_STREAM(p, BTM_BLE_META_REMOVE_IRK_ENTRY);
     UINT8_TO_STREAM(p, p_dev_rec->ble.static_addr_type);
-    BDADDR_TO_STREAM(p, p_dev_rec->ble.static_addr);
+    BDADDR_TO_STREAM(p, to_BD_ADDR(p_dev_rec->ble.static_addr));
 
     BTM_VendorSpecificCommand(HCI_VENDOR_BLE_RPA_VSC,
                               BTM_BLE_META_REMOVE_IRK_LEN, param,
@@ -695,12 +693,12 @@ bool btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC* p_dev_rec) {
 
         btm_ble_update_resolving_list(p_dev_rec->bd_addr, true);
         if (controller_get_interface()->supports_ble_privacy()) {
-          BD_ADDR dummy_bda = {0};
+          const bt_bdaddr_t& dummy_bda = {.address = {0}};
           uint8_t* peer_irk = p_dev_rec->ble.keys.irk;
           uint8_t* local_irk = btm_cb.devcb.id_keys.irk;
 
-          if (memcmp(p_dev_rec->ble.static_addr, dummy_bda, BD_ADDR_LEN) == 0) {
-            memcpy(p_dev_rec->ble.static_addr, p_dev_rec->bd_addr, BD_ADDR_LEN);
+          if (p_dev_rec->ble.static_addr == dummy_bda) {
+            p_dev_rec->ble.static_addr = p_dev_rec->bd_addr;
             p_dev_rec->ble.static_addr_type = p_dev_rec->ble.ble_addr_type;
           }
 
@@ -723,7 +721,7 @@ bool btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC* p_dev_rec) {
           UINT8_TO_STREAM(p, BTM_BLE_META_ADD_IRK_ENTRY);
           ARRAY_TO_STREAM(p, p_dev_rec->ble.keys.irk, BT_OCTET16_LEN);
           UINT8_TO_STREAM(p, p_dev_rec->ble.static_addr_type);
-          BDADDR_TO_STREAM(p, p_dev_rec->ble.static_addr);
+          BDADDR_TO_STREAM(p, to_BD_ADDR(p_dev_rec->ble.static_addr));
 
           BTM_VendorSpecificCommand(HCI_VENDOR_BLE_RPA_VSC,
                                     BTM_BLE_META_ADD_IRK_LEN, param,
@@ -876,7 +874,7 @@ void btm_ble_resolving_list_init(uint8_t max_irk_list_sz) {
 
   if (max_irk_list_sz > 0) {
     p_q->resolve_q_random_pseudo =
-        (BD_ADDR*)osi_malloc(sizeof(BD_ADDR) * max_irk_list_sz);
+        (bt_bdaddr_t*)osi_malloc(sizeof(bt_bdaddr_t) * max_irk_list_sz);
     p_q->resolve_q_action = (uint8_t*)osi_malloc(max_irk_list_sz);
 
     /* RPA offloading feature */

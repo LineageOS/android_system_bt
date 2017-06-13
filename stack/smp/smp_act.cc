@@ -33,7 +33,7 @@ const tSMP_ACT smp_distribute_act[] = {smp_generate_ltk, smp_send_id_info,
                                        smp_generate_csrk,
                                        smp_set_derive_link_key};
 
-static bool lmp_version_below(BD_ADDR bda, uint8_t version) {
+static bool lmp_version_below(const bt_bdaddr_t& bda, uint8_t version) {
   tACL_CONN* acl = btm_bda_to_acl(bda, BT_TRANSPORT_LE);
   if (acl == NULL || acl->lmp_version == 0) {
     SMP_TRACE_WARNING("%s cannot retrieve LMP version...", __func__);
@@ -935,13 +935,13 @@ void smp_proc_id_addr(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   smp_update_key_mask(p_cb, SMP_SEC_KEY_TYPE_ID, true);
 
   STREAM_TO_UINT8(pid_key.addr_type, p);
-  STREAM_TO_BDADDR(pid_key.static_addr, p);
+  STREAM_TO_BDADDR(to_BD_ADDR(pid_key.static_addr), p);
   memcpy(pid_key.irk, p_cb->tk, BT_OCTET16_LEN);
 
   /* to use as BD_ADDR for lk derived from ltk */
   p_cb->id_addr_rcvd = true;
   p_cb->id_addr_type = pid_key.addr_type;
-  memcpy(p_cb->id_addr, pid_key.static_addr, BD_ADDR_LEN);
+  p_cb->id_addr = pid_key.static_addr;
 
   /* store the ID key from peer device */
   if ((p_cb->peer_auth_req & SMP_AUTH_BOND) &&
@@ -1832,12 +1832,12 @@ void smp_set_local_oob_random_commitment(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void smp_link_encrypted(BD_ADDR bda, uint8_t encr_enable) {
+void smp_link_encrypted(const bt_bdaddr_t& bda, uint8_t encr_enable) {
   tSMP_CB* p_cb = &smp_cb;
 
   SMP_TRACE_DEBUG("%s: encr_enable=%d", __func__, encr_enable);
 
-  if (memcmp(&smp_cb.pairing_bda[0], bda, BD_ADDR_LEN) == 0) {
+  if (smp_cb.pairing_bda == bda) {
     /* encryption completed with STK, remember the key size now, could be
      * overwritten when key exchange happens                                 */
     if (p_cb->loc_enc_size != 0 && encr_enable) {
@@ -1859,19 +1859,17 @@ void smp_link_encrypted(BD_ADDR bda, uint8_t encr_enable) {
  * Returns          void
  *
  ******************************************************************************/
-bool smp_proc_ltk_request(BD_ADDR bda) {
+bool smp_proc_ltk_request(const bt_bdaddr_t& bda) {
   SMP_TRACE_DEBUG("%s state = %d", __func__, smp_cb.state);
   bool match = false;
 
-  if (!memcmp(bda, smp_cb.pairing_bda, BD_ADDR_LEN)) {
+  if (bda == smp_cb.pairing_bda) {
     match = true;
   } else {
-    BD_ADDR dummy_bda = {0};
+    const bt_bdaddr_t& dummy_bda = {.address = {0}};
     tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bda);
-    if (p_dev_rec != NULL &&
-        0 == memcmp(p_dev_rec->ble.pseudo_addr, smp_cb.pairing_bda,
-                    BD_ADDR_LEN) &&
-        0 != memcmp(p_dev_rec->ble.pseudo_addr, dummy_bda, BD_ADDR_LEN)) {
+    if (p_dev_rec != NULL && p_dev_rec->ble.pseudo_addr == smp_cb.pairing_bda &&
+        p_dev_rec->ble.pseudo_addr != dummy_bda) {
       match = true;
     }
   }

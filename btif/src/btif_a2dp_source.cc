@@ -739,7 +739,7 @@ static bool btif_a2dp_source_enqueue_callback(BT_HDR* p_buf, size_t frames_n) {
 
     // Request RSSI for log purposes if we had to flush buffers
     bt_bdaddr_t peer_bda = btif_av_get_addr();
-    BTM_ReadRSSI(peer_bda.address, btm_read_rssi_cb);
+    BTM_ReadRSSI(peer_bda, btm_read_rssi_cb);
   }
 
   /* Update the statistics */
@@ -1088,7 +1088,6 @@ static void btm_read_rssi_cb(void* data) {
 
   char temp_buffer[20] = {0};
   LOG_WARN(LOG_TAG, "%s device: %s, rssi: %d", __func__,
-           bdaddr_to_string((bt_bdaddr_t*)result->rem_bda, temp_buffer,
-                            sizeof(temp_buffer)),
+           bdaddr_to_string(&result->rem_bda, temp_buffer, sizeof(temp_buffer)),
            result->rssi);
 }

@@ -40,7 +40,7 @@
  * Returns          void
  *
  ******************************************************************************/
-void bta_dm_ci_io_req(BD_ADDR bd_addr, tBTA_IO_CAP io_cap,
+void bta_dm_ci_io_req(const bt_bdaddr_t& bd_addr, tBTA_IO_CAP io_cap,
                       tBTA_OOB_DATA oob_data, tBTA_AUTH_REQ auth_req)
 
 {
@@ -48,7 +48,7 @@ void bta_dm_ci_io_req(BD_ADDR bd_addr, tBTA_IO_CAP io_cap,
       (tBTA_DM_CI_IO_REQ*)osi_malloc(sizeof(tBTA_DM_CI_IO_REQ));
 
   p_msg->hdr.event = BTA_DM_CI_IO_REQ_EVT;
-  bdcpy(p_msg->bd_addr, bd_addr);
+  p_msg->bd_addr = bd_addr;
   p_msg->io_cap = io_cap;
   p_msg->oob_data = oob_data;
   p_msg->auth_req = auth_req;
@@ -67,13 +67,13 @@ void bta_dm_ci_io_req(BD_ADDR bd_addr, tBTA_IO_CAP io_cap,
  * Returns          void
  *
  ******************************************************************************/
-void bta_dm_ci_rmt_oob(bool accept, BD_ADDR bd_addr, BT_OCTET16 c,
+void bta_dm_ci_rmt_oob(bool accept, const bt_bdaddr_t& bd_addr, BT_OCTET16 c,
                        BT_OCTET16 r) {
   tBTA_DM_CI_RMT_OOB* p_msg =
       (tBTA_DM_CI_RMT_OOB*)osi_malloc(sizeof(tBTA_DM_CI_RMT_OOB));
 
   p_msg->hdr.event = BTA_DM_CI_RMT_OOB_EVT;
-  bdcpy(p_msg->bd_addr, bd_addr);
+  p_msg->bd_addr = bd_addr;
   p_msg->accept = accept;
   memcpy(p_msg->c, c, BT_OCTET16_LEN);
   memcpy(p_msg->r, r, BT_OCTET16_LEN);

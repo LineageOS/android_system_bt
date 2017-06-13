@@ -67,7 +67,7 @@ namespace {
 class AdvertisingCache {
  public:
   /* Set the data to |data| for device |addr_type, addr| */
-  const std::vector<uint8_t>& Set(uint8_t addr_type, BD_ADDR addr,
+  const std::vector<uint8_t>& Set(uint8_t addr_type, const bt_bdaddr_t& addr,
                                   std::vector<uint8_t> data) {
     auto it = Find(addr_type, addr);
     if (it != items.end()) {
@@ -84,7 +84,7 @@ class AdvertisingCache {
   }
 
   /* Append |data| for device |addr_type, addr| */
-  const std::vector<uint8_t>& Append(uint8_t addr_type, BD_ADDR addr,
+  const std::vector<uint8_t>& Append(uint8_t addr_type, const bt_bdaddr_t& addr,
                                      std::vector<uint8_t> data) {
     auto it = Find(addr_type, addr);
     if (it != items.end()) {
@@ -101,7 +101,7 @@ class AdvertisingCache {
   }
 
   /* Clear data for device |addr_type, addr| */
-  void Clear(uint8_t addr_type, BD_ADDR addr) {
+  void Clear(uint8_t addr_type, const bt_bdaddr_t& addr) {
     auto it = Find(addr_type, addr);
     if (it != items.end()) {
       items.erase(it);
@@ -111,19 +111,16 @@ class AdvertisingCache {
  private:
   struct Item {
     uint8_t addr_type;
-    BD_ADDR addr;
+    bt_bdaddr_t addr;
     std::vector<uint8_t> data;
 
-    Item(uint8_t addr_type, BD_ADDR addr, std::vector<uint8_t> data)
-        : addr_type(addr_type), data(data) {
-      memcpy(this->addr, addr, BD_ADDR_LEN);
-    }
+    Item(uint8_t addr_type, const bt_bdaddr_t& addr, std::vector<uint8_t> data)
+        : addr_type(addr_type), addr(addr), data(data) {}
   };
 
-  std::list<Item>::iterator Find(uint8_t addr_type, BD_ADDR addr) {
+  std::list<Item>::iterator Find(uint8_t addr_type, const bt_bdaddr_t& addr) {
     for (auto it = items.begin(); it != items.end(); it++) {
-      if (it->addr_type == addr_type &&
-          memcmp(it->addr, addr, BD_ADDR_LEN) == 0) {
+      if (it->addr_type == addr_type && it->addr == addr) {
         return it;
       }
     }
@@ -150,11 +147,12 @@ static tBTM_BLE_CTRL_FEATURES_CBACK* p_ctrl_le_feature_rd_cmpl_cback = NULL;
  ******************************************************************************/
 static void btm_ble_update_adv_flag(uint8_t flag);
 static void btm_ble_process_adv_pkt_cont(
-    uint16_t evt_type, uint8_t addr_type, BD_ADDR bda, uint8_t primary_phy,
-    uint8_t secondary_phy, uint8_t advertising_sid, int8_t tx_power,
-    int8_t rssi, uint16_t periodic_adv_int, uint8_t data_len, uint8_t* data);
+    uint16_t evt_type, uint8_t addr_type, const bt_bdaddr_t& bda,
+    uint8_t primary_phy, uint8_t secondary_phy, uint8_t advertising_sid,
+    int8_t tx_power, int8_t rssi, uint16_t periodic_adv_int, uint8_t data_len,
+    uint8_t* data);
 static uint8_t btm_set_conn_mode_adv_init_addr(tBTM_BLE_INQ_CB* p_cb,
-                                               BD_ADDR_PTR p_peer_addr_ptr,
+                                               bt_bdaddr_t& p_peer_addr_ptr,
                                                tBLE_ADDR_TYPE* p_peer_addr_type,
                                                tBLE_ADDR_TYPE* p_own_addr_type);
 static void btm_ble_stop_observe(void);
@@ -442,7 +440,7 @@ const uint8_t btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX][2] =
 void BTM_BleUpdateAdvFilterPolicy(tBTM_BLE_AFP adv_policy) {
   tBTM_BLE_INQ_CB* p_cb = &btm_cb.ble_ctr_cb.inq_var;
   tBLE_ADDR_TYPE init_addr_type = BLE_ADDR_PUBLIC;
-  BD_ADDR p_addr_ptr = {0};
+  bt_bdaddr_t p_addr_ptr = {.address = {0}};
   uint8_t adv_mode = p_cb->adv_mode;
 
   BTM_TRACE_EVENT("BTM_BleUpdateAdvFilterPolicy");
@@ -828,7 +826,7 @@ void BTM_BleClearBgConnDev(void) {
  * Returns          void
  *
  ******************************************************************************/
-bool BTM_BleUpdateBgConnDev(bool add_remove, BD_ADDR remote_bda) {
+bool BTM_BleUpdateBgConnDev(bool add_remove, const bt_bdaddr_t& remote_bda) {
   BTM_TRACE_EVENT("%s() add=%d", __func__, add_remove);
   return btm_update_dev_to_white_list(add_remove, remote_bda);
 }
@@ -880,7 +878,7 @@ static bool is_resolving_list_bit_set(void* data, void* context) {
  *
  ******************************************************************************/
 static uint8_t btm_set_conn_mode_adv_init_addr(
-    tBTM_BLE_INQ_CB* p_cb, BD_ADDR_PTR p_peer_addr_ptr,
+    tBTM_BLE_INQ_CB* p_cb, bt_bdaddr_t& p_peer_addr_ptr,
     tBLE_ADDR_TYPE* p_peer_addr_type, tBLE_ADDR_TYPE* p_own_addr_type) {
   uint8_t evt_type;
 #if (BLE_PRIVACY_SPT == TRUE)
@@ -903,10 +901,11 @@ static uint8_t btm_set_conn_mode_adv_init_addr(
       if (btm_cb.ble_ctr_cb.privacy_mode == BTM_PRIVACY_1_2 ||
           btm_cb.ble_ctr_cb.privacy_mode == BTM_PRIVACY_MIXED) {
         /* only do so for bonded device */
-        if ((p_dev_rec = btm_find_or_alloc_dev(p_cb->direct_bda.bda)) != NULL &&
+        if ((p_dev_rec = btm_find_or_alloc_dev(
+                 from_BD_ADDR(p_cb->direct_bda.bda))) != NULL &&
             p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
           btm_ble_enable_resolving_list(BTM_BLE_RL_ADV);
-          memcpy(p_peer_addr_ptr, p_dev_rec->ble.static_addr, BD_ADDR_LEN);
+          p_peer_addr_ptr = p_dev_rec->ble.static_addr;
           *p_peer_addr_type = p_dev_rec->ble.static_addr_type;
           *p_own_addr_type = BLE_ADDR_RANDOM_ID;
           return evt_type;
@@ -919,7 +918,7 @@ static uint8_t btm_set_conn_mode_adv_init_addr(
 #endif
       /* direct adv mode does not have privacy, if privacy is not enabled  */
       *p_peer_addr_type = p_cb->direct_bda.type;
-      memcpy(p_peer_addr_ptr, p_cb->direct_bda.bda, BD_ADDR_LEN);
+      p_peer_addr_ptr = from_BD_ADDR(p_cb->direct_bda.bda);
       return evt_type;
     }
   }
@@ -937,7 +936,7 @@ static uint8_t btm_set_conn_mode_adv_init_addr(
        * peer */
       tBTM_SEC_DEV_REC* p_dev_rec =
           static_cast<tBTM_SEC_DEV_REC*>(list_node(n));
-      memcpy(p_peer_addr_ptr, p_dev_rec->ble.static_addr, BD_ADDR_LEN);
+      p_peer_addr_ptr = p_dev_rec->ble.static_addr;
       *p_peer_addr_type = p_dev_rec->ble.static_addr_type;
 
       *p_own_addr_type = BLE_ADDR_RANDOM_ID;
@@ -974,12 +973,12 @@ static uint8_t btm_set_conn_mode_adv_init_addr(
  *
  ******************************************************************************/
 tBTM_STATUS BTM_BleSetAdvParams(uint16_t adv_int_min, uint16_t adv_int_max,
-                                tBLE_BD_ADDR* p_dir_bda,
+                                const bt_bdaddr_t& p_dir_bda,
                                 tBTM_BLE_ADV_CHNL_MAP chnl_map) {
   tBTM_LE_RANDOM_CB* p_addr_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
   tBTM_BLE_INQ_CB* p_cb = &btm_cb.ble_ctr_cb.inq_var;
   tBTM_STATUS status = BTM_SUCCESS;
-  BD_ADDR p_addr_ptr = {0};
+  bt_bdaddr_t p_addr_ptr = {.address = {0}};
   tBLE_ADDR_TYPE init_addr_type = BLE_ADDR_PUBLIC;
   tBLE_ADDR_TYPE own_addr_type = p_addr_cb->own_addr_type;
   uint8_t adv_mode = p_cb->adv_mode;
@@ -998,10 +997,7 @@ tBTM_STATUS BTM_BleSetAdvParams(uint16_t adv_int_min, uint16_t adv_int_max,
   p_cb->adv_interval_min = adv_int_min;
   p_cb->adv_interval_max = adv_int_max;
   p_cb->adv_chnl_map = chnl_map;
-
-  if (p_dir_bda) {
-    memcpy(&p_cb->direct_bda, p_dir_bda, sizeof(tBLE_BD_ADDR));
-  }
+  memcpy(p_cb->direct_bda.bda, to_BD_ADDR(p_dir_bda), BD_ADDR_LEN);
 
   BTM_TRACE_EVENT("update params for an active adv");
 
@@ -1257,7 +1253,7 @@ tBTM_STATUS btm_ble_set_discoverability(uint16_t combined_mode) {
   uint8_t new_mode = BTM_BLE_ADV_ENABLE;
   uint8_t evt_type;
   tBTM_STATUS status = BTM_SUCCESS;
-  BD_ADDR p_addr_ptr = {0};
+  bt_bdaddr_t p_addr_ptr{.address = {0}};
   tBLE_ADDR_TYPE init_addr_type = BLE_ADDR_PUBLIC,
                  own_addr_type = p_addr_cb->own_addr_type;
   uint16_t adv_int_min, adv_int_max;
@@ -1350,7 +1346,7 @@ tBTM_STATUS btm_ble_set_connectability(uint16_t combined_mode) {
   uint8_t new_mode = BTM_BLE_ADV_ENABLE;
   uint8_t evt_type;
   tBTM_STATUS status = BTM_SUCCESS;
-  BD_ADDR p_addr_ptr = {0};
+  bt_bdaddr_t p_addr_ptr = {.address = {0}};
   tBLE_ADDR_TYPE peer_addr_type = BLE_ADDR_PUBLIC,
                  own_addr_type = p_addr_cb->own_addr_type;
   uint16_t adv_int_min, adv_int_max;
@@ -1524,8 +1520,8 @@ tBTM_STATUS btm_ble_start_inquiry(uint8_t mode, uint8_t duration) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_read_remote_name_cmpl(bool status, BD_ADDR bda, uint16_t length,
-                                   char* p_name) {
+void btm_ble_read_remote_name_cmpl(bool status, const bt_bdaddr_t& bda,
+                                   uint16_t length, char* p_name) {
   uint8_t hci_status = HCI_SUCCESS;
   BD_NAME bd_name;
 
@@ -1539,8 +1535,8 @@ void btm_ble_read_remote_name_cmpl(bool status, BD_ADDR bda, uint16_t length,
     hci_status = HCI_ERR_HOST_TIMEOUT;
   }
 
-  btm_process_remote_name(bda, bd_name, length + 1, hci_status);
-  btm_sec_rmt_name_request_complete(bda, (uint8_t*)p_name, hci_status);
+  btm_process_remote_name(&bda, bd_name, length + 1, hci_status);
+  btm_sec_rmt_name_request_complete(&bda, (uint8_t*)p_name, hci_status);
 }
 
 /*******************************************************************************
@@ -1555,7 +1551,8 @@ void btm_ble_read_remote_name_cmpl(bool status, BD_ADDR bda, uint16_t length,
  * Returns          void
  *
  ******************************************************************************/
-tBTM_STATUS btm_ble_read_remote_name(BD_ADDR remote_bda, tBTM_CMPL_CB* p_cb) {
+tBTM_STATUS btm_ble_read_remote_name(const bt_bdaddr_t& remote_bda,
+                                     tBTM_CMPL_CB* p_cb) {
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
 
   if (!controller_get_interface()->supports_ble()) return BTM_ERR_PROCESSING;
@@ -1574,8 +1571,7 @@ tBTM_STATUS btm_ble_read_remote_name(BD_ADDR remote_bda, tBTM_CMPL_CB* p_cb) {
 
   p_inq->p_remname_cmpl_cb = p_cb;
   p_inq->remname_active = true;
-
-  memcpy(p_inq->remname_bda, remote_bda, BD_ADDR_LEN);
+  p_inq->remname_bda = remote_bda;
 
   alarm_set_on_queue(p_inq->remote_name_timer, BTM_EXT_BLE_RMT_NAME_TIMEOUT_MS,
                      btm_inq_remote_name_timer_timeout, NULL,
@@ -1595,14 +1591,14 @@ tBTM_STATUS btm_ble_read_remote_name(BD_ADDR remote_bda, tBTM_CMPL_CB* p_cb) {
  * Returns          void
  *
  ******************************************************************************/
-bool btm_ble_cancel_remote_name(BD_ADDR remote_bda) {
+bool btm_ble_cancel_remote_name(const bt_bdaddr_t& remote_bda) {
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
   bool status;
 
   status = GAP_BleCancelReadPeerDevName(remote_bda);
 
   p_inq->remname_active = false;
-  memset(p_inq->remname_bda, 0, BD_ADDR_LEN);
+  p_inq->remname_bda = {.address = {0}};
   alarm_cancel(p_inq->remote_name_timer);
 
   return status;
@@ -1655,7 +1651,7 @@ static void btm_ble_update_adv_flag(uint8_t flag) {
  * Check ADV flag to make sure device is discoverable and match the search
  * condition
  */
-uint8_t btm_ble_is_discoverable(BD_ADDR bda,
+uint8_t btm_ble_is_discoverable(const bt_bdaddr_t& bda,
                                 std::vector<uint8_t> const& adv_data) {
   uint8_t flag = 0, rt = 0;
   uint8_t data_len;
@@ -1667,7 +1663,7 @@ uint8_t btm_ble_is_discoverable(BD_ADDR bda,
 
   /* does not match filter condition */
   if (p_cond->filter_cond_type == BTM_FILTER_COND_BD_ADDR &&
-      memcmp(bda, p_cond->filter_cond.bdaddr_cond, BD_ADDR_LEN) != 0) {
+      bda != p_cond->filter_cond.bdaddr_cond) {
     BTM_TRACE_DEBUG("BD ADDR does not meet filter condition");
     return rt;
   }
@@ -1822,11 +1818,11 @@ static void btm_ble_appearance_to_cod(uint16_t appearance, uint8_t* dev_class) {
 /**
  * Update adv packet information into inquiry result.
  */
-void btm_ble_update_inq_result(tINQ_DB_ENT* p_i, uint8_t addr_type, BD_ADDR bda,
-                               uint16_t evt_type, uint8_t primary_phy,
-                               uint8_t secondary_phy, uint8_t advertising_sid,
-                               int8_t tx_power, int8_t rssi,
-                               uint16_t periodic_adv_int,
+void btm_ble_update_inq_result(tINQ_DB_ENT* p_i, uint8_t addr_type,
+                               const bt_bdaddr_t& bda, uint16_t evt_type,
+                               uint8_t primary_phy, uint8_t secondary_phy,
+                               uint8_t advertising_sid, int8_t tx_power,
+                               int8_t rssi, uint16_t periodic_adv_int,
                                std::vector<uint8_t> const& data) {
   tBTM_INQ_RESULTS* p_cur = &p_i->inq_info.results;
   uint8_t len;
@@ -1934,25 +1930,24 @@ void btm_clear_all_pending_le_entry(void) {
   }
 }
 
-void btm_ble_process_adv_addr(BD_ADDR bda, uint8_t addr_type) {
+void btm_ble_process_adv_addr(bt_bdaddr_t& bda, uint8_t addr_type) {
 #if (BLE_PRIVACY_SPT == TRUE)
   /* map address to security record */
-  bool match = btm_identity_addr_to_random_pseudo(bda, &addr_type, false);
+  bool match = btm_identity_addr_to_random_pseudo(&bda, &addr_type, false);
 
-  BTM_TRACE_DEBUG("%s: bda= %0x:%0x:%0x:%0x:%0x:%0x", __func__, bda[0], bda[1],
-                  bda[2], bda[3], bda[4], bda[5]);
+  VLOG(1) << __func__ << ": bda=" << bda;
   /* always do RRA resolution on host */
   if (!match && BTM_BLE_IS_RESOLVE_BDA(bda)) {
     tBTM_SEC_DEV_REC* match_rec = btm_ble_resolve_random_addr(bda);
     if (match_rec) {
       match_rec->ble.active_addr_type = BTM_BLE_ADDR_RRA;
-      memcpy(match_rec->ble.cur_rand_addr, bda, BD_ADDR_LEN);
+      match_rec->ble.cur_rand_addr = bda;
 
       if (btm_ble_init_pseudo_addr(match_rec, bda)) {
-        memcpy(bda, match_rec->bd_addr, BD_ADDR_LEN);
+        bda = match_rec->bd_addr;
       } else {
         // Assign the original address to be the current report address
-        memcpy(bda, match_rec->ble.pseudo_addr, BD_ADDR_LEN);
+        bda = match_rec->ble.pseudo_addr;
       }
     }
   }
@@ -1965,7 +1960,7 @@ void btm_ble_process_adv_addr(BD_ADDR bda, uint8_t addr_type) {
  * entry is discarded.
  */
 void btm_ble_process_ext_adv_pkt(uint8_t data_len, uint8_t* data) {
-  BD_ADDR bda, direct_address;
+  bt_bdaddr_t bda, direct_address;
   uint8_t* p = data;
   uint8_t addr_type, num_reports, pkt_data_len, primary_phy, secondary_phy,
       advertising_sid;
@@ -1990,7 +1985,7 @@ void btm_ble_process_ext_adv_pkt(uint8_t data_len, uint8_t* data) {
     /* Extract inquiry results */
     STREAM_TO_UINT16(event_type, p);
     STREAM_TO_UINT8(addr_type, p);
-    STREAM_TO_BDADDR(bda, p);
+    STREAM_TO_BDADDR(to_BD_ADDR(bda), p);
     STREAM_TO_UINT8(primary_phy, p);
     STREAM_TO_UINT8(secondary_phy, p);
     STREAM_TO_UINT8(advertising_sid, p);
@@ -1998,7 +1993,7 @@ void btm_ble_process_ext_adv_pkt(uint8_t data_len, uint8_t* data) {
     STREAM_TO_INT8(rssi, p);
     STREAM_TO_UINT16(periodic_adv_int, p);
     STREAM_TO_UINT8(direct_address_type, p);
-    STREAM_TO_BDADDR(direct_address, p);
+    STREAM_TO_BDADDR(to_BD_ADDR(direct_address), p);
     STREAM_TO_UINT8(pkt_data_len, p);
 
     uint8_t* pkt_data = p;
@@ -2022,7 +2017,7 @@ void btm_ble_process_ext_adv_pkt(uint8_t data_len, uint8_t* data) {
  * discarded.
  */
 void btm_ble_process_adv_pkt(uint8_t data_len, uint8_t* data) {
-  BD_ADDR bda;
+  bt_bdaddr_t bda;
   uint8_t* p = data;
   uint8_t legacy_evt_type, addr_type, num_reports, pkt_data_len;
   int8_t rssi;
@@ -2043,7 +2038,7 @@ void btm_ble_process_adv_pkt(uint8_t data_len, uint8_t* data) {
     /* Extract inquiry results */
     STREAM_TO_UINT8(legacy_evt_type, p);
     STREAM_TO_UINT8(addr_type, p);
-    STREAM_TO_BDADDR(bda, p);
+    STREAM_TO_BDADDR(to_BD_ADDR(bda), p);
     STREAM_TO_UINT8(pkt_data_len, p);
 
     uint8_t* pkt_data = p;
@@ -2091,9 +2086,10 @@ void btm_ble_process_adv_pkt(uint8_t data_len, uint8_t* data) {
  * to process adv packet.
  */
 static void btm_ble_process_adv_pkt_cont(
-    uint16_t evt_type, uint8_t addr_type, BD_ADDR bda, uint8_t primary_phy,
-    uint8_t secondary_phy, uint8_t advertising_sid, int8_t tx_power,
-    int8_t rssi, uint16_t periodic_adv_int, uint8_t data_len, uint8_t* data) {
+    uint16_t evt_type, uint8_t addr_type, const bt_bdaddr_t& bda,
+    uint8_t primary_phy, uint8_t secondary_phy, uint8_t advertising_sid,
+    int8_t tx_power, int8_t rssi, uint16_t periodic_adv_int, uint8_t data_len,
+    uint8_t* data) {
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
   bool update = true;
 
@@ -2116,8 +2112,7 @@ static void btm_ble_process_adv_pkt_cont(
 
   if (!data_complete) {
     // If we didn't receive whole adv data yet, don't report the device.
-    DVLOG(1) << "Data not complete yet, waiting for more "
-             << base::HexEncode(bda, BD_ADDR_LEN);
+    DVLOG(1) << "Data not complete yet, waiting for more " << bda;
     return;
   }
 
@@ -2125,8 +2120,7 @@ static void btm_ble_process_adv_pkt_cont(
       btm_cb.ble_ctr_cb.inq_var.scan_type == BTM_BLE_SCAN_MODE_ACTI;
   if (is_active_scan && is_scannable && !is_scan_resp) {
     // If we didn't receive scan response yet, don't report the device.
-    DVLOG(1) << " Waiting for scan response "
-             << base::HexEncode(bda, BD_ADDR_LEN);
+    DVLOG(1) << " Waiting for scan response " << bda;
     return;
   }
 
@@ -2467,7 +2461,7 @@ static void btm_ble_start_slow_adv(void) {
 
   if (p_cb->adv_mode == BTM_BLE_ADV_ENABLE) {
     tBTM_LE_RANDOM_CB* p_addr_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
-    BD_ADDR p_addr_ptr = {0};
+    bt_bdaddr_t p_addr_ptr = {.address = {0}};
     tBLE_ADDR_TYPE init_addr_type = BLE_ADDR_PUBLIC;
     tBLE_ADDR_TYPE own_addr_type = p_addr_cb->own_addr_type;
 
@@ -2655,8 +2649,8 @@ void btm_ble_update_link_topology_mask(uint8_t link_role, bool increase) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_update_mode_operation(uint8_t link_role, BD_ADDR bd_addr,
-                                   uint8_t status) {
+void btm_ble_update_mode_operation(uint8_t link_role,
+                                   const bt_bdaddr_t* bd_addr, uint8_t status) {
   if (status == HCI_ERR_DIRECTED_ADVERTISING_TIMEOUT) {
     btm_cb.ble_ctr_cb.inq_var.adv_mode = BTM_BLE_ADV_DISABLE;
     /* make device fall back into undirected adv mode by default */
@@ -2672,7 +2666,7 @@ void btm_ble_update_mode_operation(uint8_t link_role, BD_ADDR bd_addr,
 
   /* in case of disconnected, we must cancel bgconn and restart
      in order to add back device to white list in order to reconnect */
-  btm_ble_bgconn_cancel_if_disconnected(bd_addr);
+  btm_ble_bgconn_cancel_if_disconnected(*bd_addr);
 
   /* when no connection is attempted, and controller is not rejecting last
      request

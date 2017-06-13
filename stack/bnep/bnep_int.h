@@ -222,8 +222,9 @@ extern void bnep_process_setup_conn_responce(tBNEP_CONN* p_bcb,
                                              uint8_t* p_setup);
 extern uint8_t* bnep_process_control_packet(tBNEP_CONN* p_bcb, uint8_t* p,
                                             uint16_t* len, bool is_ext);
-extern void bnep_sec_check_complete(BD_ADDR bd_addr, tBT_TRANSPORT trasnport,
-                                    void* p_ref_data, uint8_t result);
+extern void bnep_sec_check_complete(const bt_bdaddr_t* bd_addr,
+                                    tBT_TRANSPORT trasnport, void* p_ref_data,
+                                    uint8_t result);
 extern tBNEP_RESULT bnep_is_packet_allowed(tBNEP_CONN* p_bcb,
                                            BD_ADDR p_dest_addr,
                                            uint16_t protocol,

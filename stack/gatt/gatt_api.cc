@@ -1032,7 +1032,7 @@ tGATT_STATUS GATTC_SendHandleValueConfirm(uint16_t conn_id, uint16_t handle) {
  * Returns          void
  *
  ******************************************************************************/
-void GATT_SetIdleTimeout(BD_ADDR bd_addr, uint16_t idle_tout,
+void GATT_SetIdleTimeout(const bt_bdaddr_t& bd_addr, uint16_t idle_tout,
                          tBT_TRANSPORT transport) {
   tGATT_TCB* p_tcb;
   bool status = false;
@@ -1187,7 +1187,7 @@ void GATT_Deregister(tGATT_IF gatt_if) {
 void GATT_StartIf(tGATT_IF gatt_if) {
   tGATT_REG* p_reg;
   tGATT_TCB* p_tcb;
-  BD_ADDR bda;
+  bt_bdaddr_t bda;
   uint8_t start_idx, found_idx;
   uint16_t conn_id;
   tGATT_TRANSPORT transport;
@@ -1224,20 +1224,20 @@ void GATT_StartIf(tGATT_IF gatt_if) {
  *                  failure.
  *
  ******************************************************************************/
-bool GATT_Connect(tGATT_IF gatt_if, BD_ADDR bd_addr, bool is_direct,
+bool GATT_Connect(tGATT_IF gatt_if, const bt_bdaddr_t& bd_addr, bool is_direct,
                   tBT_TRANSPORT transport, bool opportunistic) {
   uint8_t phy = controller_get_interface()->get_le_all_initiating_phys();
   return GATT_Connect(gatt_if, bd_addr, is_direct, transport, opportunistic,
                       phy);
 }
 
-bool GATT_Connect(tGATT_IF gatt_if, BD_ADDR bd_addr, bool is_direct,
+bool GATT_Connect(tGATT_IF gatt_if, const bt_bdaddr_t& bd_addr, bool is_direct,
                   tBT_TRANSPORT transport, bool opportunistic,
                   uint8_t initiating_phys) {
   tGATT_REG* p_reg;
   bool status = false;
 
-  LOG(INFO) << __func__ << "gatt_if=" << +gatt_if;
+  LOG(INFO) << __func__ << "gatt_if=" << +gatt_if << " " << bd_addr;
 
   /* Make sure app is registered */
   p_reg = gatt_get_regcb(gatt_if);
@@ -1275,7 +1275,8 @@ bool GATT_Connect(tGATT_IF gatt_if, BD_ADDR bd_addr, bool is_direct,
  * Returns          true if the connection started; false otherwise.
  *
  ******************************************************************************/
-bool GATT_CancelConnect(tGATT_IF gatt_if, BD_ADDR bd_addr, bool is_direct) {
+bool GATT_CancelConnect(tGATT_IF gatt_if, const bt_bdaddr_t& bd_addr,
+                        bool is_direct) {
   LOG(INFO) << __func__ << ": gatt_if=" << +gatt_if;
 
   if (gatt_if && !gatt_get_regcb(gatt_if)) {
@@ -1365,7 +1366,7 @@ tGATT_STATUS GATT_Disconnect(uint16_t conn_id) {
  *
  ******************************************************************************/
 bool GATT_GetConnectionInfor(uint16_t conn_id, tGATT_IF* p_gatt_if,
-                             BD_ADDR bd_addr, tBT_TRANSPORT* p_transport) {
+                             bt_bdaddr_t& bd_addr, tBT_TRANSPORT* p_transport) {
   tGATT_IF gatt_if = GATT_GET_GATT_IF(conn_id);
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
   uint8_t tcb_idx = GATT_GET_TCB_IDX(conn_id);
@@ -1375,7 +1376,7 @@ bool GATT_GetConnectionInfor(uint16_t conn_id, tGATT_IF* p_gatt_if,
   LOG(INFO) << __func__ << " conn_id=" << +conn_id;
 
   if (p_tcb && p_reg) {
-    memcpy(bd_addr, p_tcb->peer_bda, BD_ADDR_LEN);
+    bd_addr = p_tcb->peer_bda;
     *p_gatt_if = gatt_if;
     *p_transport = p_tcb->transport;
     status = true;
@@ -1398,7 +1399,7 @@ bool GATT_GetConnectionInfor(uint16_t conn_id, tGATT_IF* p_gatt_if,
  * Returns          true the logical link is connected
  *
  ******************************************************************************/
-bool GATT_GetConnIdIfConnected(tGATT_IF gatt_if, BD_ADDR bd_addr,
+bool GATT_GetConnIdIfConnected(tGATT_IF gatt_if, const bt_bdaddr_t& bd_addr,
                                uint16_t* p_conn_id, tBT_TRANSPORT transport) {
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);

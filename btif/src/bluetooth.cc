@@ -223,7 +223,7 @@ int get_remote_services(bt_bdaddr_t* remote_addr) {
   /* sanity check */
   if (interface_ready() == false) return BT_STATUS_NOT_READY;
 
-  return btif_dm_get_remote_services(remote_addr);
+  return btif_dm_get_remote_services(*remote_addr);
 }
 
 static int start_discovery(void) {
