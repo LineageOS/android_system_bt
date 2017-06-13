@@ -221,7 +221,7 @@ void btm_acl_created(const bt_bdaddr_t& bda, DEV_CLASS dc, BD_NAME bdn,
             bda, btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr);
 #else
       p->conn_addr_type = BLE_ADDR_PUBLIC;
-      p->conn_addr = &controller_get_interface()->get_address();
+      p->conn_addr = *controller_get_interface()->get_address();
 
 #endif
       p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
