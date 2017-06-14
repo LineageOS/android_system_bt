@@ -1300,8 +1300,7 @@ bt_status_t btif_storage_load_bonded_hid_info(void) {
         string_to_bdaddr(name, &bd_addr);
         // add extracted information to BTA HH
         if (btif_hh_add_added_dev(bd_addr, attr_mask)) {
-          BTA_HhAddDev(bd_addr.address, attr_mask, sub_class, app_id,
-                       dscp_info);
+          BTA_HhAddDev(bd_addr, attr_mask, sub_class, app_id, dscp_info);
         }
       }
     } else {
@@ -1384,7 +1383,7 @@ bt_status_t btif_storage_load_hidd(void) {
     if (btif_in_fetch_bonded_device(name) == BT_STATUS_SUCCESS) {
       if (btif_config_get_int(name, "HidDeviceCabled", &value)) {
         string_to_bdaddr(name, &bd_addr);
-        BTA_HdAddDevice(bd_addr.address);
+        BTA_HdAddDevice(bd_addr);
         break;
       }
     }
