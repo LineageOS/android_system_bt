@@ -779,7 +779,7 @@ static void bta_dm_pm_ssr(const bt_bdaddr_t& peer_addr) {
        * from BTA HH */
       if (p_bta_dm_pm_spec[p_bta_dm_pm_cfg[j].spec_idx].ssr ==
           BTA_DM_PM_SSR_HH) {
-        if (bta_hh_read_ssr_param(to_BD_ADDR(peer_addr), &p_spec_cur->max_lat,
+        if (bta_hh_read_ssr_param(peer_addr, &p_spec_cur->max_lat,
                                   &p_spec_cur->min_rmt_to) == BTA_HH_ERR)
           continue;
       }
