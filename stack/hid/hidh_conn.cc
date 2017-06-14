@@ -52,8 +52,9 @@ static void hidh_conn_retry(uint8_t dhandle);
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
-static void hidh_l2cif_connect_ind(BD_ADDR bd_addr, uint16_t l2cap_cid,
-                                   uint16_t psm, uint8_t l2cap_id);
+static void hidh_l2cif_connect_ind(const bt_bdaddr_t& bd_addr,
+                                   uint16_t l2cap_cid, uint16_t psm,
+                                   uint8_t l2cap_id);
 static void hidh_l2cif_connect_cfm(uint16_t l2cap_cid, uint16_t result);
 static void hidh_l2cif_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
 static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
@@ -158,7 +159,7 @@ tHID_STATUS hidh_conn_disconnect(uint8_t dhandle) {
  *                  send security block L2C connection response.
  *
  ******************************************************************************/
-void hidh_sec_check_complete_term(UNUSED_ATTR BD_ADDR bd_addr,
+void hidh_sec_check_complete_term(UNUSED_ATTR const bt_bdaddr_t* bd_addr,
                                   UNUSED_ATTR tBT_TRANSPORT transport,
                                   void* p_ref_data, uint8_t res) {
   tHID_HOST_DEV_CTB* p_dev = (tHID_HOST_DEV_CTB*)p_ref_data;
@@ -199,8 +200,9 @@ void hidh_sec_check_complete_term(UNUSED_ATTR BD_ADDR bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-static void hidh_l2cif_connect_ind(BD_ADDR bd_addr, uint16_t l2cap_cid,
-                                   uint16_t psm, uint8_t l2cap_id) {
+static void hidh_l2cif_connect_ind(const bt_bdaddr_t& bd_addr,
+                                   uint16_t l2cap_cid, uint16_t psm,
+                                   uint8_t l2cap_id) {
   tHID_CONN* p_hcon;
   bool bAccept = true;
   uint8_t i = HID_HOST_MAX_DEVICES;
@@ -321,7 +323,7 @@ void hidh_try_repage(uint8_t dhandle) {
  * Returns          void
  *
  ******************************************************************************/
-void hidh_sec_check_complete_orig(UNUSED_ATTR BD_ADDR bd_addr,
+void hidh_sec_check_complete_orig(UNUSED_ATTR const bt_bdaddr_t* bd_addr,
                                   UNUSED_ATTR tBT_TRANSPORT transport,
                                   void* p_ref_data, uint8_t res) {
   tHID_HOST_DEV_CTB* p_dev = (tHID_HOST_DEV_CTB*)p_ref_data;

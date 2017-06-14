@@ -98,14 +98,13 @@ extern btif_hh_cb_t btif_hh_cb;
 
 extern btif_hh_device_t* btif_hh_find_connected_dev_by_handle(uint8_t handle);
 extern void btif_hh_remove_device(bt_bdaddr_t bd_addr);
-bool btif_hh_add_added_dev(bt_bdaddr_t bda, tBTA_HH_ATTR_MASK attr_mask);
-extern bt_status_t btif_hh_virtual_unplug(bt_bdaddr_t* bd_addr);
+extern bool btif_hh_add_added_dev(const bt_bdaddr_t& bda,
+                                  tBTA_HH_ATTR_MASK attr_mask);
+extern bt_status_t btif_hh_virtual_unplug(const bt_bdaddr_t* bd_addr);
 extern void btif_hh_disconnect(bt_bdaddr_t* bd_addr);
 extern void btif_hh_setreport(btif_hh_device_t* p_dev,
                               bthh_report_type_t r_type, uint16_t size,
                               uint8_t* report);
 extern void btif_hh_service_registration(bool enable);
-
-bool btif_hh_add_added_dev(bt_bdaddr_t bd_addr, tBTA_HH_ATTR_MASK attr_mask);
 
 #endif

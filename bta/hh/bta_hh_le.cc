@@ -378,7 +378,7 @@ void bta_hh_le_deregister(void) { BTA_GATTC_AppDeregister(bta_hh_cb.gatt_if); }
  * Parameters:
  *
  ******************************************************************************/
-bool bta_hh_is_le_device(tBTA_HH_DEV_CB* p_cb, BD_ADDR remote_bda) {
+bool bta_hh_is_le_device(tBTA_HH_DEV_CB* p_cb, const bt_bdaddr_t& remote_bda) {
   p_cb->is_le_device = BTM_UseLeLink(remote_bda);
 
   return p_cb->is_le_device;
@@ -393,10 +393,10 @@ bool bta_hh_is_le_device(tBTA_HH_DEV_CB* p_cb, BD_ADDR remote_bda) {
  * Parameters:
  *
  ******************************************************************************/
-void bta_hh_le_open_conn(tBTA_HH_DEV_CB* p_cb, BD_ADDR remote_bda) {
+void bta_hh_le_open_conn(tBTA_HH_DEV_CB* p_cb, const bt_bdaddr_t& remote_bda) {
   /* update cb_index[] map */
   p_cb->hid_handle = BTA_HH_GET_LE_DEV_HDL(p_cb->index);
-  memcpy(p_cb->addr, remote_bda, BD_ADDR_LEN);
+  p_cb->addr = remote_bda;
   bta_hh_cb.le_cb_index[BTA_HH_GET_LE_CB_IDX(p_cb->hid_handle)] = p_cb->index;
   p_cb->in_use = true;
 
@@ -429,12 +429,13 @@ tBTA_HH_DEV_CB* bta_hh_le_find_dev_cb_by_conn_id(uint16_t conn_id) {
  * Description      Utility function find a device control block by BD address.
  *
  ******************************************************************************/
-tBTA_HH_DEV_CB* bta_hh_le_find_dev_cb_by_bda(BD_ADDR bda) {
+tBTA_HH_DEV_CB* bta_hh_le_find_dev_cb_by_bda(const BD_ADDR bda) {
   uint8_t i;
   tBTA_HH_DEV_CB* p_dev_cb = &bta_hh_cb.kdev[0];
 
   for (i = 0; i < BTA_HH_MAX_DEVICE; i++, p_dev_cb++) {
-    if (p_dev_cb->in_use && memcmp(p_dev_cb->addr, bda, BD_ADDR_LEN) == 0)
+    if (p_dev_cb->in_use &&
+        p_dev_cb->addr == from_BD_ADDR(const_cast<uint8_t*>(bda)))
       return p_dev_cb;
   }
   return NULL;
@@ -1037,8 +1038,8 @@ void bta_hh_le_get_protocol_mode(tBTA_HH_DEV_CB* p_cb) {
  * Parameters:
  *
  ******************************************************************************/
-void bta_hh_le_dis_cback(BD_ADDR addr, tDIS_VALUE* p_dis_value) {
-  tBTA_HH_DEV_CB* p_cb = bta_hh_le_find_dev_cb_by_bda(addr);
+void bta_hh_le_dis_cback(const bt_bdaddr_t& addr, tDIS_VALUE* p_dis_value) {
+  tBTA_HH_DEV_CB* p_cb = bta_hh_le_find_dev_cb_by_bda(addr.address);
 
   if (p_cb == NULL || p_dis_value == NULL) {
     APPL_TRACE_ERROR("received unexpected/error DIS callback");
@@ -1101,10 +1102,10 @@ void bta_hh_le_pri_service_discovery(tBTA_HH_DEV_CB* p_cb) {
  * Returns          None
  *
  ******************************************************************************/
-void bta_hh_le_encrypt_cback(BD_ADDR bd_addr,
+void bta_hh_le_encrypt_cback(const bt_bdaddr_t* bd_addr,
                              UNUSED_ATTR tBTA_GATT_TRANSPORT transport,
                              UNUSED_ATTR void* p_ref_data, tBTM_STATUS result) {
-  uint8_t idx = bta_hh_find_cb(bd_addr);
+  uint8_t idx = bta_hh_find_cb(*bd_addr);
   tBTA_HH_DEV_CB* p_dev_cb;
 
   if (idx != BTA_HH_IDX_INVALID)
@@ -1275,7 +1276,7 @@ void bta_hh_gatt_open(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_buf) {
   /* if received invalid callback data , ignore it */
   if (p_cb == NULL || p_data == NULL) return;
 
-  p2 = p_data->remote_bda;
+  p2 = p_data->remote_bda.address;
 
   APPL_TRACE_DEBUG(
       "bta_hh_gatt_open BTA_GATTC_OPEN_EVT bda= [%08x%04x] status =%d",
@@ -1316,7 +1317,8 @@ void bta_hh_gatt_open(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_buf) {
  *
  ******************************************************************************/
 void bta_hh_le_close(tBTA_GATTC_CLOSE* p_data) {
-  tBTA_HH_DEV_CB* p_dev_cb = bta_hh_le_find_dev_cb_by_bda(p_data->remote_bda);
+  tBTA_HH_DEV_CB* p_dev_cb =
+      bta_hh_le_find_dev_cb_by_bda(p_data->remote_bda.address);
   uint16_t sm_event = BTA_HH_GATT_CLOSE_EVT;
 
   if (p_dev_cb != NULL) {
@@ -1442,6 +1444,11 @@ static void read_report_ref_desc_cb(uint16_t conn_id, tGATT_STATUS status,
   tBTA_HH_DEV_CB* p_dev_cb = (tBTA_HH_DEV_CB*)data;
   const tBTA_GATTC_DESCRIPTOR* p_desc =
       BTA_GATTC_GetDescriptor(conn_id, handle);
+
+  if (!p_desc) {
+    APPL_TRACE_ERROR("%s: error: descriptor is null!", __func__);
+    return;
+  }
 
   tBTA_HH_LE_RPT* p_rpt;
   p_rpt = bta_hh_le_find_report_entry(
@@ -1758,7 +1765,7 @@ void bta_hh_le_open_fail(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
   p_cb->disc_active = BTA_HH_LE_DISC_NONE;
   /* Failure in opening connection or GATT discovery failure */
   conn_dat.handle = p_cb->hid_handle;
-  memcpy(conn_dat.bda, p_cb->addr, BD_ADDR_LEN);
+  conn_dat.bda = p_cb->addr;
   conn_dat.le_hid = true;
   conn_dat.scps_supported = p_cb->scps_supported;
 
@@ -2199,7 +2206,7 @@ static void bta_hh_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
       break;
 
     case BTA_GATTC_OPEN_EVT: /* 2 */
-      p_dev_cb = bta_hh_le_find_dev_cb_by_bda(p_data->open.remote_bda);
+      p_dev_cb = bta_hh_le_find_dev_cb_by_bda(p_data->open.remote_bda.address);
       if (p_dev_cb) {
         bta_hh_sm_execute(p_dev_cb, BTA_HH_GATT_OPEN_EVT,
                           (tBTA_HH_DATA*)&p_data->open);
@@ -2219,7 +2226,8 @@ static void bta_hh_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
       break;
 
     case BTA_GATTC_ENC_CMPL_CB_EVT: /* 17 */
-      p_dev_cb = bta_hh_le_find_dev_cb_by_bda(p_data->enc_cmpl.remote_bda);
+      p_dev_cb =
+          bta_hh_le_find_dev_cb_by_bda(p_data->enc_cmpl.remote_bda.address);
       if (p_dev_cb) {
         bta_hh_sm_execute(p_dev_cb, BTA_HH_GATT_ENC_CMPL_EVT,
                           (tBTA_HH_DATA*)&p_data->enc_cmpl);
@@ -2257,7 +2265,7 @@ void bta_hh_le_hid_read_rpt_clt_cfg(BD_ADDR bd_addr, uint8_t rpt_id) {
   tBTA_HH_LE_RPT* p_rpt;
   uint8_t index = BTA_HH_IDX_INVALID;
 
-  index = bta_hh_find_cb(bd_addr);
+  index = bta_hh_find_cb(from_BD_ADDR(bd_addr));
   if (index == BTA_HH_IDX_INVALID) {
     APPL_TRACE_ERROR("%s: unknown device", __func__);
     return;

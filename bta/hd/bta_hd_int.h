@@ -101,7 +101,7 @@ typedef struct {
 
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR addr;
+  bt_bdaddr_t addr;
 } tBTA_HD_DEVICE_CTRL;
 
 typedef struct {
@@ -121,7 +121,7 @@ typedef union {
 
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR addr;
+  bt_bdaddr_t addr;
   uint32_t data;
   BT_HDR* p_data;
 } tBTA_HD_CBACK_DATA;
@@ -134,7 +134,7 @@ typedef struct {
   uint32_t sdp_handle;
   uint8_t trace_level;
   uint8_t state;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   bool use_report_id;
   bool boot_mode;
   bool vc_unplug;

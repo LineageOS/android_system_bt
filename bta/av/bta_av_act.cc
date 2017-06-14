@@ -1097,7 +1097,7 @@ void bta_av_stream_chg(tBTA_AV_SCB* p_scb, bool started) {
 
   if (started) {
     /* Let L2CAP know this channel is processed with high priority */
-    L2CA_SetAclPriority(p_scb->peer_addr, L2CAP_PRIORITY_HIGH);
+    L2CA_SetAclPriority(from_BD_ADDR(p_scb->peer_addr), L2CAP_PRIORITY_HIGH);
     (*p_streams) |= started_msk;
   } else {
     (*p_streams) &= ~started_msk;
@@ -1127,7 +1127,8 @@ void bta_av_stream_chg(tBTA_AV_SCB* p_scb, bool started) {
                      bta_av_cb.video_streams);
     if (no_streams) {
       /* Let L2CAP know this channel is processed with low priority */
-      L2CA_SetAclPriority(p_scb->peer_addr, L2CAP_PRIORITY_NORMAL);
+      L2CA_SetAclPriority(from_BD_ADDR(p_scb->peer_addr),
+                          L2CAP_PRIORITY_NORMAL);
     }
   }
 }
@@ -1254,7 +1255,7 @@ void bta_av_conn_chg(tBTA_AV_DATA* p_data) {
       /* the stream is closed.
        * clear the peer address, so it would not mess up the AVRCP for the next
        * round of operation */
-      bdcpy(p_scb->peer_addr, bd_addr_null);
+      bdcpy(p_scb->peer_addr, to_BD_ADDR(bd_addr_null));
       if (p_scb->chnl == BTA_AV_CHNL_AUDIO) {
         if (p_lcb) {
           p_lcb->conn_msk &= ~conn_msk;
@@ -1319,7 +1320,7 @@ void bta_av_conn_chg(tBTA_AV_DATA* p_data) {
           if (p_scbi->co_started != bta_av_cb.audio_open_cnt) {
             p_scbi->co_started = bta_av_cb.audio_open_cnt;
             L2CA_SetFlushTimeout(
-                p_scbi->peer_addr,
+                from_BD_ADDR(p_scbi->peer_addr),
                 p_bta_av_cfg->p_audio_flush_to[p_scbi->co_started - 1]);
           }
         }

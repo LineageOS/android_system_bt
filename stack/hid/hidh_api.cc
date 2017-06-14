@@ -48,8 +48,8 @@ static void hidh_search_callback(uint16_t sdp_result);
  * Returns          tHID_STATUS
  *
  ******************************************************************************/
-tHID_STATUS HID_HostGetSDPRecord(BD_ADDR addr, tSDP_DISCOVERY_DB* p_db,
-                                 uint32_t db_len,
+tHID_STATUS HID_HostGetSDPRecord(const bt_bdaddr_t& addr,
+                                 tSDP_DISCOVERY_DB* p_db, uint32_t db_len,
                                  tHID_HOST_SDP_CALLBACK* sdp_cback) {
   tSDP_UUID uuid_list;
 
@@ -61,7 +61,7 @@ tHID_STATUS HID_HostGetSDPRecord(BD_ADDR addr, tSDP_DISCOVERY_DB* p_db,
   hh_cb.p_sdp_db = p_db;
   SDP_InitDiscoveryDb(p_db, db_len, 1, &uuid_list, 0, NULL);
 
-  if (SDP_ServiceSearchRequest(addr, p_db, hidh_search_callback)) {
+  if (SDP_ServiceSearchRequest(to_BD_ADDR(addr), p_db, hidh_search_callback)) {
     hh_cb.sdp_cback = sdp_cback;
     hh_cb.sdp_busy = true;
     return HID_SUCCESS;
@@ -317,15 +317,14 @@ tHID_STATUS HID_HostDeregister(void) {
  * Returns          tHID_STATUS
  *
  ******************************************************************************/
-tHID_STATUS HID_HostAddDev(BD_ADDR addr, uint16_t attr_mask, uint8_t* handle) {
+tHID_STATUS HID_HostAddDev(const bt_bdaddr_t& addr, uint16_t attr_mask,
+                           uint8_t* handle) {
   int i;
   /* Find an entry for this device in hh_cb.devices array */
   if (!hh_cb.reg_flag) return (HID_ERR_NOT_REGISTERED);
 
   for (i = 0; i < HID_HOST_MAX_DEVICES; i++) {
-    if ((hh_cb.devices[i].in_use) &&
-        (!memcmp(addr, hh_cb.devices[i].addr, BD_ADDR_LEN)))
-      break;
+    if ((hh_cb.devices[i].in_use) && addr == hh_cb.devices[i].addr) break;
   }
 
   if (i == HID_HOST_MAX_DEVICES) {
@@ -338,7 +337,7 @@ tHID_STATUS HID_HostAddDev(BD_ADDR addr, uint16_t attr_mask, uint8_t* handle) {
 
   if (!hh_cb.devices[i].in_use) {
     hh_cb.devices[i].in_use = true;
-    memcpy(hh_cb.devices[i].addr, addr, sizeof(BD_ADDR));
+    hh_cb.devices[i].addr = addr;
     hh_cb.devices[i].state = HID_DEV_NO_CONN;
     hh_cb.devices[i].conn_tries = 0;
   }
@@ -520,7 +519,7 @@ tHID_STATUS HID_HostSetSecurityLevel(const char serv_name[], uint8_t sec_lvl) {
  * Returns          true if device is HID Device else false
  *
  ******************************************************************************/
-bool hid_known_hid_device(BD_ADDR bd_addr) {
+bool hid_known_hid_device(const bt_bdaddr_t& bd_addr) {
   uint8_t i;
   tBTM_INQ_INFO* p_inq_info = BTM_InqDbRead(bd_addr);
 
@@ -550,8 +549,7 @@ bool hid_known_hid_device(BD_ADDR bd_addr) {
 
   /* Find an entry for this device in hh_cb.devices array */
   for (i = 0; i < HID_HOST_MAX_DEVICES; i++) {
-    if ((hh_cb.devices[i].in_use) &&
-        (memcmp(bd_addr, hh_cb.devices[i].addr, BD_ADDR_LEN) == 0))
+    if ((hh_cb.devices[i].in_use) && bd_addr == hh_cb.devices[i].addr)
       return true;
   }
   /* Check if this device is marked as HID Device in IOP Dev */

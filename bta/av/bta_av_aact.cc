@@ -1358,7 +1358,7 @@ void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     open.status = BTA_AV_SUCCESS;
     open.starting = bta_av_chk_start(p_scb);
     open.edr = 0;
-    p = BTM_ReadRemoteFeatures(p_scb->peer_addr);
+    p = BTM_ReadRemoteFeatures(from_BD_ADDR(p_scb->peer_addr));
     if (p != NULL) {
       if (HCI_EDR_ACL_2MPS_SUPPORTED(p)) open.edr |= BTA_AV_EDR_2MBPS;
       if (HCI_EDR_ACL_3MPS_SUPPORTED(p)) open.edr |= BTA_AV_EDR_3MBPS;
@@ -1888,7 +1888,7 @@ void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   /* disallow role switch during streaming, only if we are the master role
    * i.e. allow role switch, if we are slave.
    * It would not hurt us, if the peer device wants us to be master */
-  if ((BTM_GetRole(p_scb->peer_addr, &cur_role) == BTM_SUCCESS) &&
+  if ((BTM_GetRole(from_BD_ADDR(p_scb->peer_addr), &cur_role) == BTM_SUCCESS) &&
       (cur_role == BTM_ROLE_MASTER)) {
     policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
   }
@@ -1955,7 +1955,8 @@ void bta_av_str_stopped(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     p_scb->co_started = false;
 
     p_scb->p_cos->stop(p_scb->hndl);
-    L2CA_SetFlushTimeout(p_scb->peer_addr, L2CAP_DEFAULT_FLUSH_TO);
+    L2CA_SetFlushTimeout(from_BD_ADDR(p_scb->peer_addr),
+                         L2CAP_DEFAULT_FLUSH_TO);
   }
 
   /* if q_info.a2dp_list is not empty, drop it now */
@@ -2316,7 +2317,7 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   } else {
     flush_to = p_bta_av_cfg->video_flush_to;
   }
-  L2CA_SetFlushTimeout(p_scb->peer_addr, flush_to);
+  L2CA_SetFlushTimeout(from_BD_ADDR(p_scb->peer_addr), flush_to);
 
   /* clear the congestion flag */
   p_scb->cong = false;
@@ -2340,7 +2341,8 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       * Otherwise allow role switch, if source is slave.
       * Because it would not hurt source, if the peer device wants source to be
       * master */
-      if ((BTM_GetRole(p_scb->peer_addr, &cur_role) == BTM_SUCCESS) &&
+      if ((BTM_GetRole(from_BD_ADDR(p_scb->peer_addr), &cur_role) ==
+           BTM_SUCCESS) &&
           (cur_role == BTM_ROLE_MASTER)) {
         policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
       }
@@ -2548,7 +2550,8 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       p_scb->co_started = false;
       p_scb->p_cos->stop(p_scb->hndl);
     }
-    L2CA_SetFlushTimeout(p_scb->peer_addr, L2CAP_DEFAULT_FLUSH_TO);
+    L2CA_SetFlushTimeout(from_BD_ADDR(p_scb->peer_addr),
+                         L2CAP_DEFAULT_FLUSH_TO);
   }
 
   {
@@ -2848,7 +2851,7 @@ void bta_av_chk_2nd_start(tBTA_AV_SCB* p_scb,
           if (p_scbi->co_started != bta_av_cb.audio_open_cnt) {
             p_scbi->co_started = bta_av_cb.audio_open_cnt;
             L2CA_SetFlushTimeout(
-                p_scbi->peer_addr,
+                from_BD_ADDR(p_scbi->peer_addr),
                 p_bta_av_cfg->p_audio_flush_to[p_scbi->co_started - 1]);
           }
         }

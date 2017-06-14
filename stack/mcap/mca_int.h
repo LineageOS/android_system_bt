@@ -341,9 +341,9 @@ extern uint16_t mca_l2c_open_req(BD_ADDR bd_addr, uint16_t PSM,
                                  const tMCA_CHNL_CFG* p_chnl_cfg);
 
 /* callback function declarations */
-extern void mca_l2c_cconn_ind_cback(BD_ADDR bd_addr, uint16_t lcid,
+extern void mca_l2c_cconn_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
                                     uint16_t psm, uint8_t id);
-extern void mca_l2c_dconn_ind_cback(BD_ADDR bd_addr, uint16_t lcid,
+extern void mca_l2c_dconn_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
                                     uint16_t psm, uint8_t id);
 extern void mca_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result);
 extern void mca_l2c_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);

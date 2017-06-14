@@ -79,8 +79,8 @@ bt_status_t btif_storage_set_adapter_property(bt_property_t* property);
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_get_remote_device_property(bt_bdaddr_t* remote_bd_addr,
-                                                    bt_property_t* property);
+bt_status_t btif_storage_get_remote_device_property(
+    const bt_bdaddr_t* remote_bd_addr, bt_property_t* property);
 
 /*******************************************************************************
  *
@@ -93,8 +93,8 @@ bt_status_t btif_storage_get_remote_device_property(bt_bdaddr_t* remote_bd_addr,
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_set_remote_device_property(bt_bdaddr_t* remote_bd_addr,
-                                                    bt_property_t* property);
+bt_status_t btif_storage_set_remote_device_property(
+    const bt_bdaddr_t* remote_bd_addr, bt_property_t* property);
 
 /*******************************************************************************
  *
@@ -108,7 +108,7 @@ bt_status_t btif_storage_set_remote_device_property(bt_bdaddr_t* remote_bd_addr,
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_add_remote_device(bt_bdaddr_t* remote_bd_addr,
+bt_status_t btif_storage_add_remote_device(const bt_bdaddr_t* remote_bd_addr,
                                            uint32_t num_properties,
                                            bt_property_t* properties);
 
@@ -137,7 +137,8 @@ bt_status_t btif_storage_add_bonded_device(bt_bdaddr_t* remote_bd_addr,
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_remove_bonded_device(bt_bdaddr_t* remote_bd_addr);
+bt_status_t btif_storage_remove_bonded_device(
+    const bt_bdaddr_t* remote_bd_addr);
 
 /*******************************************************************************
  *
@@ -216,15 +217,16 @@ bt_status_t btif_storage_get_ble_bonding_key(bt_bdaddr_t* remote_bd_addr,
 
 bt_status_t btif_storage_add_ble_local_key(char* key, uint8_t key_type,
                                            uint8_t key_length);
-bt_status_t btif_storage_remove_ble_bonding_keys(bt_bdaddr_t* remote_bd_addr);
+bt_status_t btif_storage_remove_ble_bonding_keys(
+    const bt_bdaddr_t* remote_bd_addr);
 bt_status_t btif_storage_remove_ble_local_keys(void);
 bt_status_t btif_storage_get_ble_local_key(uint8_t key_type, char* key_value,
                                            int key_len);
 
-bt_status_t btif_storage_get_remote_addr_type(bt_bdaddr_t* remote_bd_addr,
+bt_status_t btif_storage_get_remote_addr_type(const bt_bdaddr_t* remote_bd_addr,
                                               int* addr_type);
 
-bt_status_t btif_storage_set_remote_addr_type(bt_bdaddr_t* remote_bd_addr,
+bt_status_t btif_storage_set_remote_addr_type(const bt_bdaddr_t* remote_bd_addr,
                                               uint8_t addr_type);
 
 /*******************************************************************************

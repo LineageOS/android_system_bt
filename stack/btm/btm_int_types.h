@@ -63,7 +63,7 @@ typedef struct {
   uint16_t hci_handle;
   uint16_t pkt_types_mask;
   uint16_t clock_offset;
-  BD_ADDR remote_addr;
+  bt_bdaddr_t remote_addr;
   DEV_CLASS remote_dc;
   BD_NAME remote_name;
 
@@ -97,9 +97,9 @@ typedef struct {
   uint8_t encrypt_state;                   /* overall BTM encryption state */
 
   tBT_TRANSPORT transport;
-  BD_ADDR conn_addr;      /* local device address used for this connection */
+  bt_bdaddr_t conn_addr;  /* local device address used for this connection */
   uint8_t conn_addr_type; /* local device address type for this connection */
-  BD_ADDR active_remote_addr;      /* remote address used on this connection */
+  bt_bdaddr_t active_remote_addr;  /* remote address used on this connection */
   uint8_t active_remote_addr_type; /* local device address type for this
                                       connection */
   BD_FEATURES peer_le_features; /* Peer LE Used features mask for the device */
@@ -148,7 +148,7 @@ typedef struct {
       p_le_test_cmd_cmpl_cb; /* Callback function to be called when
                              LE test mode command has been sent successfully */
 
-  BD_ADDR read_tx_pwr_addr; /* read TX power target address     */
+  bt_bdaddr_t read_tx_pwr_addr; /* read TX power target address     */
 
 #define BTM_LE_SUPPORT_STATE_SIZE 8
   uint8_t le_supported_states[BTM_LE_SUPPORT_STATE_SIZE];
@@ -190,7 +190,7 @@ typedef struct {
   /* received for the current inquiry operation. (We do not   */
   /* want to flood the caller with multiple responses from    */
   /* the same device.                                         */
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
 } tINQ_BDADDR;
 
 typedef struct {
@@ -226,7 +226,7 @@ typedef struct {
   uint16_t page_scan_type; /* current page scan type */
   tBTM_INQ_TYPE scan_type;
 
-  BD_ADDR remname_bda; /* Name of bd addr for active remote name request */
+  bt_bdaddr_t remname_bda; /* Name of bd addr for active remote name request */
 #define BTM_RMT_NAME_INACTIVE 0
 #define BTM_RMT_NAME_EXT 0x1 /* Initiated through API */
 #define BTM_RMT_NAME_SEC 0x2 /* Initiated internally by security manager */
@@ -435,18 +435,18 @@ typedef struct {
 } tBTM_SEC_BLE_KEYS;
 
 typedef struct {
-  BD_ADDR pseudo_addr; /* LE pseudo address of the device if different from
+  bt_bdaddr_t pseudo_addr; /* LE pseudo address of the device if different from
                           device address  */
   tBLE_ADDR_TYPE ble_addr_type; /* LE device type: public or random address */
   tBLE_ADDR_TYPE static_addr_type; /* static address type */
-  BD_ADDR static_addr;             /* static address */
+  bt_bdaddr_t static_addr;         /* static address */
 
 #define BTM_WHITE_LIST_BIT 0x01
 #define BTM_RESOLVING_LIST_BIT 0x02
   uint8_t in_controller_list; /* in controller resolving list or not */
   uint8_t resolving_list_index;
 #if (BLE_PRIVACY_SPT == TRUE)
-  BD_ADDR cur_rand_addr; /* current random address */
+  bt_bdaddr_t cur_rand_addr; /* current random address */
 
 #define BTM_BLE_ADDR_PSEUDO 0 /* address index device record */
 #define BTM_BLE_ADDR_RRA 1    /* cur_rand_addr */
@@ -475,7 +475,7 @@ typedef struct {
                                                         services     */
   uint16_t hci_handle;     /* Handle to connection when exists   */
   uint16_t clock_offset;   /* Latest known clock offset          */
-  BD_ADDR bd_addr;         /* BD_ADDR of the device              */
+  bt_bdaddr_t bd_addr;     /* BD_ADDR of the device              */
   DEV_CLASS dev_class;     /* DEV_CLASS of the device            */
   LINK_KEY link_key;       /* Device link key                    */
   uint8_t pin_code_length; /* Length of the pin_code used for paring */
@@ -719,7 +719,7 @@ typedef uint8_t tBTM_PAIRING_STATE;
 
 typedef struct {
   bool is_mux;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   uint16_t psm;
   bool is_orig;
   tBTM_SEC_CALLBACK* p_callback;
@@ -833,7 +833,7 @@ typedef struct {
   PIN_CODE pin_code;                /* for legacy devices */
   tBTM_PAIRING_STATE pairing_state; /* The current pairing state    */
   uint8_t pairing_flags;            /* The current pairing flags    */
-  BD_ADDR pairing_bda;              /* The device currently pairing */
+  bt_bdaddr_t pairing_bda;          /* The device currently pairing */
   alarm_t* pairing_timer;           /* Timer for pairing process    */
   uint16_t disc_handle;             /* for legacy devices */
   uint8_t disc_reason;              /* for legacy devices */
@@ -842,7 +842,7 @@ typedef struct {
   tBTM_SEC_SERV_REC* p_out_serv;
   tBTM_MKEY_CALLBACK* mkey_cback;
 
-  BD_ADDR connecting_bda;
+  bt_bdaddr_t connecting_bda;
   DEV_CLASS connecting_dc;
 
   uint8_t acl_disc_reason;

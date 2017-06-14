@@ -47,7 +47,7 @@
 /*****************************************************************************
  *  Constants
  ****************************************************************************/
-static void bta_gattc_conn_cback(tGATT_IF gattc_if, BD_ADDR bda,
+static void bta_gattc_conn_cback(tGATT_IF gattc_if, const bt_bdaddr_t& bda,
                                  uint16_t conn_id, bool connected,
                                  tGATT_DISCONN_REASON reason,
                                  tBT_TRANSPORT transport);
@@ -60,7 +60,7 @@ static void bta_gattc_cmpl_sendmsg(uint16_t conn_id, tGATTC_OPTYPE op,
                                    tGATT_CL_COMPLETE* p_data);
 
 static void bta_gattc_deregister_cmpl(tBTA_GATTC_RCB* p_clreg);
-static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, BD_ADDR bda);
+static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, const bt_bdaddr_t& bda);
 static void bta_gattc_cong_cback(uint16_t conn_id, bool congested);
 static void bta_gattc_phy_update_cback(tGATT_IF gatt_if, uint16_t conn_id,
                                        uint8_t tx_phy, uint8_t rx_phy,
@@ -325,7 +325,7 @@ void bta_gattc_process_api_open_cancel(tBTA_GATTC_DATA* p_msg) {
 }
 
 /** process encryption complete message */
-void bta_gattc_process_enc_cmpl(tGATT_IF client_if, bt_bdaddr_t bda) {
+void bta_gattc_process_enc_cmpl(tGATT_IF client_if, const bt_bdaddr_t& bda) {
   tBTA_GATTC_RCB* p_clreg;
   tBTA_GATTC cb_data;
 
@@ -335,7 +335,7 @@ void bta_gattc_process_enc_cmpl(tGATT_IF client_if, bt_bdaddr_t bda) {
     memset(&cb_data, 0, sizeof(tBTA_GATTC));
 
     cb_data.enc_cmpl.client_if = client_if;
-    memcpy(cb_data.enc_cmpl.remote_bda, bda.address, BD_ADDR_LEN);
+    cb_data.enc_cmpl.remote_bda = bda;
 
     (*p_clreg->p_cback)(BTA_GATTC_ENC_CMPL_CB_EVT, &cb_data);
   }
@@ -444,12 +444,9 @@ void bta_gattc_init_bk_conn(tBTA_GATTC_API_OPEN* p_data,
     /* always call open to hold a connection */
     if (!GATT_Connect(p_data->client_if, p_data->remote_bda, false,
                       p_data->transport, false)) {
-      uint8_t* bda = (uint8_t*)p_data->remote_bda;
       status = BTA_GATT_ERROR;
-      APPL_TRACE_ERROR(
-          "%s unable to connect to remote "
-          "bd_addr:%02x:%02x:%02x:%02x:%02x:%02x",
-          __func__, bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+      LOG(ERROR) << __func__ << " unable to connect to remote bd_addr:"
+                 << p_data->remote_bda;
 
     } else {
       status = BTA_GATT_OK;
@@ -602,7 +599,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
   if (p_clcb->p_rcb) {
     /* there is no RM for GATT */
     if (p_clcb->transport == BTA_TRANSPORT_BR_EDR)
-      bta_sys_conn_open(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
+      bta_sys_conn_open(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda.address);
 
     bta_gattc_send_open_cback(p_clcb->p_rcb, BTA_GATT_OK, p_clcb->bda,
                               p_clcb->bta_conn_id, p_clcb->transport,
@@ -625,7 +622,7 @@ void bta_gattc_close_fail(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
     memset(&cb_data, 0, sizeof(tBTA_GATTC));
     cb_data.close.client_if = p_clcb->p_rcb->client_if;
     cb_data.close.conn_id = p_data->hdr.layer_specific;
-    bdcpy(cb_data.close.remote_bda, p_clcb->bda);
+    cb_data.close.remote_bda = p_clcb->bda;
     cb_data.close.status = BTA_GATT_ERROR;
     cb_data.close.reason = BTA_GATT_CONN_NONE;
 
@@ -652,10 +649,10 @@ void bta_gattc_close(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
   cb_data.close.conn_id = p_clcb->bta_conn_id;
   cb_data.close.reason = p_clcb->reason;
   cb_data.close.status = p_clcb->status;
-  bdcpy(cb_data.close.remote_bda, p_clcb->bda);
+  cb_data.close.remote_bda = p_clcb->bda;
 
   if (p_clcb->transport == BTA_TRANSPORT_BR_EDR)
-    bta_sys_conn_close(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
+    bta_sys_conn_close(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda.address);
 
   bta_gattc_clcb_dealloc(p_clcb);
 
@@ -884,8 +881,7 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB* p_clcb,
   else if (p_q_cmd != NULL) {
     p_clcb->p_q_cmd = NULL;
     /* execute pending operation of link block still present */
-    if (l2cu_find_lcb_by_bd_addr(p_clcb->p_srcb->server_bda, BT_TRANSPORT_LE) !=
-        NULL) {
+    if (l2cu_find_lcb_by_bd_addr(p_clcb->p_srcb->server_bda, BT_TRANSPORT_LE)) {
       bta_gattc_sm_execute(p_clcb, p_q_cmd->hdr.event, p_q_cmd);
     }
     /* if the command executed requeued the cmd, we don't
@@ -1046,8 +1042,8 @@ void bta_gattc_confirm(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
   } else {
     /* if over BR_EDR, inform PM for mode change */
     if (p_clcb->transport == BTA_TRANSPORT_BR_EDR) {
-      bta_sys_busy(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
-      bta_sys_idle(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
+      bta_sys_busy(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda.address);
+      bta_sys_idle(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda.address);
     }
   }
 }
@@ -1319,7 +1315,7 @@ static void bta_gattc_deregister_cmpl(tBTA_GATTC_RCB* p_clreg) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_gattc_conn_cback(tGATT_IF gattc_if, BD_ADDR bda,
+static void bta_gattc_conn_cback(tGATT_IF gattc_if, const bt_bdaddr_t& bdaddr,
                                  uint16_t conn_id, bool connected,
                                  tGATT_DISCONN_REASON reason,
                                  tBT_TRANSPORT transport) {
@@ -1328,8 +1324,6 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, BD_ADDR bda,
                        __func__, gattc_if, connected, conn_id, reason);
   }
 
-  bt_bdaddr_t bdaddr;
-  bdcpy(bdaddr.address, bda);
   if (connected)
     btif_debug_conn_state(bdaddr, BTIF_DEBUG_CONNECTED, GATT_CONN_UNKNOWN);
   else
@@ -1341,10 +1335,10 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, BD_ADDR bda,
       connected ? BTA_GATTC_INT_CONN_EVT : BTA_GATTC_INT_DISCONN_EVT;
   p_buf->int_conn.hdr.layer_specific = conn_id;
   p_buf->int_conn.client_if = gattc_if;
-  p_buf->int_conn.role = L2CA_GetBleConnRole(bda);
+  p_buf->int_conn.role = L2CA_GetBleConnRole(bdaddr);
   p_buf->int_conn.reason = reason;
   p_buf->int_conn.transport = transport;
-  bdcpy(p_buf->int_conn.remote_bda, bda);
+  p_buf->int_conn.remote_bda = bdaddr;
 
   bta_sys_sendmsg(p_buf);
 }
@@ -1358,7 +1352,8 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, BD_ADDR bda,
  * Returns          void
  *
  ******************************************************************************/
-static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, BD_ADDR bda) {
+static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if,
+                                     const bt_bdaddr_t& bda) {
   tBTA_GATTC_CLCB* p_clcb =
       bta_gattc_find_clcb_by_cif(gattc_if, bda, BTA_GATT_TRANSPORT_LE);
 
@@ -1376,10 +1371,8 @@ static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, BD_ADDR bda) {
 
   APPL_TRACE_DEBUG("%s: cif = %d", __func__, gattc_if);
 
-  bt_bdaddr_t addr;
-  memcpy(addr.address, bda, BD_ADDR_LEN);
   do_in_bta_thread(FROM_HERE,
-                   base::Bind(&bta_gattc_process_enc_cmpl, gattc_if, addr));
+                   base::Bind(&bta_gattc_process_enc_cmpl, gattc_if, bda));
 }
 
 /*******************************************************************************
@@ -1392,8 +1385,8 @@ static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, BD_ADDR bda) {
  * Returns          None.
  *
  ******************************************************************************/
-void bta_gattc_process_api_refresh(bt_bdaddr_t remote_bda) {
-  tBTA_GATTC_SERV* p_srvc_cb = bta_gattc_find_srvr_cache(remote_bda.address);
+void bta_gattc_process_api_refresh(const bt_bdaddr_t& remote_bda) {
+  tBTA_GATTC_SERV* p_srvc_cb = bta_gattc_find_srvr_cache(remote_bda);
   tBTA_GATTC_CLCB* p_clcb = &bta_gattc_cb.clcb[0];
   bool found = false;
   uint8_t i;
@@ -1419,7 +1412,7 @@ void bta_gattc_process_api_refresh(bt_bdaddr_t remote_bda) {
     }
   }
   /* used to reset cache in application */
-  bta_gattc_cache_reset(remote_bda.address);
+  bta_gattc_cache_reset(remote_bda);
 }
 /*******************************************************************************
  *
@@ -1493,7 +1486,7 @@ bool bta_gattc_process_srvc_chg_ind(uint16_t conn_id, tBTA_GATTC_RCB* p_clrcb,
     /* notify applicationf or service change */
     if (p_clrcb->p_cback != NULL) {
       (*p_clrcb->p_cback)(BTA_GATTC_SRVC_CHG_EVT,
-                          (tBTA_GATTC*)p_srcb->server_bda);
+                          (tBTA_GATTC*)&p_srcb->server_bda);
     }
   }
 
@@ -1517,7 +1510,7 @@ void bta_gattc_proc_other_indication(tBTA_GATTC_CLCB* p_clcb, uint8_t op,
 
   p_notify->is_notify = (op == GATTC_OPTYPE_INDICATION) ? false : true;
   p_notify->len = p_data->att_value.len;
-  bdcpy(p_notify->bda, p_clcb->bda);
+  p_notify->bda = p_clcb->bda;
   memcpy(p_notify->value, p_data->att_value.value, p_data->att_value.len);
   p_notify->conn_id = p_clcb->bta_conn_id;
 
@@ -1540,7 +1533,7 @@ void bta_gattc_process_indicate(uint16_t conn_id, tGATTC_OPTYPE op,
   tBTA_GATTC_RCB* p_clrcb = NULL;
   tBTA_GATTC_SERV* p_srcb = NULL;
   tBTA_GATTC_NOTIFY notify;
-  BD_ADDR remote_bda;
+  bt_bdaddr_t remote_bda;
   tBTA_GATTC_IF gatt_if;
   tBTA_TRANSPORT transport;
 
@@ -1634,8 +1627,8 @@ static void bta_gattc_cmpl_cback(uint16_t conn_id, tGATTC_OPTYPE op,
 
   /* if over BR_EDR, inform PM for mode change */
   if (p_clcb->transport == BTA_TRANSPORT_BR_EDR) {
-    bta_sys_busy(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
-    bta_sys_idle(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
+    bta_sys_busy(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda.address);
+    bta_sys_idle(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda.address);
   }
 
   bta_gattc_cmpl_sendmsg(conn_id, op, status, p_data);

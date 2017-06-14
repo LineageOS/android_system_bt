@@ -393,21 +393,22 @@ void smp_gen_p1_4_confirm(tSMP_CB* p_cb, tBLE_ADDR_TYPE remote_bd_addr_type,
  * Returns          void
  *
  ******************************************************************************/
-void smp_gen_p2_4_confirm(tSMP_CB* p_cb, BD_ADDR remote_bda, BT_OCTET16 p2) {
+void smp_gen_p2_4_confirm(tSMP_CB* p_cb, const bt_bdaddr_t& remote_bda,
+                          BT_OCTET16 p2) {
   SMP_TRACE_DEBUG("%s", __func__);
   uint8_t* p = (uint8_t*)p2;
   /* 32-bit Padding */
   memset(p, 0, sizeof(BT_OCTET16));
   if (p_cb->role == HCI_ROLE_MASTER) {
     /* ra : Responder's (remote) address */
-    BDADDR_TO_STREAM(p, remote_bda);
+    BDADDR_TO_STREAM(p, to_BD_ADDR(remote_bda));
     /* ia : Initiator's (local) address */
-    BDADDR_TO_STREAM(p, p_cb->local_bda);
+    BDADDR_TO_STREAM(p, to_BD_ADDR(p_cb->local_bda));
   } else {
     /* ra : Responder's (local) address */
-    BDADDR_TO_STREAM(p, p_cb->local_bda);
+    BDADDR_TO_STREAM(p, to_BD_ADDR(p_cb->local_bda));
     /* ia : Initiator's (remote) address */
-    BDADDR_TO_STREAM(p, remote_bda);
+    BDADDR_TO_STREAM(p, to_BD_ADDR(remote_bda));
   }
   smp_debug_print_nbyte_little_endian(p2, "p2 = ra || ia || padding", 16);
 }
@@ -424,7 +425,7 @@ void smp_gen_p2_4_confirm(tSMP_CB* p_cb, BD_ADDR remote_bda, BT_OCTET16 p2) {
 tSMP_STATUS smp_calculate_comfirm(tSMP_CB* p_cb, BT_OCTET16 rand,
                                   tSMP_ENC* output) {
   SMP_TRACE_DEBUG("%s", __func__);
-  BD_ADDR remote_bda;
+  bt_bdaddr_t remote_bda;
   tBLE_ADDR_TYPE remote_bd_addr_type = 0;
   /* get remote connection specific bluetooth address */
   if (!BTM_ReadRemoteConnectionAddr(p_cb->pairing_bda, remote_bda,
@@ -1632,7 +1633,7 @@ bool smp_calculate_f6(uint8_t* w, uint8_t* n1, uint8_t* n2, uint8_t* r,
  ******************************************************************************/
 bool smp_calculate_link_key_from_long_term_key(tSMP_CB* p_cb) {
   tBTM_SEC_DEV_REC* p_dev_rec;
-  BD_ADDR bda_for_lk;
+  bt_bdaddr_t bda_for_lk;
   tBLE_ADDR_TYPE conn_addr_type;
   BT_OCTET16 salt = {0x31, 0x70, 0x6D, 0x74, 0x00, 0x00, 0x00, 0x00,
                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -1642,7 +1643,7 @@ bool smp_calculate_link_key_from_long_term_key(tSMP_CB* p_cb) {
   if (p_cb->id_addr_rcvd && p_cb->id_addr_type == BLE_ADDR_PUBLIC) {
     SMP_TRACE_DEBUG(
         "Use rcvd identity address as BD_ADDR of LK rcvd identity address");
-    memcpy(bda_for_lk, p_cb->id_addr, BD_ADDR_LEN);
+    bda_for_lk = p_cb->id_addr;
   } else if ((BTM_ReadRemoteConnectionAddr(p_cb->pairing_bda, bda_for_lk,
                                            &conn_addr_type)) &&
              conn_addr_type == BLE_ADDR_PUBLIC) {

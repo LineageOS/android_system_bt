@@ -36,13 +36,15 @@
 extern fixed_queue_t* btu_bta_alarm_queue;
 
 static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
-                            uint8_t app_id, BD_ADDR peer_addr);
-static void bta_dm_pm_set_mode(BD_ADDR peer_addr, tBTA_DM_PM_ACTION pm_mode,
+                            uint8_t app_id, const bt_bdaddr_t& peer_addr);
+static void bta_dm_pm_set_mode(const bt_bdaddr_t& peer_addr,
+                               tBTA_DM_PM_ACTION pm_mode,
                                tBTA_DM_PM_REQ pm_req);
 static void bta_dm_pm_timer_cback(void* data);
-static void bta_dm_pm_btm_cback(BD_ADDR bd_addr, tBTM_PM_STATUS status,
-                                uint16_t value, uint8_t hci_status);
-static bool bta_dm_pm_park(BD_ADDR peer_addr);
+static void bta_dm_pm_btm_cback(const bt_bdaddr_t& bd_addr,
+                                tBTM_PM_STATUS status, uint16_t value,
+                                uint8_t hci_status);
+static bool bta_dm_pm_park(const bt_bdaddr_t& peer_addr);
 static bool bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index);
 static bool bta_dm_pm_is_sco_active();
 static int bta_dm_get_sco_index();
@@ -59,7 +61,7 @@ static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER* p_timer,
  * can use it */
 #define BTA_DM_PM_SSR_HH BTA_DM_PM_SSR1
 #endif
-static void bta_dm_pm_ssr(BD_ADDR peer_addr);
+static void bta_dm_pm_ssr(const bt_bdaddr_t& peer_addr);
 #endif
 
 tBTA_DM_CONNECTED_SRVCS bta_dm_conn_srvcs;
@@ -148,12 +150,12 @@ uint8_t bta_dm_get_av_count(void) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_dm_pm_stop_timer(BD_ADDR peer_addr) {
+static void bta_dm_pm_stop_timer(const bt_bdaddr_t& peer_addr) {
   APPL_TRACE_DEBUG("%s: ", __func__);
 
   for (int i = 0; i < BTA_DM_NUM_PM_TIMER; i++) {
     if (bta_dm_cb.pm_timer[i].in_use &&
-        !bdcmp(bta_dm_cb.pm_timer[i].peer_bdaddr, peer_addr)) {
+        bta_dm_cb.pm_timer[i].peer_bdaddr == peer_addr) {
       for (int j = 0; j < BTA_DM_PM_MODE_TIMER_MAX; j++) {
         bta_dm_pm_stop_timer_by_index(&bta_dm_cb.pm_timer[i], j);
         /*
@@ -205,14 +207,14 @@ static uint8_t bta_pm_action_to_timer_idx(uint8_t pm_action) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_dm_pm_stop_timer_by_mode(BD_ADDR peer_addr,
+static void bta_dm_pm_stop_timer_by_mode(const bt_bdaddr_t& peer_addr,
                                          uint8_t power_mode) {
   const uint8_t timer_idx = bta_pm_action_to_timer_idx(power_mode);
   if (timer_idx == BTA_DM_PM_MODE_TIMER_MAX) return;
 
   for (int i = 0; i < BTA_DM_NUM_PM_TIMER; i++) {
     if (bta_dm_cb.pm_timer[i].in_use &&
-        !bdcmp(bta_dm_cb.pm_timer[i].peer_bdaddr, peer_addr)) {
+        bta_dm_cb.pm_timer[i].peer_bdaddr == peer_addr) {
       if (bta_dm_cb.pm_timer[i].srvc_id[timer_idx] != BTA_ID_MAX) {
         bta_dm_pm_stop_timer_by_index(&bta_dm_cb.pm_timer[i], timer_idx);
         /*
@@ -238,11 +240,11 @@ static void bta_dm_pm_stop_timer_by_mode(BD_ADDR peer_addr,
  * Returns          index of the power mode delay timer
  *
  ******************************************************************************/
-static void bta_dm_pm_stop_timer_by_srvc_id(BD_ADDR peer_addr,
+static void bta_dm_pm_stop_timer_by_srvc_id(const bt_bdaddr_t& peer_addr,
                                             uint8_t srvc_id) {
   for (int i = 0; i < BTA_DM_NUM_PM_TIMER; i++) {
     if (bta_dm_cb.pm_timer[i].in_use &&
-        !bdcmp(bta_dm_cb.pm_timer[i].peer_bdaddr, peer_addr)) {
+        bta_dm_cb.pm_timer[i].peer_bdaddr == peer_addr) {
       for (int j = 0; j < BTA_DM_PM_MODE_TIMER_MAX; j++) {
         if (bta_dm_cb.pm_timer[i].srvc_id[j] == srvc_id) {
           bta_dm_pm_stop_timer_by_index(&bta_dm_cb.pm_timer[i], j);
@@ -319,7 +321,7 @@ static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER* p_timer,
  *
  ******************************************************************************/
 static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
-                            uint8_t app_id, BD_ADDR peer_addr) {
+                            uint8_t app_id, const bt_bdaddr_t& peer_addr) {
   uint8_t i, j;
   uint8_t* p = NULL;
   tBTA_DM_PEER_DEVICE* p_dev;
@@ -370,7 +372,7 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
     /* check if an entry already present */
     if ((bta_dm_conn_srvcs.conn_srvc[j].id == id) &&
         (bta_dm_conn_srvcs.conn_srvc[j].app_id == app_id) &&
-        !bdcmp(bta_dm_conn_srvcs.conn_srvc[j].peer_bdaddr, peer_addr)) {
+        bta_dm_conn_srvcs.conn_srvc[j].peer_bdaddr == peer_addr) {
       bta_dm_conn_srvcs.conn_srvc[j].new_request = true;
       break;
     }
@@ -404,7 +406,7 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
     bta_dm_conn_srvcs.conn_srvc[j].id = id;
     bta_dm_conn_srvcs.conn_srvc[j].app_id = app_id;
     bta_dm_conn_srvcs.conn_srvc[j].new_request = true;
-    bdcpy(bta_dm_conn_srvcs.conn_srvc[j].peer_bdaddr, peer_addr);
+    bta_dm_conn_srvcs.conn_srvc[j].peer_bdaddr = peer_addr;
 
     APPL_TRACE_WARNING("new conn_srvc id:%d, app_id:%d", id, app_id);
 
@@ -486,7 +488,8 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
  *
  ******************************************************************************/
 
-static void bta_dm_pm_set_mode(BD_ADDR peer_addr, tBTA_DM_PM_ACTION pm_request,
+static void bta_dm_pm_set_mode(const bt_bdaddr_t& peer_addr,
+                               tBTA_DM_PM_ACTION pm_request,
                                tBTA_DM_PM_REQ pm_req) {
   tBTA_DM_PM_ACTION pm_action = BTA_DM_PM_NO_ACTION;
   period_ms_t timeout_ms = 0;
@@ -514,7 +517,7 @@ static void bta_dm_pm_set_mode(BD_ADDR peer_addr, tBTA_DM_PM_ACTION pm_request,
 
   for (i = 0; i < bta_dm_conn_srvcs.count; i++) {
     p_srvcs = &bta_dm_conn_srvcs.conn_srvc[i];
-    if (!bdcmp(p_srvcs->peer_bdaddr, peer_addr)) {
+    if (p_srvcs->peer_bdaddr == peer_addr) {
       /* p_bta_dm_pm_cfg[0].app_id is the number of entries */
       for (j = 1; j <= p_bta_dm_pm_cfg[0].app_id; j++) {
         if ((p_bta_dm_pm_cfg[j].id == p_srvcs->id) &&
@@ -577,7 +580,7 @@ static void bta_dm_pm_set_mode(BD_ADDR peer_addr, tBTA_DM_PM_ACTION pm_request,
   if ((pm_req != BTA_DM_PM_EXECUTE) && (timeout_ms > 0)) {
     for (i = 0; i < BTA_DM_NUM_PM_TIMER; i++) {
       if (bta_dm_cb.pm_timer[i].in_use &&
-          bdcmp(bta_dm_cb.pm_timer[i].peer_bdaddr, peer_addr) == 0) {
+          bta_dm_cb.pm_timer[i].peer_bdaddr == peer_addr) {
         timer_idx = bta_pm_action_to_timer_idx(pm_action);
         if (timer_idx != BTA_DM_PM_MODE_TIMER_MAX) {
           remaining_ms =
@@ -606,7 +609,7 @@ static void bta_dm_pm_set_mode(BD_ADDR peer_addr, tBTA_DM_PM_ACTION pm_request,
     /* new power mode for a new active connection */
     if (!timer_started) {
       if (available_timer != BTA_DM_PM_MODE_TIMER_MAX) {
-        bdcpy(bta_dm_cb.pm_timer[available_timer].peer_bdaddr, peer_addr);
+        bta_dm_cb.pm_timer[available_timer].peer_bdaddr = peer_addr;
         timer_idx = bta_pm_action_to_timer_idx(pm_action);
         if (timer_idx != BTA_DM_PM_MODE_TIMER_MAX) {
           bta_dm_pm_start_timer(&bta_dm_cb.pm_timer[available_timer], timer_idx,
@@ -653,7 +656,7 @@ static void bta_dm_pm_set_mode(BD_ADDR peer_addr, tBTA_DM_PM_ACTION pm_request,
  * Returns          true if park attempted, false otherwise.
  *
  ******************************************************************************/
-static bool bta_dm_pm_park(BD_ADDR peer_addr) {
+static bool bta_dm_pm_park(const bt_bdaddr_t& peer_addr) {
   tBTM_PM_MODE mode = BTM_PM_STS_ACTIVE;
 
   /* if not in park mode, switch to park */
@@ -744,14 +747,14 @@ static bool bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
  *
  ******************************************************************************/
 #if (BTM_SSR_INCLUDED == TRUE)
-static void bta_dm_pm_ssr(BD_ADDR peer_addr) {
+static void bta_dm_pm_ssr(const bt_bdaddr_t& peer_addr) {
   tBTA_DM_SSR_SPEC *p_spec, *p_spec_cur;
   uint8_t i, j;
   int ssr = BTA_DM_PM_SSR0;
 
   /* go through the connected services */
   for (i = 0; i < bta_dm_conn_srvcs.count; i++) {
-    if (!bdcmp(bta_dm_conn_srvcs.conn_srvc[i].peer_bdaddr, peer_addr)) {
+    if (bta_dm_conn_srvcs.conn_srvc[i].peer_bdaddr == peer_addr) {
       /* p_bta_dm_pm_cfg[0].app_id is the number of entries */
       for (j = 1; j <= p_bta_dm_pm_cfg[0].app_id; j++) {
         /* find the associated p_bta_dm_pm_cfg */
@@ -798,8 +801,7 @@ static void bta_dm_pm_ssr(BD_ADDR peer_addr) {
     if (bta_dm_pm_is_sco_active()) {
       int idx = bta_dm_get_sco_index();
       if (idx != -1) {
-        if (bdcmp(bta_dm_conn_srvcs.conn_srvc[idx].peer_bdaddr, peer_addr) ==
-            0) {
+        if (bta_dm_conn_srvcs.conn_srvc[idx].peer_bdaddr == peer_addr) {
           APPL_TRACE_WARNING("%s SCO is active on device, ignore SSR",
                              __func__);
           return;
@@ -823,7 +825,7 @@ static void bta_dm_pm_ssr(BD_ADDR peer_addr) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_dm_pm_active(BD_ADDR peer_addr) {
+void bta_dm_pm_active(const bt_bdaddr_t& peer_addr) {
   tBTM_PM_PWR_MD pm;
 
   memset((void*)&pm, 0, sizeof(pm));
@@ -843,8 +845,9 @@ void bta_dm_pm_active(BD_ADDR peer_addr) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_dm_pm_btm_cback(BD_ADDR bd_addr, tBTM_PM_STATUS status,
-                                uint16_t value, uint8_t hci_status) {
+static void bta_dm_pm_btm_cback(const bt_bdaddr_t& bd_addr,
+                                tBTM_PM_STATUS status, uint16_t value,
+                                uint8_t hci_status) {
   tBTA_DM_PM_BTM_STATUS* p_buf =
       (tBTA_DM_PM_BTM_STATUS*)osi_malloc(sizeof(tBTA_DM_PM_BTM_STATUS));
 
@@ -852,7 +855,7 @@ static void bta_dm_pm_btm_cback(BD_ADDR bd_addr, tBTM_PM_STATUS status,
   p_buf->status = status;
   p_buf->value = value;
   p_buf->hci_status = hci_status;
-  bdcpy(p_buf->bd_addr, bd_addr);
+  p_buf->bd_addr = bd_addr;
 
   bta_sys_sendmsg(p_buf);
 }
@@ -896,7 +899,7 @@ static void bta_dm_pm_timer_cback(void* data) {
       (tBTA_DM_PM_TIMER*)osi_malloc(sizeof(tBTA_DM_PM_TIMER));
   p_buf->hdr.event = BTA_DM_PM_TIMER_EVT;
   p_buf->pm_request = bta_dm_cb.pm_timer[i].pm_action[j];
-  bdcpy(p_buf->bd_addr, bta_dm_cb.pm_timer[i].peer_bdaddr);
+  p_buf->bd_addr = bta_dm_cb.pm_timer[i].peer_bdaddr;
 
   bta_sys_sendmsg(p_buf);
 }
@@ -1024,11 +1027,11 @@ void bta_dm_pm_timer(tBTA_DM_MSG* p_data) {
  * Returns          tBTA_DM_PEER_DEVICE
  *
  ******************************************************************************/
-tBTA_DM_PEER_DEVICE* bta_dm_find_peer_device(const BD_ADDR peer_addr) {
+tBTA_DM_PEER_DEVICE* bta_dm_find_peer_device(const bt_bdaddr_t& peer_addr) {
   tBTA_DM_PEER_DEVICE* p_dev = NULL;
 
   for (int i = 0; i < bta_dm_cb.device_list.count; i++) {
-    if (!bdcmp(bta_dm_cb.device_list.peer_device[i].peer_bdaddr, peer_addr)) {
+    if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr == peer_addr) {
       p_dev = &bta_dm_cb.device_list.peer_device[i];
       break;
     }

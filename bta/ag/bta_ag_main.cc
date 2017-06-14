@@ -393,13 +393,13 @@ uint8_t bta_ag_service_to_idx(tBTA_SERVICE_MASK services) {
  * Returns          Index of SCB or zero if none found.
  *
  ******************************************************************************/
-uint16_t bta_ag_idx_by_bdaddr(BD_ADDR peer_addr) {
+uint16_t bta_ag_idx_by_bdaddr(const bt_bdaddr_t* peer_addr) {
   tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
   uint16_t i;
 
   if (peer_addr != NULL) {
     for (i = 0; i < BTA_AG_NUM_SCB; i++, p_scb++) {
-      if (p_scb->in_use && !bdcmp(peer_addr, p_scb->peer_addr)) {
+      if (p_scb->in_use && *peer_addr == p_scb->peer_addr) {
         return (i + 1);
       }
     }
@@ -516,7 +516,7 @@ void bta_ag_collision_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status, uint8_t id,
   tBTA_AG_SCB* p_scb;
 
   /* Check if we have opening scb for the peer device. */
-  handle = bta_ag_idx_by_bdaddr(peer_addr);
+  handle = bta_ag_idx_by_bdaddr(&from_BD_ADDR(peer_addr));
   p_scb = bta_ag_scb_by_idx(handle);
 
   if (p_scb && (p_scb->state == BTA_AG_OPENING_ST)) {

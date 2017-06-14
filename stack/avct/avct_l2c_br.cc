@@ -70,8 +70,8 @@
 #define AVCT_BR_FCR_OPT_MONITOR_TOUT 12000
 
 /* callback function declarations */
-void avct_l2c_br_connect_ind_cback(BD_ADDR bd_addr, uint16_t lcid, uint16_t psm,
-                                   uint8_t id);
+void avct_l2c_br_connect_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
+                                   uint16_t psm, uint8_t id);
 void avct_l2c_br_connect_cfm_cback(uint16_t lcid, uint16_t result);
 void avct_l2c_br_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
 void avct_l2c_br_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
@@ -116,7 +116,7 @@ const tL2CAP_FCR_OPTS avct_l2c_br_fcr_opts_def = {
  * Returns          void
  *
  ******************************************************************************/
-void avct_l2c_br_connect_ind_cback(BD_ADDR bd_addr, uint16_t lcid,
+void avct_l2c_br_connect_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
                                    UNUSED_ATTR uint16_t psm, uint8_t id) {
   tAVCT_LCB* p_lcb;
   uint16_t result = L2CAP_CONN_NO_RESOURCES;
@@ -127,11 +127,11 @@ void avct_l2c_br_connect_ind_cback(BD_ADDR bd_addr, uint16_t lcid,
   memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
   cfg.mtu_present = true;
 
-  p_lcb = avct_lcb_by_bd(bd_addr);
+  p_lcb = avct_lcb_by_bd(to_BD_ADDR(bd_addr));
   if (p_lcb != NULL) {
     /* control channel exists */
     p_bcb = avct_bcb_by_lcb(p_lcb);
-    memcpy(p_bcb->peer_addr, bd_addr, BD_ADDR_LEN);
+    memcpy(p_bcb->peer_addr, to_BD_ADDR(bd_addr), BD_ADDR_LEN);
 
     if (p_bcb->allocated == 0) {
       /* browsing channel does not exist yet and the browsing channel is
