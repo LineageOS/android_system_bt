@@ -2556,7 +2556,7 @@ void btif_dm_execute_service_request(uint16_t event, char* p_param) {
   return;
 }
 
-void btif_dm_proc_io_req(UNUSED_ATTR BD_ADDR bd_addr,
+void btif_dm_proc_io_req(UNUSED_ATTR const bt_bdaddr_t& bd_addr,
                          UNUSED_ATTR tBTA_IO_CAP* p_io_cap,
                          UNUSED_ATTR tBTA_OOB_DATA* p_oob_data,
                          tBTA_AUTH_REQ* p_auth_req, bool is_orig) {
@@ -2593,8 +2593,8 @@ void btif_dm_proc_io_req(UNUSED_ATTR BD_ADDR bd_addr,
   BTIF_TRACE_DEBUG("-%s: p_auth_req=%d", __func__, *p_auth_req);
 }
 
-void btif_dm_proc_io_rsp(UNUSED_ATTR BD_ADDR bd_addr, tBTA_IO_CAP io_cap,
-                         UNUSED_ATTR tBTA_OOB_DATA oob_data,
+void btif_dm_proc_io_rsp(UNUSED_ATTR const bt_bdaddr_t& bd_addr,
+                         tBTA_IO_CAP io_cap, UNUSED_ATTR tBTA_OOB_DATA oob_data,
                          tBTA_AUTH_REQ auth_req) {
   if (auth_req & BTA_AUTH_BONDS) {
     BTIF_TRACE_DEBUG("%s auth_req:%d", __func__, auth_req);

@@ -23,6 +23,7 @@
  *
  ******************************************************************************/
 
+#include <base/logging.h>
 #include <string.h>
 #include "avct_api.h"
 #include "avct_int.h"
@@ -230,13 +231,13 @@ void avct_bcb_event(tAVCT_BCB* p_bcb, uint8_t event, tAVCT_LCB_EVT* p_data) {
  * Returns          pointer to the lcb, or NULL if none found.
  *
  ******************************************************************************/
-tAVCT_LCB* avct_lcb_by_bd(BD_ADDR bd_addr) {
+tAVCT_LCB* avct_lcb_by_bd(const bt_bdaddr_t& bd_addr) {
   tAVCT_LCB* p_lcb = &avct_cb.lcb[0];
   int i;
 
   for (i = 0; i < AVCT_NUM_LINKS; i++, p_lcb++) {
     /* if allocated lcb has matching lcb */
-    if (p_lcb->allocated && (!memcmp(p_lcb->peer_addr, bd_addr, BD_ADDR_LEN))) {
+    if (p_lcb->allocated && p_lcb->peer_addr == bd_addr) {
       break;
     }
   }
@@ -245,9 +246,7 @@ tAVCT_LCB* avct_lcb_by_bd(BD_ADDR bd_addr) {
     /* if no lcb found */
     p_lcb = NULL;
 
-    AVCT_TRACE_DEBUG("No lcb for addr %02x-%02x-%02x-%02x-%02x-%02x",
-                     bd_addr[0], bd_addr[1], bd_addr[2], bd_addr[3], bd_addr[4],
-                     bd_addr[5]);
+    VLOG(1) << "No lcb for addr " << bd_addr;
   }
   return p_lcb;
 }
@@ -262,14 +261,14 @@ tAVCT_LCB* avct_lcb_by_bd(BD_ADDR bd_addr) {
  * Returns          pointer to the lcb, or NULL if none could be allocated.
  *
  ******************************************************************************/
-tAVCT_LCB* avct_lcb_alloc(BD_ADDR bd_addr) {
+tAVCT_LCB* avct_lcb_alloc(const bt_bdaddr_t& bd_addr) {
   tAVCT_LCB* p_lcb = &avct_cb.lcb[0];
   int i;
 
   for (i = 0; i < AVCT_NUM_LINKS; i++, p_lcb++) {
     if (!p_lcb->allocated) {
       p_lcb->allocated = (uint8_t)(i + 1);
-      memcpy(p_lcb->peer_addr, bd_addr, BD_ADDR_LEN);
+      p_lcb->peer_addr = bd_addr;
       AVCT_TRACE_DEBUG("avct_lcb_alloc %d", p_lcb->allocated);
       p_lcb->tx_q = fixed_queue_new(SIZE_MAX);
       break;

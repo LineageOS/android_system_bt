@@ -82,7 +82,7 @@ static const uint8_t avrc_ctrl_event_map[] = {
  *
  *****************************************************************************/
 static void avrc_ctrl_cback(uint8_t handle, uint8_t event, uint16_t result,
-                            BD_ADDR peer_addr) {
+                            const bt_bdaddr_t* peer_addr) {
   uint8_t avrc_event;
 
   if (event <= AVRC_MAX_RCV_CTRL_EVT && avrc_cb.ccb[handle].p_ctrl_cback) {
@@ -1028,7 +1028,7 @@ static BT_HDR* avrc_pass_msg(tAVRC_MSG_PASS* p_msg) {
  *
  *****************************************************************************/
 uint16_t AVRC_Open(uint8_t* p_handle, tAVRC_CONN_CB* p_ccb,
-                   BD_ADDR_PTR peer_addr) {
+                   const bt_bdaddr_t& peer_addr) {
   uint16_t status;
   tAVCT_CC cc;
 
