@@ -1443,6 +1443,11 @@ static void read_report_ref_desc_cb(uint16_t conn_id, tGATT_STATUS status,
   const tBTA_GATTC_DESCRIPTOR* p_desc =
       BTA_GATTC_GetDescriptor(conn_id, handle);
 
+  if (!p_desc) {
+    APPL_TRACE_ERROR("%s: error: descriptor is null!", __func__);
+    return;
+  }
+
   tBTA_HH_LE_RPT* p_rpt;
   p_rpt = bta_hh_le_find_report_entry(
       p_dev_cb, p_desc->characteristic->service->handle, GATT_UUID_HID_REPORT,
