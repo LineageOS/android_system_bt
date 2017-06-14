@@ -242,7 +242,7 @@ void btif_gatt_check_encrypted_link(bt_bdaddr_t bd_addr,
   }
 }
 #else
-void btif_gatt_check_encrypted_link(UNUSED_ATTR bd_addr bd_addr,
+void btif_gatt_check_encrypted_link(UNUSED_ATTR bt_bdaddr_t bd_addr,
                                     UNUSED_ATTR tBTA_GATT_TRANSPORT
                                         transport_link) {}
 #endif
