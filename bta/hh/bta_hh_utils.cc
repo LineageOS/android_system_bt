@@ -54,14 +54,13 @@ static const uint8_t bta_hh_mod_key_mask[BTA_HH_MOD_MAX_KEY] = {
  * Returns          void
  *
  ******************************************************************************/
-uint8_t bta_hh_find_cb(BD_ADDR bda) {
+uint8_t bta_hh_find_cb(const bt_bdaddr_t& bda) {
   uint8_t xx;
 
   /* See how many active devices there are. */
   for (xx = 0; xx < BTA_HH_MAX_DEVICE; xx++) {
     /* check if any active/known devices is a match */
-    if ((!bdcmp(bda, bta_hh_cb.kdev[xx].addr) &&
-         from_BD_ADDR(bda) != bd_addr_null)) {
+    if ((bda == bta_hh_cb.kdev[xx].addr && bda != bd_addr_null)) {
 #if (BTA_HH_DEBUG == TRUE)
       APPL_TRACE_DEBUG("found kdev_cb[%d] hid_handle = %d ", xx,
                        bta_hh_cb.kdev[xx].hid_handle)
@@ -79,7 +78,7 @@ uint8_t bta_hh_find_cb(BD_ADDR bda) {
   /* if no active device match, find a spot for it */
   for (xx = 0; xx < BTA_HH_MAX_DEVICE; xx++) {
     if (!bta_hh_cb.kdev[xx].in_use) {
-      bdcpy(bta_hh_cb.kdev[xx].addr, bda);
+      bta_hh_cb.kdev[xx].addr = bda;
       break;
     }
   }
@@ -371,21 +370,21 @@ void bta_hh_parse_mice_rpt(tBTA_HH_BOOT_RPT* p_mice_data, uint8_t* p_report,
  * Returns          tBTA_HH_STATUS  operation status
  *
  ******************************************************************************/
-tBTA_HH_STATUS bta_hh_read_ssr_param(BD_ADDR bd_addr, uint16_t* p_max_ssr_lat,
+tBTA_HH_STATUS bta_hh_read_ssr_param(const bt_bdaddr_t& bd_addr,
+                                     uint16_t* p_max_ssr_lat,
                                      uint16_t* p_min_ssr_tout) {
   tBTA_HH_STATUS status = BTA_HH_ERR;
   tBTA_HH_CB* p_cb = &bta_hh_cb;
   uint8_t i;
   uint16_t ssr_max_latency;
   for (i = 0; i < BTA_HH_MAX_KNOWN; i++) {
-    if (memcmp(p_cb->kdev[i].addr, bd_addr, BD_ADDR_LEN) == 0) {
+    if (p_cb->kdev[i].addr == bd_addr) {
       /* if remote device does not have HIDSSRHostMaxLatency attribute in SDP,
       set SSR max latency default value here.  */
       if (p_cb->kdev[i].dscp_info.ssr_max_latency == HID_SSR_PARAM_INVALID) {
         /* The default is calculated as half of link supervision timeout.*/
 
-        BTM_GetLinkSuperTout(from_BD_ADDR(p_cb->kdev[i].addr),
-                             &ssr_max_latency);
+        BTM_GetLinkSuperTout(p_cb->kdev[i].addr, &ssr_max_latency);
         ssr_max_latency = BTA_HH_GET_DEF_SSR_MAX_LAT(ssr_max_latency);
 
         /* per 1.1 spec, if the newly calculated max latency is greater than

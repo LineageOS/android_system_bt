@@ -424,9 +424,9 @@ tHID_STATUS HID_DevVirtualCableUnplug(void) {
  * Returns          tHID_STATUS
  *
  ******************************************************************************/
-tHID_STATUS HID_DevPlugDevice(BD_ADDR addr) {
+tHID_STATUS HID_DevPlugDevice(const bt_bdaddr_t& addr) {
   hd_cb.device.in_use = TRUE;
-  memcpy(hd_cb.device.addr, addr, sizeof(BD_ADDR));
+  hd_cb.device.addr = addr;
 
   return HID_SUCCESS;
 }
@@ -440,8 +440,8 @@ tHID_STATUS HID_DevPlugDevice(BD_ADDR addr) {
  * Returns          tHID_STATUS
  *
  ******************************************************************************/
-tHID_STATUS HID_DevUnplugDevice(BD_ADDR addr) {
-  if (!memcmp(hd_cb.device.addr, addr, sizeof(BD_ADDR))) {
+tHID_STATUS HID_DevUnplugDevice(const bt_bdaddr_t& addr) {
+  if (hd_cb.device.addr == addr) {
     hd_cb.device.in_use = FALSE;
     hd_cb.device.conn.conn_state = HID_CONN_STATE_UNUSED;
     hd_cb.device.conn.ctrl_cid = 0;
@@ -566,11 +566,11 @@ tHID_STATUS HID_DevReportError(uint8_t error) {
  * Returns          tHID_STATUS
  *
  ******************************************************************************/
-tHID_STATUS HID_DevGetDevice(BD_ADDR* addr) {
+tHID_STATUS HID_DevGetDevice(bt_bdaddr_t* addr) {
   HIDD_TRACE_API("%s", __func__);
 
   if (hd_cb.device.in_use) {
-    memcpy(addr, hd_cb.device.addr, sizeof(BD_ADDR));
+    *addr = hd_cb.device.addr;
   } else {
     return HID_ERR_NOT_REGISTERED;
   }

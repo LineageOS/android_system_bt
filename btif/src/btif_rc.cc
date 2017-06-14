@@ -1104,11 +1104,11 @@ void btif_rc_handler(tBTA_AV_EVT event, tBTA_AV* p_data) {
  ** Description    Fetches the connected headset's BD_ADDR if any
  **
  ***************************************************************************/
-bool btif_rc_get_connected_peer(BD_ADDR peer_addr) {
+bool btif_rc_get_connected_peer(bt_bdaddr_t* peer_addr) {
   for (int idx = 0; idx < BTIF_RC_NUM_CONN; idx++) {
     btif_rc_device_cb_t* p_dev = get_connected_device(idx);
     if (p_dev != NULL && (p_dev->rc_connected == TRUE)) {
-      bdcpy(peer_addr, to_BD_ADDR(p_dev->rc_addr));
+      *peer_addr = p_dev->rc_addr;
       return true;
     }
   }
@@ -1122,9 +1122,9 @@ bool btif_rc_get_connected_peer(BD_ADDR peer_addr) {
  ** Description    Fetches the connected headset's handle if any
  **
  ***************************************************************************/
-uint8_t btif_rc_get_connected_peer_handle(BD_ADDR peer_addr) {
+uint8_t btif_rc_get_connected_peer_handle(const bt_bdaddr_t& peer_addr) {
   btif_rc_device_cb_t* p_dev = NULL;
-  p_dev = btif_rc_get_device_by_bda(&from_BD_ADDR(peer_addr));
+  p_dev = btif_rc_get_device_by_bda(&peer_addr);
 
   if (p_dev == NULL) {
     BTIF_TRACE_ERROR("%s: p_dev NULL", __func__);
@@ -1143,9 +1143,10 @@ uint8_t btif_rc_get_connected_peer_handle(BD_ADDR peer_addr) {
  ***************************************************************************/
 
 /* clear the queued PLAY command. if |bSendToApp| is true, forward to app */
-void btif_rc_check_handle_pending_play(BD_ADDR peer_addr, bool bSendToApp) {
+void btif_rc_check_handle_pending_play(const bt_bdaddr_t& peer_addr,
+                                       bool bSendToApp) {
   btif_rc_device_cb_t* p_dev = NULL;
-  p_dev = btif_rc_get_device_by_bda(&from_BD_ADDR(peer_addr));
+  p_dev = btif_rc_get_device_by_bda(&peer_addr);
 
   if (p_dev == NULL) {
     BTIF_TRACE_ERROR("%s: p_dev NULL", __func__);
