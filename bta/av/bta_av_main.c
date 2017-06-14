@@ -256,8 +256,11 @@ static void bta_av_api_enable(tBTA_AV_DATA *p_data)
      * to alarm_free() the alarms below.
      */
     bta_av_cb.link_signalling_timer = alarm_new("bta_av.link_signalling_timer");
-    bta_av_cb.accept_signalling_timer =
-        alarm_new("bta_av.accept_signalling_timer");
+    for (int j = 0; j < BTA_AV_NUM_STRS; j++)
+    {
+        bta_av_cb.accept_signalling_timer[j] =
+            alarm_new("bta_av.accept_signalling_timer");
+    }
 
     /* store parameters */
     bta_av_cb.p_cback  = p_data->api_enable.p_cback;
