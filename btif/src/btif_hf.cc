@@ -254,6 +254,26 @@ static void send_indicator_update(uint16_t indicator, uint16_t value) {
   BTA_AgResult(BTA_AG_HANDLE_ALL, BTA_AG_IND_RES, &ag_res);
 }
 
+/*******************************************************************************
+ *
+ * Function         send_call_status_forcibly
+ *
+ * Description      Send call status
+ *
+ * Returns          void
+ *
+ *******************************************************************************/
+static void send_call_status_forcibly(uint16_t value) {
+  tBTA_AG_RES_DATA ag_res;
+
+  memset(&ag_res, 0, sizeof(tBTA_AG_RES_DATA));
+
+  ag_res.ind.id = BTA_AG_IND_CALL;
+  ag_res.ind.value = value;
+
+  BTA_AgResult(BTA_AG_HANDLE_ALL, BTA_AG_IND_RES_ON_DEMAND, &ag_res);
+}
+
 void clear_phone_state_multihf(int idx) {
   btif_hf_cb[idx].call_setup_state = BTHF_CALL_STATE_IDLE;
   btif_hf_cb[idx].num_active = btif_hf_cb[idx].num_held = 0;
@@ -1425,6 +1445,17 @@ static bt_status_t phone_state_change(int num_active, int num_held,
       (num_held == btif_hf_cb[idx].num_held)) {
     BTIF_TRACE_DEBUG("%s: Calls swapped", __func__);
     send_indicator_update(BTA_AG_IND_CALLHELD, 1);
+  }
+
+  /* When call is hung up and still there is another call is in active,
+   * some of the HF cannot acquire the call states by its own. If HF try
+   * to terminate a call, it may not send the command AT+CHUP because the
+   * call states are not updated properly. HF should get informed the call
+   * status forcibly.
+   */
+  if ((btif_hf_cb[idx].num_active == num_active && num_active != 0) &&
+      (btif_hf_cb[idx].num_held != num_held && num_held == 0)) {
+    send_call_status_forcibly((uint16_t)num_active);
   }
 
 update_call_states:
