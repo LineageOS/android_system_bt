@@ -818,12 +818,6 @@ extern tGATT_STATUS GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id,
  ******************************************************************************/
 extern tGATT_STATUS GATTC_ConfigureMTU(uint16_t conn_id, uint16_t mtu);
 
-extern void GATTC_ReadPHY(
-    uint16_t conn_id,
-    base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb);
-extern void GATTC_SetPreferredPHY(uint16_t conn_id, uint8_t tx_phy,
-                                  uint8_t rx_phy, uint16_t phy_options);
-
 /*******************************************************************************
  *
  * Function         GATTC_Discover

@@ -822,6 +822,171 @@ tBTM_STATUS BTM_SetBleDataLength(const bt_bdaddr_t& bd_addr,
   return BTM_SUCCESS;
 }
 
+void read_phy_cb(
+    base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb,
+    uint8_t* data, uint16_t len) {
+  uint8_t status, tx_phy, rx_phy;
+  uint16_t handle;
+
+  LOG_ASSERT(len == 5) << "Received bad response length: " << len;
+  uint8_t* pp = data;
+  STREAM_TO_UINT8(status, pp);
+  STREAM_TO_UINT16(handle, pp);
+  handle = handle & 0x0FFF;
+  STREAM_TO_UINT8(tx_phy, pp);
+  STREAM_TO_UINT8(rx_phy, pp);
+
+  DVLOG(1) << __func__ << " Received read_phy_cb";
+  cb.Run(tx_phy, rx_phy, status);
+}
+
+/*******************************************************************************
+ *
+ * Function         BTM_BleReadPhy
+ *
+ * Description      To read the current PHYs for specified LE connection
+ *
+ *
+ * Returns          BTM_SUCCESS if command successfully sent to controller,
+ *                  BTM_MODE_UNSUPPORTED if local controller doesn't support LE
+ *                  2M or LE Coded PHY,
+ *                  BTM_WRONG_MODE if Device in wrong mode for request.
+ *
+ ******************************************************************************/
+void BTM_BleReadPhy(
+    const bt_bdaddr_t& bd_addr,
+    base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb) {
+  BTM_TRACE_DEBUG("%s", __func__);
+
+  tACL_CONN* p_acl = btm_bda_to_acl(bd_addr, BT_TRANSPORT_LE);
+
+  if (p_acl == NULL) {
+    BTM_TRACE_ERROR("%s: Wrong mode: no LE link exist or LE not supported",
+                    __func__);
+    cb.Run(0, 0, HCI_ERR_NO_CONNECTION);
+    return;
+  }
+
+  // checking if local controller supports it!
+  if (!controller_get_interface()->supports_ble_2m_phy() &&
+      !controller_get_interface()->supports_ble_coded_phy()) {
+    BTM_TRACE_ERROR("%s failed, request not supported in local controller!",
+                    __func__);
+    cb.Run(0, 0, HCI_ERR_ILLEGAL_COMMAND);
+    return;
+  }
+
+  uint16_t handle = p_acl->hci_handle;
+
+  const uint8_t len = HCIC_PARAM_SIZE_BLE_READ_PHY;
+  uint8_t data[len];
+  uint8_t* pp = data;
+  UINT16_TO_STREAM(pp, handle);
+  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_BLE_READ_PHY, data, len,
+                            base::Bind(&read_phy_cb, std::move(cb)));
+  return;
+}
+
+void doNothing(uint8_t* data, uint16_t len) {}
+
+/*******************************************************************************
+ *
+ * Function         BTM_BleSetDefaultPhy
+ *
+ * Description      To set preferred PHY for ensuing LE connections
+ *
+ *
+ * Returns          BTM_SUCCESS if command successfully sent to controller,
+ *                  BTM_MODE_UNSUPPORTED if local controller doesn't support LE
+ *                  2M or LE Coded PHY
+ *
+ ******************************************************************************/
+tBTM_STATUS BTM_BleSetDefaultPhy(uint8_t all_phys, uint8_t tx_phys,
+                                 uint8_t rx_phys) {
+  BTM_TRACE_DEBUG("%s: all_phys = 0x%02x, tx_phys = 0x%02x, rx_phys = 0x%02x",
+                  __func__, all_phys, tx_phys, rx_phys);
+
+  // checking if local controller supports it!
+  if (!controller_get_interface()->supports_ble_2m_phy() &&
+      !controller_get_interface()->supports_ble_coded_phy()) {
+    BTM_TRACE_ERROR("%s failed, request not supported in local controller!",
+                    __func__);
+    return BTM_MODE_UNSUPPORTED;
+  }
+
+  const uint8_t len = HCIC_PARAM_SIZE_BLE_SET_DEFAULT_PHY;
+  uint8_t data[len];
+  uint8_t* pp = data;
+  UINT8_TO_STREAM(pp, all_phys);
+  UINT8_TO_STREAM(pp, tx_phys);
+  UINT8_TO_STREAM(pp, rx_phys);
+  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_BLE_SET_DEFAULT_PHY, data, len,
+                            base::Bind(doNothing));
+  return BTM_SUCCESS;
+}
+
+/*******************************************************************************
+ *
+ * Function         BTM_BleSetPhy
+ *
+ * Description      To set PHY preferences for specified LE connection
+ *
+ *
+ * Returns          BTM_SUCCESS if command successfully sent to controller,
+ *                  BTM_MODE_UNSUPPORTED if local controller doesn't support LE
+ *                  2M or LE Coded PHY,
+ *                  BTM_ILLEGAL_VALUE if specified remote doesn't support LE 2M
+ *                  or LE Coded PHY,
+ *                  BTM_WRONG_MODE if Device in wrong mode for request.
+ *
+ ******************************************************************************/
+void BTM_BleSetPhy(const bt_bdaddr_t& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
+                   uint16_t phy_options) {
+  tACL_CONN* p_acl = btm_bda_to_acl(bd_addr, BT_TRANSPORT_LE);
+
+  if (p_acl == NULL) {
+    BTM_TRACE_ERROR("%s: Wrong mode: no LE link exist or LE not supported",
+                    __func__);
+    return;
+  }
+
+  uint8_t all_phys = 0;
+  if (tx_phys == 0) all_phys &= 0x01;
+  if (rx_phys == 0) all_phys &= 0x02;
+
+  BTM_TRACE_DEBUG(
+      "%s: all_phys = 0x%02x, tx_phys = 0x%02x, rx_phys = 0x%02x, phy_options "
+      "= 0x%04x",
+      __func__, all_phys, tx_phys, rx_phys, phy_options);
+
+  // checking if local controller supports it!
+  if (!controller_get_interface()->supports_ble_2m_phy() &&
+      !controller_get_interface()->supports_ble_coded_phy()) {
+    BTM_TRACE_ERROR("%s failed, request not supported in local controller!",
+                    __func__);
+    return;
+  }
+
+  if (!HCI_LE_2M_PHY_SUPPORTED(p_acl->peer_le_features) &&
+      !HCI_LE_CODED_PHY_SUPPORTED(p_acl->peer_le_features)) {
+    BTM_TRACE_ERROR("%s failed, peer does not support request", __func__);
+    return;
+  }
+
+  uint16_t handle = p_acl->hci_handle;
+
+  const uint8_t len = HCIC_PARAM_SIZE_BLE_SET_PHY;
+  uint8_t data[len];
+  uint8_t* pp = data;
+  UINT16_TO_STREAM(pp, handle);
+  UINT8_TO_STREAM(pp, all_phys);
+  UINT8_TO_STREAM(pp, tx_phys);
+  UINT8_TO_STREAM(pp, rx_phys);
+  UINT16_TO_STREAM(pp, phy_options);
+  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_BLE_SET_PHY, data, len,
+                            base::Bind(doNothing));
+}
+
 /*******************************************************************************
  *
  * Function         btm_ble_determine_security_act
