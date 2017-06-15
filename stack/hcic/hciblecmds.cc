@@ -703,6 +703,42 @@ void btsnd_hcic_ble_set_data_length(uint16_t conn_handle, uint16_t tx_octets,
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
+void btsnd_hcic_ble_enh_rx_test(uint8_t rx_chan, uint8_t phy,
+                                uint8_t mod_index) {
+  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
+  uint8_t* pp = (uint8_t*)(p + 1);
+
+  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_BLE_ENH_RX_TEST;
+  p->offset = 0;
+
+  UINT16_TO_STREAM(pp, HCI_BLE_ENH_RECEIVER_TEST);
+  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_BLE_ENH_RX_TEST);
+
+  UINT8_TO_STREAM(pp, rx_chan);
+  UINT8_TO_STREAM(pp, phy);
+  UINT8_TO_STREAM(pp, mod_index);
+
+  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+void btsnd_hcic_ble_enh_tx_test(uint8_t tx_chan, uint8_t data_len,
+                                uint8_t payload, uint8_t phy) {
+  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
+  uint8_t* pp = (uint8_t*)(p + 1);
+
+  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_BLE_ENH_TX_TEST;
+  p->offset = 0;
+
+  UINT16_TO_STREAM(pp, HCI_BLE_ENH_TRANSMITTER_TEST);
+  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_BLE_ENH_TX_TEST);
+  UINT8_TO_STREAM(pp, tx_chan);
+  UINT8_TO_STREAM(pp, data_len);
+  UINT8_TO_STREAM(pp, payload);
+  UINT8_TO_STREAM(pp, phy);
+
+  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
 void btsnd_hcic_ble_set_extended_scan_params(uint8_t own_address_type,
                                              uint8_t scanning_filter_policy,
                                              uint8_t scanning_phys,

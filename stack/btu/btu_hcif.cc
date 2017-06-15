@@ -343,7 +343,7 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
           btu_ble_data_length_change_evt(p, hci_evt_len);
           break;
 
-        case HCI_LE_PHY_UPDATE_COMPLETE_EVT:
+        case HCI_BLE_PHY_UPDATE_COMPLETE_EVT:
           btm_ble_process_phy_update_pkt(ble_evt_len, p);
           break;
 
