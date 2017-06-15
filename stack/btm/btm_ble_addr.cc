@@ -503,7 +503,7 @@ void btm_ble_refresh_local_resolvable_private_addr(
   if (p != NULL) {
     if (btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE) {
       p->conn_addr_type = BLE_ADDR_RANDOM;
-      if (local_rpa == dummy_bda)
+      if (local_rpa != dummy_bda)
         p->conn_addr = local_rpa;
       else
         p->conn_addr = btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr;
