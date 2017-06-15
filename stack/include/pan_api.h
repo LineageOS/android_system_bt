@@ -96,7 +96,7 @@ typedef uint8_t tPAN_RESULT;
  *      to the application. The second parameter true means
  *      to create the bridge and false means to remove it.
 */
-typedef void(tPAN_CONN_STATE_CB)(uint16_t handle, BD_ADDR bd_addr,
+typedef void(tPAN_CONN_STATE_CB)(uint16_t handle, const bt_bdaddr_t& bd_addr,
                                  tPAN_RESULT state, bool is_role_change,
                                  uint8_t src_role, uint8_t dst_role);
 
@@ -105,7 +105,7 @@ typedef void(tPAN_CONN_STATE_CB)(uint16_t handle, BD_ADDR bd_addr,
  *      whether to create the bridge or remove it. true means
  *      to create the bridge and false means to remove it.
 */
-typedef void(tPAN_BRIDGE_REQ_CB)(BD_ADDR bd_addr, bool state);
+typedef void(tPAN_BRIDGE_REQ_CB)(const bt_bdaddr_t& bd_addr, bool state);
 
 /* Data received indication callback prototype. Parameters are
  *              Source BD/Ethernet Address
@@ -118,9 +118,10 @@ typedef void(tPAN_BRIDGE_REQ_CB)(BD_ADDR bd_addr, bool state);
  *                      false - Use it for internal stack
  *                      true  - Send it across the ethernet as well
 */
-typedef void(tPAN_DATA_IND_CB)(uint16_t handle, BD_ADDR src, BD_ADDR dst,
-                               uint16_t protocol, uint8_t* p_data, uint16_t len,
-                               bool ext, bool forward);
+typedef void(tPAN_DATA_IND_CB)(uint16_t handle, const bt_bdaddr_t& src,
+                               const bt_bdaddr_t& dst, uint16_t protocol,
+                               uint8_t* p_data, uint16_t len, bool ext,
+                               bool forward);
 
 /* Data buffer received indication callback prototype. Parameters are
  *              Source BD/Ethernet Address
@@ -132,9 +133,9 @@ typedef void(tPAN_DATA_IND_CB)(uint16_t handle, BD_ADDR src, BD_ADDR dst,
  *                      false - Use it for internal stack
  *                      true  - Send it across the ethernet as well
 */
-typedef void(tPAN_DATA_BUF_IND_CB)(uint16_t handle, BD_ADDR src, BD_ADDR dst,
-                                   uint16_t protocol, BT_HDR* p_buf, bool ext,
-                                   bool forward);
+typedef void(tPAN_DATA_BUF_IND_CB)(uint16_t handle, const bt_bdaddr_t& src,
+                                   const bt_bdaddr_t& dst, uint16_t protocol,
+                                   BT_HDR* p_buf, bool ext, bool forward);
 
 /* Flow control callback for TX data. Parameters are
  *              Handle to the connection
@@ -282,7 +283,7 @@ extern tPAN_RESULT PAN_SetRole(uint8_t role, uint8_t* sec_mask,
  *                                     allowed at that point of time
  *
  ******************************************************************************/
-extern tPAN_RESULT PAN_Connect(BD_ADDR rem_bda, uint8_t src_role,
+extern tPAN_RESULT PAN_Connect(const bt_bdaddr_t& rem_bda, uint8_t src_role,
                                uint8_t dst_role, uint16_t* handle);
 
 /*******************************************************************************
@@ -323,9 +324,9 @@ extern tPAN_RESULT PAN_Disconnect(uint16_t handle);
  *                                           there is an error in sending data
  *
  ******************************************************************************/
-extern tPAN_RESULT PAN_Write(uint16_t handle, BD_ADDR dst, BD_ADDR src,
-                             uint16_t protocol, uint8_t* p_data, uint16_t len,
-                             bool ext);
+extern tPAN_RESULT PAN_Write(uint16_t handle, const bt_bdaddr_t& dst,
+                             const bt_bdaddr_t& src, uint16_t protocol,
+                             uint8_t* p_data, uint16_t len, bool ext);
 
 /*******************************************************************************
  *
@@ -349,8 +350,9 @@ extern tPAN_RESULT PAN_Write(uint16_t handle, BD_ADDR dst, BD_ADDR src,
  *                                           there is an error in sending data
  *
  ******************************************************************************/
-extern tPAN_RESULT PAN_WriteBuf(uint16_t handle, BD_ADDR dst, BD_ADDR src,
-                                uint16_t protocol, BT_HDR* p_buf, bool ext);
+extern tPAN_RESULT PAN_WriteBuf(uint16_t handle, const bt_bdaddr_t& dst,
+                                const bt_bdaddr_t& src, uint16_t protocol,
+                                BT_HDR* p_buf, bool ext);
 
 /*******************************************************************************
  *

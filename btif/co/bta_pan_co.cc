@@ -25,6 +25,7 @@
  *
  ******************************************************************************/
 #include "bta_pan_co.h"
+#include <base/logging.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_pan.h>
 #include <string.h>
@@ -73,7 +74,7 @@ uint8_t bta_pan_co_init(uint8_t* q_level) {
  *
  ******************************************************************************/
 void bta_pan_co_open(uint16_t handle, uint8_t app_id, tBTA_PAN_ROLE local_role,
-                     tBTA_PAN_ROLE peer_role, BD_ADDR peer_addr) {
+                     tBTA_PAN_ROLE peer_role, const bt_bdaddr_t& peer_addr) {
   BTIF_TRACE_API(
       "bta_pan_co_open:app_id:%d, local_role:%d, peer_role:%d, "
       "handle:%d",
@@ -91,7 +92,7 @@ void bta_pan_co_open(uint16_t handle, uint8_t app_id, tBTA_PAN_ROLE local_role,
 
     btpan_cb.open_count++;
     conn->handle = handle;
-    // bdcpy(conn->peer, peer_addr);
+    // conn->peer = peer_addr;
     if (btpan_cb.tap_fd < 0) {
       btpan_cb.tap_fd = btpan_tap_open();
       if (btpan_cb.tap_fd >= 0) create_tap_read_thread(btpan_cb.tap_fd);
@@ -153,8 +154,8 @@ void bta_pan_co_close(uint16_t handle, uint8_t app_id) {
  ******************************************************************************/
 void bta_pan_co_tx_path(uint16_t handle, uint8_t app_id) {
   BT_HDR* p_buf;
-  BD_ADDR src;
-  BD_ADDR dst;
+  bt_bdaddr_t src;
+  bt_bdaddr_t dst;
   uint16_t protocol;
   bool ext;
   bool forward;
@@ -175,20 +176,14 @@ void bta_pan_co_tx_path(uint16_t handle, uint8_t app_id) {
     /* read next data buffer from pan */
     p_buf = bta_pan_ci_readbuf(handle, src, dst, &protocol, &ext, &forward);
     if (p_buf) {
-      bdstr_t bdstr;
       BTIF_TRACE_DEBUG(
           "%s, calling btapp_tap_send, "
           "p_buf->len:%d, offset:%d",
           __func__, p_buf->len, p_buf->offset);
       if (is_empty_eth_addr(conn->eth_addr) && is_valid_bt_eth_addr(src)) {
-        BTIF_TRACE_DEBUG(
-            "%s pan bt peer addr: %s", __func__,
-            bdaddr_to_string((bt_bdaddr_t*)conn->peer, bdstr, sizeof(bdstr)));
-        bdaddr_to_string((bt_bdaddr_t*)src, bdstr, sizeof(bdstr));
-        BTIF_TRACE_DEBUG(
-            "%s:     update its ethernet addr: %s", __func__,
-            bdaddr_to_string((bt_bdaddr_t*)src, bdstr, sizeof(bdstr)));
-        memcpy(conn->eth_addr, src, sizeof(conn->eth_addr));
+        VLOG(1) << __func__ << " pan bt peer addr: " << conn->peer
+                << " update its ethernet addr: " << src;
+        conn->eth_addr = src;
       }
       btpan_tap_send(btpan_cb.tap_fd, src, dst, protocol,
                      (char*)(p_buf + 1) + p_buf->offset, p_buf->len, ext,
@@ -230,8 +225,10 @@ void bta_pan_co_rx_path(UNUSED_ATTR uint16_t handle,
  *
  ******************************************************************************/
 void bta_pan_co_tx_write(UNUSED_ATTR uint16_t handle,
-                         UNUSED_ATTR uint8_t app_id, UNUSED_ATTR BD_ADDR src,
-                         UNUSED_ATTR BD_ADDR dst, UNUSED_ATTR uint16_t protocol,
+                         UNUSED_ATTR uint8_t app_id,
+                         UNUSED_ATTR const bt_bdaddr_t& src,
+                         UNUSED_ATTR const bt_bdaddr_t& dst,
+                         UNUSED_ATTR uint16_t protocol,
                          UNUSED_ATTR uint8_t* p_data, UNUSED_ATTR uint16_t len,
                          UNUSED_ATTR bool ext, UNUSED_ATTR bool forward) {
   BTIF_TRACE_API("bta_pan_co_tx_write not used");
@@ -251,8 +248,9 @@ void bta_pan_co_tx_write(UNUSED_ATTR uint16_t handle,
  *
  ******************************************************************************/
 void bta_pan_co_tx_writebuf(UNUSED_ATTR uint16_t handle,
-                            UNUSED_ATTR uint8_t app_id, UNUSED_ATTR BD_ADDR src,
-                            UNUSED_ATTR BD_ADDR dst,
+                            UNUSED_ATTR uint8_t app_id,
+                            UNUSED_ATTR const bt_bdaddr_t& src,
+                            UNUSED_ATTR const bt_bdaddr_t& dst,
                             UNUSED_ATTR uint16_t protocol,
                             UNUSED_ATTR BT_HDR* p_buf, UNUSED_ATTR bool ext,
                             UNUSED_ATTR bool forward) {
