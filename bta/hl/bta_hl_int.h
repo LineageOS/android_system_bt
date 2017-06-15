@@ -267,8 +267,8 @@ typedef struct {
   uint8_t app_id;
   tBTA_HL_APP_HANDLE app_handle;
   uint16_t ctrl_psm;
-  BD_ADDR bd_addr;   /* Address of peer device */
-  tBTA_SEC sec_mask; /* security mask for initiating connection*/
+  bt_bdaddr_t bd_addr; /* Address of peer device */
+  tBTA_SEC sec_mask;   /* security mask for initiating connection*/
 } tBTA_HL_API_CCH_OPEN;
 
 typedef struct {
@@ -359,7 +359,7 @@ typedef struct {
   BT_HDR hdr;
   tBTA_HL_APP_HANDLE app_handle;
   uint8_t app_id;
-  BD_ADDR bd_addr; /* Address of peer device */
+  bt_bdaddr_t bd_addr; /* Address of peer device */
 } tBTA_HL_API_SDP_QUERY;
 
 typedef struct {
@@ -455,7 +455,7 @@ typedef struct {
   uint16_t req_ctrl_psm;
   uint16_t ctrl_psm;
   uint16_t data_psm;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   uint16_t cch_mtu;
   uint16_t sec_mask;
   tBTA_HL_MCL_HANDLE mcl_handle;
@@ -720,7 +720,7 @@ extern bool bta_hl_find_app_idx_using_handle(tBTA_HL_APP_HANDLE app_handle,
 extern bool bta_hl_find_mcl_idx_using_handle(tBTA_HL_MCL_HANDLE mcl_handle,
                                              uint8_t* p_app_idx,
                                              uint8_t* p_mcl_idx);
-extern bool bta_hl_find_mcl_idx(uint8_t app_idx, BD_ADDR p_bd_addr,
+extern bool bta_hl_find_mcl_idx(uint8_t app_idx, const bt_bdaddr_t& p_bd_addr,
                                 uint8_t* p_mcl_idx);
 extern bool bta_hl_is_the_first_reliable_existed(uint8_t app_idx,
                                                  uint8_t mcl_idx);
@@ -735,9 +735,10 @@ extern bool bta_hl_find_mdl_cfg_idx(uint8_t app_idx, uint8_t mcl_idx,
 extern bool bta_hl_get_cur_time(uint8_t app_idx, uint8_t* p_cur_time);
 extern void bta_hl_sort_cfg_time_idx(uint8_t app_idx, uint8_t* a, uint8_t n);
 extern void bta_hl_compact_mdl_cfg_time(uint8_t app_idx, uint8_t mdep_id);
-extern bool bta_hl_is_mdl_exsit_in_mcl(uint8_t app_idx, BD_ADDR bd_addr,
+extern bool bta_hl_is_mdl_exsit_in_mcl(uint8_t app_idx,
+                                       const bt_bdaddr_t& bd_addr,
                                        tBTA_HL_MDL_ID mdl_id);
-extern bool bta_hl_delete_mdl_cfg(uint8_t app_idx, BD_ADDR bd_addr,
+extern bool bta_hl_delete_mdl_cfg(uint8_t app_idx, const bt_bdaddr_t& bd_addr,
                                   tBTA_HL_MDL_ID mdl_id);
 extern bool bta_hl_is_mdl_value_valid(tBTA_HL_MDL_ID mdl_id);
 extern bool bta_hl_find_mdep_cfg_idx(uint8_t app_idx,
@@ -774,7 +775,7 @@ extern bool bta_hl_get_l2cap_cfg(tBTA_HL_MDL_HANDLE mdl_hnd,
                                  tBTA_HL_L2CAP_CFG_INFO* p_cfg);
 extern bool bta_hl_validate_chan_cfg(uint8_t app_idx, uint8_t mcl_idx,
                                      uint8_t mdl_idx);
-extern bool bta_hl_is_cong_on(uint8_t app_id, BD_ADDR bd_addr,
+extern bool bta_hl_is_cong_on(uint8_t app_id, const bt_bdaddr_t& bd_addr,
                               tBTA_HL_MDL_ID mdl_id);
 extern void bta_hl_check_cch_close(uint8_t app_idx, uint8_t mcl_idx,
                                    tBTA_HL_DATA* p_data, bool check_dch_setup);
@@ -810,11 +811,12 @@ extern void bta_hl_build_rcv_data_ind(tBTA_HL* p_evt_data,
 extern void bta_hl_build_cch_open_cfm(tBTA_HL* p_evt_data, uint8_t app_id,
                                       tBTA_HL_APP_HANDLE app_handle,
                                       tBTA_HL_MCL_HANDLE mcl_handle,
-                                      BD_ADDR bd_addr, tBTA_HL_STATUS status);
+                                      const bt_bdaddr_t& bd_addr,
+                                      tBTA_HL_STATUS status);
 extern void bta_hl_build_cch_open_ind(tBTA_HL* p_evt_data,
                                       tBTA_HL_APP_HANDLE app_handle,
                                       tBTA_HL_MCL_HANDLE mcl_handle,
-                                      BD_ADDR bd_addr);
+                                      const bt_bdaddr_t& bd_addr);
 extern void bta_hl_build_cch_close_cfm(tBTA_HL* p_evt_data,
                                        tBTA_HL_APP_HANDLE app_handle,
                                        tBTA_HL_MCL_HANDLE mcl_handle,
@@ -842,7 +844,8 @@ extern void bta_hl_build_echo_test_cfm(tBTA_HL* p_evt_data,
                                        tBTA_HL_STATUS status);
 extern void bta_hl_build_sdp_query_cfm(tBTA_HL* p_evt_data, uint8_t app_id,
                                        tBTA_HL_APP_HANDLE app_handle,
-                                       BD_ADDR bd_addr, tBTA_HL_SDP* p_sdp,
+                                       const bt_bdaddr_t& bd_addr,
+                                       tBTA_HL_SDP* p_sdp,
                                        tBTA_HL_STATUS status);
 
 #if (BTA_HL_DEBUG == TRUE)
