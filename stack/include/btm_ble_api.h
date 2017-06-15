@@ -831,6 +831,46 @@ extern tBTM_STATUS BTM_BleGetEnergyInfo(
 extern tBTM_STATUS BTM_SetBleDataLength(const bt_bdaddr_t& bd_addr,
                                         uint16_t tx_pdu_length);
 
+/*******************************************************************************
+ *
+ * Function         BTM_BleReadPhy
+ *
+ * Description      To read the current PHYs for specified LE connection
+ *
+ *
+ * Returns          BTM_SUCCESS if success; otherwise failed.
+ *
+ ******************************************************************************/
+extern void BTM_BleReadPhy(
+    const bt_bdaddr_t& bd_addr,
+    base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb);
+
+/*******************************************************************************
+ *
+ * Function         BTM_BleSetDefaultPhy
+ *
+ * Description      To set preferred PHY for ensuing LE connections
+ *
+ *
+ * Returns          BTM_SUCCESS if success; otherwise failed.
+ *
+ ******************************************************************************/
+extern tBTM_STATUS BTM_BleSetDefaultPhy(uint8_t all_phys, uint8_t tx_phys,
+                                        uint8_t rx_phys);
+
+/*******************************************************************************
+ *
+ * Function         BTM_BleSetPhy
+ *
+ * Description      To set PHY preferences for specified LE connection
+ *
+ *
+ * Returns          BTM_SUCCESS if success; otherwise failed.
+ *
+ ******************************************************************************/
+extern void BTM_BleSetPhy(const bt_bdaddr_t& bd_addr, uint8_t tx_phys,
+                          uint8_t rx_phys, uint16_t phy_options);
+
 extern void btm_ble_multi_adv_cleanup(void);
 
 #endif
