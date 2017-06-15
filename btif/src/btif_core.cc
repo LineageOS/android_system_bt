@@ -601,7 +601,7 @@ static bt_status_t btif_in_get_adapter_properties(void) {
   bt_uuid_t local_uuids[BT_MAX_NUM_UUIDS];
   bt_status_t status;
 
-  /* BD_ADDR */
+  /* bt_bdaddr_t */
   BTIF_STORAGE_FILL_PROPERTY(&properties[num_props], BT_PROPERTY_BDADDR,
                              sizeof(addr), &addr);
   status = btif_storage_get_adapter_property(&properties[num_props]);
