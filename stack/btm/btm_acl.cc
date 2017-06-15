@@ -140,7 +140,7 @@ uint8_t btm_handle_to_acl_index(uint16_t hci_handle) {
  *
  ******************************************************************************/
 bool btm_ble_get_acl_remote_addr(tBTM_SEC_DEV_REC* p_dev_rec,
-                                 bt_bdaddr_t* conn_addr,
+                                 bt_bdaddr_t& conn_addr,
                                  tBLE_ADDR_TYPE* p_addr_type) {
   bool st = true;
 
@@ -151,17 +151,17 @@ bool btm_ble_get_acl_remote_addr(tBTM_SEC_DEV_REC* p_dev_rec,
 
   switch (p_dev_rec->ble.active_addr_type) {
     case BTM_BLE_ADDR_PSEUDO:
-      conn_addr = &p_dev_rec->bd_addr;
+      conn_addr = p_dev_rec->bd_addr;
       *p_addr_type = p_dev_rec->ble.ble_addr_type;
       break;
 
     case BTM_BLE_ADDR_RRA:
-      conn_addr = &p_dev_rec->ble.cur_rand_addr;
+      conn_addr = p_dev_rec->ble.cur_rand_addr;
       *p_addr_type = BLE_ADDR_RANDOM;
       break;
 
     case BTM_BLE_ADDR_STATIC:
-      conn_addr = &p_dev_rec->ble.static_addr;
+      conn_addr = p_dev_rec->ble.static_addr;
       *p_addr_type = p_dev_rec->ble.static_addr_type;
       break;
 
@@ -270,7 +270,7 @@ void btm_acl_created(const bt_bdaddr_t& bda, DEV_CLASS dc, BD_NAME bdn,
       /* If here, features are not known yet */
       if (p_dev_rec && transport == BT_TRANSPORT_LE) {
 #if (BLE_PRIVACY_SPT == TRUE)
-        btm_ble_get_acl_remote_addr(p_dev_rec, &p->active_remote_addr,
+        btm_ble_get_acl_remote_addr(p_dev_rec, p->active_remote_addr,
                                     &p->active_remote_addr_type);
 #endif
 
