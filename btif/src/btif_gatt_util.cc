@@ -212,10 +212,8 @@ uint16_t set_read_value(btgatt_read_params_t* p_dest, tBTA_GATTC_READ* p_src) {
  ******************************************************************************/
 
 #if (BLE_DELAY_REQUEST_ENC == FALSE)
-static bool btif_gatt_is_link_encrypted(BD_ADDR bd_addr) {
-  if (bd_addr == NULL) return false;
-
-  return BTA_JvIsEncrypted(bd_addr);
+static bool btif_gatt_is_link_encrypted(const bt_bdaddr_t& bd_addr) {
+  return BTA_JvIsEncrypted(to_BD_ADDR(bd_addr));
 }
 
 static void btif_gatt_set_encryption_cb(UNUSED_ATTR const bt_bdaddr_t& bd_addr,
@@ -235,7 +233,7 @@ void btif_gatt_check_encrypted_link(bt_bdaddr_t bd_addr,
   if ((btif_storage_get_ble_bonding_key(&bd_addr, BTIF_DM_LE_KEY_PENC, buf,
                                         sizeof(tBTM_LE_PENC_KEYS)) ==
        BT_STATUS_SUCCESS) &&
-      !btif_gatt_is_link_encrypted(bd_addr.address)) {
+      !btif_gatt_is_link_encrypted(bd_addr)) {
     BTIF_TRACE_DEBUG("%s: transport = %d", __func__, transport_link);
     BTA_DmSetEncryption(bd_addr, transport_link, &btif_gatt_set_encryption_cb,
                         BTM_BLE_SEC_ENCRYPT);

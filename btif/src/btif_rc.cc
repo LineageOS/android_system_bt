@@ -1101,7 +1101,7 @@ void btif_rc_handler(tBTA_AV_EVT event, tBTA_AV* p_data) {
  **
  ** Function       btif_rc_get_connected_peer
  **
- ** Description    Fetches the connected headset's BD_ADDR if any
+ ** Description    Fetches the connected headset's address if any
  **
  ***************************************************************************/
 bool btif_rc_get_connected_peer(bt_bdaddr_t* peer_addr) {
