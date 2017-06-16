@@ -795,7 +795,7 @@ static tBTA_GATT_STATUS bta_gattc_sdp_service_disc(
   SDP_InitDiscoveryDb(cb_data->p_sdp_db, BTA_GATT_SDP_DB_SIZE, 1, &uuid,
                       num_attrs, attr_list);
 
-  if (!SDP_ServiceSearchAttributeRequest2(p_server_cb->server_bda.address,
+  if (!SDP_ServiceSearchAttributeRequest2(p_server_cb->server_bda,
                                           cb_data->p_sdp_db,
                                           &bta_gattc_sdp_callback, cb_data)) {
     osi_free(cb_data->p_sdp_db);

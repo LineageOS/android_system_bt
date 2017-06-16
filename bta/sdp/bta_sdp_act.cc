@@ -395,7 +395,7 @@ static void bta_sdp_search_cback(uint16_t result, void* user_data) {
 
   if (bta_sdp_cb.p_dm_cback == NULL) return;
 
-  bdcpy(evt_data.remote_addr, bta_sdp_cb.remote_addr);
+  evt_data.remote_addr = bta_sdp_cb.remote_addr;
   tBT_UUID* uuid = (tBT_UUID*)user_data;
   memcpy(&evt_data.uuid, uuid, sizeof(tBT_UUID));
   su = shorten_sdp_uuid(uuid);
@@ -493,7 +493,7 @@ void bta_sdp_search(tBTA_SDP_MSG* p_data) {
       tBTA_SDP_SEARCH_COMP result;
       memset(&result, 0, sizeof(result));
       result.uuid = p_data->get_search.uuid;
-      bdcpy(result.remote_addr, p_data->get_search.bd_addr);
+      result.remote_addr = p_data->get_search.bd_addr;
       result.status = status;
       bta_sdp_cb.p_dm_cback(BTA_SDP_SEARCH_COMP_EVT, (tBTA_SDP*)&result, NULL);
     }
@@ -501,7 +501,7 @@ void bta_sdp_search(tBTA_SDP_MSG* p_data) {
   }
 
   bta_sdp_cb.sdp_active = BTA_SDP_ACTIVE_YES;
-  bdcpy(bta_sdp_cb.remote_addr, p_data->get_search.bd_addr);
+  bta_sdp_cb.remote_addr = p_data->get_search.bd_addr;
   /* set the uuid used in the search */
   tBT_UUID* bta_sdp_search_uuid =
       static_cast<tBT_UUID*>(osi_malloc(sizeof(tBT_UUID)));
@@ -526,7 +526,7 @@ void bta_sdp_search(tBTA_SDP_MSG* p_data) {
       tBTA_SDP_SEARCH_COMP result;
       memset(&result, 0, sizeof(result));
       result.uuid = p_data->get_search.uuid;
-      bdcpy(result.remote_addr, p_data->get_search.bd_addr);
+      result.remote_addr = p_data->get_search.bd_addr;
       result.status = status;
       bta_sdp_cb.p_dm_cback(BTA_SDP_SEARCH_COMP_EVT, (tBTA_SDP*)&result, NULL);
     }

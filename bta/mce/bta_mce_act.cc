@@ -164,9 +164,9 @@ void bta_mce_get_remote_mas_instances(tBTA_MCE_MSG* p_data) {
   SDP_InitDiscoveryDb(p_bta_mce_cfg->p_sdp_db, p_bta_mce_cfg->sdp_db_size, 1,
                       (tBT_UUID*)&bta_mce_mas_uuid, 0, NULL);
 
-  if (!SDP_ServiceSearchAttributeRequest2(p_data->get_rmt_mas.bd_addr,
-                                          p_bta_mce_cfg->p_sdp_db,
-                                          bta_mce_search_cback, NULL)) {
+  if (!SDP_ServiceSearchAttributeRequest2(
+          from_BD_ADDR(p_data->get_rmt_mas.bd_addr), p_bta_mce_cfg->p_sdp_db,
+          bta_mce_search_cback, NULL)) {
     bta_mce_cb.sdp_active = BTA_MCE_SDP_ACT_NONE;
 
     /* failed to start SDP. report the failure right away */
