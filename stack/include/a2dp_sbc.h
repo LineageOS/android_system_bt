@@ -196,14 +196,6 @@ int A2DP_GetMaxBitpoolSbc(const uint8_t* p_codec_info);
 // contains invalid codec information.
 int A2DP_GetSinkTrackChannelTypeSbc(const uint8_t* p_codec_info);
 
-// Computes the number of frames to process in a time window for the A2DP
-// SBC sink codec. |time_interval_ms| is the time interval (in milliseconds).
-// |p_codec_info| is a pointer to the codec_info to decode.
-// Returns the number of frames to process on success, or -1 if |p_codec_info|
-// contains invalid codec information.
-int A2DP_GetSinkFramesCountToProcessSbc(uint64_t time_interval_ms,
-                                        const uint8_t* p_codec_info);
-
 // Gets the A2DP SBC audio data timestamp from an audio packet.
 // |p_codec_info| contains the codec information.
 // |p_data| contains the audio data.
@@ -231,6 +223,14 @@ bool A2DP_DumpCodecInfoSbc(const uint8_t* p_codec_info);
 // Returns the A2DP SBC encoder interface if the |p_codec_info| is valid and
 // supported, otherwise NULL.
 const tA2DP_ENCODER_INTERFACE* A2DP_GetEncoderInterfaceSbc(
+    const uint8_t* p_codec_info);
+
+// Gets the A2DP SBC decoder interface that can be used to decode received A2DP
+// packets - see |tA2DP_DECODER_INTERFACE|.
+// |p_codec_info| contains the codec information.
+// Returns the A2DP SBC decoder interface if the |p_codec_info| is valid and
+// supported, otherwise NULL.
+const tA2DP_DECODER_INTERFACE* A2DP_GetDecoderInterfaceSbc(
     const uint8_t* p_codec_info);
 
 // Adjusts the A2DP SBC codec, based on local support and Bluetooth
