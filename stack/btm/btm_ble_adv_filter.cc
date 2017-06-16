@@ -521,7 +521,7 @@ void BTM_LE_PF_addr_filter(tBTM_BLE_SCAN_COND_OP action,
   UINT8_TO_STREAM(p, filt_index);
 
   if (action != BTM_BLE_SCAN_COND_CLEAR) {
-    BDADDR_TO_STREAM(p, to_BD_ADDR(addr.bda));
+    BDADDR_TO_STREAM(p, addr.bda);
     UINT8_TO_STREAM(p, addr.type);
   }
 

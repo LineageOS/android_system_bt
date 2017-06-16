@@ -85,7 +85,7 @@ void btm_ble_batchscan_filter_track_adv_vse_cback(uint8_t len, uint8_t* p) {
       STREAM_TO_UINT8(adv_data.filt_index, p);
       STREAM_TO_UINT8(adv_data.advertiser_state, p);
       STREAM_TO_UINT8(adv_data.advertiser_info_present, p);
-      STREAM_TO_BDADDR(adv_data.bd_addr.address, p);
+      STREAM_TO_BDADDR(adv_data.bd_addr, p);
       STREAM_TO_UINT8(adv_data.addr_type, p);
 
       /* Extract the adv info details */
@@ -112,7 +112,7 @@ void btm_ble_batchscan_filter_track_adv_vse_cback(uint8_t len, uint8_t* p) {
       /* Based on L-release version */
       STREAM_TO_UINT8(adv_data.filt_index, p);
       STREAM_TO_UINT8(adv_data.addr_type, p);
-      STREAM_TO_BDADDR(adv_data.bd_addr.address, p);
+      STREAM_TO_BDADDR(adv_data.bd_addr, p);
       STREAM_TO_UINT8(adv_data.advertiser_state, p);
     }
 
@@ -121,8 +121,8 @@ void btm_ble_batchscan_filter_track_adv_vse_cback(uint8_t len, uint8_t* p) {
                     adv_data.advertiser_state);
 
     // Make sure the device is known
-    BTM_SecAddBleDevice(from_BD_ADDR(adv_data.bd_addr.address), NULL,
-                        BT_DEVICE_TYPE_BLE, adv_data.addr_type);
+    BTM_SecAddBleDevice(adv_data.bd_addr, NULL, BT_DEVICE_TYPE_BLE,
+                        adv_data.addr_type);
 
     ble_advtrack_cb.p_track_cback(&adv_data);
     return;

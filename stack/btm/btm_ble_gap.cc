@@ -1984,7 +1984,7 @@ void btm_ble_process_ext_adv_pkt(uint8_t data_len, uint8_t* data) {
     /* Extract inquiry results */
     STREAM_TO_UINT16(event_type, p);
     STREAM_TO_UINT8(addr_type, p);
-    STREAM_TO_BDADDR(to_BD_ADDR(bda), p);
+    STREAM_TO_BDADDR(bda, p);
     STREAM_TO_UINT8(primary_phy, p);
     STREAM_TO_UINT8(secondary_phy, p);
     STREAM_TO_UINT8(advertising_sid, p);
@@ -1992,7 +1992,7 @@ void btm_ble_process_ext_adv_pkt(uint8_t data_len, uint8_t* data) {
     STREAM_TO_INT8(rssi, p);
     STREAM_TO_UINT16(periodic_adv_int, p);
     STREAM_TO_UINT8(direct_address_type, p);
-    STREAM_TO_BDADDR(to_BD_ADDR(direct_address), p);
+    STREAM_TO_BDADDR(direct_address, p);
     STREAM_TO_UINT8(pkt_data_len, p);
 
     uint8_t* pkt_data = p;
@@ -2037,7 +2037,7 @@ void btm_ble_process_adv_pkt(uint8_t data_len, uint8_t* data) {
     /* Extract inquiry results */
     STREAM_TO_UINT8(legacy_evt_type, p);
     STREAM_TO_UINT8(addr_type, p);
-    STREAM_TO_BDADDR(to_BD_ADDR(bda), p);
+    STREAM_TO_BDADDR(bda, p);
     STREAM_TO_UINT8(pkt_data_len, p);
 
     uint8_t* pkt_data = p;

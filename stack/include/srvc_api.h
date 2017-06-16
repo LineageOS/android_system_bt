@@ -193,7 +193,7 @@ extern void Battery_Rsp(uint8_t app_id, tGATT_STATUS st, uint8_t event,
  * Description      Send battery level notification
  *
  ******************************************************************************/
-extern void Battery_Notify(uint8_t app_id, BD_ADDR remote_bda,
+extern void Battery_Notify(uint8_t app_id, const bt_bdaddr_t& remote_bda,
                            uint8_t battery_level);
 
 #endif

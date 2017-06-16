@@ -135,16 +135,16 @@ typedef struct {
   uint16_t sent_prot_filter_end[BNEP_MAX_PROT_FILTERS];
 
   uint16_t sent_mcast_filters;
-  BD_ADDR sent_mcast_filter_start[BNEP_MAX_MULTI_FILTERS];
-  BD_ADDR sent_mcast_filter_end[BNEP_MAX_MULTI_FILTERS];
+  bt_bdaddr_t sent_mcast_filter_start[BNEP_MAX_MULTI_FILTERS];
+  bt_bdaddr_t sent_mcast_filter_end[BNEP_MAX_MULTI_FILTERS];
 
   uint16_t rcvd_num_filters;
   uint16_t rcvd_prot_filter_start[BNEP_MAX_PROT_FILTERS];
   uint16_t rcvd_prot_filter_end[BNEP_MAX_PROT_FILTERS];
 
   uint16_t rcvd_mcast_filters;
-  BD_ADDR rcvd_mcast_filter_start[BNEP_MAX_MULTI_FILTERS];
-  BD_ADDR rcvd_mcast_filter_end[BNEP_MAX_MULTI_FILTERS];
+  bt_bdaddr_t rcvd_mcast_filter_start[BNEP_MAX_MULTI_FILTERS];
+  bt_bdaddr_t rcvd_mcast_filter_end[BNEP_MAX_MULTI_FILTERS];
 
   uint16_t bad_pkts_rcvd;
   uint8_t re_transmits;

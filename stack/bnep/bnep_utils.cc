@@ -302,9 +302,9 @@ void bnepu_send_peer_our_multi_filters(tBNEP_CONN* p_bcb) {
 
   UINT16_TO_BE_STREAM(p, (2 * BD_ADDR_LEN * p_bcb->sent_mcast_filters));
   for (xx = 0; xx < p_bcb->sent_mcast_filters; xx++) {
-    memcpy(p, p_bcb->sent_mcast_filter_start[xx], BD_ADDR_LEN);
+    memcpy(p, p_bcb->sent_mcast_filter_start[xx].address, BD_ADDR_LEN);
     p += BD_ADDR_LEN;
-    memcpy(p, p_bcb->sent_mcast_filter_end[xx], BD_ADDR_LEN);
+    memcpy(p, p_bcb->sent_mcast_filter_end[xx].address, BD_ADDR_LEN);
     p += BD_ADDR_LEN;
   }
 
@@ -1022,17 +1022,17 @@ void bnepu_process_peer_multicast_filter_set(tBNEP_CONN* p_bcb,
 
   p_bcb->rcvd_mcast_filters = num_filters;
   for (xx = 0; xx < num_filters; xx++) {
-    memcpy(p_bcb->rcvd_mcast_filter_start[xx], p_filters, BD_ADDR_LEN);
-    memcpy(p_bcb->rcvd_mcast_filter_end[xx], p_filters + BD_ADDR_LEN,
+    memcpy(p_bcb->rcvd_mcast_filter_start[xx].address, p_filters, BD_ADDR_LEN);
+    memcpy(p_bcb->rcvd_mcast_filter_end[xx].address, p_filters + BD_ADDR_LEN,
            BD_ADDR_LEN);
     p_filters += (BD_ADDR_LEN * 2);
 
     /* Check if any of the ranges have all zeros as both starting and ending
      * addresses */
-    if ((memcmp(null_bda, p_bcb->rcvd_mcast_filter_start[xx], BD_ADDR_LEN) ==
-         0) &&
-        (memcmp(null_bda, p_bcb->rcvd_mcast_filter_end[xx], BD_ADDR_LEN) ==
-         0)) {
+    if ((memcmp(null_bda, p_bcb->rcvd_mcast_filter_start[xx].address,
+                BD_ADDR_LEN) == 0) &&
+        (memcmp(null_bda, p_bcb->rcvd_mcast_filter_end[xx].address,
+                BD_ADDR_LEN) == 0)) {
       p_bcb->rcvd_mcast_filters = 0xFFFF;
       break;
     }
@@ -1235,10 +1235,10 @@ tBNEP_RESULT bnep_is_packet_allowed(tBNEP_CONN* p_bcb,
     if (p_bcb->rcvd_mcast_filters != 0xFFFF) {
       /* Check if the address is mentioned in the filter range */
       for (i = 0; i < p_bcb->rcvd_mcast_filters; i++) {
-        if ((memcmp(p_bcb->rcvd_mcast_filter_start[i], p_dest_addr.address,
-                    BD_ADDR_LEN) <= 0) &&
-            (memcmp(p_bcb->rcvd_mcast_filter_end[i], p_dest_addr.address,
-                    BD_ADDR_LEN) >= 0))
+        if ((memcmp(p_bcb->rcvd_mcast_filter_start[i].address,
+                    p_dest_addr.address, BD_ADDR_LEN) <= 0) &&
+            (memcmp(p_bcb->rcvd_mcast_filter_end[i].address,
+                    p_dest_addr.address, BD_ADDR_LEN) >= 0))
           break;
       }
     }

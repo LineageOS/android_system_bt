@@ -341,13 +341,13 @@ tBTM_SEC_DEV_REC* btm_find_dev_by_handle(uint16_t handle) {
 
 bool is_address_equal(void* data, void* context) {
   tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(data);
-  const bt_bdaddr_t& bd_addr = from_BD_ADDR((uint8_t*)context);
+  const bt_bdaddr_t* bd_addr = ((bt_bdaddr_t*)context);
 
-  if (p_dev_rec->bd_addr == bd_addr) return false;
+  if (p_dev_rec->bd_addr == *bd_addr) return false;
   // If a LE random address is looking for device record
-  if (p_dev_rec->ble.pseudo_addr == bd_addr) return false;
+  if (p_dev_rec->ble.pseudo_addr == *bd_addr) return false;
 
-  if (btm_ble_addr_resolvable(bd_addr, p_dev_rec)) return false;
+  if (btm_ble_addr_resolvable(*bd_addr, p_dev_rec)) return false;
   return true;
 }
 
@@ -362,8 +362,8 @@ bool is_address_equal(void* data, void* context) {
  *
  ******************************************************************************/
 tBTM_SEC_DEV_REC* btm_find_dev(const bt_bdaddr_t& bd_addr) {
-  list_node_t* n = list_foreach(btm_cb.sec_dev_rec, is_address_equal,
-                                (void*)to_BD_ADDR(bd_addr));
+  list_node_t* n =
+      list_foreach(btm_cb.sec_dev_rec, is_address_equal, (void*)&bd_addr);
   if (n) return static_cast<tBTM_SEC_DEV_REC*>(list_node(n));
 
   return NULL;
