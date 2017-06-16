@@ -295,7 +295,8 @@ extern void rfc_process_l2cap_congestion(tRFC_MCB* p_mcb, bool is_congested);
 /*
  * Functions provided by the rfc_utils.cc
 */
-tRFC_MCB* rfc_alloc_multiplexer_channel(BD_ADDR bd_addr, bool is_initiator);
+tRFC_MCB* rfc_alloc_multiplexer_channel(const bt_bdaddr_t& bd_addr,
+                                        bool is_initiator);
 extern void rfc_release_multiplexer_channel(tRFC_MCB* p_rfc_mcb);
 extern void rfc_timer_start(tRFC_MCB* p_rfc_mcb, uint16_t timeout);
 extern void rfc_timer_stop(tRFC_MCB* p_rfc_mcb);
