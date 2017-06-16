@@ -325,8 +325,8 @@ void bta_hf_client_do_disc(tBTA_HF_CLIENT_CB* client_cb) {
   if (db_inited) {
     /*Service discovery not initiated */
     db_inited = SDP_ServiceSearchAttributeRequest2(
-        client_cb->peer_addr, client_cb->p_disc_db, bta_hf_client_sdp_cback,
-        (void*)client_cb);
+        to_BD_ADDR(client_cb->peer_addr), client_cb->p_disc_db,
+        bta_hf_client_sdp_cback, (void*)client_cb);
   }
 
   if (!db_inited) {
