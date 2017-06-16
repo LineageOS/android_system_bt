@@ -838,8 +838,7 @@ static void btif_in_storage_request_copy_cb(uint16_t event, char* p_new_buf,
   switch (event) {
     case BTIF_CORE_STORAGE_REMOTE_WRITE:
     case BTIF_CORE_STORAGE_ADAPTER_WRITE: {
-      bdcpy(new_req->write_req.bd_addr.address,
-            old_req->write_req.bd_addr.address);
+      new_req->write_req.bd_addr = old_req->write_req.bd_addr;
       /* Copy the member variables one at a time */
       new_req->write_req.prop.type = old_req->write_req.prop.type;
       new_req->write_req.prop.len = old_req->write_req.prop.len;

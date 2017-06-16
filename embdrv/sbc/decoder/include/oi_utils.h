@@ -128,17 +128,6 @@ OI_STATUS OI_CancelCallbackFunction(OI_CALLBACK_HANDLE handle);
 OI_STATUS OI_CancelCallback(OI_SCHEDULED_CALLBACK callbackFunction);
 
 /**
- * Parse a Bluetooth device address from the specified string.
- *
- * @param str   the string to parse
- * @param addr  the parsed address, if successful
- *
- * @return true if an address was successfully parsed, false otherwise
- */
-
-OI_BOOL OI_ParseBdAddr(const OI_CHAR* str, OI_BD_ADDR* addr);
-
-/**
  * Printf function for platforms which have no stdio or printf available.
  * OI_Printf supports the basic formatting types, with the exception of
  * floating point types. Additionally, OI_Printf supports several formats
@@ -153,10 +142,6 @@ OI_BOOL OI_ParseBdAddr(const OI_CHAR* str, OI_BD_ADDR* addr);
  *       be printed.
  *       @code OI_Printf("Contents of buffer %@", buffer, sizeof(buffer));
  *       @endcode
- *
- * \%:   prints a Bluetooth address in the form "HH:HH:HH:HH:HH:HH".
- *       Requires a pointer to an #OI_BD_ADDR.
- *       @code OI_Printf("Bluetooth address %:", &bdaddr); @endcode
  *
  * \%^   decodes and prints a data element as formatted XML.
  *       Requires a pointer to an #OI_DATAELEM.
@@ -332,20 +317,6 @@ const OI_CHAR* OI_ScanStr(const OI_CHAR* str, OI_CHAR* outStr, uint16_t len);
 const OI_CHAR* OI_ScanAlt(const OI_CHAR* str, const OI_CHAR* alts,
                           OI_INT* index);
 
-/**
- * Parse a string for a BD Addr. Skips leading whitespace (space and tabs only)
- * and parses a Bluetooth device address with nibbles optionally separated by
- * colons. Return pointet to first character following the BD Addr.
- *
- * @param str    String to parse.
- *
- * @param addr   Pointer to receive the Bluetooth device address
- *
- * @return       A pointer to the first character following the BD Addr or the
- *               pointer passed in.
- */
-const OI_CHAR* OI_ScanBdAddr(const OI_CHAR* str, OI_BD_ADDR* addr);
-
 /** Get a character from a digit integer value (0 - 9). */
 #define OI_DigitToChar(d) ((d) + '0')
 
@@ -359,13 +330,6 @@ const OI_CHAR* OI_ScanBdAddr(const OI_CHAR* str, OI_BD_ADDR* addr);
  */
 #define OI_MAX(a, b) (((a) < (b)) ? (b) : (a))
 #define OI_MIN(a, b) (((a) > (b)) ? (b) : (a))
-
-/**
- * Compare two BD_ADDRs
- * SAME_BD_ADDR - Boolean: true if they are the same address
- */
-
-#define SAME_BD_ADDR(x, y) (0 == OI_MemCmp((x), (y), OI_BD_ADDR_BYTE_SIZE))
 
 #ifdef __cplusplus
 }

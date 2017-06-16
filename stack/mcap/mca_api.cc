@@ -302,7 +302,7 @@ tMCA_RESULT MCA_DeleteDep(tMCA_HANDLE handle, tMCA_DEP dep) {
  * Returns          MCA_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-tMCA_RESULT MCA_ConnectReq(tMCA_HANDLE handle, BD_ADDR bd_addr,
+tMCA_RESULT MCA_ConnectReq(tMCA_HANDLE handle, const bt_bdaddr_t& bd_addr,
                            uint16_t ctrl_psm, uint16_t sec_mask) {
   tMCA_RESULT result = MCA_BAD_HANDLE;
   tMCA_CCB* p_ccb;

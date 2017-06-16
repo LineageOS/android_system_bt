@@ -436,10 +436,9 @@ bool bta_hl_find_cch_cb_indexes(tBTA_HL_DATA* p_msg, uint8_t* p_app_idx,
 
       if (bta_hl_find_app_idx_using_handle(p_msg->mca_evt.app_handle,
                                            &app_idx)) {
-        if (bta_hl_find_mcl_idx(
-                app_idx,
-                from_BD_ADDR(p_msg->mca_evt.mca_data.connect_ind.bd_addr),
-                &mcl_idx)) {
+        if (bta_hl_find_mcl_idx(app_idx,
+                                p_msg->mca_evt.mca_data.connect_ind.bd_addr,
+                                &mcl_idx)) {
           /* local initiated */
           found = true;
         } else if (!bta_hl_find_mcl_idx_using_handle(p_msg->mca_evt.mcl_handle,
@@ -462,9 +461,7 @@ bool bta_hl_find_cch_cb_indexes(tBTA_HL_DATA* p_msg, uint8_t* p_app_idx,
       } else if (bta_hl_find_app_idx_using_handle(p_msg->mca_evt.app_handle,
                                                   &app_idx) &&
                  bta_hl_find_mcl_idx(
-                     app_idx,
-                     from_BD_ADDR(
-                         p_msg->mca_evt.mca_data.disconnect_ind.bd_addr),
+                     app_idx, p_msg->mca_evt.mca_data.disconnect_ind.bd_addr,
                      &mcl_idx)) {
         found = true;
       }
