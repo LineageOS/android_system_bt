@@ -541,7 +541,7 @@ size_t btif_split_uuids_string(const char* str, bt_uuid_t* p_uuid,
  *
  ******************************************************************************/
 bt_status_t btif_storage_get_adapter_property(bt_property_t* property) {
-  /* Special handling for adapter BD_ADDR and BONDED_DEVICES */
+  /* Special handling for adapter address and BONDED_DEVICES */
   if (property->type == BT_PROPERTY_BDADDR) {
     bt_bdaddr_t* bd_addr = (bt_bdaddr_t*)property->val;
     /* Fetch the local BD ADDR */
@@ -697,7 +697,7 @@ bt_status_t btif_storage_add_remote_device(const bt_bdaddr_t* remote_bd_addr,
     /* Ignore the RSSI as this is not stored in DB */
     if (properties[i].type == BT_PROPERTY_REMOTE_RSSI) continue;
 
-    /* BD_ADDR for remote device needs special handling as we also store
+    /* address for remote device needs special handling as we also store
      * timestamp */
     if (properties[i].type == BT_PROPERTY_BDADDR) {
       bt_property_t addr_prop;
@@ -806,7 +806,7 @@ bt_status_t btif_storage_load_bonded_devices(void) {
   {
     memset(adapter_props, 0, sizeof(adapter_props));
 
-    /* BD_ADDR */
+    /* address */
     BTIF_STORAGE_GET_ADAPTER_PROP(status, BT_PROPERTY_BDADDR, &addr,
                                   sizeof(addr), adapter_props[num_props]);
     // Add BT_PROPERTY_BDADDR property into list only when successful.
