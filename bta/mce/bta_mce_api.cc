@@ -91,7 +91,7 @@ tBTA_MCE_STATUS BTA_MceEnable(tBTA_MCE_DM_CBACK* p_cback) {
  *                  BTA_MCE_FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_MCE_STATUS BTA_MceGetRemoteMasInstances(BD_ADDR bd_addr) {
+tBTA_MCE_STATUS BTA_MceGetRemoteMasInstances(const bt_bdaddr_t& bd_addr) {
   tBTA_MCE_API_GET_REMOTE_MAS_INSTANCES* p_msg =
       (tBTA_MCE_API_GET_REMOTE_MAS_INSTANCES*)osi_malloc(
           sizeof(tBTA_MCE_API_GET_REMOTE_MAS_INSTANCES));
@@ -99,7 +99,7 @@ tBTA_MCE_STATUS BTA_MceGetRemoteMasInstances(BD_ADDR bd_addr) {
   APPL_TRACE_API("%s", __func__);
 
   p_msg->hdr.event = BTA_MCE_API_GET_REMOTE_MAS_INSTANCES_EVT;
-  bdcpy(p_msg->bd_addr, bd_addr);
+  p_msg->bd_addr = bd_addr;
 
   bta_sys_sendmsg(p_msg);
 
