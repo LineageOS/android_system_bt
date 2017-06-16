@@ -113,13 +113,12 @@ void BTA_JvDisable(void) {
  *                  false if not.
  *
  ******************************************************************************/
-bool BTA_JvIsEncrypted(BD_ADDR bd_addr) {
+bool BTA_JvIsEncrypted(const bt_bdaddr_t& bd_addr) {
   bool is_encrypted = false;
   uint8_t sec_flags, le_flags;
 
-  if (BTM_GetSecurityFlags(from_BD_ADDR(bd_addr), &sec_flags) &&
-      BTM_GetSecurityFlagsByTransport(from_BD_ADDR(bd_addr), &le_flags,
-                                      BT_TRANSPORT_LE)) {
+  if (BTM_GetSecurityFlags(bd_addr, &sec_flags) &&
+      BTM_GetSecurityFlagsByTransport(bd_addr, &le_flags, BT_TRANSPORT_LE)) {
     if (sec_flags & BTM_SEC_FLAG_ENCRYPTED || le_flags & BTM_SEC_FLAG_ENCRYPTED)
       is_encrypted = true;
   }
@@ -214,8 +213,8 @@ tBTA_JV_STATUS BTA_JvFreeChannel(uint16_t channel, int conn_type) {
  *                  BTA_JV_FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvStartDiscovery(BD_ADDR bd_addr, uint16_t num_uuid,
-                                    tSDP_UUID* p_uuid_list,
+tBTA_JV_STATUS BTA_JvStartDiscovery(const bt_bdaddr_t& bd_addr,
+                                    uint16_t num_uuid, tSDP_UUID* p_uuid_list,
                                     uint32_t rfcomm_slot_id) {
   tBTA_JV_API_START_DISCOVERY* p_msg = (tBTA_JV_API_START_DISCOVERY*)osi_malloc(
       sizeof(tBTA_JV_API_START_DISCOVERY));
@@ -223,7 +222,7 @@ tBTA_JV_STATUS BTA_JvStartDiscovery(BD_ADDR bd_addr, uint16_t num_uuid,
   APPL_TRACE_API("%s", __func__);
 
   p_msg->hdr.event = BTA_JV_API_START_DISCOVERY_EVT;
-  bdcpy(p_msg->bd_addr, bd_addr);
+  p_msg->bd_addr = bd_addr;
   p_msg->num_uuid = num_uuid;
   memcpy(p_msg->uuid_list, p_uuid_list, num_uuid * sizeof(tSDP_UUID));
   p_msg->num_attr = 0;
@@ -302,7 +301,8 @@ tBTA_JV_STATUS BTA_JvDeleteRecord(uint32_t handle) {
 tBTA_JV_STATUS BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
                                     const tL2CAP_ERTM_INFO* ertm_info,
                                     uint16_t remote_chan, uint16_t rx_mtu,
-                                    tL2CAP_CFG_INFO* cfg, BD_ADDR peer_bd_addr,
+                                    tL2CAP_CFG_INFO* cfg,
+                                    const bt_bdaddr_t& peer_bd_addr,
                                     tBTA_JV_L2CAP_CBACK* p_cback,
                                     uint32_t l2cap_socket_id) {
   APPL_TRACE_API("%s", __func__);
@@ -328,7 +328,7 @@ tBTA_JV_STATUS BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
   } else {
     p_msg->has_ertm_info = false;
   }
-  memcpy(p_msg->peer_bd_addr, peer_bd_addr, sizeof(BD_ADDR));
+  p_msg->peer_bd_addr = peer_bd_addr;
   p_msg->p_cback = p_cback;
   p_msg->l2cap_socket_id = l2cap_socket_id;
 
@@ -352,13 +352,11 @@ tBTA_JV_STATUS BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
  *                  BTA_JV_FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capConnect(int conn_type, tBTA_SEC sec_mask,
-                                  tBTA_JV_ROLE role,
-                                  const tL2CAP_ERTM_INFO* ertm_info,
-                                  uint16_t remote_psm, uint16_t rx_mtu,
-                                  tL2CAP_CFG_INFO* cfg, BD_ADDR peer_bd_addr,
-                                  tBTA_JV_L2CAP_CBACK* p_cback,
-                                  uint32_t l2cap_socket_id) {
+tBTA_JV_STATUS BTA_JvL2capConnect(
+    int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
+    const tL2CAP_ERTM_INFO* ertm_info, uint16_t remote_psm, uint16_t rx_mtu,
+    tL2CAP_CFG_INFO* cfg, const bt_bdaddr_t& peer_bd_addr,
+    tBTA_JV_L2CAP_CBACK* p_cback, uint32_t l2cap_socket_id) {
   APPL_TRACE_API("%s", __func__);
 
   if (p_cback == NULL) return BTA_JV_FAILURE; /* Nothing to do */
@@ -383,7 +381,7 @@ tBTA_JV_STATUS BTA_JvL2capConnect(int conn_type, tBTA_SEC sec_mask,
   } else {
     p_msg->has_ertm_info = false;
   }
-  memcpy(p_msg->peer_bd_addr, peer_bd_addr, sizeof(BD_ADDR));
+  p_msg->peer_bd_addr = peer_bd_addr;
   p_msg->p_cback = p_cback;
   p_msg->l2cap_socket_id = l2cap_socket_id;
 
@@ -722,7 +720,7 @@ tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id,
  *                  BTA_JV_FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capWriteFixed(uint16_t channel, BD_ADDR* addr,
+tBTA_JV_STATUS BTA_JvL2capWriteFixed(uint16_t channel, const bt_bdaddr_t& addr,
                                      uint32_t req_id,
                                      tBTA_JV_L2CAP_CBACK* p_cback,
                                      uint8_t* p_data, uint16_t len,
@@ -735,7 +733,7 @@ tBTA_JV_STATUS BTA_JvL2capWriteFixed(uint16_t channel, BD_ADDR* addr,
 
   p_msg->hdr.event = BTA_JV_API_L2CAP_WRITE_FIXED_EVT;
   p_msg->channel = channel;
-  memcpy(p_msg->addr, addr, sizeof(p_msg->addr));
+  p_msg->addr = addr;
   p_msg->req_id = req_id;
   p_msg->p_data = p_data;
   p_msg->p_cback = p_cback;
@@ -764,7 +762,8 @@ tBTA_JV_STATUS BTA_JvL2capWriteFixed(uint16_t channel, BD_ADDR* addr,
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
-                                   uint8_t remote_scn, BD_ADDR peer_bd_addr,
+                                   uint8_t remote_scn,
+                                   const bt_bdaddr_t& peer_bd_addr,
                                    tBTA_JV_RFCOMM_CBACK* p_cback,
                                    uint32_t rfcomm_slot_id) {
   APPL_TRACE_API("%s", __func__);
@@ -777,7 +776,7 @@ tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
   p_msg->sec_mask = sec_mask;
   p_msg->role = role;
   p_msg->remote_scn = remote_scn;
-  memcpy(p_msg->peer_bd_addr, peer_bd_addr, sizeof(BD_ADDR));
+  p_msg->peer_bd_addr = peer_bd_addr;
   p_msg->p_cback = p_cback;
   p_msg->rfcomm_slot_id = rfcomm_slot_id;
 

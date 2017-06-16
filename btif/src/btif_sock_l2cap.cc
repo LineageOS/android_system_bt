@@ -1,19 +1,19 @@
 /*
-* Copyright (C) 2014 Samsung System LSI
-* Copyright (C) 2013 The Android Open Source Project
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2014 Samsung System LSI
+ * Copyright (C) 2013 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #define LOG_TAG "bt_btif_sock"
 
@@ -195,14 +195,6 @@ static char packet_put_tail_l(l2cap_socket* sock, const void* data,
   sock->bytes_buffered += len;
 
   return true;
-}
-
-static inline void bd_copy(uint8_t* dest, uint8_t* src, bool swap) {
-  if (swap) {
-    for (int i = 0; i < 6; i++) dest[i] = src[5 - i];
-  } else {
-    memcpy(dest, src, 6);
-  }
 }
 
 static char is_inited(void) {
@@ -442,8 +434,7 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
   uint32_t new_listen_id;
 
   // std::mutex locked by caller
-  accept_rs = btsock_l2cap_alloc_l(
-      sock->name, (const bt_bdaddr_t*)p_open->rem_bda, false, 0);
+  accept_rs = btsock_l2cap_alloc_l(sock->name, &p_open->rem_bda, false, 0);
   accept_rs->connected = true;
   accept_rs->security = sock->security;
   accept_rs->fixed_chan = sock->fixed_chan;
@@ -490,8 +481,7 @@ static void on_srv_l2cap_le_connect_l(tBTA_JV_L2CAP_LE_OPEN* p_open,
   uint32_t new_listen_id;
 
   // std::mutex locked by caller
-  accept_rs = btsock_l2cap_alloc_l(
-      sock->name, (const bt_bdaddr_t*)p_open->rem_bda, false, 0);
+  accept_rs = btsock_l2cap_alloc_l(sock->name, &p_open->rem_bda, false, 0);
   if (accept_rs) {
     // swap IDs
     new_listen_id = accept_rs->id;
@@ -527,7 +517,7 @@ static void on_srv_l2cap_le_connect_l(tBTA_JV_L2CAP_LE_OPEN* p_open,
 
 static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
                                       l2cap_socket* sock) {
-  bd_copy(sock->addr.address, p_open->rem_bda, 0);
+  sock->addr = p_open->rem_bda;
 
   if (!send_app_psm_or_chan_l(sock)) {
     APPL_TRACE_ERROR("send_app_psm_or_chan_l failed");
@@ -550,7 +540,7 @@ static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
 
 static void on_cl_l2cap_le_connect_l(tBTA_JV_L2CAP_LE_OPEN* p_open,
                                      l2cap_socket* sock) {
-  bd_copy(sock->addr.address, p_open->rem_bda, 0);
+  sock->addr = p_open->rem_bda;
 
   if (!send_app_psm_or_chan_l(sock)) {
     APPL_TRACE_ERROR("send_app_psm_or_chan_l failed");
@@ -926,7 +916,7 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
   } else {
     if (fixed_chan) {
       if (BTA_JvL2capConnectLE(sock->security, 0, NULL, channel,
-                               L2CAP_DEFAULT_MTU, NULL, sock->addr.address,
+                               L2CAP_DEFAULT_MTU, NULL, sock->addr,
                                btsock_l2cap_cbk, sock->id) != BTA_JV_SUCCESS)
         stat = BT_STATUS_FAIL;
 
@@ -934,13 +924,13 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
       if (sock->is_le_coc) {
         if (BTA_JvL2capConnect(BTA_JV_CONN_TYPE_L2CAP_LE, sock->security, 0,
                                NULL, channel, L2CAP_MAX_SDU_LENGTH, &cfg,
-                               sock->addr.address, btsock_l2cap_cbk,
+                               sock->addr, btsock_l2cap_cbk,
                                sock->id) != BTA_JV_SUCCESS)
           stat = BT_STATUS_FAIL;
       } else {
         if (BTA_JvL2capConnect(BTA_JV_CONN_TYPE_L2CAP, sock->security, 0,
                                &obex_l2c_etm_opt, channel, L2CAP_MAX_SDU_LENGTH,
-                               &cfg, sock->addr.address, btsock_l2cap_cbk,
+                               &cfg, sock->addr, btsock_l2cap_cbk,
                                sock->id) != BTA_JV_SUCCESS)
           stat = BT_STATUS_FAIL;
       }
@@ -1050,7 +1040,7 @@ void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
             "btsock_l2cap_signaled - %d bytes received from socket", count);
 
         if (sock->fixed_chan) {
-          if (BTA_JvL2capWriteFixed(sock->channel, (BD_ADDR*)&sock->addr,
+          if (BTA_JvL2capWriteFixed(sock->channel, sock->addr,
                                     PTR_TO_UINT(buffer), btsock_l2cap_cbk,
                                     buffer, count, user_id) != BTA_JV_SUCCESS) {
             // On fail, free the buffer

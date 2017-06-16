@@ -213,7 +213,7 @@ uint16_t set_read_value(btgatt_read_params_t* p_dest, tBTA_GATTC_READ* p_src) {
 
 #if (BLE_DELAY_REQUEST_ENC == FALSE)
 static bool btif_gatt_is_link_encrypted(const bt_bdaddr_t& bd_addr) {
-  return BTA_JvIsEncrypted(to_BD_ADDR(bd_addr));
+  return BTA_JvIsEncrypted(bd_addr);
 }
 
 static void btif_gatt_set_encryption_cb(UNUSED_ATTR const bt_bdaddr_t& bd_addr,
