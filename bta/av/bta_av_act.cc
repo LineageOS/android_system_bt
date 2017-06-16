@@ -1425,7 +1425,7 @@ void bta_av_sig_chg(tBTA_AV_DATA* p_data) {
 
             APPL_TRACE_DEBUG("%s: Re-start timer for AVDTP service", __func__);
             bta_sys_conn_open(BTA_ID_AV, p_cb->p_scb[xx]->app_id,
-                              to_BD_ADDR(p_cb->p_scb[xx]->peer_addr));
+                              p_cb->p_scb[xx]->peer_addr);
             /* Possible collision : need to avoid outgoing processing while the
              * timer is running */
             p_cb->p_scb[xx]->coll_mask = BTA_AV_COLL_INC_TMR;
@@ -1467,7 +1467,7 @@ void bta_av_sig_chg(tBTA_AV_DATA* p_data) {
             p_cb->p_scb[xx]->peer_addr == p_data->str_msg.bd_addr) {
           APPL_TRACE_DEBUG("%s: Closing timer for AVDTP service", __func__);
           bta_sys_conn_close(BTA_ID_AV, p_cb->p_scb[xx]->app_id,
-                             to_BD_ADDR(p_cb->p_scb[xx]->peer_addr));
+                             p_cb->p_scb[xx]->peer_addr);
         }
         mask = 1 << (xx + 1);
         if (((mask & p_lcb->conn_msk) || bta_av_cb.conn_lcb) &&
