@@ -1264,7 +1264,7 @@ static void btif_dm_search_devices_evt(uint16_t event, char* p_param) {
         int addr_type = 0;
 
         memset(properties, 0, sizeof(properties));
-        /* BD_ADDR */
+        /* bt_bdaddr_t */
         BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties],
                                    BT_PROPERTY_BDADDR, sizeof(bdaddr), &bdaddr);
         num_properties++;
@@ -3273,7 +3273,7 @@ void btif_debug_bond_event_dump(int fd) {
   dprintf(fd, "  Total Number of events: %zu\n", btif_num_bond_events);
   if (btif_num_bond_events > 0)
     dprintf(fd,
-            "  Time          BD_ADDR            Function             State\n");
+            "  Time          address            Function             State\n");
 
   for (size_t i = btif_events_start_index; i != btif_events_end_index;
        i = (i + 1) % (MAX_BTIF_BOND_EVENT_ENTRIES + 1)) {

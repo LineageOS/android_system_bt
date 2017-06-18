@@ -73,12 +73,6 @@ struct hash<bt_bdaddr_t> {
   }
 };
 
-template <>
-struct equal_to<bt_bdaddr_t> {
-  size_t operator()(const bt_bdaddr_t& x, const bt_bdaddr_t& y) const {
-    return memcmp(x.address, y.address, BD_ADDR_LEN);
-  }
-};
 }
 
 namespace {
@@ -86,16 +80,12 @@ namespace {
 // all access to this variable should be done on the jni thread
 std::unordered_set<bt_bdaddr_t> p_dev_cb;
 
-void btif_gattc_add_remote_bdaddr(BD_ADDR p_bda, uint8_t addr_type) {
-  bt_bdaddr_t bd_addr;
-  memcpy(bd_addr.address, p_bda, BD_ADDR_LEN);
-  p_dev_cb.insert(bd_addr);
+void btif_gattc_add_remote_bdaddr(const bt_bdaddr_t& p_bda, uint8_t addr_type) {
+  p_dev_cb.insert(p_bda);
 }
 
-bool btif_gattc_find_bdaddr(BD_ADDR p_bda) {
-  bt_bdaddr_t bd_addr;
-  memcpy(bd_addr.address, p_bda, BD_ADDR_LEN);
-  return (p_dev_cb.count(bd_addr) != 0);
+bool btif_gattc_find_bdaddr(const bt_bdaddr_t& p_bda) {
+  return (p_dev_cb.count(p_bda) != 0);
 }
 
 void btif_gattc_init_dev_cb(void) { p_dev_cb.clear(); }
@@ -158,8 +148,8 @@ void bta_scan_results_cb_impl(bt_bdaddr_t bd_addr, tBT_DEVICE_TYPE device_type,
   }
 
   if ((addr_type != BLE_ADDR_RANDOM) || (p_eir_remote_name)) {
-    if (!btif_gattc_find_bdaddr(bd_addr.address)) {
-      btif_gattc_add_remote_bdaddr(bd_addr.address, addr_type);
+    if (!btif_gattc_find_bdaddr(bd_addr)) {
+      btif_gattc_add_remote_bdaddr(bd_addr, addr_type);
 
       if (p_eir_remote_name) {
         if (remote_name_len > BD_NAME_LEN + 1 ||
