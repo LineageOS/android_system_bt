@@ -36,7 +36,7 @@
 
 /* Define the minimum offset that L2CAP needs in a buffer. This is made up of
  * HCI type(1), len(2), handle(2), L2CAP len(2) and CID(2) => 9
-*/
+ */
 #define L2CAP_MIN_OFFSET 13 /* plus control(2), SDU length(2) */
 
 #define L2CAP_LCC_SDU_LENGTH 2
@@ -112,7 +112,7 @@ typedef uint8_t tL2CAP_CHNL_DATA_RATE;
 #define L2CAP_ROLE_CHECK_SWITCH 0xC0
 
 /* Values for 'allowed_modes' field passed in structure tL2CAP_ERTM_INFO
-*/
+ */
 #define L2CAP_FCR_CHAN_OPT_BASIC (1 << L2CAP_FCR_BASIC_MODE)
 #define L2CAP_FCR_CHAN_OPT_ERTM (1 << L2CAP_FCR_ERTM_MODE)
 #define L2CAP_FCR_CHAN_OPT_STREAM (1 << L2CAP_FCR_STREAM_MODE)
@@ -124,7 +124,7 @@ typedef uint8_t tL2CAP_CHNL_DATA_RATE;
 /* Validity check for PSM.  PSM values must be odd.  Also, all PSM values must
  * be assigned such that the least significant bit of the most sigificant
  * octet equals zero.
-*/
+ */
 #define L2C_INVALID_PSM(psm) (((psm)&0x0101) != 0x0001)
 #define L2C_IS_VALID_PSM(psm) (((psm)&0x0101) == 0x0001)
 #define L2C_IS_VALID_LE_PSM(psm) (((psm) > 0x0000) && ((psm) < 0x0100))
@@ -151,7 +151,7 @@ typedef struct {
 /* Define a structure to hold the configuration parameters. Since the
  * parameters are optional, for each parameter there is a boolean to
  * use to signify its presence or absence.
-*/
+ */
 typedef struct {
   uint16_t result; /* Only used in confirm messages */
   bool mtu_present;
@@ -171,7 +171,7 @@ typedef struct {
 
 /* Define a structure to hold the configuration parameter for LE L2CAP
  * connection oriented channels.
-*/
+ */
 typedef struct {
   uint16_t mtu;
   uint16_t mps;
@@ -197,61 +197,61 @@ typedef uint16_t tL2CAP_CH_CFG_BITS;
  *              Local CID assigned to the connection
  *              PSM that the remote wants to connect to
  *              Identifier that the remote sent
-*/
+ */
 typedef void(tL2CA_CONNECT_IND_CB)(const bt_bdaddr_t&, uint16_t, uint16_t,
                                    uint8_t);
 
 /* Connection confirmation callback prototype. Parameters are
  *              Local CID
  *              Result - 0 = connected, non-zero means failure reason
-*/
+ */
 typedef void(tL2CA_CONNECT_CFM_CB)(uint16_t, uint16_t);
 
 /* Connection pending callback prototype. Parameters are
  *              Local CID
-*/
+ */
 typedef void(tL2CA_CONNECT_PND_CB)(uint16_t);
 
 /* Configuration indication callback prototype. Parameters are
  *              Local CID assigned to the connection
  *              Pointer to configuration info
-*/
+ */
 typedef void(tL2CA_CONFIG_IND_CB)(uint16_t, tL2CAP_CFG_INFO*);
 
 /* Configuration confirm callback prototype. Parameters are
  *              Local CID assigned to the connection
  *              Pointer to configuration info
-*/
+ */
 typedef void(tL2CA_CONFIG_CFM_CB)(uint16_t, tL2CAP_CFG_INFO*);
 
 /* Disconnect indication callback prototype. Parameters are
  *              Local CID
  *              Boolean whether upper layer should ack this
-*/
+ */
 typedef void(tL2CA_DISCONNECT_IND_CB)(uint16_t, bool);
 
 /* Disconnect confirm callback prototype. Parameters are
  *              Local CID
  *              Result
-*/
+ */
 typedef void(tL2CA_DISCONNECT_CFM_CB)(uint16_t, uint16_t);
 
 /* QOS Violation indication callback prototype. Parameters are
  *              BD Address of violating device
-*/
+ */
 typedef void(tL2CA_QOS_VIOLATION_IND_CB)(const bt_bdaddr_t&);
 
 /* Data received indication callback prototype. Parameters are
  *              Local CID
  *              Address of buffer
-*/
+ */
 typedef void(tL2CA_DATA_IND_CB)(uint16_t, BT_HDR*);
 
 /* Echo response callback prototype. Note that this is not included in the
  * registration information, but is passed to L2CAP as part of the API to
  * actually send an echo request. Parameters are
  *              Result
-*/
+ */
 typedef void(tL2CA_ECHO_RSP_CB)(uint16_t);
 
 /* Callback function prototype to pass broadcom specific echo response  */
@@ -263,7 +263,7 @@ typedef void(tL2CA_ECHO_DATA_CB)(const bt_bdaddr_t&, uint16_t, uint8_t*);
  * the data will anyways be dropped. The parameter is:
  *              Local CID
  *              true if congested, false if uncongested
-*/
+ */
 typedef void(tL2CA_CONGESTION_STATUS_CB)(uint16_t, bool);
 
 /* Callback prototype for number of packets completed events.
@@ -272,7 +272,7 @@ typedef void(tL2CA_CONGESTION_STATUS_CB)(uint16_t, bool);
  * This callback is originally designed for 3DG devices.
  * The parameter is:
  *          peer BD_ADDR
-*/
+ */
 typedef void(tL2CA_NOCP_CB)(const bt_bdaddr_t&);
 
 /* Transmit complete callback protype. This callback is optional. If
@@ -281,14 +281,14 @@ typedef void(tL2CA_NOCP_CB)(const bt_bdaddr_t&);
  * mode only). The parameters are:
  *              Local CID
  *              Number of SDUs sent or dropped
-*/
+ */
 typedef void(tL2CA_TX_COMPLETE_CB)(uint16_t, uint16_t);
 
 /* Define the structure that applications use to register with
  * L2CAP. This structure includes callback functions. All functions
  * MUST be provided, with the exception of the "connect pending"
  * callback and "congestion status" callback.
-*/
+ */
 typedef struct {
   tL2CA_CONNECT_IND_CB* pL2CA_ConnectInd_Cb;
   tL2CA_CONNECT_CFM_CB* pL2CA_ConnectCfm_Cb;
@@ -306,7 +306,7 @@ typedef struct {
 
 /* Define the structure that applications use to create or accept
  * connections with enhanced retransmission mode.
-*/
+ */
 typedef struct {
   uint8_t preferred_mode;
   uint8_t allowed_modes;
@@ -634,9 +634,9 @@ extern bool L2CA_SetIdleTimeout(uint16_t cid, uint16_t timeout, bool is_global);
  *                  A timeout of zero means that the connection will be torn
  *                  down immediately when the last channel is removed.
  *                  A timeout of 0xFFFF means no timeout. Values are in seconds.
- *                  A bd_addr is the remote BD address. If bd_addr = BT_BD_ANY,
- *                  then the idle timeouts for all active l2cap links will be
- *                  changed.
+ *                  A bd_addr is the remote BD address. If bd_addr =
+ *                  bd_addr_any, then the idle timeouts for all active l2cap
+ *                  links will be changed.
  *
  * Returns          true if command succeeded, false if failed
  *
@@ -892,7 +892,7 @@ extern uint8_t L2CA_GetChnlFcrMode(uint16_t lcid);
  *      BD Address of remote
  *      Data Type
  *      Data
-*/
+ */
 #define L2CAP_UCD_INFO_TYPE_RECEPTION 0x01
 #define L2CAP_UCD_INFO_TYPE_MTU 0x02
 
@@ -901,7 +901,7 @@ typedef void(tL2CA_UCD_DISCOVER_CB)(const bt_bdaddr_t&, uint8_t, uint32_t);
 /* UCD data received. Parameters are
  *      BD Address of remote
  *      Pointer to buffer with data
-*/
+ */
 typedef void(tL2CA_UCD_DATA_CB)(const bt_bdaddr_t&, BT_HDR*);
 
 /* Congestion status callback protype. This callback is optional. If
@@ -909,11 +909,11 @@ typedef void(tL2CA_UCD_DATA_CB)(const bt_bdaddr_t&, BT_HDR*);
  * the data will anyways be dropped. The parameter is:
  *              remote BD_ADDR
  *              true if congested, false if uncongested
-*/
+ */
 typedef void(tL2CA_UCD_CONGESTION_STATUS_CB)(const bt_bdaddr_t&, bool);
 
 /* UCD registration info (the callback addresses and PSM)
-*/
+ */
 typedef struct {
   tL2CA_UCD_DISCOVER_CB* pL2CA_UCD_Discover_Cb;
   tL2CA_UCD_DATA_CB* pL2CA_UCD_Data_Cb;
@@ -1023,7 +1023,7 @@ extern bool L2CA_UCDSetTxPriority(const bt_bdaddr_t& rem_bda,
  *      true if channel is connected, false if disconnected
  *      Reason for connection failure
  *      transport : physical transport, BR/EDR or LE
-*/
+ */
 typedef void(tL2CA_FIXED_CHNL_CB)(uint16_t, const bt_bdaddr_t&, bool, uint16_t,
                                   tBT_TRANSPORT);
 
@@ -1031,7 +1031,7 @@ typedef void(tL2CA_FIXED_CHNL_CB)(uint16_t, const bt_bdaddr_t&, bool, uint16_t,
  *      channel
  *      BD Address of remote
  *      Pointer to buffer with data
-*/
+ */
 typedef void(tL2CA_FIXED_DATA_CB)(uint16_t, const bt_bdaddr_t&, BT_HDR*);
 
 /* Congestion status callback protype. This callback is optional. If
@@ -1039,11 +1039,11 @@ typedef void(tL2CA_FIXED_DATA_CB)(uint16_t, const bt_bdaddr_t&, BT_HDR*);
  * the data will anyways be dropped. The parameter is:
  *      remote BD_ADDR
  *      true if congested, false if uncongested
-*/
+ */
 typedef void(tL2CA_FIXED_CONGESTION_STATUS_CB)(const bt_bdaddr_t&, bool);
 
 /* Fixed channel registration info (the callback addresses and channel config)
-*/
+ */
 typedef struct {
   tL2CA_FIXED_CHNL_CB* pL2CA_FixedConn_Cb;
   tL2CA_FIXED_DATA_CB* pL2CA_FixedData_Cb;
@@ -1133,9 +1133,9 @@ extern bool L2CA_RemoveFixedChnl(uint16_t fixed_cid,
  *                  it. A timeout of zero means that the connection will be torn
  *                  down immediately when the last channel is removed.
  *                  A timeout of 0xFFFF means no timeout. Values are in seconds.
- *                  A bd_addr is the remote BD address. If bd_addr = BT_BD_ANY,
- *                  then the idle timeouts for all active l2cap links will be
- *                  changed.
+ *                  A bd_addr is the remote BD address. If bd_addr =
+ *                  bd_addr_any, then the idle timeouts for all active l2cap
+ *                  links will be changed.
  *
  * Returns          true if command succeeded, false if failed
  *

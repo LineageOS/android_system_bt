@@ -179,8 +179,8 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
 
   /* If caller specified a BD address, save it */
   if (p_rem_bda) {
-    /* the bd addr is not BT_BD_ANY, then a bd address was specified */
-    if (*p_rem_bda != BT_BD_ANY) p_ccb->rem_addr_specified = true;
+    /* the bd addr is not bd_addr_any, then a bd address was specified */
+    if (*p_rem_bda != bd_addr_any) p_ccb->rem_addr_specified = true;
 
     p_ccb->rem_dev_address = *p_rem_bda;
   } else if (!is_server) {

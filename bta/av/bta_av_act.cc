@@ -1247,7 +1247,7 @@ void bta_av_conn_chg(tBTA_AV_DATA* p_data) {
       /* the stream is closed.
        * clear the peer address, so it would not mess up the AVRCP for the next
        * round of operation */
-      p_scb->peer_addr = bd_addr_null;
+      p_scb->peer_addr = bd_addr_empty;
       if (p_scb->chnl == BTA_AV_CHNL_AUDIO) {
         if (p_lcb) {
           p_lcb->conn_msk &= ~conn_msk;
