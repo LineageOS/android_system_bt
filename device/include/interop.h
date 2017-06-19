@@ -74,6 +74,11 @@ typedef enum {
   // Do not send service changed indications (GATT client).
   // This should be removed after the characteristic is implmeented b/62088395.
   INTEROP_GATTC_NO_SERVICE_CHANGED_IND,
+
+  // Do not use AVDTP RECONFIGURE when reconfiguring A2DP streams.
+  // Some A2DP Sink devices report SUCCESS to the AVDTP RECONFIGURE command,
+  // but fail to play the reconfigured audio stream.
+  INTEROP_DISABLE_AVDTP_RECONFIGURE,
 } interop_feature_t;
 
 // Check if a given |addr| matches a known interoperability workaround as

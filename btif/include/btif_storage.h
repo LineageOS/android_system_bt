@@ -263,6 +263,14 @@ bt_status_t btif_storage_set_hidd(bt_bdaddr_t* remote_bd_addr);
 
 bt_status_t btif_storage_remove_hidd(bt_bdaddr_t* remote_bd_addr);
 
+// Gets the device name for a given Bluetooth address |bd_addr|.
+// The device name (if found) is stored in |name|.
+// Returns true if the device name is found, othervise false.
+// Note: |name| should point to a buffer that can store string of length
+// |BTM_MAX_REM_BD_NAME_LEN|.
+bool btif_storage_get_stored_remote_name(const bt_bdaddr_t& bd_addr,
+                                         char* name);
+
 /******************************************************************************
  * Exported for unit tests
  *****************************************************************************/
