@@ -377,8 +377,8 @@ extern void bta_hd_send_report_act(tBTA_HD_DATA* p_data) {
                     p_report->data);
 
   /* trigger PM */
-  bta_sys_busy(BTA_ID_HD, 1, to_BD_ADDR(bta_hd_cb.bd_addr));
-  bta_sys_idle(BTA_ID_HD, 1, to_BD_ADDR(bta_hd_cb.bd_addr));
+  bta_sys_busy(BTA_ID_HD, 1, bta_hd_cb.bd_addr);
+  bta_sys_idle(BTA_ID_HD, 1, bta_hd_cb.bd_addr);
 }
 
 /*******************************************************************************
@@ -427,8 +427,8 @@ extern void bta_hd_vc_unplug_act(UNUSED_ATTR tBTA_HD_DATA* p_data) {
   }
 
   /* trigger PM */
-  bta_sys_busy(BTA_ID_HD, 1, to_BD_ADDR(bta_hd_cb.bd_addr));
-  bta_sys_idle(BTA_ID_HD, 1, to_BD_ADDR(bta_hd_cb.bd_addr));
+  bta_sys_busy(BTA_ID_HD, 1, bta_hd_cb.bd_addr);
+  bta_sys_idle(BTA_ID_HD, 1, bta_hd_cb.bd_addr);
 }
 
 /*******************************************************************************
@@ -447,7 +447,7 @@ extern void bta_hd_open_act(tBTA_HD_DATA* p_data) {
   APPL_TRACE_API("%s", __func__);
 
   HID_DevPlugDevice(p_cback->addr);
-  bta_sys_conn_open(BTA_ID_HD, 1, to_BD_ADDR(p_cback->addr));
+  bta_sys_conn_open(BTA_ID_HD, 1, p_cback->addr);
 
   cback_data.conn.bda = p_cback->addr;
   bta_hd_cb.bd_addr = p_cback->addr;
@@ -471,7 +471,7 @@ extern void bta_hd_close_act(tBTA_HD_DATA* p_data) {
 
   APPL_TRACE_API("%s", __func__);
 
-  bta_sys_conn_close(BTA_ID_HD, 1, to_BD_ADDR(p_cback->addr));
+  bta_sys_conn_close(BTA_ID_HD, 1, p_cback->addr);
 
   if (bta_hd_cb.vc_unplug) {
     bta_hd_cb.vc_unplug = FALSE;
@@ -624,7 +624,7 @@ extern void bta_hd_vc_unplug_done_act(tBTA_HD_DATA* p_data) {
 
   APPL_TRACE_API("%s", __func__);
 
-  bta_sys_conn_close(BTA_ID_HD, 1, to_BD_ADDR(p_cback->addr));
+  bta_sys_conn_close(BTA_ID_HD, 1, p_cback->addr);
 
   HID_DevUnplugDevice(p_cback->addr);
 
@@ -648,7 +648,7 @@ extern void bta_hd_suspend_act(tBTA_HD_DATA* p_data) {
 
   APPL_TRACE_API("%s", __func__);
 
-  bta_sys_idle(BTA_ID_HD, 1, to_BD_ADDR(p_cback->addr));
+  bta_sys_idle(BTA_ID_HD, 1, p_cback->addr);
 }
 
 /*******************************************************************************
@@ -665,8 +665,8 @@ extern void bta_hd_exit_suspend_act(tBTA_HD_DATA* p_data) {
 
   APPL_TRACE_API("%s", __func__);
 
-  bta_sys_busy(BTA_ID_HD, 1, to_BD_ADDR(p_cback->addr));
-  bta_sys_idle(BTA_ID_HD, 1, to_BD_ADDR(p_cback->addr));
+  bta_sys_busy(BTA_ID_HD, 1, p_cback->addr);
+  bta_sys_idle(BTA_ID_HD, 1, p_cback->addr);
 }
 
 /*******************************************************************************

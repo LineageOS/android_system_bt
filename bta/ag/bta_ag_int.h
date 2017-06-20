@@ -331,7 +331,8 @@ extern void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event,
                               tBTA_AG_DATA* p_data);
 extern bool bta_ag_hdl_event(BT_HDR* p_msg);
 extern void bta_ag_collision_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
-                                   uint8_t app_id, BD_ADDR peer_addr);
+                                   uint8_t app_id,
+                                   const bt_bdaddr_t* peer_addr);
 extern void bta_ag_resume_open(tBTA_AG_SCB* p_scb);
 
 /* SDP functions */
