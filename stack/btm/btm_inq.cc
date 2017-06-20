@@ -1480,7 +1480,7 @@ static tBTM_STATUS btm_set_inq_event_filter(uint8_t filter_cond_type,
       break;
 
     case BTM_FILTER_COND_BD_ADDR:
-      p_cond = to_BD_ADDR(p_filt_cond->bdaddr_cond);
+      p_cond = (uint8_t*)&p_filt_cond->bdaddr_cond;
 
       /* condition length should already be set as the default */
       break;
@@ -1719,7 +1719,7 @@ void btm_process_inq_results(uint8_t* p, uint8_t inq_res_mode) {
   for (xx = 0; xx < num_resp; xx++) {
     update = false;
     /* Extract inquiry results */
-    STREAM_TO_BDADDR(to_BD_ADDR(bda), p);
+    STREAM_TO_BDADDR(bda, p);
     STREAM_TO_UINT8(page_scan_rep_mode, p);
     STREAM_TO_UINT8(page_scan_per_mode, p);
 

@@ -935,7 +935,7 @@ void smp_proc_id_addr(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   smp_update_key_mask(p_cb, SMP_SEC_KEY_TYPE_ID, true);
 
   STREAM_TO_UINT8(pid_key.addr_type, p);
-  STREAM_TO_BDADDR(to_BD_ADDR(pid_key.static_addr), p);
+  STREAM_TO_BDADDR(pid_key.static_addr, p);
   memcpy(pid_key.irk, p_cb->tk, BT_OCTET16_LEN);
 
   /* to use as BD_ADDR for lk derived from ltk */

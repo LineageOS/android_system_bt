@@ -611,8 +611,9 @@ tBNEP_RESULT BNEP_SetMulticastFilters(uint16_t handle, uint16_t num_filters,
 
   /* Fill the multicast filter values in connnection block */
   for (xx = 0; xx < num_filters; xx++) {
-    memcpy(p_bcb->sent_mcast_filter_start[xx], p_start_array, BD_ADDR_LEN);
-    memcpy(p_bcb->sent_mcast_filter_end[xx], p_end_array, BD_ADDR_LEN);
+    memcpy(p_bcb->sent_mcast_filter_start[xx].address, p_start_array,
+           BD_ADDR_LEN);
+    memcpy(p_bcb->sent_mcast_filter_end[xx].address, p_end_array, BD_ADDR_LEN);
 
     p_start_array += BD_ADDR_LEN;
     p_end_array += BD_ADDR_LEN;
