@@ -139,8 +139,8 @@ uint16_t AVRC_FindService(uint16_t service_uuid, const bt_bdaddr_t& bd_addr,
     avrc_cb.p_cback = p_cback;
 
     /* perform service search */
-    result = SDP_ServiceSearchAttributeRequest(to_BD_ADDR(bd_addr), p_db->p_db,
-                                               avrc_sdp_cback);
+    result =
+        SDP_ServiceSearchAttributeRequest(bd_addr, p_db->p_db, avrc_sdp_cback);
   }
 
   return (result ? AVRC_SUCCESS : AVRC_FAIL);

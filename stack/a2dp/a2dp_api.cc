@@ -261,7 +261,7 @@ tA2DP_STATUS A2DP_AddRecord(uint16_t service_uuid, char* p_service_name,
  *                  A2DP_FAIL if function execution failed.
  *
  *****************************************************************************/
-tA2DP_STATUS A2DP_FindService(uint16_t service_uuid, BD_ADDR bd_addr,
+tA2DP_STATUS A2DP_FindService(uint16_t service_uuid, const bt_bdaddr_t& bd_addr,
                               tA2DP_SDP_DB_PARAMS* p_db,
                               tA2DP_FIND_CBACK* p_cback) {
   tSDP_UUID uuid_list;

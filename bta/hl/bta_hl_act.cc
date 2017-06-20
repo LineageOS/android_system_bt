@@ -1848,8 +1848,8 @@ tBTA_HL_STATUS bta_hl_init_sdp(tBTA_HL_SDP_OPER sdp_oper, uint8_t app_idx,
     SDP_InitDiscoveryDb(p_cb->p_db, BTA_HL_DISC_SIZE, 1, &uuid_list, num_attrs,
                         attr_list);
 
-    if (!SDP_ServiceSearchAttributeRequest(to_BD_ADDR(p_cb->bd_addr),
-                                           p_cb->p_db, p_cb->sdp_cback)) {
+    if (!SDP_ServiceSearchAttributeRequest(p_cb->bd_addr, p_cb->p_db,
+                                           p_cb->sdp_cback)) {
       status = BTA_HL_STATUS_FAIL;
     } else {
       status = BTA_HL_STATUS_OK;
