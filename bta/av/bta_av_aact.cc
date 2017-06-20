@@ -991,7 +991,7 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   APPL_TRACE_DEBUG("%s: uuid_int 0x%x, Doing SDP For 0x%x", __func__,
                    p_scb->uuid_int, sdp_uuid);
-  if (A2DP_FindService(sdp_uuid, to_BD_ADDR(p_scb->peer_addr), &db_params,
+  if (A2DP_FindService(sdp_uuid, p_scb->peer_addr, &db_params,
                        bta_av_a2dp_sdp_cback) == A2DP_SUCCESS)
     return;
 

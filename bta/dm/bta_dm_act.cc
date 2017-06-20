@@ -1328,8 +1328,8 @@ void bta_dm_di_disc(tBTA_DM_MSG* p_data) {
 
   bta_dm_search_cb.p_sdp_db =
       (tSDP_DISCOVERY_DB*)osi_malloc(BTA_DM_SDP_DB_SIZE);
-  if (SDP_DiDiscover(to_BD_ADDR(bta_dm_search_cb.peer_bdaddr),
-                     p_data->di_disc.p_sdp_db, p_data->di_disc.len,
+  if (SDP_DiDiscover(bta_dm_search_cb.peer_bdaddr, p_data->di_disc.p_sdp_db,
+                     p_data->di_disc.len,
                      bta_dm_di_disc_callback) == SDP_SUCCESS) {
     result = BTA_SUCCESS;
   }
@@ -1984,8 +1984,7 @@ static void bta_dm_find_services(const bt_bdaddr_t& bd_addr) {
 
       bta_dm_search_cb.p_sdp_db->raw_size = MAX_DISC_RAW_DATA_BUF;
 
-      if (!SDP_ServiceSearchAttributeRequest(to_BD_ADDR(bd_addr),
-                                             bta_dm_search_cb.p_sdp_db,
+      if (!SDP_ServiceSearchAttributeRequest(bd_addr, bta_dm_search_cb.p_sdp_db,
                                              &bta_dm_sdp_callback)) {
         /*
          * If discovery is not successful with this device, then

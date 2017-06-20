@@ -69,7 +69,7 @@ static void btif_sdp_search_comp_evt(uint16_t event, char* p_param) {
 
   if (event != BTA_SDP_SEARCH_COMP_EVT) return;
 
-  bdcpy(addr.address, evt_data->remote_addr);
+  addr = evt_data->remote_addr;
 
   HAL_CBACK(bt_sdp_callbacks, sdp_search_cb, (bt_status_t)evt_data->status,
             &addr, (uint8_t*)(evt_data->uuid.uu.uuid128),
@@ -142,7 +142,7 @@ static bt_status_t search(bt_bdaddr_t* bd_addr, const uint8_t* uuid) {
   sdp_uuid.len = 16;
   memcpy(sdp_uuid.uu.uuid128, uuid, sizeof(sdp_uuid.uu.uuid128));
 
-  BTA_SdpSearch(bd_addr->address, &sdp_uuid);
+  BTA_SdpSearch(*bd_addr, &sdp_uuid);
 
   return BT_STATUS_SUCCESS;
 }

@@ -72,7 +72,7 @@ typedef void(tSDP_DISC_CMPL_CB)(uint16_t result);
 typedef void(tSDP_DISC_CMPL_CB2)(uint16_t result, void* user_data);
 
 typedef struct {
-  BD_ADDR peer_addr;
+  bt_bdaddr_t peer_addr;
   uint16_t peer_mtu;
 } tSDP_DR_OPEN;
 
@@ -112,7 +112,7 @@ typedef struct t_sdp_disc_rec {
   tSDP_DISC_ATTR* p_first_attr;      /* First attribute of record    */
   struct t_sdp_disc_rec* p_next_rec; /* Addr of next linked record   */
   uint32_t time_read;                /* The time the record was read */
-  BD_ADDR remote_bd_addr;            /* Remote BD address            */
+  bt_bdaddr_t remote_bd_addr;        /* Remote BD address            */
 } tSDP_DISC_REC;
 
 typedef struct {
@@ -200,8 +200,8 @@ bool SDP_CancelServiceSearch(tSDP_DISCOVERY_DB* p_db);
  * Returns          true if discovery started, false if failed.
  *
  ******************************************************************************/
-bool SDP_ServiceSearchRequest(uint8_t* p_bd_addr, tSDP_DISCOVERY_DB* p_db,
-                              tSDP_DISC_CMPL_CB* p_cb);
+bool SDP_ServiceSearchRequest(const bt_bdaddr_t& p_bd_addr,
+                              tSDP_DISCOVERY_DB* p_db, tSDP_DISC_CMPL_CB* p_cb);
 
 /*******************************************************************************
  *
@@ -216,7 +216,7 @@ bool SDP_ServiceSearchRequest(uint8_t* p_bd_addr, tSDP_DISCOVERY_DB* p_db,
  * Returns          true if discovery started, false if failed.
  *
  ******************************************************************************/
-bool SDP_ServiceSearchAttributeRequest(uint8_t* p_bd_addr,
+bool SDP_ServiceSearchAttributeRequest(const bt_bdaddr_t& p_bd_addr,
                                        tSDP_DISCOVERY_DB* p_db,
                                        tSDP_DISC_CMPL_CB* p_cb);
 
@@ -234,7 +234,7 @@ bool SDP_ServiceSearchAttributeRequest(uint8_t* p_bd_addr,
  * Returns          true if discovery started, false if failed.
  *
  ******************************************************************************/
-bool SDP_ServiceSearchAttributeRequest2(uint8_t* p_bd_addr,
+bool SDP_ServiceSearchAttributeRequest2(const bt_bdaddr_t& p_bd_addr,
                                         tSDP_DISCOVERY_DB* p_db,
                                         tSDP_DISC_CMPL_CB2* p_cb,
                                         void* user_data);
@@ -583,8 +583,9 @@ uint16_t SDP_SetLocalDiRecord(tSDP_DI_RECORD* device_info, uint32_t* p_handle);
  * Returns          SDP_SUCCESS if query started successfully, else error
  *
  ******************************************************************************/
-uint16_t SDP_DiDiscover(BD_ADDR remote_device, tSDP_DISCOVERY_DB* p_db,
-                        uint32_t len, tSDP_DISC_CMPL_CB* p_cb);
+uint16_t SDP_DiDiscover(const bt_bdaddr_t& remote_device,
+                        tSDP_DISCOVERY_DB* p_db, uint32_t len,
+                        tSDP_DISC_CMPL_CB* p_cb);
 
 /*******************************************************************************
  *
