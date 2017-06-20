@@ -171,7 +171,7 @@ uint8_t McapTestApp::GetHandle() { return _mcap_handle; }
 
 McapMcl* McapTestApp::FindMclByPeerAddress(const bt_bdaddr_t& bd_addr) {
   for (McapMcl& mcl : _mcl_list) {
-    if (bdaddr_equals(&mcl.GetPeerAddress(), &bd_addr)) {
+    if (mcl.GetPeerAddress() == bd_addr) {
       return &mcl;
     }
   }
