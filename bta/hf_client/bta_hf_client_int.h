@@ -105,7 +105,7 @@ enum {
 /* data type for BTA_HF_CLIENT_API_OPEN_EVT */
 typedef struct {
   BT_HDR hdr;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   uint16_t* handle;
   tBTA_SEC sec_mask;
 } tBTA_HF_CLIENT_API_OPEN;
@@ -162,7 +162,7 @@ typedef struct {
   // Fields useful for particular control block.
   uint8_t handle;               /* Handle of the control block to be
                                    used by upper layer */
-  BD_ADDR peer_addr;            /* peer bd address */
+  bt_bdaddr_t peer_addr;        /* peer bd address */
   tSDP_DISCOVERY_DB* p_disc_db; /* pointer to discovery database */
   uint16_t conn_handle;         /* RFCOMM handle of connected service */
   tBTA_SEC cli_sec_mask;        /* client security mask */
@@ -205,14 +205,15 @@ extern tBTA_HF_CLIENT_CB_ARR bta_hf_client_cb_arr;
 
 /* main functions */
 extern tBTA_HF_CLIENT_CB* bta_hf_client_find_cb_by_handle(uint16_t handle);
-extern tBTA_HF_CLIENT_CB* bta_hf_client_find_cb_by_bda(const BD_ADDR bd_addr);
+extern tBTA_HF_CLIENT_CB* bta_hf_client_find_cb_by_bda(
+    const bt_bdaddr_t& bd_addr);
 extern tBTA_HF_CLIENT_CB* bta_hf_client_find_cb_by_rfc_handle(uint16_t handle);
 extern tBTA_HF_CLIENT_CB* bta_hf_client_find_cb_by_sco_handle(uint16_t handle);
 extern bool bta_hf_client_hdl_event(BT_HDR* p_msg);
 extern void bta_hf_client_sm_execute(uint16_t event,
                                      tBTA_HF_CLIENT_DATA* p_data);
 extern void bta_hf_client_slc_seq(tBTA_HF_CLIENT_CB* client_cb, bool error);
-extern bool bta_hf_client_allocate_handle(const BD_ADDR bd_addr,
+extern bool bta_hf_client_allocate_handle(const bt_bdaddr_t& bd_addr,
                                           uint16_t* p_handle);
 extern void bta_hf_client_app_callback(uint16_t event, tBTA_HF_CLIENT* data);
 extern void bta_hf_client_collision_cback(tBTA_SYS_CONN_STATUS status,

@@ -84,7 +84,7 @@ void bta_hf_client_cback_sco(tBTA_HF_CLIENT_CB* client_cb, uint8_t event) {
   tBTA_HF_CLIENT evt;
 
   memset(&evt, 0, sizeof(evt));
-  bdcpy(evt.bd_addr, client_cb->peer_addr);
+  evt.bd_addr = client_cb->peer_addr;
 
   /* call app cback */
   bta_hf_client_app_callback(event, (tBTA_HF_CLIENT*)&evt);
@@ -118,7 +118,7 @@ static void bta_hf_client_sco_conn_rsp(tBTA_HF_CLIENT_CB* client_cb,
     }
 
     /* tell sys to stop av if any */
-    bta_sys_sco_use(BTA_ID_HS, 1, client_cb->peer_addr);
+    bta_sys_sco_use(BTA_ID_HS, 1, to_BD_ADDR(client_cb->peer_addr));
   } else {
     hci_status = HCI_ERR_HOST_REJECT_DEVICE;
   }
@@ -237,13 +237,12 @@ static void bta_hf_client_sco_create(tBTA_HF_CLIENT_CB* client_cb,
   if (is_orig) {
     BTM_SetEScoMode(&params);
     /* tell sys to stop av if any */
-    bta_sys_sco_use(BTA_ID_HS, 1, client_cb->peer_addr);
+    bta_sys_sco_use(BTA_ID_HS, 1, to_BD_ADDR(client_cb->peer_addr));
   }
 
-  status =
-      BTM_CreateSco(&from_BD_ADDR(client_cb->peer_addr), is_orig,
-                    params.packet_types, &client_cb->sco_idx,
-                    bta_hf_client_sco_conn_cback, bta_hf_client_sco_disc_cback);
+  status = BTM_CreateSco(&client_cb->peer_addr, is_orig, params.packet_types,
+                         &client_cb->sco_idx, bta_hf_client_sco_conn_cback,
+                         bta_hf_client_sco_disc_cback);
   if (status == BTM_CMD_STARTED && !is_orig) {
     if (!BTM_RegForEScoEvts(client_cb->sco_idx,
                             bta_hf_client_esco_connreq_cback))
@@ -553,7 +552,7 @@ void bta_hf_client_sco_conn_open(tBTA_HF_CLIENT_DATA* p_data) {
 
   bta_hf_client_sco_event(client_cb, BTA_HF_CLIENT_SCO_CONN_OPEN_E);
 
-  bta_sys_sco_open(BTA_ID_HS, 1, client_cb->peer_addr);
+  bta_sys_sco_open(BTA_ID_HS, 1, to_BD_ADDR(client_cb->peer_addr));
 
   if (client_cb->negotiated_codec == BTM_SCO_CODEC_MSBC) {
     bta_hf_client_cback_sco(client_cb, BTA_HF_CLIENT_AUDIO_MSBC_OPEN_EVT);
@@ -588,9 +587,9 @@ void bta_hf_client_sco_conn_close(tBTA_HF_CLIENT_DATA* p_data) {
 
   bta_hf_client_sco_event(client_cb, BTA_HF_CLIENT_SCO_CONN_CLOSE_E);
 
-  bta_sys_sco_close(BTA_ID_HS, 1, client_cb->peer_addr);
+  bta_sys_sco_close(BTA_ID_HS, 1, to_BD_ADDR(client_cb->peer_addr));
 
-  bta_sys_sco_unuse(BTA_ID_HS, 1, client_cb->peer_addr);
+  bta_sys_sco_unuse(BTA_ID_HS, 1, to_BD_ADDR(client_cb->peer_addr));
 
   /* call app callback */
   bta_hf_client_cback_sco(client_cb, BTA_HF_CLIENT_AUDIO_CLOSE_EVT);

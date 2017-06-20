@@ -573,7 +573,7 @@ void bta_hf_client_ind(tBTA_HF_CLIENT_CB* client_cb,
   evt.ind.type = type;
   evt.ind.value = value;
 
-  bdcpy(evt.ind.bd_addr, client_cb->peer_addr);
+  evt.ind.bd_addr = client_cb->peer_addr;
   bta_hf_client_app_callback(BTA_HF_CLIENT_IND_EVT, &evt);
 }
 
@@ -594,7 +594,7 @@ void bta_hf_client_evt_val(tBTA_HF_CLIENT_CB* client_cb,
 
   memset(&evt, 0, sizeof(evt));
 
-  bdcpy(evt.val.bd_addr, client_cb->peer_addr);
+  evt.val.bd_addr = client_cb->peer_addr;
   evt.val.value = value;
 
   bta_hf_client_app_callback(type, &evt);
@@ -618,7 +618,7 @@ void bta_hf_client_operator_name(tBTA_HF_CLIENT_CB* client_cb, char* name) {
   strlcpy(evt.operator_name.name, name, BTA_HF_CLIENT_OPERATOR_NAME_LEN + 1);
   evt.operator_name.name[BTA_HF_CLIENT_OPERATOR_NAME_LEN] = '\0';
 
-  bdcpy(evt.operator_name.bd_addr, client_cb->peer_addr);
+  evt.operator_name.bd_addr = client_cb->peer_addr;
   bta_hf_client_app_callback(BTA_HF_CLIENT_OPERATOR_NAME_EVT, &evt);
 }
 
@@ -640,7 +640,7 @@ void bta_hf_client_clip(tBTA_HF_CLIENT_CB* client_cb, char* number) {
   strlcpy(evt.number.number, number, BTA_HF_CLIENT_NUMBER_LEN + 1);
   evt.number.number[BTA_HF_CLIENT_NUMBER_LEN] = '\0';
 
-  bdcpy(evt.number.bd_addr, client_cb->peer_addr);
+  evt.number.bd_addr = client_cb->peer_addr;
   bta_hf_client_app_callback(BTA_HF_CLIENT_CLIP_EVT, &evt);
 }
 
@@ -662,7 +662,7 @@ void bta_hf_client_ccwa(tBTA_HF_CLIENT_CB* client_cb, char* number) {
   strlcpy(evt.number.number, number, BTA_HF_CLIENT_NUMBER_LEN + 1);
   evt.number.number[BTA_HF_CLIENT_NUMBER_LEN] = '\0';
 
-  bdcpy(evt.number.bd_addr, client_cb->peer_addr);
+  evt.number.bd_addr = client_cb->peer_addr;
   bta_hf_client_app_callback(BTA_HF_CLIENT_CCWA_EVT, &evt);
 }
 
@@ -685,7 +685,7 @@ void bta_hf_client_at_result(tBTA_HF_CLIENT_CB* client_cb,
   evt.result.type = type;
   evt.result.cme = cme;
 
-  bdcpy(evt.result.bd_addr, client_cb->peer_addr);
+  evt.result.bd_addr = client_cb->peer_addr;
   bta_hf_client_app_callback(BTA_HF_CLIENT_AT_RESULT_EVT, &evt);
 }
 
@@ -717,7 +717,7 @@ void bta_hf_client_clcc(tBTA_HF_CLIENT_CB* client_cb, uint32_t idx,
     evt.clcc.number[BTA_HF_CLIENT_NUMBER_LEN] = '\0';
   }
 
-  bdcpy(evt.clcc.bd_addr, client_cb->peer_addr);
+  evt.clcc.bd_addr = client_cb->peer_addr;
   bta_hf_client_app_callback(BTA_HF_CLIENT_CLCC_EVT, &evt);
 }
 
@@ -741,7 +741,7 @@ void bta_hf_client_cnum(tBTA_HF_CLIENT_CB* client_cb, char* number,
   strlcpy(evt.cnum.number, number, BTA_HF_CLIENT_NUMBER_LEN + 1);
   evt.cnum.number[BTA_HF_CLIENT_NUMBER_LEN] = '\0';
 
-  bdcpy(evt.cnum.bd_addr, client_cb->peer_addr);
+  evt.cnum.bd_addr = client_cb->peer_addr;
   bta_hf_client_app_callback(BTA_HF_CLIENT_CNUM_EVT, &evt);
 }
 
@@ -763,7 +763,7 @@ void bta_hf_client_binp(tBTA_HF_CLIENT_CB* client_cb, char* number) {
   strlcpy(evt.number.number, number, BTA_HF_CLIENT_NUMBER_LEN + 1);
   evt.number.number[BTA_HF_CLIENT_NUMBER_LEN] = '\0';
 
-  bdcpy(evt.number.bd_addr, client_cb->peer_addr);
+  evt.number.bd_addr = client_cb->peer_addr;
   bta_hf_client_app_callback(BTA_HF_CLIENT_BINP_EVT, &evt);
 }
 
