@@ -106,10 +106,10 @@ void avct_l2c_connect_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
   tL2CAP_CFG_INFO cfg;
 
   /* do we already have a channel for this peer? */
-  p_lcb = avct_lcb_by_bd(to_BD_ADDR(bd_addr));
+  p_lcb = avct_lcb_by_bd(bd_addr);
   if (p_lcb == NULL) {
     /* no, allocate lcb */
-    p_lcb = avct_lcb_alloc(to_BD_ADDR(bd_addr));
+    p_lcb = avct_lcb_alloc(bd_addr);
     if (p_lcb == NULL) {
       /* no ccb available, reject L2CAP connection */
       result = L2CAP_CONN_NO_RESOURCES;

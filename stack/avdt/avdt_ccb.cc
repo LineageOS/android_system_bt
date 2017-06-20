@@ -405,13 +405,13 @@ void avdt_ccb_event(tAVDT_CCB* p_ccb, uint8_t event, tAVDT_CCB_EVT* p_data) {
  * Returns          pointer to the ccb, or NULL if none found.
  *
  ******************************************************************************/
-tAVDT_CCB* avdt_ccb_by_bd(BD_ADDR bd_addr) {
+tAVDT_CCB* avdt_ccb_by_bd(const bt_bdaddr_t& bd_addr) {
   tAVDT_CCB* p_ccb = &avdt_cb.ccb[0];
   int i;
 
   for (i = 0; i < AVDT_NUM_LINKS; i++, p_ccb++) {
     /* if allocated ccb has matching ccb */
-    if (p_ccb->allocated && (!memcmp(p_ccb->peer_addr, bd_addr, BD_ADDR_LEN))) {
+    if (p_ccb->allocated && p_ccb->peer_addr == bd_addr) {
       break;
     }
   }
@@ -420,9 +420,7 @@ tAVDT_CCB* avdt_ccb_by_bd(BD_ADDR bd_addr) {
     /* if no ccb found */
     p_ccb = NULL;
 
-    AVDT_TRACE_DEBUG("No ccb for addr %02x-%02x-%02x-%02x-%02x-%02x",
-                     bd_addr[0], bd_addr[1], bd_addr[2], bd_addr[3], bd_addr[4],
-                     bd_addr[5]);
+    VLOG(1) << "No ccb for addr " << bd_addr;
   }
   return p_ccb;
 }
@@ -437,14 +435,14 @@ tAVDT_CCB* avdt_ccb_by_bd(BD_ADDR bd_addr) {
  * Returns          pointer to the ccb, or NULL if none could be allocated.
  *
  ******************************************************************************/
-tAVDT_CCB* avdt_ccb_alloc(BD_ADDR bd_addr) {
+tAVDT_CCB* avdt_ccb_alloc(const bt_bdaddr_t& bd_addr) {
   tAVDT_CCB* p_ccb = &avdt_cb.ccb[0];
   int i;
 
   for (i = 0; i < AVDT_NUM_LINKS; i++, p_ccb++) {
     if (!p_ccb->allocated) {
       p_ccb->allocated = true;
-      memcpy(p_ccb->peer_addr, bd_addr, BD_ADDR_LEN);
+      p_ccb->peer_addr = bd_addr;
       p_ccb->cmd_q = fixed_queue_new(SIZE_MAX);
       p_ccb->rsp_q = fixed_queue_new(SIZE_MAX);
       p_ccb->idle_ccb_timer = alarm_new("avdt_ccb.idle_ccb_timer");

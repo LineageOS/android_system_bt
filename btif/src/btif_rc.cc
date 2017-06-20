@@ -612,13 +612,13 @@ void handle_rc_connect(tBTA_AV_RC_OPEN* p_rc_open) {
             and Current RC: %d",
         __func__, p_dev->rc_handle, p_rc_open->rc_handle);
     if (p_dev->rc_handle != p_rc_open->rc_handle &&
-        p_dev->rc_addr != from_BD_ADDR(p_rc_open->peer_addr)) {
+        p_dev->rc_addr != p_rc_open->peer_addr) {
       BTIF_TRACE_DEBUG("%s: Got RC connected for some other handle", __func__);
       BTA_AvCloseRc(p_rc_open->rc_handle);
       return;
     }
   }
-  p_dev->rc_addr = from_BD_ADDR(p_rc_open->peer_addr);
+  p_dev->rc_addr = p_rc_open->peer_addr;
   p_dev->rc_features = p_rc_open->peer_features;
   BTIF_TRACE_DEBUG("%s: handle_rc_connect in features: 0x%x out features 0x%x",
                    __func__, p_rc_open->peer_features, p_dev->rc_features);
@@ -662,7 +662,7 @@ void handle_rc_disconnect(tBTA_AV_RC_CLOSE* p_rc_close) {
   }
 
   if (p_rc_close->rc_handle != p_dev->rc_handle &&
-      p_dev->rc_addr != from_BD_ADDR(p_rc_close->peer_addr)) {
+      p_dev->rc_addr != p_rc_close->peer_addr) {
     BTIF_TRACE_ERROR("Got disconnect of unknown device");
     return;
   }

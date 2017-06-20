@@ -72,7 +72,7 @@ tAVCT_CCB* avct_ccb_alloc(tAVCT_CC* p_cc) {
  *
  ******************************************************************************/
 void avct_ccb_dealloc(tAVCT_CCB* p_ccb, uint8_t event, uint16_t result,
-                      BD_ADDR bd_addr) {
+                      const bt_bdaddr_t* bd_addr) {
   tAVCT_CTRL_CBACK* p_cback = p_ccb->cc.p_ctrl_cback;
 
   AVCT_TRACE_DEBUG("avct_ccb_dealloc %d", avct_ccb_to_idx(p_ccb));
