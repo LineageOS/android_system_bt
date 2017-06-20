@@ -73,8 +73,7 @@ void bta_dm_co_io_req(UNUSED_ATTR const bt_bdaddr_t& bd_addr,
                       tBTA_IO_CAP* p_io_cap, tBTA_OOB_DATA* p_oob_data,
                       tBTA_AUTH_REQ* p_auth_req, bool is_orig) {
   btif_dm_set_oob_for_io_req(p_oob_data);
-  btif_dm_proc_io_req(to_BD_ADDR(bd_addr), p_io_cap, p_oob_data, p_auth_req,
-                      is_orig);
+  btif_dm_proc_io_req(bd_addr, p_io_cap, p_oob_data, p_auth_req, is_orig);
   BTIF_TRACE_DEBUG("bta_dm_co_io_req *p_oob_data = %d", *p_oob_data);
   BTIF_TRACE_DEBUG("bta_dm_co_io_req *p_io_cap = %d", *p_io_cap);
   BTIF_TRACE_DEBUG("bta_dm_co_io_req *p_auth_req = %d", *p_auth_req);
@@ -100,7 +99,7 @@ void bta_dm_co_io_req(UNUSED_ATTR const bt_bdaddr_t& bd_addr,
  ******************************************************************************/
 void bta_dm_co_io_rsp(const bt_bdaddr_t& bd_addr, tBTA_IO_CAP io_cap,
                       tBTA_OOB_DATA oob_data, tBTA_AUTH_REQ auth_req) {
-  btif_dm_proc_io_rsp(to_BD_ADDR(bd_addr), io_cap, oob_data, auth_req);
+  btif_dm_proc_io_rsp(bd_addr, io_cap, oob_data, auth_req);
 }
 
 /*******************************************************************************
@@ -275,7 +274,7 @@ void bta_dm_sco_co_out_data(BT_HDR** p_buf) { btui_sco_codec_readbuf(p_buf); }
  * Returns          void.
  *
  ******************************************************************************/
-void bta_dm_co_le_io_key_req(UNUSED_ATTR BD_ADDR bd_addr,
+void bta_dm_co_le_io_key_req(UNUSED_ATTR const bt_bdaddr_t& bd_addr,
                              uint8_t* p_max_key_size,
                              tBTA_LE_KEY_TYPE* p_init_key,
                              tBTA_LE_KEY_TYPE* p_resp_key) {

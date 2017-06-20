@@ -80,7 +80,7 @@ typedef struct {
   uint8_t ch_flags;       /* L2CAP configuration flags */
   BT_HDR* p_rx_msg;       /* Message being reassembled */
   uint16_t conflict_lcid; /* L2CAP channel LCID */
-  BD_ADDR peer_addr;      /* BD address of peer */
+  bt_bdaddr_t peer_addr;  /* BD address of peer */
   fixed_queue_t* tx_q;    /* Transmit data buffer queue       */
   bool cong;              /* true, if congested */
 } tAVCT_LCB;
@@ -97,7 +97,7 @@ typedef struct {
   BT_HDR* p_tx_msg;  /* Message to be sent - in case the browsing channel is not
                         open when MsgReg is called */
   uint8_t ch_close;  /* CCB index+1, if CCB initiated channel close */
-  BD_ADDR peer_addr; /* BD address of peer */
+  bt_bdaddr_t peer_addr; /* BD address of peer */
 } tAVCT_BCB;
 
 #define AVCT_ALOC_LCB 0x01
@@ -154,8 +154,8 @@ extern tAVCT_BCB* avct_bcb_by_lcb(tAVCT_LCB* p_lcb);
 extern uint8_t avct_bcb_get_last_ccb_index(tAVCT_BCB* p_bcb,
                                            tAVCT_CCB* p_ccb_last);
 extern tAVCT_BCB* avct_bcb_by_lcid(uint16_t lcid);
-extern tAVCT_LCB* avct_lcb_by_bd(BD_ADDR bd_addr);
-extern tAVCT_LCB* avct_lcb_alloc(BD_ADDR bd_addr);
+extern tAVCT_LCB* avct_lcb_by_bd(const bt_bdaddr_t& bd_addr);
+extern tAVCT_LCB* avct_lcb_alloc(const bt_bdaddr_t& bd_addr);
 extern void avct_lcb_dealloc(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data);
 extern tAVCT_LCB* avct_lcb_by_lcid(uint16_t lcid);
 extern tAVCT_CCB* avct_lcb_has_pid(tAVCT_LCB* p_lcb, uint16_t pid);
@@ -205,7 +205,7 @@ extern const tL2CAP_FCR_OPTS avct_l2c_br_fcr_opts_def;
 /* CCB function declarations */
 extern tAVCT_CCB* avct_ccb_alloc(tAVCT_CC* p_cc);
 extern void avct_ccb_dealloc(tAVCT_CCB* p_ccb, uint8_t event, uint16_t result,
-                             BD_ADDR bd_addr);
+                             const bt_bdaddr_t* bd_addr);
 extern uint8_t avct_ccb_to_idx(tAVCT_CCB* p_ccb);
 extern tAVCT_CCB* avct_ccb_by_idx(uint8_t idx);
 

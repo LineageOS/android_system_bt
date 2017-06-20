@@ -102,7 +102,7 @@
 
 /* Control callback function. */
 typedef void(tAVCT_CTRL_CBACK)(uint8_t handle, uint8_t event, uint16_t result,
-                               BD_ADDR peer_addr);
+                               const bt_bdaddr_t* peer_addr);
 
 /* Message callback function */
 /* p_pkt->layer_specific is AVCT_DATA_CTRL or AVCT_DATA_BROWSE */
@@ -172,7 +172,7 @@ extern void AVCT_Deregister(void);
  *
  ******************************************************************************/
 extern uint16_t AVCT_CreateConn(uint8_t* p_handle, tAVCT_CC* p_cc,
-                                BD_ADDR peer_addr);
+                                const bt_bdaddr_t& peer_addr);
 
 /*******************************************************************************
  *
