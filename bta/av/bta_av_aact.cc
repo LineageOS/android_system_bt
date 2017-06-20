@@ -34,6 +34,8 @@
 #include "bt_utils.h"
 #include "bta_av_int.h"
 #include "btif/include/btif_av_co.h"
+#include "btif/include/btif_storage.h"
+#include "device/include/interop.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
 #include "osi/include/osi.h"
@@ -2745,11 +2747,32 @@ void bta_av_rcfg_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   uint8_t err_code = p_data->str_msg.msg.hdr.err_code;
 
   APPL_TRACE_DEBUG("%s: err_code = %d", __func__, err_code);
-  if (err_code) {
+
+  // Disable AVDTP RECONFIGURE for blacklisted devices
+  bool disable_avdtp_reconfigure = false;
+  {
+    char remote_name[BTM_MAX_REM_BD_NAME_LEN] = "";
+    if (btif_storage_get_stored_remote_name(from_BD_ADDR(p_scb->peer_addr),
+                                            remote_name)) {
+      if (interop_match_name(INTEROP_DISABLE_AVDTP_RECONFIGURE, remote_name) ||
+          interop_match_addr(INTEROP_DISABLE_AVDTP_RECONFIGURE,
+                             (const bt_bdaddr_t*)&p_scb->peer_addr)) {
+        APPL_TRACE_DEBUG(
+            "%s: disable AVDTP RECONFIGURE: interop matched "
+            "name %s address %02x:%02x:%02x:%02x:%02x:%02x",
+            __func__, remote_name, p_scb->peer_addr[0], p_scb->peer_addr[1],
+            p_scb->peer_addr[2], p_scb->peer_addr[3], p_scb->peer_addr[4],
+            p_scb->peer_addr[5]);
+        disable_avdtp_reconfigure = true;
+      }
+    }
+  }
+
+  if ((err_code != 0) || disable_avdtp_reconfigure) {
     APPL_TRACE_ERROR("%s: reconfig rejected, try close", __func__);
     /* Disable reconfiguration feature only with explicit rejection(not with
      * timeout) */
-    if (err_code != AVDT_ERR_TIMEOUT) {
+    if ((err_code != AVDT_ERR_TIMEOUT) || disable_avdtp_reconfigure) {
       p_scb->recfg_sup = false;
     }
     /* started flag is false when reconfigure command is sent */
