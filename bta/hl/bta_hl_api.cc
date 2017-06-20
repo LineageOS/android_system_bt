@@ -227,7 +227,7 @@ void BTA_HlCchOpen(uint8_t app_id, tBTA_HL_APP_HANDLE app_handle,
   p_buf->app_handle = app_handle;
   p_buf->sec_mask =
       (p_open_param->sec_mask | BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT);
-  bdcpy(p_buf->bd_addr, p_open_param->bd_addr);
+  p_buf->bd_addr = p_open_param->bd_addr;
   p_buf->ctrl_psm = p_open_param->ctrl_psm;
 
   bta_sys_sendmsg(p_buf);
@@ -443,14 +443,14 @@ void BTA_HlDchEchoTest(tBTA_HL_MCL_HANDLE mcl_handle,
  *
  ******************************************************************************/
 void BTA_HlSdpQuery(uint8_t app_id, tBTA_HL_APP_HANDLE app_handle,
-                    BD_ADDR bd_addr) {
+                    const bt_bdaddr_t& bd_addr) {
   tBTA_HL_API_SDP_QUERY* p_buf =
       (tBTA_HL_API_SDP_QUERY*)osi_malloc(sizeof(tBTA_HL_API_SDP_QUERY));
 
   p_buf->hdr.event = BTA_HL_API_SDP_QUERY_EVT;
   p_buf->app_id = app_id;
   p_buf->app_handle = app_handle;
-  bdcpy(p_buf->bd_addr, bd_addr);
+  p_buf->bd_addr = bd_addr;
 
   bta_sys_sendmsg(p_buf);
 }

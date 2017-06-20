@@ -1254,7 +1254,7 @@ void bta_hl_dch_mca_create_ind(uint8_t app_idx, uint8_t mcl_idx,
     evt_data.dch_create_ind.local_mdep_id = p_dcb->local_mdep_id;
     evt_data.dch_create_ind.mdl_id = p_dcb->mdl_id;
     evt_data.dch_create_ind.cfg = p_dcb->remote_cfg;
-    bdcpy(evt_data.dch_create_ind.bd_addr, p_mcb->bd_addr);
+    evt_data.dch_create_ind.bd_addr = p_mcb->bd_addr;
     p_acb->p_cback(BTA_HL_DCH_CREATE_IND_EVT, (tBTA_HL*)&evt_data);
   } else {
     if (MCA_CreateMdlRsp((tMCA_CL)p_mcb->mcl_handle, p_dcb->local_mdep_id,
@@ -1848,8 +1848,8 @@ tBTA_HL_STATUS bta_hl_init_sdp(tBTA_HL_SDP_OPER sdp_oper, uint8_t app_idx,
     SDP_InitDiscoveryDb(p_cb->p_db, BTA_HL_DISC_SIZE, 1, &uuid_list, num_attrs,
                         attr_list);
 
-    if (!SDP_ServiceSearchAttributeRequest(p_cb->bd_addr, p_cb->p_db,
-                                           p_cb->sdp_cback)) {
+    if (!SDP_ServiceSearchAttributeRequest(to_BD_ADDR(p_cb->bd_addr),
+                                           p_cb->p_db, p_cb->sdp_cback)) {
       status = BTA_HL_STATUS_FAIL;
     } else {
       status = BTA_HL_STATUS_OK;
@@ -1920,8 +1920,9 @@ void bta_hl_cch_mca_open(uint8_t app_idx, uint8_t mcl_idx,
                                          &sdp_idx)) {
     p_mcb->ctrl_psm = p_mcb->sdp.sdp_rec[sdp_idx].ctrl_psm;
     p_mcb->data_psm = p_mcb->sdp.sdp_rec[sdp_idx].data_psm;
-    if (MCA_ConnectReq((tMCA_HANDLE)p_acb->app_handle, p_mcb->bd_addr,
-                       p_mcb->ctrl_psm, p_mcb->sec_mask) != MCA_SUCCESS) {
+    if (MCA_ConnectReq((tMCA_HANDLE)p_acb->app_handle,
+                       to_BD_ADDR(p_mcb->bd_addr), p_mcb->ctrl_psm,
+                       p_mcb->sec_mask) != MCA_SUCCESS) {
       bta_hl_cch_sm_execute(app_idx, mcl_idx, BTA_HL_CCH_CLOSE_CMPL_EVT,
                             p_data);
     }
@@ -1986,7 +1987,7 @@ void bta_hl_cch_close_cmpl(uint8_t app_idx, uint8_t mcl_idx,
 #if (BTA_HL_DEBUG == TRUE)
   APPL_TRACE_DEBUG("bta_hl_cch_close_cmpl");
 #endif
-  bta_sys_conn_close(BTA_ID_HL, p_acb->app_id, p_mcb->bd_addr);
+  bta_sys_conn_close(BTA_ID_HL, p_acb->app_id, to_BD_ADDR(p_mcb->bd_addr));
 
   if (p_mcb->cch_oper == BTA_HL_CCH_OP_LOCAL_CLOSE &&
       p_mcb->force_close_local_cch_opening) {
@@ -2131,10 +2132,10 @@ void bta_hl_cch_mca_connect(uint8_t app_idx, uint8_t mcl_idx,
 #endif
 
   p_mcb->mcl_handle = p_data->mca_evt.mcl_handle;
-  bdcpy(p_mcb->bd_addr, p_data->mca_evt.mca_data.connect_ind.bd_addr);
+  p_mcb->bd_addr = from_BD_ADDR(p_data->mca_evt.mca_data.connect_ind.bd_addr);
   p_mcb->cch_mtu = p_data->mca_evt.mca_data.connect_ind.mtu;
 
-  bta_sys_conn_open(BTA_ID_HL, p_acb->app_id, p_mcb->bd_addr);
+  bta_sys_conn_open(BTA_ID_HL, p_acb->app_id, to_BD_ADDR(p_mcb->bd_addr));
   switch (p_mcb->cch_oper) {
     case BTA_HL_CCH_OP_LOCAL_OPEN:
       bta_hl_build_cch_open_cfm(&evt_data, p_mcb->app_id, p_acb->app_handle,
