@@ -306,7 +306,7 @@ static void bta_av_rc_msg_cback(uint8_t handle, uint8_t label, uint8_t opcode,
 uint8_t bta_av_rc_create(tBTA_AV_CB* p_cb, uint8_t role, uint8_t shdl,
                          uint8_t lidx) {
   tAVRC_CONN_CB ccb;
-  bt_bdaddr_t bda = from_BD_ADDR(const_cast<uint8_t*>(bd_addr_any));
+  bt_bdaddr_t bda = bd_addr_any;
   uint8_t status = BTA_AV_RC_ROLE_ACP;
   tBTA_AV_SCB* p_scb = p_cb->p_scb[shdl - 1];
   int i;

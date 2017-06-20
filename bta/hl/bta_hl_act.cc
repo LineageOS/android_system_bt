@@ -1920,9 +1920,8 @@ void bta_hl_cch_mca_open(uint8_t app_idx, uint8_t mcl_idx,
                                          &sdp_idx)) {
     p_mcb->ctrl_psm = p_mcb->sdp.sdp_rec[sdp_idx].ctrl_psm;
     p_mcb->data_psm = p_mcb->sdp.sdp_rec[sdp_idx].data_psm;
-    if (MCA_ConnectReq((tMCA_HANDLE)p_acb->app_handle,
-                       to_BD_ADDR(p_mcb->bd_addr), p_mcb->ctrl_psm,
-                       p_mcb->sec_mask) != MCA_SUCCESS) {
+    if (MCA_ConnectReq((tMCA_HANDLE)p_acb->app_handle, p_mcb->bd_addr,
+                       p_mcb->ctrl_psm, p_mcb->sec_mask) != MCA_SUCCESS) {
       bta_hl_cch_sm_execute(app_idx, mcl_idx, BTA_HL_CCH_CLOSE_CMPL_EVT,
                             p_data);
     }
@@ -2132,7 +2131,7 @@ void bta_hl_cch_mca_connect(uint8_t app_idx, uint8_t mcl_idx,
 #endif
 
   p_mcb->mcl_handle = p_data->mca_evt.mcl_handle;
-  p_mcb->bd_addr = from_BD_ADDR(p_data->mca_evt.mca_data.connect_ind.bd_addr);
+  p_mcb->bd_addr = p_data->mca_evt.mca_data.connect_ind.bd_addr;
   p_mcb->cch_mtu = p_data->mca_evt.mca_data.connect_ind.mtu;
 
   bta_sys_conn_open(BTA_ID_HL, p_acb->app_id, p_mcb->bd_addr);

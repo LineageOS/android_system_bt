@@ -42,27 +42,6 @@ extern "C" {
 /** The maximum number of active slaves in a piconet. */
 #define OI_BT_MAX_ACTIVE_SLAVES 7
 
-/** the number of bytes in a Bluetooth device address (BD_ADDR) */
-#define OI_BD_ADDR_BYTE_SIZE 6
-
-/**
- * 48-bit Bluetooth device address
- *
- * Because 48-bit integers may not be supported on all platforms, the
- * address is defined as an array of bytes. This array is big-endian,
- * meaning that
- *  - array[0] contains bits 47-40,
- *  - array[1] contains bits 39-32,
- *  - array[2] contains bits 31-24,
- *  - array[3] contains bits 23-16,
- *  - array[4] contains bits 15-8, and
- *  - array[5] contains bits 7-0.
- */
-typedef struct {
-  /* Bluetooth device address represented as an array of 8-bit values */
-  uint8_t addr[OI_BD_ADDR_BYTE_SIZE];
-} OI_BD_ADDR;
-
 /**
  * @name Data types for working with UUIDs
  * UUIDs are 16 bytes (128 bits).

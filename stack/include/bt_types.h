@@ -538,7 +538,6 @@ typedef struct {
 /* Common Bluetooth field definitions */
 #define BD_ADDR_LEN 6                 /* Device address length */
 typedef uint8_t BD_ADDR[BD_ADDR_LEN]; /* Device address */
-typedef uint8_t* BD_ADDR_PTR;         /* Pointer to Device Address */
 
 #ifdef __cplusplus
 #include <base/strings/stringprintf.h>
@@ -774,10 +773,12 @@ typedef uint8_t tBT_TRANSPORT;
 
 #define BLE_ADDR_IS_STATIC(x) (((x)[0] & 0xC0) == 0xC0)
 
-typedef struct {
+#ifdef __cplusplus
+struct tBLE_BD_ADDR {
   tBLE_ADDR_TYPE type;
-  BD_ADDR bda;
-} tBLE_BD_ADDR;
+  bt_bdaddr_t bda;
+};
+#endif
 
 /* Device Types
 */
@@ -972,72 +973,12 @@ typedef uint8_t BD_ADDR[BD_ADDR_LEN];
  ****************************************************************************/
 
 /* global constant for "any" bd addr */
-static const BD_ADDR bd_addr_any = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-
+#ifdef __cplusplus
+static const bt_bdaddr_t bd_addr_any = {
+    .address = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}};
+#endif
 /*****************************************************************************
  *  Functions
  ****************************************************************************/
 
-/*******************************************************************************
- *
- * Function         bdcpy
- *
- * Description      Copy bd addr b to a.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-static inline void bdcpy(BD_ADDR a, const BD_ADDR b) {
-  int i;
-
-  for (i = BD_ADDR_LEN; i != 0; i--) {
-    *a++ = *b++;
-  }
-}
-
-/*******************************************************************************
- *
- * Function         bdcmp
- *
- * Description      Compare bd addr b to a.
- *
- *
- * Returns          Zero if b==a, nonzero otherwise (like memcmp).
- *
- ******************************************************************************/
-static inline int bdcmp(const BD_ADDR a, const BD_ADDR b) {
-  int i;
-
-  for (i = BD_ADDR_LEN; i != 0; i--) {
-    if (*a++ != *b++) {
-      return -1;
-    }
-  }
-  return 0;
-}
-
-/*******************************************************************************
- *
- * Function         bdcmpany
- *
- * Description      Compare bd addr to "any" bd addr.
- *
- *
- * Returns          Zero if a equals bd_addr_any.
- *
- ******************************************************************************/
-static inline int bdcmpany(const BD_ADDR a) { return bdcmp(a, bd_addr_any); }
-
-/*******************************************************************************
- *
- * Function         bdsetany
- *
- * Description      Set bd addr to "any" bd addr.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-static inline void bdsetany(BD_ADDR a) { bdcpy(a, bd_addr_any); }
 #endif
