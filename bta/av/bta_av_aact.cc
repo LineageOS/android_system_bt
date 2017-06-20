@@ -1363,7 +1363,7 @@ void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       if (HCI_EDR_ACL_3MPS_SUPPORTED(p)) open.edr |= BTA_AV_EDR_3MBPS;
     }
 #if (BTA_AR_INCLUDED == TRUE)
-    bta_ar_avdt_conn(BTA_ID_AV, to_BD_ADDR(open.bd_addr));
+    bta_ar_avdt_conn(BTA_ID_AV, open.bd_addr);
 #endif
     if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SRC)
       open.sep = AVDT_TSEP_SNK;

@@ -473,8 +473,7 @@ void BTM_BleSecureConnectionOobDataReply(const bt_bdaddr_t& bd_addr,
   memcpy(&oob.peer_oob_data.randomizer, p_r, BT_OCTET16_LEN);
   memcpy(&oob.peer_oob_data.commitment, p_c, BT_OCTET16_LEN);
   oob.peer_oob_data.addr_rcvd_from.type = p_dev_rec->ble.ble_addr_type;
-  memcpy(oob.peer_oob_data.addr_rcvd_from.bda, to_BD_ADDR(bd_addr),
-         BD_ADDR_LEN);
+  oob.peer_oob_data.addr_rcvd_from.bda = bd_addr;
 
   SMP_SecureConnectionOobDataReply((uint8_t*)&oob);
 }
