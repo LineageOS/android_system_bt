@@ -22,6 +22,7 @@
  *  communications
  *
  ******************************************************************************/
+#include <base/logging.h>
 #include <string.h>
 
 #include "osi/include/mutex.h"
@@ -292,7 +293,7 @@ void PORT_ParNegInd(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu, uint8_t cl,
     p_mcb->port_inx[dlci] = p_port->inx;
   }
 
-  memcpy(p_port->bd_addr, p_mcb->bd_addr, BD_ADDR_LEN);
+  p_port->bd_addr = p_mcb->bd_addr;
 
   /* Connection is up and we know local and remote features, select MTU */
   port_select_mtu(p_port);
@@ -420,10 +421,7 @@ void PORT_DlcEstablishInd(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu) {
   RFCOMM_TRACE_DEBUG(
       "PORT_DlcEstablishInd p_mcb:%p, dlci:%d mtu:%di, p_port:%p", p_mcb, dlci,
       mtu, p_port);
-  RFCOMM_TRACE_DEBUG(
-      "PORT_DlcEstablishInd p_mcb addr:%02x:%02x:%02x:%02x:%02x:%02x",
-      p_mcb->bd_addr[0], p_mcb->bd_addr[1], p_mcb->bd_addr[2],
-      p_mcb->bd_addr[3], p_mcb->bd_addr[4], p_mcb->bd_addr[5]);
+  VLOG(1) << __func__ << " p_mcb addr:" << p_mcb->bd_addr;
 
   if (!p_port) {
     /* This can be a first request for this port */

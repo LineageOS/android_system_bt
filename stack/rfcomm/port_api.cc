@@ -24,6 +24,7 @@
 
 #define LOG_TAG "bt_port_api"
 
+#include <base/logging.h>
 #include <string.h>
 
 #include "osi/include/log.h"
@@ -94,7 +95,7 @@ static const char* result_code_strings[] = {"Success",
  *                                 the peer device (client).
  *                  is_server    - true if requesting application is a server
  *                  mtu          - Maximum frame size the application can accept
- *                  bd_addr      - BD_ADDR of the peer (client)
+ *                  bd_addr      - address of the peer (client)
  *                  mask         - specifies events to be enabled.  A value
  *                                 of zero disables all events.
  *                  p_handle     - OUT pointer to the handle.
@@ -112,17 +113,14 @@ static const char* result_code_strings[] = {"Success",
  *
  ******************************************************************************/
 int RFCOMM_CreateConnection(uint16_t uuid, uint8_t scn, bool is_server,
-                            uint16_t mtu, BD_ADDR bd_addr, uint16_t* p_handle,
-                            tPORT_CALLBACK* p_mgmt_cb) {
+                            uint16_t mtu, const bt_bdaddr_t& bd_addr,
+                            uint16_t* p_handle, tPORT_CALLBACK* p_mgmt_cb) {
   tPORT* p_port;
-  int i;
   uint8_t dlci;
   tRFC_MCB* p_mcb = port_find_mcb(bd_addr);
   uint16_t rfcomm_mtu;
 
-  RFCOMM_TRACE_API(
-      "RFCOMM_CreateConnection()  BDA: %02x-%02x-%02x-%02x-%02x-%02x",
-      bd_addr[0], bd_addr[1], bd_addr[2], bd_addr[3], bd_addr[4], bd_addr[5]);
+  VLOG(0) << __func__ << " BDA: " << bd_addr;
 
   *p_handle = 0;
 
@@ -228,7 +226,7 @@ int RFCOMM_CreateConnection(uint16_t uuid, uint8_t scn, bool is_server,
 
   p_port->p_mgmt_callback = p_mgmt_cb;
 
-  for (i = 0; i < BD_ADDR_LEN; i++) p_port->bd_addr[i] = bd_addr[i];
+  p_port->bd_addr = bd_addr;
 
   /* If this is not initiator of the connection need to just wait */
   if (p_port->is_server) {
@@ -482,7 +480,8 @@ int PORT_SetEventMask(uint16_t port_handle, uint32_t mask) {
  *                  p_lcid     - OUT L2CAP's LCID
  *
  ******************************************************************************/
-int PORT_CheckConnection(uint16_t handle, BD_ADDR bd_addr, uint16_t* p_lcid) {
+int PORT_CheckConnection(uint16_t handle, bt_bdaddr_t& bd_addr,
+                         uint16_t* p_lcid) {
   tPORT* p_port;
 
   RFCOMM_TRACE_API("PORT_CheckConnection() handle:%d", handle);
@@ -503,7 +502,7 @@ int PORT_CheckConnection(uint16_t handle, BD_ADDR bd_addr, uint16_t* p_lcid) {
     return (PORT_LINE_ERR);
   }
 
-  memcpy(bd_addr, p_port->rfc.p_mcb->bd_addr, BD_ADDR_LEN);
+  bd_addr = p_port->rfc.p_mcb->bd_addr;
   if (p_lcid) *p_lcid = p_port->rfc.p_mcb->lcid;
 
   return (PORT_SUCCESS);
@@ -520,7 +519,7 @@ int PORT_CheckConnection(uint16_t handle, BD_ADDR bd_addr, uint16_t* p_lcid) {
  *                  bd_addr    - bd_addr of the peer
  *
  ******************************************************************************/
-bool PORT_IsOpening(BD_ADDR bd_addr) {
+bool PORT_IsOpening(bt_bdaddr_t& bd_addr) {
   uint8_t xx, yy;
   tRFC_MCB* p_mcb = NULL;
   tPORT* p_port;
@@ -530,7 +529,7 @@ bool PORT_IsOpening(BD_ADDR bd_addr) {
   for (xx = 0; xx < MAX_BD_CONNECTIONS; xx++) {
     if ((rfc_cb.port.rfc_mcb[xx].state > RFC_MX_STATE_IDLE) &&
         (rfc_cb.port.rfc_mcb[xx].state < RFC_MX_STATE_CONNECTED)) {
-      memcpy(bd_addr, rfc_cb.port.rfc_mcb[xx].bd_addr, BD_ADDR_LEN);
+      bd_addr = rfc_cb.port.rfc_mcb[xx].bd_addr;
       return true;
     }
 
@@ -549,7 +548,7 @@ bool PORT_IsOpening(BD_ADDR bd_addr) {
       if ((!found_port) ||
           (found_port && (p_port->rfc.state < RFC_STATE_OPENED))) {
         /* Port is not established yet. */
-        memcpy(bd_addr, rfc_cb.port.rfc_mcb[xx].bd_addr, BD_ADDR_LEN);
+        bd_addr = rfc_cb.port.rfc_mcb[xx].bd_addr;
         return true;
       }
     }

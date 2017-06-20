@@ -274,7 +274,7 @@ void bta_ag_start_servers(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK services) {
 
       bta_ag_port_status = RFCOMM_CreateConnection(
           bta_ag_uuid[i], bta_ag_cb.profile[i].scn, true, BTA_AG_MTU,
-          (uint8_t*)bd_addr_any, &(p_scb->serv_handle[i]),
+          from_BD_ADDR(bd_addr_any), &(p_scb->serv_handle[i]),
           bta_ag_mgmt_cback_tbl[bta_ag_scb_to_idx(p_scb) - 1]);
 
       if (bta_ag_port_status == PORT_SUCCESS) {
@@ -350,7 +350,7 @@ void bta_ag_rfc_do_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
 
   if (RFCOMM_CreateConnection(
           bta_ag_uuid[p_scb->conn_service], p_scb->peer_scn, false, BTA_AG_MTU,
-          to_BD_ADDR(p_scb->peer_addr), &(p_scb->conn_handle),
+          p_scb->peer_addr, &(p_scb->conn_handle),
           bta_ag_mgmt_cback_tbl[bta_ag_scb_to_idx(p_scb) - 1]) ==
       PORT_SUCCESS) {
     bta_ag_setup_port(p_scb, p_scb->conn_handle);

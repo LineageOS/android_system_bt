@@ -104,7 +104,7 @@ void bta_hf_client_start_open(tBTA_HF_CLIENT_DATA* p_data) {
 
   /* Check if RFCOMM has any incoming connection to avoid collision. */
   bt_bdaddr_t pending_bd_addr;
-  if (PORT_IsOpening(to_BD_ADDR(pending_bd_addr))) {
+  if (PORT_IsOpening(pending_bd_addr)) {
     /* Let the incoming connection goes through.                        */
     /* Issue collision for now.                                         */
     /* We will decide what to do when we find incoming connection later.*/
@@ -176,9 +176,8 @@ void bta_hf_client_rfc_acp_open(tBTA_HF_CLIENT_DATA* p_data) {
   APPL_TRACE_DEBUG("%s: conn_handle %d", __func__, client_cb->conn_handle);
 
   /* get bd addr of peer */
-  if (PORT_SUCCESS !=
-      (status = PORT_CheckConnection(client_cb->conn_handle,
-                                     to_BD_ADDR(dev_addr), &lcid))) {
+  if (PORT_SUCCESS != (status = PORT_CheckConnection(client_cb->conn_handle,
+                                                     dev_addr, &lcid))) {
     APPL_TRACE_DEBUG("%s: error PORT_CheckConnection returned status %d",
                      __func__, status);
   }

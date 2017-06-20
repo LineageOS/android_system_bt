@@ -129,15 +129,14 @@ bool rfc_check_fcs(uint16_t len, uint8_t* p, uint8_t received_fcs) {
  * Function         rfc_alloc_multiplexer_channel
  *
  * Description      This function returns existing or new control block for
- *                  the BD_ADDR.
+ *                  the address.
  *
  ******************************************************************************/
-tRFC_MCB* rfc_alloc_multiplexer_channel(BD_ADDR bd_addr, bool is_initiator) {
+tRFC_MCB* rfc_alloc_multiplexer_channel(const bt_bdaddr_t& bd_addr,
+                                        bool is_initiator) {
   int i, j;
   tRFC_MCB* p_mcb = NULL;
-  RFCOMM_TRACE_DEBUG(
-      "rfc_alloc_multiplexer_channel: bd_addr:%02x:%02x:%02x:%02x:%02x:%02x",
-      bd_addr[0], bd_addr[1], bd_addr[2], bd_addr[3], bd_addr[4], bd_addr[5]);
+  VLOG(1) << __func__ << ": bd_addr:" << bd_addr;
   RFCOMM_TRACE_DEBUG("rfc_alloc_multiplexer_channel:is_initiator:%d",
                      is_initiator);
 
@@ -145,14 +144,11 @@ tRFC_MCB* rfc_alloc_multiplexer_channel(BD_ADDR bd_addr, bool is_initiator) {
     RFCOMM_TRACE_DEBUG(
         "rfc_alloc_multiplexer_channel rfc_cb.port.rfc_mcb[%d].state:%d", i,
         rfc_cb.port.rfc_mcb[i].state);
-    RFCOMM_TRACE_DEBUG(
-        "(rfc_cb.port.rfc_mcb[i].bd_addr:%02x:%02x:%02x:%02x:%02x:%02x",
-        rfc_cb.port.rfc_mcb[i].bd_addr[0], rfc_cb.port.rfc_mcb[i].bd_addr[1],
-        rfc_cb.port.rfc_mcb[i].bd_addr[2], rfc_cb.port.rfc_mcb[i].bd_addr[3],
-        rfc_cb.port.rfc_mcb[i].bd_addr[4], rfc_cb.port.rfc_mcb[i].bd_addr[5]);
+    VLOG(1) << "(rfc_cb.port.rfc_mcb[i].bd_addr:"
+            << rfc_cb.port.rfc_mcb[i].bd_addr;
 
     if ((rfc_cb.port.rfc_mcb[i].state != RFC_MX_STATE_IDLE) &&
-        (!memcmp(rfc_cb.port.rfc_mcb[i].bd_addr, bd_addr, BD_ADDR_LEN))) {
+        rfc_cb.port.rfc_mcb[i].bd_addr == bd_addr) {
       /* Multiplexer channel found do not change anything */
       /* If there was an inactivity timer running stop it now */
       if (rfc_cb.port.rfc_mcb[i].state == RFC_MX_STATE_CONNECTED)
@@ -175,7 +171,7 @@ tRFC_MCB* rfc_alloc_multiplexer_channel(BD_ADDR bd_addr, bool is_initiator) {
       alarm_free(p_mcb->mcb_timer);
       fixed_queue_free(p_mcb->cmd_q, NULL);
       memset(p_mcb, 0, sizeof(tRFC_MCB));
-      memcpy(p_mcb->bd_addr, bd_addr, BD_ADDR_LEN);
+      p_mcb->bd_addr = bd_addr;
       RFCOMM_TRACE_DEBUG(
           "rfc_alloc_multiplexer_channel:is_initiator:%d, create new p_mcb:%p, "
           "index:%d",
