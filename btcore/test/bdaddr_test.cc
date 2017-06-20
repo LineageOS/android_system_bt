@@ -56,17 +56,17 @@ TEST(BdaddrTest, test_equals) {
   bt_bdaddr_t bdaddr3;
   string_to_bdaddr(test_addr, &bdaddr1);
   string_to_bdaddr(test_addr, &bdaddr2);
-  EXPECT_TRUE(bdaddr_equals(&bdaddr1, &bdaddr2));
+  EXPECT_TRUE(bdaddr1 == bdaddr2);
 
   string_to_bdaddr(test_addr2, &bdaddr3);
-  EXPECT_FALSE(bdaddr_equals(&bdaddr2, &bdaddr3));
+  EXPECT_FALSE(bdaddr2 == bdaddr3);
 }
 
 TEST(BdaddrTest, test_copy) {
   bt_bdaddr_t bdaddr1;
   bt_bdaddr_t bdaddr2;
   string_to_bdaddr(test_addr, &bdaddr1);
-  bdaddr_copy(&bdaddr2, &bdaddr1);
+  bdaddr2 = bdaddr1;
 
-  EXPECT_TRUE(bdaddr_equals(&bdaddr1, &bdaddr2));
+  EXPECT_TRUE(bdaddr1 == bdaddr2);
 }

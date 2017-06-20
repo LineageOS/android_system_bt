@@ -63,7 +63,7 @@ void RFCommTest::SetUp() {
     for (int j = 0; j < num_uuids; j++) {
       uuid_to_string(&uuids[j], (uuid_string_t*)value);
       if (!memcmp(uuids + j, &HFP_UUID, sizeof(bt_uuid_t))) {
-        bdaddr_copy(&bt_remote_bdaddr_, devices + i);
+        bt_remote_bdaddr_ = *(devices + i);
         break;
       }
     }

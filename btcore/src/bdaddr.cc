@@ -30,20 +30,6 @@ bool bdaddr_is_empty(const bt_bdaddr_t* addr) {
   return memcmp(addr, &zero, sizeof(bt_bdaddr_t)) == 0;
 }
 
-bool bdaddr_equals(const bt_bdaddr_t* first, const bt_bdaddr_t* second) {
-  CHECK(first != NULL);
-  CHECK(second != NULL);
-
-  return memcmp(first, second, sizeof(bt_bdaddr_t)) == 0;
-}
-
-bt_bdaddr_t* bdaddr_copy(bt_bdaddr_t* dest, const bt_bdaddr_t* src) {
-  CHECK(dest != NULL);
-  CHECK(src != NULL);
-
-  return (bt_bdaddr_t*)memcpy(dest, src, sizeof(bt_bdaddr_t));
-}
-
 const char* bdaddr_to_string(const bt_bdaddr_t* addr, char* string,
                              size_t size) {
   CHECK(addr != NULL);
