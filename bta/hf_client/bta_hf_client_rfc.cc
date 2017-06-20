@@ -24,6 +24,7 @@
  *
  ******************************************************************************/
 
+#include <base/logging.h>
 #include <string.h>
 
 #include "bt_utils.h"
@@ -97,7 +98,7 @@ static void bta_hf_client_mgmt_cback(uint32_t code, uint16_t port_handle) {
       APPL_TRACE_DEBUG("%s: allocating a new CB for incoming connection",
                        __func__);
       // Find the BDADDR of the peer device
-      BD_ADDR peer_addr;
+      bt_bdaddr_t peer_addr;
       uint16_t lcid;
       PORT_CheckConnection(port_handle, peer_addr, &lcid);
 
@@ -127,12 +128,8 @@ static void bta_hf_client_mgmt_cback(uint32_t code, uint16_t port_handle) {
     }
   } else if (client_cb != NULL &&
              port_handle == client_cb->conn_handle) { /* code != PORT_SUC */
-    APPL_TRACE_ERROR(
-        "%s: closing port handle %d "
-        "dev %02x:%02x:%02x:%02x:%02x:%02x",
-        __func__, port_handle, client_cb->peer_addr[0], client_cb->peer_addr[1],
-        client_cb->peer_addr[2], client_cb->peer_addr[3],
-        client_cb->peer_addr[4], client_cb->peer_addr[5]);
+    LOG(ERROR) << __func__ << ": closing port handle " << port_handle << "dev "
+               << client_cb->peer_addr;
 
     RFCOMM_RemoveServer(port_handle);
     p_buf->hdr.event = BTA_HF_CLIENT_RFC_CLOSE_EVT;
@@ -182,8 +179,8 @@ void bta_hf_client_start_server() {
 
   port_status = RFCOMM_CreateConnection(
       UUID_SERVCLASS_HF_HANDSFREE, bta_hf_client_cb_arr.scn, true,
-      BTA_HF_CLIENT_MTU, (uint8_t*)bd_addr_any,
-      &(bta_hf_client_cb_arr.serv_handle), bta_hf_client_mgmt_cback);
+      BTA_HF_CLIENT_MTU, bd_addr_any, &(bta_hf_client_cb_arr.serv_handle),
+      bta_hf_client_mgmt_cback);
 
   APPL_TRACE_DEBUG("%s: started rfcomm server with handle %d", __func__,
                    bta_hf_client_cb_arr.serv_handle);

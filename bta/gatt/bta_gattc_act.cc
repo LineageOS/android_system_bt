@@ -599,7 +599,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
   if (p_clcb->p_rcb) {
     /* there is no RM for GATT */
     if (p_clcb->transport == BTA_TRANSPORT_BR_EDR)
-      bta_sys_conn_open(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda.address);
+      bta_sys_conn_open(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
 
     bta_gattc_send_open_cback(p_clcb->p_rcb, BTA_GATT_OK, p_clcb->bda,
                               p_clcb->bta_conn_id, p_clcb->transport,
@@ -652,7 +652,7 @@ void bta_gattc_close(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
   cb_data.close.remote_bda = p_clcb->bda;
 
   if (p_clcb->transport == BTA_TRANSPORT_BR_EDR)
-    bta_sys_conn_close(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda.address);
+    bta_sys_conn_close(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
 
   bta_gattc_clcb_dealloc(p_clcb);
 
@@ -1042,8 +1042,8 @@ void bta_gattc_confirm(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
   } else {
     /* if over BR_EDR, inform PM for mode change */
     if (p_clcb->transport == BTA_TRANSPORT_BR_EDR) {
-      bta_sys_busy(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda.address);
-      bta_sys_idle(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda.address);
+      bta_sys_busy(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
+      bta_sys_idle(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
     }
   }
 }
@@ -1627,8 +1627,8 @@ static void bta_gattc_cmpl_cback(uint16_t conn_id, tGATTC_OPTYPE op,
 
   /* if over BR_EDR, inform PM for mode change */
   if (p_clcb->transport == BTA_TRANSPORT_BR_EDR) {
-    bta_sys_busy(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda.address);
-    bta_sys_idle(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda.address);
+    bta_sys_busy(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
+    bta_sys_idle(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
   }
 
   bta_gattc_cmpl_sendmsg(conn_id, op, status, p_data);

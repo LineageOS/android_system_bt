@@ -582,7 +582,7 @@ static void btu_hcif_connection_comp_evt(uint8_t* p) {
 
   STREAM_TO_UINT8(status, p);
   STREAM_TO_UINT16(handle, p);
-  STREAM_TO_BDADDR(to_BD_ADDR(bda), p);
+  STREAM_TO_BDADDR(bda, p);
   STREAM_TO_UINT8(link_type, p);
   STREAM_TO_UINT8(enc_mode, p);
 
@@ -617,7 +617,7 @@ static void btu_hcif_connection_request_evt(uint8_t* p) {
   DEV_CLASS dc;
   uint8_t link_type;
 
-  STREAM_TO_BDADDR(to_BD_ADDR(bda), p);
+  STREAM_TO_BDADDR(bda, p);
   STREAM_TO_DEVCLASS(dc, p);
   STREAM_TO_UINT8(link_type, p);
 
@@ -696,7 +696,7 @@ static void btu_hcif_rmt_name_request_comp_evt(uint8_t* p, uint16_t evt_len) {
   bt_bdaddr_t bd_addr;
 
   STREAM_TO_UINT8(status, p);
-  STREAM_TO_BDADDR(to_BD_ADDR(bd_addr), p);
+  STREAM_TO_BDADDR(bd_addr, p);
 
   evt_len -= (1 + BD_ADDR_LEN);
 
@@ -821,7 +821,7 @@ static void btu_hcif_esco_connection_comp_evt(uint8_t* p) {
 
   STREAM_TO_UINT8(status, p);
   STREAM_TO_UINT16(handle, p);
-  STREAM_TO_BDADDR(to_BD_ADDR(bda), p);
+  STREAM_TO_BDADDR(bda, p);
 
   STREAM_TO_UINT8(data.link_type, p);
   STREAM_TO_UINT8(data.tx_interval, p);
@@ -1080,7 +1080,7 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
             /* read bd addr out of stored command */
             if (p_cmd != NULL) {
               p_cmd++;
-              STREAM_TO_BDADDR(to_BD_ADDR(bd_addr), p_cmd);
+              STREAM_TO_BDADDR(bd_addr, p_cmd);
               btm_acl_role_changed(status, &bd_addr, BTM_ROLE_UNDEFINED);
             } else
               btm_acl_role_changed(status, NULL, BTM_ROLE_UNDEFINED);
@@ -1092,7 +1092,7 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
             /* read bd addr out of stored command */
             if (p_cmd != NULL) {
               p_cmd++;
-              STREAM_TO_BDADDR(to_BD_ADDR(bd_addr), p_cmd);
+              STREAM_TO_BDADDR(bd_addr, p_cmd);
               btm_sec_connected(bd_addr, HCI_INVALID_HANDLE, status, 0);
               l2c_link_hci_conn_comp(status, HCI_INVALID_HANDLE, bd_addr);
             }
@@ -1234,7 +1234,7 @@ static void btu_hcif_role_change_evt(uint8_t* p) {
   uint8_t role;
 
   STREAM_TO_UINT8(status, p);
-  STREAM_TO_BDADDR(to_BD_ADDR(bda), p);
+  STREAM_TO_BDADDR(bda, p);
   STREAM_TO_UINT8(role, p);
 
   l2c_link_role_changed(&bda, role, status);
@@ -1315,7 +1315,7 @@ static void btu_hcif_ssr_evt(uint8_t* p, uint16_t evt_len) {
 static void btu_hcif_pin_code_request_evt(uint8_t* p) {
   bt_bdaddr_t bda;
 
-  STREAM_TO_BDADDR(to_BD_ADDR(bda), p);
+  STREAM_TO_BDADDR(bda, p);
 
   /* Tell L2CAP that there was a PIN code request,  */
   /* it may need to stretch timeouts                */
@@ -1336,7 +1336,7 @@ static void btu_hcif_pin_code_request_evt(uint8_t* p) {
 static void btu_hcif_link_key_request_evt(uint8_t* p) {
   bt_bdaddr_t bda;
 
-  STREAM_TO_BDADDR(to_BD_ADDR(bda), p);
+  STREAM_TO_BDADDR(bda, p);
   btm_sec_link_key_request(bda);
 }
 
@@ -1354,7 +1354,7 @@ static void btu_hcif_link_key_notification_evt(uint8_t* p) {
   LINK_KEY key;
   uint8_t key_type;
 
-  STREAM_TO_BDADDR(to_BD_ADDR(bda), p);
+  STREAM_TO_BDADDR(bda, p);
   STREAM_TO_ARRAY16(key, p);
   STREAM_TO_UINT8(key_type, p);
 
@@ -1502,7 +1502,7 @@ static void btu_hcif_host_support_evt(uint8_t* p) {
  ******************************************************************************/
 static void btu_hcif_io_cap_request_evt(uint8_t* p) {
   bt_bdaddr_t bda;
-  STREAM_TO_BDADDR(to_BD_ADDR(bda), p);
+  STREAM_TO_BDADDR(bda, p);
   btm_io_capabilities_req(bda);
 }
 

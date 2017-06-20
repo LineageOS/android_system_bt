@@ -296,7 +296,7 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
     switch (filt_type) {
       case BTM_BLE_PF_ADDR_FILTER: {
         tBLE_BD_ADDR target_addr;
-        bdcpy(target_addr.bda, bd_addr->address);
+        target_addr.bda = *bd_addr;
         target_addr.type = addr_type;
 
         do_in_bta_thread(

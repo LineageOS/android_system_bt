@@ -127,11 +127,11 @@ void avct_l2c_br_connect_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
   memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
   cfg.mtu_present = true;
 
-  p_lcb = avct_lcb_by_bd(to_BD_ADDR(bd_addr));
+  p_lcb = avct_lcb_by_bd(bd_addr);
   if (p_lcb != NULL) {
     /* control channel exists */
     p_bcb = avct_bcb_by_lcb(p_lcb);
-    memcpy(p_bcb->peer_addr, to_BD_ADDR(bd_addr), BD_ADDR_LEN);
+    p_bcb->peer_addr = bd_addr;
 
     if (p_bcb->allocated == 0) {
       /* browsing channel does not exist yet and the browsing channel is

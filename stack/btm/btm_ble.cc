@@ -473,8 +473,7 @@ void BTM_BleSecureConnectionOobDataReply(const bt_bdaddr_t& bd_addr,
   memcpy(&oob.peer_oob_data.randomizer, p_r, BT_OCTET16_LEN);
   memcpy(&oob.peer_oob_data.commitment, p_c, BT_OCTET16_LEN);
   oob.peer_oob_data.addr_rcvd_from.type = p_dev_rec->ble.ble_addr_type;
-  memcpy(oob.peer_oob_data.addr_rcvd_from.bda, to_BD_ADDR(bd_addr),
-         BD_ADDR_LEN);
+  oob.peer_oob_data.addr_rcvd_from.bda = bd_addr;
 
   SMP_SecureConnectionOobDataReply((uint8_t*)&oob);
 }
@@ -1924,12 +1923,12 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
   STREAM_TO_UINT16(handle, p);
   STREAM_TO_UINT8(role, p);
   STREAM_TO_UINT8(bda_type, p);
-  STREAM_TO_BDADDR(to_BD_ADDR(bda), p);
+  STREAM_TO_BDADDR(bda, p);
 
   if (status == 0) {
     if (enhanced) {
-      STREAM_TO_BDADDR(to_BD_ADDR(local_rpa), p);
-      STREAM_TO_BDADDR(to_BD_ADDR(peer_rpa), p);
+      STREAM_TO_BDADDR(local_rpa, p);
+      STREAM_TO_BDADDR(peer_rpa, p);
     }
 
     STREAM_TO_UINT16(conn_interval, p);

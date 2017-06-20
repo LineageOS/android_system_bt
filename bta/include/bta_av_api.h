@@ -263,7 +263,7 @@ typedef uint8_t tBTA_AV_EDR;
 typedef struct {
   tBTA_AV_CHNL chnl;
   tBTA_AV_HNDL hndl;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   tBTA_AV_STATUS status;
   bool starting;
   tBTA_AV_EDR edr; /* 0, if peer device does not support EDR */
@@ -321,34 +321,34 @@ typedef struct {
 typedef struct {
   uint8_t rc_handle;
   tBTA_AV_FEAT peer_features;
-  BD_ADDR peer_addr;
+  bt_bdaddr_t peer_addr;
   tBTA_AV_STATUS status;
 } tBTA_AV_RC_OPEN;
 
 /* data associated with BTA_AV_RC_CLOSE_EVT */
 typedef struct {
   uint8_t rc_handle;
-  BD_ADDR peer_addr;
+  bt_bdaddr_t peer_addr;
 } tBTA_AV_RC_CLOSE;
 
 /* data associated with BTA_AV_RC_BROWSE_OPEN_EVT */
 typedef struct {
   uint8_t rc_handle;
-  BD_ADDR peer_addr;
+  bt_bdaddr_t peer_addr;
   tBTA_AV_STATUS status;
 } tBTA_AV_RC_BROWSE_OPEN;
 
 /* data associated with BTA_AV_RC_BROWSE_CLOSE_EVT */
 typedef struct {
   uint8_t rc_handle;
-  BD_ADDR peer_addr;
+  bt_bdaddr_t peer_addr;
 } tBTA_AV_RC_BROWSE_CLOSE;
 
 /* data associated with BTA_AV_RC_FEAT_EVT */
 typedef struct {
   uint8_t rc_handle;
   tBTA_AV_FEAT peer_features;
-  BD_ADDR peer_addr;
+  bt_bdaddr_t peer_addr;
 } tBTA_AV_RC_FEAT;
 
 /* data associated with BTA_AV_REMOTE_CMD_EVT */
@@ -395,11 +395,11 @@ typedef struct {
 } tBTA_AV_META_MSG;
 
 /* data associated with BTA_AV_PENDING_EVT */
-typedef struct { BD_ADDR bd_addr; } tBTA_AV_PEND;
+typedef struct { bt_bdaddr_t bd_addr; } tBTA_AV_PEND;
 
 /* data associated with BTA_AV_REJECT_EVT */
 typedef struct {
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
   tBTA_AV_HNDL hndl; /* Handle associated with the stream that rejected the
                         connection. */
 } tBTA_AV_REJECT;
@@ -433,8 +433,7 @@ typedef union {
 
 typedef struct {
   uint8_t* codec_info;
-  BD_ADDR bd_addr;
-  ;
+  bt_bdaddr_t bd_addr;
 } tBTA_AVK_CONFIG;
 
 /* union of data associated with AV Media callback */
@@ -556,7 +555,7 @@ void BTA_AvDeregister(tBTA_AV_HNDL hndl);
  * Returns          void
  *
  ******************************************************************************/
-void BTA_AvOpen(BD_ADDR bd_addr, tBTA_AV_HNDL handle, bool use_rc,
+void BTA_AvOpen(const bt_bdaddr_t& bd_addr, tBTA_AV_HNDL handle, bool use_rc,
                 tBTA_SEC sec_mask, uint16_t uuid);
 
 /*******************************************************************************
@@ -579,7 +578,7 @@ void BTA_AvClose(tBTA_AV_HNDL handle);
  * Returns          void
  *
  ******************************************************************************/
-void BTA_AvDisconnect(BD_ADDR bd_addr);
+void BTA_AvDisconnect(const bt_bdaddr_t& bd_addr);
 
 /*******************************************************************************
  *

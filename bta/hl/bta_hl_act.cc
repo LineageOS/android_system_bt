@@ -1254,7 +1254,7 @@ void bta_hl_dch_mca_create_ind(uint8_t app_idx, uint8_t mcl_idx,
     evt_data.dch_create_ind.local_mdep_id = p_dcb->local_mdep_id;
     evt_data.dch_create_ind.mdl_id = p_dcb->mdl_id;
     evt_data.dch_create_ind.cfg = p_dcb->remote_cfg;
-    bdcpy(evt_data.dch_create_ind.bd_addr, p_mcb->bd_addr);
+    evt_data.dch_create_ind.bd_addr = p_mcb->bd_addr;
     p_acb->p_cback(BTA_HL_DCH_CREATE_IND_EVT, (tBTA_HL*)&evt_data);
   } else {
     if (MCA_CreateMdlRsp((tMCA_CL)p_mcb->mcl_handle, p_dcb->local_mdep_id,
@@ -2131,7 +2131,7 @@ void bta_hl_cch_mca_connect(uint8_t app_idx, uint8_t mcl_idx,
 #endif
 
   p_mcb->mcl_handle = p_data->mca_evt.mcl_handle;
-  bdcpy(p_mcb->bd_addr, p_data->mca_evt.mca_data.connect_ind.bd_addr);
+  p_mcb->bd_addr = p_data->mca_evt.mca_data.connect_ind.bd_addr;
   p_mcb->cch_mtu = p_data->mca_evt.mca_data.connect_ind.mtu;
 
   bta_sys_conn_open(BTA_ID_HL, p_acb->app_id, p_mcb->bd_addr);

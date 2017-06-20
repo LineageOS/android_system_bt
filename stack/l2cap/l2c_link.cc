@@ -98,7 +98,7 @@ bool l2c_link_hci_conn_req(const bt_bdaddr_t& bd_addr) {
     }
 
     /* Tell the other side we accept the connection */
-    btsnd_hcic_accept_conn(to_BD_ADDR(bd_addr), p_lcb->link_role);
+    btsnd_hcic_accept_conn(bd_addr, p_lcb->link_role);
 
     p_lcb->link_state = LST_CONNECTING;
 
@@ -119,7 +119,7 @@ bool l2c_link_hci_conn_req(const bt_bdaddr_t& bd_addr) {
     else
       p_lcb->link_role = l2cu_get_conn_role(p_lcb);
 
-    btsnd_hcic_accept_conn(to_BD_ADDR(bd_addr), p_lcb->link_role);
+    btsnd_hcic_accept_conn(bd_addr, p_lcb->link_role);
 
     p_lcb->link_state = LST_CONNECTING;
     return (true);

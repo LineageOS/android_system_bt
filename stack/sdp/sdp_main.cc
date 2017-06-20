@@ -168,7 +168,7 @@ static void sdp_connect_ind(const bt_bdaddr_t& bd_addr, uint16_t l2cap_cid,
   p_ccb->con_state = SDP_STATE_CFG_SETUP;
 
   /* Save the BD Address and Channel ID. */
-  memcpy(&p_ccb->device_address[0], to_BD_ADDR(bd_addr), sizeof(BD_ADDR));
+  p_ccb->device_address = bd_addr;
   p_ccb->connection_id = l2cap_cid;
 
   /* Send response to the L2CAP layer. */
@@ -505,7 +505,7 @@ static void sdp_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg) {
  * Returns          void
  *
  ******************************************************************************/
-tCONN_CB* sdp_conn_originate(uint8_t* p_bd_addr) {
+tCONN_CB* sdp_conn_originate(const bt_bdaddr_t& p_bd_addr) {
   tCONN_CB* p_ccb;
   uint16_t cid;
 
@@ -522,13 +522,14 @@ tCONN_CB* sdp_conn_originate(uint8_t* p_bd_addr) {
   p_ccb->con_flags |= SDP_FLAGS_IS_ORIG;
 
   /* Save the BD Address and Channel ID. */
-  memcpy(&p_ccb->device_address[0], p_bd_addr, sizeof(BD_ADDR));
+  p_ccb->device_address = p_bd_addr;
+  ;
 
   /* Transition to the next appropriate state, waiting for connection confirm.
    */
   p_ccb->con_state = SDP_STATE_CONN_SETUP;
 
-  cid = L2CA_ConnectReq(SDP_PSM, from_BD_ADDR(p_bd_addr));
+  cid = L2CA_ConnectReq(SDP_PSM, p_bd_addr);
 
   /* Check if L2CAP started the connection process */
   if (cid != 0) {

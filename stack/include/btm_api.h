@@ -704,66 +704,6 @@ extern tBTM_STATUS BTM_ClearInqDb(const bt_bdaddr_t* p_bda);
  ******************************************************************************/
 extern tBTM_STATUS BTM_ReadInquiryRspTxPower(tBTM_CMPL_CB* p_cb);
 
-/*******************************************************************************
- *
- * Function         BTM_StartDiscovery
- *
- * Description      This function is called by an application (or profile)
- *                  when it wants to trigger an service discovery using the
- *                  BTM's discovery database.
- *
- * Returns          tBTM_STATUS
- *                      BTM_CMD_STARTED if the discovery was initiated
- *                      BTM_BUSY if one is already in progress
- *                      BTM_UNKNOWN_ADDR if no addresses are in the INQ DB
- *                      BTM_ERR_PROCESSING if err initiating the command
- *
- ******************************************************************************/
-extern tBTM_STATUS BTM_StartDiscovery(tBTM_CMPL_CB* p_cmpl_cb,
-                                      BD_ADDR_PTR p_rem_addr);
-
-/*******************************************************************************
- *
- * Function         BTM_FindAttribute
- *
- * Description      This function is called by an application (or profile)
- *                  when it wants to see if an attribute exists in the BTM
- *                  discovery database.
- *
- * Returns          Pointer to matching record, or NULL
- *
- ******************************************************************************/
-extern tSDP_DISC_REC* BTM_FindAttribute(uint16_t attr_id,
-                                        tSDP_DISC_REC* p_start_rec);
-
-/*******************************************************************************
- *
- * Function         BTM_FindService
- *
- * Description      This function is called by an application (or profile)
- *                  when it wants to see if a service exists in the BTM
- *                  discovery database.
- *
- * Returns          Pointer to matching record, or NULL
- *
- ******************************************************************************/
-extern tSDP_DISC_REC* BTM_FindService(uint16_t service_uuid,
-                                      tSDP_DISC_REC* p_start_rec);
-
-/*******************************************************************************
- *
- * Function         BTM_SetDiscoveryParams
- *
- * Description      This function is called to set the BTM default discovery
- *                  parameters. These UUID and attribute filters are used during
- *                  the call to BTM_StartDiscovery.
- *
- * Returns          void
- *
- ******************************************************************************/
-extern void BTM_SetDiscoveryParams(uint16_t num_uuid, tSDP_UUID* p_uuid_list,
-                                   uint16_t num_attr, uint16_t* p_attr_list);
-
 /*****************************************************************************
  *  ACL CHANNEL MANAGEMENT FUNCTIONS
  ****************************************************************************/

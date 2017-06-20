@@ -901,8 +901,7 @@ static uint8_t btm_set_conn_mode_adv_init_addr(
       if (btm_cb.ble_ctr_cb.privacy_mode == BTM_PRIVACY_1_2 ||
           btm_cb.ble_ctr_cb.privacy_mode == BTM_PRIVACY_MIXED) {
         /* only do so for bonded device */
-        if ((p_dev_rec = btm_find_or_alloc_dev(
-                 from_BD_ADDR(p_cb->direct_bda.bda))) != NULL &&
+        if ((p_dev_rec = btm_find_or_alloc_dev(p_cb->direct_bda.bda)) != NULL &&
             p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
           btm_ble_enable_resolving_list(BTM_BLE_RL_ADV);
           p_peer_addr_ptr = p_dev_rec->ble.static_addr;
@@ -918,7 +917,7 @@ static uint8_t btm_set_conn_mode_adv_init_addr(
 #endif
       /* direct adv mode does not have privacy, if privacy is not enabled  */
       *p_peer_addr_type = p_cb->direct_bda.type;
-      p_peer_addr_ptr = from_BD_ADDR(p_cb->direct_bda.bda);
+      p_peer_addr_ptr = p_cb->direct_bda.bda;
       return evt_type;
     }
   }
@@ -997,7 +996,7 @@ tBTM_STATUS BTM_BleSetAdvParams(uint16_t adv_int_min, uint16_t adv_int_max,
   p_cb->adv_interval_min = adv_int_min;
   p_cb->adv_interval_max = adv_int_max;
   p_cb->adv_chnl_map = chnl_map;
-  memcpy(p_cb->direct_bda.bda, to_BD_ADDR(p_dir_bda), BD_ADDR_LEN);
+  p_cb->direct_bda.bda = p_dir_bda;
 
   BTM_TRACE_EVENT("update params for an active adv");
 
@@ -1985,7 +1984,7 @@ void btm_ble_process_ext_adv_pkt(uint8_t data_len, uint8_t* data) {
     /* Extract inquiry results */
     STREAM_TO_UINT16(event_type, p);
     STREAM_TO_UINT8(addr_type, p);
-    STREAM_TO_BDADDR(to_BD_ADDR(bda), p);
+    STREAM_TO_BDADDR(bda, p);
     STREAM_TO_UINT8(primary_phy, p);
     STREAM_TO_UINT8(secondary_phy, p);
     STREAM_TO_UINT8(advertising_sid, p);
@@ -1993,7 +1992,7 @@ void btm_ble_process_ext_adv_pkt(uint8_t data_len, uint8_t* data) {
     STREAM_TO_INT8(rssi, p);
     STREAM_TO_UINT16(periodic_adv_int, p);
     STREAM_TO_UINT8(direct_address_type, p);
-    STREAM_TO_BDADDR(to_BD_ADDR(direct_address), p);
+    STREAM_TO_BDADDR(direct_address, p);
     STREAM_TO_UINT8(pkt_data_len, p);
 
     uint8_t* pkt_data = p;
@@ -2038,7 +2037,7 @@ void btm_ble_process_adv_pkt(uint8_t data_len, uint8_t* data) {
     /* Extract inquiry results */
     STREAM_TO_UINT8(legacy_evt_type, p);
     STREAM_TO_UINT8(addr_type, p);
-    STREAM_TO_BDADDR(to_BD_ADDR(bda), p);
+    STREAM_TO_BDADDR(bda, p);
     STREAM_TO_UINT8(pkt_data_len, p);
 
     uint8_t* pkt_data = p;

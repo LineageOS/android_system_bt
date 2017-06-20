@@ -87,14 +87,14 @@ tBTA_SDP_STATUS BTA_SdpEnable(tBTA_SDP_DM_CBACK* p_cback) {
  *                  BTA_SDP_FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_SDP_STATUS BTA_SdpSearch(BD_ADDR bd_addr, tSDP_UUID* uuid) {
+tBTA_SDP_STATUS BTA_SdpSearch(const bt_bdaddr_t& bd_addr, tSDP_UUID* uuid) {
   tBTA_SDP_API_SEARCH* p_msg =
       (tBTA_SDP_API_SEARCH*)osi_malloc(sizeof(tBTA_SDP_API_SEARCH));
 
   APPL_TRACE_API("%s", __func__);
 
   p_msg->hdr.event = BTA_SDP_API_SEARCH_EVT;
-  bdcpy(p_msg->bd_addr, bd_addr);
+  p_msg->bd_addr = bd_addr;
   // p_msg->uuid = uuid;
   memcpy(&(p_msg->uuid), uuid, sizeof(tSDP_UUID));
 

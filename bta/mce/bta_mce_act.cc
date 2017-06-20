@@ -67,7 +67,7 @@ static void bta_mce_search_cback(uint16_t result, void* user_data) {
   if (bta_mce_cb.p_dm_cback == NULL) return;
 
   evt_data.status = BTA_MCE_FAILURE;
-  bdcpy(evt_data.remote_addr, bta_mce_cb.remote_addr);
+  evt_data.remote_addr = bta_mce_cb.remote_addr;
   evt_data.num_mas = 0;
 
   if (result == SDP_SUCCESS || result == SDP_DB_FULL) {
@@ -159,7 +159,7 @@ void bta_mce_get_remote_mas_instances(tBTA_MCE_MSG* p_data) {
   }
 
   bta_mce_cb.sdp_active = BTA_MCE_SDP_ACT_YES;
-  bdcpy(bta_mce_cb.remote_addr, p_data->get_rmt_mas.bd_addr);
+  bta_mce_cb.remote_addr = p_data->get_rmt_mas.bd_addr;
 
   SDP_InitDiscoveryDb(p_bta_mce_cfg->p_sdp_db, p_bta_mce_cfg->sdp_db_size, 1,
                       (tBT_UUID*)&bta_mce_mas_uuid, 0, NULL);

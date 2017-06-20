@@ -2244,7 +2244,7 @@ void btm_acl_resubmit_page(void) {
     pp = (uint8_t*)(p_buf + 1) + p_buf->offset + 3;
 
     bt_bdaddr_t bda;
-    STREAM_TO_BDADDR(to_BD_ADDR(bda), pp);
+    STREAM_TO_BDADDR(bda, pp);
 
     p_dev_rec = btm_find_or_alloc_dev(bda);
 

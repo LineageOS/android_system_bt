@@ -22,6 +22,7 @@
  *  applications that can run over an SMP.
  *
  ******************************************************************************/
+#include <base/logging.h>
 #include <string.h>
 
 #include "bt_target.h"
@@ -541,20 +542,15 @@ void SMP_KeypressNotification(const bt_bdaddr_t& bd_addr, uint8_t value) {
  ******************************************************************************/
 bool SMP_CreateLocalSecureConnectionsOobData(tBLE_BD_ADDR* addr_to_send_to) {
   tSMP_CB* p_cb = &smp_cb;
-  uint8_t* bd_addr;
 
   if (addr_to_send_to == NULL) {
     SMP_TRACE_ERROR("%s addr_to_send_to is not provided", __func__);
     return false;
   }
 
-  bd_addr = addr_to_send_to->bda;
-
-  SMP_TRACE_EVENT(
-      "%s addr type: %u,  BDA: %08x%04x,  state: %u, br_state: %u", __func__,
-      addr_to_send_to->type,
-      (bd_addr[0] << 24) + (bd_addr[1] << 16) + (bd_addr[2] << 8) + bd_addr[3],
-      (bd_addr[4] << 8) + bd_addr[5], p_cb->state, p_cb->br_state);
+  VLOG(2) << __func__ << " addr type:" << +addr_to_send_to->type
+          << ", BDA:" << addr_to_send_to->bda << ", state:" << p_cb->state
+          << ", br_state: " << p_cb->br_state;
 
   if ((p_cb->state != SMP_STATE_IDLE) || (p_cb->smp_over_br)) {
     SMP_TRACE_WARNING(

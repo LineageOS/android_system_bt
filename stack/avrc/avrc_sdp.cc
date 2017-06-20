@@ -98,7 +98,7 @@ static void avrc_sdp_cback(uint16_t status) {
  *                                    perform the service search.
  *
  *****************************************************************************/
-uint16_t AVRC_FindService(uint16_t service_uuid, BD_ADDR bd_addr,
+uint16_t AVRC_FindService(uint16_t service_uuid, const bt_bdaddr_t& bd_addr,
                           tAVRC_SDP_DB_PARAMS* p_db,
                           tAVRC_FIND_CBACK* p_cback) {
   tSDP_UUID uuid_list;

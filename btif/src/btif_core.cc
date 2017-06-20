@@ -381,9 +381,7 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status) {
   BTIF_TRACE_DEBUG("%s: status %d", __func__, status);
 
   /* Fetch the local BD ADDR */
-  bt_bdaddr_t local_bd_addr;
-  const controller_t* controller = controller_get_interface();
-  bdaddr_copy(&local_bd_addr, controller->get_address());
+  bt_bdaddr_t local_bd_addr = *controller_get_interface()->get_address();
 
   bdstr_t bdstr;
   bdaddr_to_string(&local_bd_addr, bdstr, sizeof(bdstr));
@@ -840,8 +838,7 @@ static void btif_in_storage_request_copy_cb(uint16_t event, char* p_new_buf,
   switch (event) {
     case BTIF_CORE_STORAGE_REMOTE_WRITE:
     case BTIF_CORE_STORAGE_ADAPTER_WRITE: {
-      bdcpy(new_req->write_req.bd_addr.address,
-            old_req->write_req.bd_addr.address);
+      new_req->write_req.bd_addr = old_req->write_req.bd_addr;
       /* Copy the member variables one at a time */
       new_req->write_req.prop.type = old_req->write_req.prop.type;
       new_req->write_req.prop.len = old_req->write_req.prop.len;

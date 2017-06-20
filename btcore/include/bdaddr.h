@@ -21,6 +21,7 @@
 #include <hardware/bluetooth.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include "stack/include/bt_types.h"
 
 // Note: the string representation of a bdaddr is expected to have the format
 // xx:xx:xx:xx:xx:xx
@@ -33,14 +34,6 @@ typedef char bdstr_t[sizeof("xx:xx:xx:xx:xx:xx")];
 // Returns true if |addr| is the empty address (00:00:00:00:00:00).
 // |addr| may not be NULL.
 bool bdaddr_is_empty(const bt_bdaddr_t* addr);
-
-// Returns true if |first| and |second| refer to the same address. Neither
-// may be NULL.
-bool bdaddr_equals(const bt_bdaddr_t* first, const bt_bdaddr_t* second);
-
-// Returns destination bdaddr |dest| after copying |src| to |dest|.
-// |dest| and |src| must not be NULL.
-bt_bdaddr_t* bdaddr_copy(bt_bdaddr_t* dest, const bt_bdaddr_t* src);
 
 // Makes a string representation of |addr| and places it into |string|. |size|
 // refers to the size of |string|'s buffer and must be >= 18. On success, this

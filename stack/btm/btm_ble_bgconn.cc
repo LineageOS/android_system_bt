@@ -66,14 +66,7 @@ struct BgConnHash {
   }
 };
 
-struct BgConnKeyEqual {
-  bool operator()(const bt_bdaddr_t& x, const bt_bdaddr_t& y) const {
-    return bdaddr_equals(&x, &y);
-  }
-};
-
-static std::unordered_map<bt_bdaddr_t, background_connection_t, BgConnHash,
-                          BgConnKeyEqual>
+static std::unordered_map<bt_bdaddr_t, background_connection_t, BgConnHash>
     background_connections;
 
 static void background_connection_add(uint8_t addr_type,
@@ -242,7 +235,7 @@ bool btm_execute_wl_dev_operation(void) {
     background_connection_t* connection = &map_it->second;
     if (connection->pending_removal) {
       btsnd_hcic_ble_remove_from_white_list(connection->addr_type_in_wl,
-                                            connection->address.address);
+                                            connection->address);
       map_it = background_connections.erase(map_it);
     } else
       ++map_it;
@@ -252,8 +245,7 @@ bool btm_execute_wl_dev_operation(void) {
     const bool connected =
         BTM_IsAclConnectionUp(connection->address, BT_TRANSPORT_LE);
     if (!connection->in_controller_wl && !connected) {
-      btsnd_hcic_ble_add_white_list(connection->addr_type,
-                                    connection->address.address);
+      btsnd_hcic_ble_add_white_list(connection->addr_type, connection->address);
       connection->in_controller_wl = true;
       connection->addr_type_in_wl = connection->addr_type;
     } else if (connection->in_controller_wl && connected) {
@@ -262,7 +254,7 @@ bool btm_execute_wl_dev_operation(void) {
          correctly, therefore we must make sure connected devices are not in
          the white list when bg connection attempt is active. */
       btsnd_hcic_ble_remove_from_white_list(connection->addr_type_in_wl,
-                                            connection->address.address);
+                                            connection->address);
       connection->in_controller_wl = false;
     }
   }
@@ -382,8 +374,8 @@ void btm_send_hci_create_connection(
     }
 
     btsnd_hcic_ble_ext_create_conn(init_filter_policy, addr_type_own,
-                                   addr_type_peer, to_BD_ADDR(bda_peer),
-                                   initiating_phys, phy_cfg);
+                                   addr_type_peer, bda_peer, initiating_phys,
+                                   phy_cfg);
   } else {
     btsnd_hcic_ble_create_ll_conn(scan_int, scan_win, init_filter_policy,
                                   addr_type_peer, bda_peer, addr_type_own,

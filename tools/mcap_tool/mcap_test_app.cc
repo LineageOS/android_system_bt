@@ -54,15 +54,15 @@ static const char* dump_mcap_events(const uint8_t event) {
 static void print_mcap_event(const tMCA_DISCONNECT_IND* mcap_disconnect_ind) {
   bdstr_t bd_addr_str;
   printf("%s: peer_bd_addr=%s,l2cap_disconnect_reason=0x%04x\n", __func__,
-         bdaddr_to_string((bt_bdaddr_t*)mcap_disconnect_ind->bd_addr,
-                          bd_addr_str, sizeof(bd_addr_str)),
+         bdaddr_to_string(&mcap_disconnect_ind->bd_addr, bd_addr_str,
+                          sizeof(bd_addr_str)),
          mcap_disconnect_ind->reason);
 }
 
 static void print_mcap_event(const tMCA_CONNECT_IND* mcap_connect_ind) {
   bdstr_t bd_addr_str;
   printf("%s: peer_bd_addr=%s, peer_mtu=%d \n", __func__,
-         bdaddr_to_string((bt_bdaddr_t*)mcap_connect_ind->bd_addr, bd_addr_str,
+         bdaddr_to_string(&mcap_connect_ind->bd_addr, bd_addr_str,
                           sizeof(bd_addr_str)),
          mcap_connect_ind->mtu);
 }
@@ -171,7 +171,7 @@ uint8_t McapTestApp::GetHandle() { return _mcap_handle; }
 
 McapMcl* McapTestApp::FindMclByPeerAddress(const bt_bdaddr_t& bd_addr) {
   for (McapMcl& mcl : _mcl_list) {
-    if (bdaddr_equals(&mcl.GetPeerAddress(), &bd_addr)) {
+    if (mcl.GetPeerAddress() == bd_addr) {
       return &mcl;
     }
   }
@@ -431,7 +431,7 @@ void McapTestApp::ControlCallback(tMCA_HANDLE handle, tMCA_CL mcl,
       // Called when MCA_ConnectReq succeeded
       print_mcap_event(&p_data->connect_ind);
       LOG(INFO) << "Received MCL handle " << (int)mcl;
-      bt_bdaddr_t bd_addr = *((bt_bdaddr_t*)p_data->connect_ind.bd_addr);
+      bt_bdaddr_t bd_addr = p_data->connect_ind.bd_addr;
       mcap_mcl = FindMclByPeerAddress(bd_addr);
       if (!mcap_mcl) {
         LOG(INFO) << "Creating new MCL for ID " << (int)mcl;
@@ -450,7 +450,7 @@ void McapTestApp::ControlCallback(tMCA_HANDLE handle, tMCA_CL mcl,
     case MCA_DISCONNECT_IND_EVT: {
       // Called when MCA_ConnectReq failed or MCA_DisconnectReq succeeded
       print_mcap_event(&p_data->disconnect_ind);
-      bt_bdaddr_t bd_addr = *((bt_bdaddr_t*)p_data->disconnect_ind.bd_addr);
+      bt_bdaddr_t bd_addr = p_data->disconnect_ind.bd_addr;
       mcap_mcl = FindMclByPeerAddress(bd_addr);
       if (!mcap_mcl) {
         bdstr_t bd_addr_str;

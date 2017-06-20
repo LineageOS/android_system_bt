@@ -580,7 +580,7 @@ static BT_HDR* smp_build_id_addr_cmd(UNUSED_ATTR uint8_t cmd_code,
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_ID_ADDR);
   UINT8_TO_STREAM(p, 0);
-  BDADDR_TO_STREAM(p, controller_get_interface()->get_address()->address);
+  BDADDR_TO_STREAM(p, *controller_get_interface()->get_address());
 
   p_buf->offset = L2CAP_MIN_OFFSET;
   p_buf->len = SMP_ID_ADDR_SIZE;
@@ -1359,7 +1359,7 @@ void smp_collect_local_ble_address(uint8_t* le_addr, tSMP_CB* p_cb) {
   SMP_TRACE_DEBUG("%s", __func__);
 
   BTM_ReadConnectionAddr(p_cb->pairing_bda, bda, &addr_type);
-  BDADDR_TO_STREAM(p, to_BD_ADDR(bda));
+  BDADDR_TO_STREAM(p, bda);
   UINT8_TO_STREAM(p, addr_type);
 }
 
@@ -1386,7 +1386,7 @@ void smp_collect_peer_ble_address(uint8_t* le_addr, tSMP_CB* p_cb) {
     return;
   }
 
-  BDADDR_TO_STREAM(p, to_BD_ADDR(bda));
+  BDADDR_TO_STREAM(p, bda);
   UINT8_TO_STREAM(p, addr_type);
 }
 

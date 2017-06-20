@@ -301,12 +301,6 @@ typedef struct {
     int ijk;                                                      \
     for (ijk = 0; ijk < 8; ijk++) *(p)++ = (uint8_t)(a)[7 - ijk]; \
   }
-#define BDADDR_TO_STREAM(p, a)                      \
-  {                                                 \
-    int ijk;                                        \
-    for (ijk = 0; ijk < BD_ADDR_LEN; ijk++)         \
-      *(p)++ = (uint8_t)(a)[BD_ADDR_LEN - 1 - ijk]; \
-  }
 #define LAP_TO_STREAM(p, a)                     \
   {                                             \
     int ijk;                                    \
@@ -357,12 +351,6 @@ typedef struct {
              ((((uint32_t)(*((p) + 2)))) << 16) +                     \
              ((((uint32_t)(*((p) + 3)))) << 24));                     \
     (p) += 4;                                                         \
-  }
-#define STREAM_TO_BDADDR(a, p)                                \
-  {                                                           \
-    int ijk;                                                  \
-    uint8_t* pbda = (uint8_t*)(a) + BD_ADDR_LEN - 1;          \
-    for (ijk = 0; ijk < BD_ADDR_LEN; ijk++) *pbda-- = *(p)++; \
   }
 #define STREAM_TO_ARRAY32(a, p)                     \
   {                                                 \
@@ -537,8 +525,6 @@ typedef struct {
 
 /* Common Bluetooth field definitions */
 #define BD_ADDR_LEN 6                 /* Device address length */
-typedef uint8_t BD_ADDR[BD_ADDR_LEN]; /* Device address */
-typedef uint8_t* BD_ADDR_PTR;         /* Pointer to Device Address */
 
 #ifdef __cplusplus
 #include <base/strings/stringprintf.h>
@@ -562,12 +548,15 @@ inline std::ostream& operator<<(std::ostream& os, const bt_bdaddr_t& a) {
   return os;
 }
 
-/*TODO(jpawlowski): These two helpers are used at the border between code where
- * BD_ADDR is not used any more. Remove once BD_ADDR is no more */
-inline uint8_t* to_BD_ADDR(const bt_bdaddr_t& a) {
-  return const_cast<uint8_t*>((const uint8_t*)a.address);
+inline void BDADDR_TO_STREAM(uint8_t*& p, const bt_bdaddr_t& a) {
+  for (int ijk = 0; ijk < BD_ADDR_LEN; ijk++)
+    *(p)++ = (uint8_t)(a.address)[BD_ADDR_LEN - 1 - ijk];
 }
-inline const bt_bdaddr_t& from_BD_ADDR(BD_ADDR a) { return (bt_bdaddr_t&)*a; }
+
+inline void STREAM_TO_BDADDR(bt_bdaddr_t& a, uint8_t*& p) {
+  uint8_t* pbda = (uint8_t*)(a.address) + BD_ADDR_LEN - 1;
+  for (int ijk = 0; ijk < BD_ADDR_LEN; ijk++) *pbda-- = *(p)++;
+}
 
 #endif
 
@@ -772,10 +761,12 @@ typedef uint8_t tBT_TRANSPORT;
 
 #define BLE_ADDR_IS_STATIC(x) (((x)[0] & 0xC0) == 0xC0)
 
-typedef struct {
+#ifdef __cplusplus
+struct tBLE_BD_ADDR {
   tBLE_ADDR_TYPE type;
-  BD_ADDR bda;
-} tBLE_BD_ADDR;
+  bt_bdaddr_t bda;
+};
+#endif
 
 /* Device Types
 */
@@ -970,72 +961,12 @@ typedef uint8_t BD_ADDR[BD_ADDR_LEN];
  ****************************************************************************/
 
 /* global constant for "any" bd addr */
-static const BD_ADDR bd_addr_any = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-
+#ifdef __cplusplus
+static const bt_bdaddr_t bd_addr_any = {
+    .address = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}};
+#endif
 /*****************************************************************************
  *  Functions
  ****************************************************************************/
 
-/*******************************************************************************
- *
- * Function         bdcpy
- *
- * Description      Copy bd addr b to a.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-static inline void bdcpy(BD_ADDR a, const BD_ADDR b) {
-  int i;
-
-  for (i = BD_ADDR_LEN; i != 0; i--) {
-    *a++ = *b++;
-  }
-}
-
-/*******************************************************************************
- *
- * Function         bdcmp
- *
- * Description      Compare bd addr b to a.
- *
- *
- * Returns          Zero if b==a, nonzero otherwise (like memcmp).
- *
- ******************************************************************************/
-static inline int bdcmp(const BD_ADDR a, const BD_ADDR b) {
-  int i;
-
-  for (i = BD_ADDR_LEN; i != 0; i--) {
-    if (*a++ != *b++) {
-      return -1;
-    }
-  }
-  return 0;
-}
-
-/*******************************************************************************
- *
- * Function         bdcmpany
- *
- * Description      Compare bd addr to "any" bd addr.
- *
- *
- * Returns          Zero if a equals bd_addr_any.
- *
- ******************************************************************************/
-static inline int bdcmpany(const BD_ADDR a) { return bdcmp(a, bd_addr_any); }
-
-/*******************************************************************************
- *
- * Function         bdsetany
- *
- * Description      Set bd addr to "any" bd addr.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-static inline void bdsetany(BD_ADDR a) { bdcpy(a, bd_addr_any); }
 #endif

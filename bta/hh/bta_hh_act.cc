@@ -342,8 +342,8 @@ void bta_hh_start_sdp(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
         (tSDP_DISCOVERY_DB*)osi_malloc(p_bta_hh_cfg->sdp_db_size);
     bta_hh_cb.p_cur = p_cb;
     /* do DI discovery first */
-    if (SDP_DiDiscover(to_BD_ADDR(p_data->api_conn.bd_addr),
-                       bta_hh_cb.p_disc_db, p_bta_hh_cfg->sdp_db_size,
+    if (SDP_DiDiscover(p_data->api_conn.bd_addr, bta_hh_cb.p_disc_db,
+                       p_bta_hh_cfg->sdp_db_size,
                        bta_hh_di_sdp_cback) != SDP_SUCCESS) {
 #if (BTA_HH_DEBUG == TRUE)
       APPL_TRACE_DEBUG("%s:  SDP_DiDiscover failed: Status 0x%2X", __func__,
@@ -526,7 +526,7 @@ void bta_hh_open_cmpl_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
 #endif
   {
     /* inform role manager */
-    bta_sys_conn_open(BTA_ID_HH, p_cb->app_id, to_BD_ADDR(p_cb->addr));
+    bta_sys_conn_open(BTA_ID_HH, p_cb->app_id, p_cb->addr);
   }
   /* set protocol mode when not default report mode */
   if (p_cb->mode != BTA_HH_PROTO_RPT_MODE
@@ -679,7 +679,7 @@ void bta_hh_handsk_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
   }
 
   /* transaction achknoledgement received, inform PM for mode change */
-  bta_sys_idle(BTA_ID_HH, p_cb->app_id, to_BD_ADDR(p_cb->addr));
+  bta_sys_idle(BTA_ID_HH, p_cb->app_id, p_cb->addr);
   return;
 }
 /*******************************************************************************
@@ -739,8 +739,8 @@ void bta_hh_ctrl_dat_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
   }
 
   /* inform PM for mode change */
-  bta_sys_busy(BTA_ID_HH, p_cb->app_id, to_BD_ADDR(p_cb->addr));
-  bta_sys_idle(BTA_ID_HH, p_cb->app_id, to_BD_ADDR(p_cb->addr));
+  bta_sys_busy(BTA_ID_HH, p_cb->app_id, p_cb->addr);
+  bta_sys_idle(BTA_ID_HH, p_cb->app_id, p_cb->addr);
 
   (*bta_hh_cb.p_cback)(p_cb->w4_evt, (tBTA_HH*)&hs_data);
 
@@ -839,7 +839,7 @@ void bta_hh_close_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
     /* finaliza device driver */
     bta_hh_co_close(p_cb->hid_handle, p_cb->app_id);
     /* inform role manager */
-    bta_sys_conn_close(BTA_ID_HH, p_cb->app_id, to_BD_ADDR(p_cb->addr));
+    bta_sys_conn_close(BTA_ID_HH, p_cb->app_id, p_cb->addr);
     /* update total conn number */
     bta_hh_cb.cnt_num--;
 
@@ -1063,12 +1063,12 @@ void bta_hh_write_dev_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
       /* if not control type transaction, notify PM for energy control */
       if (p_data->api_sndcmd.t_type != HID_TRANS_CONTROL) {
         /* inform PM for mode change */
-        bta_sys_busy(BTA_ID_HH, p_cb->app_id, to_BD_ADDR(p_cb->addr));
-        bta_sys_idle(BTA_ID_HH, p_cb->app_id, to_BD_ADDR(p_cb->addr));
+        bta_sys_busy(BTA_ID_HH, p_cb->app_id, p_cb->addr);
+        bta_sys_idle(BTA_ID_HH, p_cb->app_id, p_cb->addr);
       } else if (p_data->api_sndcmd.param == BTA_HH_CTRL_SUSPEND) {
-        bta_sys_sco_close(BTA_ID_HH, p_cb->app_id, to_BD_ADDR(p_cb->addr));
+        bta_sys_sco_close(BTA_ID_HH, p_cb->app_id, p_cb->addr);
       } else if (p_data->api_sndcmd.param == BTA_HH_CTRL_EXIT_SUSPEND) {
-        bta_sys_busy(BTA_ID_HH, p_cb->app_id, to_BD_ADDR(p_cb->addr));
+        bta_sys_busy(BTA_ID_HH, p_cb->app_id, p_cb->addr);
       }
     }
   }

@@ -81,7 +81,7 @@ static void avdt_sec_check_complete_term(const bt_bdaddr_t* bd_addr,
   tAVDT_TC_TBL* p_tbl;
 
   AVDT_TRACE_DEBUG("avdt_sec_check_complete_term res: %d", res);
-  p_ccb = avdt_ccb_by_bd(to_BD_ADDR(*bd_addr));
+  p_ccb = avdt_ccb_by_bd(*bd_addr);
 
   p_tbl = avdt_ad_tc_tbl_by_st(AVDT_CHAN_SIG, p_ccb, AVDT_AD_ST_SEC_ACP);
   if (p_tbl == NULL) return;
@@ -132,7 +132,7 @@ static void avdt_sec_check_complete_orig(const bt_bdaddr_t* bd_addr,
   tAVDT_TC_TBL* p_tbl;
 
   AVDT_TRACE_DEBUG("avdt_sec_check_complete_orig res: %d", res);
-  if (bd_addr) p_ccb = avdt_ccb_by_bd(to_BD_ADDR(*bd_addr));
+  if (bd_addr) p_ccb = avdt_ccb_by_bd(*bd_addr);
   p_tbl = avdt_ad_tc_tbl_by_st(AVDT_CHAN_SIG, p_ccb, AVDT_AD_ST_SEC_INT);
   if (p_tbl == NULL) return;
 
@@ -171,10 +171,10 @@ void avdt_l2c_connect_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
   tBTM_STATUS rc;
 
   /* do we already have a control channel for this peer? */
-  p_ccb = avdt_ccb_by_bd(to_BD_ADDR(bd_addr));
+  p_ccb = avdt_ccb_by_bd(bd_addr);
   if (p_ccb == NULL) {
     /* no, allocate ccb */
-    p_ccb = avdt_ccb_alloc(to_BD_ADDR(bd_addr));
+    p_ccb = avdt_ccb_alloc(bd_addr);
     if (p_ccb == NULL) {
       /* no ccb available, reject L2CAP connection */
       result = L2CAP_CONN_NO_RESOURCES;
@@ -203,8 +203,8 @@ void avdt_l2c_connect_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
                                      BTM_SEC_PROTO_AVDT, AVDT_CHAN_SIG,
                                      &avdt_sec_check_complete_term, NULL);
       if (rc == BTM_CMD_STARTED) {
-        L2CA_ConnectRsp(from_BD_ADDR(p_ccb->peer_addr), p_tbl->id, lcid,
-                        L2CAP_CONN_PENDING, L2CAP_CONN_OK);
+        L2CA_ConnectRsp(p_ccb->peer_addr, p_tbl->id, lcid, L2CAP_CONN_PENDING,
+                        L2CAP_CONN_OK);
       }
       return;
     }
@@ -315,8 +315,8 @@ void avdt_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
             if (interop_match_addr(INTEROP_2MBPS_LINK_ONLY,
                                    (const bt_bdaddr_t*)&p_ccb->peer_addr)) {
               // Disable 3DH packets for AVDT ACL to improve sensitivity on HS
-              tACL_CONN* p_acl_cb = btm_bda_to_acl(
-                  from_BD_ADDR(p_ccb->peer_addr), BT_TRANSPORT_BR_EDR);
+              tACL_CONN* p_acl_cb =
+                  btm_bda_to_acl(p_ccb->peer_addr, BT_TRANSPORT_BR_EDR);
               btm_set_packet_types(
                   p_acl_cb,
                   (btm_cb.btm_acl_pkt_types_supported |
@@ -325,8 +325,8 @@ void avdt_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
             }
 
             /* Check the security */
-            btm_sec_mx_access_request(from_BD_ADDR(p_ccb->peer_addr), AVDT_PSM,
-                                      true, BTM_SEC_PROTO_AVDT, AVDT_CHAN_SIG,
+            btm_sec_mx_access_request(p_ccb->peer_addr, AVDT_PSM, true,
+                                      BTM_SEC_PROTO_AVDT, AVDT_CHAN_SIG,
                                       &avdt_sec_check_complete_orig, NULL);
           }
         }

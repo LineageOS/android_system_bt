@@ -129,7 +129,8 @@ void AVCT_Deregister(void) {
  * Returns          AVCT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-uint16_t AVCT_CreateConn(uint8_t* p_handle, tAVCT_CC* p_cc, BD_ADDR peer_addr) {
+uint16_t AVCT_CreateConn(uint8_t* p_handle, tAVCT_CC* p_cc,
+                         const bt_bdaddr_t& peer_addr) {
   uint16_t result = AVCT_SUCCESS;
   tAVCT_CCB* p_ccb;
   tAVCT_LCB* p_lcb;
@@ -265,7 +266,7 @@ uint16_t AVCT_CreateBrowse(uint8_t handle, uint8_t role) {
     if (result == AVCT_SUCCESS) {
       /* bind bcb to ccb */
       p_ccb->p_bcb = p_bcb;
-      memcpy(p_bcb->peer_addr, p_ccb->p_lcb->peer_addr, BD_ADDR_LEN);
+      p_bcb->peer_addr = p_ccb->p_lcb->peer_addr;
       AVCT_TRACE_DEBUG("ch_state: %d", p_bcb->ch_state);
       avct_bcb_event(p_bcb, AVCT_LCB_UL_BIND_EVT, (tAVCT_LCB_EVT*)&p_ccb);
     }
