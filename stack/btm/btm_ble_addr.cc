@@ -139,7 +139,7 @@ static void btm_gen_non_resolve_paddr_cmpl(BT_OCTET8 rand) {
 
   p_cb->p_generate_cback = NULL;
   pp = rand;
-  STREAM_TO_BDADDR(to_BD_ADDR(static_random), pp);
+  STREAM_TO_BDADDR(static_random, pp);
   /* mask off the 2 MSB */
   static_random.address[0] &= BLE_STATIC_PRIVATE_MSB_MASK;
 
@@ -320,7 +320,7 @@ tBTM_SEC_DEV_REC* btm_ble_resolve_random_addr(const bt_bdaddr_t& random_bda) {
   /* check for next security record */
 
   list_node_t* n = list_foreach(btm_cb.sec_dev_rec, btm_ble_match_random_bda,
-                                to_BD_ADDR(random_bda));
+                                (void*)&random_bda);
   tBTM_SEC_DEV_REC* p_dev_rec = nullptr;
   if (n != nullptr) p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(list_node(n));
 

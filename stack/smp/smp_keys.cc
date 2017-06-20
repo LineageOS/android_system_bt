@@ -401,14 +401,14 @@ void smp_gen_p2_4_confirm(tSMP_CB* p_cb, const bt_bdaddr_t& remote_bda,
   memset(p, 0, sizeof(BT_OCTET16));
   if (p_cb->role == HCI_ROLE_MASTER) {
     /* ra : Responder's (remote) address */
-    BDADDR_TO_STREAM(p, to_BD_ADDR(remote_bda));
+    BDADDR_TO_STREAM(p, remote_bda);
     /* ia : Initiator's (local) address */
-    BDADDR_TO_STREAM(p, to_BD_ADDR(p_cb->local_bda));
+    BDADDR_TO_STREAM(p, p_cb->local_bda);
   } else {
     /* ra : Responder's (local) address */
-    BDADDR_TO_STREAM(p, to_BD_ADDR(p_cb->local_bda));
+    BDADDR_TO_STREAM(p, p_cb->local_bda);
     /* ia : Initiator's (remote) address */
-    BDADDR_TO_STREAM(p, to_BD_ADDR(remote_bda));
+    BDADDR_TO_STREAM(p, remote_bda);
   }
   smp_debug_print_nbyte_little_endian(p2, "p2 = ra || ia || padding", 16);
 }

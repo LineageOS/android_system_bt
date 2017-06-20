@@ -90,7 +90,7 @@ static void parse_read_bd_addr_response(BT_HDR* response,
   uint8_t* stream = read_command_complete_header(
       response, HCI_READ_BD_ADDR, sizeof(bt_bdaddr_t) /* bytes after */);
   CHECK(stream != NULL);
-  STREAM_TO_BDADDR(address_ptr->address, stream);
+  STREAM_TO_BDADDR(*address_ptr, stream);
 
   buffer_allocator->free(response);
 }
