@@ -89,23 +89,21 @@ const uint8_t codec_info_aac[AVDT_CODEC_SIZE] = {
 };
 
 const uint8_t codec_info_aac_capability[AVDT_CODEC_SIZE] = {
-    8,            // Length (A2DP_AAC_INFO_LEN)
-    0,            // Media Type: AVDT_MEDIA_TYPE_AUDIO
-    2,            // Media Codec Type: A2DP_MEDIA_CT_AAC
-    0x80,         // Object Type: A2DP_AAC_OBJECT_TYPE_MPEG2_LC
-    0x01,         // Sampling Frequency: A2DP_AAC_SAMPLING_FREQ_44100
-    0x80 | 0x04,  // Sampling Frequency:
-                  // A2DP_AAC_SAMPLING_FREQ_48000 |
-                  // Channels:
-                  // A2DP_AAC_CHANNEL_MODE_STEREO
-    0x00 | 0x4,   // Variable Bit Rate:
-                  // A2DP_AAC_VARIABLE_BIT_RATE_DISABLED
-                  // Bit Rate: 320000 = 0x4e200
-    0xe2,         // Bit Rate: 320000 = 0x4e200
-    0x00,         // Bit Rate: 320000 = 0x4e200
-    7,            // Dummy
-    8,            // Dummy
-    9             // Dummy
+    8,     // Length (A2DP_AAC_INFO_LEN)
+    0,     // Media Type: AVDT_MEDIA_TYPE_AUDIO
+    2,     // Media Codec Type: A2DP_MEDIA_CT_AAC
+    0x80,  // Object Type: A2DP_AAC_OBJECT_TYPE_MPEG2_LC
+    0x01,  // Sampling Frequency: A2DP_AAC_SAMPLING_FREQ_44100
+    // TODO: AAC 48.0kHz sampling rate should be added back - see b/62301376
+    0x04,        // Channels: A2DP_AAC_CHANNEL_MODE_STEREO
+    0x00 | 0x4,  // Variable Bit Rate:
+                 // A2DP_AAC_VARIABLE_BIT_RATE_DISABLED
+                 // Bit Rate: 320000 = 0x4e200
+    0xe2,        // Bit Rate: 320000 = 0x4e200
+    0x00,        // Bit Rate: 320000 = 0x4e200
+    7,           // Dummy
+    8,           // Dummy
+    9            // Dummy
 };
 
 const uint8_t codec_info_aac_sink_capability[AVDT_CODEC_SIZE] = {
