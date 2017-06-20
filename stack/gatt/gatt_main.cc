@@ -1090,17 +1090,6 @@ void gatt_init_srv_chg(void) {
   }
 }
 
-// Get the name of a device from btif for interop database matching.
-static bool get_stored_remote_name(const bt_bdaddr_t& bd_addr, char* name) {
-  bt_property_t property;
-  property.type = BT_PROPERTY_BDNAME;
-  property.len = BTM_MAX_REM_BD_NAME_LEN;
-  property.val = name;
-
-  return (btif_storage_get_remote_device_property(&bd_addr, &property) ==
-          BT_STATUS_SUCCESS);
-}
-
 /*******************************************************************************
  *
  * Function         gatt_proc_srv_chg
@@ -1134,7 +1123,8 @@ void gatt_proc_srv_chg(void) {
 
       // Some LE GATT clients don't respond to service changed indications.
       char remote_name[BTM_MAX_REM_BD_NAME_LEN] = "";
-      if (send_indication && get_stored_remote_name(bda, remote_name)) {
+      if (send_indication &&
+          btif_storage_get_stored_remote_name(bda, remote_name)) {
         if (interop_match_name(INTEROP_GATTC_NO_SERVICE_CHANGED_IND,
                                remote_name)) {
           VLOG(1) << "discard srv chg - interop matched " << remote_name;
