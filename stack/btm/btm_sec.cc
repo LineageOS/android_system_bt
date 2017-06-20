@@ -1220,7 +1220,7 @@ tBTM_STATUS BTM_SecBondCancel(const bt_bdaddr_t& bd_addr) {
     {
       /* If the HCI link creation was started by Bonding process */
       if (btm_cb.pairing_flags & BTM_PAIR_FLAGS_DISC_WHEN_DONE) {
-        btsnd_hcic_create_conn_cancel(to_BD_ADDR(bd_addr));
+        btsnd_hcic_create_conn_cancel(bd_addr);
         return BTM_CMD_STARTED;
       }
       if (btm_cb.pairing_state == BTM_PAIR_STATE_GET_REM_NAME) {
@@ -1480,12 +1480,12 @@ void BTM_ConfirmReqReply(tBTM_STATUS res, const bt_bdaddr_t& bd_addr) {
       }
     }
 
-    btsnd_hcic_user_conf_reply(to_BD_ADDR(bd_addr), true);
+    btsnd_hcic_user_conf_reply(bd_addr, true);
   } else {
     /* Report authentication failed event from state
      * BTM_PAIR_STATE_WAIT_AUTH_COMPLETE */
     btm_cb.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
-    btsnd_hcic_user_conf_reply(to_BD_ADDR(bd_addr), false);
+    btsnd_hcic_user_conf_reply(bd_addr, false);
   }
 }
 
@@ -1544,10 +1544,10 @@ void BTM_PasskeyReqReply(tBTM_STATUS res, const bt_bdaddr_t& bd_addr,
     /* use BTM_PAIR_STATE_WAIT_AUTH_COMPLETE to report authentication failed
      * event */
     btm_cb.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
-    btsnd_hcic_user_passkey_neg_reply(to_BD_ADDR(bd_addr));
+    btsnd_hcic_user_passkey_neg_reply(bd_addr);
   } else {
     btm_cb.acl_disc_reason = HCI_SUCCESS;
-    btsnd_hcic_user_passkey_reply(to_BD_ADDR(bd_addr), passkey);
+    btsnd_hcic_user_passkey_reply(bd_addr, passkey);
   }
 }
 #endif
@@ -1570,7 +1570,7 @@ void BTM_PasskeyReqReply(tBTM_STATUS res, const bt_bdaddr_t& bd_addr,
 void BTM_SendKeypressNotif(const bt_bdaddr_t& bd_addr, tBTM_SP_KEY_TYPE type) {
   /* This API only make sense between PASSKEY_REQ and SP complete */
   if (btm_cb.pairing_state == BTM_PAIR_STATE_KEY_ENTRY)
-    btsnd_hcic_send_keypress_notif(to_BD_ADDR(bd_addr), type);
+    btsnd_hcic_send_keypress_notif(bd_addr, type);
 }
 #endif
 
@@ -1605,7 +1605,7 @@ void BTM_IoCapRsp(const bt_bdaddr_t& bd_addr, tBTM_IO_CAP io_cap,
     if (btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD)
       auth_req = (BTM_AUTH_DD_BOND | (auth_req & BTM_AUTH_YN_BIT));
 
-    btsnd_hcic_io_cap_req_reply(to_BD_ADDR(bd_addr), io_cap, oob, auth_req);
+    btsnd_hcic_io_cap_req_reply(bd_addr, io_cap, oob, auth_req);
   }
 }
 
@@ -1680,7 +1680,7 @@ uint16_t BTM_BuildOobData(uint8_t* p_data, uint16_t max_len, BT_OCTET16 c,
   if (p_data && max_len >= BTM_OOB_MANDATORY_SIZE) {
     /* add mandatory part */
     UINT16_TO_STREAM(p, len);
-    BDADDR_TO_STREAM(p, controller_get_interface()->get_address()->address);
+    BDADDR_TO_STREAM(p, *controller_get_interface()->get_address());
 
     len = BTM_OOB_MANDATORY_SIZE;
     max_len -= len;
@@ -1909,9 +1909,9 @@ static bool btm_sec_is_upgrade_possible(tBTM_SEC_DEV_REC* p_dev_rec,
           p_dev_rec->link_key_type, p_dev_rec->rmt_io_caps, mtm_check);
     }
     /* Already have a link key to the connected peer. Is the link key secure
-    *enough?
-    ** Is a link key upgrade even possible?
-    */
+     *enough?
+     ** Is a link key upgrade even possible?
+     */
     if ((p_dev_rec->security_required & mtm_check) /* needs MITM */
         && ((p_dev_rec->link_key_type == BTM_LKEY_TYPE_UNAUTH_COMB) ||
             (p_dev_rec->link_key_type == BTM_LKEY_TYPE_UNAUTH_COMB_P_256))
@@ -2965,7 +2965,7 @@ bool is_state_getting_name(void* data, void* context) {
 /*******************************************************************************
  *
  * Function         btm_sec_rmt_name_request_complete
-*
+ *
  * Description      This function is called when remote name was obtained from
  *                  the peer device
  *
@@ -3001,7 +3001,7 @@ void btm_sec_rmt_name_request_complete(const bt_bdaddr_t* p_bd_addr,
   }
 
   /* Commenting out trace due to obf/compilation problems.
-  */
+   */
   if (!p_bd_name) p_bd_name = (uint8_t*)"";
 
   if (p_dev_rec) {
@@ -3119,10 +3119,10 @@ void btm_sec_rmt_name_request_complete(const bt_bdaddr_t* p_bd_addr,
                       BTM_SEC_IS_SM4_UNKNOWN(p_dev_rec->sm4));
 
       /* BT 2.1 or carkit, bring up the connection to force the peer to request
-      *PIN.
-      ** Else prefetch (btm_sec_check_prefetch_pin will do the prefetching if
-      *needed)
-      */
+       *PIN.
+       ** Else prefetch (btm_sec_check_prefetch_pin will do the prefetching if
+       *needed)
+       */
       if ((p_dev_rec->sm4 != BTM_SM4_KNOWN) ||
           !btm_sec_check_prefetch_pin(p_dev_rec)) {
         /* if we rejected incoming connection request, we have to wait
@@ -3231,7 +3231,7 @@ void btm_sec_rmt_host_support_feat_evt(uint8_t* p) {
   bt_bdaddr_t bd_addr; /* peer address */
   BD_FEATURES features;
 
-  STREAM_TO_BDADDR(to_BD_ADDR(bd_addr), p);
+  STREAM_TO_BDADDR(bd_addr, p);
   p_dev_rec = btm_find_or_alloc_dev(bd_addr);
 
   BTM_TRACE_EVENT("btm_sec_rmt_host_support_feat_evt  sm4: 0x%x  p[0]: 0x%x",
@@ -3360,7 +3360,7 @@ void btm_io_capabilities_req(const bt_bdaddr_t& p) {
   }
 
   if (err_code != 0) {
-    btsnd_hcic_io_cap_req_neg_reply(to_BD_ADDR(evt_data.bd_addr), err_code);
+    btsnd_hcic_io_cap_req_neg_reply(evt_data.bd_addr, err_code);
     return;
   }
 
@@ -3432,7 +3432,7 @@ void btm_io_capabilities_req(const bt_bdaddr_t& p) {
                     __func__, btm_pair_state_descr(btm_cb.pairing_state),
                     evt_data.io_cap, evt_data.oob_data, evt_data.auth_req);
 
-    btsnd_hcic_io_cap_req_reply(to_BD_ADDR(evt_data.bd_addr), evt_data.io_cap,
+    btsnd_hcic_io_cap_req_reply(evt_data.bd_addr, evt_data.io_cap,
                                 evt_data.oob_data, evt_data.auth_req);
   }
 }
@@ -3451,7 +3451,7 @@ void btm_io_capabilities_rsp(uint8_t* p) {
   tBTM_SEC_DEV_REC* p_dev_rec;
   tBTM_SP_IO_RSP evt_data;
 
-  STREAM_TO_BDADDR(to_BD_ADDR(evt_data.bd_addr), p);
+  STREAM_TO_BDADDR(evt_data.bd_addr, p);
   STREAM_TO_UINT8(evt_data.io_cap, p);
   STREAM_TO_UINT8(evt_data.oob_data, p);
   STREAM_TO_UINT8(evt_data.auth_req, p);
@@ -3518,7 +3518,7 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, uint8_t* p) {
   tBTM_SEC_DEV_REC* p_dev_rec;
 
   /* All events start with bd_addr */
-  STREAM_TO_BDADDR(to_BD_ADDR(p_bda), p);
+  STREAM_TO_BDADDR(p_bda, p);
 
   VLOG(2) << " BDA: " << p_bda << " event: 0x" << std::hex << +event
           << " State: " << btm_pair_state_descr(btm_cb.pairing_state);
@@ -3623,7 +3623,7 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, uint8_t* p) {
   btm_cb.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
 
   if (BTM_SP_CFM_REQ_EVT == event) {
-    btsnd_hcic_user_conf_reply(to_BD_ADDR(p_bda), false);
+    btsnd_hcic_user_conf_reply(p_bda, false);
   } else if (BTM_SP_KEY_NOTIF_EVT == event) {
     /* do nothing -> it very unlikely to happen.
     This event is most likely to be received by a HID host when it first
@@ -3639,7 +3639,7 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, uint8_t* p) {
   }
 #if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
   else {
-    btsnd_hcic_user_passkey_neg_reply(to_BD_ADDR(p_bda));
+    btsnd_hcic_user_passkey_neg_reply(p_bda);
   }
 #endif
 }
@@ -3661,7 +3661,7 @@ void btm_keypress_notif_evt(uint8_t* p) {
   if (btm_cb.api.p_sp_callback) {
     bt_bdaddr_t& p_bda = evt_data.bd_addr;
 
-    STREAM_TO_BDADDR(to_BD_ADDR(p_bda), p);
+    STREAM_TO_BDADDR(p_bda, p);
     evt_data.notif_type = *p;
 
     (*btm_cb.api.p_sp_callback)(BTM_SP_KEYPRESS_EVT,
@@ -3686,7 +3686,7 @@ void btm_simple_pair_complete(uint8_t* p) {
   bool disc = false;
 
   status = *p++;
-  STREAM_TO_BDADDR(to_BD_ADDR(evt_data.bd_addr), p);
+  STREAM_TO_BDADDR(evt_data.bd_addr, p);
 
   p_dev_rec = btm_find_dev(evt_data.bd_addr);
   if (p_dev_rec == NULL) {
@@ -3762,7 +3762,7 @@ void btm_rem_oob_req(uint8_t* p) {
 
   bt_bdaddr_t& p_bda = evt_data.bd_addr;
 
-  STREAM_TO_BDADDR(to_BD_ADDR(p_bda), p);
+  STREAM_TO_BDADDR(p_bda, p);
 
   VLOG(2) << __func__ << " BDA: " << p_bda;
   p_dev_rec = btm_find_dev(p_bda);
@@ -4886,13 +4886,13 @@ static void btm_sec_pairing_timeout(UNUSED_ATTR void* data) {
       break;
 
     case BTM_PAIR_STATE_WAIT_NUMERIC_CONFIRM:
-      btsnd_hcic_user_conf_reply(to_BD_ADDR(p_cb->pairing_bda), false);
+      btsnd_hcic_user_conf_reply(p_cb->pairing_bda, false);
       /* btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE); */
       break;
 
 #if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
     case BTM_PAIR_STATE_KEY_ENTRY:
-      btsnd_hcic_user_passkey_neg_reply(to_BD_ADDR(p_cb->pairing_bda));
+      btsnd_hcic_user_passkey_neg_reply(p_cb->pairing_bda);
       /* btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE); */
       break;
 #endif /* !BTM_IO_CAP_NONE */
@@ -4901,9 +4901,8 @@ static void btm_sec_pairing_timeout(UNUSED_ATTR void* data) {
       if (btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD)
         auth_req |= BTM_AUTH_DD_BOND;
 
-      btsnd_hcic_io_cap_req_reply(to_BD_ADDR(p_cb->pairing_bda),
-                                  btm_cb.devcb.loc_io_caps, BTM_OOB_NONE,
-                                  auth_req);
+      btsnd_hcic_io_cap_req_reply(p_cb->pairing_bda, btm_cb.devcb.loc_io_caps,
+                                  BTM_OOB_NONE, auth_req);
       btm_sec_change_pairing_state(BTM_PAIR_STATE_IDLE);
       break;
 
@@ -5030,7 +5029,7 @@ void btm_sec_pin_code_request(const bt_bdaddr_t& p_bda) {
       p_cb->pairing_disabled || (p_cb->api.p_pin_callback == NULL)
 
       /* OR Microsoft keyboard can for some reason try to establish connection
-         */
+       */
       /*  the only thing we can do here is to shut it up.  Normally we will be
          originator */
       /*  for keyboard bonding */
@@ -5853,7 +5852,6 @@ static bool btm_sec_queue_encrypt_request(const bt_bdaddr_t& bd_addr,
  ******************************************************************************/
 void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
                                tBTM_SEC_DEV_REC* p_dev_rec) {
-
   if ((btm_cb.security_mode == BTM_SEC_MODE_SP ||
        btm_cb.security_mode == BTM_SEC_MODE_SP_DEBUG ||
        btm_cb.security_mode == BTM_SEC_MODE_SC) &&

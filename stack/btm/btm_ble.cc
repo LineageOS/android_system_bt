@@ -1923,12 +1923,12 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
   STREAM_TO_UINT16(handle, p);
   STREAM_TO_UINT8(role, p);
   STREAM_TO_UINT8(bda_type, p);
-  STREAM_TO_BDADDR(to_BD_ADDR(bda), p);
+  STREAM_TO_BDADDR(bda, p);
 
   if (status == 0) {
     if (enhanced) {
-      STREAM_TO_BDADDR(to_BD_ADDR(local_rpa), p);
-      STREAM_TO_BDADDR(to_BD_ADDR(peer_rpa), p);
+      STREAM_TO_BDADDR(local_rpa, p);
+      STREAM_TO_BDADDR(peer_rpa, p);
     }
 
     STREAM_TO_UINT16(conn_interval, p);

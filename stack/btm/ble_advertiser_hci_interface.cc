@@ -142,9 +142,9 @@ class BleAdvertiserVscHciInterfaceImpl : public BleAdvertiserHciInterface {
     }
 
     UINT8_TO_STREAM(pp, own_address_type);
-    BDADDR_TO_STREAM(pp, to_BD_ADDR(own_address));
+    BDADDR_TO_STREAM(pp, own_address);
     UINT8_TO_STREAM(pp, peer_address_type);
-    BDADDR_TO_STREAM(pp, to_BD_ADDR(peer_address));
+    BDADDR_TO_STREAM(pp, peer_address);
     UINT8_TO_STREAM(pp, channel_map);
     UINT8_TO_STREAM(pp, filter_policy);
     UINT8_TO_STREAM(pp, handle);
@@ -199,7 +199,7 @@ class BleAdvertiserVscHciInterfaceImpl : public BleAdvertiserHciInterface {
 
     uint8_t* pp = param;
     UINT8_TO_STREAM(pp, BTM_BLE_MULTI_ADV_SET_RANDOM_ADDR);
-    BDADDR_TO_STREAM(pp, to_BD_ADDR(random_address));
+    BDADDR_TO_STREAM(pp, random_address);
     UINT8_TO_STREAM(pp, handle);
 
     SendAdvCmd(FROM_HERE, (uint8_t)BTM_BLE_MULTI_ADV_SET_RANDOM_ADDR_LEN, param,
@@ -347,7 +347,7 @@ class BleAdvertiserLegacyHciInterfaceImpl : public BleAdvertiserHciInterface {
 
     UINT8_TO_STREAM(pp, own_address_type);
     UINT8_TO_STREAM(pp, peer_address_type);
-    BDADDR_TO_STREAM(pp, to_BD_ADDR(peer_address));
+    BDADDR_TO_STREAM(pp, peer_address);
     UINT8_TO_STREAM(pp, channel_map);
     UINT8_TO_STREAM(pp, filter_policy);
 
@@ -397,7 +397,7 @@ class BleAdvertiserLegacyHciInterfaceImpl : public BleAdvertiserHciInterface {
     uint8_t param[HCIC_PARAM_SIZE_WRITE_RANDOM_ADDR_CMD];
 
     uint8_t* pp = param;
-    BDADDR_TO_STREAM(pp, to_BD_ADDR(random_address));
+    BDADDR_TO_STREAM(pp, random_address);
 
     SendAdvCmd(FROM_HERE, HCI_BLE_WRITE_RANDOM_ADDR, param,
                HCIC_PARAM_SIZE_WRITE_RANDOM_ADDR_CMD, command_complete);
@@ -490,7 +490,7 @@ class BleAdvertiserHciExtendedImpl : public BleAdvertiserHciInterface {
     UINT8_TO_STREAM(pp, channel_map);
     UINT8_TO_STREAM(pp, own_address_type);
     UINT8_TO_STREAM(pp, peer_address_type);
-    BDADDR_TO_STREAM(pp, to_BD_ADDR(peer_address));
+    BDADDR_TO_STREAM(pp, peer_address);
     UINT8_TO_STREAM(pp, filter_policy);
     INT8_TO_STREAM(pp, tx_power);
     UINT8_TO_STREAM(pp, primary_phy);
@@ -557,7 +557,7 @@ class BleAdvertiserHciExtendedImpl : public BleAdvertiserHciInterface {
 
     uint8_t* pp = param;
     UINT8_TO_STREAM(pp, handle);
-    BDADDR_TO_STREAM(pp, to_BD_ADDR(random_address));
+    BDADDR_TO_STREAM(pp, random_address);
 
     SendAdvCmd(FROM_HERE, HCI_LE_SET_EXT_ADVERTISING_RANDOM_ADDRESS, param,
                LE_SET_ADVERTISING_SET_RANDOM_ADDRESS_LEN, command_complete);

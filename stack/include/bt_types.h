@@ -301,12 +301,6 @@ typedef struct {
     int ijk;                                                      \
     for (ijk = 0; ijk < 8; ijk++) *(p)++ = (uint8_t)(a)[7 - ijk]; \
   }
-#define BDADDR_TO_STREAM(p, a)                      \
-  {                                                 \
-    int ijk;                                        \
-    for (ijk = 0; ijk < BD_ADDR_LEN; ijk++)         \
-      *(p)++ = (uint8_t)(a)[BD_ADDR_LEN - 1 - ijk]; \
-  }
 #define LAP_TO_STREAM(p, a)                     \
   {                                             \
     int ijk;                                    \
@@ -357,12 +351,6 @@ typedef struct {
              ((((uint32_t)(*((p) + 2)))) << 16) +                     \
              ((((uint32_t)(*((p) + 3)))) << 24));                     \
     (p) += 4;                                                         \
-  }
-#define STREAM_TO_BDADDR(a, p)                                \
-  {                                                           \
-    int ijk;                                                  \
-    uint8_t* pbda = (uint8_t*)(a) + BD_ADDR_LEN - 1;          \
-    for (ijk = 0; ijk < BD_ADDR_LEN; ijk++) *pbda-- = *(p)++; \
   }
 #define STREAM_TO_ARRAY32(a, p)                     \
   {                                                 \
@@ -537,7 +525,6 @@ typedef struct {
 
 /* Common Bluetooth field definitions */
 #define BD_ADDR_LEN 6                 /* Device address length */
-typedef uint8_t BD_ADDR[BD_ADDR_LEN]; /* Device address */
 
 #ifdef __cplusplus
 #include <base/strings/stringprintf.h>
@@ -561,13 +548,14 @@ inline std::ostream& operator<<(std::ostream& os, const bt_bdaddr_t& a) {
   return os;
 }
 
-/*TODO(jpawlowski): These two helpers are used at the border between code where
- * BD_ADDR is not used any more. Remove once BD_ADDR is no more */
-inline uint8_t* to_BD_ADDR(const bt_bdaddr_t& a) {
-  return const_cast<uint8_t*>((const uint8_t*)a.address);
+inline void BDADDR_TO_STREAM(uint8_t*& p, const bt_bdaddr_t& a) {
+  for (int ijk = 0; ijk < BD_ADDR_LEN; ijk++)
+    *(p)++ = (uint8_t)(a.address)[BD_ADDR_LEN - 1 - ijk];
 }
-inline const bt_bdaddr_t& from_BD_ADDR(const BD_ADDR a) {
-  return (bt_bdaddr_t&)*a;
+
+inline void STREAM_TO_BDADDR(bt_bdaddr_t& a, uint8_t*& p) {
+  uint8_t* pbda = (uint8_t*)(a.address) + BD_ADDR_LEN - 1;
+  for (int ijk = 0; ijk < BD_ADDR_LEN; ijk++) *pbda-- = *(p)++;
 }
 
 #endif
