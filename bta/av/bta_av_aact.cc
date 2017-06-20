@@ -2753,17 +2753,13 @@ void bta_av_rcfg_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   bool disable_avdtp_reconfigure = false;
   {
     char remote_name[BTM_MAX_REM_BD_NAME_LEN] = "";
-    if (btif_storage_get_stored_remote_name(from_BD_ADDR(p_scb->peer_addr),
-                                            remote_name)) {
+    if (btif_storage_get_stored_remote_name(p_scb->peer_addr, remote_name)) {
       if (interop_match_name(INTEROP_DISABLE_AVDTP_RECONFIGURE, remote_name) ||
           interop_match_addr(INTEROP_DISABLE_AVDTP_RECONFIGURE,
                              (const bt_bdaddr_t*)&p_scb->peer_addr)) {
-        APPL_TRACE_DEBUG(
-            "%s: disable AVDTP RECONFIGURE: interop matched "
-            "name %s address %02x:%02x:%02x:%02x:%02x:%02x",
-            __func__, remote_name, p_scb->peer_addr[0], p_scb->peer_addr[1],
-            p_scb->peer_addr[2], p_scb->peer_addr[3], p_scb->peer_addr[4],
-            p_scb->peer_addr[5]);
+        VLOG(1) << __func__ << ": disable AVDTP RECONFIGURE: interop matched "
+                               "name "
+                << remote_name << " address " << p_scb->peer_addr;
         disable_avdtp_reconfigure = true;
       }
     }
