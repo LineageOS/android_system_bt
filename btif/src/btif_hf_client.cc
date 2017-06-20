@@ -854,7 +854,7 @@ static void btif_hf_client_upstreams_evt(uint16_t event, char* p_param) {
                 0 /* AT+CHLD feat */);
 
       if (cb->state == BTHF_CLIENT_CONNECTION_STATE_DISCONNECTED)
-        bdsetany(cb->peer_bda.address);
+        cb->peer_bda = bd_addr_any;
 
       if (p_data->open.status != BTA_HF_CLIENT_SUCCESS) btif_queue_advance();
       break;
@@ -880,7 +880,7 @@ static void btif_hf_client_upstreams_evt(uint16_t event, char* p_param) {
       cb->state = BTHF_CLIENT_CONNECTION_STATE_DISCONNECTED;
       HAL_CBACK(bt_hf_client_callbacks, connection_state_cb, &cb->peer_bda,
                 cb->state, 0, 0);
-      bdsetany(cb->peer_bda.address);
+      cb->peer_bda = bd_addr_any;
       cb->peer_feat = 0;
       cb->chld_feat = 0;
       btif_queue_advance();

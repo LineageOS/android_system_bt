@@ -79,7 +79,7 @@ static bool bta_dm_check_av(uint16_t event);
 static void bta_dm_bl_change_cback(tBTM_BL_EVENT_DATA* p_data);
 
 static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
-                                uint8_t app_id, BD_ADDR peer_addr);
+                                uint8_t app_id, const bt_bdaddr_t* peer_addr);
 
 /* Extended Inquiry Response */
 #if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
@@ -95,7 +95,7 @@ static void bta_dm_eir_search_services(tBTM_INQ_RESULTS* p_result,
 static void bta_dm_search_timer_cback(void* data);
 static void bta_dm_disable_conn_down_timer_cback(void* data);
 static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
-                            uint8_t app_id, BD_ADDR peer_addr);
+                            uint8_t app_id, const bt_bdaddr_t* peer_addr);
 static void bta_dm_adjust_roles(bool delay_role_switch);
 static char* bta_dm_get_remname(void);
 static void bta_dm_bond_cancel_complete_cback(tBTM_STATUS result);
@@ -990,12 +990,12 @@ void bta_dm_pin_reply(tBTA_DM_MSG* p_data) {
  *
  ******************************************************************************/
 static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
-                                uint8_t app_id, BD_ADDR peer_addr) {
+                                uint8_t app_id, const bt_bdaddr_t* peer_addr) {
   tBTA_DM_PEER_DEVICE* p_dev = NULL;
   uint16_t policy = app_id;
   uint32_t mask = (uint32_t)(1 << id);
 
-  if (peer_addr) p_dev = bta_dm_find_peer_device(from_BD_ADDR(peer_addr));
+  if (peer_addr) p_dev = bta_dm_find_peer_device(*peer_addr);
 
   APPL_TRACE_DEBUG(" bta_dm_policy_cback cmd:%d, policy:0x%x", status, policy);
   switch (status) {
@@ -2887,7 +2887,7 @@ static bool bta_dm_check_av(uint16_t event) {
         }
         /* else either already master or can not switch for some reasons */
         bta_dm_policy_cback(BTA_SYS_PLCY_CLR, 0, HCI_ENABLE_MASTER_SLAVE_SWITCH,
-                            to_BD_ADDR(p_dev->peer_bdaddr));
+                            &p_dev->peer_bdaddr);
         break;
       }
     }
@@ -2953,7 +2953,7 @@ void bta_dm_acl_change(tBTA_DM_MSG* p_data) {
           if (need_policy_change) {
             bta_dm_policy_cback(BTA_SYS_PLCY_CLR, 0,
                                 HCI_ENABLE_MASTER_SLAVE_SWITCH,
-                                to_BD_ADDR(p_dev->peer_bdaddr));
+                                &p_dev->peer_bdaddr);
           }
         } else {
           /* there's AV no activity on this link and role switch happened
@@ -3144,12 +3144,12 @@ static void bta_dm_disable_conn_down_timer_cback(UNUSED_ATTR void* data) {
  *
  ******************************************************************************/
 static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
-                            uint8_t app_id, BD_ADDR peer_addr) {
+                            uint8_t app_id, const bt_bdaddr_t* peer_addr) {
   uint8_t j;
   tBTA_PREF_ROLES role;
   tBTA_DM_PEER_DEVICE* p_dev;
 
-  p_dev = bta_dm_find_peer_device(from_BD_ADDR(peer_addr));
+  p_dev = bta_dm_find_peer_device(*peer_addr);
   if (status == BTA_SYS_CONN_OPEN) {
     if (p_dev) {
       /* Do not set to connected if we are in the middle of unpairing. When AV

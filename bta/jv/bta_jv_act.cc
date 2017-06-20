@@ -1785,7 +1785,7 @@ static tBTA_JV_PCB* bta_jv_add_rfc_port(tBTA_JV_RFC_CB* p_cb,
     if (used < p_cb->max_sess && listen == 1 && si) {
       si--;
       if (RFCOMM_CreateConnection(p_cb->sec_id, p_cb->scn, true,
-                                  BTA_JV_DEF_RFC_MTU, from_BD_ADDR(bd_addr_any),
+                                  BTA_JV_DEF_RFC_MTU, bd_addr_any,
                                   &(p_cb->rfc_hdl[si]),
                                   bta_jv_port_mgmt_sr_cback) == PORT_SUCCESS) {
         p_cb->curr_sess++;
@@ -1858,7 +1858,7 @@ void bta_jv_rfcomm_start_server(tBTA_JV_MSG* p_data) {
     }
 
     if (RFCOMM_CreateConnection(sec_id, rs->local_scn, true, BTA_JV_DEF_RFC_MTU,
-                                from_BD_ADDR(bd_addr_any), &handle,
+                                bd_addr_any, &handle,
                                 bta_jv_port_mgmt_sr_cback) != PORT_SUCCESS) {
       APPL_TRACE_ERROR(
           "bta_jv_rfcomm_start_server, RFCOMM_CreateConnection failed");

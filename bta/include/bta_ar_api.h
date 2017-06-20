@@ -86,7 +86,7 @@ extern void bta_ar_dereg_avdt(tBTA_SYS_ID sys_id);
  * Returns          void
  *
  ******************************************************************************/
-extern void bta_ar_avdt_conn(tBTA_SYS_ID sys_id, BD_ADDR bd_addr);
+extern void bta_ar_avdt_conn(tBTA_SYS_ID sys_id, const bt_bdaddr_t& bd_addr);
 
 /*******************************************************************************
  *

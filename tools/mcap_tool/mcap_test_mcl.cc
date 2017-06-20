@@ -35,7 +35,7 @@ McapMcl::McapMcl(btmcap_test_interface_t* mcap_test_interface,
 
 bool McapMcl::Connect(uint16_t ctrl_psm, uint16_t sec_mask) {
   tMCA_RESULT ret = _mcap_test_interface->connect_mcl(
-      _mcap_handle, _peer_bd_addr.address, ctrl_psm, sec_mask);
+      _mcap_handle, _peer_bd_addr, ctrl_psm, sec_mask);
   LOG_IF(INFO, ret != MCA_SUCCESS) << "ret=" << (int)ret;
   return ret == MCA_SUCCESS;
 }
