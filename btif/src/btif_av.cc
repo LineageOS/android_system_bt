@@ -356,17 +356,17 @@ static bool btif_av_state_idle_handler(btif_sm_event_t event, void* p_data) {
         memcpy(&btif_av_cb.peer_bda,
                ((btif_av_connect_req_t*)p_data)->target_bda,
                sizeof(bt_bdaddr_t));
-        BTA_AvOpen(btif_av_cb.peer_bda.address, btif_av_cb.bta_handle, true,
+        BTA_AvOpen(btif_av_cb.peer_bda, btif_av_cb.bta_handle, true,
                    BTA_SEC_AUTHENTICATE,
                    ((btif_av_connect_req_t*)p_data)->uuid);
       } else if (event == BTA_AV_PENDING_EVT) {
-        bdcpy(btif_av_cb.peer_bda.address, ((tBTA_AV*)p_data)->pend.bd_addr);
+        btif_av_cb.peer_bda = ((tBTA_AV*)p_data)->pend.bd_addr;
         if (bt_av_src_callbacks != NULL) {
-          BTA_AvOpen(btif_av_cb.peer_bda.address, btif_av_cb.bta_handle, true,
+          BTA_AvOpen(btif_av_cb.peer_bda, btif_av_cb.bta_handle, true,
                      BTA_SEC_AUTHENTICATE, UUID_SERVCLASS_AUDIO_SOURCE);
         }
         if (bt_av_sink_callbacks != NULL) {
-          BTA_AvOpen(btif_av_cb.peer_bda.address, btif_av_cb.bta_handle, true,
+          BTA_AvOpen(btif_av_cb.peer_bda, btif_av_cb.bta_handle, true,
                      BTA_SEC_AUTHENTICATE, UUID_SERVCLASS_AUDIO_SINK);
         }
       }
@@ -455,7 +455,7 @@ static bool btif_av_state_idle_handler(btif_sm_event_t event, void* p_data) {
       if (btif_av_cb.peer_sep == AVDT_TSEP_SNK) {
         /* if queued PLAY command,  send it now */
         btif_rc_check_handle_pending_play(
-            from_BD_ADDR(p_bta_data->open.bd_addr),
+            p_bta_data->open.bd_addr,
             (p_bta_data->open.status == BTA_AV_SUCCESS));
       } else if ((btif_av_cb.peer_sep == AVDT_TSEP_SRC) &&
                  (p_bta_data->open.status == BTA_AV_SUCCESS)) {
@@ -567,7 +567,7 @@ static bool btif_av_state_opening_handler(btif_sm_event_t event, void* p_data) {
       if (btif_av_cb.peer_sep == AVDT_TSEP_SNK) {
         /* if queued PLAY command,  send it now */
         btif_rc_check_handle_pending_play(
-            from_BD_ADDR(p_bta_data->open.bd_addr),
+            p_bta_data->open.bd_addr,
             (p_bta_data->open.status == BTA_AV_SUCCESS));
       } else if ((btif_av_cb.peer_sep == AVDT_TSEP_SRC) &&
                  (p_bta_data->open.status == BTA_AV_SUCCESS)) {
@@ -622,8 +622,7 @@ static bool btif_av_state_opening_handler(btif_sm_event_t event, void* p_data) {
     case BTA_AV_PENDING_EVT:
       // Check for device, if same device which moved to opening then ignore
       // callback
-      if (memcmp(((tBTA_AV*)p_data)->pend.bd_addr, &(btif_av_cb.peer_bda),
-                 sizeof(btif_av_cb.peer_bda)) == 0) {
+      if (((tBTA_AV*)p_data)->pend.bd_addr == btif_av_cb.peer_bda) {
         BTIF_TRACE_DEBUG(
             "%s: Same device moved to Opening state,ignore Pending Req",
             __func__);
@@ -1195,8 +1194,7 @@ static void bte_av_sink_media_callback(tBTA_AV_EVT event,
         break;
       }
 
-      memcpy(&config_req.peer_bd, (uint8_t*)(p_data->avk_config.bd_addr),
-             sizeof(config_req.peer_bd));
+      config_req.peer_bd = p_data->avk_config.bd_addr;
       btif_transfer_context(btif_av_handle_event, BTIF_AV_SINK_CONFIG_REQ_EVT,
                             (char*)&config_req, sizeof(config_req), NULL);
       break;

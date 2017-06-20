@@ -78,8 +78,7 @@ static void avdt_ccb_clear_ccb(tAVDT_CCB* p_ccb) {
  *
  ******************************************************************************/
 void avdt_ccb_chan_open(tAVDT_CCB* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
-  BTM_SetOutService(from_BD_ADDR(p_ccb->peer_addr), BTM_SEC_SERVICE_AVDTP,
-                    AVDT_CHAN_SIG);
+  BTM_SetOutService(p_ccb->peer_addr, BTM_SEC_SERVICE_AVDTP, AVDT_CHAN_SIG);
   avdt_ad_open_req(AVDT_CHAN_SIG, p_ccb, NULL, AVDT_INT);
 }
 
@@ -188,7 +187,7 @@ void avdt_ccb_hdl_discover_rsp(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data) {
   p_ccb->proc_busy = false;
 
   /* call app callback with results */
-  (*p_ccb->proc_cback)(0, p_ccb->peer_addr, AVDT_DISCOVER_CFM_EVT,
+  (*p_ccb->proc_cback)(0, &p_ccb->peer_addr, AVDT_DISCOVER_CFM_EVT,
                        (tAVDT_CTRL*)(&p_data->msg.discover_rsp));
 }
 
@@ -233,7 +232,7 @@ void avdt_ccb_hdl_getcap_rsp(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data) {
   p_ccb->proc_busy = false;
 
   /* call app callback with results */
-  (*p_ccb->proc_cback)(0, p_ccb->peer_addr, AVDT_GETCAP_CFM_EVT,
+  (*p_ccb->proc_cback)(0, &p_ccb->peer_addr, AVDT_GETCAP_CFM_EVT,
                        (tAVDT_CTRL*)(&p_data->msg.svccap));
 }
 
@@ -985,7 +984,6 @@ void avdt_ccb_do_disconn(tAVDT_CCB* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
  ******************************************************************************/
 void avdt_ccb_ll_closed(tAVDT_CCB* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
   tAVDT_CTRL_CBACK* p_cback;
-  BD_ADDR bd_addr;
   tAVDT_CTRL avdt_ctrl;
 
   /* clear any pending commands */
@@ -994,7 +992,7 @@ void avdt_ccb_ll_closed(tAVDT_CCB* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
   /* save callback pointer, bd addr */
   p_cback = p_ccb->p_conn_cback;
   if (!p_cback) p_cback = avdt_cb.p_conn_cback;
-  memcpy(bd_addr, p_ccb->peer_addr, BD_ADDR_LEN);
+  bt_bdaddr_t bd_addr = p_ccb->peer_addr;
 
   /* dealloc ccb */
   avdt_ccb_dealloc(p_ccb, NULL);
@@ -1002,7 +1000,7 @@ void avdt_ccb_ll_closed(tAVDT_CCB* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
   /* call callback */
   if (p_cback) {
     avdt_ctrl.hdr.err_code = 0;
-    (*p_cback)(0, bd_addr, AVDT_DISCONNECT_IND_EVT, &avdt_ctrl);
+    (*p_cback)(0, &bd_addr, AVDT_DISCONNECT_IND_EVT, &avdt_ctrl);
   }
 }
 
@@ -1027,7 +1025,7 @@ void avdt_ccb_ll_opened(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data) {
   if (p_ccb->p_conn_cback) {
     avdt_ctrl.hdr.err_code = 0;
     avdt_ctrl.hdr.err_param = p_data->msg.hdr.err_param;
-    (*p_ccb->p_conn_cback)(0, p_ccb->peer_addr, AVDT_CONNECT_IND_EVT,
+    (*p_ccb->p_conn_cback)(0, &p_ccb->peer_addr, AVDT_CONNECT_IND_EVT,
                            &avdt_ctrl);
   }
 }
