@@ -187,7 +187,7 @@ typedef struct {
 typedef struct {
   tBTA_JV_STATUS status; /* Whether the operation succeeded or failed. */
   uint32_t handle;       /* The connection handle */
-  BD_ADDR rem_bda;       /* The peer address */
+  bt_bdaddr_t rem_bda;   /* The peer address */
   int32_t tx_mtu;        /* The transmit MTU */
 } tBTA_JV_L2CAP_OPEN;
 
@@ -195,7 +195,7 @@ typedef struct {
 typedef struct {
   tBTA_JV_STATUS status; /* Whether the operation succeeded or failed. */
   uint32_t handle;       /* The connection handle */
-  BD_ADDR rem_bda;       /* The peer address */
+  bt_bdaddr_t rem_bda;   /* The peer address */
   int32_t tx_mtu;        /* The transmit MTU */
   void** p_p_cback;      /* set them for new socket */
   void** p_user_data;    /* set them for new socket */
@@ -254,7 +254,7 @@ typedef struct {
 typedef struct {
   tBTA_JV_STATUS status; /* Whether the operation succeeded or failed. */
   uint16_t channel;      /* The connection channel */
-  BD_ADDR addr;          /* The peer address */
+  bt_bdaddr_t addr;      /* The peer address */
   uint32_t req_id;       /* The req_id in the associated BTA_JvL2capWrite() */
   uint8_t* p_data;       /* The buffer where data is held */
   uint16_t len;          /* The length of the data written. */
@@ -265,14 +265,14 @@ typedef struct {
 typedef struct {
   tBTA_JV_STATUS status; /* Whether the operation succeeded or failed. */
   uint32_t handle;       /* The connection handle */
-  BD_ADDR rem_bda;       /* The peer address */
+  bt_bdaddr_t rem_bda;   /* The peer address */
 } tBTA_JV_RFCOMM_OPEN;
 /* data associated with BTA_JV_RFCOMM_SRV_OPEN_EVT */
 typedef struct {
   tBTA_JV_STATUS status;      /* Whether the operation succeeded or failed. */
   uint32_t handle;            /* The connection handle */
   uint32_t new_listen_handle; /* The new listen handle */
-  BD_ADDR rem_bda;            /* The peer address */
+  bt_bdaddr_t rem_bda;        /* The peer address */
 } tBTA_JV_RFCOMM_SRV_OPEN;
 
 /* data associated with BTA_JV_RFCOMM_CLOSE_EVT */
@@ -423,7 +423,7 @@ void BTA_JvDisable(void);
  *                  false if not.
  *
  ******************************************************************************/
-bool BTA_JvIsEncrypted(BD_ADDR bd_addr);
+bool BTA_JvIsEncrypted(const bt_bdaddr_t& bd_addr);
 
 /*******************************************************************************
  *
@@ -474,8 +474,8 @@ tBTA_JV_STATUS BTA_JvFreeChannel(uint16_t channel, int conn_type);
  *                  BTA_JV_FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvStartDiscovery(BD_ADDR bd_addr, uint16_t num_uuid,
-                                    tSDP_UUID* p_uuid_list,
+tBTA_JV_STATUS BTA_JvStartDiscovery(const bt_bdaddr_t& bd_addr,
+                                    uint16_t num_uuid, tSDP_UUID* p_uuid_list,
                                     uint32_t rfcomm_slot_id);
 
 /*******************************************************************************
@@ -521,7 +521,8 @@ tBTA_JV_STATUS BTA_JvDeleteRecord(uint32_t handle);
 tBTA_JV_STATUS BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
                                     const tL2CAP_ERTM_INFO* ertm_info,
                                     uint16_t remote_chan, uint16_t rx_mtu,
-                                    tL2CAP_CFG_INFO* cfg, BD_ADDR peer_bd_addr,
+                                    tL2CAP_CFG_INFO* cfg,
+                                    const bt_bdaddr_t& peer_bd_addr,
                                     tBTA_JV_L2CAP_CBACK* p_cback,
                                     uint32_t l2cap_socket_id);
 
@@ -540,13 +541,11 @@ tBTA_JV_STATUS BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
  *                  BTA_JV_FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capConnect(int conn_type, tBTA_SEC sec_mask,
-                                  tBTA_JV_ROLE role,
-                                  const tL2CAP_ERTM_INFO* ertm_info,
-                                  uint16_t remote_psm, uint16_t rx_mtu,
-                                  tL2CAP_CFG_INFO* cfg, BD_ADDR peer_bd_addr,
-                                  tBTA_JV_L2CAP_CBACK* p_cback,
-                                  uint32_t l2cap_socket_id);
+tBTA_JV_STATUS BTA_JvL2capConnect(
+    int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
+    const tL2CAP_ERTM_INFO* ertm_info, uint16_t remote_psm, uint16_t rx_mtu,
+    tL2CAP_CFG_INFO* cfg, const bt_bdaddr_t& peer_bd_addr,
+    tBTA_JV_L2CAP_CBACK* p_cback, uint32_t l2cap_socket_id);
 
 /*******************************************************************************
  *
@@ -704,7 +703,7 @@ tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id,
  *                  BTA_JV_FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capWriteFixed(uint16_t channel, BD_ADDR* addr,
+tBTA_JV_STATUS BTA_JvL2capWriteFixed(uint16_t channel, const bt_bdaddr_t& addr,
                                      uint32_t req_id,
                                      tBTA_JV_L2CAP_CBACK* p_cback,
                                      uint8_t* p_data, uint16_t len,
@@ -727,7 +726,8 @@ tBTA_JV_STATUS BTA_JvL2capWriteFixed(uint16_t channel, BD_ADDR* addr,
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
-                                   uint8_t remote_scn, BD_ADDR peer_bd_addr,
+                                   uint8_t remote_scn,
+                                   const bt_bdaddr_t& peer_bd_addr,
                                    tBTA_JV_RFCOMM_CBACK* p_cback,
                                    uint32_t rfcomm_slot_id);
 
