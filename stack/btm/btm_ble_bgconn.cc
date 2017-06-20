@@ -66,14 +66,7 @@ struct BgConnHash {
   }
 };
 
-struct BgConnKeyEqual {
-  bool operator()(const bt_bdaddr_t& x, const bt_bdaddr_t& y) const {
-    return bdaddr_equals(&x, &y);
-  }
-};
-
-static std::unordered_map<bt_bdaddr_t, background_connection_t, BgConnHash,
-                          BgConnKeyEqual>
+static std::unordered_map<bt_bdaddr_t, background_connection_t, BgConnHash>
     background_connections;
 
 static void background_connection_add(uint8_t addr_type,

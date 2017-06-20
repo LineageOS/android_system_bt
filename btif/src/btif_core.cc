@@ -381,9 +381,7 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status) {
   BTIF_TRACE_DEBUG("%s: status %d", __func__, status);
 
   /* Fetch the local BD ADDR */
-  bt_bdaddr_t local_bd_addr;
-  const controller_t* controller = controller_get_interface();
-  bdaddr_copy(&local_bd_addr, controller->get_address());
+  bt_bdaddr_t local_bd_addr = *controller_get_interface()->get_address();
 
   bdstr_t bdstr;
   bdaddr_to_string(&local_bd_addr, bdstr, sizeof(bdstr));
