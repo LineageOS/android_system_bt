@@ -37,7 +37,6 @@
 #define PAN_NAP_SERVICE_NAME "Android Network Access Point"
 #define PANU_SERVICE_NAME "Android Network User"
 #define TAP_IF_NAME "bt-pan"
-#define ETH_ADDR_LEN 6
 #define TAP_MAX_PKT_WRITE_LEN 2000
 #ifndef PAN_SECURITY
 #define PAN_SECURITY                                                         \
@@ -57,8 +56,8 @@
  ******************************************************************************/
 
 typedef struct eth_hdr {
-  unsigned char h_dest[ETH_ADDR_LEN];
-  unsigned char h_src[ETH_ADDR_LEN];
+  bt_bdaddr_t h_dest;
+  bt_bdaddr_t h_src;
   short h_proto;
 } tETH_HDR;
 
@@ -66,10 +65,10 @@ typedef struct {
   int handle;
   int state;
   uint16_t protocol;
-  BD_ADDR peer;
+  bt_bdaddr_t peer;
   int local_role;
   int remote_role;
-  unsigned char eth_addr[ETH_ADDR_LEN];
+  bt_bdaddr_t eth_addr;
 } btpan_conn_t;
 
 typedef struct {
@@ -89,9 +88,9 @@ typedef struct {
  ******************************************************************************/
 
 extern btpan_cb_t btpan_cb;
-btpan_conn_t* btpan_new_conn(int handle, const BD_ADDR addr, int local_role,
-                             int peer_role);
-btpan_conn_t* btpan_find_conn_addr(const BD_ADDR addr);
+btpan_conn_t* btpan_new_conn(int handle, const bt_bdaddr_t& addr,
+                             int local_role, int peer_role);
+btpan_conn_t* btpan_find_conn_addr(const bt_bdaddr_t& addr);
 btpan_conn_t* btpan_find_conn_handle(uint16_t handle);
 void btpan_set_flow_control(bool enable);
 int btpan_get_connected_count(void);
@@ -99,20 +98,17 @@ int btpan_tap_open(void);
 void create_tap_read_thread(int tap_fd);
 void destroy_tap_read_thread(void);
 int btpan_tap_close(int tap_fd);
-int btpan_tap_send(int tap_fd, const BD_ADDR src, const BD_ADDR dst,
+int btpan_tap_send(int tap_fd, const bt_bdaddr_t& src, const bt_bdaddr_t& dst,
                    uint16_t protocol, const char* buff, uint16_t size, bool ext,
                    bool forward);
 
-static inline int is_empty_eth_addr(const BD_ADDR addr) {
-  int i;
-  for (i = 0; i < BD_ADDR_LEN; i++)
-    if (addr[i] != 0) return 0;
-  return 1;
+static inline int is_empty_eth_addr(const bt_bdaddr_t& addr) {
+  return addr == bt_bdaddr_t{.address = {0}};
 }
 
-static inline int is_valid_bt_eth_addr(const BD_ADDR addr) {
+static inline int is_valid_bt_eth_addr(const bt_bdaddr_t& addr) {
   if (is_empty_eth_addr(addr)) return 0;
-  return addr[0] & 1 ? 0 : 1; /* Cannot be multicasting address */
+  return addr.address[0] & 1 ? 0 : 1; /* Cannot be multicasting address */
 }
 
 #endif
