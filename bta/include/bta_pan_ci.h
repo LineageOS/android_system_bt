@@ -91,8 +91,9 @@ extern void bta_pan_ci_tx_flow(uint16_t handle, bool enable);
  * Returns          true if flow enabled
  *
  ******************************************************************************/
-extern void bta_pan_ci_rx_writebuf(uint16_t handle, BD_ADDR src, BD_ADDR dst,
-                                   uint16_t protocol, BT_HDR* p_buf, bool ext);
+extern void bta_pan_ci_rx_writebuf(uint16_t handle, const bt_bdaddr_t& src,
+                                   const bt_bdaddr_t& dst, uint16_t protocol,
+                                   BT_HDR* p_buf, bool ext);
 
 /*******************************************************************************
  *
@@ -107,9 +108,9 @@ extern void bta_pan_ci_rx_writebuf(uint16_t handle, BD_ADDR src, BD_ADDR dst,
  * Returns          void
  *
  ******************************************************************************/
-extern BT_HDR* bta_pan_ci_readbuf(uint16_t handle, BD_ADDR src, BD_ADDR dst,
-                                  uint16_t* p_protocol, bool* p_ext,
-                                  bool* p_forward);
+extern BT_HDR* bta_pan_ci_readbuf(uint16_t handle, bt_bdaddr_t& src,
+                                  bt_bdaddr_t& dst, uint16_t* p_protocol,
+                                  bool* p_ext, bool* p_forward);
 
 /*******************************************************************************
  *
