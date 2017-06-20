@@ -24,6 +24,7 @@
  *****************************************************************************/
 
 #include "pan_api.h"
+#include <base/logging.h>
 #include <string.h>
 #include "bnep_api.h"
 #include "bt_common.h"
@@ -169,7 +170,7 @@ tPAN_RESULT PAN_SetRole(uint8_t role, uint8_t* sec_mask,
     bta_sys_add_uuid(UUID_SERVCLASS_NAP);
   }
   /* If the NAP role is already active and now being cleared delete the record
-     */
+   */
   else if (pan_cb.role & PAN_ROLE_NAP_SERVER) {
     if (pan_cb.pan_nap_sdp_handle != 0) {
       SDP_DeleteRecord(pan_cb.pan_nap_sdp_handle);
@@ -221,7 +222,7 @@ tPAN_RESULT PAN_SetRole(uint8_t role, uint8_t* sec_mask,
     bta_sys_add_uuid(UUID_SERVCLASS_PANU);
   }
   /* If the PANU role is already active and now being cleared delete the record
-     */
+   */
   else if (pan_cb.role & PAN_ROLE_CLIENT) {
     if (pan_cb.pan_user_sdp_handle != 0) {
       SDP_DeleteRecord(pan_cb.pan_user_sdp_handle);
@@ -263,8 +264,8 @@ tPAN_RESULT PAN_SetRole(uint8_t role, uint8_t* sec_mask,
  *                                     allowed at that point of time
  *
  ******************************************************************************/
-tPAN_RESULT PAN_Connect(BD_ADDR rem_bda, uint8_t src_role, uint8_t dst_role,
-                        uint16_t* handle) {
+tPAN_RESULT PAN_Connect(const bt_bdaddr_t& rem_bda, uint8_t src_role,
+                        uint8_t dst_role, uint16_t* handle) {
   tPAN_CONN* pcb;
   tBNEP_RESULT result;
   tBT_UUID src_uuid, dst_uuid;
@@ -348,11 +349,9 @@ tPAN_RESULT PAN_Connect(BD_ADDR rem_bda, uint8_t src_role, uint8_t dst_role,
     PAN_TRACE_ERROR("PAN Connection failed because of no resources");
     return PAN_NO_RESOURCES;
   }
-  BTM_SetOutService(from_BD_ADDR(rem_bda), BTM_SEC_SERVICE_BNEP_PANU,
-                    mx_chan_id);
+  BTM_SetOutService(rem_bda, BTM_SEC_SERVICE_BNEP_PANU, mx_chan_id);
 
-  PAN_TRACE_API("PAN_Connect() for BD Addr %x.%x.%x.%x.%x.%x", rem_bda[0],
-                rem_bda[1], rem_bda[2], rem_bda[3], rem_bda[4], rem_bda[5]);
+  VLOG(0) << __func__ << " for BD Addr: " << rem_bda;
   if (pcb->con_state == PAN_STATE_IDLE) {
     pan_cb.num_conns++;
   } else if (pcb->con_state == PAN_STATE_CONNECTED) {
@@ -448,9 +447,9 @@ tPAN_RESULT PAN_Disconnect(uint16_t handle) {
  *                                           there is an error in sending data
  *
  ******************************************************************************/
-tPAN_RESULT PAN_Write(uint16_t handle, BD_ADDR dst, BD_ADDR src,
-                      uint16_t protocol, uint8_t* p_data, uint16_t len,
-                      bool ext) {
+tPAN_RESULT PAN_Write(uint16_t handle, const bt_bdaddr_t& dst,
+                      const bt_bdaddr_t& src, uint16_t protocol,
+                      uint8_t* p_data, uint16_t len, bool ext) {
   if (pan_cb.role == PAN_ROLE_INACTIVE || !pan_cb.num_conns) {
     PAN_TRACE_ERROR("%s PAN is not active, data write failed.", __func__);
     return PAN_FAILURE;
@@ -460,11 +459,11 @@ tPAN_RESULT PAN_Write(uint16_t handle, BD_ADDR dst, BD_ADDR src,
   // a copy of the packet for each connection. We can save one extra copy
   // by fast-pathing here and calling BNEP_Write instead of placing the packet
   // in a BT_HDR buffer, calling BNEP_Write, and then freeing the buffer.
-  if (dst[0] & 0x01) {
+  if (dst.address[0] & 0x01) {
     int i;
     for (i = 0; i < MAX_PAN_CONNS; ++i) {
       if (pan_cb.pcb[i].con_state == PAN_STATE_CONNECTED)
-        BNEP_Write(pan_cb.pcb[i].handle, dst, p_data, len, protocol, src, ext);
+        BNEP_Write(pan_cb.pcb[i].handle, dst, p_data, len, protocol, &src, ext);
     }
     return PAN_SUCCESS;
   }
@@ -501,8 +500,9 @@ tPAN_RESULT PAN_Write(uint16_t handle, BD_ADDR dst, BD_ADDR src,
  *                                           there is an error in sending data
  *
  ******************************************************************************/
-tPAN_RESULT PAN_WriteBuf(uint16_t handle, BD_ADDR dst, BD_ADDR src,
-                         uint16_t protocol, BT_HDR* p_buf, bool ext) {
+tPAN_RESULT PAN_WriteBuf(uint16_t handle, const bt_bdaddr_t& dst,
+                         const bt_bdaddr_t& src, uint16_t protocol,
+                         BT_HDR* p_buf, bool ext) {
   tPAN_CONN* pcb;
   uint16_t i;
   tBNEP_RESULT result;
@@ -514,11 +514,11 @@ tPAN_RESULT PAN_WriteBuf(uint16_t handle, BD_ADDR dst, BD_ADDR src,
   }
 
   /* Check if it is broadcast or multicast packet */
-  if (dst[0] & 0x01) {
+  if (dst.address[0] & 0x01) {
     uint8_t* data = (uint8_t*)p_buf + sizeof(BT_HDR) + p_buf->offset;
     for (i = 0; i < MAX_PAN_CONNS; ++i) {
       if (pan_cb.pcb[i].con_state == PAN_STATE_CONNECTED)
-        BNEP_Write(pan_cb.pcb[i].handle, dst, data, p_buf->len, protocol, src,
+        BNEP_Write(pan_cb.pcb[i].handle, dst, data, p_buf->len, protocol, &src,
                    ext);
     }
     osi_free(p_buf);
@@ -541,7 +541,7 @@ tPAN_RESULT PAN_WriteBuf(uint16_t handle, BD_ADDR dst, BD_ADDR src,
     }
 
     result =
-        BNEP_WriteBuf(pan_cb.pcb[i].handle, dst, p_buf, protocol, src, ext);
+        BNEP_WriteBuf(pan_cb.pcb[i].handle, dst, p_buf, protocol, &src, ext);
     if (result == BNEP_IGNORE_CMD) {
       PAN_TRACE_DEBUG("PAN ignored data write for PANU connection");
       return result;
@@ -568,7 +568,7 @@ tPAN_RESULT PAN_WriteBuf(uint16_t handle, BD_ADDR dst, BD_ADDR src,
     return PAN_FAILURE;
   }
 
-  result = BNEP_WriteBuf(pcb->handle, dst, p_buf, protocol, src, ext);
+  result = BNEP_WriteBuf(pcb->handle, dst, p_buf, protocol, &src, ext);
   if (result == BNEP_IGNORE_CMD) {
     PAN_TRACE_DEBUG("PAN ignored data buf write to PANU");
     return result;
