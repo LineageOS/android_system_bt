@@ -1987,7 +1987,7 @@ void bta_hl_cch_close_cmpl(uint8_t app_idx, uint8_t mcl_idx,
 #if (BTA_HL_DEBUG == TRUE)
   APPL_TRACE_DEBUG("bta_hl_cch_close_cmpl");
 #endif
-  bta_sys_conn_close(BTA_ID_HL, p_acb->app_id, to_BD_ADDR(p_mcb->bd_addr));
+  bta_sys_conn_close(BTA_ID_HL, p_acb->app_id, p_mcb->bd_addr);
 
   if (p_mcb->cch_oper == BTA_HL_CCH_OP_LOCAL_CLOSE &&
       p_mcb->force_close_local_cch_opening) {
@@ -2135,7 +2135,7 @@ void bta_hl_cch_mca_connect(uint8_t app_idx, uint8_t mcl_idx,
   p_mcb->bd_addr = from_BD_ADDR(p_data->mca_evt.mca_data.connect_ind.bd_addr);
   p_mcb->cch_mtu = p_data->mca_evt.mca_data.connect_ind.mtu;
 
-  bta_sys_conn_open(BTA_ID_HL, p_acb->app_id, to_BD_ADDR(p_mcb->bd_addr));
+  bta_sys_conn_open(BTA_ID_HL, p_acb->app_id, p_mcb->bd_addr);
   switch (p_mcb->cch_oper) {
     case BTA_HL_CCH_OP_LOCAL_OPEN:
       bta_hl_build_cch_open_cfm(&evt_data, p_mcb->app_id, p_acb->app_handle,

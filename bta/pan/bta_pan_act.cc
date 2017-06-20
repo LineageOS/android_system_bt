@@ -55,7 +55,7 @@
  ******************************************************************************/
 static void bta_pan_pm_conn_busy(tBTA_PAN_SCB* p_scb) {
   if ((p_scb != NULL) && (p_scb->state != BTA_PAN_IDLE_ST))
-    bta_sys_busy(BTA_ID_PAN, p_scb->app_id, to_BD_ADDR(p_scb->bd_addr));
+    bta_sys_busy(BTA_ID_PAN, p_scb->app_id, p_scb->bd_addr);
 }
 
 /*******************************************************************************
@@ -71,7 +71,7 @@ static void bta_pan_pm_conn_busy(tBTA_PAN_SCB* p_scb) {
  ******************************************************************************/
 static void bta_pan_pm_conn_idle(tBTA_PAN_SCB* p_scb) {
   if ((p_scb != NULL) && (p_scb->state != BTA_PAN_IDLE_ST))
-    bta_sys_idle(BTA_ID_PAN, p_scb->app_id, to_BD_ADDR(p_scb->bd_addr));
+    bta_sys_idle(BTA_ID_PAN, p_scb->app_id, p_scb->bd_addr);
 }
 
 /*******************************************************************************
@@ -513,7 +513,7 @@ void bta_pan_conn_open(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data) {
     bta_pan.open.status = BTA_PAN_SUCCESS;
     p_scb->pan_flow_enable = true;
     p_scb->app_flow_enable = true;
-    bta_sys_conn_open(BTA_ID_PAN, p_scb->app_id, to_BD_ADDR(p_scb->bd_addr));
+    bta_sys_conn_open(BTA_ID_PAN, p_scb->app_id, p_scb->bd_addr);
   } else {
     bta_pan_scb_dealloc(p_scb);
     bta_pan.open.status = BTA_PAN_FAIL;
@@ -531,7 +531,7 @@ void bta_pan_conn_open(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data) {
     p_scb->app_id = BTA_APP_ID_PAN_MULTI;
   }
 
-  bta_sys_conn_open(BTA_ID_PAN, p_scb->app_id, to_BD_ADDR(p_scb->bd_addr));
+  bta_sys_conn_open(BTA_ID_PAN, p_scb->app_id, p_scb->bd_addr);
   bta_pan_cb.p_cback(BTA_PAN_OPEN_EVT, &bta_pan);
 }
 
@@ -552,7 +552,7 @@ void bta_pan_conn_close(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data) {
 
   bta_pan.close.handle = p_data->hdr.layer_specific;
 
-  bta_sys_conn_close(BTA_ID_PAN, p_scb->app_id, to_BD_ADDR(p_scb->bd_addr));
+  bta_sys_conn_close(BTA_ID_PAN, p_scb->app_id, p_scb->bd_addr);
 
   /* free all queued up data buffers */
   while ((p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_scb->data_queue)) != NULL)

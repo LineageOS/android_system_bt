@@ -2961,7 +2961,7 @@ void bta_dm_acl_change(tBTA_DM_MSG* p_data) {
            * if so, make sure the AV link is master */
           bta_dm_check_av(0);
         }
-        bta_sys_notify_role_chg(to_BD_ADDR(p_data->acl_change.bd_addr),
+        bta_sys_notify_role_chg(p_data->acl_change.bd_addr,
                                 p_data->acl_change.new_role,
                                 p_data->acl_change.hci_status);
         conn.role_chg.bd_addr = p_bda;
@@ -2974,7 +2974,7 @@ void bta_dm_acl_change(tBTA_DM_MSG* p_data) {
 
   /* Collision report from Stack: Notify profiles */
   if (p_data->acl_change.event == BTM_BL_COLLISION_EVT) {
-    bta_sys_notify_collision(to_BD_ADDR(p_bda));
+    bta_sys_notify_collision(p_bda);
     return;
   }
 
