@@ -61,7 +61,7 @@ typedef struct {
 /* data associated with BTA_MCE_MAS_DISCOVERY_COMP_EVT */
 typedef struct {
   tBTA_MCE_STATUS status;
-  BD_ADDR remote_addr;
+  bt_bdaddr_t remote_addr;
   int num_mas;
   tBTA_MCE_MAS_INFO mas[BTA_MCE_MAX_MAS_INSTANCES];
 } tBTA_MCE_MAS_DISCOVERY_COMP;
@@ -116,6 +116,6 @@ extern tBTA_MCE_STATUS BTA_MceEnable(tBTA_MCE_DM_CBACK* p_cback);
  *                  BTA_MCE_FAILURE, otherwise.
  *
  ******************************************************************************/
-extern tBTA_MCE_STATUS BTA_MceGetRemoteMasInstances(BD_ADDR bd_addr);
+extern tBTA_MCE_STATUS BTA_MceGetRemoteMasInstances(const bt_bdaddr_t& bd_addr);
 
 #endif /* BTA_MCE_API_H */
