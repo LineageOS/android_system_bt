@@ -147,9 +147,9 @@ static btif_hf_cb_t btif_hf_cb[BTIF_HF_NUM_CB];
  *  Externs
  ******************************************************************************/
 /* By default, even though codec negotiation is enabled, we will not use WBS as
-* the default
-* codec unless this variable is set to true.
-*/
+ * the default
+ * codec unless this variable is set to true.
+ */
 #ifndef BTIF_HF_WBS_PREFERRED
 #define BTIF_HF_WBS_PREFERRED false
 #endif
@@ -174,8 +174,7 @@ static bool is_connected(bt_bdaddr_t* bd_addr) {
   for (i = 0; i < btif_max_hf_clients; ++i) {
     if (((btif_hf_cb[i].state == BTHF_CONNECTION_STATE_CONNECTED) ||
          (btif_hf_cb[i].state == BTHF_CONNECTION_STATE_SLC_CONNECTED)) &&
-        ((bd_addr == NULL) ||
-         (bdcmp(bd_addr->address, btif_hf_cb[i].connected_bda.address) == 0)))
+        (!bd_addr || *bd_addr == btif_hf_cb[i].connected_bda))
       return true;
   }
   return false;
@@ -193,8 +192,7 @@ static bool is_connected(bt_bdaddr_t* bd_addr) {
 static int btif_hf_idx_by_bdaddr(bt_bdaddr_t* bd_addr) {
   int i;
   for (i = 0; i < btif_max_hf_clients; ++i) {
-    if ((bdcmp(bd_addr->address, btif_hf_cb[i].connected_bda.address) == 0))
-      return i;
+    if (*bd_addr == btif_hf_cb[i].connected_bda) return i;
   }
   return BTIF_HF_INVALID_IDX;
 }
@@ -383,7 +381,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
                 &btif_hf_cb[idx].connected_bda);
 
       if (btif_hf_cb[idx].state == BTHF_CONNECTION_STATE_DISCONNECTED)
-        bdsetany(btif_hf_cb[idx].connected_bda.address);
+        btif_hf_cb[idx].connected_bda = bd_addr_any;
 
       if (p_data->open.status != BTA_AG_SUCCESS) btif_queue_advance();
       break;
@@ -397,14 +395,14 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
           __func__, idx, btif_hf_cb[idx].handle);
       HAL_CBACK(bt_hf_callbacks, connection_state_cb, btif_hf_cb[idx].state,
                 &btif_hf_cb[idx].connected_bda);
-      bdsetany(btif_hf_cb[idx].connected_bda.address);
+      btif_hf_cb[idx].connected_bda = bd_addr_any;
       btif_hf_cb[idx].peer_feat = 0;
       clear_phone_state_multihf(idx);
       hf_idx = btif_hf_latest_connected_idx();
       /* If AG_OPEN was received but SLC was not setup in a specified time (10
-      *seconds),
-      ** then AG_CLOSE may be received. We need to advance the queue here
-      */
+       *seconds),
+       ** then AG_CLOSE may be received. We need to advance the queue here
+       */
       btif_queue_advance();
       break;
 
@@ -704,7 +702,7 @@ static bt_status_t init(bthf_callbacks_t* callbacks, int max_hf_clients,
  * Internally, the HSP_SERVICE_ID shall also be enabled if HFP is enabled
  * (phone)
  * othwerwise only HSP is enabled (tablet)
-*/
+ */
 #if (defined(BTIF_HF_SERVICES) && (BTIF_HF_SERVICES & BTA_HFP_SERVICE_MASK))
   btif_enable_service(BTA_HFP_SERVICE_ID);
 #else
@@ -1037,9 +1035,9 @@ static bt_status_t cind_response(int svc, int num_active, int num_held,
 
     memset(&ag_res, 0, sizeof(ag_res));
     /* per the errata 2043, call=1 implies atleast one call is in progress
-    *(active/held)
-    ** https://www.bluetooth.org/errata/errata_view.cfm?errata_id=2043
-    **/
+     *(active/held)
+     ** https://www.bluetooth.org/errata/errata_view.cfm?errata_id=2043
+     **/
     snprintf(
         ag_res.str, sizeof(ag_res.str), "%d,%d,%d,%d,%d,%d,%d",
         (num_active + num_held) ? 1 : 0,          /* Call state */
@@ -1404,10 +1402,10 @@ static bt_status_t phone_state_change(int num_active, int num_held,
   memset(&ag_res, 0, sizeof(tBTA_AG_RES_DATA));
 
   /* per the errata 2043, call=1 implies atleast one call is in progress
-  *(active/held)
-  ** https://www.bluetooth.org/errata/errata_view.cfm?errata_id=2043
-  ** Handle call indicator change
-  **/
+   *(active/held)
+   ** https://www.bluetooth.org/errata/errata_view.cfm?errata_id=2043
+   ** Handle call indicator change
+   **/
   if (!activeCallUpdated &&
       ((num_active + num_held) !=
        (btif_hf_cb[idx].num_active + btif_hf_cb[idx].num_held))) {

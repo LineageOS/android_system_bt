@@ -213,7 +213,7 @@ void btm_flt_update_cb(uint8_t expected_ocf, tBTM_BLE_PF_CFG_CBACK cb,
   BTM_TRACE_DEBUG("%s: Recd: %d, %d, %d, %d, %d", __func__, op_subcode,
                   expected_ocf, action, status, num_avail);
   if (HCI_SUCCESS == status) {
-    if (from_BD_ADDR(btm_ble_adv_filt_cb.cur_filter_target.bda) == na_bda)
+    if (btm_ble_adv_filt_cb.cur_filter_target.bda == na_bda)
       btm_ble_cs_update_pf_counter(action, cond_type, NULL, num_avail);
     else
       btm_ble_cs_update_pf_counter(
@@ -244,8 +244,7 @@ tBTM_BLE_PF_COUNT* btm_ble_find_addr_filter_counter(tBLE_BD_ADDR* p_le_bda) {
   if (p_le_bda == NULL) return &btm_ble_adv_filt_cb.p_addr_filter_count[0];
 
   for (i = 0; i < cmn_ble_vsc_cb.max_filter; i++, p_addr_filter++) {
-    if (p_addr_filter->in_use &&
-        from_BD_ADDR(p_le_bda->bda) == p_addr_filter->bd_addr) {
+    if (p_addr_filter->in_use && p_le_bda->bda == p_addr_filter->bd_addr) {
       return p_addr_filter;
     }
   }
@@ -299,8 +298,7 @@ bool btm_ble_dealloc_addr_filter_counter(tBLE_BD_ADDR* p_bd_addr,
 
   for (i = 0; i < cmn_ble_vsc_cb.max_filter; i++, p_addr_filter++) {
     if (p_addr_filter->in_use &&
-        (!p_bd_addr ||
-         from_BD_ADDR(p_bd_addr->bda) == p_addr_filter->bd_addr)) {
+        (!p_bd_addr || p_bd_addr->bda == p_addr_filter->bd_addr)) {
       found = true;
       memset(p_addr_filter, 0, sizeof(tBTM_BLE_PF_COUNT));
 
@@ -475,8 +473,7 @@ uint8_t btm_ble_cs_update_pf_counter(tBTM_BLE_SCAN_COND_OP action,
 
   if ((p_addr_filter = btm_ble_find_addr_filter_counter(p_bd_addr)) == NULL &&
       BTM_BLE_SCAN_COND_ADD == action) {
-    p_addr_filter =
-        btm_ble_alloc_addr_filter_counter(from_BD_ADDR(p_bd_addr->bda));
+    p_addr_filter = btm_ble_alloc_addr_filter_counter(p_bd_addr->bda);
   }
 
   if (NULL != p_addr_filter) {
@@ -524,7 +521,7 @@ void BTM_LE_PF_addr_filter(tBTM_BLE_SCAN_COND_OP action,
   UINT8_TO_STREAM(p, filt_index);
 
   if (action != BTM_BLE_SCAN_COND_CLEAR) {
-    BDADDR_TO_STREAM(p, addr.bda);
+    BDADDR_TO_STREAM(p, to_BD_ADDR(addr.bda));
     UINT8_TO_STREAM(p, addr.type);
   }
 

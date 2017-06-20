@@ -178,7 +178,7 @@ void mca_ccb_event(tMCA_CCB* p_ccb, uint8_t event, tMCA_CCB_EVT* p_data) {
  * Returns          void.
  *
  ******************************************************************************/
-tMCA_CCB* mca_ccb_by_bd(tMCA_HANDLE handle, BD_ADDR bd_addr) {
+tMCA_CCB* mca_ccb_by_bd(tMCA_HANDLE handle, const bt_bdaddr_t& bd_addr) {
   tMCA_CCB* p_ccb = NULL;
   tMCA_RCB* p_rcb = mca_rcb_by_handle(handle);
   tMCA_CCB* p_ccb_tmp;
@@ -189,7 +189,7 @@ tMCA_CCB* mca_ccb_by_bd(tMCA_HANDLE handle, BD_ADDR bd_addr) {
     p_ccb_tmp = &mca_cb.ccb[i * MCA_NUM_LINKS];
     for (i = 0; i < MCA_NUM_LINKS; i++, p_ccb_tmp++) {
       if (p_ccb_tmp->state != MCA_CCB_NULL_ST &&
-          memcmp(p_ccb_tmp->peer_addr, bd_addr, BD_ADDR_LEN) == 0) {
+          p_ccb_tmp->peer_addr == bd_addr) {
         p_ccb = p_ccb_tmp;
         break;
       }
@@ -209,7 +209,7 @@ tMCA_CCB* mca_ccb_by_bd(tMCA_HANDLE handle, BD_ADDR bd_addr) {
  * Returns          void.
  *
  ******************************************************************************/
-tMCA_CCB* mca_ccb_alloc(tMCA_HANDLE handle, BD_ADDR bd_addr) {
+tMCA_CCB* mca_ccb_alloc(tMCA_HANDLE handle, const bt_bdaddr_t& bd_addr) {
   tMCA_CCB* p_ccb = NULL;
   tMCA_RCB* p_rcb = mca_rcb_by_handle(handle);
   tMCA_CCB* p_ccb_tmp;
@@ -225,7 +225,7 @@ tMCA_CCB* mca_ccb_alloc(tMCA_HANDLE handle, BD_ADDR bd_addr) {
         p_ccb_tmp->mca_ccb_timer = alarm_new("mca.mca_ccb_timer");
         p_ccb_tmp->state = MCA_CCB_OPENING_ST;
         p_ccb_tmp->cong = true;
-        memcpy(p_ccb_tmp->peer_addr, bd_addr, BD_ADDR_LEN);
+        p_ccb_tmp->peer_addr = bd_addr;
         p_ccb = p_ccb_tmp;
         break;
       }
@@ -260,7 +260,7 @@ void mca_ccb_dealloc(tMCA_CCB* p_ccb, tMCA_CCB_EVT* p_data) {
 
   if (p_data) {
     /* non-NULL -> an action function -> report disconnect event */
-    memcpy(evt_data.disconnect_ind.bd_addr, p_ccb->peer_addr, BD_ADDR_LEN);
+    evt_data.disconnect_ind.bd_addr = p_ccb->peer_addr;
     evt_data.disconnect_ind.reason = p_data->close.reason;
     mca_ccb_report_event(p_ccb, MCA_DISCONNECT_IND_EVT, &evt_data);
   }
