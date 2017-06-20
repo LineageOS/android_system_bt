@@ -24,6 +24,7 @@
  *
  ******************************************************************************/
 
+#include <base/logging.h>
 #include <string.h>
 
 #include "bt_utils.h"
@@ -97,9 +98,9 @@ static void bta_hf_client_mgmt_cback(uint32_t code, uint16_t port_handle) {
       APPL_TRACE_DEBUG("%s: allocating a new CB for incoming connection",
                        __func__);
       // Find the BDADDR of the peer device
-      BD_ADDR peer_addr;
+      bt_bdaddr_t peer_addr;
       uint16_t lcid;
-      PORT_CheckConnection(port_handle, peer_addr, &lcid);
+      PORT_CheckConnection(port_handle, to_BD_ADDR(peer_addr), &lcid);
 
       // Since we accepted a remote request we should allocate a handle first.
       uint16_t tmp_handle = -1;
@@ -127,12 +128,8 @@ static void bta_hf_client_mgmt_cback(uint32_t code, uint16_t port_handle) {
     }
   } else if (client_cb != NULL &&
              port_handle == client_cb->conn_handle) { /* code != PORT_SUC */
-    APPL_TRACE_ERROR(
-        "%s: closing port handle %d "
-        "dev %02x:%02x:%02x:%02x:%02x:%02x",
-        __func__, port_handle, client_cb->peer_addr[0], client_cb->peer_addr[1],
-        client_cb->peer_addr[2], client_cb->peer_addr[3],
-        client_cb->peer_addr[4], client_cb->peer_addr[5]);
+    LOG(ERROR) << __func__ << ": closing port handle " << port_handle << "dev "
+               << client_cb->peer_addr;
 
     RFCOMM_RemoveServer(port_handle);
     p_buf->hdr.event = BTA_HF_CLIENT_RFC_CLOSE_EVT;
@@ -241,7 +238,8 @@ void bta_hf_client_rfc_do_open(tBTA_HF_CLIENT_DATA* p_data) {
                        client_cb->cli_sec_mask, BT_PSM_RFCOMM,
                        BTM_SEC_PROTO_RFCOMM, client_cb->peer_scn);
   if (RFCOMM_CreateConnection(UUID_SERVCLASS_HF_HANDSFREE, client_cb->peer_scn,
-                              false, BTA_HF_CLIENT_MTU, client_cb->peer_addr,
+                              false, BTA_HF_CLIENT_MTU,
+                              to_BD_ADDR(client_cb->peer_addr),
                               &(client_cb->conn_handle),
                               bta_hf_client_mgmt_cback) == PORT_SUCCESS) {
     bta_hf_client_setup_port(client_cb->conn_handle);
