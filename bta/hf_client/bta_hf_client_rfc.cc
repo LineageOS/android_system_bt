@@ -100,7 +100,7 @@ static void bta_hf_client_mgmt_cback(uint32_t code, uint16_t port_handle) {
       // Find the BDADDR of the peer device
       bt_bdaddr_t peer_addr;
       uint16_t lcid;
-      PORT_CheckConnection(port_handle, to_BD_ADDR(peer_addr), &lcid);
+      PORT_CheckConnection(port_handle, peer_addr, &lcid);
 
       // Since we accepted a remote request we should allocate a handle first.
       uint16_t tmp_handle = -1;
@@ -179,7 +179,7 @@ void bta_hf_client_start_server() {
 
   port_status = RFCOMM_CreateConnection(
       UUID_SERVCLASS_HF_HANDSFREE, bta_hf_client_cb_arr.scn, true,
-      BTA_HF_CLIENT_MTU, (uint8_t*)bd_addr_any,
+      BTA_HF_CLIENT_MTU, from_BD_ADDR(bd_addr_any),
       &(bta_hf_client_cb_arr.serv_handle), bta_hf_client_mgmt_cback);
 
   APPL_TRACE_DEBUG("%s: started rfcomm server with handle %d", __func__,
@@ -238,8 +238,7 @@ void bta_hf_client_rfc_do_open(tBTA_HF_CLIENT_DATA* p_data) {
                        client_cb->cli_sec_mask, BT_PSM_RFCOMM,
                        BTM_SEC_PROTO_RFCOMM, client_cb->peer_scn);
   if (RFCOMM_CreateConnection(UUID_SERVCLASS_HF_HANDSFREE, client_cb->peer_scn,
-                              false, BTA_HF_CLIENT_MTU,
-                              to_BD_ADDR(client_cb->peer_addr),
+                              false, BTA_HF_CLIENT_MTU, client_cb->peer_addr,
                               &(client_cb->conn_handle),
                               bta_hf_client_mgmt_cback) == PORT_SUCCESS) {
     bta_hf_client_setup_port(client_cb->conn_handle);

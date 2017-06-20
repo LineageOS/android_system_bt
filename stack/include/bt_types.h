@@ -567,7 +567,9 @@ inline std::ostream& operator<<(std::ostream& os, const bt_bdaddr_t& a) {
 inline uint8_t* to_BD_ADDR(const bt_bdaddr_t& a) {
   return const_cast<uint8_t*>((const uint8_t*)a.address);
 }
-inline const bt_bdaddr_t& from_BD_ADDR(BD_ADDR a) { return (bt_bdaddr_t&)*a; }
+inline const bt_bdaddr_t& from_BD_ADDR(const BD_ADDR a) {
+  return (bt_bdaddr_t&)*a;
+}
 
 #endif
 

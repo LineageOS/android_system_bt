@@ -118,8 +118,7 @@ void rfc_mx_sm_state_idle(tRFC_MCB* p_mcb, uint16_t event, void* p_data) {
       /* Initialize L2CAP MTU */
       p_mcb->peer_l2cap_mtu = L2CAP_DEFAULT_MTU - RFCOMM_MIN_OFFSET - 1;
 
-      uint16_t lcid =
-          L2CA_ConnectReq(BT_PSM_RFCOMM, from_BD_ADDR(p_mcb->bd_addr));
+      uint16_t lcid = L2CA_ConnectReq(BT_PSM_RFCOMM, p_mcb->bd_addr);
       if (lcid == 0) {
         rfc_save_lcid_mcb(NULL, p_mcb->lcid);
         p_mcb->lcid = 0;
@@ -144,8 +143,8 @@ void rfc_mx_sm_state_idle(tRFC_MCB* p_mcb, uint16_t event, void* p_data) {
     case RFC_MX_EVENT_CONN_IND:
 
       rfc_timer_start(p_mcb, RFCOMM_CONN_TIMEOUT);
-      L2CA_ConnectRsp(from_BD_ADDR(p_mcb->bd_addr), *((uint8_t*)p_data),
-                      p_mcb->lcid, L2CAP_CONN_OK, 0);
+      L2CA_ConnectRsp(p_mcb->bd_addr, *((uint8_t*)p_data), p_mcb->lcid,
+                      L2CAP_CONN_OK, 0);
 
       rfc_mx_send_config_req(p_mcb);
 
@@ -485,8 +484,7 @@ void rfc_mx_sm_state_disc_wait_ua(tRFC_MCB* p_mcb, uint16_t event,
 
       if (p_mcb->restart_required) {
         /* Start Request was received while disconnecting.  Execute it again */
-        uint16_t lcid =
-            L2CA_ConnectReq(BT_PSM_RFCOMM, from_BD_ADDR(p_mcb->bd_addr));
+        uint16_t lcid = L2CA_ConnectReq(BT_PSM_RFCOMM, p_mcb->bd_addr);
         if (lcid == 0) {
           rfc_save_lcid_mcb(NULL, p_mcb->lcid);
           p_mcb->lcid = 0;

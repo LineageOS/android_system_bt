@@ -181,7 +181,7 @@ void bta_ag_start_dereg(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_ag_start_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
-  BD_ADDR pending_bd_addr;
+  bt_bdaddr_t pending_bd_addr;
 
   /* store parameters */
   if (p_data) {
@@ -511,9 +511,8 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
                    p_scb->serv_handle[0], p_scb->serv_handle[1]);
 
   /* get bd addr of peer */
-  if (PORT_SUCCESS !=
-      (status = PORT_CheckConnection(p_data->rfc.port_handle,
-                                     to_BD_ADDR(dev_addr), &lcid))) {
+  if (PORT_SUCCESS != (status = PORT_CheckConnection(p_data->rfc.port_handle,
+                                                     dev_addr, &lcid))) {
     APPL_TRACE_DEBUG(
         "bta_ag_rfc_acp_open error PORT_CheckConnection returned status %d",
         status);

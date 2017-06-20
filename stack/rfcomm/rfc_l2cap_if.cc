@@ -87,7 +87,7 @@ void rfcomm_l2cap_if_init(void) {
  ******************************************************************************/
 void RFCOMM_ConnectInd(const bt_bdaddr_t& bd_addr, uint16_t lcid,
                        UNUSED_ATTR uint16_t psm, uint8_t id) {
-  tRFC_MCB* p_mcb = rfc_alloc_multiplexer_channel(to_BD_ADDR(bd_addr), false);
+  tRFC_MCB* p_mcb = rfc_alloc_multiplexer_channel(bd_addr, false);
 
   if ((p_mcb) && (p_mcb->state != RFC_MX_STATE_IDLE)) {
     /* if this is collision case */
@@ -184,8 +184,8 @@ void RFCOMM_ConnectCnf(uint16_t lcid, uint16_t result) {
 
       /* Peer gave up his connection request, make sure cleaning up L2CAP
        * channel */
-      L2CA_ConnectRsp(from_BD_ADDR(p_mcb->bd_addr), p_mcb->pending_id,
-                      p_mcb->pending_lcid, L2CAP_CONN_NO_RESOURCES, 0);
+      L2CA_ConnectRsp(p_mcb->bd_addr, p_mcb->pending_id, p_mcb->pending_lcid,
+                      L2CAP_CONN_NO_RESOURCES, 0);
 
       p_mcb->pending_lcid = 0;
     }
