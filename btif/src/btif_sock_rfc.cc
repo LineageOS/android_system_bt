@@ -353,8 +353,8 @@ bt_status_t btsock_rfc_connect(const bt_bdaddr_t* bd_addr,
 
   if (is_uuid_empty(service_uuid)) {
     tBTA_JV_STATUS ret =
-        BTA_JvRfcommConnect(slot->security, slot->role, slot->scn,
-                            slot->addr.address, rfcomm_cback, slot->id);
+        BTA_JvRfcommConnect(slot->security, slot->role, slot->scn, slot->addr,
+                            rfcomm_cback, slot->id);
     if (ret != BTA_JV_SUCCESS) {
       LOG_ERROR(LOG_TAG, "%s unable to initiate RFCOMM connection: %d",
                 __func__, ret);
@@ -373,7 +373,7 @@ bt_status_t btsock_rfc_connect(const bt_bdaddr_t* bd_addr,
     memcpy(sdp_uuid.uu.uuid128, service_uuid, sizeof(sdp_uuid.uu.uuid128));
 
     if (!is_requesting_sdp()) {
-      BTA_JvStartDiscovery((uint8_t*)bd_addr->address, 1, &sdp_uuid, slot->id);
+      BTA_JvStartDiscovery(*bd_addr, 1, &sdp_uuid, slot->id);
       slot->f.pending_sdp_request = false;
       slot->f.doing_sdp_request = true;
     } else {
@@ -501,9 +501,8 @@ static uint32_t on_srv_rfc_connect(tBTA_JV_RFCOMM_SRV_OPEN* p_open,
   rfc_slot_t* srv_rs = find_rfc_slot_by_id(id);
   if (!srv_rs) return 0;
 
-  accept_rs =
-      create_srv_accept_rfc_slot(srv_rs, (const bt_bdaddr_t*)p_open->rem_bda,
-                                 p_open->handle, p_open->new_listen_handle);
+  accept_rs = create_srv_accept_rfc_slot(
+      srv_rs, &p_open->rem_bda, p_open->handle, p_open->new_listen_handle);
   if (!accept_rs) return 0;
 
   // Start monitoring the socket.
@@ -529,7 +528,7 @@ static void on_cli_rfc_connect(tBTA_JV_RFCOMM_OPEN* p_open, uint32_t id) {
   }
 
   slot->rfc_port_handle = BTA_JvRfcommGetPortHdl(p_open->handle);
-  memcpy(slot->addr.address, p_open->rem_bda, 6);
+  slot->addr = p_open->rem_bda;
 
   if (send_app_connect_signal(slot->fd, &slot->addr, slot->scn, 0, -1)) {
     slot->f.connected = true;
@@ -710,7 +709,7 @@ static void jv_dm_cback(tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t id) {
           // Establish the connection if we successfully looked up a channel
           // number to connect to.
           if (BTA_JvRfcommConnect(slot->security, slot->role,
-                                  p_data->disc_comp.scn, slot->addr.address,
+                                  p_data->disc_comp.scn, slot->addr,
                                   rfcomm_cback, slot->id) == BTA_JV_SUCCESS) {
             slot->scn = p_data->disc_comp.scn;
             slot->f.doing_sdp_request = false;
@@ -737,8 +736,7 @@ static void jv_dm_cback(tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t id) {
         sdp_uuid.len = 16;
         memcpy(sdp_uuid.uu.uuid128, slot->service_uuid,
                sizeof(sdp_uuid.uu.uuid128));
-        BTA_JvStartDiscovery((uint8_t*)slot->addr.address, 1, &sdp_uuid,
-                             slot->id);
+        BTA_JvStartDiscovery(slot->addr, 1, &sdp_uuid, slot->id);
         slot->f.pending_sdp_request = false;
         slot->f.doing_sdp_request = true;
       }
