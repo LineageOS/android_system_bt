@@ -92,7 +92,7 @@ typedef struct {
   fixed_queue_t* cmd_q; /* Queue for command messages on this mux */
   uint8_t port_inx[RFCOMM_MAX_DLCI + 1]; /* Array for quick access to  */
                                          /* tPORT based on dlci        */
-  BD_ADDR bd_addr;                       /* BD ADDR of the peer if initiator */
+  bt_bdaddr_t bd_addr;                   /* BD ADDR of the peer if initiator */
   uint16_t lcid;                         /* Local cid used for this channel */
   uint16_t peer_l2cap_mtu; /* Max frame that can be sent to peer L2CAP */
   uint8_t state;           /* Current multiplexer channel state */
@@ -152,7 +152,7 @@ typedef struct {
   uint8_t scn;   /* Service channel number */
   uint16_t uuid; /* Service UUID */
 
-  BD_ADDR bd_addr; /* BD ADDR of the device for the multiplexer channel */
+  bt_bdaddr_t bd_addr; /* BD ADDR of the device for the multiplexer channel */
   bool is_server;  /* true if the server application */
   uint8_t dlci;    /* DLCI of the connection */
 
@@ -215,14 +215,14 @@ typedef struct {
 /*
  * Functions provided by the port_utils.cc
 */
-extern tPORT* port_allocate_port(uint8_t dlci, BD_ADDR bd_addr);
+extern tPORT* port_allocate_port(uint8_t dlci, const bt_bdaddr_t& bd_addr);
 extern void port_set_defaults(tPORT* p_port);
 extern void port_select_mtu(tPORT* p_port);
 extern void port_release_port(tPORT* p_port);
 extern tPORT* port_find_mcb_dlci_port(tRFC_MCB* p_mcb, uint8_t dlci);
-extern tRFC_MCB* port_find_mcb(BD_ADDR bd_addr);
+extern tRFC_MCB* port_find_mcb(const bt_bdaddr_t& bd_addr);
 extern tPORT* port_find_dlci_port(uint8_t dlci);
-extern tPORT* port_find_port(uint8_t dlci, BD_ADDR bd_addr);
+extern tPORT* port_find_port(uint8_t dlci, const bt_bdaddr_t& bd_addr);
 extern uint32_t port_get_signal_changes(tPORT* p_port, uint8_t old_signals,
                                         uint8_t signal);
 extern uint32_t port_flow_control_user(tPORT* p_port);
