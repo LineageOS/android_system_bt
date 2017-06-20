@@ -352,11 +352,11 @@ void btm_ble_read_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len) {
     if (evt_len > 8) {
       /* skip subcode, index, IRK value, address type, identity addr type */
       p += (2 + 16 + 1 + 6);
-      STREAM_TO_BDADDR(to_BD_ADDR(rra), p);
+      STREAM_TO_BDADDR(rra, p);
 
       VLOG(2) << __func__ << " peer_addr: " << rra;
     } else {
-      STREAM_TO_BDADDR(to_BD_ADDR(rra), p);
+      STREAM_TO_BDADDR(rra, p);
     }
     btm_ble_refresh_peer_resolvable_private_addr(pseudo_bda, rra, rra_type);
   }
@@ -422,7 +422,7 @@ tBTM_STATUS btm_ble_remove_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_rec) {
 
     UINT8_TO_STREAM(p, BTM_BLE_META_REMOVE_IRK_ENTRY);
     UINT8_TO_STREAM(p, p_dev_rec->ble.static_addr_type);
-    BDADDR_TO_STREAM(p, to_BD_ADDR(p_dev_rec->ble.static_addr));
+    BDADDR_TO_STREAM(p, p_dev_rec->ble.static_addr);
 
     BTM_VendorSpecificCommand(HCI_VENDOR_BLE_RPA_VSC,
                               BTM_BLE_META_REMOVE_IRK_LEN, param,
@@ -721,7 +721,7 @@ bool btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC* p_dev_rec) {
           UINT8_TO_STREAM(p, BTM_BLE_META_ADD_IRK_ENTRY);
           ARRAY_TO_STREAM(p, p_dev_rec->ble.keys.irk, BT_OCTET16_LEN);
           UINT8_TO_STREAM(p, p_dev_rec->ble.static_addr_type);
-          BDADDR_TO_STREAM(p, to_BD_ADDR(p_dev_rec->ble.static_addr));
+          BDADDR_TO_STREAM(p, p_dev_rec->ble.static_addr);
 
           BTM_VendorSpecificCommand(HCI_VENDOR_BLE_RPA_VSC,
                                     BTM_BLE_META_ADD_IRK_LEN, param,
