@@ -51,7 +51,6 @@ static btmce_callbacks_t* bt_mce_callbacks = NULL;
 static void btif_mce_mas_discovery_comp_evt(uint16_t event, char* p_param) {
   tBTA_MCE_MAS_DISCOVERY_COMP* evt_data = (tBTA_MCE_MAS_DISCOVERY_COMP*)p_param;
   btmce_mas_instance_t insts[BTA_MCE_MAX_MAS_INSTANCES];
-  bt_bdaddr_t addr;
   int i;
 
   BTIF_TRACE_EVENT("%s:  event = %d", __func__, event);
@@ -65,8 +64,7 @@ static void btif_mce_mas_discovery_comp_evt(uint16_t event, char* p_param) {
     insts[i].p_name = evt_data->mas[i].p_srv_name;
   }
 
-  bdcpy(addr.address, evt_data->remote_addr);
-
+  bt_bdaddr_t addr = evt_data->remote_addr;
   HAL_CBACK(bt_mce_callbacks, remote_mas_instances_cb,
             (bt_status_t)evt_data->status, &addr, evt_data->num_mas, insts);
 }
@@ -128,12 +126,9 @@ static bt_status_t init(btmce_callbacks_t* callbacks) {
 }
 
 static bt_status_t get_remote_mas_instances(bt_bdaddr_t* bd_addr) {
-  bdstr_t bdstr;
+  VLOG(2) << __func__ << ": remote_addr=" << bd_addr;
 
-  BTIF_TRACE_EVENT("%s: remote_addr=%s", __func__,
-                   bdaddr_to_string(bd_addr, bdstr, sizeof(bdstr)));
-
-  BTA_MceGetRemoteMasInstances(bd_addr->address);
+  BTA_MceGetRemoteMasInstances(*bd_addr);
 
   return BT_STATUS_SUCCESS;
 }
