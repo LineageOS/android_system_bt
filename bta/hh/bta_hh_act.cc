@@ -342,8 +342,8 @@ void bta_hh_start_sdp(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
         (tSDP_DISCOVERY_DB*)osi_malloc(p_bta_hh_cfg->sdp_db_size);
     bta_hh_cb.p_cur = p_cb;
     /* do DI discovery first */
-    if (SDP_DiDiscover(to_BD_ADDR(p_data->api_conn.bd_addr),
-                       bta_hh_cb.p_disc_db, p_bta_hh_cfg->sdp_db_size,
+    if (SDP_DiDiscover(p_data->api_conn.bd_addr, bta_hh_cb.p_disc_db,
+                       p_bta_hh_cfg->sdp_db_size,
                        bta_hh_di_sdp_cback) != SDP_SUCCESS) {
 #if (BTA_HH_DEBUG == TRUE)
       APPL_TRACE_DEBUG("%s:  SDP_DiDiscover failed: Status 0x%2X", __func__,
