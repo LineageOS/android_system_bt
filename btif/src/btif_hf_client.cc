@@ -296,11 +296,11 @@ static bt_status_t connect_int(bt_bdaddr_t* bd_addr, uint16_t uuid) {
     return BT_STATUS_BUSY;
   }
 
-  bdcpy(cb->peer_bda.address, bd_addr->address);
+  cb->peer_bda = *bd_addr;
   if (is_connected(cb)) return BT_STATUS_BUSY;
 
   cb->state = BTHF_CLIENT_CONNECTION_STATE_CONNECTING;
-  bdcpy(cb->peer_bda.address, bd_addr->address);
+  cb->peer_bda = *bd_addr;
 
   /* Open HF connection to remote device and get the relevant handle.
    * The handle is valid until we have called BTA_HfClientClose or the LL
@@ -824,7 +824,7 @@ static void btif_hf_client_upstreams_evt(uint16_t event, char* p_param) {
                      __func__);
     cb = btif_hf_client_allocate_cb();
     cb->handle = p_data->open.handle;
-    bdcpy(cb->peer_bda.address, p_data->open.bd_addr);
+    cb->peer_bda = from_BD_ADDR(p_data->open.bd_addr);
   } else if (cb == NULL) {
     BTIF_TRACE_ERROR("%s: event %d but not allocating block: cb not found",
                      __func__, event);

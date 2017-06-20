@@ -55,7 +55,7 @@
  ******************************************************************************/
 static void bta_pan_pm_conn_busy(tBTA_PAN_SCB* p_scb) {
   if ((p_scb != NULL) && (p_scb->state != BTA_PAN_IDLE_ST))
-    bta_sys_busy(BTA_ID_PAN, p_scb->app_id, p_scb->bd_addr);
+    bta_sys_busy(BTA_ID_PAN, p_scb->app_id, to_BD_ADDR(p_scb->bd_addr));
 }
 
 /*******************************************************************************
@@ -71,7 +71,7 @@ static void bta_pan_pm_conn_busy(tBTA_PAN_SCB* p_scb) {
  ******************************************************************************/
 static void bta_pan_pm_conn_idle(tBTA_PAN_SCB* p_scb) {
   if ((p_scb != NULL) && (p_scb->state != BTA_PAN_IDLE_ST))
-    bta_sys_idle(BTA_ID_PAN, p_scb->app_id, p_scb->bd_addr);
+    bta_sys_idle(BTA_ID_PAN, p_scb->app_id, to_BD_ADDR(p_scb->bd_addr));
 }
 
 /*******************************************************************************
@@ -84,7 +84,8 @@ static void bta_pan_pm_conn_idle(tBTA_PAN_SCB* p_scb) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_pan_conn_state_cback(uint16_t handle, BD_ADDR bd_addr,
+static void bta_pan_conn_state_cback(uint16_t handle,
+                                     const bt_bdaddr_t& bd_addr,
                                      tPAN_RESULT state, bool is_role_change,
                                      uint8_t src_role, uint8_t dst_role) {
   tBTA_PAN_SCB* p_scb;
@@ -107,7 +108,7 @@ static void bta_pan_conn_state_cback(uint16_t handle, BD_ADDR bd_addr,
     p_scb->local_role = src_role;
     p_scb->peer_role = dst_role;
     p_scb->pan_flow_enable = true;
-    bdcpy(p_scb->bd_addr, bd_addr);
+    p_scb->bd_addr = bd_addr;
     p_scb->data_queue = fixed_queue_new(SIZE_MAX);
 
     if (src_role == PAN_ROLE_CLIENT)
@@ -166,9 +167,10 @@ static void bta_pan_data_flow_cb(uint16_t handle, tPAN_RESULT result) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_pan_data_buf_ind_cback(uint16_t handle, BD_ADDR src,
-                                       BD_ADDR dst, uint16_t protocol,
-                                       BT_HDR* p_buf, bool ext, bool forward) {
+static void bta_pan_data_buf_ind_cback(uint16_t handle, const bt_bdaddr_t& src,
+                                       const bt_bdaddr_t& dst,
+                                       uint16_t protocol, BT_HDR* p_buf,
+                                       bool ext, bool forward) {
   tBTA_PAN_SCB* p_scb;
   BT_HDR* p_new_buf;
 
@@ -184,8 +186,8 @@ static void bta_pan_data_buf_ind_cback(uint16_t handle, BD_ADDR src,
     p_new_buf = p_buf;
   }
   /* copy params into the space before the data */
-  bdcpy(((tBTA_PAN_DATA_PARAMS*)p_new_buf)->src, src);
-  bdcpy(((tBTA_PAN_DATA_PARAMS*)p_new_buf)->dst, dst);
+  ((tBTA_PAN_DATA_PARAMS*)p_new_buf)->src = src;
+  ((tBTA_PAN_DATA_PARAMS*)p_new_buf)->dst = dst;
   ((tBTA_PAN_DATA_PARAMS*)p_new_buf)->protocol = protocol;
   ((tBTA_PAN_DATA_PARAMS*)p_new_buf)->ext = ext;
   ((tBTA_PAN_DATA_PARAMS*)p_new_buf)->forward = forward;
@@ -257,13 +259,13 @@ static void bta_pan_mfilt_ind_cback(uint16_t handle, bool indication,
 static bool bta_pan_has_multiple_connections(uint8_t app_id) {
   tBTA_PAN_SCB* p_scb = NULL;
   bool found = false;
-  BD_ADDR bd_addr;
+  bt_bdaddr_t bd_addr;
 
   for (uint8_t index = 0; index < BTA_PAN_NUM_CONN; index++) {
     p_scb = &bta_pan_cb.scb[index];
     if (p_scb->in_use == true && app_id == p_scb->app_id) {
       /* save temp bd_addr */
-      bdcpy(bd_addr, p_scb->bd_addr);
+      bd_addr = p_scb->bd_addr;
       found = true;
       break;
     }
@@ -278,7 +280,7 @@ static bool bta_pan_has_multiple_connections(uint8_t app_id) {
   for (uint8_t index = 0; index < BTA_PAN_NUM_CONN; index++) {
     p_scb = &bta_pan_cb.scb[index];
     if (p_scb->in_use == true && p_scb->app_id != bta_pan_cb.app_id[0] &&
-        bdcmp(bd_addr, p_scb->bd_addr)) {
+        bd_addr != p_scb->bd_addr) {
       return true;
     }
   }
@@ -444,16 +446,16 @@ void bta_pan_open(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data) {
   APPL_TRACE_DEBUG("%s pan connect status: %d", __func__, status);
 
   if (status == PAN_SUCCESS) {
-    bdcpy(p_scb->bd_addr, p_data->api_open.bd_addr);
+    p_scb->bd_addr = p_data->api_open.bd_addr;
     p_scb->local_role = p_data->api_open.local_role;
     p_scb->peer_role = p_data->api_open.peer_role;
-    bdcpy(bta_pan.opening.bd_addr, p_data->api_open.bd_addr);
+    bta_pan.opening.bd_addr = p_data->api_open.bd_addr;
     bta_pan.opening.handle = p_scb->handle;
     bta_pan_cb.p_cback(BTA_PAN_OPENING_EVT, &bta_pan);
 
   } else {
     bta_pan_scb_dealloc(p_scb);
-    bdcpy(bta_pan.open.bd_addr, p_data->api_open.bd_addr);
+    bta_pan.open.bd_addr = p_data->api_open.bd_addr;
     bta_pan.open.status = BTA_PAN_FAIL;
     bta_pan.open.local_role = p_data->api_open.local_role;
     bta_pan.open.peer_role = p_data->api_open.peer_role;
@@ -502,7 +504,7 @@ void bta_pan_conn_open(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data) {
   APPL_TRACE_DEBUG("%s pan connection result: %d", __func__,
                    p_data->conn.result);
 
-  bdcpy(bta_pan.open.bd_addr, p_scb->bd_addr);
+  bta_pan.open.bd_addr = p_scb->bd_addr;
   bta_pan.open.handle = p_scb->handle;
   bta_pan.open.local_role = p_scb->local_role;
   bta_pan.open.peer_role = p_scb->peer_role;
@@ -511,7 +513,7 @@ void bta_pan_conn_open(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data) {
     bta_pan.open.status = BTA_PAN_SUCCESS;
     p_scb->pan_flow_enable = true;
     p_scb->app_flow_enable = true;
-    bta_sys_conn_open(BTA_ID_PAN, p_scb->app_id, p_scb->bd_addr);
+    bta_sys_conn_open(BTA_ID_PAN, p_scb->app_id, to_BD_ADDR(p_scb->bd_addr));
   } else {
     bta_pan_scb_dealloc(p_scb);
     bta_pan.open.status = BTA_PAN_FAIL;
@@ -529,7 +531,7 @@ void bta_pan_conn_open(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data) {
     p_scb->app_id = BTA_APP_ID_PAN_MULTI;
   }
 
-  bta_sys_conn_open(BTA_ID_PAN, p_scb->app_id, p_scb->bd_addr);
+  bta_sys_conn_open(BTA_ID_PAN, p_scb->app_id, to_BD_ADDR(p_scb->bd_addr));
   bta_pan_cb.p_cback(BTA_PAN_OPEN_EVT, &bta_pan);
 }
 
@@ -550,7 +552,7 @@ void bta_pan_conn_close(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data) {
 
   bta_pan.close.handle = p_data->hdr.layer_specific;
 
-  bta_sys_conn_close(BTA_ID_PAN, p_scb->app_id, p_scb->bd_addr);
+  bta_sys_conn_close(BTA_ID_PAN, p_scb->app_id, to_BD_ADDR(p_scb->bd_addr));
 
   /* free all queued up data buffers */
   while ((p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_scb->data_queue)) != NULL)
