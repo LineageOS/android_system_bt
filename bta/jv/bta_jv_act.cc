@@ -890,7 +890,7 @@ void bta_jv_start_discovery(tBTA_JV_MSG* p_data) {
   *rfcomm_slot_id = p_data->start_discovery.rfcomm_slot_id;
 
   if (!SDP_ServiceSearchAttributeRequest2(
-          to_BD_ADDR(p_data->start_discovery.bd_addr), p_bta_jv_cfg->p_sdp_db,
+          p_data->start_discovery.bd_addr, p_bta_jv_cfg->p_sdp_db,
           bta_jv_start_discovery_cback, (void*)rfcomm_slot_id)) {
     bta_jv_cb.sdp_active = BTA_JV_SDP_ACT_NONE;
     /* failed to start SDP. report the failure right away */

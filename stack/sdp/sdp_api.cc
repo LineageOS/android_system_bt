@@ -129,7 +129,8 @@ bool SDP_CancelServiceSearch(tSDP_DISCOVERY_DB* p_db) {
  * Returns          true if discovery started, false if failed.
  *
  ******************************************************************************/
-bool SDP_ServiceSearchRequest(uint8_t* p_bd_addr, tSDP_DISCOVERY_DB* p_db,
+bool SDP_ServiceSearchRequest(const bt_bdaddr_t& p_bd_addr,
+                              tSDP_DISCOVERY_DB* p_db,
                               tSDP_DISC_CMPL_CB* p_cb) {
   tCONN_CB* p_ccb;
 
@@ -159,7 +160,7 @@ bool SDP_ServiceSearchRequest(uint8_t* p_bd_addr, tSDP_DISCOVERY_DB* p_db,
  * Returns          true if discovery started, false if failed.
  *
  ******************************************************************************/
-bool SDP_ServiceSearchAttributeRequest(uint8_t* p_bd_addr,
+bool SDP_ServiceSearchAttributeRequest(const bt_bdaddr_t& p_bd_addr,
                                        tSDP_DISCOVERY_DB* p_db,
                                        tSDP_DISC_CMPL_CB* p_cb) {
   tCONN_CB* p_ccb;
@@ -191,7 +192,7 @@ bool SDP_ServiceSearchAttributeRequest(uint8_t* p_bd_addr,
  * Returns          true if discovery started, false if failed.
  *
  ******************************************************************************/
-bool SDP_ServiceSearchAttributeRequest2(uint8_t* p_bd_addr,
+bool SDP_ServiceSearchAttributeRequest2(const bt_bdaddr_t& p_bd_addr,
                                         tSDP_DISCOVERY_DB* p_db,
                                         tSDP_DISC_CMPL_CB2* p_cb2,
                                         void* user_data) {
@@ -211,9 +212,6 @@ bool SDP_ServiceSearchAttributeRequest2(uint8_t* p_bd_addr,
 
   return (true);
 }
-
-void SDP_SetIdleTimeout(UNUSED_ATTR BD_ADDR addr,
-                        UNUSED_ATTR uint16_t timeout) {}
 
 /*******************************************************************************
  *
@@ -823,8 +821,9 @@ bool SDP_FindProfileVersionInRec(tSDP_DISC_REC* p_rec, uint16_t profile_uuid,
  * Returns          SDP_SUCCESS if query started successfully, else error
  *
  ******************************************************************************/
-uint16_t SDP_DiDiscover(BD_ADDR remote_device, tSDP_DISCOVERY_DB* p_db,
-                        uint32_t len, tSDP_DISC_CMPL_CB* p_cb) {
+uint16_t SDP_DiDiscover(const bt_bdaddr_t& remote_device,
+                        tSDP_DISCOVERY_DB* p_db, uint32_t len,
+                        tSDP_DISC_CMPL_CB* p_cb) {
   uint16_t result = SDP_DI_DISC_FAILED;
   uint16_t num_uuids = 1;
   uint16_t di_uuid = UUID_SERVCLASS_PNP_INFORMATION;
