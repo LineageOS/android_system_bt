@@ -151,14 +151,14 @@ void BTA_AvDeregister(tBTA_AV_HNDL hndl) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_AvOpen(BD_ADDR bd_addr, tBTA_AV_HNDL handle, bool use_rc,
+void BTA_AvOpen(const bt_bdaddr_t& bd_addr, tBTA_AV_HNDL handle, bool use_rc,
                 tBTA_SEC sec_mask, uint16_t uuid) {
   tBTA_AV_API_OPEN* p_buf =
       (tBTA_AV_API_OPEN*)osi_malloc(sizeof(tBTA_AV_API_OPEN));
 
   p_buf->hdr.event = BTA_AV_API_OPEN_EVT;
   p_buf->hdr.layer_specific = handle;
-  bdcpy(p_buf->bd_addr, bd_addr);
+  p_buf->bd_addr = bd_addr;
   p_buf->use_rc = use_rc;
   p_buf->sec_mask = sec_mask;
   p_buf->switch_res = BTA_AV_RS_NONE;
@@ -194,12 +194,12 @@ void BTA_AvClose(tBTA_AV_HNDL handle) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_AvDisconnect(BD_ADDR bd_addr) {
+void BTA_AvDisconnect(const bt_bdaddr_t& bd_addr) {
   tBTA_AV_API_DISCNT* p_buf =
       (tBTA_AV_API_DISCNT*)osi_malloc(sizeof(tBTA_AV_API_DISCNT));
 
   p_buf->hdr.event = BTA_AV_API_DISCONNECT_EVT;
-  bdcpy(p_buf->bd_addr, bd_addr);
+  p_buf->bd_addr = bd_addr;
 
   bta_sys_sendmsg(p_buf);
 }

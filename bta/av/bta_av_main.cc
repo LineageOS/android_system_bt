@@ -255,13 +255,13 @@ static void bta_av_api_enable(tBTA_AV_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-static tBTA_AV_SCB* bta_av_addr_to_scb(BD_ADDR bd_addr) {
+static tBTA_AV_SCB* bta_av_addr_to_scb(const bt_bdaddr_t& bd_addr) {
   tBTA_AV_SCB* p_scb = NULL;
   int xx;
 
   for (xx = 0; xx < BTA_AV_NUM_STRS; xx++) {
     if (bta_av_cb.p_scb[xx]) {
-      if (!bdcmp(bd_addr, bta_av_cb.p_scb[xx]->peer_addr)) {
+      if (bd_addr == bta_av_cb.p_scb[xx]->peer_addr) {
         p_scb = bta_av_cb.p_scb[xx];
         break;
       }
@@ -343,7 +343,7 @@ static tBTA_AV_SCB* bta_av_alloc_scb(tBTA_AV_CHNL chnl) {
 
 /*******************************************************************************
  ******************************************************************************/
-void bta_av_conn_cback(UNUSED_ATTR uint8_t handle, BD_ADDR bd_addr,
+void bta_av_conn_cback(UNUSED_ATTR uint8_t handle, const bt_bdaddr_t* bd_addr,
                        uint8_t event, tAVDT_CTRL* p_data) {
   uint16_t evt = 0;
   tBTA_AV_SCB* p_scb = NULL;
@@ -357,7 +357,7 @@ void bta_av_conn_cback(UNUSED_ATTR uint8_t handle, BD_ADDR bd_addr,
   {
     evt = BTA_AV_SIG_CHG_EVT;
     if (event == AVDT_DISCONNECT_IND_EVT) {
-      p_scb = bta_av_addr_to_scb(bd_addr);
+      p_scb = bta_av_addr_to_scb(*bd_addr);
     } else if (event == AVDT_CONNECT_IND_EVT) {
       APPL_TRACE_DEBUG("%s: CONN_IND is ACP:%d", __func__,
                        p_data->hdr.err_param);
@@ -368,13 +368,11 @@ void bta_av_conn_cback(UNUSED_ATTR uint8_t handle, BD_ADDR bd_addr,
     p_msg->hdr.event = evt;
     p_msg->hdr.layer_specific = event;
     p_msg->hdr.offset = p_data->hdr.err_param;
-    bdcpy(p_msg->bd_addr, bd_addr);
+    p_msg->bd_addr = *bd_addr;
     if (p_scb) {
       APPL_TRACE_DEBUG("scb hndl x%x, role x%x", p_scb->hndl, p_scb->role);
     }
-    APPL_TRACE_DEBUG("conn_cback bd_addr:%02x-%02x-%02x-%02x-%02x-%02x",
-                     bd_addr[0], bd_addr[1], bd_addr[2], bd_addr[3], bd_addr[4],
-                     bd_addr[5]);
+    VLOG(1) << "conn_cback bd_addr:" << bd_addr;
     bta_sys_sendmsg(p_msg);
   }
 }
@@ -787,7 +785,7 @@ bool bta_av_chk_start(tBTA_AV_SCB* p_scb) {
           if (p_scbi->co_started != bta_av_cb.audio_open_cnt) {
             p_scbi->co_started = bta_av_cb.audio_open_cnt;
             L2CA_SetFlushTimeout(
-                from_BD_ADDR(p_scbi->peer_addr),
+                p_scbi->peer_addr,
                 p_bta_av_cfg->p_audio_flush_to[p_scbi->co_started - 1]);
           }
         }
@@ -818,7 +816,7 @@ void bta_av_restore_switch(void) {
     if (p_cb->conn_audio == mask) {
       if (p_cb->p_scb[i]) {
         bta_sys_set_policy(BTA_ID_AV, HCI_ENABLE_MASTER_SLAVE_SWITCH,
-                           p_cb->p_scb[i]->peer_addr);
+                           to_BD_ADDR(p_cb->p_scb[i]->peer_addr));
       }
       break;
     }
@@ -847,7 +845,7 @@ static void bta_av_sys_rs_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status,
      * role change event */
     /* note that more than one SCB (a2dp & vdp) maybe waiting for this event */
     p_scb = bta_av_cb.p_scb[i];
-    if (p_scb && (bdcmp(peer_addr, p_scb->peer_addr) == 0)) {
+    if (p_scb && p_scb->peer_addr == from_BD_ADDR(peer_addr)) {
       tBTA_AV_ROLE_RES* p_buf =
           (tBTA_AV_ROLE_RES*)osi_malloc(sizeof(tBTA_AV_ROLE_RES));
       APPL_TRACE_DEBUG("new_role:%d, hci_status:x%x hndl: x%x", id, app_id,
@@ -976,15 +974,15 @@ bool bta_av_switch_if_needed(tBTA_AV_SCB* p_scb) {
         ((bta_av_cb.conn_audio & mask) || /* connected audio */
          (bta_av_cb.conn_video & mask)))  /* connected video */
     {
-      BTM_GetRole(from_BD_ADDR(p_scbi->peer_addr), &role);
+      BTM_GetRole(p_scbi->peer_addr, &role);
       /* this channel is open - clear the role switch link policy for this link
        */
       if (BTM_ROLE_MASTER != role) {
         if (bta_av_cb.features & BTA_AV_FEAT_MASTER)
           bta_sys_clear_policy(BTA_ID_AV, HCI_ENABLE_MASTER_SLAVE_SWITCH,
-                               p_scbi->peer_addr);
-        if (BTM_CMD_STARTED != BTM_SwitchRole(from_BD_ADDR(p_scbi->peer_addr),
-                                              BTM_ROLE_MASTER, NULL)) {
+                               to_BD_ADDR(p_scbi->peer_addr));
+        if (BTM_CMD_STARTED !=
+            BTM_SwitchRole(p_scbi->peer_addr, BTM_ROLE_MASTER, NULL)) {
           /* can not switch role on SCBI
            * start the timer on SCB - because this function is ONLY called when
            * SCB gets API_OPEN */
@@ -1015,7 +1013,7 @@ bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits) {
   uint8_t role;
   bool is_ok = true;
 
-  if (BTM_GetRole(from_BD_ADDR(p_scb->peer_addr), &role) == BTM_SUCCESS) {
+  if (BTM_GetRole(p_scb->peer_addr, &role) == BTM_SUCCESS) {
     LOG_INFO(LOG_TAG, "%s hndl:x%x role:%d conn_audio:x%x bits:%d features:x%x",
              __func__, p_scb->hndl, role, bta_av_cb.conn_audio, bits,
              bta_av_cb.features);
@@ -1024,10 +1022,10 @@ bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits) {
          (bta_av_cb.features & BTA_AV_FEAT_MASTER))) {
       if (bta_av_cb.features & BTA_AV_FEAT_MASTER)
         bta_sys_clear_policy(BTA_ID_AV, HCI_ENABLE_MASTER_SLAVE_SWITCH,
-                             p_scb->peer_addr);
+                             to_BD_ADDR(p_scb->peer_addr));
 
-      if (BTM_CMD_STARTED != BTM_SwitchRole(from_BD_ADDR(p_scb->peer_addr),
-                                            BTM_ROLE_MASTER, NULL)) {
+      if (BTM_CMD_STARTED !=
+          BTM_SwitchRole(p_scb->peer_addr, BTM_ROLE_MASTER, NULL)) {
         /* can not switch role on SCB - start the timer on SCB */
       }
       is_ok = false;

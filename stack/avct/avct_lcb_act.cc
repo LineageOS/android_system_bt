@@ -167,10 +167,10 @@ static BT_HDR* avct_lcb_msg_asmbl(tAVCT_LCB* p_lcb, BT_HDR* p_buf) {
 void avct_lcb_chnl_open(tAVCT_LCB* p_lcb, UNUSED_ATTR tAVCT_LCB_EVT* p_data) {
   uint16_t result = AVCT_RESULT_FAIL;
 
-  BTM_SetOutService(from_BD_ADDR(p_lcb->peer_addr), BTM_SEC_SERVICE_AVCTP, 0);
+  BTM_SetOutService(p_lcb->peer_addr, BTM_SEC_SERVICE_AVCTP, 0);
   /* call l2cap connect req */
   p_lcb->ch_state = AVCT_CH_CONN;
-  p_lcb->ch_lcid = L2CA_ConnectReq(AVCT_PSM, from_BD_ADDR(p_lcb->peer_addr));
+  p_lcb->ch_lcid = L2CA_ConnectReq(AVCT_PSM, p_lcb->peer_addr);
   if (p_lcb->ch_lcid == 0) {
     /* if connect req failed, send ourselves close event */
     avct_lcb_event(p_lcb, AVCT_LCB_LL_CLOSE_EVT, (tAVCT_LCB_EVT*)&result);
@@ -217,7 +217,7 @@ void avct_lcb_open_ind(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
         bind = true;
         L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH);
         p_ccb->cc.p_ctrl_cback(avct_ccb_to_idx(p_ccb), AVCT_CONNECT_CFM_EVT, 0,
-                               p_lcb->peer_addr);
+                               &p_lcb->peer_addr);
       }
       /* if unbound acceptor and lcb doesn't already have a ccb for this PID */
       else if ((p_ccb->p_lcb == NULL) && (p_ccb->cc.role == AVCT_ACP) &&
@@ -227,7 +227,7 @@ void avct_lcb_open_ind(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
         p_ccb->p_lcb = p_lcb;
         L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH);
         p_ccb->cc.p_ctrl_cback(avct_ccb_to_idx(p_ccb), AVCT_CONNECT_IND_EVT, 0,
-                               p_lcb->peer_addr);
+                               &p_lcb->peer_addr);
       }
     }
   }
@@ -256,7 +256,7 @@ void avct_lcb_open_fail(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
   for (i = 0; i < AVCT_NUM_CONN; i++, p_ccb++) {
     if (p_ccb->allocated && (p_ccb->p_lcb == p_lcb)) {
       avct_ccb_dealloc(p_ccb, AVCT_CONNECT_CFM_EVT, p_data->result,
-                       p_lcb->peer_addr);
+                       &p_lcb->peer_addr);
     }
   }
 }
@@ -279,11 +279,12 @@ void avct_lcb_close_ind(tAVCT_LCB* p_lcb, UNUSED_ATTR tAVCT_LCB_EVT* p_data) {
   for (i = 0; i < AVCT_NUM_CONN; i++, p_ccb++) {
     if (p_ccb->allocated && (p_ccb->p_lcb == p_lcb)) {
       if (p_ccb->cc.role == AVCT_INT) {
-        avct_ccb_dealloc(p_ccb, AVCT_DISCONNECT_IND_EVT, 0, p_lcb->peer_addr);
+        avct_ccb_dealloc(p_ccb, AVCT_DISCONNECT_IND_EVT, 0, &p_lcb->peer_addr);
       } else {
         p_ccb->p_lcb = NULL;
         (*p_ccb->cc.p_ctrl_cback)(avct_ccb_to_idx(p_ccb),
-                                  AVCT_DISCONNECT_IND_EVT, 0, p_lcb->peer_addr);
+                                  AVCT_DISCONNECT_IND_EVT, 0,
+                                  &p_lcb->peer_addr);
       }
     }
   }
@@ -316,11 +317,11 @@ void avct_lcb_close_cfm(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
       }
 
       if (p_ccb->cc.role == AVCT_INT) {
-        avct_ccb_dealloc(p_ccb, event, p_data->result, p_lcb->peer_addr);
+        avct_ccb_dealloc(p_ccb, event, p_data->result, &p_lcb->peer_addr);
       } else {
         p_ccb->p_lcb = NULL;
         (*p_ccb->cc.p_ctrl_cback)(avct_ccb_to_idx(p_ccb), event, p_data->result,
-                                  p_lcb->peer_addr);
+                                  &p_lcb->peer_addr);
       }
     }
   }
@@ -339,7 +340,7 @@ void avct_lcb_close_cfm(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
 void avct_lcb_bind_conn(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
   p_data->p_ccb->p_lcb = p_lcb;
   (*p_data->p_ccb->cc.p_ctrl_cback)(avct_ccb_to_idx(p_data->p_ccb),
-                                    AVCT_CONNECT_CFM_EVT, 0, p_lcb->peer_addr);
+                                    AVCT_CONNECT_CFM_EVT, 0, &p_lcb->peer_addr);
 }
 
 /*******************************************************************************
@@ -429,7 +430,7 @@ void avct_lcb_cong_ind(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
   for (i = 0; i < AVCT_NUM_CONN; i++, p_ccb++) {
     if (p_ccb->allocated && (p_ccb->p_lcb == p_lcb)) {
       (*p_ccb->cc.p_ctrl_cback)(avct_ccb_to_idx(p_ccb), event, 0,
-                                p_lcb->peer_addr);
+                                &p_lcb->peer_addr);
     }
   }
 }
