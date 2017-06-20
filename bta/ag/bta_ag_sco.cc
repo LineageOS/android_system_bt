@@ -421,7 +421,7 @@ static void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
     p_scb->inuse_codec = esco_codec;
 
     /* tell sys to stop av if any */
-    bta_sys_sco_use(BTA_ID_AG, p_scb->app_id, to_BD_ADDR(p_scb->peer_addr));
+    bta_sys_sco_use(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
 
     /* Send pending commands to create SCO connection to peer */
     bta_ag_create_pending_sco(p_scb, bta_ag_cb.sco.is_local);
@@ -552,7 +552,7 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
   if ((p_scb->codec_updated || p_scb->codec_fallback) &&
       (p_scb->peer_features & BTA_AG_PEER_FEAT_CODEC)) {
     /* Change the power mode to Active until SCO open is completed. */
-    bta_sys_busy(BTA_ID_AG, p_scb->app_id, to_BD_ADDR(p_scb->peer_addr));
+    bta_sys_busy(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
 
     /* Send +BCS to the peer */
     bta_ag_send_bcs(p_scb, NULL);
@@ -1252,7 +1252,7 @@ void bta_ag_sco_conn_open(tBTA_AG_SCB* p_scb,
                           UNUSED_ATTR tBTA_AG_DATA* p_data) {
   bta_ag_sco_event(p_scb, BTA_AG_SCO_CONN_OPEN_E);
 
-  bta_sys_sco_open(BTA_ID_AG, p_scb->app_id, to_BD_ADDR(p_scb->peer_addr));
+  bta_sys_sco_open(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
 
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
   /* open SCO codec if SCO is routed through transport */
@@ -1294,14 +1294,14 @@ void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb,
     /* Indicate if the closing of audio is because of transfer */
     bta_ag_sco_event(p_scb, BTA_AG_SCO_CONN_CLOSE_E);
 
-    bta_sys_sco_close(BTA_ID_AG, p_scb->app_id, to_BD_ADDR(p_scb->peer_addr));
+    bta_sys_sco_close(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
 
     /* if av got suspended by this call, let it resume. */
     /* In case call stays alive regardless of sco, av should not be affected. */
     if (((p_scb->call_ind == BTA_AG_CALL_INACTIVE) &&
          (p_scb->callsetup_ind == BTA_AG_CALLSETUP_NONE)) ||
         (p_scb->post_sco == BTA_AG_POST_SCO_CALL_END)) {
-      bta_sys_sco_unuse(BTA_ID_AG, p_scb->app_id, to_BD_ADDR(p_scb->peer_addr));
+      bta_sys_sco_unuse(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
     }
 
     /* call app callback */
@@ -1333,7 +1333,7 @@ void bta_ag_sco_conn_rsp(tBTA_AG_SCB* p_scb,
       bta_ag_cb.sco.state == BTA_AG_SCO_CLOSE_XFER_ST ||
       bta_ag_cb.sco.state == BTA_AG_SCO_OPEN_XFER_ST) {
     /* tell sys to stop av if any */
-    bta_sys_sco_use(BTA_ID_AG, p_scb->app_id, to_BD_ADDR(p_scb->peer_addr));
+    bta_sys_sco_use(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
     /* When HS initiated SCO, it cannot be WBS. */
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
     /* Configure the transport being used */

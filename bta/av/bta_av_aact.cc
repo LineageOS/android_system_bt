@@ -818,8 +818,7 @@ void bta_av_role_res(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       p_scb->wait &= ~BTA_AV_WAIT_ROLE_SW_BITS;
       if (p_data->role_res.hci_status != HCI_SUCCESS) {
         p_scb->role &= ~BTA_AV_ROLE_START_INT;
-        bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt,
-                     to_BD_ADDR(p_scb->peer_addr));
+        bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
         /* start failed because of role switch. */
         start.chnl = p_scb->chnl;
         start.status = BTA_AV_FAIL_ROLE;
@@ -961,7 +960,7 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   p_scb->sec_mask = p_data->api_open.sec_mask;
   p_scb->use_rc = p_data->api_open.use_rc;
 
-  bta_sys_app_open(BTA_ID_AV, p_scb->app_id, to_BD_ADDR(p_scb->peer_addr));
+  bta_sys_app_open(BTA_ID_AV, p_scb->app_id, p_scb->peer_addr);
 
   if (p_scb->skip_sdp == true) {
     tA2DP_Service a2dp_ser;
@@ -1268,7 +1267,7 @@ void bta_av_setconfig_rsp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
         num > 1) {
       /* if SBC is used by the SNK as INT, discover req is not sent in
        * bta_av_config_ind.
-                 * call disc_res now */
+       * call disc_res now */
       /* this is called in A2DP SRC path only, In case of SINK we don't need it
        */
       if (local_sep == AVDT_TSEP_SRC)
@@ -1335,7 +1334,7 @@ void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   L2CA_SetTxPriority(p_scb->l2c_cid, L2CAP_CHNL_PRIORITY_MEDIUM);
   L2CA_SetChnlFlushability(p_scb->l2c_cid, true);
 
-  bta_sys_conn_open(BTA_ID_AV, p_scb->app_id, to_BD_ADDR(p_scb->peer_addr));
+  bta_sys_conn_open(BTA_ID_AV, p_scb->app_id, p_scb->peer_addr);
   memset(&p_scb->q_info, 0, sizeof(tBTA_AV_Q_INFO));
 
   p_scb->l2c_bufs = 0;
@@ -1892,13 +1891,12 @@ void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
   }
 
-  bta_sys_clear_policy(BTA_ID_AV, policy, to_BD_ADDR(p_scb->peer_addr));
+  bta_sys_clear_policy(BTA_ID_AV, policy, p_scb->peer_addr);
 
   if ((p_scb->started == false) &&
       ((p_scb->role & BTA_AV_ROLE_START_INT) == 0)) {
     p_scb->role |= BTA_AV_ROLE_START_INT;
-    bta_sys_busy(BTA_ID_AV, bta_av_cb.audio_open_cnt,
-                 to_BD_ADDR(p_scb->peer_addr));
+    bta_sys_busy(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
 
     AVDT_StartReq(&p_scb->avdt_handle, 1);
   } else if (p_scb->started) {
@@ -1934,12 +1932,11 @@ void bta_av_str_stopped(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   APPL_TRACE_ERROR("%s: audio_open_cnt=%d, p_data %p", __func__,
                    bta_av_cb.audio_open_cnt, p_data);
 
-  bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt,
-               to_BD_ADDR(p_scb->peer_addr));
+  bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
   if ((bta_av_cb.features & BTA_AV_FEAT_MASTER) == 0 ||
       bta_av_cb.audio_open_cnt == 1)
     policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
-  bta_sys_set_policy(BTA_ID_AV, policy, to_BD_ADDR(p_scb->peer_addr));
+  bta_sys_set_policy(BTA_ID_AV, policy, p_scb->peer_addr);
 
   if (p_scb->co_started) {
     /* TODO(eisenbach): RE-IMPLEMENT USING VSC OR HAL EXTENSION
@@ -2259,8 +2256,7 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   if (p_data && (p_data->hdr.offset != BTA_AV_RS_NONE)) {
     p_scb->wait &= ~BTA_AV_WAIT_ROLE_SW_BITS;
     if (p_data->hdr.offset == BTA_AV_RS_FAIL) {
-      bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt,
-                   to_BD_ADDR(p_scb->peer_addr));
+      bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
       start.chnl = p_scb->chnl;
       start.status = BTA_AV_FAIL_ROLE;
       start.hndl = p_scb->hndl;
@@ -2297,15 +2293,14 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
      * first bit of p_scb->wait is cleared hence it ensures bt_av_start_ok is
      * not called
      * again from bta_av_save_caps.
-    */
+     */
     p_scb->wait &= ~BTA_AV_WAIT_ACP_CAPS_ON;
   }
 
   /* tell role manager to check M/S role */
-  bta_sys_conn_open(BTA_ID_AV, p_scb->app_id, to_BD_ADDR(p_scb->peer_addr));
+  bta_sys_conn_open(BTA_ID_AV, p_scb->app_id, p_scb->peer_addr);
 
-  bta_sys_busy(BTA_ID_AV, bta_av_cb.audio_open_cnt,
-               to_BD_ADDR(p_scb->peer_addr));
+  bta_sys_busy(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
 
   if (p_scb->media_type == AVDT_MEDIA_TYPE_AUDIO) {
     /* in normal logic, conns should be bta_av_cb.audio_count - 1,
@@ -2340,15 +2335,15 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     /* If sink starts stream, disable sniff mode here */
     if (!initiator) {
       /* If souce is the master role, disable role switch during streaming.
-      * Otherwise allow role switch, if source is slave.
-      * Because it would not hurt source, if the peer device wants source to be
-      * master */
+       * Otherwise allow role switch, if source is slave.
+       * Because it would not hurt source, if the peer device wants source to be
+       * master */
       if ((BTM_GetRole(p_scb->peer_addr, &cur_role) == BTM_SUCCESS) &&
           (cur_role == BTM_ROLE_MASTER)) {
         policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
       }
 
-      bta_sys_clear_policy(BTA_ID_AV, policy, to_BD_ADDR(p_scb->peer_addr));
+      bta_sys_clear_policy(BTA_ID_AV, policy, p_scb->peer_addr);
     }
 
     p_scb->role = new_role;
@@ -2395,14 +2390,13 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
  ******************************************************************************/
 void bta_av_start_failed(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   if (p_scb->started == false && p_scb->co_started == false) {
-    bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt,
-                 to_BD_ADDR(p_scb->peer_addr));
+    bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
     notify_start_failed(p_scb);
   }
 
   bta_sys_set_policy(BTA_ID_AV,
                      (HCI_ENABLE_SNIFF_MODE | HCI_ENABLE_MASTER_SLAVE_SWITCH),
-                     to_BD_ADDR(p_scb->peer_addr));
+                     p_scb->peer_addr);
   p_scb->sco_suspend = false;
 }
 
@@ -2423,7 +2417,7 @@ void bta_av_str_closed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   if ((bta_av_cb.features & BTA_AV_FEAT_MASTER) == 0 ||
       bta_av_cb.audio_open_cnt == 1)
     policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
-  bta_sys_set_policy(BTA_ID_AV, policy, to_BD_ADDR(p_scb->peer_addr));
+  bta_sys_set_policy(BTA_ID_AV, policy, p_scb->peer_addr);
   if (bta_av_cb.audio_open_cnt <= 1) {
     /* last connection - restore the allow switch flag */
     L2CA_SetDesireRole(L2CAP_ROLE_ALLOW_SWITCH);
@@ -2444,7 +2438,7 @@ void bta_av_str_closed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     event = BTA_AV_OPEN_EVT;
     p_scb->open_status = BTA_AV_SUCCESS;
 
-    bta_sys_conn_close(BTA_ID_AV, p_scb->app_id, to_BD_ADDR(p_scb->peer_addr));
+    bta_sys_conn_close(BTA_ID_AV, p_scb->app_id, p_scb->peer_addr);
     bta_av_cleanup(p_scb, p_data);
     (*bta_av_cb.p_cback)(event, &data);
   } else {
@@ -2459,8 +2453,7 @@ void bta_av_str_closed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       data.close.hndl = p_scb->hndl;
       event = BTA_AV_CLOSE_EVT;
 
-      bta_sys_conn_close(BTA_ID_AV, p_scb->app_id,
-                         to_BD_ADDR(p_scb->peer_addr));
+      bta_sys_conn_close(BTA_ID_AV, p_scb->app_id, p_scb->peer_addr);
       bta_av_cleanup(p_scb, p_data);
       (*bta_av_cb.p_cback)(event, &data);
     }
@@ -2499,9 +2492,9 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   if (p_scb->started == false) {
     /* handle the condition where there is a collision of SUSPEND req from
-    *either side
-    ** Second SUSPEND req could be rejected. Do not treat this as a failure
-    */
+     *either side
+     ** Second SUSPEND req could be rejected. Do not treat this as a failure
+     */
     APPL_TRACE_WARNING("%s: already suspended, ignore, err_code %d", __func__,
                        err_code);
     return;
@@ -2529,12 +2522,11 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     p_scb->cong = false;
   }
 
-  bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt,
-               to_BD_ADDR(p_scb->peer_addr));
+  bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
   if ((bta_av_cb.features & BTA_AV_FEAT_MASTER) == 0 ||
       bta_av_cb.audio_open_cnt == 1)
     policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
-  bta_sys_set_policy(BTA_ID_AV, policy, to_BD_ADDR(p_scb->peer_addr));
+  bta_sys_set_policy(BTA_ID_AV, policy, p_scb->peer_addr);
 
   /* in case that we received suspend_ind, we may need to call co_stop here */
   if (p_scb->co_started) {

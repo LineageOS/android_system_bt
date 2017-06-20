@@ -397,8 +397,8 @@ void bta_gatts_indicate_handle(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
 
       /* if over BR_EDR, inform PM for mode change */
       if (transport == BTA_TRANSPORT_BR_EDR) {
-        bta_sys_busy(BTA_ID_GATTS, BTA_ALL_APP_ID, remote_bda.address);
-        bta_sys_idle(BTA_ID_GATTS, BTA_ALL_APP_ID, remote_bda.address);
+        bta_sys_busy(BTA_ID_GATTS, BTA_ALL_APP_ID, remote_bda);
+        bta_sys_idle(BTA_ID_GATTS, BTA_ALL_APP_ID, remote_bda);
       }
     } else {
       APPL_TRACE_ERROR("Unknown connection ID: %d fail sending notification",
@@ -510,7 +510,7 @@ void bta_gatts_close(UNUSED_ATTR tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
 
     if (p_rcb && p_rcb->p_cback) {
       if (transport == BTA_TRANSPORT_BR_EDR)
-        bta_sys_conn_close(BTA_ID_GATTS, BTA_ALL_APP_ID, remote_bda.address);
+        bta_sys_conn_close(BTA_ID_GATTS, BTA_ALL_APP_ID, remote_bda);
 
       (*p_rcb->p_cback)(BTA_GATTS_CLOSE_EVT, (tBTA_GATTS*)&status);
     }
@@ -548,10 +548,8 @@ static void bta_gatts_send_request_cback(uint16_t conn_id, uint32_t trans_id,
     if (p_rcb && p_rcb->p_cback) {
       /* if over BR_EDR, inform PM for mode change */
       if (transport == BTA_TRANSPORT_BR_EDR) {
-        bta_sys_busy(BTA_ID_GATTS, BTA_ALL_APP_ID,
-                     cb_data.req_data.remote_bda.address);
-        bta_sys_idle(BTA_ID_GATTS, BTA_ALL_APP_ID,
-                     cb_data.req_data.remote_bda.address);
+        bta_sys_busy(BTA_ID_GATTS, BTA_ALL_APP_ID, cb_data.req_data.remote_bda);
+        bta_sys_idle(BTA_ID_GATTS, BTA_ALL_APP_ID, cb_data.req_data.remote_bda);
       }
 
       cb_data.req_data.conn_id = conn_id;
@@ -601,9 +599,9 @@ static void bta_gatts_conn_cback(tGATT_IF gatt_if, const bt_bdaddr_t& bdaddr,
     /* there is no RM for GATT */
     if (transport == BTA_TRANSPORT_BR_EDR) {
       if (connected)
-        bta_sys_conn_open(BTA_ID_GATTS, BTA_ALL_APP_ID, to_BD_ADDR(bdaddr));
+        bta_sys_conn_open(BTA_ID_GATTS, BTA_ALL_APP_ID, bdaddr);
       else
-        bta_sys_conn_close(BTA_ID_GATTS, BTA_ALL_APP_ID, to_BD_ADDR(bdaddr));
+        bta_sys_conn_close(BTA_ID_GATTS, BTA_ALL_APP_ID, bdaddr);
     }
 
     cb_data.conn.conn_id = conn_id;

@@ -397,8 +397,7 @@ static void bta_jv_clear_pm_cb(tBTA_JV_PM_CB* p_pm_cb, bool close_conn) {
   /* needs to be called if registered with bta pm, otherwise we may run out of
    * dm pm slots! */
   if (close_conn)
-    bta_sys_conn_close(BTA_ID_JV, p_pm_cb->app_id,
-                       to_BD_ADDR(p_pm_cb->peer_bd_addr));
+    bta_sys_conn_close(BTA_ID_JV, p_pm_cb->app_id, p_pm_cb->peer_bd_addr);
   p_pm_cb->state = BTA_JV_PM_FREE_ST;
   p_pm_cb->app_id = BTA_JV_PM_ALL;
   p_pm_cb->handle = BTA_JV_PM_HANDLE_CLEAR;
@@ -2112,41 +2111,37 @@ static void bta_jv_pm_state_change(tBTA_JV_PM_CB* p_cb,
 
   switch (state) {
     case BTA_JV_CONN_OPEN:
-      bta_sys_conn_open(BTA_ID_JV, p_cb->app_id,
-                        to_BD_ADDR(p_cb->peer_bd_addr));
+      bta_sys_conn_open(BTA_ID_JV, p_cb->app_id, p_cb->peer_bd_addr);
       break;
 
     case BTA_JV_CONN_CLOSE:
-      bta_sys_conn_close(BTA_ID_JV, p_cb->app_id,
-                         to_BD_ADDR(p_cb->peer_bd_addr));
+      bta_sys_conn_close(BTA_ID_JV, p_cb->app_id, p_cb->peer_bd_addr);
       break;
 
     case BTA_JV_APP_OPEN:
-      bta_sys_app_open(BTA_ID_JV, p_cb->app_id, to_BD_ADDR(p_cb->peer_bd_addr));
+      bta_sys_app_open(BTA_ID_JV, p_cb->app_id, p_cb->peer_bd_addr);
       break;
 
     case BTA_JV_APP_CLOSE:
-      bta_sys_app_close(BTA_ID_JV, p_cb->app_id,
-                        to_BD_ADDR(p_cb->peer_bd_addr));
+      bta_sys_app_close(BTA_ID_JV, p_cb->app_id, p_cb->peer_bd_addr);
       break;
 
     case BTA_JV_SCO_OPEN:
-      bta_sys_sco_open(BTA_ID_JV, p_cb->app_id, to_BD_ADDR(p_cb->peer_bd_addr));
+      bta_sys_sco_open(BTA_ID_JV, p_cb->app_id, p_cb->peer_bd_addr);
       break;
 
     case BTA_JV_SCO_CLOSE:
-      bta_sys_sco_close(BTA_ID_JV, p_cb->app_id,
-                        to_BD_ADDR(p_cb->peer_bd_addr));
+      bta_sys_sco_close(BTA_ID_JV, p_cb->app_id, p_cb->peer_bd_addr);
       break;
 
     case BTA_JV_CONN_IDLE:
       p_cb->state = BTA_JV_PM_IDLE_ST;
-      bta_sys_idle(BTA_ID_JV, p_cb->app_id, to_BD_ADDR(p_cb->peer_bd_addr));
+      bta_sys_idle(BTA_ID_JV, p_cb->app_id, p_cb->peer_bd_addr);
       break;
 
     case BTA_JV_CONN_BUSY:
       p_cb->state = BTA_JV_PM_BUSY_ST;
-      bta_sys_busy(BTA_ID_JV, p_cb->app_id, to_BD_ADDR(p_cb->peer_bd_addr));
+      bta_sys_busy(BTA_ID_JV, p_cb->app_id, p_cb->peer_bd_addr);
       break;
 
     default:
