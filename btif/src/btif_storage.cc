@@ -1431,3 +1431,16 @@ bt_status_t btif_storage_remove_hidd(bt_bdaddr_t* remote_bd_addr) {
 
   return BT_STATUS_SUCCESS;
 }
+
+// Get the name of a device from btif for interop database matching.
+bool btif_storage_get_stored_remote_name(const bt_bdaddr_t& bd_addr,
+                                         char* name) {
+  bt_property_t property;
+  property.type = BT_PROPERTY_BDNAME;
+  property.len = BTM_MAX_REM_BD_NAME_LEN;
+  property.val = name;
+
+  return (btif_storage_get_remote_device_property(
+              const_cast<bt_bdaddr_t*>(&bd_addr), &property) ==
+          BT_STATUS_SUCCESS);
+}
