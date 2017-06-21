@@ -435,7 +435,7 @@ bool btif_hh_add_added_dev(const bt_bdaddr_t& bda,
     }
   }
   for (i = 0; i < BTIF_HH_MAX_ADDED_DEV; i++) {
-    if (btif_hh_cb.added_devices[i].bd_addr == bt_bdaddr_t{.address = {0}}) {
+    if (btif_hh_cb.added_devices[i].bd_addr == bd_addr_empty) {
       LOG(WARNING) << " Added device " << bda;
       btif_hh_cb.added_devices[i].bd_addr = bda;
       btif_hh_cb.added_devices[i].dev_handle = BTA_HH_INVALID_HANDLE;
@@ -592,7 +592,7 @@ bt_status_t btif_hh_connect(const bt_bdaddr_t* bd_addr) {
       // No space for more HID device now.
       LOG(ERROR) << __func__ << ": Error, device " << *bd_addr
                  << " added but addition failed";
-      added_dev->bd_addr = {.address = {0}};
+      added_dev->bd_addr = bd_addr_empty;
       added_dev->dev_handle = BTA_HH_INVALID_HANDLE;
       return BT_STATUS_FAIL;
     }
@@ -1025,7 +1025,7 @@ static void btif_hh_upstreams_evt(uint16_t event, char* p_param) {
           if (p_data->dev_info.status == BTA_HH_OK) {
             btif_hh_cb.added_devices[i].dev_handle = p_data->dev_info.handle;
           } else {
-            memset(btif_hh_cb.added_devices[i].bd_addr.address, 0, 6);
+            btif_hh_cb.added_devices[i].bd_addr = bd_addr_empty;
             btif_hh_cb.added_devices[i].dev_handle = BTA_HH_INVALID_HANDLE;
           }
           break;

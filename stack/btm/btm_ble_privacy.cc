@@ -116,7 +116,7 @@ bool btm_ble_deq_resolving_pending(bt_bdaddr_t& pseudo_addr) {
 
   if (p_q->q_next != p_q->q_pending) {
     pseudo_addr = p_q->resolve_q_random_pseudo[p_q->q_pending];
-    p_q->resolve_q_random_pseudo[p_q->q_pending] = {.address = {0}};
+    p_q->resolve_q_random_pseudo[p_q->q_pending] = bd_addr_empty;
     p_q->q_pending++;
     p_q->q_pending %=
         controller_get_interface()->get_ble_resolving_list_max_size();
@@ -693,11 +693,10 @@ bool btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC* p_dev_rec) {
 
         btm_ble_update_resolving_list(p_dev_rec->bd_addr, true);
         if (controller_get_interface()->supports_ble_privacy()) {
-          const bt_bdaddr_t& dummy_bda = {.address = {0}};
           uint8_t* peer_irk = p_dev_rec->ble.keys.irk;
           uint8_t* local_irk = btm_cb.devcb.id_keys.irk;
 
-          if (p_dev_rec->ble.static_addr == dummy_bda) {
+          if (p_dev_rec->ble.static_addr == bd_addr_empty) {
             p_dev_rec->ble.static_addr = p_dev_rec->bd_addr;
             p_dev_rec->ble.static_addr_type = p_dev_rec->ble.ble_addr_type;
           }
