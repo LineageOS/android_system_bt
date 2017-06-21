@@ -28,7 +28,7 @@ std::shared_ptr<BleScannerInterface> g_scanner_handler;
 std::shared_ptr<FakeBluetoothGattInterface::TestClientHandler> g_client_handler;
 std::shared_ptr<FakeBluetoothGattInterface::TestServerHandler> g_server_handler;
 
-bt_status_t FakeRegisterClient(bt_uuid_t* app_uuid) {
+bt_status_t FakeRegisterClient(const bt_uuid_t& app_uuid) {
   if (g_client_handler) return g_client_handler->RegisterClient(app_uuid);
 
   return BT_STATUS_FAIL;
@@ -40,7 +40,7 @@ bt_status_t FakeUnregisterClient(int client_if) {
   return BT_STATUS_FAIL;
 }
 
-bt_status_t FakeConnect(int client_if, const bt_bdaddr_t* bd_addr,
+bt_status_t FakeConnect(int client_if, const bt_bdaddr_t& bd_addr,
                         bool is_direct, int transport, int phy) {
   if (g_client_handler)
     return g_client_handler->Connect(client_if, bd_addr, is_direct, transport);
@@ -48,7 +48,7 @@ bt_status_t FakeConnect(int client_if, const bt_bdaddr_t* bd_addr,
   return BT_STATUS_FAIL;
 }
 
-bt_status_t FakeDisconnect(int client_if, const bt_bdaddr_t* bd_addr,
+bt_status_t FakeDisconnect(int client_if, const bt_bdaddr_t& bd_addr,
                            int conn_id) {
   if (g_client_handler)
     return g_client_handler->Disconnect(client_if, bd_addr, conn_id);
@@ -56,7 +56,7 @@ bt_status_t FakeDisconnect(int client_if, const bt_bdaddr_t* bd_addr,
   return BT_STATUS_FAIL;
 }
 
-bt_status_t FakeRegisterServer(bt_uuid_t* app_uuid) {
+bt_status_t FakeRegisterServer(const bt_uuid_t& app_uuid) {
   if (g_server_handler) return g_server_handler->RegisterServer(app_uuid);
 
   return BT_STATUS_FAIL;
@@ -93,7 +93,7 @@ bt_status_t FakeSendIndication(int server_if, int attribute_handle, int conn_id,
 }
 
 bt_status_t FakeSendResponse(int conn_id, int trans_id, int status,
-                             btgatt_response_t* response) {
+                             const btgatt_response_t& response) {
   if (g_server_handler)
     return g_server_handler->SendResponse(conn_id, trans_id, status, response);
 
