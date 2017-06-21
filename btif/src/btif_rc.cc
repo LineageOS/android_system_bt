@@ -501,7 +501,7 @@ void handle_rc_features(btif_rc_device_cb_t* p_dev) {
                    bdaddr_to_string(&rc_addr, addr2, sizeof(addr2)));
 
   if (interop_match_addr(INTEROP_DISABLE_ABSOLUTE_VOLUME, &rc_addr) ||
-      absolute_volume_disabled() || avdtp_addr.address != rc_addr.address) {
+      absolute_volume_disabled() || avdtp_addr != rc_addr) {
     p_dev->rc_features &= ~BTA_AV_FEAT_ADV_CTRL;
   }
 
@@ -690,14 +690,14 @@ void handle_rc_disconnect(tBTA_AV_RC_CLOSE* p_rc_close) {
     p_dev->rc_vol_label = MAX_LABEL;
     p_dev->rc_volume = MAX_VOLUME;
 
-    p_dev->rc_addr = {.address = {0}};
+    p_dev->rc_addr = bd_addr_empty;
   }
   if (get_num_connected_devices() == 0) {
     BTIF_TRACE_DEBUG("%s: Closing all handles", __func__);
     init_all_transactions();
   }
 
-  p_dev->rc_addr = {.address = {0}};
+  p_dev->rc_addr = bd_addr_empty;
   /* report connection state if device is AVRCP target */
   if (bt_rc_ctrl_callbacks != NULL) {
     HAL_CBACK(bt_rc_ctrl_callbacks, connection_state_cb, false, false,

@@ -44,8 +44,6 @@ static const uint8_t base_uuid[LEN_UUID_128] = {
     0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x00, 0x00, 0x80,
     0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-static const bt_bdaddr_t dummy_bda = {.address = {0, 0, 0, 0, 0, 0}};
-
 /*******************************************************************************
  *
  * Function         bta_gatt_convert_uuid16_to_uuid128
@@ -490,7 +488,7 @@ bool bta_gattc_mark_bg_conn(tBTA_GATTC_IF client_if,
 
   for (i = 0; i < BTA_GATTC_KNOWN_SR_MAX; i++, p_bg_tck++) {
     if (p_bg_tck->in_use && ((p_bg_tck->remote_bda == remote_bda_ptr) ||
-                             (p_bg_tck->remote_bda == dummy_bda))) {
+                             (p_bg_tck->remote_bda == bd_addr_empty))) {
       p_cif_mask = &p_bg_tck->cif_mask;
 
       if (add) /* mask on the cif bit */
@@ -548,7 +546,7 @@ bool bta_gattc_check_bg_conn(tBTA_GATTC_IF client_if,
 
   for (i = 0; i < BTA_GATTC_KNOWN_SR_MAX && !is_bg_conn; i++, p_bg_tck++) {
     if (p_bg_tck->in_use && (p_bg_tck->remote_bda == remote_bda ||
-                             p_bg_tck->remote_bda == dummy_bda)) {
+                             p_bg_tck->remote_bda == bd_addr_empty)) {
       if (((p_bg_tck->cif_mask & (1 << (client_if - 1))) != 0) &&
           role == HCI_ROLE_MASTER)
         is_bg_conn = true;
@@ -667,7 +665,7 @@ bool bta_gattc_conn_dealloc(const bt_bdaddr_t& remote_bda) {
 
   if (p_conn != NULL) {
     p_conn->in_use = false;
-    p_conn->remote_bda = {.address = {0}};
+    p_conn->remote_bda = bd_addr_empty;
     return true;
   }
   return false;

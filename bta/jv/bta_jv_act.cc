@@ -401,7 +401,7 @@ static void bta_jv_clear_pm_cb(tBTA_JV_PM_CB* p_pm_cb, bool close_conn) {
   p_pm_cb->state = BTA_JV_PM_FREE_ST;
   p_pm_cb->app_id = BTA_JV_PM_ALL;
   p_pm_cb->handle = BTA_JV_PM_HANDLE_CLEAR;
-  p_pm_cb->peer_bd_addr = bd_addr_null;
+  p_pm_cb->peer_bd_addr = bd_addr_empty;
 }
 
 /*******************************************************************************

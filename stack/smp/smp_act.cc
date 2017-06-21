@@ -1866,10 +1866,9 @@ bool smp_proc_ltk_request(const bt_bdaddr_t& bda) {
   if (bda == smp_cb.pairing_bda) {
     match = true;
   } else {
-    const bt_bdaddr_t& dummy_bda = {.address = {0}};
     tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bda);
     if (p_dev_rec != NULL && p_dev_rec->ble.pseudo_addr == smp_cb.pairing_bda &&
-        p_dev_rec->ble.pseudo_addr != dummy_bda) {
+        p_dev_rec->ble.pseudo_addr != bd_addr_empty) {
       match = true;
     }
   }

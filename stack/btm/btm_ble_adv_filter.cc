@@ -52,7 +52,6 @@
 
 tBTM_BLE_ADV_FILTER_CB btm_ble_adv_filt_cb;
 tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
-static const bt_bdaddr_t& na_bda = {.address = {0}};
 
 static uint8_t btm_ble_cs_update_pf_counter(tBTM_BLE_SCAN_COND_OP action,
                                             uint8_t cond_type,
@@ -213,7 +212,7 @@ void btm_flt_update_cb(uint8_t expected_ocf, tBTM_BLE_PF_CFG_CBACK cb,
   BTM_TRACE_DEBUG("%s: Recd: %d, %d, %d, %d, %d", __func__, op_subcode,
                   expected_ocf, action, status, num_avail);
   if (HCI_SUCCESS == status) {
-    if (btm_ble_adv_filt_cb.cur_filter_target.bda == na_bda)
+    if (btm_ble_adv_filt_cb.cur_filter_target.bda == bd_addr_empty)
       btm_ble_cs_update_pf_counter(action, cond_type, NULL, num_avail);
     else
       btm_ble_cs_update_pf_counter(
@@ -268,7 +267,7 @@ tBTM_BLE_PF_COUNT* btm_ble_alloc_addr_filter_counter(
       &btm_ble_adv_filt_cb.p_addr_filter_count[1];
 
   for (i = 0; i < cmn_ble_vsc_cb.max_filter; i++, p_addr_filter++) {
-    if (p_addr_filter->bd_addr == na_bda) {
+    if (p_addr_filter->bd_addr == bd_addr_empty) {
       p_addr_filter->bd_addr = bd_addr;
       p_addr_filter->in_use = true;
       return p_addr_filter;
