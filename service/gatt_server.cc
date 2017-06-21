@@ -159,7 +159,7 @@ bool GattServer::SendResponse(const std::string& device_address, int request_id,
   bt_status_t result =
       hal::BluetoothGattInterface::Get()
           ->GetServerHALInterface()
-          ->send_response(connection->conn_id, request_id, error, &response);
+          ->send_response(connection->conn_id, request_id, error, response);
   if (result != BT_STATUS_SUCCESS) {
     LOG(ERROR) << "Failed to initiate call to send GATT response";
     return false;
@@ -583,7 +583,7 @@ bool GattServerFactory::RegisterInstance(const UUID& uuid,
       hal::BluetoothGattInterface::Get()->GetServerHALInterface();
   bt_uuid_t app_uuid = uuid.GetBlueDroid();
 
-  if (hal_iface->register_server(&app_uuid) != BT_STATUS_SUCCESS) return false;
+  if (hal_iface->register_server(app_uuid) != BT_STATUS_SUCCESS) return false;
 
   pending_calls_[uuid] = callback;
 

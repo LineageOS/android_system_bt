@@ -68,7 +68,7 @@ bool GattClientFactory::RegisterInstance(const UUID& uuid,
       hal::BluetoothGattInterface::Get()->GetClientHALInterface();
   bt_uuid_t app_uuid = uuid.GetBlueDroid();
 
-  if (hal_iface->register_client(&app_uuid) != BT_STATUS_SUCCESS) return false;
+  if (hal_iface->register_client(app_uuid) != BT_STATUS_SUCCESS) return false;
 
   pending_calls_[uuid] = callback;
 
