@@ -108,6 +108,9 @@ static const interop_addr_entry_t interop_addr_database[] = {
 
     // Kinivo BTC-450 - volume is erratic when using Absolute Volume
     {{{0x00, 0x18, 0x91, 0, 0, 0}}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
+
+    // Kenwood KMM-BT518HD - no audio when A2DP codec sample rate is changed
+    {{{0x00, 0x1d, 0x86, 0, 0, 0}}, 3, INTEROP_DISABLE_AVDTP_RECONFIGURE},
 };
 
 typedef struct {
@@ -131,4 +134,7 @@ static const interop_name_entry_t interop_name_database[] = {
 
     // Pixel C Keyboard doesn't respond to service changed indications.
     {"Pixel C Keyboard", 16, INTEROP_GATTC_NO_SERVICE_CHANGED_IND},
+
+    // Kenwood KMM-BT518HD - no audio when A2DP codec sample rate is changed
+    {"KMM-BT51*HD", 11, INTEROP_DISABLE_AVDTP_RECONFIGURE},
 };
