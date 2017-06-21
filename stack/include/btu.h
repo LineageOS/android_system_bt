@@ -37,8 +37,6 @@
 /* Global BTU data */
 extern uint8_t btu_trace_level;
 
-extern const bt_bdaddr_t BT_BD_ANY;
-
 /* Functions provided by btu_hcif.cc
  ***********************************
 */

@@ -213,9 +213,7 @@ static bool btm_ble_proc_resolve_x(tSMP_ENC* p) {
  ******************************************************************************/
 bool btm_ble_init_pseudo_addr(tBTM_SEC_DEV_REC* p_dev_rec,
                               const bt_bdaddr_t& new_pseudo_addr) {
-  bt_bdaddr_t dummy_bda = {.address = {0}};
-
-  if (p_dev_rec->ble.pseudo_addr == dummy_bda) {
+  if (p_dev_rec->ble.pseudo_addr == bd_addr_empty) {
     p_dev_rec->ble.pseudo_addr = new_pseudo_addr;
     return true;
   }
@@ -436,9 +434,7 @@ void btm_ble_refresh_peer_resolvable_private_addr(const bt_bdaddr_t& pseudo_bda,
                                                   uint8_t rra_type) {
 #if (BLE_PRIVACY_SPT == TRUE)
   uint8_t rra_dummy = false;
-  const bt_bdaddr_t& dummy_bda = {.address = {0}};
-
-  if (rpa == dummy_bda) rra_dummy = true;
+  if (rpa == bd_addr_empty) rra_dummy = true;
 
   /* update security record here, in adv event or connection complete process */
   tBTM_SEC_DEV_REC* p_sec_rec = btm_find_dev(pseudo_bda);
@@ -498,12 +494,11 @@ void btm_ble_refresh_local_resolvable_private_addr(
     const bt_bdaddr_t& pseudo_addr, const bt_bdaddr_t& local_rpa) {
 #if (BLE_PRIVACY_SPT == TRUE)
   tACL_CONN* p = btm_bda_to_acl(pseudo_addr, BT_TRANSPORT_LE);
-  bt_bdaddr_t dummy_bda = {.address = {0}};
 
   if (p != NULL) {
     if (btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE) {
       p->conn_addr_type = BLE_ADDR_RANDOM;
-      if (local_rpa != dummy_bda)
+      if (local_rpa != bd_addr_empty)
         p->conn_addr = local_rpa;
       else
         p->conn_addr = btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr;

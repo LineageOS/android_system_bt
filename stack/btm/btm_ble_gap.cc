@@ -440,7 +440,7 @@ const uint8_t btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX][2] =
 void BTM_BleUpdateAdvFilterPolicy(tBTM_BLE_AFP adv_policy) {
   tBTM_BLE_INQ_CB* p_cb = &btm_cb.ble_ctr_cb.inq_var;
   tBLE_ADDR_TYPE init_addr_type = BLE_ADDR_PUBLIC;
-  bt_bdaddr_t p_addr_ptr = {.address = {0}};
+  bt_bdaddr_t p_addr_ptr = bd_addr_empty;
   uint8_t adv_mode = p_cb->adv_mode;
 
   BTM_TRACE_EVENT("BTM_BleUpdateAdvFilterPolicy");
@@ -977,7 +977,7 @@ tBTM_STATUS BTM_BleSetAdvParams(uint16_t adv_int_min, uint16_t adv_int_max,
   tBTM_LE_RANDOM_CB* p_addr_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
   tBTM_BLE_INQ_CB* p_cb = &btm_cb.ble_ctr_cb.inq_var;
   tBTM_STATUS status = BTM_SUCCESS;
-  bt_bdaddr_t p_addr_ptr = {.address = {0}};
+  bt_bdaddr_t p_addr_ptr = bd_addr_empty;
   tBLE_ADDR_TYPE init_addr_type = BLE_ADDR_PUBLIC;
   tBLE_ADDR_TYPE own_addr_type = p_addr_cb->own_addr_type;
   uint8_t adv_mode = p_cb->adv_mode;
@@ -1252,7 +1252,7 @@ tBTM_STATUS btm_ble_set_discoverability(uint16_t combined_mode) {
   uint8_t new_mode = BTM_BLE_ADV_ENABLE;
   uint8_t evt_type;
   tBTM_STATUS status = BTM_SUCCESS;
-  bt_bdaddr_t p_addr_ptr{.address = {0}};
+  bt_bdaddr_t p_addr_ptr = bd_addr_empty;
   tBLE_ADDR_TYPE init_addr_type = BLE_ADDR_PUBLIC,
                  own_addr_type = p_addr_cb->own_addr_type;
   uint16_t adv_int_min, adv_int_max;
@@ -1345,7 +1345,7 @@ tBTM_STATUS btm_ble_set_connectability(uint16_t combined_mode) {
   uint8_t new_mode = BTM_BLE_ADV_ENABLE;
   uint8_t evt_type;
   tBTM_STATUS status = BTM_SUCCESS;
-  bt_bdaddr_t p_addr_ptr = {.address = {0}};
+  bt_bdaddr_t p_addr_ptr = bd_addr_empty;
   tBLE_ADDR_TYPE peer_addr_type = BLE_ADDR_PUBLIC,
                  own_addr_type = p_addr_cb->own_addr_type;
   uint16_t adv_int_min, adv_int_max;
@@ -1597,7 +1597,7 @@ bool btm_ble_cancel_remote_name(const bt_bdaddr_t& remote_bda) {
   status = GAP_BleCancelReadPeerDevName(remote_bda);
 
   p_inq->remname_active = false;
-  p_inq->remname_bda = {.address = {0}};
+  p_inq->remname_bda = bd_addr_empty;
   alarm_cancel(p_inq->remote_name_timer);
 
   return status;
@@ -2460,7 +2460,7 @@ static void btm_ble_start_slow_adv(void) {
 
   if (p_cb->adv_mode == BTM_BLE_ADV_ENABLE) {
     tBTM_LE_RANDOM_CB* p_addr_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
-    bt_bdaddr_t p_addr_ptr = {.address = {0}};
+    bt_bdaddr_t p_addr_ptr = bd_addr_empty;
     tBLE_ADDR_TYPE init_addr_type = BLE_ADDR_PUBLIC;
     tBLE_ADDR_TYPE own_addr_type = p_addr_cb->own_addr_type;
 

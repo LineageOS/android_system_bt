@@ -176,7 +176,6 @@ void btm_ble_bgconn_cancel_if_disconnected(const bt_bdaddr_t& bd_addr) {
 bool btm_add_dev_to_controller(bool to_add, const bt_bdaddr_t& bd_addr) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
   bool started = false;
-  bt_bdaddr_t dummy_bda = {.address = {0}};
 
   if (p_dev_rec != NULL && p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) {
     if (to_add) {
@@ -186,7 +185,7 @@ bool btm_add_dev_to_controller(bool to_add, const bt_bdaddr_t& bd_addr) {
         started = true;
         p_dev_rec->ble.in_controller_list |= BTM_WHITE_LIST_BIT;
       } else if (p_dev_rec->ble.static_addr != bd_addr &&
-                 p_dev_rec->ble.static_addr != dummy_bda) {
+                 p_dev_rec->ble.static_addr != bd_addr_empty) {
         background_connection_add(p_dev_rec->ble.static_addr_type,
                                   p_dev_rec->ble.static_addr);
         started = true;
@@ -199,7 +198,7 @@ bool btm_add_dev_to_controller(bool to_add, const bt_bdaddr_t& bd_addr) {
         started = true;
       }
 
-      if (p_dev_rec->ble.static_addr != dummy_bda &&
+      if (p_dev_rec->ble.static_addr != bd_addr_empty &&
           p_dev_rec->ble.static_addr != bd_addr) {
         background_connection_remove(p_dev_rec->ble.static_addr);
         started = true;
@@ -397,7 +396,6 @@ void btm_send_hci_create_connection(
  ******************************************************************************/
 bool btm_ble_start_auto_conn(bool start) {
   tBTM_BLE_CB* p_cb = &btm_cb.ble_ctr_cb;
-  const bt_bdaddr_t dummy_bda = {.address = {0}};
   bool exec = true;
   uint16_t scan_int;
   uint16_t scan_win;
@@ -440,7 +438,7 @@ bool btm_ble_start_auto_conn(bool start) {
           scan_win,                       /* uint16_t scan_win      */
           0x01,                           /* uint8_t white_list     */
           peer_addr_type,                 /* uint8_t addr_type_peer */
-          dummy_bda,                      /* BD_ADDR bda_peer     */
+          bd_addr_empty,                  /* BD_ADDR bda_peer     */
           own_addr_type,                  /* uint8_t addr_type_own */
           BTM_BLE_CONN_INT_MIN_DEF,       /* uint16_t conn_int_min  */
           BTM_BLE_CONN_INT_MAX_DEF,       /* uint16_t conn_int_max  */
