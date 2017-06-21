@@ -315,10 +315,6 @@ static void btif_gatts_open_impl(int server_if, bt_bdaddr_t address,
         else
           transport = BTA_GATT_TRANSPORT_BR_EDR;
         break;
-
-      default:
-        BTIF_TRACE_ERROR("%s: Invalid device type %d", __func__, device_type);
-        return;
     }
   }
 
