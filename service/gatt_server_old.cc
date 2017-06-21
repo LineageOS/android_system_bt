@@ -129,13 +129,14 @@ struct ServerInternals {
 namespace {
 
 /** Callback invoked in response to register_server */
-void RegisterServerCallback(int status, int server_if, bt_uuid_t* app_uuid) {
+void RegisterServerCallback(int status, int server_if,
+                            const bt_uuid_t& app_uuid) {
   LOG_INFO(LOG_TAG, "%s: status:%d server_if:%d app_uuid:%p", __func__, status,
-           server_if, app_uuid);
+           server_if, &app_uuid);
 
   g_internal->server_if = server_if;
   pending_svc_decl.push_back(
-      {.type = BTGATT_DB_PRIMARY_SERVICE, .uuid = *app_uuid});
+      {.type = BTGATT_DB_PRIMARY_SERVICE, .uuid = app_uuid});
 }
 
 void ServiceAddedCallback(int status, int server_if,
@@ -197,13 +198,13 @@ void ServiceAddedCallback(int status, int server_if,
   bt_uuid_t client_id = service[0].uuid;
   ++client_id.uu[15];
 
-  bt_status_t btstat = g_internal->gatt->client->register_client(&client_id);
+  bt_status_t btstat = g_internal->gatt->client->register_client(client_id);
   if (btstat != BT_STATUS_SUCCESS) {
     LOG_ERROR(LOG_TAG, "%s: Failed to register client", __func__);
   }
 }
 
-void RequestReadCallback(int conn_id, int trans_id, bt_bdaddr_t* bda,
+void RequestReadCallback(int conn_id, int trans_id, const bt_bdaddr_t& bda,
                          int attr_handle, int attribute_offset_octets,
                          bool is_long) {
   std::lock_guard<std::mutex> lock(g_internal->lock);
@@ -223,7 +224,7 @@ void RequestReadCallback(int conn_id, int trans_id, bt_bdaddr_t* bda,
   const size_t blob_remaining = ch.blob.size() - blob_offset_octets;
   const size_t attribute_size = std::min(kMaxGattAttributeSize, blob_remaining);
 
-  std::string addr(BtAddrString(bda));
+  std::string addr(BtAddrString(&bda));
   LOG_INFO(LOG_TAG,
            "%s: connection:%d (%s) reading attr:%d attribute_offset_octets:%d "
            "blob_section:%u (is_long:%u)",
@@ -243,13 +244,13 @@ void RequestReadCallback(int conn_id, int trans_id, bt_bdaddr_t* bda,
   response.attr_value.handle = attr_handle;
   response.attr_value.offset = attribute_offset_octets;
   response.attr_value.auth_req = 0;
-  g_internal->gatt->server->send_response(conn_id, trans_id, 0, &response);
+  g_internal->gatt->server->send_response(conn_id, trans_id, 0, response);
 }
 
-void RequestWriteCallback(int conn_id, int trans_id, bt_bdaddr_t* bda,
+void RequestWriteCallback(int conn_id, int trans_id, const bt_bdaddr_t& bda,
                           int attr_handle, int attribute_offset, bool need_rsp,
                           bool is_prep, std::vector<uint8_t> value) {
-  std::string addr(BtAddrString(bda));
+  std::string addr(BtAddrString(&bda));
   LOG_INFO(LOG_TAG,
            "%s: connection:%d (%s:trans:%d) write attr:%d attribute_offset:%d "
            "length:%zu "
@@ -299,19 +300,19 @@ void RequestWriteCallback(int conn_id, int trans_id, bt_bdaddr_t* bda,
   // Provide written data back to sender for the response.
   // Remote stacks use this to validate the success of the write.
   std::copy(value.begin(), value.end(), response.attr_value.value);
-  g_internal->gatt->server->send_response(conn_id, trans_id, 0, &response);
+  g_internal->gatt->server->send_response(conn_id, trans_id, 0, response);
 }
 
-void RequestExecWriteCallback(int conn_id, int trans_id, bt_bdaddr_t* bda,
+void RequestExecWriteCallback(int conn_id, int trans_id, const bt_bdaddr_t& bda,
                               int exec_write) {
-  std::string addr(BtAddrString(bda));
+  std::string addr(BtAddrString(&bda));
   LOG_INFO(LOG_TAG, "%s: connection:%d (%s:trans:%d) exec_write:%d", __func__,
            conn_id, addr.c_str(), trans_id, exec_write);
 
   // This 'response' data is unused for ExecWriteResponses.
   // It is only used to pass BlueDroid argument validation.
   btgatt_response_t response = {};
-  g_internal->gatt->server->send_response(conn_id, trans_id, 0, &response);
+  g_internal->gatt->server->send_response(conn_id, trans_id, 0, response);
 
   if (!exec_write) return;
 
@@ -327,8 +328,8 @@ void RequestExecWriteCallback(int conn_id, int trans_id, bt_bdaddr_t* bda,
 }
 
 void ConnectionCallback(int conn_id, int server_if, int connected,
-                        bt_bdaddr_t* bda) {
-  std::string addr(BtAddrString(bda));
+                        const bt_bdaddr_t& bda) {
+  std::string addr(BtAddrString(&bda));
   LOG_INFO(LOG_TAG, "%s: connection:%d server_if:%d connected:%d addr:%s",
            __func__, conn_id, server_if, connected, addr.c_str());
   if (connected == 1) {
@@ -345,9 +346,10 @@ void EnableAdvertisingCallback(uint8_t status) {
   g_internal->api_synchronize.notify_one();
 }
 
-void RegisterClientCallback(int status, int client_if, bt_uuid_t* app_uuid) {
+void RegisterClientCallback(int status, int client_if,
+                            const bt_uuid_t& app_uuid) {
   LOG_INFO(LOG_TAG, "%s: status:%d client_if:%d uuid[0]:%u", __func__, status,
-           client_if, app_uuid->uu[0]);
+           client_if, app_uuid.uu[0]);
   g_internal->client_if = client_if;
 
   // Setup our advertisement. This has no callback.
@@ -381,15 +383,15 @@ void ScanResultCallback(uint16_t ble_evt_type, uint8_t addr_type,
 }
 
 void ClientConnectCallback(int conn_id, int status, int client_if,
-                           bt_bdaddr_t* bda) {
-  std::string addr(BtAddrString(bda));
+                           const bt_bdaddr_t& bda) {
+  std::string addr(BtAddrString(&bda));
   LOG_INFO(LOG_TAG, "%s: conn_id:%d status:%d client_if:%d %s", __func__,
            conn_id, status, client_if, addr.c_str());
 }
 
 void ClientDisconnectCallback(int conn_id, int status, int client_if,
-                              bt_bdaddr_t* bda) {
-  std::string addr(BtAddrString(bda));
+                              const bt_bdaddr_t& bda) {
+  std::string addr(BtAddrString(&bda));
   LOG_INFO(LOG_TAG, "%s: conn_id:%d status:%d client_if:%d %s", __func__,
            conn_id, status, client_if, addr.c_str());
 }
@@ -547,7 +549,7 @@ bool Server::Initialize(const UUID& service_id, int* gatt_pipe) {
 
   bt_uuid_t uuid = service_id.GetBlueDroid();
 
-  bt_status_t btstat = internal_->gatt->server->register_server(&uuid);
+  bt_status_t btstat = internal_->gatt->server->register_server(uuid);
   if (btstat != BT_STATUS_SUCCESS) {
     LOG_ERROR(LOG_TAG, "Failed to register server");
     return false;
