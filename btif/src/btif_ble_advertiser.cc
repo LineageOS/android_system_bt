@@ -103,8 +103,15 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface {
   void Unregister(uint8_t advertiser_id) override {
     do_in_bta_thread(
         FROM_HERE,
-        Bind(&BleAdvertisingManager::Unregister,
-             base::Unretained(BleAdvertisingManager::Get()), advertiser_id));
+        Bind(
+            [](uint8_t advertiser_id) {
+              if (!BleAdvertisingManager::IsInitialized()) {
+                LOG(WARNING) << "Stack already shutdown";
+                return;
+              }
+              BleAdvertisingManager::Get()->Unregister(advertiser_id);
+            },
+            advertiser_id));
   }
 
   void GetOwnAddress(uint8_t advertiser_id, GetAddressCallback cb) override {
