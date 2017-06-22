@@ -999,7 +999,7 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, tL2C_CCB* p_ccb, BT_HDR* p_buf) {
           (p_lcb->transport == BT_TRANSPORT_LE &&
            (l2cb.ble_round_robin_unacked >= l2cb.ble_round_robin_quota ||
             l2cb.controller_le_xmit_window == 0)))
-        break;
+        continue;
 
       /* Check for wraparound */
       if (p_lcb == &l2cb.lcb_pool[MAX_L2CAP_LINKS]) p_lcb = &l2cb.lcb_pool[0];
