@@ -387,6 +387,7 @@ void btm_send_hci_create_connection(
       phy_cfg[i].max_ce_len = max_ce_len;
     }
 
+    addr_type_peer &= ~BLE_ADDR_TYPE_ID_BIT;
     btsnd_hcic_ble_ext_create_conn(init_filter_policy, addr_type_own,
                                    addr_type_peer, bda_peer, initiating_phys,
                                    phy_cfg);
