@@ -95,11 +95,10 @@ static void smp_connect_callback(uint16_t channel, const bt_bdaddr_t& bd_addr,
                                  tBT_TRANSPORT transport) {
   tSMP_CB* p_cb = &smp_cb;
   tSMP_INT_DATA int_data;
-  bt_bdaddr_t dummy_bda = {.address = {0}};
 
   SMP_TRACE_EVENT("SMDBG l2c %s", __func__);
 
-  if (transport == BT_TRANSPORT_BR_EDR || bd_addr == dummy_bda) return;
+  if (transport == BT_TRANSPORT_BR_EDR || bd_addr == bd_addr_empty) return;
 
   if (bd_addr == p_cb->pairing_bda) {
     VLOG(2) << __func__ << " for pairing BDA: " << bd_addr

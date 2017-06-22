@@ -2835,7 +2835,7 @@ void btm_sec_check_pending_reqs(void) {
  ******************************************************************************/
 void btm_sec_init(uint8_t sec_mode) {
   btm_cb.security_mode = sec_mode;
-  btm_cb.pairing_bda = {.address = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
+  btm_cb.pairing_bda = bd_addr_any;
   btm_cb.max_collision_delay = BTM_SEC_MAX_COLLISION_DELAY;
 }
 
@@ -5633,7 +5633,7 @@ static void btm_sec_change_pairing_state(tBTM_PAIRING_STATE new_state) {
     btm_sec_check_pending_reqs();
     btm_inq_clear_ssp();
 
-    btm_cb.pairing_bda = {.address = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}};
+    btm_cb.pairing_bda = bd_addr_any;
   } else {
     /* If transitioning out of idle, mark the lcb as bonding */
     if (old_state == BTM_PAIR_STATE_IDLE)

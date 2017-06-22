@@ -41,7 +41,7 @@ TEST_F(GattTest, GattClientRegister) {
   // Registers gatt client.
   bt_uuid_t gatt_client_uuid;
   create_random_uuid(&gatt_client_uuid, DEFAULT_RANDOM_SEED);
-  gatt_client_interface()->register_client(&gatt_client_uuid);
+  gatt_client_interface()->register_client(gatt_client_uuid);
   semaphore_wait(register_client_callback_sem_);
   EXPECT_TRUE(status() == BT_STATUS_SUCCESS)
       << "Error registering GATT client app callback.";
@@ -54,7 +54,7 @@ TEST_F(GattTest, GattServerRegister) {
   // Registers gatt server.
   bt_uuid_t gatt_server_uuid;
   create_random_uuid(&gatt_server_uuid, DEFAULT_RANDOM_SEED);
-  gatt_server_interface()->register_server(&gatt_server_uuid);
+  gatt_server_interface()->register_server(gatt_server_uuid);
   semaphore_wait(register_server_callback_sem_);
   EXPECT_TRUE(status() == BT_STATUS_SUCCESS)
       << "Error registering GATT server app callback.";
@@ -67,7 +67,7 @@ TEST_F(GattTest, GattServerBuild) {
   // Registers gatt server.
   bt_uuid_t gatt_server_uuid;
   create_random_uuid(&gatt_server_uuid, DEFAULT_RANDOM_SEED);
-  gatt_server_interface()->register_server(&gatt_server_uuid);
+  gatt_server_interface()->register_server(gatt_server_uuid);
   semaphore_wait(register_server_callback_sem_);
   EXPECT_TRUE(status() == BT_STATUS_SUCCESS)
       << "Error registering GATT server app callback.";

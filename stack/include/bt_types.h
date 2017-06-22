@@ -47,7 +47,7 @@
  *
  * The convention used is the the event name contains the layer that the
  * event is going to.
-*/
+ */
 #define BT_EVT_MASK 0xFF00
 #define BT_SUB_EVT_MASK 0x00FF
 /* To Bluetooth Upper Layers        */
@@ -211,7 +211,7 @@
 #define BT_EVT_CONTEXT_SWITCH_EVT (0x0001 | BT_EVT_BTIF)
 
 /* Define the header of each buffer used in the Bluetooth stack.
-*/
+ */
 typedef struct {
   uint16_t event;
   uint16_t len;
@@ -238,7 +238,7 @@ typedef struct {
 #define BT_PSM_ATT 0x001F /* Attribute Protocol  */
 
 /* These macros extract the HCI opcodes from a buffer
-*/
+ */
 #define HCI_GET_CMD_HDR_OPCODE(p)                    \
   (uint16_t)((*((uint8_t*)((p) + 1) + (p)->offset) + \
               (*((uint8_t*)((p) + 1) + (p)->offset + 1) << 8)))
@@ -252,7 +252,7 @@ typedef struct {
 
 /*******************************************************************************
  * Macros to get and put bytes to and from a stream (Little Endian format).
-*/
+ */
 #define UINT64_TO_BE_STREAM(p, u64)  \
   {                                  \
     *(p)++ = (uint8_t)((u64) >> 56); \
@@ -406,7 +406,7 @@ typedef struct {
 /*******************************************************************************
  * Macros to get and put bytes to and from a field (Little Endian format).
  * These are the same as to stream, except the pointer is not incremented.
-*/
+ */
 #define UINT32_TO_FIELD(p, u32)                    \
   {                                                \
     *(uint8_t*)(p) = (uint8_t)(u32);               \
@@ -430,7 +430,7 @@ typedef struct {
 
 /*******************************************************************************
  * Macros to get and put bytes to and from a stream (Big Endian format)
-*/
+ */
 #define UINT32_TO_BE_STREAM(p, u32)  \
   {                                  \
     *(p)++ = (uint8_t)((u32) >> 24); \
@@ -501,7 +501,7 @@ typedef struct {
 /*******************************************************************************
  * Macros to get and put bytes to and from a field (Big Endian format).
  * These are the same as to stream, except the pointer is not incremented.
-*/
+ */
 #define UINT32_TO_BE_FIELD(p, u32)                 \
   {                                                \
     *(uint8_t*)(p) = (uint8_t)((u32) >> 24);       \
@@ -524,14 +524,11 @@ typedef struct {
   { *(uint8_t*)(p) = (uint8_t)(u8); }
 
 /* Common Bluetooth field definitions */
-#define BD_ADDR_LEN 6                 /* Device address length */
+#define BD_ADDR_LEN 6 /* Device address length */
 
 #ifdef __cplusplus
 #include <base/strings/stringprintf.h>
 #include <hardware/bluetooth.h>
-
-static const bt_bdaddr_t bd_addr_null = {
-    .address = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
 
 inline bool operator==(const bt_bdaddr_t& lhs, const bt_bdaddr_t& rhs) {
   return memcmp(&lhs, &rhs, sizeof(lhs)) == 0;
@@ -703,14 +700,14 @@ typedef struct {
  *
  * The lowest 4 bytes byte of the UUID or GUID depend on the feature. Typically,
  * the value of those bytes will be the PSM or SCN.
-*/
+ */
 #define BRCM_PROPRIETARY_UUID_BASE \
   0xDA, 0x23, 0x41, 0x02, 0xA3, 0xBB, 0xC1, 0x71, 0xBA, 0x09, 0x6f, 0x21
 #define BRCM_PROPRIETARY_GUID_BASE \
   0xda23, 0x4102, 0xa3, 0xbb, 0xc1, 0x71, 0xba, 0x09, 0x6f, 0x21
 
 /* We will not allocate a PSM in the reserved range to 3rd party apps
-*/
+ */
 #define BRCM_RESERVED_PSM_START 0x5AE1
 #define BRCM_RESERVED_PSM_END 0x5AFF
 
@@ -718,7 +715,7 @@ typedef struct {
 #define BRCM_MATCHER_PSM 0x5AE3
 
 /* Connection statistics
-*/
+ */
 
 /* Structure to hold connection stats */
 #ifndef BT_CONN_STATS_DEFINED
@@ -742,7 +739,7 @@ typedef struct {
  *                          Low Energy definitions
  *
  * Address types
-*/
+ */
 #define BLE_ADDR_PUBLIC 0x00
 #define BLE_ADDR_RANDOM 0x01
 #define BLE_ADDR_PUBLIC_ID 0x02
@@ -769,7 +766,7 @@ struct tBLE_BD_ADDR {
 #endif
 
 /* Device Types
-*/
+ */
 #define BT_DEVICE_TYPE_BREDR 0x01
 #define BT_DEVICE_TYPE_BLE 0x02
 #define BT_DEVICE_TYPE_DUMO 0x03
@@ -964,6 +961,10 @@ typedef uint8_t BD_ADDR[BD_ADDR_LEN];
 #ifdef __cplusplus
 static const bt_bdaddr_t bd_addr_any = {
     .address = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}};
+
+static const bt_bdaddr_t bd_addr_empty = {
+    .address = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
+
 #endif
 /*****************************************************************************
  *  Functions

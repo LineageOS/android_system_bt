@@ -480,7 +480,7 @@ extern void bta_hd_close_act(tBTA_HD_DATA* p_data) {
   }
 
   cback_data.conn.bda = p_cback->addr;
-  bta_hd_cb.bd_addr = {.address = {0}};
+  bta_hd_cb.bd_addr = bd_addr_empty;
 
   bta_hd_cb.p_cback(cback_event, &cback_data);
 }

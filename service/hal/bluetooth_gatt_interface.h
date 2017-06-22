@@ -85,7 +85,7 @@ class BluetoothGattInterface {
         int registered, uint16_t handle);
 
     virtual void NotifyCallback(BluetoothGattInterface* gatt_iface, int conn_id,
-                                btgatt_notify_params_t* p_data);
+                                const btgatt_notify_params_t& p_data);
 
     virtual void WriteCharacteristicCallback(BluetoothGattInterface* gatt_iface,
                                              int conn_id, int status,
@@ -99,7 +99,8 @@ class BluetoothGattInterface {
                                     int conn_id, int status, int mtu);
 
     virtual void GetGattDbCallback(BluetoothGattInterface* gatt_iface,
-                                   int conn_id, btgatt_db_element_t* gatt_db,
+                                   int conn_id,
+                                   const btgatt_db_element_t* gatt_db,
                                    int size);
 
     virtual void ServicesRemovedCallback(BluetoothGattInterface* gatt_iface,
@@ -107,7 +108,8 @@ class BluetoothGattInterface {
                                          uint16_t end_handle);
 
     virtual void ServicesAddedCallback(BluetoothGattInterface* gatt_iface,
-                                       int conn_id, btgatt_db_element_t* added,
+                                       int conn_id,
+                                       const btgatt_db_element_t& added,
                                        int added_count);
   };
 

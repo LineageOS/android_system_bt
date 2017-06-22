@@ -78,14 +78,14 @@ GetServerObservers();
     }                                                                  \
   } while (0)
 
-void RegisterClientCallback(int status, int client_if, bt_uuid_t* app_uuid) {
+void RegisterClientCallback(int status, int client_if,
+                            const bt_uuid_t& app_uuid) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VLOG(2) << __func__ << " - status: " << status << " client_if: " << client_if;
   VERIFY_INTERFACE_OR_RETURN();
-  CHECK(app_uuid);
 
   FOR_EACH_CLIENT_OBSERVER(
-      RegisterClientCallback(g_interface, status, client_if, *app_uuid));
+      RegisterClientCallback(g_interface, status, client_if, app_uuid));
 }
 
 void ScanResultCallback(
@@ -104,28 +104,28 @@ void ScanResultCallback(
       ScanResultCallback(g_interface, *bda, rssi, adv_data));
 }
 
-void ConnectCallback(int conn_id, int status, int client_if, bt_bdaddr_t* bda) {
+void ConnectCallback(int conn_id, int status, int client_if,
+                     const bt_bdaddr_t& bda) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VERIFY_INTERFACE_OR_RETURN();
-  CHECK(bda);
 
   VLOG(2) << __func__ << " - status: " << status << " client_if: " << client_if
-          << " - BD_ADDR: " << BtAddrString(bda) << " - conn_id: " << conn_id;
+          << " - BD_ADDR: " << BtAddrString(&bda) << " - conn_id: " << conn_id;
 
   FOR_EACH_CLIENT_OBSERVER(
-      ConnectCallback(g_interface, conn_id, status, client_if, *bda));
+      ConnectCallback(g_interface, conn_id, status, client_if, bda));
 }
 
 void DisconnectCallback(int conn_id, int status, int client_if,
-                        bt_bdaddr_t* bda) {
+                        const bt_bdaddr_t& bda) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VERIFY_INTERFACE_OR_RETURN();
-  CHECK(bda);
 
   VLOG(2) << __func__ << " - conn_id: " << conn_id << " - status: " << status
-          << " client_if: " << client_if << " - BD_ADDR: " << BtAddrString(bda);
+          << " client_if: " << client_if
+          << " - BD_ADDR: " << BtAddrString(&bda);
   FOR_EACH_CLIENT_OBSERVER(
-      DisconnectCallback(g_interface, conn_id, status, client_if, *bda));
+      DisconnectCallback(g_interface, conn_id, status, client_if, bda));
 }
 
 void SearchCompleteCallback(int conn_id, int status) {
@@ -148,14 +148,14 @@ void RegisterForNotificationCallback(int conn_id, int registered, int status,
       g_interface, conn_id, status, registered, handle));
 }
 
-void NotifyCallback(int conn_id, btgatt_notify_params_t* p_data) {
+void NotifyCallback(int conn_id, const btgatt_notify_params_t& p_data) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VERIFY_INTERFACE_OR_RETURN();
 
   VLOG(2) << __func__ << " - conn_id: " << conn_id
-          << " - address: " << BtAddrString(&p_data->bda)
-          << " - handle: " << p_data->handle << " - len: " << p_data->len
-          << " - is_notify: " << p_data->is_notify;
+          << " - address: " << BtAddrString(&p_data.bda)
+          << " - handle: " << p_data.handle << " - len: " << p_data.len
+          << " - is_notify: " << p_data.is_notify;
 
   FOR_EACH_CLIENT_OBSERVER(NotifyCallback(g_interface, conn_id, p_data));
 }
@@ -191,7 +191,7 @@ void MtuChangedCallback(int conn_id, int status, int mtu) {
       MtuChangedCallback(g_interface, conn_id, status, mtu));
 }
 
-void GetGattDbCallback(int conn_id, btgatt_db_element_t* db, int size) {
+void GetGattDbCallback(int conn_id, const btgatt_db_element_t* db, int size) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VLOG(2) << __func__ << " - conn_id: " << conn_id << " size: " << size;
   VERIFY_INTERFACE_OR_RETURN();
@@ -210,7 +210,7 @@ void ServicesRemovedCallback(int conn_id, uint16_t start_handle,
       ServicesRemovedCallback(g_interface, conn_id, start_handle, end_handle));
 }
 
-void ServicesAddedCallback(int conn_id, btgatt_db_element_t* added,
+void ServicesAddedCallback(int conn_id, const btgatt_db_element_t& added,
                            int added_count) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VLOG(2) << __func__ << " - conn_id: " << conn_id
@@ -221,26 +221,25 @@ void ServicesAddedCallback(int conn_id, btgatt_db_element_t* added,
       ServicesAddedCallback(g_interface, conn_id, added, added_count));
 }
 
-void RegisterServerCallback(int status, int server_if, bt_uuid_t* app_uuid) {
+void RegisterServerCallback(int status, int server_if,
+                            const bt_uuid_t& app_uuid) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VLOG(2) << __func__ << " - status: " << status << " server_if: " << server_if;
   VERIFY_INTERFACE_OR_RETURN();
-  CHECK(app_uuid);
 
   FOR_EACH_SERVER_OBSERVER(
-      RegisterServerCallback(g_interface, status, server_if, *app_uuid));
+      RegisterServerCallback(g_interface, status, server_if, app_uuid));
 }
 
 void ConnectionCallback(int conn_id, int server_if, int connected,
-                        bt_bdaddr_t* bda) {
+                        const bt_bdaddr_t& bda) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VLOG(2) << __func__ << " - conn_id: " << conn_id
           << " server_if: " << server_if << " connected: " << connected;
   VERIFY_INTERFACE_OR_RETURN();
-  CHECK(bda);
 
   FOR_EACH_SERVER_OBSERVER(
-      ConnectionCallback(g_interface, conn_id, server_if, connected, *bda));
+      ConnectionCallback(g_interface, conn_id, server_if, connected, bda));
 }
 
 void ServiceAddedCallback(
@@ -277,34 +276,33 @@ void ServiceDeletedCallback(int status, int server_if, int srvc_handle) {
 }
 
 void RequestReadCharacteristicCallback(int conn_id, int trans_id,
-                                       bt_bdaddr_t* bda, int attr_handle,
+                                       const bt_bdaddr_t& bda, int attr_handle,
                                        int offset, bool is_long) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VLOG(2) << __func__ << " - conn_id: " << conn_id << " trans_id: " << trans_id
           << " attr_handle: " << attr_handle << " offset: " << offset
           << " is_long: " << is_long;
   VERIFY_INTERFACE_OR_RETURN();
-  CHECK(bda);
 
   FOR_EACH_SERVER_OBSERVER(RequestReadCharacteristicCallback(
-      g_interface, conn_id, trans_id, *bda, attr_handle, offset, is_long));
+      g_interface, conn_id, trans_id, bda, attr_handle, offset, is_long));
 }
 
-void RequestReadDescriptorCallback(int conn_id, int trans_id, bt_bdaddr_t* bda,
-                                   int attr_handle, int offset, bool is_long) {
+void RequestReadDescriptorCallback(int conn_id, int trans_id,
+                                   const bt_bdaddr_t& bda, int attr_handle,
+                                   int offset, bool is_long) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VLOG(2) << __func__ << " - conn_id: " << conn_id << " trans_id: " << trans_id
           << " attr_handle: " << attr_handle << " offset: " << offset
           << " is_long: " << is_long;
   VERIFY_INTERFACE_OR_RETURN();
-  CHECK(bda);
 
   FOR_EACH_SERVER_OBSERVER(RequestReadDescriptorCallback(
-      g_interface, conn_id, trans_id, *bda, attr_handle, offset, is_long));
+      g_interface, conn_id, trans_id, bda, attr_handle, offset, is_long));
 }
 
 void RequestWriteCharacteristicCallback(int conn_id, int trans_id,
-                                        bt_bdaddr_t* bda, int attr_handle,
+                                        const bt_bdaddr_t& bda, int attr_handle,
                                         int offset, bool need_rsp, bool is_prep,
                                         std::vector<uint8_t> value) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
@@ -313,16 +311,15 @@ void RequestWriteCharacteristicCallback(int conn_id, int trans_id,
           << " length: " << value.size() << " need_rsp: " << need_rsp
           << " is_prep: " << is_prep;
   VERIFY_INTERFACE_OR_RETURN();
-  CHECK(bda);
 
   FOR_EACH_SERVER_OBSERVER(RequestWriteCharacteristicCallback(
-      g_interface, conn_id, trans_id, *bda, attr_handle, offset, need_rsp,
+      g_interface, conn_id, trans_id, bda, attr_handle, offset, need_rsp,
       is_prep, value));
 }
 
 void RequestWriteDescriptorCallback(
-    int conn_id, int trans_id, bt_bdaddr_t* bda, int attr_handle, int offset,
-    bool need_rsp, bool is_prep,
+    int conn_id, int trans_id, const bt_bdaddr_t& bda, int attr_handle,
+    int offset, bool need_rsp, bool is_prep,
     std::vector<uint8_t> value) {  // NOLINT(pass-by-value)
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VLOG(2) << __func__ << " - conn_id: " << conn_id << " trans_id: " << trans_id
@@ -330,23 +327,21 @@ void RequestWriteDescriptorCallback(
           << " length: " << value.size() << " need_rsp: " << need_rsp
           << " is_prep: " << is_prep;
   VERIFY_INTERFACE_OR_RETURN();
-  CHECK(bda);
 
   FOR_EACH_SERVER_OBSERVER(RequestWriteDescriptorCallback(
-      g_interface, conn_id, trans_id, *bda, attr_handle, offset, need_rsp,
+      g_interface, conn_id, trans_id, bda, attr_handle, offset, need_rsp,
       is_prep, value));
 }
 
-void RequestExecWriteCallback(int conn_id, int trans_id, bt_bdaddr_t* bda,
+void RequestExecWriteCallback(int conn_id, int trans_id, const bt_bdaddr_t& bda,
                               int exec_write) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VLOG(2) << __func__ << " - conn_id: " << conn_id << " trans_id: " << trans_id
           << " exec_write: " << exec_write;
   VERIFY_INTERFACE_OR_RETURN();
-  CHECK(bda);
 
-  FOR_EACH_SERVER_OBSERVER(RequestExecWriteCallback(
-      g_interface, conn_id, trans_id, *bda, exec_write));
+  FOR_EACH_SERVER_OBSERVER(RequestExecWriteCallback(g_interface, conn_id,
+                                                    trans_id, bda, exec_write));
 }
 
 void ResponseConfirmationCallback(int status, int handle) {
@@ -602,7 +597,7 @@ void BluetoothGattInterface::ClientObserver::RegisterForNotificationCallback(
 
 void BluetoothGattInterface::ClientObserver::NotifyCallback(
     BluetoothGattInterface* /* gatt_iface */, int /* conn_id */,
-    btgatt_notify_params_t* /* p_data */) {
+    const btgatt_notify_params_t& /* p_data */) {
   // Do nothing
 }
 
@@ -626,7 +621,7 @@ void BluetoothGattInterface::ClientObserver::MtuChangedCallback(
 
 void BluetoothGattInterface::ClientObserver::GetGattDbCallback(
     BluetoothGattInterface* /* gatt_iface */, int /* conn_id */,
-    btgatt_db_element_t* /* gatt_db */, int /* size */) {
+    const btgatt_db_element_t* /* gatt_db */, int /* size */) {
   // Do nothing.
 }
 
@@ -638,7 +633,7 @@ void BluetoothGattInterface::ClientObserver::ServicesRemovedCallback(
 
 void BluetoothGattInterface::ClientObserver::ServicesAddedCallback(
     BluetoothGattInterface* /* gatt_iface */, int /* conn_id */,
-    btgatt_db_element_t* /* added */, int /* added_count */) {
+    const btgatt_db_element_t& /* added */, int /* added_count */) {
   // Do nothing.
 }
 
