@@ -33,7 +33,7 @@ class MockGattHandler
   MockGattHandler() = default;
   ~MockGattHandler() override = default;
 
-  MOCK_METHOD1(RegisterServer, bt_status_t(bt_uuid_t*));
+  MOCK_METHOD1(RegisterServer, bt_status_t(const bt_uuid_t&));
   MOCK_METHOD1(UnregisterServer, bt_status_t(int));
   MOCK_METHOD2(AddService, bt_status_t(int, std::vector<btgatt_db_element_t>));
   MOCK_METHOD5(AddCharacteristic, bt_status_t(int, int, bt_uuid_t*, int, int));
@@ -42,7 +42,8 @@ class MockGattHandler
   MOCK_METHOD2(DeleteService, bt_status_t(int, int));
   MOCK_METHOD5(SendIndication,
                bt_status_t(int, int, int, int, std::vector<uint8_t>));
-  MOCK_METHOD4(SendResponse, bt_status_t(int, int, int, btgatt_response_t*));
+  MOCK_METHOD4(SendResponse,
+               bt_status_t(int, int, int, const btgatt_response_t&));
 
  private:
   DISALLOW_COPY_AND_ASSIGN(MockGattHandler);

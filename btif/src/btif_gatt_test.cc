@@ -199,7 +199,7 @@ static tGATT_CBACK btif_test_callbacks = {btif_test_connect_cback,
  ******************************************************************************/
 
 bt_status_t btif_gattc_test_command_impl(int command,
-                                         btgatt_test_params_t* params) {
+                                         const btgatt_test_params_t* params) {
   switch (command) {
     case 0x01: /* Enable */
     {

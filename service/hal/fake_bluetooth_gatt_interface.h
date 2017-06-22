@@ -35,12 +35,12 @@ class FakeBluetoothGattInterface : public BluetoothGattInterface {
    public:
     virtual ~TestClientHandler() = default;
 
-    virtual bt_status_t RegisterClient(bt_uuid_t* app_uuid) = 0;
+    virtual bt_status_t RegisterClient(const bt_uuid_t& app_uuid) = 0;
     virtual bt_status_t UnregisterClient(int client_if) = 0;
 
-    virtual bt_status_t Connect(int client_if, const bt_bdaddr_t* bd_addr,
+    virtual bt_status_t Connect(int client_if, const bt_bdaddr_t& bd_addr,
                                 bool is_direct, int transport) = 0;
-    virtual bt_status_t Disconnect(int client_if, const bt_bdaddr_t* bd_addr,
+    virtual bt_status_t Disconnect(int client_if, const bt_bdaddr_t& bd_addr,
                                    int conn_id) = 0;
   };
 
@@ -51,7 +51,7 @@ class FakeBluetoothGattInterface : public BluetoothGattInterface {
    public:
     virtual ~TestServerHandler() = default;
 
-    virtual bt_status_t RegisterServer(bt_uuid_t* app_uuid) = 0;
+    virtual bt_status_t RegisterServer(const bt_uuid_t& app_uuid) = 0;
     virtual bt_status_t UnregisterServer(int server_if) = 0;
     virtual bt_status_t AddService(
         int server_if, std::vector<btgatt_db_element_t> service) = 0;
@@ -60,7 +60,7 @@ class FakeBluetoothGattInterface : public BluetoothGattInterface {
                                        int conn_id, int confirm,
                                        std::vector<uint8_t> value) = 0;
     virtual bt_status_t SendResponse(int conn_id, int trans_id, int status,
-                                     btgatt_response_t* response) = 0;
+                                     const btgatt_response_t& response) = 0;
   };
 
   // Constructs the fake with the given handlers. Implementations can
