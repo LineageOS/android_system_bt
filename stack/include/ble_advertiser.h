@@ -71,6 +71,7 @@ class BleAdvertisingManager {
 
   static void Initialize(BleAdvertiserHciInterface* interface);
   static void CleanUp();
+  static bool IsInitialized();
   static BleAdvertisingManager* Get();
 
   /* Register an advertising instance, status will be returned in |cb|
