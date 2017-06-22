@@ -1064,6 +1064,53 @@ TEST_F(BleAdvertisingManagerTest, test_duration_update_during_timeout) {
   remove_cb.Run(0);
 }
 
+/* This test verifies that stack cleanup, and shutdown happening while there is
+ * outstanding HCI command is not triggering the callback */
+TEST_F(BleAdvertisingManagerTest, test_cleanup_during_execution) {
+  std::vector<uint8_t> adv_data;
+  std::vector<uint8_t> scan_resp;
+  tBTM_BLE_ADV_PARAMS params;
+  tBLE_PERIODIC_ADV_PARAMS periodic_params;
+  periodic_params.enable = false;
+  std::vector<uint8_t> periodic_data;
+
+  parameters_cb set_params_cb;
+  status_cb set_address_cb;
+  status_cb set_data_cb;
+  EXPECT_CALL(*hci_mock, SetParameters1(_, _, _, _, _, _, _, _, _)).Times(1);
+  EXPECT_CALL(*hci_mock, SetParameters2(_, _, _, _, _, _, _, _))
+      .Times(1)
+      .WillOnce(SaveArg<7>(&set_params_cb));
+  EXPECT_CALL(*hci_mock, SetRandomAddress(_, _, _))
+      .Times(1)
+      .WillOnce(SaveArg<2>(&set_address_cb));
+  EXPECT_CALL(*hci_mock, SetAdvertisingData(_, _, _, _, _, _))
+      .Times(1)
+      .WillOnce(SaveArg<5>(&set_data_cb));
+
+  BleAdvertisingManager::Get()->StartAdvertisingSet(
+      Bind(&BleAdvertisingManagerTest::StartAdvertisingSetCb,
+           base::Unretained(this)),
+      &params, adv_data, scan_resp, &periodic_params, periodic_data,
+      0 /* duration */, 0 /* maxExtAdvEvents */, Bind(DoNothing2));
+
+  // we are a truly gracious fake controller, let the commands succeed!
+  int selected_tx_power = -15;
+  set_params_cb.Run(0, selected_tx_power);
+  set_address_cb.Run(0);
+
+  // Someone shut down the stack in the middle of flow, when the HCI Set
+  // Advertise Data was scheduled!
+  BleAdvertisingManager::Get()->CleanUp();
+
+  // The HCI call returns with status, and tries to execute the callback. This
+  // should just silently drop the call. If it got executed, we would get crash,
+  // because BleAdvertisingManager object was already deleted.
+  set_data_cb.Run(0);
+
+  ::testing::Mock::VerifyAndClearExpectations(hci_mock.get());
+}
+
 extern void testRecomputeTimeout1();
 extern void testRecomputeTimeout2();
 extern void testRecomputeTimeout3();
