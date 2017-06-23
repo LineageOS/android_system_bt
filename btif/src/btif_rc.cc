@@ -860,20 +860,6 @@ void handle_rc_vendorunique_rsp(tBTA_AV_REMOTE_RSP* p_remote_rsp) {
   }
 }
 
-void handle_uid_changed_notification(btif_rc_device_cb_t* p_dev, uint8_t label,
-                                     tAVRC_COMMAND* pavrc_command) {
-  tAVRC_RESPONSE avrc_rsp = {0};
-  avrc_rsp.rsp.pdu = pavrc_command->pdu;
-  avrc_rsp.rsp.status = AVRC_STS_NO_ERROR;
-  avrc_rsp.rsp.opcode = pavrc_command->cmd.opcode;
-
-  avrc_rsp.reg_notif.event_id = pavrc_command->reg_notif.event_id;
-  avrc_rsp.reg_notif.param.uid_counter = 0;
-
-  send_metamsg_rsp(p_dev, -1, label, AVRC_RSP_INTERIM, &avrc_rsp);
-  send_metamsg_rsp(p_dev, -1, label, AVRC_RSP_CHANGED, &avrc_rsp);
-}
-
 /***************************************************************************
  *  Function       handle_rc_metamsg_cmd
  *
@@ -963,11 +949,6 @@ void handle_rc_metamsg_cmd(tBTA_AV_META_MSG* pmeta_msg) {
           pmeta_msg->code);
       p_dev->rc_notif[event_id - 1].bNotify = true;
       p_dev->rc_notif[event_id - 1].label = pmeta_msg->label;
-
-      if (event_id == AVRC_EVT_UIDS_CHANGE) {
-        handle_uid_changed_notification(p_dev, pmeta_msg->label, &avrc_command);
-        return;
-      }
     }
 
     BTIF_TRACE_EVENT("%s: Passing received metamsg command to app. pdu: %s",
