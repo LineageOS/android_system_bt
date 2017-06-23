@@ -89,6 +89,7 @@
 #define NUM_TIMEOUT_RETRIES                 5
 
 #define PROPERTY_PRODUCT_MODEL "ro.product.model"
+#define PROPERTY_BT_NAME "ro.bluetooth.name"
 #define DEFAULT_LOCAL_NAME_MAX  31
 #if (DEFAULT_LOCAL_NAME_MAX > BTM_MAX_LOC_BD_NAME_LEN)
     #error "default btif local name size exceeds stack supported length"
@@ -3833,15 +3834,20 @@ static char* btif_get_default_local_name() {
     if (btif_default_local_name[0] == '\0')
     {
         int max_len = sizeof(btif_default_local_name) - 1;
-        if (BTM_DEF_LOCAL_NAME[0] != '\0')
+        char bt_name[PROPERTY_VALUE_MAX];
+        osi_property_get(PROPERTY_BT_NAME, bt_name, "");
+        if (bt_name[0] != '\0')
+        {
+            strncpy(btif_default_local_name, bt_name, max_len);
+        }
+        else if (BTM_DEF_LOCAL_NAME[0] != '\0')
         {
             strncpy(btif_default_local_name, BTM_DEF_LOCAL_NAME, max_len);
         }
         else
         {
-            char prop_model[PROPERTY_VALUE_MAX];
-            osi_property_get(PROPERTY_PRODUCT_MODEL, prop_model, "");
-            strncpy(btif_default_local_name, prop_model, max_len);
+            osi_property_get(PROPERTY_PRODUCT_MODEL, bt_name, "");
+            strncpy(btif_default_local_name, bt_name, max_len);
         }
         btif_default_local_name[max_len] = '\0';
     }
