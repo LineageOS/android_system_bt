@@ -182,22 +182,21 @@ void btm_gen_non_resolvable_private_addr(tBTM_BLE_ADDR_CBACK* p_cback,
  * Returns          true on match, false otherwise
  *
  ******************************************************************************/
-static bool btm_ble_proc_resolve_x(tSMP_ENC* p) {
-  tBTM_LE_RANDOM_CB* p_mgnt_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
-  uint8_t comp[3];
+static bool btm_ble_proc_resolve_x(const tSMP_ENC& encrypt_output,
+                                   const bt_bdaddr_t& random_bda) {
   BTM_TRACE_EVENT("btm_ble_proc_resolve_x");
-  /* compare the hash with 3 LSB of bd address */
-  comp[0] = p_mgnt_cb->random_bda[5];
-  comp[1] = p_mgnt_cb->random_bda[4];
-  comp[2] = p_mgnt_cb->random_bda[3];
 
-  if (p) {
-    if (!memcmp(p->param_buf, &comp[0], 3)) {
-      /* match is found */
-      BTM_TRACE_EVENT("match is found");
-      return true;
-    }
+  /* compare the hash with 3 LSB of bd address */
+  uint8_t comp[3];
+  comp[0] = random_bda.address[5];
+  comp[1] = random_bda.address[4];
+  comp[2] = random_bda.address[3];
+
+  if (!memcmp(encrypt_output.param_buf, comp, 3)) {
+    BTM_TRACE_EVENT("match is found");
+    return true;
   }
+
   return false;
 }
 
@@ -276,13 +275,15 @@ bool btm_ble_addr_resolvable(BD_ADDR rpa, tBTM_SEC_DEV_REC* p_dev_rec) {
  *
  ******************************************************************************/
 static bool btm_ble_match_random_bda(void* data, void* context) {
-  uint8_t* random_bda = (uint8_t*)context;
+  bt_bdaddr_t random_bda;
+  bdcpy(random_bda.address, (uint8_t *)context);
+
   /* use the 3 MSB of bd address as prand */
 
   uint8_t rand[3];
-  rand[0] = random_bda[2];
-  rand[1] = random_bda[1];
-  rand[2] = random_bda[0];
+  rand[0] = random_bda.address[2];
+  rand[1] = random_bda.address[1];
+  rand[2] = random_bda.address[0];
 
   BTM_TRACE_EVENT("%s next iteration", __func__);
 
@@ -299,7 +300,7 @@ static bool btm_ble_match_random_bda(void* data, void* context) {
   /* generate X = E irk(R0, R1, R2) and R is random address 3 LSO */
   SMP_Encrypt(p_dev_rec->ble.keys.irk, BT_OCTET16_LEN, &rand[0], 3, &output);
   // if it was match, finish iteration, otherwise continue
-  return !btm_ble_proc_resolve_x(&output);
+  return !btm_ble_proc_resolve_x(output, random_bda);
 }
 
 /*******************************************************************************
