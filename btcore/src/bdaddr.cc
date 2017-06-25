@@ -23,14 +23,14 @@
 
 #include "btcore/include/bdaddr.h"
 
-bool bdaddr_is_empty(const bt_bdaddr_t* addr) {
+bool bdaddr_is_empty(const RawAddress* addr) {
   CHECK(addr != NULL);
 
-  uint8_t zero[sizeof(bt_bdaddr_t)] = {0};
-  return memcmp(addr, &zero, sizeof(bt_bdaddr_t)) == 0;
+  uint8_t zero[sizeof(RawAddress)] = {0};
+  return memcmp(addr, &zero, sizeof(RawAddress)) == 0;
 }
 
-const char* bdaddr_to_string(const bt_bdaddr_t* addr, char* string,
+const char* bdaddr_to_string(const RawAddress* addr, char* string,
                              size_t size) {
   CHECK(addr != NULL);
   CHECK(string != NULL);
@@ -59,16 +59,16 @@ bool string_is_bdaddr(const char* string) {
   return true;
 }
 
-bool string_to_bdaddr(const char* string, bt_bdaddr_t* addr) {
+bool string_to_bdaddr(const char* string, RawAddress* addr) {
   CHECK(string != NULL);
   CHECK(addr != NULL);
 
-  bt_bdaddr_t new_addr;
+  RawAddress new_addr;
   uint8_t* ptr = new_addr.address;
   bool ret = sscanf(string, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
                     &ptr[0], &ptr[1], &ptr[2], &ptr[3], &ptr[4], &ptr[5]) == 6;
 
-  if (ret) memcpy(addr, &new_addr, sizeof(bt_bdaddr_t));
+  if (ret) memcpy(addr, &new_addr, sizeof(RawAddress));
 
   return ret;
 }

@@ -47,14 +47,14 @@ using base::StringPrintf;
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
-static void gatt_le_connect_cback(uint16_t chan, const bt_bdaddr_t& bd_addr,
+static void gatt_le_connect_cback(uint16_t chan, const RawAddress& bd_addr,
                                   bool connected, uint16_t reason,
                                   tBT_TRANSPORT transport);
-static void gatt_le_data_ind(uint16_t chan, const bt_bdaddr_t& bd_addr,
+static void gatt_le_data_ind(uint16_t chan, const RawAddress& bd_addr,
                              BT_HDR* p_buf);
-static void gatt_le_cong_cback(const bt_bdaddr_t& remote_bda, bool congest);
+static void gatt_le_cong_cback(const RawAddress& remote_bda, bool congest);
 
-static void gatt_l2cif_connect_ind_cback(const bt_bdaddr_t& bd_addr,
+static void gatt_l2cif_connect_ind_cback(const RawAddress& bd_addr,
                                          uint16_t l2cap_cid, uint16_t psm,
                                          uint8_t l2cap_id);
 static void gatt_l2cif_connect_cfm_cback(uint16_t l2cap_cid, uint16_t result);
@@ -190,7 +190,7 @@ void gatt_free(void) {
  * Returns          true if connection is started, otherwise return false.
  *
  ******************************************************************************/
-bool gatt_connect(const bt_bdaddr_t& rem_bda, tGATT_TCB* p_tcb,
+bool gatt_connect(const RawAddress& rem_bda, tGATT_TCB* p_tcb,
                   tBT_TRANSPORT transport, uint8_t initiating_phys) {
   bool gatt_ret = false;
 
@@ -345,7 +345,7 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
  * Returns          void.
  *
  ******************************************************************************/
-bool gatt_act_connect(tGATT_REG* p_reg, const bt_bdaddr_t& bd_addr,
+bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr,
                       tBT_TRANSPORT transport, bool opportunistic,
                       int8_t initiating_phys) {
   bool ret = false;
@@ -401,7 +401,7 @@ bool gatt_act_connect(tGATT_REG* p_reg, const bt_bdaddr_t& bd_addr,
  *                      connected (conn = true)/disconnected (conn = false).
  *
  ******************************************************************************/
-static void gatt_le_connect_cback(uint16_t chan, const bt_bdaddr_t& bd_addr,
+static void gatt_le_connect_cback(uint16_t chan, const RawAddress& bd_addr,
                                   bool connected, uint16_t reason,
                                   tBT_TRANSPORT transport) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
@@ -534,7 +534,7 @@ void gatt_notify_conn_update(uint16_t handle, uint16_t interval,
  * Returns          void
  *
  ******************************************************************************/
-static void gatt_le_cong_cback(const bt_bdaddr_t& remote_bda, bool congested) {
+static void gatt_le_cong_cback(const RawAddress& remote_bda, bool congested) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(remote_bda, BT_TRANSPORT_LE);
 
   /* if uncongested, check to see if there is any more pending data */
@@ -559,7 +559,7 @@ static void gatt_le_cong_cback(const bt_bdaddr_t& remote_bda, bool congested) {
  * Returns          void
  *
  ******************************************************************************/
-static void gatt_le_data_ind(uint16_t chan, const bt_bdaddr_t& bd_addr,
+static void gatt_le_data_ind(uint16_t chan, const RawAddress& bd_addr,
                              BT_HDR* p_buf) {
   tGATT_TCB* p_tcb;
 
@@ -586,7 +586,7 @@ static void gatt_le_data_ind(uint16_t chan, const bt_bdaddr_t& bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-static void gatt_l2cif_connect_ind_cback(const bt_bdaddr_t& bd_addr,
+static void gatt_l2cif_connect_ind_cback(const RawAddress& bd_addr,
                                          uint16_t lcid,
                                          UNUSED_ATTR uint16_t psm, uint8_t id) {
   /* do we already have a control channel for this peer? */
@@ -981,7 +981,7 @@ void gatt_data_process(tGATT_TCB& tcb, BT_HDR* p_buf) {
  * Returns          void
  *
  ******************************************************************************/
-void gatt_add_a_bonded_dev_for_srv_chg(const bt_bdaddr_t& bda) {
+void gatt_add_a_bonded_dev_for_srv_chg(const RawAddress& bda) {
   tGATTS_SRV_CHG_REQ req;
   tGATTS_SRV_CHG srv_chg_clt;
 
@@ -1006,7 +1006,7 @@ void gatt_add_a_bonded_dev_for_srv_chg(const bt_bdaddr_t& bda) {
  * Returns          void
  *
  ******************************************************************************/
-void gatt_send_srv_chg_ind(const bt_bdaddr_t& peer_bda) {
+void gatt_send_srv_chg_ind(const RawAddress& peer_bda) {
   uint8_t handle_range[GATT_SIZE_OF_SRV_CHG_HNDL_RANGE];
   uint8_t* p = handle_range;
   uint16_t conn_id;
@@ -1101,7 +1101,7 @@ void gatt_init_srv_chg(void) {
  ******************************************************************************/
 void gatt_proc_srv_chg(void) {
   uint8_t start_idx, found_idx;
-  bt_bdaddr_t bda;
+  RawAddress bda;
   tGATT_TCB* p_tcb;
   tBT_TRANSPORT transport;
 

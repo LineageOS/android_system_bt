@@ -992,7 +992,7 @@ void avdt_ccb_ll_closed(tAVDT_CCB* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
   /* save callback pointer, bd addr */
   p_cback = p_ccb->p_conn_cback;
   if (!p_cback) p_cback = avdt_cb.p_conn_cback;
-  bt_bdaddr_t bd_addr = p_ccb->peer_addr;
+  RawAddress bd_addr = p_ccb->peer_addr;
 
   /* dealloc ccb */
   avdt_ccb_dealloc(p_ccb, NULL);

@@ -52,7 +52,7 @@ typedef struct {
   uint16_t connection_id; /* L2CAP CID */
   bool rem_addr_specified;
   uint8_t chan_mode_mask; /* Supported channel modes (FCR) */
-  bt_bdaddr_t rem_dev_address;
+  RawAddress rem_dev_address;
   uint16_t psm;
   uint16_t rem_mtu_size;
 
@@ -83,7 +83,7 @@ tGAP_CONN conn;
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
-static void gap_connect_ind(const bt_bdaddr_t& bd_addr, uint16_t l2cap_cid,
+static void gap_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
                             uint16_t psm, uint8_t l2cap_id);
 static void gap_connect_cfm(uint16_t l2cap_cid, uint16_t result);
 static void gap_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
@@ -160,11 +160,10 @@ void gap_conn_init(void) {
  *
  ******************************************************************************/
 uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
-                      bool is_server, const bt_bdaddr_t* p_rem_bda,
-                      uint16_t psm, tL2CAP_CFG_INFO* p_cfg,
-                      tL2CAP_ERTM_INFO* ertm_info, uint16_t security,
-                      uint8_t chan_mode_mask, tGAP_CONN_CALLBACK* p_cb,
-                      tBT_TRANSPORT transport) {
+                      bool is_server, const RawAddress* p_rem_bda, uint16_t psm,
+                      tL2CAP_CFG_INFO* p_cfg, tL2CAP_ERTM_INFO* ertm_info,
+                      uint16_t security, uint8_t chan_mode_mask,
+                      tGAP_CONN_CALLBACK* p_cb, tBT_TRANSPORT transport) {
   tGAP_CCB* p_ccb;
   uint16_t cid;
 
@@ -605,7 +604,7 @@ uint16_t GAP_ConnSetIdleTimeout(uint16_t gap_handle, uint16_t timeout) {
  *                  GAP_ERR_BAD_HANDLE  - invalid handle
  *
  ******************************************************************************/
-const bt_bdaddr_t* GAP_ConnGetRemoteAddr(uint16_t gap_handle) {
+const RawAddress* GAP_ConnGetRemoteAddr(uint16_t gap_handle) {
   tGAP_CCB* p_ccb = gap_find_ccb_by_handle(gap_handle);
 
   DVLOG(1) << __func__ << " gap_handle = " << gap_handle;
@@ -692,7 +691,7 @@ void gap_tx_complete_ind(uint16_t l2cap_cid, uint16_t sdu_sent) {
  * Returns          void
  *
  ******************************************************************************/
-static void gap_connect_ind(const bt_bdaddr_t& bd_addr, uint16_t l2cap_cid,
+static void gap_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
                             uint16_t psm, uint8_t l2cap_id) {
   uint16_t xx;
   tGAP_CCB* p_ccb;
@@ -781,7 +780,7 @@ static void gap_checks_con_flags(tGAP_CCB* p_ccb) {
  * Returns          void
  *
  ******************************************************************************/
-static void gap_sec_check_complete(const bt_bdaddr_t*, tBT_TRANSPORT,
+static void gap_sec_check_complete(const RawAddress*, tBT_TRANSPORT,
                                    void* p_ref_data, uint8_t res) {
   tGAP_CCB* p_ccb = (tGAP_CCB*)p_ref_data;
 

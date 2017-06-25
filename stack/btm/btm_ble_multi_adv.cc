@@ -59,7 +59,7 @@ struct AdvertisingInstance {
   uint8_t maxExtAdvEvents;
   alarm_t* timeout_timer;
   uint8_t own_address_type;
-  bt_bdaddr_t own_address;
+  RawAddress own_address;
   MultiAdvCb timeout_cb;
   bool address_update_required;
   bool periodic_enabled;
@@ -173,11 +173,11 @@ class BleAdvertisingManagerImpl
     }
   }
 
-  void OnRpaGenerationComplete(base::Callback<void(bt_bdaddr_t)> cb,
+  void OnRpaGenerationComplete(base::Callback<void(RawAddress)> cb,
                                uint8_t rand[8]) {
     VLOG(1) << __func__;
 
-    bt_bdaddr_t bda;
+    RawAddress bda;
 
     rand[2] &= (~BLE_RESOLVE_ADDR_MASK);
     rand[2] |= BLE_RESOLVE_ADDR_MSB;
@@ -201,7 +201,7 @@ class BleAdvertisingManagerImpl
     cb.Run(bda);
   }
 
-  void GenerateRpa(base::Callback<void(bt_bdaddr_t)> cb) {
+  void GenerateRpa(base::Callback<void(RawAddress)> cb) {
     btm_gen_resolvable_private_addr(
         Bind(&BleAdvertisingManagerImpl::OnRpaGenerationComplete,
              base::Unretained(this), std::move(cb)));
@@ -222,7 +222,7 @@ class BleAdvertisingManagerImpl
 
     GenerateRpa(Bind(
         [](AdvertisingInstance* p_inst, MultiAdvCb configuredCb,
-           bt_bdaddr_t bda) {
+           RawAddress bda) {
           /* Connectable advertising set must be disabled when updating RPA */
           bool restart = p_inst->IsEnabled() && p_inst->IsConnectable();
 
@@ -240,7 +240,7 @@ class BleAdvertisingManagerImpl
           hci_interface->SetRandomAddress(
               p_inst->inst_id, p_inst->own_address,
               Bind(
-                  [](AdvertisingInstance* p_inst, bt_bdaddr_t bda,
+                  [](AdvertisingInstance* p_inst, RawAddress bda,
                      MultiAdvCb configuredCb, uint8_t status) {
                     p_inst->own_address = bda;
                     configuredCb.Run(0x00);
@@ -272,7 +272,7 @@ class BleAdvertisingManagerImpl
             [](AdvertisingInstance* p_inst,
                base::Callback<void(uint8_t /* inst_id */, uint8_t /* status */)>
                    cb,
-               bt_bdaddr_t bda) {
+               RawAddress bda) {
               p_inst->own_address = bda;
 
               alarm_set_on_queue(p_inst->adv_raddr_timer,
@@ -339,7 +339,7 @@ class BleAdvertisingManagerImpl
 
         c->self->adv_inst[c->inst_id].tx_power = tx_power;
 
-        const bt_bdaddr_t& rpa = c->self->adv_inst[c->inst_id].own_address;
+        const RawAddress& rpa = c->self->adv_inst[c->inst_id].own_address;
         c->self->GetHciInterface()->SetRandomAddress(c->inst_id, rpa, Bind(
           [](c_type c, uint8_t status) {
             if (status != 0) {
@@ -419,7 +419,7 @@ class BleAdvertisingManagerImpl
 
             c->self->adv_inst[c->inst_id].tx_power = tx_power;
 
-            const bt_bdaddr_t& rpa = c->self->adv_inst[c->inst_id].own_address;
+            const RawAddress& rpa = c->self->adv_inst[c->inst_id].own_address;
             c->self->GetHciInterface()->SetRandomAddress(c->inst_id, rpa, Bind(
               [](c_type c, uint8_t status) {
                 if (status != 0) {
@@ -621,7 +621,7 @@ class BleAdvertisingManagerImpl
     p_inst->advertising_event_properties =
         p_params->advertising_event_properties;
     p_inst->tx_power = p_params->tx_power;
-    const bt_bdaddr_t& peer_address = bd_addr_empty;
+    const RawAddress& peer_address = bd_addr_empty;
 
     GetHciInterface()->SetParameters(
         p_inst->inst_id, p_params->advertising_event_properties,

@@ -83,7 +83,7 @@ void AdapterPropertiesCallback(bt_status_t status, int num_properties,
 }
 
 void RemoteDevicePropertiesCallback(bt_status_t status,
-                                    bt_bdaddr_t* remote_bd_addr,
+                                    RawAddress* remote_bd_addr,
                                     int num_properties,
                                     bt_property_t* properties) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
@@ -103,7 +103,7 @@ void DiscoveryStateChangedCallback(bt_discovery_state_t state) {
   FOR_EACH_BLUETOOTH_OBSERVER(DiscoveryStateChangedCallback(state));
 }
 
-void PinRequestCallback(bt_bdaddr_t* remote_bd_addr, bt_bdname_t* bd_name,
+void PinRequestCallback(RawAddress* remote_bd_addr, bt_bdname_t* bd_name,
                         uint32_t cod, bool min_16_digit) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VERIFY_INTERFACE_OR_RETURN();
@@ -114,7 +114,7 @@ void PinRequestCallback(bt_bdaddr_t* remote_bd_addr, bt_bdname_t* bd_name,
       PinRequestCallback(remote_bd_addr, bd_name, cod, min_16_digit));
 }
 
-void SSPRequestCallback(bt_bdaddr_t* remote_bd_addr, bt_bdname_t* bd_name,
+void SSPRequestCallback(RawAddress* remote_bd_addr, bt_bdname_t* bd_name,
                         uint32_t cod, bt_ssp_variant_t pairing_variant,
                         uint32_t pass_key) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
@@ -126,7 +126,7 @@ void SSPRequestCallback(bt_bdaddr_t* remote_bd_addr, bt_bdname_t* bd_name,
                                                  pairing_variant, pass_key));
 }
 
-void BondStateChangedCallback(bt_status_t status, bt_bdaddr_t* remote_bd_addr,
+void BondStateChangedCallback(bt_status_t status, RawAddress* remote_bd_addr,
                               bt_bond_state_t state) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VERIFY_INTERFACE_OR_RETURN();
@@ -136,7 +136,7 @@ void BondStateChangedCallback(bt_status_t status, bt_bdaddr_t* remote_bd_addr,
       BondStateChangedCallback(status, remote_bd_addr, state));
 }
 
-void AclStateChangedCallback(bt_status_t status, bt_bdaddr_t* remote_bd_addr,
+void AclStateChangedCallback(bt_status_t status, RawAddress* remote_bd_addr,
                              bt_acl_state_t state) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VERIFY_INTERFACE_OR_RETURN();
@@ -320,7 +320,7 @@ void BluetoothInterface::Observer::AdapterPropertiesCallback(
 }
 
 void BluetoothInterface::Observer::RemoteDevicePropertiesCallback(
-    bt_status_t /* status */, bt_bdaddr_t* /* remote_bd_addr */,
+    bt_status_t /* status */, RawAddress* /* remote_bd_addr */,
     int /* num_properties */, bt_property_t* /* properties */) {
   // Do nothing.
 }
@@ -331,24 +331,24 @@ void BluetoothInterface::Observer::DiscoveryStateChangedCallback(
 }
 
 void BluetoothInterface::Observer::PinRequestCallback(
-    bt_bdaddr_t* remote_bd_addr, bt_bdname_t* bd_name, uint32_t cod,
+    RawAddress* remote_bd_addr, bt_bdname_t* bd_name, uint32_t cod,
     bool min_16_digit) {
   // Do nothing.
 }
 
 void BluetoothInterface::Observer::SSPRequestCallback(
-    bt_bdaddr_t* remote_bd_addr, bt_bdname_t* bd_name, uint32_t cod,
+    RawAddress* remote_bd_addr, bt_bdname_t* bd_name, uint32_t cod,
     bt_ssp_variant_t pairing_variant, uint32_t pass_key) {
   // Do nothing.
 }
 
 void BluetoothInterface::Observer::BondStateChangedCallback(
-    bt_status_t status, bt_bdaddr_t* remote_bd_addr, bt_bond_state_t state) {
+    bt_status_t status, RawAddress* remote_bd_addr, bt_bond_state_t state) {
   // Do nothing.
 }
 
 void BluetoothInterface::Observer::AclStateChangedCallback(
-    bt_status_t /* status */, const bt_bdaddr_t& /* remote_bdaddr */,
+    bt_status_t /* status */, const RawAddress& /* remote_bdaddr */,
     bt_acl_state_t /* state */) {
   // Do nothing.
 }

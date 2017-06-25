@@ -39,10 +39,9 @@
 static bt_status_t btsock_listen(btsock_type_t type, const char* service_name,
                                  const uint8_t* uuid, int channel, int* sock_fd,
                                  int flags, int app_uid);
-static bt_status_t btsock_connect(const bt_bdaddr_t* bd_addr,
-                                  btsock_type_t type, const uint8_t* uuid,
-                                  int channel, int* sock_fd, int flags,
-                                  int app_uid);
+static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type,
+                                  const uint8_t* uuid, int channel,
+                                  int* sock_fd, int flags, int app_uid);
 
 static void btsock_signaled(int fd, int type, int flags, uint32_t user_id);
 
@@ -154,10 +153,9 @@ static bt_status_t btsock_listen(btsock_type_t type, const char* service_name,
   return status;
 }
 
-static bt_status_t btsock_connect(const bt_bdaddr_t* bd_addr,
-                                  btsock_type_t type, const uint8_t* uuid,
-                                  int channel, int* sock_fd, int flags,
-                                  int app_uid) {
+static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type,
+                                  const uint8_t* uuid, int channel,
+                                  int* sock_fd, int flags, int app_uid) {
   CHECK(uuid != NULL || channel > 0);
   CHECK(bd_addr != NULL);
   CHECK(sock_fd != NULL);

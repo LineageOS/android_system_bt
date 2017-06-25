@@ -58,7 +58,7 @@ typedef struct {
 /* data type for BTA_SDP_API_SEARCH_EVT */
 typedef struct {
   BT_HDR hdr;
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   tSDP_UUID uuid;
 } tBTA_SDP_API_SEARCH;
 
@@ -80,7 +80,7 @@ typedef union {
 /* SDP control block */
 typedef struct {
   uint8_t sdp_active; /* see BTA_SDP_SDP_ACT_* */
-  bt_bdaddr_t remote_addr;
+  RawAddress remote_addr;
   tBTA_SDP_DM_CBACK* p_dm_cback;
 } tBTA_SDP_CB;
 

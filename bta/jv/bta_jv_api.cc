@@ -113,7 +113,7 @@ void BTA_JvDisable(void) {
  *                  false if not.
  *
  ******************************************************************************/
-bool BTA_JvIsEncrypted(const bt_bdaddr_t& bd_addr) {
+bool BTA_JvIsEncrypted(const RawAddress& bd_addr) {
   bool is_encrypted = false;
   uint8_t sec_flags, le_flags;
 
@@ -213,7 +213,7 @@ tBTA_JV_STATUS BTA_JvFreeChannel(uint16_t channel, int conn_type) {
  *                  BTA_JV_FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvStartDiscovery(const bt_bdaddr_t& bd_addr,
+tBTA_JV_STATUS BTA_JvStartDiscovery(const RawAddress& bd_addr,
                                     uint16_t num_uuid, tSDP_UUID* p_uuid_list,
                                     uint32_t rfcomm_slot_id) {
   tBTA_JV_API_START_DISCOVERY* p_msg = (tBTA_JV_API_START_DISCOVERY*)osi_malloc(
@@ -302,7 +302,7 @@ tBTA_JV_STATUS BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
                                     const tL2CAP_ERTM_INFO* ertm_info,
                                     uint16_t remote_chan, uint16_t rx_mtu,
                                     tL2CAP_CFG_INFO* cfg,
-                                    const bt_bdaddr_t& peer_bd_addr,
+                                    const RawAddress& peer_bd_addr,
                                     tBTA_JV_L2CAP_CBACK* p_cback,
                                     uint32_t l2cap_socket_id) {
   APPL_TRACE_API("%s", __func__);
@@ -355,7 +355,7 @@ tBTA_JV_STATUS BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
 tBTA_JV_STATUS BTA_JvL2capConnect(
     int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
     const tL2CAP_ERTM_INFO* ertm_info, uint16_t remote_psm, uint16_t rx_mtu,
-    tL2CAP_CFG_INFO* cfg, const bt_bdaddr_t& peer_bd_addr,
+    tL2CAP_CFG_INFO* cfg, const RawAddress& peer_bd_addr,
     tBTA_JV_L2CAP_CBACK* p_cback, uint32_t l2cap_socket_id) {
   APPL_TRACE_API("%s", __func__);
 
@@ -720,7 +720,7 @@ tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id,
  *                  BTA_JV_FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capWriteFixed(uint16_t channel, const bt_bdaddr_t& addr,
+tBTA_JV_STATUS BTA_JvL2capWriteFixed(uint16_t channel, const RawAddress& addr,
                                      uint32_t req_id,
                                      tBTA_JV_L2CAP_CBACK* p_cback,
                                      uint8_t* p_data, uint16_t len,
@@ -763,7 +763,7 @@ tBTA_JV_STATUS BTA_JvL2capWriteFixed(uint16_t channel, const bt_bdaddr_t& addr,
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
                                    uint8_t remote_scn,
-                                   const bt_bdaddr_t& peer_bd_addr,
+                                   const RawAddress& peer_bd_addr,
                                    tBTA_JV_RFCOMM_CBACK* p_cback,
                                    uint32_t rfcomm_slot_id) {
   APPL_TRACE_API("%s", __func__);

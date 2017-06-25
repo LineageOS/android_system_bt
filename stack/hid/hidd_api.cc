@@ -424,7 +424,7 @@ tHID_STATUS HID_DevVirtualCableUnplug(void) {
  * Returns          tHID_STATUS
  *
  ******************************************************************************/
-tHID_STATUS HID_DevPlugDevice(const bt_bdaddr_t& addr) {
+tHID_STATUS HID_DevPlugDevice(const RawAddress& addr) {
   hd_cb.device.in_use = TRUE;
   hd_cb.device.addr = addr;
 
@@ -440,7 +440,7 @@ tHID_STATUS HID_DevPlugDevice(const bt_bdaddr_t& addr) {
  * Returns          tHID_STATUS
  *
  ******************************************************************************/
-tHID_STATUS HID_DevUnplugDevice(const bt_bdaddr_t& addr) {
+tHID_STATUS HID_DevUnplugDevice(const RawAddress& addr) {
   if (hd_cb.device.addr == addr) {
     hd_cb.device.in_use = FALSE;
     hd_cb.device.conn.conn_state = HID_CONN_STATE_UNUSED;
@@ -566,7 +566,7 @@ tHID_STATUS HID_DevReportError(uint8_t error) {
  * Returns          tHID_STATUS
  *
  ******************************************************************************/
-tHID_STATUS HID_DevGetDevice(bt_bdaddr_t* addr) {
+tHID_STATUS HID_DevGetDevice(RawAddress* addr) {
   HIDD_TRACE_API("%s", __func__);
 
   if (hd_cb.device.in_use) {

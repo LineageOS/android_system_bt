@@ -64,7 +64,7 @@ static btsdp_callbacks_t* bt_sdp_callbacks = NULL;
 
 static void btif_sdp_search_comp_evt(uint16_t event, char* p_param) {
   tBTA_SDP_SEARCH_COMP* evt_data = (tBTA_SDP_SEARCH_COMP*)p_param;
-  bt_bdaddr_t addr;
+  RawAddress addr;
   BTIF_TRACE_DEBUG("%s:  event = %d", __func__, event);
 
   if (event != BTA_SDP_SEARCH_COMP_EVT) return;
@@ -137,7 +137,7 @@ static bt_status_t deinit() {
   return BT_STATUS_SUCCESS;
 }
 
-static bt_status_t search(bt_bdaddr_t* bd_addr, const uint8_t* uuid) {
+static bt_status_t search(RawAddress* bd_addr, const uint8_t* uuid) {
   tSDP_UUID sdp_uuid;
   sdp_uuid.len = 16;
   memcpy(sdp_uuid.uu.uuid128, uuid, sizeof(sdp_uuid.uu.uuid128));

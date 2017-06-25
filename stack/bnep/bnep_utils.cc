@@ -80,7 +80,7 @@ tBNEP_CONN* bnepu_find_bcb_by_cid(uint16_t cid) {
  * Returns          the BCB address, or NULL if not found.
  *
  ******************************************************************************/
-tBNEP_CONN* bnepu_find_bcb_by_bd_addr(const bt_bdaddr_t& p_bda) {
+tBNEP_CONN* bnepu_find_bcb_by_bd_addr(const RawAddress& p_bda) {
   uint16_t xx;
   tBNEP_CONN* p_bcb;
 
@@ -104,7 +104,7 @@ tBNEP_CONN* bnepu_find_bcb_by_bd_addr(const bt_bdaddr_t& p_bda) {
  * Returns          BCB address, or NULL if none available.
  *
  ******************************************************************************/
-tBNEP_CONN* bnepu_allocate_bcb(const bt_bdaddr_t& p_rem_bda) {
+tBNEP_CONN* bnepu_allocate_bcb(const RawAddress& p_rem_bda) {
   uint16_t xx;
   tBNEP_CONN* p_bcb;
 
@@ -423,8 +423,8 @@ void bnepu_check_send_packet(tBNEP_CONN* p_bcb, BT_HDR* p_buf) {
  *
  ******************************************************************************/
 void bnepu_build_bnep_hdr(tBNEP_CONN* p_bcb, BT_HDR* p_buf, uint16_t protocol,
-                          const bt_bdaddr_t* p_src_addr,
-                          const bt_bdaddr_t* p_dest_addr, bool fw_ext_present) {
+                          const RawAddress* p_src_addr,
+                          const RawAddress* p_dest_addr, bool fw_ext_present) {
   const controller_t* controller = controller_get_interface();
   uint8_t ext_bit, *p = (uint8_t*)NULL;
   uint8_t type = BNEP_FRAME_COMPRESSED_ETHERNET;
@@ -1087,7 +1087,7 @@ void bnepu_send_peer_multicast_filter_rsp(tBNEP_CONN* p_bcb,
  * Returns          void
  *
  ******************************************************************************/
-void bnep_sec_check_complete(UNUSED_ATTR const bt_bdaddr_t* bd_addr,
+void bnep_sec_check_complete(UNUSED_ATTR const RawAddress* bd_addr,
                              UNUSED_ATTR tBT_TRANSPORT trasnport,
                              void* p_ref_data, uint8_t result) {
   tBNEP_CONN* p_bcb = (tBNEP_CONN*)p_ref_data;
@@ -1192,7 +1192,7 @@ void bnep_sec_check_complete(UNUSED_ATTR const bt_bdaddr_t* bd_addr,
  *
  ******************************************************************************/
 tBNEP_RESULT bnep_is_packet_allowed(tBNEP_CONN* p_bcb,
-                                    const bt_bdaddr_t& p_dest_addr,
+                                    const RawAddress& p_dest_addr,
                                     uint16_t protocol, bool fw_ext_present,
                                     uint8_t* p_data) {
   if (p_bcb->rcvd_num_filters) {

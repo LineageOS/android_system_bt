@@ -87,7 +87,7 @@ typedef struct {
   BT_HDR hdr;               /* Event header */
   tBTA_PAN_ROLE local_role; /* local role */
   tBTA_PAN_ROLE peer_role;  /* peer role */
-  bt_bdaddr_t bd_addr;      /* peer bdaddr */
+  RawAddress bd_addr;       /* peer bdaddr */
 } tBTA_PAN_API_OPEN;
 
 /* data type for BTA_PAN_CI_TX_FLOW_EVT */
@@ -115,7 +115,7 @@ typedef union {
 
 /* state machine control block */
 typedef struct {
-  bt_bdaddr_t bd_addr; /* peer bdaddr */
+  RawAddress bd_addr; /* peer bdaddr */
   fixed_queue_t*
       data_queue;    /* Queue of buffers waiting to be passed to application */
   uint16_t handle;   /* BTA PAN/BNEP handle */
@@ -143,8 +143,8 @@ typedef struct {
 /* pan data param */
 typedef struct {
   BT_HDR hdr;
-  bt_bdaddr_t src;
-  bt_bdaddr_t dst;
+  RawAddress src;
+  RawAddress dst;
   uint16_t protocol;
   bool ext;
   bool forward;

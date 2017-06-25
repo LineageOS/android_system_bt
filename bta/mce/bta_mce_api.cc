@@ -91,7 +91,7 @@ tBTA_MCE_STATUS BTA_MceEnable(tBTA_MCE_DM_CBACK* p_cback) {
  *                  BTA_MCE_FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_MCE_STATUS BTA_MceGetRemoteMasInstances(const bt_bdaddr_t& bd_addr) {
+tBTA_MCE_STATUS BTA_MceGetRemoteMasInstances(const RawAddress& bd_addr) {
   tBTA_MCE_API_GET_REMOTE_MAS_INSTANCES* p_msg =
       (tBTA_MCE_API_GET_REMOTE_MAS_INSTANCES*)osi_malloc(
           sizeof(tBTA_MCE_API_GET_REMOTE_MAS_INSTANCES));

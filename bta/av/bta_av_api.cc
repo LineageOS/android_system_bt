@@ -151,7 +151,7 @@ void BTA_AvDeregister(tBTA_AV_HNDL hndl) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_AvOpen(const bt_bdaddr_t& bd_addr, tBTA_AV_HNDL handle, bool use_rc,
+void BTA_AvOpen(const RawAddress& bd_addr, tBTA_AV_HNDL handle, bool use_rc,
                 tBTA_SEC sec_mask, uint16_t uuid) {
   tBTA_AV_API_OPEN* p_buf =
       (tBTA_AV_API_OPEN*)osi_malloc(sizeof(tBTA_AV_API_OPEN));
@@ -194,7 +194,7 @@ void BTA_AvClose(tBTA_AV_HNDL handle) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_AvDisconnect(const bt_bdaddr_t& bd_addr) {
+void BTA_AvDisconnect(const RawAddress& bd_addr) {
   tBTA_AV_API_DISCNT* p_buf =
       (tBTA_AV_API_DISCNT*)osi_malloc(sizeof(tBTA_AV_API_DISCNT));
 

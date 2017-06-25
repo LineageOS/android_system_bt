@@ -125,7 +125,7 @@ void BNEP_Deregister(void) {
  *                  BNEP_NO_RESOURCES           if no resources
  *
  ******************************************************************************/
-tBNEP_RESULT BNEP_Connect(const bt_bdaddr_t& p_rem_bda, tBT_UUID* src_uuid,
+tBNEP_RESULT BNEP_Connect(const RawAddress& p_rem_bda, tBT_UUID* src_uuid,
                           tBT_UUID* dst_uuid, uint16_t* p_handle) {
   uint16_t cid;
   tBNEP_CONN* p_bcb = bnepu_find_bcb_by_bd_addr(p_rem_bda);
@@ -333,9 +333,9 @@ tBNEP_RESULT BNEP_Disconnect(uint16_t handle) {
  *                  BNEP_SUCCESS            - If written successfully
  *
  ******************************************************************************/
-tBNEP_RESULT BNEP_WriteBuf(uint16_t handle, const bt_bdaddr_t& p_dest_addr,
+tBNEP_RESULT BNEP_WriteBuf(uint16_t handle, const RawAddress& p_dest_addr,
                            BT_HDR* p_buf, uint16_t protocol,
-                           const bt_bdaddr_t* p_src_addr, bool fw_ext_present) {
+                           const RawAddress* p_src_addr, bool fw_ext_present) {
   tBNEP_CONN* p_bcb;
   uint8_t* p_data;
 
@@ -435,9 +435,9 @@ tBNEP_RESULT BNEP_WriteBuf(uint16_t handle, const bt_bdaddr_t& p_dest_addr,
  *                  BNEP_SUCCESS            - If written successfully
  *
  ******************************************************************************/
-tBNEP_RESULT BNEP_Write(uint16_t handle, const bt_bdaddr_t& p_dest_addr,
+tBNEP_RESULT BNEP_Write(uint16_t handle, const RawAddress& p_dest_addr,
                         uint8_t* p_data, uint16_t len, uint16_t protocol,
-                        const bt_bdaddr_t* p_src_addr, bool fw_ext_present) {
+                        const RawAddress* p_src_addr, bool fw_ext_present) {
   tBNEP_CONN* p_bcb;
   uint8_t* p;
 

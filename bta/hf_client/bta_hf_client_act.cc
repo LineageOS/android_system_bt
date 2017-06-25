@@ -103,7 +103,7 @@ void bta_hf_client_start_open(tBTA_HF_CLIENT_DATA* p_data) {
   }
 
   /* Check if RFCOMM has any incoming connection to avoid collision. */
-  bt_bdaddr_t pending_bd_addr;
+  RawAddress pending_bd_addr;
   if (PORT_IsOpening(pending_bd_addr)) {
     /* Let the incoming connection goes through.                        */
     /* Issue collision for now.                                         */
@@ -166,7 +166,7 @@ void bta_hf_client_rfc_acp_open(tBTA_HF_CLIENT_DATA* p_data) {
   }
 
   uint16_t lcid;
-  bt_bdaddr_t dev_addr;
+  RawAddress dev_addr;
   int status;
 
   /* set role */

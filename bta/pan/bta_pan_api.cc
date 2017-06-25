@@ -142,7 +142,7 @@ void BTA_PanSetRole(tBTA_PAN_ROLE role, tBTA_PAN_ROLE_INFO* p_user_info,
  * Returns          void
  *
  ******************************************************************************/
-void BTA_PanOpen(const bt_bdaddr_t& bd_addr, tBTA_PAN_ROLE local_role,
+void BTA_PanOpen(const RawAddress& bd_addr, tBTA_PAN_ROLE local_role,
                  tBTA_PAN_ROLE peer_role) {
   tBTA_PAN_API_OPEN* p_buf =
       (tBTA_PAN_API_OPEN*)osi_malloc(sizeof(tBTA_PAN_API_OPEN));
@@ -184,7 +184,7 @@ void BTA_PanSetRole(UNUSED_ATTR tBTA_PAN_ROLE role,
                     UNUSED_ATTR tBTA_PAN_ROLE_INFO* p_gn_info,
                     UNUSED_ATTR tBTA_PAN_ROLE_INFO* p_nap_info) {}
 
-void BTA_PanOpen(UNUSED_ATTR const bt_bdaddr_t& bd_addr,
+void BTA_PanOpen(UNUSED_ATTR const RawAddress& bd_addr,
                  UNUSED_ATTR tBTA_PAN_ROLE local_role,
                  UNUSED_ATTR tBTA_PAN_ROLE peer_role) {}
 

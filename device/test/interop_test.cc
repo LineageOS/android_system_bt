@@ -21,7 +21,7 @@
 #include "device/include/interop.h"
 
 TEST(InteropTest, test_lookup_hit) {
-  bt_bdaddr_t test_address;
+  RawAddress test_address;
   string_to_bdaddr("38:2c:4a:e6:67:89", &test_address);
   EXPECT_TRUE(
       interop_match_addr(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, &test_address));
@@ -30,7 +30,7 @@ TEST(InteropTest, test_lookup_hit) {
 }
 
 TEST(InteropTest, test_lookup_miss) {
-  bt_bdaddr_t test_address;
+  RawAddress test_address;
   string_to_bdaddr("00:00:00:00:00:00", &test_address);
   EXPECT_FALSE(
       interop_match_addr(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, &test_address));
@@ -44,7 +44,7 @@ TEST(InteropTest, test_lookup_miss) {
 }
 
 TEST(InteropTest, test_dynamic) {
-  bt_bdaddr_t test_address;
+  RawAddress test_address;
 
   string_to_bdaddr("11:22:33:44:55:66", &test_address);
   EXPECT_FALSE(

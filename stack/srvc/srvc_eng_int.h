@@ -37,7 +37,7 @@ typedef struct {
   bool in_use;
   uint16_t conn_id;
   bool connected;
-  bt_bdaddr_t bda;
+  RawAddress bda;
   uint32_t trans_id;
   uint8_t cur_srvc_id;
 
@@ -57,14 +57,14 @@ typedef struct {
 extern tSRVC_ENG_CB srvc_eng_cb;
 
 extern tSRVC_CLCB* srvc_eng_find_clcb_by_conn_id(uint16_t conn_id);
-extern tSRVC_CLCB* srvc_eng_find_clcb_by_bd_addr(const bt_bdaddr_t& bda);
-extern uint16_t srvc_eng_find_conn_id_by_bd_addr(const bt_bdaddr_t& bda);
+extern tSRVC_CLCB* srvc_eng_find_clcb_by_bd_addr(const RawAddress& bda);
+extern uint16_t srvc_eng_find_conn_id_by_bd_addr(const RawAddress& bda);
 
 extern void srvc_eng_release_channel(uint16_t conn_id);
-extern bool srvc_eng_request_channel(const bt_bdaddr_t& remote_bda,
+extern bool srvc_eng_request_channel(const RawAddress& remote_bda,
                                      uint8_t srvc_id);
 extern void srvc_sr_rsp(uint8_t clcb_idx, tGATT_STATUS st, tGATTS_RSP* p_rsp);
-extern void srvc_sr_notify(const bt_bdaddr_t& remote_bda, uint16_t handle,
+extern void srvc_sr_notify(const RawAddress& remote_bda, uint16_t handle,
                            uint16_t len, uint8_t* p_value);
 
 #endif

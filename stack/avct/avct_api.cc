@@ -130,7 +130,7 @@ void AVCT_Deregister(void) {
  *
  ******************************************************************************/
 uint16_t AVCT_CreateConn(uint8_t* p_handle, tAVCT_CC* p_cc,
-                         const bt_bdaddr_t& peer_addr) {
+                         const RawAddress& peer_addr) {
   uint16_t result = AVCT_SUCCESS;
   tAVCT_CCB* p_ccb;
   tAVCT_LCB* p_lcb;

@@ -27,6 +27,6 @@
 #include "stack/include/bt_types.h"
 
 // Brings connection to active mode
-void bta_dm_pm_active(const bt_bdaddr_t& peer_addr);
+void bta_dm_pm_active(const RawAddress& peer_addr);
 
 #endif /* BTA_DM_API_H */

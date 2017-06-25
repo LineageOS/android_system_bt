@@ -44,7 +44,7 @@
 #include "sdpdefs.h"
 #include "utl.h"
 
-static void bta_gattc_cache_write(const bt_bdaddr_t& server_bda,
+static void bta_gattc_cache_write(const RawAddress& server_bda,
                                   uint16_t num_attr, tBTA_GATTC_NV_ATTR* attr);
 static void bta_gattc_char_dscpt_disc_cmpl(uint16_t conn_id,
                                            tBTA_GATTC_SERV* p_srvc_cb);
@@ -64,7 +64,7 @@ tBTA_GATTC_CHARACTERISTIC* bta_gattc_get_characteristic_srcb(
 #define GATT_CACHE_VERSION 2
 
 static void bta_gattc_generate_cache_file_name(char* buffer, size_t buffer_len,
-                                               const bt_bdaddr_t& bda) {
+                                               const RawAddress& bda) {
   snprintf(buffer, buffer_len, "%s%02x%02x%02x%02x%02x%02x", GATT_CACHE_PREFIX,
            bda.address[0], bda.address[1], bda.address[2], bda.address[3],
            bda.address[4], bda.address[5]);
@@ -1493,7 +1493,7 @@ done:
  * Returns
  *
  ******************************************************************************/
-static void bta_gattc_cache_write(const bt_bdaddr_t& server_bda,
+static void bta_gattc_cache_write(const RawAddress& server_bda,
                                   uint16_t num_attr, tBTA_GATTC_NV_ATTR* attr) {
   char fname[255] = {0};
   bta_gattc_generate_cache_file_name(fname, sizeof(fname), server_bda);
@@ -1541,7 +1541,7 @@ static void bta_gattc_cache_write(const bt_bdaddr_t& server_bda,
  * Returns          void.
  *
  ******************************************************************************/
-void bta_gattc_cache_reset(const bt_bdaddr_t& server_bda) {
+void bta_gattc_cache_reset(const RawAddress& server_bda) {
   BTIF_TRACE_DEBUG("%s", __func__);
   char fname[255] = {0};
   bta_gattc_generate_cache_file_name(fname, sizeof(fname), server_bda);

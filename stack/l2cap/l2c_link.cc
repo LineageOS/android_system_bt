@@ -58,7 +58,7 @@ static bool l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
  * Returns          true, if accept conn
  *
  ******************************************************************************/
-bool l2c_link_hci_conn_req(const bt_bdaddr_t& bd_addr) {
+bool l2c_link_hci_conn_req(const RawAddress& bd_addr) {
   tL2C_LCB* p_lcb;
   tL2C_LCB* p_lcb_cur;
   int xx;
@@ -147,7 +147,7 @@ bool l2c_link_hci_conn_req(const bt_bdaddr_t& bd_addr) {
  *
  ******************************************************************************/
 bool l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
-                            const bt_bdaddr_t& p_bda) {
+                            const RawAddress& p_bda) {
   tL2C_CONN_INFO ci;
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
@@ -273,13 +273,13 @@ bool l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
  * Returns          void
  *
  ******************************************************************************/
-void l2c_link_sec_comp(const bt_bdaddr_t* p_bda,
+void l2c_link_sec_comp(const RawAddress* p_bda,
                        UNUSED_ATTR tBT_TRANSPORT transport, void* p_ref_data,
                        uint8_t status) {
   l2c_link_sec_comp2(*p_bda, transport, p_ref_data, status);
 }
 
-void l2c_link_sec_comp2(const bt_bdaddr_t& p_bda,
+void l2c_link_sec_comp2(const RawAddress& p_bda,
                         UNUSED_ATTR tBT_TRANSPORT transport, void* p_ref_data,
                         uint8_t status) {
   tL2C_CONN_INFO ci;
@@ -432,7 +432,7 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
                   "link_role = %d is_bonding = %d disc_reason = %d transport = "
                   "%d",
                   __func__, xx,
-                  bdaddr_to_string((bt_bdaddr_t*)&p_lcb->remote_bd_addr,
+                  bdaddr_to_string((RawAddress*)&p_lcb->remote_bd_addr,
                                    bd_addr_str, sizeof(bd_addr_str)),
                   p_lcb, p_lcb->in_use, p_lcb->link_state, p_lcb->handle,
                   p_lcb->link_role, p_lcb->is_bonding, p_lcb->disc_reason,
@@ -856,7 +856,7 @@ uint8_t l2c_link_pkts_rcvd(UNUSED_ATTR uint16_t* num_pkts,
  * Returns          void
  *
  ******************************************************************************/
-void l2c_link_role_changed(const bt_bdaddr_t* bd_addr, uint8_t new_role,
+void l2c_link_role_changed(const RawAddress* bd_addr, uint8_t new_role,
                            uint8_t hci_status) {
   tL2C_LCB* p_lcb;
   int xx;
@@ -896,7 +896,7 @@ void l2c_link_role_changed(const bt_bdaddr_t* bd_addr, uint8_t new_role,
  * Returns          void
  *
  ******************************************************************************/
-void l2c_pin_code_request(const bt_bdaddr_t& bd_addr) {
+void l2c_pin_code_request(const RawAddress& bd_addr) {
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_BR_EDR);
 
   if ((p_lcb) && (!p_lcb->ccb_queue.p_first_ccb)) {
