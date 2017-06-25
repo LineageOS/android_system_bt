@@ -166,7 +166,7 @@ typedef void(tAVRC_FIND_CBACK)(uint16_t status);
 /* This is the control callback function.  This function passes events
  * listed in Table 20 to the application. */
 typedef void(tAVRC_CTRL_CBACK)(uint8_t handle, uint8_t event, uint16_t result,
-                               const bt_bdaddr_t* peer_addr);
+                               const RawAddress* peer_addr);
 
 /* This is the message callback function.  It is executed when AVCTP has
  * a message packet ready for the application.  The implementation of this
@@ -272,7 +272,7 @@ extern uint16_t AVRC_AddRecord(uint16_t service_uuid,
  *
  *****************************************************************************/
 extern uint16_t AVRC_FindService(uint16_t service_uuid,
-                                 const bt_bdaddr_t& bd_addr,
+                                 const RawAddress& bd_addr,
                                  tAVRC_SDP_DB_PARAMS* p_db,
                                  tAVRC_FIND_CBACK* p_cback);
 
@@ -325,7 +325,7 @@ extern uint16_t AVRC_FindService(uint16_t service_uuid,
  *
  *****************************************************************************/
 extern uint16_t AVRC_Open(uint8_t* p_handle, tAVRC_CONN_CB* p_ccb,
-                          const bt_bdaddr_t& peer_addr);
+                          const RawAddress& peer_addr);
 
 /******************************************************************************
  *

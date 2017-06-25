@@ -87,7 +87,7 @@ tBTA_SDP_STATUS BTA_SdpEnable(tBTA_SDP_DM_CBACK* p_cback) {
  *                  BTA_SDP_FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_SDP_STATUS BTA_SdpSearch(const bt_bdaddr_t& bd_addr, tSDP_UUID* uuid) {
+tBTA_SDP_STATUS BTA_SdpSearch(const RawAddress& bd_addr, tSDP_UUID* uuid) {
   tBTA_SDP_API_SEARCH* p_msg =
       (tBTA_SDP_API_SEARCH*)osi_malloc(sizeof(tBTA_SDP_API_SEARCH));
 

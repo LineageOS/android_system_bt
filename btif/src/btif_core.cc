@@ -88,12 +88,12 @@
 *  in the downstream path for the adapter and remote_device property APIs */
 
 typedef struct {
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   bt_property_type_t type;
 } btif_storage_read_t;
 
 typedef struct {
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   bt_property_t prop;
 } btif_storage_write_t;
 
@@ -381,7 +381,7 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status) {
   BTIF_TRACE_DEBUG("%s: status %d", __func__, status);
 
   /* Fetch the local BD ADDR */
-  bt_bdaddr_t local_bd_addr = *controller_get_interface()->get_address();
+  RawAddress local_bd_addr = *controller_get_interface()->get_address();
 
   bdstr_t bdstr;
   bdaddr_to_string(&local_bd_addr, bdstr, sizeof(bdstr));
@@ -399,7 +399,7 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status) {
     bt_property_t prop;
     prop.type = BT_PROPERTY_BDADDR;
     prop.val = (void*)&local_bd_addr;
-    prop.len = sizeof(bt_bdaddr_t);
+    prop.len = sizeof(RawAddress);
     HAL_CBACK(bt_hal_cbacks, adapter_properties_cb, BT_STATUS_SUCCESS, 1,
               &prop);
   }
@@ -591,15 +591,15 @@ static bt_status_t btif_in_get_adapter_properties(void) {
   bt_property_t properties[6];
   uint32_t num_props = 0;
 
-  bt_bdaddr_t addr;
+  RawAddress addr;
   bt_bdname_t name;
   bt_scan_mode_t mode;
   uint32_t disc_timeout;
-  bt_bdaddr_t bonded_devices[BTM_SEC_MAX_DEVICE_RECORDS];
+  RawAddress bonded_devices[BTM_SEC_MAX_DEVICE_RECORDS];
   bt_uuid_t local_uuids[BT_MAX_NUM_UUIDS];
   bt_status_t status;
 
-  /* bt_bdaddr_t */
+  /* RawAddress */
   BTIF_STORAGE_FILL_PROPERTY(&properties[num_props], BT_PROPERTY_BDADDR,
                              sizeof(addr), &addr);
   status = btif_storage_get_adapter_property(&properties[num_props]);
@@ -648,7 +648,7 @@ static bt_status_t btif_in_get_adapter_properties(void) {
   return BT_STATUS_SUCCESS;
 }
 
-static bt_status_t btif_in_get_remote_device_properties(bt_bdaddr_t* bd_addr) {
+static bt_status_t btif_in_get_remote_device_properties(RawAddress* bd_addr) {
   bt_property_t remote_properties[8];
   uint32_t num_props = 0;
 
@@ -813,7 +813,7 @@ void btif_adapter_properties_evt(bt_status_t status, uint32_t num_props,
                                  bt_property_t* p_props) {
   HAL_CBACK(bt_hal_cbacks, adapter_properties_cb, status, num_props, p_props);
 }
-void btif_remote_properties_evt(bt_status_t status, bt_bdaddr_t* remote_addr,
+void btif_remote_properties_evt(bt_status_t status, RawAddress* remote_addr,
                                 uint32_t num_props, bt_property_t* p_props) {
   HAL_CBACK(bt_hal_cbacks, remote_device_properties_cb, status, remote_addr,
             num_props, p_props);
@@ -891,7 +891,7 @@ bt_status_t btif_get_adapter_property(bt_property_type_t type) {
       (type != BT_PROPERTY_BDNAME))
     return BT_STATUS_NOT_READY;
 
-  memset(&(req.read_req.bd_addr), 0, sizeof(bt_bdaddr_t));
+  memset(&(req.read_req.bd_addr), 0, sizeof(RawAddress));
   req.read_req.type = type;
 
   return btif_transfer_context(execute_storage_request,
@@ -993,7 +993,7 @@ bt_status_t btif_set_adapter_property(const bt_property_t* property) {
   if (storage_req_id != BTIF_CORE_STORAGE_NO_ACTION) {
     /* pass on to storage for updating local database */
 
-    memset(&(req.write_req.bd_addr), 0, sizeof(bt_bdaddr_t));
+    memset(&(req.write_req.bd_addr), 0, sizeof(RawAddress));
     memcpy(&(req.write_req.prop), property, sizeof(bt_property_t));
 
     return btif_transfer_context(execute_storage_request, storage_req_id,
@@ -1014,13 +1014,13 @@ bt_status_t btif_set_adapter_property(const bt_property_t* property) {
  * Returns          bt_status_t
  *
  ******************************************************************************/
-bt_status_t btif_get_remote_device_property(bt_bdaddr_t* remote_addr,
+bt_status_t btif_get_remote_device_property(RawAddress* remote_addr,
                                             bt_property_type_t type) {
   btif_storage_req_t req;
 
   if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
-  memcpy(&(req.read_req.bd_addr), remote_addr, sizeof(bt_bdaddr_t));
+  memcpy(&(req.read_req.bd_addr), remote_addr, sizeof(RawAddress));
   req.read_req.type = type;
   return btif_transfer_context(execute_storage_remote_request,
                                BTIF_CORE_STORAGE_REMOTE_READ, (char*)&req,
@@ -1036,12 +1036,12 @@ bt_status_t btif_get_remote_device_property(bt_bdaddr_t* remote_addr,
  * Returns          bt_status_t
  *
  ******************************************************************************/
-bt_status_t btif_get_remote_device_properties(bt_bdaddr_t* remote_addr) {
+bt_status_t btif_get_remote_device_properties(RawAddress* remote_addr) {
   btif_storage_req_t req;
 
   if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
-  memcpy(&(req.read_req.bd_addr), remote_addr, sizeof(bt_bdaddr_t));
+  memcpy(&(req.read_req.bd_addr), remote_addr, sizeof(RawAddress));
   return btif_transfer_context(execute_storage_remote_request,
                                BTIF_CORE_STORAGE_REMOTE_READ_ALL, (char*)&req,
                                sizeof(btif_storage_req_t), NULL);
@@ -1058,13 +1058,13 @@ bt_status_t btif_get_remote_device_properties(bt_bdaddr_t* remote_addr) {
  * Returns          bt_status_t
  *
  ******************************************************************************/
-bt_status_t btif_set_remote_device_property(bt_bdaddr_t* remote_addr,
+bt_status_t btif_set_remote_device_property(RawAddress* remote_addr,
                                             const bt_property_t* property) {
   btif_storage_req_t req;
 
   if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
-  memcpy(&(req.write_req.bd_addr), remote_addr, sizeof(bt_bdaddr_t));
+  memcpy(&(req.write_req.bd_addr), remote_addr, sizeof(RawAddress));
   memcpy(&(req.write_req.prop), property, sizeof(bt_property_t));
 
   return btif_transfer_context(execute_storage_remote_request,
@@ -1083,7 +1083,7 @@ bt_status_t btif_set_remote_device_property(bt_bdaddr_t* remote_addr,
  * Returns          bt_status_t
  *
  ******************************************************************************/
-bt_status_t btif_get_remote_service_record(bt_bdaddr_t* remote_addr,
+bt_status_t btif_get_remote_service_record(RawAddress* remote_addr,
                                            bt_uuid_t* uuid) {
   if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 

@@ -38,9 +38,9 @@ class FakeBluetoothGattInterface : public BluetoothGattInterface {
     virtual bt_status_t RegisterClient(const bt_uuid_t& app_uuid) = 0;
     virtual bt_status_t UnregisterClient(int client_if) = 0;
 
-    virtual bt_status_t Connect(int client_if, const bt_bdaddr_t& bd_addr,
+    virtual bt_status_t Connect(int client_if, const RawAddress& bd_addr,
                                 bool is_direct, int transport) = 0;
-    virtual bt_status_t Disconnect(int client_if, const bt_bdaddr_t& bd_addr,
+    virtual bt_status_t Disconnect(int client_if, const RawAddress& bd_addr,
                                    int conn_id) = 0;
   };
 
@@ -78,22 +78,22 @@ class FakeBluetoothGattInterface : public BluetoothGattInterface {
 
   void NotifyRegisterScannerCallback(int status, int client_if,
                                      const bt_uuid_t& app_uuid);
-  void NotifyScanResultCallback(const bt_bdaddr_t& bda, int rssi,
+  void NotifyScanResultCallback(const RawAddress& bda, int rssi,
                                 std::vector<uint8_t> adv_data);
 
   // Client callbacks:
   void NotifyRegisterClientCallback(int status, int client_if,
                                     const bt_uuid_t& app_uuid);
   void NotifyConnectCallback(int conn_id, int status, int client_if,
-                             const bt_bdaddr_t& bda);
+                             const RawAddress& bda);
   void NotifyDisconnectCallback(int conn_id, int status, int client_if,
-                                const bt_bdaddr_t& bda);
+                                const RawAddress& bda);
 
   // Server callbacks:
   void NotifyRegisterServerCallback(int status, int server_if,
                                     const bt_uuid_t& app_uuid);
   void NotifyServerConnectionCallback(int conn_id, int server_if, int connected,
-                                      const bt_bdaddr_t& bda);
+                                      const RawAddress& bda);
   void NotifyServiceAddedCallback(int status, int server_if,
                                   std::vector<btgatt_db_element_t> srvc);
   void NotifyCharacteristicAddedCallback(int status, int server_if,
@@ -104,25 +104,25 @@ class FakeBluetoothGattInterface : public BluetoothGattInterface {
                                      int desc_handle);
   void NotifyServiceStartedCallback(int status, int server_if, int srvc_handle);
   void NotifyRequestReadCharacteristicCallback(int conn_id, int trans_id,
-                                               const bt_bdaddr_t& bda,
+                                               const RawAddress& bda,
                                                int attr_handle, int offset,
                                                bool is_long);
   void NotifyRequestReadDescriptorCallback(int conn_id, int trans_id,
-                                           const bt_bdaddr_t& bda,
+                                           const RawAddress& bda,
                                            int attr_handle, int offset,
                                            bool is_long);
   void NotifyRequestWriteCharacteristicCallback(int conn_id, int trans_id,
-                                                const bt_bdaddr_t& bda,
+                                                const RawAddress& bda,
                                                 int attr_handle, int offset,
                                                 bool need_rsp, bool is_prep,
                                                 std::vector<uint8_t> value);
   void NotifyRequestWriteDescriptorCallback(int conn_id, int trans_id,
-                                            const bt_bdaddr_t& bda,
+                                            const RawAddress& bda,
                                             int attr_handle, int offset,
                                             bool need_rsp, bool is_prep,
                                             std::vector<uint8_t> value);
   void NotifyRequestExecWriteCallback(int conn_id, int trans_id,
-                                      const bt_bdaddr_t& bda, int exec_write);
+                                      const RawAddress& bda, int exec_write);
   void NotifyIndicationSentCallback(int conn_id, int status);
 
   // BluetoothGattInterface overrides:

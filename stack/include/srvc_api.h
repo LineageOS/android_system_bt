@@ -75,13 +75,13 @@ typedef struct {
   uint8_t* data_string[DIS_MAX_STRING_DATA];
 } tDIS_VALUE;
 
-typedef void(tDIS_READ_CBACK)(const bt_bdaddr_t& addr, tDIS_VALUE* p_dis_value);
+typedef void(tDIS_READ_CBACK)(const RawAddress& addr, tDIS_VALUE* p_dis_value);
 
 /*****************************************************************************
  *  Data structure used by Battery Service
  ****************************************************************************/
 typedef struct {
-  bt_bdaddr_t remote_bda;
+  RawAddress remote_bda;
   bool need_rsp;
   uint16_t clt_cfg;
 } tBA_WRITE_DATA;
@@ -162,7 +162,7 @@ extern tDIS_STATUS DIS_SrUpdate(tDIS_ATTR_BIT dis_attr_bit, tDIS_ATTR* p_info);
  * Returns          void
  *
  ******************************************************************************/
-extern bool DIS_ReadDISInfo(const bt_bdaddr_t& peer_bda,
+extern bool DIS_ReadDISInfo(const RawAddress& peer_bda,
                             tDIS_READ_CBACK* p_cback, tDIS_ATTR_MASK mask);
 
 /*******************************************************************************
@@ -193,7 +193,7 @@ extern void Battery_Rsp(uint8_t app_id, tGATT_STATUS st, uint8_t event,
  * Description      Send battery level notification
  *
  ******************************************************************************/
-extern void Battery_Notify(uint8_t app_id, const bt_bdaddr_t& remote_bda,
+extern void Battery_Notify(uint8_t app_id, const RawAddress& remote_bda,
                            uint8_t battery_level);
 
 #endif

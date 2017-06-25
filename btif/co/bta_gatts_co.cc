@@ -60,7 +60,7 @@ static void btif_gatts_check_init(void) {
  *  Externally called functions
  ****************************************************************************/
 
-void btif_gatts_add_bonded_dev_from_nv(const bt_bdaddr_t& bda) {
+void btif_gatts_add_bonded_dev_from_nv(const RawAddress& bda) {
   btif_gatts_srv_chg_cb_t* p_cb = &btif_gatts_srv_chg_cb;
   bool found = false;
   uint8_t i;

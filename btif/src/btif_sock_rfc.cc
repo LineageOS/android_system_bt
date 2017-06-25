@@ -80,7 +80,7 @@ typedef struct {
   int security;
   int scn;  // Server channel number
   int scn_notified;
-  bt_bdaddr_t addr;
+  RawAddress addr;
   int is_service_uuid_valid;
   uint8_t service_uuid[16];
   char service_name[256];
@@ -180,7 +180,7 @@ static bool is_requesting_sdp(void) {
   return false;
 }
 
-static rfc_slot_t* alloc_rfc_slot(const bt_bdaddr_t* addr, const char* name,
+static rfc_slot_t* alloc_rfc_slot(const RawAddress* addr, const char* name,
                                   const uint8_t* uuid, int channel, int flags,
                                   bool server) {
   int security = 0;
@@ -236,7 +236,7 @@ static rfc_slot_t* alloc_rfc_slot(const bt_bdaddr_t* addr, const char* name,
 }
 
 static rfc_slot_t* create_srv_accept_rfc_slot(rfc_slot_t* srv_rs,
-                                              const bt_bdaddr_t* addr,
+                                              const RawAddress* addr,
                                               int open_handle,
                                               int new_listen_handle) {
   rfc_slot_t* accept_rs = alloc_rfc_slot(
@@ -328,7 +328,7 @@ bt_status_t btsock_rfc_listen(const char* service_name,
   return BT_STATUS_SUCCESS;
 }
 
-bt_status_t btsock_rfc_connect(const bt_bdaddr_t* bd_addr,
+bt_status_t btsock_rfc_connect(const RawAddress* bd_addr,
                                const uint8_t* service_uuid, int channel,
                                int* sock_fd, int flags, int app_uid) {
   CHECK(sock_fd != NULL);
@@ -453,8 +453,8 @@ static bool send_app_scn(rfc_slot_t* slot) {
                        sizeof(slot->scn)) == sizeof(slot->scn);
 }
 
-static bool send_app_connect_signal(int fd, const bt_bdaddr_t* addr,
-                                    int channel, int status, int send_fd) {
+static bool send_app_connect_signal(int fd, const RawAddress* addr, int channel,
+                                    int status, int send_fd) {
   sock_connect_signal_t cs;
   cs.size = sizeof(cs);
   cs.bd_addr = *addr;

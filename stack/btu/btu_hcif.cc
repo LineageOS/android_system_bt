@@ -573,7 +573,7 @@ static void btu_hcif_extended_inquiry_result_evt(uint8_t* p) {
 static void btu_hcif_connection_comp_evt(uint8_t* p) {
   uint8_t status;
   uint16_t handle;
-  bt_bdaddr_t bda;
+  RawAddress bda;
   uint8_t link_type;
   uint8_t enc_mode;
 #if (BTM_SCO_INCLUDED == TRUE)
@@ -613,7 +613,7 @@ static void btu_hcif_connection_comp_evt(uint8_t* p) {
  *
  ******************************************************************************/
 static void btu_hcif_connection_request_evt(uint8_t* p) {
-  bt_bdaddr_t bda;
+  RawAddress bda;
   DEV_CLASS dc;
   uint8_t link_type;
 
@@ -693,7 +693,7 @@ static void btu_hcif_authentication_comp_evt(uint8_t* p) {
  ******************************************************************************/
 static void btu_hcif_rmt_name_request_comp_evt(uint8_t* p, uint16_t evt_len) {
   uint8_t status;
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
 
   STREAM_TO_UINT8(status, p);
   STREAM_TO_BDADDR(bd_addr, p);
@@ -816,7 +816,7 @@ static void btu_hcif_esco_connection_comp_evt(uint8_t* p) {
 #if (BTM_SCO_INCLUDED == TRUE)
   tBTM_ESCO_DATA data;
   uint16_t handle;
-  bt_bdaddr_t bda;
+  RawAddress bda;
   uint8_t status;
 
   STREAM_TO_UINT8(status, p);
@@ -1027,7 +1027,7 @@ static void btu_hcif_command_complete_evt(BT_HDR* response, void* context) {
 static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
                                         uint8_t* p_cmd,
                                         void* p_vsc_status_cback) {
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   uint16_t handle;
 #if (BTM_SCO_INCLUDED == TRUE)
   tBTM_ESCO_DATA esco_data;
@@ -1230,7 +1230,7 @@ static void btu_hcif_flush_occured_evt(void) {}
  ******************************************************************************/
 static void btu_hcif_role_change_evt(uint8_t* p) {
   uint8_t status;
-  bt_bdaddr_t bda;
+  RawAddress bda;
   uint8_t role;
 
   STREAM_TO_UINT8(status, p);
@@ -1313,7 +1313,7 @@ static void btu_hcif_ssr_evt(uint8_t* p, uint16_t evt_len) {
  *
  ******************************************************************************/
 static void btu_hcif_pin_code_request_evt(uint8_t* p) {
-  bt_bdaddr_t bda;
+  RawAddress bda;
 
   STREAM_TO_BDADDR(bda, p);
 
@@ -1334,7 +1334,7 @@ static void btu_hcif_pin_code_request_evt(uint8_t* p) {
  *
  ******************************************************************************/
 static void btu_hcif_link_key_request_evt(uint8_t* p) {
-  bt_bdaddr_t bda;
+  RawAddress bda;
 
   STREAM_TO_BDADDR(bda, p);
   btm_sec_link_key_request(bda);
@@ -1350,7 +1350,7 @@ static void btu_hcif_link_key_request_evt(uint8_t* p) {
  *
  ******************************************************************************/
 static void btu_hcif_link_key_notification_evt(uint8_t* p) {
-  bt_bdaddr_t bda;
+  RawAddress bda;
   LINK_KEY key;
   uint8_t key_type;
 
@@ -1501,7 +1501,7 @@ static void btu_hcif_host_support_evt(uint8_t* p) {
  *
  ******************************************************************************/
 static void btu_hcif_io_cap_request_evt(uint8_t* p) {
-  bt_bdaddr_t bda;
+  RawAddress bda;
   STREAM_TO_BDADDR(bda, p);
   btm_io_capabilities_req(bda);
 }

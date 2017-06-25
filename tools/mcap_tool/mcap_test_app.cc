@@ -137,7 +137,7 @@ void McapTestApp::Deregister() {
 
 bool McapTestApp::Registered() { return _mcap_handle > 0; }
 
-bool McapTestApp::ConnectMcl(const bt_bdaddr_t& bd_addr, uint16_t ctrl_psm,
+bool McapTestApp::ConnectMcl(const RawAddress& bd_addr, uint16_t ctrl_psm,
                              uint16_t sec_mask) {
   if (!Registered()) {
     LOG(ERROR) << "Application not registered";
@@ -169,7 +169,7 @@ bool McapTestApp::CreateMdep(uint8_t type, uint8_t max_mdl,
 
 uint8_t McapTestApp::GetHandle() { return _mcap_handle; }
 
-McapMcl* McapTestApp::FindMclByPeerAddress(const bt_bdaddr_t& bd_addr) {
+McapMcl* McapTestApp::FindMclByPeerAddress(const RawAddress& bd_addr) {
   for (McapMcl& mcl : _mcl_list) {
     if (mcl.GetPeerAddress() == bd_addr) {
       return &mcl;
@@ -431,7 +431,7 @@ void McapTestApp::ControlCallback(tMCA_HANDLE handle, tMCA_CL mcl,
       // Called when MCA_ConnectReq succeeded
       print_mcap_event(&p_data->connect_ind);
       LOG(INFO) << "Received MCL handle " << (int)mcl;
-      bt_bdaddr_t bd_addr = p_data->connect_ind.bd_addr;
+      RawAddress bd_addr = p_data->connect_ind.bd_addr;
       mcap_mcl = FindMclByPeerAddress(bd_addr);
       if (!mcap_mcl) {
         LOG(INFO) << "Creating new MCL for ID " << (int)mcl;
@@ -450,7 +450,7 @@ void McapTestApp::ControlCallback(tMCA_HANDLE handle, tMCA_CL mcl,
     case MCA_DISCONNECT_IND_EVT: {
       // Called when MCA_ConnectReq failed or MCA_DisconnectReq succeeded
       print_mcap_event(&p_data->disconnect_ind);
-      bt_bdaddr_t bd_addr = p_data->disconnect_ind.bd_addr;
+      RawAddress bd_addr = p_data->disconnect_ind.bd_addr;
       mcap_mcl = FindMclByPeerAddress(bd_addr);
       if (!mcap_mcl) {
         bdstr_t bd_addr_str;

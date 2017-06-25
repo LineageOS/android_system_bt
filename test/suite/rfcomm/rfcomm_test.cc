@@ -45,8 +45,8 @@ void RFCommTest::SetUp() {
 
   bt_property_t* bonded_devices_prop =
       GetProperty(BT_PROPERTY_ADAPTER_BONDED_DEVICES);
-  bt_bdaddr_t* devices = (bt_bdaddr_t*)bonded_devices_prop->val;
-  int num_bonded_devices = bonded_devices_prop->len / sizeof(bt_bdaddr_t);
+  RawAddress* devices = (RawAddress*)bonded_devices_prop->val;
+  int num_bonded_devices = bonded_devices_prop->len / sizeof(RawAddress);
 
   for (int i = 0; i < num_bonded_devices && bdaddr_is_empty(&bt_remote_bdaddr_);
        i++) {

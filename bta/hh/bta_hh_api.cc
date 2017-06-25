@@ -122,7 +122,7 @@ void BTA_HhClose(uint8_t dev_handle) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HhOpen(const bt_bdaddr_t& dev_bda, tBTA_HH_PROTO_MODE mode,
+void BTA_HhOpen(const RawAddress& dev_bda, tBTA_HH_PROTO_MODE mode,
                 tBTA_SEC sec_mask) {
   tBTA_HH_API_CONN* p_buf =
       (tBTA_HH_API_CONN*)osi_calloc(sizeof(tBTA_HH_API_CONN));
@@ -272,7 +272,7 @@ void BTA_HhSendCtrl(uint8_t dev_handle, tBTA_HH_TRANS_CTRL_TYPE c_type) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HhSendData(uint8_t dev_handle, UNUSED_ATTR const bt_bdaddr_t& dev_bda,
+void BTA_HhSendData(uint8_t dev_handle, UNUSED_ATTR const RawAddress& dev_bda,
                     BT_HDR* p_data) {
 #if (BTA_HH_LE_INCLUDED == TRUE)
   if (p_data->layer_specific != BTA_HH_RPTT_OUTPUT) {
@@ -316,7 +316,7 @@ void BTA_HhGetDscpInfo(uint8_t dev_handle) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HhAddDev(const bt_bdaddr_t& bda, tBTA_HH_ATTR_MASK attr_mask,
+void BTA_HhAddDev(const RawAddress& bda, tBTA_HH_ATTR_MASK attr_mask,
                   uint8_t sub_class, uint8_t app_id,
                   tBTA_HH_DEV_DSCP_INFO dscp_info) {
   size_t len = sizeof(tBTA_HH_MAINT_DEV) + dscp_info.descriptor.dl_len;

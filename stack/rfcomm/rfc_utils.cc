@@ -132,7 +132,7 @@ bool rfc_check_fcs(uint16_t len, uint8_t* p, uint8_t received_fcs) {
  *                  the address.
  *
  ******************************************************************************/
-tRFC_MCB* rfc_alloc_multiplexer_channel(const bt_bdaddr_t& bd_addr,
+tRFC_MCB* rfc_alloc_multiplexer_channel(const RawAddress& bd_addr,
                                         bool is_initiator) {
   int i, j;
   tRFC_MCB* p_mcb = NULL;
@@ -324,7 +324,7 @@ void rfcomm_mcb_timer_timeout(void* data) {
  * Returns          void
  *
  ******************************************************************************/
-void rfc_sec_check_complete(UNUSED_ATTR const bt_bdaddr_t* bd_addr,
+void rfc_sec_check_complete(UNUSED_ATTR const RawAddress* bd_addr,
                             UNUSED_ATTR tBT_TRANSPORT transport,
                             void* p_ref_data, uint8_t res) {
   tPORT* p_port = (tPORT*)p_ref_data;

@@ -281,7 +281,7 @@ void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id,
  * Returns          void
  *
  ******************************************************************************/
-void BTA_GATTS_Open(tBTA_GATTS_IF server_if, const bt_bdaddr_t& remote_bda,
+void BTA_GATTS_Open(tBTA_GATTS_IF server_if, const RawAddress& remote_bda,
                     bool is_direct, tBTA_GATT_TRANSPORT transport) {
   tBTA_GATTS_API_OPEN* p_buf =
       (tBTA_GATTS_API_OPEN*)osi_malloc(sizeof(tBTA_GATTS_API_OPEN));
@@ -309,8 +309,8 @@ void BTA_GATTS_Open(tBTA_GATTS_IF server_if, const bt_bdaddr_t& remote_bda,
  * Returns          void
  *
  ******************************************************************************/
-void BTA_GATTS_CancelOpen(tBTA_GATTS_IF server_if,
-                          const bt_bdaddr_t& remote_bda, bool is_direct) {
+void BTA_GATTS_CancelOpen(tBTA_GATTS_IF server_if, const RawAddress& remote_bda,
+                          bool is_direct) {
   tBTA_GATTS_API_CANCEL_OPEN* p_buf = (tBTA_GATTS_API_CANCEL_OPEN*)osi_malloc(
       sizeof(tBTA_GATTS_API_CANCEL_OPEN));
 

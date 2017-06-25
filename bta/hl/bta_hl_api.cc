@@ -443,7 +443,7 @@ void BTA_HlDchEchoTest(tBTA_HL_MCL_HANDLE mcl_handle,
  *
  ******************************************************************************/
 void BTA_HlSdpQuery(uint8_t app_id, tBTA_HL_APP_HANDLE app_handle,
-                    const bt_bdaddr_t& bd_addr) {
+                    const RawAddress& bd_addr) {
   tBTA_HL_API_SDP_QUERY* p_buf =
       (tBTA_HL_API_SDP_QUERY*)osi_malloc(sizeof(tBTA_HL_API_SDP_QUERY));
 

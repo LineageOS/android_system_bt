@@ -231,7 +231,7 @@ void avct_bcb_event(tAVCT_BCB* p_bcb, uint8_t event, tAVCT_LCB_EVT* p_data) {
  * Returns          pointer to the lcb, or NULL if none found.
  *
  ******************************************************************************/
-tAVCT_LCB* avct_lcb_by_bd(const bt_bdaddr_t& bd_addr) {
+tAVCT_LCB* avct_lcb_by_bd(const RawAddress& bd_addr) {
   tAVCT_LCB* p_lcb = &avct_cb.lcb[0];
   int i;
 
@@ -261,7 +261,7 @@ tAVCT_LCB* avct_lcb_by_bd(const bt_bdaddr_t& bd_addr) {
  * Returns          pointer to the lcb, or NULL if none could be allocated.
  *
  ******************************************************************************/
-tAVCT_LCB* avct_lcb_alloc(const bt_bdaddr_t& bd_addr) {
+tAVCT_LCB* avct_lcb_alloc(const RawAddress& bd_addr) {
   tAVCT_LCB* p_lcb = &avct_cb.lcb[0];
   int i;
 

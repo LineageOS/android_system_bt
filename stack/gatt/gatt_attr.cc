@@ -47,7 +47,7 @@ using base::StringPrintf;
 static void gatt_request_cback(uint16_t conn_id, uint32_t trans_id,
                                uint8_t op_code, tGATTS_DATA* p_data);
 static void gatt_connect_cback(UNUSED_ATTR tGATT_IF gatt_if,
-                               const bt_bdaddr_t& bda, uint16_t conn_id,
+                               const RawAddress& bda, uint16_t conn_id,
                                bool connected, tGATT_DISCONN_REASON reason,
                                tBT_TRANSPORT transport);
 static void gatt_disc_res_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
@@ -80,7 +80,7 @@ static tGATT_CBACK gatt_profile_cback = {gatt_connect_cback,
  * Returns          Connection ID
  *
  ******************************************************************************/
-uint16_t gatt_profile_find_conn_id_by_bd_addr(const bt_bdaddr_t& remote_bda) {
+uint16_t gatt_profile_find_conn_id_by_bd_addr(const RawAddress& remote_bda) {
   uint16_t conn_id = GATT_INVALID_CONN_ID;
   GATT_GetConnIdIfConnected(gatt_cb.gatt_if, remote_bda, &conn_id,
                             BT_TRANSPORT_LE);
@@ -118,7 +118,7 @@ static tGATT_PROFILE_CLCB* gatt_profile_find_clcb_by_conn_id(uint16_t conn_id) {
  *
  ******************************************************************************/
 static tGATT_PROFILE_CLCB* gatt_profile_find_clcb_by_bd_addr(
-    const bt_bdaddr_t& bda, tBT_TRANSPORT transport) {
+    const RawAddress& bda, tBT_TRANSPORT transport) {
   uint8_t i_clcb;
   tGATT_PROFILE_CLCB* p_clcb = NULL;
 
@@ -144,7 +144,7 @@ static tGATT_PROFILE_CLCB* gatt_profile_find_clcb_by_bd_addr(
  *
  ******************************************************************************/
 tGATT_PROFILE_CLCB* gatt_profile_clcb_alloc(uint16_t conn_id,
-                                            const bt_bdaddr_t& bda,
+                                            const RawAddress& bda,
                                             tBT_TRANSPORT tranport) {
   uint8_t i_clcb = 0;
   tGATT_PROFILE_CLCB* p_clcb = NULL;
@@ -237,7 +237,7 @@ static void gatt_request_cback(uint16_t conn_id, uint32_t trans_id,
  *
  ******************************************************************************/
 static void gatt_connect_cback(UNUSED_ATTR tGATT_IF gatt_if,
-                               const bt_bdaddr_t& bda, uint16_t conn_id,
+                               const RawAddress& bda, uint16_t conn_id,
                                bool connected, tGATT_DISCONN_REASON reason,
                                tBT_TRANSPORT transport) {
   VLOG(1) << __func__ << ": from " << bda
@@ -435,7 +435,7 @@ static void gatt_cl_start_config_ccc(tGATT_PROFILE_CLCB* p_clcb) {
  * Returns          none
  *
  ******************************************************************************/
-void GATT_ConfigServiceChangeCCC(const bt_bdaddr_t& remote_bda, bool enable,
+void GATT_ConfigServiceChangeCCC(const RawAddress& remote_bda, bool enable,
                                  tBT_TRANSPORT transport) {
   tGATT_PROFILE_CLCB* p_clcb =
       gatt_profile_find_clcb_by_bd_addr(remote_bda, transport);

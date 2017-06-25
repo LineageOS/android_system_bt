@@ -125,7 +125,7 @@ void BTA_GATTC_AppDeregister(tBTA_GATTC_IF client_if) {
  *                                 and don't impact the disconnection timer
  *
  ******************************************************************************/
-void BTA_GATTC_Open(tBTA_GATTC_IF client_if, const bt_bdaddr_t& remote_bda,
+void BTA_GATTC_Open(tBTA_GATTC_IF client_if, const RawAddress& remote_bda,
                     bool is_direct, tBTA_GATT_TRANSPORT transport,
                     bool opportunistic) {
   uint8_t phy = controller_get_interface()->get_le_all_initiating_phys();
@@ -133,7 +133,7 @@ void BTA_GATTC_Open(tBTA_GATTC_IF client_if, const bt_bdaddr_t& remote_bda,
                  phy);
 }
 
-void BTA_GATTC_Open(tBTA_GATTC_IF client_if, const bt_bdaddr_t& remote_bda,
+void BTA_GATTC_Open(tBTA_GATTC_IF client_if, const RawAddress& remote_bda,
                     bool is_direct, tBTA_GATT_TRANSPORT transport,
                     bool opportunistic, uint8_t initiating_phys) {
   tBTA_GATTC_API_OPEN* p_buf =
@@ -165,8 +165,8 @@ void BTA_GATTC_Open(tBTA_GATTC_IF client_if, const bt_bdaddr_t& remote_bda,
  * Returns          void
  *
  ******************************************************************************/
-void BTA_GATTC_CancelOpen(tBTA_GATTC_IF client_if,
-                          const bt_bdaddr_t& remote_bda, bool is_direct) {
+void BTA_GATTC_CancelOpen(tBTA_GATTC_IF client_if, const RawAddress& remote_bda,
+                          bool is_direct) {
   tBTA_GATTC_API_CANCEL_OPEN* p_buf = (tBTA_GATTC_API_CANCEL_OPEN*)osi_malloc(
       sizeof(tBTA_GATTC_API_CANCEL_OPEN));
 
@@ -626,7 +626,7 @@ void BTA_GATTC_SendIndConfirm(uint16_t conn_id, uint16_t handle) {
  *
  ******************************************************************************/
 tBTA_GATT_STATUS BTA_GATTC_RegisterForNotifications(tBTA_GATTC_IF client_if,
-                                                    const bt_bdaddr_t& bda,
+                                                    const RawAddress& bda,
                                                     uint16_t handle) {
   tBTA_GATTC_RCB* p_clreg;
   tBTA_GATT_STATUS status = BTA_GATT_ILLEGAL_PARAMETER;
@@ -689,7 +689,7 @@ tBTA_GATT_STATUS BTA_GATTC_RegisterForNotifications(tBTA_GATTC_IF client_if,
  *
  ******************************************************************************/
 tBTA_GATT_STATUS BTA_GATTC_DeregisterForNotifications(tBTA_GATTC_IF client_if,
-                                                      const bt_bdaddr_t& bda,
+                                                      const RawAddress& bda,
                                                       uint16_t handle) {
   if (!handle) {
     APPL_TRACE_ERROR("%s: deregistration failed, handle is 0", __func__);
@@ -728,7 +728,7 @@ tBTA_GATT_STATUS BTA_GATTC_DeregisterForNotifications(tBTA_GATTC_IF client_if,
  * Returns          void
  *
  ******************************************************************************/
-void BTA_GATTC_Refresh(const bt_bdaddr_t& remote_bda) {
+void BTA_GATTC_Refresh(const RawAddress& remote_bda) {
   do_in_bta_thread(FROM_HERE,
                    base::Bind(&bta_gattc_process_api_refresh, remote_bda));
 }

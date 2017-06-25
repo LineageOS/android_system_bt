@@ -36,15 +36,15 @@
 extern fixed_queue_t* btu_bta_alarm_queue;
 
 static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
-                            uint8_t app_id, const bt_bdaddr_t& peer_addr);
-static void bta_dm_pm_set_mode(const bt_bdaddr_t& peer_addr,
+                            uint8_t app_id, const RawAddress& peer_addr);
+static void bta_dm_pm_set_mode(const RawAddress& peer_addr,
                                tBTA_DM_PM_ACTION pm_mode,
                                tBTA_DM_PM_REQ pm_req);
 static void bta_dm_pm_timer_cback(void* data);
-static void bta_dm_pm_btm_cback(const bt_bdaddr_t& bd_addr,
+static void bta_dm_pm_btm_cback(const RawAddress& bd_addr,
                                 tBTM_PM_STATUS status, uint16_t value,
                                 uint8_t hci_status);
-static bool bta_dm_pm_park(const bt_bdaddr_t& peer_addr);
+static bool bta_dm_pm_park(const RawAddress& peer_addr);
 static bool bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index);
 static bool bta_dm_pm_is_sco_active();
 static int bta_dm_get_sco_index();
@@ -61,7 +61,7 @@ static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER* p_timer,
  * can use it */
 #define BTA_DM_PM_SSR_HH BTA_DM_PM_SSR1
 #endif
-static void bta_dm_pm_ssr(const bt_bdaddr_t& peer_addr);
+static void bta_dm_pm_ssr(const RawAddress& peer_addr);
 #endif
 
 tBTA_DM_CONNECTED_SRVCS bta_dm_conn_srvcs;
@@ -150,7 +150,7 @@ uint8_t bta_dm_get_av_count(void) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_dm_pm_stop_timer(const bt_bdaddr_t& peer_addr) {
+static void bta_dm_pm_stop_timer(const RawAddress& peer_addr) {
   APPL_TRACE_DEBUG("%s: ", __func__);
 
   for (int i = 0; i < BTA_DM_NUM_PM_TIMER; i++) {
@@ -207,7 +207,7 @@ static uint8_t bta_pm_action_to_timer_idx(uint8_t pm_action) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_dm_pm_stop_timer_by_mode(const bt_bdaddr_t& peer_addr,
+static void bta_dm_pm_stop_timer_by_mode(const RawAddress& peer_addr,
                                          uint8_t power_mode) {
   const uint8_t timer_idx = bta_pm_action_to_timer_idx(power_mode);
   if (timer_idx == BTA_DM_PM_MODE_TIMER_MAX) return;
@@ -240,7 +240,7 @@ static void bta_dm_pm_stop_timer_by_mode(const bt_bdaddr_t& peer_addr,
  * Returns          index of the power mode delay timer
  *
  ******************************************************************************/
-static void bta_dm_pm_stop_timer_by_srvc_id(const bt_bdaddr_t& peer_addr,
+static void bta_dm_pm_stop_timer_by_srvc_id(const RawAddress& peer_addr,
                                             uint8_t srvc_id) {
   for (int i = 0; i < BTA_DM_NUM_PM_TIMER; i++) {
     if (bta_dm_cb.pm_timer[i].in_use &&
@@ -321,7 +321,7 @@ static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER* p_timer,
  *
  ******************************************************************************/
 static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
-                            uint8_t app_id, const bt_bdaddr_t& peer_addr) {
+                            uint8_t app_id, const RawAddress& peer_addr) {
   uint8_t i, j;
   uint8_t* p = NULL;
   tBTA_DM_PEER_DEVICE* p_dev;
@@ -488,7 +488,7 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
  *
  ******************************************************************************/
 
-static void bta_dm_pm_set_mode(const bt_bdaddr_t& peer_addr,
+static void bta_dm_pm_set_mode(const RawAddress& peer_addr,
                                tBTA_DM_PM_ACTION pm_request,
                                tBTA_DM_PM_REQ pm_req) {
   tBTA_DM_PM_ACTION pm_action = BTA_DM_PM_NO_ACTION;
@@ -656,7 +656,7 @@ static void bta_dm_pm_set_mode(const bt_bdaddr_t& peer_addr,
  * Returns          true if park attempted, false otherwise.
  *
  ******************************************************************************/
-static bool bta_dm_pm_park(const bt_bdaddr_t& peer_addr) {
+static bool bta_dm_pm_park(const RawAddress& peer_addr) {
   tBTM_PM_MODE mode = BTM_PM_STS_ACTIVE;
 
   /* if not in park mode, switch to park */
@@ -747,7 +747,7 @@ static bool bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
  *
  ******************************************************************************/
 #if (BTM_SSR_INCLUDED == TRUE)
-static void bta_dm_pm_ssr(const bt_bdaddr_t& peer_addr) {
+static void bta_dm_pm_ssr(const RawAddress& peer_addr) {
   tBTA_DM_SSR_SPEC *p_spec, *p_spec_cur;
   uint8_t i, j;
   int ssr = BTA_DM_PM_SSR0;
@@ -825,7 +825,7 @@ static void bta_dm_pm_ssr(const bt_bdaddr_t& peer_addr) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_dm_pm_active(const bt_bdaddr_t& peer_addr) {
+void bta_dm_pm_active(const RawAddress& peer_addr) {
   tBTM_PM_PWR_MD pm;
 
   memset((void*)&pm, 0, sizeof(pm));
@@ -845,7 +845,7 @@ void bta_dm_pm_active(const bt_bdaddr_t& peer_addr) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_dm_pm_btm_cback(const bt_bdaddr_t& bd_addr,
+static void bta_dm_pm_btm_cback(const RawAddress& bd_addr,
                                 tBTM_PM_STATUS status, uint16_t value,
                                 uint8_t hci_status) {
   tBTA_DM_PM_BTM_STATUS* p_buf =
@@ -1027,7 +1027,7 @@ void bta_dm_pm_timer(tBTA_DM_MSG* p_data) {
  * Returns          tBTA_DM_PEER_DEVICE
  *
  ******************************************************************************/
-tBTA_DM_PEER_DEVICE* bta_dm_find_peer_device(const bt_bdaddr_t& peer_addr) {
+tBTA_DM_PEER_DEVICE* bta_dm_find_peer_device(const RawAddress& peer_addr) {
   tBTA_DM_PEER_DEVICE* p_dev = NULL;
 
   for (int i = 0; i < bta_dm_cb.device_list.count; i++) {

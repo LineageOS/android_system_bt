@@ -37,7 +37,7 @@
 #include "osi/include/osi.h"
 
 /* callback function declarations */
-void avdt_l2c_connect_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
+void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
                                 uint16_t psm, uint8_t id);
 void avdt_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result);
 void avdt_l2c_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
@@ -72,7 +72,7 @@ const tL2CAP_APPL_INFO avdt_l2c_appl = {
  * Returns          void
  *
  ******************************************************************************/
-static void avdt_sec_check_complete_term(const bt_bdaddr_t* bd_addr,
+static void avdt_sec_check_complete_term(const RawAddress* bd_addr,
                                          tBT_TRANSPORT transport,
                                          UNUSED_ATTR void* p_ref_data,
                                          uint8_t res) {
@@ -123,7 +123,7 @@ static void avdt_sec_check_complete_term(const bt_bdaddr_t* bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-static void avdt_sec_check_complete_orig(const bt_bdaddr_t* bd_addr,
+static void avdt_sec_check_complete_orig(const RawAddress* bd_addr,
                                          tBT_TRANSPORT trasnport,
                                          UNUSED_ATTR void* p_ref_data,
                                          uint8_t res) {
@@ -162,7 +162,7 @@ static void avdt_sec_check_complete_orig(const bt_bdaddr_t* bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-void avdt_l2c_connect_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
+void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
                                 UNUSED_ATTR uint16_t psm, uint8_t id) {
   tAVDT_CCB* p_ccb;
   tAVDT_TC_TBL* p_tbl = NULL;
@@ -313,7 +313,7 @@ void avdt_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
             p_tbl->cfg_flags = AVDT_L2C_CFG_CONN_INT;
 
             if (interop_match_addr(INTEROP_2MBPS_LINK_ONLY,
-                                   (const bt_bdaddr_t*)&p_ccb->peer_addr)) {
+                                   (const RawAddress*)&p_ccb->peer_addr)) {
               // Disable 3DH packets for AVDT ACL to improve sensitivity on HS
               tACL_CONN* p_acl_cb =
                   btm_bda_to_acl(p_ccb->peer_addr, BT_TRANSPORT_BR_EDR);

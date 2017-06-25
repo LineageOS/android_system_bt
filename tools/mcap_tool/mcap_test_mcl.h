@@ -32,7 +32,7 @@ class McapMcl {
    * @param peer_bd_addr Peer Bluetooth MAC address
    */
   McapMcl(btmcap_test_interface_t* mcap_test_interface, tMCA_HANDLE mcap_handle,
-          const bt_bdaddr_t& peer_bd_addr);
+          const RawAddress& peer_bd_addr);
   /**
    * Connect this MCL's control channel
    * @param ctrl_psm Control channel L2CAP PSM
@@ -101,7 +101,7 @@ class McapMcl {
    */
   bool DeleteMdl(uint16_t mdl_id);
   // Simple methods that are self-explanatory
-  bt_bdaddr_t& GetPeerAddress();
+  RawAddress& GetPeerAddress();
   void SetHandle(tMCA_CL handle);
   tMCA_CL GetHandle() const;
   void SetMtu(uint16_t mtu);
@@ -120,7 +120,7 @@ class McapMcl {
   // Initialized during start up
   btmcap_test_interface_t* _mcap_test_interface;
   tMCA_HANDLE _mcap_handle;
-  bt_bdaddr_t _peer_bd_addr;
+  RawAddress _peer_bd_addr;
   std::vector<McapMdl> _mdl_list;
 
   // Initialized later

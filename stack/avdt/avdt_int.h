@@ -400,7 +400,7 @@ typedef union {
 
 /* channel control block type */
 typedef struct {
-  bt_bdaddr_t peer_addr; /* BD address of peer */
+  RawAddress peer_addr; /* BD address of peer */
   /*
    * NOTE: idle_ccb_timer, ret_ccb_timer and rsp_ccb_timer are mutually
    * exclusive - no more than one timer should be running at the same time.
@@ -530,8 +530,8 @@ typedef struct {
 extern void avdt_ccb_init(void);
 extern void avdt_ccb_event(tAVDT_CCB* p_ccb, uint8_t event,
                            tAVDT_CCB_EVT* p_data);
-extern tAVDT_CCB* avdt_ccb_by_bd(const bt_bdaddr_t& bd_addr);
-extern tAVDT_CCB* avdt_ccb_alloc(const bt_bdaddr_t& bd_addr);
+extern tAVDT_CCB* avdt_ccb_by_bd(const RawAddress& bd_addr);
+extern tAVDT_CCB* avdt_ccb_alloc(const RawAddress& bd_addr);
 extern void avdt_ccb_dealloc(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
 extern uint8_t avdt_ccb_to_idx(tAVDT_CCB* p_ccb);
 extern tAVDT_CCB* avdt_ccb_by_idx(uint8_t idx);

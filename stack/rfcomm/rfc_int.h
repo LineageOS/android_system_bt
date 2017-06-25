@@ -295,7 +295,7 @@ extern void rfc_process_l2cap_congestion(tRFC_MCB* p_mcb, bool is_congested);
 /*
  * Functions provided by the rfc_utils.cc
 */
-tRFC_MCB* rfc_alloc_multiplexer_channel(const bt_bdaddr_t& bd_addr,
+tRFC_MCB* rfc_alloc_multiplexer_channel(const RawAddress& bd_addr,
                                         bool is_initiator);
 extern void rfc_release_multiplexer_channel(tRFC_MCB* p_rfc_mcb);
 extern void rfc_timer_start(tRFC_MCB* p_rfc_mcb, uint16_t timeout);
@@ -309,7 +309,7 @@ tRFC_MCB* rfc_find_lcid_mcb(uint16_t lcid);
 extern void rfc_save_lcid_mcb(tRFC_MCB* p_rfc_mcb, uint16_t lcid);
 extern void rfc_check_mcb_active(tRFC_MCB* p_mcb);
 extern void rfc_port_closed(tPORT* p_port);
-extern void rfc_sec_check_complete(const bt_bdaddr_t* bd_addr,
+extern void rfc_sec_check_complete(const RawAddress* bd_addr,
                                    tBT_TRANSPORT transport, void* p_ref_data,
                                    uint8_t res);
 extern void rfc_inc_credit(tPORT* p_port, uint8_t credit);

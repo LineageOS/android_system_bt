@@ -38,7 +38,7 @@
 
 #include "osi/include/osi.h"
 
-static void bta_hd_cback(const bt_bdaddr_t& bd_addr, uint8_t event,
+static void bta_hd_cback(const RawAddress& bd_addr, uint8_t event,
                          uint32_t data, BT_HDR* pdata);
 
 static bool check_descriptor(uint8_t* data, uint16_t length,
@@ -678,7 +678,7 @@ extern void bta_hd_exit_suspend_act(tBTA_HD_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_hd_cback(const bt_bdaddr_t& bd_addr, uint8_t event,
+static void bta_hd_cback(const RawAddress& bd_addr, uint8_t event,
                          uint32_t data, BT_HDR* pdata) {
   tBTA_HD_CBACK_DATA* p_buf = NULL;
   uint16_t sm_event = BTA_HD_INVALID_EVT;

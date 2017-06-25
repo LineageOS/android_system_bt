@@ -227,7 +227,7 @@ TEST_F(AdapterTest, SetName) {
 TEST_F(AdapterTest, GetAddress) {
   EXPECT_EQ(bluetooth::Adapter::kDefaultAddress, adapter_->GetAddress());
 
-  const bt_bdaddr_t kTestAdapterInput = {{0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc}};
+  const RawAddress kTestAdapterInput = {{0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc}};
   const char kTestAdapterAddressOutput[] = "12:34:56:78:9A:BC";
 
   fake_hal_iface_->NotifyAdapterAddressPropertyChanged(&kTestAdapterInput);
@@ -255,7 +255,7 @@ TEST_F(AdapterTest, IsDeviceConnected) {
 
   EXPECT_FALSE(adapter_->IsDeviceConnected(kDeviceAddr));
 
-  bt_bdaddr_t hal_addr;
+  RawAddress hal_addr;
   ASSERT_TRUE(util::BdAddrFromString(kDeviceAddr, &hal_addr));
 
   // status != BT_STATUS_SUCCESS should be ignored

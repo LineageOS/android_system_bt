@@ -25,5 +25,5 @@ typedef struct thread_t thread_t;
 bt_status_t btsock_sco_init(thread_t* thread);
 bt_status_t btsock_sco_cleanup(void);
 bt_status_t btsock_sco_listen(int* sock_fd, int flags);
-bt_status_t btsock_sco_connect(const bt_bdaddr_t* bd_addr, int* sock_fd,
+bt_status_t btsock_sco_connect(const RawAddress* bd_addr, int* sock_fd,
                                int flags);

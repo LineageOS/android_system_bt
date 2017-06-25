@@ -633,7 +633,7 @@ bool btif_hl_is_reconnect_possible(uint8_t app_idx, uint8_t mcl_idx,
  * Returns      bool
  *
  ******************************************************************************/
-bool btif_hl_dch_open(uint8_t app_id, const bt_bdaddr_t& bd_addr,
+bool btif_hl_dch_open(uint8_t app_id, const RawAddress& bd_addr,
                       tBTA_HL_DCH_OPEN_PARAM* p_dch_open_api, int mdep_cfg_idx,
                       btif_hl_pend_dch_op_t op, int* channel_id) {
   btif_hl_app_cb_t* p_acb;
@@ -725,7 +725,7 @@ void btif_hl_dch_abort(uint8_t app_idx, uint8_t mcl_idx) {
  * Returns     Nothing
  *
  ******************************************************************************/
-bool btif_hl_cch_open(uint8_t app_id, const bt_bdaddr_t& bd_addr,
+bool btif_hl_cch_open(uint8_t app_id, const RawAddress& bd_addr,
                       uint16_t ctrl_psm, int mdep_cfg_idx,
                       btif_hl_pend_dch_op_t op, int* channel_id) {
   btif_hl_app_cb_t* p_acb;
@@ -962,8 +962,7 @@ bool btif_hl_find_mdl_idx_using_handle(tBTA_HL_MDL_HANDLE mdl_handle,
  * Returns          bool
  *
  ******************************************************************************/
-static bool btif_hl_find_peer_mdep_id(uint8_t app_id,
-                                      const bt_bdaddr_t& bd_addr,
+static bool btif_hl_find_peer_mdep_id(uint8_t app_id, const RawAddress& bd_addr,
                                       tBTA_HL_MDEP_ROLE local_mdep_role,
                                       uint16_t data_type,
                                       tBTA_HL_MDEP_ID* p_peer_mdep_id) {
@@ -1060,7 +1059,7 @@ static bool btif_hl_find_mdep_cfg_idx(uint8_t app_idx,
  * Returns      bool
  *
  ******************************************************************************/
-bool btif_hl_find_mcl_idx(uint8_t app_idx, const bt_bdaddr_t& p_bd_addr,
+bool btif_hl_find_mcl_idx(uint8_t app_idx, const RawAddress& p_bd_addr,
                           uint8_t* p_mcl_idx) {
   bool found = false;
   uint8_t i;
@@ -1638,7 +1637,7 @@ void btif_hl_clean_mdls_using_app_idx(uint8_t app_idx) {
   btif_hl_mcl_cb_t* p_mcb;
   btif_hl_mdl_cb_t* p_dcb;
   uint8_t j, x;
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
 
   p_acb = BTIF_HL_GET_APP_CB_PTR(app_idx);
   for (j = 0; j < BTA_HL_NUM_MCLS; j++) {
@@ -1901,7 +1900,7 @@ void btif_hl_set_chan_cb_state(uint8_t app_idx, uint8_t mcl_idx,
 void btif_hl_send_destroyed_cb(btif_hl_app_cb_t* p_acb) {
   int app_id = (int)btif_hl_get_app_id(p_acb->delete_mdl.channel_id);
 
-  bt_bdaddr_t bd_addr = p_acb->delete_mdl.bd_addr;
+  RawAddress bd_addr = p_acb->delete_mdl.bd_addr;
   BTIF_TRACE_DEBUG("%s", __func__);
   BTIF_TRACE_DEBUG(
       "call channel state callback channel_id=0x%08x mdep_cfg_idx=%d, state=%d "
@@ -1930,7 +1929,7 @@ void btif_hl_send_disconnecting_cb(uint8_t app_idx, uint8_t mcl_idx,
   btif_hl_soc_cb_t* p_scb = p_dcb->p_scb;
   int app_id = (int)btif_hl_get_app_id(p_scb->channel_id);
 
-  bt_bdaddr_t bd_addr = p_scb->bd_addr;
+  RawAddress bd_addr = p_scb->bd_addr;
 
   BTIF_TRACE_DEBUG("%s", __func__);
   BTIF_TRACE_DEBUG(
@@ -1956,7 +1955,7 @@ void btif_hl_send_setup_connecting_cb(uint8_t app_idx, uint8_t mcl_idx) {
   btif_hl_pending_chan_cb_t* p_pcb = BTIF_HL_GET_PCB_PTR(app_idx, mcl_idx);
   int app_id = (int)btif_hl_get_app_id(p_pcb->channel_id);
 
-  bt_bdaddr_t bd_addr = p_pcb->bd_addr;
+  RawAddress bd_addr = p_pcb->bd_addr;
 
   if (p_pcb->in_use &&
       p_pcb->cb_state == BTIF_HL_CHAN_CB_STATE_CONNECTING_PENDING) {
@@ -1987,7 +1986,7 @@ void btif_hl_send_setup_disconnected_cb(uint8_t app_idx, uint8_t mcl_idx) {
   btif_hl_pending_chan_cb_t* p_pcb = BTIF_HL_GET_PCB_PTR(app_idx, mcl_idx);
   int app_id = (int)btif_hl_get_app_id(p_pcb->channel_id);
 
-  bt_bdaddr_t bd_addr = p_pcb->bd_addr;
+  RawAddress bd_addr = p_pcb->bd_addr;
 
   BTIF_TRACE_DEBUG("%s p_pcb->in_use=%d", __func__, p_pcb->in_use);
   if (p_pcb->in_use) {
@@ -2927,7 +2926,7 @@ static void btif_hl_proc_cb_evt(uint16_t event, char* p_param) {
         send_chan_cb = false;
 
       if (send_chan_cb) {
-        bt_bdaddr_t bd_addr = p_data->chan_cb.bd_addr;
+        RawAddress bd_addr = p_data->chan_cb.bd_addr;
         BTIF_TRACE_DEBUG(
             "state callbk: ch_id=0x%08x cb_state=%d state=%d  fd=%d",
             p_data->chan_cb.channel_id, p_data->chan_cb.cb_state, state,
@@ -3545,7 +3544,7 @@ static void btif_hl_ctrl_cback(tBTA_HL_CTRL_EVT event, tBTA_HL_CTRL* p_data) {
  * Returns         bt_status_t
  *
  ******************************************************************************/
-static bt_status_t connect_channel(int app_id, bt_bdaddr_t* bd_addr,
+static bt_status_t connect_channel(int app_id, RawAddress* bd_addr,
                                    int mdep_cfg_index, int* channel_id) {
   uint8_t app_idx, mcl_idx;
   btif_hl_app_cb_t* p_acb = NULL;

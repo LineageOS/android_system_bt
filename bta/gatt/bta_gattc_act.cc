@@ -47,7 +47,7 @@
 /*****************************************************************************
  *  Constants
  ****************************************************************************/
-static void bta_gattc_conn_cback(tGATT_IF gattc_if, const bt_bdaddr_t& bda,
+static void bta_gattc_conn_cback(tGATT_IF gattc_if, const RawAddress& bda,
                                  uint16_t conn_id, bool connected,
                                  tGATT_DISCONN_REASON reason,
                                  tBT_TRANSPORT transport);
@@ -60,7 +60,7 @@ static void bta_gattc_cmpl_sendmsg(uint16_t conn_id, tGATTC_OPTYPE op,
                                    tGATT_CL_COMPLETE* p_data);
 
 static void bta_gattc_deregister_cmpl(tBTA_GATTC_RCB* p_clreg);
-static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, const bt_bdaddr_t& bda);
+static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, const RawAddress& bda);
 static void bta_gattc_cong_cback(uint16_t conn_id, bool congested);
 static void bta_gattc_phy_update_cback(tGATT_IF gatt_if, uint16_t conn_id,
                                        uint8_t tx_phy, uint8_t rx_phy,
@@ -325,7 +325,7 @@ void bta_gattc_process_api_open_cancel(tBTA_GATTC_DATA* p_msg) {
 }
 
 /** process encryption complete message */
-void bta_gattc_process_enc_cmpl(tGATT_IF client_if, const bt_bdaddr_t& bda) {
+void bta_gattc_process_enc_cmpl(tGATT_IF client_if, const RawAddress& bda) {
   tBTA_GATTC_RCB* p_clreg;
   tBTA_GATTC cb_data;
 
@@ -1315,7 +1315,7 @@ static void bta_gattc_deregister_cmpl(tBTA_GATTC_RCB* p_clreg) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_gattc_conn_cback(tGATT_IF gattc_if, const bt_bdaddr_t& bdaddr,
+static void bta_gattc_conn_cback(tGATT_IF gattc_if, const RawAddress& bdaddr,
                                  uint16_t conn_id, bool connected,
                                  tGATT_DISCONN_REASON reason,
                                  tBT_TRANSPORT transport) {
@@ -1352,8 +1352,7 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, const bt_bdaddr_t& bdaddr,
  * Returns          void
  *
  ******************************************************************************/
-static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if,
-                                     const bt_bdaddr_t& bda) {
+static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, const RawAddress& bda) {
   tBTA_GATTC_CLCB* p_clcb =
       bta_gattc_find_clcb_by_cif(gattc_if, bda, BTA_GATT_TRANSPORT_LE);
 
@@ -1385,7 +1384,7 @@ static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if,
  * Returns          None.
  *
  ******************************************************************************/
-void bta_gattc_process_api_refresh(const bt_bdaddr_t& remote_bda) {
+void bta_gattc_process_api_refresh(const RawAddress& remote_bda) {
   tBTA_GATTC_SERV* p_srvc_cb = bta_gattc_find_srvr_cache(remote_bda);
   tBTA_GATTC_CLCB* p_clcb = &bta_gattc_cb.clcb[0];
   bool found = false;
@@ -1533,7 +1532,7 @@ void bta_gattc_process_indicate(uint16_t conn_id, tGATTC_OPTYPE op,
   tBTA_GATTC_RCB* p_clrcb = NULL;
   tBTA_GATTC_SERV* p_srcb = NULL;
   tBTA_GATTC_NOTIFY notify;
-  bt_bdaddr_t remote_bda;
+  RawAddress remote_bda;
   tBTA_GATTC_IF gatt_if;
   tBTA_TRANSPORT transport;
 

@@ -89,7 +89,7 @@ bt_property_t* BluetoothTest::GetProperty(bt_property_type_t type) {
   return nullptr;
 }
 
-bt_property_t* BluetoothTest::GetRemoteDeviceProperty(const bt_bdaddr_t* addr,
+bt_property_t* BluetoothTest::GetRemoteDeviceProperty(const RawAddress* addr,
                                                       bt_property_type_t type) {
   if (curr_remote_device_ != *addr) return nullptr;
 
@@ -129,7 +129,7 @@ void BluetoothTest::AdapterPropertiesCallback(bt_status_t status,
 
 // callback
 void BluetoothTest::RemoteDevicePropertiesCallback(bt_status_t status,
-                                                   bt_bdaddr_t* remote_bd_addr,
+                                                   RawAddress* remote_bd_addr,
                                                    int num_properties,
                                                    bt_property_t* properties) {
   curr_remote_device_ = *remote_bd_addr;

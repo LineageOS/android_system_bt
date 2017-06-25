@@ -65,7 +65,7 @@ typedef struct {
 } sco_socket_t;
 
 static sco_socket_t* sco_socket_establish_locked(bool is_listening,
-                                                 const bt_bdaddr_t* bd_addr,
+                                                 const RawAddress* bd_addr,
                                                  int* sock_fd);
 static sco_socket_t* sco_socket_new(void);
 static void sco_socket_free_locked(sco_socket_t* socket);
@@ -116,7 +116,7 @@ bt_status_t btsock_sco_listen(int* sock_fd, UNUSED_ATTR int flags) {
   return BT_STATUS_SUCCESS;
 }
 
-bt_status_t btsock_sco_connect(const bt_bdaddr_t* bd_addr, int* sock_fd,
+bt_status_t btsock_sco_connect(const RawAddress* bd_addr, int* sock_fd,
                                UNUSED_ATTR int flags) {
   CHECK(bd_addr != NULL);
   CHECK(sock_fd != NULL);
@@ -130,7 +130,7 @@ bt_status_t btsock_sco_connect(const bt_bdaddr_t* bd_addr, int* sock_fd,
 
 // Must be called with |lock| held.
 static sco_socket_t* sco_socket_establish_locked(bool is_listening,
-                                                 const bt_bdaddr_t* bd_addr,
+                                                 const RawAddress* bd_addr,
                                                  int* sock_fd) {
   int pair[2] = {INVALID_FD, INVALID_FD};
   sco_socket_t* sco_socket = NULL;

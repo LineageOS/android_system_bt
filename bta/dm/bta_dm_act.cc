@@ -55,31 +55,31 @@
 static void bta_dm_inq_results_cb(tBTM_INQ_RESULTS* p_inq, uint8_t* p_eir,
                                   uint16_t eir_len);
 static void bta_dm_inq_cmpl_cb(void* p_result);
-static void bta_dm_service_search_remname_cback(const bt_bdaddr_t& bd_addr,
+static void bta_dm_service_search_remname_cback(const RawAddress& bd_addr,
                                                 DEV_CLASS dc, BD_NAME bd_name);
 static void bta_dm_remname_cback(tBTM_REMOTE_DEV_NAME* p_remote_name);
-static void bta_dm_find_services(const bt_bdaddr_t& bd_addr);
+static void bta_dm_find_services(const RawAddress& bd_addr);
 static void bta_dm_discover_next_device(void);
 static void bta_dm_sdp_callback(uint16_t sdp_status);
-static uint8_t bta_dm_authorize_cback(const bt_bdaddr_t& bd_addr,
+static uint8_t bta_dm_authorize_cback(const RawAddress& bd_addr,
                                       DEV_CLASS dev_class, BD_NAME bd_name,
                                       uint8_t* service_name, uint8_t service_id,
                                       bool is_originator);
-static uint8_t bta_dm_pin_cback(const bt_bdaddr_t& bd_addr, DEV_CLASS dev_class,
+static uint8_t bta_dm_pin_cback(const RawAddress& bd_addr, DEV_CLASS dev_class,
                                 BD_NAME bd_name, bool min_16_digit);
-static uint8_t bta_dm_new_link_key_cback(const bt_bdaddr_t& bd_addr,
+static uint8_t bta_dm_new_link_key_cback(const RawAddress& bd_addr,
                                          DEV_CLASS dev_class, BD_NAME bd_name,
                                          LINK_KEY key, uint8_t key_type);
-static uint8_t bta_dm_authentication_complete_cback(const bt_bdaddr_t& bd_addr,
+static uint8_t bta_dm_authentication_complete_cback(const RawAddress& bd_addr,
                                                     DEV_CLASS dev_class,
                                                     BD_NAME bd_name,
                                                     int result);
-static void bta_dm_local_name_cback(const bt_bdaddr_t& bd_addr);
+static void bta_dm_local_name_cback(const RawAddress& bd_addr);
 static bool bta_dm_check_av(uint16_t event);
 static void bta_dm_bl_change_cback(tBTM_BL_EVENT_DATA* p_data);
 
 static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
-                                uint8_t app_id, const bt_bdaddr_t* peer_addr);
+                                uint8_t app_id, const RawAddress* peer_addr);
 
 /* Extended Inquiry Response */
 #if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
@@ -95,25 +95,25 @@ static void bta_dm_eir_search_services(tBTM_INQ_RESULTS* p_result,
 static void bta_dm_search_timer_cback(void* data);
 static void bta_dm_disable_conn_down_timer_cback(void* data);
 static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
-                            uint8_t app_id, const bt_bdaddr_t* peer_addr);
+                            uint8_t app_id, const RawAddress* peer_addr);
 static void bta_dm_adjust_roles(bool delay_role_switch);
 static char* bta_dm_get_remname(void);
 static void bta_dm_bond_cancel_complete_cback(tBTM_STATUS result);
 
-static bool bta_dm_read_remote_device_name(const bt_bdaddr_t& bd_addr,
+static bool bta_dm_read_remote_device_name(const RawAddress& bd_addr,
                                            tBT_TRANSPORT transport);
-static void bta_dm_discover_device(const bt_bdaddr_t& remote_bd_addr);
+static void bta_dm_discover_device(const RawAddress& remote_bd_addr);
 
 static void bta_dm_sys_hw_cback(tBTA_SYS_HW_EVT status);
 static void bta_dm_disable_search_and_disc(void);
 
-static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const bt_bdaddr_t& bda,
+static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
                                     tBTM_LE_EVT_DATA* p_data);
 static void bta_dm_ble_id_key_cback(uint8_t key_type,
                                     tBTM_BLE_LOCAL_KEYS* p_key);
 static void bta_dm_gattc_register(void);
-static void btm_dm_start_gatt_discovery(const bt_bdaddr_t& bd_addr);
-static void bta_dm_cancel_gatt_discovery(const bt_bdaddr_t& bd_addr);
+static void btm_dm_start_gatt_discovery(const RawAddress& bd_addr);
+static void bta_dm_cancel_gatt_discovery(const RawAddress& bd_addr);
 static void bta_dm_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data);
 extern tBTA_DM_CONTRL_STATE bta_dm_pm_obtain_controller_state(void);
 
@@ -146,8 +146,8 @@ static void bta_dm_ctrl_features_rd_cmpl_cback(tBTM_STATUS result);
 #define BTA_DM_SWITCH_DELAY_TIMER_MS 500
 #endif
 
-static void bta_dm_reset_sec_dev_pending(const bt_bdaddr_t& remote_bd_addr);
-static void bta_dm_remove_sec_dev_entry(const bt_bdaddr_t& remote_bd_addr);
+static void bta_dm_reset_sec_dev_pending(const RawAddress& remote_bd_addr);
+static void bta_dm_remove_sec_dev_entry(const RawAddress& remote_bd_addr);
 static void bta_dm_observe_results_cb(tBTM_INQ_RESULTS* p_inq, uint8_t* p_eir,
                                       uint16_t eir_len);
 static void bta_dm_observe_cmpl_cb(void* p_result);
@@ -659,7 +659,7 @@ void bta_dm_set_visibility(tBTA_DM_MSG* p_data) {
  * Description      Removes device, Disconnects ACL link if required.
  ***
  ******************************************************************************/
-void bta_dm_process_remove_device(const bt_bdaddr_t& bd_addr) {
+void bta_dm_process_remove_device(const RawAddress& bd_addr) {
   /* need to remove all pending background connection before unpair */
   BTA_GATTC_CancelOpen(0, bd_addr, false);
 
@@ -690,7 +690,7 @@ void bta_dm_remove_device(tBTA_DM_MSG* p_data) {
   bool continue_delete_other_dev = false;
   if (p_dev == NULL) return;
 
-  bt_bdaddr_t other_address = p_dev->bd_addr;
+  RawAddress other_address = p_dev->bd_addr;
 
   /* If ACL exists for the device in the remove_bond message*/
   bool continue_delete_dev = false;
@@ -989,7 +989,7 @@ void bta_dm_pin_reply(tBTA_DM_MSG* p_data) {
  *
  ******************************************************************************/
 static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
-                                uint8_t app_id, const bt_bdaddr_t* peer_addr) {
+                                uint8_t app_id, const RawAddress* peer_addr) {
   tBTA_DM_PEER_DEVICE* p_dev = NULL;
   uint16_t policy = app_id;
   uint32_t mask = (uint32_t)(1 << id);
@@ -1352,7 +1352,7 @@ void bta_dm_di_disc(tBTA_DM_MSG* p_data) {
  * Returns          true if started to get remote name
  *
  ******************************************************************************/
-static bool bta_dm_read_remote_device_name(const bt_bdaddr_t& bd_addr,
+static bool bta_dm_read_remote_device_name(const RawAddress& bd_addr,
                                            tBT_TRANSPORT transport) {
   tBTM_STATUS btm_status;
 
@@ -1912,7 +1912,7 @@ void bta_dm_search_cancel_notify(UNUSED_ATTR tBTA_DM_MSG* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_dm_find_services(const bt_bdaddr_t& bd_addr) {
+static void bta_dm_find_services(const RawAddress& bd_addr) {
   tSDP_UUID uuid;
 
   memset(&uuid, 0, sizeof(tSDP_UUID));
@@ -2062,7 +2062,7 @@ static void bta_dm_discover_next_device(void) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_dm_discover_device(const bt_bdaddr_t& remote_bd_addr) {
+static void bta_dm_discover_device(const RawAddress& remote_bd_addr) {
   tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
   if (bta_dm_search_cb.transport == BTA_TRANSPORT_UNKNOWN) {
     tBT_DEVICE_TYPE dev_type;
@@ -2286,7 +2286,7 @@ static void bta_dm_inq_cmpl_cb(void* p_result) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_dm_service_search_remname_cback(const bt_bdaddr_t& bd_addr,
+static void bta_dm_service_search_remname_cback(const RawAddress& bd_addr,
                                                 UNUSED_ATTR DEV_CLASS dc,
                                                 BD_NAME bd_name) {
   tBTM_REMOTE_DEV_NAME rem_name;
@@ -2369,7 +2369,7 @@ static void bta_dm_remname_cback(tBTM_REMOTE_DEV_NAME* p_remote_name) {
  * Returns          void
  *
  ******************************************************************************/
-static uint8_t bta_dm_authorize_cback(const bt_bdaddr_t& bd_addr,
+static uint8_t bta_dm_authorize_cback(const RawAddress& bd_addr,
                                       DEV_CLASS dev_class, BD_NAME bd_name,
                                       UNUSED_ATTR uint8_t* service_name,
                                       uint8_t service_id,
@@ -2476,7 +2476,7 @@ static void bta_dm_pinname_cback(void* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-static uint8_t bta_dm_pin_cback(const bt_bdaddr_t& bd_addr, DEV_CLASS dev_class,
+static uint8_t bta_dm_pin_cback(const RawAddress& bd_addr, DEV_CLASS dev_class,
                                 BD_NAME bd_name, bool min_16_digit) {
   tBTA_DM_SEC sec_event;
 
@@ -2514,7 +2514,7 @@ static uint8_t bta_dm_pin_cback(const bt_bdaddr_t& bd_addr, DEV_CLASS dev_class,
  * Returns          void
  *
  ******************************************************************************/
-static uint8_t bta_dm_new_link_key_cback(const bt_bdaddr_t& bd_addr,
+static uint8_t bta_dm_new_link_key_cback(const RawAddress& bd_addr,
                                          UNUSED_ATTR DEV_CLASS dev_class,
                                          BD_NAME bd_name, LINK_KEY key,
                                          uint8_t key_type) {
@@ -2569,8 +2569,8 @@ static uint8_t bta_dm_new_link_key_cback(const bt_bdaddr_t& bd_addr,
  *
  ******************************************************************************/
 static uint8_t bta_dm_authentication_complete_cback(
-    const bt_bdaddr_t& bd_addr, UNUSED_ATTR DEV_CLASS dev_class,
-    BD_NAME bd_name, int result) {
+    const RawAddress& bd_addr, UNUSED_ATTR DEV_CLASS dev_class, BD_NAME bd_name,
+    int result) {
   tBTA_DM_SEC sec_event;
 
   if (result != BTM_SUCCESS) {
@@ -2768,7 +2768,7 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_dm_local_name_cback(UNUSED_ATTR const bt_bdaddr_t& p_name) {
+static void bta_dm_local_name_cback(UNUSED_ATTR const RawAddress& p_name) {
   tBTA_DM_SEC sec_event;
 
   sec_event.enable.status = BTA_SUCCESS;
@@ -2909,7 +2909,7 @@ void bta_dm_acl_change(tBTA_DM_MSG* p_data) {
   uint8_t* p;
   tBTA_DM_SEC conn;
   bool is_new = p_data->acl_change.is_new;
-  const bt_bdaddr_t& p_bda = p_data->acl_change.bd_addr;
+  const RawAddress& p_bda = p_data->acl_change.bd_addr;
   bool need_policy_change = false;
   bool issue_unpair_cb = false;
 
@@ -3143,7 +3143,7 @@ static void bta_dm_disable_conn_down_timer_cback(UNUSED_ATTR void* data) {
  *
  ******************************************************************************/
 static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
-                            uint8_t app_id, const bt_bdaddr_t* peer_addr) {
+                            uint8_t app_id, const RawAddress* peer_addr) {
   uint8_t j;
   tBTA_PREF_ROLES role;
   tBTA_DM_PEER_DEVICE* p_dev;
@@ -3220,7 +3220,7 @@ static void bta_dm_delay_role_switch_cback(UNUSED_ATTR void* data) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_dm_reset_sec_dev_pending(const bt_bdaddr_t& remote_bd_addr) {
+static void bta_dm_reset_sec_dev_pending(const RawAddress& remote_bd_addr) {
   for (size_t i = 0; i < bta_dm_cb.device_list.count; i++) {
     if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr == remote_bd_addr) {
       bta_dm_cb.device_list.peer_device[i].remove_dev_pending = false;
@@ -3242,7 +3242,7 @@ static void bta_dm_reset_sec_dev_pending(const bt_bdaddr_t& remote_bd_addr) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_dm_remove_sec_dev_entry(const bt_bdaddr_t& remote_bd_addr) {
+static void bta_dm_remove_sec_dev_entry(const RawAddress& remote_bd_addr) {
   if (BTM_IsAclConnectionUp(remote_bd_addr, BT_TRANSPORT_LE) ||
       BTM_IsAclConnectionUp(remote_bd_addr, BT_TRANSPORT_BR_EDR)) {
     APPL_TRACE_DEBUG(
@@ -3809,7 +3809,7 @@ void bta_dm_execute_callback(tBTA_DM_MSG* p_data) {
  * Returns         None
  *
  ******************************************************************************/
-void bta_dm_encrypt_cback(const bt_bdaddr_t* bd_addr, tBT_TRANSPORT transport,
+void bta_dm_encrypt_cback(const RawAddress* bd_addr, tBT_TRANSPORT transport,
                           UNUSED_ATTR void* p_ref_data, tBTM_STATUS result) {
   tBTA_STATUS bta_status = BTA_SUCCESS;
   tBTA_DM_ENCRYPT_CBACK* p_callback = NULL;
@@ -3893,7 +3893,7 @@ void bta_dm_set_encryption(tBTA_DM_MSG* p_data) {
   }
 }
 
-bool bta_dm_check_if_only_hd_connected(const bt_bdaddr_t& peer_addr) {
+bool bta_dm_check_if_only_hd_connected(const RawAddress& peer_addr) {
   APPL_TRACE_DEBUG("%s: count(%d)", __func__, bta_dm_conn_srvcs.count);
 
   for (uint8_t j = 0; j < bta_dm_conn_srvcs.count; j++) {
@@ -3991,7 +3991,7 @@ static void bta_dm_observe_cmpl_cb(void* p_result) {
  * Returns          void
  *
  ******************************************************************************/
-static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const bt_bdaddr_t& bda,
+static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
                                     tBTM_LE_EVT_DATA* p_data) {
   tBTM_STATUS status = BTM_SUCCESS;
   tBTA_DM_SEC sec_event;
@@ -4601,7 +4601,7 @@ void bta_dm_close_gatt_conn(UNUSED_ATTR tBTA_DM_MSG* p_data) {
  * Parameters:
  *
  ******************************************************************************/
-void btm_dm_start_gatt_discovery(const bt_bdaddr_t& bd_addr) {
+void btm_dm_start_gatt_discovery(const RawAddress& bd_addr) {
   bta_dm_search_cb.gatt_disc_active = true;
 
   /* connection is already open */
@@ -4630,7 +4630,7 @@ void btm_dm_start_gatt_discovery(const bt_bdaddr_t& bd_addr) {
  * Parameters:
  *
  ******************************************************************************/
-static void bta_dm_cancel_gatt_discovery(const bt_bdaddr_t& bd_addr) {
+static void bta_dm_cancel_gatt_discovery(const RawAddress& bd_addr) {
   if (bta_dm_search_cb.conn_id == BTA_GATT_INVALID_CONN_ID) {
     BTA_GATTC_CancelOpen(bta_dm_search_cb.client_if, bd_addr, true);
   }

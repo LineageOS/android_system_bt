@@ -99,7 +99,7 @@ typedef struct {
 
 typedef struct {
   BT_HDR hdr;
-  bt_bdaddr_t remote_bda;
+  RawAddress remote_bda;
   tBTA_GATTS_IF server_if;
   bool is_direct;
   tBTA_GATT_TRANSPORT transport;

@@ -49,7 +49,7 @@ static void btm_resume_wl_activity(tBTM_BLE_WL_STATE wl_state);
 // peripherals or not.
 // TODO: Move all of this to controller/le/background_list or similar?
 typedef struct background_connection_t {
-  bt_bdaddr_t address;
+  RawAddress address;
   uint8_t addr_type;
 
   bool in_controller_wl;
@@ -59,18 +59,18 @@ typedef struct background_connection_t {
 } background_connection_t;
 
 struct BgConnHash {
-  bool operator()(const bt_bdaddr_t& x) const {
+  bool operator()(const RawAddress& x) const {
     const uint8_t* a = x.address;
     return a[0] ^ (a[1] << 8) ^ (a[2] << 16) ^ (a[3] << 24) ^ a[4] ^
            (a[5] << 8);
   }
 };
 
-static std::unordered_map<bt_bdaddr_t, background_connection_t, BgConnHash>
+static std::unordered_map<RawAddress, background_connection_t, BgConnHash>
     background_connections;
 
 static void background_connection_add(uint8_t addr_type,
-                                      const bt_bdaddr_t& address) {
+                                      const RawAddress& address) {
   auto map_iter = background_connections.find(address);
   if (map_iter == background_connections.end()) {
     background_connections[address] =
@@ -82,7 +82,7 @@ static void background_connection_add(uint8_t addr_type,
   }
 }
 
-static void background_connection_remove(const bt_bdaddr_t& address) {
+static void background_connection_remove(const RawAddress& address) {
   auto map_iter = background_connections.find(address);
   if (map_iter != background_connections.end()) {
     if (map_iter->second.in_controller_wl) {
@@ -154,7 +154,7 @@ void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy) {
  * Parameters       bd_addr: updated device
  *
  ******************************************************************************/
-void btm_ble_bgconn_cancel_if_disconnected(const bt_bdaddr_t& bd_addr) {
+void btm_ble_bgconn_cancel_if_disconnected(const RawAddress& bd_addr) {
   if (btm_cb.ble_ctr_cb.conn_state != BLE_BG_CONN) return;
 
   auto map_it = background_connections.find(bd_addr);
@@ -173,7 +173,7 @@ void btm_ble_bgconn_cancel_if_disconnected(const bt_bdaddr_t& bd_addr) {
  *
  * Description      This function load the device into controller white list
  ******************************************************************************/
-bool btm_add_dev_to_controller(bool to_add, const bt_bdaddr_t& bd_addr) {
+bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
   bool started = false;
 
@@ -268,7 +268,7 @@ bool btm_execute_wl_dev_operation(void) {
  *                  the white list.
  *
  ******************************************************************************/
-bool btm_update_dev_to_white_list(bool to_add, const bt_bdaddr_t& bd_addr) {
+bool btm_update_dev_to_white_list(bool to_add, const RawAddress& bd_addr) {
   tBTM_BLE_CB* p_cb = &btm_cb.ble_ctr_cb;
 
   if (to_add &&
@@ -348,7 +348,7 @@ void btm_ble_remove_from_white_list_complete(uint8_t* p,
 
 void btm_send_hci_create_connection(
     uint16_t scan_int, uint16_t scan_win, uint8_t init_filter_policy,
-    uint8_t addr_type_peer, const bt_bdaddr_t& bda_peer, uint8_t addr_type_own,
+    uint8_t addr_type_peer, const RawAddress& bda_peer, uint8_t addr_type_own,
     uint16_t conn_int_min, uint16_t conn_int_max, uint16_t conn_latency,
     uint16_t conn_timeout, uint16_t min_ce_len, uint16_t max_ce_len,
     uint8_t initiating_phys) {
@@ -588,7 +588,7 @@ void btm_ble_enqueue_direct_conn_req(void* p_param) {
  * Returns          None.
  *
  ******************************************************************************/
-void btm_ble_dequeue_direct_conn_req(const bt_bdaddr_t& rem_bda) {
+void btm_ble_dequeue_direct_conn_req(const RawAddress& rem_bda) {
   if (fixed_queue_is_empty(btm_cb.ble_ctr_cb.conn_pending_q)) return;
 
   list_t* list = fixed_queue_get_list(btm_cb.ble_ctr_cb.conn_pending_q);

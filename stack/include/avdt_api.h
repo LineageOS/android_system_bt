@@ -384,7 +384,7 @@ typedef union {
  * endpoints and for the AVDT_DiscoverReq() and AVDT_GetCapReq() functions.
  *
 */
-typedef void(tAVDT_CTRL_CBACK)(uint8_t handle, const bt_bdaddr_t* bd_addr,
+typedef void(tAVDT_CTRL_CBACK)(uint8_t handle, const RawAddress* bd_addr,
                                uint8_t event, tAVDT_CTRL* p_data);
 
 /* This is the data callback function.  It is executed when AVDTP has a media
@@ -403,7 +403,7 @@ typedef void(tAVDT_REPORT_CBACK)(uint8_t handle, AVDT_REPORT_TYPE type,
                                  tAVDT_REPORT_DATA* p_data);
 #endif
 
-typedef uint16_t(tAVDT_GETCAP_REQ)(const bt_bdaddr_t& bd_addr, uint8_t seid,
+typedef uint16_t(tAVDT_GETCAP_REQ)(const RawAddress& bd_addr, uint8_t seid,
                                    tAVDT_CFG* p_cfg, tAVDT_CTRL_CBACK* p_cback);
 
 /* This structure contains information required when a stream is created.
@@ -533,7 +533,7 @@ extern uint16_t AVDT_RemoveStream(uint8_t handle);
  * Returns          AVDT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-extern uint16_t AVDT_DiscoverReq(const bt_bdaddr_t& bd_addr,
+extern uint16_t AVDT_DiscoverReq(const RawAddress& bd_addr,
                                  tAVDT_SEP_INFO* p_sep_info, uint8_t max_seps,
                                  tAVDT_CTRL_CBACK* p_cback);
 
@@ -561,7 +561,7 @@ extern uint16_t AVDT_DiscoverReq(const bt_bdaddr_t& bd_addr,
  * Returns          AVDT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-extern uint16_t AVDT_GetCapReq(const bt_bdaddr_t& bd_addr, uint8_t seid,
+extern uint16_t AVDT_GetCapReq(const RawAddress& bd_addr, uint8_t seid,
                                tAVDT_CFG* p_cfg, tAVDT_CTRL_CBACK* p_cback);
 
 /*******************************************************************************
@@ -588,7 +588,7 @@ extern uint16_t AVDT_GetCapReq(const bt_bdaddr_t& bd_addr, uint8_t seid,
  * Returns          AVDT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-extern uint16_t AVDT_GetAllCapReq(const bt_bdaddr_t& bd_addr, uint8_t seid,
+extern uint16_t AVDT_GetAllCapReq(const RawAddress& bd_addr, uint8_t seid,
                                   tAVDT_CFG* p_cfg, tAVDT_CTRL_CBACK* p_cback);
 
 /*******************************************************************************
@@ -618,7 +618,7 @@ extern uint16_t AVDT_DelayReport(uint8_t handle, uint8_t seid, uint16_t delay);
  * Returns          AVDT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-extern uint16_t AVDT_OpenReq(uint8_t handle, const bt_bdaddr_t& bd_addr,
+extern uint16_t AVDT_OpenReq(uint8_t handle, const RawAddress& bd_addr,
                              uint8_t seid, tAVDT_CFG* p_cfg);
 
 /*******************************************************************************
@@ -845,7 +845,7 @@ extern uint16_t AVDT_WriteReqOpt(uint8_t handle, BT_HDR* p_pkt,
  * Returns          AVDT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-extern uint16_t AVDT_ConnectReq(const bt_bdaddr_t& bd_addr, uint8_t sec_mask,
+extern uint16_t AVDT_ConnectReq(const RawAddress& bd_addr, uint8_t sec_mask,
                                 tAVDT_CTRL_CBACK* p_cback);
 
 /*******************************************************************************
@@ -860,7 +860,7 @@ extern uint16_t AVDT_ConnectReq(const bt_bdaddr_t& bd_addr, uint8_t sec_mask,
  * Returns          AVDT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-extern uint16_t AVDT_DisconnectReq(const bt_bdaddr_t& bd_addr,
+extern uint16_t AVDT_DisconnectReq(const RawAddress& bd_addr,
                                    tAVDT_CTRL_CBACK* p_cback);
 
 /*******************************************************************************
@@ -885,7 +885,7 @@ extern uint16_t AVDT_GetL2CapChannel(uint8_t handle);
  *
  ******************************************************************************/
 extern uint16_t AVDT_GetSignalChannel(uint8_t handle,
-                                      const bt_bdaddr_t& bd_addr);
+                                      const RawAddress& bd_addr);
 
 /*******************************************************************************
  *

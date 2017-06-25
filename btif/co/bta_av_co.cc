@@ -65,7 +65,7 @@ typedef struct {
 } tBTA_AV_CO_SINK;
 
 typedef struct {
-  bt_bdaddr_t addr; /* address of audio/video peer */
+  RawAddress addr; /* address of audio/video peer */
   tBTA_AV_CO_SINK
       sinks[BTAV_A2DP_CODEC_INDEX_MAX]; /* array of supported sinks */
   tBTA_AV_CO_SINK srcs[BTAV_A2DP_CODEC_INDEX_MAX]; /* array of supported srcs */
@@ -240,7 +240,7 @@ bool bta_av_co_audio_init(btav_a2dp_codec_index_t codec_index,
  ******************************************************************************/
 void bta_av_co_audio_disc_res(tBTA_AV_HNDL hndl, uint8_t num_seps,
                               uint8_t num_sink, uint8_t num_src,
-                              const bt_bdaddr_t& addr, uint16_t uuid_local) {
+                              const RawAddress& addr, uint16_t uuid_local) {
   tBTA_AV_CO_PEER* p_peer;
 
   APPL_TRACE_DEBUG("%s: h:x%x num_seps:%d num_sink:%d num_src:%d", __func__,
@@ -492,7 +492,7 @@ tA2DP_STATUS bta_av_co_audio_getconfig(tBTA_AV_HNDL hndl, uint8_t* p_codec_info,
  ******************************************************************************/
 void bta_av_co_audio_setconfig(tBTA_AV_HNDL hndl, const uint8_t* p_codec_info,
                                UNUSED_ATTR uint8_t seid,
-                               UNUSED_ATTR const bt_bdaddr_t& addr,
+                               UNUSED_ATTR const RawAddress& addr,
                                uint8_t num_protect,
                                const uint8_t* p_protect_info,
                                uint8_t t_local_sep, uint8_t avdt_handle) {

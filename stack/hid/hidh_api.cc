@@ -48,7 +48,7 @@ static void hidh_search_callback(uint16_t sdp_result);
  * Returns          tHID_STATUS
  *
  ******************************************************************************/
-tHID_STATUS HID_HostGetSDPRecord(const bt_bdaddr_t& addr,
+tHID_STATUS HID_HostGetSDPRecord(const RawAddress& addr,
                                  tSDP_DISCOVERY_DB* p_db, uint32_t db_len,
                                  tHID_HOST_SDP_CALLBACK* sdp_cback) {
   tSDP_UUID uuid_list;
@@ -317,7 +317,7 @@ tHID_STATUS HID_HostDeregister(void) {
  * Returns          tHID_STATUS
  *
  ******************************************************************************/
-tHID_STATUS HID_HostAddDev(const bt_bdaddr_t& addr, uint16_t attr_mask,
+tHID_STATUS HID_HostAddDev(const RawAddress& addr, uint16_t attr_mask,
                            uint8_t* handle) {
   int i;
   /* Find an entry for this device in hh_cb.devices array */
@@ -519,7 +519,7 @@ tHID_STATUS HID_HostSetSecurityLevel(const char serv_name[], uint8_t sec_lvl) {
  * Returns          true if device is HID Device else false
  *
  ******************************************************************************/
-bool hid_known_hid_device(const bt_bdaddr_t& bd_addr) {
+bool hid_known_hid_device(const RawAddress& bd_addr) {
   uint8_t i;
   tBTM_INQ_INFO* p_inq_info = BTM_InqDbRead(bd_addr);
 

@@ -474,7 +474,7 @@ typedef union {
 
 typedef struct {
   bool in_use;
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   uint8_t pf_counter[BTM_BLE_PF_TYPE_MAX]; /* number of filter indexed by
                                               tBTM_BLE_PF_COND_TYPE */
 } tBTM_BLE_PF_COUNT;

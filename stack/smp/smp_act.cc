@@ -33,7 +33,7 @@ const tSMP_ACT smp_distribute_act[] = {smp_generate_ltk, smp_send_id_info,
                                        smp_generate_csrk,
                                        smp_set_derive_link_key};
 
-static bool lmp_version_below(const bt_bdaddr_t& bda, uint8_t version) {
+static bool lmp_version_below(const RawAddress& bda, uint8_t version) {
   tACL_CONN* acl = btm_bda_to_acl(bda, BT_TRANSPORT_LE);
   if (acl == NULL || acl->lmp_version == 0) {
     SMP_TRACE_WARNING("%s cannot retrieve LMP version...", __func__);
@@ -170,7 +170,7 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
           if (!(p_cb->loc_auth_req & SMP_SC_SUPPORT_BIT) ||
               lmp_version_below(p_cb->pairing_bda, HCI_PROTO_VERSION_4_2) ||
               interop_match_addr(INTEROP_DISABLE_LE_SECURE_CONNECTIONS,
-                                 (const bt_bdaddr_t*)&p_cb->pairing_bda)) {
+                                 (const RawAddress*)&p_cb->pairing_bda)) {
             p_cb->loc_auth_req &= ~SMP_KP_SUPPORT_BIT;
             p_cb->local_i_key &= ~SMP_SEC_KEY_TYPE_LK;
             p_cb->local_r_key &= ~SMP_SEC_KEY_TYPE_LK;
@@ -1832,7 +1832,7 @@ void smp_set_local_oob_random_commitment(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void smp_link_encrypted(const bt_bdaddr_t& bda, uint8_t encr_enable) {
+void smp_link_encrypted(const RawAddress& bda, uint8_t encr_enable) {
   tSMP_CB* p_cb = &smp_cb;
 
   SMP_TRACE_DEBUG("%s: encr_enable=%d", __func__, encr_enable);
@@ -1859,7 +1859,7 @@ void smp_link_encrypted(const bt_bdaddr_t& bda, uint8_t encr_enable) {
  * Returns          void
  *
  ******************************************************************************/
-bool smp_proc_ltk_request(const bt_bdaddr_t& bda) {
+bool smp_proc_ltk_request(const RawAddress& bda) {
   SMP_TRACE_DEBUG("%s state = %d", __func__, smp_cb.state);
   bool match = false;
 
