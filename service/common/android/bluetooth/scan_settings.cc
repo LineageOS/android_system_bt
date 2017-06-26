@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "service/common/android/bluetooth/scan_settings.h"
+#include "android/bluetooth/scan_settings.h"
 
 #include <binder/Parcel.h>
 

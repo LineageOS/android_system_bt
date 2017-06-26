@@ -14,8 +14,8 @@
 //  limitations under the License.
 //
 
-#include "service/common/android/bluetooth/bluetooth_gatt_descriptor.h"
-#include "service/common/android/bluetooth/uuid.h"
+#include "android/bluetooth/bluetooth_gatt_descriptor.h"
+#include "android/bluetooth/uuid.h"
 
 #include <utils/String16.h>
 #include <utils/String8.h>
