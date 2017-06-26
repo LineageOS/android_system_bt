@@ -10,9 +10,3 @@ root path, e.g.:
 This is so that client applications that link against the client library have
 one common include path exported to them, and our headers can find eachother
 within that.
-
-It is however OK to include from the package root when including common headers
-from source files as these are pre-compiled. For example,
-common/bluetooth/adapter_state.cpp should do:
-
-#include "service/common/bluetooth/adapter_state.h"

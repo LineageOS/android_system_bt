@@ -14,8 +14,8 @@
 //  limitations under the License.
 //
 
-#include "service/common/android/bluetooth/scan_filter.h"
-#include "service/common/android/bluetooth/uuid.h"
+#include "android/bluetooth/scan_filter.h"
+#include "android/bluetooth/uuid.h"
 
 #include <binder/Parcel.h>
 #include <utils/String16.h>
