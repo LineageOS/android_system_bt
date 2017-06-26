@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "service/common/android/bluetooth/uuid.h"
+#include "android/bluetooth/uuid.h"
 
 #include <binder/Parcel.h>
 

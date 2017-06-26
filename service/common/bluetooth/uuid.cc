@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "service/common/bluetooth/uuid.h"
+#include "bluetooth/uuid.h"
 
 #include <algorithm>
 #include <array>
