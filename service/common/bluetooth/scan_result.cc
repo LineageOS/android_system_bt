@@ -14,11 +14,11 @@
 //  limitations under the License.
 //
 
-#include "service/common/bluetooth/scan_result.h"
+#include "bluetooth/scan_result.h"
 
 #include <base/logging.h>
 
-#include "service/common/bluetooth/util/address_helper.h"
+#include "bluetooth/util/address_helper.h"
 
 namespace bluetooth {
 

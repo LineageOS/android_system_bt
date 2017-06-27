@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "service/common/android/bluetooth/scan_result.h"
+#include "android/bluetooth/scan_result.h"
 
 #include <base/logging.h>
 #include <binder/Parcel.h>
