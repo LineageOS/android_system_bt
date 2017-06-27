@@ -378,6 +378,13 @@ static bool supports_ble_privacy(void) {
   return HCI_LE_ENHANCED_PRIVACY_SUPPORTED(features_ble.as_array);
 }
 
+static bool supports_ble_set_privacy_mode() {
+  CHECK(readable);
+  CHECK(ble_supported);
+  return HCI_LE_ENHANCED_PRIVACY_SUPPORTED(features_ble.as_array) &&
+         HCI_LE_SET_PRIVACY_MODE_SUPPORTED(supported_commands);
+}
+
 static bool supports_ble_packet_extension(void) {
   CHECK(readable);
   CHECK(ble_supported);
@@ -521,6 +528,7 @@ static const controller_t interface = {
     supports_ble_packet_extension,
     supports_ble_connection_parameters_request,
     supports_ble_privacy,
+    supports_ble_set_privacy_mode,
     supports_ble_2m_phy,
     supports_ble_coded_phy,
     supports_ble_extended_advertising,
