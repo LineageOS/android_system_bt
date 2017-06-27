@@ -3230,6 +3230,8 @@ typedef struct {
   ((x)[HCI_SUPP_COMMANDS_LE_ENH_TX_TEST_OFF] & \
    HCI_SUPP_COMMANDS_LE_ENH_TX_TEST_MASK)
 
+#define HCI_LE_SET_PRIVACY_MODE_SUPPORTED(x) ((x)[39] & 0x04)
+
 /* LE Advertising Extension related Procedurs */
 #define HCI_LE_EXTENDED_ADVERTISING_SUPPORTED(x) \
   (((x)[1] & 0x10))  // BIT 12 SET
