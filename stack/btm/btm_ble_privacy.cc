@@ -708,7 +708,7 @@ bool btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC* p_dev_rec) {
               p_dev_rec->ble.static_addr_type, p_dev_rec->ble.static_addr,
               peer_irk, local_irk);
 
-          if (controller_get_interface()->supports_ble_privacy()) {
+          if (controller_get_interface()->supports_ble_set_privacy_mode()) {
             BTM_TRACE_DEBUG("%s: adding device privacy mode", __func__);
             btsnd_hcic_ble_set_privacy_mode(p_dev_rec->ble.static_addr_type,
                                             p_dev_rec->ble.static_addr, 0x01);
