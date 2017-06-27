@@ -56,6 +56,7 @@ typedef struct controller_t {
   bool (*supports_ble_packet_extension)(void);
   bool (*supports_ble_connection_parameters_request)(void);
   bool (*supports_ble_privacy)(void);
+  bool (*supports_ble_set_privacy_mode)(void);
   bool (*supports_ble_2m_phy)(void);
   bool (*supports_ble_coded_phy)(void);
   bool (*supports_ble_extended_advertising)(void);

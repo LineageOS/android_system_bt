@@ -14,9 +14,9 @@
 //  limitations under the License.
 //
 
-#include "service/common/bluetooth/scan_filter.h"
+#include "bluetooth/scan_filter.h"
 
-#include "service/common/bluetooth/util/address_helper.h"
+#include "bluetooth/util/address_helper.h"
 
 namespace bluetooth {
 
