@@ -189,243 +189,163 @@ uint8_t ble_evt_type_data_status(uint16_t evt_type) {
   return (evt_type >> 5) & 3;
 }
 
+constexpr uint8_t UNSUPPORTED = 255;
+
 /* LE states combo bit to check */
-const uint8_t btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX][2] =
-    {{
-         /* single state support */
-         {HCI_SUPP_LE_STATES_CONN_ADV_MASK,
-          HCI_SUPP_LE_STATES_CONN_ADV_OFF}, /* conn_adv */
-         {HCI_SUPP_LE_STATES_INIT_MASK, HCI_SUPP_LE_STATES_INIT_OFF}, /* init */
-         {HCI_SUPP_LE_STATES_INIT_MASK,
-          HCI_SUPP_LE_STATES_INIT_OFF}, /* master */
-         {HCI_SUPP_LE_STATES_SLAVE_MASK,
-          HCI_SUPP_LE_STATES_SLAVE_OFF}, /* slave */
-         {0, 0}, /* todo: lo du dir adv, not covered ? */
-         {HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_MASK,
-          HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_OFF}, /* hi duty dir adv */
-         {HCI_SUPP_LE_STATES_NON_CONN_ADV_MASK,
-          HCI_SUPP_LE_STATES_NON_CONN_ADV_OFF}, /* non connectable adv */
-         {HCI_SUPP_LE_STATES_PASS_SCAN_MASK,
-          HCI_SUPP_LE_STATES_PASS_SCAN_OFF}, /*  passive scan */
-         {HCI_SUPP_LE_STATES_ACTIVE_SCAN_MASK,
-          HCI_SUPP_LE_STATES_ACTIVE_SCAN_OFF}, /*   active scan */
-         {HCI_SUPP_LE_STATES_SCAN_ADV_MASK,
-          HCI_SUPP_LE_STATESSCAN_ADV_OFF} /* scanable adv */
-     },
-     {
-         /* conn_adv =0 */
-         {0, 0}, /* conn_adv */
-         {HCI_SUPP_LE_STATES_CONN_ADV_INIT_MASK,
-          HCI_SUPP_LE_STATES_CONN_ADV_INIT_OFF}, /* init: 32 */
-         {HCI_SUPP_LE_STATES_CONN_ADV_MASTER_MASK,
-          HCI_SUPP_LE_STATES_CONN_ADV_MASTER_OFF}, /* master: 35 */
-         {HCI_SUPP_LE_STATES_CONN_ADV_SLAVE_MASK,
-          HCI_SUPP_LE_STATES_CONN_ADV_SLAVE_OFF}, /* slave: 38,*/
-         {0, 0},                                  /* lo du dir adv */
-         {0, 0},                                  /* hi duty dir adv */
-         {0, 0},                                  /* non connectable adv */
-         {HCI_SUPP_LE_STATES_CONN_ADV_PASS_SCAN_MASK,
-          HCI_SUPP_LE_STATES_CONN_ADV_PASS_SCAN_OFF}, /*  passive scan */
-         {HCI_SUPP_LE_STATES_CONN_ADV_ACTIVE_SCAN_MASK,
-          HCI_SUPP_LE_STATES_CONN_ADV_ACTIVE_SCAN_OFF}, /*   active scan */
-         {0, 0}                                         /* scanable adv */
-     },
-     {
-         /* init */
-         {HCI_SUPP_LE_STATES_CONN_ADV_INIT_MASK,
-          HCI_SUPP_LE_STATES_CONN_ADV_INIT_OFF}, /* conn_adv: 32 */
-         {0, 0},                                 /* init */
-         {HCI_SUPP_LE_STATES_INIT_MASTER_MASK,
-          HCI_SUPP_LE_STATES_INIT_MASTER_OFF}, /* master 28 */
-         {HCI_SUPP_LE_STATES_INIT_MASTER_SLAVE_MASK,
-          HCI_SUPP_LE_STATES_INIT_MASTER_SLAVE_OFF}, /* slave 41 */
-         {HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_INIT_MASK,
-          HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_INIT_OFF}, /* lo du dir adv 34 */
-         {HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_INIT_MASK,
-          HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_INIT_OFF}, /* hi duty dir adv 33 */
-         {HCI_SUPP_LE_STATES_NON_CONN_INIT_MASK,
-          HCI_SUPP_LE_STATES_NON_CONN_INIT_OFF}, /*  non connectable adv */
-         {HCI_SUPP_LE_STATES_PASS_SCAN_INIT_MASK,
-          HCI_SUPP_LE_STATES_PASS_SCAN_INIT_OFF}, /* passive scan */
-         {HCI_SUPP_LE_STATES_ACTIVE_SCAN_INIT_MASK,
-          HCI_SUPP_LE_STATES_ACTIVE_SCAN_INIT_OFF}, /*  active scan */
-         {HCI_SUPP_LE_STATES_SCAN_ADV_INIT_MASK,
-          HCI_SUPP_LE_STATES_SCAN_ADV_INIT_OFF} /* scanable adv */
+const uint8_t btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX] = {
+    {
+        /* single state support */
+        HCI_LE_STATES_CONN_ADV_BIT, /* conn_adv */
+        HCI_LE_STATES_INIT_BIT,     /* init */
+        HCI_LE_STATES_INIT_BIT,     /* master */
+        HCI_LE_STATES_SLAVE_BIT,    /* slave */
+        UNSUPPORTED,                /* todo: lo du dir adv, not covered ? */
+        HCI_LE_STATES_HI_DUTY_DIR_ADV_BIT, /* hi duty dir adv */
+        HCI_LE_STATES_NON_CONN_ADV_BIT,    /* non connectable adv */
+        HCI_LE_STATES_PASS_SCAN_BIT,       /*  passive scan */
+        HCI_LE_STATES_ACTIVE_SCAN_BIT,     /*   active scan */
+        HCI_LE_STATES_SCAN_ADV_BIT         /* scanable adv */
+    },
+    {
+        /* conn_adv =0 */
+        UNSUPPORTED,                            /* conn_adv */
+        HCI_LE_STATES_CONN_ADV_INIT_BIT,        /* init: 32 */
+        HCI_LE_STATES_CONN_ADV_MASTER_BIT,      /* master: 35 */
+        HCI_LE_STATES_CONN_ADV_SLAVE_BIT,       /* slave: 38,*/
+        UNSUPPORTED,                            /* lo du dir adv */
+        UNSUPPORTED,                            /* hi duty dir adv */
+        UNSUPPORTED,                            /* non connectable adv */
+        HCI_LE_STATES_CONN_ADV_PASS_SCAN_BIT,   /*  passive scan */
+        HCI_LE_STATES_CONN_ADV_ACTIVE_SCAN_BIT, /*   active scan */
+        UNSUPPORTED                             /* scanable adv */
+    },
+    {
+        /* init */
+        HCI_LE_STATES_CONN_ADV_INIT_BIT,        /* conn_adv: 32 */
+        UNSUPPORTED,                            /* init */
+        HCI_LE_STATES_INIT_MASTER_BIT,          /* master 28 */
+        HCI_LE_STATES_INIT_MASTER_SLAVE_BIT,    /* slave 41 */
+        HCI_LE_STATES_LO_DUTY_DIR_ADV_INIT_BIT, /* lo du dir adv 34 */
+        HCI_LE_STATES_HI_DUTY_DIR_ADV_INIT_BIT, /* hi duty dir adv 33 */
+        HCI_LE_STATES_NON_CONN_INIT_BIT,        /*  non connectable adv */
+        HCI_LE_STATES_PASS_SCAN_INIT_BIT,       /* passive scan */
+        HCI_LE_STATES_ACTIVE_SCAN_INIT_BIT,     /*  active scan */
+        HCI_LE_STATES_SCAN_ADV_INIT_BIT         /* scanable adv */
 
-     },
-     {
-         /* master */
-         {HCI_SUPP_LE_STATES_CONN_ADV_MASTER_MASK,
-          HCI_SUPP_LE_STATES_CONN_ADV_MASTER_OFF}, /* conn_adv: 35 */
-         {HCI_SUPP_LE_STATES_INIT_MASTER_MASK,
-          HCI_SUPP_LE_STATES_INIT_MASTER_OFF}, /* init 28 */
-         {HCI_SUPP_LE_STATES_INIT_MASTER_MASK,
-          HCI_SUPP_LE_STATES_INIT_MASTER_OFF}, /* master 28 */
-         {HCI_SUPP_LE_STATES_CONN_ADV_INIT_MASK,
-          HCI_SUPP_LE_STATES_CONN_ADV_INIT_OFF}, /* slave: 32 */
-         {HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_MASTER_MASK,
-          HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_MASTER_OFF}, /* lo duty cycle adv
-                                                             37 */
-         {HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_MASTER_MASK,
-          HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_MASTER_OFF}, /* hi duty cycle adv
-                                                             36 */
-         {HCI_SUPP_LE_STATES_NON_CONN_ADV_MASTER_MASK,
-          HCI_SUPP_LE_STATES_NON_CONN_ADV_MASTER_OFF}, /*  non connectable adv
-                                                          */
-         {HCI_SUPP_LE_STATES_PASS_SCAN_MASTER_MASK,
-          HCI_SUPP_LE_STATES_PASS_SCAN_MASTER_OFF}, /*  passive scan */
-         {HCI_SUPP_LE_STATES_ACTIVE_SCAN_MASTER_MASK,
-          HCI_SUPP_LE_STATES_ACTIVE_SCAN_MASTER_OFF}, /*   active scan */
-         {HCI_SUPP_LE_STATES_SCAN_ADV_MASTER_MASK,
-          HCI_SUPP_LE_STATES_SCAN_ADV_MASTER_OFF} /*  scanable adv */
+    },
+    {
+        /* master */
+        HCI_LE_STATES_CONN_ADV_MASTER_BIT,        /* conn_adv: 35 */
+        HCI_LE_STATES_INIT_MASTER_BIT,            /* init 28 */
+        HCI_LE_STATES_INIT_MASTER_BIT,            /* master 28 */
+        HCI_LE_STATES_CONN_ADV_INIT_BIT,          /* slave: 32 */
+        HCI_LE_STATES_LO_DUTY_DIR_ADV_MASTER_BIT, /* lo duty cycle adv 37 */
+        HCI_LE_STATES_HI_DUTY_DIR_ADV_MASTER_BIT, /* hi duty cycle adv 36 */
+        HCI_LE_STATES_NON_CONN_ADV_MASTER_BIT,    /*  non connectable adv*/
+        HCI_LE_STATES_PASS_SCAN_MASTER_BIT,       /*  passive scan */
+        HCI_LE_STATES_ACTIVE_SCAN_MASTER_BIT,     /*   active scan */
+        HCI_LE_STATES_SCAN_ADV_MASTER_BIT         /*  scanable adv */
 
-     },
-     {
-         /* slave */
-         {HCI_SUPP_LE_STATES_CONN_ADV_SLAVE_MASK,
-          HCI_SUPP_LE_STATES_CONN_ADV_SLAVE_OFF}, /* conn_adv: 38,*/
-         {HCI_SUPP_LE_STATES_INIT_MASTER_SLAVE_MASK,
-          HCI_SUPP_LE_STATES_INIT_MASTER_SLAVE_OFF}, /* init 41 */
-         {HCI_SUPP_LE_STATES_INIT_MASTER_SLAVE_MASK,
-          HCI_SUPP_LE_STATES_INIT_MASTER_SLAVE_OFF}, /* master 41 */
-         {HCI_SUPP_LE_STATES_CONN_ADV_SLAVE_MASK,
-          HCI_SUPP_LE_STATES_CONN_ADV_SLAVE_OFF}, /* slave: 38,*/
-         {HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_SLAVE_MASK,
-          HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_SLAVE_OFF}, /* lo duty cycle adv 40
-                                                            */
-         {HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_SLAVE_MASK,
-          HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_SLAVE_OFF}, /* hi duty cycle adv 39
-                                                            */
-         {HCI_SUPP_LE_STATES_NON_CONN_ADV_SLAVE_MASK,
-          HCI_SUPP_LE_STATES_NON_CONN_ADV_SLAVE_OFF}, /* non connectable adv */
-         {HCI_SUPP_LE_STATES_PASS_SCAN_SLAVE_MASK,
-          HCI_SUPP_LE_STATES_PASS_SCAN_SLAVE_OFF}, /* passive scan */
-         {HCI_SUPP_LE_STATES_ACTIVE_SCAN_SLAVE_MASK,
-          HCI_SUPP_LE_STATES_ACTIVE_SCAN_SLAVE_OFF}, /*  active scan */
-         {HCI_SUPP_LE_STATES_SCAN_ADV_SLAVE_MASK,
-          HCI_SUPP_LE_STATES_SCAN_ADV_SLAVE_OFF} /* scanable adv */
+    },
+    {
+        /* slave */
+        HCI_LE_STATES_CONN_ADV_SLAVE_BIT,        /* conn_adv: 38,*/
+        HCI_LE_STATES_INIT_MASTER_SLAVE_BIT,     /* init 41 */
+        HCI_LE_STATES_INIT_MASTER_SLAVE_BIT,     /* master 41 */
+        HCI_LE_STATES_CONN_ADV_SLAVE_BIT,        /* slave: 38,*/
+        HCI_LE_STATES_LO_DUTY_DIR_ADV_SLAVE_BIT, /* lo duty cycle adv 40 */
+        HCI_LE_STATES_HI_DUTY_DIR_ADV_SLAVE_BIT, /* hi duty cycle adv 39 */
+        HCI_LE_STATES_NON_CONN_ADV_SLAVE_BIT,    /* non connectable adv */
+        HCI_LE_STATES_PASS_SCAN_SLAVE_BIT,       /* passive scan */
+        HCI_LE_STATES_ACTIVE_SCAN_SLAVE_BIT,     /*  active scan */
+        HCI_LE_STATES_SCAN_ADV_SLAVE_BIT         /* scanable adv */
 
-     },
-     {
-         /* lo duty cycle adv */
-         {0, 0}, /* conn_adv: 38,*/
-         {HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_INIT_MASK,
-          HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_INIT_OFF}, /* init 34 */
-         {HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_MASTER_MASK,
-          HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_MASTER_OFF}, /* master 37 */
-         {HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_SLAVE_MASK,
-          HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_SLAVE_OFF}, /* slave: 40 */
-         {0, 0}, /* lo duty cycle adv 40 */
-         {0, 0}, /* hi duty cycle adv 39 */
-         {0, 0}, /*  non connectable adv */
-         {0, 0}, /* TODO: passive scan, not covered? */
-         {0, 0}, /* TODO:  active scan, not covered? */
-         {0, 0}  /*  scanable adv */
-     },
-     {
-         /* hi duty cycle adv */
-         {0, 0}, /* conn_adv: 38,*/
-         {HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_INIT_MASK,
-          HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_INIT_OFF}, /* init 33 */
-         {HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_MASTER_MASK,
-          HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_MASTER_OFF}, /* master 36 */
-         {HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_SLAVE_MASK,
-          HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_SLAVE_OFF}, /* slave: 39*/
-         {0, 0}, /* lo duty cycle adv 40 */
-         {0, 0}, /* hi duty cycle adv 39 */
-         {0, 0}, /* non connectable adv */
-         {HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_PASS_SCAN_MASK,
-          HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_PASS_SCAN_OFF}, /* passive scan */
-         {HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_ACTIVE_SCAN_MASK,
-          HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_ACTIVE_SCAN_OFF}, /* active scan */
-         {0, 0} /* scanable adv */
-     },
-     {
-         /* non connectable adv */
-         {0, 0}, /* conn_adv: */
-         {HCI_SUPP_LE_STATES_NON_CONN_INIT_MASK,
-          HCI_SUPP_LE_STATES_NON_CONN_INIT_OFF}, /* init  */
-         {HCI_SUPP_LE_STATES_NON_CONN_ADV_MASTER_MASK,
-          HCI_SUPP_LE_STATES_NON_CONN_ADV_MASTER_OFF}, /* master  */
-         {HCI_SUPP_LE_STATES_NON_CONN_ADV_SLAVE_MASK,
-          HCI_SUPP_LE_STATES_NON_CONN_ADV_SLAVE_OFF}, /* slave: */
-         {0, 0},                                      /* lo duty cycle adv */
-         {0, 0},                                      /* hi duty cycle adv */
-         {0, 0},                                      /* non connectable adv */
-         {HCI_SUPP_LE_STATES_NON_CONN_ADV_PASS_SCAN_MASK,
-          HCI_SUPP_LE_STATES_NON_CONN_ADV_PASS_SCAN_OFF}, /* passive scan */
-         {HCI_SUPP_LE_STATES_NON_CONN_ADV_ACTIVE_SCAN_MASK,
-          HCI_SUPP_LE_STATES_NON_CONN_ADV_ACTIVE_SCAN_OFF}, /*  active scan */
-         {0, 0}                                             /* scanable adv */
-     },
-     {
-         /* passive scan */
-         {HCI_SUPP_LE_STATES_CONN_ADV_PASS_SCAN_MASK,
-          HCI_SUPP_LE_STATES_CONN_ADV_PASS_SCAN_OFF}, /* conn_adv: */
-         {HCI_SUPP_LE_STATES_PASS_SCAN_INIT_MASK,
-          HCI_SUPP_LE_STATES_PASS_SCAN_INIT_OFF}, /* init  */
-         {HCI_SUPP_LE_STATES_PASS_SCAN_MASTER_MASK,
-          HCI_SUPP_LE_STATES_PASS_SCAN_MASTER_OFF}, /* master  */
-         {HCI_SUPP_LE_STATES_PASS_SCAN_SLAVE_MASK,
-          HCI_SUPP_LE_STATES_PASS_SCAN_SLAVE_OFF}, /* slave: */
-         {0, 0},                                   /* lo duty cycle adv */
-         {HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_PASS_SCAN_MASK,
-          HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_PASS_SCAN_OFF}, /* hi duty cycle
-                                                                adv */
-         {HCI_SUPP_LE_STATES_NON_CONN_ADV_PASS_SCAN_MASK,
-          HCI_SUPP_LE_STATES_NON_CONN_ADV_PASS_SCAN_OFF}, /*  non connectable
-                                                             adv */
-         {0, 0},                                          /* passive scan */
-         {0, 0},                                          /* active scan */
-         {HCI_SUPP_LE_STATES_SCAN_ADV_PASS_SCAN_MASK,
-          HCI_SUPP_LE_STATES_SCAN_ADV_PASS_SCAN_OFF} /* scanable adv */
-     },
-     {
-         /* active scan */
-         {HCI_SUPP_LE_STATES_CONN_ADV_ACTIVE_SCAN_MASK,
-          HCI_SUPP_LE_STATES_CONN_ADV_ACTIVE_SCAN_OFF}, /* conn_adv: */
-         {HCI_SUPP_LE_STATES_ACTIVE_SCAN_INIT_MASK,
-          HCI_SUPP_LE_STATES_ACTIVE_SCAN_INIT_OFF}, /* init  */
-         {HCI_SUPP_LE_STATES_ACTIVE_SCAN_MASTER_MASK,
-          HCI_SUPP_LE_STATES_ACTIVE_SCAN_MASTER_OFF}, /* master  */
-         {HCI_SUPP_LE_STATES_ACTIVE_SCAN_SLAVE_MASK,
-          HCI_SUPP_LE_STATES_ACTIVE_SCAN_SLAVE_OFF}, /* slave: */
-         {0, 0},                                     /* lo duty cycle adv */
-         {HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_ACTIVE_SCAN_MASK,
-          HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_ACTIVE_SCAN_OFF}, /* hi duty
-                                                                  cycle adv
-                                                                  */
-         {HCI_SUPP_LE_STATES_NON_CONN_ADV_ACTIVE_SCAN_MASK,
-          HCI_SUPP_LE_STATES_NON_CONN_ADV_ACTIVE_SCAN_OFF}, /*  non
-                                                               connectable
-                                                               adv */
-         {0, 0}, /* TODO: passive scan */
-         {0, 0}, /* TODO:  active scan */
-         {HCI_SUPP_LE_STATES_SCAN_ADV_ACTIVE_SCAN_MASK,
-          HCI_SUPP_LE_STATES_SCAN_ADV_ACTIVE_SCAN_OFF} /*  scanable adv */
-     },
-     {
-         /* scanable adv */
-         {0, 0}, /* conn_adv: */
-         {HCI_SUPP_LE_STATES_SCAN_ADV_INIT_MASK,
-          HCI_SUPP_LE_STATES_SCAN_ADV_INIT_OFF}, /* init  */
-         {HCI_SUPP_LE_STATES_SCAN_ADV_MASTER_MASK,
-          HCI_SUPP_LE_STATES_SCAN_ADV_MASTER_OFF}, /* master  */
-         {HCI_SUPP_LE_STATES_SCAN_ADV_SLAVE_MASK,
-          HCI_SUPP_LE_STATES_SCAN_ADV_SLAVE_OFF}, /* slave: */
-         {0, 0},                                  /* lo duty cycle adv */
-         {0, 0},                                  /* hi duty cycle adv */
-         {0, 0},                                  /* non connectable adv */
-         {HCI_SUPP_LE_STATES_SCAN_ADV_PASS_SCAN_MASK,
-          HCI_SUPP_LE_STATES_SCAN_ADV_PASS_SCAN_OFF}, /*  passive scan */
-         {HCI_SUPP_LE_STATES_SCAN_ADV_ACTIVE_SCAN_MASK,
-          HCI_SUPP_LE_STATES_SCAN_ADV_ACTIVE_SCAN_OFF}, /*  active scan */
-         {0, 0}                                         /* scanable adv */
-     }
+    },
+    {
+        /* lo duty cycle adv */
+        UNSUPPORTED,                              /* conn_adv: 38,*/
+        HCI_LE_STATES_LO_DUTY_DIR_ADV_INIT_BIT,   /* init 34 */
+        HCI_LE_STATES_LO_DUTY_DIR_ADV_MASTER_BIT, /* master 37 */
+        HCI_LE_STATES_LO_DUTY_DIR_ADV_SLAVE_BIT,  /* slave: 40 */
+        UNSUPPORTED,                              /* lo duty cycle adv 40 */
+        UNSUPPORTED,                              /* hi duty cycle adv 39 */
+        UNSUPPORTED,                              /*  non connectable adv */
+        UNSUPPORTED, /* TODO: passive scan, not covered? */
+        UNSUPPORTED, /* TODO:  active scan, not covered? */
+        UNSUPPORTED  /*  scanable adv */
+    },
+    {
+        /* hi duty cycle adv */
+        UNSUPPORTED,                                 /* conn_adv: 38,*/
+        HCI_LE_STATES_HI_DUTY_DIR_ADV_INIT_BIT,      /* init 33 */
+        HCI_LE_STATES_HI_DUTY_DIR_ADV_MASTER_BIT,    /* master 36 */
+        HCI_LE_STATES_HI_DUTY_DIR_ADV_SLAVE_BIT,     /* slave: 39*/
+        UNSUPPORTED,                                 /* lo duty cycle adv 40 */
+        UNSUPPORTED,                                 /* hi duty cycle adv 39 */
+        UNSUPPORTED,                                 /* non connectable adv */
+        HCI_LE_STATES_HI_DUTY_DIR_ADV_PASS_SCAN_BIT, /* passive scan */
+        HCI_LE_STATES_HI_DUTY_DIR_ADV_ACTIVE_SCAN_BIT, /* active scan */
+        UNSUPPORTED                                    /* scanable adv */
+    },
+    {
+        /* non connectable adv */
+        UNSUPPORTED,                                /* conn_adv: */
+        HCI_LE_STATES_NON_CONN_INIT_BIT,            /* init  */
+        HCI_LE_STATES_NON_CONN_ADV_MASTER_BIT,      /* master  */
+        HCI_LE_STATES_NON_CONN_ADV_SLAVE_BIT,       /* slave: */
+        UNSUPPORTED,                                /* lo duty cycle adv */
+        UNSUPPORTED,                                /* hi duty cycle adv */
+        UNSUPPORTED,                                /* non connectable adv */
+        HCI_LE_STATES_NON_CONN_ADV_PASS_SCAN_BIT,   /* passive scan */
+        HCI_LE_STATES_NON_CONN_ADV_ACTIVE_SCAN_BIT, /* active scan */
+        UNSUPPORTED                                 /* scanable adv */
+    },
+    {
+        /* passive scan */
+        HCI_LE_STATES_CONN_ADV_PASS_SCAN_BIT,        /* conn_adv: */
+        HCI_LE_STATES_PASS_SCAN_INIT_BIT,            /* init  */
+        HCI_LE_STATES_PASS_SCAN_MASTER_BIT,          /* master  */
+        HCI_LE_STATES_PASS_SCAN_SLAVE_BIT,           /* slave: */
+        UNSUPPORTED,                                 /* lo duty cycle adv */
+        HCI_LE_STATES_HI_DUTY_DIR_ADV_PASS_SCAN_BIT, /* hi duty cycle adv */
+        HCI_LE_STATES_NON_CONN_ADV_PASS_SCAN_BIT,    /* non connectable adv */
+        UNSUPPORTED,                                 /* passive scan */
+        UNSUPPORTED,                                 /* active scan */
+        HCI_LE_STATES_SCAN_ADV_PASS_SCAN_BIT         /* scanable adv */
+    },
+    {
+        /* active scan */
+        HCI_LE_STATES_CONN_ADV_ACTIVE_SCAN_BIT,        /* conn_adv: */
+        HCI_LE_STATES_ACTIVE_SCAN_INIT_BIT,            /* init  */
+        HCI_LE_STATES_ACTIVE_SCAN_MASTER_BIT,          /* master  */
+        HCI_LE_STATES_ACTIVE_SCAN_SLAVE_BIT,           /* slave: */
+        UNSUPPORTED,                                   /* lo duty cycle adv */
+        HCI_LE_STATES_HI_DUTY_DIR_ADV_ACTIVE_SCAN_BIT, /* hi duty cycle adv */
+        HCI_LE_STATES_NON_CONN_ADV_ACTIVE_SCAN_BIT, /*  non connectable adv */
+        UNSUPPORTED,                                /* TODO: passive scan */
+        UNSUPPORTED,                                /* TODO:  active scan */
+        HCI_LE_STATES_SCAN_ADV_ACTIVE_SCAN_BIT      /*  scanable adv */
+    },
+    {
+        /* scanable adv */
+        UNSUPPORTED,                            /* conn_adv: */
+        HCI_LE_STATES_SCAN_ADV_INIT_BIT,        /* init  */
+        HCI_LE_STATES_SCAN_ADV_MASTER_BIT,      /* master  */
+        HCI_LE_STATES_SCAN_ADV_SLAVE_BIT,       /* slave: */
+        UNSUPPORTED,                            /* lo duty cycle adv */
+        UNSUPPORTED,                            /* hi duty cycle adv */
+        UNSUPPORTED,                            /* non connectable adv */
+        HCI_LE_STATES_SCAN_ADV_PASS_SCAN_BIT,   /*  passive scan */
+        HCI_LE_STATES_SCAN_ADV_ACTIVE_SCAN_BIT, /*  active scan */
+        UNSUPPORTED                             /* scanable adv */
+    }};
 
-};
 /* check LE combo state supported */
-#define BTM_LE_STATES_SUPPORTED(x, y, z) ((x)[(z)] & (y))
+inline bool BTM_LE_STATES_SUPPORTED(const uint8_t* x, uint8_t bit_num) {
+  uint8_t mask = 1 << (bit_num % 8);
+  uint8_t offset = bit_num / 8;
+  return ((x)[offset] & mask);
+}
 
 /*******************************************************************************
  *
@@ -797,7 +717,7 @@ void BTM_BleStartAutoConn() {
  *
  * Description      This function is called to clear the whitelist,
  *                  end any pending whitelist connections,
-*                   and reset the local bg device list.
+ *                  and reset the local bg device list.
  *
  * Parameters       void
  *
@@ -816,9 +736,8 @@ void BTM_BleClearBgConnDev(void) {
  *
  * Description      This function is called to add or remove a device into/from
  *                  background connection procedure. The background connection
-*                   procedure is decided by the background connection type, it
-*can be
-*                   auto connection, or selective connection.
+ *                  procedure is decided by the background connection type, it
+ *                  can be auto connection, or selective connection.
  *
  * Parameters       add_remove: true to add; false to remove.
  *                  remote_bda: device address to add/remove.
@@ -2742,7 +2661,6 @@ bool btm_ble_topology_check(tBTM_BLE_STATE_MASK request_state_mask) {
 
   uint8_t state_offset = 0;
   uint16_t cur_states = btm_cb.ble_ctr_cb.cur_states;
-  uint8_t mask, offset;
   uint8_t request_state = 0;
 
   /* check only one bit is set and within valid range */
@@ -2759,28 +2677,24 @@ bool btm_ble_topology_check(tBTM_BLE_STATE_MASK request_state_mask) {
   }
 
   /* check if the requested state is supported or not */
-  mask = btm_le_state_combo_tbl[0][request_state - 1][0];
-  offset = btm_le_state_combo_tbl[0][request_state - 1][1];
-
+  uint8_t bit_num = btm_le_state_combo_tbl[0][request_state - 1];
   const uint8_t* ble_supported_states =
       controller_get_interface()->get_ble_supported_states();
 
-  if (!BTM_LE_STATES_SUPPORTED(ble_supported_states, mask, offset)) {
+  if (!BTM_LE_STATES_SUPPORTED(ble_supported_states, bit_num)) {
     BTM_TRACE_ERROR("state requested not supported: %d", request_state);
     return rt;
   }
 
   rt = true;
   /* make sure currently active states are all supported in conjunction with the
-     requested
-     state. If the bit in table is not set, the combination is not supported */
+     requested state. If the bit in table is UNSUPPORTED, the combination is not
+     supported */
   while (cur_states != 0) {
     if (cur_states & 0x01) {
-      mask = btm_le_state_combo_tbl[request_state][state_offset][0];
-      offset = btm_le_state_combo_tbl[request_state][state_offset][1];
-
-      if (mask != 0 && offset != 0) {
-        if (!BTM_LE_STATES_SUPPORTED(ble_supported_states, mask, offset)) {
+      uint8_t bit_num = btm_le_state_combo_tbl[request_state][state_offset];
+      if (bit_num != UNSUPPORTED) {
+        if (!BTM_LE_STATES_SUPPORTED(ble_supported_states, bit_num)) {
           rt = false;
           break;
         }
