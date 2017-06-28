@@ -148,37 +148,6 @@ enum {
                                          successfully */
 };
 
-/* Macro definitions for BD ADDR persistence */
-
-/**
- * PROPERTY_BT_BDADDR_PATH
- * The property key stores the storage location of Bluetooth Device Address
- */
-#ifndef PROPERTY_BT_BDADDR_PATH
-#define PROPERTY_BT_BDADDR_PATH "ro.bt.bdaddr_path"
-#endif
-
-/**
- * PERSIST_BDADDR_PROPERTY
- * If there is no valid bdaddr available from PROPERTY_BT_BDADDR_PATH,
- * generating a random BDADDR and keeping it in the PERSIST_BDADDR_DROP.
- */
-#ifndef PERSIST_BDADDR_PROPERTY
-#define PERSIST_BDADDR_PROPERTY "persist.service.bdroid.bdaddr"
-#endif
-
-/**
- * FACTORY_BT_BDADDR_PROPERTY
- * If there is no valid bdaddr available from PROPERTY_BT_BDADDR_PATH
- * and there is no available persistent bdaddr available from
- * PERSIST_BDADDR_PROPERTY use a factory set address
- */
-#ifndef FACTORY_BT_ADDR_PROPERTY
-#define FACTORY_BT_ADDR_PROPERTY "ro.boot.btmacaddr"
-#endif
-
-#define FACTORY_BT_BDADDR_STORAGE_LEN 17
-
 /*******************************************************************************
  *  Type definitions for callback functions
  ******************************************************************************/
