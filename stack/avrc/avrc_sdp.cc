@@ -31,6 +31,11 @@
  *  Global data
  ****************************************************************************/
 tAVRC_CB avrc_cb;
+static uint16_t a2dp_attr_list_sdp[] = {
+    ATTR_ID_SERVICE_CLASS_ID_LIST, /* update A2DP_NUM_ATTR, if changed */
+    ATTR_ID_BT_PROFILE_DESC_LIST,  ATTR_ID_SUPPORTED_FEATURES,
+    ATTR_ID_SERVICE_NAME,          ATTR_ID_PROTOCOL_DESC_LIST,
+    ATTR_ID_PROVIDER_NAME};
 
 /******************************************************************************
  *
@@ -103,11 +108,6 @@ uint16_t AVRC_FindService(uint16_t service_uuid, const bt_bdaddr_t& bd_addr,
                           tAVRC_FIND_CBACK* p_cback) {
   tSDP_UUID uuid_list;
   bool result = true;
-  uint16_t a2dp_attr_list[] = {
-      ATTR_ID_SERVICE_CLASS_ID_LIST, /* update AVRC_NUM_ATTR, if changed */
-      ATTR_ID_PROTOCOL_DESC_LIST,    ATTR_ID_BT_PROFILE_DESC_LIST,
-      ATTR_ID_SERVICE_NAME,          ATTR_ID_SUPPORTED_FEATURES,
-      ATTR_ID_PROVIDER_NAME};
 
   AVRC_TRACE_API("%s uuid: %x", __func__, service_uuid);
   if ((service_uuid != UUID_SERVCLASS_AV_REM_CTRL_TARGET &&
@@ -125,7 +125,7 @@ uint16_t AVRC_FindService(uint16_t service_uuid, const bt_bdaddr_t& bd_addr,
   uuid_list.uu.uuid16 = service_uuid;
 
   if (p_db->p_attrs == NULL || p_db->num_attr == 0) {
-    p_db->p_attrs = a2dp_attr_list;
+    p_db->p_attrs = a2dp_attr_list_sdp;
     p_db->num_attr = AVRC_NUM_ATTR;
   }
 
