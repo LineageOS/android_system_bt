@@ -945,12 +945,6 @@ typedef uint8_t tBT_DEVICE_TYPE;
 /* Define a function for logging */
 typedef void(BT_LOG_FUNC)(int trace_type, const char* fmt_str, ...);
 
-/* bd addr length and type */
-#ifndef BD_ADDR_LEN
-#define BD_ADDR_LEN 6
-typedef uint8_t BD_ADDR[BD_ADDR_LEN];
-#endif
-
 // From bd.c
 
 /*****************************************************************************
