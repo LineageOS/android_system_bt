@@ -64,7 +64,7 @@ static void btif_mce_mas_discovery_comp_evt(uint16_t event, char* p_param) {
     insts[i].p_name = evt_data->mas[i].p_srv_name;
   }
 
-  bt_bdaddr_t addr = evt_data->remote_addr;
+  RawAddress addr = evt_data->remote_addr;
   HAL_CBACK(bt_mce_callbacks, remote_mas_instances_cb,
             (bt_status_t)evt_data->status, &addr, evt_data->num_mas, insts);
 }
@@ -125,7 +125,7 @@ static bt_status_t init(btmce_callbacks_t* callbacks) {
   return BT_STATUS_SUCCESS;
 }
 
-static bt_status_t get_remote_mas_instances(bt_bdaddr_t* bd_addr) {
+static bt_status_t get_remote_mas_instances(RawAddress* bd_addr) {
   VLOG(2) << __func__ << ": remote_addr=" << bd_addr;
 
   BTA_MceGetRemoteMasInstances(*bd_addr);

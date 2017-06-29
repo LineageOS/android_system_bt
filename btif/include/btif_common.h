@@ -235,7 +235,7 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status);
 void btif_disable_bluetooth_evt(void);
 void btif_adapter_properties_evt(bt_status_t status, uint32_t num_props,
                                  bt_property_t* p_props);
-void btif_remote_properties_evt(bt_status_t status, bt_bdaddr_t* remote_addr,
+void btif_remote_properties_evt(bt_status_t status, RawAddress* remote_addr,
                                 uint32_t num_props, bt_property_t* p_props);
 
 void bte_load_did_conf(const char* p_path);

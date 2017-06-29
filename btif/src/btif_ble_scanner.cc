@@ -66,8 +66,8 @@ extern const btgatt_callbacks_t* bt_gatt_callbacks;
 
 namespace std {
 template <>
-struct hash<bt_bdaddr_t> {
-  size_t operator()(const bt_bdaddr_t& f) const {
+struct hash<RawAddress> {
+  size_t operator()(const RawAddress& f) const {
     return f.address[0] + f.address[1] + f.address[2] + f.address[3] +
            f.address[4] + f.address[5];
   }
@@ -78,13 +78,13 @@ struct hash<bt_bdaddr_t> {
 namespace {
 
 // all access to this variable should be done on the jni thread
-std::unordered_set<bt_bdaddr_t> p_dev_cb;
+std::unordered_set<RawAddress> p_dev_cb;
 
-void btif_gattc_add_remote_bdaddr(const bt_bdaddr_t& p_bda, uint8_t addr_type) {
+void btif_gattc_add_remote_bdaddr(const RawAddress& p_bda, uint8_t addr_type) {
   p_dev_cb.insert(p_bda);
 }
 
-bool btif_gattc_find_bdaddr(const bt_bdaddr_t& p_bda) {
+bool btif_gattc_find_bdaddr(const RawAddress& p_bda) {
   return (p_dev_cb.count(p_bda) != 0);
 }
 
@@ -128,7 +128,7 @@ void bta_batch_scan_reports_cb(int client_id, tBTA_STATUS status,
                     num_records, std::move(data));
 }
 
-void bta_scan_results_cb_impl(bt_bdaddr_t bd_addr, tBT_DEVICE_TYPE device_type,
+void bta_scan_results_cb_impl(RawAddress bd_addr, tBT_DEVICE_TYPE device_type,
                               int8_t rssi, uint8_t addr_type,
                               uint16_t ble_evt_type, uint8_t ble_primary_phy,
                               uint8_t ble_secondary_phy,
@@ -284,7 +284,7 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
                            int company_id, int company_id_mask,
                            const bt_uuid_t* p_uuid,
                            const bt_uuid_t* p_uuid_mask,
-                           const bt_bdaddr_t* bd_addr, char addr_type,
+                           const RawAddress* bd_addr, char addr_type,
                            vector<uint8_t> data, vector<uint8_t> mask,
                            FilterConfigCallback cb) override {
     BTIF_TRACE_DEBUG("%s, %d, %d", __func__, action, filt_type);
@@ -426,7 +426,7 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
                                 Bind(bta_batch_scan_reports_cb, client_if)));
   }
 
-  void StartSync(uint8_t sid, bt_bdaddr_t address, uint16_t skip,
+  void StartSync(uint8_t sid, RawAddress address, uint16_t skip,
                  uint16_t timeout, StartSyncCb start_cb, SyncReportCb report_cb,
                  SyncLostCb lost_cb) override {}
 

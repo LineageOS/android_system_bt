@@ -139,7 +139,7 @@ const UUID& LowEnergyScanner::GetAppIdentifier() const {
 int LowEnergyScanner::GetInstanceId() const { return scanner_id_; }
 
 void LowEnergyScanner::ScanResultCallback(
-    hal::BluetoothGattInterface* gatt_iface, const bt_bdaddr_t& bda, int rssi,
+    hal::BluetoothGattInterface* gatt_iface, const RawAddress& bda, int rssi,
     std::vector<uint8_t> adv_data) {
   // Ignore scan results if this client didn't start a scan.
   if (!scan_started_.load()) return;

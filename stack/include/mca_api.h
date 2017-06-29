@@ -165,13 +165,13 @@ typedef struct {
 
 /* This data structure is associated with MCA_CONNECT_IND_EVT. */
 typedef struct {
-  bt_bdaddr_t bd_addr; /* The peer address */
+  RawAddress bd_addr; /* The peer address */
   uint16_t mtu;    /* peer mtu */
 } tMCA_CONNECT_IND;
 
 /* This data structure is associated with MCA_DISCONNECT_IND_EVT. */
 typedef struct {
-  bt_bdaddr_t bd_addr; /* The peer address */
+  RawAddress bd_addr; /* The peer address */
   uint16_t reason; /* disconnect reason given by L2CAP */
 } tMCA_DISCONNECT_IND;
 
@@ -332,9 +332,8 @@ extern tMCA_RESULT MCA_DeleteDep(tMCA_HANDLE handle, tMCA_DEP dep);
  * Returns          MCA_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-extern tMCA_RESULT MCA_ConnectReq(tMCA_HANDLE handle,
-                                  const bt_bdaddr_t& bd_addr, uint16_t ctrl_psm,
-                                  uint16_t sec_mask);
+extern tMCA_RESULT MCA_ConnectReq(tMCA_HANDLE handle, const RawAddress& bd_addr,
+                                  uint16_t ctrl_psm, uint16_t sec_mask);
 
 /*******************************************************************************
  *
@@ -526,7 +525,7 @@ typedef struct {
   tMCA_RESULT (*create_mdep)(tMCA_HANDLE handle, tMCA_DEP* p_dep,
                              tMCA_CS* p_cs);
   tMCA_RESULT (*delete_mdep)(tMCA_HANDLE handle, tMCA_DEP dep);
-  tMCA_RESULT (*connect_mcl)(tMCA_HANDLE handle, const bt_bdaddr_t& bd_addr,
+  tMCA_RESULT (*connect_mcl)(tMCA_HANDLE handle, const RawAddress& bd_addr,
                              uint16_t ctrl_psm, uint16_t sec_mask);
   tMCA_RESULT (*disconnect_mcl)(tMCA_CL mcl);
   tMCA_RESULT (*create_mdl_request)(tMCA_CL mcl, tMCA_DEP dep,

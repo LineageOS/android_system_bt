@@ -40,7 +40,7 @@
  * Returns          void
  *
  ******************************************************************************/
-void bta_dm_ci_io_req(const bt_bdaddr_t& bd_addr, tBTA_IO_CAP io_cap,
+void bta_dm_ci_io_req(const RawAddress& bd_addr, tBTA_IO_CAP io_cap,
                       tBTA_OOB_DATA oob_data, tBTA_AUTH_REQ auth_req)
 
 {
@@ -67,7 +67,7 @@ void bta_dm_ci_io_req(const bt_bdaddr_t& bd_addr, tBTA_IO_CAP io_cap,
  * Returns          void
  *
  ******************************************************************************/
-void bta_dm_ci_rmt_oob(bool accept, const bt_bdaddr_t& bd_addr, BT_OCTET16 c,
+void bta_dm_ci_rmt_oob(bool accept, const RawAddress& bd_addr, BT_OCTET16 c,
                        BT_OCTET16 r) {
   tBTA_DM_CI_RMT_OOB* p_msg =
       (tBTA_DM_CI_RMT_OOB*)osi_malloc(sizeof(tBTA_DM_CI_RMT_OOB));

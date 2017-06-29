@@ -178,7 +178,7 @@ void mca_ccb_event(tMCA_CCB* p_ccb, uint8_t event, tMCA_CCB_EVT* p_data) {
  * Returns          void.
  *
  ******************************************************************************/
-tMCA_CCB* mca_ccb_by_bd(tMCA_HANDLE handle, const bt_bdaddr_t& bd_addr) {
+tMCA_CCB* mca_ccb_by_bd(tMCA_HANDLE handle, const RawAddress& bd_addr) {
   tMCA_CCB* p_ccb = NULL;
   tMCA_RCB* p_rcb = mca_rcb_by_handle(handle);
   tMCA_CCB* p_ccb_tmp;
@@ -209,7 +209,7 @@ tMCA_CCB* mca_ccb_by_bd(tMCA_HANDLE handle, const bt_bdaddr_t& bd_addr) {
  * Returns          void.
  *
  ******************************************************************************/
-tMCA_CCB* mca_ccb_alloc(tMCA_HANDLE handle, const bt_bdaddr_t& bd_addr) {
+tMCA_CCB* mca_ccb_alloc(tMCA_HANDLE handle, const RawAddress& bd_addr) {
   tMCA_CCB* p_ccb = NULL;
   tMCA_RCB* p_rcb = mca_rcb_by_handle(handle);
   tMCA_CCB* p_ccb_tmp;

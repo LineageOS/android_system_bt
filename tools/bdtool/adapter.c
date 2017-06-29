@@ -58,7 +58,7 @@ bt_acl_state_t adapter_get_acl_state() { return acl_state; }
 bt_bond_state_t adapter_get_bond_state() { return bond_state; }
 
 // callback
-void acl_state_changed(bt_status_t status, bt_bdaddr_t* remote_bd_addr,
+void acl_state_changed(bt_status_t status, RawAddress* remote_bd_addr,
                        bt_acl_state_t state) {
   acl_state = state;
   CALLBACK_RET();
@@ -81,7 +81,7 @@ void adapter_state_changed(bt_state_t new_state) {
 }
 
 // callback
-void bond_state_changed(bt_status_t status, bt_bdaddr_t* bdaddr,
+void bond_state_changed(bt_status_t status, RawAddress* bdaddr,
                         bt_bond_state_t state) {
   char buf[18];
   bond_state = state;
@@ -138,7 +138,7 @@ void discovery_state_changed(bt_discovery_state_t state) {
 }
 
 // callback
-void remote_device_properties(bt_status_t status, bt_bdaddr_t* bdaddr,
+void remote_device_properties(bt_status_t status, RawAddress* bdaddr,
                               int num_properties, bt_property_t* properties) {
   char buf[18];
   fprintf(stdout, "Device found bdaddr:%s num_properties:%d\n",
@@ -150,9 +150,8 @@ void remote_device_properties(bt_status_t status, bt_bdaddr_t* bdaddr,
 }
 
 // callback
-void ssp_request(bt_bdaddr_t* remote_bd_addr, bt_bdname_t* bd_name,
-                 uint32_t cod, bt_ssp_variant_t pairing_variant,
-                 uint32_t pass_key) {
+void ssp_request(RawAddress* remote_bd_addr, bt_bdname_t* bd_name, uint32_t cod,
+                 bt_ssp_variant_t pairing_variant, uint32_t pass_key) {
   char* pairing_variant_name = "Unknown";
 
   switch (pairing_variant) {
@@ -199,7 +198,7 @@ static void parse_properties(int num_properties, bt_property_t* property) {
 
       case BT_PROPERTY_BDADDR: {
         char buf[18];
-        const bt_bdaddr_t* addr = property_as_addr(property);
+        const RawAddress* addr = property_as_addr(property);
         if (addr)
           fprintf(stdout, " addr:%s\n",
                   bdaddr_to_string(addr, buf, sizeof(buf)));

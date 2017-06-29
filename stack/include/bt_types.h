@@ -530,27 +530,27 @@ typedef struct {
 #include <base/strings/stringprintf.h>
 #include <hardware/bluetooth.h>
 
-inline bool operator==(const bt_bdaddr_t& lhs, const bt_bdaddr_t& rhs) {
+inline bool operator==(const RawAddress& lhs, const RawAddress& rhs) {
   return memcmp(&lhs, &rhs, sizeof(lhs)) == 0;
 }
 
-inline bool operator!=(const bt_bdaddr_t& lhs, const bt_bdaddr_t& rhs) {
+inline bool operator!=(const RawAddress& lhs, const RawAddress& rhs) {
   return !(lhs == rhs);
 }
 
-inline std::ostream& operator<<(std::ostream& os, const bt_bdaddr_t& a) {
+inline std::ostream& operator<<(std::ostream& os, const RawAddress& a) {
   os << base::StringPrintf("%02x:%02x:%02x:%02x:%02x:%02x", a.address[0],
                            a.address[1], a.address[2], a.address[3],
                            a.address[4], a.address[5]);
   return os;
 }
 
-inline void BDADDR_TO_STREAM(uint8_t*& p, const bt_bdaddr_t& a) {
+inline void BDADDR_TO_STREAM(uint8_t*& p, const RawAddress& a) {
   for (int ijk = 0; ijk < BD_ADDR_LEN; ijk++)
     *(p)++ = (uint8_t)(a.address)[BD_ADDR_LEN - 1 - ijk];
 }
 
-inline void STREAM_TO_BDADDR(bt_bdaddr_t& a, uint8_t*& p) {
+inline void STREAM_TO_BDADDR(RawAddress& a, uint8_t*& p) {
   uint8_t* pbda = (uint8_t*)(a.address) + BD_ADDR_LEN - 1;
   for (int ijk = 0; ijk < BD_ADDR_LEN; ijk++) *pbda-- = *(p)++;
 }
@@ -761,7 +761,7 @@ typedef uint8_t tBT_TRANSPORT;
 #ifdef __cplusplus
 struct tBLE_BD_ADDR {
   tBLE_ADDR_TYPE type;
-  bt_bdaddr_t bda;
+  RawAddress bda;
 };
 #endif
 
@@ -945,12 +945,6 @@ typedef uint8_t tBT_DEVICE_TYPE;
 /* Define a function for logging */
 typedef void(BT_LOG_FUNC)(int trace_type, const char* fmt_str, ...);
 
-/* bd addr length and type */
-#ifndef BD_ADDR_LEN
-#define BD_ADDR_LEN 6
-typedef uint8_t BD_ADDR[BD_ADDR_LEN];
-#endif
-
 // From bd.c
 
 /*****************************************************************************
@@ -959,10 +953,10 @@ typedef uint8_t BD_ADDR[BD_ADDR_LEN];
 
 /* global constant for "any" bd addr */
 #ifdef __cplusplus
-static const bt_bdaddr_t bd_addr_any = {
+static const RawAddress bd_addr_any = {
     .address = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}};
 
-static const bt_bdaddr_t bd_addr_empty = {
+static const RawAddress bd_addr_empty = {
     .address = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
 
 #endif

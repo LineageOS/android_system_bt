@@ -266,7 +266,7 @@ typedef struct {
 typedef struct {
   std::queue<tGATT_CLCB*> pending_enc_clcb; /* pending encryption channel q */
   tGATT_SEC_ACTION sec_act;
-  bt_bdaddr_t peer_bda;
+  RawAddress peer_bda;
   tBT_TRANSPORT transport;
   uint32_t trans_id;
 
@@ -333,7 +333,7 @@ typedef struct {
 
 typedef struct {
   std::unordered_set<tGATT_IF> gatt_if;
-  bt_bdaddr_t remote_bda;
+  RawAddress remote_bda;
 } tGATT_BG_CONN_DEV;
 
 #define GATT_SVC_CHANGED_CONNECTING 1     /* wait for connection */
@@ -346,7 +346,7 @@ typedef struct {
   uint16_t conn_id;
   bool in_use;
   bool connected;
-  bt_bdaddr_t bda;
+  RawAddress bda;
   tBT_TRANSPORT transport;
 
   /* GATT service change CCC related variables */
@@ -401,10 +401,10 @@ extern void gatt_set_err_rsp(bool enable, uint8_t req_op_code,
 
 /* from gatt_main.cc */
 extern bool gatt_disconnect(tGATT_TCB* p_tcb);
-extern bool gatt_act_connect(tGATT_REG* p_reg, const bt_bdaddr_t& bd_addr,
+extern bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr,
                              tBT_TRANSPORT transport, bool opportunistic,
                              int8_t initiating_phys);
-extern bool gatt_connect(const bt_bdaddr_t& rem_bda, tGATT_TCB* p_tcb,
+extern bool gatt_connect(const RawAddress& rem_bda, tGATT_TCB* p_tcb,
                          tBT_TRANSPORT transport, uint8_t initiating_phys);
 extern void gatt_data_process(tGATT_TCB& p_tcb, BT_HDR* p_buf);
 extern void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
@@ -415,12 +415,12 @@ extern void gatt_set_ch_state(tGATT_TCB* p_tcb, tGATT_CH_STATE ch_state);
 extern tGATT_CH_STATE gatt_get_ch_state(tGATT_TCB* p_tcb);
 extern void gatt_init_srv_chg(void);
 extern void gatt_proc_srv_chg(void);
-extern void gatt_send_srv_chg_ind(const bt_bdaddr_t& peer_bda);
+extern void gatt_send_srv_chg_ind(const RawAddress& peer_bda);
 extern void gatt_chk_srv_chg(tGATTS_SRV_CHG* p_srv_chg_clt);
-extern void gatt_add_a_bonded_dev_for_srv_chg(const bt_bdaddr_t& bda);
+extern void gatt_add_a_bonded_dev_for_srv_chg(const RawAddress& bda);
 
 /* from gatt_attr.cc */
-extern uint16_t gatt_profile_find_conn_id_by_bd_addr(const bt_bdaddr_t& bda);
+extern uint16_t gatt_profile_find_conn_id_by_bd_addr(const RawAddress& bda);
 
 /* Functions provided by att_protocol.cc */
 extern tGATT_STATUS attp_send_cl_msg(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
@@ -440,7 +440,7 @@ extern uint8_t gatt_build_uuid_to_stream(uint8_t** p_dst, tBT_UUID uuid);
 extern bool gatt_uuid_compare(tBT_UUID src, tBT_UUID tar);
 extern void gatt_convert_uuid32_to_uuid128(uint8_t uuid_128[LEN_UUID_128],
                                            uint32_t uuid_32);
-extern void gatt_sr_get_sec_info(const bt_bdaddr_t& rem_bda,
+extern void gatt_sr_get_sec_info(const RawAddress& rem_bda,
                                  tBT_TRANSPORT transport, uint8_t* p_sec_flag,
                                  uint8_t* p_key_size);
 extern void gatt_start_rsp_timer(tGATT_CLCB* p_clcb);
@@ -456,13 +456,13 @@ extern void gatt_dbg_display_uuid(tBT_UUID bt_uuid);
 
 extern bool gatt_is_srv_chg_ind_pending(tGATT_TCB* p_tcb);
 extern tGATTS_SRV_CHG* gatt_is_bda_in_the_srv_chg_clt_list(
-    const bt_bdaddr_t& bda);
+    const RawAddress& bda);
 
-extern bool gatt_find_the_connected_bda(uint8_t start_idx, bt_bdaddr_t& bda,
+extern bool gatt_find_the_connected_bda(uint8_t start_idx, RawAddress& bda,
                                         uint8_t* p_found_idx,
                                         tBT_TRANSPORT* p_transport);
 extern void gatt_set_srv_chg(void);
-extern void gatt_delete_dev_from_srv_chg_clt_list(const bt_bdaddr_t& bd_addr);
+extern void gatt_delete_dev_from_srv_chg_clt_list(const RawAddress& bd_addr);
 extern tGATT_VALUE* gatt_add_pending_ind(tGATT_TCB* p_tcb, tGATT_VALUE* p_ind);
 extern void gatt_free_srvc_db_buffer_app_id(tBT_UUID* p_app_id);
 extern bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb);
@@ -475,12 +475,12 @@ extern tGATTS_SRV_CHG* gatt_add_srv_chg_clt(tGATTS_SRV_CHG* p_srv_chg);
 
 /* for background connection */
 extern bool gatt_update_auto_connect_dev(tGATT_IF gatt_if, bool add,
-                                         const bt_bdaddr_t& bd_addr);
+                                         const RawAddress& bd_addr);
 extern bool gatt_is_bg_dev_for_app(tGATT_BG_CONN_DEV* p_dev, tGATT_IF gatt_if);
 extern bool gatt_remove_bg_dev_for_app(tGATT_IF gatt_if,
-                                       const bt_bdaddr_t& bd_addr);
-extern uint8_t gatt_clear_bg_dev_for_addr(const bt_bdaddr_t& bd_addr);
-extern tGATT_BG_CONN_DEV* gatt_find_bg_dev(const bt_bdaddr_t& remote_bda);
+                                       const RawAddress& bd_addr);
+extern uint8_t gatt_clear_bg_dev_for_addr(const RawAddress& bd_addr);
+extern tGATT_BG_CONN_DEV* gatt_find_bg_dev(const RawAddress& remote_bda);
 extern void gatt_deregister_bgdev_list(tGATT_IF gatt_if);
 
 /* server function */
@@ -499,7 +499,7 @@ extern void gatt_sr_send_req_callback(uint16_t conn_id, uint32_t trans_id,
                                       uint8_t op_code, tGATTS_DATA* p_req_data);
 extern uint32_t gatt_sr_enqueue_cmd(tGATT_TCB& tcb, uint8_t op_code,
                                     uint16_t handle);
-extern bool gatt_cancel_open(tGATT_IF gatt_if, const bt_bdaddr_t& bda);
+extern bool gatt_cancel_open(tGATT_IF gatt_if, const RawAddress& bda);
 extern void gatt_notify_phy_updated(tGATT_TCB* p_tcb, uint8_t tx_phy,
                                     uint8_t rx_phy, uint8_t status);
 
@@ -520,14 +520,14 @@ extern void gatt_sr_update_cback_cnt(tGATT_TCB& p_tcb, tGATT_IF gatt_if,
 extern void gatt_sr_update_prep_cnt(tGATT_TCB& tcb, tGATT_IF gatt_if,
                                     bool is_inc, bool is_reset_first);
 
-extern uint8_t gatt_num_clcb_by_bd_addr(const bt_bdaddr_t& bda);
+extern uint8_t gatt_num_clcb_by_bd_addr(const RawAddress& bda);
 extern tGATT_TCB* gatt_find_tcb_by_cid(uint16_t lcid);
-extern tGATT_TCB* gatt_allocate_tcb_by_bdaddr(const bt_bdaddr_t& bda,
+extern tGATT_TCB* gatt_allocate_tcb_by_bdaddr(const RawAddress& bda,
                                               tBT_TRANSPORT transport);
 extern tGATT_TCB* gatt_get_tcb_by_idx(uint8_t tcb_idx);
-extern tGATT_TCB* gatt_find_tcb_by_addr(const bt_bdaddr_t& bda,
+extern tGATT_TCB* gatt_find_tcb_by_addr(const RawAddress& bda,
                                         tBT_TRANSPORT transport);
-extern bool gatt_send_ble_burst_data(const bt_bdaddr_t& remote_bda,
+extern bool gatt_send_ble_burst_data(const RawAddress& remote_bda,
                                      BT_HDR* p_buf);
 
 /* GATT client functions */
@@ -536,7 +536,7 @@ extern uint8_t gatt_send_write_msg(tGATT_TCB& p_tcb, tGATT_CLCB* p_clcb,
                                    uint8_t op_code, uint16_t handle,
                                    uint16_t len, uint16_t offset,
                                    uint8_t* p_data);
-extern void gatt_cleanup_upon_disc(const bt_bdaddr_t& bda, uint16_t reason,
+extern void gatt_cleanup_upon_disc(const RawAddress& bda, uint16_t reason,
                                    tBT_TRANSPORT transport);
 extern void gatt_end_operation(tGATT_CLCB* p_clcb, tGATT_STATUS status,
                                void* p_data);

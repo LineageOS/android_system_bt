@@ -667,7 +667,7 @@ void avdt_scb_hdl_tc_close(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data) {
   tAVDT_CTRL avdt_ctrl;
   uint8_t event;
   tAVDT_CCB* p_ccb = p_scb->p_ccb;
-  bt_bdaddr_t remote_addr = p_ccb->peer_addr;
+  RawAddress remote_addr = p_ccb->peer_addr;
 
   /* set up hdr */
   avdt_ctrl.hdr.err_code = p_scb->close_code;

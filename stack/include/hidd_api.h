@@ -47,7 +47,7 @@ enum {
   HID_DHOST_EVT_SUSPEND,
   HID_DHOST_EVT_EXIT_SUSPEND,
 };
-typedef void(tHID_DEV_HOST_CALLBACK)(const bt_bdaddr_t& bd_addr, uint8_t event,
+typedef void(tHID_DEV_HOST_CALLBACK)(const RawAddress& bd_addr, uint8_t event,
                                      uint32_t data, BT_HDR* p_buf);
 
 /*****************************************************************************
@@ -147,7 +147,7 @@ extern tHID_STATUS HID_DevVirtualCableUnplug(void);
  * Returns          tHID_STATUS
  *
  ******************************************************************************/
-extern tHID_STATUS HID_DevPlugDevice(const bt_bdaddr_t& addr);
+extern tHID_STATUS HID_DevPlugDevice(const RawAddress& addr);
 
 /*******************************************************************************
  *
@@ -158,7 +158,7 @@ extern tHID_STATUS HID_DevPlugDevice(const bt_bdaddr_t& addr);
  * Returns          tHID_STATUS
  *
  ******************************************************************************/
-extern tHID_STATUS HID_DevUnplugDevice(const bt_bdaddr_t& addr);
+extern tHID_STATUS HID_DevUnplugDevice(const RawAddress& addr);
 
 /*******************************************************************************
  *
@@ -213,7 +213,7 @@ extern tHID_STATUS HID_DevReportError(uint8_t error);
  * Returns          tHID_STATUS
  *
  ******************************************************************************/
-extern tHID_STATUS HID_DevGetDevice(bt_bdaddr_t* addr);
+extern tHID_STATUS HID_DevGetDevice(RawAddress* addr);
 
 /*******************************************************************************
  *

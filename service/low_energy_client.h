@@ -34,8 +34,8 @@
 namespace bluetooth {
 
 struct ConnComparator {
-  bool operator()(const bt_bdaddr_t& a, const bt_bdaddr_t& b) const {
-    return memcmp(&a, &b, sizeof(bt_bdaddr_t)) < 0;
+  bool operator()(const RawAddress& a, const RawAddress& b) const {
+    return memcmp(&a, &b, sizeof(RawAddress)) < 0;
   }
 };
 
@@ -104,10 +104,10 @@ class LowEnergyClient : private hal::BluetoothGattInterface::ClientObserver,
   // BluetoothGattInterface::ClientObserver overrides:
   void ConnectCallback(hal::BluetoothGattInterface* gatt_iface, int conn_id,
                        int status, int client_id,
-                       const bt_bdaddr_t& bda) override;
+                       const RawAddress& bda) override;
   void DisconnectCallback(hal::BluetoothGattInterface* gatt_iface, int conn_id,
                           int status, int client_id,
-                          const bt_bdaddr_t& bda) override;
+                          const RawAddress& bda) override;
   void MtuChangedCallback(hal::BluetoothGattInterface* gatt_iface, int conn_id,
                           int status, int mtu) override;
 
@@ -132,7 +132,7 @@ class LowEnergyClient : private hal::BluetoothGattInterface::ClientObserver,
 
   // Maps bluetooth address to connection id
   // TODO(jpawlowski): change type to bimap
-  std::map<const bt_bdaddr_t, int, ConnComparator> connection_ids_;
+  std::map<const RawAddress, int, ConnComparator> connection_ids_;
 
   DISALLOW_COPY_AND_ASSIGN(LowEnergyClient);
 };

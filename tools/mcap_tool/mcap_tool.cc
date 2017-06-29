@@ -424,7 +424,7 @@ static void adapter_state_changed(bt_state_t state) {
 
 static void adapter_properties_changed(bt_status_t status, int num_properties,
                                        bt_property_t* properties) {
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   bdstr_t bd_addr_str;
   if (!properties) {
     printf("properties is null\n");
@@ -448,7 +448,7 @@ static void discovery_state_changed(bt_discovery_state_t state) {
             << (state == BT_DISCOVERY_STOPPED ? "STOPPED" : "STARTED");
 }
 
-static void pin_request_cb(bt_bdaddr_t* remote_bd_addr, bt_bdname_t* bd_name,
+static void pin_request_cb(RawAddress* remote_bd_addr, bt_bdname_t* bd_name,
                            uint32_t cod, bool min_16_digit) {
   bt_pin_code_t pincode = {{0x31, 0x32, 0x33, 0x34}};
 
@@ -458,7 +458,7 @@ static void pin_request_cb(bt_bdaddr_t* remote_bd_addr, bt_bdname_t* bd_name,
   }
 }
 
-static void ssp_request_cb(bt_bdaddr_t* remote_bd_addr, bt_bdname_t* bd_name,
+static void ssp_request_cb(RawAddress* remote_bd_addr, bt_bdname_t* bd_name,
                            uint32_t cod, bt_ssp_variant_t pairing_variant,
                            uint32_t pass_key) {
   LOG(INFO) << __func__ << ": device_name:" << bd_name->name
@@ -472,13 +472,13 @@ static void ssp_request_cb(bt_bdaddr_t* remote_bd_addr, bt_bdname_t* bd_name,
 }
 
 static void bond_state_changed_cb(bt_status_t status,
-                                  bt_bdaddr_t* remote_bd_addr,
+                                  RawAddress* remote_bd_addr,
                                   bt_bond_state_t state) {
   LOG(INFO) << "Bond State Changed = " << state;
   global_pair_state = state;
 }
 
-static void acl_state_changed(bt_status_t status, bt_bdaddr_t* remote_bd_addr,
+static void acl_state_changed(bt_status_t status, RawAddress* remote_bd_addr,
                               bt_acl_state_t state) {
   bdstr_t bd_addr_str;
   bdaddr_to_string(remote_bd_addr, bd_addr_str, sizeof(bd_addr_str));
@@ -680,7 +680,7 @@ static void do_mcap_delete_mdep(char* p) {
 static void do_mcap_connect_mcl(char* p) {
   char buf[64];
   get_str(&p, buf);  // arg1
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   bool valid_bd_addr = string_to_bdaddr(buf, &bd_addr);
   uint16_t ctrl_psm = get_hex(&p, 0);  // arg2
   uint16_t sec_mask = get_int(&p, 0);  // arg3
@@ -697,7 +697,7 @@ static void do_mcap_connect_mcl(char* p) {
 static void do_mcap_disconnect_mcl(char* p) {
   char buf[64];
   get_str(&p, buf);  // arg1
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   bool valid_bd_addr = string_to_bdaddr(buf, &bd_addr);
   printf("%s: bd_addr=%s\n", __func__, buf);
   if (!valid_bd_addr) {
@@ -716,7 +716,7 @@ static void do_mcap_disconnect_mcl(char* p) {
 static void do_mcap_create_mdl(char* p) {
   char buf[64];
   get_str(&p, buf);  // arg1
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   bool valid_bd_addr = string_to_bdaddr(buf, &bd_addr);
   uint16_t mdep_handle = get_int(&p, 0);  // arg2
   uint16_t data_psm = get_hex(&p, 0);     // arg3
@@ -746,7 +746,7 @@ static void do_mcap_create_mdl(char* p) {
 static void do_mcap_data_channel_config(char* p) {
   char buf[64];
   get_str(&p, buf);  // arg1
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   bool valid_bd_addr = string_to_bdaddr(buf, &bd_addr);
   printf("%s: bd_addr=%s\n", __func__, buf);
   if (!valid_bd_addr) {
@@ -765,7 +765,7 @@ static void do_mcap_data_channel_config(char* p) {
 static void do_mcap_abort_mdl(char* p) {
   char buf[64];
   get_str(&p, buf);  // arg1
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   bool valid_bd_addr = string_to_bdaddr(buf, &bd_addr);
   printf("%s: bd_addr=%s\n", __func__, buf);
   if (!valid_bd_addr) {
@@ -784,7 +784,7 @@ static void do_mcap_abort_mdl(char* p) {
 static void do_mcap_delete_mdl(char* p) {
   char buf[64];
   get_str(&p, buf);  // arg1
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   bool valid_bd_addr = string_to_bdaddr(buf, &bd_addr);
   uint16_t mdl_id = get_int(&p, 0);  // arg2
   printf("%s: bd_addr=%s, mdl_id=%d\n", __func__, buf, mdl_id);
@@ -804,7 +804,7 @@ static void do_mcap_delete_mdl(char* p) {
 static void do_mcap_close_mdl(char* p) {
   char buf[64];
   get_str(&p, buf);  // arg1
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   bool valid_bd_addr = string_to_bdaddr(buf, &bd_addr);
   uint16_t mdl_id = get_int(&p, 0);  // arg2
   printf("%s: bd_addr=%s, mdl_id=%d\n", __func__, buf, mdl_id);
@@ -829,7 +829,7 @@ static void do_mcap_close_mdl(char* p) {
 static void do_mcap_reconnect_mdl(char* p) {
   char buf[64];
   get_str(&p, buf);  // arg1
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   bool valid_bd_addr = string_to_bdaddr(buf, &bd_addr);
   uint16_t data_psm = get_hex(&p, 0);  // arg1
   uint16_t mdl_id = get_int(&p, 0);    // arg2
@@ -853,7 +853,7 @@ static void do_mcap_reconnect_mdl(char* p) {
 }
 
 static void do_pairing(char* p) {
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   if (!string_to_bdaddr(p, &bd_addr)) {
     LOG(ERROR) << "Invalid Bluetooth address " << p;
     return;

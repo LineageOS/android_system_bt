@@ -46,7 +46,7 @@ void btsnd_hcic_ble_set_local_used_feat(uint8_t feat_set[8]) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_ble_set_random_addr(const bt_bdaddr_t& random_bda) {
+void btsnd_hcic_ble_set_random_addr(const RawAddress& random_bda) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -64,7 +64,7 @@ void btsnd_hcic_ble_set_random_addr(const bt_bdaddr_t& random_bda) {
 void btsnd_hcic_ble_write_adv_params(uint16_t adv_int_min, uint16_t adv_int_max,
                                      uint8_t adv_type, uint8_t addr_type_own,
                                      uint8_t addr_type_dir,
-                                     const bt_bdaddr_t& direct_bda,
+                                     const RawAddress& direct_bda,
                                      uint8_t channel_map,
                                      uint8_t adv_filter_policy) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
@@ -200,7 +200,7 @@ void btsnd_hcic_ble_set_scan_enable(uint8_t scan_enable, uint8_t duplicate) {
 /* link layer connection management commands */
 void btsnd_hcic_ble_create_ll_conn(
     uint16_t scan_int, uint16_t scan_win, uint8_t init_filter_policy,
-    uint8_t addr_type_peer, const bt_bdaddr_t& bda_peer, uint8_t addr_type_own,
+    uint8_t addr_type_peer, const RawAddress& bda_peer, uint8_t addr_type_own,
     uint16_t conn_int_min, uint16_t conn_int_max, uint16_t conn_latency,
     uint16_t conn_timeout, uint16_t min_ce_len, uint16_t max_ce_len) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
@@ -257,7 +257,7 @@ void btsnd_hcic_ble_clear_white_list(void) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_ble_add_white_list(uint8_t addr_type, const bt_bdaddr_t& bda) {
+void btsnd_hcic_ble_add_white_list(uint8_t addr_type, const RawAddress& bda) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -274,7 +274,7 @@ void btsnd_hcic_ble_add_white_list(uint8_t addr_type, const bt_bdaddr_t& bda) {
 }
 
 void btsnd_hcic_ble_remove_from_white_list(uint8_t addr_type,
-                                           const bt_bdaddr_t& bda) {
+                                           const RawAddress& bda) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -561,7 +561,7 @@ void btsnd_hcic_ble_rc_param_req_neg_reply(uint16_t handle, uint8_t reason) {
 #endif
 
 void btsnd_hcic_ble_add_device_resolving_list(
-    uint8_t addr_type_peer, const bt_bdaddr_t& bda_peer,
+    uint8_t addr_type_peer, const RawAddress& bda_peer,
     uint8_t irk_peer[HCIC_BLE_IRK_SIZE], uint8_t irk_local[HCIC_BLE_IRK_SIZE]) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
@@ -580,7 +580,7 @@ void btsnd_hcic_ble_add_device_resolving_list(
 }
 
 void btsnd_hcic_ble_rm_device_resolving_list(uint8_t addr_type_peer,
-                                             const bt_bdaddr_t& bda_peer) {
+                                             const RawAddress& bda_peer) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -596,7 +596,7 @@ void btsnd_hcic_ble_rm_device_resolving_list(uint8_t addr_type_peer,
 }
 
 void btsnd_hcic_ble_set_privacy_mode(uint8_t addr_type_peer,
-                                     const bt_bdaddr_t& bda_peer,
+                                     const RawAddress& bda_peer,
                                      uint8_t privacy_type) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
@@ -627,7 +627,7 @@ void btsnd_hcic_ble_clear_resolving_list(void) {
 }
 
 void btsnd_hcic_ble_read_resolvable_addr_peer(uint8_t addr_type_peer,
-                                              const bt_bdaddr_t& bda_peer) {
+                                              const RawAddress& bda_peer) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -643,7 +643,7 @@ void btsnd_hcic_ble_read_resolvable_addr_peer(uint8_t addr_type_peer,
 }
 
 void btsnd_hcic_ble_read_resolvable_addr_local(uint8_t addr_type_peer,
-                                               const bt_bdaddr_t& bda_peer) {
+                                               const RawAddress& bda_peer) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -795,7 +795,7 @@ void btsnd_hcic_ble_set_extended_scan_enable(uint8_t enable,
 void btsnd_hcic_ble_ext_create_conn(uint8_t init_filter_policy,
                                     uint8_t addr_type_own,
                                     uint8_t addr_type_peer,
-                                    const bt_bdaddr_t& bda_peer,
+                                    const RawAddress& bda_peer,
                                     uint8_t initiating_phys,
                                     EXT_CONN_PHY_CFG* phy_cfg) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);

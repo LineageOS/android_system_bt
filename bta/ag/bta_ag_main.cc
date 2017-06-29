@@ -393,7 +393,7 @@ uint8_t bta_ag_service_to_idx(tBTA_SERVICE_MASK services) {
  * Returns          Index of SCB or zero if none found.
  *
  ******************************************************************************/
-uint16_t bta_ag_idx_by_bdaddr(const bt_bdaddr_t* peer_addr) {
+uint16_t bta_ag_idx_by_bdaddr(const RawAddress* peer_addr) {
   tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
   uint16_t i;
 
@@ -512,7 +512,7 @@ static void bta_ag_collision_timer_cback(void* data) {
  ******************************************************************************/
 void bta_ag_collision_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status, uint8_t id,
                             UNUSED_ATTR uint8_t app_id,
-                            const bt_bdaddr_t* peer_addr) {
+                            const RawAddress* peer_addr) {
   uint16_t handle;
   tBTA_AG_SCB* p_scb;
 

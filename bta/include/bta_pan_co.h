@@ -75,7 +75,7 @@ extern uint8_t bta_pan_co_init(uint8_t* q_level);
  ******************************************************************************/
 extern void bta_pan_co_open(uint16_t handle, uint8_t app_id,
                             tBTA_PAN_ROLE local_role, tBTA_PAN_ROLE peer_role,
-                            const bt_bdaddr_t& peer_addr);
+                            const RawAddress& peer_addr);
 
 /*******************************************************************************
  *
@@ -134,7 +134,7 @@ extern void bta_pan_co_rx_path(uint16_t handle, uint8_t app_id);
  *
  ******************************************************************************/
 extern void bta_pan_co_tx_write(uint16_t handle, uint8_t app_id,
-                                const bt_bdaddr_t& src, const bt_bdaddr_t& dst,
+                                const RawAddress& src, const RawAddress& dst,
                                 uint16_t protocol, uint8_t* p_data,
                                 uint16_t len, bool ext, bool forward);
 
@@ -152,9 +152,9 @@ extern void bta_pan_co_tx_write(uint16_t handle, uint8_t app_id,
  *
  ******************************************************************************/
 extern void bta_pan_co_tx_writebuf(uint16_t handle, uint8_t app_id,
-                                   const bt_bdaddr_t& src,
-                                   const bt_bdaddr_t& dst, uint16_t protocol,
-                                   BT_HDR* p_buf, bool ext, bool forward);
+                                   const RawAddress& src, const RawAddress& dst,
+                                   uint16_t protocol, BT_HDR* p_buf, bool ext,
+                                   bool forward);
 
 /*******************************************************************************
  *

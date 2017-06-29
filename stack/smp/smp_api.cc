@@ -130,7 +130,7 @@ bool SMP_Register(tSMP_CALLBACK* p_cback) {
  * Returns          None
  *
  ******************************************************************************/
-tSMP_STATUS SMP_Pair(const bt_bdaddr_t& bd_addr) {
+tSMP_STATUS SMP_Pair(const RawAddress& bd_addr) {
   tSMP_CB* p_cb = &smp_cb;
   uint8_t status = SMP_PAIR_INTERNAL_ERR;
 
@@ -167,7 +167,7 @@ tSMP_STATUS SMP_Pair(const bt_bdaddr_t& bd_addr) {
  *                  failure.
  *
  ******************************************************************************/
-tSMP_STATUS SMP_BR_PairWith(const bt_bdaddr_t& bd_addr) {
+tSMP_STATUS SMP_BR_PairWith(const RawAddress& bd_addr) {
   tSMP_CB* p_cb = &smp_cb;
   uint8_t status = SMP_PAIR_INTERNAL_ERR;
 
@@ -205,7 +205,7 @@ tSMP_STATUS SMP_BR_PairWith(const bt_bdaddr_t& bd_addr) {
  * Returns          true - Pairining is cancelled
  *
  ******************************************************************************/
-bool SMP_PairCancel(const bt_bdaddr_t& bd_addr) {
+bool SMP_PairCancel(const RawAddress& bd_addr) {
   tSMP_CB* p_cb = &smp_cb;
   uint8_t err_code = SMP_PAIR_FAIL_UNKNOWN;
   bool status = false;
@@ -240,7 +240,7 @@ bool SMP_PairCancel(const bt_bdaddr_t& bd_addr) {
  * Returns          None
  *
  ******************************************************************************/
-void SMP_SecurityGrant(const bt_bdaddr_t& bd_addr, uint8_t res) {
+void SMP_SecurityGrant(const RawAddress& bd_addr, uint8_t res) {
   SMP_TRACE_EVENT("SMP_SecurityGrant ");
 
   if (smp_cb.smp_over_br) {
@@ -280,7 +280,7 @@ void SMP_SecurityGrant(const bt_bdaddr_t& bd_addr, uint8_t res) {
  *                            BTM_MAX_PASSKEY_VAL(999999(0xF423F)).
  *
  ******************************************************************************/
-void SMP_PasskeyReply(const bt_bdaddr_t& bd_addr, uint8_t res,
+void SMP_PasskeyReply(const RawAddress& bd_addr, uint8_t res,
                       uint32_t passkey) {
   tSMP_CB* p_cb = &smp_cb;
   uint8_t failure = SMP_PASSKEY_ENTRY_FAIL;
@@ -332,7 +332,7 @@ void SMP_PasskeyReply(const bt_bdaddr_t& bd_addr, uint8_t res,
  *                  res          - comparison result SMP_SUCCESS if success
  *
  ******************************************************************************/
-void SMP_ConfirmReply(const bt_bdaddr_t& bd_addr, uint8_t res) {
+void SMP_ConfirmReply(const RawAddress& bd_addr, uint8_t res) {
   tSMP_CB* p_cb = &smp_cb;
   uint8_t failure = SMP_NUMERIC_COMPAR_FAIL;
 
@@ -375,7 +375,7 @@ void SMP_ConfirmReply(const bt_bdaddr_t& bd_addr, uint8_t res) {
  *                  p_data      - simple pairing Randomizer  C.
  *
  ******************************************************************************/
-void SMP_OobDataReply(const bt_bdaddr_t& bd_addr, tSMP_STATUS res, uint8_t len,
+void SMP_OobDataReply(const RawAddress& bd_addr, tSMP_STATUS res, uint8_t len,
                       uint8_t* p_data) {
   tSMP_CB* p_cb = &smp_cb;
   uint8_t failure = SMP_OOB_FAIL;
@@ -497,7 +497,7 @@ bool SMP_Encrypt(uint8_t* key, uint8_t key_len, uint8_t* plain_text,
  *                 value        Keypress notification parameter value
  *
  ******************************************************************************/
-void SMP_KeypressNotification(const bt_bdaddr_t& bd_addr, uint8_t value) {
+void SMP_KeypressNotification(const RawAddress& bd_addr, uint8_t value) {
   tSMP_CB* p_cb = &smp_cb;
 
   SMP_TRACE_EVENT("%s: Value: %d", __func__, value);

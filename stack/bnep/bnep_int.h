@@ -125,7 +125,7 @@ typedef struct {
   BT_HDR* p_pending_data;
 
   uint16_t l2cap_cid;
-  bt_bdaddr_t rem_bda;
+  RawAddress rem_bda;
   uint16_t rem_mtu_size;
   alarm_t* conn_timer;
   fixed_queue_t* xmit_q;
@@ -135,16 +135,16 @@ typedef struct {
   uint16_t sent_prot_filter_end[BNEP_MAX_PROT_FILTERS];
 
   uint16_t sent_mcast_filters;
-  bt_bdaddr_t sent_mcast_filter_start[BNEP_MAX_MULTI_FILTERS];
-  bt_bdaddr_t sent_mcast_filter_end[BNEP_MAX_MULTI_FILTERS];
+  RawAddress sent_mcast_filter_start[BNEP_MAX_MULTI_FILTERS];
+  RawAddress sent_mcast_filter_end[BNEP_MAX_MULTI_FILTERS];
 
   uint16_t rcvd_num_filters;
   uint16_t rcvd_prot_filter_start[BNEP_MAX_PROT_FILTERS];
   uint16_t rcvd_prot_filter_end[BNEP_MAX_PROT_FILTERS];
 
   uint16_t rcvd_mcast_filters;
-  bt_bdaddr_t rcvd_mcast_filter_start[BNEP_MAX_MULTI_FILTERS];
-  bt_bdaddr_t rcvd_mcast_filter_end[BNEP_MAX_MULTI_FILTERS];
+  RawAddress rcvd_mcast_filter_start[BNEP_MAX_MULTI_FILTERS];
+  RawAddress rcvd_mcast_filter_end[BNEP_MAX_MULTI_FILTERS];
 
   uint16_t bad_pkts_rcvd;
   uint8_t re_transmits;
@@ -192,16 +192,16 @@ extern void bnep_connected(tBNEP_CONN* p_bcb);
 /* Functions provided by bnep_utils.cc
 */
 extern tBNEP_CONN* bnepu_find_bcb_by_cid(uint16_t cid);
-extern tBNEP_CONN* bnepu_find_bcb_by_bd_addr(const bt_bdaddr_t& p_bda);
-extern tBNEP_CONN* bnepu_allocate_bcb(const bt_bdaddr_t& p_rem_bda);
+extern tBNEP_CONN* bnepu_find_bcb_by_bd_addr(const RawAddress& p_bda);
+extern tBNEP_CONN* bnepu_allocate_bcb(const RawAddress& p_rem_bda);
 extern void bnepu_release_bcb(tBNEP_CONN* p_bcb);
 extern void bnepu_send_peer_our_filters(tBNEP_CONN* p_bcb);
 extern void bnepu_send_peer_our_multi_filters(tBNEP_CONN* p_bcb);
 extern bool bnepu_does_dest_support_prot(tBNEP_CONN* p_bcb, uint16_t protocol);
 extern void bnepu_build_bnep_hdr(tBNEP_CONN* p_bcb, BT_HDR* p_buf,
                                  uint16_t protocol,
-                                 const bt_bdaddr_t* p_src_addr,
-                                 const bt_bdaddr_t* p_dest_addr, bool ext_bit);
+                                 const RawAddress* p_src_addr,
+                                 const RawAddress* p_dest_addr, bool ext_bit);
 extern void test_bnepu_build_bnep_hdr(tBNEP_CONN* p_bcb, BT_HDR* p_buf,
                                       uint16_t protocol, uint8_t* p_src_addr,
                                       uint8_t* p_dest_addr, uint8_t type);
@@ -223,11 +223,11 @@ extern void bnep_process_setup_conn_responce(tBNEP_CONN* p_bcb,
                                              uint8_t* p_setup);
 extern uint8_t* bnep_process_control_packet(tBNEP_CONN* p_bcb, uint8_t* p,
                                             uint16_t* len, bool is_ext);
-extern void bnep_sec_check_complete(const bt_bdaddr_t* bd_addr,
+extern void bnep_sec_check_complete(const RawAddress* bd_addr,
                                     tBT_TRANSPORT trasnport, void* p_ref_data,
                                     uint8_t result);
 extern tBNEP_RESULT bnep_is_packet_allowed(tBNEP_CONN* p_bcb,
-                                           const bt_bdaddr_t& p_dest_addr,
+                                           const RawAddress& p_dest_addr,
                                            uint16_t protocol,
                                            bool fw_ext_present,
                                            uint8_t* p_data);

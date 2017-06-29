@@ -204,7 +204,7 @@ void ServiceAddedCallback(int status, int server_if,
   }
 }
 
-void RequestReadCallback(int conn_id, int trans_id, const bt_bdaddr_t& bda,
+void RequestReadCallback(int conn_id, int trans_id, const RawAddress& bda,
                          int attr_handle, int attribute_offset_octets,
                          bool is_long) {
   std::lock_guard<std::mutex> lock(g_internal->lock);
@@ -247,7 +247,7 @@ void RequestReadCallback(int conn_id, int trans_id, const bt_bdaddr_t& bda,
   g_internal->gatt->server->send_response(conn_id, trans_id, 0, response);
 }
 
-void RequestWriteCallback(int conn_id, int trans_id, const bt_bdaddr_t& bda,
+void RequestWriteCallback(int conn_id, int trans_id, const RawAddress& bda,
                           int attr_handle, int attribute_offset, bool need_rsp,
                           bool is_prep, std::vector<uint8_t> value) {
   std::string addr(BtAddrString(&bda));
@@ -303,7 +303,7 @@ void RequestWriteCallback(int conn_id, int trans_id, const bt_bdaddr_t& bda,
   g_internal->gatt->server->send_response(conn_id, trans_id, 0, response);
 }
 
-void RequestExecWriteCallback(int conn_id, int trans_id, const bt_bdaddr_t& bda,
+void RequestExecWriteCallback(int conn_id, int trans_id, const RawAddress& bda,
                               int exec_write) {
   std::string addr(BtAddrString(&bda));
   LOG_INFO(LOG_TAG, "%s: connection:%d (%s:trans:%d) exec_write:%d", __func__,
@@ -328,7 +328,7 @@ void RequestExecWriteCallback(int conn_id, int trans_id, const bt_bdaddr_t& bda,
 }
 
 void ConnectionCallback(int conn_id, int server_if, int connected,
-                        const bt_bdaddr_t& bda) {
+                        const RawAddress& bda) {
   std::string addr(BtAddrString(&bda));
   LOG_INFO(LOG_TAG, "%s: connection:%d server_if:%d connected:%d addr:%s",
            __func__, conn_id, server_if, connected, addr.c_str());
@@ -372,7 +372,7 @@ void ServiceStoppedCallback(int status, int server_if, int srvc_handle) {
 }
 
 void ScanResultCallback(uint16_t ble_evt_type, uint8_t addr_type,
-                        bt_bdaddr_t* bda, uint8_t ble_primary_phy,
+                        RawAddress* bda, uint8_t ble_primary_phy,
                         uint8_t ble_secondary_phy, uint8_t ble_advertising_sid,
                         int8_t ble_tx_power, int8_t rssi,
                         uint16_t ble_periodic_adv_int,
@@ -383,14 +383,14 @@ void ScanResultCallback(uint16_t ble_evt_type, uint8_t addr_type,
 }
 
 void ClientConnectCallback(int conn_id, int status, int client_if,
-                           const bt_bdaddr_t& bda) {
+                           const RawAddress& bda) {
   std::string addr(BtAddrString(&bda));
   LOG_INFO(LOG_TAG, "%s: conn_id:%d status:%d client_if:%d %s", __func__,
            conn_id, status, client_if, addr.c_str());
 }
 
 void ClientDisconnectCallback(int conn_id, int status, int client_if,
-                              const bt_bdaddr_t& bda) {
+                              const RawAddress& bda) {
   std::string addr(BtAddrString(&bda));
   LOG_INFO(LOG_TAG, "%s: conn_id:%d status:%d client_if:%d %s", __func__,
            conn_id, status, client_if, addr.c_str());

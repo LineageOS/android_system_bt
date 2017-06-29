@@ -66,7 +66,7 @@ bool l2cu_can_allocate_lcb(void) {
  * Returns          LCB address or NULL if none found
  *
  ******************************************************************************/
-tL2C_LCB* l2cu_allocate_lcb(const bt_bdaddr_t& p_bd_addr, bool is_bonding,
+tL2C_LCB* l2cu_allocate_lcb(const RawAddress& p_bd_addr, bool is_bonding,
                             tBT_TRANSPORT transport) {
   int xx;
   tL2C_LCB* p_lcb = &l2cb.lcb_pool[0];
@@ -123,7 +123,7 @@ tL2C_LCB* l2cu_allocate_lcb(const bt_bdaddr_t& p_bd_addr, bool is_bonding,
  * Returns          Nothing
  *
  ******************************************************************************/
-void l2cu_update_lcb_4_bonding(const bt_bdaddr_t& p_bd_addr, bool is_bonding) {
+void l2cu_update_lcb_4_bonding(const RawAddress& p_bd_addr, bool is_bonding) {
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(p_bd_addr, BT_TRANSPORT_BR_EDR);
 
   if (p_lcb) {
@@ -258,7 +258,7 @@ void l2cu_release_lcb(tL2C_LCB* p_lcb) {
  * Returns          pointer to matched LCB, or NULL if no match
  *
  ******************************************************************************/
-tL2C_LCB* l2cu_find_lcb_by_bd_addr(const bt_bdaddr_t& p_bd_addr,
+tL2C_LCB* l2cu_find_lcb_by_bd_addr(const RawAddress& p_bd_addr,
                                    tBT_TRANSPORT transport) {
   int xx;
   tL2C_LCB* p_lcb = &l2cb.lcb_pool[0];
@@ -2358,7 +2358,7 @@ bool l2cu_lcb_disconnecting(void) {
  *
  ******************************************************************************/
 
-bool l2cu_set_acl_priority(const bt_bdaddr_t& bd_addr, uint8_t priority,
+bool l2cu_set_acl_priority(const RawAddress& bd_addr, uint8_t priority,
                            bool reset_after_rs) {
   tL2C_LCB* p_lcb;
   uint8_t* pp;
@@ -2390,13 +2390,13 @@ bool l2cu_set_acl_priority(const bt_bdaddr_t& bd_addr, uint8_t priority,
       BTM_VendorSpecificCommand(HCI_BRCM_SET_ACL_PRIORITY,
                                 HCI_BRCM_ACL_PRIORITY_PARAM_SIZE, command,
                                 NULL);
-
-      /* Adjust lmp buffer allocation for this channel if priority changed */
-      if (p_lcb->acl_priority != priority) {
-        p_lcb->acl_priority = priority;
-        l2c_link_adjust_allocation();
-      }
     }
+  }
+
+  /* Adjust lmp buffer allocation for this channel if priority changed */
+  if (p_lcb->acl_priority != priority) {
+    p_lcb->acl_priority = priority;
+    l2c_link_adjust_allocation();
   }
   return (true);
 }
@@ -2430,7 +2430,7 @@ void l2cu_set_non_flushable_pbf(bool is_supported) {
  * Returns          void
  *
  ******************************************************************************/
-void l2cu_resubmit_pending_sec_req(const bt_bdaddr_t* p_bda) {
+void l2cu_resubmit_pending_sec_req(const RawAddress* p_bda) {
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
   tL2C_CCB* p_next_ccb;

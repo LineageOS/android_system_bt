@@ -41,7 +41,7 @@ typedef struct {
 
 extern btif_hd_cb_t btif_hd_cb;
 
-extern void btif_hd_remove_device(bt_bdaddr_t bd_addr);
+extern void btif_hd_remove_device(RawAddress bd_addr);
 extern void btif_hd_service_registration();
 
 #endif

@@ -332,7 +332,7 @@ typedef struct {
 /* data associated with BTA_AG_OPEN_EVT */
 typedef struct {
   tBTA_AG_HDR hdr;
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   tBTA_SERVICE_ID service_id;
   tBTA_AG_STATUS status;
 } tBTA_AG_OPEN;
@@ -340,21 +340,21 @@ typedef struct {
 /* data associated with BTA_AG_CLOSE_EVT */
 typedef struct {
   tBTA_AG_HDR hdr;
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
 } tBTA_AG_CLOSE;
 
 /* data associated with BTA_AG_CONN_EVT */
 typedef struct {
   tBTA_AG_HDR hdr;
   tBTA_AG_PEER_FEAT peer_feat;
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   tBTA_AG_PEER_CODEC peer_codec;
 } tBTA_AG_CONN;
 
 /* data associated with AT command event */
 typedef struct {
   tBTA_AG_HDR hdr;
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   char str[BTA_AG_AT_MAX_LEN + 1];
   uint16_t num;
   uint8_t idx;   /* call number used by CLCC and CHLD */
@@ -512,7 +512,7 @@ void BTA_AgDeregister(uint16_t handle);
  * Returns          void
  *
  ******************************************************************************/
-void BTA_AgOpen(uint16_t handle, const bt_bdaddr_t& bd_addr, tBTA_SEC sec_mask,
+void BTA_AgOpen(uint16_t handle, const RawAddress& bd_addr, tBTA_SEC sec_mask,
                 tBTA_SERVICE_MASK services);
 
 /*******************************************************************************

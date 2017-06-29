@@ -204,7 +204,7 @@ typedef struct {
 
 /* callback event data for BTA_HH_OPEN_EVT */
 typedef struct {
-  bt_bdaddr_t bda;       /* HID device bd address    */
+  RawAddress bda;        /* HID device bd address    */
   tBTA_HH_STATUS status; /* operation status         */
   uint8_t handle;        /* device handle            */
 #if (BTA_HH_LE_INCLUDED == TRUE)
@@ -330,7 +330,7 @@ extern void BTA_HhDisable(void);
  * Returns          void
  *
  ******************************************************************************/
-extern void BTA_HhOpen(const bt_bdaddr_t& dev_bda, tBTA_HH_PROTO_MODE mode,
+extern void BTA_HhOpen(const RawAddress& dev_bda, tBTA_HH_PROTO_MODE mode,
                        tBTA_SEC sec_mask);
 
 /*******************************************************************************
@@ -453,7 +453,7 @@ extern void BTA_HhGetIdle(uint8_t dev_handle);
  * Returns          void
  *
  ******************************************************************************/
-extern void BTA_HhSendData(uint8_t dev_handle, const bt_bdaddr_t& dev_bda,
+extern void BTA_HhSendData(uint8_t dev_handle, const RawAddress& dev_bda,
                            BT_HDR* p_buf);
 
 /*******************************************************************************
@@ -478,7 +478,7 @@ extern void BTA_HhGetDscpInfo(uint8_t dev_handle);
  * Returns          void
  *
  ******************************************************************************/
-extern void BTA_HhAddDev(const bt_bdaddr_t& bda, tBTA_HH_ATTR_MASK attr_mask,
+extern void BTA_HhAddDev(const RawAddress& bda, tBTA_HH_ATTR_MASK attr_mask,
                          uint8_t sub_class, uint8_t app_id,
                          tBTA_HH_DEV_DSCP_INFO dscp_info);
 /*******************************************************************************
@@ -510,7 +510,7 @@ extern void BTA_HhParseBootRpt(tBTA_HH_BOOT_RPT* p_data, uint8_t* p_report,
                                uint16_t report_len);
 
 /* test commands */
-extern void bta_hh_le_hid_read_rpt_clt_cfg(const bt_bdaddr_t& bd_addr,
+extern void bta_hh_le_hid_read_rpt_clt_cfg(const RawAddress& bd_addr,
                                            uint8_t rpt_id);
 
 #endif /* BTA_HH_API_H */

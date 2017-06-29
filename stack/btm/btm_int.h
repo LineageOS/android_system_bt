@@ -51,17 +51,17 @@ extern void btm_init(void);
 /* Internal functions provided by btm_inq.cc
  ******************************************
 */
-extern tBTM_STATUS btm_initiate_rem_name(const bt_bdaddr_t& remote_bda,
+extern tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda,
                                          uint8_t origin, period_ms_t timeout_ms,
                                          tBTM_CMPL_CB* p_cb);
 
-extern void btm_process_remote_name(const bt_bdaddr_t* bda, BD_NAME name,
+extern void btm_process_remote_name(const RawAddress* bda, BD_NAME name,
                                     uint16_t evt_len, uint8_t hci_status);
 extern void btm_inq_rmt_name_failed(void);
 extern void btm_inq_remote_name_timer_timeout(void* data);
 
 /* Inquiry related functions */
-extern void btm_clr_inq_db(const bt_bdaddr_t* p_bda);
+extern void btm_clr_inq_db(const RawAddress* p_bda);
 extern void btm_inq_db_init(void);
 extern void btm_process_inq_results(uint8_t* p, uint8_t inq_res_mode);
 extern void btm_process_inq_complete(uint8_t status, uint8_t mode);
@@ -69,17 +69,17 @@ extern void btm_process_cancel_complete(uint8_t status, uint8_t mode);
 extern void btm_event_filter_complete(uint8_t* p);
 extern void btm_inq_stop_on_ssp(void);
 extern void btm_inq_clear_ssp(void);
-extern tINQ_DB_ENT* btm_inq_db_find(const bt_bdaddr_t& p_bda);
-extern bool btm_inq_find_bdaddr(const bt_bdaddr_t& p_bda);
+extern tINQ_DB_ENT* btm_inq_db_find(const RawAddress& p_bda);
+extern bool btm_inq_find_bdaddr(const RawAddress& p_bda);
 
 /* Internal functions provided by btm_acl.cc
  *******************************************
 */
 extern void btm_acl_init(void);
-extern void btm_acl_created(const bt_bdaddr_t& bda, DEV_CLASS dc, BD_NAME bdn,
+extern void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
                             uint16_t hci_handle, uint8_t link_role,
                             tBT_TRANSPORT transport);
-extern void btm_acl_removed(const bt_bdaddr_t& bda, tBT_TRANSPORT transport);
+extern void btm_acl_removed(const RawAddress& bda, tBT_TRANSPORT transport);
 extern void btm_acl_device_down(void);
 extern void btm_acl_update_busy_level(tBTM_BLI_EVENT event);
 
@@ -101,12 +101,12 @@ extern void btm_read_link_quality_complete(uint8_t* p);
 extern tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types);
 extern void btm_process_clk_off_comp_evt(uint16_t hci_handle,
                                          uint16_t clock_offset);
-extern void btm_acl_role_changed(uint8_t hci_status, const bt_bdaddr_t* bd_addr,
+extern void btm_acl_role_changed(uint8_t hci_status, const RawAddress* bd_addr,
                                  uint8_t new_role);
 extern void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
                                    uint8_t encr_enable);
 extern uint16_t btm_get_acl_disc_reason_code(void);
-extern tBTM_STATUS btm_remove_acl(const bt_bdaddr_t& bd_addr,
+extern tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr,
                                   tBT_TRANSPORT transport);
 extern void btm_read_remote_features_complete(uint8_t* p);
 extern void btm_read_remote_ext_features_complete(uint8_t* p);
@@ -118,12 +118,12 @@ extern void btm_establish_continue(tACL_CONN* p_acl_cb);
 extern void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
                                               uint16_t* p_pkt_type);
 /* Read maximum data packet that can be sent over current connection */
-extern uint16_t btm_get_max_packet_size(const bt_bdaddr_t& addr);
-extern tACL_CONN* btm_bda_to_acl(const bt_bdaddr_t& bda,
+extern uint16_t btm_get_max_packet_size(const RawAddress& addr);
+extern tACL_CONN* btm_bda_to_acl(const RawAddress& bda,
                                  tBT_TRANSPORT transport);
-extern bool btm_acl_notif_conn_collision(const bt_bdaddr_t& bda);
+extern bool btm_acl_notif_conn_collision(const RawAddress& bda);
 extern void btm_acl_update_conn_addr(uint8_t conn_handle,
-                                     const bt_bdaddr_t& address);
+                                     const RawAddress& address);
 
 extern void btm_pm_reset(void);
 extern void btm_pm_sm_alloc(uint8_t ind);
@@ -131,7 +131,7 @@ extern void btm_pm_proc_cmd_status(uint8_t status);
 extern void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
                                     uint8_t mode, uint16_t interval);
 extern void btm_pm_proc_ssr_evt(uint8_t* p, uint16_t evt_len);
-extern tBTM_STATUS btm_read_power_mode_state(const bt_bdaddr_t& remote_bda,
+extern tBTM_STATUS btm_read_power_mode_state(const RawAddress& remote_bda,
                                              tBTM_PM_STATE* pmState);
 #if (BTM_SCO_INCLUDED == TRUE)
 extern void btm_sco_chk_pend_unpark(uint8_t hci_status, uint16_t hci_handle);
@@ -147,19 +147,19 @@ extern void btm_qos_setup_complete(uint8_t status, uint16_t handle,
  *******************************************
 */
 extern void btm_sco_init(void);
-extern void btm_sco_connected(uint8_t hci_status, const bt_bdaddr_t* bda,
+extern void btm_sco_connected(uint8_t hci_status, const RawAddress* bda,
                               uint16_t hci_handle, tBTM_ESCO_DATA* p_esco_data);
 extern void btm_esco_proc_conn_chg(uint8_t status, uint16_t handle,
                                    uint8_t tx_interval, uint8_t retrans_window,
                                    uint16_t rx_pkt_len, uint16_t tx_pkt_len);
-extern void btm_sco_conn_req(const bt_bdaddr_t& bda, DEV_CLASS dev_class,
+extern void btm_sco_conn_req(const RawAddress& bda, DEV_CLASS dev_class,
                              uint8_t link_type);
 extern void btm_sco_removed(uint16_t hci_handle, uint8_t reason);
-extern void btm_sco_acl_removed(const bt_bdaddr_t* bda);
+extern void btm_sco_acl_removed(const RawAddress* bda);
 extern void btm_route_sco_data(BT_HDR* p_msg);
 extern bool btm_is_sco_active(uint16_t handle);
-extern void btm_remove_sco_links(const bt_bdaddr_t& bda);
-extern bool btm_is_sco_active_by_bdaddr(const bt_bdaddr_t& remote_bda);
+extern void btm_remove_sco_links(const RawAddress& bda);
+extern bool btm_is_sco_active_by_bdaddr(const RawAddress& remote_bda);
 
 extern void btm_read_def_esco_mode(enh_esco_params_t* p_parms);
 extern uint16_t btm_find_scb_by_handle(uint16_t handle);
@@ -176,7 +176,7 @@ extern void btm_ble_add_2_white_list_complete(uint8_t status);
 extern void btm_ble_remove_from_white_list_complete(uint8_t* p,
                                                     uint16_t evt_len);
 extern void btm_ble_clear_white_list_complete(uint8_t* p, uint16_t evt_len);
-extern bool btm_ble_addr_resolvable(const bt_bdaddr_t& rpa,
+extern bool btm_ble_addr_resolvable(const RawAddress& rpa,
                                     tBTM_SEC_DEV_REC* p_dev_rec);
 extern tBTM_STATUS btm_ble_read_resolving_list_entry(
     tBTM_SEC_DEV_REC* p_dev_rec);
@@ -194,34 +194,34 @@ extern void btm_report_device_status(tBTM_DEV_STATUS status);
 /* Internal functions provided by btm_dev.cc
  *********************************************
 */
-extern bool btm_dev_support_switch(const bt_bdaddr_t& bd_addr);
+extern bool btm_dev_support_switch(const RawAddress& bd_addr);
 
 extern tBTM_SEC_DEV_REC* btm_sec_allocate_dev_rec(void);
-extern tBTM_SEC_DEV_REC* btm_sec_alloc_dev(const bt_bdaddr_t& bd_addr);
+extern tBTM_SEC_DEV_REC* btm_sec_alloc_dev(const RawAddress& bd_addr);
 extern void btm_sec_free_dev(tBTM_SEC_DEV_REC* p_dev_rec);
-extern tBTM_SEC_DEV_REC* btm_find_dev(const bt_bdaddr_t& bd_addr);
-extern tBTM_SEC_DEV_REC* btm_find_or_alloc_dev(const bt_bdaddr_t& bd_addr);
+extern tBTM_SEC_DEV_REC* btm_find_dev(const RawAddress& bd_addr);
+extern tBTM_SEC_DEV_REC* btm_find_or_alloc_dev(const RawAddress& bd_addr);
 extern tBTM_SEC_DEV_REC* btm_find_dev_by_handle(uint16_t handle);
-extern tBTM_BOND_TYPE btm_get_bond_type_dev(const bt_bdaddr_t& bd_addr);
-extern bool btm_set_bond_type_dev(const bt_bdaddr_t& bd_addr,
+extern tBTM_BOND_TYPE btm_get_bond_type_dev(const RawAddress& bd_addr);
+extern bool btm_set_bond_type_dev(const RawAddress& bd_addr,
                                   tBTM_BOND_TYPE bond_type);
 
 /* Internal functions provided by btm_sec.cc
  *********************************************
 */
-extern bool btm_dev_support_switch(const bt_bdaddr_t& bd_addr);
-extern tBTM_STATUS btm_sec_l2cap_access_req(const bt_bdaddr_t& bd_addr,
+extern bool btm_dev_support_switch(const RawAddress& bd_addr);
+extern tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr,
                                             uint16_t psm, uint16_t handle,
                                             CONNECTION_TYPE conn_type,
                                             tBTM_SEC_CALLBACK* p_callback,
                                             void* p_ref_data);
-extern tBTM_STATUS btm_sec_mx_access_request(const bt_bdaddr_t& bd_addr,
+extern tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
                                              uint16_t psm, bool is_originator,
                                              uint32_t mx_proto_id,
                                              uint32_t mx_chan_id,
                                              tBTM_SEC_CALLBACK* p_callback,
                                              void* p_ref_data);
-extern void btm_sec_conn_req(const bt_bdaddr_t& bda, uint8_t* dc);
+extern void btm_sec_conn_req(const RawAddress& bda, uint8_t* dc);
 extern void btm_create_conn_cancel_complete(uint8_t* p);
 
 extern void btm_read_inq_tx_power_timeout(void* data);
@@ -229,27 +229,27 @@ extern void btm_read_inq_tx_power_complete(uint8_t* p);
 
 extern void btm_sec_init(uint8_t sec_mode);
 extern void btm_sec_dev_reset(void);
-extern void btm_sec_abort_access_req(const bt_bdaddr_t& bd_addr);
+extern void btm_sec_abort_access_req(const RawAddress& bd_addr);
 extern void btm_sec_auth_complete(uint16_t handle, uint8_t status);
 extern void btm_sec_encrypt_change(uint16_t handle, uint8_t status,
                                    uint8_t encr_enable);
-extern void btm_sec_connected(const bt_bdaddr_t& bda, uint16_t handle,
+extern void btm_sec_connected(const RawAddress& bda, uint16_t handle,
                               uint8_t status, uint8_t enc_mode);
 extern tBTM_STATUS btm_sec_disconnect(uint16_t handle, uint8_t reason);
 extern void btm_sec_disconnected(uint16_t handle, uint8_t reason);
-extern void btm_sec_rmt_name_request_complete(const bt_bdaddr_t* bd_addr,
+extern void btm_sec_rmt_name_request_complete(const RawAddress* bd_addr,
                                               uint8_t* bd_name, uint8_t status);
 extern void btm_sec_rmt_host_support_feat_evt(uint8_t* p);
-extern void btm_io_capabilities_req(const bt_bdaddr_t& p);
+extern void btm_io_capabilities_req(const RawAddress& p);
 extern void btm_io_capabilities_rsp(uint8_t* p);
 extern void btm_proc_sp_req_evt(tBTM_SP_EVT event, uint8_t* p);
 extern void btm_keypress_notif_evt(uint8_t* p);
 extern void btm_simple_pair_complete(uint8_t* p);
-extern void btm_sec_link_key_notification(const bt_bdaddr_t& p_bda,
+extern void btm_sec_link_key_notification(const RawAddress& p_bda,
                                           uint8_t* p_link_key,
                                           uint8_t key_type);
-extern void btm_sec_link_key_request(const bt_bdaddr_t& p_bda);
-extern void btm_sec_pin_code_request(const bt_bdaddr_t& p_bda);
+extern void btm_sec_link_key_request(const RawAddress& p_bda);
+extern void btm_sec_pin_code_request(const RawAddress& p_bda);
 extern void btm_sec_update_clock_offset(uint16_t handle, uint16_t clock_offset);
 extern void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec,
                                         uint8_t res, bool is_le_trasnport);
@@ -257,27 +257,27 @@ extern void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
                                       tBTM_SEC_DEV_REC* p_dev_rec);
 
 extern void btm_sec_clear_ble_keys(tBTM_SEC_DEV_REC* p_dev_rec);
-extern bool btm_sec_is_a_bonded_dev(const bt_bdaddr_t& bda);
+extern bool btm_sec_is_a_bonded_dev(const RawAddress& bda);
 extern void btm_consolidate_dev(tBTM_SEC_DEV_REC* p_target_rec);
-extern bool btm_sec_is_le_capable_dev(const bt_bdaddr_t& bda);
+extern bool btm_sec_is_le_capable_dev(const RawAddress& bda);
 extern bool btm_ble_init_pseudo_addr(tBTM_SEC_DEV_REC* p_dev_rec,
-                                     const bt_bdaddr_t& new_pseudo_addr);
+                                     const RawAddress& new_pseudo_addr);
 extern tBTM_SEC_SERV_REC* btm_sec_find_first_serv(CONNECTION_TYPE conn_type,
                                                   uint16_t psm);
-extern bool btm_ble_start_sec_check(const bt_bdaddr_t& bd_addr, uint16_t psm,
+extern bool btm_ble_start_sec_check(const RawAddress& bd_addr, uint16_t psm,
                                     bool is_originator,
                                     tBTM_SEC_CALLBACK* p_callback,
                                     void* p_ref_data);
 
-extern tINQ_DB_ENT* btm_inq_db_new(const bt_bdaddr_t& p_bda);
+extern tINQ_DB_ENT* btm_inq_db_new(const RawAddress& p_bda);
 
 extern void btm_rem_oob_req(uint8_t* p);
 extern void btm_read_local_oob_complete(uint8_t* p);
 
 extern void btm_acl_resubmit_page(void);
 extern void btm_acl_reset_paging(void);
-extern void btm_acl_paging(BT_HDR* p, const bt_bdaddr_t& dest);
+extern void btm_acl_paging(BT_HDR* p, const RawAddress& dest);
 extern uint8_t btm_sec_clr_service_by_psm(uint16_t psm);
-extern void btm_sec_clr_temp_auth_service(const bt_bdaddr_t& bda);
+extern void btm_sec_clr_temp_auth_service(const RawAddress& bda);
 
 #endif

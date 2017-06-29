@@ -201,24 +201,24 @@ static const uint16_t bta_av_stream_evt_fail[] = {
     0                          /* AVDT_DELAY_REPORT_CFM_EVT */
 };
 
-static void bta_av_stream0_cback(uint8_t handle, const bt_bdaddr_t* bd_addr,
+static void bta_av_stream0_cback(uint8_t handle, const RawAddress* bd_addr,
                                  uint8_t event, tAVDT_CTRL* p_data);
-static void bta_av_stream1_cback(uint8_t handle, const bt_bdaddr_t* bd_addr,
+static void bta_av_stream1_cback(uint8_t handle, const RawAddress* bd_addr,
                                  uint8_t event, tAVDT_CTRL* p_data);
 #if BTA_AV_NUM_STRS > 2
-static void bta_av_stream2_cback(uint8_t handle, const bt_bdaddr_t* bd_addr,
+static void bta_av_stream2_cback(uint8_t handle, const RawAddress* bd_addr,
                                  uint8_t event, tAVDT_CTRL* p_data);
 #endif
 #if BTA_AV_NUM_STRS > 3
-static void bta_av_stream3_cback(uint8_t handle, const bt_bdaddr_t* bd_addr,
+static void bta_av_stream3_cback(uint8_t handle, const RawAddress* bd_addr,
                                  uint8_t event, tAVDT_CTRL* p_data);
 #endif
 #if BTA_AV_NUM_STRS > 4
-static void bta_av_stream4_cback(uint8_t handle, const bt_bdaddr_t* bd_addr,
+static void bta_av_stream4_cback(uint8_t handle, const RawAddress* bd_addr,
                                  uint8_t event, tAVDT_CTRL* p_data);
 #endif
 #if BTA_AV_NUM_STRS > 5
-static void bta_av_stream5_cback(uint8_t handle, const bt_bdaddr_t* bd_addr,
+static void bta_av_stream5_cback(uint8_t handle, const RawAddress* bd_addr,
                                  uint8_t event, tAVDT_CTRL* p_data);
 #endif
 /* the array of callback functions to receive events from AVDT control channel
@@ -291,7 +291,7 @@ static uint8_t bta_av_get_scb_sep_type(tBTA_AV_SCB* p_scb,
  * Returns          void
  *
  ******************************************************************************/
-static void bta_av_save_addr(tBTA_AV_SCB* p_scb, const bt_bdaddr_t& b) {
+static void bta_av_save_addr(tBTA_AV_SCB* p_scb, const RawAddress& b) {
   APPL_TRACE_DEBUG("%s: r:%d, s:%d", __func__, p_scb->recfg_sup,
                    p_scb->suspend_sup);
   if (p_scb->peer_addr != b) {
@@ -416,7 +416,7 @@ static bool bta_av_next_getcap(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_av_proc_stream_evt(uint8_t handle, const bt_bdaddr_t* bd_addr,
+static void bta_av_proc_stream_evt(uint8_t handle, const RawAddress* bd_addr,
                                    uint8_t event, tAVDT_CTRL* p_data,
                                    int index) {
   uint16_t sec_len = 0;
@@ -601,7 +601,7 @@ void bta_av_sink_data_cback(uint8_t handle, BT_HDR* p_pkt, uint32_t time_stamp,
  * Returns          void
  *
  ******************************************************************************/
-static void bta_av_stream0_cback(uint8_t handle, const bt_bdaddr_t* bd_addr,
+static void bta_av_stream0_cback(uint8_t handle, const RawAddress* bd_addr,
                                  uint8_t event, tAVDT_CTRL* p_data) {
   APPL_TRACE_VERBOSE("%s: avdt_handle: %d event=0x%x", __func__, handle, event);
   bta_av_proc_stream_evt(handle, bd_addr, event, p_data, 0);
@@ -616,7 +616,7 @@ static void bta_av_stream0_cback(uint8_t handle, const bt_bdaddr_t* bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-static void bta_av_stream1_cback(uint8_t handle, const bt_bdaddr_t* bd_addr,
+static void bta_av_stream1_cback(uint8_t handle, const RawAddress* bd_addr,
                                  uint8_t event, tAVDT_CTRL* p_data) {
   APPL_TRACE_EVENT("%s: avdt_handle: %d event=0x%x", __func__, handle, event);
   bta_av_proc_stream_evt(handle, bd_addr, event, p_data, 1);
@@ -632,7 +632,7 @@ static void bta_av_stream1_cback(uint8_t handle, const bt_bdaddr_t* bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-static void bta_av_stream2_cback(uint8_t handle, const bt_bdaddr_t* bd_addr,
+static void bta_av_stream2_cback(uint8_t handle, const RawAddress* bd_addr,
                                  uint8_t event, tAVDT_CTRL* p_data) {
   APPL_TRACE_EVENT("%s: avdt_handle: %d event=0x%x", __func__, handle, event);
   bta_av_proc_stream_evt(handle, bd_addr, event, p_data, 2);
@@ -649,7 +649,7 @@ static void bta_av_stream2_cback(uint8_t handle, const bt_bdaddr_t* bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-static void bta_av_stream3_cback(uint8_t handle, const bt_bdaddr_t* bd_addr,
+static void bta_av_stream3_cback(uint8_t handle, const RawAddress* bd_addr,
                                  uint8_t event, tAVDT_CTRL* p_data) {
   APPL_TRACE_EVENT("%s: avdt_handle: %d event=0x%x", __func__, handle, event);
   bta_av_proc_stream_evt(handle, bd_addr, event, p_data, 3);
@@ -666,7 +666,7 @@ static void bta_av_stream3_cback(uint8_t handle, const bt_bdaddr_t* bd_addr,
  *
  ******************************************************************************/
 #if BTA_AV_NUM_STRS > 4
-static void bta_av_stream4_cback(uint8_t handle, const bt_bdaddr_t* bd_addr,
+static void bta_av_stream4_cback(uint8_t handle, const RawAddress* bd_addr,
                                  uint8_t event, tAVDT_CTRL* p_data) {
   APPL_TRACE_EVENT("%s: avdt_handle: %d event=0x%x", __func__, handle, event);
   bta_av_proc_stream_evt(handle, bd_addr, event, p_data, 4);
@@ -683,7 +683,7 @@ static void bta_av_stream4_cback(uint8_t handle, const bt_bdaddr_t* bd_addr,
  *
  ******************************************************************************/
 #if BTA_AV_NUM_STRS > 5
-static void bta_av_stream5_cback(uint8_t handle, const bt_bdaddr_t* bd_addr,
+static void bta_av_stream5_cback(uint8_t handle, const RawAddress* bd_addr,
                                  uint8_t event, tAVDT_CTRL* p_data) {
   APPL_TRACE_EVENT("%s: avdt_handle: %d event=0x%x", __func__, handle, event);
   bta_av_proc_stream_evt(handle, bd_addr, event, p_data, 5);
@@ -1330,8 +1330,8 @@ void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
                    p_scb->l2c_cid, p_scb->stream_mtu, mtu);
   if (mtu == 0 || mtu > p_scb->stream_mtu) mtu = p_scb->stream_mtu;
 
-  /* Set the media channel as medium priority */
-  L2CA_SetTxPriority(p_scb->l2c_cid, L2CAP_CHNL_PRIORITY_MEDIUM);
+  /* Set the media channel as high priority */
+  L2CA_SetTxPriority(p_scb->l2c_cid, L2CAP_CHNL_PRIORITY_HIGH);
   L2CA_SetChnlFlushability(p_scb->l2c_cid, true);
 
   bta_sys_conn_open(BTA_ID_AV, p_scb->app_id, p_scb->peer_addr);
@@ -2748,7 +2748,7 @@ void bta_av_rcfg_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     if (btif_storage_get_stored_remote_name(p_scb->peer_addr, remote_name)) {
       if (interop_match_name(INTEROP_DISABLE_AVDTP_RECONFIGURE, remote_name) ||
           interop_match_addr(INTEROP_DISABLE_AVDTP_RECONFIGURE,
-                             (const bt_bdaddr_t*)&p_scb->peer_addr)) {
+                             (const RawAddress*)&p_scb->peer_addr)) {
         VLOG(1) << __func__ << ": disable AVDTP RECONFIGURE: interop matched "
                                "name "
                 << remote_name << " address " << p_scb->peer_addr;

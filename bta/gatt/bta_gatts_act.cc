@@ -42,7 +42,7 @@ static bool bta_gatts_nv_srv_chg_cback(tGATTS_SRV_CHG_CMD cmd,
                                        tGATTS_SRV_CHG_REQ* p_req,
                                        tGATTS_SRV_CHG_RSP* p_rsp);
 
-static void bta_gatts_conn_cback(tGATT_IF gatt_if, const bt_bdaddr_t& bda,
+static void bta_gatts_conn_cback(tGATT_IF gatt_if, const RawAddress& bda,
                                  uint16_t conn_id, bool connected,
                                  tGATT_DISCONN_REASON reason,
                                  tGATT_TRANSPORT transport);
@@ -373,7 +373,7 @@ void bta_gatts_indicate_handle(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
   tBTA_GATTS_RCB* p_rcb = NULL;
   tBTA_GATT_STATUS status = BTA_GATT_ILLEGAL_PARAMETER;
   tGATT_IF gatt_if;
-  bt_bdaddr_t remote_bda;
+  RawAddress remote_bda;
   tBTA_TRANSPORT transport;
   tBTA_GATTS cb_data;
 
@@ -494,7 +494,7 @@ void bta_gatts_close(UNUSED_ATTR tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
   tBTA_GATTS_RCB* p_rcb;
   tBTA_GATT_STATUS status = BTA_GATT_ERROR;
   tGATT_IF gatt_if;
-  bt_bdaddr_t remote_bda;
+  RawAddress remote_bda;
   tBTA_GATT_TRANSPORT transport;
 
   if (GATT_GetConnectionInfor(p_msg->hdr.layer_specific, &gatt_if, remote_bda,
@@ -575,7 +575,7 @@ static void bta_gatts_send_request_cback(uint16_t conn_id, uint32_t trans_id,
  * Returns          none.
  *
  ******************************************************************************/
-static void bta_gatts_conn_cback(tGATT_IF gatt_if, const bt_bdaddr_t& bdaddr,
+static void bta_gatts_conn_cback(tGATT_IF gatt_if, const RawAddress& bdaddr,
                                  uint16_t conn_id, bool connected,
                                  tGATT_DISCONN_REASON reason,
                                  tGATT_TRANSPORT transport) {

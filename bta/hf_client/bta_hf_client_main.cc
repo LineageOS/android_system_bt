@@ -366,7 +366,7 @@ static void bta_hf_client_collision_timer_cback(void* data) {
  ******************************************************************************/
 void bta_hf_client_collision_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status,
                                    uint8_t id, UNUSED_ATTR uint8_t app_id,
-                                   const bt_bdaddr_t* peer_addr) {
+                                   const RawAddress* peer_addr) {
   tBTA_HF_CLIENT_CB* client_cb = bta_hf_client_find_cb_by_bda(*peer_addr);
   if (client_cb != NULL && client_cb->state == BTA_HF_CLIENT_OPENING_ST) {
     if (id == BTA_ID_SYS) /* ACL collision */
@@ -491,7 +491,7 @@ tBTA_HF_CLIENT_CB* bta_hf_client_find_cb_by_handle(uint16_t handle) {
  *                  none exists
  *
  ******************************************************************************/
-tBTA_HF_CLIENT_CB* bta_hf_client_find_cb_by_bda(const bt_bdaddr_t& peer_addr) {
+tBTA_HF_CLIENT_CB* bta_hf_client_find_cb_by_bda(const RawAddress& peer_addr) {
   for (int i = 0; i < HF_CLIENT_MAX_DEVICES; i++) {
     // Check if the associated index is allocated and that BD ADDR matches
     tBTA_HF_CLIENT_CB* client_cb = &bta_hf_client_cb_arr.cb[i];
@@ -581,7 +581,7 @@ tBTA_HF_CLIENT_CB* bta_hf_client_find_cb_by_sco_handle(uint16_t handle) {
  * Returns          true if the creation of p_handle succeeded, false otherwise
  *
  ******************************************************************************/
-bool bta_hf_client_allocate_handle(const bt_bdaddr_t& bd_addr,
+bool bta_hf_client_allocate_handle(const RawAddress& bd_addr,
                                    uint16_t* p_handle) {
   tBTA_HF_CLIENT_CB* existing_cb = bta_hf_client_find_cb_by_bda(bd_addr);
   if (existing_cb != NULL) {

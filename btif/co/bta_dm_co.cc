@@ -69,7 +69,7 @@ bool bta_dm_co_get_compress_memory(UNUSED_ATTR tBTA_SYS_ID id,
  * Returns          void.
  *
  ******************************************************************************/
-void bta_dm_co_io_req(UNUSED_ATTR const bt_bdaddr_t& bd_addr,
+void bta_dm_co_io_req(UNUSED_ATTR const RawAddress& bd_addr,
                       tBTA_IO_CAP* p_io_cap, tBTA_OOB_DATA* p_oob_data,
                       tBTA_AUTH_REQ* p_auth_req, bool is_orig) {
   btif_dm_set_oob_for_io_req(p_oob_data);
@@ -97,7 +97,7 @@ void bta_dm_co_io_req(UNUSED_ATTR const bt_bdaddr_t& bd_addr,
  * Returns          void.
  *
  ******************************************************************************/
-void bta_dm_co_io_rsp(const bt_bdaddr_t& bd_addr, tBTA_IO_CAP io_cap,
+void bta_dm_co_io_rsp(const RawAddress& bd_addr, tBTA_IO_CAP io_cap,
                       tBTA_OOB_DATA oob_data, tBTA_AUTH_REQ auth_req) {
   btif_dm_proc_io_rsp(bd_addr, io_cap, oob_data, auth_req);
 }
@@ -115,7 +115,7 @@ void bta_dm_co_io_rsp(const bt_bdaddr_t& bd_addr, tBTA_IO_CAP io_cap,
  * Returns          void.
  *
  ******************************************************************************/
-void bta_dm_co_lk_upgrade(UNUSED_ATTR const bt_bdaddr_t& bd_addr,
+void bta_dm_co_lk_upgrade(UNUSED_ATTR const RawAddress& bd_addr,
                           UNUSED_ATTR bool* p_upgrade) {}
 
 /*******************************************************************************
@@ -152,7 +152,7 @@ void bta_dm_co_loc_oob(bool valid, BT_OCTET16 c, BT_OCTET16 r) {
  * Returns          void.
  *
  ******************************************************************************/
-void bta_dm_co_rmt_oob(const bt_bdaddr_t& bd_addr) {
+void bta_dm_co_rmt_oob(const RawAddress& bd_addr) {
   BT_OCTET16 p_c;
   BT_OCTET16 p_r;
   bool result = false;
@@ -274,7 +274,7 @@ void bta_dm_sco_co_out_data(BT_HDR** p_buf) { btui_sco_codec_readbuf(p_buf); }
  * Returns          void.
  *
  ******************************************************************************/
-void bta_dm_co_le_io_key_req(UNUSED_ATTR const bt_bdaddr_t& bd_addr,
+void bta_dm_co_le_io_key_req(UNUSED_ATTR const RawAddress& bd_addr,
                              uint8_t* p_max_key_size,
                              tBTA_LE_KEY_TYPE* p_init_key,
                              tBTA_LE_KEY_TYPE* p_resp_key) {
@@ -329,7 +329,7 @@ void bta_dm_co_ble_load_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK* p_key_mask,
  * Returns          void.
  *
  ******************************************************************************/
-void bta_dm_co_ble_io_req(const bt_bdaddr_t& bd_addr, tBTA_IO_CAP* p_io_cap,
+void bta_dm_co_ble_io_req(const RawAddress& bd_addr, tBTA_IO_CAP* p_io_cap,
                           tBTA_OOB_DATA* p_oob_data,
                           tBTA_LE_AUTH_REQ* p_auth_req, uint8_t* p_max_key_size,
                           tBTA_LE_KEY_TYPE* p_init_key,

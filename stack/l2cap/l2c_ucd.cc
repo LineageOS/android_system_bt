@@ -40,7 +40,7 @@
 
 extern fixed_queue_t* btu_bta_alarm_queue;
 
-static bool l2c_ucd_connect(const bt_bdaddr_t& rem_bda);
+static bool l2c_ucd_connect(const RawAddress& rem_bda);
 
 /*******************************************************************************
  *
@@ -51,8 +51,8 @@ static bool l2c_ucd_connect(const bt_bdaddr_t& rem_bda);
  * Returns          void
  *
  ******************************************************************************/
-static void l2c_ucd_discover_cback(const bt_bdaddr_t& rem_bda,
-                                   uint8_t info_type, uint32_t data) {
+static void l2c_ucd_discover_cback(const RawAddress& rem_bda, uint8_t info_type,
+                                   uint32_t data) {
   tL2C_RCB* p_rcb = &l2cb.rcb_pool[0];
   uint16_t xx;
 
@@ -86,7 +86,7 @@ static void l2c_ucd_discover_cback(const bt_bdaddr_t& rem_bda,
  * Returns          void
  *
  ******************************************************************************/
-static void l2c_ucd_data_ind_cback(const bt_bdaddr_t& rem_bda, BT_HDR* p_buf) {
+static void l2c_ucd_data_ind_cback(const RawAddress& rem_bda, BT_HDR* p_buf) {
   uint8_t* p;
   uint16_t psm;
   tL2C_RCB* p_rcb;
@@ -118,7 +118,7 @@ static void l2c_ucd_data_ind_cback(const bt_bdaddr_t& rem_bda, BT_HDR* p_buf) {
  * Returns          void
  *
  ******************************************************************************/
-static void l2c_ucd_congestion_status_cback(const bt_bdaddr_t& rem_bda,
+static void l2c_ucd_congestion_status_cback(const RawAddress& rem_bda,
                                             bool is_congested) {
   tL2C_RCB* p_rcb = &l2cb.rcb_pool[0];
   uint16_t xx;
@@ -309,7 +309,7 @@ bool L2CA_UcdDeregister(uint16_t psm) {
  *  Return value:   true if successs
  *
  ******************************************************************************/
-bool L2CA_UcdDiscover(uint16_t psm, const bt_bdaddr_t& rem_bda,
+bool L2CA_UcdDiscover(uint16_t psm, const RawAddress& rem_bda,
                       uint8_t info_type) {
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
@@ -374,7 +374,7 @@ bool L2CA_UcdDiscover(uint16_t psm, const bt_bdaddr_t& rem_bda,
  *                  L2CAP_DW_FAILED,  if error
  *
  ******************************************************************************/
-uint16_t L2CA_UcdDataWrite(uint16_t psm, const bt_bdaddr_t& rem_bda,
+uint16_t L2CA_UcdDataWrite(uint16_t psm, const RawAddress& rem_bda,
                            BT_HDR* p_buf, uint16_t flags) {
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
@@ -470,7 +470,7 @@ uint16_t L2CA_UcdDataWrite(uint16_t psm, const bt_bdaddr_t& rem_bda,
  *  Return value:   true if successs
  *
  ******************************************************************************/
-bool L2CA_UcdSetIdleTimeout(const bt_bdaddr_t& rem_bda, uint16_t timeout) {
+bool L2CA_UcdSetIdleTimeout(const RawAddress& rem_bda, uint16_t timeout) {
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
 
@@ -502,7 +502,7 @@ bool L2CA_UcdSetIdleTimeout(const bt_bdaddr_t& rem_bda, uint16_t timeout) {
  * Returns          true if a valid channel, else false
  *
  ******************************************************************************/
-bool L2CA_UCDSetTxPriority(const bt_bdaddr_t& rem_bda,
+bool L2CA_UCDSetTxPriority(const RawAddress& rem_bda,
                            tL2CAP_CHNL_PRIORITY priority) {
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
@@ -543,7 +543,7 @@ bool L2CA_UCDSetTxPriority(const bt_bdaddr_t& rem_bda,
  *  Return value:   true if successs
  *
  ******************************************************************************/
-static bool l2c_ucd_connect(const bt_bdaddr_t& rem_bda) {
+static bool l2c_ucd_connect(const RawAddress& rem_bda) {
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
   tL2C_RCB* p_rcb;

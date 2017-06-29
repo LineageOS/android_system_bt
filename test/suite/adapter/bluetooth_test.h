@@ -55,7 +55,7 @@ class BluetoothTest : public ::testing::Test,
   bt_property_t* GetProperty(bt_property_type_t type);
 
   // Get the value of a specific remote device property
-  bt_property_t* GetRemoteDeviceProperty(const bt_bdaddr_t* addr,
+  bt_property_t* GetRemoteDeviceProperty(const RawAddress* addr,
                                          bt_property_type_t type);
 
   // Get the current discovery state
@@ -83,7 +83,7 @@ class BluetoothTest : public ::testing::Test,
 
   // A callback that is called when the remote device's property changes
   void RemoteDevicePropertiesCallback(bt_status_t status,
-                                      bt_bdaddr_t* remote_bd_addr,
+                                      RawAddress* remote_bd_addr,
                                       int num_properties,
                                       bt_property_t* properties) override;
 
@@ -107,7 +107,7 @@ class BluetoothTest : public ::testing::Test,
   bt_state_t state_;
   int properties_changed_count_;
   bt_property_t* last_changed_properties_;
-  bt_bdaddr_t curr_remote_device_;
+  RawAddress curr_remote_device_;
   int remote_device_properties_changed_count_;
   bt_property_t* remote_device_last_changed_properties_;
   bt_discovery_state_t discovery_state_;
