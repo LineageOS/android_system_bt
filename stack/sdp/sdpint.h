@@ -165,7 +165,7 @@ typedef struct {
 #define SDP_FLAGS_MY_CFG_DONE 0x04
   uint8_t con_flags;
 
-  bt_bdaddr_t device_address;
+  RawAddress device_address;
   alarm_t* sdp_conn_timer;
   uint16_t rem_mtu_size;
   uint16_t connection_id;
@@ -241,7 +241,7 @@ extern void sdp_conn_rcv_l2e_conn_failed(BT_HDR* p_msg);
 extern void sdp_conn_rcv_l2e_data(BT_HDR* p_msg);
 extern void sdp_conn_timer_timeout(void* data);
 
-extern tCONN_CB* sdp_conn_originate(const bt_bdaddr_t& p_bd_addr);
+extern tCONN_CB* sdp_conn_originate(const RawAddress& p_bd_addr);
 
 /* Functions provided by sdp_utils.cc
 */

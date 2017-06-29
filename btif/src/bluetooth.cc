@@ -189,14 +189,14 @@ static int set_adapter_property(const bt_property_t* property) {
   return btif_set_adapter_property(property);
 }
 
-int get_remote_device_properties(bt_bdaddr_t* remote_addr) {
+int get_remote_device_properties(RawAddress* remote_addr) {
   /* sanity check */
   if (interface_ready() == false) return BT_STATUS_NOT_READY;
 
   return btif_get_remote_device_properties(remote_addr);
 }
 
-int get_remote_device_property(bt_bdaddr_t* remote_addr,
+int get_remote_device_property(RawAddress* remote_addr,
                                bt_property_type_t type) {
   /* sanity check */
   if (interface_ready() == false) return BT_STATUS_NOT_READY;
@@ -204,7 +204,7 @@ int get_remote_device_property(bt_bdaddr_t* remote_addr,
   return btif_get_remote_device_property(remote_addr, type);
 }
 
-int set_remote_device_property(bt_bdaddr_t* remote_addr,
+int set_remote_device_property(RawAddress* remote_addr,
                                const bt_property_t* property) {
   /* sanity check */
   if (interface_ready() == false) return BT_STATUS_NOT_READY;
@@ -212,14 +212,14 @@ int set_remote_device_property(bt_bdaddr_t* remote_addr,
   return btif_set_remote_device_property(remote_addr, property);
 }
 
-int get_remote_service_record(bt_bdaddr_t* remote_addr, bt_uuid_t* uuid) {
+int get_remote_service_record(RawAddress* remote_addr, bt_uuid_t* uuid) {
   /* sanity check */
   if (interface_ready() == false) return BT_STATUS_NOT_READY;
 
   return btif_get_remote_service_record(remote_addr, uuid);
 }
 
-int get_remote_services(bt_bdaddr_t* remote_addr) {
+int get_remote_services(RawAddress* remote_addr) {
   /* sanity check */
   if (interface_ready() == false) return BT_STATUS_NOT_READY;
 
@@ -240,14 +240,14 @@ static int cancel_discovery(void) {
   return btif_dm_cancel_discovery();
 }
 
-static int create_bond(const bt_bdaddr_t* bd_addr, int transport) {
+static int create_bond(const RawAddress* bd_addr, int transport) {
   /* sanity check */
   if (interface_ready() == false) return BT_STATUS_NOT_READY;
 
   return btif_dm_create_bond(bd_addr, transport);
 }
 
-static int create_bond_out_of_band(const bt_bdaddr_t* bd_addr, int transport,
+static int create_bond_out_of_band(const RawAddress* bd_addr, int transport,
                                    const bt_out_of_band_data_t* oob_data) {
   /* sanity check */
   if (interface_ready() == false) return BT_STATUS_NOT_READY;
@@ -255,14 +255,14 @@ static int create_bond_out_of_band(const bt_bdaddr_t* bd_addr, int transport,
   return btif_dm_create_bond_out_of_band(bd_addr, transport, oob_data);
 }
 
-static int cancel_bond(const bt_bdaddr_t* bd_addr) {
+static int cancel_bond(const RawAddress* bd_addr) {
   /* sanity check */
   if (interface_ready() == false) return BT_STATUS_NOT_READY;
 
   return btif_dm_cancel_bond(bd_addr);
 }
 
-static int remove_bond(const bt_bdaddr_t* bd_addr) {
+static int remove_bond(const RawAddress* bd_addr) {
   if (is_restricted_mode() && !btif_storage_is_restricted_device(bd_addr))
     return BT_STATUS_SUCCESS;
 
@@ -272,22 +272,22 @@ static int remove_bond(const bt_bdaddr_t* bd_addr) {
   return btif_dm_remove_bond(bd_addr);
 }
 
-static int get_connection_state(const bt_bdaddr_t* bd_addr) {
+static int get_connection_state(const RawAddress* bd_addr) {
   /* sanity check */
   if (interface_ready() == false) return 0;
 
   return btif_dm_get_connection_state(bd_addr);
 }
 
-static int pin_reply(const bt_bdaddr_t* bd_addr, uint8_t accept,
-                     uint8_t pin_len, bt_pin_code_t* pin_code) {
+static int pin_reply(const RawAddress* bd_addr, uint8_t accept, uint8_t pin_len,
+                     bt_pin_code_t* pin_code) {
   /* sanity check */
   if (interface_ready() == false) return BT_STATUS_NOT_READY;
 
   return btif_dm_pin_reply(bd_addr, accept, pin_len, pin_code);
 }
 
-static int ssp_reply(const bt_bdaddr_t* bd_addr, bt_ssp_variant_t variant,
+static int ssp_reply(const RawAddress* bd_addr, bt_ssp_variant_t variant,
                      uint8_t accept, uint32_t passkey) {
   /* sanity check */
   if (interface_ready() == false) return BT_STATUS_NOT_READY;

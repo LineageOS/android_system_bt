@@ -25,7 +25,7 @@
 class PropertyTest : public AllocationTestHarness {};
 
 TEST_F(PropertyTest, addr) {
-  bt_bdaddr_t addr0 = {{0x1, 0x2, 0x3, 0x4, 0x5, 0x6}};
+  RawAddress addr0 = {{0x1, 0x2, 0x3, 0x4, 0x5, 0x6}};
   bt_property_t* property = property_new_addr(&addr0);
 
   EXPECT_EQ(addr0.address[0], ((uint8_t*)property->val)[0]);
@@ -35,9 +35,9 @@ TEST_F(PropertyTest, addr) {
   EXPECT_EQ(addr0.address[4], ((uint8_t*)property->val)[4]);
   EXPECT_EQ(addr0.address[5], ((uint8_t*)property->val)[5]);
   EXPECT_EQ(BT_PROPERTY_BDADDR, property->type);
-  EXPECT_EQ((int)sizeof(bt_bdaddr_t), property->len);
+  EXPECT_EQ((int)sizeof(RawAddress), property->len);
 
-  const bt_bdaddr_t* addr1 = property_as_addr(property);
+  const RawAddress* addr1 = property_as_addr(property);
   EXPECT_EQ(addr0.address[0], addr1->address[0]);
 
   property_free(property);
@@ -174,7 +174,7 @@ TEST_F(PropertyTest, copy) {
 
 TEST_F(PropertyTest, equals) {
   {
-    bt_bdaddr_t addr0 = {{0x1, 0x2, 0x3, 0x4, 0x5, 0x6}};
+    RawAddress addr0 = {{0x1, 0x2, 0x3, 0x4, 0x5, 0x6}};
     bt_property_t* property0 = property_new_addr(&addr0);
 
     bt_device_class_t dc0 = {{0x01, 0x23, 0x45}};
@@ -187,7 +187,7 @@ TEST_F(PropertyTest, equals) {
   }
 
   {
-    bt_bdaddr_t addr = {{0x1, 0x2, 0x3, 0x4, 0x5, 0x6}};
+    RawAddress addr = {{0x1, 0x2, 0x3, 0x4, 0x5, 0x6}};
     bt_property_t* property0 = property_new_addr(&addr);
     bt_property_t* property1 = property_new_addr(&addr);
 
@@ -198,10 +198,10 @@ TEST_F(PropertyTest, equals) {
   }
 
   {
-    bt_bdaddr_t addr0 = {{0x1, 0x2, 0x3, 0x4, 0x5, 0x6}};
+    RawAddress addr0 = {{0x1, 0x2, 0x3, 0x4, 0x5, 0x6}};
     bt_property_t* property0 = property_new_addr(&addr0);
 
-    bt_bdaddr_t addr1 = {{0x1, 0x2, 0x3, 0x4, 0x5, 0xff}};
+    RawAddress addr1 = {{0x1, 0x2, 0x3, 0x4, 0x5, 0xff}};
     bt_property_t* property1 = property_new_addr(&addr1);
 
     EXPECT_FALSE(property_equals(property0, property1));

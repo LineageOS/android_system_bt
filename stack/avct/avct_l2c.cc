@@ -37,7 +37,7 @@
 #define AVCT_L2C_CFG_CFM_DONE (1 << 1)
 
 /* callback function declarations */
-void avct_l2c_connect_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
+void avct_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
                                 uint16_t psm, uint8_t id);
 void avct_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result);
 void avct_l2c_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
@@ -99,7 +99,7 @@ static bool avct_l2c_is_passive(tAVCT_LCB* p_lcb) {
  * Returns          void
  *
  ******************************************************************************/
-void avct_l2c_connect_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
+void avct_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
                                 UNUSED_ATTR uint16_t psm, uint8_t id) {
   tAVCT_LCB* p_lcb;
   uint16_t result = L2CAP_CONN_OK;

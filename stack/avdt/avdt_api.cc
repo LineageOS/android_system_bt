@@ -235,9 +235,8 @@ uint16_t AVDT_RemoveStream(uint8_t handle) {
  * Returns          AVDT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-uint16_t AVDT_DiscoverReq(const bt_bdaddr_t& bd_addr,
-                          tAVDT_SEP_INFO* p_sep_info, uint8_t max_seps,
-                          tAVDT_CTRL_CBACK* p_cback) {
+uint16_t AVDT_DiscoverReq(const RawAddress& bd_addr, tAVDT_SEP_INFO* p_sep_info,
+                          uint8_t max_seps, tAVDT_CTRL_CBACK* p_cback) {
   tAVDT_CCB* p_ccb;
   uint16_t result = AVDT_SUCCESS;
   tAVDT_CCB_EVT evt;
@@ -278,7 +277,7 @@ uint16_t AVDT_DiscoverReq(const bt_bdaddr_t& bd_addr,
  * Returns          AVDT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-static uint16_t avdt_get_cap_req(const bt_bdaddr_t& bd_addr,
+static uint16_t avdt_get_cap_req(const RawAddress& bd_addr,
                                  tAVDT_CCB_API_GETCAP* p_evt) {
   tAVDT_CCB* p_ccb = NULL;
   uint16_t result = AVDT_SUCCESS;
@@ -338,7 +337,7 @@ static uint16_t avdt_get_cap_req(const bt_bdaddr_t& bd_addr,
  * Returns          AVDT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-uint16_t AVDT_GetCapReq(const bt_bdaddr_t& bd_addr, uint8_t seid,
+uint16_t AVDT_GetCapReq(const RawAddress& bd_addr, uint8_t seid,
                         tAVDT_CFG* p_cfg, tAVDT_CTRL_CBACK* p_cback) {
   tAVDT_CCB_API_GETCAP getcap;
 
@@ -373,7 +372,7 @@ uint16_t AVDT_GetCapReq(const bt_bdaddr_t& bd_addr, uint8_t seid,
  * Returns          AVDT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-uint16_t AVDT_GetAllCapReq(const bt_bdaddr_t& bd_addr, uint8_t seid,
+uint16_t AVDT_GetAllCapReq(const RawAddress& bd_addr, uint8_t seid,
                            tAVDT_CFG* p_cfg, tAVDT_CTRL_CBACK* p_cback) {
   tAVDT_CCB_API_GETCAP getcap;
 
@@ -429,7 +428,7 @@ uint16_t AVDT_DelayReport(uint8_t handle, uint8_t seid, uint16_t delay) {
  * Returns          AVDT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-uint16_t AVDT_OpenReq(uint8_t handle, const bt_bdaddr_t& bd_addr, uint8_t seid,
+uint16_t AVDT_OpenReq(uint8_t handle, const RawAddress& bd_addr, uint8_t seid,
                       tAVDT_CFG* p_cfg) {
   tAVDT_CCB* p_ccb = NULL;
   tAVDT_SCB* p_scb = NULL;
@@ -895,7 +894,7 @@ uint16_t AVDT_WriteReq(uint8_t handle, BT_HDR* p_pkt, uint32_t time_stamp,
  * Returns          AVDT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-uint16_t AVDT_ConnectReq(const bt_bdaddr_t& bd_addr, uint8_t sec_mask,
+uint16_t AVDT_ConnectReq(const RawAddress& bd_addr, uint8_t sec_mask,
                          tAVDT_CTRL_CBACK* p_cback) {
   tAVDT_CCB* p_ccb = NULL;
   uint16_t result = AVDT_SUCCESS;
@@ -937,7 +936,7 @@ uint16_t AVDT_ConnectReq(const bt_bdaddr_t& bd_addr, uint8_t sec_mask,
  * Returns          AVDT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-uint16_t AVDT_DisconnectReq(const bt_bdaddr_t& bd_addr,
+uint16_t AVDT_DisconnectReq(const RawAddress& bd_addr,
                             tAVDT_CTRL_CBACK* p_cback) {
   tAVDT_CCB* p_ccb = NULL;
   uint16_t result = AVDT_SUCCESS;
@@ -994,7 +993,7 @@ uint16_t AVDT_GetL2CapChannel(uint8_t handle) {
  * Returns          CID if successful, otherwise 0.
  *
  ******************************************************************************/
-uint16_t AVDT_GetSignalChannel(uint8_t handle, const bt_bdaddr_t& bd_addr) {
+uint16_t AVDT_GetSignalChannel(uint8_t handle, const RawAddress& bd_addr) {
   tAVDT_SCB* p_scb;
   tAVDT_CCB* p_ccb;
   uint8_t tcid = 0; /* tcid is always 0 for signal channel */

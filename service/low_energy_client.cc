@@ -54,7 +54,7 @@ LowEnergyClient::~LowEnergyClient() {
 bool LowEnergyClient::Connect(const std::string& address, bool is_direct) {
   VLOG(2) << __func__ << "Address: " << address << " is_direct: " << is_direct;
 
-  bt_bdaddr_t bda;
+  RawAddress bda;
   util::BdAddrFromString(address, &bda);
 
   bt_status_t status =
@@ -71,10 +71,10 @@ bool LowEnergyClient::Connect(const std::string& address, bool is_direct) {
 bool LowEnergyClient::Disconnect(const std::string& address) {
   VLOG(2) << __func__ << "Address: " << address;
 
-  bt_bdaddr_t bda;
+  RawAddress bda;
   util::BdAddrFromString(address, &bda);
 
-  std::map<const bt_bdaddr_t, int>::iterator conn_id;
+  std::map<const RawAddress, int>::iterator conn_id;
   {
     lock_guard<mutex> lock(connection_fields_lock_);
     conn_id = connection_ids_.find(bda);
@@ -98,10 +98,10 @@ bool LowEnergyClient::Disconnect(const std::string& address) {
 bool LowEnergyClient::SetMtu(const std::string& address, int mtu) {
   VLOG(2) << __func__ << "Address: " << address << " MTU: " << mtu;
 
-  bt_bdaddr_t bda;
+  RawAddress bda;
   util::BdAddrFromString(address, &bda);
 
-  std::map<const bt_bdaddr_t, int>::iterator conn_id;
+  std::map<const RawAddress, int>::iterator conn_id;
   {
     lock_guard<mutex> lock(connection_fields_lock_);
     conn_id = connection_ids_.find(bda);
@@ -135,7 +135,7 @@ int LowEnergyClient::GetInstanceId() const { return client_id_; }
 
 void LowEnergyClient::ConnectCallback(hal::BluetoothGattInterface* gatt_iface,
                                       int conn_id, int status, int client_id,
-                                      const bt_bdaddr_t& bda) {
+                                      const RawAddress& bda) {
   if (client_id != client_id_) return;
 
   VLOG(1) << __func__ << "client_id: " << client_id << " status: " << status;
@@ -155,7 +155,7 @@ void LowEnergyClient::ConnectCallback(hal::BluetoothGattInterface* gatt_iface,
 
 void LowEnergyClient::DisconnectCallback(
     hal::BluetoothGattInterface* gatt_iface, int conn_id, int status,
-    int client_id, const bt_bdaddr_t& bda) {
+    int client_id, const RawAddress& bda) {
   if (client_id != client_id_) return;
 
   VLOG(1) << __func__ << " client_id: " << client_id << " status: " << status;
@@ -176,7 +176,7 @@ void LowEnergyClient::MtuChangedCallback(
   VLOG(1) << __func__ << " conn_id: " << conn_id << " status: " << status
           << " mtu: " << mtu;
 
-  const bt_bdaddr_t* bda = nullptr;
+  const RawAddress* bda = nullptr;
   {
     lock_guard<mutex> lock(connection_fields_lock_);
     for (auto& connection : connection_ids_) {

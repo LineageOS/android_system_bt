@@ -266,7 +266,7 @@ typedef struct {
   tBTA_GATT_STATUS status;
   uint16_t conn_id;
   tBTA_GATTC_IF client_if;
-  bt_bdaddr_t remote_bda;
+  RawAddress remote_bda;
   tBTA_TRANSPORT transport;
   uint16_t mtu;
 } tBTA_GATTC_OPEN;
@@ -275,14 +275,14 @@ typedef struct {
   tBTA_GATT_STATUS status;
   uint16_t conn_id;
   tBTA_GATTC_IF client_if;
-  bt_bdaddr_t remote_bda;
+  RawAddress remote_bda;
   tBTA_GATT_REASON reason; /* disconnect reason code, not useful when connect
                               event is reported */
 } tBTA_GATTC_CLOSE;
 
 typedef struct {
   uint16_t conn_id;
-  bt_bdaddr_t bda;
+  RawAddress bda;
   uint16_t handle;
   uint16_t len;
   uint8_t value[BTA_GATT_MAX_ATTR_LEN];
@@ -298,12 +298,12 @@ typedef struct {
   tBTA_GATT_STATUS status;
   tBTA_GATTC_IF client_if;
   uint16_t conn_id;
-  bt_bdaddr_t remote_bda;
+  RawAddress remote_bda;
 } tBTA_GATTC_OPEN_CLOSE;
 
 typedef struct {
   tBTA_GATTC_IF client_if;
-  bt_bdaddr_t remote_bda;
+  RawAddress remote_bda;
 } tBTA_GATTC_ENC_CMPL_CB;
 
 typedef struct {
@@ -336,7 +336,7 @@ typedef union {
   tBTA_GATTC_EXEC_CMPL exec_cmpl; /*  execute complete */
   tBTA_GATTC_NOTIFY notify;       /* notification/indication event data */
   tBTA_GATTC_ENC_CMPL_CB enc_cmpl;
-  bt_bdaddr_t remote_bda;     /* service change event */
+  RawAddress remote_bda;      /* service change event */
   tBTA_GATTC_CFG_MTU cfg_mtu; /* configure MTU operation */
   tBTA_GATTC_CONGEST congest;
   tBTA_GATTC_PHY_UPDATE phy_update;
@@ -465,7 +465,7 @@ typedef tGATTS_DATA tBTA_GATTS_REQ_DATA;
 
 typedef struct {
   tBTA_GATT_STATUS status;
-  bt_bdaddr_t remote_bda;
+  RawAddress remote_bda;
   uint32_t trans_id;
   uint16_t conn_id;
   tBTA_GATTS_REQ_DATA* p_data;
@@ -494,7 +494,7 @@ typedef struct {
 
 typedef struct {
   tBTA_GATTS_IF server_if;
-  bt_bdaddr_t remote_bda;
+  RawAddress remote_bda;
   uint16_t conn_id;
   tBTA_GATT_REASON reason; /* report disconnect reason */
   tBTA_GATT_TRANSPORT transport;
@@ -639,10 +639,10 @@ extern void BTA_GATTC_AppDeregister(tBTA_GATTC_IF client_if);
  *
  ******************************************************************************/
 extern void BTA_GATTC_Open(tBTA_GATTC_IF client_if,
-                           const bt_bdaddr_t& remote_bda, bool is_direct,
+                           const RawAddress& remote_bda, bool is_direct,
                            tBTA_GATT_TRANSPORT transport, bool opportunistic);
 extern void BTA_GATTC_Open(tBTA_GATTC_IF client_if,
-                           const bt_bdaddr_t& remote_bda, bool is_direct,
+                           const RawAddress& remote_bda, bool is_direct,
                            tBTA_GATT_TRANSPORT transport, bool opportunistic,
                            uint8_t initiating_phys);
 
@@ -661,7 +661,7 @@ extern void BTA_GATTC_Open(tBTA_GATTC_IF client_if,
  *
  ******************************************************************************/
 extern void BTA_GATTC_CancelOpen(tBTA_GATTC_IF client_if,
-                                 const bt_bdaddr_t& remote_bda, bool is_direct);
+                                 const RawAddress& remote_bda, bool is_direct);
 
 /*******************************************************************************
  *
@@ -878,7 +878,7 @@ extern void BTA_GATTC_SendIndConfirm(uint16_t conn_id, uint16_t handle);
  *
  ******************************************************************************/
 extern tBTA_GATT_STATUS BTA_GATTC_RegisterForNotifications(
-    tBTA_GATTC_IF client_if, const bt_bdaddr_t& remote_bda, uint16_t handle);
+    tBTA_GATTC_IF client_if, const RawAddress& remote_bda, uint16_t handle);
 
 /*******************************************************************************
  *
@@ -895,7 +895,7 @@ extern tBTA_GATT_STATUS BTA_GATTC_RegisterForNotifications(
  *
  ******************************************************************************/
 extern tBTA_GATT_STATUS BTA_GATTC_DeregisterForNotifications(
-    tBTA_GATTC_IF client_if, const bt_bdaddr_t& remote_bda, uint16_t handle);
+    tBTA_GATTC_IF client_if, const RawAddress& remote_bda, uint16_t handle);
 
 /*******************************************************************************
  *
@@ -960,7 +960,7 @@ extern void BTA_GATTC_ReadMultiple(uint16_t conn_id,
  * Returns          void
  *
  ******************************************************************************/
-extern void BTA_GATTC_Refresh(const bt_bdaddr_t& remote_bda);
+extern void BTA_GATTC_Refresh(const RawAddress& remote_bda);
 
 /*******************************************************************************
  *
@@ -1134,7 +1134,7 @@ extern void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id,
  *
  ******************************************************************************/
 extern void BTA_GATTS_Open(tBTA_GATTS_IF server_if,
-                           const bt_bdaddr_t& remote_bda, bool is_direct,
+                           const RawAddress& remote_bda, bool is_direct,
                            tBTA_GATT_TRANSPORT transport);
 
 /*******************************************************************************
@@ -1152,7 +1152,7 @@ extern void BTA_GATTS_Open(tBTA_GATTS_IF server_if,
  *
  ******************************************************************************/
 extern void BTA_GATTS_CancelOpen(tBTA_GATTS_IF server_if,
-                                 const bt_bdaddr_t& remote_bda, bool is_direct);
+                                 const RawAddress& remote_bda, bool is_direct);
 
 /*******************************************************************************
  *

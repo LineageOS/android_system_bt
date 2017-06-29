@@ -151,7 +151,7 @@ uint8_t bta_gattc_num_reg_app(void) {
  *
  ******************************************************************************/
 tBTA_GATTC_CLCB* bta_gattc_find_clcb_by_cif(uint8_t client_if,
-                                            const bt_bdaddr_t& remote_bda,
+                                            const RawAddress& remote_bda,
                                             tBTA_TRANSPORT transport) {
   tBTA_GATTC_CLCB* p_clcb = &bta_gattc_cb.clcb[0];
   uint8_t i;
@@ -192,7 +192,7 @@ tBTA_GATTC_CLCB* bta_gattc_find_clcb_by_conn_id(uint16_t conn_id) {
  *
  ******************************************************************************/
 tBTA_GATTC_CLCB* bta_gattc_clcb_alloc(tBTA_GATTC_IF client_if,
-                                      const bt_bdaddr_t& remote_bda,
+                                      const RawAddress& remote_bda,
                                       tBTA_TRANSPORT transport) {
   uint8_t i_clcb = 0;
   tBTA_GATTC_CLCB* p_clcb = NULL;
@@ -238,7 +238,7 @@ tBTA_GATTC_CLCB* bta_gattc_clcb_alloc(tBTA_GATTC_IF client_if,
  *
  ******************************************************************************/
 tBTA_GATTC_CLCB* bta_gattc_find_alloc_clcb(tBTA_GATTC_IF client_if,
-                                           const bt_bdaddr_t& remote_bda,
+                                           const RawAddress& remote_bda,
                                            tBTA_TRANSPORT transport) {
   tBTA_GATTC_CLCB* p_clcb;
 
@@ -296,7 +296,7 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB* p_clcb) {
  * Returns          pointer to the server cache.
  *
  ******************************************************************************/
-tBTA_GATTC_SERV* bta_gattc_find_srcb(const bt_bdaddr_t& bda) {
+tBTA_GATTC_SERV* bta_gattc_find_srcb(const RawAddress& bda) {
   tBTA_GATTC_SERV* p_srcb = &bta_gattc_cb.known_server[0];
   uint8_t i;
 
@@ -315,7 +315,7 @@ tBTA_GATTC_SERV* bta_gattc_find_srcb(const bt_bdaddr_t& bda) {
  * Returns          pointer to the server cache.
  *
  ******************************************************************************/
-tBTA_GATTC_SERV* bta_gattc_find_srvr_cache(const bt_bdaddr_t& bda) {
+tBTA_GATTC_SERV* bta_gattc_find_srvr_cache(const RawAddress& bda) {
   tBTA_GATTC_SERV* p_srcb = &bta_gattc_cb.known_server[0];
   uint8_t i;
 
@@ -350,7 +350,7 @@ tBTA_GATTC_SERV* bta_gattc_find_scb_by_cid(uint16_t conn_id) {
  * Returns          pointer to the server cache.
  *
  ******************************************************************************/
-tBTA_GATTC_SERV* bta_gattc_srcb_alloc(const bt_bdaddr_t& bda) {
+tBTA_GATTC_SERV* bta_gattc_srcb_alloc(const RawAddress& bda) {
   tBTA_GATTC_SERV *p_tcb = &bta_gattc_cb.known_server[0], *p_recycle = NULL;
   bool found = false;
   uint8_t i;
@@ -430,7 +430,7 @@ bool bta_gattc_check_notif_registry(tBTA_GATTC_RCB* p_clreg,
  * Function         bta_gattc_clear_notif_registration
  *
  * Description      Clear up the notification registration information by
- *                  bt_bdaddr_t.
+ *                  RawAddress.
  *                  Where handle is between start_handle and end_handle, and
  *                  start_handle and end_handle are boundaries of service
  *                  containing characteristic.
@@ -441,7 +441,7 @@ bool bta_gattc_check_notif_registry(tBTA_GATTC_RCB* p_clreg,
 void bta_gattc_clear_notif_registration(tBTA_GATTC_SERV* p_srcb,
                                         uint16_t conn_id, uint16_t start_handle,
                                         uint16_t end_handle) {
-  bt_bdaddr_t remote_bda;
+  RawAddress remote_bda;
   tBTA_GATTC_IF gatt_if;
   tBTA_GATTC_RCB* p_clrcb;
   uint8_t i;
@@ -481,7 +481,7 @@ void bta_gattc_clear_notif_registration(tBTA_GATTC_SERV* p_srcb,
  *
  ******************************************************************************/
 bool bta_gattc_mark_bg_conn(tBTA_GATTC_IF client_if,
-                            const bt_bdaddr_t& remote_bda_ptr, bool add) {
+                            const RawAddress& remote_bda_ptr, bool add) {
   tBTA_GATTC_BG_TCK* p_bg_tck = &bta_gattc_cb.bg_track[0];
   uint8_t i = 0;
   tBTA_GATTC_CIF_MASK* p_cif_mask;
@@ -539,7 +539,7 @@ bool bta_gattc_mark_bg_conn(tBTA_GATTC_IF client_if,
  *
  ******************************************************************************/
 bool bta_gattc_check_bg_conn(tBTA_GATTC_IF client_if,
-                             const bt_bdaddr_t& remote_bda, uint8_t role) {
+                             const RawAddress& remote_bda, uint8_t role) {
   tBTA_GATTC_BG_TCK* p_bg_tck = &bta_gattc_cb.bg_track[0];
   uint8_t i = 0;
   bool is_bg_conn = false;
@@ -564,7 +564,7 @@ bool bta_gattc_check_bg_conn(tBTA_GATTC_IF client_if,
  *
  ******************************************************************************/
 void bta_gattc_send_open_cback(tBTA_GATTC_RCB* p_clreg, tBTA_GATT_STATUS status,
-                               const bt_bdaddr_t& remote_bda, uint16_t conn_id,
+                               const RawAddress& remote_bda, uint16_t conn_id,
                                tBTA_TRANSPORT transport, uint16_t mtu) {
   tBTA_GATTC cb_data;
 
@@ -590,7 +590,7 @@ void bta_gattc_send_open_cback(tBTA_GATTC_RCB* p_clreg, tBTA_GATT_STATUS status,
  * Returns          pointer to the clcb
  *
  ******************************************************************************/
-tBTA_GATTC_CONN* bta_gattc_conn_alloc(const bt_bdaddr_t& remote_bda) {
+tBTA_GATTC_CONN* bta_gattc_conn_alloc(const RawAddress& remote_bda) {
   uint8_t i_conn = 0;
   tBTA_GATTC_CONN* p_conn = &bta_gattc_cb.conn_track[0];
 
@@ -617,7 +617,7 @@ tBTA_GATTC_CONN* bta_gattc_conn_alloc(const bt_bdaddr_t& remote_bda) {
  * Returns          pointer to the clcb
  *
  ******************************************************************************/
-tBTA_GATTC_CONN* bta_gattc_conn_find(const bt_bdaddr_t& remote_bda) {
+tBTA_GATTC_CONN* bta_gattc_conn_find(const RawAddress& remote_bda) {
   uint8_t i_conn = 0;
   tBTA_GATTC_CONN* p_conn = &bta_gattc_cb.conn_track[0];
 
@@ -642,7 +642,7 @@ tBTA_GATTC_CONN* bta_gattc_conn_find(const bt_bdaddr_t& remote_bda) {
  * Returns          pointer to the clcb
  *
  ******************************************************************************/
-tBTA_GATTC_CONN* bta_gattc_conn_find_alloc(const bt_bdaddr_t& remote_bda) {
+tBTA_GATTC_CONN* bta_gattc_conn_find_alloc(const RawAddress& remote_bda) {
   tBTA_GATTC_CONN* p_conn = bta_gattc_conn_find(remote_bda);
 
   if (p_conn == NULL) {
@@ -660,7 +660,7 @@ tBTA_GATTC_CONN* bta_gattc_conn_find_alloc(const bt_bdaddr_t& remote_bda) {
  * Returns          pointer to the clcb
  *
  ******************************************************************************/
-bool bta_gattc_conn_dealloc(const bt_bdaddr_t& remote_bda) {
+bool bta_gattc_conn_dealloc(const RawAddress& remote_bda) {
   tBTA_GATTC_CONN* p_conn = bta_gattc_conn_find(remote_bda);
 
   if (p_conn != NULL) {

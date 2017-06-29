@@ -38,7 +38,7 @@ typedef struct {
                                                  bt_version_t* bt_version_ptr);
 
   void (*parse_read_bd_addr_response)(BT_HDR* response,
-                                      bt_bdaddr_t* address_ptr);
+                                      RawAddress* address_ptr);
 
   void (*parse_read_local_supported_commands_response)(
       BT_HDR* response, uint8_t* supported_commands_ptr,

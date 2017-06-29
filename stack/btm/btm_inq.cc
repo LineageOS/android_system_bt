@@ -954,7 +954,7 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
  *                  BTM_WRONG_MODE if the device is not up.
  *
  ******************************************************************************/
-tBTM_STATUS BTM_ReadRemoteDeviceName(const bt_bdaddr_t& remote_bda,
+tBTM_STATUS BTM_ReadRemoteDeviceName(const RawAddress& remote_bda,
                                      tBTM_CMPL_CB* p_cb,
                                      tBT_TRANSPORT transport) {
   VLOG(1) << __func__ << ": bd addr " << remote_bda;
@@ -1016,7 +1016,7 @@ tBTM_STATUS BTM_CancelRemoteDeviceName(void) {
  * Returns          pointer to entry, or NULL if not found
  *
  ******************************************************************************/
-tBTM_INQ_INFO* BTM_InqDbRead(const bt_bdaddr_t& p_bda) {
+tBTM_INQ_INFO* BTM_InqDbRead(const RawAddress& p_bda) {
   VLOG(1) << __func__ << ": bd addr " << p_bda;
 
   tINQ_DB_ENT* p_ent = btm_inq_db_find(p_bda);
@@ -1094,7 +1094,7 @@ tBTM_INQ_INFO* BTM_InqDbNext(tBTM_INQ_INFO* p_cur) {
  *                          is active, otherwise BTM_SUCCESS
  *
  ******************************************************************************/
-tBTM_STATUS BTM_ClearInqDb(const bt_bdaddr_t* p_bda) {
+tBTM_STATUS BTM_ClearInqDb(const RawAddress* p_bda) {
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
 
   /* If an inquiry or remote name is in progress return busy */
@@ -1290,7 +1290,7 @@ void btm_inq_clear_ssp(void) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_clr_inq_db(const bt_bdaddr_t* p_bda) {
+void btm_clr_inq_db(const RawAddress* p_bda) {
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
   tINQ_DB_ENT* p_ent = p_inq->inq_db;
   uint16_t xx;
@@ -1341,7 +1341,7 @@ static void btm_clr_inq_result_flt(void) {
  * Returns          true if found, else false (new entry)
  *
  ******************************************************************************/
-bool btm_inq_find_bdaddr(const bt_bdaddr_t& p_bda) {
+bool btm_inq_find_bdaddr(const RawAddress& p_bda) {
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
   tINQ_BDADDR* p_db = &p_inq->p_bd_db[0];
   uint16_t xx;
@@ -1375,7 +1375,7 @@ bool btm_inq_find_bdaddr(const bt_bdaddr_t& p_bda) {
  * Returns          pointer to entry, or NULL if not found
  *
  ******************************************************************************/
-tINQ_DB_ENT* btm_inq_db_find(const bt_bdaddr_t& p_bda) {
+tINQ_DB_ENT* btm_inq_db_find(const RawAddress& p_bda) {
   uint16_t xx;
   tINQ_DB_ENT* p_ent = btm_cb.btm_inq_vars.inq_db;
 
@@ -1399,7 +1399,7 @@ tINQ_DB_ENT* btm_inq_db_find(const bt_bdaddr_t& p_bda) {
  * Returns          pointer to entry
  *
  ******************************************************************************/
-tINQ_DB_ENT* btm_inq_db_new(const bt_bdaddr_t& p_bda) {
+tINQ_DB_ENT* btm_inq_db_new(const RawAddress& p_bda) {
   uint16_t xx;
   tINQ_DB_ENT* p_ent = btm_cb.btm_inq_vars.inq_db;
   tINQ_DB_ENT* p_old = btm_cb.btm_inq_vars.inq_db;
@@ -1683,7 +1683,7 @@ static void btm_initiate_inquiry(tBTM_INQUIRY_VAR_ST* p_inq) {
  ******************************************************************************/
 void btm_process_inq_results(uint8_t* p, uint8_t inq_res_mode) {
   uint8_t num_resp, xx;
-  bt_bdaddr_t bda;
+  RawAddress bda;
   tINQ_DB_ENT* p_i;
   tBTM_INQ_RESULTS* p_cur = NULL;
   bool is_new = true;
@@ -2053,7 +2053,7 @@ void btm_process_cancel_complete(uint8_t status, uint8_t mode) {
  *                  BTM_WRONG_MODE if the device is not up.
  *
  ******************************************************************************/
-tBTM_STATUS btm_initiate_rem_name(const bt_bdaddr_t& remote_bda, uint8_t origin,
+tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda, uint8_t origin,
                                   period_ms_t timeout_ms, tBTM_CMPL_CB* p_cb) {
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
 
@@ -2113,7 +2113,7 @@ tBTM_STATUS btm_initiate_rem_name(const bt_bdaddr_t& remote_bda, uint8_t origin,
  * Returns          void
  *
  ******************************************************************************/
-void btm_process_remote_name(const bt_bdaddr_t* bda, BD_NAME bdn,
+void btm_process_remote_name(const RawAddress* bda, BD_NAME bdn,
                              uint16_t evt_len, uint8_t hci_status) {
   tBTM_REMOTE_DEV_NAME rem_name;
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;

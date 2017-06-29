@@ -48,7 +48,7 @@ typedef struct {
  ******************************************************************************/
 extern void bta_hh_co_data(uint8_t dev_handle, uint8_t* p_rpt, uint16_t len,
                            tBTA_HH_PROTO_MODE mode, uint8_t sub_class,
-                           uint8_t ctry_code, const bt_bdaddr_t& peer_addr,
+                           uint8_t ctry_code, const RawAddress& peer_addr,
                            uint8_t app_id);
 
 /*******************************************************************************
@@ -94,7 +94,7 @@ extern void bta_hh_co_close(uint8_t dev_handle, uint8_t app_id);
  * Returns          void.
  *
  ******************************************************************************/
-extern void bta_hh_le_co_rpt_info(const bt_bdaddr_t& remote_bda,
+extern void bta_hh_le_co_rpt_info(const RawAddress& remote_bda,
                                   tBTA_HH_RPT_CACHE_ENTRY* p_entry,
                                   uint8_t app_id);
 
@@ -115,7 +115,7 @@ extern void bta_hh_le_co_rpt_info(const bt_bdaddr_t& remote_bda,
  *
  ******************************************************************************/
 extern tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(
-    const bt_bdaddr_t& remote_bda, uint8_t* p_num_rpt, uint8_t app_id);
+    const RawAddress& remote_bda, uint8_t* p_num_rpt, uint8_t app_id);
 
 /*******************************************************************************
  *
@@ -128,7 +128,7 @@ extern tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(
  * Returns          none
  *
  ******************************************************************************/
-extern void bta_hh_le_co_reset_rpt_cache(const bt_bdaddr_t& remote_bda,
+extern void bta_hh_le_co_reset_rpt_cache(const RawAddress& remote_bda,
                                          uint8_t app_id);
 
 #endif /* #if (BTA_HH_LE_INCLUDED == TRUE) */

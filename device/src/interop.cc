@@ -38,14 +38,14 @@ static const char* interop_feature_string_(const interop_feature_t feature);
 static void interop_free_entry_(void* data);
 static void interop_lazy_init_(void);
 static bool interop_match_fixed_(const interop_feature_t feature,
-                                 const bt_bdaddr_t* addr);
+                                 const RawAddress* addr);
 static bool interop_match_dynamic_(const interop_feature_t feature,
-                                   const bt_bdaddr_t* addr);
+                                   const RawAddress* addr);
 
 // Interface functions
 
 bool interop_match_addr(const interop_feature_t feature,
-                        const bt_bdaddr_t* addr) {
+                        const RawAddress* addr) {
   CHECK(addr);
 
   if (interop_match_fixed_(feature, addr) ||
@@ -77,11 +77,11 @@ bool interop_match_name(const interop_feature_t feature, const char* name) {
   return false;
 }
 
-void interop_database_add(const uint16_t feature, const bt_bdaddr_t* addr,
+void interop_database_add(const uint16_t feature, const RawAddress* addr,
                           size_t length) {
   CHECK(addr);
   CHECK(length > 0);
-  CHECK(length < sizeof(bt_bdaddr_t));
+  CHECK(length < sizeof(RawAddress));
 
   interop_addr_entry_t* entry = static_cast<interop_addr_entry_t*>(
       osi_calloc(sizeof(interop_addr_entry_t)));
@@ -144,7 +144,7 @@ static void interop_lazy_init_(void) {
 }
 
 static bool interop_match_dynamic_(const interop_feature_t feature,
-                                   const bt_bdaddr_t* addr) {
+                                   const RawAddress* addr) {
   if (interop_list == NULL || list_length(interop_list) == 0) return false;
 
   const list_node_t* node = list_begin(interop_list);
@@ -163,7 +163,7 @@ static bool interop_match_dynamic_(const interop_feature_t feature,
 }
 
 static bool interop_match_fixed_(const interop_feature_t feature,
-                                 const bt_bdaddr_t* addr) {
+                                 const RawAddress* addr) {
   CHECK(addr);
 
   const size_t db_size =

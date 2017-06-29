@@ -34,16 +34,16 @@ extern fixed_queue_t* btu_general_alarm_queue;
 
 static void smp_tx_complete_callback(uint16_t cid, uint16_t num_pkt);
 
-static void smp_connect_callback(uint16_t channel, const bt_bdaddr_t& bd_addr,
+static void smp_connect_callback(uint16_t channel, const RawAddress& bd_addr,
                                  bool connected, uint16_t reason,
                                  tBT_TRANSPORT transport);
-static void smp_data_received(uint16_t channel, const bt_bdaddr_t& bd_addr,
+static void smp_data_received(uint16_t channel, const RawAddress& bd_addr,
                               BT_HDR* p_buf);
 
-static void smp_br_connect_callback(uint16_t channel,
-                                    const bt_bdaddr_t& bd_addr, bool connected,
-                                    uint16_t reason, tBT_TRANSPORT transport);
-static void smp_br_data_received(uint16_t channel, const bt_bdaddr_t& bd_addr,
+static void smp_br_connect_callback(uint16_t channel, const RawAddress& bd_addr,
+                                    bool connected, uint16_t reason,
+                                    tBT_TRANSPORT transport);
+static void smp_br_data_received(uint16_t channel, const RawAddress& bd_addr,
                                  BT_HDR* p_buf);
 
 /*******************************************************************************
@@ -90,7 +90,7 @@ void smp_l2cap_if_init(void) {
  *                      connected (conn = true)/disconnected (conn = false).
  *
  ******************************************************************************/
-static void smp_connect_callback(uint16_t channel, const bt_bdaddr_t& bd_addr,
+static void smp_connect_callback(uint16_t channel, const RawAddress& bd_addr,
                                  bool connected, uint16_t reason,
                                  tBT_TRANSPORT transport) {
   tSMP_CB* p_cb = &smp_cb;
@@ -135,7 +135,7 @@ static void smp_connect_callback(uint16_t channel, const bt_bdaddr_t& bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-static void smp_data_received(uint16_t channel, const bt_bdaddr_t& bd_addr,
+static void smp_data_received(uint16_t channel, const RawAddress& bd_addr,
                               BT_HDR* p_buf) {
   tSMP_CB* p_cb = &smp_cb;
   uint8_t* p = (uint8_t*)(p_buf + 1) + p_buf->offset;
@@ -224,9 +224,9 @@ static void smp_tx_complete_callback(uint16_t cid, uint16_t num_pkt) {
  *                      connected (conn = true)/disconnected (conn = false).
  *
  ******************************************************************************/
-static void smp_br_connect_callback(uint16_t channel,
-                                    const bt_bdaddr_t& bd_addr, bool connected,
-                                    uint16_t reason, tBT_TRANSPORT transport) {
+static void smp_br_connect_callback(uint16_t channel, const RawAddress& bd_addr,
+                                    bool connected, uint16_t reason,
+                                    tBT_TRANSPORT transport) {
   tSMP_CB* p_cb = &smp_cb;
   tSMP_INT_DATA int_data;
 
@@ -269,7 +269,7 @@ static void smp_br_connect_callback(uint16_t channel,
  * Returns          void
  *
  ******************************************************************************/
-static void smp_br_data_received(uint16_t channel, const bt_bdaddr_t& bd_addr,
+static void smp_br_data_received(uint16_t channel, const RawAddress& bd_addr,
                                  BT_HDR* p_buf) {
   tSMP_CB* p_cb = &smp_cb;
   uint8_t* p = (uint8_t*)(p_buf + 1) + p_buf->offset;

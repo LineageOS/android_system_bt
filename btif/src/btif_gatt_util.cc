@@ -212,11 +212,11 @@ uint16_t set_read_value(btgatt_read_params_t* p_dest, tBTA_GATTC_READ* p_src) {
  ******************************************************************************/
 
 #if (BLE_DELAY_REQUEST_ENC == FALSE)
-static bool btif_gatt_is_link_encrypted(const bt_bdaddr_t& bd_addr) {
+static bool btif_gatt_is_link_encrypted(const RawAddress& bd_addr) {
   return BTA_JvIsEncrypted(bd_addr);
 }
 
-static void btif_gatt_set_encryption_cb(UNUSED_ATTR const bt_bdaddr_t& bd_addr,
+static void btif_gatt_set_encryption_cb(UNUSED_ATTR const RawAddress& bd_addr,
                                         UNUSED_ATTR tBTA_TRANSPORT transport,
                                         tBTA_STATUS result) {
   if (result != BTA_SUCCESS && result != BTA_BUSY) {
@@ -226,7 +226,7 @@ static void btif_gatt_set_encryption_cb(UNUSED_ATTR const bt_bdaddr_t& bd_addr,
 #endif
 
 #if (BLE_DELAY_REQUEST_ENC == FALSE)
-void btif_gatt_check_encrypted_link(bt_bdaddr_t bd_addr,
+void btif_gatt_check_encrypted_link(RawAddress bd_addr,
                                     tBTA_GATT_TRANSPORT transport_link) {
   char buf[100];
 
@@ -240,7 +240,7 @@ void btif_gatt_check_encrypted_link(bt_bdaddr_t bd_addr,
   }
 }
 #else
-void btif_gatt_check_encrypted_link(UNUSED_ATTR bt_bdaddr_t bd_addr,
+void btif_gatt_check_encrypted_link(UNUSED_ATTR RawAddress bd_addr,
                                     UNUSED_ATTR tBTA_GATT_TRANSPORT
                                         transport_link) {}
 #endif

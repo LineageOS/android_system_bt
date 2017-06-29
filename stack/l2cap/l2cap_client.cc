@@ -127,7 +127,7 @@ void l2cap_client_free(l2cap_client_t* client) {
 }
 
 bool l2cap_client_connect(l2cap_client_t* client,
-                          const bt_bdaddr_t& remote_bdaddr, uint16_t psm) {
+                          const RawAddress& remote_bdaddr, uint16_t psm) {
   CHECK(client != NULL);
   CHECK(psm != 0);
   CHECK(!bdaddr_is_empty(&remote_bdaddr));

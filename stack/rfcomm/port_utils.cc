@@ -60,7 +60,7 @@ static const tPORT_STATE default_port_pars = {
  * Returns          Pointer to the PORT or NULL if not found
  *
  ******************************************************************************/
-tPORT* port_allocate_port(uint8_t dlci, const bt_bdaddr_t& bd_addr) {
+tPORT* port_allocate_port(uint8_t dlci, const RawAddress& bd_addr) {
   tPORT* p_port = &rfc_cb.port.port[0];
   uint8_t xx, yy;
 
@@ -272,7 +272,7 @@ void port_release_port(tPORT* p_port) {
  *                  the address.
  *
  ******************************************************************************/
-tRFC_MCB* port_find_mcb(const bt_bdaddr_t& bd_addr) {
+tRFC_MCB* port_find_mcb(const RawAddress& bd_addr) {
   int i;
 
   for (i = 0; i < MAX_BD_CONNECTIONS; i++) {
@@ -356,7 +356,7 @@ tPORT* port_find_dlci_port(uint8_t dlci) {
  * Returns          Pointer to the PORT or NULL if not found
  *
  ******************************************************************************/
-tPORT* port_find_port(uint8_t dlci, const bt_bdaddr_t& bd_addr) {
+tPORT* port_find_port(uint8_t dlci, const RawAddress& bd_addr) {
   uint16_t i;
   tPORT* p_port;
 

@@ -405,7 +405,7 @@ void avdt_ccb_event(tAVDT_CCB* p_ccb, uint8_t event, tAVDT_CCB_EVT* p_data) {
  * Returns          pointer to the ccb, or NULL if none found.
  *
  ******************************************************************************/
-tAVDT_CCB* avdt_ccb_by_bd(const bt_bdaddr_t& bd_addr) {
+tAVDT_CCB* avdt_ccb_by_bd(const RawAddress& bd_addr) {
   tAVDT_CCB* p_ccb = &avdt_cb.ccb[0];
   int i;
 
@@ -435,7 +435,7 @@ tAVDT_CCB* avdt_ccb_by_bd(const bt_bdaddr_t& bd_addr) {
  * Returns          pointer to the ccb, or NULL if none could be allocated.
  *
  ******************************************************************************/
-tAVDT_CCB* avdt_ccb_alloc(const bt_bdaddr_t& bd_addr) {
+tAVDT_CCB* avdt_ccb_alloc(const RawAddress& bd_addr) {
   tAVDT_CCB* p_ccb = &avdt_cb.ccb[0];
   int i;
 

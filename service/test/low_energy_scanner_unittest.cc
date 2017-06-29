@@ -67,7 +67,7 @@ class MockScannerHandler : public BleScannerInterface {
 
   MOCK_METHOD2(BatchscanReadReports, void(int client_if, int scan_mode));
 
-  MOCK_METHOD7(StartSync, void(uint8_t, bt_bdaddr_t, uint16_t, uint16_t,
+  MOCK_METHOD7(StartSync, void(uint8_t, RawAddress, uint16_t, uint16_t,
                                StartSyncCb, SyncReportCb, SyncLostCb));
   MOCK_METHOD1(StopSync, void(uint16_t));
 
@@ -75,7 +75,7 @@ class MockScannerHandler : public BleScannerInterface {
                            int company_id, int company_id_mask,
                            const bt_uuid_t* p_uuid,
                            const bt_uuid_t* p_uuid_mask,
-                           const bt_bdaddr_t* bd_addr, char addr_type,
+                           const RawAddress* bd_addr, char addr_type,
                            std::vector<uint8_t> data,
                            std::vector<uint8_t> p_mask,
                            FilterConfigCallback cb){};
@@ -307,7 +307,7 @@ TEST_F(LowEnergyScannerPostRegisterTest, ScanRecord) {
        0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00,
        0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01,
        0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00});
-  const bt_bdaddr_t kTestAddress = {{0x01, 0x02, 0x03, 0x0A, 0x0B, 0x0C}};
+  const RawAddress kTestAddress = {{0x01, 0x02, 0x03, 0x0A, 0x0B, 0x0C}};
   const char kTestAddressStr[] = "01:02:03:0A:0B:0C";
   const int kTestRssi = 64;
 

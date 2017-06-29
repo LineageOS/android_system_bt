@@ -86,7 +86,7 @@ typedef enum {
 // address based lookups where more information is not available. No
 // look-ups or random address resolution are performed on |addr|.
 bool interop_match_addr(const interop_feature_t feature,
-                        const bt_bdaddr_t* addr);
+                        const RawAddress* addr);
 
 // Check if a given remote device |name| matches a known workaround.
 // Name comparisons are case sensitive and do not allow for partial matches.
@@ -99,10 +99,10 @@ bool interop_match_name(const interop_feature_t feature, const char* name);
 // Add a dynamic interop database entry for a device matching the first |length|
 // bytes of |addr|, implementing the workaround identified by |feature|.
 // |addr| may not be null.
-// |length| must be greater than 0 and less than sizeof(bt_bdaddr_t).
+// |length| must be greater than 0 and less than sizeof(RawAddress).
 // As |interop_feature_t| is not exposed in the public API, feature must be a
 // valid integer representing an option in the enum.
-void interop_database_add(const uint16_t feature, const bt_bdaddr_t* addr,
+void interop_database_add(const uint16_t feature, const RawAddress* addr,
                           size_t length);
 
 // Clear the dynamic portion of the interoperability workaround database.

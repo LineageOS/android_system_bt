@@ -70,7 +70,7 @@
 #define AVCT_BR_FCR_OPT_MONITOR_TOUT 12000
 
 /* callback function declarations */
-void avct_l2c_br_connect_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
+void avct_l2c_br_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
                                    uint16_t psm, uint8_t id);
 void avct_l2c_br_connect_cfm_cback(uint16_t lcid, uint16_t result);
 void avct_l2c_br_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
@@ -116,7 +116,7 @@ const tL2CAP_FCR_OPTS avct_l2c_br_fcr_opts_def = {
  * Returns          void
  *
  ******************************************************************************/
-void avct_l2c_br_connect_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
+void avct_l2c_br_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
                                    UNUSED_ATTR uint16_t psm, uint8_t id) {
   tAVCT_LCB* p_lcb;
   uint16_t result = L2CAP_CONN_NO_RESOURCES;

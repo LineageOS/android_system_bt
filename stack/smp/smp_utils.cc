@@ -303,7 +303,7 @@ static tSMP_ASSO_MODEL smp_select_association_model_secure_connections(
  * Description      Send message to L2CAP.
  *
  ******************************************************************************/
-bool smp_send_msg_to_L2CAP(const bt_bdaddr_t& rem_bda, BT_HDR* p_toL2CAP) {
+bool smp_send_msg_to_L2CAP(const RawAddress& rem_bda, BT_HDR* p_toL2CAP) {
   uint16_t l2cap_ret;
   uint16_t fixed_cid = L2CAP_SMP_CID;
 
@@ -932,7 +932,7 @@ void smp_proc_pairing_cmpl(tSMP_CB* p_cb) {
   SMP_TRACE_DEBUG("send SMP_COMPLT_EVT reason=0x%0x sec_level=0x%0x",
                   evt_data.cmplt.reason, evt_data.cmplt.sec_level);
 
-  bt_bdaddr_t pairing_bda = p_cb->pairing_bda;
+  RawAddress pairing_bda = p_cb->pairing_bda;
 
   smp_reset_control_value(p_cb);
 
@@ -1120,7 +1120,7 @@ bool smp_parameter_unconditionally_invalid(UNUSED_ATTR tSMP_CB* p_cb) {
  * Returns          void
  *
  ******************************************************************************/
-void smp_reject_unexpected_pairing_command(const bt_bdaddr_t& bd_addr) {
+void smp_reject_unexpected_pairing_command(const RawAddress& bd_addr) {
   uint8_t* p;
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_PAIR_FAIL_SIZE +
                                       L2CAP_MIN_OFFSET);
@@ -1353,7 +1353,7 @@ void smp_collect_peer_io_capabilities(uint8_t* iocap, tSMP_CB* p_cb) {
  ******************************************************************************/
 void smp_collect_local_ble_address(uint8_t* le_addr, tSMP_CB* p_cb) {
   tBLE_ADDR_TYPE addr_type = 0;
-  bt_bdaddr_t bda;
+  RawAddress bda;
   uint8_t* p = le_addr;
 
   SMP_TRACE_DEBUG("%s", __func__);
@@ -1375,7 +1375,7 @@ void smp_collect_local_ble_address(uint8_t* le_addr, tSMP_CB* p_cb) {
  ******************************************************************************/
 void smp_collect_peer_ble_address(uint8_t* le_addr, tSMP_CB* p_cb) {
   tBLE_ADDR_TYPE addr_type = 0;
-  bt_bdaddr_t bda;
+  RawAddress bda;
   uint8_t* p = le_addr;
 
   SMP_TRACE_DEBUG("%s", __func__);

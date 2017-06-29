@@ -52,7 +52,7 @@
 struct fc_client {
   struct fc_client* next_all_list;
   struct fc_client* next_chan_list;
-  bt_bdaddr_t remote_addr;
+  RawAddress remote_addr;
   uint32_t id;
   tBTA_JV_L2CAP_CBACK* p_cback;
   uint32_t l2cap_socket_id;
@@ -75,10 +75,10 @@ static struct fc_client* fc_clients;
 static struct fc_channel* fc_channels;
 static uint32_t fc_next_id;
 
-static void fcchan_conn_chng_cbk(uint16_t chan, const bt_bdaddr_t& bd_addr,
+static void fcchan_conn_chng_cbk(uint16_t chan, const RawAddress& bd_addr,
                                  bool connected, uint16_t reason,
                                  tBT_TRANSPORT);
-static void fcchan_data_cbk(uint16_t chan, const bt_bdaddr_t& bd_addr,
+static void fcchan_data_cbk(uint16_t chan, const RawAddress& bd_addr,
                             BT_HDR* p_buf);
 
 extern void uuid_to_string_legacy(bt_uuid_t* p_uuid, char* str, size_t str_len);
@@ -500,7 +500,7 @@ static tBTA_JV_STATUS bta_jv_free_set_pm_profile_cb(uint32_t jv_handle) {
 static tBTA_JV_PM_CB* bta_jv_alloc_set_pm_profile_cb(uint32_t jv_handle,
                                                      tBTA_JV_PM_ID app_id) {
   bool bRfcHandle = (jv_handle & BTA_JV_RFCOMM_MASK) != 0;
-  bt_bdaddr_t peer_bd_addr;
+  RawAddress peer_bd_addr;
   int i, j;
   tBTA_JV_PM_CB** pp_cb;
 
@@ -524,7 +524,7 @@ static tBTA_JV_PM_CB* bta_jv_alloc_set_pm_profile_cb(uint32_t jv_handle,
         for (j = 0; j < BTA_JV_MAX_L2C_CONN; j++) {
           if (jv_handle == bta_jv_cb.l2c_cb[j].handle) {
             pp_cb = &bta_jv_cb.l2c_cb[j].p_pm_cb;
-            const bt_bdaddr_t* p_bd_addr =
+            const RawAddress* p_bd_addr =
                 GAP_ConnGetRemoteAddr((uint16_t)jv_handle);
             if (p_bd_addr)
               peer_bd_addr = *p_bd_addr;
@@ -1428,7 +1428,7 @@ static void bta_jv_port_mgmt_cl_cback(uint32_t code, uint16_t port_handle) {
   tBTA_JV_RFC_CB* p_cb = bta_jv_rfc_port_to_cb(port_handle);
   tBTA_JV_PCB* p_pcb = bta_jv_rfc_port_to_pcb(port_handle);
   tBTA_JV evt_data;
-  bt_bdaddr_t rem_bda;
+  RawAddress rem_bda;
   uint16_t lcid;
   tBTA_JV_RFCOMM_CBACK* p_cback; /* the callback function */
 
@@ -1640,7 +1640,7 @@ static void bta_jv_port_mgmt_sr_cback(uint32_t code, uint16_t port_handle) {
   tBTA_JV_PCB* p_pcb = bta_jv_rfc_port_to_pcb(port_handle);
   tBTA_JV_RFC_CB* p_cb = bta_jv_rfc_port_to_cb(port_handle);
   tBTA_JV evt_data;
-  bt_bdaddr_t rem_bda;
+  RawAddress rem_bda;
   uint16_t lcid;
   APPL_TRACE_DEBUG("bta_jv_port_mgmt_sr_cback, code:%d, port_handle:%d", code,
                    port_handle);
@@ -2193,7 +2193,7 @@ static struct fc_channel* fcchan_get(uint16_t chan, char create) {
 
 /* pass NULL to find servers */
 static struct fc_client* fcclient_find_by_addr(struct fc_client* start,
-                                               const bt_bdaddr_t* addr) {
+                                               const RawAddress* addr) {
   struct fc_client* t = start;
 
   while (t) {
@@ -2295,7 +2295,7 @@ static void fcclient_free(struct fc_client* fc) {
   osi_free(fc);
 }
 
-static void fcchan_conn_chng_cbk(uint16_t chan, const bt_bdaddr_t& bd_addr,
+static void fcchan_conn_chng_cbk(uint16_t chan, const RawAddress& bd_addr,
                                  bool connected, uint16_t reason,
                                  tBT_TRANSPORT transport) {
   tBTA_JV init_evt;
@@ -2377,7 +2377,7 @@ static void fcchan_conn_chng_cbk(uint16_t chan, const bt_bdaddr_t& bd_addr,
   }
 }
 
-static void fcchan_data_cbk(uint16_t chan, const bt_bdaddr_t& bd_addr,
+static void fcchan_data_cbk(uint16_t chan, const RawAddress& bd_addr,
                             BT_HDR* p_buf) {
   tBTA_JV evt_data;
   struct fc_channel* tc;

@@ -1026,7 +1026,7 @@ bool bta_hl_find_mcl_idx_using_handle(tBTA_HL_MCL_HANDLE mcl_handle,
  * Returns      bool true-found
  *
  ******************************************************************************/
-bool bta_hl_find_mcl_idx(uint8_t app_idx, const bt_bdaddr_t& p_bd_addr,
+bool bta_hl_find_mcl_idx(uint8_t app_idx, const RawAddress& p_bd_addr,
                          uint8_t* p_mcl_idx) {
   bool found = false;
   uint8_t i;
@@ -1431,7 +1431,7 @@ void bta_hl_compact_mdl_cfg_time(uint8_t app_idx, uint8_t mdep_id) {
  *                        false does not exist
  *
  ******************************************************************************/
-bool bta_hl_is_mdl_exsit_in_mcl(uint8_t app_idx, const bt_bdaddr_t& bd_addr,
+bool bta_hl_is_mdl_exsit_in_mcl(uint8_t app_idx, const RawAddress& bd_addr,
                                 tBTA_HL_MDL_ID mdl_id) {
   tBTA_HL_MDL_CFG* p_mdl;
   bool found = false;
@@ -1465,7 +1465,7 @@ bool bta_hl_is_mdl_exsit_in_mcl(uint8_t app_idx, const bt_bdaddr_t& bd_addr,
  *                        false Failed
  *
  ******************************************************************************/
-bool bta_hl_delete_mdl_cfg(uint8_t app_idx, const bt_bdaddr_t& bd_addr,
+bool bta_hl_delete_mdl_cfg(uint8_t app_idx, const RawAddress& bd_addr,
                            tBTA_HL_MDL_ID mdl_id) {
   tBTA_HL_MDL_CFG* p_mdl;
   bool success = false;
@@ -2419,7 +2419,7 @@ bool bta_hl_validate_chan_cfg(uint8_t app_idx, uint8_t mcl_idx,
  *                        false not congested
  *
  ******************************************************************************/
-bool bta_hl_is_cong_on(uint8_t app_id, const bt_bdaddr_t& bd_addr,
+bool bta_hl_is_cong_on(uint8_t app_id, const RawAddress& bd_addr,
                        tBTA_HL_MDL_ID mdl_id)
 
 {
@@ -2722,7 +2722,7 @@ void bta_hl_build_rcv_data_ind(tBTA_HL* p_evt_data,
 void bta_hl_build_cch_open_cfm(tBTA_HL* p_evt_data, uint8_t app_id,
                                tBTA_HL_APP_HANDLE app_handle,
                                tBTA_HL_MCL_HANDLE mcl_handle,
-                               const bt_bdaddr_t& bd_addr,
+                               const RawAddress& bd_addr,
                                tBTA_HL_STATUS status) {
   p_evt_data->cch_open_cfm.app_id = app_id;
   p_evt_data->cch_open_cfm.app_handle = app_handle;
@@ -2744,7 +2744,7 @@ void bta_hl_build_cch_open_cfm(tBTA_HL* p_evt_data, uint8_t app_id,
 void bta_hl_build_cch_open_ind(tBTA_HL* p_evt_data,
                                tBTA_HL_APP_HANDLE app_handle,
                                tBTA_HL_MCL_HANDLE mcl_handle,
-                               const bt_bdaddr_t& bd_addr) {
+                               const RawAddress& bd_addr) {
   p_evt_data->cch_open_ind.app_handle = app_handle;
   p_evt_data->cch_open_ind.mcl_handle = mcl_handle;
   p_evt_data->cch_open_ind.bd_addr = bd_addr;
@@ -2827,7 +2827,7 @@ void bta_hl_build_dch_open_cfm(tBTA_HL* p_evt_data,
  ******************************************************************************/
 void bta_hl_build_sdp_query_cfm(tBTA_HL* p_evt_data, uint8_t app_id,
                                 tBTA_HL_APP_HANDLE app_handle,
-                                const bt_bdaddr_t& bd_addr, tBTA_HL_SDP* p_sdp,
+                                const RawAddress& bd_addr, tBTA_HL_SDP* p_sdp,
                                 tBTA_HL_STATUS status)
 
 {

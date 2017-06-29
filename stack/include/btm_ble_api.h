@@ -52,7 +52,7 @@
  * Returns          true if added OK, else false
  *
  ******************************************************************************/
-extern bool BTM_SecAddBleDevice(const bt_bdaddr_t& bd_addr, BD_NAME bd_name,
+extern bool BTM_SecAddBleDevice(const RawAddress& bd_addr, BD_NAME bd_name,
                                 tBT_DEVICE_TYPE dev_type,
                                 tBLE_ADDR_TYPE addr_type);
 
@@ -71,7 +71,7 @@ extern bool BTM_SecAddBleDevice(const bt_bdaddr_t& bd_addr, BD_NAME bd_name,
  * Returns          true if added OK, else false
  *
  ******************************************************************************/
-extern bool BTM_SecAddBleKey(const bt_bdaddr_t& bd_addr,
+extern bool BTM_SecAddBleKey(const RawAddress& bd_addr,
                              tBTM_LE_KEY_VALUE* p_le_key,
                              tBTM_LE_KEY_TYPE key_type);
 
@@ -248,7 +248,7 @@ extern void BTM_GetDeviceDHK(BT_OCTET16 dhk);
  * Returns          None
  *
  ******************************************************************************/
-extern void BTM_SecurityGrant(const bt_bdaddr_t& bd_addr, uint8_t res);
+extern void BTM_SecurityGrant(const RawAddress& bd_addr, uint8_t res);
 
 /*******************************************************************************
  *
@@ -265,7 +265,7 @@ extern void BTM_SecurityGrant(const bt_bdaddr_t& bd_addr, uint8_t res);
  *                               BTM_MAX_PASSKEY_VAL(999999(0xF423F)).
  *
  ******************************************************************************/
-extern void BTM_BlePasskeyReply(const bt_bdaddr_t& bd_addr, uint8_t res,
+extern void BTM_BlePasskeyReply(const RawAddress& bd_addr, uint8_t res,
                                 uint32_t passkey);
 
 /*******************************************************************************
@@ -280,7 +280,7 @@ extern void BTM_BlePasskeyReply(const bt_bdaddr_t& bd_addr, uint8_t res,
  *                  res          - comparison result BTM_SUCCESS if success
  *
  ******************************************************************************/
-extern void BTM_BleConfirmReply(const bt_bdaddr_t& bd_addr, uint8_t res);
+extern void BTM_BleConfirmReply(const RawAddress& bd_addr, uint8_t res);
 
 /*******************************************************************************
  *
@@ -294,7 +294,7 @@ extern void BTM_BleConfirmReply(const bt_bdaddr_t& bd_addr, uint8_t res);
  *                  p_data      - simple pairing Randomizer  C.
  *
  ******************************************************************************/
-extern void BTM_BleOobDataReply(const bt_bdaddr_t& bd_addr, uint8_t res,
+extern void BTM_BleOobDataReply(const RawAddress& bd_addr, uint8_t res,
                                 uint8_t len, uint8_t* p_data);
 
 /*******************************************************************************
@@ -310,7 +310,7 @@ extern void BTM_BleOobDataReply(const bt_bdaddr_t& bd_addr, uint8_t res,
  *                  p_r         - pointer to Randomizer.
  *
  ******************************************************************************/
-extern void BTM_BleSecureConnectionOobDataReply(const bt_bdaddr_t& bd_addr,
+extern void BTM_BleSecureConnectionOobDataReply(const RawAddress& bd_addr,
                                                 uint8_t* p_c, uint8_t* p_r);
 
 /*******************************************************************************
@@ -329,7 +329,7 @@ extern void BTM_BleSecureConnectionOobDataReply(const bt_bdaddr_t& bd_addr,
  * Returns          true if signing sucessul, otherwise false.
  *
  ******************************************************************************/
-extern bool BTM_BleDataSignature(const bt_bdaddr_t& bd_addr, uint8_t* p_text,
+extern bool BTM_BleDataSignature(const RawAddress& bd_addr, uint8_t* p_text,
                                  uint16_t len, BLE_SIGNATURE signature);
 
 /*******************************************************************************
@@ -347,7 +347,7 @@ extern bool BTM_BleDataSignature(const bt_bdaddr_t& bd_addr, uint8_t* p_text,
  * Returns          true if signature verified correctly; otherwise false.
  *
  ******************************************************************************/
-extern bool BTM_BleVerifySignature(const bt_bdaddr_t& bd_addr, uint8_t* p_orig,
+extern bool BTM_BleVerifySignature(const RawAddress& bd_addr, uint8_t* p_orig,
                                    uint16_t len, uint32_t counter,
                                    uint8_t* p_comp);
 
@@ -360,8 +360,8 @@ extern bool BTM_BleVerifySignature(const bt_bdaddr_t& bd_addr, uint8_t* p_orig,
  * Returns          void
  *
  ******************************************************************************/
-extern void BTM_ReadConnectionAddr(const bt_bdaddr_t& remote_bda,
-                                   bt_bdaddr_t& local_conn_addr,
+extern void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
+                                   RawAddress& local_conn_addr,
                                    tBLE_ADDR_TYPE* p_addr_type);
 
 /*******************************************************************************
@@ -373,8 +373,8 @@ extern void BTM_ReadConnectionAddr(const bt_bdaddr_t& remote_bda,
  * Returns          void
  *
  ******************************************************************************/
-extern bool BTM_ReadRemoteConnectionAddr(const bt_bdaddr_t& pseudo_addr,
-                                         bt_bdaddr_t& conn_addr,
+extern bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr,
+                                         RawAddress& conn_addr,
                                          tBLE_ADDR_TYPE* p_addr_type);
 
 /*******************************************************************************
@@ -415,7 +415,7 @@ extern void BTM_BleStartAutoConn();
  *
  ******************************************************************************/
 extern bool BTM_BleUpdateBgConnDev(bool add_remove,
-                                   const bt_bdaddr_t& remote_bda);
+                                   const RawAddress& remote_bda);
 
 /*******************************************************************************
  *
@@ -450,7 +450,7 @@ extern void BTM_BleClearBgConnDev(void);
  * Returns          void
  *
  ******************************************************************************/
-extern void BTM_BleSetPrefConnParams(const bt_bdaddr_t& bd_addr,
+extern void BTM_BleSetPrefConnParams(const RawAddress& bd_addr,
                                      uint16_t min_conn_int,
                                      uint16_t max_conn_int,
                                      uint16_t slave_latency,
@@ -523,7 +523,7 @@ extern uint16_t BTM_BleReadConnectability();
  *                  p_addr_type: output parameter to read the address type.
  *
  ******************************************************************************/
-extern void BTM_ReadDevInfo(const bt_bdaddr_t& remote_bda,
+extern void BTM_ReadDevInfo(const RawAddress& remote_bda,
                             tBT_DEVICE_TYPE* p_dev_type,
                             tBLE_ADDR_TYPE* p_addr_type);
 
@@ -541,7 +541,7 @@ extern void BTM_ReadDevInfo(const bt_bdaddr_t& remote_bda,
  * Return           true if an active link is identified; false otherwise
  *
  ******************************************************************************/
-extern bool BTM_ReadConnectedTransportAddress(bt_bdaddr_t* remote_bda,
+extern bool BTM_ReadConnectedTransportAddress(RawAddress* remote_bda,
                                               tBT_TRANSPORT transport);
 
 /*******************************************************************************
@@ -628,7 +628,7 @@ extern tBTM_STATUS BTM_BleSetConnectableMode(
  * Returns          void
  *
  ******************************************************************************/
-extern void BTM_BleTurnOnPrivacyOnRemote(const bt_bdaddr_t& bd_addr,
+extern void BTM_BleTurnOnPrivacyOnRemote(const RawAddress& bd_addr,
                                          bool privacy_on);
 
 /*******************************************************************************
@@ -692,7 +692,7 @@ void BTM_BleTestEnd(tBTM_CMPL_CB* p_cmd_cmpl_cback);
  * Returns          true to use LE, false use BR/EDR.
  *
  ******************************************************************************/
-extern bool BTM_UseLeLink(const bt_bdaddr_t& bd_addr);
+extern bool BTM_UseLeLink(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
@@ -718,7 +718,7 @@ extern tBTM_STATUS BTM_BleStackEnable(bool enable);
  * Returns          bool    true if LE device is found, false otherwise.
  *
  ******************************************************************************/
-extern bool BTM_GetLeSecurityState(const bt_bdaddr_t& bd_addr,
+extern bool BTM_GetLeSecurityState(const RawAddress& bd_addr,
                                    uint8_t* p_le_dev_sec_flags,
                                    uint8_t* p_le_key_size);
 
@@ -732,7 +732,7 @@ extern bool BTM_GetLeSecurityState(const bt_bdaddr_t& bd_addr,
  * Returns          bool true if security procedure is running, false otherwise.
  *
  ******************************************************************************/
-extern bool BTM_BleSecurityProcedureIsRunning(const bt_bdaddr_t& bd_addr);
+extern bool BTM_BleSecurityProcedureIsRunning(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
@@ -745,7 +745,7 @@ extern bool BTM_BleSecurityProcedureIsRunning(const bt_bdaddr_t& bd_addr);
  * Returns          the key size or 0 if the size can't be retrieved.
  *
  ******************************************************************************/
-extern uint8_t BTM_BleGetSupportedKeySize(const bt_bdaddr_t& bd_addr);
+extern uint8_t BTM_BleGetSupportedKeySize(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
@@ -828,7 +828,7 @@ extern tBTM_STATUS BTM_BleGetEnergyInfo(
  * Returns          BTM_SUCCESS if success; otherwise failed.
  *
  ******************************************************************************/
-extern tBTM_STATUS BTM_SetBleDataLength(const bt_bdaddr_t& bd_addr,
+extern tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
                                         uint16_t tx_pdu_length);
 
 /*******************************************************************************
@@ -842,7 +842,7 @@ extern tBTM_STATUS BTM_SetBleDataLength(const bt_bdaddr_t& bd_addr,
  *
  ******************************************************************************/
 extern void BTM_BleReadPhy(
-    const bt_bdaddr_t& bd_addr,
+    const RawAddress& bd_addr,
     base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb);
 
 /*******************************************************************************
@@ -868,7 +868,7 @@ extern tBTM_STATUS BTM_BleSetDefaultPhy(uint8_t all_phys, uint8_t tx_phys,
  * Returns          BTM_SUCCESS if success; otherwise failed.
  *
  ******************************************************************************/
-extern void BTM_BleSetPhy(const bt_bdaddr_t& bd_addr, uint8_t tx_phys,
+extern void BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys,
                           uint8_t rx_phys, uint16_t phy_options);
 
 extern void btm_ble_multi_adv_cleanup(void);

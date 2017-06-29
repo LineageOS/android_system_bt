@@ -218,7 +218,7 @@ extern void BTA_HdVirtualCableUnplug(void) {
  * Returns          void
  *
  ******************************************************************************/
-extern void BTA_HdConnect(const bt_bdaddr_t& addr) {
+extern void BTA_HdConnect(const RawAddress& addr) {
   APPL_TRACE_API("%s", __func__);
 
   tBTA_HD_DEVICE_CTRL* p_buf =
@@ -256,7 +256,7 @@ extern void BTA_HdDisconnect(void) {
  * Returns          void
  *
  ******************************************************************************/
-extern void BTA_HdAddDevice(const bt_bdaddr_t& addr) {
+extern void BTA_HdAddDevice(const RawAddress& addr) {
   APPL_TRACE_API("%s", __func__);
   tBTA_HD_DEVICE_CTRL* p_buf =
       (tBTA_HD_DEVICE_CTRL*)osi_malloc(sizeof(tBTA_HD_DEVICE_CTRL));
@@ -276,7 +276,7 @@ extern void BTA_HdAddDevice(const bt_bdaddr_t& addr) {
  * Returns          void
  *
  ******************************************************************************/
-extern void BTA_HdRemoveDevice(const bt_bdaddr_t& addr) {
+extern void BTA_HdRemoveDevice(const RawAddress& addr) {
   APPL_TRACE_API("%s", __func__);
   tBTA_HD_DEVICE_CTRL* p_buf =
       (tBTA_HD_DEVICE_CTRL*)osi_malloc(sizeof(tBTA_HD_DEVICE_CTRL));

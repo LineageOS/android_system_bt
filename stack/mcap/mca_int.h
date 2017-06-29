@@ -218,7 +218,7 @@ typedef struct {
   alarm_t* mca_ccb_timer; /* MCA CCB timer entry */
   tMCA_CCB_MSG* p_tx_req; /* Current request being sent/awaiting response */
   tMCA_CCB_MSG* p_rx_msg; /* Current message received/being processed */
-  bt_bdaddr_t peer_addr;  /* BD address of peer */
+  RawAddress peer_addr;   /* BD address of peer */
   uint16_t sec_mask;      /* Security mask for connections as initiator */
   uint16_t ctrl_vpsm;     /* The virtual PSM that peer is listening for control
                              channel */
@@ -278,8 +278,8 @@ typedef struct {
 
 /* csm functions */
 extern void mca_ccb_event(tMCA_CCB* p_ccb, uint8_t event, tMCA_CCB_EVT* p_data);
-extern tMCA_CCB* mca_ccb_by_bd(tMCA_HANDLE handle, const bt_bdaddr_t& bd_addr);
-extern tMCA_CCB* mca_ccb_alloc(tMCA_HANDLE handle, const bt_bdaddr_t& bd_addr);
+extern tMCA_CCB* mca_ccb_by_bd(tMCA_HANDLE handle, const RawAddress& bd_addr);
+extern tMCA_CCB* mca_ccb_alloc(tMCA_HANDLE handle, const RawAddress& bd_addr);
 extern void mca_ccb_rsp_tout(tMCA_CCB* p_ccb, tMCA_CCB_EVT* p_data);
 extern void mca_ccb_dealloc(tMCA_CCB* p_ccb, tMCA_CCB_EVT* p_data);
 extern tMCA_CL mca_ccb_to_hdl(tMCA_CCB* p_ccb);
@@ -337,13 +337,13 @@ extern void mca_ccb_timer_timeout(void* data);
 extern void mca_stop_timer(tMCA_CCB* p_ccb);
 
 /* l2c functions */
-extern uint16_t mca_l2c_open_req(const bt_bdaddr_t& bd_addr, uint16_t PSM,
+extern uint16_t mca_l2c_open_req(const RawAddress& bd_addr, uint16_t PSM,
                                  const tMCA_CHNL_CFG* p_chnl_cfg);
 
 /* callback function declarations */
-extern void mca_l2c_cconn_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
+extern void mca_l2c_cconn_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
                                     uint16_t psm, uint8_t id);
-extern void mca_l2c_dconn_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
+extern void mca_l2c_dconn_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
                                     uint16_t psm, uint8_t id);
 extern void mca_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result);
 extern void mca_l2c_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);

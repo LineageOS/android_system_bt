@@ -53,8 +53,8 @@
 #define COD_HID_COMBO 0x05C0
 #define COD_HID_MAJOR 0x0500
 
-extern bool bta_dm_check_if_only_hd_connected(const bt_bdaddr_t& peer_addr);
-extern bool check_cod_hid(const bt_bdaddr_t* remote_bdaddr);
+extern bool bta_dm_check_if_only_hd_connected(const RawAddress& peer_addr);
+extern bool check_cod_hid(const RawAddress* remote_bdaddr);
 extern void btif_hh_service_registration(bool enable);
 
 /* HD request events */
@@ -123,7 +123,7 @@ static void btif_hd_free_buf() {
  * Returns          void
  *
  ******************************************************************************/
-void btif_hd_remove_device(bt_bdaddr_t bd_addr) {
+void btif_hd_remove_device(RawAddress bd_addr) {
   BTA_HdRemoveDevice(bd_addr);
   btif_storage_remove_hidd(&bd_addr);
 }
@@ -176,7 +176,7 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
       break;
 
     case BTA_HD_REGISTER_APP_EVT: {
-      bt_bdaddr_t* addr = (bt_bdaddr_t*)&p_data->reg_status.bda;
+      RawAddress* addr = (RawAddress*)&p_data->reg_status.bda;
 
       if (!p_data->reg_status.in_use) {
         addr = NULL;
@@ -199,7 +199,7 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
       break;
 
     case BTA_HD_OPEN_EVT: {
-      bt_bdaddr_t* addr = (bt_bdaddr_t*)&p_data->conn.bda;
+      RawAddress* addr = (RawAddress*)&p_data->conn.bda;
       BTIF_TRACE_WARNING(
           "BTA_HD_OPEN_EVT, address (%02x:%02x:%02x:%02x:%02x:%02x)",
           addr->address[0], addr->address[1], addr->address[2],
@@ -212,22 +212,22 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
         BTA_HdDisconnect();
         break;
       }
-      btif_storage_set_hidd((bt_bdaddr_t*)&p_data->conn.bda);
+      btif_storage_set_hidd((RawAddress*)&p_data->conn.bda);
 
       HAL_CBACK(bt_hd_callbacks, connection_state_cb,
-                (bt_bdaddr_t*)&p_data->conn.bda, BTHD_CONN_STATE_CONNECTED);
+                (RawAddress*)&p_data->conn.bda, BTHD_CONN_STATE_CONNECTED);
     } break;
 
     case BTA_HD_CLOSE_EVT:
       if (btif_hd_cb.forced_disc) {
-        bt_bdaddr_t* addr = (bt_bdaddr_t*)&p_data->conn.bda;
+        RawAddress* addr = (RawAddress*)&p_data->conn.bda;
         BTIF_TRACE_WARNING("remote device was forcefully disconnected");
         btif_hd_remove_device(*addr);
         btif_hd_cb.forced_disc = FALSE;
         break;
       }
       HAL_CBACK(bt_hd_callbacks, connection_state_cb,
-                (bt_bdaddr_t*)&p_data->conn.bda, BTHD_CONN_STATE_DISCONNECTED);
+                (RawAddress*)&p_data->conn.bda, BTHD_CONN_STATE_DISCONNECTED);
       break;
 
     case BTA_HD_GET_REPORT_EVT:
@@ -252,13 +252,13 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
 
     case BTA_HD_VC_UNPLUG_EVT:
       HAL_CBACK(bt_hd_callbacks, connection_state_cb,
-                (bt_bdaddr_t*)&p_data->conn.bda, BTHD_CONN_STATE_DISCONNECTED);
+                (RawAddress*)&p_data->conn.bda, BTHD_CONN_STATE_DISCONNECTED);
       if (bta_dm_check_if_only_hd_connected(p_data->conn.bda)) {
         BTIF_TRACE_DEBUG("%s: Removing bonding as only HID profile connected",
                          __func__);
         BTA_DmRemoveDevice(p_data->conn.bda);
       } else {
-        bt_bdaddr_t* bd_addr = (bt_bdaddr_t*)&p_data->conn.bda;
+        RawAddress* bd_addr = (RawAddress*)&p_data->conn.bda;
         BTIF_TRACE_DEBUG(
             "%s: Only removing HID data as some other profiles "
             "connected",
@@ -270,7 +270,7 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
 
     case BTA_HD_CONN_STATE_EVT:
       HAL_CBACK(bt_hd_callbacks, connection_state_cb,
-                (bt_bdaddr_t*)&p_data->conn.bda,
+                (RawAddress*)&p_data->conn.bda,
                 (bthd_connection_state_t)p_data->conn.status);
       break;
 
@@ -477,7 +477,7 @@ static bt_status_t unregister_app(void) {
  * Returns          bt_status_t
  *
  ******************************************************************************/
-static bt_status_t connect(bt_bdaddr_t* bd_addr) {
+static bt_status_t connect(RawAddress* bd_addr) {
   BTIF_TRACE_API("%s", __func__);
 
   if (!btif_hd_cb.app_registered) {

@@ -97,7 +97,7 @@ void btsnd_hcic_exit_per_inq(void) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_create_conn(const bt_bdaddr_t& dest, uint16_t packet_types,
+void btsnd_hcic_create_conn(const RawAddress& dest, uint16_t packet_types,
                             uint8_t page_scan_rep_mode, uint8_t page_scan_mode,
                             uint16_t clock_offset, uint8_t allow_switch) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
@@ -160,7 +160,7 @@ void btsnd_hcic_add_SCO_conn(uint16_t handle, uint16_t packet_types) {
 }
 #endif /* BTM_SCO_INCLUDED */
 
-void btsnd_hcic_create_conn_cancel(const bt_bdaddr_t& dest) {
+void btsnd_hcic_create_conn_cancel(const RawAddress& dest) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -175,7 +175,7 @@ void btsnd_hcic_create_conn_cancel(const bt_bdaddr_t& dest) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_accept_conn(const bt_bdaddr_t& dest, uint8_t role) {
+void btsnd_hcic_accept_conn(const RawAddress& dest, uint8_t role) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -190,7 +190,7 @@ void btsnd_hcic_accept_conn(const bt_bdaddr_t& dest, uint8_t role) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_reject_conn(const bt_bdaddr_t& dest, uint8_t reason) {
+void btsnd_hcic_reject_conn(const RawAddress& dest, uint8_t reason) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -206,7 +206,7 @@ void btsnd_hcic_reject_conn(const bt_bdaddr_t& dest, uint8_t reason) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_link_key_req_reply(const bt_bdaddr_t& bd_addr,
+void btsnd_hcic_link_key_req_reply(const RawAddress& bd_addr,
                                    LINK_KEY link_key) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
@@ -223,7 +223,7 @@ void btsnd_hcic_link_key_req_reply(const bt_bdaddr_t& bd_addr,
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_link_key_neg_reply(const bt_bdaddr_t& bd_addr) {
+void btsnd_hcic_link_key_neg_reply(const RawAddress& bd_addr) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -238,7 +238,7 @@ void btsnd_hcic_link_key_neg_reply(const bt_bdaddr_t& bd_addr) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_pin_code_req_reply(const bt_bdaddr_t& bd_addr,
+void btsnd_hcic_pin_code_req_reply(const RawAddress& bd_addr,
                                    uint8_t pin_code_len, PIN_CODE pin_code) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
@@ -260,7 +260,7 @@ void btsnd_hcic_pin_code_req_reply(const bt_bdaddr_t& bd_addr,
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_pin_code_neg_reply(const bt_bdaddr_t& bd_addr) {
+void btsnd_hcic_pin_code_neg_reply(const RawAddress& bd_addr) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -322,7 +322,7 @@ void btsnd_hcic_set_conn_encrypt(uint16_t handle, bool enable) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_rmt_name_req(const bt_bdaddr_t& bd_addr,
+void btsnd_hcic_rmt_name_req(const RawAddress& bd_addr,
                              uint8_t page_scan_rep_mode, uint8_t page_scan_mode,
                              uint16_t clock_offset) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
@@ -342,7 +342,7 @@ void btsnd_hcic_rmt_name_req(const bt_bdaddr_t& bd_addr,
   btm_acl_paging(p, bd_addr);
 }
 
-void btsnd_hcic_rmt_name_req_cancel(const bt_bdaddr_t& bd_addr) {
+void btsnd_hcic_rmt_name_req_cancel(const RawAddress& bd_addr) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -457,7 +457,7 @@ void btsnd_hcic_setup_esco_conn(uint16_t handle, uint32_t transmit_bandwidth,
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_accept_esco_conn(const bt_bdaddr_t& bd_addr,
+void btsnd_hcic_accept_esco_conn(const RawAddress& bd_addr,
                                  uint32_t transmit_bandwidth,
                                  uint32_t receive_bandwidth,
                                  uint16_t max_latency, uint16_t content_fmt,
@@ -483,7 +483,7 @@ void btsnd_hcic_accept_esco_conn(const bt_bdaddr_t& bd_addr,
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_reject_esco_conn(const bt_bdaddr_t& bd_addr, uint8_t reason) {
+void btsnd_hcic_reject_esco_conn(const RawAddress& bd_addr, uint8_t reason) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -609,7 +609,7 @@ void btsnd_hcic_qos_setup(uint16_t handle, uint8_t flags, uint8_t service_type,
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_switch_role(const bt_bdaddr_t& bd_addr, uint8_t role) {
+void btsnd_hcic_switch_role(const RawAddress& bd_addr, uint8_t role) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -678,7 +678,7 @@ void btsnd_hcic_set_event_filter(uint8_t filt_type, uint8_t filt_cond_type,
 
       filt_cond_len -= (2 * DEV_CLASS_LEN);
     } else if (filt_cond_type == HCI_FILTER_COND_BD_ADDR) {
-      BDADDR_TO_STREAM(pp, *((bt_bdaddr_t*)filt_cond));
+      BDADDR_TO_STREAM(pp, *((RawAddress*)filt_cond));
       filt_cond += BD_ADDR_LEN;
 
       filt_cond_len -= BD_ADDR_LEN;
@@ -710,7 +710,7 @@ void btsnd_hcic_write_pin_type(uint8_t type) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_delete_stored_key(const bt_bdaddr_t& bd_addr,
+void btsnd_hcic_delete_stored_key(const RawAddress& bd_addr,
                                   bool delete_all_flag) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
@@ -996,7 +996,7 @@ void btsnd_hcic_write_ext_inquiry_response(void* buffer, uint8_t fec_req) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_io_cap_req_reply(const bt_bdaddr_t& bd_addr, uint8_t capability,
+void btsnd_hcic_io_cap_req_reply(const RawAddress& bd_addr, uint8_t capability,
                                  uint8_t oob_present, uint8_t auth_req) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
@@ -1065,7 +1065,7 @@ void btsnd_hcic_enhanced_set_up_synchronous_connection(
 }
 
 void btsnd_hcic_enhanced_accept_synchronous_connection(
-    const bt_bdaddr_t& bd_addr, enh_esco_params_t* p_params) {
+    const RawAddress& bd_addr, enh_esco_params_t* p_params) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -1113,7 +1113,7 @@ void btsnd_hcic_enhanced_accept_synchronous_connection(
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_io_cap_req_neg_reply(const bt_bdaddr_t& bd_addr,
+void btsnd_hcic_io_cap_req_neg_reply(const RawAddress& bd_addr,
                                      uint8_t err_code) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
@@ -1143,7 +1143,7 @@ void btsnd_hcic_read_local_oob_data(void) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_user_conf_reply(const bt_bdaddr_t& bd_addr, bool is_yes) {
+void btsnd_hcic_user_conf_reply(const RawAddress& bd_addr, bool is_yes) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -1165,7 +1165,7 @@ void btsnd_hcic_user_conf_reply(const bt_bdaddr_t& bd_addr, bool is_yes) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_user_passkey_reply(const bt_bdaddr_t& bd_addr, uint32_t value) {
+void btsnd_hcic_user_passkey_reply(const RawAddress& bd_addr, uint32_t value) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -1181,7 +1181,7 @@ void btsnd_hcic_user_passkey_reply(const bt_bdaddr_t& bd_addr, uint32_t value) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_user_passkey_neg_reply(const bt_bdaddr_t& bd_addr) {
+void btsnd_hcic_user_passkey_neg_reply(const RawAddress& bd_addr) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -1196,7 +1196,7 @@ void btsnd_hcic_user_passkey_neg_reply(const bt_bdaddr_t& bd_addr) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_rem_oob_reply(const bt_bdaddr_t& bd_addr, uint8_t* p_c,
+void btsnd_hcic_rem_oob_reply(const RawAddress& bd_addr, uint8_t* p_c,
                               uint8_t* p_r) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
@@ -1214,7 +1214,7 @@ void btsnd_hcic_rem_oob_reply(const bt_bdaddr_t& bd_addr, uint8_t* p_c,
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_rem_oob_neg_reply(const bt_bdaddr_t& bd_addr) {
+void btsnd_hcic_rem_oob_neg_reply(const RawAddress& bd_addr) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -1242,7 +1242,7 @@ void btsnd_hcic_read_inq_tx_power(void) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_send_keypress_notif(const bt_bdaddr_t& bd_addr, uint8_t notif) {
+void btsnd_hcic_send_keypress_notif(const RawAddress& bd_addr, uint8_t notif) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 

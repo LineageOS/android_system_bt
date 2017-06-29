@@ -32,7 +32,7 @@ static const char CONTROLLER_MODULE[] = "controller_module";
 typedef struct controller_t {
   bool (*get_is_ready)(void);
 
-  const bt_bdaddr_t* (*get_address)(void);
+  const RawAddress* (*get_address)(void);
   const bt_version_t* (*get_bt_version)(void);
 
   const bt_device_features_t* (*get_features_classic)(int index);

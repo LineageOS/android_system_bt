@@ -112,8 +112,8 @@ class BleAdvertiserVscHciInterfaceImpl : public BleAdvertiserHciInterface {
 
   void SetParameters(uint8_t handle, uint16_t properties, uint32_t adv_int_min,
                      uint32_t adv_int_max, uint8_t channel_map,
-                     uint8_t own_address_type, const bt_bdaddr_t& own_address,
-                     uint8_t peer_address_type, const bt_bdaddr_t& peer_address,
+                     uint8_t own_address_type, const RawAddress& own_address,
+                     uint8_t peer_address_type, const RawAddress& peer_address,
                      uint8_t filter_policy, int8_t tx_power,
                      uint8_t primary_phy, uint8_t secondary_max_skip,
                      uint8_t secondary_phy, uint8_t advertising_sid,
@@ -191,7 +191,7 @@ class BleAdvertiserVscHciInterfaceImpl : public BleAdvertiserHciInterface {
                command_complete);
   }
 
-  void SetRandomAddress(uint8_t handle, const bt_bdaddr_t& random_address,
+  void SetRandomAddress(uint8_t handle, const RawAddress& random_address,
                         status_cb command_complete) override {
     VLOG(1) << __func__;
     uint8_t param[BTM_BLE_MULTI_ADV_SET_RANDOM_ADDR_LEN];
@@ -317,8 +317,8 @@ class BleAdvertiserLegacyHciInterfaceImpl : public BleAdvertiserHciInterface {
   void SetParameters(uint8_t handle, uint16_t properties, uint32_t adv_int_min,
                      uint32_t adv_int_max, uint8_t channel_map,
                      uint8_t own_address_type,
-                     const bt_bdaddr_t& /* own_address */,
-                     uint8_t peer_address_type, const bt_bdaddr_t& peer_address,
+                     const RawAddress& /* own_address */,
+                     uint8_t peer_address_type, const RawAddress& peer_address,
                      uint8_t filter_policy, int8_t tx_power,
                      uint8_t primary_phy, uint8_t secondary_max_skip,
                      uint8_t secondary_phy, uint8_t advertising_sid,
@@ -390,7 +390,7 @@ class BleAdvertiserLegacyHciInterfaceImpl : public BleAdvertiserHciInterface {
                HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA + 1, command_complete);
   }
 
-  void SetRandomAddress(uint8_t handle, const bt_bdaddr_t& random_address,
+  void SetRandomAddress(uint8_t handle, const RawAddress& random_address,
                         status_cb command_complete) override {
     VLOG(1) << __func__;
 
@@ -470,8 +470,8 @@ class BleAdvertiserHciExtendedImpl : public BleAdvertiserHciInterface {
   void SetParameters(uint8_t handle, uint16_t properties, uint32_t adv_int_min,
                      uint32_t adv_int_max, uint8_t channel_map,
                      uint8_t own_address_type,
-                     const bt_bdaddr_t& /* own_address */,
-                     uint8_t peer_address_type, const bt_bdaddr_t& peer_address,
+                     const RawAddress& /* own_address */,
+                     uint8_t peer_address_type, const RawAddress& peer_address,
                      uint8_t filter_policy, int8_t tx_power,
                      uint8_t primary_phy, uint8_t secondary_max_skip,
                      uint8_t secondary_phy, uint8_t advertising_sid,
@@ -547,7 +547,7 @@ class BleAdvertiserHciExtendedImpl : public BleAdvertiserHciInterface {
                cmd_length, command_complete);
   }
 
-  void SetRandomAddress(uint8_t handle, const bt_bdaddr_t& random_address,
+  void SetRandomAddress(uint8_t handle, const RawAddress& random_address,
                         status_cb command_complete) override {
     VLOG(1) << __func__;
     const int LE_SET_ADVERTISING_SET_RANDOM_ADDRESS_LEN = 7;

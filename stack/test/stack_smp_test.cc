@@ -55,8 +55,8 @@
  */
 
 // Set remote bda to 0xB1B2B3B4B5B6
-bool BTM_ReadRemoteConnectionAddr(const bt_bdaddr_t& pseudo_addr,
-                                  bt_bdaddr_t& conn_addr,
+bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr,
+                                  RawAddress& conn_addr,
                                   tBLE_ADDR_TYPE* p_addr_type) {
   conn_addr = {.address = {0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6}};
   *p_addr_type = 0x00;
@@ -64,8 +64,8 @@ bool BTM_ReadRemoteConnectionAddr(const bt_bdaddr_t& pseudo_addr,
 }
 
 // Set local_bda to 0xA1A2A3A4A5A6
-void BTM_ReadConnectionAddr(const bt_bdaddr_t& remote_bda,
-                            bt_bdaddr_t& local_conn_addr,
+void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
+                            RawAddress& local_conn_addr,
                             tBLE_ADDR_TYPE* p_addr_type) {
   local_conn_addr = {.address = {0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6}};
   *p_addr_type = 0x01;
@@ -84,7 +84,7 @@ extern void smp_gen_p1_4_confirm(tSMP_CB* p_cb,
                                  tBLE_ADDR_TYPE remote_bd_addr_type,
                                  BT_OCTET16 p1);
 
-extern void smp_gen_p2_4_confirm(tSMP_CB* p_cb, const bt_bdaddr_t& remote_bda,
+extern void smp_gen_p2_4_confirm(tSMP_CB* p_cb, const RawAddress& remote_bda,
                                  BT_OCTET16 p2);
 
 extern tSMP_STATUS smp_calculate_comfirm(tSMP_CB* p_cb, BT_OCTET16 rand,
@@ -170,7 +170,7 @@ class SmpCalculateConfirmTest : public Test {
 // Test smp_gen_p2_4_confirm function implementation
 TEST_F(SmpCalculateConfirmTest, test_smp_gen_p2_4_confirm_as_master) {
   BT_OCTET16 p2;
-  bt_bdaddr_t remote_bda;
+  RawAddress remote_bda;
   tBLE_ADDR_TYPE remote_bd_addr_type = 0;
   BTM_ReadRemoteConnectionAddr(p_cb_.pairing_bda, remote_bda,
                                &remote_bd_addr_type);
@@ -186,7 +186,7 @@ TEST_F(SmpCalculateConfirmTest, test_smp_gen_p2_4_confirm_as_master) {
 // Test smp_gen_p1_4_confirm and SMP_Encrypt function implementation
 TEST_F(SmpCalculateConfirmTest, test_SMP_Encrypt_as_master) {
   BT_OCTET16 p1;
-  bt_bdaddr_t remote_bda;
+  RawAddress remote_bda;
   tBLE_ADDR_TYPE remote_bd_addr_type = 0;
   BTM_ReadRemoteConnectionAddr(p_cb_.pairing_bda, remote_bda,
                                &remote_bd_addr_type);

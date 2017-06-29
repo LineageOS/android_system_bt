@@ -120,8 +120,8 @@ void bta_pan_ci_tx_flow(uint16_t handle, bool enable) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_pan_ci_rx_write(uint16_t handle, const bt_bdaddr_t& dst,
-                         const bt_bdaddr_t& src, uint16_t protocol,
+void bta_pan_ci_rx_write(uint16_t handle, const RawAddress& dst,
+                         const RawAddress& src, uint16_t protocol,
                          uint8_t* p_data, uint16_t len, bool ext) {
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(PAN_BUF_SIZE);
 
@@ -157,8 +157,8 @@ void bta_pan_ci_rx_write(uint16_t handle, const bt_bdaddr_t& dst,
  * Returns          void
  *
  ******************************************************************************/
-void bta_pan_ci_rx_writebuf(uint16_t handle, const bt_bdaddr_t& dst,
-                            const bt_bdaddr_t& src, uint16_t protocol,
+void bta_pan_ci_rx_writebuf(uint16_t handle, const RawAddress& dst,
+                            const RawAddress& src, uint16_t protocol,
                             BT_HDR* p_buf, bool ext) {
   /* copy all other params before the data */
   ((tBTA_PAN_DATA_PARAMS*)p_buf)->src = src;
@@ -181,7 +181,7 @@ void bta_pan_ci_rx_writebuf(uint16_t handle, const bt_bdaddr_t& dst,
  * Returns          void
  *
  ******************************************************************************/
-BT_HDR* bta_pan_ci_readbuf(uint16_t handle, bt_bdaddr_t& src, bt_bdaddr_t& dst,
+BT_HDR* bta_pan_ci_readbuf(uint16_t handle, RawAddress& src, RawAddress& dst,
                            uint16_t* p_protocol, bool* p_ext, bool* p_forward) {
   tBTA_PAN_SCB* p_scb;
   BT_HDR* p_buf;
@@ -239,14 +239,14 @@ void bta_pan_ci_rx_ready(UNUSED_ATTR uint16_t handle) {}
 void bta_pan_ci_tx_flow(UNUSED_ATTR uint16_t handle, UNUSED_ATTR bool enable) {}
 
 void bta_pan_ci_rx_writebuf(UNUSED_ATTR uint16_t handle,
-                            UNUSED_ATTR const bt_bdaddr_t& src,
-                            UNUSED_ATTR const bt_bdaddr_t& dst,
+                            UNUSED_ATTR const RawAddress& src,
+                            UNUSED_ATTR const RawAddress& dst,
                             UNUSED_ATTR uint16_t protocol,
                             UNUSED_ATTR BT_HDR* p_buf, UNUSED_ATTR bool ext) {}
 
 BT_HDR* bta_pan_ci_readbuf(UNUSED_ATTR uint16_t handle,
-                           UNUSED_ATTR bt_bdaddr_t& src,
-                           UNUSED_ATTR bt_bdaddr_t& dst,
+                           UNUSED_ATTR RawAddress& src,
+                           UNUSED_ATTR RawAddress& dst,
                            UNUSED_ATTR uint16_t* p_protocol,
                            UNUSED_ATTR bool* p_ext,
                            UNUSED_ATTR bool* p_forward) {

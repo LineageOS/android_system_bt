@@ -43,7 +43,7 @@
 /*****************************************************************************
  *  Local Function prototypes
  ****************************************************************************/
-static void bta_hh_cback(uint8_t dev_handle, const bt_bdaddr_t& addr,
+static void bta_hh_cback(uint8_t dev_handle, const RawAddress& addr,
                          uint8_t event, uint32_t data, BT_HDR* pdata);
 static tBTA_HH_STATUS bta_hh_get_trans_status(uint32_t result);
 
@@ -1088,7 +1088,7 @@ void bta_hh_write_dev_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_hh_cback(uint8_t dev_handle, const bt_bdaddr_t& addr,
+static void bta_hh_cback(uint8_t dev_handle, const RawAddress& addr,
                          uint8_t event, uint32_t data, BT_HDR* pdata) {
   uint16_t sm_event = BTA_HH_INVALID_EVT;
   uint8_t xx = 0;
