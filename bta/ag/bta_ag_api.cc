@@ -155,7 +155,7 @@ void BTA_AgDeregister(uint16_t handle) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_AgOpen(uint16_t handle, const bt_bdaddr_t& bd_addr, tBTA_SEC sec_mask,
+void BTA_AgOpen(uint16_t handle, const RawAddress& bd_addr, tBTA_SEC sec_mask,
                 tBTA_SERVICE_MASK services) {
   tBTA_AG_API_OPEN* p_buf =
       (tBTA_AG_API_OPEN*)osi_malloc(sizeof(tBTA_AG_API_OPEN));

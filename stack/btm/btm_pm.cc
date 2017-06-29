@@ -72,7 +72,7 @@ const uint8_t
         BTM_PM_GET_MD1,  BTM_PM_GET_MD2,  BTM_PM_GET_COMP};
 
 /* function prototype */
-static int btm_pm_find_acl_ind(const bt_bdaddr_t& remote_bda);
+static int btm_pm_find_acl_ind(const RawAddress& remote_bda);
 static tBTM_STATUS btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
                                      tBTM_PM_PWR_MD* p_mode);
 static const char* mode_to_string(tBTM_PM_MODE mode);
@@ -143,7 +143,7 @@ tBTM_STATUS BTM_PmRegister(uint8_t mask, uint8_t* p_pm_id,
  *                  BTM_UNKNOWN_ADDR if bd addr is not active or bad
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const bt_bdaddr_t& remote_bda,
+tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
                              tBTM_PM_PWR_MD* p_mode) {
   uint8_t* p_features;
   int ind, acl_ind;
@@ -246,7 +246,7 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const bt_bdaddr_t& remote_bda,
  *                  BTM_UNKNOWN_ADDR if bd addr is not active or bad
  *
  ******************************************************************************/
-tBTM_STATUS BTM_ReadPowerMode(const bt_bdaddr_t& remote_bda,
+tBTM_STATUS BTM_ReadPowerMode(const RawAddress& remote_bda,
                               tBTM_PM_MODE* p_mode) {
   int acl_ind;
 
@@ -278,7 +278,7 @@ tBTM_STATUS BTM_ReadPowerMode(const bt_bdaddr_t& remote_bda,
  *                  BTM_UNKNOWN_ADDR if bd addr is not active or bad
  *
  ******************************************************************************/
-tBTM_STATUS btm_read_power_mode_state(const bt_bdaddr_t& remote_bda,
+tBTM_STATUS btm_read_power_mode_state(const RawAddress& remote_bda,
                                       tBTM_PM_STATE* pmState) {
   int acl_ind = btm_pm_find_acl_ind(remote_bda);
 
@@ -306,7 +306,7 @@ tBTM_STATUS btm_read_power_mode_state(const bt_bdaddr_t& remote_bda,
  *                  BTM_CMD_STORED if the command is stored
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SetSsrParams(const bt_bdaddr_t& remote_bda, uint16_t max_lat,
+tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda, uint16_t max_lat,
                              uint16_t min_rmt_to, uint16_t min_loc_to) {
 #if (BTM_SSR_INCLUDED == TRUE)
   int acl_ind;
@@ -392,7 +392,7 @@ void btm_pm_sm_alloc(uint8_t ind) {
  * Returns          void
  *
  ******************************************************************************/
-static int btm_pm_find_acl_ind(const bt_bdaddr_t& remote_bda) {
+static int btm_pm_find_acl_ind(const RawAddress& remote_bda) {
   tACL_CONN* p = &btm_cb.acl_db[0];
   uint8_t xx;
 

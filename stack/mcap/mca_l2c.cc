@@ -66,7 +66,7 @@ const tL2CAP_FCR_OPTS mca_l2c_fcr_opts_def = {
  * Returns          void
  *
  ******************************************************************************/
-static void mca_sec_check_complete_term(const bt_bdaddr_t* bd_addr,
+static void mca_sec_check_complete_term(const RawAddress* bd_addr,
                                         UNUSED_ATTR tBT_TRANSPORT transport,
                                         void* p_ref_data, uint8_t res) {
   tMCA_TC_TBL* p_tbl = (tMCA_TC_TBL*)p_ref_data;
@@ -111,7 +111,7 @@ static void mca_sec_check_complete_term(const bt_bdaddr_t* bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-static void mca_sec_check_complete_orig(UNUSED_ATTR const bt_bdaddr_t* bd_addr,
+static void mca_sec_check_complete_orig(UNUSED_ATTR const RawAddress* bd_addr,
                                         UNUSED_ATTR tBT_TRANSPORT transport,
                                         void* p_ref_data, uint8_t res) {
   tMCA_TC_TBL* p_tbl = (tMCA_TC_TBL*)p_ref_data;
@@ -140,7 +140,7 @@ static void mca_sec_check_complete_orig(UNUSED_ATTR const bt_bdaddr_t* bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-void mca_l2c_cconn_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
+void mca_l2c_cconn_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
                              uint16_t psm, uint8_t id) {
   tMCA_HANDLE handle = mca_handle_by_cpsm(psm);
   tMCA_CCB* p_ccb;
@@ -213,7 +213,7 @@ void mca_l2c_cconn_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
  * Returns          void
  *
  ******************************************************************************/
-void mca_l2c_dconn_ind_cback(const bt_bdaddr_t& bd_addr, uint16_t lcid,
+void mca_l2c_dconn_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
                              uint16_t psm, uint8_t id) {
   tMCA_HANDLE handle = mca_handle_by_dpsm(psm);
   tMCA_CCB* p_ccb;
@@ -515,7 +515,7 @@ void mca_l2c_data_ind_cback(uint16_t lcid, BT_HDR* p_buf) {
  * Returns          void.
  *
  ******************************************************************************/
-uint16_t mca_l2c_open_req(const bt_bdaddr_t& bd_addr, uint16_t psm,
+uint16_t mca_l2c_open_req(const RawAddress& bd_addr, uint16_t psm,
                           const tMCA_CHNL_CFG* p_chnl_cfg) {
   tL2CAP_ERTM_INFO ertm_info;
 

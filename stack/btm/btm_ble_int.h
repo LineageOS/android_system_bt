@@ -41,9 +41,9 @@ extern void btm_ble_process_adv_pkt(uint8_t len, uint8_t* p);
 extern void btm_ble_process_phy_update_pkt(uint8_t len, uint8_t* p);
 extern void btm_ble_process_ext_adv_pkt(uint8_t len, uint8_t* p);
 extern void btm_ble_proc_scan_rsp_rpt(uint8_t* p);
-extern tBTM_STATUS btm_ble_read_remote_name(const bt_bdaddr_t& remote_bda,
+extern tBTM_STATUS btm_ble_read_remote_name(const RawAddress& remote_bda,
                                             tBTM_CMPL_CB* p_cb);
-extern bool btm_ble_cancel_remote_name(const bt_bdaddr_t& remote_bda);
+extern bool btm_ble_cancel_remote_name(const RawAddress& remote_bda);
 
 extern tBTM_STATUS btm_ble_set_discoverability(uint16_t combined_mode);
 extern tBTM_STATUS btm_ble_set_connectability(uint16_t combined_mode);
@@ -59,7 +59,7 @@ extern void btm_clear_all_pending_le_entry(void);
 extern void btm_ble_stop_scan();
 extern void btm_ble_stop_inquiry(void);
 extern void btm_ble_init(void);
-extern void btm_ble_connected(const bt_bdaddr_t& bda, uint16_t handle,
+extern void btm_ble_connected(const RawAddress& bda, uint16_t handle,
                               uint8_t enc_mode, uint8_t role,
                               tBLE_ADDR_TYPE addr_type, bool addr_matched);
 extern void btm_ble_read_remote_features_complete(uint8_t* p);
@@ -76,48 +76,48 @@ extern tBTM_STATUS btm_ble_start_scan(void);
 extern void btm_ble_create_ll_conn_complete(uint8_t status);
 
 /* LE security function from btm_sec.cc */
-extern void btm_ble_link_sec_check(const bt_bdaddr_t& bd_addr,
+extern void btm_ble_link_sec_check(const RawAddress& bd_addr,
                                    tBTM_LE_AUTH_REQ auth_req,
                                    tBTM_BLE_SEC_REQ_ACT* p_sec_req_act);
-extern void btm_ble_ltk_request_reply(const bt_bdaddr_t& bda, bool use_stk,
+extern void btm_ble_ltk_request_reply(const RawAddress& bda, bool use_stk,
                                       BT_OCTET16 stk);
-extern uint8_t btm_proc_smp_cback(tSMP_EVT event, const bt_bdaddr_t& bd_addr,
+extern uint8_t btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr,
                                   tSMP_EVT_DATA* p_data);
-extern tBTM_STATUS btm_ble_set_encryption(const bt_bdaddr_t& bd_addr,
+extern tBTM_STATUS btm_ble_set_encryption(const RawAddress& bd_addr,
                                           tBTM_BLE_SEC_ACT sec_act,
                                           uint8_t link_role);
 extern void btm_ble_ltk_request(uint16_t handle, uint8_t rand[8],
                                 uint16_t ediv);
-extern tBTM_STATUS btm_ble_start_encrypt(const bt_bdaddr_t& bda, bool use_stk,
+extern tBTM_STATUS btm_ble_start_encrypt(const RawAddress& bda, bool use_stk,
                                          BT_OCTET16 stk);
-extern void btm_ble_link_encrypted(const bt_bdaddr_t& bd_addr,
+extern void btm_ble_link_encrypted(const RawAddress& bd_addr,
                                    uint8_t encr_enable);
 
 /* LE device management functions */
 extern void btm_ble_reset_id(void);
 
 /* security related functions */
-extern void btm_ble_increment_sign_ctr(const bt_bdaddr_t& bd_addr,
+extern void btm_ble_increment_sign_ctr(const RawAddress& bd_addr,
                                        bool is_local);
-extern bool btm_get_local_div(const bt_bdaddr_t& bd_addr, uint16_t* p_div);
-extern bool btm_ble_get_enc_key_type(const bt_bdaddr_t& bd_addr,
+extern bool btm_get_local_div(const RawAddress& bd_addr, uint16_t* p_div);
+extern bool btm_ble_get_enc_key_type(const RawAddress& bd_addr,
                                      uint8_t* p_key_types);
 
 extern void btm_ble_test_command_complete(uint8_t* p);
 extern void btm_ble_rand_enc_complete(uint8_t* p, uint16_t op_code,
                                       tBTM_RAND_ENC_CB* p_enc_cplt_cback);
 
-extern void btm_sec_save_le_key(const bt_bdaddr_t& bd_addr,
+extern void btm_sec_save_le_key(const RawAddress& bd_addr,
                                 tBTM_LE_KEY_TYPE key_type,
                                 tBTM_LE_KEY_VALUE* p_keys,
                                 bool pass_to_application);
-extern void btm_ble_update_sec_key_size(const bt_bdaddr_t& bd_addr,
+extern void btm_ble_update_sec_key_size(const RawAddress& bd_addr,
                                         uint8_t enc_key_size);
-extern uint8_t btm_ble_read_sec_key_size(const bt_bdaddr_t& bd_addr);
+extern uint8_t btm_ble_read_sec_key_size(const RawAddress& bd_addr);
 
 /* white list function */
 extern bool btm_update_dev_to_white_list(bool to_add,
-                                         const bt_bdaddr_t& bd_addr);
+                                         const RawAddress& bd_addr);
 extern void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy);
 extern void btm_update_adv_filter_policy(tBTM_BLE_AFP adv_policy);
 extern void btm_ble_clear_white_list(void);
@@ -133,46 +133,46 @@ extern bool btm_ble_suspend_bg_conn(void);
 extern bool btm_ble_resume_bg_conn(void);
 extern void btm_send_hci_create_connection(
     uint16_t scan_int, uint16_t scan_win, uint8_t init_filter_policy,
-    uint8_t addr_type_peer, const bt_bdaddr_t& bda_peer, uint8_t addr_type_own,
+    uint8_t addr_type_peer, const RawAddress& bda_peer, uint8_t addr_type_own,
     uint16_t conn_int_min, uint16_t conn_int_max, uint16_t conn_latency,
     uint16_t conn_timeout, uint16_t min_ce_len, uint16_t max_ce_len,
     uint8_t phy);
 extern bool btm_ble_start_auto_conn(bool start);
 extern bool btm_ble_start_select_conn(bool start);
-extern bool btm_ble_renew_bg_conn_params(bool add, const bt_bdaddr_t& bd_addr);
-extern void btm_write_dir_conn_wl(const bt_bdaddr_t& target_addr);
+extern bool btm_ble_renew_bg_conn_params(bool add, const RawAddress& bd_addr);
+extern void btm_write_dir_conn_wl(const RawAddress& target_addr);
 extern void btm_ble_update_mode_operation(uint8_t link_role,
-                                          const bt_bdaddr_t* bda,
+                                          const RawAddress* bda,
                                           uint8_t status);
 extern bool btm_execute_wl_dev_operation(void);
 extern void btm_ble_update_link_topology_mask(uint8_t role, bool increase);
-extern void btm_ble_bgconn_cancel_if_disconnected(const bt_bdaddr_t& bd_addr);
+extern void btm_ble_bgconn_cancel_if_disconnected(const RawAddress& bd_addr);
 
 /* direct connection utility */
 extern bool btm_send_pending_direct_conn(void);
 extern void btm_ble_enqueue_direct_conn_req(void* p_param);
-extern void btm_ble_dequeue_direct_conn_req(const bt_bdaddr_t& rem_bda);
+extern void btm_ble_dequeue_direct_conn_req(const RawAddress& rem_bda);
 
 /* BLE address management */
 extern void btm_gen_resolvable_private_addr(base::Callback<void(BT_OCTET8)> cb);
 extern void btm_gen_non_resolvable_private_addr(tBTM_BLE_ADDR_CBACK* p_cback,
                                                 void* p);
 extern tBTM_SEC_DEV_REC* btm_ble_resolve_random_addr(
-    const bt_bdaddr_t& random_bda);
+    const RawAddress& random_bda);
 extern void btm_gen_resolve_paddr_low(BT_OCTET8 rand);
 
 /*  privacy function */
 #if (BLE_PRIVACY_SPT == TRUE)
 /* BLE address mapping with CS feature */
-extern bool btm_identity_addr_to_random_pseudo(bt_bdaddr_t* bd_addr,
+extern bool btm_identity_addr_to_random_pseudo(RawAddress* bd_addr,
                                                uint8_t* p_addr_type,
                                                bool refresh);
-extern bool btm_random_pseudo_to_identity_addr(bt_bdaddr_t* random_pseudo,
+extern bool btm_random_pseudo_to_identity_addr(RawAddress* random_pseudo,
                                                uint8_t* p_static_addr_type);
 extern void btm_ble_refresh_peer_resolvable_private_addr(
-    const bt_bdaddr_t& pseudo_bda, const bt_bdaddr_t& rra, uint8_t rra_type);
+    const RawAddress& pseudo_bda, const RawAddress& rra, uint8_t rra_type);
 extern void btm_ble_refresh_local_resolvable_private_addr(
-    const bt_bdaddr_t& pseudo_addr, const bt_bdaddr_t& local_rpa);
+    const RawAddress& pseudo_addr, const RawAddress& local_rpa);
 extern void btm_ble_read_resolving_list_entry_complete(uint8_t* p,
                                                        uint16_t evt_len);
 extern void btm_ble_remove_resolving_list_entry_complete(uint8_t* p,
@@ -199,7 +199,7 @@ extern void btm_ble_adv_filter_cleanup(void);
 extern bool btm_ble_topology_check(tBTM_BLE_STATE_MASK request);
 extern bool btm_ble_clear_topology_mask(tBTM_BLE_STATE_MASK request_state);
 extern bool btm_ble_set_topology_mask(tBTM_BLE_STATE_MASK request_state);
-extern void btm_ble_set_random_address(const bt_bdaddr_t& random_bda);
+extern void btm_ble_set_random_address(const RawAddress& random_bda);
 
 #if (BTM_BLE_CONFORMANCE_TESTING == TRUE)
 extern void btm_ble_set_no_disc_if_pair_fail(bool disble_disc);

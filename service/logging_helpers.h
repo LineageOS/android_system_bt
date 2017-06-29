@@ -44,4 +44,4 @@ const char* BtEventText(const bt_cb_thread_evt evt);
 const char* BtAclText(const bt_acl_state_t state);
 
 // TODO(icoolidge): Address object.
-std::string BtAddrString(const bt_bdaddr_t* addr);
+std::string BtAddrString(const RawAddress* addr);

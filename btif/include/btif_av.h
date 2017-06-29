@@ -64,7 +64,7 @@ typedef enum {
  *
  ******************************************************************************/
 
-bt_bdaddr_t btif_av_get_addr(void);
+RawAddress btif_av_get_addr(void);
 
 /*******************************************************************************
  * Function         btif_av_is_sink_enabled

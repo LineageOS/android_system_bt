@@ -89,7 +89,7 @@ void pan_register_with_bnep(void) {
  * Returns          none
  *
  ******************************************************************************/
-void pan_conn_ind_cb(uint16_t handle, const bt_bdaddr_t& p_bda,
+void pan_conn_ind_cb(uint16_t handle, const RawAddress& p_bda,
                      tBT_UUID* remote_uuid, tBT_UUID* local_uuid,
                      bool is_role_change) {
   tPAN_CONN* pcb;
@@ -315,7 +315,7 @@ void pan_conn_ind_cb(uint16_t handle, const bt_bdaddr_t& p_bda,
  *
  ******************************************************************************/
 void pan_connect_state_cb(uint16_t handle,
-                          UNUSED_ATTR const bt_bdaddr_t& rem_bda,
+                          UNUSED_ATTR const RawAddress& rem_bda,
                           tBNEP_RESULT result, bool is_role_change) {
   tPAN_CONN* pcb;
   uint8_t peer_role;
@@ -414,8 +414,8 @@ void pan_connect_state_cb(uint16_t handle,
  * Returns          none
  *
  ******************************************************************************/
-void pan_data_ind_cb(uint16_t handle, const bt_bdaddr_t& src,
-                     const bt_bdaddr_t& dst, uint16_t protocol, uint8_t* p_data,
+void pan_data_ind_cb(uint16_t handle, const RawAddress& src,
+                     const RawAddress& dst, uint16_t protocol, uint8_t* p_data,
                      uint16_t len, bool ext) {
   tPAN_CONN* pcb;
   uint16_t i;
@@ -508,8 +508,8 @@ void pan_data_ind_cb(uint16_t handle, const bt_bdaddr_t& src,
  * Returns          none
  *
  ******************************************************************************/
-void pan_data_buf_ind_cb(uint16_t handle, const bt_bdaddr_t& src,
-                         const bt_bdaddr_t& dst, uint16_t protocol,
+void pan_data_buf_ind_cb(uint16_t handle, const RawAddress& src,
+                         const RawAddress& dst, uint16_t protocol,
                          BT_HDR* p_buf, bool ext) {
   tPAN_CONN *pcb, *dst_pcb;
   tBNEP_RESULT result;

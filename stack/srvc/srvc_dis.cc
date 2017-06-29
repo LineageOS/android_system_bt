@@ -439,7 +439,7 @@ tDIS_STATUS DIS_SrUpdate(tDIS_ATTR_BIT dis_attr_bit, tDIS_ATTR* p_info) {
  * Returns          void
  *
  ******************************************************************************/
-bool DIS_ReadDISInfo(const bt_bdaddr_t& peer_bda, tDIS_READ_CBACK* p_cback,
+bool DIS_ReadDISInfo(const RawAddress& peer_bda, tDIS_READ_CBACK* p_cback,
                      tDIS_ATTR_MASK mask) {
   uint16_t conn_id;
 

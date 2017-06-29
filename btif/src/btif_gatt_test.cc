@@ -86,7 +86,7 @@ static char* format_uuid(tBT_UUID bt_uuid, char* str_buf, size_t buf_size) {
   return str_buf;
 }
 
-static void btif_test_connect_cback(tGATT_IF, const bt_bdaddr_t&,
+static void btif_test_connect_cback(tGATT_IF, const RawAddress&,
                                     uint16_t conn_id, bool connected,
                                     tGATT_DISCONN_REASON, tBT_TRANSPORT) {
   LOG_DEBUG(LOG_TAG, "%s: conn_id=%d, connected=%d", __func__, conn_id,

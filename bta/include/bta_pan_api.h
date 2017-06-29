@@ -69,14 +69,14 @@ typedef struct {
 
 /* Event associated with BTA_PAN_OPENING_EVT */
 typedef struct {
-  bt_bdaddr_t bd_addr; /* BD address of peer device. */
+  RawAddress bd_addr; /* BD address of peer device. */
   uint16_t handle; /* Handle associated with this connection. */
 
 } tBTA_PAN_OPENING;
 
 /* Event associated with BTA_PAN_OPEN_EVT */
 typedef struct {
-  bt_bdaddr_t bd_addr;      /* BD address of peer device. */
+  RawAddress bd_addr;       /* BD address of peer device. */
   uint16_t handle;          /* Handle associated with this connection. */
   tBTA_PAN_STATUS status;   /* status of open event */
   tBTA_PAN_ROLE local_role; /* Local device PAN role for the connection */
@@ -161,7 +161,7 @@ void BTA_PanSetRole(tBTA_PAN_ROLE role, tBTA_PAN_ROLE_INFO* p_user_info,
  * Returns          void
  *
  ******************************************************************************/
-void BTA_PanOpen(const bt_bdaddr_t& bd_addr, tBTA_PAN_ROLE local_role,
+void BTA_PanOpen(const RawAddress& bd_addr, tBTA_PAN_ROLE local_role,
                  tBTA_PAN_ROLE peer_role);
 
 /*******************************************************************************

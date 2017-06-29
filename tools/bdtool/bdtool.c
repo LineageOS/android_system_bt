@@ -36,7 +36,7 @@ static const bt_uuid_t HFP_AG_UUID = {{0x00, 0x00, 0x11, 0x1F, 0x00, 0x00, 0x10,
 
 const bt_interface_t* bt_interface;
 
-bt_bdaddr_t bt_remote_bdaddr;
+RawAddress bt_remote_bdaddr;
 
 static int f_verbose;
 static bool discover = false;

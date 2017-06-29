@@ -24,11 +24,11 @@
 namespace util {
 
 bool IsAddressValid(const std::string& address) {
-  bt_bdaddr_t addr;
+  RawAddress addr;
   return BdAddrFromString(address, &addr);
 }
 
-bool BdAddrFromString(const std::string& address, bt_bdaddr_t* out_addr) {
+bool BdAddrFromString(const std::string& address, RawAddress* out_addr) {
   CHECK(out_addr);
 
   if (address.length() != 17) return false;

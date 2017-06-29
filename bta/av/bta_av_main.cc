@@ -167,9 +167,9 @@ static void bta_av_rpc_conn(tBTA_AV_DATA* p_data);
 static void bta_av_api_to_ssm(tBTA_AV_DATA* p_data);
 
 static void bta_av_sco_chg_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
-                                 uint8_t app_id, const bt_bdaddr_t* peer_addr);
+                                 uint8_t app_id, const RawAddress* peer_addr);
 static void bta_av_sys_rs_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
-                                uint8_t app_id, const bt_bdaddr_t* peer_addr);
+                                uint8_t app_id, const RawAddress* peer_addr);
 
 /* action functions */
 const tBTA_AV_NSM_ACT bta_av_nsm_act[] = {
@@ -255,7 +255,7 @@ static void bta_av_api_enable(tBTA_AV_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-static tBTA_AV_SCB* bta_av_addr_to_scb(const bt_bdaddr_t& bd_addr) {
+static tBTA_AV_SCB* bta_av_addr_to_scb(const RawAddress& bd_addr) {
   tBTA_AV_SCB* p_scb = NULL;
   int xx;
 
@@ -343,7 +343,7 @@ static tBTA_AV_SCB* bta_av_alloc_scb(tBTA_AV_CHNL chnl) {
 
 /*******************************************************************************
  ******************************************************************************/
-void bta_av_conn_cback(UNUSED_ATTR uint8_t handle, const bt_bdaddr_t* bd_addr,
+void bta_av_conn_cback(UNUSED_ATTR uint8_t handle, const RawAddress* bd_addr,
                        uint8_t event, tAVDT_CTRL* p_data) {
   uint16_t evt = 0;
   tBTA_AV_SCB* p_scb = NULL;
@@ -834,7 +834,7 @@ void bta_av_restore_switch(void) {
  ******************************************************************************/
 static void bta_av_sys_rs_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status,
                                 uint8_t id, uint8_t app_id,
-                                const bt_bdaddr_t* peer_addr) {
+                                const RawAddress* peer_addr) {
   int i;
   tBTA_AV_SCB* p_scb = NULL;
   uint8_t cur_role;
@@ -912,7 +912,7 @@ static void bta_av_sys_rs_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status,
  ******************************************************************************/
 static void bta_av_sco_chg_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
                                  UNUSED_ATTR uint8_t app_id,
-                                 UNUSED_ATTR const bt_bdaddr_t* peer_addr) {
+                                 UNUSED_ATTR const RawAddress* peer_addr) {
   tBTA_AV_SCB* p_scb;
   int i;
   tBTA_AV_API_STOP stop;

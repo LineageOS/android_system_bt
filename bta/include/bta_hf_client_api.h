@@ -164,27 +164,27 @@ typedef uint8_t tBTA_HF_CLIENT_AT_CMD_TYPE;
 
 /* data associated with BTA_HF_CLIENT_REGISTER_EVT */
 typedef struct {
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   tBTA_HF_CLIENT_STATUS status;
 } tBTA_HF_CLIENT_REGISTER;
 
 /* data associated with BTA_HF_CLIENT_OPEN_EVT */
 typedef struct {
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   uint16_t handle;  // Handle for client control block
   tBTA_HF_CLIENT_STATUS status;
 } tBTA_HF_CLIENT_OPEN;
 
 /* data associated with BTA_HF_CLIENT_CONN_EVT */
 typedef struct {
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   tBTA_HF_CLIENT_PEER_FEAT peer_feat;
   tBTA_HF_CLIENT_CHLD_FEAT chld_feat;
 } tBTA_HF_CLIENT_CONN;
 
 /* data associated with BTA_HF_CLIENT_IND_EVT event */
 typedef struct {
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   tBTA_HF_CLIENT_IND_TYPE type;
   uint16_t value;
 } tBTA_HF_CLIENT_IND;
@@ -192,27 +192,27 @@ typedef struct {
 /* data associated with BTA_HF_CLIENT_OPERATOR_NAME_EVT */
 #define BTA_HF_CLIENT_OPERATOR_NAME_LEN 16
 typedef struct {
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   char name[BTA_HF_CLIENT_OPERATOR_NAME_LEN + 1];
 } tBTA_HF_CLIENT_OPERATOR_NAME;
 
 /* data associated with BTA_HF_CLIENT_CLIP_EVT  and BTA_HF_CLIENT_CCWA_EVT*/
 #define BTA_HF_CLIENT_NUMBER_LEN 32
 typedef struct {
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   char number[BTA_HF_CLIENT_NUMBER_LEN + 1];
 } tBTA_HF_CLIENT_NUMBER;
 
 /* data associated with BTA_HF_CLIENT_AT_RESULT_EVT event */
 typedef struct {
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   tBTA_HF_CLIENT_AT_RESULT_TYPE type;
   uint16_t cme;
 } tBTA_HF_CLIENT_AT_RESULT;
 
 /* data associated with BTA_HF_CLIENT_CLCC_EVT event */
 typedef struct {
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   uint32_t idx;
   bool inc;
   uint8_t status;
@@ -223,21 +223,21 @@ typedef struct {
 
 /* data associated with BTA_HF_CLIENT_CNUM_EVT event */
 typedef struct {
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   uint16_t service;
   char number[BTA_HF_CLIENT_NUMBER_LEN + 1];
 } tBTA_HF_CLIENT_CNUM;
 
 /* data associated with other events */
 typedef struct {
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   uint16_t value;
 } tBTA_HF_CLIENT_VAL;
 
 /* union of data associated with AG callback */
 typedef union {
   // Common BD ADDR field for all tyepdefs
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   tBTA_HF_CLIENT_REGISTER reg;
   tBTA_HF_CLIENT_OPEN open;
   tBTA_HF_CLIENT_CONN conn;
@@ -303,7 +303,7 @@ void BTA_HfClientDisable(void);
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HfClientOpen(const bt_bdaddr_t& bd_addr, tBTA_SEC sec_mask,
+void BTA_HfClientOpen(const RawAddress& bd_addr, tBTA_SEC sec_mask,
                       uint16_t* p_handle);
 
 /*******************************************************************************

@@ -53,7 +53,7 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb);
  *  Return value:   true if connection was cancelled
  *
  ******************************************************************************/
-bool L2CA_CancelBleConnectReq(const bt_bdaddr_t& rem_bda) {
+bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda) {
   tL2C_LCB* p_lcb;
 
   /* There can be only one BLE connection request outstanding at a time */
@@ -98,7 +98,7 @@ bool L2CA_CancelBleConnectReq(const bt_bdaddr_t& rem_bda) {
  *  Return value:   true if update started
  *
  ******************************************************************************/
-bool L2CA_UpdateBleConnParams(const bt_bdaddr_t& rem_bda, uint16_t min_int,
+bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
                               uint16_t max_int, uint16_t latency,
                               uint16_t timeout) {
   tL2C_LCB* p_lcb;
@@ -140,7 +140,7 @@ bool L2CA_UpdateBleConnParams(const bt_bdaddr_t& rem_bda, uint16_t min_int,
  *  Return value:   true if update started
  *
  ******************************************************************************/
-bool L2CA_EnableUpdateBleConnParams(const bt_bdaddr_t& rem_bda, bool enable) {
+bool L2CA_EnableUpdateBleConnParams(const RawAddress& rem_bda, bool enable) {
   if (stack_config_get_interface()->get_pts_conn_updates_disabled())
     return false;
 
@@ -183,7 +183,7 @@ bool L2CA_EnableUpdateBleConnParams(const bt_bdaddr_t& rem_bda, bool enable) {
  * Returns          link role.
  *
  ******************************************************************************/
-uint8_t L2CA_GetBleConnRole(const bt_bdaddr_t& bd_addr) {
+uint8_t L2CA_GetBleConnRole(const RawAddress& bd_addr) {
   uint8_t role = HCI_ROLE_UNKNOWN;
 
   tL2C_LCB* p_lcb;
@@ -202,7 +202,7 @@ uint8_t L2CA_GetBleConnRole(const bt_bdaddr_t& bd_addr) {
  * Returns          disconnect reason
  *
  ******************************************************************************/
-uint16_t L2CA_GetDisconnectReason(const bt_bdaddr_t& remote_bda,
+uint16_t L2CA_GetDisconnectReason(const RawAddress& remote_bda,
                                   tBT_TRANSPORT transport) {
   tL2C_LCB* p_lcb;
   uint16_t reason = 0;
@@ -224,7 +224,7 @@ uint16_t L2CA_GetDisconnectReason(const bt_bdaddr_t& remote_bda,
  * Returns none
  *
  ******************************************************************************/
-void l2cble_notify_le_connection(const bt_bdaddr_t& bda) {
+void l2cble_notify_le_connection(const RawAddress& bda) {
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
   tACL_CONN* p_acl = btm_bda_to_acl(bda, BT_TRANSPORT_LE);
   tL2C_CCB* p_ccb;
@@ -257,7 +257,7 @@ void l2cble_notify_le_connection(const bt_bdaddr_t& bda) {
  * Returns          void
  *
  ******************************************************************************/
-void l2cble_scanner_conn_comp(uint16_t handle, const bt_bdaddr_t& bda,
+void l2cble_scanner_conn_comp(uint16_t handle, const RawAddress& bda,
                               tBLE_ADDR_TYPE type, uint16_t conn_interval,
                               uint16_t conn_latency, uint16_t conn_timeout) {
   tL2C_LCB* p_lcb;
@@ -340,7 +340,7 @@ void l2cble_scanner_conn_comp(uint16_t handle, const bt_bdaddr_t& bda,
  * Returns          void
  *
  ******************************************************************************/
-void l2cble_advertiser_conn_comp(uint16_t handle, const bt_bdaddr_t& bda,
+void l2cble_advertiser_conn_comp(uint16_t handle, const RawAddress& bda,
                                  UNUSED_ATTR tBLE_ADDR_TYPE type,
                                  UNUSED_ATTR uint16_t conn_interval,
                                  UNUSED_ATTR uint16_t conn_latency,
@@ -420,7 +420,7 @@ void l2cble_advertiser_conn_comp(uint16_t handle, const bt_bdaddr_t& bda,
  * Returns          void
  *
  ******************************************************************************/
-void l2cble_conn_comp(uint16_t handle, uint8_t role, const bt_bdaddr_t& bda,
+void l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
                       tBLE_ADDR_TYPE type, uint16_t conn_interval,
                       uint16_t conn_latency, uint16_t conn_timeout) {
   btm_ble_update_link_topology_mask(role, true);
@@ -832,7 +832,7 @@ bool l2cble_init_direct_conn(tL2C_LCB* p_lcb) {
   tBTM_BLE_CB* p_cb = &btm_cb.ble_ctr_cb;
   uint16_t scan_int;
   uint16_t scan_win;
-  bt_bdaddr_t peer_addr;
+  RawAddress peer_addr;
   uint8_t peer_addr_type = BLE_ADDR_PUBLIC;
   uint8_t own_addr_type = BLE_ADDR_PUBLIC;
 
@@ -1186,7 +1186,7 @@ void l2cble_process_data_length_change_event(uint16_t handle,
  * Returns          void
  *
  ******************************************************************************/
-void l2cble_set_fixed_channel_tx_data_length(const bt_bdaddr_t& remote_bda,
+void l2cble_set_fixed_channel_tx_data_length(const RawAddress& remote_bda,
                                              uint16_t fix_cid,
                                              uint16_t tx_mtu) {
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(remote_bda, BT_TRANSPORT_LE);
@@ -1310,9 +1310,9 @@ void l2cble_send_peer_disc_req(tL2C_CCB* p_ccb) {
  * Returns          void
  *
  ******************************************************************************/
-void l2cble_sec_comp(const bt_bdaddr_t* bda, tBT_TRANSPORT transport,
+void l2cble_sec_comp(const RawAddress* bda, tBT_TRANSPORT transport,
                      void* p_ref_data, uint8_t status) {
-  const bt_bdaddr_t& p_bda = *bda;
+  const RawAddress& p_bda = *bda;
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(p_bda, BT_TRANSPORT_LE);
   tL2CAP_SEC_DATA* p_buf = NULL;
   uint8_t sec_flag;
@@ -1387,7 +1387,7 @@ void l2cble_sec_comp(const bt_bdaddr_t* bda, tBT_TRANSPORT transport,
  *                  false - failure
  *
  ******************************************************************************/
-bool l2ble_sec_access_req(const bt_bdaddr_t& bd_addr, uint16_t psm,
+bool l2ble_sec_access_req(const RawAddress& bd_addr, uint16_t psm,
                           bool is_originator, tL2CAP_SEC_CBACK* p_callback,
                           void* p_ref_data) {
   L2CAP_TRACE_DEBUG("%s", __func__);

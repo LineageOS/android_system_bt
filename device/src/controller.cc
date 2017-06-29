@@ -48,7 +48,7 @@ static const hci_t* hci;
 static const hci_packet_factory_t* packet_factory;
 static const hci_packet_parser_t* packet_parser;
 
-static bt_bdaddr_t address;
+static RawAddress address;
 static bt_version_t bt_version;
 
 static uint8_t supported_commands[HCI_SUPPORTED_COMMANDS_ARRAY_SIZE];
@@ -274,7 +274,7 @@ EXPORT_SYMBOL extern const module_t controller_module = {
 
 static bool get_is_ready(void) { return readable; }
 
-static const bt_bdaddr_t* get_address(void) {
+static const RawAddress* get_address(void) {
   CHECK(readable);
   return &address;
 }

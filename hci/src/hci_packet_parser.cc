@@ -86,9 +86,9 @@ static void parse_read_local_supported_codecs_response(
 }
 
 static void parse_read_bd_addr_response(BT_HDR* response,
-                                        bt_bdaddr_t* address_ptr) {
+                                        RawAddress* address_ptr) {
   uint8_t* stream = read_command_complete_header(
-      response, HCI_READ_BD_ADDR, sizeof(bt_bdaddr_t) /* bytes after */);
+      response, HCI_READ_BD_ADDR, sizeof(RawAddress) /* bytes after */);
   CHECK(stream != NULL);
   STREAM_TO_BDADDR(*address_ptr, stream);
 

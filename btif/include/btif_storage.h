@@ -80,7 +80,7 @@ bt_status_t btif_storage_set_adapter_property(bt_property_t* property);
  *
  ******************************************************************************/
 bt_status_t btif_storage_get_remote_device_property(
-    const bt_bdaddr_t* remote_bd_addr, bt_property_t* property);
+    const RawAddress* remote_bd_addr, bt_property_t* property);
 
 /*******************************************************************************
  *
@@ -94,7 +94,7 @@ bt_status_t btif_storage_get_remote_device_property(
  *
  ******************************************************************************/
 bt_status_t btif_storage_set_remote_device_property(
-    const bt_bdaddr_t* remote_bd_addr, bt_property_t* property);
+    const RawAddress* remote_bd_addr, bt_property_t* property);
 
 /*******************************************************************************
  *
@@ -108,7 +108,7 @@ bt_status_t btif_storage_set_remote_device_property(
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_add_remote_device(const bt_bdaddr_t* remote_bd_addr,
+bt_status_t btif_storage_add_remote_device(const RawAddress* remote_bd_addr,
                                            uint32_t num_properties,
                                            bt_property_t* properties);
 
@@ -123,7 +123,7 @@ bt_status_t btif_storage_add_remote_device(const bt_bdaddr_t* remote_bd_addr,
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_add_bonded_device(bt_bdaddr_t* remote_bd_addr,
+bt_status_t btif_storage_add_bonded_device(RawAddress* remote_bd_addr,
                                            LINK_KEY link_key, uint8_t key_type,
                                            uint8_t pin_length);
 
@@ -137,8 +137,7 @@ bt_status_t btif_storage_add_bonded_device(bt_bdaddr_t* remote_bd_addr,
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_remove_bonded_device(
-    const bt_bdaddr_t* remote_bd_addr);
+bt_status_t btif_storage_remove_bonded_device(const RawAddress* remote_bd_addr);
 
 /*******************************************************************************
  *
@@ -165,7 +164,7 @@ bt_status_t btif_storage_load_bonded_devices(void);
  ******************************************************************************/
 
 bt_status_t btif_storage_add_hid_device_info(
-    bt_bdaddr_t* remote_bd_addr, uint16_t attr_mask, uint8_t sub_class,
+    RawAddress* remote_bd_addr, uint16_t attr_mask, uint8_t sub_class,
     uint8_t app_id, uint16_t vendor_id, uint16_t product_id, uint16_t version,
     uint8_t ctry_code, uint16_t ssr_max_latency, uint16_t ssr_min_tout,
     uint16_t dl_len, uint8_t* dsc_list);
@@ -193,7 +192,7 @@ bt_status_t btif_storage_load_bonded_hid_info(void);
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_remove_hid_info(bt_bdaddr_t* remote_bd_addr);
+bt_status_t btif_storage_remove_hid_info(RawAddress* remote_bd_addr);
 
 /*******************************************************************************
  *
@@ -206,27 +205,27 @@ bt_status_t btif_storage_remove_hid_info(bt_bdaddr_t* remote_bd_addr);
  *                  false otherwise
  *
  ******************************************************************************/
-bool btif_storage_is_restricted_device(const bt_bdaddr_t* remote_bd_addr);
+bool btif_storage_is_restricted_device(const RawAddress* remote_bd_addr);
 
-bt_status_t btif_storage_add_ble_bonding_key(bt_bdaddr_t* remote_bd_addr,
+bt_status_t btif_storage_add_ble_bonding_key(RawAddress* remote_bd_addr,
                                              char* key, uint8_t key_type,
                                              uint8_t key_length);
-bt_status_t btif_storage_get_ble_bonding_key(bt_bdaddr_t* remote_bd_addr,
+bt_status_t btif_storage_get_ble_bonding_key(RawAddress* remote_bd_addr,
                                              uint8_t key_type, char* key_value,
                                              int key_length);
 
 bt_status_t btif_storage_add_ble_local_key(char* key, uint8_t key_type,
                                            uint8_t key_length);
 bt_status_t btif_storage_remove_ble_bonding_keys(
-    const bt_bdaddr_t* remote_bd_addr);
+    const RawAddress* remote_bd_addr);
 bt_status_t btif_storage_remove_ble_local_keys(void);
 bt_status_t btif_storage_get_ble_local_key(uint8_t key_type, char* key_value,
                                            int key_len);
 
-bt_status_t btif_storage_get_remote_addr_type(const bt_bdaddr_t* remote_bd_addr,
+bt_status_t btif_storage_get_remote_addr_type(const RawAddress* remote_bd_addr,
                                               int* addr_type);
 
-bt_status_t btif_storage_set_remote_addr_type(const bt_bdaddr_t* remote_bd_addr,
+bt_status_t btif_storage_set_remote_addr_type(const RawAddress* remote_bd_addr,
                                               uint8_t addr_type);
 
 /*******************************************************************************
@@ -249,7 +248,7 @@ bt_status_t btif_storage_load_hidd(void);
  *
  ******************************************************************************/
 
-bt_status_t btif_storage_set_hidd(bt_bdaddr_t* remote_bd_addr);
+bt_status_t btif_storage_set_hidd(RawAddress* remote_bd_addr);
 
 /*******************************************************************************
  *
@@ -261,15 +260,14 @@ bt_status_t btif_storage_set_hidd(bt_bdaddr_t* remote_bd_addr);
  *
  ******************************************************************************/
 
-bt_status_t btif_storage_remove_hidd(bt_bdaddr_t* remote_bd_addr);
+bt_status_t btif_storage_remove_hidd(RawAddress* remote_bd_addr);
 
 // Gets the device name for a given Bluetooth address |bd_addr|.
 // The device name (if found) is stored in |name|.
 // Returns true if the device name is found, othervise false.
 // Note: |name| should point to a buffer that can store string of length
 // |BTM_MAX_REM_BD_NAME_LEN|.
-bool btif_storage_get_stored_remote_name(const bt_bdaddr_t& bd_addr,
-                                         char* name);
+bool btif_storage_get_stored_remote_name(const RawAddress& bd_addr, char* name);
 
 /******************************************************************************
  * Exported for unit tests

@@ -36,8 +36,8 @@ class MockGattHandler
   MOCK_METHOD1(RegisterClient, bt_status_t(const bt_uuid_t&));
   MOCK_METHOD1(UnregisterClient, bt_status_t(int));
   MOCK_METHOD1(Scan, bt_status_t(bool));
-  MOCK_METHOD4(Connect, bt_status_t(int, const bt_bdaddr_t&, bool, int));
-  MOCK_METHOD3(Disconnect, bt_status_t(int, const bt_bdaddr_t&, int));
+  MOCK_METHOD4(Connect, bt_status_t(int, const RawAddress&, bool, int));
+  MOCK_METHOD3(Disconnect, bt_status_t(int, const RawAddress&, int));
 
  private:
   DISALLOW_COPY_AND_ASSIGN(MockGattHandler);

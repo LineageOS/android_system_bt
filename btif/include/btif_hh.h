@@ -58,7 +58,7 @@ typedef enum {
 typedef struct {
   bthh_connection_state_t dev_status;
   uint8_t dev_handle;
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   tBTA_HH_ATTR_MASK attr_mask;
   uint8_t sub_class;
   uint8_t app_id;
@@ -73,7 +73,7 @@ typedef struct {
 /* Control block to maintain properties of devices */
 typedef struct {
   uint8_t dev_handle;
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   tBTA_HH_ATTR_MASK attr_mask;
 } btif_hh_added_device_t;
 
@@ -97,11 +97,11 @@ typedef struct {
 extern btif_hh_cb_t btif_hh_cb;
 
 extern btif_hh_device_t* btif_hh_find_connected_dev_by_handle(uint8_t handle);
-extern void btif_hh_remove_device(bt_bdaddr_t bd_addr);
-extern bool btif_hh_add_added_dev(const bt_bdaddr_t& bda,
+extern void btif_hh_remove_device(RawAddress bd_addr);
+extern bool btif_hh_add_added_dev(const RawAddress& bda,
                                   tBTA_HH_ATTR_MASK attr_mask);
-extern bt_status_t btif_hh_virtual_unplug(const bt_bdaddr_t* bd_addr);
-extern void btif_hh_disconnect(bt_bdaddr_t* bd_addr);
+extern bt_status_t btif_hh_virtual_unplug(const RawAddress* bd_addr);
+extern void btif_hh_disconnect(RawAddress* bd_addr);
 extern void btif_hh_setreport(btif_hh_device_t* p_dev,
                               bthh_report_type_t r_type, uint16_t size,
                               uint8_t* report);

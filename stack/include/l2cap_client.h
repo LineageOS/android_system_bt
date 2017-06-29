@@ -60,7 +60,7 @@ void l2cap_client_free(l2cap_client_t* client);
 // while |l2cap_client_is_connected|. |client| and |remote_bdaddr| must not be
 // NULL. |psm| must be greater than zero.
 bool l2cap_client_connect(l2cap_client_t* client,
-                          const bt_bdaddr_t& remote_bdaddr, uint16_t psm);
+                          const RawAddress& remote_bdaddr, uint16_t psm);
 
 // Disconnects a connected |client|. This function is asynchronous and
 // idempotent. It will indicate completion with a 'disconnected' callback.

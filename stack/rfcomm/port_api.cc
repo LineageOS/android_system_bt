@@ -113,7 +113,7 @@ static const char* result_code_strings[] = {"Success",
  *
  ******************************************************************************/
 int RFCOMM_CreateConnection(uint16_t uuid, uint8_t scn, bool is_server,
-                            uint16_t mtu, const bt_bdaddr_t& bd_addr,
+                            uint16_t mtu, const RawAddress& bd_addr,
                             uint16_t* p_handle, tPORT_CALLBACK* p_mgmt_cb) {
   tPORT* p_port;
   uint8_t dlci;
@@ -480,7 +480,7 @@ int PORT_SetEventMask(uint16_t port_handle, uint32_t mask) {
  *                  p_lcid     - OUT L2CAP's LCID
  *
  ******************************************************************************/
-int PORT_CheckConnection(uint16_t handle, bt_bdaddr_t& bd_addr,
+int PORT_CheckConnection(uint16_t handle, RawAddress& bd_addr,
                          uint16_t* p_lcid) {
   tPORT* p_port;
 
@@ -519,7 +519,7 @@ int PORT_CheckConnection(uint16_t handle, bt_bdaddr_t& bd_addr,
  *                  bd_addr    - bd_addr of the peer
  *
  ******************************************************************************/
-bool PORT_IsOpening(bt_bdaddr_t& bd_addr) {
+bool PORT_IsOpening(RawAddress& bd_addr) {
   uint8_t xx, yy;
   tRFC_MCB* p_mcb = NULL;
   tPORT* p_port;

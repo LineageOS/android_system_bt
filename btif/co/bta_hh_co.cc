@@ -403,7 +403,7 @@ void bta_hh_co_close(uint8_t dev_handle, uint8_t app_id) {
  ******************************************************************************/
 void bta_hh_co_data(uint8_t dev_handle, uint8_t* p_rpt, uint16_t len,
                     tBTA_HH_PROTO_MODE mode, uint8_t sub_class,
-                    uint8_t ctry_code, UNUSED_ATTR const bt_bdaddr_t& peer_addr,
+                    uint8_t ctry_code, UNUSED_ATTR const RawAddress& peer_addr,
                     uint8_t app_id) {
   btif_hh_device_t* p_dev;
 
@@ -520,7 +520,7 @@ void bta_hh_co_send_hid_info(btif_hh_device_t* p_dev, const char* dev_name,
  * Returns          void.
  *
  ******************************************************************************/
-void bta_hh_le_co_rpt_info(const bt_bdaddr_t& remote_bda,
+void bta_hh_le_co_rpt_info(const RawAddress& remote_bda,
                            tBTA_HH_RPT_CACHE_ENTRY* p_entry,
                            UNUSED_ATTR uint8_t app_id) {
   unsigned idx = 0;
@@ -559,7 +559,7 @@ void bta_hh_le_co_rpt_info(const bt_bdaddr_t& remote_bda,
  * Returns          the acched report array
  *
  ******************************************************************************/
-tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(const bt_bdaddr_t& remote_bda,
+tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(const RawAddress& remote_bda,
                                                  uint8_t* p_num_rpt,
                                                  UNUSED_ATTR uint8_t app_id) {
   bdstr_t bdstr;
@@ -589,7 +589,7 @@ tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(const bt_bdaddr_t& remote_bda,
  * Returns          none
  *
  ******************************************************************************/
-void bta_hh_le_co_reset_rpt_cache(const bt_bdaddr_t& remote_bda,
+void bta_hh_le_co_reset_rpt_cache(const RawAddress& remote_bda,
                                   UNUSED_ATTR uint8_t app_id) {
   bdstr_t bdstr;
   bdaddr_to_string(&remote_bda, bdstr, sizeof(bdstr));

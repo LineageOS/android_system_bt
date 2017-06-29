@@ -265,7 +265,7 @@ class AdapterImpl : public Adapter, public hal::BluetoothInterface::Observer {
       switch (property->type) {
         case BT_PROPERTY_BDADDR: {
           std::string address =
-              BtAddrString(reinterpret_cast<bt_bdaddr_t*>(property->val));
+              BtAddrString(reinterpret_cast<RawAddress*>(property->val));
           LOG(INFO) << "Adapter address changed: " << address;
           address_.Set(address);
           break;
@@ -300,13 +300,13 @@ class AdapterImpl : public Adapter, public hal::BluetoothInterface::Observer {
     }
   }
 
-  void SSPRequestCallback(bt_bdaddr_t*, bt_bdname_t*, uint32_t,
-                          bt_ssp_variant_t, uint32_t pass_key) override {
+  void SSPRequestCallback(RawAddress*, bt_bdname_t*, uint32_t, bt_ssp_variant_t,
+                          uint32_t pass_key) override {
     LOG(INFO) << "Passkey is: " << pass_key;
   }
 
   void AclStateChangedCallback(bt_status_t status,
-                               const bt_bdaddr_t& remote_bdaddr,
+                               const RawAddress& remote_bdaddr,
                                bt_acl_state_t state) override {
     std::string device_address = BtAddrString(&remote_bdaddr);
     bool connected = (state == BT_ACL_STATE_CONNECTED);

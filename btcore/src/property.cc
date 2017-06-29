@@ -76,9 +76,9 @@ bool property_equals(const bt_property_t* p1, const bt_property_t* p2) {
   return p1->len == p2->len && !memcmp(p1->val, p2->val, p1->len);
 }
 
-bt_property_t* property_new_addr(const bt_bdaddr_t* addr) {
+bt_property_t* property_new_addr(const RawAddress* addr) {
   CHECK(addr != NULL);
-  return property_new_((void*)addr, sizeof(bt_bdaddr_t), BT_PROPERTY_BDADDR);
+  return property_new_((void*)addr, sizeof(RawAddress), BT_PROPERTY_BDADDR);
 }
 
 bt_property_t* property_new_device_class(const bt_device_class_t* dc) {
@@ -172,9 +172,9 @@ bool property_is_uuids(const bt_property_t* property) {
 }
 
 // Convenience conversion methods to property values
-const bt_bdaddr_t* property_as_addr(const bt_property_t* property) {
+const RawAddress* property_as_addr(const bt_property_t* property) {
   CHECK(property_is_addr(property));
-  return (const bt_bdaddr_t*)property->val;
+  return (const RawAddress*)property->val;
 }
 
 const bt_device_class_t* property_as_device_class(

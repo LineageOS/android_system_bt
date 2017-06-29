@@ -280,7 +280,7 @@ static bt_status_t btif_gatts_unregister_app(int server_if) {
   return do_in_jni_thread(Bind(&BTA_GATTS_AppDeregister, server_if));
 }
 
-static void btif_gatts_open_impl(int server_if, const bt_bdaddr_t& address,
+static void btif_gatts_open_impl(int server_if, const RawAddress& address,
                                  bool is_direct, int transport_param) {
   // Ensure device is in inquiry database
   int addr_type = 0;
@@ -322,14 +322,14 @@ static void btif_gatts_open_impl(int server_if, const bt_bdaddr_t& address,
   BTA_GATTS_Open(server_if, address, is_direct, transport);
 }
 
-static bt_status_t btif_gatts_open(int server_if, const bt_bdaddr_t& bd_addr,
+static bt_status_t btif_gatts_open(int server_if, const RawAddress& bd_addr,
                                    bool is_direct, int transport) {
   CHECK_BTGATT_INIT();
   return do_in_jni_thread(
       Bind(&btif_gatts_open_impl, server_if, bd_addr, is_direct, transport));
 }
 
-static void btif_gatts_close_impl(int server_if, const bt_bdaddr_t& address,
+static void btif_gatts_close_impl(int server_if, const RawAddress& address,
                                   int conn_id) {
   // Close active connection
   if (conn_id != 0)
@@ -341,7 +341,7 @@ static void btif_gatts_close_impl(int server_if, const bt_bdaddr_t& address,
   BTA_GATTS_CancelOpen(server_if, address, false);
 }
 
-static bt_status_t btif_gatts_close(int server_if, const bt_bdaddr_t& bd_addr,
+static bt_status_t btif_gatts_close(int server_if, const RawAddress& bd_addr,
                                     int conn_id) {
   CHECK_BTGATT_INIT();
   return do_in_jni_thread(
@@ -421,7 +421,7 @@ static bt_status_t btif_gatts_send_response(int conn_id, int trans_id,
                                trans_id, status, response));
 }
 
-static bt_status_t btif_gatts_set_preferred_phy(const bt_bdaddr_t& bd_addr,
+static bt_status_t btif_gatts_set_preferred_phy(const RawAddress& bd_addr,
                                                 uint8_t tx_phy, uint8_t rx_phy,
                                                 uint16_t phy_options) {
   CHECK_BTGATT_INIT();
@@ -431,7 +431,7 @@ static bt_status_t btif_gatts_set_preferred_phy(const bt_bdaddr_t& bd_addr,
 }
 
 static bt_status_t btif_gatts_read_phy(
-    const bt_bdaddr_t& bd_addr,
+    const RawAddress& bd_addr,
     base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb) {
   CHECK_BTGATT_INIT();
   do_in_bta_thread(FROM_HERE, Bind(&BTM_BleReadPhy, bd_addr,

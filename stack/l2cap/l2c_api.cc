@@ -207,7 +207,7 @@ uint16_t L2CA_AllocatePSM(void) {
  * Returns          the CID of the connection, or 0 if it failed to start
  *
  ******************************************************************************/
-uint16_t L2CA_ConnectReq(uint16_t psm, const bt_bdaddr_t& p_bd_addr) {
+uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
   return L2CA_ErtmConnectReq(psm, p_bd_addr, NULL);
 }
 
@@ -228,7 +228,7 @@ uint16_t L2CA_ConnectReq(uint16_t psm, const bt_bdaddr_t& p_bd_addr) {
  * Returns          the CID of the connection, or 0 if it failed to start
  *
  ******************************************************************************/
-uint16_t L2CA_ErtmConnectReq(uint16_t psm, const bt_bdaddr_t& p_bd_addr,
+uint16_t L2CA_ErtmConnectReq(uint16_t psm, const RawAddress& p_bd_addr,
                              tL2CAP_ERTM_INFO* p_ertm_info) {
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
@@ -442,7 +442,7 @@ void L2CA_DeregisterLECoc(uint16_t psm) {
  * Returns          the CID of the connection, or 0 if it failed to start
  *
  ******************************************************************************/
-uint16_t L2CA_ConnectLECocReq(uint16_t psm, const bt_bdaddr_t& p_bd_addr,
+uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
                               tL2CAP_LE_CFG_INFO* p_cfg) {
   VLOG(1) << __func__ << " BDA: " << p_bd_addr
           << StringPrintf(" PSM: 0x%04x", psm);
@@ -526,7 +526,7 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const bt_bdaddr_t& p_bd_addr,
  * Returns          true for success, false for failure
  *
  ******************************************************************************/
-bool L2CA_ConnectLECocRsp(const bt_bdaddr_t& p_bd_addr, uint8_t id,
+bool L2CA_ConnectLECocRsp(const RawAddress& p_bd_addr, uint8_t id,
                           uint16_t lcid, uint16_t result, uint16_t status,
                           tL2CAP_LE_CFG_INFO* p_cfg) {
   VLOG(1) << __func__ << " BDA: " << p_bd_addr
@@ -647,7 +647,7 @@ bool L2CA_SetConnectionCallbacks(uint16_t local_cid,
  * Returns          true for success, false for failure
  *
  ******************************************************************************/
-bool L2CA_ConnectRsp(const bt_bdaddr_t& p_bd_addr, uint8_t id, uint16_t lcid,
+bool L2CA_ConnectRsp(const RawAddress& p_bd_addr, uint8_t id, uint16_t lcid,
                      uint16_t result, uint16_t status) {
   return L2CA_ErtmConnectRsp(p_bd_addr, id, lcid, result, status, NULL);
 }
@@ -663,8 +663,8 @@ bool L2CA_ConnectRsp(const bt_bdaddr_t& p_bd_addr, uint8_t id, uint16_t lcid,
  * Returns          true for success, false for failure
  *
  ******************************************************************************/
-bool L2CA_ErtmConnectRsp(const bt_bdaddr_t& p_bd_addr, uint8_t id,
-                         uint16_t lcid, uint16_t result, uint16_t status,
+bool L2CA_ErtmConnectRsp(const RawAddress& p_bd_addr, uint8_t id, uint16_t lcid,
+                         uint16_t result, uint16_t status,
                          tL2CAP_ERTM_INFO* p_ertm_info) {
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
@@ -889,7 +889,7 @@ bool L2CA_DisconnectRsp(uint16_t cid) {
  * Returns          true if echo request sent, else false.
  *
  ******************************************************************************/
-bool L2CA_Ping(const bt_bdaddr_t& p_bd_addr, tL2CA_ECHO_RSP_CB* p_callback) {
+bool L2CA_Ping(const RawAddress& p_bd_addr, tL2CA_ECHO_RSP_CB* p_callback) {
   tL2C_LCB* p_lcb;
 
   VLOG(1) << __func__ << " BDA: " << p_bd_addr;
@@ -951,7 +951,7 @@ bool L2CA_Ping(const bt_bdaddr_t& p_bd_addr, tL2CA_ECHO_RSP_CB* p_callback) {
  * Returns          true if echo request sent, else false.
  *
  ******************************************************************************/
-bool L2CA_Echo(const bt_bdaddr_t& p_bd_addr, BT_HDR* p_data,
+bool L2CA_Echo(const RawAddress& p_bd_addr, BT_HDR* p_data,
                tL2CA_ECHO_DATA_CB* p_callback) {
   tL2C_LCB* p_lcb;
   uint8_t* pp;
@@ -1066,7 +1066,7 @@ bool L2CA_SetIdleTimeout(uint16_t cid, uint16_t timeout, bool is_global) {
  * NOTE             This timeout applies to all logical channels active on the
  *                  ACL link.
  ******************************************************************************/
-bool L2CA_SetIdleTimeoutByBdAddr(const bt_bdaddr_t& bd_addr, uint16_t timeout,
+bool L2CA_SetIdleTimeoutByBdAddr(const RawAddress& bd_addr, uint16_t timeout,
                                  tBT_TRANSPORT transport) {
   tL2C_LCB* p_lcb;
 
@@ -1157,7 +1157,7 @@ uint8_t L2CA_SetDesireRole(uint8_t new_role) {
  *
  ******************************************************************************/
 uint16_t L2CA_LocalLoopbackReq(uint16_t psm, uint16_t handle,
-                               const bt_bdaddr_t& p_bd_addr) {
+                               const RawAddress& p_bd_addr) {
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
   tL2C_RCB* p_rcb;
@@ -1215,7 +1215,7 @@ uint16_t L2CA_LocalLoopbackReq(uint16_t psm, uint16_t handle,
  * Returns          true if a valid channel, else false
  *
  ******************************************************************************/
-bool L2CA_SetAclPriority(const bt_bdaddr_t& bd_addr, uint8_t priority) {
+bool L2CA_SetAclPriority(const RawAddress& bd_addr, uint8_t priority) {
   VLOG(1) << __func__ << " BDA: " << bd_addr << ", priority: " << priority;
   return (l2cu_set_acl_priority(bd_addr, priority, false));
 }
@@ -1387,7 +1387,7 @@ bool L2CA_SetChnlDataRate(uint16_t cid, tL2CAP_CHNL_DATA_RATE tx,
  * NOTE             This flush timeout applies to all logical channels active on
  *                  the ACL link.
  ******************************************************************************/
-bool L2CA_SetFlushTimeout(const bt_bdaddr_t& bd_addr, uint16_t flush_tout) {
+bool L2CA_SetFlushTimeout(const RawAddress& bd_addr, uint16_t flush_tout) {
   tL2C_LCB* p_lcb;
   uint16_t hci_flush_to;
   uint32_t temp;
@@ -1470,7 +1470,7 @@ bool L2CA_SetFlushTimeout(const bt_bdaddr_t& bd_addr, uint16_t flush_tout) {
  *  Return value:    true if peer is connected
  *
  ******************************************************************************/
-bool L2CA_GetPeerFeatures(const bt_bdaddr_t& bd_addr, uint32_t* p_ext_feat,
+bool L2CA_GetPeerFeatures(const RawAddress& bd_addr, uint32_t* p_ext_feat,
                           uint8_t* p_chnl_mask) {
   tL2C_LCB* p_lcb;
 
@@ -1504,7 +1504,7 @@ bool L2CA_GetPeerFeatures(const bt_bdaddr_t& bd_addr, uint32_t* p_ext_feat,
  *  Return value:    true if found lcb for the given handle, false otherwise
  *
  ******************************************************************************/
-bool L2CA_GetBDAddrbyHandle(uint16_t handle, bt_bdaddr_t& bd_addr) {
+bool L2CA_GetBDAddrbyHandle(uint16_t handle, RawAddress& bd_addr) {
   tL2C_LCB* p_lcb = NULL;
   bool found_dev = false;
 
@@ -1580,12 +1580,12 @@ bool L2CA_RegisterFixedChannel(uint16_t fixed_cid,
  *  Return value:   true if connection started
  *
  ******************************************************************************/
-bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const bt_bdaddr_t& rem_bda) {
+bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
   uint8_t phy = controller_get_interface()->get_le_all_initiating_phys();
   return L2CA_ConnectFixedChnl(fixed_cid, rem_bda, phy);
 }
 
-bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const bt_bdaddr_t& rem_bda,
+bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda,
                            uint8_t initiating_phys) {
   tL2C_LCB* p_lcb;
   tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
@@ -1693,7 +1693,7 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const bt_bdaddr_t& rem_bda,
  *                  L2CAP_DW_FAILED,  if error
  *
  ******************************************************************************/
-uint16_t L2CA_SendFixedChnlData(uint16_t fixed_cid, const bt_bdaddr_t& rem_bda,
+uint16_t L2CA_SendFixedChnlData(uint16_t fixed_cid, const RawAddress& rem_bda,
                                 BT_HDR* p_buf) {
   tL2C_LCB* p_lcb;
   tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
@@ -1807,7 +1807,7 @@ uint16_t L2CA_SendFixedChnlData(uint16_t fixed_cid, const bt_bdaddr_t& rem_bda,
  *  Return value:   true if channel removed
  *
  ******************************************************************************/
-bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const bt_bdaddr_t& rem_bda) {
+bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
   tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
@@ -1873,7 +1873,7 @@ bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const bt_bdaddr_t& rem_bda) {
  * Returns          true if command succeeded, false if failed
  *
  ******************************************************************************/
-bool L2CA_SetFixedChannelTout(const bt_bdaddr_t& rem_bda, uint16_t fixed_cid,
+bool L2CA_SetFixedChannelTout(const RawAddress& rem_bda, uint16_t fixed_cid,
                               uint16_t idle_tout) {
   tL2C_LCB* p_lcb;
   tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
@@ -1994,7 +1994,7 @@ bool L2CA_GetConnectionConfig(uint16_t lcid, uint16_t* mtu, uint16_t* rcid,
  * Returns          true if registered OK, else false
  *
  ******************************************************************************/
-bool L2CA_RegForNoCPEvt(tL2CA_NOCP_CB* p_cb, const bt_bdaddr_t& p_bda) {
+bool L2CA_RegForNoCPEvt(tL2CA_NOCP_CB* p_cb, const RawAddress& p_bda) {
   tL2C_LCB* p_lcb;
 
   /* Find the link that is associated with this remote bdaddr */

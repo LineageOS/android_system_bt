@@ -53,8 +53,8 @@ class BleAdvertiserHciInterface {
   virtual void SetParameters(
       uint8_t handle, uint16_t properties, uint32_t adv_int_min,
       uint32_t adv_int_max, uint8_t channel_map, uint8_t own_address_type,
-      const bt_bdaddr_t& own_address, uint8_t peer_address_type,
-      const bt_bdaddr_t& peer_address, uint8_t filter_policy, int8_t tx_power,
+      const RawAddress& own_address, uint8_t peer_address_type,
+      const RawAddress& peer_address, uint8_t filter_policy, int8_t tx_power,
       uint8_t primary_phy, uint8_t secondary_max_skip, uint8_t secondary_phy,
       uint8_t advertising_sid, uint8_t scan_request_notify_enable,
       parameters_cb command_complete) = 0;
@@ -68,7 +68,7 @@ class BleAdvertiserHciInterface {
                                    uint8_t* scan_response_data,
                                    status_cb command_complete) = 0;
   virtual void SetRandomAddress(uint8_t handle,
-                                const bt_bdaddr_t& random_address,
+                                const RawAddress& random_address,
                                 status_cb command_complete) = 0;
   virtual void Enable(uint8_t enable, uint8_t handle, uint16_t duration,
                       uint8_t max_extended_advertising_events,

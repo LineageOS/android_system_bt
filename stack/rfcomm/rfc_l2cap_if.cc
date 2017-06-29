@@ -40,13 +40,13 @@
 /*
  * Define Callback functions to be called by L2CAP
 */
-static void RFCOMM_ConnectInd(const bt_bdaddr_t& bd_addr, uint16_t lcid,
+static void RFCOMM_ConnectInd(const RawAddress& bd_addr, uint16_t lcid,
                               uint16_t psm, uint8_t id);
 static void RFCOMM_ConnectCnf(uint16_t lcid, uint16_t err);
 static void RFCOMM_ConfigInd(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
 static void RFCOMM_ConfigCnf(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
 static void RFCOMM_DisconnectInd(uint16_t lcid, bool is_clear);
-static void RFCOMM_QoSViolationInd(UNUSED_ATTR const bt_bdaddr_t& bd_addr);
+static void RFCOMM_QoSViolationInd(UNUSED_ATTR const RawAddress& bd_addr);
 static void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf);
 static void RFCOMM_CongestionStatusInd(uint16_t lcid, bool is_congested);
 
@@ -85,7 +85,7 @@ void rfcomm_l2cap_if_init(void) {
  *                  block and dispatch the event to it.
  *
  ******************************************************************************/
-void RFCOMM_ConnectInd(const bt_bdaddr_t& bd_addr, uint16_t lcid,
+void RFCOMM_ConnectInd(const RawAddress& bd_addr, uint16_t lcid,
                        UNUSED_ATTR uint16_t psm, uint8_t id) {
   tRFC_MCB* p_mcb = rfc_alloc_multiplexer_channel(bd_addr, false);
 
@@ -246,7 +246,7 @@ void RFCOMM_ConfigCnf(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
  *                  FSM.
  *
  ******************************************************************************/
-void RFCOMM_QoSViolationInd(UNUSED_ATTR const bt_bdaddr_t& bd_addr) {}
+void RFCOMM_QoSViolationInd(UNUSED_ATTR const RawAddress& bd_addr) {}
 
 /*******************************************************************************
  *

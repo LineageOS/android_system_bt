@@ -31,15 +31,15 @@ TEST(UtilTest, IsAddressValid) {
 }
 
 TEST(UtilTest, BdAddrFromString) {
-  bt_bdaddr_t addr;
+  RawAddress addr;
   memset(&addr, 0, sizeof(addr));
 
   EXPECT_TRUE(BdAddrFromString("00:00:00:00:00:00", &addr));
-  const bt_bdaddr_t result0 = {{0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
+  const RawAddress result0 = {{0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
   EXPECT_EQ(0, memcmp(&addr, &result0, sizeof(addr)));
 
   EXPECT_TRUE(BdAddrFromString("ab:01:4C:d5:21:9f", &addr));
-  const bt_bdaddr_t result1 = {{0xab, 0x01, 0x4c, 0xd5, 0x21, 0x9f}};
+  const RawAddress result1 = {{0xab, 0x01, 0x4c, 0xd5, 0x21, 0x9f}};
   EXPECT_EQ(0, memcmp(&addr, &result1, sizeof(addr)));
 }
 

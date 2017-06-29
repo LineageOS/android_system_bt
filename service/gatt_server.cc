@@ -109,7 +109,7 @@ bool GattServer::SendResponse(const std::string& device_address, int request_id,
           << " offset: " << offset;
   lock_guard<mutex> lock(mutex_);
 
-  bt_bdaddr_t addr;
+  RawAddress addr;
   if (!util::BdAddrFromString(device_address, &addr)) {
     LOG(ERROR) << "Invalid device address given: " << device_address;
     return false;
@@ -178,7 +178,7 @@ bool GattServer::SendNotification(const std::string& device_address,
           << " device_address: " << device_address << " confirm: " << confirm;
   lock_guard<mutex> lock(mutex_);
 
-  bt_bdaddr_t addr;
+  RawAddress addr;
   if (!util::BdAddrFromString(device_address, &addr)) {
     LOG(ERROR) << "Invalid device address given: " << device_address;
     return false;
@@ -236,7 +236,7 @@ bool GattServer::SendNotification(const std::string& device_address,
 
 void GattServer::ConnectionCallback(
     hal::BluetoothGattInterface* /* gatt_iface */, int conn_id, int server_id,
-    int connected, const bt_bdaddr_t& bda) {
+    int connected, const RawAddress& bda) {
   lock_guard<mutex> lock(mutex_);
 
   if (server_id != server_id_) return;
@@ -328,7 +328,7 @@ void GattServer::ServiceStoppedCallback(
 
 void GattServer::RequestReadCharacteristicCallback(
     hal::BluetoothGattInterface* /* gatt_iface */, int conn_id, int trans_id,
-    const bt_bdaddr_t& bda, int attribute_handle, int offset, bool is_long) {
+    const RawAddress& bda, int attribute_handle, int offset, bool is_long) {
   lock_guard<mutex> lock(mutex_);
 
   // Check to see if we know about this connection. Otherwise ignore the
@@ -361,7 +361,7 @@ void GattServer::RequestReadCharacteristicCallback(
 }
 void GattServer::RequestReadDescriptorCallback(
     hal::BluetoothGattInterface* /* gatt_iface */, int conn_id, int trans_id,
-    const bt_bdaddr_t& bda, int attribute_handle, int offset, bool is_long) {
+    const RawAddress& bda, int attribute_handle, int offset, bool is_long) {
   lock_guard<mutex> lock(mutex_);
 
   // Check to see if we know about this connection. Otherwise ignore the
@@ -395,7 +395,7 @@ void GattServer::RequestReadDescriptorCallback(
 
 void GattServer::RequestWriteCharacteristicCallback(
     hal::BluetoothGattInterface* /* gatt_iface */, int conn_id, int trans_id,
-    const bt_bdaddr_t& bda, int attr_handle, int offset, bool need_rsp,
+    const RawAddress& bda, int attr_handle, int offset, bool need_rsp,
     bool is_prep, std::vector<uint8_t> value) {
   lock_guard<mutex> lock(mutex_);
 
@@ -434,7 +434,7 @@ void GattServer::RequestWriteCharacteristicCallback(
 
 void GattServer::RequestWriteDescriptorCallback(
     hal::BluetoothGattInterface* /* gatt_iface */, int conn_id, int trans_id,
-    const bt_bdaddr_t& bda, int attr_handle, int offset, bool need_rsp,
+    const RawAddress& bda, int attr_handle, int offset, bool need_rsp,
     bool is_prep, std::vector<uint8_t> value) {
   lock_guard<mutex> lock(mutex_);
 
@@ -473,7 +473,7 @@ void GattServer::RequestWriteDescriptorCallback(
 
 void GattServer::RequestExecWriteCallback(
     hal::BluetoothGattInterface* /* gatt_iface */, int conn_id, int trans_id,
-    const bt_bdaddr_t& bda, int exec_write) {
+    const RawAddress& bda, int exec_write) {
   lock_guard<mutex> lock(mutex_);
 
   // Check to see if we know about this connection. Otherwise ignore the
@@ -533,7 +533,7 @@ void GattServer::CleanUpPendingData() {
 }
 
 std::shared_ptr<GattServer::Connection> GattServer::GetConnection(
-    int conn_id, const bt_bdaddr_t& bda, int request_id) {
+    int conn_id, const RawAddress& bda, int request_id) {
   auto iter = conn_id_map_.find(conn_id);
   if (iter == conn_id_map_.end()) {
     VLOG(1) << "Connection doesn't belong to this server";
