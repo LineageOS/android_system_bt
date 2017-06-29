@@ -89,7 +89,7 @@ void RegisterClientCallback(int status, int client_if,
 }
 
 void ScanResultCallback(
-    uint16_t ble_evt_type, uint8_t addr_type, bt_bdaddr_t* bda,
+    uint16_t ble_evt_type, uint8_t addr_type, RawAddress* bda,
     uint8_t ble_primary_phy, uint8_t ble_secondary_phy,
     uint8_t ble_advertising_sid, int8_t ble_tx_power, int8_t rssi,
     uint16_t ble_periodic_adv_int,
@@ -105,7 +105,7 @@ void ScanResultCallback(
 }
 
 void ConnectCallback(int conn_id, int status, int client_if,
-                     const bt_bdaddr_t& bda) {
+                     const RawAddress& bda) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VERIFY_INTERFACE_OR_RETURN();
 
@@ -117,7 +117,7 @@ void ConnectCallback(int conn_id, int status, int client_if,
 }
 
 void DisconnectCallback(int conn_id, int status, int client_if,
-                        const bt_bdaddr_t& bda) {
+                        const RawAddress& bda) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VERIFY_INTERFACE_OR_RETURN();
 
@@ -232,7 +232,7 @@ void RegisterServerCallback(int status, int server_if,
 }
 
 void ConnectionCallback(int conn_id, int server_if, int connected,
-                        const bt_bdaddr_t& bda) {
+                        const RawAddress& bda) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VLOG(2) << __func__ << " - conn_id: " << conn_id
           << " server_if: " << server_if << " connected: " << connected;
@@ -276,7 +276,7 @@ void ServiceDeletedCallback(int status, int server_if, int srvc_handle) {
 }
 
 void RequestReadCharacteristicCallback(int conn_id, int trans_id,
-                                       const bt_bdaddr_t& bda, int attr_handle,
+                                       const RawAddress& bda, int attr_handle,
                                        int offset, bool is_long) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VLOG(2) << __func__ << " - conn_id: " << conn_id << " trans_id: " << trans_id
@@ -289,7 +289,7 @@ void RequestReadCharacteristicCallback(int conn_id, int trans_id,
 }
 
 void RequestReadDescriptorCallback(int conn_id, int trans_id,
-                                   const bt_bdaddr_t& bda, int attr_handle,
+                                   const RawAddress& bda, int attr_handle,
                                    int offset, bool is_long) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VLOG(2) << __func__ << " - conn_id: " << conn_id << " trans_id: " << trans_id
@@ -302,7 +302,7 @@ void RequestReadDescriptorCallback(int conn_id, int trans_id,
 }
 
 void RequestWriteCharacteristicCallback(int conn_id, int trans_id,
-                                        const bt_bdaddr_t& bda, int attr_handle,
+                                        const RawAddress& bda, int attr_handle,
                                         int offset, bool need_rsp, bool is_prep,
                                         std::vector<uint8_t> value) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
@@ -318,7 +318,7 @@ void RequestWriteCharacteristicCallback(int conn_id, int trans_id,
 }
 
 void RequestWriteDescriptorCallback(
-    int conn_id, int trans_id, const bt_bdaddr_t& bda, int attr_handle,
+    int conn_id, int trans_id, const RawAddress& bda, int attr_handle,
     int offset, bool need_rsp, bool is_prep,
     std::vector<uint8_t> value) {  // NOLINT(pass-by-value)
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
@@ -333,7 +333,7 @@ void RequestWriteDescriptorCallback(
       is_prep, value));
 }
 
-void RequestExecWriteCallback(int conn_id, int trans_id, const bt_bdaddr_t& bda,
+void RequestExecWriteCallback(int conn_id, int trans_id, const RawAddress& bda,
                               int exec_write) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VLOG(2) << __func__ << " - conn_id: " << conn_id << " trans_id: " << trans_id
@@ -559,7 +559,7 @@ GetServerObservers() {
 // themselves are optional.
 
 void BluetoothGattInterface::ScannerObserver::ScanResultCallback(
-    BluetoothGattInterface* /* gatt_iface */, const bt_bdaddr_t& /* bda */,
+    BluetoothGattInterface* /* gatt_iface */, const RawAddress& /* bda */,
     int /* rssi */,
     std::vector<uint8_t> /* adv_data */) {  // NOLINT(pass-by-value)
   // Do Nothing.
@@ -573,13 +573,13 @@ void BluetoothGattInterface::ClientObserver::RegisterClientCallback(
 
 void BluetoothGattInterface::ClientObserver::ConnectCallback(
     BluetoothGattInterface* /* gatt_iface */, int /* conn_id */,
-    int /* status */, int /* client_if */, const bt_bdaddr_t& /* bda */) {
+    int /* status */, int /* client_if */, const RawAddress& /* bda */) {
   // Do nothing
 }
 
 void BluetoothGattInterface::ClientObserver::DisconnectCallback(
     BluetoothGattInterface* /* gatt_iface */, int /* conn_id */,
-    int /* status */, int /* client_if */, const bt_bdaddr_t& /* bda */) {
+    int /* status */, int /* client_if */, const RawAddress& /* bda */) {
   // Do nothing
 }
 
@@ -645,7 +645,7 @@ void BluetoothGattInterface::ServerObserver::RegisterServerCallback(
 
 void BluetoothGattInterface::ServerObserver::ConnectionCallback(
     BluetoothGattInterface* /* gatt_iface */, int /* conn_id */,
-    int /* server_if */, int /* connected */, const bt_bdaddr_t& /* bda */) {
+    int /* server_if */, int /* connected */, const RawAddress& /* bda */) {
   // Do nothing.
 }
 
@@ -670,21 +670,21 @@ void BluetoothGattInterface::ServerObserver::ServiceDeletedCallback(
 
 void BluetoothGattInterface::ServerObserver::RequestReadCharacteristicCallback(
     BluetoothGattInterface* /* gatt_iface */, int /* conn_id */,
-    int /* trans_id */, const bt_bdaddr_t& /* bda */, int /* attr_handle */,
+    int /* trans_id */, const RawAddress& /* bda */, int /* attr_handle */,
     int /* offset */, bool /* is_long */) {
   // Do nothing.
 }
 
 void BluetoothGattInterface::ServerObserver::RequestReadDescriptorCallback(
     BluetoothGattInterface* /* gatt_iface */, int /* conn_id */,
-    int /* trans_id */, const bt_bdaddr_t& /* bda */, int /* attr_handle */,
+    int /* trans_id */, const RawAddress& /* bda */, int /* attr_handle */,
     int /* offset */, bool /* is_long */) {
   // Do nothing.
 }
 
 void BluetoothGattInterface::ServerObserver::RequestWriteCharacteristicCallback(
     BluetoothGattInterface* /* gatt_iface */, int /* conn_id */,
-    int /* trans_id */, const bt_bdaddr_t& /* bda */, int /* attr_handle */,
+    int /* trans_id */, const RawAddress& /* bda */, int /* attr_handle */,
     int /* offset */, bool /* need_rsp */, bool /* is_prep */,
     std::vector<uint8_t> /* value */) {  // NOLINT(pass-by-value)
   // Do nothing.
@@ -692,7 +692,7 @@ void BluetoothGattInterface::ServerObserver::RequestWriteCharacteristicCallback(
 
 void BluetoothGattInterface::ServerObserver::RequestWriteDescriptorCallback(
     BluetoothGattInterface* /* gatt_iface */, int /* conn_id */,
-    int /* trans_id */, const bt_bdaddr_t& /* bda */, int /* attr_handle */,
+    int /* trans_id */, const RawAddress& /* bda */, int /* attr_handle */,
     int /* offset */, bool /* need_rsp */, bool /* is_prep */,
     std::vector<uint8_t> /* value */) {  // NOLINT(pass-by-value)
   // Do nothing.
@@ -700,7 +700,7 @@ void BluetoothGattInterface::ServerObserver::RequestWriteDescriptorCallback(
 
 void BluetoothGattInterface::ServerObserver::RequestExecWriteCallback(
     BluetoothGattInterface* /* gatt_iface */, int /* conn_id */,
-    int /* trans_id */, const bt_bdaddr_t& /* bda */, int /* exec_write */) {
+    int /* trans_id */, const RawAddress& /* bda */, int /* exec_write */) {
   // Do nothing.
 }
 

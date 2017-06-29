@@ -96,9 +96,9 @@ static bool stack_initialized;
 
 static bt_status_t btpan_jni_init(const btpan_callbacks_t* callbacks);
 static void btpan_jni_cleanup();
-static bt_status_t btpan_connect(const bt_bdaddr_t* bd_addr, int local_role,
+static bt_status_t btpan_connect(const RawAddress* bd_addr, int local_role,
                                  int remote_role);
-static bt_status_t btpan_disconnect(const bt_bdaddr_t* bd_addr);
+static bt_status_t btpan_disconnect(const RawAddress* bd_addr);
 static bt_status_t btpan_enable(int local_role);
 static int btpan_get_local_role(void);
 
@@ -218,7 +218,7 @@ static int btpan_get_local_role() {
   return btpan_dev_local_role;
 }
 
-static bt_status_t btpan_connect(const bt_bdaddr_t* bd_addr, int local_role,
+static bt_status_t btpan_connect(const RawAddress* bd_addr, int local_role,
                                  int remote_role) {
   BTIF_TRACE_DEBUG("local_role:%d, remote_role:%d", local_role, remote_role);
   int bta_local_role = btpan_role_to_bta(local_role);
@@ -232,7 +232,7 @@ static void btif_in_pan_generic_evt(uint16_t event, char* p_param) {
   BTIF_TRACE_EVENT("%s: event=%d", __func__, event);
   switch (event) {
     case BTIF_PAN_CB_DISCONNECTING: {
-      bt_bdaddr_t* bd_addr = (bt_bdaddr_t*)p_param;
+      RawAddress* bd_addr = (RawAddress*)p_param;
       btpan_conn_t* conn = btpan_find_conn_addr(*bd_addr);
       int btpan_conn_local_role;
       int btpan_remote_role;
@@ -251,13 +251,13 @@ static void btif_in_pan_generic_evt(uint16_t event, char* p_param) {
   }
 }
 
-static bt_status_t btpan_disconnect(const bt_bdaddr_t* bd_addr) {
+static bt_status_t btpan_disconnect(const RawAddress* bd_addr) {
   btpan_conn_t* conn = btpan_find_conn_addr(*bd_addr);
   if (conn && conn->handle >= 0) {
     /* Inform the application that the disconnect has been initiated
      * successfully */
     btif_transfer_context(btif_in_pan_generic_evt, BTIF_PAN_CB_DISCONNECTING,
-                          (char*)bd_addr, sizeof(bt_bdaddr_t), NULL);
+                          (char*)bd_addr, sizeof(RawAddress), NULL);
     BTA_PanClose(conn->handle);
     return BT_STATUS_SUCCESS;
   }
@@ -278,7 +278,7 @@ void destroy_tap_read_thread(void) {
   }
 }
 
-static int tap_if_up(const char* devname, const bt_bdaddr_t* addr) {
+static int tap_if_up(const char* devname, const RawAddress* addr) {
   struct ifreq ifr;
   int sk, err;
 
@@ -407,7 +407,7 @@ int btpan_tap_open() {
   return INVALID_FD;
 }
 
-int btpan_tap_send(int tap_fd, const bt_bdaddr_t& src, const bt_bdaddr_t& dst,
+int btpan_tap_send(int tap_fd, const RawAddress& src, const RawAddress& dst,
                    uint16_t proto, const char* buf, uint16_t len,
                    UNUSED_ATTR bool ext, UNUSED_ATTR bool forward) {
   if (tap_fd != INVALID_FD) {
@@ -446,7 +446,7 @@ btpan_conn_t* btpan_find_conn_handle(uint16_t handle) {
   return NULL;
 }
 
-btpan_conn_t* btpan_find_conn_addr(const bt_bdaddr_t& addr) {
+btpan_conn_t* btpan_find_conn_addr(const RawAddress& addr) {
   for (int i = 0; i < MAX_PAN_CONNS; i++) {
     if (btpan_cb.conns[i].peer == addr) return &btpan_cb.conns[i];
   }
@@ -512,8 +512,8 @@ static void btpan_cleanup_conn(btpan_conn_t* conn) {
   }
 }
 
-btpan_conn_t* btpan_new_conn(int handle, const bt_bdaddr_t& addr,
-                             int local_role, int remote_role) {
+btpan_conn_t* btpan_new_conn(int handle, const RawAddress& addr, int local_role,
+                             int remote_role) {
   for (int i = 0; i < MAX_PAN_CONNS; i++) {
     BTIF_TRACE_DEBUG("conns[%d]:%d", i, btpan_cb.conns[i].handle);
     if (btpan_cb.conns[i].handle == -1) {

@@ -62,7 +62,7 @@
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_enq_resolving_list_pending(const bt_bdaddr_t& pseudo_bda,
+void btm_ble_enq_resolving_list_pending(const RawAddress& pseudo_bda,
                                         uint8_t op_code) {
   tBTM_BLE_RESOLVE_Q* p_q = &btm_cb.ble_ctr_cb.resolving_list_pend_q;
 
@@ -84,7 +84,7 @@ void btm_ble_enq_resolving_list_pending(const bt_bdaddr_t& pseudo_bda,
  * Returns          void
  *
  ******************************************************************************/
-bool btm_ble_brcm_find_resolving_pending_entry(const bt_bdaddr_t& pseudo_addr,
+bool btm_ble_brcm_find_resolving_pending_entry(const RawAddress& pseudo_addr,
                                                uint8_t action) {
   tBTM_BLE_RESOLVE_Q* p_q = &btm_cb.ble_ctr_cb.resolving_list_pend_q;
 
@@ -111,7 +111,7 @@ bool btm_ble_brcm_find_resolving_pending_entry(const bt_bdaddr_t& pseudo_addr,
  * Returns          void
  *
  ******************************************************************************/
-bool btm_ble_deq_resolving_pending(bt_bdaddr_t& pseudo_addr) {
+bool btm_ble_deq_resolving_pending(RawAddress& pseudo_addr) {
   tBTM_BLE_RESOLVE_Q* p_q = &btm_cb.ble_ctr_cb.resolving_list_pend_q;
 
   if (p_q->q_next != p_q->q_pending) {
@@ -184,7 +184,7 @@ uint8_t btm_ble_find_irk_index(void) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_update_resolving_list(const bt_bdaddr_t& pseudo_bda, bool add) {
+void btm_ble_update_resolving_list(const RawAddress& pseudo_bda, bool add) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(pseudo_bda);
   if (p_dev_rec == NULL) return;
 
@@ -268,7 +268,7 @@ void btm_ble_add_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len) {
 
   BTM_TRACE_DEBUG("%s status = %d", __func__, status);
 
-  bt_bdaddr_t pseudo_bda;
+  RawAddress pseudo_bda;
   if (!btm_ble_deq_resolving_pending(pseudo_bda)) {
     BTM_TRACE_DEBUG("no pending resolving list operation");
     return;
@@ -302,7 +302,7 @@ void btm_ble_add_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len) {
  ******************************************************************************/
 void btm_ble_remove_resolving_list_entry_complete(uint8_t* p,
                                                   uint16_t evt_len) {
-  bt_bdaddr_t pseudo_bda;
+  RawAddress pseudo_bda;
   uint8_t status;
 
   STREAM_TO_UINT8(status, p);
@@ -336,7 +336,7 @@ void btm_ble_remove_resolving_list_entry_complete(uint8_t* p,
  ******************************************************************************/
 void btm_ble_read_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len) {
   uint8_t status, rra_type = BTM_BLE_ADDR_PSEUDO;
-  bt_bdaddr_t rra, pseudo_bda;
+  RawAddress rra, pseudo_bda;
 
   STREAM_TO_UINT8(status, p);
 
@@ -873,7 +873,7 @@ void btm_ble_resolving_list_init(uint8_t max_irk_list_sz) {
 
   if (max_irk_list_sz > 0) {
     p_q->resolve_q_random_pseudo =
-        (bt_bdaddr_t*)osi_malloc(sizeof(bt_bdaddr_t) * max_irk_list_sz);
+        (RawAddress*)osi_malloc(sizeof(RawAddress) * max_irk_list_sz);
     p_q->resolve_q_action = (uint8_t*)osi_malloc(max_irk_list_sz);
 
     /* RPA offloading feature */

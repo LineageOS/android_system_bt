@@ -409,8 +409,8 @@ class A2dpCodecs {
 
  private:
   struct CompareBtBdaddr
-      : public std::binary_function<bt_bdaddr_t, bt_bdaddr_t, bool> {
-    bool operator()(const bt_bdaddr_t& lhs, const bt_bdaddr_t& rhs) const {
+      : public std::binary_function<RawAddress, RawAddress, bool> {
+    bool operator()(const RawAddress& lhs, const RawAddress& rhs) const {
       return (memcmp(&lhs, &rhs, sizeof(lhs)) < 0);
     }
   };
@@ -430,7 +430,7 @@ class A2dpCodecs {
   // A2DP Sink codecs ordered by priority
   std::list<A2dpCodecConfig*> ordered_sink_codecs_;
 
-  std::map<bt_bdaddr_t, IndexedCodecs*, CompareBtBdaddr> peer_codecs_;
+  std::map<RawAddress, IndexedCodecs*, CompareBtBdaddr> peer_codecs_;
 };
 
 /**

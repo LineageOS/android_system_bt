@@ -263,7 +263,7 @@ typedef struct {
   bool active; /* true if this item is in use */
   tBTA_HL_DCH_MODE dch_mode;
   uint8_t fcs;
-  bt_bdaddr_t peer_bd_addr;
+  RawAddress peer_bd_addr;
 } tBTA_HL_MDL_CFG;
 
 /* Maximum number of supported feature list items (list_elem in
@@ -297,7 +297,7 @@ typedef struct {
 
 typedef struct {
   uint16_t ctrl_psm;
-  bt_bdaddr_t bd_addr; /* Address of peer device */
+  RawAddress bd_addr; /* Address of peer device */
   tBTA_SEC sec_mask; /* security mask for initiating connection*/
 } tBTA_HL_CCH_OPEN_PARAM;
 
@@ -429,7 +429,7 @@ typedef struct {
 typedef struct {
   tBTA_HL_MCL_HANDLE mcl_handle;
   tBTA_HL_APP_HANDLE app_handle;
-  bt_bdaddr_t bd_addr; /* address of peer device */
+  RawAddress bd_addr; /* address of peer device */
 } tBTA_HL_CCH_OPEN_IND;
 
 typedef struct {
@@ -437,7 +437,7 @@ typedef struct {
   uint8_t app_id;
   tBTA_HL_MCL_HANDLE mcl_handle;
   tBTA_HL_APP_HANDLE app_handle;
-  bt_bdaddr_t bd_addr; /* address of peer device */
+  RawAddress bd_addr; /* address of peer device */
 } tBTA_HL_CCH_OPEN_CFM;
 
 typedef struct {
@@ -447,7 +447,7 @@ typedef struct {
   tBTA_HL_MDL_ID mdl_id; /* MCAP data link ID for this
                             data channel conenction    */
   tBTA_HL_DCH_CFG cfg;   /* dch cfg requested by the peer device */
-  bt_bdaddr_t bd_addr;   /* address of peer device */
+  RawAddress bd_addr;    /* address of peer device */
 
 } tBTA_HL_DCH_CREATE_IND;
 
@@ -529,7 +529,7 @@ typedef struct {
   tBTA_HL_STATUS status;
   uint8_t app_id;
   tBTA_HL_APP_HANDLE app_handle;
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   tBTA_HL_SDP* p_sdp;
 } tBTA_HL_SDP_QUERY_CFM;
 
@@ -800,7 +800,7 @@ extern void BTA_HlDchEchoTest(tBTA_HL_MCL_HANDLE mcl_handle,
  *
  ******************************************************************************/
 extern void BTA_HlSdpQuery(uint8_t app_id, tBTA_HL_APP_HANDLE app_handle,
-                           const bt_bdaddr_t& bd_addr);
+                           const RawAddress& bd_addr);
 
 /*******************************************************************************
  *

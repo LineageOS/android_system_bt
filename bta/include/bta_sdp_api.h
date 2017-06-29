@@ -54,7 +54,7 @@ typedef uint16_t tBTA_SDP_EVT;
 /* data associated with BTA_SDP_DISCOVERY_COMP_EVT */
 typedef struct {
   tBTA_SDP_STATUS status;
-  bt_bdaddr_t remote_addr;
+  RawAddress remote_addr;
   tBT_UUID uuid;
   int record_count;
   bluetooth_sdp_record records[BTA_SDP_MAX_RECORDS];
@@ -103,7 +103,7 @@ extern tBTA_SDP_STATUS BTA_SdpEnable(tBTA_SDP_DM_CBACK* p_cback);
  *                  BTA_SDP_FAIL if internal failure.
  *
  ******************************************************************************/
-extern tBTA_SDP_STATUS BTA_SdpSearch(const bt_bdaddr_t& bd_addr,
+extern tBTA_SDP_STATUS BTA_SdpSearch(const RawAddress& bd_addr,
                                      tSDP_UUID* uuid);
 
 /*******************************************************************************

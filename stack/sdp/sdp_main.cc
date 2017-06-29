@@ -52,7 +52,7 @@ tSDP_CB sdp_cb;
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
-static void sdp_connect_ind(const bt_bdaddr_t& bd_addr, uint16_t l2cap_cid,
+static void sdp_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
                             UNUSED_ATTR uint16_t psm, uint8_t l2cap_id);
 static void sdp_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
 static void sdp_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
@@ -155,7 +155,7 @@ uint16_t sdp_set_max_attr_list_size(uint16_t max_size) {
  * Returns          void
  *
  ******************************************************************************/
-static void sdp_connect_ind(const bt_bdaddr_t& bd_addr, uint16_t l2cap_cid,
+static void sdp_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
                             UNUSED_ATTR uint16_t psm, uint8_t l2cap_id) {
 #if (SDP_SERVER_ENABLED == TRUE)
   tCONN_CB* p_ccb;
@@ -505,7 +505,7 @@ static void sdp_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg) {
  * Returns          void
  *
  ******************************************************************************/
-tCONN_CB* sdp_conn_originate(const bt_bdaddr_t& p_bd_addr) {
+tCONN_CB* sdp_conn_originate(const RawAddress& p_bd_addr) {
   tCONN_CB* p_ccb;
   uint16_t cid;
 

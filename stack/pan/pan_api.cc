@@ -264,7 +264,7 @@ tPAN_RESULT PAN_SetRole(uint8_t role, uint8_t* sec_mask,
  *                                     allowed at that point of time
  *
  ******************************************************************************/
-tPAN_RESULT PAN_Connect(const bt_bdaddr_t& rem_bda, uint8_t src_role,
+tPAN_RESULT PAN_Connect(const RawAddress& rem_bda, uint8_t src_role,
                         uint8_t dst_role, uint16_t* handle) {
   tPAN_CONN* pcb;
   tBNEP_RESULT result;
@@ -447,9 +447,9 @@ tPAN_RESULT PAN_Disconnect(uint16_t handle) {
  *                                           there is an error in sending data
  *
  ******************************************************************************/
-tPAN_RESULT PAN_Write(uint16_t handle, const bt_bdaddr_t& dst,
-                      const bt_bdaddr_t& src, uint16_t protocol,
-                      uint8_t* p_data, uint16_t len, bool ext) {
+tPAN_RESULT PAN_Write(uint16_t handle, const RawAddress& dst,
+                      const RawAddress& src, uint16_t protocol, uint8_t* p_data,
+                      uint16_t len, bool ext) {
   if (pan_cb.role == PAN_ROLE_INACTIVE || !pan_cb.num_conns) {
     PAN_TRACE_ERROR("%s PAN is not active, data write failed.", __func__);
     return PAN_FAILURE;
@@ -500,8 +500,8 @@ tPAN_RESULT PAN_Write(uint16_t handle, const bt_bdaddr_t& dst,
  *                                           there is an error in sending data
  *
  ******************************************************************************/
-tPAN_RESULT PAN_WriteBuf(uint16_t handle, const bt_bdaddr_t& dst,
-                         const bt_bdaddr_t& src, uint16_t protocol,
+tPAN_RESULT PAN_WriteBuf(uint16_t handle, const RawAddress& dst,
+                         const RawAddress& src, uint16_t protocol,
                          BT_HDR* p_buf, bool ext) {
   tPAN_CONN* pcb;
   uint16_t i;

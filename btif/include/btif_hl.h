@@ -118,7 +118,7 @@ typedef struct {
 
 typedef struct {
   int channel_id;
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   uint8_t mdep_cfg_idx;
   int max_s;
   int socket_id[2];
@@ -175,7 +175,7 @@ typedef struct {
   bool in_use;
   btif_hl_chan_cb_state_t cb_state;
   btif_hl_pend_dch_op_t op;
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   bool abort_pending;
 } btif_hl_pending_chan_cb_t;
 
@@ -186,7 +186,7 @@ typedef struct {
   uint16_t req_ctrl_psm;
   uint16_t ctrl_psm;
   uint16_t data_psm;
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   uint16_t cch_mtu;
   tBTA_SEC sec_mask;
   tBTA_HL_MCL_HANDLE mcl_handle;
@@ -202,7 +202,7 @@ typedef struct {
   bool active;
   uint16_t mdl_id;
   uint8_t mdep_cfg_idx;
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   int channel_id;
 } btif_hl_delete_mdl_t;
 
@@ -252,7 +252,7 @@ typedef uint8_t btif_hl_evt_t;
 
 typedef struct {
   int app_id;
-  bt_bdaddr_t bd_addr;
+  RawAddress bd_addr;
   int mdep_cfg_index;
   int channel_id;
   btif_hl_chan_cb_state_t cb_state;
@@ -291,7 +291,7 @@ typedef union {
 extern btif_hl_cb_t btif_hl_cb;
 extern btif_hl_cb_t* p_btif_hl_cb;
 
-extern bool btif_hl_find_mcl_idx(uint8_t app_idx, const bt_bdaddr_t& p_bd_addr,
+extern bool btif_hl_find_mcl_idx(uint8_t app_idx, const RawAddress& p_bd_addr,
                                  uint8_t* p_mcl_idx);
 extern bool btif_hl_find_app_idx(uint8_t app_id, uint8_t* p_app_idx);
 extern bool btif_hl_find_avail_mcl_idx(uint8_t app_idx, uint8_t* p_mcl_idx);

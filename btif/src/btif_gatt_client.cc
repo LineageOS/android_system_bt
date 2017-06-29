@@ -88,7 +88,7 @@ extern const btgatt_callbacks_t* bt_gatt_callbacks;
   0x40                             /* bit7, bit6 is 01 to be resolvable random \
                                       */
 #define BLE_RESOLVE_ADDR_MASK 0xc0 /* bit 6, and bit7 */
-inline bool BTM_BLE_IS_RESOLVE_BDA(const bt_bdaddr_t& x) {
+inline bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x) {
   return ((x.address)[0] & BLE_RESOLVE_ADDR_MASK) == BLE_RESOLVE_ADDR_MSB;
 }
 namespace {
@@ -250,7 +250,7 @@ bt_status_t btif_gattc_unregister_app(int client_if) {
   return do_in_jni_thread(Bind(&btif_gattc_unregister_app_impl, client_if));
 }
 
-void btif_gattc_open_impl(int client_if, bt_bdaddr_t address, bool is_direct,
+void btif_gattc_open_impl(int client_if, RawAddress address, bool is_direct,
                           int transport_p, int initiating_phys) {
   // Ensure device is in inquiry database
   int addr_type = 0;
@@ -310,7 +310,7 @@ void btif_gattc_open_impl(int client_if, bt_bdaddr_t address, bool is_direct,
                  initiating_phys);
 }
 
-bt_status_t btif_gattc_open(int client_if, const bt_bdaddr_t& bd_addr,
+bt_status_t btif_gattc_open(int client_if, const RawAddress& bd_addr,
                             bool is_direct, int transport,
                             int initiating_phys) {
   CHECK_BTGATT_INIT();
@@ -319,7 +319,7 @@ bt_status_t btif_gattc_open(int client_if, const bt_bdaddr_t& bd_addr,
                                is_direct, transport, initiating_phys));
 }
 
-void btif_gattc_close_impl(int client_if, bt_bdaddr_t address, int conn_id) {
+void btif_gattc_close_impl(int client_if, RawAddress address, int conn_id) {
   // Disconnect established connections
   if (conn_id != 0)
     BTA_GATTC_Close(conn_id);
@@ -330,14 +330,14 @@ void btif_gattc_close_impl(int client_if, bt_bdaddr_t address, int conn_id) {
   BTA_GATTC_CancelOpen(client_if, address, false);
 }
 
-bt_status_t btif_gattc_close(int client_if, const bt_bdaddr_t& bd_addr,
+bt_status_t btif_gattc_close(int client_if, const RawAddress& bd_addr,
                              int conn_id) {
   CHECK_BTGATT_INIT();
   return do_in_jni_thread(
       Bind(&btif_gattc_close_impl, client_if, bd_addr, conn_id));
 }
 
-bt_status_t btif_gattc_refresh(int client_if, const bt_bdaddr_t& bd_addr) {
+bt_status_t btif_gattc_refresh(int client_if, const RawAddress& bd_addr) {
   CHECK_BTGATT_INIT();
   return do_in_jni_thread(Bind(&BTA_GATTC_Refresh, bd_addr));
 }
@@ -487,7 +487,7 @@ bt_status_t btif_gattc_execute_write(int conn_id, int execute) {
 }
 
 void btif_gattc_reg_for_notification_impl(tBTA_GATTC_IF client_if,
-                                          const bt_bdaddr_t& bda,
+                                          const RawAddress& bda,
                                           uint16_t handle) {
   tBTA_GATT_STATUS status =
       BTA_GATTC_RegisterForNotifications(client_if, bda, handle);
@@ -498,7 +498,7 @@ void btif_gattc_reg_for_notification_impl(tBTA_GATTC_IF client_if,
 }
 
 bt_status_t btif_gattc_reg_for_notification(int client_if,
-                                            const bt_bdaddr_t& bd_addr,
+                                            const RawAddress& bd_addr,
                                             uint16_t handle) {
   CHECK_BTGATT_INIT();
 
@@ -508,7 +508,7 @@ bt_status_t btif_gattc_reg_for_notification(int client_if,
 }
 
 void btif_gattc_dereg_for_notification_impl(tBTA_GATTC_IF client_if,
-                                            const bt_bdaddr_t& bda,
+                                            const RawAddress& bda,
                                             uint16_t handle) {
   tBTA_GATT_STATUS status =
       BTA_GATTC_DeregisterForNotifications(client_if, bda, handle);
@@ -519,7 +519,7 @@ void btif_gattc_dereg_for_notification_impl(tBTA_GATTC_IF client_if,
 }
 
 bt_status_t btif_gattc_dereg_for_notification(int client_if,
-                                              const bt_bdaddr_t& bd_addr,
+                                              const RawAddress& bd_addr,
                                               uint16_t handle) {
   CHECK_BTGATT_INIT();
 
@@ -529,7 +529,7 @@ bt_status_t btif_gattc_dereg_for_notification(int client_if,
 }
 
 bt_status_t btif_gattc_read_remote_rssi(int client_if,
-                                        const bt_bdaddr_t& bd_addr) {
+                                        const RawAddress& bd_addr) {
   CHECK_BTGATT_INIT();
   rssi_request_client_if = client_if;
 
@@ -543,7 +543,7 @@ bt_status_t btif_gattc_configure_mtu(int conn_id, int mtu) {
       Bind(base::IgnoreResult(&BTA_GATTC_ConfigureMTU), conn_id, mtu));
 }
 
-void btif_gattc_conn_parameter_update_impl(bt_bdaddr_t addr, int min_interval,
+void btif_gattc_conn_parameter_update_impl(RawAddress addr, int min_interval,
                                            int max_interval, int latency,
                                            int timeout) {
   if (BTA_DmGetConnectionState(addr))
@@ -554,7 +554,7 @@ void btif_gattc_conn_parameter_update_impl(bt_bdaddr_t addr, int min_interval,
                                timeout);
 }
 
-bt_status_t btif_gattc_conn_parameter_update(const bt_bdaddr_t& bd_addr,
+bt_status_t btif_gattc_conn_parameter_update(const RawAddress& bd_addr,
                                              int min_interval, int max_interval,
                                              int latency, int timeout) {
   CHECK_BTGATT_INIT();
@@ -563,7 +563,7 @@ bt_status_t btif_gattc_conn_parameter_update(const bt_bdaddr_t& bd_addr,
            min_interval, max_interval, latency, timeout));
 }
 
-bt_status_t btif_gattc_set_preferred_phy(const bt_bdaddr_t& bd_addr,
+bt_status_t btif_gattc_set_preferred_phy(const RawAddress& bd_addr,
                                          uint8_t tx_phy, uint8_t rx_phy,
                                          uint16_t phy_options) {
   CHECK_BTGATT_INIT();
@@ -573,7 +573,7 @@ bt_status_t btif_gattc_set_preferred_phy(const bt_bdaddr_t& bd_addr,
 }
 
 bt_status_t btif_gattc_read_phy(
-    const bt_bdaddr_t& bd_addr,
+    const RawAddress& bd_addr,
     base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb) {
   CHECK_BTGATT_INIT();
   do_in_bta_thread(FROM_HERE, Bind(&BTM_BleReadPhy, bd_addr,
@@ -581,7 +581,7 @@ bt_status_t btif_gattc_read_phy(
   return BT_STATUS_SUCCESS;
 }
 
-int btif_gattc_get_device_type(const bt_bdaddr_t& bd_addr) {
+int btif_gattc_get_device_type(const RawAddress& bd_addr) {
   int device_type = 0;
   char bd_addr_str[18] = {0};
 

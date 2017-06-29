@@ -54,7 +54,7 @@ static const uint8_t bta_hh_mod_key_mask[BTA_HH_MOD_MAX_KEY] = {
  * Returns          void
  *
  ******************************************************************************/
-uint8_t bta_hh_find_cb(const bt_bdaddr_t& bda) {
+uint8_t bta_hh_find_cb(const RawAddress& bda) {
   uint8_t xx;
 
   /* See how many active devices there are. */
@@ -370,7 +370,7 @@ void bta_hh_parse_mice_rpt(tBTA_HH_BOOT_RPT* p_mice_data, uint8_t* p_report,
  * Returns          tBTA_HH_STATUS  operation status
  *
  ******************************************************************************/
-tBTA_HH_STATUS bta_hh_read_ssr_param(const bt_bdaddr_t& bd_addr,
+tBTA_HH_STATUS bta_hh_read_ssr_param(const RawAddress& bd_addr,
                                      uint16_t* p_max_ssr_lat,
                                      uint16_t* p_min_ssr_tout) {
   tBTA_HH_STATUS status = BTA_HH_ERR;

@@ -393,7 +393,7 @@ void smp_gen_p1_4_confirm(tSMP_CB* p_cb, tBLE_ADDR_TYPE remote_bd_addr_type,
  * Returns          void
  *
  ******************************************************************************/
-void smp_gen_p2_4_confirm(tSMP_CB* p_cb, const bt_bdaddr_t& remote_bda,
+void smp_gen_p2_4_confirm(tSMP_CB* p_cb, const RawAddress& remote_bda,
                           BT_OCTET16 p2) {
   SMP_TRACE_DEBUG("%s", __func__);
   uint8_t* p = (uint8_t*)p2;
@@ -425,7 +425,7 @@ void smp_gen_p2_4_confirm(tSMP_CB* p_cb, const bt_bdaddr_t& remote_bda,
 tSMP_STATUS smp_calculate_comfirm(tSMP_CB* p_cb, BT_OCTET16 rand,
                                   tSMP_ENC* output) {
   SMP_TRACE_DEBUG("%s", __func__);
-  bt_bdaddr_t remote_bda;
+  RawAddress remote_bda;
   tBLE_ADDR_TYPE remote_bd_addr_type = 0;
   /* get remote connection specific bluetooth address */
   if (!BTM_ReadRemoteConnectionAddr(p_cb->pairing_bda, remote_bda,
@@ -1633,7 +1633,7 @@ bool smp_calculate_f6(uint8_t* w, uint8_t* n1, uint8_t* n2, uint8_t* r,
  ******************************************************************************/
 bool smp_calculate_link_key_from_long_term_key(tSMP_CB* p_cb) {
   tBTM_SEC_DEV_REC* p_dev_rec;
-  bt_bdaddr_t bda_for_lk;
+  RawAddress bda_for_lk;
   tBLE_ADDR_TYPE conn_addr_type;
   BT_OCTET16 salt = {0x31, 0x70, 0x6D, 0x74, 0x00, 0x00, 0x00, 0x00,
                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};

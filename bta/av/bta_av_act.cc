@@ -206,7 +206,7 @@ static void bta_av_avrc_sdp_cback(UNUSED_ATTR uint16_t status) {
  ******************************************************************************/
 static void bta_av_rc_ctrl_cback(uint8_t handle, uint8_t event,
                                  UNUSED_ATTR uint16_t result,
-                                 const bt_bdaddr_t* peer_addr) {
+                                 const RawAddress* peer_addr) {
   uint16_t msg_event = 0;
 
   APPL_TRACE_EVENT("%s handle: %d event=0x%x", __func__, handle, event);
@@ -306,7 +306,7 @@ static void bta_av_rc_msg_cback(uint8_t handle, uint8_t label, uint8_t opcode,
 uint8_t bta_av_rc_create(tBTA_AV_CB* p_cb, uint8_t role, uint8_t shdl,
                          uint8_t lidx) {
   tAVRC_CONN_CB ccb;
-  bt_bdaddr_t bda = bd_addr_any;
+  RawAddress bda = bd_addr_any;
   uint8_t status = BTA_AV_RC_ROLE_ACP;
   tBTA_AV_SCB* p_scb = p_cb->p_scb[shdl - 1];
   int i;
@@ -437,7 +437,7 @@ static tBTA_AV_CODE bta_av_op_supported(tBTA_AV_RC rc_id, bool is_inquiry) {
  * Returns          NULL, if not found.
  *
  ******************************************************************************/
-tBTA_AV_LCB* bta_av_find_lcb(const bt_bdaddr_t& addr, uint8_t op) {
+tBTA_AV_LCB* bta_av_find_lcb(const RawAddress& addr, uint8_t op) {
   tBTA_AV_CB* p_cb = &bta_av_cb;
   int xx;
   uint8_t mask;
@@ -1979,7 +1979,7 @@ void bta_av_rc_disc(uint8_t disc) {
                           ATTR_ID_SUPPORTED_FEATURES};
   uint8_t hdi;
   tBTA_AV_SCB* p_scb;
-  bt_bdaddr_t* p_addr = NULL;
+  RawAddress* p_addr = NULL;
   uint8_t rc_handle;
 
   APPL_TRACE_DEBUG("bta_av_rc_disc 0x%x, %d", disc, bta_av_cb.disc);

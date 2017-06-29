@@ -150,7 +150,7 @@ void gatt_sec_check_complete(bool sec_check_ok, tGATT_CLCB* p_clcb,
  * Returns
  *
  ******************************************************************************/
-void gatt_enc_cmpl_cback(const bt_bdaddr_t* bd_addr, tBT_TRANSPORT transport,
+void gatt_enc_cmpl_cback(const RawAddress* bd_addr, tBT_TRANSPORT transport,
                          UNUSED_ATTR void* p_ref_data, tBTM_STATUS result) {
   VLOG(1) << StringPrintf("gatt_enc_cmpl_cback");
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(*bd_addr, transport);
@@ -205,7 +205,7 @@ void gatt_enc_cmpl_cback(const bt_bdaddr_t* bd_addr, tBT_TRANSPORT transport,
  * Returns
  *
  ******************************************************************************/
-void gatt_notify_enc_cmpl(const bt_bdaddr_t& bd_addr) {
+void gatt_notify_enc_cmpl(const RawAddress& bd_addr) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
   if (!p_tcb) {
     VLOG(1) << StringPrintf(

@@ -50,8 +50,7 @@ void BTM_GetDeviceIDRoot(BT_OCTET16 irk) {}
 void btm_ble_update_dmt_flag_bits(uint8_t* flag_value,
                                   const uint16_t connect_mode,
                                   const uint16_t disc_mode) {}
-void btm_acl_update_conn_addr(uint8_t conn_handle, const bt_bdaddr_t& address) {
-}
+void btm_acl_update_conn_addr(uint8_t conn_handle, const RawAddress& address) {}
 void btm_gen_resolvable_private_addr(base::Callback<void(uint8_t[8])> cb) {
   uint8_t fake_rand[8] = {0, 0, 0, 0, 0, 0, 0, 0};
   cb.Run(fake_rand);
@@ -102,7 +101,7 @@ class AdvertiserHciMock : public BleAdvertiserHciInterface {
                void(uint8_t, uint8_t, uint8_t, uint8_t, uint8_t*, status_cb));
   MOCK_METHOD6(SetScanResponseData,
                void(uint8_t, uint8_t, uint8_t, uint8_t, uint8_t*, status_cb));
-  MOCK_METHOD3(SetRandomAddress, void(uint8_t, const bt_bdaddr_t&, status_cb));
+  MOCK_METHOD3(SetRandomAddress, void(uint8_t, const RawAddress&, status_cb));
   MOCK_METHOD5(Enable, void(uint8_t, uint8_t, uint16_t, uint8_t, status_cb));
   MOCK_METHOD5(SetPeriodicAdvertisingParameters,
                void(uint8_t, uint16_t, uint16_t, uint16_t, status_cb));
@@ -114,14 +113,14 @@ class AdvertiserHciMock : public BleAdvertiserHciInterface {
 
   MOCK_METHOD9(SetParameters1,
                void(uint8_t, uint16_t, uint32_t, uint32_t, uint8_t, uint8_t,
-                    const bt_bdaddr_t&, uint8_t, const bt_bdaddr_t&));
+                    const RawAddress&, uint8_t, const RawAddress&));
   MOCK_METHOD8(SetParameters2, void(uint8_t, int8_t, uint8_t, uint8_t, uint8_t,
                                     uint8_t, uint8_t, parameters_cb));
 
   void SetParameters(uint8_t handle, uint16_t properties, uint32_t adv_int_min,
                      uint32_t adv_int_max, uint8_t channel_map,
-                     uint8_t own_address_type, const bt_bdaddr_t& own_address,
-                     uint8_t peer_address_type, const bt_bdaddr_t& peer_address,
+                     uint8_t own_address_type, const RawAddress& own_address,
+                     uint8_t peer_address_type, const RawAddress& peer_address,
                      uint8_t filter_policy, int8_t tx_power,
                      uint8_t primary_phy, uint8_t secondary_max_skip,
                      uint8_t secondary_phy, uint8_t advertising_sid,

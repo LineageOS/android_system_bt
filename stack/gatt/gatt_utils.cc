@@ -112,7 +112,7 @@ void gatt_free_pending_ind(tGATT_TCB* p_tcb) {
  * Returns       None
  *
  ******************************************************************************/
-void gatt_delete_dev_from_srv_chg_clt_list(const bt_bdaddr_t& bd_addr) {
+void gatt_delete_dev_from_srv_chg_clt_list(const RawAddress& bd_addr) {
   VLOG(1) << __func__;
 
   tGATTS_SRV_CHG* p_buf = gatt_is_bda_in_the_srv_chg_clt_list(bd_addr);
@@ -261,7 +261,7 @@ void gatt_free_srvc_db_buffer_app_id(tBT_UUID* p_app_id) {
  * Returns           true if found
  *
  ******************************************************************************/
-bool gatt_find_the_connected_bda(uint8_t start_idx, bt_bdaddr_t& bda,
+bool gatt_find_the_connected_bda(uint8_t start_idx, RawAddress& bda,
                                  uint8_t* p_found_idx,
                                  tBT_TRANSPORT* p_transport) {
   uint8_t i;
@@ -326,7 +326,7 @@ bool gatt_is_srv_chg_ind_pending(tGATT_TCB* p_tcb) {
  * Returns         pointer to the found elemenet otherwise NULL
  *
  ******************************************************************************/
-tGATTS_SRV_CHG* gatt_is_bda_in_the_srv_chg_clt_list(const bt_bdaddr_t& bda) {
+tGATTS_SRV_CHG* gatt_is_bda_in_the_srv_chg_clt_list(const RawAddress& bda) {
   tGATTS_SRV_CHG* p_buf = NULL;
 
   VLOG(1) << __func__ << ": " << bda;
@@ -355,7 +355,7 @@ tGATTS_SRV_CHG* gatt_is_bda_in_the_srv_chg_clt_list(const bt_bdaddr_t& bda) {
  * Returns          GATT_INDEX_INVALID if not found. Otherwise index to the tcb.
  *
  ******************************************************************************/
-bool gatt_is_bda_connected(const bt_bdaddr_t& bda) {
+bool gatt_is_bda_connected(const RawAddress& bda) {
   uint8_t i = 0;
   bool connected = false;
 
@@ -377,7 +377,7 @@ bool gatt_is_bda_connected(const bt_bdaddr_t& bda) {
  * Returns          GATT_INDEX_INVALID if not found. Otherwise index to the tcb.
  *
  ******************************************************************************/
-uint8_t gatt_find_i_tcb_by_addr(const bt_bdaddr_t& bda,
+uint8_t gatt_find_i_tcb_by_addr(const RawAddress& bda,
                                 tBT_TRANSPORT transport) {
   uint8_t i = 0;
 
@@ -417,7 +417,7 @@ tGATT_TCB* gatt_get_tcb_by_idx(uint8_t tcb_idx) {
  * Returns          NULL if not found. Otherwise index to the tcb.
  *
  ******************************************************************************/
-tGATT_TCB* gatt_find_tcb_by_addr(const bt_bdaddr_t& bda,
+tGATT_TCB* gatt_find_tcb_by_addr(const RawAddress& bda,
                                  tBT_TRANSPORT transport) {
   tGATT_TCB* p_tcb = NULL;
   uint8_t i = 0;
@@ -437,7 +437,7 @@ tGATT_TCB* gatt_find_tcb_by_addr(const bt_bdaddr_t& bda,
  * Returns          GATT_INDEX_INVALID if not found. Otherwise index to the tcb.
  *
  ******************************************************************************/
-tGATT_TCB* gatt_allocate_tcb_by_bdaddr(const bt_bdaddr_t& bda,
+tGATT_TCB* gatt_allocate_tcb_by_bdaddr(const RawAddress& bda,
                                        tBT_TRANSPORT transport) {
   /* search for existing tcb with matching bda    */
   uint8_t j = gatt_find_i_tcb_by_addr(bda, transport);
@@ -802,7 +802,7 @@ std::list<tGATT_SRV_LIST_ELEM>::iterator gatt_sr_find_i_rcb_by_handle(
  * Returns          void
  *
  ******************************************************************************/
-void gatt_sr_get_sec_info(const bt_bdaddr_t& rem_bda, tBT_TRANSPORT transport,
+void gatt_sr_get_sec_info(const RawAddress& rem_bda, tBT_TRANSPORT transport,
                           uint8_t* p_sec_flag, uint8_t* p_key_size) {
   uint8_t sec_flag = 0;
 
@@ -1091,7 +1091,7 @@ tGATT_TCB* gatt_find_tcb_by_cid(uint16_t lcid) {
  * Returns          total number of clcb found.
  *
  ******************************************************************************/
-uint8_t gatt_num_clcb_by_bd_addr(const bt_bdaddr_t& bda) {
+uint8_t gatt_num_clcb_by_bd_addr(const RawAddress& bda) {
   uint8_t i, num = 0;
 
   for (i = 0; i < GATT_CL_MAX_LCB; i++) {
@@ -1236,7 +1236,7 @@ void gatt_sr_update_prep_cnt(tGATT_TCB& tcb, tGATT_IF gatt_if, bool is_inc,
  * Returns         Boolean
  *
  ******************************************************************************/
-bool gatt_cancel_open(tGATT_IF gatt_if, const bt_bdaddr_t& bda) {
+bool gatt_cancel_open(tGATT_IF gatt_if, const RawAddress& bda) {
   tGATT_TCB* p_tcb = NULL;
   bool status = true;
 
@@ -1373,7 +1373,7 @@ void gatt_end_operation(tGATT_CLCB* p_clcb, tGATT_STATUS status, void* p_data) {
 }
 
 /** This function cleans up the control blocks when L2CAP channel disconnect */
-void gatt_cleanup_upon_disc(const bt_bdaddr_t& bda, uint16_t reason,
+void gatt_cleanup_upon_disc(const RawAddress& bda, uint16_t reason,
                             tBT_TRANSPORT transport) {
   VLOG(1) << __func__;
 
@@ -1485,7 +1485,7 @@ bool gatt_is_bg_dev_for_app(tGATT_BG_CONN_DEV* p_dev, tGATT_IF gatt_if) {
 
 /** background connection device from the list. Returns pointer to the device
  * record, or nullptr if not found */
-tGATT_BG_CONN_DEV* gatt_find_bg_dev(const bt_bdaddr_t& remote_bda) {
+tGATT_BG_CONN_DEV* gatt_find_bg_dev(const RawAddress& remote_bda) {
   for (tGATT_BG_CONN_DEV& dev : gatt_cb.bgconn_dev) {
     if (dev.remote_bda == remote_bda) {
       return &dev;
@@ -1495,7 +1495,7 @@ tGATT_BG_CONN_DEV* gatt_find_bg_dev(const bt_bdaddr_t& remote_bda) {
 }
 
 std::list<tGATT_BG_CONN_DEV>::iterator gatt_find_bg_dev_it(
-    const bt_bdaddr_t& remote_bda) {
+    const RawAddress& remote_bda) {
   auto& list = gatt_cb.bgconn_dev;
   for (auto it = list.begin(); it != list.end(); it++) {
     if (it->remote_bda == remote_bda) {
@@ -1507,7 +1507,7 @@ std::list<tGATT_BG_CONN_DEV>::iterator gatt_find_bg_dev_it(
 
 /** Add a device from the background connection list.  Returns true if device
  * added to the list, or already in list, false otherwise */
-bool gatt_add_bg_dev_list(tGATT_REG* p_reg, const bt_bdaddr_t& bd_addr) {
+bool gatt_add_bg_dev_list(tGATT_REG* p_reg, const RawAddress& bd_addr) {
   tGATT_IF gatt_if = p_reg->gatt_if;
 
   tGATT_BG_CONN_DEV* p_dev = gatt_find_bg_dev(bd_addr);
@@ -1531,7 +1531,7 @@ bool gatt_add_bg_dev_list(tGATT_REG* p_reg, const bt_bdaddr_t& bd_addr) {
 }
 
 /** Remove the application interface for the specified background device */
-bool gatt_remove_bg_dev_for_app(tGATT_IF gatt_if, const bt_bdaddr_t& bd_addr) {
+bool gatt_remove_bg_dev_for_app(tGATT_IF gatt_if, const RawAddress& bd_addr) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
   bool status;
 
@@ -1542,7 +1542,7 @@ bool gatt_remove_bg_dev_for_app(tGATT_IF gatt_if, const bt_bdaddr_t& bd_addr) {
 
 /** Removes all registrations for background connection for given device.
  * Returns true if anything was removed, false otherwise */
-uint8_t gatt_clear_bg_dev_for_addr(const bt_bdaddr_t& bd_addr) {
+uint8_t gatt_clear_bg_dev_for_addr(const RawAddress& bd_addr) {
   auto dev_it = gatt_find_bg_dev_it(bd_addr);
   if (dev_it == gatt_cb.bgconn_dev.end()) return false;
 
@@ -1554,8 +1554,7 @@ uint8_t gatt_clear_bg_dev_for_addr(const bt_bdaddr_t& bd_addr) {
 /** Remove device from the background connection device list or listening to
  * advertising list.  Returns true if device was on the list and was succesfully
  * removed */
-bool gatt_remove_bg_dev_from_list(tGATT_REG* p_reg,
-                                  const bt_bdaddr_t& bd_addr) {
+bool gatt_remove_bg_dev_from_list(tGATT_REG* p_reg, const RawAddress& bd_addr) {
   tGATT_IF gatt_if = p_reg->gatt_if;
   auto dev_it = gatt_find_bg_dev_it(bd_addr);
   if (dev_it == gatt_cb.bgconn_dev.end()) return false;
@@ -1611,7 +1610,7 @@ void gatt_reset_bgdev_list(void) { gatt_cb.bgconn_dev.clear(); }
  *
  ******************************************************************************/
 bool gatt_update_auto_connect_dev(tGATT_IF gatt_if, bool add,
-                                  const bt_bdaddr_t& bd_addr) {
+                                  const RawAddress& bd_addr) {
   bool ret = false;
   tGATT_REG* p_reg;
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);

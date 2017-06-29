@@ -98,7 +98,7 @@ static void bta_hf_client_mgmt_cback(uint32_t code, uint16_t port_handle) {
       APPL_TRACE_DEBUG("%s: allocating a new CB for incoming connection",
                        __func__);
       // Find the BDADDR of the peer device
-      bt_bdaddr_t peer_addr;
+      RawAddress peer_addr;
       uint16_t lcid;
       PORT_CheckConnection(port_handle, peer_addr, &lcid);
 

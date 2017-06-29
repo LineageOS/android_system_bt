@@ -122,7 +122,7 @@ void btm_sco_init(void) {
  *
  ******************************************************************************/
 static void btm_esco_conn_rsp(uint16_t sco_inx, uint8_t hci_status,
-                              const bt_bdaddr_t& bda,
+                              const RawAddress& bda,
                               enh_esco_params_t* p_parms) {
 #if (BTM_MAX_SCO_LINKS > 0)
   tSCO_CONN* p_sco = NULL;
@@ -541,7 +541,7 @@ void btm_reject_sco_link(uint16_t sco_inx) {
  *                                   with the sco index used for the connection.
  *
  ******************************************************************************/
-tBTM_STATUS BTM_CreateSco(const bt_bdaddr_t* remote_bda, bool is_orig,
+tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
                           uint16_t pkt_types, uint16_t* p_sco_inx,
                           tBTM_SCO_CB* p_conn_cb, tBTM_SCO_CB* p_disc_cb) {
 #if (BTM_MAX_SCO_LINKS > 0)
@@ -794,7 +794,7 @@ void btm_sco_disc_chk_pend_for_modechange(uint16_t hci_handle) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_sco_conn_req(const bt_bdaddr_t& bda, DEV_CLASS dev_class,
+void btm_sco_conn_req(const RawAddress& bda, DEV_CLASS dev_class,
                       uint8_t link_type) {
 #if (BTM_MAX_SCO_LINKS > 0)
   tSCO_CB* p_sco = &btm_cb.sco_cb;
@@ -887,7 +887,7 @@ void btm_sco_conn_req(const bt_bdaddr_t& bda, DEV_CLASS dev_class,
  * Returns          void
  *
  ******************************************************************************/
-void btm_sco_connected(uint8_t hci_status, const bt_bdaddr_t* bda,
+void btm_sco_connected(uint8_t hci_status, const RawAddress* bda,
                        uint16_t hci_handle, tBTM_ESCO_DATA* p_esco_data) {
 #if (BTM_MAX_SCO_LINKS > 0)
   tSCO_CONN* p = &btm_cb.sco_cb.sco_db[0];
@@ -1042,7 +1042,7 @@ tBTM_STATUS BTM_RemoveSco(uint16_t sco_inx) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_remove_sco_links(const bt_bdaddr_t& bda) {
+void btm_remove_sco_links(const RawAddress& bda) {
 #if (BTM_MAX_SCO_LINKS > 0)
   tSCO_CONN* p = &btm_cb.sco_cb.sco_db[0];
   uint16_t xx;
@@ -1105,7 +1105,7 @@ void btm_sco_removed(uint16_t hci_handle, uint8_t reason) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_sco_acl_removed(const bt_bdaddr_t* bda) {
+void btm_sco_acl_removed(const RawAddress* bda) {
 #if (BTM_MAX_SCO_LINKS > 0)
   tSCO_CONN* p = &btm_cb.sco_cb.sco_db[0];
   uint16_t xx;
@@ -1280,7 +1280,7 @@ uint16_t BTM_ReadScoHandle(uint16_t sco_inx) {
  * Returns          pointer to BD address or NULL if not known
  *
  ******************************************************************************/
-const bt_bdaddr_t* BTM_ReadScoBdAddr(uint16_t sco_inx) {
+const RawAddress* BTM_ReadScoBdAddr(uint16_t sco_inx) {
 #if (BTM_MAX_SCO_LINKS > 0)
   tSCO_CONN* p = &btm_cb.sco_cb.sco_db[sco_inx];
 
@@ -1667,7 +1667,7 @@ uint8_t BTM_GetNumScoLinks(void) {
  * Returns          bool
  *
  ******************************************************************************/
-bool btm_is_sco_active_by_bdaddr(const bt_bdaddr_t& remote_bda) {
+bool btm_is_sco_active_by_bdaddr(const RawAddress& remote_bda) {
 #if (BTM_MAX_SCO_LINKS > 0)
   uint8_t xx;
   tSCO_CONN* p = &btm_cb.sco_cb.sco_db[0];
@@ -1791,7 +1791,7 @@ static uint16_t btm_sco_voice_settings_to_legacy(enh_esco_params_t* p_params) {
 
 #else /* SCO_EXCLUDED == TRUE (Link in stubs) */
 
-tBTM_STATUS BTM_CreateSco(const bt_bdaddr_t* remote_bda, bool is_orig,
+tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
                           uint16_t pkt_types, uint16_t* p_sco_inx,
                           tBTM_SCO_CB* p_conn_cb, tBTM_SCO_CB* p_disc_cb) {
   return (BTM_NO_RESOURCES);
@@ -1805,7 +1805,7 @@ uint16_t BTM_ReadDeviceScoPacketTypes(void) { return (0); }
 uint16_t BTM_ReadScoHandle(uint16_t sco_inx) {
   return (BTM_INVALID_HCI_HANDLE);
 }
-const bt_bdaddr_t* BTM_ReadScoBdAddr(uint16_t sco_inx) {
+const RawAddress* BTM_ReadScoBdAddr(uint16_t sco_inx) {
   return ((uint8_t*)NULL);
 }
 uint16_t BTM_ReadScoDiscReason(void) { return (BTM_INVALID_SCO_DISC_REASON); }

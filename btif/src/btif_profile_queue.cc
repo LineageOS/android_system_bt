@@ -47,7 +47,7 @@ typedef enum {
 } btif_queue_event_t;
 
 typedef struct {
-  bt_bdaddr_t bda;
+  RawAddress bda;
   uint16_t uuid;
   bool busy;
   btif_connect_cb_t connect_cb;
@@ -118,11 +118,11 @@ static void queue_int_handle_evt(uint16_t event, char* p_param) {
  * Returns          BT_STATUS_SUCCESS if successful
  *
  ******************************************************************************/
-bt_status_t btif_queue_connect(uint16_t uuid, const bt_bdaddr_t* bda,
+bt_status_t btif_queue_connect(uint16_t uuid, const RawAddress* bda,
                                btif_connect_cb_t connect_cb) {
   connect_node_t node;
   memset(&node, 0, sizeof(connect_node_t));
-  memcpy(&node.bda, bda, sizeof(bt_bdaddr_t));
+  memcpy(&node.bda, bda, sizeof(RawAddress));
   node.uuid = uuid;
   node.connect_cb = connect_cb;
 

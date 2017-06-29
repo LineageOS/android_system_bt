@@ -400,7 +400,7 @@ TEST_F(GattServerPostRegisterTest, RequestRead) {
   EXPECT_FALSE(gatt_server_->SendResponse(kTestAddress0, kReqId0,
                                           GATT_ERROR_NONE, 0, kTestValue));
 
-  bt_bdaddr_t hal_addr0, hal_addr1;
+  RawAddress hal_addr0, hal_addr1;
   ASSERT_TRUE(util::BdAddrFromString(kTestAddress0, &hal_addr0));
   ASSERT_TRUE(util::BdAddrFromString(kTestAddress1, &hal_addr1));
 
@@ -510,7 +510,7 @@ TEST_F(GattServerPostRegisterTest, RequestWrite) {
   EXPECT_FALSE(gatt_server_->SendResponse(kTestAddress0, kReqId0,
                                           GATT_ERROR_NONE, 0, kTestValue));
 
-  bt_bdaddr_t hal_addr0, hal_addr1;
+  RawAddress hal_addr0, hal_addr1;
   ASSERT_TRUE(util::BdAddrFromString(kTestAddress0, &hal_addr0));
   ASSERT_TRUE(util::BdAddrFromString(kTestAddress1, &hal_addr1));
 
@@ -620,7 +620,7 @@ TEST_F(GattServerPostRegisterTest, SendNotification) {
   const int kConnId0 = 0;
   const int kConnId1 = 1;
   std::vector<uint8_t> value;
-  bt_bdaddr_t hal_addr0;
+  RawAddress hal_addr0;
   ASSERT_TRUE(util::BdAddrFromString(kTestAddress0, &hal_addr0));
 
   // Set up two connections with the same address.

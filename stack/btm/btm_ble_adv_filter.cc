@@ -261,7 +261,7 @@ tBTM_BLE_PF_COUNT* btm_ble_find_addr_filter_counter(tBLE_BD_ADDR* p_le_bda) {
  *
  ******************************************************************************/
 tBTM_BLE_PF_COUNT* btm_ble_alloc_addr_filter_counter(
-    const bt_bdaddr_t& bd_addr) {
+    const RawAddress& bd_addr) {
   uint8_t i;
   tBTM_BLE_PF_COUNT* p_addr_filter =
       &btm_ble_adv_filt_cb.p_addr_filter_count[1];

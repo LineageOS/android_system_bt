@@ -334,7 +334,7 @@ void Battery_Rsp(uint8_t app_id, tGATT_STATUS st, uint8_t event,
  * Description      Send battery level notification
  *
  ******************************************************************************/
-void Battery_Notify(uint8_t app_id, const bt_bdaddr_t& remote_bda,
+void Battery_Notify(uint8_t app_id, const RawAddress& remote_bda,
                     uint8_t battery_level) {
   tBA_INST* p_inst = &battery_cb.battery_inst[0];
   uint8_t i = 0;
@@ -357,7 +357,7 @@ void Battery_Notify(uint8_t app_id, const bt_bdaddr_t& remote_bda,
  * Returns          void
  *
  ******************************************************************************/
-bool Battery_ReadBatteryLevel(const bt_bdaddr_t&) {
+bool Battery_ReadBatteryLevel(const RawAddress&) {
   /* to be implemented */
   return true;
 }

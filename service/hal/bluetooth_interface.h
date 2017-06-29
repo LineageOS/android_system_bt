@@ -54,22 +54,22 @@ class BluetoothInterface {
                                            int num_properties,
                                            bt_property_t* properties);
     virtual void RemoteDevicePropertiesCallback(bt_status_t status,
-                                                bt_bdaddr_t* remote_bd_addr,
+                                                RawAddress* remote_bd_addr,
                                                 int num_properties,
                                                 bt_property_t* properties);
     virtual void DiscoveryStateChangedCallback(bt_discovery_state_t state);
-    virtual void PinRequestCallback(bt_bdaddr_t* remote_bd_addr,
+    virtual void PinRequestCallback(RawAddress* remote_bd_addr,
                                     bt_bdname_t* bd_name, uint32_t cod,
                                     bool min_16_digit);
-    virtual void SSPRequestCallback(bt_bdaddr_t* remote_bd_addr,
+    virtual void SSPRequestCallback(RawAddress* remote_bd_addr,
                                     bt_bdname_t* bd_name, uint32_t cod,
                                     bt_ssp_variant_t pairing_variant,
                                     uint32_t pass_key);
     virtual void BondStateChangedCallback(bt_status_t status,
-                                          bt_bdaddr_t* remote_bd_addr,
+                                          RawAddress* remote_bd_addr,
                                           bt_bond_state_t state);
     virtual void AclStateChangedCallback(bt_status_t status,
-                                         const bt_bdaddr_t& remote_bdaddr,
+                                         const RawAddress& remote_bdaddr,
                                          bt_acl_state_t state);
 
     // TODO(armansito): Complete the list of callbacks.

@@ -36,7 +36,7 @@ class RFCommTest : public BluetoothTest {
   // TearDown cleans up the Bluetooth and RFCOMM interfaces
   virtual void TearDown();
 
-  bt_bdaddr_t bt_remote_bdaddr_;
+  RawAddress bt_remote_bdaddr_;
 
   static const bt_uuid_t HFP_UUID;
 

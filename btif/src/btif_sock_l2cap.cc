@@ -62,7 +62,7 @@ struct packet {
 typedef struct l2cap_socket {
   struct l2cap_socket* prev;  // link to prev list item
   struct l2cap_socket* next;  // link to next list item
-  bt_bdaddr_t addr;           // other side's address
+  RawAddress addr;            // other side's address
   char name[256];             // user-friendly name of the service
   uint32_t id;                // just a tag to find this struct
   int app_uid;                // The UID of the app who requested this socket
@@ -273,7 +273,7 @@ static void btsock_l2cap_free_l(l2cap_socket* sock) {
 }
 
 static l2cap_socket* btsock_l2cap_alloc_l(const char* name,
-                                          const bt_bdaddr_t* addr,
+                                          const RawAddress* addr,
                                           char is_server, int flags) {
   unsigned security = 0;
   int fds[2];
@@ -356,9 +356,8 @@ static inline bool send_app_psm_or_chan_l(l2cap_socket* sock) {
                        sizeof(sock->channel)) == sizeof(sock->channel);
 }
 
-static bool send_app_connect_signal(int fd, const bt_bdaddr_t* addr,
-                                    int channel, int status, int send_fd,
-                                    int tx_mtu) {
+static bool send_app_connect_signal(int fd, const RawAddress* addr, int channel,
+                                    int status, int send_fd, int tx_mtu) {
   sock_connect_signal_t cs;
   cs.size = sizeof(cs);
   cs.bd_addr = *addr;
@@ -865,7 +864,7 @@ static bt_status_t btSock_start_l2cap_server_l(l2cap_socket* sock) {
 }
 
 static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
-                                                  const bt_bdaddr_t* addr,
+                                                  const RawAddress* addr,
                                                   int channel, int* sock_fd,
                                                   int flags, char listen,
                                                   int app_uid) {
@@ -962,7 +961,7 @@ bt_status_t btsock_l2cap_listen(const char* name, int channel, int* sock_fd,
                                         app_uid);
 }
 
-bt_status_t btsock_l2cap_connect(const bt_bdaddr_t* bd_addr, int channel,
+bt_status_t btsock_l2cap_connect(const RawAddress* bd_addr, int channel,
                                  int* sock_fd, int flags, int app_uid) {
   return btsock_l2cap_listen_or_connect(NULL, bd_addr, channel, sock_fd, flags,
                                         0, app_uid);

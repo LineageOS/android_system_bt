@@ -57,7 +57,7 @@ const uint16_t bnep_frame_hdr_sizes[] = {14, 1, 2, 8, 8};
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
-static void bnep_connect_ind(const bt_bdaddr_t& bd_addr, uint16_t l2cap_cid,
+static void bnep_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
                              uint16_t psm, uint8_t l2cap_id);
 static void bnep_connect_cfm(uint16_t l2cap_cid, uint16_t result);
 static void bnep_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
@@ -114,7 +114,7 @@ tBNEP_RESULT bnep_register_with_l2cap(void) {
  * Returns          void
  *
  ******************************************************************************/
-static void bnep_connect_ind(const bt_bdaddr_t& bd_addr, uint16_t l2cap_cid,
+static void bnep_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
                              UNUSED_ATTR uint16_t psm, uint8_t l2cap_id) {
   tBNEP_CONN* p_bcb = bnepu_find_bcb_by_bd_addr(bd_addr);
 
@@ -505,14 +505,14 @@ static void bnep_data_ind(uint16_t l2cap_cid, BT_HDR* p_buf) {
                    p_buf->len, extension_present);
 
   /* Initialize addresses to 'not supplied' */
-  const bt_bdaddr_t *p_src_addr, *p_dst_addr;
+  const RawAddress *p_src_addr, *p_dst_addr;
   p_src_addr = p_dst_addr = NULL;
 
   switch (type) {
     case BNEP_FRAME_GENERAL_ETHERNET:
-      p_dst_addr = (bt_bdaddr_t*)p;
+      p_dst_addr = (RawAddress*)p;
       p += BD_ADDR_LEN;
-      p_src_addr = (bt_bdaddr_t*)p;
+      p_src_addr = (RawAddress*)p;
       p += BD_ADDR_LEN;
       BE_STREAM_TO_UINT16(protocol, p);
       rem_len -= 14;
@@ -550,14 +550,14 @@ static void bnep_data_ind(uint16_t l2cap_cid, BT_HDR* p_buf) {
       break;
 
     case BNEP_FRAME_COMPRESSED_ETHERNET_SRC_ONLY:
-      p_src_addr = (bt_bdaddr_t*)p;
+      p_src_addr = (RawAddress*)p;
       p += BD_ADDR_LEN;
       BE_STREAM_TO_UINT16(protocol, p);
       rem_len -= 8;
       break;
 
     case BNEP_FRAME_COMPRESSED_ETHERNET_DEST_ONLY:
-      p_dst_addr = (bt_bdaddr_t*)p;
+      p_dst_addr = (RawAddress*)p;
       p += BD_ADDR_LEN;
       BE_STREAM_TO_UINT16(protocol, p);
       rem_len -= 8;

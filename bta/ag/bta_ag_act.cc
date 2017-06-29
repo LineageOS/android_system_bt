@@ -181,7 +181,7 @@ void bta_ag_start_dereg(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_ag_start_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
-  bt_bdaddr_t pending_bd_addr;
+  RawAddress pending_bd_addr;
 
   /* store parameters */
   if (p_data) {
@@ -501,7 +501,7 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
   uint16_t lcid;
   int i;
   tBTA_AG_SCB *ag_scb, *other_scb;
-  bt_bdaddr_t dev_addr;
+  RawAddress dev_addr;
   int status;
 
   /* set role */

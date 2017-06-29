@@ -30,7 +30,7 @@
 typedef struct conn_event_t {
   uint64_t ts;
   btif_debug_conn_state_t state;
-  bt_bdaddr_t bda;
+  RawAddress bda;
   tGATT_DISCONN_REASON disconnect_reason;
 } conn_event_t;
 
@@ -64,7 +64,7 @@ static void next_event() {
   if (current_event == NUM_CONNECTION_EVENTS) current_event = 0;
 }
 
-void btif_debug_conn_state(const bt_bdaddr_t bda,
+void btif_debug_conn_state(const RawAddress bda,
                            const btif_debug_conn_state_t state,
                            const tGATT_DISCONN_REASON disconnect_reason) {
   next_event();
@@ -73,7 +73,7 @@ void btif_debug_conn_state(const bt_bdaddr_t bda,
   evt->ts = time_gettimeofday_us();
   evt->state = state;
   evt->disconnect_reason = disconnect_reason;
-  memcpy(&evt->bda, &bda, sizeof(bt_bdaddr_t));
+  memcpy(&evt->bda, &bda, sizeof(RawAddress));
 }
 
 void btif_debug_conn_dump(int fd) {

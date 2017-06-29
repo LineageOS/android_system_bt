@@ -126,7 +126,7 @@ static int hf_idx = BTIF_HF_INVALID_IDX;
 /* BTIF-HF control block to map bdaddr to BTA handle */
 typedef struct _btif_hf_cb {
   uint16_t handle;
-  bt_bdaddr_t connected_bda;
+  RawAddress connected_bda;
   bthf_connection_state_t state;
   bthf_vr_state_t vr_state;
   tBTA_AG_PEER_FEAT peer_feat;
@@ -169,7 +169,7 @@ bool btif_conf_hf_force_wbs = BTIF_HF_WBS_PREFERRED;
  * Returns          true if connected
  *
  ******************************************************************************/
-static bool is_connected(bt_bdaddr_t* bd_addr) {
+static bool is_connected(RawAddress* bd_addr) {
   int i;
   for (i = 0; i < btif_max_hf_clients; ++i) {
     if (((btif_hf_cb[i].state == BTHF_CONNECTION_STATE_CONNECTED) ||
@@ -189,7 +189,7 @@ static bool is_connected(bt_bdaddr_t* bd_addr) {
  * Returns          idx
  *
  ******************************************************************************/
-static int btif_hf_idx_by_bdaddr(bt_bdaddr_t* bd_addr) {
+static int btif_hf_idx_by_bdaddr(RawAddress* bd_addr) {
   int i;
   for (i = 0; i < btif_max_hf_clients; ++i) {
     if (*bd_addr == btif_hf_cb[i].connected_bda) return i;
@@ -641,7 +641,7 @@ static void bte_hf_evt(tBTA_AG_EVT event, tBTA_AG* p_data) {
  *
  ******************************************************************************/
 static void btif_in_hf_generic_evt(uint16_t event, char* p_param) {
-  int idx = btif_hf_idx_by_bdaddr((bt_bdaddr_t*)p_param);
+  int idx = btif_hf_idx_by_bdaddr((RawAddress*)p_param);
 
   BTIF_TRACE_EVENT("%s: event=%d", __func__, event);
 
@@ -723,7 +723,7 @@ static bt_status_t init(bthf_callbacks_t* callbacks, int max_hf_clients,
  * Returns         bt_status_t
  *
  ******************************************************************************/
-static bt_status_t connect_int(bt_bdaddr_t* bd_addr, uint16_t uuid) {
+static bt_status_t connect_int(RawAddress* bd_addr, uint16_t uuid) {
   CHECK_BTHF_INIT();
   int i;
   for (i = 0; i < btif_max_hf_clients;) {
@@ -748,7 +748,7 @@ static bt_status_t connect_int(bt_bdaddr_t* bd_addr, uint16_t uuid) {
   return BT_STATUS_BUSY;
 }
 
-static bt_status_t connect(bt_bdaddr_t* bd_addr) {
+static bt_status_t connect(RawAddress* bd_addr) {
   CHECK_BTHF_INIT();
   return btif_queue_connect(UUID_SERVCLASS_AG_HANDSFREE, bd_addr, connect_int);
 }
@@ -762,7 +762,7 @@ static bt_status_t connect(bt_bdaddr_t* bd_addr) {
  * Returns         bt_status_t
  *
  ******************************************************************************/
-static bt_status_t disconnect(bt_bdaddr_t* bd_addr) {
+static bt_status_t disconnect(RawAddress* bd_addr) {
   CHECK_BTHF_INIT();
 
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
@@ -789,7 +789,7 @@ static bt_status_t disconnect(bt_bdaddr_t* bd_addr) {
  * Returns         bt_status_t
  *
  ******************************************************************************/
-static bt_status_t connect_audio(bt_bdaddr_t* bd_addr) {
+static bt_status_t connect_audio(RawAddress* bd_addr) {
   CHECK_BTHF_INIT();
 
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
@@ -809,7 +809,7 @@ static bt_status_t connect_audio(bt_bdaddr_t* bd_addr) {
     /* Inform the application that the audio connection has been initiated
      * successfully */
     btif_transfer_context(btif_in_hf_generic_evt, BTIF_HFP_CB_AUDIO_CONNECTING,
-                          (char*)bd_addr, sizeof(bt_bdaddr_t), NULL);
+                          (char*)bd_addr, sizeof(RawAddress), NULL);
     return BT_STATUS_SUCCESS;
   }
 
@@ -825,7 +825,7 @@ static bt_status_t connect_audio(bt_bdaddr_t* bd_addr) {
  * Returns         bt_status_t
  *
  ******************************************************************************/
-static bt_status_t disconnect_audio(bt_bdaddr_t* bd_addr) {
+static bt_status_t disconnect_audio(RawAddress* bd_addr) {
   CHECK_BTHF_INIT();
 
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
@@ -852,7 +852,7 @@ static bt_status_t disconnect_audio(bt_bdaddr_t* bd_addr) {
  * Returns          bt_status_t
  *
  ******************************************************************************/
-static bt_status_t start_voice_recognition(bt_bdaddr_t* bd_addr) {
+static bt_status_t start_voice_recognition(RawAddress* bd_addr) {
   CHECK_BTHF_INIT();
 
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
@@ -887,7 +887,7 @@ static bt_status_t start_voice_recognition(bt_bdaddr_t* bd_addr) {
  * Returns          bt_status_t
  *
  ******************************************************************************/
-static bt_status_t stop_voice_recognition(bt_bdaddr_t* bd_addr) {
+static bt_status_t stop_voice_recognition(RawAddress* bd_addr) {
   CHECK_BTHF_INIT();
 
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
@@ -923,7 +923,7 @@ static bt_status_t stop_voice_recognition(bt_bdaddr_t* bd_addr) {
  *
  ******************************************************************************/
 static bt_status_t volume_control(bthf_volume_type_t type, int volume,
-                                  bt_bdaddr_t* bd_addr) {
+                                  RawAddress* bd_addr) {
   CHECK_BTHF_INIT();
 
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
@@ -986,7 +986,7 @@ static bt_status_t device_status_notification(bthf_network_state_t ntk_state,
  * Returns          bt_status_t
  *
  ******************************************************************************/
-static bt_status_t cops_response(const char* cops, bt_bdaddr_t* bd_addr) {
+static bt_status_t cops_response(const char* cops, RawAddress* bd_addr) {
   CHECK_BTHF_INIT();
 
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
@@ -1020,7 +1020,7 @@ static bt_status_t cops_response(const char* cops, bt_bdaddr_t* bd_addr) {
  ******************************************************************************/
 static bt_status_t cind_response(int svc, int num_active, int num_held,
                                  bthf_call_state_t call_setup_state, int signal,
-                                 int roam, int batt_chg, bt_bdaddr_t* bd_addr) {
+                                 int roam, int batt_chg, RawAddress* bd_addr) {
   CHECK_BTHF_INIT();
 
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
@@ -1067,7 +1067,7 @@ static bt_status_t cind_response(int svc, int num_active, int num_held,
  ******************************************************************************/
 static bt_status_t bind_response(bthf_hf_ind_type_t ind_id,
                                  bthf_hf_ind_status_t ind_status,
-                                 bt_bdaddr_t* bd_addr) {
+                                 RawAddress* bd_addr) {
   CHECK_BTHF_INIT();
 
   int index = btif_hf_idx_by_bdaddr(bd_addr);
@@ -1100,8 +1100,7 @@ static bt_status_t set_sco_allowed(bool value) {
  * Returns          bt_status_t
  *
  ******************************************************************************/
-static bt_status_t formatted_at_response(const char* rsp,
-                                         bt_bdaddr_t* bd_addr) {
+static bt_status_t formatted_at_response(const char* rsp, RawAddress* bd_addr) {
   CHECK_BTHF_INIT();
   tBTA_AG_RES_DATA ag_res;
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
@@ -1133,7 +1132,7 @@ static bt_status_t formatted_at_response(const char* rsp,
  *
  ******************************************************************************/
 static bt_status_t at_response(bthf_at_response_t response_code, int error_code,
-                               bt_bdaddr_t* bd_addr) {
+                               RawAddress* bd_addr) {
   CHECK_BTHF_INIT();
 
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
@@ -1169,7 +1168,7 @@ static bt_status_t clcc_response(int index, bthf_call_direction_t dir,
                                  bthf_call_state_t state, bthf_call_mode_t mode,
                                  bthf_call_mpty_type_t mpty, const char* number,
                                  bthf_call_addrtype_t type,
-                                 bt_bdaddr_t* bd_addr) {
+                                 RawAddress* bd_addr) {
   CHECK_BTHF_INIT();
 
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
@@ -1519,7 +1518,7 @@ static void cleanup(void) {
  * Returns          bt_status_t
  *
  ******************************************************************************/
-static bt_status_t configure_wbs(bt_bdaddr_t* bd_addr,
+static bt_status_t configure_wbs(RawAddress* bd_addr,
                                  bthf_wbs_config_t config) {
   CHECK_BTHF_INIT();
 

@@ -214,7 +214,7 @@ typedef void(tPORT_CALLBACK)(uint32_t code, uint16_t port_handle);
  *
  ******************************************************************************/
 extern int RFCOMM_CreateConnection(uint16_t uuid, uint8_t scn, bool is_server,
-                                   uint16_t mtu, const bt_bdaddr_t& bd_addr,
+                                   uint16_t mtu, const RawAddress& bd_addr,
                                    uint16_t* p_handle,
                                    tPORT_CALLBACK* p_mgmt_cb);
 
@@ -309,7 +309,7 @@ extern int PORT_SetEventMask(uint16_t port_handle, uint32_t mask);
  *                  p_lcid     - OUT L2CAP's LCID
  *
  ******************************************************************************/
-extern int PORT_CheckConnection(uint16_t handle, bt_bdaddr_t& bd_addr,
+extern int PORT_CheckConnection(uint16_t handle, RawAddress& bd_addr,
                                 uint16_t* p_lcid);
 
 /*******************************************************************************
@@ -323,7 +323,7 @@ extern int PORT_CheckConnection(uint16_t handle, bt_bdaddr_t& bd_addr,
  *                  bd_addr    - bd_addr of the peer
  *
  ******************************************************************************/
-extern bool PORT_IsOpening(bt_bdaddr_t& bd_addr);
+extern bool PORT_IsOpening(RawAddress& bd_addr);
 
 /*******************************************************************************
  *

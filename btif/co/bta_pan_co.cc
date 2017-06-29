@@ -74,7 +74,7 @@ uint8_t bta_pan_co_init(uint8_t* q_level) {
  *
  ******************************************************************************/
 void bta_pan_co_open(uint16_t handle, uint8_t app_id, tBTA_PAN_ROLE local_role,
-                     tBTA_PAN_ROLE peer_role, const bt_bdaddr_t& peer_addr) {
+                     tBTA_PAN_ROLE peer_role, const RawAddress& peer_addr) {
   BTIF_TRACE_API(
       "bta_pan_co_open:app_id:%d, local_role:%d, peer_role:%d, "
       "handle:%d",
@@ -154,8 +154,8 @@ void bta_pan_co_close(uint16_t handle, uint8_t app_id) {
  ******************************************************************************/
 void bta_pan_co_tx_path(uint16_t handle, uint8_t app_id) {
   BT_HDR* p_buf;
-  bt_bdaddr_t src;
-  bt_bdaddr_t dst;
+  RawAddress src;
+  RawAddress dst;
   uint16_t protocol;
   bool ext;
   bool forward;
@@ -226,8 +226,8 @@ void bta_pan_co_rx_path(UNUSED_ATTR uint16_t handle,
  ******************************************************************************/
 void bta_pan_co_tx_write(UNUSED_ATTR uint16_t handle,
                          UNUSED_ATTR uint8_t app_id,
-                         UNUSED_ATTR const bt_bdaddr_t& src,
-                         UNUSED_ATTR const bt_bdaddr_t& dst,
+                         UNUSED_ATTR const RawAddress& src,
+                         UNUSED_ATTR const RawAddress& dst,
                          UNUSED_ATTR uint16_t protocol,
                          UNUSED_ATTR uint8_t* p_data, UNUSED_ATTR uint16_t len,
                          UNUSED_ATTR bool ext, UNUSED_ATTR bool forward) {
@@ -249,8 +249,8 @@ void bta_pan_co_tx_write(UNUSED_ATTR uint16_t handle,
  ******************************************************************************/
 void bta_pan_co_tx_writebuf(UNUSED_ATTR uint16_t handle,
                             UNUSED_ATTR uint8_t app_id,
-                            UNUSED_ATTR const bt_bdaddr_t& src,
-                            UNUSED_ATTR const bt_bdaddr_t& dst,
+                            UNUSED_ATTR const RawAddress& src,
+                            UNUSED_ATTR const RawAddress& dst,
                             UNUSED_ATTR uint16_t protocol,
                             UNUSED_ATTR BT_HDR* p_buf, UNUSED_ATTR bool ext,
                             UNUSED_ATTR bool forward) {
