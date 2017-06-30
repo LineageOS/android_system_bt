@@ -1283,7 +1283,8 @@ void bta_av_config_ind (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
         APPL_TRACE_WARNING(" bta_av_config_ind config_ind called before Open");
         p_scb->coll_mask |= BTA_AV_COLL_SETCONFIG_IND;
     }
-    alarm_cancel(bta_av_cb.accept_signalling_timer);
+    APPL_TRACE_DEBUG(" bta_av_config_ind p_scb->hdi = %d ", p_scb->hdi);
+    alarm_cancel(bta_av_cb.accept_signalling_timer[p_scb->hdi]);
 
     /* if no codec parameters in configuration, fail */
     if ((p_evt_cfg->num_codec == 0) ||
