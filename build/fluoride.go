@@ -18,19 +18,17 @@ import (
 
 	"android/soong/android"
 	"android/soong/cc"
-
-	"github.com/google/blueprint"
 )
 
 func init() {
 	android.RegisterModuleType("fluoride_defaults", fluorideDefaultsFactory)
 }
 
-func fluorideDefaultsFactory() (blueprint.Module, []interface{}) {
-	module, props := cc.DefaultsFactory()
+func fluorideDefaultsFactory() android.Module {
+	module := cc.DefaultsFactory()
 	android.AddLoadHook(module, fluorideDefaults)
 
-	return module, props
+	return module
 }
 
 func fluorideDefaults(ctx android.LoadHookContext) {
