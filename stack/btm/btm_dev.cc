@@ -407,7 +407,6 @@ void btm_consolidate_dev(tBTM_SEC_DEV_REC* p_target_rec) {
 
       /* remove the combined record */
       list_remove(btm_cb.sec_dev_rec, p_dev_rec);
-      break;
     }
 
     /* an RPA device entry is a duplicate of the target record */
@@ -419,7 +418,6 @@ void btm_consolidate_dev(tBTM_SEC_DEV_REC* p_target_rec) {
         /* remove the combined record */
         list_remove(btm_cb.sec_dev_rec, p_dev_rec);
       }
-      break;
     }
   }
 }
