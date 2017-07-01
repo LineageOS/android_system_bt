@@ -1463,9 +1463,14 @@ bool bta_gattc_cache_load(tBTA_GATTC_CLCB* p_clcb) {
     goto done;
   }
 
+  if (num_attr > 0xFFFF) {
+    APPL_TRACE_ERROR("%s: more than 0xFFFF GATT attributes: %s", __func__, fname);
+    goto done;
+  }
+
   attr = (tBTA_GATTC_NV_ATTR*)osi_malloc(sizeof(tBTA_GATTC_NV_ATTR) * num_attr);
 
-  if (fread(attr, sizeof(tBTA_GATTC_NV_ATTR), 0xFF, fd) != num_attr) {
+  if (fread(attr, sizeof(tBTA_GATTC_NV_ATTR), num_attr, fd) != num_attr) {
     APPL_TRACE_ERROR("%s: can't read GATT attributes: %s", __func__, fname);
     goto done;
   }
