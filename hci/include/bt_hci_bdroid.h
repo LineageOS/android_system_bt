@@ -38,6 +38,7 @@
  *****************************************************************************/
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #define HCI_ACL_MAX_SIZE 1024
 #define HCI_MAX_FRAME_SIZE (HCI_ACL_MAX_SIZE + 4)
