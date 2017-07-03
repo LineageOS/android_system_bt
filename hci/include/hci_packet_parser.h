@@ -20,7 +20,6 @@
 
 #include <stdint.h>
 
-#include "bdaddr.h"
 #include "bt_types.h"
 #include "device_features.h"
 #include "features.h"

@@ -258,7 +258,7 @@ void port_release_port(tPORT* p_port) {
       if (p_port->is_server) p_port->dlci &= 0xfe;
 
       p_port->local_ctrl.modem_signal = p_port->default_signal_state;
-      p_port->bd_addr = bd_addr_any;
+      p_port->bd_addr = RawAddress::kAny;
     } else {
       RFCOMM_TRACE_DEBUG("%s Clean-up handle: %d", __func__, p_port->inx);
       alarm_free(p_port->rfc.port_timer);

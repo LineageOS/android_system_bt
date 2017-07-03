@@ -6,7 +6,6 @@ cc_library_static {
     local_include_dirs: ["include"],
     include_dirs: ["system/bt"],
     srcs: [
-        "src/bdaddr.cc",
         "src/device_class.cc",
         "src/hal_util.cc",
         "src/module.cc",
@@ -39,7 +38,6 @@ cc_test {
     local_include_dirs: ["include"],
     include_dirs: ["system/bt"],
     srcs: [
-        "test/bdaddr_test.cc",
         "test/device_class_test.cc",
         "test/property_test.cc",
         "test/uuid_test.cc",

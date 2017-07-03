@@ -18,7 +18,6 @@
 
 #include "gatt/gatt_test.h"
 #include "adapter/bluetooth_test.h"
-#include "btcore/include/bdaddr.h"
 
 namespace bttest {
 

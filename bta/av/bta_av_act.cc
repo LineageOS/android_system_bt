@@ -306,7 +306,7 @@ static void bta_av_rc_msg_cback(uint8_t handle, uint8_t label, uint8_t opcode,
 uint8_t bta_av_rc_create(tBTA_AV_CB* p_cb, uint8_t role, uint8_t shdl,
                          uint8_t lidx) {
   tAVRC_CONN_CB ccb;
-  RawAddress bda = bd_addr_any;
+  RawAddress bda = RawAddress::kAny;
   uint8_t status = BTA_AV_RC_ROLE_ACP;
   tBTA_AV_SCB* p_scb = p_cb->p_scb[shdl - 1];
   int i;
@@ -1247,7 +1247,7 @@ void bta_av_conn_chg(tBTA_AV_DATA* p_data) {
       /* the stream is closed.
        * clear the peer address, so it would not mess up the AVRCP for the next
        * round of operation */
-      p_scb->peer_addr = bd_addr_empty;
+      p_scb->peer_addr = RawAddress::kEmpty;
       if (p_scb->chnl == BTA_AV_CHNL_AUDIO) {
         if (p_lcb) {
           p_lcb->conn_msk &= ~conn_msk;

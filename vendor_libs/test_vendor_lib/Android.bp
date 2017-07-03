@@ -36,6 +36,9 @@ cc_library_static {
         "libchrome",
         "liblog",
     ],
+    static_libs: [
+        "libbluetooth-types",
+    ]
 }
 
 // test-vendor unit tests for host
@@ -65,6 +68,9 @@ cc_test_host {
     shared_libs: [
         "liblog",
         "libchrome",
+    ],
+    static_libs: [
+        "libbluetooth-types",
     ],
     cflags: [
         "-fvisibility=hidden",

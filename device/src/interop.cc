@@ -50,9 +50,8 @@ bool interop_match_addr(const interop_feature_t feature,
 
   if (interop_match_fixed_(feature, addr) ||
       interop_match_dynamic_(feature, addr)) {
-    char bdstr[20] = {0};
     LOG_WARN(LOG_TAG, "%s() Device %s is a match for interop workaround %s.",
-             __func__, bdaddr_to_string(addr, bdstr, sizeof(bdstr)),
+             __func__, addr->ToString().c_str(),
              interop_feature_string_(feature));
     return true;
   }
