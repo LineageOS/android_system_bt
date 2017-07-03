@@ -80,7 +80,7 @@ LOCAL_SRC_FILES:= \
 LOCAL_MODULE := libbt-bta
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_MODULE_TAGS := optional
-LOCAL_SHARED_LIBRARIES := libcutils libc
+LOCAL_SHARED_LIBRARIES := libbttypes
 
 LOCAL_C_INCLUDES+= . \
                    $(LOCAL_PATH)/include \

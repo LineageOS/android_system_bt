@@ -153,7 +153,7 @@ LOCAL_SRC_FILES:= \
     ./gap/gap_utils.c
 
 LOCAL_MODULE := libbt-stack
-LOCAL_STATIC_LIBRARIES := libbt-hci
+LOCAL_STATIC_LIBRARIES := libbt-hci libbttypes
 LOCAL_SHARED_LIBRARIES := libcutils
 
 
