@@ -17,7 +17,6 @@
 
 #include <base/logging.h>
 
-#include "bdaddr.h"
 #include "mca_api.h"
 #include "mca_defs.h"
 #include "mcap_test_mcl.h"

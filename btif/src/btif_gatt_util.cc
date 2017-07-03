@@ -28,7 +28,6 @@
 #include <hardware/bluetooth.h>
 #include <hardware/bt_gatt.h>
 
-#include "bdaddr.h"
 #include "bt_common.h"
 #include "bta_api.h"
 #include "bta_gatt_api.h"

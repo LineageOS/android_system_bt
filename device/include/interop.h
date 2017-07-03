@@ -20,7 +20,7 @@
 
 #include <stdbool.h>
 
-#include "btcore/include/bdaddr.h"
+#include "raw_address.h"
 
 static const char INTEROP_MODULE[] = "interop_module";
 

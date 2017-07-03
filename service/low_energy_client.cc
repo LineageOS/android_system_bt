@@ -19,7 +19,6 @@
 #include <base/logging.h>
 
 #include "service/adapter.h"
-#include "service/common/bluetooth/util/address_helper.h"
 #include "service/logging_helpers.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/hcidefs.h"
@@ -55,7 +54,7 @@ bool LowEnergyClient::Connect(const std::string& address, bool is_direct) {
   VLOG(2) << __func__ << "Address: " << address << " is_direct: " << is_direct;
 
   RawAddress bda;
-  util::BdAddrFromString(address, &bda);
+  RawAddress::FromString(address, bda);
 
   bt_status_t status =
       hal::BluetoothGattInterface::Get()->GetClientHALInterface()->connect(
@@ -72,7 +71,7 @@ bool LowEnergyClient::Disconnect(const std::string& address) {
   VLOG(2) << __func__ << "Address: " << address;
 
   RawAddress bda;
-  util::BdAddrFromString(address, &bda);
+  RawAddress::FromString(address, bda);
 
   std::map<const RawAddress, int>::iterator conn_id;
   {
@@ -99,7 +98,7 @@ bool LowEnergyClient::SetMtu(const std::string& address, int mtu) {
   VLOG(2) << __func__ << "Address: " << address << " MTU: " << mtu;
 
   RawAddress bda;
-  util::BdAddrFromString(address, &bda);
+  RawAddress::FromString(address, bda);
 
   std::map<const RawAddress, int>::iterator conn_id;
   {

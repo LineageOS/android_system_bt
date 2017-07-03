@@ -667,7 +667,7 @@ bool BTM_ReadConnectedTransportAddress(RawAddress* remote_bda,
     } else if (p_dev_rec->device_type & BT_DEVICE_TYPE_BREDR) {
       *remote_bda = p_dev_rec->bd_addr;
     } else
-      *remote_bda = bd_addr_empty;
+      *remote_bda = RawAddress::kEmpty;
     return false;
   }
 
@@ -2102,7 +2102,7 @@ uint8_t btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr,
           /* Reset btm state only if the callback address matches pairing
            * address*/
           if (bd_addr == btm_cb.pairing_bda) {
-            btm_cb.pairing_bda = bd_addr_any;
+            btm_cb.pairing_bda = RawAddress::kAny;
             btm_cb.pairing_state = BTM_PAIR_STATE_IDLE;
             btm_cb.pairing_flags = 0;
           }

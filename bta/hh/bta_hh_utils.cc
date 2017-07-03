@@ -60,7 +60,7 @@ uint8_t bta_hh_find_cb(const RawAddress& bda) {
   /* See how many active devices there are. */
   for (xx = 0; xx < BTA_HH_MAX_DEVICE; xx++) {
     /* check if any active/known devices is a match */
-    if ((bda == bta_hh_cb.kdev[xx].addr && bda != bd_addr_empty)) {
+    if ((bda == bta_hh_cb.kdev[xx].addr && !bda.IsEmpty())) {
 #if (BTA_HH_DEBUG == TRUE)
       APPL_TRACE_DEBUG("found kdev_cb[%d] hid_handle = %d ", xx,
                        bta_hh_cb.kdev[xx].hid_handle)

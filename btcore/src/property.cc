@@ -19,7 +19,6 @@
 #include "btcore/include/property.h"
 #include <base/logging.h>
 #include <string.h>
-#include "btcore/include/bdaddr.h"
 #include "btcore/include/device_class.h"
 #include "btcore/include/uuid.h"
 #include "osi/include/allocator.h"

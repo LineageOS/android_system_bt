@@ -44,7 +44,6 @@
 #include <hardware/bluetooth.h>
 
 #include "advertise_data_parser.h"
-#include "bdaddr.h"
 #include "bt_common.h"
 #include "bta_closure_api.h"
 #include "bta_gatt_api.h"
@@ -438,9 +437,8 @@ bool check_hid_le(const RawAddress* remote_bdaddr) {
   if (btif_storage_get_remote_device_property(
           (RawAddress*)remote_bdaddr, &prop_name) == BT_STATUS_SUCCESS) {
     if (remote_dev_type == BT_DEVICE_DEVTYPE_BLE) {
-      bdstr_t bdstr;
-      bdaddr_to_string(remote_bdaddr, bdstr, sizeof(bdstr));
-      if (btif_config_exist(bdstr, "HidAppId")) return true;
+      if (btif_config_exist(remote_bdaddr->ToString().c_str(), "HidAppId"))
+        return true;
     }
   }
   return false;
@@ -473,8 +471,8 @@ bool check_sdp_bl(const RawAddress* remote_bdaddr) {
   BTIF_STORAGE_FILL_PROPERTY(&prop_name, BT_PROPERTY_REMOTE_VERSION_INFO,
                              sizeof(bt_remote_version_t), &info);
 
-  if (btif_storage_get_remote_device_property(
-          (RawAddress*)remote_bdaddr, &prop_name) != BT_STATUS_SUCCESS) {
+  if (btif_storage_get_remote_device_property(remote_bdaddr, &prop_name) !=
+      BT_STATUS_SUCCESS) {
     return false;
   }
   manufacturer = info.manufacturer;
@@ -493,7 +491,7 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
   // duplicates
   if ((pairing_cb.state == state) && (state == BT_BOND_STATE_BONDING)) {
     // Cross key pairing so send callback for static address
-    if (!bdaddr_is_empty(&pairing_cb.static_bdaddr)) {
+    if (!pairing_cb.static_bdaddr.IsEmpty()) {
       auto tmp = bd_addr;
       HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, status, &tmp, state);
     }
@@ -529,13 +527,11 @@ static void btif_update_remote_version_property(RawAddress* p_bd) {
   tBTM_STATUS btm_status;
   bt_remote_version_t info;
   bt_status_t status;
-  bdstr_t bdstr;
 
   btm_status = BTM_ReadRemoteVersion(*p_bd, &lmp_ver, &mfct_set, &lmp_subver);
 
   LOG_DEBUG(LOG_TAG, "remote version info [%s]: %x, %x, %x",
-            bdaddr_to_string(p_bd, bdstr, sizeof(bdstr)), lmp_ver, mfct_set,
-            lmp_subver);
+            p_bd->ToString().c_str(), lmp_ver, mfct_set, lmp_subver);
 
   if (btm_status == BTM_SUCCESS) {
     // Always update cache to ensure we have availability whenever BTM API is
@@ -663,10 +659,10 @@ static void btif_dm_cb_create_bond(const RawAddress& bd_addr,
 
   int device_type;
   int addr_type;
-  bdstr_t bdstr;
-  bdaddr_to_string(&bd_addr, bdstr, sizeof(bdstr));
+  std::string addrstr = bd_addr.ToString();
+  const char* bdstr = addrstr.c_str();
   if (transport == BT_TRANSPORT_LE) {
-    if (!btif_config_get_int((char const*)&bdstr, "DevType", &device_type)) {
+    if (!btif_config_get_int(bdstr, "DevType", &device_type)) {
       btif_config_set_int(bdstr, "DevType", BT_DEVICE_TYPE_BLE);
     }
     if (btif_storage_get_remote_addr_type(&bd_addr, &addr_type) !=
@@ -681,7 +677,7 @@ static void btif_dm_cb_create_bond(const RawAddress& bd_addr,
       btif_storage_set_remote_addr_type(&bd_addr, addr_type);
     }
   }
-  if ((btif_config_get_int((char const*)&bdstr, "DevType", &device_type) &&
+  if ((btif_config_get_int(bdstr, "DevType", &device_type) &&
        (btif_storage_get_remote_addr_type(&bd_addr, &addr_type) ==
         BT_STATUS_SUCCESS) &&
        (device_type & BT_DEVICE_TYPE_BLE) == BT_DEVICE_TYPE_BLE) ||
@@ -1233,13 +1229,12 @@ static void btif_dm_search_devices_evt(uint16_t event, char* p_param) {
       bt_bdname_t bdname;
       uint8_t remote_name_len;
       tBTA_SERVICE_MASK services = 0;
-      bdstr_t bdstr;
 
       p_search_data = (tBTA_DM_SEARCH*)p_param;
       RawAddress& bdaddr = p_search_data->inq_res.bd_addr;
 
       BTIF_TRACE_DEBUG("%s() %s device_type = 0x%x\n", __func__,
-                       bdaddr_to_string(&bdaddr, bdstr, sizeof(bdstr)),
+                       bdaddr.ToString().c_str(),
                        p_search_data->inq_res.device_type);
       bdname.name[0] = 0;
 
@@ -2214,9 +2209,8 @@ bt_status_t btif_dm_create_bond(const RawAddress* bd_addr, int transport) {
   create_bond_cb.transport = transport;
   create_bond_cb.bdaddr = *bd_addr;
 
-  bdstr_t bdstr;
   BTIF_TRACE_EVENT("%s: bd_addr=%s, transport=%d", __func__,
-                   bdaddr_to_string(bd_addr, bdstr, sizeof(bdstr)), transport);
+                   bd_addr->ToString().c_str(), transport);
   if (pairing_cb.state != BT_BOND_STATE_NONE) return BT_STATUS_BUSY;
 
   btif_stats_add_bond_event(*bd_addr, BTIF_DM_FUNC_CREATE_BOND,
@@ -2258,9 +2252,8 @@ bt_status_t btif_dm_create_bond_out_of_band(
     }
   }
 
-  bdstr_t bdstr;
   BTIF_TRACE_EVENT("%s: bd_addr=%s, transport=%d", __func__,
-                   bdaddr_to_string(bd_addr, bdstr, sizeof(bdstr)), transport);
+                   bd_addr->ToString().c_str(), transport);
   return btif_dm_create_bond(bd_addr, transport);
 }
 
@@ -2275,10 +2268,7 @@ bt_status_t btif_dm_create_bond_out_of_band(
  ******************************************************************************/
 
 bt_status_t btif_dm_cancel_bond(const RawAddress* bd_addr) {
-  bdstr_t bdstr;
-
-  BTIF_TRACE_EVENT("%s: bd_addr=%s", __func__,
-                   bdaddr_to_string(bd_addr, bdstr, sizeof(bdstr)));
+  BTIF_TRACE_EVENT("%s: bd_addr=%s", __func__, bd_addr->ToString().c_str());
 
   btif_stats_add_bond_event(*bd_addr, BTIF_DM_FUNC_CANCEL_BOND,
                             pairing_cb.state);
@@ -2339,10 +2329,7 @@ void btif_dm_hh_open_failed(RawAddress* bdaddr) {
  ******************************************************************************/
 
 bt_status_t btif_dm_remove_bond(const RawAddress* bd_addr) {
-  bdstr_t bdstr;
-
-  BTIF_TRACE_EVENT("%s: bd_addr=%s", __func__,
-                   bdaddr_to_string(bd_addr, bdstr, sizeof(bdstr)));
+  BTIF_TRACE_EVENT("%s: bd_addr=%s", __func__, bd_addr->ToString().c_str());
 
   btif_stats_add_bond_event(*bd_addr, BTIF_DM_FUNC_REMOVE_BOND,
                             pairing_cb.state);
@@ -2472,10 +2459,7 @@ bt_status_t btif_dm_get_adapter_property(bt_property_t* prop) {
  *
  ******************************************************************************/
 bt_status_t btif_dm_get_remote_services(const RawAddress& remote_addr) {
-  bdstr_t bdstr;
-
-  BTIF_TRACE_EVENT("%s: remote_addr=%s", __func__,
-                   bdaddr_to_string(&remote_addr, bdstr, sizeof(bdstr)));
+  BTIF_TRACE_EVENT("%s: bd_addr=%s", __func__, remote_addr.ToString().c_str());
 
   BTA_DmDiscover(remote_addr, BTA_ALL_SERVICE_MASK, bte_dm_search_services_evt,
                  true);
@@ -2519,12 +2503,9 @@ bt_status_t btif_dm_get_remote_services_by_transport(RawAddress* remote_addr,
  ******************************************************************************/
 bt_status_t btif_dm_get_remote_service_record(RawAddress* remote_addr,
                                               bt_uuid_t* uuid) {
+  BTIF_TRACE_EVENT("%s: bd_addr=%s", __func__, remote_addr->ToString().c_str());
+
   tSDP_UUID sdp_uuid;
-  bdstr_t bdstr;
-
-  BTIF_TRACE_EVENT("%s: remote_addr=%s", __func__,
-                   bdaddr_to_string(remote_addr, bdstr, sizeof(bdstr)));
-
   sdp_uuid.len = MAX_UUID_SIZE;
   memcpy(sdp_uuid.uu.uuid128, uuid->uu, MAX_UUID_SIZE);
 
@@ -3286,9 +3267,6 @@ void btif_debug_bond_event_dump(int fd) {
     snprintf(eventtime, sizeof(eventtime), "%s.%03ld", temptime,
              event->timestamp.tv_nsec / 1000000);
 
-    char bdaddr[18];
-    bdaddr_to_string(&event->bd_addr, bdaddr, sizeof(bdaddr));
-
     const char* func_name;
     switch (event->function) {
       case BTIF_DM_FUNC_CREATE_BOND:
@@ -3320,6 +3298,8 @@ void btif_debug_bond_event_dump(int fd) {
         bond_state = "Invalid bond state";
         break;
     }
-    dprintf(fd, "  %s  %s  %s  %s\n", eventtime, bdaddr, func_name, bond_state);
+
+    dprintf(fd, "  %s  %s  %s  %s\n", eventtime,
+            event->bd_addr.ToString().c_str(), func_name, bond_state);
   }
 }

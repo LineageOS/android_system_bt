@@ -98,7 +98,7 @@ static void smp_connect_callback(uint16_t channel, const RawAddress& bd_addr,
 
   SMP_TRACE_EVENT("SMDBG l2c %s", __func__);
 
-  if (transport == BT_TRANSPORT_BR_EDR || bd_addr == bd_addr_empty) return;
+  if (transport == BT_TRANSPORT_BR_EDR || bd_addr.IsEmpty()) return;
 
   if (bd_addr == p_cb->pairing_bda) {
     VLOG(2) << __func__ << " for pairing BDA: " << bd_addr

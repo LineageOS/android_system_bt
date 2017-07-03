@@ -32,7 +32,6 @@
 #include "bt_common.h"
 #include "bt_types.h"
 #include "bt_utils.h"
-#include "btcore/include/bdaddr.h"
 #include "btm_api.h"
 #include "btm_int.h"
 #include "btu.h"
@@ -425,16 +424,13 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
                 xx + L2CAP_FIRST_FIXED_CHNL, p_lcb->remote_bd_addr, false,
                 p_lcb->disc_reason, p_lcb->transport);
             if (p_lcb->p_fixed_ccbs[xx] == NULL) {
-              bdstr_t bd_addr_str = {0};
               L2CAP_TRACE_ERROR(
                   "%s: unexpected p_fixed_ccbs[%d] is NULL remote_bd_addr = %s "
                   "p_lcb = %p in_use = %d link_state = %d handle = %d "
                   "link_role = %d is_bonding = %d disc_reason = %d transport = "
                   "%d",
-                  __func__, xx,
-                  bdaddr_to_string((RawAddress*)&p_lcb->remote_bd_addr,
-                                   bd_addr_str, sizeof(bd_addr_str)),
-                  p_lcb, p_lcb->in_use, p_lcb->link_state, p_lcb->handle,
+                  __func__, xx, p_lcb->remote_bd_addr.ToString().c_str(), p_lcb,
+                  p_lcb->in_use, p_lcb->link_state, p_lcb->handle,
                   p_lcb->link_role, p_lcb->is_bonding, p_lcb->disc_reason,
                   p_lcb->transport);
             }

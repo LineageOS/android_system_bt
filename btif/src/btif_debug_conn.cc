@@ -20,7 +20,6 @@
 #include <string.h>
 #include <time.h>
 
-#include "btcore/include/bdaddr.h"
 #include "btif/include/btif_debug_conn.h"
 #include "osi/include/time.h"
 
@@ -81,7 +80,6 @@ void btif_debug_conn_dump(int fd) {
       current_event;  // Cache to avoid threading issues
   uint8_t dump_event = current_event_local;
   char ts_buffer[TEMP_BUFFER_SIZE] = {0};
-  char name_buffer[TEMP_BUFFER_SIZE] = {0};
 
   dprintf(fd, "\nConnection Events:\n");
   if (connection_events[dump_event].ts == 0) dprintf(fd, "  None\n");
@@ -89,8 +87,7 @@ void btif_debug_conn_dump(int fd) {
   while (connection_events[dump_event].ts) {
     conn_event_t* evt = &connection_events[dump_event];
     dprintf(fd, "  %s %s %s", format_ts(evt->ts, ts_buffer, sizeof(ts_buffer)),
-            format_state(evt->state),
-            bdaddr_to_string(&evt->bda, name_buffer, sizeof(name_buffer)));
+            format_state(evt->state), evt->bda.ToString().c_str());
     if (evt->state == BTIF_DEBUG_DISCONNECTED)
       dprintf(fd, " reason=%d", evt->disconnect_reason);
     dprintf(fd, "\n");
