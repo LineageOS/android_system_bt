@@ -89,6 +89,9 @@ typedef struct {
 #define BTM_ACL_SWKEY_STATE_IN_PROGRESS 5
   uint8_t switch_role_state;
 
+#define BTM_MAX_SW_ROLE_FAILED_ATTEMPTS 3
+  uint8_t switch_role_failed_attempts;
+
 #define BTM_ACL_ENCRYPT_STATE_IDLE 0
 #define BTM_ACL_ENCRYPT_STATE_ENCRYPT_OFF 1 /* encryption turning off */
 #define BTM_ACL_ENCRYPT_STATE_TEMP_FUNC \

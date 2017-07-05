@@ -44,6 +44,7 @@
 #include "btm_int.h"
 #include "btu.h"
 #include "device/include/controller.h"
+#include "device/include/interop.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
 #include "l2c_int.h"
@@ -224,6 +225,7 @@ void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
       p->conn_addr = *controller_get_interface()->get_address();
 
 #endif
+      p->switch_role_failed_attempts = 0;
       p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
 
       btm_pm_sm_alloc(xx);
@@ -567,6 +569,12 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role,
   if (p->switch_role_state != BTM_ACL_SWKEY_STATE_IDLE) {
     BTM_TRACE_DEBUG("BTM_SwitchRole busy: %d", p->switch_role_state);
     return (BTM_BUSY);
+  }
+
+  if (interop_match_addr(INTEROP_DYNAMIC_ROLE_SWITCH, &remote_bd_addr)) {
+    BTM_TRACE_DEBUG("%s, Device blacklisted under INTEROP_DYNAMIC_ROLE_SWITCH.",
+                    __func__);
+    return BTM_DEV_BLACKLISTED;
   }
 
   status = BTM_ReadPowerMode(p->remote_addr, &pwr_mode);
@@ -1349,6 +1357,56 @@ void btm_process_clk_off_comp_evt(uint16_t hci_handle, uint16_t clock_offset) {
   /* Look up the connection by handle and set the current mode */
   xx = btm_handle_to_acl_index(hci_handle);
   if (xx < MAX_L2CAP_LINKS) btm_cb.acl_db[xx].clock_offset = clock_offset;
+}
+
+/*******************************************************************************
+*
+* Function         btm_blacklist_role_change_device
+*
+* Description      This function is used to blacklist the device if the role
+*                  switch fails for maximum number of times. It also removes
+*                  the device from the black list if the role switch succeeds.
+*
+* Input Parms      bd_addr - remote BD addr
+*                  hci_status - role switch status
+*
+* Returns          void
+*
+*******************************************************************************/
+void btm_blacklist_role_change_device(const RawAddress& bd_addr,
+                                      uint8_t hci_status) {
+  tACL_CONN* p = btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
+
+  if (!p || !p_dev_rec) {
+    return;
+  }
+  if (hci_status == HCI_SUCCESS) {
+    p->switch_role_failed_attempts = 0;
+    return;
+  }
+
+  /* check for carkits */
+  const uint32_t cod_audio_device =
+      (BTM_COD_SERVICE_AUDIO | BTM_COD_MAJOR_AUDIO) << 8;
+  const uint32_t cod =
+      ((p_dev_rec->dev_class[0] << 16) | (p_dev_rec->dev_class[1] << 8) |
+       p_dev_rec->dev_class[2]) &
+      0xffffff;
+  if ((hci_status != HCI_SUCCESS) &&
+      ((p->switch_role_state == BTM_ACL_SWKEY_STATE_SWITCHING) ||
+       (p->switch_role_state == BTM_ACL_SWKEY_STATE_IN_PROGRESS)) &&
+      ((cod & cod_audio_device) == cod_audio_device) &&
+      (!interop_match_addr(INTEROP_DYNAMIC_ROLE_SWITCH, &bd_addr))) {
+    p->switch_role_failed_attempts++;
+    if (p->switch_role_failed_attempts == BTM_MAX_SW_ROLE_FAILED_ATTEMPTS) {
+      BTM_TRACE_WARNING(
+          "%s: Device %s blacklisted for role switching - "
+          "multiple role switch failed attempts: %u",
+          __func__, to_string(bd_addr).c_str(), p->switch_role_failed_attempts);
+      interop_database_add(INTEROP_DYNAMIC_ROLE_SWITCH, &bd_addr, 3);
+    }
+  }
 }
 
 /*******************************************************************************
