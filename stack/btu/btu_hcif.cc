@@ -1237,6 +1237,7 @@ static void btu_hcif_role_change_evt(uint8_t* p) {
   STREAM_TO_BDADDR(bda, p);
   STREAM_TO_UINT8(role, p);
 
+  btm_blacklist_role_change_device(bda, status);
   l2c_link_role_changed(&bda, role, status);
   btm_acl_role_changed(status, &bda, role);
 }
