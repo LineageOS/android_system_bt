@@ -545,6 +545,12 @@ inline std::ostream& operator<<(std::ostream& os, const RawAddress& a) {
   return os;
 }
 
+inline std::string to_string(const RawAddress& a) {
+  return base::StringPrintf("%02x:%02x:%02x:%02x:%02x:%02x", a.address[0],
+                            a.address[1], a.address[2], a.address[3],
+                            a.address[4], a.address[5]);
+}
+
 inline void BDADDR_TO_STREAM(uint8_t*& p, const RawAddress& a) {
   for (int ijk = 0; ijk < BD_ADDR_LEN; ijk++)
     *(p)++ = (uint8_t)(a.address)[BD_ADDR_LEN - 1 - ijk];
