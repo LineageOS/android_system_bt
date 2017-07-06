@@ -124,7 +124,7 @@ void mca_ccb_snd_req(tMCA_CCB *p_ccb, tMCA_CCB_EVT *p_data)
         p_ccb->p_tx_req = p_msg;
         if (!p_ccb->cong)
         {
-            p_pkt = (BT_HDR *)GKI_getbuf (MCA_CTRL_MTU);
+            p_pkt = (BT_HDR *)GKI_getbuf (MCA_CTRL_MTU + sizeof(BT_HDR));
             if (p_pkt)
             {
                 p_pkt->offset = L2CAP_MIN_OFFSET;
@@ -171,7 +171,7 @@ void mca_ccb_snd_rsp(tMCA_CCB *p_ccb, tMCA_CCB_EVT *p_data)
 
     MCA_TRACE_DEBUG ("mca_ccb_snd_rsp cong=%d req=%d", p_ccb->cong, p_msg->op_code);
     /* assume that API functions verified the parameters */
-    p_pkt = (BT_HDR *)GKI_getbuf (MCA_CTRL_MTU);
+    p_pkt = (BT_HDR *)GKI_getbuf (MCA_CTRL_MTU + sizeof(BT_HDR));
     if (p_pkt)
     {
         p_pkt->offset = L2CAP_MIN_OFFSET;
@@ -412,7 +412,7 @@ void mca_ccb_hdl_req(tMCA_CCB *p_ccb, tMCA_CCB_EVT *p_data)
     if (((reject_code != MCA_RSP_SUCCESS) && (evt_data.hdr.op_code != MCA_OP_SYNC_INFO_IND))
         || send_rsp)
     {
-        p_buf = (BT_HDR *)GKI_getbuf (MCA_CTRL_MTU);
+        p_buf = (BT_HDR *)GKI_getbuf (MCA_CTRL_MTU + sizeof(BT_HDR));
         if (p_buf)
         {
             p_buf->offset = L2CAP_MIN_OFFSET;

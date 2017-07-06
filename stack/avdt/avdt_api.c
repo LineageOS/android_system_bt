@@ -1394,7 +1394,7 @@ UINT16 AVDT_SendReport(UINT8 handle, AVDT_REPORT_TYPE type,
         /* build SR - assume fit in one packet */
         p_tbl = avdt_ad_tc_tbl_by_type(AVDT_CHAN_REPORT, p_scb->p_ccb, p_scb);
         if((p_tbl->state == AVDT_AD_ST_OPEN) &&
-            (p_pkt = (BT_HDR *)GKI_getbuf(p_tbl->peer_mtu)) != NULL)
+            (p_pkt = (BT_HDR *)GKI_getbuf(p_tbl->peer_mtu + sizeof(BT_HDR))) != NULL)
         {
             p_pkt->offset = L2CAP_MIN_OFFSET;
             p = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
