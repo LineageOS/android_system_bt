@@ -26,6 +26,10 @@ const RawAddress bdaddr1 = {.address = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66}};
 const RawAddress bdaddr2 = {.address = {0x66, 0x55, 0x44, 0x33, 0x22, 0x11}};
 }  // namespace
 
+// TODO(jpawlowski): there is some weird dependency issue in tests, and the
+// tests here fail to compile without this definition.
+void LogMsg(uint32_t trace_set_mask, const char* fmt_str, ...) {}
+
 class BtaHfClientTest : public testing::Test {
  protected:
   void SetUp() override {
