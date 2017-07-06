@@ -575,7 +575,7 @@ static void bnep_data_ind (UINT16 l2cap_cid, BT_HDR *p_buf)
             p_bcb->con_state != BNEP_STATE_CONNECTED &&
             extension_present && p && rem_len)
         {
-            p_bcb->p_pending_data = (BT_HDR *)osi_malloc(rem_len);
+            p_bcb->p_pending_data = (BT_HDR *)osi_malloc(rem_len + sizeof(BT_HDR));
             memcpy((UINT8 *)(p_bcb->p_pending_data + 1), p, rem_len);
             p_bcb->p_pending_data->len    = rem_len;
             p_bcb->p_pending_data->offset = 0;

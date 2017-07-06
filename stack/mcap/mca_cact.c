@@ -122,7 +122,7 @@ void mca_ccb_snd_req(tMCA_CCB *p_ccb, tMCA_CCB_EVT *p_data)
         p_ccb->p_tx_req = p_msg;
         if (!p_ccb->cong)
         {
-            BT_HDR *p_pkt = (BT_HDR *)osi_malloc(MCA_CTRL_MTU);
+            BT_HDR *p_pkt = (BT_HDR *)osi_malloc(MCA_CTRL_MTU + sizeof(BT_HDR));
 
             p_pkt->offset = L2CAP_MIN_OFFSET;
             p = p_start = (UINT8*)(p_pkt + 1) + L2CAP_MIN_OFFSET;
@@ -164,7 +164,7 @@ void mca_ccb_snd_rsp(tMCA_CCB *p_ccb, tMCA_CCB_EVT *p_data)
     tMCA_CCB_MSG *p_msg = (tMCA_CCB_MSG *)p_data;
     UINT8   *p, *p_start;
     BOOLEAN chk_mdl = FALSE;
-    BT_HDR *p_pkt = (BT_HDR *)osi_malloc(MCA_CTRL_MTU);
+    BT_HDR *p_pkt = (BT_HDR *)osi_malloc(MCA_CTRL_MTU + sizeof(BT_HDR));
 
     MCA_TRACE_DEBUG("%s cong=%d req=%d", __func__, p_ccb->cong, p_msg->op_code);
     /* assume that API functions verified the parameters */
