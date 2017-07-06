@@ -36,6 +36,7 @@
 #include <string.h>
 #include "utl.h"
 
+#include <cutils/log.h>
 
 /* RX and TX data flow mask */
 #define BTA_PAN_RX_MASK              0x0F
@@ -176,6 +177,15 @@ static void bta_pan_data_buf_ind_cback(UINT16 handle, BD_ADDR src, BD_ADDR dst, 
 
     if (sizeof(tBTA_PAN_DATA_PARAMS) > p_buf->offset) {
         /* offset smaller than data structure in front of actual data */
+        if (sizeof(BT_HDR) + sizeof(tBTA_PAN_DATA_PARAMS) + p_buf->len >
+            PAN_BUF_SIZE)
+        {
+            android_errorWriteLog(0x534e4554, "63146237");
+            APPL_TRACE_ERROR("%s: received buffer length too large: %d", __func__,
+                             p_buf->len);
+            osi_free(p_buf);
+            return;
+        }
         p_new_buf = (BT_HDR *)osi_malloc(PAN_BUF_SIZE);
         memcpy((UINT8 *)(p_new_buf + 1) + sizeof(tBTA_PAN_DATA_PARAMS),
                (UINT8 *)(p_buf + 1) + p_buf->offset, p_buf->len);
