@@ -79,6 +79,12 @@ typedef enum {
   // Some A2DP Sink devices report SUCCESS to the AVDTP RECONFIGURE command,
   // but fail to play the reconfigured audio stream.
   INTEROP_DISABLE_AVDTP_RECONFIGURE,
+
+  // Create dynamic blacklist to disable role switch.
+  // Some car kits indicate that role switch is supported, but then reject
+  // role switch attempts. After rejecting several role switch attempts,
+  // such car kits will go into bad state.
+  INTEROP_DYNAMIC_ROLE_SWITCH
 } interop_feature_t;
 
 // Check if a given |addr| matches a known interoperability workaround as

@@ -49,8 +49,9 @@ enum {
   BTM_SUCCESS_NO_SECURITY, /* 17 security passed, no security set  */
   BTM_FAILED_ON_SECURITY,  /* 18 security failed                   */
   BTM_REPEATED_ATTEMPTS,   /* 19 repeated attempts for LE security requests */
-  BTM_MODE4_LEVEL4_NOT_SUPPORTED /* 20 Secure Connections Only Mode can't be
-                                    supported */
+  BTM_MODE4_LEVEL4_NOT_SUPPORTED, /* 20 Secure Connections Only Mode can't be
+                                     supported */
+  BTM_DEV_BLACKLISTED             /* 21 The device is Blacklisted */
 };
 
 typedef uint8_t tBTM_STATUS;
