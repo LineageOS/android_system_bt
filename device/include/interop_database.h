@@ -111,6 +111,24 @@ static const interop_addr_entry_t interop_addr_database[] = {
 
     // Kenwood KMM-BT518HD - no audio when A2DP codec sample rate is changed
     {{{0x00, 0x1d, 0x86, 0, 0, 0}}, 3, INTEROP_DISABLE_AVDTP_RECONFIGURE},
+
+    // NAC FORD-2013 - Lincoln
+    {{{0x00, 0x26, 0xb4, 0, 0, 0}}, 3, INTEROP_DISABLE_ROLE_SWITCH},
+
+    // Toyota Prius - 2015
+    {{{0xfc, 0xc2, 0xde, 0, 0, 0}}, 3, INTEROP_DISABLE_ROLE_SWITCH},
+
+    // OBU II Bluetooth dongle
+    {{{0x00, 0x04, 0x3e, 0, 0, 0}}, 3, INTEROP_DISABLE_ROLE_SWITCH},
+
+    // Roman R9020
+    {{{0x00, 0x23, 0x01, 0, 0, 0}}, 3, INTEROP_DISABLE_ROLE_SWITCH},
+
+    // Jabra Storm
+    {{{0x1c, 0x48, 0xf9, 0, 0, 0}}, 3, INTEROP_DISABLE_ROLE_SWITCH},
+
+    // Jeep Uconnect
+    {{{0x00, 0x54, 0xaf, 0, 0, 0}}, 3, INTEROP_DISABLE_ROLE_SWITCH},
 };
 
 typedef struct {
