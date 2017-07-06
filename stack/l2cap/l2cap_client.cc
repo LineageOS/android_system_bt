@@ -393,7 +393,7 @@ static void fragment_packet(l2cap_client_t* client, buffer_t* packet) {
 
   // TODO(sharvil): eliminate copy into BT_HDR.
   BT_HDR* bt_packet = static_cast<BT_HDR*>(
-      osi_malloc(buffer_length(packet) + L2CAP_MIN_OFFSET));
+      osi_malloc(buffer_length(packet) + L2CAP_MIN_OFFSET + sizeof(BT_HDR)));
   bt_packet->offset = L2CAP_MIN_OFFSET;
   bt_packet->len = buffer_length(packet);
   memcpy(bt_packet->data + bt_packet->offset, buffer_ptr(packet),
@@ -408,8 +408,8 @@ static void fragment_packet(l2cap_client_t* client, buffer_t* packet) {
       break;
     }
 
-    BT_HDR* fragment =
-        static_cast<BT_HDR*>(osi_malloc(client->remote_mtu + L2CAP_MIN_OFFSET));
+    BT_HDR* fragment = static_cast<BT_HDR*>(
+        osi_malloc(client->remote_mtu + L2CAP_MIN_OFFSET + sizeof(BT_HDR)));
     fragment->offset = L2CAP_MIN_OFFSET;
     fragment->len = client->remote_mtu;
     memcpy(fragment->data + fragment->offset,

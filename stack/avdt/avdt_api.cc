@@ -1042,7 +1042,7 @@ uint16_t AVDT_SendReport(uint8_t handle, AVDT_REPORT_TYPE type,
     /* build SR - assume fit in one packet */
     p_tbl = avdt_ad_tc_tbl_by_type(AVDT_CHAN_REPORT, p_scb->p_ccb, p_scb);
     if (p_tbl->state == AVDT_AD_ST_OPEN) {
-      BT_HDR* p_pkt = (BT_HDR*)osi_malloc(p_tbl->peer_mtu);
+      BT_HDR* p_pkt = (BT_HDR*)osi_malloc(p_tbl->peer_mtu + sizeof(BT_HDR));
 
       p_pkt->offset = L2CAP_MIN_OFFSET;
       p = (uint8_t*)(p_pkt + 1) + p_pkt->offset;
