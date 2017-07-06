@@ -334,6 +334,10 @@
 #define AVDT_DATA_POOL_SIZE         GKI_BUF3_SIZE
 #endif
 
+#ifndef PAN_BUF_SIZE
+#define PAN_BUF_SIZE                GKI_BUF3_SIZE
+#endif
+
 #ifndef PAN_POOL_ID
 #define PAN_POOL_ID                 GKI_POOL_ID_3
 /* Maximum amount of the shared buffer to allocate for PAN */
