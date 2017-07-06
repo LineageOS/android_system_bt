@@ -565,7 +565,7 @@ static void bnep_data_ind (UINT16 l2cap_cid, BT_HDR *p_buf)
             p_bcb->con_state != BNEP_STATE_CONNECTED &&
             extension_present && p && rem_len)
         {
-            p_bcb->p_pending_data = (BT_HDR *)GKI_getbuf (rem_len);
+            p_bcb->p_pending_data = (BT_HDR *)GKI_getbuf (rem_len + sizeof(BT_HDR));
             if (p_bcb->p_pending_data)
             {
                 memcpy ((UINT8 *)(p_bcb->p_pending_data + 1), p, rem_len);
