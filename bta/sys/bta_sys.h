@@ -28,6 +28,9 @@
 #include "bt_target.h"
 #include "osi/include/alarm.h"
 
+#include <base/logging.h>
+#include <base/threading/thread.h>
+
 /*****************************************************************************
  *  Constants and data types
  ****************************************************************************/
@@ -160,7 +163,6 @@ typedef struct {
 } tBTA_SYS_HW_MSG;
 
 typedef void (*tBTA_SYS_REGISTER)(uint8_t id, const tBTA_SYS_REG* p_reg);
-typedef void (*tBTA_SYS_SENDMSG)(void* p_msg);
 
 /*****************************************************************************
  *  Global data
@@ -221,6 +223,8 @@ extern void bta_sys_deregister(uint8_t id);
 extern bool bta_sys_is_register(uint8_t id);
 extern uint16_t bta_sys_get_sys_features(void);
 extern void bta_sys_sendmsg(void* p_msg);
+extern void do_in_bta_thread(const tracked_objects::Location& from_here,
+                             const base::Closure& task);
 extern void bta_sys_start_timer(alarm_t* alarm, period_ms_t interval,
                                 uint16_t event, uint16_t layer_specific);
 extern void bta_sys_disable(tBTA_SYS_HW_MODULE module);
