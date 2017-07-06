@@ -32,7 +32,6 @@
 
 #include "bt_common.h"
 #include "bta_api.h"
-#include "bta_closure_int.h"
 #include "bta_sys.h"
 #include "bta_sys_int.h"
 #include "btm_api.h"
@@ -195,8 +194,6 @@ void bta_sys_init(void) {
 #if (defined BTA_AR_INCLUDED) && (BTA_AR_INCLUDED == true)
   bta_ar_init();
 #endif
-
-  bta_closure_init(bta_sys_register, bta_sys_sendmsg);
 }
 
 void bta_sys_free(void) {
@@ -549,6 +546,27 @@ void bta_sys_sendmsg(void* p_msg) {
 
   bta_message_loop->task_runner()->PostTask(
       FROM_HERE, base::Bind(&bta_sys_event, static_cast<BT_HDR*>(p_msg)));
+}
+
+/*******************************************************************************
+ *
+ * Function         do_in_bta_thread
+ *
+ * Description      Post a closure to be ran in the bta thread
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void do_in_bta_thread(const tracked_objects::Location& from_here,
+                      const base::Closure& task) {
+  base::MessageLoop* bta_message_loop = get_message_loop();
+
+  if (!bta_message_loop || !bta_message_loop->task_runner().get()) {
+    APPL_TRACE_ERROR("%s: MessageLooper not initialized", __func__);
+    return;
+  }
+
+  bta_message_loop->task_runner()->PostTask(from_here, task);
 }
 
 /*******************************************************************************
