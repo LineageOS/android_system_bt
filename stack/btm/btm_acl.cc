@@ -558,6 +558,9 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role,
   /* Finished if already in desired role */
   if (p->link_role == new_role) return (BTM_SUCCESS);
 
+  if (interop_match_addr(INTEROP_DISABLE_ROLE_SWITCH, &remote_bd_addr))
+    return BTM_DEV_BLACKLISTED;
+
 #if (BTM_SCO_INCLUDED == TRUE)
   /* Check if there is any SCO Active on this BD Address */
   is_sco_active = btm_is_sco_active_by_bdaddr(remote_bd_addr);
