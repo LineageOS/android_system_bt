@@ -23,7 +23,6 @@
 #include <base/logging.h>
 #include <string.h>
 
-#include "btcore/include/bdaddr.h"
 #include "osi/include/allocator.h"
 #include "osi/include/buffer.h"
 #include "osi/include/list.h"
@@ -130,7 +129,7 @@ bool l2cap_client_connect(l2cap_client_t* client,
                           const RawAddress& remote_bdaddr, uint16_t psm) {
   CHECK(client != NULL);
   CHECK(psm != 0);
-  CHECK(!bdaddr_is_empty(&remote_bdaddr));
+  CHECK(!remote_bdaddr.IsEmpty());
   CHECK(client->local_channel_id == 0);
   CHECK(!client->configured_self);
   CHECK(!client->configured_peer);

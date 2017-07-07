@@ -17,7 +17,6 @@
 
 #include <vector>
 
-#include "bdaddr.h"
 #include "mca_api.h"
 #include "mcap_test_mdl.h"
 

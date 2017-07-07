@@ -28,7 +28,6 @@
 #include <unordered_set>
 #include "device/include/controller.h"
 
-#include "btcore/include/bdaddr.h"
 #include "btif_common.h"
 #include "btif_util.h"
 

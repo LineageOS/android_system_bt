@@ -126,6 +126,7 @@ cc_test {
     static_libs: [
         "libbtcore",
         "libbt-bta",
+        "libbluetooth-types",
         "libosi",
         "libbt-protos",
     ],

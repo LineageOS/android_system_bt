@@ -185,7 +185,7 @@ bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
         started = true;
         p_dev_rec->ble.in_controller_list |= BTM_WHITE_LIST_BIT;
       } else if (p_dev_rec->ble.static_addr != bd_addr &&
-                 p_dev_rec->ble.static_addr != bd_addr_empty) {
+                 !p_dev_rec->ble.static_addr.IsEmpty()) {
         background_connection_add(p_dev_rec->ble.static_addr_type,
                                   p_dev_rec->ble.static_addr);
         started = true;
@@ -198,7 +198,7 @@ bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
         started = true;
       }
 
-      if (p_dev_rec->ble.static_addr != bd_addr_empty &&
+      if (!p_dev_rec->ble.static_addr.IsEmpty() &&
           p_dev_rec->ble.static_addr != bd_addr) {
         background_connection_remove(p_dev_rec->ble.static_addr);
         started = true;
@@ -439,7 +439,7 @@ bool btm_ble_start_auto_conn(bool start) {
           scan_win,                       /* uint16_t scan_win      */
           0x01,                           /* uint8_t white_list     */
           peer_addr_type,                 /* uint8_t addr_type_peer */
-          bd_addr_empty,                  /* BD_ADDR bda_peer     */
+          RawAddress::kEmpty,             /* BD_ADDR bda_peer     */
           own_addr_type,                  /* uint8_t addr_type_own */
           BTM_BLE_CONN_INT_MIN_DEF,       /* uint16_t conn_int_min  */
           BTM_BLE_CONN_INT_MAX_DEF,       /* uint16_t conn_int_max  */

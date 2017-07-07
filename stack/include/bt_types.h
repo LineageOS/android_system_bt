@@ -527,29 +527,7 @@ typedef struct {
 #define BD_ADDR_LEN 6 /* Device address length */
 
 #ifdef __cplusplus
-#include <base/strings/stringprintf.h>
 #include <hardware/bluetooth.h>
-
-inline bool operator==(const RawAddress& lhs, const RawAddress& rhs) {
-  return memcmp(&lhs, &rhs, sizeof(lhs)) == 0;
-}
-
-inline bool operator!=(const RawAddress& lhs, const RawAddress& rhs) {
-  return !(lhs == rhs);
-}
-
-inline std::ostream& operator<<(std::ostream& os, const RawAddress& a) {
-  os << base::StringPrintf("%02x:%02x:%02x:%02x:%02x:%02x", a.address[0],
-                           a.address[1], a.address[2], a.address[3],
-                           a.address[4], a.address[5]);
-  return os;
-}
-
-inline std::string to_string(const RawAddress& a) {
-  return base::StringPrintf("%02x:%02x:%02x:%02x:%02x:%02x", a.address[0],
-                            a.address[1], a.address[2], a.address[3],
-                            a.address[4], a.address[5]);
-}
 
 inline void BDADDR_TO_STREAM(uint8_t*& p, const RawAddress& a) {
   for (int ijk = 0; ijk < BD_ADDR_LEN; ijk++)
@@ -950,24 +928,5 @@ typedef uint8_t tBT_DEVICE_TYPE;
 
 /* Define a function for logging */
 typedef void(BT_LOG_FUNC)(int trace_type, const char* fmt_str, ...);
-
-// From bd.c
-
-/*****************************************************************************
- *  Constants
- ****************************************************************************/
-
-/* global constant for "any" bd addr */
-#ifdef __cplusplus
-static const RawAddress bd_addr_any = {
-    .address = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}};
-
-static const RawAddress bd_addr_empty = {
-    .address = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
-
-#endif
-/*****************************************************************************
- *  Functions
- ****************************************************************************/
 
 #endif

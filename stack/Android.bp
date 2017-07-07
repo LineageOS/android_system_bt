@@ -267,6 +267,7 @@ cc_test {
         "libcutils",
     ],
     static_libs: [
+        "libbluetooth-types",
         "liblog",
         "libgmock",
     ],
@@ -284,6 +285,7 @@ cc_test {
         "test/ad_parser_unittest.cc",
     ],
     static_libs: [
+        "libbluetooth-types",
         "liblog",
         "libgmock",
     ],
@@ -314,6 +316,7 @@ cc_test {
         "libprotobuf-cpp-lite",
     ],
     static_libs: [
+        "libbluetooth-types",
         "libgmock",
         "libosi",
         "libbt-protos",

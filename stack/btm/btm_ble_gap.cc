@@ -360,7 +360,7 @@ inline bool BTM_LE_STATES_SUPPORTED(const uint8_t* x, uint8_t bit_num) {
 void BTM_BleUpdateAdvFilterPolicy(tBTM_BLE_AFP adv_policy) {
   tBTM_BLE_INQ_CB* p_cb = &btm_cb.ble_ctr_cb.inq_var;
   tBLE_ADDR_TYPE init_addr_type = BLE_ADDR_PUBLIC;
-  RawAddress p_addr_ptr = bd_addr_empty;
+  RawAddress adv_address = RawAddress::kEmpty;
   uint8_t adv_mode = p_cb->adv_mode;
 
   BTM_TRACE_EVENT("BTM_BleUpdateAdvFilterPolicy");
@@ -375,14 +375,14 @@ void BTM_BleUpdateAdvFilterPolicy(tBTM_BLE_AFP adv_policy) {
 
     if (p_cb->connectable_mode & BTM_BLE_CONNECTABLE)
       p_cb->evt_type = btm_set_conn_mode_adv_init_addr(
-          p_cb, p_addr_ptr, &init_addr_type, &p_cb->adv_addr_type);
+          p_cb, adv_address, &init_addr_type, &p_cb->adv_addr_type);
 
     btsnd_hcic_ble_write_adv_params(
         (uint16_t)(p_cb->adv_interval_min ? p_cb->adv_interval_min
                                           : BTM_BLE_GAP_ADV_SLOW_INT),
         (uint16_t)(p_cb->adv_interval_max ? p_cb->adv_interval_max
                                           : BTM_BLE_GAP_ADV_SLOW_INT),
-        p_cb->evt_type, p_cb->adv_addr_type, init_addr_type, p_addr_ptr,
+        p_cb->evt_type, p_cb->adv_addr_type, init_addr_type, adv_address,
         p_cb->adv_chnl_map, p_cb->afp);
 
     if (adv_mode == BTM_BLE_ADV_ENABLE) btm_ble_start_adv();
@@ -896,7 +896,7 @@ tBTM_STATUS BTM_BleSetAdvParams(uint16_t adv_int_min, uint16_t adv_int_max,
   tBTM_LE_RANDOM_CB* p_addr_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
   tBTM_BLE_INQ_CB* p_cb = &btm_cb.ble_ctr_cb.inq_var;
   tBTM_STATUS status = BTM_SUCCESS;
-  RawAddress p_addr_ptr = bd_addr_empty;
+  RawAddress address = RawAddress::kEmpty;
   tBLE_ADDR_TYPE init_addr_type = BLE_ADDR_PUBLIC;
   tBLE_ADDR_TYPE own_addr_type = p_addr_cb->own_addr_type;
   uint8_t adv_mode = p_cb->adv_mode;
@@ -922,12 +922,12 @@ tBTM_STATUS BTM_BleSetAdvParams(uint16_t adv_int_min, uint16_t adv_int_max,
   btm_ble_stop_adv();
 
   p_cb->evt_type = btm_set_conn_mode_adv_init_addr(
-      p_cb, p_addr_ptr, &init_addr_type, &own_addr_type);
+      p_cb, address, &init_addr_type, &own_addr_type);
 
   /* update adv params */
   btsnd_hcic_ble_write_adv_params(
       p_cb->adv_interval_min, p_cb->adv_interval_max, p_cb->evt_type,
-      own_addr_type, init_addr_type, p_addr_ptr, p_cb->adv_chnl_map, p_cb->afp);
+      own_addr_type, init_addr_type, address, p_cb->adv_chnl_map, p_cb->afp);
 
   if (adv_mode == BTM_BLE_ADV_ENABLE) btm_ble_start_adv();
 
@@ -1171,7 +1171,7 @@ tBTM_STATUS btm_ble_set_discoverability(uint16_t combined_mode) {
   uint8_t new_mode = BTM_BLE_ADV_ENABLE;
   uint8_t evt_type;
   tBTM_STATUS status = BTM_SUCCESS;
-  RawAddress p_addr_ptr = bd_addr_empty;
+  RawAddress address = RawAddress::kEmpty;
   tBLE_ADDR_TYPE init_addr_type = BLE_ADDR_PUBLIC,
                  own_addr_type = p_addr_cb->own_addr_type;
   uint16_t adv_int_min, adv_int_max;
@@ -1184,7 +1184,7 @@ tBTM_STATUS btm_ble_set_discoverability(uint16_t combined_mode) {
 
   p_cb->discoverable_mode = mode;
 
-  evt_type = btm_set_conn_mode_adv_init_addr(p_cb, p_addr_ptr, &init_addr_type,
+  evt_type = btm_set_conn_mode_adv_init_addr(p_cb, address, &init_addr_type,
                                              &own_addr_type);
 
   if (p_cb->connectable_mode == BTM_BLE_NON_CONNECTABLE &&
@@ -1208,7 +1208,7 @@ tBTM_STATUS btm_ble_set_discoverability(uint16_t combined_mode) {
 
       /* update adv params */
       btsnd_hcic_ble_write_adv_params(adv_int_min, adv_int_max, evt_type,
-                                      own_addr_type, init_addr_type, p_addr_ptr,
+                                      own_addr_type, init_addr_type, address,
                                       p_cb->adv_chnl_map, p_cb->afp);
       p_cb->evt_type = evt_type;
       p_cb->adv_addr_type = own_addr_type;
@@ -1264,7 +1264,7 @@ tBTM_STATUS btm_ble_set_connectability(uint16_t combined_mode) {
   uint8_t new_mode = BTM_BLE_ADV_ENABLE;
   uint8_t evt_type;
   tBTM_STATUS status = BTM_SUCCESS;
-  RawAddress p_addr_ptr = bd_addr_empty;
+  RawAddress address = RawAddress::kEmpty;
   tBLE_ADDR_TYPE peer_addr_type = BLE_ADDR_PUBLIC,
                  own_addr_type = p_addr_cb->own_addr_type;
   uint16_t adv_int_min, adv_int_max;
@@ -1277,7 +1277,7 @@ tBTM_STATUS btm_ble_set_connectability(uint16_t combined_mode) {
 
   p_cb->connectable_mode = mode;
 
-  evt_type = btm_set_conn_mode_adv_init_addr(p_cb, p_addr_ptr, &peer_addr_type,
+  evt_type = btm_set_conn_mode_adv_init_addr(p_cb, address, &peer_addr_type,
                                              &own_addr_type);
 
   if (mode == BTM_BLE_NON_CONNECTABLE &&
@@ -1295,7 +1295,7 @@ tBTM_STATUS btm_ble_set_connectability(uint16_t combined_mode) {
       btm_ble_stop_adv();
 
       btsnd_hcic_ble_write_adv_params(adv_int_min, adv_int_max, evt_type,
-                                      own_addr_type, peer_addr_type, p_addr_ptr,
+                                      own_addr_type, peer_addr_type, address,
                                       p_cb->adv_chnl_map, p_cb->afp);
       p_cb->evt_type = evt_type;
       p_cb->adv_addr_type = own_addr_type;
@@ -1516,7 +1516,7 @@ bool btm_ble_cancel_remote_name(const RawAddress& remote_bda) {
   status = GAP_BleCancelReadPeerDevName(remote_bda);
 
   p_inq->remname_active = false;
-  p_inq->remname_bda = bd_addr_empty;
+  p_inq->remname_bda = RawAddress::kEmpty;
   alarm_cancel(p_inq->remote_name_timer);
 
   return status;
@@ -2379,20 +2379,19 @@ static void btm_ble_start_slow_adv(void) {
 
   if (p_cb->adv_mode == BTM_BLE_ADV_ENABLE) {
     tBTM_LE_RANDOM_CB* p_addr_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
-    RawAddress p_addr_ptr = bd_addr_empty;
+    RawAddress address = RawAddress::kEmpty;
     tBLE_ADDR_TYPE init_addr_type = BLE_ADDR_PUBLIC;
     tBLE_ADDR_TYPE own_addr_type = p_addr_cb->own_addr_type;
 
     btm_ble_stop_adv();
 
     p_cb->evt_type = btm_set_conn_mode_adv_init_addr(
-        p_cb, p_addr_ptr, &init_addr_type, &own_addr_type);
+        p_cb, address, &init_addr_type, &own_addr_type);
 
     /* slow adv mode never goes into directed adv */
-    btsnd_hcic_ble_write_adv_params(BTM_BLE_GAP_ADV_SLOW_INT,
-                                    BTM_BLE_GAP_ADV_SLOW_INT, p_cb->evt_type,
-                                    own_addr_type, init_addr_type, p_addr_ptr,
-                                    p_cb->adv_chnl_map, p_cb->afp);
+    btsnd_hcic_ble_write_adv_params(
+        BTM_BLE_GAP_ADV_SLOW_INT, BTM_BLE_GAP_ADV_SLOW_INT, p_cb->evt_type,
+        own_addr_type, init_addr_type, address, p_cb->adv_chnl_map, p_cb->afp);
 
     btm_ble_start_adv();
   }
