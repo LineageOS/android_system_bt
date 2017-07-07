@@ -19,8 +19,6 @@
 #include "adapter/bluetooth_test.h"
 #include "rfcomm/rfcomm_test.h"
 
-#include "btcore/include/bdaddr.h"
-
 #include <sys/socket.h>
 #include <unistd.h>
 

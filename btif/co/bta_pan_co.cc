@@ -33,7 +33,6 @@
 #include "bta_api.h"
 #include "bta_pan_api.h"
 #include "bta_pan_ci.h"
-#include "btcore/include/bdaddr.h"
 #include "btif_pan_internal.h"
 #include "btif_sock_thread.h"
 #include "btif_util.h"

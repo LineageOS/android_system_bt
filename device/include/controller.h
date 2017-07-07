@@ -21,7 +21,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "bdaddr.h"
 #include "device_features.h"
 #include "hci_layer.h"
 #include "hci_packet_factory.h"

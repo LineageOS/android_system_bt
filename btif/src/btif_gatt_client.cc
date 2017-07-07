@@ -35,7 +35,6 @@
 #include <string.h>
 #include "device/include/controller.h"
 
-#include "btcore/include/bdaddr.h"
 #include "btif_common.h"
 #include "btif_util.h"
 
@@ -583,10 +582,8 @@ bt_status_t btif_gattc_read_phy(
 
 int btif_gattc_get_device_type(const RawAddress& bd_addr) {
   int device_type = 0;
-  char bd_addr_str[18] = {0};
 
-  bdaddr_to_string(&bd_addr, bd_addr_str, sizeof(bd_addr_str));
-  if (btif_config_get_int(bd_addr_str, "DevType", &device_type))
+  if (btif_config_get_int(bd_addr.ToString().c_str(), "DevType", &device_type))
     return device_type;
   return 0;
 }

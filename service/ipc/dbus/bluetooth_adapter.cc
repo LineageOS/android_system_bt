@@ -17,7 +17,6 @@
 #include "service/ipc/dbus/bluetooth_adapter.h"
 #include <base/files/file_util.h>
 #include <base/logging.h>
-#include "service/common/bluetooth/util/address_helper.h"
 #include "service/hal/bluetooth_interface.h"
 
 using ::dbus::Bus;

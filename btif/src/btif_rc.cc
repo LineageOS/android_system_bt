@@ -37,7 +37,6 @@
 #include <hardware/bt_rc.h>
 
 #include "avrc_defs.h"
-#include "bdaddr.h"
 #include "bt_common.h"
 #include "bta_api.h"
 #include "bta_av_api.h"
@@ -489,7 +488,6 @@ void handle_rc_ctrl_features(btif_rc_device_cb_t* p_dev) {
 
 void handle_rc_features(btif_rc_device_cb_t* p_dev) {
   RawAddress rc_addr = p_dev->rc_addr;
-  bdstr_t addr1, addr2;
 
   CHECK(bt_rc_callbacks);
 
@@ -497,8 +495,7 @@ void handle_rc_features(btif_rc_device_cb_t* p_dev) {
   RawAddress avdtp_addr = btif_av_get_addr();
 
   BTIF_TRACE_DEBUG("%s: AVDTP Address: %s AVCTP address: %s", __func__,
-                   bdaddr_to_string(&avdtp_addr, addr1, sizeof(addr1)),
-                   bdaddr_to_string(&rc_addr, addr2, sizeof(addr2)));
+                   avdtp_addr.ToString().c_str(), rc_addr.ToString().c_str());
 
   if (interop_match_addr(INTEROP_DISABLE_ABSOLUTE_VOLUME, &rc_addr) ||
       absolute_volume_disabled() || avdtp_addr != rc_addr) {
@@ -690,14 +687,14 @@ void handle_rc_disconnect(tBTA_AV_RC_CLOSE* p_rc_close) {
     p_dev->rc_vol_label = MAX_LABEL;
     p_dev->rc_volume = MAX_VOLUME;
 
-    p_dev->rc_addr = bd_addr_empty;
+    p_dev->rc_addr = RawAddress::kEmpty;
   }
   if (get_num_connected_devices() == 0) {
     BTIF_TRACE_DEBUG("%s: Closing all handles", __func__);
     init_all_transactions();
   }
 
-  p_dev->rc_addr = bd_addr_empty;
+  p_dev->rc_addr = RawAddress::kEmpty;
   /* report connection state if device is AVRCP target */
   if (bt_rc_ctrl_callbacks != NULL) {
     HAL_CBACK(bt_rc_ctrl_callbacks, connection_state_cb, false, false,

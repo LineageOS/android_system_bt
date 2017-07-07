@@ -52,7 +52,6 @@
 
 #include "bt_utils.h"
 #include "bta_hf_client_api.h"
-#include "btcore/include/bdaddr.h"
 #include "btif_common.h"
 #include "btif_profile_queue.h"
 #include "btif_util.h"
@@ -814,7 +813,6 @@ static void process_ind_evt(tBTA_HF_CLIENT_IND* ind) {
  ******************************************************************************/
 static void btif_hf_client_upstreams_evt(uint16_t event, char* p_param) {
   tBTA_HF_CLIENT* p_data = (tBTA_HF_CLIENT*)p_param;
-  bdstr_t bdstr;
 
   btif_hf_client_cb_t* cb = btif_hf_client_get_cb_by_bda(p_data->bd_addr);
   if (cb == NULL && event == BTA_HF_CLIENT_OPEN_EVT) {
@@ -845,7 +843,7 @@ static void btif_hf_client_upstreams_evt(uint16_t event, char* p_param) {
             "%s: HF CLient open failed, but another device connected. "
             "status=%d state=%d connected device=%s",
             __func__, p_data->open.status, cb->state,
-            bdaddr_to_string(&cb->peer_bda, bdstr, sizeof(bdstr)));
+            cb->peer_bda.ToString().c_str());
         break;
       }
 
@@ -854,7 +852,7 @@ static void btif_hf_client_upstreams_evt(uint16_t event, char* p_param) {
                 0 /* AT+CHLD feat */);
 
       if (cb->state == BTHF_CLIENT_CONNECTION_STATE_DISCONNECTED)
-        cb->peer_bda = bd_addr_any;
+        cb->peer_bda = RawAddress::kAny;
 
       if (p_data->open.status != BTA_HF_CLIENT_SUCCESS) btif_queue_advance();
       break;
@@ -880,7 +878,7 @@ static void btif_hf_client_upstreams_evt(uint16_t event, char* p_param) {
       cb->state = BTHF_CLIENT_CONNECTION_STATE_DISCONNECTED;
       HAL_CBACK(bt_hf_client_callbacks, connection_state_cb, &cb->peer_bda,
                 cb->state, 0, 0);
-      cb->peer_bda = bd_addr_any;
+      cb->peer_bda = RawAddress::kAny;
       cb->peer_feat = 0;
       cb->chld_feat = 0;
       btif_queue_advance();
