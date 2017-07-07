@@ -106,9 +106,6 @@ static const interop_addr_entry_t interop_addr_database[] = {
     // Unknown keyboard (carried over from auto_pair_devlist.conf)
     {{{0x00, 0x0F, 0xF6, 0, 0, 0}}, 3, INTEROP_KEYBOARD_REQUIRES_FIXED_PIN},
 
-    // Kinivo BTC-450 - volume is erratic when using Absolute Volume
-    {{{0x00, 0x18, 0x91, 0, 0, 0}}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
-
     // Kenwood KMM-BT518HD - no audio when A2DP codec sample rate is changed
     {{{0x00, 0x1d, 0x86, 0, 0, 0}}, 3, INTEROP_DISABLE_AVDTP_RECONFIGURE},
 
