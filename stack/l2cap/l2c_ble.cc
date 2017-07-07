@@ -865,7 +865,7 @@ bool l2cble_init_direct_conn(tL2C_LCB* p_lcb) {
     btm_ble_disable_resolving_list(BTM_BLE_RL_INIT, true);
 
     // If we have a current RPA, use that instead.
-    if (!bdaddr_is_empty(&p_dev_rec->ble.cur_rand_addr)) {
+    if (!p_dev_rec->ble.cur_rand_addr.IsEmpty()) {
       peer_addr = p_dev_rec->ble.cur_rand_addr;
     }
   }

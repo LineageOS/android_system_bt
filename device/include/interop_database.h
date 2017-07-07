@@ -19,6 +19,7 @@
 #pragma once
 
 #include "device/include/interop.h"
+#include "raw_address.h"
 
 typedef struct {
   RawAddress addr;

@@ -1406,7 +1406,7 @@ void btm_blacklist_role_change_device(const RawAddress& bd_addr,
       BTM_TRACE_WARNING(
           "%s: Device %s blacklisted for role switching - "
           "multiple role switch failed attempts: %u",
-          __func__, to_string(bd_addr).c_str(), p->switch_role_failed_attempts);
+          __func__, bd_addr.ToString().c_str(), p->switch_role_failed_attempts);
       interop_database_add(INTEROP_DYNAMIC_ROLE_SWITCH, &bd_addr, 3);
     }
   }

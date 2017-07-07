@@ -26,7 +26,6 @@ source_set("service") {
     "common/bluetooth/scan_result.cc",
     "common/bluetooth/scan_settings.cc",
     "common/bluetooth/service.cc",
-    "common/bluetooth/util/address_helper.cc",
     "common/bluetooth/util/atomic_string.cc",
     "common/bluetooth/uuid.cc",
     "daemon.cc",

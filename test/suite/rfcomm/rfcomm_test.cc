@@ -19,7 +19,6 @@
 #include "rfcomm/rfcomm_test.h"
 #include "adapter/bluetooth_test.h"
 
-#include "btcore/include/bdaddr.h"
 #include "btcore/include/uuid.h"
 
 namespace bttest {
@@ -40,7 +39,7 @@ void RFCommTest::SetUp() {
   ASSERT_NE(socket_interface_, nullptr);
 
   // Find a bonded device that supports HFP
-  string_to_bdaddr("00:00:00:00:00:00", &bt_remote_bdaddr_);
+  bt_remote_bdaddr_ = RawAddress::kEmpty;
   char value[1280];
 
   bt_property_t* bonded_devices_prop =
@@ -48,8 +47,7 @@ void RFCommTest::SetUp() {
   RawAddress* devices = (RawAddress*)bonded_devices_prop->val;
   int num_bonded_devices = bonded_devices_prop->len / sizeof(RawAddress);
 
-  for (int i = 0; i < num_bonded_devices && bdaddr_is_empty(&bt_remote_bdaddr_);
-       i++) {
+  for (int i = 0; i < num_bonded_devices && bt_remote_bdaddr_.IsEmpty(); i++) {
     ClearSemaphore(remote_device_properties_callback_sem_);
     bt_interface()->get_remote_device_property(&devices[i], BT_PROPERTY_UUIDS);
     semaphore_wait(remote_device_properties_callback_sem_);
@@ -69,7 +67,7 @@ void RFCommTest::SetUp() {
     }
   }
 
-  ASSERT_FALSE(bdaddr_is_empty(&bt_remote_bdaddr_))
+  ASSERT_FALSE(bt_remote_bdaddr_.IsEmpty())
       << "Could not find paired device that supports HFP";
 }
 
