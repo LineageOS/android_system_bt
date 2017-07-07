@@ -1,6 +1,7 @@
 // Bluetooth types
 cc_library_static {
     name: "libbluetooth-types",
+    vendor_available: true,
     defaults: ["fluoride_types_defaults"],
     cflags: [
         /* we export all classes, so change default visibility, instead of having EXPORT_SYMBOL on each class*/
