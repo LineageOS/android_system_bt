@@ -18,7 +18,6 @@
 
 #include "adapter/bluetooth_test.h"
 #include <mutex>
-#include "btcore/include/bdaddr.h"
 #include "btcore/include/property.h"
 
 namespace {

@@ -7,7 +7,6 @@ cc_defaults {
         "dm",
         "hd",
         "hh",
-        "closure",
     ],
     include_dirs: [
         "system/bt",
@@ -51,7 +50,6 @@ cc_library_static {
         "av/bta_av_ci.cc",
         "av/bta_av_main.cc",
         "av/bta_av_ssm.cc",
-        "closure/bta_closure.cc",
         "dm/bta_dm_act.cc",
         "dm/bta_dm_api.cc",
         "dm/bta_dm_cfg.cc",
@@ -118,7 +116,6 @@ cc_test {
     name: "net_test_bta",
     defaults: ["fluoride_bta_defaults"],
     srcs: [
-        "test/bta_closure_test.cc",
         "test/bta_hf_client_test.cc",
     ],
     shared_libs: [
@@ -129,6 +126,7 @@ cc_test {
     static_libs: [
         "libbtcore",
         "libbt-bta",
+        "libbluetooth-types",
         "libosi",
         "libbt-protos",
     ],

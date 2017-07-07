@@ -58,7 +58,7 @@
 bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr,
                                   RawAddress& conn_addr,
                                   tBLE_ADDR_TYPE* p_addr_type) {
-  conn_addr = {.address = {0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6}};
+  conn_addr = RawAddress({0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6});
   *p_addr_type = 0x00;
   return true;
 }
@@ -67,7 +67,7 @@ bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr,
 void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
                             RawAddress& local_conn_addr,
                             tBLE_ADDR_TYPE* p_addr_type) {
-  local_conn_addr = {.address = {0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6}};
+  local_conn_addr = RawAddress({0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6});
   *p_addr_type = 0x01;
 }
 

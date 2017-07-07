@@ -18,7 +18,6 @@
 
 #include "support/adapter.h"
 #include "base.h"
-#include "btcore/include/bdaddr.h"
 #include "btcore/include/property.h"
 #include "support/callbacks.h"
 

@@ -103,7 +103,7 @@ int btpan_tap_send(int tap_fd, const RawAddress& src, const RawAddress& dst,
                    bool forward);
 
 static inline int is_empty_eth_addr(const RawAddress& addr) {
-  return addr == bd_addr_empty;
+  return addr == RawAddress::kEmpty;
 }
 
 static inline int is_valid_bt_eth_addr(const RawAddress& addr) {

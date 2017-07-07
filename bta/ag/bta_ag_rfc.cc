@@ -274,7 +274,7 @@ void bta_ag_start_servers(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK services) {
 
       bta_ag_port_status = RFCOMM_CreateConnection(
           bta_ag_uuid[i], bta_ag_cb.profile[i].scn, true, BTA_AG_MTU,
-          bd_addr_any, &(p_scb->serv_handle[i]),
+          RawAddress::kAny, &(p_scb->serv_handle[i]),
           bta_ag_mgmt_cback_tbl[bta_ag_scb_to_idx(p_scb) - 1]);
 
       if (bta_ag_port_status == PORT_SUCCESS) {

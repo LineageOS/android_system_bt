@@ -16,8 +16,6 @@
 
 #include "bluetooth/scan_filter.h"
 
-#include "bluetooth/util/address_helper.h"
-
 namespace bluetooth {
 
 ScanFilter::ScanFilter(const ScanFilter& other) {
@@ -48,7 +46,7 @@ ScanFilter& ScanFilter::operator=(const ScanFilter& other) {
 }
 
 bool ScanFilter::SetDeviceAddress(const std::string& device_address) {
-  if (!util::IsAddressValid(device_address)) return false;
+  if (!RawAddress::IsValidAddress(device_address)) return false;
 
   device_address_ = device_address;
   return true;

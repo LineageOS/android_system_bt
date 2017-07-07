@@ -401,7 +401,7 @@ static void bta_jv_clear_pm_cb(tBTA_JV_PM_CB* p_pm_cb, bool close_conn) {
   p_pm_cb->state = BTA_JV_PM_FREE_ST;
   p_pm_cb->app_id = BTA_JV_PM_ALL;
   p_pm_cb->handle = BTA_JV_PM_HANDLE_CLEAR;
-  p_pm_cb->peer_bd_addr = bd_addr_empty;
+  p_pm_cb->peer_bd_addr = RawAddress::kEmpty;
 }
 
 /*******************************************************************************
@@ -1785,7 +1785,7 @@ static tBTA_JV_PCB* bta_jv_add_rfc_port(tBTA_JV_RFC_CB* p_cb,
     if (used < p_cb->max_sess && listen == 1 && si) {
       si--;
       if (RFCOMM_CreateConnection(p_cb->sec_id, p_cb->scn, true,
-                                  BTA_JV_DEF_RFC_MTU, bd_addr_any,
+                                  BTA_JV_DEF_RFC_MTU, RawAddress::kAny,
                                   &(p_cb->rfc_hdl[si]),
                                   bta_jv_port_mgmt_sr_cback) == PORT_SUCCESS) {
         p_cb->curr_sess++;
@@ -1858,7 +1858,7 @@ void bta_jv_rfcomm_start_server(tBTA_JV_MSG* p_data) {
     }
 
     if (RFCOMM_CreateConnection(sec_id, rs->local_scn, true, BTA_JV_DEF_RFC_MTU,
-                                bd_addr_any, &handle,
+                                RawAddress::kAny, &handle,
                                 bta_jv_port_mgmt_sr_cback) != PORT_SUCCESS) {
       APPL_TRACE_ERROR(
           "bta_jv_rfcomm_start_server, RFCOMM_CreateConnection failed");

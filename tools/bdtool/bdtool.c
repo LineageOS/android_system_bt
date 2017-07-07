@@ -21,7 +21,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "btcore/include/bdaddr.h"
 #include "btcore/include/property.h"
 #include "osi/include/osi.h"
 #include "test/suite/support/callbacks.h"

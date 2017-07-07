@@ -27,7 +27,6 @@
 #include "bta_hf_client_api.h"
 #include "bta_hf_client_int.h"
 #include "bta_sys.h"
-#include "btcore/include/bdaddr.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
 #include "utl.h"

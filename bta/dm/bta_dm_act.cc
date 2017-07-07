@@ -486,8 +486,8 @@ static void bta_dm_sys_hw_cback(tBTA_SYS_HW_EVT status) {
 void bta_dm_disable(UNUSED_ATTR tBTA_DM_MSG* p_data) {
   /* Set l2cap idle timeout to 0 (so BTE immediately disconnects ACL link after
    * last channel is closed) */
-  L2CA_SetIdleTimeoutByBdAddr(bd_addr_any, 0, BT_TRANSPORT_BR_EDR);
-  L2CA_SetIdleTimeoutByBdAddr(bd_addr_any, 0, BT_TRANSPORT_LE);
+  L2CA_SetIdleTimeoutByBdAddr(RawAddress::kAny, 0, BT_TRANSPORT_BR_EDR);
+  L2CA_SetIdleTimeoutByBdAddr(RawAddress::kAny, 0, BT_TRANSPORT_LE);
 
   /* disable all active subsystems */
   bta_sys_disable(BTA_SYS_HW_BLUETOOTH);
@@ -755,7 +755,7 @@ void bta_dm_remove_device(tBTA_DM_MSG* p_data) {
   if (continue_delete_dev) bta_dm_process_remove_device(p_dev->bd_addr);
 
   /* Delete the other paired device too */
-  if (continue_delete_other_dev && other_address != bd_addr_empty)
+  if (continue_delete_other_dev && !other_address.IsEmpty())
     bta_dm_process_remove_device(other_address);
 }
 
@@ -2590,7 +2590,8 @@ static uint8_t bta_dm_authentication_complete_cback(
 
     if (result != HCI_ERR_LMP_RESPONSE_TIMEOUT &&
         result != HCI_ERR_PAGE_TIMEOUT &&
-        result != HCI_ERR_CONN_FAILED_ESTABLISHMENT) {
+        result != HCI_ERR_CONN_FAILED_ESTABLISHMENT &&
+        result != HCI_ERR_KEY_MISSING) {
       bta_dm_remove_sec_dev_entry(bd_addr);
     }
   }
@@ -4588,7 +4589,7 @@ void bta_dm_close_gatt_conn(UNUSED_ATTR tBTA_DM_MSG* p_data) {
   if (bta_dm_search_cb.conn_id != BTA_GATT_INVALID_CONN_ID)
     BTA_GATTC_Close(bta_dm_search_cb.conn_id);
 
-  bta_dm_search_cb.pending_close_bda = bd_addr_empty;
+  bta_dm_search_cb.pending_close_bda = RawAddress::kEmpty;
   bta_dm_search_cb.conn_id = BTA_GATT_INVALID_CONN_ID;
 }
 /*******************************************************************************
@@ -4607,7 +4608,7 @@ void btm_dm_start_gatt_discovery(const RawAddress& bd_addr) {
   /* connection is already open */
   if (bta_dm_search_cb.pending_close_bda == bd_addr &&
       bta_dm_search_cb.conn_id != BTA_GATT_INVALID_CONN_ID) {
-    bta_dm_search_cb.pending_close_bda = bd_addr_empty;
+    bta_dm_search_cb.pending_close_bda = RawAddress::kEmpty;
     alarm_cancel(bta_dm_search_cb.gatt_close_timer);
     btm_dm_start_disc_gatt_services(bta_dm_search_cb.conn_id);
   } else {

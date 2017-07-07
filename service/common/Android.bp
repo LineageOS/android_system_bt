@@ -17,7 +17,6 @@ cc_library_static {
         "bluetooth/scan_result.cc",
         "bluetooth/scan_settings.cc",
         "bluetooth/service.cc",
-        "bluetooth/util/address_helper.cc",
         "bluetooth/util/atomic_string.cc",
         "bluetooth/uuid.cc",
     ],

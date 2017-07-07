@@ -18,7 +18,6 @@
 #include <gtest/gtest.h>
 
 #include "service/adapter.h"
-#include "service/common/bluetooth/util/address_helper.h"
 #include "service/hal/fake_bluetooth_gatt_interface.h"
 #include "service/hal/fake_bluetooth_interface.h"
 
@@ -256,7 +255,7 @@ TEST_F(AdapterTest, IsDeviceConnected) {
   EXPECT_FALSE(adapter_->IsDeviceConnected(kDeviceAddr));
 
   RawAddress hal_addr;
-  ASSERT_TRUE(util::BdAddrFromString(kDeviceAddr, &hal_addr));
+  ASSERT_TRUE(RawAddress::FromString(kDeviceAddr, hal_addr));
 
   // status != BT_STATUS_SUCCESS should be ignored
   fake_hal_iface_->NotifyAclStateChangedCallback(BT_STATUS_FAIL, hal_addr,
