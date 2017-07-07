@@ -782,7 +782,7 @@ tBTM_STATUS BTM_DeleteStoredLinkKey(const RawAddress* bd_addr,
   if (!bd_addr) {
     /* This is to delete all link keys */
     /* We don't care the BD address. Just pass a non zero pointer */
-    RawAddress local_bd_addr = bd_addr_empty;
+    RawAddress local_bd_addr = RawAddress::kEmpty;
     btsnd_hcic_delete_stored_key(local_bd_addr, delete_all_flag);
   } else {
     btsnd_hcic_delete_stored_key(*bd_addr, delete_all_flag);

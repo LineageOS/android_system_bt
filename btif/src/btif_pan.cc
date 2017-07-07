@@ -54,7 +54,6 @@
 #include "bt_common.h"
 #include "bta_api.h"
 #include "bta_pan_api.h"
-#include "btcore/include/bdaddr.h"
 #include "btif_common.h"
 #include "btif_pan_internal.h"
 #include "btif_sock_thread.h"
@@ -592,10 +591,9 @@ static void bta_pan_callback_transfer(uint16_t event, char* p_param) {
     }
     case BTA_PAN_OPENING_EVT: {
       btpan_conn_t* conn;
-      bdstr_t bds;
-      bdaddr_to_string(&p_data->opening.bd_addr, bds, sizeof(bds));
       BTIF_TRACE_DEBUG("BTA_PAN_OPENING_EVT handle %d, addr: %s",
-                       p_data->opening.handle, bds);
+                       p_data->opening.handle,
+                       p_data->opening.bd_addr.ToString().c_str());
       conn = btpan_find_conn_addr(p_data->opening.bd_addr);
 
       asrt(conn != NULL);

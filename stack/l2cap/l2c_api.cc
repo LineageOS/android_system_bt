@@ -962,7 +962,7 @@ bool L2CA_Echo(const RawAddress& p_bd_addr, BT_HDR* p_data,
   /* Fail if we have not established communications with the controller */
   if (!BTM_IsDeviceUp()) return (false);
 
-  if (bd_addr_any == p_bd_addr && (p_data == NULL)) {
+  if (RawAddress::kAny == p_bd_addr && (p_data == NULL)) {
     /* Only register callback without sending message. */
     l2cb.p_echo_data_cb = p_callback;
     return true;
@@ -1058,8 +1058,8 @@ bool L2CA_SetIdleTimeout(uint16_t cid, uint16_t timeout, bool is_global) {
  *                  down immediately when the last channel is removed.
  *                  A timeout of 0xFFFF means no timeout. Values are in seconds.
  *                  A bd_addr is the remote BD address. If bd_addr =
- *                  bd_addr_any, then the idle timeouts for all active l2cap
- *                  links will be changed.
+ *                  RawAddress::kAny, then the idle timeouts for all active
+ *                  l2cap links will be changed.
  *
  * Returns          true if command succeeded, false if failed
  *
@@ -1070,7 +1070,7 @@ bool L2CA_SetIdleTimeoutByBdAddr(const RawAddress& bd_addr, uint16_t timeout,
                                  tBT_TRANSPORT transport) {
   tL2C_LCB* p_lcb;
 
-  if (bd_addr_any == bd_addr) {
+  if (RawAddress::kAny == bd_addr) {
     p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, transport);
     if ((p_lcb) && (p_lcb->in_use) && (p_lcb->link_state == LST_CONNECTED)) {
       p_lcb->idle_timeout = timeout;
@@ -1422,7 +1422,7 @@ bool L2CA_SetFlushTimeout(const RawAddress& bd_addr, uint16_t flush_tout) {
     }
   }
 
-  if (bd_addr_any == bd_addr) {
+  if (RawAddress::kAny == bd_addr) {
     p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_BR_EDR);
 
     if ((p_lcb) && (p_lcb->in_use) && (p_lcb->link_state == LST_CONNECTED)) {

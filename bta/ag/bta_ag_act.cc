@@ -305,7 +305,7 @@ void bta_ag_disc_fail(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
   /* reinitialize stuff */
 
   /* clear the remote BD address */
-  p_scb->peer_addr = bd_addr_empty;
+  p_scb->peer_addr = RawAddress::kEmpty;
 
   /* call open cback w. failure */
   bta_ag_cback_open(p_scb, NULL, BTA_AG_FAIL_SDP);
@@ -347,7 +347,7 @@ void bta_ag_rfc_fail(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
   p_scb->svc_conn = false;
   p_scb->hsp_version = HSP_VERSION_1_2;
   /*Clear the BD address*/
-  p_scb->peer_addr = bd_addr_empty;
+  p_scb->peer_addr = RawAddress::kEmpty;
 
   /* reopen registered servers */
   bta_ag_start_servers(p_scb, p_scb->reg_services);
@@ -408,7 +408,7 @@ void bta_ag_rfc_close(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
   /* if not deregistering (deallocating) reopen registered servers */
   if (p_scb->dealloc == false) {
     /* Clear peer bd_addr so instance can be reused */
-    p_scb->peer_addr = bd_addr_empty;
+    p_scb->peer_addr = RawAddress::kEmpty;
 
     /* start only unopened server */
     services = p_scb->reg_services;

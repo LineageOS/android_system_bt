@@ -16,7 +16,6 @@
 
 #include "service/gatt_server.h"
 
-#include "service/common/bluetooth/util/address_helper.h"
 #include "service/logging_helpers.h"
 #include "stack/include/bt_types.h"
 
@@ -110,7 +109,7 @@ bool GattServer::SendResponse(const std::string& device_address, int request_id,
   lock_guard<mutex> lock(mutex_);
 
   RawAddress addr;
-  if (!util::BdAddrFromString(device_address, &addr)) {
+  if (!RawAddress::FromString(device_address, addr)) {
     LOG(ERROR) << "Invalid device address given: " << device_address;
     return false;
   }
@@ -179,7 +178,7 @@ bool GattServer::SendNotification(const std::string& device_address,
   lock_guard<mutex> lock(mutex_);
 
   RawAddress addr;
-  if (!util::BdAddrFromString(device_address, &addr)) {
+  if (!RawAddress::FromString(device_address, addr)) {
     LOG(ERROR) << "Invalid device address given: " << device_address;
     return false;
   }

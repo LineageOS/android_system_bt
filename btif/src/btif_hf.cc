@@ -36,7 +36,6 @@
 
 #include "bta/include/utl.h"
 #include "bta_ag_api.h"
-#include "btcore/include/bdaddr.h"
 #include "btif_common.h"
 #include "btif_hf.h"
 #include "btif_profile_queue.h"
@@ -336,7 +335,6 @@ static bt_status_t btif_hf_check_if_slc_connected() {
  ******************************************************************************/
 static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
   tBTA_AG* p_data = (tBTA_AG*)p_param;
-  bdstr_t bdstr;
   int idx = p_data->hdr.handle - 1;
 
   BTIF_TRACE_DEBUG("%s: event=%s", __func__, dump_hf_event(event));
@@ -372,8 +370,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
             "%s: AG open failed, but another device connected. status=%d "
             "state=%d connected device=%s",
             __func__, p_data->open.status, btif_hf_cb[idx].state,
-            bdaddr_to_string(&btif_hf_cb[idx].connected_bda, bdstr,
-                             sizeof(bdstr)));
+            btif_hf_cb[idx].connected_bda.ToString().c_str());
         break;
       }
 
@@ -381,7 +378,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
                 &btif_hf_cb[idx].connected_bda);
 
       if (btif_hf_cb[idx].state == BTHF_CONNECTION_STATE_DISCONNECTED)
-        btif_hf_cb[idx].connected_bda = bd_addr_any;
+        btif_hf_cb[idx].connected_bda = RawAddress::kAny;
 
       if (p_data->open.status != BTA_AG_SUCCESS) btif_queue_advance();
       break;
@@ -395,7 +392,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
           __func__, idx, btif_hf_cb[idx].handle);
       HAL_CBACK(bt_hf_callbacks, connection_state_cb, btif_hf_cb[idx].state,
                 &btif_hf_cb[idx].connected_bda);
-      btif_hf_cb[idx].connected_bda = bd_addr_any;
+      btif_hf_cb[idx].connected_bda = RawAddress::kAny;
       btif_hf_cb[idx].peer_feat = 0;
       clear_phone_state_multihf(idx);
       hf_idx = btif_hf_latest_connected_idx();

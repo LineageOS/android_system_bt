@@ -32,7 +32,6 @@
 #include "bt_common.h"
 #include "bta_gattc_int.h"
 #include "bta_sys.h"
-#include "btcore/include/bdaddr.h"
 #include "l2c_api.h"
 #include "utl.h"
 
@@ -488,7 +487,7 @@ bool bta_gattc_mark_bg_conn(tBTA_GATTC_IF client_if,
 
   for (i = 0; i < BTA_GATTC_KNOWN_SR_MAX; i++, p_bg_tck++) {
     if (p_bg_tck->in_use && ((p_bg_tck->remote_bda == remote_bda_ptr) ||
-                             (p_bg_tck->remote_bda == bd_addr_empty))) {
+                             (p_bg_tck->remote_bda.IsEmpty()))) {
       p_cif_mask = &p_bg_tck->cif_mask;
 
       if (add) /* mask on the cif bit */
@@ -546,7 +545,7 @@ bool bta_gattc_check_bg_conn(tBTA_GATTC_IF client_if,
 
   for (i = 0; i < BTA_GATTC_KNOWN_SR_MAX && !is_bg_conn; i++, p_bg_tck++) {
     if (p_bg_tck->in_use && (p_bg_tck->remote_bda == remote_bda ||
-                             p_bg_tck->remote_bda == bd_addr_empty)) {
+                             p_bg_tck->remote_bda.IsEmpty())) {
       if (((p_bg_tck->cif_mask & (1 << (client_if - 1))) != 0) &&
           role == HCI_ROLE_MASTER)
         is_bg_conn = true;
@@ -665,7 +664,7 @@ bool bta_gattc_conn_dealloc(const RawAddress& remote_bda) {
 
   if (p_conn != NULL) {
     p_conn->in_use = false;
-    p_conn->remote_bda = bd_addr_empty;
+    p_conn->remote_bda = RawAddress::kEmpty;
     return true;
   }
   return false;

@@ -38,7 +38,6 @@
 
 #include "bt_common.h"
 #include "bta_api.h"
-#include "btcore/include/bdaddr.h"
 #include "btif_common.h"
 #include "btif_storage.h"
 #include "btif_util.h"
@@ -434,7 +433,7 @@ bool btif_hh_add_added_dev(const RawAddress& bda, tBTA_HH_ATTR_MASK attr_mask) {
     }
   }
   for (i = 0; i < BTIF_HH_MAX_ADDED_DEV; i++) {
-    if (btif_hh_cb.added_devices[i].bd_addr == bd_addr_empty) {
+    if (btif_hh_cb.added_devices[i].bd_addr.IsEmpty()) {
       LOG(WARNING) << " Added device " << bda;
       btif_hh_cb.added_devices[i].bd_addr = bda;
       btif_hh_cb.added_devices[i].dev_handle = BTA_HH_INVALID_HANDLE;
@@ -591,7 +590,7 @@ bt_status_t btif_hh_connect(const RawAddress* bd_addr) {
       // No space for more HID device now.
       LOG(ERROR) << __func__ << ": Error, device " << *bd_addr
                  << " added but addition failed";
-      added_dev->bd_addr = bd_addr_empty;
+      added_dev->bd_addr = RawAddress::kEmpty;
       added_dev->dev_handle = BTA_HH_INVALID_HANDLE;
       return BT_STATUS_FAIL;
     }
@@ -1020,7 +1019,7 @@ static void btif_hh_upstreams_evt(uint16_t event, char* p_param) {
           if (p_data->dev_info.status == BTA_HH_OK) {
             btif_hh_cb.added_devices[i].dev_handle = p_data->dev_info.handle;
           } else {
-            btif_hh_cb.added_devices[i].bd_addr = bd_addr_empty;
+            btif_hh_cb.added_devices[i].bd_addr = RawAddress::kEmpty;
             btif_hh_cb.added_devices[i].dev_handle = BTA_HH_INVALID_HANDLE;
           }
           break;
@@ -1296,9 +1295,7 @@ static bt_status_t virtual_unplug(RawAddress* bd_addr) {
 static bt_status_t get_idle_time(RawAddress* bd_addr) {
   CHECK_BTHH_INIT();
 
-  char bdstr[20] = {0};
-  BTIF_TRACE_DEBUG("%s: addr = %s", __func__,
-                   bdaddr_to_string(bd_addr, bdstr, sizeof(bdstr)));
+  BTIF_TRACE_DEBUG("%s: addr = %s", __func__, bd_addr->ToString().c_str());
 
   if (btif_hh_cb.status == BTIF_HH_DISABLED) {
     BTIF_TRACE_ERROR("%s: Error, HH status = %d", __func__, btif_hh_cb.status);
@@ -1324,9 +1321,8 @@ static bt_status_t get_idle_time(RawAddress* bd_addr) {
 static bt_status_t set_idle_time(RawAddress* bd_addr, uint8_t idle_time) {
   CHECK_BTHH_INIT();
 
-  char bdstr[20] = {0};
   BTIF_TRACE_DEBUG("%s: addr = %s, idle time = %d", __func__,
-                   bdaddr_to_string(bd_addr, bdstr, sizeof(bdstr)), idle_time);
+                   bd_addr->ToString().c_str(), idle_time);
 
   if (btif_hh_cb.status == BTIF_HH_DISABLED) {
     BTIF_TRACE_ERROR("%s: Error, HH status = %d", __func__, btif_hh_cb.status);
@@ -1336,7 +1332,7 @@ static bt_status_t set_idle_time(RawAddress* bd_addr, uint8_t idle_time) {
   btif_hh_device_t* p_dev = p_dev = btif_hh_find_connected_dev_by_bda(*bd_addr);
   if (p_dev == NULL) {
     BTIF_TRACE_WARNING("%s: addr = %s not opened", __func__,
-                       bdaddr_to_string(bd_addr, bdstr, sizeof(bdstr)));
+                       bd_addr->ToString().c_str());
     return BT_STATUS_FAIL;
   }
 

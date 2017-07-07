@@ -87,7 +87,7 @@ struct AdvertisingInstance {
         duration(0),
         timeout_timer(nullptr),
         own_address_type(0),
-        own_address(bd_addr_empty),
+        own_address(RawAddress::kEmpty),
         address_update_required(false),
         periodic_enabled(false),
         enable_status(false) {
@@ -621,7 +621,7 @@ class BleAdvertisingManagerImpl
     p_inst->advertising_event_properties =
         p_params->advertising_event_properties;
     p_inst->tx_power = p_params->tx_power;
-    const RawAddress& peer_address = bd_addr_empty;
+    const RawAddress& peer_address = RawAddress::kEmpty;
 
     GetHciInterface()->SetParameters(
         p_inst->inst_id, p_params->advertising_event_properties,

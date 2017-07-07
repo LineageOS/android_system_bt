@@ -1,20 +1,20 @@
 /******************************************************************************
- *
- *  Copyright (C) 1999-2012 Broadcom Corporation
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at:
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
- ******************************************************************************/
+*
+*  Copyright (C) 1999-2012 Broadcom Corporation
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at:
+*
+*  http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*
+******************************************************************************/
 
 /******************************************************************************
  *
@@ -635,8 +635,8 @@ extern bool L2CA_SetIdleTimeout(uint16_t cid, uint16_t timeout, bool is_global);
  *                  down immediately when the last channel is removed.
  *                  A timeout of 0xFFFF means no timeout. Values are in seconds.
  *                  A bd_addr is the remote BD address. If bd_addr =
- *                  bd_addr_any, then the idle timeouts for all active l2cap
- *                  links will be changed.
+ *                  RawAddress::kAny, then the idle timeouts for all active
+ *                  l2cap links will be changed.
  *
  * Returns          true if command succeeded, false if failed
  *
@@ -1131,8 +1131,8 @@ extern bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda);
  *                  down immediately when the last channel is removed.
  *                  A timeout of 0xFFFF means no timeout. Values are in seconds.
  *                  A bd_addr is the remote BD address. If bd_addr =
- *                  bd_addr_any, then the idle timeouts for all active l2cap
- *                  links will be changed.
+ *                  RawAddress::kAny, then the idle timeouts for all active
+ *                  l2cap links will be changed.
  *
  * Returns          true if command succeeded, false if failed
  *

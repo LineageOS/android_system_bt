@@ -15,7 +15,7 @@ bootstrap_go_package {
 }
 
 fluoride_defaults {
-    name: "fluoride_defaults",
+    name: "fluoride_types_defaults",
     cflags: [
         "-DEXPORT_SYMBOL=__attribute__((visibility(\"default\")))",
         "-fvisibility=hidden",
@@ -44,4 +44,12 @@ fluoride_defaults {
     },
     shared_libs: [ "libchrome" ]
     // Setup Bluetooth local make variables for handling configuration
+}
+
+fluoride_defaults {
+    name: "fluoride_defaults",
+    defaults: ["fluoride_types_defaults"],
+    static_libs: [
+        "libbluetooth-types",
+    ],
 }
