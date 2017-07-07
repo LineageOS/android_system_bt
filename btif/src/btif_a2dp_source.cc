@@ -29,7 +29,6 @@
 #include "audio_a2dp_hw/include/audio_a2dp_hw.h"
 #include "bt_common.h"
 #include "bta_av_ci.h"
-#include "btcore/include/bdaddr.h"
 #include "btif_a2dp.h"
 #include "btif_a2dp_control.h"
 #include "btif_a2dp_source.h"
@@ -1089,8 +1088,6 @@ static void btm_read_rssi_cb(void* data) {
     return;
   }
 
-  char temp_buffer[20] = {0};
   LOG_WARN(LOG_TAG, "%s device: %s, rssi: %d", __func__,
-           bdaddr_to_string(&result->rem_bda, temp_buffer, sizeof(temp_buffer)),
-           result->rssi);
+           result->rem_bda.ToString().c_str(), result->rssi);
 }

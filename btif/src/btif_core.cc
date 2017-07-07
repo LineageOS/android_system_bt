@@ -42,7 +42,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "bdaddr.h"
 #include "bt_common.h"
 #include "bt_utils.h"
 #include "bta_api.h"
@@ -84,8 +83,9 @@
  ******************************************************************************/
 
 /* These type definitions are used when passing data from the HAL to BTIF
-* context
-*  in the downstream path for the adapter and remote_device property APIs */
+ * context in the downstream path for the adapter and remote_device property
+ * APIs
+ */
 
 typedef struct {
   RawAddress bd_addr;
@@ -116,11 +116,11 @@ typedef enum {
 static tBTA_SERVICE_MASK btif_enabled_services = 0;
 
 /*
-* This variable should be set to 1, if the Bluedroid+BTIF libraries are to
-* function in DUT mode.
-*
-* To set this, the btif_init_bluetooth needs to be called with argument as 1
-*/
+ * This variable should be set to 1, if the Bluedroid+BTIF libraries are to
+ * function in DUT mode.
+ *
+ * To set this, the btif_init_bluetooth needs to be called with argument as 1
+ */
 static uint8_t btif_dut_mode = 0;
 
 static thread_t* bt_jni_workqueue_thread;
@@ -383,16 +383,15 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status) {
   /* Fetch the local BD ADDR */
   RawAddress local_bd_addr = *controller_get_interface()->get_address();
 
-  bdstr_t bdstr;
-  bdaddr_to_string(&local_bd_addr, bdstr, sizeof(bdstr));
+  std::string bdstr = local_bd_addr.ToString();
 
   char val[PROPERTY_VALUE_MAX] = "";
   int val_size = 0;
   if ((btif_config_get_str("Adapter", "Address", val, &val_size) == 0) ||
-      strcmp(bdstr, val) == 0) {
+      strcmp(bdstr.c_str(), val) == 0) {
     // This address is not present in the config file, save it there.
     BTIF_TRACE_WARNING("%s: Saving the Adapter Address", __func__);
-    btif_config_set_str("Adapter", "Address", bdstr);
+    btif_config_set_str("Adapter", "Address", bdstr.c_str());
     btif_config_save();
 
     // fire HAL callback for property change

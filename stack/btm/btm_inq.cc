@@ -1175,7 +1175,7 @@ void btm_inq_db_reset(void) {
   if (p_inq->remname_active) {
     alarm_cancel(p_inq->remote_name_timer);
     p_inq->remname_active = false;
-    p_inq->remname_bda = bd_addr_empty;
+    p_inq->remname_bda = RawAddress::kEmpty;
 
     if (p_inq->p_remname_cmpl_cb) {
       rem_name.status = BTM_DEV_RESET;
@@ -2167,7 +2167,7 @@ void btm_process_remote_name(const RawAddress* bda, BD_NAME bdn,
       rem_name.remote_bd_name[0] = 0;
     }
     /* Reset the remote BAD to zero and call callback if possible */
-    p_inq->remname_bda = bd_addr_empty;
+    p_inq->remname_bda = RawAddress::kEmpty;
 
     p_inq->p_remname_cmpl_cb = NULL;
     if (p_cb) (p_cb)((tBTM_REMOTE_DEV_NAME*)&rem_name);

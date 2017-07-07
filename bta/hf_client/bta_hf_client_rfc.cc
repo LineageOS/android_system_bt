@@ -179,7 +179,7 @@ void bta_hf_client_start_server() {
 
   port_status = RFCOMM_CreateConnection(
       UUID_SERVCLASS_HF_HANDSFREE, bta_hf_client_cb_arr.scn, true,
-      BTA_HF_CLIENT_MTU, bd_addr_any, &(bta_hf_client_cb_arr.serv_handle),
+      BTA_HF_CLIENT_MTU, RawAddress::kAny, &(bta_hf_client_cb_arr.serv_handle),
       bta_hf_client_mgmt_cback);
 
   APPL_TRACE_DEBUG("%s: started rfcomm server with handle %d", __func__,

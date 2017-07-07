@@ -59,7 +59,6 @@ btserviceBaseTestSrc = [
     "test/low_energy_client_unittest.cc",
     "test/low_energy_scanner_unittest.cc",
     "test/settings_unittest.cc",
-    "test/util_unittest.cc",
     "test/uuid_unittest.cc",
 ]
 

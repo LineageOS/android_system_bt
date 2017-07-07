@@ -17,7 +17,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "service/common/bluetooth/util/address_helper.h"
 #include "service/gatt_server.h"
 #include "service/hal/fake_bluetooth_gatt_interface.h"
 
@@ -401,8 +400,8 @@ TEST_F(GattServerPostRegisterTest, RequestRead) {
                                           GATT_ERROR_NONE, 0, kTestValue));
 
   RawAddress hal_addr0, hal_addr1;
-  ASSERT_TRUE(util::BdAddrFromString(kTestAddress0, &hal_addr0));
-  ASSERT_TRUE(util::BdAddrFromString(kTestAddress1, &hal_addr1));
+  ASSERT_TRUE(RawAddress::FromString(kTestAddress0, hal_addr0));
+  ASSERT_TRUE(RawAddress::FromString(kTestAddress1, hal_addr1));
 
   // Send a connection callback. The GattServer should store the connection
   // information and be able to process the incoming read requests for this
@@ -511,8 +510,8 @@ TEST_F(GattServerPostRegisterTest, RequestWrite) {
                                           GATT_ERROR_NONE, 0, kTestValue));
 
   RawAddress hal_addr0, hal_addr1;
-  ASSERT_TRUE(util::BdAddrFromString(kTestAddress0, &hal_addr0));
-  ASSERT_TRUE(util::BdAddrFromString(kTestAddress1, &hal_addr1));
+  ASSERT_TRUE(RawAddress::FromString(kTestAddress0, hal_addr0));
+  ASSERT_TRUE(RawAddress::FromString(kTestAddress1, hal_addr1));
 
   // Send a connection callback. The GattServer should store the connection
   // information and be able to process the incoming read requests for this
@@ -621,7 +620,7 @@ TEST_F(GattServerPostRegisterTest, SendNotification) {
   const int kConnId1 = 1;
   std::vector<uint8_t> value;
   RawAddress hal_addr0;
-  ASSERT_TRUE(util::BdAddrFromString(kTestAddress0, &hal_addr0));
+  ASSERT_TRUE(RawAddress::FromString(kTestAddress0, hal_addr0));
 
   // Set up two connections with the same address.
   fake_hal_gatt_iface_->NotifyServerConnectionCallback(
