@@ -2970,10 +2970,15 @@ bt_status_t btif_dm_get_adapter_property(bt_property_t *prop)
 *******************************************************************************/
 bt_status_t btif_dm_get_remote_services(bt_bdaddr_t *remote_addr)
 {
-    bdstr_t bdstr;
+    bdstr_t bdstr = {'\0'};
 
     BTIF_TRACE_EVENT("%s: remote_addr=%s", __FUNCTION__, bdaddr_to_string(remote_addr, bdstr, sizeof(bdstr)));
 
+    if (bdaddr_is_empty(remote_addr))
+    {
+        BTIF_TRACE_WARNING("%s: remote_addr =%s not valid.", __FUNCTION__, bdaddr_to_string(remote_addr, bdstr, sizeof(bdstr)));
+        return BT_STATUS_FAIL;
+    }
     BTA_DmDiscover(remote_addr->address, BTA_ALL_SERVICE_MASK,
                    bte_dm_search_services_evt, TRUE);
 

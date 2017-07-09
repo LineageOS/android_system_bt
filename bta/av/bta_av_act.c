@@ -1547,12 +1547,12 @@ void bta_av_disable(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
     {
         hdr.layer_specific = xx + 1;
         bta_av_api_deregister((tBTA_AV_DATA *)&hdr);
+        alarm_free(p_cb->accept_signalling_timer[xx]);
+        p_cb->accept_signalling_timer[xx] = NULL;
     }
 
     alarm_free(p_cb->link_signalling_timer);
     p_cb->link_signalling_timer = NULL;
-    alarm_free(p_cb->accept_signalling_timer);
-    p_cb->accept_signalling_timer = NULL;
 }
 
 /*******************************************************************************
@@ -1667,7 +1667,7 @@ void bta_av_sig_chg(tBTA_AV_DATA *p_data)
                                 p_cb->p_scb[xx]->peer_addr);
                         /* Possible collision : need to avoid outgoing processing while the timer is running */
                         p_cb->p_scb[xx]->coll_mask = BTA_AV_COLL_INC_TMR;
-                        alarm_set_on_queue(p_cb->accept_signalling_timer,
+                        alarm_set_on_queue(p_cb->accept_signalling_timer[xx],
                                            BTA_AV_ACCEPT_SIGNALLING_TIMEOUT_MS,
                                            bta_av_accept_signalling_timer_cback,
                                            UINT_TO_PTR(xx),
@@ -1806,7 +1806,7 @@ static void bta_av_accept_signalling_timer_cback(void *data)
                     /* We are still doing SDP. Run the timer again. */
                     p_scb->coll_mask |= BTA_AV_COLL_INC_TMR;
 
-                    alarm_set_on_queue(p_cb->accept_signalling_timer,
+                    alarm_set_on_queue(p_cb->accept_signalling_timer[inx],
                                        BTA_AV_ACCEPT_SIGNALLING_TIMEOUT_MS,
                                        bta_av_accept_signalling_timer_cback,
                                        UINT_TO_PTR(inx),
