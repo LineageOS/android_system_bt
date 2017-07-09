@@ -84,7 +84,12 @@ typedef enum {
   // Some car kits indicate that role switch is supported, but then reject
   // role switch attempts. After rejecting several role switch attempts,
   // such car kits will go into bad state.
-  INTEROP_DYNAMIC_ROLE_SWITCH
+  INTEROP_DYNAMIC_ROLE_SWITCH,
+
+  // Disable role switch for headsets/car-kits.
+  // Some car kits allow role switch but when the Phone initiates role switch,
+  // the Remote device will go into bad state that will lead to LMP time out.
+  INTEROP_DISABLE_ROLE_SWITCH
 } interop_feature_t;
 
 // Check if a given |addr| matches a known interoperability workaround as

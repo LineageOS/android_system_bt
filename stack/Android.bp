@@ -195,6 +195,7 @@ cc_test {
     srcs: ["test/stack_a2dp_test.cc"],
     shared_libs: [
         "liblog",
+        "libcutils",
     ],
     static_libs: [
         "libbt-stack",

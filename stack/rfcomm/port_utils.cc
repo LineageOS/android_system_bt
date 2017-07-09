@@ -231,10 +231,13 @@ void port_release_port(tPORT* p_port) {
     }
 
     rfc_port_timer_stop(p_port);
+
+    mutex_global_lock();
     fixed_queue_free(p_port->tx.queue, NULL);
     p_port->tx.queue = NULL;
     fixed_queue_free(p_port->rx.queue, NULL);
     p_port->rx.queue = NULL;
+    mutex_global_unlock();
 
     if (p_port->keep_port_handle) {
       RFCOMM_TRACE_DEBUG("%s Re-initialize handle: %d", __func__, p_port->inx);
