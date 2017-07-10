@@ -37,6 +37,8 @@
 #include "sdp_api.h"
 #include "sdpdefs.h"
 
+using bluetooth::Uuid;
+
 /*******************************************************************************
  *
  * Function         PAN_Register
@@ -266,9 +268,6 @@ tPAN_RESULT PAN_SetRole(uint8_t role, uint8_t* sec_mask,
  ******************************************************************************/
 tPAN_RESULT PAN_Connect(const RawAddress& rem_bda, uint8_t src_role,
                         uint8_t dst_role, uint16_t* handle) {
-  tPAN_CONN* pcb;
-  tBNEP_RESULT result;
-  tBT_UUID src_uuid, dst_uuid;
   uint32_t mx_chan_id;
 
   /*
@@ -294,8 +293,9 @@ tPAN_RESULT PAN_Connect(const RawAddress& rem_bda, uint8_t src_role,
   }
 
   /* Check if connection exists for this remote device */
-  pcb = pan_get_pcb_by_addr(rem_bda);
+  tPAN_CONN* pcb = pan_get_pcb_by_addr(rem_bda);
 
+  uint16_t src_uuid, dst_uuid;
   /* If we are PANU for this role validate destination role */
   if (src_role == PAN_ROLE_CLIENT) {
     if ((pan_cb.num_conns > 1) || (pan_cb.num_conns && (!pcb))) {
@@ -310,15 +310,15 @@ tPAN_RESULT PAN_Connect(const RawAddress& rem_bda, uint8_t src_role,
       return PAN_INVALID_SRC_ROLE;
     }
 
-    src_uuid.uu.uuid16 = UUID_SERVCLASS_PANU;
+    src_uuid = UUID_SERVCLASS_PANU;
     if (dst_role == PAN_ROLE_CLIENT) {
-      dst_uuid.uu.uuid16 = UUID_SERVCLASS_PANU;
+      dst_uuid = UUID_SERVCLASS_PANU;
     } else if (dst_role == PAN_ROLE_GN_SERVER) {
-      dst_uuid.uu.uuid16 = UUID_SERVCLASS_GN;
+      dst_uuid = UUID_SERVCLASS_GN;
     } else {
-      dst_uuid.uu.uuid16 = UUID_SERVCLASS_NAP;
+      dst_uuid = UUID_SERVCLASS_NAP;
     }
-    mx_chan_id = dst_uuid.uu.uuid16;
+    mx_chan_id = dst_uuid;
   }
   /* If destination is PANU role validate source role */
   else if (dst_role == PAN_ROLE_CLIENT) {
@@ -327,13 +327,13 @@ tPAN_RESULT PAN_Connect(const RawAddress& rem_bda, uint8_t src_role,
       return PAN_INVALID_SRC_ROLE;
     }
 
-    dst_uuid.uu.uuid16 = UUID_SERVCLASS_PANU;
+    dst_uuid = UUID_SERVCLASS_PANU;
     if (src_role == PAN_ROLE_GN_SERVER) {
-      src_uuid.uu.uuid16 = UUID_SERVCLASS_GN;
+      src_uuid = UUID_SERVCLASS_GN;
     } else {
-      src_uuid.uu.uuid16 = UUID_SERVCLASS_NAP;
+      src_uuid = UUID_SERVCLASS_NAP;
     }
-    mx_chan_id = src_uuid.uu.uuid16;
+    mx_chan_id = src_uuid;
   }
   /* The role combination is not valid */
   else {
@@ -364,16 +364,14 @@ tPAN_RESULT PAN_Connect(const RawAddress& rem_bda, uint8_t src_role,
   pcb->prv_src_uuid = pcb->src_uuid;
   pcb->prv_dst_uuid = pcb->dst_uuid;
 
-  pcb->src_uuid = src_uuid.uu.uuid16;
-  pcb->dst_uuid = dst_uuid.uu.uuid16;
+  pcb->src_uuid = src_uuid;
+  pcb->dst_uuid = dst_uuid;
 
-  src_uuid.len = 2;
-  dst_uuid.len = 2;
-
-  result = BNEP_Connect(rem_bda, &src_uuid, &dst_uuid, &(pcb->handle));
-  if (result != BNEP_SUCCESS) {
+  tBNEP_RESULT ret = BNEP_Connect(rem_bda, Uuid::From16Bit(src_uuid),
+                                  Uuid::From16Bit(dst_uuid), &(pcb->handle));
+  if (ret != BNEP_SUCCESS) {
     pan_release_pcb(pcb);
-    return result;
+    return ret;
   }
 
   PAN_TRACE_DEBUG("PAN_Connect() current active role set to %d", src_role);

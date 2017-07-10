@@ -46,7 +46,7 @@ using std::vector;
  **************************/
 /* GATT ID */
 typedef struct {
-  tBT_UUID uuid;   /* uuid of the attribute */
+  bluetooth::Uuid uuid; /* uuid of the attribute */
   uint8_t inst_id; /* instance ID */
 } __attribute__((packed)) tBTA_GATT_ID;
 
@@ -210,7 +210,7 @@ enum {
 typedef uint8_t tBTA_GATTC_ATTR_TYPE;
 
 typedef struct {
-  tBT_UUID uuid;
+  bluetooth::Uuid uuid;
   uint16_t s_handle;
   uint16_t e_handle; /* used for service only */
   uint8_t attr_type;
@@ -224,7 +224,6 @@ typedef struct {
 typedef struct {
   tBTA_GATT_STATUS status;
   tBTA_GATTC_IF client_if;
-  tBT_UUID app_uuid;
 } tBTA_GATTC_REG;
 
 typedef struct {
@@ -419,8 +418,8 @@ typedef uint8_t tBTA_GATT_CHAR_PROP;
 /***********************  NV callback Data Definitions   **********************
 */
 typedef struct {
-  tBT_UUID app_uuid128;
-  tBT_UUID svc_uuid;
+  bluetooth::Uuid app_uuid128;
+  bluetooth::Uuid svc_uuid;
   uint16_t svc_inst;
   uint16_t s_handle;
   uint16_t e_handle;
@@ -474,7 +473,7 @@ typedef struct {
 typedef struct {
   tBTA_GATTS_IF server_if;
   tBTA_GATT_STATUS status;
-  tBT_UUID uuid;
+  bluetooth::Uuid uuid;
 } tBTA_GATTS_REG_OPER;
 
 typedef struct {
@@ -483,7 +482,7 @@ typedef struct {
   uint16_t svc_instance;
   bool is_primary;
   tBTA_GATT_STATUS status;
-  tBT_UUID uuid;
+  bluetooth::Uuid uuid;
 } tBTA_GATTS_CREATE;
 
 typedef struct {
@@ -549,31 +548,32 @@ typedef void(tBTA_GATTS_ENB_CBACK)(tBTA_GATT_STATUS status);
 typedef void(tBTA_GATTS_CBACK)(tBTA_GATTS_EVT event, tBTA_GATTS* p_data);
 
 typedef struct {
-  tBT_UUID uuid;
+  bluetooth::Uuid uuid;
   bool is_primary;
   uint16_t handle;
   uint16_t s_handle;
   uint16_t e_handle;
   list_t* characteristics; /* list of tBTA_GATTC_CHARACTERISTIC */
   list_t* included_svc;    /* list of tBTA_GATTC_INCLUDED_SVC */
-} __attribute__((packed, aligned(alignof(tBT_UUID)))) tBTA_GATTC_SERVICE;
+} __attribute__((packed, aligned(alignof(bluetooth::Uuid)))) tBTA_GATTC_SERVICE;
 
 typedef struct {
-  tBT_UUID uuid;
+  bluetooth::Uuid uuid;
   uint16_t handle;
   tBTA_GATT_CHAR_PROP properties;
   tBTA_GATTC_SERVICE* service; /* owning service*/
   list_t* descriptors;         /* list of tBTA_GATTC_DESCRIPTOR */
-} __attribute__((packed, aligned(alignof(tBT_UUID)))) tBTA_GATTC_CHARACTERISTIC;
+} __attribute__((packed, aligned(alignof(bluetooth::Uuid))))
+tBTA_GATTC_CHARACTERISTIC;
 
 typedef struct {
-  tBT_UUID uuid;
+  bluetooth::Uuid uuid;
   uint16_t handle;
   tBTA_GATTC_CHARACTERISTIC* characteristic; /* owning characteristic */
 } __attribute__((packed)) tBTA_GATTC_DESCRIPTOR;
 
 typedef struct {
-  tBT_UUID uuid;
+  bluetooth::Uuid uuid;
   uint16_t handle;
   tBTA_GATTC_SERVICE* owning_service; /* owning service*/
   tBTA_GATTC_SERVICE* included_service;
@@ -693,14 +693,14 @@ extern void BTA_GATTC_Close(uint16_t conn_id);
  *
  ******************************************************************************/
 extern void BTA_GATTC_ServiceSearchRequest(uint16_t conn_id,
-                                           tBT_UUID* p_srvc_uuid);
+                                           bluetooth::Uuid* p_srvc_uuid);
 
 /**
  * This function is called to send "Find service by UUID" request. Used only for
  * PTS tests.
  */
 extern void BTA_GATTC_DiscoverServiceByUuid(uint16_t conn_id,
-                                            tBT_UUID* p_srvc_uuid);
+                                            const bluetooth::Uuid& p_srvc_uuid);
 
 /*******************************************************************************
  *
@@ -790,7 +790,7 @@ void BTA_GATTC_ReadCharacteristic(uint16_t conn_id, uint16_t handle,
  * This function is called to read a value of characteristic with uuid equal to
  * |uuid|
  */
-void BTA_GATTC_ReadUsingCharUuid(uint16_t conn_id, tBT_UUID uuid,
+void BTA_GATTC_ReadUsingCharUuid(uint16_t conn_id, const bluetooth::Uuid& uuid,
                                  uint16_t s_handle, uint16_t e_handle,
                                  tBTA_GATT_AUTH_REQ auth_req,
                                  GATT_READ_OP_CB callback, void* cb_data);
@@ -1020,7 +1020,7 @@ extern void BTA_GATTS_Disable(void);
  * Returns          None
  *
  ******************************************************************************/
-extern void BTA_GATTS_AppRegister(tBT_UUID* p_app_uuid,
+extern void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid,
                                   tBTA_GATTS_CBACK* p_cback);
 
 /*******************************************************************************

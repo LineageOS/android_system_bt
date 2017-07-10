@@ -41,6 +41,7 @@
 
 #include <mutex>
 
+#include <bluetooth/uuid.h>
 #include <hardware/bluetooth.h>
 
 #include "advertise_data_parser.h"
@@ -67,6 +68,7 @@
 #include "stack/btm/btm_int.h"
 #include "stack_config.h"
 
+using bluetooth::Uuid;
 /******************************************************************************
  *  Constants & Macros
  *****************************************************************************/
@@ -182,8 +184,6 @@ typedef struct {
 
 #define BTA_SERVICE_ID_TO_SERVICE_MASK(id) (1 << (id))
 
-#define UUID_HUMAN_INTERFACE_DEVICE "00001124-0000-1000-8000-00805f9b34fb"
-
 #define MAX_BTIF_BOND_EVENT_ENTRIES 15
 
 static skip_sdp_entry_t sdp_blacklist[] = {{76}};  // Apple Mouse and Keyboard
@@ -247,8 +247,6 @@ extern bt_status_t btif_hh_execute_service(bool b_enable);
 extern bt_status_t btif_hf_client_execute_service(bool b_enable);
 extern bt_status_t btif_sdp_execute_service(bool b_enable);
 extern int btif_hh_connect(const RawAddress* bd_addr);
-extern void bta_gatt_convert_uuid16_to_uuid128(uint8_t uuid_128[LEN_UUID_128],
-                                               uint16_t uuid_16);
 extern void btif_av_move_idle(RawAddress bd_addr);
 extern bt_status_t btif_hd_execute_service(bool b_enable);
 
@@ -802,10 +800,10 @@ static void search_services_copy_cb(uint16_t event, char* p_dest, char* p_src) {
       if (p_src_data->disc_res.result == BTA_SUCCESS) {
         if (p_src_data->disc_res.num_uuids > 0) {
           p_dest_data->disc_res.p_uuid_list =
-              (uint8_t*)(p_dest + sizeof(tBTA_DM_SEARCH));
+              (Uuid*)(p_dest + sizeof(tBTA_DM_SEARCH));
           memcpy(p_dest_data->disc_res.p_uuid_list,
                  p_src_data->disc_res.p_uuid_list,
-                 p_src_data->disc_res.num_uuids * MAX_UUID_SIZE);
+                 p_src_data->disc_res.num_uuids * sizeof(Uuid));
           osi_free_and_reset((void**)&p_src_data->disc_res.p_uuid_list);
         }
         osi_free_and_reset((void**)&p_src_data->disc_res.p_raw_data);
@@ -1091,14 +1089,11 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
       LOG_WARN(LOG_TAG, "%s: Incoming HID Connection", __func__);
       bt_property_t prop;
       RawAddress bd_addr;
-      bt_uuid_t uuid;
-      char uuid_str[128] = UUID_HUMAN_INTERFACE_DEVICE;
-
-      string_to_uuid(uuid_str, &uuid);
+      Uuid uuid = Uuid::From16Bit(UUID_SERVCLASS_HUMAN_INTERFACE);
 
       prop.type = BT_PROPERTY_UUIDS;
-      prop.val = uuid.uu;
-      prop.len = MAX_UUID_SIZE;
+      prop.val = &uuid;
+      prop.len = Uuid::kNumBytes128;
 
       /* Send the event to the BTIF */
       HAL_CBACK(bt_hal_cbacks, remote_device_properties_cb, BT_STATUS_SUCCESS,
@@ -1392,13 +1387,10 @@ static void btif_dm_search_services_evt(uint16_t event, char* p_param) {
       if ((p_data->disc_res.result == BTA_SUCCESS) &&
           (p_data->disc_res.num_uuids > 0)) {
         prop.val = p_data->disc_res.p_uuid_list;
-        prop.len = p_data->disc_res.num_uuids * MAX_UUID_SIZE;
+        prop.len = p_data->disc_res.num_uuids * Uuid::kNumBytes128;
         for (i = 0; i < p_data->disc_res.num_uuids; i++) {
-          char temp[256];
-          uuid_to_string_legacy(
-              (bt_uuid_t*)(p_data->disc_res.p_uuid_list + (i * MAX_UUID_SIZE)),
-              temp, sizeof(temp));
-          LOG_INFO(LOG_TAG, "%s index:%d uuid:%s", __func__, i, temp);
+          std::string temp = ((p_data->disc_res.p_uuid_list + i))->ToString();
+          LOG_INFO(LOG_TAG, "%s index:%d uuid:%s", __func__, i, temp.c_str());
         }
       }
 
@@ -1442,36 +1434,20 @@ static void btif_dm_search_services_evt(uint16_t event, char* p_param) {
       break;
 
     case BTA_DM_DISC_BLE_RES_EVT: {
-      BTIF_TRACE_DEBUG("%s:, services 0x%x)", __func__,
-                       p_data->disc_ble_res.service.uu.uuid16);
-      bt_uuid_t uuid;
-      int i = 0;
-      int j = 15;
+      BTIF_TRACE_DEBUG("%s: service %s", __func__,
+                       p_data->disc_ble_res.service.ToString().c_str());
       int num_properties = 0;
-      if (p_data->disc_ble_res.service.uu.uuid16 == UUID_SERVCLASS_LE_HID) {
+      if (p_data->disc_ble_res.service.As16Bit() == UUID_SERVCLASS_LE_HID) {
         BTIF_TRACE_DEBUG("%s: Found HOGP UUID", __func__);
         bt_property_t prop[2];
-        char temp[256];
         bt_status_t ret;
 
-        bta_gatt_convert_uuid16_to_uuid128(
-            uuid.uu, p_data->disc_ble_res.service.uu.uuid16);
-
-        while (i < j) {
-          unsigned char c = uuid.uu[j];
-          uuid.uu[j] = uuid.uu[i];
-          uuid.uu[i] = c;
-          i++;
-          j--;
-        }
-
-        uuid_to_string_legacy(&uuid, temp, sizeof(temp));
-        LOG_INFO(LOG_TAG, "%s uuid:%s", __func__, temp);
+        const auto& arr = p_data->disc_ble_res.service.To128BitBE();
 
         RawAddress& bd_addr = p_data->disc_ble_res.bd_addr;
         prop[0].type = BT_PROPERTY_UUIDS;
-        prop[0].val = uuid.uu;
-        prop[0].len = MAX_UUID_SIZE;
+        prop[0].val = (void*)arr.data();
+        prop[0].len = Uuid::kNumBytes128;
 
         /* Also write this to the NVRAM */
         ret = btif_storage_set_remote_device_property(&bd_addr, &prop[0]);
@@ -2039,7 +2015,7 @@ static void bte_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
     case BTA_DM_DISC_RES_EVT: {
       if ((p_data->disc_res.result == BTA_SUCCESS) &&
           (p_data->disc_res.num_uuids > 0)) {
-        param_len += (p_data->disc_res.num_uuids * MAX_UUID_SIZE);
+        param_len += (p_data->disc_res.num_uuids * Uuid::kNumBytes128);
       }
     } break;
   }
@@ -2501,16 +2477,10 @@ bt_status_t btif_dm_get_remote_services_by_transport(RawAddress* remote_addr,
  *
  * Returns          bt_status_t
  ******************************************************************************/
-bt_status_t btif_dm_get_remote_service_record(RawAddress* remote_addr,
-                                              bt_uuid_t* uuid) {
-  BTIF_TRACE_EVENT("%s: bd_addr=%s", __func__, remote_addr->ToString().c_str());
-
-  tSDP_UUID sdp_uuid;
-  sdp_uuid.len = MAX_UUID_SIZE;
-  memcpy(sdp_uuid.uu.uuid128, uuid->uu, MAX_UUID_SIZE);
-
-  BTA_DmDiscoverUUID(*remote_addr, &sdp_uuid, bte_dm_remote_service_record_evt,
-                     true);
+bt_status_t btif_dm_get_remote_service_record(const RawAddress& remote_addr,
+                                              const Uuid& uuid) {
+  BTIF_TRACE_EVENT("%s: bd_addr=%s", __func__, remote_addr.ToString().c_str());
+  BTA_DmDiscoverUUID(remote_addr, uuid, bte_dm_remote_service_record_evt, true);
 
   return BT_STATUS_SUCCESS;
 }
@@ -2525,7 +2495,7 @@ void btif_dm_execute_service_request(uint16_t event, char* p_param) {
       btif_in_execute_service_request(*((tBTA_SERVICE_ID*)p_param), b_enable);
   if (status == BT_STATUS_SUCCESS) {
     bt_property_t property;
-    bt_uuid_t local_uuids[BT_MAX_NUM_UUIDS];
+    Uuid local_uuids[BT_MAX_NUM_UUIDS];
 
     /* Now send the UUID_PROPERTY_CHANGED event to the upper layer */
     BTIF_STORAGE_FILL_PROPERTY(&property, BT_PROPERTY_UUIDS,

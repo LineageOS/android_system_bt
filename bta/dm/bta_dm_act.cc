@@ -52,6 +52,8 @@
 #include "gap_api.h"
 #endif
 
+using bluetooth::Uuid;
+
 static void bta_dm_inq_results_cb(tBTM_INQ_RESULTS* p_inq, uint8_t* p_eir,
                                   uint16_t eir_len);
 static void bta_dm_inq_cmpl_cb(void* p_result);
@@ -1103,7 +1105,7 @@ void bta_dm_ci_rmt_oob_act(tBTA_DM_MSG* p_data) {
 void bta_dm_search_start(tBTA_DM_MSG* p_data) {
   tBTM_INQUIRY_CMPL result;
 
-  size_t len = sizeof(tBT_UUID) * p_data->search.num_uuid;
+  size_t len = sizeof(Uuid) * p_data->search.num_uuid;
   bta_dm_gattc_register();
 
   APPL_TRACE_DEBUG("%s avoid_scatter=%d", __func__,
@@ -1125,8 +1127,8 @@ void bta_dm_search_start(tBTA_DM_MSG* p_data) {
 
   if ((bta_dm_search_cb.num_uuid = p_data->search.num_uuid) != 0 &&
       p_data->search.p_uuid != NULL) {
-    bta_dm_search_cb.p_srvc_uuid = (tBT_UUID*)osi_malloc(len);
-    memcpy(bta_dm_search_cb.p_srvc_uuid, p_data->search.p_uuid, len);
+    bta_dm_search_cb.p_srvc_uuid = (Uuid*)osi_malloc(len);
+    *bta_dm_search_cb.p_srvc_uuid = *p_data->search.p_uuid;
   }
   result.status = BTM_StartInquiry((tBTM_INQ_PARMS*)&p_data->search.inq_params,
                                    bta_dm_inq_results_cb,
@@ -1196,7 +1198,7 @@ void bta_dm_search_cancel(UNUSED_ATTR tBTA_DM_MSG* p_data) {
  *
  ******************************************************************************/
 void bta_dm_discover(tBTA_DM_MSG* p_data) {
-  size_t len = sizeof(tBT_UUID) * p_data->discover.num_uuid;
+  size_t len = sizeof(Uuid) * p_data->discover.num_uuid;
   APPL_TRACE_EVENT("%s services_to_search=0x%04X, sdp_search=%d", __func__,
                    p_data->discover.services, p_data->discover.sdp_search);
 
@@ -1207,8 +1209,8 @@ void bta_dm_discover(tBTA_DM_MSG* p_data) {
   osi_free_and_reset((void**)&bta_dm_search_cb.p_srvc_uuid);
   if ((bta_dm_search_cb.num_uuid = p_data->discover.num_uuid) != 0 &&
       p_data->discover.p_uuid != NULL) {
-    bta_dm_search_cb.p_srvc_uuid = (tBT_UUID*)osi_malloc(len);
-    memcpy(bta_dm_search_cb.p_srvc_uuid, p_data->discover.p_uuid, len);
+    bta_dm_search_cb.p_srvc_uuid = (Uuid*)osi_malloc(len);
+    *bta_dm_search_cb.p_srvc_uuid = *p_data->discover.p_uuid;
   }
   bta_dm_search_cb.uuid_to_search = bta_dm_search_cb.num_uuid;
 
@@ -1223,7 +1225,7 @@ void bta_dm_discover(tBTA_DM_MSG* p_data) {
   bta_dm_search_cb.transport = p_data->discover.transport;
 
   bta_dm_search_cb.name_discover_done = false;
-  memcpy(&bta_dm_search_cb.uuid, &p_data->discover.uuid, sizeof(tSDP_UUID));
+  bta_dm_search_cb.uuid = p_data->discover.uuid;
   bta_dm_discover_device(p_data->discover.bd_addr);
 }
 
@@ -1475,12 +1477,10 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
   uint16_t service = 0xFFFF;
   tSDP_PROTOCOL_ELEM pe;
 
-  tBT_UUID* p_uuid = bta_dm_search_cb.p_srvc_uuid;
+  Uuid* p_uuid = bta_dm_search_cb.p_srvc_uuid;
   tBTA_DM_SEARCH result;
-  tBT_UUID service_uuid;
 
-  uint32_t num_uuids = 0;
-  uint8_t uuid_list[32][MAX_UUID_SIZE];  // assuming a max of 32 services
+  std::vector<Uuid> uuid_list;
 
   if ((p_data->sdp_event.sdp_result == SDP_SUCCESS) ||
       (p_data->sdp_event.sdp_result == SDP_NO_RECS_MATCH) ||
@@ -1490,7 +1490,7 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
       p_sdp_rec = NULL;
       if (bta_dm_search_cb.service_index == (BTA_USER_SERVICE_ID + 1)) {
         p_sdp_rec = SDP_FindServiceUUIDInDb(bta_dm_search_cb.p_sdp_db,
-                                            &bta_dm_search_cb.uuid, p_sdp_rec);
+                                            bta_dm_search_cb.uuid, p_sdp_rec);
 
         if (p_sdp_rec && SDP_FindProtocolListElemInRec(
                              p_sdp_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
@@ -1510,7 +1510,7 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
           p_uuid +=
               (bta_dm_search_cb.num_uuid - bta_dm_search_cb.uuid_to_search);
           /* only support 16 bits UUID for now */
-          service = p_uuid->uu.uuid16;
+          service = p_uuid->As16Bit();
         }
         /* all GATT based services */
         do {
@@ -1518,14 +1518,14 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
           p_sdp_rec =
               SDP_FindServiceInDb(bta_dm_search_cb.p_sdp_db, 0, p_sdp_rec);
           if (p_sdp_rec) {
+            Uuid service_uuid;
             if (SDP_FindServiceUUIDInRec(p_sdp_rec, &service_uuid)) {
               /* send result back to app now, one by one */
               result.disc_ble_res.bd_addr = bta_dm_search_cb.peer_bdaddr;
               strlcpy((char*)result.disc_ble_res.bd_name, bta_dm_get_remname(),
                       BD_NAME_LEN);
-              result.disc_ble_res.service.len = service_uuid.len;
-              result.disc_ble_res.service.uu.uuid16 = service_uuid.uu.uuid16;
 
+              result.disc_ble_res.service = service_uuid;
               bta_dm_search_cb.p_search_cback(BTA_DM_DISC_BLE_RES_EVT, &result);
             }
           }
@@ -1540,16 +1540,14 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
              bta_dm_search_cb.services != BTA_ALL_SERVICE_MASK) ||
             (p_sdp_rec != NULL)) {
           if (service != UUID_SERVCLASS_PNP_INFORMATION) {
-            uint16_t tmp_svc = 0xFFFF;
             bta_dm_search_cb.services_found |=
                 (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(
                     bta_dm_search_cb.service_index - 1));
-            tmp_svc =
+            uint16_t tmp_svc =
                 bta_service_id_to_uuid_lkup_tbl[bta_dm_search_cb.service_index -
                                                 1];
             /* Add to the list of UUIDs */
-            sdpu_uuid16_to_uuid128(tmp_svc, uuid_list[num_uuids]);
-            num_uuids++;
+            uuid_list.push_back(Uuid::From16Bit(tmp_svc));
           }
         }
       }
@@ -1575,14 +1573,14 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
     if (bta_dm_search_cb.services == BTA_ALL_SERVICE_MASK) {
       p_sdp_rec = NULL;
       do {
-        tBT_UUID temp_uuid;
         /* find a service record, report it */
         p_sdp_rec =
             SDP_FindServiceInDb_128bit(bta_dm_search_cb.p_sdp_db, p_sdp_rec);
         if (p_sdp_rec) {
+          // SDP_FindServiceUUIDInRec_128bit is used only once, refactor?
+          Uuid temp_uuid;
           if (SDP_FindServiceUUIDInRec_128bit(p_sdp_rec, &temp_uuid)) {
-            memcpy(uuid_list[num_uuids], temp_uuid.uu.uuid128, MAX_UUID_SIZE);
-            num_uuids++;
+            uuid_list.push_back(temp_uuid);
           }
         }
       } while (p_sdp_rec);
@@ -1603,13 +1601,15 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
       p_msg->disc_result.result.disc_res.result = BTA_SUCCESS;
       p_msg->disc_result.result.disc_res.p_raw_data = NULL;
       p_msg->disc_result.result.disc_res.raw_data_size = 0;
-      p_msg->disc_result.result.disc_res.num_uuids = num_uuids;
+      p_msg->disc_result.result.disc_res.num_uuids = uuid_list.size();
       p_msg->disc_result.result.disc_res.p_uuid_list = NULL;
-      if (num_uuids > 0) {
+      if (uuid_list.size() > 0) {
+        // TODO(jpawlowski): make p_uuid_list into vector, and just copy
+        // vectors, but first get rid of bta_sys_sendmsg below.
         p_msg->disc_result.result.disc_res.p_uuid_list =
-            (uint8_t*)osi_malloc(num_uuids * MAX_UUID_SIZE);
-        memcpy(p_msg->disc_result.result.disc_res.p_uuid_list, uuid_list,
-               num_uuids * MAX_UUID_SIZE);
+            (Uuid*)osi_malloc(uuid_list.size() * sizeof(Uuid));
+        memcpy(p_msg->disc_result.result.disc_res.p_uuid_list, uuid_list.data(),
+               uuid_list.size() * sizeof(Uuid));
       }
       // Copy the raw_data to the discovery result structure
       if (bta_dm_search_cb.p_sdp_db != NULL &&
@@ -1904,11 +1904,9 @@ void bta_dm_search_cancel_notify(UNUSED_ATTR tBTA_DM_MSG* p_data) {
  *
  ******************************************************************************/
 static void bta_dm_find_services(const RawAddress& bd_addr) {
-  tSDP_UUID uuid;
-
-  memset(&uuid, 0, sizeof(tSDP_UUID));
 
   while (bta_dm_search_cb.service_index < BTA_MAX_SERVICE_ID) {
+    Uuid uuid = Uuid::kEmpty;
     if (bta_dm_search_cb.services_to_search &
         (tBTA_SERVICE_MASK)(
             BTA_SERVICE_ID_TO_SERVICE_MASK(bta_dm_search_cb.service_index))) {
@@ -1921,10 +1919,10 @@ static void bta_dm_find_services(const RawAddress& bd_addr) {
         LOG_INFO(LOG_TAG, "%s services_to_search=%08x", __func__,
                  bta_dm_search_cb.services_to_search);
         if (bta_dm_search_cb.services_to_search & BTA_RES_SERVICE_MASK) {
-          uuid.uu.uuid16 = bta_service_id_to_uuid_lkup_tbl[0];
+          uuid = Uuid::From16Bit(bta_service_id_to_uuid_lkup_tbl[0]);
           bta_dm_search_cb.services_to_search &= ~BTA_RES_SERVICE_MASK;
         } else {
-          uuid.uu.uuid16 = UUID_PROTOCOL_L2CAP;
+          uuid = Uuid::From16Bit(UUID_PROTOCOL_L2CAP);
           bta_dm_search_cb.services_to_search = 0;
         }
       } else {
@@ -1932,15 +1930,14 @@ static void bta_dm_find_services(const RawAddress& bd_addr) {
         if (bta_dm_search_cb.service_index == BTA_BLE_SERVICE_ID) {
           if (bta_dm_search_cb.uuid_to_search > 0 &&
               bta_dm_search_cb.p_srvc_uuid) {
-            memcpy(&uuid, (const void*)(bta_dm_search_cb.p_srvc_uuid +
-                                        bta_dm_search_cb.num_uuid -
-                                        bta_dm_search_cb.uuid_to_search),
-                   sizeof(tBT_UUID));
+            uuid = *(bta_dm_search_cb.p_srvc_uuid + bta_dm_search_cb.num_uuid -
+                     bta_dm_search_cb.uuid_to_search);
 
             bta_dm_search_cb.uuid_to_search--;
           } else {
-            uuid.uu.uuid16 =
-                bta_service_id_to_uuid_lkup_tbl[bta_dm_search_cb.service_index];
+            uuid = Uuid::From16Bit(
+                bta_service_id_to_uuid_lkup_tbl[bta_dm_search_cb
+                                                    .service_index]);
           }
 
           /* last one? clear the BLE service bit if all discovery has been done
@@ -1954,18 +1951,17 @@ static void bta_dm_find_services(const RawAddress& bd_addr) {
           /* remove the service from services to be searched  */
           bta_dm_search_cb.services_to_search &= (tBTA_SERVICE_MASK)(~(
               BTA_SERVICE_ID_TO_SERVICE_MASK(bta_dm_search_cb.service_index)));
-          uuid.uu.uuid16 =
-              bta_service_id_to_uuid_lkup_tbl[bta_dm_search_cb.service_index];
+          uuid = Uuid::From16Bit(
+              bta_service_id_to_uuid_lkup_tbl[bta_dm_search_cb.service_index]);
         }
       }
 
-      if (uuid.len == 0) uuid.len = LEN_UUID_16;
-
       if (bta_dm_search_cb.service_index == BTA_USER_SERVICE_ID) {
-        memcpy(&uuid, &bta_dm_search_cb.uuid, sizeof(tSDP_UUID));
+        uuid = bta_dm_search_cb.uuid;
       }
 
-      LOG_INFO(LOG_TAG, "%s search UUID = %04x", __func__, uuid.uu.uuid16);
+      LOG_INFO(LOG_TAG, "%s search UUID = %s", __func__,
+               uuid.ToString().c_str());
       SDP_InitDiscoveryDb(bta_dm_search_cb.p_sdp_db, BTA_DM_SDP_DB_SIZE, 1,
                           &uuid, 0, NULL);
 
@@ -3461,16 +3457,16 @@ static void bta_dm_set_eir(char* local_name) {
   if (local_name_len > p_bta_dm_eir_cfg->bta_dm_eir_min_name_len) {
 /* get number of UUID 16-bit list */
 #if (BTA_EIR_CANNED_UUID_LIST == TRUE)
-    num_uuid = p_bta_dm_eir_cfg->bta_dm_eir_uuid16_len / LEN_UUID_16;
+    num_uuid = p_bta_dm_eir_cfg->bta_dm_eir_uuid16_len / Uuid::kNumBytes16;
 #else   // BTA_EIR_CANNED_UUID_LIST
-    max_num_uuid = (free_eir_length - 2) / LEN_UUID_16;
+    max_num_uuid = (free_eir_length - 2) / Uuid::kNumBytes16;
     data_type = BTM_GetEirSupportedServices(bta_dm_cb.eir_uuid, &p,
                                             max_num_uuid, &num_uuid);
     p = (uint8_t*)p_buf + BTM_HCI_EIR_OFFSET; /* reset p */
 #endif  // BTA_EIR_CANNED_UUID_LIST
 
     /* if UUID doesn't fit remaing space, shorten local name */
-    if (local_name_len > (free_eir_length - 4 - num_uuid * LEN_UUID_16)) {
+    if (local_name_len > (free_eir_length - 4 - num_uuid * Uuid::kNumBytes16)) {
       local_name_len = find_utf8_char_boundary(
           local_name, p_bta_dm_eir_cfg->bta_dm_eir_min_name_len);
       APPL_TRACE_WARNING("%s local name is shortened (%d)", __func__,
@@ -3494,23 +3490,24 @@ static void bta_dm_set_eir(char* local_name) {
   /* if UUID list is provided as static data in configuration */
   if ((p_bta_dm_eir_cfg->bta_dm_eir_uuid16_len > 0) &&
       (p_bta_dm_eir_cfg->bta_dm_eir_uuid16)) {
-    if (free_eir_length > LEN_UUID_16 + 2) {
+    if (free_eir_length > Uuid::kNumBytes16 + 2) {
       free_eir_length -= 2;
 
       if (free_eir_length >= p_bta_dm_eir_cfg->bta_dm_eir_uuid16_len) {
-        num_uuid = p_bta_dm_eir_cfg->bta_dm_eir_uuid16_len / LEN_UUID_16;
+        num_uuid = p_bta_dm_eir_cfg->bta_dm_eir_uuid16_len / Uuid::kNumBytes16;
         data_type = BTM_EIR_COMPLETE_16BITS_UUID_TYPE;
       } else /* not enough room for all UUIDs */
       {
         APPL_TRACE_WARNING("BTA EIR: UUID 16-bit list is truncated");
-        num_uuid = free_eir_length / LEN_UUID_16;
+        num_uuid = free_eir_length / Uuid::kNumBytes16;
         data_type = BTM_EIR_MORE_16BITS_UUID_TYPE;
       }
-      UINT8_TO_STREAM(p, num_uuid * LEN_UUID_16 + 1);
+      UINT8_TO_STREAM(p, num_uuid * Uuid::kNumBytes16 + 1);
       UINT8_TO_STREAM(p, data_type);
-      memcpy(p, p_bta_dm_eir_cfg->bta_dm_eir_uuid16, num_uuid * LEN_UUID_16);
-      p += num_uuid * LEN_UUID_16;
-      free_eir_length -= num_uuid * LEN_UUID_16;
+      memcpy(p, p_bta_dm_eir_cfg->bta_dm_eir_uuid16,
+             num_uuid * Uuid::kNumBytes16);
+      p += num_uuid * Uuid::kNumBytes16;
+      free_eir_length -= num_uuid * Uuid::kNumBytes16;
     }
   }
 #else /* (BTA_EIR_CANNED_UUID_LIST == TRUE) */
@@ -3520,7 +3517,7 @@ static void bta_dm_set_eir(char* local_name) {
     p_type = p++;
     num_uuid = 0;
 
-    max_num_uuid = (free_eir_length - 2) / LEN_UUID_16;
+    max_num_uuid = (free_eir_length - 2) / Uuid::kNumBytes16;
     data_type = BTM_GetEirSupportedServices(bta_dm_cb.eir_uuid, &p,
                                             max_num_uuid, &num_uuid);
 
@@ -3532,10 +3529,10 @@ static void bta_dm_set_eir(char* local_name) {
       for (custom_uuid_idx = 0;
            custom_uuid_idx < BTA_EIR_SERVER_NUM_CUSTOM_UUID;
            custom_uuid_idx++) {
-        if (bta_dm_cb.custom_uuid[custom_uuid_idx].len == LEN_UUID_16) {
+        const Uuid& curr = bta_dm_cb.custom_uuid[custom_uuid_idx];
+        if (curr.GetShortestRepresentationSize() == Uuid::kNumBytes16) {
           if (num_uuid < max_num_uuid) {
-            UINT16_TO_STREAM(p,
-                             bta_dm_cb.custom_uuid[custom_uuid_idx].uu.uuid16);
+            UINT16_TO_STREAM(p, curr.As16Bit());
             num_uuid++;
           } else {
             data_type = BTM_EIR_MORE_16BITS_UUID_TYPE;
@@ -3547,9 +3544,9 @@ static void bta_dm_set_eir(char* local_name) {
     }
 #endif /* (BTA_EIR_SERVER_NUM_CUSTOM_UUID > 0) */
 
-    UINT8_TO_STREAM(p_length, num_uuid * LEN_UUID_16 + 1);
+    UINT8_TO_STREAM(p_length, num_uuid * Uuid::kNumBytes16 + 1);
     UINT8_TO_STREAM(p_type, data_type);
-    free_eir_length -= num_uuid * LEN_UUID_16 + 2;
+    free_eir_length -= num_uuid * Uuid::kNumBytes16 + 2;
   }
 #endif /* (BTA_EIR_CANNED_UUID_LIST == TRUE) */
 
@@ -3561,13 +3558,14 @@ static void bta_dm_set_eir(char* local_name) {
     num_uuid = 0;
     data_type = BTM_EIR_COMPLETE_32BITS_UUID_TYPE;
 
-    max_num_uuid = (free_eir_length - 2) / LEN_UUID_32;
+    max_num_uuid = (free_eir_length - 2) / Uuid::kNumBytes32;
 
     for (custom_uuid_idx = 0; custom_uuid_idx < BTA_EIR_SERVER_NUM_CUSTOM_UUID;
          custom_uuid_idx++) {
-      if (bta_dm_cb.custom_uuid[custom_uuid_idx].len == LEN_UUID_32) {
+      const Uuid& curr = bta_dm_cb.custom_uuid[custom_uuid_idx];
+      if (curr.GetShortestRepresentationSize() == Uuid::kNumBytes32) {
         if (num_uuid < max_num_uuid) {
-          UINT32_TO_STREAM(p, bta_dm_cb.custom_uuid[custom_uuid_idx].uu.uuid32);
+          UINT32_TO_STREAM(p, curr.As32Bit());
           num_uuid++;
         } else {
           data_type = BTM_EIR_MORE_32BITS_UUID_TYPE;
@@ -3577,9 +3575,9 @@ static void bta_dm_set_eir(char* local_name) {
       }
     }
 
-    UINT8_TO_STREAM(p_length, num_uuid * LEN_UUID_32 + 1);
+    UINT8_TO_STREAM(p_length, num_uuid * Uuid::kNumBytes32 + 1);
     UINT8_TO_STREAM(p_type, data_type);
-    free_eir_length -= num_uuid * LEN_UUID_32 + 2;
+    free_eir_length -= num_uuid * Uuid::kNumBytes32 + 2;
   }
 
   /* Adding 128-bit UUID list */
@@ -3589,14 +3587,14 @@ static void bta_dm_set_eir(char* local_name) {
     num_uuid = 0;
     data_type = BTM_EIR_COMPLETE_128BITS_UUID_TYPE;
 
-    max_num_uuid = (free_eir_length - 2) / LEN_UUID_128;
+    max_num_uuid = (free_eir_length - 2) / Uuid::kNumBytes128;
 
     for (custom_uuid_idx = 0; custom_uuid_idx < BTA_EIR_SERVER_NUM_CUSTOM_UUID;
          custom_uuid_idx++) {
-      if (bta_dm_cb.custom_uuid[custom_uuid_idx].len == LEN_UUID_128) {
+      const Uuid& curr = bta_dm_cb.custom_uuid[custom_uuid_idx];
+      if (curr.GetShortestRepresentationSize() == Uuid::kNumBytes128) {
         if (num_uuid < max_num_uuid) {
-          ARRAY16_TO_STREAM(p,
-                            bta_dm_cb.custom_uuid[custom_uuid_idx].uu.uuid128);
+          ARRAY16_TO_STREAM(p, curr.To128BitBE().data());
           num_uuid++;
         } else {
           data_type = BTM_EIR_MORE_128BITS_UUID_TYPE;
@@ -3606,9 +3604,9 @@ static void bta_dm_set_eir(char* local_name) {
       }
     }
 
-    UINT8_TO_STREAM(p_length, num_uuid * LEN_UUID_128 + 1);
+    UINT8_TO_STREAM(p_length, num_uuid * Uuid::kNumBytes128 + 1);
     UINT8_TO_STREAM(p_type, data_type);
-    free_eir_length -= num_uuid * LEN_UUID_128 + 2;
+    free_eir_length -= num_uuid * Uuid::kNumBytes128 + 2;
   }
 #endif /* ( BTA_EIR_CANNED_UUID_LIST != TRUE \
           )&&(BTA_EIR_SERVER_NUM_CUSTOM_UUID > 0) */
@@ -4443,11 +4441,8 @@ static void bta_dm_gattc_register(void) {
  *
  ******************************************************************************/
 static void btm_dm_start_disc_gatt_services(uint16_t conn_id) {
-  tBT_UUID* p_uuid = bta_dm_search_cb.p_srvc_uuid + bta_dm_search_cb.num_uuid -
-                     bta_dm_search_cb.uuid_to_search;
-
-  p_uuid = bta_dm_search_cb.p_srvc_uuid + bta_dm_search_cb.num_uuid -
-           bta_dm_search_cb.uuid_to_search;
+  Uuid* p_uuid = bta_dm_search_cb.p_srvc_uuid + bta_dm_search_cb.num_uuid -
+                 bta_dm_search_cb.uuid_to_search;
 
   /* always search for all services */
   BTA_GATTC_ServiceSearchRequest(conn_id, p_uuid);
@@ -4474,11 +4469,14 @@ static void bta_dm_gatt_disc_result(tBTA_GATT_ID service_id) {
   if (bta_dm_search_cb.ble_raw_used + sizeof(tBTA_GATT_ID) <
       bta_dm_search_cb.ble_raw_size) {
     APPL_TRACE_DEBUG(
-        "ADDING BLE SERVICE uuid=0x%x, ble_ptr = 0x%x, ble_raw_used = 0x%x",
-        service_id.uuid.uu.uuid16, bta_dm_search_cb.p_ble_rawdata,
+        "ADDING BLE SERVICE uuid=%s, ble_ptr = 0x%x, ble_raw_used = 0x%x",
+        service_id.uuid.ToString().c_str(), bta_dm_search_cb.p_ble_rawdata,
         bta_dm_search_cb.ble_raw_used);
 
     if (bta_dm_search_cb.p_ble_rawdata) {
+      // TODO(jpawlowski): the p_ble_raw data is only sent to btif_dm.cc, but is
+      // never used there. Get rid of this code completly, or implement the
+      // TODOs from btif_dm.cc
       memcpy((bta_dm_search_cb.p_ble_rawdata + bta_dm_search_cb.ble_raw_used),
              &service_id, sizeof(service_id));
 
@@ -4494,14 +4492,14 @@ static void bta_dm_gatt_disc_result(tBTA_GATT_ID service_id) {
         __func__, bta_dm_search_cb.ble_raw_size, bta_dm_search_cb.ble_raw_used);
   }
 
-  LOG_INFO(LOG_TAG, "%s service_id_uuid_len=%d ", __func__,
-           service_id.uuid.len);
+  LOG_INFO(LOG_TAG, "%s service_id_uuid_len=%zu", __func__,
+           service_id.uuid.GetShortestRepresentationSize());
   if (bta_dm_search_cb.state != BTA_DM_SEARCH_IDLE) {
     /* send result back to app now, one by one */
     result.disc_ble_res.bd_addr = bta_dm_search_cb.peer_bdaddr;
     strlcpy((char*)result.disc_ble_res.bd_name, bta_dm_get_remname(),
             BD_NAME_LEN);
-    memcpy(&result.disc_ble_res.service, &service_id.uuid, sizeof(tBT_UUID));
+    result.disc_ble_res.service = service_id.uuid;
 
     bta_dm_search_cb.p_search_cback(BTA_DM_DISC_BLE_RES_EVT, &result);
   }

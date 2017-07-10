@@ -35,6 +35,8 @@
 #include "hidh_api.h"
 #include "hidh_int.h"
 
+using bluetooth::Uuid;
+
 tHID_HOST_CTB hh_cb;
 
 static void hidh_search_callback(uint16_t sdp_result);
@@ -51,14 +53,11 @@ static void hidh_search_callback(uint16_t sdp_result);
 tHID_STATUS HID_HostGetSDPRecord(const RawAddress& addr,
                                  tSDP_DISCOVERY_DB* p_db, uint32_t db_len,
                                  tHID_HOST_SDP_CALLBACK* sdp_cback) {
-  tSDP_UUID uuid_list;
 
   if (hh_cb.sdp_busy) return HID_ERR_SDP_BUSY;
 
-  uuid_list.len = 2;
-  uuid_list.uu.uuid16 = UUID_SERVCLASS_HUMAN_INTERFACE;
-
   hh_cb.p_sdp_db = p_db;
+  Uuid uuid_list = Uuid::From16Bit(UUID_SERVCLASS_HUMAN_INTERFACE);
   SDP_InitDiscoveryDb(p_db, db_len, 1, &uuid_list, 0, NULL);
 
   if (SDP_ServiceSearchRequest(addr, p_db, hidh_search_callback)) {
@@ -92,12 +91,9 @@ static void hidh_search_callback(uint16_t sdp_result) {
   tSDP_DISCOVERY_DB* p_db = hh_cb.p_sdp_db;
   tSDP_DISC_REC* p_rec;
   tSDP_DISC_ATTR *p_attr, *p_subattr1, *p_subattr2, *p_repdesc;
-  tBT_UUID hid_uuid;
   tHID_DEV_SDP_INFO* p_nvi = &hh_cb.sdp_rec;
   uint16_t attr_mask = 0;
 
-  hid_uuid.len = LEN_UUID_16;
-  hid_uuid.uu.uuid16 = UUID_SERVCLASS_HUMAN_INTERFACE;
 
   hh_cb.sdp_busy = false;
 
@@ -106,7 +102,8 @@ static void hidh_search_callback(uint16_t sdp_result) {
     return;
   }
 
-  p_rec = SDP_FindServiceUUIDInDb(p_db, &hid_uuid, NULL);
+  Uuid hid_uuid = Uuid::From16Bit(UUID_SERVCLASS_HUMAN_INTERFACE);
+  p_rec = SDP_FindServiceUUIDInDb(p_db, hid_uuid, NULL);
   if (p_rec == NULL) {
     hh_cb.sdp_cback(HID_SDP_NO_SERV_UUID, 0, NULL);
     return;

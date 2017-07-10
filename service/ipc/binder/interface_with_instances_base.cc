@@ -34,7 +34,7 @@ bool InterfaceWithInstancesBase::RegisterInstanceBase(
 
   // Store the callback in the pending list. It will get removed later when the
   // stack notifies us asynchronously.
-  bluetooth::UUID app_uuid = bluetooth::UUID::GetRandom();
+  bluetooth::Uuid app_uuid = bluetooth::Uuid::GetRandom();
   if (!pending_callbacks_.Register(app_uuid, callback)) {
     LOG(ERROR) << "Failed to store |callback| to map";
     return false;
@@ -45,21 +45,22 @@ bool InterfaceWithInstancesBase::RegisterInstanceBase(
   // (sp) we are using a wp here rather than std::weak_ptr.
   android::wp<InterfaceWithInstancesBase> weak_ptr_to_this(this);
 
-  bluetooth::BluetoothInstanceFactory::RegisterCallback cb = [weak_ptr_to_this](
-      bluetooth::BLEStatus status, const bluetooth::UUID& in_uuid,
-      std::unique_ptr<bluetooth::BluetoothInstance> instance) {
-    // If the weak pointer was invalidated then there is nothing we can do.
-    android::sp<InterfaceWithInstancesBase> strong_ptr_to_this =
-        weak_ptr_to_this.promote();
-    if (!strong_ptr_to_this.get()) {
-      VLOG(2) << "InterfaceWithInstancesBase was deleted while instance was"
-              << " being registered";
-      return;
-    }
+  bluetooth::BluetoothInstanceFactory::RegisterCallback cb =
+      [weak_ptr_to_this](
+          bluetooth::BLEStatus status, const bluetooth::Uuid& in_uuid,
+          std::unique_ptr<bluetooth::BluetoothInstance> instance) {
+        // If the weak pointer was invalidated then there is nothing we can do.
+        android::sp<InterfaceWithInstancesBase> strong_ptr_to_this =
+            weak_ptr_to_this.promote();
+        if (!strong_ptr_to_this.get()) {
+          VLOG(2) << "InterfaceWithInstancesBase was deleted while instance was"
+                  << " being registered";
+          return;
+        }
 
-    strong_ptr_to_this->OnRegisterInstance(status, in_uuid,
-                                           std::move(instance));
-  };
+        strong_ptr_to_this->OnRegisterInstance(status, in_uuid,
+                                               std::move(instance));
+      };
 
   if (factory->RegisterInstance(app_uuid, cb)) return true;
 
@@ -99,7 +100,7 @@ InterfaceWithInstancesBase::GetInstance(int instance_id) {
 }
 
 void InterfaceWithInstancesBase::OnRegisterInstance(
-    bluetooth::BLEStatus status, const bluetooth::UUID& uuid,
+    bluetooth::BLEStatus status, const bluetooth::Uuid& uuid,
     std::unique_ptr<bluetooth::BluetoothInstance> instance) {
   VLOG(2) << __func__ << " - status: " << status;
 

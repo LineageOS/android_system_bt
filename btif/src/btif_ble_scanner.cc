@@ -282,8 +282,8 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
 
   void ScanFilterAddRemove(int action, int filt_type, int filt_index,
                            int company_id, int company_id_mask,
-                           const bt_uuid_t* p_uuid,
-                           const bt_uuid_t* p_uuid_mask,
+                           const bluetooth::Uuid* p_uuid,
+                           const bluetooth::Uuid* p_uuid_mask,
                            const RawAddress* bd_addr, char addr_type,
                            vector<uint8_t> data, vector<uint8_t> mask,
                            FilterConfigCallback cb) override {
@@ -314,24 +314,21 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
 
       case BTM_BLE_PF_SRVC_UUID:
       case BTM_BLE_PF_SRVC_SOL_UUID: {
-        tBT_UUID bt_uuid;
-        btif_to_bta_uuid(&bt_uuid, p_uuid);
-
         if (p_uuid_mask == NULL) {
           do_in_bta_thread(
               FROM_HERE,
               base::Bind(&BTM_LE_PF_uuid_filter, action, filt_index, filt_type,
-                         bt_uuid, BTM_BLE_PF_LOGIC_AND, nullptr,
+                         *p_uuid, BTM_BLE_PF_LOGIC_AND, nullptr,
                          jni_thread_wrapper(FROM_HERE, Bind(cb, filt_type))));
           return;
         }
 
         tBTM_BLE_PF_COND_MASK* mask = new tBTM_BLE_PF_COND_MASK;
-        btif_to_bta_uuid_mask(mask, p_uuid_mask, p_uuid);
+        btif_to_bta_uuid_mask(mask, *p_uuid_mask, *p_uuid);
         do_in_bta_thread(
             FROM_HERE,
             base::Bind(&BTM_LE_PF_uuid_filter, action, filt_index, filt_type,
-                       bt_uuid, BTM_BLE_PF_LOGIC_AND, base::Owned(mask),
+                       *p_uuid, BTM_BLE_PF_LOGIC_AND, base::Owned(mask),
                        jni_thread_wrapper(FROM_HERE, Bind(cb, filt_type))));
         return;
       }

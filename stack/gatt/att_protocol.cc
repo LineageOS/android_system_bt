@@ -32,6 +32,7 @@
 #define GATT_START_END_HANDLE_SIZE 4
 
 using base::StringPrintf;
+using bluetooth::Uuid;
 /**********************************************************************
  *   ATT protocl message building utility                              *
  **********************************************************************/
@@ -124,9 +125,9 @@ BT_HDR* attp_build_err_cmd(uint8_t cmd_code, uint16_t err_handle,
  *
  ******************************************************************************/
 BT_HDR* attp_build_browse_cmd(uint8_t op_code, uint16_t s_hdl, uint16_t e_hdl,
-                              tBT_UUID uuid) {
+                              const bluetooth::Uuid& uuid) {
   const size_t payload_size =
-      (GATT_OP_CODE_SIZE) + (GATT_START_END_HANDLE_SIZE) + (LEN_UUID_128);
+      (GATT_OP_CODE_SIZE) + (GATT_START_END_HANDLE_SIZE) + (Uuid::kNumBytes128);
   BT_HDR* p_buf =
       (BT_HDR*)osi_malloc(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET);
 

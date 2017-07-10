@@ -254,9 +254,9 @@ static void bnep_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
                        bnep_conn_timer_timeout, p_bcb);
 
     if (p_bcb->con_flags & BNEP_FLAGS_IS_ORIG) {
-      btm_sec_mx_access_request(
-          p_bcb->rem_bda, BT_PSM_BNEP, true, BTM_SEC_PROTO_BNEP,
-          bnep_get_uuid32(&(p_bcb->src_uuid)), &bnep_sec_check_complete, p_bcb);
+      btm_sec_mx_access_request(p_bcb->rem_bda, BT_PSM_BNEP, true,
+                                BTM_SEC_PROTO_BNEP, p_bcb->src_uuid.As32Bit(),
+                                &bnep_sec_check_complete, p_bcb);
     }
   }
 }
@@ -298,8 +298,7 @@ static void bnep_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
 
       if (p_bcb->con_flags & BNEP_FLAGS_IS_ORIG) {
         btm_sec_mx_access_request(p_bcb->rem_bda, BT_PSM_BNEP, true,
-                                  BTM_SEC_PROTO_BNEP,
-                                  bnep_get_uuid32(&(p_bcb->src_uuid)),
+                                  BTM_SEC_PROTO_BNEP, p_bcb->src_uuid.As32Bit(),
                                   &bnep_sec_check_complete, p_bcb);
       }
     }

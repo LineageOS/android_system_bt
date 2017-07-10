@@ -475,7 +475,8 @@ tBTA_JV_STATUS BTA_JvFreeChannel(uint16_t channel, int conn_type);
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvStartDiscovery(const RawAddress& bd_addr,
-                                    uint16_t num_uuid, tSDP_UUID* p_uuid_list,
+                                    uint16_t num_uuid,
+                                    const bluetooth::Uuid* p_uuid_list,
                                     uint32_t rfcomm_slot_id);
 
 /*******************************************************************************

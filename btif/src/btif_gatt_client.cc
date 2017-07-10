@@ -53,6 +53,7 @@
 
 using base::Bind;
 using base::Owned;
+using bluetooth::Uuid;
 using std::vector;
 
 extern bt_status_t btif_gattc_test_command_impl(
@@ -214,30 +215,25 @@ void btm_read_rssi_cb(tBTM_RSSI_RESULT* p_result) {
  *  Client API Functions
  ******************************************************************************/
 
-bt_status_t btif_gattc_register_app(const bt_uuid_t& uuid) {
+bt_status_t btif_gattc_register_app(const Uuid& uuid) {
   CHECK_BTGATT_INIT();
 
-  tBT_UUID bt_uuid;
-  btif_to_bta_uuid(&bt_uuid, &uuid);
-
   return do_in_jni_thread(Bind(
-      [](tBT_UUID bt_uuid) {
+      [](const Uuid& uuid) {
         BTA_GATTC_AppRegister(
             bta_gattc_cback,
             base::Bind(
-                [](tBT_UUID bt_uuid, uint8_t client_id, uint8_t status) {
+                [](const Uuid& uuid, uint8_t client_id, uint8_t status) {
                   do_in_jni_thread(Bind(
-                      [](tBT_UUID bt_uuid, uint8_t client_id, uint8_t status) {
-                        bt_uuid_t app_uuid;
-                        bta_to_btif_uuid(&app_uuid, &bt_uuid);
+                      [](const Uuid& uuid, uint8_t client_id, uint8_t status) {
                         HAL_CBACK(bt_gatt_callbacks, client->register_client_cb,
-                                  status, client_id, app_uuid);
+                                  status, client_id, uuid);
                       },
-                      bt_uuid, client_id, status));
+                      uuid, client_id, status));
                 },
-                bt_uuid));
+                uuid));
       },
-      bt_uuid));
+      uuid));
 }
 
 void btif_gattc_unregister_app_impl(int client_if) {
@@ -343,13 +339,11 @@ bt_status_t btif_gattc_refresh(int client_if, const RawAddress& bd_addr) {
   return do_in_jni_thread(Bind(&BTA_GATTC_Refresh, bd_addr));
 }
 
-bt_status_t btif_gattc_search_service(int conn_id,
-                                      const bt_uuid_t* filter_uuid) {
+bt_status_t btif_gattc_search_service(int conn_id, const Uuid* filter_uuid) {
   CHECK_BTGATT_INIT();
 
   if (filter_uuid) {
-    tBT_UUID* uuid = new tBT_UUID;
-    btif_to_bta_uuid(uuid, filter_uuid);
+    Uuid* uuid = new Uuid(*filter_uuid);
     return do_in_jni_thread(
         Bind(&BTA_GATTC_ServiceSearchRequest, conn_id, base::Owned(uuid)));
   } else {
@@ -358,11 +352,8 @@ bt_status_t btif_gattc_search_service(int conn_id,
   }
 }
 
-void btif_gattc_discover_service_by_uuid(int conn_id, const bt_uuid_t& p_uuid) {
-  tBT_UUID* uuid = new tBT_UUID;
-  btif_to_bta_uuid(uuid, &p_uuid);
-  do_in_jni_thread(
-      Bind(&BTA_GATTC_DiscoverServiceByUuid, conn_id, base::Owned(uuid)));
+void btif_gattc_discover_service_by_uuid(int conn_id, const Uuid& uuid) {
+  do_in_jni_thread(Bind(&BTA_GATTC_DiscoverServiceByUuid, conn_id, uuid));
 }
 
 void btif_gattc_get_gatt_db_impl(int conn_id) {
@@ -418,13 +409,11 @@ void read_using_char_uuid_cb(uint16_t conn_id, tGATT_STATUS status,
                    base::Owned(params));
 }
 
-bt_status_t btif_gattc_read_using_char_uuid(int conn_id, const bt_uuid_t& uuid,
+bt_status_t btif_gattc_read_using_char_uuid(int conn_id, const Uuid& uuid,
                                             uint16_t s_handle,
                                             uint16_t e_handle, int auth_req) {
   CHECK_BTGATT_INIT();
-  tBT_UUID bt_uuid;
-  btif_to_bta_uuid(&bt_uuid, &uuid);
-  return do_in_jni_thread(Bind(&BTA_GATTC_ReadUsingCharUuid, conn_id, bt_uuid,
+  return do_in_jni_thread(Bind(&BTA_GATTC_ReadUsingCharUuid, conn_id, uuid,
                                s_handle, e_handle, auth_req,
                                read_using_char_uuid_cb, nullptr));
 }

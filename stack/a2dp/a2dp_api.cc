@@ -35,6 +35,8 @@
 #include "osi/include/log.h"
 #include "sdpdefs.h"
 
+using bluetooth::Uuid;
+
 /*****************************************************************************
  *  Global data
  ****************************************************************************/
@@ -269,7 +271,6 @@ tA2DP_STATUS A2DP_AddRecord(uint16_t service_uuid, char* p_service_name,
 tA2DP_STATUS A2DP_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
                               tA2DP_SDP_DB_PARAMS* p_db,
                               tA2DP_FIND_CBACK* p_cback) {
-  tSDP_UUID uuid_list;
   bool result = true;
 
   LOG_VERBOSE(LOG_TAG, "%s: uuid: 0x%x", __func__, service_uuid);
@@ -282,10 +283,6 @@ tA2DP_STATUS A2DP_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
       a2dp_cb.find.service_uuid == UUID_SERVCLASS_AUDIO_SINK)
     return A2DP_BUSY;
 
-  /* set up discovery database */
-  uuid_list.len = LEN_UUID_16;
-  uuid_list.uu.uuid16 = service_uuid;
-
   if (p_db->p_attrs == NULL || p_db->num_attr == 0) {
     p_db->p_attrs = a2dp_attr_list;
     p_db->num_attr = A2DP_NUM_ATTR;
@@ -294,6 +291,7 @@ tA2DP_STATUS A2DP_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
   if (a2dp_cb.find.p_db == NULL)
     a2dp_cb.find.p_db = (tSDP_DISCOVERY_DB*)osi_malloc(p_db->db_len);
 
+  Uuid uuid_list = Uuid::From16Bit(service_uuid);
   result = SDP_InitDiscoveryDb(a2dp_cb.find.p_db, p_db->db_len, 1, &uuid_list,
                                p_db->num_attr, p_db->p_attrs);
 

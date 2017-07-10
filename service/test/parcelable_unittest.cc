@@ -37,7 +37,7 @@ using bluetooth::ScanFilter;
 using bluetooth::ScanResult;
 using bluetooth::ScanSettings;
 using bluetooth::Service;
-using bluetooth::UUID;
+using bluetooth::Uuid;
 
 namespace bluetooth {
 namespace {
@@ -82,11 +82,11 @@ TEST(ParcelableTest, NonEmptyAdvertiseSettings) {
   EXPECT_TRUE(result);
 }
 
-TEST(ParcelableTest, UUID) {
-  // Try a whole bunch of UUIDs.
+TEST(ParcelableTest, Uuid) {
+  // Try a whole bunch of Uuids.
   for (int i = 0; i < 10; i++) {
-    UUID uuid = UUID::GetRandom();
-    TestData<UUID, android::bluetooth::UUID>(uuid);
+    Uuid uuid = Uuid::GetRandom();
+    TestData<Uuid, android::bluetooth::UUID>(uuid);
   }
 }
 
@@ -115,13 +115,13 @@ TEST(ParcelableTest, ScanFilter) {
   bool result = TestData<ScanFilter, android::bluetooth::ScanFilter>(filter);
   EXPECT_TRUE(result);
 
-  UUID uuid = UUID::GetRandom();
+  Uuid uuid = Uuid::GetRandom();
   filter.SetServiceUuid(uuid);
 
   result = TestData<ScanFilter, android::bluetooth::ScanFilter>(filter);
   EXPECT_TRUE(result);
 
-  UUID mask = UUID::GetRandom();
+  Uuid mask = Uuid::GetRandom();
   filter.SetServiceUuidWithMask(uuid, mask);
   result = TestData<ScanFilter, android::bluetooth::ScanFilter>(filter);
   EXPECT_TRUE(result);
@@ -146,11 +146,11 @@ TEST(ParcelableTest, ScanResult) {
 }
 
 TEST(ParcelableTest, GattDescriptor) {
-  Descriptor s = Descriptor(0x0000, UUID::GetRandom(),
+  Descriptor s = Descriptor(0x0000, Uuid::GetRandom(),
                             bluetooth::kAttributePermissionRead);
-  Descriptor s2 = Descriptor(0xFFFE, UUID::GetRandom(),
+  Descriptor s2 = Descriptor(0xFFFE, Uuid::GetRandom(),
                              bluetooth::kAttributePermissionWrite);
-  Descriptor s3 = Descriptor(0x003D, UUID::GetRandom(),
+  Descriptor s3 = Descriptor(0x003D, Uuid::GetRandom(),
                              bluetooth::kAttributePermissionReadEncryptedMITM |
                                  bluetooth::kAttributePermissionRead);
 
@@ -168,10 +168,10 @@ TEST(ParcelableTest, GattDescriptor) {
 }
 
 TEST(ParcelableTest, GattCharacteristic) {
-  Characteristic c = Characteristic(0x0004, UUID::GetRandom(), 0, 0,
-                                    {Descriptor(0x0005, UUID::GetRandom(), 0),
-                                     Descriptor(0x0007, UUID::GetRandom(), 0),
-                                     Descriptor(0x00A1, UUID::GetRandom(), 0)});
+  Characteristic c = Characteristic(0x0004, Uuid::GetRandom(), 0, 0,
+                                    {Descriptor(0x0005, Uuid::GetRandom(), 0),
+                                     Descriptor(0x0007, Uuid::GetRandom(), 0),
+                                     Descriptor(0x00A1, Uuid::GetRandom(), 0)});
 
   bool result =
       TestData<Characteristic, android::bluetooth::BluetoothGattCharacteristic>(
@@ -181,19 +181,19 @@ TEST(ParcelableTest, GattCharacteristic) {
 
 TEST(ParcelableTest, GattService) {
   Service s =
-      Service(0x0001, true, UUID("CAFE"),
-              {Characteristic(0x0004, UUID::GetRandom(),
+      Service(0x0001, true, Uuid::FromString("CAFE", nullptr),
+              {Characteristic(0x0004, Uuid::GetRandom(),
                               bluetooth::kCharacteristicPropertyNotify,
                               bluetooth::kAttributePermissionRead,
-                              {Descriptor(0x0005, UUID::GetRandom(), 0),
-                               Descriptor(0x0007, UUID::GetRandom(), 0),
-                               Descriptor(0x0009, UUID::GetRandom(), 0)}),
-               Characteristic(0x000D, UUID::GetRandom(),
+                              {Descriptor(0x0005, Uuid::GetRandom(), 0),
+                               Descriptor(0x0007, Uuid::GetRandom(), 0),
+                               Descriptor(0x0009, Uuid::GetRandom(), 0)}),
+               Characteristic(0x000D, Uuid::GetRandom(),
                               bluetooth::kCharacteristicPropertyWrite,
                               bluetooth::kAttributePermissionWrite,
-                              {Descriptor(0x0010, UUID::GetRandom(), 0),
-                               Descriptor(0x0012, UUID::GetRandom(), 0)}),
-               Characteristic(0x0015, UUID::GetRandom(), 0, 0, {})},
+                              {Descriptor(0x0010, Uuid::GetRandom(), 0),
+                               Descriptor(0x0012, Uuid::GetRandom(), 0)}),
+               Characteristic(0x0015, Uuid::GetRandom(), 0, 0, {})},
               {});
 
   Parcel parcel;

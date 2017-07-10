@@ -32,11 +32,12 @@ class MockGattHandler
   MockGattHandler() = default;
   ~MockGattHandler() override = default;
 
-  MOCK_METHOD1(RegisterServer, bt_status_t(const bt_uuid_t&));
+  MOCK_METHOD1(RegisterServer, bt_status_t(const bluetooth::Uuid&));
   MOCK_METHOD1(UnregisterServer, bt_status_t(int));
   MOCK_METHOD2(AddService, bt_status_t(int, std::vector<btgatt_db_element_t>));
-  MOCK_METHOD5(AddCharacteristic, bt_status_t(int, int, bt_uuid_t*, int, int));
-  MOCK_METHOD4(AddDescriptor, bt_status_t(int, int, bt_uuid_t*, int));
+  MOCK_METHOD5(AddCharacteristic,
+               bt_status_t(int, int, bluetooth::Uuid*, int, int));
+  MOCK_METHOD4(AddDescriptor, bt_status_t(int, int, bluetooth::Uuid*, int));
   MOCK_METHOD3(StartService, bt_status_t(int, int, int));
   MOCK_METHOD2(DeleteService, bt_status_t(int, int));
   MOCK_METHOD5(SendIndication,
@@ -211,8 +212,8 @@ class GattServerPostRegisterTest : public GattServerTest {
 
   void SetUp() override {
     GattServerTest::SetUp();
-    UUID uuid = UUID::GetRandom();
-    auto callback = [&](BLEStatus status, const UUID& in_uuid,
+    Uuid uuid = Uuid::GetRandom();
+    auto callback = [&](BLEStatus status, const Uuid& in_uuid,
                         std::unique_ptr<BluetoothInstance> in_client) {
       CHECK(in_uuid == uuid);
       CHECK(in_client.get());
@@ -228,9 +229,8 @@ class GattServerPostRegisterTest : public GattServerTest {
 
     factory_->RegisterInstance(uuid, callback);
 
-    bt_uuid_t hal_uuid = uuid.GetBlueDroid();
-    fake_hal_gatt_iface_->NotifyRegisterServerCallback(
-        BT_STATUS_SUCCESS, kDefaultServerId, hal_uuid);
+    fake_hal_gatt_iface_->NotifyRegisterServerCallback(BT_STATUS_SUCCESS,
+                                                       kDefaultServerId, uuid);
   }
 
   void TearDown() override {
@@ -246,9 +246,9 @@ class GattServerPostRegisterTest : public GattServerTest {
         .Times(1)
         .WillOnce(Return(BT_STATUS_SUCCESS));
 
-    UUID uuid0 = UUID::GetRandom();
-    UUID uuid1 = UUID::GetRandom();
-    UUID uuid2 = UUID::GetRandom();
+    Uuid uuid0 = Uuid::GetRandom();
+    Uuid uuid1 = Uuid::GetRandom();
+    Uuid uuid2 = Uuid::GetRandom();
 
     bool register_success = false;
 
@@ -257,7 +257,7 @@ class GattServerPostRegisterTest : public GattServerTest {
     ASSERT_TRUE(gatt_server_->AddService(
         service, [&](BLEStatus status, const Service& added_service) {
           ASSERT_EQ(BLE_STATUS_SUCCESS, status);
-          ASSERT_TRUE(UUID(added_service.uuid()) == UUID(service.uuid()));
+          ASSERT_TRUE(Uuid(added_service.uuid()) == Uuid(service.uuid()));
           ASSERT_TRUE(added_service.handle() == 0x0001);
           register_success = true;
         }));
@@ -268,13 +268,13 @@ class GattServerPostRegisterTest : public GattServerTest {
 
     std::vector<btgatt_db_element_t> service_with_handles = {
         {.type = BTGATT_DB_PRIMARY_SERVICE,
-         .uuid = uuid0.GetBlueDroid(),
+         .uuid = uuid0,
          .attribute_handle = srvc_handle_},
         {.type = BTGATT_DB_CHARACTERISTIC,
-         .uuid = uuid1.GetBlueDroid(),
+         .uuid = uuid1,
          .attribute_handle = char_handle_},
         {.type = BTGATT_DB_DESCRIPTOR,
-         .uuid = uuid2.GetBlueDroid(),
+         .uuid = uuid2,
          .attribute_handle = desc_handle_},
     };
 
@@ -306,11 +306,11 @@ TEST_F(GattServerTest, RegisterServer) {
   // These will be asynchronously populate with a result when the callback
   // executes.
   BLEStatus status = BLE_STATUS_SUCCESS;
-  UUID cb_uuid;
+  Uuid cb_uuid;
   std::unique_ptr<GattServer> server;
   int callback_count = 0;
 
-  auto callback = [&](BLEStatus in_status, const UUID& uuid,
+  auto callback = [&](BLEStatus in_status, const Uuid& uuid,
                       std::unique_ptr<BluetoothInstance> in_server) {
     status = in_status;
     cb_uuid = uuid;
@@ -319,7 +319,7 @@ TEST_F(GattServerTest, RegisterServer) {
     callback_count++;
   };
 
-  UUID uuid0 = UUID::GetRandom();
+  Uuid uuid0 = Uuid::GetRandom();
 
   // HAL returns failure.
   EXPECT_FALSE(factory_->RegisterInstance(uuid0, callback));
@@ -329,30 +329,28 @@ TEST_F(GattServerTest, RegisterServer) {
   EXPECT_TRUE(factory_->RegisterInstance(uuid0, callback));
   EXPECT_EQ(0, callback_count);
 
-  // Calling twice with the same UUID should fail with no additional calls into
+  // Calling twice with the same Uuid should fail with no additional calls into
   // the stack.
   EXPECT_FALSE(factory_->RegisterInstance(uuid0, callback));
 
   testing::Mock::VerifyAndClearExpectations(mock_handler_.get());
 
-  // Call with a different UUID while one is pending.
-  UUID uuid1 = UUID::GetRandom();
+  // Call with a different Uuid while one is pending.
+  Uuid uuid1 = Uuid::GetRandom();
   EXPECT_CALL(*mock_handler_, RegisterServer(_))
       .Times(1)
       .WillOnce(Return(BT_STATUS_SUCCESS));
   EXPECT_TRUE(factory_->RegisterInstance(uuid1, callback));
 
-  // Trigger callback with an unknown UUID. This should get ignored.
-  UUID uuid2 = UUID::GetRandom();
-  bt_uuid_t hal_uuid = uuid2.GetBlueDroid();
+  // Trigger callback with an unknown Uuid. This should get ignored.
+  bluetooth::Uuid hal_uuid = bluetooth::Uuid::GetRandom();
   fake_hal_gatt_iface_->NotifyRegisterServerCallback(0, 0, hal_uuid);
   EXPECT_EQ(0, callback_count);
 
   // |uuid0| succeeds.
   int server_if0 = 2;  // Pick something that's not 0.
-  hal_uuid = uuid0.GetBlueDroid();
   fake_hal_gatt_iface_->NotifyRegisterServerCallback(BT_STATUS_SUCCESS,
-                                                     server_if0, hal_uuid);
+                                                     server_if0, uuid0);
 
   EXPECT_EQ(1, callback_count);
   ASSERT_TRUE(server.get() != nullptr);  // Assert to terminate in case of error
@@ -371,9 +369,8 @@ TEST_F(GattServerTest, RegisterServer) {
 
   // |uuid1| fails.
   int server_if1 = 3;
-  hal_uuid = uuid1.GetBlueDroid();
   fake_hal_gatt_iface_->NotifyRegisterServerCallback(BT_STATUS_FAIL, server_if1,
-                                                     hal_uuid);
+                                                     uuid1);
 
   EXPECT_EQ(2, callback_count);
   ASSERT_TRUE(server.get() == nullptr);  // Assert to terminate in case of error

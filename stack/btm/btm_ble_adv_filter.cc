@@ -34,6 +34,8 @@
 #include "hcidefs.h"
 #include "hcimsgs.h"
 
+using bluetooth::Uuid;
+
 #define BTM_BLE_ADV_FILT_META_HDR_LENGTH 3
 #define BTM_BLE_ADV_FILT_FEAT_SELN_LEN 13
 #define BTM_BLE_ADV_FILT_TRACK_NUM 2
@@ -537,7 +539,8 @@ void BTM_LE_PF_addr_filter(tBTM_BLE_SCAN_COND_OP action,
  */
 void BTM_LE_PF_uuid_filter(tBTM_BLE_SCAN_COND_OP action,
                            tBTM_BLE_PF_FILT_INDEX filt_index,
-                           tBTM_BLE_PF_COND_TYPE filter_type, tBT_UUID uuid,
+                           tBTM_BLE_PF_COND_TYPE filter_type,
+                           const bluetooth::Uuid& uuid,
                            tBTM_BLE_PF_LOGIC_TYPE cond_logic,
                            tBTM_BLE_PF_COND_MASK* p_uuid_mask,
                            tBTM_BLE_PF_CFG_CBACK cb) {
@@ -559,36 +562,38 @@ void BTM_LE_PF_uuid_filter(tBTM_BLE_SCAN_COND_OP action,
   UINT8_TO_STREAM(p, action);
   UINT8_TO_STREAM(p, filt_index);
 
+  uint8_t uuid_len = uuid.GetShortestRepresentationSize();
   if (action != BTM_BLE_SCAN_COND_CLEAR) {
-    if (uuid.len == LEN_UUID_16) {
-      UINT16_TO_STREAM(p, uuid.uu.uuid16);
-      len += LEN_UUID_16;
-    } else if (uuid.len == LEN_UUID_32) {
-      UINT32_TO_STREAM(p, uuid.uu.uuid32);
-      len += LEN_UUID_32;
-    } else if (uuid.len == LEN_UUID_128) {
-      ARRAY_TO_STREAM(p, uuid.uu.uuid128, LEN_UUID_128);
-      len += LEN_UUID_128;
+    if (uuid_len == Uuid::kNumBytes16) {
+      UINT16_TO_STREAM(p, uuid.As16Bit());
+      len += Uuid::kNumBytes16;
+    } else if (uuid_len == Uuid::kNumBytes32) {
+      UINT32_TO_STREAM(p, uuid.As32Bit());
+      len += Uuid::kNumBytes32;
+    } else if (uuid_len == Uuid::kNumBytes128) {
+      const auto& tmp = uuid.To128BitLE();
+      ARRAY_TO_STREAM(p, tmp.data(), (int)Uuid::kNumBytes128);
+      len += Uuid::kNumBytes128;
     } else {
-      BTM_TRACE_ERROR("illegal UUID length: %d", uuid.len);
+      BTM_TRACE_ERROR("illegal UUID length: %d", uuid_len);
       cb.Run(0, BTM_BLE_PF_CONFIG, 1 /*BTA_FAILURE*/);
       return;
     }
 
     if (p_uuid_mask) {
-      if (uuid.len == LEN_UUID_16) {
+      if (uuid_len == Uuid::kNumBytes16) {
         UINT16_TO_STREAM(p, p_uuid_mask->uuid16_mask);
-        len += LEN_UUID_16;
-      } else if (uuid.len == LEN_UUID_32) {
+        len += Uuid::kNumBytes16;
+      } else if (uuid_len == Uuid::kNumBytes32) {
         UINT32_TO_STREAM(p, p_uuid_mask->uuid32_mask);
-        len += LEN_UUID_32;
-      } else if (uuid.len == LEN_UUID_128) {
-        ARRAY_TO_STREAM(p, p_uuid_mask->uuid128_mask, LEN_UUID_128);
-        len += LEN_UUID_128;
+        len += Uuid::kNumBytes32;
+      } else if (uuid_len == Uuid::kNumBytes128) {
+        ARRAY_TO_STREAM(p, p_uuid_mask->uuid128_mask, (int)Uuid::kNumBytes128);
+        len += Uuid::kNumBytes128;
       }
     } else {
-      memset(p, 0xff, uuid.len);
-      len += uuid.len;
+      memset(p, 0xff, uuid_len);
+      len += uuid_len;
     }
   }
 

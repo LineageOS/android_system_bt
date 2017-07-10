@@ -278,8 +278,8 @@ const tBTA_GATTC_ST_TBL bta_gattc_st_tbl[] = {
 tBTA_GATTC_CB bta_gattc_cb;
 
 #if (BTA_GATT_DEBUG == TRUE)
-static char* gattc_evt_code(tBTA_GATTC_INT_EVT evt_code);
-static char* gattc_state_code(tBTA_GATTC_STATE state_code);
+static const char* gattc_evt_code(tBTA_GATTC_INT_EVT evt_code);
+static const char* gattc_state_code(tBTA_GATTC_STATE state_code);
 #endif
 
 /*******************************************************************************
@@ -403,7 +403,7 @@ bool bta_gattc_hdl_event(BT_HDR* p_msg) {
  * Returns          void
  *
  ******************************************************************************/
-static char* gattc_evt_code(tBTA_GATTC_INT_EVT evt_code) {
+static const char* gattc_evt_code(tBTA_GATTC_INT_EVT evt_code) {
   switch (evt_code) {
     case BTA_GATTC_API_OPEN_EVT:
       return "BTA_GATTC_API_OPEN_EVT";
@@ -453,7 +453,7 @@ static char* gattc_evt_code(tBTA_GATTC_INT_EVT evt_code) {
  * Returns          void
  *
  ******************************************************************************/
-static char* gattc_state_code(tBTA_GATTC_STATE state_code) {
+static const char* gattc_state_code(tBTA_GATTC_STATE state_code) {
   switch (state_code) {
     case BTA_GATTC_IDLE_ST:
       return "GATTC_IDLE_ST";

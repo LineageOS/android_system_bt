@@ -20,7 +20,6 @@
 
 #include "bt_target.h"
 #include "bt_utils.h"
-#include "btcore/include/uuid.h"
 #include "gatt_api.h"
 #include "gatt_int.h"
 #include "osi/include/log.h"
@@ -232,7 +231,6 @@ bool dis_gatt_c_read_dis_req(uint16_t conn_id) {
 
   memset(&param, 0, sizeof(tGATT_READ_PARAM));
 
-  param.service.uuid.len = LEN_UUID_16;
   param.service.s_handle = 1;
   param.service.e_handle = 0xFFFF;
   param.service.auth_req = 0;
@@ -240,13 +238,14 @@ bool dis_gatt_c_read_dis_req(uint16_t conn_id) {
   while (dis_cb.dis_read_uuid_idx < DIS_MAX_CHAR_NUM) {
     if (dis_uuid_to_attr(dis_attr_uuid[dis_cb.dis_read_uuid_idx]) &
         dis_cb.request_mask) {
-      param.service.uuid.uu.uuid16 = dis_attr_uuid[dis_cb.dis_read_uuid_idx];
+      param.service.uuid =
+          bluetooth::Uuid::From16Bit(dis_attr_uuid[dis_cb.dis_read_uuid_idx]);
 
       if (GATTC_Read(conn_id, GATT_READ_BY_TYPE, &param) == GATT_SUCCESS)
         return true;
 
-      LOG(ERROR) << "Read DISInfo: 0x" << std::hex
-                 << param.service.uuid.uu.uuid16 << "GATT_Read Failed";
+      LOG(ERROR) << "Read DISInfo: " << param.service.uuid
+                 << " GATT_Read Failed";
     }
 
     dis_cb.dis_read_uuid_idx++;
@@ -350,16 +349,16 @@ tDIS_STATUS DIS_SrInit(tDIS_ATTR_MASK dis_attr_mask) {
 
   btgatt_db_element_t service[DIS_MAX_ATTR_NUM] = {};
 
-  bt_uuid_t svc_uuid;
-  uuid_128_from_16(&svc_uuid, UUID_SERVCLASS_DEVICE_INFO);
+  bluetooth::Uuid svc_uuid =
+      bluetooth::Uuid::From16Bit(UUID_SERVCLASS_DEVICE_INFO);
   service[0].type = BTGATT_DB_PRIMARY_SERVICE;
   service[0].uuid = svc_uuid;
 
   for (int i = 0; dis_attr_mask != 0 && i < DIS_MAX_CHAR_NUM; i++) {
     dis_cb.dis_attr[i].uuid = dis_attr_uuid[i];
 
-    bt_uuid_t char_uuid;
-    uuid_128_from_16(&char_uuid, dis_cb.dis_attr[i].uuid);
+    bluetooth::Uuid char_uuid =
+        bluetooth::Uuid::From16Bit(dis_cb.dis_attr[i].uuid);
     /* index 0 is service, so characteristics start from 1 */
     service[i + 1].type = BTGATT_DB_CHARACTERISTIC;
     service[i + 1].uuid = char_uuid;

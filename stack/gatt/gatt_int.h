@@ -101,7 +101,7 @@ typedef uint8_t tGATT_SEC_FLAG;
 
 /*  GATT client FIND_TYPE_VALUE_Request data */
 typedef struct {
-  tBT_UUID uuid;      /* type of attribute to be found */
+  bluetooth::Uuid uuid; /* type of attribute to be found */
   uint16_t s_handle;  /* starting handle */
   uint16_t e_handle;  /* ending handle */
   uint16_t value_len; /* length of the attribute value */
@@ -152,7 +152,7 @@ typedef struct {
 /* attribute value maintained in the server database
 */
 typedef union {
-  tBT_UUID uuid;               /* service declaration */
+  bluetooth::Uuid uuid;        /* service declaration */
   tGATT_CHAR_DECL char_decl;   /* characteristic declaration */
   tGATT_INCL_SRVC incl_handle; /* included service */
 } tGATT_ATTR_VALUE;
@@ -170,7 +170,7 @@ typedef struct {
   std::unique_ptr<tGATT_ATTR_VALUE> p_value;
   tGATT_PERM permission;
   uint16_t handle;
-  tBT_UUID uuid;
+  bluetooth::Uuid uuid;
   bt_gatt_db_attribute_type_t gatt_type;
 } tGATT_ATTR;
 
@@ -188,7 +188,7 @@ typedef struct {
 /* attribute handle, service UUID and a set of GATT server callback.          */
 
 typedef struct {
-  tBT_UUID app_uuid128;
+  bluetooth::Uuid app_uuid128;
   tGATT_CBACK app_cb;
   tGATT_IF gatt_if; /* one based */
   bool in_use;
@@ -254,7 +254,7 @@ typedef struct hdl_list_elem {
 /* attribute handle, service UUID and a set of GATT server callback.          */
 typedef struct {
   tGATT_SVC_DB* p_db;  /* pointer to the service database */
-  tBT_UUID app_uuid;   /* applicatino UUID */
+  bluetooth::Uuid app_uuid; /* application UUID */
   uint32_t sdp_handle; /* primamry service SDP handle */
   uint16_t type;       /* service type UUID, primary or secondary */
   uint16_t s_hdl;      /* service starting handle */
@@ -308,7 +308,7 @@ struct tGATT_CLCB {
   tGATT_REG* p_reg; /* owner of this CLCB */
   uint8_t sccb_idx;
   uint8_t* p_attr_buf; /* attribute buffer for read multiple, prepare write */
-  tBT_UUID uuid;
+  bluetooth::Uuid uuid;
   uint16_t conn_id; /* connection handle */
   uint16_t s_handle; /* starting handle of the active request */
   uint16_t e_handle; /* ending handle of the active request */
@@ -432,14 +432,12 @@ extern tGATT_STATUS attp_send_msg_to_l2cap(tGATT_TCB& tcb, BT_HDR* p_toL2CAP);
 
 /* utility functions */
 extern uint8_t* gatt_dbg_op_name(uint8_t op_code);
-extern uint32_t gatt_add_sdp_record(tBT_UUID* p_uuid, uint16_t start_hdl,
-                                    uint16_t end_hdl);
-extern bool gatt_parse_uuid_from_cmd(tBT_UUID* p_uuid, uint16_t len,
+extern uint32_t gatt_add_sdp_record(const bluetooth::Uuid& uuid,
+                                    uint16_t start_hdl, uint16_t end_hdl);
+extern bool gatt_parse_uuid_from_cmd(bluetooth::Uuid* p_uuid, uint16_t len,
                                      uint8_t** p_data);
-extern uint8_t gatt_build_uuid_to_stream(uint8_t** p_dst, tBT_UUID uuid);
-extern bool gatt_uuid_compare(tBT_UUID src, tBT_UUID tar);
-extern void gatt_convert_uuid32_to_uuid128(uint8_t uuid_128[LEN_UUID_128],
-                                           uint32_t uuid_32);
+extern uint8_t gatt_build_uuid_to_stream(uint8_t** p_dst,
+                                         const bluetooth::Uuid& uuid);
 extern void gatt_sr_get_sec_info(const RawAddress& rem_bda,
                                  tBT_TRANSPORT transport, uint8_t* p_sec_flag,
                                  uint8_t* p_key_size);
@@ -452,7 +450,6 @@ extern void gatt_start_ind_ack_timer(tGATT_TCB& tcb);
 extern tGATT_STATUS gatt_send_error_rsp(tGATT_TCB& tcb, uint8_t err_code,
                                         uint8_t op_code, uint16_t handle,
                                         bool deq);
-extern void gatt_dbg_display_uuid(tBT_UUID bt_uuid);
 
 extern bool gatt_is_srv_chg_ind_pending(tGATT_TCB* p_tcb);
 extern tGATTS_SRV_CHG* gatt_is_bda_in_the_srv_chg_clt_list(
@@ -464,12 +461,13 @@ extern bool gatt_find_the_connected_bda(uint8_t start_idx, RawAddress& bda,
 extern void gatt_set_srv_chg(void);
 extern void gatt_delete_dev_from_srv_chg_clt_list(const RawAddress& bd_addr);
 extern tGATT_VALUE* gatt_add_pending_ind(tGATT_TCB* p_tcb, tGATT_VALUE* p_ind);
-extern void gatt_free_srvc_db_buffer_app_id(tBT_UUID* p_app_id);
+extern void gatt_free_srvc_db_buffer_app_id(const bluetooth::Uuid& app_id);
 extern bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb);
 
 /* reserved handle list */
 extern std::list<tGATT_HDL_LIST_ELEM>::iterator gatt_find_hdl_buffer_by_app_id(
-    tBT_UUID* p_app_uuid128, tBT_UUID* p_svc_uuid, uint16_t svc_inst);
+    const bluetooth::Uuid& app_uuid128, bluetooth::Uuid* p_svc_uuid,
+    uint16_t svc_inst);
 extern tGATT_HDL_LIST_ELEM* gatt_find_hdl_buffer_by_handle(uint16_t handle);
 extern tGATTS_SRV_CHG* gatt_add_srv_chg_clt(tGATTS_SRV_CHG* p_srv_chg);
 
@@ -486,9 +484,6 @@ extern void gatt_deregister_bgdev_list(tGATT_IF gatt_if);
 /* server function */
 extern std::list<tGATT_SRV_LIST_ELEM>::iterator gatt_sr_find_i_rcb_by_handle(
     uint16_t handle);
-extern bool gatt_sr_find_i_rcb_by_app_id(tBT_UUID* p_app_uuid128,
-                                         tBT_UUID* p_svc_uuid,
-                                         uint16_t svc_inst);
 extern tGATT_STATUS gatt_sr_process_app_rsp(tGATT_TCB& tcb, tGATT_IF gatt_if,
                                             uint32_t trans_id, uint8_t op_code,
                                             tGATT_STATUS status,
@@ -559,21 +554,22 @@ extern tGATT_SEC_ACTION gatt_get_sec_act(tGATT_TCB* p_tcb);
 extern void gatt_set_sec_act(tGATT_TCB* p_tcb, tGATT_SEC_ACTION sec_act);
 
 /* gatt_db.cc */
-extern void gatts_init_service_db(tGATT_SVC_DB& db, tBT_UUID* p_service,
-                                  bool is_pri, uint16_t s_hdl,
-                                  uint16_t num_handle);
+extern void gatts_init_service_db(tGATT_SVC_DB& db,
+                                  const bluetooth::Uuid& service, bool is_pri,
+                                  uint16_t s_hdl, uint16_t num_handle);
 extern uint16_t gatts_add_included_service(tGATT_SVC_DB& db, uint16_t s_handle,
-                                           uint16_t e_handle, tBT_UUID service);
+                                           uint16_t e_handle,
+                                           const bluetooth::Uuid& service);
 extern uint16_t gatts_add_characteristic(tGATT_SVC_DB& db, tGATT_PERM perm,
                                          tGATT_CHAR_PROP property,
-                                         tBT_UUID& char_uuid);
+                                         const bluetooth::Uuid& char_uuid);
 extern uint16_t gatts_add_char_descr(tGATT_SVC_DB& db, tGATT_PERM perm,
-                                     tBT_UUID& dscp_uuid);
+                                     const bluetooth::Uuid& dscp_uuid);
 extern tGATT_STATUS gatts_db_read_attr_value_by_type(
     tGATT_TCB& tcb, tGATT_SVC_DB* p_db, uint8_t op_code, BT_HDR* p_rsp,
-    uint16_t s_handle, uint16_t e_handle, tBT_UUID type, uint16_t* p_len,
-    tGATT_SEC_FLAG sec_flag, uint8_t key_size, uint32_t trans_id,
-    uint16_t* p_cur_handle);
+    uint16_t s_handle, uint16_t e_handle, const bluetooth::Uuid& type,
+    uint16_t* p_len, tGATT_SEC_FLAG sec_flag, uint8_t key_size,
+    uint32_t trans_id, uint16_t* p_cur_handle);
 extern tGATT_STATUS gatts_read_attr_value_by_handle(
     tGATT_TCB& tcb, tGATT_SVC_DB* p_db, uint8_t op_code, uint16_t handle,
     uint16_t offset, uint8_t* p_value, uint16_t* p_len, uint16_t mtu,
@@ -585,6 +581,6 @@ extern tGATT_STATUS gatts_read_attr_perm_check(tGATT_SVC_DB* p_db, bool is_long,
                                                uint16_t handle,
                                                tGATT_SEC_FLAG sec_flag,
                                                uint8_t key_size);
-extern tBT_UUID* gatts_get_service_uuid(tGATT_SVC_DB* p_db);
+extern bluetooth::Uuid* gatts_get_service_uuid(tGATT_SVC_DB* p_db);
 
 #endif

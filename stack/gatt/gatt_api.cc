@@ -23,6 +23,7 @@
  ******************************************************************************/
 #include "bt_target.h"
 
+#include <base/strings/string_number_conversions.h>
 #include <base/strings/stringprintf.h>
 #include <stdio.h>
 #include <string.h>
@@ -34,6 +35,7 @@
 #include "l2c_api.h"
 
 using base::StringPrintf;
+using bluetooth::Uuid;
 
 /**
  * Add an service handle range to the list in decending order of the start
@@ -95,53 +97,6 @@ bool GATTS_NVRegister(tGATT_APPL_INFO* p_cb_info) {
   return status;
 }
 
-static uint8_t BASE_UUID[16] = {0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80,
-                                0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-
-static int uuidType(unsigned char* p_uuid) {
-  if (memcmp(p_uuid, BASE_UUID, 12) != 0) return LEN_UUID_128;
-  if (memcmp(p_uuid + 14, BASE_UUID + 14, 2) != 0) return LEN_UUID_32;
-
-  return LEN_UUID_16;
-}
-
-/*******************************************************************************
- * BTIF -> BTA conversion functions
- ******************************************************************************/
-
-static void btif_to_bta_uuid(tBT_UUID* p_dest, bt_uuid_t* p_src) {
-  char* p_byte = (char*)p_src;
-  int i = 0;
-
-  p_dest->len = uuidType(p_src->uu);
-
-  switch (p_dest->len) {
-    case LEN_UUID_16:
-      p_dest->uu.uuid16 = (p_src->uu[13] << 8) + p_src->uu[12];
-      break;
-
-    case LEN_UUID_32:
-      p_dest->uu.uuid32 = (p_src->uu[15] << 24) + (p_src->uu[14] << 16) +
-                          (p_src->uu[13] << 8) + p_src->uu[12];
-      break;
-
-    case LEN_UUID_128:
-      for (i = 0; i != 16; ++i) p_dest->uu.uuid128[i] = p_byte[i];
-      break;
-
-    default:
-      LOG(ERROR) << __func__ << ": Unknown UUID length %d!" << +p_dest->len;
-      break;
-  }
-}
-
-void uuid_128_from_16(bt_uuid_t* uuid, uint16_t uuid16) {
-  memcpy(uuid, &BASE_UUID, sizeof(bt_uuid_t));
-
-  uuid->uu[13] = (uint8_t)((0xFF00 & uuid16) >> 8);
-  uuid->uu[12] = (uint8_t)(0x00FF & uuid16);
-}
-
 static uint16_t compute_service_size(btgatt_db_element_t* service, int count) {
   int db_size = 0;
   btgatt_db_element_t* el = service;
@@ -160,11 +115,11 @@ static uint16_t compute_service_size(btgatt_db_element_t* service, int count) {
   return db_size;
 }
 
-static bool is_gatt_attr_type(const tBT_UUID& uuid) {
-  if (uuid.len == LEN_UUID_16 && (uuid.uu.uuid16 == GATT_UUID_PRI_SERVICE ||
-                                  uuid.uu.uuid16 == GATT_UUID_SEC_SERVICE ||
-                                  uuid.uu.uuid16 == GATT_UUID_INCLUDE_SERVICE ||
-                                  uuid.uu.uuid16 == GATT_UUID_CHAR_DECLARE)) {
+static bool is_gatt_attr_type(const Uuid& uuid) {
+  if (uuid == Uuid::From16Bit(GATT_UUID_PRI_SERVICE) ||
+      uuid == Uuid::From16Bit(GATT_UUID_SEC_SERVICE) ||
+      uuid == Uuid::From16Bit(GATT_UUID_INCLUDE_SERVICE) ||
+      uuid == Uuid::From16Bit(GATT_UUID_CHAR_DECLARE)) {
     return true;
   }
   return false;
@@ -198,28 +153,22 @@ uint16_t GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
   uint16_t s_hdl = 0;
   bool save_hdl = false;
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
-  tBT_UUID* p_app_uuid128;
 
   bool is_pri = (service->type == BTGATT_DB_PRIMARY_SERVICE) ? true : false;
-  tBT_UUID svc_uuid;
-  btif_to_bta_uuid(&svc_uuid, &service->uuid);
+  Uuid svc_uuid = service->uuid;
 
   LOG(INFO) << __func__;
 
-  if (p_reg == NULL) {
+  if (!p_reg) {
     LOG(ERROR) << "Inavlid gatt_if=" << +gatt_if;
     return GATT_INTERNAL_ERROR;
   }
 
-  p_app_uuid128 = &p_reg->app_uuid128;
-
   uint16_t num_handles = compute_service_size(service, count);
 
-  if ((svc_uuid.len == LEN_UUID_16) &&
-      (svc_uuid.uu.uuid16 == UUID_SERVCLASS_GATT_SERVER)) {
+  if (svc_uuid == Uuid::From16Bit(UUID_SERVCLASS_GATT_SERVER)) {
     s_hdl = gatt_cb.hdl_cfg.gatt_start_hdl;
-  } else if ((svc_uuid.len == LEN_UUID_16) &&
-             (svc_uuid.uu.uuid16 == UUID_SERVCLASS_GAP_SERVER)) {
+  } else if (svc_uuid == Uuid::From16Bit(UUID_SERVCLASS_GAP_SERVER)) {
     s_hdl = gatt_cb.hdl_cfg.gap_start_hdl;
   } else {
     if (!gatt_cb.hdl_list_info->empty()) {
@@ -241,7 +190,7 @@ uint16_t GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
   }
 
   tGATT_HDL_LIST_ELEM& list = gatt_add_an_item_to_list(s_hdl);
-  list.asgn_range.app_uuid128 = *p_app_uuid128;
+  list.asgn_range.app_uuid128 = p_reg->app_uuid128;
   list.asgn_range.svc_uuid = svc_uuid;
   list.asgn_range.s_handle = s_hdl;
   list.asgn_range.e_handle = s_hdl + num_handles - 1;
@@ -252,20 +201,18 @@ uint16_t GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
       (*gatt_cb.cb_info.p_nv_save_callback)(true, &list.asgn_range);
   }
 
-  gatts_init_service_db(list.svc_db, &svc_uuid, is_pri, s_hdl, num_handles);
+  gatts_init_service_db(list.svc_db, svc_uuid, is_pri, s_hdl, num_handles);
 
   VLOG(1) << StringPrintf(
-      "%s: handles needed:%u s_hdl=%u e_hdl=%u %s[%x] is_primary=%d", __func__,
+      "%s: handles needed:%u s_hdl=%u e_hdl=%u %s is_primary=%d", __func__,
       num_handles, list.asgn_range.s_handle, list.asgn_range.e_handle,
-      ((list.asgn_range.svc_uuid.len == 2) ? "uuid16" : "uuid128"),
-      list.asgn_range.svc_uuid.uu.uuid16, list.asgn_range.is_primary);
+      list.asgn_range.svc_uuid.ToString().c_str(), list.asgn_range.is_primary);
 
   service->attribute_handle = s_hdl;
 
   btgatt_db_element_t* el = service + 1;
   for (int i = 0; i < count - 1; i++, el++) {
-    tBT_UUID uuid;
-    btif_to_bta_uuid(&uuid, &el->uuid);
+    const Uuid& uuid = el->uuid;
 
     if (el->type == BTGATT_DB_CHARACTERISTIC) {
       /* data validity checking */
@@ -282,8 +229,8 @@ uint16_t GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
       if (is_gatt_attr_type(uuid)) {
         LOG(ERROR) << StringPrintf(
             "%s: attept to add characteristic with UUID equal to GATT "
-            "Attribute Type 0x%04x ",
-            __func__, uuid.uu.uuid16);
+            "Attribute Type %s ",
+            __func__, uuid.ToString().c_str());
         return GATT_INTERNAL_ERROR;
       }
 
@@ -293,8 +240,8 @@ uint16_t GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
       if (is_gatt_attr_type(uuid)) {
         LOG(ERROR) << StringPrintf(
             "%s: attept to add descriptor with UUID equal to GATT "
-            "Attribute Type 0x%04x ",
-            __func__, uuid.uu.uuid16);
+            "Attribute Type %s",
+            __func__, uuid.ToString().c_str());
         return GATT_INTERNAL_ERROR;
       }
 
@@ -333,13 +280,13 @@ uint16_t GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
   elem.p_db = &list.svc_db;
   elem.is_primary = list.asgn_range.is_primary;
 
-  memcpy(&elem.app_uuid, &list.asgn_range.app_uuid128, sizeof(tBT_UUID));
+  elem.app_uuid = list.asgn_range.app_uuid128;
   elem.type = list.asgn_range.is_primary ? GATT_UUID_PRI_SERVICE
                                          : GATT_UUID_SEC_SERVICE;
 
   if (elem.type == GATT_UUID_PRI_SERVICE) {
-    tBT_UUID* p_uuid = gatts_get_service_uuid(elem.p_db);
-    elem.sdp_handle = gatt_add_sdp_record(p_uuid, elem.s_hdl, elem.e_hdl);
+    Uuid* p_uuid = gatts_get_service_uuid(elem.p_db);
+    elem.sdp_handle = gatt_add_sdp_record(*p_uuid, elem.s_hdl, elem.e_hdl);
   } else {
     elem.sdp_handle = 0;
   }
@@ -355,17 +302,14 @@ uint16_t GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
   return GATT_SERVICE_STARTED;
 }
 
-bool is_active_service(tBT_UUID* p_app_uuid128, tBT_UUID* p_svc_uuid,
+bool is_active_service(const Uuid& app_uuid128, Uuid* p_svc_uuid,
                        uint16_t start_handle) {
   for (auto& info : *gatt_cb.srv_list_info) {
-    tBT_UUID* p_this_uuid = gatts_get_service_uuid(info.p_db);
+    Uuid* p_this_uuid = gatts_get_service_uuid(info.p_db);
 
-    if (p_this_uuid && gatt_uuid_compare(*p_app_uuid128, info.app_uuid) &&
-        gatt_uuid_compare(*p_svc_uuid, *p_this_uuid) &&
-        (start_handle == info.s_hdl)) {
-      LOG(ERROR) << "Active Service Found";
-      gatt_dbg_display_uuid(*p_svc_uuid);
-
+    if (p_this_uuid && app_uuid128 == info.app_uuid &&
+        *p_svc_uuid == *p_this_uuid && (start_handle == info.s_hdl)) {
+      LOG(ERROR) << "Active Service Found: " << *p_svc_uuid;
       return true;
     }
   }
@@ -386,7 +330,7 @@ bool is_active_service(tBT_UUID* p_app_uuid128, tBT_UUID* p_svc_uuid,
  *                  was not found.
  *
  ******************************************************************************/
-bool GATTS_DeleteService(tGATT_IF gatt_if, tBT_UUID* p_svc_uuid,
+bool GATTS_DeleteService(tGATT_IF gatt_if, Uuid* p_svc_uuid,
                          uint16_t svc_inst) {
   VLOG(1) << __func__;
 
@@ -396,8 +340,8 @@ bool GATTS_DeleteService(tGATT_IF gatt_if, tBT_UUID* p_svc_uuid,
     return false;
   }
 
-  tBT_UUID* p_app_uuid128 = &p_reg->app_uuid128;
-  auto it = gatt_find_hdl_buffer_by_app_id(p_app_uuid128, p_svc_uuid, svc_inst);
+  auto it =
+      gatt_find_hdl_buffer_by_app_id(p_reg->app_uuid128, p_svc_uuid, svc_inst);
   if (it == gatt_cb.hdl_list_info->end()) {
     LOG(ERROR) << "No Service found";
     return false;
@@ -405,7 +349,7 @@ bool GATTS_DeleteService(tGATT_IF gatt_if, tBT_UUID* p_svc_uuid,
 
   gatt_proc_srv_chg();
 
-  if (is_active_service(p_app_uuid128, p_svc_uuid, svc_inst)) {
+  if (is_active_service(p_reg->app_uuid128, p_svc_uuid, svc_inst)) {
     GATTS_StopService(it->asgn_range.s_handle);
   }
 
@@ -660,7 +604,6 @@ tGATT_STATUS GATTC_ConfigureMTU(uint16_t conn_id, uint16_t mtu) {
                           (tGATT_CL_MSG*)&mtu);
 }
 
-
 /*******************************************************************************
  *
  * Function         GATTC_Discover
@@ -695,7 +638,7 @@ tGATT_STATUS GATTC_Discover(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
   if (!GATT_HANDLE_IS_VALID(p_param->s_handle) ||
       !GATT_HANDLE_IS_VALID(p_param->e_handle) ||
       /* search by type does not have a valid UUID param */
-      (disc_type == GATT_DISC_SRVC_BY_UUID && p_param->service.len == 0)) {
+      (disc_type == GATT_DISC_SRVC_BY_UUID && p_param->service.IsEmpty())) {
     return GATT_ILLEGAL_PARAMETER;
   }
 
@@ -765,7 +708,7 @@ tGATT_STATUS GATTC_Read(uint16_t conn_id, tGATT_READ_TYPE type,
     case GATT_READ_CHAR_VALUE:
       p_clcb->s_handle = p_read->service.s_handle;
       p_clcb->e_handle = p_read->service.e_handle;
-      memcpy(&p_clcb->uuid, &p_read->service.uuid, sizeof(tBT_UUID));
+      p_clcb->uuid = p_read->service.uuid;
       break;
     case GATT_READ_MULTIPLE: {
       p_clcb->s_handle = 0;
@@ -778,7 +721,7 @@ tGATT_STATUS GATTC_Read(uint16_t conn_id, tGATT_READ_TYPE type,
     }
     case GATT_READ_BY_HANDLE:
     case GATT_READ_PARTIAL:
-      memset(&p_clcb->uuid, 0, sizeof(tBT_UUID));
+      p_clcb->uuid = Uuid::kEmpty;
       p_clcb->s_handle = p_read->by_handle.handle;
 
       if (type == GATT_READ_PARTIAL) {
@@ -990,19 +933,16 @@ void GATT_SetIdleTimeout(const RawAddress& bd_addr, uint16_t idle_tout,
  *                  with GATT
  *
  ******************************************************************************/
-tGATT_IF GATT_Register(tBT_UUID* p_app_uuid128, tGATT_CBACK* p_cb_info) {
+tGATT_IF GATT_Register(const Uuid& app_uuid128, tGATT_CBACK* p_cb_info) {
   tGATT_REG* p_reg;
   uint8_t i_gatt_if = 0;
   tGATT_IF gatt_if = 0;
 
-  LOG(INFO) << __func__;
-  gatt_dbg_display_uuid(*p_app_uuid128);
+  LOG(INFO) << __func__ << app_uuid128;
 
   for (i_gatt_if = 0, p_reg = gatt_cb.cl_rcb; i_gatt_if < GATT_MAX_APPS;
        i_gatt_if++, p_reg++) {
-    if (p_reg->in_use &&
-        !memcmp(p_app_uuid128->uu.uuid128, p_reg->app_uuid128.uu.uuid128,
-                LEN_UUID_128)) {
+    if (p_reg->in_use && p_reg->app_uuid128 == app_uuid128) {
       LOG(ERROR) << "application already registered.";
       return 0;
     }
@@ -1013,7 +953,7 @@ tGATT_IF GATT_Register(tBT_UUID* p_app_uuid128, tGATT_CBACK* p_cb_info) {
     if (!p_reg->in_use) {
       memset(p_reg, 0, sizeof(tGATT_REG));
       i_gatt_if++; /* one based number */
-      p_reg->app_uuid128 = *p_app_uuid128;
+      p_reg->app_uuid128 = app_uuid128;
       gatt_if = p_reg->gatt_if = (tGATT_IF)i_gatt_if;
       p_reg->app_cb = *p_cb_info;
       p_reg->in_use = true;
@@ -1063,7 +1003,7 @@ void GATT_Deregister(tGATT_IF gatt_if) {
   }
 
   /* free all services db buffers if owned by this application */
-  gatt_free_srvc_db_buffer_app_id(&p_reg->app_uuid128);
+  gatt_free_srvc_db_buffer_app_id(p_reg->app_uuid128);
 
   /* When an application deregisters, check remove the link associated with the
    * app */

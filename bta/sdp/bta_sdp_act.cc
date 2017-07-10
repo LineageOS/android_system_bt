@@ -42,55 +42,11 @@
  *  Constants
  ****************************************************************************/
 
-static const uint8_t UUID_OBEX_OBJECT_PUSH[] = {
-    0x00, 0x00, 0x11, 0x05, 0x00, 0x00, 0x10, 0x00,
-    0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB};
-static const uint8_t UUID_PBAP_PSE[] = {0x00, 0x00, 0x11, 0x2F, 0x00, 0x00,
-                                        0x10, 0x00, 0x80, 0x00, 0x00, 0x80,
-                                        0x5F, 0x9B, 0x34, 0xFB};
-static const uint8_t UUID_MAP_MAS[] = {0x00, 0x00, 0x11, 0x32, 0x00, 0x00,
-                                       0x10, 0x00, 0x80, 0x00, 0x00, 0x80,
-                                       0x5F, 0x9B, 0x34, 0xFB};
-static const uint8_t UUID_MAP_MNS[] = {0x00, 0x00, 0x11, 0x33, 0x00, 0x00,
-                                       0x10, 0x00, 0x80, 0x00, 0x00, 0x80,
-                                       0x5F, 0x9B, 0x34, 0xFB};
-static const uint8_t UUID_SAP[] = {0x00, 0x00, 0x11, 0x2D, 0x00, 0x00,
-                                   0x10, 0x00, 0x80, 0x00, 0x00, 0x80,
-                                   0x5F, 0x9B, 0x34, 0xFB};
-// TODO:
-// Both the fact that the UUIDs are declared in multiple places, plus the fact
-// that there is a mess of UUID comparison and shortening methods will have to
-// be fixed.
-// The btcore->uuid module should be used for all instances.
-
-#define UUID_MAX_LENGTH 16
-#define IS_UUID(u1, u2) !memcmp(u1, u2, UUID_MAX_LENGTH)
-
-static inline tBT_UUID shorten_sdp_uuid(const tBT_UUID* u) {
-  static uint8_t bt_base_uuid[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                   0x10, 0x00, 0x80, 0x00, 0x00, 0x80,
-                                   0x5F, 0x9B, 0x34, 0xFB};
-
-  APPL_TRACE_DEBUG("%s() - uuid len:%d", __func__, u->len);
-  if (u->len != 16) return *u;
-
-  if (memcmp(&u->uu.uuid128[4], &bt_base_uuid[4], 12) != 0) return *u;
-
-  tBT_UUID su;
-  memset(&su, 0, sizeof(su));
-  if (u->uu.uuid128[0] == 0 && u->uu.uuid128[1] == 0) {
-    su.len = 2;
-    uint16_t u16;
-    memcpy(&u16, &u->uu.uuid128[2], sizeof(u16));
-    su.uu.uuid16 = ntohs(u16);
-  } else {
-    su.len = 4;
-    uint32_t u32;
-    memcpy(&u32, &u->uu.uuid128[0], sizeof(u32));
-    su.uu.uuid32 = ntohl(u32);
-  }
-  return su;
-}
+static const Uuid UUID_OBEX_OBJECT_PUSH = Uuid::From16Bit(0x1105);
+static const Uuid UUID_PBAP_PSE = Uuid::From16Bit(0x112F);
+static const Uuid UUID_MAP_MAS = Uuid::From16Bit(0x1132);
+static const Uuid UUID_MAP_MNS = Uuid::From16Bit(0x1133);
+static const Uuid UUID_SAP = Uuid::From16Bit(0x112D);
 
 static void bta_create_mns_sdp_record(bluetooth_sdp_record* record,
                                       tSDP_DISC_REC* p_rec) {
@@ -373,74 +329,63 @@ static void bta_create_raw_sdp_record(bluetooth_sdp_record* record,
   record->hdr.user1_ptr = p_bta_sdp_cfg->p_sdp_db->raw_data;
 }
 
-/*******************************************************************************
- *
- * Function     bta_sdp_search_cback
- *
- * Description  Callback from btm after search is completed
- *
- * Returns      void
- *
- ******************************************************************************/
+/** Callback from btm after search is completed */
 static void bta_sdp_search_cback(uint16_t result, void* user_data) {
-  tSDP_DISC_REC* p_rec = NULL;
-  tBTA_SDP_SEARCH_COMP evt_data;
   tBTA_SDP_STATUS status = BTA_SDP_FAILURE;
   int count = 0;
-  tBT_UUID su;
   APPL_TRACE_DEBUG("%s() -  res: 0x%x", __func__, result);
 
-  memset(&evt_data, 0, sizeof(evt_data));
   bta_sdp_cb.sdp_active = BTA_SDP_ACTIVE_NONE;
 
   if (bta_sdp_cb.p_dm_cback == NULL) return;
 
+  Uuid& uuid = *(reinterpret_cast<Uuid*>(user_data));
+
+  tBTA_SDP_SEARCH_COMP evt_data;
+  memset(&evt_data, 0, sizeof(evt_data));
   evt_data.remote_addr = bta_sdp_cb.remote_addr;
-  tBT_UUID* uuid = (tBT_UUID*)user_data;
-  memcpy(&evt_data.uuid, uuid, sizeof(tBT_UUID));
-  su = shorten_sdp_uuid(uuid);
+  evt_data.uuid = uuid;
 
   if (result == SDP_SUCCESS || result == SDP_DB_FULL) {
+    tSDP_DISC_REC* p_rec = NULL;
     do {
-      p_rec = SDP_FindServiceUUIDInDb(p_bta_sdp_cfg->p_sdp_db, &su, p_rec);
+      p_rec = SDP_FindServiceUUIDInDb(p_bta_sdp_cfg->p_sdp_db, uuid, p_rec);
       /* generate the matching record data pointer */
-      if (p_rec != NULL) {
-        status = BTA_SDP_SUCCESS;
-        if (IS_UUID(UUID_MAP_MAS, uuid->uu.uuid128)) {
-          APPL_TRACE_DEBUG("%s() - found MAP (MAS) uuid", __func__);
-          bta_create_mas_sdp_record(&evt_data.records[count], p_rec);
-        } else if (IS_UUID(UUID_MAP_MNS, uuid->uu.uuid128)) {
-          APPL_TRACE_DEBUG("%s() - found MAP (MNS) uuid", __func__);
-          bta_create_mns_sdp_record(&evt_data.records[count], p_rec);
-        } else if (IS_UUID(UUID_PBAP_PSE, uuid->uu.uuid128)) {
-          APPL_TRACE_DEBUG("%s() - found PBAP (PSE) uuid", __func__);
-          bta_create_pse_sdp_record(&evt_data.records[count], p_rec);
-        } else if (IS_UUID(UUID_OBEX_OBJECT_PUSH, uuid->uu.uuid128)) {
-          APPL_TRACE_DEBUG("%s() - found Object Push Server (OPS) uuid",
-                           __func__);
-          bta_create_ops_sdp_record(&evt_data.records[count], p_rec);
-        } else if (IS_UUID(UUID_SAP, uuid->uu.uuid128)) {
-          APPL_TRACE_DEBUG("%s() - found SAP uuid", __func__);
-          bta_create_sap_sdp_record(&evt_data.records[count], p_rec);
-        } else {
-          /* we do not have specific structure for this */
-          APPL_TRACE_DEBUG("%s() - profile not identified. using raw data",
-                           __func__);
-          bta_create_raw_sdp_record(&evt_data.records[count], p_rec);
-          p_rec = NULL;  // Terminate loop
-          /* For raw, we only extract the first entry, and then return the
-             entire
-             raw data chunk.
-             TODO: Find a way to split the raw data into record chunks, and
-             iterate
-                   to extract generic data for each chunk - e.g. rfcomm channel
-             and
-                   service name. */
-        }
-        count++;
-      } else {
+      if (!p_rec) {
         APPL_TRACE_DEBUG("%s() - UUID not found", __func__);
+        continue;
       }
+
+      status = BTA_SDP_SUCCESS;
+      if (uuid == UUID_MAP_MAS) {
+        APPL_TRACE_DEBUG("%s() - found MAP (MAS) uuid", __func__);
+        bta_create_mas_sdp_record(&evt_data.records[count], p_rec);
+      } else if (uuid == UUID_MAP_MNS) {
+        APPL_TRACE_DEBUG("%s() - found MAP (MNS) uuid", __func__);
+        bta_create_mns_sdp_record(&evt_data.records[count], p_rec);
+      } else if (uuid == UUID_PBAP_PSE) {
+        APPL_TRACE_DEBUG("%s() - found PBAP (PSE) uuid", __func__);
+        bta_create_pse_sdp_record(&evt_data.records[count], p_rec);
+      } else if (uuid == UUID_OBEX_OBJECT_PUSH) {
+        APPL_TRACE_DEBUG("%s() - found Object Push Server (OPS) uuid",
+                         __func__);
+        bta_create_ops_sdp_record(&evt_data.records[count], p_rec);
+      } else if (uuid == UUID_SAP) {
+        APPL_TRACE_DEBUG("%s() - found SAP uuid", __func__);
+        bta_create_sap_sdp_record(&evt_data.records[count], p_rec);
+      } else {
+        /* we do not have specific structure for this */
+        APPL_TRACE_DEBUG("%s() - profile not identified. using raw data",
+                         __func__);
+        bta_create_raw_sdp_record(&evt_data.records[count], p_rec);
+        p_rec = NULL;  // Terminate loop
+        /* For raw, we only extract the first entry, and then return the
+           entire raw data chunk.
+           TODO: Find a way to split the raw data into record chunks, and
+           iterate to extract generic data for each chunk - e.g. rfcomm
+           channel and service name. */
+      }
+      count++;
     } while (p_rec != NULL && count < BTA_SDP_MAX_RECORDS);
 
     evt_data.record_count = count;
@@ -448,7 +393,7 @@ static void bta_sdp_search_cback(uint16_t result, void* user_data) {
   evt_data.status = status;
 
   bta_sdp_cb.p_dm_cback(BTA_SDP_SEARCH_COMP_EVT, (tBTA_SDP*)&evt_data,
-                        (void*)&uuid->uu.uuid128);
+                        (void*)&uuid);
   osi_free(user_data);  // We no longer need the user data to track the search
 }
 
@@ -486,13 +431,14 @@ void bta_sdp_search(tBTA_SDP_MSG* p_data) {
 
   APPL_TRACE_DEBUG("%s in, sdp_active:%d", __func__, bta_sdp_cb.sdp_active);
 
+  const Uuid& uuid = p_data->get_search.uuid;
   if (bta_sdp_cb.sdp_active != BTA_SDP_ACTIVE_NONE) {
     /* SDP is still in progress */
     status = BTA_SDP_BUSY;
     if (bta_sdp_cb.p_dm_cback) {
       tBTA_SDP_SEARCH_COMP result;
       memset(&result, 0, sizeof(result));
-      result.uuid = p_data->get_search.uuid;
+      result.uuid = uuid;
       result.remote_addr = p_data->get_search.bd_addr;
       result.status = status;
       bta_sdp_cb.p_dm_cback(BTA_SDP_SEARCH_COMP_EVT, (tBTA_SDP*)&result, NULL);
@@ -502,20 +448,15 @@ void bta_sdp_search(tBTA_SDP_MSG* p_data) {
 
   bta_sdp_cb.sdp_active = BTA_SDP_ACTIVE_YES;
   bta_sdp_cb.remote_addr = p_data->get_search.bd_addr;
-  /* set the uuid used in the search */
-  tBT_UUID* bta_sdp_search_uuid =
-      static_cast<tBT_UUID*>(osi_malloc(sizeof(tBT_UUID)));
-  memcpy(bta_sdp_search_uuid, &(p_data->get_search.uuid), sizeof(tBT_UUID));
 
   /* initialize the search for the uuid */
-  APPL_TRACE_DEBUG("%s init discovery with UUID(len: %d):", __func__,
-                   bta_sdp_search_uuid->len);
-  for (int x = 0; x < bta_sdp_search_uuid->len; x++) {
-    APPL_TRACE_DEBUG("%X", bta_sdp_search_uuid->uu.uuid128[x]);
-  }
+  APPL_TRACE_DEBUG("%s init discovery with UUID: %s", __func__,
+                   uuid.ToString().c_str());
   SDP_InitDiscoveryDb(p_bta_sdp_cfg->p_sdp_db, p_bta_sdp_cfg->sdp_db_size, 1,
-                      bta_sdp_search_uuid, 0, NULL);
+                      &uuid, 0, NULL);
 
+  Uuid* bta_sdp_search_uuid = (Uuid*)osi_malloc(sizeof(Uuid));
+  *bta_sdp_search_uuid = uuid;
   if (!SDP_ServiceSearchAttributeRequest2(
           p_data->get_search.bd_addr, p_bta_sdp_cfg->p_sdp_db,
           bta_sdp_search_cback, (void*)bta_sdp_search_uuid)) {
@@ -525,7 +466,7 @@ void bta_sdp_search(tBTA_SDP_MSG* p_data) {
     if (bta_sdp_cb.p_dm_cback) {
       tBTA_SDP_SEARCH_COMP result;
       memset(&result, 0, sizeof(result));
-      result.uuid = p_data->get_search.uuid;
+      result.uuid = uuid;
       result.remote_addr = p_data->get_search.bd_addr;
       result.status = status;
       bta_sdp_cb.p_dm_cback(BTA_SDP_SEARCH_COMP_EVT, (tBTA_SDP*)&result, NULL);
