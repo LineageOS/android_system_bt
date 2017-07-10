@@ -26,12 +26,12 @@
 #include "bt_target.h"
 #include "bt_utils.h"
 
-#include "btcore/include/uuid.h"
 #include "gatt_api.h"
 #include "gatt_int.h"
 #include "osi/include/osi.h"
 
 using base::StringPrintf;
+using bluetooth::Uuid;
 
 #define GATTP_MAX_NUM_INC_SVR 0
 #define GATTP_MAX_CHAR_NUM 2
@@ -269,21 +269,19 @@ static void gatt_connect_cback(UNUSED_ATTR tGATT_IF gatt_if,
  *
  ******************************************************************************/
 void gatt_profile_db_init(void) {
-  tBT_UUID app_uuid = {LEN_UUID_128, {0}};
   uint16_t service_handle = 0;
 
   /* Fill our internal UUID with a fixed pattern 0x81 */
-  memset(&app_uuid.uu.uuid128, 0x81, LEN_UUID_128);
+  std::array<uint8_t, Uuid::kNumBytes128> tmp;
+  tmp.fill(0x81);
 
   /* Create a GATT profile service */
-  gatt_cb.gatt_if = GATT_Register(&app_uuid, &gatt_profile_cback);
+  gatt_cb.gatt_if = GATT_Register(Uuid::From128BitBE(tmp), &gatt_profile_cback);
   GATT_StartIf(gatt_cb.gatt_if);
 
-  bt_uuid_t service_uuid;
-  uuid_128_from_16(&service_uuid, UUID_SERVCLASS_GATT_SERVER);
+  Uuid service_uuid = Uuid::From16Bit(UUID_SERVCLASS_GATT_SERVER);
 
-  bt_uuid_t char_uuid;
-  uuid_128_from_16(&char_uuid, GATT_UUID_GATT_SRV_CHGD);
+  Uuid char_uuid = Uuid::From16Bit(GATT_UUID_GATT_SRV_CHGD);
 
   btgatt_db_element_t service[] = {
       {.type = BTGATT_DB_PRIMARY_SERVICE, .uuid = service_uuid},
@@ -329,7 +327,7 @@ static void gatt_disc_res_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
       break;
 
     case GATT_DISC_CHAR_DSCPT: /* stage 3 */
-      if (p_data->type.uu.uuid16 == GATT_UUID_CHAR_CLIENT_CONFIG) {
+      if (p_data->type == Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG)) {
         p_clcb->s_handle = p_data->handle;
         p_clcb->ccc_result++;
       }
@@ -398,16 +396,14 @@ static void gatt_cl_start_config_ccc(tGATT_PROFILE_CLCB* p_clcb) {
     case GATT_SVC_CHANGED_SERVICE: /* discover GATT service */
       srvc_disc_param.s_handle = 1;
       srvc_disc_param.e_handle = 0xffff;
-      srvc_disc_param.service.len = 2;
-      srvc_disc_param.service.uu.uuid16 = UUID_SERVCLASS_GATT_SERVER;
+      srvc_disc_param.service = Uuid::From16Bit(UUID_SERVCLASS_GATT_SERVER);
       GATTC_Discover(p_clcb->conn_id, GATT_DISC_SRVC_BY_UUID, &srvc_disc_param);
       break;
 
     case GATT_SVC_CHANGED_CHARACTERISTIC: /* discover service change char */
       srvc_disc_param.s_handle = 1;
       srvc_disc_param.e_handle = p_clcb->e_handle;
-      srvc_disc_param.service.len = 2;
-      srvc_disc_param.service.uu.uuid16 = GATT_UUID_GATT_SRV_CHGD;
+      srvc_disc_param.service = Uuid::From16Bit(GATT_UUID_GATT_SRV_CHGD);
       GATTC_Discover(p_clcb->conn_id, GATT_DISC_CHAR, &srvc_disc_param);
       break;
 

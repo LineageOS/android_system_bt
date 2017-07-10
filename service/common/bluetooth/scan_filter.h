@@ -45,21 +45,21 @@ class ScanFilter {
   // |device_address| is in an illegal format.
   bool SetDeviceAddress(const std::string& device_address);
 
-  // The service UUID and its mask used while filtering scan results. See
+  // The service Uuid and its mask used while filtering scan results. See
   // SetServiceUuidWithMask for what this mask does. The raw pointer returned
   // from these getters belongs to the ScanFilter object. nullptr will be
   // returned if these fields have not been set on this filter.
-  const UUID* service_uuid() const { return service_uuid_.get(); }
-  const UUID* service_uuid_mask() const { return service_uuid_mask_.get(); }
+  const Uuid* service_uuid() const { return service_uuid_.get(); }
+  const Uuid* service_uuid_mask() const { return service_uuid_mask_.get(); }
 
-  // Sets the service UUID for this filter.
-  void SetServiceUuid(const UUID& service_uuid);
+  // Sets the service Uuid for this filter.
+  void SetServiceUuid(const Uuid& service_uuid);
 
-  // Sets the service UUID for this filter with a 128-bit mask. The mask allows
-  // the caller to partially filter scanned service UUIDs. For any of the
-  // 128-bits of a UUID, set the corresponding bit in the mask to 1 to match the
+  // Sets the service Uuid for this filter with a 128-bit mask. The mask allows
+  // the caller to partially filter scanned service Uuids. For any of the
+  // 128-bits of a Uuid, set the corresponding bit in the mask to 1 to match the
   // advertised value, and 0 to ignore that bit.
-  void SetServiceUuidWithMask(const UUID& service_uuid, const UUID& mask);
+  void SetServiceUuidWithMask(const Uuid& service_uuid, const Uuid& mask);
 
   // Comparison operator.
   bool operator==(const ScanFilter& rhs) const;
@@ -68,8 +68,8 @@ class ScanFilter {
   std::string device_name_;
   std::string device_address_;
 
-  std::unique_ptr<UUID> service_uuid_;
-  std::unique_ptr<UUID> service_uuid_mask_;
+  std::unique_ptr<Uuid> service_uuid_;
+  std::unique_ptr<Uuid> service_uuid_mask_;
 
   // TODO(armansito): Add service and manufacturer data filter fields.
 };

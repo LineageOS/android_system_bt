@@ -25,10 +25,10 @@
 #include <vector>
 
 #include <base/macros.h>
+#include <bluetooth/uuid.h>
 
 #include "service/bluetooth_instance.h"
 #include "service/common/bluetooth/service.h"
-#include "service/common/bluetooth/uuid.h"
 #include "service/hal/bluetooth_gatt_interface.h"
 
 namespace bluetooth {
@@ -116,7 +116,7 @@ class GattServer : public BluetoothInstance,
   void SetDelegate(Delegate* delegate);
 
   // BluetoothClientInstace overrides:
-  const UUID& GetAppIdentifier() const override;
+  const Uuid& GetAppIdentifier() const override;
   int GetInstanceId() const override;
 
   // Callback type used to report the status of an asynchronous GATT server
@@ -134,7 +134,7 @@ class GattServer : public BluetoothInstance,
   // we can add other services to this server instance? Do we need to clean up
   // all the entries or does the upper-layer need to remove the service? Or are
   // we in a stuck-state where the service declaration hasn't ended?
-  bool AddService(const bluetooth::Service&, const ResultCallback& callback);
+  bool AddService(const Service&, const ResultCallback& callback);
 
   // Sends a response for a pending notification. |request_id| and
   // |device_address| should match those that were received through one of the
@@ -189,7 +189,7 @@ class GattServer : public BluetoothInstance,
 
   // Constructor shouldn't be called directly as instances are meant to be
   // obtained from the factory.
-  GattServer(const UUID& uuid, int server_id);
+  GattServer(const Uuid& uuid, int server_id);
 
   // hal::BluetoothGattInterface::ServerObserver overrides:
   void ConnectionCallback(hal::BluetoothGattInterface* gatt_iface, int conn_id,
@@ -237,7 +237,7 @@ class GattServer : public BluetoothInstance,
                                             int request_id);
 
   // See getters for documentation.
-  UUID app_identifier_;
+  Uuid app_identifier_;
   int server_id_;
 
   // Mutex that synchronizes access to the entries below.
@@ -277,18 +277,18 @@ class GattServerFactory : public BluetoothInstanceFactory,
   ~GattServerFactory() override;
 
   // BluetoothInstanceFactory override:
-  bool RegisterInstance(const UUID& uuid,
+  bool RegisterInstance(const Uuid& uuid,
                         const RegisterCallback& callback) override;
 
  private:
   // hal::BluetoothGattInterface::ServerObserver override:
   void RegisterServerCallback(hal::BluetoothGattInterface* gatt_iface,
                               int status, int server_id,
-                              const bt_uuid_t& app_uuid) override;
+                              const Uuid& app_uuid) override;
 
   // Map of pending calls to register.
   std::mutex pending_calls_lock_;
-  std::unordered_map<UUID, RegisterCallback> pending_calls_;
+  std::unordered_map<Uuid, RegisterCallback> pending_calls_;
 
   DISALLOW_COPY_AND_ASSIGN(GattServerFactory);
 };

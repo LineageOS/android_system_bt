@@ -28,11 +28,11 @@ using android::status_t;
 namespace android {
 namespace bluetooth {
 
-class UUID : public Parcelable, public ::bluetooth::UUID {
+class UUID : public Parcelable {
  public:
   UUID() = default;
   // NOLINT, implicit converter
-  UUID(const ::bluetooth::UUID& uuid) : ::bluetooth::UUID(uuid){};  // NOLINT
+  UUID(const ::bluetooth::Uuid& uuid) : uuid(uuid){};  // NOLINT
   ~UUID() = default;
 
   // Write |this| parcelable to the given |parcel|.  Keep in mind that
@@ -48,6 +48,15 @@ class UUID : public Parcelable, public ::bluetooth::UUID {
   //
   // Returns android::OK on success and an appropriate error otherwise.
   status_t readFromParcel(const Parcel* parcel) override;
+
+  bool operator==(::bluetooth::Uuid rhs) const { return uuid == rhs; }
+
+  ::bluetooth::Uuid uuid;
 };
 }  // namespace bluetooth
 }  // namespace android
+
+inline bool operator==(const ::bluetooth::Uuid& lhs,
+                       const android::bluetooth::UUID& rhs) {
+  return lhs == rhs.uuid;
+}

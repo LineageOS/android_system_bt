@@ -20,21 +20,21 @@
 #include <memory>
 
 #include <base/macros.h>
+#include <bluetooth/uuid.h>
 
 #include "service/common/bluetooth/low_energy_constants.h"
-#include "service/common/bluetooth/uuid.h"
 
 namespace bluetooth {
 
 // A BluetoothInstance represents an application's handle to an instance
-// that is registered with the underlying Bluetooth stack using a UUID and has a
+// that is registered with the underlying Bluetooth stack using a Uuid and has a
 // stack-assigned integer "instance_id" ID associated with it.
 class BluetoothInstance {
  public:
   virtual ~BluetoothInstance() = default;
 
   // Returns the app-specific unique ID used while registering this instance.
-  virtual const UUID& GetAppIdentifier() const = 0;
+  virtual const Uuid& GetAppIdentifier() const = 0;
 
   // Returns the HAL "interface ID" assigned to this instance by the stack.
   virtual int GetInstanceId() const = 0;
@@ -58,14 +58,14 @@ class BluetoothInstanceFactory {
 
   // Callback invoked as a result of a call to RegisterInstance.
   using RegisterCallback =
-      std::function<void(BLEStatus status, const UUID& app_uuid,
+      std::function<void(BLEStatus status, const Uuid& app_uuid,
                          std::unique_ptr<BluetoothInstance> instance)>;
 
   // Registers an instance for the given unique identifier |app_uuid|.
   // On success, this asynchronously invokes |callback| with a unique pointer
   // to a BluetoothInstance whose ownership can be taken by the caller. In
   // the case of an error, the pointer will contain nullptr.
-  virtual bool RegisterInstance(const UUID& app_uuid,
+  virtual bool RegisterInstance(const Uuid& app_uuid,
                                 const RegisterCallback& callback) = 0;
 
  private:

@@ -126,7 +126,7 @@ int RFCOMM_CreateConnection(uint16_t uuid, uint8_t scn, bool is_server,
 
   if ((scn == 0) || (scn >= PORT_MAX_RFC_PORTS)) {
     /* Server Channel Number(SCN) should be in range 1...30 */
-    RFCOMM_TRACE_ERROR("RFCOMM_CreateConnection - invalid SCN");
+    RFCOMM_TRACE_ERROR("%s - invalid SCN", __func__);
     return (PORT_INVALID_SCN);
   }
 
@@ -136,10 +136,8 @@ int RFCOMM_CreateConnection(uint16_t uuid, uint8_t scn, bool is_server,
     dlci = (scn << 1) + 1;
   else
     dlci = (scn << 1);
-  RFCOMM_TRACE_API(
-      "RFCOMM_CreateConnection(): scn:%d, dlci:%d, is_server:%d mtu:%d, "
-      "p_mcb:%p",
-      scn, dlci, is_server, mtu, p_mcb);
+  RFCOMM_TRACE_API("%s: scn:%d, dlci:%d, is_server:%d mtu:%d, p_mcb:%p",
+                   __func__, scn, dlci, is_server, mtu, p_mcb);
 
   /* For the server side always allocate a new port.  On the client side */
   /* do not allow the same (dlci, bd_addr) to be opened twice by application */
@@ -149,9 +147,8 @@ int RFCOMM_CreateConnection(uint16_t uuid, uint8_t scn, bool is_server,
       /* if existing port is also a client port */
       if (p_port->is_server == false) {
         RFCOMM_TRACE_ERROR(
-            "RFCOMM_CreateConnection - already opened state:%d, RFC state:%d, "
-            "MCB state:%d",
-            p_port->state, p_port->rfc.state,
+            "%s - already opened state:%d, RFC state:%d, MCB state:%d",
+            __func__, p_port->state, p_port->rfc.state,
             p_port->rfc.p_mcb ? p_port->rfc.p_mcb->state : 0);
         *p_handle = p_port->inx;
         return (PORT_ALREADY_OPENED);
@@ -161,12 +158,11 @@ int RFCOMM_CreateConnection(uint16_t uuid, uint8_t scn, bool is_server,
 
   p_port = port_allocate_port(dlci, bd_addr);
   if (p_port == NULL) {
-    RFCOMM_TRACE_WARNING("RFCOMM_CreateConnection - no resources");
+    RFCOMM_TRACE_WARNING("%s - no resources", __func__);
     return (PORT_NO_RESOURCES);
   }
   RFCOMM_TRACE_API(
-      "RFCOMM_CreateConnection(): scn:%d, dlci:%d, is_server:%d mtu:%d, "
-      "p_mcb:%p, p_port:%p",
+      "%s: scn:%d, dlci:%d, is_server:%d mtu:%d, p_mcb:%p, p_port:%p", __func__,
       scn, dlci, is_server, mtu, p_mcb, p_port);
 
   p_port->default_signal_state =
@@ -188,7 +184,7 @@ int RFCOMM_CreateConnection(uint16_t uuid, uint8_t scn, bool is_server,
       break;
   }
 
-  RFCOMM_TRACE_EVENT("RFCOMM_CreateConnection dlci:%d signal state:0x%x", dlci,
+  RFCOMM_TRACE_EVENT("%s dlci:%d signal state:0x%x", __func__, dlci,
                      p_port->default_signal_state);
 
   *p_handle = p_port->inx;

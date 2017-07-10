@@ -33,6 +33,8 @@
 #define GATT_MTU_REQ_MIN_LEN 2
 
 using base::StringPrintf;
+using bluetooth::Uuid;
+
 /*******************************************************************************
  *
  * Function         gatt_sr_enqueue_cmd
@@ -439,57 +441,59 @@ void gatt_process_read_multi_req(tGATT_TCB& tcb, uint8_t op_code, uint16_t len,
  ******************************************************************************/
 static tGATT_STATUS gatt_build_primary_service_rsp(
     BT_HDR* p_msg, tGATT_TCB& tcb, uint8_t op_code, uint16_t s_hdl,
-    uint16_t e_hdl, UNUSED_ATTR uint8_t* p_data, tBT_UUID value) {
+    uint16_t e_hdl, UNUSED_ATTR uint8_t* p_data, const Uuid& value) {
   tGATT_STATUS status = GATT_NOT_FOUND;
-  uint8_t handle_len = 4, *p;
-  tBT_UUID* p_uuid;
+  uint8_t handle_len = 4;
 
-  p = (uint8_t*)(p_msg + 1) + L2CAP_MIN_OFFSET;
+  uint8_t* p = (uint8_t*)(p_msg + 1) + L2CAP_MIN_OFFSET;
 
   for (tGATT_SRV_LIST_ELEM& el : *gatt_cb.srv_list_info) {
-    if (el.s_hdl >= s_hdl && el.s_hdl <= e_hdl &&
-        el.type == GATT_UUID_PRI_SERVICE) {
-      p_uuid = gatts_get_service_uuid(el.p_db);
-      if (p_uuid != NULL) {
-        if (op_code == GATT_REQ_READ_BY_GRP_TYPE) handle_len = 4 + p_uuid->len;
+    if (el.s_hdl < s_hdl || el.s_hdl > e_hdl ||
+        el.type != GATT_UUID_PRI_SERVICE) {
+      continue;
+    }
 
-        /* get the length byte in the repsonse */
-        if (p_msg->offset == 0) {
-          *p++ = op_code + 1;
-          p_msg->len++;
-          p_msg->offset = handle_len;
+    Uuid* p_uuid = gatts_get_service_uuid(el.p_db);
+    if (!p_uuid) continue;
 
-          if (op_code == GATT_REQ_READ_BY_GRP_TYPE) {
-            *p++ = (uint8_t)p_msg->offset; /* length byte */
-            p_msg->len++;
-          }
-        }
+    if (op_code == GATT_REQ_READ_BY_GRP_TYPE)
+      handle_len = 4 + p_uuid->GetShortestRepresentationSize();
 
-        if (p_msg->len + p_msg->offset <= tcb.payload_size &&
-            handle_len == p_msg->offset) {
-          if (op_code != GATT_REQ_FIND_TYPE_VALUE ||
-              gatt_uuid_compare(value, *p_uuid)) {
-            UINT16_TO_STREAM(p, el.s_hdl);
+    /* get the length byte in the repsonse */
+    if (p_msg->offset == 0) {
+      *p++ = op_code + 1;
+      p_msg->len++;
+      p_msg->offset = handle_len;
 
-            if (gatt_cb.last_primary_s_handle &&
-                gatt_cb.last_primary_s_handle == el.s_hdl) {
-              VLOG(1) << "Use 0xFFFF for the last primary attribute";
-              /* see GATT ERRATA 4065, 4063, ATT ERRATA 4062 */
-              UINT16_TO_STREAM(p, 0xFFFF);
-            } else {
-              UINT16_TO_STREAM(p, el.e_hdl);
-            }
-
-            if (op_code == GATT_REQ_READ_BY_GRP_TYPE)
-              gatt_build_uuid_to_stream(&p, *p_uuid);
-
-            status = GATT_SUCCESS;
-            p_msg->len += p_msg->offset;
-          }
-        } else
-          break;
+      if (op_code == GATT_REQ_READ_BY_GRP_TYPE) {
+        *p++ = (uint8_t)p_msg->offset; /* length byte */
+        p_msg->len++;
       }
     }
+
+    if (p_msg->len + p_msg->offset > tcb.payload_size ||
+        handle_len != p_msg->offset) {
+      break;
+    }
+
+    if (op_code == GATT_REQ_FIND_TYPE_VALUE && value != *p_uuid) continue;
+
+    UINT16_TO_STREAM(p, el.s_hdl);
+
+    if (gatt_cb.last_primary_s_handle &&
+        gatt_cb.last_primary_s_handle == el.s_hdl) {
+      VLOG(1) << "Use 0xFFFF for the last primary attribute";
+      /* see GATT ERRATA 4065, 4063, ATT ERRATA 4062 */
+      UINT16_TO_STREAM(p, 0xFFFF);
+    } else {
+      UINT16_TO_STREAM(p, el.e_hdl);
+    }
+
+    if (op_code == GATT_REQ_READ_BY_GRP_TYPE)
+      gatt_build_uuid_to_stream(&p, *p_uuid);
+
+    status = GATT_SUCCESS;
+    p_msg->len += p_msg->offset;
   }
   p_msg->offset = L2CAP_MIN_OFFSET;
 
@@ -518,25 +522,25 @@ static tGATT_STATUS gatt_build_find_info_rsp(tGATT_SRV_LIST_ELEM& el,
 
     if (attr.handle < s_hdl) continue;
 
+    uint8_t uuid_len = attr.uuid.GetShortestRepresentationSize();
     if (p_msg->offset == 0)
-      p_msg->offset = (attr.uuid.len == LEN_UUID_16) ? GATT_INFO_TYPE_PAIR_16
-                                                     : GATT_INFO_TYPE_PAIR_128;
+      p_msg->offset = (uuid_len == Uuid::kNumBytes16) ? GATT_INFO_TYPE_PAIR_16
+                                                      : GATT_INFO_TYPE_PAIR_128;
 
     if (len < info_pair_len[p_msg->offset - 1]) return GATT_NO_RESOURCES;
 
     if (p_msg->offset == GATT_INFO_TYPE_PAIR_16 &&
-        attr.uuid.len == LEN_UUID_16) {
+        uuid_len == Uuid::kNumBytes16) {
       UINT16_TO_STREAM(p, attr.handle);
-      UINT16_TO_STREAM(p, attr.uuid.uu.uuid16);
+      UINT16_TO_STREAM(p, attr.uuid.As16Bit());
     } else if (p_msg->offset == GATT_INFO_TYPE_PAIR_128 &&
-               attr.uuid.len == LEN_UUID_128) {
+               uuid_len == Uuid::kNumBytes128) {
       UINT16_TO_STREAM(p, attr.handle);
-      ARRAY_TO_STREAM(p, attr.uuid.uu.uuid128, LEN_UUID_128);
+      ARRAY_TO_STREAM(p, attr.uuid.To128BitLE(), (int)Uuid::kNumBytes128);
     } else if (p_msg->offset == GATT_INFO_TYPE_PAIR_128 &&
-               attr.uuid.len == LEN_UUID_32) {
+               uuid_len == Uuid::kNumBytes32) {
       UINT16_TO_STREAM(p, attr.handle);
-      gatt_convert_uuid32_to_uuid128(p, attr.uuid.uu.uuid32);
-      p += LEN_UUID_128;
+      ARRAY_TO_STREAM(p, attr.uuid.To128BitLE(), (int)Uuid::kNumBytes128);
     } else {
       LOG(ERROR) << "format mismatch";
       return GATT_NO_RESOURCES;
@@ -568,7 +572,7 @@ static tGATT_STATUS read_handles(uint16_t& len, uint8_t*& p, uint16_t& s_hdl,
 }
 
 static tGATT_STATUS gatts_validate_packet_format(uint8_t op_code, uint16_t& len,
-                                                 uint8_t*& p, tBT_UUID* p_uuid,
+                                                 uint8_t*& p, Uuid* p_uuid,
                                                  uint16_t& s_hdl,
                                                  uint16_t& e_hdl) {
   tGATT_STATUS ret = read_handles(len, p, s_hdl, e_hdl);
@@ -602,7 +606,7 @@ static tGATT_STATUS gatts_validate_packet_format(uint8_t op_code, uint16_t& len,
 void gatts_process_primary_service_req(tGATT_TCB& tcb, uint8_t op_code,
                                        uint16_t len, uint8_t* p_data) {
   uint16_t s_hdl = 0, e_hdl = 0;
-  tBT_UUID uuid;
+  Uuid uuid = Uuid::kEmpty;
 
   uint8_t reason =
       gatts_validate_packet_format(op_code, len, p_data, &uuid, s_hdl, e_hdl);
@@ -611,25 +615,23 @@ void gatts_process_primary_service_req(tGATT_TCB& tcb, uint8_t op_code,
     return;
   }
 
-  tBT_UUID primary_service = {LEN_UUID_16, {GATT_UUID_PRI_SERVICE}};
-  if (!gatt_uuid_compare(uuid, primary_service)) {
+  if (uuid != Uuid::From16Bit(GATT_UUID_PRI_SERVICE)) {
     if (op_code == GATT_REQ_READ_BY_GRP_TYPE) {
       gatt_send_error_rsp(tcb, GATT_UNSUPPORT_GRP_TYPE, op_code, s_hdl, false);
-      VLOG(1) << StringPrintf("unexpected ReadByGrpType Group: 0x%04x",
-                              uuid.uu.uuid16);
+      VLOG(1) << StringPrintf("unexpected ReadByGrpType Group: %s",
+                              uuid.ToString().c_str());
       return;
     }
 
     // we do not support ReadByTypeValue with any non-primamry_service type
     gatt_send_error_rsp(tcb, GATT_NOT_FOUND, op_code, s_hdl, false);
-    VLOG(1) << StringPrintf("unexpected ReadByTypeValue type: 0x%04x",
-                            uuid.uu.uuid16);
+    VLOG(1) << StringPrintf("unexpected ReadByTypeValue type: %s",
+                            uuid.ToString().c_str());
     return;
   }
 
   // TODO: we assume theh value is UUID, there is no such requirement in spec
-  tBT_UUID value;
-  memset(&value, 0, sizeof(tBT_UUID));
+  Uuid value = Uuid::kEmpty;
   if (op_code == GATT_REQ_FIND_TYPE_VALUE) {
     if (gatt_parse_uuid_from_cmd(&value, len, &p_data) == false) {
       gatt_send_error_rsp(tcb, GATT_INVALID_PDU, op_code, s_hdl, false);
@@ -775,7 +777,7 @@ static void gatts_process_mtu_req(tGATT_TCB& tcb, uint16_t len,
  ******************************************************************************/
 void gatts_process_read_by_type_req(tGATT_TCB& tcb, uint8_t op_code,
                                     uint16_t len, uint8_t* p_data) {
-  tBT_UUID uuid;
+  Uuid uuid = Uuid::kEmpty;
   uint16_t s_hdl, e_hdl, err_hdl = 0;
   tGATT_STATUS reason =
       gatts_validate_packet_format(op_code, len, p_data, &uuid, s_hdl, e_hdl);

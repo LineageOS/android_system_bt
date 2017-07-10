@@ -42,7 +42,7 @@ status_t BluetoothGattDescriptor::readFromParcel(const Parcel* parcel) {
   UUID uuid;
   status_t status = parcel->readParcelable(&uuid);
   if (status != OK) return status;
-  uuid_ = (bluetooth::UUID)uuid;
+  uuid_ = uuid.uuid;
 
   int32_t tmp;
   status = parcel->readInt32(&tmp);

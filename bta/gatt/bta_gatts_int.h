@@ -59,7 +59,7 @@ typedef uint16_t tBTA_GATTS_INT_EVT;
 /* internal strucutre for GATTC register API  */
 typedef struct {
   BT_HDR hdr;
-  tBT_UUID app_uuid;
+  bluetooth::Uuid app_uuid;
   tBTA_GATTS_CBACK* p_cback;
 } tBTA_GATTS_API_REG;
 
@@ -124,14 +124,14 @@ typedef union {
 /* application registration control block */
 typedef struct {
   bool in_use;
-  tBT_UUID app_uuid;
+  bluetooth::Uuid app_uuid;
   tBTA_GATTS_CBACK* p_cback;
   tBTA_GATTS_IF gatt_if;
 } tBTA_GATTS_RCB;
 
 /* service registration control block */
 typedef struct {
-  tBT_UUID service_uuid; /* service UUID */
+  bluetooth::Uuid service_uuid; /* service UUID */
   uint16_t service_id;   /* service start handle */
   uint8_t rcb_idx;
   uint8_t idx; /* self index of serviec CB */
@@ -175,7 +175,6 @@ extern void bta_gatts_open(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg);
 extern void bta_gatts_cancel_open(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg);
 extern void bta_gatts_close(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg);
 
-extern bool bta_gatts_uuid_compare(tBT_UUID tar, tBT_UUID src);
 extern tBTA_GATTS_RCB* bta_gatts_find_app_rcb_by_app_if(
     tBTA_GATTS_IF server_if);
 extern uint8_t bta_gatts_find_app_rcb_idx_by_app_if(tBTA_GATTS_CB* p_cb,

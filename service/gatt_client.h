@@ -20,9 +20,9 @@
 #include <unordered_map>
 
 #include <base/macros.h>
+#include <bluetooth/uuid.h>
 
 #include "service/bluetooth_instance.h"
-#include "service/common/bluetooth/uuid.h"
 #include "service/hal/bluetooth_gatt_interface.h"
 
 namespace bluetooth {
@@ -35,7 +35,7 @@ class GattClient : public BluetoothInstance {
   ~GattClient() override;
 
   // BluetoothClientInstace overrides:
-  const UUID& GetAppIdentifier() const override;
+  const Uuid& GetAppIdentifier() const override;
   int GetInstanceId() const override;
 
  private:
@@ -43,10 +43,10 @@ class GattClient : public BluetoothInstance {
 
   // Constructor shouldn't be called directly as instances are meant to be
   // obtained from the factory.
-  GattClient(const UUID& uuid, int client_id);
+  GattClient(const Uuid& uuid, int client_id);
 
   // See getters above for documentation.
-  UUID app_identifier_;
+  Uuid app_identifier_;
   int client_id_;
 
   DISALLOW_COPY_AND_ASSIGN(GattClient);
@@ -64,18 +64,18 @@ class GattClientFactory : public BluetoothInstanceFactory,
   ~GattClientFactory() override;
 
   // BluetoothInstanceFactory override:
-  bool RegisterInstance(const UUID& uuid,
+  bool RegisterInstance(const Uuid& uuid,
                         const RegisterCallback& callback) override;
 
  private:
   // hal::BluetoothGattInterface::ClientObserver override:
   void RegisterClientCallback(hal::BluetoothGattInterface* gatt_iface,
                               int status, int client_id,
-                              const bt_uuid_t& app_uuid) override;
+                              const Uuid& app_uuid) override;
 
   // Map of pending calls to register.
   std::mutex pending_calls_lock_;
-  std::unordered_map<UUID, RegisterCallback> pending_calls_;
+  std::unordered_map<Uuid, RegisterCallback> pending_calls_;
 
   DISALLOW_COPY_AND_ASSIGN(GattClientFactory);
 };

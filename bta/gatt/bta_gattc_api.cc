@@ -36,6 +36,8 @@
 #include "bta_sys.h"
 #include "device/include/controller.h"
 
+using bluetooth::Uuid;
+
 /*****************************************************************************
  *  Constants
  ****************************************************************************/
@@ -64,14 +66,6 @@ void BTA_GATTC_Disable(void) {
   bta_sys_deregister(BTA_ID_GATTC);
 }
 
-static void create_random_uuid(tBT_UUID* uuid) {
-  uuid->len = LEN_UUID_128;
-
-  for (int i = 0; i < 16; ++i) {
-    uuid->uu.uuid128[i] = (uint8_t)(rand() % 256);
-  }
-}
-
 /**
  * This function is called to register application callbacks with BTA GATTC
  * module. |client_cb| pointer to the application callback function.
@@ -82,10 +76,7 @@ void BTA_GATTC_AppRegister(tBTA_GATTC_CBACK* p_client_cb,
   if (bta_sys_is_register(BTA_ID_GATTC) == false)
     bta_sys_register(BTA_ID_GATTC, &bta_gattc_reg);
 
-  // base::Owned will own and free app_uuid
-  tBT_UUID* uuid = new tBT_UUID;
-  create_random_uuid(uuid);
-  do_in_bta_thread(FROM_HERE, base::Bind(&bta_gattc_register, base::Owned(uuid),
+  do_in_bta_thread(FROM_HERE, base::Bind(&bta_gattc_register, Uuid::GetRandom(),
                                          p_client_cb, std::move(cb)));
 }
 
@@ -239,15 +230,15 @@ void BTA_GATTC_ConfigureMTU(uint16_t conn_id, uint16_t mtu) {
  * Returns          None
  *
  ******************************************************************************/
-void BTA_GATTC_ServiceSearchRequest(uint16_t conn_id, tBT_UUID* p_srvc_uuid) {
-  const size_t len = sizeof(tBTA_GATTC_API_SEARCH) + sizeof(tBT_UUID);
+void BTA_GATTC_ServiceSearchRequest(uint16_t conn_id, Uuid* p_srvc_uuid) {
+  const size_t len = sizeof(tBTA_GATTC_API_SEARCH) + sizeof(Uuid);
   tBTA_GATTC_API_SEARCH* p_buf = (tBTA_GATTC_API_SEARCH*)osi_calloc(len);
 
   p_buf->hdr.event = BTA_GATTC_API_SEARCH_EVT;
   p_buf->hdr.layer_specific = conn_id;
   if (p_srvc_uuid) {
-    p_buf->p_srvc_uuid = (tBT_UUID*)(p_buf + 1);
-    memcpy(p_buf->p_srvc_uuid, p_srvc_uuid, sizeof(tBT_UUID));
+    p_buf->p_srvc_uuid = (Uuid*)(p_buf + 1);
+    *p_buf->p_srvc_uuid = *p_srvc_uuid;
   } else {
     p_buf->p_srvc_uuid = NULL;
   }
@@ -255,11 +246,12 @@ void BTA_GATTC_ServiceSearchRequest(uint16_t conn_id, tBT_UUID* p_srvc_uuid) {
   bta_sys_sendmsg(p_buf);
 }
 
-void BTA_GATTC_DiscoverServiceByUuid(uint16_t conn_id, tBT_UUID* p_srvc_uuid) {
+void BTA_GATTC_DiscoverServiceByUuid(uint16_t conn_id,
+                                     const Uuid& p_srvc_uuid) {
   tGATT_DISC_PARAM* param = new tGATT_DISC_PARAM;
   param->s_handle = 0x0001;
   param->e_handle = 0xFFFF;
-  param->service = *p_srvc_uuid;
+  param->service = p_srvc_uuid;
   do_in_bta_thread(FROM_HERE,
                    base::Bind(base::IgnoreResult(&GATTC_Discover), conn_id,
                               GATT_DISC_SRVC_BY_UUID, base::Owned(param)));
@@ -367,7 +359,7 @@ void BTA_GATTC_ReadCharacteristic(uint16_t conn_id, uint16_t handle,
  * This function is called to read a value of characteristic with uuid equal to
  * |uuid|
  */
-void BTA_GATTC_ReadUsingCharUuid(uint16_t conn_id, tBT_UUID uuid,
+void BTA_GATTC_ReadUsingCharUuid(uint16_t conn_id, const Uuid& uuid,
                                  uint16_t s_handle, uint16_t e_handle,
                                  tBTA_GATT_AUTH_REQ auth_req,
                                  GATT_READ_OP_CB callback, void* cb_data) {

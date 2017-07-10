@@ -110,12 +110,12 @@ const int kAdvertisingChannelAll =
 // Various Extended Inquiry Response fields types that are used for advertising
 // data fields as defined in the Core Specification Supplement.
 const uint8_t kEIRTypeFlags = 0x01;
-const uint8_t kEIRTypeIncomplete16BitUUIDs = 0x02;
-const uint8_t kEIRTypeComplete16BitUUIDs = 0x03;
-const uint8_t kEIRTypeIncomplete32BitUUIDs = 0x04;
-const uint8_t kEIRTypeComplete32BitUUIDs = 0x05;
-const uint8_t kEIRTypeIncomplete128BitUUIDs = 0x06;
-const uint8_t kEIRTypeComplete128BitUUIDs = 0x07;
+const uint8_t kEIRTypeIncomplete16BitUuids = 0x02;
+const uint8_t kEIRTypeComplete16BitUuids = 0x03;
+const uint8_t kEIRTypeIncomplete32BitUuids = 0x04;
+const uint8_t kEIRTypeComplete32BitUuids = 0x05;
+const uint8_t kEIRTypeIncomplete128BitUuids = 0x06;
+const uint8_t kEIRTypeComplete128BitUuids = 0x07;
 const uint8_t kEIRTypeShortenedLocalName = 0x08;
 const uint8_t kEIRTypeCompleteLocalName = 0x09;
 const uint8_t kEIRTypeTxPower = 0x0A;

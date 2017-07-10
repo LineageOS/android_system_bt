@@ -38,7 +38,7 @@ class RFCommTest : public BluetoothTest {
 
   RawAddress bt_remote_bdaddr_;
 
-  static const bt_uuid_t HFP_UUID;
+  static const bluetooth::Uuid HFP_UUID;
 
  private:
   const btsock_interface_t* socket_interface_;

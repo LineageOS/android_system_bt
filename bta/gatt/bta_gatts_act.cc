@@ -184,8 +184,7 @@ void bta_gatts_register(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
 
   for (i = 0; i < BTA_GATTS_MAX_APP_NUM; i++) {
     if (p_cb->rcb[i].in_use) {
-      if (bta_gatts_uuid_compare(p_cb->rcb[i].app_uuid,
-                                 p_msg->api_reg.app_uuid)) {
+      if (p_cb->rcb[i].app_uuid == p_msg->api_reg.app_uuid) {
         APPL_TRACE_ERROR("application already registered.");
         status = BTA_GATT_DUP_REG;
         break;
@@ -202,17 +201,16 @@ void bta_gatts_register(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
     }
 
     cb_data.reg_oper.server_if = BTA_GATTS_INVALID_IF;
-    memcpy(&cb_data.reg_oper.uuid, &p_msg->api_reg.app_uuid, sizeof(tBT_UUID));
+    cb_data.reg_oper.uuid = p_msg->api_reg.app_uuid;
     if (first_unuse != 0xff) {
       APPL_TRACE_ERROR("register application first_unuse rcb_idx = %d",
                        first_unuse);
 
       p_cb->rcb[first_unuse].in_use = true;
       p_cb->rcb[first_unuse].p_cback = p_msg->api_reg.p_cback;
-      memcpy(&p_cb->rcb[first_unuse].app_uuid, &p_msg->api_reg.app_uuid,
-             sizeof(tBT_UUID));
+      p_cb->rcb[first_unuse].app_uuid = p_msg->api_reg.app_uuid;
       cb_data.reg_oper.server_if = p_cb->rcb[first_unuse].gatt_if =
-          GATT_Register(&p_msg->api_reg.app_uuid, &bta_gatts_cback);
+          GATT_Register(p_msg->api_reg.app_uuid, &bta_gatts_cback);
       if (!p_cb->rcb[first_unuse].gatt_if) {
         status = BTA_GATT_NO_RESOURCES;
       } else {

@@ -22,6 +22,8 @@
 
 #include "btcore/include/property.h"
 
+using bluetooth::Uuid;
+
 class PropertyTest : public AllocationTestHarness {};
 
 TEST_F(PropertyTest, addr) {
@@ -131,38 +133,38 @@ TEST_F(PropertyTest, scan_mode) {
 }
 
 TEST_F(PropertyTest, uuids) {
-  bt_uuid_t uuid0 = {{
+  Uuid uuid0 = Uuid::From128BitBE({{
       0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
       0xcc, 0xdd, 0xee, 0xff,
-  }};
+  }});
   bt_property_t* property = property_new_uuids(&uuid0, 1);
 
-  EXPECT_EQ(0, strcmp((const char*)uuid0.uu, (char*)property->val));
+  EXPECT_EQ(0, memcmp(uuid0.To128BitBE().data(), property->val, sizeof(Uuid)));
   EXPECT_EQ(BT_PROPERTY_UUIDS, property->type);
-  EXPECT_EQ((int)sizeof(bt_uuid_t), property->len);
+  EXPECT_EQ((int)sizeof(Uuid), property->len);
 
   size_t uuid_cnt1;
-  const bt_uuid_t* uuid1 = property_as_uuids(property, &uuid_cnt1);
-  EXPECT_EQ(0, memcmp(uuid1->uu, uuid1->uu, sizeof(bt_uuid_t)));
+  const Uuid* uuid1 = property_as_uuids(property, &uuid_cnt1);
+  EXPECT_EQ(uuid0, *uuid1);
 
   property_free(property);
 }
 
 TEST_F(PropertyTest, copy) {
   {
-    bt_uuid_t uuids[] = {
-        {{
+    Uuid uuids[] = {
+        Uuid::From128BitBE({{
             0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa,
             0xbb, 0xcc, 0xdd, 0xee, 0xff,
-        }},
-        {{
+        }}),
+        Uuid::From128BitBE({{
             0xf0, 0xe1, 0xd2, 0xc3, 0xf4, 0xe5, 0xd6, 0xc7, 0xf8, 0xe9, 0xda,
             0xcb, 0xfc, 0xed, 0xde, 0xcf,
-        }},
+        }}),
     };
 
     bt_property_t* property0 =
-        property_new_uuids(uuids, sizeof(bt_uuid_t) / sizeof(uuids));
+        property_new_uuids(uuids, sizeof(uuids) / sizeof(Uuid));
 
     bt_property_t property1;
     property_copy(&property1, property0);

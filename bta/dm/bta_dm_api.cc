@@ -35,6 +35,8 @@
 #include "osi/include/osi.h"
 #include "utl.h"
 
+using bluetooth::Uuid;
+
 /*****************************************************************************
  *  Constants
  ****************************************************************************/
@@ -260,7 +262,7 @@ void BTA_DmDiscover(const RawAddress& bd_addr, tBTA_SERVICE_MASK services,
  * Returns          void
  *
  ******************************************************************************/
-void BTA_DmDiscoverUUID(const RawAddress& bd_addr, tSDP_UUID* uuid,
+void BTA_DmDiscoverUUID(const RawAddress& bd_addr, const Uuid& uuid,
                         tBTA_DM_SEARCH_CBACK* p_cback, bool sdp_search) {
   tBTA_DM_API_DISCOVER* p_msg =
       (tBTA_DM_API_DISCOVER*)osi_malloc(sizeof(tBTA_DM_API_DISCOVER));
@@ -273,8 +275,7 @@ void BTA_DmDiscoverUUID(const RawAddress& bd_addr, tSDP_UUID* uuid,
 
   p_msg->num_uuid = 0;
   p_msg->p_uuid = NULL;
-
-  memcpy(&p_msg->uuid, uuid, sizeof(tSDP_UUID));
+  p_msg->uuid = uuid;
 
   bta_sys_sendmsg(p_msg);
 }
@@ -500,11 +501,11 @@ void BTA_GetEirService(uint8_t* p_eir, size_t eir_len,
                        tBTA_SERVICE_MASK* p_services) {
   uint8_t xx, yy;
   uint8_t num_uuid, max_num_uuid = 32;
-  uint8_t uuid_list[32 * LEN_UUID_16];
+  uint8_t uuid_list[32 * Uuid::kNumBytes16];
   uint16_t* p_uuid16 = (uint16_t*)uuid_list;
   tBTA_SERVICE_MASK mask;
 
-  BTM_GetEirUuidList(p_eir, eir_len, LEN_UUID_16, &num_uuid, uuid_list,
+  BTM_GetEirUuidList(p_eir, eir_len, Uuid::kNumBytes16, &num_uuid, uuid_list,
                      max_num_uuid);
   for (xx = 0; xx < num_uuid; xx++) {
     mask = 1;
@@ -815,9 +816,10 @@ static void bta_dm_discover_send_msg(const RawAddress& bd_addr,
                                      tBTA_DM_SEARCH_CBACK* p_cback,
                                      bool sdp_search,
                                      tBTA_TRANSPORT transport) {
-  const size_t len = p_services ? (sizeof(tBTA_DM_API_DISCOVER) +
-                                   sizeof(tBT_UUID) * p_services->num_uuid)
-                                : sizeof(tBTA_DM_API_DISCOVER);
+  const size_t len =
+      p_services
+          ? (sizeof(tBTA_DM_API_DISCOVER) + sizeof(Uuid) * p_services->num_uuid)
+          : sizeof(tBTA_DM_API_DISCOVER);
   tBTA_DM_API_DISCOVER* p_msg = (tBTA_DM_API_DISCOVER*)osi_calloc(len);
 
   p_msg->hdr.event = BTA_DM_API_DISCOVER_EVT;
@@ -830,9 +832,9 @@ static void bta_dm_discover_send_msg(const RawAddress& bd_addr,
     p_msg->services = p_services->srvc_mask;
     p_msg->num_uuid = p_services->num_uuid;
     if (p_services->num_uuid != 0) {
-      p_msg->p_uuid = (tBT_UUID*)(p_msg + 1);
+      p_msg->p_uuid = (Uuid*)(p_msg + 1);
       memcpy(p_msg->p_uuid, p_services->p_uuid,
-             sizeof(tBT_UUID) * p_services->num_uuid);
+             sizeof(Uuid) * p_services->num_uuid);
     }
   }
 
@@ -906,9 +908,10 @@ void BTA_DmDiscoverExt(const RawAddress& bd_addr,
  ******************************************************************************/
 void BTA_DmSearchExt(tBTA_DM_INQ* p_dm_inq, tBTA_SERVICE_MASK_EXT* p_services,
                      tBTA_DM_SEARCH_CBACK* p_cback) {
-  const size_t len = p_services ? (sizeof(tBTA_DM_API_SEARCH) +
-                                   sizeof(tBT_UUID) * p_services->num_uuid)
-                                : sizeof(tBTA_DM_API_SEARCH);
+  const size_t len =
+      p_services
+          ? (sizeof(tBTA_DM_API_SEARCH) + sizeof(Uuid) * p_services->num_uuid)
+          : sizeof(tBTA_DM_API_SEARCH);
   tBTA_DM_API_SEARCH* p_msg = (tBTA_DM_API_SEARCH*)osi_calloc(len);
 
   p_msg->hdr.event = BTA_DM_API_SEARCH_EVT;
@@ -921,9 +924,9 @@ void BTA_DmSearchExt(tBTA_DM_INQ* p_dm_inq, tBTA_SERVICE_MASK_EXT* p_services,
     p_msg->num_uuid = p_services->num_uuid;
 
     if (p_services->num_uuid != 0) {
-      p_msg->p_uuid = (tBT_UUID*)(p_msg + 1);
+      p_msg->p_uuid = (Uuid*)(p_msg + 1);
       memcpy(p_msg->p_uuid, p_services->p_uuid,
-             sizeof(tBT_UUID) * p_services->num_uuid);
+             sizeof(Uuid) * p_services->num_uuid);
     } else {
       p_msg->p_uuid = NULL;
     }

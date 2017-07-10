@@ -151,7 +151,7 @@ typedef struct {
   tBTA_DM_SEARCH_CBACK* p_cback;
   tBTA_DM_RS_RES rs_res;
   uint8_t num_uuid;
-  tBT_UUID* p_uuid;
+  bluetooth::Uuid* p_uuid;
 } tBTA_DM_API_SEARCH;
 
 /* data type for BTA_DM_API_DISCOVER_EVT */
@@ -163,8 +163,8 @@ typedef struct {
   bool sdp_search;
   tBTA_TRANSPORT transport;
   uint8_t num_uuid;
-  tBT_UUID* p_uuid;
-  tSDP_UUID uuid;
+  bluetooth::Uuid* p_uuid;
+  bluetooth::Uuid uuid;
 } tBTA_DM_API_DISCOVER;
 
 /* data type for BTA_DM_API_DI_DISC_EVT */
@@ -641,7 +641,7 @@ typedef struct {
   /* store UUID list for EIR */
   uint32_t eir_uuid[BTM_EIR_SERVICE_ARRAY_SIZE];
 #if (BTA_EIR_SERVER_NUM_CUSTOM_UUID > 0)
-  tBT_UUID custom_uuid[BTA_EIR_SERVER_NUM_CUSTOM_UUID];
+  bluetooth::Uuid custom_uuid[BTA_EIR_SERVER_NUM_CUSTOM_UUID];
 #endif
 
 #endif
@@ -669,7 +669,7 @@ typedef struct {
                                   cancel stored here */
   bool wait_disc;
   bool sdp_results;
-  tSDP_UUID uuid;
+  bluetooth::Uuid uuid;
   uint8_t peer_scn;
   bool sdp_search;
   bool cancel_pending; /* inquiry cancel is pending */
@@ -677,7 +677,7 @@ typedef struct {
   tBTA_DM_SEARCH_CBACK* p_scan_cback;
   tBTA_GATTC_IF client_if;
   uint8_t num_uuid;
-  tBT_UUID* p_srvc_uuid;
+  bluetooth::Uuid* p_srvc_uuid;
   uint8_t uuid_to_search;
   bool gatt_disc_active;
   uint16_t conn_id;

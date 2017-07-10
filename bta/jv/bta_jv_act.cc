@@ -22,6 +22,7 @@
  *
  ******************************************************************************/
 #include <arpa/inet.h>
+#include <bluetooth/uuid.h>
 #include <hardware/bluetooth.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -47,6 +48,8 @@
 #include "utl.h"
 
 #include "osi/include/osi.h"
+
+using bluetooth::Uuid;
 
 /* one of these exists for each client */
 struct fc_client {
@@ -80,13 +83,6 @@ static void fcchan_conn_chng_cbk(uint16_t chan, const RawAddress& bd_addr,
                                  tBT_TRANSPORT);
 static void fcchan_data_cbk(uint16_t chan, const RawAddress& bd_addr,
                             BT_HDR* p_buf);
-
-extern void uuid_to_string_legacy(bt_uuid_t* p_uuid, char* str, size_t str_len);
-static inline void logu(const char* title, const uint8_t* p_uuid) {
-  char uuids[128];
-  uuid_to_string_legacy((bt_uuid_t*)p_uuid, uuids, sizeof(uuids));
-  APPL_TRACE_DEBUG("%s: %s", title, uuids);
-}
 
 static tBTA_JV_PCB* bta_jv_add_rfc_port(tBTA_JV_RFC_CB* p_cb,
                                         tBTA_JV_PCB* p_pcb_open);
@@ -772,36 +768,6 @@ void bta_jv_free_scn(tBTA_JV_MSG* p_data) {
       break;
   }
 }
-static inline tBT_UUID shorten_sdp_uuid(const tBT_UUID* u) {
-  static uint8_t bt_base_uuid[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                   0x10, 0x00, 0x80, 0x00, 0x00, 0x80,
-                                   0x5F, 0x9B, 0x34, 0xFB};
-
-  logu("in, uuid:", u->uu.uuid128);
-  APPL_TRACE_DEBUG("uuid len:%d", u->len);
-  if (u->len == 16) {
-    if (memcmp(&u->uu.uuid128[4], &bt_base_uuid[4], 12) == 0) {
-      tBT_UUID su;
-      memset(&su, 0, sizeof(su));
-      if (u->uu.uuid128[0] == 0 && u->uu.uuid128[1] == 0) {
-        su.len = 2;
-        uint16_t u16;
-        memcpy(&u16, &u->uu.uuid128[2], sizeof(u16));
-        su.uu.uuid16 = ntohs(u16);
-        APPL_TRACE_DEBUG("shorten to 16 bits uuid: %x", su.uu.uuid16);
-      } else {
-        su.len = 4;
-        uint32_t u32;
-        memcpy(&u32, &u->uu.uuid128[0], sizeof(u32));
-        su.uu.uuid32 = ntohl(u32);
-        APPL_TRACE_DEBUG("shorten to 32 bits uuid: %x", su.uu.uuid32);
-      }
-      return su;
-    }
-  }
-  APPL_TRACE_DEBUG("cannot shorten none-reserved 128 bits uuid");
-  return *u;
-}
 
 /*******************************************************************************
  *
@@ -826,11 +792,9 @@ static void bta_jv_start_discovery_cback(uint16_t result, void* user_data) {
     if (result == SDP_SUCCESS || result == SDP_DB_FULL) {
       tSDP_DISC_REC* p_sdp_rec = NULL;
       tSDP_PROTOCOL_ELEM pe;
-      logu("bta_jv_cb.uuid", bta_jv_cb.uuid.uu.uuid128);
-      tBT_UUID su = shorten_sdp_uuid(&bta_jv_cb.uuid);
-      logu("shorten uuid:", su.uu.uuid128);
-      p_sdp_rec =
-          SDP_FindServiceUUIDInDb(p_bta_jv_cfg->p_sdp_db, &su, p_sdp_rec);
+      APPL_TRACE_DEBUG("bta_jv_cb.uuid: %s", bta_jv_cb.uuid.ToString().c_str());
+      p_sdp_rec = SDP_FindServiceUUIDInDb(p_bta_jv_cfg->p_sdp_db,
+                                          bta_jv_cb.uuid, p_sdp_rec);
       APPL_TRACE_DEBUG("p_sdp_rec:%p", p_sdp_rec);
       if (p_sdp_rec &&
           SDP_FindProtocolListElemInRec(p_sdp_rec, UUID_PROTOCOL_RFCOMM, &pe)) {

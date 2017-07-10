@@ -19,6 +19,7 @@
 #ifndef BTIF_STORAGE_H
 #define BTIF_STORAGE_H
 
+#include <bluetooth/uuid.h>
 #include <hardware/bluetooth.h>
 
 #include "bt_target.h"
@@ -272,7 +273,7 @@ bool btif_storage_get_stored_remote_name(const RawAddress& bd_addr, char* name);
 /******************************************************************************
  * Exported for unit tests
  *****************************************************************************/
-size_t btif_split_uuids_string(const char* str, bt_uuid_t* p_uuid,
+size_t btif_split_uuids_string(const char* str, bluetooth::Uuid* p_uuid,
                                size_t max_uuids);
 
 #endif /* BTIF_STORAGE_H */

@@ -31,27 +31,6 @@
 #include "bta_sys.h"
 #include "utl.h"
 
-static const uint8_t base_uuid[LEN_UUID_128] = {
-    0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x00, 0x00, 0x80,
-    0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-
-/*******************************************************************************
- *
- * Function         bta_gatt_convert_uuid16_to_uuid128
- *
- * Description      Convert a 16 bits UUID to be an standard 128 bits one.
- *
- * Returns          true if two uuid match; false otherwise.
- *
- ******************************************************************************/
-static void bta_gatt_convert_uuid16_to_uuid128(uint8_t uuid_128[LEN_UUID_128],
-                                               uint16_t uuid_16) {
-  uint8_t* p = &uuid_128[LEN_UUID_128 - 4];
-
-  memcpy(uuid_128, base_uuid, LEN_UUID_128);
-
-  UINT16_TO_STREAM(p, uuid_16);
-}
 /*******************************************************************************
  *
  * Function         bta_gatts_alloc_srvc_cb
@@ -167,44 +146,4 @@ tBTA_GATTS_SRVC_CB* bta_gatts_find_srvc_cb_by_attr_id(tBTA_GATTS_CB* p_cb,
     }
   }
   return NULL;
-}
-/*******************************************************************************
- *
- * Function         bta_gatts_uuid_compare
- *
- * Description      Compare two UUID to see if they are the same.
- *
- * Returns          true if two uuid match; false otherwise.
- *
- ******************************************************************************/
-bool bta_gatts_uuid_compare(tBT_UUID tar, tBT_UUID src) {
-  uint8_t su[LEN_UUID_128], tu[LEN_UUID_128];
-  uint8_t *ps, *pt;
-
-  /* any of the UUID is unspecified */
-  if (src.len == 0 || tar.len == 0) {
-    return true;
-  }
-
-  /* If both are 16-bit, we can do a simple compare */
-  if (src.len == 2 && tar.len == 2) {
-    return src.uu.uuid16 == tar.uu.uuid16;
-  }
-
-  /* One or both of the UUIDs is 128-bit */
-  if (src.len == LEN_UUID_16) {
-    /* convert a 16 bits UUID to 128 bits value */
-    bta_gatt_convert_uuid16_to_uuid128(su, src.uu.uuid16);
-    ps = su;
-  } else
-    ps = src.uu.uuid128;
-
-  if (tar.len == LEN_UUID_16) {
-    /* convert a 16 bits UUID to 128 bits value */
-    bta_gatt_convert_uuid16_to_uuid128(tu, tar.uu.uuid16);
-    pt = tu;
-  } else
-    pt = tar.uu.uuid128;
-
-  return (memcmp(ps, pt, LEN_UUID_128) == 0);
 }

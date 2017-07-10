@@ -43,6 +43,8 @@
 #include "hcidefs.h"
 #include "hcimsgs.h"
 
+using bluetooth::Uuid;
+
 /* 3 second timeout waiting for responses */
 #define BTM_INQ_REPLY_TIMEOUT_MS (3 * 1000)
 
@@ -121,8 +123,6 @@ static const uint8_t* btm_eir_get_uuid_list(uint8_t* p_eir, size_t eir_len,
                                             uint8_t uuid_size,
                                             uint8_t* p_num_uuid,
                                             uint8_t* p_uuid_list_type);
-static uint16_t btm_convert_uuid_to_uuid16(const uint8_t* p_uuid,
-                                           uint8_t uuid_size);
 
 /*******************************************************************************
  *
@@ -2433,7 +2433,8 @@ uint8_t BTM_GetEirSupportedServices(uint32_t* p_eir_uuid, uint8_t** p,
  *
  * Parameters       p_eir - EIR
  *                  eir_len - EIR len
- *                  uuid_size - LEN_UUID_16, LEN_UUID_32, LEN_UUID_128
+ *                  uuid_size - Uuid::kNumBytes16, Uuid::kNumBytes32,
+ *                              Uuid::kNumBytes128
  *                  p_num_uuid - return number of UUID in found list
  *                  p_uuid_list - return UUID list
  *                  max_num_uuid - maximum number of UUID to be returned
@@ -2455,7 +2456,7 @@ uint8_t BTM_GetEirUuidList(uint8_t* p_eir, size_t eir_len, uint8_t uuid_size,
   uint8_t yy, xx;
   uint16_t* p_uuid16 = (uint16_t*)p_uuid_list;
   uint32_t* p_uuid32 = (uint32_t*)p_uuid_list;
-  char buff[LEN_UUID_128 * 2 + 1];
+  char buff[Uuid::kNumBytes128 * 2 + 1];
 
   p_uuid_data =
       btm_eir_get_uuid_list(p_eir, eir_len, uuid_size, p_num_uuid, &type);
@@ -2472,22 +2473,22 @@ uint8_t BTM_GetEirUuidList(uint8_t* p_eir, size_t eir_len, uint8_t uuid_size,
   BTM_TRACE_DEBUG("%s: type = %02X, number of uuid = %d", __func__, type,
                   *p_num_uuid);
 
-  if (uuid_size == LEN_UUID_16) {
+  if (uuid_size == Uuid::kNumBytes16) {
     for (yy = 0; yy < *p_num_uuid; yy++) {
       STREAM_TO_UINT16(*(p_uuid16 + yy), p_uuid_data);
       BTM_TRACE_DEBUG("                     0x%04X", *(p_uuid16 + yy));
     }
-  } else if (uuid_size == LEN_UUID_32) {
+  } else if (uuid_size == Uuid::kNumBytes32) {
     for (yy = 0; yy < *p_num_uuid; yy++) {
       STREAM_TO_UINT32(*(p_uuid32 + yy), p_uuid_data);
       BTM_TRACE_DEBUG("                     0x%08X", *(p_uuid32 + yy));
     }
-  } else if (uuid_size == LEN_UUID_128) {
+  } else if (uuid_size == Uuid::kNumBytes128) {
     for (yy = 0; yy < *p_num_uuid; yy++) {
-      STREAM_TO_ARRAY16(p_uuid_list + yy * LEN_UUID_128, p_uuid_data);
-      for (xx = 0; xx < LEN_UUID_128; xx++)
+      STREAM_TO_ARRAY16(p_uuid_list + yy * Uuid::kNumBytes128, p_uuid_data);
+      for (xx = 0; xx < Uuid::kNumBytes128; xx++)
         snprintf(buff + xx * 2, sizeof(buff) - xx * 2, "%02X",
-                 *(p_uuid_list + yy * LEN_UUID_128 + xx));
+                 *(p_uuid_list + yy * Uuid::kNumBytes128 + xx));
       BTM_TRACE_DEBUG("                     0x%s", buff);
     }
   }
@@ -2520,15 +2521,15 @@ static const uint8_t* btm_eir_get_uuid_list(uint8_t* p_eir, size_t eir_len,
   uint8_t uuid_len;
 
   switch (uuid_size) {
-    case LEN_UUID_16:
+    case Uuid::kNumBytes16:
       complete_type = BTM_EIR_COMPLETE_16BITS_UUID_TYPE;
       more_type = BTM_EIR_MORE_16BITS_UUID_TYPE;
       break;
-    case LEN_UUID_32:
+    case Uuid::kNumBytes32:
       complete_type = BTM_EIR_COMPLETE_32BITS_UUID_TYPE;
       more_type = BTM_EIR_MORE_32BITS_UUID_TYPE;
       break;
-    case LEN_UUID_128:
+    case Uuid::kNumBytes128:
       complete_type = BTM_EIR_COMPLETE_128BITS_UUID_TYPE;
       more_type = BTM_EIR_MORE_128BITS_UUID_TYPE;
       break;
@@ -2567,7 +2568,7 @@ static const uint8_t* btm_eir_get_uuid_list(uint8_t* p_eir, size_t eir_len,
  ******************************************************************************/
 static uint16_t btm_convert_uuid_to_uuid16(const uint8_t* p_uuid,
                                            uint8_t uuid_size) {
-  static const uint8_t base_uuid[LEN_UUID_128] = {
+  static const uint8_t base_uuid[Uuid::kNumBytes128] = {
       0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x00, 0x00, 0x80,
       0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
   uint16_t uuid16 = 0;
@@ -2576,26 +2577,26 @@ static uint16_t btm_convert_uuid_to_uuid16(const uint8_t* p_uuid,
   uint8_t xx;
 
   switch (uuid_size) {
-    case LEN_UUID_16:
+    case Uuid::kNumBytes16:
       STREAM_TO_UINT16(uuid16, p_uuid);
       break;
-    case LEN_UUID_32:
+    case Uuid::kNumBytes32:
       STREAM_TO_UINT32(uuid32, p_uuid);
       if (uuid32 < 0x10000) uuid16 = (uint16_t)uuid32;
       break;
-    case LEN_UUID_128:
+    case Uuid::kNumBytes128:
       /* See if we can compress his UUID down to 16 or 32bit UUIDs */
       is_base_uuid = true;
-      for (xx = 0; xx < LEN_UUID_128 - 4; xx++) {
+      for (xx = 0; xx < Uuid::kNumBytes128 - 4; xx++) {
         if (p_uuid[xx] != base_uuid[xx]) {
           is_base_uuid = false;
           break;
         }
       }
       if (is_base_uuid) {
-        if ((p_uuid[LEN_UUID_128 - 1] == 0) &&
-            (p_uuid[LEN_UUID_128 - 2] == 0)) {
-          p_uuid += (LEN_UUID_128 - 4);
+        if ((p_uuid[Uuid::kNumBytes128 - 1] == 0) &&
+            (p_uuid[Uuid::kNumBytes128 - 2] == 0)) {
+          p_uuid += (Uuid::kNumBytes128 - 4);
           STREAM_TO_UINT16(uuid16, p_uuid);
         }
       }
@@ -2629,7 +2630,7 @@ void btm_set_eir_uuid(uint8_t* p_eir, tBTM_INQ_RESULTS* p_results) {
   uint8_t type = BTM_EIR_MORE_16BITS_UUID_TYPE;
 
   p_uuid_data = btm_eir_get_uuid_list(p_eir, HCI_EXT_INQ_RESPONSE_LEN,
-                                      LEN_UUID_16, &num_uuid, &type);
+                                      Uuid::kNumBytes16, &num_uuid, &type);
 
   if (type == BTM_EIR_COMPLETE_16BITS_UUID_TYPE) {
     p_results->eir_complete_list = true;
@@ -2648,21 +2649,21 @@ void btm_set_eir_uuid(uint8_t* p_eir, tBTM_INQ_RESULTS* p_results) {
   }
 
   p_uuid_data = btm_eir_get_uuid_list(p_eir, HCI_EXT_INQ_RESPONSE_LEN,
-                                      LEN_UUID_32, &num_uuid, &type);
+                                      Uuid::kNumBytes32, &num_uuid, &type);
   if (p_uuid_data) {
     for (yy = 0; yy < num_uuid; yy++) {
-      uuid16 = btm_convert_uuid_to_uuid16(p_uuid_data, LEN_UUID_32);
-      p_uuid_data += LEN_UUID_32;
+      uuid16 = btm_convert_uuid_to_uuid16(p_uuid_data, Uuid::kNumBytes32);
+      p_uuid_data += Uuid::kNumBytes32;
       if (uuid16) BTM_AddEirService(p_results->eir_uuid, uuid16);
     }
   }
 
   p_uuid_data = btm_eir_get_uuid_list(p_eir, HCI_EXT_INQ_RESPONSE_LEN,
-                                      LEN_UUID_128, &num_uuid, &type);
+                                      Uuid::kNumBytes128, &num_uuid, &type);
   if (p_uuid_data) {
     for (yy = 0; yy < num_uuid; yy++) {
-      uuid16 = btm_convert_uuid_to_uuid16(p_uuid_data, LEN_UUID_128);
-      p_uuid_data += LEN_UUID_128;
+      uuid16 = btm_convert_uuid_to_uuid16(p_uuid_data, Uuid::kNumBytes128);
+      p_uuid_data += Uuid::kNumBytes128;
       if (uuid16) BTM_AddEirService(p_results->eir_uuid, uuid16);
     }
   }

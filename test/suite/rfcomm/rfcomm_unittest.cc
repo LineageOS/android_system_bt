@@ -34,8 +34,7 @@ TEST_F(RFCommTest, RfcommConnectPairedDevice) {
   size_t len = 0;
 
   error = socket_interface()->connect(&bt_remote_bdaddr_, BTSOCK_RFCOMM,
-                                      (const uint8_t*)&HFP_UUID, 0, &fd, 0,
-                                      getuid());
+                                      &HFP_UUID, 0, &fd, 0, getuid());
   EXPECT_TRUE(error == BT_STATUS_SUCCESS) << "Error creating RFCOMM socket: "
                                           << error;
   EXPECT_TRUE(fd != -1) << "Error creating RFCOMM socket: invalid fd";
@@ -76,8 +75,7 @@ TEST_F(RFCommTest, RfcommRepeatedConnectPairedDevice) {
     size_t len = 0;
 
     error = socket_interface()->connect(&bt_remote_bdaddr_, BTSOCK_RFCOMM,
-                                        (const uint8_t*)&HFP_UUID, 0, &fd, 0,
-                                        getuid());
+                                        &HFP_UUID, 0, &fd, 0, getuid());
     ASSERT_TRUE(error == BT_STATUS_SUCCESS) << "Error creating RFCOMM socket: "
                                             << error;
     ASSERT_TRUE(fd != -1) << "Error creating RFCOMM socket: invalid fd";

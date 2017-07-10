@@ -24,7 +24,7 @@ class Descriptor {
   Descriptor() = default;
   Descriptor(const Descriptor& other);
   Descriptor& operator=(const Descriptor& other);
-  Descriptor(uint16_t handle, const UUID& uuid, uint16_t permissions)
+  Descriptor(uint16_t handle, const Uuid& uuid, uint16_t permissions)
       : handle_(handle), uuid_(uuid), permissions_(permissions){};
   virtual ~Descriptor() = default;
 
@@ -35,11 +35,11 @@ class Descriptor {
 
   uint16_t handle() const { return handle_; }
   uint16_t permissions() const { return permissions_; }
-  const UUID& uuid() const { return uuid_; }
+  const Uuid& uuid() const { return uuid_; }
 
  protected:
   uint16_t handle_;
-  UUID uuid_;
+  Uuid uuid_;
   uint16_t permissions_;
 };
 }

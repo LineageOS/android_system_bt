@@ -35,7 +35,7 @@ class FakeBluetoothGattInterface : public BluetoothGattInterface {
    public:
     virtual ~TestClientHandler() = default;
 
-    virtual bt_status_t RegisterClient(const bt_uuid_t& app_uuid) = 0;
+    virtual bt_status_t RegisterClient(const bluetooth::Uuid& app_uuid) = 0;
     virtual bt_status_t UnregisterClient(int client_if) = 0;
 
     virtual bt_status_t Connect(int client_if, const RawAddress& bd_addr,
@@ -51,7 +51,7 @@ class FakeBluetoothGattInterface : public BluetoothGattInterface {
    public:
     virtual ~TestServerHandler() = default;
 
-    virtual bt_status_t RegisterServer(const bt_uuid_t& app_uuid) = 0;
+    virtual bt_status_t RegisterServer(const bluetooth::Uuid& app_uuid) = 0;
     virtual bt_status_t UnregisterServer(int server_if) = 0;
     virtual bt_status_t AddService(
         int server_if, std::vector<btgatt_db_element_t> service) = 0;
@@ -77,13 +77,13 @@ class FakeBluetoothGattInterface : public BluetoothGattInterface {
   // given parameters.
 
   void NotifyRegisterScannerCallback(int status, int client_if,
-                                     const bt_uuid_t& app_uuid);
+                                     const bluetooth::Uuid& app_uuid);
   void NotifyScanResultCallback(const RawAddress& bda, int rssi,
                                 std::vector<uint8_t> adv_data);
 
   // Client callbacks:
   void NotifyRegisterClientCallback(int status, int client_if,
-                                    const bt_uuid_t& app_uuid);
+                                    const bluetooth::Uuid& app_uuid);
   void NotifyConnectCallback(int conn_id, int status, int client_if,
                              const RawAddress& bda);
   void NotifyDisconnectCallback(int conn_id, int status, int client_if,
@@ -91,17 +91,17 @@ class FakeBluetoothGattInterface : public BluetoothGattInterface {
 
   // Server callbacks:
   void NotifyRegisterServerCallback(int status, int server_if,
-                                    const bt_uuid_t& app_uuid);
+                                    const bluetooth::Uuid& app_uuid);
   void NotifyServerConnectionCallback(int conn_id, int server_if, int connected,
                                       const RawAddress& bda);
   void NotifyServiceAddedCallback(int status, int server_if,
                                   std::vector<btgatt_db_element_t> srvc);
   void NotifyCharacteristicAddedCallback(int status, int server_if,
-                                         const bt_uuid_t& uuid, int srvc_handle,
-                                         int char_handle);
+                                         const bluetooth::Uuid& uuid,
+                                         int srvc_handle, int char_handle);
   void NotifyDescriptorAddedCallback(int status, int server_if,
-                                     const bt_uuid_t& uuid, int srvc_handle,
-                                     int desc_handle);
+                                     const bluetooth::Uuid& uuid,
+                                     int srvc_handle, int desc_handle);
   void NotifyServiceStartedCallback(int status, int server_if, int srvc_handle);
   void NotifyRequestReadCharacteristicCallback(int conn_id, int trans_id,
                                                const RawAddress& bda,

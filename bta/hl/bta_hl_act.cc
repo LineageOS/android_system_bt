@@ -39,6 +39,8 @@
 #include "sdp_api.h"
 #include "utl.h"
 
+using bluetooth::Uuid;
+
 /*****************************************************************************
  *  Local Function prototypes
  ****************************************************************************/
@@ -1817,7 +1819,6 @@ tSDP_DISC_CMPL_CB* bta_hl_allocate_spd_cback(tBTA_HL_SDP_OPER sdp_oper,
 tBTA_HL_STATUS bta_hl_init_sdp(tBTA_HL_SDP_OPER sdp_oper, uint8_t app_idx,
                                uint8_t mcl_idx, uint8_t mdl_idx) {
   tBTA_HL_MCL_CB* p_cb = BTA_HL_GET_MCL_CB_PTR(app_idx, mcl_idx);
-  tSDP_UUID uuid_list;
   uint16_t attr_list[BTA_HL_NUM_SRCH_ATTR];
   uint16_t num_attrs = BTA_HL_NUM_SRCH_ATTR;
   tBTA_HL_STATUS status;
@@ -1843,8 +1844,7 @@ tBTA_HL_STATUS bta_hl_init_sdp(tBTA_HL_SDP_OPER sdp_oper, uint8_t app_idx,
     attr_list[8] = ATTR_ID_HDP_DATA_EXCH_SPEC;
     attr_list[9] = ATTR_ID_HDP_MCAP_SUP_PROC;
 
-    uuid_list.len = LEN_UUID_16;
-    uuid_list.uu.uuid16 = UUID_SERVCLASS_HDP_PROFILE;
+    Uuid uuid_list = Uuid::From16Bit(UUID_SERVCLASS_HDP_PROFILE);
     SDP_InitDiscoveryDb(p_cb->p_db, BTA_HL_DISC_SIZE, 1, &uuid_list, num_attrs,
                         attr_list);
 

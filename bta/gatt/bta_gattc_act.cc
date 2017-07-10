@@ -44,6 +44,8 @@
 #include "bta_hh_int.h"
 #endif
 
+using bluetooth::Uuid;
+
 /*****************************************************************************
  *  Constants
  ****************************************************************************/
@@ -169,7 +171,7 @@ void bta_gattc_start_if(uint8_t client_if) {
 }
 
 /** Register a GATT client application with BTA */
-void bta_gattc_register(tBT_UUID* p_app_uuid, tBTA_GATTC_CBACK* p_cback,
+void bta_gattc_register(const Uuid& app_uuid, tBTA_GATTC_CBACK* p_cback,
                         BtaAppRegisterCallback cb) {
   tBTA_GATT_STATUS status = BTA_GATT_NO_RESOURCES;
   uint8_t client_if = 0;
@@ -182,15 +184,14 @@ void bta_gattc_register(tBT_UUID* p_app_uuid, tBTA_GATTC_CBACK* p_cback,
   /* todo need to check duplicate uuid */
   for (uint8_t i = 0; i < BTA_GATTC_CL_MAX; i++) {
     if (!bta_gattc_cb.cl_rcb[i].in_use) {
-      if ((p_app_uuid == NULL) ||
-          (bta_gattc_cb.cl_rcb[i].client_if =
-               GATT_Register(p_app_uuid, &bta_gattc_cl_cback)) == 0) {
+      if ((bta_gattc_cb.cl_rcb[i].client_if =
+               GATT_Register(app_uuid, &bta_gattc_cl_cback)) == 0) {
         APPL_TRACE_ERROR("Register with GATT stack failed.");
         status = BTA_GATT_ERROR;
       } else {
         bta_gattc_cb.cl_rcb[i].in_use = true;
         bta_gattc_cb.cl_rcb[i].p_cback = p_cback;
-        memcpy(&bta_gattc_cb.cl_rcb[i].app_uuid, p_app_uuid, sizeof(tBT_UUID));
+        bta_gattc_cb.cl_rcb[i].app_uuid = app_uuid;
 
         /* BTA use the same client interface as BTE GATT statck */
         client_if = bta_gattc_cb.cl_rcb[i].client_if;
@@ -1427,21 +1428,15 @@ bool bta_gattc_process_srvc_chg_ind(uint16_t conn_id, tBTA_GATTC_RCB* p_clrcb,
                                     tBTA_GATTC_CLCB* p_clcb,
                                     tBTA_GATTC_NOTIFY* p_notify,
                                     tGATT_VALUE* att_value) {
-  tBT_UUID gattp_uuid, srvc_chg_uuid;
   bool processed = false;
-  uint8_t i;
 
-  gattp_uuid.len = 2;
-  gattp_uuid.uu.uuid16 = UUID_SERVCLASS_GATT_SERVER;
-
-  srvc_chg_uuid.len = 2;
-  srvc_chg_uuid.uu.uuid16 = GATT_UUID_GATT_SRV_CHGD;
+  Uuid gattp_uuid = Uuid::From16Bit(UUID_SERVCLASS_GATT_SERVER);
+  Uuid srvc_chg_uuid = Uuid::From16Bit(GATT_UUID_GATT_SRV_CHGD);
 
   const tBTA_GATTC_CHARACTERISTIC* p_char =
       bta_gattc_get_characteristic_srcb(p_srcb, p_notify->handle);
-  if (p_char &&
-      bta_gattc_uuid_compare(&p_char->service->uuid, &gattp_uuid, true) &&
-      bta_gattc_uuid_compare(&p_char->uuid, &srvc_chg_uuid, true)) {
+  if (p_char && p_char->service->uuid == gattp_uuid &&
+      p_char->uuid == srvc_chg_uuid) {
     if (att_value->len != BTA_GATTC_SERVICE_CHANGED_LEN) {
       APPL_TRACE_ERROR(
           "%s: received malformed service changed indication, skipping",
@@ -1466,7 +1461,7 @@ bool bta_gattc_process_srvc_chg_ind(uint16_t conn_id, tBTA_GATTC_RCB* p_clrcb,
       /* not an opened connection; or connection busy */
       /* search for first available clcb and start discovery */
       if (p_clcb == NULL || (p_clcb && p_clcb->p_q_cmd != NULL)) {
-        for (i = 0; i < BTA_GATTC_CLCB_MAX; i++) {
+        for (size_t i = 0; i < BTA_GATTC_CLCB_MAX; i++) {
           if (bta_gattc_cb.clcb[i].in_use &&
               bta_gattc_cb.clcb[i].p_srcb == p_srcb &&
               bta_gattc_cb.clcb[i].p_q_cmd == NULL) {
