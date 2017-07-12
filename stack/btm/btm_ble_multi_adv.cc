@@ -843,6 +843,8 @@ void BleAdvertisingManager::Initialize(BleAdvertiserHciInterface* interface) {
   instance = new BleAdvertisingManagerImpl(interface);
 }
 
+bool BleAdvertisingManager::IsInitialized() { return instance; }
+
 BleAdvertisingManager* BleAdvertisingManager::Get() {
   CHECK(instance);
   return instance;
