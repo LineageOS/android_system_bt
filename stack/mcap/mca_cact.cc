@@ -117,7 +117,7 @@ void mca_ccb_snd_req(tMCA_CCB* p_ccb, tMCA_CCB_EVT* p_data) {
   if ((!p_ccb->p_tx_req) || is_abort) {
     p_ccb->p_tx_req = p_msg;
     if (!p_ccb->cong) {
-      BT_HDR* p_pkt = (BT_HDR*)osi_malloc(MCA_CTRL_MTU);
+      BT_HDR* p_pkt = (BT_HDR*)osi_malloc(MCA_CTRL_MTU + sizeof(BT_HDR));
 
       p_pkt->offset = L2CAP_MIN_OFFSET;
       p = p_start = (uint8_t*)(p_pkt + 1) + L2CAP_MIN_OFFSET;
@@ -154,7 +154,7 @@ void mca_ccb_snd_req(tMCA_CCB* p_ccb, tMCA_CCB_EVT* p_data) {
 void mca_ccb_snd_rsp(tMCA_CCB* p_ccb, tMCA_CCB_EVT* p_data) {
   tMCA_CCB_MSG* p_msg = (tMCA_CCB_MSG*)p_data;
   uint8_t *p, *p_start;
-  BT_HDR* p_pkt = (BT_HDR*)osi_malloc(MCA_CTRL_MTU);
+  BT_HDR* p_pkt = (BT_HDR*)osi_malloc(MCA_CTRL_MTU + sizeof(BT_HDR));
 
   MCA_TRACE_DEBUG("%s cong=%d req=%d", __func__, p_ccb->cong, p_msg->op_code);
   /* assume that API functions verified the parameters */
@@ -367,7 +367,7 @@ void mca_ccb_hdl_req(tMCA_CCB* p_ccb, tMCA_CCB_EVT* p_data) {
   if (((reject_code != MCA_RSP_SUCCESS) &&
        (evt_data.hdr.op_code != MCA_OP_SYNC_INFO_IND)) ||
       send_rsp) {
-    BT_HDR* p_buf = (BT_HDR*)osi_malloc(MCA_CTRL_MTU);
+    BT_HDR* p_buf = (BT_HDR*)osi_malloc(MCA_CTRL_MTU + sizeof(BT_HDR));
     p_buf->offset = L2CAP_MIN_OFFSET;
     p = p_start = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
     *p++ = reject_opcode;
