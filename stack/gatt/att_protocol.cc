@@ -341,16 +341,9 @@ tGATT_STATUS attp_send_msg_to_l2cap(tGATT_TCB& tcb, BT_HDR* p_toL2CAP) {
   return GATT_SUCCESS;
 }
 
-/*******************************************************************************
- *
- * Function         attp_build_sr_msg
- *
- * Description      Build ATT Server PDUs.
- *
- ******************************************************************************/
+/** Build ATT Server PDUs */
 BT_HDR* attp_build_sr_msg(tGATT_TCB& tcb, uint8_t op_code,
                           tGATT_SR_MSG* p_msg) {
-  BT_HDR* p_cmd = NULL;
   uint16_t offset = 0;
 
   switch (op_code) {
@@ -367,37 +360,27 @@ BT_HDR* attp_build_sr_msg(tGATT_TCB& tcb, uint8_t op_code,
     case GATT_RSP_READ:
     case GATT_HANDLE_VALUE_NOTIF:
     case GATT_HANDLE_VALUE_IND:
-      p_cmd = attp_build_value_cmd(
+      return attp_build_value_cmd(
           tcb.payload_size, op_code, p_msg->attr_value.handle, offset,
           p_msg->attr_value.len, p_msg->attr_value.value);
-      break;
 
     case GATT_RSP_WRITE:
-      p_cmd = attp_build_opcode_cmd(op_code);
-      break;
+      return attp_build_opcode_cmd(op_code);
 
     case GATT_RSP_ERROR:
-      p_cmd = attp_build_err_cmd(p_msg->error.cmd_code, p_msg->error.handle,
-                                 p_msg->error.reason);
-      break;
+      return attp_build_err_cmd(p_msg->error.cmd_code, p_msg->error.handle,
+                                p_msg->error.reason);
 
     case GATT_RSP_EXEC_WRITE:
-      p_cmd = attp_build_exec_write_cmd(op_code, 0);
-      break;
+      return attp_build_exec_write_cmd(op_code, 0);
 
     case GATT_RSP_MTU:
-      p_cmd = attp_build_mtu_cmd(op_code, p_msg->mtu);
-      break;
+      return attp_build_mtu_cmd(op_code, p_msg->mtu);
 
     default:
-      VLOG(1) << StringPrintf("attp_build_sr_msg: unknown op code = %d",
-                              op_code);
-      break;
+      LOG(FATAL) << "attp_build_sr_msg: unknown op code = " << +op_code;
+      return nullptr;
   }
-
-  if (!p_cmd) LOG(ERROR) << StringPrintf("No resources");
-
-  return p_cmd;
 }
 
 /*******************************************************************************

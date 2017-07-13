@@ -503,119 +503,89 @@ static tGATT_STATUS gatt_build_primary_service_rsp(
  *                  false: packet full, or format mismatch.
  */
 static tGATT_STATUS gatt_build_find_info_rsp(tGATT_SRV_LIST_ELEM& el,
-                                             BT_HDR* p_msg, uint16_t* p_len,
+                                             BT_HDR* p_msg, uint16_t& len,
                                              uint16_t s_hdl, uint16_t e_hdl) {
-  tGATT_STATUS status = GATT_NOT_FOUND;
-  uint8_t* p;
-  uint16_t len = *p_len;
   uint8_t info_pair_len[2] = {4, 18};
 
-  if (!el.p_db) return status;
+  if (!el.p_db) return GATT_NOT_FOUND;
 
   /* check the attribute database */
 
-  p = (uint8_t*)(p_msg + 1) + L2CAP_MIN_OFFSET + p_msg->len;
+  uint8_t* p = (uint8_t*)(p_msg + 1) + L2CAP_MIN_OFFSET + p_msg->len;
 
   for (auto& attr : el.p_db->attr_list) {
-    if (attr.handle > e_hdl) {
-      break;
+    if (attr.handle > e_hdl) break;
+
+    if (attr.handle < s_hdl) continue;
+
+    if (p_msg->offset == 0)
+      p_msg->offset = (attr.uuid.len == LEN_UUID_16) ? GATT_INFO_TYPE_PAIR_16
+                                                     : GATT_INFO_TYPE_PAIR_128;
+
+    if (len < info_pair_len[p_msg->offset - 1]) return GATT_NO_RESOURCES;
+
+    if (p_msg->offset == GATT_INFO_TYPE_PAIR_16 &&
+        attr.uuid.len == LEN_UUID_16) {
+      UINT16_TO_STREAM(p, attr.handle);
+      UINT16_TO_STREAM(p, attr.uuid.uu.uuid16);
+    } else if (p_msg->offset == GATT_INFO_TYPE_PAIR_128 &&
+               attr.uuid.len == LEN_UUID_128) {
+      UINT16_TO_STREAM(p, attr.handle);
+      ARRAY_TO_STREAM(p, attr.uuid.uu.uuid128, LEN_UUID_128);
+    } else if (p_msg->offset == GATT_INFO_TYPE_PAIR_128 &&
+               attr.uuid.len == LEN_UUID_32) {
+      UINT16_TO_STREAM(p, attr.handle);
+      gatt_convert_uuid32_to_uuid128(p, attr.uuid.uu.uuid32);
+      p += LEN_UUID_128;
+    } else {
+      LOG(ERROR) << "format mismatch";
+      return GATT_NO_RESOURCES;
+      /* format mismatch */
     }
-
-    if (attr.handle >= s_hdl) {
-      if (p_msg->offset == 0)
-        p_msg->offset = (attr.uuid.len == LEN_UUID_16)
-                            ? GATT_INFO_TYPE_PAIR_16
-                            : GATT_INFO_TYPE_PAIR_128;
-
-      if (len >= info_pair_len[p_msg->offset - 1]) {
-        if (p_msg->offset == GATT_INFO_TYPE_PAIR_16 &&
-            attr.uuid.len == LEN_UUID_16) {
-          UINT16_TO_STREAM(p, attr.handle);
-          UINT16_TO_STREAM(p, attr.uuid.uu.uuid16);
-        } else if (p_msg->offset == GATT_INFO_TYPE_PAIR_128 &&
-                   attr.uuid.len == LEN_UUID_128) {
-          UINT16_TO_STREAM(p, attr.handle);
-          ARRAY_TO_STREAM(p, attr.uuid.uu.uuid128, LEN_UUID_128);
-        } else if (p_msg->offset == GATT_INFO_TYPE_PAIR_128 &&
-                   attr.uuid.len == LEN_UUID_32) {
-          UINT16_TO_STREAM(p, attr.handle);
-          gatt_convert_uuid32_to_uuid128(p, attr.uuid.uu.uuid32);
-          p += LEN_UUID_128;
-        } else {
-          LOG(ERROR) << "format mismatch";
-          status = GATT_NO_RESOURCES;
-          break;
-          /* format mismatch */
-        }
-        p_msg->len += info_pair_len[p_msg->offset - 1];
-        len -= info_pair_len[p_msg->offset - 1];
-        status = GATT_SUCCESS;
-
-      } else {
-        status = GATT_NO_RESOURCES;
-        break;
-      }
-    }
+    p_msg->len += info_pair_len[p_msg->offset - 1];
+    len -= info_pair_len[p_msg->offset - 1];
+    return GATT_SUCCESS;
   }
 
-  *p_len = len;
-  return status;
+  return GATT_NOT_FOUND;
 }
 
-/*******************************************************************************
- *
- * Function         gatts_internal_read_by_type_req
- *
- * Description      Check to see if the ReadByType request can be handled
- *                  internally.
- *
- * Returns          void
- *
- ******************************************************************************/
-static tGATT_STATUS gatts_validate_packet_format(
-    uint8_t op_code, uint16_t* p_len, uint8_t** p_data, tBT_UUID* p_uuid_filter,
-    uint16_t* p_s_hdl, uint16_t* p_e_hdl) {
-  tGATT_STATUS reason = GATT_SUCCESS;
-  uint16_t uuid_len, s_hdl = 0, e_hdl = 0;
-  uint16_t len = *p_len;
-  uint8_t* p = *p_data;
+static tGATT_STATUS read_handles(uint16_t& len, uint8_t*& p, uint16_t& s_hdl,
+                                 uint16_t& e_hdl) {
+  if (len < 4) return GATT_INVALID_PDU;
 
-  if (len >= 4) {
-    /* obtain starting handle, and ending handle */
-    STREAM_TO_UINT16(s_hdl, p);
-    STREAM_TO_UINT16(e_hdl, p);
-    len -= 4;
+  /* obtain starting handle, and ending handle */
+  STREAM_TO_UINT16(s_hdl, p);
+  STREAM_TO_UINT16(e_hdl, p);
+  len -= 4;
 
-    if (s_hdl > e_hdl || !GATT_HANDLE_IS_VALID(s_hdl) ||
-        !GATT_HANDLE_IS_VALID(e_hdl)) {
-      reason = GATT_INVALID_HANDLE;
-    }
-    /* for these PDUs, uuid filter must present */
-    else if (op_code == GATT_REQ_READ_BY_GRP_TYPE ||
-             op_code == GATT_REQ_FIND_TYPE_VALUE ||
-             op_code == GATT_REQ_READ_BY_TYPE) {
-      if (len >= 2 && p_uuid_filter != NULL) {
-        uuid_len = (op_code == GATT_REQ_FIND_TYPE_VALUE) ? 2 : len;
+  if (s_hdl > e_hdl || !GATT_HANDLE_IS_VALID(s_hdl) ||
+      !GATT_HANDLE_IS_VALID(e_hdl)) {
+    return GATT_INVALID_PDU;
+  }
 
-        /* parse uuid now */
-        if (gatt_parse_uuid_from_cmd(p_uuid_filter, uuid_len, &p) == false ||
-            p_uuid_filter->len == 0) {
-          VLOG(1) << "UUID filter does not exsit";
-          reason = GATT_INVALID_PDU;
-        } else
-          len -= p_uuid_filter->len;
-      } else
-        reason = GATT_INVALID_PDU;
-    }
-  } else
-    reason = GATT_INVALID_PDU;
+  return GATT_SUCCESS;
+}
 
-  *p_data = p;
-  *p_len = len;
-  *p_s_hdl = s_hdl;
-  *p_e_hdl = e_hdl;
+static tGATT_STATUS gatts_validate_packet_format(uint8_t op_code, uint16_t& len,
+                                                 uint8_t*& p, tBT_UUID* p_uuid,
+                                                 uint16_t& s_hdl,
+                                                 uint16_t& e_hdl) {
+  tGATT_STATUS ret = read_handles(len, p, s_hdl, e_hdl);
+  if (ret != GATT_SUCCESS) return ret;
 
-  return reason;
+  if (len < 2) return GATT_INVALID_PDU;
+
+  /* parse uuid now */
+  CHECK(p_uuid);
+  uint16_t uuid_len = (op_code == GATT_REQ_FIND_TYPE_VALUE) ? 2 : len;
+  if (!gatt_parse_uuid_from_cmd(p_uuid, uuid_len, &p)) {
+    VLOG(1) << "Bad UUID";
+    return GATT_INVALID_PDU;
+  }
+
+  len -= uuid_len;
+  return GATT_SUCCESS;
 }
 
 /*******************************************************************************
@@ -631,50 +601,52 @@ static tGATT_STATUS gatts_validate_packet_format(
  ******************************************************************************/
 void gatts_process_primary_service_req(tGATT_TCB& tcb, uint8_t op_code,
                                        uint16_t len, uint8_t* p_data) {
-  uint8_t reason = GATT_INVALID_PDU;
   uint16_t s_hdl = 0, e_hdl = 0;
-  tBT_UUID uuid, value,
-      primary_service = {LEN_UUID_16, {GATT_UUID_PRI_SERVICE}};
-  BT_HDR* p_msg = NULL;
-  uint16_t msg_len =
-      (uint16_t)(sizeof(BT_HDR) + tcb.payload_size + L2CAP_MIN_OFFSET);
+  tBT_UUID uuid;
 
+  uint8_t reason =
+      gatts_validate_packet_format(op_code, len, p_data, &uuid, s_hdl, e_hdl);
+  if (reason != GATT_SUCCESS) {
+    gatt_send_error_rsp(tcb, reason, op_code, s_hdl, false);
+    return;
+  }
+
+  tBT_UUID primary_service = {LEN_UUID_16, {GATT_UUID_PRI_SERVICE}};
+  if (!gatt_uuid_compare(uuid, primary_service)) {
+    if (op_code == GATT_REQ_READ_BY_GRP_TYPE) {
+      gatt_send_error_rsp(tcb, GATT_UNSUPPORT_GRP_TYPE, op_code, s_hdl, false);
+      VLOG(1) << StringPrintf("unexpected ReadByGrpType Group: 0x%04x",
+                              uuid.uu.uuid16);
+      return;
+    }
+
+    // we do not support ReadByTypeValue with any non-primamry_service type
+    gatt_send_error_rsp(tcb, GATT_NOT_FOUND, op_code, s_hdl, false);
+    VLOG(1) << StringPrintf("unexpected ReadByTypeValue type: 0x%04x",
+                            uuid.uu.uuid16);
+    return;
+  }
+
+  // TODO: we assume theh value is UUID, there is no such requirement in spec
+  tBT_UUID value;
   memset(&value, 0, sizeof(tBT_UUID));
-  reason = gatts_validate_packet_format(op_code, &len, &p_data, &uuid, &s_hdl,
-                                        &e_hdl);
-
-  if (reason == GATT_SUCCESS) {
-    if (gatt_uuid_compare(uuid, primary_service)) {
-      if (op_code == GATT_REQ_FIND_TYPE_VALUE) {
-        if (gatt_parse_uuid_from_cmd(&value, len, &p_data) == false)
-          reason = GATT_INVALID_PDU;
-      }
-
-      if (reason == GATT_SUCCESS) {
-        p_msg = (BT_HDR*)osi_calloc(msg_len);
-        reason = gatt_build_primary_service_rsp(p_msg, tcb, op_code, s_hdl,
-                                                e_hdl, p_data, value);
-      }
-    } else {
-      if (op_code == GATT_REQ_READ_BY_GRP_TYPE) {
-        reason = GATT_UNSUPPORT_GRP_TYPE;
-        VLOG(1) << StringPrintf("unexpected ReadByGrpType Group: 0x%04x",
-                                uuid.uu.uuid16);
-      } else {
-        /* we do not support ReadByTypeValue with any non-primamry_service type
-         */
-        reason = GATT_NOT_FOUND;
-        VLOG(1) << StringPrintf("unexpected ReadByTypeValue type: 0x%04x",
-                                uuid.uu.uuid16);
-      }
+  if (op_code == GATT_REQ_FIND_TYPE_VALUE) {
+    if (gatt_parse_uuid_from_cmd(&value, len, &p_data) == false) {
+      gatt_send_error_rsp(tcb, GATT_INVALID_PDU, op_code, s_hdl, false);
     }
   }
 
+  uint16_t msg_len =
+      (uint16_t)(sizeof(BT_HDR) + tcb.payload_size + L2CAP_MIN_OFFSET);
+  BT_HDR* p_msg = (BT_HDR*)osi_calloc(msg_len);
+  reason = gatt_build_primary_service_rsp(p_msg, tcb, op_code, s_hdl, e_hdl,
+                                          p_data, value);
   if (reason != GATT_SUCCESS) {
     osi_free(p_msg);
     gatt_send_error_rsp(tcb, reason, op_code, s_hdl, false);
-  } else
-    attp_send_sr_msg(tcb, p_msg);
+  }
+
+  attp_send_sr_msg(tcb, p_msg);
 }
 
 /*******************************************************************************
@@ -690,9 +662,7 @@ void gatts_process_primary_service_req(tGATT_TCB& tcb, uint8_t op_code,
 static void gatts_process_find_info(tGATT_TCB& tcb, uint8_t op_code,
                                     uint16_t len, uint8_t* p_data) {
   uint16_t s_hdl = 0, e_hdl = 0;
-
-  uint8_t reason = gatts_validate_packet_format(op_code, &len, &p_data, NULL,
-                                                &s_hdl, &e_hdl);
+  uint8_t reason = read_handles(len, p_data, s_hdl, e_hdl);
   if (reason != GATT_SUCCESS) {
     gatt_send_error_rsp(tcb, reason, op_code, s_hdl, false);
     return;
@@ -712,7 +682,7 @@ static void gatts_process_find_info(tGATT_TCB& tcb, uint8_t op_code,
 
   for (tGATT_SRV_LIST_ELEM& el : *gatt_cb.srv_list_info) {
     if (el.s_hdl <= e_hdl && el.e_hdl >= s_hdl) {
-      reason = gatt_build_find_info_rsp(el, p_msg, &buf_len, s_hdl, e_hdl);
+      reason = gatt_build_find_info_rsp(el, p_msg, buf_len, s_hdl, e_hdl);
       if (reason == GATT_NO_RESOURCES) {
         reason = GATT_SUCCESS;
         break;
@@ -743,48 +713,46 @@ static void gatts_process_find_info(tGATT_TCB& tcb, uint8_t op_code,
  ******************************************************************************/
 static void gatts_process_mtu_req(tGATT_TCB& tcb, uint16_t len,
                                   uint8_t* p_data) {
-  uint16_t mtu = 0;
-  uint8_t *p = p_data, i;
-  BT_HDR* p_buf;
-  uint16_t conn_id;
-
   /* BR/EDR conenction, send error response */
   if (tcb.att_lcid != L2CAP_ATT_CID) {
     gatt_send_error_rsp(tcb, GATT_REQ_NOT_SUPPORTED, GATT_REQ_MTU, 0, false);
-  } else if (len < GATT_MTU_REQ_MIN_LEN) {
+    return;
+  }
+
+  if (len < GATT_MTU_REQ_MIN_LEN) {
     LOG(ERROR) << "invalid MTU request PDU received.";
     gatt_send_error_rsp(tcb, GATT_INVALID_PDU, GATT_REQ_MTU, 0, false);
-  } else {
-    STREAM_TO_UINT16(mtu, p);
-    /* mtu must be greater than default MTU which is 23/48 */
-    if (mtu < GATT_DEF_BLE_MTU_SIZE)
-      tcb.payload_size = GATT_DEF_BLE_MTU_SIZE;
-    else if (mtu > GATT_MAX_MTU_SIZE)
-      tcb.payload_size = GATT_MAX_MTU_SIZE;
-    else
-      tcb.payload_size = mtu;
+    return;
+  }
 
-    LOG(ERROR) << "MTU request PDU with MTU size " << +tcb.payload_size;
+  uint16_t mtu = 0;
+  uint8_t* p = p_data;
+  STREAM_TO_UINT16(mtu, p);
+  /* mtu must be greater than default MTU which is 23/48 */
+  if (mtu < GATT_DEF_BLE_MTU_SIZE)
+    tcb.payload_size = GATT_DEF_BLE_MTU_SIZE;
+  else if (mtu > GATT_MAX_MTU_SIZE)
+    tcb.payload_size = GATT_MAX_MTU_SIZE;
+  else
+    tcb.payload_size = mtu;
 
-    l2cble_set_fixed_channel_tx_data_length(tcb.peer_bda, L2CAP_ATT_CID,
-                                            tcb.payload_size);
+  LOG(ERROR) << "MTU request PDU with MTU size " << +tcb.payload_size;
 
-    p_buf =
-        attp_build_sr_msg(tcb, GATT_RSP_MTU, (tGATT_SR_MSG*)&tcb.payload_size);
-    if (p_buf != NULL) {
-      attp_send_sr_msg(tcb, p_buf);
+  l2cble_set_fixed_channel_tx_data_length(tcb.peer_bda, L2CAP_ATT_CID,
+                                          tcb.payload_size);
 
-      /* Notify all registered applicaiton with new MTU size. Us a transaction
-       * ID */
-      /* of 0, as no response is allowed from applcations                    */
+  BT_HDR* p_buf =
+      attp_build_sr_msg(tcb, GATT_RSP_MTU, (tGATT_SR_MSG*)&tcb.payload_size);
+  attp_send_sr_msg(tcb, p_buf);
 
-      for (i = 0; i < GATT_MAX_APPS; i++) {
-        if (gatt_cb.cl_rcb[i].in_use) {
-          conn_id = GATT_CREATE_CONN_ID(tcb.tcb_idx, gatt_cb.cl_rcb[i].gatt_if);
-          gatt_sr_send_req_callback(conn_id, 0, GATTS_REQ_TYPE_MTU,
-                                    (tGATTS_DATA*)&tcb.payload_size);
-        }
-      }
+  /* Notify all registered applicaiton with new MTU size. Us a transaction ID */
+  /* of 0, as no response is allowed from applcations                    */
+  for (int i = 0; i < GATT_MAX_APPS; i++) {
+    if (gatt_cb.cl_rcb[i].in_use) {
+      uint16_t conn_id =
+          GATT_CREATE_CONN_ID(tcb.tcb_idx, gatt_cb.cl_rcb[i].gatt_if);
+      gatt_sr_send_req_callback(conn_id, 0, GATTS_REQ_TYPE_MTU,
+                                (tGATTS_DATA*)&tcb.payload_size);
     }
   }
 }
@@ -807,15 +775,9 @@ static void gatts_process_mtu_req(tGATT_TCB& tcb, uint16_t len,
 void gatts_process_read_by_type_req(tGATT_TCB& tcb, uint8_t op_code,
                                     uint16_t len, uint8_t* p_data) {
   tBT_UUID uuid;
-  size_t msg_len = sizeof(BT_HDR) + tcb.payload_size + L2CAP_MIN_OFFSET;
-  uint16_t buf_len, s_hdl, e_hdl, err_hdl = 0;
-  BT_HDR* p_msg = NULL;
-  tGATT_STATUS reason, ret;
-  uint8_t* p;
-  uint8_t sec_flag, key_size;
-
-  reason = gatts_validate_packet_format(op_code, &len, &p_data, &uuid, &s_hdl,
-                                        &e_hdl);
+  uint16_t s_hdl, e_hdl, err_hdl = 0;
+  tGATT_STATUS reason =
+      gatts_validate_packet_format(op_code, len, p_data, &uuid, s_hdl, e_hdl);
 
 #if (GATT_CONFORMANCE_TESTING == TRUE)
   if (gatt_cb.enable_err_rsp && gatt_cb.req_op_code == op_code) {
@@ -829,38 +791,43 @@ void gatts_process_read_by_type_req(tGATT_TCB& tcb, uint8_t op_code,
   }
 #endif
 
-  if (reason == GATT_SUCCESS) {
-    p_msg = (BT_HDR*)osi_calloc(msg_len);
-    p = (uint8_t*)(p_msg + 1) + L2CAP_MIN_OFFSET;
+  if (reason != GATT_SUCCESS) {
+    gatt_send_error_rsp(tcb, reason, op_code, s_hdl, false);
+    return;
+  }
 
-    *p++ = op_code + 1;
-    /* reserve length byte */
-    p_msg->len = 2;
-    buf_len = tcb.payload_size - 2;
+  size_t msg_len = sizeof(BT_HDR) + tcb.payload_size + L2CAP_MIN_OFFSET;
+  BT_HDR* p_msg = (BT_HDR*)osi_calloc(msg_len);
+  uint8_t* p = (uint8_t*)(p_msg + 1) + L2CAP_MIN_OFFSET;
 
-    reason = GATT_NOT_FOUND;
+  *p++ = op_code + 1;
+  /* reserve length byte */
+  p_msg->len = 2;
+  uint16_t buf_len = tcb.payload_size - 2;
 
-    for (tGATT_SRV_LIST_ELEM& el : *gatt_cb.srv_list_info) {
-      if (el.s_hdl <= e_hdl && el.e_hdl >= s_hdl) {
-        gatt_sr_get_sec_info(tcb.peer_bda, tcb.transport, &sec_flag, &key_size);
+  reason = GATT_NOT_FOUND;
+  for (tGATT_SRV_LIST_ELEM& el : *gatt_cb.srv_list_info) {
+    if (el.s_hdl <= e_hdl && el.e_hdl >= s_hdl) {
+      uint8_t sec_flag, key_size;
+      gatt_sr_get_sec_info(tcb.peer_bda, tcb.transport, &sec_flag, &key_size);
 
-        ret = gatts_db_read_attr_value_by_type(tcb, el.p_db, op_code, p_msg,
-                                               s_hdl, e_hdl, uuid, &buf_len,
-                                               sec_flag, key_size, 0, &err_hdl);
-        if (ret != GATT_NOT_FOUND) {
-          reason = ret;
+      tGATT_STATUS ret = gatts_db_read_attr_value_by_type(
+          tcb, el.p_db, op_code, p_msg, s_hdl, e_hdl, uuid, &buf_len, sec_flag,
+          key_size, 0, &err_hdl);
+      if (ret != GATT_NOT_FOUND) {
+        reason = ret;
+        if (ret == GATT_NO_RESOURCES) reason = GATT_SUCCESS;
+      }
 
-          if (ret == GATT_NO_RESOURCES) reason = GATT_SUCCESS;
-        }
-        if (ret != GATT_SUCCESS && ret != GATT_NOT_FOUND) {
-          s_hdl = err_hdl;
-          break;
-        }
+      if (ret != GATT_SUCCESS && ret != GATT_NOT_FOUND) {
+        s_hdl = err_hdl;
+        break;
       }
     }
-    *p = (uint8_t)p_msg->offset;
-    p_msg->offset = L2CAP_MIN_OFFSET;
   }
+  *p = (uint8_t)p_msg->offset;
+  p_msg->offset = L2CAP_MIN_OFFSET;
+
   if (reason != GATT_SUCCESS) {
     osi_free(p_msg);
 
@@ -868,8 +835,11 @@ void gatts_process_read_by_type_req(tGATT_TCB& tcb, uint8_t op_code,
      * check */
     if (reason != GATT_PENDING && reason != GATT_BUSY)
       gatt_send_error_rsp(tcb, reason, op_code, s_hdl, false);
-  } else
-    attp_send_sr_msg(tcb, p_msg);
+
+    return;
+  }
+
+  attp_send_sr_msg(tcb, p_msg);
 }
 
 /**
@@ -967,24 +937,23 @@ static void gatts_process_read_req(tGATT_TCB& tcb, tGATT_SRV_LIST_ELEM& el,
                                    uint8_t op_code, uint16_t handle,
                                    UNUSED_ATTR uint16_t len, uint8_t* p_data) {
   size_t buf_len = sizeof(BT_HDR) + tcb.payload_size + L2CAP_MIN_OFFSET;
-  tGATT_STATUS reason;
-  uint8_t sec_flag, key_size, *p;
-  uint16_t offset = 0, value_len = 0;
+  uint16_t offset = 0;
   BT_HDR* p_msg = (BT_HDR*)osi_calloc(buf_len);
 
   if (op_code == GATT_REQ_READ_BLOB) STREAM_TO_UINT16(offset, p_data);
 
-  p = (uint8_t*)(p_msg + 1) + L2CAP_MIN_OFFSET;
+  uint8_t* p = (uint8_t*)(p_msg + 1) + L2CAP_MIN_OFFSET;
   *p++ = op_code + 1;
   p_msg->len = 1;
   buf_len = tcb.payload_size - 1;
 
+  uint8_t sec_flag, key_size;
   gatt_sr_get_sec_info(tcb.peer_bda, tcb.transport, &sec_flag, &key_size);
 
-  reason = gatts_read_attr_value_by_handle(
+  uint16_t value_len = 0;
+  tGATT_STATUS reason = gatts_read_attr_value_by_handle(
       tcb, el.p_db, op_code, handle, offset, p, &value_len, (uint16_t)buf_len,
       sec_flag, key_size, 0);
-
   p_msg->len += value_len;
 
   if (reason != GATT_SUCCESS) {
@@ -994,8 +963,11 @@ static void gatts_process_read_req(tGATT_TCB& tcb, tGATT_SRV_LIST_ELEM& el,
      * check */
     if (reason != GATT_PENDING && reason != GATT_BUSY)
       gatt_send_error_rsp(tcb, reason, op_code, handle, false);
-  } else
-    attp_send_sr_msg(tcb, p_msg);
+
+    return;
+  }
+
+  attp_send_sr_msg(tcb, p_msg);
 }
 
 /*******************************************************************************
