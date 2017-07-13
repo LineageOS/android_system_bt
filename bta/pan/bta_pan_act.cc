@@ -28,6 +28,8 @@
 
 #include <string.h>
 
+#include <cutils/log.h>
+
 #include "bt_common.h"
 #include "bta_api.h"
 #include "bta_pan_api.h"
@@ -174,6 +176,14 @@ static void bta_pan_data_buf_ind_cback(uint16_t handle, BD_ADDR src,
 
   if (sizeof(tBTA_PAN_DATA_PARAMS) > p_buf->offset) {
     /* offset smaller than data structure in front of actual data */
+    if (sizeof(BT_HDR) + sizeof(tBTA_PAN_DATA_PARAMS) + p_buf->len >
+        PAN_BUF_SIZE) {
+      android_errorWriteLog(0x534e4554, "63146237");
+      APPL_TRACE_ERROR("%s: received buffer length too large: %d", __func__,
+                       p_buf->len);
+      osi_free(p_buf);
+      return;
+    }
     p_new_buf = (BT_HDR*)osi_malloc(PAN_BUF_SIZE);
     memcpy((uint8_t*)(p_new_buf + 1) + sizeof(tBTA_PAN_DATA_PARAMS),
            (uint8_t*)(p_buf + 1) + p_buf->offset, p_buf->len);
