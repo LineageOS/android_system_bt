@@ -17,7 +17,7 @@
  ******************************************************************************/
 #define LOG_TAG "l2cap_assemble"
 
-#include "l2cap.h"
+#include "l2cap_packet.h"
 
 #include <algorithm>
 
@@ -31,9 +31,9 @@ const uint16_t kSduTxSeqBits = 0x007e;
 const int kSduStandardHeaderLength = 6;
 const int kSduFirstHeaderLength = 8;
 
-std::unique_ptr<L2cap> L2cap::assemble(
+std::unique_ptr<L2capPacket> L2capPacket::assemble(
     const std::vector<L2capSdu>& sdu_packets) {
-  std::unique_ptr<L2cap> built_l2cap_packet(new L2cap());
+  std::unique_ptr<L2capPacket> built_l2cap_packet(new L2capPacket());
   uint16_t l2cap_payload_length = 0;
   uint16_t first_packet_channel_id = 0;
   uint8_t txseq_start;
@@ -124,7 +124,7 @@ std::unique_ptr<L2cap> L2cap::assemble(
   return built_l2cap_packet;
 }  // Assemble
 
-std::vector<uint8_t> L2cap::get_l2cap_payload() const {
+std::vector<uint8_t> L2capPacket::get_l2cap_payload() const {
   std::vector<uint8_t> payload_sub_vector;
   payload_sub_vector.clear();
 
@@ -135,19 +135,19 @@ std::vector<uint8_t> L2cap::get_l2cap_payload() const {
   return payload_sub_vector;
 }
 
-uint16_t L2cap::get_l2cap_cid() const {
+uint16_t L2capPacket::get_l2cap_cid() const {
   return ((l2cap_packet_[3] << 8) | l2cap_packet_[2]);
 }
 
-bool L2cap::check_if_only_sdu(const uint8_t bits) {
+bool L2capPacket::check_if_only_sdu(const uint8_t bits) {
   return ((bits & 0xc) == 0x0);
 }
 
-bool L2cap::check_if_starting_sdu(const uint8_t bits) {
+bool L2capPacket::check_if_starting_sdu(const uint8_t bits) {
   return ((bits & 0xc) == 0x4);
 }
 
-bool L2cap::check_if_ending_sdu(const uint8_t bits) {
+bool L2capPacket::check_if_ending_sdu(const uint8_t bits) {
   return ((bits & 0xc) == 0x8);
 }
 
