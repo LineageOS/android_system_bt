@@ -178,6 +178,7 @@ static_library("stack") {
   ]
 
   deps = [
+    "//types",
     "//third_party/libchrome:base",
     "//third_party/libldac:libldacBT_enc",
     "//third_party/libldac:libldacBT_abr",
@@ -225,6 +226,7 @@ executable("stack_unittests") {
     "//device",
     "//embdrv/sbc",
     "//hci",
+    "//types",
     "//main:bluetooth.default",
     "//third_party/googletest:gmock_main",
     "//third_party/libchrome:base",
@@ -247,7 +249,7 @@ executable("net_test_stack_multi_adv") {
     "//stack/btm",
   ]
 
-libs = [
+  libs = [
     "-ldl",
     "-lpthread",
     "-lresolv",
@@ -257,6 +259,7 @@ libs = [
   ]
 
   deps = [
+    "//types",
     "//third_party/googletest:gmock_main",
     "//third_party/libchrome:base",
   ]
