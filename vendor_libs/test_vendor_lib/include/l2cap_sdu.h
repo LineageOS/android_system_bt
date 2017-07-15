@@ -62,6 +62,9 @@ class L2capSdu {
   // Returns a completed L2capSdu object.
   L2capSdu(std::vector<uint8_t> create_from);
 
+  // Adds an FCS to create_from and returns an L2capSdu object
+  static L2capSdu L2capSduBuilder(std::vector<uint8_t> create_from);
+
   // Get a vector iterator that points to the first byte of the
   // L2CAP payload within an SDU. The offset parameter will be the
   // number of bytes that are in the SDU header. This should always
