@@ -37,6 +37,7 @@ class L2capPacket {
 
   // Construct a vector of just the L2CAP payload. This essentially
   // will remove the L2CAP header from the private member variable.
+  // TODO: Remove this in favor of custom iterators.
   std::vector<uint8_t> get_l2cap_payload() const;
 
   uint16_t get_l2cap_cid() const;
