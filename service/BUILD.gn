@@ -57,7 +57,8 @@ source_set("service") {
   ]
 
   deps = [
-    "//third_party/libchrome:base"
+    "//types",
+    "//third_party/libchrome:base",
   ]
 }
 

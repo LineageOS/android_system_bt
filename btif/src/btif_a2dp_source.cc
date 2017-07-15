@@ -21,7 +21,9 @@
 #define ATRACE_TAG ATRACE_TAG_AUDIO
 
 #include <base/logging.h>
+#ifndef OS_GENERIC
 #include <cutils/trace.h>
+#endif
 #include <limits.h>
 #include <string.h>
 #include <algorithm>
@@ -663,7 +665,9 @@ static void btif_a2dp_source_audio_handle_timer(UNUSED_ATTR void* context) {
     CHECK(btif_a2dp_source_cb.encoder_interface != NULL);
     size_t transmit_queue_length =
         fixed_queue_length(btif_a2dp_source_cb.tx_audio_queue);
+#ifndef OS_GENERIC
     ATRACE_INT("btif TX queue", transmit_queue_length);
+#endif
     if (btif_a2dp_source_cb.encoder_interface->set_transmit_queue_length !=
         NULL) {
       btif_a2dp_source_cb.encoder_interface->set_transmit_queue_length(
