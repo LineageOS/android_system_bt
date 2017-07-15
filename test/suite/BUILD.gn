@@ -31,6 +31,7 @@ executable("net_test_bluetooth") {
     "//main:bluetooth.default",
     "//service:service",
     "//service:service_unittests",
+    "//types:types_unittests",
     "//third_party/libchrome:base",
     "//osi",
     "//third_party/googletest:gtest_main",
