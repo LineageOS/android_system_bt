@@ -1,5 +1,5 @@
 #
-#  Copyright (C) 2015 Google, Inc.
+#  Copyright (C) 2017 Google, Inc.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -14,18 +14,16 @@
 #  limitations under the License.
 #
 
-static_library("btcore") {
+static_library("types") {
+  cflags = [
+     "-fvisibility=default",
+  ]
+
   sources = [
-    "src/device_class.cc",
-    "src/hal_util.cc",
-    "src/module.cc",
-    "src/property.cc",
-    "src/uuid.cc",
-    "src/osi_module.cc",
+    "raw_address.cc",
   ]
 
   include_dirs = [
-    "include",
     "//",
   ]
 
@@ -34,31 +32,28 @@ static_library("btcore") {
   ]
 }
 
-executable("net_test_btcore") {
+executable("types_unittests") {
   testonly = true
   sources = [
-    "test/device_class_test.cc",
-    "test/property_test.cc",
-    "test/uuid_test.cc",
-    "//osi/test/AllocationTestHarness.cc",
+    "test/raw_address_unittest.cc",
   ]
 
   include_dirs = [
-    "include",
     "//",
   ]
 
-  deps = [
-    "//btcore",
-    "//osi",
-    "//types",
-    "//third_party/googletest:gtest_main",
-    "//third_party/libchrome:base",
+  libs = [
+     "-ldl",
+     "-lpthread",
+     "-lresolv",
+     "-lrt",
+     "-lz",
+     "-latomic",
   ]
 
-  libs = [
-    "-lpthread",
-    "-lrt",
-    "-ldl",
+  deps = [
+    "//types",
+    "//third_party/googletest:gmock_main",
+    "//third_party/libchrome:base",
   ]
 }

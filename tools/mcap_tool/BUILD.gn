@@ -39,5 +39,6 @@ executable("mcap_tool") {
     "//btcore",
     "//osi",
     "//third_party/libchrome:base",
+    "//types",
   ]
 }
