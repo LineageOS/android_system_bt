@@ -33,8 +33,14 @@ class AdvertiseDataParser {
       uint8_t len = ad[position];
 
       // A field length of 0 would be invalid as it should at least contain the
-      // EIR field type.
-      if (len == 0) return false;
+      // EIR field type. However, some existing devices send zero padding at the
+      // end of advertisement. If this is the case, treat the packet as valid.
+      if (len == 0) {
+        for (size_t i = position + 1; i < ad_len; i++) {
+          if (ad[i] != 0) return false;
+        }
+        return true;
+      }
 
       // If the length of the current field would exceed the total data length,
       // then the data is badly formatted.
