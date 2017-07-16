@@ -60,6 +60,19 @@ L2capSdu::L2capSdu(std::vector<uint8_t> create_from) {
   sdu_data_.insert(sdu_data_.end(), create_from.begin(), create_from.end());
 }
 
+L2capSdu L2capSdu::L2capSduBuilder(std::vector<uint8_t> create_from) {
+  L2capSdu packet(create_from);
+
+  packet.sdu_data_.resize(packet.sdu_data_.size() + 2, 0x00);
+
+  uint16_t fcs = packet.calculate_fcs();
+
+  packet.sdu_data_[packet.sdu_data_.size() - 2] = fcs & 0xFF;
+  packet.sdu_data_[packet.sdu_data_.size() - 1] = (fcs & 0xFF00) >> 8;
+
+  return packet;
+}
+
 uint16_t L2capSdu::convert_from_little_endian(
     const unsigned int starting_index) const {
   uint16_t convert = sdu_data_[starting_index + 1];

@@ -29,20 +29,21 @@ namespace test_vendor_lib {
 
 const int kSduHeaderLength = 4;
 
-class L2cap {
+class L2capPacket {
  public:
   // Returns an assembled L2cap object if successful, nullptr if failure.
-  static std::unique_ptr<L2cap> assemble(
+  static std::unique_ptr<L2capPacket> assemble(
       const std::vector<L2capSdu>& sdu_packet);
 
   // Construct a vector of just the L2CAP payload. This essentially
   // will remove the L2CAP header from the private member variable.
+  // TODO: Remove this in favor of custom iterators.
   std::vector<uint8_t> get_l2cap_payload() const;
 
   uint16_t get_l2cap_cid() const;
 
  private:
-  L2cap() = default;
+  L2capPacket() = default;
 
   // Entire L2CAP packet: length, CID, and payload in that order.
   std::vector<uint8_t> l2cap_packet_;
@@ -64,7 +65,7 @@ class L2cap {
   // Reasembly is 10b, false otherwise.
   static bool check_if_ending_sdu(const uint8_t bytes);
 
-  DISALLOW_COPY_AND_ASSIGN(L2cap);
-};  // L2cap
+  DISALLOW_COPY_AND_ASSIGN(L2capPacket);
+};  // L2capPacket
 
 }  // namespace test_vendor_lib

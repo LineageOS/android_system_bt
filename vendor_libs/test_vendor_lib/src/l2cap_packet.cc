@@ -17,7 +17,7 @@
  ******************************************************************************/
 #define LOG_TAG "l2cap_assemble"
 
-#include "l2cap.h"
+#include "l2cap_packet.h"
 
 #include <algorithm>
 
@@ -31,11 +31,12 @@ const uint16_t kSduTxSeqBits = 0x007e;
 const int kSduStandardHeaderLength = 6;
 const int kSduFirstHeaderLength = 8;
 
-std::unique_ptr<L2cap> L2cap::assemble(
+std::unique_ptr<L2capPacket> L2capPacket::assemble(
     const std::vector<L2capSdu>& sdu_packets) {
-  std::unique_ptr<L2cap> built_l2cap_packet(new L2cap());
+  std::unique_ptr<L2capPacket> built_l2cap_packet(new L2capPacket());
   uint16_t l2cap_payload_length = 0;
   uint16_t first_packet_channel_id = 0;
+  uint16_t total_expected_l2cap_length;
   uint8_t txseq_start;
 
   if (sdu_packets.size() == 0) {
@@ -85,34 +86,49 @@ std::unique_ptr<L2cap> L2cap::assemble(
     // Meanwhile all segments in between the start and end must have the bits
     // set to 11b.
     uint16_t starting_index;
-    uint16_t total_expected_l2cap_length;
     uint8_t txseq = controls & kSduTxSeqBits;
     if (sdu_packets.size() == 1 && !check_if_only_sdu(continuation_bits)) {
       return nullptr;
-    } else if (sdu_packets.size() > 1 && i == 0 &&
-               !check_if_starting_sdu(continuation_bits)) {
+    }
+    if (sdu_packets.size() > 1 && i == 0 &&
+        !check_if_starting_sdu(continuation_bits)) {
       return nullptr;
-    } else if (i != 0 && check_if_starting_sdu(continuation_bits)) {
+    }
+    if (i != 0 && check_if_starting_sdu(continuation_bits)) {
       return nullptr;
-    } else if (txseq != (txseq_start + (static_cast<uint8_t>(i) << 1))) {
+    }
+    if (txseq != (txseq_start + (static_cast<uint8_t>(i) << 1))) {
       return nullptr;
-    } else if (sdu_packets.size() > 1 && i == sdu_packets.size() - 1 &&
-               !check_if_ending_sdu(continuation_bits)) {
+    }
+    if (sdu_packets.size() > 1 && i == sdu_packets.size() - 1 &&
+        !check_if_ending_sdu(continuation_bits)) {
       return nullptr;
-    } else if (check_if_starting_sdu(continuation_bits)) {
+    }
+
+    // Subtract the control and fcs from every SDU payload length.
+    l2cap_payload_length += (payload_length - 4);
+
+    if (check_if_starting_sdu(continuation_bits)) {
       starting_index = kSduFirstHeaderLength;
       total_expected_l2cap_length = sdu_packets[i].get_total_l2cap_length();
+
+      // Subtract the additional two bytes from the first packet of a segmented
+      // SDU.
+      l2cap_payload_length -= 2;
     } else {
       starting_index = kSduStandardHeaderLength;
     }
-
-    l2cap_payload_length += (payload_length - 2);
 
     auto payload_begin = sdu_packets[i].get_payload_begin(starting_index);
     auto payload_end = sdu_packets[i].get_payload_end();
 
     built_l2cap_packet->l2cap_packet_.insert(
         built_l2cap_packet->l2cap_packet_.end(), payload_begin, payload_end);
+  }
+
+  if (l2cap_payload_length != total_expected_l2cap_length &&
+      sdu_packets.size() > 1) {
+    return nullptr;
   }
 
   built_l2cap_packet->l2cap_packet_[0] = l2cap_payload_length & 0xff;
@@ -124,7 +140,7 @@ std::unique_ptr<L2cap> L2cap::assemble(
   return built_l2cap_packet;
 }  // Assemble
 
-std::vector<uint8_t> L2cap::get_l2cap_payload() const {
+std::vector<uint8_t> L2capPacket::get_l2cap_payload() const {
   std::vector<uint8_t> payload_sub_vector;
   payload_sub_vector.clear();
 
@@ -135,19 +151,19 @@ std::vector<uint8_t> L2cap::get_l2cap_payload() const {
   return payload_sub_vector;
 }
 
-uint16_t L2cap::get_l2cap_cid() const {
+uint16_t L2capPacket::get_l2cap_cid() const {
   return ((l2cap_packet_[3] << 8) | l2cap_packet_[2]);
 }
 
-bool L2cap::check_if_only_sdu(const uint8_t bits) {
+bool L2capPacket::check_if_only_sdu(const uint8_t bits) {
   return ((bits & 0xc) == 0x0);
 }
 
-bool L2cap::check_if_starting_sdu(const uint8_t bits) {
+bool L2capPacket::check_if_starting_sdu(const uint8_t bits) {
   return ((bits & 0xc) == 0x4);
 }
 
-bool L2cap::check_if_ending_sdu(const uint8_t bits) {
+bool L2capPacket::check_if_ending_sdu(const uint8_t bits) {
   return ((bits & 0xc) == 0x8);
 }
 

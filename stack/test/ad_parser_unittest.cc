@@ -23,9 +23,9 @@ TEST(AdvertiseDataParserTest, IsValidEmpty) {
   const std::vector<uint8_t> data0;
   EXPECT_TRUE(AdvertiseDataParser::IsValid(data0));
 
-  // Single empty field not allowed.
+  // Single empty field allowed (treated as zero padding).
   const std::vector<uint8_t> data1{0x00};
-  EXPECT_FALSE(AdvertiseDataParser::IsValid(data1));
+  EXPECT_TRUE(AdvertiseDataParser::IsValid(data1));
 }
 
 TEST(AdvertiseDataParserTest, IsValidBad) {
@@ -44,6 +44,16 @@ TEST(AdvertiseDataParserTest, IsValidBad) {
   // Two fields, second field empty.
   const std::vector<uint8_t> data3{0x02, 0x02, 0x00, 0x01};
   EXPECT_FALSE(AdvertiseDataParser::IsValid(data3));
+
+  // Non-zero padding at end of packet.
+  const std::vector<uint8_t> data4{0x03, 0x02, 0x01, 0x02, 0x02, 0x03, 0x01,
+                                   0x00, 0x00, 0xBA, 0xBA, 0x00, 0x00};
+  EXPECT_FALSE(AdvertiseDataParser::IsValid(data1));
+
+  // Non-zero padding at end of packet.
+  const std::vector<uint8_t> data5{0x03, 0x02, 0x01, 0x02, 0x02,
+                                   0x03, 0x01, 0x00, 0xBA};
+  EXPECT_FALSE(AdvertiseDataParser::IsValid(data1));
 }
 
 TEST(AdvertiseDataParserTest, IsValidGood) {
@@ -54,6 +64,18 @@ TEST(AdvertiseDataParserTest, IsValidGood) {
   // Two fields.
   const std::vector<uint8_t> data1{0x03, 0x02, 0x01, 0x02, 0x02, 0x03, 0x01};
   EXPECT_TRUE(AdvertiseDataParser::IsValid(data1));
+
+  // Zero padding at end of packet.
+  const std::vector<uint8_t> data2{0x03, 0x02, 0x01, 0x02,
+                                   0x02, 0x03, 0x01, 0x00};
+  EXPECT_TRUE(AdvertiseDataParser::IsValid(data2));
+
+  // zero padding at end of packet, sample data from real device
+  const std::vector<uint8_t> data3{
+      0x10, 0x096, 0x85, 0x44, 0x32, 0x04, 0x74, 0x32, 0x03, 0x13, 0x93,
+      0xa,  0x32,  0x39, 0x3a, 0x65, 0x32, 0x05, 0x12, 0x50, 0x00, 0x50,
+      0x00, 0x02,  0x0a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+  EXPECT_TRUE(AdvertiseDataParser::IsValid(data3));
 }
 
 TEST(AdvertiseDataParserTest, GetFieldByType) {
