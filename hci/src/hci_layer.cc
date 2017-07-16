@@ -472,7 +472,7 @@ static void hci_timeout_abort(void* unused_data) {
 
   // We shouldn't try to recover the stack from this command timeout.
   // If it's caused by a software bug, fix it. If it's a hardware bug, fix it.
-  abort();
+  exit(0);
 }
 
 // Print debugging information and quit. Don't dereference original_wait_entry.
