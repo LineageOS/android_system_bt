@@ -83,15 +83,18 @@ static uint8_t* sdpu_build_uuid_seq(uint8_t* p_out, uint16_t num_uuids,
 
   /* Now, loop through and put in all the UUID(s) */
   for (xx = 0; xx < num_uuids; xx++, p_uuid_list++) {
-    if (p_uuid_list->len == 2) {
+    if (p_uuid_list->len == LEN_UUID_16) {
       UINT8_TO_BE_STREAM(p_out, (UUID_DESC_TYPE << 3) | SIZE_TWO_BYTES);
       UINT16_TO_BE_STREAM(p_out, p_uuid_list->uu.uuid16);
-    } else if (p_uuid_list->len == 4) {
+    } else if (p_uuid_list->len == LEN_UUID_32) {
       UINT8_TO_BE_STREAM(p_out, (UUID_DESC_TYPE << 3) | SIZE_FOUR_BYTES);
       UINT32_TO_BE_STREAM(p_out, p_uuid_list->uu.uuid32);
-    } else {
+    } else if (p_uuid_list->len == LEN_UUID_128) {
       UINT8_TO_BE_STREAM(p_out, (UUID_DESC_TYPE << 3) | SIZE_SIXTEEN_BYTES);
       ARRAY_TO_BE_STREAM(p_out, p_uuid_list->uu.uuid128, p_uuid_list->len);
+    } else {
+      SDP_TRACE_ERROR("SDP: Passed UUID has invalid length %x",
+                      p_uuid_list->len);
     }
   }
 
