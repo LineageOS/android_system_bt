@@ -846,7 +846,7 @@ UINT8 *bnep_process_control_packet (tBNEP_CONN *p_bcb, UINT8 *p, UINT16 *rem_len
     default :
         BNEP_TRACE_ERROR ("BNEP - bad ctl pkt type: %d", control_type);
         bnep_send_command_not_understood (p_bcb, control_type);
-        if (is_ext)
+        if (is_ext && (ext_len > 0))
         {
             p += (ext_len - 1);
             *rem_len -= (ext_len - 1);
