@@ -150,6 +150,7 @@ void bnepu_release_bcb (tBNEP_CONN *p_bcb)
 
     /* Drop any response pointer we may be holding */
     p_bcb->con_state        = BNEP_STATE_IDLE;
+    GKI_freebuf(p_bcb->p_pending_data);
     p_bcb->p_pending_data   = NULL;
 
     /* Free transmit queue */
