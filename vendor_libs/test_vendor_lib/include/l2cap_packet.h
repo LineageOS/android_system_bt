@@ -53,18 +53,6 @@ class L2capPacket {
     return std::next(l2cap_packet_.begin(), kSduHeaderLength);
   }
 
-  // Returns true if the SDU control sequence for Segmentation and
-  // Reassembly is 00b, false otherwise.
-  static bool check_if_only_sdu(const uint8_t bytes);
-
-  // Returns true if the SDU control sequence for Segmentation and
-  // Reassembly is 01b, false otherwise.
-  static bool check_if_starting_sdu(const uint8_t bytes);
-
-  // Returns true if the SDU control sequence for Segmentation and
-  // Reasembly is 10b, false otherwise.
-  static bool check_if_ending_sdu(const uint8_t bytes);
-
   DISALLOW_COPY_AND_ASSIGN(L2capPacket);
 };  // L2capPacket
 
