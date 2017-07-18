@@ -100,6 +100,18 @@ class L2capSdu {
 
   uint16_t get_channel_id() const;
 
+  // Returns true if the SDU control sequence for Segmentation and
+  // Reassembly is 00b, false otherwise.
+  static bool is_complete_l2cap(const L2capSdu& sdu);
+
+  // Returns true if the SDU control sequence for Segmentation and
+  // Reassembly is 01b, false otherwise.
+  static bool is_starting_sdu(const L2capSdu& sdu);
+
+  // Returns true if the SDU control sequence for Segmentation and
+  // Reasembly is 10b, false otherwise.
+  static bool is_ending_sdu(const L2capSdu& sdu);
+
  private:
   // This is the SDU packet in bytes.
   std::vector<uint8_t> sdu_data_;

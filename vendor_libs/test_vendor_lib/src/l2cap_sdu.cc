@@ -21,6 +21,8 @@
 
 namespace test_vendor_lib {
 
+const uint16_t kSduSarBits = 0xe000;
+
 // Define the LFSR table of precalculated values defined by the
 // Bluetooth specification version 4.2 volume 3 part A section 3.3.5.
 const uint16_t L2capSdu::lfsr_table_[256] = {
@@ -115,5 +117,23 @@ uint16_t L2capSdu::get_channel_id() const {
 }
 
 size_t L2capSdu::get_vector_size() const { return sdu_data_.size(); }
+
+bool L2capSdu::is_complete_l2cap(const L2capSdu& sdu) {
+  uint16_t sar_bits = (sdu.get_controls() & kSduSarBits);
+
+  return (sar_bits == 0x0000);
+}
+
+bool L2capSdu::is_starting_sdu(const L2capSdu& sdu) {
+  uint16_t sar_bits = (sdu.get_controls() & kSduSarBits);
+
+  return (sar_bits == 0x4000);
+}
+
+bool L2capSdu::is_ending_sdu(const L2capSdu& sdu) {
+  uint16_t sar_bits = (sdu.get_controls() & kSduSarBits);
+
+  return (sar_bits == 0x8000);
+}
 
 }  // namespace test_vendor_lib

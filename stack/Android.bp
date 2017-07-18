@@ -19,6 +19,9 @@ cc_library_static {
         "smp",
         "srvc",
     ],
+    header_libs: [
+        "libhardware_headers",
+    ],
     include_dirs: [
         "external/aac/libAACenc/include",
         "external/aac/libSYS/include",

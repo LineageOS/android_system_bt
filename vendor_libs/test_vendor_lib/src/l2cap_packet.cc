@@ -15,7 +15,7 @@
  *  limitations under the License.
  *
  ******************************************************************************/
-#define LOG_TAG "l2cap_assemble"
+#define LOG_TAG "l2cap_packet"
 
 #include "l2cap_packet.h"
 
@@ -26,7 +26,6 @@
 namespace test_vendor_lib {
 
 const int kL2capHeaderLength = 4;
-const uint16_t kSduSarBits = 0xe000;
 const uint16_t kSduTxSeqBits = 0x007e;
 const int kSduStandardHeaderLength = 6;
 const int kSduFirstHeaderLength = 8;
@@ -40,6 +39,11 @@ std::unique_ptr<L2capPacket> L2capPacket::assemble(
   uint8_t txseq_start;
 
   if (sdu_packets.size() == 0) {
+    LOG_DEBUG(LOG_TAG, "%s: No SDU received.", __func__);
+    return nullptr;
+  }
+  if (sdu_packets.size() == 1 && !L2capSdu::is_complete_l2cap(sdu_packets[0])) {
+    LOG_DEBUG(LOG_TAG, "%s: Unsegmented SDU has incorrect SAR bits.", __func__);
     return nullptr;
   }
 
@@ -55,24 +59,24 @@ std::unique_ptr<L2capPacket> L2capPacket::assemble(
     // L2capSdu objects and these checks will be moved there instead.
     //
     // Check the integrity of the packet length, if it is zero, it is invalid.
-    // The maximum size of a single, partial L2CAP payload is 1016 bytes.
+    // The maximum size of a single, segmented L2CAP payload is 1016 bytes.
     if ((payload_length <= 0) ||
         (payload_length != sdu_packets[i].get_vector_size() - 4)) {
+      LOG_DEBUG(LOG_TAG, "%s: SDU payload length incorrect.", __func__);
       return nullptr;
     }
 
     uint16_t fcs_check = sdu_packets[i].get_fcs();
 
     if (sdu_packets[i].calculate_fcs() != fcs_check) {
+      LOG_DEBUG(LOG_TAG, "%s: SDU fcs is incorrect.", __func__);
       return nullptr;
     }
 
     uint16_t controls = sdu_packets[i].get_controls();
 
-    uint16_t continuation_bits = controls & kSduSarBits;
-    continuation_bits = continuation_bits >> 12;
-
     if (sdu_packets[i].get_channel_id() != first_packet_channel_id) {
+      LOG_DEBUG(LOG_TAG, "%s: SDU CID does not match expected.", __func__);
       return nullptr;
     }
 
@@ -87,28 +91,34 @@ std::unique_ptr<L2capPacket> L2capPacket::assemble(
     // set to 11b.
     uint16_t starting_index;
     uint8_t txseq = controls & kSduTxSeqBits;
-    if (sdu_packets.size() == 1 && !check_if_only_sdu(continuation_bits)) {
-      return nullptr;
-    }
     if (sdu_packets.size() > 1 && i == 0 &&
-        !check_if_starting_sdu(continuation_bits)) {
+        !L2capSdu::is_starting_sdu(sdu_packets[i])) {
+      LOG_DEBUG(LOG_TAG, "%s: First segmented SDU has incorrect SAR bits.",
+                __func__);
       return nullptr;
     }
-    if (i != 0 && check_if_starting_sdu(continuation_bits)) {
+    if (i != 0 && L2capSdu::is_starting_sdu(sdu_packets[i])) {
+      LOG_DEBUG(LOG_TAG,
+                "%s: SAR bits set to first segmented SDU on "
+                "non-starting SDU.",
+                __func__);
       return nullptr;
     }
     if (txseq != (txseq_start + (static_cast<uint8_t>(i) << 1))) {
+      LOG_DEBUG(LOG_TAG, "%s: TxSeq incorrect.", __func__);
       return nullptr;
     }
     if (sdu_packets.size() > 1 && i == sdu_packets.size() - 1 &&
-        !check_if_ending_sdu(continuation_bits)) {
+        !L2capSdu::is_ending_sdu(sdu_packets[i])) {
+      LOG_DEBUG(LOG_TAG, "%s: Final segmented SDU has incorrect SAR bits.",
+                __func__);
       return nullptr;
     }
 
     // Subtract the control and fcs from every SDU payload length.
     l2cap_payload_length += (payload_length - 4);
 
-    if (check_if_starting_sdu(continuation_bits)) {
+    if (L2capSdu::is_starting_sdu(sdu_packets[i])) {
       starting_index = kSduFirstHeaderLength;
       total_expected_l2cap_length = sdu_packets[i].get_total_l2cap_length();
 
@@ -128,6 +138,8 @@ std::unique_ptr<L2capPacket> L2capPacket::assemble(
 
   if (l2cap_payload_length != total_expected_l2cap_length &&
       sdu_packets.size() > 1) {
+    LOG_DEBUG(LOG_TAG, "%s: Total expected L2CAP payload length incorrect.",
+              __func__);
     return nullptr;
   }
 
@@ -153,18 +165,6 @@ std::vector<uint8_t> L2capPacket::get_l2cap_payload() const {
 
 uint16_t L2capPacket::get_l2cap_cid() const {
   return ((l2cap_packet_[3] << 8) | l2cap_packet_[2]);
-}
-
-bool L2capPacket::check_if_only_sdu(const uint8_t bits) {
-  return ((bits & 0xc) == 0x0);
-}
-
-bool L2capPacket::check_if_starting_sdu(const uint8_t bits) {
-  return ((bits & 0xc) == 0x4);
-}
-
-bool L2capPacket::check_if_ending_sdu(const uint8_t bits) {
-  return ((bits & 0xc) == 0x8);
 }
 
 }  // namespace test_vendor_lib
