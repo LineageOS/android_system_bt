@@ -58,12 +58,11 @@ const uint16_t L2capSdu::lfsr_table_[256] = {
 };  // lfsr_table
 
 L2capSdu::L2capSdu(std::vector<uint8_t> create_from) {
-  sdu_data_.clear();
-  sdu_data_.insert(sdu_data_.end(), create_from.begin(), create_from.end());
+  sdu_data_ = std::move(create_from);
 }
 
 L2capSdu L2capSdu::L2capSduBuilder(std::vector<uint8_t> create_from) {
-  L2capSdu packet(create_from);
+  L2capSdu packet(std::move(create_from));
 
   packet.sdu_data_.resize(packet.sdu_data_.size() + 2, 0x00);
 
@@ -73,6 +72,15 @@ L2capSdu L2capSdu::L2capSduBuilder(std::vector<uint8_t> create_from) {
   packet.sdu_data_[packet.sdu_data_.size() - 1] = (fcs & 0xFF00) >> 8;
 
   return packet;
+}
+
+std::vector<uint8_t>::const_iterator L2capSdu::get_payload_begin(
+    const unsigned int offset) const {
+  return std::next(sdu_data_.begin(), offset);
+}
+
+std::vector<uint8_t>::const_iterator L2capSdu::get_payload_end() const {
+  return std::prev(sdu_data_.end(), 2);
 }
 
 uint16_t L2capSdu::convert_from_little_endian(
