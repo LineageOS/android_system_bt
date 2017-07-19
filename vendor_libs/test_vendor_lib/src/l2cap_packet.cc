@@ -26,9 +26,12 @@
 namespace test_vendor_lib {
 
 const int kL2capHeaderLength = 4;
-const uint16_t kSduTxSeqBits = 0x007e;
+const uint16_t kSduTxSeqBits = 0x007E;
 const int kSduStandardHeaderLength = 6;
 const int kSduFirstHeaderLength = 8;
+const uint8_t kSduFirstReqseq = 0x40;
+const uint8_t kSduContinuationReqseq = 0xC0;
+const uint8_t kSduEndReqseq = 0x80;
 
 std::unique_ptr<L2capPacket> L2capPacket::assemble(
     const std::vector<L2capSdu>& sdu_packets) {
@@ -143,11 +146,11 @@ std::unique_ptr<L2capPacket> L2capPacket::assemble(
     return nullptr;
   }
 
-  built_l2cap_packet->l2cap_packet_[0] = l2cap_payload_length & 0xff;
-  built_l2cap_packet->l2cap_packet_[1] = (l2cap_payload_length & 0xff00) >> 8;
-  built_l2cap_packet->l2cap_packet_[2] = first_packet_channel_id & 0xff;
+  built_l2cap_packet->l2cap_packet_[0] = l2cap_payload_length & 0xFF;
+  built_l2cap_packet->l2cap_packet_[1] = (l2cap_payload_length & 0xFF00) >> 8;
+  built_l2cap_packet->l2cap_packet_[2] = first_packet_channel_id & 0xFF;
   built_l2cap_packet->l2cap_packet_[3] =
-      (first_packet_channel_id & 0xff00) >> 8;
+      (first_packet_channel_id & 0xFF00) >> 8;
 
   return built_l2cap_packet;
 }  // Assemble
@@ -165,6 +168,153 @@ std::vector<uint8_t> L2capPacket::get_l2cap_payload() const {
 
 uint16_t L2capPacket::get_l2cap_cid() const {
   return ((l2cap_packet_[3] << 8) | l2cap_packet_[2]);
+}
+
+std::vector<uint8_t>::const_iterator L2capPacket::get_l2cap_payload_begin()
+    const {
+  return std::next(l2cap_packet_.begin(), kSduHeaderLength);
+}
+
+std::vector<uint8_t>::const_iterator L2capPacket::get_l2cap_payload_end()
+    const {
+  return l2cap_packet_.end();
+}
+
+std::vector<L2capSdu> L2capPacket::fragment(uint16_t maximum_sdu_size,
+                                            uint8_t txseq,
+                                            uint8_t reqseq) const {
+  std::vector<L2capSdu> sdu;
+  if (!check_l2cap_packet()) return sdu;
+
+  std::vector<uint8_t> current_sdu;
+
+  auto current_iter = get_l2cap_payload_begin();
+  auto end_iter = get_l2cap_payload_end();
+
+  size_t number_of_packets = ceil((l2cap_packet_.size() - kL2capHeaderLength) /
+                                  static_cast<float>(maximum_sdu_size));
+
+  if (number_of_packets == 0) {
+    current_sdu.resize(kSduStandardHeaderLength);
+
+    set_sdu_header_length(current_sdu, kL2capHeaderLength);
+
+    set_sdu_cid(current_sdu, get_l2cap_cid());
+
+    reqseq = (reqseq & 0xF0) >> 4;
+    set_sdu_control_bytes(current_sdu, txseq, reqseq);
+
+    sdu.push_back(L2capSdu::L2capSduBuilder(current_sdu));
+
+    return sdu;
+  }
+
+  uint16_t header_length = 0x0000;
+
+  if (number_of_packets == 1) {
+    current_sdu.clear();
+    current_sdu.resize(kSduStandardHeaderLength);
+
+    header_length = ((l2cap_packet_[1] & 0xFF) << 8) | l2cap_packet_[0];
+    header_length += kL2capHeaderLength;
+    set_sdu_header_length(current_sdu, header_length);
+
+    set_sdu_cid(current_sdu, get_l2cap_cid());
+
+    set_sdu_control_bytes(current_sdu, txseq, 0x00);
+
+    current_sdu.insert(current_sdu.end(), current_iter, end_iter);
+
+    sdu.push_back(L2capSdu::L2capSduBuilder(current_sdu));
+
+    return sdu;
+  }
+
+  auto next_iter =
+      std::next(current_iter, maximum_sdu_size - (kSduFirstHeaderLength + 2));
+
+  sdu.reserve(number_of_packets);
+  sdu.clear();
+
+  for (size_t i = 0; i <= number_of_packets; i++) {
+    if (i == 0) {
+      current_sdu.resize(kSduFirstHeaderLength);
+
+      header_length = maximum_sdu_size - kL2capHeaderLength;
+
+      reqseq = reqseq | kSduFirstReqseq;
+
+      set_total_sdu_length(current_sdu, l2cap_packet_.size() - 4);
+    } else {
+      current_sdu.resize(kSduStandardHeaderLength);
+
+      header_length = (next_iter - current_iter) + kL2capHeaderLength;
+
+      reqseq = reqseq & 0x0F;
+
+      if (i < number_of_packets) {
+        reqseq |= kSduContinuationReqseq;
+      } else {
+        reqseq |= kSduEndReqseq;
+      }
+    }
+    set_sdu_header_length(current_sdu, header_length);
+
+    set_sdu_cid(current_sdu, get_l2cap_cid());
+
+    set_sdu_control_bytes(current_sdu, txseq, reqseq);
+    txseq += 2;
+
+    // Txseq has a maximum of 0x3F. If it exceeds that, it restarts at 0x00.
+    if (txseq > 0x3F) txseq = 0x00;
+
+    current_sdu.insert(current_sdu.end(), current_iter, next_iter);
+
+    current_iter = next_iter;
+
+    next_iter =
+        std::next(current_iter, maximum_sdu_size - kSduFirstHeaderLength);
+
+    if (next_iter > end_iter) {
+      next_iter = end_iter;
+    }
+
+    sdu.push_back(L2capSdu::L2capSduBuilder(std::move(current_sdu)));
+  }
+
+  return sdu;
+}  // fragment
+
+void L2capPacket::set_sdu_header_length(std::vector<uint8_t>& sdu,
+                                        uint16_t length) {
+  sdu[0] = length & 0xFF;
+  sdu[1] = (length & 0xFF00) >> 8;
+}
+
+void L2capPacket::set_total_sdu_length(std::vector<uint8_t>& sdu,
+                                       uint16_t total_sdu_length) {
+  sdu[6] = total_sdu_length & 0xFF;
+  sdu[7] = (total_sdu_length & 0xFF00) >> 8;
+}
+
+void L2capPacket::set_sdu_cid(std::vector<uint8_t>& sdu, uint16_t cid) {
+  sdu[2] = cid & 0xFF;
+  sdu[3] = (cid & 0xFF00) >> 8;
+}
+
+void L2capPacket::set_sdu_control_bytes(std::vector<uint8_t>& sdu,
+                                        uint8_t txseq, uint8_t reqseq) {
+  sdu[4] = txseq;
+  sdu[5] = reqseq;
+}
+
+bool L2capPacket::check_l2cap_packet() const {
+  uint16_t payload_length = ((l2cap_packet_[1] & 0xFF) << 8) | l2cap_packet_[0];
+
+  if (l2cap_packet_.size() < 4) return false;
+  if (payload_length != (l2cap_packet_.size() - 4)) return false;
+
+  return true;
 }
 
 }  // namespace test_vendor_lib
