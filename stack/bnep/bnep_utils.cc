@@ -144,7 +144,7 @@ void bnepu_release_bcb(tBNEP_CONN* p_bcb) {
 
   /* Drop any response pointer we may be holding */
   p_bcb->con_state = BNEP_STATE_IDLE;
-  p_bcb->p_pending_data = NULL;
+  osi_free_and_reset((void**)&p_bcb->p_pending_data);
 
   /* Free transmit queue */
   while (!fixed_queue_is_empty(p_bcb->xmit_q)) {
@@ -832,7 +832,7 @@ uint8_t* bnep_process_control_packet(tBNEP_CONN* p_bcb, uint8_t* p,
       BNEP_TRACE_ERROR("%s: BNEP - bad ctl pkt type: %d", __func__,
                        control_type);
       bnep_send_command_not_understood(p_bcb, control_type);
-      if (is_ext) {
+      if (is_ext && (ext_len > 0)) {
         if (*rem_len < (ext_len - 1)) {
           goto bad_packet_length;
         }

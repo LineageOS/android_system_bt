@@ -38,6 +38,7 @@
 #include "bta_dm_co.h"
 #include "bta_dm_int.h"
 #include "bta_sys.h"
+#include "btcore/include/bdaddr.h"
 #include "btm_api.h"
 #include "btm_int.h"
 #include "btu.h"
@@ -2612,9 +2613,14 @@ static uint8_t bta_dm_authentication_complete_cback(
       bta_dm_cb.p_sec_cback(BTA_DM_AUTH_CMPL_EVT, &sec_event);
 
     if (result != HCI_ERR_LMP_RESPONSE_TIMEOUT &&
-        result != HCI_ERR_PAGE_TIMEOUT &&
+        result != HCI_ERR_PAGE_TIMEOUT && result != HCI_ERR_CONNECTION_TOUT &&
         result != HCI_ERR_CONN_FAILED_ESTABLISHMENT &&
         result != HCI_ERR_KEY_MISSING) {
+      bdstr_t bd_addr_str;
+      APPL_TRACE_WARNING("%s deleting %s - result: 0x%02x", __func__,
+                         bdaddr_to_string((bt_bdaddr_t*)bd_addr, bd_addr_str,
+                                          sizeof(bd_addr_str)),
+                         result);
       bta_dm_remove_sec_dev_entry(bd_addr);
     }
   }
