@@ -17,6 +17,7 @@
  ******************************************************************************/
 #pragma once
 
+#include <cmath>
 #include <cstdint>
 #include <iterator>
 #include <memory>
@@ -42,6 +43,11 @@ class L2capPacket {
 
   uint16_t get_l2cap_cid() const;
 
+  // Returns a fragmented vector of L2capSdu objects if successful
+  // Returns an empty vector of L2capSdu objects if unsuccessful
+  std::vector<L2capSdu> fragment(uint16_t maximum_sdu_size, uint8_t txseq,
+                                 uint8_t reqseq) const;
+
  private:
   L2capPacket() = default;
 
@@ -49,11 +55,26 @@ class L2capPacket {
   std::vector<uint8_t> l2cap_packet_;
 
   // Returns an iterator to the beginning of the L2CAP payload on success.
-  auto get_l2cap_payload_begin() const {
-    return std::next(l2cap_packet_.begin(), kSduHeaderLength);
-  }
+  std::vector<uint8_t>::const_iterator get_l2cap_payload_begin() const;
 
   DISALLOW_COPY_AND_ASSIGN(L2capPacket);
+
+  // Returns an iterator to the end of the L2CAP payload.
+  std::vector<uint8_t>::const_iterator get_l2cap_payload_end() const;
+
+  // Helper functions for fragmenting.
+  static void set_sdu_header_length(std::vector<uint8_t>& sdu, uint16_t length);
+
+  static void set_total_sdu_length(std::vector<uint8_t>& sdu,
+                                   uint16_t total_sdu_length);
+
+  static void set_sdu_cid(std::vector<uint8_t>& sdu, uint16_t cid);
+
+  static void set_sdu_control_bytes(std::vector<uint8_t>& sdu, uint8_t txseq,
+                                    uint8_t reqseq);
+
+  bool check_l2cap_packet() const;
+
 };  // L2capPacket
 
 }  // namespace test_vendor_lib
