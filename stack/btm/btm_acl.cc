@@ -1893,8 +1893,7 @@ void btm_qos_setup_complete(uint8_t status, uint16_t handle,
  *
  ******************************************************************************/
 tBTM_STATUS BTM_ReadRSSI(const RawAddress& remote_bda, tBTM_CMPL_CB* p_cb) {
-  tACL_CONN* p;
-  tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
+  tACL_CONN* p = NULL;
   tBT_DEVICE_TYPE dev_type;
   tBLE_ADDR_TYPE addr_type;
 
@@ -1902,10 +1901,16 @@ tBTM_STATUS BTM_ReadRSSI(const RawAddress& remote_bda, tBTM_CMPL_CB* p_cb) {
   if (btm_cb.devcb.p_rssi_cmpl_cb) return (BTM_BUSY);
 
   BTM_ReadDevInfo(remote_bda, &dev_type, &addr_type);
-  if (dev_type == BT_DEVICE_TYPE_BLE) transport = BT_TRANSPORT_LE;
 
-  p = btm_bda_to_acl(remote_bda, transport);
-  if (p != (tACL_CONN*)NULL) {
+  if (dev_type & BT_DEVICE_TYPE_BLE) {
+    p = btm_bda_to_acl(remote_bda, BT_TRANSPORT_LE);
+  }
+
+  if (p == NULL && dev_type & BT_DEVICE_TYPE_BREDR) {
+    p = btm_bda_to_acl(remote_bda, BT_TRANSPORT_BR_EDR);
+  }
+
+  if (p) {
     btm_cb.devcb.p_rssi_cmpl_cb = p_cb;
     alarm_set_on_queue(btm_cb.devcb.read_rssi_timer, BTM_DEV_REPLY_TIMEOUT_MS,
                        btm_read_rssi_timeout, NULL, btu_general_alarm_queue);
