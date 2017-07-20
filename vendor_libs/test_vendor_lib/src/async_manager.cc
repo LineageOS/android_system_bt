@@ -18,6 +18,8 @@
 
 #include "async_manager.h"
 
+#include "osi/include/log.h"
+
 #include <algorithm>
 #include <atomic>
 #include <condition_variable>
