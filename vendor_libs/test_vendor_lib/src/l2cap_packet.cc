@@ -34,7 +34,7 @@ const uint8_t kSduContinuationReqseq = 0xC0;
 const uint8_t kSduEndReqseq = 0x80;
 
 std::unique_ptr<L2capPacket> L2capPacket::assemble(
-    const std::vector<L2capSdu>& sdu_packets) {
+    const std::vector<std::unique_ptr<L2capSdu> >& sdu_packets) {
   std::unique_ptr<L2capPacket> built_l2cap_packet(new L2capPacket());
   uint16_t l2cap_payload_length = 0;
   uint16_t first_packet_channel_id = 0;
@@ -45,17 +45,18 @@ std::unique_ptr<L2capPacket> L2capPacket::assemble(
     LOG_DEBUG(LOG_TAG, "%s: No SDU received.", __func__);
     return nullptr;
   }
-  if (sdu_packets.size() == 1 && !L2capSdu::is_complete_l2cap(sdu_packets[0])) {
+  if (sdu_packets.size() == 1 &&
+      !L2capSdu::is_complete_l2cap(*sdu_packets[0])) {
     LOG_DEBUG(LOG_TAG, "%s: Unsegmented SDU has incorrect SAR bits.", __func__);
     return nullptr;
   }
 
-  first_packet_channel_id = sdu_packets[0].get_channel_id();
+  first_packet_channel_id = sdu_packets[0]->get_channel_id();
 
   built_l2cap_packet->l2cap_packet_.resize(kL2capHeaderLength);
 
   for (size_t i = 0; i < sdu_packets.size(); i++) {
-    uint16_t payload_length = sdu_packets[i].get_payload_length();
+    uint16_t payload_length = sdu_packets[i]->get_payload_length();
 
     // TODO(jruthe): Remove these checks when ACL packets have been
     // implemented. Once those are done, that will be the only way to create
@@ -64,21 +65,21 @@ std::unique_ptr<L2capPacket> L2capPacket::assemble(
     // Check the integrity of the packet length, if it is zero, it is invalid.
     // The maximum size of a single, segmented L2CAP payload is 1016 bytes.
     if ((payload_length <= 0) ||
-        (payload_length != sdu_packets[i].get_vector_size() - 4)) {
+        (payload_length != sdu_packets[i]->get_vector_size() - 4)) {
       LOG_DEBUG(LOG_TAG, "%s: SDU payload length incorrect.", __func__);
       return nullptr;
     }
 
-    uint16_t fcs_check = sdu_packets[i].get_fcs();
+    uint16_t fcs_check = sdu_packets[i]->get_fcs();
 
-    if (sdu_packets[i].calculate_fcs() != fcs_check) {
+    if (sdu_packets[i]->calculate_fcs() != fcs_check) {
       LOG_DEBUG(LOG_TAG, "%s: SDU fcs is incorrect.", __func__);
       return nullptr;
     }
 
-    uint16_t controls = sdu_packets[i].get_controls();
+    uint16_t controls = sdu_packets[i]->get_controls();
 
-    if (sdu_packets[i].get_channel_id() != first_packet_channel_id) {
+    if (sdu_packets[i]->get_channel_id() != first_packet_channel_id) {
       LOG_DEBUG(LOG_TAG, "%s: SDU CID does not match expected.", __func__);
       return nullptr;
     }
@@ -95,12 +96,12 @@ std::unique_ptr<L2capPacket> L2capPacket::assemble(
     uint16_t starting_index;
     uint8_t txseq = controls & kSduTxSeqBits;
     if (sdu_packets.size() > 1 && i == 0 &&
-        !L2capSdu::is_starting_sdu(sdu_packets[i])) {
+        !L2capSdu::is_starting_sdu(*sdu_packets[i])) {
       LOG_DEBUG(LOG_TAG, "%s: First segmented SDU has incorrect SAR bits.",
                 __func__);
       return nullptr;
     }
-    if (i != 0 && L2capSdu::is_starting_sdu(sdu_packets[i])) {
+    if (i != 0 && L2capSdu::is_starting_sdu(*sdu_packets[i])) {
       LOG_DEBUG(LOG_TAG,
                 "%s: SAR bits set to first segmented SDU on "
                 "non-starting SDU.",
@@ -112,7 +113,7 @@ std::unique_ptr<L2capPacket> L2capPacket::assemble(
       return nullptr;
     }
     if (sdu_packets.size() > 1 && i == sdu_packets.size() - 1 &&
-        !L2capSdu::is_ending_sdu(sdu_packets[i])) {
+        !L2capSdu::is_ending_sdu(*sdu_packets[i])) {
       LOG_DEBUG(LOG_TAG, "%s: Final segmented SDU has incorrect SAR bits.",
                 __func__);
       return nullptr;
@@ -121,9 +122,9 @@ std::unique_ptr<L2capPacket> L2capPacket::assemble(
     // Subtract the control and fcs from every SDU payload length.
     l2cap_payload_length += (payload_length - 4);
 
-    if (L2capSdu::is_starting_sdu(sdu_packets[i])) {
+    if (L2capSdu::is_starting_sdu(*sdu_packets[i])) {
       starting_index = kSduFirstHeaderLength;
-      total_expected_l2cap_length = sdu_packets[i].get_total_l2cap_length();
+      total_expected_l2cap_length = sdu_packets[i]->get_total_l2cap_length();
 
       // Subtract the additional two bytes from the first packet of a segmented
       // SDU.
@@ -132,8 +133,8 @@ std::unique_ptr<L2capPacket> L2capPacket::assemble(
       starting_index = kSduStandardHeaderLength;
     }
 
-    auto payload_begin = sdu_packets[i].get_payload_begin(starting_index);
-    auto payload_end = sdu_packets[i].get_payload_end();
+    auto payload_begin = sdu_packets[i]->get_payload_begin(starting_index);
+    auto payload_end = sdu_packets[i]->get_payload_end();
 
     built_l2cap_packet->l2cap_packet_.insert(
         built_l2cap_packet->l2cap_packet_.end(), payload_begin, payload_end);
@@ -180,10 +181,9 @@ std::vector<uint8_t>::const_iterator L2capPacket::get_l2cap_payload_end()
   return l2cap_packet_.end();
 }
 
-std::vector<L2capSdu> L2capPacket::fragment(uint16_t maximum_sdu_size,
-                                            uint8_t txseq,
-                                            uint8_t reqseq) const {
-  std::vector<L2capSdu> sdu;
+std::vector<std::unique_ptr<L2capSdu> > L2capPacket::fragment(
+    uint16_t maximum_sdu_size, uint8_t txseq, uint8_t reqseq) const {
+  std::vector<std::unique_ptr<L2capSdu> > sdu;
   if (!check_l2cap_packet()) return sdu;
 
   std::vector<uint8_t> current_sdu;
