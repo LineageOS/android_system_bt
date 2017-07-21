@@ -34,7 +34,7 @@ class L2capPacket {
  public:
   // Returns an assembled L2cap object if successful, nullptr if failure.
   static std::unique_ptr<L2capPacket> assemble(
-      const std::vector<L2capSdu>& sdu_packet);
+      const std::vector<std::unique_ptr<L2capSdu> >& sdu_packet);
 
   // Construct a vector of just the L2CAP payload. This essentially
   // will remove the L2CAP header from the private member variable.
@@ -45,8 +45,9 @@ class L2capPacket {
 
   // Returns a fragmented vector of L2capSdu objects if successful
   // Returns an empty vector of L2capSdu objects if unsuccessful
-  std::vector<L2capSdu> fragment(uint16_t maximum_sdu_size, uint8_t txseq,
-                                 uint8_t reqseq) const;
+  std::vector<std::unique_ptr<L2capSdu> > fragment(uint16_t maximum_sdu_size,
+                                                   uint8_t txseq,
+                                                   uint8_t reqseq) const;
 
  private:
   L2capPacket() = default;
