@@ -40,7 +40,7 @@ class L2capTest : public ::testing::Test {
     }
   }
 
-  L2capSdu update_fcs(vector<uint8_t> sdu) {
+  std::unique_ptr<L2capSdu> update_fcs(vector<uint8_t> sdu) {
     sdu.resize(sdu.size() - 2);
 
     return L2capSdu::L2capSduBuilder(sdu);
@@ -59,13 +59,13 @@ class L2capTest : public ::testing::Test {
 };
 
 TEST_F(L2capTest, assembleGoodPackets) {
-  vector<L2capSdu> test_packet;
+  vector<std::unique_ptr<L2capSdu> > test_packet;
   vector<uint8_t> assembled_payload;
 
   // Test 1: Pass correct packets.
-  test_packet.push_back(L2capSdu(good_sdu[0]));
-  test_packet.push_back(L2capSdu(good_sdu[1]));
-  test_packet.push_back(L2capSdu(good_sdu[2]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(good_sdu[0]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(good_sdu[1]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(good_sdu[2]));
 
   unique_ptr<L2capPacket> test_1 = L2capPacket::assemble(test_packet);
   ASSERT_NE(test_1, nullptr);
@@ -77,15 +77,15 @@ TEST_F(L2capTest, assembleGoodPackets) {
   assembled_payload.clear();
   test_packet.clear();
 
-  test_packet.push_back(L2capSdu(l2cap_test_packet_1));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_2));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_3));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_4));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_5));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_6));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_7));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_8));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_9));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_1));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_2));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_3));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_4));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_5));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_6));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_7));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_8));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_9));
 
   test_1 = L2capPacket::assemble(test_packet);
   ASSERT_NE(test_1, nullptr);
@@ -98,27 +98,27 @@ TEST_F(L2capTest, assembleGoodPackets) {
 }
 
 TEST_F(L2capTest, assembleOutofOrderPackets) {
-  vector<L2capSdu> test_packet;
+  vector<std::unique_ptr<L2capSdu> > test_packet;
 
   // Test 2: Pass out of order packets.
-  test_packet.push_back(L2capSdu(good_sdu[1]));
-  test_packet.push_back(L2capSdu(good_sdu[0]));
-  test_packet.push_back(L2capSdu(good_sdu[2]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(good_sdu[1]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(good_sdu[0]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(good_sdu[2]));
 
   unique_ptr<L2capPacket> test_2 = L2capPacket::assemble(test_packet);
   EXPECT_EQ(test_2, nullptr);
 
   test_packet.clear();
 
-  test_packet.push_back(L2capSdu(l2cap_test_packet_1));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_3));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_2));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_6));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_5));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_4));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_8));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_7));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_9));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_1));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_3));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_2));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_6));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_5));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_4));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_8));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_7));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_9));
 
   test_2 = L2capPacket::assemble(test_packet);
   EXPECT_EQ(test_2, nullptr);
@@ -127,25 +127,25 @@ TEST_F(L2capTest, assembleOutofOrderPackets) {
 }
 
 TEST_F(L2capTest, assembleBadControlBytes) {
-  vector<L2capSdu> test_packet;
+  vector<std::unique_ptr<L2capSdu> > test_packet;
 
   // Test 3: Pass packets missing the finished control bytes.
-  test_packet.push_back(L2capSdu(good_sdu[0]));
-  test_packet.push_back(L2capSdu(good_sdu[1]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(good_sdu[0]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(good_sdu[1]));
 
   unique_ptr<L2capPacket> test_3 = L2capPacket::assemble(test_packet);
   EXPECT_EQ(test_3, nullptr);
 
   test_packet.clear();
 
-  test_packet.push_back(L2capSdu(l2cap_test_packet_1));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_2));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_3));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_4));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_5));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_6));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_7));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_8));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_1));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_2));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_3));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_4));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_5));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_6));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_7));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_8));
 
   test_3 = L2capPacket::assemble(test_packet);
   EXPECT_EQ(test_3, nullptr);
@@ -154,31 +154,31 @@ TEST_F(L2capTest, assembleBadControlBytes) {
 }
 
 TEST_F(L2capTest, assembleBadFCS) {
-  vector<L2capSdu> test_packet;
+  vector<std::unique_ptr<L2capSdu> > test_packet;
 
   // Test 4: Pass packets with incorrect frame check sequences.
-  test_packet.push_back(L2capSdu(good_sdu[0]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(good_sdu[0]));
   good_sdu[1][good_sdu[1].size() - 1]++;
-  test_packet.push_back(L2capSdu(good_sdu[1]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(good_sdu[1]));
   good_sdu[1][good_sdu[1].size() - 1]--;
-  test_packet.push_back(L2capSdu(good_sdu[2]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(good_sdu[2]));
 
   unique_ptr<L2capPacket> test_4 = L2capPacket::assemble(test_packet);
   EXPECT_EQ(test_4, nullptr);
 
   test_packet.clear();
 
-  test_packet.push_back(L2capSdu(l2cap_test_packet_1));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_2));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_3));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_4));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_1));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_2));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_3));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_4));
   l2cap_test_packet_5[l2cap_test_packet_5.size() - 1]++;
-  test_packet.push_back(L2capSdu(l2cap_test_packet_5));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_5));
   l2cap_test_packet_5[l2cap_test_packet_5.size() - 1]--;
-  test_packet.push_back(L2capSdu(l2cap_test_packet_6));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_7));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_8));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_9));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_6));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_7));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_8));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_9));
 
   test_4 = L2capPacket::assemble(test_packet);
   EXPECT_EQ(test_4, nullptr);
@@ -187,12 +187,12 @@ TEST_F(L2capTest, assembleBadFCS) {
 }
 
 TEST_F(L2capTest, assembleEmptyPayload) {
-  vector<L2capSdu> test_packet;
+  vector<std::unique_ptr<L2capSdu> > test_packet;
   vector<uint8_t> assembled_payload;
 
   // Test 5: Pass a packet with an empty payload.
-  test_packet.push_back(L2capSdu(empty_sdu_payload[0]));
-  test_packet.push_back(L2capSdu(empty_sdu_payload[1]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(empty_sdu_payload[0]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(empty_sdu_payload[1]));
 
   unique_ptr<L2capPacket> test_5 = L2capPacket::assemble(test_packet);
   ASSERT_NE(test_5, nullptr);
@@ -206,12 +206,12 @@ TEST_F(L2capTest, assembleEmptyPayload) {
 }
 
 TEST_F(L2capTest, assembleAllStartingControlError) {
-  vector<L2capSdu> test_packet;
+  vector<std::unique_ptr<L2capSdu> > test_packet;
 
   // Test 6: Pass a SDU with all the control bytes set to as the starting bytes.
-  test_packet.push_back(L2capSdu(all_first_packet[0]));
-  test_packet.push_back(L2capSdu(all_first_packet[1]));
-  test_packet.push_back(L2capSdu(all_first_packet[2]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(all_first_packet[0]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(all_first_packet[1]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(all_first_packet[2]));
 
   unique_ptr<L2capPacket> test_6 = L2capPacket::assemble(test_packet);
   EXPECT_EQ(test_6, nullptr);
@@ -220,35 +220,35 @@ TEST_F(L2capTest, assembleAllStartingControlError) {
 }
 
 TEST_F(L2capTest, assembleBadCID) {
-  vector<L2capSdu> test_packet;
+  vector<std::unique_ptr<L2capSdu> > test_packet;
 
   // Test 7: Pass SDUs with mixed channel ids.
-  test_packet.push_back(L2capSdu(good_sdu[0]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(good_sdu[0]));
   good_sdu[1][2]++;
   test_packet.push_back(update_fcs(good_sdu[1]));
   good_sdu[1][2]--;
-  test_packet.push_back(L2capSdu(good_sdu[2]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(good_sdu[2]));
 
   unique_ptr<L2capPacket> test_7 = L2capPacket::assemble(test_packet);
   EXPECT_EQ(test_7, nullptr);
 
   test_packet.clear();
 
-  test_packet.push_back(L2capSdu(l2cap_test_packet_1));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_1));
   l2cap_test_packet_2[2]++;
-  test_packet.push_back(update_fcs(l2cap_test_packet_2));
+  test_packet.push_back((update_fcs(l2cap_test_packet_2)));
   l2cap_test_packet_2[2]--;
-  test_packet.push_back(L2capSdu(l2cap_test_packet_3));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_4));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_3));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_4));
   l2cap_test_packet_5[2]++;
-  test_packet.push_back(update_fcs(l2cap_test_packet_5));
+  test_packet.push_back((update_fcs(l2cap_test_packet_5)));
   l2cap_test_packet_5[2]--;
-  test_packet.push_back(L2capSdu(l2cap_test_packet_6));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_7));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_6));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_7));
   l2cap_test_packet_8[2]--;
-  test_packet.push_back(update_fcs(l2cap_test_packet_8));
+  test_packet.push_back((update_fcs(l2cap_test_packet_8)));
   l2cap_test_packet_8[2]++;
-  test_packet.push_back(L2capSdu(l2cap_test_packet_9));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_9));
 
   test_7 = L2capPacket::assemble(test_packet);
   EXPECT_EQ(test_7, nullptr);
@@ -257,10 +257,10 @@ TEST_F(L2capTest, assembleBadCID) {
 }
 
 TEST_F(L2capTest, assembleUnsegmentedSDU) {
-  vector<L2capSdu> test_packet;
+  vector<std::unique_ptr<L2capSdu> > test_packet;
 
   // Test 8: Pass a complete l2cap packet.
-  test_packet.push_back(L2capSdu(one_sdu[0]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(one_sdu[0]));
 
   unique_ptr<L2capPacket> test_8 = L2capPacket::assemble(test_packet);
   EXPECT_NE(test_8, nullptr);
@@ -269,14 +269,14 @@ TEST_F(L2capTest, assembleUnsegmentedSDU) {
 }
 
 TEST_F(L2capTest, assembleBadTxSeq) {
-  vector<L2capSdu> test_packet;
+  vector<std::unique_ptr<L2capSdu> > test_packet;
 
   // Test 9: Pass SDUs with incorrect TxSeq.
   good_sdu[0][4] += 4;
-  test_packet.push_back(update_fcs(good_sdu[0]));
+  test_packet.push_back((update_fcs(good_sdu[0])));
   good_sdu[0][4] -= 4;
-  test_packet.push_back(L2capSdu(good_sdu[1]));
-  test_packet.push_back(L2capSdu(good_sdu[2]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(good_sdu[1]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(good_sdu[2]));
 
   unique_ptr<L2capPacket> test_9 = L2capPacket::assemble(test_packet);
   EXPECT_EQ(test_9, nullptr);
@@ -285,14 +285,14 @@ TEST_F(L2capTest, assembleBadTxSeq) {
 }
 
 TEST_F(L2capTest, assembleBadTotalSDULength) {
-  vector<L2capSdu> test_packet;
+  vector<std::unique_ptr<L2capSdu> > test_packet;
 
   // Test 10: Pass SDUs with an incorrect total SDU length
   good_sdu[0][7]++;
-  test_packet.push_back(update_fcs(good_sdu[0]));
+  test_packet.push_back((update_fcs(good_sdu[0])));
   good_sdu[0][7]--;
-  test_packet.push_back(L2capSdu(good_sdu[1]));
-  test_packet.push_back(L2capSdu(good_sdu[2]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(good_sdu[1]));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(good_sdu[2]));
 
   unique_ptr<L2capPacket> test_10 = L2capPacket::assemble(test_packet);
   EXPECT_EQ(test_10, nullptr);
@@ -300,16 +300,16 @@ TEST_F(L2capTest, assembleBadTotalSDULength) {
   test_packet.clear();
 
   l2cap_test_packet_1[6]++;
-  test_packet.push_back(update_fcs(l2cap_test_packet_1));
+  test_packet.push_back((update_fcs(l2cap_test_packet_1)));
   l2cap_test_packet_1[6]--;
-  test_packet.push_back(L2capSdu(l2cap_test_packet_2));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_3));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_4));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_5));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_6));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_7));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_8));
-  test_packet.push_back(L2capSdu(l2cap_test_packet_9));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_2));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_3));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_4));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_5));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_6));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_7));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_8));
+  test_packet.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_9));
 
   test_10 = L2capPacket::assemble(test_packet);
 
@@ -320,13 +320,13 @@ TEST_F(L2capTest, assembleBadTotalSDULength) {
 
 // Begin Fragment Test1
 TEST_F(L2capTest, fragmentSmallSegmentTest) {
-  std::vector<L2capSdu> sdu;
+  std::vector<std::unique_ptr<L2capSdu> > sdu;
   std::unique_ptr<L2capPacket> l2cap_expected;
   std::unique_ptr<L2capPacket> l2cap_received;
 
-  sdu.push_back(L2capSdu(good_sdu[0]));
-  sdu.push_back(L2capSdu(good_sdu[1]));
-  sdu.push_back(L2capSdu(good_sdu[2]));
+  sdu.push_back(L2capSdu::L2capSduConstructor(good_sdu[0]));
+  sdu.push_back(L2capSdu::L2capSduConstructor(good_sdu[1]));
+  sdu.push_back(L2capSdu::L2capSduConstructor(good_sdu[2]));
 
   l2cap_expected = L2capPacket::assemble(sdu);
 
@@ -354,19 +354,19 @@ TEST_F(L2capTest, fragmentSmallSegmentTest) {
 
 // Begin Fragment Test2
 TEST_F(L2capTest, fragmentLargeSegmentTest) {
-  std::vector<L2capSdu> sdu;
+  std::vector<std::unique_ptr<L2capSdu> > sdu;
   std::unique_ptr<L2capPacket> l2cap_expected;
   std::unique_ptr<L2capPacket> l2cap_received;
 
-  sdu.push_back(L2capSdu(l2cap_test_packet_1));
-  sdu.push_back(L2capSdu(l2cap_test_packet_2));
-  sdu.push_back(L2capSdu(l2cap_test_packet_3));
-  sdu.push_back(L2capSdu(l2cap_test_packet_4));
-  sdu.push_back(L2capSdu(l2cap_test_packet_5));
-  sdu.push_back(L2capSdu(l2cap_test_packet_6));
-  sdu.push_back(L2capSdu(l2cap_test_packet_7));
-  sdu.push_back(L2capSdu(l2cap_test_packet_8));
-  sdu.push_back(L2capSdu(l2cap_test_packet_9));
+  sdu.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_1));
+  sdu.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_2));
+  sdu.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_3));
+  sdu.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_4));
+  sdu.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_5));
+  sdu.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_6));
+  sdu.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_7));
+  sdu.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_8));
+  sdu.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_9));
 
   l2cap_expected = L2capPacket::assemble(sdu);
 
@@ -394,13 +394,13 @@ TEST_F(L2capTest, fragmentLargeSegmentTest) {
 
 // Begin Fragment Test3
 TEST_F(L2capTest, fragmentTxSeqTest) {
-  std::vector<L2capSdu> sdu;
+  std::vector<std::unique_ptr<L2capSdu> > sdu;
   std::unique_ptr<L2capPacket> l2cap_expected;
   std::unique_ptr<L2capPacket> l2cap_received;
 
-  sdu.push_back(L2capSdu(good_sdu[0]));
-  sdu.push_back(L2capSdu(good_sdu[1]));
-  sdu.push_back(L2capSdu(good_sdu[2]));
+  sdu.push_back(L2capSdu::L2capSduConstructor(good_sdu[0]));
+  sdu.push_back(L2capSdu::L2capSduConstructor(good_sdu[1]));
+  sdu.push_back(L2capSdu::L2capSduConstructor(good_sdu[2]));
 
   l2cap_expected = L2capPacket::assemble(sdu);
 
@@ -428,12 +428,12 @@ TEST_F(L2capTest, fragmentTxSeqTest) {
 
 // Begin Fragment Test4
 TEST_F(L2capTest, fragmentPayloadTest) {
-  std::vector<L2capSdu> sdu;
+  std::vector<std::unique_ptr<L2capSdu> > sdu;
   std::unique_ptr<L2capPacket> l2cap_expected;
   std::unique_ptr<L2capPacket> l2cap_received;
 
-  sdu.push_back(L2capSdu(empty_sdu_payload[0]));
-  sdu.push_back(L2capSdu(empty_sdu_payload[1]));
+  sdu.push_back(L2capSdu::L2capSduConstructor(empty_sdu_payload[0]));
+  sdu.push_back(L2capSdu::L2capSduConstructor(empty_sdu_payload[1]));
 
   l2cap_expected = L2capPacket::assemble(sdu);
 
@@ -461,13 +461,13 @@ TEST_F(L2capTest, fragmentPayloadTest) {
 
 // Begin Fragment Test5
 TEST_F(L2capTest, fragmentSegmentSizeTest) {
-  std::vector<L2capSdu> sdu;
+  std::vector<std::unique_ptr<L2capSdu> > sdu;
   std::unique_ptr<L2capPacket> l2cap_expected;
   std::unique_ptr<L2capPacket> l2cap_received;
 
-  sdu.push_back(L2capSdu(good_sdu[0]));
-  sdu.push_back(L2capSdu(good_sdu[1]));
-  sdu.push_back(L2capSdu(good_sdu[2]));
+  sdu.push_back(L2capSdu::L2capSduConstructor(good_sdu[0]));
+  sdu.push_back(L2capSdu::L2capSduConstructor(good_sdu[1]));
+  sdu.push_back(L2capSdu::L2capSduConstructor(good_sdu[2]));
 
   l2cap_expected = L2capPacket::assemble(sdu);
 
@@ -495,19 +495,19 @@ TEST_F(L2capTest, fragmentSegmentSizeTest) {
 
 // Begin Fragment Test6
 TEST_F(L2capTest, fragmentSegmentSizeTest2) {
-  std::vector<L2capSdu> sdu;
+  std::vector<std::unique_ptr<L2capSdu> > sdu;
   std::unique_ptr<L2capPacket> l2cap_expected;
   std::unique_ptr<L2capPacket> l2cap_received;
 
-  sdu.push_back(L2capSdu(l2cap_test_packet_1));
-  sdu.push_back(L2capSdu(l2cap_test_packet_2));
-  sdu.push_back(L2capSdu(l2cap_test_packet_3));
-  sdu.push_back(L2capSdu(l2cap_test_packet_4));
-  sdu.push_back(L2capSdu(l2cap_test_packet_5));
-  sdu.push_back(L2capSdu(l2cap_test_packet_6));
-  sdu.push_back(L2capSdu(l2cap_test_packet_7));
-  sdu.push_back(L2capSdu(l2cap_test_packet_8));
-  sdu.push_back(L2capSdu(l2cap_test_packet_9));
+  sdu.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_1));
+  sdu.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_2));
+  sdu.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_3));
+  sdu.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_4));
+  sdu.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_5));
+  sdu.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_6));
+  sdu.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_7));
+  sdu.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_8));
+  sdu.push_back(L2capSdu::L2capSduConstructor(l2cap_test_packet_9));
 
   l2cap_expected = L2capPacket::assemble(sdu);
   sdu.clear();
