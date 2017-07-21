@@ -57,11 +57,19 @@ const uint16_t L2capSdu::lfsr_table_[256] = {
     0x4100, 0x81c1, 0x8081, 0x4040,
 };  // lfsr_table
 
-L2capSdu::L2capSdu(std::vector<uint8_t> create_from) {
-  sdu_data_ = std::move(create_from);
+L2capSdu::L2capSdu(std::vector<uint8_t>&& create_from) {
+  sdu_data_ = create_from;
 }
 
-L2capSdu L2capSdu::L2capSduBuilder(std::vector<uint8_t> create_from) {
+std::unique_ptr<L2capSdu> L2capSdu::L2capSduConstructor(
+    std::vector<uint8_t> create_from) {
+  L2capSdu packet(std::move(create_from));
+
+  return std::make_unique<L2capSdu>(packet);
+}
+
+std::unique_ptr<L2capSdu> L2capSdu::L2capSduBuilder(
+    std::vector<uint8_t> create_from) {
   L2capSdu packet(std::move(create_from));
 
   packet.sdu_data_.resize(packet.sdu_data_.size() + 2, 0x00);
@@ -71,7 +79,7 @@ L2capSdu L2capSdu::L2capSduBuilder(std::vector<uint8_t> create_from) {
   packet.sdu_data_[packet.sdu_data_.size() - 2] = fcs & 0xFF;
   packet.sdu_data_[packet.sdu_data_.size() - 1] = (fcs & 0xFF00) >> 8;
 
-  return packet;
+  return std::make_unique<L2capSdu>(packet);
 }
 
 std::vector<uint8_t>::const_iterator L2capSdu::get_payload_begin(
