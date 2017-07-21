@@ -1363,7 +1363,12 @@ void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     p = BTM_ReadRemoteFeatures(p_scb->peer_addr);
     if (p != NULL) {
       if (HCI_EDR_ACL_2MPS_SUPPORTED(p)) open.edr |= BTA_AV_EDR_2MBPS;
-      if (HCI_EDR_ACL_3MPS_SUPPORTED(p)) open.edr |= BTA_AV_EDR_3MBPS;
+      if (HCI_EDR_ACL_3MPS_SUPPORTED(p)) {
+        if (!interop_match_addr(INTEROP_2MBPS_LINK_ONLY,
+                                (const bt_bdaddr_t*)&p_scb->peer_addr)) {
+          open.edr |= BTA_AV_EDR_3MBPS;
+        }
+      }
     }
 #if (BTA_AR_INCLUDED == TRUE)
     bta_ar_avdt_conn(BTA_ID_AV, open.bd_addr);

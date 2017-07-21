@@ -70,6 +70,12 @@ static const interop_addr_entry_t interop_addr_database[] = {
     // JayBird Family
     {{{0x00, 0x18, 0x91, 0, 0, 0}}, 3, INTEROP_2MBPS_LINK_ONLY},
 
+    // Sony MBH-10
+    {{{0x20, 0x15, 0x06, 0, 0, 0}}, 3, INTEROP_2MBPS_LINK_ONLY},
+
+    // Uconnect
+    {{{0x9c, 0xdf, 0x03, 0, 0, 0}}, 3, INTEROP_2MBPS_LINK_ONLY},
+
     // LG Tone HBS-730 - unacceptably loud volume
     {{{0x00, 0x18, 0x6b, 0, 0, 0}}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
     {{{0xb8, 0xad, 0x3e, 0, 0, 0}}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
