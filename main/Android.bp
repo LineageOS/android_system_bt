@@ -75,7 +75,6 @@ cc_library_shared {
     required: [
         "bt_did.conf",
         "bt_stack.conf",
-        "libbt-hci",
         "libldacBT_enc",
         "libldacBT_abr",
     ],
