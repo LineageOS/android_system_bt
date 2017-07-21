@@ -1,5 +1,12 @@
 // Bluetooth types
-cc_library_static {
+cc_library_headers {
+    name: "libbluetooth-types-header",
+    export_include_dirs: ["./"],
+    vendor_available: true,
+    host_supported: true,
+}
+
+cc_library {
     name: "libbluetooth-types",
     vendor_available: true,
     defaults: ["fluoride_types_defaults"],
@@ -11,7 +18,8 @@ cc_library_static {
     srcs: [
         "raw_address.cc",
     ],
-    export_include_dirs: ["./"],
+    header_libs: ["libbluetooth-types-header"],
+    export_header_lib_headers: ["libbluetooth-types-header"],
 }
 
 // ========================================================
