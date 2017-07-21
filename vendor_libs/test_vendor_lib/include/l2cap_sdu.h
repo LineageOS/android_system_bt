@@ -59,19 +59,14 @@ namespace test_vendor_lib {
 //
 class L2capSdu {
  public:
-  // Returns a completed L2capSdu object.
-  L2capSdu(std::vector<uint8_t> create_from);
+  // Returns a unique_ptr to an L2capSdu object that is constructed with the
+  // assumption that the SDU packet is complete and correct.
+  static std::unique_ptr<L2capSdu> L2capSduConstructor(
+      std::vector<uint8_t> create_from);
 
-  static L2capSdu L2capSduBuilder(std::vector<uint8_t> create_from);
-
-  // TODO: Remove this when the move to L2capSdu* is done
-  L2capSdu& operator=(L2capSdu obj1) {
-    sdu_data_.clear();
-
-    sdu_data_ = obj1.sdu_data_;
-
-    return *this;
-  }
+  // Adds an FCS to create_from and returns a unique_ptr to an L2capSdu object.
+  static std::unique_ptr<L2capSdu> L2capSduBuilder(
+      std::vector<uint8_t> create_from);
 
   // Get a vector iterator that points to the first byte of the
   // L2CAP payload within an SDU. The offset parameter will be the
@@ -122,6 +117,9 @@ class L2capSdu {
  private:
   // This is the SDU packet in bytes.
   std::vector<uint8_t> sdu_data_;
+
+  // Returns a completed L2capSdu object.
+  L2capSdu(std::vector<uint8_t>&& create_from);
 
   // Table for precalculated lfsr values.
   static const uint16_t lfsr_table_[256];
