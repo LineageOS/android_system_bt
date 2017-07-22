@@ -49,13 +49,13 @@ class Packet {
 
   // Add |octets| bytes to the payload.  Return true if:
   // - the size of |bytes| is equal to |octets| and
-  // - the new size of the payload is still < |kMaxPacketOctets|
+  // - the new size of the payload is still < |kMaxPayloadOctets|
   bool AddPayloadOctets(size_t octets, const std::vector<uint8_t>& bytes);
 
  private:
   // Add |octets| bytes to the payload.  Return true if:
   // - the value of |value| fits in |octets| bytes and
-  // - the new size of the payload is still < |kMaxPacketOctets|
+  // - the new size of the payload is still < |kMaxPayloadOctets|
   bool AddPayloadOctets(size_t octets, uint64_t value);
 
  public:
@@ -68,8 +68,13 @@ class Packet {
   bool AddPayloadOctets8(uint64_t value) { return AddPayloadOctets(8, value); }
 
   // Add |address| to the payload.  Return true if:
-  // - the new size of the payload is still < |kMaxPacketOctets|
+  // - the new size of the payload is still < |kMaxPayloadOctets|
   bool AddPayloadBtAddress(const BtAddress& address);
+
+  // Return true if |num_bytes| can be added to the payload.
+  bool CanAddPayloadOctets(size_t num_bytes) const {
+    return GetPayloadSize() + num_bytes <= kMaxPayloadOctets;
+  }
 
  protected:
   // Constructs an empty packet of type |type| and header |header|
@@ -79,7 +84,7 @@ class Packet {
   bool IncrementPayloadCounter(size_t index, uint8_t max_val);
 
  private:
-  const size_t kMaxPacketOctets = 256;  // Includes the Octet count
+  const size_t kMaxPayloadOctets = 256;  // Includes the size byte.
 
   // Underlying containers for storing the actual packet
 
