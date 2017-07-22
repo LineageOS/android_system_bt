@@ -22,12 +22,16 @@
 #include <unordered_map>
 #include <vector>
 
+#include "acl_packet.h"
 #include "async_manager.h"
 #include "base/json/json_value_converter.h"
 #include "base/time/time.h"
 #include "bt_address.h"
 #include "command_packet.h"
+#include "connection.h"
+#include "device.h"
 #include "event_packet.h"
+#include "sco_packet.h"
 #include "test_channel_transport.h"
 
 namespace test_vendor_lib {
@@ -164,10 +168,10 @@ class DualModeController {
 
   ~DualModeController() = default;
 
-  // Preprocesses the command, primarily checking testh channel hooks. If
-  // possible, dispatches the corresponding controller method corresponding to
-  // carry out the command.
+  // Route commands and data from the stack.
+  void HandleAcl(std::unique_ptr<AclPacket> acl_packet);
   void HandleCommand(std::unique_ptr<CommandPacket> command_packet);
+  void HandleSco(std::unique_ptr<ScoPacket> sco_packet);
 
   // Dispatches the test channel action corresponding to the command specified
   // by |name|.
@@ -186,9 +190,15 @@ class DualModeController {
 
   void RegisterTaskCancel(std::function<void(AsyncTaskId)> cancel);
 
-  // Sets the callback to be used for sending events back to the HCI.
+  // Set the callbacks for sending packets to the HCI.
   void RegisterEventChannel(
       const std::function<void(std::unique_ptr<EventPacket>)>& send_event);
+
+  void RegisterAclChannel(
+      const std::function<void(std::unique_ptr<AclPacket>)>& send_acl);
+
+  void RegisterScoChannel(
+      const std::function<void(std::unique_ptr<ScoPacket>)>& send_sco);
 
   // Controller commands. For error codes, see the Bluetooth Core Specification,
   // Version 4.2, Volume 2, Part D (page 370).
@@ -340,6 +350,14 @@ class DualModeController {
   // Bluetooth Core Specification Version 4.2 Volume 2 Part E 7.1.19
   void HciRemoteNameRequest(const std::vector<uint8_t>& args);
 
+  // Test Commands
+
+  // Bluetooth Core Specification Version 4.2 Volume 2 Part E 7.7.1
+  void HciReadLoopbackMode(const std::vector<uint8_t>& args);
+
+  // Bluetooth Core Specification Version 4.2 Volume 2 Part E 7.7.2
+  void HciWriteLoopbackMode(const std::vector<uint8_t>& args);
+
   // LE Controller Commands
 
   // OGF: 0x0008
@@ -383,9 +401,25 @@ class DualModeController {
   void HciLeSetScanEnable(const std::vector<uint8_t>& args);
 
   // OGF: 0x0008
+  // OCF: 0x000D
+  // Bluetooth Core Specification Version 4.2 Volume 2 Part E 7.8.12
+  void HciLeCreateConnection(const std::vector<uint8_t>& args);
+
+  // OGF: 0x0008
+  // OCF: 0x000E
+  // Bluetooth Core Specification Version 4.2 Volume 2 Part E 7.8.13
+  void HciLeConnectionCancel(const std::vector<uint8_t>& args);
+
+  // OGF: 0x0008
   // OCF: 0x000F
   // Bluetooth Core Specification Version 4.2 Volume 2 Part E 7.8.14
   void HciLeReadWhiteListSize(const std::vector<uint8_t>& args);
+
+  // OGF: 0x0008
+  // OCF: 0x0016
+  // Bluetooth Core Specification Version 4.2 Volume 2 Part E 7.8.21
+  void HciLeReadRemoteUsedFeatures(const std::vector<uint8_t>& args);
+  void HciLeReadRemoteUsedFeaturesB(uint16_t handle);
 
   // OGF: 0x0008
   // OCF: 0x0018
@@ -423,26 +457,29 @@ class DualModeController {
   // OCF: 0x0159
   void HciBleEnergyInfo(const std::vector<uint8_t>& args);
 
+  // Test
+  void HciBleAdvertisingFilter(const std::vector<uint8_t>& args);
+
   // OGF: 0x00FC
   // OCF: 0x015A
   void HciBleExtendedScanParams(const std::vector<uint8_t>& args);
 
   // Test Channel commands:
 
-  // Clears all test channel modifications.
-  void TestChannelClear(const std::vector<std::string>& args);
+  // Add devices
+  void TestChannelAdd(const std::vector<std::string>& args);
 
-  // Sets the response delay for events to 0.
-  void TestChannelClearEventDelay(const std::vector<std::string>& args);
+  // Remove devices by index
+  void TestChannelDel(const std::vector<std::string>& args);
 
-  // Discovers a fake device.
-  void TestChannelDiscover(const std::vector<std::string>& args);
+  // List the devices that the controller knows about
+  void TestChannelList(const std::vector<std::string>& args) const;
 
-  // Causes events to be sent after a delay.
-  void TestChannelSetEventDelay(const std::vector<std::string>& args);
+  void Connections();
 
-  // Causes all future HCI commands to timeout.
-  void TestChannelTimeoutAll(const std::vector<std::string>& args);
+  void LeScan();
+
+  void PageScan();
 
   void HandleTimerTick();
   void SetTimerPeriod(std::chrono::milliseconds new_period);
@@ -456,15 +493,11 @@ class DualModeController {
     kInquiry,  // The controller is discovering other nearby devices.
   };
 
-  enum TestChannelState {
-    kNone,             // The controller is running normally.
-    kTimeoutAll,       // All commands should time out, i.e. send no response.
-    kDelayedResponse,  // Event responses are sent after a delay.
-  };
-
   // Set a timer for a future action
   void AddControllerEvent(std::chrono::milliseconds,
                           const TaskCallback& callback);
+
+  void AddConnectionAction(const TaskCallback& callback, uint16_t handle);
 
   // Creates a command complete event and sends it back to the HCI.
   void SendCommandComplete(uint16_t command_opcode,
@@ -496,8 +529,10 @@ class DualModeController {
 
   std::function<void(AsyncTaskId)> cancel_task_;
 
-  // Callback provided to send events from the controller back to the HCI.
+  // Callbacks to send packets back to the HCI.
+  std::function<void(std::unique_ptr<AclPacket>)> send_acl_;
   std::function<void(std::unique_ptr<EventPacket>)> send_event_;
+  std::function<void(std::unique_ptr<ScoPacket>)> send_sco_;
 
   // Maintains the commands to be registered and used in the HciHandler object.
   // Keys are command opcodes and values are the callbacks to handle each
@@ -517,6 +552,10 @@ class DualModeController {
   // 0x03-0xFF: Reserved.
   uint8_t inquiry_mode_;
 
+  bool inquiry_responses_limited_;
+  uint8_t inquiry_num_responses_;
+  uint8_t inquiry_lap_[3];
+
   std::vector<uint8_t> le_event_mask_;
 
   BtAddress le_random_address_;
@@ -530,15 +569,26 @@ class DualModeController {
   uint8_t le_scan_enable_;
   uint8_t filter_duplicates_;
 
+  bool le_connect_;
+  uint8_t initiator_filter_policy_;
+
+  BtAddress peer_address_;
+  uint8_t peer_address_type_;
+
+  uint8_t loopback_mode_;
+
   State state_;
 
   Properties properties_;
 
-  TestChannelState test_channel_state_;
+  std::vector<std::shared_ptr<Device>> devices_;
 
   std::vector<AsyncTaskId> controller_events_;
+
+  std::vector<std::shared_ptr<Connection>> connections_;
+
   AsyncTaskId timer_tick_task_;
-  std::chrono::milliseconds timer_period_ = std::chrono::milliseconds(1000);
+  std::chrono::milliseconds timer_period_ = std::chrono::milliseconds(100);
 
   DualModeController(const DualModeController& cmdPckt) = delete;
   DualModeController& operator=(const DualModeController& cmdPckt) = delete;
