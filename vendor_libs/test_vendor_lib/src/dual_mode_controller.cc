@@ -17,6 +17,7 @@
 #define LOG_TAG "dual_mode_controller"
 
 #include "dual_mode_controller.h"
+#include "device_factory.h"
 
 #include <memory>
 
@@ -24,7 +25,6 @@
 #include "base/files/file_util.h"
 #include "base/json/json_reader.h"
 #include "base/values.h"
-#include "event_packet.h"
 
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
@@ -43,14 +43,6 @@ const uint8_t kUnknownHciCommand = 1;
 // The location of the config file loaded to populate controller attributes.
 const std::string kControllerPropertiesFile =
     "/etc/bluetooth/controller_properties.json";
-
-// Inquiry modes for specifiying inquiry result formats.
-const uint8_t kStandardInquiry = 0x00;
-const uint8_t kRssiInquiry = 0x01;
-const uint8_t kExtendedOrRssiInquiry = 0x02;
-
-// The bd address of another (fake) device.
-const vector<uint8_t> kOtherDeviceBdAddress = {6, 5, 4, 3, 2, 1};
 
 void LogCommand(const char* command) {
   LOG_INFO(LOG_TAG, "Controller performing command: %s", command);
@@ -77,6 +69,12 @@ void DualModeController::AddControllerEvent(std::chrono::milliseconds delay,
   controller_events_.push_back(schedule_task_(delay, task));
 }
 
+void DualModeController::AddConnectionAction(const TaskCallback& task,
+                                             uint16_t handle) {
+  for (size_t i = 0; i < connections_.size(); i++)
+    if (*connections_[i] == handle) connections_[i]->AddAction(task);
+}
+
 void DualModeController::SendCommandCompleteSuccess(
     uint16_t command_opcode) const {
   send_event_(EventPacket::CreateCommandCompleteOnlyStatusEvent(
@@ -100,9 +98,31 @@ void DualModeController::SendCommandStatusSuccess(
 }
 
 DualModeController::DualModeController()
-    : state_(kStandby),
-      properties_(kControllerPropertiesFile),
-      test_channel_state_(kNone) {
+    : state_(kStandby), properties_(kControllerPropertiesFile) {
+  devices_ = {};
+
+  vector<std::string> beacon1 = {"beacon", "be:ac:10:00:00:01", "1000"};
+  TestChannelAdd(beacon1);
+
+  vector<std::string> beacon2 = {"beacon", "be:ac:10:00:00:02", "2000"};
+  TestChannelAdd(beacon2);
+
+  vector<std::string> beacon3 = {"beacon", "be:ac:10:00:00:03", "3000"};
+  TestChannelAdd(beacon3);
+
+  vector<std::string> classic1 = {std::string("classic"),
+                                  std::string("c1:a5:51:c0:00:01")};
+
+  vector<std::string> keyboard1 = {std::string("keyboard"),
+                                   std::string("cc:1c:eb:0a:12:d1"),
+                                   std::string("500")};
+  TestChannelAdd(keyboard1);
+
+  le_scan_enable_ = 0;
+  le_connect_ = false;
+
+  loopback_mode_ = 0;
+
 #define SET_HANDLER(opcode, method)                                     \
   active_hci_commands_[opcode] = [this](const vector<uint8_t>& param) { \
     method(param);                                                      \
@@ -144,6 +164,8 @@ DualModeController::DualModeController()
   SET_HANDLER(HCI_BLE_WRITE_ADV_PARAMS, HciLeSetAdvertisingParameters);
   SET_HANDLER(HCI_BLE_WRITE_SCAN_PARAMS, HciLeSetScanParameters);
   SET_HANDLER(HCI_BLE_WRITE_SCAN_ENABLE, HciLeSetScanEnable);
+  SET_HANDLER(HCI_BLE_CREATE_LL_CONN, HciLeCreateConnection);
+  SET_HANDLER(HCI_BLE_CREATE_CONN_CANCEL, HciLeConnectionCancel);
   SET_HANDLER(HCI_BLE_READ_WHITE_LIST_SIZE, HciLeReadWhiteListSize);
   SET_HANDLER(HCI_BLE_RAND, HciLeRand);
   SET_HANDLER(HCI_BLE_READ_SUPPORTED_STATES, HciLeReadSupportedStates);
@@ -151,19 +173,20 @@ DualModeController::DualModeController()
   SET_HANDLER(HCI_BLE_VENDOR_CAP_OCF, HciBleVendorCap);
   SET_HANDLER(HCI_BLE_MULTI_ADV_OCF, HciBleVendorMultiAdv);
   SET_HANDLER((HCI_GRP_VENDOR_SPECIFIC | 0x155), HciBleVendor155);
-  SET_HANDLER((HCI_GRP_VENDOR_SPECIFIC | 0x157), HciBleVendor157);
+  SET_HANDLER(HCI_BLE_ADV_FILTER_OCF, HciBleAdvertisingFilter);
   SET_HANDLER(HCI_BLE_ENERGY_INFO_OCF, HciBleEnergyInfo);
   SET_HANDLER(HCI_BLE_EXTENDED_SCAN_PARAMS_OCF, HciBleExtendedScanParams);
+  // Testing Commands
+  SET_HANDLER(HCI_READ_LOOPBACK_MODE, HciReadLoopbackMode);
+  SET_HANDLER(HCI_WRITE_LOOPBACK_MODE, HciWriteLoopbackMode);
 #undef SET_HANDLER
 
 #define SET_TEST_HANDLER(command_name, method)  \
   active_test_channel_commands_[command_name] = \
       [this](const vector<std::string>& param) { method(param); };
-  SET_TEST_HANDLER("CLEAR", TestChannelClear);
-  SET_TEST_HANDLER("CLEAR_EVENT_DELAY", TestChannelClearEventDelay);
-  SET_TEST_HANDLER("DISCOVER", TestChannelDiscover);
-  SET_TEST_HANDLER("SET_EVENT_DELAY", TestChannelSetEventDelay);
-  SET_TEST_HANDLER("TIMEOUT_ALL", TestChannelTimeoutAll);
+  SET_TEST_HANDLER("add", TestChannelAdd);
+  SET_TEST_HANDLER("del", TestChannelDel);
+  SET_TEST_HANDLER("list", TestChannelList);
 #undef SET_TEST_HANDLER
 }
 
@@ -191,19 +214,43 @@ void DualModeController::HandleTestChannelCommand(
   active_test_channel_commands_[name](args);
 }
 
+void DualModeController::HandleAcl(std::unique_ptr<AclPacket> acl_packet) {
+  if (loopback_mode_ == HCI_LOOPBACK_MODE_LOCAL) {
+    uint16_t channel = acl_packet->GetChannel();
+    send_acl_(std::move(acl_packet));
+    send_event_(EventPacket::CreateNumberOfCompletedPacketsEvent(channel, 1));
+    return;
+  }
+}
+
+void DualModeController::HandleSco(std::unique_ptr<ScoPacket> sco_packet) {
+  if (loopback_mode_ == HCI_LOOPBACK_MODE_LOCAL) {
+    uint16_t channel = sco_packet->GetChannel();
+    send_sco_(std::move(sco_packet));
+    send_event_(EventPacket::CreateNumberOfCompletedPacketsEvent(channel, 1));
+    return;
+  }
+}
+
 void DualModeController::HandleCommand(
     std::unique_ptr<CommandPacket> command_packet) {
   uint16_t opcode = command_packet->GetOpcode();
   LOG_INFO(LOG_TAG, "Command opcode: 0x%04X, OGF: 0x%04X, OCF: 0x%04X", opcode,
            command_packet->GetOGF(), command_packet->GetOCF());
 
-  // The command hasn't been registered with the handler yet. There is nothing
-  // to do.
-  if (active_hci_commands_.count(opcode) == 0)
-    return;
-  else if (test_channel_state_ == kTimeoutAll)
-    return;
-  active_hci_commands_[opcode](command_packet->GetPayload());
+  if (loopback_mode_ == HCI_LOOPBACK_MODE_LOCAL &&
+      // Loopback exceptions.
+      opcode != HCI_RESET && opcode != HCI_SET_HC_TO_HOST_FLOW_CTRL &&
+      opcode != HCI_HOST_BUFFER_SIZE && opcode != HCI_HOST_NUM_PACKETS_DONE &&
+      opcode != HCI_READ_BUFFER_SIZE && opcode != HCI_READ_LOOPBACK_MODE &&
+      opcode != HCI_WRITE_LOOPBACK_MODE) {
+    send_event_(EventPacket::CreateLoopbackCommandEvent(
+        opcode, command_packet->GetPayload()));
+  } else if (active_hci_commands_.count(opcode) > 0) {
+    active_hci_commands_[opcode](command_packet->GetPayload());
+  } else {
+    SendCommandCompleteOnlyStatus(opcode, kUnknownHciCommand);
+  }
 }
 
 void DualModeController::RegisterEventChannel(
@@ -211,10 +258,21 @@ void DualModeController::RegisterEventChannel(
   send_event_ = callback;
 }
 
+void DualModeController::RegisterAclChannel(
+    const std::function<void(std::unique_ptr<AclPacket>)>& callback) {
+  send_acl_ = callback;
+}
+
+void DualModeController::RegisterScoChannel(
+    const std::function<void(std::unique_ptr<ScoPacket>)>& callback) {
+  send_sco_ = callback;
+}
+
 void DualModeController::HandleTimerTick() {
-  // PageScan();
-  if (le_scan_enable_) LOG_ERROR(LOG_TAG, "LE scan");
-  // LeScan();
+  if (state_ == kInquiry) PageScan();
+  if (le_scan_enable_ || le_connect_) LeScan();
+  Connections();
+  for (size_t dev = 0; dev < devices_.size(); dev++) devices_[dev]->TimerTick();
 }
 
 void DualModeController::SetTimerPeriod(std::chrono::milliseconds new_period) {
@@ -225,6 +283,145 @@ void DualModeController::SetTimerPeriod(std::chrono::milliseconds new_period) {
   // Restart the timer with the new period
   StopTimer();
   StartTimer();
+}
+
+static uint8_t GetRssi(size_t dev) {
+  // TODO: Model rssi somehow
+  return -((dev * 16) % 127);
+}
+
+static uint8_t LeGetHandle() {
+  static int handle = 0;
+  return handle++;
+}
+
+static uint8_t LeGetConnInterval() { return 1; }
+
+static uint8_t LeGetConnLatency() { return 2; }
+
+static uint8_t LeGetSupervisionTimeout() { return 3; }
+
+void DualModeController::Connections() {
+  for (size_t i = 0; i < connections_.size(); i++) {
+    if (connections_[i]->Connected()) {
+      connections_[i]->SendToDevice();
+      vector<uint8_t> data;
+      connections_[i]->ReceiveFromDevice(data);
+      // HandleConnectionData(data);
+    }
+  }
+}
+
+void DualModeController::LeScan() {
+  std::unique_ptr<EventPacket> le_adverts =
+      EventPacket::CreateLeAdvertisingReportEvent();
+  vector<uint8_t> ad;
+  for (size_t dev = 0; dev < devices_.size(); dev++) {
+    uint8_t adv_type;
+    const BtAddress addr = devices_[dev]->GetBtAddress();
+    uint8_t addr_type = devices_[dev]->GetAddressType();
+    ad.clear();
+
+    // Listen for Advertisements
+    if (devices_[dev]->IsAdvertisementAvailable(
+            std::chrono::milliseconds(le_scan_window_))) {
+      ad = devices_[dev]->GetAdvertisement();
+      adv_type = devices_[dev]->GetAdvertisementType();
+      if (le_scan_enable_ && !le_adverts->AddLeAdvertisingReport(
+                                 adv_type, addr_type, addr, ad, GetRssi(dev))) {
+        send_event_(std::move(le_adverts));
+        le_adverts = EventPacket::CreateLeAdvertisingReportEvent();
+        CHECK(le_adverts->AddLeAdvertisingReport(adv_type, addr_type, addr, ad,
+                                                 GetRssi(dev)));
+      }
+
+      // Connect
+      if (le_connect_ && (adv_type == BTM_BLE_CONNECT_EVT ||
+                          adv_type == BTM_BLE_CONNECT_DIR_EVT)) {
+        LOG_INFO(LOG_TAG, "Connecting to device %d", static_cast<int>(dev));
+        if (peer_address_ == addr && peer_address_type_ == addr_type &&
+            devices_[dev]->LeConnect()) {
+          uint16_t handle = LeGetHandle();
+          std::unique_ptr<EventPacket> event =
+              EventPacket::CreateLeConnectionCompleteEvent(
+                  kSuccessStatus, handle, HCI_ROLE_MASTER, addr_type, addr,
+                  LeGetConnInterval(), LeGetConnLatency(),
+                  LeGetSupervisionTimeout());
+          send_event_(std::move(event));
+          le_connect_ = false;
+
+          connections_.push_back(
+              std::make_shared<Connection>(devices_[dev], handle));
+        }
+
+        // TODO: Handle the white list (if (InWhiteList(dev)))
+      }
+
+      // Active scanning
+      if (le_scan_enable_ && le_scan_type_ == 1) {
+        ad.clear();
+        if (devices_[dev]->HasScanResponse()) {
+          ad = devices_[dev]->GetScanResponse();
+          if (!le_adverts->AddLeAdvertisingReport(
+                  BTM_BLE_SCAN_RSP_EVT, addr_type, addr, ad, GetRssi(dev))) {
+            send_event_(std::move(le_adverts));
+            le_adverts = EventPacket::CreateLeAdvertisingReportEvent();
+            CHECK(le_adverts->AddLeAdvertisingReport(
+                BTM_BLE_SCAN_RSP_EVT, addr_type, addr, ad, GetRssi(dev)));
+          }
+        }
+      }
+    }
+  }
+
+  if (le_scan_enable_) send_event_(std::move(le_adverts));
+}
+
+void DualModeController::PageScan() {
+  // Inquiry modes for specifiying inquiry result formats.
+  static const uint8_t kStandardInquiry = 0x00;
+  static const uint8_t kRssiInquiry = 0x01;
+  static const uint8_t kExtendedOrRssiInquiry = 0x02;
+
+  switch (inquiry_mode_) {
+    case (kStandardInquiry): {
+      std::unique_ptr<EventPacket> inquiry_result =
+          EventPacket::CreateInquiryResultEvent();
+      for (size_t dev = 0; dev < devices_.size(); dev++)
+        // Scan for devices
+        if (devices_[dev]->IsPageScanAvailable()) {
+          bool result_added = inquiry_result->AddInquiryResult(
+              devices_[dev]->GetBtAddress(),
+              devices_[dev]->GetPageScanRepetitionMode(),
+              devices_[dev]->GetDeviceClass(), devices_[dev]->GetClockOffset());
+          if (!result_added) {
+            send_event_(std::move(inquiry_result));
+            inquiry_result = EventPacket::CreateInquiryResultEvent();
+            result_added = inquiry_result->AddInquiryResult(
+                devices_[dev]->GetBtAddress(),
+                devices_[dev]->GetPageScanRepetitionMode(),
+                devices_[dev]->GetDeviceClass(),
+                devices_[dev]->GetClockOffset());
+            CHECK(result_added);
+          }
+        }
+    } break;
+
+    case (kRssiInquiry):
+      LOG_INFO(LOG_TAG, "RSSI Inquiry Mode currently not supported.");
+      break;
+
+    case (kExtendedOrRssiInquiry):
+      for (size_t dev = 0; dev < devices_.size(); dev++)
+        if (devices_[dev]->IsPageScanAvailable()) {
+          send_event_(EventPacket::CreateExtendedInquiryResultEvent(
+              devices_[dev]->GetBtAddress(),
+              devices_[dev]->GetPageScanRepetitionMode(),
+              devices_[dev]->GetDeviceClass(), devices_[dev]->GetClockOffset(),
+              GetRssi(dev), devices_[dev]->GetExtendedInquiryData()));
+        }
+      break;
+  }
 }
 
 void DualModeController::StartTimer() {
@@ -240,43 +437,49 @@ void DualModeController::StopTimer() {
   timer_tick_task_ = kInvalidTaskId;
 }
 
-void DualModeController::TestChannelClear(
-    UNUSED_ATTR const vector<std::string>& args) {
-  LogCommand("TestChannel Clear");
-  test_channel_state_ = kNone;
+void DualModeController::SetEventDelay(int64_t delay) {
+  if (delay < 0) delay = 0;
 }
 
-void DualModeController::TestChannelDiscover(
-    UNUSED_ATTR const vector<std::string>& args) {
-  LogCommand("TestChannel Discover");
-  /* TODO: Replace with adding devices */
-  /*
+void DualModeController::TestChannelAdd(const vector<std::string>& args) {
+  LogCommand("TestChannel 'add'");
 
-    for (size_t i = 0; i < args.size() - 1; i += 2)
-      SendExtendedInquiryResult(args[i], args[i + 1]);
-  */
+  std::shared_ptr<Device> new_dev = DeviceFactory::Create(args);
+
+  if (new_dev == NULL) {
+    LOG_ERROR(LOG_TAG, "TestChannel 'add' failed!");
+    return;
+  }
+
+  devices_.push_back(new_dev);
 }
 
-void DualModeController::TestChannelTimeoutAll(
-    UNUSED_ATTR const vector<std::string>& args) {
-  LogCommand("TestChannel Timeout All");
-  test_channel_state_ = kTimeoutAll;
+void DualModeController::TestChannelDel(const vector<std::string>& args) {
+  LogCommand("TestChannel 'del'");
+
+  size_t dev_index = std::stoi(args[0]);
+
+  if (dev_index >= devices_.size()) {
+    LOG_INFO(LOG_TAG, "TestChannel 'del': index %d out of range!",
+             static_cast<int>(dev_index));
+  } else {
+    devices_.erase(devices_.begin() + dev_index);
+  }
 }
 
-void DualModeController::TestChannelSetEventDelay(
-    const vector<std::string>& args UNUSED_ATTR) {
-  LogCommand("TestChannel Set Event Delay");
-  test_channel_state_ = kDelayedResponse;
+void DualModeController::TestChannelList(
+    UNUSED_ATTR const vector<std::string>& args) const {
+  LogCommand("TestChannel 'list'");
+  LOG_INFO(LOG_TAG, "Devices:");
+  for (size_t dev = 0; dev < devices_.size(); dev++) {
+    LOG_INFO(LOG_TAG, "%d:", static_cast<int>(dev));
+    devices_[dev]->ToString();
+  }
 }
 
-void DualModeController::TestChannelClearEventDelay(
-    UNUSED_ATTR const vector<std::string>& args) {
-  LogCommand("TestChannel Clear Event Delay");
-  test_channel_state_ = kNone;
-}
-
-void DualModeController::HciReset(UNUSED_ATTR const vector<uint8_t>& args) {
+void DualModeController::HciReset(const vector<uint8_t>& args) {
   LogCommand("Reset");
+  CHECK(args[0] == 0);  // No arguments
   state_ = kStandby;
   if (timer_tick_task_ != kInvalidTaskId) {
     LOG_INFO(LOG_TAG, "The timer was already running!");
@@ -288,9 +491,9 @@ void DualModeController::HciReset(UNUSED_ATTR const vector<uint8_t>& args) {
   SendCommandCompleteSuccess(HCI_RESET);
 }
 
-void DualModeController::HciReadBufferSize(
-    UNUSED_ATTR const vector<uint8_t>& args) {
+void DualModeController::HciReadBufferSize(const vector<uint8_t>& args) {
   LogCommand("Read Buffer Size");
+  CHECK(args[0] == 0);  // No arguments
   std::unique_ptr<EventPacket> command_complete =
       EventPacket::CreateCommandCompleteReadBufferSize(
           kSuccessStatus, properties_.GetAclDataPacketSize(),
@@ -301,15 +504,16 @@ void DualModeController::HciReadBufferSize(
   send_event_(std::move(command_complete));
 }
 
-void DualModeController::HciHostBufferSize(
-    UNUSED_ATTR const vector<uint8_t>& args) {
+void DualModeController::HciHostBufferSize(const vector<uint8_t>& args) {
   LogCommand("Host Buffer Size");
+  CHECK(args[0] == 7);  // No arguments
   SendCommandCompleteSuccess(HCI_HOST_BUFFER_SIZE);
 }
 
 void DualModeController::HciReadLocalVersionInformation(
-    UNUSED_ATTR const vector<uint8_t>& args) {
+    const vector<uint8_t>& args) {
   LogCommand("Read Local Version Information");
+  CHECK(args[0] == 0);  // No arguments
   std::unique_ptr<EventPacket> command_complete =
       EventPacket::CreateCommandCompleteReadLocalVersionInformation(
           kSuccessStatus, properties_.GetVersion(), properties_.GetRevision(),
@@ -318,8 +522,8 @@ void DualModeController::HciReadLocalVersionInformation(
   send_event_(std::move(command_complete));
 }
 
-void DualModeController::HciReadBdAddr(
-    UNUSED_ATTR const vector<uint8_t>& args) {
+void DualModeController::HciReadBdAddr(const vector<uint8_t>& args) {
+  CHECK(args[0] == 0);  // No arguments
   std::unique_ptr<EventPacket> command_complete =
       EventPacket::CreateCommandCompleteReadBdAddr(kSuccessStatus,
                                                    properties_.GetAddress());
@@ -327,8 +531,9 @@ void DualModeController::HciReadBdAddr(
 }
 
 void DualModeController::HciReadLocalSupportedCommands(
-    UNUSED_ATTR const vector<uint8_t>& args) {
+    const vector<uint8_t>& args) {
   LogCommand("Read Local Supported Commands");
+  CHECK(args[0] == 0);  // No arguments
   std::unique_ptr<EventPacket> command_complete =
       EventPacket::CreateCommandCompleteReadLocalSupportedCommands(
           kSuccessStatus, properties_.GetLocalSupportedCommands());
@@ -336,8 +541,9 @@ void DualModeController::HciReadLocalSupportedCommands(
 }
 
 void DualModeController::HciReadLocalSupportedCodecs(
-    UNUSED_ATTR const vector<uint8_t>& args) {
+    const vector<uint8_t>& args) {
   LogCommand("Read Local Supported Codecs");
+  CHECK(args[0] == 0);  // No arguments
   std::unique_ptr<EventPacket> command_complete =
       EventPacket::CreateCommandCompleteReadLocalSupportedCodecs(
           kSuccessStatus, properties_.GetSupportedCodecs(),
@@ -464,49 +670,21 @@ void DualModeController::HciSetEventFilter(
 }
 
 void DualModeController::HciInquiry(const vector<uint8_t>& args) {
-  // Fake inquiry response for a fake device.
-  const EventPacket::PageScanRepetitionMode kPageScanRepetitionMode =
-      EventPacket::kR0;
-  const uint32_t kClassOfDevice = 0x030201;
-  const uint16_t kClockOffset = 513;
-  BtAddress other_addr;
-  other_addr.FromVector(kOtherDeviceBdAddress);
-
   LogCommand("Inquiry");
+  CHECK(args.size() == 6);
   state_ = kInquiry;
   SendCommandStatusSuccess(HCI_INQUIRY);
-  switch (inquiry_mode_) {
-    case (kStandardInquiry): {
-      std::unique_ptr<EventPacket> inquiry_result_evt =
-          EventPacket::CreateInquiryResultEvent(other_addr,
-                                                kPageScanRepetitionMode,
-                                                kClassOfDevice, kClockOffset);
-      send_event_(std::move(inquiry_result_evt));
-      /* TODO: Return responses from modeled devices */
-    } break;
+  inquiry_lap_[0] = args[1];
+  inquiry_lap_[1] = args[2];
+  inquiry_lap_[2] = args[3];
 
-    case (kRssiInquiry):
-      LOG_INFO(LOG_TAG, "RSSI Inquiry Mode currently not supported.");
-      break;
-
-    case (kExtendedOrRssiInquiry): {
-      const std::string name = "Foobar";
-      vector<uint8_t> extended_inquiry_data = {
-          static_cast<uint8_t>(name.length() + 1), 0x09};
-
-      for (size_t i = 0; i < name.length(); i++)
-        extended_inquiry_data.push_back(name[i]);
-      extended_inquiry_data.push_back('\0');
-
-      uint8_t rssi = static_cast<uint8_t>(-20);
-      send_event_(EventPacket::CreateExtendedInquiryResultEvent(
-          other_addr, kPageScanRepetitionMode, kClassOfDevice, kClockOffset,
-          rssi, extended_inquiry_data));
-      /* TODO: Return responses from modeled devices */
-    } break;
-  }
   AddControllerEvent(std::chrono::milliseconds(args[4] * 1280),
                      [this]() { DualModeController::InquiryTimeout(); });
+
+  if (args[5] > 0) {
+    inquiry_responses_limited_ = true;
+    inquiry_num_responses_ = args[5];
+  }
 }
 
 void DualModeController::HciInquiryCancel(
@@ -521,6 +699,7 @@ void DualModeController::InquiryTimeout() {
   LOG_INFO(LOG_TAG, "InquiryTimer fired");
   if (state_ == kInquiry) {
     state_ = kStandby;
+    inquiry_responses_limited_ = false;
     send_event_(EventPacket::CreateInquiryCompleteEvent(kSuccessStatus));
   }
 }
@@ -530,7 +709,10 @@ void DualModeController::HciDeleteStoredLinkKey(
   LogCommand("Delete Stored Link Key");
   /* Check the last octect in |args|. If it is 0, delete only the link key for
    * the given BD_ADDR. If is is 1, delete all stored link keys. */
-  SendCommandCompleteOnlyStatus(HCI_INQUIRY_CANCEL, kUnknownHciCommand);
+  uint16_t deleted_keys = 1;
+
+  send_event_(EventPacket::CreateCommandCompleteDeleteStoredLinkKey(
+      kSuccessStatus, deleted_keys));
 }
 
 void DualModeController::HciRemoteNameRequest(
@@ -597,18 +779,74 @@ void DualModeController::HciLeSetScanParameters(const vector<uint8_t>& args) {
 void DualModeController::HciLeSetScanEnable(const vector<uint8_t>& args) {
   LogCommand("LE SetScanEnable");
   CHECK(args.size() == 3);
-  CHECK(args[0] == 2);
   le_scan_enable_ = args[1];
   filter_duplicates_ = args[2];
   SendCommandCompleteSuccess(HCI_BLE_WRITE_SCAN_ENABLE);
 }
 
-void DualModeController::HciLeReadWhiteListSize(
-    UNUSED_ATTR const vector<uint8_t>& args) {
+void DualModeController::HciLeCreateConnection(const vector<uint8_t>& args) {
+  LogCommand("LE CreateConnection");
+  le_connect_ = true;
+  le_scan_interval_ = args[1] | (args[2] << 8);
+  le_scan_window_ = args[3] | (args[4] << 8);
+  initiator_filter_policy_ = args[5];
+
+  if (initiator_filter_policy_ == 0) {  // White list not used
+    peer_address_type_ = args[6];
+    vector<uint8_t> peer_addr = {args[7],  args[8],  args[9],
+                                 args[10], args[11], args[12]};
+    peer_address_.FromVector(peer_addr);
+  }
+
+  SendCommandStatusSuccess(HCI_BLE_CREATE_LL_CONN);
+}
+
+void DualModeController::HciLeConnectionCancel(const vector<uint8_t>& args) {
+  LogCommand("LE ConnectionCancel");
+  CHECK(args[0] == 0);  // No arguments
+  le_connect_ = false;
+  SendCommandStatusSuccess(HCI_BLE_CREATE_CONN_CANCEL);
+}
+
+void DualModeController::HciLeReadWhiteListSize(const vector<uint8_t>& args) {
+  LogCommand("LE ReadWhiteListSize");
+  CHECK(args[0] == 0);  // No arguments
   std::unique_ptr<EventPacket> command_complete =
       EventPacket::CreateCommandCompleteLeReadWhiteListSize(
           kSuccessStatus, properties_.GetLeWhiteListSize());
   send_event_(std::move(command_complete));
+}
+
+void DualModeController::HciLeReadRemoteUsedFeaturesB(uint16_t handle) {
+  uint64_t features;
+  LogCommand("LE ReadRemoteUsedFeatures Bottom half");
+
+  for (size_t i = 0; i < connections_.size(); i++)
+    if (*connections_[i] == handle)
+      // TODO:
+      // features = connections_[i]->GetDevice()->GetUsedFeatures();
+      features = 0xffffffffffffffff;
+
+  std::unique_ptr<EventPacket> event =
+      EventPacket::CreateLeRemoteUsedFeaturesEvent(kSuccessStatus, handle,
+                                                   features);
+  send_event_(std::move(event));
+}
+
+void DualModeController::HciLeReadRemoteUsedFeatures(
+    const vector<uint8_t>& args) {
+  LogCommand("LE ReadRemoteUsedFeatures");
+  CHECK(args.size() == 3);
+
+  uint16_t handle = args[1] | (args[2] << 8);
+
+  AddConnectionAction(
+      [this, handle]() {
+        DualModeController::HciLeReadRemoteUsedFeaturesB(handle);
+      },
+      handle);
+
+  SendCommandStatusSuccess(HCI_BLE_READ_REMOTE_FEAT);
 }
 
 void DualModeController::HciLeRand(UNUSED_ATTR const vector<uint8_t>& args) {
@@ -634,6 +872,12 @@ void DualModeController::HciBleVendorSleepMode(
 
 void DualModeController::HciBleVendorCap(
     UNUSED_ATTR const vector<uint8_t>& args) {
+  vector<uint8_t> caps = properties_.GetLeVendorCap();
+  if (caps.size() == 0) {
+    SendCommandCompleteOnlyStatus(HCI_BLE_VENDOR_CAP_OCF, kUnknownHciCommand);
+    return;
+  }
+
   std::unique_ptr<EventPacket> command_complete =
       EventPacket::CreateCommandCompleteLeVendorCap(
           kSuccessStatus, properties_.GetLeVendorCap());
@@ -651,10 +895,9 @@ void DualModeController::HciBleVendor155(
                                 kUnknownHciCommand);
 }
 
-void DualModeController::HciBleVendor157(
+void DualModeController::HciBleAdvertisingFilter(
     UNUSED_ATTR const vector<uint8_t>& args) {
-  SendCommandCompleteOnlyStatus(HCI_GRP_VENDOR_SPECIFIC | 0x157,
-                                kUnknownHciCommand);
+  SendCommandCompleteOnlyStatus(HCI_BLE_ADV_FILTER_OCF, kUnknownHciCommand);
 }
 
 void DualModeController::HciBleEnergyInfo(
@@ -668,14 +911,38 @@ void DualModeController::HciBleExtendedScanParams(
                                 kUnknownHciCommand);
 }
 
+void DualModeController::HciReadLoopbackMode(const vector<uint8_t>& args) {
+  CHECK(args[0] == 0);  // No arguments
+  std::unique_ptr<EventPacket> command_complete =
+      EventPacket::CreateCommandCompleteReadLoopbackMode(kSuccessStatus,
+                                                         loopback_mode_);
+  send_event_(std::move(command_complete));
+}
+
+void DualModeController::HciWriteLoopbackMode(const vector<uint8_t>& args) {
+  CHECK(args[0] == 1);
+  loopback_mode_ = args[1];
+  // ACL channel
+  uint16_t acl_handle = 0x123;
+  send_event_(EventPacket::CreateConnectionCompleteEvent(
+      kSuccessStatus, acl_handle, properties_.GetAddress(), HCI_LINK_TYPE_ACL,
+      false));
+  // SCO channel
+  uint16_t sco_handle = 0x345;
+  send_event_(EventPacket::CreateConnectionCompleteEvent(
+      kSuccessStatus, sco_handle, properties_.GetAddress(), HCI_LINK_TYPE_SCO,
+      false));
+  SendCommandCompleteSuccess(HCI_WRITE_LOOPBACK_MODE);
+}
+
 DualModeController::Properties::Properties(const std::string& file_name)
     : acl_data_packet_size_(1024),
       sco_data_packet_size_(255),
       num_acl_data_packets_(10),
       num_sco_data_packets_(10),
-      version_(4),
-      revision_(1),
-      lmp_pal_version_(0),
+      version_(HCI_PROTO_VERSION_4_1),
+      revision_(0),
+      lmp_pal_version_(7), /* 4.1 */
       manufacturer_name_(0),
       lmp_pal_subversion_(0),
       le_data_packet_length_(27),
@@ -695,8 +962,7 @@ DualModeController::Properties::Properties(const std::string& file_name)
 
   le_supported_features_ = 0x1f;
   le_supported_states_ = 0x3ffffffffff;
-  le_vendor_cap_ = {0x05, 0x01, 0x00, 0x04, 0x80, 0x01, 0x10,
-                    0x01, 0x60, 0x00, 0x0a, 0x00, 0x01, 0x01};
+  le_vendor_cap_ = {};
 
   LOG_INFO(LOG_TAG, "Reading controller properties from %s.",
            file_name.c_str());
