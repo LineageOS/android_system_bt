@@ -55,3 +55,41 @@ cc_binary {
     ],
     init_rc: ["android.hardware.bluetooth@1.0-service.sim.rc"],
 }
+
+cc_library_shared {
+    name: "android.hardware.bluetooth@1.0-impl-sim",
+    proprietary: true,
+    relative_install_path: "hw",
+    srcs: [
+        "bluetooth_hci.cc",
+    ],
+
+    shared_libs: [
+        "android.hardware.bluetooth@1.0",
+        "libbase",
+        "libchrome",
+        "libcutils",
+        "libhardware",
+        "libhidlbase",
+        "libhidltransport",
+        "liblog",
+        "libutils",
+    ],
+    cflags: [
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-DHAS_NO_BDROID_BUILDCFG",
+    ],
+    static_libs: [
+        "android.hardware.bluetooth-async",
+        "android.hardware.bluetooth-hci",
+        "libbt-rootcanal",
+    ],
+    include_dirs: [
+        "system/bt",
+        "system/bt/hci/include",
+        "system/bt/include",
+        "system/bt/stack/include",
+    ],
+}

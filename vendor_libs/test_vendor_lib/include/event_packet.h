@@ -55,6 +55,16 @@ class EventPacket : public Packet {
   static std::unique_ptr<EventPacket> CreateCommandStatusEvent(
       uint8_t status, uint16_t command_opcode);
 
+  // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.7.19
+  static std::unique_ptr<EventPacket> CreateNumberOfCompletedPacketsEvent(
+      uint16_t handle, uint16_t num_completed_packets);
+
+  void AddCompletedPackets(uint16_t handle, uint16_t num_completed_packets);
+
+  // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.3.10
+  static std::unique_ptr<EventPacket> CreateCommandCompleteDeleteStoredLinkKey(
+      uint8_t status, uint16_t num_keys_deleted);
+
   // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.3.12
   static std::unique_ptr<EventPacket> CreateCommandCompleteReadLocalName(
       uint8_t status, const std::string& local_name);
@@ -96,28 +106,53 @@ class EventPacket : public Packet {
       uint8_t status, const std::vector<uint8_t>& supported_codecs,
       const std::vector<uint32_t>& vendor_specific_codecs);
 
+  // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.6.1
+  static std::unique_ptr<EventPacket> CreateCommandCompleteReadLoopbackMode(
+      uint8_t status, uint8_t mode);
+
   // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.7.2
-  enum PageScanRepetitionMode {
-    kR0 = 0,
-    kR1 = 1,
-    kR2 = 2,
-  };
+  static std::unique_ptr<EventPacket> CreateInquiryResultEvent();
 
-  static std::unique_ptr<EventPacket> CreateInquiryResultEvent(
-      const BtAddress& bt_address,
-      const PageScanRepetitionMode page_scan_repetition_mode,
-      uint32_t class_of_device, uint16_t clock_offset);
-
-  void AddInquiryResult(const BtAddress& bt_address,
-                        const PageScanRepetitionMode page_scan_repetition_mode,
+  // Returns true if the result can be added to the event packet.
+  bool AddInquiryResult(const BtAddress& bt_address,
+                        uint8_t page_scan_repetition_mode,
                         uint32_t class_of_device, uint16_t clock_offset);
+
+  // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.7.3
+  static std::unique_ptr<EventPacket> CreateConnectionCompleteEvent(
+      uint8_t status, uint16_t handle, const BtAddress& address,
+      uint8_t link_type, bool encryption_enabled);
+
+  // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.7.25
+  static std::unique_ptr<EventPacket> CreateLoopbackCommandEvent(
+      uint16_t opcode, const std::vector<uint8_t>& payload);
 
   // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.7.38
   static std::unique_ptr<EventPacket> CreateExtendedInquiryResultEvent(
-      const BtAddress& bt_address,
-      const PageScanRepetitionMode page_scan_repetition_mode,
+      const BtAddress& bt_address, uint8_t page_scan_repetition_mode,
       uint32_t class_of_device, uint16_t clock_offset, uint8_t rssi,
       const std::vector<uint8_t>& extended_inquiry_response);
+
+  // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section
+  // 7.7.65.1
+  static std::unique_ptr<EventPacket> CreateLeConnectionCompleteEvent(
+      uint8_t status, uint16_t handle, uint8_t role, uint8_t peer_address_type,
+      const BtAddress& peer, uint16_t interval, uint16_t latency,
+      uint16_t supervision_timeout);
+
+  // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section
+  // 7.7.65.2
+  static std::unique_ptr<EventPacket> CreateLeAdvertisingReportEvent();
+
+  // Returns true if the report can be added to the event packet.
+  bool AddLeAdvertisingReport(uint8_t event_type, uint8_t addr_type,
+                              const BtAddress& addr,
+                              const std::vector<uint8_t>& data, uint8_t rssi);
+
+  // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section
+  // 7.7.65.4
+  static std::unique_ptr<EventPacket> CreateLeRemoteUsedFeaturesEvent(
+      uint8_t status, uint16_t handle, uint64_t features);
 
   // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.8.2
   static std::unique_ptr<EventPacket> CreateCommandCompleteLeReadBufferSize(

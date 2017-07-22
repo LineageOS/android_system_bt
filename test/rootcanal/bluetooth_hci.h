@@ -72,6 +72,8 @@ class BluetoothHci : public IBluetoothHci {
   test_vendor_lib::TestChannelTransport test_channel_transport_;
 };
 
+extern "C" IBluetoothHci* HIDL_FETCH_IBluetoothHci(const char* name);
+
 }  // namespace sim
 }  // namespace V1_0
 }  // namespace bluetooth
