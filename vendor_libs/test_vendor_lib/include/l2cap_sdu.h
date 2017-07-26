@@ -20,6 +20,8 @@
 #include <iterator>
 #include <vector>
 
+#include "hci_packet.h"
+
 namespace test_vendor_lib {
 
 // Abstract representation of an SDU packet that contains an L2CAP
@@ -57,31 +59,16 @@ namespace test_vendor_lib {
 // L2CAP packet will not include either of the control or FCS
 // bytes.
 //
-class L2capSdu {
+class L2capSdu : public HciPacket {
  public:
   // Returns a unique_ptr to an L2capSdu object that is constructed with the
   // assumption that the SDU packet is complete and correct.
-  static std::unique_ptr<L2capSdu> L2capSduConstructor(
+  static std::shared_ptr<L2capSdu> L2capSduConstructor(
       std::vector<uint8_t> create_from);
 
   // Adds an FCS to create_from and returns a unique_ptr to an L2capSdu object.
-  static std::unique_ptr<L2capSdu> L2capSduBuilder(
+  static std::shared_ptr<L2capSdu> L2capSduBuilder(
       std::vector<uint8_t> create_from);
-
-  // Get a vector iterator that points to the first byte of the
-  // L2CAP payload within an SDU. The offset parameter will be the
-  // number of bytes that are in the SDU header. This should always
-  // be 6 bytes with the exception being the first SDU of a stream
-  // of SDU packets where the first SDU packet will have an extra
-  // two bytes and the offset should be 8 bytes.
-  std::vector<uint8_t>::const_iterator get_payload_begin(
-      const unsigned int offset) const;
-
-  // Get a vector iterator that points to the last bytes of the
-  // L2CAP payload within an SDU packet. There is no offset
-  // parameter for this function because there will always be two
-  // FCS bytes and nothing else at the end of each SDU.
-  std::vector<uint8_t>::const_iterator get_payload_end() const;
 
   // Get the FCS bytes from the end of the L2CAP payload of an SDU
   // packet.
@@ -113,6 +100,10 @@ class L2capSdu {
   // Returns true if the SDU control sequence for Segmentation and
   // Reasembly is 10b, false otherwise.
   static bool is_ending_sdu(const L2capSdu& sdu);
+
+  // HciPacket functions
+  size_t get_length();
+  uint8_t& get_at_index(size_t index);
 
  private:
   // This is the SDU packet in bytes.
