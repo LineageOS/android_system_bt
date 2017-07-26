@@ -26,6 +26,8 @@
 #include <base/logging.h>
 #include <string.h>
 
+#include <mutex>
+
 #include "bt_common.h"
 #include "bta_api.h"
 #include "bta_dm_api.h"
@@ -65,6 +67,7 @@ static void bta_dm_pm_ssr(const RawAddress& peer_addr);
 #endif
 
 tBTA_DM_CONNECTED_SRVCS bta_dm_conn_srvcs;
+static std::recursive_mutex pm_timer_mutex;
 
 /*******************************************************************************
  *
@@ -269,6 +272,7 @@ static void bta_dm_pm_stop_timer_by_srvc_id(const RawAddress& peer_addr,
 static void bta_dm_pm_start_timer(tBTA_PM_TIMER* p_timer, uint8_t timer_idx,
                                   period_ms_t timeout_ms, uint8_t srvc_id,
                                   uint8_t pm_action) {
+  std::unique_lock<std::recursive_mutex> lock(pm_timer_mutex);
   p_timer->in_use = true;
 
   if (p_timer->srvc_id[timer_idx] == BTA_ID_MAX) p_timer->active++;
@@ -277,6 +281,7 @@ static void bta_dm_pm_start_timer(tBTA_PM_TIMER* p_timer, uint8_t timer_idx,
     p_timer->pm_action[timer_idx] = pm_action;
 
   p_timer->srvc_id[timer_idx] = srvc_id;
+  lock.unlock();
 
   alarm_set_on_queue(p_timer->timer[timer_idx], timeout_ms,
                      bta_dm_pm_timer_cback, p_timer->timer[timer_idx],
@@ -303,6 +308,8 @@ static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER* p_timer,
   CHECK(p_timer->in_use && (p_timer->active > 0));
 
   alarm_cancel(p_timer->timer[timer_idx]);
+
+  std::lock_guard<std::recursive_mutex> lock(pm_timer_mutex);
   p_timer->srvc_id[timer_idx] = BTA_ID_MAX;
   /* NOTE: pm_action[timer_idx] intentionally not reset */
 
@@ -874,6 +881,7 @@ static void bta_dm_pm_timer_cback(void* data) {
   uint8_t i, j;
   alarm_t* alarm = (alarm_t*)data;
 
+  std::unique_lock<std::recursive_mutex> lock(pm_timer_mutex);
   for (i = 0; i < BTA_DM_NUM_PM_TIMER; i++) {
     APPL_TRACE_DEBUG("dm_pm_timer[%d] in use? %d", i,
                      bta_dm_cb.pm_timer[i].in_use);
@@ -891,6 +899,7 @@ static void bta_dm_pm_timer_cback(void* data) {
       if (j < BTA_DM_PM_MODE_TIMER_MAX) break;
     }
   }
+  lock.unlock();
 
   /* no more timers */
   if (i == BTA_DM_NUM_PM_TIMER) return;
