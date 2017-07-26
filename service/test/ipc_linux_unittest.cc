@@ -23,6 +23,7 @@
 #include <base/command_line.h>
 #include <base/files/scoped_file.h>
 #include <base/macros.h>
+#include <base/run_loop.h>
 #include <base/strings/stringprintf.h>
 #include <gtest/gtest.h>
 
@@ -167,7 +168,7 @@ TEST_F(IPCLinuxTest, BasicStartAndExit) {
 
   // Run the message loop. We will stop the loop when we receive a delegate
   // event.
-  message_loop_.Run();
+  base::RunLoop().Run();
 
   // We should have received the started event.
   EXPECT_EQ(1, delegate.started_count());
@@ -177,7 +178,7 @@ TEST_F(IPCLinuxTest, BasicStartAndExit) {
   // connections. TearDown should gracefully clean up the thread and the test
   // should succeed without hanging.
   ipc_manager_.reset();
-  message_loop_.Run();
+  base::RunLoop().Run();
   EXPECT_EQ(1, delegate.stopped_count());
 }
 
@@ -188,7 +189,7 @@ TEST_F(IPCLinuxTest, BasicStartAndConnect) {
 
   // Run the message loop. We will stop the loop when we receive a delegate
   // event.
-  message_loop_.Run();
+  base::RunLoop().Run();
 
   // We should have received the started event.
   EXPECT_EQ(1, delegate.started_count());
