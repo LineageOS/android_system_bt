@@ -87,14 +87,17 @@ FakeBluetoothInterface::Manager::Manager()
       set_property_succeed(false) {}
 
 void FakeBluetoothInterface::NotifyAdapterStateChanged(bt_state_t state) {
-  FOR_EACH_OBSERVER(Observer, observers_, AdapterStateChangedCallback(state));
+  for (auto& observer : observers_) {
+    observer.AdapterStateChangedCallback(state);
+  }
 }
 
 void FakeBluetoothInterface::NotifyAdapterPropertiesChanged(
     int num_properties, bt_property_t* properties) {
-  FOR_EACH_OBSERVER(
-      Observer, observers_,
-      AdapterPropertiesCallback(BT_STATUS_SUCCESS, num_properties, properties));
+  for (auto& observer : observers_) {
+    observer.AdapterPropertiesCallback(
+        BT_STATUS_SUCCESS, num_properties, properties);
+  }
 }
 
 void FakeBluetoothInterface::NotifyAdapterNamePropertyChanged(
@@ -134,8 +137,9 @@ void FakeBluetoothInterface::NotifyAdapterLocalLeFeaturesPropertyChanged(
 
 void FakeBluetoothInterface::NotifyAclStateChangedCallback(
     bt_status_t status, const RawAddress& remote_bdaddr, bt_acl_state_t state) {
-  FOR_EACH_OBSERVER(Observer, observers_,
-                    AclStateChangedCallback(status, remote_bdaddr, state));
+  for (auto& observer : observers_) {
+    observer.AclStateChangedCallback(status, remote_bdaddr, state);
+  }
 }
 
 void FakeBluetoothInterface::AddObserver(Observer* observer) {
