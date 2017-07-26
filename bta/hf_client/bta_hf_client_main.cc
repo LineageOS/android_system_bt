@@ -774,6 +774,9 @@ void bta_hf_client_sm_execute(uint16_t event, tBTA_HF_CLIENT_DATA* p_data) {
 static void send_post_slc_cmd(tBTA_HF_CLIENT_CB* client_cb) {
   client_cb->at_cb.current_cmd = BTA_HF_CLIENT_AT_NONE;
 
+  tBTA_HF_CLIENT_DATA p_data;
+  p_data.hdr.layer_specific = client_cb->handle;
+  bta_hf_client_sco_listen(&p_data);
   bta_hf_client_send_at_bia(client_cb);
   bta_hf_client_send_at_ccwa(client_cb, true);
   bta_hf_client_send_at_cmee(client_cb, true);
