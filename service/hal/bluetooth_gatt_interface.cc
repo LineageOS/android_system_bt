@@ -59,16 +59,13 @@ base::ObserverList<BluetoothGattInterface::ServerObserver>*
 GetServerObservers();
 
 #define FOR_EACH_SCANNER_OBSERVER(func)                      \
-  FOR_EACH_OBSERVER(BluetoothGattInterface::ScannerObserver, \
-                    *GetScannerObservers(), func)
+  for (auto& observer : *GetScannerObservers()) { observer.func; }
 
 #define FOR_EACH_CLIENT_OBSERVER(func)                      \
-  FOR_EACH_OBSERVER(BluetoothGattInterface::ClientObserver, \
-                    *GetClientObservers(), func)
+  for (auto& observer : *GetClientObservers()) { observer.func; }
 
 #define FOR_EACH_SERVER_OBSERVER(func)                      \
-  FOR_EACH_OBSERVER(BluetoothGattInterface::ServerObserver, \
-                    *GetServerObservers(), func)
+  for (auto& observer : *GetServerObservers()) { observer.func; }
 
 #define VERIFY_INTERFACE_OR_RETURN()                                   \
   do {                                                                 \
