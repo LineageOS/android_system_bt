@@ -19,7 +19,6 @@
 #include <memory>
 
 #include <base/logging.h>
-#include <base/run_loop.h>
 
 #include "service/adapter.h"
 #include "service/hal/bluetooth_gatt_interface.h"
@@ -45,7 +44,7 @@ class DaemonImpl : public Daemon, public ipc::IPCManager::Delegate {
     CleanUpBluetoothStack();
   }
 
-  void StartMainLoop() override { base::RunLoop().Run(); }
+  void StartMainLoop() override { message_loop_->Run(); }
 
   Settings* GetSettings() const override { return settings_.get(); }
 

@@ -55,7 +55,7 @@ shared_mutex_impl g_instance_lock;
 base::ObserverList<BluetoothInterface::Observer>* GetObservers();
 
 #define FOR_EACH_BLUETOOTH_OBSERVER(func) \
-  for (auto& observer : *GetObservers()) { observer.func; }
+  FOR_EACH_OBSERVER(BluetoothInterface::Observer, *GetObservers(), func)
 
 #define VERIFY_INTERFACE_OR_RETURN()                                   \
   do {                                                                 \
