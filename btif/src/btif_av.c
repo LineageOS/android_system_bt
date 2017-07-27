@@ -519,7 +519,7 @@ static BOOLEAN btif_av_state_idle_handler(btif_sm_event_t event, void *p_data, i
             memcpy(&btif_av_cb[index].peer_bda, ((btif_av_connect_req_t*)p_data)->target_bda,
                                                                         sizeof(bt_bdaddr_t));
             BTA_AvOpen(btif_av_cb[index].peer_bda.address, btif_av_cb[index].bta_handle,
-                        TRUE, BTA_SEC_NONE, ((btif_av_connect_req_t*)p_data)->uuid);
+                        TRUE, BTA_SEC_AUTHENTICATE, ((btif_av_connect_req_t*)p_data)->uuid);
             btif_sm_change_state(btif_av_cb[index].sm_handle, BTIF_AV_STATE_OPENING);
             break;
 
@@ -581,7 +581,7 @@ static BOOLEAN btif_av_state_idle_handler(btif_sm_event_t event, void *p_data, i
                 if(event == BTA_AV_PENDING_EVT)
                 {
                     BTA_AvOpen(btif_av_cb[index].peer_bda.address, btif_av_cb[index].bta_handle,
-                       TRUE, BTA_SEC_NONE, UUID_SERVCLASS_AUDIO_SINK);
+                       TRUE, BTA_SEC_AUTHENTICATE, UUID_SERVCLASS_AUDIO_SINK);
                 }
                 else if(event == BTA_AV_RC_OPEN_EVT)
                 {
@@ -2730,7 +2730,7 @@ static void allow_connection(int is_valid, bt_bdaddr_t *bd_addr)
                 }
                 BTIF_TRACE_DEBUG("The connection is allowed for the device at index = %d", index);
                 BTA_AvOpen(btif_av_cb[index].peer_bda.address, btif_av_cb[index].bta_handle,
-                       TRUE, BTA_SEC_NONE, UUID_SERVCLASS_AUDIO_SOURCE);
+                       TRUE, BTA_SEC_AUTHENTICATE, UUID_SERVCLASS_AUDIO_SOURCE);
             }
             else
             {

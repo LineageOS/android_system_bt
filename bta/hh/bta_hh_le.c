@@ -33,7 +33,6 @@
 #include "btm_int.h"
 #include "osi/include/log.h"
 #include "srvc_api.h"
-#include "stack/include/l2c_api.h"
 #include "utl.h"
 
 #ifndef BTA_HH_LE_RECONN
@@ -1656,20 +1655,6 @@ void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL *p_data)
                if (p_dev_cb->scan_refresh_char_handle &&  p_dev_cb->scan_int_char_handle)
                    break;
             }
-        } else if (service->uuid.uu.uuid16 == UUID_SERVCLASS_GAP_SERVER) {
-            //TODO(jpawlowski): this should be done by GAP profile, remove when GAP is fixed.
-            for (list_node_t *cn = list_begin(service->characteristics);
-                 cn != list_end(service->characteristics); cn = list_next(cn)) {
-                tBTA_GATTC_CHARACTERISTIC *p_char = list_node(cn);
-                if (p_char->uuid.len == LEN_UUID_16 &&
-                    p_char->uuid.uu.uuid16 == GATT_UUID_GAP_PREF_CONN_PARAM) {
-
-                    /* read the char value */
-                    gatt_queue_read_op(GATT_READ_CHAR, p_dev_cb->conn_id, p_char->handle);
-
-                    break;
-                }
-            }
         }
     }
 
@@ -1745,6 +1730,12 @@ void bta_hh_le_proc_get_rpt_cmpl(tBTA_HH_DEV_CB *p_dev_cb, tBTA_GATTC_READ *p_da
 
     const tBTA_GATTC_CHARACTERISTIC *p_char = BTA_GATTC_GetCharacteristic(p_dev_cb->conn_id,
                                                                           p_data->handle);
+
+    if (p_char == NULL) {
+        APPL_TRACE_ERROR("%s: report cmpl for Unknown Characteristic,handle: 0x%04x",
+            __func__, p_data->handle);
+        return;
+    }
 
     memset(&hs_data, 0, sizeof(hs_data));
     hs_data.status  = BTA_HH_ERR;
@@ -1845,35 +1836,6 @@ void bta_hh_w4_le_read_char_cmpl(tBTA_HH_DEV_CB *p_dev_cb, tBTA_HH_DATA *p_buf)
     if (char_uuid == GATT_UUID_BATTERY_LEVEL)
     {
         bta_hh_read_battery_level_cmpl(p_data->status, p_dev_cb, p_data);
-    }
-    else if (char_uuid == GATT_UUID_GAP_PREF_CONN_PARAM)
-    {
-        //TODO(jpawlowski): this should be done by GAP profile, remove when GAP is fixed.
-        if (p_data->status != BTA_GATT_OK || p_data->p_value == NULL) {
-            APPL_TRACE_ERROR("%s: read pref conn params error: %d",
-                             __func__, p_data->status);
-            return;
-        }
-
-        UINT8 *pp = p_data->p_value->p_value;
-        UINT16 min, max, latency, tout;
-        STREAM_TO_UINT16 (min, pp);
-        STREAM_TO_UINT16 (max, pp);
-        STREAM_TO_UINT16 (latency, pp);
-        STREAM_TO_UINT16 (tout, pp);
-
-        // Make sure both min, and max are bigger than 11.25ms, lower values can introduce
-        // audio issues if A2DP is also active.
-        if (min < BTM_BLE_CONN_INT_MIN_LIMIT)
-            min = BTM_BLE_CONN_INT_MIN_LIMIT;
-        if (max < BTM_BLE_CONN_INT_MIN_LIMIT)
-            max = BTM_BLE_CONN_INT_MIN_LIMIT;
-
-        if (tout < BTM_BLE_CONN_TIMEOUT_MIN_DEF)
-            tout = BTM_BLE_CONN_TIMEOUT_MIN_DEF;
-
-        BTM_BleSetPrefConnParams (p_dev_cb->addr, min, max, latency, tout);
-        L2CA_UpdateBleConnParams(p_dev_cb->addr, min, max, latency, tout);
     }
     else
     {
@@ -2074,6 +2036,11 @@ void bta_hh_w4_le_write_cmpl(tBTA_HH_DEV_CB *p_dev_cb, tBTA_HH_DATA *p_buf)
 
     const tBTA_GATTC_CHARACTERISTIC *p_char = BTA_GATTC_GetCharacteristic(p_dev_cb->conn_id,
                                                                           p_data->handle);
+    if (p_char == NULL) {
+        APPL_TRACE_ERROR("%s: write cmpl for Unknown Characteristic,handle: 0x%04x",
+            __func__, p_data->handle);
+        return;
+    }
 
     if (p_char->uuid.uu.uuid16 == GATT_UUID_HID_PROTO_MODE)
     {
@@ -2104,6 +2071,12 @@ void bta_hh_le_write_cmpl(tBTA_HH_DEV_CB *p_dev_cb, tBTA_HH_DATA *p_buf)
 
     const tBTA_GATTC_CHARACTERISTIC *p_char = BTA_GATTC_GetCharacteristic(p_dev_cb->conn_id,
                                                                           p_data->handle);
+
+    if (p_char == NULL) {
+        APPL_TRACE_ERROR("%s: write cmpl for Unknown Characteristic,handle: 0x%04x",
+            __func__, p_data->handle);
+        return;
+    }
 
 #if BTA_HH_DEBUG
     APPL_TRACE_DEBUG("bta_hh_le_write_cmpl w4_evt: %d", p_dev_cb->w4_evt);
@@ -2239,6 +2212,11 @@ void bta_hh_le_input_rpt_notify(tBTA_GATTC_NOTIFY *p_data)
         return;
     }
 
+    if (p_char == NULL) {
+        APPL_TRACE_ERROR("%s: notification received for Unknown Characteristic,handle: 0x%04x",
+            __func__, p_data->handle);
+        return;
+    }
     app_id= p_dev_cb->app_id;
 
     if (p_char->uuid.uu.uuid16 == GATT_UUID_SCAN_REFRESH) {

@@ -398,7 +398,7 @@ BOOLEAN SDP_AddAttribute (UINT32 handle, UINT16 attr_id, UINT8 attr_type,
                           UINT32 attr_len, UINT8 *p_val)
 {
 #if SDP_SERVER_ENABLED == TRUE
-    UINT16          xx, yy, zz;
+    UINT16          xx;
     tSDP_RECORD     *p_rec = &sdp_cb.server_db.record[0];
 
 #if (BT_TRACE_VERBOSE == TRUE)
@@ -436,81 +436,84 @@ BOOLEAN SDP_AddAttribute (UINT32 handle, UINT16 attr_id, UINT8 attr_type,
 #endif
 
     /* Find the record in the database */
-    for (zz = 0; zz < sdp_cb.server_db.num_records; zz++, p_rec++)
+    for (xx = 0; xx < sdp_cb.server_db.num_records; xx++, p_rec++)
     {
         if (p_rec->record_handle == handle)
-        {
-            tSDP_ATTRIBUTE  *p_attr = &p_rec->attribute[0];
-
-            /* Found the record. Now, see if the attribute already exists */
-            for (xx = 0; xx < p_rec->num_attributes; xx++, p_attr++)
-            {
-                /* The attribute exists. replace it */
-                if (p_attr->id == attr_id)
-                {
-                    SDP_DeleteAttribute (handle, attr_id);
-                    break;
-                }
-                if (p_attr->id > attr_id)
-                    break;
-            }
-
-            if (p_rec->num_attributes == SDP_MAX_REC_ATTR)
-                return (FALSE);
-
-            /* If not found, see if we can allocate a new entry */
-            if (xx == p_rec->num_attributes)
-                p_attr = &p_rec->attribute[p_rec->num_attributes];
-            else
-            {
-                /* Since the attributes are kept in sorted order, insert ours here */
-                for (yy = p_rec->num_attributes; yy > xx; yy--)
-                    p_rec->attribute[yy] = p_rec->attribute[yy - 1];
-            }
-
-            p_attr->id   = attr_id;
-            p_attr->type = attr_type;
-            p_attr->len  = attr_len;
-
-            if (p_rec->free_pad_ptr + attr_len >= SDP_MAX_PAD_LEN)
-            {
-                /* do truncate only for text string type descriptor */
-                if (attr_type == TEXT_STR_DESC_TYPE)
-                {
-                    SDP_TRACE_WARNING("SDP_AddAttribute: attr_len:%d too long. truncate to (%d)",
-                        attr_len, SDP_MAX_PAD_LEN - p_rec->free_pad_ptr );
-
-                    attr_len = SDP_MAX_PAD_LEN - p_rec->free_pad_ptr;
-                    p_val[SDP_MAX_PAD_LEN - p_rec->free_pad_ptr] = '\0';
-                    p_val[SDP_MAX_PAD_LEN - p_rec->free_pad_ptr+1] = '\0';
-                }
-                else
-                    attr_len = 0;
-            }
-
-            if ((attr_len > 0) && (p_val != 0))
-            {
-                p_attr->len  = attr_len;
-                memcpy (&p_rec->attr_pad[p_rec->free_pad_ptr], p_val, (size_t)attr_len);
-                p_attr->value_ptr = &p_rec->attr_pad[p_rec->free_pad_ptr];
-                p_rec->free_pad_ptr += attr_len;
-            }
-            else if ((attr_len == 0 && p_attr->len != 0) || /* if truncate to 0 length, simply don't add */
-                      p_val == 0)
-            {
-                SDP_TRACE_ERROR("SDP_AddAttribute fail, length exceed maximum: ID %d: attr_len:%d ",
-                    attr_id, attr_len );
-                p_attr->id   = p_attr->type = p_attr->len  = 0;
-                return (FALSE);
-            }
-            p_rec->num_attributes++;
-            return (TRUE);
-        }
+            return SDP_AddAttributetoRecord (p_rec, attr_id, attr_type, attr_len, p_val);
     }
 #endif
     return (FALSE);
 }
 
+BOOLEAN SDP_AddAttributetoRecord (tSDP_RECORD *p_rec, UINT16 attr_id, UINT8 attr_type,
+                                  UINT32 attr_len, UINT8 *p_val)
+{
+    UINT16 xx, yy;
+    tSDP_ATTRIBUTE  *p_attr = &p_rec->attribute[0];
+    /* Found the record. Now, see if the attribute already exists */
+    for (xx = 0; xx < p_rec->num_attributes; xx++, p_attr++)
+    {
+        /* The attribute exists. replace it */
+        if (p_attr->id == attr_id)
+        {
+            SDP_DeleteAttributefromRecord (p_rec, attr_id);
+            break;
+        }
+        if (p_attr->id > attr_id)
+            break;
+    }
+
+    if (p_rec->num_attributes == SDP_MAX_REC_ATTR)
+        return (FALSE);
+
+    /* If not found, see if we can allocate a new entry */
+    if (xx == p_rec->num_attributes)
+        p_attr = &p_rec->attribute[p_rec->num_attributes];
+    else
+    {
+        /* Since the attributes are kept in sorted order, insert ours here */
+        for (yy = p_rec->num_attributes; yy > xx; yy--)
+            p_rec->attribute[yy] = p_rec->attribute[yy - 1];
+    }
+
+    p_attr->id   = attr_id;
+    p_attr->type = attr_type;
+    p_attr->len  = attr_len;
+
+    if (p_rec->free_pad_ptr + attr_len >= SDP_MAX_PAD_LEN)
+    {
+        /* do truncate only for text string type descriptor */
+        if (attr_type == TEXT_STR_DESC_TYPE)
+        {
+            SDP_TRACE_WARNING("SDP_AddAttributetoRecord: attr_len:%d too long. truncate to (%d)",
+                attr_len, SDP_MAX_PAD_LEN - p_rec->free_pad_ptr );
+
+            attr_len = SDP_MAX_PAD_LEN - p_rec->free_pad_ptr;
+            p_val[SDP_MAX_PAD_LEN - p_rec->free_pad_ptr] = '\0';
+            p_val[SDP_MAX_PAD_LEN - p_rec->free_pad_ptr+1] = '\0';
+        }
+        else
+            attr_len = 0;
+    }
+
+    if ((attr_len > 0) && (p_val != 0))
+    {
+        p_attr->len  = attr_len;
+        memcpy (&p_rec->attr_pad[p_rec->free_pad_ptr], p_val, (size_t)attr_len);
+        p_attr->value_ptr = &p_rec->attr_pad[p_rec->free_pad_ptr];
+        p_rec->free_pad_ptr += attr_len;
+    }
+    else if ((attr_len == 0 && p_attr->len != 0) || /* if truncate to 0 length, simply don't add */
+              p_val == 0)
+    {
+        SDP_TRACE_ERROR("SDP_AddAttributetoRecord fail, length exceed maximum: ID %d: attr_len:%d ",
+            attr_id, attr_len );
+        p_attr->id   = p_attr->type = p_attr->len  = 0;
+        return (FALSE);
+    }
+    p_rec->num_attributes++;
+    return (TRUE);
+}
 
 /*******************************************************************************
 **
@@ -705,7 +708,7 @@ BOOLEAN SDP_AddAdditionProtoLists (UINT32 handle, UINT16 num_elem,
         *p_len  = (UINT8)(p - p_len - 1);
     }
     result = SDP_AddAttribute (handle, ATTR_ID_ADDITION_PROTO_DESC_LISTS,DATA_ELE_SEQ_DESC_TYPE,
-	                           (UINT32) (p - p_buff), p_buff);
+            (UINT32) (p - p_buff), p_buff);
     osi_free(p_buff);
     return result;
 
@@ -757,6 +760,36 @@ BOOLEAN SDP_AddProfileDescriptorList (UINT32 handle, UINT16 profile_uuid,
 #endif
 }
 
+BOOLEAN SDP_AddProfileDescriptorListtoRecord (tSDP_RECORD *prec, UINT16 profile_uuid,
+                                      UINT16 version)
+{
+#if SDP_SERVER_ENABLED == TRUE
+    UINT8 *p;
+    BOOLEAN result;
+    UINT8 *p_buff = (UINT8 *)osi_malloc(sizeof(UINT8) * SDP_MAX_ATTR_LEN);
+
+    p = p_buff + 2;
+
+    /* First, build the profile descriptor list. This consists of a data element sequence. */
+    /* The sequence consists of profile's UUID and version number  */
+    UINT8_TO_BE_STREAM  (p, (UUID_DESC_TYPE << 3) | SIZE_TWO_BYTES);
+    UINT16_TO_BE_STREAM (p, profile_uuid);
+
+    UINT8_TO_BE_STREAM  (p, (UINT_DESC_TYPE << 3) | SIZE_TWO_BYTES);
+    UINT16_TO_BE_STREAM (p, version);
+
+    /* Add in type and length fields */
+    *p_buff = (UINT8) ((DATA_ELE_SEQ_DESC_TYPE << 3) | SIZE_IN_NEXT_BYTE);
+    *(p_buff+1) = (UINT8) (p - (p_buff+2));
+
+    result = SDP_AddAttributetoRecord (prec, ATTR_ID_BT_PROFILE_DESC_LIST,DATA_ELE_SEQ_DESC_TYPE, (UINT32) (p - p_buff), p_buff);
+    osi_free(p_buff);
+    return result;
+
+#else   /* SDP_SERVER_ENABLED == FALSE */
+    return (FALSE);
+#endif
+}
 
 /*******************************************************************************
 **
@@ -853,67 +886,75 @@ BOOLEAN SDP_AddServiceClassIdList (UINT32 handle, UINT16 num_services,
 BOOLEAN SDP_DeleteAttribute (UINT32 handle, UINT16 attr_id)
 {
 #if SDP_SERVER_ENABLED == TRUE
-    UINT16          xx, yy;
+    UINT16          xx;
     tSDP_RECORD     *p_rec = &sdp_cb.server_db.record[0];
-    UINT8           *pad_ptr;
-    UINT32  len;                        /* Number of bytes in the entry */
 
     /* Find the record in the database */
     for (xx = 0; xx < sdp_cb.server_db.num_records; xx++, p_rec++)
     {
         if (p_rec->record_handle == handle)
         {
-            tSDP_ATTRIBUTE  *p_attr = &p_rec->attribute[0];
-
             SDP_TRACE_API("Deleting attr_id 0x%04x for handle 0x%x", attr_id, handle);
-            /* Found it. Now, find the attribute */
-            for (xx = 0; xx < p_rec->num_attributes; xx++, p_attr++)
-            {
-                if (p_attr->id == attr_id)
-                {
-                    pad_ptr = p_attr->value_ptr;
-                    len = p_attr->len;
-                    if (p_rec->free_pad_ptr + p_attr->len >= SDP_MAX_PAD_LEN)
-                    {
-                        SDP_TRACE_ERROR("Deleting attr_id 0x%04x len %d exceeds 600", attr_id, len);
-                        if (p_attr->type == TEXT_STR_DESC_TYPE)
-                            len = SDP_MAX_PAD_LEN - p_rec->free_pad_ptr;
-                        else
-                            len = 0;
-                    }
-                    if (len)
-                    {
-                        for (yy = 0; yy < p_rec->num_attributes; yy++)
-                        {
-                            if( p_rec->attribute[yy].value_ptr > pad_ptr )
-                                p_rec->attribute[yy].value_ptr -= len;
-                        }
-                    }
-
-                    /* Found it. Shift everything up one */
-                    p_rec->num_attributes--;
-
-                    for (yy = xx; yy < p_rec->num_attributes; yy++, p_attr++)
-                    {
-                        *p_attr = *(p_attr + 1);
-                    }
-
-                    /* adjust attribute values if needed */
-                    if (len)
-                    {
-                        xx = (p_rec->free_pad_ptr - ((pad_ptr+len) -
-                                                  &p_rec->attr_pad[0]));
-                        for( yy=0; yy<xx; yy++, pad_ptr++)
-                            *pad_ptr = *(pad_ptr+len);
-                        p_rec->free_pad_ptr -= len;
-                    }
-                    return (TRUE);
-                }
-            }
+            if (SDP_DeleteAttributefromRecord (p_rec, attr_id))
+                return (TRUE);
         }
     }
 #endif
     /* If here, not found */
+    return (FALSE);
+}
+
+BOOLEAN SDP_DeleteAttributefromRecord (tSDP_RECORD *p_rec, UINT16 attr_id)
+{
+    UINT16          xx, yy;
+    tSDP_ATTRIBUTE  *p_attr = &p_rec->attribute[0];
+    UINT8           *pad_ptr;
+    UINT32  len;                        /* Number of bytes in the entry */
+
+    /* Found it. Now, find the attribute */
+    for (xx = 0; xx < p_rec->num_attributes; xx++, p_attr++)
+    {
+        if (p_attr->id == attr_id)
+        {
+            pad_ptr = p_attr->value_ptr;
+            len = p_attr->len;
+            if (p_rec->free_pad_ptr + p_attr->len >= SDP_MAX_PAD_LEN)
+            {
+                SDP_TRACE_ERROR("Deleting attr_id 0x%04x len %d exceeds 600", attr_id, len);
+                if (p_attr->type == TEXT_STR_DESC_TYPE)
+                    len = SDP_MAX_PAD_LEN - p_rec->free_pad_ptr;
+                else
+                    len = 0;
+            }
+            if (len)
+            {
+                for (yy = 0; yy < p_rec->num_attributes; yy++)
+                {
+                    if( p_rec->attribute[yy].value_ptr > pad_ptr )
+                        p_rec->attribute[yy].value_ptr -= len;
+                }
+            }
+
+            /* Found it. Shift everything up one */
+            p_rec->num_attributes--;
+
+            for (yy = xx; yy < p_rec->num_attributes; yy++, p_attr++)
+            {
+                *p_attr = *(p_attr + 1);
+            }
+
+            /* adjust attribute values if needed */
+            if (len)
+            {
+                xx = (p_rec->free_pad_ptr - ((pad_ptr+len) -
+                                          &p_rec->attr_pad[0]));
+                for( yy=0; yy<xx; yy++, pad_ptr++)
+                    *pad_ptr = *(pad_ptr+len);
+                p_rec->free_pad_ptr -= len;
+            }
+            return (TRUE);
+        }
+    }
     return (FALSE);
 }
 

@@ -359,6 +359,11 @@ static void btapp_gatts_cback(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 
 static void btgatts_handle_event(uint16_t event, char* p_param)
 {
+    if (!btif_is_enabled()) {
+       LOG_ERROR(LOG_TAG,"%s: bluetooth adapter not enabled",__FUNCTION__);
+       return;
+    }
+
     btif_gatts_cb_t* p_cb = (btif_gatts_cb_t*)p_param;
     if (!p_cb) return;
 
@@ -431,13 +436,15 @@ static void btgatts_handle_event(uint16_t event, char* p_param)
         }
 
         case BTIF_GATTS_CLOSE:
-            // Cancel pending foreground/background connections
-            BTA_GATTS_CancelOpen(p_cb->server_if, p_cb->bd_addr.address, TRUE);
-            BTA_GATTS_CancelOpen(p_cb->server_if, p_cb->bd_addr.address, FALSE);
 
             // Close active connection
             if (p_cb->conn_id != 0)
                 BTA_GATTS_Close(p_cb->conn_id);
+            else
+                BTA_GATTS_CancelOpen(p_cb->server_if, p_cb->bd_addr.address, TRUE);
+
+            // Cancel pending background connections
+            BTA_GATTS_CancelOpen(p_cb->server_if, p_cb->bd_addr.address, FALSE);
             break;
 
         case BTIF_GATTS_CREATE_SERVICE:

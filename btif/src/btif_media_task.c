@@ -402,7 +402,6 @@ typedef struct
     alarm_t *media_alarm;
     alarm_t *decode_alarm;
     btif_media_stats_t stats;
-    btif_media_stats_t accumulated_stats;
 //#ifdef BTA_AV_SPLIT_A2DP_ENABLED
     UINT8 max_bitpool;
     UINT8 min_bitpool;
@@ -413,6 +412,7 @@ typedef struct
     BOOLEAN tx_enc_update_initiated;
 //#endif
 
+    btif_media_stats_t accumulated_stats;
 #endif
 } tBTIF_MEDIA_CB;
 
@@ -1543,12 +1543,7 @@ void btif_a2dp_stop_media_task(void)
     media_task_running = MEDIA_TASK_STATE_SHUTTING_DOWN;
 
     // remove aptX thread
-    if (A2d_aptx_thread)
-    {
-        A2D_aptx_sched_stop();
-        thread_free(A2d_aptx_thread);
-        A2d_aptx_thread = NULL;
-    }
+    A2D_stop_aptX();
 
     // Stop timer
     alarm_free(btif_media_cb.media_alarm);
@@ -2142,13 +2137,15 @@ static void btif_media_thread_init(UNUSED_ATTR void *context) {
 
   raise_priority_a2dp(TASK_HIGH_MEDIA);
   media_task_running = MEDIA_TASK_STATE_ON;
-  metrics_log_bluetooth_session_start(CONNECTION_TECHNOLOGY_TYPE_BREDR, 0);
   APPL_TRACE_DEBUG(" btif_media_thread_init complete");
+  metrics_log_bluetooth_session_start(CONNECTION_TECHNOLOGY_TYPE_BREDR, 0);
 }
 
 static void btif_media_thread_cleanup(UNUSED_ATTR void *context) {
   APPL_TRACE_IMP(" btif_media_thread_cleanup");
 
+  APPL_TRACE_IMP(" before close the UIPC channnel, ack the pending cmd");
+  a2dp_cmd_acknowledge(A2DP_CTRL_ACK_SUCCESS);
   /* this calls blocks until uipc is fully closed */
   UIPC_Close(UIPC_CH_ID_ALL);
 
@@ -2161,8 +2158,8 @@ static void btif_media_thread_cleanup(UNUSED_ATTR void *context) {
 
   /* Clear media task flag */
   media_task_running = MEDIA_TASK_STATE_OFF;
-  metrics_log_bluetooth_session_end(DISCONNECT_REASON_UNKNOWN, 0);
   APPL_TRACE_DEBUG(" btif_media_thread_cleanup complete");
+  metrics_log_bluetooth_session_end(DISCONNECT_REASON_UNKNOWN, 0);
 }
 
 /*******************************************************************************
@@ -3617,35 +3614,32 @@ static void btif_media_task_aa_start_tx(void)
     if (!bt_split_a2dp_enabled)
     {
         if (isA2dAptXEnabled && btif_media_task_is_aptx_configured()) {
+
 #if (BTA_AV_CO_CP_SCMS_T == TRUE)
-          BOOLEAN use_SCMS_T = true;
+        BOOLEAN use_SCMS_T = true;
 #else
-          BOOLEAN use_SCMS_T = false;
+        BOOLEAN use_SCMS_T = false;
 #endif
-          A2D_AptXCodecType aptX_codec_type = btif_media_task_get_aptX_codec_type();
-          BOOLEAN is_24bit_audio = true;
+        A2D_AptXCodecType aptX_codec_type = btif_media_task_get_aptX_codec_type();
+        BOOLEAN is_24bit_audio = true;
 
-          BOOLEAN test = false;
-          BOOLEAN trace = false;
+        BOOLEAN test = false;
+        BOOLEAN trace = false;
 
-          A2d_aptx_thread_fn = A2D_aptx_sched_start(btif_media_cb.aptxEncoderParams.encoder,
-                   aptX_codec_type,
-                   use_SCMS_T,
-                   is_24bit_audio,
-                   btif_media_cb.media_feeding.cfg.pcm.sampling_freq,
-                   btif_media_cb.media_feeding.cfg.pcm.bit_per_sample,
-                   UIPC_CH_ID_AV_AUDIO,
-                   btif_media_cb.TxAaMtuSize,
-                   UIPC_Read,
-                   btif_media_task_cb_packet_send,
-                   raise_priority_a2dp,
-                   test,
-                   trace);
+        A2D_start_aptX(btif_media_cb.aptxEncoderParams.encoder,
+                 aptX_codec_type,
+                 use_SCMS_T,
+                 is_24bit_audio,
+                 btif_media_cb.media_feeding.cfg.pcm.sampling_freq,
+                 btif_media_cb.media_feeding.cfg.pcm.bit_per_sample,
+                 UIPC_CH_ID_AV_AUDIO,
+                 btif_media_cb.TxAaMtuSize,
+                 UIPC_Read,
+                 btif_media_task_cb_packet_send,
+                 raise_priority_a2dp,
+                 test,
+                 trace);
 
-          A2d_aptx_thread = thread_new("aptx_media_worker");
-          if (A2d_aptx_thread ) {
-             thread_post(A2d_aptx_thread, A2d_aptx_thread_fn, NULL);
-          }
         } else {
             APPL_TRACE_EVENT("starting timer %dms", BTIF_MEDIA_TIME_TICK);
 
@@ -3679,10 +3673,9 @@ static void btif_media_task_aa_stop_tx(void)
                          alarm_is_scheduled(btif_media_cb.media_alarm)? "" : "not ");
         const bool send_ack = alarm_is_scheduled(btif_media_cb.media_alarm);
 
-        if (isA2dAptXEnabled && A2D_aptx_sched_stop())
+        if (isA2dAptXEnabled && A2d_aptx_thread)
         {
-            thread_free(A2d_aptx_thread);
-            A2d_aptx_thread = NULL;
+            A2D_stop_aptX();
         }
         else
         {

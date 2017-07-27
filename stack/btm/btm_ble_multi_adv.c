@@ -79,13 +79,15 @@ static inline BOOLEAN is_btm_multi_adv_cb_valid()
 *******************************************************************************/
 void btm_ble_multi_adv_enq_op_q(UINT8 opcode, UINT8 inst_id, UINT8 cb_evt)
 {
+    UINT8 max_adv_instance = BTM_BleMaxMultiAdvInstanceCount();
     tBTM_BLE_MULTI_ADV_OPQ  *p_op_q = &btm_multi_adv_cb.op_q;
 
     p_op_q->p_inst_id[p_op_q->next_idx] = inst_id;
 
     p_op_q->p_sub_code[p_op_q->next_idx] = (opcode |(cb_evt << 4));
 
-    p_op_q->next_idx = (p_op_q->next_idx + 1) %  BTM_BleMaxMultiAdvInstanceCount();
+    if (max_adv_instance > 0)
+       p_op_q->next_idx = (p_op_q->next_idx + 1) %  max_adv_instance;
 }
 
 /*******************************************************************************
@@ -100,13 +102,15 @@ void btm_ble_multi_adv_enq_op_q(UINT8 opcode, UINT8 inst_id, UINT8 cb_evt)
 *******************************************************************************/
 void btm_ble_multi_adv_deq_op_q(UINT8 *p_opcode, UINT8 *p_inst_id, UINT8 *p_cb_evt)
 {
+    UINT8 max_adv_instance = BTM_BleMaxMultiAdvInstanceCount();
     tBTM_BLE_MULTI_ADV_OPQ  *p_op_q = &btm_multi_adv_cb.op_q;
 
     *p_inst_id = p_op_q->p_inst_id[p_op_q->pending_idx] & 0x7F;
     *p_cb_evt = (p_op_q->p_sub_code[p_op_q->pending_idx] >> 4);
     *p_opcode = (p_op_q->p_sub_code[p_op_q->pending_idx] & BTM_BLE_MULTI_ADV_SUBCODE_MASK);
 
-    p_op_q->pending_idx = (p_op_q->pending_idx + 1) %  BTM_BleMaxMultiAdvInstanceCount();
+    if (max_adv_instance > 0)
+       p_op_q->pending_idx = (p_op_q->pending_idx + 1) % max_adv_instance;
 }
 
 /*******************************************************************************
@@ -127,6 +131,12 @@ void btm_ble_multi_adv_vsc_cmpl_cback (tBTM_VSC_CMPL *p_params)
     UINT16  len = p_params->param_len;
     tBTM_BLE_MULTI_ADV_INST *p_inst ;
     UINT8   cb_evt = 0, opcode;
+
+    if (!controller_get_interface()->get_is_ready())
+    {
+        BTM_TRACE_ERROR("btm_ble_multi_adv_vsc_cmpl_cback controller not ready. returning!");
+        return;
+    }
 
     if (len  < 2)
     {
@@ -398,6 +408,11 @@ tBTM_STATUS btm_ble_multi_adv_write_rpa (tBTM_BLE_MULTI_ADV_INST *p_inst, BD_ADD
 *******************************************************************************/
 void btm_ble_multi_adv_gen_rpa_cmpl(tBTM_RAND_ENC *p)
 {
+    if (!controller_get_interface()->get_is_ready())
+    {
+        BTM_TRACE_ERROR("btm_ble_multi_adv_gen_rpa_cmpl controller module is not ready!");
+        return;
+    }
 #if (SMP_INCLUDED == TRUE)
     tSMP_ENC    output;
     UINT8 index = 0;
@@ -912,4 +927,3 @@ void* btm_ble_multi_adv_get_ref(UINT8 inst_id)
     return NULL;
 }
 #endif
-

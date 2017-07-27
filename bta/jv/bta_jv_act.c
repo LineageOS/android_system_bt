@@ -1033,6 +1033,10 @@ static void bta_jv_l2cap_client_cback(UINT16 gap_handle, UINT16 event)
         bta_jv_pm_conn_idle(p_cb->p_pm_cb);
         break;
 
+    case GAP_EVT_TX_DONE:
+        bta_jv_pm_conn_idle(p_cb->p_pm_cb);
+        break;
+
     case GAP_EVT_CONN_CONGESTED:
     case GAP_EVT_CONN_UNCONGESTED:
         p_cb->cong = (event == GAP_EVT_CONN_CONGESTED) ? TRUE : FALSE;
@@ -1201,6 +1205,10 @@ static void bta_jv_l2cap_server_cback(UINT16 gap_handle, UINT16 event)
         break;
 
     case GAP_EVT_TX_EMPTY:
+        bta_jv_pm_conn_idle(p_cb->p_pm_cb);
+        break;
+
+    case GAP_EVT_TX_DONE:
         bta_jv_pm_conn_idle(p_cb->p_pm_cb);
         break;
 

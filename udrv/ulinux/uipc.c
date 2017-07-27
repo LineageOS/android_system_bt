@@ -67,6 +67,9 @@
 
 #define UIPC_FLUSH_BUFFER_SIZE 1024
 
+#define CHAN_CREATE_WAIT_TIME_MS 30
+#define CHAN_CREATE_RETRY_COUNT 10
+
 /*****************************************************************************
 **  Local type definitions
 ******************************************************************************/
@@ -143,6 +146,7 @@ const char* dump_uipc_event(tUIPC_EVENT event)
 
 static inline int create_server_socket(const char* name)
 {
+    int ret;
     int s = socket(AF_LOCAL, SOCK_STREAM, 0);
     if (s < 0)
         return -1;
@@ -151,9 +155,10 @@ static inline int create_server_socket(const char* name)
 
     if(osi_socket_local_server_bind(s, name, ANDROID_SOCKET_NAMESPACE_ABSTRACT) < 0)
     {
+        ret = (errno == EADDRINUSE ? -EADDRINUSE : -1);
         BTIF_TRACE_EVENT("socket failed to create (%s)", strerror(errno));
         close(s);
-        return -1;
+        return ret;
     }
 
     if(listen(s, 5) < 0)
@@ -350,6 +355,7 @@ static inline void uipc_wakeup_locked(void)
 static int uipc_setup_server_locked(tUIPC_CH_ID ch_id, char *name, tUIPC_RCV_CBACK *cback)
 {
     int fd;
+    int i;
 
     BTIF_TRACE_EVENT("SETUP CHANNEL SERVER %d", ch_id);
 
@@ -358,7 +364,19 @@ static int uipc_setup_server_locked(tUIPC_CH_ID ch_id, char *name, tUIPC_RCV_CBA
 
     UIPC_LOCK();
 
-    fd = create_server_socket(name);
+    for (i = 0; i < CHAN_CREATE_RETRY_COUNT; i++)
+    {
+        fd = create_server_socket(name);
+        if (fd == -EADDRINUSE)
+        {
+            BTIF_TRACE_ERROR("Address already in use, retry: %d", i);
+            usleep(CHAN_CREATE_WAIT_TIME_MS * 1000);
+        }
+        else
+        {
+            break;
+        }
+    }
 
     if (fd < 0)
     {
