@@ -542,6 +542,8 @@ void rfc_process_pn (tRFC_MCB *p_mcb, BOOLEAN is_command, MX_FRAME *p_frame)
         /* Ignore if Multiplexer is being shut down */
         if (p_mcb->state != RFC_MX_STATE_DISC_WAIT_UA)
         {
+            /* make sure the multiplexer disconnect timer is not running (reconnect case) */
+            rfc_timer_stop(p_mcb);
             PORT_ParNegInd (p_mcb, dlci, p_frame->u.pn.mtu,
                         p_frame->u.pn.conv_layer, p_frame->u.pn.k);
         }

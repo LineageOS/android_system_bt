@@ -917,10 +917,6 @@ static void bta_dm_pm_ssr(BD_ADDR peer_addr)
                     BTM_SetSsrParams (peer_addr, 0, 0, 0);
                     return;
                 }
-                else if (p_spec_cur->max_lat > BTA_HH_SSR_MAX_LATENCY_OPTIMAL)
-                {
-                    p_spec_cur->max_lat = BTA_HH_SSR_MAX_LATENCY_OPTIMAL;
-                }
                 else if (p_spec_cur->max_lat < BTA_HH_SSR_MAX_LATENCY_MIN_OPTIMAL)
                 {
                     p_spec_cur->max_lat = BTA_HH_SSR_MAX_LATENCY_MIN_OPTIMAL;

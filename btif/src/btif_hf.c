@@ -467,11 +467,23 @@ static void btif_hf_upstreams_evt(UINT16 event, char* p_param)
 {
     tBTA_AG *p_data = (tBTA_AG *)p_param;
     bdstr_t bdstr;
-    int idx = p_data->hdr.handle - 1;
+    int idx;
     BOOLEAN ignore_rfc_fail = false;
 
     BTIF_TRACE_IMP("%s: event=%s", __FUNCTION__, dump_hf_event(event));
 
+    // for BTA_AG_ENABLE_EVT/BTA_AG_DISABLE_EVT, p_data is NULL
+    if (event == BTA_AG_ENABLE_EVT || event == BTA_AG_DISABLE_EVT)
+        return;
+
+    // p_data is NULL for any other event, return
+    if (p_data == NULL)
+    {
+        BTIF_TRACE_ERROR("%s: data is NULL", __FUNCTION__);
+        return;
+    }
+
+    idx = p_data->hdr.handle - 1;
     if ((idx < 0) || (idx >= BTIF_HF_NUM_CB))
     {
         BTIF_TRACE_ERROR("%s: Invalid index %d", __FUNCTION__, idx);
@@ -480,10 +492,6 @@ static void btif_hf_upstreams_evt(UINT16 event, char* p_param)
 
     switch (event)
     {
-        case BTA_AG_ENABLE_EVT:
-        case BTA_AG_DISABLE_EVT:
-            break;
-
         case BTA_AG_REGISTER_EVT:
             btif_hf_cb[idx].handle = p_data->reg.hdr.handle;
             BTIF_TRACE_DEBUG("%s: BTA_AG_REGISTER_EVT,"

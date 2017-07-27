@@ -606,7 +606,7 @@ typedef struct
     tBTA_AV_RCB         rcb[BTA_AV_NUM_RCB];  /* RCB control block */
     tBTA_AV_LCB         lcb[BTA_AV_NUM_LINKS+1];  /* link control block */
     alarm_t             *link_signalling_timer;
-    alarm_t             *accept_signalling_timer; /* timer to monitor signalling when accepting */
+    alarm_t             *accept_signalling_timer[BTA_AV_NUM_STRS]; /* timer to monitor signalling when accepting */
     UINT32              sdp_a2d_handle; /* SDP record handle for audio src */
 #if (BTA_AV_SINK_INCLUDED == TRUE)
     UINT32              sdp_a2d_snk_handle; /* SDP record handle for audio snk */

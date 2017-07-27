@@ -43,6 +43,7 @@
 #include "btif_common.h"
 #include "btif_gatt_multi_adv_util.h"
 #include "btif_gatt_util.h"
+#include "device/include/controller.h"
 
 extern fixed_queue_t *btu_general_alarm_queue;
 
@@ -54,6 +55,11 @@ static btgatt_multi_adv_common_data *p_multi_adv_com_data_cb = NULL;
 
 btgatt_multi_adv_common_data *btif_obtain_multi_adv_data_cb()
 {
+    if (!controller_get_interface()->get_is_ready())
+    {
+        BTIF_TRACE_ERROR("btif_obtain_multi_adv_data_cb controller not ready!");
+        return NULL;
+    }
     int max_adv_inst = BTM_BleMaxMultiAdvInstanceCount();
     if (0 == max_adv_inst)
         max_adv_inst = 1;
