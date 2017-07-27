@@ -3875,6 +3875,50 @@ static void btm_sec_auth_collision(uint16_t handle) {
   }
 }
 
+/******************************************************************************
+ *
+ * Function         btm_sec_auth_retry
+ *
+ * Description      This function is called when authentication or encryption
+ *                  needs to be retried at a later time.
+ *
+ * Returns          TRUE if a security retry required
+ *
+ *****************************************************************************/
+static bool btm_sec_auth_retry(uint16_t handle, uint8_t status) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
+  if (!p_dev_rec) return false;
+
+  /* keep the old sm4 flag and clear the retry bit in control block */
+  uint8_t old_sm4 = p_dev_rec->sm4;
+  p_dev_rec->sm4 &= ~BTM_SM4_RETRY;
+
+  if ((btm_cb.pairing_state == BTM_PAIR_STATE_IDLE) &&
+      ((old_sm4 & BTM_SM4_RETRY) == 0) && (HCI_ERR_KEY_MISSING == status) &&
+      BTM_SEC_IS_SM4(p_dev_rec->sm4)) {
+    /* This retry for missing key is for Lisbon or later only.
+       Legacy device do not need this. the controller will drive the retry
+       automatically
+       set the retry bit */
+    btm_cb.collision_start_time = 0;
+    btm_restore_mode();
+    p_dev_rec->sm4 |= BTM_SM4_RETRY;
+    p_dev_rec->sec_flags &= ~BTM_SEC_LINK_KEY_KNOWN;
+    BTM_TRACE_DEBUG("%s Retry for missing key sm4:x%x sec_flags:0x%x", __func__,
+                    p_dev_rec->sm4, p_dev_rec->sec_flags);
+
+    /* With BRCM controller, we do not need to delete the stored link key in
+       controller.
+       If the stack may sit on top of other controller, we may need this
+       BTM_DeleteStoredLinkKey (bd_addr, NULL); */
+    p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
+    btm_sec_execute_procedure(p_dev_rec);
+    return true;
+  }
+
+  return false;
+}
+
 /*******************************************************************************
  *
  * Function         btm_sec_auth_complete
@@ -3886,7 +3930,6 @@ static void btm_sec_auth_collision(uint16_t handle) {
  *
  ******************************************************************************/
 void btm_sec_auth_complete(uint16_t handle, uint8_t status) {
-  uint8_t old_sm4;
   tBTM_PAIRING_STATE old_state = btm_cb.pairing_state;
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
   bool are_bonding = false;
@@ -3912,7 +3955,10 @@ void btm_sec_auth_complete(uint16_t handle, uint8_t status) {
       (status == HCI_ERR_DIFF_TRANSACTION_COLLISION)) {
     btm_sec_auth_collision(handle);
     return;
+  } else if (btm_sec_auth_retry(handle, status)) {
+    return;
   }
+
   btm_cb.collision_start_time = 0;
 
   btm_restore_mode();
@@ -3928,10 +3974,6 @@ void btm_sec_auth_complete(uint16_t handle, uint8_t status) {
   }
 
   if (!p_dev_rec) return;
-
-  /* keep the old sm4 flag and clear the retry bit in control block */
-  old_sm4 = p_dev_rec->sm4;
-  p_dev_rec->sm4 &= ~BTM_SM4_RETRY;
 
   if ((btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
       (btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) &&
@@ -4011,37 +4053,6 @@ void btm_sec_auth_complete(uint16_t handle, uint8_t status) {
 
   /* If authentication failed, notify the waiting layer */
   if (status != HCI_SUCCESS) {
-    if ((old_sm4 & BTM_SM4_RETRY) == 0) {
-      /* allow retry only once */
-      if (status == HCI_ERR_LMP_ERR_TRANS_COLLISION) {
-        /* not retried yet. set the retry bit */
-        p_dev_rec->sm4 |= BTM_SM4_RETRY;
-        BTM_TRACE_DEBUG("Collision retry sm4:x%x sec_flags:0x%x",
-                        p_dev_rec->sm4, p_dev_rec->sec_flags);
-      }
-      /* this retry for missing key is for Lisbon or later only.
-       * Legacy device do not need this. the controller will drive the retry
-       * automatically */
-      else if (HCI_ERR_KEY_MISSING == status &&
-               BTM_SEC_IS_SM4(p_dev_rec->sm4)) {
-        /* not retried yet. set the retry bit */
-        p_dev_rec->sm4 |= BTM_SM4_RETRY;
-        p_dev_rec->sec_flags &= ~BTM_SEC_LINK_KEY_KNOWN;
-        BTM_TRACE_DEBUG("Retry for missing key sm4:x%x sec_flags:0x%x",
-                        p_dev_rec->sm4, p_dev_rec->sec_flags);
-
-        /* With BRCM controller, we do not need to delete the stored link key in
-        controller.
-        If the stack may sit on top of other controller, we may need this
-        BTM_DeleteStoredLinkKey (bd_addr, NULL); */
-      }
-
-      if (p_dev_rec->sm4 & BTM_SM4_RETRY) {
-        btm_sec_execute_procedure(p_dev_rec);
-        return;
-      }
-    }
-
     btm_sec_dev_rec_cback_event(p_dev_rec, BTM_ERR_PROCESSING, false);
 
     if (btm_cb.pairing_flags & BTM_PAIR_FLAGS_DISC_WHEN_DONE) {
