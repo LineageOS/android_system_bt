@@ -52,6 +52,8 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 
+#include "device/include/controller.h"
+
 /************************************************************************************
 **  Constants & Macros
 ************************************************************************************/
@@ -80,9 +82,11 @@
 /* This is a local property to add a device found */
 #define BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP 0xFF
 
-#define BTIF_STORAGE_GET_ADAPTER_PROP(t,v,l,p) \
-      {p.type=t;p.val=v;p.len=l; btif_storage_get_adapter_property(&p);}
+// TODO: This macro should be converted to a function
+#define BTIF_STORAGE_GET_ADAPTER_PROP(s, t,v,l,p) \
+      {p.type=t;p.val=v;p.len=l; s = btif_storage_get_adapter_property(&p);}
 
+// TODO: This macro should be converted to a function
 #define BTIF_STORAGE_GET_REMOTE_PROP(b,t,v,l,p) \
       {p.type=t;p.val=v;p.len=l;btif_storage_get_remote_device_property(b,&p);}
 
@@ -583,8 +587,17 @@ bt_status_t btif_storage_get_adapter_property(bt_property_t *property)
     if (property->type == BT_PROPERTY_BDADDR)
     {
         bt_bdaddr_t *bd_addr = (bt_bdaddr_t*)property->val;
-        /* This has been cached in btif. Just fetch it from there */
-        memcpy(bd_addr, &btif_local_bd_addr, sizeof(bt_bdaddr_t));
+        /* Fetch the local BD ADDR */
+        const controller_t* controller = controller_get_interface();
+        if (controller->get_is_ready() == false) {
+          BTIF_TRACE_DEBUG("%s: Controller not ready! Unable to return Bluetooth Address",
+                    __FUNCTION__);
+          memset(bd_addr, 0, sizeof(bt_bdaddr_t));
+          return BT_STATUS_FAIL;
+        } else {
+          BTIF_TRACE_DEBUG("%s: Controller ready!", __FUNCTION__);
+          memcpy(bd_addr, controller->get_address(), sizeof(bt_bdaddr_t));
+        }
         property->len = sizeof(bt_bdaddr_t);
         return BT_STATUS_SUCCESS;
     }
@@ -854,6 +867,7 @@ bt_status_t btif_storage_load_bonded_devices(void)
     uint32_t disc_timeout;
     bt_uuid_t local_uuids[BT_MAX_NUM_UUIDS];
     bt_uuid_t remote_uuids[BT_MAX_NUM_UUIDS];
+    bt_status_t status;
 
     btif_in_fetch_bonded_devices(&bonded_devices, 1);
 
@@ -862,12 +876,16 @@ bt_status_t btif_storage_load_bonded_devices(void)
         memset(adapter_props, 0, sizeof(adapter_props));
 
         /* BD_ADDR */
-        BTIF_STORAGE_GET_ADAPTER_PROP(BT_PROPERTY_BDADDR, &addr, sizeof(addr),
+        BTIF_STORAGE_GET_ADAPTER_PROP(status, BT_PROPERTY_BDADDR, &addr, sizeof(addr),
                                       adapter_props[num_props]);
-        num_props++;
+        // Add BT_PROPERTY_BDADDR property into list only when successful.
+        // Otherwise, skip this property entry.
+        if (status == BT_STATUS_SUCCESS) {
+          num_props++;
+        }
 
         /* BD_NAME */
-        BTIF_STORAGE_GET_ADAPTER_PROP(BT_PROPERTY_BDNAME, &name, sizeof(name),
+        BTIF_STORAGE_GET_ADAPTER_PROP(status, BT_PROPERTY_BDNAME, &name, sizeof(name),
                                       adapter_props[num_props]);
         num_props++;
 
@@ -883,7 +901,7 @@ bt_status_t btif_storage_load_bonded_devices(void)
         num_props++;
 
         /* DISC_TIMEOUT */
-        BTIF_STORAGE_GET_ADAPTER_PROP(BT_PROPERTY_ADAPTER_DISCOVERY_TIMEOUT,
+        BTIF_STORAGE_GET_ADAPTER_PROP(status, BT_PROPERTY_ADAPTER_DISCOVERY_TIMEOUT,
                                       &disc_timeout, sizeof(disc_timeout),
                                       adapter_props[num_props]);
         num_props++;
@@ -901,7 +919,7 @@ bt_status_t btif_storage_load_bonded_devices(void)
         num_props++;
 
         /* LOCAL UUIDs */
-        BTIF_STORAGE_GET_ADAPTER_PROP(BT_PROPERTY_UUIDS,
+        BTIF_STORAGE_GET_ADAPTER_PROP(status, BT_PROPERTY_UUIDS,
                                       local_uuids, sizeof(local_uuids),
                                       adapter_props[num_props]);
         num_props++;
