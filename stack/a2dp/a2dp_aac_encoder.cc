@@ -37,6 +37,12 @@
 // A2DP AAC encoder interval in milliseconds
 #define A2DP_AAC_ENCODER_INTERVAL_MS 20
 
+/*
+ * 2DH5 payload size of:
+ * 679 bytes - (4 bytes L2CAP Header + 12 bytes AVDTP Header)
+ */
+#define MAX_2MBPS_AVDTP_MTU 663
+
 // offset
 #if (BTA_AV_CO_CP_SCMS_T == TRUE)
 #define A2DP_AAC_OFFSET (AVDT_MEDIA_OFFSET + 1)
@@ -222,6 +228,22 @@ static void a2dp_aac_encoder_update(uint16_t peer_mtu,
       a2dp_aac_encoder_cb.feeding_params.sample_rate;
   p_encoder_params->channel_mode = A2DP_GetChannelModeCodeAac(p_codec_info);
 
+  LOG_VERBOSE(LOG_TAG, "%s: original AVDTP MTU size: %d", __func__,
+              a2dp_aac_encoder_cb.TxAaMtuSize);
+  if (a2dp_aac_encoder_cb.is_peer_edr &&
+      !a2dp_aac_encoder_cb.peer_supports_3mbps) {
+    // This condition would be satisfied only if the remote device is
+    // EDR and supports only 2 Mbps, but the effective AVDTP MTU size
+    // exceeds the 2DH5 packet size.
+    LOG_VERBOSE(LOG_TAG,
+                "%s: The remote device is EDR but does not support 3 Mbps",
+                __func__);
+    if (peer_mtu > MAX_2MBPS_AVDTP_MTU) {
+      LOG_WARN(LOG_TAG, "%s: Restricting AVDTP MTU size from %d to %d",
+               __func__, peer_mtu, MAX_2MBPS_AVDTP_MTU);
+      peer_mtu = MAX_2MBPS_AVDTP_MTU;
+    }
+  }
   uint16_t mtu_size = BT_DEFAULT_BUFFER_SIZE - A2DP_AAC_OFFSET - sizeof(BT_HDR);
   if (mtu_size < peer_mtu) {
     a2dp_aac_encoder_cb.TxAaMtuSize = mtu_size;
