@@ -101,22 +101,17 @@ DualModeController::DualModeController()
     : state_(kStandby), properties_(kControllerPropertiesFile) {
   devices_ = {};
 
-  vector<std::string> beacon1 = {"beacon", "be:ac:10:00:00:01", "1000"};
-  TestChannelAdd(beacon1);
+  vector<std::string> beacon = {"beacon", "be:ac:10:00:00:01", "1000"};
+  TestChannelAdd(beacon);
 
-  vector<std::string> beacon2 = {"beacon", "be:ac:10:00:00:02", "2000"};
-  TestChannelAdd(beacon2);
+  vector<std::string> classic = {std::string("classic"),
+                                 std::string("c1:a5:51:c0:00:01")};
+  TestChannelAdd(classic);
 
-  vector<std::string> beacon3 = {"beacon", "be:ac:10:00:00:03", "3000"};
-  TestChannelAdd(beacon3);
-
-  vector<std::string> classic1 = {std::string("classic"),
-                                  std::string("c1:a5:51:c0:00:01")};
-
-  vector<std::string> keyboard1 = {std::string("keyboard"),
-                                   std::string("cc:1c:eb:0a:12:d1"),
-                                   std::string("500")};
-  TestChannelAdd(keyboard1);
+  vector<std::string> keyboard = {std::string("keyboard"),
+                                  std::string("cc:1c:eb:0a:12:d1"),
+                                  std::string("500")};
+  TestChannelAdd(keyboard);
 
   le_scan_enable_ = 0;
   le_connect_ = false;
