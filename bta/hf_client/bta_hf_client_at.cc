@@ -1933,11 +1933,6 @@ void bta_hf_client_send_at_bcc(tBTA_HF_CLIENT_CB* client_cb) {
   buf = "AT+BCC\r";
 
   bta_hf_client_send_at(client_cb, BTA_HF_CLIENT_AT_BCC, buf, strlen(buf));
-
-  // At this point we should also open up an incoming SCO connection
-  tBTA_HF_CLIENT_DATA p_data;
-  p_data.hdr.layer_specific = client_cb->handle;
-  bta_hf_client_sco_listen(&p_data);
 }
 
 void bta_hf_client_send_at_cnum(tBTA_HF_CLIENT_CB* client_cb) {
