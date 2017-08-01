@@ -377,3 +377,5 @@ void A2DP_Init(void) {
   a2dp_cb.trace_level = BT_TRACE_LEVEL_NONE;
 #endif
 }
+
+uint16_t A2DP_GetAvdtpVersion() { return a2dp_cb.avdt_sdp_ver; }
