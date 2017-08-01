@@ -34,7 +34,7 @@
 #ifndef AVDT_VERSION
 #define AVDT_VERSION 0x0102
 #endif
-#define AVDT_VERSION_SYNC 0x0103
+#define AVDT_VERSION_1_3 0x0103
 
 /* Maximum size in bytes of the codec capabilities information element. */
 #define AVDT_CODEC_SIZE 20

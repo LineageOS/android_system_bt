@@ -387,7 +387,8 @@ static bool bta_av_next_getcap(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       /* we got a stream; get its capabilities */
       if (p_scb->p_cap == NULL)
         p_scb->p_cap = (tAVDT_CFG*)osi_malloc(sizeof(tAVDT_CFG));
-      if (p_scb->avdt_version >= AVDT_VERSION_SYNC) {
+      if ((p_scb->avdt_version >= AVDT_VERSION_1_3) &&
+          (A2DP_GetAvdtpVersion() >= AVDT_VERSION_1_3)) {
         p_req = AVDT_GetAllCapReq;
       } else {
         p_req = AVDT_GetCapReq;
@@ -1264,7 +1265,7 @@ void bta_av_setconfig_rsp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     p_scb->num_seps = num;
 
     if (p_scb->cur_psc_mask & AVDT_PSC_DELAY_RPT)
-      p_scb->avdt_version = AVDT_VERSION_SYNC;
+      p_scb->avdt_version = AVDT_VERSION_1_3;
 
     if (A2DP_GetCodecType(p_scb->cfg.codec_info) == A2DP_MEDIA_CT_SBC ||
         num > 1) {
