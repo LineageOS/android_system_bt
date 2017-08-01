@@ -2027,7 +2027,7 @@ static void bte_search_devices_evt(tBTA_DM_SEARCH_EVT event,
    * to the end of the tBTA_DM_SEARCH */
   switch (event) {
     case BTA_DM_INQ_RES_EVT: {
-      if (p_data->inq_res.p_eir) param_len += HCI_EXT_INQ_RESPONSE_LEN;
+      if (p_data->inq_res.p_eir) param_len += p_data->inq_res.eir_len;
     } break;
 
     case BTA_DM_DISC_RES_EVT: {
