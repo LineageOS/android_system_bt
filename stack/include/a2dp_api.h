@@ -163,6 +163,17 @@ extern tA2DP_STATUS A2DP_FindService(uint16_t service_uuid,
 
 /******************************************************************************
  *
+ * Function         A2DP_GetAvdtpVersion()
+ *
+ * Description      Gets the local version of AVDTP
+ *
+ * Returns          The local version of AVDTP.
+ *
+ *****************************************************************************/
+extern uint16_t A2DP_GetAvdtpVersion(void);
+
+/******************************************************************************
+ *
  * Function         A2DP_SetTraceLevel
  *
  * Description      Sets the trace level for A2D. If 0xff is passed, the
