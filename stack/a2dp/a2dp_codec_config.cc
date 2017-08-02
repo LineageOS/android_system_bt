@@ -1258,3 +1258,23 @@ bool A2DP_InitCodecConfig(btav_a2dp_codec_index_t codec_index,
 
   return false;
 }
+
+bool A2DP_DumpCodecInfo(const uint8_t* p_codec_info) {
+  tA2DP_CODEC_TYPE codec_type = A2DP_GetCodecType(p_codec_info);
+
+  LOG_VERBOSE(LOG_TAG, "%s: codec_type = 0x%x", __func__, codec_type);
+
+  switch (codec_type) {
+    case A2DP_MEDIA_CT_SBC:
+      return A2DP_DumpCodecInfoSbc(p_codec_info);
+    case A2DP_MEDIA_CT_AAC:
+      return A2DP_DumpCodecInfoAac(p_codec_info);
+    case A2DP_MEDIA_CT_NON_A2DP:
+      return A2DP_VendorDumpCodecInfo(p_codec_info);
+    default:
+      break;
+  }
+
+  LOG_ERROR(LOG_TAG, "%s: unsupported codec type 0x%x", __func__, codec_type);
+  return false;
+}
