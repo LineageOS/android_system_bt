@@ -28,7 +28,7 @@ Classic::Classic() {
   advertising_interval_ms_ = std::chrono::milliseconds(0);
   device_class_ = 0x30201;
 
-  extended_inquiry_data_ = {0x08,  // Length
+  extended_inquiry_data_ = {0x10,  // Length
                             BT_EIR_COMPLETE_LOCAL_NAME_TYPE,
                             'g',
                             'D',
@@ -36,7 +36,15 @@ Classic::Classic() {
                             'v',
                             'i',
                             'c',
-                            'e'};
+                            'e',
+                            '-',
+                            'c',
+                            'l',
+                            'a',
+                            's',
+                            's',
+                            'i',
+                            'c'};
   page_scan_repetition_mode_ = 0;
   page_scan_delay_ms_ = std::chrono::milliseconds(600);
 }
