@@ -629,7 +629,7 @@ class BleAdvertisingManagerImpl
         p_params->adv_int_min, p_params->adv_int_max, p_params->channel_map,
         p_inst->own_address_type, p_inst->own_address, 0x00, peer_address,
         p_params->adv_filter_policy, p_inst->tx_power,
-        p_params->primary_advertising_phy, 0x01,
+        p_params->primary_advertising_phy, 0x00,
         p_params->secondary_advertising_phy, 0x01 /* TODO: proper SID */,
         p_params->scan_request_notification_enable, cb);
 
