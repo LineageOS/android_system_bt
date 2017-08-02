@@ -1095,6 +1095,10 @@ void bta_av_config_ind(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   local_sep = bta_av_get_scb_sep_type(p_scb, p_msg->handle);
   p_scb->avdt_label = p_data->str_msg.msg.hdr.label;
+
+  APPL_TRACE_DEBUG("%s: local_sep = %d", __func__, local_sep);
+  A2DP_DumpCodecInfo(p_evt_cfg->codec_info);
+
   memcpy(p_scb->cfg.codec_info, p_evt_cfg->codec_info, AVDT_CODEC_SIZE);
   bta_av_save_addr(p_scb, p_data->str_msg.bd_addr);
 
@@ -1452,6 +1456,8 @@ void bta_av_security_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_do_close(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
+  APPL_TRACE_DEBUG("%s: p_scb->co_started=%d", __func__, p_scb->co_started);
+
   /* stop stream if started */
   if (p_scb->co_started) {
     bta_av_str_stopped(p_scb, NULL);
@@ -1630,12 +1636,18 @@ void bta_av_save_caps(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   APPL_TRACE_DEBUG("%s: num_seps:%d sep_info_idx:%d wait:x%x", __func__,
                    p_scb->num_seps, p_scb->sep_info_idx, p_scb->wait);
+  A2DP_DumpCodecInfo(p_scb->p_cap->codec_info);
+
   memcpy(&cfg, p_scb->p_cap, sizeof(tAVDT_CFG));
   /* let application know the capability of the SNK */
   p_scb->p_cos->getcfg(p_scb->hndl, cfg.codec_info, &p_scb->sep_info_idx,
                        p_info->seid, &cfg.num_protect, cfg.protect_info);
 
   p_scb->sep_info_idx++;
+  APPL_TRACE_DEBUG("%s: result: sep_info_idx:%d", __func__,
+                   p_scb->sep_info_idx);
+  A2DP_DumpCodecInfo(cfg.codec_info);
+
   if (p_scb->num_seps > p_scb->sep_info_idx) {
     /* Some devices have seps at the end of the discover list, which is not */
     /* matching media type(video not audio).                                */
@@ -1646,8 +1658,9 @@ void bta_av_save_caps(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     getcap_done = true;
 
   if (getcap_done) {
-    /* we are done getting capabilities. restore the p_cb->sep_info_idx */
-    p_scb->sep_info_idx = 0;
+    APPL_TRACE_DEBUG("%s: getcap_done: num_seps:%d sep_info_idx:%d wait:x%x",
+                     __func__, p_scb->num_seps, p_scb->sep_info_idx,
+                     p_scb->wait);
     p_scb->wait &= ~(BTA_AV_WAIT_ACP_CAPS_ON | BTA_AV_WAIT_ACP_CAPS_STARTED);
     if (old_wait & BTA_AV_WAIT_ACP_CAPS_STARTED) {
       bta_av_start_ok(p_scb, NULL);
@@ -1765,6 +1778,7 @@ void bta_av_getcap_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   APPL_TRACE_DEBUG("%s: num_codec %d", __func__, p_scb->p_cap->num_codec);
   APPL_TRACE_DEBUG("%s: media type x%x, x%x", __func__, media_type,
                    p_scb->media_type);
+  A2DP_DumpCodecInfo(p_scb->cfg.codec_info);
 
   /* if codec present and we get a codec configuration */
   if ((p_scb->p_cap->num_codec != 0) && (media_type == p_scb->media_type) &&
@@ -1773,6 +1787,10 @@ void bta_av_getcap_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
                             cfg.protect_info) == A2DP_SUCCESS)) {
     /* save copy of codec configuration */
     memcpy(&p_scb->cfg, &cfg, sizeof(tAVDT_CFG));
+
+    APPL_TRACE_DEBUG("%s: result: sep_info_idx=%d", __func__,
+                     p_scb->sep_info_idx);
+    A2DP_DumpCodecInfo(p_scb->cfg.codec_info);
 
     uuid_int = p_scb->uuid_int;
     APPL_TRACE_DEBUG("%s: initiator UUID = 0x%x", __func__, uuid_int);
@@ -2031,16 +2049,22 @@ void bta_av_reconfig(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   /* store the new configuration in control block */
   if (p_scb->p_cap == NULL)
     p_scb->p_cap = (tAVDT_CFG*)osi_malloc(sizeof(tAVDT_CFG));
-  p_cfg = p_scb->p_cap;
+  p_cfg = &p_scb->cfg;
 
   alarm_cancel(p_scb->avrc_ct_timer);
 
-  memcpy(p_cfg, &p_scb->cfg, sizeof(tAVDT_CFG));
+  APPL_TRACE_DEBUG(
+      "%s: p_scb->sep_info_idx=%d p_scb->rcfg_idx=%d p_rcfg->sep_info_idx=%d",
+      __func__, p_scb->sep_info_idx, p_scb->rcfg_idx, p_rcfg->sep_info_idx);
+  A2DP_DumpCodecInfo(p_scb->p_cap->codec_info);
+  A2DP_DumpCodecInfo(p_scb->cfg.codec_info);
+  A2DP_DumpCodecInfo(p_rcfg->codec_info);
+
   p_cfg->num_protect = p_rcfg->num_protect;
   memcpy(p_cfg->codec_info, p_rcfg->codec_info, AVDT_CODEC_SIZE);
   memcpy(p_cfg->protect_info, p_rcfg->p_protect_info, p_rcfg->num_protect);
   p_scb->rcfg_idx = p_rcfg->sep_info_idx;
-  p_scb->p_cap->psc_mask = p_scb->cur_psc_mask;
+  p_cfg->psc_mask = p_scb->cur_psc_mask;
 
   // If the requested SEP index is same as the current one, then we
   // can Suspend->Reconfigure->Start.
@@ -2057,8 +2081,9 @@ void bta_av_reconfig(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     } else {
       // Reconfigure
       APPL_TRACE_DEBUG("%s: reconfig", __func__);
-      AVDT_ReconfigReq(p_scb->avdt_handle, p_scb->p_cap);
-      p_scb->p_cap->psc_mask = p_scb->cur_psc_mask;
+      A2DP_DumpCodecInfo(p_scb->cfg.codec_info);
+      AVDT_ReconfigReq(p_scb->avdt_handle, &p_scb->cfg);
+      p_scb->cfg.psc_mask = p_scb->cur_psc_mask;
     }
   } else {
     // Close the stream first, and then Configure it
@@ -2726,8 +2751,9 @@ void bta_av_suspend_cont(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     APPL_TRACE_DEBUG("%s: calling AVDT_ReconfigReq", __func__);
     /* reconfig the stream */
 
-    AVDT_ReconfigReq(p_scb->avdt_handle, p_scb->p_cap);
-    p_scb->p_cap->psc_mask = p_scb->cur_psc_mask;
+    A2DP_DumpCodecInfo(p_scb->cfg.codec_info);
+    AVDT_ReconfigReq(p_scb->avdt_handle, &p_scb->cfg);
+    p_scb->cfg.psc_mask = p_scb->cur_psc_mask;
   }
 }
 
@@ -2807,7 +2833,9 @@ void bta_av_rcfg_open(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
     AVDT_DiscoverReq(p_scb->peer_addr, p_scb->sep_info, BTA_AV_NUM_SEPS,
                      bta_av_dt_cback[p_scb->hdi]);
   } else {
-    memcpy(p_scb->cfg.codec_info, p_scb->p_cap->codec_info, AVDT_CODEC_SIZE);
+    APPL_TRACE_DEBUG("%s: calling AVDT_OpenReq()", __func__);
+    A2DP_DumpCodecInfo(p_scb->cfg.codec_info);
+
     /* we may choose to use a different SEP at reconfig.
      * adjust the sep_idx now */
     bta_av_adjust_seps_idx(p_scb, bta_av_get_scb_handle(p_scb, AVDT_TSEP_SRC));
@@ -2815,7 +2843,7 @@ void bta_av_rcfg_open(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
     /* open the stream with the new config */
     p_scb->sep_info_idx = p_scb->rcfg_idx;
     AVDT_OpenReq(p_scb->avdt_handle, p_scb->peer_addr,
-                 p_scb->sep_info[p_scb->sep_info_idx].seid, p_scb->p_cap);
+                 p_scb->sep_info[p_scb->sep_info_idx].seid, &p_scb->cfg);
   }
 }
 
