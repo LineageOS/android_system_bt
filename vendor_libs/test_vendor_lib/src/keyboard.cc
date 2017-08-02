@@ -23,13 +23,21 @@ using std::vector;
 namespace test_vendor_lib {
 Keyboard::Keyboard() {
   advertising_type_ = BTM_BLE_CONNECT_EVT;
-  adv_data_ = {0x09,  // Length
+  adv_data_ = {0x11,  // Length
                BTM_BLE_AD_TYPE_NAME_CMPL,
+               'g',
+               'D',
+               'e',
+               'v',
+               'i',
+               'c',
+               'e',
+               '-',
                'k',
                'e',
                'y',
                'b',
-               '0',
+               'o',
                'a',
                'r',
                'd',

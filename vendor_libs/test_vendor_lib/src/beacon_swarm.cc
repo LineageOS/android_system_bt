@@ -27,17 +27,29 @@ BeaconSwarm::BeaconSwarm() {
   advertising_type_ = BTM_BLE_NON_CONNECT_EVT;
   adv_data_ = {0x02,  // Length
                BTM_BLE_AD_TYPE_FLAG,
-               BTM_BLE_BREDR_NOT_SPT,
-               0x0d,  // Length (four spots for the count)
+               BTM_BLE_BREDR_NOT_SPT | BTM_BLE_GEN_DISC_FLAG,
+               0x15,
                BTM_BLE_AD_TYPE_NAME_CMPL,
+               'g',
+               'D',
+               'e',
+               'v',
+               'i',
                'c',
+               'e',
+               '-',
                'b',
                'e',
                'a',
                'c',
                'o',
                'n',
-               ' '};
+               '_',
+               's',
+               'w',
+               'a',
+               'r',
+               'm'};
 
   scan_response_present_ = true;
   scan_data_ = {0x06,  // Length

@@ -25,8 +25,16 @@ namespace test_vendor_lib {
 Beacon::Beacon() {
   advertising_interval_ms_ = std::chrono::milliseconds(1280);
   advertising_type_ = BTM_BLE_NON_CONNECT_EVT;
-  adv_data_ = {0x07,  // Length
+  adv_data_ = {0x0F,  // Length
                BTM_BLE_AD_TYPE_NAME_CMPL,
+               'g',
+               'D',
+               'e',
+               'v',
+               'i',
+               'c',
+               'e',
+               '-',
                'b',
                'e',
                'a',
@@ -35,7 +43,7 @@ Beacon::Beacon() {
                'n',
                0x02,  // Length
                BTM_BLE_AD_TYPE_FLAG,
-               BTM_BLE_BREDR_NOT_SPT};
+               BTM_BLE_BREDR_NOT_SPT | BTM_BLE_GEN_DISC_FLAG};
 
   scan_data_ = {0x05,  // Length
                 BTM_BLE_AD_TYPE_NAME_SHORT,
