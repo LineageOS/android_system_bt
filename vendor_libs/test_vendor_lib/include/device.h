@@ -145,16 +145,7 @@ class Device {
   // The time between page scans.
   std::chrono::milliseconds page_scan_delay_ms_;
 
-  std::vector<uint8_t> extended_inquiry_data_ = {
-      0x08,  // Length
-      BT_EIR_COMPLETE_LOCAL_NAME_TYPE,
-      'g',
-      'D',
-      'e',
-      'v',
-      'i',
-      'c',
-      'e'};
+  std::vector<uint8_t> extended_inquiry_data_;
 
   // Classic Bluetooth CLKN_slave[16..2] - CLKN_master[16..2]
   // Bluetooth Core Specification Version 4.2, Volume 2, Part C, Section 4.3.2
