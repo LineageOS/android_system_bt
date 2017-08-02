@@ -3338,6 +3338,8 @@ static void handle_notification_response(tBTA_AV_META_MSG* pmeta_msg,
          */
         if (p_rsp->param.play_status == AVRC_PLAYSTATE_PLAYING) {
           rc_start_play_status_timer(p_dev);
+          get_element_attribute_cmd(AVRC_MAX_NUM_MEDIA_ATTR_ID, attr_list,
+                                    p_dev);
         } else {
           rc_stop_play_status_timer(p_dev);
         }
