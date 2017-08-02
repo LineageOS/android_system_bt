@@ -395,6 +395,7 @@ tA2DP_STATUS bta_av_co_audio_getconfig(tBTA_AV_HNDL hndl, uint8_t* p_codec_info,
   tBTA_AV_CO_PEER* p_peer;
 
   APPL_TRACE_DEBUG("%s", __func__);
+  A2DP_DumpCodecInfo(p_codec_info);
 
   /* Retrieve the peer info */
   p_peer = bta_av_co_get_peer(hndl);
@@ -506,6 +507,7 @@ void bta_av_co_audio_setconfig(tBTA_AV_HNDL hndl, const uint8_t* p_codec_info,
   APPL_TRACE_DEBUG("num_protect:0x%02x protect_info:0x%02x%02x%02x",
                    num_protect, p_protect_info[0], p_protect_info[1],
                    p_protect_info[2]);
+  A2DP_DumpCodecInfo(p_codec_info);
 
   /* Retrieve the peer info */
   p_peer = bta_av_co_get_peer(hndl);
@@ -991,6 +993,9 @@ static void bta_av_co_save_new_codec_config(tBTA_AV_CO_PEER* p_peer,
                                             const uint8_t* new_codec_config,
                                             uint8_t num_protect,
                                             const uint8_t* p_protect_info) {
+  APPL_TRACE_DEBUG("%s", __func__);
+  A2DP_DumpCodecInfo(new_codec_config);
+
   // Protect access to bta_av_co_cb.codec_config
   mutex_global_lock();
 
@@ -1113,6 +1118,15 @@ bool bta_av_co_set_codec_user_config(
       success = false;
       goto done;
     }
+    // Don't call BTA_AvReconfig() prior to retrieving all peer's capabilities
+    if ((p_peer->num_rx_sinks != p_peer->num_sinks) &&
+        (p_peer->num_sup_sinks != BTA_AV_CO_NUM_ELEMENTS(p_peer->sinks))) {
+      APPL_TRACE_WARNING("%s: not all peer's capabilities have been retrieved",
+                         __func__);
+      success = false;
+      goto done;
+    }
+
     APPL_TRACE_DEBUG("%s: call BTA_AvReconfig(x%x)", __func__, p_peer->handle);
     BTA_AvReconfig(p_peer->handle, true, p_sink->sep_info_idx,
                    p_peer->codec_config, num_protect, bta_av_co_cp_scmst);
@@ -1153,6 +1167,9 @@ static bool bta_av_co_set_codec_ota_config(tBTA_AV_CO_PEER* p_peer,
   bool restart_output = false;
   bool config_updated = false;
 
+  APPL_TRACE_DEBUG("%s", __func__);
+  A2DP_DumpCodecInfo(p_ota_codec_config);
+
   *p_restart_output = false;
 
   // Find the peer SEP codec to use
@@ -1189,6 +1206,9 @@ static bool bta_av_co_set_codec_ota_config(tBTA_AV_CO_PEER* p_peer,
   }
 
   if (restart_output) {
+    APPL_TRACE_DEBUG("%s: restart output", __func__);
+    A2DP_DumpCodecInfo(result_codec_config);
+
     *p_restart_output = true;
     p_peer->p_sink = p_sink;
     bta_av_co_save_new_codec_config(p_peer, result_codec_config, num_protect,
@@ -1248,9 +1268,17 @@ bool bta_av_co_set_codec_audio_config(
     bta_av_co_save_new_codec_config(p_peer, result_codec_config,
                                     p_sink->num_protect, p_sink->protect_info);
 
-    APPL_TRACE_DEBUG("%s: call BTA_AvReconfig(x%x)", __func__, p_peer->handle);
-    BTA_AvReconfig(p_peer->handle, true, p_sink->sep_info_idx,
-                   p_peer->codec_config, num_protect, bta_av_co_cp_scmst);
+    // Don't call BTA_AvReconfig() prior to retrieving all peer's capabilities
+    if ((p_peer->num_rx_sinks != p_peer->num_sinks) &&
+        (p_peer->num_sup_sinks != BTA_AV_CO_NUM_ELEMENTS(p_peer->sinks))) {
+      APPL_TRACE_WARNING("%s: not all peer's capabilities have been retrieved",
+                         __func__);
+    } else {
+      APPL_TRACE_DEBUG("%s: call BTA_AvReconfig(x%x)", __func__,
+                       p_peer->handle);
+      BTA_AvReconfig(p_peer->handle, true, p_sink->sep_info_idx,
+                     p_peer->codec_config, num_protect, bta_av_co_cp_scmst);
+    }
   }
 
   if (config_updated) {
