@@ -37,7 +37,6 @@
 /*****************************************************************************
  * state machine constants and types
  ****************************************************************************/
-#if (AVDT_DEBUG == TRUE)
 
 /* verbose state strings for trace */
 const char* const avdt_ccb_st_str[] = {"CCB_IDLE_ST", "CCB_OPENING_ST",
@@ -59,8 +58,6 @@ const char* const avdt_ccb_evt_str[] = {
     "IDLE_TOUT_EVT",        "UL_OPEN_EVT",
     "UL_CLOSE_EVT",         "LL_OPEN_EVT",
     "LL_CLOSE_EVT",         "LL_CONG_EVT"};
-
-#endif
 
 /* action function list */
 const tAVDT_CCB_ACTION avdt_ccb_action[] = {
@@ -387,6 +384,9 @@ void avdt_ccb_event(tAVDT_CCB* p_ccb, uint8_t event, tAVDT_CCB_EVT* p_data) {
   /* execute action functions */
   for (i = 0; i < AVDT_CCB_ACTIONS; i++) {
     action = state_table[event][i];
+    AVDT_TRACE_DEBUG("%s: event=%s state=%s action=%d", __func__,
+                     avdt_ccb_evt_str[event], avdt_ccb_st_str[p_ccb->state],
+                     action);
     if (action != AVDT_CCB_IGNORE) {
       (*avdt_cb.p_ccb_act[action])(p_ccb, p_data);
     } else {
