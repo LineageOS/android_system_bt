@@ -529,7 +529,7 @@ bool A2DP_BuildCodecHeaderAac(UNUSED_ATTR const uint8_t* p_codec_info,
   return true;
 }
 
-void A2DP_DumpCodecInfoAac(const uint8_t* p_codec_info) {
+bool A2DP_DumpCodecInfoAac(const uint8_t* p_codec_info) {
   tA2DP_STATUS a2dp_status;
   tA2DP_AAC_CIE aac_cie;
 
@@ -538,7 +538,7 @@ void A2DP_DumpCodecInfoAac(const uint8_t* p_codec_info) {
   a2dp_status = A2DP_ParseInfoAac(&aac_cie, p_codec_info, true);
   if (a2dp_status != A2DP_SUCCESS) {
     LOG_ERROR(LOG_TAG, "%s: A2DP_ParseInfoAac fail:%d", __func__, a2dp_status);
-    return;
+    return false;
   }
 
   LOG_DEBUG(LOG_TAG, "\tobjectType: 0x%x", aac_cie.objectType);
@@ -605,6 +605,8 @@ void A2DP_DumpCodecInfoAac(const uint8_t* p_codec_info) {
             (aac_cie.variableBitRateSupport != 0) ? "true" : "false");
 
   LOG_DEBUG(LOG_TAG, "\tbitRate: %u", aac_cie.bitRate);
+
+  return true;
 }
 
 const tA2DP_ENCODER_INTERFACE* A2DP_GetEncoderInterfaceAac(
