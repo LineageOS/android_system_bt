@@ -195,4 +195,9 @@ const char* A2DP_VendorCodecIndexStr(btav_a2dp_codec_index_t codec_index);
 bool A2DP_VendorInitCodecConfig(btav_a2dp_codec_index_t codec_index,
                                 tAVDT_CFG* p_cfg);
 
+// Decodes and displays A2DP vendor codec info when using |LOG_DEBUG|.
+// |p_codec_info| is a pointer to the codec_info to decode and display.
+// Returns true if the codec information is valid, otherwise false.
+bool A2DP_VendorDumpCodecInfo(const uint8_t* p_codec_info);
+
 #endif  // A2DP_VENDOR_H
