@@ -28,17 +28,31 @@ namespace test_vendor_lib {
 BrokenAdv::BrokenAdv() {
   advertising_interval_ms_ = std::chrono::milliseconds(1280);
   advertising_type_ = BTM_BLE_NON_CONNECT_EVT;
-  adv_data_ = {0x02,  // Length
-               BTM_BLE_AD_TYPE_FLAG,
-               BTM_BLE_BREDR_NOT_SPT,
-               0x07,  // Length
-               BTM_BLE_AD_TYPE_NAME_CMPL,
-               'B',
-               'R',
-               '0',
-               'K',
-               '3',
-               'N'};
+  adv_data_ = {
+      0x02,  // Length
+      BTM_BLE_AD_TYPE_FLAG,
+      BTM_BLE_BREDR_NOT_SPT | BTM_BLE_GEN_DISC_FLAG,
+      0x13,  // Length
+      BTM_BLE_AD_TYPE_NAME_CMPL,
+      'g',
+      'D',
+      'e',
+      'v',
+      'i',
+      'c',
+      'e',
+      '-',
+      'b',
+      'r',
+      'o',
+      'k',
+      'e',
+      'n',
+      '_',
+      'a',
+      'd',
+      'v',
+  };
 
   constant_adv_data_ = adv_data_;
 
