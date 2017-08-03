@@ -111,9 +111,10 @@ bool A2DP_VendorGetPacketTimestampAptx(const uint8_t* p_codec_info,
 bool A2DP_VendorBuildCodecHeaderAptx(const uint8_t* p_codec_info, BT_HDR* p_buf,
                                      uint16_t frames_per_packet);
 
-// Decodes and displays aptX codec info (for debugging).
+// Decodes and displays A2DP aptX codec info when using |LOG_DEBUG|.
 // |p_codec_info| is a pointer to the aptX codec_info to decode and display.
-void A2DP_VendorDumpCodecInfoAptx(const uint8_t* p_codec_info);
+// Returns true if the codec information is valid, otherwise false.
+bool A2DP_VendorDumpCodecInfoAptx(const uint8_t* p_codec_info);
 
 // Gets the A2DP aptX encoder interface that can be used to encode and prepare
 // A2DP packets for transmission - see |tA2DP_ENCODER_INTERFACE|.
