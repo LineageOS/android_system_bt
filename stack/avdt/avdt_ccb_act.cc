@@ -486,6 +486,8 @@ void avdt_ccb_snd_start_cmd(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data) {
   tAVDT_MSG avdt_msg;
   uint8_t seid_list[AVDT_NUM_SEPS];
 
+  AVDT_TRACE_DEBUG("%s", __func__);
+
   /* make copy of our seid list */
   memcpy(seid_list, p_data->msg.multi.seid_list, p_data->msg.multi.num_seps);
 
@@ -494,6 +496,8 @@ void avdt_ccb_snd_start_cmd(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data) {
       avdt_scb_verify(p_ccb, AVDT_VERIFY_OPEN, p_data->msg.multi.seid_list,
                       p_data->msg.multi.num_seps, &avdt_msg.hdr.err_code);
   if (avdt_msg.hdr.err_param == 0) {
+    AVDT_TRACE_DEBUG("%s: AVDT_SIG_START", __func__);
+
     /* set peer seid list in messsage */
     avdt_scb_peer_seid_list(&p_data->msg.multi);
 
@@ -504,6 +508,7 @@ void avdt_ccb_snd_start_cmd(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data) {
     for (i = 0; i < p_data->msg.multi.num_seps; i++) {
       p_scb = avdt_scb_by_hdl(seid_list[i]);
       if (p_scb != NULL) {
+        AVDT_TRACE_DEBUG("%s: AVDT_SCB_MSG_START_REJ_EVT: i=%d", __func__, i);
         avdt_scb_event(p_scb, AVDT_SCB_MSG_START_REJ_EVT,
                        (tAVDT_SCB_EVT*)&avdt_msg.hdr);
       }
