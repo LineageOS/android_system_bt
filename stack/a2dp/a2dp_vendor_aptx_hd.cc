@@ -348,7 +348,7 @@ bool A2DP_VendorBuildCodecHeaderAptxHd(UNUSED_ATTR const uint8_t* p_codec_info,
   return true;
 }
 
-void A2DP_VendorDumpCodecInfoAptxHd(const uint8_t* p_codec_info) {
+bool A2DP_VendorDumpCodecInfoAptxHd(const uint8_t* p_codec_info) {
   tA2DP_STATUS a2dp_status;
   tA2DP_APTX_HD_CIE aptx_hd_cie;
 
@@ -358,7 +358,7 @@ void A2DP_VendorDumpCodecInfoAptxHd(const uint8_t* p_codec_info) {
   if (a2dp_status != A2DP_SUCCESS) {
     LOG_ERROR(LOG_TAG, "%s: A2DP_ParseInfoAptxHd fail:%d", __func__,
               a2dp_status);
-    return;
+    return false;
   }
 
   LOG_DEBUG(LOG_TAG, "\tsamp_freq: 0x%x", aptx_hd_cie.sampleRate);
@@ -376,6 +376,8 @@ void A2DP_VendorDumpCodecInfoAptxHd(const uint8_t* p_codec_info) {
   if (aptx_hd_cie.channelMode & A2DP_APTX_HD_CHANNELS_STEREO) {
     LOG_DEBUG(LOG_TAG, "\tch_mode: (Stereo)");
   }
+
+  return true;
 }
 
 const tA2DP_ENCODER_INTERFACE* A2DP_VendorGetEncoderInterfaceAptxHd(

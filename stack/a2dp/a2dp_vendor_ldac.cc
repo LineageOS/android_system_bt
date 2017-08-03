@@ -398,7 +398,7 @@ bool A2DP_VendorBuildCodecHeaderLdac(UNUSED_ATTR const uint8_t* p_codec_info,
   return true;
 }
 
-void A2DP_VendorDumpCodecInfoLdac(const uint8_t* p_codec_info) {
+bool A2DP_VendorDumpCodecInfoLdac(const uint8_t* p_codec_info) {
   tA2DP_STATUS a2dp_status;
   tA2DP_LDAC_CIE ldac_cie;
 
@@ -407,7 +407,7 @@ void A2DP_VendorDumpCodecInfoLdac(const uint8_t* p_codec_info) {
   a2dp_status = A2DP_ParseInfoLdac(&ldac_cie, p_codec_info, true);
   if (a2dp_status != A2DP_SUCCESS) {
     LOG_ERROR(LOG_TAG, "%s: A2DP_ParseInfoLdac fail:%d", __func__, a2dp_status);
-    return;
+    return false;
   }
 
   LOG_DEBUG(LOG_TAG, "\tsamp_freq: 0x%x", ldac_cie.sampleRate);
@@ -440,6 +440,8 @@ void A2DP_VendorDumpCodecInfoLdac(const uint8_t* p_codec_info) {
   if (ldac_cie.channelMode & A2DP_LDAC_CHANNEL_MODE_STEREO) {
     LOG_DEBUG(LOG_TAG, "\tch_mode: (Stereo)");
   }
+
+  return true;
 }
 
 const tA2DP_ENCODER_INTERFACE* A2DP_VendorGetEncoderInterfaceLdac(
