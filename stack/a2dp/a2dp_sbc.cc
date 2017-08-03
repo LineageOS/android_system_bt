@@ -867,7 +867,7 @@ bool A2DP_BuildCodecHeaderSbc(UNUSED_ATTR const uint8_t* p_codec_info,
   return true;
 }
 
-void A2DP_DumpCodecInfoSbc(const uint8_t* p_codec_info) {
+bool A2DP_DumpCodecInfoSbc(const uint8_t* p_codec_info) {
   tA2DP_STATUS a2dp_status;
   tA2DP_SBC_CIE sbc_cie;
 
@@ -876,7 +876,7 @@ void A2DP_DumpCodecInfoSbc(const uint8_t* p_codec_info) {
   a2dp_status = A2DP_ParseInfoSbc(&sbc_cie, p_codec_info, true);
   if (a2dp_status != A2DP_SUCCESS) {
     LOG_ERROR(LOG_TAG, "%s: A2DP_ParseInfoSbc fail:%d", __func__, a2dp_status);
-    return;
+    return false;
   }
 
   LOG_DEBUG(LOG_TAG, "\tsamp_freq: 0x%x", sbc_cie.samp_freq);
@@ -939,6 +939,8 @@ void A2DP_DumpCodecInfoSbc(const uint8_t* p_codec_info) {
 
   LOG_DEBUG(LOG_TAG, "\tBit pool Min:%d Max:%d", sbc_cie.min_bitpool,
             sbc_cie.max_bitpool);
+
+  return true;
 }
 
 const tA2DP_ENCODER_INTERFACE* A2DP_GetEncoderInterfaceSbc(
