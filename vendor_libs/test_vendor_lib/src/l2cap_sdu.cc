@@ -61,14 +61,14 @@ L2capSdu::L2capSdu(std::vector<uint8_t>&& create_from) {
   sdu_data_ = create_from;
 }
 
-std::unique_ptr<L2capSdu> L2capSdu::L2capSduConstructor(
+std::shared_ptr<L2capSdu> L2capSdu::L2capSduConstructor(
     std::vector<uint8_t> create_from) {
   L2capSdu packet(std::move(create_from));
 
-  return std::make_unique<L2capSdu>(packet);
+  return std::make_shared<L2capSdu>(packet);
 }
 
-std::unique_ptr<L2capSdu> L2capSdu::L2capSduBuilder(
+std::shared_ptr<L2capSdu> L2capSdu::L2capSduBuilder(
     std::vector<uint8_t> create_from) {
   L2capSdu packet(std::move(create_from));
 
@@ -79,16 +79,7 @@ std::unique_ptr<L2capSdu> L2capSdu::L2capSduBuilder(
   packet.sdu_data_[packet.sdu_data_.size() - 2] = fcs & 0xFF;
   packet.sdu_data_[packet.sdu_data_.size() - 1] = (fcs & 0xFF00) >> 8;
 
-  return std::make_unique<L2capSdu>(packet);
-}
-
-std::vector<uint8_t>::const_iterator L2capSdu::get_payload_begin(
-    const unsigned int offset) const {
-  return std::next(sdu_data_.begin(), offset);
-}
-
-std::vector<uint8_t>::const_iterator L2capSdu::get_payload_end() const {
-  return std::prev(sdu_data_.end(), 2);
+  return std::make_shared<L2capSdu>(packet);
 }
 
 uint16_t L2capSdu::convert_from_little_endian(
@@ -151,5 +142,9 @@ bool L2capSdu::is_ending_sdu(const L2capSdu& sdu) {
 
   return (sar_bits == 0x8000);
 }
+
+// HciPacket functions.
+size_t L2capSdu::get_length() { return sdu_data_.size(); }
+uint8_t& L2capSdu::get_at_index(size_t index) { return sdu_data_[index]; }
 
 }  // namespace test_vendor_lib

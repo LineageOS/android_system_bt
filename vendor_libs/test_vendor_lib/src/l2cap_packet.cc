@@ -25,17 +25,18 @@
 
 namespace test_vendor_lib {
 
-const int kL2capHeaderLength = 4;
+const size_t kL2capHeaderLength = 4;
+const size_t kSduFirstHeaderLength = 8;
+const size_t kSduStandardHeaderLength = 6;
+const size_t kFcsBytes = 2;
 const uint16_t kSduTxSeqBits = 0x007E;
-const int kSduStandardHeaderLength = 6;
-const int kSduFirstHeaderLength = 8;
 const uint8_t kSduFirstReqseq = 0x40;
 const uint8_t kSduContinuationReqseq = 0xC0;
 const uint8_t kSduEndReqseq = 0x80;
 
-std::unique_ptr<L2capPacket> L2capPacket::assemble(
-    const std::vector<std::unique_ptr<L2capSdu> >& sdu_packets) {
-  std::unique_ptr<L2capPacket> built_l2cap_packet(new L2capPacket());
+std::shared_ptr<L2capPacket> L2capPacket::assemble(
+    const std::vector<std::shared_ptr<L2capSdu> >& sdu_packets) {
+  std::shared_ptr<L2capPacket> built_l2cap_packet(new L2capPacket());
   uint16_t l2cap_payload_length = 0;
   uint16_t first_packet_channel_id = 0;
   uint16_t total_expected_l2cap_length;
@@ -93,7 +94,7 @@ std::unique_ptr<L2capPacket> L2capPacket::assemble(
     // control bits set to 01b and the ending segment must have them set to 10b.
     // Meanwhile all segments in between the start and end must have the bits
     // set to 11b.
-    uint16_t starting_index;
+    size_t starting_index;
     uint8_t txseq = controls & kSduTxSeqBits;
     if (sdu_packets.size() > 1 && i == 0 &&
         !L2capSdu::is_starting_sdu(*sdu_packets[i])) {
@@ -133,8 +134,8 @@ std::unique_ptr<L2capPacket> L2capPacket::assemble(
       starting_index = kSduStandardHeaderLength;
     }
 
-    auto payload_begin = sdu_packets[i]->get_payload_begin(starting_index);
-    auto payload_end = sdu_packets[i]->get_payload_end();
+    Iterator payload_begin = sdu_packets[i]->get_begin() + starting_index;
+    Iterator payload_end = sdu_packets[i]->get_end() - kFcsBytes;
 
     built_l2cap_packet->l2cap_packet_.insert(
         built_l2cap_packet->l2cap_packet_.end(), payload_begin, payload_end);
@@ -156,40 +157,19 @@ std::unique_ptr<L2capPacket> L2capPacket::assemble(
   return built_l2cap_packet;
 }  // Assemble
 
-std::vector<uint8_t> L2capPacket::get_l2cap_payload() const {
-  std::vector<uint8_t> payload_sub_vector;
-  payload_sub_vector.clear();
-
-  auto begin_payload_iter = get_l2cap_payload_begin();
-  payload_sub_vector.insert(payload_sub_vector.end(), begin_payload_iter,
-                            l2cap_packet_.end());
-
-  return payload_sub_vector;
-}
-
 uint16_t L2capPacket::get_l2cap_cid() const {
   return ((l2cap_packet_[3] << 8) | l2cap_packet_[2]);
 }
 
-std::vector<uint8_t>::const_iterator L2capPacket::get_l2cap_payload_begin()
-    const {
-  return std::next(l2cap_packet_.begin(), kSduHeaderLength);
-}
-
-std::vector<uint8_t>::const_iterator L2capPacket::get_l2cap_payload_end()
-    const {
-  return l2cap_packet_.end();
-}
-
-std::vector<std::unique_ptr<L2capSdu> > L2capPacket::fragment(
-    uint16_t maximum_sdu_size, uint8_t txseq, uint8_t reqseq) const {
-  std::vector<std::unique_ptr<L2capSdu> > sdu;
+std::vector<std::shared_ptr<L2capSdu> > L2capPacket::fragment(
+    uint16_t maximum_sdu_size, uint8_t txseq, uint8_t reqseq) {
+  std::vector<std::shared_ptr<L2capSdu> > sdu;
   if (!check_l2cap_packet()) return sdu;
 
   std::vector<uint8_t> current_sdu;
 
-  auto current_iter = get_l2cap_payload_begin();
-  auto end_iter = get_l2cap_payload_end();
+  Iterator current_iter = get_begin() + kL2capHeaderLength;
+  Iterator end_iter = get_end();
 
   size_t number_of_packets = ceil((l2cap_packet_.size() - kL2capHeaderLength) /
                                   static_cast<float>(maximum_sdu_size));
@@ -230,8 +210,8 @@ std::vector<std::unique_ptr<L2capSdu> > L2capPacket::fragment(
     return sdu;
   }
 
-  auto next_iter =
-      std::next(current_iter, maximum_sdu_size - (kSduFirstHeaderLength + 2));
+  Iterator next_iter =
+      current_iter + (maximum_sdu_size - (kSduFirstHeaderLength + 2));
 
   sdu.reserve(number_of_packets);
   sdu.clear();
@@ -269,15 +249,9 @@ std::vector<std::unique_ptr<L2capSdu> > L2capPacket::fragment(
     if (txseq > 0x3F) txseq = 0x00;
 
     current_sdu.insert(current_sdu.end(), current_iter, next_iter);
-
     current_iter = next_iter;
 
-    next_iter =
-        std::next(current_iter, maximum_sdu_size - kSduFirstHeaderLength);
-
-    if (next_iter > end_iter) {
-      next_iter = end_iter;
-    }
+    next_iter = current_iter + (maximum_sdu_size - kSduFirstHeaderLength);
 
     sdu.push_back(L2capSdu::L2capSduBuilder(std::move(current_sdu)));
   }
@@ -323,4 +297,5 @@ size_t L2capPacket::get_length() { return l2cap_packet_.size(); }
 uint8_t& L2capPacket::get_at_index(size_t index) {
   return l2cap_packet_[index];
 }
+
 }  // namespace test_vendor_lib

@@ -62,6 +62,7 @@ class HciPacket : public std::enable_shared_from_this<HciPacket> {
   virtual size_t get_length() = 0;
 
   virtual uint8_t& get_at_index(size_t index) = 0;
+
 };  // HciPacket
 
 };  // namespace test_vendor_lib
