@@ -34,21 +34,16 @@ const int kSduHeaderLength = 4;
 class L2capPacket : public HciPacket {
  public:
   // Returns an assembled L2cap object if successful, nullptr if failure.
-  static std::unique_ptr<L2capPacket> assemble(
-      const std::vector<std::unique_ptr<L2capSdu> >& sdu_packet);
-
-  // Construct a vector of just the L2CAP payload. This essentially
-  // will remove the L2CAP header from the private member variable.
-  // TODO: Remove this in favor of custom iterators.
-  std::vector<uint8_t> get_l2cap_payload() const;
-
-  uint16_t get_l2cap_cid() const;
+  static std::shared_ptr<L2capPacket> assemble(
+      const std::vector<std::shared_ptr<L2capSdu> >& sdu_packet);
 
   // Returns a fragmented vector of L2capSdu objects if successful
   // Returns an empty vector of L2capSdu objects if unsuccessful
-  std::vector<std::unique_ptr<L2capSdu> > fragment(uint16_t maximum_sdu_size,
+  std::vector<std::shared_ptr<L2capSdu> > fragment(uint16_t maximum_sdu_size,
                                                    uint8_t txseq,
-                                                   uint8_t reqseq) const;
+                                                   uint8_t reqseq);
+
+  uint16_t get_l2cap_cid() const;
 
   // HciPacket Functions
   size_t get_length();
@@ -60,13 +55,7 @@ class L2capPacket : public HciPacket {
   // Entire L2CAP packet: length, CID, and payload in that order.
   std::vector<uint8_t> l2cap_packet_;
 
-  // Returns an iterator to the beginning of the L2CAP payload on success.
-  std::vector<uint8_t>::const_iterator get_l2cap_payload_begin() const;
-
   DISALLOW_COPY_AND_ASSIGN(L2capPacket);
-
-  // Returns an iterator to the end of the L2CAP payload.
-  std::vector<uint8_t>::const_iterator get_l2cap_payload_end() const;
 
   // Helper functions for fragmenting.
   static void set_sdu_header_length(std::vector<uint8_t>& sdu, uint16_t length);
