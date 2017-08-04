@@ -231,8 +231,10 @@ static future_t* clean_up(void) {
   btif_config_flush();
 
   alarm_free(config_timer);
-  config_free(config);
   config_timer = NULL;
+
+  std::unique_lock<std::mutex> lock(config_lock);
+  config_free(config);
   config = NULL;
   return future_new_immediate(FUTURE_SUCCESS);
 }
