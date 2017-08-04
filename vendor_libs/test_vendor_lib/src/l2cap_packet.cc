@@ -317,4 +317,10 @@ bool L2capPacket::check_l2cap_packet() const {
   return true;
 }
 
+// HciPacket Functions
+size_t L2capPacket::get_length() { return l2cap_packet_.size(); }
+
+uint8_t& L2capPacket::get_at_index(size_t index) {
+  return l2cap_packet_[index];
+}
 }  // namespace test_vendor_lib
