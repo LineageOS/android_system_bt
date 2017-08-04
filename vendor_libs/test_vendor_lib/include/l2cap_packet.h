@@ -24,13 +24,14 @@
 #include <vector>
 
 #include "base/macros.h"
+#include "hci_packet.h"
 #include "l2cap_sdu.h"
 
 namespace test_vendor_lib {
 
 const int kSduHeaderLength = 4;
 
-class L2capPacket {
+class L2capPacket : public HciPacket {
  public:
   // Returns an assembled L2cap object if successful, nullptr if failure.
   static std::unique_ptr<L2capPacket> assemble(
@@ -48,6 +49,10 @@ class L2capPacket {
   std::vector<std::unique_ptr<L2capSdu> > fragment(uint16_t maximum_sdu_size,
                                                    uint8_t txseq,
                                                    uint8_t reqseq) const;
+
+  // HciPacket Functions
+  size_t get_length();
+  uint8_t& get_at_index(size_t index);
 
  private:
   L2capPacket() = default;
