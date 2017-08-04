@@ -79,6 +79,7 @@ static const interop_addr_entry_t interop_addr_database[] = {
 
     // Uconnect
     {{{0x00, 0x54, 0xaf, 0, 0, 0}}, 3, INTEROP_2MBPS_LINK_ONLY},
+    {{{0x30, 0x14, 0x4a, 0, 0, 0}}, 3, INTEROP_2MBPS_LINK_ONLY},
 
     // LG Tone HBS-730 - unacceptably loud volume
     {{{0x00, 0x18, 0x6b, 0, 0, 0}}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
