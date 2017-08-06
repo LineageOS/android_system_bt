@@ -17,7 +17,10 @@ cc_library_static {
         "src/device_factory.cc",
         "src/dual_mode_controller.cc",
         "src/event_packet.cc",
+        "src/hci_packet.cc",
         "src/keyboard.cc",
+        "src/l2cap_packet.cc",
+        "src/l2cap_sdu.cc",
         "src/packet.cc",
         "src/packet_stream.cc",
         "src/sco_packet.cc",
@@ -61,6 +64,7 @@ cc_test_host {
     srcs: [
         "src/async_manager.cc",
         "src/bt_address.cc",
+        "src/hci_packet.cc",
         "src/command_packet.cc",
         "src/event_packet.cc",
         "src/packet.cc",

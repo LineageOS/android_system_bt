@@ -44,6 +44,36 @@ class AdvertiseDataParser {
   }
 
  public:
+  static void RemoveTrailingZeros(std::vector<uint8_t>& ad) {
+    size_t position = 0;
+
+    size_t ad_len = ad.size();
+    while (position != ad_len) {
+      uint8_t len = ad[position];
+
+      // A field length of 0 would be invalid as it should at least contain the
+      // EIR field type. However, some existing devices send zero padding at the
+      // end of advertisement. If this is the case, cut the zero padding from
+      // end of the packet. Otherwise i.e. gluing scan response to advertise
+      // data will result in data with zero padding in the middle.
+      if (len == 0) {
+        size_t zeros_start = position;
+        for (size_t i = position + 1; i < ad_len; i++) {
+          if (ad[i] != 0) return;
+        }
+
+        ad.erase(ad.begin() + zeros_start, ad.end());
+        return;
+      }
+
+      if (position + len >= ad_len) {
+        return;
+      }
+
+      position += len + 1;
+    }
+  }
+
   /**
    * Return true if this |ad| represent properly formatted advertising data.
    */
