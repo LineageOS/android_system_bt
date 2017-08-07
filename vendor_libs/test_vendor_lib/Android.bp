@@ -74,6 +74,7 @@ cc_test_host {
         "test/async_manager_unittest.cc",
         "test/bt_address_unittest.cc",
         "test/packet_stream_unittest.cc",
+        "test/iterator_test.cc",
         "test/l2cap_test.cc",
         "test/l2cap_sdu_test.cc",
     ],
