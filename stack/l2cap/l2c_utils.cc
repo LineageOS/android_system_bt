@@ -172,7 +172,8 @@ void l2cu_release_lcb(tL2C_LCB* p_lcb) {
   }
 
   // Reset BLE connecting flag only if the address matches
-  if (l2cb.ble_connecting_bda == p_lcb->remote_bd_addr)
+  if (p_lcb->transport == BT_TRANSPORT_LE &&
+      l2cb.ble_connecting_bda == p_lcb->remote_bd_addr)
     l2cb.is_ble_connecting = false;
 
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
