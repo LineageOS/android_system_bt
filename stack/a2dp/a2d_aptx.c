@@ -39,7 +39,6 @@
 
 #include <string.h>
 #include <dlfcn.h>
-#include "osi/include/mutex.h"
 #include "osi/include/thread.h"
 #include "bt_utils.h"
 #include "a2d_api.h"
@@ -266,42 +265,6 @@ BOOLEAN A2D_check_and_init_aptX(void)
 
 /*******************************************************************************
 **
-** Function         A2D_start_aptX
-**
-** Description      This function Start aptX
-**
-** Returns          Nothing
-**
-*******************************************************************************/
-void A2D_start_aptX(void *encoder, A2D_AptXCodecType aptX_codec_type,
-                        BOOLEAN use_SCMS_T, BOOLEAN is_24bit_audio,
-                        UINT16 sample_rate, UINT8 format_bits,
-                        UINT8 channel, UINT16 MTU, A2D_AptXReadFn read_fn,
-                        A2D_AptXBufferSendFn send_fn,
-                        A2D_AptXSetPriorityFn set_priority_fn,
-                        BOOLEAN test, BOOLEAN trace)
-{
-    A2D_TRACE_DEBUG("%s", __func__);
-    mutex_global_lock();
-
-    A2d_aptx_thread_fn = A2D_aptx_sched_start (encoder, aptX_codec_type,
-              use_SCMS_T, is_24bit_audio, sample_rate, format_bits,
-              channel, MTU, read_fn, send_fn, set_priority_fn, test, trace);
-
-    A2d_aptx_thread = thread_new("aptx_media_worker");
-    if (A2d_aptx_thread)
-    {
-        thread_post(A2d_aptx_thread, A2d_aptx_thread_fn, NULL);
-    }
-
-    mutex_global_unlock();
-    return;
-}
-
-
-
-/*******************************************************************************
-**
 ** Function         A2D_deinit_aptX
 **
 ** Description      This function de-initialized aptX
@@ -324,32 +287,6 @@ void A2D_deinit_aptX(void)
 
 /*******************************************************************************
 **
-** Function         A2D_stop_aptX
-**
-** Description      This function remove aptX thread
-**
-** Returns          Nothing
-**
-*******************************************************************************/
-void A2D_stop_aptX(void)
-{
-    A2D_TRACE_DEBUG("%s", __func__);
-    mutex_global_lock();
-    if (A2dAptXSchedLibHandle)
-    {
-        // remove aptX thread
-        if (A2d_aptx_thread)
-        {
-            A2D_aptx_sched_stop();
-            thread_free(A2d_aptx_thread);
-            A2d_aptx_thread = NULL;
-        }
-    }
-    mutex_global_unlock();
-    return;
-}
-/*******************************************************************************
-**
 ** Function         A2D_close_aptX
 **
 ** Description      This function close aptX
@@ -361,8 +298,16 @@ void A2D_close_aptX(void)
 {
     A2D_TRACE_DEBUG("%s", __func__);
 
-    // remove aptX thread
-    A2D_stop_aptX();
+    if (A2dAptXSchedLibHandle)
+    {
+        // remove aptX thread
+        if (A2d_aptx_thread)
+        {
+            A2D_aptx_sched_stop();
+            thread_free(A2d_aptx_thread);
+            A2d_aptx_thread = NULL;
+        }
+    }
 
     // de-initialize aptX HD
     A2D_deinit_aptX_HD();

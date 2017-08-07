@@ -445,15 +445,11 @@ static BOOLEAN bta_av_next_getcap(tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
             {
                 p_req = AVDT_GetCapReq;
             }
-            if ((*p_req)(p_scb->peer_addr,
+            (*p_req)(p_scb->peer_addr,
                            p_scb->sep_info[i].seid,
-                           p_scb->p_cap, bta_av_dt_cback[p_scb->hdi]) == AVDT_SUCCESS)
-            {
-                sent_cmd = TRUE;
-                break;
-            }
-            else
-                APPL_TRACE_ERROR("bta_av_next_getcap command could not be sent because of resource constraint");
+                           p_scb->p_cap, bta_av_dt_cback[p_scb->hdi]);
+            sent_cmd = TRUE;
+            break;
         }
     }
 
@@ -1283,8 +1279,7 @@ void bta_av_config_ind (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
         APPL_TRACE_WARNING(" bta_av_config_ind config_ind called before Open");
         p_scb->coll_mask |= BTA_AV_COLL_SETCONFIG_IND;
     }
-    APPL_TRACE_DEBUG(" bta_av_config_ind p_scb->hdi = %d ", p_scb->hdi);
-    alarm_cancel(bta_av_cb.accept_signalling_timer[p_scb->hdi]);
+    alarm_cancel(bta_av_cb.accept_signalling_timer);
 
     /* if no codec parameters in configuration, fail */
     if ((p_evt_cfg->num_codec == 0) ||
@@ -2158,11 +2153,8 @@ void bta_av_discover_req (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     UNUSED(p_data);
 
     /* send avdtp discover request */
-    if (AVDT_DiscoverReq(p_scb->peer_addr, p_scb->sep_info, BTA_AV_NUM_SEPS, bta_av_dt_cback[p_scb->hdi]) != AVDT_SUCCESS)
-    {
-        APPL_TRACE_ERROR("bta_av_discover_req command could not be sent because of resource constraint");
-        bta_av_ssm_execute(p_scb, BTA_AV_STR_DISC_FAIL_EVT, p_data);
-    }
+
+    AVDT_DiscoverReq(p_scb->peer_addr, p_scb->sep_info, BTA_AV_NUM_SEPS, bta_av_dt_cback[p_scb->hdi]);
 }
 
 /*******************************************************************************

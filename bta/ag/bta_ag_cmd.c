@@ -364,7 +364,7 @@ static void bta_ag_send_result(tBTA_AG_SCB *p_scb, UINT8 code, char *p_arg,
     /* copy result code string */
     strlcpy(p, bta_ag_result_tbl[code].p_res, sizeof(buf) - 2);
 #if defined(BTA_HSP_RESULT_REPLACE_COLON) && (BTA_HSP_RESULT_REPLACE_COLON == TRUE)
-    if (p_scb->conn_service == BTA_AG_HSP)
+    if(p_scb->conn_service == BTA_AG_HSP)
     {
         /* If HSP then ":"symbol should be changed as "=" for HSP compatibility */
         switch(code)
@@ -1368,7 +1368,6 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
 
         case BTA_AG_HF_CMD_CNUM:
             break;
-
         case BTA_AG_HF_CMD_CLCC:
             if(!(p_scb->features & BTA_AG_FEAT_ECS))
             {

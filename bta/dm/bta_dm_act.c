@@ -592,7 +592,7 @@ static void bta_dm_disable_timer_cback(void *data)
         bta_dm_cb.disabling = FALSE;
 
         bta_sys_remove_uuid(UUID_SERVCLASS_PNP_INFORMATION);
-        bta_dm_disable_conn_down_timer_cback(NULL);
+        bta_dm_cb.p_sec_cback(BTA_DM_DISABLE_EVT, NULL);
     }
 }
 
@@ -4522,7 +4522,6 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
             else
             {
                 sec_event.auth_cmpl.success = TRUE;
-                sec_event.auth_cmpl.smp_over_br = p_data->complt.smp_over_br;
             }
 
             if (bta_dm_cb.p_sec_cback)

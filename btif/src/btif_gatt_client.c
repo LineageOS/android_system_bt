@@ -1117,10 +1117,6 @@ static void btgattc_handle_event(uint16_t event, char* p_param)
     tBT_UUID                   uuid;
     tBTA_GATT_UNFMT            descr_val;
 
-    if (!btif_is_enabled()) {
-       LOG_ERROR(LOG_TAG,"%s: bluetooth adapter not enabled",__FUNCTION__);
-       return;
-    }
     btif_gattc_cb_t* p_cb = (btif_gattc_cb_t*) p_param;
     if (!p_cb) return;
 

@@ -256,11 +256,8 @@ static void bta_av_api_enable(tBTA_AV_DATA *p_data)
      * to alarm_free() the alarms below.
      */
     bta_av_cb.link_signalling_timer = alarm_new("bta_av.link_signalling_timer");
-    for (int j = 0; j < BTA_AV_NUM_STRS; j++)
-    {
-        bta_av_cb.accept_signalling_timer[j] =
-            alarm_new("bta_av.accept_signalling_timer");
-    }
+    bta_av_cb.accept_signalling_timer =
+        alarm_new("bta_av.accept_signalling_timer");
 
     /* store parameters */
     bta_av_cb.p_cback  = p_data->api_enable.p_cback;
@@ -772,11 +769,8 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
                     continue;
                 }
 
-                /* Fix for below klockwork Issues
-                 * Array 'seps' of size 4 may use index value(s) 4 */
-                if (((index - startIndex) < BTA_AV_MAX_SEPS) &&
-                    (AVDT_CreateStream(&p_scb->seps[index - startIndex].av_handle, &cs) ==
-                                                                             AVDT_SUCCESS))
+                if(AVDT_CreateStream(&p_scb->seps[index - startIndex].av_handle, &cs) ==
+                                                                            AVDT_SUCCESS)
                 {
                    if ((profile_initialized == UUID_SERVCLASS_AUDIO_SOURCE) &&
                        ((index == BTIF_SV_AV_AA_APTX_INDEX) || (index == BTIF_SV_AV_AA_APTX_HD_INDEX)))
