@@ -82,9 +82,7 @@ static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
                                 uint8_t app_id, const RawAddress* peer_addr);
 
 /* Extended Inquiry Response */
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
 static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data);
-#endif
 
 static void bta_dm_set_eir(char* local_name);
 
@@ -236,11 +234,7 @@ const tBTM_APPL_INFO bta_security = {&bta_dm_authorize_cback,
                                      &bta_dm_new_link_key_cback,
                                      &bta_dm_authentication_complete_cback,
                                      &bta_dm_bond_cancel_complete_cback,
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
                                      &bta_dm_sp_cback,
-#else
-                                     NULL,
-#endif
                                      &bta_dm_ble_smp_cback,
                                      &bta_dm_ble_id_key_cback};
 
@@ -2600,7 +2594,6 @@ static uint8_t bta_dm_authentication_complete_cback(
   return BTM_SUCCESS;
 }
 
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
 /*******************************************************************************
  *
  * Function         bta_dm_sp_cback
@@ -2621,16 +2614,20 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
   /* TODO_SP */
   switch (event) {
     case BTM_SP_IO_REQ_EVT:
+#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
       /* translate auth_req */
       bta_dm_co_io_req(p_data->io_req.bd_addr, &p_data->io_req.io_cap,
                        &p_data->io_req.oob_data, &p_data->io_req.auth_req,
                        p_data->io_req.is_orig);
+#endif
       APPL_TRACE_EVENT("io mitm: %d oob_data:%d", p_data->io_req.auth_req,
                        p_data->io_req.oob_data);
       break;
     case BTM_SP_IO_RSP_EVT:
+#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
       bta_dm_co_io_rsp(p_data->io_rsp.bd_addr, p_data->io_rsp.io_cap,
                        p_data->io_rsp.oob_data, p_data->io_rsp.auth_req);
+#endif
       break;
 
     case BTM_SP_CFM_REQ_EVT:
@@ -2643,10 +2640,12 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
       sec_event.cfm_req.rmt_io_caps = p_data->cfm_req.rmt_io_caps;
 
     /* continue to next case */
+#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
     /* Passkey entry mode, mobile device with output capability is very
         unlikely to receive key request, so skip this event */
     /*case BTM_SP_KEY_REQ_EVT: */
     case BTM_SP_KEY_NOTIF_EVT:
+#endif
       bta_dm_cb.num_val = sec_event.key_notif.passkey =
           p_data->key_notif.passkey;
 
@@ -2758,7 +2757,6 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
   APPL_TRACE_EVENT("dm status: %d", status);
   return status;
 }
-#endif
 
 /*******************************************************************************
  *
