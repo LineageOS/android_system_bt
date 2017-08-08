@@ -1,4 +1,5 @@
 subdirs = [
+    "binder",
     "build",
     "btif",
     "btcore",
