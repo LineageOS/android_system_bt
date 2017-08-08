@@ -661,6 +661,11 @@ int check_a2dp_ready(struct a2dp_stream_common *common)
     return 0;
 }
 
+int audio_check_a2dp_ready()
+{
+    return check_a2dp_ready(&audio_stream) == 0;
+}
+
 int a2dp_read_audio_config(struct a2dp_stream_common *common)
 {
     uint32_t sample_rate;
