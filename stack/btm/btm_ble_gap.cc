@@ -2103,11 +2103,14 @@ static void btm_ble_process_adv_pkt_cont(
   bool is_scannable = ble_evt_type_is_scannable(evt_type);
   bool is_scan_resp = ble_evt_type_is_scan_resp(evt_type);
 
+  bool is_start =
+      ble_evt_type_is_legacy(evt_type) && is_scannable && !is_scan_resp;
+
+  if (is_start) AdvertiseDataParser::RemoveTrailingZeros(tmp);
+
   // We might have send scan request to this device before, but didn't get the
   // response. In such case make sure data is put at start, not appended to
   // already existing data.
-  bool is_start =
-      ble_evt_type_is_legacy(evt_type) && is_scannable && !is_scan_resp;
   std::vector<uint8_t> const& adv_data =
       is_start ? cache.Set(addr_type, bda, std::move(tmp))
                : cache.Append(addr_type, bda, std::move(tmp));
