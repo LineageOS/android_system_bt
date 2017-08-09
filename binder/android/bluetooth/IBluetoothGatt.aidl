@@ -16,6 +16,7 @@
 
 package android.bluetooth;
 
+import android.app.PendingIntent;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.le.AdvertiseSettings;
@@ -46,6 +47,9 @@ interface IBluetoothGatt {
     void unregisterScanner(in int scannerId);
     void startScan(in int scannerId, in ScanSettings settings, in List<ScanFilter> filters,
                    in List scanStorages, in String callingPackage);
+    void startScanForIntent(in PendingIntent intent, in ScanSettings settings, in List<ScanFilter> filters,
+                            in String callingPackage);
+    void stopScanForIntent(in PendingIntent intent, in String callingPackage);
     void stopScan(in int scannerId);
     void flushPendingBatchResults(in int scannerId);
 
