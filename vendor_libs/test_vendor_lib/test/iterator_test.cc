@@ -33,6 +33,30 @@ class IteratorTest : public ::testing::Test {
   std::shared_ptr<TestPacket> packet;
 };
 
+TEST_F(IteratorTest, extractTest) {
+  Iterator general_case = packet->get_begin();
+
+  ASSERT_EQ(0x95, general_case.extract<uint8_t>());
+  ASSERT_EQ(0x471f, general_case.extract<uint16_t>());
+  ASSERT_EQ(0x951f0200u, general_case.extract<uint32_t>());
+  ASSERT_EQ(0x33000101000000cbu, general_case.extract<uint64_t>());
+}
+
+TEST_F(IteratorTest, extractBoundsDeathTest) {
+  Iterator bounds_test = packet->get_end();
+
+  ASSERT_DEATH(bounds_test.extract<uint8_t>(), "");
+  ASSERT_DEATH(bounds_test.extract<uint16_t>(), "");
+  ASSERT_DEATH(bounds_test.extract<uint32_t>(), "");
+  ASSERT_DEATH(bounds_test.extract<uint64_t>(), "");
+}
+
+TEST_F(IteratorTest, dereferenceDeathTest) {
+  Iterator dereference_test = packet->get_end();
+
+  ASSERT_EQ(0x45, *(dereference_test - static_cast<size_t>(1)));
+  ASSERT_DEATH(*dereference_test, "");
+}
 TEST_F(IteratorTest, plusEqTest) {
   Iterator plus_eq = packet->get_begin();
   for (size_t i = 0; i < complete_l2cap_packet.size(); i += 2) {
@@ -45,7 +69,7 @@ TEST_F(IteratorTest, plusEqTest) {
 
 TEST_F(IteratorTest, preIncrementTest) {
   Iterator plus_plus = packet->get_begin();
-  for (size_t i = 0; i < complete_l2cap_packet.size(); i++) {
+  for (size_t i = 0; i < complete_l2cap_packet.size() - 1; i++) {
     ASSERT_EQ(complete_l2cap_packet[i + 1], *(++plus_plus))
         << "Pre-increment test: Dereferenced iterator does not equal expected "
         << "at index " << i;
