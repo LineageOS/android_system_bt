@@ -1,6 +1,9 @@
 #pragma once
 #include <iterator>
 #include <memory>
+#include <type_traits>
+
+#include "base/logging.h"
 
 namespace test_vendor_lib {
 
@@ -41,6 +44,21 @@ class Iterator
 
   uint8_t& operator*() const;
   uint8_t* operator->() const;
+
+  // Get the next sizeof(FixedWidthIntegerType) bytes and return the filled type
+  template <typename FixedWidthIntegerType>
+  FixedWidthIntegerType extract() {
+    static_assert(std::is_integral<FixedWidthIntegerType>::value,
+                  "Iterator::extract requires an integral type.");
+    FixedWidthIntegerType extracted_value = 0;
+
+    for (size_t i = 0; i < sizeof(FixedWidthIntegerType); i++) {
+      extracted_value |= static_cast<FixedWidthIntegerType>(**this) << i * 8;
+      (*this)++;
+    }
+
+    return extracted_value;
+  }
 
  private:
   std::shared_ptr<class HciPacket> hci_packet_;

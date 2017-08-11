@@ -99,6 +99,8 @@ bool Iterator::operator>=(Iterator& itr) {
 }
 
 uint8_t& Iterator::operator*() const {
+  CHECK(index_ != hci_packet_->get_length());
+
   return hci_packet_->get_at_index(index_);
 }
 
