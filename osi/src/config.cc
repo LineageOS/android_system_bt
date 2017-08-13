@@ -441,7 +441,7 @@ static bool config_parse(FILE* fp, config_t* config) {
                   line_num);
         return false;
       }
-      strncpy(section, line_ptr + 1, len - 2);
+      strncpy(section, line_ptr + 1, len - 2);  // NOLINT (len < 1024)
       section[len - 2] = '\0';
     } else {
       char* split = strchr(line_ptr, '=');
