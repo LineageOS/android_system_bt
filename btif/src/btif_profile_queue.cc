@@ -122,7 +122,7 @@ bt_status_t btif_queue_connect(uint16_t uuid, const RawAddress* bda,
                                btif_connect_cb_t connect_cb) {
   connect_node_t node;
   memset(&node, 0, sizeof(connect_node_t));
-  memcpy(&node.bda, bda, sizeof(RawAddress));
+  node.bda = *bda;
   node.uuid = uuid;
   node.connect_cb = connect_cb;
 
