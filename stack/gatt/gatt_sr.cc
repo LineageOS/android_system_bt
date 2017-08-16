@@ -644,6 +644,7 @@ void gatts_process_primary_service_req(tGATT_TCB& tcb, uint8_t op_code,
   if (reason != GATT_SUCCESS) {
     osi_free(p_msg);
     gatt_send_error_rsp(tcb, reason, op_code, s_hdl, false);
+    return;
   }
 
   attp_send_sr_msg(tcb, p_msg);
