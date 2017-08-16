@@ -35,7 +35,7 @@ namespace bluetooth {
 
 struct ConnComparator {
   bool operator()(const RawAddress& a, const RawAddress& b) const {
-    return memcmp(&a, &b, sizeof(RawAddress)) < 0;
+    return memcmp(a.address, b.address, RawAddress::kLength) < 0;
   }
 };
 
