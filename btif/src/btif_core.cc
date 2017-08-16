@@ -992,7 +992,7 @@ bt_status_t btif_set_adapter_property(const bt_property_t* property) {
   if (storage_req_id != BTIF_CORE_STORAGE_NO_ACTION) {
     /* pass on to storage for updating local database */
 
-    memset(&(req.write_req.bd_addr), 0, sizeof(RawAddress));
+    req.write_req.bd_addr = RawAddress::kEmpty;
     memcpy(&(req.write_req.prop), property, sizeof(bt_property_t));
 
     return btif_transfer_context(execute_storage_request, storage_req_id,
@@ -1019,7 +1019,7 @@ bt_status_t btif_get_remote_device_property(RawAddress* remote_addr,
 
   if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
-  memcpy(&(req.read_req.bd_addr), remote_addr, sizeof(RawAddress));
+  req.read_req.bd_addr = *remote_addr;
   req.read_req.type = type;
   return btif_transfer_context(execute_storage_remote_request,
                                BTIF_CORE_STORAGE_REMOTE_READ, (char*)&req,
@@ -1040,7 +1040,7 @@ bt_status_t btif_get_remote_device_properties(RawAddress* remote_addr) {
 
   if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
-  memcpy(&(req.read_req.bd_addr), remote_addr, sizeof(RawAddress));
+  req.read_req.bd_addr = *remote_addr;
   return btif_transfer_context(execute_storage_remote_request,
                                BTIF_CORE_STORAGE_REMOTE_READ_ALL, (char*)&req,
                                sizeof(btif_storage_req_t), NULL);
