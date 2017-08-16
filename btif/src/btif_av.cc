@@ -333,7 +333,7 @@ static bool btif_av_state_idle_handler(btif_sm_event_t event, void* p_data) {
   switch (event) {
     case BTIF_SM_ENTER_EVT:
       /* clear the peer_bda */
-      memset(&btif_av_cb.peer_bda, 0, sizeof(RawAddress));
+      btif_av_cb.peer_bda = RawAddress::kEmpty;
       btif_av_cb.flags = 0;
       btif_av_cb.edr = 0;
       bta_av_co_init(btif_av_cb.codec_priorities);
@@ -353,12 +353,10 @@ static bool btif_av_state_idle_handler(btif_sm_event_t event, void* p_data) {
     case BTA_AV_PENDING_EVT:
     case BTIF_AV_CONNECT_REQ_EVT: {
       if (event == BTIF_AV_CONNECT_REQ_EVT) {
-        memcpy(&btif_av_cb.peer_bda,
-               ((btif_av_connect_req_t*)p_data)->target_bda,
-               sizeof(RawAddress));
+        btif_av_connect_req_t* connect_req_p = (btif_av_connect_req_t*)p_data;
+        btif_av_cb.peer_bda = *connect_req_p->target_bda;
         BTA_AvOpen(btif_av_cb.peer_bda, btif_av_cb.bta_handle, true,
-                   BTA_SEC_AUTHENTICATE,
-                   ((btif_av_connect_req_t*)p_data)->uuid);
+                   BTA_SEC_AUTHENTICATE, connect_req_p->uuid);
       } else if (event == BTA_AV_PENDING_EVT) {
         btif_av_cb.peer_bda = ((tBTA_AV*)p_data)->pend.bd_addr;
         if (bt_av_src_callbacks != NULL) {
@@ -599,25 +597,23 @@ static bool btif_av_state_opening_handler(btif_sm_event_t event, void* p_data) {
       }
     } break;
 
-    case BTIF_AV_CONNECT_REQ_EVT:
+    case BTIF_AV_CONNECT_REQ_EVT: {
       // Check for device, if same device which moved to opening then ignore
       // callback
-      if (memcmp(((btif_av_connect_req_t*)p_data)->target_bda,
-                 &(btif_av_cb.peer_bda), sizeof(btif_av_cb.peer_bda)) == 0) {
+      btif_av_connect_req_t* connect_req_p = (btif_av_connect_req_t*)p_data;
+      if (btif_av_cb.peer_bda == *connect_req_p->target_bda) {
         BTIF_TRACE_DEBUG(
             "%s: Same device moved to Opening state,ignore Connect Req",
             __func__);
-        btif_queue_advance();
-        break;
       } else {
         BTIF_TRACE_DEBUG("%s: Moved from idle by Incoming Connection request",
                          __func__);
         btif_report_connection_state(
             BTAV_CONNECTION_STATE_DISCONNECTED,
             ((btif_av_connect_req_t*)p_data)->target_bda);
-        btif_queue_advance();
-        break;
       }
+      btif_queue_advance();
+    } break;
 
     case BTA_AV_PENDING_EVT:
       // Check for device, if same device which moved to opening then ignore
@@ -869,9 +865,9 @@ static bool btif_av_state_opened_handler(btif_sm_event_t event, void* p_data) {
       }
       break;
 
-    case BTIF_AV_CONNECT_REQ_EVT:
-      if (memcmp((RawAddress*)p_data, &(btif_av_cb.peer_bda),
-                 sizeof(btif_av_cb.peer_bda)) == 0) {
+    case BTIF_AV_CONNECT_REQ_EVT: {
+      btif_av_connect_req_t* connect_req_p = (btif_av_connect_req_t*)p_data;
+      if (btif_av_cb.peer_bda == *connect_req_p->target_bda) {
         BTIF_TRACE_DEBUG("%s: Ignore BTIF_AV_CONNECT_REQ_EVT for same device",
                          __func__);
       } else {
@@ -881,7 +877,7 @@ static bool btif_av_state_opened_handler(btif_sm_event_t event, void* p_data) {
                                      (RawAddress*)p_data);
       }
       btif_queue_advance();
-      break;
+    } break;
 
     case BTIF_AV_OFFLOAD_START_REQ_EVT:
       BTIF_TRACE_ERROR(

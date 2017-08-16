@@ -4984,7 +4984,7 @@ void btm_sec_pin_code_request(const RawAddress& p_bda) {
       btsnd_hcic_pin_code_neg_reply(p_bda);
       return;
     } else if ((btm_cb.pairing_state != BTM_PAIR_STATE_WAIT_PIN_REQ) ||
-               p_bda == btm_cb.pairing_bda) {
+               p_bda != btm_cb.pairing_bda) {
       BTM_TRACE_WARNING("btm_sec_pin_code_request() rejected - state: %s",
                         btm_pair_state_descr(btm_cb.pairing_state));
       btsnd_hcic_pin_code_neg_reply(p_bda);
