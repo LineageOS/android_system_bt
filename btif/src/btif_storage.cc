@@ -88,7 +88,7 @@
     (p).type = (t);                                  \
     (p).val = (v);                                   \
     (p).len = (l);                                   \
-    s = btif_storage_get_adapter_property(&(p));     \
+    (s) = btif_storage_get_adapter_property(&(p));   \
   } while (0)
 
 // TODO: This macro should be converted to a function
