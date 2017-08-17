@@ -63,7 +63,7 @@ static void next_event() {
   if (current_event == NUM_CONNECTION_EVENTS) current_event = 0;
 }
 
-void btif_debug_conn_state(const RawAddress bda,
+void btif_debug_conn_state(const RawAddress& bda,
                            const btif_debug_conn_state_t state,
                            const tGATT_DISCONN_REASON disconnect_reason) {
   next_event();
@@ -72,7 +72,7 @@ void btif_debug_conn_state(const RawAddress bda,
   evt->ts = time_gettimeofday_us();
   evt->state = state;
   evt->disconnect_reason = disconnect_reason;
-  memcpy(&evt->bda, &bda, sizeof(RawAddress));
+  evt->bda = bda;
 }
 
 void btif_debug_conn_dump(int fd) {
