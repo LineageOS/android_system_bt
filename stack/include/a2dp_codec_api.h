@@ -650,29 +650,30 @@ bool A2DP_DumpCodecInfo(const uint8_t* p_codec_info);
 
 // Add enum-based flag operators to the btav_a2dp_codec_config_t fields
 #ifndef DEFINE_ENUM_FLAG_OPERATORS
+// Use NOLINT to suppress missing parentheses warnings around bitmask.
 #define DEFINE_ENUM_FLAG_OPERATORS(bitmask)                                 \
   extern "C++" {                                                            \
-  inline constexpr bitmask operator&(bitmask X, bitmask Y) {                \
+  inline constexpr bitmask operator&(bitmask X, bitmask Y) {  /* NOLINT */  \
     return static_cast<bitmask>(static_cast<int>(X) & static_cast<int>(Y)); \
   }                                                                         \
-  inline constexpr bitmask operator|(bitmask X, bitmask Y) {                \
+  inline constexpr bitmask operator|(bitmask X, bitmask Y) {  /* NOLINT */  \
     return static_cast<bitmask>(static_cast<int>(X) | static_cast<int>(Y)); \
   }                                                                         \
-  inline constexpr bitmask operator^(bitmask X, bitmask Y) {                \
+  inline constexpr bitmask operator^(bitmask X, bitmask Y) {  /* NOLINT */  \
     return static_cast<bitmask>(static_cast<int>(X) ^ static_cast<int>(Y)); \
   }                                                                         \
-  inline constexpr bitmask operator~(bitmask X) {                           \
+  inline constexpr bitmask operator~(bitmask X) {             /* NOLINT */  \
     return static_cast<bitmask>(~static_cast<int>(X));                      \
   }                                                                         \
-  inline bitmask& operator&=(bitmask& X, bitmask Y) {                       \
+  inline bitmask& operator&=(bitmask& X, bitmask Y) {         /* NOLINT */  \
     X = X & Y;                                                              \
     return X;                                                               \
   }                                                                         \
-  inline bitmask& operator|=(bitmask& X, bitmask Y) {                       \
+  inline bitmask& operator|=(bitmask& X, bitmask Y) {         /* NOLINT */  \
     X = X | Y;                                                              \
     return X;                                                               \
   }                                                                         \
-  inline bitmask& operator^=(bitmask& X, bitmask Y) {                       \
+  inline bitmask& operator^=(bitmask& X, bitmask Y) {         /* NOLINT */  \
     X = X ^ Y;                                                              \
     return X;                                                               \
   }                                                                         \
