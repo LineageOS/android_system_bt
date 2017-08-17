@@ -170,19 +170,19 @@ void GenerateWakeEvents(size_t start, size_t end,
   }
 }
 
-#define COMPARE_A2DP_METRICS(a, b)                                       \
-  do {                                                                   \
-    EXPECT_EQ(a.audio_duration_ms, b.audio_duration_ms);                 \
-    EXPECT_EQ(a.media_timer_min_ms, b.media_timer_min_ms);               \
-    EXPECT_EQ(a.media_timer_max_ms, b.media_timer_max_ms);               \
-    EXPECT_EQ(a.media_timer_avg_ms, b.media_timer_avg_ms);               \
-    EXPECT_EQ(a.total_scheduling_count, b.total_scheduling_count);       \
-    EXPECT_EQ(a.buffer_overruns_max_count, b.buffer_overruns_max_count); \
-    EXPECT_EQ(a.buffer_overruns_total, b.buffer_overruns_total);         \
-    EXPECT_THAT(a.buffer_underruns_average,                              \
-                FloatNear(b.buffer_underruns_average, 0.01));            \
-    a.buffer_underruns_average = b.buffer_underruns_average;             \
-    EXPECT_EQ(a.buffer_underruns_count, b.buffer_underruns_count);       \
+#define COMPARE_A2DP_METRICS(a, b)                                           \
+  do {                                                                       \
+    EXPECT_EQ((a).audio_duration_ms, (b).audio_duration_ms);                 \
+    EXPECT_EQ((a).media_timer_min_ms, (b).media_timer_min_ms);               \
+    EXPECT_EQ((a).media_timer_max_ms, (b).media_timer_max_ms);               \
+    EXPECT_EQ((a).media_timer_avg_ms, (b).media_timer_avg_ms);               \
+    EXPECT_EQ((a).total_scheduling_count, (b).total_scheduling_count);       \
+    EXPECT_EQ((a).buffer_overruns_max_count, (b).buffer_overruns_max_count); \
+    EXPECT_EQ((a).buffer_overruns_total, (b).buffer_overruns_total);         \
+    EXPECT_THAT((a).buffer_underruns_average,                                \
+                FloatNear((b).buffer_underruns_average, 0.01));              \
+    (a).buffer_underruns_average = (b).buffer_underruns_average;             \
+    EXPECT_EQ((a).buffer_underruns_count, (b).buffer_underruns_count);       \
   } while (0)
 
 /*
