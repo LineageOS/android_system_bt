@@ -456,8 +456,7 @@ static bt_status_t btif_in_fetch_bonded_devices(
           }
         }
         bt_linkkey_file_found = true;
-        memcpy(&p_bonded_devices->devices[p_bonded_devices->num_devices++],
-               &bd_addr, sizeof(RawAddress));
+        p_bonded_devices->devices[p_bonded_devices->num_devices++] = bd_addr;
       } else {
         bt_linkkey_file_found = false;
       }
@@ -557,13 +556,13 @@ bt_status_t btif_storage_get_adapter_property(bt_property_t* property) {
       LOG_ERROR(LOG_TAG,
                 "%s: Controller not ready! Unable to return Bluetooth Address",
                 __func__);
-      memset(bd_addr, 0, sizeof(RawAddress));
+      *bd_addr = RawAddress::kEmpty;
       return BT_STATUS_FAIL;
     } else {
       LOG_ERROR(LOG_TAG, "%s: Controller ready!", __func__);
-      memcpy(bd_addr, controller->get_address(), sizeof(RawAddress));
+      *bd_addr = *controller->get_address();
     }
-    property->len = sizeof(RawAddress);
+    property->len = RawAddress::kLength;
     return BT_STATUS_SUCCESS;
   } else if (property->type == BT_PROPERTY_ADAPTER_BONDED_DEVICES) {
     btif_bonded_devices_t bonded_devices;
@@ -576,7 +575,7 @@ bt_status_t btif_storage_get_adapter_property(bt_property_t* property) {
         __func__, bonded_devices.num_devices);
 
     if (bonded_devices.num_devices > 0) {
-      property->len = bonded_devices.num_devices * sizeof(RawAddress);
+      property->len = bonded_devices.num_devices * RawAddress::kLength;
       memcpy(property->val, bonded_devices.devices, property->len);
     }
 
@@ -852,7 +851,7 @@ bt_status_t btif_storage_load_bonded_devices(void) {
         bonded_devices.num_devices * sizeof(RawAddress);
     adapter_props[num_props].val = devices_list;
     for (i = 0; i < bonded_devices.num_devices; i++) {
-      memcpy(devices_list + i, &bonded_devices.devices[i], sizeof(RawAddress));
+      devices_list[i] = bonded_devices.devices[i];
     }
     num_props++;
 
@@ -1166,8 +1165,7 @@ static bt_status_t btif_in_fetch_bonded_ble_device(
 
     // Fill in the bonded devices
     if (device_added) {
-      memcpy(&p_bonded_devices->devices[p_bonded_devices->num_devices++],
-             &bd_addr, sizeof(RawAddress));
+      p_bonded_devices->devices[p_bonded_devices->num_devices++] = bd_addr;
       btif_gatts_add_bonded_dev_from_nv(bd_addr);
     }
 
