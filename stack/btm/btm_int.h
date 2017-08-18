@@ -124,7 +124,7 @@ extern uint16_t btm_get_max_packet_size(const RawAddress& addr);
 extern tACL_CONN* btm_bda_to_acl(const RawAddress& bda,
                                  tBT_TRANSPORT transport);
 extern bool btm_acl_notif_conn_collision(const RawAddress& bda);
-extern void btm_acl_update_conn_addr(uint8_t conn_handle,
+extern void btm_acl_update_conn_addr(uint16_t conn_handle,
                                      const RawAddress& address);
 
 extern void btm_pm_reset(void);
