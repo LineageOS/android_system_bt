@@ -293,7 +293,7 @@ void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
   }
 }
 
-void btm_acl_update_conn_addr(uint8_t conn_handle, const RawAddress& address) {
+void btm_acl_update_conn_addr(uint16_t conn_handle, const RawAddress& address) {
   uint8_t idx = btm_handle_to_acl_index(conn_handle);
   if (idx != MAX_L2CAP_LINKS) {
     btm_cb.acl_db[idx].conn_addr = address;
