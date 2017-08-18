@@ -110,7 +110,7 @@ bool interop_match_name(const interop_feature_t feature, const char* name);
 // Add a dynamic interop database entry for a device matching the first |length|
 // bytes of |addr|, implementing the workaround identified by |feature|.
 // |addr| may not be null.
-// |length| must be greater than 0 and less than sizeof(RawAddress).
+// |length| must be greater than 0 and less than RawAddress::kLength.
 // As |interop_feature_t| is not exposed in the public API, feature must be a
 // valid integer representing an option in the enum.
 void interop_database_add(const uint16_t feature, const RawAddress* addr,
