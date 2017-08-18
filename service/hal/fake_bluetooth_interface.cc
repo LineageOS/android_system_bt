@@ -115,8 +115,8 @@ void FakeBluetoothInterface::NotifyAdapterNamePropertyChanged(
 void FakeBluetoothInterface::NotifyAdapterAddressPropertyChanged(
     const RawAddress* address) {
   bt_property_t property;
-  property.len = sizeof(RawAddress);
-  property.val = (void*)address;
+  property.len = RawAddress::kLength;
+  property.val = (void*)address->address;
   property.type = BT_PROPERTY_BDADDR;
 
   NotifyAdapterPropertiesChanged(1, &property);

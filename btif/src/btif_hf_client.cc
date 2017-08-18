@@ -249,7 +249,6 @@ btif_hf_client_cb_t* btif_hf_client_allocate_cb() {
   return NULL;
 }
 
-
 /*****************************************************************************
  *
  *   btif hf api functions (no context switch)
