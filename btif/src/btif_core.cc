@@ -890,7 +890,7 @@ bt_status_t btif_get_adapter_property(bt_property_type_t type) {
       (type != BT_PROPERTY_BDNAME))
     return BT_STATUS_NOT_READY;
 
-  memset(&(req.read_req.bd_addr), 0, sizeof(RawAddress));
+  req.read_req.bd_addr = RawAddress::kEmpty;
   req.read_req.type = type;
 
   return btif_transfer_context(execute_storage_request,
@@ -1063,7 +1063,7 @@ bt_status_t btif_set_remote_device_property(RawAddress* remote_addr,
 
   if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
-  memcpy(&(req.write_req.bd_addr), remote_addr, sizeof(RawAddress));
+  req.write_req.bd_addr = *remote_addr;
   memcpy(&(req.write_req.prop), property, sizeof(bt_property_t));
 
   return btif_transfer_context(execute_storage_remote_request,
