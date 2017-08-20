@@ -80,7 +80,7 @@ void interop_database_add(const uint16_t feature, const RawAddress* addr,
                           size_t length) {
   CHECK(addr);
   CHECK(length > 0);
-  CHECK(length < sizeof(RawAddress));
+  CHECK(length < RawAddress::kLength);
 
   interop_addr_entry_t* entry = static_cast<interop_addr_entry_t*>(
       osi_calloc(sizeof(interop_addr_entry_t)));
