@@ -384,10 +384,13 @@ void btm_consolidate_dev(tBTM_SEC_DEV_REC* p_target_rec) {
   BTM_TRACE_DEBUG("%s", __func__);
 
   list_node_t* end = list_end(btm_cb.sec_dev_rec);
-  for (list_node_t* node = list_begin(btm_cb.sec_dev_rec); node != end;
-       node = list_next(node)) {
+  list_node_t* node = list_begin(btm_cb.sec_dev_rec);
+  while (node != end) {
     tBTM_SEC_DEV_REC* p_dev_rec =
         static_cast<tBTM_SEC_DEV_REC*>(list_node(node));
+
+    // we do list_remove in some cases, must grab next before removing
+    node = list_next(node);
 
     if (p_target_rec == p_dev_rec) continue;
 
