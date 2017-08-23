@@ -855,7 +855,7 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
       BTM_TRACE_API(
           "BTM:Interleaving: started LE scan, Advancing to next state: %d",
           p_inq->next_state + 1);
-      p_inq->next_state += 1;
+      p_inq->next_state = (btm_inq_state)(p_inq->next_state + 1);
     }
     /* reset next_state if status <> BTM_Started */
     if (status != BTM_CMD_STARTED) p_inq->next_state = BTM_BR_ONE;
@@ -914,7 +914,7 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
       BTM_TRACE_API(
           "BTM:Interleaving: Started BTM inq, Advancing to next state: %d",
           p_inq->next_state + 1);
-      p_inq->next_state += 1;
+      p_inq->next_state = (btm_inq_state)(p_inq->next_state + 1);
     }
   }
   if (status != BTM_CMD_STARTED) {
