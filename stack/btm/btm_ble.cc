@@ -1548,8 +1548,8 @@ tBTM_STATUS btm_ble_set_encryption(const RawAddress& bd_addr,
     case BTM_BLE_SEC_ENCRYPT_NO_MITM:
     case BTM_BLE_SEC_ENCRYPT_MITM:
       auth_req = (sec_act == BTM_BLE_SEC_ENCRYPT_NO_MITM)
-                     ? SMP_AUTH_GEN_BOND
-                     : (SMP_AUTH_GEN_BOND | SMP_AUTH_YN_BIT);
+                     ? SMP_AUTH_BOND
+                     : (SMP_AUTH_BOND | SMP_AUTH_YN_BIT);
       btm_ble_link_sec_check(bd_addr, auth_req, &sec_req_act);
       if (sec_req_act == BTM_BLE_SEC_REQ_ACT_NONE ||
           sec_req_act == BTM_BLE_SEC_REQ_ACT_DISCARD) {

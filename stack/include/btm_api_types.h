@@ -1580,7 +1580,7 @@ typedef uint8_t tBTM_LE_EVT;
 typedef uint8_t tBTM_LE_KEY_TYPE;
 
 #define BTM_LE_AUTH_REQ_NO_BOND SMP_AUTH_NO_BOND /* 0 */
-#define BTM_LE_AUTH_REQ_BOND SMP_AUTH_GEN_BOND   /* 1 << 0 */
+#define BTM_LE_AUTH_REQ_BOND SMP_AUTH_BOND       /* 1 << 0 */
 #define BTM_LE_AUTH_REQ_MITM SMP_AUTH_YN_BIT     /* 1 << 2 */
 typedef uint8_t tBTM_LE_AUTH_REQ;
 #define BTM_LE_SC_SUPPORT_BIT SMP_SC_SUPPORT_BIT /* (1 << 3) */
