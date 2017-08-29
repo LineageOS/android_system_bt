@@ -63,31 +63,32 @@ extern const btgatt_callbacks_t* bt_gatt_callbacks;
     }                                                                \
   } while (0)
 
-namespace std {
-template <>
-struct hash<RawAddress> {
-  size_t operator()(const RawAddress& f) const {
-    return f.address[0] + f.address[1] + f.address[2] + f.address[3] +
-           f.address[4] + f.address[5];
-  }
-};
-
-}
-
 namespace {
 
 // all access to this variable should be done on the jni thread
-std::unordered_set<RawAddress> p_dev_cb;
+std::set<RawAddress> remote_bdaddr_cache;
+std::queue<RawAddress> remote_bdaddr_cache_ordered;
+const size_t remote_bdaddr_cache_max_size = 1024;
 
 void btif_gattc_add_remote_bdaddr(const RawAddress& p_bda, uint8_t addr_type) {
-  p_dev_cb.insert(p_bda);
+  // Remove the oldest entries
+  while (remote_bdaddr_cache.size() >= remote_bdaddr_cache_max_size) {
+    const RawAddress& raw_address = remote_bdaddr_cache_ordered.front();
+    remote_bdaddr_cache.erase(raw_address);
+    remote_bdaddr_cache_ordered.pop();
+  }
+  remote_bdaddr_cache.insert(p_bda);
+  remote_bdaddr_cache_ordered.push(p_bda);
 }
 
 bool btif_gattc_find_bdaddr(const RawAddress& p_bda) {
-  return (p_dev_cb.count(p_bda) != 0);
+  return (remote_bdaddr_cache.find(p_bda) != remote_bdaddr_cache.end());
 }
 
-void btif_gattc_init_dev_cb(void) { p_dev_cb.clear(); }
+void btif_gattc_init_dev_cb(void) {
+  remote_bdaddr_cache.clear();
+  remote_bdaddr_cache_ordered = {};
+}
 
 void btif_gatts_upstreams_evt(uint16_t event, char* p_param) {
   LOG_VERBOSE(LOG_TAG, "%s: Event %d", __func__, event);
