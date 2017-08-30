@@ -1889,32 +1889,6 @@ static bt_status_t get_element_attr_rsp(bt_bdaddr_t* bd_addr, uint8_t num_attr,
 
 /***************************************************************************
  *
- * Function         reject_pending_notification
- *
- * Description      Utility function to reject a pending notification. When
- *                  AddressedPlayer change is received, all pending
- *                  notifications should be completed.
- *
- * Returns          void
- *
- **************************************************************************/
-static void reject_pending_notification(btrc_event_id_t event_id, int idx) {
-  tAVRC_RESPONSE avrc_rsp;
-  memset(&(avrc_rsp.reg_notif), 0, sizeof(tAVRC_REG_NOTIF_RSP));
-
-  avrc_rsp.reg_notif.event_id = event_id;
-  avrc_rsp.reg_notif.pdu = AVRC_PDU_REGISTER_NOTIFICATION;
-  avrc_rsp.reg_notif.opcode = opcode_from_pdu(AVRC_PDU_REGISTER_NOTIFICATION);
-  avrc_rsp.reg_notif.status = AVRC_STS_ADDR_PLAYER_CHG;
-  BTIF_TRACE_WARNING("%s: Handling event ID: 0x%x", __func__, event_id);
-
-  send_metamsg_rsp(&btif_rc_cb.rc_multi_cb[idx], -1,
-                   btif_rc_cb.rc_multi_cb[idx].rc_notif[event_id - 1].label,
-                   AVRC_RSP_REJ, &avrc_rsp);
-}
-
-/***************************************************************************
- *
  * Function         register_notification_rsp
  *
  * Description      Response to the register notification request.
@@ -1997,22 +1971,6 @@ static bt_status_t register_notification_rsp(
         ((type == BTRC_NOTIFICATION_TYPE_INTERIM) ? AVRC_CMD_NOTIF
                                                   : AVRC_RSP_CHANGED),
         &avrc_rsp);
-
-    /* if notification type is address player changed, then complete all player
-    * specific
-    * notifications with AV/C C-Type REJECTED with error code Addressed Player
-    * Changed. */
-    if (event_id == BTRC_EVT_ADDR_PLAYER_CHANGE &&
-        type == BTRC_NOTIFICATION_TYPE_CHANGED) {
-      /* array includes notifications to be completed on addressed player change
-       */
-      btrc_event_id_t evt_id[] = {
-          BTRC_EVT_PLAY_STATUS_CHANGED, BTRC_EVT_TRACK_CHANGE,
-          BTRC_EVT_PLAY_POS_CHANGED, BTRC_EVT_NOW_PLAYING_CONTENT_CHANGED};
-      for (uint8_t id = 0; id < sizeof(evt_id) / sizeof((evt_id)[0]); id++) {
-        reject_pending_notification(evt_id[id], idx);
-      }
-    }
   }
   return BT_STATUS_SUCCESS;
 }
