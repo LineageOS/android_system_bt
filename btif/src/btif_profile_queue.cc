@@ -77,20 +77,32 @@ static void queue_int_add(connect_node_t* p_param) {
   for (const list_node_t* node = list_begin(connect_queue);
        node != list_end(connect_queue); node = list_next(node)) {
     if (((connect_node_t*)list_node(node))->uuid == p_param->uuid) {
-      LOG_INFO(LOG_TAG, "%s dropping duplicate connect request for uuid: %04x",
-               __func__, p_param->uuid);
+      LOG_ERROR(LOG_TAG,
+                "%s dropping duplicate connection request UUID=%04X, "
+                "bd_addr=%s, busy=%d",
+                __func__, p_param->uuid, p_param->bda.ToString().c_str(),
+                p_param->busy);
       return;
     }
   }
 
+  LOG_INFO(
+      LOG_TAG, "%s: adding connection request UUID=%04X, bd_addr=%s, busy=%d",
+      __func__, p_param->uuid, p_param->bda.ToString().c_str(), p_param->busy);
   connect_node_t* p_node = (connect_node_t*)osi_malloc(sizeof(connect_node_t));
   memcpy(p_node, p_param, sizeof(connect_node_t));
   list_append(connect_queue, p_node);
 }
 
 static void queue_int_advance() {
-  if (connect_queue && !list_is_empty(connect_queue))
-    list_remove(connect_queue, list_front(connect_queue));
+  if (connect_queue && !list_is_empty(connect_queue)) {
+    connect_node_t* p_head = (connect_node_t*)list_front(connect_queue);
+    LOG_INFO(LOG_TAG,
+             "%s: removing connection request UUID=%04X, bd_addr=%s, busy=%d",
+             __func__, p_head->uuid, p_head->bda.ToString().c_str(),
+             p_head->busy);
+    list_remove(connect_queue, p_head);
+  }
 }
 
 static void queue_int_handle_evt(uint16_t event, char* p_param) {
@@ -152,6 +164,10 @@ bt_status_t btif_queue_connect_next(void) {
 
   connect_node_t* p_head = (connect_node_t*)list_front(connect_queue);
 
+  LOG_INFO(LOG_TAG,
+           "%s: executing connection request UUID=%04X, bd_addr=%s, busy=%d",
+           __func__, p_head->uuid, p_head->bda.ToString().c_str(),
+           p_head->busy);
   // If the queue is currently busy, we return success anyway,
   // since the connection has been queued...
   if (p_head->busy) return BT_STATUS_SUCCESS;
