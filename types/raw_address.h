@@ -30,7 +30,11 @@ class RawAddress final {
   RawAddress() = default;
   RawAddress(const uint8_t (&addr)[6]);
 
-  bool operator==(const RawAddress& rhl) const;
+  bool operator<(const RawAddress& rhs) const;
+  bool operator>(const RawAddress& rhs) const { return (rhs < *this); }
+  bool operator<=(const RawAddress& rhs) const { return !(*this > rhs); }
+  bool operator>=(const RawAddress& rhs) const { return !(*this < rhs); }
+  bool operator==(const RawAddress& rhs) const;
   bool operator!=(const RawAddress& rhs) const { return !(*this == rhs); }
 
   bool IsEmpty() const { return *this == kEmpty; }
