@@ -351,11 +351,7 @@ void rfc_sec_check_complete(UNUSED_ATTR const RawAddress* bd_addr,
  ******************************************************************************/
 void rfc_port_closed(tPORT* p_port) {
   tRFC_MCB* p_mcb = p_port->rfc.p_mcb;
-
-  RFCOMM_TRACE_DEBUG("rfc_port_closed");
-
   rfc_port_timer_stop(p_port);
-
   p_port->rfc.state = RFC_STATE_CLOSED;
 
   /* If multiplexer channel was up mark it as down */
