@@ -372,6 +372,8 @@ void PORT_ParNegCnf(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu, uint8_t cl,
     /* This is illegal-- negotiation fails. */
     if ((PORT_FC_DEFAULT == PORT_FC_TS710) &&
         (cl == RFCOMM_PN_CONV_LAYER_CBFC_R)) {
+      RFCOMM_TRACE_WARNING("%s, negotiation fails, index=%d", __func__,
+                           p_port->inx);
       rfc_send_disc(p_mcb, p_port->dlci);
       rfc_port_closed(p_port);
       return;
@@ -940,7 +942,7 @@ uint32_t port_rfc_send_tx_data(tPORT* p_port) {
  *
  * Function         port_rfc_closed
  *
- * Description      This function when RFCOMM side of port is closed
+ * Description      Called when RFCOMM port is closed
  *
  ******************************************************************************/
 void port_rfc_closed(tPORT* p_port, uint8_t res) {
@@ -949,8 +951,8 @@ void port_rfc_closed(tPORT* p_port, uint8_t res) {
   tRFC_MCB* p_mcb = p_port->rfc.p_mcb;
 
   if ((p_port->state == PORT_STATE_OPENING) && (p_port->is_server)) {
-    /* The servr side has not been informed that connection is up, ignore */
-    RFCOMM_TRACE_EVENT("port_rfc_closed in OPENING state ignored");
+    /* The server side was not informed that connection is up, ignore */
+    RFCOMM_TRACE_WARNING("port_rfc_closed in OPENING state ignored");
 
     rfc_port_timer_stop(p_port);
     p_port->rfc.state = RFC_STATE_CLOSED;
@@ -985,8 +987,6 @@ void port_rfc_closed(tPORT* p_port, uint8_t res) {
 
     if (p_port->ev_mask & PORT_EV_CONNECT_ERR) events |= PORT_EV_CONNECT_ERR;
   }
-  RFCOMM_TRACE_EVENT("port_rfc_closed state:%d sending events:%x",
-                     p_port->state, events);
 
   if ((p_port->p_callback != NULL) && events)
     p_port->p_callback(events, p_port->inx);
@@ -995,8 +995,11 @@ void port_rfc_closed(tPORT* p_port, uint8_t res) {
 
   p_port->rfc.state = RFC_STATE_CLOSED;
 
-  RFCOMM_TRACE_WARNING("%s RFCOMM connection in state %d closed: %s (res: %d)",
-                       __func__, p_port->state, PORT_GetResultString(res), res);
+  RFCOMM_TRACE_WARNING(
+      "%s: RFCOMM connection closed, index=%d, state=%d reason=%s[%d], "
+      "UUID=%04X, bd_addr=%s, is_server=%d",
+      __func__, p_port->inx, p_port->state, PORT_GetResultString(res), res,
+      p_port->uuid, p_port->bd_addr.ToString().c_str(), p_port->is_server);
 
   port_release_port(p_port);
 }
