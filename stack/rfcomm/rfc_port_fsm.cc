@@ -143,6 +143,7 @@ void rfc_port_sm_state_closed(tPORT* p_port, uint16_t event, void* p_data) {
       return;
 
     case RFC_EVENT_DM:
+      RFCOMM_TRACE_WARNING("%s, RFC_EVENT_DM, index=%d", __func__, p_port->inx);
       rfc_port_closed(p_port);
       return;
 
@@ -192,6 +193,8 @@ void rfc_port_sm_sabme_wait_ua(tPORT* p_port, uint16_t event, void* p_data) {
       return;
 
     case RFC_EVENT_CLEAR:
+      RFCOMM_TRACE_WARNING("%s, RFC_EVENT_CLEAR, index=%d", __func__,
+                           p_port->inx);
       rfc_port_closed(p_port);
       return;
 
@@ -207,6 +210,7 @@ void rfc_port_sm_sabme_wait_ua(tPORT* p_port, uint16_t event, void* p_data) {
       return;
 
     case RFC_EVENT_DM:
+      RFCOMM_TRACE_WARNING("%s, RFC_EVENT_DM, index=%d", __func__, p_port->inx);
       p_port->rfc.p_mcb->is_disc_initiator = true;
       PORT_DlcEstablishCnf(p_port->rfc.p_mcb, p_port->dlci,
                            p_port->rfc.p_mcb->peer_l2cap_mtu, RFCOMM_ERROR);
@@ -214,6 +218,8 @@ void rfc_port_sm_sabme_wait_ua(tPORT* p_port, uint16_t event, void* p_data) {
       return;
 
     case RFC_EVENT_DISC:
+      RFCOMM_TRACE_WARNING("%s, RFC_EVENT_DISC, index=%d", __func__,
+                           p_port->inx);
       rfc_send_ua(p_port->rfc.p_mcb, p_port->dlci);
       PORT_DlcEstablishCnf(p_port->rfc.p_mcb, p_port->dlci,
                            p_port->rfc.p_mcb->peer_l2cap_mtu, RFCOMM_ERROR);
@@ -275,6 +281,8 @@ void rfc_port_sm_term_wait_sec_check(tPORT* p_port, uint16_t event,
       return;
 
     case RFC_EVENT_CLEAR:
+      RFCOMM_TRACE_WARNING("%s, RFC_EVENT_CLEAR, index=%d", __func__,
+                           p_port->inx);
       btm_sec_abort_access_req(p_port->rfc.p_mcb->bd_addr);
       rfc_port_closed(p_port);
       return;
@@ -330,6 +338,8 @@ void rfc_port_sm_orig_wait_sec_check(tPORT* p_port, uint16_t event,
   switch (event) {
     case RFC_EVENT_SEC_COMPLETE:
       if (*((uint8_t*)p_data) != BTM_SUCCESS) {
+        RFCOMM_TRACE_ERROR("%s, RFC_EVENT_SEC_COMPLETE, index=%d, result=%d",
+                           __func__, event, p_port->inx, *((uint8_t*)p_data));
         p_port->rfc.p_mcb->is_disc_initiator = true;
         PORT_DlcEstablishCnf(p_port->rfc.p_mcb, p_port->dlci, 0,
                              RFCOMM_SECURITY_ERR);
@@ -348,6 +358,8 @@ void rfc_port_sm_orig_wait_sec_check(tPORT* p_port, uint16_t event,
       return;
 
     case RFC_EVENT_CLOSE:
+      RFCOMM_TRACE_WARNING("%s, RFC_EVENT_CLOSE, index=%d", __func__,
+                           p_port->inx);
       btm_sec_abort_access_req(p_port->rfc.p_mcb->bd_addr);
       rfc_port_closed(p_port);
       return;
@@ -390,6 +402,8 @@ void rfc_port_sm_opened(tPORT* p_port, uint16_t event, void* p_data) {
       return;
 
     case RFC_EVENT_CLEAR:
+      RFCOMM_TRACE_WARNING("%s, RFC_EVENT_CLEAR, index=%d", __func__,
+                           p_port->inx);
       rfc_port_closed(p_port);
       return;
 
@@ -421,6 +435,7 @@ void rfc_port_sm_opened(tPORT* p_port, uint16_t event, void* p_data) {
       return;
 
     case RFC_EVENT_DM:
+      RFCOMM_TRACE_WARNING("%s, RFC_EVENT_DM, index=%d", __func__, p_port->inx);
       PORT_DlcReleaseInd(p_port->rfc.p_mcb, p_port->dlci);
       rfc_port_closed(p_port);
       return;
@@ -468,6 +483,8 @@ void rfc_port_sm_disc_wait_ua(tPORT* p_port, uint16_t event, void* p_data) {
       return;
 
     case RFC_EVENT_CLEAR:
+      RFCOMM_TRACE_WARNING("%s, RFC_EVENT_CLEAR, index=%d", __func__, event,
+                           p_port->inx);
       rfc_port_closed(p_port);
       return;
 
@@ -480,6 +497,8 @@ void rfc_port_sm_disc_wait_ua(tPORT* p_port, uint16_t event, void* p_data) {
     /* Case falls through */
 
     case RFC_EVENT_DM:
+      RFCOMM_TRACE_WARNING("%s, RFC_EVENT_DM|RFC_EVENT_UA[%d], index=%d",
+                           __func__, event, p_port->inx);
       rfc_port_closed(p_port);
       return;
 
@@ -497,6 +516,8 @@ void rfc_port_sm_disc_wait_ua(tPORT* p_port, uint16_t event, void* p_data) {
       return;
 
     case RFC_EVENT_TIMEOUT:
+      RFCOMM_TRACE_ERROR("%s, RFC_EVENT_TIMEOUT, index=%d", __func__,
+                         p_port->inx);
       rfc_port_closed(p_port);
       return;
   }
