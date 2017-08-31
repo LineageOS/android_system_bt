@@ -33,10 +33,6 @@ RawAddress::RawAddress(const uint8_t (&addr)[6]) {
   std::copy(addr, addr + kLength, address);
 };
 
-bool RawAddress::operator==(const RawAddress& rhl) const {
-  return std::memcmp(address, rhl.address, sizeof(address)) == 0;
-}
-
 std::string RawAddress::ToString() const {
   return base::StringPrintf("%02x:%02x:%02x:%02x:%02x:%02x", address[0],
                             address[1], address[2], address[3], address[4],

@@ -56,9 +56,69 @@ TEST(RawAddressTest, test_equals) {
   RawAddress::FromString(test_addr, bdaddr1);
   RawAddress::FromString(test_addr, bdaddr2);
   EXPECT_TRUE(bdaddr1 == bdaddr2);
+  EXPECT_FALSE(bdaddr1 != bdaddr2);
+  EXPECT_TRUE(bdaddr1 == bdaddr1);
+  EXPECT_FALSE(bdaddr1 != bdaddr1);
 
   RawAddress::FromString(test_addr2, bdaddr3);
   EXPECT_FALSE(bdaddr2 == bdaddr3);
+  EXPECT_TRUE(bdaddr2 != bdaddr3);
+}
+
+TEST(RawAddressTest, test_less_than) {
+  RawAddress bdaddr1;
+  RawAddress bdaddr2;
+  RawAddress bdaddr3;
+  RawAddress::FromString(test_addr, bdaddr1);
+  RawAddress::FromString(test_addr, bdaddr2);
+  EXPECT_FALSE(bdaddr1 < bdaddr2);
+  EXPECT_FALSE(bdaddr1 < bdaddr1);
+
+  RawAddress::FromString(test_addr2, bdaddr3);
+  EXPECT_TRUE(bdaddr2 < bdaddr3);
+  EXPECT_FALSE(bdaddr3 < bdaddr2);
+}
+
+TEST(RawAddressTest, test_more_than) {
+  RawAddress bdaddr1;
+  RawAddress bdaddr2;
+  RawAddress bdaddr3;
+  RawAddress::FromString(test_addr, bdaddr1);
+  RawAddress::FromString(test_addr, bdaddr2);
+  EXPECT_FALSE(bdaddr1 > bdaddr2);
+  EXPECT_FALSE(bdaddr1 > bdaddr1);
+
+  RawAddress::FromString(test_addr2, bdaddr3);
+  EXPECT_FALSE(bdaddr2 > bdaddr3);
+  EXPECT_TRUE(bdaddr3 > bdaddr2);
+}
+
+TEST(RawAddressTest, test_less_than_or_equal) {
+  RawAddress bdaddr1;
+  RawAddress bdaddr2;
+  RawAddress bdaddr3;
+  RawAddress::FromString(test_addr, bdaddr1);
+  RawAddress::FromString(test_addr, bdaddr2);
+  EXPECT_TRUE(bdaddr1 <= bdaddr2);
+  EXPECT_TRUE(bdaddr1 <= bdaddr1);
+
+  RawAddress::FromString(test_addr2, bdaddr3);
+  EXPECT_TRUE(bdaddr2 <= bdaddr3);
+  EXPECT_FALSE(bdaddr3 <= bdaddr2);
+}
+
+TEST(RawAddressTest, test_more_than_or_equal) {
+  RawAddress bdaddr1;
+  RawAddress bdaddr2;
+  RawAddress bdaddr3;
+  RawAddress::FromString(test_addr, bdaddr1);
+  RawAddress::FromString(test_addr, bdaddr2);
+  EXPECT_TRUE(bdaddr1 >= bdaddr2);
+  EXPECT_TRUE(bdaddr1 >= bdaddr1);
+
+  RawAddress::FromString(test_addr2, bdaddr3);
+  EXPECT_FALSE(bdaddr2 >= bdaddr3);
+  EXPECT_TRUE(bdaddr3 >= bdaddr2);
 }
 
 TEST(RawAddressTest, test_copy) {
