@@ -1925,6 +1925,46 @@ tBTM_STATUS BTM_ReadRSSI(const RawAddress& remote_bda, tBTM_CMPL_CB* p_cb) {
 
 /*******************************************************************************
  *
+ * Function         BTM_ReadFailedContactCounter
+ *
+ * Description      This function is called to read the failed contact counter.
+ *                  The result is returned in the callback.
+ *                  (tBTM_FAILED_CONTACT_COUNTER_RESULT)
+ *
+ * Returns          BTM_CMD_STARTED if successfully initiated or error code
+ *
+ ******************************************************************************/
+tBTM_STATUS BTM_ReadFailedContactCounter(const RawAddress& remote_bda,
+                                         tBTM_CMPL_CB* p_cb) {
+  tACL_CONN* p;
+  tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
+  tBT_DEVICE_TYPE dev_type;
+  tBLE_ADDR_TYPE addr_type;
+
+  /* If someone already waiting on the result, do not allow another */
+  if (btm_cb.devcb.p_failed_contact_counter_cmpl_cb) return (BTM_BUSY);
+
+  BTM_ReadDevInfo(remote_bda, &dev_type, &addr_type);
+  if (dev_type == BT_DEVICE_TYPE_BLE) transport = BT_TRANSPORT_LE;
+
+  p = btm_bda_to_acl(remote_bda, transport);
+  if (p != (tACL_CONN*)NULL) {
+    btm_cb.devcb.p_failed_contact_counter_cmpl_cb = p_cb;
+    alarm_set_on_queue(btm_cb.devcb.read_failed_contact_counter_timer,
+                       BTM_DEV_REPLY_TIMEOUT_MS,
+                       btm_read_failed_contact_counter_timeout, NULL,
+                       btu_general_alarm_queue);
+
+    btsnd_hcic_read_failed_contact_counter(p->hci_handle);
+    return (BTM_CMD_STARTED);
+  }
+
+  /* If here, no BD Addr found */
+  return (BTM_UNKNOWN_ADDR);
+}
+
+/*******************************************************************************
+ *
  * Function         BTM_ReadLinkQuality
  *
  * Description      This function is called to read the link qulaity.
@@ -2130,6 +2170,73 @@ void btm_read_rssi_complete(uint8_t* p) {
       results.status = BTM_ERR_PROCESSING;
 
     (*p_cb)(&results);
+  }
+}
+
+/*******************************************************************************
+ *
+ * Function         btm_read_failed_contact_counter_timeout
+ *
+ * Description      Callback when reading the failed contact counter times out.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void btm_read_failed_contact_counter_timeout(UNUSED_ATTR void* data) {
+  tBTM_FAILED_CONTACT_COUNTER_RESULT result;
+  tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_failed_contact_counter_cmpl_cb;
+  btm_cb.devcb.p_failed_contact_counter_cmpl_cb = NULL;
+  result.status = BTM_DEVICE_TIMEOUT;
+  if (p_cb) (*p_cb)(&result);
+}
+
+/*******************************************************************************
+ *
+ * Function         btm_read_failed_contact_counter_complete
+ *
+ * Description      This function is called when the command complete message
+ *                  is received from the HCI for the read failed contact
+ *                  counter request.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void btm_read_failed_contact_counter_complete(uint8_t* p) {
+  tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_failed_contact_counter_cmpl_cb;
+  tBTM_FAILED_CONTACT_COUNTER_RESULT result;
+  tACL_CONN* p_acl_cb = &btm_cb.acl_db[0];
+
+  BTM_TRACE_DEBUG("%s", __func__);
+  alarm_cancel(btm_cb.devcb.read_failed_contact_counter_timer);
+  btm_cb.devcb.p_failed_contact_counter_cmpl_cb = NULL;
+
+  /* If there was a registered callback, call it */
+  if (p_cb) {
+    uint16_t handle;
+    STREAM_TO_UINT8(result.hci_status, p);
+
+    if (result.hci_status == HCI_SUCCESS) {
+      result.status = BTM_SUCCESS;
+
+      STREAM_TO_UINT16(handle, p);
+
+      STREAM_TO_UINT16(result.failed_contact_counter, p);
+      BTM_TRACE_DEBUG(
+          "BTM Failed Contact Counter Complete: counter %u, hci status 0x%02x",
+          result.failed_contact_counter, result.hci_status);
+
+      /* Search through the list of active channels for the correct BD Addr */
+      for (uint16_t index = 0; index < MAX_L2CAP_LINKS; index++, p_acl_cb++) {
+        if ((p_acl_cb->in_use) && (handle == p_acl_cb->hci_handle)) {
+          result.rem_bda = p_acl_cb->remote_addr;
+          break;
+        }
+      }
+    } else {
+      result.status = BTM_ERR_PROCESSING;
+    }
+
+    (*p_cb)(&result);
   }
 }
 
