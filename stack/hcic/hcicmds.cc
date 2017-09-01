@@ -871,11 +871,11 @@ void btsnd_hcic_write_auto_flush_tout(uint16_t handle, uint16_t tout) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
-  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_WRITE_AUTO_FLUSH_TOUT;
+  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_WRITE_AUTOMATIC_FLUSH_TIMEOUT;
   p->offset = 0;
 
-  UINT16_TO_STREAM(pp, HCI_WRITE_AUTO_FLUSH_TOUT);
-  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_WRITE_AUTO_FLUSH_TOUT);
+  UINT16_TO_STREAM(pp, HCI_WRITE_AUTOMATIC_FLUSH_TIMEOUT);
+  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_WRITE_AUTOMATIC_FLUSH_TIMEOUT);
 
   UINT16_TO_STREAM(pp, handle);
   UINT16_TO_STREAM(pp, tout);
@@ -1319,6 +1319,21 @@ void btsnd_hcic_read_failed_contact_counter(uint16_t handle) {
   p->offset = 0;
 
   UINT16_TO_STREAM(pp, HCI_READ_FAILED_CONTACT_COUNTER);
+  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_CMD_HANDLE);
+
+  UINT16_TO_STREAM(pp, handle);
+
+  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+void btsnd_hcic_read_automatic_flush_timeout(uint16_t handle) {
+  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
+  uint8_t* pp = (uint8_t*)(p + 1);
+
+  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_CMD_HANDLE;
+  p->offset = 0;
+
+  UINT16_TO_STREAM(pp, HCI_READ_AUTOMATIC_FLUSH_TIMEOUT);
   UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_CMD_HANDLE);
 
   UINT16_TO_STREAM(pp, handle);
