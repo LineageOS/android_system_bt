@@ -125,6 +125,10 @@ typedef struct {
   alarm_t* read_rssi_timer;       /* Read RSSI timer */
   tBTM_CMPL_CB* p_rssi_cmpl_cb;   /* Callback function to be called when  */
                                   /* read RSSI function completes */
+  alarm_t* read_failed_contact_counter_timer; /* Read Failed Contact Counter */
+                                              /* timer */
+  tBTM_CMPL_CB* p_failed_contact_counter_cmpl_cb; /* Callback function to be */
+  /* called when read Failed Contact Counter function completes */
   alarm_t* read_link_quality_timer;
   tBTM_CMPL_CB* p_link_qual_cmpl_cb; /* Callback function to be called when  */
                                      /* read link quality function completes */
