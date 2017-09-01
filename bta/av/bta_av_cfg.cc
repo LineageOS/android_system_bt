@@ -84,7 +84,7 @@ const uint16_t bta_av_audio_flush_to[] = {
 #endif
 
 /*
- * If the number of event IDs is changed in this array, BTA_AV_ NUM_RC_EVT_IDS
+ * If the number of event IDs is changed in this array, BTA_AV_NUM_RC_EVT_IDS
  * also needs to be changed.
  */
 const uint8_t bta_av_meta_caps_evt_ids[] = {
@@ -96,6 +96,7 @@ const uint8_t bta_av_meta_caps_evt_ids[] = {
     AVRC_EVT_APP_SETTING_CHANGE,
     */
 };
+
 #ifndef BTA_AV_NUM_RC_EVT_IDS
 #define BTA_AV_NUM_RC_EVT_IDS \
   (sizeof(bta_av_meta_caps_evt_ids) / sizeof(bta_av_meta_caps_evt_ids[0]))
@@ -106,6 +107,7 @@ const uint8_t bta_avk_meta_caps_evt_ids[] = {
     AVRC_EVT_VOLUME_CHANGE,
 #endif
 };
+
 #ifndef BTA_AVK_NUM_RC_EVT_IDS
 #define BTA_AVK_NUM_RC_EVT_IDS \
   (sizeof(bta_avk_meta_caps_evt_ids) / sizeof(bta_avk_meta_caps_evt_ids[0]))
