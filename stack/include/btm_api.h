@@ -820,7 +820,7 @@ extern tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr,
  *
  * Description      This function is called to read the link policy settings.
  *                  The address of link policy results are returned in the
- *                  callback. (tBTM_RSSI_RESULTS)
+ *                  callback. (tBTM_RSSI_RESULT)
  *
  * Returns          BTM_CMD_STARTED if command issued to controller.
  *                  BTM_NO_RESOURCES if memory couldn't be allocated to issue
@@ -875,7 +875,7 @@ extern tBTM_STATUS BTM_ReadAutomaticFlushTimeout(const RawAddress& remote_bda,
  * Description      This function is called to read the current connection
  *                  TX power of the connection. The TX power level results
  *                  are returned in the callback.
- *                  (tBTM_RSSI_RESULTS)
+ *                  (tBTM_RSSI_RESULT)
  *
  * Returns          BTM_CMD_STARTED if command issued to controller.
  *                  BTM_NO_RESOURCES if memory couldn't be allocated to issue
@@ -893,7 +893,7 @@ extern tBTM_STATUS BTM_ReadTxPower(const RawAddress& remote_bda,
  *
  * Description      This function is called to read the link quality.
  *                  The value of the link quality is returned in the callback.
- *                  (tBTM_LINK_QUALITY_RESULTS)
+ *                  (tBTM_LINK_QUALITY_RESULT)
  *
  * Returns          BTM_CMD_STARTED if command issued to controller.
  *                  BTM_NO_RESOURCES if memory couldn't be allocated to issue
