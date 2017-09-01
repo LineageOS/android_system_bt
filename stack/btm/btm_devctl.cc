@@ -83,6 +83,8 @@ void btm_dev_init(void) {
 
   btm_cb.devcb.read_local_name_timer = alarm_new("btm.read_local_name_timer");
   btm_cb.devcb.read_rssi_timer = alarm_new("btm.read_rssi_timer");
+  btm_cb.devcb.read_failed_contact_counter_timer =
+      alarm_new("btm.read_failed_contact_counter_timer");
   btm_cb.devcb.read_link_quality_timer =
       alarm_new("btm.read_link_quality_timer");
   btm_cb.devcb.read_inq_tx_power_timer =
@@ -130,6 +132,13 @@ static void btm_db_reset(void) {
     btm_cb.devcb.p_rssi_cmpl_cb = NULL;
 
     if (p_cb) (*p_cb)((tBTM_RSSI_RESULTS*)&status);
+  }
+
+  if (btm_cb.devcb.p_failed_contact_counter_cmpl_cb) {
+    p_cb = btm_cb.devcb.p_failed_contact_counter_cmpl_cb;
+    btm_cb.devcb.p_failed_contact_counter_cmpl_cb = NULL;
+
+    if (p_cb) (*p_cb)((tBTM_FAILED_CONTACT_COUNTER_RESULT*)&status);
   }
 }
 
