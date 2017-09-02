@@ -612,6 +612,7 @@ extern void btsnd_hcic_write_cur_iac_lap(
 
 extern void btsnd_hcic_get_link_quality(uint16_t handle); /* Get Link Quality */
 extern void btsnd_hcic_read_rssi(uint16_t handle);        /* Read RSSI */
+extern void btsnd_hcic_read_failed_contact_counter(uint16_t handle);
 extern void btsnd_hcic_enable_test_mode(
     void); /* Enable Device Under Test Mode */
 extern void btsnd_hcic_write_pagescan_type(

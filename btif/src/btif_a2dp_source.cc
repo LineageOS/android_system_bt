@@ -188,6 +188,7 @@ static void log_tstamps_us(const char* comment, uint64_t timestamp_us);
 static void update_scheduling_stats(scheduling_stats_t* stats, uint64_t now_us,
                                     uint64_t expected_delta);
 static void btm_read_rssi_cb(void* data);
+static void btm_read_failed_contact_counter_cb(void* data);
 
 UNUSED_ATTR static const char* dump_media_event(uint16_t event) {
   switch (event) {
@@ -743,9 +744,19 @@ static bool btif_a2dp_source_enqueue_callback(BT_HDR* p_buf, size_t frames_n) {
       osi_free(fixed_queue_try_dequeue(btif_a2dp_source_cb.tx_audio_queue));
     }
 
-    // Request RSSI for log purposes if we had to flush buffers
+    // Request RSSI and Failed Contact Counter for log purposes if we had to
+    // flush buffers.
     RawAddress peer_bda = btif_av_get_addr();
-    BTM_ReadRSSI(peer_bda, btm_read_rssi_cb);
+    tBTM_STATUS status = BTM_ReadRSSI(peer_bda, btm_read_rssi_cb);
+    if (status != BTM_CMD_STARTED) {
+      LOG_WARN(LOG_TAG, "%s: Cannot read RSSI: status %d", __func__, status);
+    }
+    status = BTM_ReadFailedContactCounter(peer_bda,
+                                          btm_read_failed_contact_counter_cb);
+    if (status != BTM_CMD_STARTED) {
+      LOG_WARN(LOG_TAG, "%s: Cannot read Failed Contact Counter: status %d",
+               __func__, status);
+    }
   }
 
   /* Update the statistics */
@@ -1094,4 +1105,23 @@ static void btm_read_rssi_cb(void* data) {
 
   LOG_WARN(LOG_TAG, "%s device: %s, rssi: %d", __func__,
            result->rem_bda.ToString().c_str(), result->rssi);
+}
+
+static void btm_read_failed_contact_counter_cb(void* data) {
+  if (data == nullptr) {
+    LOG_ERROR(LOG_TAG, "%s Failed Contact Counter request timed out", __func__);
+    return;
+  }
+
+  tBTM_FAILED_CONTACT_COUNTER_RESULT* result =
+      (tBTM_FAILED_CONTACT_COUNTER_RESULT*)data;
+  if (result->status != BTM_SUCCESS) {
+    LOG_ERROR(LOG_TAG,
+              "%s unable to read remote Failed Result Counter (status %d)",
+              __func__, result->status);
+    return;
+  }
+
+  LOG_WARN(LOG_TAG, "%s device: %s, Failed Contact Counter: %u", __func__,
+           result->rem_bda.ToString().c_str(), result->failed_contact_counter);
 }
