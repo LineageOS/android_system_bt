@@ -80,6 +80,10 @@
 #define AVRCP_1_4_STRING "avrcp14"
 #endif
 
+#ifndef AVRCP_1_3_STRING
+#define AVRCP_1_3_STRING "avrcp13"
+#endif
+
 /* state machine states */
 enum { BTA_AV_INIT_ST, BTA_AV_OPEN_ST };
 
@@ -420,11 +424,20 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
   registr.app_id = p_data->api_reg.app_id;
   registr.chnl = (tBTA_AV_CHNL)p_data->hdr.layer_specific;
 
+  char avrcp_version[PROPERTY_VALUE_MAX] = {0};
+  osi_property_get(AVRCP_VERSION_PROPERTY, avrcp_version, AVRCP_1_4_STRING);
+  LOG_INFO(LOG_TAG, "AVRCP version used for sdp: \"%s\"", avrcp_version);
+
   uint16_t profile_initialized = p_data->api_reg.service_uuid;
   if (profile_initialized == UUID_SERVCLASS_AUDIO_SINK) {
     p_bta_av_cfg = (tBTA_AV_CFG*)&bta_avk_cfg;
   } else if (profile_initialized == UUID_SERVCLASS_AUDIO_SOURCE) {
     p_bta_av_cfg = (tBTA_AV_CFG*)&bta_av_cfg;
+
+    if (!strncmp(AVRCP_1_3_STRING, avrcp_version, sizeof(AVRCP_1_3_STRING))) {
+      LOG_INFO(LOG_TAG, "AVRCP 1.3 capabilites used");
+      p_bta_av_cfg = (tBTA_AV_CFG*)&bta_av_cfg_compatibility;
+    }
   }
 
   APPL_TRACE_DEBUG("%s: profile: 0x%x", __func__, profile_initialized);
@@ -477,19 +490,15 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
         uint16_t profile_version = AVRC_REV_1_0;
 
         if (profile_initialized == UUID_SERVCLASS_AUDIO_SOURCE) {
-          // This check can override the AVRCP profile version with a property
-          char avrcp_version[PROPERTY_VALUE_MAX] = {0};
-          osi_property_get(AVRCP_VERSION_PROPERTY, avrcp_version,
-                           AVRCP_1_4_STRING);
-          LOG_INFO(LOG_TAG, "AVRCP version used for sdp: \"%s\"",
-                   avrcp_version);
-
           if (!strncmp(AVRCP_1_6_STRING, avrcp_version,
                        sizeof(AVRCP_1_6_STRING))) {
             profile_version = AVRC_REV_1_6;
           } else if (!strncmp(AVRCP_1_5_STRING, avrcp_version,
                               sizeof(AVRCP_1_5_STRING))) {
             profile_version = AVRC_REV_1_5;
+          } else if (!strncmp(AVRCP_1_3_STRING, avrcp_version,
+                              sizeof(AVRCP_1_3_STRING))) {
+            profile_version = AVRC_REV_1_3;
           } else {
             profile_version = AVRC_REV_1_4;
           }
