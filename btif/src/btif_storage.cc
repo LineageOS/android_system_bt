@@ -260,8 +260,10 @@ static int prop2cfg(const RawAddress* remote_bd_addr, bt_property_t* prop) {
       return false;
   }
 
-  /* save changes if the device was bonded */
-  if (btif_in_fetch_bonded_device(bdstr) == BT_STATUS_SUCCESS) {
+  /* No need to look for bonded device with address of NULL */
+  if (remote_bd_addr &&
+      btif_in_fetch_bonded_device(bdstr) == BT_STATUS_SUCCESS) {
+    /* save changes if the device was bonded */
     btif_config_flush();
   }
 
