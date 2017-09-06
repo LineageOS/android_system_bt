@@ -219,8 +219,12 @@ static bt_property_t* property_new_(void* val, size_t len,
   bt_property_t* property =
       static_cast<bt_property_t*>(osi_calloc(sizeof(bt_property_t)));
 
-  property->val = osi_malloc(len);
-  memcpy(property->val, val, len);
+  property->val = osi_calloc(len);
+  if (type == BT_PROPERTY_BDNAME) {
+    strncpy((char*)property->val, (const char*)val, len);
+  } else {
+    memcpy(property->val, val, len);
+  }
 
   property->type = type;
   property->len = len;
