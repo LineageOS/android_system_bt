@@ -1788,6 +1788,23 @@ void bta_av_rc_disc_done(UNUSED_ATTR tBTA_AV_DATA* p_data) {
       peer_features |=
           bta_av_check_peer_features(UUID_SERVCLASS_AV_REM_CTRL_TARGET);
     }
+
+    /* Change our features if the remote AVRCP version is 1.3 or less */
+    tSDP_DISC_REC* p_rec = nullptr;
+    p_rec = SDP_FindServiceInDb(p_cb->p_disc_db,
+                                UUID_SERVCLASS_AV_REMOTE_CONTROL, p_rec);
+    if (p_rec != NULL &&
+        SDP_FindAttributeInRec(p_rec, ATTR_ID_BT_PROFILE_DESC_LIST) != NULL) {
+      /* get profile version (if failure, version parameter is not updated) */
+      uint16_t peer_rc_version = 0xFFFF;  // Don't change the AVRCP version
+      SDP_FindProfileVersionInRec(p_rec, UUID_SERVCLASS_AV_REMOTE_CONTROL,
+                                  &peer_rc_version);
+      if (peer_rc_version <= AVRC_REV_1_3) {
+        APPL_TRACE_DEBUG("%s Using AVRCP 1.3 Capabilities with remote device",
+                         __func__);
+        p_bta_av_cfg = (tBTA_AV_CFG*)&bta_av_cfg_compatibility;
+      }
+    }
   }
 
   p_cb->disc = 0;
