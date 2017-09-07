@@ -776,7 +776,7 @@ typedef struct {
   uint8_t hci_status;
   int8_t rssi;
   RawAddress rem_bda;
-} tBTM_RSSI_RESULTS;
+} tBTM_RSSI_RESULT;
 
 /* Structure returned with read failed contact counter event
  * (in tBTM_CMPL_CB callback function) in response to
@@ -808,7 +808,7 @@ typedef struct {
   uint8_t hci_status;
   int8_t tx_power;
   RawAddress rem_bda;
-} tBTM_TX_POWER_RESULTS;
+} tBTM_TX_POWER_RESULT;
 
 /* Structure returned with read link quality event (in tBTM_CMPL_CB callback
  * function) in response to BTM_ReadLinkQuality call.
@@ -818,7 +818,7 @@ typedef struct {
   uint8_t hci_status;
   uint8_t link_quality;
   RawAddress rem_bda;
-} tBTM_LINK_QUALITY_RESULTS;
+} tBTM_LINK_QUALITY_RESULT;
 
 /* Structure returned with read inq tx power quality event (in tBTM_CMPL_CB
  * callback function) in response to BTM_ReadInquiryRspTxPower call.
@@ -827,7 +827,7 @@ typedef struct {
   tBTM_STATUS status;
   uint8_t hci_status;
   int8_t tx_power;
-} tBTM_INQ_TXPWR_RESULTS;
+} tBTM_INQ_TXPWR_RESULT;
 
 enum {
   BTM_BL_CONN_EVT,
