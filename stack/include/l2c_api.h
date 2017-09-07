@@ -796,8 +796,8 @@ typedef void(tL2CA_RESERVE_CMPL_CBACK)(void);
  *                           0x0000 : No automatic flush
  *                           L2CAP_NO_RETRANSMISSION : No retransmission
  *                           0x0002 - 0xFFFE : flush time out, if
- *                                             (flush_tout * 8) + 3 / 5)
- *                                               <= HCI_MAX_AUTO_FLUSH_TOUT
+ *                                             (flush_tout * 8) + 3 / 5) <=
+ *                                             HCI_MAX_AUTOMATIC_FLUSH_TIMEOUT
  *                                             (in 625us slot).
  *                                    Otherwise, return false.
  *                           L2CAP_NO_AUTOMATIC_FLUSH : No automatic flush
