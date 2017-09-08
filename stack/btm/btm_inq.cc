@@ -2228,7 +2228,7 @@ void btm_read_inq_tx_power_timeout(UNUSED_ATTR void* data) {
  ******************************************************************************/
 void btm_read_inq_tx_power_complete(uint8_t* p) {
   tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_inq_tx_power_cmpl_cb;
-  tBTM_INQ_TXPWR_RESULTS results;
+  tBTM_INQ_TXPWR_RESULT result;
 
   BTM_TRACE_DEBUG("%s", __func__);
   alarm_cancel(btm_cb.devcb.read_inq_tx_power_timer);
@@ -2236,19 +2236,20 @@ void btm_read_inq_tx_power_complete(uint8_t* p) {
 
   /* If there was a registered callback, call it */
   if (p_cb) {
-    STREAM_TO_UINT8(results.hci_status, p);
+    STREAM_TO_UINT8(result.hci_status, p);
 
-    if (results.hci_status == HCI_SUCCESS) {
-      results.status = BTM_SUCCESS;
+    if (result.hci_status == HCI_SUCCESS) {
+      result.status = BTM_SUCCESS;
 
-      STREAM_TO_UINT8(results.tx_power, p);
+      STREAM_TO_UINT8(result.tx_power, p);
       BTM_TRACE_EVENT(
           "BTM INQ TX POWER Complete: tx_power %d, hci status 0x%02x",
-          results.tx_power, results.hci_status);
-    } else
-      results.status = BTM_ERR_PROCESSING;
+          result.tx_power, result.hci_status);
+    } else {
+      result.status = BTM_ERR_PROCESSING;
+    }
 
-    (*p_cb)(&results);
+    (*p_cb)(&result);
   }
 }
 /*******************************************************************************

@@ -203,7 +203,7 @@ void bta_gattc_cback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
   ASSERTC(status == BT_STATUS_SUCCESS, "Context transfer failed!", status);
 }
 
-void btm_read_rssi_cb(tBTM_RSSI_RESULTS* p_result) {
+void btm_read_rssi_cb(tBTM_RSSI_RESULT* p_result) {
   if (!p_result) return;
 
   CLI_CBACK_IN_JNI(read_remote_rssi_cb, rssi_request_client_if,
