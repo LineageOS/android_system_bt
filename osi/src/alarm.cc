@@ -22,7 +22,9 @@
 
 #include "osi/include/alarm.h"
 
+#include <base/cancelable_callback.h>
 #include <base/logging.h>
+#include <base/message_loop/message_loop.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
@@ -44,6 +46,12 @@
 #include "osi/include/semaphore.h"
 #include "osi/include/thread.h"
 #include "osi/include/wakelock.h"
+
+using base::Bind;
+using base::CancelableClosure;
+using base::MessageLoop;
+
+extern base::MessageLoop* get_message_loop();
 
 // Callback and timer threads should run at RT priority in order to ensure they
 // meet audio deadlines.  Use this priority for all audio/timer related thread.
@@ -68,6 +76,17 @@ typedef struct {
   stat_t premature_scheduling;
 } alarm_stats_t;
 
+/* Wrapper around CancellableClosure that let it be embedded in structs, without
+ * need to define copy operator. */
+struct CancelableClosureInStruct {
+  base::CancelableClosure i;
+
+  CancelableClosureInStruct& operator=(const CancelableClosureInStruct& in) {
+    if (!in.i.callback().is_null()) i.Reset(in.i.callback());
+    return *this;
+  }
+};
+
 struct alarm_t {
   // The mutex is held while the callback for this alarm is being executed.
   // It allows us to release the coarse-grained monitor lock while a
@@ -85,6 +104,9 @@ struct alarm_t {
   alarm_callback_t callback;
   void* data;
   alarm_stats_t stats;
+
+  bool for_msg_loop;  // True, if the alarm should be processed on message loop
+  CancelableClosureInStruct closure;  // posted to message loop for processing
 };
 
 // If the next wakeup time is less than this threshold, we should acquire
@@ -123,7 +145,7 @@ static bool lazy_initialize(void);
 static period_ms_t now(void);
 static void alarm_set_internal(alarm_t* alarm, period_ms_t period,
                                alarm_callback_t cb, void* data,
-                               fixed_queue_t* queue);
+                               fixed_queue_t* queue, bool for_msg_loop);
 static void alarm_cancel_internal(alarm_t* alarm);
 static void remove_pending_alarm(alarm_t* alarm);
 static void schedule_next_instance(alarm_t* alarm);
@@ -135,6 +157,10 @@ static bool timer_create_internal(const clockid_t clock_id, timer_t* timer);
 static void update_scheduling_stats(alarm_stats_t* stats, period_ms_t now_ms,
                                     period_ms_t deadline_ms,
                                     period_ms_t execution_delta_ms);
+// Registers |queue| for processing alarm callbacks on |thread|.
+// |queue| may not be NULL. |thread| may not be NULL.
+static void alarm_register_processing_queue(fixed_queue_t* queue,
+                                            thread_t* thread);
 
 static void update_stat(stat_t* stat, period_ms_t delta) {
   if (stat->max_ms < delta) stat->max_ms = delta;
@@ -160,6 +186,11 @@ static alarm_t* alarm_new_internal(const char* name, bool is_periodic) {
   ret->callback_mutex = new std::recursive_mutex;
   ret->is_periodic = is_periodic;
   ret->stats.name = osi_strdup(name);
+
+  ret->for_msg_loop = false;
+  // placement new
+  new (&ret->closure) CancelableClosureInStruct();
+
   // NOTE: The stats were reset by osi_calloc() above
 
   return ret;
@@ -171,6 +202,7 @@ void alarm_free(alarm_t* alarm) {
   alarm_cancel(alarm);
   delete alarm->callback_mutex;
   osi_free((void*)alarm->stats.name);
+  alarm->closure.~CancelableClosureInStruct();
   osi_free(alarm);
 }
 
@@ -187,19 +219,19 @@ period_ms_t alarm_get_remaining_ms(const alarm_t* alarm) {
 
 void alarm_set(alarm_t* alarm, period_ms_t interval_ms, alarm_callback_t cb,
                void* data) {
-  alarm_set_on_queue(alarm, interval_ms, cb, data, default_callback_queue);
+  alarm_set_internal(alarm, interval_ms, cb, data, default_callback_queue,
+                     false);
 }
 
-void alarm_set_on_queue(alarm_t* alarm, period_ms_t interval_ms,
-                        alarm_callback_t cb, void* data, fixed_queue_t* queue) {
-  CHECK(queue != NULL);
-  alarm_set_internal(alarm, interval_ms, cb, data, queue);
+void alarm_set_on_mloop(alarm_t* alarm, period_ms_t interval_ms,
+                        alarm_callback_t cb, void* data) {
+  alarm_set_internal(alarm, interval_ms, cb, data, NULL, true);
 }
 
 // Runs in exclusion with alarm_cancel and timer_callback.
 static void alarm_set_internal(alarm_t* alarm, period_ms_t period,
                                alarm_callback_t cb, void* data,
-                               fixed_queue_t* queue) {
+                               fixed_queue_t* queue, bool for_msg_loop) {
   CHECK(alarms != NULL);
   CHECK(alarm != NULL);
   CHECK(cb != NULL);
@@ -211,6 +243,7 @@ static void alarm_set_internal(alarm_t* alarm, period_ms_t period,
   alarm->queue = queue;
   alarm->callback = cb;
   alarm->data = data;
+  alarm->for_msg_loop = for_msg_loop;
 
   schedule_next_instance(alarm);
   alarm->stats.scheduled_count++;
@@ -373,9 +406,15 @@ static period_ms_t now(void) {
 // The caller must hold the |alarms_mutex|
 static void remove_pending_alarm(alarm_t* alarm) {
   list_remove(alarms, alarm);
-  while (fixed_queue_try_remove_from_queue(alarm->queue, alarm) != NULL) {
-    // Remove all repeated alarm instances from the queue.
-    // NOTE: We are defensive here - we shouldn't have repeated alarm instances
+
+  if (alarm->for_msg_loop) {
+    alarm->closure.i.Cancel();
+  } else {
+    while (fixed_queue_try_remove_from_queue(alarm->queue, alarm) != NULL) {
+      // Remove all repeated alarm instances from the queue.
+      // NOTE: We are defensive here - we shouldn't have repeated alarm
+      // instances
+    }
   }
 }
 
@@ -509,7 +548,8 @@ done:
   }
 }
 
-void alarm_register_processing_queue(fixed_queue_t* queue, thread_t* thread) {
+static void alarm_register_processing_queue(fixed_queue_t* queue,
+                                            thread_t* thread) {
   CHECK(queue != NULL);
   CHECK(thread != NULL);
 
@@ -517,33 +557,11 @@ void alarm_register_processing_queue(fixed_queue_t* queue, thread_t* thread) {
                                alarm_queue_ready, NULL);
 }
 
-void alarm_unregister_processing_queue(fixed_queue_t* queue) {
-  CHECK(alarms != NULL);
-  CHECK(queue != NULL);
-
-  fixed_queue_unregister_dequeue(queue);
-
-  // Cancel all alarms that are using this queue
-  std::lock_guard<std::mutex> lock(alarms_mutex);
-  for (list_node_t* node = list_begin(alarms); node != list_end(alarms);) {
-    alarm_t* alarm = (alarm_t*)list_node(node);
-    node = list_next(node);
-    // TODO: Each module is responsible for tearing down its alarms; currently,
-    // this is not the case. In the future, this check should be replaced by
-    // an assert.
-    if (alarm->queue == queue) alarm_cancel_internal(alarm);
-  }
-}
-
-static void alarm_queue_ready(fixed_queue_t* queue, UNUSED_ATTR void* context) {
-  CHECK(queue != NULL);
-
-  std::unique_lock<std::mutex> lock(alarms_mutex);
-  alarm_t* alarm = (alarm_t*)fixed_queue_try_dequeue(queue);
+static void alarm_ready_generic(alarm_t* alarm,
+                                std::unique_lock<std::mutex>& lock) {
   if (alarm == NULL) {
     return;  // The alarm was probably canceled
   }
-
   //
   // If the alarm is not periodic, we've fully serviced it now, and can reset
   // some of its internal state. This is useful to distinguish between expired
@@ -574,6 +592,19 @@ static void alarm_queue_ready(fixed_queue_t* queue, UNUSED_ATTR void* context) {
   CHECK(t1 >= t0);
   period_ms_t delta = t1 - t0;
   update_scheduling_stats(&alarm->stats, t0, deadline, delta);
+}
+
+static void alarm_ready_mloop(alarm_t* alarm) {
+  std::unique_lock<std::mutex> lock(alarms_mutex);
+  alarm_ready_generic(alarm, lock);
+}
+
+static void alarm_queue_ready(fixed_queue_t* queue, UNUSED_ATTR void* context) {
+  CHECK(queue != NULL);
+
+  std::unique_lock<std::mutex> lock(alarms_mutex);
+  alarm_t* alarm = (alarm_t*)fixed_queue_try_dequeue(queue);
+  alarm_ready_generic(alarm, lock);
 }
 
 // Callback function for wake alarms and our posix timer
@@ -612,7 +643,18 @@ static void callback_dispatch(UNUSED_ATTR void* context) {
     reschedule_root_alarm();
 
     // Enqueue the alarm for processing
-    fixed_queue_enqueue(alarm->queue, alarm);
+    if (alarm->for_msg_loop) {
+      if (!get_message_loop()) {
+        LOG_ERROR(LOG_TAG, "%s: message loop already NULL. Alarm: %s", __func__,
+                  alarm->stats.name);
+        continue;
+      }
+
+      alarm->closure.i.Reset(Bind(alarm_ready_mloop, alarm));
+      get_message_loop()->PostTask(FROM_HERE, alarm->closure.i.callback());
+    } else {
+      fixed_queue_enqueue(alarm->queue, alarm);
+    }
   }
 
   LOG_DEBUG(LOG_TAG, "%s Callback thread exited", __func__);

@@ -77,8 +77,6 @@ extern bool btif_hl_create_socket(uint8_t app_idx, uint8_t mcl_idx,
 extern void btif_hl_release_socket(uint8_t app_idx, uint8_t mcl_idx,
                                    uint8_t mdl_idx);
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 btif_hl_cb_t btif_hl_cb;
 btif_hl_cb_t* p_btif_hl_cb = &btif_hl_cb;
 
@@ -307,8 +305,8 @@ void btif_hl_start_cch_timer(uint8_t app_idx, uint8_t mcl_idx) {
 
   alarm_free(p_mcb->cch_timer);
   p_mcb->cch_timer = alarm_new("btif_hl.mcl_cch_timer");
-  alarm_set_on_queue(p_mcb->cch_timer, BTIF_TIMEOUT_CCH_NO_DCH_MS,
-                     btif_hl_timer_timeout, p_mcb, btu_general_alarm_queue);
+  alarm_set_on_mloop(p_mcb->cch_timer, BTIF_TIMEOUT_CCH_NO_DCH_MS,
+                     btif_hl_timer_timeout, p_mcb);
 }
 
 /*******************************************************************************

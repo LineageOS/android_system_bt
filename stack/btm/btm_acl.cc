@@ -50,8 +50,6 @@
 #include "l2c_int.h"
 #include "osi/include/osi.h"
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 static void btm_read_remote_features(uint16_t handle);
 static void btm_read_remote_ext_features(uint16_t handle, uint8_t page_number);
 static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
@@ -1816,8 +1814,8 @@ tBTM_STATUS BTM_SetQoS(const RawAddress& bd, FLOW_SPEC* p_flow,
   p = btm_bda_to_acl(bd, BT_TRANSPORT_BR_EDR);
   if (p != NULL) {
     btm_cb.devcb.p_qos_setup_cmpl_cb = p_cb;
-    alarm_set_on_queue(btm_cb.devcb.qos_setup_timer, BTM_DEV_REPLY_TIMEOUT_MS,
-                       btm_qos_setup_timeout, NULL, btu_general_alarm_queue);
+    alarm_set_on_mloop(btm_cb.devcb.qos_setup_timer, BTM_DEV_REPLY_TIMEOUT_MS,
+                       btm_qos_setup_timeout, NULL);
 
     btsnd_hcic_qos_setup(p->hci_handle, p_flow->qos_flags, p_flow->service_type,
                          p_flow->token_rate, p_flow->peak_bandwidth,
@@ -1909,8 +1907,8 @@ tBTM_STATUS BTM_ReadRSSI(const RawAddress& remote_bda, tBTM_CMPL_CB* p_cb) {
   p = btm_bda_to_acl(remote_bda, transport);
   if (p != (tACL_CONN*)NULL) {
     btm_cb.devcb.p_rssi_cmpl_cb = p_cb;
-    alarm_set_on_queue(btm_cb.devcb.read_rssi_timer, BTM_DEV_REPLY_TIMEOUT_MS,
-                       btm_read_rssi_timeout, NULL, btu_general_alarm_queue);
+    alarm_set_on_mloop(btm_cb.devcb.read_rssi_timer, BTM_DEV_REPLY_TIMEOUT_MS,
+                       btm_read_rssi_timeout, NULL);
 
     btsnd_hcic_read_rssi(p->hci_handle);
     return (BTM_CMD_STARTED);
@@ -1947,10 +1945,9 @@ tBTM_STATUS BTM_ReadFailedContactCounter(const RawAddress& remote_bda,
   p = btm_bda_to_acl(remote_bda, transport);
   if (p != (tACL_CONN*)NULL) {
     btm_cb.devcb.p_failed_contact_counter_cmpl_cb = p_cb;
-    alarm_set_on_queue(btm_cb.devcb.read_failed_contact_counter_timer,
+    alarm_set_on_mloop(btm_cb.devcb.read_failed_contact_counter_timer,
                        BTM_DEV_REPLY_TIMEOUT_MS,
-                       btm_read_failed_contact_counter_timeout, NULL,
-                       btu_general_alarm_queue);
+                       btm_read_failed_contact_counter_timeout, NULL);
 
     btsnd_hcic_read_failed_contact_counter(p->hci_handle);
     return (BTM_CMD_STARTED);
@@ -1988,10 +1985,9 @@ tBTM_STATUS BTM_ReadAutomaticFlushTimeout(const RawAddress& remote_bda,
   if (!p) return BTM_UNKNOWN_ADDR;
 
   btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb = p_cb;
-  alarm_set_on_queue(btm_cb.devcb.read_automatic_flush_timeout_timer,
+  alarm_set_on_mloop(btm_cb.devcb.read_automatic_flush_timeout_timer,
                      BTM_DEV_REPLY_TIMEOUT_MS,
-                     btm_read_automatic_flush_timeout_timeout, nullptr,
-                     btu_general_alarm_queue);
+                     btm_read_automatic_flush_timeout_timeout, nullptr);
 
   btsnd_hcic_read_automatic_flush_timeout(p->hci_handle);
   return BTM_CMD_STARTED;
@@ -2018,9 +2014,9 @@ tBTM_STATUS BTM_ReadLinkQuality(const RawAddress& remote_bda,
   tACL_CONN* p = btm_bda_to_acl(remote_bda, BT_TRANSPORT_BR_EDR);
   if (p != (tACL_CONN*)NULL) {
     btm_cb.devcb.p_link_qual_cmpl_cb = p_cb;
-    alarm_set_on_queue(btm_cb.devcb.read_link_quality_timer,
+    alarm_set_on_mloop(btm_cb.devcb.read_link_quality_timer,
                        BTM_DEV_REPLY_TIMEOUT_MS, btm_read_link_quality_timeout,
-                       NULL, btu_general_alarm_queue);
+                       NULL);
 
     btsnd_hcic_get_link_quality(p->hci_handle);
     return (BTM_CMD_STARTED);
@@ -2056,9 +2052,9 @@ tBTM_STATUS BTM_ReadTxPower(const RawAddress& remote_bda,
   p = btm_bda_to_acl(remote_bda, transport);
   if (p != (tACL_CONN*)NULL) {
     btm_cb.devcb.p_tx_power_cmpl_cb = p_cb;
-    alarm_set_on_queue(btm_cb.devcb.read_tx_power_timer,
+    alarm_set_on_mloop(btm_cb.devcb.read_tx_power_timer,
                        BTM_DEV_REPLY_TIMEOUT_MS, btm_read_tx_power_timeout,
-                       NULL, btu_general_alarm_queue);
+                       NULL);
 
     if (p->transport == BT_TRANSPORT_LE) {
       btm_cb.devcb.read_tx_pwr_addr = remote_bda;

@@ -38,8 +38,6 @@
 
 using base::StringPrintf;
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 static void l2cble_start_conn_update(tL2C_LCB* p_lcb);
 
 /*******************************************************************************
@@ -907,8 +905,8 @@ bool l2cble_init_direct_conn(tL2C_LCB* p_lcb) {
   p_lcb->link_state = LST_CONNECTING;
   l2cb.is_ble_connecting = true;
   l2cb.ble_connecting_bda = p_lcb->remote_bd_addr;
-  alarm_set_on_queue(p_lcb->l2c_lcb_timer, L2CAP_BLE_LINK_CONNECT_TIMEOUT_MS,
-                     l2c_lcb_timer_timeout, p_lcb, btu_general_alarm_queue);
+  alarm_set_on_mloop(p_lcb->l2c_lcb_timer, L2CAP_BLE_LINK_CONNECT_TIMEOUT_MS,
+                     l2c_lcb_timer_timeout, p_lcb);
   btm_ble_set_conn_st(BLE_DIR_CONN);
 
   return (true);
@@ -1075,9 +1073,9 @@ void l2c_ble_link_adjust_allocation(void) {
       if ((p_lcb->link_state == LST_CONNECTED) &&
           (!list_is_empty(p_lcb->link_xmit_data_q)) &&
           (p_lcb->sent_not_acked < p_lcb->link_xmit_quota)) {
-        alarm_set_on_queue(
-            p_lcb->l2c_lcb_timer, L2CAP_LINK_FLOW_CONTROL_TIMEOUT_MS,
-            l2c_lcb_timer_timeout, p_lcb, btu_general_alarm_queue);
+        alarm_set_on_mloop(p_lcb->l2c_lcb_timer,
+                           L2CAP_LINK_FLOW_CONTROL_TIMEOUT_MS,
+                           l2c_lcb_timer_timeout, p_lcb);
       }
     }
   }

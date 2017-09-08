@@ -50,16 +50,12 @@
 /* system manager control block definition */
 tBTA_SYS_CB bta_sys_cb;
 
-fixed_queue_t* btu_bta_alarm_queue;
 extern thread_t* bt_workqueue_thread;
 
 /* trace level */
 /* TODO Hard-coded trace levels -  Needs to be configurable */
 uint8_t appl_trace_level = BT_TRACE_LEVEL_WARNING;  // APPL_INITIAL_TRACE_LEVEL;
 uint8_t btif_trace_level = BT_TRACE_LEVEL_WARNING;
-
-// Communication queue between btu_task and bta.
-extern fixed_queue_t* btu_bta_msg_queue;
 
 static const tBTA_SYS_REG bta_sys_hw_reg = {bta_sys_sm_execute, NULL};
 
@@ -179,10 +175,6 @@ const tBTA_SYS_ST_TBL bta_sys_st_tbl[] = {bta_sys_hw_off, bta_sys_hw_starting,
 void bta_sys_init(void) {
   memset(&bta_sys_cb, 0, sizeof(tBTA_SYS_CB));
 
-  btu_bta_alarm_queue = fixed_queue_new(SIZE_MAX);
-
-  alarm_register_processing_queue(btu_bta_alarm_queue, bt_workqueue_thread);
-
   appl_trace_level = APPL_INITIAL_TRACE_LEVEL;
 
   /* register BTA SYS message handler */
@@ -197,9 +189,6 @@ void bta_sys_init(void) {
 }
 
 void bta_sys_free(void) {
-  alarm_unregister_processing_queue(btu_bta_alarm_queue);
-  fixed_queue_free(btu_bta_alarm_queue, NULL);
-  btu_bta_alarm_queue = NULL;
 }
 
 /*******************************************************************************
@@ -586,8 +575,7 @@ void bta_sys_start_timer(alarm_t* alarm, period_ms_t interval, uint16_t event,
   p_buf->event = event;
   p_buf->layer_specific = layer_specific;
 
-  alarm_set_on_queue(alarm, interval, bta_sys_sendmsg, p_buf,
-                     btu_bta_alarm_queue);
+  alarm_set_on_mloop(alarm, interval, bta_sys_sendmsg, p_buf);
 }
 
 /*******************************************************************************
