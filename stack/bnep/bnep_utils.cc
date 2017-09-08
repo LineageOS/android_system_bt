@@ -33,8 +33,6 @@
 #include "device/include/controller.h"
 #include "osi/include/osi.h"
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
@@ -271,8 +269,8 @@ void bnepu_send_peer_our_filters(tBNEP_CONN* p_bcb) {
   p_bcb->con_flags |= BNEP_FLAGS_FILTER_RESP_PEND;
 
   /* Start timer waiting for setup response */
-  alarm_set_on_queue(p_bcb->conn_timer, BNEP_FILTER_SET_TIMEOUT_MS,
-                     bnep_conn_timer_timeout, p_bcb, btu_general_alarm_queue);
+  alarm_set_on_mloop(p_bcb->conn_timer, BNEP_FILTER_SET_TIMEOUT_MS,
+                     bnep_conn_timer_timeout, p_bcb);
 }
 
 /*******************************************************************************
@@ -315,8 +313,8 @@ void bnepu_send_peer_our_multi_filters(tBNEP_CONN* p_bcb) {
   p_bcb->con_flags |= BNEP_FLAGS_MULTI_RESP_PEND;
 
   /* Start timer waiting for setup response */
-  alarm_set_on_queue(p_bcb->conn_timer, BNEP_FILTER_SET_TIMEOUT_MS,
-                     bnep_conn_timer_timeout, p_bcb, btu_general_alarm_queue);
+  alarm_set_on_mloop(p_bcb->conn_timer, BNEP_FILTER_SET_TIMEOUT_MS,
+                     bnep_conn_timer_timeout, p_bcb);
 }
 
 /*******************************************************************************
@@ -1141,8 +1139,8 @@ void bnep_sec_check_complete(UNUSED_ATTR const RawAddress* bd_addr,
     p_bcb->con_state = BNEP_STATE_CONN_SETUP;
 
     bnep_send_conn_req(p_bcb);
-    alarm_set_on_queue(p_bcb->conn_timer, BNEP_CONN_TIMEOUT_MS,
-                       bnep_conn_timer_timeout, p_bcb, btu_general_alarm_queue);
+    alarm_set_on_mloop(p_bcb->conn_timer, BNEP_CONN_TIMEOUT_MS,
+                       bnep_conn_timer_timeout, p_bcb);
     return;
   }
 

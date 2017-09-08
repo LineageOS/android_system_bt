@@ -35,8 +35,6 @@
 #include "btu.h"
 #include "osi/include/osi.h"
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 /* This table is used to lookup the callback event that matches a particular
  * state machine API request event.  Note that state machine API request
  * events are at the beginning of the event list starting at zero, thus
@@ -209,9 +207,9 @@ void avdt_scb_hdl_open_rsp(tAVDT_SCB* p_scb,
   avdt_ad_open_req(AVDT_CHAN_MEDIA, p_scb->p_ccb, p_scb, AVDT_INT);
 
   /* start tc connect timer */
-  alarm_set_on_queue(
-      p_scb->transport_channel_timer, AVDT_SCB_TC_CONN_TIMEOUT_MS,
-      avdt_scb_transport_channel_timer_timeout, p_scb, btu_general_alarm_queue);
+  alarm_set_on_mloop(p_scb->transport_channel_timer,
+                     AVDT_SCB_TC_CONN_TIMEOUT_MS,
+                     avdt_scb_transport_channel_timer_timeout, p_scb);
 }
 
 /*******************************************************************************
@@ -1061,9 +1059,9 @@ void avdt_scb_snd_open_rsp(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data) {
   /* send response */
   avdt_msg_send_rsp(p_scb->p_ccb, AVDT_SIG_OPEN, &p_data->msg);
 
-  alarm_set_on_queue(
-      p_scb->transport_channel_timer, AVDT_SCB_TC_CONN_TIMEOUT_MS,
-      avdt_scb_transport_channel_timer_timeout, p_scb, btu_general_alarm_queue);
+  alarm_set_on_mloop(p_scb->transport_channel_timer,
+                     AVDT_SCB_TC_CONN_TIMEOUT_MS,
+                     avdt_scb_transport_channel_timer_timeout, p_scb);
 }
 
 /*******************************************************************************
@@ -1446,9 +1444,9 @@ void avdt_scb_chk_snd_pkt(tAVDT_SCB* p_scb, UNUSED_ATTR tAVDT_SCB_EVT* p_data) {
  ******************************************************************************/
 void avdt_scb_transport_channel_timer(tAVDT_SCB* p_scb,
                                       UNUSED_ATTR tAVDT_SCB_EVT* p_data) {
-  alarm_set_on_queue(
-      p_scb->transport_channel_timer, AVDT_SCB_TC_DISC_TIMEOUT_MS,
-      avdt_scb_transport_channel_timer_timeout, p_scb, btu_general_alarm_queue);
+  alarm_set_on_mloop(p_scb->transport_channel_timer,
+                     AVDT_SCB_TC_DISC_TIMEOUT_MS,
+                     avdt_scb_transport_channel_timer_timeout, p_scb);
 }
 
 /*******************************************************************************

@@ -34,8 +34,6 @@
 
 #include "btu.h"
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 /*****************************************************************************
  * constants
  ****************************************************************************/
@@ -131,8 +129,8 @@ void mca_ccb_snd_req(tMCA_CCB* p_ccb, tMCA_CCB_EVT* p_data) {
       p_pkt->len = p - p_start;
       L2CA_DataWrite(p_ccb->lcid, p_pkt);
       period_ms_t interval_ms = p_ccb->p_rcb->reg.rsp_tout * 1000;
-      alarm_set_on_queue(p_ccb->mca_ccb_timer, interval_ms,
-                         mca_ccb_timer_timeout, p_ccb, btu_general_alarm_queue);
+      alarm_set_on_mloop(p_ccb->mca_ccb_timer, interval_ms,
+                         mca_ccb_timer_timeout, p_ccb);
     }
     /* else the L2CAP channel is congested. keep the message to be sent later */
   } else {

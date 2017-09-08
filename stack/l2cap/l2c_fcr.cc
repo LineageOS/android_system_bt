@@ -38,8 +38,6 @@
 #include "l2c_int.h"
 #include "l2cdefs.h"
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 /* Flag passed to retransmit_i_frames() when all packets should be retransmitted
  */
 #define L2C_FCR_RETX_ALL_PKTS 0xFF
@@ -180,8 +178,8 @@ void l2c_fcr_start_timer(tL2C_CCB* p_ccb) {
 
   /* Only start a timer that was not started */
   if (!alarm_is_scheduled(p_ccb->fcrb.mon_retrans_timer)) {
-    alarm_set_on_queue(p_ccb->fcrb.mon_retrans_timer, tout,
-                       l2c_ccb_timer_timeout, p_ccb, btu_general_alarm_queue);
+    alarm_set_on_mloop(p_ccb->fcrb.mon_retrans_timer, tout,
+                       l2c_ccb_timer_timeout, p_ccb);
   }
 }
 
@@ -712,9 +710,8 @@ void l2c_fcr_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
          * final,  */
         /* then it speeds up recovery significantly if we poll him back soon
          * after his poll. */
-        alarm_set_on_queue(p_ccb->fcrb.mon_retrans_timer, BT_1SEC_TIMEOUT_MS,
-                           l2c_ccb_timer_timeout, p_ccb,
-                           btu_general_alarm_queue);
+        alarm_set_on_mloop(p_ccb->fcrb.mon_retrans_timer, BT_1SEC_TIMEOUT_MS,
+                           l2c_ccb_timer_timeout, p_ccb);
       }
       osi_free(p_buf);
       return;
@@ -1301,9 +1298,8 @@ static void process_i_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf, uint16_t ctrl_word,
     if (delay_ack) {
       /* If it is the first I frame we did not ack, start ack timer */
       if (!alarm_is_scheduled(p_ccb->fcrb.ack_timer)) {
-        alarm_set_on_queue(p_ccb->fcrb.ack_timer, L2CAP_FCR_ACK_TIMEOUT_MS,
-                           l2c_fcrb_ack_timer_timeout, p_ccb,
-                           btu_general_alarm_queue);
+        alarm_set_on_mloop(p_ccb->fcrb.ack_timer, L2CAP_FCR_ACK_TIMEOUT_MS,
+                           l2c_fcrb_ack_timer_timeout, p_ccb);
       }
     } else if ((fixed_queue_is_empty(p_ccb->xmit_hold_q) ||
                 l2c_fcr_is_flow_controlled(p_ccb)) &&
@@ -2198,9 +2194,8 @@ bool l2c_fcr_renegotiate_chan(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
 
         l2cu_process_our_cfg_req(p_ccb, &p_ccb->our_cfg);
         l2cu_send_peer_config_req(p_ccb, &p_ccb->our_cfg);
-        alarm_set_on_queue(p_ccb->l2c_ccb_timer, L2CAP_CHNL_CFG_TIMEOUT_MS,
-                           l2c_ccb_timer_timeout, p_ccb,
-                           btu_general_alarm_queue);
+        alarm_set_on_mloop(p_ccb->l2c_ccb_timer, L2CAP_CHNL_CFG_TIMEOUT_MS,
+                           l2c_ccb_timer_timeout, p_ccb);
         return (true);
       }
     }
