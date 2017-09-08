@@ -2053,7 +2053,7 @@ void l2cu_process_our_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
         p_lcb->link_flush_tout = p_cfg->flush_to;
 
         /* If the timeout is within range of HCI, set the flush timeout */
-        if (p_cfg->flush_to <= ((HCI_MAX_AUTO_FLUSH_TOUT * 5) / 8)) {
+        if (p_cfg->flush_to <= ((HCI_MAX_AUTOMATIC_FLUSH_TIMEOUT * 5) / 8)) {
           /* Convert flush timeout to 0.625 ms units, with round */
           hci_flush_to = ((p_cfg->flush_to * 8) + 3) / 5;
           btsnd_hcic_write_auto_flush_tout(p_lcb->handle, hci_flush_to);
