@@ -98,16 +98,24 @@ TEST_F(GattTest, GattServerBuild) {
   gatt_server_interface()->add_service(server_if, service);
   semaphore_wait(service_added_callback_sem_);
   EXPECT_TRUE(status() == BT_STATUS_SUCCESS) << "Error adding service.";
+  EXPECT_TRUE(server_interface_id() == server_if) << "Wrong server_if added.";
+  int service_handle_added = service_handle();
 
   // Stops server.
   gatt_server_interface()->stop_service(server_if, service_handle());
   semaphore_wait(service_stopped_callback_sem_);
   EXPECT_TRUE(status() == BT_STATUS_SUCCESS) << "Error stopping server.";
+  EXPECT_TRUE(service_handle() == service_handle_added)
+      << "Wrong service handle stopped.";
+  EXPECT_TRUE(server_interface_id() == server_if) << "Wrong server_if stopped.";
 
   // Deletes service.
   gatt_server_interface()->delete_service(server_if, service_handle());
   semaphore_wait(service_deleted_callback_sem_);
   EXPECT_TRUE(status() == BT_STATUS_SUCCESS) << "Error deleting service.";
+  EXPECT_TRUE(service_handle() == service_handle_added)
+      << "Wrong service handle deleted.";
+  EXPECT_TRUE(server_interface_id() == server_if) << "Wrong server_if deleted.";
 
   // Unregisters gatt server. No callback is expected.
   gatt_server_interface()->unregister_server(server_if);
