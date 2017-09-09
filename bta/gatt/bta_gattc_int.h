@@ -223,7 +223,7 @@ typedef struct {
 
   uint8_t state;
 
-  list_t* p_srvc_cache; /* list of tBTA_GATTC_SERVICE */
+  std::list<tBTA_GATTC_SERVICE> srvc_cache;
   uint8_t update_count; /* indication received */
   uint8_t num_clcb;     /* number of associated CLCB */
 
@@ -450,15 +450,15 @@ extern tGATT_STATUS bta_gattc_discover_pri_service(uint16_t conn_id,
                                                    uint8_t disc_type);
 extern void bta_gattc_search_service(tBTA_GATTC_CLCB* p_clcb,
                                      bluetooth::Uuid* p_uuid);
-extern const list_t* bta_gattc_get_services(uint16_t conn_id);
+extern std::list<tBTA_GATTC_SERVICE>* bta_gattc_get_services(uint16_t conn_id);
 extern const tBTA_GATTC_SERVICE* bta_gattc_get_service_for_handle(
     uint16_t conn_id, uint16_t handle);
 tBTA_GATTC_CHARACTERISTIC* bta_gattc_get_characteristic_srcb(
     tBTA_GATTC_SERV* p_srcb, uint16_t handle);
 extern tBTA_GATTC_CHARACTERISTIC* bta_gattc_get_characteristic(uint16_t conn_id,
                                                                uint16_t handle);
-extern tBTA_GATTC_DESCRIPTOR* bta_gattc_get_descriptor(uint16_t conn_id,
-                                                       uint16_t handle);
+extern const tBTA_GATTC_DESCRIPTOR* bta_gattc_get_descriptor(uint16_t conn_id,
+                                                             uint16_t handle);
 extern void bta_gattc_get_gatt_db(uint16_t conn_id, uint16_t start_handle,
                                   uint16_t end_handle, btgatt_db_element_t** db,
                                   int* count);
