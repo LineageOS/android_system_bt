@@ -95,6 +95,9 @@ extern void btm_read_rssi_complete(uint8_t* p);
 extern void btm_read_failed_contact_counter_timeout(void* data);
 extern void btm_read_failed_contact_counter_complete(uint8_t* p);
 
+extern void btm_read_automatic_flush_timeout_timeout(void* data);
+extern void btm_read_automatic_flush_timeout_complete(uint8_t* p);
+
 extern void btm_read_tx_power_timeout(void* data);
 extern void btm_read_tx_power_complete(uint8_t* p, bool is_ble);
 

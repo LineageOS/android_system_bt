@@ -22,6 +22,7 @@
 #include "btcore/include/device_class.h"
 #include "btcore/include/uuid.h"
 #include "osi/include/allocator.h"
+#include "osi/include/compat.h"
 
 static bt_property_t* property_new_(void* val, size_t len,
                                     bt_property_type_t type);
@@ -219,9 +220,9 @@ static bt_property_t* property_new_(void* val, size_t len,
   bt_property_t* property =
       static_cast<bt_property_t*>(osi_calloc(sizeof(bt_property_t)));
 
-  property->val = osi_calloc(len);
+  property->val = osi_calloc(len + 1);
   if (type == BT_PROPERTY_BDNAME) {
-    strncpy((char*)property->val, (const char*)val, len);
+    strlcpy((char*)property->val, (const char*)val, len);
   } else {
     memcpy(property->val, val, len);
   }
