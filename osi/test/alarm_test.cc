@@ -16,6 +16,8 @@
  *
  ******************************************************************************/
 
+#include <base/message_loop/message_loop.h>
+#include <base/run_loop.h>
 #include <gtest/gtest.h>
 
 #include "AlarmTestHarness.h"
@@ -26,6 +28,9 @@
 #include "osi/include/semaphore.h"
 #include "osi/include/thread.h"
 
+using base::Closure;
+using base::TimeDelta;
+
 static semaphore_t* semaphore;
 static int cb_counter;
 static int cb_misordered_counter;
@@ -33,6 +38,26 @@ static int cb_misordered_counter;
 static const uint64_t EPSILON_MS = 50;
 
 static void msleep(uint64_t ms) { usleep(ms * 1000); }
+
+base::MessageLoop* message_loop_;
+base::RunLoop* run_loop_;
+static semaphore_t* msg_loop_ready;
+
+void message_loop_run(UNUSED_ATTR void* context) {
+  message_loop_ = new base::MessageLoop();
+  run_loop_ = new base::RunLoop();
+
+  semaphore_post(msg_loop_ready);
+  run_loop_->Run();
+
+  delete message_loop_;
+  message_loop_ = nullptr;
+
+  delete run_loop_;
+  run_loop_ = nullptr;
+}
+
+base::MessageLoop* get_message_loop() { return message_loop_; }
 
 class AlarmTest : public AlarmTestHarness {
  protected:
@@ -288,23 +313,29 @@ TEST_F(AlarmTest, test_callback_ordering) {
 }
 
 // Test whether the callbacks are involed in the expected order on a
-// separate queue.
-TEST_F(AlarmTest, test_callback_ordering_on_queue) {
+// message loop.
+TEST_F(AlarmTest, test_callback_ordering_on_mloop) {
   alarm_t* alarms[100];
-  fixed_queue_t* queue = fixed_queue_new(SIZE_MAX);
-  thread_t* thread =
-      thread_new("timers.test_callback_ordering_on_queue.thread");
 
-  alarm_register_processing_queue(queue, thread);
+  // Initialize MesageLoop, and wait till it's initialized.
+  msg_loop_ready = semaphore_new(0);
+  thread_t* message_loop_thread_ = thread_new("btu message loop");
+  if (!message_loop_thread_) {
+    FAIL() << "unable to create btu message loop thread.";
+  }
+
+  thread_post(message_loop_thread_, message_loop_run, nullptr);
+  semaphore_wait(msg_loop_ready);
+  semaphore_free(msg_loop_ready);
 
   for (int i = 0; i < 100; i++) {
     const std::string alarm_name =
-        "alarm_test.test_callback_ordering_on_queue[" + std::to_string(i) + "]";
+        "alarm_test.test_callback_ordering_on_mloop[" + std::to_string(i) + "]";
     alarms[i] = alarm_new(alarm_name.c_str());
   }
 
   for (int i = 0; i < 100; i++) {
-    alarm_set_on_queue(alarms[i], 100, ordered_cb, INT_TO_PTR(i), queue);
+    alarm_set_on_mloop(alarms[i], 100, ordered_cb, INT_TO_PTR(i));
   }
 
   for (int i = 1; i <= 100; i++) {
@@ -316,128 +347,9 @@ TEST_F(AlarmTest, test_callback_ordering_on_queue) {
 
   for (int i = 0; i < 100; i++) alarm_free(alarms[i]);
 
+  message_loop_->PostTask(FROM_HERE, run_loop_->QuitWhenIdleClosure());
+  thread_free(message_loop_thread_);
   EXPECT_FALSE(WakeLockHeld());
-
-  alarm_unregister_processing_queue(queue);
-  fixed_queue_free(queue, NULL);
-  thread_free(thread);
-}
-
-// Test whether unregistering a processing queue cancels all timers using
-// that queue.
-TEST_F(AlarmTest, test_unregister_processing_queue) {
-  alarm_t* alarms[100];
-  fixed_queue_t* queue = fixed_queue_new(SIZE_MAX);
-  thread_t* thread =
-      thread_new("timers.test_unregister_processing_queue.thread");
-
-  alarm_register_processing_queue(queue, thread);
-
-  for (int i = 0; i < 100; i++) {
-    const std::string alarm_name =
-        "alarm_test.test_unregister_processing_queue[" + std::to_string(i) +
-        "]";
-    alarms[i] = alarm_new(alarm_name.c_str());
-  }
-
-  // Schedule half of the timers to expire soon, and the rest far in the future
-  for (int i = 0; i < 50; i++) {
-    alarm_set_on_queue(alarms[i], 100, ordered_cb, INT_TO_PTR(i), queue);
-  }
-  for (int i = 50; i < 100; i++) {
-    alarm_set_on_queue(alarms[i], 1000 * 1000, ordered_cb, INT_TO_PTR(i),
-                       queue);
-  }
-
-  // Wait until half of the timers have expired
-  for (int i = 1; i <= 50; i++) {
-    semaphore_wait(semaphore);
-    EXPECT_GE(cb_counter, i);
-  }
-  EXPECT_EQ(cb_counter, 50);
-  EXPECT_EQ(cb_misordered_counter, 0);
-
-  // Test that only the expired timers are not scheduled
-  for (int i = 0; i < 50; i++) {
-    EXPECT_FALSE(alarm_is_scheduled(alarms[i]));
-  }
-  for (int i = 50; i < 100; i++) {
-    EXPECT_TRUE(alarm_is_scheduled(alarms[i]));
-  }
-
-  alarm_unregister_processing_queue(queue);
-
-  // Test that none of the timers are scheduled
-  for (int i = 0; i < 100; i++) {
-    EXPECT_FALSE(alarm_is_scheduled(alarms[i]));
-  }
-
-  for (int i = 0; i < 100; i++) {
-    alarm_free(alarms[i]);
-  }
-
-  EXPECT_FALSE(WakeLockHeld());
-
-  fixed_queue_free(queue, NULL);
-  thread_free(thread);
-}
-
-// Test whether unregistering a processing queue cancels all periodic timers
-// using that queue.
-TEST_F(AlarmTest, test_periodic_unregister_processing_queue) {
-  alarm_t* alarms[5];
-  fixed_queue_t* queue = fixed_queue_new(SIZE_MAX);
-  thread_t* thread =
-      thread_new("timers.test_periodic_unregister_processing_queue.thread");
-
-  alarm_register_processing_queue(queue, thread);
-
-  for (int i = 0; i < 5; i++) {
-    const std::string alarm_name =
-        "alarm_test.test_periodic_unregister_processing_queue[" +
-        std::to_string(i) + "]";
-    alarms[i] = alarm_new_periodic(alarm_name.c_str());
-  }
-
-  // Schedule each of the timers with different period
-  for (int i = 0; i < 5; i++) {
-    alarm_set_on_queue(alarms[i], 20 + i, cb, INT_TO_PTR(i), queue);
-  }
-  EXPECT_TRUE(WakeLockHeld());
-
-  for (int i = 1; i <= 20; i++) {
-    semaphore_wait(semaphore);
-
-    EXPECT_GE(cb_counter, i);
-    EXPECT_TRUE(WakeLockHeld());
-  }
-
-  // Test that all timers are still scheduled
-  for (int i = 0; i < 5; i++) {
-    EXPECT_TRUE(alarm_is_scheduled(alarms[i]));
-  }
-
-  alarm_unregister_processing_queue(queue);
-
-  int saved_cb_counter = cb_counter;
-
-  // Test that none of the timers are scheduled
-  for (int i = 0; i < 5; i++) {
-    EXPECT_FALSE(alarm_is_scheduled(alarms[i]));
-  }
-
-  // Sleep for 500ms and test again that the cb_counter hasn't been modified
-  usleep(500 * 1000);
-  EXPECT_TRUE(cb_counter == saved_cb_counter);
-
-  for (int i = 0; i < 5; i++) {
-    alarm_free(alarms[i]);
-  }
-
-  EXPECT_FALSE(WakeLockHeld());
-
-  fixed_queue_free(queue, NULL);
-  thread_free(thread);
 }
 
 // Try to catch any race conditions between the timer callback and |alarm_free|.

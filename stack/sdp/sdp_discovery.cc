@@ -56,8 +56,6 @@ static uint8_t* add_attr(uint8_t* p, tSDP_DISCOVERY_DB* p_db,
 /* Safety check in case we go crazy */
 #define MAX_NEST_LEVELS 5
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 /*******************************************************************************
  *
  * Function         sdpu_build_uuid_seq
@@ -171,8 +169,8 @@ static void sdp_snd_service_search_req(tCONN_CB* p_ccb, uint8_t cont_len,
   L2CA_DataWrite(p_ccb->connection_id, p_cmd);
 
   /* Start inactivity timer */
-  alarm_set_on_queue(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
-                     sdp_conn_timer_timeout, p_ccb, btu_general_alarm_queue);
+  alarm_set_on_mloop(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
+                     sdp_conn_timer_timeout, p_ccb);
 }
 
 /*******************************************************************************
@@ -486,8 +484,8 @@ static void process_service_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply) {
     L2CA_DataWrite(p_ccb->connection_id, p_msg);
 
     /* Start inactivity timer */
-    alarm_set_on_queue(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
-                       sdp_conn_timer_timeout, p_ccb, btu_general_alarm_queue);
+    alarm_set_on_mloop(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
+                       sdp_conn_timer_timeout, p_ccb);
   } else {
     sdp_disconnect(p_ccb, SDP_SUCCESS);
     return;
@@ -616,8 +614,8 @@ static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply) {
     L2CA_DataWrite(p_ccb->connection_id, p_msg);
 
     /* Start inactivity timer */
-    alarm_set_on_queue(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
-                       sdp_conn_timer_timeout, p_ccb, btu_general_alarm_queue);
+    alarm_set_on_mloop(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
+                       sdp_conn_timer_timeout, p_ccb);
 
     return;
   }

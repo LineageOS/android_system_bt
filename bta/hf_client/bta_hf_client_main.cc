@@ -31,8 +31,6 @@
 #include "osi/include/properties.h"
 #include "utl.h"
 
-extern fixed_queue_t* btu_bta_alarm_queue;
-
 static const char* bta_hf_client_evt_str(uint16_t event);
 static const char* bta_hf_client_state_str(uint8_t state);
 void bta_hf_client_cb_init(tBTA_HF_CLIENT_CB* client_cb, uint16_t handle);
@@ -391,10 +389,9 @@ void bta_hf_client_collision_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status,
     // bta_hf_client_start_server();
 
     /* Start timer to handle connection opening restart */
-    alarm_set_on_queue(client_cb->collision_timer,
+    alarm_set_on_mloop(client_cb->collision_timer,
                        BTA_HF_CLIENT_COLLISION_TIMER_MS,
-                       bta_hf_client_collision_timer_cback, (void*)client_cb,
-                       btu_bta_alarm_queue);
+                       bta_hf_client_collision_timer_cback, (void*)client_cb);
   }
 }
 

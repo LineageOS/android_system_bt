@@ -51,8 +51,6 @@
 #define BTM_INQ_DEBUG FALSE
 #endif
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 /******************************************************************************/
 /*               L O C A L    D A T A    D E F I N I T I O N S                */
 /******************************************************************************/
@@ -1121,9 +1119,9 @@ tBTM_STATUS BTM_ReadInquiryRspTxPower(tBTM_CMPL_CB* p_cb) {
   if (btm_cb.devcb.p_inq_tx_power_cmpl_cb) return (BTM_BUSY);
 
   btm_cb.devcb.p_inq_tx_power_cmpl_cb = p_cb;
-  alarm_set_on_queue(btm_cb.devcb.read_inq_tx_power_timer,
+  alarm_set_on_mloop(btm_cb.devcb.read_inq_tx_power_timer,
                      BTM_INQ_REPLY_TIMEOUT_MS, btm_read_inq_tx_power_timeout,
-                     NULL, btu_general_alarm_queue);
+                     NULL);
 
   btsnd_hcic_read_inq_tx_power();
   return (BTM_CMD_STARTED);
@@ -2076,9 +2074,8 @@ tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda, uint8_t origin,
       p_inq->p_remname_cmpl_cb = p_cb;
       p_inq->remname_bda = remote_bda;
 
-      alarm_set_on_queue(p_inq->remote_name_timer, timeout_ms,
-                         btm_inq_remote_name_timer_timeout, NULL,
-                         btu_general_alarm_queue);
+      alarm_set_on_mloop(p_inq->remote_name_timer, timeout_ms,
+                         btm_inq_remote_name_timer_timeout, NULL);
 
       /* If the database entry exists for the device, use its clock offset */
       tINQ_DB_ENT* p_i = btm_inq_db_find(remote_bda);

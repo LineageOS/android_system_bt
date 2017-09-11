@@ -42,13 +42,6 @@
 #define BTA_HF_CLIENT_AT_HOLD_TIMEOUT 41
 
 /******************************************************************************
- *
- *          DATA TYPES AND CONTAINERS
- *
- ******************************************************************************/
-extern fixed_queue_t* btu_bta_alarm_queue;
-
-/******************************************************************************
  *       SUPPORTED EVENT MESSAGES
  ******************************************************************************/
 
@@ -164,9 +157,8 @@ static void bta_hf_client_at_resp_timer_cback(void* data) {
 }
 
 static void bta_hf_client_start_at_resp_timer(tBTA_HF_CLIENT_CB* client_cb) {
-  alarm_set_on_queue(client_cb->at_cb.resp_timer, BTA_HF_CLIENT_AT_TIMEOUT,
-                     bta_hf_client_at_resp_timer_cback, (void*)client_cb,
-                     btu_bta_alarm_queue);
+  alarm_set_on_mloop(client_cb->at_cb.resp_timer, BTA_HF_CLIENT_AT_TIMEOUT,
+                     bta_hf_client_at_resp_timer_cback, (void*)client_cb);
 }
 
 static void bta_hf_client_stop_at_resp_timer(tBTA_HF_CLIENT_CB* client_cb) {
@@ -234,9 +226,8 @@ static void bta_hf_client_stop_at_hold_timer(tBTA_HF_CLIENT_CB* client_cb) {
 
 static void bta_hf_client_start_at_hold_timer(tBTA_HF_CLIENT_CB* client_cb) {
   APPL_TRACE_DEBUG("%s", __func__);
-  alarm_set_on_queue(client_cb->at_cb.hold_timer, BTA_HF_CLIENT_AT_HOLD_TIMEOUT,
-                     bta_hf_client_at_hold_timer_cback, (void*)client_cb,
-                     btu_bta_alarm_queue);
+  alarm_set_on_mloop(client_cb->at_cb.hold_timer, BTA_HF_CLIENT_AT_HOLD_TIMEOUT,
+                     bta_hf_client_at_hold_timer_cback, (void*)client_cb);
 }
 
 /******************************************************************************

@@ -242,7 +242,6 @@ const tBTM_APPL_INFO bta_security = {&bta_dm_authorize_cback,
 uint8_t g_disc_raw_data_buf[MAX_DISC_RAW_DATA_BUF];
 
 extern DEV_CLASS local_device_default_class;
-extern fixed_queue_t* btu_bta_alarm_queue;
 
 /*******************************************************************************
  *
@@ -503,16 +502,14 @@ void bta_dm_disable(UNUSED_ATTR tBTA_DM_MSG* p_data) {
      */
     APPL_TRACE_WARNING("%s BTA_DISABLE_DELAY set to %d ms", __func__,
                        BTA_DISABLE_DELAY);
-    alarm_set_on_queue(bta_dm_cb.disable_timer, BTA_DISABLE_DELAY,
-                       bta_dm_disable_conn_down_timer_cback, NULL,
-                       btu_bta_alarm_queue);
+    alarm_set_on_mloop(bta_dm_cb.disable_timer, BTA_DISABLE_DELAY,
+                       bta_dm_disable_conn_down_timer_cback, NULL);
 #else
     bta_dm_disable_conn_down_timer_cback(NULL);
 #endif
   } else {
-    alarm_set_on_queue(bta_dm_cb.disable_timer, BTA_DM_DISABLE_TIMER_MS,
-                       bta_dm_disable_timer_cback, UINT_TO_PTR(0),
-                       btu_bta_alarm_queue);
+    alarm_set_on_mloop(bta_dm_cb.disable_timer, BTA_DM_DISABLE_TIMER_MS,
+                       bta_dm_disable_timer_cback, UINT_TO_PTR(0));
   }
 }
 
@@ -548,9 +545,9 @@ static void bta_dm_disable_timer_cback(void* data) {
        need
         to be sent out to avoid jave layer disable timeout */
     if (trigger_disc) {
-      alarm_set_on_queue(
-          bta_dm_cb.disable_timer, BTA_DM_DISABLE_TIMER_RETRIAL_MS,
-          bta_dm_disable_timer_cback, UINT_TO_PTR(1), btu_bta_alarm_queue);
+      alarm_set_on_mloop(bta_dm_cb.disable_timer,
+                         BTA_DM_DISABLE_TIMER_RETRIAL_MS,
+                         bta_dm_disable_timer_cback, UINT_TO_PTR(1));
     }
   } else {
     bta_dm_cb.disabling = false;
@@ -1763,9 +1760,9 @@ void bta_dm_search_result(tBTA_DM_MSG* p_data) {
   } else {
     /* wait until link is disconnected or timeout */
     bta_dm_search_cb.sdp_results = true;
-    alarm_set_on_queue(bta_dm_search_cb.search_timer,
+    alarm_set_on_mloop(bta_dm_search_cb.search_timer,
                        1000 * (L2CAP_LINK_INACTIVITY_TOUT + 1),
-                       bta_dm_search_timer_cback, NULL, btu_bta_alarm_queue);
+                       bta_dm_search_timer_cback, NULL);
   }
 }
 
@@ -3079,9 +3076,9 @@ void bta_dm_acl_change(tBTA_DM_MSG* p_data) {
          * Start a timer to make sure that the profiles
          * get the disconnect event.
          */
-        alarm_set_on_queue(
-            bta_dm_cb.disable_timer, BTA_DM_DISABLE_CONN_DOWN_TIMER_MS,
-            bta_dm_disable_conn_down_timer_cback, NULL, btu_bta_alarm_queue);
+        alarm_set_on_mloop(bta_dm_cb.disable_timer,
+                           BTA_DM_DISABLE_CONN_DOWN_TIMER_MS,
+                           bta_dm_disable_conn_down_timer_cback, NULL);
       }
     }
     if (conn.link_down.is_removed) {
@@ -3317,9 +3314,9 @@ static void bta_dm_adjust_roles(bool delay_role_switch) {
             BTM_SwitchRole(bta_dm_cb.device_list.peer_device[i].peer_bdaddr,
                            HCI_ROLE_MASTER, NULL);
           } else {
-            alarm_set_on_queue(
-                bta_dm_cb.switch_delay_timer, BTA_DM_SWITCH_DELAY_TIMER_MS,
-                bta_dm_delay_role_switch_cback, NULL, btu_bta_alarm_queue);
+            alarm_set_on_mloop(bta_dm_cb.switch_delay_timer,
+                               BTA_DM_SWITCH_DELAY_TIMER_MS,
+                               bta_dm_delay_role_switch_cback, NULL);
           }
         }
       }

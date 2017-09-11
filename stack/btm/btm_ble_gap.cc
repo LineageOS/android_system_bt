@@ -60,8 +60,6 @@
 #define MIN_ADV_LENGTH 2
 #define BTM_VSC_CHIP_CAPABILITY_RSP_LEN_L_RELEASE 9
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 namespace {
 
 class AdvertisingCache {
@@ -455,9 +453,8 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
       if (duration != 0) {
         /* start observer timer */
         period_ms_t duration_ms = duration * 1000;
-        alarm_set_on_queue(btm_cb.ble_ctr_cb.observer_timer, duration_ms,
-                           btm_ble_observer_timer_timeout, NULL,
-                           btu_general_alarm_queue);
+        alarm_set_on_mloop(btm_cb.ble_ctr_cb.observer_timer, duration_ms,
+                           btm_ble_observer_timer_timeout, NULL);
       }
     }
   } else if (BTM_BLE_IS_OBS_ACTIVE(btm_cb.ble_ctr_cb.scan_activity)) {
@@ -1225,9 +1222,8 @@ tBTM_STATUS btm_ble_set_discoverability(uint16_t combined_mode) {
   if (p_cb->adv_mode == BTM_BLE_ADV_ENABLE) {
     p_cb->fast_adv_on = true;
     /* start initial GAP mode adv timer */
-    alarm_set_on_queue(p_cb->fast_adv_timer, BTM_BLE_GAP_FAST_ADV_TIMEOUT_MS,
-                       btm_ble_fast_adv_timer_timeout, NULL,
-                       btu_general_alarm_queue);
+    alarm_set_on_mloop(p_cb->fast_adv_timer, BTM_BLE_GAP_FAST_ADV_TIMEOUT_MS,
+                       btm_ble_fast_adv_timer_timeout, NULL);
   } else {
 #if (BLE_PRIVACY_SPT == TRUE)
     btm_ble_disable_resolving_list(BTM_BLE_RL_ADV, true);
@@ -1239,9 +1235,9 @@ tBTM_STATUS btm_ble_set_discoverability(uint16_t combined_mode) {
     BTM_TRACE_EVENT("start timer for limited disc mode duration=%d ms",
                     BTM_BLE_GAP_LIM_TIMEOUT_MS);
     /* start Tgap(lim_timeout) */
-    alarm_set_on_queue(p_cb->inquiry_timer, BTM_BLE_GAP_LIM_TIMEOUT_MS,
+    alarm_set_on_mloop(p_cb->inquiry_timer, BTM_BLE_GAP_LIM_TIMEOUT_MS,
                        btm_ble_inquiry_timer_gap_limited_discovery_timeout,
-                       NULL, btu_general_alarm_queue);
+                       NULL);
   }
   return status;
 }
@@ -1313,9 +1309,8 @@ tBTM_STATUS btm_ble_set_connectability(uint16_t combined_mode) {
   if (p_cb->adv_mode == BTM_BLE_ADV_ENABLE) {
     p_cb->fast_adv_on = true;
     /* start initial GAP mode adv timer */
-    alarm_set_on_queue(p_cb->fast_adv_timer, BTM_BLE_GAP_FAST_ADV_TIMEOUT_MS,
-                       btm_ble_fast_adv_timer_timeout, NULL,
-                       btu_general_alarm_queue);
+    alarm_set_on_mloop(p_cb->fast_adv_timer, BTM_BLE_GAP_FAST_ADV_TIMEOUT_MS,
+                       btm_ble_fast_adv_timer_timeout, NULL);
   } else {
 #if (BLE_PRIVACY_SPT == TRUE)
     btm_ble_disable_resolving_list(BTM_BLE_RL_ADV, true);
@@ -1420,9 +1415,8 @@ tBTM_STATUS btm_ble_start_inquiry(uint8_t mode, uint8_t duration) {
     if (duration != 0) {
       /* start inquiry timer */
       period_ms_t duration_ms = duration * 1000;
-      alarm_set_on_queue(p_ble_cb->inq_var.inquiry_timer, duration_ms,
-                         btm_ble_inquiry_timer_timeout, NULL,
-                         btu_general_alarm_queue);
+      alarm_set_on_mloop(p_ble_cb->inq_var.inquiry_timer, duration_ms,
+                         btm_ble_inquiry_timer_timeout, NULL);
     }
   }
 
@@ -1491,9 +1485,8 @@ tBTM_STATUS btm_ble_read_remote_name(const RawAddress& remote_bda,
   p_inq->remname_active = true;
   p_inq->remname_bda = remote_bda;
 
-  alarm_set_on_queue(p_inq->remote_name_timer, BTM_EXT_BLE_RMT_NAME_TIMEOUT_MS,
-                     btm_inq_remote_name_timer_timeout, NULL,
-                     btu_general_alarm_queue);
+  alarm_set_on_mloop(p_inq->remote_name_timer, BTM_EXT_BLE_RMT_NAME_TIMEOUT_MS,
+                     btm_inq_remote_name_timer_timeout, NULL);
 
   return BTM_CMD_STARTED;
 }
