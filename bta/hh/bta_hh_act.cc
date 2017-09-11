@@ -932,7 +932,8 @@ void bta_hh_maint_dev_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
 #if (BTA_HH_LE_INCLUDED == TRUE)
         if (bta_hh_is_le_device(p_cb, p_data->api_conn.bd_addr)) {
           dev_info.handle = bta_hh_le_add_device(p_cb, p_dev_info);
-          dev_info.status = BTA_HH_OK;
+          if (dev_info.handle != BTA_HH_INVALID_HANDLE)
+            dev_info.status = BTA_HH_OK;
         } else
 #endif
 
