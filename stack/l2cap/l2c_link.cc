@@ -42,8 +42,6 @@
 #include "l2cdefs.h"
 #include "osi/include/osi.h"
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 static bool l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
                                    tL2C_TX_COMPLETE_CB_INFO* p_cbi);
 
@@ -102,8 +100,8 @@ bool l2c_link_hci_conn_req(const RawAddress& bd_addr) {
     p_lcb->link_state = LST_CONNECTING;
 
     /* Start a timer waiting for connect complete */
-    alarm_set_on_queue(p_lcb->l2c_lcb_timer, L2CAP_LINK_CONNECT_TIMEOUT_MS,
-                       l2c_lcb_timer_timeout, p_lcb, btu_general_alarm_queue);
+    alarm_set_on_mloop(p_lcb->l2c_lcb_timer, L2CAP_LINK_CONNECT_TIMEOUT_MS,
+                       l2c_lcb_timer_timeout, p_lcb);
     return (true);
   }
 
@@ -216,12 +214,12 @@ bool l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
 
     if (p_lcb->p_echo_rsp_cb) {
       l2cu_send_peer_echo_req(p_lcb, NULL, 0);
-      alarm_set_on_queue(p_lcb->l2c_lcb_timer, L2CAP_ECHO_RSP_TIMEOUT_MS,
-                         l2c_lcb_timer_timeout, p_lcb, btu_general_alarm_queue);
+      alarm_set_on_mloop(p_lcb->l2c_lcb_timer, L2CAP_ECHO_RSP_TIMEOUT_MS,
+                         l2c_lcb_timer_timeout, p_lcb);
     } else if (!p_lcb->ccb_queue.p_first_ccb) {
       period_ms_t timeout_ms = L2CAP_LINK_STARTUP_TOUT * 1000;
-      alarm_set_on_queue(p_lcb->l2c_lcb_timer, timeout_ms,
-                         l2c_lcb_timer_timeout, p_lcb, btu_general_alarm_queue);
+      alarm_set_on_mloop(p_lcb->l2c_lcb_timer, timeout_ms,
+                         l2c_lcb_timer_timeout, p_lcb);
     }
   }
   /* Max number of acl connections.                          */
@@ -316,9 +314,9 @@ void l2c_link_sec_comp2(const RawAddress& p_bda,
         case BTM_DELAY_CHECK:
           /* start a timer - encryption change not received before L2CAP connect
            * req */
-          alarm_set_on_queue(
-              p_ccb->l2c_ccb_timer, L2CAP_DELAY_CHECK_SM4_TIMEOUT_MS,
-              l2c_ccb_timer_timeout, p_ccb, btu_general_alarm_queue);
+          alarm_set_on_mloop(p_ccb->l2c_ccb_timer,
+                             L2CAP_DELAY_CHECK_SM4_TIMEOUT_MS,
+                             l2c_ccb_timer_timeout, p_ccb);
           return;
 
         default:
@@ -590,9 +588,8 @@ void l2c_link_timeout(tL2C_LCB* p_lcb) {
       }
 
       if (start_timeout) {
-        alarm_set_on_queue(p_lcb->l2c_lcb_timer, timeout_ms,
-                           l2c_lcb_timer_timeout, p_lcb,
-                           btu_general_alarm_queue);
+        alarm_set_on_mloop(p_lcb->l2c_lcb_timer, timeout_ms,
+                           l2c_lcb_timer_timeout, p_lcb);
       }
     } else {
       /* Check in case we were flow controlled */
@@ -623,9 +620,9 @@ void l2c_info_resp_timer_timeout(void* data) {
          p_ccb = p_ccb->p_next_ccb) {
       if ((p_ccb->chnl_state == CST_ORIG_W4_SEC_COMP) ||
           (p_ccb->chnl_state == CST_TERM_W4_SEC_COMP)) {
-        alarm_set_on_queue(
-            p_lcb->info_resp_timer, L2CAP_WAIT_INFO_RSP_TIMEOUT_MS,
-            l2c_info_resp_timer_timeout, p_lcb, btu_general_alarm_queue);
+        alarm_set_on_mloop(p_lcb->info_resp_timer,
+                           L2CAP_WAIT_INFO_RSP_TIMEOUT_MS,
+                           l2c_info_resp_timer_timeout, p_lcb);
         return;
       }
     }
@@ -761,9 +758,9 @@ void l2c_link_adjust_allocation(void) {
       if ((p_lcb->link_state == LST_CONNECTED) &&
           (!list_is_empty(p_lcb->link_xmit_data_q)) &&
           (p_lcb->sent_not_acked < p_lcb->link_xmit_quota)) {
-        alarm_set_on_queue(
-            p_lcb->l2c_lcb_timer, L2CAP_LINK_FLOW_CONTROL_TIMEOUT_MS,
-            l2c_lcb_timer_timeout, p_lcb, btu_general_alarm_queue);
+        alarm_set_on_mloop(p_lcb->l2c_lcb_timer,
+                           L2CAP_LINK_FLOW_CONTROL_TIMEOUT_MS,
+                           l2c_lcb_timer_timeout, p_lcb);
       }
     }
   }
@@ -896,8 +893,8 @@ void l2c_pin_code_request(const RawAddress& bd_addr) {
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_BR_EDR);
 
   if ((p_lcb) && (!p_lcb->ccb_queue.p_first_ccb)) {
-    alarm_set_on_queue(p_lcb->l2c_lcb_timer, L2CAP_LINK_CONNECT_EXT_TIMEOUT_MS,
-                       l2c_lcb_timer_timeout, p_lcb, btu_general_alarm_queue);
+    alarm_set_on_mloop(p_lcb->l2c_lcb_timer, L2CAP_LINK_CONNECT_EXT_TIMEOUT_MS,
+                       l2c_lcb_timer_timeout, p_lcb);
   }
 }
 
@@ -1084,9 +1081,9 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, tL2C_CCB* p_ccb, BT_HDR* p_buf) {
     /* so we may need a timer to kick off this link's transmissions.         */
     if ((!list_is_empty(p_lcb->link_xmit_data_q)) &&
         (p_lcb->sent_not_acked < p_lcb->link_xmit_quota)) {
-      alarm_set_on_queue(p_lcb->l2c_lcb_timer,
+      alarm_set_on_mloop(p_lcb->l2c_lcb_timer,
                          L2CAP_LINK_FLOW_CONTROL_TIMEOUT_MS,
-                         l2c_lcb_timer_timeout, p_lcb, btu_general_alarm_queue);
+                         l2c_lcb_timer_timeout, p_lcb);
     }
   }
 }

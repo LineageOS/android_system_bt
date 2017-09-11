@@ -44,8 +44,6 @@
 
 #include "osi/include/osi.h"
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 static uint8_t find_conn_by_cid(uint16_t cid);
 static void hidh_conn_retry(uint8_t dhandle);
 
@@ -658,9 +656,9 @@ static void hidh_l2cif_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
         (hh_cb.devices[dhandle].attr_mask & HID_NORMALLY_CONNECTABLE)) {
       hh_cb.devices[dhandle].conn_tries = 0;
       period_ms_t interval_ms = HID_HOST_REPAGE_WIN * 1000;
-      alarm_set_on_queue(hh_cb.devices[dhandle].conn.process_repage_timer,
+      alarm_set_on_mloop(hh_cb.devices[dhandle].conn.process_repage_timer,
                          interval_ms, hidh_process_repage_timer_timeout,
-                         UINT_TO_PTR(dhandle), btu_general_alarm_queue);
+                         UINT_TO_PTR(dhandle));
       hh_cb.callback(dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE,
                      disc_res, NULL);
     } else
@@ -1067,9 +1065,8 @@ static void hidh_conn_retry(uint8_t dhandle) {
   p_dev->conn.conn_state = HID_CONN_STATE_UNUSED;
 #if (HID_HOST_REPAGE_WIN > 0)
   period_ms_t interval_ms = HID_HOST_REPAGE_WIN * 1000;
-  alarm_set_on_queue(p_dev->conn.process_repage_timer, interval_ms,
-                     hidh_process_repage_timer_timeout, UINT_TO_PTR(dhandle),
-                     btu_general_alarm_queue);
+  alarm_set_on_mloop(p_dev->conn.process_repage_timer, interval_ms,
+                     hidh_process_repage_timer_timeout, UINT_TO_PTR(dhandle));
 #else
   hidh_try_repage(dhandle);
 #endif

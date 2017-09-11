@@ -36,8 +36,6 @@
 #include "osi/include/osi.h"
 #include "smp_int.h"
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 #define SMP_PAIRING_REQ_SIZE 7
 #define SMP_CONFIRM_CMD_SIZE (BT_OCTET16_LEN + 1)
 #define SMP_RAND_CMD_SIZE (BT_OCTET16_LEN + 1)
@@ -342,8 +340,8 @@ bool smp_send_cmd(uint8_t cmd_code, tSMP_CB* p_cb) {
 
     if (p_buf != NULL && smp_send_msg_to_L2CAP(p_cb->pairing_bda, p_buf)) {
       sent = true;
-      alarm_set_on_queue(p_cb->smp_rsp_timer_ent, SMP_WAIT_FOR_RSP_TIMEOUT_MS,
-                         smp_rsp_timeout, NULL, btu_general_alarm_queue);
+      alarm_set_on_mloop(p_cb->smp_rsp_timer_ent, SMP_WAIT_FOR_RSP_TIMEOUT_MS,
+                         smp_rsp_timeout, NULL);
     }
   }
 

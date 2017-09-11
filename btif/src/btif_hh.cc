@@ -66,7 +66,6 @@
 #define LOGITECH_KB_MX5500_VENDOR_ID 0x046D
 #define LOGITECH_KB_MX5500_PRODUCT_ID 0xB30B
 
-extern fixed_queue_t* btu_general_alarm_queue;
 extern const int BT_UID;
 extern const int BT_GID;
 static int btif_hh_keylockstates = 0;  // The current key state of each key
@@ -412,8 +411,8 @@ void btif_hh_start_vup_timer(const RawAddress* bd_addr) {
 
   alarm_free(p_dev->vup_timer);
   p_dev->vup_timer = alarm_new("btif_hh.vup_timer");
-  alarm_set_on_queue(p_dev->vup_timer, BTIF_TIMEOUT_VUP_MS,
-                     btif_hh_timer_timeout, p_dev, btu_general_alarm_queue);
+  alarm_set_on_mloop(p_dev->vup_timer, BTIF_TIMEOUT_VUP_MS,
+                     btif_hh_timer_timeout, p_dev);
 }
 
 /*******************************************************************************

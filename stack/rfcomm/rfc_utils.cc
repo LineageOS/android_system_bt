@@ -38,8 +38,6 @@
 
 #include <string.h>
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 /*******************************************************************************
  *
  * Function         rfc_calc_fcs
@@ -228,8 +226,8 @@ void rfc_timer_start(tRFC_MCB* p_mcb, uint16_t timeout) {
   RFCOMM_TRACE_EVENT("%s - timeout:%d seconds", __func__, timeout);
 
   period_ms_t interval_ms = timeout * 1000;
-  alarm_set_on_queue(p_mcb->mcb_timer, interval_ms, rfcomm_mcb_timer_timeout,
-                     p_mcb, btu_general_alarm_queue);
+  alarm_set_on_mloop(p_mcb->mcb_timer, interval_ms, rfcomm_mcb_timer_timeout,
+                     p_mcb);
 }
 
 /*******************************************************************************
@@ -256,9 +254,8 @@ void rfc_port_timer_start(tPORT* p_port, uint16_t timeout) {
   RFCOMM_TRACE_EVENT("%s - timeout:%d seconds", __func__, timeout);
 
   period_ms_t interval_ms = timeout * 1000;
-  alarm_set_on_queue(p_port->rfc.port_timer, interval_ms,
-                     rfcomm_port_timer_timeout, p_port,
-                     btu_general_alarm_queue);
+  alarm_set_on_mloop(p_port->rfc.port_timer, interval_ms,
+                     rfcomm_port_timer_timeout, p_port);
 }
 
 /*******************************************************************************
