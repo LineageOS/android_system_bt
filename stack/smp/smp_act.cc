@@ -25,8 +25,6 @@
 #include "stack/smp/smp_int.h"
 #include "utils/include/bt_utils.h"
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 #define SMP_KEY_DIST_TYPE_MAX 4
 
 const tSMP_ACT smp_distribute_act[] = {smp_generate_ltk, smp_send_id_info,
@@ -1174,9 +1172,9 @@ void smp_key_distribution(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
          */
         if (!alarm_is_scheduled(p_cb->delayed_auth_timer_ent)) {
           SMP_TRACE_DEBUG("%s delaying auth complete.", __func__);
-          alarm_set_on_queue(
-              p_cb->delayed_auth_timer_ent, SMP_DELAYED_AUTH_TIMEOUT_MS,
-              smp_delayed_auth_complete_timeout, NULL, btu_general_alarm_queue);
+          alarm_set_on_mloop(p_cb->delayed_auth_timer_ent,
+                             SMP_DELAYED_AUTH_TIMEOUT_MS,
+                             smp_delayed_auth_complete_timeout, NULL);
         }
       } else {
         p_cb->wait_for_authorization_complete = true;

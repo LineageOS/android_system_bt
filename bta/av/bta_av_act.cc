@@ -58,8 +58,6 @@
 #define BTA_AV_ACCEPT_SIGNALLING_TIMEOUT_MS (2 * 1000) /* 2 seconds */
 #endif
 
-extern fixed_queue_t* btu_bta_alarm_queue;
-
 static void bta_av_accept_signalling_timer_cback(void* data);
 
 #ifndef AVRC_MIN_META_CMD_LEN
@@ -1429,10 +1427,10 @@ void bta_av_sig_chg(tBTA_AV_DATA* p_data) {
             /* Possible collision : need to avoid outgoing processing while the
              * timer is running */
             p_cb->p_scb[xx]->coll_mask = BTA_AV_COLL_INC_TMR;
-            alarm_set_on_queue(p_cb->accept_signalling_timer,
+            alarm_set_on_mloop(p_cb->accept_signalling_timer,
                                BTA_AV_ACCEPT_SIGNALLING_TIMEOUT_MS,
                                bta_av_accept_signalling_timer_cback,
-                               UINT_TO_PTR(xx), btu_bta_alarm_queue);
+                               UINT_TO_PTR(xx));
           }
           break;
         }
@@ -1548,10 +1546,10 @@ static void bta_av_accept_signalling_timer_cback(void* data) {
           /* We are still doing SDP. Run the timer again. */
           p_scb->coll_mask |= BTA_AV_COLL_INC_TMR;
 
-          alarm_set_on_queue(p_cb->accept_signalling_timer,
+          alarm_set_on_mloop(p_cb->accept_signalling_timer,
                              BTA_AV_ACCEPT_SIGNALLING_TIMEOUT_MS,
                              bta_av_accept_signalling_timer_cback,
-                             UINT_TO_PTR(inx), btu_bta_alarm_queue);
+                             UINT_TO_PTR(inx));
         } else {
           /* SNK did not start signalling, resume signalling process. */
           bta_av_discover_req(p_scb, NULL);
