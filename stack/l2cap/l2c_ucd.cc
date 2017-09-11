@@ -38,8 +38,6 @@
 
 #if (L2CAP_UCD_INCLUDED == TRUE)
 
-extern fixed_queue_t* btu_bta_alarm_queue;
-
 static bool l2c_ucd_connect(const RawAddress& rem_bda);
 
 /*******************************************************************************
@@ -965,14 +963,13 @@ bool l2c_ucd_process_event(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
           if (!fixed_queue_is_empty(p_ccb->p_lcb->ucd_out_sec_pending_q)) {
             /* start a timer to send next UCD packet in OPEN state */
             /* it will prevent stack overflow */
-            alarm_set_on_queue(p_ccb->l2c_ccb_timer, 0, l2c_ccb_timer_timeout,
-                               p_ccb, btu_general_alarm_queue);
+            alarm_set_on_mloop(p_ccb->l2c_ccb_timer, 0, l2c_ccb_timer_timeout,
+                               p_ccb);
           } else {
             /* start a timer for idle timeout of UCD */
             period_ms_t timeout_ms = p_ccb->fixed_chnl_idle_tout * 1000;
-            alarm_set_on_queue(p_ccb->l2c_ccb_timer, timeout_ms,
-                               l2c_ccb_timer_timeout, p_ccb,
-                               btu_general_alarm_queue);
+            alarm_set_on_mloop(p_ccb->l2c_ccb_timer, timeout_ms,
+                               l2c_ccb_timer_timeout, p_ccb);
           }
           break;
 
@@ -982,9 +979,8 @@ bool l2c_ucd_process_event(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
 
           /* start a timer for idle timeout of UCD */
           period_ms_t timeout_ms = p_ccb->fixed_chnl_idle_tout * 1000;
-          alarm_set_on_queue(p_ccb->l2c_ccb_timer, timeout_ms,
-                             l2c_ccb_timer_timeout, p_ccb,
-                             btu_general_alarm_queue);
+          alarm_set_on_mloop(p_ccb->l2c_ccb_timer, timeout_ms,
+                             l2c_ccb_timer_timeout, p_ccb);
           break;
 
         case L2CEVT_L2CA_DATA_WRITE: /* Upper layer data to send */
@@ -1015,14 +1011,13 @@ bool l2c_ucd_process_event(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
           if (!fixed_queue_is_empty(p_ccb->p_lcb->ucd_in_sec_pending_q)) {
             /* start a timer to check next UCD packet in OPEN state */
             /* it will prevent stack overflow */
-            alarm_set_on_queue(p_ccb->l2c_ccb_timer, 0, l2c_ccb_timer_timeout,
-                               p_ccb, btu_general_alarm_queue);
+            alarm_set_on_mloop(p_ccb->l2c_ccb_timer, 0, l2c_ccb_timer_timeout,
+                               p_ccb);
           } else {
             /* start a timer for idle timeout of UCD */
             period_ms_t timeout_ms = p_ccb->fixed_chnl_idle_tout * 1000;
-            alarm_set_on_queue(p_ccb->l2c_ccb_timer, timeout_ms,
-                               l2c_ccb_timer_timeout, p_ccb,
-                               btu_general_alarm_queue);
+            alarm_set_on_mloop(p_ccb->l2c_ccb_timer, timeout_ms,
+                               l2c_ccb_timer_timeout, p_ccb);
           }
           break;
 
@@ -1036,9 +1031,8 @@ bool l2c_ucd_process_event(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
 
           /* start a timer for idle timeout of UCD */
           period_ms_t timeout_ms = p_ccb->fixed_chnl_idle_tout * 1000;
-          alarm_set_on_queue(p_ccb->l2c_ccb_timer, timeout_ms,
-                             l2c_ccb_timer_timeout, p_ccb,
-                             btu_general_alarm_queue);
+          alarm_set_on_mloop(p_ccb->l2c_ccb_timer, timeout_ms,
+                             l2c_ccb_timer_timeout, p_ccb);
           break;
 
         case L2CEVT_L2CA_DATA_WRITE: /* Upper layer data to send */

@@ -39,7 +39,6 @@ using IdTxPowerStatusCb = base::Callback<void(
     uint8_t /* inst_id */, int8_t /* tx_power */, uint8_t /* status */)>;
 extern void btm_gen_resolvable_private_addr(
     base::Callback<void(uint8_t[8])> cb);
-extern fixed_queue_t* btu_general_alarm_queue;
 
 constexpr int ADV_DATA_LEN_MAX = 251;
 
@@ -118,14 +117,14 @@ static void alarm_closure_cb(void* p) {
 }
 
 // Periodic alarms are not supported, because we clean up data in callback
-void alarm_set_closure_on_queue(const tracked_objects::Location& posted_from,
-                                alarm_t* alarm, period_ms_t interval_ms,
-                                base::Closure user_task, fixed_queue_t* queue) {
+void alarm_set_closure(const tracked_objects::Location& posted_from,
+                       alarm_t* alarm, period_ms_t interval_ms,
+                       base::Closure user_task) {
   closure_data* data = new closure_data;
   data->posted_from = posted_from;
   data->user_task = std::move(user_task);
   VLOG(1) << "scheduling timer %s" << data->posted_from.ToString();
-  alarm_set_on_queue(alarm, interval_ms, alarm_closure_cb, data, queue);
+  alarm_set_on_mloop(alarm, interval_ms, alarm_closure_cb, data);
 }
 
 class BleAdvertisingManagerImpl;
@@ -275,10 +274,9 @@ class BleAdvertisingManagerImpl
                RawAddress bda) {
               p_inst->own_address = bda;
 
-              alarm_set_on_queue(p_inst->adv_raddr_timer,
+              alarm_set_on_mloop(p_inst->adv_raddr_timer,
                                  BTM_BLE_PRIVATE_ADDR_INT_MS,
-                                 btm_ble_adv_raddr_timer_timeout, p_inst,
-                                 btu_general_alarm_queue);
+                                 btm_ble_adv_raddr_timer_timeout, p_inst);
               cb.Run(p_inst->inst_id, BTM_BLE_MULTI_ADV_SUCCESS);
             },
             p_inst, cb));
@@ -537,8 +535,8 @@ class BleAdvertisingManagerImpl
                             std::move(timeout_cb), 0, 0, base::Bind(DoNothing));
 
     // schedule disable when the timeout passes
-    alarm_set_closure_on_queue(FROM_HERE, p_inst->timeout_timer, duration * 10,
-                               std::move(cb), btu_general_alarm_queue);
+    alarm_set_closure(FROM_HERE, p_inst->timeout_timer, duration * 10,
+                      std::move(cb));
   }
 
   void Enable(uint8_t inst_id, bool enable, MultiAdvCb cb, uint16_t duration,

@@ -42,8 +42,6 @@
 #include "sdp_api.h"
 #include "sdpint.h"
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 /******************************************************************************/
 /*                     G L O B A L      S D P       D A T A                   */
 /******************************************************************************/
@@ -359,9 +357,8 @@ static void sdp_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
       sdp_disc_connected(p_ccb);
     } else {
       /* Start inactivity timer */
-      alarm_set_on_queue(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
-                         sdp_conn_timer_timeout, p_ccb,
-                         btu_general_alarm_queue);
+      alarm_set_on_mloop(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
+                         sdp_conn_timer_timeout, p_ccb);
     }
   }
 }
@@ -400,9 +397,8 @@ static void sdp_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
         sdp_disc_connected(p_ccb);
       } else {
         /* Start inactivity timer */
-        alarm_set_on_queue(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
-                           sdp_conn_timer_timeout, p_ccb,
-                           btu_general_alarm_queue);
+        alarm_set_on_mloop(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
+                           sdp_conn_timer_timeout, p_ccb);
       }
     }
   } else {

@@ -35,8 +35,6 @@
 #include "btm_ble_int.h"
 #include "smp_api.h"
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 /*******************************************************************************
  *
  * Function         btm_gen_resolve_paddr_cmpl
@@ -66,9 +64,8 @@ static void btm_gen_resolve_paddr_cmpl(tSMP_ENC* p) {
 #if (BTM_BLE_CONFORMANCE_TESTING == TRUE)
     interval_ms = btm_cb.ble_ctr_cb.rpa_tout * 1000;
 #endif
-    alarm_set_on_queue(p_cb->refresh_raddr_timer, interval_ms,
-                       btm_ble_refresh_raddr_timer_timeout, NULL,
-                       btu_general_alarm_queue);
+    alarm_set_on_mloop(p_cb->refresh_raddr_timer, interval_ms,
+                       btm_ble_refresh_raddr_timer_timeout, NULL);
   } else {
     /* random address set failure */
     BTM_TRACE_DEBUG("set random address failed");
