@@ -1377,7 +1377,7 @@ bool L2CA_SetChnlDataRate(uint16_t cid, tL2CAP_CHNL_DATA_RATE tx,
  *                           L2CAP_NO_RETRANSMISSION : No retransmission
  *                           0x0002 - 0xFFFE : flush time out, if
  *                                            (flush_tout * 8) + 3 / 5) <=
- *                                             HCI_MAX_AUTO_FLUSH_TOUT
+ *                                             HCI_MAX_AUTOMATIC_FLUSH_TIMEOUT
  *                                            (in 625us slot).
  *                                    Otherwise, return false.
  *                           L2CAP_NO_AUTOMATIC_FLUSH : No automatic flush
@@ -1412,7 +1412,7 @@ bool L2CA_SetFlushTimeout(const RawAddress& bd_addr, uint16_t flush_tout) {
     temp = (((uint32_t)flush_tout * 8) + 3) / 5;
 
     /* if L2CAP flush_to within range of HCI, set HCI flush timeout */
-    if (temp > HCI_MAX_AUTO_FLUSH_TOUT) {
+    if (temp > HCI_MAX_AUTOMATIC_FLUSH_TIMEOUT) {
       L2CAP_TRACE_WARNING(
           "WARNING L2CA_SetFlushTimeout timeout(0x%x) is out of range",
           flush_tout);
