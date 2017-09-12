@@ -30,8 +30,6 @@
 
 #include "smp_int.h"
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 static void smp_tx_complete_callback(uint16_t cid, uint16_t num_pkt);
 
 static void smp_connect_callback(uint16_t channel, const RawAddress& bd_addr,
@@ -168,8 +166,8 @@ static void smp_data_received(uint16_t channel, const RawAddress& bd_addr,
   }
 
   if (bd_addr == p_cb->pairing_bda) {
-    alarm_set_on_queue(p_cb->smp_rsp_timer_ent, SMP_WAIT_FOR_RSP_TIMEOUT_MS,
-                       smp_rsp_timeout, NULL, btu_general_alarm_queue);
+    alarm_set_on_mloop(p_cb->smp_rsp_timer_ent, SMP_WAIT_FOR_RSP_TIMEOUT_MS,
+                       smp_rsp_timeout, NULL);
 
     if (cmd == SMP_OPCODE_CONFIRM) {
       SMP_TRACE_DEBUG(
@@ -301,8 +299,8 @@ static void smp_br_data_received(uint16_t channel, const RawAddress& bd_addr,
   }
 
   if (bd_addr == p_cb->pairing_bda) {
-    alarm_set_on_queue(p_cb->smp_rsp_timer_ent, SMP_WAIT_FOR_RSP_TIMEOUT_MS,
-                       smp_rsp_timeout, NULL, btu_general_alarm_queue);
+    alarm_set_on_mloop(p_cb->smp_rsp_timer_ent, SMP_WAIT_FOR_RSP_TIMEOUT_MS,
+                       smp_rsp_timeout, NULL);
 
     p_cb->rcvd_cmd_code = cmd;
     p_cb->rcvd_cmd_len = (uint8_t)p_buf->len;

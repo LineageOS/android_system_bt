@@ -39,16 +39,8 @@
 // RT priority for audio-related tasks
 #define BTU_TASK_RT_PRIORITY 1
 
-extern fixed_queue_t* btif_msg_queue;
-
-// Communication queue from bta thread to bt_workqueue.
-fixed_queue_t* btu_bta_msg_queue;
-
 // Communication queue from hci thread to bt_workqueue.
 extern fixed_queue_t* btu_hci_msg_queue;
-
-// General timer queue.
-fixed_queue_t* btu_general_alarm_queue;
 
 thread_t* bt_workqueue_thread;
 static const char* BT_WORKQUEUE_NAME = "bt_workqueue";
@@ -115,12 +107,6 @@ void btu_free_core(void) {
 void BTU_StartUp(void) {
   btu_trace_level = HCI_INITIAL_TRACE_LEVEL;
 
-  btu_bta_msg_queue = fixed_queue_new(SIZE_MAX);
-  if (btu_bta_msg_queue == NULL) goto error_exit;
-
-  btu_general_alarm_queue = fixed_queue_new(SIZE_MAX);
-  if (btu_general_alarm_queue == NULL) goto error_exit;
-
   bt_workqueue_thread = thread_new(BT_WORKQUEUE_NAME);
   if (bt_workqueue_thread == NULL) goto error_exit;
 
@@ -139,11 +125,6 @@ error_exit:;
 void BTU_ShutDown(void) {
   btu_task_shut_down(NULL);
 
-  fixed_queue_free(btu_bta_msg_queue, NULL);
-  btu_bta_msg_queue = NULL;
-
-  fixed_queue_free(btu_general_alarm_queue, NULL);
-  btu_general_alarm_queue = NULL;
 
   thread_free(bt_workqueue_thread);
 

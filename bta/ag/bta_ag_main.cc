@@ -38,8 +38,6 @@
 #define BTA_AG_DEBUG FALSE
 #endif
 
-extern fixed_queue_t* btu_bta_alarm_queue;
-
 #if (BTA_AG_DEBUG == TRUE)
 static char* bta_ag_evt_str(uint16_t event, tBTA_AG_RES result);
 static char* bta_ag_state_str(uint8_t state);
@@ -545,9 +543,8 @@ void bta_ag_collision_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status, uint8_t id,
       bta_ag_start_servers(p_scb, p_scb->reg_services);
 
     /* Start timer to han */
-    alarm_set_on_queue(p_scb->collision_timer, BTA_AG_COLLISION_TIMEOUT_MS,
-                       bta_ag_collision_timer_cback, p_scb,
-                       btu_bta_alarm_queue);
+    alarm_set_on_mloop(p_scb->collision_timer, BTA_AG_COLLISION_TIMEOUT_MS,
+                       bta_ag_collision_timer_cback, p_scb);
   }
 }
 

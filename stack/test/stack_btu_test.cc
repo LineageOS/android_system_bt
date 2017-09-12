@@ -83,7 +83,6 @@ bool module_init(module_t const*) { return true; };
 void module_clean_up(module_t const*){};
 
 thread_t* bt_workqueue_thread;
-fixed_queue_t* btu_general_alarm_queue;
 
 class BtuMessageLoopTest : public testing::Test {
  public:
@@ -93,7 +92,6 @@ class BtuMessageLoopTest : public testing::Test {
   virtual void SetUp() {
     // Initialize alarms to prevent btu_task_shut_down from crashing
     alarm_new("test alarm");
-    btu_general_alarm_queue = fixed_queue_new(SIZE_MAX);
     bt_workqueue_thread = thread_new("test alarm thread");
 
     // btu_task_start_up calls btif_transfer_context to let the stack know
