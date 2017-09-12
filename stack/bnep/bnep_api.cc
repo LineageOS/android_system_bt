@@ -26,8 +26,6 @@
 #include <string.h>
 #include "bnep_int.h"
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 /*******************************************************************************
  *
  * Function         BNEP_Init
@@ -191,8 +189,8 @@ tBNEP_RESULT BNEP_Connect(const RawAddress& p_rem_bda, tBT_UUID* src_uuid,
     }
 
     /* Start timer waiting for connect */
-    alarm_set_on_queue(p_bcb->conn_timer, BNEP_CONN_TIMEOUT_MS,
-                       bnep_conn_timer_timeout, p_bcb, btu_general_alarm_queue);
+    alarm_set_on_mloop(p_bcb->conn_timer, BNEP_CONN_TIMEOUT_MS,
+                       bnep_conn_timer_timeout, p_bcb);
   }
 
   *p_handle = p_bcb->handle;

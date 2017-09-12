@@ -43,7 +43,6 @@
 
 #include "gatt_int.h"
 
-extern fixed_queue_t* btu_general_alarm_queue;
 extern thread_t* bt_workqueue_thread;
 
 /******************************************************************************/
@@ -464,9 +463,9 @@ tBTM_STATUS BTM_ReadLocalDeviceNameFromController(
   btm_cb.devcb.p_rln_cmpl_cb = p_rln_cmpl_cback;
 
   btsnd_hcic_read_name();
-  alarm_set_on_queue(btm_cb.devcb.read_local_name_timer,
+  alarm_set_on_mloop(btm_cb.devcb.read_local_name_timer,
                      BTM_DEV_NAME_REPLY_TIMEOUT_MS, btm_read_local_name_timeout,
-                     NULL, btu_general_alarm_queue);
+                     NULL);
 
   return BTM_CMD_STARTED;
 }

@@ -1054,9 +1054,11 @@ void GATT_Deregister(tGATT_IF gatt_if) {
     other application
     deregisteration need to bed performed in an orderly fashion
     no check for now */
-  for (auto& el : *gatt_cb.srv_list_info) {
-    if (el.gatt_if == gatt_if) {
-      GATTS_StopService(el.s_hdl);
+  for (auto it = gatt_cb.srv_list_info->begin(); it != gatt_cb.srv_list_info->end(); ) {
+    if (it->gatt_if == gatt_if) {
+      GATTS_StopService(it++->s_hdl);
+    } else {
+      ++it;
     }
   }
 

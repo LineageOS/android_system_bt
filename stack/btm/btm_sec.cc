@@ -44,8 +44,6 @@
 
 #define BTM_SEC_MAX_COLLISION_DELAY (5000)
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 #ifdef APPL_AUTH_WRITE_EXCEPTION
 bool(APPL_AUTH_WRITE_EXCEPTION)(const RawAddress& bd_addr);
 #endif
@@ -3708,9 +3706,8 @@ void btm_simple_pair_complete(uint8_t* p) {
       btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_DISCONNECT);
 
       /* Change the timer to 1 second */
-      alarm_set_on_queue(btm_cb.pairing_timer, BT_1SEC_TIMEOUT_MS,
-                         btm_sec_pairing_timeout, NULL,
-                         btu_general_alarm_queue);
+      alarm_set_on_mloop(btm_cb.pairing_timer, BT_1SEC_TIMEOUT_MS,
+                         btm_sec_pairing_timeout, NULL);
     } else if (btm_cb.pairing_bda == evt_data.bd_addr) {
       /* stop the timer */
       alarm_cancel(btm_cb.pairing_timer);
@@ -3848,9 +3845,8 @@ static void btm_sec_auth_collision(uint16_t handle) {
         p_dev_rec->sec_state = 0;
 
       btm_cb.p_collided_dev_rec = p_dev_rec;
-      alarm_set_on_queue(btm_cb.sec_collision_timer, BT_1SEC_TIMEOUT_MS,
-                         btm_sec_collision_timeout, NULL,
-                         btu_general_alarm_queue);
+      alarm_set_on_mloop(btm_cb.sec_collision_timer, BT_1SEC_TIMEOUT_MS,
+                         btm_sec_collision_timeout, NULL);
     }
   }
 }
@@ -4311,9 +4307,8 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
             /* Start timer with 0 to initiate connection with new LCB */
             /* because L2CAP will delete current LCB with this event  */
             btm_cb.p_collided_dev_rec = p_dev_rec;
-            alarm_set_on_queue(btm_cb.sec_collision_timer, 0,
-                               btm_sec_connect_after_reject_timeout, NULL,
-                               btu_general_alarm_queue);
+            alarm_set_on_mloop(btm_cb.sec_collision_timer, 0,
+                               btm_sec_connect_after_reject_timeout, NULL);
           } else {
             btm_sec_change_pairing_state(BTM_PAIR_STATE_GET_REM_NAME);
             if (BTM_ReadRemoteDeviceName(p_dev_rec->bd_addr, NULL,
@@ -4371,9 +4366,8 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
         /* Start timer with 0 to initiate connection with new LCB */
         /* because L2CAP will delete current LCB with this event  */
         btm_cb.p_collided_dev_rec = p_dev_rec;
-        alarm_set_on_queue(btm_cb.sec_collision_timer, 0,
-                           btm_sec_connect_after_reject_timeout, NULL,
-                           btu_general_alarm_queue);
+        alarm_set_on_mloop(btm_cb.sec_collision_timer, 0,
+                           btm_sec_connect_after_reject_timeout, NULL);
       }
 
       return;
@@ -5650,8 +5644,8 @@ static void btm_sec_change_pairing_state(tBTM_PAIRING_STATE new_state) {
     if (old_state == BTM_PAIR_STATE_IDLE)
       l2cu_update_lcb_4_bonding(btm_cb.pairing_bda, true);
 
-    alarm_set_on_queue(btm_cb.pairing_timer, BTM_SEC_TIMEOUT_VALUE * 1000,
-                       btm_sec_pairing_timeout, NULL, btu_general_alarm_queue);
+    alarm_set_on_mloop(btm_cb.pairing_timer, BTM_SEC_TIMEOUT_VALUE * 1000,
+                       btm_sec_pairing_timeout, NULL);
   }
 }
 

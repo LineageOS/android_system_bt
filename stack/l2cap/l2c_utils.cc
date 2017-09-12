@@ -39,8 +39,6 @@
 #include "l2cdefs.h"
 #include "osi/include/allocator.h"
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 /*******************************************************************************
  *
  * Function         l2cu_can_allocate_lcb
@@ -1054,9 +1052,8 @@ void l2cu_send_peer_info_req(tL2C_LCB* p_lcb, uint16_t info_type) {
   UINT16_TO_STREAM(p, info_type);
 
   p_lcb->w4_info_rsp = true;
-  alarm_set_on_queue(p_lcb->info_resp_timer, L2CAP_WAIT_INFO_RSP_TIMEOUT_MS,
-                     l2c_info_resp_timer_timeout, p_lcb,
-                     btu_general_alarm_queue);
+  alarm_set_on_mloop(p_lcb->info_resp_timer, L2CAP_WAIT_INFO_RSP_TIMEOUT_MS,
+                     l2c_info_resp_timer_timeout, p_lcb);
 
   l2c_link_check_send_pkts(p_lcb, NULL, p_buf);
 }
@@ -1556,8 +1553,8 @@ bool l2cu_start_post_bond_timer(uint16_t handle) {
       p_lcb->link_state = LST_DISCONNECTING;
       timeout_ms = L2CAP_LINK_DISCONNECT_TIMEOUT_MS;
     }
-    alarm_set_on_queue(p_lcb->l2c_lcb_timer, timeout_ms, l2c_lcb_timer_timeout,
-                       p_lcb, btu_general_alarm_queue);
+    alarm_set_on_mloop(p_lcb->l2c_lcb_timer, timeout_ms, l2c_lcb_timer_timeout,
+                       p_lcb);
     return (true);
   }
 
@@ -2175,9 +2172,9 @@ bool l2cu_create_conn(tL2C_LCB* p_lcb, tBT_TRANSPORT transport,
 
         if (BTM_SwitchRole(p_lcb_cur->remote_bd_addr, HCI_ROLE_MASTER, NULL) ==
             BTM_CMD_STARTED) {
-          alarm_set_on_queue(
-              p_lcb->l2c_lcb_timer, L2CAP_LINK_ROLE_SWITCH_TIMEOUT_MS,
-              l2c_lcb_timer_timeout, p_lcb, btu_general_alarm_queue);
+          alarm_set_on_mloop(p_lcb->l2c_lcb_timer,
+                             L2CAP_LINK_ROLE_SWITCH_TIMEOUT_MS,
+                             l2c_lcb_timer_timeout, p_lcb);
           return (true);
         }
       }
@@ -2272,8 +2269,8 @@ bool l2cu_create_conn_after_switch(tL2C_LCB* p_lcb) {
 
   btm_acl_update_busy_level(BTM_BLI_PAGE_EVT);
 
-  alarm_set_on_queue(p_lcb->l2c_lcb_timer, L2CAP_LINK_CONNECT_TIMEOUT_MS,
-                     l2c_lcb_timer_timeout, p_lcb, btu_general_alarm_queue);
+  alarm_set_on_mloop(p_lcb->l2c_lcb_timer, L2CAP_LINK_CONNECT_TIMEOUT_MS,
+                     l2c_lcb_timer_timeout, p_lcb);
 
   return (true);
 }
@@ -2650,8 +2647,8 @@ void l2cu_no_dynamic_ccbs(tL2C_LCB* p_lcb) {
 
   if (start_timeout) {
     L2CAP_TRACE_DEBUG("%s starting IDLE timeout: %d ms", __func__, timeout_ms);
-    alarm_set_on_queue(p_lcb->l2c_lcb_timer, timeout_ms, l2c_lcb_timer_timeout,
-                       p_lcb, btu_general_alarm_queue);
+    alarm_set_on_mloop(p_lcb->l2c_lcb_timer, timeout_ms, l2c_lcb_timer_timeout,
+                       p_lcb);
   } else {
     alarm_cancel(p_lcb->l2c_lcb_timer);
   }
