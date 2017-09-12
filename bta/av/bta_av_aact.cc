@@ -841,7 +841,7 @@ void bta_av_role_res(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
         av_open.bd_addr = p_scb->peer_addr;
         av_open.chnl = p_scb->chnl;
         av_open.hndl = p_scb->hndl;
-        start.status = BTA_AV_FAIL_ROLE;
+        av_open.status = BTA_AV_FAIL_ROLE;
         if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SRC)
           av_open.sep = AVDT_TSEP_SNK;
         else if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SNK)
