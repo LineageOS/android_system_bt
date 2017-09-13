@@ -4649,7 +4649,14 @@ void btm_sec_disconnected(uint16_t handle, uint8_t reason) {
     p_dev_rec->sec_flags &=
         ~(BTM_SEC_AUTHORIZED | BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED |
           BTM_SEC_ROLE_SWITCHED | BTM_SEC_16_DIGIT_PIN_AUTHED);
+
+    // Remove temporary key.
+    if (p_dev_rec->bond_type == BOND_TYPE_TEMPORARY)
+      p_dev_rec->sec_flags &= ~(BTM_SEC_LINK_KEY_KNOWN);
   }
+
+  BTM_TRACE_EVENT("%s after update sec_flags=0x%x", __func__,
+                  p_dev_rec->sec_flags);
 
   if (p_dev_rec->sec_state == BTM_SEC_STATE_DISCONNECTING_BOTH) {
     p_dev_rec->sec_state = (transport == BT_TRANSPORT_LE)
@@ -4670,9 +4677,6 @@ void btm_sec_disconnected(uint16_t handle, uint8_t reason) {
     (*p_callback)(&p_dev_rec->bd_addr, transport, p_dev_rec->p_ref_data,
                   BTM_ERR_PROCESSING);
   }
-
-  BTM_TRACE_EVENT("%s after update sec_flags=0x%x", __func__,
-                  p_dev_rec->sec_flags);
 }
 
 /*******************************************************************************
