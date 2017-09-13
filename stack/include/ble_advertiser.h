@@ -108,9 +108,9 @@ class BleAdvertisingManager {
           timeout_cb) = 0;
 
   /* Register an advertising instance, status will be returned in |cb|
-  * callback, with assigned id, if operation succeeds. Instance is freed when
-  * advertising is disabled by calling |BTM_BleDisableAdvInstance|, or when any
-  * of the operations fails. */
+   * callback, with assigned id, if operation succeeds. Instance is freed when
+   * advertising is disabled by calling |BTM_BleDisableAdvInstance|, or when any
+   * of the operations fails. */
   virtual void RegisterAdvertiser(
       base::Callback<void(uint8_t /* inst_id */, uint8_t /* status */)>) = 0;
 
@@ -145,6 +145,13 @@ class BleAdvertisingManager {
 
   /*  This function disable a Multi-ADV instance */
   virtual void Unregister(uint8_t inst_id) = 0;
+
+  /* When resolving list is used, we need to suspend and resume all advertising
+   * instances for the time of operation. Suspend() saves current state,
+   * Resume() resumes the advertising.
+   */
+  virtual void Suspend() = 0;
+  virtual void Resume() = 0;
 
   /* This method is a member of BleAdvertiserHciInterface, and is exposed here
    * just for tests. It should never be called from upper layers*/

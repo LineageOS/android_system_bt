@@ -16,6 +16,7 @@
  *
  ******************************************************************************/
 
+#include <array>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -23,15 +24,19 @@
 #include "stack/btm/ble_advertiser_hci_interface.h"
 #include "stack/include/ble_advertiser.h"
 
-using ::testing::_;
 using ::testing::Args;
+using ::testing::Contains;
 using ::testing::ElementsAreArray;
 using ::testing::Exactly;
+using ::testing::Field;
 using ::testing::IsEmpty;
 using ::testing::SaveArg;
+using ::testing::SizeIs;
+using ::testing::_;
 using base::Bind;
 using status_cb = BleAdvertiserHciInterface::status_cb;
 using parameters_cb = BleAdvertiserHciInterface::parameters_cb;
+using SetEnableData = BleAdvertiserHciInterface::SetEnableData;
 
 const int num_adv_instances = 16;
 
@@ -102,7 +107,7 @@ class AdvertiserHciMock : public BleAdvertiserHciInterface {
   MOCK_METHOD6(SetScanResponseData,
                void(uint8_t, uint8_t, uint8_t, uint8_t, uint8_t*, status_cb));
   MOCK_METHOD3(SetRandomAddress, void(uint8_t, const RawAddress&, status_cb));
-  MOCK_METHOD5(Enable, void(uint8_t, uint8_t, uint16_t, uint8_t, status_cb));
+  MOCK_METHOD3(Enable, void(uint8_t, std::vector<SetEnableData>, status_cb));
   MOCK_METHOD5(SetPeriodicAdvertisingParameters,
                void(uint8_t, uint16_t, uint16_t, uint16_t, status_cb));
   MOCK_METHOD5(SetPeriodicAdvertisingData,
@@ -240,8 +245,9 @@ TEST_F(BleAdvertisingManagerTest, test_android_flow) {
       .Times(1)
       .WillOnce(SaveArg<7>(&set_params_cb));
   BleAdvertisingManager::Get()->SetParameters(
-      advertiser_id, &params, Bind(&BleAdvertisingManagerTest::SetParametersCb,
-                                   base::Unretained(this)));
+      advertiser_id, &params,
+      Bind(&BleAdvertisingManagerTest::SetParametersCb,
+           base::Unretained(this)));
   ::testing::Mock::VerifyAndClearExpectations(hci_mock.get());
 
   // we are a truly gracious fake controller, let the command succeed!
@@ -261,9 +267,13 @@ TEST_F(BleAdvertisingManagerTest, test_android_flow) {
   EXPECT_EQ(BTM_BLE_MULTI_ADV_SUCCESS, set_data_status);
 
   status_cb enable_cb;
-  EXPECT_CALL(*hci_mock, Enable(0x01 /* enable */, advertiser_id, _, _, _))
+  EXPECT_CALL(*hci_mock,
+              Enable(0x01 /* enable */,
+                     AllOf(SizeIs(1), Contains(Field(&SetEnableData::handle,
+                                                     advertiser_id))),
+                     _))
       .Times(1)
-      .WillOnce(SaveArg<4>(&enable_cb));
+      .WillOnce(SaveArg<2>(&enable_cb));
   BleAdvertisingManager::Get()->Enable(
       advertiser_id, true,
       Bind(&BleAdvertisingManagerTest::EnableCb, base::Unretained(this)), 0, 0,
@@ -275,9 +285,13 @@ TEST_F(BleAdvertisingManagerTest, test_android_flow) {
 
   /* fake controller should be advertising */
 
-  EXPECT_CALL(*hci_mock, Enable(0x00 /* disable */, advertiser_id, _, _, _))
+  EXPECT_CALL(*hci_mock,
+              Enable(0x00 /* disable */,
+                     AllOf(SizeIs(1), Contains(Field(&SetEnableData::handle,
+                                                     advertiser_id))),
+                     _))
       .Times(1)
-      .WillOnce(SaveArg<4>(&enable_cb));
+      .WillOnce(SaveArg<2>(&enable_cb));
   status_cb remove_cb;
   EXPECT_CALL(*hci_mock, RemoveAdvertisingSet(_, _))
       .Times(1)
@@ -308,8 +322,9 @@ TEST_F(BleAdvertisingManagerTest, test_adv_data_filling) {
       .Times(1)
       .WillOnce(SaveArg<7>(&set_params_cb));
   BleAdvertisingManager::Get()->SetParameters(
-      advertiser_id, &params, Bind(&BleAdvertisingManagerTest::SetParametersCb,
-                                   base::Unretained(this)));
+      advertiser_id, &params,
+      Bind(&BleAdvertisingManagerTest::SetParametersCb,
+           base::Unretained(this)));
   ::testing::Mock::VerifyAndClearExpectations(hci_mock.get());
 
   // let the set parameters command succeed!
@@ -357,8 +372,9 @@ TEST_F(BleAdvertisingManagerTest, test_adv_data_not_filling) {
       .Times(1)
       .WillOnce(SaveArg<7>(&set_params_cb));
   BleAdvertisingManager::Get()->SetParameters(
-      advertiser_id, &params, Bind(&BleAdvertisingManagerTest::SetParametersCb,
-                                   base::Unretained(this)));
+      advertiser_id, &params,
+      Bind(&BleAdvertisingManagerTest::SetParametersCb,
+           base::Unretained(this)));
   ::testing::Mock::VerifyAndClearExpectations(hci_mock.get());
 
   // let the set parameters command succeed!
@@ -389,23 +405,37 @@ TEST_F(BleAdvertisingManagerTest, test_reenabling) {
   EXPECT_EQ(0, reg_inst_id);
 
   uint8_t advertiser_id = reg_inst_id;
-
   status_cb enable_cb;
-  EXPECT_CALL(*hci_mock, Enable(0x01 /* enable */, advertiser_id, _, _, _))
+  EXPECT_CALL(*hci_mock,
+              Enable(0x01 /* enable */,
+                     AllOf(SizeIs(1), Contains(Field(&SetEnableData::handle,
+                                                     advertiser_id))),
+                     _))
       .Times(1)
-      .WillOnce(SaveArg<4>(&enable_cb));
-  BleAdvertisingManager::Get()->OnAdvertisingSetTerminated(advertiser_id, 0x00,
-                                                           0x05, 0x00);
+      .WillOnce(SaveArg<2>(&enable_cb));
+  BleAdvertisingManager::Get()->Enable(advertiser_id, true, Bind(DoNothing), 0,
+                                       0, Bind(DoNothing));
+  enable_cb.Run(0);
   ::testing::Mock::VerifyAndClearExpectations(hci_mock.get());
 
+  EXPECT_CALL(*hci_mock,
+              Enable(0x01 /* enable */,
+                     AllOf(SizeIs(1), Contains(Field(&SetEnableData::handle,
+                                                     advertiser_id))),
+                     _))
+      .Times(1)
+      .WillOnce(SaveArg<2>(&enable_cb));
+  BleAdvertisingManager::Get()->OnAdvertisingSetTerminated(advertiser_id, 0x00,
+                                                           0x01ed, 0x00);
   enable_cb.Run(0);
+  ::testing::Mock::VerifyAndClearExpectations(hci_mock.get());
 }
 
 /* Make sure that instance is not reenabled if it's already disabled */
 TEST_F(BleAdvertisingManagerTest, test_reenabling_disabled_instance) {
   uint8_t advertiser_id = 1;  // any unregistered value
 
-  EXPECT_CALL(*hci_mock, Enable(_, _, _, _, _)).Times(Exactly(0));
+  EXPECT_CALL(*hci_mock, Enable(_, _, _)).Times(Exactly(0));
   BleAdvertisingManager::Get()->OnAdvertisingSetTerminated(advertiser_id, 0x00,
                                                            0x05, 0x00);
   ::testing::Mock::VerifyAndClearExpectations(hci_mock.get());
@@ -439,9 +469,9 @@ TEST_F(BleAdvertisingManagerTest, test_start_advertising_set) {
   EXPECT_CALL(*hci_mock, SetScanResponseData(_, _, _, _, _, _))
       .Times(1)
       .WillOnce(SaveArg<5>(&set_scan_resp_data_cb));
-  EXPECT_CALL(*hci_mock, Enable(0x01 /* enable */, _, _, _, _))
+  EXPECT_CALL(*hci_mock, Enable(0x01 /* enable */, _, _))
       .Times(1)
-      .WillOnce(SaveArg<4>(&enable_cb));
+      .WillOnce(SaveArg<2>(&enable_cb));
 
   BleAdvertisingManager::Get()->StartAdvertisingSet(
       Bind(&BleAdvertisingManagerTest::StartAdvertisingSetCb,
@@ -465,9 +495,13 @@ TEST_F(BleAdvertisingManagerTest, test_start_advertising_set) {
 
   // Disable advertiser
   status_cb disable_cb;
-  EXPECT_CALL(*hci_mock, Enable(0x00 /* disable */, advertiser_id, _, _, _))
+  EXPECT_CALL(*hci_mock,
+              Enable(0x00 /* disable */,
+                     AllOf(SizeIs(1), Contains(Field(&SetEnableData::handle,
+                                                     advertiser_id))),
+                     _))
       .Times(1)
-      .WillOnce(SaveArg<4>(&disable_cb));
+      .WillOnce(SaveArg<2>(&disable_cb));
   status_cb remove_cb;
   EXPECT_CALL(*hci_mock, RemoveAdvertisingSet(advertiser_id, _))
       .Times(1)
@@ -500,8 +534,9 @@ TEST_F(BleAdvertisingManagerTest, test_start_advertising_set_params_failed) {
       .Times(Exactly(0));
 
   BleAdvertisingManager::Get()->StartAdvertising(
-      advertiser_id, Bind(&BleAdvertisingManagerTest::StartAdvertisingCb,
-                          base::Unretained(this)),
+      advertiser_id,
+      Bind(&BleAdvertisingManagerTest::StartAdvertisingCb,
+           base::Unretained(this)),
       &params, adv_data, scan_resp, 0, base::Callback<void(uint8_t)>());
   ::testing::Mock::VerifyAndClearExpectations(hci_mock.get());
 
@@ -677,9 +712,16 @@ TEST_F(BleAdvertisingManagerTest,
   EXPECT_CALL(*hci_mock, SetScanResponseData(_, _, _, _, _, _))
       .Times(1)
       .WillOnce(SaveArg<5>(&set_scan_resp_data_cb));
-  EXPECT_CALL(*hci_mock, Enable(0x01 /* enable */, _, _, maxExtAdvEvents, _))
+  EXPECT_CALL(
+      *hci_mock,
+      Enable(
+          0x01 /* enable */,
+          AllOf(SizeIs(1),
+                Contains(Field(&SetEnableData::max_extended_advertising_events,
+                               maxExtAdvEvents))),
+          _))
       .Times(1)
-      .WillOnce(SaveArg<4>(&enable_cb));
+      .WillOnce(SaveArg<2>(&enable_cb));
 
   BleAdvertisingManager::Get()->StartAdvertisingSet(
       Bind(&BleAdvertisingManagerTest::StartAdvertisingSetCb,
@@ -715,9 +757,16 @@ TEST_F(BleAdvertisingManagerTest,
   EXPECT_CALL(*hci_mock, SetRandomAddress(_, _, _))
       .Times(1)
       .WillOnce(SaveArg<2>(&set_address_cb));
-  EXPECT_CALL(*hci_mock, Enable(0x01 /* enable */, _, _, maxExtAdvEvents, _))
+  EXPECT_CALL(
+      *hci_mock,
+      Enable(
+          0x01 /* enable */,
+          AllOf(SizeIs(1),
+                Contains(Field(&SetEnableData::max_extended_advertising_events,
+                               maxExtAdvEvents))),
+          _))
       .Times(1)
-      .WillOnce(SaveArg<4>(&enable_cb));
+      .WillOnce(SaveArg<2>(&enable_cb));
   BleAdvertisingManager::Get()->Enable(
       advertiser_id, true,
       Bind(&BleAdvertisingManagerTest::EnableCb, base::Unretained(this)), 0,
@@ -728,9 +777,13 @@ TEST_F(BleAdvertisingManagerTest,
 
   // Disable advertiser
   status_cb disable_cb;
-  EXPECT_CALL(*hci_mock, Enable(0x00 /* disable */, advertiser_id, _, _, _))
+  EXPECT_CALL(*hci_mock,
+              Enable(0x00 /* disable */,
+                     AllOf(SizeIs(1), Contains(Field(&SetEnableData::handle,
+                                                     advertiser_id))),
+                     _))
       .Times(1)
-      .WillOnce(SaveArg<4>(&disable_cb));
+      .WillOnce(SaveArg<2>(&disable_cb));
   status_cb remove_cb;
   EXPECT_CALL(*hci_mock, RemoveAdvertisingSet(advertiser_id, _))
       .Times(1)
@@ -783,9 +836,9 @@ TEST_F(BleAdvertisingManagerTest, test_periodic_adv_disable_on_unregister) {
   EXPECT_CALL(*hci_mock, SetPeriodicAdvertisingEnable(0x01 /* enable */, _, _))
       .Times(1)
       .WillOnce(SaveArg<2>(&set_periodic_enable_cb));
-  EXPECT_CALL(*hci_mock, Enable(0x01 /* enable */, _, _, _, _))
+  EXPECT_CALL(*hci_mock, Enable(0x01 /* enable */, _, _))
       .Times(1)
-      .WillOnce(SaveArg<4>(&enable_cb));
+      .WillOnce(SaveArg<2>(&enable_cb));
 
   BleAdvertisingManager::Get()->StartAdvertisingSet(
       Bind(&BleAdvertisingManagerTest::StartAdvertisingSetCb,
@@ -812,9 +865,13 @@ TEST_F(BleAdvertisingManagerTest, test_periodic_adv_disable_on_unregister) {
 
   // Unregister advertiser - should disable periodic advertising
   status_cb disable_cb;
-  EXPECT_CALL(*hci_mock, Enable(0x00 /* disable */, advertiser_id, _, _, _))
+  EXPECT_CALL(*hci_mock,
+              Enable(0x00 /* disable */,
+                     AllOf(SizeIs(1), Contains(Field(&SetEnableData::handle,
+                                                     advertiser_id))),
+                     _))
       .Times(1)
-      .WillOnce(SaveArg<4>(&disable_cb));
+      .WillOnce(SaveArg<2>(&disable_cb));
   status_cb disable_periodic_cb;
   EXPECT_CALL(*hci_mock, SetPeriodicAdvertisingEnable(0x00 /* disable */,
                                                       advertiser_id, _))
@@ -830,4 +887,189 @@ TEST_F(BleAdvertisingManagerTest, test_periodic_adv_disable_on_unregister) {
   disable_cb.Run(0);
   disable_periodic_cb.Run(0);
   remove_cb.Run(0);
+}
+
+TEST_F(BleAdvertisingManagerTest, test_suspend_resume) {
+  for (int i = 0; i < 10; i++) {
+    BleAdvertisingManager::Get()->RegisterAdvertiser(Bind(
+        &BleAdvertisingManagerTest::RegistrationCb, base::Unretained(this)));
+    EXPECT_EQ(BTM_BLE_MULTI_ADV_SUCCESS, reg_status);
+    EXPECT_EQ(i, reg_inst_id);
+  }
+
+  std::array<int, 3> enabled = {{1, 3, 9}};
+
+  for (int advertiser_id : enabled) {
+    status_cb enable_cb;
+    EXPECT_CALL(*hci_mock,
+                Enable(0x01 /* enable */,
+                       AllOf(SizeIs(1), Contains(Field(&SetEnableData::handle,
+                                                       advertiser_id))),
+                       _))
+        .Times(1)
+        .WillOnce(SaveArg<2>(&enable_cb));
+    BleAdvertisingManager::Get()->Enable(
+        advertiser_id, true,
+        Bind(&BleAdvertisingManagerTest::EnableCb, base::Unretained(this)), 0,
+        0, base::Callback<void(uint8_t)>());
+    enable_cb.Run(0);
+    ::testing::Mock::VerifyAndClearExpectations(hci_mock.get());
+  }
+
+  // we have some advertisers registered, three advertising.
+
+  // Call to Suspend() should disable all running advertisers
+  status_cb disable_cb;
+  EXPECT_CALL(
+      *hci_mock,
+      Enable(0x00 /* disable */,
+             AllOf(SizeIs(3), Contains(Field(&SetEnableData::handle, 1)),
+                   Contains(Field(&SetEnableData::handle, 3)),
+                   Contains(Field(&SetEnableData::handle, 9))),
+             _))
+      .Times(1)
+      .WillOnce(SaveArg<2>(&disable_cb));
+
+  BleAdvertisingManager::Get()->Suspend();
+
+  disable_cb.Run(0);
+  ::testing::Mock::VerifyAndClearExpectations(hci_mock.get());
+
+  // Call to Resume() should re-enable advertisers
+  status_cb enable_cb;
+  EXPECT_CALL(
+      *hci_mock,
+      Enable(0x01 /* enable */,
+             AllOf(SizeIs(3), Contains(Field(&SetEnableData::handle, 1)),
+                   Contains(Field(&SetEnableData::handle, 3)),
+                   Contains(Field(&SetEnableData::handle, 9))),
+             _))
+      .Times(1)
+      .WillOnce(SaveArg<2>(&enable_cb));
+
+  BleAdvertisingManager::Get()->Resume();
+
+  enable_cb.Run(0);
+
+  ::testing::Mock::VerifyAndClearExpectations(hci_mock.get());
+}
+
+/* This test makes sure that conectable advertisment with timeout will get it's
+ * duration and maxExtAdvEvents updated, when it's terminated due to incoming
+ * connection.*/
+TEST_F(BleAdvertisingManagerTest, test_duration_update_during_timeout) {
+  std::vector<uint8_t> adv_data;
+  std::vector<uint8_t> scan_resp;
+  tBTM_BLE_ADV_PARAMS params;
+  params.advertising_event_properties = 0x1 /* connectable */;
+  params.adv_int_min = params.adv_int_max = 0xA0 /* 100ms */;
+  tBLE_PERIODIC_ADV_PARAMS periodic_params;
+  periodic_params.enable = false;
+  std::vector<uint8_t> periodic_data;
+
+  uint8_t maxExtAdvEvents = 50;
+  uint16_t duration = 500 /* 5s */;
+
+  parameters_cb set_params_cb;
+  status_cb set_address_cb;
+  status_cb set_data_cb;
+  status_cb set_scan_resp_data_cb;
+  status_cb enable_cb;
+  EXPECT_CALL(*hci_mock, SetParameters1(_, _, _, _, _, _, _, _, _)).Times(1);
+  EXPECT_CALL(*hci_mock, SetParameters2(_, _, _, _, _, _, _, _))
+      .Times(1)
+      .WillOnce(SaveArg<7>(&set_params_cb));
+  EXPECT_CALL(*hci_mock, SetRandomAddress(_, _, _))
+      .Times(1)
+      .WillOnce(SaveArg<2>(&set_address_cb));
+  EXPECT_CALL(*hci_mock, SetAdvertisingData(_, _, _, _, _, _))
+      .Times(1)
+      .WillOnce(SaveArg<5>(&set_data_cb));
+  EXPECT_CALL(*hci_mock, SetScanResponseData(_, _, _, _, _, _))
+      .Times(1)
+      .WillOnce(SaveArg<5>(&set_scan_resp_data_cb));
+  EXPECT_CALL(
+      *hci_mock,
+      Enable(0x01 /* enable */,
+             AllOf(SizeIs(1),
+                   Contains(AllOf(
+                       Field(&SetEnableData::max_extended_advertising_events,
+                             maxExtAdvEvents),
+                       Field(&SetEnableData::duration, duration)))),
+             _))
+      .Times(1)
+      .WillOnce(SaveArg<2>(&enable_cb));
+
+  BleAdvertisingManager::Get()->StartAdvertisingSet(
+      Bind(&BleAdvertisingManagerTest::StartAdvertisingSetCb,
+           base::Unretained(this)),
+      &params, adv_data, scan_resp, &periodic_params, periodic_data, duration,
+      maxExtAdvEvents, Bind(DoNothing2));
+
+  // we are a truly gracious fake controller, let the commands succeed!
+  int selected_tx_power = -15;
+  set_params_cb.Run(0, selected_tx_power);
+  set_address_cb.Run(0);
+  set_data_cb.Run(0);
+  set_scan_resp_data_cb.Run(0);
+  enable_cb.Run(0);
+  EXPECT_EQ(BTM_BLE_MULTI_ADV_SUCCESS, start_advertising_set_status);
+  EXPECT_EQ(selected_tx_power, start_advertising_set_tx_power);
+  int advertiser_id = start_advertising_set_advertiser_id;
+  ::testing::Mock::VerifyAndClearExpectations(hci_mock.get());
+
+  // ... advertising ...
+
+  sleep(1);
+
+  std::vector<SetEnableData> setEnableData;
+  // Set terminated because we received connect request! Should trigger
+  // re-enabling of the set
+  EXPECT_CALL(*hci_mock, Enable(0x01 /* enable */, _, _))
+      .Times(1)
+      .WillOnce(DoAll(SaveArg<1>(&setEnableData), SaveArg<2>(&enable_cb)));
+
+  BleAdvertisingManager::Get()->OnAdvertisingSetTerminated(
+      0x00 /* Advertising successfully ended with a connection being created */,
+      advertiser_id, 0x01fe /* conn_handle*/, 20 /* completed ExtAdvEvents */);
+  enable_cb.Run(0);
+
+  ::testing::Mock::VerifyAndClearExpectations(hci_mock.get());
+
+  uint16_t new_duration = setEnableData[0].duration;
+  uint8_t new_extAdvEvents = setEnableData[0].max_extended_advertising_events;
+
+  // Sleep is not super-accurate, so assume the recomputed timeouts are around
+  // 4s +/- 100ms
+  EXPECT_NEAR((duration - new_duration), 100 /*4s */, 10);
+  EXPECT_NEAR((maxExtAdvEvents - new_extAdvEvents), 10, 1);
+
+  // Disable advertiser
+  status_cb disable_cb;
+  EXPECT_CALL(*hci_mock,
+              Enable(0x00 /* disable */,
+                     AllOf(SizeIs(1), Contains(Field(&SetEnableData::handle,
+                                                     advertiser_id))),
+                     _))
+      .Times(1)
+      .WillOnce(SaveArg<2>(&disable_cb));
+  status_cb remove_cb;
+  EXPECT_CALL(*hci_mock, RemoveAdvertisingSet(advertiser_id, _))
+      .Times(1)
+      .WillOnce(SaveArg<1>(&remove_cb));
+  BleAdvertisingManager::Get()->Unregister(advertiser_id);
+  ::testing::Mock::VerifyAndClearExpectations(hci_mock.get());
+
+  disable_cb.Run(0);
+  remove_cb.Run(0);
+}
+
+extern void testRecomputeTimeout1();
+extern void testRecomputeTimeout2();
+extern void testRecomputeTimeout3();
+
+TEST_F(BleAdvertisingManagerTest, test_recompute_timeout) {
+  testRecomputeTimeout1();
+  testRecomputeTimeout2();
+  testRecomputeTimeout3();
 }
