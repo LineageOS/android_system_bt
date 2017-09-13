@@ -5524,11 +5524,11 @@ static void btm_sec_collision_timeout(UNUSED_ATTR void* data) {
 
 /*******************************************************************************
  *
- * Function         btm_sec_link_key_request
+ * Function         btm_send_link_key_notif
  *
- * Description      This function is called when controller requests link key
+ * Description      Call the link key callback.
  *
- * Returns          Pointer to the record or NULL
+ * Returns          void
  *
  ******************************************************************************/
 static void btm_send_link_key_notif(tBTM_SEC_DEV_REC* p_dev_rec) {
