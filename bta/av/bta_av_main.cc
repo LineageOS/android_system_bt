@@ -247,7 +247,9 @@ static void bta_av_api_enable(tBTA_AV_DATA* p_data) {
   }
 
   /* call callback with enable event */
-  (*bta_av_cb.p_cback)(BTA_AV_ENABLE_EVT, (tBTA_AV*)&enable);
+  tBTA_AV bta_av_data;
+  bta_av_data.enable = enable;
+  (*bta_av_cb.p_cback)(BTA_AV_ENABLE_EVT, &bta_av_data);
 }
 
 /*******************************************************************************
@@ -678,7 +680,9 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
   } while (0);
 
   /* call callback with register event */
-  (*bta_av_cb.p_cback)(BTA_AV_REGISTER_EVT, (tBTA_AV*)&registr);
+  tBTA_AV bta_av_data;
+  bta_av_data.registr = registr;
+  (*bta_av_cb.p_cback)(BTA_AV_REGISTER_EVT, &bta_av_data);
 }
 
 /*******************************************************************************
