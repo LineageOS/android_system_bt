@@ -19,6 +19,7 @@ package android.bluetooth;
 import android.bluetooth.IBluetoothCallback;
 import android.bluetooth.IBluetoothStateChangeCallback;
 import android.bluetooth.BluetoothActivityEnergyInfo;
+import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.OobData;
 import android.os.ParcelUuid;
@@ -42,6 +43,7 @@ interface IBluetooth
     ParcelUuid[] getUuids();
     boolean setName(in String name);
     String getName();
+    boolean setBluetoothClass(in BluetoothClass bluetoothClass);
 
     int getScanMode();
     boolean setScanMode(int mode, int duration);
