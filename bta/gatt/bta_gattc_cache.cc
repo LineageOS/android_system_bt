@@ -1218,10 +1218,10 @@ static void bta_gattc_get_gatt_db_impl(tBTA_GATTC_SERV* p_srvc_cb,
       tBTA_GATTC_INCLUDED_SVC* p_isvc =
           (tBTA_GATTC_INCLUDED_SVC*)list_node(isn);
 
-      bta_gattc_fill_gatt_db_el(curr_db_attr, BTGATT_DB_INCLUDED_SERVICE,
-                                p_isvc->handle, 0 /* s_handle */,
-                                0 /* e_handle */, p_isvc->handle, p_isvc->uuid,
-                                0 /* property */);
+      bta_gattc_fill_gatt_db_el(
+          curr_db_attr, BTGATT_DB_INCLUDED_SERVICE, p_isvc->handle,
+          p_isvc->included_service ? p_isvc->included_service->s_handle : 0,
+          0 /* e_handle */, p_isvc->handle, p_isvc->uuid, 0 /* property */);
       curr_db_attr++;
     }
   }
