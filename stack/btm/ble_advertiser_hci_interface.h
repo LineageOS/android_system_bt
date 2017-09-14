@@ -20,6 +20,7 @@
 #define BLE_ADVERTISER_HCI_INTERFACE_H
 
 #include <base/bind.h>
+#include <vector>
 #include "stack/include/bt_types.h"
 
 /* This class is an abstraction of HCI commands used for managing
@@ -70,9 +71,25 @@ class BleAdvertiserHciInterface {
   virtual void SetRandomAddress(uint8_t handle,
                                 const RawAddress& random_address,
                                 status_cb command_complete) = 0;
-  virtual void Enable(uint8_t enable, uint8_t handle, uint16_t duration,
-                      uint8_t max_extended_advertising_events,
+
+  struct SetEnableData {
+    uint8_t handle;
+    uint16_t duration;
+    uint8_t max_extended_advertising_events;
+  };
+  virtual void Enable(uint8_t enable, std::vector<SetEnableData> sets,
                       status_cb command_complete) = 0;
+
+  void Enable(uint8_t enable, uint8_t handle, uint16_t duration,
+              uint8_t max_extended_advertising_events,
+              status_cb command_complete) {
+    std::vector<SetEnableData> enableData;
+    enableData.emplace_back(SetEnableData{
+        .handle = handle,
+        .duration = duration,
+        .max_extended_advertising_events = max_extended_advertising_events});
+    Enable(enable, enableData, command_complete);
+  };
   virtual void SetPeriodicAdvertisingParameters(uint8_t handle,
                                                 uint16_t periodic_adv_int_min,
                                                 uint16_t periodic_adv_int_max,
