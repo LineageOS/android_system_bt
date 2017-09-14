@@ -305,7 +305,7 @@ void bta_gatts_delete_service(tBTA_GATTS_SRVC_CB* p_srvc_cb,
   tBTA_GATTS cb_data;
 
   cb_data.srvc_oper.server_if = p_rcb->gatt_if;
-  // cb_data.srvc_oper.service_id = p_msg->api_add_incl_srvc.hdr.layer_specific;
+  cb_data.srvc_oper.service_id = p_srvc_cb->service_id;
 
   if (GATTS_DeleteService(p_rcb->gatt_if, &p_srvc_cb->service_uuid,
                           p_srvc_cb->service_id)) {
