@@ -25,6 +25,7 @@
 #include "bt_target.h"
 
 #if (BLE_PRIVACY_SPT == TRUE)
+#include "ble_advertiser.h"
 #include "bt_types.h"
 #include "btm_int.h"
 #include "btu.h"
@@ -526,6 +527,13 @@ bool btm_ble_suspend_resolving_list_activity(void) {
     p_ble_cb->suspended_rl_state |= BTM_BLE_RL_ADV;
   }
 
+  // If it's non-VSC implementation, suspend
+  if (BleAdvertisingManager::Get() &&
+      (controller_get_interface()->supports_ble_extended_advertising() ||
+       BTM_BleMaxMultiAdvInstanceCount() == 0)) {
+    BleAdvertisingManager::Get()->Suspend();
+  }
+
   if (BTM_BLE_IS_SCAN_ACTIVE(p_ble_cb->scan_activity)) {
     btm_ble_stop_scan();
     p_ble_cb->suspended_rl_state |= BTM_BLE_RL_SCAN;
@@ -552,6 +560,13 @@ void btm_ble_resume_resolving_list_activity(void) {
   tBTM_BLE_CB* p_ble_cb = &btm_cb.ble_ctr_cb;
 
   if (p_ble_cb->suspended_rl_state & BTM_BLE_RL_ADV) btm_ble_start_adv();
+
+  // If it's non-VSC implementation, resume
+  if (BleAdvertisingManager::Get() &&
+      (controller_get_interface()->supports_ble_extended_advertising() ||
+       BTM_BleMaxMultiAdvInstanceCount() == 0)) {
+    BleAdvertisingManager::Get()->Resume();
+  }
 
   if (p_ble_cb->suspended_rl_state & BTM_BLE_RL_SCAN) btm_ble_start_scan();
 
