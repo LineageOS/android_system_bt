@@ -708,6 +708,7 @@ static bt_status_t request_last_voice_tag_number(const bt_bdaddr_t* bd_addr) {
 static void cleanup(void) {
   BTIF_TRACE_EVENT("%s", __func__);
 
+  btif_queue_cleanup(UUID_SERVCLASS_HF_HANDSFREE);
   if (bt_hf_client_callbacks) {
     btif_disable_service(BTA_HFP_HS_SERVICE_ID);
     bt_hf_client_callbacks = NULL;

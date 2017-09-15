@@ -119,3 +119,25 @@ cc_test {
     ],
     cflags: ["-DBUILDCFG"],
 }
+
+// btif profile queue unit tests for target
+// ========================================================
+cc_test {
+    name: "net_test_btif_profile_queue",
+    defaults: ["fluoride_defaults"],
+    include_dirs: btifCommonIncludes,
+    srcs: [
+      "src/btif_profile_queue.cc",
+      "test/btif_profile_queue_test.cc"
+    ],
+    shared_libs: [
+        "liblog",
+        "libhardware",
+        "libcutils",
+    ],
+    static_libs: [
+        "libbluetooth-types",
+        "libosi",
+    ],
+    cflags: ["-DBUILDCFG"],
+}
