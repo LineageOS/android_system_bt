@@ -19,7 +19,6 @@
 
 #include "btif/include/btif_profile_queue.h"
 #include "stack_manager.h"
-#include "types/raw_address.h"
 
 static bool sStackRunning;
 
@@ -54,8 +53,8 @@ class BtifProfileQueueTest : public ::testing::Test {
  public:
   static const uint16_t kTestUuid1 = 0x9527;
   static const uint16_t kTestUuid2 = 0x819F;
-  static const RawAddress kTestAddr1;
-  static const RawAddress kTestAddr2;
+  static const bt_bdaddr_t kTestAddr1;
+  static const bt_bdaddr_t kTestAddr2;
 
  protected:
   void SetUp() override {
@@ -65,20 +64,21 @@ class BtifProfileQueueTest : public ::testing::Test {
   void TearDown() override { btif_queue_release(); };
 };
 
-const RawAddress BtifProfileQueueTest::kTestAddr1{
+const bt_bdaddr_t BtifProfileQueueTest::kTestAddr1{
     {0x11, 0x22, 0x33, 0x44, 0x55, 0x66}};
-const RawAddress BtifProfileQueueTest::kTestAddr2{
+const bt_bdaddr_t BtifProfileQueueTest::kTestAddr2{
     {0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56}};
 
-static bt_status_t test_connect_cb(RawAddress* bda, uint16_t uuid) {
+static bt_status_t test_connect_cb(bt_bdaddr_t* bda, uint16_t uuid) {
   sResult = UNKNOWN;
-  if (*bda == BtifProfileQueueTest::kTestAddr1) {
+  if (!memcmp(bda, &BtifProfileQueueTest::kTestAddr1, sizeof(bt_bdaddr_t))) {
     if (uuid == BtifProfileQueueTest::kTestUuid1) {
       sResult = UUID1_ADDR1;
     } else if (uuid == BtifProfileQueueTest::kTestUuid2) {
       sResult = UUID2_ADDR1;
     }
-  } else if (*bda == BtifProfileQueueTest::kTestAddr2) {
+  } else if (!memcmp(bda, &BtifProfileQueueTest::kTestAddr2,
+                     sizeof(bt_bdaddr_t))) {
     if (uuid == BtifProfileQueueTest::kTestUuid1) {
       sResult = UUID1_ADDR2;
     } else if (uuid == BtifProfileQueueTest::kTestUuid2) {

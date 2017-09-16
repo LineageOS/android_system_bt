@@ -32,6 +32,7 @@
 #include <string.h>
 
 #include "bt_common.h"
+#include "btcore/include/bdaddr.h"
 #include "btif_common.h"
 #include "osi/include/allocator.h"
 #include "osi/include/list.h"
@@ -79,8 +80,14 @@ static void queue_int_add(connect_node_t* p_param) {
   for (const list_node_t* node = list_begin(connect_queue);
        node != list_end(connect_queue); node = list_next(node)) {
     if (((connect_node_t*)list_node(node))->uuid == p_param->uuid) {
-      LOG_INFO(LOG_TAG, "%s dropping duplicate connect request for uuid: %04x",
-               __func__, p_param->uuid);
+      bdstr_t bd_addr_str;
+      LOG_ERROR(
+          LOG_TAG,
+          "%s dropping duplicate connection request UUID=%04X, "
+          "bd_addr=%s, busy=%d",
+          __func__, p_param->uuid,
+          bdaddr_to_string(&p_param->bda, bd_addr_str, sizeof(bd_addr_str)),
+          p_param->busy);
       return;
     }
   }
@@ -111,10 +118,12 @@ static void queue_int_cleanup(uint16_t* p_uuid) {
     connection_request = (connect_node_t*)list_node(node);
     node = list_next(node);
     if (connection_request->uuid == uuid) {
+      bdstr_t bd_addr_str;
       LOG_INFO(LOG_TAG,
                "%s: removing connection request UUID=%04X, bd_addr=%s, busy=%d",
                __func__, connection_request->uuid,
-               connection_request->bda.ToString().c_str(),
+               bdaddr_to_string(&connection_request->bda, bd_addr_str,
+                                sizeof(bd_addr_str)),
                connection_request->busy);
       list_remove(connect_queue, connection_request);
     }
@@ -198,6 +207,12 @@ bt_status_t btif_queue_connect_next(void) {
 
   connect_node_t* p_head = (connect_node_t*)list_front(connect_queue);
 
+  bdstr_t bd_addr_str;
+  LOG_INFO(LOG_TAG,
+           "%s: executing connection request UUID=%04X, bd_addr=%s, busy=%d",
+           __func__, p_head->uuid,
+           bdaddr_to_string(&p_head->bda, bd_addr_str, sizeof(bd_addr_str)),
+           p_head->busy);
   // If the queue is currently busy, we return success anyway,
   // since the connection has been queued...
   if (p_head->busy) return BT_STATUS_SUCCESS;

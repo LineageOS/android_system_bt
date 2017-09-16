@@ -136,7 +136,7 @@ cc_test {
         "libcutils",
     ],
     static_libs: [
-        "libbluetooth-types",
+        "libbtcore",
         "libosi",
     ],
     cflags: ["-DBUILDCFG"],
