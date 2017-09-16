@@ -41,7 +41,7 @@ using base::StringPrintf;
 #define GATT_L2C_CFG_CFM_DONE (1 << 1)
 
 /* minimum GATT MTU size over BR/EDR link
-*/
+ */
 #define GATT_MIN_BR_MTU_SIZE 48
 
 /******************************************************************************/
@@ -490,8 +490,18 @@ static void gatt_channel_congestion(tGATT_TCB* p_tcb, bool congested) {
   }
 }
 
-void gatt_notify_phy_updated(tGATT_TCB* p_tcb, uint8_t tx_phy, uint8_t rx_phy,
-                             uint8_t status) {
+void gatt_notify_phy_updated(uint8_t status, uint16_t handle, uint8_t tx_phy,
+                             uint8_t rx_phy) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
+  if (!p_dev_rec) {
+    BTM_TRACE_WARNING("%s: No Device Found!", __func__);
+    return;
+  }
+
+  tGATT_TCB* p_tcb =
+      gatt_find_tcb_by_addr(p_dev_rec->ble.pseudo_addr, BT_TRANSPORT_LE);
+  if (p_tcb == NULL) return;
+
   for (int i = 0; i < GATT_MAX_APPS; i++) {
     tGATT_REG* p_reg = &gatt_cb.cl_rcb[i];
     if (p_reg->in_use && p_reg->app_cb.p_phy_update_cb) {
