@@ -2140,17 +2140,7 @@ void btm_ble_process_phy_update_pkt(uint8_t len, uint8_t* data) {
   STREAM_TO_UINT8(tx_phy, p);
   STREAM_TO_UINT8(rx_phy, p);
 
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
-  if (!p_dev_rec) {
-    BTM_TRACE_WARNING("%s: No Device Found!", __func__);
-    return;
-  }
-
-  tGATT_TCB* p_tcb =
-      gatt_find_tcb_by_addr(p_dev_rec->ble.pseudo_addr, BT_TRANSPORT_LE);
-  if (p_tcb == NULL) return;
-
-  gatt_notify_phy_updated(p_tcb, tx_phy, rx_phy, status);
+  gatt_notify_phy_updated(status, handle, tx_phy, rx_phy);
 }
 
 /*******************************************************************************

@@ -500,9 +500,8 @@ extern void gatt_sr_send_req_callback(uint16_t conn_id, uint32_t trans_id,
 extern uint32_t gatt_sr_enqueue_cmd(tGATT_TCB& tcb, uint8_t op_code,
                                     uint16_t handle);
 extern bool gatt_cancel_open(tGATT_IF gatt_if, const RawAddress& bda);
-extern void gatt_notify_phy_updated(tGATT_TCB* p_tcb, uint8_t tx_phy,
-                                    uint8_t rx_phy, uint8_t status);
-
+extern void gatt_notify_phy_updated(uint8_t status, uint16_t handle,
+                                    uint8_t tx_phy, uint8_t rx_phy);
 /*   */
 
 extern tGATT_REG* gatt_get_regcb(tGATT_IF gatt_if);
