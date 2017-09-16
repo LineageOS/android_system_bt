@@ -47,6 +47,8 @@
 extern bool aes_cipher_msg_auth_code(BT_OCTET16 key, uint8_t* input,
                                      uint16_t length, uint16_t tlen,
                                      uint8_t* p_signature);
+extern void gatt_notify_phy_updated(uint8_t status, uint16_t handle,
+                                    uint8_t tx_phy, uint8_t rx_phy);
 
 /******************************************************************************/
 /* External Function to be called by other modules                            */
@@ -871,7 +873,7 @@ void BTM_BleReadPhy(
       !controller_get_interface()->supports_ble_coded_phy()) {
     BTM_TRACE_ERROR("%s failed, request not supported in local controller!",
                     __func__);
-    cb.Run(0, 0, HCI_ERR_ILLEGAL_COMMAND);
+    cb.Run(0, 0, GATT_REQ_NOT_SUPPORTED);
     return;
   }
 
@@ -958,21 +960,23 @@ void BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
       "= 0x%04x",
       __func__, all_phys, tx_phys, rx_phys, phy_options);
 
+  uint16_t handle = p_acl->hci_handle;
+
   // checking if local controller supports it!
   if (!controller_get_interface()->supports_ble_2m_phy() &&
       !controller_get_interface()->supports_ble_coded_phy()) {
     BTM_TRACE_ERROR("%s failed, request not supported in local controller!",
                     __func__);
+    gatt_notify_phy_updated(GATT_REQ_NOT_SUPPORTED, handle, tx_phys, rx_phys);
     return;
   }
 
   if (!HCI_LE_2M_PHY_SUPPORTED(p_acl->peer_le_features) &&
       !HCI_LE_CODED_PHY_SUPPORTED(p_acl->peer_le_features)) {
     BTM_TRACE_ERROR("%s failed, peer does not support request", __func__);
+    gatt_notify_phy_updated(GATT_REQ_NOT_SUPPORTED, handle, tx_phys, rx_phys);
     return;
   }
-
-  uint16_t handle = p_acl->hci_handle;
 
   const uint8_t len = HCIC_PARAM_SIZE_BLE_SET_PHY;
   uint8_t data[len];
