@@ -7,6 +7,7 @@ known_tests=(
   net_test_btcore
   net_test_bta
   net_test_btif
+  net_test_btif_profile_queue
   net_test_device
   net_test_hci
   net_test_stack
