@@ -111,13 +111,14 @@ void mca_dcb_free_data(UNUSED_ATTR tMCA_DCB* p_dcb, tMCA_DCB_EVT* p_data) {
  *
  ******************************************************************************/
 void mca_dcb_do_disconn(tMCA_DCB* p_dcb, UNUSED_ATTR tMCA_DCB_EVT* p_data) {
-  tMCA_CLOSE close;
-
   if ((p_dcb->lcid == 0) || (L2CA_DisconnectReq(p_dcb->lcid) == false)) {
+    tMCA_CLOSE close;
     close.param = MCA_INT;
     close.reason = L2CAP_DISC_OK;
     close.lcid = 0;
-    mca_dcb_event(p_dcb, MCA_DCB_TC_CLOSE_EVT, (tMCA_DCB_EVT*)&close);
+    tMCA_DCB_EVT mca_dcb_evt;
+    mca_dcb_evt.close = close;
+    mca_dcb_event(p_dcb, MCA_DCB_TC_CLOSE_EVT, &mca_dcb_evt);
   }
 }
 

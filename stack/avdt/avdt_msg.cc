@@ -1623,8 +1623,9 @@ void avdt_msg_ind(tAVDT_CCB* p_ccb, BT_HDR* p_buf) {
   if (ok) {
     /* if it's a ccb event send to ccb */
     if (evt & AVDT_CCB_MKR) {
-      avdt_ccb_event(p_ccb, (uint8_t)(evt & ~AVDT_CCB_MKR),
-                     (tAVDT_CCB_EVT*)&msg);
+      tAVDT_CCB_EVT avdt_ccb_evt;
+      avdt_ccb_evt.msg = msg;
+      avdt_ccb_event(p_ccb, (uint8_t)(evt & ~AVDT_CCB_MKR), &avdt_ccb_evt);
     }
     /* if it's a scb event */
     else {
@@ -1643,7 +1644,9 @@ void avdt_msg_ind(tAVDT_CCB* p_ccb, BT_HDR* p_buf) {
       if (evt) {
         p_scb = avdt_scb_by_hdl(scb_hdl);
         if (p_scb != NULL) {
-          avdt_scb_event(p_scb, evt, (tAVDT_SCB_EVT*)&msg);
+          tAVDT_SCB_EVT avdt_scb_evt;
+          avdt_scb_evt.msg = msg;
+          avdt_scb_event(p_scb, evt, &avdt_scb_evt);
         }
       }
     }
