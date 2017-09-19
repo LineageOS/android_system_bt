@@ -243,7 +243,7 @@ class BleAdvertisingManagerImpl
 
           /* set it to controller */
           hci_interface->SetRandomAddress(
-              p_inst->inst_id, p_inst->own_address,
+              p_inst->inst_id, bda,
               Bind(
                   [](AdvertisingInstance* p_inst, RawAddress bda,
                      MultiAdvCb configuredCb, uint8_t status) {
