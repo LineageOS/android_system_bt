@@ -17,12 +17,12 @@
  ******************************************************************************/
 
 /*****************************************************************************
-*
-*  Name:           avct_bcb_act.cc
-*
-*  Description:    This module contains action functions of the browsing control
-*                  state machine.
-*
+ *
+ *  Name:           avct_bcb_act.cc
+ *
+ *  Description:    This module contains action functions of the browsing
+ *                  control state machine.
+ *
  *****************************************************************************/
 
 #include <string.h>

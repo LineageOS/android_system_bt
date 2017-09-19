@@ -444,17 +444,17 @@ void mca_tc_data_ind(tMCA_TC_TBL* p_tbl, BT_HDR* p_buf) {
       p_buf->layer_specific = rej_rsp_code;
       /* forward the request/response to state machine */
       mca_ccb_event(p_ccb, event, (tMCA_CCB_EVT*)p_buf);
-    } /* got a valid ccb */
-    else
+    } else {
       osi_free(p_buf);
-  }
-  /* else send event to dcb */
-  else {
+    }
+  } else {
+    /* send event to dcb */
     p_dcb = mca_dcb_by_hdl(p_tbl->cb_idx);
     if (p_dcb != NULL) {
       mca_dcb_event(p_dcb, MCA_DCB_TC_DATA_EVT, (tMCA_DCB_EVT*)p_buf);
-    } else
+    } else {
       osi_free(p_buf);
+    }
   }
 }
 
