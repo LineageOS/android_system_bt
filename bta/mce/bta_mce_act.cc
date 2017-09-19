@@ -113,8 +113,9 @@ static void bta_mce_search_cback(uint16_t result, void* user_data) {
     evt_data.status = BTA_MCE_SUCCESS;
   }
 
-  bta_mce_cb.p_dm_cback(BTA_MCE_MAS_DISCOVERY_COMP_EVT, (tBTA_MCE*)&evt_data,
-                        user_data);
+  tBTA_MCE bta_mce;
+  bta_mce.mas_disc_comp = evt_data;
+  bta_mce_cb.p_dm_cback(BTA_MCE_MAS_DISCOVERY_COMP_EVT, &bta_mce, user_data);
 }
 
 /*******************************************************************************
@@ -129,7 +130,9 @@ static void bta_mce_search_cback(uint16_t result, void* user_data) {
 void bta_mce_enable(tBTA_MCE_MSG* p_data) {
   tBTA_MCE_STATUS status = BTA_MCE_SUCCESS;
   bta_mce_cb.p_dm_cback = p_data->enable.p_cback;
-  bta_mce_cb.p_dm_cback(BTA_MCE_ENABLE_EVT, (tBTA_MCE*)&status, NULL);
+  tBTA_MCE bta_mce;
+  bta_mce.status = status;
+  bta_mce_cb.p_dm_cback(BTA_MCE_ENABLE_EVT, &bta_mce, NULL);
 }
 
 /*******************************************************************************
@@ -153,9 +156,11 @@ void bta_mce_get_remote_mas_instances(tBTA_MCE_MSG* p_data) {
   if (bta_mce_cb.sdp_active != BTA_MCE_SDP_ACT_NONE) {
     /* SDP is still in progress */
     status = BTA_MCE_BUSY;
-    if (bta_mce_cb.p_dm_cback)
-      bta_mce_cb.p_dm_cback(BTA_MCE_MAS_DISCOVERY_COMP_EVT, (tBTA_MCE*)&status,
-                            NULL);
+    if (bta_mce_cb.p_dm_cback) {
+      tBTA_MCE bta_mce;
+      bta_mce.status = status;
+      bta_mce_cb.p_dm_cback(BTA_MCE_MAS_DISCOVERY_COMP_EVT, &bta_mce, NULL);
+    }
 
     return;
   }
@@ -172,9 +177,11 @@ void bta_mce_get_remote_mas_instances(tBTA_MCE_MSG* p_data) {
     bta_mce_cb.sdp_active = BTA_MCE_SDP_ACT_NONE;
 
     /* failed to start SDP. report the failure right away */
-    if (bta_mce_cb.p_dm_cback)
-      bta_mce_cb.p_dm_cback(BTA_MCE_MAS_DISCOVERY_COMP_EVT, (tBTA_MCE*)&status,
-                            NULL);
+    if (bta_mce_cb.p_dm_cback) {
+      tBTA_MCE bta_mce;
+      bta_mce.status = status;
+      bta_mce_cb.p_dm_cback(BTA_MCE_MAS_DISCOVERY_COMP_EVT, &bta_mce, NULL);
+    }
   }
   /*
   else report the result when the cback is called
