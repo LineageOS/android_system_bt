@@ -293,7 +293,7 @@ static int uipc_check_fd_locked(tUIPC_CH_ID ch_id) {
     }
 
     if (uipc_main.ch[ch_id].fd < 0) {
-      BTIF_TRACE_ERROR("FAILED TO ACCEPT CH %d (%s)", ch_id, strerror(errno));
+      BTIF_TRACE_ERROR("FAILED TO ACCEPT CH %d", ch_id);
       return -1;
     }
 
