@@ -26,8 +26,6 @@
 #include "btcore/include/hal_util.h"
 #include "osi/include/log.h"
 
-#if defined(OS_GENERIC)
-
 // TODO(armansito): All logging macros should include __func__ by default (see
 // Bug: 22671731)
 #define HULOGERR(fmt, args...)                                          \
@@ -38,7 +36,7 @@
 // generic manner as opposed to hard-coding it here.
 static const char kBluetoothLibraryName[] = "libbluetooth.default.so";
 
-static int load_bt_library(const struct hw_module_t** module) {
+int hal_util_load_bt_library(const struct hw_module_t** module) {
   const char* id = BT_STACK_MODULE_ID;
   const char* sym = HAL_MODULE_INFO_SYM_AS_STR;
   struct hw_module_t* hmi = nullptr;
@@ -78,14 +76,4 @@ error:
   if (handle) dlclose(handle);
 
   return -EINVAL;
-}
-
-#endif  // defined(OS_GENERIC)
-
-int hal_util_load_bt_library(const struct hw_module_t** module) {
-#if defined(OS_GENERIC)
-  return load_bt_library(module);
-#else  // !defined(OS_GENERIC)
-  return hw_get_module(BT_STACK_MODULE_ID, module);
-#endif  // defined(OS_GENERIC)
 }
