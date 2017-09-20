@@ -14,7 +14,6 @@ cc_test {
     header_libs: ["libhardware_headers"],
     shared_libs: [
         "liblog",
-        "libhardware",
         "libcutils",
     ],
     static_libs: [
@@ -37,9 +36,9 @@ cc_test {
         "rfcomm/rfcomm_test.cc",
         "rfcomm/rfcomm_unittest.cc",
     ],
+    header_libs: [ "libhardware_headers" ],
     shared_libs: [
         "liblog",
-        "libhardware",
         "libcutils",
     ],
     static_libs: [
