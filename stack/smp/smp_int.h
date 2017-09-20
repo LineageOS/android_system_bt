@@ -221,6 +221,7 @@ typedef struct {
 typedef union {
   uint8_t* p_data; /* uint8_t type data pointer */
   tSMP_KEY key;
+  uint8_t status;
   uint16_t reason;
   uint32_t passkey;
   tSMP_OOB_DATA_TYPE req_oob_type;
@@ -341,7 +342,8 @@ extern tSMP_CB smp_cb;
 extern void smp_init(void);
 
 /* smp main */
-extern void smp_sm_event(tSMP_CB* p_cb, tSMP_EVENT event, void* p_data);
+extern void smp_sm_event(tSMP_CB* p_cb, tSMP_EVENT event,
+                         tSMP_INT_DATA* p_data);
 
 extern void smp_proc_sec_request(tSMP_CB* p_cb, tSMP_INT_DATA* p_data);
 extern void smp_set_fail_nc(bool enable);
@@ -366,14 +368,12 @@ extern void smp_f5_calc_chk(uint8_t* w, uint8_t* n1, uint8_t* n2, uint8_t* a1,
 extern void smp_f6_calc_chk(uint8_t* w, uint8_t* n1, uint8_t* n2, uint8_t* r,
                             uint8_t* iocap, uint8_t* a1, uint8_t* a2,
                             uint8_t* mac);
-/* smp_main */
-extern void smp_sm_event(tSMP_CB* p_cb, tSMP_EVENT event, void* p_data);
 extern tSMP_STATE smp_get_state(void);
 extern void smp_set_state(tSMP_STATE state);
 
 /* smp_br_main */
 extern void smp_br_state_machine_event(tSMP_CB* p_cb, tSMP_BR_EVENT event,
-                                       void* p_data);
+                                       tSMP_INT_DATA* p_data);
 extern tSMP_BR_STATE smp_get_br_state(void);
 extern void smp_set_br_state(tSMP_BR_STATE state);
 
