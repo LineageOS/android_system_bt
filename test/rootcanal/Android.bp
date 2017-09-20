@@ -22,12 +22,12 @@ cc_binary {
         "service.cc",
     ],
 
+    header_libs: ["libhardware_headers"],
     shared_libs: [
         "android.hardware.bluetooth@1.0",
         "libbase",
         "libchrome",
         "libcutils",
-        "libhardware",
         "libhwbinder",
         "libhidlbase",
         "libhidltransport",
@@ -64,12 +64,12 @@ cc_library_shared {
         "bluetooth_hci.cc",
     ],
 
+    header_libs: ["libhardware_headers"],
     shared_libs: [
         "android.hardware.bluetooth@1.0",
         "libbase",
         "libchrome",
         "libcutils",
-        "libhardware",
         "libhidlbase",
         "libhidltransport",
         "liblog",
