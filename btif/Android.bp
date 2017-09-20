@@ -106,9 +106,9 @@ cc_test {
     defaults: ["fluoride_defaults"],
     include_dirs: btifCommonIncludes,
     srcs: ["test/btif_storage_test.cc"],
+    header_libs: ["libhardware_headers"],
     shared_libs: [
         "liblog",
-        "libhardware",
         "libcutils",
     ],
     static_libs: [
@@ -131,9 +131,9 @@ cc_test {
       "src/btif_profile_queue.cc",
       "test/btif_profile_queue_test.cc"
     ],
+    header_libs: ["libhardware_headers"],
     shared_libs: [
         "liblog",
-        "libhardware",
         "libcutils",
     ],
     static_libs: [
