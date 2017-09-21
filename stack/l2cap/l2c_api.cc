@@ -44,8 +44,6 @@
 
 using base::StringPrintf;
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 /*******************************************************************************
  *
  * Function         L2CA_Register
@@ -934,8 +932,8 @@ bool L2CA_Ping(const RawAddress& p_bd_addr, tL2CA_ECHO_RSP_CB* p_callback) {
   if (p_lcb->link_state == LST_CONNECTED) {
     l2cu_adj_id(p_lcb, L2CAP_ADJ_BRCM_ID); /* Make sure not using Broadcom ID */
     l2cu_send_peer_echo_req(p_lcb, NULL, 0);
-    alarm_set_on_queue(p_lcb->l2c_lcb_timer, L2CAP_ECHO_RSP_TIMEOUT_MS,
-                       l2c_lcb_timer_timeout, p_lcb, btu_general_alarm_queue);
+    alarm_set_on_mloop(p_lcb->l2c_lcb_timer, L2CAP_ECHO_RSP_TIMEOUT_MS,
+                       l2c_lcb_timer_timeout, p_lcb);
   }
 
   return (true);

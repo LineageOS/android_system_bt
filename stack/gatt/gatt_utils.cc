@@ -80,8 +80,6 @@ static const uint8_t base_uuid[LEN_UUID_128] = {
     0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x00, 0x00, 0x80,
     0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 /*******************************************************************************
  *
  * Function         gatt_free_pending_ind
@@ -670,8 +668,8 @@ void gatt_start_rsp_timer(tGATT_CLCB* p_clcb) {
   if (p_clcb->gatt_rsp_timer_ent == NULL) {
     p_clcb->gatt_rsp_timer_ent = alarm_new("gatt.gatt_rsp_timer_ent");
   }
-  alarm_set_on_queue(p_clcb->gatt_rsp_timer_ent, timeout_ms, gatt_rsp_timeout,
-                     p_clcb, btu_general_alarm_queue);
+  alarm_set_on_mloop(p_clcb->gatt_rsp_timer_ent, timeout_ms, gatt_rsp_timeout,
+                     p_clcb);
 }
 
 /*******************************************************************************
@@ -684,9 +682,8 @@ void gatt_start_rsp_timer(tGATT_CLCB* p_clcb) {
  *
  ******************************************************************************/
 void gatt_start_conf_timer(tGATT_TCB* p_tcb) {
-  alarm_set_on_queue(p_tcb->conf_timer, GATT_WAIT_FOR_RSP_TIMEOUT_MS,
-                     gatt_indication_confirmation_timeout, p_tcb,
-                     btu_general_alarm_queue);
+  alarm_set_on_mloop(p_tcb->conf_timer, GATT_WAIT_FOR_RSP_TIMEOUT_MS,
+                     gatt_indication_confirmation_timeout, p_tcb);
 }
 
 /*******************************************************************************
@@ -700,8 +697,8 @@ void gatt_start_conf_timer(tGATT_TCB* p_tcb) {
  ******************************************************************************/
 void gatt_start_ind_ack_timer(tGATT_TCB& tcb) {
   /* start notification cache timer */
-  alarm_set_on_queue(tcb.ind_ack_timer, GATT_WAIT_FOR_RSP_TIMEOUT_MS,
-                     gatt_ind_ack_timeout, &tcb, btu_general_alarm_queue);
+  alarm_set_on_mloop(tcb.ind_ack_timer, GATT_WAIT_FOR_RSP_TIMEOUT_MS,
+                     gatt_ind_ack_timeout, &tcb);
 }
 
 /*******************************************************************************

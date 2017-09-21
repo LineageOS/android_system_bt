@@ -147,8 +147,6 @@ extern uint8_t btif_rc_get_connected_peer_handle(const RawAddress& peer_addr);
 extern void btif_rc_check_handle_pending_play(const RawAddress& peer_addr,
                                               bool bSendToApp);
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 /*****************************************************************************
  * Local helper functions
  *****************************************************************************/
@@ -387,9 +385,8 @@ static bool btif_av_state_idle_handler(btif_sm_event_t event, void* p_data) {
        */
 
       BTIF_TRACE_DEBUG("BTA_AV_RC_OPEN_EVT received w/o AV");
-      alarm_set_on_queue(av_open_on_rc_timer, BTIF_TIMEOUT_AV_OPEN_ON_RC_MS,
-                         btif_initiate_av_open_timer_timeout, NULL,
-                         btu_general_alarm_queue);
+      alarm_set_on_mloop(av_open_on_rc_timer, BTIF_TIMEOUT_AV_OPEN_ON_RC_MS,
+                         btif_initiate_av_open_timer_timeout, NULL);
       btif_rc_handler(event, (tBTA_AV*)p_data);
       break;
 
@@ -1413,6 +1410,7 @@ static void cleanup(int service_uuid) {
 static void cleanup_src(void) {
   BTIF_TRACE_EVENT("%s", __func__);
 
+  btif_queue_cleanup(UUID_SERVCLASS_AUDIO_SOURCE);
   if (bt_av_src_callbacks) {
     bt_av_src_callbacks = NULL;
     if (bt_av_sink_callbacks == NULL) cleanup(BTA_A2DP_SOURCE_SERVICE_ID);
@@ -1422,6 +1420,7 @@ static void cleanup_src(void) {
 static void cleanup_sink(void) {
   BTIF_TRACE_EVENT("%s", __func__);
 
+  btif_queue_cleanup(UUID_SERVCLASS_AUDIO_SINK);
   if (bt_av_sink_callbacks) {
     bt_av_sink_callbacks = NULL;
     if (bt_av_src_callbacks == NULL) cleanup(BTA_A2DP_SINK_SERVICE_ID);

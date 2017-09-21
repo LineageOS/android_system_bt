@@ -47,8 +47,6 @@
 #define BTA_AG_CODEC_NEGOTIATION_TIMEOUT_MS (3 * 1000) /* 3 seconds */
 #endif
 
-extern fixed_queue_t* btu_bta_alarm_queue;
-
 #if (BTA_AG_SCO_DEBUG == TRUE)
 static char* bta_ag_sco_evt_str(uint8_t event);
 static char* bta_ag_sco_state_str(uint8_t state);
@@ -558,9 +556,9 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
     bta_ag_send_bcs(p_scb, NULL);
 
     /* Start timer to handle timeout */
-    alarm_set_on_queue(
-        p_scb->codec_negotiation_timer, BTA_AG_CODEC_NEGOTIATION_TIMEOUT_MS,
-        bta_ag_codec_negotiation_timer_cback, p_scb, btu_bta_alarm_queue);
+    alarm_set_on_mloop(p_scb->codec_negotiation_timer,
+                       BTA_AG_CODEC_NEGOTIATION_TIMEOUT_MS,
+                       bta_ag_codec_negotiation_timer_cback, p_scb);
   } else {
     /* use same codec type as previous SCO connection, skip codec negotiation */
     APPL_TRACE_DEBUG(

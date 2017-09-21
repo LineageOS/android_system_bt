@@ -324,7 +324,10 @@ static void notify_start_failed(tBTA_AV_SCB* p_scb) {
   start.status = BTA_AV_FAIL;
   start.initiator = true;
   start.hndl = p_scb->hndl;
-  (*bta_av_cb.p_cback)(BTA_AV_START_EVT, (tBTA_AV*)&start);
+
+  tBTA_AV bta_av_data;
+  bta_av_data.start = start;
+  (*bta_av_cb.p_cback)(BTA_AV_START_EVT, &bta_av_data);
 }
 
 /*******************************************************************************
@@ -807,8 +810,6 @@ void bta_av_switch_role(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
  ******************************************************************************/
 void bta_av_role_res(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   bool initiator = false;
-  tBTA_AV_START start;
-  tBTA_AV_OPEN av_open;
 
   APPL_TRACE_DEBUG("%s: q_tag:%d, wait:x%x, role:x%x", __func__, p_scb->q_tag,
                    p_scb->wait, p_scb->role);
@@ -821,11 +822,14 @@ void bta_av_role_res(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
         p_scb->role &= ~BTA_AV_ROLE_START_INT;
         bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
         /* start failed because of role switch. */
+        tBTA_AV_START start;
         start.chnl = p_scb->chnl;
         start.status = BTA_AV_FAIL_ROLE;
         start.hndl = p_scb->hndl;
         start.initiator = initiator;
-        (*bta_av_cb.p_cback)(BTA_AV_START_EVT, (tBTA_AV*)&start);
+        tBTA_AV bta_av_data;
+        bta_av_data.start = start;
+        (*bta_av_cb.p_cback)(BTA_AV_START_EVT, &bta_av_data);
       } else {
         bta_av_start_ok(p_scb, p_data);
       }
@@ -838,15 +842,19 @@ void bta_av_role_res(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
       if (p_data->role_res.hci_status != HCI_SUCCESS) {
         /* Open failed because of role switch. */
+        tBTA_AV_OPEN av_open;
         av_open.bd_addr = p_scb->peer_addr;
         av_open.chnl = p_scb->chnl;
         av_open.hndl = p_scb->hndl;
-        start.status = BTA_AV_FAIL_ROLE;
-        if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SRC)
+        av_open.status = BTA_AV_FAIL_ROLE;
+        if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SRC) {
           av_open.sep = AVDT_TSEP_SNK;
-        else if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SNK)
+        } else if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SNK) {
           av_open.sep = AVDT_TSEP_SRC;
-        (*bta_av_cb.p_cback)(BTA_AV_OPEN_EVT, (tBTA_AV*)&av_open);
+        }
+        tBTA_AV bta_av_data;
+        bta_av_data.open = av_open;
+        (*bta_av_cb.p_cback)(BTA_AV_OPEN_EVT, &bta_av_data);
       } else {
         /* Continue av open process */
         p_scb->q_info.open.switch_res = BTA_AV_RS_DONE;
@@ -1039,7 +1047,9 @@ void bta_av_cleanup(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
         (vendor_opcode_t)BT_VND_OP_A2DP_OFFLOAD_STOP, (void*)&p_scb->l2c_cid);
     if (p_scb->offload_start_pending) {
       tBTA_AV_STATUS status = BTA_AV_FAIL_STREAM;
-      (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, (tBTA_AV*)&status);
+      tBTA_AV bta_av_data;
+      bta_av_data.status = status;
+      (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, &bta_av_data);
     }
   */
 
@@ -1315,7 +1325,6 @@ void bta_av_setconfig_rsp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
  ******************************************************************************/
 void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   tBTA_AV_CONN_CHG msg;
-  tBTA_AV_OPEN open;
   uint8_t* p;
   uint16_t mtu;
 
@@ -1356,6 +1365,7 @@ void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
      * the connection will be rejected.
      */
     /* check if other audio channel is started. If yes, start */
+    tBTA_AV_OPEN open;
     open.bd_addr = p_scb->peer_addr;
     open.chnl = p_scb->chnl;
     open.hndl = p_scb->hndl;
@@ -1374,12 +1384,15 @@ void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 #if (BTA_AR_INCLUDED == TRUE)
     bta_ar_avdt_conn(BTA_ID_AV, open.bd_addr);
 #endif
-    if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SRC)
+    if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SRC) {
       open.sep = AVDT_TSEP_SNK;
-    else if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SNK)
+    } else if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SNK) {
       open.sep = AVDT_TSEP_SRC;
+    }
 
-    (*bta_av_cb.p_cback)(BTA_AV_OPEN_EVT, (tBTA_AV*)&open);
+    tBTA_AV bta_av_data;
+    bta_av_data.open = open;
+    (*bta_av_cb.p_cback)(BTA_AV_OPEN_EVT, &bta_av_data);
     if (open.starting) {
       bta_av_ssm_execute(p_scb, BTA_AV_AP_START_EVT, NULL);
     }
@@ -1404,17 +1417,18 @@ void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_security_ind(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
-  tBTA_AV_PROTECT_REQ protect_req;
-
   p_scb->avdt_label = p_data->str_msg.msg.hdr.label;
 
   if (bta_av_cb.features & BTA_AV_FEAT_PROTECT) {
+    tBTA_AV_PROTECT_REQ protect_req;
     protect_req.chnl = p_scb->chnl;
     protect_req.hndl = p_scb->hndl;
     protect_req.p_data = p_data->str_msg.msg.security_ind.p_data;
     protect_req.len = p_data->str_msg.msg.security_ind.len;
 
-    (*bta_av_cb.p_cback)(BTA_AV_PROTECT_REQ_EVT, (tBTA_AV*)&protect_req);
+    tBTA_AV bta_av_data;
+    bta_av_data.protect_req = protect_req;
+    (*bta_av_cb.p_cback)(BTA_AV_PROTECT_REQ_EVT, &bta_av_data);
   }
   /* app doesn't support security indication; respond with failure */
   else {
@@ -1433,16 +1447,17 @@ void bta_av_security_ind(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_security_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
-  tBTA_AV_PROTECT_RSP protect_rsp;
-
   if (bta_av_cb.features & BTA_AV_FEAT_PROTECT) {
+    tBTA_AV_PROTECT_RSP protect_rsp;
     protect_rsp.chnl = p_scb->chnl;
     protect_rsp.hndl = p_scb->hndl;
     protect_rsp.p_data = p_data->str_msg.msg.security_cfm.p_data;
     protect_rsp.len = p_data->str_msg.msg.security_cfm.len;
     protect_rsp.err_code = p_data->str_msg.msg.hdr.err_code;
 
-    (*bta_av_cb.p_cback)(BTA_AV_PROTECT_RSP_EVT, (tBTA_AV*)&protect_rsp);
+    tBTA_AV bta_av_data;
+    bta_av_data.protect_rsp = protect_rsp;
+    (*bta_av_cb.p_cback)(BTA_AV_PROTECT_RSP_EVT, &bta_av_data);
   }
 }
 
@@ -1711,7 +1726,6 @@ void bta_av_open_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   bool is_av_opened = false;
   tBTA_AV_SCB* p_opened_scb = NULL;
   uint8_t idx;
-  tBTA_AV_OPEN open;
 
   APPL_TRACE_DEBUG("%s", __func__);
   p_scb->open_status = BTA_AV_FAIL_STREAM;
@@ -1730,6 +1744,7 @@ void bta_av_open_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
      don't send disconnect req, just report the open event with
      BTA_AV_FAIL_GET_CAP status */
   if (is_av_opened == true) {
+    tBTA_AV_OPEN open;
     open.bd_addr = p_scb->peer_addr;
     open.chnl = p_scb->chnl;
     open.hndl = p_scb->hndl;
@@ -1739,13 +1754,15 @@ void bta_av_open_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     /* set the state back to initial state */
     bta_av_set_scb_sst_init(p_scb);
 
-    if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SRC)
+    if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SRC) {
       open.sep = AVDT_TSEP_SNK;
-    else if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SNK)
+    } else if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SNK) {
       open.sep = AVDT_TSEP_SRC;
+    }
 
-    (*bta_av_cb.p_cback)(BTA_AV_OPEN_EVT, (tBTA_AV*)&open);
-
+    tBTA_AV bta_av_data;
+    bta_av_data.open = open;
+    (*bta_av_cb.p_cback)(BTA_AV_OPEN_EVT, &bta_av_data);
   } else {
     AVDT_DisconnectReq(p_scb->peer_addr, bta_av_dt_cback[p_scb->hdi]);
   }
@@ -1853,7 +1870,10 @@ void bta_av_setconfig_rej(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   reject.bd_addr = p_data->str_msg.bd_addr;
   reject.hndl = p_scb->hndl;
-  (*bta_av_cb.p_cback)(BTA_AV_REJECT_EVT, (tBTA_AV*)&reject);
+
+  tBTA_AV bta_av_data;
+  bta_av_data.reject = reject;
+  (*bta_av_cb.p_cback)(BTA_AV_REJECT_EVT, &bta_av_data);
 }
 
 /*******************************************************************************
@@ -1967,7 +1987,9 @@ void bta_av_str_stopped(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
         (vendor_opcode_t)BT_VND_OP_A2DP_OFFLOAD_STOP, (void*)&p_scb->l2c_cid);
     if (p_scb->offload_start_pending) {
       tBTA_AV_STATUS status = BTA_AV_FAIL_STREAM;
-      (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, (tBTA_AV*)&status);
+      tBTA_AV bta_av_data;
+      bta_av_data.status = status;
+      (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, &bta_av_data);
     }
     p_scb->offload_start_pending = false;
     */
@@ -2009,7 +2031,9 @@ void bta_av_str_stopped(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     if ((sus_evt) && (p_scb->state != BTA_AV_RCFG_SST)) {
       suspend_rsp.status = BTA_AV_SUCCESS;
       suspend_rsp.initiator = true;
-      (*bta_av_cb.p_cback)(BTA_AV_SUSPEND_EVT, (tBTA_AV*)&suspend_rsp);
+      tBTA_AV bta_av_data;
+      bta_av_data.suspend = suspend_rsp;
+      (*bta_av_cb.p_cback)(BTA_AV_SUSPEND_EVT, &bta_av_data);
     }
   } else {
     suspend_rsp.status = BTA_AV_SUCCESS;
@@ -2021,7 +2045,9 @@ void bta_av_str_stopped(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     // the Close->Configure->Open->Start path.
     if (p_scb->state != BTA_AV_RCFG_SST ||
         (p_data && p_data->api_stop.reconfig_stop)) {
-      (*bta_av_cb.p_cback)(BTA_AV_STOP_EVT, (tBTA_AV*)&suspend_rsp);
+      tBTA_AV bta_av_data;
+      bta_av_data.suspend = suspend_rsp;
+      (*bta_av_cb.p_cback)(BTA_AV_STOP_EVT, &bta_av_data);
     }
   }
 }
@@ -2247,7 +2273,6 @@ void bta_av_data_path(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
-  tBTA_AV_START start;
   bool initiator = false;
   bool suspend = false;
   uint16_t flush_to;
@@ -2287,11 +2312,14 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     p_scb->wait &= ~BTA_AV_WAIT_ROLE_SW_BITS;
     if (p_data->hdr.offset == BTA_AV_RS_FAIL) {
       bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
+      tBTA_AV_START start;
       start.chnl = p_scb->chnl;
       start.status = BTA_AV_FAIL_ROLE;
       start.hndl = p_scb->hndl;
       start.initiator = initiator;
-      (*bta_av_cb.p_cback)(BTA_AV_START_EVT, (tBTA_AV*)&start);
+      tBTA_AV bta_av_data;
+      bta_av_data.start = start;
+      (*bta_av_cb.p_cback)(BTA_AV_START_EVT, &bta_av_data);
       return;
     }
   }
@@ -2387,12 +2415,15 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     APPL_TRACE_DEBUG("%s: suspending: %d, role:x%x, init %d", __func__, suspend,
                      p_scb->role, initiator);
 
+    tBTA_AV_START start;
     start.suspending = suspend;
     start.initiator = initiator;
     start.chnl = p_scb->chnl;
     start.status = BTA_AV_SUCCESS;
     start.hndl = p_scb->hndl;
-    (*bta_av_cb.p_cback)(BTA_AV_START_EVT, (tBTA_AV*)&start);
+    tBTA_AV bta_av_data;
+    bta_av_data.start = start;
+    (*bta_av_cb.p_cback)(BTA_AV_START_EVT, &bta_av_data);
 
     if (suspend) {
       tBTA_AV_API_STOP stop;
@@ -2565,7 +2596,9 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
         (vendor_opcode_t)BT_VND_OP_A2DP_OFFLOAD_STOP, (void*)&p_scb->l2c_cid);
     if (p_scb->offload_start_pending) {
       tBTA_AV_STATUS status = BTA_AV_FAIL_STREAM;
-      (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, (tBTA_AV*)&status);
+      tBTA_AV bta_av_data;
+      bta_av_data.status = status;
+      (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, &bta_av_data);
     }
     p_scb->offload_start_pending = false;
     */
@@ -2583,7 +2616,9 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     suspend_rsp.chnl = p_scb->chnl;
     suspend_rsp.hndl = p_scb->hndl;
     suspend_rsp.initiator = p_data->str_msg.initiator;
-    (*bta_av_cb.p_cback)(BTA_AV_SUSPEND_EVT, (tBTA_AV*)&suspend_rsp);
+    tBTA_AV bta_av_data;
+    bta_av_data.suspend = suspend_rsp;
+    (*bta_av_cb.p_cback)(BTA_AV_SUSPEND_EVT, &bta_av_data);
   }
 }
 
@@ -2597,8 +2632,6 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_rcfg_str_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
-  tBTA_AV_RECONFIG evt;
-
   p_scb->l2c_cid = AVDT_GetL2CapChannel(p_scb->avdt_handle);
   APPL_TRACE_DEBUG("%s: l2c_cid: %d", __func__, p_scb->l2c_cid);
 
@@ -2624,10 +2657,13 @@ void bta_av_rcfg_str_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   {
     /* reconfigure success  */
-    evt.status = BTA_AV_SUCCESS;
-    evt.chnl = p_scb->chnl;
-    evt.hndl = p_scb->hndl;
-    (*bta_av_cb.p_cback)(BTA_AV_RECONFIG_EVT, (tBTA_AV*)&evt);
+    tBTA_AV_RECONFIG reconfig;
+    reconfig.status = BTA_AV_SUCCESS;
+    reconfig.chnl = p_scb->chnl;
+    reconfig.hndl = p_scb->hndl;
+    tBTA_AV bta_av_data;
+    bta_av_data.reconfig = reconfig;
+    (*bta_av_cb.p_cback)(BTA_AV_RECONFIG_EVT, &bta_av_data);
   }
 }
 
@@ -2641,17 +2677,18 @@ void bta_av_rcfg_str_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_rcfg_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
-  tBTA_AV_RECONFIG evt;
-
   APPL_TRACE_DEBUG("%s: num_recfg: %d, conn_lcb:0x%x", __func__,
                    p_scb->num_recfg, bta_av_cb.conn_lcb);
   if (p_scb->num_recfg > BTA_AV_RECONFIG_RETRY) {
     bta_av_cco_close(p_scb, p_data);
     /* report failure */
-    evt.status = BTA_AV_FAIL_STREAM;
-    evt.chnl = p_scb->chnl;
-    evt.hndl = p_scb->hndl;
-    (*bta_av_cb.p_cback)(BTA_AV_RECONFIG_EVT, (tBTA_AV*)&evt);
+    tBTA_AV_RECONFIG reconfig;
+    reconfig.status = BTA_AV_FAIL_STREAM;
+    reconfig.chnl = p_scb->chnl;
+    reconfig.hndl = p_scb->hndl;
+    tBTA_AV bta_av_data;
+    bta_av_data.reconfig = reconfig;
+    (*bta_av_cb.p_cback)(BTA_AV_RECONFIG_EVT, &bta_av_data);
     /* go to closing state */
     bta_av_ssm_execute(p_scb, BTA_AV_API_CLOSE_EVT, NULL);
   } else {
@@ -2696,16 +2733,17 @@ void bta_av_rcfg_connect(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_rcfg_discntd(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
-  tBTA_AV_RECONFIG evt;
-
   APPL_TRACE_DEBUG("%s: num_recfg: %d", __func__, p_scb->num_recfg);
   p_scb->num_recfg++;
   if (p_scb->num_recfg > BTA_AV_RECONFIG_RETRY) {
     /* report failure */
-    evt.status = BTA_AV_FAIL_STREAM;
-    evt.chnl = p_scb->chnl;
-    evt.hndl = p_scb->hndl;
-    (*bta_av_cb.p_cback)(BTA_AV_RECONFIG_EVT, (tBTA_AV*)&evt);
+    tBTA_AV_RECONFIG reconfig;
+    reconfig.status = BTA_AV_FAIL_STREAM;
+    reconfig.chnl = p_scb->chnl;
+    reconfig.hndl = p_scb->hndl;
+    tBTA_AV bta_av_data;
+    bta_av_data.reconfig = reconfig;
+    (*bta_av_cb.p_cback)(BTA_AV_RECONFIG_EVT, &bta_av_data);
     /* report close event & go to init state */
     bta_av_ssm_execute(p_scb, BTA_AV_STR_DISC_FAIL_EVT, NULL);
   } else
@@ -2725,15 +2763,17 @@ void bta_av_rcfg_discntd(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
  ******************************************************************************/
 void bta_av_suspend_cont(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   uint8_t err_code = p_data->str_msg.msg.hdr.err_code;
-  tBTA_AV_RECONFIG evt;
 
   p_scb->started = false;
   p_scb->cong = false;
   if (err_code) {
     if (AVDT_ERR_CONNECT == err_code) {
       /* report failure */
-      evt.status = BTA_AV_FAIL;
-      (*bta_av_cb.p_cback)(BTA_AV_RECONFIG_EVT, (tBTA_AV*)&evt);
+      tBTA_AV_RECONFIG reconfig;
+      reconfig.status = BTA_AV_FAIL;
+      tBTA_AV bta_av_data;
+      bta_av_data.reconfig = reconfig;
+      (*bta_av_cb.p_cback)(BTA_AV_RECONFIG_EVT, &bta_av_data);
       bta_av_ssm_execute(p_scb, BTA_AV_STR_DISC_FAIL_EVT, NULL);
     } else {
       APPL_TRACE_ERROR("%s: suspend rejected, try close", __func__);
@@ -2915,8 +2955,6 @@ void bta_av_chk_2nd_start(tBTA_AV_SCB* p_scb,
  *
  ******************************************************************************/
 void bta_av_open_rc(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
-  tBTA_AV_START start;
-
   APPL_TRACE_DEBUG("%s: use_rc: %d, wait: x%x role:x%x", __func__,
                    p_scb->use_rc, p_scb->wait, p_scb->role);
   if ((p_scb->wait & BTA_AV_WAIT_ROLE_SW_BITS) &&
@@ -2927,13 +2965,17 @@ void bta_av_open_rc(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
           "%s: failed to start streaming for role management reasons!!",
           __func__);
       alarm_cancel(p_scb->avrc_ct_timer);
+
+      tBTA_AV_START start;
       start.chnl = p_scb->chnl;
       start.status = BTA_AV_FAIL_ROLE;
       start.initiator = true;
       start.hndl = p_scb->hndl;
       p_scb->wait &= ~BTA_AV_WAIT_ROLE_SW_BITS;
       bta_av_cb.rs_idx = 0;
-      (*bta_av_cb.p_cback)(BTA_AV_START_EVT, (tBTA_AV*)&start);
+      tBTA_AV bta_av_data;
+      bta_av_data.start = start;
+      (*bta_av_cb.p_cback)(BTA_AV_START_EVT, &bta_av_data);
     } else {
       /* role switch is done. continue to start streaming */
       bta_av_cb.rs_idx = 0;
@@ -3060,8 +3102,11 @@ void bta_av_offload_req(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
      }
    }
    */
-  if (status != BTA_AV_SUCCESS)
-    (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, (tBTA_AV*)&status);
+  if (status != BTA_AV_SUCCESS) {
+    tBTA_AV bta_av_data;
+    bta_av_data.status = status;
+    (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, &bta_av_data);
+  }
 }
 
 /*******************************************************************************
@@ -3087,5 +3132,7 @@ void bta_av_offload_rsp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   }
 
   p_scb->offload_start_pending = false;
-  (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, (tBTA_AV*)&status);
+  tBTA_AV bta_av_data;
+  bta_av_data.status = status;
+  (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, &bta_av_data);
 }

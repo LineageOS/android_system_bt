@@ -176,6 +176,9 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
   /* update the transport */
   p_ccb->transport = transport;
 
+  /* The service_id must be set before calling gap_release_ccb(). */
+  p_ccb->service_id = service_id;
+
   /* If caller specified a BD address, save it */
   if (p_rem_bda) {
     /* the bd addr is not RawAddress::kAny, then a bd address was specified */
@@ -237,7 +240,6 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
   }
 
   /* Register with Security Manager for the specific security level */
-  p_ccb->service_id = service_id;
   if (!BTM_SetSecurityLevel((uint8_t)!is_server, p_serv_name, p_ccb->service_id,
                             security, p_ccb->psm, 0, 0)) {
     LOG(ERROR) << "GAP_CONN - Security Error";

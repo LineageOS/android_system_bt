@@ -45,8 +45,6 @@
 #include "device/include/controller.h"
 #include "osi/include/osi.h"
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 /******************************************************************************/
 /*                     G L O B A L    B N E P       D A T A                   */
 /******************************************************************************/
@@ -139,8 +137,8 @@ static void bnep_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
   L2CA_ConfigReq(l2cap_cid, &bnep_cb.l2cap_my_cfg);
 
   /* Start timer waiting for config setup */
-  alarm_set_on_queue(p_bcb->conn_timer, BNEP_CONN_TIMEOUT_MS,
-                     bnep_conn_timer_timeout, p_bcb, btu_general_alarm_queue);
+  alarm_set_on_mloop(p_bcb->conn_timer, BNEP_CONN_TIMEOUT_MS,
+                     bnep_conn_timer_timeout, p_bcb);
 
   BNEP_TRACE_EVENT("BNEP - Rcvd L2CAP conn ind, CID: 0x%x", p_bcb->l2cap_cid);
 }
@@ -176,8 +174,8 @@ static void bnep_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
     L2CA_ConfigReq(l2cap_cid, &bnep_cb.l2cap_my_cfg);
 
     /* Start timer waiting for config results */
-    alarm_set_on_queue(p_bcb->conn_timer, BNEP_CONN_TIMEOUT_MS,
-                       bnep_conn_timer_timeout, p_bcb, btu_general_alarm_queue);
+    alarm_set_on_mloop(p_bcb->conn_timer, BNEP_CONN_TIMEOUT_MS,
+                       bnep_conn_timer_timeout, p_bcb);
 
     BNEP_TRACE_EVENT("BNEP - got conn cnf, sent cfg req, CID: 0x%x",
                      p_bcb->l2cap_cid);
@@ -252,8 +250,8 @@ static void bnep_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
     p_bcb->con_state = BNEP_STATE_SEC_CHECKING;
 
     /* Start timer waiting for setup or response */
-    alarm_set_on_queue(p_bcb->conn_timer, BNEP_HOST_TIMEOUT_MS,
-                       bnep_conn_timer_timeout, p_bcb, btu_general_alarm_queue);
+    alarm_set_on_mloop(p_bcb->conn_timer, BNEP_HOST_TIMEOUT_MS,
+                       bnep_conn_timer_timeout, p_bcb);
 
     if (p_bcb->con_flags & BNEP_FLAGS_IS_ORIG) {
       btm_sec_mx_access_request(
@@ -295,9 +293,8 @@ static void bnep_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
       p_bcb->con_state = BNEP_STATE_SEC_CHECKING;
 
       /* Start timer waiting for setup or response */
-      alarm_set_on_queue(p_bcb->conn_timer, BNEP_HOST_TIMEOUT_MS,
-                         bnep_conn_timer_timeout, p_bcb,
-                         btu_general_alarm_queue);
+      alarm_set_on_mloop(p_bcb->conn_timer, BNEP_HOST_TIMEOUT_MS,
+                         bnep_conn_timer_timeout, p_bcb);
 
       if (p_bcb->con_flags & BNEP_FLAGS_IS_ORIG) {
         btm_sec_mx_access_request(p_bcb->rem_bda, BT_PSM_BNEP, true,
@@ -638,9 +635,8 @@ void bnep_conn_timer_timeout(void* data) {
 
     if (p_bcb->re_transmits++ != BNEP_MAX_RETRANSMITS) {
       bnep_send_conn_req(p_bcb);
-      alarm_set_on_queue(p_bcb->conn_timer, BNEP_CONN_TIMEOUT_MS,
-                         bnep_conn_timer_timeout, p_bcb,
-                         btu_general_alarm_queue);
+      alarm_set_on_mloop(p_bcb->conn_timer, BNEP_CONN_TIMEOUT_MS,
+                         bnep_conn_timer_timeout, p_bcb);
     } else {
       L2CA_DisconnectReq(p_bcb->l2cap_cid);
 
@@ -666,9 +662,8 @@ void bnep_conn_timer_timeout(void* data) {
   } else if (p_bcb->con_flags & BNEP_FLAGS_FILTER_RESP_PEND) {
     if (p_bcb->re_transmits++ != BNEP_MAX_RETRANSMITS) {
       bnepu_send_peer_our_filters(p_bcb);
-      alarm_set_on_queue(p_bcb->conn_timer, BNEP_FILTER_SET_TIMEOUT_MS,
-                         bnep_conn_timer_timeout, p_bcb,
-                         btu_general_alarm_queue);
+      alarm_set_on_mloop(p_bcb->conn_timer, BNEP_FILTER_SET_TIMEOUT_MS,
+                         bnep_conn_timer_timeout, p_bcb);
     } else {
       L2CA_DisconnectReq(p_bcb->l2cap_cid);
 
@@ -683,9 +678,8 @@ void bnep_conn_timer_timeout(void* data) {
   } else if (p_bcb->con_flags & BNEP_FLAGS_MULTI_RESP_PEND) {
     if (p_bcb->re_transmits++ != BNEP_MAX_RETRANSMITS) {
       bnepu_send_peer_our_multi_filters(p_bcb);
-      alarm_set_on_queue(p_bcb->conn_timer, BNEP_FILTER_SET_TIMEOUT_MS,
-                         bnep_conn_timer_timeout, p_bcb,
-                         btu_general_alarm_queue);
+      alarm_set_on_mloop(p_bcb->conn_timer, BNEP_FILTER_SET_TIMEOUT_MS,
+                         bnep_conn_timer_timeout, p_bcb);
     } else {
       L2CA_DisconnectReq(p_bcb->l2cap_cid);
 

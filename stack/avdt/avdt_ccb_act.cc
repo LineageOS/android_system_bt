@@ -35,8 +35,6 @@
 #include "btu.h"
 #include "osi/include/osi.h"
 
-extern fixed_queue_t* btu_general_alarm_queue;
-
 /*******************************************************************************
  *
  * Function         avdt_ccb_clear_ccb
@@ -125,9 +123,8 @@ void avdt_ccb_chk_close(tAVDT_CCB* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
     alarm_cancel(p_ccb->ret_ccb_timer);
     alarm_cancel(p_ccb->rsp_ccb_timer);
     period_ms_t interval_ms = avdt_cb.rcb.idle_tout * 1000;
-    alarm_set_on_queue(p_ccb->idle_ccb_timer, interval_ms,
-                       avdt_ccb_idle_ccb_timer_timeout, p_ccb,
-                       btu_general_alarm_queue);
+    alarm_set_on_mloop(p_ccb->idle_ccb_timer, interval_ms,
+                       avdt_ccb_idle_ccb_timer_timeout, p_ccb);
   }
 }
 
@@ -773,9 +770,8 @@ void avdt_ccb_ret_cmd(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data) {
     alarm_cancel(p_ccb->idle_ccb_timer);
     alarm_cancel(p_ccb->rsp_ccb_timer);
     period_ms_t interval_ms = avdt_cb.rcb.ret_tout * 1000;
-    alarm_set_on_queue(p_ccb->ret_ccb_timer, interval_ms,
-                       avdt_ccb_ret_ccb_timer_timeout, p_ccb,
-                       btu_general_alarm_queue);
+    alarm_set_on_mloop(p_ccb->ret_ccb_timer, interval_ms,
+                       avdt_ccb_ret_ccb_timer_timeout, p_ccb);
   }
 }
 
