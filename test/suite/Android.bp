@@ -11,6 +11,7 @@ cc_test {
         "gatt/gatt_test.cc",
         "gatt/gatt_unittest.cc",
     ],
+    header_libs: ["libhardware_headers"],
     shared_libs: [
         "liblog",
         "libhardware",

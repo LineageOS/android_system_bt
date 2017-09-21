@@ -118,8 +118,8 @@ cc_test {
     srcs: [
         "test/bta_hf_client_test.cc",
     ],
+    header_libs: ["libhardware_headers"],
     shared_libs: [
-        "libhardware",
         "liblog",
         "libprotobuf-cpp-lite",
     ],
