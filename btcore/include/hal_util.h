@@ -18,7 +18,6 @@
 
 struct hw_module_t;
 
-// Loads the Bluetooth library. If OS_GENERIC is defined, this function looks
-// explicitly for libbluetooth.default.so and loads it. On Android, this calls
-// the hw_get_module routine with the Bluetooth stack module id.
+// Loads the Bluetooth library. This function looks explicitly for
+// libbluetooth.default.so and loads it.
 int hal_util_load_bt_library(const struct hw_module_t** module);
