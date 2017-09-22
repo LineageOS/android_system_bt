@@ -141,12 +141,7 @@ typedef struct {
   bool disable_w4_close;
 } tBTA_HD_CB;
 
-#if BTA_DYNAMIC_MEMORY == FALSE
 extern tBTA_HD_CB bta_hd_cb;
-#else
-extern tBTA_HD_CB* bta_hd_cb_ptr;
-#define bta_hd_cb (*bta_hd_cb_ptr)
-#endif
 
 /*****************************************************************************
  *  Function prototypes
