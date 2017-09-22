@@ -34,9 +34,7 @@
 #include "hidd_int.h"
 #include "hiddefs.h"
 
-#if HID_DYNAMIC_MEMORY == FALSE
 tHID_DEV_CTB hd_cb;
-#endif
 
 /*******************************************************************************
  *
