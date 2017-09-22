@@ -80,12 +80,7 @@ extern "C" {
 /******************************************************************************
  * Main Control Block
  ******************************************************************************/
-#if HID_DYNAMIC_MEMORY == FALSE
 extern tHID_DEV_CTB hd_cb;
-#else
-extern tHID_DEV_CTB* hidd_cb_ptr;
-#define hd_cb (*hidd_cb_ptr)
-#endif
 
 #ifdef __cplusplus
 }
