@@ -11,9 +11,9 @@ cc_test {
         "gatt/gatt_test.cc",
         "gatt/gatt_unittest.cc",
     ],
+    header_libs: ["libhardware_headers"],
     shared_libs: [
         "liblog",
-        "libhardware",
         "libcutils",
     ],
     static_libs: [
@@ -36,9 +36,9 @@ cc_test {
         "rfcomm/rfcomm_test.cc",
         "rfcomm/rfcomm_unittest.cc",
     ],
+    header_libs: [ "libhardware_headers" ],
     shared_libs: [
         "liblog",
-        "libhardware",
         "libcutils",
     ],
     static_libs: [

@@ -24,11 +24,11 @@ cc_binary {
         "async_fd_watcher.cc",
         "service.cc"
     ],
+    header_libs: ["libhardware_headers"],
     shared_libs: [
         "android.hardware.bluetooth@1.0",
         "libbase",
         "libcutils",
-        "libhardware",
         "libhidlbase",
         "libhidltransport",
         "liblog",
