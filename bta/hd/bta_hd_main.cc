@@ -219,9 +219,7 @@ const tBTA_HD_ST_TBL bta_hd_st_tbl[] = {bta_hd_st_init, bta_hd_st_idle,
 /*****************************************************************************
  * Global data
  ****************************************************************************/
-#if BTA_DYNAMIC_MEMORY == FALSE
 tBTA_HD_CB bta_hd_cb;
-#endif
 
 static const char* bta_hd_evt_code(tBTA_HD_INT_EVT evt_code);
 static const char* bta_hd_state_code(tBTA_HD_STATE state_code);
