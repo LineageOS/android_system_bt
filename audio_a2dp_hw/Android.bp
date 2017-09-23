@@ -3,6 +3,7 @@ cc_defaults {
     defaults: ["fluoride_defaults"],
     include_dirs: [
         "system/bt",
+        "system/bt/include",
         "system/bt/audio_a2dp_hw/include",
     ]
 }

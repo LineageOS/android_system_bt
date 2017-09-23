@@ -35,7 +35,6 @@ git clone https://android.googlesource.com/platform/external/libchrome
 git clone https://android.googlesource.com/platform/external/libldac
 git clone https://android.googlesource.com/platform/external/modp_b64
 git clone https://android.googlesource.com/platform/external/tinyxml2
-git clone https://android.googlesource.com/platform/hardware/libhardware
 ```
 
 And third party dependencies of third party dependencies:
@@ -60,7 +59,6 @@ ln -s ../../../external/libchrome libchrome
 ln -s ../../../external/libldac libldac
 ln -s ../../../external/modp_b64 modp_b64
 ln -s ../../../external/tinyxml2 tinyxml2
-ln -s ../../../hardware/libhardware libhardware
 ln -s ../../../external/googletest googletest
 ```
 
