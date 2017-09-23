@@ -33,7 +33,6 @@ cc_binary {
     shared_libs: [
       "libcutils",
       "libutils",
-      "libhardware",
     ],
     static_libs: [
       "libbtcore",

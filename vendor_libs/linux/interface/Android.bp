@@ -25,7 +25,7 @@ cc_binary {
         "service.cc"
     ],
     cflags: ["-Wall", "-Werror"],
-    header_libs: ["libhardware_headers"],
+    header_libs: ["bluetooth.default_headers"],
     shared_libs: [
         "android.hardware.bluetooth@1.0",
         "libbase",
