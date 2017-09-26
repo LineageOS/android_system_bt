@@ -398,19 +398,6 @@ typedef uint16_t tBTA_GATT_PERM;
 
 #define BTA_GATTS_INVALID_IF 0
 
-/* definition of characteristic properties */
-#define BTA_GATT_CHAR_PROP_BIT_BROADCAST                                    \
-  GATT_CHAR_PROP_BIT_BROADCAST                                      /* 0x01 \
-                                                                       */
-#define BTA_GATT_CHAR_PROP_BIT_READ GATT_CHAR_PROP_BIT_READ         /* 0x02 */
-#define BTA_GATT_CHAR_PROP_BIT_WRITE_NR GATT_CHAR_PROP_BIT_WRITE_NR /* 0x04 */
-#define BTA_GATT_CHAR_PROP_BIT_WRITE GATT_CHAR_PROP_BIT_WRITE       /* 0x08 */
-#define BTA_GATT_CHAR_PROP_BIT_NOTIFY GATT_CHAR_PROP_BIT_NOTIFY     /* 0x10 */
-#define BTA_GATT_CHAR_PROP_BIT_INDICATE GATT_CHAR_PROP_BIT_INDICATE /* 0x20 */
-#define BTA_GATT_CHAR_PROP_BIT_AUTH GATT_CHAR_PROP_BIT_AUTH         /* 0x40 */
-#define BTA_GATT_CHAR_PROP_BIT_EXT_PROP GATT_CHAR_PROP_BIT_EXT_PROP /* 0x80 */
-typedef uint8_t tBTA_GATT_CHAR_PROP;
-
 #ifndef BTA_GATTC_CHAR_DESCR_MAX
 #define BTA_GATTC_CHAR_DESCR_MAX 7
 #endif
@@ -560,7 +547,7 @@ typedef struct {
 typedef struct {
   bluetooth::Uuid uuid;
   uint16_t handle;
-  tBTA_GATT_CHAR_PROP properties;
+  tGATT_CHAR_PROP properties;
   tBTA_GATTC_SERVICE* service; /* owning service*/
   list_t* descriptors;         /* list of tBTA_GATTC_DESCRIPTOR */
 } __attribute__((packed, aligned(alignof(bluetooth::Uuid))))
