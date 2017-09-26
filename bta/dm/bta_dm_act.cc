@@ -423,7 +423,7 @@ static void bta_dm_sys_hw_cback(tBTA_SYS_HW_EVT status) {
       BTM_BleLoadLocalKeys(BTA_BLE_LOCAL_KEY_TYPE_ID,
                            (tBTM_BLE_LOCAL_KEYS*)&id_key);
     }
-    bta_dm_search_cb.conn_id = BTA_GATT_INVALID_CONN_ID;
+    bta_dm_search_cb.conn_id = GATT_INVALID_CONN_ID;
 
     BTM_SecRegister((tBTM_APPL_INFO*)&bta_security);
     BTM_SetDefaultLinkSuperTout(p_bta_dm_cfg->link_timeout);
@@ -4422,7 +4422,7 @@ static void bta_dm_gattc_register(void) {
   if (bta_dm_search_cb.client_if == BTA_GATTS_INVALID_IF) {
     BTA_GATTC_AppRegister(bta_dm_gattc_callback,
                           base::Bind([](uint8_t client_id, uint8_t status) {
-                            if (status == BTA_GATT_OK)
+                            if (status == GATT_SUCCESS)
                               bta_dm_search_cb.client_if = client_id;
                             else
                               bta_dm_search_cb.client_if = BTA_GATTS_INVALID_IF;
@@ -4514,13 +4514,12 @@ static void bta_dm_gatt_disc_result(tBTA_GATT_ID service_id) {
  * Parameters:
  *
  ******************************************************************************/
-static void bta_dm_gatt_disc_complete(uint16_t conn_id,
-                                      tBTA_GATT_STATUS status) {
+static void bta_dm_gatt_disc_complete(uint16_t conn_id, tGATT_STATUS status) {
   APPL_TRACE_DEBUG("%s conn_id = %d", __func__, conn_id);
 
   if (bta_dm_search_cb.uuid_to_search > 0) bta_dm_search_cb.uuid_to_search--;
 
-  if (status == BTA_GATT_OK && bta_dm_search_cb.uuid_to_search > 0) {
+  if (status == GATT_SUCCESS && bta_dm_search_cb.uuid_to_search > 0) {
     btm_dm_start_disc_gatt_services(conn_id);
   } else {
     tBTA_DM_MSG* p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
@@ -4530,7 +4529,7 @@ static void bta_dm_gatt_disc_complete(uint16_t conn_id,
     /* no more services to be discovered */
     p_msg->hdr.event = BTA_DM_DISCOVERY_RESULT_EVT;
     p_msg->disc_result.result.disc_res.result =
-        (status == BTA_GATT_OK) ? BTA_SUCCESS : BTA_FAILURE;
+        (status == GATT_SUCCESS) ? BTA_SUCCESS : BTA_FAILURE;
     APPL_TRACE_DEBUG("%s service found: 0x%08x", __func__,
                      bta_dm_search_cb.services_found);
     p_msg->disc_result.result.disc_res.services =
@@ -4558,7 +4557,7 @@ static void bta_dm_gatt_disc_complete(uint16_t conn_id,
 
     bta_sys_sendmsg(p_msg);
 
-    if (conn_id != BTA_GATT_INVALID_CONN_ID) {
+    if (conn_id != GATT_INVALID_CONN_ID) {
       /* start a GATT channel close delay timer */
       bta_sys_start_timer(bta_dm_search_cb.gatt_close_timer,
                           BTA_DM_GATT_CLOSE_DELAY_TOUT,
@@ -4580,11 +4579,11 @@ static void bta_dm_gatt_disc_complete(uint16_t conn_id,
  *
  ******************************************************************************/
 void bta_dm_close_gatt_conn(UNUSED_ATTR tBTA_DM_MSG* p_data) {
-  if (bta_dm_search_cb.conn_id != BTA_GATT_INVALID_CONN_ID)
+  if (bta_dm_search_cb.conn_id != GATT_INVALID_CONN_ID)
     BTA_GATTC_Close(bta_dm_search_cb.conn_id);
 
   bta_dm_search_cb.pending_close_bda = RawAddress::kEmpty;
-  bta_dm_search_cb.conn_id = BTA_GATT_INVALID_CONN_ID;
+  bta_dm_search_cb.conn_id = GATT_INVALID_CONN_ID;
 }
 /*******************************************************************************
  *
@@ -4601,7 +4600,7 @@ void btm_dm_start_gatt_discovery(const RawAddress& bd_addr) {
 
   /* connection is already open */
   if (bta_dm_search_cb.pending_close_bda == bd_addr &&
-      bta_dm_search_cb.conn_id != BTA_GATT_INVALID_CONN_ID) {
+      bta_dm_search_cb.conn_id != GATT_INVALID_CONN_ID) {
     bta_dm_search_cb.pending_close_bda = RawAddress::kEmpty;
     alarm_cancel(bta_dm_search_cb.gatt_close_timer);
     btm_dm_start_disc_gatt_services(bta_dm_search_cb.conn_id);
@@ -4626,12 +4625,11 @@ void btm_dm_start_gatt_discovery(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 static void bta_dm_cancel_gatt_discovery(const RawAddress& bd_addr) {
-  if (bta_dm_search_cb.conn_id == BTA_GATT_INVALID_CONN_ID) {
+  if (bta_dm_search_cb.conn_id == GATT_INVALID_CONN_ID) {
     BTA_GATTC_CancelOpen(bta_dm_search_cb.client_if, bd_addr, true);
   }
 
-  bta_dm_gatt_disc_complete(bta_dm_search_cb.conn_id,
-                            (tBTA_GATT_STATUS)BTA_GATT_ERROR);
+  bta_dm_gatt_disc_complete(bta_dm_search_cb.conn_id, (tGATT_STATUS)GATT_ERROR);
 }
 
 /*******************************************************************************
@@ -4653,10 +4651,10 @@ void bta_dm_proc_open_evt(tBTA_GATTC_OPEN* p_data) {
 
   bta_dm_search_cb.conn_id = p_data->conn_id;
 
-  if (p_data->status == BTA_GATT_OK) {
+  if (p_data->status == GATT_SUCCESS) {
     btm_dm_start_disc_gatt_services(p_data->conn_id);
   } else {
-    bta_dm_gatt_disc_complete(BTA_GATT_INVALID_CONN_ID, p_data->status);
+    bta_dm_gatt_disc_complete(GATT_INVALID_CONN_ID, p_data->status);
   }
 }
 
@@ -4693,8 +4691,8 @@ static void bta_dm_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
       if ((bta_dm_search_cb.state != BTA_DM_SEARCH_IDLE) &&
           (bta_dm_search_cb.state != BTA_DM_SEARCH_ACTIVE) &&
           p_data->close.remote_bda == bta_dm_search_cb.peer_bdaddr) {
-        bta_dm_gatt_disc_complete((uint16_t)BTA_GATT_INVALID_CONN_ID,
-                                  (tBTA_GATT_STATUS)BTA_GATT_ERROR);
+        bta_dm_gatt_disc_complete((uint16_t)GATT_INVALID_CONN_ID,
+                                  (tGATT_STATUS)GATT_ERROR);
       }
       break;
 
