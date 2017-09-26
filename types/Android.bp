@@ -17,6 +17,7 @@ cc_library {
     host_supported: true,
     srcs: [
         "raw_address.cc",
+        "bluetooth/uuid.cc",
     ],
     header_libs: ["libbluetooth-types-header"],
     export_header_lib_headers: ["libbluetooth-types-header"],
@@ -30,5 +31,6 @@ cc_test {
     host_supported: true,
     srcs: [
         "test/raw_address_unittest.cc",
+        "test/bluetooth/uuid_unittest.cc",
     ],
 }

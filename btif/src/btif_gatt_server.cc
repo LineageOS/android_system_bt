@@ -51,6 +51,7 @@
 
 using base::Bind;
 using base::Owned;
+using bluetooth::Uuid;
 using std::vector;
 
 /*******************************************************************************
@@ -128,10 +129,9 @@ static void btapp_gatts_handle_cback(uint16_t event, char* p_param) {
   tBTA_GATTS* p_data = (tBTA_GATTS*)p_param;
   switch (event) {
     case BTA_GATTS_REG_EVT: {
-      bt_uuid_t app_uuid;
-      bta_to_btif_uuid(&app_uuid, &p_data->reg_oper.uuid);
       HAL_CBACK(bt_gatt_callbacks, server->register_server_cb,
-                p_data->reg_oper.status, p_data->reg_oper.server_if, app_uuid);
+                p_data->reg_oper.status, p_data->reg_oper.server_if,
+                p_data->reg_oper.uuid);
       break;
     }
 
@@ -266,13 +266,11 @@ static void btapp_gatts_cback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data) {
 /*******************************************************************************
  *  Server API Functions
  ******************************************************************************/
-static bt_status_t btif_gatts_register_app(const bt_uuid_t& bt_uuid) {
+static bt_status_t btif_gatts_register_app(const Uuid& bt_uuid) {
   CHECK_BTGATT_INIT();
-  tBT_UUID* uuid = new tBT_UUID;
-  btif_to_bta_uuid(uuid, &bt_uuid);
 
   return do_in_jni_thread(
-      Bind(&BTA_GATTS_AppRegister, base::Owned(uuid), &btapp_gatts_cback));
+      Bind(&BTA_GATTS_AppRegister, bt_uuid, &btapp_gatts_cback));
 }
 
 static bt_status_t btif_gatts_unregister_app(int server_if) {
@@ -350,15 +348,11 @@ static bt_status_t btif_gatts_close(int server_if, const RawAddress& bd_addr,
 
 static void add_service_impl(int server_if,
                              vector<btgatt_db_element_t> service) {
-  bt_uuid_t restricted_uuid1, restricted_uuid2;
-  uuid_128_from_16(&restricted_uuid1, UUID_SERVCLASS_GATT_SERVER);
-  uuid_128_from_16(&restricted_uuid2, UUID_SERVCLASS_GAP_SERVER);
-
   // TODO(jpawlowski): btif should be a pass through layer, and no checks should
   // be made here. This exception is added only until GATT server code is
   // refactored, and one can distinguish stack-internal aps from external apps
-  if (memcmp(&service[0].uuid, &restricted_uuid1, sizeof(bt_uuid_t)) == 0 ||
-      memcmp(&service[0].uuid, &restricted_uuid2, sizeof(bt_uuid_t)) == 0) {
+  if (service[0].uuid == Uuid::From16Bit(UUID_SERVCLASS_GATT_SERVER) ||
+      service[0].uuid == Uuid::From16Bit(UUID_SERVCLASS_GAP_SERVER)) {
     LOG_ERROR(LOG_TAG, "%s: Attept to register restricted service", __func__);
     HAL_CBACK(bt_gatt_callbacks, server->service_added_cb, BT_STATUS_FAIL,
               server_if, std::move(service));

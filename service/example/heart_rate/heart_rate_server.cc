@@ -55,8 +55,8 @@ class CLIBluetoothLeAdvertiserCallback
     bt_->GetName(&name_param);
     std::string name(String8(name_param).string());
 
-    /* Advertising data: 16-bit Service UUID: Heart Rate Service, Tx power*/
-    std::vector<uint8_t> data{0x03, bluetooth::kEIRTypeComplete16BitUUIDs,
+    /* Advertising data: 16-bit Service Uuid: Heart Rate Service, Tx power*/
+    std::vector<uint8_t> data{0x03, bluetooth::kEIRTypeComplete16BitUuids,
                               0x0D, 0x18,
                               0x02, bluetooth::kEIRTypeTxPower,
                               0x00};
@@ -239,25 +239,25 @@ Status HeartRateServer::OnServerRegistered(int status, int server_if) {
 
   LOG(INFO) << "Heart Rate server registered - server_if: " << server_if_;
 
-  bluetooth::Service hrService(
-      0, true, kHRServiceUUID,
-      {{0,
-        kHRMeasurementUUID,
-        bluetooth::kCharacteristicPropertyNotify,
-        0,
-        {{0, kCCCDescriptorUUID, (bluetooth::kAttributePermissionRead |
-                                  bluetooth::kAttributePermissionWrite)}}},
-       {0,
-        kBodySensorLocationUUID,
-        bluetooth::kCharacteristicPropertyRead,
-        bluetooth::kAttributePermissionRead,
-        {}},
-       {0,
-        kHRControlPointUUID,
-        bluetooth::kCharacteristicPropertyWrite,
-        bluetooth::kAttributePermissionWrite,
-        {}}},
-      {});
+  bluetooth::Service hrService(0, true, kHRServiceUuid,
+                               {{0,
+                                 kHRMeasurementUuid,
+                                 bluetooth::kCharacteristicPropertyNotify,
+                                 0,
+                                 {{0, kCCCDescriptorUuid,
+                                   (bluetooth::kAttributePermissionRead |
+                                    bluetooth::kAttributePermissionWrite)}}},
+                                {0,
+                                 kBodySensorLocationUuid,
+                                 bluetooth::kCharacteristicPropertyRead,
+                                 bluetooth::kAttributePermissionRead,
+                                 {}},
+                                {0,
+                                 kHRControlPointUuid,
+                                 bluetooth::kCharacteristicPropertyWrite,
+                                 bluetooth::kAttributePermissionWrite,
+                                 {}}},
+                               {});
 
   bool op_status = true;
 

@@ -28,7 +28,7 @@ std::shared_ptr<BleScannerInterface> g_scanner_handler;
 std::shared_ptr<FakeBluetoothGattInterface::TestClientHandler> g_client_handler;
 std::shared_ptr<FakeBluetoothGattInterface::TestServerHandler> g_server_handler;
 
-bt_status_t FakeRegisterClient(const bt_uuid_t& app_uuid) {
+bt_status_t FakeRegisterClient(const bluetooth::Uuid& app_uuid) {
   if (g_client_handler) return g_client_handler->RegisterClient(app_uuid);
 
   return BT_STATUS_FAIL;
@@ -57,7 +57,7 @@ bt_status_t FakeDisconnect(int client_if, const RawAddress& bd_addr,
   return BT_STATUS_FAIL;
 }
 
-bt_status_t FakeRegisterServer(const bt_uuid_t& app_uuid) {
+bt_status_t FakeRegisterServer(const bluetooth::Uuid& app_uuid) {
   if (g_server_handler) return g_server_handler->RegisterServer(app_uuid);
 
   return BT_STATUS_FAIL;
@@ -183,7 +183,7 @@ void FakeBluetoothGattInterface::NotifyScanResultCallback(
 }
 
 void FakeBluetoothGattInterface::NotifyRegisterClientCallback(
-    int status, int client_if, const bt_uuid_t& app_uuid) {
+    int status, int client_if, const bluetooth::Uuid& app_uuid) {
   FOR_EACH_OBSERVER(ClientObserver, client_observers_,
                     RegisterClientCallback(this, status, client_if, app_uuid));
 }
@@ -202,7 +202,7 @@ void FakeBluetoothGattInterface::NotifyDisconnectCallback(
 }
 
 void FakeBluetoothGattInterface::NotifyRegisterServerCallback(
-    int status, int server_if, const bt_uuid_t& app_uuid) {
+    int status, int server_if, const Uuid& app_uuid) {
   FOR_EACH_OBSERVER(ServerObserver, server_observers_,
                     RegisterServerCallback(this, status, server_if, app_uuid));
 }

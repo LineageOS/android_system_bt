@@ -17,11 +17,11 @@
 
 #include <poll.h>
 
+#include <bluetooth/uuid.h>
 #include <memory>
 #include <string>
 #include <unordered_map>
 
-#include "service/common/bluetooth/uuid.h"
 #include "service/gatt_server_old.h"
 
 namespace bluetooth {

@@ -59,7 +59,7 @@ typedef struct {
 typedef struct {
   BT_HDR hdr;
   RawAddress bd_addr;
-  tSDP_UUID uuid;
+  bluetooth::Uuid uuid;
 } tBTA_SDP_API_SEARCH;
 
 /* data type for BTA_SDP_API_SEARCH_EVT */

@@ -65,17 +65,7 @@ const char* dump_rc_pdu(uint8_t pdu);
 
 uint32_t devclass2uint(DEV_CLASS dev_class);
 void uint2devclass(uint32_t dev, DEV_CLASS dev_class);
-void uuid16_to_uuid128(uint16_t uuid16, bt_uuid_t* uuid128);
-
-// Takes a |str| containing a 128-bit GUID formatted UUID and stores the
-// result in |p_uuid|. |str| must be formatted in this format:
-//   "12345678-1234-1234-1234-123456789012"
-// |p_uuid| cannot be null. Returns true if parsing was successful, false
-// otherwise. Returns false if |str| is null.
-bool string_to_uuid(const char* str, bt_uuid_t* p_uuid);
 
 int ascii_2_hex(const char* p_ascii, int len, uint8_t* p_hex);
-
-void uuid_to_string_legacy(bt_uuid_t* p_uuid, char* str, size_t str_len);
 
 #endif /* BTIF_UTIL_H */

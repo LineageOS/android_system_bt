@@ -26,7 +26,7 @@ class Characteristic {
  public:
   Characteristic() = default;
   Characteristic(const Characteristic& other);
-  Characteristic(uint16_t handle, const UUID& uuid, uint8_t properties,
+  Characteristic(uint16_t handle, const Uuid& uuid, uint8_t properties,
                  uint16_t permissions,
                  const std::vector<Descriptor>& descriptors)
       : handle_(handle),
@@ -43,7 +43,7 @@ class Characteristic {
   bool operator!=(const Characteristic& rhs) const;
 
   uint16_t handle() const { return handle_; }
-  const UUID& uuid() const { return uuid_; }
+  const Uuid& uuid() const { return uuid_; }
   uint8_t properties() const { return properties_; }
   uint16_t permissions() const { return permissions_; }
   const std::vector<Descriptor>& descriptors() const { return descriptors_; }
@@ -51,7 +51,7 @@ class Characteristic {
 
  protected:
   uint16_t handle_;
-  UUID uuid_;
+  Uuid uuid_;
   uint8_t properties_;
   uint16_t permissions_;
   std::vector<Descriptor> descriptors_;

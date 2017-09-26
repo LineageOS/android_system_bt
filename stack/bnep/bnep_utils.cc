@@ -33,6 +33,8 @@
 #include "device/include/controller.h"
 #include "osi/include/osi.h"
 
+using bluetooth::Uuid;
+
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
@@ -164,8 +166,8 @@ void bnep_send_conn_req(tBNEP_CONN* p_bcb) {
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(BNEP_BUF_SIZE);
   uint8_t *p, *p_start;
 
-  BNEP_TRACE_DEBUG("%s: sending setup req with dst uuid %x", __func__,
-                   p_bcb->dst_uuid.uu.uuid16);
+  BNEP_TRACE_DEBUG("%s: sending setup req with dst uuid %s", __func__,
+                   p_bcb->dst_uuid.ToString().c_str());
 
   p_buf->offset = L2CAP_MIN_OFFSET;
   p = p_start = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
@@ -176,22 +178,26 @@ void bnep_send_conn_req(tBNEP_CONN* p_bcb) {
   /* Put in filter message type - set filters */
   UINT8_TO_BE_STREAM(p, BNEP_SETUP_CONNECTION_REQUEST_MSG);
 
-  UINT8_TO_BE_STREAM(p, p_bcb->dst_uuid.len);
+  int len = std::max(p_bcb->dst_uuid.GetShortestRepresentationSize(),
+                     p_bcb->src_uuid.GetShortestRepresentationSize());
 
-  if (p_bcb->dst_uuid.len == 2) {
-    UINT16_TO_BE_STREAM(p, p_bcb->dst_uuid.uu.uuid16);
-    UINT16_TO_BE_STREAM(p, p_bcb->src_uuid.uu.uuid16);
-  } else if (p_bcb->dst_uuid.len == 4) {
-    UINT32_TO_BE_STREAM(p, p_bcb->dst_uuid.uu.uuid32);
-    UINT32_TO_BE_STREAM(p, p_bcb->src_uuid.uu.uuid32);
-  } else if (p_bcb->dst_uuid.len == 16) {
-    memcpy(p, p_bcb->dst_uuid.uu.uuid128, p_bcb->dst_uuid.len);
-    p += p_bcb->dst_uuid.len;
-    memcpy(p, p_bcb->src_uuid.uu.uuid128, p_bcb->dst_uuid.len);
-    p += p_bcb->dst_uuid.len;
+  UINT8_TO_BE_STREAM(p, len);
+
+  if (len == Uuid::kNumBytes16) {
+    UINT16_TO_BE_STREAM(p, p_bcb->dst_uuid.As16Bit());
+    UINT16_TO_BE_STREAM(p, p_bcb->src_uuid.As16Bit());
+  } else if (len == Uuid::kNumBytes32) {
+    UINT32_TO_BE_STREAM(p, p_bcb->dst_uuid.As32Bit());
+    UINT32_TO_BE_STREAM(p, p_bcb->src_uuid.As32Bit());
+  } else if (len == Uuid::kNumBytes128) {
+    memcpy(p, p_bcb->dst_uuid.To128BitBE().data(), Uuid::kNumBytes128);
+    p += Uuid::kNumBytes128;
+    memcpy(p, p_bcb->src_uuid.To128BitBE().data(), Uuid::kNumBytes128);
+    p += Uuid::kNumBytes128;
   } else {
-    BNEP_TRACE_ERROR("%s: uuid: %x, invalid length: %x", __func__,
-                     p_bcb->dst_uuid.uu.uuid16, p_bcb->dst_uuid.len);
+    BNEP_TRACE_ERROR("%s: uuid: %s, invalid length: %zu", __func__,
+                     p_bcb->dst_uuid.ToString().c_str(),
+                     p_bcb->dst_uuid.GetShortestRepresentationSize());
   }
 
   p_buf->len = (uint16_t)(p - p_start);
@@ -523,8 +529,7 @@ static uint8_t* bnepu_init_hdr(BT_HDR* p_buf, uint16_t hdr_len,
  ******************************************************************************/
 void bnep_process_setup_conn_req(tBNEP_CONN* p_bcb, uint8_t* p_setup,
                                  uint8_t len) {
-  BNEP_TRACE_EVENT("BNEP - bnep_process_setup_conn_req for CID: 0x%x",
-                   p_bcb->l2cap_cid);
+  BNEP_TRACE_EVENT("BNEP - %s for CID: 0x%x", __func__, p_bcb->l2cap_cid);
 
   if (p_bcb->con_state != BNEP_STATE_CONN_SETUP &&
       p_bcb->con_state != BNEP_STATE_SEC_CHECKING &&
@@ -553,36 +558,43 @@ void bnep_process_setup_conn_req(tBNEP_CONN* p_bcb, uint8_t* p_setup,
   }
 
   if (p_bcb->con_state == BNEP_STATE_CONNECTED) {
-    memcpy((uint8_t*)&(p_bcb->prv_src_uuid), (uint8_t*)&(p_bcb->src_uuid),
-           sizeof(tBT_UUID));
-    memcpy((uint8_t*)&(p_bcb->prv_dst_uuid), (uint8_t*)&(p_bcb->dst_uuid),
-           sizeof(tBT_UUID));
+    p_bcb->prv_src_uuid = p_bcb->src_uuid;
+    p_bcb->prv_dst_uuid = p_bcb->dst_uuid;
   }
 
-  p_bcb->dst_uuid.len = p_bcb->src_uuid.len = len;
-
-  if (p_bcb->dst_uuid.len == 2) {
+  if (len == Uuid::kNumBytes16) {
     /* because peer initiated connection keep src uuid as dst uuid */
-    BE_STREAM_TO_UINT16(p_bcb->src_uuid.uu.uuid16, p_setup);
-    BE_STREAM_TO_UINT16(p_bcb->dst_uuid.uu.uuid16, p_setup);
+    uint16_t tmp;
+
+    BE_STREAM_TO_UINT16(tmp, p_setup);
+    p_bcb->src_uuid = Uuid::From16Bit(tmp);
+
+    BE_STREAM_TO_UINT16(tmp, p_setup);
+    p_bcb->dst_uuid = Uuid::From16Bit(tmp);
 
     /* If nothing has changed don't bother the profile */
     if (p_bcb->con_state == BNEP_STATE_CONNECTED &&
-        p_bcb->src_uuid.uu.uuid16 == p_bcb->prv_src_uuid.uu.uuid16 &&
-        p_bcb->dst_uuid.uu.uuid16 == p_bcb->prv_dst_uuid.uu.uuid16) {
+        p_bcb->src_uuid == p_bcb->prv_src_uuid &&
+        p_bcb->dst_uuid == p_bcb->prv_dst_uuid) {
       bnep_send_conn_responce(p_bcb, BNEP_SETUP_CONN_OK);
       return;
     }
-  } else if (p_bcb->dst_uuid.len == 4) {
-    BE_STREAM_TO_UINT32(p_bcb->src_uuid.uu.uuid32, p_setup);
-    BE_STREAM_TO_UINT32(p_bcb->dst_uuid.uu.uuid32, p_setup);
-  } else if (p_bcb->dst_uuid.len == 16) {
-    memcpy(p_bcb->src_uuid.uu.uuid128, p_setup, p_bcb->src_uuid.len);
-    p_setup += p_bcb->src_uuid.len;
-    memcpy(p_bcb->dst_uuid.uu.uuid128, p_setup, p_bcb->dst_uuid.len);
-    p_setup += p_bcb->dst_uuid.len;
+  } else if (len == Uuid::kNumBytes32) {
+    uint32_t tmp;
+
+    BE_STREAM_TO_UINT32(tmp, p_setup);
+    p_bcb->src_uuid = Uuid::From32Bit(tmp);
+
+    BE_STREAM_TO_UINT32(tmp, p_setup);
+    p_bcb->dst_uuid = Uuid::From32Bit(tmp);
+  } else if (len == Uuid::kNumBytes128) {
+    p_bcb->src_uuid = Uuid::From128BitBE(p_setup);
+    p_setup += len;
+
+    p_bcb->dst_uuid = Uuid::From128BitBE(p_setup);
+    p_setup += len;
   } else {
-    BNEP_TRACE_ERROR("BNEP - Bad UID len %d in ConnReq", p_bcb->dst_uuid.len);
+    BNEP_TRACE_ERROR("BNEP - Bad UID len %d in ConnReq", len);
     bnep_send_conn_responce(p_bcb, BNEP_SETUP_INVALID_UUID_SIZE);
     return;
   }
@@ -591,16 +603,16 @@ void bnep_process_setup_conn_req(tBNEP_CONN* p_bcb, uint8_t* p_setup,
   p_bcb->con_flags |= BNEP_FLAGS_SETUP_RCVD;
 
   BNEP_TRACE_EVENT(
-      "BNEP initiating security check for incoming call for uuid 0x%x",
-      p_bcb->src_uuid.uu.uuid16);
+      "BNEP initiating security check for incoming call for uuid %s",
+      p_bcb->src_uuid.ToString().c_str());
 #if (BNEP_DO_AUTH_FOR_ROLE_SWITCH == FALSE)
   if (p_bcb->con_flags & BNEP_FLAGS_CONN_COMPLETED)
     bnep_sec_check_complete(p_bcb->rem_bda, p_bcb, BTM_SUCCESS);
   else
 #endif
-    btm_sec_mx_access_request(
-        p_bcb->rem_bda, BT_PSM_BNEP, false, BTM_SEC_PROTO_BNEP,
-        bnep_get_uuid32(&(p_bcb->src_uuid)), &bnep_sec_check_complete, p_bcb);
+    btm_sec_mx_access_request(p_bcb->rem_bda, BT_PSM_BNEP, false,
+                              BTM_SEC_PROTO_BNEP, p_bcb->src_uuid.As32Bit(),
+                              &bnep_sec_check_complete, p_bcb);
 
   return;
 }
@@ -664,10 +676,8 @@ void bnep_process_setup_conn_responce(tBNEP_CONN* p_bcb, uint8_t* p_setup) {
       /* Restore the earlier BNEP status */
       p_bcb->con_state = BNEP_STATE_CONNECTED;
       p_bcb->con_flags &= (~BNEP_FLAGS_SETUP_RCVD);
-      memcpy((uint8_t*)&(p_bcb->src_uuid), (uint8_t*)&(p_bcb->prv_src_uuid),
-             sizeof(tBT_UUID));
-      memcpy((uint8_t*)&(p_bcb->dst_uuid), (uint8_t*)&(p_bcb->prv_dst_uuid),
-             sizeof(tBT_UUID));
+      p_bcb->src_uuid = p_bcb->prv_src_uuid;
+      p_bcb->dst_uuid = p_bcb->prv_dst_uuid;
 
       /* Ensure timer is stopped */
       alarm_cancel(p_bcb->conn_timer);
@@ -1154,10 +1164,8 @@ void bnep_sec_check_complete(UNUSED_ATTR const RawAddress* bd_addr,
                                      BNEP_SECURITY_FAIL, is_role_change);
 
         p_bcb->con_state = BNEP_STATE_CONNECTED;
-        memcpy((uint8_t*)&(p_bcb->src_uuid), (uint8_t*)&(p_bcb->prv_src_uuid),
-               sizeof(tBT_UUID));
-        memcpy((uint8_t*)&(p_bcb->dst_uuid), (uint8_t*)&(p_bcb->prv_dst_uuid),
-               sizeof(tBT_UUID));
+        p_bcb->src_uuid = p_bcb->prv_src_uuid;
+        p_bcb->dst_uuid = p_bcb->prv_dst_uuid;
         return;
       }
 
@@ -1190,10 +1198,8 @@ void bnep_sec_check_complete(UNUSED_ATTR const RawAddress* bd_addr,
        * state */
       p_bcb->con_state = BNEP_STATE_CONNECTED;
       p_bcb->con_flags &= (~BNEP_FLAGS_SETUP_RCVD);
-      memcpy((uint8_t*)&(p_bcb->src_uuid), (uint8_t*)&(p_bcb->prv_src_uuid),
-             sizeof(tBT_UUID));
-      memcpy((uint8_t*)&(p_bcb->dst_uuid), (uint8_t*)&(p_bcb->prv_dst_uuid),
-             sizeof(tBT_UUID));
+      p_bcb->src_uuid = p_bcb->prv_src_uuid;
+      p_bcb->dst_uuid = p_bcb->prv_dst_uuid;
       return;
     }
 
@@ -1205,8 +1211,8 @@ void bnep_sec_check_complete(UNUSED_ATTR const RawAddress* bd_addr,
 
   if (bnep_cb.p_conn_ind_cb) {
     p_bcb->con_state = BNEP_STATE_CONN_SETUP;
-    (*bnep_cb.p_conn_ind_cb)(p_bcb->handle, p_bcb->rem_bda, &p_bcb->dst_uuid,
-                             &p_bcb->src_uuid, is_role_change);
+    (*bnep_cb.p_conn_ind_cb)(p_bcb->handle, p_bcb->rem_bda, p_bcb->dst_uuid,
+                             p_bcb->src_uuid, is_role_change);
   } else {
     /* Profile didn't register connection indication call back */
     bnep_send_conn_responce(p_bcb, resp_code);
@@ -1293,27 +1299,4 @@ tBNEP_RESULT bnep_is_packet_allowed(tBNEP_CONN* p_bcb,
   }
 
   return BNEP_SUCCESS;
-}
-
-/*******************************************************************************
- *
- * Function         bnep_get_uuid32
- *
- * Description      This function returns the 32-bit equivalent of the UUID
- *
- * Returns          uint32_t - 32-bit equivalent of the UUID
- *
- ******************************************************************************/
-uint32_t bnep_get_uuid32(tBT_UUID* src_uuid) {
-  uint32_t result;
-
-  if (src_uuid->len == 2)
-    return ((uint32_t)src_uuid->uu.uuid16);
-  else if (src_uuid->len == 4)
-    return (src_uuid->uu.uuid32 & 0x0000FFFF);
-  else {
-    result = src_uuid->uu.uuid128[2];
-    result = (result << 8) | (src_uuid->uu.uuid128[3]);
-    return result;
-  }
 }

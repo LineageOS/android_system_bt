@@ -35,6 +35,8 @@
 #include "sdp_api.h"
 #include "utl.h"
 
+using bluetooth::Uuid;
+
 /* Number of protocol elements in protocol element list. */
 #define BTA_AG_NUM_PROTO_ELEMS 2
 
@@ -374,7 +376,7 @@ bool bta_ag_sdp_find_attr(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
  *
  ******************************************************************************/
 void bta_ag_do_disc(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
-  tSDP_UUID uuid_list[1];
+  Uuid uuid_list[1];
   uint16_t num_uuid = 1;
   uint16_t attr_list[4];
   uint8_t num_attr;
@@ -387,7 +389,7 @@ void bta_ag_do_disc(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
     attr_list[2] = ATTR_ID_BT_PROFILE_DESC_LIST;
     attr_list[3] = ATTR_ID_SUPPORTED_FEATURES;
     num_attr = 4;
-    uuid_list[0].uu.uuid16 = UUID_SERVCLASS_HF_HANDSFREE;
+    uuid_list[0] = Uuid::From16Bit(UUID_SERVCLASS_HF_HANDSFREE);
   }
   /* HFP acceptor; get features */
   else if (service & BTA_HFP_SERVICE_MASK && p_scb->role == BTA_AG_ACP) {
@@ -395,7 +397,7 @@ void bta_ag_do_disc(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
     attr_list[1] = ATTR_ID_BT_PROFILE_DESC_LIST;
     attr_list[2] = ATTR_ID_SUPPORTED_FEATURES;
     num_attr = 3;
-    uuid_list[0].uu.uuid16 = UUID_SERVCLASS_HF_HANDSFREE;
+    uuid_list[0] = Uuid::From16Bit(UUID_SERVCLASS_HF_HANDSFREE);
   }
   /* HSP initiator; get proto list */
   else if (service & BTA_HSP_SERVICE_MASK && p_scb->role == BTA_AG_INT) {
@@ -409,9 +411,9 @@ void bta_ag_do_disc(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
     // UUID_SERVCLASS_HEADSET (0x1108) to store its service record. However,
     // most of such devices are HSP 1.0 devices.
     if (p_scb->hsp_version >= HSP_VERSION_1_2) {
-      uuid_list[0].uu.uuid16 = UUID_SERVCLASS_HEADSET_HS;
+      uuid_list[0] = Uuid::From16Bit(UUID_SERVCLASS_HEADSET_HS);
     } else {
-      uuid_list[0].uu.uuid16 = UUID_SERVCLASS_HEADSET;
+      uuid_list[0] = Uuid::From16Bit(UUID_SERVCLASS_HEADSET);
     }
   }
   /* HSP acceptor; no discovery */
@@ -422,7 +424,6 @@ void bta_ag_do_disc(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
   /* allocate buffer for sdp database */
   p_scb->p_disc_db = (tSDP_DISCOVERY_DB*)osi_malloc(BTA_AG_DISC_BUF_SIZE);
   /* set up service discovery database; attr happens to be attr_list len */
-  uuid_list[0].len = LEN_UUID_16;
   db_inited = SDP_InitDiscoveryDb(p_scb->p_disc_db, BTA_AG_DISC_BUF_SIZE,
                                   num_uuid, uuid_list, num_attr, attr_list);
 

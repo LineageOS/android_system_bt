@@ -22,13 +22,13 @@
 #include <mutex>
 
 #include <base/macros.h>
+#include <bluetooth/uuid.h>
 
 #include "service/bluetooth_instance.h"
 #include "service/common/bluetooth/low_energy_constants.h"
 #include "service/common/bluetooth/scan_filter.h"
 #include "service/common/bluetooth/scan_result.h"
 #include "service/common/bluetooth/scan_settings.h"
-#include "service/common/bluetooth/uuid.h"
 #include "service/hal/bluetooth_gatt_interface.h"
 
 namespace bluetooth {
@@ -91,7 +91,7 @@ class LowEnergyClient : private hal::BluetoothGattInterface::ClientObserver,
   bool SetMtu(const std::string& address, int mtu);
 
   // BluetoothClientInstace overrides:
-  const UUID& GetAppIdentifier() const override;
+  const Uuid& GetAppIdentifier() const override;
   int GetInstanceId() const override;
 
  private:
@@ -99,7 +99,7 @@ class LowEnergyClient : private hal::BluetoothGattInterface::ClientObserver,
 
   // Constructor shouldn't be called directly as instances are meant to be
   // obtained from the factory.
-  LowEnergyClient(Adapter& adapter, const UUID& uuid, int client_id);
+  LowEnergyClient(Adapter& adapter, const Uuid& uuid, int client_id);
 
   // BluetoothGattInterface::ClientObserver overrides:
   void ConnectCallback(hal::BluetoothGattInterface* gatt_iface, int conn_id,
@@ -119,7 +119,7 @@ class LowEnergyClient : private hal::BluetoothGattInterface::ClientObserver,
   Adapter& adapter_;
 
   // See getters above for documentation.
-  UUID app_identifier_;
+  Uuid app_identifier_;
   int client_id_;
 
   // Raw handle to the Delegate, which must outlive this LowEnergyClient
@@ -151,7 +151,7 @@ class LowEnergyClientFactory
   ~LowEnergyClientFactory() override;
 
   // BluetoothInstanceFactory override:
-  bool RegisterInstance(const UUID& uuid,
+  bool RegisterInstance(const Uuid& uuid,
                         const RegisterCallback& callback) override;
 
  private:
@@ -160,11 +160,11 @@ class LowEnergyClientFactory
   // BluetoothGattInterface::ClientObserver overrides:
   void RegisterClientCallback(hal::BluetoothGattInterface* gatt_iface,
                               int status, int client_id,
-                              const bt_uuid_t& app_uuid) override;
+                              const bluetooth::Uuid& app_uuid) override;
 
   // Map of pending calls to register.
   std::mutex pending_calls_lock_;
-  std::map<UUID, RegisterCallback> pending_calls_;
+  std::map<Uuid, RegisterCallback> pending_calls_;
 
   // Raw pointer to the Adapter that owns this factory.
   Adapter& adapter_;

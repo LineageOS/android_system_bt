@@ -26,6 +26,7 @@
 #include "gatt_api.h"
 
 using base::StringPrintf;
+using bluetooth::Uuid;
 
 namespace {
 
@@ -246,8 +247,7 @@ bool send_cl_read_request(tGAP_CLCB& clcb) {
   tGATT_READ_PARAM param;
   memset(&param, 0, sizeof(tGATT_READ_PARAM));
 
-  param.service.uuid.len = LEN_UUID_16;
-  param.service.uuid.uu.uuid16 = uuid;
+  param.service.uuid = Uuid::From16Bit(uuid);
   param.service.s_handle = 1;
   param.service.e_handle = 0xFFFF;
   param.service.auth_req = 0;
@@ -393,23 +393,22 @@ bool accept_client_operation(const RawAddress& peer_bda, uint16_t uuid,
  *
  ******************************************************************************/
 void gap_attr_db_init(void) {
-  tBT_UUID app_uuid = {LEN_UUID_128, {0}};
   uint16_t service_handle;
 
   /* Fill our internal UUID with a fixed pattern 0x82 */
-  memset(&app_uuid.uu.uuid128, 0x82, LEN_UUID_128);
+  std::array<uint8_t, Uuid::kNumBytes128> tmp;
+  tmp.fill(0x82);
+  Uuid app_uuid = Uuid::From128BitBE(tmp);
   gatt_attr.fill({});
 
-  gatt_if = GATT_Register(&app_uuid, &gap_cback);
+  gatt_if = GATT_Register(app_uuid, &gap_cback);
 
   GATT_StartIf(gatt_if);
 
-  bt_uuid_t svc_uuid, name_uuid, icon_uuid, pref_uuid, addr_res_uuid;
-  uuid_128_from_16(&svc_uuid, UUID_SERVCLASS_GAP_SERVER);
-  uuid_128_from_16(&name_uuid, GATT_UUID_GAP_DEVICE_NAME);
-  uuid_128_from_16(&icon_uuid, GATT_UUID_GAP_ICON);
-  uuid_128_from_16(&pref_uuid, GATT_UUID_GAP_PREF_CONN_PARAM);
-  uuid_128_from_16(&addr_res_uuid, GATT_UUID_GAP_CENTRAL_ADDR_RESOL);
+  Uuid svc_uuid = Uuid::From16Bit(UUID_SERVCLASS_GAP_SERVER);
+  Uuid name_uuid = Uuid::From16Bit(GATT_UUID_GAP_DEVICE_NAME);
+  Uuid icon_uuid = Uuid::From16Bit(GATT_UUID_GAP_ICON);
+  Uuid addr_res_uuid = Uuid::From16Bit(GATT_UUID_GAP_CENTRAL_ADDR_RESOL);
 
   btgatt_db_element_t service[] = {
     {.type = BTGATT_DB_PRIMARY_SERVICE, .uuid = svc_uuid},
@@ -428,7 +427,7 @@ void gap_attr_db_init(void) {
 #if (BTM_PERIPHERAL_ENABLED == TRUE) /* Only needed for peripheral testing */
     ,
     {.type = BTGATT_DB_CHARACTERISTIC,
-     .uuid = pref_uuid,
+     .uuid = Uuid::From16Bit(GATT_UUID_GAP_PREF_CONN_PARAM),
      .properties = GATT_CHAR_PROP_BIT_READ,
      .permissions = GATT_PERM_READ}
 #endif

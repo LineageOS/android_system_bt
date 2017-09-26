@@ -37,6 +37,7 @@
 #include "sdp_api.h"
 
 using base::StringPrintf;
+using bluetooth::Uuid;
 
 /* check if [x, y] and [a, b] have overlapping range */
 #define GATT_VALIDATE_HANDLE_RANGE(x, y, a, b) ((y) >= (a) && (x) <= (b))
@@ -75,10 +76,6 @@ const char* const op_code_name[] = {"UNKNOWN",
                                     "ATT_HANDLE_VALUE_IND",
                                     "ATT_HANDLE_VALUE_CONF",
                                     "ATT_OP_CODE_MAX"};
-
-static const uint8_t base_uuid[LEN_UUID_128] = {
-    0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x00, 0x00, 0x80,
-    0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 /*******************************************************************************
  *
@@ -220,12 +217,12 @@ tGATT_HDL_LIST_ELEM* gatt_find_hdl_buffer_by_handle(uint16_t handle) {
  *
  ******************************************************************************/
 std::list<tGATT_HDL_LIST_ELEM>::iterator gatt_find_hdl_buffer_by_app_id(
-    tBT_UUID* p_app_uuid128, tBT_UUID* p_svc_uuid, uint16_t start_handle) {
+    const Uuid& app_uuid128, Uuid* p_svc_uuid, uint16_t start_handle) {
   auto end_it = gatt_cb.hdl_list_info->end();
   auto it = gatt_cb.hdl_list_info->begin();
   for (; it != end_it; it++) {
-    if (gatt_uuid_compare(*p_app_uuid128, it->asgn_range.app_uuid128) &&
-        gatt_uuid_compare(*p_svc_uuid, it->asgn_range.svc_uuid) &&
+    if (app_uuid128 == it->asgn_range.app_uuid128 &&
+        *p_svc_uuid == it->asgn_range.svc_uuid &&
         (start_handle == it->asgn_range.s_handle)) {
       return it;
     }
@@ -238,11 +235,11 @@ std::list<tGATT_HDL_LIST_ELEM>::iterator gatt_find_hdl_buffer_by_app_id(
  * free the service attribute database buffers by the owner of the service app
  * ID.
  */
-void gatt_free_srvc_db_buffer_app_id(tBT_UUID* p_app_id) {
+void gatt_free_srvc_db_buffer_app_id(const Uuid& app_id) {
   auto it = gatt_cb.hdl_list_info->begin();
   auto end = gatt_cb.hdl_list_info->end();
   while (it != end) {
-    if (memcmp(p_app_id, &it->asgn_range.app_uuid128, sizeof(tBT_UUID)) == 0) {
+    if (app_id == it->asgn_range.app_uuid128) {
       it = gatt_cb.hdl_list_info->erase(it);
     } else {
       it++;
@@ -461,179 +458,51 @@ tGATT_TCB* gatt_allocate_tcb_by_bdaddr(const RawAddress& bda,
   return NULL;
 }
 
-/*******************************************************************************
- *
- * Function         gatt_convert_uuid16_to_uuid128
- *
- * Description      Convert a 16 bits UUID to be an standard 128 bits one.
- *
- * Returns          true if two uuid match; false otherwise.
- *
- ******************************************************************************/
-void gatt_convert_uuid16_to_uuid128(uint8_t uuid_128[LEN_UUID_128],
-                                    uint16_t uuid_16) {
-  uint8_t* p = &uuid_128[LEN_UUID_128 - 4];
-
-  memcpy(uuid_128, base_uuid, LEN_UUID_128);
-
-  UINT16_TO_STREAM(p, uuid_16);
-}
-
-/*******************************************************************************
- *
- * Function         gatt_convert_uuid32_to_uuid128
- *
- * Description      Convert a 32 bits UUID to be an standard 128 bits one.
- *
- * Returns          true if two uuid match; false otherwise.
- *
- ******************************************************************************/
-void gatt_convert_uuid32_to_uuid128(uint8_t uuid_128[LEN_UUID_128],
-                                    uint32_t uuid_32) {
-  uint8_t* p = &uuid_128[LEN_UUID_128 - 4];
-
-  memcpy(uuid_128, base_uuid, LEN_UUID_128);
-
-  UINT32_TO_STREAM(p, uuid_32);
-}
-/*******************************************************************************
- *
- * Function         gatt_uuid_compare
- *
- * Description      Compare two UUID to see if they are the same.
- *
- * Returns          true if two uuid match; false otherwise.
- *
- ******************************************************************************/
-bool gatt_uuid_compare(tBT_UUID src, tBT_UUID tar) {
-  uint8_t su[LEN_UUID_128], tu[LEN_UUID_128];
-  uint8_t *ps, *pt;
-
-  /* any of the UUID is unspecified */
-  if (src.len == 0 || tar.len == 0) {
-    return true;
-  }
-
-  /* If both are 16-bit, we can do a simple compare */
-  if (src.len == LEN_UUID_16 && tar.len == LEN_UUID_16) {
-    return src.uu.uuid16 == tar.uu.uuid16;
-  }
-
-  /* If both are 32-bit, we can do a simple compare */
-  if (src.len == LEN_UUID_32 && tar.len == LEN_UUID_32) {
-    return src.uu.uuid32 == tar.uu.uuid32;
-  }
-
-  /* One or both of the UUIDs is 128-bit */
-  if (src.len == LEN_UUID_16) {
-    /* convert a 16 bits UUID to 128 bits value */
-    gatt_convert_uuid16_to_uuid128(su, src.uu.uuid16);
-    ps = su;
-  } else if (src.len == LEN_UUID_32) {
-    gatt_convert_uuid32_to_uuid128(su, src.uu.uuid32);
-    ps = su;
-  } else
-    ps = src.uu.uuid128;
-
-  if (tar.len == LEN_UUID_16) {
-    /* convert a 16 bits UUID to 128 bits value */
-    gatt_convert_uuid16_to_uuid128(tu, tar.uu.uuid16);
-    pt = tu;
-  } else if (tar.len == LEN_UUID_32) {
-    /* convert a 32 bits UUID to 128 bits value */
-    gatt_convert_uuid32_to_uuid128(tu, tar.uu.uuid32);
-    pt = tu;
-  } else
-    pt = tar.uu.uuid128;
-
-  return (memcmp(ps, pt, LEN_UUID_128) == 0);
-}
-
-/*******************************************************************************
- *
- * Function         gatt_build_uuid_to_stream
- *
- * Description      Add UUID into stream.
- *
- * Returns          UUID length.
- *
- ******************************************************************************/
-uint8_t gatt_build_uuid_to_stream(uint8_t** p_dst, tBT_UUID uuid) {
+/** Add UUID into stream. Returns UUID length. */
+uint8_t gatt_build_uuid_to_stream(uint8_t** p_dst, const Uuid& uuid) {
   uint8_t* p = *p_dst;
-  uint8_t len = 0;
+  size_t len = uuid.GetShortestRepresentationSize();
 
-  if (uuid.len == LEN_UUID_16) {
-    UINT16_TO_STREAM(p, uuid.uu.uuid16);
-    len = LEN_UUID_16;
-  } else if (uuid.len ==
-             LEN_UUID_32) /* always convert 32 bits into 128 bits as alwats */
-  {
-    gatt_convert_uuid32_to_uuid128(p, uuid.uu.uuid32);
-    p += LEN_UUID_128;
-    len = LEN_UUID_128;
-  } else if (uuid.len == LEN_UUID_128) {
-    ARRAY_TO_STREAM(p, uuid.uu.uuid128, LEN_UUID_128);
-    len = LEN_UUID_128;
+  if (uuid.IsEmpty()) {
+    return 0;
+  }
+
+  if (len == Uuid::kNumBytes16) {
+    UINT16_TO_STREAM(p, uuid.As16Bit());
+  } else if (len == Uuid::kNumBytes32) {
+    /* always convert 32 bits into 128 bits */
+    ARRAY_TO_STREAM(p, uuid.To128BitLE(), (int)Uuid::kNumBytes128);
+    len = Uuid::kNumBytes128;
+  } else if (len == Uuid::kNumBytes128) {
+    ARRAY_TO_STREAM(p, uuid.To128BitLE(), (int)Uuid::kNumBytes128);
   }
 
   *p_dst = p;
   return len;
 }
 
-/*******************************************************************************
- *
- * Function         gatt_parse_uuid_from_cmd
- *
- * Description      Convert a 128 bits UUID into a 16 bits UUID.
- *
- * Returns          true if command sent, otherwise false.
- *
- ******************************************************************************/
-bool gatt_parse_uuid_from_cmd(tBT_UUID* p_uuid_rec, uint16_t uuid_size,
+bool gatt_parse_uuid_from_cmd(Uuid* p_uuid_rec, uint16_t uuid_size,
                               uint8_t** p_data) {
-  bool is_base_uuid, ret = true;
-  uint8_t xx;
+  bool ret = true;
   uint8_t* p_uuid = *p_data;
 
-  memset(p_uuid_rec, 0, sizeof(tBT_UUID));
-
   switch (uuid_size) {
-    case LEN_UUID_16:
-      p_uuid_rec->len = uuid_size;
-      STREAM_TO_UINT16(p_uuid_rec->uu.uuid16, p_uuid);
-      *p_data += LEN_UUID_16;
-      break;
+    case Uuid::kNumBytes16: {
+      uint16_t val;
+      STREAM_TO_UINT16(val, p_uuid);
+      *p_uuid_rec = Uuid::From16Bit(val);
+      *p_data += Uuid::kNumBytes16;
+      return true;
+    }
 
-    case LEN_UUID_128:
-      /* See if we can compress his UUID down to 16 or 32bit UUIDs */
-      is_base_uuid = true;
-      for (xx = 0; xx < LEN_UUID_128 - 4; xx++) {
-        if (p_uuid[xx] != base_uuid[xx]) {
-          is_base_uuid = false;
-          break;
-        }
-      }
-      if (is_base_uuid) {
-        if ((p_uuid[LEN_UUID_128 - 1] == 0) &&
-            (p_uuid[LEN_UUID_128 - 2] == 0)) {
-          p_uuid += (LEN_UUID_128 - 4);
-          p_uuid_rec->len = LEN_UUID_16;
-          STREAM_TO_UINT16(p_uuid_rec->uu.uuid16, p_uuid);
-        } else {
-          p_uuid += (LEN_UUID_128 - LEN_UUID_32);
-          p_uuid_rec->len = LEN_UUID_32;
-          STREAM_TO_UINT32(p_uuid_rec->uu.uuid32, p_uuid);
-        }
-      }
-      if (!is_base_uuid) {
-        p_uuid_rec->len = LEN_UUID_128;
-        memcpy(p_uuid_rec->uu.uuid128, p_uuid, LEN_UUID_128);
-      }
-      *p_data += LEN_UUID_128;
-      break;
+    case Uuid::kNumBytes128: {
+      *p_uuid_rec = Uuid::From128BitLE(p_uuid);
+      *p_data += Uuid::kNumBytes128;
+      return true;
+    }
 
     /* do not allow 32 bits UUID in ATT PDU now */
-    case LEN_UUID_32:
+    case Uuid::kNumBytes32:
       LOG(ERROR) << "DO NOT ALLOW 32 BITS UUID IN ATT PDU";
       return false;
     case 0:
@@ -877,47 +746,43 @@ tGATT_STATUS gatt_send_error_rsp(tGATT_TCB& tcb, uint8_t err_code,
  * Returns          0 if error else sdp handle for the record.
  *
  ******************************************************************************/
-uint32_t gatt_add_sdp_record(tBT_UUID* p_uuid, uint16_t start_hdl,
+uint32_t gatt_add_sdp_record(const Uuid& uuid, uint16_t start_hdl,
                              uint16_t end_hdl) {
-  tSDP_PROTOCOL_ELEM proto_elem_list[2];
-  uint32_t sdp_handle;
-  uint16_t list = UUID_SERVCLASS_PUBLIC_BROWSE_GROUP;
   uint8_t buff[60];
   uint8_t* p = buff;
 
   VLOG(1) << __func__
           << StringPrintf(" s_hdl=0x%x  s_hdl=0x%x", start_hdl, end_hdl);
 
-  sdp_handle = SDP_CreateRecord();
+  uint32_t sdp_handle = SDP_CreateRecord();
   if (sdp_handle == 0) return 0;
 
-  switch (p_uuid->len) {
-    case LEN_UUID_16:
-      SDP_AddServiceClassIdList(sdp_handle, 1, &p_uuid->uu.uuid16);
+  switch (uuid.GetShortestRepresentationSize()) {
+    case Uuid::kNumBytes16: {
+      uint16_t tmp = uuid.As16Bit();
+      SDP_AddServiceClassIdList(sdp_handle, 1, &tmp);
       break;
+    }
 
-    case LEN_UUID_32:
+    case Uuid::kNumBytes32: {
       UINT8_TO_BE_STREAM(p, (UUID_DESC_TYPE << 3) | SIZE_FOUR_BYTES);
-      UINT32_TO_BE_STREAM(p, p_uuid->uu.uuid32);
+      uint32_t tmp = uuid.As32Bit();
+      UINT32_TO_BE_STREAM(p, tmp);
       SDP_AddAttribute(sdp_handle, ATTR_ID_SERVICE_CLASS_ID_LIST,
                        DATA_ELE_SEQ_DESC_TYPE, (uint32_t)(p - buff), buff);
       break;
+    }
 
-    case LEN_UUID_128:
+    case Uuid::kNumBytes128:
       UINT8_TO_BE_STREAM(p, (UUID_DESC_TYPE << 3) | SIZE_SIXTEEN_BYTES);
-      ARRAY_TO_BE_STREAM_REVERSE(p, p_uuid->uu.uuid128, LEN_UUID_128);
+      ARRAY_TO_BE_STREAM(p, uuid.To128BitBE().data(), (int)Uuid::kNumBytes128);
       SDP_AddAttribute(sdp_handle, ATTR_ID_SERVICE_CLASS_ID_LIST,
                        DATA_ELE_SEQ_DESC_TYPE, (uint32_t)(p - buff), buff);
-      break;
-
-    default:
-      LOG(ERROR) << "inavlid UUID len=" << +p_uuid->len;
-      SDP_DeleteRecord(sdp_handle);
-      return 0;
       break;
   }
 
   /*** Fill out the protocol element sequence for SDP ***/
+  tSDP_PROTOCOL_ELEM proto_elem_list[2];
   proto_elem_list[0].protocol_uuid = UUID_PROTOCOL_L2CAP;
   proto_elem_list[0].num_params = 1;
   proto_elem_list[0].params[0] = BT_PSM_ATT;
@@ -929,6 +794,7 @@ uint32_t gatt_add_sdp_record(tBT_UUID* p_uuid, uint16_t start_hdl,
   SDP_AddProtocolList(sdp_handle, 2, proto_elem_list);
 
   /* Make the service browseable */
+  uint16_t list = UUID_SERVCLASS_PUBLIC_BROWSE_GROUP;
   SDP_AddUuidSequence(sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &list);
 
   return (sdp_handle);
@@ -1438,40 +1304,6 @@ uint8_t* gatt_dbg_op_name(uint8_t op_code) {
     return (uint8_t*)op_code_name[pseduo_op_code_idx];
   else
     return (uint8_t*)"Op Code Exceed Max";
-}
-
-/*******************************************************************************
- *
- * Function         gatt_dbg_display_uuid
- *
- * Description      Disaplay the UUID
- *
- * Returns          None
- *
- ******************************************************************************/
-void gatt_dbg_display_uuid(tBT_UUID bt_uuid) {
-  char str_buf[50];
-
-  if (bt_uuid.len == LEN_UUID_16) {
-    snprintf(str_buf, sizeof(str_buf), "0x%04x", bt_uuid.uu.uuid16);
-  } else if (bt_uuid.len == LEN_UUID_32) {
-    snprintf(str_buf, sizeof(str_buf), "0x%08x",
-             (unsigned int)bt_uuid.uu.uuid32);
-  } else if (bt_uuid.len == LEN_UUID_128) {
-    int x = snprintf(
-        str_buf, sizeof(str_buf), "0x%02x%02x%02x%02x%02x%02x%02x%02x",
-        bt_uuid.uu.uuid128[15], bt_uuid.uu.uuid128[14], bt_uuid.uu.uuid128[13],
-        bt_uuid.uu.uuid128[12], bt_uuid.uu.uuid128[11], bt_uuid.uu.uuid128[10],
-        bt_uuid.uu.uuid128[9], bt_uuid.uu.uuid128[8]);
-    snprintf(
-        &str_buf[x], sizeof(str_buf) - x, "%02x%02x%02x%02x%02x%02x%02x%02x",
-        bt_uuid.uu.uuid128[7], bt_uuid.uu.uuid128[6], bt_uuid.uu.uuid128[5],
-        bt_uuid.uu.uuid128[4], bt_uuid.uu.uuid128[3], bt_uuid.uu.uuid128[2],
-        bt_uuid.uu.uuid128[1], bt_uuid.uu.uuid128[0]);
-  } else
-    strlcpy(str_buf, "Unknown UUID 0", sizeof(str_buf));
-
-  VLOG(1) << StringPrintf("UUID=[%s]", str_buf);
 }
 
 /** Returns true if this is one of the background devices for the application,

@@ -149,10 +149,10 @@ typedef struct {
   uint16_t bad_pkts_rcvd;
   uint8_t re_transmits;
   uint16_t handle;
-  tBT_UUID prv_src_uuid;
-  tBT_UUID prv_dst_uuid;
-  tBT_UUID src_uuid;
-  tBT_UUID dst_uuid;
+  bluetooth::Uuid prv_src_uuid;
+  bluetooth::Uuid prv_dst_uuid;
+  bluetooth::Uuid src_uuid;
+  bluetooth::Uuid dst_uuid;
 
 } tBNEP_CONN;
 
@@ -231,6 +231,5 @@ extern tBNEP_RESULT bnep_is_packet_allowed(tBNEP_CONN* p_bcb,
                                            uint16_t protocol,
                                            bool fw_ext_present,
                                            uint8_t* p_data);
-extern uint32_t bnep_get_uuid32(tBT_UUID* src_uuid);
 
 #endif

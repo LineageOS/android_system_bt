@@ -184,8 +184,8 @@ bt_status_t btif_set_remote_device_property(RawAddress* remote_addr,
  * Returns          bt_status_t
  *
  ******************************************************************************/
-bt_status_t btif_get_remote_service_record(RawAddress* remote_addr,
-                                           bt_uuid_t* uuid);
+bt_status_t btif_get_remote_service_record(const RawAddress& remote_addr,
+                                           const bluetooth::Uuid& uuid);
 
 /*******************************************************************************
  *  BTIF DM API
@@ -329,8 +329,8 @@ bt_status_t btif_dm_get_adapter_property(bt_property_t* prop);
  * Returns          bt_status_t
  *
  ******************************************************************************/
-bt_status_t btif_dm_get_remote_service_record(RawAddress* remote_addr,
-                                              bt_uuid_t* uuid);
+bt_status_t btif_dm_get_remote_service_record(const RawAddress& remote_addr,
+                                              const bluetooth::Uuid& uuid);
 
 /*******************************************************************************
  *

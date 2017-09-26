@@ -593,7 +593,7 @@ void HandleStartAdv(IBluetooth* bt_iface, const vector<string>& args) {
   bool connectable = false;
   bool set_manufacturer_data = false;
   bool set_uuid = false;
-  bluetooth::UUID uuid;
+  bluetooth::Uuid uuid;
 
   for (auto iter = args.begin(); iter != args.end(); ++iter) {
     const std::string& arg = *iter;
@@ -609,14 +609,15 @@ void HandleStartAdv(IBluetooth* bt_iface, const vector<string>& args) {
       // This flag has a single argument.
       ++iter;
       if (iter == args.end()) {
-        PrintError("Expected a UUID after -u");
+        PrintError("Expected a Uuid after -u");
         return;
       }
 
       std::string uuid_str = *iter;
-      uuid = bluetooth::UUID(uuid_str);
-      if (!uuid.is_valid()) {
-        PrintError("Invalid UUID: " + uuid_str);
+      bool is_valid = false;
+      uuid = bluetooth::Uuid::FromString(uuid_str, &is_valid);
+      if (!is_valid) {
+        PrintError("Invalid Uuid: " + uuid_str);
         return;
       }
 
@@ -661,19 +662,19 @@ void HandleStartAdv(IBluetooth* bt_iface, const vector<string>& args) {
     // Determine the type and length bytes.
     int uuid_size = uuid.GetShortestRepresentationSize();
     uint8_t type;
-    if (uuid_size == bluetooth::UUID::kNumBytes128)
-      type = bluetooth::kEIRTypeComplete128BitUUIDs;
-    else if (uuid_size == bluetooth::UUID::kNumBytes32)
-      type = bluetooth::kEIRTypeComplete32BitUUIDs;
-    else if (uuid_size == bluetooth::UUID::kNumBytes16)
-      type = bluetooth::kEIRTypeComplete16BitUUIDs;
+    if (uuid_size == bluetooth::Uuid::kNumBytes128)
+      type = bluetooth::kEIRTypeComplete128BitUuids;
+    else if (uuid_size == bluetooth::Uuid::kNumBytes32)
+      type = bluetooth::kEIRTypeComplete32BitUuids;
+    else if (uuid_size == bluetooth::Uuid::kNumBytes16)
+      type = bluetooth::kEIRTypeComplete16BitUuids;
     else
       NOTREACHED() << "Unexpected size: " << uuid_size;
 
     data.push_back(uuid_size + 1);
     data.push_back(type);
 
-    auto uuid_bytes = uuid.GetFullLittleEndian();
+    auto uuid_bytes = uuid.To128BitLE();
     int index = (uuid_size == 16) ? 0 : 12;
     data.insert(data.end(), uuid_bytes.data() + index,
                 uuid_bytes.data() + index + uuid_size);

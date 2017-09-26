@@ -31,8 +31,6 @@
 #include "bta_gatts_int.h"
 #include "bta_sys.h"
 
-void btif_to_bta_uuid(tBT_UUID* p_dest, const bt_uuid_t* p_src);
-
 /*****************************************************************************
  *  Constants
  ****************************************************************************/
@@ -76,7 +74,8 @@ void BTA_GATTS_Disable(void) {
  * Returns          None
  *
  ******************************************************************************/
-void BTA_GATTS_AppRegister(tBT_UUID* p_app_uuid, tBTA_GATTS_CBACK* p_cback) {
+void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid,
+                           tBTA_GATTS_CBACK* p_cback) {
   tBTA_GATTS_API_REG* p_buf =
       (tBTA_GATTS_API_REG*)osi_malloc(sizeof(tBTA_GATTS_API_REG));
 
@@ -85,8 +84,7 @@ void BTA_GATTS_AppRegister(tBT_UUID* p_app_uuid, tBTA_GATTS_CBACK* p_cback) {
     bta_sys_register(BTA_ID_GATTS, &bta_gatts_reg);
 
   p_buf->hdr.event = BTA_GATTS_API_REG_EVT;
-  if (p_app_uuid != NULL)
-    memcpy(&p_buf->app_uuid, p_app_uuid, sizeof(tBT_UUID));
+  p_buf->app_uuid = app_uuid;
   p_buf->p_cback = p_cback;
 
   bta_sys_sendmsg(p_buf);
@@ -143,8 +141,7 @@ extern uint16_t BTA_GATTS_AddService(tBTA_GATTS_IF server_if,
   uint16_t status = GATTS_AddService(server_if, service.data(), service.size());
 
   if (status == GATT_SERVICE_STARTED) {
-    btif_to_bta_uuid(&bta_gatts_cb.srvc_cb[srvc_idx].service_uuid,
-                     &service[0].uuid);
+    bta_gatts_cb.srvc_cb[srvc_idx].service_uuid = service[0].uuid;
 
     // service_id is equal to service start handle
     bta_gatts_cb.srvc_cb[srvc_idx].service_id = service[0].attribute_handle;

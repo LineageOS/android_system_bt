@@ -40,6 +40,8 @@
 #include "btif_profile_queue.h"
 #include "btif_util.h"
 
+using bluetooth::Uuid;
+
 /*****************************************************************************
  *  Functions implemented in sdp_server.c
  *****************************************************************************/
@@ -64,16 +66,13 @@ static btsdp_callbacks_t* bt_sdp_callbacks = NULL;
 
 static void btif_sdp_search_comp_evt(uint16_t event, char* p_param) {
   tBTA_SDP_SEARCH_COMP* evt_data = (tBTA_SDP_SEARCH_COMP*)p_param;
-  RawAddress addr;
   BTIF_TRACE_DEBUG("%s:  event = %d", __func__, event);
 
   if (event != BTA_SDP_SEARCH_COMP_EVT) return;
 
-  addr = evt_data->remote_addr;
-
   HAL_CBACK(bt_sdp_callbacks, sdp_search_cb, (bt_status_t)evt_data->status,
-            &addr, (uint8_t*)(evt_data->uuid.uu.uuid128),
-            evt_data->record_count, evt_data->records);
+            evt_data->remote_addr, evt_data->uuid, evt_data->record_count,
+            evt_data->records);
 }
 
 static void sdp_search_comp_copy_cb(uint16_t event, char* p_dest, char* p_src) {
@@ -137,13 +136,8 @@ static bt_status_t deinit() {
   return BT_STATUS_SUCCESS;
 }
 
-static bt_status_t search(RawAddress* bd_addr, const uint8_t* uuid) {
-  tSDP_UUID sdp_uuid;
-  sdp_uuid.len = 16;
-  memcpy(sdp_uuid.uu.uuid128, uuid, sizeof(sdp_uuid.uu.uuid128));
-
-  BTA_SdpSearch(*bd_addr, &sdp_uuid);
-
+static bt_status_t search(RawAddress* bd_addr, const Uuid& uuid) {
+  BTA_SdpSearch(*bd_addr, uuid);
   return BT_STATUS_SUCCESS;
 }
 
