@@ -251,7 +251,7 @@ void btif_gattc_open_impl(int client_if, RawAddress address, bool is_direct,
   // Ensure device is in inquiry database
   int addr_type = 0;
   int device_type = 0;
-  tBTA_GATT_TRANSPORT transport = (tBTA_GATT_TRANSPORT)BTA_GATT_TRANSPORT_LE;
+  tGATT_TRANSPORT transport = (tGATT_TRANSPORT)GATT_TRANSPORT_LE;
 
   if (btif_get_address_type(address, &addr_type) &&
       btif_get_device_type(address, &device_type) &&
@@ -283,18 +283,18 @@ void btif_gattc_open_impl(int client_if, RawAddress address, bool is_direct,
   } else {
     switch (device_type) {
       case BT_DEVICE_TYPE_BREDR:
-        transport = BTA_GATT_TRANSPORT_BR_EDR;
+        transport = GATT_TRANSPORT_BR_EDR;
         break;
 
       case BT_DEVICE_TYPE_BLE:
-        transport = BTA_GATT_TRANSPORT_LE;
+        transport = GATT_TRANSPORT_LE;
         break;
 
       case BT_DEVICE_TYPE_DUMO:
         if (transport_p == GATT_TRANSPORT_LE)
-          transport = BTA_GATT_TRANSPORT_LE;
+          transport = GATT_TRANSPORT_LE;
         else
-          transport = BTA_GATT_TRANSPORT_BR_EDR;
+          transport = GATT_TRANSPORT_BR_EDR;
         break;
     }
   }
