@@ -1636,7 +1636,7 @@ void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
         if (p_char->uuid == Uuid::From16Bit(GATT_UUID_SCAN_REFRESH)) {
           p_dev_cb->scan_refresh_char_handle = p_char->handle;
 
-          if (p_char->properties & BTA_GATT_CHAR_PROP_BIT_NOTIFY)
+          if (p_char->properties & GATT_CHAR_PROP_BIT_NOTIFY)
             p_dev_cb->scps_notify |= BTA_HH_LE_SCPS_NOTIFY_SPT;
           else
             p_dev_cb->scps_notify = BTA_HH_LE_SCPS_NOTIFY_NONE;
@@ -1989,7 +1989,7 @@ void bta_hh_le_write_rpt(tBTA_HH_DEV_CB* p_cb, tBTA_HH_RPT_TYPE r_type,
       BTA_GATTC_GetCharacteristic(p_cb->conn_id, p_rpt->char_inst_id);
 
   tBTA_GATTC_WRITE_TYPE write_type = BTA_GATTC_TYPE_WRITE;
-  if (p_char && (p_char->properties & BTA_GATT_CHAR_PROP_BIT_WRITE_NR))
+  if (p_char && (p_char->properties & GATT_CHAR_PROP_BIT_WRITE_NR))
     write_type = BTA_GATTC_TYPE_WRITE_NO_RSP;
 
   gatt_queue_write_op(GATT_WRITE_CHAR, p_cb->conn_id, p_rpt->char_inst_id,
