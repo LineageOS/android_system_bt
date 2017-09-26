@@ -39,6 +39,7 @@
 
 #include "btu.h"
 
+using bluetooth::Uuid;
 static const uint8_t sdp_base_uuid[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                         0x10, 0x00, 0x80, 0x00, 0x00, 0x80,
                                         0x5F, 0x9B, 0x34, 0xFB};
@@ -569,7 +570,7 @@ uint8_t* sdpu_get_len_from_type(uint8_t* p, uint8_t type, uint32_t* p_len) {
 bool sdpu_is_base_uuid(uint8_t* p_uuid) {
   uint16_t xx;
 
-  for (xx = 4; xx < MAX_UUID_SIZE; xx++)
+  for (xx = 4; xx < Uuid::kNumBytes128; xx++)
     if (p_uuid[xx] != sdp_base_uuid[xx]) return (false);
 
   /* If here, matched */
@@ -590,8 +591,8 @@ bool sdpu_is_base_uuid(uint8_t* p_uuid) {
  ******************************************************************************/
 bool sdpu_compare_uuid_arrays(uint8_t* p_uuid1, uint32_t len1, uint8_t* p_uuid2,
                               uint16_t len2) {
-  uint8_t nu1[MAX_UUID_SIZE];
-  uint8_t nu2[MAX_UUID_SIZE];
+  uint8_t nu1[Uuid::kNumBytes128];
+  uint8_t nu2[Uuid::kNumBytes128];
 
   if (((len1 != 2) && (len1 != 4) && (len1 != 16)) ||
       ((len2 != 2) && (len2 != 4) && (len2 != 16))) {
@@ -615,15 +616,15 @@ bool sdpu_compare_uuid_arrays(uint8_t* p_uuid1, uint32_t len1, uint8_t* p_uuid2,
               (p_uuid1[2] == p_uuid2[0]) && (p_uuid1[3] == p_uuid2[1]));
     } else {
       /* Normalize UUIDs to 16-byte form, then compare. Len1 must be 16 */
-      memcpy(nu1, p_uuid1, MAX_UUID_SIZE);
-      memcpy(nu2, sdp_base_uuid, MAX_UUID_SIZE);
+      memcpy(nu1, p_uuid1, Uuid::kNumBytes128);
+      memcpy(nu2, sdp_base_uuid, Uuid::kNumBytes128);
 
       if (len2 == 4)
         memcpy(nu2, p_uuid2, len2);
       else if (len2 == 2)
         memcpy(nu2 + 2, p_uuid2, len2);
 
-      return (memcmp(nu1, nu2, MAX_UUID_SIZE) == 0);
+      return (memcmp(nu1, nu2, Uuid::kNumBytes128) == 0);
     }
   } else {
     /* len2 is greater than len1 */
@@ -633,43 +634,17 @@ bool sdpu_compare_uuid_arrays(uint8_t* p_uuid1, uint32_t len1, uint8_t* p_uuid2,
               (p_uuid2[2] == p_uuid1[0]) && (p_uuid2[3] == p_uuid1[1]));
     } else {
       /* Normalize UUIDs to 16-byte form, then compare. Len1 must be 16 */
-      memcpy(nu2, p_uuid2, MAX_UUID_SIZE);
-      memcpy(nu1, sdp_base_uuid, MAX_UUID_SIZE);
+      memcpy(nu2, p_uuid2, Uuid::kNumBytes128);
+      memcpy(nu1, sdp_base_uuid, Uuid::kNumBytes128);
 
       if (len1 == 4)
         memcpy(nu1, p_uuid1, (size_t)len1);
       else if (len1 == 2)
         memcpy(nu1 + 2, p_uuid1, (size_t)len1);
 
-      return (memcmp(nu1, nu2, MAX_UUID_SIZE) == 0);
+      return (memcmp(nu1, nu2, Uuid::kNumBytes128) == 0);
     }
   }
-}
-
-/*******************************************************************************
- *
- * Function         sdpu_compare_bt_uuids
- *
- * Description      This function compares 2 BT UUID structures.
- *
- * NOTE             it is assumed that BT UUID structures are compressed to the
- *                  smallest possible UUIDs (by removing the base SDP UUID)
- *
- * Returns          true if matched, else false
- *
- ******************************************************************************/
-bool sdpu_compare_bt_uuids(tBT_UUID* p_uuid1, tBT_UUID* p_uuid2) {
-  /* Lengths must match for BT UUIDs to match */
-  if (p_uuid1->len == p_uuid2->len) {
-    if (p_uuid1->len == 2)
-      return (p_uuid1->uu.uuid16 == p_uuid2->uu.uuid16);
-    else if (p_uuid1->len == 4)
-      return (p_uuid1->uu.uuid32 == p_uuid2->uu.uuid32);
-    else if (!memcmp(p_uuid1->uu.uuid128, p_uuid2->uu.uuid128, 16))
-      return (true);
-  }
-
-  return (false);
 }
 
 /*******************************************************************************
@@ -688,18 +663,12 @@ bool sdpu_compare_bt_uuids(tBT_UUID* p_uuid1, tBT_UUID* p_uuid2) {
  * Returns          true if matched, else false
  *
  ******************************************************************************/
-bool sdpu_compare_uuid_with_attr(tBT_UUID* p_btuuid, tSDP_DISC_ATTR* p_attr) {
-  uint16_t attr_len = SDP_DISC_ATTR_LEN(p_attr->attr_len_type);
-
-  /* Since both UUIDs are compressed, lengths must match  */
-  if (p_btuuid->len != attr_len) return (false);
-
-  if (p_btuuid->len == 2)
-    return (bool)(p_btuuid->uu.uuid16 == p_attr->attr_value.v.u16);
-  else if (p_btuuid->len == 4)
-    return (bool)(p_btuuid->uu.uuid32 == p_attr->attr_value.v.u32);
-  else if (!memcmp(p_btuuid->uu.uuid128, (void*)p_attr->attr_value.v.array,
-                   MAX_UUID_SIZE))
+bool sdpu_compare_uuid_with_attr(const Uuid& uuid, tSDP_DISC_ATTR* p_attr) {
+  int len = uuid.GetShortestRepresentationSize();
+  if (len == 2) return uuid.As16Bit() == p_attr->attr_value.v.u16;
+  if (len == 4) return uuid.As32Bit() == p_attr->attr_value.v.u32;
+  if (memcmp(uuid.To128BitBE().data(), (void*)p_attr->attr_value.v.array,
+             Uuid::kNumBytes128) == 0)
     return (true);
 
   return (false);
@@ -902,26 +871,4 @@ uint8_t* sdpu_build_partial_attrib_entry(uint8_t* p_out, tSDP_ATTRIBUTE* p_attr,
 
   osi_free(p_attr_buff);
   return p_out;
-}
-
-/*******************************************************************************
- *
- * Function         sdpu_uuid16_to_uuid128
- *
- * Description      This function converts UUID-16 to UUID-128 by including the
- *                  base UUID
- *
- *                  uuid16: 2-byte UUID
- *                  p_uuid128: Expanded 128-bit UUID
- *
- * Returns          None
- *
- ******************************************************************************/
-void sdpu_uuid16_to_uuid128(uint16_t uuid16, uint8_t* p_uuid128) {
-  uint16_t uuid16_bo;
-  memset(p_uuid128, 0, 16);
-
-  memcpy(p_uuid128, sdp_base_uuid, MAX_UUID_SIZE);
-  uuid16_bo = ntohs(uuid16);
-  memcpy(p_uuid128 + 2, &uuid16_bo, sizeof(uint16_t));
 }

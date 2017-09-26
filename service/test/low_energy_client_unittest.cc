@@ -40,7 +40,7 @@ class MockGattHandler
   MockGattHandler(){};
   ~MockGattHandler() override = default;
 
-  MOCK_METHOD1(RegisterClient, bt_status_t(const bt_uuid_t&));
+  MOCK_METHOD1(RegisterClient, bt_status_t(const bluetooth::Uuid&));
   MOCK_METHOD1(UnregisterClient, bt_status_t(int));
   MOCK_METHOD4(Connect, bt_status_t(int, const RawAddress&, bool, int));
   MOCK_METHOD3(Disconnect, bt_status_t(int, const RawAddress&, int));
@@ -134,8 +134,8 @@ class LowEnergyClientPostRegisterTest : public LowEnergyClientTest {
   void RegisterTestClient(
       const std::function<void(std::unique_ptr<LowEnergyClient> client)>
           callback) {
-    UUID uuid = UUID::GetRandom();
-    auto api_callback = [&](BLEStatus status, const UUID& in_uuid,
+    Uuid uuid = Uuid::GetRandom();
+    auto api_callback = [&](BLEStatus status, const Uuid& in_uuid,
                             std::unique_ptr<BluetoothInstance> in_client) {
       CHECK(in_uuid == uuid);
       CHECK(in_client.get());
@@ -151,9 +151,8 @@ class LowEnergyClientPostRegisterTest : public LowEnergyClientTest {
 
     ble_factory_->RegisterInstance(uuid, api_callback);
 
-    bt_uuid_t hal_uuid = uuid.GetBlueDroid();
     fake_hal_gatt_iface_->NotifyRegisterClientCallback(0, next_client_id_++,
-                                                       hal_uuid);
+                                                       uuid);
     ::testing::Mock::VerifyAndClearExpectations(mock_handler_.get());
   }
 
@@ -175,11 +174,11 @@ TEST_F(LowEnergyClientTest, RegisterInstance) {
   // These will be asynchronously populated with a result when the callback
   // executes.
   BLEStatus status = BLE_STATUS_SUCCESS;
-  UUID cb_uuid;
+  Uuid cb_uuid;
   std::unique_ptr<LowEnergyClient> client;
   int callback_count = 0;
 
-  auto callback = [&](BLEStatus in_status, const UUID& uuid,
+  auto callback = [&](BLEStatus in_status, const Uuid& uuid,
                       std::unique_ptr<BluetoothInstance> in_client) {
     status = in_status;
     cb_uuid = uuid;
@@ -188,7 +187,7 @@ TEST_F(LowEnergyClientTest, RegisterInstance) {
     callback_count++;
   };
 
-  UUID uuid0 = UUID::GetRandom();
+  Uuid uuid0 = Uuid::GetRandom();
 
   // HAL returns failure.
   EXPECT_FALSE(ble_factory_->RegisterInstance(uuid0, callback));
@@ -198,30 +197,28 @@ TEST_F(LowEnergyClientTest, RegisterInstance) {
   EXPECT_TRUE(ble_factory_->RegisterInstance(uuid0, callback));
   EXPECT_EQ(0, callback_count);
 
-  // Calling twice with the same UUID should fail with no additional call into
+  // Calling twice with the same Uuid should fail with no additional call into
   // the stack.
   EXPECT_FALSE(ble_factory_->RegisterInstance(uuid0, callback));
 
   ::testing::Mock::VerifyAndClearExpectations(mock_handler_.get());
 
-  // Call with a different UUID while one is pending.
-  UUID uuid1 = UUID::GetRandom();
+  // Call with a different Uuid while one is pending.
+  Uuid uuid1 = Uuid::GetRandom();
   EXPECT_CALL(*mock_handler_, RegisterClient(_))
       .Times(1)
       .WillOnce(Return(BT_STATUS_SUCCESS));
   EXPECT_TRUE(ble_factory_->RegisterInstance(uuid1, callback));
 
-  // Trigger callback with an unknown UUID. This should get ignored.
-  UUID uuid2 = UUID::GetRandom();
-  bt_uuid_t hal_uuid = uuid2.GetBlueDroid();
-  fake_hal_gatt_iface_->NotifyRegisterClientCallback(0, 0, hal_uuid);
+  // Trigger callback with an unknown Uuid. This should get ignored.
+  Uuid uuid2 = Uuid::GetRandom();
+  fake_hal_gatt_iface_->NotifyRegisterClientCallback(0, 0, uuid2);
   EXPECT_EQ(0, callback_count);
 
   // |uuid0| succeeds.
   int client_if0 = 2;  // Pick something that's not 0.
-  hal_uuid = uuid0.GetBlueDroid();
   fake_hal_gatt_iface_->NotifyRegisterClientCallback(BT_STATUS_SUCCESS,
-                                                     client_if0, hal_uuid);
+                                                     client_if0, uuid0);
 
   EXPECT_EQ(1, callback_count);
   ASSERT_TRUE(client.get() != nullptr);  // Assert to terminate in case of error
@@ -239,9 +236,8 @@ TEST_F(LowEnergyClientTest, RegisterInstance) {
 
   // |uuid1| fails.
   int client_if1 = 3;
-  hal_uuid = uuid1.GetBlueDroid();
   fake_hal_gatt_iface_->NotifyRegisterClientCallback(BT_STATUS_FAIL, client_if1,
-                                                     hal_uuid);
+                                                     uuid1);
 
   EXPECT_EQ(2, callback_count);
   ASSERT_TRUE(client.get() == nullptr);  // Assert to terminate in case of error

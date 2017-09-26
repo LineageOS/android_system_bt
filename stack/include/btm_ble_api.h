@@ -775,7 +775,7 @@ extern void BTM_LE_PF_local_name(tBTM_BLE_SCAN_COND_OP action,
 extern void BTM_LE_PF_uuid_filter(tBTM_BLE_SCAN_COND_OP action,
                                   tBTM_BLE_PF_FILT_INDEX filt_index,
                                   tBTM_BLE_PF_COND_TYPE filter_type,
-                                  tBT_UUID uuid,
+                                  const bluetooth::Uuid& uuid,
                                   tBTM_BLE_PF_LOGIC_TYPE cond_logic,
                                   tBTM_BLE_PF_COND_MASK* p_uuid_mask,
                                   tBTM_BLE_PF_CFG_CBACK cb);

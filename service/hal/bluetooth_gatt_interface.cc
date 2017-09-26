@@ -79,7 +79,7 @@ GetServerObservers();
   } while (0)
 
 void RegisterClientCallback(int status, int client_if,
-                            const bt_uuid_t& app_uuid) {
+                            const bluetooth::Uuid& app_uuid) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VLOG(2) << __func__ << " - status: " << status << " client_if: " << client_if;
   VERIFY_INTERFACE_OR_RETURN();
@@ -222,7 +222,7 @@ void ServicesAddedCallback(int conn_id, const btgatt_db_element_t& added,
 }
 
 void RegisterServerCallback(int status, int server_if,
-                            const bt_uuid_t& app_uuid) {
+                            const bluetooth::Uuid& app_uuid) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VLOG(2) << __func__ << " - status: " << status << " server_if: " << server_if;
   VERIFY_INTERFACE_OR_RETURN();
@@ -567,7 +567,7 @@ void BluetoothGattInterface::ScannerObserver::ScanResultCallback(
 
 void BluetoothGattInterface::ClientObserver::RegisterClientCallback(
     BluetoothGattInterface* /* gatt_iface */, int /* status */,
-    int /* client_if */, const bt_uuid_t& /* app_uuid */) {
+    int /* client_if */, const bluetooth::Uuid& /* app_uuid */) {
   // Do nothing.
 }
 
@@ -639,7 +639,7 @@ void BluetoothGattInterface::ClientObserver::ServicesAddedCallback(
 
 void BluetoothGattInterface::ServerObserver::RegisterServerCallback(
     BluetoothGattInterface* /* gatt_iface */, int /* status */,
-    int /* server_if */, const bt_uuid_t& /* app_uuid */) {
+    int /* server_if */, const bluetooth::Uuid& /* app_uuid */) {
   // Do nothing.
 }
 

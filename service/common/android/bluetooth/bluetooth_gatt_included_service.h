@@ -25,7 +25,7 @@ using android::Parcel;
 using android::Parcelable;
 using android::status_t;
 
-using ::bluetooth::UUID;
+using ::bluetooth::Uuid;
 
 namespace android {
 namespace bluetooth {
@@ -56,11 +56,11 @@ class BluetoothGattIncludedService : public Parcelable {
 
   uint16_t handle() const { return handle_; }
   bool primary() const { return primary_; }
-  UUID uuid() const { return uuid_; }
+  Uuid uuid() const { return uuid_; }
 
  protected:
   uint16_t handle_;
-  UUID uuid_;
+  Uuid uuid_;
   bool primary_;
 };
 }  // namespace bluetooth

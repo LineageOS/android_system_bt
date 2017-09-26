@@ -101,7 +101,7 @@ typedef struct {
   uint16_t handle;
 
   // read by UUID data
-  tBT_UUID uuid;
+  bluetooth::Uuid uuid;
   uint16_t s_handle;
   uint16_t e_handle;
 
@@ -143,7 +143,7 @@ typedef struct {
 
 typedef struct {
   BT_HDR hdr;
-  tBT_UUID* p_srvc_uuid;
+  bluetooth::Uuid* p_srvc_uuid;
 } tBTA_GATTC_API_SEARCH;
 
 typedef struct {
@@ -185,7 +185,7 @@ typedef union {
 /* GATT server cache on the client */
 
 typedef struct {
-  tBT_UUID uuid;
+  bluetooth::Uuid uuid;
   uint16_t s_handle;
   uint16_t e_handle;
   // this field is set only for characteristic
@@ -257,7 +257,7 @@ typedef struct {
       client_if;    /* client interface with BTE stack for this application */
   uint8_t num_clcb; /* number of associated CLCB */
   bool dereg_pending;
-  tBT_UUID app_uuid;
+  bluetooth::Uuid app_uuid;
   tBTA_GATTC_NOTIF_REG notif_reg[BTA_GATTC_NOTIF_REG_MAX];
 } tBTA_GATTC_RCB;
 
@@ -338,7 +338,8 @@ extern bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event,
 
 /* function processed outside SM */
 extern void bta_gattc_disable();
-extern void bta_gattc_register(tBT_UUID* p_app_uuid, tBTA_GATTC_CBACK* p_data,
+extern void bta_gattc_register(const bluetooth::Uuid& app_uuid,
+                               tBTA_GATTC_CBACK* p_data,
                                BtaAppRegisterCallback cb);
 extern void bta_gattc_process_api_open(tBTA_GATTC_DATA* p_msg);
 extern void bta_gattc_process_api_open_cancel(tBTA_GATTC_DATA* p_msg);
@@ -421,8 +422,6 @@ extern tBTA_GATTC_CLCB* bta_gattc_find_int_disconn_clcb(tBTA_GATTC_DATA* p_msg);
 
 extern bool bta_gattc_enqueue(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data);
 
-extern bool bta_gattc_uuid_compare(const tBT_UUID* p_src, const tBT_UUID* p_tar,
-                                   bool is_precise);
 extern bool bta_gattc_check_notif_registry(tBTA_GATTC_RCB* p_clreg,
                                            tBTA_GATTC_SERV* p_srcb,
                                            tBTA_GATTC_NOTIFY* p_notify);
@@ -448,7 +447,8 @@ extern tBTA_GATT_STATUS bta_gattc_discover_procedure(
     uint16_t conn_id, tBTA_GATTC_SERV* p_server_cb, uint8_t disc_type);
 extern tBTA_GATT_STATUS bta_gattc_discover_pri_service(
     uint16_t conn_id, tBTA_GATTC_SERV* p_server_cb, uint8_t disc_type);
-extern void bta_gattc_search_service(tBTA_GATTC_CLCB* p_clcb, tBT_UUID* p_uuid);
+extern void bta_gattc_search_service(tBTA_GATTC_CLCB* p_clcb,
+                                     bluetooth::Uuid* p_uuid);
 extern const list_t* bta_gattc_get_services(uint16_t conn_id);
 extern const tBTA_GATTC_SERVICE* bta_gattc_get_service_for_handle(
     uint16_t conn_id, uint16_t handle);

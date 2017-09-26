@@ -212,7 +212,8 @@ int set_remote_device_property(RawAddress* remote_addr,
   return btif_set_remote_device_property(remote_addr, property);
 }
 
-int get_remote_service_record(RawAddress* remote_addr, bt_uuid_t* uuid) {
+int get_remote_service_record(const RawAddress& remote_addr,
+                              const bluetooth::Uuid& uuid) {
   /* sanity check */
   if (interface_ready() == false) return BT_STATUS_NOT_READY;
 

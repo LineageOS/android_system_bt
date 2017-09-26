@@ -91,7 +91,8 @@ typedef void(tBNEP_CONN_STATE_CB)(uint16_t handle, const RawAddress& rem_bda,
  *              use BNEP_ConnectResp call to accept or reject the request
 */
 typedef void(tBNEP_CONNECT_IND_CB)(uint16_t handle, const RawAddress& bd_addr,
-                                   tBT_UUID* remote_uuid, tBT_UUID* local_uuid,
+                                   const bluetooth::Uuid& remote_uuid,
+                                   const bluetooth::Uuid& local_uuid,
                                    bool is_role_change);
 
 /* Data buffer received indication callback prototype. Parameters are
@@ -190,8 +191,8 @@ typedef struct {
   uint16_t sent_mcast_filters;
   uint16_t rcvd_num_filters;
   uint16_t rcvd_mcast_filters;
-  tBT_UUID src_uuid;
-  tBT_UUID dst_uuid;
+  bluetooth::Uuid src_uuid;
+  bluetooth::Uuid dst_uuid;
 
 } tBNEP_STATUS;
 
@@ -246,7 +247,8 @@ extern void BNEP_Deregister(void);
  *
  ******************************************************************************/
 extern tBNEP_RESULT BNEP_Connect(const RawAddress& p_rem_bda,
-                                 tBT_UUID* src_uuid, tBT_UUID* dst_uuid,
+                                 const bluetooth::Uuid& src_uuid,
+                                 const bluetooth::Uuid& dst_uuid,
                                  uint16_t* p_handle);
 
 /*******************************************************************************

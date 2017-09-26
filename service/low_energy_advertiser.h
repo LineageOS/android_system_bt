@@ -22,6 +22,7 @@
 #include <mutex>
 
 #include <base/macros.h>
+#include <bluetooth/uuid.h>
 
 #include "service/bluetooth_instance.h"
 #include "service/common/bluetooth/advertise_data.h"
@@ -30,7 +31,6 @@
 #include "service/common/bluetooth/scan_filter.h"
 #include "service/common/bluetooth/scan_result.h"
 #include "service/common/bluetooth/scan_settings.h"
-#include "service/common/bluetooth/uuid.h"
 #include "service/hal/bluetooth_gatt_interface.h"
 
 namespace bluetooth {
@@ -75,7 +75,7 @@ class LowEnergyAdvertiser : public BluetoothInstance {
   }
 
   // BluetoothClientInstace overrides:
-  const UUID& GetAppIdentifier() const override;
+  const Uuid& GetAppIdentifier() const override;
   int GetInstanceId() const override;
 
  private:
@@ -83,7 +83,7 @@ class LowEnergyAdvertiser : public BluetoothInstance {
 
   // Constructor shouldn't be called directly as instances are meant to be
   // obtained from the factory.
-  LowEnergyAdvertiser(const UUID& uuid, int advertiser_id);
+  LowEnergyAdvertiser(const Uuid& uuid, int advertiser_id);
 
   // BluetoothGattInterface::AdvertiserObserver overrides:
   void SetDataCallback(uint8_t advertiser_id, uint8_t status);
@@ -95,7 +95,7 @@ class LowEnergyAdvertiser : public BluetoothInstance {
   void InvokeAndClearStopCallback(BLEStatus status);
 
   // See getters above for documentation.
-  UUID app_identifier_;
+  Uuid app_identifier_;
   int advertiser_id_;
 
   // Protects advertising-related members below.
@@ -124,7 +124,7 @@ class LowEnergyAdvertiserFactory : public BluetoothInstanceFactory {
   ~LowEnergyAdvertiserFactory() override;
 
   // BluetoothInstanceFactory override:
-  bool RegisterInstance(const UUID& app_uuid,
+  bool RegisterInstance(const Uuid& app_uuid,
                         const RegisterCallback& callback) override;
 
  private:
@@ -132,12 +132,12 @@ class LowEnergyAdvertiserFactory : public BluetoothInstanceFactory {
 
   // BluetoothGattInterface::AdvertiserObserver overrides:
   void RegisterAdvertiserCallback(const RegisterCallback& callback,
-                                  const UUID& app_uuid, uint8_t advertiser_id,
+                                  const Uuid& app_uuid, uint8_t advertiser_id,
                                   uint8_t status);
 
   // Map of pending calls to register.
   std::mutex pending_calls_lock_;
-  std::unordered_set<UUID> pending_calls_;
+  std::unordered_set<Uuid> pending_calls_;
 
   DISALLOW_COPY_AND_ASSIGN(LowEnergyAdvertiserFactory);
 };

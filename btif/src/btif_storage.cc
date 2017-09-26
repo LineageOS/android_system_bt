@@ -54,6 +54,8 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 
+using bluetooth::Uuid;
+
 /*******************************************************************************
  *  Constants & Macros
  ******************************************************************************/
@@ -228,18 +230,12 @@ static int prop2cfg(const RawAddress* remote_bd_addr, bt_property_t* prop) {
                           *(int*)prop->val);
       break;
     case BT_PROPERTY_UUIDS: {
-      uint32_t i;
-      char buf[64];
-      value[0] = 0;
-      for (i = 0; i < (prop->len) / sizeof(bt_uuid_t); i++) {
-        bt_uuid_t* p_uuid = (bt_uuid_t*)prop->val + i;
-        memset(buf, 0, sizeof(buf));
-        uuid_to_string_legacy(p_uuid, buf, sizeof(buf));
-        strcat(value, buf);
-        // strcat(value, ";");
-        strcat(value, " ");
+      std::string val;
+      size_t cnt = (prop->len) / sizeof(Uuid);
+      for (size_t i = 0; i < cnt; i++) {
+        val += (reinterpret_cast<Uuid*>(prop->val) + i)->ToString() + " ";
       }
-      btif_config_set_str(bdstr, BTIF_STORAGE_PATH_REMOTE_SERVICE, value);
+      btif_config_set_str(bdstr, BTIF_STORAGE_PATH_REMOTE_SERVICE, val.c_str());
       break;
     }
     case BT_PROPERTY_REMOTE_VERSION_INFO: {
@@ -344,10 +340,10 @@ static int cfg2prop(const RawAddress* remote_bd_addr, bt_property_t* prop) {
       int size = sizeof(value);
       if (btif_config_get_str(bdstr, BTIF_STORAGE_PATH_REMOTE_SERVICE, value,
                               &size)) {
-        bt_uuid_t* p_uuid = (bt_uuid_t*)prop->val;
+        Uuid* p_uuid = reinterpret_cast<Uuid*>(prop->val);
         size_t num_uuids =
             btif_split_uuids_string(value, p_uuid, BT_MAX_NUM_UUIDS);
-        prop->len = num_uuids * sizeof(bt_uuid_t);
+        prop->len = num_uuids * sizeof(Uuid);
         ret = true;
       } else {
         prop->val = NULL;
@@ -518,15 +514,21 @@ static void btif_read_le_key(const uint8_t key_type, const size_t key_len,
  * Returns          Number of UUIDs parsed from the supplied string
  *
  ******************************************************************************/
-size_t btif_split_uuids_string(const char* str, bt_uuid_t* p_uuid,
+size_t btif_split_uuids_string(const char* str, bluetooth::Uuid* p_uuid,
                                size_t max_uuids) {
   CHECK(str);
   CHECK(p_uuid);
 
   size_t num_uuids = 0;
   while (str && num_uuids < max_uuids) {
-    bool rc = string_to_uuid(str, p_uuid++);
-    if (!rc) break;
+    bool is_valid;
+    bluetooth::Uuid tmp =
+        Uuid::FromString(std::string(str, Uuid::kString128BitLen), &is_valid);
+    if (!is_valid) break;
+
+    *p_uuid = tmp;
+    p_uuid++;
+
     num_uuids++;
     str = strchr(str, ' ');
     if (str) str++;
@@ -585,7 +587,7 @@ bt_status_t btif_storage_get_adapter_property(bt_property_t* property) {
     return BT_STATUS_SUCCESS;
   } else if (property->type == BT_PROPERTY_UUIDS) {
     /* publish list of local supported services */
-    bt_uuid_t* p_uuid = (bt_uuid_t*)property->val;
+    Uuid* p_uuid = reinterpret_cast<Uuid*>(property->val);
     uint32_t num_uuids = 0;
     uint32_t i;
 
@@ -597,32 +599,35 @@ bt_status_t btif_storage_get_adapter_property(bt_property_t* property) {
       if (service_mask & (tBTA_SERVICE_MASK)(1 << i)) {
         switch (i) {
           case BTA_HFP_SERVICE_ID: {
-            uuid16_to_uuid128(UUID_SERVCLASS_AG_HANDSFREE, p_uuid + num_uuids);
+            *(p_uuid + num_uuids) =
+                Uuid::From16Bit(UUID_SERVCLASS_AG_HANDSFREE);
             num_uuids++;
           }
           /* intentional fall through: Send both BFP & HSP UUIDs if HFP is
            * enabled */
           case BTA_HSP_SERVICE_ID: {
-            uuid16_to_uuid128(UUID_SERVCLASS_HEADSET_AUDIO_GATEWAY,
-                              p_uuid + num_uuids);
+            *(p_uuid + num_uuids) =
+                Uuid::From16Bit(UUID_SERVCLASS_HEADSET_AUDIO_GATEWAY);
             num_uuids++;
           } break;
           case BTA_A2DP_SOURCE_SERVICE_ID: {
-            uuid16_to_uuid128(UUID_SERVCLASS_AUDIO_SOURCE, p_uuid + num_uuids);
+            *(p_uuid + num_uuids) =
+                Uuid::From16Bit(UUID_SERVCLASS_AUDIO_SOURCE);
             num_uuids++;
           } break;
           case BTA_A2DP_SINK_SERVICE_ID: {
-            uuid16_to_uuid128(UUID_SERVCLASS_AUDIO_SINK, p_uuid + num_uuids);
+            *(p_uuid + num_uuids) = Uuid::From16Bit(UUID_SERVCLASS_AUDIO_SINK);
             num_uuids++;
           } break;
           case BTA_HFP_HS_SERVICE_ID: {
-            uuid16_to_uuid128(UUID_SERVCLASS_HF_HANDSFREE, p_uuid + num_uuids);
+            *(p_uuid + num_uuids) =
+                Uuid::From16Bit(UUID_SERVCLASS_HF_HANDSFREE);
             num_uuids++;
           } break;
         }
       }
     }
-    property->len = (num_uuids) * sizeof(bt_uuid_t);
+    property->len = (num_uuids) * sizeof(Uuid);
     return BT_STATUS_SUCCESS;
   }
 
@@ -804,8 +809,8 @@ bt_status_t btif_storage_load_bonded_devices(void) {
   bt_bdname_t name, alias;
   bt_scan_mode_t mode;
   uint32_t disc_timeout;
-  bt_uuid_t local_uuids[BT_MAX_NUM_UUIDS];
-  bt_uuid_t remote_uuids[BT_MAX_NUM_UUIDS];
+  Uuid local_uuids[BT_MAX_NUM_UUIDS];
+  Uuid remote_uuids[BT_MAX_NUM_UUIDS];
   bt_status_t status;
 
   btif_in_fetch_bonded_devices(&bonded_devices, 1);

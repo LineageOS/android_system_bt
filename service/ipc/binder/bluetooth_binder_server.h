@@ -30,9 +30,9 @@
 #include <android/bluetooth/IBluetoothLeAdvertiser.h>
 #include <android/bluetooth/IBluetoothLeScanner.h>
 #include <android/bluetooth/IBluetoothLowEnergy.h>
+#include <bluetooth/uuid.h>
 
 #include "service/adapter.h"
-#include "service/common/bluetooth/uuid.h"
 #include "service/ipc/binder/remote_callback_list.h"
 
 using android::String16;

@@ -19,13 +19,11 @@
 #include "rfcomm/rfcomm_test.h"
 #include "adapter/bluetooth_test.h"
 
-#include "btcore/include/uuid.h"
+using bluetooth::Uuid;
 
 namespace bttest {
 
-const bt_uuid_t RFCommTest::HFP_UUID = {{0x00, 0x00, 0x11, 0x1E, 0x00, 0x00,
-                                         0x10, 0x00, 0x80, 0x00, 0x00, 0x80,
-                                         0x5F, 0x9B, 0x34, 0xFB}};
+const Uuid RFCommTest::HFP_UUID = Uuid::From16Bit(0x111E);
 
 void RFCommTest::SetUp() {
   BluetoothTest::SetUp();
@@ -40,7 +38,6 @@ void RFCommTest::SetUp() {
 
   // Find a bonded device that supports HFP
   bt_remote_bdaddr_ = RawAddress::kEmpty;
-  char value[1280];
 
   bt_property_t* bonded_devices_prop =
       GetProperty(BT_PROPERTY_ADAPTER_BONDED_DEVICES);
@@ -55,12 +52,11 @@ void RFCommTest::SetUp() {
     bt_property_t* uuid_prop =
         GetRemoteDeviceProperty(&devices[i], BT_PROPERTY_UUIDS);
     if (uuid_prop == nullptr) continue;
-    bt_uuid_t* uuids = (bt_uuid_t*)uuid_prop->val;
-    int num_uuids = uuid_prop->len / sizeof(bt_uuid_t);
+    Uuid* uuids = reinterpret_cast<Uuid*>(uuid_prop->val);
+    int num_uuids = uuid_prop->len / sizeof(Uuid);
 
     for (int j = 0; j < num_uuids; j++) {
-      uuid_to_string(&uuids[j], (uuid_string_t*)value);
-      if (!memcmp(uuids + j, &HFP_UUID, sizeof(bt_uuid_t))) {
+      if (!memcmp(uuids + j, &HFP_UUID, sizeof(Uuid))) {
         bt_remote_bdaddr_ = *(devices + i);
         break;
       }

@@ -19,34 +19,21 @@
 #ifndef BTIF_SOCK_SDP_H
 #define BTIF_SOCK_SDP_H
 
+#include <bluetooth/uuid.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
-static const uint8_t UUID_OBEX_OBJECT_PUSH[] = {
-    0x00, 0x00, 0x11, 0x05, 0x00, 0x00, 0x10, 0x00,
-    0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB};
-static const uint8_t UUID_PBAP_PSE[] = {0x00, 0x00, 0x11, 0x2F, 0x00, 0x00,
-                                        0x10, 0x00, 0x80, 0x00, 0x00, 0x80,
-                                        0x5F, 0x9B, 0x34, 0xFB};
-static const uint8_t UUID_MAP_MAS[] = {0x00, 0x00, 0x11, 0x32, 0x00, 0x00,
-                                       0x10, 0x00, 0x80, 0x00, 0x00, 0x80,
-                                       0x5F, 0x9B, 0x34, 0xFB};
-static const uint8_t UUID_SAP[] = {0x00, 0x00, 0x11, 0x2D, 0x00, 0x00,
-                                   0x10, 0x00, 0x80, 0x00, 0x00, 0x80,
-                                   0x5F, 0x9B, 0x34, 0xFB};
-static const uint8_t UUID_SPP[] = {0x00, 0x00, 0x11, 0x01, 0x00, 0x00,
-                                   0x10, 0x00, 0x80, 0x00, 0x00, 0x80,
-                                   0x5F, 0x9B, 0x34, 0xFB};
+static const bluetooth::Uuid UUID_OBEX_OBJECT_PUSH =
+    bluetooth::Uuid::From16Bit(0x1105);
+static const bluetooth::Uuid UUID_PBAP_PSE = bluetooth::Uuid::From16Bit(0x112F);
+static const bluetooth::Uuid UUID_MAP_MAS = bluetooth::Uuid::From16Bit(0x1132);
+static const bluetooth::Uuid UUID_SAP = bluetooth::Uuid::From16Bit(0x112D);
+static const bluetooth::Uuid UUID_SPP = bluetooth::Uuid::From16Bit(0x1101);
 
-static inline bool is_uuid_empty(const uint8_t* uuid) {
-  static uint8_t empty_uuid[16];
-  return uuid == NULL || memcmp(uuid, empty_uuid, sizeof(empty_uuid)) == 0;
-}
-
-int add_rfc_sdp_rec(const char* name, const uint8_t* uuid, int scn);
+int add_rfc_sdp_rec(const char* name, bluetooth::Uuid uuid, int scn);
 void del_rfc_sdp_rec(int handle);
 bool is_reserved_rfc_channel(int channel);
-int get_reserved_rfc_channel(const uint8_t* uuid);
+int get_reserved_rfc_channel(const bluetooth::Uuid& uuid);
 
 #endif
