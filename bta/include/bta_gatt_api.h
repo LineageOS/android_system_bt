@@ -273,25 +273,6 @@ typedef void(tBTA_GATTC_CBACK)(tBTA_GATTC_EVT event, tBTA_GATTC* p_data);
 
 typedef uint8_t tBTA_GATTS_EVT;
 
-/* Attribute permissions
-*/
-#define BTA_GATT_PERM_READ GATT_PERM_READ /* bit 0 -  0x0001 */
-#define BTA_GATT_PERM_READ_ENCRYPTED \
-  GATT_PERM_READ_ENCRYPTED /* bit 1 -  0x0002 */
-#define BTA_GATT_PERM_READ_ENC_MITM \
-  GATT_PERM_READ_ENC_MITM                   /* bit 2 -  0x0004 */
-#define BTA_GATT_PERM_WRITE GATT_PERM_WRITE /* bit 4 -  0x0010 */
-#define BTA_GATT_PERM_WRITE_ENCRYPTED \
-  GATT_PERM_WRITE_ENCRYPTED /* bit 5 -  0x0020 */
-#define BTA_GATT_PERM_WRITE_ENC_MITM \
-  GATT_PERM_WRITE_ENC_MITM /* bit 6 -  0x0040 */
-#define BTA_GATT_PERM_WRITE_SIGNED          \
-  GATT_PERM_WRITE_SIGNED /* bit 7 -  0x0080 \
-                            */
-#define BTA_GATT_PERM_WRITE_SIGNED_MITM \
-  GATT_PERM_WRITE_SIGNED_MITM /* bit 8 -  0x0100 */
-typedef uint16_t tBTA_GATT_PERM;
-
 #define BTA_GATTS_INVALID_APP 0xff
 
 #define BTA_GATTS_INVALID_IF 0
@@ -311,48 +292,12 @@ typedef struct {
   bool is_primary; /* primary service or secondary */
 } tBTA_GATTS_HNDL_RANGE;
 
-#define BTA_GATTS_SRV_CHG_CMD_ADD_CLIENT GATTS_SRV_CHG_CMD_ADD_CLIENT
-#define BTA_GATTS_SRV_CHG_CMD_UPDATE_CLIENT GATTS_SRV_CHG_CMD_UPDATE_CLIENT
-#define BTA_GATTS_SRV_CHG_CMD_REMOVE_CLIENT GATTS_SRV_CHG_CMD_REMOVE_CLIENT
-#define BTA_GATTS_SRV_CHG_CMD_READ_NUM_CLENTS GATTS_SRV_CHG_CMD_READ_NUM_CLENTS
-#define BTA_GATTS_SRV_CHG_CMD_READ_CLENT GATTS_SRV_CHG_CMD_READ_CLENT
-typedef tGATTS_SRV_CHG_CMD tBTA_GATTS_SRV_CHG_CMD;
-
-typedef tGATTS_SRV_CHG tBTA_GATTS_SRV_CHG;
-typedef tGATTS_SRV_CHG_REQ tBTA_GATTS_SRV_CHG_REQ;
-typedef tGATTS_SRV_CHG_RSP tBTA_GATTS_SRV_CHG_RSP;
-
-#define BTA_GATT_TRANSPORT_LE GATT_TRANSPORT_LE
-#define BTA_GATT_TRANSPORT_BR_EDR GATT_TRANSPORT_BR_EDR
-#define BTA_GATT_TRANSPORT_LE_BR_EDR GATT_TRANSPORT_LE_BR_EDR
-typedef uint8_t tBTA_GATT_TRANSPORT;
-
-/* attribute value */
-typedef tGATT_VALUE tBTA_GATT_VALUE;
-
-/* attribute response data */
-typedef tGATTS_RSP tBTA_GATTS_RSP;
-
-/* attribute request data from the client */
-#define BTA_GATT_PREP_WRITE_CANCEL 0x00
-#define BTA_GATT_PREP_WRITE_EXEC 0x01
-typedef tGATT_EXEC_FLAG tBTA_GATT_EXEC_FLAG;
-
-/* read request always based on UUID */
-typedef tGATT_READ_REQ tTA_GBATT_READ_REQ;
-
-/* write request data */
-typedef tGATT_WRITE_REQ tBTA_GATT_WRITE_REQ;
-
-/* callback data for server access request from client */
-typedef tGATTS_DATA tBTA_GATTS_REQ_DATA;
-
 typedef struct {
   tGATT_STATUS status;
   RawAddress remote_bda;
   uint32_t trans_id;
   uint16_t conn_id;
-  tBTA_GATTS_REQ_DATA* p_data;
+  tGATTS_DATA* p_data;
 } tBTA_GATTS_REQ;
 
 typedef struct {
@@ -381,7 +326,7 @@ typedef struct {
   RawAddress remote_bda;
   uint16_t conn_id;
   tBTA_GATT_REASON reason; /* report disconnect reason */
-  tBTA_GATT_TRANSPORT transport;
+  tGATT_TRANSPORT transport;
 } tBTA_GATTS_CONN;
 
 typedef struct {
@@ -524,10 +469,10 @@ extern void BTA_GATTC_AppDeregister(tGATT_IF client_if);
  *
  ******************************************************************************/
 extern void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
-                           bool is_direct, tBTA_GATT_TRANSPORT transport,
+                           bool is_direct, tGATT_TRANSPORT transport,
                            bool opportunistic);
 extern void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
-                           bool is_direct, tBTA_GATT_TRANSPORT transport,
+                           bool is_direct, tGATT_TRANSPORT transport,
                            bool opportunistic, uint8_t initiating_phys);
 
 /*******************************************************************************
@@ -999,7 +944,7 @@ extern void BTA_GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_id,
  *
  ******************************************************************************/
 extern void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id,
-                              tGATT_STATUS status, tBTA_GATTS_RSP* p_msg);
+                              tGATT_STATUS status, tGATTS_RSP* p_msg);
 
 /*******************************************************************************
  *
@@ -1016,7 +961,7 @@ extern void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id,
  *
  ******************************************************************************/
 extern void BTA_GATTS_Open(tGATT_IF server_if, const RawAddress& remote_bda,
-                           bool is_direct, tBTA_GATT_TRANSPORT transport);
+                           bool is_direct, tGATT_TRANSPORT transport);
 
 /*******************************************************************************
  *

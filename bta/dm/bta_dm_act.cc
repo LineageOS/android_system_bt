@@ -4607,10 +4607,10 @@ void btm_dm_start_gatt_discovery(const RawAddress& bd_addr) {
   } else {
     if (BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
       BTA_GATTC_Open(bta_dm_search_cb.client_if, bd_addr, true,
-                     BTA_GATT_TRANSPORT_LE, true);
+                     GATT_TRANSPORT_LE, true);
     } else {
       BTA_GATTC_Open(bta_dm_search_cb.client_if, bd_addr, true,
-                     BTA_GATT_TRANSPORT_LE, false);
+                     GATT_TRANSPORT_LE, false);
     }
   }
 }
