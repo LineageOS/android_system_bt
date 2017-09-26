@@ -120,7 +120,7 @@ void DoNothing(uint8_t status) {}
 // LowEnergyAdvertiser implementation
 // ========================================================
 
-LowEnergyAdvertiser::LowEnergyAdvertiser(const UUID& uuid, int advertiser_id)
+LowEnergyAdvertiser::LowEnergyAdvertiser(const Uuid& uuid, int advertiser_id)
     : app_identifier_(uuid),
       advertiser_id_(advertiser_id),
       adv_started_(false),
@@ -226,7 +226,7 @@ bool LowEnergyAdvertiser::IsStoppingAdvertising() const {
   return IsAdvertisingStarted() && adv_stop_callback_;
 }
 
-const UUID& LowEnergyAdvertiser::GetAppIdentifier() const {
+const Uuid& LowEnergyAdvertiser::GetAppIdentifier() const {
   return app_identifier_;
 }
 
@@ -294,13 +294,13 @@ LowEnergyAdvertiserFactory::LowEnergyAdvertiserFactory() {}
 LowEnergyAdvertiserFactory::~LowEnergyAdvertiserFactory() {}
 
 bool LowEnergyAdvertiserFactory::RegisterInstance(
-    const UUID& app_uuid, const RegisterCallback& callback) {
+    const Uuid& app_uuid, const RegisterCallback& callback) {
   VLOG(1) << __func__;
   lock_guard<mutex> lock(pending_calls_lock_);
 
   if (pending_calls_.find(app_uuid) != pending_calls_.end()) {
-    LOG(ERROR) << "Low-Energy advertiser with given UUID already registered - "
-               << "UUID: " << app_uuid.ToString();
+    LOG(ERROR) << "Low-Energy advertiser with given Uuid already registered - "
+               << "Uuid: " << app_uuid.ToString();
     return false;
   }
 
@@ -319,7 +319,7 @@ bool LowEnergyAdvertiserFactory::RegisterInstance(
 }
 
 void LowEnergyAdvertiserFactory::RegisterAdvertiserCallback(
-    const RegisterCallback& callback, const UUID& app_uuid,
+    const RegisterCallback& callback, const Uuid& app_uuid,
     uint8_t advertiser_id, uint8_t status) {
   VLOG(1) << __func__;
   lock_guard<mutex> lock(pending_calls_lock_);

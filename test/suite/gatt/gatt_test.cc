@@ -91,7 +91,7 @@ const btgatt_server_interface_t* GattTest::gatt_server_interface() {
 
 void GattTest::RegisterClientCallback(
     bluetooth::hal::BluetoothGattInterface* /* unused */, int status,
-    int clientIf, const bt_uuid_t& app_uuid) {
+    int clientIf, const bluetooth::Uuid& app_uuid) {
   status_ = status;
   client_interface_id_ = clientIf;
   semaphore_post(register_client_callback_sem_);
@@ -106,7 +106,7 @@ void GattTest::ScanResultCallback(
 // GATT server callbacks
 void GattTest::RegisterServerCallback(
     bluetooth::hal::BluetoothGattInterface* /* unused */, int status,
-    int server_if, const bt_uuid_t& uuid) {
+    int server_if, const bluetooth::Uuid& uuid) {
   status_ = status;
   server_interface_id_ = server_if;
   semaphore_post(register_server_callback_sem_);

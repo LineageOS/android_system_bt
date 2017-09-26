@@ -18,7 +18,6 @@ cc_library_static {
         "bluetooth/scan_settings.cc",
         "bluetooth/service.cc",
         "bluetooth/util/atomic_string.cc",
-        "bluetooth/uuid.cc",
     ],
     export_include_dirs: ["./"],
     include_dirs: ["system/bt"],
@@ -72,4 +71,7 @@ cc_library_static {
         "libbase",
         "libbinder",
     ],
+    static_libs: [
+        "libbluetooth-types",
+    ]
 }

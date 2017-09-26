@@ -52,9 +52,6 @@
 /* Define the PSM that SDP uses */
 #define SDP_PSM 0x0001
 
-/* Legacy #define to avoid code changes - SDP UUID is same as BT UUID */
-#define tSDP_UUID tBT_UUID
-
 /* Masks for attr_value field of tSDP_DISC_ATTR */
 #define SDP_DISC_ATTR_LEN_MASK 0x0FFF
 #define SDP_DISC_ATTR_TYPE(len_type) ((len_type) >> 12)
@@ -120,7 +117,7 @@ typedef struct {
   uint32_t mem_free;          /* Memory still available       */
   tSDP_DISC_REC* p_first_rec; /* Addr of first record in DB   */
   uint16_t num_uuid_filters;  /* Number of UUIds to filter    */
-  tSDP_UUID uuid_filters[SDP_MAX_UUID_FILTERS]; /* UUIDs to filter      */
+  bluetooth::Uuid uuid_filters[SDP_MAX_UUID_FILTERS]; /* UUIDs to filter */
   uint16_t num_attr_filters; /* Number of attribute filters  */
   uint16_t attr_filters[SDP_MAX_ATTR_FILTERS]; /* Attributes to filter */
   uint8_t* p_free_mem; /* Pointer to free memory       */
@@ -176,7 +173,7 @@ typedef struct t_sdp_di_get_record {
  *
  ******************************************************************************/
 bool SDP_InitDiscoveryDb(tSDP_DISCOVERY_DB* p_db, uint32_t len,
-                         uint16_t num_uuid, tSDP_UUID* p_uuid_list,
+                         uint16_t num_uuid, const bluetooth::Uuid* p_uuid_list,
                          uint16_t num_attr, uint16_t* p_attr_list);
 
 /*******************************************************************************
@@ -295,13 +292,13 @@ tSDP_DISC_REC* SDP_FindServiceInDb(tSDP_DISCOVERY_DB* p_db,
  *
  * NOTE             the only difference between this function and the previous
  *                  function "SDP_FindServiceInDb()" is that this function takes
- *                  a tBT_UUID input.
+ *                  a Uuid input.
  *
  * Returns          Pointer to record containing service class, or NULL
  *
  ******************************************************************************/
 tSDP_DISC_REC* SDP_FindServiceUUIDInDb(tSDP_DISCOVERY_DB* p_db,
-                                       tBT_UUID* p_uuid,
+                                       const bluetooth::Uuid& uuid,
                                        tSDP_DISC_REC* p_start_rec);
 
 /*******************************************************************************
@@ -317,7 +314,8 @@ tSDP_DISC_REC* SDP_FindServiceUUIDInDb(tSDP_DISCOVERY_DB* p_db,
  * Returns          true if found, otherwise false.
  *
  ******************************************************************************/
-bool SDP_FindServiceUUIDInRec_128bit(tSDP_DISC_REC* p_rec, tBT_UUID* p_uuid);
+bool SDP_FindServiceUUIDInRec_128bit(tSDP_DISC_REC* p_rec,
+                                     bluetooth::Uuid* p_uuid);
 
 /*******************************************************************************
  *
@@ -636,11 +634,6 @@ uint8_t SDP_SetTraceLevel(uint8_t new_level);
  * Returns          true if found, otherwise false.
  *
  ******************************************************************************/
-bool SDP_FindServiceUUIDInRec(tSDP_DISC_REC* p_rec, tBT_UUID* p_uuid);
-
-// Converts UUID-16 to UUID-128 by including the base UUID.
-// |uuid16| is the 2-byte UUID to convert.
-// The result with the expanded 128-bit UUID is stored in |p_uuid128|.
-void sdpu_uuid16_to_uuid128(uint16_t uuid16, uint8_t* p_uuid128);
+bool SDP_FindServiceUUIDInRec(tSDP_DISC_REC* p_rec, bluetooth::Uuid* p_uuid);
 
 #endif /* SDP_API_H */

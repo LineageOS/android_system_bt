@@ -44,6 +44,7 @@
 #include "stack/include/l2c_api.h"
 #include "utl.h"
 
+using bluetooth::Uuid;
 using std::vector;
 
 #ifndef BTA_HH_LE_RECONN
@@ -597,8 +598,7 @@ static tBTA_GATTC_DESCRIPTOR* find_descriptor_by_short_uuid(
        dn != list_end(p_char->descriptors); dn = list_next(dn)) {
     tBTA_GATTC_DESCRIPTOR* p_desc = (tBTA_GATTC_DESCRIPTOR*)list_node(dn);
 
-    if (p_char->uuid.len == LEN_UUID_16 && p_desc->uuid.uu.uuid16 == short_uuid)
-      return p_desc;
+    if (p_desc->uuid == Uuid::From16Bit(short_uuid)) return p_desc;
   }
 
   return NULL;
@@ -826,7 +826,7 @@ static void write_rpt_ctl_cfg_cb(uint16_t conn_id, tGATT_STATUS status,
   const tBTA_GATTC_DESCRIPTOR* p_desc =
       BTA_GATTC_GetDescriptor(conn_id, handle);
 
-  uint16_t char_uuid = p_desc->characteristic->uuid.uu.uuid16;
+  uint16_t char_uuid = p_desc->characteristic->uuid.As16Bit();
 
   srvc_inst_id = p_desc->characteristic->service->handle;
   hid_inst_id = srvc_inst_id;
@@ -1071,8 +1071,6 @@ void bta_hh_le_dis_cback(const RawAddress& addr, tDIS_VALUE* p_dis_value) {
  *
  ******************************************************************************/
 void bta_hh_le_pri_service_discovery(tBTA_HH_DEV_CB* p_cb) {
-  tBT_UUID pri_srvc;
-
   bta_hh_le_co_reset_rpt_cache(p_cb->addr, p_cb->app_id);
 
   p_cb->disc_active |= (BTA_HH_LE_DISC_HIDS | BTA_HH_LE_DISC_DIS);
@@ -1085,8 +1083,7 @@ void bta_hh_le_pri_service_discovery(tBTA_HH_DEV_CB* p_cb) {
 
   /* in parallel */
   /* start primary service discovery for HID service */
-  pri_srvc.len = LEN_UUID_16;
-  pri_srvc.uu.uuid16 = UUID_SERVCLASS_LE_HID;
+  Uuid pri_srvc = Uuid::From16Bit(UUID_SERVCLASS_LE_HID);
   BTA_GATTC_ServiceSearchRequest(p_cb->conn_id, &pri_srvc);
   return;
 }
@@ -1414,7 +1411,7 @@ static void read_ext_rpt_ref_desc_cb(uint16_t conn_id, tGATT_STATUS status,
 
   /* if the length of the descriptor value is right, parse it assume it's a 16
    * bits UUID */
-  if (len != LEN_UUID_16) {
+  if (len != Uuid::kNumBytes16) {
     APPL_TRACE_ERROR("%s: we support only 16bit UUID: %d", __func__, len);
     return;
   }
@@ -1515,13 +1512,13 @@ static void bta_hh_le_search_hid_chars(tBTA_HH_DEV_CB* p_dev_cb,
     tBTA_GATTC_CHARACTERISTIC* p_char =
         (tBTA_GATTC_CHARACTERISTIC*)list_node(cn);
 
-    if (p_char->uuid.len != LEN_UUID_16) continue;
+    if (!p_char->uuid.Is16Bit()) continue;
 
-    LOG_DEBUG(LOG_TAG, "%s: %s 0x%04d", __func__,
-              bta_hh_uuid_to_str(p_char->uuid.uu.uuid16),
-              p_char->uuid.uu.uuid16);
+    uint16_t uuid16 = p_char->uuid.As16Bit();
+    LOG_DEBUG(LOG_TAG, "%s: %s %s", __func__, bta_hh_uuid_to_str(uuid16),
+              p_char->uuid.ToString().c_str());
 
-    switch (p_char->uuid.uu.uuid16) {
+    switch (uuid16) {
       case GATT_UUID_HID_CONTROL_POINT:
         p_dev_cb->hid_srvc.control_point_handle = p_char->handle;
         break;
@@ -1560,8 +1557,7 @@ static void bta_hh_le_search_hid_chars(tBTA_HH_DEV_CB* p_dev_cb,
       case GATT_UUID_HID_BT_KB_OUTPUT:
       case GATT_UUID_HID_BT_MOUSE_INPUT:
       case GATT_UUID_HID_BT_KB_INPUT:
-        if (bta_hh_le_find_alloc_report_entry(p_dev_cb, service->handle,
-                                              p_char->uuid.uu.uuid16,
+        if (bta_hh_le_find_alloc_report_entry(p_dev_cb, service->handle, uuid16,
                                               p_char->handle) == NULL)
           APPL_TRACE_ERROR("%s: Add report entry failed !!!", __func__);
 
@@ -1569,8 +1565,7 @@ static void bta_hh_le_search_hid_chars(tBTA_HH_DEV_CB* p_dev_cb,
 
       default:
         APPL_TRACE_DEBUG("%s: not processing %s 0x%04d", __func__,
-                         bta_hh_uuid_to_str(p_char->uuid.uu.uuid16),
-                         p_char->uuid.uu.uuid16);
+                         bta_hh_uuid_to_str(uuid16), uuid16);
     }
   }
 
@@ -1580,8 +1575,7 @@ static void bta_hh_le_search_hid_chars(tBTA_HH_DEV_CB* p_dev_cb,
     tBTA_GATTC_CHARACTERISTIC* p_char =
         (tBTA_GATTC_CHARACTERISTIC*)list_node(cn);
 
-    if (p_char->uuid.len == LEN_UUID_16 &&
-        p_char->uuid.uu.uuid16 == GATT_UUID_HID_PROTO_MODE) {
+    if (p_char->uuid == Uuid::From16Bit(GATT_UUID_HID_PROTO_MODE)) {
       p_dev_cb->hid_srvc.proto_mode_handle = p_char->handle;
       bta_hh_le_set_protocol_mode(p_dev_cb, p_dev_cb->mode);
       break;
@@ -1618,7 +1612,7 @@ void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
        sn = list_next(sn)) {
     tBTA_GATTC_SERVICE* service = (tBTA_GATTC_SERVICE*)list_node(sn);
 
-    if (service->uuid.uu.uuid16 == UUID_SERVCLASS_LE_HID &&
+    if (service->uuid == Uuid::From16Bit(UUID_SERVCLASS_LE_HID) &&
         service->is_primary && !have_hid) {
       have_hid = true;
 
@@ -1632,15 +1626,14 @@ void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
 
       APPL_TRACE_DEBUG("%s: have HID service inst_id= %d", __func__,
                        p_dev_cb->hid_srvc.srvc_inst_id);
-    } else if (service->uuid.uu.uuid16 == UUID_SERVCLASS_SCAN_PARAM) {
+    } else if (service->uuid == Uuid::From16Bit(UUID_SERVCLASS_SCAN_PARAM)) {
       p_dev_cb->scan_refresh_char_handle = 0;
 
       for (list_node_t* cn = list_begin(service->characteristics);
            cn != list_end(service->characteristics); cn = list_next(cn)) {
         tBTA_GATTC_CHARACTERISTIC* p_char =
             (tBTA_GATTC_CHARACTERISTIC*)list_node(cn);
-        if (p_char->uuid.len == LEN_UUID_16 &&
-            p_char->uuid.uu.uuid16 == GATT_UUID_SCAN_REFRESH) {
+        if (p_char->uuid == Uuid::From16Bit(GATT_UUID_SCAN_REFRESH)) {
           p_dev_cb->scan_refresh_char_handle = p_char->handle;
 
           if (p_char->properties & BTA_GATT_CHAR_PROP_BIT_NOTIFY)
@@ -1651,15 +1644,14 @@ void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
           break;
         }
       }
-    } else if (service->uuid.uu.uuid16 == UUID_SERVCLASS_GAP_SERVER) {
+    } else if (service->uuid == Uuid::From16Bit(UUID_SERVCLASS_GAP_SERVER)) {
       // TODO(jpawlowski): this should be done by GAP profile, remove when GAP
       // is fixed.
       for (list_node_t* cn = list_begin(service->characteristics);
            cn != list_end(service->characteristics); cn = list_next(cn)) {
         tBTA_GATTC_CHARACTERISTIC* p_char =
             (tBTA_GATTC_CHARACTERISTIC*)list_node(cn);
-        if (p_char->uuid.len == LEN_UUID_16 &&
-            p_char->uuid.uu.uuid16 == GATT_UUID_GAP_PREF_CONN_PARAM) {
+        if (p_char->uuid == Uuid::From16Bit(GATT_UUID_GAP_PREF_CONN_PARAM)) {
           /* read the char value */
           gatt_queue_read_op(GATT_READ_CHAR, p_dev_cb->conn_id, p_char->handle,
                              read_pref_conn_params_cb, p_dev_cb);
@@ -1708,18 +1700,18 @@ void bta_hh_le_input_rpt_notify(tBTA_GATTC_NOTIFY* p_data) {
   app_id = p_dev_cb->app_id;
 
   p_rpt = bta_hh_le_find_report_entry(p_dev_cb, p_dev_cb->hid_srvc.srvc_inst_id,
-                                      p_char->uuid.uu.uuid16, p_char->handle);
+                                      p_char->uuid.As16Bit(), p_char->handle);
   if (p_rpt == NULL) {
     APPL_TRACE_ERROR(
-        "%s: notification received for Unknown Report, uuid: 0x%04x, handle: "
+        "%s: notification received for Unknown Report, uuid: %s, handle: "
         "0x%04x",
-        __func__, p_char->uuid.uu.uuid16, p_char->handle);
+        __func__, p_char->uuid.ToString().c_str(), p_char->handle);
     return;
   }
 
-  if (p_char->uuid.uu.uuid16 == GATT_UUID_HID_BT_MOUSE_INPUT)
+  if (p_char->uuid == Uuid::From16Bit(GATT_UUID_HID_BT_MOUSE_INPUT))
     app_id = BTA_HH_APP_ID_MI;
-  else if (p_char->uuid.uu.uuid16 == GATT_UUID_HID_BT_KB_INPUT)
+  else if (p_char->uuid == Uuid::From16Bit(GATT_UUID_HID_BT_KB_INPUT))
     app_id = BTA_HH_APP_ID_KB;
 
   APPL_TRACE_DEBUG("Notification received on report ID: %d", p_rpt->rpt_id);
@@ -1853,7 +1845,7 @@ static void read_report_cb(uint16_t conn_id, tGATT_STATUS status,
 
   if (p_char == NULL) return;
 
-  uint16_t char_uuid = p_char->uuid.uu.uuid16;
+  uint16_t char_uuid = p_char->uuid.As16Bit();
 
   if (char_uuid != GATT_UUID_HID_REPORT &&
       char_uuid != GATT_UUID_HID_BT_KB_INPUT &&
@@ -1882,7 +1874,7 @@ static void read_report_cb(uint16_t conn_id, tGATT_STATUS status,
 
   if (status == BTA_GATT_OK) {
     p_rpt = bta_hh_le_find_report_entry(p_dev_cb, p_char->service->handle,
-                                        p_char->uuid.uu.uuid16, p_char->handle);
+                                        char_uuid, p_char->handle);
 
     if (p_rpt != NULL && len) {
       p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + len + 1);
@@ -1946,7 +1938,7 @@ static void write_report_cb(uint16_t conn_id, tGATT_STATUS status,
 
   const tBTA_GATTC_CHARACTERISTIC* p_char =
       BTA_GATTC_GetCharacteristic(conn_id, handle);
-  uint16_t uuid = p_char->uuid.uu.uuid16;
+  uint16_t uuid = p_char->uuid.As16Bit();
   if (uuid != GATT_UUID_HID_REPORT && uuid != GATT_UUID_HID_BT_KB_INPUT &&
       uuid != GATT_UUID_HID_BT_MOUSE_INPUT &&
       uuid != GATT_UUID_HID_BT_KB_OUTPUT) {

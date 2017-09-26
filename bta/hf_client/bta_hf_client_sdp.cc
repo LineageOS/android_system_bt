@@ -33,6 +33,8 @@
 #include "bta_sys.h"
 #include "osi/include/osi.h"
 
+using bluetooth::Uuid;
+
 /* Number of protocol elements in protocol element list. */
 #define BTA_HF_CLIENT_NUM_PROTO_ELEMS 2
 
@@ -289,7 +291,7 @@ bool bta_hf_client_sdp_find_attr(tBTA_HF_CLIENT_CB* client_cb) {
  *
  ******************************************************************************/
 void bta_hf_client_do_disc(tBTA_HF_CLIENT_CB* client_cb) {
-  tSDP_UUID uuid_list[2];
+  Uuid uuid_list[1];
   uint16_t num_uuid = 1;
   uint16_t attr_list[4];
   uint8_t num_attr;
@@ -302,7 +304,7 @@ void bta_hf_client_do_disc(tBTA_HF_CLIENT_CB* client_cb) {
     attr_list[2] = ATTR_ID_BT_PROFILE_DESC_LIST;
     attr_list[3] = ATTR_ID_SUPPORTED_FEATURES;
     num_attr = 4;
-    uuid_list[0].uu.uuid16 = UUID_SERVCLASS_AG_HANDSFREE;
+    uuid_list[0] = Uuid::From16Bit(UUID_SERVCLASS_AG_HANDSFREE);
   }
   /* acceptor; get features */
   else {
@@ -310,15 +312,13 @@ void bta_hf_client_do_disc(tBTA_HF_CLIENT_CB* client_cb) {
     attr_list[1] = ATTR_ID_BT_PROFILE_DESC_LIST;
     attr_list[2] = ATTR_ID_SUPPORTED_FEATURES;
     num_attr = 3;
-    uuid_list[0].uu.uuid16 = UUID_SERVCLASS_AG_HANDSFREE;
+    uuid_list[0] = Uuid::From16Bit(UUID_SERVCLASS_AG_HANDSFREE);
   }
 
   /* allocate buffer for sdp database */
   client_cb->p_disc_db = (tSDP_DISCOVERY_DB*)osi_malloc(BT_DEFAULT_BUFFER_SIZE);
 
   /* set up service discovery database; attr happens to be attr_list len */
-  uuid_list[0].len = LEN_UUID_16;
-  uuid_list[1].len = LEN_UUID_16;
   db_inited = SDP_InitDiscoveryDb(client_cb->p_disc_db, BT_DEFAULT_BUFFER_SIZE,
                                   num_uuid, uuid_list, num_attr, attr_list);
 

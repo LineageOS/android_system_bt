@@ -143,7 +143,7 @@ typedef uint32_t tBTA_SERVICE_MASK;
 typedef struct {
   tBTA_SERVICE_MASK srvc_mask;
   uint8_t num_uuid;
-  tBT_UUID* p_uuid;
+  bluetooth::Uuid* p_uuid;
 } tBTA_SERVICE_MASK_EXT;
 
 /* Security Setting Mask */
@@ -762,7 +762,7 @@ typedef struct {
   uint32_t raw_data_size;      /* size of raw data */
   tBT_DEVICE_TYPE device_type; /* device type in case it is BLE device */
   uint32_t num_uuids;
-  uint8_t* p_uuid_list;
+  bluetooth::Uuid* p_uuid_list;
   tBTA_STATUS result;
 } tBTA_DM_DISC_RES;
 
@@ -770,7 +770,7 @@ typedef struct {
 typedef struct {
   RawAddress bd_addr; /* BD address peer device. */
   BD_NAME bd_name;  /* Name of peer device. */
-  tBT_UUID service; /* GATT based Services UUID found on peer device. */
+  bluetooth::Uuid service; /* GATT based Services UUID found on peer device. */
 } tBTA_DM_DISC_BLE_RES;
 
 /* Union of all search callback structures */
@@ -1172,7 +1172,8 @@ extern void BTA_DmDiscover(const RawAddress& bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-extern void BTA_DmDiscoverUUID(const RawAddress& bd_addr, tSDP_UUID* uuid,
+extern void BTA_DmDiscoverUUID(const RawAddress& bd_addr,
+                               const bluetooth::Uuid& uuid,
                                tBTA_DM_SEARCH_CBACK* p_cback, bool sdp_search);
 
 /*******************************************************************************

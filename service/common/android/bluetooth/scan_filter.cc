@@ -77,14 +77,14 @@ status_t ScanFilter::readFromParcel(const Parcel* parcel) {
   if (status != OK) return status;
   device_address_ = std::string(String8(addr).string());
 
-  std::unique_ptr<UUID> uuid;
+  UUID uuid;
   status = parcel->readParcelable(&uuid);
   if (status != OK) return status;
-  service_uuid_ = std::move(uuid);
+  service_uuid_.reset(new ::bluetooth::Uuid(uuid.uuid));
 
   status = parcel->readParcelable(&uuid);
   if (status != OK) return status;
-  service_uuid_mask_ = std::move(uuid);
+  service_uuid_mask_.reset(new ::bluetooth::Uuid(uuid.uuid));
 
   return status;
 }

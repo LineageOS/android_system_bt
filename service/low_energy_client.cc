@@ -31,7 +31,7 @@ namespace bluetooth {
 // LowEnergyClient implementation
 // ========================================================
 
-LowEnergyClient::LowEnergyClient(Adapter& adapter, const UUID& uuid,
+LowEnergyClient::LowEnergyClient(Adapter& adapter, const Uuid& uuid,
                                  int client_id)
     : adapter_(adapter),
       app_identifier_(uuid),
@@ -126,7 +126,7 @@ void LowEnergyClient::SetDelegate(Delegate* delegate) {
   delegate_ = delegate;
 }
 
-const UUID& LowEnergyClient::GetAppIdentifier() const {
+const Uuid& LowEnergyClient::GetAppIdentifier() const {
   return app_identifier_;
 }
 
@@ -205,21 +205,20 @@ LowEnergyClientFactory::~LowEnergyClientFactory() {
 }
 
 bool LowEnergyClientFactory::RegisterInstance(
-    const UUID& uuid, const RegisterCallback& callback) {
-  VLOG(1) << __func__ << " - UUID: " << uuid.ToString();
+    const Uuid& uuid, const RegisterCallback& callback) {
+  VLOG(1) << __func__ << " - Uuid: " << uuid.ToString();
   lock_guard<mutex> lock(pending_calls_lock_);
 
   if (pending_calls_.find(uuid) != pending_calls_.end()) {
-    LOG(ERROR) << "Low-Energy client with given UUID already registered - "
-               << "UUID: " << uuid.ToString();
+    LOG(ERROR) << "Low-Energy client with given Uuid already registered - "
+               << "Uuid: " << uuid.ToString();
     return false;
   }
 
   const btgatt_client_interface_t* hal_iface =
       hal::BluetoothGattInterface::Get()->GetClientHALInterface();
-  bt_uuid_t app_uuid = uuid.GetBlueDroid();
 
-  if (hal_iface->register_client(app_uuid) != BT_STATUS_SUCCESS) return false;
+  if (hal_iface->register_client(uuid) != BT_STATUS_SUCCESS) return false;
 
   pending_calls_[uuid] = callback;
 
@@ -228,10 +227,10 @@ bool LowEnergyClientFactory::RegisterInstance(
 
 void LowEnergyClientFactory::RegisterClientCallback(
     hal::BluetoothGattInterface* gatt_iface, int status, int client_id,
-    const bt_uuid_t& app_uuid) {
-  UUID uuid(app_uuid);
+    const bluetooth::Uuid& app_uuid) {
+  Uuid uuid(app_uuid);
 
-  VLOG(1) << __func__ << " - UUID: " << uuid.ToString();
+  VLOG(1) << __func__ << " - Uuid: " << uuid.ToString();
   lock_guard<mutex> lock(pending_calls_lock_);
 
   auto iter = pending_calls_.find(uuid);

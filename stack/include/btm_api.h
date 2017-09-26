@@ -1956,7 +1956,8 @@ extern uint8_t BTM_GetEirSupportedServices(uint32_t* p_eir_uuid, uint8_t** p,
  *
  * Parameters       p_eir - EIR
  *                  eirl_len - EIR len
- *                  uuid_size - LEN_UUID_16, LEN_UUID_32, LEN_UUID_128
+ *                  uuid_size - Uuid::kNumBytes16, Uuid::kNumBytes32,
+ *                              Uuid::kNumBytes128
  *                  p_num_uuid - return number of UUID in found list
  *                  p_uuid_list - return UUID 16-bit list
  *                  max_num_uuid - maximum number of UUID to be returned

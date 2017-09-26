@@ -80,7 +80,7 @@ typedef struct {
   BT_HDR hdr;
   RawAddress bd_addr;
   uint16_t num_uuid;
-  tSDP_UUID uuid_list[BTA_JV_MAX_UUIDS];
+  bluetooth::Uuid uuid_list[BTA_JV_MAX_UUIDS];
   uint16_t num_attr;
   uint16_t attr_list[BTA_JV_MAX_ATTRS];
   uint32_t rfcomm_slot_id;
@@ -361,7 +361,7 @@ typedef struct {
   uint16_t free_psm_list[BTA_JV_MAX_L2C_CONN]; /* PSMs freed by java
                                                 (can be reused) */
   uint8_t sdp_active;                          /* see BTA_JV_SDP_ACT_* */
-  tSDP_UUID uuid;                         /* current uuid of sdp discovery*/
+  bluetooth::Uuid uuid;                   /* current uuid of sdp discovery*/
   tBTA_JV_PM_CB pm_cb[BTA_JV_PM_MAX_NUM]; /* PM on a per JV handle bases */
 } tBTA_JV_CB;
 

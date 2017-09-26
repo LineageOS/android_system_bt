@@ -27,6 +27,8 @@
 #include "avrc_int.h"
 #include "bt_common.h"
 
+using bluetooth::Uuid;
+
 /*****************************************************************************
  *  Global data
  ****************************************************************************/
@@ -106,7 +108,6 @@ static void avrc_sdp_cback(uint16_t status) {
 uint16_t AVRC_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
                           tAVRC_SDP_DB_PARAMS* p_db,
                           tAVRC_FIND_CBACK* p_cback) {
-  tSDP_UUID uuid_list;
   bool result = true;
 
   AVRC_TRACE_API("%s uuid: %x", __func__, service_uuid);
@@ -120,15 +121,13 @@ uint16_t AVRC_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
       avrc_cb.service_uuid == UUID_SERVCLASS_AV_REMOTE_CONTROL)
     return AVRC_NO_RESOURCES;
 
-  /* set up discovery database */
-  uuid_list.len = LEN_UUID_16;
-  uuid_list.uu.uuid16 = service_uuid;
 
   if (p_db->p_attrs == NULL || p_db->num_attr == 0) {
     p_db->p_attrs = a2dp_attr_list_sdp;
     p_db->num_attr = AVRC_NUM_ATTR;
   }
 
+  Uuid uuid_list = Uuid::From16Bit(service_uuid);
   result = SDP_InitDiscoveryDb(p_db->p_db, p_db->db_len, 1, &uuid_list,
                                p_db->num_attr, p_db->p_attrs);
 
