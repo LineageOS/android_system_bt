@@ -191,7 +191,7 @@ typedef struct {
   // this field is set only for characteristic
   uint16_t char_decl_handle;
   bool is_primary;
-  tBTA_GATT_CHAR_PROP property;
+  tGATT_CHAR_PROP property;
 } tBTA_GATTC_ATTR_REC;
 
 #define BTA_GATTC_MAX_CACHE_CHAR 40
