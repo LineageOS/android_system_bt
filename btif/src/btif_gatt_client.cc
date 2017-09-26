@@ -145,7 +145,7 @@ void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
                   p_data->open.conn_id, p_data->open.status, p_data->open.mtu);
       }
 
-      if (p_data->open.status == BTA_GATT_OK)
+      if (p_data->open.status == GATT_SUCCESS)
         btif_gatt_check_encrypted_link(p_data->open.remote_bda,
                                        p_data->open.transport);
       break;
@@ -476,10 +476,10 @@ bt_status_t btif_gattc_execute_write(int conn_id, int execute) {
       Bind(&BTA_GATTC_ExecuteWrite, conn_id, (uint8_t)execute));
 }
 
-void btif_gattc_reg_for_notification_impl(tBTA_GATTC_IF client_if,
+void btif_gattc_reg_for_notification_impl(tGATT_IF client_if,
                                           const RawAddress& bda,
                                           uint16_t handle) {
-  tBTA_GATT_STATUS status =
+  tGATT_STATUS status =
       BTA_GATTC_RegisterForNotifications(client_if, bda, handle);
 
   // TODO(jpawlowski): conn_id is currently unused
@@ -497,10 +497,10 @@ bt_status_t btif_gattc_reg_for_notification(int client_if,
            bd_addr, handle));
 }
 
-void btif_gattc_dereg_for_notification_impl(tBTA_GATTC_IF client_if,
+void btif_gattc_dereg_for_notification_impl(tGATT_IF client_if,
                                             const RawAddress& bda,
                                             uint16_t handle) {
-  tBTA_GATT_STATUS status =
+  tGATT_STATUS status =
       BTA_GATTC_DeregisterForNotifications(client_if, bda, handle);
 
   // TODO(jpawlowski): conn_id is currently unused

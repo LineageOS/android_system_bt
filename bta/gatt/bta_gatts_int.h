@@ -82,13 +82,13 @@ typedef struct {
   uint16_t attr_id;
   uint16_t len;
   bool need_confirm;
-  uint8_t value[BTA_GATT_MAX_ATTR_LEN];
+  uint8_t value[GATT_MAX_ATTR_LEN];
 } tBTA_GATTS_API_INDICATION;
 
 typedef struct {
   BT_HDR hdr;
   uint32_t trans_id;
-  tBTA_GATT_STATUS status;
+  tGATT_STATUS status;
   tBTA_GATTS_RSP* p_rsp;
 } tBTA_GATTS_API_RSP;
 

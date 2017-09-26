@@ -377,7 +377,7 @@ typedef struct {
 /* set scan parameter for BLE connections */
 typedef struct {
   BT_HDR hdr;
-  tBTA_GATTC_IF client_if;
+  tGATT_IF client_if;
   uint32_t scan_int;
   uint32_t scan_window;
   tBLE_SCAN_MODE scan_mode;
@@ -675,7 +675,7 @@ typedef struct {
   bool cancel_pending; /* inquiry cancel is pending */
   tBTA_TRANSPORT transport;
   tBTA_DM_SEARCH_CBACK* p_scan_cback;
-  tBTA_GATTC_IF client_if;
+  tGATT_IF client_if;
   uint8_t num_uuid;
   bluetooth::Uuid* p_srvc_uuid;
   uint8_t uuid_to_search;

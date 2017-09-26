@@ -63,6 +63,9 @@
 #define GATT_NOT_ENCRYPTED 0x8e
 #define GATT_CONGESTED 0x8f
 
+#define GATT_DUP_REG 0x90      /* 0x90 */
+#define GATT_ALREADY_OPEN 0x91 /* 0x91 */
+#define GATT_CANCEL 0x92       /* 0x92 */
 /* 0xE0 ~ 0xFC reserved for future use */
 
 /* Client Characteristic Configuration Descriptor Improperly Configured */
@@ -290,7 +293,6 @@ typedef struct {
 #define GATT_CLT_CONFIG_NONE 0x0000
 #define GATT_CLT_CONFIG_NOTIFICATION 0x0001
 #define GATT_CLT_CONFIG_INDICATION 0x0002
-typedef uint16_t tGATT_CLT_CHAR_CONFIG;
 
 /* characteristic descriptor: server configuration value
 */
