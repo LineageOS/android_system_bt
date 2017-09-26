@@ -95,7 +95,7 @@ typedef tBTA_GATTC_API_OPEN tBTA_GATTC_API_CANCEL_OPEN;
 
 typedef struct {
   BT_HDR hdr;
-  tBTA_GATT_AUTH_REQ auth_req;
+  tGATT_AUTH_REQ auth_req;
 
   // read by handle data
   uint16_t handle;
@@ -112,7 +112,7 @@ typedef struct {
 
 typedef struct {
   BT_HDR hdr;
-  tBTA_GATT_AUTH_REQ auth_req;
+  tGATT_AUTH_REQ auth_req;
   uint16_t handle;
   tGATT_WRITE_TYPE write_type;
   uint16_t offset;
@@ -148,7 +148,7 @@ typedef struct {
 
 typedef struct {
   BT_HDR hdr;
-  tBTA_GATT_AUTH_REQ auth_req;
+  tGATT_AUTH_REQ auth_req;
   uint8_t num_attr;
   uint16_t handles[GATT_MAX_READ_MULTI_HANDLES];
 } tBTA_GATTC_API_READ_MULTI;

@@ -101,7 +101,7 @@ void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid,
  * Returns          void
  *
  ******************************************************************************/
-void BTA_GATTS_AppDeregister(tBTA_GATTS_IF server_if) {
+void BTA_GATTS_AppDeregister(tGATT_IF server_if) {
   tBTA_GATTS_API_DEREG* p_buf =
       (tBTA_GATTS_API_DEREG*)osi_malloc(sizeof(tBTA_GATTS_API_DEREG));
 
@@ -126,7 +126,7 @@ void BTA_GATTS_AppDeregister(tBTA_GATTS_IF server_if) {
  *                  service cannot be added.
  *
  ******************************************************************************/
-extern uint16_t BTA_GATTS_AddService(tBTA_GATTS_IF server_if,
+extern uint16_t BTA_GATTS_AddService(tGATT_IF server_if,
                                      vector<btgatt_db_element_t>& service) {
   uint8_t rcb_idx =
       bta_gatts_find_app_rcb_idx_by_app_if(&bta_gatts_cb, server_if);
@@ -278,7 +278,7 @@ void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
  * Returns          void
  *
  ******************************************************************************/
-void BTA_GATTS_Open(tBTA_GATTS_IF server_if, const RawAddress& remote_bda,
+void BTA_GATTS_Open(tGATT_IF server_if, const RawAddress& remote_bda,
                     bool is_direct, tBTA_GATT_TRANSPORT transport) {
   tBTA_GATTS_API_OPEN* p_buf =
       (tBTA_GATTS_API_OPEN*)osi_malloc(sizeof(tBTA_GATTS_API_OPEN));
@@ -306,7 +306,7 @@ void BTA_GATTS_Open(tBTA_GATTS_IF server_if, const RawAddress& remote_bda,
  * Returns          void
  *
  ******************************************************************************/
-void BTA_GATTS_CancelOpen(tBTA_GATTS_IF server_if, const RawAddress& remote_bda,
+void BTA_GATTS_CancelOpen(tGATT_IF server_if, const RawAddress& remote_bda,
                           bool is_direct) {
   tBTA_GATTS_API_CANCEL_OPEN* p_buf = (tBTA_GATTS_API_CANCEL_OPEN*)osi_malloc(
       sizeof(tBTA_GATTS_API_CANCEL_OPEN));
