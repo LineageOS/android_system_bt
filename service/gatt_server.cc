@@ -16,6 +16,8 @@
 
 #include "service/gatt_server.h"
 
+#include <base/logging.h>
+
 #include "service/logging_helpers.h"
 #include "stack/include/bt_types.h"
 
@@ -27,7 +29,7 @@ namespace bluetooth {
 // GattServer implementation
 // ========================================================
 
-GattServer::GattServer(const UUID& uuid, int server_id)
+GattServer::GattServer(const Uuid& uuid, int server_id)
     : app_identifier_(uuid), server_id_(server_id), delegate_(nullptr) {}
 
 GattServer::~GattServer() {
@@ -50,7 +52,7 @@ void GattServer::SetDelegate(Delegate* delegate) {
   delegate_ = delegate;
 }
 
-const UUID& GattServer::GetAppIdentifier() const { return app_identifier_; }
+const Uuid& GattServer::GetAppIdentifier() const { return app_identifier_; }
 
 int GattServer::GetInstanceId() const { return server_id_; }
 
@@ -68,16 +70,16 @@ bool GattServer::AddService(const bluetooth::Service& service,
 
   svc.push_back({.type = (service.primary() ? BTGATT_DB_PRIMARY_SERVICE
                                             : BTGATT_DB_SECONDARY_SERVICE),
-                 .uuid = service.uuid().GetBlueDroid()});
+                 .uuid = service.uuid()});
 
   for (const auto& characteristic : service.characteristics()) {
     svc.push_back({.type = BTGATT_DB_CHARACTERISTIC,
-                   .uuid = characteristic.uuid().GetBlueDroid(),
+                   .uuid = characteristic.uuid(),
                    .properties = characteristic.properties(),
                    .permissions = characteristic.permissions()});
     for (const auto& descriptor : characteristic.descriptors())
       svc.push_back({.type = BTGATT_DB_DESCRIPTOR,
-                     .uuid = descriptor.uuid().GetBlueDroid(),
+                     .uuid = descriptor.uuid(),
                      .permissions = descriptor.permissions()});
   }
 
@@ -292,10 +294,10 @@ void GattServer::ServiceAddedCallback(hal::BluetoothGattInterface* gatt_iface,
 
   VLOG(1) << __func__ << " - status: " << status << " server_id: " << server_id
           << " first handle: " << svc[0].attribute_handle
-          << " service UUID: " << UUID(svc[0].uuid).ToString()
+          << " service Uuid: " << Uuid(svc[0].uuid).ToString()
           << " count: " << svc.size();
 
-  Service service(svc[0].attribute_handle, true, UUID(svc[0].uuid), {}, {});
+  Service service(svc[0].attribute_handle, true, Uuid(svc[0].uuid), {}, {});
 
   for (size_t i = 1; i < svc.size(); i++) {
     const btgatt_db_element_t& curr = svc[i];
@@ -303,13 +305,13 @@ void GattServer::ServiceAddedCallback(hal::BluetoothGattInterface* gatt_iface,
             << " handle: " << curr.attribute_handle;
     if (curr.type == BTGATT_DB_CHARACTERISTIC) {
       service.characteristics().push_back({curr.attribute_handle,
-                                           UUID(curr.uuid),
+                                           Uuid(curr.uuid),
                                            curr.properties,
                                            curr.permissions,
                                            {}});
     } else if (curr.type == BTGATT_DB_DESCRIPTOR) {
       service.characteristics().back().descriptors().push_back(
-          {curr.attribute_handle, UUID(curr.uuid), curr.permissions});
+          {curr.attribute_handle, Uuid(curr.uuid), curr.permissions});
     } else if (svc[i].type == BTGATT_DB_INCLUDED_SERVICE) {
     }
   }
@@ -567,22 +569,21 @@ GattServerFactory::~GattServerFactory() {
   hal::BluetoothGattInterface::Get()->RemoveServerObserver(this);
 }
 
-bool GattServerFactory::RegisterInstance(const UUID& uuid,
+bool GattServerFactory::RegisterInstance(const Uuid& uuid,
                                          const RegisterCallback& callback) {
-  VLOG(1) << __func__ << " - UUID: " << uuid.ToString();
+  VLOG(1) << __func__ << " - Uuid: " << uuid.ToString();
   lock_guard<mutex> lock(pending_calls_lock_);
 
   if (pending_calls_.find(uuid) != pending_calls_.end()) {
-    LOG(ERROR) << "GATT-server client with given UUID already being registered "
-               << " - UUID: " << uuid.ToString();
+    LOG(ERROR) << "GATT-server client with given Uuid already being registered "
+               << " - Uuid: " << uuid.ToString();
     return false;
   }
 
   const btgatt_server_interface_t* hal_iface =
       hal::BluetoothGattInterface::Get()->GetServerHALInterface();
-  bt_uuid_t app_uuid = uuid.GetBlueDroid();
 
-  if (hal_iface->register_server(app_uuid) != BT_STATUS_SUCCESS) return false;
+  if (hal_iface->register_server(uuid) != BT_STATUS_SUCCESS) return false;
 
   pending_calls_[uuid] = callback;
 
@@ -591,10 +592,10 @@ bool GattServerFactory::RegisterInstance(const UUID& uuid,
 
 void GattServerFactory::RegisterServerCallback(
     hal::BluetoothGattInterface* gatt_iface, int status, int server_id,
-    const bt_uuid_t& app_uuid) {
-  UUID uuid(app_uuid);
+    const Uuid& app_uuid) {
+  Uuid uuid(app_uuid);
 
-  VLOG(1) << __func__ << " - UUID: " << uuid.ToString();
+  VLOG(1) << __func__ << " - Uuid: " << uuid.ToString();
   lock_guard<mutex> lock(pending_calls_lock_);
 
   auto iter = pending_calls_.find(uuid);

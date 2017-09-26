@@ -33,7 +33,7 @@ status_t UUID::writeToParcel(Parcel* parcel) const {
   // a second 64-bit integer. This is the same as writing the raw-bytes in
   // sequence, but we don't want to assume any host-endianness here. So follow
   // the same scheme and use the same Parcel APIs.
-  UUID::UUID128Bit bytes = GetFullBigEndian();
+  ::bluetooth::Uuid::UUID128Bit bytes = uuid.To128BitBE();
 
   uint64_t most_sig_bits =
       ((((uint64_t)bytes[0]) << 56) | (((uint64_t)bytes[1]) << 48) |
@@ -55,7 +55,7 @@ status_t UUID::writeToParcel(Parcel* parcel) const {
 }
 
 status_t UUID::readFromParcel(const Parcel* parcel) {
-  UUID::UUID128Bit bytes;
+  ::bluetooth::Uuid::UUID128Bit bytes;
 
   uint64_t most_sig_bits, least_sig_bits;
   status_t status = parcel->readUint64(&most_sig_bits);
@@ -82,8 +82,7 @@ status_t UUID::readFromParcel(const Parcel* parcel) {
   bytes[14] = (least_sig_bits >> 8) & 0xFF;
   bytes[15] = least_sig_bits & 0xFF;
 
-  id_ = bytes;
-  is_valid_ = true;
+  uuid = ::bluetooth::Uuid::From128BitBE(bytes);
   return status;
 }
 

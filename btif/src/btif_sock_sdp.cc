@@ -43,6 +43,8 @@
 #include "sdp_api.h"
 #include "utl.h"
 
+using bluetooth::Uuid;
+
 // This module provides an abstraction on top of the lower-level SDP database
 // code for registration and discovery of various bluetooth sockets.
 //
@@ -85,7 +87,6 @@ static const tBTA_OP_FMT bta_ops_obj_fmt[OBEX_PUSH_NUM_FORMATS] = {
 #define RESERVED_SCN_OPS 12
 
 #define UUID_MAX_LENGTH 16
-#define UUID_MATCHES(u1, u2) !memcmp(u1, u2, UUID_MAX_LENGTH)
 
 // Adds a protocol list and service name (if provided) to an SDP record given by
 // |sdp_handle|, and marks it as browseable. This is a shortcut for defining a
@@ -152,15 +153,15 @@ error:
 // Registers a service with the given |name|, |uuid|, and |channel| in the SDP
 // database as a generic L2CAP RFCOMM protocol, storing its |uuid| as a service
 // class sequence.
-static int add_sdp_by_uuid(const char* name, const uint8_t* uuid,
+static int add_sdp_by_uuid(const char* name, const Uuid& uuid,
                            const uint16_t channel) {
-  APPL_TRACE_DEBUG("add_sdp_by_uuid: scn: %d, service_name: %s", channel, name);
+  APPL_TRACE_DEBUG("%s: uuid: %s, scn: %d, service_name: %s", __func__,
+                   uuid.ToString().c_str(), channel, name);
 
   uint32_t handle = SDP_CreateRecord();
   if (handle == 0) {
     APPL_TRACE_ERROR(
-        "add_sdp_by_uuid: failed to create sdp record, "
-        "scn: %d, service_name: %s",
+        "%s: failed to create sdp record, scn: %d, service_name: %s", __func__,
         channel, name);
     return 0;
   }
@@ -183,7 +184,8 @@ static int add_sdp_by_uuid(const char* name, const uint8_t* uuid,
   // Do the conversion to big-endian -- tmp is only used to iterate through the
   // UUID array in the macro and serves no other purpose as the conversion
   // macros are not hygenic.
-  { ARRAY_TO_BE_STREAM(tmp, uuid, UUID_MAX_LENGTH); }
+
+  { ARRAY_TO_BE_STREAM(tmp, uuid.To128BitBE().data(), UUID_MAX_LENGTH); }
 
   stage = "service_class_sequence";
   if (!SDP_AddSequence(handle, (uint16_t)ATTR_ID_SERVICE_CLASS_ID_LIST, 1,
@@ -191,17 +193,14 @@ static int add_sdp_by_uuid(const char* name, const uint8_t* uuid,
     goto error;
 
   APPL_TRACE_DEBUG(
-      "add_sdp_by_uuid: service registered successfully, "
-      "service_name: %s, handle: 0x%08x",
-      name, handle);
+      "%s: service registered successfully, service_name: %s, handle: 0x%08x",
+      __func__, name, handle);
   return handle;
 
 error:
   SDP_DeleteRecord(handle);
-  APPL_TRACE_ERROR(
-      "add_sdp_by_uuid: failed to register service "
-      "stage: %s, service_name: %s",
-      stage, name);
+  APPL_TRACE_ERROR("%s: failed to register service stage: %s, service_name: %s",
+                   __func__, stage, name);
   return 0;
 }
 
@@ -377,10 +376,10 @@ error:
 // |channel|. This function attempts to identify the type of the service based
 // upon its |uuid|, and will override the |channel| with a reserved channel
 // number if the |uuid| matches one of the preregistered bluez SDP records.
-static int add_rfc_sdp_by_uuid(const char* name, const uint8_t* uuid,
+static int add_rfc_sdp_by_uuid(const char* name, const Uuid& uuid,
                                const int channel) {
-  APPL_TRACE_DEBUG("add_rfc_sdp_by_uuid: service_name: %s, channel: %d", name,
-                   channel);
+  APPL_TRACE_DEBUG("%s: uuid: %s, service_name: %s, channel: %d", __func__,
+                   uuid.ToString().c_str(), name, channel);
 
   /*
    * Bluetooth Socket API relies on having preregistered bluez sdp records for
@@ -402,14 +401,14 @@ static int add_rfc_sdp_by_uuid(const char* name, const uint8_t* uuid,
 
   int handle = 0;
 
-  if (UUID_MATCHES(UUID_OBEX_OBJECT_PUSH, uuid)) {
+  if (uuid == UUID_OBEX_OBJECT_PUSH) {
     handle = add_ops_sdp(name, final_channel);
-  } else if (UUID_MATCHES(UUID_PBAP_PSE, uuid)) {
+  } else if (uuid == UUID_PBAP_PSE) {
     // PBAP Server is always channel 19
     handle = add_pbap_sdp(name, final_channel);
-  } else if (UUID_MATCHES(UUID_SPP, uuid)) {
+  } else if (uuid == UUID_SPP) {
     handle = add_spp_sdp(name, final_channel);
-  } else if (UUID_MATCHES(UUID_MAP_MAS, uuid)) {
+  } else if (uuid == UUID_MAP_MAS) {
     // Record created by new SDP create record interface
     handle = 0xff;
   } else {
@@ -429,10 +428,10 @@ bool is_reserved_rfc_channel(const int channel) {
   return false;
 }
 
-int get_reserved_rfc_channel(const uint8_t* uuid) {
-  if (UUID_MATCHES(UUID_PBAP_PSE, uuid)) {
+int get_reserved_rfc_channel(const bluetooth::Uuid& uuid) {
+  if (uuid == UUID_PBAP_PSE) {
     return RESERVED_SCN_PBS;
-  } else if (UUID_MATCHES(UUID_OBEX_OBJECT_PUSH, uuid)) {
+  } else if (uuid == UUID_OBEX_OBJECT_PUSH) {
     return RESERVED_SCN_OPS;
   }
 
@@ -442,8 +441,8 @@ int get_reserved_rfc_channel(const uint8_t* uuid) {
 // Adds an SDP record to the SDP database using the given |name|, |uuid|, and
 // |channel|. Note that if the |uuid| is empty, the |uuid| will be set based
 // upon the |channel| passed in.
-int add_rfc_sdp_rec(const char* name, const uint8_t* uuid, const int channel) {
-  if (is_uuid_empty(uuid)) {
+int add_rfc_sdp_rec(const char* name, Uuid uuid, const int channel) {
+  if (uuid.IsEmpty()) {
     switch (channel) {
       case RESERVED_SCN_PBS:  // PBAP Reserved port
         uuid = UUID_PBAP_PSE;

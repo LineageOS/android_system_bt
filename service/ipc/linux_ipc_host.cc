@@ -38,7 +38,7 @@
 #include "service/adapter.h"
 
 using bluetooth::Adapter;
-using bluetooth::UUID;
+using bluetooth::Uuid;
 
 using namespace bluetooth::gatt;
 
@@ -108,8 +108,8 @@ bool LinuxIPCHost::OnCreateService(const std::string& service_uuid) {
   gatt_servers_[service_uuid] = std::unique_ptr<Server>(new Server);
 
   int gattfd;
-  bool status =
-      gatt_servers_[service_uuid]->Initialize(UUID(service_uuid), &gattfd);
+  bool status = gatt_servers_[service_uuid]->Initialize(
+      Uuid::FromString(service_uuid), &gattfd);
   if (!status) {
     LOG_ERROR(LOG_TAG, "Failed to initialize bluetooth");
     return false;
@@ -155,11 +155,12 @@ bool LinuxIPCHost::OnAddCharacteristic(const std::string& service_uuid,
 
   if (control_uuid.empty()) {
     gatt_servers_[service_uuid]->AddCharacteristic(
-        UUID(characteristic_uuid), properties_mask, permissions_mask);
+        Uuid::FromString(characteristic_uuid), properties_mask,
+        permissions_mask);
   } else {
-    gatt_servers_[service_uuid]->AddBlob(UUID(characteristic_uuid),
-                                         UUID(control_uuid), properties_mask,
-                                         permissions_mask);
+    gatt_servers_[service_uuid]->AddBlob(Uuid::FromString(characteristic_uuid),
+                                         Uuid::FromString(control_uuid),
+                                         properties_mask, permissions_mask);
   }
   return true;
 }
@@ -170,8 +171,8 @@ bool LinuxIPCHost::OnSetCharacteristicValue(
   std::string decoded_data;
   base::Base64Decode(value, &decoded_data);
   std::vector<uint8_t> blob_data(decoded_data.begin(), decoded_data.end());
-  gatt_servers_[service_uuid]->SetCharacteristicValue(UUID(characteristic_uuid),
-                                                      blob_data);
+  gatt_servers_[service_uuid]->SetCharacteristicValue(
+      Uuid::FromString(characteristic_uuid), blob_data);
   return true;
 }
 
@@ -187,10 +188,10 @@ bool LinuxIPCHost::OnSetAdvertisement(const std::string& service_uuid,
   std::vector<std::string> advertise_uuid_tokens = base::SplitString(
       advertise_uuids, ".", base::TRIM_WHITESPACE, base::SPLIT_WANT_ALL);
 
-  // string -> vector<UUID>
-  std::vector<UUID> ids;
+  // string -> vector<Uuid>
+  std::vector<Uuid> ids;
   for (const auto& uuid_token : advertise_uuid_tokens)
-    ids.emplace_back(uuid_token);
+    ids.emplace_back(Uuid::FromString(uuid_token));
 
   std::string decoded_data;
   base::Base64Decode(advertise_data, &decoded_data);
@@ -215,10 +216,10 @@ bool LinuxIPCHost::OnSetScanResponse(const std::string& service_uuid,
   std::vector<std::string> scan_response_uuid_tokens = base::SplitString(
       scan_response_uuids, ".", base::TRIM_WHITESPACE, base::SPLIT_WANT_ALL);
 
-  // string -> vector<UUID>
-  std::vector<UUID> ids;
+  // string -> vector<Uuid>
+  std::vector<Uuid> ids;
   for (const auto& uuid_token : scan_response_uuid_tokens)
-    ids.emplace_back(uuid_token);
+    ids.emplace_back(Uuid::FromString(uuid_token));
 
   std::string decoded_data;
   base::Base64Decode(scan_response_data, &decoded_data);
@@ -304,7 +305,7 @@ bool LinuxIPCHost::OnMessage() {
 }
 
 bool LinuxIPCHost::OnGattWrite() {
-  UUID::UUID128Bit id;
+  Uuid::UUID128Bit id;
   ssize_t r;
 
   OSI_NO_INTR(r = read(pfds_[kFdGatt].fd, id.data(), id.size()));
@@ -316,7 +317,7 @@ bool LinuxIPCHost::OnGattWrite() {
   std::vector<uint8_t> value;
   // TODO(icoolidge): Generalize this for multiple clients.
   auto server = gatt_servers_.begin();
-  server->second->GetCharacteristicValue(UUID(id), &value);
+  server->second->GetCharacteristicValue(Uuid::From128BitBE(id), &value);
   const std::string value_string(value.begin(), value.end());
   std::string encoded_value;
   base::Base64Encode(value_string, &encoded_value);

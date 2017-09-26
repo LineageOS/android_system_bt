@@ -36,6 +36,8 @@
 #include "sdp_api.h"
 #include "sdpint.h"
 
+using bluetooth::Uuid;
+
 #ifndef SDP_DEBUG_RAW
 #define SDP_DEBUG_RAW false
 #endif
@@ -68,7 +70,7 @@ static uint8_t* add_attr(uint8_t* p, tSDP_DISCOVERY_DB* p_db,
  *
  ******************************************************************************/
 static uint8_t* sdpu_build_uuid_seq(uint8_t* p_out, uint16_t num_uuids,
-                                    tSDP_UUID* p_uuid_list) {
+                                    Uuid* p_uuid_list) {
   uint16_t xx;
   uint8_t* p_len;
 
@@ -81,18 +83,19 @@ static uint8_t* sdpu_build_uuid_seq(uint8_t* p_out, uint16_t num_uuids,
 
   /* Now, loop through and put in all the UUID(s) */
   for (xx = 0; xx < num_uuids; xx++, p_uuid_list++) {
-    if (p_uuid_list->len == LEN_UUID_16) {
+    int len = p_uuid_list->GetShortestRepresentationSize();
+    if (len == Uuid::kNumBytes16) {
       UINT8_TO_BE_STREAM(p_out, (UUID_DESC_TYPE << 3) | SIZE_TWO_BYTES);
-      UINT16_TO_BE_STREAM(p_out, p_uuid_list->uu.uuid16);
-    } else if (p_uuid_list->len == LEN_UUID_32) {
+      UINT16_TO_BE_STREAM(p_out, p_uuid_list->As16Bit());
+    } else if (len == Uuid::kNumBytes32) {
       UINT8_TO_BE_STREAM(p_out, (UUID_DESC_TYPE << 3) | SIZE_FOUR_BYTES);
-      UINT32_TO_BE_STREAM(p_out, p_uuid_list->uu.uuid32);
-    } else if (p_uuid_list->len == LEN_UUID_128) {
+      UINT32_TO_BE_STREAM(p_out, p_uuid_list->As32Bit());
+    } else if (len == Uuid::kNumBytes128) {
       UINT8_TO_BE_STREAM(p_out, (UUID_DESC_TYPE << 3) | SIZE_SIXTEEN_BYTES);
-      ARRAY_TO_BE_STREAM(p_out, p_uuid_list->uu.uuid128, p_uuid_list->len);
+      ARRAY_TO_BE_STREAM(p_out, p_uuid_list->To128BitBE(),
+                         (int)Uuid::kNumBytes128);
     } else {
-      SDP_TRACE_ERROR("SDP: Passed UUID has invalid length %x",
-                      p_uuid_list->len);
+      DCHECK(0) << "SDP: Passed UUID has invalid length " << len;
     }
   }
 
@@ -874,12 +877,12 @@ static uint8_t* add_attr(uint8_t* p, tSDP_DISCOVERY_DB* p_db,
                   (p_attr->attr_len_type & ~SDP_DISC_ATTR_LEN_MASK) | 2;
               p += 2;
               BE_STREAM_TO_UINT16(p_attr->attr_value.v.u16, p);
-              p += MAX_UUID_SIZE - 4;
+              p += Uuid::kNumBytes128 - 4;
             } else {
               p_attr->attr_len_type =
                   (p_attr->attr_len_type & ~SDP_DISC_ATTR_LEN_MASK) | 4;
               BE_STREAM_TO_UINT32(p_attr->attr_value.v.u32, p);
-              p += MAX_UUID_SIZE - 4;
+              p += Uuid::kNumBytes128 - 4;
             }
           } else {
             BE_STREAM_TO_ARRAY(p, p_attr->attr_value.v.array,

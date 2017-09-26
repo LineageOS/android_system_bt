@@ -18,7 +18,6 @@
 
 #include "bt_target.h"
 #include "bt_utils.h"
-#include "btcore/include/uuid.h"
 #include "gatt_api.h"
 #include "gatt_int.h"
 #include "osi/include/osi.h"
@@ -185,13 +184,13 @@ uint16_t Battery_Instantiate(uint8_t app_id, tBA_REG_INFO* p_reg_info) {
 
   btgatt_db_element_t service[BA_MAX_ATTR_NUM] = {};
 
-  bt_uuid_t service_uuid;
-  uuid_128_from_16(&service_uuid, UUID_SERVCLASS_BATTERY);
+  bluetooth::Uuid service_uuid =
+      bluetooth::Uuid::From16Bit(UUID_SERVCLASS_BATTERY);
   service[0].type = /* p_reg_info->is_pri */ BTGATT_DB_PRIMARY_SERVICE;
   service[0].uuid = service_uuid;
 
-  bt_uuid_t char_uuid;
-  uuid_128_from_16(&char_uuid, GATT_UUID_BATTERY_LEVEL);
+  bluetooth::Uuid char_uuid =
+      bluetooth::Uuid::From16Bit(GATT_UUID_BATTERY_LEVEL);
   service[1].type = BTGATT_DB_CHARACTERISTIC;
   service[1].uuid = char_uuid;
   service[1].properties = GATT_CHAR_PROP_BIT_READ;
@@ -200,8 +199,8 @@ uint16_t Battery_Instantiate(uint8_t app_id, tBA_REG_INFO* p_reg_info) {
 
   int i = 2;
   if (p_reg_info->ba_level_descr & BA_LEVEL_NOTIFY) {
-    bt_uuid_t desc_uuid;
-    uuid_128_from_16(&desc_uuid, GATT_UUID_CHAR_CLIENT_CONFIG);
+    bluetooth::Uuid desc_uuid =
+        bluetooth::Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG);
 
     service[i].type = BTGATT_DB_DESCRIPTOR;
     service[i].uuid = desc_uuid;
@@ -211,8 +210,8 @@ uint16_t Battery_Instantiate(uint8_t app_id, tBA_REG_INFO* p_reg_info) {
 
   /* need presentation format descriptor? */
   if (p_reg_info->ba_level_descr & BA_LEVEL_PRE_FMT) {
-    bt_uuid_t desc_uuid;
-    uuid_128_from_16(&desc_uuid, GATT_UUID_CHAR_PRESENT_FORMAT);
+    bluetooth::Uuid desc_uuid =
+        bluetooth::Uuid::From16Bit(GATT_UUID_CHAR_PRESENT_FORMAT);
 
     service[i].type = BTGATT_DB_DESCRIPTOR;
     service[i].uuid = desc_uuid;
@@ -222,8 +221,8 @@ uint16_t Battery_Instantiate(uint8_t app_id, tBA_REG_INFO* p_reg_info) {
 
   /* need presentation format descriptor? */
   if (p_reg_info->ba_level_descr & BA_LEVEL_RPT_REF) {
-    bt_uuid_t desc_uuid;
-    uuid_128_from_16(&desc_uuid, GATT_UUID_RPT_REF_DESCR);
+    bluetooth::Uuid desc_uuid =
+        bluetooth::Uuid::From16Bit(GATT_UUID_RPT_REF_DESCR);
 
     service[i].type = BTGATT_DB_DESCRIPTOR;
     service[i].uuid = desc_uuid;

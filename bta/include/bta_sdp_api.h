@@ -31,6 +31,8 @@
 #include "bta_api.h"
 #include "btm_api.h"
 
+using bluetooth::Uuid;
+
 /* status values */
 #define BTA_SDP_SUCCESS 0 /* Successful operation. */
 #define BTA_SDP_FAILURE 1 /* Generic failure. */
@@ -55,7 +57,7 @@ typedef uint16_t tBTA_SDP_EVT;
 typedef struct {
   tBTA_SDP_STATUS status;
   RawAddress remote_addr;
-  tBT_UUID uuid;
+  bluetooth::Uuid uuid;
   int record_count;
   bluetooth_sdp_record records[BTA_SDP_MAX_RECORDS];
 } tBTA_SDP_SEARCH_COMP;
@@ -104,7 +106,7 @@ extern tBTA_SDP_STATUS BTA_SdpEnable(tBTA_SDP_DM_CBACK* p_cback);
  *
  ******************************************************************************/
 extern tBTA_SDP_STATUS BTA_SdpSearch(const RawAddress& bd_addr,
-                                     tSDP_UUID* uuid);
+                                     const bluetooth::Uuid& uuid);
 
 /*******************************************************************************
  *

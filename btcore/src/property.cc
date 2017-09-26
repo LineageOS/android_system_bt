@@ -20,9 +20,10 @@
 #include <base/logging.h>
 #include <string.h>
 #include "btcore/include/device_class.h"
-#include "btcore/include/uuid.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
+
+using bluetooth::Uuid;
 
 static bt_property_t* property_new_(void* val, size_t len,
                                     bt_property_type_t type);
@@ -111,10 +112,9 @@ bt_property_t* property_new_scan_mode(bt_scan_mode_t scan_mode) {
                        BT_PROPERTY_ADAPTER_SCAN_MODE);
 }
 
-bt_property_t* property_new_uuids(const bt_uuid_t* uuid, size_t count) {
+bt_property_t* property_new_uuids(const Uuid* uuid, size_t count) {
   CHECK(uuid != NULL);
-  return property_new_((void*)uuid, sizeof(bt_uuid_t) * count,
-                       BT_PROPERTY_UUIDS);
+  return property_new_((void*)uuid, sizeof(Uuid) * count, BT_PROPERTY_UUIDS);
 }
 
 void property_free(bt_property_t* property) {
@@ -208,11 +208,10 @@ bt_scan_mode_t property_as_scan_mode(const bt_property_t* property) {
   return *(const bt_scan_mode_t*)property->val;
 }
 
-const bt_uuid_t* property_as_uuids(const bt_property_t* property,
-                                   size_t* count) {
+const Uuid* property_as_uuids(const bt_property_t* property, size_t* count) {
   CHECK(property_is_uuids(property));
-  *count = sizeof(bt_uuid_t) / property->len;
-  return (const bt_uuid_t*)property->val;
+  *count = sizeof(Uuid) / property->len;
+  return (const Uuid*)property->val;
 }
 
 static bt_property_t* property_new_(void* val, size_t len,

@@ -65,6 +65,7 @@
 #include "osi/include/thread.h"
 #include "stack_manager.h"
 
+using bluetooth::Uuid;
 /*******************************************************************************
  *  Constants & Macros
  ******************************************************************************/
@@ -608,7 +609,7 @@ static bt_status_t btif_in_get_adapter_properties(void) {
   bt_scan_mode_t mode;
   uint32_t disc_timeout;
   RawAddress bonded_devices[BTM_SEC_MAX_DEVICE_RECORDS];
-  bt_uuid_t local_uuids[BT_MAX_NUM_UUIDS];
+  Uuid local_uuids[BT_MAX_NUM_UUIDS];
   bt_status_t status;
 
   /* RawAddress */
@@ -666,7 +667,7 @@ static bt_status_t btif_in_get_remote_device_properties(RawAddress* bd_addr) {
 
   bt_bdname_t name, alias;
   uint32_t cod, devtype;
-  bt_uuid_t remote_uuids[BT_MAX_NUM_UUIDS];
+  Uuid remote_uuids[BT_MAX_NUM_UUIDS];
 
   memset(remote_properties, 0, sizeof(remote_properties));
   BTIF_STORAGE_FILL_PROPERTY(&remote_properties[num_props], BT_PROPERTY_BDNAME,
@@ -1095,8 +1096,8 @@ bt_status_t btif_set_remote_device_property(RawAddress* remote_addr,
  * Returns          bt_status_t
  *
  ******************************************************************************/
-bt_status_t btif_get_remote_service_record(RawAddress* remote_addr,
-                                           bt_uuid_t* uuid) {
+bt_status_t btif_get_remote_service_record(const RawAddress& remote_addr,
+                                           const Uuid& uuid) {
   if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
   return btif_dm_get_remote_service_record(remote_addr, uuid);

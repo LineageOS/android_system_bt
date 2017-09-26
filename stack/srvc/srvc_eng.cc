@@ -402,7 +402,6 @@ void srvc_eng_release_channel(uint16_t conn_id) {
  *
  ******************************************************************************/
 tGATT_STATUS srvc_eng_init(void) {
-  tBT_UUID app_uuid = {LEN_UUID_16, {UUID_SERVCLASS_DEVICE_INFO}};
 
   if (srvc_eng_cb.enabled) {
     LOG(ERROR) << "DIS already initalized";
@@ -410,7 +409,9 @@ tGATT_STATUS srvc_eng_init(void) {
     memset(&srvc_eng_cb, 0, sizeof(tSRVC_ENG_CB));
 
     /* Create a GATT profile service */
-    srvc_eng_cb.gatt_if = GATT_Register(&app_uuid, &srvc_gatt_cback);
+    bluetooth::Uuid app_uuid =
+        bluetooth::Uuid::From16Bit(UUID_SERVCLASS_DEVICE_INFO);
+    srvc_eng_cb.gatt_if = GATT_Register(app_uuid, &srvc_gatt_cback);
     GATT_StartIf(srvc_eng_cb.gatt_if);
 
     VLOG(1) << "Srvc_Init:  gatt_if=" << +srvc_eng_cb.gatt_if;

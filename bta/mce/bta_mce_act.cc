@@ -38,12 +38,14 @@
 #include "sdp_api.h"
 #include "utl.h"
 
+using bluetooth::Uuid;
+
 /*****************************************************************************
  *  Constants
  ****************************************************************************/
 
-static const tBT_UUID bta_mce_mas_uuid = {
-    .len = 2, .uu.uuid16 = UUID_SERVCLASS_MESSAGE_ACCESS};
+static const Uuid bta_mce_mas_uuid =
+    Uuid::From16Bit(UUID_SERVCLASS_MESSAGE_ACCESS);
 
 /*******************************************************************************
  *
@@ -75,8 +77,8 @@ static void bta_mce_search_cback(uint16_t result, void* user_data) {
       tSDP_DISC_ATTR* p_attr;
       tSDP_PROTOCOL_ELEM pe;
 
-      p_rec = SDP_FindServiceUUIDInDb(p_bta_mce_cfg->p_sdp_db,
-                                      (tBT_UUID*)&bta_mce_mas_uuid, p_rec);
+      p_rec = SDP_FindServiceUUIDInDb(p_bta_mce_cfg->p_sdp_db, bta_mce_mas_uuid,
+                                      p_rec);
 
       APPL_TRACE_DEBUG("p_rec:%p", p_rec);
 
@@ -162,7 +164,7 @@ void bta_mce_get_remote_mas_instances(tBTA_MCE_MSG* p_data) {
   bta_mce_cb.remote_addr = p_data->get_rmt_mas.bd_addr;
 
   SDP_InitDiscoveryDb(p_bta_mce_cfg->p_sdp_db, p_bta_mce_cfg->sdp_db_size, 1,
-                      (tBT_UUID*)&bta_mce_mas_uuid, 0, NULL);
+                      &bta_mce_mas_uuid, 0, NULL);
 
   if (!SDP_ServiceSearchAttributeRequest2(p_data->get_rmt_mas.bd_addr,
                                           p_bta_mce_cfg->p_sdp_db,

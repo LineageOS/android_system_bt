@@ -24,15 +24,10 @@
 
 #include "bta/include/bta_gatt_api.h"
 
-void btif_to_bta_uuid(tBT_UUID* p_dest, const bt_uuid_t* p_src);
 void btif_to_bta_response(tBTA_GATTS_RSP* p_dest, btgatt_response_t* p_src);
 void btif_to_bta_uuid_mask(tBTM_BLE_PF_COND_MASK* p_mask,
-                           const bt_uuid_t* p_src, const bt_uuid_t* svc_uuid);
-
-void bta_to_btif_uuid(bt_uuid_t* p_dest, tBT_UUID* p_src);
-
-uint16_t set_read_value(btgatt_read_params_t* p_dest, tBTA_GATTC_READ* p_src);
-uint16_t get_uuid16(tBT_UUID* p_uuid);
+                           const bluetooth::Uuid& p_src,
+                           const bluetooth::Uuid& svc_uuid);
 
 void btif_gatt_check_encrypted_link(RawAddress bd_addr,
                                     tBTA_GATT_TRANSPORT transport);

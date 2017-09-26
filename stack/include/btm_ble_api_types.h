@@ -462,7 +462,7 @@ using tBTM_BLE_PF_PARAM_CB = base::Callback<void(
 typedef union {
   uint16_t uuid16_mask;
   uint32_t uuid32_mask;
-  uint8_t uuid128_mask[LEN_UUID_128];
+  uint8_t uuid128_mask[bluetooth::Uuid::kNumBytes128];
 } tBTM_BLE_PF_COND_MASK;
 
 /* per device filter + one generic filter indexed by 0 */

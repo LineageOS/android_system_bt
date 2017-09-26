@@ -64,7 +64,7 @@ status_t BluetoothGattService::readFromParcel(const Parcel* parcel) {
   UUID uuid;
   status = parcel->readParcelable(&uuid);
   if (status != OK) return status;
-  uuid_ = uuid;
+  uuid_ = uuid.uuid;
 
   std::vector<BluetoothGattCharacteristic> characteristics;
   status = parcel->readParcelableVector(&characteristics);
