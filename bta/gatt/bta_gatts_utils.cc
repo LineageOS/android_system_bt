@@ -62,7 +62,7 @@ uint8_t bta_gatts_alloc_srvc_cb(tBTA_GATTS_CB* p_cb, uint8_t rcb_idx) {
  * Returns          pointer to the control block if success, otherwise NULL
  *
  ******************************************************************************/
-tBTA_GATTS_RCB* bta_gatts_find_app_rcb_by_app_if(tBTA_GATTS_IF server_if) {
+tBTA_GATTS_RCB* bta_gatts_find_app_rcb_by_app_if(tGATT_IF server_if) {
   uint8_t i;
   tBTA_GATTS_RCB* p_reg;
 
@@ -85,7 +85,7 @@ tBTA_GATTS_RCB* bta_gatts_find_app_rcb_by_app_if(tBTA_GATTS_IF server_if) {
  ******************************************************************************/
 
 uint8_t bta_gatts_find_app_rcb_idx_by_app_if(tBTA_GATTS_CB* p_cb,
-                                             tBTA_GATTS_IF server_if) {
+                                             tGATT_IF server_if) {
   uint8_t i;
 
   for (i = 0; i < BTA_GATTS_MAX_APP_NUM; i++) {
