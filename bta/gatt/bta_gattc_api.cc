@@ -340,7 +340,7 @@ void BTA_GATTC_GetGattDb(uint16_t conn_id, uint16_t start_handle,
  *
  ******************************************************************************/
 void BTA_GATTC_ReadCharacteristic(uint16_t conn_id, uint16_t handle,
-                                  tBTA_GATT_AUTH_REQ auth_req,
+                                  tGATT_AUTH_REQ auth_req,
                                   GATT_READ_OP_CB callback, void* cb_data) {
   tBTA_GATTC_API_READ* p_buf =
       (tBTA_GATTC_API_READ*)osi_calloc(sizeof(tBTA_GATTC_API_READ));
@@ -361,7 +361,7 @@ void BTA_GATTC_ReadCharacteristic(uint16_t conn_id, uint16_t handle,
  */
 void BTA_GATTC_ReadUsingCharUuid(uint16_t conn_id, const Uuid& uuid,
                                  uint16_t s_handle, uint16_t e_handle,
-                                 tBTA_GATT_AUTH_REQ auth_req,
+                                 tGATT_AUTH_REQ auth_req,
                                  GATT_READ_OP_CB callback, void* cb_data) {
   tBTA_GATTC_API_READ* p_buf =
       (tBTA_GATTC_API_READ*)osi_calloc(sizeof(tBTA_GATTC_API_READ));
@@ -392,8 +392,8 @@ void BTA_GATTC_ReadUsingCharUuid(uint16_t conn_id, const Uuid& uuid,
  *
  ******************************************************************************/
 void BTA_GATTC_ReadCharDescr(uint16_t conn_id, uint16_t handle,
-                             tBTA_GATT_AUTH_REQ auth_req,
-                             GATT_READ_OP_CB callback, void* cb_data) {
+                             tGATT_AUTH_REQ auth_req, GATT_READ_OP_CB callback,
+                             void* cb_data) {
   tBTA_GATTC_API_READ* p_buf =
       (tBTA_GATTC_API_READ*)osi_calloc(sizeof(tBTA_GATTC_API_READ));
 
@@ -421,7 +421,7 @@ void BTA_GATTC_ReadCharDescr(uint16_t conn_id, uint16_t handle,
  *
  ******************************************************************************/
 void BTA_GATTC_ReadMultiple(uint16_t conn_id, tBTA_GATTC_MULTI* p_read_multi,
-                            tBTA_GATT_AUTH_REQ auth_req) {
+                            tGATT_AUTH_REQ auth_req) {
   tBTA_GATTC_API_READ_MULTI* p_buf =
       (tBTA_GATTC_API_READ_MULTI*)osi_calloc(sizeof(tBTA_GATTC_API_READ_MULTI));
 
@@ -454,7 +454,7 @@ void BTA_GATTC_ReadMultiple(uint16_t conn_id, tBTA_GATTC_MULTI* p_read_multi,
 void BTA_GATTC_WriteCharValue(uint16_t conn_id, uint16_t handle,
                               tGATT_WRITE_TYPE write_type,
                               std::vector<uint8_t> value,
-                              tBTA_GATT_AUTH_REQ auth_req,
+                              tGATT_AUTH_REQ auth_req,
                               GATT_WRITE_OP_CB callback, void* cb_data) {
   tBTA_GATTC_API_WRITE* p_buf = (tBTA_GATTC_API_WRITE*)osi_calloc(
       sizeof(tBTA_GATTC_API_WRITE) + value.size());
@@ -491,7 +491,7 @@ void BTA_GATTC_WriteCharValue(uint16_t conn_id, uint16_t handle,
  ******************************************************************************/
 void BTA_GATTC_WriteCharDescr(uint16_t conn_id, uint16_t handle,
                               std::vector<uint8_t> value,
-                              tBTA_GATT_AUTH_REQ auth_req,
+                              tGATT_AUTH_REQ auth_req,
                               GATT_WRITE_OP_CB callback, void* cb_data) {
   tBTA_GATTC_API_WRITE* p_buf = (tBTA_GATTC_API_WRITE*)osi_calloc(
       sizeof(tBTA_GATTC_API_WRITE) + value.size());
@@ -529,8 +529,7 @@ void BTA_GATTC_WriteCharDescr(uint16_t conn_id, uint16_t handle,
  *
  ******************************************************************************/
 void BTA_GATTC_PrepareWrite(uint16_t conn_id, uint16_t handle, uint16_t offset,
-                            std::vector<uint8_t> value,
-                            tBTA_GATT_AUTH_REQ auth_req,
+                            std::vector<uint8_t> value, tGATT_AUTH_REQ auth_req,
                             GATT_WRITE_OP_CB callback, void* cb_data) {
   tBTA_GATTC_API_WRITE* p_buf = (tBTA_GATTC_API_WRITE*)osi_calloc(
       sizeof(tBTA_GATTC_API_WRITE) + value.size());
