@@ -80,7 +80,7 @@ void BTA_GATTC_AppRegister(tBTA_GATTC_CBACK* p_client_cb,
                                          p_client_cb, std::move(cb)));
 }
 
-static void app_deregister_impl(tBTA_GATTC_IF client_if) {
+static void app_deregister_impl(tGATT_IF client_if) {
   bta_gattc_deregister(bta_gattc_cl_get_regcb(client_if));
 }
 /*******************************************************************************
@@ -95,7 +95,7 @@ static void app_deregister_impl(tBTA_GATTC_IF client_if) {
  * Returns          None
  *
  ******************************************************************************/
-void BTA_GATTC_AppDeregister(tBTA_GATTC_IF client_if) {
+void BTA_GATTC_AppDeregister(tGATT_IF client_if) {
   do_in_bta_thread(FROM_HERE, base::Bind(&app_deregister_impl, client_if));
 }
 
@@ -116,7 +116,7 @@ void BTA_GATTC_AppDeregister(tBTA_GATTC_IF client_if) {
  *                                 and don't impact the disconnection timer
  *
  ******************************************************************************/
-void BTA_GATTC_Open(tBTA_GATTC_IF client_if, const RawAddress& remote_bda,
+void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
                     bool is_direct, tBTA_GATT_TRANSPORT transport,
                     bool opportunistic) {
   uint8_t phy = controller_get_interface()->get_le_all_initiating_phys();
@@ -124,7 +124,7 @@ void BTA_GATTC_Open(tBTA_GATTC_IF client_if, const RawAddress& remote_bda,
                  phy);
 }
 
-void BTA_GATTC_Open(tBTA_GATTC_IF client_if, const RawAddress& remote_bda,
+void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
                     bool is_direct, tBTA_GATT_TRANSPORT transport,
                     bool opportunistic, uint8_t initiating_phys) {
   tBTA_GATTC_API_OPEN* p_buf =
@@ -156,7 +156,7 @@ void BTA_GATTC_Open(tBTA_GATTC_IF client_if, const RawAddress& remote_bda,
  * Returns          void
  *
  ******************************************************************************/
-void BTA_GATTC_CancelOpen(tBTA_GATTC_IF client_if, const RawAddress& remote_bda,
+void BTA_GATTC_CancelOpen(tGATT_IF client_if, const RawAddress& remote_bda,
                           bool is_direct) {
   tBTA_GATTC_API_CANCEL_OPEN* p_buf = (tBTA_GATTC_API_CANCEL_OPEN*)osi_malloc(
       sizeof(tBTA_GATTC_API_CANCEL_OPEN));
@@ -452,7 +452,7 @@ void BTA_GATTC_ReadMultiple(uint16_t conn_id, tBTA_GATTC_MULTI* p_read_multi,
  *
  ******************************************************************************/
 void BTA_GATTC_WriteCharValue(uint16_t conn_id, uint16_t handle,
-                              tBTA_GATTC_WRITE_TYPE write_type,
+                              tGATT_WRITE_TYPE write_type,
                               std::vector<uint8_t> value,
                               tBTA_GATT_AUTH_REQ auth_req,
                               GATT_WRITE_OP_CB callback, void* cb_data) {
@@ -500,7 +500,7 @@ void BTA_GATTC_WriteCharDescr(uint16_t conn_id, uint16_t handle,
   p_buf->hdr.layer_specific = conn_id;
   p_buf->auth_req = auth_req;
   p_buf->handle = handle;
-  p_buf->write_type = BTA_GATTC_TYPE_WRITE;
+  p_buf->write_type = GATT_WRITE;
   p_buf->write_cb = callback;
   p_buf->write_cb_data = cb_data;
 
@@ -617,11 +617,11 @@ void BTA_GATTC_SendIndConfirm(uint16_t conn_id, uint16_t handle) {
  * Returns          OK if registration succeed, otherwise failed.
  *
  ******************************************************************************/
-tBTA_GATT_STATUS BTA_GATTC_RegisterForNotifications(tBTA_GATTC_IF client_if,
-                                                    const RawAddress& bda,
-                                                    uint16_t handle) {
+tGATT_STATUS BTA_GATTC_RegisterForNotifications(tGATT_IF client_if,
+                                                const RawAddress& bda,
+                                                uint16_t handle) {
   tBTA_GATTC_RCB* p_clreg;
-  tBTA_GATT_STATUS status = BTA_GATT_ILLEGAL_PARAMETER;
+  tGATT_STATUS status = GATT_ILLEGAL_PARAMETER;
   uint8_t i;
 
   if (!handle) {
@@ -636,11 +636,11 @@ tBTA_GATT_STATUS BTA_GATTC_RegisterForNotifications(tBTA_GATTC_IF client_if,
           p_clreg->notif_reg[i].remote_bda == bda &&
           p_clreg->notif_reg[i].handle == handle) {
         APPL_TRACE_WARNING("notification already registered");
-        status = BTA_GATT_OK;
+        status = GATT_SUCCESS;
         break;
       }
     }
-    if (status != BTA_GATT_OK) {
+    if (status != GATT_SUCCESS) {
       for (i = 0; i < BTA_GATTC_NOTIF_REG_MAX; i++) {
         if (!p_clreg->notif_reg[i].in_use) {
           memset((void*)&p_clreg->notif_reg[i], 0,
@@ -650,12 +650,12 @@ tBTA_GATT_STATUS BTA_GATTC_RegisterForNotifications(tBTA_GATTC_IF client_if,
           p_clreg->notif_reg[i].remote_bda = bda;
 
           p_clreg->notif_reg[i].handle = handle;
-          status = BTA_GATT_OK;
+          status = GATT_SUCCESS;
           break;
         }
       }
       if (i == BTA_GATTC_NOTIF_REG_MAX) {
-        status = BTA_GATT_NO_RESOURCES;
+        status = GATT_NO_RESOURCES;
         APPL_TRACE_ERROR("Max Notification Reached, registration failed.");
       }
     }
@@ -680,19 +680,19 @@ tBTA_GATT_STATUS BTA_GATTC_RegisterForNotifications(tBTA_GATTC_IF client_if,
  * Returns          OK if deregistration succeed, otherwise failed.
  *
  ******************************************************************************/
-tBTA_GATT_STATUS BTA_GATTC_DeregisterForNotifications(tBTA_GATTC_IF client_if,
-                                                      const RawAddress& bda,
-                                                      uint16_t handle) {
+tGATT_STATUS BTA_GATTC_DeregisterForNotifications(tGATT_IF client_if,
+                                                  const RawAddress& bda,
+                                                  uint16_t handle) {
   if (!handle) {
     APPL_TRACE_ERROR("%s: deregistration failed, handle is 0", __func__);
-    return BTA_GATT_ILLEGAL_PARAMETER;
+    return GATT_ILLEGAL_PARAMETER;
   }
 
   tBTA_GATTC_RCB* p_clreg = bta_gattc_cl_get_regcb(client_if);
   if (p_clreg == NULL) {
     LOG(ERROR) << __func__ << " client_if: " << +client_if
                << " not registered bd_addr:" << bda;
-    return BTA_GATT_ILLEGAL_PARAMETER;
+    return GATT_ILLEGAL_PARAMETER;
   }
 
   for (int i = 0; i < BTA_GATTC_NOTIF_REG_MAX; i++) {
@@ -701,12 +701,12 @@ tBTA_GATT_STATUS BTA_GATTC_DeregisterForNotifications(tBTA_GATTC_IF client_if,
         p_clreg->notif_reg[i].handle == handle) {
       VLOG(1) << __func__ << " deregistered bd_addr:" << bda;
       memset(&p_clreg->notif_reg[i], 0, sizeof(tBTA_GATTC_NOTIF_REG));
-      return BTA_GATT_OK;
+      return GATT_SUCCESS;
     }
   }
 
   LOG(ERROR) << __func__ << " registration not found bd_addr:" << bda;
-  return BTA_GATT_ERROR;
+  return GATT_ERROR;
 }
 
 /*******************************************************************************
