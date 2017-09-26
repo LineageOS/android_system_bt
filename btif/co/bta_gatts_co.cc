@@ -34,7 +34,7 @@
 typedef struct {
   bool enable;
   uint8_t num_clients;
-  tBTA_GATTS_SRV_CHG srv_chg[BTIF_GATTS_MAX_SRV_CHG_CLT_SIZE];
+  tGATTS_SRV_CHG srv_chg[BTIF_GATTS_MAX_SRV_CHG_CLT_SIZE];
 } __attribute__((packed)) btif_gatts_srv_chg_cb_t;
 
 /*****************************************************************************
@@ -121,9 +121,9 @@ void bta_gatts_co_update_handle_range(
  *                  false - if the request can not be processed
  *
  ******************************************************************************/
-bool bta_gatts_co_srv_chg(UNUSED_ATTR tBTA_GATTS_SRV_CHG_CMD cmd,
-                          UNUSED_ATTR tBTA_GATTS_SRV_CHG_REQ* p_req,
-                          UNUSED_ATTR tBTA_GATTS_SRV_CHG_RSP* p_rsp) {
+bool bta_gatts_co_srv_chg(UNUSED_ATTR tGATTS_SRV_CHG_CMD cmd,
+                          UNUSED_ATTR tGATTS_SRV_CHG_REQ* p_req,
+                          UNUSED_ATTR tGATTS_SRV_CHG_RSP* p_rsp) {
   return false;
 }
 
