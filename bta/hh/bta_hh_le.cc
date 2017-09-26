@@ -174,28 +174,27 @@ static void gatt_execute_next_op(uint16_t conn_id) {
   if (op.type == GATT_READ_CHAR) {
     act_read_cb = op.read_cb;
     act_read_cb_data = op.read_cb_data;
-    BTA_GATTC_ReadCharacteristic(conn_id, op.handle, BTA_GATT_AUTH_REQ_NONE,
+    BTA_GATTC_ReadCharacteristic(conn_id, op.handle, GATT_AUTH_REQ_NONE,
                                  gatt_read_op_finished, NULL);
 
   } else if (op.type == GATT_READ_DESC) {
     act_read_cb = op.read_cb;
     act_read_cb_data = op.read_cb_data;
-    BTA_GATTC_ReadCharDescr(conn_id, op.handle, BTA_GATT_AUTH_REQ_NONE,
+    BTA_GATTC_ReadCharDescr(conn_id, op.handle, GATT_AUTH_REQ_NONE,
                             gatt_read_op_finished, NULL);
 
   } else if (op.type == GATT_WRITE_CHAR) {
     act_write_cb = op.write_cb;
     act_write_cb_data = op.write_cb_data;
     BTA_GATTC_WriteCharValue(conn_id, op.handle, op.write_type,
-                             std::move(op.value), BTA_GATT_AUTH_REQ_NONE,
+                             std::move(op.value), GATT_AUTH_REQ_NONE,
                              gatt_write_op_finished, NULL);
 
   } else if (op.type == GATT_WRITE_DESC) {
     act_write_cb = op.write_cb;
     act_write_cb_data = op.write_cb_data;
     BTA_GATTC_WriteCharDescr(conn_id, op.handle, std::move(op.value),
-                             BTA_GATT_AUTH_REQ_NONE, gatt_write_op_finished,
-                             NULL);
+                             GATT_AUTH_REQ_NONE, gatt_write_op_finished, NULL);
   }
 
   gatt_ops.pop_front();
