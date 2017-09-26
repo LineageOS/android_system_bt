@@ -306,7 +306,7 @@ void bta_gattc_process_api_open_cancel(tBTA_GATTC_DATA* p_msg) {
   if (p_msg->api_cancel_conn.is_direct) {
     p_clcb = bta_gattc_find_clcb_by_cif(p_msg->api_cancel_conn.client_if,
                                         p_msg->api_cancel_conn.remote_bda,
-                                        BTA_GATT_TRANSPORT_LE);
+                                        GATT_TRANSPORT_LE);
     if (p_clcb != NULL) {
       bta_gattc_sm_execute(p_clcb, event, p_msg);
     } else {
@@ -455,7 +455,7 @@ void bta_gattc_init_bk_conn(tBTA_GATTC_API_OPEN* p_data,
       if (GATT_GetConnIdIfConnected(p_data->client_if, p_data->remote_bda,
                                     &conn_id, p_data->transport)) {
         p_clcb = bta_gattc_find_alloc_clcb(
-            p_data->client_if, p_data->remote_bda, BTA_GATT_TRANSPORT_LE);
+            p_data->client_if, p_data->remote_bda, GATT_TRANSPORT_LE);
         if (p_clcb != NULL) {
           gattc_data.hdr.layer_specific = p_clcb->bta_conn_id = conn_id;
 
@@ -470,7 +470,7 @@ void bta_gattc_init_bk_conn(tBTA_GATTC_API_OPEN* p_data,
   /* open failure, report OPEN_EVT */
   if (status != GATT_SUCCESS) {
     bta_gattc_send_open_cback(p_clreg, status, p_data->remote_bda,
-                              GATT_INVALID_CONN_ID, BTA_GATT_TRANSPORT_LE, 0);
+                              GATT_INVALID_CONN_ID, GATT_TRANSPORT_LE, 0);
   }
 }
 /*******************************************************************************
@@ -1352,7 +1352,7 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, const RawAddress& bdaddr,
  ******************************************************************************/
 static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, const RawAddress& bda) {
   tBTA_GATTC_CLCB* p_clcb =
-      bta_gattc_find_clcb_by_cif(gattc_if, bda, BTA_GATT_TRANSPORT_LE);
+      bta_gattc_find_clcb_by_cif(gattc_if, bda, GATT_TRANSPORT_LE);
 
   if (p_clcb == NULL) return;
 

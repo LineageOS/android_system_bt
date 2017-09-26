@@ -246,8 +246,8 @@ void BTA_GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_id,
  *
  ******************************************************************************/
 void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
-                       tBTA_GATTS_RSP* p_msg) {
-  const size_t len = sizeof(tBTA_GATTS_API_RSP) + sizeof(tBTA_GATTS_RSP);
+                       tGATTS_RSP* p_msg) {
+  const size_t len = sizeof(tBTA_GATTS_API_RSP) + sizeof(tGATTS_RSP);
   tBTA_GATTS_API_RSP* p_buf = (tBTA_GATTS_API_RSP*)osi_calloc(len);
 
   p_buf->hdr.event = BTA_GATTS_API_RSP_EVT;
@@ -255,8 +255,8 @@ void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
   p_buf->trans_id = trans_id;
   p_buf->status = status;
   if (p_msg != NULL) {
-    p_buf->p_rsp = (tBTA_GATTS_RSP*)(p_buf + 1);
-    memcpy(p_buf->p_rsp, p_msg, sizeof(tBTA_GATTS_RSP));
+    p_buf->p_rsp = (tGATTS_RSP*)(p_buf + 1);
+    memcpy(p_buf->p_rsp, p_msg, sizeof(tGATTS_RSP));
   }
 
   bta_sys_sendmsg(p_buf);
@@ -279,7 +279,7 @@ void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
  *
  ******************************************************************************/
 void BTA_GATTS_Open(tGATT_IF server_if, const RawAddress& remote_bda,
-                    bool is_direct, tBTA_GATT_TRANSPORT transport) {
+                    bool is_direct, tGATT_TRANSPORT transport) {
   tBTA_GATTS_API_OPEN* p_buf =
       (tBTA_GATTS_API_OPEN*)osi_malloc(sizeof(tBTA_GATTS_API_OPEN));
 

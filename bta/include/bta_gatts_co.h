@@ -60,9 +60,9 @@ extern void bta_gatts_co_update_handle_range(
  *                  false - if the request can not be processed
  *
  ******************************************************************************/
-extern bool bta_gatts_co_srv_chg(tBTA_GATTS_SRV_CHG_CMD cmd,
-                                 tBTA_GATTS_SRV_CHG_REQ* p_req,
-                                 tBTA_GATTS_SRV_CHG_RSP* p_rsp);
+extern bool bta_gatts_co_srv_chg(tGATTS_SRV_CHG_CMD cmd,
+                                 tGATTS_SRV_CHG_REQ* p_req,
+                                 tGATTS_SRV_CHG_RSP* p_rsp);
 
 /*******************************************************************************
  *
