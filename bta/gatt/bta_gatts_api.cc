@@ -122,7 +122,7 @@ void BTA_GATTS_AppDeregister(tBTA_GATTS_IF server_if) {
  * Parameters       server_if: server interface.
  *                  service: pointer vector describing service.
  *
- * Returns          Returns |BTA_GATT_OK| on success or |BTA_GATT_ERROR| if the
+ * Returns          Returns |GATT_SUCCESS| on success or |GATT_ERROR| if the
  *                  service cannot be added.
  *
  ******************************************************************************/
@@ -133,10 +133,10 @@ extern uint16_t BTA_GATTS_AddService(tBTA_GATTS_IF server_if,
 
   APPL_TRACE_ERROR("%s: rcb_idx = %d", __func__, rcb_idx);
 
-  if (rcb_idx == BTA_GATTS_INVALID_APP) return BTA_GATT_ERROR;
+  if (rcb_idx == BTA_GATTS_INVALID_APP) return GATT_ERROR;
 
   uint8_t srvc_idx = bta_gatts_alloc_srvc_cb(&bta_gatts_cb, rcb_idx);
-  if (srvc_idx == BTA_GATTS_INVALID_APP) return BTA_GATT_ERROR;
+  if (srvc_idx == BTA_GATTS_INVALID_APP) return GATT_ERROR;
 
   uint16_t status = GATTS_AddService(server_if, service.data(), service.size());
 
@@ -147,11 +147,11 @@ extern uint16_t BTA_GATTS_AddService(tBTA_GATTS_IF server_if,
     bta_gatts_cb.srvc_cb[srvc_idx].service_id = service[0].attribute_handle;
     bta_gatts_cb.srvc_cb[srvc_idx].idx = srvc_idx;
 
-    return BTA_GATT_OK;
+    return GATT_SUCCESS;
   } else {
     memset(&bta_gatts_cb.srvc_cb[srvc_idx], 0, sizeof(tBTA_GATTS_SRVC_CB));
     APPL_TRACE_ERROR("%s: service creation failed.", __func__);
-    return BTA_GATT_ERROR;
+    return GATT_ERROR;
   }
 }
 
@@ -245,8 +245,8 @@ void BTA_GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_id,
  * Returns          None
  *
  ******************************************************************************/
-void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id,
-                       tBTA_GATT_STATUS status, tBTA_GATTS_RSP* p_msg) {
+void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
+                       tBTA_GATTS_RSP* p_msg) {
   const size_t len = sizeof(tBTA_GATTS_API_RSP) + sizeof(tBTA_GATTS_RSP);
   tBTA_GATTS_API_RSP* p_buf = (tBTA_GATTS_API_RSP*)osi_calloc(len);
 
