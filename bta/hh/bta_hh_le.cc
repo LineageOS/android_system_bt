@@ -400,8 +400,7 @@ void bta_hh_le_open_conn(tBTA_HH_DEV_CB* p_cb, const RawAddress& remote_bda) {
   bta_hh_cb.le_cb_index[BTA_HH_GET_LE_CB_IDX(p_cb->hid_handle)] = p_cb->index;
   p_cb->in_use = true;
 
-  BTA_GATTC_Open(bta_hh_cb.gatt_if, remote_bda, true, BTA_GATT_TRANSPORT_LE,
-                 false);
+  BTA_GATTC_Open(bta_hh_cb.gatt_if, remote_bda, true, GATT_TRANSPORT_LE, false);
 }
 
 /*******************************************************************************
@@ -1096,7 +1095,7 @@ void bta_hh_le_pri_service_discovery(tBTA_HH_DEV_CB* p_cb) {
  *
  ******************************************************************************/
 void bta_hh_le_encrypt_cback(const RawAddress* bd_addr,
-                             UNUSED_ATTR tBTA_GATT_TRANSPORT transport,
+                             UNUSED_ATTR tGATT_TRANSPORT transport,
                              UNUSED_ATTR void* p_ref_data, tBTM_STATUS result) {
   uint8_t idx = bta_hh_find_cb(*bd_addr);
   tBTA_HH_DEV_CB* p_dev_cb;
@@ -2108,7 +2107,7 @@ static void bta_hh_le_add_dev_bg_conn(tBTA_HH_DEV_CB* p_cb, bool check_bond) {
   if (/*p_cb->dscp_info.flag & BTA_HH_LE_NORMAL_CONN &&*/
       !p_cb->in_bg_conn && to_add) {
     /* add device into BG connection to accept remote initiated connection */
-    BTA_GATTC_Open(bta_hh_cb.gatt_if, p_cb->addr, false, BTA_GATT_TRANSPORT_LE,
+    BTA_GATTC_Open(bta_hh_cb.gatt_if, p_cb->addr, false, GATT_TRANSPORT_LE,
                    false);
     p_cb->in_bg_conn = true;
 

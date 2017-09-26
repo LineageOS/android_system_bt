@@ -89,12 +89,12 @@ typedef struct {
   BT_HDR hdr;
   uint32_t trans_id;
   tGATT_STATUS status;
-  tBTA_GATTS_RSP* p_rsp;
+  tGATTS_RSP* p_rsp;
 } tBTA_GATTS_API_RSP;
 
 typedef struct {
   BT_HDR hdr;
-  tBTA_GATT_TRANSPORT transport;
+  tGATT_TRANSPORT transport;
 } tBTA_GATTS_API_START;
 
 typedef struct {
@@ -102,7 +102,7 @@ typedef struct {
   RawAddress remote_bda;
   tGATT_IF server_if;
   bool is_direct;
-  tBTA_GATT_TRANSPORT transport;
+  tGATT_TRANSPORT transport;
 
 } tBTA_GATTS_API_OPEN;
 

@@ -101,9 +101,9 @@ static void bta_gatts_nv_save_cback(bool is_add,
 static bool bta_gatts_nv_srv_chg_cback(tGATTS_SRV_CHG_CMD cmd,
                                        tGATTS_SRV_CHG_REQ* p_req,
                                        tGATTS_SRV_CHG_RSP* p_rsp) {
-  return bta_gatts_co_srv_chg((tBTA_GATTS_SRV_CHG_CMD)cmd,
-                              (tBTA_GATTS_SRV_CHG_REQ*)p_req,
-                              (tBTA_GATTS_SRV_CHG_RSP*)p_rsp);
+  return bta_gatts_co_srv_chg((tGATTS_SRV_CHG_CMD)cmd,
+                              (tGATTS_SRV_CHG_REQ*)p_req,
+                              (tGATTS_SRV_CHG_RSP*)p_rsp);
 }
 
 /*******************************************************************************
@@ -493,7 +493,7 @@ void bta_gatts_close(UNUSED_ATTR tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
   tGATT_STATUS status = GATT_ERROR;
   tGATT_IF gatt_if;
   RawAddress remote_bda;
-  tBTA_GATT_TRANSPORT transport;
+  tGATT_TRANSPORT transport;
 
   if (GATT_GetConnectionInfor(p_msg->hdr.layer_specific, &gatt_if, remote_bda,
                               &transport)) {
@@ -532,7 +532,7 @@ static void bta_gatts_send_request_cback(uint16_t conn_id, uint32_t trans_id,
   tBTA_GATTS cb_data;
   tBTA_GATTS_RCB* p_rcb;
   tGATT_IF gatt_if;
-  tBTA_GATT_TRANSPORT transport;
+  tGATT_TRANSPORT transport;
 
   memset(&cb_data, 0, sizeof(tBTA_GATTS));
 
@@ -552,7 +552,7 @@ static void bta_gatts_send_request_cback(uint16_t conn_id, uint32_t trans_id,
 
       cb_data.req_data.conn_id = conn_id;
       cb_data.req_data.trans_id = trans_id;
-      cb_data.req_data.p_data = (tBTA_GATTS_REQ_DATA*)p_data;
+      cb_data.req_data.p_data = (tGATTS_DATA*)p_data;
 
       (*p_rcb->p_cback)(req_type, &cb_data);
     } else {
@@ -662,7 +662,7 @@ static void bta_gatts_conn_update_cback(tGATT_IF gatt_if, uint16_t conn_id,
 static void bta_gatts_cong_cback(uint16_t conn_id, bool congested) {
   tBTA_GATTS_RCB* p_rcb;
   tGATT_IF gatt_if;
-  tBTA_GATT_TRANSPORT transport;
+  tGATT_TRANSPORT transport;
   tBTA_GATTS cb_data;
 
   if (GATT_GetConnectionInfor(conn_id, &gatt_if, cb_data.req_data.remote_bda,

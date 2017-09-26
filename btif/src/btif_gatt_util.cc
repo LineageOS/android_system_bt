@@ -45,7 +45,7 @@ using bluetooth::Uuid;
 /*******************************************************************************
  * BTIF -> BTA conversion functions
  ******************************************************************************/
-void btif_to_bta_response(tBTA_GATTS_RSP* p_dest, btgatt_response_t* p_src) {
+void btif_to_bta_response(tGATTS_RSP* p_dest, btgatt_response_t* p_src) {
   p_dest->attr_value.auth_req = p_src->attr_value.auth_req;
   p_dest->attr_value.handle = p_src->attr_value.handle;
   p_dest->attr_value.len = p_src->attr_value.len;
@@ -98,7 +98,7 @@ static void btif_gatt_set_encryption_cb(UNUSED_ATTR const RawAddress& bd_addr,
 
 #if (BLE_DELAY_REQUEST_ENC == FALSE)
 void btif_gatt_check_encrypted_link(RawAddress bd_addr,
-                                    tBTA_GATT_TRANSPORT transport_link) {
+                                    tGATT_TRANSPORT transport_link) {
   char buf[100];
 
   if ((btif_storage_get_ble_bonding_key(&bd_addr, BTIF_DM_LE_KEY_PENC, buf,
@@ -112,7 +112,7 @@ void btif_gatt_check_encrypted_link(RawAddress bd_addr,
 }
 #else
 void btif_gatt_check_encrypted_link(UNUSED_ATTR RawAddress bd_addr,
-                                    UNUSED_ATTR tBTA_GATT_TRANSPORT
+                                    UNUSED_ATTR tGATT_TRANSPORT
                                         transport_link) {}
 #endif
 
