@@ -527,6 +527,7 @@ typedef struct {
 #define BD_ADDR_LEN 6 /* Device address length */
 
 #ifdef __cplusplus
+#include <bluetooth/uuid.h>
 #include <hardware/bluetooth.h>
 
 inline void BDADDR_TO_STREAM(uint8_t*& p, const RawAddress& a) {
