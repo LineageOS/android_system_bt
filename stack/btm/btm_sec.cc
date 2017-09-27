@@ -3593,7 +3593,7 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, uint8_t* p) {
     }
 
     if (btm_cb.api.p_sp_callback) {
-      status = (*btm_cb.api.p_sp_callback)(event, (tBTM_SP_EVT_DATA*)&evt_data);
+      status = (*btm_cb.api.p_sp_callback)(event, &evt_data);
       if (status != BTM_NOT_AUTHORIZED) {
         return;
       }
@@ -3805,9 +3805,11 @@ void btm_read_local_oob_complete(uint8_t* p) {
   } else
     evt_data.status = BTM_ERR_PROCESSING;
 
-  if (btm_cb.api.p_sp_callback)
-    (*btm_cb.api.p_sp_callback)(BTM_SP_LOC_OOB_EVT,
-                                (tBTM_SP_EVT_DATA*)&evt_data);
+  if (btm_cb.api.p_sp_callback) {
+    tBTM_SP_EVT_DATA btm_sp_evt_data;
+    btm_sp_evt_data.loc_oob = evt_data;
+    (*btm_cb.api.p_sp_callback)(BTM_SP_LOC_OOB_EVT, &btm_sp_evt_data);
+  }
 }
 
 /*******************************************************************************

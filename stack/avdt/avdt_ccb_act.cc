@@ -506,8 +506,9 @@ void avdt_ccb_snd_start_cmd(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data) {
       p_scb = avdt_scb_by_hdl(seid_list[i]);
       if (p_scb != NULL) {
         AVDT_TRACE_DEBUG("%s: AVDT_SCB_MSG_START_REJ_EVT: i=%d", __func__, i);
-        avdt_scb_event(p_scb, AVDT_SCB_MSG_START_REJ_EVT,
-                       (tAVDT_SCB_EVT*)&avdt_msg.hdr);
+        tAVDT_SCB_EVT avdt_scb_evt;
+        avdt_scb_evt.msg.hdr = avdt_msg.hdr;
+        avdt_scb_event(p_scb, AVDT_SCB_MSG_START_REJ_EVT, &avdt_scb_evt);
       }
     }
   }
@@ -580,8 +581,9 @@ void avdt_ccb_snd_suspend_cmd(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data) {
     for (i = 0; i < p_data->msg.multi.num_seps; i++) {
       p_scb = avdt_scb_by_hdl(seid_list[i]);
       if (p_scb != NULL) {
-        avdt_scb_event(p_scb, AVDT_SCB_MSG_SUSPEND_REJ_EVT,
-                       (tAVDT_SCB_EVT*)&avdt_msg.hdr);
+        tAVDT_SCB_EVT avdt_scb_evt;
+        avdt_scb_evt.msg.hdr = avdt_msg.hdr;
+        avdt_scb_event(p_scb, AVDT_SCB_MSG_SUSPEND_REJ_EVT, &avdt_scb_evt);
       }
     }
   }
@@ -644,7 +646,9 @@ void avdt_ccb_clear_cmds(tAVDT_CCB* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
   */
   do {
     /* we know p_curr_cmd = NULL after this */
-    avdt_ccb_cmd_fail(p_ccb, (tAVDT_CCB_EVT*)&err_code);
+    tAVDT_CCB_EVT avdt_ccb_evt;
+    avdt_ccb_evt.err_code = err_code;
+    avdt_ccb_cmd_fail(p_ccb, &avdt_ccb_evt);
 
     /* set up next message */
     p_ccb->p_curr_cmd = (BT_HDR*)fixed_queue_try_dequeue(p_ccb->cmd_q);
@@ -686,13 +690,16 @@ void avdt_ccb_cmd_fail(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data) {
     evt = avdt_msg_rej_2_evt[p_ccb->p_curr_cmd->event - 1];
 
     if (evt & AVDT_CCB_MKR) {
-      avdt_ccb_event(p_ccb, (uint8_t)(evt & ~AVDT_CCB_MKR),
-                     (tAVDT_CCB_EVT*)&msg);
+      tAVDT_CCB_EVT avdt_ccb_evt;
+      avdt_ccb_evt.msg = msg;
+      avdt_ccb_event(p_ccb, (uint8_t)(evt & ~AVDT_CCB_MKR), &avdt_ccb_evt);
     } else {
       /* we get the scb out of the current cmd */
       p_scb = avdt_scb_by_hdl(*((uint8_t*)(p_ccb->p_curr_cmd + 1)));
       if (p_scb != NULL) {
-        avdt_scb_event(p_scb, evt, (tAVDT_SCB_EVT*)&msg);
+        tAVDT_SCB_EVT avdt_scb_evt;
+        avdt_scb_evt.msg = msg;
+        avdt_scb_event(p_scb, evt, &avdt_scb_evt);
       }
     }
 
@@ -744,13 +751,13 @@ void avdt_ccb_cong_state(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data) {
  *
  ******************************************************************************/
 void avdt_ccb_ret_cmd(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data) {
-  uint8_t err_code = AVDT_ERR_TIMEOUT;
-
   p_ccb->ret_count++;
   if (p_ccb->ret_count == AVDT_RET_MAX) {
     /* command failed */
     p_ccb->ret_count = 0;
-    avdt_ccb_cmd_fail(p_ccb, (tAVDT_CCB_EVT*)&err_code);
+    tAVDT_CCB_EVT avdt_ccb_evt;
+    avdt_ccb_evt.err_code = AVDT_ERR_TIMEOUT;
+    avdt_ccb_cmd_fail(p_ccb, &avdt_ccb_evt);
 
     /* go to next queued command */
     avdt_ccb_snd_cmd(p_ccb, p_data);
@@ -882,8 +889,6 @@ void avdt_ccb_clr_reconn(tAVDT_CCB* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
  *
  ******************************************************************************/
 void avdt_ccb_chk_reconn(tAVDT_CCB* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
-  uint8_t err_code = AVDT_ERR_CONNECT;
-
   if (p_ccb->reconn) {
     p_ccb->reconn = false;
 
@@ -891,7 +896,10 @@ void avdt_ccb_chk_reconn(tAVDT_CCB* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
     avdt_ccb_clear_ccb(p_ccb);
 
     /* clear out current command, if any */
-    avdt_ccb_cmd_fail(p_ccb, (tAVDT_CCB_EVT*)&err_code);
+    uint8_t err_code = AVDT_ERR_CONNECT;
+    tAVDT_CCB_EVT avdt_ccb_evt;
+    avdt_ccb_evt.err_code = err_code;
+    avdt_ccb_cmd_fail(p_ccb, &avdt_ccb_evt);
 
     /* reopen the signaling channel */
     avdt_ccb_event(p_ccb, AVDT_CCB_UL_OPEN_EVT, NULL);

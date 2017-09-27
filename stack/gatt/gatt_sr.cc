@@ -317,8 +317,10 @@ void gatt_process_exec_write_req(tGATT_TCB& tcb, uint8_t op_code,
       if (tcb.prep_cnt[i]) {
         gatt_if = (tGATT_IF)(i + 1);
         conn_id = GATT_CREATE_CONN_ID(tcb.tcb_idx, gatt_if);
+        tGATTS_DATA gatts_data;
+        gatts_data.exec_write = flag;
         gatt_sr_send_req_callback(conn_id, trans_id, GATTS_REQ_TYPE_WRITE_EXEC,
-                                  (tGATTS_DATA*)&flag);
+                                  &gatts_data);
         tcb.prep_cnt[i] = 0;
       }
     }
@@ -744,18 +746,20 @@ static void gatts_process_mtu_req(tGATT_TCB& tcb, uint16_t len,
   l2cble_set_fixed_channel_tx_data_length(tcb.peer_bda, L2CAP_ATT_CID,
                                           tcb.payload_size);
 
-  BT_HDR* p_buf =
-      attp_build_sr_msg(tcb, GATT_RSP_MTU, (tGATT_SR_MSG*)&tcb.payload_size);
+  tGATT_SR_MSG gatt_sr_msg;
+  gatt_sr_msg.mtu = tcb.payload_size;
+  BT_HDR* p_buf = attp_build_sr_msg(tcb, GATT_RSP_MTU, &gatt_sr_msg);
   attp_send_sr_msg(tcb, p_buf);
 
+  tGATTS_DATA gatts_data;
+  gatts_data.mtu = tcb.payload_size;
   /* Notify all registered applicaiton with new MTU size. Us a transaction ID */
   /* of 0, as no response is allowed from applcations                    */
   for (int i = 0; i < GATT_MAX_APPS; i++) {
     if (gatt_cb.cl_rcb[i].in_use) {
       uint16_t conn_id =
           GATT_CREATE_CONN_ID(tcb.tcb_idx, gatt_cb.cl_rcb[i].gatt_if);
-      gatt_sr_send_req_callback(conn_id, 0, GATTS_REQ_TYPE_MTU,
-                                (tGATTS_DATA*)&tcb.payload_size);
+      gatt_sr_send_req_callback(conn_id, 0, GATTS_REQ_TYPE_MTU, &gatts_data);
     }
   }
 }
@@ -1142,12 +1146,14 @@ void gatts_process_value_conf(tGATT_TCB& tcb, uint8_t op_code) {
   bool continue_processing = gatts_proc_ind_ack(tcb, handle);
 
   if (continue_processing) {
+    tGATTS_DATA gatts_data;
+    gatts_data.handle = handle;
     for (auto& el : *gatt_cb.srv_list_info) {
       if (el.s_hdl <= handle && el.e_hdl >= handle) {
         uint32_t trans_id = gatt_sr_enqueue_cmd(tcb, op_code, handle);
         uint16_t conn_id = GATT_CREATE_CONN_ID(tcb.tcb_idx, el.gatt_if);
         gatt_sr_send_req_callback(conn_id, trans_id, GATTS_REQ_TYPE_CONF,
-                                  (tGATTS_DATA*)&handle);
+                                  &gatts_data);
       }
     }
   }

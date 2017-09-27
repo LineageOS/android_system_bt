@@ -594,7 +594,10 @@ static uint8_t avrc_proc_far_msg(uint8_t handle, uint8_t label, uint8_t cr,
     }
     avrc_cmd.status = AVRC_STS_NO_ERROR;
     avrc_cmd.target_pdu = p_rcb->rasm_pdu;
-    status = AVRC_BldCommand((tAVRC_COMMAND*)&avrc_cmd, &p_cmd);
+
+    tAVRC_COMMAND avrc_command;
+    avrc_command.continu = avrc_cmd;
+    status = AVRC_BldCommand(&avrc_command, &p_cmd);
     if (status == AVRC_STS_NO_ERROR) {
       AVRC_MsgReq(handle, (uint8_t)(label), AVRC_CMD_CTRL, p_cmd);
     }
