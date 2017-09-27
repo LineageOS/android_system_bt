@@ -122,7 +122,6 @@ cc_library_static {
         "l2cap/l2c_fcr.cc",
         "l2cap/l2c_link.cc",
         "l2cap/l2c_main.cc",
-        "l2cap/l2c_ucd.cc",
         "l2cap/l2c_utils.cc",
         "l2cap/l2cap_client.cc",
         "mcap/mca_api.cc",
