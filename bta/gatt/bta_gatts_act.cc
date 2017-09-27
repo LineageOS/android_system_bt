@@ -101,9 +101,9 @@ static void bta_gatts_nv_save_cback(bool is_add,
 static bool bta_gatts_nv_srv_chg_cback(tGATTS_SRV_CHG_CMD cmd,
                                        tGATTS_SRV_CHG_REQ* p_req,
                                        tGATTS_SRV_CHG_RSP* p_rsp) {
-  return bta_gatts_co_srv_chg((tBTA_GATTS_SRV_CHG_CMD)cmd,
-                              (tBTA_GATTS_SRV_CHG_REQ*)p_req,
-                              (tBTA_GATTS_SRV_CHG_RSP*)p_rsp);
+  return bta_gatts_co_srv_chg((tGATTS_SRV_CHG_CMD)cmd,
+                              (tGATTS_SRV_CHG_REQ*)p_req,
+                              (tGATTS_SRV_CHG_RSP*)p_rsp);
 }
 
 /*******************************************************************************
@@ -175,7 +175,7 @@ void bta_gatts_api_disable(tBTA_GATTS_CB* p_cb) {
  ******************************************************************************/
 void bta_gatts_register(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
   tBTA_GATTS cb_data;
-  tBTA_GATT_STATUS status = BTA_GATT_OK;
+  tGATT_STATUS status = GATT_SUCCESS;
   uint8_t i, first_unuse = 0xff;
 
   if (p_cb->enabled == false) {
@@ -186,13 +186,13 @@ void bta_gatts_register(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
     if (p_cb->rcb[i].in_use) {
       if (p_cb->rcb[i].app_uuid == p_msg->api_reg.app_uuid) {
         APPL_TRACE_ERROR("application already registered.");
-        status = BTA_GATT_DUP_REG;
+        status = GATT_DUP_REG;
         break;
       }
     }
   }
 
-  if (status == BTA_GATT_OK) {
+  if (status == GATT_SUCCESS) {
     for (i = 0; i < BTA_GATTS_MAX_APP_NUM; i++) {
       if (first_unuse == 0xff && !p_cb->rcb[i].in_use) {
         first_unuse = i;
@@ -212,7 +212,7 @@ void bta_gatts_register(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
       cb_data.reg_oper.server_if = p_cb->rcb[first_unuse].gatt_if =
           GATT_Register(p_msg->api_reg.app_uuid, &bta_gatts_cback);
       if (!p_cb->rcb[first_unuse].gatt_if) {
-        status = BTA_GATT_NO_RESOURCES;
+        status = GATT_NO_RESOURCES;
       } else {
         tBTA_GATTS_INT_START_IF* p_buf = (tBTA_GATTS_INT_START_IF*)osi_malloc(
             sizeof(tBTA_GATTS_INT_START_IF));
@@ -222,7 +222,7 @@ void bta_gatts_register(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
         bta_sys_sendmsg(p_buf);
       }
     } else {
-      status = BTA_GATT_NO_RESOURCES;
+      status = GATT_NO_RESOURCES;
     }
   }
   cb_data.reg_oper.status = status;
@@ -258,7 +258,7 @@ void bta_gatts_start_if(UNUSED_ATTR tBTA_GATTS_CB* p_cb,
  *
  ******************************************************************************/
 void bta_gatts_deregister(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
-  tBTA_GATT_STATUS status = BTA_GATT_ERROR;
+  tGATT_STATUS status = GATT_ERROR;
   tBTA_GATTS_CBACK* p_cback = NULL;
   uint8_t i;
   tBTA_GATTS cb_data;
@@ -270,7 +270,7 @@ void bta_gatts_deregister(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
     if (p_cb->rcb[i].in_use &&
         p_cb->rcb[i].gatt_if == p_msg->api_dereg.server_if) {
       p_cback = p_cb->rcb[i].p_cback;
-      status = BTA_GATT_OK;
+      status = GATT_SUCCESS;
 
       /* deregister the app */
       GATT_Deregister(p_cb->rcb[i].gatt_if);
@@ -308,10 +308,10 @@ void bta_gatts_delete_service(tBTA_GATTS_SRVC_CB* p_srvc_cb,
 
   if (GATTS_DeleteService(p_rcb->gatt_if, &p_srvc_cb->service_uuid,
                           p_srvc_cb->service_id)) {
-    cb_data.srvc_oper.status = BTA_GATT_OK;
+    cb_data.srvc_oper.status = GATT_SUCCESS;
     memset(p_srvc_cb, 0, sizeof(tBTA_GATTS_SRVC_CB));
   } else {
-    cb_data.srvc_oper.status = BTA_GATT_ERROR;
+    cb_data.srvc_oper.status = GATT_ERROR;
   }
 
   if (p_rcb->p_cback) (*p_rcb->p_cback)(BTA_GATTS_DELELTE_EVT, &cb_data);
@@ -334,7 +334,7 @@ void bta_gatts_stop_service(tBTA_GATTS_SRVC_CB* p_srvc_cb,
   GATTS_StopService(p_srvc_cb->service_id);
   cb_data.srvc_oper.server_if = p_rcb->gatt_if;
   cb_data.srvc_oper.service_id = p_srvc_cb->service_id;
-  cb_data.srvc_oper.status = BTA_GATT_OK;
+  cb_data.srvc_oper.status = GATT_SUCCESS;
   APPL_TRACE_ERROR("bta_gatts_stop_service service_id= %d",
                    p_srvc_cb->service_id);
 
@@ -369,7 +369,7 @@ void bta_gatts_send_rsp(UNUSED_ATTR tBTA_GATTS_CB* p_cb,
 void bta_gatts_indicate_handle(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
   tBTA_GATTS_SRVC_CB* p_srvc_cb;
   tBTA_GATTS_RCB* p_rcb = NULL;
-  tBTA_GATT_STATUS status = BTA_GATT_ILLEGAL_PARAMETER;
+  tGATT_STATUS status = GATT_ILLEGAL_PARAMETER;
   tGATT_IF gatt_if;
   RawAddress remote_bda;
   tBTA_TRANSPORT transport;
@@ -427,7 +427,7 @@ void bta_gatts_indicate_handle(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
  ******************************************************************************/
 void bta_gatts_open(UNUSED_ATTR tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
   tBTA_GATTS_RCB* p_rcb = NULL;
-  tBTA_GATT_STATUS status = BTA_GATT_ERROR;
+  tGATT_STATUS status = GATT_ERROR;
   uint16_t conn_id;
 
   p_rcb = bta_gatts_find_app_rcb_by_app_if(p_msg->api_open.server_if);
@@ -436,11 +436,11 @@ void bta_gatts_open(UNUSED_ATTR tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
     if (GATT_Connect(p_rcb->gatt_if, p_msg->api_open.remote_bda,
                      p_msg->api_open.is_direct, p_msg->api_open.transport,
                      false)) {
-      status = BTA_GATT_OK;
+      status = GATT_SUCCESS;
 
       if (GATT_GetConnIdIfConnected(p_rcb->gatt_if, p_msg->api_open.remote_bda,
                                     &conn_id, p_msg->api_open.transport)) {
-        status = BTA_GATT_ALREADY_OPEN;
+        status = GATT_ALREADY_OPEN;
       }
     }
   } else {
@@ -462,7 +462,7 @@ void bta_gatts_open(UNUSED_ATTR tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
 void bta_gatts_cancel_open(UNUSED_ATTR tBTA_GATTS_CB* p_cb,
                            tBTA_GATTS_DATA* p_msg) {
   tBTA_GATTS_RCB* p_rcb;
-  tBTA_GATT_STATUS status = BTA_GATT_ERROR;
+  tGATT_STATUS status = GATT_ERROR;
 
   p_rcb = bta_gatts_find_app_rcb_by_app_if(p_msg->api_cancel_open.server_if);
   if (p_rcb != NULL) {
@@ -470,7 +470,7 @@ void bta_gatts_cancel_open(UNUSED_ATTR tBTA_GATTS_CB* p_cb,
                             p_msg->api_cancel_open.is_direct)) {
       APPL_TRACE_ERROR("bta_gatts_cancel_open failed for open request");
     } else {
-      status = BTA_GATT_OK;
+      status = GATT_SUCCESS;
     }
   } else {
     APPL_TRACE_ERROR("Inavlide server_if=%d", p_msg->api_cancel_open.server_if);
@@ -490,10 +490,10 @@ void bta_gatts_cancel_open(UNUSED_ATTR tBTA_GATTS_CB* p_cb,
  ******************************************************************************/
 void bta_gatts_close(UNUSED_ATTR tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
   tBTA_GATTS_RCB* p_rcb;
-  tBTA_GATT_STATUS status = BTA_GATT_ERROR;
+  tGATT_STATUS status = GATT_ERROR;
   tGATT_IF gatt_if;
   RawAddress remote_bda;
-  tBTA_GATT_TRANSPORT transport;
+  tGATT_TRANSPORT transport;
 
   if (GATT_GetConnectionInfor(p_msg->hdr.layer_specific, &gatt_if, remote_bda,
                               &transport)) {
@@ -501,7 +501,7 @@ void bta_gatts_close(UNUSED_ATTR tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
       APPL_TRACE_ERROR("bta_gatts_close fail conn_id=%d",
                        p_msg->hdr.layer_specific);
     } else {
-      status = BTA_GATT_OK;
+      status = GATT_SUCCESS;
     }
 
     p_rcb = bta_gatts_find_app_rcb_by_app_if(gatt_if);
@@ -532,7 +532,7 @@ static void bta_gatts_send_request_cback(uint16_t conn_id, uint32_t trans_id,
   tBTA_GATTS cb_data;
   tBTA_GATTS_RCB* p_rcb;
   tGATT_IF gatt_if;
-  tBTA_GATT_TRANSPORT transport;
+  tGATT_TRANSPORT transport;
 
   memset(&cb_data, 0, sizeof(tBTA_GATTS));
 
@@ -552,7 +552,7 @@ static void bta_gatts_send_request_cback(uint16_t conn_id, uint32_t trans_id,
 
       cb_data.req_data.conn_id = conn_id;
       cb_data.req_data.trans_id = trans_id;
-      cb_data.req_data.p_data = (tBTA_GATTS_REQ_DATA*)p_data;
+      cb_data.req_data.p_data = (tGATTS_DATA*)p_data;
 
       (*p_rcb->p_cback)(req_type, &cb_data);
     } else {
@@ -662,7 +662,7 @@ static void bta_gatts_conn_update_cback(tGATT_IF gatt_if, uint16_t conn_id,
 static void bta_gatts_cong_cback(uint16_t conn_id, bool congested) {
   tBTA_GATTS_RCB* p_rcb;
   tGATT_IF gatt_if;
-  tBTA_GATT_TRANSPORT transport;
+  tGATT_TRANSPORT transport;
   tBTA_GATTS cb_data;
 
   if (GATT_GetConnectionInfor(conn_id, &gatt_if, cb_data.req_data.remote_bda,

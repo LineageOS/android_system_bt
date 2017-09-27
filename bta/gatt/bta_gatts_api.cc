@@ -101,7 +101,7 @@ void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid,
  * Returns          void
  *
  ******************************************************************************/
-void BTA_GATTS_AppDeregister(tBTA_GATTS_IF server_if) {
+void BTA_GATTS_AppDeregister(tGATT_IF server_if) {
   tBTA_GATTS_API_DEREG* p_buf =
       (tBTA_GATTS_API_DEREG*)osi_malloc(sizeof(tBTA_GATTS_API_DEREG));
 
@@ -122,21 +122,21 @@ void BTA_GATTS_AppDeregister(tBTA_GATTS_IF server_if) {
  * Parameters       server_if: server interface.
  *                  service: pointer vector describing service.
  *
- * Returns          Returns |BTA_GATT_OK| on success or |BTA_GATT_ERROR| if the
+ * Returns          Returns |GATT_SUCCESS| on success or |GATT_ERROR| if the
  *                  service cannot be added.
  *
  ******************************************************************************/
-extern uint16_t BTA_GATTS_AddService(tBTA_GATTS_IF server_if,
+extern uint16_t BTA_GATTS_AddService(tGATT_IF server_if,
                                      vector<btgatt_db_element_t>& service) {
   uint8_t rcb_idx =
       bta_gatts_find_app_rcb_idx_by_app_if(&bta_gatts_cb, server_if);
 
   APPL_TRACE_ERROR("%s: rcb_idx = %d", __func__, rcb_idx);
 
-  if (rcb_idx == BTA_GATTS_INVALID_APP) return BTA_GATT_ERROR;
+  if (rcb_idx == BTA_GATTS_INVALID_APP) return GATT_ERROR;
 
   uint8_t srvc_idx = bta_gatts_alloc_srvc_cb(&bta_gatts_cb, rcb_idx);
-  if (srvc_idx == BTA_GATTS_INVALID_APP) return BTA_GATT_ERROR;
+  if (srvc_idx == BTA_GATTS_INVALID_APP) return GATT_ERROR;
 
   uint16_t status = GATTS_AddService(server_if, service.data(), service.size());
 
@@ -147,11 +147,11 @@ extern uint16_t BTA_GATTS_AddService(tBTA_GATTS_IF server_if,
     bta_gatts_cb.srvc_cb[srvc_idx].service_id = service[0].attribute_handle;
     bta_gatts_cb.srvc_cb[srvc_idx].idx = srvc_idx;
 
-    return BTA_GATT_OK;
+    return GATT_SUCCESS;
   } else {
     memset(&bta_gatts_cb.srvc_cb[srvc_idx], 0, sizeof(tBTA_GATTS_SRVC_CB));
     APPL_TRACE_ERROR("%s: service creation failed.", __func__);
-    return BTA_GATT_ERROR;
+    return GATT_ERROR;
   }
 }
 
@@ -245,9 +245,9 @@ void BTA_GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_id,
  * Returns          None
  *
  ******************************************************************************/
-void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id,
-                       tBTA_GATT_STATUS status, tBTA_GATTS_RSP* p_msg) {
-  const size_t len = sizeof(tBTA_GATTS_API_RSP) + sizeof(tBTA_GATTS_RSP);
+void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
+                       tGATTS_RSP* p_msg) {
+  const size_t len = sizeof(tBTA_GATTS_API_RSP) + sizeof(tGATTS_RSP);
   tBTA_GATTS_API_RSP* p_buf = (tBTA_GATTS_API_RSP*)osi_calloc(len);
 
   p_buf->hdr.event = BTA_GATTS_API_RSP_EVT;
@@ -255,8 +255,8 @@ void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id,
   p_buf->trans_id = trans_id;
   p_buf->status = status;
   if (p_msg != NULL) {
-    p_buf->p_rsp = (tBTA_GATTS_RSP*)(p_buf + 1);
-    memcpy(p_buf->p_rsp, p_msg, sizeof(tBTA_GATTS_RSP));
+    p_buf->p_rsp = (tGATTS_RSP*)(p_buf + 1);
+    memcpy(p_buf->p_rsp, p_msg, sizeof(tGATTS_RSP));
   }
 
   bta_sys_sendmsg(p_buf);
@@ -278,8 +278,8 @@ void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id,
  * Returns          void
  *
  ******************************************************************************/
-void BTA_GATTS_Open(tBTA_GATTS_IF server_if, const RawAddress& remote_bda,
-                    bool is_direct, tBTA_GATT_TRANSPORT transport) {
+void BTA_GATTS_Open(tGATT_IF server_if, const RawAddress& remote_bda,
+                    bool is_direct, tGATT_TRANSPORT transport) {
   tBTA_GATTS_API_OPEN* p_buf =
       (tBTA_GATTS_API_OPEN*)osi_malloc(sizeof(tBTA_GATTS_API_OPEN));
 
@@ -306,7 +306,7 @@ void BTA_GATTS_Open(tBTA_GATTS_IF server_if, const RawAddress& remote_bda,
  * Returns          void
  *
  ******************************************************************************/
-void BTA_GATTS_CancelOpen(tBTA_GATTS_IF server_if, const RawAddress& remote_bda,
+void BTA_GATTS_CancelOpen(tGATT_IF server_if, const RawAddress& remote_bda,
                           bool is_direct) {
   tBTA_GATTS_API_CANCEL_OPEN* p_buf = (tBTA_GATTS_API_CANCEL_OPEN*)osi_malloc(
       sizeof(tBTA_GATTS_API_CANCEL_OPEN));

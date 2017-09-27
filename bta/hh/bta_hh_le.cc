@@ -89,7 +89,7 @@ struct gatt_operation {
   void* write_cb_data;
 
   /* write-specific fields */
-  tBTA_GATTC_WRITE_TYPE write_type;
+  tGATT_WRITE_TYPE write_type;
   vector<uint8_t> value;
 };
 
@@ -174,28 +174,27 @@ static void gatt_execute_next_op(uint16_t conn_id) {
   if (op.type == GATT_READ_CHAR) {
     act_read_cb = op.read_cb;
     act_read_cb_data = op.read_cb_data;
-    BTA_GATTC_ReadCharacteristic(conn_id, op.handle, BTA_GATT_AUTH_REQ_NONE,
+    BTA_GATTC_ReadCharacteristic(conn_id, op.handle, GATT_AUTH_REQ_NONE,
                                  gatt_read_op_finished, NULL);
 
   } else if (op.type == GATT_READ_DESC) {
     act_read_cb = op.read_cb;
     act_read_cb_data = op.read_cb_data;
-    BTA_GATTC_ReadCharDescr(conn_id, op.handle, BTA_GATT_AUTH_REQ_NONE,
+    BTA_GATTC_ReadCharDescr(conn_id, op.handle, GATT_AUTH_REQ_NONE,
                             gatt_read_op_finished, NULL);
 
   } else if (op.type == GATT_WRITE_CHAR) {
     act_write_cb = op.write_cb;
     act_write_cb_data = op.write_cb_data;
     BTA_GATTC_WriteCharValue(conn_id, op.handle, op.write_type,
-                             std::move(op.value), BTA_GATT_AUTH_REQ_NONE,
+                             std::move(op.value), GATT_AUTH_REQ_NONE,
                              gatt_write_op_finished, NULL);
 
   } else if (op.type == GATT_WRITE_DESC) {
     act_write_cb = op.write_cb;
     act_write_cb_data = op.write_cb_data;
     BTA_GATTC_WriteCharDescr(conn_id, op.handle, std::move(op.value),
-                             BTA_GATT_AUTH_REQ_NONE, gatt_write_op_finished,
-                             NULL);
+                             GATT_AUTH_REQ_NONE, gatt_write_op_finished, NULL);
   }
 
   gatt_ops.pop_front();
@@ -215,7 +214,7 @@ static void gatt_queue_read_op(uint8_t op_type, uint16_t conn_id,
 
 static void gatt_queue_write_op(uint8_t op_type, uint16_t conn_id,
                                 uint16_t handle, vector<uint8_t> value,
-                                tBTA_GATTC_WRITE_TYPE write_type,
+                                tGATT_WRITE_TYPE write_type,
                                 GATT_WRITE_OP_CB cb, void* cb_data) {
   gatt_operation op;
   op.type = op_type;
@@ -332,7 +331,7 @@ void bta_hh_le_enable(void) {
                         base::Bind([](uint8_t client_id, uint8_t r_status) {
                           tBTA_HH_STATUS status = BTA_HH_ERR;
 
-                          if (r_status == BTA_GATT_OK) {
+                          if (r_status == GATT_SUCCESS) {
                             bta_hh_cb.gatt_if = client_id;
                             status = BTA_HH_OK;
                           } else
@@ -354,7 +353,7 @@ void bta_hh_le_enable(void) {
  * Returns          whether it is HH GATT IF
  *
  ******************************************************************************/
-bool bta_hh_le_is_hh_gatt_if(tBTA_GATTC_IF client_if) {
+bool bta_hh_le_is_hh_gatt_if(tGATT_IF client_if) {
   return (bta_hh_cb.gatt_if == client_if);
 }
 
@@ -401,8 +400,7 @@ void bta_hh_le_open_conn(tBTA_HH_DEV_CB* p_cb, const RawAddress& remote_bda) {
   bta_hh_cb.le_cb_index[BTA_HH_GET_LE_CB_IDX(p_cb->hid_handle)] = p_cb->index;
   p_cb->in_use = true;
 
-  BTA_GATTC_Open(bta_hh_cb.gatt_if, remote_bda, true, BTA_GATT_TRANSPORT_LE,
-                 false);
+  BTA_GATTC_Open(bta_hh_cb.gatt_if, remote_bda, true, GATT_TRANSPORT_LE, false);
 }
 
 /*******************************************************************************
@@ -637,7 +635,7 @@ static tBTA_HH_STATUS bta_hh_le_read_char_descriptor(tBTA_HH_DEV_CB* p_cb,
 void bta_hh_le_save_report_ref(tBTA_HH_DEV_CB* p_dev_cb, tBTA_HH_LE_RPT* p_rpt,
                                tGATT_STATUS status, uint8_t* value,
                                uint16_t len) {
-  if (status == BTA_GATT_INSUF_AUTHENTICATION) {
+  if (status == GATT_INSUF_AUTHENTICATION) {
     /* close connection right away */
     p_dev_cb->status = BTA_HH_ERR_AUTH_FAILED;
     /* close the connection and report service discovery complete with error */
@@ -646,7 +644,7 @@ void bta_hh_le_save_report_ref(tBTA_HH_DEV_CB* p_dev_cb, tBTA_HH_LE_RPT* p_rpt,
   }
 
   /* if the length of the descriptor value is right, parse it */
-  if (status == BTA_GATT_OK && len == 2) {
+  if (status == GATT_SUCCESS && len == 2) {
     uint8_t* pp = value;
 
     STREAM_TO_UINT8(p_rpt->rpt_id, pp);
@@ -702,7 +700,7 @@ void bta_hh_le_register_input_notif(tBTA_HH_DEV_CB* p_dev_cb,
       /* boot mode, deregister report input notification */
       else if (proto_mode == BTA_HH_PROTO_BOOT_MODE) {
         if (p_rpt->uuid == GATT_UUID_HID_REPORT &&
-            p_rpt->client_cfg_value == BTA_GATT_CLT_CONFIG_NOTIFICATION) {
+            p_rpt->client_cfg_value == GATT_CLT_CONFIG_NOTIFICATION) {
           APPL_TRACE_DEBUG("%s ---> Deregister Report ID: %d", __func__,
                            p_rpt->rpt_id);
           BTA_GATTC_DeregisterForNotifications(
@@ -719,14 +717,13 @@ void bta_hh_le_register_input_notif(tBTA_HH_DEV_CB* p_dev_cb,
       } else if (proto_mode == BTA_HH_PROTO_RPT_MODE) {
         if ((p_rpt->uuid == GATT_UUID_HID_BT_KB_INPUT ||
              p_rpt->uuid == GATT_UUID_HID_BT_MOUSE_INPUT) &&
-            p_rpt->client_cfg_value == BTA_GATT_CLT_CONFIG_NOTIFICATION) {
+            p_rpt->client_cfg_value == GATT_CLT_CONFIG_NOTIFICATION) {
           APPL_TRACE_DEBUG("%s ---> Deregister Boot Report ID: %d", __func__,
                            p_rpt->rpt_id);
           BTA_GATTC_DeregisterForNotifications(
               bta_hh_cb.gatt_if, p_dev_cb->addr, p_rpt->char_inst_id);
         } else if (p_rpt->uuid == GATT_UUID_HID_REPORT &&
-                   p_rpt->client_cfg_value ==
-                       BTA_GATT_CLT_CONFIG_NOTIFICATION) {
+                   p_rpt->client_cfg_value == GATT_CLT_CONFIG_NOTIFICATION) {
           APPL_TRACE_DEBUG("%s <--- Register Report ID: %d", __func__,
                            p_rpt->rpt_id);
           BTA_GATTC_RegisterForNotifications(bta_hh_cb.gatt_if, p_dev_cb->addr,
@@ -752,14 +749,14 @@ void bta_hh_le_deregister_input_notif(tBTA_HH_DEV_CB* p_dev_cb) {
   for (uint8_t i = 0; i < BTA_HH_LE_RPT_MAX; i++, p_rpt++) {
     if (p_rpt->rpt_type == BTA_HH_RPTT_INPUT) {
       if (p_rpt->uuid == GATT_UUID_HID_REPORT &&
-          p_rpt->client_cfg_value == BTA_GATT_CLT_CONFIG_NOTIFICATION) {
+          p_rpt->client_cfg_value == GATT_CLT_CONFIG_NOTIFICATION) {
         APPL_TRACE_DEBUG("%s ---> Deregister Report ID: %d", __func__,
                          p_rpt->rpt_id);
         BTA_GATTC_DeregisterForNotifications(bta_hh_cb.gatt_if, p_dev_cb->addr,
                                              p_rpt->char_inst_id);
       } else if ((p_rpt->uuid == GATT_UUID_HID_BT_KB_INPUT ||
                   p_rpt->uuid == GATT_UUID_HID_BT_MOUSE_INPUT) &&
-                 p_rpt->client_cfg_value == BTA_GATT_CLT_CONFIG_NOTIFICATION) {
+                 p_rpt->client_cfg_value == GATT_CLT_CONFIG_NOTIFICATION) {
         APPL_TRACE_DEBUG("%s ---> Deregister Boot Report ID: %d", __func__,
                          p_rpt->rpt_id);
         BTA_GATTC_DeregisterForNotifications(bta_hh_cb.gatt_if, p_dev_cb->addr,
@@ -812,7 +809,7 @@ bool bta_hh_le_write_ccc(tBTA_HH_DEV_CB* p_cb, uint8_t char_handle,
   UINT16_TO_STREAM(ptr, clt_cfg_value);
 
   gatt_queue_write_op(GATT_WRITE_DESC, p_cb->conn_id, p_desc->handle,
-                      std::move(value), BTA_GATTC_TYPE_WRITE, cb, cb_data);
+                      std::move(value), GATT_WRITE, cb, cb_data);
   return true;
 }
 
@@ -838,9 +835,9 @@ static void write_rpt_ctl_cfg_cb(uint16_t conn_id, tGATT_STATUS status,
     case GATT_UUID_HID_BT_KB_INPUT:
     case GATT_UUID_HID_BT_MOUSE_INPUT:
     case GATT_UUID_HID_REPORT:
-      if (status == BTA_GATT_OK)
+      if (status == GATT_SUCCESS)
         p_dev_cb->hid_srvc.report[p_dev_cb->clt_cfg_idx].client_cfg_value =
-            BTA_GATT_CLT_CONFIG_NOTIFICATION;
+            GATT_CLT_CONFIG_NOTIFICATION;
       p_dev_cb->clt_cfg_idx++;
       bta_hh_le_write_rpt_clt_cfg(p_dev_cb);
       break;
@@ -866,7 +863,7 @@ bool bta_hh_le_write_rpt_clt_cfg(tBTA_HH_DEV_CB* p_cb) {
     /* enable notification for all input report, regardless mode */
     if (p_rpt->rpt_type == BTA_HH_RPTT_INPUT) {
       if (bta_hh_le_write_ccc(p_cb, p_rpt->char_inst_id,
-                              BTA_GATT_CLT_CONFIG_NOTIFICATION,
+                              GATT_CLT_CONFIG_NOTIFICATION,
                               write_rpt_ctl_cfg_cb, p_cb)) {
         p_cb->clt_cfg_idx = i;
         return true;
@@ -897,15 +894,15 @@ static void write_proto_mode_cb(uint16_t conn_id, tGATT_STATUS status,
     tBTA_HH_CBDATA cback_data;
 
     cback_data.handle = p_dev_cb->hid_handle;
-    cback_data.status = (status == BTA_GATT_OK) ? BTA_HH_OK : BTA_HH_ERR;
+    cback_data.status = (status == GATT_SUCCESS) ? BTA_HH_OK : BTA_HH_ERR;
 
-    if (status == BTA_GATT_OK)
+    if (status == GATT_SUCCESS)
       bta_hh_le_register_input_notif(p_dev_cb, p_dev_cb->mode, false);
 
     p_dev_cb->w4_evt = 0;
     (*bta_hh_cb.p_cback)(cb_evt, (tBTA_HH*)&cback_data);
   } else if (p_dev_cb->state == BTA_HH_W4_CONN_ST) {
-    p_dev_cb->status = (status == BTA_GATT_OK) ? BTA_HH_OK : BTA_HH_ERR_PROTO;
+    p_dev_cb->status = (status == GATT_SUCCESS) ? BTA_HH_OK : BTA_HH_ERR_PROTO;
 
     if ((p_dev_cb->disc_active & BTA_HH_LE_DISC_HIDS) == 0)
       bta_hh_le_open_cmpl(p_dev_cb);
@@ -952,7 +949,7 @@ bool bta_hh_le_set_protocol_mode(tBTA_HH_DEV_CB* p_cb,
 
     gatt_queue_write_op(GATT_WRITE_CHAR, p_cb->conn_id,
                         p_cb->hid_srvc.proto_mode_handle, {mode},
-                        BTA_GATTC_TYPE_WRITE_NO_RSP, write_proto_mode_cb, p_cb);
+                        GATT_WRITE_NO_RSP, write_proto_mode_cb, p_cb);
     return true;
   }
 
@@ -976,7 +973,7 @@ static void get_protocol_mode_cb(uint16_t conn_id, tGATT_STATUS status,
   hs_data.handle = p_dev_cb->hid_handle;
   hs_data.rsp_data.proto_mode = p_dev_cb->mode;
 
-  if (status == BTA_GATT_OK && len) {
+  if (status == GATT_SUCCESS && len) {
     hs_data.status = BTA_HH_OK;
     /* match up BTE/BTA report/boot mode def*/
     hs_data.rsp_data.proto_mode = *(value);
@@ -1098,7 +1095,7 @@ void bta_hh_le_pri_service_discovery(tBTA_HH_DEV_CB* p_cb) {
  *
  ******************************************************************************/
 void bta_hh_le_encrypt_cback(const RawAddress* bd_addr,
-                             UNUSED_ATTR tBTA_GATT_TRANSPORT transport,
+                             UNUSED_ATTR tGATT_TRANSPORT transport,
                              UNUSED_ATTR void* p_ref_data, tBTM_STATUS result) {
   uint8_t idx = bta_hh_find_cb(*bd_addr);
   tBTA_HH_DEV_CB* p_dev_cb;
@@ -1278,7 +1275,7 @@ void bta_hh_gatt_open(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_buf) {
       ((p2[0]) << 24) + ((p2[1]) << 16) + ((p2[2]) << 8) + (p2[3]),
       ((p2[4]) << 8) + p2[5], p_data->status);
 
-  if (p_data->status == BTA_GATT_OK) {
+  if (p_data->status == GATT_SUCCESS) {
     p_cb->is_le_device = true;
     p_cb->in_use = true;
     p_cb->conn_id = p_data->conn_id;
@@ -1323,7 +1320,7 @@ void bta_hh_le_close(tBTA_GATTC_CLOSE* p_data) {
     p_buf->conn_id = p_data->conn_id;
     p_buf->reason = p_data->reason;
 
-    p_dev_cb->conn_id = BTA_GATT_INVALID_CONN_ID;
+    p_dev_cb->conn_id = GATT_INVALID_CONN_ID;
     p_dev_cb->security_pending = false;
     bta_sys_sendmsg(p_buf);
   }
@@ -1360,7 +1357,7 @@ void bta_hh_le_gatt_disc_cmpl(tBTA_HH_DEV_CB* p_cb, tBTA_HH_STATUS status) {
 static void read_hid_info_cb(uint16_t conn_id, tGATT_STATUS status,
                              uint16_t handle, uint16_t len, uint8_t* value,
                              void* data) {
-  if (status != BTA_GATT_OK) {
+  if (status != GATT_SUCCESS) {
     APPL_TRACE_ERROR("%s: error: %d", __func__, status);
     return;
   }
@@ -1381,7 +1378,7 @@ static void read_hid_info_cb(uint16_t conn_id, tGATT_STATUS status,
 static void read_hid_report_map_cb(uint16_t conn_id, tGATT_STATUS status,
                                    uint16_t handle, uint16_t len,
                                    uint8_t* value, void* data) {
-  if (status != BTA_GATT_OK) {
+  if (status != GATT_SUCCESS) {
     APPL_TRACE_ERROR("%s: error reading characteristic: %d", __func__, status);
     return;
   }
@@ -1404,7 +1401,7 @@ static void read_hid_report_map_cb(uint16_t conn_id, tGATT_STATUS status,
 static void read_ext_rpt_ref_desc_cb(uint16_t conn_id, tGATT_STATUS status,
                                      uint16_t handle, uint16_t len,
                                      uint8_t* value, void* data) {
-  if (status != BTA_GATT_OK) {
+  if (status != GATT_SUCCESS) {
     APPL_TRACE_ERROR("%s: error: %d", __func__, status);
     return;
   }
@@ -1430,7 +1427,7 @@ static void read_ext_rpt_ref_desc_cb(uint16_t conn_id, tGATT_STATUS status,
 static void read_report_ref_desc_cb(uint16_t conn_id, tGATT_STATUS status,
                                     uint16_t handle, uint16_t len,
                                     uint8_t* value, void* data) {
-  if (status != BTA_GATT_OK) {
+  if (status != GATT_SUCCESS) {
     APPL_TRACE_ERROR("%s: error: %d", __func__, status);
     return;
   }
@@ -1454,7 +1451,7 @@ static void read_report_ref_desc_cb(uint16_t conn_id, tGATT_STATUS status,
 void read_pref_conn_params_cb(uint16_t conn_id, tGATT_STATUS status,
                               uint16_t handle, uint16_t len, uint8_t* value,
                               void* data) {
-  if (status != BTA_GATT_OK) {
+  if (status != GATT_SUCCESS) {
     APPL_TRACE_ERROR("%s: error: %d", __func__, status);
     return;
   }
@@ -1598,7 +1595,7 @@ void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
   /* service search exception or no HID service is supported on remote */
   if (p_dev_cb == NULL) return;
 
-  if (p_data->status != BTA_GATT_OK) {
+  if (p_data->status != GATT_SUCCESS) {
     p_dev_cb->status = BTA_HH_ERR_SDP;
     /* close the connection and report service discovery complete with error */
     bta_hh_le_api_disc_act(p_dev_cb);
@@ -1636,7 +1633,7 @@ void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
         if (p_char->uuid == Uuid::From16Bit(GATT_UUID_SCAN_REFRESH)) {
           p_dev_cb->scan_refresh_char_handle = p_char->handle;
 
-          if (p_char->properties & BTA_GATT_CHAR_PROP_BIT_NOTIFY)
+          if (p_char->properties & GATT_CHAR_PROP_BIT_NOTIFY)
             p_dev_cb->scps_notify |= BTA_HH_LE_SCPS_NOTIFY_SPT;
           else
             p_dev_cb->scps_notify = BTA_HH_LE_SCPS_NOTIFY_NONE;
@@ -1759,7 +1756,7 @@ void bta_hh_le_open_fail(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
   conn_dat.scps_supported = p_cb->scps_supported;
 
   if (p_cb->status == BTA_HH_OK)
-    conn_dat.status = (p_data->le_close.reason == BTA_GATT_CONN_UNKNOWN)
+    conn_dat.status = (p_data->le_close.reason == GATT_CONN_UNKNOWN)
                           ? p_cb->status
                           : BTA_HH_ERR;
   else
@@ -1799,7 +1796,7 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
     bta_hh_disc_cmpl();
   } else {
 #if (BTA_HH_LE_RECONN == TRUE)
-    if (p_data->le_close.reason == BTA_GATT_CONN_TIMEOUT) {
+    if (p_data->le_close.reason == GATT_CONN_TIMEOUT) {
       bta_hh_le_add_dev_bg_conn(p_cb, false);
     }
 #endif
@@ -1818,7 +1815,7 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_hh_le_api_disc_act(tBTA_HH_DEV_CB* p_cb) {
-  if (p_cb->conn_id != BTA_GATT_INVALID_CONN_ID) {
+  if (p_cb->conn_id != GATT_INVALID_CONN_ID) {
     gatt_op_queue_clean(p_cb->conn_id);
     BTA_GATTC_Close(p_cb->conn_id);
     /* remove device from background connection if intended to disconnect,
@@ -1872,7 +1869,7 @@ static void read_report_cb(uint16_t conn_id, tGATT_STATUS status,
   hs_data.status = BTA_HH_ERR;
   hs_data.handle = p_dev_cb->hid_handle;
 
-  if (status == BTA_GATT_OK) {
+  if (status == GATT_SUCCESS) {
     p_rpt = bta_hh_le_find_report_entry(p_dev_cb, p_char->service->handle,
                                         char_uuid, p_char->handle);
 
@@ -1947,7 +1944,7 @@ static void write_report_cb(uint16_t conn_id, tGATT_STATUS status,
 
   /* Set Report finished */
   cback_data.handle = p_dev_cb->hid_handle;
-  cback_data.status = (status == BTA_GATT_OK) ? BTA_HH_OK : BTA_HH_ERR;
+  cback_data.status = (status == GATT_SUCCESS) ? BTA_HH_OK : BTA_HH_ERR;
   p_dev_cb->w4_evt = 0;
   (*bta_hh_cb.p_cback)(cb_evt, (tBTA_HH*)&cback_data);
 }
@@ -1988,9 +1985,9 @@ void bta_hh_le_write_rpt(tBTA_HH_DEV_CB* p_cb, tBTA_HH_RPT_TYPE r_type,
   const tBTA_GATTC_CHARACTERISTIC* p_char =
       BTA_GATTC_GetCharacteristic(p_cb->conn_id, p_rpt->char_inst_id);
 
-  tBTA_GATTC_WRITE_TYPE write_type = BTA_GATTC_TYPE_WRITE;
-  if (p_char && (p_char->properties & BTA_GATT_CHAR_PROP_BIT_WRITE_NR))
-    write_type = BTA_GATTC_TYPE_WRITE_NO_RSP;
+  tGATT_WRITE_TYPE write_type = GATT_WRITE;
+  if (p_char && (p_char->properties & GATT_CHAR_PROP_BIT_WRITE_NR))
+    write_type = GATT_WRITE_NO_RSP;
 
   gatt_queue_write_op(GATT_WRITE_CHAR, p_cb->conn_id, p_rpt->char_inst_id,
                       std::move(value), write_type, write_report_cb, p_cb);
@@ -2012,7 +2009,7 @@ void bta_hh_le_suspend(tBTA_HH_DEV_CB* p_cb,
   // We don't care about response
   gatt_queue_write_op(GATT_WRITE_CHAR, p_cb->conn_id,
                       p_cb->hid_srvc.control_point_handle, {(uint8_t)ctrl_type},
-                      BTA_GATTC_TYPE_WRITE_NO_RSP, NULL, NULL);
+                      GATT_WRITE_NO_RSP, NULL, NULL);
 }
 
 /*******************************************************************************
@@ -2110,7 +2107,7 @@ static void bta_hh_le_add_dev_bg_conn(tBTA_HH_DEV_CB* p_cb, bool check_bond) {
   if (/*p_cb->dscp_info.flag & BTA_HH_LE_NORMAL_CONN &&*/
       !p_cb->in_bg_conn && to_add) {
     /* add device into BG connection to accept remote initiated connection */
-    BTA_GATTC_Open(bta_hh_cb.gatt_if, p_cb->addr, false, BTA_GATT_TRANSPORT_LE,
+    BTA_GATTC_Open(bta_hh_cb.gatt_if, p_cb->addr, false, GATT_TRANSPORT_LE,
                    false);
     p_cb->in_bg_conn = true;
 
@@ -2325,7 +2322,7 @@ void bta_hh_le_hid_read_rpt_clt_cfg(const RawAddress& bd_addr, uint8_t rpt_id) {
 //                     == BTA_HH_RPTT_INPUT))
 //                 {
 //                     p_rpt->client_cfg_value =
-//                     BTA_GATT_CLT_CONFIG_NOTIFICATION;
+//                     GATT_CLT_CONFIG_NOTIFICATION;
 //                 }
 //             }
 //         }
