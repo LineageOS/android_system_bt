@@ -186,6 +186,7 @@ static tGATT_STATUS read_attr_value(tGATT_ATTR& attr16, uint16_t offset,
     if (mtu < *p_len) return GATT_NO_RESOURCES;
 
     gatt_build_uuid_to_stream(&p, attr16.p_value->uuid);
+    *p_data = p;
     return GATT_SUCCESS;
   }
 
@@ -205,6 +206,7 @@ static tGATT_STATUS read_attr_value(tGATT_ATTR& attr16, uint16_t offset,
       /* if 32 bit UUID, convert to 128 bit */
       ARRAY_TO_STREAM(p, val_attr->uuid.To128BitLE(), (int)Uuid::kNumBytes128);
     }
+    *p_data = p;
     return GATT_SUCCESS;
   }
 
@@ -223,6 +225,7 @@ static tGATT_STATUS read_attr_value(tGATT_ATTR& attr16, uint16_t offset,
     if (incl_handle.service_type.Is16Bit()) {
       UINT16_TO_STREAM(p, incl_handle.service_type.As16Bit());
     }
+    *p_data = p;
     return GATT_SUCCESS;
   }
 
