@@ -988,6 +988,15 @@ bt_status_t btif_set_adapter_property(const bt_property_t* property) {
          if required */
       storage_req_id = BTIF_CORE_STORAGE_ADAPTER_WRITE;
     } break;
+    case BT_PROPERTY_CLASS_OF_DEVICE: {
+      DEV_CLASS dev_class;
+      memcpy(dev_class, property->val, DEV_CLASS_LEN);
+
+      BTIF_TRACE_EVENT("set property dev_class : 0x%02x%02x%02x", dev_class[0],
+                       dev_class[1], dev_class[2]);
+
+      BTM_SetDeviceClass(dev_class);
+    } break;
     case BT_PROPERTY_BDADDR:
     case BT_PROPERTY_UUIDS:
     case BT_PROPERTY_ADAPTER_BONDED_DEVICES:
