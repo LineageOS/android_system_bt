@@ -194,10 +194,13 @@ void avct_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
       else {
         AVCT_TRACE_DEBUG("avct_l2c_connect_cfm_cback conflict_lcid:0x%x",
                          p_lcb->conflict_lcid);
-        if (p_lcb->conflict_lcid == lcid)
+        if (p_lcb->conflict_lcid == lcid) {
           p_lcb->conflict_lcid = 0;
-        else
-          avct_lcb_event(p_lcb, AVCT_LCB_LL_CLOSE_EVT, (tAVCT_LCB_EVT*)&result);
+        } else {
+          tAVCT_LCB_EVT avct_lcb_evt;
+          avct_lcb_evt.result = result;
+          avct_lcb_event(p_lcb, AVCT_LCB_LL_CLOSE_EVT, &avct_lcb_evt);
+        }
       }
     } else if (p_lcb->conflict_lcid == lcid) {
       /* we must be in AVCT_CH_CFG state for the ch_lcid channel */
@@ -331,7 +334,9 @@ void avct_l2c_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
       L2CA_DisconnectRsp(lcid);
     }
 
-    avct_lcb_event(p_lcb, AVCT_LCB_LL_CLOSE_EVT, (tAVCT_LCB_EVT*)&result);
+    tAVCT_LCB_EVT avct_lcb_evt;
+    avct_lcb_evt.result = result;
+    avct_lcb_event(p_lcb, AVCT_LCB_LL_CLOSE_EVT, &avct_lcb_evt);
     AVCT_TRACE_DEBUG("ch_state di: %d ", p_lcb->ch_state);
   }
 }
@@ -360,7 +365,9 @@ void avct_l2c_disconnect_cfm_cback(uint16_t lcid, uint16_t result) {
     res = (p_lcb->ch_result != 0) ? p_lcb->ch_result : result;
     p_lcb->ch_result = 0;
 
-    avct_lcb_event(p_lcb, AVCT_LCB_LL_CLOSE_EVT, (tAVCT_LCB_EVT*)&res);
+    tAVCT_LCB_EVT avct_lcb_evt;
+    avct_lcb_evt.result = res;
+    avct_lcb_event(p_lcb, AVCT_LCB_LL_CLOSE_EVT, &avct_lcb_evt);
     AVCT_TRACE_DEBUG("ch_state dc: %d ", p_lcb->ch_state);
   }
 }
@@ -382,7 +389,9 @@ void avct_l2c_congestion_ind_cback(uint16_t lcid, bool is_congested) {
   /* look up lcb for this channel */
   p_lcb = avct_lcb_by_lcid(lcid);
   if (p_lcb != NULL) {
-    avct_lcb_event(p_lcb, AVCT_LCB_LL_CONG_EVT, (tAVCT_LCB_EVT*)&is_congested);
+    tAVCT_LCB_EVT avct_lcb_evt;
+    avct_lcb_evt.cong = is_congested;
+    avct_lcb_event(p_lcb, AVCT_LCB_LL_CONG_EVT, &avct_lcb_evt);
   }
 }
 
