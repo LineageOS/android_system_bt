@@ -296,7 +296,7 @@ const char* smp_get_br_event_name(tSMP_BR_EVENT event) {
  *
  ******************************************************************************/
 void smp_br_state_machine_event(tSMP_CB* p_cb, tSMP_BR_EVENT event,
-                                void* p_data) {
+                                tSMP_INT_DATA* p_data) {
   tSMP_BR_STATE curr_state = p_cb->br_state;
   tSMP_BR_SM_TBL state_table;
   uint8_t action, entry;
@@ -343,7 +343,7 @@ void smp_br_state_machine_event(tSMP_CB* p_cb, tSMP_BR_EVENT event,
   for (uint8_t i = 0; i < SMP_BR_NUM_ACTIONS; i++) {
     action = state_table[entry - 1][i];
     if (action != SMP_BR_SM_NO_ACTION) {
-      (*smp_br_sm_action[action])(p_cb, (tSMP_INT_DATA*)p_data);
+      (*smp_br_sm_action[action])(p_cb, p_data);
     } else {
       break;
     }
