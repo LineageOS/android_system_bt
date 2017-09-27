@@ -415,12 +415,13 @@ tMCA_RESULT MCA_CreateMdl(tMCA_CL mcl, tMCA_DEP dep, uint16_t data_psm,
       /* save the info required by dcb connection */
       p_dcb->p_chnl_cfg = p_chnl_cfg;
       p_dcb->mdl_id = mdl_id;
-      tMCA_CCB_MSG* p_evt_data =
-          (tMCA_CCB_MSG*)osi_malloc(sizeof(tMCA_CCB_MSG));
       if (!p_ccb->data_vpsm)
         p_ccb->data_vpsm =
             L2CA_Register(data_psm, (tL2CAP_APPL_INFO*)&mca_l2c_int_appl);
       if (p_ccb->data_vpsm) {
+        tMCA_CCB_EVT* mca_ccb_evt =
+            (tMCA_CCB_EVT*)osi_malloc(sizeof(tMCA_CCB_EVT));
+        tMCA_CCB_MSG* p_evt_data = &mca_ccb_evt->api;
         p_evt_data->dcb_idx = mca_dcb_to_hdl(p_dcb);
         p_evt_data->mdep_id = peer_dep_id;
         p_evt_data->mdl_id = mdl_id;
@@ -428,10 +429,8 @@ tMCA_RESULT MCA_CreateMdl(tMCA_CL mcl, tMCA_DEP dep, uint16_t data_psm,
         p_evt_data->op_code = MCA_OP_MDL_CREATE_REQ;
         p_evt_data->hdr.event = MCA_CCB_API_REQ_EVT;
         p_evt_data->hdr.layer_specific = false;
-        mca_ccb_event(p_ccb, MCA_CCB_API_REQ_EVT, (tMCA_CCB_EVT*)p_evt_data);
+        mca_ccb_event(p_ccb, MCA_CCB_API_REQ_EVT, mca_ccb_evt);
         return MCA_SUCCESS;
-      } else {
-        osi_free(p_evt_data);
       }
 
       mca_dcb_dealloc(p_dcb, NULL);
@@ -460,8 +459,6 @@ tMCA_RESULT MCA_CreateMdlRsp(tMCA_CL mcl, tMCA_DEP dep, uint16_t mdl_id,
                              const tMCA_CHNL_CFG* p_chnl_cfg) {
   tMCA_RESULT result = MCA_BAD_HANDLE;
   tMCA_CCB* p_ccb = mca_ccb_by_hdl(mcl);
-  tMCA_CCB_MSG evt_data;
-  tMCA_DCB* p_dcb;
 
   MCA_TRACE_API("MCA_CreateMdlRsp: %d dep=%d mdl_id=%d cfg=%d rsp_code=%d", mcl,
                 dep, mdl_id, cfg, rsp_code);
@@ -474,10 +471,11 @@ tMCA_RESULT MCA_CreateMdlRsp(tMCA_CL mcl, tMCA_DEP dep, uint16_t mdl_id,
     if (p_ccb->p_rx_msg && (p_ccb->p_rx_msg->mdep_id == dep) &&
         (p_ccb->p_rx_msg->mdl_id == mdl_id) &&
         (p_ccb->p_rx_msg->op_code == MCA_OP_MDL_CREATE_REQ)) {
+      tMCA_CCB_MSG evt_data;
       result = MCA_SUCCESS;
       evt_data.dcb_idx = 0;
       if (rsp_code == MCA_RSP_SUCCESS) {
-        p_dcb = mca_dcb_alloc(p_ccb, dep);
+        tMCA_DCB* p_dcb = mca_dcb_alloc(p_ccb, dep);
         if (p_dcb) {
           evt_data.dcb_idx = mca_dcb_to_hdl(p_dcb);
           p_dcb->p_chnl_cfg = p_chnl_cfg;
@@ -493,7 +491,9 @@ tMCA_RESULT MCA_CreateMdlRsp(tMCA_CL mcl, tMCA_DEP dep, uint16_t mdl_id,
         evt_data.param = cfg;
         evt_data.rsp_code = rsp_code;
         evt_data.op_code = MCA_OP_MDL_CREATE_RSP;
-        mca_ccb_event(p_ccb, MCA_CCB_API_RSP_EVT, (tMCA_CCB_EVT*)&evt_data);
+        tMCA_CCB_EVT mca_ccb_evt;
+        mca_ccb_evt.api = evt_data;
+        mca_ccb_event(p_ccb, MCA_CCB_API_RSP_EVT, &mca_ccb_evt);
       }
     } else {
       MCA_TRACE_ERROR(
@@ -570,8 +570,9 @@ tMCA_RESULT MCA_ReconnectMdl(tMCA_CL mcl, tMCA_DEP dep, uint16_t data_psm,
     p_dcb = mca_dcb_alloc(p_ccb, dep);
     result = MCA_NO_RESOURCES;
     if (p_dcb) {
-      tMCA_CCB_MSG* p_evt_data =
-          (tMCA_CCB_MSG*)osi_malloc(sizeof(tMCA_CCB_MSG));
+      tMCA_CCB_EVT* mca_ccb_evt =
+          (tMCA_CCB_EVT*)osi_malloc(sizeof(tMCA_CCB_EVT));
+      tMCA_CCB_MSG* p_evt_data = &mca_ccb_evt->api;
 
       p_dcb->p_chnl_cfg = p_chnl_cfg;
       p_dcb->mdl_id = mdl_id;
@@ -582,7 +583,7 @@ tMCA_RESULT MCA_ReconnectMdl(tMCA_CL mcl, tMCA_DEP dep, uint16_t data_psm,
       p_evt_data->mdl_id = mdl_id;
       p_evt_data->op_code = MCA_OP_MDL_RECONNECT_REQ;
       p_evt_data->hdr.event = MCA_CCB_API_REQ_EVT;
-      mca_ccb_event(p_ccb, MCA_CCB_API_REQ_EVT, (tMCA_CCB_EVT*)p_evt_data);
+      mca_ccb_event(p_ccb, MCA_CCB_API_REQ_EVT, mca_ccb_evt);
       return MCA_SUCCESS;
     }
   }
@@ -607,7 +608,6 @@ tMCA_RESULT MCA_ReconnectMdlRsp(tMCA_CL mcl, tMCA_DEP dep, uint16_t mdl_id,
                                 const tMCA_CHNL_CFG* p_chnl_cfg) {
   tMCA_RESULT result = MCA_BAD_HANDLE;
   tMCA_CCB* p_ccb = mca_ccb_by_hdl(mcl);
-  tMCA_CCB_MSG evt_data;
   tMCA_DCB* p_dcb;
 
   MCA_TRACE_API("MCA_ReconnectMdlRsp: %d ", mcl);
@@ -620,6 +620,7 @@ tMCA_RESULT MCA_ReconnectMdlRsp(tMCA_CL mcl, tMCA_DEP dep, uint16_t mdl_id,
     if (p_ccb->p_rx_msg && (p_ccb->p_rx_msg->mdl_id == mdl_id) &&
         (p_ccb->p_rx_msg->op_code == MCA_OP_MDL_RECONNECT_REQ)) {
       result = MCA_SUCCESS;
+      tMCA_CCB_MSG evt_data;
       evt_data.dcb_idx = 0;
       if (rsp_code == MCA_RSP_SUCCESS) {
         p_dcb = mca_dcb_alloc(p_ccb, dep);
@@ -637,7 +638,9 @@ tMCA_RESULT MCA_ReconnectMdlRsp(tMCA_CL mcl, tMCA_DEP dep, uint16_t mdl_id,
       evt_data.mdl_id = mdl_id;
       evt_data.rsp_code = rsp_code;
       evt_data.op_code = MCA_OP_MDL_RECONNECT_RSP;
-      mca_ccb_event(p_ccb, MCA_CCB_API_RSP_EVT, (tMCA_CCB_EVT*)&evt_data);
+      tMCA_CCB_EVT mca_ccb_evt;
+      mca_ccb_evt.api = evt_data;
+      mca_ccb_event(p_ccb, MCA_CCB_API_RSP_EVT, &mca_ccb_evt);
     } else {
       MCA_TRACE_ERROR(
           "The given MCL is not expecting a MCA_ReconnectMdlRsp with the given "
@@ -728,11 +731,12 @@ tMCA_RESULT MCA_Abort(tMCA_CL mcl) {
       return MCA_BUSY;
     }
 
-    tMCA_CCB_MSG* p_evt_data = (tMCA_CCB_MSG*)osi_malloc(sizeof(tMCA_CCB_MSG));
+    tMCA_CCB_EVT* mca_ccb_evt = (tMCA_CCB_EVT*)osi_malloc(sizeof(tMCA_CCB_EVT));
+    tMCA_CCB_MSG* p_evt_data = &mca_ccb_evt->api;
     result = MCA_SUCCESS;
     p_evt_data->op_code = MCA_OP_MDL_ABORT_REQ;
     p_evt_data->hdr.event = MCA_CCB_API_REQ_EVT;
-    mca_ccb_event(p_ccb, MCA_CCB_API_REQ_EVT, (tMCA_CCB_EVT*)p_evt_data);
+    mca_ccb_event(p_ccb, MCA_CCB_API_REQ_EVT, mca_ccb_evt);
   }
   return result;
 }
@@ -763,12 +767,13 @@ tMCA_RESULT MCA_Delete(tMCA_CL mcl, uint16_t mdl_id) {
       return MCA_BAD_PARAMS;
     }
 
-    tMCA_CCB_MSG* p_evt_data = (tMCA_CCB_MSG*)osi_malloc(sizeof(tMCA_CCB_MSG));
+    tMCA_CCB_EVT* mca_ccb_evt = (tMCA_CCB_EVT*)osi_malloc(sizeof(tMCA_CCB_EVT));
+    tMCA_CCB_MSG* p_evt_data = &mca_ccb_evt->api;
     result = MCA_SUCCESS;
     p_evt_data->mdl_id = mdl_id;
     p_evt_data->op_code = MCA_OP_MDL_DELETE_REQ;
     p_evt_data->hdr.event = MCA_CCB_API_REQ_EVT;
-    mca_ccb_event(p_ccb, MCA_CCB_API_REQ_EVT, (tMCA_CCB_EVT*)p_evt_data);
+    mca_ccb_event(p_ccb, MCA_CCB_API_REQ_EVT, mca_ccb_evt);
   }
   return result;
 }

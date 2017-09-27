@@ -840,8 +840,9 @@ void btm_sco_conn_req(const RawAddress& bda, DEV_CLASS dev_class,
         memcpy(evt_data.dev_class, dev_class, DEV_CLASS_LEN);
         evt_data.link_type = link_type;
         evt_data.sco_inx = xx;
-        p->esco.p_esco_cback(BTM_ESCO_CONN_REQ_EVT,
-                             (tBTM_ESCO_EVT_DATA*)&evt_data);
+        tBTM_ESCO_EVT_DATA btm_esco_evt_data;
+        btm_esco_evt_data.conn_evt = evt_data;
+        p->esco.p_esco_cback(BTM_ESCO_CONN_REQ_EVT, &btm_esco_evt_data);
       }
 
       return;
@@ -1596,7 +1597,9 @@ void btm_esco_proc_conn_chg(uint8_t status, uint16_t handle,
         data.tx_interval = p->esco.data.tx_interval = tx_interval;
         data.retrans_window = p->esco.data.retrans_window = retrans_window;
 
-        (*p->esco.p_esco_cback)(BTM_ESCO_CHG_EVT, (tBTM_ESCO_EVT_DATA*)&data);
+        tBTM_ESCO_EVT_DATA btm_esco_evt_data;
+        btm_esco_evt_data.chg_evt = data;
+        (*p->esco.p_esco_cback)(BTM_ESCO_CHG_EVT, &btm_esco_evt_data);
       }
       return;
     }
