@@ -224,31 +224,11 @@ typedef struct {
 #endif
 } tL2C_FCRB;
 
-/* Define a registration control block. Every application (e.g. RFCOMM, SDP,
- * TCS etc) that registers with L2CAP is assigned one of these.
-*/
-#if (L2CAP_UCD_INCLUDED == TRUE)
-#define L2C_UCD_RCB_ID 0x00
-#define L2C_UCD_STATE_UNUSED 0x00
-#define L2C_UCD_STATE_W4_DATA 0x01
-#define L2C_UCD_STATE_W4_RECEPTION 0x02
-#define L2C_UCD_STATE_W4_MTU 0x04
-
-typedef struct {
-  uint8_t state;
-  tL2CAP_UCD_CB_INFO cb_info;
-} tL2C_UCD_REG;
-#endif
-
 typedef struct {
   bool in_use;
   uint16_t psm;
   uint16_t real_psm; /* This may be a dummy RCB for an o/b connection but */
                      /* this is the real PSM that we need to connect to */
-#if (L2CAP_UCD_INCLUDED == TRUE)
-  tL2C_UCD_REG ucd;
-#endif
-
   tL2CAP_APPL_INFO api;
 } tL2C_RCB;
 
@@ -340,7 +320,7 @@ typedef struct t_l2c_ccb {
   bool is_flushable; /* true if channel is flushable */
 #endif
 
-#if (L2CAP_NUM_FIXED_CHNLS > 0 || L2CAP_UCD_INCLUDED == TRUE)
+#if (L2CAP_NUM_FIXED_CHNLS > 0)
   uint16_t fixed_chnl_idle_tout; /* Idle timeout to use for the fixed channel */
 #endif
   uint16_t tx_data_len;
@@ -415,13 +395,6 @@ typedef struct t_l2c_linkcb {
   list_t* link_xmit_data_q;        /* Link transmit data buffer queue */
 
   uint8_t peer_chnl_mask[L2CAP_FIXED_CHNL_ARRAY_SIZE];
-#if (L2CAP_UCD_INCLUDED == TRUE)
-  uint16_t ucd_mtu; /* peer MTU on UCD */
-  fixed_queue_t*
-      ucd_out_sec_pending_q; /* Security pending outgoing UCD packet */
-  fixed_queue_t*
-      ucd_in_sec_pending_q; /* Security pending incoming UCD packet */
-#endif
 
   BT_HDR* p_hcit_rcv_acl;   /* Current HCIT ACL buf being rcvd */
   uint16_t idle_timeout_sv; /* Save current Idle timeout */
@@ -666,23 +639,6 @@ extern bool l2cu_initialize_fixed_ccb(tL2C_LCB* p_lcb, uint16_t fixed_cid,
 extern void l2cu_no_dynamic_ccbs(tL2C_LCB* p_lcb);
 extern void l2cu_process_fixed_chnl_resp(tL2C_LCB* p_lcb);
 extern bool l2cu_is_ccb_active(tL2C_CCB* p_ccb);
-
-/* Functions provided by l2c_ucd.cc
- ***********************************
-*/
-#if (L2CAP_UCD_INCLUDED == TRUE)
-void l2c_ucd_delete_sec_pending_q(tL2C_LCB* p_lcb);
-void l2c_ucd_enqueue_pending_out_sec_q(tL2C_CCB* p_ccb, void* p_data);
-bool l2c_ucd_check_pending_info_req(tL2C_CCB* p_ccb);
-bool l2c_ucd_check_pending_out_sec_q(tL2C_CCB* p_ccb);
-void l2c_ucd_send_pending_out_sec_q(tL2C_CCB* p_ccb);
-void l2c_ucd_discard_pending_out_sec_q(tL2C_CCB* p_ccb);
-bool l2c_ucd_check_pending_in_sec_q(tL2C_CCB* p_ccb);
-void l2c_ucd_send_pending_in_sec_q(tL2C_CCB* p_ccb);
-void l2c_ucd_discard_pending_in_sec_q(tL2C_CCB* p_ccb);
-bool l2c_ucd_check_rx_pkts(tL2C_LCB* p_lcb, BT_HDR* p_msg);
-bool l2c_ucd_process_event(tL2C_CCB* p_ccb, uint16_t event, void* p_data);
-#endif
 
 /* Functions provided for Broadcom Aware
  ***************************************
