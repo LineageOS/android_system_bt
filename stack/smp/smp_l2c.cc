@@ -183,7 +183,9 @@ static void smp_data_received(uint16_t channel, const RawAddress& bd_addr,
 
     p_cb->rcvd_cmd_code = cmd;
     p_cb->rcvd_cmd_len = (uint8_t)p_buf->len;
-    smp_sm_event(p_cb, cmd, p);
+    tSMP_INT_DATA smp_int_data;
+    smp_int_data.p_data = p;
+    smp_sm_event(p_cb, cmd, &smp_int_data);
   }
 
   osi_free(p_buf);
@@ -204,12 +206,14 @@ static void smp_tx_complete_callback(uint16_t cid, uint16_t num_pkt) {
   else
     SMP_TRACE_ERROR("Unexpected %s: num_pkt = %d", __func__, num_pkt);
 
-  uint8_t reason = SMP_SUCCESS;
   if (p_cb->total_tx_unacked == 0 && p_cb->wait_for_authorization_complete) {
-    if (cid == L2CAP_SMP_CID)
-      smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
-    else
-      smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &reason);
+    tSMP_INT_DATA smp_int_data;
+    smp_int_data.status = SMP_SUCCESS;
+    if (cid == L2CAP_SMP_CID) {
+      smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
+    } else {
+      smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &smp_int_data);
+    }
   }
 }
 
@@ -304,7 +308,9 @@ static void smp_br_data_received(uint16_t channel, const RawAddress& bd_addr,
 
     p_cb->rcvd_cmd_code = cmd;
     p_cb->rcvd_cmd_len = (uint8_t)p_buf->len;
-    smp_br_state_machine_event(p_cb, cmd, p);
+    tSMP_INT_DATA smp_int_data;
+    smp_int_data.p_data = p;
+    smp_br_state_machine_event(p_cb, cmd, &smp_int_data);
   }
 
   osi_free(p_buf);
