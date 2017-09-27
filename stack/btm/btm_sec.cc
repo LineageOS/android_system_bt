@@ -454,20 +454,8 @@ void BTM_SetSecureConnectionsOnly(bool secure_connections_only_mode) {
 bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
                           uint8_t service_id, uint16_t sec_level, uint16_t psm,
                           uint32_t mx_proto_id, uint32_t mx_chan_id) {
-#if (L2CAP_UCD_INCLUDED == TRUE)
-  CONNECTION_TYPE conn_type;
-
-  if (is_originator)
-    conn_type = CONN_ORIENT_ORIG;
-  else
-    conn_type = CONN_ORIENT_TERM;
-
-  return (btm_sec_set_security_level(conn_type, p_name, service_id, sec_level,
-                                     psm, mx_proto_id, mx_chan_id));
-#else
   return (btm_sec_set_security_level(is_originator, p_name, service_id,
                                      sec_level, psm, mx_proto_id, mx_chan_id));
-#endif
 }
 
 /*******************************************************************************
@@ -500,22 +488,7 @@ static bool btm_sec_set_security_level(CONNECTION_TYPE conn_type,
   uint16_t first_unused_record = BTM_NO_AVAIL_SEC_SERVICES;
   bool record_allocated = false;
   bool is_originator;
-#if (L2CAP_UCD_INCLUDED == TRUE)
-  bool is_ucd;
-
-  if (conn_type & CONNECTION_TYPE_ORIG_MASK)
-    is_originator = true;
-  else
-    is_originator = false;
-
-  if (conn_type & CONNECTION_TYPE_CONNLESS_MASK) {
-    is_ucd = true;
-  } else {
-    is_ucd = false;
-  }
-#else
   is_originator = conn_type;
-#endif
 
   BTM_TRACE_API("%s : sec: 0x%x", __func__, sec_level);
 
@@ -577,14 +550,6 @@ static bool btm_sec_set_security_level(CONNECTION_TYPE conn_type,
             BTM_SEC_SERVICE_NAME_LEN + 1);
 #endif
 /* clear out the old setting, just in case it exists */
-#if (L2CAP_UCD_INCLUDED == TRUE)
-    if (is_ucd) {
-      p_srec->ucd_security_flags &= ~(
-          BTM_SEC_OUT_AUTHORIZE | BTM_SEC_OUT_ENCRYPT |
-          BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_MITM | BTM_SEC_FORCE_MASTER |
-          BTM_SEC_ATTEMPT_MASTER | BTM_SEC_FORCE_SLAVE | BTM_SEC_ATTEMPT_SLAVE);
-    } else
-#endif
     {
       p_srec->security_flags &= ~(
           BTM_SEC_OUT_AUTHORIZE | BTM_SEC_OUT_ENCRYPT |
@@ -610,12 +575,7 @@ static bool btm_sec_set_security_level(CONNECTION_TYPE conn_type,
 /* outgoing connections usually set the security level right before
  * the connection is initiated.
  * set it to be the outgoing service */
-#if (L2CAP_UCD_INCLUDED == TRUE)
-    if (is_ucd == false)
-#endif
-    {
       btm_cb.p_out_serv = p_srec;
-    }
   } else {
     p_srec->term_mx_chan_id = mx_chan_id;
 #if BTM_SEC_SERVICE_NAME_LEN > 0
@@ -623,15 +583,6 @@ static bool btm_sec_set_security_level(CONNECTION_TYPE conn_type,
             BTM_SEC_SERVICE_NAME_LEN + 1);
 #endif
 /* clear out the old setting, just in case it exists */
-#if (L2CAP_UCD_INCLUDED == TRUE)
-    if (is_ucd) {
-      p_srec->ucd_security_flags &=
-          ~(BTM_SEC_IN_AUTHORIZE | BTM_SEC_IN_ENCRYPT |
-            BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_MITM | BTM_SEC_FORCE_MASTER |
-            BTM_SEC_ATTEMPT_MASTER | BTM_SEC_FORCE_SLAVE |
-            BTM_SEC_ATTEMPT_SLAVE | BTM_SEC_IN_MIN_16_DIGIT_PIN);
-    } else
-#endif
     {
       p_srec->security_flags &=
           ~(BTM_SEC_IN_AUTHORIZE | BTM_SEC_IN_ENCRYPT |
@@ -655,28 +606,6 @@ static bool btm_sec_set_security_level(CONNECTION_TYPE conn_type,
     if (sec_level & BTM_SEC_IN_ENCRYPT) sec_level |= BTM_SEC_IN_AUTHENTICATE;
   }
 
-#if (L2CAP_UCD_INCLUDED == TRUE)
-  if (is_ucd) {
-    p_srec->security_flags |= (uint16_t)(BTM_SEC_IN_USE);
-    p_srec->ucd_security_flags |= (uint16_t)(sec_level | BTM_SEC_IN_USE);
-  } else {
-    p_srec->security_flags |= (uint16_t)(sec_level | BTM_SEC_IN_USE);
-  }
-
-  BTM_TRACE_API(
-      "BTM_SEC_REG[%d]: id %d, conn_type 0x%x, psm 0x%04x, proto_id %d, "
-      "chan_id %d",
-      index, service_id, conn_type, psm, mx_proto_id, mx_chan_id);
-
-  BTM_TRACE_API(
-      "               : security_flags: 0x%04x, ucd_security_flags: 0x%04x",
-      p_srec->security_flags, p_srec->ucd_security_flags);
-
-#if BTM_SEC_SERVICE_NAME_LEN > 0
-  BTM_TRACE_API("               : service name [%s] (up to %d chars saved)",
-                p_name, BTM_SEC_SERVICE_NAME_LEN);
-#endif
-#else
   p_srec->security_flags |= (uint16_t)(sec_level | BTM_SEC_IN_USE);
 
   BTM_TRACE_API(
@@ -687,7 +616,6 @@ static bool btm_sec_set_security_level(CONNECTION_TYPE conn_type,
   BTM_TRACE_API(
       "               : sec: 0x%x, service name [%s] (up to %d chars saved)",
       p_srec->security_flags, p_name, BTM_SEC_SERVICE_NAME_LEN);
-#endif
 #endif
 
   return (record_allocated);
@@ -723,9 +651,6 @@ uint8_t BTM_SecClrService(uint8_t service_id) {
         (!service_id || (service_id == p_srec->service_id))) {
       BTM_TRACE_API("BTM_SEC_CLR[%d]: id %d", i, service_id);
       p_srec->security_flags = 0;
-#if (L2CAP_UCD_INCLUDED == TRUE)
-      p_srec->ucd_security_flags = 0;
-#endif
       num_freed++;
     }
   }
@@ -2010,20 +1935,10 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
       BT_TRANSPORT_BR_EDR; /* should check PSM range in LE connection oriented
                               L2CAP connection */
 
-#if (L2CAP_UCD_INCLUDED == TRUE)
-  if (conn_type & CONNECTION_TYPE_ORIG_MASK)
-    is_originator = true;
-  else
-    is_originator = false;
-
-  BTM_TRACE_DEBUG("%s() conn_type: 0x%x, 0x%x", __func__, conn_type,
-                  p_ref_data);
-#else
   is_originator = conn_type;
 
   BTM_TRACE_DEBUG("%s() is_originator:%d, 0x%x", __func__, is_originator,
                   p_ref_data);
-#endif
 
   /* Find or get oldest record */
   p_dev_rec = btm_find_or_alloc_dev(bd_addr);
@@ -2047,68 +1962,11 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
     (*p_callback)(&bd_addr, transport, p_ref_data, BTM_SUCCESS_NO_SECURITY);
     return (BTM_SUCCESS);
   }
-#if (L2CAP_UCD_INCLUDED == TRUE)
-  if (conn_type & CONNECTION_TYPE_CONNLESS_MASK) {
-    if (btm_cb.security_mode == BTM_SEC_MODE_SC) {
-      security_required = btm_sec_set_serv_level4_flags(
-          p_serv_rec->ucd_security_flags, is_originator);
-    } else {
-      security_required = p_serv_rec->ucd_security_flags;
-    }
-
-    rc = BTM_CMD_STARTED;
-    if (is_originator) {
-      if (((security_required & BTM_SEC_OUT_FLAGS) == 0) ||
-          ((((security_required & BTM_SEC_OUT_FLAGS) ==
-             BTM_SEC_OUT_AUTHENTICATE) &&
-            (p_dev_rec->sec_flags & BTM_SEC_AUTHENTICATED))) ||
-          ((((security_required & BTM_SEC_OUT_FLAGS) ==
-             (BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT)) &&
-            (p_dev_rec->sec_flags & BTM_SEC_ENCRYPTED))) ||
-          ((((security_required & BTM_SEC_OUT_FLAGS) == BTM_SEC_OUT_FLAGS) &&
-            (p_dev_rec->sec_flags & BTM_SEC_AUTHORIZED)))) {
-        rc = BTM_SUCCESS;
-      }
-    } else {
-      if (((security_required & BTM_SEC_IN_FLAGS) == 0) ||
-          ((((security_required & BTM_SEC_IN_FLAGS) ==
-             BTM_SEC_IN_AUTHENTICATE) &&
-            (p_dev_rec->sec_flags & BTM_SEC_AUTHENTICATED))) ||
-          ((((security_required & BTM_SEC_IN_FLAGS) ==
-             (BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT)) &&
-            (p_dev_rec->sec_flags & BTM_SEC_ENCRYPTED))) ||
-          ((((security_required & BTM_SEC_IN_FLAGS) == BTM_SEC_IN_FLAGS) &&
-            (p_dev_rec->sec_flags & BTM_SEC_AUTHORIZED)))) {
-        // Check for 16 digits (or MITM)
-        if (((security_required & BTM_SEC_IN_MIN_16_DIGIT_PIN) == 0) ||
-            (((security_required & BTM_SEC_IN_MIN_16_DIGIT_PIN) ==
-              BTM_SEC_IN_MIN_16_DIGIT_PIN) &&
-             btm_dev_16_digit_authenticated(p_dev_rec))) {
-          rc = BTM_SUCCESS;
-        }
-      }
-    }
-
-    if ((rc == BTM_SUCCESS) && (security_required & BTM_SEC_MODE4_LEVEL4) &&
-        (p_dev_rec->link_key_type != BTM_LKEY_TYPE_AUTH_COMB_P_256)) {
-      rc = BTM_CMD_STARTED;
-    }
-
-    if (rc == BTM_SUCCESS) {
-      if (p_callback)
-        (*p_callback)(&bd_addr, transport, (void*)p_ref_data, BTM_SUCCESS);
-
-      return (BTM_SUCCESS);
-    }
-  } else
-#endif
-  {
-    if (btm_cb.security_mode == BTM_SEC_MODE_SC) {
-      security_required = btm_sec_set_serv_level4_flags(
-          p_serv_rec->security_flags, is_originator);
-    } else {
-      security_required = p_serv_rec->security_flags;
-    }
+  if (btm_cb.security_mode == BTM_SEC_MODE_SC) {
+    security_required = btm_sec_set_serv_level4_flags(
+        p_serv_rec->security_flags, is_originator);
+  } else {
+    security_required = p_serv_rec->security_flags;
   }
 
   BTM_TRACE_DEBUG(
@@ -2258,22 +2116,9 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
   p_dev_rec->p_ref_data = p_ref_data;
   p_dev_rec->is_originator = is_originator;
 
-#if (L2CAP_UCD_INCLUDED == TRUE)
-  if (conn_type & CONNECTION_TYPE_CONNLESS_MASK)
-    p_dev_rec->is_ucd = true;
-  else
-    p_dev_rec->is_ucd = false;
-#endif
-
 /* If there are multiple service records used through the same PSM */
 /* leave security decision for the multiplexor on the top */
-#if (L2CAP_UCD_INCLUDED == TRUE)
-  if (((btm_sec_find_next_serv(p_serv_rec)) != NULL) &&
-      (!(conn_type & CONNECTION_TYPE_CONNLESS_MASK))) /* if not UCD */
-#else
-  if ((btm_sec_find_next_serv(p_serv_rec)) != NULL)
-#endif
-  {
+  if ((btm_sec_find_next_serv(p_serv_rec)) != NULL) {
     BTM_TRACE_DEBUG("no next_serv sm4:0x%x, chk:%d", p_dev_rec->sm4,
                     chk_acp_auth_done);
     if (!BTM_SEC_IS_SM4(p_dev_rec->sm4)) {
@@ -5173,12 +5018,6 @@ static tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
  * authenticated connections, hence we cannot distinguish here.
  */
 
-#if (L2CAP_UCD_INCLUDED == TRUE)
-    /* if incoming UCD packet, discard it */
-    if (!p_dev_rec->is_originator && (p_dev_rec->is_ucd == true))
-      return (BTM_FAILED_ON_SECURITY);
-#endif
-
     BTM_TRACE_EVENT("Security Manager: Start authentication");
 
     /*
@@ -5213,11 +5052,6 @@ static tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
        (!p_dev_rec->is_originator &&
         (p_dev_rec->security_required & BTM_SEC_IN_ENCRYPT))) &&
       (p_dev_rec->hci_handle != BTM_SEC_INVALID_HANDLE)) {
-#if (L2CAP_UCD_INCLUDED == TRUE)
-    /* if incoming UCD packet, discard it */
-    if (!p_dev_rec->is_originator && (p_dev_rec->is_ucd == true))
-      return (BTM_FAILED_ON_SECURITY);
-#endif
 
     BTM_TRACE_EVENT("Security Manager: Start encryption");
 
@@ -5414,17 +5248,7 @@ tBTM_SEC_SERV_REC* btm_sec_find_first_serv(CONNECTION_TYPE conn_type,
                                            uint16_t psm) {
   tBTM_SEC_SERV_REC* p_serv_rec = &btm_cb.sec_serv_rec[0];
   int i;
-  bool is_originator;
-
-#if (L2CAP_UCD_INCLUDED == TRUE)
-
-  if (conn_type & CONNECTION_TYPE_ORIG_MASK)
-    is_originator = true;
-  else
-    is_originator = false;
-#else
-  is_originator = conn_type;
-#endif
+  bool is_originator = conn_type;
 
   if (is_originator && btm_cb.p_out_serv && btm_cb.p_out_serv->psm == psm) {
     /* If this is outgoing connection and the PSM matches p_out_serv,

@@ -175,14 +175,7 @@ void l2c_rcv_acl_data(BT_HDR* p_msg) {
     /* process_connectionless_data (p_lcb); */
     STREAM_TO_UINT16(psm, p);
     L2CAP_TRACE_DEBUG("GOT CONNECTIONLESS DATA PSM:%d", psm);
-
-#if (L2CAP_UCD_INCLUDED == TRUE)
-    /* if it is not broadcast, check UCD registration */
-    if (l2c_ucd_check_rx_pkts(p_lcb, p_msg)) {
-      /* nothing to do */
-    } else
-#endif
-      osi_free(p_msg);
+    osi_free(p_msg);
   } else if (rcv_cid == L2CAP_BLE_SIGNALLING_CID) {
     l2cble_process_sig_cmd(p_lcb, p, l2cap_len);
     osi_free(p_msg);
@@ -684,14 +677,6 @@ static void process_l2cap_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
           l2cu_process_fixed_chnl_resp(p_lcb);
         }
 #endif
-#if (L2CAP_UCD_INCLUDED == TRUE)
-        else if (info_type == L2CAP_CONNLESS_MTU_INFO_TYPE) {
-          if (result == L2CAP_INFO_RESP_RESULT_SUCCESS) {
-            STREAM_TO_UINT16(p_lcb->ucd_mtu, p);
-          }
-        }
-#endif
-
         ci.status = HCI_SUCCESS;
         ci.bd_addr = p_lcb->remote_bd_addr;
         for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb;
