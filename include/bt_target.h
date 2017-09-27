@@ -585,26 +585,6 @@
 #define L2CAP_HCI_FLOW_CONTROL_DEBUG TRUE
 #endif
 
-/* Unicast Connectionless Data */
-#ifndef L2CAP_UCD_INCLUDED
-#define L2CAP_UCD_INCLUDED FALSE
-#endif
-
-/* Unicast Connectionless Data MTU */
-#ifndef L2CAP_UCD_MTU
-#define L2CAP_UCD_MTU L2CAP_MTU_SIZE
-#endif
-
-/* Unicast Connectionless Data Idle Timeout */
-#ifndef L2CAP_UCD_IDLE_TIMEOUT
-#define L2CAP_UCD_IDLE_TIMEOUT 2
-#endif
-
-/* Unicast Connectionless Data Idle Timeout */
-#ifndef L2CAP_UCD_CH_PRIORITY
-#define L2CAP_UCD_CH_PRIORITY L2CAP_CHNL_PRIORITY_MEDIUM
-#endif
-
 /* Used for features using fixed channels; set to zero if no fixed channels
  * supported (BLE, etc.) */
 /* Excluding L2CAP signaling channel and UCD */

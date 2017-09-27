@@ -138,16 +138,6 @@ static void l2c_csm_closed(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
     return;
   }
 
-#if (L2CAP_UCD_INCLUDED == TRUE)
-  if (local_cid == L2CAP_CONNECTIONLESS_CID) {
-    /* check if this event can be processed by UCD */
-    if (l2c_ucd_process_event(p_ccb, event, p_data)) {
-      /* The event is processed by UCD state machine */
-      return;
-    }
-  }
-#endif
-
   disconnect_ind = p_ccb->p_rcb->api.pL2CA_DisconnectInd_Cb;
   connect_cfm = p_ccb->p_rcb->api.pL2CA_ConnectCfm_Cb;
 
@@ -195,22 +185,21 @@ static void l2c_csm_closed(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
                              true, &l2c_link_sec_comp2, p_ccb);
       } else {
         /* Cancel sniff mode if needed */
-        {
-          tBTM_PM_PWR_MD settings;
-          memset((void*)&settings, 0, sizeof(settings));
-          settings.mode = BTM_PM_MD_ACTIVE;
+        tBTM_PM_PWR_MD settings;
+        memset((void*)&settings, 0, sizeof(settings));
+        settings.mode = BTM_PM_MD_ACTIVE;
 
-          BTM_SetPowerMode(BTM_PM_SET_ONLY_ID, p_ccb->p_lcb->remote_bd_addr,
-                           &settings);
-        }
+        BTM_SetPowerMode(BTM_PM_SET_ONLY_ID, p_ccb->p_lcb->remote_bd_addr,
+                         &settings);
 
         /* If sec access does not result in started SEC_COM or COMP_NEG are
          * already processed */
         if (btm_sec_l2cap_access_req(p_ccb->p_lcb->remote_bd_addr,
                                      p_ccb->p_rcb->psm, p_ccb->p_lcb->handle,
                                      true, &l2c_link_sec_comp,
-                                     p_ccb) == BTM_CMD_STARTED)
+                                     p_ccb) == BTM_CMD_STARTED) {
           p_ccb->chnl_state = CST_ORIG_W4_SEC_COMP;
+        }
       }
       break;
 
@@ -318,16 +307,6 @@ static void l2c_csm_orig_w4_sec_comp(tL2C_CCB* p_ccb, uint16_t event,
   L2CAP_TRACE_EVENT("L2CAP - LCID: 0x%04x  st: ORIG_W4_SEC_COMP  evt: %s",
                     p_ccb->local_cid, l2c_csm_get_event_name(event));
 
-#if (L2CAP_UCD_INCLUDED == TRUE)
-  if (local_cid == L2CAP_CONNECTIONLESS_CID) {
-    /* check if this event can be processed by UCD */
-    if (l2c_ucd_process_event(p_ccb, event, p_data)) {
-      /* The event is processed by UCD state machine */
-      return;
-    }
-  }
-#endif
-
   switch (event) {
     case L2CEVT_LP_DISCONNECT_IND: /* Link was disconnected */
       L2CAP_TRACE_API(
@@ -417,16 +396,6 @@ static void l2c_csm_term_w4_sec_comp(tL2C_CCB* p_ccb, uint16_t event,
                                      void* p_data) {
   L2CAP_TRACE_EVENT("L2CAP - LCID: 0x%04x  st: TERM_W4_SEC_COMP  evt: %s",
                     p_ccb->local_cid, l2c_csm_get_event_name(event));
-
-#if (L2CAP_UCD_INCLUDED == TRUE)
-  if (p_ccb->local_cid == L2CAP_CONNECTIONLESS_CID) {
-    /* check if this event can be processed by UCD */
-    if (l2c_ucd_process_event(p_ccb, event, p_data)) {
-      /* The event is processed by UCD state machine */
-      return;
-    }
-  }
-#endif
 
   switch (event) {
     case L2CEVT_LP_DISCONNECT_IND: /* Link was disconnected */
@@ -1013,16 +982,6 @@ static void l2c_csm_open(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
 
   L2CAP_TRACE_EVENT("L2CAP - LCID: 0x%04x  st: OPEN  evt: %s", p_ccb->local_cid,
                     l2c_csm_get_event_name(event));
-
-#if (L2CAP_UCD_INCLUDED == TRUE)
-  if (local_cid == L2CAP_CONNECTIONLESS_CID) {
-    /* check if this event can be processed by UCD */
-    if (l2c_ucd_process_event(p_ccb, event, p_data)) {
-      /* The event is processed by UCD state machine */
-      return;
-    }
-  }
-#endif
 
   switch (event) {
     case L2CEVT_LP_DISCONNECT_IND: /* Link was disconnected */
