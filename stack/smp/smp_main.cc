@@ -950,7 +950,7 @@ tSMP_STATE smp_get_state(void) { return smp_cb.state; }
  * Returns      void.
  *
  ******************************************************************************/
-void smp_sm_event(tSMP_CB* p_cb, tSMP_EVENT event, void* p_data) {
+void smp_sm_event(tSMP_CB* p_cb, tSMP_EVENT event, tSMP_INT_DATA* p_data) {
   uint8_t curr_state = p_cb->state;
   tSMP_SM_TBL state_table;
   uint8_t action, entry, i;
@@ -997,7 +997,7 @@ void smp_sm_event(tSMP_CB* p_cb, tSMP_EVENT event, void* p_data) {
   for (i = 0; i < SMP_NUM_ACTIONS; i++) {
     action = state_table[entry - 1][i];
     if (action != SMP_SM_NO_ACTION) {
-      (*smp_sm_action[action])(p_cb, (tSMP_INT_DATA*)p_data);
+      (*smp_sm_action[action])(p_cb, p_data);
     } else {
       break;
     }
