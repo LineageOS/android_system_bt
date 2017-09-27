@@ -174,6 +174,10 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
             p_cb->local_r_key &= ~SMP_SEC_KEY_TYPE_LK;
           }
 
+          if (lmp_version_below(p_cb->pairing_bda, HCI_PROTO_VERSION_5_0)) {
+            p_cb->loc_auth_req &= ~SMP_H7_SUPPORT_BIT;
+          }
+
           SMP_TRACE_WARNING(
               "set auth_req: 0x%02x, local_i_key: 0x%02x, local_r_key: 0x%02x",
               p_cb->loc_auth_req, p_cb->local_i_key, p_cb->local_r_key);
