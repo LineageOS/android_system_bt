@@ -308,6 +308,11 @@
 #define BTM_DISC_DURING_RS TRUE
 #endif
 
+/* Disables Sco Enhanced Absent on pre-Oreo bluetooth Firmware */
+#ifndef BTM_SCO_ENHANCED_SYNC_DISABLED
+#define BTM_SCO_ENHANCED_SYNC_DISABLED FALSE
+#endif
+
 /**************************
  * Initial SCO TX credit
  ************************/
