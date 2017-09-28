@@ -22,6 +22,7 @@
 
 #include <base/logging.h>
 
+#include "bt_target.h"
 #include "bt_types.h"
 #include "btcore/include/event_mask.h"
 #include "btcore/include/module.h"
@@ -129,6 +130,9 @@ static future_t* start_up(void) {
       AWAIT_COMMAND(packet_factory->make_read_local_supported_commands());
   packet_parser->parse_read_local_supported_commands_response(
       response, supported_commands, HCI_SUPPORTED_COMMANDS_ARRAY_SIZE);
+#if (BTM_SCO_ENHANCED_SYNC_ENABLED == FALSE)
+  supported_commands[29] &= ~0x08;
+#endif
 
   // Read page 0 of the controller features next
   uint8_t page_number = 0;
