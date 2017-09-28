@@ -19,6 +19,8 @@
 #ifndef HCIDEFS_H
 #define HCIDEFS_H
 
+#include "bt_target.h"
+
 #define HCI_PROTO_VERSION 0x01     /* Version for BT spec 1.1          */
 #define HCI_PROTO_VERSION_1_2 0x02 /* Version for BT spec 1.2          */
 #define HCI_PROTO_VERSION_2_0 0x03 /* Version for BT spec 2.0          */
@@ -1592,8 +1594,13 @@ typedef struct {
 #define HCI_WRITE_BE_FLUSH_TOUT_SUPPORTED(x) ((x)[24] & 0x08)
 #define HCI_SHORT_RANGE_MODE_SUPPORTED(x) ((x)[24] & 0x10)
 
+#if (BTM_SCO_ENHANCED_SYNC_ENABLED == FALSE)
+#define HCI_ENH_SETUP_SYNCH_CONN_SUPPORTED(x) false
+#define HCI_ENH_ACCEPT_SYNCH_CONN_SUPPORTED(x) false
+#else
 #define HCI_ENH_SETUP_SYNCH_CONN_SUPPORTED(x) ((x)[29] & 0x08)
 #define HCI_ENH_ACCEPT_SYNCH_CONN_SUPPORTED(x) ((x)[29] & 0x10)
+#endif
 #define HCI_READ_LOCAL_CODECS_SUPPORTED(x) ((x)[29] & 0x20)
 #define HCI_SET_MWS_CHANNEL_PARAMETERS_SUPPORTED(x) ((x)[29] & 0x40)
 #define HCI_SET_EXTERNAL_FRAME_CONFIGURATION_SUPPORTED(x) ((x)[29] & 0x80)
