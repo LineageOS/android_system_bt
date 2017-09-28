@@ -190,17 +190,6 @@ static void hidd_l2cif_connect_ind(const RawAddress& bd_addr, uint16_t cid,
     return;
   }
 
-  if (p_dev->in_use && bd_addr != p_dev->addr) {
-    HIDD_TRACE_WARNING(
-        "%s: incoming connections from different device, rejecting", __func__);
-    L2CA_ConnectRsp(bd_addr, id, cid, L2CAP_CONN_NO_RESOURCES, 0);
-    return;
-  } else if (!p_dev->in_use) {
-    p_dev->in_use = TRUE;
-    p_dev->addr = bd_addr;
-    p_dev->state = HIDD_DEV_NO_CONN;
-  }
-
   p_hcon = &hd_cb.device.conn;
 
   switch (psm) {
@@ -241,6 +230,12 @@ static void hidd_l2cif_connect_ind(const RawAddress& bd_addr, uint16_t cid,
 
   // for CTRL we need to go through security and we reply in callback from there
   if (psm == HID_PSM_CONTROL) {
+    // We are ready to accept connection from this device, since we aren't
+    // connected to anything and are in the correct state.
+    p_dev->in_use = TRUE;
+    p_dev->addr = bd_addr;
+    p_dev->state = HIDD_DEV_NO_CONN;
+
     p_hcon->conn_flags = 0;
     p_hcon->ctrl_cid = cid;
     p_hcon->ctrl_id = id;
