@@ -387,6 +387,10 @@ void bta_gattc_open_error(tBTA_GATTC_CLCB* p_clcb,
  ******************************************************************************/
 void bta_gattc_open_fail(tBTA_GATTC_CLCB* p_clcb,
                          UNUSED_ATTR tBTA_GATTC_DATA* p_data) {
+  APPL_TRACE_WARNING(
+      "%s: Cannot establish Connection. conn_id=%d. Return GATT_ERROR(%d).",
+      __func__, p_clcb->bta_conn_id, GATT_ERROR);
+
   bta_gattc_send_open_cback(p_clcb->p_rcb, GATT_ERROR, p_clcb->bda,
                             p_clcb->bta_conn_id, p_clcb->transport, 0);
   /* open failure, remove clcb */
@@ -624,6 +628,9 @@ void bta_gattc_close_fail(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
     cb_data.close.remote_bda = p_clcb->bda;
     cb_data.close.status = GATT_ERROR;
     cb_data.close.reason = BTA_GATT_CONN_NONE;
+
+    APPL_TRACE_WARNING("%s: conn_id=%d. Returns GATT_ERROR (%d).", __func__,
+                       cb_data.close.conn_id, GATT_ERROR);
 
     (*p_clcb->p_rcb->p_cback)(BTA_GATTC_CLOSE_EVT, &cb_data);
   }
