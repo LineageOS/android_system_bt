@@ -20,7 +20,6 @@ static_library("btcore") {
     "src/hal_util.cc",
     "src/module.cc",
     "src/property.cc",
-    "src/uuid.cc",
     "src/osi_module.cc",
   ]
 
@@ -39,7 +38,6 @@ executable("net_test_btcore") {
   sources = [
     "test/device_class_test.cc",
     "test/property_test.cc",
-    "test/uuid_test.cc",
     "//osi/test/AllocationTestHarness.cc",
   ]
 
