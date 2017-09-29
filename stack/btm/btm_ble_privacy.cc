@@ -699,8 +699,15 @@ bool btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC* p_dev_rec) {
   }
 
   /* only add RPA enabled device into resolving list */
-  if ((p_dev_rec->ble.key_type & (BTM_LE_KEY_PID | BTM_LE_KEY_LID)) == 0) {
-    BTM_TRACE_DEBUG("%s: Device not a RPA enabled device", __func__);
+  if (controller_get_interface()->supports_ble_privacy()) {
+    if ((p_dev_rec->ble.key_type & (BTM_LE_KEY_PID | BTM_LE_KEY_LID)) == 0) {
+      BTM_TRACE_DEBUG("%s: privacy 1.2: Device not a RPA enabled device",
+                      __func__);
+      return false;
+    }
+  } else if ((p_dev_rec->ble.key_type & BTM_LE_KEY_PID) == 0) {
+    BTM_TRACE_DEBUG("%s: RPA offloading: Device not a RPA enabled device",
+                    __func__);
     return false;
   }
 
