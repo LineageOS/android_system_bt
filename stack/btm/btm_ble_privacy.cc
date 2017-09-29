@@ -528,7 +528,7 @@ bool btm_ble_suspend_resolving_list_activity(void) {
   }
 
   // If it's non-VSC implementation, suspend
-  if (BleAdvertisingManager::Get() &&
+  if (BleAdvertisingManager::IsInitialized() &&
       (controller_get_interface()->supports_ble_extended_advertising() ||
        BTM_BleMaxMultiAdvInstanceCount() == 0)) {
     BleAdvertisingManager::Get()->Suspend();
@@ -562,7 +562,7 @@ void btm_ble_resume_resolving_list_activity(void) {
   if (p_ble_cb->suspended_rl_state & BTM_BLE_RL_ADV) btm_ble_start_adv();
 
   // If it's non-VSC implementation, resume
-  if (BleAdvertisingManager::Get() &&
+  if (BleAdvertisingManager::IsInitialized() &&
       (controller_get_interface()->supports_ble_extended_advertising() ||
        BTM_BleMaxMultiAdvInstanceCount() == 0)) {
     BleAdvertisingManager::Get()->Resume();
