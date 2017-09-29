@@ -146,10 +146,6 @@ cc_test {
     target: {
         linux: {
             cflags: ["-DOS_GENERIC"],
-            host_ldlibs: [
-                "-lrt",
-                "-lpthread",
-            ],
         },
         darwin: {
             enabled: false,
