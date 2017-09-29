@@ -63,30 +63,35 @@ Uuid Uuid::FromString(const std::string& uuid, bool* is_valid) {
 
   uint8_t* p = ret.uu.data();
   if (uuid.size() == kString128BitLen) {
-    char c;
+    if (uuid[8] != '-' || uuid[13] != '-' || uuid[18] != '-' ||
+        uuid[23] != '-') {
+      return ret;
+    }
+
+    int c;
     int rc =
         sscanf(uuid.c_str(),
                "%02hhx%02hhx%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx"
-               "-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%c",
+               "-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%n",
                &p[0], &p[1], &p[2], &p[3], &p[4], &p[5], &p[6], &p[7], &p[8],
                &p[9], &p[10], &p[11], &p[12], &p[13], &p[14], &p[15], &c);
     if (rc != 16) return ret;
-    if (c != '\0') return ret;
+    if (c != kString128BitLen) return ret;
 
     if (is_valid) *is_valid = true;
   } else if (uuid.size() == 8) {
-    char c;
-    int rc = sscanf(uuid.c_str(), "%02hhx%02hhx%02hhx%02hhx%c", &p[0], &p[1],
+    int c;
+    int rc = sscanf(uuid.c_str(), "%02hhx%02hhx%02hhx%02hhx%n", &p[0], &p[1],
                     &p[2], &p[3], &c);
     if (rc != 4) return ret;
-    if (c != '\0') return ret;
+    if (c != 8) return ret;
 
     if (is_valid) *is_valid = true;
   } else if (uuid.size() == 4) {
-    char c;
-    int rc = sscanf(uuid.c_str(), "%02hhx%02hhx%c", &p[2], &p[3], &c);
+    int c;
+    int rc = sscanf(uuid.c_str(), "%02hhx%02hhx%n", &p[2], &p[3], &c);
     if (rc != 2) return ret;
-    if (c != '\0') return ret;
+    if (c != 4) return ret;
 
     if (is_valid) *is_valid = true;
   }
