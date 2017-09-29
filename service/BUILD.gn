@@ -27,7 +27,6 @@ source_set("service") {
     "common/bluetooth/scan_settings.cc",
     "common/bluetooth/service.cc",
     "common/bluetooth/util/atomic_string.cc",
-    "common/bluetooth/uuid.cc",
     "daemon.cc",
     "gatt_client.cc",
     "gatt_server.cc",
@@ -88,7 +87,6 @@ executable("service_unittests") {
   sources = [
     "test/fake_hal_util.cc",
     "test/settings_unittest.cc",
-    "test/uuid_unittest.cc",
   ]
 
   include_dirs = [ "//" ]
