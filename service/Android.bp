@@ -142,7 +142,6 @@ cc_test {
                 // TODO(bcf): Fix this test.
                 //"test/ipc_linux_unittest.cc",
             ],
-            host_ldlibs: ["-lrt"],
         },
     },
 }
