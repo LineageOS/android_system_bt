@@ -27,9 +27,12 @@
 
 #define SMP_KEY_DIST_TYPE_MAX 4
 
-const tSMP_ACT smp_distribute_act[] = {smp_generate_ltk, smp_send_id_info,
-                                       smp_generate_csrk,
-                                       smp_set_derive_link_key};
+const tSMP_ACT smp_distribute_act[] = {
+    smp_generate_ltk,       /* SMP_SEC_KEY_TYPE_ENC - '1' bit index */
+    smp_send_id_info,       /* SMP_SEC_KEY_TYPE_ID - '1' bit index */
+    smp_generate_csrk,      /* SMP_SEC_KEY_TYPE_CSRK - '1' bit index */
+    smp_set_derive_link_key /* SMP_SEC_KEY_TYPE_LK - '1' bit index */
+};
 
 static bool lmp_version_below(const RawAddress& bda, uint8_t version) {
   tACL_CONN* acl = btm_bda_to_acl(bda, BT_TRANSPORT_LE);

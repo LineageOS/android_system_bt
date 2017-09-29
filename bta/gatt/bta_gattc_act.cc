@@ -83,12 +83,25 @@ static tGATT_CBACK bta_gattc_cl_cback = {bta_gattc_conn_cback,
 
 /* opcode(tGATTC_OPTYPE) order has to be comply with internal event order */
 static uint16_t bta_gattc_opcode_to_int_evt[] = {
-    BTA_GATTC_API_READ_EVT, BTA_GATTC_API_WRITE_EVT, BTA_GATTC_API_EXEC_EVT,
-    BTA_GATTC_API_CFG_MTU_EVT};
+    /* Skip: GATTC_OPTYPE_NONE */
+    /* Skip: GATTC_OPTYPE_DISCOVERY */
+    BTA_GATTC_API_READ_EVT,   /* GATTC_OPTYPE_READ */
+    BTA_GATTC_API_WRITE_EVT,  /* GATTC_OPTYPE_WRITE */
+    BTA_GATTC_API_EXEC_EVT,   /* GATTC_OPTYPE_EXE_WRITE */
+    BTA_GATTC_API_CFG_MTU_EVT /* GATTC_OPTYPE_CONFIG */
+};
 
 static const char* bta_gattc_op_code_name[] = {
-    "Unknown", "Discovery", "Read",         "Write",
-    "Exec",    "Config",    "Notification", "Indication"};
+    "Unknown",      /* GATTC_OPTYPE_NONE */
+    "Discovery",    /* GATTC_OPTYPE_DISCOVERY */
+    "Read",         /* GATTC_OPTYPE_READ */
+    "Write",        /* GATTC_OPTYPE_WRITE */
+    "Exec",         /* GATTC_OPTYPE_EXE_WRITE */
+    "Config",       /* GATTC_OPTYPE_CONFIG */
+    "Notification", /* GATTC_OPTYPE_NOTIFICATION */
+    "Indication"    /* GATTC_OPTYPE_INDICATION */
+};
+
 /*****************************************************************************
  *  Action Functions
  ****************************************************************************/
