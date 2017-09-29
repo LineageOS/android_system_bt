@@ -90,33 +90,6 @@ void btif_gattc_init_dev_cb(void) {
   remote_bdaddr_cache_ordered = {};
 }
 
-void btif_gatts_upstreams_evt(uint16_t event, char* p_param) {
-  LOG_VERBOSE(LOG_TAG, "%s: Event %d", __func__, event);
-
-  tBTA_GATTC* p_data = (tBTA_GATTC*)p_param;
-  switch (event) {
-    case BTA_GATTC_DEREG_EVT:
-      break;
-
-    case BTA_GATTC_SEARCH_CMPL_EVT: {
-      HAL_CBACK(bt_gatt_callbacks, client->search_complete_cb,
-                p_data->search_cmpl.conn_id, p_data->search_cmpl.status);
-      break;
-    }
-
-    default:
-      LOG_DEBUG(LOG_TAG, "%s: Unhandled event (%d)", __func__, event);
-      break;
-  }
-}
-
-void bta_gatts_cback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
-  bt_status_t status =
-      btif_transfer_context(btif_gatts_upstreams_evt, (uint16_t)event,
-                            (char*)p_data, sizeof(tBTA_GATTC), NULL);
-  ASSERTC(status == BT_STATUS_SUCCESS, "Context transfer failed!", status);
-}
-
 void bta_batch_scan_threshold_cb(tBTM_BLE_REF_VALUE ref_value) {
   SCAN_CBACK_IN_JNI(batchscan_threshold_cb, ref_value);
 }
@@ -227,6 +200,8 @@ void bta_track_adv_event_cb(tBTM_BLE_TRACK_ADV_DATA* p_track_adv_data) {
   SCAN_CBACK_IN_JNI(track_adv_event_cb, Owned(btif_scan_track_cb));
 }
 
+void bta_cback(tBTA_GATTC_EVT, tBTA_GATTC*) {}
+
 class BleScannerInterfaceImpl : public BleScannerInterface {
   ~BleScannerInterfaceImpl(){};
 
@@ -235,7 +210,7 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
                      Bind(
                          [](RegisterCallback cb) {
                            BTA_GATTC_AppRegister(
-                               bta_gatts_cback,
+                               bta_cback,
                                jni_thread_wrapper(FROM_HERE, std::move(cb)));
                          },
                          std::move(cb)));
