@@ -681,85 +681,97 @@ bool btm_ble_disable_resolving_list(uint8_t rl_mask, bool to_resume) {
  *
  ******************************************************************************/
 bool btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC* p_dev_rec) {
-  bool rt = false;
-  uint8_t rl_mask = btm_cb.ble_ctr_cb.rl_state;
+  const uint8_t rl_state = btm_cb.ble_ctr_cb.rl_state;
 
-  BTM_TRACE_DEBUG("%s btm_cb.ble_ctr_cb.privacy_mode = %d", __func__,
-                  btm_cb.ble_ctr_cb.privacy_mode);
-
-  /* if controller does not support RPA offloading or privacy 1.2, skip */
-  if (controller_get_interface()->get_ble_resolving_list_max_size() == 0)
+  if (controller_get_interface()->get_ble_resolving_list_max_size() == 0) {
+    BTM_TRACE_DEBUG(
+        "%s: Controller does not support RPA offloading or privacy 1.2",
+        __func__);
     return false;
+  }
 
-  BTM_TRACE_DEBUG("%s btm_cb.ble_ctr_cb.privacy_mode = %d", __func__,
+  BTM_TRACE_DEBUG("%s: btm_cb.ble_ctr_cb.privacy_mode = %d", __func__,
                   btm_cb.ble_ctr_cb.privacy_mode);
+
+  if (!p_dev_rec) {
+    BTM_TRACE_DEBUG("%s: No device security record", __func__);
+    return false;
+  }
 
   /* only add RPA enabled device into resolving list */
-  if (p_dev_rec != NULL && /* RPA is being used and PID is known */
-      ((p_dev_rec->ble.key_type & BTM_LE_KEY_PID) != 0 ||
-       (p_dev_rec->ble.key_type & BTM_LE_KEY_LID) != 0)) {
-    if (!(p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) &&
-        btm_ble_brcm_find_resolving_pending_entry(
-            p_dev_rec->bd_addr, BTM_BLE_META_ADD_IRK_ENTRY) == false) {
-      if (btm_cb.ble_ctr_cb.resolving_list_avail_size > 0) {
-        if (rl_mask) {
-          if (!btm_ble_disable_resolving_list(rl_mask, false)) return false;
-        }
+  if (controller_get_interface()->supports_ble_privacy()) {
+    if ((p_dev_rec->ble.key_type & (BTM_LE_KEY_PID | BTM_LE_KEY_LID)) == 0) {
+      BTM_TRACE_DEBUG("%s: privacy 1.2: Device not a RPA enabled device",
+                      __func__);
+      return false;
+    }
+  } else if ((p_dev_rec->ble.key_type & BTM_LE_KEY_PID) == 0) {
+    BTM_TRACE_DEBUG("%s: RPA offloading: Device not a RPA enabled device",
+                    __func__);
+    return false;
+  }
 
-        btm_ble_update_resolving_list(p_dev_rec->bd_addr, true);
-        if (controller_get_interface()->supports_ble_privacy()) {
-          uint8_t* peer_irk = p_dev_rec->ble.keys.irk;
-          uint8_t* local_irk = btm_cb.devcb.id_keys.irk;
+  if ((p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) ||
+      btm_ble_brcm_find_resolving_pending_entry(p_dev_rec->bd_addr,
+                                                BTM_BLE_META_ADD_IRK_ENTRY)) {
+    BTM_TRACE_ERROR("%s: Device already in Resolving list", __func__);
+    return true;
+  }
 
-          if (p_dev_rec->ble.static_addr.IsEmpty()) {
-            p_dev_rec->ble.static_addr = p_dev_rec->bd_addr;
-            p_dev_rec->ble.static_addr_type = p_dev_rec->ble.ble_addr_type;
-          }
+  if (btm_cb.ble_ctr_cb.resolving_list_avail_size == 0) {
+    return false;
+  }
 
-          BTM_TRACE_DEBUG("%s:adding device to controller resolving list",
-                          __func__);
-          // use identical IRK for now
-          btsnd_hcic_ble_add_device_resolving_list(
-              p_dev_rec->ble.static_addr_type, p_dev_rec->ble.static_addr,
-              peer_irk, local_irk);
+  if (rl_state && !btm_ble_disable_resolving_list(rl_state, false)) {
+    return false;
+  }
 
-          if (controller_get_interface()->supports_ble_set_privacy_mode()) {
-            BTM_TRACE_DEBUG("%s: adding device privacy mode", __func__);
-            btsnd_hcic_ble_set_privacy_mode(p_dev_rec->ble.static_addr_type,
-                                            p_dev_rec->ble.static_addr, 0x01);
-          }
-        } else {
-          uint8_t param[40] = {0};
-          uint8_t* p = param;
+  btm_ble_update_resolving_list(p_dev_rec->bd_addr, true);
+  if (controller_get_interface()->supports_ble_privacy()) {
+    uint8_t* peer_irk = p_dev_rec->ble.keys.irk;
+    uint8_t* local_irk = btm_cb.devcb.id_keys.irk;
 
-          UINT8_TO_STREAM(p, BTM_BLE_META_ADD_IRK_ENTRY);
-          ARRAY_TO_STREAM(p, p_dev_rec->ble.keys.irk, BT_OCTET16_LEN);
-          UINT8_TO_STREAM(p, p_dev_rec->ble.static_addr_type);
-          BDADDR_TO_STREAM(p, p_dev_rec->ble.static_addr);
+    if (p_dev_rec->ble.static_addr.IsEmpty()) {
+      p_dev_rec->ble.static_addr = p_dev_rec->bd_addr;
+      p_dev_rec->ble.static_addr_type = p_dev_rec->ble.ble_addr_type;
+    }
 
-          BTM_VendorSpecificCommand(HCI_VENDOR_BLE_RPA_VSC,
-                                    BTM_BLE_META_ADD_IRK_LEN, param,
-                                    btm_ble_resolving_list_vsc_op_cmpl);
-        }
+    BTM_TRACE_DEBUG("%s: adding device %s to controller resolving list",
+                    __func__, p_dev_rec->ble.static_addr.ToString().c_str());
 
-        rt = true;
-        btm_ble_enq_resolving_list_pending(p_dev_rec->bd_addr,
-                                           BTM_BLE_META_ADD_IRK_ENTRY);
+    // use identical IRK for now
+    btsnd_hcic_ble_add_device_resolving_list(p_dev_rec->ble.static_addr_type,
+                                             p_dev_rec->ble.static_addr,
+                                             peer_irk, local_irk);
 
-        /* if resolving list has been turned on, re-enable it */
-        if (rl_mask)
-          btm_ble_enable_resolving_list(rl_mask);
-        else
-          btm_ble_enable_resolving_list(BTM_BLE_RL_INIT);
-      }
-    } else {
-      BTM_TRACE_ERROR("Device already in Resolving list");
-      rt = true;
+    if (controller_get_interface()->supports_ble_set_privacy_mode()) {
+      BTM_TRACE_DEBUG("%s: adding device privacy mode", __func__);
+      btsnd_hcic_ble_set_privacy_mode(p_dev_rec->ble.static_addr_type,
+                                      p_dev_rec->ble.static_addr, 0x01);
     }
   } else {
-    BTM_TRACE_DEBUG("Device not a RPA enabled device");
+    uint8_t param[40] = {0};
+    uint8_t* p = param;
+
+    UINT8_TO_STREAM(p, BTM_BLE_META_ADD_IRK_ENTRY);
+    ARRAY_TO_STREAM(p, p_dev_rec->ble.keys.irk, BT_OCTET16_LEN);
+    UINT8_TO_STREAM(p, p_dev_rec->ble.static_addr_type);
+    BDADDR_TO_STREAM(p, p_dev_rec->ble.static_addr);
+
+    BTM_VendorSpecificCommand(HCI_VENDOR_BLE_RPA_VSC, BTM_BLE_META_ADD_IRK_LEN,
+                              param, btm_ble_resolving_list_vsc_op_cmpl);
   }
-  return rt;
+
+  btm_ble_enq_resolving_list_pending(p_dev_rec->bd_addr,
+                                     BTM_BLE_META_ADD_IRK_ENTRY);
+
+  /* if resolving list has been turned on, re-enable it */
+  if (rl_state)
+    btm_ble_enable_resolving_list(rl_state);
+  else
+    btm_ble_enable_resolving_list(BTM_BLE_RL_INIT);
+
+  return true;
 }
 
 /*******************************************************************************
