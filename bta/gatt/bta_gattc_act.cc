@@ -1523,11 +1523,10 @@ void bta_gattc_process_indicate(uint16_t conn_id, tGATTC_OPTYPE op,
   tBTA_GATTC_CLCB* p_clcb;
   tBTA_GATTC_RCB* p_clrcb = NULL;
   tBTA_GATTC_SERV* p_srcb = NULL;
-  tBTA_GATTC notify;
+  tBTA_GATTC_NOTIFY notify;
   RawAddress remote_bda;
   tGATT_IF gatt_if;
   tBTA_TRANSPORT transport;
-  memset(&notify, 0, sizeof(notify));
 
   if (!GATT_GetConnectionInfor(conn_id, &gatt_if, remote_bda, &transport)) {
     APPL_TRACE_ERROR("%s indication/notif for unknown app", __func__);
@@ -1555,12 +1554,12 @@ void bta_gattc_process_indicate(uint16_t conn_id, tGATTC_OPTYPE op,
 
   p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
 
-  notify.notify.handle = handle;
+  notify.handle = handle;
   /* if non-service change indication/notification, forward to application */
-  if (!bta_gattc_process_srvc_chg_ind(conn_id, p_clrcb, p_srcb, p_clcb, &notify.notify,
+  if (!bta_gattc_process_srvc_chg_ind(conn_id, p_clrcb, p_srcb, p_clcb, &notify,
                                       &p_data->att_value)) {
     /* if app registered for the notification */
-    if (bta_gattc_check_notif_registry(p_clrcb, p_srcb, &notify.notify)) {
+    if (bta_gattc_check_notif_registry(p_clrcb, p_srcb, &notify)) {
       /* connection not open yet */
       if (p_clcb == NULL) {
         p_clcb = bta_gattc_clcb_alloc(gatt_if, remote_bda, transport);
@@ -1577,7 +1576,7 @@ void bta_gattc_process_indicate(uint16_t conn_id, tGATTC_OPTYPE op,
       }
 
       if (p_clcb != NULL)
-        bta_gattc_proc_other_indication(p_clcb, op, p_data, &notify.notify);
+        bta_gattc_proc_other_indication(p_clcb, op, p_data, &notify);
     }
     /* no one intersted and need ack? */
     else if (op == GATTC_OPTYPE_INDICATION) {
