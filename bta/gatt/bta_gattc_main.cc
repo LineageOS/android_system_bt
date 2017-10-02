@@ -299,12 +299,15 @@ bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event,
   uint8_t action;
   int i;
   bool rt = true;
-#if (BTA_GATT_DEBUG == TRUE)
   tBTA_GATTC_STATE in_state = p_clcb->state;
   uint16_t in_event = event;
-  APPL_TRACE_DEBUG("bta_gattc_sm_execute: State 0x%02x [%s], Event 0x%x[%s]",
-                   in_state, gattc_state_code(in_state), in_event,
+#if (BTA_GATT_DEBUG == TRUE)
+  APPL_TRACE_DEBUG("%s: State 0x%02x [%s], Event 0x%x[%s]", __func__, in_state,
+                   gattc_state_code(in_state), in_event,
                    gattc_evt_code(in_event));
+#else
+  APPL_TRACE_VERBOSE("%s: State 0x%02x, Event 0x%x", __func__, in_state,
+                     in_event);
 #endif
 
   /* look up the state table for the current state */
@@ -337,6 +340,9 @@ bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event,
                      gattc_state_code(in_state),
                      gattc_state_code(p_clcb->state), gattc_evt_code(in_event));
   }
+#else
+  APPL_TRACE_DEBUG("%s: GATTC State Change: 0x%02x -> 0x%02x after Event 0x%x",
+                   __func__, in_state, p_clcb->state, in_event);
 #endif
   return rt;
 }

@@ -588,6 +588,13 @@ static void btu_hcif_connection_comp_evt(uint8_t* p) {
 
   handle = HCID_GET_HANDLE(handle);
 
+  if (status != HCI_SUCCESS) {
+    HCI_TRACE_DEBUG(
+        "%s: Connection failed: status=%d, handle=%d, link_type=%d, "
+        "enc_mode=%d",
+        __func__, status, handle, link_type, enc_mode);
+  }
+
   if (link_type == HCI_LINK_TYPE_ACL) {
     btm_sec_connected(bda, handle, status, enc_mode);
 
@@ -651,6 +658,13 @@ static void btu_hcif_disconnection_comp_evt(uint8_t* p) {
   STREAM_TO_UINT8(reason, p);
 
   handle = HCID_GET_HANDLE(handle);
+
+  if ((reason != HCI_ERR_CONN_CAUSE_LOCAL_HOST) &&
+      (reason != HCI_ERR_PEER_USER)) {
+    /* Uncommon disconnection reasons */
+    HCI_TRACE_DEBUG("%s: Got Disconn Complete Event: reason=%d, handle=%d",
+                    __func__, reason, handle);
+  }
 
 #if (BTM_SCO_INCLUDED == TRUE)
   /* If L2CAP doesn't know about it, send it to SCO */
