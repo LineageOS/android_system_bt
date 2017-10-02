@@ -20,7 +20,7 @@ cc_library_static {
         darwin: {
             enabled: false,
         },
-        linux: {
+        linux_glibc: {
             cflags: ["-D_GNU_SOURCE"],
         },
     },
