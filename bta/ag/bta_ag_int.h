@@ -204,6 +204,7 @@ typedef union {
   tBTA_AG_API_OPEN api_open;
   tBTA_AG_API_RESULT api_result;
   tBTA_AG_API_SETCODEC api_setcodec;
+  tBTA_AG_API_SET_SCO_ALLOWED api_set_sco_allowed;
   tBTA_AG_DISC_RESULT disc_result;
   tBTA_AG_RFC rfc;
   tBTA_AG_CI_RX_WRITE ci_rx_write;
@@ -311,7 +312,7 @@ extern const tBTA_AG_AT_CMD* bta_ag_at_tbl[BTA_AG_NUM_IDX];
 extern tBTA_AG_CB bta_ag_cb;
 
 /* config struct */
-extern tBTA_AG_CFG* p_bta_ag_cfg;
+extern const tBTA_AG_CFG* p_bta_ag_cfg;
 extern const tBTA_AG_HF_IND bta_ag_local_hf_ind_cfg[];
 
 /*****************************************************************************
