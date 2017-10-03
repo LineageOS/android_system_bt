@@ -117,7 +117,6 @@ void btm_dev_init(void) {
  ******************************************************************************/
 static void btm_db_reset(void) {
   tBTM_CMPL_CB* p_cb;
-  tBTM_STATUS status = BTM_DEV_RESET;
 
   btm_inq_db_reset();
 
@@ -132,21 +131,33 @@ static void btm_db_reset(void) {
     p_cb = btm_cb.devcb.p_rssi_cmpl_cb;
     btm_cb.devcb.p_rssi_cmpl_cb = NULL;
 
-    if (p_cb) (*p_cb)((tBTM_RSSI_RESULT*)&status);
+    if (p_cb) {
+      tBTM_RSSI_RESULT btm_rssi_result;
+      btm_rssi_result.status = BTM_DEV_RESET;
+      (*p_cb)(&btm_rssi_result);
+    }
   }
 
   if (btm_cb.devcb.p_failed_contact_counter_cmpl_cb) {
     p_cb = btm_cb.devcb.p_failed_contact_counter_cmpl_cb;
     btm_cb.devcb.p_failed_contact_counter_cmpl_cb = NULL;
 
-    if (p_cb) (*p_cb)((tBTM_FAILED_CONTACT_COUNTER_RESULT*)&status);
+    if (p_cb) {
+      tBTM_FAILED_CONTACT_COUNTER_RESULT btm_failed_contact_counter_result;
+      btm_failed_contact_counter_result.status = BTM_DEV_RESET;
+      (*p_cb)(&btm_failed_contact_counter_result);
+    }
   }
 
   if (btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb) {
     p_cb = btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb;
     btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb = NULL;
 
-    if (p_cb) (*p_cb)((tBTM_AUTOMATIC_FLUSH_TIMEOUT_RESULT*)&status);
+    if (p_cb) {
+      tBTM_AUTOMATIC_FLUSH_TIMEOUT_RESULT btm_automatic_flush_timeout_result;
+      btm_automatic_flush_timeout_result.status = BTM_DEV_RESET;
+      (*p_cb)(&btm_automatic_flush_timeout_result);
+    }
   }
 }
 

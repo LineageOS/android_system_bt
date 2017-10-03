@@ -99,8 +99,12 @@ void bta_hh_api_enable(tBTA_HH_DATA* p_data) {
     bta_hh_le_enable();
   } else
 #endif
+  {
     /* signal BTA call back event */
-    (*bta_hh_cb.p_cback)(BTA_HH_ENABLE_EVT, (tBTA_HH*)&status);
+    tBTA_HH bta_hh;
+    bta_hh.status = status;
+    (*bta_hh_cb.p_cback)(BTA_HH_ENABLE_EVT, &bta_hh);
+  }
 }
 /*******************************************************************************
  *
@@ -224,7 +228,9 @@ static void bta_hh_sdp_cback(uint16_t result, uint16_t attr_mask,
   osi_free_and_reset((void**)&bta_hh_cb.p_disc_db);
 
   /* send SDP_CMPL_EVT into state machine */
-  bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, (tBTA_HH_DATA*)&status);
+  tBTA_HH_DATA bta_hh_data;
+  bta_hh_data.status = status;
+  bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, &bta_hh_data);
 
   return;
 }
@@ -282,7 +288,9 @@ static void bta_hh_di_sdp_cback(uint16_t result) {
   if (status != BTA_HH_OK) {
     osi_free_and_reset((void**)&bta_hh_cb.p_disc_db);
     /* send SDP_CMPL_EVT into state machine */
-    bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, (tBTA_HH_DATA*)&status);
+    tBTA_HH_DATA bta_hh_data;
+    bta_hh_data.status = status;
+    bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, &bta_hh_data);
   }
   return;
 }
@@ -332,7 +340,9 @@ void bta_hh_start_sdp(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
       } else
         status = BTA_HH_ERR_NO_RES;
     }
-    bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, (tBTA_HH_DATA*)&status);
+    tBTA_HH_DATA bta_hh_data;
+    bta_hh_data.status = status;
+    bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, &bta_hh_data);
 
     return;
   }
@@ -366,8 +376,11 @@ void bta_hh_start_sdp(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
     return;
   }
 
-  if (status != BTA_HH_OK)
-    bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, (tBTA_HH_DATA*)&status);
+  if (status != BTA_HH_OK) {
+    tBTA_HH_DATA bta_hh_data;
+    bta_hh_data.status = status;
+    bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, &bta_hh_data);
+  }
 
   return;
 }
@@ -486,7 +499,11 @@ void bta_hh_api_disc_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
 
     status = HID_HostCloseDev(disc_dat.handle);
 
-    if (status) (*bta_hh_cb.p_cback)(BTA_HH_CLOSE_EVT, (tBTA_HH*)&disc_dat);
+    if (status) {
+      tBTA_HH bta_hh;
+      bta_hh.dev_status = disc_dat;
+      (*bta_hh_cb.p_cback)(BTA_HH_CLOSE_EVT, &bta_hh);
+    }
   }
 
   return;
@@ -622,31 +639,28 @@ void bta_hh_data_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_hh_handsk_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
-  tBTA_HH_CBDATA cback_data;
-  tBTA_HH_HSDATA hs_data;
-  tBTA_HH_CONN conn;
-
 #if (BTA_HH_DEBUG == TRUE)
   APPL_TRACE_DEBUG("HANDSHAKE received for: event = %s data= %d",
                    bta_hh_get_w4_event(p_cb->w4_evt), p_data->hid_cback.data);
 #endif
 
-  memset(&hs_data, 0, sizeof(tBTA_HH_HSDATA));
-  memset(&cback_data, 0, sizeof(tBTA_HH_CBDATA));
+  tBTA_HH bta_hh;
+  memset(&bta_hh, 0, sizeof(tBTA_HH));
 
   switch (p_cb->w4_evt) {
     /* GET_ transsaction, handshake indicate unsupported request */
     case BTA_HH_GET_PROTO_EVT:
-      hs_data.rsp_data.proto_mode = BTA_HH_PROTO_UNKNOWN;
+      bta_hh.hs_data.rsp_data.proto_mode = BTA_HH_PROTO_UNKNOWN;
     /* fall through */
     case BTA_HH_GET_RPT_EVT:
     case BTA_HH_GET_IDLE_EVT:
-      hs_data.handle = p_cb->hid_handle;
+      bta_hh.hs_data.handle = p_cb->hid_handle;
       /* if handshake gives an OK code for these transaction, fill in UNSUPT */
-      hs_data.status = bta_hh_get_trans_status(p_data->hid_cback.data);
-      if (hs_data.status == BTA_HH_OK) hs_data.status = BTA_HH_HS_TRANS_NOT_SPT;
+      bta_hh.hs_data.status = bta_hh_get_trans_status(p_data->hid_cback.data);
+      if (bta_hh.hs_data.status == BTA_HH_OK)
+        bta_hh.hs_data.status = BTA_HH_HS_TRANS_NOT_SPT;
 
-      (*bta_hh_cb.p_cback)(p_cb->w4_evt, (tBTA_HH*)&hs_data);
+      (*bta_hh_cb.p_cback)(p_cb->w4_evt, &bta_hh);
       p_cb->w4_evt = 0;
       break;
 
@@ -654,18 +668,20 @@ void bta_hh_handsk_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
     case BTA_HH_SET_RPT_EVT:
     case BTA_HH_SET_PROTO_EVT:
     case BTA_HH_SET_IDLE_EVT:
-      cback_data.handle = p_cb->hid_handle;
-      cback_data.status = bta_hh_get_trans_status(p_data->hid_cback.data);
-      (*bta_hh_cb.p_cback)(p_cb->w4_evt, (tBTA_HH*)&cback_data);
+      bta_hh.dev_status.handle = p_cb->hid_handle;
+      bta_hh.dev_status.status =
+          bta_hh_get_trans_status(p_data->hid_cback.data);
+      (*bta_hh_cb.p_cback)(p_cb->w4_evt, &bta_hh);
       p_cb->w4_evt = 0;
       break;
 
     /* SET_PROTOCOL when open connection */
     case BTA_HH_OPEN_EVT:
-      conn.status = p_data->hid_cback.data ? BTA_HH_ERR_PROTO : BTA_HH_OK;
-      conn.handle = p_cb->hid_handle;
-      conn.bda = p_cb->addr;
-      (*bta_hh_cb.p_cback)(p_cb->w4_evt, (tBTA_HH*)&conn);
+      bta_hh.conn.status =
+          p_data->hid_cback.data ? BTA_HH_ERR_PROTO : BTA_HH_OK;
+      bta_hh.conn.handle = p_cb->hid_handle;
+      bta_hh.conn.bda = p_cb->addr;
+      (*bta_hh_cb.p_cback)(p_cb->w4_evt, &bta_hh);
 #if (BTA_HH_DEBUG == TRUE)
       bta_hh_trace_dev_db();
 #endif

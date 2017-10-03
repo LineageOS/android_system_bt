@@ -52,4 +52,4 @@ const tBTA_HH_CFG bta_hh_cfg = {
     BTA_HH_DISC_BUF_SIZE /* HH SDP discovery database size */
 };
 
-tBTA_HH_CFG* p_bta_hh_cfg = (tBTA_HH_CFG*)&bta_hh_cfg;
+const tBTA_HH_CFG* p_bta_hh_cfg = &bta_hh_cfg;

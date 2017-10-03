@@ -2308,7 +2308,7 @@ static uint8_t btm_convert_uuid_to_eir_service(uint16_t uuid16) {
  *                  false - if not found
  *
  ******************************************************************************/
-bool BTM_HasEirService(uint32_t* p_eir_uuid, uint16_t uuid16) {
+bool BTM_HasEirService(const uint32_t* p_eir_uuid, uint16_t uuid16) {
   uint8_t service_id;
 
   service_id = btm_convert_uuid_to_eir_service(uuid16);

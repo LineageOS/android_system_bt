@@ -329,17 +329,18 @@ void bta_hh_le_enable(void) {
 
   BTA_GATTC_AppRegister(bta_hh_gattc_callback,
                         base::Bind([](uint8_t client_id, uint8_t r_status) {
-                          tBTA_HH_STATUS status = BTA_HH_ERR;
+                          tBTA_HH bta_hh;
+                          bta_hh.status = BTA_HH_ERR;
 
                           if (r_status == GATT_SUCCESS) {
                             bta_hh_cb.gatt_if = client_id;
-                            status = BTA_HH_OK;
-                          } else
+                            bta_hh.status = BTA_HH_OK;
+                          } else {
                             bta_hh_cb.gatt_if = BTA_GATTS_INVALID_IF;
+                          }
 
                           /* signal BTA call back event */
-                          (*bta_hh_cb.p_cback)(BTA_HH_ENABLE_EVT,
-                                               (tBTA_HH*)&status);
+                          (*bta_hh_cb.p_cback)(BTA_HH_ENABLE_EVT, &bta_hh);
                         }));
 }
 
@@ -1258,7 +1259,6 @@ void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb,
 void bta_hh_gatt_open(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_buf) {
   tBTA_GATTC_OPEN* p_data = &p_buf->le_open;
   uint8_t* p2;
-  tHID_STATUS status = BTA_HH_ERR;
 
   /* if received invalid callback data , ignore it */
   if (p_cb == NULL || p_data == NULL) return;
@@ -1287,9 +1287,11 @@ void bta_hh_gatt_open(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_buf) {
 
     bta_hh_sm_execute(p_cb, BTA_HH_START_ENC_EVT, NULL);
 
-  } else /* open failure */
-  {
-    bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, (tBTA_HH_DATA*)&status);
+  } else {
+    /* open failure */
+    tBTA_HH_DATA bta_hh_data;
+    bta_hh_data.status = BTA_HH_ERR;
+    bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, &bta_hh_data);
   }
 }
 
