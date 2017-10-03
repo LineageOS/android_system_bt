@@ -630,7 +630,8 @@ bool BTM_BleConfigPrivacy(bool privacy_mode) {
   /* if LE is not supported, return error */
   if (!controller_get_interface()->supports_ble()) return false;
 
-  uint8_t addr_resolution = 0;
+  tGAP_BLE_ATTR_VALUE gap_ble_attr_value;
+  gap_ble_attr_value.addr_resolution = 0;
   if (!privacy_mode) /* if privacy disabled, always use public address */
   {
     p_cb->addr_mgnt_cb.own_addr_type = BLE_ADDR_PUBLIC;
@@ -645,7 +646,7 @@ bool BTM_BleConfigPrivacy(bool privacy_mode) {
     /* 4.2 controller only allow privacy 1.2 or mixed mode, resolvable private
      * address in controller */
     if (controller_get_interface()->supports_ble_privacy()) {
-      addr_resolution = 1;
+      gap_ble_attr_value.addr_resolution = 1;
       /* check vendor specific capability */
       p_cb->privacy_mode =
           btm_cb.ble_ctr_cb.mixed_mode ? BTM_PRIVACY_MIXED : BTM_PRIVACY_1_2;
@@ -653,8 +654,7 @@ bool BTM_BleConfigPrivacy(bool privacy_mode) {
       p_cb->privacy_mode = BTM_PRIVACY_1_1;
   }
 
-  GAP_BleAttrDBUpdate(GATT_UUID_GAP_CENTRAL_ADDR_RESOL,
-                      (tGAP_BLE_ATTR_VALUE*)&addr_resolution);
+  GAP_BleAttrDBUpdate(GATT_UUID_GAP_CENTRAL_ADDR_RESOL, &gap_ble_attr_value);
 
   return true;
 #else
@@ -2247,8 +2247,7 @@ static void btm_ble_stop_observe(void) {
 
   if (!BTM_BLE_IS_SCAN_ACTIVE(p_ble_cb->scan_activity)) btm_ble_stop_scan();
 
-  if (p_obs_cb)
-    (p_obs_cb)((tBTM_INQUIRY_CMPL*)&btm_cb.btm_inq_vars.inq_cmpl_info);
+  if (p_obs_cb) (p_obs_cb)(&btm_cb.btm_inq_vars.inq_cmpl_info);
 }
 /*******************************************************************************
  *
