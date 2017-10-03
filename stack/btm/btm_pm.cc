@@ -425,7 +425,7 @@ static tBTM_PM_PWR_MD* btm_pm_compare_modes(tBTM_PM_PWR_MD* p_md1,
     *p_res = *p_md2;
     p_res->mode &= ~BTM_PM_MD_FORCE;
 
-    return p_md2;
+    return p_res;
   }
 
   if (p_md2->mode == BTM_PM_MD_ACTIVE || p_md1->mode == BTM_PM_MD_ACTIVE) {
@@ -450,11 +450,11 @@ static tBTM_PM_PWR_MD* btm_pm_compare_modes(tBTM_PM_PWR_MD* p_md1,
   switch (res) {
     case BTM_PM_GET_MD1:
       *p_res = *p_md1;
-      return p_md1;
+      return p_res;
 
     case BTM_PM_GET_MD2:
       *p_res = *p_md2;
-      return p_md2;
+      return p_res;
 
     case BTM_PM_GET_COMP:
       p_res->mode = p_md1->mode;
