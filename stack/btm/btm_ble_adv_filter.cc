@@ -34,6 +34,7 @@
 #include "hcidefs.h"
 #include "hcimsgs.h"
 
+using base::Bind;
 using bluetooth::Uuid;
 
 #define BTM_BLE_ADV_FILT_META_HDR_LENGTH 3
@@ -542,7 +543,7 @@ void BTM_LE_PF_uuid_filter(tBTM_BLE_SCAN_COND_OP action,
                            tBTM_BLE_PF_COND_TYPE filter_type,
                            const bluetooth::Uuid& uuid,
                            tBTM_BLE_PF_LOGIC_TYPE cond_logic,
-                           tBTM_BLE_PF_COND_MASK* p_uuid_mask,
+                           const bluetooth::Uuid& uuid_mask,
                            tBTM_BLE_PF_CFG_CBACK cb) {
   uint8_t evt_type;
 
@@ -580,15 +581,16 @@ void BTM_LE_PF_uuid_filter(tBTM_BLE_SCAN_COND_OP action,
       return;
     }
 
-    if (p_uuid_mask) {
+    if (!uuid_mask.IsEmpty()) {
       if (uuid_len == Uuid::kNumBytes16) {
-        UINT16_TO_STREAM(p, p_uuid_mask->uuid16_mask);
+        UINT16_TO_STREAM(p, uuid_mask.As16Bit());
         len += Uuid::kNumBytes16;
       } else if (uuid_len == Uuid::kNumBytes32) {
-        UINT32_TO_STREAM(p, p_uuid_mask->uuid32_mask);
+        UINT32_TO_STREAM(p, uuid_mask.As32Bit());
         len += Uuid::kNumBytes32;
       } else if (uuid_len == Uuid::kNumBytes128) {
-        ARRAY_TO_STREAM(p, p_uuid_mask->uuid128_mask, (int)Uuid::kNumBytes128);
+        const auto& tmp = uuid.To128BitLE();
+        ARRAY_TO_STREAM(p, tmp.data(), (int)Uuid::kNumBytes128);
         len += Uuid::kNumBytes128;
       }
     } else {
@@ -601,6 +603,69 @@ void BTM_LE_PF_uuid_filter(tBTM_BLE_SCAN_COND_OP action,
   btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_BLE_ADV_FILTER_OCF, param, len,
                             base::Bind(&btm_flt_update_cb, evt_type, cb));
   memset(&btm_ble_adv_filt_cb.cur_filter_target, 0, sizeof(tBLE_BD_ADDR));
+}
+
+void DoNothing(uint8_t a, uint8_t b, uint8_t c) {}
+
+void BTM_LE_PF_set(tBTM_BLE_PF_FILT_INDEX filt_index,
+                   std::vector<ApcfCommand> commands,
+                   tBTM_BLE_PF_CFG_CBACK cb) {
+  int action = BTM_BLE_SCAN_COND_ADD;
+
+  for (const ApcfCommand& cmd : commands) {
+    /* If data is passed, both mask and data have to be the same length */
+    if (cmd.data.size() != cmd.data_mask.size() && cmd.data.size() != 0 &&
+        cmd.data_mask.size() != 0) {
+      LOG(ERROR) << __func__ << " data(" << cmd.data.size() << ") and mask("
+                 << cmd.data_mask.size() << ") are of different size";
+      continue;
+    }
+
+    switch (cmd.type) {
+      case BTM_BLE_PF_ADDR_FILTER: {
+        tBLE_BD_ADDR target_addr;
+        target_addr.bda = cmd.address;
+        target_addr.type = cmd.addr_type;
+
+        BTM_LE_PF_addr_filter(action, filt_index, target_addr, Bind(DoNothing));
+        break;
+      }
+
+      case BTM_BLE_PF_SRVC_DATA:
+        BTM_LE_PF_srvc_data(action, filt_index);
+        break;
+
+      case BTM_BLE_PF_SRVC_UUID:
+      case BTM_BLE_PF_SRVC_SOL_UUID: {
+        BTM_LE_PF_uuid_filter(action, filt_index, cmd.type, cmd.uuid,
+                              BTM_BLE_PF_LOGIC_AND, cmd.uuid_mask,
+                              Bind(DoNothing));
+        break;
+      }
+
+      case BTM_BLE_PF_LOCAL_NAME: {
+        BTM_LE_PF_local_name(action, filt_index, cmd.name, Bind(DoNothing));
+        break;
+      }
+
+      case BTM_BLE_PF_MANU_DATA: {
+        BTM_LE_PF_manu_data(action, filt_index, cmd.company, cmd.company_mask,
+                            cmd.data, cmd.data_mask, Bind(DoNothing));
+        break;
+      }
+
+      case BTM_BLE_PF_SRVC_DATA_PATTERN: {
+        BTM_LE_PF_srvc_data_pattern(action, filt_index, cmd.data, cmd.data_mask,
+                                    Bind(DoNothing));
+        break;
+      }
+
+      default:
+        LOG(ERROR) << __func__ << ": Unknown filter type: " << +cmd.type;
+        break;
+    }
+  }
+  cb.Run(0, 0, 0);
 }
 
 /**
@@ -624,10 +689,12 @@ void BTM_LE_PF_clear(tBTM_BLE_PF_FILT_INDEX filt_index,
 
     /* clear UUID filter */
     BTM_LE_PF_uuid_filter(BTM_BLE_SCAN_COND_CLEAR, filt_index,
-                          BTM_BLE_PF_SRVC_UUID, {}, 0, nullptr, fDoNothing);
+                          BTM_BLE_PF_SRVC_UUID, {}, 0, Uuid::kEmpty,
+                          fDoNothing);
 
     BTM_LE_PF_uuid_filter(BTM_BLE_SCAN_COND_CLEAR, filt_index,
-                          BTM_BLE_PF_SRVC_SOL_UUID, {}, 0, nullptr, fDoNothing);
+                          BTM_BLE_PF_SRVC_SOL_UUID, {}, 0, Uuid::kEmpty,
+                          fDoNothing);
 
     /* clear service data filter */
     BTM_LE_PF_srvc_data_pattern(BTM_BLE_SCAN_COND_CLEAR, filt_index, {}, {},

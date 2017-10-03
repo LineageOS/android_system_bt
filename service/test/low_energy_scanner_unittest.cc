@@ -71,14 +71,8 @@ class MockScannerHandler : public BleScannerInterface {
                                StartSyncCb, SyncReportCb, SyncLostCb));
   MOCK_METHOD1(StopSync, void(uint16_t));
 
-  void ScanFilterAddRemove(int action, int filt_type, int filt_index,
-                           int company_id, int company_id_mask,
-                           const bluetooth::Uuid* p_uuid,
-                           const bluetooth::Uuid* p_uuid_mask,
-                           const RawAddress* bd_addr, char addr_type,
-                           std::vector<uint8_t> data,
-                           std::vector<uint8_t> p_mask,
-                           FilterConfigCallback cb){};
+  void ScanFilterAdd(int filter_index, std::vector<ApcfCommand> filters,
+                     FilterConfigCallback cb){};
 
   void ScanFilterParamSetup(
       uint8_t client_if, uint8_t action, uint8_t filt_index,
