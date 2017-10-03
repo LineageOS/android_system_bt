@@ -159,8 +159,12 @@ const uint8_t bta_sys_hw_stopping[][BTA_SYS_NUM_COLS] = {
 typedef const uint8_t (*tBTA_SYS_ST_TBL)[BTA_SYS_NUM_COLS];
 
 /* state table */
-const tBTA_SYS_ST_TBL bta_sys_st_tbl[] = {bta_sys_hw_off, bta_sys_hw_starting,
-                                          bta_sys_hw_on, bta_sys_hw_stopping};
+const tBTA_SYS_ST_TBL bta_sys_st_tbl[] = {
+    bta_sys_hw_off,      /* BTA_SYS_HW_OFF */
+    bta_sys_hw_starting, /* BTA_SYS_HW_STARTING */
+    bta_sys_hw_on,       /* BTA_SYS_HW_ON */
+    bta_sys_hw_stopping  /* BTA_SYS_HW_STOPPING */
+};
 
 /*******************************************************************************
  *

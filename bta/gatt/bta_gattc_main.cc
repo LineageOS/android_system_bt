@@ -44,13 +44,11 @@ enum {
   BTA_GATTC_CONN,
   BTA_GATTC_START_DISCOVER,
   BTA_GATTC_DISC_CMPL,
-
   BTA_GATTC_Q_CMD,
   BTA_GATTC_CLOSE,
   BTA_GATTC_CLOSE_FAIL,
   BTA_GATTC_READ,
   BTA_GATTC_WRITE,
-
   BTA_GATTC_OP_CMPL,
   BTA_GATTC_SEARCH,
   BTA_GATTC_FAIL,
@@ -69,32 +67,32 @@ typedef void (*tBTA_GATTC_ACTION)(tBTA_GATTC_CLCB* p_clcb,
                                   tBTA_GATTC_DATA* p_data);
 
 /* action function list */
-const tBTA_GATTC_ACTION bta_gattc_action[] = {bta_gattc_open,
-                                              bta_gattc_open_fail,
-                                              bta_gattc_open_error,
-                                              bta_gattc_cancel_open,
-                                              bta_gattc_cancel_open_ok,
-                                              bta_gattc_cancel_open_error,
-                                              bta_gattc_conn,
-                                              bta_gattc_start_discover,
-                                              bta_gattc_disc_cmpl,
-
-                                              bta_gattc_q_cmd,
-                                              bta_gattc_close,
-                                              bta_gattc_close_fail,
-                                              bta_gattc_read,
-                                              bta_gattc_write,
-
-                                              bta_gattc_op_cmpl,
-                                              bta_gattc_search,
-                                              bta_gattc_fail,
-                                              bta_gattc_confirm,
-                                              bta_gattc_execute,
-                                              bta_gattc_read_multi,
-                                              bta_gattc_ignore_op_cmpl,
-                                              bta_gattc_disc_close,
-                                              bta_gattc_restart_discover,
-                                              bta_gattc_cfg_mtu};
+const tBTA_GATTC_ACTION bta_gattc_action[] = {
+    bta_gattc_open,              /* BTA_GATTC_OPEN */
+    bta_gattc_open_fail,         /* BTA_GATTC_OPEN_FAIL */
+    bta_gattc_open_error,        /* BTA_GATTC_OPEN_ERROR */
+    bta_gattc_cancel_open,       /* BTA_GATTC_CANCEL_OPEN */
+    bta_gattc_cancel_open_ok,    /* BTA_GATTC_CANCEL_OPEN_OK */
+    bta_gattc_cancel_open_error, /* BTA_GATTC_CANCEL_OPEN_ERROR */
+    bta_gattc_conn,              /* BTA_GATTC_CONN */
+    bta_gattc_start_discover,    /* BTA_GATTC_START_DISCOVER */
+    bta_gattc_disc_cmpl,         /* BTA_GATTC_DISC_CMPL */
+    bta_gattc_q_cmd,             /* BTA_GATTC_Q_CMD */
+    bta_gattc_close,             /* BTA_GATTC_CLOSE */
+    bta_gattc_close_fail,        /* BTA_GATTC_CLOSE_FAIL */
+    bta_gattc_read,              /* BTA_GATTC_READ */
+    bta_gattc_write,             /* BTA_GATTC_WRITE */
+    bta_gattc_op_cmpl,           /* BTA_GATTC_OP_CMPL */
+    bta_gattc_search,            /* BTA_GATTC_SEARCH */
+    bta_gattc_fail,              /* BTA_GATTC_FAIL */
+    bta_gattc_confirm,           /* BTA_GATTC_CONFIRM */
+    bta_gattc_execute,           /* BTA_GATTC_EXEC */
+    bta_gattc_read_multi,        /* BTA_GATTC_READ_MULTI */
+    bta_gattc_ignore_op_cmpl,    /* BTA_GATTC_IGNORE_OP_CMPL */
+    bta_gattc_disc_close,        /* BTA_GATTC_DISC_CLOSE */
+    bta_gattc_restart_discover,  /* BTA_GATTC_RESTART_DISCOVER */
+    bta_gattc_cfg_mtu            /* BTA_GATTC_CFG_MTU */
+};
 
 /* state table information */
 #define BTA_GATTC_ACTIONS 1    /* number of actions */
@@ -267,8 +265,11 @@ typedef const uint8_t (*tBTA_GATTC_ST_TBL)[BTA_GATTC_NUM_COLS];
 
 /* state table */
 const tBTA_GATTC_ST_TBL bta_gattc_st_tbl[] = {
-    bta_gattc_st_idle, bta_gattc_st_w4_conn, bta_gattc_st_connected,
-    bta_gattc_st_discover};
+    bta_gattc_st_idle,      /* BTA_GATTC_IDLE_ST */
+    bta_gattc_st_w4_conn,   /* BTA_GATTC_W4_CONN_ST */
+    bta_gattc_st_connected, /* BTA_GATTC_CONN_ST */
+    bta_gattc_st_discover   /* BTA_GATTC_DISCOVER_ST */
+};
 
 /*****************************************************************************
  * Global data
