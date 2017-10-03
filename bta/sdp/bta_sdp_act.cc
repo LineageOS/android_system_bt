@@ -447,7 +447,9 @@ static void bta_sdp_search_cback(uint16_t result, void* user_data) {
   }
   evt_data.status = status;
 
-  bta_sdp_cb.p_dm_cback(BTA_SDP_SEARCH_COMP_EVT, (tBTA_SDP*)&evt_data,
+  tBTA_SDP bta_sdp;
+  bta_sdp.sdp_search_comp = evt_data;
+  bta_sdp_cb.p_dm_cback(BTA_SDP_SEARCH_COMP_EVT, &bta_sdp,
                         (void*)&uuid->uu.uuid128);
   osi_free(user_data);  // We no longer need the user data to track the search
 }
@@ -465,7 +467,9 @@ void bta_sdp_enable(tBTA_SDP_MSG* p_data) {
   APPL_TRACE_DEBUG("%s in, sdp_active:%d", __func__, bta_sdp_cb.sdp_active);
   tBTA_SDP_STATUS status = BTA_SDP_SUCCESS;
   bta_sdp_cb.p_dm_cback = p_data->enable.p_cback;
-  bta_sdp_cb.p_dm_cback(BTA_SDP_ENABLE_EVT, (tBTA_SDP*)&status, NULL);
+  tBTA_SDP bta_sdp;
+  bta_sdp.status = status;
+  bta_sdp_cb.p_dm_cback(BTA_SDP_ENABLE_EVT, &bta_sdp, NULL);
 }
 
 /*******************************************************************************
@@ -495,7 +499,9 @@ void bta_sdp_search(tBTA_SDP_MSG* p_data) {
       result.uuid = p_data->get_search.uuid;
       result.remote_addr = p_data->get_search.bd_addr;
       result.status = status;
-      bta_sdp_cb.p_dm_cback(BTA_SDP_SEARCH_COMP_EVT, (tBTA_SDP*)&result, NULL);
+      tBTA_SDP bta_sdp;
+      bta_sdp.sdp_search_comp = result;
+      bta_sdp_cb.p_dm_cback(BTA_SDP_SEARCH_COMP_EVT, &bta_sdp, NULL);
     }
     return;
   }
@@ -528,7 +534,9 @@ void bta_sdp_search(tBTA_SDP_MSG* p_data) {
       result.uuid = p_data->get_search.uuid;
       result.remote_addr = p_data->get_search.bd_addr;
       result.status = status;
-      bta_sdp_cb.p_dm_cback(BTA_SDP_SEARCH_COMP_EVT, (tBTA_SDP*)&result, NULL);
+      tBTA_SDP bta_sdp;
+      bta_sdp.sdp_search_comp = result;
+      bta_sdp_cb.p_dm_cback(BTA_SDP_SEARCH_COMP_EVT, &bta_sdp, NULL);
     }
   }
   /*

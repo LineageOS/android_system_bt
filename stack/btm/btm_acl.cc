@@ -479,7 +479,9 @@ void btm_acl_update_busy_level(tBTM_BLI_EVENT event) {
     evt.busy_level = busy_level;
     btm_cb.busy_level = busy_level;
     if (btm_cb.p_bl_changed_cb && (btm_cb.bl_evt_mask & BTM_BL_UPDATE_MASK)) {
-      (*btm_cb.p_bl_changed_cb)((tBTM_BL_EVENT_DATA*)&evt);
+      tBTM_BL_EVENT_DATA btm_bl_event_data;
+      btm_bl_event_data.update = evt;
+      (*btm_cb.p_bl_changed_cb)(&btm_bl_event_data);
     }
   }
 }
@@ -683,7 +685,9 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
       evt.new_role = btm_cb.devcb.switch_role_ref_data.role;
       evt.p_bda = &btm_cb.devcb.switch_role_ref_data.remote_bd_addr;
       evt.hci_status = btm_cb.devcb.switch_role_ref_data.hci_status;
-      (*btm_cb.p_bl_changed_cb)((tBTM_BL_EVENT_DATA*)&evt);
+      tBTM_BL_EVENT_DATA btm_bl_event_data;
+      btm_bl_event_data.role_chg = evt;
+      (*btm_cb.p_bl_changed_cb)(&btm_bl_event_data);
 
       BTM_TRACE_DEBUG(
           "Role Switch Event: new_role 0x%02x, HCI Status 0x%02x, rs_st:%d",
@@ -1488,7 +1492,9 @@ void btm_acl_role_changed(uint8_t hci_status, const RawAddress* bd_addr,
     evt.new_role = new_role;
     evt.p_bda = p_bda;
     evt.hci_status = hci_status;
-    (*btm_cb.p_bl_changed_cb)((tBTM_BL_EVENT_DATA*)&evt);
+    tBTM_BL_EVENT_DATA btm_bl_event_data;
+    btm_bl_event_data.role_chg = evt;
+    (*btm_cb.p_bl_changed_cb)(&btm_bl_event_data);
   }
 
   BTM_TRACE_DEBUG(

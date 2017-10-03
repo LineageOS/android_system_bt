@@ -233,11 +233,6 @@ void HID_HostInit(void) {
   uint8_t log_level = hh_cb.trace_level;
   memset(&hh_cb, 0, sizeof(tHID_HOST_CTB));
   hh_cb.trace_level = log_level;
-
-  for (size_t i = 0; i < HID_HOST_MAX_DEVICES; i++) {
-    hh_cb.devices[i].conn.process_repage_timer =
-        alarm_new("hid_devices_conn.process_repage_timer");
-  }
 }
 
 /*******************************************************************************
@@ -281,6 +276,10 @@ tHID_STATUS HID_HostRegister(tHID_HOST_DEV_CALLBACK* dev_cback) {
   hh_cb.callback = dev_cback;
   hh_cb.reg_flag = true;
 
+  for (size_t i = 0; i < HID_HOST_MAX_DEVICES; i++) {
+    hh_cb.devices[i].conn.process_repage_timer =
+        alarm_new("hid_devices_conn.process_repage_timer");
+  }
   return (HID_SUCCESS);
 }
 
@@ -299,6 +298,7 @@ tHID_STATUS HID_HostDeregister(void) {
   if (!hh_cb.reg_flag) return (HID_ERR_NOT_REGISTERED);
 
   for (i = 0; i < HID_HOST_MAX_DEVICES; i++) {
+    alarm_free(hh_cb.devices[i].conn.process_repage_timer);
     HID_HostRemoveDev(i);
   }
 

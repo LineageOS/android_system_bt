@@ -270,7 +270,9 @@ void gatt_send_queue_write_cancel(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
 
   VLOG(1) << __func__;
 
-  rt = attp_send_cl_msg(tcb, p_clcb, GATT_REQ_EXEC_WRITE, (tGATT_CL_MSG*)&flag);
+  tGATT_CL_MSG gatt_cl_msg;
+  gatt_cl_msg.exec_write = flag;
+  rt = attp_send_cl_msg(tcb, p_clcb, GATT_REQ_EXEC_WRITE, &gatt_cl_msg);
 
   if (rt != GATT_SUCCESS) {
     gatt_end_operation(p_clcb, rt, NULL);
@@ -647,11 +649,13 @@ void gatt_process_notification(tGATT_TCB& tcb, uint8_t op_code, uint16_t len,
   }
 
   encrypt_status = gatt_get_link_encrypt_status(tcb);
+  tGATT_CL_COMPLETE gatt_cl_complete;
+  gatt_cl_complete.att_value = value;
   for (i = 0, p_reg = gatt_cb.cl_rcb; i < GATT_MAX_APPS; i++, p_reg++) {
     if (p_reg->in_use && p_reg->app_cb.p_cmpl_cb) {
       conn_id = GATT_CREATE_CONN_ID(tcb.tcb_idx, p_reg->gatt_if);
       (*p_reg->app_cb.p_cmpl_cb)(conn_id, event, encrypt_status,
-                                 (tGATT_CL_COMPLETE*)&value);
+                                 &gatt_cl_complete);
     }
   }
 }

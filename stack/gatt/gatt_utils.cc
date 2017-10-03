@@ -849,15 +849,15 @@ void gatt_sr_send_req_callback(uint16_t conn_id, uint32_t trans_id,
  ******************************************************************************/
 tGATT_STATUS gatt_send_error_rsp(tGATT_TCB& tcb, uint8_t err_code,
                                  uint8_t op_code, uint16_t handle, bool deq) {
-  tGATT_ERROR error;
   tGATT_STATUS status;
   BT_HDR* p_buf;
 
-  error.cmd_code = op_code;
-  error.reason = err_code;
-  error.handle = handle;
+  tGATT_SR_MSG msg;
+  msg.error.cmd_code = op_code;
+  msg.error.reason = err_code;
+  msg.error.handle = handle;
 
-  p_buf = attp_build_sr_msg(tcb, GATT_RSP_ERROR, (tGATT_SR_MSG*)&error);
+  p_buf = attp_build_sr_msg(tcb, GATT_RSP_ERROR, &msg);
   if (p_buf != NULL) {
     status = attp_send_sr_msg(tcb, p_buf);
   } else

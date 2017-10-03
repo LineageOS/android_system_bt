@@ -627,7 +627,9 @@ bool bta_jv_check_psm(uint16_t psm) {
 void bta_jv_enable(tBTA_JV_MSG* p_data) {
   tBTA_JV_STATUS status = BTA_JV_SUCCESS;
   bta_jv_cb.p_dm_cback = p_data->enable.p_cback;
-  bta_jv_cb.p_dm_cback(BTA_JV_ENABLE_EVT, (tBTA_JV*)&status, 0);
+  tBTA_JV bta_jv;
+  bta_jv.status = status;
+  bta_jv_cb.p_dm_cback(BTA_JV_ENABLE_EVT, &bta_jv, 0);
   memset(bta_jv_cb.free_psm_list, 0, sizeof(bta_jv_cb.free_psm_list));
 }
 
@@ -718,9 +720,12 @@ void bta_jv_get_channel_id(tBTA_JV_MSG* p_data) {
         bta_jv_cb.scn[channel - 1] = true;
         scn = (uint8_t)channel;
       }
-      if (bta_jv_cb.p_dm_cback)
-        bta_jv_cb.p_dm_cback(BTA_JV_GET_SCN_EVT, (tBTA_JV*)&scn,
+      if (bta_jv_cb.p_dm_cback) {
+        tBTA_JV bta_jv;
+        bta_jv.scn = scn;
+        bta_jv_cb.p_dm_cback(BTA_JV_GET_SCN_EVT, &bta_jv,
                              p_data->alloc_channel.rfcomm_slot_id);
+      }
       return;
     }
     case BTA_JV_CONN_TYPE_L2CAP:
@@ -736,9 +741,12 @@ void bta_jv_get_channel_id(tBTA_JV_MSG* p_data) {
       break;
   }
 
-  if (bta_jv_cb.p_dm_cback)
-    bta_jv_cb.p_dm_cback(BTA_JV_GET_PSM_EVT, (tBTA_JV*)&psm,
+  if (bta_jv_cb.p_dm_cback) {
+    tBTA_JV bta_jv;
+    bta_jv.psm = psm;
+    bta_jv_cb.p_dm_cback(BTA_JV_GET_PSM_EVT, &bta_jv,
                          p_data->alloc_channel.l2cap_socket_id);
+  }
 }
 
 /*******************************************************************************
@@ -840,8 +848,9 @@ static void bta_jv_start_discovery_cback(uint16_t result, void* user_data) {
     }
 
     dcomp.status = status;
-    bta_jv_cb.p_dm_cback(BTA_JV_DISCOVERY_COMP_EVT, (tBTA_JV*)&dcomp,
-                         *p_rfcomm_slot_id);
+    tBTA_JV bta_jv;
+    bta_jv.disc_comp = dcomp;
+    bta_jv_cb.p_dm_cback(BTA_JV_DISCOVERY_COMP_EVT, &bta_jv, *p_rfcomm_slot_id);
     osi_free(p_rfcomm_slot_id);
   }
 }
@@ -862,9 +871,12 @@ void bta_jv_start_discovery(tBTA_JV_MSG* p_data) {
   if (bta_jv_cb.sdp_active != BTA_JV_SDP_ACT_NONE) {
     /* SDP is still in progress */
     status = BTA_JV_BUSY;
-    if (bta_jv_cb.p_dm_cback)
-      bta_jv_cb.p_dm_cback(BTA_JV_DISCOVERY_COMP_EVT, (tBTA_JV*)&status,
+    if (bta_jv_cb.p_dm_cback) {
+      tBTA_JV bta_jv;
+      bta_jv.status = status;
+      bta_jv_cb.p_dm_cback(BTA_JV_DISCOVERY_COMP_EVT, &bta_jv,
                            p_data->start_discovery.rfcomm_slot_id);
+    }
     return;
   }
 
@@ -893,9 +905,12 @@ void bta_jv_start_discovery(tBTA_JV_MSG* p_data) {
           bta_jv_start_discovery_cback, (void*)rfcomm_slot_id)) {
     bta_jv_cb.sdp_active = BTA_JV_SDP_ACT_NONE;
     /* failed to start SDP. report the failure right away */
-    if (bta_jv_cb.p_dm_cback)
-      bta_jv_cb.p_dm_cback(BTA_JV_DISCOVERY_COMP_EVT, (tBTA_JV*)&status,
+    if (bta_jv_cb.p_dm_cback) {
+      tBTA_JV bta_jv;
+      bta_jv.status = status;
+      bta_jv_cb.p_dm_cback(BTA_JV_DISCOVERY_COMP_EVT, &bta_jv,
                            p_data->start_discovery.rfcomm_slot_id);
+    }
   }
   /*
   else report the result when the cback is called
@@ -915,11 +930,12 @@ void bta_jv_create_record(tBTA_JV_MSG* p_data) {
   tBTA_JV_API_CREATE_RECORD* cr = &(p_data->create_record);
   tBTA_JV_CREATE_RECORD evt_data;
   evt_data.status = BTA_JV_SUCCESS;
-  if (bta_jv_cb.p_dm_cback)
-    // callback user immediately to create his own sdp record in stack thread
-    // context
-    bta_jv_cb.p_dm_cback(BTA_JV_CREATE_RECORD_EVT, (tBTA_JV*)&evt_data,
-                         cr->rfcomm_slot_id);
+  if (bta_jv_cb.p_dm_cback) {
+    // callback immediately to create the sdp record in stack thread context
+    tBTA_JV bta_jv;
+    bta_jv.create_rec = evt_data;
+    bta_jv_cb.p_dm_cback(BTA_JV_CREATE_RECORD_EVT, &bta_jv, cr->rfcomm_slot_id);
+  }
 }
 
 /*******************************************************************************
@@ -1072,9 +1088,11 @@ void bta_jv_l2cap_connect(tBTA_JV_MSG* p_data) {
   }
 
   evt_data.handle = handle;
-  if (cc->p_cback)
-    cc->p_cback(BTA_JV_L2CAP_CL_INIT_EVT, (tBTA_JV*)&evt_data,
-                cc->l2cap_socket_id);
+  if (cc->p_cback) {
+    tBTA_JV bta_jv;
+    bta_jv.l2c_cl_init = evt_data;
+    cc->p_cback(BTA_JV_L2CAP_CL_INIT_EVT, &bta_jv, cc->l2cap_socket_id);
+  }
 }
 
 /*******************************************************************************
@@ -1096,8 +1114,11 @@ void bta_jv_l2cap_close(tBTA_JV_MSG* p_data) {
   evt_data.status = bta_jv_free_l2c_cb(cc->p_cb);
   evt_data.async = false;
 
-  if (p_cback)
-    p_cback(BTA_JV_L2CAP_CLOSE_EVT, (tBTA_JV*)&evt_data, l2cap_socket_id);
+  if (p_cback) {
+    tBTA_JV bta_jv;
+    bta_jv.l2c_close = evt_data;
+    p_cback(BTA_JV_L2CAP_CLOSE_EVT, &bta_jv, l2cap_socket_id);
+  }
 }
 
 /*******************************************************************************
@@ -1231,9 +1252,11 @@ void bta_jv_l2cap_start_server(tBTA_JV_MSG* p_data) {
     p_cb->psm = ls->local_psm;
   }
 
-  if (ls->p_cback)
-    ls->p_cback(BTA_JV_L2CAP_START_EVT, (tBTA_JV*)&evt_data,
-                ls->l2cap_socket_id);
+  if (ls->p_cback) {
+    tBTA_JV bta_jv;
+    bta_jv.l2c_start = evt_data;
+    ls->p_cback(BTA_JV_L2CAP_START_EVT, &bta_jv, ls->l2cap_socket_id);
+  }
 }
 
 /*******************************************************************************
@@ -1258,8 +1281,11 @@ void bta_jv_l2cap_stop_server(tBTA_JV_MSG* p_data) {
       evt_data.handle = p_cb->handle;
       evt_data.status = bta_jv_free_l2c_cb(p_cb);
       evt_data.async = false;
-      if (p_cback)
-        p_cback(BTA_JV_L2CAP_CLOSE_EVT, (tBTA_JV*)&evt_data, l2cap_socket_id);
+      if (p_cback) {
+        tBTA_JV bta_jv;
+        bta_jv.l2c_close = evt_data;
+        p_cback(BTA_JV_L2CAP_CLOSE_EVT, &bta_jv, l2cap_socket_id);
+      }
       break;
     }
   }
@@ -1289,7 +1315,9 @@ void bta_jv_l2cap_read(tBTA_JV_MSG* p_data) {
     evt_data.status = BTA_JV_SUCCESS;
   }
 
-  rc->p_cback(BTA_JV_L2CAP_READ_EVT, (tBTA_JV*)&evt_data, rc->l2cap_socket_id);
+  tBTA_JV bta_jv;
+  bta_jv.l2c_read = evt_data;
+  rc->p_cback(BTA_JV_L2CAP_READ_EVT, &bta_jv, rc->l2cap_socket_id);
 }
 
 /*******************************************************************************
@@ -1341,7 +1369,9 @@ void bta_jv_l2cap_write(tBTA_JV_MSG* p_data) {
             GAP_ConnWriteData(ls->handle, ls->p_data, ls->len, &evt_data.len)) {
       evt_data.status = BTA_JV_SUCCESS;
     }
-    ls->p_cb->p_cback(BTA_JV_L2CAP_WRITE_EVT, (tBTA_JV*)&evt_data, ls->user_id);
+    tBTA_JV bta_jv;
+    bta_jv.l2c_write = evt_data;
+    ls->p_cb->p_cback(BTA_JV_L2CAP_WRITE_EVT, &bta_jv, ls->user_id);
   } else {
     /* As this pointer is checked in the API function, this occurs only when the
      * channel is
@@ -1379,7 +1409,9 @@ void bta_jv_l2cap_write_fixed(tBTA_JV_MSG* p_data) {
 
   L2CA_SendFixedChnlData(ls->channel, ls->addr, msg);
 
-  ls->p_cback(BTA_JV_L2CAP_WRITE_FIXED_EVT, (tBTA_JV*)&evt_data, ls->user_id);
+  tBTA_JV bta_jv;
+  bta_jv.l2c_write_fixed = evt_data;
+  ls->p_cback(BTA_JV_L2CAP_WRITE_FIXED_EVT, &bta_jv, ls->user_id);
 }
 
 /*******************************************************************************
@@ -1570,9 +1602,10 @@ void bta_jv_rfcomm_connect(tBTA_JV_MSG* p_data) {
       APPL_TRACE_ERROR("run out of rfc control block");
     }
   }
-  cc->p_cback(BTA_JV_RFCOMM_CL_INIT_EVT, (tBTA_JV*)&evt_data,
-              cc->rfcomm_slot_id);
-  if (evt_data.status == BTA_JV_FAILURE) {
+  tBTA_JV bta_jv;
+  bta_jv.rfc_cl_init = evt_data;
+  cc->p_cback(BTA_JV_RFCOMM_CL_INIT_EVT, &bta_jv, cc->rfcomm_slot_id);
+  if (bta_jv.rfc_cl_init.status == BTA_JV_FAILURE) {
     if (sec_id) bta_jv_free_sec_id(&sec_id);
     if (handle) RFCOMM_RemoveConnection(handle);
   }
@@ -1893,8 +1926,10 @@ void bta_jv_rfcomm_start_server(tBTA_JV_MSG* p_data) {
     PORT_SetState(handle, &port_state);
   } while (0);
 
-  rs->p_cback(BTA_JV_RFCOMM_START_EVT, (tBTA_JV*)&evt_data, rs->rfcomm_slot_id);
-  if (evt_data.status == BTA_JV_SUCCESS) {
+  tBTA_JV bta_jv;
+  bta_jv.rfc_start = evt_data;
+  rs->p_cback(BTA_JV_RFCOMM_START_EVT, &bta_jv, rs->rfcomm_slot_id);
+  if (bta_jv.rfc_start.status == BTA_JV_SUCCESS) {
     PORT_SetDataCOCallback(handle, bta_jv_port_data_co_cback);
   } else {
     if (sec_id) bta_jv_free_sec_id(&sec_id);
@@ -1968,8 +2003,9 @@ void bta_jv_rfcomm_write(tBTA_JV_MSG* p_data) {
   evt_data.cong = p_pcb->cong;
 
   if (p_cb->p_cback) {
-    p_cb->p_cback(BTA_JV_RFCOMM_WRITE_EVT, (tBTA_JV*)&evt_data,
-                  p_pcb->rfcomm_slot_id);
+    tBTA_JV bta_jv;
+    bta_jv.rfc_write = evt_data;
+    p_cb->p_cback(BTA_JV_RFCOMM_WRITE_EVT, &bta_jv, p_pcb->rfcomm_slot_id);
   } else {
     APPL_TRACE_ERROR("%s No JV callback set", __func__);
   }
@@ -2519,7 +2555,9 @@ void bta_jv_l2cap_start_server_le(tBTA_JV_MSG* p_data) {
   evt_data.sec_id = t->sec_id;
 
 out:
-  ss->p_cback(BTA_JV_L2CAP_START_EVT, (tBTA_JV*)&evt_data, ss->l2cap_socket_id);
+  tBTA_JV bta_jv;
+  bta_jv.l2c_start = evt_data;
+  ss->p_cback(BTA_JV_L2CAP_START_EVT, &bta_jv, ss->l2cap_socket_id);
 }
 
 /*******************************************************************************
