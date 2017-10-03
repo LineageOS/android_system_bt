@@ -94,7 +94,7 @@ cc_library_static {
         darwin: {
             enabled: false,
         },
-        linux: {
+        linux_glibc: {
             cflags: [
                 "-D_GNU_SOURCE",
                 "-DOS_GENERIC",
@@ -144,7 +144,7 @@ cc_test {
         "libosi",
     ],
     target: {
-        linux: {
+        linux_glibc: {
             cflags: ["-DOS_GENERIC"],
         },
         darwin: {
