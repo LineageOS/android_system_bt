@@ -76,7 +76,7 @@ struct hash<bt_bdaddr_t> {
 template <>
 struct equal_to<bt_bdaddr_t> {
   size_t operator()(const bt_bdaddr_t& x, const bt_bdaddr_t& y) const {
-    return memcmp(x.address, y.address, BD_ADDR_LEN);
+    return (memcmp(x.address, y.address, BD_ADDR_LEN) == 0);
   }
 };
 }
