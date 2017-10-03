@@ -137,7 +137,7 @@ cc_test {
                 "test/stub_ipc_handler_linux.cc",
             ],
         },
-        linux: {
+        linux_glibc: {
             srcs: btserviceLinuxSrc + [
                 // TODO(bcf): Fix this test.
                 //"test/ipc_linux_unittest.cc",
