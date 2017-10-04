@@ -123,7 +123,7 @@ static void bta_gattc_enable() {
 
   if (bta_gattc_cb.state == BTA_GATTC_STATE_DISABLED) {
     /* initialize control block */
-    memset(&bta_gattc_cb, 0, sizeof(tBTA_GATTC_CB));
+    bta_gattc_cb = tBTA_GATTC_CB();
     bta_gattc_cb.state = BTA_GATTC_STATE_ENABLED;
   } else {
     APPL_TRACE_DEBUG("GATTC is already enabled");
@@ -167,7 +167,7 @@ void bta_gattc_disable() {
 
   /* no registered apps, indicate disable completed */
   if (bta_gattc_cb.state != BTA_GATTC_STATE_DISABLING) {
-    memset(&bta_gattc_cb, 0, sizeof(tBTA_GATTC_CB));
+    bta_gattc_cb = tBTA_GATTC_CB();
     bta_gattc_cb.state = BTA_GATTC_STATE_DISABLED;
   }
 }
@@ -587,7 +587,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
   if (p_clcb->p_srcb->mtu == 0) p_clcb->p_srcb->mtu = GATT_DEF_BLE_MTU_SIZE;
 
   /* start database cache if needed */
-  if (p_clcb->p_srcb->p_srvc_cache == NULL ||
+  if (p_clcb->p_srcb->srvc_cache.empty() ||
       p_clcb->p_srcb->state != BTA_GATTC_SERV_IDLE) {
     if (p_clcb->p_srcb->state == BTA_GATTC_SERV_IDLE) {
       p_clcb->p_srcb->state = BTA_GATTC_SERV_LOAD;
@@ -877,10 +877,7 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB* p_clcb,
 
   if (p_clcb->status != GATT_SUCCESS) {
     /* clean up cache */
-    if (p_clcb->p_srcb && p_clcb->p_srcb->p_srvc_cache) {
-      list_free(p_clcb->p_srcb->p_srvc_cache);
-      p_clcb->p_srcb->p_srvc_cache = NULL;
-    }
+    if (p_clcb->p_srcb) p_clcb->p_srcb->srvc_cache.clear();
 
     /* used to reset cache in application */
     bta_gattc_cache_reset(p_clcb->p_srcb->server_bda);
@@ -1252,7 +1249,7 @@ void bta_gattc_search(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
   tGATT_STATUS status = GATT_INTERNAL_ERROR;
   tBTA_GATTC cb_data;
   APPL_TRACE_DEBUG("%s: conn_id=%d", __func__, p_clcb->bta_conn_id);
-  if (p_clcb->p_srcb && p_clcb->p_srcb->p_srvc_cache) {
+  if (p_clcb->p_srcb && !p_clcb->p_srcb->srvc_cache.empty()) {
     status = GATT_SUCCESS;
     /* search the local cache of a server device */
     bta_gattc_search_service(p_clcb, p_data->api_search.p_srvc_uuid);
@@ -1423,10 +1420,7 @@ void bta_gattc_process_api_refresh(const RawAddress& remote_bda) {
       }
     }
     /* in all other cases, mark it and delete the cache */
-    if (p_srvc_cb->p_srvc_cache != NULL) {
-      list_free(p_srvc_cb->p_srvc_cache);
-      p_srvc_cb->p_srvc_cache = NULL;
-    }
+    p_srvc_cb->srvc_cache.clear();
   }
   /* used to reset cache in application */
   bta_gattc_cache_reset(remote_bda);
