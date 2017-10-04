@@ -266,10 +266,9 @@ static void avrc_prep_end_frag(uint8_t handle) {
   p_fcb = &avrc_cb.fcb[handle];
 
   /* The response type of the end fragment should be the same as the the PDU of
-  *"End Fragment
-  ** Response" Errata:
-  *https://www.bluetooth.org/errata/errata_view.cfm?errata_id=4383
-  */
+   * "End Fragment Response" Errata:
+   * https://www.bluetooth.org/errata/errata_view.cfm?errata_id=4383
+   */
   p_orig_data = ((uint8_t*)(p_fcb->p_fmsg + 1) + p_fcb->p_fmsg->offset);
   rsp_type = ((*p_orig_data) & AVRC_CTYPE_MASK);
 
@@ -498,16 +497,16 @@ static uint8_t avrc_proc_far_msg(uint8_t handle, uint8_t label, uint8_t cr,
       p_rcb->p_rmsg->offset = p_rcb->rasm_offset = 0;
 
       /*
-          * Free original START packet, replace with pointer to
-          * reassembly buffer.
-          */
+       * Free original START packet, replace with pointer to
+       * reassembly buffer.
+       */
       osi_free(p_pkt);
       *pp_pkt = p_rcb->p_rmsg;
 
       /*
-          * Set offset to point to where to copy next - use the same
-          * reassembly logic as AVCT.
-          */
+       * Set offset to point to where to copy next - use the same
+       * reassembly logic as AVCT.
+       */
       p_rcb->p_rmsg->offset += p_rcb->p_rmsg->len;
       req_continue = true;
     } else if (p_rcb->p_rmsg == NULL) {
@@ -522,9 +521,9 @@ static uint8_t avrc_proc_far_msg(uint8_t handle, uint8_t label, uint8_t cr,
     } else {
       /* get size of buffer holding assembled message */
       /*
-          * NOTE: The buffer is allocated above at the beginning of the
-          * reassembly, and is always of size BT_DEFAULT_BUFFER_SIZE.
-          */
+       * NOTE: The buffer is allocated above at the beginning of the
+       * reassembly, and is always of size BT_DEFAULT_BUFFER_SIZE.
+       */
       uint16_t buf_len = BT_DEFAULT_BUFFER_SIZE - sizeof(BT_HDR);
       /* adjust offset and len of fragment for header byte */
       p_pkt->offset += (AVRC_VENDOR_HDR_SIZE + AVRC_MIN_META_HDR_SIZE);
