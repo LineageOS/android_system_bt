@@ -109,7 +109,7 @@ do
   binary="/data/nativetest/${name}/${name}"
 
   push_command=( "${adb[@]}" push {"${ANDROID_PRODUCT_OUT}",}"${binary}" )
-  test_command=( "${adb[@]}" shell "${binary}" )
+  test_command=( "${adb[@]}" shell "LD_LIBRARY_PATH=/system/lib/hw:$LD_LIBRARY_PATH ${binary}" )
   if [ "${name}" != "${spec}" ]; then
     filter="${spec#*.}"
     test_command+=( "--gtest_filter=${filter}" )
