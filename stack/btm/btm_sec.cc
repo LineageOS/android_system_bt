@@ -1239,8 +1239,9 @@ tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr,
   tBTM_STATUS rc = 0;
 
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
-  if (!p_dev_rec || (transport == BT_TRANSPORT_BR_EDR &&
-                     p_dev_rec->hci_handle == BTM_SEC_INVALID_HANDLE) ||
+  if (!p_dev_rec ||
+      (transport == BT_TRANSPORT_BR_EDR &&
+       p_dev_rec->hci_handle == BTM_SEC_INVALID_HANDLE) ||
       (transport == BT_TRANSPORT_LE &&
        p_dev_rec->ble_hci_handle == BTM_SEC_INVALID_HANDLE)) {
     /* Connection should be up and runnning */
@@ -2140,11 +2141,12 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
    * The layer above L2CAP needs to carry out the security requirement after
    * L2CAP connect
    * response is received */
-  if (is_originator && ((btm_cb.security_mode == BTM_SEC_MODE_UNDEFINED ||
-                         btm_cb.security_mode == BTM_SEC_MODE_NONE ||
-                         btm_cb.security_mode == BTM_SEC_MODE_SERVICE ||
-                         btm_cb.security_mode == BTM_SEC_MODE_LINK) ||
-                        !BTM_SEC_IS_SM4(p_dev_rec->sm4)) &&
+  if (is_originator &&
+      ((btm_cb.security_mode == BTM_SEC_MODE_UNDEFINED ||
+        btm_cb.security_mode == BTM_SEC_MODE_NONE ||
+        btm_cb.security_mode == BTM_SEC_MODE_SERVICE ||
+        btm_cb.security_mode == BTM_SEC_MODE_LINK) ||
+       !BTM_SEC_IS_SM4(p_dev_rec->sm4)) &&
       (psm >= 0x1001)) {
     BTM_TRACE_EVENT(
         "dynamic PSM:0x%x in legacy mode - postponed for upper layer", psm);
@@ -2767,9 +2769,8 @@ static tBTM_STATUS btm_sec_dd_create_conn(tBTM_SEC_DEV_REC* p_dev_rec) {
   }
 
   /* Make sure an L2cap link control block is available */
-  if (!p_lcb &&
-      (p_lcb = l2cu_allocate_lcb(p_dev_rec->bd_addr, true,
-                                 BT_TRANSPORT_BR_EDR)) == NULL) {
+  if (!p_lcb && (p_lcb = l2cu_allocate_lcb(p_dev_rec->bd_addr, true,
+                                           BT_TRANSPORT_BR_EDR)) == NULL) {
     LOG(WARNING) << "Security Manager: failed allocate LCB "
                  << p_dev_rec->bd_addr;
 
@@ -4882,7 +4883,8 @@ void btm_sec_pin_code_request(const RawAddress& p_bda) {
   /* If pairing disabled OR (no PIN callback and not bonding) */
   /* OR we could not allocate entry in the database reject pairing request */
   else if (
-      p_cb->pairing_disabled || (p_cb->api.p_pin_callback == NULL)
+      p_cb->pairing_disabled ||
+      (p_cb->api.p_pin_callback == NULL)
 
       /* OR Microsoft keyboard can for some reason try to establish connection
        */

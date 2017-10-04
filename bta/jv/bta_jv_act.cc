@@ -1195,8 +1195,9 @@ void bta_jv_l2cap_start_server(tBTA_JV_MSG* p_data) {
 
   sec_id = bta_jv_alloc_sec_id();
   /* PSM checking is not required for LE COC */
-  if (0 == sec_id || ((ls->type == BTA_JV_CONN_TYPE_L2CAP) &&
-                      (false == bta_jv_check_psm(ls->local_psm))) ||
+  if (0 == sec_id ||
+      ((ls->type == BTA_JV_CONN_TYPE_L2CAP) &&
+       (false == bta_jv_check_psm(ls->local_psm))) ||
       (handle = GAP_ConnOpen("JV L2CAP", sec_id, 1, nullptr, ls->local_psm,
                              &cfg, ertm_info, ls->sec_mask, chan_mode_mask,
                              bta_jv_l2cap_server_cback, ls->type)) ==
