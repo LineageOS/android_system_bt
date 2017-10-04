@@ -591,8 +591,9 @@ void gatt_process_notification(tGATT_TCB& tcb, uint8_t op_code, uint16_t len,
   tGATT_REG* p_reg;
   uint16_t conn_id;
   tGATT_STATUS encrypt_status;
-  uint8_t *p = p_data, i,
-          event = (op_code == GATT_HANDLE_VALUE_NOTIF)
+  uint8_t* p = p_data;
+  uint8_t i;
+  uint8_t event = (op_code == GATT_HANDLE_VALUE_NOTIF)
                       ? GATTC_OPTYPE_NOTIFICATION
                       : GATTC_OPTYPE_INDICATION;
 
