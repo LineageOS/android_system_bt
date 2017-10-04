@@ -1043,7 +1043,7 @@ uint16_t AVDT_DisconnectReq(const RawAddress& bd_addr,
   uint16_t result = AVDT_SUCCESS;
   tAVDT_CCB_EVT evt;
 
-  AVDT_TRACE_DEBUG("%s", __func__);
+  AVDT_TRACE_WARNING("%s: address=%s", __func__, bd_addr.ToString().c_str());
 
   /* find channel control block for this bd addr; if none, error */
   p_ccb = avdt_ccb_by_bd(bd_addr);
@@ -1057,7 +1057,8 @@ uint16_t AVDT_DisconnectReq(const RawAddress& bd_addr,
     avdt_ccb_event(p_ccb, AVDT_CCB_API_DISCONNECT_REQ_EVT, &evt);
   }
 
-  AVDT_TRACE_DEBUG("%s: result=%d", __func__, result);
+  AVDT_TRACE_DEBUG("%s: address=%s result=%d", __func__,
+                   bd_addr.ToString().c_str(), result);
 
   return result;
 }
