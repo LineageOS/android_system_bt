@@ -720,3 +720,22 @@ void LogMsg(uint32_t trace_set_mask, const char* fmt_str, ...);
 #ifdef __cplusplus
 }
 #endif
+
+#ifdef __cplusplus
+
+#include <iomanip>
+#include <sstream>
+#include <type_traits>
+
+/* Prints intergral parameter x as hex string, with '0' fill */
+template <typename T>
+std::string loghex(T x) {
+  static_assert(std::is_integral<T>::value,
+                "loghex parameter must be integral.");
+  std::stringstream tmp;
+  tmp << std::showbase << std::internal << std::hex << std::setfill('0')
+      << std::setw(sizeof(T) / 4 + 2) << x;
+  return tmp.str();
+}
+
+#endif
