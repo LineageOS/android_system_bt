@@ -30,6 +30,7 @@
 #include "osi/include/list.h"
 
 #include <base/callback_forward.h>
+#include <list>
 #include <vector>
 
 using std::vector;
@@ -47,7 +48,7 @@ using std::vector;
 /* GATT ID */
 typedef struct {
   bluetooth::Uuid uuid; /* uuid of the attribute */
-  uint8_t inst_id; /* instance ID */
+  uint8_t inst_id;      /* instance ID */
 } __attribute__((packed)) tBTA_GATT_ID;
 
 /* Client callback function events */
@@ -78,7 +79,7 @@ typedef struct {
 } tBTA_GATT_CHAR_PRES;
 
 /* Characteristic Aggregate Format attribute value
-*/
+ */
 #define BTA_GATT_AGGR_HANDLE_NUM_MAX 10
 typedef struct {
   uint8_t num_handle;
@@ -282,7 +283,7 @@ typedef uint8_t tBTA_GATTS_EVT;
 #endif
 
 /***********************  NV callback Data Definitions   **********************
-*/
+ */
 typedef struct {
   bluetooth::Uuid app_uuid128;
   bluetooth::Uuid svc_uuid;
@@ -363,9 +364,9 @@ typedef union {
   tBTA_GATTS_SRVC_OPER srvc_oper;
   tGATT_STATUS status; /* BTA_GATTS_LISTEN_EVT */
   tBTA_GATTS_REQ req_data;
-  tBTA_GATTS_CONN conn;       /* BTA_GATTS_CONN_EVT */
-  tBTA_GATTS_CONGEST congest; /* BTA_GATTS_CONGEST_EVT callback data */
-  tBTA_GATTS_CONF confirm;    /* BTA_GATTS_CONF_EVT callback data */
+  tBTA_GATTS_CONN conn;             /* BTA_GATTS_CONN_EVT */
+  tBTA_GATTS_CONGEST congest;       /* BTA_GATTS_CONGEST_EVT callback data */
+  tBTA_GATTS_CONF confirm;          /* BTA_GATTS_CONF_EVT callback data */
   tBTA_GATTS_PHY_UPDATE phy_update; /* BTA_GATTS_PHY_UPDATE_EVT callback data */
   tBTA_GATTS_CONN_UPDATE
       conn_update; /* BTA_GATTS_CONN_UPDATE_EVT callback data */
@@ -377,37 +378,40 @@ typedef void(tBTA_GATTS_ENB_CBACK)(tGATT_STATUS status);
 /* Server callback function */
 typedef void(tBTA_GATTS_CBACK)(tBTA_GATTS_EVT event, tBTA_GATTS* p_data);
 
+struct tBTA_GATTC_CHARACTERISTIC;
+struct tBTA_GATTC_DESCRIPTOR;
+struct tBTA_GATTC_INCLUDED_SVC;
+
 typedef struct {
   bluetooth::Uuid uuid;
   bool is_primary;
   uint16_t handle;
   uint16_t s_handle;
   uint16_t e_handle;
-  list_t* characteristics; /* list of tBTA_GATTC_CHARACTERISTIC */
-  list_t* included_svc;    /* list of tBTA_GATTC_INCLUDED_SVC */
+  std::list<tBTA_GATTC_CHARACTERISTIC> characteristics;
+  std::list<tBTA_GATTC_INCLUDED_SVC> included_svc;
 } __attribute__((packed, aligned(alignof(bluetooth::Uuid)))) tBTA_GATTC_SERVICE;
 
-typedef struct {
+struct tBTA_GATTC_CHARACTERISTIC {
   bluetooth::Uuid uuid;
   uint16_t handle;
   tGATT_CHAR_PROP properties;
   tBTA_GATTC_SERVICE* service; /* owning service*/
-  list_t* descriptors;         /* list of tBTA_GATTC_DESCRIPTOR */
-} __attribute__((packed, aligned(alignof(bluetooth::Uuid))))
-tBTA_GATTC_CHARACTERISTIC;
+  std::list<tBTA_GATTC_DESCRIPTOR> descriptors;
+} __attribute__((packed, aligned(alignof(bluetooth::Uuid))));
 
-typedef struct {
+struct tBTA_GATTC_DESCRIPTOR {
   bluetooth::Uuid uuid;
   uint16_t handle;
   tBTA_GATTC_CHARACTERISTIC* characteristic; /* owning characteristic */
-} __attribute__((packed)) tBTA_GATTC_DESCRIPTOR;
+} __attribute__((packed));
 
-typedef struct {
+struct tBTA_GATTC_INCLUDED_SVC {
   bluetooth::Uuid uuid;
   uint16_t handle;
   tBTA_GATTC_SERVICE* owning_service; /* owning service*/
   tBTA_GATTC_SERVICE* included_service;
-} __attribute__((packed)) tBTA_GATTC_INCLUDED_SVC;
+} __attribute__((packed));
 
 /*****************************************************************************
  *  External Function Declarations
@@ -540,10 +544,11 @@ extern void BTA_GATTC_DiscoverServiceByUuid(uint16_t conn_id,
  *
  * Parameters       conn_id: connection ID which identify the server.
  *
- * Returns          returns list_t of tBTA_GATTC_SERVICE or NULL.
+ * Returns          returns list of tBTA_GATTC_SERVICE or NULL.
  *
  ******************************************************************************/
-extern const list_t* BTA_GATTC_GetServices(uint16_t conn_id);
+extern const std::list<tBTA_GATTC_SERVICE>* BTA_GATTC_GetServices(
+    uint16_t conn_id);
 
 /*******************************************************************************
  *

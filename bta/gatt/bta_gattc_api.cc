@@ -266,10 +266,10 @@ void BTA_GATTC_DiscoverServiceByUuid(uint16_t conn_id,
  *
  * Parameters       conn_id: connection ID which identify the server.
  *
- * Returns          returns list_t of tBTA_GATTC_SERVICE or NULL.
+ * Returns          returns list of tBTA_GATTC_SERVICE or NULL.
  *
  ******************************************************************************/
-const list_t* BTA_GATTC_GetServices(uint16_t conn_id) {
+const std::list<tBTA_GATTC_SERVICE>* BTA_GATTC_GetServices(uint16_t conn_id) {
   return bta_gattc_get_services(conn_id);
 }
 
