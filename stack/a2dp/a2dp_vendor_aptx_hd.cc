@@ -222,10 +222,10 @@ static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityAptxHd(
 
   /* verify that each parameter is in range */
 
-  LOG_DEBUG(LOG_TAG, "%s: FREQ peer: 0x%x, capability 0x%x", __func__,
-            cfg_cie.sampleRate, p_cap->sampleRate);
-  LOG_DEBUG(LOG_TAG, "%s: CH_MODE peer: 0x%x, capability 0x%x", __func__,
-            cfg_cie.channelMode, p_cap->channelMode);
+  LOG_VERBOSE(LOG_TAG, "%s: FREQ peer: 0x%x, capability 0x%x", __func__,
+              cfg_cie.sampleRate, p_cap->sampleRate);
+  LOG_VERBOSE(LOG_TAG, "%s: CH_MODE peer: 0x%x, capability 0x%x", __func__,
+              cfg_cie.channelMode, p_cap->channelMode);
 
   /* sampling frequency */
   if ((cfg_cie.sampleRate & p_cap->sampleRate) == 0) return A2DP_NS_SAMP_FREQ;
@@ -352,7 +352,7 @@ bool A2DP_VendorDumpCodecInfoAptxHd(const uint8_t* p_codec_info) {
   tA2DP_STATUS a2dp_status;
   tA2DP_APTX_HD_CIE aptx_hd_cie;
 
-  LOG_DEBUG(LOG_TAG, "%s", __func__);
+  LOG_VERBOSE(LOG_TAG, "%s", __func__);
 
   a2dp_status = A2DP_ParseInfoAptxHd(&aptx_hd_cie, p_codec_info, true);
   if (a2dp_status != A2DP_SUCCESS) {
@@ -361,20 +361,20 @@ bool A2DP_VendorDumpCodecInfoAptxHd(const uint8_t* p_codec_info) {
     return false;
   }
 
-  LOG_DEBUG(LOG_TAG, "\tsamp_freq: 0x%x", aptx_hd_cie.sampleRate);
+  LOG_VERBOSE(LOG_TAG, "\tsamp_freq: 0x%x", aptx_hd_cie.sampleRate);
   if (aptx_hd_cie.sampleRate & A2DP_APTX_HD_SAMPLERATE_44100) {
-    LOG_DEBUG(LOG_TAG, "\tsamp_freq: (44100)");
+    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (44100)");
   }
   if (aptx_hd_cie.sampleRate & A2DP_APTX_HD_SAMPLERATE_48000) {
-    LOG_DEBUG(LOG_TAG, "\tsamp_freq: (48000)");
+    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (48000)");
   }
 
-  LOG_DEBUG(LOG_TAG, "\tch_mode: 0x%x", aptx_hd_cie.channelMode);
+  LOG_VERBOSE(LOG_TAG, "\tch_mode: 0x%x", aptx_hd_cie.channelMode);
   if (aptx_hd_cie.channelMode & A2DP_APTX_HD_CHANNELS_MONO) {
-    LOG_DEBUG(LOG_TAG, "\tch_mode: (Mono)");
+    LOG_VERBOSE(LOG_TAG, "\tch_mode: (Mono)");
   }
   if (aptx_hd_cie.channelMode & A2DP_APTX_HD_CHANNELS_STEREO) {
-    LOG_DEBUG(LOG_TAG, "\tch_mode: (Stereo)");
+    LOG_VERBOSE(LOG_TAG, "\tch_mode: (Stereo)");
   }
 
   return true;

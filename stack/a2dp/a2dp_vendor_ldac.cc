@@ -230,10 +230,10 @@ static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityLdac(
 
   /* verify that each parameter is in range */
 
-  LOG_DEBUG(LOG_TAG, "%s: FREQ peer: 0x%x, capability 0x%x", __func__,
-            cfg_cie.sampleRate, p_cap->sampleRate);
-  LOG_DEBUG(LOG_TAG, "%s: CH_MODE peer: 0x%x, capability 0x%x", __func__,
-            cfg_cie.channelMode, p_cap->channelMode);
+  LOG_VERBOSE(LOG_TAG, "%s: FREQ peer: 0x%x, capability 0x%x", __func__,
+              cfg_cie.sampleRate, p_cap->sampleRate);
+  LOG_VERBOSE(LOG_TAG, "%s: CH_MODE peer: 0x%x, capability 0x%x", __func__,
+              cfg_cie.channelMode, p_cap->channelMode);
 
   /* sampling frequency */
   if ((cfg_cie.sampleRate & p_cap->sampleRate) == 0) return A2DP_NS_SAMP_FREQ;
@@ -402,7 +402,7 @@ bool A2DP_VendorDumpCodecInfoLdac(const uint8_t* p_codec_info) {
   tA2DP_STATUS a2dp_status;
   tA2DP_LDAC_CIE ldac_cie;
 
-  LOG_DEBUG(LOG_TAG, "%s", __func__);
+  LOG_VERBOSE(LOG_TAG, "%s", __func__);
 
   a2dp_status = A2DP_ParseInfoLdac(&ldac_cie, p_codec_info, true);
   if (a2dp_status != A2DP_SUCCESS) {
@@ -410,35 +410,35 @@ bool A2DP_VendorDumpCodecInfoLdac(const uint8_t* p_codec_info) {
     return false;
   }
 
-  LOG_DEBUG(LOG_TAG, "\tsamp_freq: 0x%x", ldac_cie.sampleRate);
+  LOG_VERBOSE(LOG_TAG, "\tsamp_freq: 0x%x", ldac_cie.sampleRate);
   if (ldac_cie.sampleRate & A2DP_LDAC_SAMPLING_FREQ_44100) {
-    LOG_DEBUG(LOG_TAG, "\tsamp_freq: (44100)");
+    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (44100)");
   }
   if (ldac_cie.sampleRate & A2DP_LDAC_SAMPLING_FREQ_48000) {
-    LOG_DEBUG(LOG_TAG, "\tsamp_freq: (48000)");
+    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (48000)");
   }
   if (ldac_cie.sampleRate & A2DP_LDAC_SAMPLING_FREQ_88200) {
-    LOG_DEBUG(LOG_TAG, "\tsamp_freq: (88200)");
+    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (88200)");
   }
   if (ldac_cie.sampleRate & A2DP_LDAC_SAMPLING_FREQ_96000) {
-    LOG_DEBUG(LOG_TAG, "\tsamp_freq: (96000)");
+    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (96000)");
   }
   if (ldac_cie.sampleRate & A2DP_LDAC_SAMPLING_FREQ_176400) {
-    LOG_DEBUG(LOG_TAG, "\tsamp_freq: (176400)");
+    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (176400)");
   }
   if (ldac_cie.sampleRate & A2DP_LDAC_SAMPLING_FREQ_192000) {
-    LOG_DEBUG(LOG_TAG, "\tsamp_freq: (192000)");
+    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (192000)");
   }
 
-  LOG_DEBUG(LOG_TAG, "\tch_mode: 0x%x", ldac_cie.channelMode);
+  LOG_VERBOSE(LOG_TAG, "\tch_mode: 0x%x", ldac_cie.channelMode);
   if (ldac_cie.channelMode & A2DP_LDAC_CHANNEL_MODE_MONO) {
-    LOG_DEBUG(LOG_TAG, "\tch_mode: (Mono)");
+    LOG_VERBOSE(LOG_TAG, "\tch_mode: (Mono)");
   }
   if (ldac_cie.channelMode & A2DP_LDAC_CHANNEL_MODE_DUAL) {
-    LOG_DEBUG(LOG_TAG, "\tch_mode: (Dual)");
+    LOG_VERBOSE(LOG_TAG, "\tch_mode: (Dual)");
   }
   if (ldac_cie.channelMode & A2DP_LDAC_CHANNEL_MODE_STEREO) {
-    LOG_DEBUG(LOG_TAG, "\tch_mode: (Stereo)");
+    LOG_VERBOSE(LOG_TAG, "\tch_mode: (Stereo)");
   }
 
   return true;
