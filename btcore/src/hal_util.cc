@@ -34,7 +34,7 @@
 
 // TODO(armansito): It might be better to pass the library name in a more
 // generic manner as opposed to hard-coding it here.
-static const char kBluetoothLibraryName[] = "libbluetooth.default.so";
+static const char kBluetoothLibraryName[] = "bluetooth.default.so";
 
 int hal_util_load_bt_library(const struct hw_module_t** module) {
   const char* id = BT_STACK_MODULE_ID;
