@@ -33,7 +33,8 @@
 #include "osi/include/log.h"
 
 void btif_a2dp_on_idle(void) {
-  APPL_TRACE_EVENT("## ON A2DP IDLE ## peer_sep = %d", btif_av_get_peer_sep());
+  APPL_TRACE_WARNING("## ON A2DP IDLE ## peer_sep = %d",
+                     btif_av_get_peer_sep());
   if (btif_av_get_peer_sep() == AVDT_TSEP_SNK) {
     btif_a2dp_source_on_idle();
   } else if (btif_av_get_peer_sep() == AVDT_TSEP_SRC) {
@@ -44,13 +45,18 @@ void btif_a2dp_on_idle(void) {
 bool btif_a2dp_on_started(tBTA_AV_START* p_av_start, bool pending_start) {
   bool ack = false;
 
-  APPL_TRACE_EVENT("## ON A2DP STARTED ##");
+  APPL_TRACE_WARNING("## ON A2DP STARTED ##");
 
   if (p_av_start == NULL) {
     /* ack back a local start request */
     btif_a2dp_command_ack(A2DP_CTRL_ACK_SUCCESS);
     return true;
   }
+
+  APPL_TRACE_WARNING(
+      "%s: pending_start = %d status = %d suspending = %d initiator = %d",
+      __func__, pending_start, p_av_start->status, p_av_start->suspending,
+      p_av_start->initiator);
 
   if (p_av_start->status == BTA_AV_SUCCESS) {
     if (!p_av_start->suspending) {
@@ -78,7 +84,7 @@ bool btif_a2dp_on_started(tBTA_AV_START* p_av_start, bool pending_start) {
 }
 
 void btif_a2dp_on_stopped(tBTA_AV_SUSPEND* p_av_suspend) {
-  APPL_TRACE_EVENT("## ON A2DP STOPPED ##");
+  APPL_TRACE_WARNING("## ON A2DP STOPPED ##");
 
   if (btif_av_get_peer_sep() == AVDT_TSEP_SRC) {
     btif_a2dp_sink_on_stopped(p_av_suspend);
@@ -89,7 +95,7 @@ void btif_a2dp_on_stopped(tBTA_AV_SUSPEND* p_av_suspend) {
 }
 
 void btif_a2dp_on_suspended(tBTA_AV_SUSPEND* p_av_suspend) {
-  APPL_TRACE_EVENT("## ON A2DP SUSPENDED ##");
+  APPL_TRACE_WARNING("## ON A2DP SUSPENDED ##");
   if (btif_av_get_peer_sep() == AVDT_TSEP_SRC) {
     btif_a2dp_sink_on_suspended(p_av_suspend);
   } else {
