@@ -410,7 +410,7 @@ void mca_ccb_hdl_req(tMCA_CCB *p_ccb, tMCA_CCB_EVT *p_data)
 
     if (((reject_code != MCA_RSP_SUCCESS) && (evt_data.hdr.op_code != MCA_OP_SYNC_INFO_IND))
         || send_rsp) {
-        BT_HDR *p_buf = (BT_HDR *)osi_malloc(MCA_CTRL_MTU);
+        BT_HDR *p_buf = (BT_HDR *)osi_malloc(MCA_CTRL_MTU + sizeof(BT_HDR));
         p_buf->offset = L2CAP_MIN_OFFSET;
         p = p_start = (UINT8*)(p_buf + 1) + L2CAP_MIN_OFFSET;
         *p++ = reject_opcode;
