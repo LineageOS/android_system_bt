@@ -203,10 +203,7 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB* p_clcb) {
       p_srcb->mtu = 0;
 
       /* clean up cache */
-      if (p_srcb->p_srvc_cache) {
-        list_free(p_srcb->p_srvc_cache);
-        p_srcb->p_srvc_cache = NULL;
-      }
+      p_srcb->srvc_cache.clear();
     }
 
     osi_free_and_reset((void**)&p_clcb->p_q_cmd);
@@ -300,10 +297,10 @@ tBTA_GATTC_SERV* bta_gattc_srcb_alloc(const RawAddress& bda) {
     p_tcb = p_recycle;
 
   if (p_tcb != NULL) {
-    if (p_tcb->p_srvc_cache != NULL) list_free(p_tcb->p_srvc_cache);
+    p_tcb->srvc_cache.clear();
 
     osi_free_and_reset((void**)&p_tcb->p_srvc_list);
-    memset(p_tcb, 0, sizeof(tBTA_GATTC_SERV));
+    *p_tcb = tBTA_GATTC_SERV();
 
     p_tcb->in_use = true;
     p_tcb->server_bda = bda;

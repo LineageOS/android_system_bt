@@ -39,7 +39,7 @@
  * state machine API request event.  Note that state machine API request
  * events are at the beginning of the event list starting at zero, thus
  * allowing for this table.
-*/
+ */
 const uint8_t avdt_scb_cback_evt[] = {
     0,                     /* API_REMOVE_EVT (no event) */
     AVDT_WRITE_CFM_EVT,    /* API_WRITE_REQ_EVT */

@@ -811,8 +811,9 @@ uint32_t gatt_add_sdp_record(const Uuid& uuid, uint16_t start_hdl,
  *
  ******************************************************************************/
 void gatt_set_err_rsp(bool enable, uint8_t req_op_code, uint8_t err_status) {
-  VLOG(1) << __func__ << StringPrintf(" enable=%d op_code=%d, err_status=%d",
-                                      enable, req_op_code, err_status);
+  VLOG(1) << __func__
+          << StringPrintf(" enable=%d op_code=%d, err_status=%d", enable,
+                          req_op_code, err_status);
   gatt_cb.enable_err_rsp = enable;
   gatt_cb.req_op_code = req_op_code;
   gatt_cb.err_status = err_status;
@@ -1183,8 +1184,9 @@ void gatt_end_operation(tGATT_CLCB* p_clcb, tGATT_STATUS status, void* p_data) {
   uint16_t conn_id;
   uint8_t operation;
 
-  VLOG(1) << __func__ << StringPrintf(" status=%d op=%d subtype=%d", status,
-                                      p_clcb->operation, p_clcb->op_subtype);
+  VLOG(1) << __func__
+          << StringPrintf(" status=%d op=%d subtype=%d", status,
+                          p_clcb->operation, p_clcb->op_subtype);
   memset(&cb_data.att_value, 0, sizeof(tGATT_VALUE));
 
   if (p_cmpl_cb != NULL && p_clcb->operation != 0) {

@@ -1473,7 +1473,9 @@ void bta_av_sig_chg(tBTA_AV_DATA* p_data) {
         if (((mask & p_lcb->conn_msk) || bta_av_cb.conn_lcb) &&
             p_cb->p_scb[xx] &&
             p_cb->p_scb[xx]->peer_addr == p_data->str_msg.bd_addr) {
-          APPL_TRACE_DEBUG("%s: Sending AVDT_DISCONNECT_EVT", __func__);
+          APPL_TRACE_WARNING("%s: Sending AVDT_DISCONNECT_EVT peer_addr=%s",
+                             __func__,
+                             p_cb->p_scb[xx]->peer_addr.ToString().c_str());
           bta_av_ssm_execute(p_cb->p_scb[xx], BTA_AV_AVDT_DISCONNECT_EVT, NULL);
         }
       }
