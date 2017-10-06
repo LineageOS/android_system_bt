@@ -358,11 +358,11 @@ static int cfg2prop(const RawAddress* remote_bd_addr, bt_property_t* prop) {
         ret = btif_config_get_int(bdstr, BTIF_STORAGE_PATH_REMOTE_VER_MFCT,
                                   &info->manufacturer);
 
-        if (ret == true)
+        if (ret)
           ret = btif_config_get_int(bdstr, BTIF_STORAGE_PATH_REMOTE_VER_VER,
                                     &info->version);
 
-        if (ret == true)
+        if (ret)
           ret = btif_config_get_int(bdstr, BTIF_STORAGE_PATH_REMOTE_VER_SUBVER,
                                     &info->sub_ver);
       }
@@ -556,7 +556,7 @@ bt_status_t btif_storage_get_adapter_property(bt_property_t* property) {
     RawAddress* bd_addr = (RawAddress*)property->val;
     /* Fetch the local BD ADDR */
     const controller_t* controller = controller_get_interface();
-    if (controller->get_is_ready() == false) {
+    if (!controller->get_is_ready()) {
       LOG_ERROR(LOG_TAG,
                 "%s: Controller not ready! Unable to return Bluetooth Address",
                 __func__);

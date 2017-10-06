@@ -400,7 +400,7 @@ bool bta_hh_hdl_event(BT_HDR* p_msg) {
             * force the index to be IDX_INVALID
             */
           if ((index != BTA_HH_IDX_INVALID) &&
-              (bta_hh_cb.kdev[index].in_use == false)) {
+              (!bta_hh_cb.kdev[index].in_use)) {
             index = BTA_HH_IDX_INVALID;
           }
         }

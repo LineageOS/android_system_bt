@@ -128,7 +128,7 @@ void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
       HAL_CBACK(bt_gatt_callbacks, client->notify_cb, p_data->notify.conn_id,
                 data);
 
-      if (p_data->notify.is_notify == false)
+      if (!p_data->notify.is_notify)
         BTA_GATTC_SendIndConfirm(p_data->notify.conn_id, p_data->notify.handle);
 
       break;

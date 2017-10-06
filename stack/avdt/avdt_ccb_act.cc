@@ -834,7 +834,7 @@ void avdt_ccb_snd_msg(tAVDT_CCB* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
     /* do we have responses to send?  send them */
     else if (!fixed_queue_is_empty(p_ccb->rsp_q)) {
       while ((p_msg = (BT_HDR*)fixed_queue_try_dequeue(p_ccb->rsp_q)) != NULL) {
-        if (avdt_msg_send(p_ccb, p_msg) == true) {
+        if (avdt_msg_send(p_ccb, p_msg)) {
           /* break out if congested */
           break;
         }

@@ -476,7 +476,7 @@ static void gatt_channel_congestion(tGATT_TCB* p_tcb, bool congested) {
   uint16_t conn_id;
 
   /* if uncongested, check to see if there is any more pending data */
-  if (p_tcb != NULL && congested == false) {
+  if (p_tcb != NULL && !congested) {
     gatt_cl_send_next_cmd_inq(*p_tcb);
   }
   /* notifying all applications for the connection up event */
@@ -1085,7 +1085,7 @@ void gatt_init_srv_chg(void) {
         req.client_read_index = i;
         status = (*gatt_cb.cb_info.p_srv_chg_callback)(
             GATTS_SRV_CHG_CMD_READ_CLENT, &req, &rsp);
-        if (status == true) {
+        if (status) {
           memcpy(&srv_chg_clt, &rsp.srv_chg, sizeof(tGATTS_SRV_CHG));
           if (gatt_add_srv_chg_clt(&srv_chg_clt) == NULL) {
             LOG(ERROR) << "Unable to add a service change client";

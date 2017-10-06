@@ -794,8 +794,8 @@ void btm_ble_resolving_list_remove_dev(tBTM_SEC_DEV_REC* p_dev_rec) {
   }
 
   if ((p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) &&
-      btm_ble_brcm_find_resolving_pending_entry(
-          p_dev_rec->bd_addr, BTM_BLE_META_REMOVE_IRK_ENTRY) == false) {
+      !btm_ble_brcm_find_resolving_pending_entry(
+          p_dev_rec->bd_addr, BTM_BLE_META_REMOVE_IRK_ENTRY)) {
     btm_ble_update_resolving_list(p_dev_rec->bd_addr, false);
     btm_ble_remove_resolving_list_entry(p_dev_rec);
   } else {

@@ -547,8 +547,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
       we should set the BTA AG Codec to mSBC. This would trigger a +BCS to mSBC
       at the time
       of SCO connection establishment */
-      if ((btif_conf_hf_force_wbs == true) &&
-          (p_data->val.num & BTA_AG_CODEC_MSBC)) {
+      if ((btif_conf_hf_force_wbs) && (p_data->val.num & BTA_AG_CODEC_MSBC)) {
         BTIF_TRACE_EVENT("%s: btif_hf override-Preferred Codec to MSBC",
                          __func__);
         BTA_AgSetCodec(btif_hf_cb[idx].handle, BTA_AG_CODEC_MSBC);

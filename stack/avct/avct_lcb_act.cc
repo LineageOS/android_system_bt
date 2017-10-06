@@ -235,7 +235,7 @@ void avct_lcb_open_ind(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
   }
 
   /* if no ccbs bound to this lcb, disconnect */
-  if (bind == false) {
+  if (!bind) {
     avct_lcb_event(p_lcb, AVCT_LCB_INT_CLOSE_EVT, p_data);
   }
 }
@@ -419,7 +419,7 @@ void avct_lcb_cong_ind(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
   /* set event */
   event = (p_data->cong) ? AVCT_CONG_IND_EVT : AVCT_UNCONG_IND_EVT;
   p_lcb->cong = p_data->cong;
-  if (p_lcb->cong == false && !fixed_queue_is_empty(p_lcb->tx_q)) {
+  if (!p_lcb->cong && !fixed_queue_is_empty(p_lcb->tx_q)) {
     while (!p_lcb->cong &&
            (p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_lcb->tx_q)) != NULL) {
       if (L2CA_DataWrite(p_lcb->ch_lcid, p_buf) == L2CAP_DW_CONGESTED) {
@@ -528,7 +528,7 @@ void avct_lcb_send_msg(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
       UINT16_TO_BE_STREAM(p, p_data->ul_msg.p_ccb->cc.pid);
     }
 
-    if (p_lcb->cong == true) {
+    if (p_lcb->cong) {
       fixed_queue_enqueue(p_lcb->tx_q, p_buf);
     }
 

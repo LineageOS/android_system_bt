@@ -56,7 +56,7 @@ tBTA_SDP_STATUS BTA_SdpEnable(tBTA_SDP_DM_CBACK* p_cback) {
   tBTA_SDP_STATUS status = BTA_SDP_FAILURE;
 
   APPL_TRACE_API(__func__);
-  if (p_cback && false == bta_sys_is_register(BTA_ID_SDP)) {
+  if (p_cback && !bta_sys_is_register(BTA_ID_SDP)) {
     memset(&bta_sdp_cb, 0, sizeof(tBTA_SDP_CB));
 
     /* register with BTA system manager */

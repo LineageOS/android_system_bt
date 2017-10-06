@@ -180,7 +180,7 @@ void avct_bcb_open_ind(tAVCT_BCB* p_bcb, tAVCT_LCB_EVT* p_data) {
   }
 
   /* if no ccbs bound to this lcb, disconnect */
-  if (bind == false) {
+  if (!bind) {
     avct_bcb_event(p_bcb, AVCT_LCB_INT_CLOSE_EVT, p_data);
     return;
   }
