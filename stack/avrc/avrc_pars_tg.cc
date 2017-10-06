@@ -546,4 +546,4 @@ tAVRC_STS AVRC_ParsCommand(tAVRC_MSG* p_msg, tAVRC_COMMAND* p_result,
   return status;
 }
 
-#endif /* (AVRC_METADATA_INCLUDED == true) */
+#endif /* (AVRC_METADATA_INCLUDED == TRUE) */

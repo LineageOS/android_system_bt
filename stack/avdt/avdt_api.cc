@@ -1006,7 +1006,7 @@ uint16_t AVDT_ConnectReq(const RawAddress& bd_addr, uint8_t sec_mask,
       /* could not allocate channel control block */
       result = AVDT_NO_RESOURCES;
     }
-  } else if (p_ccb->ll_opened == false) {
+  } else if (!p_ccb->ll_opened) {
     AVDT_TRACE_WARNING("AVDT_ConnectReq: CCB LL is in the middle of opening");
 
     /* ccb was already allocated for the incoming signalling. */

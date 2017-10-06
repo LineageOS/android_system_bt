@@ -40,7 +40,7 @@ bool BtAddress::FromString(const std::string& str) {
   std::string tok;
   std::istringstream iss(str);
 
-  if (IsValid(str) == false) return false;
+  if (!IsValid(str)) return false;
 
   address_ = 0;
   for (size_t i = 0; i < kOctets; i++) {

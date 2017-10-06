@@ -565,7 +565,7 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role,
   /* Check if there is any SCO Active on this BD Address */
   is_sco_active = btm_is_sco_active_by_bdaddr(remote_bd_addr);
 
-  if (is_sco_active == true) return (BTM_NO_RESOURCES);
+  if (is_sco_active) return (BTM_NO_RESOURCES);
 #endif
 
   /* Ignore role switch request if the previous request was not completed */

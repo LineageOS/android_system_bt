@@ -145,7 +145,7 @@ int RFCOMM_CreateConnection(uint16_t uuid, uint8_t scn, bool is_server,
     p_port = port_find_port(dlci, bd_addr);
     if (p_port != NULL) {
       /* if existing port is also a client port */
-      if (p_port->is_server == false) {
+      if (!p_port->is_server) {
         RFCOMM_TRACE_ERROR(
             "%s - already opened state:%d, RFC state:%d, MCB state:%d",
             __func__, p_port->state, p_port->rfc.state,
