@@ -280,6 +280,10 @@
 #define BTM_SCO_INCLUDED TRUE /* TRUE includes SCO code */
 #endif
 
+#ifndef DISABLE_WBS
+#define DISABLE_WBS FALSE
+#endif
+
 /*  This is used to work around a controller bug that doesn't like Disconnect
  *  issued while there is a role switch in progress
 */
