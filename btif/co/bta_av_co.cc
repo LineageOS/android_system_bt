@@ -532,8 +532,7 @@ void bta_av_co_audio_setconfig(tBTA_AV_HNDL hndl, const uint8_t* p_codec_info,
   if (num_protect != 0) {
 #if (BTA_AV_CO_CP_SCMS_T == TRUE)
     /* If CP is supported */
-    if ((num_protect != 1) ||
-        (bta_av_co_cp_is_scmst(p_protect_info) == false)) {
+    if ((num_protect != 1) || (!bta_av_co_cp_is_scmst(p_protect_info))) {
       APPL_TRACE_ERROR("%s: wrong CP configuration", __func__);
       status = A2DP_BAD_CP_TYPE;
       category = AVDT_ASC_PROTECT;

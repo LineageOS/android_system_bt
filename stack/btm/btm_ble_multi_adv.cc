@@ -896,7 +896,7 @@ class BleAdvertisingManagerImpl
 
     VLOG(1) << "reneabling advertising";
 
-    if (p_inst->in_use == true) {
+    if (p_inst->in_use) {
       // TODO(jpawlowski): we don't really allow to do directed advertising
       // right now. This should probably be removed, check with Andre.
       if ((p_inst->advertising_event_properties & 0x0C) == 0) {
@@ -997,9 +997,9 @@ void testRecomputeTimeout1() {
 
   manager->RecomputeTimeout(&test1, end);
 
-  CHECK(timeout_triggered == true);
+  CHECK(timeout_triggered);
   timeout_triggered = false;
-  CHECK(test1.enable_status == false);
+  CHECK(!test1.enable_status);
 }
 
 // verify that duration and maxExtAdvEvents are properly adjusted when
@@ -1019,8 +1019,8 @@ void testRecomputeTimeout2() {
 
   manager->RecomputeTimeout(&test1, end);
 
-  CHECK(timeout_triggered == false);
-  CHECK(test1.enable_status == true);
+  CHECK(!timeout_triggered);
+  CHECK(test1.enable_status);
   CHECK(test1.duration == 25);
   CHECK(test1.maxExtAdvEvents == 25);
 }
@@ -1041,7 +1041,7 @@ void testRecomputeTimeout3() {
 
   manager->RecomputeTimeout(&test1, end);
 
-  CHECK(timeout_triggered == true);
+  CHECK(timeout_triggered);
   timeout_triggered = false;
-  CHECK(test1.enable_status == false);
+  CHECK(!test1.enable_status);
 }
