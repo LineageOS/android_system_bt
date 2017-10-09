@@ -830,7 +830,7 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
       alarm_cancel(p_ccb->l2c_ccb_timer);
 
       /* If failure was channel mode try to renegotiate */
-      if (l2c_fcr_renegotiate_chan(p_ccb, p_cfg) == false) {
+      if (!l2c_fcr_renegotiate_chan(p_ccb, p_cfg)) {
         L2CAP_TRACE_API(
             "L2CAP - Calling Config_Rsp_Cb(), CID: 0x%04x, Failure: %d",
             p_ccb->local_cid, p_cfg->result);

@@ -207,7 +207,7 @@ void btif_debug_btsnoop_dump(int fd) {
     rc = btsnoop_compress(ringbuffer, buffer);
   }
 
-  if (rc == false) {
+  if (!rc) {
     dprintf(fd, "%s Log compression failed", __func__);
     goto error;
   }

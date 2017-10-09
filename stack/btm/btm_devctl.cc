@@ -647,7 +647,7 @@ tBTM_STATUS BTM_RegisterForVSEvents(tBTM_VS_EVT_CB* p_cb, bool is_register) {
       free_idx = i;
     } else if (btm_cb.devcb.p_vend_spec_cb[i] == p_cb) {
       /* Found callback in lookup table. If deregistering, clear the entry. */
-      if (is_register == false) {
+      if (!is_register) {
         btm_cb.devcb.p_vend_spec_cb[i] = NULL;
         BTM_TRACE_EVENT("BTM Deregister For VSEvents is successfully");
       }

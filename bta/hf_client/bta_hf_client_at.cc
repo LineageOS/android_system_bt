@@ -170,7 +170,7 @@ static void bta_hf_client_send_at(tBTA_HF_CLIENT_CB* client_cb,
                                   uint16_t buf_len) {
   APPL_TRACE_DEBUG("%s", __func__);
   if ((client_cb->at_cb.current_cmd == BTA_HF_CLIENT_AT_NONE ||
-       client_cb->svc_conn == false) &&
+       !client_cb->svc_conn) &&
       !alarm_is_scheduled(client_cb->at_cb.hold_timer)) {
     uint16_t len;
 
@@ -257,7 +257,7 @@ static void bta_hf_client_handle_ok(tBTA_HF_CLIENT_CB* client_cb) {
       client_cb->at_cb.current_cmd = BTA_HF_CLIENT_AT_NONE;
       return;
     case BTA_HF_CLIENT_AT_CLIP:  // last cmd is post slc seq
-      if (client_cb->send_at_reply == false) {
+      if (!client_cb->send_at_reply) {
         client_cb->send_at_reply = true;
       }
       break;
@@ -296,7 +296,7 @@ static void bta_hf_client_handle_error(tBTA_HF_CLIENT_CB* client_cb,
       bta_hf_client_cback_sco(client_cb, BTA_HF_CLIENT_AUDIO_CLOSE_EVT);
       break;
     case BTA_HF_CLIENT_AT_CLIP:  // last cmd is post slc seq
-      if (client_cb->send_at_reply == false) {
+      if (!client_cb->send_at_reply) {
         client_cb->send_at_reply = true;
       }
       break;
@@ -1587,7 +1587,7 @@ void bta_hf_client_at_parse(tBTA_HF_CLIENT_CB* client_cb, char* buf,
     client_cb->at_cb.offset += space_left;
 
     /* find end of last complete command before proceeding */
-    while (bta_hf_client_check_at_complete(client_cb) == false) {
+    while (!bta_hf_client_check_at_complete(client_cb)) {
       if (client_cb->at_cb.offset == 0) {
         APPL_TRACE_ERROR("HFPClient: AT parser buffer overrun, disconnecting");
 
@@ -1620,7 +1620,7 @@ void bta_hf_client_at_parse(tBTA_HF_CLIENT_CB* client_cb, char* buf,
   client_cb->at_cb.offset += len;
 
   /* If last event is complete, parsing can be started */
-  if (bta_hf_client_check_at_complete(client_cb) == true) {
+  if (bta_hf_client_check_at_complete(client_cb)) {
     bta_hf_client_at_parse_start(client_cb);
     bta_hf_client_at_clear_buf(client_cb);
   }
@@ -1886,7 +1886,7 @@ void bta_hf_client_send_at_btrh(tBTA_HF_CLIENT_CB* client_cb, bool query,
 
   APPL_TRACE_DEBUG("%s", __func__);
 
-  if (query == true) {
+  if (query) {
     at_len = snprintf(buf, sizeof(buf), "AT+BTRH?\r");
   } else {
     at_len = snprintf(buf, sizeof(buf), "AT+BTRH=%u\r", val);

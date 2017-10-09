@@ -576,27 +576,27 @@ bool bta_jv_check_psm(uint16_t psm) {
 
         case TCS_PSM_INTERCOM: /* 5 */
         case TCS_PSM_CORDLESS: /* 7 */
-          if (false == bta_sys_is_register(BTA_ID_CT) &&
-              false == bta_sys_is_register(BTA_ID_CG))
+          if (!bta_sys_is_register(BTA_ID_CT) &&
+              !bta_sys_is_register(BTA_ID_CG))
             ret = true;
           break;
 
         case BT_PSM_BNEP: /* F */
-          if (false == bta_sys_is_register(BTA_ID_PAN)) ret = true;
+          if (!bta_sys_is_register(BTA_ID_PAN)) ret = true;
           break;
 
         case HID_PSM_CONTROL:   /* 0x11 */
         case HID_PSM_INTERRUPT: /* 0x13 */
           // FIX: allow HID Device and HID Host to coexist
-          if (false == bta_sys_is_register(BTA_ID_HD) ||
-              false == bta_sys_is_register(BTA_ID_HH))
+          if (!bta_sys_is_register(BTA_ID_HD) ||
+              !bta_sys_is_register(BTA_ID_HH))
             ret = true;
           break;
 
         case AVCT_PSM: /* 0x17 */
         case AVDT_PSM: /* 0x19 */
-          if ((false == bta_sys_is_register(BTA_ID_AV)) &&
-              (false == bta_sys_is_register(BTA_ID_AVK)))
+          if ((!bta_sys_is_register(BTA_ID_AV)) &&
+              (!bta_sys_is_register(BTA_ID_AVK)))
             ret = true;
           break;
 
@@ -701,7 +701,7 @@ void bta_jv_get_channel_id(tBTA_JV_MSG* p_data) {
       int32_t channel = p_data->alloc_channel.channel;
       uint8_t scn = 0;
       if (channel > 0) {
-        if (BTM_TryAllocateSCN(channel) == false) {
+        if (!BTM_TryAllocateSCN(channel)) {
           APPL_TRACE_ERROR("rfc channel:%d already in use or invalid", channel);
           channel = 0;
         }
@@ -1001,14 +1001,14 @@ void bta_jv_l2cap_connect(tBTA_JV_MSG* p_data) {
 
   memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
 
-  if (cc->has_cfg == true) {
+  if (cc->has_cfg) {
     cfg = cc->cfg;
     if (cfg.fcr_present && cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) {
       chan_mode_mask = GAP_FCR_CHAN_OPT_ERTM;
     }
   }
 
-  if (cc->has_ertm_info == true) {
+  if (cc->has_ertm_info) {
     ertm_info = &(cc->ertm_info);
   }
 
@@ -1169,14 +1169,14 @@ void bta_jv_l2cap_start_server(tBTA_JV_MSG* p_data) {
 
   memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
 
-  if (ls->has_cfg == true) {
+  if (ls->has_cfg) {
     cfg = ls->cfg;
     if (cfg.fcr_present && cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) {
       chan_mode_mask = GAP_FCR_CHAN_OPT_ERTM;
     }
   }
 
-  if (ls->has_ertm_info == true) {
+  if (ls->has_ertm_info) {
     ertm_info = &(ls->ertm_info);
   }
 
@@ -1197,7 +1197,7 @@ void bta_jv_l2cap_start_server(tBTA_JV_MSG* p_data) {
   /* PSM checking is not required for LE COC */
   if (0 == sec_id ||
       ((ls->type == BTA_JV_CONN_TYPE_L2CAP) &&
-       (false == bta_jv_check_psm(ls->local_psm))) ||
+       (!bta_jv_check_psm(ls->local_psm))) ||
       (handle = GAP_ConnOpen("JV L2CAP", sec_id, 1, nullptr, ls->local_psm,
                              &cfg, ertm_info, ls->sec_mask, chan_mode_mask,
                              bta_jv_l2cap_server_cback, ls->type)) ==
@@ -1526,8 +1526,8 @@ void bta_jv_rfcomm_connect(tBTA_JV_MSG* p_data) {
   evt_data.sec_id = sec_id;
   evt_data.status = BTA_JV_SUCCESS;
   if (0 == sec_id ||
-      BTM_SetSecurityLevel(true, "", sec_id, cc->sec_mask, BT_PSM_RFCOMM,
-                           BTM_SEC_PROTO_RFCOMM, cc->remote_scn) == false) {
+      !BTM_SetSecurityLevel(true, "", sec_id, cc->sec_mask, BT_PSM_RFCOMM,
+                            BTM_SEC_PROTO_RFCOMM, cc->remote_scn)) {
     evt_data.status = BTA_JV_FAILURE;
     APPL_TRACE_ERROR(
         "sec_id:%d is zero or BTM_SetSecurityLevel failed, remote_scn:%d",
@@ -1848,9 +1848,9 @@ void bta_jv_rfcomm_start_server(tBTA_JV_MSG* p_data) {
     sec_id = bta_jv_alloc_sec_id();
 
     if (0 == sec_id ||
-        BTM_SetSecurityLevel(false, "JV PORT", sec_id, rs->sec_mask,
-                             BT_PSM_RFCOMM, BTM_SEC_PROTO_RFCOMM,
-                             rs->local_scn) == false) {
+        !BTM_SetSecurityLevel(false, "JV PORT", sec_id, rs->sec_mask,
+                              BT_PSM_RFCOMM, BTM_SEC_PROTO_RFCOMM,
+                              rs->local_scn)) {
       APPL_TRACE_ERROR("bta_jv_rfcomm_start_server, run out of sec_id");
       break;
     }

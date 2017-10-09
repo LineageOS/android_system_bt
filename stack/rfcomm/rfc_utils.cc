@@ -380,8 +380,7 @@ void rfc_inc_credit(tPORT* p_port, uint8_t credit) {
 
     RFCOMM_TRACE_EVENT("rfc_inc_credit:%d", p_port->credit_tx);
 
-    if (p_port->tx.peer_fc == true)
-      PORT_FlowInd(p_port->rfc.p_mcb, p_port->dlci, true);
+    if (p_port->tx.peer_fc) PORT_FlowInd(p_port->rfc.p_mcb, p_port->dlci, true);
   }
 }
 
@@ -426,7 +425,7 @@ void rfc_check_send_cmd(tRFC_MCB* p_mcb, BT_HDR* p_buf) {
   }
 
   /* handle queue if L2CAP not congested */
-  while (p_mcb->l2cap_congested == false) {
+  while (!p_mcb->l2cap_congested) {
     BT_HDR* p = (BT_HDR*)fixed_queue_try_dequeue(p_mcb->cmd_q);
     if (p == NULL) break;
     L2CA_DataWrite(p_mcb->lcid, p);

@@ -1532,7 +1532,7 @@ void btm_event_filter_complete(uint8_t* p) {
 
   /* Only process the inquiry filter; Ignore the connection filter until it
      is used by the upper layers */
-  if (p_inq->inqfilt_active == true) {
+  if (p_inq->inqfilt_active) {
     /* Extract the returned status from the buffer */
     STREAM_TO_UINT8(hci_status, p);
     if (hci_status != HCI_SUCCESS) {
@@ -1804,7 +1804,7 @@ void btm_process_inq_results(uint8_t* p, uint8_t inq_res_mode) {
     else
       p_i->inq_info.results.rssi = BTM_INQ_RES_IGNORE_RSSI;
 
-    if (is_new == true) {
+    if (is_new) {
       /* Save the info */
       p_cur = &p_i->inq_info.results;
       p_cur->page_scan_rep_mode = page_scan_rep_mode;
@@ -2127,8 +2127,7 @@ void btm_process_remote_name(const RawAddress* bda, BD_NAME bdn,
 
   /* If the inquire BDA and remote DBA are the same, then stop the timer and set
    * the active to false */
-  if ((p_inq->remname_active == true) &&
-      (!bda || (*bda == p_inq->remname_bda))) {
+  if ((p_inq->remname_active) && (!bda || (*bda == p_inq->remname_bda))) {
     if (BTM_UseLeLink(p_inq->remname_bda)) {
       if (hci_status == HCI_ERR_UNSPECIFIED)
         btm_ble_cancel_remote_name(p_inq->remname_bda);
