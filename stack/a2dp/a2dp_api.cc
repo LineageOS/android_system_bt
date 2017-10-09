@@ -295,7 +295,7 @@ tA2DP_STATUS A2DP_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
   result = SDP_InitDiscoveryDb(a2dp_cb.find.p_db, p_db->db_len, 1, &uuid_list,
                                p_db->num_attr, p_db->p_attrs);
 
-  if (result == true) {
+  if (result) {
     /* store service_uuid */
     a2dp_cb.find.service_uuid = service_uuid;
     a2dp_cb.find.p_cback = p_cback;
@@ -303,7 +303,7 @@ tA2DP_STATUS A2DP_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
     /* perform service search */
     result = SDP_ServiceSearchAttributeRequest(bd_addr, a2dp_cb.find.p_db,
                                                a2dp_sdp_cback);
-    if (false == result) {
+    if (!result) {
       a2dp_cb.find.service_uuid = 0;
     }
   }

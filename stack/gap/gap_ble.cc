@@ -123,7 +123,7 @@ tGATT_STATUS read_attr_value(uint16_t handle, tGATT_VALUE* p_value,
   for (const tGAP_ATTR& db_attr : gatt_attr) {
     const tGAP_BLE_ATTR_VALUE& attr_value = db_attr.attr_value;
     if (handle == db_attr.handle) {
-      if (db_attr.uuid != GATT_UUID_GAP_DEVICE_NAME && is_long == true)
+      if (db_attr.uuid != GATT_UUID_GAP_DEVICE_NAME && is_long)
         return GATT_NOT_LONG;
 
       switch (db_attr.uuid) {

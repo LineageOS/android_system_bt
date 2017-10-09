@@ -635,7 +635,7 @@ void gatts_process_primary_service_req(tGATT_TCB& tcb, uint8_t op_code,
   // TODO: we assume theh value is UUID, there is no such requirement in spec
   Uuid value = Uuid::kEmpty;
   if (op_code == GATT_REQ_FIND_TYPE_VALUE) {
-    if (gatt_parse_uuid_from_cmd(&value, len, &p_data) == false) {
+    if (!gatt_parse_uuid_from_cmd(&value, len, &p_data)) {
       gatt_send_error_rsp(tcb, GATT_INVALID_PDU, op_code, s_hdl, false);
     }
   }

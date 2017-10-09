@@ -800,7 +800,7 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
 
   if ((btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) &&
       (p_dev_rec->hci_handle == BTM_SEC_INVALID_HANDLE) &&
-      (btm_cb.security_mode_changed == false)) {
+      (!btm_cb.security_mode_changed)) {
     /* This is start of the dedicated bonding if local device is 2.0 */
     btm_cb.pin_code_len = pin_len;
     memcpy(btm_cb.pin_code, p_pin, pin_len);
@@ -2010,7 +2010,7 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
          btm_cb.security_mode == BTM_SEC_MODE_LINK) ||
         (BTM_SM4_KNOWN == p_dev_rec->sm4) ||
         (BTM_SEC_IS_SM4(p_dev_rec->sm4) &&
-         (btm_sec_is_upgrade_possible(p_dev_rec, is_originator) == false))) {
+         (!btm_sec_is_upgrade_possible(p_dev_rec, is_originator)))) {
       /* legacy mode - local is legacy or local is lisbon/peer is legacy
        * or SM4 with no possibility of link key upgrade */
       if (is_originator) {
@@ -2313,7 +2313,7 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
          btm_cb.security_mode == BTM_SEC_MODE_LINK) ||
         (BTM_SM4_KNOWN == p_dev_rec->sm4) ||
         (BTM_SEC_IS_SM4(p_dev_rec->sm4) &&
-         (btm_sec_is_upgrade_possible(p_dev_rec, is_originator) == false))) {
+         (!btm_sec_is_upgrade_possible(p_dev_rec, is_originator)))) {
       /* legacy mode - local is legacy or local is lisbon/peer is legacy
        * or SM4 with no possibility of link key upgrade */
       if (is_originator) {
@@ -3445,8 +3445,7 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, uint8_t* p) {
       }
       /* else BTM_NOT_AUTHORIZED means when the app wants to reject the req
        * right now */
-    } else if ((event == BTM_SP_CFM_REQ_EVT) &&
-               (evt_data.cfm_req.just_works == true)) {
+    } else if ((event == BTM_SP_CFM_REQ_EVT) && (evt_data.cfm_req.just_works)) {
       /* automatically reply with just works if no sp_cback */
       status = BTM_SUCCESS;
     }
