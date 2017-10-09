@@ -131,7 +131,7 @@ uint16_t AVRC_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
   result = SDP_InitDiscoveryDb(p_db->p_db, p_db->db_len, 1, &uuid_list,
                                p_db->num_attr, p_db->p_attrs);
 
-  if (result == true) {
+  if (result) {
     /* store service_uuid and discovery db pointer */
     avrc_cb.p_db = p_db->p_db;
     avrc_cb.service_uuid = service_uuid;

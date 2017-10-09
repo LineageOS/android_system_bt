@@ -854,7 +854,7 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
 
   /* check for auto pair possiblity only if bond was initiated by local device
    */
-  if (pairing_cb.is_local_initiated && (p_pin_req->min_16_digit == false)) {
+  if (pairing_cb.is_local_initiated && !p_pin_req->min_16_digit) {
     if (check_cod(&bd_addr, COD_AV_HEADSETS) ||
         check_cod(&bd_addr, COD_AV_HEADPHONES) ||
         check_cod(&bd_addr, COD_AV_PORTABLE_AUDIO) ||
@@ -1336,7 +1336,7 @@ static void btif_dm_search_devices_evt(uint16_t event, char* p_param) {
        * but instead wait for the cancel_cmpl_evt via the Busy Level
        *
        */
-      if (btif_dm_inquiry_in_progress == false) {
+      if (!btif_dm_inquiry_in_progress) {
         btgatt_filt_param_setup_t adv_filt_param;
         memset(&adv_filt_param, 0, sizeof(btgatt_filt_param_setup_t));
         do_in_bta_thread(
@@ -1625,7 +1625,7 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
       btm_set_bond_type_dev(p_data->link_down.bd_addr, BOND_TYPE_UNKNOWN);
 
 /*special handling for HID devices */
-#if (defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == true))
+#if (defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE))
       btif_hh_remove_device(bd_addr);
 #endif
 #if (defined(BTA_HD_INCLUDED) && (BTA_HD_INCLUDED == TRUE))

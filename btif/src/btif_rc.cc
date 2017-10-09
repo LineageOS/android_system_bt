@@ -88,7 +88,7 @@
 
 #define CHECK_RC_CONNECTED(p_dev)                                          \
   do {                                                                     \
-    if ((p_dev) == NULL || (p_dev)->rc_connected == false) {               \
+    if ((p_dev) == NULL || !(p_dev)->rc_connected) {                       \
       BTIF_TRACE_WARNING("%s: called when RC is not connected", __func__); \
       return BT_STATUS_NOT_READY;                                          \
     }                                                                      \
@@ -96,7 +96,7 @@
 
 #define CHECK_BR_CONNECTED(p_dev)                                          \
   do {                                                                     \
-    if ((p_dev) == NULL || (p_dev)->br_connected == false) {               \
+    if ((p_dev) == NULL || !(p_dev)->br_connected) {                       \
       BTIF_TRACE_WARNING("%s: called when BR is not connected", __func__); \
       return BT_STATUS_NOT_READY;                                          \
     }                                                                      \
@@ -1892,7 +1892,7 @@ static bt_status_t register_notification_rsp(
       continue;
     }
 
-    if (btif_rc_cb.rc_multi_cb[idx].rc_notif[event_id - 1].bNotify == false) {
+    if (!btif_rc_cb.rc_multi_cb[idx].rc_notif[event_id - 1].bNotify) {
       BTIF_TRACE_WARNING(
           "%s: Avrcp Event id is not registered: event_id: %x, handle: 0x%x",
           __func__, event_id, btif_rc_cb.rc_multi_cb[idx].rc_handle);
@@ -5259,7 +5259,7 @@ rc_transaction_t* get_transaction_by_lbl(uint8_t lbl) {
 
   /* Determine if this is a valid label */
   if (lbl < MAX_TRANSACTIONS_PER_SESSION) {
-    if (false == device.transaction[lbl].in_use) {
+    if (!device.transaction[lbl].in_use) {
       transaction = NULL;
     } else {
       transaction = &(device.transaction[lbl]);
@@ -5284,7 +5284,7 @@ static bt_status_t get_transaction(rc_transaction_t** ptransaction) {
 
   // Check for unused transactions
   for (uint8_t i = 0; i < MAX_TRANSACTIONS_PER_SESSION; i++) {
-    if (false == device.transaction[i].in_use) {
+    if (!device.transaction[i].in_use) {
       BTIF_TRACE_DEBUG("%s: Got transaction.label: %d", __func__,
                        device.transaction[i].lbl);
       device.transaction[i].in_use = true;

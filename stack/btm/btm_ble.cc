@@ -2178,7 +2178,7 @@ bool BTM_BleDataSignature(const RawAddress& bd_addr, uint8_t* p_text,
     ret = aes_cipher_msg_auth_code(p_rec->ble.keys.lcsrk, p_buf,
                                    (uint16_t)(len + 4), BTM_CMAC_TLEN_SIZE,
                                    p_mac);
-    if (ret == true) {
+    if (ret) {
       btm_ble_increment_sign_ctr(bd_addr, true);
     }
 
