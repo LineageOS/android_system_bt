@@ -47,7 +47,9 @@ static void bta_dm_pm_btm_cback(const RawAddress& bd_addr,
 static bool bta_dm_pm_park(const RawAddress& peer_addr);
 static bool bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index);
 static bool bta_dm_pm_is_sco_active();
+#if (BTM_SSR_INCLUDED == TRUE)
 static int bta_dm_get_sco_index();
+#endif
 static void bta_dm_pm_hid_check(bool bScoActive);
 static void bta_dm_pm_set_sniff_policy(tBTA_DM_PEER_DEVICE* p_dev,
                                        bool bDisable);
@@ -331,13 +333,8 @@ static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER* p_timer,
 static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
                             uint8_t app_id, const RawAddress& peer_addr) {
   uint8_t i, j;
-  uint8_t* p = NULL;
   tBTA_DM_PEER_DEVICE* p_dev;
   tBTA_DM_PM_REQ pm_req = BTA_DM_PM_NEW_REQ;
-
-#if (BTM_SSR_INCLUDED == TRUE)
-  int index = BTA_DM_PM_SSR0;
-#endif
 
   APPL_TRACE_DEBUG("bta_dm_pm_cback: st(%d), id(%d), app(%d)", status, id,
                    app_id);
@@ -360,6 +357,7 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
 
 #if (BTM_SSR_INCLUDED == TRUE)
   /* set SSR parameters on SYS CONN OPEN */
+  int index = BTA_DM_PM_SSR0;
   if ((BTA_SYS_CONN_OPEN == status) && p_dev &&
       (p_dev->info & BTA_DM_DI_USE_SSR)) {
     index = p_bta_dm_pm_spec[p_bta_dm_pm_cfg[i].spec_idx].ssr;
@@ -448,6 +446,7 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
       ) {
     bta_dm_pm_ssr(peer_addr);
   } else {
+    uint8_t* p = NULL;
     if (((NULL != (p = BTM_ReadLocalFeatures())) &&
          HCI_SNIFF_SUB_RATE_SUPPORTED(p)) &&
         ((NULL != (p = BTM_ReadRemoteFeatures(peer_addr))) &&
@@ -692,25 +691,16 @@ static bool bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
   tBTM_PM_MODE mode = BTM_PM_STS_ACTIVE;
   tBTM_PM_PWR_MD pwr_md;
   tBTM_STATUS status;
-#if (BTM_SSR_INCLUDED == TRUE)
-  uint8_t* p_rem_feat = NULL;
-#endif
 
   BTM_ReadPowerMode(p_peer_dev->peer_bdaddr, &mode);
-  p_rem_feat = BTM_ReadRemoteFeatures(p_peer_dev->peer_bdaddr);
 #if (BTM_SSR_INCLUDED == TRUE)
+  uint8_t* p_rem_feat = BTM_ReadRemoteFeatures(p_peer_dev->peer_bdaddr);
   APPL_TRACE_DEBUG("bta_dm_pm_sniff cur:%d, idx:%d, info:x%x", mode, index,
                    p_peer_dev->info);
   if (mode != BTM_PM_MD_SNIFF ||
       (HCI_SNIFF_SUB_RATE_SUPPORTED(BTM_ReadLocalFeatures()) && p_rem_feat &&
        HCI_SNIFF_SUB_RATE_SUPPORTED(p_rem_feat) &&
-       !(p_peer_dev->info & BTA_DM_DI_USE_SSR)))
-#else
-  APPL_TRACE_DEBUG("bta_dm_pm_sniff cur:%d, idx:%d", mode, index);
-  if (mode != BTM_PM_MD_SNIFF)
-#endif
-  {
-#if (BTM_SSR_INCLUDED == TRUE)
+       !(p_peer_dev->info & BTA_DM_DI_USE_SSR))) {
     /* Dont initiate Sniff if controller has alreay accepted
      * remote sniff params. This avoid sniff loop issue with
      * some agrresive headsets who use sniff latencies more than
@@ -719,6 +709,9 @@ static bool bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
       APPL_TRACE_DEBUG("%s: already in remote initiate sniff", __func__);
       return true;
     }
+#else
+  APPL_TRACE_DEBUG("bta_dm_pm_sniff cur:%d, idx:%d", mode, index);
+  if (mode != BTM_PM_MD_SNIFF) {
 #endif
     /* if the current mode is not sniff, issue the sniff command.
      * If sniff, but SSR is not used in this link, still issue the command */
@@ -1071,6 +1064,7 @@ static bool bta_dm_pm_is_sco_active() {
   return bScoActive;
 }
 
+#if (BTM_SSR_INCLUDED == TRUE)
 /*******************************************************************************
  *
  * Function        bta_dm_get_sco_index
@@ -1090,6 +1084,7 @@ static int bta_dm_get_sco_index() {
   }
   return -1;
 }
+#endif
 
 /*******************************************************************************
  *
