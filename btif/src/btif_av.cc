@@ -811,8 +811,7 @@ static bool btif_av_state_opened_handler(btif_sm_event_t event, void* p_data) {
           __func__, p_av->start.status, p_av->start.suspending,
           p_av->start.initiator, btif_av_cb.flags);
 
-      if ((p_av->start.status == BTA_SUCCESS) &&
-          (p_av->start.suspending == true))
+      if ((p_av->start.status == BTA_SUCCESS) && p_av->start.suspending)
         return true;
 
       /* if remote tries to start a2dp when DUT is a2dp source

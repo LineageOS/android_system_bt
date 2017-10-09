@@ -2090,8 +2090,7 @@ static void bta_dm_discover_device(const RawAddress& remote_bd_addr) {
       ((bta_dm_search_cb.p_btm_inq_info == NULL) ||
        (bta_dm_search_cb.p_btm_inq_info &&
         (!bta_dm_search_cb.p_btm_inq_info->appl_knows_rem_name)))) {
-    if (bta_dm_read_remote_device_name(bta_dm_search_cb.peer_bdaddr,
-                                       transport) == true)
+    if (bta_dm_read_remote_device_name(bta_dm_search_cb.peer_bdaddr, transport))
       return;
 
     /* starting name discovery failed */
@@ -2107,7 +2106,7 @@ static void bta_dm_discover_device(const RawAddress& remote_bd_addr) {
     bta_dm_search_cb.uuid_to_search = bta_dm_search_cb.num_uuid;
     if ((bta_dm_search_cb.p_btm_inq_info != NULL) &&
         bta_dm_search_cb.services != BTA_USER_SERVICE_MASK &&
-        (bta_dm_search_cb.sdp_search == false)) {
+        (!bta_dm_search_cb.sdp_search)) {
       /* check if EIR provides the information of supported services */
       bta_dm_eir_search_services(&bta_dm_search_cb.p_btm_inq_info->results,
                                  &bta_dm_search_cb.services_to_search,

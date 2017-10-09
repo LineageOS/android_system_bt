@@ -435,7 +435,7 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
                              ? BTM_BLE_SCAN_MODE_ACTI
                              : p_inq->scan_type;
 /* assume observe always not using white list */
-#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == true)
+#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
       /* enable resolving list */
       btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_SCAN);
 #endif

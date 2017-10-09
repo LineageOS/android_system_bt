@@ -43,7 +43,7 @@
 #include "osi/include/thread.h"
 #include "utl.h"
 
-#if (defined BTA_AR_INCLUDED) && (BTA_AR_INCLUDED == true)
+#if (defined BTA_AR_INCLUDED) && (BTA_AR_INCLUDED == TRUE)
 #include "bta_ar_api.h"
 #endif
 
@@ -187,7 +187,7 @@ void bta_sys_init(void) {
   /* register for BTM notifications */
   BTM_RegisterForDeviceStatusNotif((tBTM_DEV_STATUS_CB*)&bta_sys_hw_btm_cback);
 
-#if (defined BTA_AR_INCLUDED) && (BTA_AR_INCLUDED == true)
+#if (defined BTA_AR_INCLUDED) && (BTA_AR_INCLUDED == TRUE)
   bta_ar_init();
 #endif
 }

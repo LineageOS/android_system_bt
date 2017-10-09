@@ -1519,4 +1519,4 @@ tAVRC_STS AVRC_BldResponse(uint8_t handle, tAVRC_RESPONSE* p_rsp,
   return status;
 }
 
-#endif /* (AVRC_METADATA_INCLUDED == true)*/
+#endif /* (AVRC_METADATA_INCLUDED == TRUE)*/
