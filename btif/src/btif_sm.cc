@@ -136,8 +136,7 @@ bt_status_t btif_sm_dispatch(btif_sm_handle_t handle, btif_sm_event_t event,
     return BT_STATUS_FAIL;
   }
 
-  if (p_cb->p_handlers[p_cb->state](event, data) == false)
-    return BT_STATUS_UNHANDLED;
+  if (!p_cb->p_handlers[p_cb->state](event, data)) return BT_STATUS_UNHANDLED;
 
   return status;
 }
@@ -167,14 +166,14 @@ bt_status_t btif_sm_change_state(btif_sm_handle_t handle,
   }
 
   /* Send exit event to the current state */
-  if (p_cb->p_handlers[p_cb->state](BTIF_SM_EXIT_EVT, NULL) == false)
+  if (!p_cb->p_handlers[p_cb->state](BTIF_SM_EXIT_EVT, NULL))
     status = BT_STATUS_UNHANDLED;
 
   /* Change to the new state */
   p_cb->state = state;
 
   /* Send enter event to the new state */
-  if (p_cb->p_handlers[p_cb->state](BTIF_SM_ENTER_EVT, NULL) == false)
+  if (!p_cb->p_handlers[p_cb->state](BTIF_SM_ENTER_EVT, NULL))
     status = BT_STATUS_UNHANDLED;
 
   return status;

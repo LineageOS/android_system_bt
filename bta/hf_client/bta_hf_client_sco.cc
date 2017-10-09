@@ -602,7 +602,7 @@ void bta_hf_client_sco_conn_close(tBTA_HF_CLIENT_DATA* p_data) {
   /* call app callback */
   bta_hf_client_cback_sco(client_cb, BTA_HF_CLIENT_AUDIO_CLOSE_EVT);
 
-  if (client_cb->sco_close_rfc == true) {
+  if (client_cb->sco_close_rfc) {
     client_cb->sco_close_rfc = false;
     bta_hf_client_rfc_do_close(p_data);
   }

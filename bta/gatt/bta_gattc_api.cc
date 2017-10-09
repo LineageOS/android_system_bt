@@ -57,7 +57,7 @@ static const tBTA_SYS_REG bta_gattc_reg = {bta_gattc_hdl_event,
  *
  ******************************************************************************/
 void BTA_GATTC_Disable(void) {
-  if (bta_sys_is_register(BTA_ID_GATTC) == false) {
+  if (!bta_sys_is_register(BTA_ID_GATTC)) {
     APPL_TRACE_WARNING("GATTC Module not enabled/already disabled");
     return;
   }
@@ -73,7 +73,7 @@ void BTA_GATTC_Disable(void) {
  */
 void BTA_GATTC_AppRegister(tBTA_GATTC_CBACK* p_client_cb,
                            BtaAppRegisterCallback cb) {
-  if (bta_sys_is_register(BTA_ID_GATTC) == false)
+  if (!bta_sys_is_register(BTA_ID_GATTC))
     bta_sys_register(BTA_ID_GATTC, &bta_gattc_reg);
 
   do_in_bta_thread(FROM_HERE, base::Bind(&bta_gattc_register, Uuid::GetRandom(),

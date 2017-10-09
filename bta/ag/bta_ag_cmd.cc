@@ -321,39 +321,39 @@ static void bta_ag_send_ind(tBTA_AG_SCB* p_scb, uint16_t id, uint16_t value,
   /* Ensure we do not send duplicate indicators if not requested by app */
   /* If it was requested by app, transmit CIEV even if it is duplicate. */
   if (id == BTA_AG_IND_CALL) {
-    if ((value == p_scb->call_ind) && (on_demand == false)) return;
+    if ((value == p_scb->call_ind) && (!on_demand)) return;
 
     p_scb->call_ind = (uint8_t)value;
   }
 
-  if ((id == BTA_AG_IND_CALLSETUP) && (on_demand == false)) {
+  if ((id == BTA_AG_IND_CALLSETUP) && (!on_demand)) {
     if (value == p_scb->callsetup_ind) return;
 
     p_scb->callsetup_ind = (uint8_t)value;
   }
 
-  if ((id == BTA_AG_IND_SERVICE) && (on_demand == false)) {
+  if ((id == BTA_AG_IND_SERVICE) && (!on_demand)) {
     if (value == p_scb->service_ind) return;
 
     p_scb->service_ind = (uint8_t)value;
   }
-  if ((id == BTA_AG_IND_SIGNAL) && (on_demand == false)) {
+  if ((id == BTA_AG_IND_SIGNAL) && (!on_demand)) {
     if (value == p_scb->signal_ind) return;
 
     p_scb->signal_ind = (uint8_t)value;
   }
-  if ((id == BTA_AG_IND_ROAM) && (on_demand == false)) {
+  if ((id == BTA_AG_IND_ROAM) && (!on_demand)) {
     if (value == p_scb->roam_ind) return;
 
     p_scb->roam_ind = (uint8_t)value;
   }
-  if ((id == BTA_AG_IND_BATTCHG) && (on_demand == false)) {
+  if ((id == BTA_AG_IND_BATTCHG) && (!on_demand)) {
     if (value == p_scb->battchg_ind) return;
 
     p_scb->battchg_ind = (uint8_t)value;
   }
 
-  if ((id == BTA_AG_IND_CALLHELD) && (on_demand == false)) {
+  if ((id == BTA_AG_IND_CALLHELD) && (!on_demand)) {
     /* call swap could result in sending callheld=1 multiple times */
     if ((value != 1) && (value == p_scb->callheld_ind)) return;
 
@@ -750,8 +750,7 @@ static void bta_ag_bind_response(tBTA_AG_SCB* p_scb, uint8_t arg_type) {
           p_scb->local_hf_indicators[i].ind_id);
 
       /* Check whether local and peer sides support this indicator */
-      if (p_scb->local_hf_indicators[i].is_supported == true &&
-          peer_index != -1) {
+      if (p_scb->local_hf_indicators[i].is_supported && peer_index != -1) {
         /* In the format of ind, state */
         p += utl_itoa((uint16_t)p_scb->local_hf_indicators[i].ind_id, p);
         *p++ = ',';
@@ -1670,7 +1669,7 @@ void bta_ag_hfp_result(tBTA_AG_SCB* p_scb, tBTA_AG_API_RESULT* p_result) {
         } else {
           APPL_TRACE_DEBUG(
               "%s HF Indicator %d already %s", p_result->data.ind.id,
-              (p_result->data.ind.on_demand == true) ? "Enabled" : "Disabled");
+              (p_result->data.ind.on_demand) ? "Enabled" : "Disabled");
         }
       }
       break;

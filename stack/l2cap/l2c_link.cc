@@ -523,7 +523,7 @@ void l2c_link_timeout(tL2C_LCB* p_lcb) {
 
       p_ccb = pn;
     }
-    if (p_lcb->link_state == LST_CONNECTING && l2cb.is_ble_connecting == true) {
+    if (p_lcb->link_state == LST_CONNECTING && l2cb.is_ble_connecting) {
       L2CA_CancelBleConnectReq(l2cb.ble_connecting_bda);
     }
     /* Release the LCB */

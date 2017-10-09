@@ -240,21 +240,21 @@ static void btsock_l2cap_free_l(l2cap_socket* sock) {
   // lower-level close() should be idempotent... so let's call it and see...
   if (sock->is_le_coc) {
     // Only call if we are non server connections
-    if (sock->handle >= 0 && (sock->server == false)) {
+    if (sock->handle >= 0 && (!sock->server)) {
       BTA_JvL2capClose(sock->handle);
     }
-    if ((sock->channel >= 0) && (sock->server == true)) {
+    if ((sock->channel >= 0) && (sock->server)) {
       BTA_JvFreeChannel(sock->channel, BTA_JV_CONN_TYPE_L2CAP);
     }
   } else {
     // Only call if we are non server connections
-    if ((sock->handle >= 0) && (sock->server == false)) {
+    if ((sock->handle >= 0) && (!sock->server)) {
       if (sock->fixed_chan)
         BTA_JvL2capCloseLE(sock->handle);
       else
         BTA_JvL2capClose(sock->handle);
     }
-    if ((sock->channel >= 0) && (sock->server == true)) {
+    if ((sock->channel >= 0) && (sock->server)) {
       if (sock->fixed_chan)
         BTA_JvFreeChannel(sock->channel, BTA_JV_CONN_TYPE_L2CAP_LE);
       else
@@ -396,7 +396,7 @@ static void on_srv_l2cap_listen_started(tBTA_JV_L2CAP_START* p_start,
   APPL_TRACE_DEBUG("on_srv_l2cap_listen_started() sock->handle =%d id:%d",
                    sock->handle, sock->id);
 
-  if (sock->server_psm_sent == false) {
+  if (!sock->server_psm_sent) {
     if (!send_app_psm_or_chan_l(sock)) {
       // closed
       APPL_TRACE_DEBUG("send_app_psm() failed, close rs->id:%d", sock->id);
@@ -599,7 +599,7 @@ static void on_l2cap_close(tBTA_JV_L2CAP_CLOSE* p_close, uint32_t id) {
                    sock->server);
   // TODO: This does not seem to be called...
   // I'm not sure if this will be called for non-server sockets?
-  if (!sock->fixed_chan && (sock->server == true)) {
+  if (!sock->fixed_chan && (sock->server)) {
     BTA_JvFreeChannel(sock->channel, BTA_JV_CONN_TYPE_L2CAP);
   }
   btsock_l2cap_free_l(sock);

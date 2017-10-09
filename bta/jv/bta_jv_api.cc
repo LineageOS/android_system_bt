@@ -61,7 +61,7 @@ tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK* p_cback) {
   int i;
 
   APPL_TRACE_API("BTA_JvEnable");
-  if (p_cback && false == bta_sys_is_register(BTA_ID_JV)) {
+  if (p_cback && !bta_sys_is_register(BTA_ID_JV)) {
     memset(&bta_jv_cb, 0, sizeof(tBTA_JV_CB));
     /* set handle to invalid value by default */
     for (i = 0; i < BTA_JV_PM_MAX_NUM; i++) {

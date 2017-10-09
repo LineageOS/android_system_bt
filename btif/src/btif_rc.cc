@@ -1242,7 +1242,7 @@ static void send_metamsg_rsp(btif_rc_device_cb_t* p_dev, int index,
       __func__, p_dev->rc_handle, index, label, code,
       dump_rc_pdu(pmetamsg_resp->rsp.pdu));
 
-  if (index >= 0 && p_dev->rc_pdu_info[index].is_rsp_pending == false) {
+  if (index >= 0 && !p_dev->rc_pdu_info[index].is_rsp_pending) {
     BTIF_TRACE_ERROR("%s: is_rsp_pending false, returning", __func__);
     return;
   }
@@ -1467,7 +1467,7 @@ static void btif_rc_upstreams_evt(uint16_t event, tAVRC_COMMAND* pavrc_cmd,
     case AVRC_PDU_INFORM_DISPLAY_CHARSET: {
       tAVRC_RESPONSE avrc_rsp;
       BTIF_TRACE_EVENT("%s: AVRC_PDU_INFORM_DISPLAY_CHARSET", __func__);
-      if (p_dev->rc_connected == true) {
+      if (p_dev->rc_connected) {
         memset(&(avrc_rsp.inform_charset), 0, sizeof(tAVRC_RSP));
         avrc_rsp.inform_charset.opcode =
             opcode_from_pdu(AVRC_PDU_INFORM_DISPLAY_CHARSET);
@@ -1754,7 +1754,7 @@ static void rc_ctrl_procedure_complete(btif_rc_device_cb_t* p_dev) {
     return;
   }
 
-  if (p_dev->rc_procedure_complete == true) {
+  if (p_dev->rc_procedure_complete) {
     return;
   }
   p_dev->rc_procedure_complete = true;
@@ -1981,7 +1981,7 @@ static bt_status_t get_folder_items_list_rsp(RawAddress* bd_addr,
   CHECK_RC_CONNECTED(p_dev);
 
   /* check if rsp to previous cmd was completed */
-  if (p_dev->rc_pdu_info[IDX_GET_FOLDER_ITEMS_RSP].is_rsp_pending == false) {
+  if (!p_dev->rc_pdu_info[IDX_GET_FOLDER_ITEMS_RSP].is_rsp_pending) {
     BTIF_TRACE_WARNING("%s: Not sending response as no PDU was registered",
                        __func__);
     return BT_STATUS_UNHANDLED;
@@ -2192,7 +2192,7 @@ static bt_status_t set_browsed_player_rsp(RawAddress* bd_addr,
                    __func__, rsp_status, avrc_rsp.br_player.status);
 
   /* check if rsp to previous cmd was completed */
-  if (p_dev->rc_pdu_info[IDX_SET_BROWSED_PLAYER_RSP].is_rsp_pending == false) {
+  if (!p_dev->rc_pdu_info[IDX_SET_BROWSED_PLAYER_RSP].is_rsp_pending) {
     BTIF_TRACE_WARNING("%s: Not sending response as no PDU was registered",
                        __func__);
     return BT_STATUS_UNHANDLED;
@@ -3251,7 +3251,7 @@ static void handle_notification_response(tBTA_AV_META_MSG* pmeta_msg,
       p_event = NULL;
     }
     /* Registered for all events, we can request application settings */
-    if (p_event == NULL && p_dev->rc_app_settings.query_started == false) {
+    if (p_event == NULL && !p_dev->rc_app_settings.query_started) {
       /* we need to do this only if remote TG supports
        * player application settings
        */

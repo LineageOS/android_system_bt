@@ -574,7 +574,7 @@ static tBTM_STATUS btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
   if (mode != BTM_PM_MD_ACTIVE && p_cb->state != BTM_PM_MD_ACTIVE)
     p_cb->chg_ind = true; /* needs to wake, then sleep */
 
-  if (p_cb->chg_ind == true) /* needs to wake first */
+  if (p_cb->chg_ind) /* needs to wake first */
     md_res.mode = BTM_PM_MD_ACTIVE;
 #if (BTM_SSR_INCLUDED == TRUE)
   else if (BTM_PM_MD_SNIFF == md_res.mode && p_cb->max_lat) {
@@ -785,7 +785,7 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
     btm_pm_snd_md_req(BTM_PM_SET_ONLY_ID, xx, NULL);
   } else {
     for (zz = 0; zz < MAX_L2CAP_LINKS; zz++) {
-      if (btm_cb.pm_mode_db[zz].chg_ind == true) {
+      if (btm_cb.pm_mode_db[zz].chg_ind) {
 #if (BTM_PM_DEBUG == TRUE)
         BTM_TRACE_DEBUG("btm_pm_proc_mode_change: Sending PM req :%d", zz);
 #endif  // BTM_PM_DEBUG
@@ -928,9 +928,9 @@ bool btm_pm_device_in_scan_state(void) {
  *
  ******************************************************************************/
 tBTM_CONTRL_STATE BTM_PM_ReadControllerState(void) {
-  if (true == btm_pm_device_in_active_or_sniff_mode())
+  if (btm_pm_device_in_active_or_sniff_mode())
     return BTM_CONTRL_ACTIVE;
-  else if (true == btm_pm_device_in_scan_state())
+  else if (btm_pm_device_in_scan_state())
     return BTM_CONTRL_SCAN;
   else
     return BTM_CONTRL_IDLE;
