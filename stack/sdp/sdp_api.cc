@@ -720,7 +720,7 @@ bool SDP_FindAddProtoListsElemInRec(tSDP_DISC_REC* p_rec, uint16_t layer_uuid,
         if (SDP_DISC_ATTR_TYPE(p_sattr->attr_len_type) ==
             DATA_ELE_SEQ_DESC_TYPE) {
           ret = sdp_fill_proto_elem(p_sattr, layer_uuid, p_elem);
-          if (ret == true) break;
+          if (ret) break;
         }
       }
       return ret;
@@ -999,8 +999,7 @@ uint16_t SDP_SetLocalDiRecord(tSDP_DI_RECORD* p_device_info,
   if (p_device_info == NULL) return SDP_ILLEGAL_PARAMETER;
 
   /* if record is to be primary record, get handle to replace old primary */
-  if (p_device_info->primary_record == true &&
-      sdp_cb.server_db.di_primary_handle)
+  if (p_device_info->primary_record && sdp_cb.server_db.di_primary_handle)
     handle = sdp_cb.server_db.di_primary_handle;
   else {
     handle = SDP_CreateRecord();
@@ -1011,7 +1010,7 @@ uint16_t SDP_SetLocalDiRecord(tSDP_DI_RECORD* p_device_info,
 
   /* build the SDP entry */
   /* Add the UUID to the Service Class ID List */
-  if ((SDP_AddServiceClassIdList(handle, 1, &di_uuid)) == false)
+  if (!(SDP_AddServiceClassIdList(handle, 1, &di_uuid)))
     result = SDP_DI_REG_FAILED;
 
   /* mandatory */
@@ -1108,7 +1107,7 @@ uint16_t SDP_SetLocalDiRecord(tSDP_DI_RECORD* p_device_info,
 
   if (result != SDP_SUCCESS)
     SDP_DeleteRecord(handle);
-  else if (p_device_info->primary_record == true)
+  else if (p_device_info->primary_record)
     sdp_cb.server_db.di_primary_handle = handle;
 
   return result;

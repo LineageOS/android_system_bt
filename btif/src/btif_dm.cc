@@ -1027,7 +1027,7 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
   BTIF_TRACE_DEBUG("%s: bond state=%d", __func__, pairing_cb.state);
 
   RawAddress bd_addr = p_auth_cmpl->bd_addr;
-  if ((p_auth_cmpl->success == true) && (p_auth_cmpl->key_present)) {
+  if ((p_auth_cmpl->success) && (p_auth_cmpl->key_present)) {
     if ((p_auth_cmpl->key_type < HCI_LKEY_TYPE_DEBUG_COMB) ||
         (p_auth_cmpl->key_type == HCI_LKEY_TYPE_AUTH_COMB) ||
         (p_auth_cmpl->key_type == HCI_LKEY_TYPE_CHANGED_COMB) ||
@@ -2789,7 +2789,7 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
   /* Clear OOB data */
   memset(&oob_cb, 0, sizeof(oob_cb));
 
-  if ((p_auth_cmpl->success == true) && (p_auth_cmpl->key_present)) {
+  if ((p_auth_cmpl->success) && (p_auth_cmpl->key_present)) {
     /* store keys */
   }
   if (p_auth_cmpl->success) {

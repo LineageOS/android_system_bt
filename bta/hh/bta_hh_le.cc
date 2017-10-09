@@ -1139,7 +1139,7 @@ void bta_hh_security_cmpl(tBTA_HH_DEV_CB* p_cb,
     if (p_cb->app_id != 0 && p_cb->hid_srvc.in_use) {
       APPL_TRACE_DEBUG("%s: discovery has been done for HID service", __func__);
       /* configure protocol mode */
-      if (bta_hh_le_set_protocol_mode(p_cb, p_cb->mode) == false) {
+      if (!bta_hh_le_set_protocol_mode(p_cb, p_cb->mode)) {
         bta_hh_le_open_cmpl(p_cb);
       }
     }
@@ -1166,7 +1166,7 @@ void bta_hh_security_cmpl(tBTA_HH_DEV_CB* p_cb,
  *
  ******************************************************************************/
 void bta_hh_le_notify_enc_cmpl(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_buf) {
-  if (p_cb == NULL || p_cb->security_pending == false || p_buf == NULL ||
+  if (p_cb == NULL || !p_cb->security_pending || p_buf == NULL ||
       p_buf->le_enc_cmpl.client_if != bta_hh_cb.gatt_if) {
     return;
   }
@@ -1477,7 +1477,7 @@ void read_pref_conn_params_cb(uint16_t conn_id, tGATT_STATUS status,
   tBTA_HH_DEV_CB* p_dev_cb = (tBTA_HH_DEV_CB*)data;
 
   if (interop_match_addr(INTEROP_HID_PREF_CONN_SUP_TIMEOUT_3S,
-                         (RawAddress*)&p_dev_cb->addr) == true) {
+                         (RawAddress*)&p_dev_cb->addr)) {
     if (tout < 300) tout = 300;
   }
 

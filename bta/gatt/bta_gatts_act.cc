@@ -178,7 +178,7 @@ void bta_gatts_register(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
   tGATT_STATUS status = GATT_SUCCESS;
   uint8_t i, first_unuse = 0xff;
 
-  if (p_cb->enabled == false) {
+  if (!p_cb->enabled) {
     bta_gatts_enable(p_cb);
   }
 

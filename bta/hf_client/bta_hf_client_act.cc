@@ -303,7 +303,7 @@ void bta_hf_client_rfc_close(tBTA_HF_CLIENT_DATA* p_data) {
   evt.conn.bd_addr = client_cb->peer_addr;
 
   /* if not deregistering reopen server */
-  if (bta_hf_client_cb_arr.deregister == false) {
+  if (!bta_hf_client_cb_arr.deregister) {
     /* Make sure SCO is shutdown */
     bta_hf_client_sco_shutdown(client_cb);
 
