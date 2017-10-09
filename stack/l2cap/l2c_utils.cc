@@ -1835,7 +1835,7 @@ uint8_t l2cu_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
     /* Make sure MTU is at least the minimum */
     if (p_cfg->mtu >= L2CAP_MIN_MTU) {
       /* In basic mode, limit the MTU to our buffer size */
-      if ((p_cfg->fcr_present == false) && (p_cfg->mtu > L2CAP_MTU_SIZE))
+      if ((!p_cfg->fcr_present) && (p_cfg->mtu > L2CAP_MTU_SIZE))
         p_cfg->mtu = L2CAP_MTU_SIZE;
 
       /* Save the accepted value in case of renegotiation */
@@ -2139,9 +2139,9 @@ bool l2cu_create_conn(tL2C_LCB* p_lcb, tBT_TRANSPORT transport,
 
       L2CAP_TRACE_API(
           "l2cu_create_conn - btm_is_sco_active_by_bdaddr() is_sco_active = %s",
-          (is_sco_active == true) ? "true" : "false");
+          (is_sco_active) ? "true" : "false");
 
-      if (is_sco_active == true)
+      if (is_sco_active)
         continue; /* No Master Slave switch not allowed when SCO Active */
 #endif
       /*4_1_TODO check  if btm_cb.devcb.local_features to be used instead */

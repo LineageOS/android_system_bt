@@ -59,7 +59,7 @@ tBTA_MCE_STATUS BTA_MceEnable(tBTA_MCE_DM_CBACK* p_cback) {
 
   APPL_TRACE_API("%", __func__);
 
-  if (p_cback && false == bta_sys_is_register(BTA_ID_MCE)) {
+  if (p_cback && !bta_sys_is_register(BTA_ID_MCE)) {
     memset(&bta_mce_cb, 0, sizeof(tBTA_MCE_CB));
 
     /* register with BTA system manager */

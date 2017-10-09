@@ -580,10 +580,10 @@ static uint8_t avrc_proc_far_msg(uint8_t handle, uint8_t label, uint8_t cr,
       drop_code = 4;
 
   } else if (cr == AVCT_RSP) {
-    if (req_continue == true) {
+    if (req_continue) {
       avrc_cmd.pdu = AVRC_PDU_REQUEST_CONTINUATION_RSP;
       drop_code = 2;
-    } else if (buf_overflow == true) {
+    } else if (buf_overflow) {
       /* Incoming message too big to fit in BT_DEFAULT_BUFFER_SIZE. Send abort
        * to peer  */
       avrc_cmd.pdu = AVRC_PDU_ABORT_CONTINUATION_RSP;
@@ -861,7 +861,7 @@ static void avrc_msg_cback(uint8_t handle, uint8_t label, uint8_t cr,
     drop = true;
   }
 
-  if (drop == false) {
+  if (!drop) {
     msg.hdr.opcode = opcode;
     (*avrc_cb.ccb[handle].p_msg_cback)(handle, label, opcode, &msg);
   } else {
@@ -1216,7 +1216,7 @@ uint16_t AVRC_MsgReq(uint8_t handle, uint8_t label, uint8_t ctype,
   /* AVRCP spec has not defined any control channel commands that needs
    * fragmentation at this level
    * check for fragmentation only on the response */
-  if ((cr == AVCT_RSP) && (chk_frag == true)) {
+  if ((cr == AVCT_RSP) && (chk_frag)) {
     if (p_pkt->len > AVRC_MAX_CTRL_DATA_LEN) {
       int offset_len = MAX(AVCT_MSG_OFFSET, p_pkt->offset);
       BT_HDR* p_pkt_new =

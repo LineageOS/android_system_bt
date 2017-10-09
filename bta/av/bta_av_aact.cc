@@ -348,7 +348,7 @@ static void bta_av_st_rc_timer(tBTA_AV_SCB* p_scb,
   /* for outgoing RC connection as INT/CT */
   if ((p_scb->rc_handle == BTA_AV_RC_HANDLE_NONE) &&
       /* (bta_av_cb.features & BTA_AV_FEAT_RCCT) && */
-      (p_scb->use_rc == true || (p_scb->role & BTA_AV_ROLE_AD_ACP))) {
+      (p_scb->use_rc || (p_scb->role & BTA_AV_ROLE_AD_ACP))) {
     if ((p_scb->wait & BTA_AV_WAIT_ROLE_SW_BITS) == 0) {
       bta_sys_start_timer(p_scb->avrc_ct_timer, BTA_AV_RC_DISC_TIME_VAL,
                           BTA_AV_AVRC_TIMER_EVT, p_scb->hndl);
@@ -382,7 +382,7 @@ static bool bta_av_next_getcap(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   for (i = p_scb->sep_info_idx; i < p_scb->num_seps; i++) {
     /* steam not in use, is a sink, and is the right media type (audio/video) */
-    if ((p_scb->sep_info[i].in_use == false) &&
+    if ((!p_scb->sep_info[i].in_use) &&
         (p_scb->sep_info[i].tsep == sep_requested) &&
         (p_scb->sep_info[i].media_type == p_scb->media_type)) {
       p_scb->sep_info_idx = i;
@@ -975,7 +975,7 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   bta_sys_app_open(BTA_ID_AV, p_scb->app_id, p_scb->peer_addr);
 
-  if (p_scb->skip_sdp == true) {
+  if (p_scb->skip_sdp) {
     tA2DP_Service a2dp_ser;
     a2dp_ser.avdt_version = AVDT_VERSION;
     p_scb->skip_sdp = false;
@@ -1569,7 +1569,7 @@ void bta_av_disc_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   for (i = 0; i < p_scb->num_seps; i++) {
     /* steam not in use, is a sink, and is audio */
-    if ((p_scb->sep_info[i].in_use == false) &&
+    if ((!p_scb->sep_info[i].in_use) &&
         (p_scb->sep_info[i].media_type == p_scb->media_type)) {
       if ((p_scb->sep_info[i].tsep == AVDT_TSEP_SNK) &&
           (uuid_int == UUID_SERVCLASS_AUDIO_SOURCE))
@@ -1748,7 +1748,7 @@ void bta_av_open_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   /* check whether there is already an opened audio or video connection with the
    * same device */
-  for (idx = 0; (idx < BTA_AV_NUM_STRS) && (is_av_opened == false); idx++) {
+  for (idx = 0; (idx < BTA_AV_NUM_STRS) && (!is_av_opened); idx++) {
     p_opened_scb = bta_av_cb.p_scb[idx];
     if (p_opened_scb && (p_opened_scb->state == BTA_AV_OPEN_SST) &&
         (p_opened_scb->peer_addr == p_scb->peer_addr))
@@ -1758,7 +1758,7 @@ void bta_av_open_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   /* if there is already an active AV connnection with the same bd_addr,
      don't send disconnect req, just report the open event with
      BTA_AV_FAIL_GET_CAP status */
-  if (is_av_opened == true) {
+  if (is_av_opened) {
     tBTA_AV_OPEN open;
     open.bd_addr = p_scb->peer_addr;
     open.chnl = p_scb->chnl;
@@ -1960,8 +1960,7 @@ void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   bta_sys_clear_policy(BTA_ID_AV, policy, p_scb->peer_addr);
 
-  if ((p_scb->started == false) &&
-      ((p_scb->role & BTA_AV_ROLE_START_INT) == 0)) {
+  if ((!p_scb->started) && ((p_scb->role & BTA_AV_ROLE_START_INT) == 0)) {
     p_scb->role |= BTA_AV_ROLE_START_INT;
     bta_sys_busy(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
 
@@ -2474,7 +2473,7 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_start_failed(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
-  if (p_scb->started == false && p_scb->co_started == false) {
+  if (!p_scb->started && !p_scb->co_started) {
     bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
     notify_start_failed(p_scb);
   }
@@ -2580,7 +2579,7 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   APPL_TRACE_DEBUG("%s: audio_open_cnt = %d, err_code = %d", __func__,
                    bta_av_cb.audio_open_cnt, err_code);
 
-  if (p_scb->started == false) {
+  if (!p_scb->started) {
     /* handle the condition where there is a collision of SUSPEND req from
      *either side
      ** Second SUSPEND req could be rejected. Do not treat this as a failure
@@ -3021,7 +3020,7 @@ void bta_av_open_rc(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     return;
   }
 
-  if (p_scb->use_rc == true || (p_scb->role & BTA_AV_ROLE_AD_ACP)) {
+  if (p_scb->use_rc || (p_scb->role & BTA_AV_ROLE_AD_ACP)) {
     if (bta_av_cb.disc) {
       /* AVRC discover db is in use */
       if (p_scb->rc_handle == BTA_AV_RC_HANDLE_NONE) {

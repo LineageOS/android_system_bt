@@ -756,7 +756,7 @@ uint16_t sdpu_get_attrib_seq_len(tSDP_RECORD* p_rec, tSDP_ATTR_SEQ* attr_seq) {
   uint16_t start_id = 0, end_id = 0;
 
   for (xx = 0; xx < attr_seq->num_attr; xx++) {
-    if (is_range == false) {
+    if (!is_range) {
       start_id = attr_seq->attr_entry[xx].start;
       end_id = attr_seq->attr_entry[xx].end;
     }

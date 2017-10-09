@@ -2124,7 +2124,7 @@ uint16_t L2CA_FlushChannel(uint16_t lcid, uint16_t num_to_flush) {
        * controller */
       if ((HCI_NON_FLUSHABLE_PB_SUPPORTED(BTM_ReadLocalFeatures())) &&
           (BTM_GetNumScoLinks() == 0)) {
-        if (l2cb.is_flush_active == false) {
+        if (!l2cb.is_flush_active) {
           l2cb.is_flush_active = true;
 
           /* The only packet type defined - 0 - Automatically-Flushable Only */

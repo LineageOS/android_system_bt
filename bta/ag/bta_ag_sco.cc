@@ -1209,7 +1209,7 @@ void bta_ag_sco_close(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_ag_sco_codec_nego(tBTA_AG_SCB* p_scb, bool result) {
-  if (result == true) {
+  if (result) {
     /* Subsequent SCO connection will skip codec negotiation */
     APPL_TRACE_DEBUG("%s: Succeeded for index 0x%04x", __func__,
                      p_scb->sco_idx);

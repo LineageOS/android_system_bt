@@ -938,7 +938,7 @@ static void bta_av_sco_chg_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
     for (i = 0; i < BTA_AV_NUM_STRS; i++) {
       p_scb = bta_av_cb.p_scb[i];
 
-      if (p_scb && p_scb->co_started && (p_scb->sco_suspend == false)) {
+      if (p_scb && p_scb->co_started && (!p_scb->sco_suspend)) {
         APPL_TRACE_DEBUG("suspending scb:%d", i);
         /* scb is used and started, not suspended automatically */
         p_scb->sco_suspend = true;
