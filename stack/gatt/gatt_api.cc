@@ -498,8 +498,9 @@ tGATT_STATUS GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_handle,
       cmd_status = GATT_NO_RESOURCES;
     }
   } else {
-    p_msg = attp_build_sr_msg(*p_tcb, GATT_HANDLE_VALUE_IND,
-                              (tGATT_SR_MSG*)&indication);
+    tGATT_SR_MSG gatt_sr_msg;
+    gatt_sr_msg.attr_value = indication;
+    p_msg = attp_build_sr_msg(*p_tcb, GATT_HANDLE_VALUE_IND, &gatt_sr_msg);
     if (p_msg != NULL) {
       cmd_status = attp_send_sr_msg(*p_tcb, p_msg);
 
@@ -553,8 +554,10 @@ tGATT_STATUS GATTS_HandleValueNotification(uint16_t conn_id,
   notif.auth_req = GATT_AUTH_REQ_NONE;
 
   tGATT_STATUS cmd_sent;
+  tGATT_SR_MSG gatt_sr_msg;
+  gatt_sr_msg.attr_value = notif;
   BT_HDR* p_buf =
-      attp_build_sr_msg(*p_tcb, GATT_HANDLE_VALUE_NOTIF, (tGATT_SR_MSG*)&notif);
+      attp_build_sr_msg(*p_tcb, GATT_HANDLE_VALUE_NOTIF, &gatt_sr_msg);
   if (p_buf != NULL) {
     cmd_sent = attp_send_sr_msg(*p_tcb, p_buf);
   } else
@@ -656,8 +659,9 @@ tGATT_STATUS GATTC_ConfigureMTU(uint16_t conn_id, uint16_t mtu) {
 
   p_clcb->p_tcb->payload_size = mtu;
   p_clcb->operation = GATTC_OPTYPE_CONFIG;
-  return attp_send_cl_msg(*p_clcb->p_tcb, p_clcb, GATT_REQ_MTU,
-                          (tGATT_CL_MSG*)&mtu);
+  tGATT_CL_MSG gatt_cl_msg;
+  gatt_cl_msg.mtu = mtu;
+  return attp_send_cl_msg(*p_clcb->p_tcb, p_clcb, GATT_REQ_MTU, &gatt_cl_msg);
 }
 
 
@@ -926,8 +930,10 @@ tGATT_STATUS GATTC_SendHandleValueConfirm(uint16_t conn_id, uint16_t handle) {
 
   VLOG(1) << "notif_count= " << p_tcb->ind_count;
   /* send confirmation now */
-  tGATT_STATUS ret = attp_send_cl_msg(*p_tcb, nullptr, GATT_HANDLE_VALUE_CONF,
-                                      (tGATT_CL_MSG*)&handle);
+  tGATT_CL_MSG gatt_cl_msg;
+  gatt_cl_msg.handle = handle;
+  tGATT_STATUS ret =
+      attp_send_cl_msg(*p_tcb, nullptr, GATT_HANDLE_VALUE_CONF, &gatt_cl_msg);
 
   p_tcb->ind_count = 0;
 

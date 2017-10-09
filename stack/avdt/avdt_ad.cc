@@ -305,7 +305,9 @@ void avdt_ad_tc_close_ind(tAVDT_TC_TBL* p_tbl, UNUSED_ATTR uint16_t reason) {
     if (p_scb != NULL) {
       close.tcid = p_tbl->tcid;
       close.type = avdt_ad_tcid_to_type(p_tbl->tcid);
-      avdt_scb_event(p_scb, AVDT_SCB_TC_CLOSE_EVT, (tAVDT_SCB_EVT*)&close);
+      tAVDT_SCB_EVT avdt_scb_evt;
+      avdt_scb_evt.close = close;
+      avdt_scb_event(p_scb, AVDT_SCB_TC_CLOSE_EVT, &avdt_scb_evt);
     }
   }
 }
@@ -343,7 +345,9 @@ void avdt_ad_tc_open_ind(tAVDT_TC_TBL* p_tbl) {
     if (p_tbl->cfg_flags & AVDT_L2C_CFG_CONN_ACP) {
       evt.err_param = AVDT_ACP;
     }
-    avdt_ccb_event(p_ccb, AVDT_CCB_LL_OPEN_EVT, (tAVDT_CCB_EVT*)&evt);
+    tAVDT_CCB_EVT avdt_ccb_evt;
+    avdt_ccb_evt.msg.hdr = evt;
+    avdt_ccb_event(p_ccb, AVDT_CCB_LL_OPEN_EVT, &avdt_ccb_evt);
   }
   /* if media or other channel, notify scb that channel open */
   else {
@@ -356,7 +360,9 @@ void avdt_ad_tc_open_ind(tAVDT_TC_TBL* p_tbl) {
       open.peer_mtu = p_tbl->peer_mtu;
       open.lcid = avdt_cb.ad.rt_tbl[p_tbl->ccb_idx][p_tbl->tcid].lcid;
       open.hdr.err_code = avdt_ad_tcid_to_type(p_tbl->tcid);
-      avdt_scb_event(p_scb, AVDT_SCB_TC_OPEN_EVT, (tAVDT_SCB_EVT*)&open);
+      tAVDT_SCB_EVT avdt_scb_evt;
+      avdt_scb_evt.open = open;
+      avdt_scb_event(p_scb, AVDT_SCB_TC_OPEN_EVT, &avdt_scb_evt);
     }
   }
 }
@@ -382,7 +388,9 @@ void avdt_ad_tc_cong_ind(tAVDT_TC_TBL* p_tbl, bool is_congested) {
   /* if signaling channel, notify ccb of congestion */
   if (p_tbl->tcid == 0) {
     p_ccb = avdt_ccb_by_idx(p_tbl->ccb_idx);
-    avdt_ccb_event(p_ccb, AVDT_CCB_LL_CONG_EVT, (tAVDT_CCB_EVT*)&is_congested);
+    tAVDT_CCB_EVT avdt_ccb_evt;
+    avdt_ccb_evt.llcong = is_congested;
+    avdt_ccb_event(p_ccb, AVDT_CCB_LL_CONG_EVT, &avdt_ccb_evt);
   }
   /* if media or other channel, notify scb that channel open */
   else {
@@ -390,8 +398,9 @@ void avdt_ad_tc_cong_ind(tAVDT_TC_TBL* p_tbl, bool is_congested) {
     p_scb =
         avdt_scb_by_hdl(avdt_cb.ad.rt_tbl[p_tbl->ccb_idx][p_tbl->tcid].scb_hdl);
     if (p_scb != NULL) {
-      avdt_scb_event(p_scb, AVDT_SCB_TC_CONG_EVT,
-                     (tAVDT_SCB_EVT*)&is_congested);
+      tAVDT_SCB_EVT avdt_scb_evt;
+      avdt_scb_evt.llcong = is_congested;
+      avdt_scb_event(p_scb, AVDT_SCB_TC_CONG_EVT, &avdt_scb_evt);
     }
   }
 }

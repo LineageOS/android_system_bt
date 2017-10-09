@@ -334,20 +334,20 @@ static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilitySbc(
 
   /* verify that each parameter is in range */
 
-  LOG_DEBUG(LOG_TAG, "%s: FREQ peer: 0x%x, capability 0x%x", __func__,
-            cfg_cie.samp_freq, p_cap->samp_freq);
-  LOG_DEBUG(LOG_TAG, "%s: CH_MODE peer: 0x%x, capability 0x%x", __func__,
-            cfg_cie.ch_mode, p_cap->ch_mode);
-  LOG_DEBUG(LOG_TAG, "%s: BLOCK_LEN peer: 0x%x, capability 0x%x", __func__,
-            cfg_cie.block_len, p_cap->block_len);
-  LOG_DEBUG(LOG_TAG, "%s: SUB_BAND peer: 0x%x, capability 0x%x", __func__,
-            cfg_cie.num_subbands, p_cap->num_subbands);
-  LOG_DEBUG(LOG_TAG, "%s: ALLOC_METHOD peer: 0x%x, capability 0x%x", __func__,
-            cfg_cie.alloc_method, p_cap->alloc_method);
-  LOG_DEBUG(LOG_TAG, "%s: MIN_BitPool peer: 0x%x, capability 0x%x", __func__,
-            cfg_cie.min_bitpool, p_cap->min_bitpool);
-  LOG_DEBUG(LOG_TAG, "%s: MAX_BitPool peer: 0x%x, capability 0x%x", __func__,
-            cfg_cie.max_bitpool, p_cap->max_bitpool);
+  LOG_VERBOSE(LOG_TAG, "%s: FREQ peer: 0x%x, capability 0x%x", __func__,
+              cfg_cie.samp_freq, p_cap->samp_freq);
+  LOG_VERBOSE(LOG_TAG, "%s: CH_MODE peer: 0x%x, capability 0x%x", __func__,
+              cfg_cie.ch_mode, p_cap->ch_mode);
+  LOG_VERBOSE(LOG_TAG, "%s: BLOCK_LEN peer: 0x%x, capability 0x%x", __func__,
+              cfg_cie.block_len, p_cap->block_len);
+  LOG_VERBOSE(LOG_TAG, "%s: SUB_BAND peer: 0x%x, capability 0x%x", __func__,
+              cfg_cie.num_subbands, p_cap->num_subbands);
+  LOG_VERBOSE(LOG_TAG, "%s: ALLOC_METHOD peer: 0x%x, capability 0x%x", __func__,
+              cfg_cie.alloc_method, p_cap->alloc_method);
+  LOG_VERBOSE(LOG_TAG, "%s: MIN_BitPool peer: 0x%x, capability 0x%x", __func__,
+              cfg_cie.min_bitpool, p_cap->min_bitpool);
+  LOG_VERBOSE(LOG_TAG, "%s: MAX_BitPool peer: 0x%x, capability 0x%x", __func__,
+              cfg_cie.max_bitpool, p_cap->max_bitpool);
 
   /* sampling frequency */
   if ((cfg_cie.samp_freq & p_cap->samp_freq) == 0) return A2DP_NS_SAMP_FREQ;
@@ -871,7 +871,7 @@ bool A2DP_DumpCodecInfoSbc(const uint8_t* p_codec_info) {
   tA2DP_STATUS a2dp_status;
   tA2DP_SBC_CIE sbc_cie;
 
-  LOG_DEBUG(LOG_TAG, "%s", __func__);
+  LOG_VERBOSE(LOG_TAG, "%s", __func__);
 
   a2dp_status = A2DP_ParseInfoSbc(&sbc_cie, p_codec_info, true);
   if (a2dp_status != A2DP_SUCCESS) {
@@ -879,66 +879,66 @@ bool A2DP_DumpCodecInfoSbc(const uint8_t* p_codec_info) {
     return false;
   }
 
-  LOG_DEBUG(LOG_TAG, "\tsamp_freq: 0x%x", sbc_cie.samp_freq);
+  LOG_VERBOSE(LOG_TAG, "\tsamp_freq: 0x%x", sbc_cie.samp_freq);
   if (sbc_cie.samp_freq & A2DP_SBC_IE_SAMP_FREQ_16) {
-    LOG_DEBUG(LOG_TAG, "\tsamp_freq: (16000)");
+    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (16000)");
   }
   if (sbc_cie.samp_freq & A2DP_SBC_IE_SAMP_FREQ_32) {
-    LOG_DEBUG(LOG_TAG, "\tsamp_freq: (32000)");
+    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (32000)");
   }
   if (sbc_cie.samp_freq & A2DP_SBC_IE_SAMP_FREQ_44) {
-    LOG_DEBUG(LOG_TAG, "\tsamp_freq: (44100)");
+    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (44100)");
   }
   if (sbc_cie.samp_freq & A2DP_SBC_IE_SAMP_FREQ_48) {
-    LOG_DEBUG(LOG_TAG, "\tsamp_freq: (48000)");
+    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (48000)");
   }
 
-  LOG_DEBUG(LOG_TAG, "\tch_mode: 0x%x", sbc_cie.ch_mode);
+  LOG_VERBOSE(LOG_TAG, "\tch_mode: 0x%x", sbc_cie.ch_mode);
   if (sbc_cie.ch_mode & A2DP_SBC_IE_CH_MD_MONO) {
-    LOG_DEBUG(LOG_TAG, "\tch_mode: (Mono)");
+    LOG_VERBOSE(LOG_TAG, "\tch_mode: (Mono)");
   }
   if (sbc_cie.ch_mode & A2DP_SBC_IE_CH_MD_DUAL) {
-    LOG_DEBUG(LOG_TAG, "\tch_mode: (Dual)");
+    LOG_VERBOSE(LOG_TAG, "\tch_mode: (Dual)");
   }
   if (sbc_cie.ch_mode & A2DP_SBC_IE_CH_MD_STEREO) {
-    LOG_DEBUG(LOG_TAG, "\tch_mode: (Stereo)");
+    LOG_VERBOSE(LOG_TAG, "\tch_mode: (Stereo)");
   }
   if (sbc_cie.ch_mode & A2DP_SBC_IE_CH_MD_JOINT) {
-    LOG_DEBUG(LOG_TAG, "\tch_mode: (Joint)");
+    LOG_VERBOSE(LOG_TAG, "\tch_mode: (Joint)");
   }
 
-  LOG_DEBUG(LOG_TAG, "\tblock_len: 0x%x", sbc_cie.block_len);
+  LOG_VERBOSE(LOG_TAG, "\tblock_len: 0x%x", sbc_cie.block_len);
   if (sbc_cie.block_len & A2DP_SBC_IE_BLOCKS_4) {
-    LOG_DEBUG(LOG_TAG, "\tblock_len: (4)");
+    LOG_VERBOSE(LOG_TAG, "\tblock_len: (4)");
   }
   if (sbc_cie.block_len & A2DP_SBC_IE_BLOCKS_8) {
-    LOG_DEBUG(LOG_TAG, "\tblock_len: (8)");
+    LOG_VERBOSE(LOG_TAG, "\tblock_len: (8)");
   }
   if (sbc_cie.block_len & A2DP_SBC_IE_BLOCKS_12) {
-    LOG_DEBUG(LOG_TAG, "\tblock_len: (12)");
+    LOG_VERBOSE(LOG_TAG, "\tblock_len: (12)");
   }
   if (sbc_cie.block_len & A2DP_SBC_IE_BLOCKS_16) {
-    LOG_DEBUG(LOG_TAG, "\tblock_len: (16)");
+    LOG_VERBOSE(LOG_TAG, "\tblock_len: (16)");
   }
 
-  LOG_DEBUG(LOG_TAG, "\tnum_subbands: 0x%x", sbc_cie.num_subbands);
+  LOG_VERBOSE(LOG_TAG, "\tnum_subbands: 0x%x", sbc_cie.num_subbands);
   if (sbc_cie.num_subbands & A2DP_SBC_IE_SUBBAND_4) {
-    LOG_DEBUG(LOG_TAG, "\tnum_subbands: (4)");
+    LOG_VERBOSE(LOG_TAG, "\tnum_subbands: (4)");
   }
   if (sbc_cie.num_subbands & A2DP_SBC_IE_SUBBAND_8) {
-    LOG_DEBUG(LOG_TAG, "\tnum_subbands: (8)");
+    LOG_VERBOSE(LOG_TAG, "\tnum_subbands: (8)");
   }
 
-  LOG_DEBUG(LOG_TAG, "\talloc_method: 0x%x)", sbc_cie.alloc_method);
+  LOG_VERBOSE(LOG_TAG, "\talloc_method: 0x%x)", sbc_cie.alloc_method);
   if (sbc_cie.alloc_method & A2DP_SBC_IE_ALLOC_MD_S) {
-    LOG_DEBUG(LOG_TAG, "\talloc_method: (SNR)");
+    LOG_VERBOSE(LOG_TAG, "\talloc_method: (SNR)");
   }
   if (sbc_cie.alloc_method & A2DP_SBC_IE_ALLOC_MD_L) {
-    LOG_DEBUG(LOG_TAG, "\talloc_method: (Loundess)");
+    LOG_VERBOSE(LOG_TAG, "\talloc_method: (Loundess)");
   }
 
-  LOG_DEBUG(LOG_TAG, "\tBit pool Min:%d Max:%d", sbc_cie.min_bitpool,
-            sbc_cie.max_bitpool);
+  LOG_VERBOSE(LOG_TAG, "\tBit pool Min:%d Max:%d", sbc_cie.min_bitpool,
+              sbc_cie.max_bitpool);
 
   return true;
 }

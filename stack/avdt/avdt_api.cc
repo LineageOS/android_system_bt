@@ -42,7 +42,9 @@ void avdt_ccb_idle_ccb_timer_timeout(void* data) {
   uint8_t avdt_event = AVDT_CCB_IDLE_TOUT_EVT;
   uint8_t err_code = AVDT_ERR_TIMEOUT;
 
-  avdt_ccb_event(p_ccb, avdt_event, (tAVDT_CCB_EVT*)&err_code);
+  tAVDT_CCB_EVT avdt_ccb_evt;
+  avdt_ccb_evt.err_code = err_code;
+  avdt_ccb_event(p_ccb, avdt_event, &avdt_ccb_evt);
 }
 
 void avdt_ccb_ret_ccb_timer_timeout(void* data) {
@@ -50,7 +52,9 @@ void avdt_ccb_ret_ccb_timer_timeout(void* data) {
   uint8_t avdt_event = AVDT_CCB_RET_TOUT_EVT;
   uint8_t err_code = AVDT_ERR_TIMEOUT;
 
-  avdt_ccb_event(p_ccb, avdt_event, (tAVDT_CCB_EVT*)&err_code);
+  tAVDT_CCB_EVT avdt_ccb_evt;
+  avdt_ccb_evt.err_code = err_code;
+  avdt_ccb_event(p_ccb, avdt_event, &avdt_ccb_evt);
 }
 
 void avdt_ccb_rsp_ccb_timer_timeout(void* data) {
@@ -58,7 +62,9 @@ void avdt_ccb_rsp_ccb_timer_timeout(void* data) {
   uint8_t avdt_event = AVDT_CCB_RSP_TOUT_EVT;
   uint8_t err_code = AVDT_ERR_TIMEOUT;
 
-  avdt_ccb_event(p_ccb, avdt_event, (tAVDT_CCB_EVT*)&err_code);
+  tAVDT_CCB_EVT avdt_ccb_evt;
+  avdt_ccb_evt.err_code = err_code;
+  avdt_ccb_event(p_ccb, avdt_event, &avdt_ccb_evt);
 }
 
 void avdt_scb_transport_channel_timer_timeout(void* data) {
@@ -1037,7 +1043,7 @@ uint16_t AVDT_DisconnectReq(const RawAddress& bd_addr,
   uint16_t result = AVDT_SUCCESS;
   tAVDT_CCB_EVT evt;
 
-  AVDT_TRACE_DEBUG("%s", __func__);
+  AVDT_TRACE_WARNING("%s: address=%s", __func__, bd_addr.ToString().c_str());
 
   /* find channel control block for this bd addr; if none, error */
   p_ccb = avdt_ccb_by_bd(bd_addr);
@@ -1051,7 +1057,8 @@ uint16_t AVDT_DisconnectReq(const RawAddress& bd_addr,
     avdt_ccb_event(p_ccb, AVDT_CCB_API_DISCONNECT_REQ_EVT, &evt);
   }
 
-  AVDT_TRACE_DEBUG("%s: result=%d", __func__, result);
+  AVDT_TRACE_DEBUG("%s: address=%s result=%d", __func__,
+                   bd_addr.ToString().c_str(), result);
 
   return result;
 }

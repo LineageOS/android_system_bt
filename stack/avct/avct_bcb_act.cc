@@ -112,7 +112,9 @@ void avct_bcb_chnl_open(tAVCT_BCB* p_bcb, UNUSED_ATTR tAVCT_LCB_EVT* p_data) {
       L2CA_ErtmConnectReq(AVCT_BR_PSM, p_lcb->peer_addr, &ertm_info);
   if (p_bcb->ch_lcid == 0) {
     /* if connect req failed, send ourselves close event */
-    avct_bcb_event(p_bcb, AVCT_LCB_LL_CLOSE_EVT, (tAVCT_LCB_EVT*)&result);
+    tAVCT_LCB_EVT avct_lcb_evt;
+    avct_lcb_evt.result = result;
+    avct_bcb_event(p_bcb, AVCT_LCB_LL_CLOSE_EVT, &avct_lcb_evt);
   }
 }
 
@@ -195,7 +197,9 @@ void avct_bcb_open_ind(tAVCT_BCB* p_bcb, tAVCT_LCB_EVT* p_data) {
   p_bcb->p_tx_msg = NULL;
 
   /* send msg event to bcb */
-  avct_bcb_event(p_bcb, AVCT_LCB_UL_MSG_EVT, (tAVCT_LCB_EVT*)&ul_msg);
+  tAVCT_LCB_EVT avct_lcb_evt;
+  avct_lcb_evt.ul_msg = ul_msg;
+  avct_bcb_event(p_bcb, AVCT_LCB_UL_MSG_EVT, &avct_lcb_evt);
 }
 
 /*******************************************************************************
