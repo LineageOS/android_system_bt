@@ -50,7 +50,7 @@ void bte_load_did_conf(const char* p_path) {
 
     tBTA_DI_RECORD record;
     record.vendor =
-        config_get_int(config, section_name, "vendorId", LMP_COMPID_BROADCOM);
+        config_get_int(config, section_name, "vendorId", LMP_COMPID_GOOGLE);
     record.vendor_id_source = config_get_int(
         config, section_name, "vendorIdSource", DI_VENDOR_ID_SOURCE_BTSIG);
     record.product = config_get_int(config, section_name, "productId", 0);
