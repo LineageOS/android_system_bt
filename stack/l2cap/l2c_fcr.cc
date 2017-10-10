@@ -375,7 +375,7 @@ bool l2c_fcr_is_flow_controlled(tL2C_CCB* p_ccb) {
   CHECK(p_ccb != NULL);
   if (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) {
     /* Check if remote side flowed us off or the transmit window is full */
-    if ((p_ccb->fcrb.remote_busy == true) ||
+    if ((p_ccb->fcrb.remote_busy) ||
         (fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q) >=
          p_ccb->peer_cfg.fcr.tx_win_sz)) {
 #if (L2CAP_ERTM_STATS == TRUE)
@@ -802,8 +802,7 @@ void l2c_fcr_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
   /* If a window has opened, check if we can send any more packets */
   if ((!fixed_queue_is_empty(p_ccb->fcrb.retrans_q) ||
        !fixed_queue_is_empty(p_ccb->xmit_hold_q)) &&
-      (p_ccb->fcrb.wait_ack == false) &&
-      (l2c_fcr_is_flow_controlled(p_ccb) == false)) {
+      (!p_ccb->fcrb.wait_ack) && (!l2c_fcr_is_flow_controlled(p_ccb))) {
     l2c_link_check_send_pkts(p_ccb->p_lcb, NULL, NULL);
   }
 }
@@ -1489,7 +1488,7 @@ static bool do_sar_reassembly(tL2C_CCB* p_ccb, BT_HDR* p_buf,
     }
   }
 
-  if (packet_ok == false) {
+  if (!packet_ok) {
     osi_free(p_buf);
   } else if (p_buf != NULL) {
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
@@ -1831,7 +1830,7 @@ BT_HDR* l2c_lcc_get_next_xmit_sdu_seg(tL2C_CCB* p_ccb,
   }
 
   /* Get a new buffer and copy the data that can be sent in a PDU */
-  if (first_seg == true)
+  if (first_seg)
     p_xmit = l2c_fcr_clone_buf(p_buf, L2CAP_LCC_OFFSET, no_of_bytes_to_send);
   else
     p_xmit = l2c_fcr_clone_buf(p_buf, L2CAP_MIN_OFFSET, no_of_bytes_to_send);
@@ -1840,7 +1839,7 @@ BT_HDR* l2c_lcc_get_next_xmit_sdu_seg(tL2C_CCB* p_ccb,
     p_buf->event = p_ccb->local_cid;
     p_xmit->event = p_ccb->local_cid;
 
-    if (first_seg == true) {
+    if (first_seg) {
       p_xmit->offset -= L2CAP_LCC_SDU_LENGTH; /* for writing the SDU length. */
       p = (uint8_t*)(p_xmit + 1) + p_xmit->offset;
       UINT16_TO_STREAM(p, sdu_len);
@@ -1860,7 +1859,7 @@ BT_HDR* l2c_lcc_get_next_xmit_sdu_seg(tL2C_CCB* p_ccb,
     return (NULL);
   }
 
-  if (last_seg == true) {
+  if (last_seg) {
     p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_ccb->xmit_hold_q);
     osi_free(p_buf);
   }

@@ -88,7 +88,7 @@
 
 #define CHECK_RC_CONNECTED(p_dev)                                          \
   do {                                                                     \
-    if ((p_dev) == NULL || (p_dev)->rc_connected == false) {               \
+    if ((p_dev) == NULL || !(p_dev)->rc_connected) {                       \
       BTIF_TRACE_WARNING("%s: called when RC is not connected", __func__); \
       return BT_STATUS_NOT_READY;                                          \
     }                                                                      \
@@ -96,7 +96,7 @@
 
 #define CHECK_BR_CONNECTED(p_dev)                                          \
   do {                                                                     \
-    if ((p_dev) == NULL || (p_dev)->br_connected == false) {               \
+    if ((p_dev) == NULL || !(p_dev)->br_connected) {                       \
       BTIF_TRACE_WARNING("%s: called when BR is not connected", __func__); \
       return BT_STATUS_NOT_READY;                                          \
     }                                                                      \
@@ -1242,7 +1242,7 @@ static void send_metamsg_rsp(btif_rc_device_cb_t* p_dev, int index,
       __func__, p_dev->rc_handle, index, label, code,
       dump_rc_pdu(pmetamsg_resp->rsp.pdu));
 
-  if (index >= 0 && p_dev->rc_pdu_info[index].is_rsp_pending == false) {
+  if (index >= 0 && !p_dev->rc_pdu_info[index].is_rsp_pending) {
     BTIF_TRACE_ERROR("%s: is_rsp_pending false, returning", __func__);
     return;
   }
@@ -1467,7 +1467,7 @@ static void btif_rc_upstreams_evt(uint16_t event, tAVRC_COMMAND* pavrc_cmd,
     case AVRC_PDU_INFORM_DISPLAY_CHARSET: {
       tAVRC_RESPONSE avrc_rsp;
       BTIF_TRACE_EVENT("%s: AVRC_PDU_INFORM_DISPLAY_CHARSET", __func__);
-      if (p_dev->rc_connected == true) {
+      if (p_dev->rc_connected) {
         memset(&(avrc_rsp.inform_charset), 0, sizeof(tAVRC_RSP));
         avrc_rsp.inform_charset.opcode =
             opcode_from_pdu(AVRC_PDU_INFORM_DISPLAY_CHARSET);
@@ -1754,7 +1754,7 @@ static void rc_ctrl_procedure_complete(btif_rc_device_cb_t* p_dev) {
     return;
   }
 
-  if (p_dev->rc_procedure_complete == true) {
+  if (p_dev->rc_procedure_complete) {
     return;
   }
   p_dev->rc_procedure_complete = true;
@@ -1892,7 +1892,7 @@ static bt_status_t register_notification_rsp(
       continue;
     }
 
-    if (btif_rc_cb.rc_multi_cb[idx].rc_notif[event_id - 1].bNotify == false) {
+    if (!btif_rc_cb.rc_multi_cb[idx].rc_notif[event_id - 1].bNotify) {
       BTIF_TRACE_WARNING(
           "%s: Avrcp Event id is not registered: event_id: %x, handle: 0x%x",
           __func__, event_id, btif_rc_cb.rc_multi_cb[idx].rc_handle);
@@ -1981,7 +1981,7 @@ static bt_status_t get_folder_items_list_rsp(RawAddress* bd_addr,
   CHECK_RC_CONNECTED(p_dev);
 
   /* check if rsp to previous cmd was completed */
-  if (p_dev->rc_pdu_info[IDX_GET_FOLDER_ITEMS_RSP].is_rsp_pending == false) {
+  if (!p_dev->rc_pdu_info[IDX_GET_FOLDER_ITEMS_RSP].is_rsp_pending) {
     BTIF_TRACE_WARNING("%s: Not sending response as no PDU was registered",
                        __func__);
     return BT_STATUS_UNHANDLED;
@@ -2192,7 +2192,7 @@ static bt_status_t set_browsed_player_rsp(RawAddress* bd_addr,
                    __func__, rsp_status, avrc_rsp.br_player.status);
 
   /* check if rsp to previous cmd was completed */
-  if (p_dev->rc_pdu_info[IDX_SET_BROWSED_PLAYER_RSP].is_rsp_pending == false) {
+  if (!p_dev->rc_pdu_info[IDX_SET_BROWSED_PLAYER_RSP].is_rsp_pending) {
     BTIF_TRACE_WARNING("%s: Not sending response as no PDU was registered",
                        __func__);
     return BT_STATUS_UNHANDLED;
@@ -3251,7 +3251,7 @@ static void handle_notification_response(tBTA_AV_META_MSG* pmeta_msg,
       p_event = NULL;
     }
     /* Registered for all events, we can request application settings */
-    if (p_event == NULL && p_dev->rc_app_settings.query_started == false) {
+    if (p_event == NULL && !p_dev->rc_app_settings.query_started) {
       /* we need to do this only if remote TG supports
        * player application settings
        */
@@ -5259,7 +5259,7 @@ rc_transaction_t* get_transaction_by_lbl(uint8_t lbl) {
 
   /* Determine if this is a valid label */
   if (lbl < MAX_TRANSACTIONS_PER_SESSION) {
-    if (false == device.transaction[lbl].in_use) {
+    if (!device.transaction[lbl].in_use) {
       transaction = NULL;
     } else {
       transaction = &(device.transaction[lbl]);
@@ -5284,7 +5284,7 @@ static bt_status_t get_transaction(rc_transaction_t** ptransaction) {
 
   // Check for unused transactions
   for (uint8_t i = 0; i < MAX_TRANSACTIONS_PER_SESSION; i++) {
-    if (false == device.transaction[i].in_use) {
+    if (!device.transaction[i].in_use) {
       BTIF_TRACE_DEBUG("%s: Got transaction.label: %d", __func__,
                        device.transaction[i].lbl);
       device.transaction[i].in_use = true;

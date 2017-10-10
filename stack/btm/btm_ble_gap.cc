@@ -435,7 +435,7 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
                              ? BTM_BLE_SCAN_MODE_ACTI
                              : p_inq->scan_type;
 /* assume observe always not using white list */
-#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == true)
+#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
       /* enable resolving list */
       btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_SCAN);
 #endif
@@ -576,7 +576,7 @@ extern void BTM_BleGetVendorCapabilities(tBTM_BLE_VSC_CB* p_cmn_vsc_cb) {
 #if (BLE_VND_INCLUDED == TRUE)
 extern void BTM_BleReadControllerFeatures(
     tBTM_BLE_CTRL_FEATURES_CBACK* p_vsc_cback) {
-  if (true == btm_cb.cmn_ble_vsc_cb.values_read) return;
+  if (btm_cb.cmn_ble_vsc_cb.values_read) return;
 
   BTM_TRACE_DEBUG("BTM_BleReadControllerFeatures");
 

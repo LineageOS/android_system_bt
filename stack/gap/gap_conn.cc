@@ -701,8 +701,7 @@ static void gap_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
   /* See if we have a CCB listening for the connection */
   for (xx = 0, p_ccb = conn.ccb_pool; xx < GAP_MAX_CONNECTIONS; xx++, p_ccb++) {
     if ((p_ccb->con_state == GAP_CCB_STATE_LISTENING) && (p_ccb->psm == psm) &&
-        ((p_ccb->rem_addr_specified == false) ||
-         (bd_addr == p_ccb->rem_dev_address)))
+        (!p_ccb->rem_addr_specified || (bd_addr == p_ccb->rem_dev_address)))
       break;
   }
 

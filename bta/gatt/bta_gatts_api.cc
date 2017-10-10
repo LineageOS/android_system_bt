@@ -50,7 +50,7 @@ static const tBTA_SYS_REG bta_gatts_reg = {bta_gatts_hdl_event,
  *
  ******************************************************************************/
 void BTA_GATTS_Disable(void) {
-  if (bta_sys_is_register(BTA_ID_GATTS) == false) {
+  if (!bta_sys_is_register(BTA_ID_GATTS)) {
     APPL_TRACE_WARNING("GATTS Module not enabled/already disabled");
     return;
   }
@@ -80,7 +80,7 @@ void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid,
       (tBTA_GATTS_API_REG*)osi_malloc(sizeof(tBTA_GATTS_API_REG));
 
   /* register with BTA system manager */
-  if (bta_sys_is_register(BTA_ID_GATTS) == false)
+  if (!bta_sys_is_register(BTA_ID_GATTS))
     bta_sys_register(BTA_ID_GATTS, &bta_gatts_reg);
 
   p_buf->hdr.event = BTA_GATTS_API_REG_EVT;

@@ -406,7 +406,7 @@ void bta_ag_rfc_close(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
   (*bta_ag_cb.p_cback)(BTA_AG_CLOSE_EVT, (tBTA_AG*)&close);
 
   /* if not deregistering (deallocating) reopen registered servers */
-  if (p_scb->dealloc == false) {
+  if (!p_scb->dealloc) {
     /* Clear peer bd_addr so instance can be reused */
     p_scb->peer_addr = RawAddress::kEmpty;
 

@@ -136,7 +136,7 @@ uint8_t dis_read_attr_value(UNUSED_ATTR uint8_t clcb_idx, uint16_t handle,
     if (handle == p_db_attr->handle) {
       if ((p_db_attr->uuid == GATT_UUID_PNP_ID ||
            p_db_attr->uuid == GATT_UUID_SYSTEM_ID) &&
-          is_long == true) {
+          is_long) {
         st = GATT_NOT_LONG;
         break;
       }

@@ -145,7 +145,7 @@ int RFCOMM_CreateConnection(uint16_t uuid, uint8_t scn, bool is_server,
     p_port = port_find_port(dlci, bd_addr);
     if (p_port != NULL) {
       /* if existing port is also a client port */
-      if (p_port->is_server == false) {
+      if (!p_port->is_server) {
         RFCOMM_TRACE_ERROR(
             "%s - already opened state:%d, RFC state:%d, MCB state:%d",
             __func__, p_port->state, p_port->rfc.state,
@@ -1418,9 +1418,9 @@ int PORT_WriteDataCO(uint16_t handle, int* p_len) {
   }
   int available = 0;
   // if(ioctl(fd, FIONREAD, &available) < 0)
-  if (p_port->p_data_co_callback(
-          handle, (uint8_t*)&available, sizeof(available),
-          DATA_CO_CALLBACK_TYPE_OUTGOING_SIZE) == false) {
+  if (!p_port->p_data_co_callback(handle, (uint8_t*)&available,
+                                  sizeof(available),
+                                  DATA_CO_CALLBACK_TYPE_OUTGOING_SIZE)) {
     RFCOMM_TRACE_ERROR(
         "p_data_co_callback DATA_CO_CALLBACK_TYPE_INCOMING_SIZE failed, "
         "available:%d",
@@ -1443,9 +1443,9 @@ int PORT_WriteDataCO(uint16_t handle, int* p_len) {
       (((int)p_buf->len + available) <= (int)length)) {
     // if(recv(fd, (uint8_t *)(p_buf + 1) + p_buf->offset + p_buf->len,
     // available, 0) != available)
-    if (p_port->p_data_co_callback(
+    if (!p_port->p_data_co_callback(
             handle, (uint8_t*)(p_buf + 1) + p_buf->offset + p_buf->len,
-            available, DATA_CO_CALLBACK_TYPE_OUTGOING) == false)
+            available, DATA_CO_CALLBACK_TYPE_OUTGOING))
 
     {
       error(
@@ -1499,9 +1499,9 @@ int PORT_WriteDataCO(uint16_t handle, int* p_len) {
     // memcpy ((uint8_t *)(p_buf + 1) + p_buf->offset, p_data, length);
     // if(recv(fd, (uint8_t *)(p_buf + 1) + p_buf->offset, (int)length, 0) !=
     // (int)length)
-    if (p_port->p_data_co_callback(
-            handle, (uint8_t*)(p_buf + 1) + p_buf->offset, length,
-            DATA_CO_CALLBACK_TYPE_OUTGOING) == false) {
+    if (!p_port->p_data_co_callback(handle,
+                                    (uint8_t*)(p_buf + 1) + p_buf->offset,
+                                    length, DATA_CO_CALLBACK_TYPE_OUTGOING)) {
       error(
           "p_data_co_callback DATA_CO_CALLBACK_TYPE_OUTGOING failed, length:%d",
           length);

@@ -800,7 +800,7 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
 
   if ((btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) &&
       (p_dev_rec->hci_handle == BTM_SEC_INVALID_HANDLE) &&
-      (btm_cb.security_mode_changed == false)) {
+      (!btm_cb.security_mode_changed)) {
     /* This is start of the dedicated bonding if local device is 2.0 */
     btm_cb.pin_code_len = pin_len;
     memcpy(btm_cb.pin_code, p_pin, pin_len);
@@ -1875,7 +1875,7 @@ static void btm_sec_check_upgrade(tBTM_SEC_DEV_REC* p_dev_rec,
   /* Only check if link key already exists */
   if (!(p_dev_rec->sec_flags & BTM_SEC_LINK_KEY_KNOWN)) return;
 
-  if (btm_sec_is_upgrade_possible(p_dev_rec, is_originator) == true) {
+  if (btm_sec_is_upgrade_possible(p_dev_rec, is_originator)) {
     BTM_TRACE_DEBUG("need upgrade!! sec_flags:0x%x", p_dev_rec->sec_flags);
     /* upgrade is possible: check if the application wants the upgrade.
      * If the application is configured to use a global MITM flag,
@@ -2010,7 +2010,7 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
          btm_cb.security_mode == BTM_SEC_MODE_LINK) ||
         (BTM_SM4_KNOWN == p_dev_rec->sm4) ||
         (BTM_SEC_IS_SM4(p_dev_rec->sm4) &&
-         (btm_sec_is_upgrade_possible(p_dev_rec, is_originator) == false))) {
+         (!btm_sec_is_upgrade_possible(p_dev_rec, is_originator)))) {
       /* legacy mode - local is legacy or local is lisbon/peer is legacy
        * or SM4 with no possibility of link key upgrade */
       if (is_originator) {
@@ -2313,7 +2313,7 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
          btm_cb.security_mode == BTM_SEC_MODE_LINK) ||
         (BTM_SM4_KNOWN == p_dev_rec->sm4) ||
         (BTM_SEC_IS_SM4(p_dev_rec->sm4) &&
-         (btm_sec_is_upgrade_possible(p_dev_rec, is_originator) == false))) {
+         (!btm_sec_is_upgrade_possible(p_dev_rec, is_originator)))) {
       /* legacy mode - local is legacy or local is lisbon/peer is legacy
        * or SM4 with no possibility of link key upgrade */
       if (is_originator) {
@@ -2780,7 +2780,7 @@ static tBTM_STATUS btm_sec_dd_create_conn(tBTM_SEC_DEV_REC* p_dev_rec) {
   /* set up the control block to indicated dedicated bonding */
   btm_cb.pairing_flags |= BTM_PAIR_FLAGS_DISC_WHEN_DONE;
 
-  if (l2cu_create_conn(p_lcb, BT_TRANSPORT_BR_EDR) == false) {
+  if (!l2cu_create_conn(p_lcb, BT_TRANSPORT_BR_EDR)) {
     LOG(WARNING) << "Security Manager: failed create allocate LCB "
                  << p_dev_rec->bd_addr;
 
@@ -3445,8 +3445,7 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, uint8_t* p) {
       }
       /* else BTM_NOT_AUTHORIZED means when the app wants to reject the req
        * right now */
-    } else if ((event == BTM_SP_CFM_REQ_EVT) &&
-               (evt_data.cfm_req.just_works == true)) {
+    } else if ((event == BTM_SP_CFM_REQ_EVT) && (evt_data.cfm_req.just_works)) {
       /* automatically reply with just works if no sp_cback */
       status = BTM_SUCCESS;
     }
@@ -5080,11 +5079,10 @@ static tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
         "service id:%d, is trusted:%d", p_dev_rec->p_cur_service->service_id,
         (BTM_SEC_IS_SERVICE_TRUSTED(p_dev_rec->trusted_mask,
                                     p_dev_rec->p_cur_service->service_id)));
-    if ((btm_sec_are_all_trusted(p_dev_rec->trusted_mask) == false) &&
+    if ((!btm_sec_are_all_trusted(p_dev_rec->trusted_mask)) &&
         (p_dev_rec->p_cur_service->service_id < BTM_SEC_MAX_SERVICES) &&
-        (BTM_SEC_IS_SERVICE_TRUSTED(p_dev_rec->trusted_mask,
-                                    p_dev_rec->p_cur_service->service_id) ==
-         false)) {
+        (!BTM_SEC_IS_SERVICE_TRUSTED(p_dev_rec->trusted_mask,
+                                     p_dev_rec->p_cur_service->service_id))) {
       BTM_TRACE_EVENT("Security Manager: Start authorization");
       return (btm_sec_start_authorization(p_dev_rec));
     }
@@ -5592,7 +5590,7 @@ static bool btm_sec_check_prefetch_pin(tBTM_SEC_DEV_REC* p_dev_rec) {
         "0x%02x",
         __func__, major, minor);
 
-    if (btm_cb.security_mode_changed == false) {
+    if (!btm_cb.security_mode_changed) {
       btm_cb.security_mode_changed = true;
 #ifdef APPL_AUTH_WRITE_EXCEPTION
       if (!(APPL_AUTH_WRITE_EXCEPTION)(p_dev_rec->bd_addr))

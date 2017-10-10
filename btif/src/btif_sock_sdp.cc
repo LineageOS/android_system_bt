@@ -112,7 +112,7 @@ static bool create_base_record(const uint32_t sdp_handle, const char* name,
   proto_list[1].num_params = 1;
   proto_list[1].params[0] = channel;
 
-  if (with_obex == true) {
+  if (with_obex) {
     proto_list[2].protocol_uuid = UUID_PROTOCOL_OBEX;
     proto_list[2].num_params = 0;
   }

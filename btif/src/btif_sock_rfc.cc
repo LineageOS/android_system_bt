@@ -439,7 +439,7 @@ static void cleanup_rfc_slot(rfc_slot_t* slot) {
 }
 
 static bool send_app_scn(rfc_slot_t* slot) {
-  if (slot->scn_notified == true) {
+  if (slot->scn_notified) {
     // already send, just return success.
     return true;
   }
@@ -653,7 +653,7 @@ static void jv_dm_cback(tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t id) {
           APPL_TRACE_DEBUG("send_app_scn() failed, close rs->id:%d", rs->id);
           cleanup_rfc_slot(rs);
         } else {
-          if (rs->is_service_uuid_valid == true) {
+          if (rs->is_service_uuid_valid) {
             // We already have data for SDP record, create it (RFC-only
             // profiles)
             BTA_JvCreateRecordByUser(rs->id);

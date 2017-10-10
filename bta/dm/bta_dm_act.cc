@@ -259,7 +259,7 @@ void bta_dm_enable(tBTA_DM_MSG* p_data) {
   tBTA_DM_ENABLE enable_event;
 
   /* if already in use, return an error */
-  if (bta_dm_cb.is_bta_dm_active == true) {
+  if (bta_dm_cb.is_bta_dm_active) {
     APPL_TRACE_WARNING("%s Device already started by another application",
                        __func__);
     memset(&enable_event, 0, sizeof(tBTA_DM_ENABLE));
@@ -1042,7 +1042,7 @@ static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
 void bta_dm_confirm(tBTA_DM_MSG* p_data) {
   tBTM_STATUS res = BTM_NOT_AUTHORIZED;
 
-  if (p_data->confirm.accept == true) res = BTM_SUCCESS;
+  if (p_data->confirm.accept) res = BTM_SUCCESS;
   BTM_ConfirmReqReply(res, p_data->confirm.bd_addr);
 }
 
@@ -1087,7 +1087,7 @@ void bta_dm_ci_io_req_act(tBTA_DM_MSG* p_data) {
 void bta_dm_ci_rmt_oob_act(tBTA_DM_MSG* p_data) {
   tBTM_STATUS res = BTM_NOT_AUTHORIZED;
 
-  if (p_data->ci_rmt_oob.accept == true) res = BTM_SUCCESS;
+  if (p_data->ci_rmt_oob.accept) res = BTM_SUCCESS;
   BTM_RemoteOobDataReply(res, p_data->ci_rmt_oob.bd_addr, p_data->ci_rmt_oob.c,
                          p_data->ci_rmt_oob.r);
 }
@@ -2090,8 +2090,7 @@ static void bta_dm_discover_device(const RawAddress& remote_bd_addr) {
       ((bta_dm_search_cb.p_btm_inq_info == NULL) ||
        (bta_dm_search_cb.p_btm_inq_info &&
         (!bta_dm_search_cb.p_btm_inq_info->appl_knows_rem_name)))) {
-    if (bta_dm_read_remote_device_name(bta_dm_search_cb.peer_bdaddr,
-                                       transport) == true)
+    if (bta_dm_read_remote_device_name(bta_dm_search_cb.peer_bdaddr, transport))
       return;
 
     /* starting name discovery failed */
@@ -2107,7 +2106,7 @@ static void bta_dm_discover_device(const RawAddress& remote_bd_addr) {
     bta_dm_search_cb.uuid_to_search = bta_dm_search_cb.num_uuid;
     if ((bta_dm_search_cb.p_btm_inq_info != NULL) &&
         bta_dm_search_cb.services != BTA_USER_SERVICE_MASK &&
-        (bta_dm_search_cb.sdp_search == false)) {
+        (!bta_dm_search_cb.sdp_search)) {
       /* check if EIR provides the information of supported services */
       bta_dm_eir_search_services(&bta_dm_search_cb.p_btm_inq_info->results,
                                  &bta_dm_search_cb.services_to_search,
@@ -2251,7 +2250,7 @@ static void bta_dm_inq_cmpl_cb(void* p_result) {
 
   APPL_TRACE_DEBUG("%s", __func__);
 
-  if (bta_dm_search_cb.cancel_pending == false) {
+  if (!bta_dm_search_cb.cancel_pending) {
     p_msg->inq_cmpl.hdr.event = BTA_DM_INQUIRY_CMPL_EVT;
     p_msg->inq_cmpl.num = ((tBTM_INQUIRY_CMPL*)p_result)->num_resp;
   } else {
@@ -2868,7 +2867,7 @@ static bool bta_dm_check_av(uint16_t event) {
       APPL_TRACE_WARNING("[%d]: state:%d, info:x%x, avoid_rs %d", i,
                          p_dev->conn_state, p_dev->info, avoid_roleswitch);
       if ((p_dev->conn_state == BTA_DM_CONNECTED) &&
-          (p_dev->info & BTA_DM_DI_AV_ACTIVE) && (avoid_roleswitch == false)) {
+          (p_dev->info & BTA_DM_DI_AV_ACTIVE) && (!avoid_roleswitch)) {
         /* make master and take away the role switch policy */
         if (BTM_CMD_STARTED == BTM_SwitchRole(p_dev->peer_bdaddr,
                                               HCI_ROLE_MASTER,
@@ -3306,7 +3305,7 @@ static void bta_dm_adjust_roles(bool delay_role_switch) {
 
           if (bta_dm_cb.device_list.peer_device[i].pref_role !=
                   BTA_SLAVE_ROLE_ONLY &&
-              delay_role_switch == false) {
+              !delay_role_switch) {
             BTM_SwitchRole(bta_dm_cb.device_list.peer_device[i].peer_bdaddr,
                            HCI_ROLE_MASTER, NULL);
           } else {

@@ -256,8 +256,7 @@ uint16_t L2CA_ErtmConnectReq(uint16_t psm, const RawAddress& p_bd_addr,
     /* No link. Get an LCB and start link establishment */
     p_lcb = l2cu_allocate_lcb(p_bd_addr, false, BT_TRANSPORT_BR_EDR);
     /* currently use BR/EDR for ERTM mode l2cap connection */
-    if ((p_lcb == NULL) ||
-        (l2cu_create_conn(p_lcb, BT_TRANSPORT_BR_EDR) == false)) {
+    if ((p_lcb == NULL) || (!l2cu_create_conn(p_lcb, BT_TRANSPORT_BR_EDR))) {
       L2CAP_TRACE_WARNING(
           "L2CAP - conn not started for PSM: 0x%04x  p_lcb: 0x%08x", psm,
           p_lcb);
@@ -465,7 +464,7 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
     p_lcb = l2cu_allocate_lcb(p_bd_addr, false, BT_TRANSPORT_LE);
     if ((p_lcb == NULL)
         /* currently use BR/EDR for ERTM mode l2cap connection */
-        || (l2cu_create_conn(p_lcb, BT_TRANSPORT_LE) == false)) {
+        || (!l2cu_create_conn(p_lcb, BT_TRANSPORT_LE))) {
       L2CAP_TRACE_WARNING("%s conn not started for PSM: 0x%04x  p_lcb: 0x%08x",
                           __func__, psm, p_lcb);
       return 0;
@@ -904,7 +903,7 @@ bool L2CA_Ping(const RawAddress& p_bd_addr, tL2CA_ECHO_RSP_CB* p_callback) {
       L2CAP_TRACE_WARNING("L2CAP - no LCB for L2CA_ping");
       return (false);
     }
-    if (l2cu_create_conn(p_lcb, BT_TRANSPORT_BR_EDR) == false) {
+    if (!l2cu_create_conn(p_lcb, BT_TRANSPORT_BR_EDR)) {
       return (false);
     }
 
@@ -2124,7 +2123,7 @@ uint16_t L2CA_FlushChannel(uint16_t lcid, uint16_t num_to_flush) {
        * controller */
       if ((HCI_NON_FLUSHABLE_PB_SUPPORTED(BTM_ReadLocalFeatures())) &&
           (BTM_GetNumScoLinks() == 0)) {
-        if (l2cb.is_flush_active == false) {
+        if (!l2cb.is_flush_active) {
           l2cb.is_flush_active = true;
 
           /* The only packet type defined - 0 - Automatically-Flushable Only */

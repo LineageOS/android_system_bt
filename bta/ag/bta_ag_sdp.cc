@@ -251,7 +251,7 @@ void bta_ag_del_records(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
       continue;
     }
 
-    if (p->in_use && p->dealloc == false) {
+    if (p->in_use && !p->dealloc) {
       others |= p->reg_services;
     }
   }
