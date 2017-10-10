@@ -1261,6 +1261,8 @@ typedef struct {
 #define LMP_TESTCTL_POWCTL_FIXEDTX_OP 0
 #define LMP_TESTCTL_POWCTL_ADAPTIVE 1
 
+#define LMP_COMPID_GOOGLE 0xE0
+
 // TODO(zachoverflow): remove this once broadcom specific hacks are removed
 #define LMP_COMPID_BROADCOM 15
 
