@@ -28,6 +28,7 @@ config("linux") {
     #TODO(jpawlowski): uncomment once we have no warnings on linux build
     #    "-Wall",
     #    "-Werror",
+    "-Wno-gnu-variable-sized-type-not-at-end",
     "-g",
     "-O0",
     "-fpic",
