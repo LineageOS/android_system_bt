@@ -78,7 +78,7 @@ static const int BT_HCI_RT_PRIORITY = 1;
 
 // Abort if there is no response to an HCI command.
 static const uint32_t COMMAND_PENDING_TIMEOUT_MS = 2000;
-static const uint32_t COMMAND_TIMEOUT_RESTART_US = 500000;
+static const uint32_t COMMAND_TIMEOUT_RESTART_US = 5000000;
 
 // Our interface
 static bool interface_created;
