@@ -29,6 +29,8 @@
 #include "bt_common.h"
 #include "bta_gattc_int.h"
 
+using base::StringPrintf;
+
 /*****************************************************************************
  * Constants and types
  ****************************************************************************/
@@ -303,12 +305,12 @@ bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event,
   tBTA_GATTC_STATE in_state = p_clcb->state;
   uint16_t in_event = event;
 #if (BTA_GATT_DEBUG == TRUE)
-  APPL_TRACE_DEBUG("%s: State 0x%02x [%s], Event 0x%x[%s]", __func__, in_state,
-                   gattc_state_code(in_state), in_event,
-                   gattc_evt_code(in_event));
+  VLOG(1) << StringPrintf("%s: State 0x%02x [%s], Event 0x%x[%s]", __func__,
+                          in_state, gattc_state_code(in_state), in_event,
+                          gattc_evt_code(in_event));
 #else
-  APPL_TRACE_VERBOSE("%s: State 0x%02x, Event 0x%x", __func__, in_state,
-                     in_event);
+  VLOG(1) << StringPrintf("%s: State 0x%02x, Event 0x%x", __func__, in_state,
+                          in_event);
 #endif
 
   /* look up the state table for the current state */
@@ -337,13 +339,15 @@ bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event,
 
 #if (BTA_GATT_DEBUG == TRUE)
   if (in_state != p_clcb->state) {
-    APPL_TRACE_DEBUG("GATTC State Change: [%s] -> [%s] after Event [%s]",
-                     gattc_state_code(in_state),
-                     gattc_state_code(p_clcb->state), gattc_evt_code(in_event));
+    VLOG(1) << StringPrintf("GATTC State Change: [%s] -> [%s] after Event [%s]",
+                            gattc_state_code(in_state),
+                            gattc_state_code(p_clcb->state),
+                            gattc_evt_code(in_event));
   }
 #else
-  APPL_TRACE_DEBUG("%s: GATTC State Change: 0x%02x -> 0x%02x after Event 0x%x",
-                   __func__, in_state, p_clcb->state, in_event);
+  VLOG(1) << StringPrintf(
+      "%s: GATTC State Change: 0x%02x -> 0x%02x after Event 0x%x", __func__,
+      in_state, p_clcb->state, in_event);
 #endif
   return rt;
 }
@@ -362,8 +366,7 @@ bool bta_gattc_hdl_event(BT_HDR* p_msg) {
   tBTA_GATTC_CLCB* p_clcb = NULL;
   bool rt = true;
 #if (BTA_GATT_DEBUG == TRUE)
-  APPL_TRACE_DEBUG("bta_gattc_hdl_event: Event [%s]",
-                   gattc_evt_code(p_msg->event));
+  VLOG(1) << __func__ << ": Event:" << gattc_evt_code(p_msg->event);
 #endif
   switch (p_msg->event) {
 
@@ -387,7 +390,7 @@ bool bta_gattc_hdl_event(BT_HDR* p_msg) {
         rt =
             bta_gattc_sm_execute(p_clcb, p_msg->event, (tBTA_GATTC_DATA*)p_msg);
       } else {
-        APPL_TRACE_DEBUG("Ignore unknown conn ID: %d", p_msg->layer_specific);
+        VLOG(1) << "Ignore unknown conn ID: " << +p_msg->layer_specific;
       }
 
       break;
