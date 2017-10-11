@@ -51,7 +51,7 @@ static const tBTA_SYS_REG bta_gatts_reg = {bta_gatts_hdl_event,
  ******************************************************************************/
 void BTA_GATTS_Disable(void) {
   if (!bta_sys_is_register(BTA_ID_GATTS)) {
-    APPL_TRACE_WARNING("GATTS Module not enabled/already disabled");
+    LOG(WARNING) << "GATTS Module not enabled/already disabled";
     return;
   }
 
@@ -131,7 +131,7 @@ extern uint16_t BTA_GATTS_AddService(tGATT_IF server_if,
   uint8_t rcb_idx =
       bta_gatts_find_app_rcb_idx_by_app_if(&bta_gatts_cb, server_if);
 
-  APPL_TRACE_ERROR("%s: rcb_idx = %d", __func__, rcb_idx);
+  LOG(ERROR) << __func__ << ": rcb_idx=" << +rcb_idx;
 
   if (rcb_idx == BTA_GATTS_INVALID_APP) return GATT_ERROR;
 
@@ -150,7 +150,7 @@ extern uint16_t BTA_GATTS_AddService(tGATT_IF server_if,
     return GATT_SUCCESS;
   } else {
     memset(&bta_gatts_cb.srvc_cb[srvc_idx], 0, sizeof(tBTA_GATTS_SRVC_CB));
-    APPL_TRACE_ERROR("%s: service creation failed.", __func__);
+    LOG(ERROR) << __func__ << ": service creation failed.";
     return GATT_ERROR;
   }
 }

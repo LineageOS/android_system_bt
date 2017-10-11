@@ -105,12 +105,10 @@ uint8_t bta_gatts_find_app_rcb_idx_by_app_if(tBTA_GATTS_CB* p_cb,
 tBTA_GATTS_SRVC_CB* bta_gatts_find_srvc_cb_by_srvc_id(tBTA_GATTS_CB* p_cb,
                                                       uint16_t service_id) {
   uint8_t i;
-  APPL_TRACE_DEBUG("bta_gatts_find_srvc_cb_by_srvc_id  service_id=%d",
-                   service_id);
+  VLOG(1) << __func__ << ": service_id=" << +service_id;
   for (i = 0; i < BTA_GATTS_MAX_SRVC_NUM; i++) {
     if (p_cb->srvc_cb[i].in_use && p_cb->srvc_cb[i].service_id == service_id) {
-      APPL_TRACE_DEBUG(
-          "bta_gatts_find_srvc_cb_by_srvc_id  found service cb index =%d", i);
+      VLOG(1) << __func__ << ": found service cb index=" << +i;
       return &p_cb->srvc_cb[i];
     }
   }
