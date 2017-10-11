@@ -129,8 +129,7 @@ tBTA_GATTC_CLCB* bta_gattc_clcb_alloc(tGATT_IF client_if,
   for (i_clcb = 0; i_clcb < BTA_GATTC_CLCB_MAX; i_clcb++) {
     if (!bta_gattc_cb.clcb[i_clcb].in_use) {
 #if (BTA_GATT_DEBUG == TRUE)
-      APPL_TRACE_DEBUG("bta_gattc_clcb_alloc: found clcb[%d] available",
-                       i_clcb);
+      VLOG(1) << __func__ << ": found clcb:" << +i_clcb << " available", ;
 #endif
       p_clcb = &bta_gattc_cb.clcb[i_clcb];
       p_clcb->in_use = true;
@@ -209,7 +208,7 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB* p_clcb) {
     osi_free_and_reset((void**)&p_clcb->p_q_cmd);
     memset(p_clcb, 0, sizeof(tBTA_GATTC_CLCB));
   } else {
-    APPL_TRACE_ERROR("bta_gattc_clcb_dealloc p_clcb=NULL");
+    LOG(ERROR) << __func__ << " p_clcb=NULL";
   }
 }
 
@@ -322,7 +321,7 @@ bool bta_gattc_enqueue(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
     return true;
   }
 
-  APPL_TRACE_ERROR("%s: already has a pending command!!", __func__);
+  LOG(ERROR) << __func__ << ": already has a pending command";
   /* skip the callback now. ----- need to send callback ? */
   return false;
 }
@@ -345,7 +344,7 @@ bool bta_gattc_check_notif_registry(tBTA_GATTC_RCB* p_clreg,
     if (p_clreg->notif_reg[i].in_use &&
         p_clreg->notif_reg[i].remote_bda == p_srcb->server_bda &&
         p_clreg->notif_reg[i].handle == p_notify->handle) {
-      APPL_TRACE_DEBUG("Notification registered!");
+      VLOG(1) << "Notification registered!";
       return true;
     }
   }
@@ -390,8 +389,7 @@ void bta_gattc_clear_notif_registration(tBTA_GATTC_SERV* p_srcb,
       }
     }
   } else {
-    APPL_TRACE_ERROR(
-        "can not clear indication/notif registration for unknown app");
+    LOG(ERROR) << "can not clear indication/notif registration for unknown app";
   }
   return;
 }
@@ -433,7 +431,8 @@ bool bta_gattc_mark_bg_conn(tGATT_IF client_if,
     }
   }
   if (!add) {
-    LOG(ERROR) << __func__ << " unable to find the bg connection mask for: "
+    LOG(ERROR) << __func__
+               << " unable to find the bg connection mask for bd_addr="
                << remote_bda_ptr;
     return false;
   } else /* adding a new device mask */
@@ -450,7 +449,7 @@ bool bta_gattc_mark_bg_conn(tGATT_IF client_if,
         return true;
       }
     }
-    APPL_TRACE_ERROR("no available space to mark the bg connection status");
+    LOG(ERROR) << "no available space to mark the bg connection status";
     return false;
   }
 }
@@ -523,8 +522,7 @@ tBTA_GATTC_CONN* bta_gattc_conn_alloc(const RawAddress& remote_bda) {
   for (i_conn = 0; i_conn < BTA_GATTC_CONN_MAX; i_conn++, p_conn++) {
     if (!p_conn->in_use) {
 #if (BTA_GATT_DEBUG == TRUE)
-      APPL_TRACE_DEBUG("bta_gattc_conn_alloc: found conn_track[%d] available",
-                       i_conn);
+      VLOG(1) << __func__ << ": found conn_track:" << +i_conn << " available";
 #endif
       p_conn->in_use = true;
       p_conn->remote_bda = remote_bda;
@@ -550,8 +548,7 @@ tBTA_GATTC_CONN* bta_gattc_conn_find(const RawAddress& remote_bda) {
   for (i_conn = 0; i_conn < BTA_GATTC_CONN_MAX; i_conn++, p_conn++) {
     if (p_conn->in_use && remote_bda == p_conn->remote_bda) {
 #if (BTA_GATT_DEBUG == TRUE)
-      APPL_TRACE_DEBUG("bta_gattc_conn_find: found conn_track[%d] matched",
-                       i_conn);
+      VLOG(1) << __func__ << ": found conn_track:" << +i_conn << " matched";
 #endif
       return p_conn;
     }
@@ -654,8 +651,8 @@ tBTA_GATTC_CLCB* bta_gattc_find_int_disconn_clcb(tBTA_GATTC_DATA* p_msg) {
                                         p_msg->int_conn.transport);
   }
   if (p_clcb == NULL) {
-    APPL_TRACE_DEBUG(" disconnection ID: [%d] not used by BTA",
-                     p_msg->int_conn.hdr.layer_specific);
+    VLOG(1) << " disconnection ID:" << +p_msg->int_conn.hdr.layer_specific
+            << " not used by BTA";
   }
   return p_clcb;
 }
