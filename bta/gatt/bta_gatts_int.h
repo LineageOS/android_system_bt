@@ -29,6 +29,7 @@
 #include "bta_sys.h"
 #include "gatt_api.h"
 
+#include <base/strings/stringprintf.h>
 #include "bt_common.h"
 
 /*****************************************************************************

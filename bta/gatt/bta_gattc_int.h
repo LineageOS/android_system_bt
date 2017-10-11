@@ -32,6 +32,9 @@
 
 #include "bt_common.h"
 
+#include <base/logging.h>
+#include <base/strings/stringprintf.h>
+
 /*****************************************************************************
  *  Constants and data types
  ****************************************************************************/
