@@ -58,7 +58,7 @@ static const tBTA_SYS_REG bta_gattc_reg = {bta_gattc_hdl_event,
  ******************************************************************************/
 void BTA_GATTC_Disable(void) {
   if (!bta_sys_is_register(BTA_ID_GATTC)) {
-    APPL_TRACE_WARNING("GATTC Module not enabled/already disabled");
+    LOG(WARNING) << "GATTC Module not enabled/already disabled";
     return;
   }
 
@@ -593,7 +593,8 @@ void BTA_GATTC_SendIndConfirm(uint16_t conn_id, uint16_t handle) {
   tBTA_GATTC_API_CONFIRM* p_buf =
       (tBTA_GATTC_API_CONFIRM*)osi_calloc(sizeof(tBTA_GATTC_API_CONFIRM));
 
-  APPL_TRACE_API("%s conn_id=%d handle=0x%04x", __func__, conn_id, handle);
+  VLOG(1) << __func__ << ": conn_id=" << +conn_id << " handle=0x" << std::hex
+          << +handle;
 
   p_buf->hdr.event = BTA_GATTC_API_CONFIRM_EVT;
   p_buf->hdr.layer_specific = conn_id;
@@ -624,7 +625,7 @@ tGATT_STATUS BTA_GATTC_RegisterForNotifications(tGATT_IF client_if,
   uint8_t i;
 
   if (!handle) {
-    APPL_TRACE_ERROR("deregistration failed, handle is 0");
+    LOG(ERROR) << "deregistration failed, handle is 0";
     return status;
   }
 
@@ -634,7 +635,7 @@ tGATT_STATUS BTA_GATTC_RegisterForNotifications(tGATT_IF client_if,
       if (p_clreg->notif_reg[i].in_use &&
           p_clreg->notif_reg[i].remote_bda == bda &&
           p_clreg->notif_reg[i].handle == handle) {
-        APPL_TRACE_WARNING("notification already registered");
+        LOG(WARNING) << "notification already registered";
         status = GATT_SUCCESS;
         break;
       }
@@ -655,11 +656,11 @@ tGATT_STATUS BTA_GATTC_RegisterForNotifications(tGATT_IF client_if,
       }
       if (i == BTA_GATTC_NOTIF_REG_MAX) {
         status = GATT_NO_RESOURCES;
-        APPL_TRACE_ERROR("Max Notification Reached, registration failed.");
+        LOG(ERROR) << "Max Notification Reached, registration failed.";
       }
     }
   } else {
-    APPL_TRACE_ERROR("Client_if: %d Not Registered", client_if);
+    LOG(ERROR) << "client_if=" << +client_if << " Not Registered";
   }
 
   return status;
@@ -683,14 +684,14 @@ tGATT_STATUS BTA_GATTC_DeregisterForNotifications(tGATT_IF client_if,
                                                   const RawAddress& bda,
                                                   uint16_t handle) {
   if (!handle) {
-    APPL_TRACE_ERROR("%s: deregistration failed, handle is 0", __func__);
+    LOG(ERROR) << __func__ << ": deregistration failed, handle is 0";
     return GATT_ILLEGAL_PARAMETER;
   }
 
   tBTA_GATTC_RCB* p_clreg = bta_gattc_cl_get_regcb(client_if);
   if (p_clreg == NULL) {
-    LOG(ERROR) << __func__ << " client_if: " << +client_if
-               << " not registered bd_addr:" << bda;
+    LOG(ERROR) << __func__ << " client_if=" << +client_if
+               << " not registered bd_addr=" << bda;
     return GATT_ILLEGAL_PARAMETER;
   }
 
@@ -698,13 +699,13 @@ tGATT_STATUS BTA_GATTC_DeregisterForNotifications(tGATT_IF client_if,
     if (p_clreg->notif_reg[i].in_use &&
         p_clreg->notif_reg[i].remote_bda == bda &&
         p_clreg->notif_reg[i].handle == handle) {
-      VLOG(1) << __func__ << " deregistered bd_addr:" << bda;
+      VLOG(1) << __func__ << " deregistered bd_addr=" << bda;
       memset(&p_clreg->notif_reg[i], 0, sizeof(tBTA_GATTC_NOTIF_REG));
       return GATT_SUCCESS;
     }
   }
 
-  LOG(ERROR) << __func__ << " registration not found bd_addr:" << bda;
+  LOG(ERROR) << __func__ << " registration not found bd_addr=" << bda;
   return GATT_ERROR;
 }
 
