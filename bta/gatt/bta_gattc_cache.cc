@@ -82,11 +82,6 @@ typedef struct {
 } tBTA_GATTC_CB_DATA;
 
 #if (BTA_GATT_DEBUG == TRUE)
-static const char* bta_gattc_attr_type[] = {
-    "I", /* Included Service */
-    "C", /* Characteristic */
-    "D"  /* Characteristic Descriptor */
-};
 /* utility functions */
 
 /* debug function to display the server cache */
@@ -116,7 +111,7 @@ static void bta_gattc_display_cache_server(
 
       for (const tBTA_GATTC_DESCRIPTOR& d : c.descriptors) {
         LOG(ERROR) << "\t\t Descriptor handle=" << loghex(d.handle)
-                   << ", uuid=" : << d.uuid;
+                   << ", uuid=" << d.uuid;
       }
     }
   }
@@ -224,54 +219,64 @@ static void bta_gattc_add_char_to_cache(tBTA_GATTC_SERV* p_srvc_cb,
   return;
 }
 
-/* Add an attribute into database cache buffer */
-static void bta_gattc_add_attr_to_cache(tBTA_GATTC_SERV* p_srvc_cb,
-                                        uint16_t handle, const Uuid& uuid,
-                                        uint8_t property,
-                                        uint16_t incl_srvc_s_handle,
-                                        tBTA_GATTC_ATTR_TYPE type) {
+/* Add an descriptor into database cache buffer */
+static void bta_gattc_add_descr_to_cache(tBTA_GATTC_SERV* p_srvc_cb,
+                                         uint16_t handle, const Uuid& uuid) {
 #if (BTA_GATT_DEBUG == TRUE)
-  VLOG(1) << __func__ << ": Add a " << bta_gattc_attr_type[type]
-          << " into Service, handle=" << +handle << " uuid=" << uuid
-          << " property=0x" << std::hex << property << " type=" << +type;
+  VLOG(1) << __func__ << ": add descriptor, handle=" << loghex(handle)
+          << ", uuid=" << uuid;
 #endif
 
   tBTA_GATTC_SERVICE* service =
       bta_gattc_find_matching_service(p_srvc_cb->srvc_cache, handle);
   if (!service) {
-    LOG(ERROR) << "Illegal action to add char/descr/incl srvc for non-existing "
-                  "service!";
+    LOG(ERROR) << "Illegal action to add descriptor for non-existing service!";
     return;
   }
 
-  if (type == BTA_GATTC_ATTR_TYPE_INCL_SRVC) {
-    tBTA_GATTC_SERVICE* included_service = bta_gattc_find_matching_service(
-        p_srvc_cb->srvc_cache, incl_srvc_s_handle);
-    if (!included_service) {
-      LOG(ERROR) << __func__
-                 << ": Illegal action to add non-existing included service!";
-      return;
-    }
-
-    service->included_svc.emplace_back(tBTA_GATTC_INCLUDED_SVC{
-        .handle = handle,
-        .uuid = uuid,
-        .owning_service = service,
-        .included_service = included_service,
-    });
-  } else if (type == BTA_GATTC_ATTR_TYPE_CHAR_DESCR) {
-    if (service->characteristics.empty()) {
-      LOG(ERROR) << __func__
-                 << ": Illegal action to add descriptor before adding a "
-                    "characteristic!";
-      return;
-    }
-
-    tBTA_GATTC_CHARACTERISTIC& char_node = service->characteristics.back();
-    char_node.descriptors.emplace_back(tBTA_GATTC_DESCRIPTOR{
-        .handle = handle, .uuid = uuid, .characteristic = &char_node,
-    });
+  if (service->characteristics.empty()) {
+    LOG(ERROR) << __func__
+               << ": Illegal action to add descriptor before adding a "
+                  "characteristic!";
+    return;
   }
+
+  tBTA_GATTC_CHARACTERISTIC& char_node = service->characteristics.back();
+  char_node.descriptors.emplace_back(tBTA_GATTC_DESCRIPTOR{
+      .handle = handle, .uuid = uuid, .characteristic = &char_node,
+  });
+}
+
+/* Add an attribute into database cache buffer */
+static void bta_gattc_add_incl_srvc_to_cache(tBTA_GATTC_SERV* p_srvc_cb,
+                                             uint16_t handle, const Uuid& uuid,
+                                             uint16_t incl_srvc_s_handle) {
+#if (BTA_GATT_DEBUG == TRUE)
+  VLOG(1) << __func__ << ": add included service, handle=" << loghex(handle)
+          << ", uuid=" << uuid;
+#endif
+
+  tBTA_GATTC_SERVICE* service =
+      bta_gattc_find_matching_service(p_srvc_cb->srvc_cache, handle);
+  if (!service) {
+    LOG(ERROR) << "Illegal action to add incl srvc for non-existing service!";
+    return;
+  }
+
+  tBTA_GATTC_SERVICE* included_service = bta_gattc_find_matching_service(
+      p_srvc_cb->srvc_cache, incl_srvc_s_handle);
+  if (!included_service) {
+    LOG(ERROR) << __func__
+               << ": Illegal action to add non-existing included service!";
+    return;
+  }
+
+  service->included_svc.emplace_back(tBTA_GATTC_INCLUDED_SVC{
+      .handle = handle,
+      .uuid = uuid,
+      .owning_service = service,
+      .included_service = included_service,
+  });
 }
 
 /*******************************************************************************
@@ -784,10 +789,9 @@ void bta_gattc_disc_res_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
               p_data->value.incl_service.e_handle,
               p_data->value.incl_service.service_type, false);
         /* add into database */
-        bta_gattc_add_attr_to_cache(
+        bta_gattc_add_incl_srvc_to_cache(
             p_srvc_cb, p_data->handle, p_data->value.incl_service.service_type,
-            pri_srvc, p_data->value.incl_service.s_handle,
-            BTA_GATTC_ATTR_TYPE_INCL_SRVC);
+            p_data->value.incl_service.s_handle);
         break;
 
       case GATT_DISC_CHAR:
@@ -799,9 +803,7 @@ void bta_gattc_disc_res_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
         break;
 
       case GATT_DISC_CHAR_DSCPT:
-        bta_gattc_add_attr_to_cache(p_srvc_cb, p_data->handle, p_data->type, 0,
-                                    0 /* incl_srvc_handle */,
-                                    BTA_GATTC_ATTR_TYPE_CHAR_DESCR);
+        bta_gattc_add_descr_to_cache(p_srvc_cb, p_data->handle, p_data->type);
         break;
     }
   }
@@ -1178,10 +1180,12 @@ void bta_gattc_rebuild_cache(tBTA_GATTC_SERV* p_srvc_cb, uint16_t num_attr,
         break;
 
       case BTA_GATTC_ATTR_TYPE_CHAR_DESCR:
+        bta_gattc_add_descr_to_cache(p_srvc_cb, p_attr->s_handle, p_attr->uuid);
+        break;
       case BTA_GATTC_ATTR_TYPE_INCL_SRVC:
-        bta_gattc_add_attr_to_cache(p_srvc_cb, p_attr->s_handle, p_attr->uuid,
-                                    p_attr->prop, p_attr->incl_srvc_handle,
-                                    p_attr->attr_type);
+        bta_gattc_add_incl_srvc_to_cache(p_srvc_cb, p_attr->s_handle,
+                                         p_attr->uuid,
+                                         p_attr->incl_srvc_handle);
         break;
     }
     p_attr++;
