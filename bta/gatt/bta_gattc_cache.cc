@@ -740,72 +740,59 @@ static tGATT_STATUS bta_gattc_sdp_service_disc(uint16_t conn_id,
   cb_data->sdp_conn_id = conn_id;
   return GATT_SUCCESS;
 }
-/*******************************************************************************
- *
- * Function         bta_gattc_disc_res_cback
- *                  bta_gattc_disc_cmpl_cback
- *
- * Description      callback functions to GATT client stack.
- *
- * Returns          void
- *
- ******************************************************************************/
+
+/** callback function to GATT client stack */
 void bta_gattc_disc_res_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
                               tGATT_DISC_RES* p_data) {
-  tBTA_GATTC_SERV* p_srvc_cb = NULL;
-  bool pri_srvc;
   tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
+  tBTA_GATTC_SERV* p_srvc_cb = bta_gattc_find_scb_by_cid(conn_id);
 
-  p_srvc_cb = bta_gattc_find_scb_by_cid(conn_id);
+  if (!p_srvc_cb || !p_clcb || p_clcb->state != BTA_GATTC_DISCOVER_ST) return;
 
-  if (p_srvc_cb != NULL && p_clcb != NULL &&
-      p_clcb->state == BTA_GATTC_DISCOVER_ST) {
-    switch (disc_type) {
-      case GATT_DISC_SRVC_ALL:
-        /* discover services result, add services into a service list */
+  switch (disc_type) {
+    case GATT_DISC_SRVC_ALL:
+      /* discover services result, add services into a service list */
+      bta_gattc_add_srvc_to_list(p_srvc_cb, p_data->handle,
+                                 p_data->value.group_value.e_handle,
+                                 p_data->value.group_value.service_type, true);
+
+      break;
+    case GATT_DISC_SRVC_BY_UUID:
+      bta_gattc_add_srvc_to_list(p_srvc_cb, p_data->handle,
+                                 p_data->value.group_value.e_handle,
+                                 p_data->value.group_value.service_type, true);
+      break;
+
+    case GATT_DISC_INC_SRVC:
+      /* add included service into service list if it's secondary or it never
+         showed up in the primary service search */
+      if (!bta_gattc_srvc_in_list(p_srvc_cb,
+                                  p_data->value.incl_service.s_handle,
+                                  p_data->value.incl_service.e_handle,
+                                  p_data->value.incl_service.service_type)) {
         bta_gattc_add_srvc_to_list(
-            p_srvc_cb, p_data->handle, p_data->value.group_value.e_handle,
-            p_data->value.group_value.service_type, true);
-
-        break;
-      case GATT_DISC_SRVC_BY_UUID:
-        bta_gattc_add_srvc_to_list(
-            p_srvc_cb, p_data->handle, p_data->value.group_value.e_handle,
-            p_data->value.group_value.service_type, true);
-        break;
-
-      case GATT_DISC_INC_SRVC:
-        /* add included service into service list if it's secondary or it never
-           showed up
-           in the primary service search */
-        pri_srvc = bta_gattc_srvc_in_list(
             p_srvc_cb, p_data->value.incl_service.s_handle,
             p_data->value.incl_service.e_handle,
-            p_data->value.incl_service.service_type);
+            p_data->value.incl_service.service_type, false);
+      }
 
-        if (!pri_srvc)
-          bta_gattc_add_srvc_to_list(
-              p_srvc_cb, p_data->value.incl_service.s_handle,
-              p_data->value.incl_service.e_handle,
-              p_data->value.incl_service.service_type, false);
-        /* add into database */
-        bta_gattc_add_incl_srvc_to_cache(
-            p_srvc_cb, p_data->handle, p_data->value.incl_service.service_type,
-            p_data->value.incl_service.s_handle);
-        break;
+      /* add into database */
+      bta_gattc_add_incl_srvc_to_cache(p_srvc_cb, p_data->handle,
+                                       p_data->value.incl_service.service_type,
+                                       p_data->value.incl_service.s_handle);
+      break;
 
-      case GATT_DISC_CHAR:
-        /* add char value into database */
-        bta_gattc_add_char_to_list(p_srvc_cb, p_data->handle,
-                                   p_data->value.dclr_value.val_handle,
-                                   p_data->value.dclr_value.char_uuid,
-                                   p_data->value.dclr_value.char_prop);
-        break;
+    case GATT_DISC_CHAR:
+      /* add char value into database */
+      bta_gattc_add_char_to_list(p_srvc_cb, p_data->handle,
+                                 p_data->value.dclr_value.val_handle,
+                                 p_data->value.dclr_value.char_uuid,
+                                 p_data->value.dclr_value.char_prop);
+      break;
 
-      case GATT_DISC_CHAR_DSCPT:
-        bta_gattc_add_descr_to_cache(p_srvc_cb, p_data->handle, p_data->type);
-        break;
-    }
+    case GATT_DISC_CHAR_DSCPT:
+      bta_gattc_add_descr_to_cache(p_srvc_cb, p_data->handle, p_data->type);
+      break;
   }
 }
 
