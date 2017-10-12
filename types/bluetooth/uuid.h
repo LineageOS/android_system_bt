@@ -40,10 +40,11 @@ class Uuid final {
 
   static constexpr size_t kString128BitLen = 36;
 
-  static Uuid kEmpty;  // 00000000-0000-0000-0000-000000000000
-  static Uuid kBase;   // 00000000-0000-1000-8000-00805f9b34fb
+  static const Uuid kEmpty;  // 00000000-0000-0000-0000-000000000000
 
   using UUID128Bit = std::array<uint8_t, kNumBytes128>;
+
+  Uuid() = default;
 
   // Creates and returns a random 128-bit UUID.
   static Uuid GetRandom();
@@ -76,7 +77,10 @@ class Uuid final {
   static Uuid From32Bit(uint32_t uuid32bit);
 
   // Converts 128 bit Big Endian array representing UUID to UUID.
-  static Uuid From128BitBE(const UUID128Bit& uuid);
+  static constexpr Uuid From128BitBE(const UUID128Bit& uuid) {
+    Uuid u(uuid);
+    return u;
+  }
 
   // Converts 128 bit Big Endian array representing UUID to UUID. |uuid| points
   // to beginning of array.
@@ -107,6 +111,8 @@ class Uuid final {
   bool operator!=(const Uuid& rhs) const;
 
  private:
+  constexpr Uuid(const UUID128Bit& val) : uu{val} {};
+
   // Network-byte-ordered ID (Big Endian).
   UUID128Bit uu;
 };
