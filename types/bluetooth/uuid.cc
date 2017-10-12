@@ -28,10 +28,13 @@ static_assert(sizeof(Uuid) == 16, "Uuid must be 16 bytes long!");
 
 using UUID128Bit = Uuid::UUID128Bit;
 
-Uuid Uuid::kEmpty = Uuid::From128BitBE(UUID128Bit{{0x00}});
-Uuid Uuid::kBase = Uuid::From128BitBE(
+const Uuid Uuid::kEmpty = Uuid::From128BitBE(UUID128Bit{{0x00}});
+
+namespace {
+constexpr Uuid kBase = Uuid::From128BitBE(
     UUID128Bit{{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00,
                 0x00, 0x80, 0x5f, 0x9b, 0x34, 0xfb}});
+}  // namespace
 
 size_t Uuid::GetShortestRepresentationSize() const {
   if (memcmp(uu.data() + kNumBytes32, kBase.uu.data() + kNumBytes32,
@@ -114,12 +117,6 @@ Uuid Uuid::From32Bit(uint32_t uuid32) {
   u.uu[1] = (uint8_t)((0x00FF0000 & uuid32) >> 16);
   u.uu[2] = (uint8_t)((0x0000FF00 & uuid32) >> 8);
   u.uu[3] = (uint8_t)(0x000000FF & uuid32);
-  return u;
-}
-
-Uuid Uuid::From128BitBE(const UUID128Bit& uuid) {
-  Uuid u;
-  u.uu = uuid;
   return u;
 }
 
