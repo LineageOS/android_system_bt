@@ -1480,7 +1480,7 @@ static bt_status_t get_report(RawAddress* bd_addr,
     return BT_STATUS_FAIL;
   } else if (((int)reportType) <= BTA_HH_RPTT_RESRV ||
              ((int)reportType) > BTA_HH_RPTT_FEATURE) {
-    LOG(ERROR) << " Error, device" << *bd_addr << " not opened";
+    LOG(ERROR) << " Error, report type=" << +reportType << " not supported";
     return BT_STATUS_FAIL;
   } else {
     BTA_HhGetReport(p_dev->dev_handle, reportType, reportId, bufferSize);
@@ -1517,7 +1517,7 @@ static bt_status_t set_report(RawAddress* bd_addr,
     return BT_STATUS_FAIL;
   } else if (((int)reportType) <= BTA_HH_RPTT_RESRV ||
              ((int)reportType) > BTA_HH_RPTT_FEATURE) {
-    LOG(ERROR) << " Error, device" << *bd_addr << " not opened";
+    LOG(ERROR) << " Error, report type=" << +reportType << " not supported";
     return BT_STATUS_FAIL;
   } else {
     int hex_bytes_filled;
