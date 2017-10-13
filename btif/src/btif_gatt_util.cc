@@ -99,11 +99,10 @@ static void btif_gatt_set_encryption_cb(UNUSED_ATTR const RawAddress& bd_addr,
 #if (BLE_DELAY_REQUEST_ENC == FALSE)
 void btif_gatt_check_encrypted_link(RawAddress bd_addr,
                                     tGATT_TRANSPORT transport_link) {
-  char buf[100];
-
-  if ((btif_storage_get_ble_bonding_key(&bd_addr, BTIF_DM_LE_KEY_PENC, buf,
-                                        sizeof(tBTM_LE_PENC_KEYS)) ==
-       BT_STATUS_SUCCESS) &&
+  tBTM_LE_PENC_KEYS key;
+  if ((btif_storage_get_ble_bonding_key(
+           &bd_addr, BTIF_DM_LE_KEY_PENC, (uint8_t*)&key,
+           sizeof(tBTM_LE_PENC_KEYS)) == BT_STATUS_SUCCESS) &&
       !btif_gatt_is_link_encrypted(bd_addr)) {
     BTIF_TRACE_DEBUG("%s: transport = %d", __func__, transport_link);
     BTA_DmSetEncryption(bd_addr, transport_link, &btif_gatt_set_encryption_cb,
