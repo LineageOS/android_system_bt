@@ -288,27 +288,23 @@ bool gatt_find_the_connected_bda(uint8_t start_idx, RawAddress& bda,
  *
  ******************************************************************************/
 bool gatt_is_srv_chg_ind_pending(tGATT_TCB* p_tcb) {
-  bool srv_chg_ind_pending = false;
-
   VLOG(1) << __func__
           << " is_queue_empty=" << fixed_queue_is_empty(p_tcb->pending_ind_q);
 
-  if (p_tcb->indicate_handle == gatt_cb.handle_of_h_r) {
-    srv_chg_ind_pending = true;
-  } else if (!fixed_queue_is_empty(p_tcb->pending_ind_q)) {
-    list_t* list = fixed_queue_get_list(p_tcb->pending_ind_q);
-    for (const list_node_t* node = list_begin(list); node != list_end(list);
-         node = list_next(node)) {
-      tGATT_VALUE* p_buf = (tGATT_VALUE*)list_node(node);
-      if (p_buf->handle == gatt_cb.handle_of_h_r) {
-        srv_chg_ind_pending = true;
-        break;
-      }
+  if (p_tcb->indicate_handle == gatt_cb.handle_of_h_r) return true;
+
+  if (fixed_queue_is_empty(p_tcb->pending_ind_q)) return false;
+
+  list_t* list = fixed_queue_get_list(p_tcb->pending_ind_q);
+  for (const list_node_t* node = list_begin(list); node != list_end(list);
+       node = list_next(node)) {
+    tGATT_VALUE* p_buf = (tGATT_VALUE*)list_node(node);
+    if (p_buf->handle == gatt_cb.handle_of_h_r) {
+      return true;
     }
   }
 
-  VLOG(1) << __func__ << "srv_chg_ind_pending = %d", srv_chg_ind_pending;
-  return srv_chg_ind_pending;
+  return false;
 }
 
 /*******************************************************************************
@@ -1101,24 +1097,19 @@ void gatt_sr_update_prep_cnt(tGATT_TCB& tcb, tGATT_IF gatt_if, bool is_inc,
  *
  ******************************************************************************/
 bool gatt_cancel_open(tGATT_IF gatt_if, const RawAddress& bda) {
-  tGATT_TCB* p_tcb = NULL;
-  bool status = true;
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bda, BT_TRANSPORT_LE);
+  if (!p_tcb) return true;
 
-  p_tcb = gatt_find_tcb_by_addr(bda, BT_TRANSPORT_LE);
-
-  if (p_tcb) {
-    if (gatt_get_ch_state(p_tcb) == GATT_CH_OPEN) {
-      LOG(ERROR) << __func__ << ": link connected Too late to cancel";
-      status = false;
-    } else {
-      gatt_update_app_use_link_flag(gatt_if, p_tcb, false, false);
-      if (p_tcb->app_hold_link.empty()) {
-        gatt_disconnect(p_tcb);
-      }
-    }
+  if (gatt_get_ch_state(p_tcb) == GATT_CH_OPEN) {
+    LOG(ERROR) << __func__ << ": link connected Too late to cancel";
+    return false;
   }
 
-  return status;
+  gatt_update_app_use_link_flag(gatt_if, p_tcb, false, false);
+
+  if (p_tcb->app_hold_link.empty()) gatt_disconnect(p_tcb);
+
+  return true;
 }
 
 /** Enqueue this command */
@@ -1442,27 +1433,22 @@ void gatt_reset_bgdev_list(void) { gatt_cb.bgconn_dev.clear(); }
  ******************************************************************************/
 bool gatt_update_auto_connect_dev(tGATT_IF gatt_if, bool add,
                                   const RawAddress& bd_addr) {
-  bool ret = false;
-  tGATT_REG* p_reg;
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
 
   VLOG(1) << __func__;
   /* Make sure app is registered */
-  p_reg = gatt_get_regcb(gatt_if);
-  if (p_reg == NULL) {
+  tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
+  if (!p_reg) {
     LOG(ERROR) << __func__ << " gatt_if is not registered " << +gatt_if;
     return false;
   }
 
-  if (add) {
-    ret = gatt_add_bg_dev_list(p_reg, bd_addr);
+  if (!add) return gatt_remove_bg_dev_from_list(p_reg, bd_addr);
 
-    if (ret && p_tcb != NULL) {
-      /* if a connected device, update the link holding number */
-      gatt_update_app_use_link_flag(gatt_if, p_tcb, true, true);
-    }
-  } else {
-    ret = gatt_remove_bg_dev_from_list(p_reg, bd_addr);
+  bool ret = gatt_add_bg_dev_list(p_reg, bd_addr);
+  if (ret && p_tcb != NULL) {
+    /* if a connected device, update the link holding number */
+    gatt_update_app_use_link_flag(gatt_if, p_tcb, true, true);
   }
   return ret;
 }
