@@ -307,30 +307,20 @@ void bta_gattc_get_disc_range(tBTA_GATTC_SERV* p_srvc_cb, uint16_t* p_s_hdl,
 #endif
   return;
 }
-/*******************************************************************************
- *
- * Function         bta_gattc_discover_pri_service
- *
- * Description      Start primary service discovery
- *
- * Returns          status of the operation.
- *
- ******************************************************************************/
+
+/** Start primary service discovery */
 tGATT_STATUS bta_gattc_discover_pri_service(uint16_t conn_id,
                                             tBTA_GATTC_SERV* p_server_cb,
                                             uint8_t disc_type) {
   tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
-  tGATT_STATUS status = GATT_ERROR;
+  if (!p_clcb) return GATT_ERROR;
 
-  if (p_clcb) {
-    if (p_clcb->transport == BTA_TRANSPORT_LE)
-      status = bta_gattc_discover_procedure(conn_id, p_server_cb, disc_type);
-    else
-      status = bta_gattc_sdp_service_disc(conn_id, p_server_cb);
-  }
+  if (p_clcb->transport == BTA_TRANSPORT_LE)
+    return bta_gattc_discover_procedure(conn_id, p_server_cb, disc_type);
 
-  return status;
+  return bta_gattc_sdp_service_disc(conn_id, p_server_cb);
 }
+
 /*******************************************************************************
  *
  * Function         bta_gattc_discover_procedure
