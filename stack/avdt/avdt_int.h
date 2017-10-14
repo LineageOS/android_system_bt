@@ -516,8 +516,8 @@ typedef struct {
   tAVDT_SCB scb[AVDT_NUM_SEPS];    /* stream control blocks */
   tAVDT_AD ad;                     /* adaption layer control block */
   tAVDTC_CTRL_CBACK* p_conf_cback; /* conformance callback function */
-  tAVDT_CCB_ACTION* p_ccb_act;     /* pointer to CCB action functions */
-  tAVDT_SCB_ACTION* p_scb_act;     /* pointer to SCB action functions */
+  const tAVDT_CCB_ACTION* p_ccb_act; /* pointer to CCB action functions */
+  const tAVDT_SCB_ACTION* p_scb_act; /* pointer to SCB action functions */
   tAVDT_CTRL_CBACK* p_conn_cback;  /* connection callback function */
   uint8_t trace_level;             /* trace level */
 } tAVDT_CB;

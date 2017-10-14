@@ -2166,7 +2166,7 @@ void btm_process_remote_name(const RawAddress* bda, BD_NAME bdn,
     p_inq->remname_bda = RawAddress::kEmpty;
 
     p_inq->p_remname_cmpl_cb = NULL;
-    if (p_cb) (p_cb)((tBTM_REMOTE_DEV_NAME*)&rem_name);
+    if (p_cb) (p_cb)(&rem_name);
   }
 }
 
