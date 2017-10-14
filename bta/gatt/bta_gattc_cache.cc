@@ -53,8 +53,6 @@ static void bta_gattc_char_dscpt_disc_cmpl(uint16_t conn_id,
                                            tBTA_GATTC_SERV* p_srvc_cb);
 static tGATT_STATUS bta_gattc_sdp_service_disc(uint16_t conn_id,
                                                tBTA_GATTC_SERV* p_server_cb);
-tBTA_GATTC_SERVICE* bta_gattc_find_matching_service(
-    std::list<tBTA_GATTC_SERVICE>& services, uint16_t handle);
 const tBTA_GATTC_DESCRIPTOR* bta_gattc_get_descriptor_srcb(
     tBTA_GATTC_SERV* p_srcb, uint16_t handle);
 tBTA_GATTC_CHARACTERISTIC* bta_gattc_get_characteristic_srcb(
@@ -170,15 +168,25 @@ tGATT_STATUS bta_gattc_init_cache(tBTA_GATTC_SERV* p_srvc_cb) {
   return GATT_SUCCESS;
 }
 
-/** Add a service into database cache */
-static void bta_gattc_add_srvc_to_cache(tBTA_GATTC_SERV* p_srvc_cb,
-                                        uint16_t s_handle, uint16_t e_handle,
-                                        const Uuid& uuid, bool is_primary) {
+tBTA_GATTC_SERVICE* bta_gattc_find_matching_service(
+    std::list<tBTA_GATTC_SERVICE>& services, uint16_t handle) {
+  for (tBTA_GATTC_SERVICE& service : services) {
+    if (handle >= service.s_handle && handle <= service.e_handle)
+      return &service;
+  }
+
+  return nullptr;
+}
+
+/** Add a service into GATT database */
+static void add_service_to_gatt_db(std::list<tBTA_GATTC_SERVICE>& gatt_db,
+                                   uint16_t s_handle, uint16_t e_handle,
+                                   const Uuid& uuid, bool is_primary) {
 #if (BTA_GATT_DEBUG == TRUE)
   VLOG(1) << "Add a service into Service";
 #endif
 
-  p_srvc_cb->srvc_cache.emplace_back(tBTA_GATTC_SERVICE{
+  gatt_db.emplace_back(tBTA_GATTC_SERVICE{
       .s_handle = s_handle,
       .e_handle = e_handle,
       .is_primary = is_primary,
@@ -187,10 +195,10 @@ static void bta_gattc_add_srvc_to_cache(tBTA_GATTC_SERV* p_srvc_cb,
   });
 }
 
-static void bta_gattc_add_char_to_cache(tBTA_GATTC_SERV* p_srvc_cb,
-                                        uint16_t attr_handle,
-                                        uint16_t value_handle, const Uuid& uuid,
-                                        uint8_t property) {
+/** Add a characteristic into GATT database */
+static void add_characteristic_to_gatt_db(
+    std::list<tBTA_GATTC_SERVICE>& gatt_db, uint16_t attr_handle,
+    uint16_t value_handle, const Uuid& uuid, uint8_t property) {
 #if (BTA_GATT_DEBUG == TRUE)
   VLOG(1) << __func__
           << ": Add a characteristic into service. handle:" << +value_handle
@@ -198,7 +206,7 @@ static void bta_gattc_add_char_to_cache(tBTA_GATTC_SERV* p_srvc_cb,
 #endif
 
   tBTA_GATTC_SERVICE* service =
-      bta_gattc_find_matching_service(p_srvc_cb->srvc_cache, attr_handle);
+      bta_gattc_find_matching_service(gatt_db, attr_handle);
   if (!service) {
     LOG(ERROR) << "Illegal action to add char/descr/incl srvc for non-existing "
                   "service!";
@@ -220,15 +228,15 @@ static void bta_gattc_add_char_to_cache(tBTA_GATTC_SERV* p_srvc_cb,
 }
 
 /* Add an descriptor into database cache buffer */
-static void bta_gattc_add_descr_to_cache(tBTA_GATTC_SERV* p_srvc_cb,
-                                         uint16_t handle, const Uuid& uuid) {
+static void add_descriptor_to_gatt_db(std::list<tBTA_GATTC_SERVICE>& gatt_db,
+                                      uint16_t handle, const Uuid& uuid) {
 #if (BTA_GATT_DEBUG == TRUE)
   VLOG(1) << __func__ << ": add descriptor, handle=" << loghex(handle)
           << ", uuid=" << uuid;
 #endif
 
   tBTA_GATTC_SERVICE* service =
-      bta_gattc_find_matching_service(p_srvc_cb->srvc_cache, handle);
+      bta_gattc_find_matching_service(gatt_db, handle);
   if (!service) {
     LOG(ERROR) << "Illegal action to add descriptor for non-existing service!";
     return;
@@ -248,23 +256,23 @@ static void bta_gattc_add_descr_to_cache(tBTA_GATTC_SERV* p_srvc_cb,
 }
 
 /* Add an attribute into database cache buffer */
-static void bta_gattc_add_incl_srvc_to_cache(tBTA_GATTC_SERV* p_srvc_cb,
-                                             uint16_t handle, const Uuid& uuid,
-                                             uint16_t incl_srvc_s_handle) {
+static void add_incl_srvc_to_gatt_db(std::list<tBTA_GATTC_SERVICE>& gatt_db,
+                                     uint16_t handle, const Uuid& uuid,
+                                     uint16_t incl_srvc_s_handle) {
 #if (BTA_GATT_DEBUG == TRUE)
   VLOG(1) << __func__ << ": add included service, handle=" << loghex(handle)
           << ", uuid=" << uuid;
 #endif
 
   tBTA_GATTC_SERVICE* service =
-      bta_gattc_find_matching_service(p_srvc_cb->srvc_cache, handle);
+      bta_gattc_find_matching_service(gatt_db, handle);
   if (!service) {
     LOG(ERROR) << "Illegal action to add incl srvc for non-existing service!";
     return;
   }
 
-  tBTA_GATTC_SERVICE* included_service = bta_gattc_find_matching_service(
-      p_srvc_cb->srvc_cache, incl_srvc_s_handle);
+  tBTA_GATTC_SERVICE* included_service =
+      bta_gattc_find_matching_service(gatt_db, incl_srvc_s_handle);
   if (!included_service) {
     LOG(ERROR) << __func__
                << ": Illegal action to add non-existing included service!";
@@ -423,8 +431,8 @@ static void bta_gattc_explore_srvc(uint16_t conn_id,
   /* start expore a service if there is service not been explored */
   if (p_srvc_cb->cur_srvc_idx < p_srvc_cb->total_srvc) {
     /* add the first service into cache */
-    bta_gattc_add_srvc_to_cache(p_srvc_cb, p_rec->s_handle, p_rec->e_handle,
-                                p_rec->uuid, p_rec->is_primary);
+    add_service_to_gatt_db(p_srvc_cb->srvc_cache, p_rec->s_handle,
+                           p_rec->e_handle, p_rec->uuid, p_rec->is_primary);
 
     /* start discovering included services */
     bta_gattc_start_disc_include_srvc(conn_id, p_srvc_cb);
@@ -477,8 +485,9 @@ static void bta_gattc_char_disc_cmpl(uint16_t conn_id,
   /* if there are characteristic needs to be explored */
   if (p_srvc_cb->total_char > 0) {
     /* add the first characteristic into cache */
-    bta_gattc_add_char_to_cache(p_srvc_cb, p_rec->char_decl_handle,
-                                p_rec->s_handle, p_rec->uuid, p_rec->property);
+    add_characteristic_to_gatt_db(p_srvc_cb->srvc_cache,
+                                  p_rec->char_decl_handle, p_rec->s_handle,
+                                  p_rec->uuid, p_rec->property);
 
     /* start discoverying characteristic descriptor , if failed, disc for next
      * char*/
@@ -506,8 +515,9 @@ static void bta_gattc_char_dscpt_disc_cmpl(uint16_t conn_id,
   if (--p_srvc_cb->total_char > 0) {
     p_rec = p_srvc_cb->p_srvc_list + (++p_srvc_cb->cur_char_idx);
     /* add the next characteristic into cache */
-    bta_gattc_add_char_to_cache(p_srvc_cb, p_rec->char_decl_handle,
-                                p_rec->s_handle, p_rec->uuid, p_rec->property);
+    add_characteristic_to_gatt_db(p_srvc_cb->srvc_cache,
+                                  p_rec->char_decl_handle, p_rec->s_handle,
+                                  p_rec->uuid, p_rec->property);
 
     /* start discoverying next characteristic for char descriptor */
     bta_gattc_start_disc_char_dscp(conn_id, p_srvc_cb);
@@ -741,9 +751,9 @@ void bta_gattc_disc_res_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
       }
 
       /* add into database */
-      bta_gattc_add_incl_srvc_to_cache(p_srvc_cb, p_data->handle,
-                                       p_data->value.incl_service.service_type,
-                                       p_data->value.incl_service.s_handle);
+      add_incl_srvc_to_gatt_db(p_srvc_cb->srvc_cache, p_data->handle,
+                               p_data->value.incl_service.service_type,
+                               p_data->value.incl_service.s_handle);
       break;
 
     case GATT_DISC_CHAR:
@@ -755,7 +765,8 @@ void bta_gattc_disc_res_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
       break;
 
     case GATT_DISC_CHAR_DSCPT:
-      bta_gattc_add_descr_to_cache(p_srvc_cb, p_data->handle, p_data->type);
+      add_descriptor_to_gatt_db(p_srvc_cb->srvc_cache, p_data->handle,
+                                p_data->type);
       break;
   }
 }
@@ -845,16 +856,6 @@ std::list<tBTA_GATTC_SERVICE>* bta_gattc_get_services(uint16_t conn_id) {
   tBTA_GATTC_SERV* p_srcb = p_clcb->p_srcb;
 
   return bta_gattc_get_services_srcb(p_srcb);
-}
-
-tBTA_GATTC_SERVICE* bta_gattc_find_matching_service(
-    std::list<tBTA_GATTC_SERVICE>& services, uint16_t handle) {
-  for (tBTA_GATTC_SERVICE& service : services) {
-    if (handle >= service.s_handle && handle <= service.e_handle)
-      return &service;
-  }
-
-  return NULL;
 }
 
 static tBTA_GATTC_SERVICE* bta_gattc_get_service_for_handle_srcb(
@@ -1118,25 +1119,25 @@ void bta_gattc_rebuild_cache(tBTA_GATTC_SERV* p_srvc_cb, uint16_t num_attr,
   while (num_attr > 0 && p_attr != NULL) {
     switch (p_attr->attr_type) {
       case BTA_GATTC_ATTR_TYPE_SRVC:
-        bta_gattc_add_srvc_to_cache(p_srvc_cb, p_attr->s_handle,
-                                    p_attr->e_handle, p_attr->uuid,
-                                    p_attr->is_primary);
+        add_service_to_gatt_db(p_srvc_cb->srvc_cache, p_attr->s_handle,
+                               p_attr->e_handle, p_attr->uuid,
+                               p_attr->is_primary);
         break;
 
       case BTA_GATTC_ATTR_TYPE_CHAR:
         // TODO(jpawlowski): store decl_handle properly.
-        bta_gattc_add_char_to_cache(p_srvc_cb, p_attr->s_handle,
-                                    p_attr->s_handle, p_attr->uuid,
-                                    p_attr->prop);
+        add_characteristic_to_gatt_db(p_srvc_cb->srvc_cache, p_attr->s_handle,
+                                      p_attr->s_handle, p_attr->uuid,
+                                      p_attr->prop);
         break;
 
       case BTA_GATTC_ATTR_TYPE_CHAR_DESCR:
-        bta_gattc_add_descr_to_cache(p_srvc_cb, p_attr->s_handle, p_attr->uuid);
+        add_descriptor_to_gatt_db(p_srvc_cb->srvc_cache, p_attr->s_handle,
+                                  p_attr->uuid);
         break;
       case BTA_GATTC_ATTR_TYPE_INCL_SRVC:
-        bta_gattc_add_incl_srvc_to_cache(p_srvc_cb, p_attr->s_handle,
-                                         p_attr->uuid,
-                                         p_attr->incl_srvc_handle);
+        add_incl_srvc_to_gatt_db(p_srvc_cb->srvc_cache, p_attr->s_handle,
+                                 p_attr->uuid, p_attr->incl_srvc_handle);
         break;
     }
     p_attr++;
