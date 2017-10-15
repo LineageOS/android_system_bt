@@ -656,7 +656,6 @@ static void bta_ag_api_disable(tBTA_AG_DATA* p_data) {
  ******************************************************************************/
 static void bta_ag_api_register(tBTA_AG_DATA* p_data) {
   tBTA_AG_SCB* p_scb;
-  tBTA_AG_REGISTER reg;
 
   /* allocate an scb */
   p_scb = bta_ag_scb_alloc();
@@ -664,8 +663,9 @@ static void bta_ag_api_register(tBTA_AG_DATA* p_data) {
     APPL_TRACE_DEBUG("bta_ag_api_register: p_scb 0x%08x ", p_scb);
     bta_ag_sm_execute(p_scb, p_data->hdr.event, p_data);
   } else {
-    reg.status = BTA_AG_FAIL_RESOURCES;
-    (*bta_ag_cb.p_cback)(BTA_AG_REGISTER_EVT, (tBTA_AG*)&reg);
+    tBTA_AG bta_ag;
+    bta_ag.reg.status = BTA_AG_FAIL_RESOURCES;
+    (*bta_ag_cb.p_cback)(BTA_AG_REGISTER_EVT, &bta_ag);
   }
 }
 

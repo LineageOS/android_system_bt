@@ -1363,7 +1363,7 @@ void bta_ag_ci_sco_data(UNUSED_ATTR tBTA_AG_SCB* p_scb,
 }
 
 void bta_ag_set_sco_allowed(tBTA_AG_DATA* p_data) {
-  sco_allowed = ((tBTA_AG_API_SET_SCO_ALLOWED*)p_data)->value;
+  sco_allowed = p_data->api_set_sco_allowed.value;
   APPL_TRACE_DEBUG(sco_allowed ? "sco now allowed" : "sco now not allowed");
 }
 
