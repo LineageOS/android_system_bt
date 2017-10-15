@@ -437,7 +437,9 @@ void bta_hh_cleanup_disable(tBTA_HH_STATUS status) {
   }
 
   if (bta_hh_cb.p_cback) {
-    (*bta_hh_cb.p_cback)(BTA_HH_DISABLE_EVT, (tBTA_HH*)&status);
+    tBTA_HH bta_hh;
+    bta_hh.status = status;
+    (*bta_hh_cb.p_cback)(BTA_HH_DISABLE_EVT, &bta_hh);
     /* all connections are down, no waiting for diconnect */
     memset(&bta_hh_cb, 0, sizeof(tBTA_HH_CB));
   }

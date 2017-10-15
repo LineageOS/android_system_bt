@@ -1218,7 +1218,7 @@ extern uint8_t BTM_GetNumScoLinks(void);
  * Returns          true if registered OK, else false
  *
  ******************************************************************************/
-extern bool BTM_SecRegister(tBTM_APPL_INFO* p_cb_info);
+extern bool BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info);
 
 /*******************************************************************************
  *
@@ -1775,7 +1775,7 @@ extern tBTM_STATUS BTM_PmRegister(uint8_t mask, uint8_t* p_pm_id,
  *
  ******************************************************************************/
 extern tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
-                                    tBTM_PM_PWR_MD* p_mode);
+                                    const tBTM_PM_PWR_MD* p_mode);
 
 /*******************************************************************************
  *
@@ -1879,7 +1879,7 @@ extern tBTM_STATUS BTM_WriteEIR(BT_HDR* p_buff);
  *                  false - if not found
  *
  ******************************************************************************/
-extern bool BTM_HasEirService(uint32_t* p_eir_uuid, uint16_t uuid16);
+extern bool BTM_HasEirService(const uint32_t* p_eir_uuid, uint16_t uuid16);
 
 /*******************************************************************************
  *
