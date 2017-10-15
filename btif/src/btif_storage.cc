@@ -474,11 +474,11 @@ static void btif_read_le_key(const uint8_t key_type, const size_t key_len,
   CHECK(device_added);
   CHECK(key_found);
 
-  char buffer[100];
-  memset(buffer, 0, sizeof(buffer));
+  tBTA_LE_KEY_VALUE key;
+  memset(&key, 0, sizeof(key));
 
-  if (btif_storage_get_ble_bonding_key(&bd_addr, key_type, buffer, key_len) ==
-      BT_STATUS_SUCCESS) {
+  if (btif_storage_get_ble_bonding_key(&bd_addr, key_type, (uint8_t*)&key,
+                                       key_len) == BT_STATUS_SUCCESS) {
     if (add_key) {
       if (!*device_added) {
         BTA_DmAddBleDevice(bd_addr, addr_type, BT_DEVICE_TYPE_BLE);
@@ -487,7 +487,7 @@ static void btif_read_le_key(const uint8_t key_type, const size_t key_len,
 
       BTIF_TRACE_DEBUG("%s() Adding key type %d for %s", __func__, key_type,
                        bd_addr.ToString().c_str());
-      BTA_DmAddBleKey(bd_addr, (tBTA_LE_KEY_VALUE*)buffer, key_type);
+      BTA_DmAddBleKey(bd_addr, &key, key_type);
     }
 
     *key_found = true;
@@ -933,7 +933,8 @@ bt_status_t btif_storage_load_bonded_devices(void) {
  ******************************************************************************/
 
 bt_status_t btif_storage_add_ble_bonding_key(RawAddress* remote_bd_addr,
-                                             char* key, uint8_t key_type,
+                                             const uint8_t* key,
+                                             uint8_t key_type,
                                              uint8_t key_length) {
   const char* name;
   switch (key_type) {
@@ -958,8 +959,8 @@ bt_status_t btif_storage_add_ble_bonding_key(RawAddress* remote_bd_addr,
     default:
       return BT_STATUS_FAIL;
   }
-  int ret = btif_config_set_bin(remote_bd_addr->ToString().c_str(), name,
-                                (const uint8_t*)key, key_length);
+  int ret = btif_config_set_bin(remote_bd_addr->ToString().c_str(), name, key,
+                                key_length);
   btif_config_save();
   return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
@@ -975,7 +976,8 @@ bt_status_t btif_storage_add_ble_bonding_key(RawAddress* remote_bd_addr,
  *
  ******************************************************************************/
 bt_status_t btif_storage_get_ble_bonding_key(RawAddress* remote_bd_addr,
-                                             uint8_t key_type, char* key_value,
+                                             uint8_t key_type,
+                                             uint8_t* key_value,
                                              int key_length) {
   const char* name;
   switch (key_type) {
@@ -1001,7 +1003,7 @@ bt_status_t btif_storage_get_ble_bonding_key(RawAddress* remote_bd_addr,
   }
   size_t length = key_length;
   int ret = btif_config_get_bin(remote_bd_addr->ToString().c_str(), name,
-                                (uint8_t*)key_value, &length);
+                                key_value, &length);
   return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 

@@ -209,10 +209,12 @@ bt_status_t btif_storage_remove_hid_info(RawAddress* remote_bd_addr);
 bool btif_storage_is_restricted_device(const RawAddress* remote_bd_addr);
 
 bt_status_t btif_storage_add_ble_bonding_key(RawAddress* remote_bd_addr,
-                                             char* key, uint8_t key_type,
+                                             const uint8_t* key,
+                                             uint8_t key_type,
                                              uint8_t key_length);
 bt_status_t btif_storage_get_ble_bonding_key(RawAddress* remote_bd_addr,
-                                             uint8_t key_type, char* key_value,
+                                             uint8_t key_type,
+                                             uint8_t* key_value,
                                              int key_length);
 
 bt_status_t btif_storage_add_ble_local_key(char* key, uint8_t key_type,
