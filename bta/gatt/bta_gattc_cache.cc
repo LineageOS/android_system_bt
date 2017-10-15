@@ -556,88 +556,67 @@ static bool bta_gattc_srvc_in_list(tBTA_GATTC_SERV* p_srvc_cb,
   }
   return exist_srvc;
 }
-/*******************************************************************************
- *
- * Function         bta_gattc_add_srvc_to_list
- *
- * Description      Add a service into explore pending list
- *
- * Returns          status
- *
- ******************************************************************************/
-static tGATT_STATUS bta_gattc_add_srvc_to_list(tBTA_GATTC_SERV* p_srvc_cb,
-                                               uint16_t s_handle,
-                                               uint16_t e_handle,
-                                               const Uuid& uuid,
-                                               bool is_primary) {
-  tBTA_GATTC_ATTR_REC* p_rec = NULL;
-  tGATT_STATUS status = GATT_SUCCESS;
 
-  if (p_srvc_cb->p_srvc_list &&
-      p_srvc_cb->next_avail_idx < BTA_GATTC_MAX_CACHE_CHAR) {
-    p_rec = p_srvc_cb->p_srvc_list + p_srvc_cb->next_avail_idx;
-
-    VLOG(1) << __func__ << "handle:" << loghex(s_handle)
-            << " service type=" << uuid;
-
-    p_rec->s_handle = s_handle;
-    p_rec->e_handle = e_handle;
-    p_rec->is_primary = is_primary;
-    p_rec->uuid = uuid;
-
-    p_srvc_cb->total_srvc++;
-    p_srvc_cb->next_avail_idx++;
-  } else { /* allocate bigger buffer ?? */
-    status = GATT_DB_FULL;
-
+/** Add a service into explore pending list */
+static void bta_gattc_add_srvc_to_list(tBTA_GATTC_SERV* p_srvc_cb,
+                                       uint16_t s_handle, uint16_t e_handle,
+                                       const Uuid& uuid, bool is_primary) {
+  if (!p_srvc_cb->p_srvc_list ||
+      p_srvc_cb->next_avail_idx >= BTA_GATTC_MAX_CACHE_CHAR) {
+    /* allocate bigger buffer ?? */
     LOG(ERROR) << "service not added, no resources or wrong state";
+    return;
   }
-  return status;
+
+  tBTA_GATTC_ATTR_REC* p_rec =
+      p_srvc_cb->p_srvc_list + p_srvc_cb->next_avail_idx;
+
+  VLOG(1) << __func__ << "handle:" << loghex(s_handle)
+          << " service type=" << uuid;
+
+  p_rec->s_handle = s_handle;
+  p_rec->e_handle = e_handle;
+  p_rec->is_primary = is_primary;
+  p_rec->uuid = uuid;
+
+  p_srvc_cb->total_srvc++;
+  p_srvc_cb->next_avail_idx++;
 }
-/*******************************************************************************
- *
- * Function         bta_gattc_add_char_to_list
- *
- * Description      Add a characteristic into explore pending list
- *
- * Returns          status
- *
- ******************************************************************************/
-static tGATT_STATUS bta_gattc_add_char_to_list(tBTA_GATTC_SERV* p_srvc_cb,
-                                               uint16_t decl_handle,
-                                               uint16_t value_handle,
-                                               const Uuid& uuid,
-                                               uint8_t property) {
-  tBTA_GATTC_ATTR_REC* p_rec = NULL;
-  tGATT_STATUS status = GATT_SUCCESS;
 
-  if (p_srvc_cb->p_srvc_list == NULL) {
+/** Add a characteristic into explore pending list */
+static void bta_gattc_add_char_to_list(tBTA_GATTC_SERV* p_srvc_cb,
+                                       uint16_t decl_handle,
+                                       uint16_t value_handle, const Uuid& uuid,
+                                       uint8_t property) {
+  if (!p_srvc_cb->p_srvc_list) {
     LOG(ERROR) << "No service available, unexpected char discovery result";
-    status = GATT_INTERNAL_ERROR;
-  } else if (p_srvc_cb->next_avail_idx < BTA_GATTC_MAX_CACHE_CHAR) {
-    p_rec = p_srvc_cb->p_srvc_list + p_srvc_cb->next_avail_idx;
+    return;
+  }
 
-    p_srvc_cb->total_char++;
-
-    p_rec->s_handle = value_handle;
-    p_rec->char_decl_handle = decl_handle;
-    p_rec->property = property;
-    p_rec->e_handle =
-        (p_srvc_cb->p_srvc_list + p_srvc_cb->cur_srvc_idx)->e_handle;
-    p_rec->uuid = uuid;
-
-    /* update the endind handle of pervious characteristic if available */
-    if (p_srvc_cb->total_char > 1) {
-      p_rec -= 1;
-      p_rec->e_handle = decl_handle - 1;
-    }
-    p_srvc_cb->next_avail_idx++;
-  } else {
+  if (p_srvc_cb->next_avail_idx >= BTA_GATTC_MAX_CACHE_CHAR) {
     LOG(ERROR) << "char not added, no resources";
     /* allocate bigger buffer ?? */
-    status = GATT_DB_FULL;
+    return;
   }
-  return status;
+
+  tBTA_GATTC_ATTR_REC* p_rec =
+      p_srvc_cb->p_srvc_list + p_srvc_cb->next_avail_idx;
+
+  p_srvc_cb->total_char++;
+
+  p_rec->s_handle = value_handle;
+  p_rec->char_decl_handle = decl_handle;
+  p_rec->property = property;
+  p_rec->e_handle =
+      (p_srvc_cb->p_srvc_list + p_srvc_cb->cur_srvc_idx)->e_handle;
+  p_rec->uuid = uuid;
+
+  /* update the endind handle of pervious characteristic if available */
+  if (p_srvc_cb->total_char > 1) {
+    p_rec -= 1;
+    p_rec->e_handle = decl_handle - 1;
+  }
+  p_srvc_cb->next_avail_idx++;
 }
 
 /*******************************************************************************
