@@ -756,53 +756,48 @@ static bool bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
  ******************************************************************************/
 #if (BTM_SSR_INCLUDED == TRUE)
 static void bta_dm_pm_ssr(const RawAddress& peer_addr) {
-  tBTA_DM_SSR_SPEC *p_spec, *p_spec_cur;
-  uint8_t i, j;
-  int ssr = BTA_DM_PM_SSR0;
+  int current_ssr_index;
+  int ssr_index = BTA_DM_PM_SSR0;
+  tBTA_DM_SSR_SPEC* p_spec = &p_bta_dm_ssr_spec[ssr_index];
 
   /* go through the connected services */
-  for (i = 0; i < bta_dm_conn_srvcs.count; i++) {
-    if (bta_dm_conn_srvcs.conn_srvc[i].peer_bdaddr == peer_addr) {
-      /* p_bta_dm_pm_cfg[0].app_id is the number of entries */
-      for (j = 1; j <= p_bta_dm_pm_cfg[0].app_id; j++) {
-        /* find the associated p_bta_dm_pm_cfg */
-        if ((p_bta_dm_pm_cfg[j].id == bta_dm_conn_srvcs.conn_srvc[i].id) &&
-            ((p_bta_dm_pm_cfg[j].app_id == BTA_ALL_APP_ID) ||
-             (p_bta_dm_pm_cfg[j].app_id ==
-              bta_dm_conn_srvcs.conn_srvc[i].app_id))) {
-          APPL_TRACE_WARNING("bta_dm_pm_ssr conn_srvc id:%d, app_id:%d",
-                             bta_dm_conn_srvcs.conn_srvc[i].id,
-                             bta_dm_conn_srvcs.conn_srvc[i].app_id);
-          break;
-        }
+  for (int i = 0; i < bta_dm_conn_srvcs.count; i++) {
+    const tBTA_DM_SRVCS& service = bta_dm_conn_srvcs.conn_srvc[i];
+    if (service.peer_bdaddr != peer_addr) {
+      continue;
+    }
+    /* p_bta_dm_pm_cfg[0].app_id is the number of entries */
+    for (int j = 1; j <= p_bta_dm_pm_cfg[0].app_id; j++) {
+      /* find the associated p_bta_dm_pm_cfg */
+      const tBTA_DM_PM_CFG& config = p_bta_dm_pm_cfg[j];
+      current_ssr_index = p_bta_dm_pm_spec[config.spec_idx].ssr;
+      if ((config.id == service.id) && ((config.app_id == BTA_ALL_APP_ID) ||
+                                        (config.app_id == service.app_id))) {
+        APPL_TRACE_WARNING("%s: conn_srvc id:%d, app_id:%d", __func__,
+                           service.id, service.app_id);
+        break;
       }
-
-      /* find the ssr index with the smallest max latency. */
-      p_spec_cur =
-          &p_bta_dm_ssr_spec[p_bta_dm_pm_spec[p_bta_dm_pm_cfg[j].spec_idx].ssr];
-      p_spec = &p_bta_dm_ssr_spec[ssr];
-
+    }
+    /* find the ssr index with the smallest max latency. */
+    tBTA_DM_SSR_SPEC* p_spec_cur = &p_bta_dm_ssr_spec[current_ssr_index];
 #if (BTA_HH_INCLUDED == TRUE)
-      /* HH has the per connection SSR preference, already read the SSR params
-       * from BTA HH */
-      if (p_bta_dm_pm_spec[p_bta_dm_pm_cfg[j].spec_idx].ssr ==
-          BTA_DM_PM_SSR_HH) {
-        if (bta_hh_read_ssr_param(peer_addr, &p_spec_cur->max_lat,
-                                  &p_spec_cur->min_rmt_to) == BTA_HH_ERR)
-          continue;
+    /* HH has the per connection SSR preference, already read the SSR params
+     * from BTA HH */
+    if (current_ssr_index == BTA_DM_PM_SSR_HH) {
+      if (bta_hh_read_ssr_param(peer_addr, &p_spec_cur->max_lat,
+                                &p_spec_cur->min_rmt_to) == BTA_HH_ERR) {
+        continue;
       }
+    }
 #endif
-      if (p_spec_cur->max_lat < p_spec->max_lat ||
-          (ssr == BTA_DM_PM_SSR0 &&
-           p_bta_dm_pm_spec[p_bta_dm_pm_cfg[j].spec_idx].ssr !=
-               BTA_DM_PM_SSR0)) {
-        ssr = p_bta_dm_pm_spec[p_bta_dm_pm_cfg[j].spec_idx].ssr;
-      }
+    if (p_spec_cur->max_lat < p_spec->max_lat ||
+        (ssr_index == BTA_DM_PM_SSR0 && current_ssr_index != BTA_DM_PM_SSR0)) {
+      ssr_index = current_ssr_index;
+      p_spec = &p_bta_dm_ssr_spec[ssr_index];
     }
   }
 
-  p_spec = &p_bta_dm_ssr_spec[ssr];
-  APPL_TRACE_WARNING("%s ssr:%d, lat:%d", __func__, ssr, p_spec->max_lat);
+  APPL_TRACE_WARNING("%s ssr:%d, lat:%d", __func__, ssr_index, p_spec->max_lat);
 
   if (p_spec->max_lat) {
     /* Avoid SSR reset on device which has SCO connected */
