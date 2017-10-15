@@ -534,27 +534,22 @@ static void bta_gattc_char_dscpt_disc_cmpl(uint16_t conn_id,
 
 static bool bta_gattc_srvc_in_list(tBTA_GATTC_SERV* p_srvc_cb,
                                    uint16_t s_handle, uint16_t e_handle, Uuid) {
-  tBTA_GATTC_ATTR_REC* p_rec = NULL;
-  uint8_t i;
-  bool exist_srvc = false;
-
   if (!GATT_HANDLE_IS_VALID(s_handle) || !GATT_HANDLE_IS_VALID(e_handle)) {
     LOG(ERROR) << "invalid included service s_handle=" << loghex(s_handle)
                << ", e_handle=" << loghex(e_handle);
-    exist_srvc = true;
-  } else {
-    for (i = 0; i < p_srvc_cb->next_avail_idx; i++) {
-      p_rec = p_srvc_cb->p_srvc_list + i;
+    return true;
+  }
 
-      /* a new service should not have any overlap with other service handle
-       * range */
-      if (p_rec->s_handle == s_handle || p_rec->e_handle == e_handle) {
-        exist_srvc = true;
-        break;
-      }
+  for (uint8_t i = 0; i < p_srvc_cb->next_avail_idx; i++) {
+    tBTA_GATTC_ATTR_REC* p_rec = p_srvc_cb->p_srvc_list + i;
+
+    /* new service should not have any overlap with other service */
+    if (p_rec->s_handle == s_handle || p_rec->e_handle == e_handle) {
+      return true;
     }
   }
-  return exist_srvc;
+
+  return false;
 }
 
 /** Add a service into explore pending list */
