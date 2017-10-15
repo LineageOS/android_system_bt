@@ -349,7 +349,7 @@ const tAVDT_CCB_ST_TBL avdt_ccb_st_tbl[] = {
  ******************************************************************************/
 void avdt_ccb_init(void) {
   memset(&avdt_cb.ccb[0], 0, sizeof(tAVDT_CCB) * AVDT_NUM_LINKS);
-  avdt_cb.p_ccb_act = (tAVDT_CCB_ACTION*)avdt_ccb_action;
+  avdt_cb.p_ccb_act = avdt_ccb_action;
 }
 
 /*******************************************************************************

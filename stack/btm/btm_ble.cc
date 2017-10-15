@@ -2333,7 +2333,7 @@ bool BTM_BleSecurityProcedureIsRunning(const RawAddress& bd_addr) {
 extern uint8_t BTM_BleGetSupportedKeySize(const RawAddress& bd_addr) {
 #if (L2CAP_LE_COC_INCLUDED == TRUE)
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
-  tBTM_LE_IO_REQ dev_io_cfg;
+  tBTM_LE_EVT_DATA btm_le_evt_data;
   uint8_t callback_rc;
 
   if (!p_dev_rec) {
@@ -2348,7 +2348,7 @@ extern uint8_t BTM_BleGetSupportedKeySize(const RawAddress& bd_addr) {
   }
 
   callback_rc = (*btm_cb.api.p_le_callback)(
-      BTM_LE_IO_REQ_EVT, p_dev_rec->bd_addr, (tBTM_LE_EVT_DATA*)&dev_io_cfg);
+      BTM_LE_IO_REQ_EVT, p_dev_rec->bd_addr, &btm_le_evt_data);
 
   if (callback_rc != BTM_SUCCESS) {
     BTM_TRACE_ERROR("%s can't access supported key size", __func__);
@@ -2356,8 +2356,8 @@ extern uint8_t BTM_BleGetSupportedKeySize(const RawAddress& bd_addr) {
   }
 
   BTM_TRACE_DEBUG("%s device supports key size = %d", __func__,
-                  dev_io_cfg.max_key_size);
-  return (dev_io_cfg.max_key_size);
+                  btm_le_evt_data.io_req.max_key_size);
+  return (btm_le_evt_data.io_req.max_key_size);
 #else
   return 0;
 #endif
@@ -2377,7 +2377,7 @@ extern uint8_t BTM_BleGetSupportedKeySize(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 static void btm_notify_new_key(uint8_t key_type) {
-  tBTM_BLE_LOCAL_KEYS* p_locak_keys = NULL;
+  tBTM_BLE_LOCAL_KEYS* p_local_keys = NULL;
 
   BTM_TRACE_DEBUG("btm_notify_new_key key_type=%d", key_type);
 
@@ -2385,12 +2385,12 @@ static void btm_notify_new_key(uint8_t key_type) {
     switch (key_type) {
       case BTM_BLE_KEY_TYPE_ID:
         BTM_TRACE_DEBUG("BTM_BLE_KEY_TYPE_ID");
-        p_locak_keys = (tBTM_BLE_LOCAL_KEYS*)&btm_cb.devcb.id_keys;
+        p_local_keys = (tBTM_BLE_LOCAL_KEYS*)&btm_cb.devcb.id_keys;
         break;
 
       case BTM_BLE_KEY_TYPE_ER:
         BTM_TRACE_DEBUG("BTM_BLE_KEY_TYPE_ER");
-        p_locak_keys =
+        p_local_keys =
             (tBTM_BLE_LOCAL_KEYS*)&btm_cb.devcb.ble_encryption_key_value;
         break;
 
@@ -2398,8 +2398,8 @@ static void btm_notify_new_key(uint8_t key_type) {
         BTM_TRACE_ERROR("unknown key type: %d", key_type);
         break;
     }
-    if (p_locak_keys != NULL)
-      (*btm_cb.api.p_le_key_callback)(key_type, p_locak_keys);
+    if (p_local_keys != NULL)
+      (*btm_cb.api.p_le_key_callback)(key_type, p_local_keys);
   }
 }
 
