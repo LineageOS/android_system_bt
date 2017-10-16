@@ -199,8 +199,8 @@ static void load_levels_from_config(const config_t* config) {
 
   for (tBTTRC_FUNC_MAP* functions = &bttrc_set_level_map[0];
        functions->trc_name; ++functions) {
-    int value =
-        config_get_int(config, CONFIG_DEFAULT_SECTION, functions->trc_name, -1);
+    int value = config_get_int(*config, CONFIG_DEFAULT_SECTION,
+                               functions->trc_name, -1);
     if (value != -1) functions->trace_level = value;
 
     if (functions->p_f) functions->p_f(functions->trace_level);

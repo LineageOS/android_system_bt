@@ -2663,17 +2663,17 @@ void btif_dm_proc_loc_oob(bool valid, BT_OCTET16 c, BT_OCTET16 r) {
  *
  ******************************************************************************/
 bool btif_dm_get_smp_config(tBTE_APPL_CFG* p_cfg) {
-  if (!stack_config_get_interface()->get_pts_smp_options()) {
+  const std::string* recv = stack_config_get_interface()->get_pts_smp_options();
+  if (!recv) {
     BTIF_TRACE_DEBUG("%s: SMP options not found in configuration", __func__);
     return false;
   }
 
   char conf[64];
-  const char* recv = stack_config_get_interface()->get_pts_smp_options();
   char* pch;
   char* endptr;
 
-  strncpy(conf, recv, 64);
+  strncpy(conf, recv->c_str(), 64);
   conf[63] = 0;  // null terminate
 
   pch = strtok(conf, ",");
