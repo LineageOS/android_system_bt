@@ -778,7 +778,7 @@ void bta_ag_svc_conn_open(tBTA_AG_SCB* p_scb,
  ******************************************************************************/
 void bta_ag_ci_rx_data(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
   uint16_t len;
-  tBTA_AG_CI_RX_WRITE* p_rx_write_msg = (tBTA_AG_CI_RX_WRITE*)p_data;
+  tBTA_AG_CI_RX_WRITE* p_rx_write_msg = &p_data->ci_rx_write;
   char* p_data_area =
       (char*)(p_rx_write_msg + 1); /* Point to data area after header */
 

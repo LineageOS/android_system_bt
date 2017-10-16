@@ -79,46 +79,47 @@ uint16_t disc_type_to_uuid[GATT_DISC_MAX] = {
  ******************************************************************************/
 void gatt_act_discovery(tGATT_CLCB* p_clcb) {
   uint8_t op_code = disc_type_to_att_opcode[p_clcb->op_subtype];
-  tGATT_CL_MSG cl_req;
-  tGATT_STATUS st;
 
-  if (p_clcb->s_handle <= p_clcb->e_handle && p_clcb->s_handle != 0) {
-    memset(&cl_req, 0, sizeof(tGATT_CL_MSG));
-
-    cl_req.browse.s_handle = p_clcb->s_handle;
-    cl_req.browse.e_handle = p_clcb->e_handle;
-
-    if (disc_type_to_uuid[p_clcb->op_subtype] != 0) {
-      cl_req.browse.uuid =
-          bluetooth::Uuid::From16Bit(disc_type_to_uuid[p_clcb->op_subtype]);
-    }
-
-    if (p_clcb->op_subtype ==
-        GATT_DISC_SRVC_BY_UUID) /* fill in the FindByTypeValue request info*/
-    {
-      cl_req.find_type_value.uuid =
-          bluetooth::Uuid::From16Bit(disc_type_to_uuid[p_clcb->op_subtype]);
-      cl_req.find_type_value.s_handle = p_clcb->s_handle;
-      cl_req.find_type_value.e_handle = p_clcb->e_handle;
-
-      size_t size = p_clcb->uuid.GetShortestRepresentationSize();
-      cl_req.find_type_value.value_len = size;
-      if (size == Uuid::kNumBytes32) {
-        /* if service type is 32 bits UUID, convert it now */
-        memcpy(cl_req.find_type_value.value, p_clcb->uuid.To128BitLE().data(),
-               Uuid::kNumBytes128);
-      } else
-        memcpy(cl_req.find_type_value.value, p_clcb->uuid.To128BitLE().data(),
-               size);
-    }
-
-    st = attp_send_cl_msg(*p_clcb->p_tcb, p_clcb, op_code, &cl_req);
-
-    if (st != GATT_SUCCESS && st != GATT_CMD_STARTED) {
-      gatt_end_operation(p_clcb, GATT_ERROR, NULL);
-    }
-  } else /* end of handle range */
+  if (p_clcb->s_handle > p_clcb->e_handle || p_clcb->s_handle == 0) {
+    /* end of handle range */
     gatt_end_operation(p_clcb, GATT_SUCCESS, NULL);
+    return;
+  }
+
+  tGATT_CL_MSG cl_req;
+  memset(&cl_req, 0, sizeof(tGATT_CL_MSG));
+
+  cl_req.browse.s_handle = p_clcb->s_handle;
+  cl_req.browse.e_handle = p_clcb->e_handle;
+
+  if (disc_type_to_uuid[p_clcb->op_subtype] != 0) {
+    cl_req.browse.uuid =
+        bluetooth::Uuid::From16Bit(disc_type_to_uuid[p_clcb->op_subtype]);
+  }
+
+  if (p_clcb->op_subtype ==
+      GATT_DISC_SRVC_BY_UUID) /* fill in the FindByTypeValue request info*/
+  {
+    cl_req.find_type_value.uuid =
+        bluetooth::Uuid::From16Bit(disc_type_to_uuid[p_clcb->op_subtype]);
+    cl_req.find_type_value.s_handle = p_clcb->s_handle;
+    cl_req.find_type_value.e_handle = p_clcb->e_handle;
+
+    size_t size = p_clcb->uuid.GetShortestRepresentationSize();
+    cl_req.find_type_value.value_len = size;
+    if (size == Uuid::kNumBytes32) {
+      /* if service type is 32 bits UUID, convert it now */
+      memcpy(cl_req.find_type_value.value, p_clcb->uuid.To128BitLE().data(),
+             Uuid::kNumBytes128);
+    } else
+      memcpy(cl_req.find_type_value.value, p_clcb->uuid.To128BitLE().data(),
+             size);
+  }
+
+  tGATT_STATUS st = attp_send_cl_msg(*p_clcb->p_tcb, p_clcb, op_code, &cl_req);
+  if (st != GATT_SUCCESS && st != GATT_CMD_STARTED) {
+    gatt_end_operation(p_clcb, GATT_ERROR, NULL);
+  }
 }
 
 /*******************************************************************************

@@ -75,4 +75,4 @@ const tBTA_AG_CFG bta_ag_cfg = {BTA_AG_CIND_INFO,        BTA_AG_BIND_INFO,
                                 BTA_AG_SCO_PKT_TYPES,    BTA_AG_CHLD_VAL_ECC,
                                 BTA_AG_CHLD_VAL};
 
-tBTA_AG_CFG* p_bta_ag_cfg = (tBTA_AG_CFG*)&bta_ag_cfg;
+const tBTA_AG_CFG* p_bta_ag_cfg = &bta_ag_cfg;

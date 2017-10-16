@@ -447,6 +447,10 @@ void l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
 static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
   uint16_t min_conn_int, max_conn_int, slave_latency, supervision_tout;
   tACL_CONN* p_acl_cb = btm_bda_to_acl(p_lcb->remote_bd_addr, BT_TRANSPORT_LE);
+  if (!p_acl_cb) {
+    LOG(ERROR) << "No known connection ACL for " << p_lcb->remote_bd_addr;
+    return;
+  }
 
   // TODO(armansito): The return value of this call wasn't being used but the
   // logic of this function might be depending on its side effects. We should

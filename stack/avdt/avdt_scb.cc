@@ -809,8 +809,8 @@ void avdt_scb_event(tAVDT_SCB* p_scb, uint8_t event, tAVDT_SCB_EVT* p_data) {
  *
  ******************************************************************************/
 void avdt_scb_init(void) {
-  memset(&avdt_cb.scb[0], 0, sizeof(tAVDT_SCB) * AVDT_NUM_SEPS);
-  avdt_cb.p_scb_act = (tAVDT_SCB_ACTION*)avdt_scb_action;
+  memset(avdt_cb.scb, 0, sizeof(tAVDT_SCB) * AVDT_NUM_SEPS);
+  avdt_cb.p_scb_act = avdt_scb_action;
 }
 
 /*******************************************************************************
