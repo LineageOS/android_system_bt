@@ -406,30 +406,24 @@ void bta_gattc_start_disc_char_dscp(uint16_t conn_id,
       0)
     bta_gattc_char_dscpt_disc_cmpl(conn_id, p_srvc_cb);
 }
-/*******************************************************************************
- *
- * Function         bta_gattc_explore_srvc
- *
- * Description      process the service discovery complete event
- *
- * Returns          status
- *
- ******************************************************************************/
+
+/** process the service discovery complete event */
 static void bta_gattc_explore_srvc(uint16_t conn_id,
                                    tBTA_GATTC_SERV* p_srvc_cb) {
-  tBTA_GATTC_ATTR_REC* p_rec = p_srvc_cb->p_srvc_list + p_srvc_cb->cur_srvc_idx;
   tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
-
-  VLOG(1) << "Start service discovery: srvc_idx:" << +p_srvc_cb->cur_srvc_idx;
-
-  p_srvc_cb->cur_char_idx = p_srvc_cb->next_avail_idx = p_srvc_cb->total_srvc;
-
-  if (p_clcb == NULL) {
+  if (!p_clcb) {
     LOG(ERROR) << "unknown connection ID";
     return;
   }
+
   /* start expore a service if there is service not been explored */
   if (p_srvc_cb->cur_srvc_idx < p_srvc_cb->total_srvc) {
+    tBTA_GATTC_ATTR_REC* p_rec =
+        p_srvc_cb->p_srvc_list + p_srvc_cb->cur_srvc_idx;
+    VLOG(1) << "Start service discovery: srvc_idx:" << +p_srvc_cb->cur_srvc_idx;
+
+    p_srvc_cb->cur_char_idx = p_srvc_cb->next_avail_idx = p_srvc_cb->total_srvc;
+
     /* add the first service into cache */
     add_service_to_gatt_db(p_srvc_cb->srvc_cache, p_rec->s_handle,
                            p_rec->e_handle, p_rec->uuid, p_rec->is_primary);
@@ -438,6 +432,7 @@ static void bta_gattc_explore_srvc(uint16_t conn_id,
     bta_gattc_start_disc_include_srvc(conn_id, p_srvc_cb);
     return;
   }
+
   /* no service found at all, the end of server discovery*/
   LOG_WARN(LOG_TAG, "%s no more services found", __func__);
 
