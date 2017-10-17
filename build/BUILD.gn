@@ -55,11 +55,6 @@ config("linux") {
     "EXPORT_SYMBOL=__attribute__((visibility(\"default\")))",
     "KERNEL_MISSING_CLOCK_BOOTTIME_ALARM=TRUE",
 
-    # This is a macro to that can be used by android hardware/libhardware
-    # to not include dependencies on core project. This is a temporary
-    # workaround until we get rid of dependency on hardware.
-    "_HW_DONT_INCLUDE_CORE_=1",
-
     # This is a macro to that can be used by source code to detect if the
     # current build is done by GN or via Android.mk. This is a temporary
     # workaround until we can remove all Android-specific dependencies.
