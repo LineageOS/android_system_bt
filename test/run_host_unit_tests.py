@@ -75,8 +75,12 @@ def get_android_host_out_or_die():
 
 
 def get_android_dist_dir_or_die():
-  ANDROID_BUILD_TOP = get_android_root_or_die()
-  value = os.path.join(os.path.join(ANDROID_BUILD_TOP, 'out'), 'dist')
+  # Check if $DIST_DIR is predefined as environment variable
+  value = os.environ.get('DIST_DIR')
+  if not value:
+    # If not use the default path
+    ANDROID_BUILD_TOP = get_android_root_or_die()
+    value = os.path.join(os.path.join(ANDROID_BUILD_TOP, 'out'), 'dist')
   if not os.path.isdir(value):
     if os.path.exists(value):
       print '%s is not a directory!' % (value)
