@@ -414,7 +414,7 @@ static int config_clear(void) {
   return btif_config_clear() ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
-static const bt_interface_t bluetoothInterface = {
+EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
     sizeof(bluetoothInterface),
     init,
     enable,
@@ -448,40 +448,3 @@ static const bt_interface_t bluetoothInterface = {
     interop_database_clear,
     interop_database_add,
 };
-
-const bt_interface_t* bluetooth__get_bluetooth_interface() {
-  /* fixme -- add property to disable bt interface ? */
-
-  return &bluetoothInterface;
-}
-
-static int close_bluetooth_stack(UNUSED_ATTR struct hw_device_t* device) {
-  cleanup();
-  return 0;
-}
-
-static int open_bluetooth_stack(const struct hw_module_t* module,
-                                UNUSED_ATTR char const* name,
-                                struct hw_device_t** abstraction) {
-  static bluetooth_device_t device;
-  device.common.tag = HARDWARE_DEVICE_TAG;
-  device.common.version = 0;
-  device.common.close = close_bluetooth_stack;
-  device.get_bluetooth_interface = bluetooth__get_bluetooth_interface;
-  device.common.module = (struct hw_module_t*)module;
-  *abstraction = (struct hw_device_t*)&device;
-  return 0;
-}
-
-static struct hw_module_methods_t bt_stack_module_methods = {
-    .open = open_bluetooth_stack,
-};
-
-EXPORT_SYMBOL struct hw_module_t HAL_MODULE_INFO_SYM = {
-    .tag = HARDWARE_MODULE_TAG,
-    .version_major = 1,
-    .version_minor = 0,
-    .id = BT_HARDWARE_MODULE_ID,
-    .name = "Bluetooth Stack",
-    .author = "The Android Open Source Project",
-    .methods = &bt_stack_module_methods};

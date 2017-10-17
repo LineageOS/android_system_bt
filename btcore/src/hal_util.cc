@@ -37,10 +37,9 @@ using base::StringPrintf;
 #define BACKUP_PATH "/system/lib/hw/" BLUETOOTH_LIBRARY_NAME
 #endif
 
-int hal_util_load_bt_library(const struct hw_module_t** module) {
-  const char* id = BT_STACK_MODULE_ID;
-  const char* sym = HAL_MODULE_INFO_SYM_AS_STR;
-  struct hw_module_t* hmi = nullptr;
+int hal_util_load_bt_library(const bt_interface_t** interface) {
+  const char* sym = BLUETOOTH_INTERFACE_STRING;
+  bt_interface_t* itf = nullptr;
 
   // Always try to load the default Bluetooth stack on GN builds.
   const char* path = BLUETOOTH_LIBRARY_NAME;
@@ -60,32 +59,23 @@ int hal_util_load_bt_library(const struct hw_module_t** module) {
     }
   }
 
-  // Get the address of the struct hal_module_info.
-  hmi = (struct hw_module_t*)dlsym(handle, sym);
-  if (!hmi) {
+  // Get the address of the bt_interface_t.
+  itf = (bt_interface_t*)dlsym(handle, sym);
+  if (!itf) {
     LOG(ERROR) << __func__ << ": failed to load symbol from Bluetooth library "
                << sym;
     goto error;
   }
 
-  // Check that the id matches.
-  if (strcmp(id, hmi->id) != 0) {
-    LOG(ERROR) << StringPrintf("%s: id=%s does not match HAL module ID: %s",
-                               __func__, id, hmi->id);
-    goto error;
-  }
-
-  hmi->dso = handle;
-
   // Success.
-  LOG(INFO) << StringPrintf("%s: loaded HAL id=%s path=%s hmi=%p handle=%p",
-                            __func__, id, path, hmi, handle);
+  LOG(INFO) << __func__ << " loaded HAL path=" << BLUETOOTH_LIBRARY_NAME
+            << " btinterface=" << itf << " handle=" << handle;
 
-  *module = hmi;
+  *interface = itf;
   return 0;
 
 error:
-  *module = NULL;
+  *interface = NULL;
   if (handle) dlclose(handle);
 
   return -EINVAL;
