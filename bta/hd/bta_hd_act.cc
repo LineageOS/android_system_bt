@@ -103,7 +103,9 @@ void bta_hd_api_enable(tBTA_HD_DATA* p_data) {
   }
 
   /* signal BTA call back event */
-  (*bta_hd_cb.p_cback)(BTA_HD_ENABLE_EVT, (tBTA_HD*)&status);
+  tBTA_HD bta_hd;
+  bta_hd.status = status;
+  (*bta_hd_cb.p_cback)(BTA_HD_ENABLE_EVT, &bta_hd);
 }
 
 /*******************************************************************************
@@ -138,7 +140,9 @@ void bta_hd_api_disable(void) {
     APPL_TRACE_ERROR("%s: Failed to deregister HID device (%s)", __func__, ret);
   }
 
-  (*bta_hd_cb.p_cback)(BTA_HD_DISABLE_EVT, (tBTA_HD*)&status);
+  tBTA_HD bta_hd;
+  bta_hd.status = status;
+  (*bta_hd_cb.p_cback)(BTA_HD_DISABLE_EVT, &bta_hd);
 
   memset(&bta_hd_cb, 0, sizeof(tBTA_HD_CB));
 }
@@ -231,7 +235,9 @@ void bta_hd_unregister_act(UNUSED_ATTR tBTA_HD_DATA* p_data) {
   bta_hd_cb.sdp_handle = 0;
   bta_sys_remove_uuid(UUID_SERVCLASS_HUMAN_INTERFACE);
 
-  (*bta_hd_cb.p_cback)(BTA_HD_UNREGISTER_APP_EVT, (tBTA_HD*)&status);
+  tBTA_HD bta_hd;
+  bta_hd.status = status;
+  (*bta_hd_cb.p_cback)(BTA_HD_UNREGISTER_APP_EVT, &bta_hd);
 }
 
 /*******************************************************************************
@@ -515,7 +521,9 @@ extern void bta_hd_intr_data_act(tBTA_HD_DATA* p_data) {
   ret.len = len;
   ret.p_data = p_buf;
 
-  (*bta_hd_cb.p_cback)(BTA_HD_INTR_DATA_EVT, (tBTA_HD*)&ret);
+  tBTA_HD bta_hd;
+  bta_hd.intr_data = ret;
+  (*bta_hd_cb.p_cback)(BTA_HD_INTR_DATA_EVT, &bta_hd);
 }
 
 /*******************************************************************************
@@ -548,7 +556,9 @@ extern void bta_hd_get_report_act(tBTA_HD_DATA* p_data) {
     ret.buffer_size = *p_buf | (*(p_buf + 1) << 8);
   }
 
-  (*bta_hd_cb.p_cback)(BTA_HD_GET_REPORT_EVT, (tBTA_HD*)&ret);
+  tBTA_HD bta_hd;
+  bta_hd.get_report = ret;
+  (*bta_hd_cb.p_cback)(BTA_HD_GET_REPORT_EVT, &bta_hd);
 }
 
 /*******************************************************************************
@@ -585,7 +595,9 @@ extern void bta_hd_set_report_act(tBTA_HD_DATA* p_data) {
   ret.len = len;
   ret.p_data = p_buf;
 
-  (*bta_hd_cb.p_cback)(BTA_HD_SET_REPORT_EVT, (tBTA_HD*)&ret);
+  tBTA_HD bta_hd;
+  bta_hd.set_report = ret;
+  (*bta_hd_cb.p_cback)(BTA_HD_SET_REPORT_EVT, &bta_hd);
 }
 
 /*******************************************************************************

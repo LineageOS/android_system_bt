@@ -236,7 +236,7 @@ const tBTA_AV_CFG bta_av_cfg_compatibility = {
     BTA_AV_RC_TG_NAME  /* Default AVRCP target name */
 };
 
-tBTA_AV_CFG* p_bta_av_cfg = NULL;
+const tBTA_AV_CFG* p_bta_av_cfg = NULL;
 
 const uint16_t bta_av_rc_id[] = {
     0x0000, /* bit mask: 0=SELECT, 1=UP, 2=DOWN, 3=LEFT,
