@@ -121,4 +121,4 @@ bool config_remove_key(config_t* config, const std::string& section,
 // file was opened with |config_new| and subsequently overwritten with
 // |config_save|, all comments and special formatting in the original file will
 // be lost. Neither |config| nor |filename| may be NULL.
-bool config_save(const config_t& config, const char* filename);
+bool config_save(const config_t& config, const std::string& filename);
