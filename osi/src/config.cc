@@ -17,8 +17,8 @@
  ******************************************************************************/
 
 #include "osi/include/config.h"
-#include "osi/include/allocator.h"
 
+#include <base/files/file_path.h>
 #include <base/logging.h>
 #include <ctype.h>
 #include <errno.h>
@@ -29,6 +29,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <sstream>
 #include <type_traits>
 
 // Empty definition; this type is aliased to list_node_t.
@@ -191,9 +192,8 @@ bool config_remove_key(config_t* config, const std::string& section,
   return false;
 }
 
-bool config_save(const config_t& config, const char* filename) {
-  CHECK(filename != nullptr);
-  CHECK(*filename != '\0');
+bool config_save(const config_t& config, const std::string& filename) {
+  CHECK(!filename.empty());
 
   // Steps to ensure content of config file gets to disk:
   //
@@ -205,31 +205,27 @@ bool config_save(const config_t& config, const char* filename) {
   //    This ensures directory entries are up-to-date.
   int dir_fd = -1;
   FILE* fp = nullptr;
+  std::stringstream serialized;
 
   // Build temp config file based on config file (e.g. bt_config.conf.new).
-  static const char* temp_file_ext = ".new";
-  const int filename_len = strlen(filename);
-  const int temp_filename_len = filename_len + strlen(temp_file_ext) + 1;
-  char* temp_filename = static_cast<char*>(osi_calloc(temp_filename_len));
-  snprintf(temp_filename, temp_filename_len, "%s%s", filename, temp_file_ext);
+  const std::string temp_filename = filename + ".new";
 
   // Extract directory from file path (e.g. /data/misc/bluedroid).
-  char* temp_dirname = osi_strdup(filename);
-  const char* directoryname = dirname(temp_dirname);
-  if (!directoryname) {
+  const std::string& directoryname = base::FilePath(filename).DirName().value();
+  if (directoryname.empty()) {
     LOG(ERROR) << __func__ << ": error extracting directory from '" << filename
                << "': " << strerror(errno);
     goto error;
   }
 
-  dir_fd = open(directoryname, O_RDONLY);
+  dir_fd = open(directoryname.c_str(), O_RDONLY);
   if (dir_fd < 0) {
     LOG(ERROR) << __func__ << ": unable to open dir '" << directoryname
                << "': " << strerror(errno);
     goto error;
   }
 
-  fp = fopen(temp_filename, "wt");
+  fp = fopen(temp_filename.c_str(), "wt");
   if (!fp) {
     LOG(ERROR) << __func__ << ": unable to write to file '" << temp_filename
                << "': " << strerror(errno);
@@ -237,26 +233,18 @@ bool config_save(const config_t& config, const char* filename) {
   }
 
   for (const section_t& section : config.sections) {
-    if (fprintf(fp, "[%s]\n", section.name.c_str()) < 0) {
-      LOG(ERROR) << __func__ << ": unable to write to file '" << temp_filename
-                 << "': " << strerror(errno);
-      goto error;
-    }
+    serialized << "[" << section.name << "]" << std::endl;
 
-    for (const entry_t& entry : section.entries) {
-      if (fprintf(fp, "%s = %s\n", entry.key.c_str(), entry.value.c_str()) <
-          0) {
-        LOG(ERROR) << __func__ << ": unable to write to file '" << temp_filename
-                   << "': " << strerror(errno);
-        goto error;
-      }
-    }
+    for (const entry_t& entry : section.entries)
+      serialized << entry.key << " = " << entry.value << std::endl;
 
-    if (fputc('\n', fp) == EOF) {
-      LOG(ERROR) << __func__ << ": unable to write to file '" << temp_filename
-                 << "': " << strerror(errno);
-      goto error;
-    }
+    serialized << std::endl;
+  }
+
+  if (fprintf(fp, "%s", serialized.str().c_str()) < 0) {
+    LOG(ERROR) << __func__ << ": unable to write to file '" << temp_filename
+               << "': " << strerror(errno);
+    goto error;
   }
 
   // Sync written temp file out to disk. fsync() is blocking until data makes it
@@ -274,14 +262,15 @@ bool config_save(const config_t& config, const char* filename) {
   fp = nullptr;
 
   // Change the file's permissions to Read/Write by User and Group
-  if (chmod(temp_filename, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) == -1) {
+  if (chmod(temp_filename.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) ==
+      -1) {
     LOG(ERROR) << __func__ << ": unable to change file permissions '"
                << filename << "': " << strerror(errno);
     goto error;
   }
 
   // Rename written temp file to the actual config file.
-  if (rename(temp_filename, filename) == -1) {
+  if (rename(temp_filename.c_str(), filename.c_str()) == -1) {
     LOG(ERROR) << __func__ << ": unable to commit file '" << filename
                << "': " << strerror(errno);
     goto error;
@@ -299,18 +288,14 @@ bool config_save(const config_t& config, const char* filename) {
     goto error;
   }
 
-  osi_free(temp_filename);
-  osi_free(temp_dirname);
   return true;
 
 error:
   // This indicates there is a write issue.  Unlink as partial data is not
   // acceptable.
-  unlink(temp_filename);
+  unlink(temp_filename.c_str());
   if (fp) fclose(fp);
   if (dir_fd != -1) close(dir_fd);
-  osi_free(temp_filename);
-  osi_free(temp_dirname);
   return false;
 }
 
