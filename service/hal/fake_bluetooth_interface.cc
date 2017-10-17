@@ -154,10 +154,5 @@ bt_callbacks_t* FakeBluetoothInterface::GetHALCallbacks() const {
   return nullptr;
 }
 
-const bluetooth_device_t* FakeBluetoothInterface::GetHALAdapter() const {
-  // TODO(armansito): Do something meaningful here to simulate test behavior.
-  return nullptr;
-}
-
 }  // namespace hal
 }  // namespace bluetooth
