@@ -727,8 +727,8 @@ typedef struct {
 
 } tBTA_DM_RM;
 
-extern tBTA_DM_CFG* p_bta_dm_cfg;
-extern tBTA_DM_RM* p_bta_dm_rm_cfg;
+extern const tBTA_DM_CFG* p_bta_dm_cfg;
+extern const tBTA_DM_RM* p_bta_dm_rm_cfg;
 
 typedef struct {
   uint8_t id;
@@ -766,16 +766,16 @@ typedef struct {
 
 extern const uint16_t bta_service_id_to_uuid_lkup_tbl[];
 
-extern tBTA_DM_PM_CFG* p_bta_dm_pm_cfg;
-extern tBTA_DM_PM_SPEC* p_bta_dm_pm_spec;
-extern tBTM_PM_PWR_MD* p_bta_dm_pm_md;
+extern const tBTA_DM_PM_CFG* p_bta_dm_pm_cfg;
+extern const tBTA_DM_PM_SPEC* p_bta_dm_pm_spec;
+extern const tBTM_PM_PWR_MD* p_bta_dm_pm_md;
 #if (BTM_SSR_INCLUDED == TRUE)
 extern tBTA_DM_SSR_SPEC* p_bta_dm_ssr_spec;
 #endif
 
 /* update dynamic BRCM Aware EIR data */
 extern const tBTA_DM_EIR_CONF bta_dm_eir_cfg;
-extern tBTA_DM_EIR_CONF* p_bta_dm_eir_cfg;
+extern const tBTA_DM_EIR_CONF* p_bta_dm_eir_cfg;
 
 /* DM control block */
 extern tBTA_DM_CB bta_dm_cb;

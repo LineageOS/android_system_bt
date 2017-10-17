@@ -574,7 +574,7 @@ typedef struct {
 extern tBTA_AV_CB bta_av_cb;
 
 /* config struct */
-extern tBTA_AV_CFG* p_bta_av_cfg;
+extern const tBTA_AV_CFG* p_bta_av_cfg;
 extern const tBTA_AV_CFG bta_avk_cfg;
 extern const tBTA_AV_CFG bta_av_cfg;
 extern const tBTA_AV_CFG bta_av_cfg_compatibility;

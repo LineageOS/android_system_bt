@@ -74,8 +74,8 @@ const uint8_t
 /* function prototype */
 static int btm_pm_find_acl_ind(const RawAddress& remote_bda);
 static tBTM_STATUS btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
-                                     tBTM_PM_PWR_MD* p_mode);
-static const char* mode_to_string(tBTM_PM_MODE mode);
+                                     const tBTM_PM_PWR_MD* p_mode);
+static const char* mode_to_string(const tBTM_PM_MODE mode);
 
 #if (BTM_PM_DEBUG == TRUE)
 const char* btm_pm_state_str[] = {"pm_active_state", "pm_hold_state",
@@ -144,7 +144,7 @@ tBTM_STATUS BTM_PmRegister(uint8_t mask, uint8_t* p_pm_id,
  *
  ******************************************************************************/
 tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
-                             tBTM_PM_PWR_MD* p_mode) {
+                             const tBTM_PM_PWR_MD* p_mode) {
   uint8_t* p_features;
   int ind, acl_ind;
   tBTM_PM_MCB* p_cb = NULL; /* per ACL link */
@@ -203,7 +203,7 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
 #endif  // BTM_PM_DEBUG
     /* Make sure mask is set to BTM_PM_REG_SET */
     btm_cb.pm_reg_db[temp_pm_id].mask |= BTM_PM_REG_SET;
-    *(&p_cb->req_mode[temp_pm_id]) = *((tBTM_PM_PWR_MD*)p_mode);
+    *(&p_cb->req_mode[temp_pm_id]) = *p_mode;
     p_cb->chg_ind = true;
   }
 
@@ -416,8 +416,8 @@ static int btm_pm_find_acl_ind(const RawAddress& remote_bda) {
  * Returns      void
  *
  ******************************************************************************/
-static tBTM_PM_PWR_MD* btm_pm_compare_modes(tBTM_PM_PWR_MD* p_md1,
-                                            tBTM_PM_PWR_MD* p_md2,
+static tBTM_PM_PWR_MD* btm_pm_compare_modes(const tBTM_PM_PWR_MD* p_md1,
+                                            const tBTM_PM_PWR_MD* p_md2,
                                             tBTM_PM_PWR_MD* p_res) {
   uint8_t res;
 
@@ -489,7 +489,7 @@ static tBTM_PM_PWR_MD* btm_pm_compare_modes(tBTM_PM_PWR_MD* p_md1,
  *
  ******************************************************************************/
 static tBTM_PM_MODE btm_pm_get_set_mode(uint8_t pm_id, tBTM_PM_MCB* p_cb,
-                                        tBTM_PM_PWR_MD* p_mode,
+                                        const tBTM_PM_PWR_MD* p_mode,
                                         tBTM_PM_PWR_MD* p_res) {
   int xx, loop_max;
   tBTM_PM_PWR_MD* p_md = NULL;
@@ -547,7 +547,7 @@ static tBTM_PM_MODE btm_pm_get_set_mode(uint8_t pm_id, tBTM_PM_MCB* p_cb,
  *, bool    *p_chg_ind
  ******************************************************************************/
 static tBTM_STATUS btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
-                                     tBTM_PM_PWR_MD* p_mode) {
+                                     const tBTM_PM_PWR_MD* p_mode) {
   tBTM_PM_PWR_MD md_res;
   tBTM_PM_MODE mode;
   tBTM_PM_MCB* p_cb = &btm_cb.pm_mode_db[link_ind];
@@ -936,7 +936,7 @@ tBTM_CONTRL_STATE BTM_PM_ReadControllerState(void) {
     return BTM_CONTRL_IDLE;
 }
 
-static const char* mode_to_string(tBTM_PM_MODE mode) {
+static const char* mode_to_string(const tBTM_PM_MODE mode) {
   switch (mode) {
     case BTM_PM_MD_ACTIVE:
       return "ACTIVE";

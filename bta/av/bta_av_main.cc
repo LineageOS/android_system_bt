@@ -432,13 +432,13 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
 
   uint16_t profile_initialized = p_data->api_reg.service_uuid;
   if (profile_initialized == UUID_SERVCLASS_AUDIO_SINK) {
-    p_bta_av_cfg = (tBTA_AV_CFG*)&bta_avk_cfg;
+    p_bta_av_cfg = &bta_avk_cfg;
   } else if (profile_initialized == UUID_SERVCLASS_AUDIO_SOURCE) {
-    p_bta_av_cfg = (tBTA_AV_CFG*)&bta_av_cfg;
+    p_bta_av_cfg = &bta_av_cfg;
 
     if (!strncmp(AVRCP_1_3_STRING, avrcp_version, sizeof(AVRCP_1_3_STRING))) {
       LOG_INFO(LOG_TAG, "AVRCP 1.3 capabilites used");
-      p_bta_av_cfg = (tBTA_AV_CFG*)&bta_av_cfg_compatibility;
+      p_bta_av_cfg = &bta_av_cfg_compatibility;
     }
   }
 
