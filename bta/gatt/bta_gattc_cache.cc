@@ -453,22 +453,7 @@ static void bta_gattc_explore_srvc(uint16_t conn_id,
 
   bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_SUCCESS);
 }
-/*******************************************************************************
- *
- * Function         bta_gattc_incl_srvc_disc_cmpl
- *
- * Description      process the relationship discovery complete event
- *
- * Returns          status
- *
- ******************************************************************************/
-static void bta_gattc_incl_srvc_disc_cmpl(uint16_t conn_id,
-                                          tBTA_GATTC_SERV* p_srvc_cb) {
-  p_srvc_cb->cur_char_idx = p_srvc_cb->total_srvc;
 
-  /* start discoverying characteristic */
-  bta_gattc_start_disc_char(conn_id, p_srvc_cb);
-}
 /*******************************************************************************
  *
  * Function         bta_gattc_char_disc_cmpl
@@ -795,7 +780,10 @@ void bta_gattc_disc_cmpl_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
       break;
 
     case GATT_DISC_INC_SRVC:
-      bta_gattc_incl_srvc_disc_cmpl(conn_id, p_srvc_cb);
+      p_srvc_cb->cur_char_idx = p_srvc_cb->total_srvc;
+
+      /* start discoverying characteristic */
+      bta_gattc_start_disc_char(conn_id, p_srvc_cb);
       break;
 
     case GATT_DISC_CHAR:
