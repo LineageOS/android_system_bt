@@ -44,7 +44,7 @@ cc_library_static {
         "system/bt",
         "system/bt/utils/include",
         "system/bt/hci/include",
-        "system/bt/include",
+        "system/bt/internal_include",
         "system/bt/stack/include",
     ],
     shared_libs: [
