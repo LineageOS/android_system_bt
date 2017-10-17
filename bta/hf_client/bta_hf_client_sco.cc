@@ -233,7 +233,7 @@ static void bta_hf_client_sco_create(tBTA_HF_CLIENT_CB* client_cb,
     return;
   }
 
-  enh_esco_params_t params = esco_parameters_for_codec(ESCO_CODEC_MSBC_T1);
+  enh_esco_params_t params = esco_parameters_for_codec(ESCO_CODEC_CVSD);
 
   /* if initiating set current scb and peer bd addr */
   if (is_orig) {
