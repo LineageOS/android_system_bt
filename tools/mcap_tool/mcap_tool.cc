@@ -53,9 +53,7 @@
 #include "mca_api.h"
 #include "mca_defs.h"
 #include "osi/include/compat.h"
-#if defined(OS_GENERIC)
 #include "hal_util.h"
-#endif
 #include "mcap_test_app.h"
 #include "mcap_test_mcl.h"
 #include "mcap_test_mdep.h"
@@ -98,7 +96,6 @@ static bt_status_t global_status;
 static bool global_strict_mode = false;
 
 /* Device and Profile Interfaces */
-static bluetooth_device_t* sBtDevice = nullptr;
 const bt_interface_t* sBtInterface = nullptr;
 static btmcap_test_interface_t* sMcapTestInterface = nullptr;
 static McapTestApp* sMcapTestApp = nullptr;
@@ -353,23 +350,15 @@ static int create_cmdjob(char* cmd) {
  *******************************************************************************/
 
 int HAL_load(void) {
-  int err = 0;
-  hw_module_t* module;
-  hw_device_t* device;
   LOG(INFO) << "Loading HAL library and extensions";
-#if defined(OS_GENERIC)
-  err = hal_util_load_bt_library((hw_module_t const**)&module);
-#else
-  err = hw_get_module(BT_HARDWARE_MODULE_ID, (hw_module_t const**)&module);
-#endif
-  if (!err) {
-    err = module->methods->open(module, BT_HARDWARE_MODULE_ID, &device);
-    if (!err) {
-      sBtDevice = (bluetooth_device_t*)device;
-      sBtInterface = sBtDevice->get_bluetooth_interface();
-    }
+  bt_interface_t* interface;
+  int err = hal_util_load_bt_library((const bt_interface_t**)&interface);
+  if (err) {
+    LOG(ERROR) << "Error loading HAL library: " << strerror(err);
+    return err;
   }
-  LOG(INFO) << "HAL library loaded, status: " << strerror(err);
+  sBtInterface = interface;
+  LOG(INFO) << "HAL library loaded";
   return err;
 }
 

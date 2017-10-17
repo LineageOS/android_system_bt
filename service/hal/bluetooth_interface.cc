@@ -209,7 +209,7 @@ bt_os_callouts_t bt_os_callouts = {sizeof(bt_os_callouts_t),
 // BluetoothInterface implementation for production.
 class BluetoothInterfaceImpl : public BluetoothInterface {
  public:
-  BluetoothInterfaceImpl() : hal_iface_(nullptr), hal_adapter_(nullptr) {}
+  BluetoothInterfaceImpl() : hal_iface_(nullptr) {}
 
   ~BluetoothInterfaceImpl() override {
     if (hal_iface_) hal_iface_->cleanup();
@@ -230,31 +230,18 @@ class BluetoothInterfaceImpl : public BluetoothInterface {
 
   bt_callbacks_t* GetHALCallbacks() const override { return &bt_callbacks; }
 
-  const bluetooth_device_t* GetHALAdapter() const override {
-    return hal_adapter_;
-  }
-
   // Initialize the interface. This loads the shared Bluetooth library and sets
   // up the callbacks.
   bool Initialize() {
     // Load the Bluetooth shared library module.
-    const hw_module_t* module;
-    int status = hal_util_load_bt_library(&module);
-    if (status) {
-      LOG(ERROR) << "Failed to load Bluetooth library: " << status;
-      return false;
-    }
-
-    // Open the Bluetooth adapter.
-    hw_device_t* device;
-    status = module->methods->open(module, BT_HARDWARE_MODULE_ID, &device);
+    const bt_interface_t* interface;
+    int status = hal_util_load_bt_library(&interface);
     if (status) {
       LOG(ERROR) << "Failed to open the Bluetooth module";
       return false;
     }
 
-    hal_adapter_ = reinterpret_cast<bluetooth_device_t*>(device);
-    hal_iface_ = hal_adapter_->get_bluetooth_interface();
+    hal_iface_ = interface;
 
     // Initialize the Bluetooth interface. Set up the adapter (Bluetooth DM) API
     // callbacks.
@@ -285,11 +272,6 @@ class BluetoothInterfaceImpl : public BluetoothInterface {
   // The HAL handle obtained from the shared library. We hold a weak reference
   // to this since the actual data resides in the shared Bluetooth library.
   const bt_interface_t* hal_iface_;
-
-  // The HAL handle that represents the underlying Bluetooth adapter. We hold a
-  // weak reference to this since the actual data resides in the shared
-  // Bluetooth library.
-  const bluetooth_device_t* hal_adapter_;
 
   DISALLOW_COPY_AND_ASSIGN(BluetoothInterfaceImpl);
 };
