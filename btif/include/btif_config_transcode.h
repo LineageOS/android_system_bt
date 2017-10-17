@@ -18,6 +18,6 @@
 
 #pragma once
 
-typedef struct config_t config_t;
+#include "osi/include/config.h"
 
-config_t* btif_config_transcode(const char* xml_filename);
+std::unique_ptr<config_t> btif_config_transcode(const char* xml_filename);

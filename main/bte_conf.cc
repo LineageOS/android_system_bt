@@ -33,7 +33,7 @@
 void bte_load_did_conf(const char* p_path) {
   CHECK(p_path != NULL);
 
-  config_t* config = config_new(p_path);
+  std::unique_ptr<config_t> config = config_new(p_path);
   if (!config) {
     LOG_ERROR(LOG_TAG, "%s unable to load DID config '%s'.", __func__, p_path);
     return;
@@ -43,28 +43,34 @@ void bte_load_did_conf(const char* p_path) {
     char section_name[16] = {0};
     snprintf(section_name, sizeof(section_name), "DID%d", i);
 
-    if (!config_has_section(config, section_name)) {
+    if (!config_has_section(*config, section_name)) {
       LOG_DEBUG(LOG_TAG, "%s no section named %s.", __func__, section_name);
       break;
     }
 
     tBTA_DI_RECORD record;
     record.vendor =
-        config_get_int(config, section_name, "vendorId", LMP_COMPID_GOOGLE);
+        config_get_int(*config, section_name, "vendorId", LMP_COMPID_GOOGLE);
     record.vendor_id_source = config_get_int(
-        config, section_name, "vendorIdSource", DI_VENDOR_ID_SOURCE_BTSIG);
-    record.product = config_get_int(config, section_name, "productId", 0);
-    record.version = config_get_int(config, section_name, "version", 0);
+        *config, section_name, "vendorIdSource", DI_VENDOR_ID_SOURCE_BTSIG);
+    record.product = config_get_int(*config, section_name, "productId", 0);
+    record.version = config_get_int(*config, section_name, "version", 0);
     record.primary_record =
-        config_get_bool(config, section_name, "primaryRecord", false);
-    strlcpy(record.client_executable_url,
-            config_get_string(config, section_name, "clientExecutableURL", ""),
-            sizeof(record.client_executable_url));
-    strlcpy(record.service_description,
-            config_get_string(config, section_name, "serviceDescription", ""),
-            sizeof(record.service_description));
+        config_get_bool(*config, section_name, "primaryRecord", false);
+    std::string empty = "";
+    strlcpy(
+        record.client_executable_url,
+        config_get_string(*config, section_name, "clientExecutableURL", &empty)
+            ->c_str(),
+        sizeof(record.client_executable_url));
+    strlcpy(
+        record.service_description,
+        config_get_string(*config, section_name, "serviceDescription", &empty)
+            ->c_str(),
+        sizeof(record.service_description));
     strlcpy(record.documentation_url,
-            config_get_string(config, section_name, "documentationURL", ""),
+            config_get_string(*config, section_name, "documentationURL", &empty)
+                ->c_str(),
             sizeof(record.documentation_url));
 
     if (record.vendor_id_source != DI_VENDOR_ID_SOURCE_BTSIG &&
@@ -94,6 +100,4 @@ void bte_load_did_conf(const char* p_path) {
                 __func__, i, status);
     }
   }
-
-  config_free(config);
 }

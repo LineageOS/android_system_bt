@@ -25,6 +25,7 @@
 #include "osi/include/future.h"
 #include "osi/include/log.h"
 
+namespace {
 const char* TRACE_CONFIG_ENABLED_KEY = "TraceConf";
 const char* PTS_SECURE_ONLY_MODE = "PTS_SecurePairOnly";
 const char* PTS_LE_CONN_UPDATED_DISABLED = "PTS_DisableConnUpdates";
@@ -32,7 +33,8 @@ const char* PTS_DISABLE_SDP_LE_PAIR = "PTS_DisableSDPOnLEPair";
 const char* PTS_SMP_PAIRING_OPTIONS_KEY = "PTS_SmpOptions";
 const char* PTS_SMP_FAILURE_CASE_KEY = "PTS_SmpFailureCase";
 
-static config_t* config;
+static std::unique_ptr<config_t> config;
+}  // namespace
 
 // Module lifecycle functions
 
@@ -57,8 +59,7 @@ static future_t* init() {
 }
 
 static future_t* clean_up() {
-  config_free(config);
-  config = NULL;
+  config.reset();
   return future_new_immediate(FUTURE_SUCCESS);
 }
 
@@ -72,36 +73,36 @@ EXPORT_SYMBOL extern const module_t stack_config_module = {
 
 // Interface functions
 static bool get_trace_config_enabled(void) {
-  return config_get_bool(config, CONFIG_DEFAULT_SECTION,
+  return config_get_bool(*config, CONFIG_DEFAULT_SECTION,
                          TRACE_CONFIG_ENABLED_KEY, false);
 }
 
 static bool get_pts_secure_only_mode(void) {
-  return config_get_bool(config, CONFIG_DEFAULT_SECTION, PTS_SECURE_ONLY_MODE,
+  return config_get_bool(*config, CONFIG_DEFAULT_SECTION, PTS_SECURE_ONLY_MODE,
                          false);
 }
 
 static bool get_pts_conn_updates_disabled(void) {
-  return config_get_bool(config, CONFIG_DEFAULT_SECTION,
+  return config_get_bool(*config, CONFIG_DEFAULT_SECTION,
                          PTS_LE_CONN_UPDATED_DISABLED, false);
 }
 
 static bool get_pts_crosskey_sdp_disable(void) {
-  return config_get_bool(config, CONFIG_DEFAULT_SECTION,
+  return config_get_bool(*config, CONFIG_DEFAULT_SECTION,
                          PTS_DISABLE_SDP_LE_PAIR, false);
 }
 
-static const char* get_pts_smp_options(void) {
-  return config_get_string(config, CONFIG_DEFAULT_SECTION,
+static const std::string* get_pts_smp_options(void) {
+  return config_get_string(*config, CONFIG_DEFAULT_SECTION,
                            PTS_SMP_PAIRING_OPTIONS_KEY, NULL);
 }
 
 static int get_pts_smp_failure_case(void) {
-  return config_get_int(config, CONFIG_DEFAULT_SECTION,
+  return config_get_int(*config, CONFIG_DEFAULT_SECTION,
                         PTS_SMP_FAILURE_CASE_KEY, 0);
 }
 
-static config_t* get_all(void) { return config; }
+static config_t* get_all(void) { return config.get(); }
 
 const stack_config_t interface = {get_trace_config_enabled,
                                   get_pts_secure_only_mode,
