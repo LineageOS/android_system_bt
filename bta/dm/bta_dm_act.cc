@@ -256,17 +256,16 @@ extern DEV_CLASS local_device_default_class;
  *
  ******************************************************************************/
 void bta_dm_enable(tBTA_DM_MSG* p_data) {
-  tBTA_DM_ENABLE enable_event;
 
   /* if already in use, return an error */
   if (bta_dm_cb.is_bta_dm_active) {
+    tBTA_DM_SEC enable_event;
     APPL_TRACE_WARNING("%s Device already started by another application",
                        __func__);
-    memset(&enable_event, 0, sizeof(tBTA_DM_ENABLE));
-    enable_event.status = BTA_FAILURE;
+    memset(&enable_event, 0, sizeof(tBTA_DM_SEC));
+    enable_event.enable.status = BTA_FAILURE;
     if (p_data->enable.p_sec_cback != NULL)
-      p_data->enable.p_sec_cback(BTA_DM_ENABLE_EVT,
-                                 (tBTA_DM_SEC*)&enable_event);
+      p_data->enable.p_sec_cback(BTA_DM_ENABLE_EVT, &enable_event);
     return;
   }
 
@@ -425,7 +424,7 @@ static void bta_dm_sys_hw_cback(tBTA_SYS_HW_EVT status) {
     }
     bta_dm_search_cb.conn_id = GATT_INVALID_CONN_ID;
 
-    BTM_SecRegister((tBTM_APPL_INFO*)&bta_security);
+    BTM_SecRegister(&bta_security);
     BTM_SetDefaultLinkSuperTout(p_bta_dm_cfg->link_timeout);
     BTM_WritePageTimeout(p_bta_dm_cfg->page_timeout);
     bta_dm_cb.cur_policy = p_bta_dm_cfg->policy_settings;
@@ -2958,7 +2957,7 @@ void bta_dm_acl_change(tBTA_DM_MSG* p_data) {
         conn.role_chg.bd_addr = p_bda;
         conn.role_chg.new_role = (uint8_t)p_data->acl_change.new_role;
         if (bta_dm_cb.p_sec_cback)
-          bta_dm_cb.p_sec_cback(BTA_DM_ROLE_CHG_EVT, (tBTA_DM_SEC*)&conn);
+          bta_dm_cb.p_sec_cback(BTA_DM_ROLE_CHG_EVT, &conn);
       }
       return;
   }
@@ -3013,8 +3012,7 @@ void bta_dm_acl_change(tBTA_DM_MSG* p_data) {
     APPL_TRACE_WARNING("%s info: 0x%x", __func__,
                        bta_dm_cb.device_list.peer_device[i].info);
 
-    if (bta_dm_cb.p_sec_cback)
-      bta_dm_cb.p_sec_cback(BTA_DM_LINK_UP_EVT, (tBTA_DM_SEC*)&conn);
+    if (bta_dm_cb.p_sec_cback) bta_dm_cb.p_sec_cback(BTA_DM_LINK_UP_EVT, &conn);
   } else {
     for (i = 0; i < bta_dm_cb.device_list.count; i++) {
       if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr != p_bda ||

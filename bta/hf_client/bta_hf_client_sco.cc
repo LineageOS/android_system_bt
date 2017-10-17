@@ -87,7 +87,7 @@ void bta_hf_client_cback_sco(tBTA_HF_CLIENT_CB* client_cb, uint8_t event) {
   evt.bd_addr = client_cb->peer_addr;
 
   /* call app cback */
-  bta_hf_client_app_callback(event, (tBTA_HF_CLIENT*)&evt);
+  bta_hf_client_app_callback(event, &evt);
 }
 
 /*******************************************************************************
