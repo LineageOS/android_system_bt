@@ -110,7 +110,7 @@ int config_get_int(const config_t& config, const std::string& section,
   if (!entry) return def_value;
 
   size_t endptr;
-  int ret = stoi(entry->value, &endptr);
+  int ret = stoi(entry->value, &endptr, 0);
   return (endptr == entry->value.size()) ? ret : def_value;
 }
 
