@@ -19,7 +19,6 @@
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
 #include <hardware/bluetooth.h>
-#include <hardware/hardware.h>
 
 #include <dlfcn.h>
 #include <errno.h>
