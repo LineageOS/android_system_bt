@@ -43,16 +43,16 @@
  * BTA_JvStartDiscovery
  * it can be de-allocated after the last call to access the database */
 static uint8_t bta_jv_sdp_raw_data[BTA_JV_SDP_RAW_DATA_SIZE];
-static uint8_t __attribute__((aligned(4)))
-bta_jv_sdp_db_data[BTA_JV_SDP_DB_SIZE];
+static tSDP_DISCOVERY_DB
+    bta_jv_sdp_db_data[BTA_JV_SDP_DB_SIZE / sizeof(tSDP_DISCOVERY_DB)];
 
 /* JV configuration structure */
 const tBTA_JV_CFG bta_jv_cfg = {
     BTA_JV_SDP_RAW_DATA_SIZE, /* The size of p_sdp_raw_data */
-    BTA_JV_SDP_DB_SIZE,       /* The size of p_sdp_db_data */
-    bta_jv_sdp_raw_data,      /* The data buffer to keep raw data */
-    (tSDP_DISCOVERY_DB*)
-        bta_jv_sdp_db_data /* The data buffer to keep SDP database */
+    (BTA_JV_SDP_DB_SIZE / sizeof(tSDP_DISCOVERY_DB)) *
+        sizeof(tSDP_DISCOVERY_DB), /* The size of p_sdp_db_data */
+    bta_jv_sdp_raw_data,           /* The data buffer to keep raw data */
+    bta_jv_sdp_db_data             /* The data buffer to keep SDP database */
 };
 
-tBTA_JV_CFG* p_bta_jv_cfg = (tBTA_JV_CFG*)&bta_jv_cfg;
+const tBTA_JV_CFG* p_bta_jv_cfg = &bta_jv_cfg;
