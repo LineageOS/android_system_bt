@@ -16,7 +16,7 @@
  *
  ******************************************************************************/
 
-#include "include/bt_target.h"
+#include "internal_include/bt_target.h"
 
 #define LOG_TAG "bt_osi_alarm"
 

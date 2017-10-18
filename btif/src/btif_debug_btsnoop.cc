@@ -25,7 +25,7 @@
 #include "btif/include/btif_debug.h"
 #include "btif/include/btif_debug_btsnoop.h"
 #include "hci/include/btsnoop_mem.h"
-#include "include/bt_target.h"
+#include "internal_include/bt_target.h"
 #include "osi/include/ringbuffer.h"
 #include "osi/include/time.h"
 

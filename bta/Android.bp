@@ -13,7 +13,7 @@ cc_defaults {
         "system/bt/bta/include",
         "system/bt/btcore/include",
         "system/bt/hci/include",
-        "system/bt/include",
+        "system/bt/internal_include",
         "system/bt/stack/include",
         "system/bt/stack/btm",
         "system/bt/udrv/include",

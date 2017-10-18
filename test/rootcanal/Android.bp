@@ -50,7 +50,7 @@ cc_binary {
     include_dirs: [
         "system/bt",
         "system/bt/hci/include",
-        "system/bt/include",
+        "system/bt/internal_include",
         "system/bt/stack/include",
     ],
     init_rc: ["android.hardware.bluetooth@1.0-service.sim.rc"],
@@ -90,7 +90,7 @@ cc_library_shared {
     include_dirs: [
         "system/bt",
         "system/bt/hci/include",
-        "system/bt/include",
+        "system/bt/internal_include",
         "system/bt/stack/include",
     ],
 }
