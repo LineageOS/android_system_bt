@@ -815,13 +815,6 @@ static void btif_hh_upstreams_evt(uint16_t event, char* p_param) {
         BTIF_TRACE_DEBUG("%s: uhid fd=%d local_vup=%d", __func__, p_dev->fd,
                          p_dev->local_vup);
         btif_hh_stop_vup_timer(&(p_dev->bd_addr));
-        /* If this is a locally initiated VUP, remove the bond as ACL got
-         *  disconnected while VUP being processed.
-         */
-        if (p_dev->local_vup) {
-          p_dev->local_vup = false;
-          BTA_DmRemoveDevice(p_dev->bd_addr);
-        }
 
         btif_hh_cb.status = (BTIF_HH_STATUS)BTIF_HH_DEV_DISCONNECTED;
         p_dev->dev_status = BTHH_CONN_STATE_DISCONNECTED;
@@ -1046,13 +1039,7 @@ static void btif_hh_upstreams_evt(uint16_t event, char* p_param) {
         HAL_CBACK(bt_hh_callbacks, connection_state_cb, &(p_dev->bd_addr),
                   p_dev->dev_status);
         BTIF_TRACE_DEBUG("%s---Removing HID bond", __func__);
-        /* If it is locally initiated VUP or remote device has its major COD as
-        Peripheral removed the bond.*/
-        if (p_dev->local_vup || check_cod_hid(&(p_dev->bd_addr))) {
-          p_dev->local_vup = false;
-          BTA_DmRemoveDevice(p_dev->bd_addr);
-        } else
-          btif_hh_remove_device(p_dev->bd_addr);
+        btif_hh_remove_device(p_dev->bd_addr);
         HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb, &(p_dev->bd_addr),
                   (bthh_status_t)p_data->dev_status.status);
       }
