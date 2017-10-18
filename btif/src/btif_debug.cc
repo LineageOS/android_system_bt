@@ -21,7 +21,7 @@
 
 #include "btif/include/btif_debug.h"
 #include "btif/include/btif_debug_btsnoop.h"
-#include "include/bt_target.h"
+#include "internal_include/bt_target.h"
 
 void btif_debug_init(void) {
 #if (BTSNOOP_MEM == TRUE)

@@ -25,7 +25,7 @@ cc_binary {
     ],
     include_dirs: [
       "system/bt",
-      "system/bt/include",
+      "system/bt/internal_include",
       "system/bt/stack/include",
       "system/bt/btcore/include",
     ],
