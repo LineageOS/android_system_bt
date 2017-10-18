@@ -38,7 +38,7 @@ shared_library("bluetooth.default") {
     "//bta/sys",
     "//bta/dm",
     "//btcore/include",
-    "//include",
+    "//internal_include",
     "//stack/include",
     "//stack/l2cap",
     "//stack/a2dp",
