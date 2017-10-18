@@ -23,7 +23,6 @@
 #include <hardware/bt_gatt.h>
 #include <hardware/bt_pan.h>
 #include <hardware/bt_sock.h>
-#include <hardware/hardware.h>
 #include <signal.h>
 #include <time.h>
 #include <map>
