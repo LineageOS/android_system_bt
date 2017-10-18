@@ -32,14 +32,14 @@
 #define BTA_MCE_SDP_DB_SIZE 4500
 #endif
 
-static uint8_t __attribute__((aligned(4)))
-bta_mce_sdp_db_data[BTA_MCE_SDP_DB_SIZE];
+static tSDP_DISCOVERY_DB
+    bta_mce_sdp_db_data[BTA_MCE_SDP_DB_SIZE / sizeof(tSDP_DISCOVERY_DB)];
 
 /* MCE configuration structure */
 const tBTA_MCE_CFG bta_mce_cfg = {
-    BTA_MCE_SDP_DB_SIZE,
-    (tSDP_DISCOVERY_DB*)
-        bta_mce_sdp_db_data /* The data buffer to keep SDP database */
+    (BTA_MCE_SDP_DB_SIZE / sizeof(tSDP_DISCOVERY_DB)) *
+        sizeof(tSDP_DISCOVERY_DB),
+    bta_mce_sdp_db_data /* The data buffer to keep SDP database */
 };
 
-tBTA_MCE_CFG* p_bta_mce_cfg = (tBTA_MCE_CFG*)&bta_mce_cfg;
+const tBTA_MCE_CFG* p_bta_mce_cfg = &bta_mce_cfg;
