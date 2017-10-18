@@ -23,7 +23,7 @@ source_set("udrv") {
     "include",
     "uipc",
     "//",
-    "//include",
+    "//internal_include",
     "//stack/include",
     "//utils/include",
   ]
