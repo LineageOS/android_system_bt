@@ -220,9 +220,8 @@ tBTA_HL_STATUS bta_hl_sdp_update(UNUSED_ATTR uint8_t app_id) {
     add_proto_list.list_elem[0].params[0] = p_cb->data_psm;
     add_proto_list.list_elem[1].protocol_uuid = UUID_PROTOCOL_MCAP_DATA;
     add_proto_list.list_elem[1].num_params = 0;
-    result &=
-        SDP_AddAdditionProtoLists(p_cb->sdp_handle, BTA_HL_NUM_ADD_PROTO_LISTS,
-                                  (tSDP_PROTO_LIST_ELEM*)&add_proto_list);
+    result &= SDP_AddAdditionProtoLists(
+        p_cb->sdp_handle, BTA_HL_NUM_ADD_PROTO_LISTS, &add_proto_list);
   }
 
   if (result) {
@@ -410,9 +409,8 @@ tBTA_HL_STATUS bta_hl_sdp_register(uint8_t app_idx) {
     add_proto_list.list_elem[0].params[0] = p_cb->data_psm;
     add_proto_list.list_elem[1].protocol_uuid = UUID_PROTOCOL_MCAP_DATA;
     add_proto_list.list_elem[1].num_params = 0;
-    result &=
-        SDP_AddAdditionProtoLists(p_cb->sdp_handle, BTA_HL_NUM_ADD_PROTO_LISTS,
-                                  (tSDP_PROTO_LIST_ELEM*)&add_proto_list);
+    result &= SDP_AddAdditionProtoLists(
+        p_cb->sdp_handle, BTA_HL_NUM_ADD_PROTO_LISTS, &add_proto_list);
   }
 
   if (result) {

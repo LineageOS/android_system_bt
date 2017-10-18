@@ -71,7 +71,7 @@ static bool is_factory_reset(void);
 static void delete_config_files(void);
 static void btif_config_remove_unpaired(config_t* config);
 static void btif_config_remove_restricted(config_t* config);
-static config_t* btif_config_open(const char* filename);
+static std::unique_ptr<config_t> btif_config_open(const char* filename);
 
 static enum ConfigSource {
   NOT_LOADED,
@@ -115,7 +115,7 @@ bool btif_get_address_type(const RawAddress& bda, int* p_addr_type) {
 }
 
 static std::mutex config_lock;  // protects operations on |config|.
-static config_t* config;
+static std::unique_ptr<config_t> config;
 static alarm_t* config_timer;
 
 // Module lifecycle functions
@@ -154,29 +154,24 @@ static future_t* init(void) {
   }
 
   if (!file_source.empty())
-    config_set_string(config, INFO_SECTION, FILE_SOURCE, file_source.c_str());
+    config_set_string(config.get(), INFO_SECTION, FILE_SOURCE, file_source);
 
-  if (!config) {
-    LOG_ERROR(LOG_TAG, "%s unable to allocate a config object.", __func__);
-    goto error;
-  }
-
-  btif_config_remove_unpaired(config);
+  btif_config_remove_unpaired(config.get());
 
   // Cleanup temporary pairings if we have left guest mode
-  if (!is_restricted_mode()) btif_config_remove_restricted(config);
+  if (!is_restricted_mode()) btif_config_remove_restricted(config.get());
 
   // Read or set config file creation timestamp
-  const char* time_str;
-  time_str = config_get_string(config, INFO_SECTION, FILE_TIMESTAMP, NULL);
+  const std::string* time_str;
+  time_str = config_get_string(*config, INFO_SECTION, FILE_TIMESTAMP, NULL);
   if (time_str != NULL) {
-    strlcpy(btif_config_time_created, time_str, TIME_STRING_LENGTH);
+    strlcpy(btif_config_time_created, time_str->c_str(), TIME_STRING_LENGTH);
   } else {
     time_t current_time = time(NULL);
     struct tm* time_created = localtime(&current_time);
     strftime(btif_config_time_created, TIME_STRING_LENGTH, TIME_STRING_FORMAT,
              time_created);
-    config_set_string(config, INFO_SECTION, FILE_TIMESTAMP,
+    config_set_string(config.get(), INFO_SECTION, FILE_TIMESTAMP,
                       btif_config_time_created);
   }
 
@@ -195,21 +190,19 @@ static future_t* init(void) {
 
 error:
   alarm_free(config_timer);
-  config_free(config);
+  config.reset();
   config_timer = NULL;
-  config = NULL;
   btif_config_source = NOT_LOADED;
   return future_new_immediate(FUTURE_FAIL);
 }
 
-static config_t* btif_config_open(const char* filename) {
-  config_t* config = config_new(filename);
-  if (!config) return NULL;
+static std::unique_ptr<config_t> btif_config_open(const char* filename) {
+  std::unique_ptr<config_t> config = config_new(filename);
+  if (!config) return nullptr;
 
-  if (!config_has_section(config, "Adapter")) {
+  if (!config_has_section(*config, "Adapter")) {
     LOG_ERROR(LOG_TAG, "Config is missing adapter section");
-    config_free(config);
-    return NULL;
+    return nullptr;
   }
 
   return config;
@@ -227,8 +220,7 @@ static future_t* clean_up(void) {
   config_timer = NULL;
 
   std::unique_lock<std::mutex> lock(config_lock);
-  config_free(config);
-  config = NULL;
+  config.reset();
   return future_new_immediate(FUTURE_SUCCESS);
 }
 
@@ -243,118 +235,106 @@ bool btif_config_has_section(const char* section) {
   CHECK(section != NULL);
 
   std::unique_lock<std::mutex> lock(config_lock);
-  return config_has_section(config, section);
+  return config_has_section(*config, section);
 }
 
-bool btif_config_exist(const char* section, const char* key) {
+bool btif_config_exist(const std::string& section, const std::string& key) {
   CHECK(config != NULL);
-  CHECK(section != NULL);
-  CHECK(key != NULL);
 
   std::unique_lock<std::mutex> lock(config_lock);
-  return config_has_key(config, section, key);
+  return config_has_key(*config, section, key);
 }
 
-bool btif_config_get_int(const char* section, const char* key, int* value) {
+bool btif_config_get_int(const std::string& section, const std::string& key,
+                         int* value) {
   CHECK(config != NULL);
-  CHECK(section != NULL);
-  CHECK(key != NULL);
   CHECK(value != NULL);
 
   std::unique_lock<std::mutex> lock(config_lock);
-  bool ret = config_has_key(config, section, key);
-  if (ret) *value = config_get_int(config, section, key, *value);
+  bool ret = config_has_key(*config, section, key);
+  if (ret) *value = config_get_int(*config, section, key, *value);
 
   return ret;
 }
 
-bool btif_config_set_int(const char* section, const char* key, int value) {
+bool btif_config_set_int(const std::string& section, const std::string& key,
+                         int value) {
   CHECK(config != NULL);
-  CHECK(section != NULL);
-  CHECK(key != NULL);
 
   std::unique_lock<std::mutex> lock(config_lock);
-  config_set_int(config, section, key, value);
+  config_set_int(config.get(), section, key, value);
 
   return true;
 }
 
-bool btif_config_get_str(const char* section, const char* key, char* value,
-                         int* size_bytes) {
+bool btif_config_get_str(const std::string& section, const std::string& key,
+                         char* value, int* size_bytes) {
   CHECK(config != NULL);
-  CHECK(section != NULL);
-  CHECK(key != NULL);
   CHECK(value != NULL);
   CHECK(size_bytes != NULL);
 
   {
     std::unique_lock<std::mutex> lock(config_lock);
-    const char* stored_value = config_get_string(config, section, key, NULL);
+    const std::string* stored_value =
+        config_get_string(*config, section, key, NULL);
     if (!stored_value) return false;
-    strlcpy(value, stored_value, *size_bytes);
+    strlcpy(value, stored_value->c_str(), *size_bytes);
   }
 
   *size_bytes = strlen(value) + 1;
   return true;
 }
 
-bool btif_config_set_str(const char* section, const char* key,
-                         const char* value) {
+bool btif_config_set_str(const std::string& section, const std::string& key,
+                         const std::string& value) {
   CHECK(config != NULL);
-  CHECK(section != NULL);
-  CHECK(key != NULL);
-  CHECK(value != NULL);
 
   std::unique_lock<std::mutex> lock(config_lock);
-  config_set_string(config, section, key, value);
+  config_set_string(config.get(), section, key, value);
   return true;
 }
 
-bool btif_config_get_bin(const char* section, const char* key, uint8_t* value,
-                         size_t* length) {
+bool btif_config_get_bin(const std::string& section, const std::string& key,
+                         uint8_t* value, size_t* length) {
   CHECK(config != NULL);
-  CHECK(section != NULL);
-  CHECK(key != NULL);
   CHECK(value != NULL);
   CHECK(length != NULL);
 
   std::unique_lock<std::mutex> lock(config_lock);
-  const char* value_str = config_get_string(config, section, key, NULL);
+  const std::string* value_str = config_get_string(*config, section, key, NULL);
 
   if (!value_str) return false;
 
-  size_t value_len = strlen(value_str);
+  size_t value_len = value_str->length();
   if ((value_len % 2) != 0 || *length < (value_len / 2)) return false;
 
   for (size_t i = 0; i < value_len; ++i)
-    if (!isxdigit(value_str[i])) return false;
+    if (!isxdigit(value_str->c_str()[i])) return false;
 
-  for (*length = 0; *value_str; value_str += 2, *length += 1)
-    sscanf(value_str, "%02hhx", &value[*length]);
+  const char* ptr = value_str->c_str();
+  for (*length = 0; *ptr; ptr += 2, *length += 1)
+    sscanf(ptr, "%02hhx", &value[*length]);
 
   return true;
 }
 
-size_t btif_config_get_bin_length(const char* section, const char* key) {
+size_t btif_config_get_bin_length(const std::string& section,
+                                  const std::string& key) {
   CHECK(config != NULL);
-  CHECK(section != NULL);
-  CHECK(key != NULL);
 
   std::unique_lock<std::mutex> lock(config_lock);
-  const char* value_str = config_get_string(config, section, key, NULL);
+  const std::string* value_str = config_get_string(*config, section, key, NULL);
   if (!value_str) return 0;
 
-  size_t value_len = strlen(value_str);
+  size_t value_len = value_str->length();
   return ((value_len % 2) != 0) ? 0 : (value_len / 2);
 }
 
-bool btif_config_set_bin(const char* section, const char* key,
+bool btif_config_set_bin(const std::string& section, const std::string& key,
                          const uint8_t* value, size_t length) {
   const char* lookup = "0123456789abcdef";
 
   CHECK(config != NULL);
-  CHECK(section != NULL);
-  CHECK(key != NULL);
 
   if (length > 0) CHECK(value != NULL);
 
@@ -367,45 +347,20 @@ bool btif_config_set_bin(const char* section, const char* key,
 
   {
     std::unique_lock<std::mutex> lock(config_lock);
-    config_set_string(config, section, key, str);
+    config_set_string(config.get(), section, key, str);
   }
 
   osi_free(str);
   return true;
 }
 
-const btif_config_section_iter_t* btif_config_section_begin(void) {
-  CHECK(config != NULL);
-  return (const btif_config_section_iter_t*)config_section_begin(config);
-}
+std::list<section_t>& btif_config_sections() { return config->sections; }
 
-const btif_config_section_iter_t* btif_config_section_end(void) {
+bool btif_config_remove(const std::string& section, const std::string& key) {
   CHECK(config != NULL);
-  return (const btif_config_section_iter_t*)config_section_end(config);
-}
-
-const btif_config_section_iter_t* btif_config_section_next(
-    const btif_config_section_iter_t* section) {
-  CHECK(config != NULL);
-  CHECK(section != NULL);
-  return (const btif_config_section_iter_t*)config_section_next(
-      (const config_section_node_t*)section);
-}
-
-const char* btif_config_section_name(
-    const btif_config_section_iter_t* section) {
-  CHECK(config != NULL);
-  CHECK(section != NULL);
-  return config_section_name((const config_section_node_t*)section);
-}
-
-bool btif_config_remove(const char* section, const char* key) {
-  CHECK(config != NULL);
-  CHECK(section != NULL);
-  CHECK(key != NULL);
 
   std::unique_lock<std::mutex> lock(config_lock);
-  return config_remove_key(config, section, key);
+  return config_remove_key(config.get(), section, key);
 }
 
 void btif_config_save(void) {
@@ -430,12 +385,10 @@ bool btif_config_clear(void) {
   alarm_cancel(config_timer);
 
   std::unique_lock<std::mutex> lock(config_lock);
-  config_free(config);
 
   config = config_new_empty();
-  if (config == NULL) return false;
 
-  bool ret = config_save(config, CONFIG_FILE_PATH);
+  bool ret = config_save(*config, CONFIG_FILE_PATH);
   btif_config_source = RESET;
   return ret;
 }
@@ -454,10 +407,9 @@ static void btif_config_write(UNUSED_ATTR uint16_t event,
 
   std::unique_lock<std::mutex> lock(config_lock);
   rename(CONFIG_FILE_PATH, CONFIG_BACKUP_PATH);
-  config_t* config_paired = config_new_clone(config);
-  btif_config_remove_unpaired(config_paired);
-  config_save(config_paired, CONFIG_FILE_PATH);
-  config_free(config_paired);
+  std::unique_ptr<config_t> config_paired = config_new_clone(*config);
+  btif_config_remove_unpaired(config_paired.get());
+  config_save(*config_paired, CONFIG_FILE_PATH);
 }
 
 static void btif_config_remove_unpaired(config_t* conf) {
@@ -467,23 +419,23 @@ static void btif_config_remove_unpaired(config_t* conf) {
   // The paired config used to carry information about
   // discovered devices during regular inquiry scans.
   // We remove these now and cache them in memory instead.
-  const config_section_node_t* snode = config_section_begin(conf);
-  while (snode != config_section_end(conf)) {
-    const char* section = config_section_name(snode);
+  for (auto it = conf->sections.begin(); it != conf->sections.end();) {
+    std::string& section = it->name;
     if (RawAddress::IsValidAddress(section)) {
-      if (!config_has_key(conf, section, "LinkKey") &&
-          !config_has_key(conf, section, "LE_KEY_PENC") &&
-          !config_has_key(conf, section, "LE_KEY_PID") &&
-          !config_has_key(conf, section, "LE_KEY_PCSRK") &&
-          !config_has_key(conf, section, "LE_KEY_LENC") &&
-          !config_has_key(conf, section, "LE_KEY_LCSRK")) {
-        snode = config_section_next(snode);
-        config_remove_section(conf, section);
+      // TODO: config_has_key loop thorugh all data, maybe just make it so we
+      // loop just once ?
+      if (!config_has_key(*conf, section, "LinkKey") &&
+          !config_has_key(*conf, section, "LE_KEY_PENC") &&
+          !config_has_key(*conf, section, "LE_KEY_PID") &&
+          !config_has_key(*conf, section, "LE_KEY_PCSRK") &&
+          !config_has_key(*conf, section, "LE_KEY_LENC") &&
+          !config_has_key(*conf, section, "LE_KEY_LCSRK")) {
+        it = conf->sections.erase(it);
         continue;
       }
       paired_devices++;
     }
-    snode = config_section_next(snode);
+    it++;
   }
 
   // should only happen once, at initial load time
@@ -516,24 +468,27 @@ void btif_debug_config_dump(int fd) {
       break;
   }
 
+  std::string original = "Original";
   dprintf(fd, "  Devices loaded: %d\n", btif_config_devices_loaded);
   dprintf(fd, "  File created/tagged: %s\n", btif_config_time_created);
   dprintf(fd, "  File source: %s\n",
-          config_get_string(config, INFO_SECTION, FILE_SOURCE, "Original"));
+          config_get_string(*config, INFO_SECTION, FILE_SOURCE, &original)
+              ->c_str());
 }
 
 static void btif_config_remove_restricted(config_t* config) {
   CHECK(config != NULL);
 
-  const config_section_node_t* snode = config_section_begin(config);
-  while (snode != config_section_end(config)) {
-    const char* section = config_section_name(snode);
+  for (auto it = config->sections.begin(); it != config->sections.end();) {
+    const std::string& section = it->name;
     if (RawAddress::IsValidAddress(section) &&
-        config_has_key(config, section, "Restricted")) {
-      BTIF_TRACE_DEBUG("%s: Removing restricted device %s", __func__, section);
-      config_remove_section(config, section);
+        config_has_key(*config, section, "Restricted")) {
+      BTIF_TRACE_DEBUG("%s: Removing restricted device %s", __func__,
+                       section.c_str());
+      it = config->sections.erase(it);
+      continue;
     }
-    snode = config_section_next(snode);
+    it++;
   }
 }
 

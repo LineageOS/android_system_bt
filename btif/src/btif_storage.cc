@@ -424,13 +424,13 @@ static bt_status_t btif_in_fetch_bonded_devices(
   bool bt_linkkey_file_found = false;
   int device_type;
 
-  for (const btif_config_section_iter_t* iter = btif_config_section_begin();
-       iter != btif_config_section_end();
-       iter = btif_config_section_next(iter)) {
-    const char* name = btif_config_section_name(iter);
+  // TODO: this code is not thread safe, it can corrupt config content.
+  // b/67595284
+  for (const section_t& section : btif_config_sections()) {
+    const std::string& name = section.name;
     if (!RawAddress::IsValidAddress(name)) continue;
 
-    BTIF_TRACE_DEBUG("Remote device:%s", name);
+    BTIF_TRACE_DEBUG("Remote device:%s", name.c_str());
     LINK_KEY link_key;
     size_t size = sizeof(link_key);
     if (btif_config_get_bin(name, "LinkKey", link_key, &size)) {
@@ -459,9 +459,10 @@ static bt_status_t btif_in_fetch_bonded_devices(
         bt_linkkey_file_found = false;
       }
     }
-    if (!btif_in_fetch_bonded_ble_device(name, add, p_bonded_devices) &&
+    if (!btif_in_fetch_bonded_ble_device(name.c_str(), add, p_bonded_devices) &&
         !bt_linkkey_file_found) {
-      BTIF_TRACE_DEBUG("Remote device:%s, no link key or ble key found", name);
+      BTIF_TRACE_DEBUG("Remote device:%s, no link key or ble key found",
+                       name.c_str());
     }
   }
   return BT_STATUS_SUCCESS;
@@ -1262,15 +1263,16 @@ bt_status_t btif_storage_load_bonded_hid_info(void) {
   uint8_t app_id;
 
   memset(&dscp_info, 0, sizeof(dscp_info));
-  for (const btif_config_section_iter_t* iter = btif_config_section_begin();
-       iter != btif_config_section_end();
-       iter = btif_config_section_next(iter)) {
-    const char* name = btif_config_section_name(iter);
+
+  // TODO: this code is not thread safe, it can corrupt config content.
+  // b/67595284
+  for (const section_t& section : btif_config_sections()) {
+    const std::string& name = section.name;
     if (!RawAddress::IsValidAddress(name)) continue;
 
-    BTIF_TRACE_DEBUG("Remote device:%s", name);
+    BTIF_TRACE_DEBUG("Remote device:%s", name.c_str());
     int value;
-    if (btif_in_fetch_bonded_device(name) == BT_STATUS_SUCCESS) {
+    if (btif_in_fetch_bonded_device(name.c_str()) == BT_STATUS_SUCCESS) {
       if (btif_config_get_int(name, "HidAttrMask", &value)) {
         attr_mask = (uint16_t)value;
 
@@ -1377,16 +1379,15 @@ bool btif_storage_is_restricted_device(const RawAddress* remote_bd_addr) {
  *
  ******************************************************************************/
 bt_status_t btif_storage_load_hidd(void) {
-
-  for (const btif_config_section_iter_t* iter = btif_config_section_begin();
-       iter != btif_config_section_end();
-       iter = btif_config_section_next(iter)) {
-    const char* name = btif_config_section_name(iter);
+  // TODO: this code is not thread safe, it can corrupt config content.
+  // b/67595284
+  for (const section_t& section : btif_config_sections()) {
+    const std::string& name = section.name;
     if (!RawAddress::IsValidAddress(name)) continue;
 
-    BTIF_TRACE_DEBUG("Remote device:%s", name);
+    BTIF_TRACE_DEBUG("Remote device:%s", name.c_str());
     int value;
-    if (btif_in_fetch_bonded_device(name) == BT_STATUS_SUCCESS) {
+    if (btif_in_fetch_bonded_device(name.c_str()) == BT_STATUS_SUCCESS) {
       if (btif_config_get_int(name, "HidDeviceCabled", &value)) {
         RawAddress bd_addr;
         RawAddress::FromString(name, bd_addr);

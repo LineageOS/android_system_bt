@@ -448,8 +448,11 @@ void bta_gatts_open(UNUSED_ATTR tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
     LOG(ERROR) << "Inavlid server_if=" << p_msg->api_open.server_if;
   }
 
-  if (p_rcb && p_rcb->p_cback)
-    (*p_rcb->p_cback)(BTA_GATTS_OPEN_EVT, (tBTA_GATTS*)&status);
+  if (p_rcb && p_rcb->p_cback) {
+    tBTA_GATTS bta_gatts;
+    bta_gatts.status = status;
+    (*p_rcb->p_cback)(BTA_GATTS_OPEN_EVT, &bta_gatts);
+  }
 }
 /*******************************************************************************
  *
@@ -477,8 +480,11 @@ void bta_gatts_cancel_open(UNUSED_ATTR tBTA_GATTS_CB* p_cb,
     LOG(ERROR) << "Inavlid server_if=" << +p_msg->api_cancel_open.server_if;
   }
 
-  if (p_rcb && p_rcb->p_cback)
-    (*p_rcb->p_cback)(BTA_GATTS_CANCEL_OPEN_EVT, (tBTA_GATTS*)&status);
+  if (p_rcb && p_rcb->p_cback) {
+    tBTA_GATTS bta_gatts;
+    bta_gatts.status = status;
+    (*p_rcb->p_cback)(BTA_GATTS_CANCEL_OPEN_EVT, &bta_gatts);
+  }
 }
 /*******************************************************************************
  *
@@ -511,7 +517,9 @@ void bta_gatts_close(UNUSED_ATTR tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
       if (transport == BTA_TRANSPORT_BR_EDR)
         bta_sys_conn_close(BTA_ID_GATTS, BTA_ALL_APP_ID, remote_bda);
 
-      (*p_rcb->p_cback)(BTA_GATTS_CLOSE_EVT, (tBTA_GATTS*)&status);
+      tBTA_GATTS bta_gatts;
+      bta_gatts.status = status;
+      (*p_rcb->p_cback)(BTA_GATTS_CLOSE_EVT, &bta_gatts);
     }
   } else {
     LOG(ERROR) << "Unknown connection_id=" << loghex(p_msg->hdr.layer_specific);

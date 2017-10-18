@@ -223,7 +223,7 @@ static bool btm_serv_trusted(tBTM_SEC_DEV_REC* p_dev_rec,
  * Returns          true if registered OK, else false
  *
  ******************************************************************************/
-bool BTM_SecRegister(tBTM_APPL_INFO* p_cb_info) {
+bool BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info) {
   BT_OCTET16 temp_value = {0};
 
   BTM_TRACE_EVENT("%s application registered", __func__);

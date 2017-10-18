@@ -506,9 +506,10 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr,
   tBTA_DM_PEER_DEVICE* p_peer_device = NULL;
   tBTA_DM_PM_ACTION allowed_modes = 0;
   tBTA_DM_PM_ACTION pref_modes = 0;
-  tBTA_DM_PM_CFG* p_pm_cfg;
-  tBTA_DM_PM_SPEC* p_pm_spec;
-  tBTA_DM_PM_ACTN *p_act0, *p_act1;
+  const tBTA_DM_PM_CFG* p_pm_cfg;
+  const tBTA_DM_PM_SPEC* p_pm_spec;
+  const tBTA_DM_PM_ACTN* p_act0;
+  const tBTA_DM_PM_ACTN* p_act1;
   tBTA_DM_SRVCS* p_srvcs = NULL;
   bool timer_started = false;
   uint8_t timer_idx, available_timer = BTA_DM_PM_MODE_TIMER_MAX;

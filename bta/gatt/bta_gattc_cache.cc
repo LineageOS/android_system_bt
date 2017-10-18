@@ -361,43 +361,8 @@ tGATT_STATUS bta_gattc_discover_procedure(uint16_t conn_id,
   }
   return GATTC_Discover(conn_id, disc_type, &param);
 }
-/*******************************************************************************
- *
- * Function         bta_gattc_start_disc_include_srvc
- *
- * Description      Start discovery for included service
- *
- * Returns          status of the operation.
- *
- ******************************************************************************/
-tGATT_STATUS bta_gattc_start_disc_include_srvc(uint16_t conn_id,
-                                               tBTA_GATTC_SERV* p_srvc_cb) {
-  return bta_gattc_discover_procedure(conn_id, p_srvc_cb, GATT_DISC_INC_SRVC);
-}
-/*******************************************************************************
- *
- * Function         bta_gattc_start_disc_char
- *
- * Description      Start discovery for characteristic
- *
- * Returns          status of the operation.
- *
- ******************************************************************************/
-tGATT_STATUS bta_gattc_start_disc_char(uint16_t conn_id,
-                                       tBTA_GATTC_SERV* p_srvc_cb) {
-  p_srvc_cb->total_char = 0;
 
-  return bta_gattc_discover_procedure(conn_id, p_srvc_cb, GATT_DISC_CHAR);
-}
-/*******************************************************************************
- *
- * Function         bta_gattc_start_disc_char_dscp
- *
- * Description      Start discovery for characteristic descriptor
- *
- * Returns          none.
- *
- ******************************************************************************/
+/** Start discovery for characteristic descriptor */
 void bta_gattc_start_disc_char_dscp(uint16_t conn_id,
                                     tBTA_GATTC_SERV* p_srvc_cb) {
   VLOG(1) << "starting discover characteristics descriptor";
@@ -406,38 +371,33 @@ void bta_gattc_start_disc_char_dscp(uint16_t conn_id,
       0)
     bta_gattc_char_dscpt_disc_cmpl(conn_id, p_srvc_cb);
 }
-/*******************************************************************************
- *
- * Function         bta_gattc_explore_srvc
- *
- * Description      process the service discovery complete event
- *
- * Returns          status
- *
- ******************************************************************************/
+
+/** process the service discovery complete event */
 static void bta_gattc_explore_srvc(uint16_t conn_id,
                                    tBTA_GATTC_SERV* p_srvc_cb) {
-  tBTA_GATTC_ATTR_REC* p_rec = p_srvc_cb->p_srvc_list + p_srvc_cb->cur_srvc_idx;
   tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
-
-  VLOG(1) << "Start service discovery: srvc_idx:" << +p_srvc_cb->cur_srvc_idx;
-
-  p_srvc_cb->cur_char_idx = p_srvc_cb->next_avail_idx = p_srvc_cb->total_srvc;
-
-  if (p_clcb == NULL) {
+  if (!p_clcb) {
     LOG(ERROR) << "unknown connection ID";
     return;
   }
+
   /* start expore a service if there is service not been explored */
   if (p_srvc_cb->cur_srvc_idx < p_srvc_cb->total_srvc) {
+    tBTA_GATTC_ATTR_REC* p_rec =
+        p_srvc_cb->p_srvc_list + p_srvc_cb->cur_srvc_idx;
+    VLOG(1) << "Start service discovery: srvc_idx:" << +p_srvc_cb->cur_srvc_idx;
+
+    p_srvc_cb->cur_char_idx = p_srvc_cb->next_avail_idx = p_srvc_cb->total_srvc;
+
     /* add the first service into cache */
     add_service_to_gatt_db(p_srvc_cb->srvc_cache, p_rec->s_handle,
                            p_rec->e_handle, p_rec->uuid, p_rec->is_primary);
 
     /* start discovering included services */
-    bta_gattc_start_disc_include_srvc(conn_id, p_srvc_cb);
+    bta_gattc_discover_procedure(conn_id, p_srvc_cb, GATT_DISC_INC_SRVC);
     return;
   }
+
   /* no service found at all, the end of server discovery*/
   LOG_WARN(LOG_TAG, "%s no more services found", __func__);
 
@@ -453,22 +413,7 @@ static void bta_gattc_explore_srvc(uint16_t conn_id,
 
   bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_SUCCESS);
 }
-/*******************************************************************************
- *
- * Function         bta_gattc_incl_srvc_disc_cmpl
- *
- * Description      process the relationship discovery complete event
- *
- * Returns          status
- *
- ******************************************************************************/
-static void bta_gattc_incl_srvc_disc_cmpl(uint16_t conn_id,
-                                          tBTA_GATTC_SERV* p_srvc_cb) {
-  p_srvc_cb->cur_char_idx = p_srvc_cb->total_srvc;
 
-  /* start discoverying characteristic */
-  bta_gattc_start_disc_char(conn_id, p_srvc_cb);
-}
 /*******************************************************************************
  *
  * Function         bta_gattc_char_disc_cmpl
@@ -795,7 +740,10 @@ void bta_gattc_disc_cmpl_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
       break;
 
     case GATT_DISC_INC_SRVC:
-      bta_gattc_incl_srvc_disc_cmpl(conn_id, p_srvc_cb);
+      /* start discoverying characteristic */
+      p_srvc_cb->cur_char_idx = p_srvc_cb->total_srvc;
+      p_srvc_cb->total_char = 0;
+      bta_gattc_discover_procedure(conn_id, p_srvc_cb, GATT_DISC_CHAR);
       break;
 
     case GATT_DISC_CHAR:

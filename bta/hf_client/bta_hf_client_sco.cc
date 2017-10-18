@@ -87,7 +87,7 @@ void bta_hf_client_cback_sco(tBTA_HF_CLIENT_CB* client_cb, uint8_t event) {
   evt.bd_addr = client_cb->peer_addr;
 
   /* call app cback */
-  bta_hf_client_app_callback(event, (tBTA_HF_CLIENT*)&evt);
+  bta_hf_client_app_callback(event, &evt);
 }
 
 /*******************************************************************************
@@ -233,7 +233,7 @@ static void bta_hf_client_sco_create(tBTA_HF_CLIENT_CB* client_cb,
     return;
   }
 
-  enh_esco_params_t params = esco_parameters_for_codec(ESCO_CODEC_MSBC_T1);
+  enh_esco_params_t params = esco_parameters_for_codec(ESCO_CODEC_CVSD);
 
   /* if initiating set current scb and peer bd addr */
   if (is_orig) {

@@ -1797,7 +1797,7 @@ void bta_av_rc_disc_done(UNUSED_ATTR tBTA_AV_DATA* p_data) {
       if (peer_rc_version <= AVRC_REV_1_3) {
         APPL_TRACE_DEBUG("%s Using AVRCP 1.3 Capabilities with remote device",
                          __func__);
-        p_bta_av_cfg = (tBTA_AV_CFG*)&bta_av_cfg_compatibility;
+        p_bta_av_cfg = &bta_av_cfg_compatibility;
       }
     }
   }

@@ -16,6 +16,8 @@
 
 #define LOG_TAG "hal_util"
 
+#include <base/logging.h>
+#include <base/strings/stringprintf.h>
 #include <hardware/bluetooth.h>
 #include <hardware/hardware.h>
 
@@ -26,53 +28,54 @@
 #include "btcore/include/hal_util.h"
 #include "osi/include/log.h"
 
-// TODO(armansito): All logging macros should include __func__ by default (see
-// Bug: 22671731)
-#define HULOGERR(fmt, args...)                                          \
-  LOG_ERROR(LOG_TAG, "[%s] failed to load the Bluetooth library: " fmt, \
-            __func__, ##args)
+using base::StringPrintf;
 
-// TODO(armansito): It might be better to pass the library name in a more
-// generic manner as opposed to hard-coding it here.
-static const char kBluetoothLibraryName[] = "bluetooth.default.so";
+#define BLUETOOTH_LIBRARY_NAME "bluetooth.default.so"
+#if defined(__LP64__)
+#define BACKUP_PATH "/system/lib64/hw/" BLUETOOTH_LIBRARY_NAME
+#else
+#define BACKUP_PATH "/system/lib/hw/" BLUETOOTH_LIBRARY_NAME
+#endif
 
-int hal_util_load_bt_library(const struct hw_module_t** module) {
-  const char* id = BT_STACK_MODULE_ID;
-  const char* sym = HAL_MODULE_INFO_SYM_AS_STR;
-  struct hw_module_t* hmi = nullptr;
+int hal_util_load_bt_library(const bt_interface_t** interface) {
+  const char* sym = BLUETOOTH_INTERFACE_STRING;
+  bt_interface_t* itf = nullptr;
 
   // Always try to load the default Bluetooth stack on GN builds.
-  void* handle = dlopen(kBluetoothLibraryName, RTLD_NOW);
+  const char* path = BLUETOOTH_LIBRARY_NAME;
+  void* handle = dlopen(path, RTLD_NOW);
   if (!handle) {
-    char const* err_str = dlerror();
-    HULOGERR("%s", err_str ? err_str : "error unknown");
-    goto error;
+    const char* err_str = dlerror();
+    LOG(WARNING) << __func__ << ": failed to load Bluetooth library " << path
+                 << ", error=" << (err_str ? err_str : "error unknown");
+    path = BACKUP_PATH;
+    LOG(WARNING) << __func__ << ": loading backup path " << path;
+    handle = dlopen(path, RTLD_NOW);
+    if (!handle) {
+      err_str = dlerror();
+      LOG(ERROR) << __func__ << ": failed to load Bluetooth library " << path
+                 << ", error=" << (err_str ? err_str : "error unknown");
+      goto error;
+    }
   }
 
-  // Get the address of the struct hal_module_info.
-  hmi = (struct hw_module_t*)dlsym(handle, sym);
-  if (!hmi) {
-    HULOGERR("%s", sym);
+  // Get the address of the bt_interface_t.
+  itf = (bt_interface_t*)dlsym(handle, sym);
+  if (!itf) {
+    LOG(ERROR) << __func__ << ": failed to load symbol from Bluetooth library "
+               << sym;
     goto error;
   }
-
-  // Check that the id matches.
-  if (strcmp(id, hmi->id) != 0) {
-    HULOGERR("id=%s does not match HAL module ID: %s", id, hmi->id);
-    goto error;
-  }
-
-  hmi->dso = handle;
 
   // Success.
-  LOG_INFO(LOG_TAG, "[%s] loaded HAL id=%s path=%s hmi=%p handle=%p", __func__,
-           id, kBluetoothLibraryName, hmi, handle);
+  LOG(INFO) << __func__ << " loaded HAL path=" << BLUETOOTH_LIBRARY_NAME
+            << " btinterface=" << itf << " handle=" << handle;
 
-  *module = hmi;
+  *interface = itf;
   return 0;
 
 error:
-  *module = NULL;
+  *interface = NULL;
   if (handle) dlclose(handle);
 
   return -EINVAL;

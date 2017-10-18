@@ -19,7 +19,7 @@ cc_library_shared {
         "system/bt/bta/sys",
         "system/bt/bta/dm",
         "system/bt/btcore/include",
-        "system/bt/include",
+        "system/bt/internal_include",
         "system/bt/stack/include",
         "system/bt/stack/l2cap",
         "system/bt/stack/a2dp",

@@ -19,7 +19,7 @@
 #include <string.h>
 #include "btif_common.h"
 #include "device/include/interop.h"
-#include "include/bt_target.h"
+#include "internal_include/bt_target.h"
 #include "stack/btm/btm_int.h"
 #include "stack/include/l2c_api.h"
 #include "stack/smp/smp_int.h"

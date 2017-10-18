@@ -22,4 +22,4 @@
 // tests. Instead of doing it this way, however, we should instead provide a C++
 // class abstraction for this (and all other btif interfaces) that we can mock
 // for testing.
-int hal_util_load_bt_library(const struct hw_module_t** module) { return -1; }
+int hal_util_load_bt_library(const bt_interface_t** interface) { return -1; }
