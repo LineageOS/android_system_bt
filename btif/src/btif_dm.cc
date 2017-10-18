@@ -59,7 +59,7 @@
 #include "btu.h"
 #include "device/include/controller.h"
 #include "device/include/interop.h"
-#include "include/stack_config.h"
+#include "internal_include/stack_config.h"
 #include "osi/include/allocator.h"
 #include "osi/include/log.h"
 #include "osi/include/metrics.h"
