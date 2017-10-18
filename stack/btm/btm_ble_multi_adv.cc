@@ -422,6 +422,12 @@ class BleAdvertisingManagerImpl
 
             c->self->adv_inst[c->inst_id].tx_power = tx_power;
 
+            if (c->self->adv_inst[c->inst_id].own_address_type == BLE_ADDR_PUBLIC) {
+              c->self->StartAdvertisingSetAfterAddressPart(std::move(c));
+              return;
+            }
+
+            //own_address_type == BLE_ADDR_RANDOM
             const RawAddress& rpa = c->self->adv_inst[c->inst_id].own_address;
             c->self->GetHciInterface()->SetRandomAddress(c->inst_id, rpa, Bind(
               [](c_type c, uint8_t status) {
@@ -432,35 +438,39 @@ class BleAdvertisingManagerImpl
                   return;
                 }
 
-                c->self->SetData(c->inst_id, false, std::move(c->advertise_data), Bind(
-                  [](c_type c, uint8_t status) {
-                    if (status != 0) {
-                      c->self->Unregister(c->inst_id);
-                      LOG(ERROR) << "setting advertise data failed, status: " << +status;
-                      c->cb.Run(0, 0, status);
-                      return;
-                    }
-
-                    c->self->SetData(c->inst_id, true, std::move(c->scan_response_data), Bind(
-                      [](c_type c, uint8_t status) {
-                        if (status != 0) {
-                          c->self->Unregister(c->inst_id);
-                          LOG(ERROR) << "setting scan response data failed, status: " << +status;
-                          c->cb.Run(0, 0, status);
-                          return;
-                        }
-
-                        if (c->periodic_params.enable) {
-                          c->self->StartAdvertisingSetPeriodicPart(std::move(c));
-                        } else {
-                          c->self->StartAdvertisingSetFinish(std::move(c));
-                        }
-                    }, base::Passed(&c)));
-                }, base::Passed(&c)));
-            }, base::Passed(&c)));
+                c->self->StartAdvertisingSetAfterAddressPart(std::move(c));
+          }, base::Passed(&c)));
         }, base::Passed(&c)));
     }, base::Passed(&c)));
     // clang-format on
+  }
+
+  void StartAdvertisingSetAfterAddressPart(c_type c) {
+    c->self->SetData(c->inst_id, false, std::move(c->advertise_data), Bind(
+      [](c_type c, uint8_t status) {
+        if (status != 0) {
+          c->self->Unregister(c->inst_id);
+          LOG(ERROR) << "setting advertise data failed, status: " << +status;
+          c->cb.Run(0, 0, status);
+          return;
+        }
+
+        c->self->SetData(c->inst_id, true, std::move(c->scan_response_data), Bind(
+          [](c_type c, uint8_t status) {
+            if (status != 0) {
+              c->self->Unregister(c->inst_id);
+              LOG(ERROR) << "setting scan response data failed, status: " << +status;
+              c->cb.Run(0, 0, status);
+              return;
+            }
+
+            if (c->periodic_params.enable) {
+              c->self->StartAdvertisingSetPeriodicPart(std::move(c));
+            } else {
+              c->self->StartAdvertisingSetFinish(std::move(c));
+            }
+        }, base::Passed(&c)));
+    }, base::Passed(&c)));
   }
 
   void StartAdvertisingSetPeriodicPart(c_type c) {
