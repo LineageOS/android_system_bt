@@ -1,5 +1,5 @@
 cc_library_headers {
-    name: "bluetooth.default_headers",
+    name: "libbluetooth_headers",
     header_libs: [
         "libbluetooth-types-header",
     ],

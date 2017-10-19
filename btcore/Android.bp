@@ -15,7 +15,7 @@ cc_library_static {
     shared_libs: [
         "liblog",
     ],
-    header_libs: ["bluetooth.default_headers"],
+    header_libs: ["libbluetooth_headers"],
     host_supported: true,
     target: {
         darwin: {
