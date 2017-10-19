@@ -19,7 +19,7 @@ fluoride_defaults {
     cflags: [
         "-DEXPORT_SYMBOL=__attribute__((visibility(\"default\")))",
         "-fno-exceptions",
-	"-fvisibility=hidden",
+        "-fvisibility=hidden",
         "-Wall",
         "-Wextra",
         "-Werror",
