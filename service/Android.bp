@@ -8,7 +8,7 @@ cc_defaults {
     include_dirs: [
         "system/bt",
     ],
-    header_libs: [ "bluetooth.default_headers" ],
+    header_libs: [ "libbluetooth_headers" ],
 }
 
 // Source variables
@@ -71,7 +71,7 @@ cc_binary {
     btserviceLinuxSrc +
     btserviceDaemonSrc +
     ["main.cc"],
-    required: ["bluetooth.default"],
+    required: ["libbluetooth-system"],
     static_libs: [
         "libbluetooth-binder-common",
         "libbtcore",
@@ -184,7 +184,7 @@ cc_library_static {
     name: "libbluetoothtbd_hal",
     defaults: ["fluoride_defaults"],
     include_dirs: ["system/bt"],
-    header_libs: ["bluetooth.default_headers"],
+    header_libs: ["libbluetooth_headers"],
     srcs: [
         "hal/bluetooth_gatt_interface.cc",
         "hal/bluetooth_interface.cc",
