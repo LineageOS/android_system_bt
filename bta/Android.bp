@@ -23,7 +23,7 @@ cc_defaults {
     shared_libs: [
         "libcutils",
     ],
-    header_libs: ["bluetooth.default_headers"],
+    header_libs: ["libbluetooth_headers"],
     cflags: ["-DBUILDCFG"],
 }
 
