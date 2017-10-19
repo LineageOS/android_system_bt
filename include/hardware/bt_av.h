@@ -25,17 +25,17 @@ __BEGIN_DECLS
 
 /* Bluetooth AV connection states */
 typedef enum {
-    BTAV_CONNECTION_STATE_DISCONNECTED = 0,
-    BTAV_CONNECTION_STATE_CONNECTING,
-    BTAV_CONNECTION_STATE_CONNECTED,
-    BTAV_CONNECTION_STATE_DISCONNECTING
+  BTAV_CONNECTION_STATE_DISCONNECTED = 0,
+  BTAV_CONNECTION_STATE_CONNECTING,
+  BTAV_CONNECTION_STATE_CONNECTED,
+  BTAV_CONNECTION_STATE_DISCONNECTING
 } btav_connection_state_t;
 
 /* Bluetooth AV datapath states */
 typedef enum {
-    BTAV_AUDIO_STATE_REMOTE_SUSPEND = 0,
-    BTAV_AUDIO_STATE_STOPPED,
-    BTAV_AUDIO_STATE_STARTED,
+  BTAV_AUDIO_STATE_REMOTE_SUSPEND = 0,
+  BTAV_AUDIO_STATE_STOPPED,
+  BTAV_AUDIO_STATE_STARTED,
 } btav_audio_state_t;
 
 /*
@@ -82,25 +82,25 @@ typedef enum {
 } btav_a2dp_codec_priority_t;
 
 typedef enum {
-  BTAV_A2DP_CODEC_SAMPLE_RATE_NONE   = 0x0,
-  BTAV_A2DP_CODEC_SAMPLE_RATE_44100  = 0x1 << 0,
-  BTAV_A2DP_CODEC_SAMPLE_RATE_48000  = 0x1 << 1,
-  BTAV_A2DP_CODEC_SAMPLE_RATE_88200  = 0x1 << 2,
-  BTAV_A2DP_CODEC_SAMPLE_RATE_96000  = 0x1 << 3,
+  BTAV_A2DP_CODEC_SAMPLE_RATE_NONE = 0x0,
+  BTAV_A2DP_CODEC_SAMPLE_RATE_44100 = 0x1 << 0,
+  BTAV_A2DP_CODEC_SAMPLE_RATE_48000 = 0x1 << 1,
+  BTAV_A2DP_CODEC_SAMPLE_RATE_88200 = 0x1 << 2,
+  BTAV_A2DP_CODEC_SAMPLE_RATE_96000 = 0x1 << 3,
   BTAV_A2DP_CODEC_SAMPLE_RATE_176400 = 0x1 << 4,
   BTAV_A2DP_CODEC_SAMPLE_RATE_192000 = 0x1 << 5
 } btav_a2dp_codec_sample_rate_t;
 
 typedef enum {
   BTAV_A2DP_CODEC_BITS_PER_SAMPLE_NONE = 0x0,
-  BTAV_A2DP_CODEC_BITS_PER_SAMPLE_16   = 0x1 << 0,
-  BTAV_A2DP_CODEC_BITS_PER_SAMPLE_24   = 0x1 << 1,
-  BTAV_A2DP_CODEC_BITS_PER_SAMPLE_32   = 0x1 << 2
+  BTAV_A2DP_CODEC_BITS_PER_SAMPLE_16 = 0x1 << 0,
+  BTAV_A2DP_CODEC_BITS_PER_SAMPLE_24 = 0x1 << 1,
+  BTAV_A2DP_CODEC_BITS_PER_SAMPLE_32 = 0x1 << 2
 } btav_a2dp_codec_bits_per_sample_t;
 
 typedef enum {
-  BTAV_A2DP_CODEC_CHANNEL_MODE_NONE   = 0x0,
-  BTAV_A2DP_CODEC_CHANNEL_MODE_MONO   = 0x1 << 0,
+  BTAV_A2DP_CODEC_CHANNEL_MODE_NONE = 0x0,
+  BTAV_A2DP_CODEC_CHANNEL_MODE_MONO = 0x1 << 0,
   BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO = 0x1 << 1
 } btav_a2dp_codec_channel_mode_t;
 
@@ -113,35 +113,36 @@ typedef enum {
  */
 typedef struct {
   btav_a2dp_codec_index_t codec_type;
-  btav_a2dp_codec_priority_t codec_priority; // Codec selection priority
-                                // relative to other codecs: larger value
-                                // means higher priority. If 0, reset to
-                                // default.
+  btav_a2dp_codec_priority_t
+      codec_priority;  // Codec selection priority
+                       // relative to other codecs: larger value
+                       // means higher priority. If 0, reset to
+                       // default.
   btav_a2dp_codec_sample_rate_t sample_rate;
   btav_a2dp_codec_bits_per_sample_t bits_per_sample;
   btav_a2dp_codec_channel_mode_t channel_mode;
-  int64_t codec_specific_1;     // Codec-specific value 1
-  int64_t codec_specific_2;     // Codec-specific value 2
-  int64_t codec_specific_3;     // Codec-specific value 3
-  int64_t codec_specific_4;     // Codec-specific value 4
+  int64_t codec_specific_1;  // Codec-specific value 1
+  int64_t codec_specific_2;  // Codec-specific value 2
+  int64_t codec_specific_3;  // Codec-specific value 3
+  int64_t codec_specific_4;  // Codec-specific value 4
 } btav_a2dp_codec_config_t;
 
 /** Callback for connection state change.
  *  state will have one of the values from btav_connection_state_t
  */
-typedef void (* btav_connection_state_callback)(btav_connection_state_t state,
-                                                    RawAddress *bd_addr);
+typedef void (*btav_connection_state_callback)(btav_connection_state_t state,
+                                               RawAddress* bd_addr);
 
 /** Callback for audiopath state change.
  *  state will have one of the values from btav_audio_state_t
  */
-typedef void (* btav_audio_state_callback)(btav_audio_state_t state,
-                                               RawAddress *bd_addr);
+typedef void (*btav_audio_state_callback)(btav_audio_state_t state,
+                                          RawAddress* bd_addr);
 
 /** Callback for audio configuration change.
  *  Used only for the A2DP Source interface.
  */
-typedef void (* btav_audio_source_config_callback)(
+typedef void (*btav_audio_source_config_callback)(
     btav_a2dp_codec_config_t codec_config,
     std::vector<btav_a2dp_codec_config_t> codecs_local_capabilities,
     std::vector<btav_a2dp_codec_config_t> codecs_selectable_capabilities);
@@ -151,26 +152,26 @@ typedef void (* btav_audio_source_config_callback)(
  *  sample_rate: sample rate in Hz
  *  channel_count: number of channels (1 for mono, 2 for stereo)
  */
-typedef void (* btav_audio_sink_config_callback)(RawAddress *bd_addr,
-                                                 uint32_t sample_rate,
-                                                 uint8_t channel_count);
+typedef void (*btav_audio_sink_config_callback)(RawAddress* bd_addr,
+                                                uint32_t sample_rate,
+                                                uint8_t channel_count);
 
 /** BT-AV A2DP Source callback structure. */
 typedef struct {
-    /** set to sizeof(btav_source_callbacks_t) */
-    size_t      size;
-    btav_connection_state_callback  connection_state_cb;
-    btav_audio_state_callback audio_state_cb;
-    btav_audio_source_config_callback audio_config_cb;
+  /** set to sizeof(btav_source_callbacks_t) */
+  size_t size;
+  btav_connection_state_callback connection_state_cb;
+  btav_audio_state_callback audio_state_cb;
+  btav_audio_source_config_callback audio_config_cb;
 } btav_source_callbacks_t;
 
 /** BT-AV A2DP Sink callback structure. */
 typedef struct {
-    /** set to sizeof(btav_sink_callbacks_t) */
-    size_t      size;
-    btav_connection_state_callback  connection_state_cb;
-    btav_audio_state_callback audio_state_cb;
-    btav_audio_sink_config_callback audio_config_cb;
+  /** set to sizeof(btav_sink_callbacks_t) */
+  size_t size;
+  btav_connection_state_callback connection_state_cb;
+  btav_audio_state_callback audio_state_cb;
+  btav_audio_sink_config_callback audio_config_cb;
 } btav_sink_callbacks_t;
 
 /**
@@ -187,54 +188,53 @@ typedef struct {
 /** Represents the standard BT-AV A2DP Source interface.
  */
 typedef struct {
+  /** set to sizeof(btav_source_interface_t) */
+  size_t size;
+  /**
+   * Register the BtAv callbacks.
+   */
+  bt_status_t (*init)(btav_source_callbacks_t* callbacks,
+                      std::vector<btav_a2dp_codec_config_t> codec_priorities);
 
-    /** set to sizeof(btav_source_interface_t) */
-    size_t          size;
-    /**
-     * Register the BtAv callbacks.
-     */
-    bt_status_t (*init)(btav_source_callbacks_t* callbacks,
-                std::vector<btav_a2dp_codec_config_t> codec_priorities);
+  /** connect to headset */
+  bt_status_t (*connect)(RawAddress* bd_addr);
 
-    /** connect to headset */
-    bt_status_t (*connect)( RawAddress *bd_addr );
+  /** dis-connect from headset */
+  bt_status_t (*disconnect)(RawAddress* bd_addr);
 
-    /** dis-connect from headset */
-    bt_status_t (*disconnect)( RawAddress *bd_addr );
+  /** configure the codecs settings preferences */
+  bt_status_t (*config_codec)(
+      std::vector<btav_a2dp_codec_config_t> codec_preferences);
 
-    /** configure the codecs settings preferences */
-    bt_status_t (*config_codec)(std::vector<btav_a2dp_codec_config_t> codec_preferences);
-
-    /** Closes the interface. */
-    void  (*cleanup)( void );
+  /** Closes the interface. */
+  void (*cleanup)(void);
 
 } btav_source_interface_t;
 
 /** Represents the standard BT-AV A2DP Sink interface.
  */
 typedef struct {
+  /** set to sizeof(btav_sink_interface_t) */
+  size_t size;
+  /**
+   * Register the BtAv callbacks
+   */
+  bt_status_t (*init)(btav_sink_callbacks_t* callbacks);
 
-    /** set to sizeof(btav_sink_interface_t) */
-    size_t          size;
-    /**
-     * Register the BtAv callbacks
-     */
-    bt_status_t (*init)( btav_sink_callbacks_t* callbacks );
+  /** connect to headset */
+  bt_status_t (*connect)(RawAddress* bd_addr);
 
-    /** connect to headset */
-    bt_status_t (*connect)( RawAddress *bd_addr );
+  /** dis-connect from headset */
+  bt_status_t (*disconnect)(RawAddress* bd_addr);
 
-    /** dis-connect from headset */
-    bt_status_t (*disconnect)( RawAddress *bd_addr );
+  /** Closes the interface. */
+  void (*cleanup)(void);
 
-    /** Closes the interface. */
-    void  (*cleanup)( void );
+  /** Sends Audio Focus State. */
+  void (*set_audio_focus_state)(int focus_state);
 
-    /** Sends Audio Focus State. */
-    void  (*set_audio_focus_state)( int focus_state );
-
-    /** Sets the audio track gain. */
-    void  (*set_audio_track_gain)( float gain );
+  /** Sets the audio track gain. */
+  void (*set_audio_track_gain)(float gain);
 } btav_sink_interface_t;
 
 __END_DECLS
