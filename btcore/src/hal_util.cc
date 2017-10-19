@@ -29,33 +29,19 @@
 
 using base::StringPrintf;
 
-#define BLUETOOTH_LIBRARY_NAME "bluetooth.default.so"
-#if defined(__LP64__)
-#define BACKUP_PATH "/system/lib64/hw/" BLUETOOTH_LIBRARY_NAME
-#else
-#define BACKUP_PATH "/system/lib/hw/" BLUETOOTH_LIBRARY_NAME
-#endif
+#define BLUETOOTH_LIBRARY_NAME "libbluetooth.so"
 
 int hal_util_load_bt_library(const bt_interface_t** interface) {
   const char* sym = BLUETOOTH_INTERFACE_STRING;
   bt_interface_t* itf = nullptr;
 
   // Always try to load the default Bluetooth stack on GN builds.
-  const char* path = BLUETOOTH_LIBRARY_NAME;
-  void* handle = dlopen(path, RTLD_NOW);
+  void* handle = dlopen(BLUETOOTH_LIBRARY_NAME, RTLD_NOW);
   if (!handle) {
     const char* err_str = dlerror();
-    LOG(WARNING) << __func__ << ": failed to load Bluetooth library " << path
-                 << ", error=" << (err_str ? err_str : "error unknown");
-    path = BACKUP_PATH;
-    LOG(WARNING) << __func__ << ": loading backup path " << path;
-    handle = dlopen(path, RTLD_NOW);
-    if (!handle) {
-      err_str = dlerror();
-      LOG(ERROR) << __func__ << ": failed to load Bluetooth library " << path
-                 << ", error=" << (err_str ? err_str : "error unknown");
-      goto error;
-    }
+    LOG(ERROR) << __func__ << ": failed to load bluetooth library, error="
+               << (err_str ? err_str : "error unknown");
+    goto error;
   }
 
   // Get the address of the bt_interface_t.

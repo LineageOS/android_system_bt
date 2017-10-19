@@ -20,7 +20,7 @@ cc_library_static {
         "srvc",
     ],
     header_libs: [
-        "bluetooth.default_headers",
+        "libbluetooth_headers",
     ],
     include_dirs: [
         "external/aac/libAACenc/include",

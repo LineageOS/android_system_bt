@@ -2,11 +2,10 @@
 // Bluetooth main HW module / shared library for target
 // ========================================================
 cc_library_shared {
-    name: "bluetooth.default",
+    name: "libbluetooth",
     defaults: ["fluoride_defaults"],
-    relative_install_path: "hw",
-    header_libs: ["bluetooth.default_headers"],
-    export_header_lib_headers: ["bluetooth.default_headers"],
+    header_libs: ["libbluetooth_headers"],
+    export_header_lib_headers: ["libbluetooth_headers"],
     srcs: [
         // platform specific
         "bte_conf.cc",
