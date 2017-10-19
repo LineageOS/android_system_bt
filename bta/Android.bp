@@ -23,6 +23,7 @@ cc_defaults {
     shared_libs: [
         "libcutils",
     ],
+    header_libs: ["bluetooth.default_headers"],
     cflags: ["-DBUILDCFG"],
 }
 
@@ -118,7 +119,6 @@ cc_test {
     srcs: [
         "test/bta_hf_client_test.cc",
     ],
-    header_libs: ["libhardware_headers"],
     shared_libs: [
         "liblog",
         "libprotobuf-cpp-lite",

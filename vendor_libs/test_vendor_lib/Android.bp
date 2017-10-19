@@ -38,7 +38,7 @@ cc_library_static {
     ],
     export_include_dirs: ["include"],
     header_libs: [
-        "libhardware_headers",
+        "bluetooth.default_headers",
     ],
     include_dirs: [
         "system/bt",
