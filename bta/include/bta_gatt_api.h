@@ -394,7 +394,7 @@ typedef struct {
 
 struct tBTA_GATTC_CHARACTERISTIC {
   bluetooth::Uuid uuid;
-  uint16_t handle;
+  uint16_t value_handle;
   tGATT_CHAR_PROP properties;
   tBTA_GATTC_SERVICE* service; /* owning service*/
   std::list<tBTA_GATTC_DESCRIPTOR> descriptors;
