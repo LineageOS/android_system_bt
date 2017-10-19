@@ -19,5 +19,5 @@
 #include <hardware/bluetooth.h>
 
 // Loads the Bluetooth library. This function looks explicitly for
-// libbluetooth.default.so and loads it.
+// libbluetooth.so and loads it.
 int hal_util_load_bt_library(const bt_interface_t** interface);
