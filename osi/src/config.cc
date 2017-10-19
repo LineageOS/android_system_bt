@@ -109,9 +109,9 @@ int config_get_int(const config_t& config, const std::string& section,
   const entry_t* entry = entry_find(config, section, key);
   if (!entry) return def_value;
 
-  size_t endptr;
-  int ret = stoi(entry->value, &endptr, 0);
-  return (endptr == entry->value.size()) ? ret : def_value;
+  char* endptr;
+  int ret = strtol(entry->value.c_str(), &endptr, 0);
+  return (*endptr == '\0') ? ret : def_value;
 }
 
 bool config_get_bool(const config_t& config, const std::string& section,
