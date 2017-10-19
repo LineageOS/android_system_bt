@@ -50,9 +50,9 @@ source_set("service") {
 
   include_dirs = [
     "//",
+    "//include",
     "//service/common",
     "//third_party/modp_b64/modp64",
-    "//third_party/libhardware/include",
   ]
 
   deps = [
