@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef ANDROID_INCLUDE_BT_GATT_H
 #define ANDROID_INCLUDE_BT_GATT_H
 
@@ -28,43 +27,43 @@ __BEGIN_DECLS
 
 /** BT-GATT callbacks */
 typedef struct {
-    /** Set to sizeof(btgatt_callbacks_t) */
-    size_t size;
+  /** Set to sizeof(btgatt_callbacks_t) */
+  size_t size;
 
-    /** GATT Client callbacks */
-    const btgatt_client_callbacks_t* client;
+  /** GATT Client callbacks */
+  const btgatt_client_callbacks_t* client;
 
-    /** GATT Server callbacks */
-    const btgatt_server_callbacks_t* server;
+  /** GATT Server callbacks */
+  const btgatt_server_callbacks_t* server;
 
-    /** LE scanner callbacks */
-    const btgatt_scanner_callbacks_t* scanner;
+  /** LE scanner callbacks */
+  const btgatt_scanner_callbacks_t* scanner;
 } btgatt_callbacks_t;
 
 /** Represents the standard Bluetooth GATT interface. */
 typedef struct {
-    /** Set to sizeof(btgatt_interface_t) */
-    size_t          size;
+  /** Set to sizeof(btgatt_interface_t) */
+  size_t size;
 
-    /**
-     * Initializes the interface and provides callback routines
-     */
-    bt_status_t (*init)( const btgatt_callbacks_t* callbacks );
+  /**
+   * Initializes the interface and provides callback routines
+   */
+  bt_status_t (*init)(const btgatt_callbacks_t* callbacks);
 
-    /** Closes the interface */
-    void (*cleanup)( void );
+  /** Closes the interface */
+  void (*cleanup)(void);
 
-    /** Pointer to the GATT client interface methods.*/
-    const btgatt_client_interface_t* client;
+  /** Pointer to the GATT client interface methods.*/
+  const btgatt_client_interface_t* client;
 
-    /** Pointer to the GATT server interface methods.*/
-    const btgatt_server_interface_t* server;
+  /** Pointer to the GATT server interface methods.*/
+  const btgatt_server_interface_t* server;
 
-    /** Pointer to the LE scanner interface methods.*/
-    BleScannerInterface* scanner;
+  /** Pointer to the LE scanner interface methods.*/
+  BleScannerInterface* scanner;
 
-    /** Pointer to the advertiser interface methods.*/
-    BleAdvertiserInterface* advertiser;
+  /** Pointer to the advertiser interface methods.*/
+  BleAdvertiserInterface* advertiser;
 } btgatt_interface_t;
 
 __END_DECLS

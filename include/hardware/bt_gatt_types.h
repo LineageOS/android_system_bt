@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-
 #ifndef ANDROID_INCLUDE_BT_GATT_TYPES_H
 #define ANDROID_INCLUDE_BT_GATT_TYPES_H
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include <bluetooth/uuid.h>
 
@@ -32,25 +31,22 @@ __BEGIN_DECLS
 #define BTGATT_SERVICE_TYPE_SECONDARY 1
 
 /** GATT ID adding instance id tracking to the UUID */
-typedef struct
-{
-    bluetooth::Uuid     uuid;
-    uint8_t             inst_id;
+typedef struct {
+  bluetooth::Uuid uuid;
+  uint8_t inst_id;
 } btgatt_gatt_id_t;
 
 /** GATT Service ID also identifies the service type (primary/secondary) */
-typedef struct
-{
-    btgatt_gatt_id_t    id;
-    uint8_t             is_primary;
+typedef struct {
+  btgatt_gatt_id_t id;
+  uint8_t is_primary;
 } btgatt_srvc_id_t;
 
 /** Preferred physical Transport for GATT connection */
-typedef enum
-{
-    GATT_TRANSPORT_AUTO,
-    GATT_TRANSPORT_BREDR,
-    GATT_TRANSPORT_LE
+typedef enum {
+  GATT_TRANSPORT_AUTO,
+  GATT_TRANSPORT_BREDR,
+  GATT_TRANSPORT_LE
 } btgatt_transport_t;
 
 __END_DECLS
