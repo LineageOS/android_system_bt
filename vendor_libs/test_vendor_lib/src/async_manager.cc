@@ -517,4 +517,4 @@ void AsyncManager::Synchronize(const CriticalCallback& critical) {
   std::unique_lock<std::mutex> guard(synchronization_mutex_);
   critical();
 }
-}
+}  // namespace test_vendor_lib
