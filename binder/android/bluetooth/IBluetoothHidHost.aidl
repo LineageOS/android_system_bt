@@ -23,7 +23,7 @@ import android.bluetooth.BluetoothDevice;
  *
  * {@hide}
  */
-interface IBluetoothInputDevice {
+interface IBluetoothHidHost {
     // Public API
     boolean connect(in BluetoothDevice device);
     boolean disconnect(in BluetoothDevice device);
