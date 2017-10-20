@@ -46,6 +46,7 @@ fluoride_defaults {
 fluoride_defaults {
     name: "fluoride_defaults",
     defaults: ["fluoride_types_defaults"],
+    compile_multilib: "first",
     header_libs: ["libbluetooth_headers"],
     static_libs: [
         "libbluetooth-types",
