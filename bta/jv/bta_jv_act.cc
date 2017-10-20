@@ -242,10 +242,8 @@ tBTA_JV_RFC_CB* bta_jv_rfc_port_to_cb(uint16_t port_handle) {
     handle &= ~BTA_JV_RFCOMM_MASK;
     if (handle) p_cb = &bta_jv_cb.rfc_cb[handle - 1];
   } else {
-    APPL_TRACE_WARNING(
-        "bta_jv_rfc_port_to_cb(port_handle:0x%x):jv handle:0x%x not"
-        " FOUND",
-        port_handle, bta_jv_cb.port_cb[port_handle - 1].handle);
+    APPL_TRACE_WARNING("%s (port_handle:0x%x):jv handle not found", __func__,
+                       port_handle);
   }
   return p_cb;
 }
