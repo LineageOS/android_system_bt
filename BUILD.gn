@@ -23,7 +23,7 @@
 # This pulls in main/BUILD.gn and all of its dependencies.
 group("bluetooth") {
   deps = [
-    "//main:bluetooth.default",
+    "//main:bluetooth",
     "//service:bluetoothtbd",
   ]
 }
