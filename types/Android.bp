@@ -10,6 +10,7 @@ cc_library {
     name: "libbluetooth-types",
     vendor_available: true,
     defaults: ["fluoride_types_defaults"],
+    compile_multilib: "both",
     cflags: [
         /* we export all classes, so change default visibility, instead of having EXPORT_SYMBOL on each class*/
         "-fvisibility=default",
