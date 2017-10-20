@@ -1441,7 +1441,7 @@ static void read_report_ref_desc_cb(uint16_t conn_id, tGATT_STATUS status,
   tBTA_HH_LE_RPT* p_rpt;
   p_rpt = bta_hh_le_find_report_entry(
       p_dev_cb, p_desc->characteristic->service->handle, GATT_UUID_HID_REPORT,
-      p_desc->characteristic->handle);
+      p_desc->characteristic->value_handle);
   if (p_rpt) bta_hh_le_save_report_ref(p_dev_cb, p_rpt, status, value, len);
 }
 
@@ -1510,19 +1510,20 @@ static void bta_hh_le_search_hid_chars(tBTA_HH_DEV_CB* p_dev_cb,
 
     switch (uuid16) {
       case GATT_UUID_HID_CONTROL_POINT:
-        p_dev_cb->hid_srvc.control_point_handle = charac.handle;
+        p_dev_cb->hid_srvc.control_point_handle = charac.value_handle;
         break;
       case GATT_UUID_HID_INFORMATION:
         /* only one instance per HID service */
-        gatt_queue_read_op(GATT_READ_CHAR, p_dev_cb->conn_id, charac.handle,
-                           read_hid_info_cb, p_dev_cb);
+        gatt_queue_read_op(GATT_READ_CHAR, p_dev_cb->conn_id,
+                           charac.value_handle, read_hid_info_cb, p_dev_cb);
         break;
       case GATT_UUID_HID_REPORT_MAP:
         /* only one instance per HID service */
-        gatt_queue_read_op(GATT_READ_CHAR, p_dev_cb->conn_id, charac.handle,
-                           read_hid_report_map_cb, p_dev_cb);
+        gatt_queue_read_op(GATT_READ_CHAR, p_dev_cb->conn_id,
+                           charac.value_handle, read_hid_report_map_cb,
+                           p_dev_cb);
         /* descriptor is optional */
-        bta_hh_le_read_char_descriptor(p_dev_cb, charac.handle,
+        bta_hh_le_read_char_descriptor(p_dev_cb, charac.value_handle,
                                        GATT_UUID_EXT_RPT_REF_DESCR,
                                        read_ext_rpt_ref_desc_cb, p_dev_cb);
         break;
@@ -1530,7 +1531,7 @@ static void bta_hh_le_search_hid_chars(tBTA_HH_DEV_CB* p_dev_cb,
       case GATT_UUID_HID_REPORT:
         p_rpt = bta_hh_le_find_alloc_report_entry(
             p_dev_cb, p_dev_cb->hid_srvc.srvc_inst_id, GATT_UUID_HID_REPORT,
-            charac.handle);
+            charac.value_handle);
         if (p_rpt == NULL) {
           APPL_TRACE_ERROR("%s: Add report entry failed !!!", __func__);
           break;
@@ -1538,7 +1539,7 @@ static void bta_hh_le_search_hid_chars(tBTA_HH_DEV_CB* p_dev_cb,
 
         if (p_rpt->rpt_type != BTA_HH_RPTT_INPUT) break;
 
-        bta_hh_le_read_char_descriptor(p_dev_cb, charac.handle,
+        bta_hh_le_read_char_descriptor(p_dev_cb, charac.value_handle,
                                        GATT_UUID_RPT_REF_DESCR,
                                        read_report_ref_desc_cb, p_dev_cb);
         break;
@@ -1548,7 +1549,7 @@ static void bta_hh_le_search_hid_chars(tBTA_HH_DEV_CB* p_dev_cb,
       case GATT_UUID_HID_BT_MOUSE_INPUT:
       case GATT_UUID_HID_BT_KB_INPUT:
         if (bta_hh_le_find_alloc_report_entry(p_dev_cb, service->handle, uuid16,
-                                              charac.handle) == NULL)
+                                              charac.value_handle) == NULL)
           APPL_TRACE_ERROR("%s: Add report entry failed !!!", __func__);
 
         break;
@@ -1562,7 +1563,7 @@ static void bta_hh_le_search_hid_chars(tBTA_HH_DEV_CB* p_dev_cb,
   /* Make sure PROTO_MODE is processed as last */
   for (const tBTA_GATTC_CHARACTERISTIC& charac : service->characteristics) {
     if (charac.uuid == Uuid::From16Bit(GATT_UUID_HID_PROTO_MODE)) {
-      p_dev_cb->hid_srvc.proto_mode_handle = charac.handle;
+      p_dev_cb->hid_srvc.proto_mode_handle = charac.value_handle;
       bta_hh_le_set_protocol_mode(p_dev_cb, p_dev_cb->mode);
       break;
     }
@@ -1615,7 +1616,7 @@ void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
 
       for (const tBTA_GATTC_CHARACTERISTIC& charac : service.characteristics) {
         if (charac.uuid == Uuid::From16Bit(GATT_UUID_SCAN_REFRESH)) {
-          p_dev_cb->scan_refresh_char_handle = charac.handle;
+          p_dev_cb->scan_refresh_char_handle = charac.value_handle;
 
           if (charac.properties & GATT_CHAR_PROP_BIT_NOTIFY)
             p_dev_cb->scps_notify |= BTA_HH_LE_SCPS_NOTIFY_SPT;
@@ -1631,8 +1632,9 @@ void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
       for (const tBTA_GATTC_CHARACTERISTIC& charac : service.characteristics) {
         if (charac.uuid == Uuid::From16Bit(GATT_UUID_GAP_PREF_CONN_PARAM)) {
           /* read the char value */
-          gatt_queue_read_op(GATT_READ_CHAR, p_dev_cb->conn_id, charac.handle,
-                             read_pref_conn_params_cb, p_dev_cb);
+          gatt_queue_read_op(GATT_READ_CHAR, p_dev_cb->conn_id,
+                             charac.value_handle, read_pref_conn_params_cb,
+                             p_dev_cb);
 
           break;
         }
@@ -1677,13 +1679,14 @@ void bta_hh_le_input_rpt_notify(tBTA_GATTC_NOTIFY* p_data) {
 
   app_id = p_dev_cb->app_id;
 
-  p_rpt = bta_hh_le_find_report_entry(p_dev_cb, p_dev_cb->hid_srvc.srvc_inst_id,
-                                      p_char->uuid.As16Bit(), p_char->handle);
+  p_rpt =
+      bta_hh_le_find_report_entry(p_dev_cb, p_dev_cb->hid_srvc.srvc_inst_id,
+                                  p_char->uuid.As16Bit(), p_char->value_handle);
   if (p_rpt == NULL) {
     APPL_TRACE_ERROR(
         "%s: notification received for Unknown Report, uuid: %s, handle: "
         "0x%04x",
-        __func__, p_char->uuid.ToString().c_str(), p_char->handle);
+        __func__, p_char->uuid.ToString().c_str(), p_char->value_handle);
     return;
   }
 
@@ -1852,7 +1855,7 @@ static void read_report_cb(uint16_t conn_id, tGATT_STATUS status,
 
   if (status == GATT_SUCCESS) {
     p_rpt = bta_hh_le_find_report_entry(p_dev_cb, p_char->service->handle,
-                                        char_uuid, p_char->handle);
+                                        char_uuid, p_char->value_handle);
 
     if (p_rpt != NULL && len) {
       p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + len + 1);
