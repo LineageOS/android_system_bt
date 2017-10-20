@@ -226,7 +226,7 @@ executable("stack_unittests") {
     "//embdrv/sbc",
     "//hci",
     "//types",
-    "//main:bluetooth.default",
+    "//main:bluetooth",
     "//third_party/googletest:gmock_main",
     "//third_party/libchrome:base",
   ]

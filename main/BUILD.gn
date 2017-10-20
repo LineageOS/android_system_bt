@@ -14,8 +14,13 @@
 #  limitations under the License.
 #
 
-shared_library("bluetooth.default") {
-  output_prefix_override=true
+config("libbluetooth_config") {
+  include_dirs = [
+    "../include",
+  ]
+}
+
+shared_library("bluetooth") {
 
   # HAL layer
   sources = [
@@ -31,6 +36,8 @@ shared_library("bluetooth.default") {
     "bte_main.cc",
     "stack_config.cc",
   ]
+
+  public_configs = [ ":libbluetooth_config" ]
 
   include_dirs = [
     "//",
