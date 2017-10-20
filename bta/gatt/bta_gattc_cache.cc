@@ -220,7 +220,7 @@ static void add_characteristic_to_gatt_db(
   if (service->e_handle < value_handle) service->e_handle = value_handle;
 
   service->characteristics.emplace_back(
-      tBTA_GATTC_CHARACTERISTIC{.handle = value_handle,
+      tBTA_GATTC_CHARACTERISTIC{.value_handle = value_handle,
                                 .properties = property,
                                 .uuid = uuid,
                                 .service = service});
@@ -829,7 +829,7 @@ tBTA_GATTC_CHARACTERISTIC* bta_gattc_get_characteristic_srcb(
   if (!service) return NULL;
 
   for (tBTA_GATTC_CHARACTERISTIC& charac : service->characteristics) {
-    if (handle == charac.handle) return &charac;
+    if (handle == charac.value_handle) return &charac;
   }
 
   return NULL;
@@ -979,9 +979,9 @@ static void bta_gattc_get_gatt_db_impl(tBTA_GATTC_SERV* p_srvc_cb,
 
     for (const tBTA_GATTC_CHARACTERISTIC& charac : service.characteristics) {
       bta_gattc_fill_gatt_db_el(curr_db_attr, BTGATT_DB_CHARACTERISTIC,
-                                charac.handle, 0 /* s_handle */,
-                                0 /* e_handle */, charac.handle, charac.uuid,
-                                charac.properties);
+                                charac.value_handle, 0 /* s_handle */,
+                                0 /* e_handle */, charac.value_handle,
+                                charac.uuid, charac.properties);
       curr_db_attr++;
 
       for (const tBTA_GATTC_DESCRIPTOR& desc : charac.descriptors) {
@@ -1142,9 +1142,9 @@ void bta_gattc_cache_save(tBTA_GATTC_SERV* p_srvc_cb, uint16_t conn_id) {
 
   for (const tBTA_GATTC_SERVICE& service : p_srvc_cb->srvc_cache) {
     for (const tBTA_GATTC_CHARACTERISTIC& charac : service.characteristics) {
-      bta_gattc_fill_nv_attr(&nv_attr[i++], BTA_GATTC_ATTR_TYPE_CHAR,
-                             charac.handle, 0, charac.uuid, charac.properties,
-                             0 /* incl_srvc_handle */, false);
+      bta_gattc_fill_nv_attr(
+          &nv_attr[i++], BTA_GATTC_ATTR_TYPE_CHAR, charac.value_handle, 0,
+          charac.uuid, charac.properties, 0 /* incl_srvc_handle */, false);
 
       for (const tBTA_GATTC_DESCRIPTOR& desc : charac.descriptors) {
         bta_gattc_fill_nv_attr(&nv_attr[i++], BTA_GATTC_ATTR_TYPE_CHAR_DESCR,
