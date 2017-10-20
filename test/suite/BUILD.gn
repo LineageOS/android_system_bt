@@ -28,7 +28,7 @@ executable("net_test_bluetooth") {
 
   deps = [
     "//btcore",
-    "//main:bluetooth.default",
+    "//main:bluetooth",
     "//service:service",
     "//service:service_unittests",
     "//types:types_unittests",
