@@ -77,9 +77,10 @@ int TestChannelTransport::Accept(int listen_fd_) {
   socklen_t sockaddr_in_size = sizeof(struct sockaddr_in);
   memset(&test_channel_address, 0, sockaddr_in_size);
 
-  OSI_NO_INTR(accept_fd = accept(listen_fd_, reinterpret_cast<sockaddr*>(
-                                                 &test_channel_address),
-                                 &sockaddr_in_size));
+  OSI_NO_INTR(accept_fd =
+                  accept(listen_fd_,
+                         reinterpret_cast<sockaddr*>(&test_channel_address),
+                         &sockaddr_in_size));
   if (accept_fd < 0) {
     LOG_INFO(LOG_TAG, "Error accepting test channel connection errno=%d (%s).",
              errno, strerror(errno));
@@ -139,4 +140,4 @@ void TestChannelTransport::RegisterCommandHandler(
   command_handler_ = callback;
 }
 
-}  // namespace test_vendor_lib {
+}  // namespace test_vendor_lib
