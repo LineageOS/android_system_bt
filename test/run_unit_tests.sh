@@ -17,7 +17,7 @@ known_tests=(
   net_test_types
   net_test_btu_message_loop
   net_test_osi
-  performance_test
+  net_test_performance
 )
 
 known_remote_tests=(
