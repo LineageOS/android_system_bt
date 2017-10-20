@@ -42,7 +42,6 @@
 #include <unistd.h>
 
 #include <hardware/bluetooth.h>
-#include <hardware/hardware.h>
 #ifndef OS_GENERIC
 #include <private/android_filesystem_config.h>
 #endif

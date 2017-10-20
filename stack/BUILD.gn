@@ -165,7 +165,7 @@ static_library("stack") {
     "//vnd/ble",
     "//btif/include",
     "//hci/include",
-    "//include",
+    "//internal_include",
     "//udrv/include",
     "//rpc/include",
     "//hcis",
@@ -199,7 +199,7 @@ executable("stack_unittests") {
     "//btcore/include",
     "//embdrv/sbc/encoder/include",
     "//hci/include",
-    "//include",
+    "//internal_include",
     "//stack/a2dp",
     "//stack/btm",
     "//stack/include",
@@ -226,7 +226,7 @@ executable("stack_unittests") {
     "//embdrv/sbc",
     "//hci",
     "//types",
-    "//main:bluetooth.default",
+    "//main:bluetooth",
     "//third_party/googletest:gmock_main",
     "//third_party/libchrome:base",
   ]
@@ -244,7 +244,7 @@ executable("net_test_stack_multi_adv") {
     "//",
     "//btcore/include",
     "//hci/include",
-    "//include",
+    "//internal_include",
     "//stack/btm",
   ]
 

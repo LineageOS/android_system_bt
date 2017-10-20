@@ -103,7 +103,7 @@ static_library("bta") {
     "//",
     "//btcore/include",
     "//hci/include",
-    "//include",
+    "//internal_include",
     "//stack/include",
     "//stack/btm",
     "//udrv/include",

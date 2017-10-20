@@ -24,7 +24,7 @@ executable("mcap_tool") {
   ]
   include_dirs = [
     "//",
-    "//include",
+    "//internal_include",
     "//stack/include",
     "//btif/include",
     "//btcore/include",

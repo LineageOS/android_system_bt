@@ -528,7 +528,7 @@ typedef struct {
 
 #ifdef __cplusplus
 #include <bluetooth/uuid.h>
-#include <hardware/bluetooth.h>
+#include <include/hardware/bluetooth.h>
 
 inline void BDADDR_TO_STREAM(uint8_t*& p, const RawAddress& a) {
   for (int ijk = 0; ijk < BD_ADDR_LEN; ijk++)

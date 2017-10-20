@@ -31,7 +31,7 @@ static_library("hci") {
   include_dirs = [
     "include",
     "//",
-    "//include",
+    "//internal_include",
     "//bta/include",
     "//btcore/include",
     "//stack/include",
@@ -52,7 +52,7 @@ executable("net_test_hci") {
 
   include_dirs = [
     "//",
-    "//include",
+    "//internal_include",
     "//btcore/include",
     "//hci/include",
     "//osi/test",
