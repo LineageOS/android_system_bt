@@ -29,6 +29,7 @@
 #include "bta_api.h"
 #include "bta_dm_api.h"
 #include "bta_sys.h"
+#include "btif_config.h"
 #include "l2c_api.h"
 #include "osi/include/osi.h"
 #include "port_api.h"
@@ -457,6 +458,16 @@ void bta_ag_rfc_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   p_scb->cmee_enabled = false;
   p_scb->inband_enabled =
       ((p_scb->features & BTA_AG_FEAT_INBAND) == BTA_AG_FEAT_INBAND);
+  if (p_scb->conn_service == BTA_AG_HFP) {
+    size_t version_value_size = sizeof(p_scb->peer_version);
+    if (!btif_config_get_bin(
+            p_scb->peer_addr.ToString(), HFP_VERSION_CONFIG_KEY,
+            (uint8_t*)&p_scb->peer_version, &version_value_size)) {
+      APPL_TRACE_WARNING("%s: Failed read cached peer HFP version for %s",
+                         __func__, p_scb->peer_addr.ToString().c_str());
+      p_scb->peer_version = HFP_HSP_VERSION_UNKNOWN;
+    }
+  }
 
   /* set up AT command interpreter */
   p_scb->at_cb.p_at_tbl = bta_ag_at_tbl[p_scb->conn_service];
