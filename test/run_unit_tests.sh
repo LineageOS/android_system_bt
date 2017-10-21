@@ -102,14 +102,21 @@ if [ -n "${device}" ]; then
   adb+=( "-s" "${device}" )
 fi
 
+source ${ANDROID_BUILD_TOP}/build/envsetup.sh
+target_arch=$(gettargetarch)
+
 failed_tests=()
 for spec in "${tests[@]}"
 do
   name="${spec%%.*}"
-  binary="/data/nativetest/${name}/${name}"
+  if [[ $target_arch == *"64"* ]]; then
+    binary="/data/nativetest64/${name}/${name}"
+  else
+    binary="/data/nativetest/${name}/${name}"
+  fi
 
   push_command=( "${adb[@]}" push {"${ANDROID_PRODUCT_OUT}",}"${binary}" )
-  test_command=( "${adb[@]}" shell "LD_LIBRARY_PATH=/system/lib/hw:$LD_LIBRARY_PATH ${binary}" )
+  test_command=( "${adb[@]}" shell "${binary}" )
   if [ "${name}" != "${spec}" ]; then
     filter="${spec#*.}"
     test_command+=( "--gtest_filter=${filter}" )

@@ -318,7 +318,9 @@ class BleAdvertiserLegacyHciInterfaceImpl : public BleAdvertiserHciInterface {
   }
 
   void SetAdvertisingEventObserver(
-      AdvertisingEventObserver* observer) override {}
+      AdvertisingEventObserver* observer) override {
+    this->advertising_event_observer = observer;
+  }
 
   void SetParameters(uint8_t handle, uint16_t properties, uint32_t adv_int_min,
                      uint32_t adv_int_max, uint8_t channel_map,
@@ -457,6 +459,19 @@ class BleAdvertiserLegacyHciInterfaceImpl : public BleAdvertiserHciInterface {
     // Legacy Advertising don't have remove method.
     command_complete.Run(0);
   }
+
+ public:
+  void OnAdvertisingSetTerminated(uint8_t status, uint16_t connection_handle) {
+    VLOG(1) << __func__;
+
+    AdvertisingEventObserver* observer = this->advertising_event_observer;
+    if (observer)
+      observer->OnAdvertisingSetTerminated(status, 0 /*advertising_handle*/,
+                                           connection_handle, 0);
+  }
+
+ private:
+  AdvertisingEventObserver* advertising_event_observer = nullptr;
 };
 
 class BleAdvertiserHciExtendedImpl : public BleAdvertiserHciInterface {
@@ -697,6 +712,15 @@ void btm_le_on_advertising_set_terminated(uint8_t* p, uint16_t length) {
   }
 }
 
+bool legacy_advertising_in_use = false;
+void btm_ble_advertiser_notify_terminated_legacy(uint8_t status,
+                                                 uint16_t connection_handle) {
+  if (BleAdvertiserHciInterface::Get() && legacy_advertising_in_use) {
+    ((BleAdvertiserLegacyHciInterfaceImpl*)BleAdvertiserHciInterface::Get())
+        ->OnAdvertisingSetTerminated(status, connection_handle);
+  }
+}
+
 void BleAdvertiserHciInterface::Initialize() {
   VLOG(1) << __func__;
   LOG_ASSERT(instance == nullptr) << "Was already initialized.";
@@ -712,6 +736,7 @@ void BleAdvertiserHciInterface::Initialize() {
   } else {
     LOG(INFO) << "Legacy advertising will be in use";
     instance = new BleAdvertiserLegacyHciInterfaceImpl();
+    legacy_advertising_in_use = true;
   }
 }
 
