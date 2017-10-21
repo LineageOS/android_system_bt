@@ -49,6 +49,8 @@ extern bool aes_cipher_msg_auth_code(BT_OCTET16 key, uint8_t* input,
                                      uint8_t* p_signature);
 extern void gatt_notify_phy_updated(uint8_t status, uint16_t handle,
                                     uint8_t tx_phy, uint8_t rx_phy);
+extern void btm_ble_advertiser_notify_terminated_legacy(
+    uint8_t status, uint16_t connection_handle);
 
 /******************************************************************************/
 /* External Function to be called by other modules                            */
@@ -1996,6 +1998,8 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
   }
 
   btm_ble_update_mode_operation(role, &bda, status);
+
+  btm_ble_advertiser_notify_terminated_legacy(status, handle);
 }
 
 /*****************************************************************************
