@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "862528fd_2d8aaa3e",
+        "filename": "device/src/controller.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 372,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2017-10-22T18:14:31Z",
+      "side": 1,
+      "message": "Actually, I think it would be preferable if you made the flag modify the mask here.",
+      "range": {
+        "startLine": 372,
+        "startChar": 44,
+        "endLine": 372,
+        "endChar": 62
+      },
+      "revId": "3aca17393a3f6f8906a1b2a07a193d0bea4eb41e",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ab3bbf61_e541f041",
         "filename": "include/bt_target.h",
         "patchSetId": 1
