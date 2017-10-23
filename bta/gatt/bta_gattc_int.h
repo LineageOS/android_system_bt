@@ -185,26 +185,6 @@ typedef union {
   tBTA_GATTC_INT_CONN int_conn;
 } tBTA_GATTC_DATA;
 
-/* GATT server cache on the client */
-
-typedef struct {
-  bluetooth::Uuid uuid;
-  uint16_t s_handle;
-  uint16_t e_handle;
-  // this field is set only for characteristic
-  uint16_t char_decl_handle;
-  bool is_primary;
-  tGATT_CHAR_PROP property;
-} tBTA_GATTC_ATTR_REC;
-
-#define BTA_GATTC_MAX_CACHE_CHAR 40
-#define BTA_GATTC_ATTR_LIST_SIZE \
-  (BTA_GATTC_MAX_CACHE_CHAR * sizeof(tBTA_GATTC_ATTR_REC))
-
-#ifndef BTA_GATTC_CACHE_SRVR_SIZE
-#define BTA_GATTC_CACHE_SRVR_SIZE 600
-#endif
-
 enum {
   BTA_GATTC_IDLE_ST = 0, /* Idle  */
   BTA_GATTC_W4_CONN_ST,  /* Wait for connection -  (optional) */
@@ -230,12 +210,9 @@ typedef struct {
   uint8_t update_count; /* indication received */
   uint8_t num_clcb;     /* number of associated CLCB */
 
-  tBTA_GATTC_ATTR_REC* p_srvc_list;
-  uint8_t cur_srvc_idx;
-  uint8_t cur_char_idx;
-  uint8_t next_avail_idx;
-  uint8_t total_srvc;
-  uint8_t total_char;
+  std::vector<tBTA_GATTC_SERVICE> pending_discovery;
+  std::vector<tBTA_GATTC_SERVICE>::iterator pending_service;
+  std::vector<tBTA_GATTC_CHARACTERISTIC>::iterator pending_char;
 
   uint8_t srvc_hdl_chg; /* service handle change indication pending */
   uint16_t attr_index;  /* cahce NV saving/loading attribute index */
@@ -445,9 +422,6 @@ extern void bta_gattc_disc_res_cback(uint16_t conn_id,
 extern void bta_gattc_disc_cmpl_cback(uint16_t conn_id,
                                       tGATT_DISC_TYPE disc_type,
                                       tGATT_STATUS status);
-extern tGATT_STATUS bta_gattc_discover_procedure(uint16_t conn_id,
-                                                 tBTA_GATTC_SERV* p_server_cb,
-                                                 uint8_t disc_type);
 extern tGATT_STATUS bta_gattc_discover_pri_service(uint16_t conn_id,
                                                    tBTA_GATTC_SERV* p_server_cb,
                                                    uint8_t disc_type);
