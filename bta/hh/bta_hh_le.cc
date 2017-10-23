@@ -1592,7 +1592,7 @@ void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
     return;
   }
 
-  const std::list<tBTA_GATTC_SERVICE>* services =
+  const std::vector<tBTA_GATTC_SERVICE>* services =
       BTA_GATTC_GetServices(p_data->conn_id);
 
   bool have_hid = false;
