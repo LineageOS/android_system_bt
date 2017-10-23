@@ -1804,9 +1804,11 @@ static tBTA_JV_PCB* bta_jv_add_rfc_port(tBTA_JV_RFC_CB* p_cb,
             "bta_jv_add_rfc_port: p_pcb->handle:0x%x, curr_sess:%d",
             p_pcb->handle, p_cb->curr_sess);
       }
-    } else
+    } else {
       APPL_TRACE_ERROR(
           "bta_jv_add_rfc_port, cannot create new rfc listen port");
+      return NULL;
+    }
   }
   APPL_TRACE_DEBUG("bta_jv_add_rfc_port: sec id in use:%d, rfc_cb in use:%d",
                    get_sec_id_used(), get_rfc_cb_used());
