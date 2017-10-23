@@ -700,9 +700,9 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB* p_clcb,
     /* used to reset cache in application */
     bta_gattc_cache_reset(p_clcb->p_srcb->server_bda);
   }
-  if (p_clcb->p_srcb && p_clcb->p_srcb->p_srvc_list) {
+  if (p_clcb->p_srcb) {
     /* release pending attribute list buffer */
-    osi_free_and_reset((void**)&p_clcb->p_srcb->p_srvc_list);
+    p_clcb->p_srcb->pending_discovery.clear();
   }
 
   if (p_clcb->auto_update == BTA_GATTC_DISC_WAITING) {

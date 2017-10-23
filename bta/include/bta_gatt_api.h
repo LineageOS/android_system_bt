@@ -390,6 +390,8 @@ typedef struct {
 
 struct tBTA_GATTC_CHARACTERISTIC {
   bluetooth::Uuid uuid;
+  // this is used only during discovery, and not persisted in cache
+  uint16_t declaration_handle;
   uint16_t value_handle;
   tGATT_CHAR_PROP properties;
   tBTA_GATTC_SERVICE* service; /* owning service*/
