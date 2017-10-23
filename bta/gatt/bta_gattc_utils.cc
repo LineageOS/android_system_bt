@@ -129,7 +129,7 @@ tBTA_GATTC_CLCB* bta_gattc_clcb_alloc(tGATT_IF client_if,
   for (i_clcb = 0; i_clcb < BTA_GATTC_CLCB_MAX; i_clcb++) {
     if (!bta_gattc_cb.clcb[i_clcb].in_use) {
 #if (BTA_GATT_DEBUG == TRUE)
-      VLOG(1) << __func__ << ": found clcb:" << +i_clcb << " available", ;
+      VLOG(1) << __func__ << ": found clcb:" << +i_clcb << " available";
 #endif
       p_clcb = &bta_gattc_cb.clcb[i_clcb];
       p_clcb->in_use = true;
@@ -297,8 +297,7 @@ tBTA_GATTC_SERV* bta_gattc_srcb_alloc(const RawAddress& bda) {
   if (p_tcb != NULL) {
     // clear reallocating
     std::vector<tBTA_GATTC_SERVICE>().swap(p_tcb->srvc_cache);
-
-    osi_free_and_reset((void**)&p_tcb->p_srvc_list);
+    std::vector<tBTA_GATTC_SERVICE>().swap(p_tcb->pending_discovery);
     *p_tcb = tBTA_GATTC_SERV();
 
     p_tcb->in_use = true;
