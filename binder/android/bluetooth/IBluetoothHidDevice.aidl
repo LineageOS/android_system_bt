@@ -23,7 +23,7 @@ import android.bluetooth.BluetoothHidDeviceAppSdpSettings;
 import android.bluetooth.BluetoothHidDeviceAppQosSettings;
 
 /** @hide */
-interface IBluetoothInputHost {
+interface IBluetoothHidDevice {
     boolean registerApp(in BluetoothHidDeviceAppConfiguration config,
             in BluetoothHidDeviceAppSdpSettings sdp, in BluetoothHidDeviceAppQosSettings inQos,
             in BluetoothHidDeviceAppQosSettings outQos, in IBluetoothHidDeviceCallback callback);
