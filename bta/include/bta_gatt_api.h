@@ -27,13 +27,9 @@
 
 #include "bta_api.h"
 #include "gatt_api.h"
-#include "osi/include/list.h"
 
 #include <base/callback_forward.h>
-#include <list>
 #include <vector>
-
-using std::vector;
 
 #ifndef BTA_GATT_DEBUG
 #define BTA_GATT_DEBUG false
@@ -388,8 +384,8 @@ typedef struct {
   uint16_t handle;
   uint16_t s_handle;
   uint16_t e_handle;
-  std::list<tBTA_GATTC_CHARACTERISTIC> characteristics;
-  std::list<tBTA_GATTC_INCLUDED_SVC> included_svc;
+  std::vector<tBTA_GATTC_CHARACTERISTIC> characteristics;
+  std::vector<tBTA_GATTC_INCLUDED_SVC> included_svc;
 } __attribute__((packed, aligned(alignof(bluetooth::Uuid)))) tBTA_GATTC_SERVICE;
 
 struct tBTA_GATTC_CHARACTERISTIC {
@@ -397,7 +393,7 @@ struct tBTA_GATTC_CHARACTERISTIC {
   uint16_t value_handle;
   tGATT_CHAR_PROP properties;
   tBTA_GATTC_SERVICE* service; /* owning service*/
-  std::list<tBTA_GATTC_DESCRIPTOR> descriptors;
+  std::vector<tBTA_GATTC_DESCRIPTOR> descriptors;
 } __attribute__((packed, aligned(alignof(bluetooth::Uuid))));
 
 struct tBTA_GATTC_DESCRIPTOR {
@@ -547,7 +543,7 @@ extern void BTA_GATTC_DiscoverServiceByUuid(uint16_t conn_id,
  * Returns          returns list of tBTA_GATTC_SERVICE or NULL.
  *
  ******************************************************************************/
-extern const std::list<tBTA_GATTC_SERVICE>* BTA_GATTC_GetServices(
+extern const std::vector<tBTA_GATTC_SERVICE>* BTA_GATTC_GetServices(
     uint16_t conn_id);
 
 /*******************************************************************************
@@ -661,7 +657,8 @@ void BTA_GATTC_ReadCharDescr(uint16_t conn_id, uint16_t handle,
  ******************************************************************************/
 void BTA_GATTC_WriteCharValue(uint16_t conn_id, uint16_t handle,
                               tGATT_WRITE_TYPE write_type,
-                              vector<uint8_t> value, tGATT_AUTH_REQ auth_req,
+                              std::vector<uint8_t> value,
+                              tGATT_AUTH_REQ auth_req,
                               GATT_WRITE_OP_CB callback, void* cb_data);
 
 /*******************************************************************************
@@ -678,7 +675,8 @@ void BTA_GATTC_WriteCharValue(uint16_t conn_id, uint16_t handle,
  *
  ******************************************************************************/
 void BTA_GATTC_WriteCharDescr(uint16_t conn_id, uint16_t handle,
-                              vector<uint8_t> value, tGATT_AUTH_REQ auth_req,
+                              std::vector<uint8_t> value,
+                              tGATT_AUTH_REQ auth_req,
                               GATT_WRITE_OP_CB callback, void* cb_data);
 
 /*******************************************************************************
@@ -745,7 +743,7 @@ extern tGATT_STATUS BTA_GATTC_DeregisterForNotifications(
  *
  ******************************************************************************/
 extern void BTA_GATTC_PrepareWrite(uint16_t conn_id, uint16_t handle,
-                                   uint16_t offset, vector<uint8_t> value,
+                                   uint16_t offset, std::vector<uint8_t> value,
                                    tGATT_AUTH_REQ auth_req,
                                    GATT_WRITE_OP_CB callback, void* cb_data);
 
@@ -884,7 +882,7 @@ extern void BTA_GATTS_AppDeregister(tGATT_IF server_if);
  *
  ******************************************************************************/
 extern uint16_t BTA_GATTS_AddService(tGATT_IF server_if,
-                                     vector<btgatt_db_element_t>& service);
+                                     std::vector<btgatt_db_element_t>& service);
 
 /*******************************************************************************
  *
@@ -931,7 +929,7 @@ extern void BTA_GATTS_StopService(uint16_t service_id);
  *
  ******************************************************************************/
 extern void BTA_GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_id,
-                                            vector<uint8_t> value,
+                                            std::vector<uint8_t> value,
                                             bool need_confirm);
 
 /*******************************************************************************
