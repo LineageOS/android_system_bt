@@ -312,27 +312,31 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
   if (!gatt_update_app_hold_link_status(gatt_if, p_tcb, is_add)) return;
 
   if (!check_acl_link ||
-      p_tcb->att_lcid !=
-          L2CAP_ATT_CID || /* only update link idle timer for fixed channel */
       (BTM_GetHCIConnHandle(p_tcb->peer_bda, p_tcb->transport) ==
        GATT_INVALID_ACL_HANDLE)) {
     return;
   }
 
   if (is_add) {
-    VLOG(1) << "disable link idle timer";
-    /* acl link is connected disable the idle timeout */
-    GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_NO_IDLE_TIMEOUT,
-                        p_tcb->transport);
+    if (p_tcb->att_lcid == L2CAP_ATT_CID) {
+      VLOG(1) << "disable link idle timer";
+      /* acl link is connected disable the idle timeout */
+      GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_NO_IDLE_TIMEOUT,
+                          p_tcb->transport);
+    }
   } else {
     if (p_tcb->app_hold_link.empty()) {
-      /* acl link is connected but no application needs to use the link
-         so set the timeout value to GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP seconds
-         */
-      VLOG(1) << " start link idle timer = "
-              << GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP << " sec";
-      GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP,
-                          p_tcb->transport);
+      // acl link is connected but no application needs to use the link
+      if (p_tcb->att_lcid == L2CAP_ATT_CID) {
+        /* for fixed channel, set the timeout value to
+           GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP seconds */
+        VLOG(1) << " start link idle timer = "
+                << GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP << " sec";
+        GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP,
+                            p_tcb->transport);
+      } else
+        // disconnect the dynamic channel
+        gatt_disconnect(p_tcb);
     }
   }
 }
