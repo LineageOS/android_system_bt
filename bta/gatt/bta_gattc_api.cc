@@ -269,7 +269,7 @@ void BTA_GATTC_DiscoverServiceByUuid(uint16_t conn_id,
  * Returns          returns list of tBTA_GATTC_SERVICE or NULL.
  *
  ******************************************************************************/
-const std::list<tBTA_GATTC_SERVICE>* BTA_GATTC_GetServices(uint16_t conn_id) {
+const std::vector<tBTA_GATTC_SERVICE>* BTA_GATTC_GetServices(uint16_t conn_id) {
   return bta_gattc_get_services(conn_id);
 }
 

@@ -84,7 +84,7 @@ typedef struct {
 
 /* debug function to display the server cache */
 static void bta_gattc_display_cache_server(
-    const std::list<tBTA_GATTC_SERVICE>& cache) {
+    const std::vector<tBTA_GATTC_SERVICE>& cache) {
   LOG(ERROR) << "<================Start Server Cache =============>";
 
   for (const tBTA_GATTC_SERVICE& service : cache) {
@@ -155,7 +155,8 @@ static void bta_gattc_display_explore_record(tBTA_GATTC_ATTR_REC* p_rec,
  *
  ******************************************************************************/
 tGATT_STATUS bta_gattc_init_cache(tBTA_GATTC_SERV* p_srvc_cb) {
-  p_srvc_cb->srvc_cache.clear();
+  // clear reallocating
+  std::vector<tBTA_GATTC_SERVICE>().swap(p_srvc_cb->srvc_cache);
 
   osi_free(p_srvc_cb->p_srvc_list);
   p_srvc_cb->p_srvc_list =
@@ -169,7 +170,7 @@ tGATT_STATUS bta_gattc_init_cache(tBTA_GATTC_SERV* p_srvc_cb) {
 }
 
 tBTA_GATTC_SERVICE* bta_gattc_find_matching_service(
-    std::list<tBTA_GATTC_SERVICE>& services, uint16_t handle) {
+    std::vector<tBTA_GATTC_SERVICE>& services, uint16_t handle) {
   for (tBTA_GATTC_SERVICE& service : services) {
     if (handle >= service.s_handle && handle <= service.e_handle)
       return &service;
@@ -179,7 +180,7 @@ tBTA_GATTC_SERVICE* bta_gattc_find_matching_service(
 }
 
 /** Add a service into GATT database */
-static void add_service_to_gatt_db(std::list<tBTA_GATTC_SERVICE>& gatt_db,
+static void add_service_to_gatt_db(std::vector<tBTA_GATTC_SERVICE>& gatt_db,
                                    uint16_t s_handle, uint16_t e_handle,
                                    const Uuid& uuid, bool is_primary) {
 #if (BTA_GATT_DEBUG == TRUE)
@@ -197,7 +198,7 @@ static void add_service_to_gatt_db(std::list<tBTA_GATTC_SERVICE>& gatt_db,
 
 /** Add a characteristic into GATT database */
 static void add_characteristic_to_gatt_db(
-    std::list<tBTA_GATTC_SERVICE>& gatt_db, uint16_t attr_handle,
+    std::vector<tBTA_GATTC_SERVICE>& gatt_db, uint16_t attr_handle,
     uint16_t value_handle, const Uuid& uuid, uint8_t property) {
 #if (BTA_GATT_DEBUG == TRUE)
   VLOG(1) << __func__
@@ -228,7 +229,7 @@ static void add_characteristic_to_gatt_db(
 }
 
 /* Add an descriptor into database cache buffer */
-static void add_descriptor_to_gatt_db(std::list<tBTA_GATTC_SERVICE>& gatt_db,
+static void add_descriptor_to_gatt_db(std::vector<tBTA_GATTC_SERVICE>& gatt_db,
                                       uint16_t handle, const Uuid& uuid) {
 #if (BTA_GATT_DEBUG == TRUE)
   VLOG(1) << __func__ << ": add descriptor, handle=" << loghex(handle)
@@ -256,7 +257,7 @@ static void add_descriptor_to_gatt_db(std::list<tBTA_GATTC_SERVICE>& gatt_db,
 }
 
 /* Add an attribute into database cache buffer */
-static void add_incl_srvc_to_gatt_db(std::list<tBTA_GATTC_SERVICE>& gatt_db,
+static void add_incl_srvc_to_gatt_db(std::vector<tBTA_GATTC_SERVICE>& gatt_db,
                                      uint16_t handle, const Uuid& uuid,
                                      uint16_t incl_srvc_s_handle) {
 #if (BTA_GATT_DEBUG == TRUE)
@@ -789,14 +790,14 @@ void bta_gattc_search_service(tBTA_GATTC_CLCB* p_clcb, Uuid* p_uuid) {
   }
 }
 
-std::list<tBTA_GATTC_SERVICE>* bta_gattc_get_services_srcb(
+std::vector<tBTA_GATTC_SERVICE>* bta_gattc_get_services_srcb(
     tBTA_GATTC_SERV* p_srcb) {
   if (!p_srcb || p_srcb->srvc_cache.empty()) return NULL;
 
   return &p_srcb->srvc_cache;
 }
 
-std::list<tBTA_GATTC_SERVICE>* bta_gattc_get_services(uint16_t conn_id) {
+std::vector<tBTA_GATTC_SERVICE>* bta_gattc_get_services(uint16_t conn_id) {
   tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
 
   if (p_clcb == NULL) return NULL;
@@ -808,14 +809,15 @@ std::list<tBTA_GATTC_SERVICE>* bta_gattc_get_services(uint16_t conn_id) {
 
 static tBTA_GATTC_SERVICE* bta_gattc_get_service_for_handle_srcb(
     tBTA_GATTC_SERV* p_srcb, uint16_t handle) {
-  std::list<tBTA_GATTC_SERVICE>* services = bta_gattc_get_services_srcb(p_srcb);
+  std::vector<tBTA_GATTC_SERVICE>* services =
+      bta_gattc_get_services_srcb(p_srcb);
   if (services == NULL) return NULL;
   return bta_gattc_find_matching_service(*services, handle);
 }
 
 const tBTA_GATTC_SERVICE* bta_gattc_get_service_for_handle(uint16_t conn_id,
                                                            uint16_t handle) {
-  std::list<tBTA_GATTC_SERVICE>* services = bta_gattc_get_services(conn_id);
+  std::vector<tBTA_GATTC_SERVICE>* services = bta_gattc_get_services(conn_id);
   if (services == NULL) return NULL;
 
   return bta_gattc_find_matching_service(*services, handle);
@@ -904,7 +906,7 @@ void bta_gattc_fill_gatt_db_el(btgatt_db_element_t* p_attr,
  * Returns          number of elements inside db from start_handle to end_handle
  ******************************************************************************/
 static size_t bta_gattc_get_db_size(
-    const std::list<tBTA_GATTC_SERVICE>& services, uint16_t start_handle,
+    const std::vector<tBTA_GATTC_SERVICE>& services, uint16_t start_handle,
     uint16_t end_handle) {
   if (services.empty()) return 0;
 
@@ -1062,7 +1064,8 @@ void bta_gattc_rebuild_cache(tBTA_GATTC_SERV* p_srvc_cb, uint16_t num_attr,
   /* first attribute loading, initialize buffer */
   LOG(ERROR) << __func__;
 
-  p_srvc_cb->srvc_cache.clear();
+  // clear reallocating
+  std::vector<tBTA_GATTC_SERVICE>().swap(p_srvc_cb->srvc_cache);
 
   while (num_attr > 0 && p_attr != NULL) {
     switch (p_attr->attr_type) {
