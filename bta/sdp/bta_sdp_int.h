@@ -2,8 +2,8 @@
 
 /******************************************************************************
  *
- *  Copyright (C) 2014 The Android Open Source Project
- *  Copyright (C) 2003-2012 Broadcom Corporation
+ *  Copyright 2014 The Android Open Source Project
+ *  Copyright 2003-2012 Broadcom Corporation
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
