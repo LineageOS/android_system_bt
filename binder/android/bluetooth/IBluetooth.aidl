@@ -43,6 +43,7 @@ interface IBluetooth
     ParcelUuid[] getUuids();
     boolean setName(in String name);
     String getName();
+    BluetoothClass getBluetoothClass();
     boolean setBluetoothClass(in BluetoothClass bluetoothClass);
 
     int getScanMode();
