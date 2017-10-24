@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright (C) 2003-2012 Broadcom Corporation
+ *  Copyright 2003-2012 Broadcom Corporation
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -129,7 +129,7 @@ tBTA_GATTC_CLCB* bta_gattc_clcb_alloc(tGATT_IF client_if,
   for (i_clcb = 0; i_clcb < BTA_GATTC_CLCB_MAX; i_clcb++) {
     if (!bta_gattc_cb.clcb[i_clcb].in_use) {
 #if (BTA_GATT_DEBUG == TRUE)
-      VLOG(1) << __func__ << ": found clcb:" << +i_clcb << " available", ;
+      VLOG(1) << __func__ << ": found clcb:" << +i_clcb << " available";
 #endif
       p_clcb = &bta_gattc_cb.clcb[i_clcb];
       p_clcb->in_use = true;
@@ -187,29 +187,28 @@ tBTA_GATTC_CLCB* bta_gattc_find_alloc_clcb(tGATT_IF client_if,
  *
  ******************************************************************************/
 void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB* p_clcb) {
-  tBTA_GATTC_SERV* p_srcb = NULL;
-
-  if (p_clcb) {
-    p_srcb = p_clcb->p_srcb;
-    if (p_srcb->num_clcb) p_srcb->num_clcb--;
-
-    if (p_clcb->p_rcb->num_clcb) p_clcb->p_rcb->num_clcb--;
-
-    /* if the srcb is no longer needed, reset the state */
-    if (p_srcb->num_clcb == 0) {
-      p_srcb->connected = false;
-      p_srcb->state = BTA_GATTC_SERV_IDLE;
-      p_srcb->mtu = 0;
-
-      /* clean up cache */
-      p_srcb->srvc_cache.clear();
-    }
-
-    osi_free_and_reset((void**)&p_clcb->p_q_cmd);
-    memset(p_clcb, 0, sizeof(tBTA_GATTC_CLCB));
-  } else {
+  if (!p_clcb) {
     LOG(ERROR) << __func__ << " p_clcb=NULL";
+    return;
   }
+
+  tBTA_GATTC_SERV* p_srcb = p_clcb->p_srcb;
+  if (p_srcb->num_clcb) p_srcb->num_clcb--;
+
+  if (p_clcb->p_rcb->num_clcb) p_clcb->p_rcb->num_clcb--;
+
+  /* if the srcb is no longer needed, reset the state */
+  if (p_srcb->num_clcb == 0) {
+    p_srcb->connected = false;
+    p_srcb->state = BTA_GATTC_SERV_IDLE;
+    p_srcb->mtu = 0;
+
+    // clear reallocating
+    std::vector<tBTA_GATTC_SERVICE>().swap(p_srcb->srvc_cache);
+  }
+
+  osi_free_and_reset((void**)&p_clcb->p_q_cmd);
+  memset(p_clcb, 0, sizeof(tBTA_GATTC_CLCB));
 }
 
 /*******************************************************************************
@@ -296,9 +295,9 @@ tBTA_GATTC_SERV* bta_gattc_srcb_alloc(const RawAddress& bda) {
     p_tcb = p_recycle;
 
   if (p_tcb != NULL) {
-    p_tcb->srvc_cache.clear();
-
-    osi_free_and_reset((void**)&p_tcb->p_srvc_list);
+    // clear reallocating
+    std::vector<tBTA_GATTC_SERVICE>().swap(p_tcb->srvc_cache);
+    std::vector<tBTA_GATTC_SERVICE>().swap(p_tcb->pending_discovery);
     *p_tcb = tBTA_GATTC_SERV();
 
     p_tcb->in_use = true;

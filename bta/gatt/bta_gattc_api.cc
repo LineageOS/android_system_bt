@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright (C) 2010-2012 Broadcom Corporation
+ *  Copyright 2010-2012 Broadcom Corporation
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -269,7 +269,7 @@ void BTA_GATTC_DiscoverServiceByUuid(uint16_t conn_id,
  * Returns          returns list of tBTA_GATTC_SERVICE or NULL.
  *
  ******************************************************************************/
-const std::list<tBTA_GATTC_SERVICE>* BTA_GATTC_GetServices(uint16_t conn_id) {
+const std::vector<tBTA_GATTC_SERVICE>* BTA_GATTC_GetServices(uint16_t conn_id) {
   return bta_gattc_get_services(conn_id);
 }
 

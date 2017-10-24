@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, The Android Open Source Project
+ * Copyright 2008, The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ interface IBluetooth
     ParcelUuid[] getUuids();
     boolean setName(in String name);
     String getName();
+    BluetoothClass getBluetoothClass();
     boolean setBluetoothClass(in BluetoothClass bluetoothClass);
 
     int getScanMode();

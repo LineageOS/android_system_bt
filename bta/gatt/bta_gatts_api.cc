@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright (C) 2010-2012 Broadcom Corporation
+ *  Copyright 2010-2012 Broadcom Corporation
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -126,8 +126,8 @@ void BTA_GATTS_AppDeregister(tGATT_IF server_if) {
  *                  service cannot be added.
  *
  ******************************************************************************/
-extern uint16_t BTA_GATTS_AddService(tGATT_IF server_if,
-                                     vector<btgatt_db_element_t>& service) {
+extern uint16_t BTA_GATTS_AddService(
+    tGATT_IF server_if, std::vector<btgatt_db_element_t>& service) {
   uint8_t rcb_idx =
       bta_gatts_find_app_rcb_idx_by_app_if(&bta_gatts_cb, server_if);
 

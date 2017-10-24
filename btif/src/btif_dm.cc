@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright (C) 2009-2012 Broadcom Corporation
+ *  Copyright 2009-2012 Broadcom Corporation
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -2416,6 +2416,12 @@ bt_status_t btif_dm_get_adapter_property(bt_property_t* prop) {
       uint32_t* tmt = (uint32_t*)prop->val;
       *tmt = 120; /* default to 120s, if not found in NV */
       prop->len = sizeof(uint32_t);
+    } break;
+
+    case BT_PROPERTY_CLASS_OF_DEVICE: {
+      DEV_CLASS dev_class = BTA_DM_COD;
+      memcpy(prop->val, dev_class, sizeof(DEV_CLASS));
+      prop->len = sizeof(DEV_CLASS);
     } break;
 
     default:

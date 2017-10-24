@@ -1,7 +1,7 @@
 /******************************************************************************
  *
- *  Copyright (C) 2014 The Android Open Source Project
- *  Copyright (C) 2009-2012 Broadcom Corporation
+ *  Copyright 2014 The Android Open Source Project
+ *  Copyright 2009-2012 Broadcom Corporation
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -901,7 +901,7 @@ bt_status_t btif_get_adapter_property(bt_property_type_t type) {
 
   /* Allow get_adapter_property only for BDADDR and BDNAME if BT is disabled */
   if (!btif_is_enabled() && (type != BT_PROPERTY_BDADDR) &&
-      (type != BT_PROPERTY_BDNAME))
+      (type != BT_PROPERTY_BDNAME) && (type != BT_PROPERTY_CLASS_OF_DEVICE))
     return BT_STATUS_NOT_READY;
 
   req.read_req.bd_addr = RawAddress::kEmpty;

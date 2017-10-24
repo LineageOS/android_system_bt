@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright (C) 2003-2012 Broadcom Corporation
+ *  Copyright 2003-2012 Broadcom Corporation
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -692,14 +692,17 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB* p_clcb,
 
   if (p_clcb->status != GATT_SUCCESS) {
     /* clean up cache */
-    if (p_clcb->p_srcb) p_clcb->p_srcb->srvc_cache.clear();
+    if (p_clcb->p_srcb) {
+      // clear reallocating
+      std::vector<tBTA_GATTC_SERVICE>().swap(p_clcb->p_srcb->srvc_cache);
+    }
 
     /* used to reset cache in application */
     bta_gattc_cache_reset(p_clcb->p_srcb->server_bda);
   }
-  if (p_clcb->p_srcb && p_clcb->p_srcb->p_srvc_list) {
+  if (p_clcb->p_srcb) {
     /* release pending attribute list buffer */
-    osi_free_and_reset((void**)&p_clcb->p_srcb->p_srvc_list);
+    p_clcb->p_srcb->pending_discovery.clear();
   }
 
   if (p_clcb->auto_update == BTA_GATTC_DISC_WAITING) {
@@ -1101,7 +1104,9 @@ void bta_gattc_process_api_refresh(const RawAddress& remote_bda) {
       }
     }
     /* in all other cases, mark it and delete the cache */
-    p_srvc_cb->srvc_cache.clear();
+
+    // clear reallocating
+    std::vector<tBTA_GATTC_SERVICE>().swap(p_srvc_cb->srvc_cache);
   }
 
   /* used to reset cache in application */

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 The Android Open Source Project
+ * Copyright 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import android.bluetooth.BluetoothHidDeviceAppSdpSettings;
 import android.bluetooth.BluetoothHidDeviceAppQosSettings;
 
 /** @hide */
-interface IBluetoothInputHost {
+interface IBluetoothHidDevice {
     boolean registerApp(in BluetoothHidDeviceAppConfiguration config,
             in BluetoothHidDeviceAppSdpSettings sdp, in BluetoothHidDeviceAppQosSettings inQos,
             in BluetoothHidDeviceAppQosSettings outQos, in IBluetoothHidDeviceCallback callback);
