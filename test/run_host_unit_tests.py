@@ -17,15 +17,16 @@ import sys
 import subprocess
 import os
 import argparse
-import multiprocessing
 
 # Registered host based unit tests
 # Must have 'host_supported: true'
 HOST_TESTS = [
-    'bluetoothtbd_test',
-    'net_test_btcore',
-    'net_test_types',
+  'bluetoothtbd_test',
+  'net_test_btcore',
+  'net_test_types',
 ]
+
+SOONG_UI_BASH = 'build/soong/soong_ui.bash'
 
 
 def str2bool(argument, default=False):
@@ -44,23 +45,39 @@ def check_dir_exists(dir, dirname):
     sys.exit(0)
 
 
-def get_android_lunch_target_or_die():
-  target_product = os.environ.get('TARGET_PRODUCT')
-  if not target_product:
-    print 'TARGET_PRODUCT not defined: run envsetup.sh / lunch'
-    sys.exit(0)
-  build_variant = os.environ.get('TARGET_BUILD_VARIANT')
-  if not build_variant:
-    print 'TARGET_BUILD_VARIANT not defined: run envsetup.sh / lunch'
-    sys.exit(0)
-  return '-'.join((target_product, build_variant))
+def get_output_from_command(cmd):
+  try:
+    return subprocess.check_output(cmd).strip()
+  except subprocess.CalledProcessError as e:
+    print 'Failed to call {cmd}, return code {code}'.format(cmd=cmd,
+                                                            code=e.returncode)
+    print e
+    return None
 
 
 def get_android_root_or_die():
   value = os.environ.get('ANDROID_BUILD_TOP')
   if not value:
-    print 'ANDROID_BUILD_TOP not defined: run envsetup.sh / lunch'
-    sys.exit(0)
+    # Try to find build/soong/soong_ui.bash upwards until root directory
+    current_path = os.path.abspath(os.getcwd())
+    while current_path and os.path.isdir(current_path):
+      soong_ui_bash_path = os.path.join(current_path, SOONG_UI_BASH)
+      if os.path.isfile(soong_ui_bash_path):
+        # Use value returned from Soong UI instead in case definition to TOP
+        # changes in the future
+        value = get_output_from_command((soong_ui_bash_path,
+                                         '--dumpvar-mode',
+                                         '--abs',
+                                         'TOP'))
+        break
+      parent_path = os.path.abspath(os.path.join(current_path, os.pardir))
+      if parent_path == current_path:
+        current_path = None
+      else:
+        current_path = parent_path
+    if not value:
+      print 'Cannot determine ANDROID_BUILD_TOP'
+      sys.exit(0)
   check_dir_exists(value, '$ANDROID_BUILD_TOP')
   return value
 
@@ -68,8 +85,15 @@ def get_android_root_or_die():
 def get_android_host_out_or_die():
   value = os.environ.get('ANDROID_HOST_OUT')
   if not value:
-    print 'ANDROID_HOST_OUT not defined: run envsetup.sh / lunch'
-    sys.exit(0)
+    ANDROID_BUILD_TOP = get_android_root_or_die()
+    value = get_output_from_command((os.path.join(ANDROID_BUILD_TOP,
+                                                  SOONG_UI_BASH),
+                                     '--dumpvar-mode',
+                                     '--abs',
+                                     'HOST_OUT'))
+    if not value:
+      print 'Cannot determine ANDROID_HOST_OUT'
+      sys.exit(0)
   check_dir_exists(value, '$ANDROID_HOST_OUT')
   return value
 
@@ -96,7 +120,7 @@ def get_native_test_root_or_die():
     test_root = os.path.join(android_host_out, 'nativetest')
     if not os.path.isdir(test_root):
       print 'Neither nativetest64 nor nativetest directory exist,' \
-        ' please compile first'
+            ' please compile first'
       sys.exit(0)
   return test_root
 
@@ -105,38 +129,26 @@ def get_test_cmd_or_die(test_root, test_name, enable_xml, test_filter):
   test_path = os.path.join(os.path.join(test_root, test_name), test_name)
   if not os.path.isfile(test_path):
     print 'Cannot find: ' + test_path
-    test_results.append(False)
     return None
   cmd = [test_path]
   if enable_xml:
     dist_dir = get_android_dist_dir_or_die()
-    cmd.append('--gtest_output=xml:gtest/%s_test_details.xml' % test_name)
+    log_output_path = os.path.join(dist_dir, 'gtest/{0}_test_details.xml'
+                                   .format(test_name))
+    cmd.append('--gtest_output=xml:{0}'.format(log_output_path))
   if test_filter:
     cmd.append('--gtest_filter=%s' % test_filter)
   return cmd
 
 
 # path is relative to Android build top
-def build_all_targets_in_dir(path, num_tasks):
-  ANDROID_LUNCH_TARGET = get_android_lunch_target_or_die()
+def build_target(target, num_tasks):
   ANDROID_BUILD_TOP = get_android_root_or_die()
-  combined_path = os.path.join(ANDROID_BUILD_TOP, path)
-  if not os.path.isdir(combined_path):
-    print 'Combined path not found: ' + combined_path
-    sys.exit(0)
-  build_cmd = ['mmma']
+  build_cmd = [SOONG_UI_BASH, '--make-mode']
   if num_tasks > 1:
     build_cmd.append('-j' + str(num_tasks))
-  build_cmd.append(path)
-  bash_cmd = ('cd {android_home} '
-              '&& source build/envsetup.sh '
-              '&& lunch {product_combo} '
-              '&& {build_cmd}'.format(
-                  android_home=ANDROID_BUILD_TOP,
-                  product_combo=ANDROID_LUNCH_TARGET,
-                  build_cmd=' '.join(build_cmd)))
-  p = subprocess.Popen(
-      bash_cmd, cwd=ANDROID_BUILD_TOP, env=os.environ, shell=True)
+  build_cmd.append(target)
+  p = subprocess.Popen(build_cmd, cwd=ANDROID_BUILD_TOP, env=os.environ.copy())
   if p.wait() != 0:
     print 'BUILD FAILED'
     sys.exit(0)
@@ -170,12 +182,13 @@ def main():
       help='-- args, other gtest arguments for each individual test')
   args = parser.parse_args()
 
-  build_all_targets_in_dir('system/bt', args.num_tasks)
+  build_target('MODULES-IN-system-bt', args.num_tasks)
   TEST_ROOT = get_native_test_root_or_die()
   test_results = []
   for test in HOST_TESTS:
     test_cmd = get_test_cmd_or_die(TEST_ROOT, test, args.enable_xml, args.rest)
     if not test_cmd:
+      test_results.append(False)
       continue
     if subprocess.call(test_cmd) != 0:
       test_results.append(False)
