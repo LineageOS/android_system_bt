@@ -1,10 +1,10 @@
 /******************************************************************************
  *
- *  Copyright (C) 2015, The linux Foundation. All rights reserved.
+ *  Copyright 2015, The linux Foundation. All rights reserved.
  *
  *  Not a Contribution.
  *
- *  Copyright (C) 2009-2012 Broadcom Corporation
+ *  Copyright 2009-2012 Broadcom Corporation
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
