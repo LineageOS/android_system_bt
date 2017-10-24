@@ -2418,6 +2418,12 @@ bt_status_t btif_dm_get_adapter_property(bt_property_t* prop) {
       prop->len = sizeof(uint32_t);
     } break;
 
+    case BT_PROPERTY_CLASS_OF_DEVICE: {
+      DEV_CLASS dev_class = BTA_DM_COD;
+      memcpy(prop->val, dev_class, sizeof(DEV_CLASS));
+      prop->len = sizeof(DEV_CLASS);
+    } break;
+
     default:
       prop->len = 0;
       return BT_STATUS_FAIL;
