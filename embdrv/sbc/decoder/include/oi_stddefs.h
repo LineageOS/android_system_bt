@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright (C) 2014 The Android Open Source Project
+ *  Copyright 2014 The Android Open Source Project
  *  Copyright 2002 - 2004 Open Interface North America, Inc. All rights
  *                        reserved.
  *
