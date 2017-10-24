@@ -782,6 +782,9 @@ bt_status_t btif_storage_remove_bonded_device(
     ret &= btif_config_remove(bdstr, "PinLength");
   if (btif_config_exist(bdstr, "LinkKey"))
     ret &= btif_config_remove(bdstr, "LinkKey");
+  if (btif_config_exist(bdstr, BTIF_STORAGE_PATH_REMOTE_ALIASE)) {
+    ret &= btif_config_remove(bdstr, BTIF_STORAGE_PATH_REMOTE_ALIASE);
+  }
   /* write bonded info immediately */
   btif_config_flush();
   return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
