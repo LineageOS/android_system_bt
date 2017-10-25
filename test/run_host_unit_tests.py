@@ -77,7 +77,7 @@ def get_android_root_or_die():
         current_path = parent_path
     if not value:
       print 'Cannot determine ANDROID_BUILD_TOP'
-      sys.exit(0)
+      sys.exit(1)
   check_dir_exists(value, '$ANDROID_BUILD_TOP')
   return value
 
@@ -93,7 +93,7 @@ def get_android_host_out_or_die():
                                      'HOST_OUT'))
     if not value:
       print 'Cannot determine ANDROID_HOST_OUT'
-      sys.exit(0)
+      sys.exit(1)
   check_dir_exists(value, '$ANDROID_HOST_OUT')
   return value
 
@@ -108,7 +108,7 @@ def get_android_dist_dir_or_die():
   if not os.path.isdir(value):
     if os.path.exists(value):
       print '%s is not a directory!' % (value)
-      sys.exit(0)
+      sys.exit(1)
     os.makedirs(value)
   return value
 
@@ -121,7 +121,7 @@ def get_native_test_root_or_die():
     if not os.path.isdir(test_root):
       print 'Neither nativetest64 nor nativetest directory exist,' \
             ' please compile first'
-      sys.exit(0)
+      sys.exit(1)
   return test_root
 
 
@@ -129,7 +129,7 @@ def get_test_cmd_or_die(test_root, test_name, enable_xml, test_filter):
   test_path = os.path.join(os.path.join(test_root, test_name), test_name)
   if not os.path.isfile(test_path):
     print 'Cannot find: ' + test_path
-    return None
+    sys.exit(1)
   cmd = [test_path]
   if enable_xml:
     dist_dir = get_android_dist_dir_or_die()
@@ -149,9 +149,10 @@ def build_target(target, num_tasks):
     build_cmd.append('-j' + str(num_tasks))
   build_cmd.append(target)
   p = subprocess.Popen(build_cmd, cwd=ANDROID_BUILD_TOP, env=os.environ.copy())
-  if p.wait() != 0:
-    print 'BUILD FAILED'
-    sys.exit(0)
+  return_code = p.wait()
+  if return_code != 0:
+    print 'BUILD FAILED, return code: {0}'.format(str(return_code))
+    sys.exit(1)
   return
 
 
@@ -187,9 +188,6 @@ def main():
   test_results = []
   for test in HOST_TESTS:
     test_cmd = get_test_cmd_or_die(TEST_ROOT, test, args.enable_xml, args.rest)
-    if not test_cmd:
-      test_results.append(False)
-      continue
     if subprocess.call(test_cmd) != 0:
       test_results.append(False)
     else:
