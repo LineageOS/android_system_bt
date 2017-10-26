@@ -32,6 +32,7 @@
 #include <string.h>
 
 #include <base/logging.h>
+#include "a2dp_sbc_decoder.h"
 #include "a2dp_sbc_encoder.h"
 #include "bt_utils.h"
 #include "embdrv/sbc/encoder/include/sbc_encoder.h"
@@ -99,6 +100,11 @@ static const tA2DP_ENCODER_INTERFACE a2dp_encoder_interface_sbc = {
     a2dp_sbc_get_encoder_interval_ms,
     a2dp_sbc_send_frames,
     nullptr  // set_transmit_queue_length
+};
+
+static const tA2DP_DECODER_INTERFACE a2dp_decoder_interface_sbc = {
+    a2dp_sbc_decoder_init, a2dp_sbc_decoder_cleanup,
+    a2dp_sbc_decoder_decode_packet,
 };
 
 static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilitySbc(
@@ -716,138 +722,6 @@ int A2DP_GetSinkTrackChannelTypeSbc(const uint8_t* p_codec_info) {
   return -1;
 }
 
-int A2DP_GetSinkFramesCountToProcessSbc(uint64_t time_interval_ms,
-                                        const uint8_t* p_codec_info) {
-  tA2DP_SBC_CIE sbc_cie;
-  uint32_t freq_multiple;
-  uint32_t num_blocks;
-  uint32_t num_subbands;
-  int frames_to_process;
-
-  tA2DP_STATUS a2dp_status = A2DP_ParseInfoSbc(&sbc_cie, p_codec_info, false);
-  if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
-    return -1;
-  }
-
-  // Check the sample frequency
-  switch (sbc_cie.samp_freq) {
-    case A2DP_SBC_IE_SAMP_FREQ_16:
-      LOG_VERBOSE(LOG_TAG, "%s: samp_freq:%d (16000)", __func__,
-                  sbc_cie.samp_freq);
-      freq_multiple = 16 * time_interval_ms;
-      break;
-    case A2DP_SBC_IE_SAMP_FREQ_32:
-      LOG_VERBOSE(LOG_TAG, "%s: samp_freq:%d (32000)", __func__,
-                  sbc_cie.samp_freq);
-      freq_multiple = 32 * time_interval_ms;
-      break;
-    case A2DP_SBC_IE_SAMP_FREQ_44:
-      LOG_VERBOSE(LOG_TAG, "%s: samp_freq:%d (44100)", __func__,
-                  sbc_cie.samp_freq);
-      freq_multiple = (441 * time_interval_ms) / 10;
-      break;
-    case A2DP_SBC_IE_SAMP_FREQ_48:
-      LOG_VERBOSE(LOG_TAG, "%s: samp_freq:%d (48000)", __func__,
-                  sbc_cie.samp_freq);
-      freq_multiple = 48 * time_interval_ms;
-      break;
-    default:
-      LOG_ERROR(LOG_TAG, "%s: unknown frequency: %d", __func__,
-                sbc_cie.samp_freq);
-      return -1;
-  }
-
-  // Check the channel mode
-  switch (sbc_cie.ch_mode) {
-    case A2DP_SBC_IE_CH_MD_MONO:
-      LOG_VERBOSE(LOG_TAG, "%s: ch_mode:%d (Mono)", __func__, sbc_cie.ch_mode);
-      break;
-    case A2DP_SBC_IE_CH_MD_DUAL:
-      LOG_VERBOSE(LOG_TAG, "%s: ch_mode:%d (DUAL)", __func__, sbc_cie.ch_mode);
-      break;
-    case A2DP_SBC_IE_CH_MD_STEREO:
-      LOG_VERBOSE(LOG_TAG, "%s: ch_mode:%d (STEREO)", __func__,
-                  sbc_cie.ch_mode);
-      break;
-    case A2DP_SBC_IE_CH_MD_JOINT:
-      LOG_VERBOSE(LOG_TAG, "%s: ch_mode:%d (JOINT)", __func__, sbc_cie.ch_mode);
-      break;
-    default:
-      LOG_ERROR(LOG_TAG, "%s: unknown channel mode: %d", __func__,
-                sbc_cie.ch_mode);
-      return -1;
-  }
-
-  // Check the block length
-  switch (sbc_cie.block_len) {
-    case A2DP_SBC_IE_BLOCKS_4:
-      LOG_VERBOSE(LOG_TAG, "%s: block_len:%d (4)", __func__, sbc_cie.block_len);
-      num_blocks = 4;
-      break;
-    case A2DP_SBC_IE_BLOCKS_8:
-      LOG_VERBOSE(LOG_TAG, "%s: block_len:%d (8)", __func__, sbc_cie.block_len);
-      num_blocks = 8;
-      break;
-    case A2DP_SBC_IE_BLOCKS_12:
-      LOG_VERBOSE(LOG_TAG, "%s: block_len:%d (12)", __func__,
-                  sbc_cie.block_len);
-      num_blocks = 12;
-      break;
-    case A2DP_SBC_IE_BLOCKS_16:
-      LOG_VERBOSE(LOG_TAG, "%s: block_len:%d (16)", __func__,
-                  sbc_cie.block_len);
-      num_blocks = 16;
-      break;
-    default:
-      LOG_ERROR(LOG_TAG, "%s: unknown block length: %d", __func__,
-                sbc_cie.block_len);
-      return -1;
-  }
-
-  // Check the number of sub-bands
-  switch (sbc_cie.num_subbands) {
-    case A2DP_SBC_IE_SUBBAND_4:
-      LOG_VERBOSE(LOG_TAG, "%s: num_subbands:%d (4)", __func__,
-                  sbc_cie.num_subbands);
-      num_subbands = 4;
-      break;
-    case A2DP_SBC_IE_SUBBAND_8:
-      LOG_VERBOSE(LOG_TAG, "%s: num_subbands:%d (8)", __func__,
-                  sbc_cie.num_subbands);
-      num_subbands = 8;
-      break;
-    default:
-      LOG_ERROR(LOG_TAG, "%s: unknown number of subbands: %d", __func__,
-                sbc_cie.num_subbands);
-      return -1;
-  }
-
-  // Check the allocation method
-  switch (sbc_cie.alloc_method) {
-    case A2DP_SBC_IE_ALLOC_MD_S:
-      LOG_VERBOSE(LOG_TAG, "%s: alloc_method:%d (SNR)", __func__,
-                  sbc_cie.alloc_method);
-      break;
-    case A2DP_SBC_IE_ALLOC_MD_L:
-      LOG_VERBOSE(LOG_TAG, "%s: alloc_method:%d (Loudness)", __func__,
-                  sbc_cie.alloc_method);
-      break;
-    default:
-      LOG_ERROR(LOG_TAG, "%s: unknown allocation method: %d", __func__,
-                sbc_cie.alloc_method);
-      return -1;
-  }
-
-  LOG_VERBOSE(LOG_TAG, "%s: Bit pool Min:%d Max:%d", __func__,
-              sbc_cie.min_bitpool, sbc_cie.max_bitpool);
-
-  frames_to_process = ((freq_multiple) / (num_blocks * num_subbands)) + 1;
-
-  return frames_to_process;
-}
-
 bool A2DP_GetPacketTimestampSbc(UNUSED_ATTR const uint8_t* p_codec_info,
                                 const uint8_t* p_data, uint32_t* p_timestamp) {
   *p_timestamp = *(const uint32_t*)p_data;
@@ -948,6 +822,13 @@ const tA2DP_ENCODER_INTERFACE* A2DP_GetEncoderInterfaceSbc(
   if (!A2DP_IsSourceCodecValidSbc(p_codec_info)) return NULL;
 
   return &a2dp_encoder_interface_sbc;
+}
+
+const tA2DP_DECODER_INTERFACE* A2DP_GetDecoderInterfaceSbc(
+    const uint8_t* p_codec_info) {
+  if (!A2DP_IsSinkCodecValidSbc(p_codec_info)) return NULL;
+
+  return &a2dp_decoder_interface_sbc;
 }
 
 bool A2DP_AdjustCodecSbc(uint8_t* p_codec_info) {
@@ -1621,6 +1502,12 @@ A2dpCodecConfigSbcSink::~A2dpCodecConfigSbcSink() {}
 
 bool A2dpCodecConfigSbcSink::init() {
   if (!isValid()) return false;
+
+  // Load the decoder
+  if (!A2DP_LoadDecoderSbc()) {
+    LOG_ERROR(LOG_TAG, "%s: cannot load the decoder", __func__);
+    return false;
+  }
 
   return true;
 }
