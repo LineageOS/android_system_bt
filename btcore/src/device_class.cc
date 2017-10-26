@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include "btcore/include/device_class.h"
-#include "osi/include/osi.h"
 
 typedef struct _bt_device_class_t {
   uint32_t unused : 2;  // LSBs
@@ -35,7 +34,9 @@ typedef struct _bt_device_class_t {
 
 // Ensure the internal device class implementation and public one
 // have equal size.
-COMPILE_ASSERT(sizeof(_bt_device_class_t) == sizeof(bt_device_class_t));
+static_assert(sizeof(_bt_device_class_t) == sizeof(bt_device_class_t),
+              "Internal and external device class implementation should have "
+              "the same size");
 
 // [Major Service Classes]
 // (https://www.bluetooth.org/en-us/specification/assigned-numbers/baseband)
