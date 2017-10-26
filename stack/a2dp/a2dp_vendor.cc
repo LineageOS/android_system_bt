@@ -350,18 +350,6 @@ int A2DP_VendorGetSinkTrackChannelType(
   return -1;
 }
 
-int A2DP_VendorGetSinkFramesCountToProcess(
-    UNUSED_ATTR uint64_t time_interval_ms,
-    UNUSED_ATTR const uint8_t* p_codec_info) {
-  // uint32_t vendor_id = A2DP_VendorCodecGetVendorId(p_codec_info);
-  // uint16_t codec_id = A2DP_VendorCodecGetCodecId(p_codec_info);
-
-  // Add checks based on <vendor_id, codec_id>
-  // NOTE: Should be done only for local Sink codecs.
-
-  return -1;
-}
-
 bool A2DP_VendorGetPacketTimestamp(const uint8_t* p_codec_info,
                                    const uint8_t* p_data,
                                    uint32_t* p_timestamp) {
@@ -448,6 +436,12 @@ const tA2DP_ENCODER_INTERFACE* A2DP_VendorGetEncoderInterface(
   return NULL;
 }
 
+const tA2DP_DECODER_INTERFACE* A2DP_VendorGetDecoderInterface(
+    const uint8_t* p_codec_info) {
+  // We do not support vendor codecs for decoding right now.
+  return NULL;
+}
+
 bool A2DP_VendorAdjustCodec(uint8_t* p_codec_info) {
   uint32_t vendor_id = A2DP_VendorCodecGetVendorId(p_codec_info);
   uint16_t codec_id = A2DP_VendorCodecGetCodecId(p_codec_info);
@@ -507,6 +501,7 @@ const char* A2DP_VendorCodecIndexStr(btav_a2dp_codec_index_t codec_index) {
     case BTAV_A2DP_CODEC_INDEX_SOURCE_SBC:
     case BTAV_A2DP_CODEC_INDEX_SINK_SBC:
     case BTAV_A2DP_CODEC_INDEX_SOURCE_AAC:
+    case BTAV_A2DP_CODEC_INDEX_SINK_AAC:
       break;  // These are not vendor-specific codecs
     case BTAV_A2DP_CODEC_INDEX_SOURCE_APTX:
       return A2DP_VendorCodecIndexStrAptx();
@@ -529,6 +524,7 @@ bool A2DP_VendorInitCodecConfig(btav_a2dp_codec_index_t codec_index,
     case BTAV_A2DP_CODEC_INDEX_SOURCE_SBC:
     case BTAV_A2DP_CODEC_INDEX_SINK_SBC:
     case BTAV_A2DP_CODEC_INDEX_SOURCE_AAC:
+    case BTAV_A2DP_CODEC_INDEX_SINK_AAC:
       break;  // These are not vendor-specific codecs
     case BTAV_A2DP_CODEC_INDEX_SOURCE_APTX:
       return A2DP_VendorInitCodecConfigAptx(p_cfg);

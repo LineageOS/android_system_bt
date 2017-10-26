@@ -30,6 +30,7 @@
 #include <string.h>
 
 #include <base/logging.h>
+#include "a2dp_aac_decoder.h"
 #include "a2dp_aac_encoder.h"
 #include "bt_utils.h"
 #include "osi/include/log.h"
@@ -65,6 +66,21 @@ static const tA2DP_AAC_CIE a2dp_aac_caps = {
     // bits_per_sample
     BTAV_A2DP_CODEC_BITS_PER_SAMPLE_16};
 
+/* AAC Sink codec capabilities */
+static const tA2DP_AAC_CIE a2dp_aac_sink_caps = {
+    // objectType
+    A2DP_AAC_OBJECT_TYPE_MPEG2_LC,
+    // sampleRate
+    A2DP_AAC_SAMPLING_FREQ_44100 | A2DP_AAC_SAMPLING_FREQ_48000,
+    // channelMode
+    A2DP_AAC_CHANNEL_MODE_MONO | A2DP_AAC_CHANNEL_MODE_STEREO,
+    // variableBitRateSupport
+    A2DP_AAC_VARIABLE_BIT_RATE_ENABLED,
+    // bitRate
+    A2DP_AAC_DEFAULT_BITRATE,
+    // bits_per_sample
+    BTAV_A2DP_CODEC_BITS_PER_SAMPLE_16};
+
 /* Default AAC codec configuration */
 static const tA2DP_AAC_CIE a2dp_aac_default_config = {
     A2DP_AAC_OBJECT_TYPE_MPEG2_LC,        // objectType
@@ -85,9 +101,14 @@ static const tA2DP_ENCODER_INTERFACE a2dp_encoder_interface_aac = {
     nullptr  // set_transmit_queue_length
 };
 
+static const tA2DP_DECODER_INTERFACE a2dp_decoder_interface_aac = {
+    a2dp_aac_decoder_init, a2dp_aac_decoder_cleanup,
+    a2dp_aac_decoder_decode_packet,
+};
+
 UNUSED_ATTR static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityAac(
     const tA2DP_AAC_CIE* p_cap, const uint8_t* p_codec_info,
-    bool is_peer_codec_info);
+    bool is_capability);
 
 // Builds the AAC Media Codec Capabilities byte sequence beginning from the
 // LOSC octet. |media_type| is the media type |AVDT_MEDIA_TYPE_*|.
@@ -191,11 +212,19 @@ bool A2DP_IsSourceCodecValidAac(const uint8_t* p_codec_info) {
 }
 
 bool A2DP_IsSinkCodecValidAac(UNUSED_ATTR const uint8_t* p_codec_info) {
-  return false;
+  tA2DP_AAC_CIE cfg_cie;
+
+  /* Use a liberal check when parsing the codec info */
+  return (A2DP_ParseInfoAac(&cfg_cie, p_codec_info, false) == A2DP_SUCCESS) ||
+         (A2DP_ParseInfoAac(&cfg_cie, p_codec_info, true) == A2DP_SUCCESS);
 }
 
 bool A2DP_IsPeerSourceCodecValidAac(UNUSED_ATTR const uint8_t* p_codec_info) {
-  return false;
+  tA2DP_AAC_CIE cfg_cie;
+
+  /* Use a liberal check when parsing the codec info */
+  return (A2DP_ParseInfoAac(&cfg_cie, p_codec_info, false) == A2DP_SUCCESS) ||
+         (A2DP_ParseInfoAac(&cfg_cie, p_codec_info, true) == A2DP_SUCCESS);
 }
 
 bool A2DP_IsPeerSinkCodecValidAac(const uint8_t* p_codec_info) {
@@ -206,13 +235,14 @@ bool A2DP_IsPeerSinkCodecValidAac(const uint8_t* p_codec_info) {
          (A2DP_ParseInfoAac(&cfg_cie, p_codec_info, true) == A2DP_SUCCESS);
 }
 
-bool A2DP_IsSinkCodecSupportedAac(UNUSED_ATTR const uint8_t* p_codec_info) {
-  return false;
+bool A2DP_IsSinkCodecSupportedAac(const uint8_t* p_codec_info) {
+  return A2DP_CodecInfoMatchesCapabilityAac(&a2dp_aac_sink_caps, p_codec_info,
+                                            false) == A2DP_SUCCESS;
 }
 
-bool A2DP_IsPeerSourceCodecSupportedAac(
-    UNUSED_ATTR const uint8_t* p_codec_info) {
-  return false;
+bool A2DP_IsPeerSourceCodecSupportedAac(const uint8_t* p_codec_info) {
+  return A2DP_CodecInfoMatchesCapabilityAac(&a2dp_aac_sink_caps, p_codec_info,
+                                            true) == A2DP_SUCCESS;
 }
 
 tA2DP_STATUS A2DP_BuildSrc2SinkConfigAac(UNUSED_ATTR const uint8_t* p_src_cap,
@@ -222,11 +252,8 @@ tA2DP_STATUS A2DP_BuildSrc2SinkConfigAac(UNUSED_ATTR const uint8_t* p_src_cap,
 
 // Checks whether A2DP AAC codec configuration matches with a device's codec
 // capabilities. |p_cap| is the AAC codec configuration. |p_codec_info| is
-// the device's codec capabilities.
-// If |is_capability| is true, the byte sequence is codec capabilities,
-// otherwise is codec configuration.
-// |p_codec_info| contains the codec capabilities for a peer device that
-// is acting as an A2DP source.
+// the device's codec capabilities. |is_capability| is true if
+// |p_codec_info| contains A2DP codec capability.
 // Returns A2DP_SUCCESS if the codec configuration matches with capabilities,
 // otherwise the corresponding A2DP error status code.
 static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityAac(
@@ -390,13 +417,24 @@ int A2DP_GetTrackChannelCountAac(const uint8_t* p_codec_info) {
   return -1;
 }
 
-int A2DP_GetSinkTrackChannelTypeAac(UNUSED_ATTR const uint8_t* p_codec_info) {
-  return -1;
-}
+int A2DP_GetSinkTrackChannelTypeAac(const uint8_t* p_codec_info) {
+  tA2DP_AAC_CIE aac_cie;
 
-int A2DP_GetSinkFramesCountToProcessAac(
-    UNUSED_ATTR uint64_t time_interval_ms,
-    UNUSED_ATTR const uint8_t* p_codec_info) {
+  // Check whether the codec info contains valid data
+  tA2DP_STATUS a2dp_status = A2DP_ParseInfoAac(&aac_cie, p_codec_info, false);
+  if (a2dp_status != A2DP_SUCCESS) {
+    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
+              a2dp_status);
+    return -1;
+  }
+
+  switch (aac_cie.channelMode) {
+    case A2DP_AAC_CHANNEL_MODE_MONO:
+      return 1;
+    case A2DP_AAC_CHANNEL_MODE_STEREO:
+      return 3;
+  }
+
   return -1;
 }
 
@@ -616,6 +654,13 @@ const tA2DP_ENCODER_INTERFACE* A2DP_GetEncoderInterfaceAac(
   return &a2dp_encoder_interface_aac;
 }
 
+const tA2DP_DECODER_INTERFACE* A2DP_GetDecoderInterfaceAac(
+    const uint8_t* p_codec_info) {
+  if (!A2DP_IsSinkCodecValidAac(p_codec_info)) return NULL;
+
+  return &a2dp_decoder_interface_aac;
+}
+
 bool A2DP_AdjustCodecAac(uint8_t* p_codec_info) {
   tA2DP_AAC_CIE cfg_cie;
 
@@ -633,6 +678,8 @@ btav_a2dp_codec_index_t A2DP_SourceCodecIndexAac(
 
 const char* A2DP_CodecIndexStrAac(void) { return "AAC"; }
 
+const char* A2DP_CodecIndexStrAacSink(void) { return "AAC SINK"; }
+
 bool A2DP_InitCodecConfigAac(tAVDT_CFG* p_cfg) {
   if (A2DP_BuildInfoAac(AVDT_MEDIA_TYPE_AUDIO, &a2dp_aac_caps,
                         p_cfg->codec_info) != A2DP_SUCCESS) {
@@ -648,6 +695,11 @@ bool A2DP_InitCodecConfigAac(tAVDT_CFG* p_cfg) {
 #endif
 
   return true;
+}
+
+bool A2DP_InitCodecConfigAacSink(tAVDT_CFG* p_cfg) {
+  return A2DP_BuildInfoAac(AVDT_MEDIA_TYPE_AUDIO, &a2dp_aac_sink_caps,
+                           p_cfg->codec_info) == A2DP_SUCCESS;
 }
 
 UNUSED_ATTR static void build_codec_config(const tA2DP_AAC_CIE& config_cie,
@@ -672,7 +724,8 @@ UNUSED_ATTR static void build_codec_config(const tA2DP_AAC_CIE& config_cie,
 
 A2dpCodecConfigAac::A2dpCodecConfigAac(
     btav_a2dp_codec_priority_t codec_priority)
-    : A2dpCodecConfig(BTAV_A2DP_CODEC_INDEX_SOURCE_AAC, "AAC", codec_priority) {
+    : A2dpCodecConfig(BTAV_A2DP_CODEC_INDEX_SOURCE_AAC, A2DP_CodecIndexStrAac(),
+                      codec_priority) {
   // Compute the local capability
   if (a2dp_aac_caps.sampleRate & A2DP_AAC_SAMPLING_FREQ_44100) {
     codec_local_capability_.sample_rate |= BTAV_A2DP_CODEC_SAMPLE_RATE_44100;
@@ -1261,5 +1314,50 @@ fail:
          sizeof(ota_codec_peer_capability_));
   memcpy(ota_codec_peer_config_, saved_ota_codec_peer_config,
          sizeof(ota_codec_peer_config_));
+  return false;
+}
+
+A2dpCodecConfigAacSink::A2dpCodecConfigAacSink(
+    btav_a2dp_codec_priority_t codec_priority)
+    : A2dpCodecConfig(BTAV_A2DP_CODEC_INDEX_SINK_AAC,
+                      A2DP_CodecIndexStrAacSink(), codec_priority) {}
+
+A2dpCodecConfigAacSink::~A2dpCodecConfigAacSink() {}
+
+bool A2dpCodecConfigAacSink::init() {
+  if (!isValid()) return false;
+
+  // Load the decoder
+  if (!A2DP_LoadDecoderAac()) {
+    LOG_ERROR(LOG_TAG, "%s: cannot load the decoder", __func__);
+    return false;
+  }
+
+  return true;
+}
+
+period_ms_t A2dpCodecConfigAacSink::encoderIntervalMs() const {
+  // TODO: This method applies only to Source codecs
+  return 0;
+}
+
+bool A2dpCodecConfigAacSink::setCodecConfig(
+    UNUSED_ATTR const uint8_t* p_peer_codec_info,
+    UNUSED_ATTR bool is_capability,
+    UNUSED_ATTR uint8_t* p_result_codec_config) {
+  // TODO: This method applies only to Source codecs
+  return false;
+}
+
+bool A2dpCodecConfigAacSink::useRtpHeaderMarkerBit() const {
+  // TODO: This method applies only to Source codecs
+  return false;
+}
+
+bool A2dpCodecConfigAacSink::updateEncoderUserConfig(
+    UNUSED_ATTR const tA2DP_ENCODER_INIT_PEER_PARAMS* p_peer_params,
+    UNUSED_ATTR bool* p_restart_input, UNUSED_ATTR bool* p_restart_output,
+    UNUSED_ATTR bool* p_config_updated) {
+  // TODO: This method applies only to Source codecs
   return false;
 }
