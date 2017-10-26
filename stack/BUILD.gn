@@ -17,10 +17,12 @@
 static_library("stack") {
   sources = [
     "a2dp/a2dp_aac.cc",
+    "a2dp/a2dp_aac_decoder.cc",
     "a2dp/a2dp_aac_encoder.cc",
     "a2dp/a2dp_api.cc",
     "a2dp/a2dp_codec_config.cc",
     "a2dp/a2dp_sbc.cc",
+    "a2dp/a2dp_sbc_decoder.cc",
     "a2dp/a2dp_sbc_encoder.cc",
     "a2dp/a2dp_sbc_up_sample.cc",
     "a2dp/a2dp_vendor.cc",

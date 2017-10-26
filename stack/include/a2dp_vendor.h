@@ -139,15 +139,6 @@ int A2DP_VendorGetTrackChannelCount(const uint8_t* p_codec_info);
 // contains invalid codec information.
 int A2DP_VendorGetSinkTrackChannelType(const uint8_t* p_codec_info);
 
-// Computes the number of frames to process in a time window for the A2DP
-// vendor-specific Sink codec. |time_interval_ms| is the time interval
-// (in milliseconds).
-// |p_codec_info| is a pointer to the codec_info to decode.
-// Returns the number of frames to process on success, or -1 if |p_codec_info|
-// contains invalid codec information.
-int A2DP_VendorGetSinkFramesCountToProcess(uint64_t time_interval_ms,
-                                           const uint8_t* p_codec_info);
-
 // Gets the A2DP codec-specific audio data timestamp from an audio packet.
 // |p_codec_info| contains the codec information.
 // |p_data| contains the audio data.
@@ -171,6 +162,14 @@ bool A2DP_VendorBuildCodecHeader(const uint8_t* p_codec_info, BT_HDR* p_buf,
 // Returns the A2DP vendor encoder interface if the |p_codec_info| is valid and
 // supported, otherwise NULL.
 const tA2DP_ENCODER_INTERFACE* A2DP_VendorGetEncoderInterface(
+    const uint8_t* p_codec_info);
+
+// Gets the current A2DP vendor decoder interface that can be used to decode
+// received A2DP packets - see |tA2DP_DECODER_INTERFACE|.
+// |p_codec_info| contains the codec information.
+// Returns the A2DP vendor decoder interface if the |p_codec_info| is valid and
+// supported, otherwise NULL.
+const tA2DP_DECODER_INTERFACE* A2DP_VendorGetDecoderInterface(
     const uint8_t* p_codec_info);
 
 // Adjusts the A2DP vendor-specific codec, based on local support and Bluetooth

@@ -490,6 +490,27 @@ typedef struct {
   void (*set_transmit_queue_length)(size_t transmit_queue_length);
 } tA2DP_ENCODER_INTERFACE;
 
+// Prototype for a callback to receive decoded audio data from a
+// tA2DP_DECODER_INTERFACE|.
+// |buf| is a pointer to the data.
+// |len| is the number of octets pointed to by |buf|.
+typedef void (*decoded_data_callback_t)(uint8_t* buf, uint32_t len);
+
+//
+// A2DP decoder callbacks interface.
+//
+typedef struct {
+  // Initialize the decoder. Can be called multiple times, will reinitalize.
+  bool (*decoder_init)(decoded_data_callback_t decode_callback);
+
+  // Cleanup the A2DP decoder.
+  void (*decoder_cleanup)();
+
+  // Decodes |p_buf| and calls |decode_callback| passed into init for the
+  // decoded data.
+  bool (*decode_packet)(BT_HDR* p_buf);
+} tA2DP_DECODER_INTERFACE;
+
 // Gets the A2DP codec type.
 // |p_codec_info| contains information about the codec capabilities.
 tA2DP_CODEC_TYPE A2DP_GetCodecType(const uint8_t* p_codec_info);
@@ -592,14 +613,6 @@ int A2DP_GetTrackChannelCount(const uint8_t* p_codec_info);
 // contains invalid codec information.
 int A2DP_GetSinkTrackChannelType(const uint8_t* p_codec_info);
 
-// Computes the number of frames to process in a time window for the A2DP
-// Sink codec. |time_interval_ms| is the time interval (in milliseconds).
-// |p_codec_info| is a pointer to the codec_info to decode.
-// Returns the number of frames to process on success, or -1 if |p_codec_info|
-// contains invalid codec information.
-int A2DP_GetSinkFramesCountToProcess(uint64_t time_interval_ms,
-                                     const uint8_t* p_codec_info);
-
 // Gets the A2DP audio data timestamp from an audio packet.
 // |p_codec_info| contains the codec information.
 // |p_data| contains the audio data.
@@ -622,6 +635,14 @@ bool A2DP_BuildCodecHeader(const uint8_t* p_codec_info, BT_HDR* p_buf,
 // Returns the A2DP encoder interface if the |p_codec_info| is valid and
 // supported, otherwise NULL.
 const tA2DP_ENCODER_INTERFACE* A2DP_GetEncoderInterface(
+    const uint8_t* p_codec_info);
+
+// Gets the A2DP decoder interface that can be used to decode received A2DP
+// packets - see |tA2DP_DECODER_INTERFACE|.
+// |p_codec_info| contains the codec information.
+// Returns the A2DP decoder interface if the |p_codec_info| is valid and
+// supported, otherwise NULL.
+const tA2DP_DECODER_INTERFACE* A2DP_GetDecoderInterface(
     const uint8_t* p_codec_info);
 
 // Adjusts the A2DP codec, based on local support and Bluetooth specification.
