@@ -2348,17 +2348,11 @@ static void fcchan_data_cbk(uint16_t chan, const RawAddress& bd_addr,
   if (sock_cback) sock_cback(BTA_JV_L2CAP_DATA_IND_EVT, &evt_data, sock_id);
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_l2cap_connect_le
- *
- * Description  makes an le l2cap client connection
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_l2cap_connect_le(tBTA_JV_MSG* p_data) {
-  tBTA_JV_API_L2CAP_CONNECT* cc = &(p_data->l2cap_connect);
+/** makes an le l2cap client connection */
+void bta_jv_l2cap_connect_le(uint16_t remote_chan,
+                             const RawAddress& peer_bd_addr,
+                             tBTA_JV_L2CAP_CBACK* p_cback,
+                             uint32_t l2cap_socket_id) {
   tBTA_JV evt;
   uint32_t id;
   char call_init_f = true;
@@ -2367,15 +2361,15 @@ void bta_jv_l2cap_connect_le(tBTA_JV_MSG* p_data) {
   evt.l2c_cl_init.handle = GAP_INVALID_HANDLE;
   evt.l2c_cl_init.status = BTA_JV_FAILURE;
 
-  t = fcclient_alloc(cc->remote_chan, false, NULL);
+  t = fcclient_alloc(remote_chan, false, NULL);
   if (!t) {
-    cc->p_cback(BTA_JV_L2CAP_CL_INIT_EVT, &evt, cc->l2cap_socket_id);
+    p_cback(BTA_JV_L2CAP_CL_INIT_EVT, &evt, l2cap_socket_id);
     return;
   }
 
-  t->p_cback = cc->p_cback;
-  t->l2cap_socket_id = cc->l2cap_socket_id;
-  t->remote_addr = cc->peer_bd_addr;
+  t->p_cback = p_cback;
+  t->l2cap_socket_id = l2cap_socket_id;
+  t->remote_addr = peer_bd_addr;
   id = t->id;
   t->init_called = false;
 
@@ -2392,8 +2386,7 @@ void bta_jv_l2cap_connect_le(tBTA_JV_MSG* p_data) {
     else
       fcclient_free(t);
   }
-  if (call_init_f)
-    cc->p_cback(BTA_JV_L2CAP_CL_INIT_EVT, &evt, cc->l2cap_socket_id);
+  if (call_init_f) p_cback(BTA_JV_L2CAP_CL_INIT_EVT, &evt, l2cap_socket_id);
   t->init_called = true;
 }
 
