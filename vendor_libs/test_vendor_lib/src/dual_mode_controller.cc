@@ -48,18 +48,6 @@ void LogCommand(const char* command) {
   LOG_INFO(LOG_TAG, "Controller performing command: %s", command);
 }
 
-// Functions used by JSONValueConverter to read stringified JSON into Properties
-// object.
-bool ParseUint8t(const base::StringPiece& value, uint8_t* field) {
-  *field = std::stoi(value.as_string());
-  return true;
-}
-
-bool ParseUint16t(const base::StringPiece& value, uint16_t* field) {
-  *field = std::stoi(value.as_string());
-  return true;
-}
-
 }  // namespace
 
 namespace test_vendor_lib {
@@ -928,81 +916,6 @@ void DualModeController::HciWriteLoopbackMode(const vector<uint8_t>& args) {
       kSuccessStatus, sco_handle, properties_.GetAddress(), HCI_LINK_TYPE_SCO,
       false));
   SendCommandCompleteSuccess(HCI_WRITE_LOOPBACK_MODE);
-}
-
-DualModeController::Properties::Properties(const std::string& file_name)
-    : acl_data_packet_size_(1024),
-      sco_data_packet_size_(255),
-      num_acl_data_packets_(10),
-      num_sco_data_packets_(10),
-      version_(HCI_PROTO_VERSION_4_1),
-      revision_(0),
-      lmp_pal_version_(7), /* 4.1 */
-      manufacturer_name_(0),
-      lmp_pal_subversion_(0),
-      le_data_packet_length_(27),
-      num_le_data_packets_(15),
-      le_white_list_size_(15) {
-  std::string properties_raw;
-
-  local_extended_features_ = {0xffffffffffffffff, 0x7};
-
-  CHECK(address_.FromString("01:02:03:04:05:06"));
-  local_name_ = "DefaultName";
-
-  supported_codecs_ = {1};
-  vendor_specific_codecs_ = {};
-
-  for (int i = 0; i < 64; i++) local_supported_commands_.push_back(0xff);
-
-  le_supported_features_ = 0x1f;
-  le_supported_states_ = 0x3ffffffffff;
-  le_vendor_cap_ = {};
-
-  LOG_INFO(LOG_TAG, "Reading controller properties from %s.",
-           file_name.c_str());
-  if (!base::ReadFileToString(base::FilePath(file_name), &properties_raw)) {
-    LOG_ERROR(LOG_TAG, "Error reading controller properties from file.");
-    return;
-  }
-
-  std::unique_ptr<base::Value> properties_value_ptr =
-      base::JSONReader::Read(properties_raw);
-  if (properties_value_ptr.get() == nullptr)
-    LOG_INFO(LOG_TAG,
-             "Error controller properties may consist of ill-formed JSON.");
-
-  // Get the underlying base::Value object, which is of type
-  // base::Value::TYPE_DICTIONARY, and read it into member variables.
-  base::Value& properties_dictionary = *(properties_value_ptr.get());
-  base::JSONValueConverter<DualModeController::Properties> converter;
-
-  if (!converter.Convert(properties_dictionary, this))
-    LOG_INFO(LOG_TAG,
-             "Error converting JSON properties into Properties object.");
-}
-
-// static
-void DualModeController::Properties::RegisterJSONConverter(
-    base::JSONValueConverter<DualModeController::Properties>* converter) {
-// TODO(dennischeng): Use RegisterIntField() here?
-#define REGISTER_UINT8_T(field_name, field) \
-  converter->RegisterCustomField<uint8_t>(  \
-      field_name, &DualModeController::Properties::field, &ParseUint8t);
-#define REGISTER_UINT16_T(field_name, field) \
-  converter->RegisterCustomField<uint16_t>(  \
-      field_name, &DualModeController::Properties::field, &ParseUint16t);
-  REGISTER_UINT16_T("AclDataPacketSize", acl_data_packet_size_);
-  REGISTER_UINT8_T("ScoDataPacketSize", sco_data_packet_size_);
-  REGISTER_UINT16_T("NumAclDataPackets", num_acl_data_packets_);
-  REGISTER_UINT16_T("NumScoDataPackets", num_sco_data_packets_);
-  REGISTER_UINT8_T("Version", version_);
-  REGISTER_UINT16_T("Revision", revision_);
-  REGISTER_UINT8_T("LmpPalVersion", lmp_pal_version_);
-  REGISTER_UINT16_T("ManufacturerName", manufacturer_name_);
-  REGISTER_UINT16_T("LmpPalSubversion", lmp_pal_subversion_);
-#undef REGISTER_UINT8_T
-#undef REGISTER_UINT16_T
 }
 
 }  // namespace test_vendor_lib
