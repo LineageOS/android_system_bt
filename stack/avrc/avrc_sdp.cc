@@ -209,7 +209,17 @@ uint16_t AVRC_AddRecord(uint16_t service_uuid, const char* p_service_name,
   }
   result &= SDP_AddServiceClassIdList(sdp_handle, count, class_list);
 
-  /* add protocol descriptor list   */
+  uint16_t protocol_reported_version;
+  /* AVRCP versions 1.3 to 1.5 report (version - 1) in the protocol
+     descriptor list. Oh, and 1.6 and 1.6.1 report version 1.4.
+     /because-we-smart */
+  if (profile_version < AVRC_REV_1_6) {
+    protocol_reported_version = profile_version - 1;
+  } else {
+    protocol_reported_version = AVCT_REV_1_4;
+  }
+
+  /* add protocol descriptor list */
   tSDP_PROTOCOL_ELEM avrc_proto_desc_list[AVRC_NUM_PROTO_ELEMS];
   avrc_proto_desc_list[0].num_params = 1;
   avrc_proto_desc_list[0].protocol_uuid = UUID_PROTOCOL_L2CAP;
@@ -218,13 +228,13 @@ uint16_t AVRC_AddRecord(uint16_t service_uuid, const char* p_service_name,
   for (index = 1; index < AVRC_NUM_PROTO_ELEMS; index++) {
     avrc_proto_desc_list[index].num_params = 1;
     avrc_proto_desc_list[index].protocol_uuid = UUID_PROTOCOL_AVCTP;
-    avrc_proto_desc_list[index].params[0] = AVCT_REV_1_4;
+    avrc_proto_desc_list[index].params[0] = protocol_reported_version;
     avrc_proto_desc_list[index].params[1] = 0;
   }
   result &= SDP_AddProtocolList(sdp_handle, AVRC_NUM_PROTO_ELEMS,
                                 &avrc_proto_desc_list[0]);
 
-  /* additional protocal descriptor, required only for version > 1.3    */
+  /* additional protocal descriptor, required only for version > 1.3 */
   if ((profile_version > AVRC_REV_1_3) && (browse_supported)) {
     tSDP_PROTO_LIST_ELEM avrc_add_proto_desc_list;
     avrc_add_proto_desc_list.num_elems = 2;
@@ -234,7 +244,7 @@ uint16_t AVRC_AddRecord(uint16_t service_uuid, const char* p_service_name,
     avrc_add_proto_desc_list.list_elem[0].params[1] = 0;
     avrc_add_proto_desc_list.list_elem[1].num_params = 1;
     avrc_add_proto_desc_list.list_elem[1].protocol_uuid = UUID_PROTOCOL_AVCTP;
-    avrc_add_proto_desc_list.list_elem[1].params[0] = AVCT_REV_1_4;
+    avrc_add_proto_desc_list.list_elem[1].params[0] = protocol_reported_version;
     avrc_add_proto_desc_list.list_elem[1].params[1] = 0;
 
     result &=
