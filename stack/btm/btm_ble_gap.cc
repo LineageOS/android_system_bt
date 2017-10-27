@@ -1841,10 +1841,10 @@ void btm_clear_all_pending_le_entry(void) {
   }
 }
 
-void btm_ble_process_adv_addr(RawAddress& bda, uint8_t addr_type) {
+void btm_ble_process_adv_addr(RawAddress& bda, uint8_t* addr_type) {
 #if (BLE_PRIVACY_SPT == TRUE)
   /* map address to security record */
-  bool match = btm_identity_addr_to_random_pseudo(&bda, &addr_type, false);
+  bool match = btm_identity_addr_to_random_pseudo(&bda, addr_type, false);
 
   VLOG(1) << __func__ << ": bda=" << bda;
   /* always do RRA resolution on host */
@@ -1915,7 +1915,7 @@ void btm_ble_process_ext_adv_pkt(uint8_t data_len, uint8_t* data) {
                       pkt_data_len, rssi);
     }
 
-    btm_ble_process_adv_addr(bda, addr_type);
+    btm_ble_process_adv_addr(bda, &addr_type);
     btm_ble_process_adv_pkt_cont(event_type, addr_type, bda, primary_phy,
                                  secondary_phy, advertising_sid, tx_power, rssi,
                                  periodic_adv_int, pkt_data_len, pkt_data);
@@ -1962,7 +1962,7 @@ void btm_ble_process_adv_pkt(uint8_t data_len, uint8_t* data) {
                       pkt_data_len, rssi);
     }
 
-    btm_ble_process_adv_addr(bda, addr_type);
+    btm_ble_process_adv_addr(bda, &addr_type);
 
     uint16_t event_type;
     if (legacy_evt_type == 0x00) {  // ADV_IND;
