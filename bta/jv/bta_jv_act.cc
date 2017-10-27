@@ -715,19 +715,10 @@ void bta_jv_get_channel_id(
   }
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_free_scn
- *
- * Description  free a SCN
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_free_scn(tBTA_JV_MSG* p_data) {
-  uint16_t scn = p_data->free_channel.scn;
-
-  switch (p_data->free_channel.type) {
+/** free a SCN */
+void bta_jv_free_scn(int32_t type /* One of BTA_JV_CONN_TYPE_ */,
+                     uint16_t scn) {
+  switch (type) {
     case BTA_JV_CONN_TYPE_RFCOMM: {
       if (scn > 0 && scn <= BTA_JV_MAX_SCN && bta_jv_cb.scn[scn - 1]) {
         /* this scn is used by JV */
