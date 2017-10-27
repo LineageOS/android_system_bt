@@ -15,6 +15,7 @@ cc_library_static {
         "src/connection.cc",
         "src/device.cc",
         "src/device_factory.cc",
+        "src/device_properties.cc",
         "src/dual_mode_controller.cc",
         "src/event_packet.cc",
         "src/hci_packet.cc",
