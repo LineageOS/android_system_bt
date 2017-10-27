@@ -48,7 +48,6 @@ enum {
   BTA_JV_API_RFCOMM_WRITE_EVT,
   BTA_JV_API_SET_PM_PROFILE_EVT,
   BTA_JV_API_PM_STATE_CHANGE_EVT,
-  BTA_JV_API_L2CAP_STOP_SERVER_LE_EVT,
   BTA_JV_API_L2CAP_WRITE_FIXED_EVT,
   BTA_JV_MAX_INT_EVT
 };
@@ -133,25 +132,6 @@ typedef struct {
   uint8_t max_sess;       /* max sessions */
   int curr_sess;          /* current sessions count*/
 } tBTA_JV_RFC_CB;
-
-/* data type for BTA_JV_API_L2CAP_SERVER_EVT */
-typedef struct {
-  BT_HDR hdr;
-  int32_t type; /* One of BTA_JV_CONN_TYPE_ */
-  tBTA_SEC sec_mask;
-  tBTA_JV_ROLE role;
-  union {
-    uint16_t local_psm;
-    uint16_t local_chan;
-  };
-  uint16_t rx_mtu;
-  int32_t has_cfg;
-  tL2CAP_CFG_INFO cfg;
-  int32_t has_ertm_info;
-  tL2CAP_ERTM_INFO ertm_info;
-  tBTA_JV_L2CAP_CBACK* p_cback;
-  uint32_t l2cap_socket_id;
-} tBTA_JV_API_L2CAP_SERVER;
 
 /* data type for BTA_JV_API_L2CAP_READ_EVT */
 typedef struct {
@@ -252,7 +232,6 @@ typedef union {
   tBTA_JV_API_START_DISCOVERY start_discovery;
   tBTA_JV_API_L2CAP_READ l2cap_read;
   tBTA_JV_API_L2CAP_WRITE l2cap_write;
-  tBTA_JV_API_L2CAP_SERVER l2cap_server;
   tBTA_JV_API_RFCOMM_CONNECT rfcomm_connect;
   tBTA_JV_API_RFCOMM_WRITE rfcomm_write;
   tBTA_JV_API_SET_PM_PROFILE set_pm;
@@ -339,7 +318,7 @@ extern void bta_jv_l2cap_connect_le(uint16_t remote_chan,
 extern void bta_jv_l2cap_start_server_le(uint16_t local_chan,
                                          tBTA_JV_L2CAP_CBACK* p_cback,
                                          uint32_t l2cap_socket_id);
-extern void bta_jv_l2cap_stop_server_le(tBTA_JV_MSG* p_data);
+extern void bta_jv_l2cap_stop_server_le(uint16_t local_chan);
 extern void bta_jv_l2cap_write_fixed(tBTA_JV_MSG* p_data);
 extern void bta_jv_l2cap_close_fixed(uint32_t handle);
 
