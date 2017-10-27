@@ -842,24 +842,15 @@ void bta_jv_start_discovery(tBTA_JV_MSG* p_data) {
   */
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_create_record
- *
- * Description  Create an SDP record with the given attributes
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_create_record(tBTA_JV_MSG* p_data) {
-  tBTA_JV_API_CREATE_RECORD* cr = &(p_data->create_record);
+/* Create an SDP record with the given attributes */
+void bta_jv_create_record(uint32_t rfcomm_slot_id) {
   tBTA_JV_CREATE_RECORD evt_data;
   evt_data.status = BTA_JV_SUCCESS;
   if (bta_jv_cb.p_dm_cback) {
     // callback immediately to create the sdp record in stack thread context
     tBTA_JV bta_jv;
     bta_jv.create_rec = evt_data;
-    bta_jv_cb.p_dm_cback(BTA_JV_CREATE_RECORD_EVT, &bta_jv, cr->rfcomm_slot_id);
+    bta_jv_cb.p_dm_cback(BTA_JV_CREATE_RECORD_EVT, &bta_jv, rfcomm_slot_id);
   }
 }
 
