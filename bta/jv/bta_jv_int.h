@@ -39,7 +39,6 @@
 enum {
   /* these events are handled by the state machine */
   BTA_JV_API_START_DISCOVERY_EVT = BTA_SYS_EVT_START(BTA_ID_JV),
-  BTA_JV_API_L2CAP_CLOSE_EVT,
   BTA_JV_API_L2CAP_START_SERVER_EVT,
   BTA_JV_API_L2CAP_STOP_SERVER_EVT,
   BTA_JV_API_L2CAP_READ_EVT,
@@ -327,7 +326,7 @@ extern void bta_jv_l2cap_connect(int32_t type, tBTA_SEC sec_mask,
                                  std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info,
                                  tBTA_JV_L2CAP_CBACK* p_cback,
                                  uint32_t l2cap_socket_id);
-extern void bta_jv_l2cap_close(tBTA_JV_MSG* p_data);
+extern void bta_jv_l2cap_close(uint32_t handle, tBTA_JV_L2C_CB* p_cb);
 extern void bta_jv_l2cap_start_server(tBTA_JV_MSG* p_data);
 extern void bta_jv_l2cap_stop_server(tBTA_JV_MSG* p_data);
 extern void bta_jv_l2cap_read(tBTA_JV_MSG* p_data);

@@ -324,22 +324,14 @@ tBTA_JV_STATUS BTA_JvL2capConnect(
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvL2capClose(uint32_t handle) {
-  tBTA_JV_STATUS status = BTA_JV_FAILURE;
-
   APPL_TRACE_API("%s", __func__);
 
-  if (handle < BTA_JV_MAX_L2C_CONN && bta_jv_cb.l2c_cb[handle].p_cback) {
-    tBTA_JV_API_L2CAP_CLOSE* p_msg =
-        (tBTA_JV_API_L2CAP_CLOSE*)osi_malloc(sizeof(tBTA_JV_API_L2CAP_CLOSE));
-    p_msg->hdr.event = BTA_JV_API_L2CAP_CLOSE_EVT;
-    p_msg->handle = handle;
-    p_msg->p_cb = &bta_jv_cb.l2c_cb[handle];
+  if (handle >= BTA_JV_MAX_L2C_CONN || !bta_jv_cb.l2c_cb[handle].p_cback)
+    return BTA_JV_FAILURE;
 
-    bta_sys_sendmsg(p_msg);
-    status = BTA_JV_SUCCESS;
-  }
-
-  return status;
+  do_in_bta_thread(
+      FROM_HERE, Bind(&bta_jv_l2cap_close, handle, &bta_jv_cb.l2c_cb[handle]));
+  return BTA_JV_SUCCESS;
 }
 
 /*******************************************************************************
