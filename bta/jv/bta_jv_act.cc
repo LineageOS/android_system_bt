@@ -1745,20 +1745,9 @@ void bta_jv_rfcomm_stop_server(uint32_t handle, uint32_t rfcomm_slot_id) {
       get_sec_id_used(), get_rfc_cb_used());
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_rfcomm_write
- *
- * Description  write data to an RFCOMM connection
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_rfcomm_write(tBTA_JV_MSG* p_data) {
-  tBTA_JV_API_RFCOMM_WRITE* wc = &(p_data->rfcomm_write);
-  tBTA_JV_RFC_CB* p_cb = wc->p_cb;
-  tBTA_JV_PCB* p_pcb = wc->p_pcb;
-
+/* write data to an RFCOMM connection */
+void bta_jv_rfcomm_write(uint32_t handle, uint32_t req_id, tBTA_JV_RFC_CB* p_cb,
+                         tBTA_JV_PCB* p_pcb) {
   if (p_pcb->state == BTA_JV_ST_NONE) {
     APPL_TRACE_ERROR("%s in state BTA_JV_ST_NONE - cannot write", __func__);
     return;
@@ -1766,8 +1755,8 @@ void bta_jv_rfcomm_write(tBTA_JV_MSG* p_data) {
 
   tBTA_JV_RFCOMM_WRITE evt_data;
   evt_data.status = BTA_JV_FAILURE;
-  evt_data.handle = p_cb->handle;
-  evt_data.req_id = wc->req_id;
+  evt_data.handle = handle;
+  evt_data.req_id = req_id;
   evt_data.cong = p_pcb->cong;
   evt_data.len = 0;
 
@@ -1781,13 +1770,14 @@ void bta_jv_rfcomm_write(tBTA_JV_MSG* p_data) {
   // Update congestion flag
   evt_data.cong = p_pcb->cong;
 
-  if (p_cb->p_cback) {
-    tBTA_JV bta_jv;
-    bta_jv.rfc_write = evt_data;
-    p_cb->p_cback(BTA_JV_RFCOMM_WRITE_EVT, &bta_jv, p_pcb->rfcomm_slot_id);
-  } else {
+  if (!p_cb->p_cback) {
     APPL_TRACE_ERROR("%s No JV callback set", __func__);
+    return;
   }
+
+  tBTA_JV bta_jv;
+  bta_jv.rfc_write = evt_data;
+  p_cb->p_cback(BTA_JV_RFCOMM_WRITE_EVT, &bta_jv, p_pcb->rfcomm_slot_id);
 }
 
 /*******************************************************************************

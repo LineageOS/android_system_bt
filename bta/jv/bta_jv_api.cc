@@ -718,29 +718,23 @@ uint16_t BTA_JvRfcommGetPortHdl(uint32_t handle) {
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvRfcommWrite(uint32_t handle, uint32_t req_id) {
-  tBTA_JV_STATUS status = BTA_JV_FAILURE;
   uint32_t hi = ((handle & BTA_JV_RFC_HDL_MASK) & ~BTA_JV_RFCOMM_MASK) - 1;
   uint32_t si = BTA_JV_RFC_HDL_TO_SIDX(handle);
 
   APPL_TRACE_API("%s", __func__);
 
   APPL_TRACE_DEBUG("handle:0x%x, hi:%d, si:%d", handle, hi, si);
-  if (hi < BTA_JV_MAX_RFC_CONN && bta_jv_cb.rfc_cb[hi].p_cback &&
-      si < BTA_JV_MAX_RFC_SR_SESSION && bta_jv_cb.rfc_cb[hi].rfc_hdl[si]) {
-    tBTA_JV_API_RFCOMM_WRITE* p_msg =
-        (tBTA_JV_API_RFCOMM_WRITE*)osi_malloc(sizeof(tBTA_JV_API_RFCOMM_WRITE));
-    p_msg->hdr.event = BTA_JV_API_RFCOMM_WRITE_EVT;
-    p_msg->handle = handle;
-    p_msg->req_id = req_id;
-    p_msg->p_cb = &bta_jv_cb.rfc_cb[hi];
-    p_msg->p_pcb = &bta_jv_cb.port_cb[p_msg->p_cb->rfc_hdl[si] - 1];
-    APPL_TRACE_API("write ok");
-
-    bta_sys_sendmsg(p_msg);
-    status = BTA_JV_SUCCESS;
+  if (hi >= BTA_JV_MAX_RFC_CONN || !bta_jv_cb.rfc_cb[hi].p_cback ||
+      si >= BTA_JV_MAX_RFC_SR_SESSION || !bta_jv_cb.rfc_cb[hi].rfc_hdl[si]) {
+    return BTA_JV_FAILURE;
   }
 
-  return status;
+  APPL_TRACE_API("write ok");
+
+  tBTA_JV_RFC_CB* p_cb = &bta_jv_cb.rfc_cb[hi];
+  do_in_bta_thread(FROM_HERE, Bind(&bta_jv_rfcomm_write, handle, req_id, p_cb,
+                                   &bta_jv_cb.port_cb[p_cb->rfc_hdl[si] - 1]));
+  return BTA_JV_SUCCESS;
 }
 
 /*******************************************************************************
