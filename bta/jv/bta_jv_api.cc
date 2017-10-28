@@ -572,23 +572,10 @@ tBTA_JV_STATUS BTA_JvL2capWriteFixed(uint16_t channel, const RawAddress& addr,
                                      tBTA_JV_L2CAP_CBACK* p_cback,
                                      uint8_t* p_data, uint16_t len,
                                      uint32_t user_id) {
-  tBTA_JV_API_L2CAP_WRITE_FIXED* p_msg =
-      (tBTA_JV_API_L2CAP_WRITE_FIXED*)osi_malloc(
-          sizeof(tBTA_JV_API_L2CAP_WRITE_FIXED));
-
   APPL_TRACE_API("%s", __func__);
 
-  p_msg->hdr.event = BTA_JV_API_L2CAP_WRITE_FIXED_EVT;
-  p_msg->channel = channel;
-  p_msg->addr = addr;
-  p_msg->req_id = req_id;
-  p_msg->p_data = p_data;
-  p_msg->p_cback = p_cback;
-  p_msg->len = len;
-  p_msg->user_id = user_id;
-
-  bta_sys_sendmsg(p_msg);
-
+  do_in_bta_thread(FROM_HERE, Bind(&bta_jv_l2cap_write_fixed, channel, addr,
+                                   req_id, p_data, len, user_id, p_cback));
   return BTA_JV_SUCCESS;
 }
 
