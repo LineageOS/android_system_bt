@@ -167,17 +167,9 @@ tBTA_JV_STATUS BTA_JvGetChannelId(int conn_type, uint32_t id, int32_t channel) {
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvFreeChannel(uint16_t channel, int conn_type) {
-  tBTA_JV_API_FREE_CHANNEL* p_msg =
-      (tBTA_JV_API_FREE_CHANNEL*)osi_malloc(sizeof(tBTA_JV_API_FREE_CHANNEL));
-
   APPL_TRACE_API("%s", __func__);
 
-  p_msg->hdr.event = BTA_JV_API_FREE_SCN_EVT;
-  p_msg->scn = channel;
-  p_msg->type = conn_type;
-
-  bta_sys_sendmsg(p_msg);
-
+  do_in_bta_thread(FROM_HERE, Bind(&bta_jv_free_scn, conn_type, channel));
   return BTA_JV_SUCCESS;
 }
 
