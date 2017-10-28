@@ -662,22 +662,15 @@ static void bta_jv_set_free_psm(uint16_t psm) {
   }
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_get_channel_id
- *
- * Description  Obtain a free SCN (Server Channel Number)
- *              (RFCOMM channel or L2CAP PSM)
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_get_channel_id(tBTA_JV_MSG* p_data) {
+/** Obtain a free SCN (Server Channel Number) (RFCOMM channel or L2CAP PSM) */
+void bta_jv_get_channel_id(
+    int32_t type /* One of BTA_JV_CONN_TYPE_ */,
+    int32_t channel /* optionally request a specific channel */,
+    uint32_t l2cap_socket_id, uint32_t rfcomm_slot_id) {
   uint16_t psm = 0;
 
-  switch (p_data->alloc_channel.type) {
+  switch (type) {
     case BTA_JV_CONN_TYPE_RFCOMM: {
-      int32_t channel = p_data->alloc_channel.channel;
       uint8_t scn = 0;
       if (channel > 0) {
         if (!BTM_TryAllocateSCN(channel)) {
@@ -698,8 +691,7 @@ void bta_jv_get_channel_id(tBTA_JV_MSG* p_data) {
       if (bta_jv_cb.p_dm_cback) {
         tBTA_JV bta_jv;
         bta_jv.scn = scn;
-        bta_jv_cb.p_dm_cback(BTA_JV_GET_SCN_EVT, &bta_jv,
-                             p_data->alloc_channel.rfcomm_slot_id);
+        bta_jv_cb.p_dm_cback(BTA_JV_GET_SCN_EVT, &bta_jv, rfcomm_slot_id);
       }
       return;
     }
@@ -719,8 +711,7 @@ void bta_jv_get_channel_id(tBTA_JV_MSG* p_data) {
   if (bta_jv_cb.p_dm_cback) {
     tBTA_JV bta_jv;
     bta_jv.psm = psm;
-    bta_jv_cb.p_dm_cback(BTA_JV_GET_PSM_EVT, &bta_jv,
-                         p_data->alloc_channel.l2cap_socket_id);
+    bta_jv_cb.p_dm_cback(BTA_JV_GET_PSM_EVT, &bta_jv, l2cap_socket_id);
   }
 }
 
