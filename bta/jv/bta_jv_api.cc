@@ -597,20 +597,11 @@ tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
                                    uint32_t rfcomm_slot_id) {
   APPL_TRACE_API("%s", __func__);
 
-  if (p_cback == NULL) return BTA_JV_FAILURE; /* Nothing to do */
+  if (!p_cback) return BTA_JV_FAILURE; /* Nothing to do */
 
-  tBTA_JV_API_RFCOMM_CONNECT* p_msg = (tBTA_JV_API_RFCOMM_CONNECT*)osi_malloc(
-      sizeof(tBTA_JV_API_RFCOMM_CONNECT));
-  p_msg->hdr.event = BTA_JV_API_RFCOMM_CONNECT_EVT;
-  p_msg->sec_mask = sec_mask;
-  p_msg->role = role;
-  p_msg->remote_scn = remote_scn;
-  p_msg->peer_bd_addr = peer_bd_addr;
-  p_msg->p_cback = p_cback;
-  p_msg->rfcomm_slot_id = rfcomm_slot_id;
-
-  bta_sys_sendmsg(p_msg);
-
+  do_in_bta_thread(FROM_HERE,
+                   Bind(&bta_jv_rfcomm_connect, sec_mask, role, remote_scn,
+                        peer_bd_addr, p_cback, rfcomm_slot_id));
   return BTA_JV_SUCCESS;
 }
 

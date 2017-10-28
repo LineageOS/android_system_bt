@@ -1341,57 +1341,50 @@ static void bta_jv_port_event_cl_cback(uint32_t code, uint16_t port_handle) {
   }
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_rfcomm_connect
- *
- * Description  Client initiates an RFCOMM connection
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_rfcomm_connect(tBTA_JV_MSG* p_data) {
+/* Client initiates an RFCOMM connection */
+void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
+                           uint8_t remote_scn, const RawAddress& peer_bd_addr,
+                           tBTA_JV_RFCOMM_CBACK* p_cback,
+                           uint32_t rfcomm_slot_id) {
   uint16_t handle = 0;
   uint32_t event_mask = BTA_JV_RFC_EV_MASK;
   tPORT_STATE port_state;
-  uint8_t sec_id = 0;
-  tBTA_JV_RFC_CB* p_cb = NULL;
-  tBTA_JV_PCB* p_pcb;
-  tBTA_JV_API_RFCOMM_CONNECT* cc = &(p_data->rfcomm_connect);
-  tBTA_JV_RFCOMM_CL_INIT evt_data;
 
   /* TODO DM role manager
-  L2CA_SetDesireRole(cc->role);
+  L2CA_SetDesireRole(role);
   */
 
-  sec_id = bta_jv_alloc_sec_id();
+  uint8_t sec_id = bta_jv_alloc_sec_id();
+
+  tBTA_JV_RFCOMM_CL_INIT evt_data;
   memset(&evt_data, 0, sizeof(evt_data));
   evt_data.sec_id = sec_id;
   evt_data.status = BTA_JV_SUCCESS;
   if (0 == sec_id ||
-      !BTM_SetSecurityLevel(true, "", sec_id, cc->sec_mask, BT_PSM_RFCOMM,
-                            BTM_SEC_PROTO_RFCOMM, cc->remote_scn)) {
+      !BTM_SetSecurityLevel(true, "", sec_id, sec_mask, BT_PSM_RFCOMM,
+                            BTM_SEC_PROTO_RFCOMM, remote_scn)) {
     evt_data.status = BTA_JV_FAILURE;
     APPL_TRACE_ERROR(
         "sec_id:%d is zero or BTM_SetSecurityLevel failed, remote_scn:%d",
-        sec_id, cc->remote_scn);
+        sec_id, remote_scn);
   }
 
   if (evt_data.status == BTA_JV_SUCCESS &&
-      RFCOMM_CreateConnection(UUID_SERVCLASS_SERIAL_PORT, cc->remote_scn, false,
-                              BTA_JV_DEF_RFC_MTU, cc->peer_bd_addr, &handle,
+      RFCOMM_CreateConnection(UUID_SERVCLASS_SERIAL_PORT, remote_scn, false,
+                              BTA_JV_DEF_RFC_MTU, peer_bd_addr, &handle,
                               bta_jv_port_mgmt_cl_cback) != PORT_SUCCESS) {
     APPL_TRACE_ERROR("bta_jv_rfcomm_connect, RFCOMM_CreateConnection failed");
     evt_data.status = BTA_JV_FAILURE;
   }
   if (evt_data.status == BTA_JV_SUCCESS) {
-    p_cb = bta_jv_alloc_rfc_cb(handle, &p_pcb);
+    tBTA_JV_PCB* p_pcb;
+    tBTA_JV_RFC_CB* p_cb = bta_jv_alloc_rfc_cb(handle, &p_pcb);
     if (p_cb) {
-      p_cb->p_cback = cc->p_cback;
+      p_cb->p_cback = p_cback;
       p_cb->sec_id = sec_id;
       p_cb->scn = 0;
       p_pcb->state = BTA_JV_ST_CL_OPENING;
-      p_pcb->rfcomm_slot_id = cc->rfcomm_slot_id;
+      p_pcb->rfcomm_slot_id = rfcomm_slot_id;
       evt_data.use_co = true;
 
       PORT_SetEventCallback(handle, bta_jv_port_event_cl_cback);
@@ -1412,7 +1405,7 @@ void bta_jv_rfcomm_connect(tBTA_JV_MSG* p_data) {
   }
   tBTA_JV bta_jv;
   bta_jv.rfc_cl_init = evt_data;
-  cc->p_cback(BTA_JV_RFCOMM_CL_INIT_EVT, &bta_jv, cc->rfcomm_slot_id);
+  p_cback(BTA_JV_RFCOMM_CL_INIT_EVT, &bta_jv, rfcomm_slot_id);
   if (bta_jv.rfc_cl_init.status == BTA_JV_FAILURE) {
     if (sec_id) bta_jv_free_sec_id(&sec_id);
     if (handle) RFCOMM_RemoveConnection(handle);
