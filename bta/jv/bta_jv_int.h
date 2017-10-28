@@ -36,8 +36,7 @@
 
 enum {
   /* these events are handled by the state machine */
-  BTA_JV_API_ENABLE_EVT = BTA_SYS_EVT_START(BTA_ID_JV),
-  BTA_JV_API_DISABLE_EVT,
+  BTA_JV_API_DISABLE_EVT = BTA_SYS_EVT_START(BTA_ID_JV),
   BTA_JV_API_GET_CHANNEL_EVT,
   BTA_JV_API_FREE_SCN_EVT,
   BTA_JV_API_START_DISCOVERY_EVT,
@@ -68,12 +67,6 @@ enum {
 #define BTA_JV_RFC_EV_MASK \
   (PORT_EV_RXCHAR | PORT_EV_TXEMPTY | PORT_EV_FC | PORT_EV_FCS)
 #endif
-
-/* data type for BTA_JV_API_ENABLE_EVT */
-typedef struct {
-  BT_HDR hdr;
-  tBTA_JV_DM_CBACK* p_cback;
-} tBTA_JV_API_ENABLE;
 
 /* data type for BTA_JV_API_START_DISCOVERY_EVT */
 typedef struct {
@@ -324,7 +317,6 @@ typedef struct {
 typedef union {
   /* GKI event buffer header */
   BT_HDR hdr;
-  tBTA_JV_API_ENABLE enable;
   tBTA_JV_API_START_DISCOVERY start_discovery;
   tBTA_JV_API_ALLOC_CHANNEL alloc_channel;
   tBTA_JV_API_FREE_CHANNEL free_channel;
@@ -379,7 +371,7 @@ extern tBTA_JV_CFG* p_bta_jv_cfg;
 
 extern bool bta_jv_sm_execute(BT_HDR* p_msg);
 
-extern void bta_jv_enable(tBTA_JV_MSG* p_data);
+extern void bta_jv_enable(tBTA_JV_DM_CBACK* p_cback);
 extern void bta_jv_disable(tBTA_JV_MSG* p_data);
 extern void bta_jv_get_channel_id(tBTA_JV_MSG* p_data);
 extern void bta_jv_free_scn(tBTA_JV_MSG* p_data);
