@@ -22,10 +22,12 @@
  *  Technology (JABWT) as specified by the JSR82 specificiation
  *
  ******************************************************************************/
+#include <base/bind.h>
 #include <string.h>
 
 #include "bt_common.h"
 #include "bta_api.h"
+#include "bta_closure_api.h"
 #include "bta_jv_api.h"
 #include "bta_jv_int.h"
 #include "bta_sys.h"
@@ -34,6 +36,7 @@
 #include "sdp_api.h"
 #include "utl.h"
 
+using base::Bind;
 using bluetooth::Uuid;
 
 /*****************************************************************************
@@ -72,11 +75,7 @@ tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK* p_cback) {
     bta_sys_register(BTA_ID_JV, &bta_jv_reg);
 
     if (p_cback) {
-      tBTA_JV_API_ENABLE* p_buf =
-          (tBTA_JV_API_ENABLE*)osi_malloc(sizeof(tBTA_JV_API_ENABLE));
-      p_buf->hdr.event = BTA_JV_API_ENABLE_EVT;
-      p_buf->p_cback = p_cback;
-      bta_sys_sendmsg(p_buf);
+      do_in_bta_thread(FROM_HERE, Bind(&bta_jv_enable, p_cback));
       status = BTA_JV_SUCCESS;
     }
   } else {

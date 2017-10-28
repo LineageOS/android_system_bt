@@ -609,18 +609,10 @@ bool bta_jv_check_psm(uint16_t psm) {
   return ret;
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_enable
- *
- * Description  Initialises the JAVA I/F
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_enable(tBTA_JV_MSG* p_data) {
+/* Initialises the JAVA I/F */
+void bta_jv_enable(tBTA_JV_DM_CBACK* p_cback) {
   tBTA_JV_STATUS status = BTA_JV_SUCCESS;
-  bta_jv_cb.p_dm_cback = p_data->enable.p_cback;
+  bta_jv_cb.p_dm_cback = p_cback;
   tBTA_JV bta_jv;
   bta_jv.status = status;
   bta_jv_cb.p_dm_cback(BTA_JV_ENABLE_EVT, &bta_jv, 0);
