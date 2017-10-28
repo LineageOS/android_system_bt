@@ -1155,35 +1155,6 @@ void bta_jv_l2cap_stop_server(uint16_t local_psm, uint32_t l2cap_socket_id) {
   }
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_l2cap_read
- *
- * Description  Read data from an L2CAP connection
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_l2cap_read(tBTA_JV_MSG* p_data) {
-  tBTA_JV_L2CAP_READ evt_data;
-  tBTA_JV_API_L2CAP_READ* rc = &(p_data->l2cap_read);
-
-  evt_data.status = BTA_JV_FAILURE;
-  evt_data.handle = rc->handle;
-  evt_data.req_id = rc->req_id;
-  evt_data.p_data = rc->p_data;
-  evt_data.len = 0;
-
-  if (BT_PASS ==
-      GAP_ConnReadData(rc->handle, rc->p_data, rc->len, &evt_data.len)) {
-    evt_data.status = BTA_JV_SUCCESS;
-  }
-
-  tBTA_JV bta_jv;
-  bta_jv.l2c_read = evt_data;
-  rc->p_cback(BTA_JV_L2CAP_READ_EVT, &bta_jv, rc->l2cap_socket_id);
-}
-
 /* Write data to an L2CAP connection */
 void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, uint8_t* p_data,
                         uint16_t len, uint32_t user_id, tBTA_JV_L2C_CB* p_cb) {
