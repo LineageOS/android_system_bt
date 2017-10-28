@@ -91,8 +91,6 @@ static void bta_jv_pm_conn_busy(tBTA_JV_PM_CB* p_cb);
 static void bta_jv_pm_conn_idle(tBTA_JV_PM_CB* p_cb);
 static void bta_jv_pm_state_change(tBTA_JV_PM_CB* p_cb,
                                    const tBTA_JV_CONN_STATE state);
-tBTA_JV_STATUS bta_jv_set_pm_conn_state(tBTA_JV_PM_CB* p_cb,
-                                        const tBTA_JV_CONN_STATE new_st);
 
 /*******************************************************************************
  *
@@ -1806,53 +1804,6 @@ void bta_jv_set_pm_profile(uint32_t handle, tBTA_JV_PM_ID app_id,
     else
       APPL_TRACE_WARNING("bta_jv_alloc_set_pm_profile_cb() failed");
   }
-}
-
-/*******************************************************************************
- *
- * Function     bta_jv_change_pm_state
- *
- * Description  change jv pm connect state, used internally
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_change_pm_state(tBTA_JV_MSG* p_data) {
-  tBTA_JV_API_PM_STATE_CHANGE* p_msg = (tBTA_JV_API_PM_STATE_CHANGE*)p_data;
-
-  if (p_msg->p_cb) bta_jv_pm_state_change(p_msg->p_cb, p_msg->state);
-}
-
-/*******************************************************************************
- *
- * Function    bta_jv_set_pm_conn_state
- *
- * Description Send pm event state change to jv state machine to serialize jv pm
- *             changes in relation to other jv messages. internal API use
- *             mainly.
- *
- * Params:     p_cb: jv pm control block, NULL pointer returns failure
- *             new_state: new PM connections state, setting is forced by action
- *                        function
- *
- * Returns     BTA_JV_SUCCESS, BTA_JV_FAILURE (buffer allocation, or NULL ptr!)
- *
- ******************************************************************************/
-tBTA_JV_STATUS bta_jv_set_pm_conn_state(tBTA_JV_PM_CB* p_cb,
-                                        const tBTA_JV_CONN_STATE new_st) {
-  if (p_cb == NULL) return BTA_JV_FAILURE;
-
-  APPL_TRACE_API("%s: handle:0x%x, state: %d", __func__, p_cb->handle, new_st);
-
-  tBTA_JV_API_PM_STATE_CHANGE* p_msg = (tBTA_JV_API_PM_STATE_CHANGE*)osi_malloc(
-      sizeof(tBTA_JV_API_PM_STATE_CHANGE));
-  p_msg->hdr.event = BTA_JV_API_PM_STATE_CHANGE_EVT;
-  p_msg->p_cb = p_cb;
-  p_msg->state = new_st;
-
-  bta_sys_sendmsg(p_msg);
-
-  return BTA_JV_SUCCESS;
 }
 
 /*******************************************************************************

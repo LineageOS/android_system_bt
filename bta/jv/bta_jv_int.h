@@ -39,7 +39,6 @@
 enum {
   /* these events are handled by the state machine */
   BTA_JV_API_START_DISCOVERY_EVT = BTA_SYS_EVT_START(BTA_ID_JV),
-  BTA_JV_API_PM_STATE_CHANGE_EVT,
   BTA_JV_MAX_INT_EVT
 };
 
@@ -135,20 +134,12 @@ typedef struct {
   uint32_t l2cap_socket_id;
 } tBTA_JV_API_L2CAP_READ;
 
-/* data type for BTA_JV_API_PM_STATE_CHANGE_EVT */
-typedef struct {
-  BT_HDR hdr;
-  tBTA_JV_PM_CB* p_cb;
-  tBTA_JV_CONN_STATE state;
-} tBTA_JV_API_PM_STATE_CHANGE;
-
 /* union of all data types */
 typedef union {
   /* GKI event buffer header */
   BT_HDR hdr;
   tBTA_JV_API_START_DISCOVERY start_discovery;
   tBTA_JV_API_L2CAP_READ l2cap_read;
-  tBTA_JV_API_PM_STATE_CHANGE change_pm_state;
 } tBTA_JV_MSG;
 
 /* JV control block */
