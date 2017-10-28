@@ -221,7 +221,7 @@ typedef enum {
   /**
    * Description - RSSI value of the inquired remote device
    * Access mode - Only GET.
-   * Data type   - int32_t.
+   * Data type   - int8_t.
    */
   BT_PROPERTY_REMOTE_RSSI,
   /**
