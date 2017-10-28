@@ -38,25 +38,13 @@
 
 enum {
   /* these events are handled by the state machine */
-  BTA_JV_API_START_DISCOVERY_EVT = BTA_SYS_EVT_START(BTA_ID_JV),
-  BTA_JV_MAX_INT_EVT
+  BTA_JV_MAX_INT_EVT = BTA_SYS_EVT_START(BTA_ID_JV),
 };
 
 #ifndef BTA_JV_RFC_EV_MASK
 #define BTA_JV_RFC_EV_MASK \
   (PORT_EV_RXCHAR | PORT_EV_TXEMPTY | PORT_EV_FC | PORT_EV_FCS)
 #endif
-
-/* data type for BTA_JV_API_START_DISCOVERY_EVT */
-typedef struct {
-  BT_HDR hdr;
-  RawAddress bd_addr;
-  uint16_t num_uuid;
-  bluetooth::Uuid uuid_list[BTA_JV_MAX_UUIDS];
-  uint16_t num_attr;
-  uint16_t attr_list[BTA_JV_MAX_ATTRS];
-  uint32_t rfcomm_slot_id;
-} tBTA_JV_API_START_DISCOVERY;
 
 enum {
   BTA_JV_PM_FREE_ST = 0, /* empty PM slot */
@@ -138,7 +126,6 @@ typedef struct {
 typedef union {
   /* GKI event buffer header */
   BT_HDR hdr;
-  tBTA_JV_API_START_DISCOVERY start_discovery;
   tBTA_JV_API_L2CAP_READ l2cap_read;
 } tBTA_JV_MSG;
 
@@ -183,7 +170,9 @@ extern void bta_jv_get_channel_id(int32_t type, int32_t channel,
                                   uint32_t l2cap_socket_id,
                                   uint32_t rfcomm_slot_id);
 extern void bta_jv_free_scn(int32_t type, uint16_t scn);
-extern void bta_jv_start_discovery(tBTA_JV_MSG* p_data);
+extern void bta_jv_start_discovery(const RawAddress& bd_addr, uint16_t num_uuid,
+                                   bluetooth::Uuid* uuid_list,
+                                   uint32_t rfcomm_slot_id);
 extern void bta_jv_create_record(uint32_t rfcomm_slot_id);
 extern void bta_jv_delete_record(uint32_t handle);
 extern void bta_jv_l2cap_connect(int32_t type, tBTA_SEC sec_mask,
