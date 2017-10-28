@@ -219,16 +219,9 @@ tBTA_JV_STATUS BTA_JvStartDiscovery(const RawAddress& bd_addr,
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvCreateRecordByUser(uint32_t rfcomm_slot_id) {
-  tBTA_JV_API_CREATE_RECORD* p_msg =
-      (tBTA_JV_API_CREATE_RECORD*)osi_malloc(sizeof(tBTA_JV_API_CREATE_RECORD));
-
   APPL_TRACE_API("%s", __func__);
 
-  p_msg->hdr.event = BTA_JV_API_CREATE_RECORD_EVT;
-  p_msg->rfcomm_slot_id = rfcomm_slot_id;
-
-  bta_sys_sendmsg(p_msg);
-
+  do_in_bta_thread(FROM_HERE, Bind(&bta_jv_create_record, rfcomm_slot_id));
   return BTA_JV_SUCCESS;
 }
 
