@@ -854,21 +854,11 @@ void bta_jv_create_record(uint32_t rfcomm_slot_id) {
   }
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_delete_record
- *
- * Description  Delete an SDP record
- *
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_delete_record(tBTA_JV_MSG* p_data) {
-  tBTA_JV_API_ADD_ATTRIBUTE* dr = &(p_data->add_attr);
-  if (dr->handle) {
+/* Delete an SDP record */
+void bta_jv_delete_record(uint32_t handle) {
+  if (handle) {
     /* this is a record created by btif layer*/
-    SDP_DeleteRecord(dr->handle);
+    SDP_DeleteRecord(handle);
   }
 }
 
