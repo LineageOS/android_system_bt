@@ -619,19 +619,8 @@ void bta_jv_enable(tBTA_JV_DM_CBACK* p_cback) {
   memset(bta_jv_cb.free_psm_list, 0, sizeof(bta_jv_cb.free_psm_list));
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_disable
- *
- * Description  Disables the BT device manager
- *              free the resources used by java
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_disable(UNUSED_ATTR tBTA_JV_MSG* p_data) {
-  APPL_TRACE_ERROR("%s", __func__);
-}
+/** Disables the BT device manager free the resources used by java */
+void bta_jv_disable() { APPL_TRACE_ERROR("%s", __func__); }
 
 /**
  * We keep a list of PSM's that have been freed from JAVA, for reuse.

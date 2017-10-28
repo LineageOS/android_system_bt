@@ -84,24 +84,13 @@ tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK* p_cback) {
   return (status);
 }
 
-/*******************************************************************************
- *
- * Function         BTA_JvDisable
- *
- * Description      Disable the Java I/F
- *
- * Returns          void
- *
- ******************************************************************************/
+/** Disable the Java I/F */
 void BTA_JvDisable(void) {
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
-
   APPL_TRACE_API("%s", __func__);
 
   bta_sys_deregister(BTA_ID_JV);
-  p_buf->event = BTA_JV_API_DISABLE_EVT;
 
-  bta_sys_sendmsg(p_buf);
+  do_in_bta_thread(FROM_HERE, Bind(&bta_jv_disable));
 }
 
 /*******************************************************************************
