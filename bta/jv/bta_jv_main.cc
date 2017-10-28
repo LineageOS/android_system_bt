@@ -41,7 +41,6 @@ typedef void (*tBTA_JV_ACTION)(tBTA_JV_MSG* p_data);
 
 /* action function list */
 const tBTA_JV_ACTION bta_jv_action[] = {
-    bta_jv_disable,               /* BTA_JV_API_DISABLE_EVT */
     bta_jv_get_channel_id,        /* BTA_JV_API_GET_CHANNEL_EVT */
     bta_jv_free_scn,              /* BTA_JV_API_FREE_SCN_EVT */
     bta_jv_start_discovery,       /* BTA_JV_API_START_DISCOVERY_EVT */

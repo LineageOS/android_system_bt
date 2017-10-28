@@ -36,8 +36,7 @@
 
 enum {
   /* these events are handled by the state machine */
-  BTA_JV_API_DISABLE_EVT = BTA_SYS_EVT_START(BTA_ID_JV),
-  BTA_JV_API_GET_CHANNEL_EVT,
+  BTA_JV_API_GET_CHANNEL_EVT = BTA_SYS_EVT_START(BTA_ID_JV),
   BTA_JV_API_FREE_SCN_EVT,
   BTA_JV_API_START_DISCOVERY_EVT,
   BTA_JV_API_CREATE_RECORD_EVT,
@@ -372,7 +371,7 @@ extern tBTA_JV_CFG* p_bta_jv_cfg;
 extern bool bta_jv_sm_execute(BT_HDR* p_msg);
 
 extern void bta_jv_enable(tBTA_JV_DM_CBACK* p_cback);
-extern void bta_jv_disable(tBTA_JV_MSG* p_data);
+extern void bta_jv_disable();
 extern void bta_jv_get_channel_id(tBTA_JV_MSG* p_data);
 extern void bta_jv_free_scn(tBTA_JV_MSG* p_data);
 extern void bta_jv_start_discovery(tBTA_JV_MSG* p_data);
