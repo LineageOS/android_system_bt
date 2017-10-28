@@ -51,6 +51,8 @@
 
 using bluetooth::Uuid;
 
+tBTA_JV_CB bta_jv_cb;
+
 /* one of these exists for each client */
 struct fc_client {
   struct fc_client* next_all_list;
