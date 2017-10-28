@@ -236,16 +236,9 @@ tBTA_JV_STATUS BTA_JvCreateRecordByUser(uint32_t rfcomm_slot_id) {
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvDeleteRecord(uint32_t handle) {
-  tBTA_JV_API_ADD_ATTRIBUTE* p_msg =
-      (tBTA_JV_API_ADD_ATTRIBUTE*)osi_malloc(sizeof(tBTA_JV_API_ADD_ATTRIBUTE));
-
   APPL_TRACE_API("%s", __func__);
 
-  p_msg->hdr.event = BTA_JV_API_DELETE_RECORD_EVT;
-  p_msg->handle = handle;
-
-  bta_sys_sendmsg(p_msg);
-
+  do_in_bta_thread(FROM_HERE, Bind(&bta_jv_delete_record, handle));
   return BTA_JV_SUCCESS;
 }
 
