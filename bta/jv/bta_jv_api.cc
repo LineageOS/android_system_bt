@@ -22,10 +22,12 @@
  *  Technology (JABWT) as specified by the JSR82 specificiation
  *
  ******************************************************************************/
+#include <base/bind.h>
 #include <string.h>
 
 #include "bt_common.h"
 #include "bta_api.h"
+#include "bta_closure_api.h"
 #include "bta_jv_api.h"
 #include "bta_jv_int.h"
 #include "bta_sys.h"
@@ -34,6 +36,7 @@
 #include "sdp_api.h"
 #include "utl.h"
 
+using base::Bind;
 using bluetooth::Uuid;
 
 /*****************************************************************************
@@ -72,11 +75,7 @@ tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK* p_cback) {
     bta_sys_register(BTA_ID_JV, &bta_jv_reg);
 
     if (p_cback) {
-      tBTA_JV_API_ENABLE* p_buf =
-          (tBTA_JV_API_ENABLE*)osi_malloc(sizeof(tBTA_JV_API_ENABLE));
-      p_buf->hdr.event = BTA_JV_API_ENABLE_EVT;
-      p_buf->p_cback = p_cback;
-      bta_sys_sendmsg(p_buf);
+      do_in_bta_thread(FROM_HERE, Bind(&bta_jv_enable, p_cback));
       status = BTA_JV_SUCCESS;
     }
   } else {
@@ -85,24 +84,13 @@ tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK* p_cback) {
   return (status);
 }
 
-/*******************************************************************************
- *
- * Function         BTA_JvDisable
- *
- * Description      Disable the Java I/F
- *
- * Returns          void
- *
- ******************************************************************************/
+/** Disable the Java I/F */
 void BTA_JvDisable(void) {
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
-
   APPL_TRACE_API("%s", __func__);
 
   bta_sys_deregister(BTA_ID_JV);
-  p_buf->event = BTA_JV_API_DISABLE_EVT;
 
-  bta_sys_sendmsg(p_buf);
+  do_in_bta_thread(FROM_HERE, Bind(&bta_jv_disable));
 }
 
 /*******************************************************************************
@@ -150,26 +138,17 @@ bool BTA_JvIsEncrypted(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvGetChannelId(int conn_type, uint32_t id, int32_t channel) {
-  tBTA_JV_API_ALLOC_CHANNEL* p_msg =
-      (tBTA_JV_API_ALLOC_CHANNEL*)osi_malloc(sizeof(tBTA_JV_API_ALLOC_CHANNEL));
-
   APPL_TRACE_API("%s", __func__);
 
-  p_msg->hdr.event = BTA_JV_API_GET_CHANNEL_EVT;
-  p_msg->type = conn_type;
-  p_msg->channel = channel;
-  if (conn_type == BTA_JV_CONN_TYPE_RFCOMM) {
-    p_msg->rfcomm_slot_id = id;
-  } else if (conn_type == BTA_JV_CONN_TYPE_L2CAP ||
-             conn_type == BTA_JV_CONN_TYPE_L2CAP_LE) {
-    p_msg->l2cap_socket_id = id;
-  } else {
+  if (conn_type != BTA_JV_CONN_TYPE_RFCOMM &&
+      conn_type != BTA_JV_CONN_TYPE_L2CAP &&
+      conn_type != BTA_JV_CONN_TYPE_L2CAP_LE) {
     APPL_TRACE_ERROR("%s: Invalid connection type");
     return BTA_JV_FAILURE;
   }
 
-  bta_sys_sendmsg(p_msg);
-
+  do_in_bta_thread(FROM_HERE,
+                   Bind(&bta_jv_get_channel_id, conn_type, channel, id, id));
   return BTA_JV_SUCCESS;
 }
 
@@ -188,17 +167,9 @@ tBTA_JV_STATUS BTA_JvGetChannelId(int conn_type, uint32_t id, int32_t channel) {
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvFreeChannel(uint16_t channel, int conn_type) {
-  tBTA_JV_API_FREE_CHANNEL* p_msg =
-      (tBTA_JV_API_FREE_CHANNEL*)osi_malloc(sizeof(tBTA_JV_API_FREE_CHANNEL));
-
   APPL_TRACE_API("%s", __func__);
 
-  p_msg->hdr.event = BTA_JV_API_FREE_SCN_EVT;
-  p_msg->scn = channel;
-  p_msg->type = conn_type;
-
-  bta_sys_sendmsg(p_msg);
-
+  do_in_bta_thread(FROM_HERE, Bind(&bta_jv_free_scn, conn_type, channel));
   return BTA_JV_SUCCESS;
 }
 
@@ -248,16 +219,9 @@ tBTA_JV_STATUS BTA_JvStartDiscovery(const RawAddress& bd_addr,
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvCreateRecordByUser(uint32_t rfcomm_slot_id) {
-  tBTA_JV_API_CREATE_RECORD* p_msg =
-      (tBTA_JV_API_CREATE_RECORD*)osi_malloc(sizeof(tBTA_JV_API_CREATE_RECORD));
-
   APPL_TRACE_API("%s", __func__);
 
-  p_msg->hdr.event = BTA_JV_API_CREATE_RECORD_EVT;
-  p_msg->rfcomm_slot_id = rfcomm_slot_id;
-
-  bta_sys_sendmsg(p_msg);
-
+  do_in_bta_thread(FROM_HERE, Bind(&bta_jv_create_record, rfcomm_slot_id));
   return BTA_JV_SUCCESS;
 }
 
@@ -272,16 +236,9 @@ tBTA_JV_STATUS BTA_JvCreateRecordByUser(uint32_t rfcomm_slot_id) {
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvDeleteRecord(uint32_t handle) {
-  tBTA_JV_API_ADD_ATTRIBUTE* p_msg =
-      (tBTA_JV_API_ADD_ATTRIBUTE*)osi_malloc(sizeof(tBTA_JV_API_ADD_ATTRIBUTE));
-
   APPL_TRACE_API("%s", __func__);
 
-  p_msg->hdr.event = BTA_JV_API_DELETE_RECORD_EVT;
-  p_msg->handle = handle;
-
-  bta_sys_sendmsg(p_msg);
-
+  do_in_bta_thread(FROM_HERE, Bind(&bta_jv_delete_record, handle));
   return BTA_JV_SUCCESS;
 }
 

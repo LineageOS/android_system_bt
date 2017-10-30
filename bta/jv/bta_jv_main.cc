@@ -41,13 +41,7 @@ typedef void (*tBTA_JV_ACTION)(tBTA_JV_MSG* p_data);
 
 /* action function list */
 const tBTA_JV_ACTION bta_jv_action[] = {
-    bta_jv_enable,                /* BTA_JV_API_ENABLE_EVT */
-    bta_jv_disable,               /* BTA_JV_API_DISABLE_EVT */
-    bta_jv_get_channel_id,        /* BTA_JV_API_GET_CHANNEL_EVT */
-    bta_jv_free_scn,              /* BTA_JV_API_FREE_SCN_EVT */
     bta_jv_start_discovery,       /* BTA_JV_API_START_DISCOVERY_EVT */
-    bta_jv_create_record,         /* BTA_JV_API_CREATE_RECORD_EVT */
-    bta_jv_delete_record,         /* BTA_JV_API_DELETE_RECORD_EVT */
     bta_jv_l2cap_connect,         /* BTA_JV_API_L2CAP_CONNECT_EVT */
     bta_jv_l2cap_close,           /* BTA_JV_API_L2CAP_CLOSE_EVT */
     bta_jv_l2cap_start_server,    /* BTA_JV_API_L2CAP_START_SERVER_EVT */

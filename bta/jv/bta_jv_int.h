@@ -36,13 +36,7 @@
 
 enum {
   /* these events are handled by the state machine */
-  BTA_JV_API_ENABLE_EVT = BTA_SYS_EVT_START(BTA_ID_JV),
-  BTA_JV_API_DISABLE_EVT,
-  BTA_JV_API_GET_CHANNEL_EVT,
-  BTA_JV_API_FREE_SCN_EVT,
-  BTA_JV_API_START_DISCOVERY_EVT,
-  BTA_JV_API_CREATE_RECORD_EVT,
-  BTA_JV_API_DELETE_RECORD_EVT,
+  BTA_JV_API_START_DISCOVERY_EVT = BTA_SYS_EVT_START(BTA_ID_JV),
   BTA_JV_API_L2CAP_CONNECT_EVT,
   BTA_JV_API_L2CAP_CLOSE_EVT,
   BTA_JV_API_L2CAP_START_SERVER_EVT,
@@ -68,12 +62,6 @@ enum {
 #define BTA_JV_RFC_EV_MASK \
   (PORT_EV_RXCHAR | PORT_EV_TXEMPTY | PORT_EV_FC | PORT_EV_FCS)
 #endif
-
-/* data type for BTA_JV_API_ENABLE_EVT */
-typedef struct {
-  BT_HDR hdr;
-  tBTA_JV_DM_CBACK* p_cback;
-} tBTA_JV_API_ENABLE;
 
 /* data type for BTA_JV_API_START_DISCOVERY_EVT */
 typedef struct {
@@ -290,46 +278,11 @@ typedef struct {
   uint32_t rfcomm_slot_id;
 } tBTA_JV_API_RFCOMM_CLOSE;
 
-/* data type for BTA_JV_API_CREATE_RECORD_EVT */
-typedef struct {
-  BT_HDR hdr;
-  uint32_t rfcomm_slot_id;
-} tBTA_JV_API_CREATE_RECORD;
-
-/* data type for BTA_JV_API_ADD_ATTRIBUTE_EVT */
-typedef struct {
-  BT_HDR hdr;
-  uint32_t handle;
-  uint16_t attr_id;
-  uint8_t* p_value;
-  int32_t value_size;
-} tBTA_JV_API_ADD_ATTRIBUTE;
-
-/* data type for BTA_JV_API_FREE_SCN_EVT */
-typedef struct {
-  BT_HDR hdr;
-  int32_t type; /* One of BTA_JV_CONN_TYPE_ */
-  uint16_t scn;
-} tBTA_JV_API_FREE_CHANNEL;
-
-/* data type for BTA_JV_API_ALLOC_CHANNEL_EVT */
-typedef struct {
-  BT_HDR hdr;
-  int32_t type;    /* One of BTA_JV_CONN_TYPE_ */
-  int32_t channel; /* optionally request a specific channel */
-  uint32_t l2cap_socket_id;
-  uint32_t rfcomm_slot_id;
-} tBTA_JV_API_ALLOC_CHANNEL;
 /* union of all data types */
 typedef union {
   /* GKI event buffer header */
   BT_HDR hdr;
-  tBTA_JV_API_ENABLE enable;
   tBTA_JV_API_START_DISCOVERY start_discovery;
-  tBTA_JV_API_ALLOC_CHANNEL alloc_channel;
-  tBTA_JV_API_FREE_CHANNEL free_channel;
-  tBTA_JV_API_CREATE_RECORD create_record;
-  tBTA_JV_API_ADD_ATTRIBUTE add_attr;
   tBTA_JV_API_L2CAP_CONNECT l2cap_connect;
   tBTA_JV_API_L2CAP_READ l2cap_read;
   tBTA_JV_API_L2CAP_WRITE l2cap_write;
@@ -379,13 +332,15 @@ extern tBTA_JV_CFG* p_bta_jv_cfg;
 
 extern bool bta_jv_sm_execute(BT_HDR* p_msg);
 
-extern void bta_jv_enable(tBTA_JV_MSG* p_data);
-extern void bta_jv_disable(tBTA_JV_MSG* p_data);
-extern void bta_jv_get_channel_id(tBTA_JV_MSG* p_data);
-extern void bta_jv_free_scn(tBTA_JV_MSG* p_data);
+extern void bta_jv_enable(tBTA_JV_DM_CBACK* p_cback);
+extern void bta_jv_disable();
+extern void bta_jv_get_channel_id(int32_t type, int32_t channel,
+                                  uint32_t l2cap_socket_id,
+                                  uint32_t rfcomm_slot_id);
+extern void bta_jv_free_scn(int32_t type, uint16_t scn);
 extern void bta_jv_start_discovery(tBTA_JV_MSG* p_data);
-extern void bta_jv_create_record(tBTA_JV_MSG* p_data);
-extern void bta_jv_delete_record(tBTA_JV_MSG* p_data);
+extern void bta_jv_create_record(uint32_t rfcomm_slot_id);
+extern void bta_jv_delete_record(uint32_t handle);
 extern void bta_jv_l2cap_connect(tBTA_JV_MSG* p_data);
 extern void bta_jv_l2cap_close(tBTA_JV_MSG* p_data);
 extern void bta_jv_l2cap_start_server(tBTA_JV_MSG* p_data);

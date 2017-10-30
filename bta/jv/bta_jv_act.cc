@@ -609,37 +609,18 @@ bool bta_jv_check_psm(uint16_t psm) {
   return ret;
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_enable
- *
- * Description  Initialises the JAVA I/F
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_enable(tBTA_JV_MSG* p_data) {
+/* Initialises the JAVA I/F */
+void bta_jv_enable(tBTA_JV_DM_CBACK* p_cback) {
   tBTA_JV_STATUS status = BTA_JV_SUCCESS;
-  bta_jv_cb.p_dm_cback = p_data->enable.p_cback;
+  bta_jv_cb.p_dm_cback = p_cback;
   tBTA_JV bta_jv;
   bta_jv.status = status;
   bta_jv_cb.p_dm_cback(BTA_JV_ENABLE_EVT, &bta_jv, 0);
   memset(bta_jv_cb.free_psm_list, 0, sizeof(bta_jv_cb.free_psm_list));
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_disable
- *
- * Description  Disables the BT device manager
- *              free the resources used by java
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_disable(UNUSED_ATTR tBTA_JV_MSG* p_data) {
-  APPL_TRACE_ERROR("%s", __func__);
-}
+/** Disables the BT device manager free the resources used by java */
+void bta_jv_disable() { APPL_TRACE_ERROR("%s", __func__); }
 
 /**
  * We keep a list of PSM's that have been freed from JAVA, for reuse.
@@ -681,22 +662,15 @@ static void bta_jv_set_free_psm(uint16_t psm) {
   }
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_get_channel_id
- *
- * Description  Obtain a free SCN (Server Channel Number)
- *              (RFCOMM channel or L2CAP PSM)
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_get_channel_id(tBTA_JV_MSG* p_data) {
+/** Obtain a free SCN (Server Channel Number) (RFCOMM channel or L2CAP PSM) */
+void bta_jv_get_channel_id(
+    int32_t type /* One of BTA_JV_CONN_TYPE_ */,
+    int32_t channel /* optionally request a specific channel */,
+    uint32_t l2cap_socket_id, uint32_t rfcomm_slot_id) {
   uint16_t psm = 0;
 
-  switch (p_data->alloc_channel.type) {
+  switch (type) {
     case BTA_JV_CONN_TYPE_RFCOMM: {
-      int32_t channel = p_data->alloc_channel.channel;
       uint8_t scn = 0;
       if (channel > 0) {
         if (!BTM_TryAllocateSCN(channel)) {
@@ -717,8 +691,7 @@ void bta_jv_get_channel_id(tBTA_JV_MSG* p_data) {
       if (bta_jv_cb.p_dm_cback) {
         tBTA_JV bta_jv;
         bta_jv.scn = scn;
-        bta_jv_cb.p_dm_cback(BTA_JV_GET_SCN_EVT, &bta_jv,
-                             p_data->alloc_channel.rfcomm_slot_id);
+        bta_jv_cb.p_dm_cback(BTA_JV_GET_SCN_EVT, &bta_jv, rfcomm_slot_id);
       }
       return;
     }
@@ -738,24 +711,14 @@ void bta_jv_get_channel_id(tBTA_JV_MSG* p_data) {
   if (bta_jv_cb.p_dm_cback) {
     tBTA_JV bta_jv;
     bta_jv.psm = psm;
-    bta_jv_cb.p_dm_cback(BTA_JV_GET_PSM_EVT, &bta_jv,
-                         p_data->alloc_channel.l2cap_socket_id);
+    bta_jv_cb.p_dm_cback(BTA_JV_GET_PSM_EVT, &bta_jv, l2cap_socket_id);
   }
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_free_scn
- *
- * Description  free a SCN
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_free_scn(tBTA_JV_MSG* p_data) {
-  uint16_t scn = p_data->free_channel.scn;
-
-  switch (p_data->free_channel.type) {
+/** free a SCN */
+void bta_jv_free_scn(int32_t type /* One of BTA_JV_CONN_TYPE_ */,
+                     uint16_t scn) {
+  switch (type) {
     case BTA_JV_CONN_TYPE_RFCOMM: {
       if (scn > 0 && scn <= BTA_JV_MAX_SCN && bta_jv_cb.scn[scn - 1]) {
         /* this scn is used by JV */
@@ -879,42 +842,23 @@ void bta_jv_start_discovery(tBTA_JV_MSG* p_data) {
   */
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_create_record
- *
- * Description  Create an SDP record with the given attributes
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_create_record(tBTA_JV_MSG* p_data) {
-  tBTA_JV_API_CREATE_RECORD* cr = &(p_data->create_record);
+/* Create an SDP record with the given attributes */
+void bta_jv_create_record(uint32_t rfcomm_slot_id) {
   tBTA_JV_CREATE_RECORD evt_data;
   evt_data.status = BTA_JV_SUCCESS;
   if (bta_jv_cb.p_dm_cback) {
     // callback immediately to create the sdp record in stack thread context
     tBTA_JV bta_jv;
     bta_jv.create_rec = evt_data;
-    bta_jv_cb.p_dm_cback(BTA_JV_CREATE_RECORD_EVT, &bta_jv, cr->rfcomm_slot_id);
+    bta_jv_cb.p_dm_cback(BTA_JV_CREATE_RECORD_EVT, &bta_jv, rfcomm_slot_id);
   }
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_delete_record
- *
- * Description  Delete an SDP record
- *
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_delete_record(tBTA_JV_MSG* p_data) {
-  tBTA_JV_API_ADD_ATTRIBUTE* dr = &(p_data->add_attr);
-  if (dr->handle) {
+/* Delete an SDP record */
+void bta_jv_delete_record(uint32_t handle) {
+  if (handle) {
     /* this is a record created by btif layer*/
-    SDP_DeleteRecord(dr->handle);
+    SDP_DeleteRecord(handle);
   }
 }
 
