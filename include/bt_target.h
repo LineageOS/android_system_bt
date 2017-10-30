@@ -399,7 +399,11 @@
 
 /* The default scan mode */
 #ifndef BTM_DEFAULT_SCAN_TYPE
+#ifdef BLUETOOTH_RTK
+#define BTM_DEFAULT_SCAN_TYPE       BTM_SCAN_TYPE_STANDARD 
+#else
 #define BTM_DEFAULT_SCAN_TYPE       BTM_SCAN_TYPE_INTERLACED
+#endif
 #endif
 
 /* Should connections to unknown devices be allowed when not discoverable? */
@@ -1638,7 +1642,11 @@ The maximum number of payload octets that the local device can receive in a sing
 ******************************************************************************/
 
 #ifndef HCILP_INCLUDED
+#ifdef BLUETOOTH_RTK
+#define HCILP_INCLUDED                  FALSE
+#else
 #define HCILP_INCLUDED                  TRUE
+#endif
 #endif
 
 /******************************************************************************

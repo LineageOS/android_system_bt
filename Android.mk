@@ -13,6 +13,16 @@ ifeq ($(TARGET_BUILD_VARIANT),userdebug)
 bluetooth_CFLAGS += -DQLOGKIT_USERDEBUG
 endif
 
+ifeq ($(BOARD_HAVE_BLUETOOTH_RTK),true)
+# RealTek Bluetooth private configuration table
+  bdroid_CFLAGS := -Wno-unused-parameter
+  rtkbt_bdroid_C_INCLUDES += $(LOCAL_PATH)/bta/hh
+  rtkbt_bdroid_C_INCLUDES += $(LOCAL_PATH)/bta/dm
+  rtkbt_bdroid_CFLAGS += -DBLUETOOTH_RTK
+  bluetooth_C_INCLUDES += $(rtkbt_bdroid_C_INCLUDES)
+  bluetooth_CFLAGS += $(rtkbt_bdroid_CFLAGS)
+endif
+
 ifneq ($(BOARD_BLUETOOTH_BDROID_HCILP_INCLUDED),)
   bluetooth_CFLAGS += -DHCILP_INCLUDED=$(BOARD_BLUETOOTH_BDROID_HCILP_INCLUDED)
 endif
@@ -36,6 +46,18 @@ bluetooth_CFLAGS += -DEXPORT_SYMBOL="__attribute__((visibility(\"default\")))"
 # -Wno-unused-parameter is needed, because there are too many unused
 #  parameters in all the code.
 #
+ifeq ($(BOARD_HAVE_BLUETOOTH_RTK),true)
+bluetooth_CFLAGS += \
+  -fvisibility=hidden \
+  -Wall \
+  -Wextra \
+  -Wno-gnu-variable-sized-type-not-at-end \
+  -Wno-typedef-redefinition \
+  -Wno-unused-parameter \
+  -Wunused-but-set-variable \
+  -UNDEBUG \
+  -DLOG_NDEBUG=1
+else
 bluetooth_CFLAGS += \
   -fvisibility=hidden \
   -Wall \
@@ -51,6 +73,7 @@ ifeq ($(strip $(AUDIO_FEATURE_ENABLED_SPLIT_A2DP)),true)
 bluetooth_CFLAGS += -DBTA_AV_SPLIT_A2DP_ENABLED
 bluetooth_CFLAGS += -DBTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
 bluetooth_CFLAGS += -DAPTX_48000
+endif
 endif
 
 bluetooth_CONLYFLAGS += -std=c99

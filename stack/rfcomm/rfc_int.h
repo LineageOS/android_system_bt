@@ -206,7 +206,11 @@ typedef struct
 #define RFC_T1_TIMEOUT                  20   /* seconds to wait for reply with Poll bit */
 #define RFC_PORT_T1_TIMEOUT             60   /* seconds to wait for reply with Poll bit other than MX */
 #define RFC_T2_TIMEOUT                  20   /* timeout to wait for Mx UIH */
+#ifdef BLUETOOTH_RTK
+#define RFC_DISC_TIMEOUT                30    /* If something goes wrong and we send DISC we should not wait for min */
+#else
 #define RFC_DISC_TIMEOUT                3    /* If something goes wrong and we send DISC we should not wait for min */
+#endif
 #define RFC_CLOSE_TIMEOUT               10
 #define RFCOMM_CONN_TIMEOUT            120   /* first connection to be established on Mx */
 

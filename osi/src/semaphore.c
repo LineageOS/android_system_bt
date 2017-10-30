@@ -65,8 +65,27 @@ void semaphore_wait(semaphore_t *semaphore) {
   assert(semaphore->fd != INVALID_FD);
 
   eventfd_t value;
+#ifdef BLUETOOTH_RTK
+  int ret;
+  while(1) {
+    ret = eventfd_read(semaphore->fd,&value);
+    if (ret == -1) {
+        if(errno == EINTR) {
+            LOG_ERROR(LOG_TAG, "%s unable to eventfd_read(semaphore->fd,&value): %s", __func__, strerror(errno));
+            continue;
+        } else {
+            LOG_ERROR(LOG_TAG, "%s unable to eventfd_read(semaphore->fd,&value) : %s", __func__, strerror(errno));
+            break;
+        }
+    }
+    if(ret >= 0) {
+        break;
+    }
+  }
+#else
   if (eventfd_read(semaphore->fd, &value) == -1)
     LOG_ERROR(LOG_TAG, "%s unable to wait on semaphore: %s", __func__, strerror(errno));
+#endif
 }
 
 bool semaphore_try_wait(semaphore_t *semaphore) {
@@ -96,9 +115,28 @@ bool semaphore_try_wait(semaphore_t *semaphore) {
 void semaphore_post(semaphore_t *semaphore) {
   assert(semaphore != NULL);
   assert(semaphore->fd != INVALID_FD);
+#ifdef BLUETOOTH_RTK
+  int ret;
 
+  while(1) {
+    ret = eventfd_write(semaphore->fd, 1ULL);
+    if (ret == -1) {
+        if(errno == EINTR) {
+            LOG_ERROR(LOG_TAG, "%s unable to eventfd_write eventfd_write(semaphore->fd, 1ULL): %s", __func__, strerror(errno));
+            continue;
+        } else {
+            LOG_ERROR(LOG_TAG, "%s unable to eventfd_write eventfd_write(semaphore->fd, 1ULL) : %s", __func__, strerror(errno));
+            break;
+        }
+    }
+    if(ret >= 0) {
+        break;
+    }
+  }
+#else
   if (eventfd_write(semaphore->fd, 1ULL) == -1)
     LOG_ERROR(LOG_TAG, "%s unable to post to semaphore: %s", __func__, strerror(errno));
+#endif
 }
 
 int semaphore_get_fd(const semaphore_t *semaphore) {

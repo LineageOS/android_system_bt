@@ -22,6 +22,14 @@ LOCAL_SRC_FILES := \
     src/vendor.c \
     ../EventLogTags.logtags
 
+ifeq ($(BOARD_HAVE_BLUETOOTH_RTK),true)
+LOCAL_CFLAGS += -DBLUETOOTH_RTK
+LOCAL_SRC_FILES += \
+    src/bt_list.c \
+    src/bt_skbuff.c \
+    src/hci_h5.c
+endif
+
 LOCAL_C_INCLUDES += \
     $(LOCAL_PATH)/include \
     $(LOCAL_PATH)/.. \

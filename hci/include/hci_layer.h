@@ -27,6 +27,9 @@
 #include "osi/include/osi.h"
 #include "bt_types.h"
 
+#ifdef BLUETOOTH_RTK
+#include "bt_hci_bdroid.h"
+#endif
 static const char HCI_MODULE[] = "hci_module";
 
 ///// LEGACY DEFINITIONS /////
@@ -60,7 +63,13 @@ typedef struct packet_fragmenter_t packet_fragmenter_t;
 typedef struct vendor_t vendor_t;
 typedef struct low_power_manager_t low_power_manager_t;
 
+#ifdef BLUETOOTH_RTK
+typedef struct {
+    uint8_t b[6];
+} __packed bdaddr_t;
+#else
 typedef unsigned char * bdaddr_t;
+#endif
 typedef uint16_t command_opcode_t;
 
 typedef enum {
@@ -73,6 +82,64 @@ typedef enum {
 typedef void (*command_complete_cb)(BT_HDR *response, void *context);
 typedef void (*command_status_cb)(uint8_t status, BT_HDR *command, void *context);
 
+#ifdef BLUETOOTH_RTK
+typedef void (* p_callback)(void *p_mem);
+
+
+/******************************************************************************
+**  Constants & Macros
+******************************************************************************/
+
+/******************************************************************************
+**  Type definitions
+******************************************************************************/
+
+/** Prototypes for HCI Service interface functions **/
+/* Callback function for the returned event of internally issued command */
+typedef void (*tINT_CMD_CBACK)(void *p_mem);
+
+
+/* Initialize transport's control block */
+typedef void (*tHCI_INIT)(tINT_CMD_CBACK p_cback,const allocator_t *bufalloc);
+
+/* Do transport's control block clean-up */
+typedef void (*tHCI_CLEANUP)(void);
+
+/* Send HCI command/data to the transport */
+typedef void (*tHCI_SEND)(HC_BT_HDR *p_msg);
+
+/* Handler for HCI upstream path */
+typedef uint16_t (*tHCI_RCV)(uint16_t *byte);
+
+
+
+
+
+/* Handler for sending HCI command from the local module */
+typedef uint8_t (*tHCI_SEND_INT)(uint16_t opcode, HC_BT_HDR *p_buf, \
+                                  tINT_CMD_CBACK p_cback);
+
+/* Handler for getting acl data length */
+typedef void (*tHCI_ACL_DATA_LEN_HDLR)(void);
+
+/******************************************************************************
+**  Extern variables and functions
+******************************************************************************/
+
+typedef struct {
+    tHCI_INIT init;
+    tHCI_CLEANUP cleanup;
+    tHCI_SEND send;
+    tHCI_SEND_INT send_int_cmd;
+    tHCI_ACL_DATA_LEN_HDLR get_acl_max_len;
+#ifdef HCI_USE_MCT
+    tHCI_RCV evt_rcv;
+    tHCI_RCV acl_rcv;
+#else
+    tHCI_RCV rcv;
+#endif
+} tHCI_IF;
+#endif 
 typedef struct hci_t {
   // Send a low power command, if supported and the low power manager is enabled.
   void (*send_low_power_command)(low_power_command_t command);
@@ -85,6 +152,14 @@ typedef struct hci_t {
 
   // Set the queue to receive ACL data in
   void (*set_data_queue)(fixed_queue_t *queue);
+#ifdef BLUETOOTH_RTK
+  // Send HCI INT command through the HCI layer
+  void (*transmit_int_command)(
+      uint16_t opcode,
+      void *buffer,
+      p_callback callback
+  );
+#endif
 
   // Send a command through the HCI layer
   void (*transmit_command)(

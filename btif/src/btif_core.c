@@ -1209,6 +1209,10 @@ bt_status_t btif_set_adapter_property(const bt_property_t *property)
                 BTA_DmSetDeviceName((char *)bd_name);
 
                 storage_req_id = BTIF_CORE_STORAGE_ADAPTER_WRITE;
+#ifdef BLUETOOTH_RTK
+		btif_config_set_str("Adapter", "Name",(char *)bd_name);
+		btif_config_save();
+#endif
             }
             break;
 

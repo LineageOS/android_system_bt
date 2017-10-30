@@ -188,7 +188,11 @@ static void transmit_completed_callback(BT_HDR *response, void *context) {
 // Called back from vendor library when it wants to send an HCI command.
 static uint8_t transmit_cb(UNUSED_ATTR uint16_t opcode, void *buffer, tINT_CMD_CBACK callback) {
   assert(hci != NULL);
+#ifdef BLUETOOTH_RTK
+  hci->transmit_int_command(opcode, (BT_HDR *)buffer, callback);
+#else
   hci->transmit_command((BT_HDR *)buffer, transmit_completed_callback, NULL, callback);
+#endif
   return true;
 }
 

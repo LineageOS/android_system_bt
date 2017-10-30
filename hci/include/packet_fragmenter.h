@@ -25,6 +25,9 @@
 typedef void (*transmit_finished_cb)(BT_HDR *packet, bool all_fragments_sent);
 typedef void (*packet_reassembled_cb)(BT_HDR *packet);
 typedef void (*packet_fragmented_cb)(BT_HDR *packet, bool send_transmit_finished);
+#ifdef BLUETOOTH_RTK
+typedef void (*filter_incoming_event_cb)(BT_HDR *packet);
+#endif
 
 typedef struct {
   // Called for every packet fragment.
@@ -36,6 +39,10 @@ typedef struct {
   // Called when the fragmenter finishes sending all requested fragments,
   // but the packet has not been entirely sent.
   transmit_finished_cb transmit_finished;
+#ifdef BLUETOOTH_RTK
+  //handle the callback of cmd comp event and cmd status event
+  filter_incoming_event_cb filter_incoming_event;
+#endif
 } packet_fragmenter_callbacks_t;
 
 typedef struct packet_fragmenter_t {
