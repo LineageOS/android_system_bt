@@ -778,16 +778,10 @@ static void bta_jv_start_discovery_cback(uint16_t result, void* user_data) {
   }
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_start_discovery
- *
- * Description  Discovers services on a remote device
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_start_discovery(tBTA_JV_MSG* p_data) {
+/* Discovers services on a remote device */
+void bta_jv_start_discovery(const RawAddress& bd_addr, uint16_t num_uuid,
+                            bluetooth::Uuid* uuid_list,
+                            uint32_t rfcomm_slot_id) {
   tBTA_JV_STATUS status = BTA_JV_FAILURE;
   APPL_TRACE_DEBUG("bta_jv_start_discovery in, sdp_active:%d",
                    bta_jv_cb.sdp_active);
@@ -797,42 +791,37 @@ void bta_jv_start_discovery(tBTA_JV_MSG* p_data) {
     if (bta_jv_cb.p_dm_cback) {
       tBTA_JV bta_jv;
       bta_jv.status = status;
-      bta_jv_cb.p_dm_cback(BTA_JV_DISCOVERY_COMP_EVT, &bta_jv,
-                           p_data->start_discovery.rfcomm_slot_id);
+      bta_jv_cb.p_dm_cback(BTA_JV_DISCOVERY_COMP_EVT, &bta_jv, rfcomm_slot_id);
     }
     return;
   }
 
   /* init the database/set up the filter */
-  APPL_TRACE_DEBUG(
-      "call SDP_InitDiscoveryDb, p_data->start_discovery.num_uuid:%d",
-      p_data->start_discovery.num_uuid);
+  APPL_TRACE_DEBUG("call SDP_InitDiscoveryDb, num_uuid:%d", num_uuid);
   SDP_InitDiscoveryDb(p_bta_jv_cfg->p_sdp_db, p_bta_jv_cfg->sdp_db_size,
-                      p_data->start_discovery.num_uuid,
-                      p_data->start_discovery.uuid_list, 0, NULL);
+                      num_uuid, uuid_list, 0, NULL);
 
   /* tell SDP to keep the raw data */
   p_bta_jv_cfg->p_sdp_db->raw_data = p_bta_jv_cfg->p_sdp_raw_data;
   p_bta_jv_cfg->p_sdp_db->raw_size = p_bta_jv_cfg->sdp_raw_size;
 
   bta_jv_cb.p_sel_raw_data = 0;
-  bta_jv_cb.uuid = p_data->start_discovery.uuid_list[0];
+  bta_jv_cb.uuid = uuid_list[0];
 
   bta_jv_cb.sdp_active = BTA_JV_SDP_ACT_YES;
 
-  uint32_t* rfcomm_slot_id = (uint32_t*)osi_malloc(sizeof(uint32_t));
-  *rfcomm_slot_id = p_data->start_discovery.rfcomm_slot_id;
+  uint32_t* rfcomm_slot_id_copy = (uint32_t*)osi_malloc(sizeof(uint32_t));
+  *rfcomm_slot_id_copy = rfcomm_slot_id;
 
-  if (!SDP_ServiceSearchAttributeRequest2(
-          p_data->start_discovery.bd_addr, p_bta_jv_cfg->p_sdp_db,
-          bta_jv_start_discovery_cback, (void*)rfcomm_slot_id)) {
+  if (!SDP_ServiceSearchAttributeRequest2(bd_addr, p_bta_jv_cfg->p_sdp_db,
+                                          bta_jv_start_discovery_cback,
+                                          (void*)rfcomm_slot_id_copy)) {
     bta_jv_cb.sdp_active = BTA_JV_SDP_ACT_NONE;
     /* failed to start SDP. report the failure right away */
     if (bta_jv_cb.p_dm_cback) {
       tBTA_JV bta_jv;
       bta_jv.status = status;
-      bta_jv_cb.p_dm_cback(BTA_JV_DISCOVERY_COMP_EVT, &bta_jv,
-                           p_data->start_discovery.rfcomm_slot_id);
+      bta_jv_cb.p_dm_cback(BTA_JV_DISCOVERY_COMP_EVT, &bta_jv, rfcomm_slot_id);
     }
   }
   /*
