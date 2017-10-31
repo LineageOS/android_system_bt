@@ -284,7 +284,7 @@ typedef struct {
   uint8_t cb_index[BTA_HH_MAX_KNOWN];     /* maintain a CB index
                                         map to dev handle */
 #if (BTA_HH_LE_INCLUDED == TRUE)
-  uint8_t le_cb_index[BTA_HH_MAX_DEVICE]; /* maintain a CB index map to LE dev
+  uint8_t le_cb_index[BTA_HH_LE_MAX_KNOWN]; /* maintain a CB index map to LE dev
                                              handle */
   tGATT_IF gatt_if;
 #endif
