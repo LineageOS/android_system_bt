@@ -1071,79 +1071,67 @@ static void bta_jv_l2cap_server_cback(uint16_t gap_handle, uint16_t event) {
   }
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_l2cap_start_server
- *
- * Description  starts an L2CAP server
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_l2cap_start_server(tBTA_JV_MSG* p_data) {
-  tBTA_JV_L2C_CB* p_cb;
-  uint8_t sec_id;
+/** starts an L2CAP server */
+void bta_jv_l2cap_start_server(int32_t type, tBTA_SEC sec_mask,
+                               tBTA_JV_ROLE role, uint16_t local_psm,
+                               uint16_t rx_mtu,
+                               std::unique_ptr<tL2CAP_CFG_INFO> cfg_param,
+                               std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info,
+                               tBTA_JV_L2CAP_CBACK* p_cback,
+                               uint32_t l2cap_socket_id) {
   uint16_t handle;
-  tL2CAP_CFG_INFO cfg;
   tBTA_JV_L2CAP_START evt_data;
-  tBTA_JV_API_L2CAP_SERVER* ls = &(p_data->l2cap_server);
   uint8_t chan_mode_mask = GAP_FCR_CHAN_OPT_BASIC;
-  tL2CAP_ERTM_INFO* ertm_info = NULL;
 
+  tL2CAP_CFG_INFO cfg;
   memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
-
-  if (ls->has_cfg) {
-    cfg = ls->cfg;
+  if (cfg_param) {
+    cfg = *cfg_param;
     if (cfg.fcr_present && cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) {
       chan_mode_mask = GAP_FCR_CHAN_OPT_ERTM;
     }
   }
 
-  if (ls->has_ertm_info) {
-    ertm_info = &(ls->ertm_info);
-  }
-
   // FIX: MTU=0 means not present
-  if (ls->rx_mtu > 0) {
+  if (rx_mtu > 0) {
     cfg.mtu_present = true;
-    cfg.mtu = ls->rx_mtu;
+    cfg.mtu = rx_mtu;
   } else {
     cfg.mtu_present = false;
     cfg.mtu = 0;
   }
 
   /* TODO DM role manager
-  L2CA_SetDesireRole(ls->role);
+  L2CA_SetDesireRole(role);
   */
 
-  sec_id = bta_jv_alloc_sec_id();
+  uint8_t sec_id = bta_jv_alloc_sec_id();
   /* PSM checking is not required for LE COC */
   if (0 == sec_id ||
-      ((ls->type == BTA_JV_CONN_TYPE_L2CAP) &&
-       (!bta_jv_check_psm(ls->local_psm))) ||
-      (handle = GAP_ConnOpen("JV L2CAP", sec_id, 1, nullptr, ls->local_psm,
-                             &cfg, ertm_info, ls->sec_mask, chan_mode_mask,
-                             bta_jv_l2cap_server_cback, ls->type)) ==
+      ((type == BTA_JV_CONN_TYPE_L2CAP) && (!bta_jv_check_psm(local_psm))) ||
+      (handle = GAP_ConnOpen("JV L2CAP", sec_id, 1, nullptr, local_psm, &cfg,
+                             ertm_info.get(), sec_mask, chan_mode_mask,
+                             bta_jv_l2cap_server_cback, type)) ==
           GAP_INVALID_HANDLE) {
     bta_jv_free_sec_id(&sec_id);
     evt_data.status = BTA_JV_FAILURE;
   } else {
-    p_cb = &bta_jv_cb.l2c_cb[handle];
+    tBTA_JV_L2C_CB* p_cb = &bta_jv_cb.l2c_cb[handle];
     evt_data.status = BTA_JV_SUCCESS;
     evt_data.handle = handle;
     evt_data.sec_id = sec_id;
-    p_cb->p_cback = ls->p_cback;
-    p_cb->l2cap_socket_id = ls->l2cap_socket_id;
+    p_cb->p_cback = p_cback;
+    p_cb->l2cap_socket_id = l2cap_socket_id;
     p_cb->handle = handle;
     p_cb->sec_id = sec_id;
     p_cb->state = BTA_JV_ST_SR_LISTEN;
-    p_cb->psm = ls->local_psm;
+    p_cb->psm = local_psm;
   }
 
-  if (ls->p_cback) {
+  if (p_cback) {
     tBTA_JV bta_jv;
     bta_jv.l2c_start = evt_data;
-    ls->p_cback(BTA_JV_L2CAP_START_EVT, &bta_jv, ls->l2cap_socket_id);
+    p_cback(BTA_JV_L2CAP_START_EVT, &bta_jv, l2cap_socket_id);
   }
 }
 

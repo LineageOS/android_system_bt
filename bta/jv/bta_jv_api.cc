@@ -376,33 +376,19 @@ tBTA_JV_STATUS BTA_JvL2capStartServer(int conn_type, tBTA_SEC sec_mask,
                                       uint32_t l2cap_socket_id) {
   APPL_TRACE_API("%s", __func__);
 
-  if (p_cback == NULL) return BTA_JV_FAILURE; /* Nothing to do */
+  if (!p_cback) return BTA_JV_FAILURE; /* Nothing to do */
 
-  tBTA_JV_API_L2CAP_SERVER* p_msg =
-      (tBTA_JV_API_L2CAP_SERVER*)osi_malloc(sizeof(tBTA_JV_API_L2CAP_SERVER));
-  p_msg->hdr.event = BTA_JV_API_L2CAP_START_SERVER_EVT;
-  p_msg->type = conn_type;
-  p_msg->sec_mask = sec_mask;
-  p_msg->role = role;
-  p_msg->local_psm = local_psm;
-  p_msg->rx_mtu = rx_mtu;
-  if (cfg != NULL) {
-    p_msg->has_cfg = true;
-    p_msg->cfg = *cfg;
-  } else {
-    p_msg->has_cfg = false;
-  }
-  if (ertm_info != NULL) {
-    p_msg->has_ertm_info = true;
-    p_msg->ertm_info = *ertm_info;
-  } else {
-    p_msg->has_ertm_info = false;
-  }
-  p_msg->p_cback = p_cback;
-  p_msg->l2cap_socket_id = l2cap_socket_id;
+  std::unique_ptr<tL2CAP_CFG_INFO> cfg_copy;
+  if (cfg) cfg_copy = std::make_unique<tL2CAP_CFG_INFO>(*cfg);
 
-  bta_sys_sendmsg(p_msg);
+  std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info_copy;
+  if (ertm_info)
+    ertm_info_copy = std::make_unique<tL2CAP_ERTM_INFO>(*ertm_info);
 
+  do_in_bta_thread(
+      FROM_HERE, Bind(&bta_jv_l2cap_start_server, conn_type, sec_mask, role,
+                      local_psm, rx_mtu, base::Passed(&cfg_copy),
+                      base::Passed(&ertm_info_copy), p_cback, l2cap_socket_id));
   return BTA_JV_SUCCESS;
 }
 
