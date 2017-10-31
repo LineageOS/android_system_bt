@@ -515,17 +515,13 @@ tBTA_JV_STATUS BTA_JvDeleteRecord(uint32_t handle);
  *                  When the connection is established or failed,
  *                  tBTA_JV_L2CAP_CBACK is called with BTA_JV_L2CAP_OPEN_EVT
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
- *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
-                                    const tL2CAP_ERTM_INFO* ertm_info,
-                                    uint16_t remote_chan, uint16_t rx_mtu,
-                                    tL2CAP_CFG_INFO* cfg,
-                                    const RawAddress& peer_bd_addr,
-                                    tBTA_JV_L2CAP_CBACK* p_cback,
-                                    uint32_t l2cap_socket_id);
+void BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
+                          const tL2CAP_ERTM_INFO* ertm_info,
+                          uint16_t remote_chan, uint16_t rx_mtu,
+                          tL2CAP_CFG_INFO* cfg, const RawAddress& peer_bd_addr,
+                          tBTA_JV_L2CAP_CBACK* p_cback,
+                          uint32_t l2cap_socket_id);
 
 /*******************************************************************************
  *
@@ -538,15 +534,12 @@ tBTA_JV_STATUS BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
  *                  When the connection is established or failed,
  *                  tBTA_JV_L2CAP_CBACK is called with BTA_JV_L2CAP_OPEN_EVT
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
- *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capConnect(
-    int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
-    const tL2CAP_ERTM_INFO* ertm_info, uint16_t remote_psm, uint16_t rx_mtu,
-    tL2CAP_CFG_INFO* cfg, const RawAddress& peer_bd_addr,
-    tBTA_JV_L2CAP_CBACK* p_cback, uint32_t l2cap_socket_id);
+void BTA_JvL2capConnect(int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
+                        const tL2CAP_ERTM_INFO* ertm_info, uint16_t remote_psm,
+                        uint16_t rx_mtu, tL2CAP_CFG_INFO* cfg,
+                        const RawAddress& peer_bd_addr,
+                        tBTA_JV_L2CAP_CBACK* p_cback, uint32_t l2cap_socket_id);
 
 /*******************************************************************************
  *
