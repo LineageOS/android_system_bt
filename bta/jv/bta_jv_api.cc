@@ -257,10 +257,10 @@ tBTA_JV_STATUS BTA_JvDeleteRecord(uint32_t handle) {
  *                  BTA_JV_FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
-                                    const tL2CAP_ERTM_INFO* ertm_info,
-                                    uint16_t remote_chan, uint16_t rx_mtu,
-                                    tL2CAP_CFG_INFO* cfg,
+tBTA_JV_STATUS BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE,
+                                    const tL2CAP_ERTM_INFO*,
+                                    uint16_t remote_chan, uint16_t,
+                                    tL2CAP_CFG_INFO*,
                                     const RawAddress& peer_bd_addr,
                                     tBTA_JV_L2CAP_CBACK* p_cback,
                                     uint32_t l2cap_socket_id) {
@@ -268,30 +268,8 @@ tBTA_JV_STATUS BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
 
   if (p_cback == NULL) return BTA_JV_FAILURE; /* Nothing to do */
 
-  tBTA_JV_API_L2CAP_CONNECT* p_msg =
-      (tBTA_JV_API_L2CAP_CONNECT*)osi_malloc(sizeof(tBTA_JV_API_L2CAP_CONNECT));
-  p_msg->hdr.event = BTA_JV_API_L2CAP_CONNECT_LE_EVT;
-  p_msg->sec_mask = sec_mask;
-  p_msg->role = role;
-  p_msg->remote_chan = remote_chan;
-  p_msg->rx_mtu = rx_mtu;
-  if (cfg != NULL) {
-    p_msg->has_cfg = true;
-    p_msg->cfg = *cfg;
-  } else {
-    p_msg->has_cfg = false;
-  }
-  if (ertm_info != NULL) {
-    p_msg->has_ertm_info = true;
-    p_msg->ertm_info = *ertm_info;
-  } else {
-    p_msg->has_ertm_info = false;
-  }
-  p_msg->peer_bd_addr = peer_bd_addr;
-  p_msg->p_cback = p_cback;
-  p_msg->l2cap_socket_id = l2cap_socket_id;
-
-  bta_sys_sendmsg(p_msg);
+  do_in_bta_thread(FROM_HERE, Bind(&bta_jv_l2cap_connect_le, remote_chan,
+                                   peer_bd_addr, p_cback, l2cap_socket_id));
 
   return BTA_JV_SUCCESS;
 }
