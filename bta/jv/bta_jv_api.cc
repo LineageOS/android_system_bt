@@ -346,16 +346,9 @@ tBTA_JV_STATUS BTA_JvL2capClose(uint32_t handle) {
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvL2capCloseLE(uint32_t handle) {
-  tBTA_JV_API_L2CAP_CLOSE* p_msg =
-      (tBTA_JV_API_L2CAP_CLOSE*)osi_malloc(sizeof(tBTA_JV_API_L2CAP_CLOSE));
-
   APPL_TRACE_API("%s", __func__);
 
-  p_msg->hdr.event = BTA_JV_API_L2CAP_CLOSE_FIXED_EVT;
-  p_msg->handle = handle;
-
-  bta_sys_sendmsg(p_msg);
-
+  do_in_bta_thread(FROM_HERE, Bind(&bta_jv_l2cap_close_fixed, handle));
   return BTA_JV_SUCCESS;
 }
 

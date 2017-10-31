@@ -56,7 +56,6 @@ const tBTA_JV_ACTION bta_jv_action[] = {
     bta_jv_l2cap_start_server_le, /* BTA_JV_API_L2CAP_START_SERVER_LE_EVT */
     bta_jv_l2cap_stop_server_le,  /* BTA_JV_API_L2CAP_STOP_SERVER_LE_EVT */
     bta_jv_l2cap_write_fixed,     /* BTA_JV_API_L2CAP_WRITE_FIXED_EVT */
-    bta_jv_l2cap_close_fixed,     /*  BTA_JV_API_L2CAP_CLOSE_FIXED_EVT */
 };
 
 /*******************************************************************************

@@ -2443,19 +2443,8 @@ out:
   ss->p_cback(BTA_JV_L2CAP_START_EVT, &bta_jv, ss->l2cap_socket_id);
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_l2cap_close_fixed
- *
- * Description  close a fixed channel connection. calls no callbacks. idempotent
- *
- * Returns      void
- *
- ******************************************************************************/
-extern void bta_jv_l2cap_close_fixed(tBTA_JV_MSG* p_data) {
-  tBTA_JV_API_L2CAP_CLOSE* cc = &(p_data->l2cap_close);
-  struct fc_client* t;
-
-  t = fcclient_find_by_id(cc->handle);
+/* close a fixed channel connection. calls no callbacks. idempotent */
+extern void bta_jv_l2cap_close_fixed(uint32_t handle) {
+  struct fc_client* t = fcclient_find_by_id(handle);
   if (t) fcclient_free(t);
 }
