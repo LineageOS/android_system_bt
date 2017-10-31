@@ -922,59 +922,48 @@ static void bta_jv_l2cap_client_cback(uint16_t gap_handle, uint16_t event) {
   }
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_l2cap_connect
- *
- * Description  makes an l2cap client connection
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_l2cap_connect(tBTA_JV_MSG* p_data) {
-  tBTA_JV_L2C_CB* p_cb;
-  tBTA_JV_L2CAP_CL_INIT evt_data;
+/* makes an l2cap client connection */
+void bta_jv_l2cap_connect(int32_t type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
+                          uint16_t remote_psm, uint16_t rx_mtu,
+                          const RawAddress& peer_bd_addr,
+                          std::unique_ptr<tL2CAP_CFG_INFO> cfg_param,
+                          std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info,
+                          tBTA_JV_L2CAP_CBACK* p_cback,
+                          uint32_t l2cap_socket_id) {
   uint16_t handle = GAP_INVALID_HANDLE;
-  uint8_t sec_id;
-  tL2CAP_CFG_INFO cfg;
-  tBTA_JV_API_L2CAP_CONNECT* cc = &(p_data->l2cap_connect);
   uint8_t chan_mode_mask = GAP_FCR_CHAN_OPT_BASIC;
-  tL2CAP_ERTM_INFO* ertm_info = NULL;
 
+  tL2CAP_CFG_INFO cfg;
   memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
-
-  if (cc->has_cfg) {
-    cfg = cc->cfg;
+  if (cfg_param) {
+    cfg = *cfg_param;
     if (cfg.fcr_present && cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) {
       chan_mode_mask = GAP_FCR_CHAN_OPT_ERTM;
     }
   }
 
-  if (cc->has_ertm_info) {
-    ertm_info = &(cc->ertm_info);
-  }
-
   /* We need to use this value for MTU to be able to handle cases where cfg is
    * not set in req. */
   cfg.mtu_present = true;
-  cfg.mtu = cc->rx_mtu;
+  cfg.mtu = rx_mtu;
 
   /* TODO: DM role manager
-  L2CA_SetDesireRole(cc->role);
+  L2CA_SetDesireRole(role);
   */
 
-  sec_id = bta_jv_alloc_sec_id();
+  uint8_t sec_id = bta_jv_alloc_sec_id();
+  tBTA_JV_L2CAP_CL_INIT evt_data;
   evt_data.sec_id = sec_id;
   evt_data.status = BTA_JV_FAILURE;
 
   if (sec_id) {
     /* PSM checking is not required for LE COC */
-    if ((cc->type != BTA_JV_CONN_TYPE_L2CAP) ||
-        (bta_jv_check_psm(cc->remote_psm))) /* allowed */
+    if ((type != BTA_JV_CONN_TYPE_L2CAP) ||
+        (bta_jv_check_psm(remote_psm))) /* allowed */
     {
-      handle = GAP_ConnOpen("", sec_id, 0, &cc->peer_bd_addr, cc->remote_psm,
-                            &cfg, ertm_info, cc->sec_mask, chan_mode_mask,
-                            bta_jv_l2cap_client_cback, cc->type);
+      handle = GAP_ConnOpen("", sec_id, 0, &peer_bd_addr, remote_psm, &cfg,
+                            ertm_info.get(), sec_mask, chan_mode_mask,
+                            bta_jv_l2cap_client_cback, type);
       if (handle != GAP_INVALID_HANDLE) {
         evt_data.status = BTA_JV_SUCCESS;
       }
@@ -982,10 +971,11 @@ void bta_jv_l2cap_connect(tBTA_JV_MSG* p_data) {
   }
 
   if (evt_data.status == BTA_JV_SUCCESS) {
+    tBTA_JV_L2C_CB* p_cb;
     p_cb = &bta_jv_cb.l2c_cb[handle];
     p_cb->handle = handle;
-    p_cb->p_cback = cc->p_cback;
-    p_cb->l2cap_socket_id = cc->l2cap_socket_id;
+    p_cb->p_cback = p_cback;
+    p_cb->l2cap_socket_id = l2cap_socket_id;
     p_cb->psm = 0; /* not a server */
     p_cb->sec_id = sec_id;
     p_cb->state = BTA_JV_ST_CL_OPENING;
@@ -994,10 +984,10 @@ void bta_jv_l2cap_connect(tBTA_JV_MSG* p_data) {
   }
 
   evt_data.handle = handle;
-  if (cc->p_cback) {
+  if (p_cback) {
     tBTA_JV bta_jv;
     bta_jv.l2c_cl_init = evt_data;
-    cc->p_cback(BTA_JV_L2CAP_CL_INIT_EVT, &bta_jv, cc->l2cap_socket_id);
+    p_cback(BTA_JV_L2CAP_CL_INIT_EVT, &bta_jv, l2cap_socket_id);
   }
 }
 

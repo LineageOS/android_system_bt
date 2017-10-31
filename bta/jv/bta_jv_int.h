@@ -30,6 +30,8 @@
 #include "port_api.h"
 #include "rfcdefs.h"
 
+#include <memory>
+
 /*****************************************************************************
  *  Constants
  ****************************************************************************/
@@ -37,7 +39,6 @@
 enum {
   /* these events are handled by the state machine */
   BTA_JV_API_START_DISCOVERY_EVT = BTA_SYS_EVT_START(BTA_ID_JV),
-  BTA_JV_API_L2CAP_CONNECT_EVT,
   BTA_JV_API_L2CAP_CLOSE_EVT,
   BTA_JV_API_L2CAP_START_SERVER_EVT,
   BTA_JV_API_L2CAP_STOP_SERVER_EVT,
@@ -137,27 +138,6 @@ typedef struct {
   uint8_t max_sess;       /* max sessions */
   int curr_sess;          /* current sessions count*/
 } tBTA_JV_RFC_CB;
-
-/* data type for BTA_JV_API_L2CAP_CONNECT_EVT
- */
-typedef struct {
-  BT_HDR hdr;
-  int32_t type; /* One of BTA_JV_CONN_TYPE_ */
-  tBTA_SEC sec_mask;
-  tBTA_JV_ROLE role;
-  union {
-    uint16_t remote_psm;
-    uint16_t remote_chan;
-  };
-  uint16_t rx_mtu;
-  RawAddress peer_bd_addr;
-  int32_t has_cfg;
-  tL2CAP_CFG_INFO cfg;
-  int32_t has_ertm_info;
-  tL2CAP_ERTM_INFO ertm_info;
-  tBTA_JV_L2CAP_CBACK* p_cback;
-  uint32_t l2cap_socket_id;
-} tBTA_JV_API_L2CAP_CONNECT;
 
 /* data type for BTA_JV_API_L2CAP_SERVER_EVT */
 typedef struct {
@@ -282,7 +262,6 @@ typedef union {
   /* GKI event buffer header */
   BT_HDR hdr;
   tBTA_JV_API_START_DISCOVERY start_discovery;
-  tBTA_JV_API_L2CAP_CONNECT l2cap_connect;
   tBTA_JV_API_L2CAP_READ l2cap_read;
   tBTA_JV_API_L2CAP_WRITE l2cap_write;
   tBTA_JV_API_L2CAP_CLOSE l2cap_close;
@@ -340,7 +319,14 @@ extern void bta_jv_free_scn(int32_t type, uint16_t scn);
 extern void bta_jv_start_discovery(tBTA_JV_MSG* p_data);
 extern void bta_jv_create_record(uint32_t rfcomm_slot_id);
 extern void bta_jv_delete_record(uint32_t handle);
-extern void bta_jv_l2cap_connect(tBTA_JV_MSG* p_data);
+extern void bta_jv_l2cap_connect(int32_t type, tBTA_SEC sec_mask,
+                                 tBTA_JV_ROLE role, uint16_t remote_psm,
+                                 uint16_t rx_mtu,
+                                 const RawAddress& peer_bd_addr,
+                                 std::unique_ptr<tL2CAP_CFG_INFO> cfg,
+                                 std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info,
+                                 tBTA_JV_L2CAP_CBACK* p_cback,
+                                 uint32_t l2cap_socket_id);
 extern void bta_jv_l2cap_close(tBTA_JV_MSG* p_data);
 extern void bta_jv_l2cap_start_server(tBTA_JV_MSG* p_data);
 extern void bta_jv_l2cap_stop_server(tBTA_JV_MSG* p_data);
