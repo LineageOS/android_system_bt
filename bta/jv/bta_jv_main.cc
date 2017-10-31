@@ -42,7 +42,6 @@ typedef void (*tBTA_JV_ACTION)(tBTA_JV_MSG* p_data);
 /* action function list */
 const tBTA_JV_ACTION bta_jv_action[] = {
     bta_jv_start_discovery,       /* BTA_JV_API_START_DISCOVERY_EVT */
-    bta_jv_rfcomm_write,          /* BTA_JV_API_RFCOMM_WRITE_EVT */
     bta_jv_set_pm_profile,        /* BTA_JV_API_SET_PM_PROFILE_EVT */
     bta_jv_change_pm_state,       /* BTA_JV_API_PM_STATE_CHANGE_EVT */
 };
