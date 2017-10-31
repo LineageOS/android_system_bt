@@ -762,17 +762,9 @@ tBTA_JV_STATUS BTA_JvRfcommWrite(uint32_t handle, uint32_t req_id) {
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvSetPmProfile(uint32_t handle, tBTA_JV_PM_ID app_id,
                                   tBTA_JV_CONN_STATE init_st) {
-  tBTA_JV_API_SET_PM_PROFILE* p_msg = (tBTA_JV_API_SET_PM_PROFILE*)osi_malloc(
-      sizeof(tBTA_JV_API_SET_PM_PROFILE));
-
   APPL_TRACE_API("%s handle:0x%x, app_id:%d", __func__, handle, app_id);
 
-  p_msg->hdr.event = BTA_JV_API_SET_PM_PROFILE_EVT;
-  p_msg->handle = handle;
-  p_msg->app_id = app_id;
-  p_msg->init_st = init_st;
-
-  bta_sys_sendmsg(p_msg);
-
+  do_in_bta_thread(FROM_HERE,
+                   Bind(&bta_jv_set_pm_profile, handle, app_id, init_st));
   return BTA_JV_SUCCESS;
 }

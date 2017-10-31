@@ -1780,26 +1780,18 @@ void bta_jv_rfcomm_write(uint32_t handle, uint32_t req_id, tBTA_JV_RFC_CB* p_cb,
   p_cb->p_cback(BTA_JV_RFCOMM_WRITE_EVT, &bta_jv, p_pcb->rfcomm_slot_id);
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_set_pm_profile
- *
- * Description  Set or free power mode profile for a JV application
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_set_pm_profile(tBTA_JV_MSG* p_data) {
+/* Set or free power mode profile for a JV application */
+void bta_jv_set_pm_profile(uint32_t handle, tBTA_JV_PM_ID app_id,
+                           tBTA_JV_CONN_STATE init_st) {
   tBTA_JV_STATUS status;
   tBTA_JV_PM_CB* p_cb;
 
   APPL_TRACE_API("bta_jv_set_pm_profile(handle: 0x%x, app_id: %d, init_st: %d)",
-                 p_data->set_pm.handle, p_data->set_pm.app_id,
-                 p_data->set_pm.init_st);
+                 handle, app_id, init_st);
 
   /* clear PM control block */
-  if (p_data->set_pm.app_id == BTA_JV_PM_ID_CLEAR) {
-    status = bta_jv_free_set_pm_profile_cb(p_data->set_pm.handle);
+  if (app_id == BTA_JV_PM_ID_CLEAR) {
+    status = bta_jv_free_set_pm_profile_cb(handle);
 
     if (status != BTA_JV_SUCCESS) {
       APPL_TRACE_WARNING("bta_jv_set_pm_profile() free pm cb failed: reason %d",
@@ -1807,11 +1799,10 @@ void bta_jv_set_pm_profile(tBTA_JV_MSG* p_data) {
     }
   } else /* set PM control block */
   {
-    p_cb = bta_jv_alloc_set_pm_profile_cb(p_data->set_pm.handle,
-                                          p_data->set_pm.app_id);
+    p_cb = bta_jv_alloc_set_pm_profile_cb(handle, app_id);
 
     if (NULL != p_cb)
-      bta_jv_pm_state_change(p_cb, p_data->set_pm.init_st);
+      bta_jv_pm_state_change(p_cb, init_st);
     else
       APPL_TRACE_WARNING("bta_jv_alloc_set_pm_profile_cb() failed");
   }
