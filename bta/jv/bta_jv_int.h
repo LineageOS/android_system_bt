@@ -39,7 +39,6 @@
 enum {
   /* these events are handled by the state machine */
   BTA_JV_API_START_DISCOVERY_EVT = BTA_SYS_EVT_START(BTA_ID_JV),
-  BTA_JV_API_RFCOMM_CONNECT_EVT,
   BTA_JV_API_RFCOMM_CLOSE_EVT,
   BTA_JV_API_RFCOMM_START_SERVER_EVT,
   BTA_JV_API_RFCOMM_STOP_SERVER_EVT,
@@ -141,17 +140,6 @@ typedef struct {
   uint32_t l2cap_socket_id;
 } tBTA_JV_API_L2CAP_READ;
 
-/* data type for BTA_JV_API_RFCOMM_CONNECT_EVT */
-typedef struct {
-  BT_HDR hdr;
-  tBTA_SEC sec_mask;
-  tBTA_JV_ROLE role;
-  uint8_t remote_scn;
-  RawAddress peer_bd_addr;
-  tBTA_JV_RFCOMM_CBACK* p_cback;
-  uint32_t rfcomm_slot_id;
-} tBTA_JV_API_RFCOMM_CONNECT;
-
 /* data type for BTA_JV_API_RFCOMM_SERVER_EVT */
 typedef struct {
   BT_HDR hdr;
@@ -205,7 +193,6 @@ typedef union {
   BT_HDR hdr;
   tBTA_JV_API_START_DISCOVERY start_discovery;
   tBTA_JV_API_L2CAP_READ l2cap_read;
-  tBTA_JV_API_RFCOMM_CONNECT rfcomm_connect;
   tBTA_JV_API_RFCOMM_WRITE rfcomm_write;
   tBTA_JV_API_SET_PM_PROFILE set_pm;
   tBTA_JV_API_PM_STATE_CHANGE change_pm_state;
@@ -276,7 +263,11 @@ extern void bta_jv_l2cap_stop_server(uint16_t local_psm,
 extern void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id,
                                uint8_t* p_data, uint16_t len, uint32_t user_id,
                                tBTA_JV_L2C_CB* p_cb);
-extern void bta_jv_rfcomm_connect(tBTA_JV_MSG* p_data);
+extern void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
+                                  uint8_t remote_scn,
+                                  const RawAddress& peer_bd_addr,
+                                  tBTA_JV_RFCOMM_CBACK* p_cback,
+                                  uint32_t rfcomm_slot_id);
 extern void bta_jv_rfcomm_close(tBTA_JV_MSG* p_data);
 extern void bta_jv_rfcomm_start_server(tBTA_JV_MSG* p_data);
 extern void bta_jv_rfcomm_stop_server(tBTA_JV_MSG* p_data);
