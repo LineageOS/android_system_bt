@@ -39,7 +39,6 @@
 enum {
   /* these events are handled by the state machine */
   BTA_JV_API_START_DISCOVERY_EVT = BTA_SYS_EVT_START(BTA_ID_JV),
-  BTA_JV_API_RFCOMM_CLOSE_EVT,
   BTA_JV_API_RFCOMM_START_SERVER_EVT,
   BTA_JV_API_RFCOMM_STOP_SERVER_EVT,
   BTA_JV_API_RFCOMM_WRITE_EVT,
@@ -178,15 +177,6 @@ typedef struct {
   tBTA_JV_PCB* p_pcb;
 } tBTA_JV_API_RFCOMM_WRITE;
 
-/* data type for BTA_JV_API_RFCOMM_CLOSE_EVT */
-typedef struct {
-  BT_HDR hdr;
-  uint32_t handle;
-  tBTA_JV_RFC_CB* p_cb;
-  tBTA_JV_PCB* p_pcb;
-  uint32_t rfcomm_slot_id;
-} tBTA_JV_API_RFCOMM_CLOSE;
-
 /* union of all data types */
 typedef union {
   /* GKI event buffer header */
@@ -196,7 +186,6 @@ typedef union {
   tBTA_JV_API_RFCOMM_WRITE rfcomm_write;
   tBTA_JV_API_SET_PM_PROFILE set_pm;
   tBTA_JV_API_PM_STATE_CHANGE change_pm_state;
-  tBTA_JV_API_RFCOMM_CLOSE rfcomm_close;
   tBTA_JV_API_RFCOMM_SERVER rfcomm_server;
 } tBTA_JV_MSG;
 
@@ -268,7 +257,7 @@ extern void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
                                   const RawAddress& peer_bd_addr,
                                   tBTA_JV_RFCOMM_CBACK* p_cback,
                                   uint32_t rfcomm_slot_id);
-extern void bta_jv_rfcomm_close(tBTA_JV_MSG* p_data);
+extern void bta_jv_rfcomm_close(uint32_t handle, uint32_t rfcomm_slot_id);
 extern void bta_jv_rfcomm_start_server(tBTA_JV_MSG* p_data);
 extern void bta_jv_rfcomm_stop_server(tBTA_JV_MSG* p_data);
 extern void bta_jv_rfcomm_read(tBTA_JV_MSG* p_data);
