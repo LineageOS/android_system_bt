@@ -53,7 +53,6 @@ enum {
   BTA_JV_API_L2CAP_START_SERVER_LE_EVT,
   BTA_JV_API_L2CAP_STOP_SERVER_LE_EVT,
   BTA_JV_API_L2CAP_WRITE_FIXED_EVT,
-  BTA_JV_API_L2CAP_CLOSE_FIXED_EVT,
   BTA_JV_MAX_INT_EVT
 };
 
@@ -157,13 +156,6 @@ typedef struct {
   uint32_t l2cap_socket_id;
 } tBTA_JV_API_L2CAP_SERVER;
 
-/* data type for BTA_JV_API_L2CAP_CLOSE_EVT */
-typedef struct {
-  BT_HDR hdr;
-  uint32_t handle;
-  tBTA_JV_L2C_CB* p_cb;
-} tBTA_JV_API_L2CAP_CLOSE;
-
 /* data type for BTA_JV_API_L2CAP_READ_EVT */
 typedef struct {
   BT_HDR hdr;
@@ -263,7 +255,6 @@ typedef union {
   tBTA_JV_API_START_DISCOVERY start_discovery;
   tBTA_JV_API_L2CAP_READ l2cap_read;
   tBTA_JV_API_L2CAP_WRITE l2cap_write;
-  tBTA_JV_API_L2CAP_CLOSE l2cap_close;
   tBTA_JV_API_L2CAP_SERVER l2cap_server;
   tBTA_JV_API_RFCOMM_CONNECT rfcomm_connect;
   tBTA_JV_API_RFCOMM_WRITE rfcomm_write;
@@ -346,6 +337,6 @@ extern void bta_jv_l2cap_connect_le(uint16_t remote_chan,
 extern void bta_jv_l2cap_start_server_le(tBTA_JV_MSG* p_data);
 extern void bta_jv_l2cap_stop_server_le(tBTA_JV_MSG* p_data);
 extern void bta_jv_l2cap_write_fixed(tBTA_JV_MSG* p_data);
-extern void bta_jv_l2cap_close_fixed(tBTA_JV_MSG* p_data);
+extern void bta_jv_l2cap_close_fixed(uint32_t handle);
 
 #endif /* BTA_JV_INT_H */
