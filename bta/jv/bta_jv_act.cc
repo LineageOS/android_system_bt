@@ -1135,25 +1135,13 @@ void bta_jv_l2cap_start_server(int32_t type, tBTA_SEC sec_mask,
   }
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_l2cap_stop_server
- *
- * Description  stops an L2CAP server
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_l2cap_stop_server(tBTA_JV_MSG* p_data) {
-  tBTA_JV_L2C_CB* p_cb;
-  tBTA_JV_L2CAP_CLOSE evt_data;
-  tBTA_JV_API_L2CAP_SERVER* ls = &(p_data->l2cap_server);
-  tBTA_JV_L2CAP_CBACK* p_cback;
+/* stops an L2CAP server */
+void bta_jv_l2cap_stop_server(uint16_t local_psm, uint32_t l2cap_socket_id) {
   for (int i = 0; i < BTA_JV_MAX_L2C_CONN; i++) {
-    if (bta_jv_cb.l2c_cb[i].psm == ls->local_psm) {
-      p_cb = &bta_jv_cb.l2c_cb[i];
-      p_cback = p_cb->p_cback;
-      uint32_t l2cap_socket_id = p_cb->l2cap_socket_id;
+    if (bta_jv_cb.l2c_cb[i].psm == local_psm) {
+      tBTA_JV_L2C_CB* p_cb = &bta_jv_cb.l2c_cb[i];
+      tBTA_JV_L2CAP_CBACK* p_cback = p_cb->p_cback;
+      tBTA_JV_L2CAP_CLOSE evt_data;
       evt_data.handle = p_cb->handle;
       evt_data.status = bta_jv_free_l2c_cb(p_cb);
       evt_data.async = false;
