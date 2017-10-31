@@ -1646,28 +1646,21 @@ static tBTA_JV_PCB* bta_jv_add_rfc_port(tBTA_JV_RFC_CB* p_cb,
   return p_pcb;
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_rfcomm_start_server
- *
- * Description  waits for an RFCOMM client to connect
- *
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_rfcomm_start_server(tBTA_JV_MSG* p_data) {
+/* waits for an RFCOMM client to connect */
+void bta_jv_rfcomm_start_server(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
+                                uint8_t local_scn, uint8_t max_session,
+                                tBTA_JV_RFCOMM_CBACK* p_cback,
+                                uint32_t rfcomm_slot_id) {
   uint16_t handle = 0;
   uint32_t event_mask = BTA_JV_RFC_EV_MASK;
   tPORT_STATE port_state;
   uint8_t sec_id = 0;
   tBTA_JV_RFC_CB* p_cb = NULL;
   tBTA_JV_PCB* p_pcb;
-  tBTA_JV_API_RFCOMM_SERVER* rs = &(p_data->rfcomm_server);
   tBTA_JV_RFCOMM_START evt_data;
 
   /* TODO DM role manager
-  L2CA_SetDesireRole(rs->role);
+  L2CA_SetDesireRole(role);
   */
   memset(&evt_data, 0, sizeof(evt_data));
   evt_data.status = BTA_JV_FAILURE;
@@ -1679,14 +1672,13 @@ void bta_jv_rfcomm_start_server(tBTA_JV_MSG* p_data) {
     sec_id = bta_jv_alloc_sec_id();
 
     if (0 == sec_id ||
-        !BTM_SetSecurityLevel(false, "JV PORT", sec_id, rs->sec_mask,
-                              BT_PSM_RFCOMM, BTM_SEC_PROTO_RFCOMM,
-                              rs->local_scn)) {
+        !BTM_SetSecurityLevel(false, "JV PORT", sec_id, sec_mask, BT_PSM_RFCOMM,
+                              BTM_SEC_PROTO_RFCOMM, local_scn)) {
       APPL_TRACE_ERROR("bta_jv_rfcomm_start_server, run out of sec_id");
       break;
     }
 
-    if (RFCOMM_CreateConnection(sec_id, rs->local_scn, true, BTA_JV_DEF_RFC_MTU,
+    if (RFCOMM_CreateConnection(sec_id, local_scn, true, BTA_JV_DEF_RFC_MTU,
                                 RawAddress::kAny, &handle,
                                 bta_jv_port_mgmt_sr_cback) != PORT_SUCCESS) {
       APPL_TRACE_ERROR(
@@ -1701,12 +1693,12 @@ void bta_jv_rfcomm_start_server(tBTA_JV_MSG* p_data) {
       break;
     }
 
-    p_cb->max_sess = rs->max_session;
-    p_cb->p_cback = rs->p_cback;
+    p_cb->max_sess = max_session;
+    p_cb->p_cback = p_cback;
     p_cb->sec_id = sec_id;
-    p_cb->scn = rs->local_scn;
+    p_cb->scn = local_scn;
     p_pcb->state = BTA_JV_ST_SR_LISTEN;
-    p_pcb->rfcomm_slot_id = rs->rfcomm_slot_id;
+    p_pcb->rfcomm_slot_id = rfcomm_slot_id;
     evt_data.status = BTA_JV_SUCCESS;
     evt_data.handle = p_cb->handle;
     evt_data.sec_id = sec_id;
@@ -1724,7 +1716,7 @@ void bta_jv_rfcomm_start_server(tBTA_JV_MSG* p_data) {
 
   tBTA_JV bta_jv;
   bta_jv.rfc_start = evt_data;
-  rs->p_cback(BTA_JV_RFCOMM_START_EVT, &bta_jv, rs->rfcomm_slot_id);
+  p_cback(BTA_JV_RFCOMM_START_EVT, &bta_jv, rfcomm_slot_id);
   if (bta_jv.rfc_start.status == BTA_JV_SUCCESS) {
     PORT_SetDataCOCallback(handle, bta_jv_port_data_co_cback);
   } else {
@@ -1733,27 +1725,18 @@ void bta_jv_rfcomm_start_server(tBTA_JV_MSG* p_data) {
   }
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_rfcomm_stop_server
- *
- * Description  stops an RFCOMM server
- *
- * Returns      void
- *
- ******************************************************************************/
-
-void bta_jv_rfcomm_stop_server(tBTA_JV_MSG* p_data) {
-  tBTA_JV_API_RFCOMM_SERVER* ls = &(p_data->rfcomm_server);
-  tBTA_JV_RFC_CB* p_cb = NULL;
-  tBTA_JV_PCB* p_pcb = NULL;
-  APPL_TRACE_DEBUG("bta_jv_rfcomm_stop_server");
-  if (!ls->handle) {
+/* stops an RFCOMM server */
+void bta_jv_rfcomm_stop_server(uint32_t handle, uint32_t rfcomm_slot_id) {
+  if (!handle) {
     APPL_TRACE_ERROR("bta_jv_rfcomm_stop_server, jv handle is null");
     return;
   }
 
-  if (!find_rfc_pcb(ls->rfcomm_slot_id, &p_cb, &p_pcb)) return;
+  APPL_TRACE_DEBUG("bta_jv_rfcomm_stop_server");
+  tBTA_JV_RFC_CB* p_cb = NULL;
+  tBTA_JV_PCB* p_pcb = NULL;
+
+  if (!find_rfc_pcb(rfcomm_slot_id, &p_cb, &p_pcb)) return;
   APPL_TRACE_DEBUG("bta_jv_rfcomm_stop_server: p_pcb:%p, p_pcb->port_handle:%d",
                    p_pcb, p_pcb->port_handle);
   bta_jv_free_rfc_cb(p_cb, p_pcb);

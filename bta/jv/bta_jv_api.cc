@@ -653,24 +653,16 @@ tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
 
   if (p_cback == NULL) return BTA_JV_FAILURE; /* Nothing to do */
 
-  tBTA_JV_API_RFCOMM_SERVER* p_msg =
-      (tBTA_JV_API_RFCOMM_SERVER*)osi_malloc(sizeof(tBTA_JV_API_RFCOMM_SERVER));
   if (max_session == 0) max_session = 1;
   if (max_session > BTA_JV_MAX_RFC_SR_SESSION) {
     APPL_TRACE_DEBUG("max_session is too big. use max (%d)", max_session,
                      BTA_JV_MAX_RFC_SR_SESSION);
     max_session = BTA_JV_MAX_RFC_SR_SESSION;
   }
-  p_msg->hdr.event = BTA_JV_API_RFCOMM_START_SERVER_EVT;
-  p_msg->sec_mask = sec_mask;
-  p_msg->role = role;
-  p_msg->local_scn = local_scn;
-  p_msg->max_session = max_session;
-  p_msg->p_cback = p_cback;
-  p_msg->rfcomm_slot_id = rfcomm_slot_id;  // caller's private data
 
-  bta_sys_sendmsg(p_msg);
-
+  do_in_bta_thread(FROM_HERE,
+                   Bind(&bta_jv_rfcomm_start_server, sec_mask, role, local_scn,
+                        max_session, p_cback, rfcomm_slot_id));
   return BTA_JV_SUCCESS;
 }
 
@@ -687,17 +679,10 @@ tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvRfcommStopServer(uint32_t handle,
                                       uint32_t rfcomm_slot_id) {
-  tBTA_JV_API_RFCOMM_SERVER* p_msg =
-      (tBTA_JV_API_RFCOMM_SERVER*)osi_malloc(sizeof(tBTA_JV_API_RFCOMM_SERVER));
-
   APPL_TRACE_API("%s", __func__);
 
-  p_msg->hdr.event = BTA_JV_API_RFCOMM_STOP_SERVER_EVT;
-  p_msg->handle = handle;
-  p_msg->rfcomm_slot_id = rfcomm_slot_id;  // caller's private data
-
-  bta_sys_sendmsg(p_msg);
-
+  do_in_bta_thread(FROM_HERE,
+                   Bind(&bta_jv_rfcomm_stop_server, handle, rfcomm_slot_id));
   return BTA_JV_SUCCESS;
 }
 
