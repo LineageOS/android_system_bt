@@ -991,23 +991,14 @@ void bta_jv_l2cap_connect(int32_t type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
   }
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_l2cap_close
- *
- * Description  Close an L2CAP client connection
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_l2cap_close(tBTA_JV_MSG* p_data) {
+/** Close an L2CAP client connection */
+void bta_jv_l2cap_close(uint32_t handle, tBTA_JV_L2C_CB* p_cb) {
   tBTA_JV_L2CAP_CLOSE evt_data;
-  tBTA_JV_API_L2CAP_CLOSE* cc = &(p_data->l2cap_close);
-  tBTA_JV_L2CAP_CBACK* p_cback = cc->p_cb->p_cback;
-  uint32_t l2cap_socket_id = cc->p_cb->l2cap_socket_id;
+  tBTA_JV_L2CAP_CBACK* p_cback = p_cb->p_cback;
+  uint32_t l2cap_socket_id = p_cb->l2cap_socket_id;
 
-  evt_data.handle = cc->handle;
-  evt_data.status = bta_jv_free_l2c_cb(cc->p_cb);
+  evt_data.handle = handle;
+  evt_data.status = bta_jv_free_l2c_cb(p_cb);
   evt_data.async = false;
 
   if (p_cback) {
