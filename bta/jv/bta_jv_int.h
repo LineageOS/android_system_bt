@@ -47,7 +47,6 @@ enum {
   BTA_JV_API_RFCOMM_WRITE_EVT,
   BTA_JV_API_SET_PM_PROFILE_EVT,
   BTA_JV_API_PM_STATE_CHANGE_EVT,
-  BTA_JV_API_L2CAP_WRITE_FIXED_EVT,
   BTA_JV_MAX_INT_EVT
 };
 
@@ -143,18 +142,6 @@ typedef struct {
   uint32_t l2cap_socket_id;
 } tBTA_JV_API_L2CAP_READ;
 
-/* data type for BTA_JV_API_L2CAP_WRITE_FIXED_EVT */
-typedef struct {
-  BT_HDR hdr;
-  uint16_t channel;
-  RawAddress addr;
-  uint32_t req_id;
-  tBTA_JV_L2CAP_CBACK* p_cback;
-  uint8_t* p_data;
-  uint16_t len;
-  uint32_t user_id;
-} tBTA_JV_API_L2CAP_WRITE_FIXED;
-
 /* data type for BTA_JV_API_RFCOMM_CONNECT_EVT */
 typedef struct {
   BT_HDR hdr;
@@ -225,7 +212,6 @@ typedef union {
   tBTA_JV_API_PM_STATE_CHANGE change_pm_state;
   tBTA_JV_API_RFCOMM_CLOSE rfcomm_close;
   tBTA_JV_API_RFCOMM_SERVER rfcomm_server;
-  tBTA_JV_API_L2CAP_WRITE_FIXED l2cap_write_fixed;
 } tBTA_JV_MSG;
 
 /* JV control block */
@@ -308,7 +294,10 @@ extern void bta_jv_l2cap_start_server_le(uint16_t local_chan,
                                          tBTA_JV_L2CAP_CBACK* p_cback,
                                          uint32_t l2cap_socket_id);
 extern void bta_jv_l2cap_stop_server_le(uint16_t local_chan);
-extern void bta_jv_l2cap_write_fixed(tBTA_JV_MSG* p_data);
+extern void bta_jv_l2cap_write_fixed(uint16_t channel, const RawAddress& addr,
+                                     uint32_t req_id, uint8_t* p_data,
+                                     uint16_t len, uint32_t user_id,
+                                     tBTA_JV_L2CAP_CBACK* p_cback);
 extern void bta_jv_l2cap_close_fixed(uint32_t handle);
 
 #endif /* BTA_JV_INT_H */

@@ -50,7 +50,6 @@ const tBTA_JV_ACTION bta_jv_action[] = {
     bta_jv_rfcomm_write,          /* BTA_JV_API_RFCOMM_WRITE_EVT */
     bta_jv_set_pm_profile,        /* BTA_JV_API_SET_PM_PROFILE_EVT */
     bta_jv_change_pm_state,       /* BTA_JV_API_PM_STATE_CHANGE_EVT */
-    bta_jv_l2cap_write_fixed,     /* BTA_JV_API_L2CAP_WRITE_FIXED_EVT */
 };
 
 /*******************************************************************************

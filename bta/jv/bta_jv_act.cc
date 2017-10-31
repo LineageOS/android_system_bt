@@ -1227,37 +1227,28 @@ void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, uint8_t* p_data,
   p_cb->p_cback(BTA_JV_L2CAP_WRITE_EVT, &bta_jv, user_id);
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_l2cap_write_fixed
- *
- * Description  Write data to an L2CAP connection using Fixed channels
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_l2cap_write_fixed(tBTA_JV_MSG* p_data) {
+/* Write data to an L2CAP connection using Fixed channels */
+void bta_jv_l2cap_write_fixed(uint16_t channel, const RawAddress& addr,
+                              uint32_t req_id, uint8_t* p_data, uint16_t len,
+                              uint32_t user_id, tBTA_JV_L2CAP_CBACK* p_cback) {
   tBTA_JV_L2CAP_WRITE_FIXED evt_data;
-  tBTA_JV_API_L2CAP_WRITE_FIXED* ls = &(p_data->l2cap_write_fixed);
-  BT_HDR* msg =
-      (BT_HDR*)osi_malloc(sizeof(BT_HDR) + ls->len + L2CAP_MIN_OFFSET);
-
   evt_data.status = BTA_JV_FAILURE;
-  evt_data.channel = ls->channel;
-  evt_data.addr = ls->addr;
-  evt_data.req_id = ls->req_id;
-  evt_data.p_data = ls->p_data;
+  evt_data.channel = channel;
+  evt_data.addr = addr;
+  evt_data.req_id = req_id;
+  evt_data.p_data = p_data;
   evt_data.len = 0;
 
-  memcpy(((uint8_t*)(msg + 1)) + L2CAP_MIN_OFFSET, ls->p_data, ls->len);
-  msg->len = ls->len;
+  BT_HDR* msg = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + len + L2CAP_MIN_OFFSET);
+  memcpy(((uint8_t*)(msg + 1)) + L2CAP_MIN_OFFSET, p_data, len);
+  msg->len = len;
   msg->offset = L2CAP_MIN_OFFSET;
 
-  L2CA_SendFixedChnlData(ls->channel, ls->addr, msg);
+  L2CA_SendFixedChnlData(channel, addr, msg);
 
   tBTA_JV bta_jv;
   bta_jv.l2c_write_fixed = evt_data;
-  ls->p_cback(BTA_JV_L2CAP_WRITE_FIXED_EVT, &bta_jv, ls->user_id);
+  p_cback(BTA_JV_L2CAP_WRITE_FIXED_EVT, &bta_jv, user_id);
 }
 
 /*******************************************************************************
