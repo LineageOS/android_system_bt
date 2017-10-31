@@ -190,20 +190,14 @@ tBTA_JV_STATUS BTA_JvFreeChannel(uint16_t channel, int conn_type) {
 tBTA_JV_STATUS BTA_JvStartDiscovery(const RawAddress& bd_addr,
                                     uint16_t num_uuid, const Uuid* p_uuid_list,
                                     uint32_t rfcomm_slot_id) {
-  tBTA_JV_API_START_DISCOVERY* p_msg = (tBTA_JV_API_START_DISCOVERY*)osi_malloc(
-      sizeof(tBTA_JV_API_START_DISCOVERY));
-
   APPL_TRACE_API("%s", __func__);
 
-  p_msg->hdr.event = BTA_JV_API_START_DISCOVERY_EVT;
-  p_msg->bd_addr = bd_addr;
-  p_msg->num_uuid = num_uuid;
-  memcpy(p_msg->uuid_list, p_uuid_list, num_uuid * sizeof(Uuid));
-  p_msg->num_attr = 0;
-  p_msg->rfcomm_slot_id = rfcomm_slot_id;
+  Uuid* uuid_list_copy = new Uuid[num_uuid];
+  memcpy(uuid_list_copy, p_uuid_list, num_uuid * sizeof(Uuid));
 
-  bta_sys_sendmsg(p_msg);
-
+  do_in_bta_thread(FROM_HERE,
+                   Bind(&bta_jv_start_discovery, bd_addr, num_uuid,
+                        base::Owned(uuid_list_copy), rfcomm_slot_id));
   return BTA_JV_SUCCESS;
 }
 
