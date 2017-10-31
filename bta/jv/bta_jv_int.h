@@ -49,7 +49,6 @@ enum {
   BTA_JV_API_RFCOMM_WRITE_EVT,
   BTA_JV_API_SET_PM_PROFILE_EVT,
   BTA_JV_API_PM_STATE_CHANGE_EVT,
-  BTA_JV_API_L2CAP_START_SERVER_LE_EVT,
   BTA_JV_API_L2CAP_STOP_SERVER_LE_EVT,
   BTA_JV_API_L2CAP_WRITE_FIXED_EVT,
   BTA_JV_MAX_INT_EVT
@@ -337,7 +336,9 @@ extern void bta_jv_l2cap_connect_le(uint16_t remote_chan,
                                     const RawAddress& peer_bd_addr,
                                     tBTA_JV_L2CAP_CBACK* p_cback,
                                     uint32_t l2cap_socket_id);
-extern void bta_jv_l2cap_start_server_le(tBTA_JV_MSG* p_data);
+extern void bta_jv_l2cap_start_server_le(uint16_t local_chan,
+                                         tBTA_JV_L2CAP_CBACK* p_cback,
+                                         uint32_t l2cap_socket_id);
 extern void bta_jv_l2cap_stop_server_le(tBTA_JV_MSG* p_data);
 extern void bta_jv_l2cap_write_fixed(tBTA_JV_MSG* p_data);
 extern void bta_jv_l2cap_close_fixed(uint32_t handle);
