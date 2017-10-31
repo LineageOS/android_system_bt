@@ -23,6 +23,7 @@
  *
  ******************************************************************************/
 #include <base/bind.h>
+#include <base/bind_helpers.h>
 #include <string.h>
 
 #include "bt_common.h"
@@ -296,34 +297,19 @@ tBTA_JV_STATUS BTA_JvL2capConnect(
     tBTA_JV_L2CAP_CBACK* p_cback, uint32_t l2cap_socket_id) {
   APPL_TRACE_API("%s", __func__);
 
-  if (p_cback == NULL) return BTA_JV_FAILURE; /* Nothing to do */
+  if (!p_cback) return BTA_JV_FAILURE; /* Nothing to do */
 
-  tBTA_JV_API_L2CAP_CONNECT* p_msg =
-      (tBTA_JV_API_L2CAP_CONNECT*)osi_malloc(sizeof(tBTA_JV_API_L2CAP_CONNECT));
-  p_msg->hdr.event = BTA_JV_API_L2CAP_CONNECT_EVT;
-  p_msg->type = conn_type;
-  p_msg->sec_mask = sec_mask;
-  p_msg->role = role;
-  p_msg->remote_psm = remote_psm;
-  p_msg->rx_mtu = rx_mtu;
-  if (cfg != NULL) {
-    p_msg->has_cfg = true;
-    p_msg->cfg = *cfg;
-  } else {
-    p_msg->has_cfg = false;
-  }
-  if (ertm_info != NULL) {
-    p_msg->has_ertm_info = true;
-    p_msg->ertm_info = *ertm_info;
-  } else {
-    p_msg->has_ertm_info = false;
-  }
-  p_msg->peer_bd_addr = peer_bd_addr;
-  p_msg->p_cback = p_cback;
-  p_msg->l2cap_socket_id = l2cap_socket_id;
+  std::unique_ptr<tL2CAP_CFG_INFO> cfg_copy;
+  if (cfg) cfg_copy = std::make_unique<tL2CAP_CFG_INFO>(*cfg);
 
-  bta_sys_sendmsg(p_msg);
+  std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info_copy;
+  if (ertm_info)
+    ertm_info_copy = std::make_unique<tL2CAP_ERTM_INFO>(*ertm_info);
 
+  do_in_bta_thread(
+      FROM_HERE, Bind(&bta_jv_l2cap_connect, conn_type, sec_mask, role,
+                      remote_psm, rx_mtu, peer_bd_addr, base::Passed(&cfg_copy),
+                      base::Passed(&ertm_info_copy), p_cback, l2cap_socket_id));
   return BTA_JV_SUCCESS;
 }
 
