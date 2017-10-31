@@ -458,14 +458,7 @@ tBTA_JV_STATUS BTA_JvL2capStopServerLE(uint16_t local_chan,
                                        uint32_t l2cap_socket_id) {
   APPL_TRACE_API("%s", __func__);
 
-  tBTA_JV_API_L2CAP_SERVER* p_msg =
-      (tBTA_JV_API_L2CAP_SERVER*)osi_malloc(sizeof(tBTA_JV_API_L2CAP_SERVER));
-  p_msg->hdr.event = BTA_JV_API_L2CAP_STOP_SERVER_LE_EVT;
-  p_msg->local_chan = local_chan;
-  p_msg->l2cap_socket_id = l2cap_socket_id;
-
-  bta_sys_sendmsg(p_msg);
-
+  do_in_bta_thread(FROM_HERE, Bind(&bta_jv_l2cap_stop_server_le, local_chan));
   return BTA_JV_SUCCESS;
 }
 
