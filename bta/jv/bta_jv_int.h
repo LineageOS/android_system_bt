@@ -50,7 +50,6 @@ enum {
   BTA_JV_API_RFCOMM_WRITE_EVT,
   BTA_JV_API_SET_PM_PROFILE_EVT,
   BTA_JV_API_PM_STATE_CHANGE_EVT,
-  BTA_JV_API_L2CAP_CONNECT_LE_EVT,
   BTA_JV_API_L2CAP_START_SERVER_LE_EVT,
   BTA_JV_API_L2CAP_STOP_SERVER_LE_EVT,
   BTA_JV_API_L2CAP_WRITE_FIXED_EVT,
@@ -139,7 +138,7 @@ typedef struct {
   int curr_sess;          /* current sessions count*/
 } tBTA_JV_RFC_CB;
 
-/* data type for BTA_JV_API_L2CAP_CONNECT_EVT & BTA_JV_API_L2CAP_CONNECT_LE_EVT
+/* data type for BTA_JV_API_L2CAP_CONNECT_EVT
  */
 typedef struct {
   BT_HDR hdr;
@@ -355,7 +354,10 @@ extern void bta_jv_rfcomm_read(tBTA_JV_MSG* p_data);
 extern void bta_jv_rfcomm_write(tBTA_JV_MSG* p_data);
 extern void bta_jv_set_pm_profile(tBTA_JV_MSG* p_data);
 extern void bta_jv_change_pm_state(tBTA_JV_MSG* p_data);
-extern void bta_jv_l2cap_connect_le(tBTA_JV_MSG* p_data);
+extern void bta_jv_l2cap_connect_le(uint16_t remote_chan,
+                                    const RawAddress& peer_bd_addr,
+                                    tBTA_JV_L2CAP_CBACK* p_cback,
+                                    uint32_t l2cap_socket_id);
 extern void bta_jv_l2cap_start_server_le(tBTA_JV_MSG* p_data);
 extern void bta_jv_l2cap_stop_server_le(tBTA_JV_MSG* p_data);
 extern void bta_jv_l2cap_write_fixed(tBTA_JV_MSG* p_data);
