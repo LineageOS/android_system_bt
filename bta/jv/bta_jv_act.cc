@@ -2347,32 +2347,20 @@ void bta_jv_l2cap_connect_le(uint16_t remote_chan,
   t->init_called = true;
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_l2cap_stop_server_le
- *
- * Description  stops an LE L2CAP server
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_l2cap_stop_server_le(tBTA_JV_MSG* p_data) {
-  tBTA_JV evt;
-  tBTA_JV_API_L2CAP_SERVER* ls = &(p_data->l2cap_server);
-  tBTA_JV_L2CAP_CBACK* p_cback = NULL;
-  struct fc_channel* fcchan;
+/* stops an LE L2CAP server */
+void bta_jv_l2cap_stop_server_le(uint16_t local_chan) {
   struct fc_client* fcclient;
-  uint32_t l2cap_socket_id;
 
+  tBTA_JV evt;
   evt.l2c_close.status = BTA_JV_FAILURE;
   evt.l2c_close.async = false;
   evt.l2c_close.handle = GAP_INVALID_HANDLE;
 
-  fcchan = fcchan_get(ls->local_chan, false);
+  struct fc_channel* fcchan = fcchan_get(local_chan, false);
   if (fcchan) {
     while ((fcclient = fcchan->clients)) {
-      p_cback = fcclient->p_cback;
-      l2cap_socket_id = fcclient->l2cap_socket_id;
+      tBTA_JV_L2CAP_CBACK* p_cback = fcclient->p_cback;
+      uint32_t l2cap_socket_id = fcclient->l2cap_socket_id;
 
       evt.l2c_close.handle = fcclient->id;
       evt.l2c_close.status = BTA_JV_SUCCESS;
