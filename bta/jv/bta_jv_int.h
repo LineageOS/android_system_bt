@@ -39,7 +39,6 @@
 enum {
   /* these events are handled by the state machine */
   BTA_JV_API_START_DISCOVERY_EVT = BTA_SYS_EVT_START(BTA_ID_JV),
-  BTA_JV_API_RFCOMM_WRITE_EVT,
   BTA_JV_API_SET_PM_PROFILE_EVT,
   BTA_JV_API_PM_STATE_CHANGE_EVT,
   BTA_JV_MAX_INT_EVT
@@ -152,24 +151,12 @@ typedef struct {
   tBTA_JV_CONN_STATE state;
 } tBTA_JV_API_PM_STATE_CHANGE;
 
-/* data type for BTA_JV_API_RFCOMM_WRITE_EVT */
-typedef struct {
-  BT_HDR hdr;
-  uint32_t handle;
-  uint32_t req_id;
-  uint8_t* p_data;
-  int len;
-  tBTA_JV_RFC_CB* p_cb;
-  tBTA_JV_PCB* p_pcb;
-} tBTA_JV_API_RFCOMM_WRITE;
-
 /* union of all data types */
 typedef union {
   /* GKI event buffer header */
   BT_HDR hdr;
   tBTA_JV_API_START_DISCOVERY start_discovery;
   tBTA_JV_API_L2CAP_READ l2cap_read;
-  tBTA_JV_API_RFCOMM_WRITE rfcomm_write;
   tBTA_JV_API_SET_PM_PROFILE set_pm;
   tBTA_JV_API_PM_STATE_CHANGE change_pm_state;
 } tBTA_JV_MSG;
@@ -248,8 +235,8 @@ extern void bta_jv_rfcomm_start_server(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
                                        tBTA_JV_RFCOMM_CBACK* p_cback,
                                        uint32_t rfcomm_slot_id);
 extern void bta_jv_rfcomm_stop_server(uint32_t handle, uint32_t rfcomm_slot_id);
-extern void bta_jv_rfcomm_read(tBTA_JV_MSG* p_data);
-extern void bta_jv_rfcomm_write(tBTA_JV_MSG* p_data);
+extern void bta_jv_rfcomm_write(uint32_t handle, uint32_t req_id,
+                                tBTA_JV_RFC_CB* p_cb, tBTA_JV_PCB* p_pcb);
 extern void bta_jv_set_pm_profile(tBTA_JV_MSG* p_data);
 extern void bta_jv_change_pm_state(tBTA_JV_MSG* p_data);
 extern void bta_jv_l2cap_connect_le(uint16_t remote_chan,
