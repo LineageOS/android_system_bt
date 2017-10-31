@@ -868,7 +868,6 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
                                                   int channel, int* sock_fd,
                                                   int flags, char listen,
                                                   int app_uid) {
-  bt_status_t stat;
   int fixed_chan = 1;
   l2cap_socket* sock;
   tL2CAP_CFG_INFO cfg;
@@ -900,10 +899,7 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
   sock->app_uid = app_uid;
   sock->is_le_coc = is_le_coc;
 
-  stat = BT_STATUS_SUCCESS;
-
-  /* Setup ETM settings:
-   *  mtu will be set below */
+  /* Setup ETM settings: mtu will be set below */
   memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
 
   cfg.fcr_present = true;
@@ -911,48 +907,38 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
 
   /* "role" is never initialized in rfcomm code */
   if (listen) {
-    stat = btSock_start_l2cap_server_l(sock);
+    bt_status_t stat = btSock_start_l2cap_server_l(sock);
+    if (stat != BT_STATUS_SUCCESS) {
+      btsock_l2cap_free_l(sock);
+    }
   } else {
     if (fixed_chan) {
-      if (BTA_JvL2capConnectLE(sock->security, 0, NULL, channel,
-                               L2CAP_DEFAULT_MTU, NULL, sock->addr,
-                               btsock_l2cap_cbk, sock->id) != BTA_JV_SUCCESS)
-        stat = BT_STATUS_FAIL;
-
+      BTA_JvL2capConnectLE(sock->security, 0, NULL, channel, L2CAP_DEFAULT_MTU,
+                           NULL, sock->addr, btsock_l2cap_cbk, sock->id);
     } else {
       if (sock->is_le_coc) {
-        if (BTA_JvL2capConnect(BTA_JV_CONN_TYPE_L2CAP_LE, sock->security, 0,
-                               NULL, channel, L2CAP_MAX_SDU_LENGTH, &cfg,
-                               sock->addr, btsock_l2cap_cbk,
-                               sock->id) != BTA_JV_SUCCESS)
-          stat = BT_STATUS_FAIL;
+        BTA_JvL2capConnect(BTA_JV_CONN_TYPE_L2CAP_LE, sock->security, 0, NULL,
+                           channel, L2CAP_MAX_SDU_LENGTH, &cfg, sock->addr,
+                           btsock_l2cap_cbk, sock->id);
       } else {
-        if (BTA_JvL2capConnect(BTA_JV_CONN_TYPE_L2CAP, sock->security, 0,
-                               &obex_l2c_etm_opt, channel, L2CAP_MAX_SDU_LENGTH,
-                               &cfg, sock->addr, btsock_l2cap_cbk,
-                               sock->id) != BTA_JV_SUCCESS)
-          stat = BT_STATUS_FAIL;
+        BTA_JvL2capConnect(BTA_JV_CONN_TYPE_L2CAP, sock->security, 0,
+                           &obex_l2c_etm_opt, channel, L2CAP_MAX_SDU_LENGTH,
+                           &cfg, sock->addr, btsock_l2cap_cbk, sock->id);
       }
     }
   }
 
-  if (stat == BT_STATUS_SUCCESS) {
-    *sock_fd = sock->app_fd;
-    /* We pass the FD to JAVA, but since it runs in another process, we need to
-     * also close
-     * it in native, either straight away, as done when accepting an incoming
-     * connection,
-     * or when doing cleanup after this socket */
-    sock->app_fd =
-        -1; /*This leaks the file descriptor. The FD should be closed in
-              JAVA but it apparently do not work */
-    btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP,
-                         SOCK_THREAD_FD_EXCEPTION, sock->id);
-  } else {
-    btsock_l2cap_free_l(sock);
-  }
+  *sock_fd = sock->app_fd;
+  /* We pass the FD to JAVA, but since it runs in another process, we need to
+   * also close it in native, either straight away, as done when accepting an
+   * incoming connection, or when doing cleanup after this socket */
+  sock->app_fd = -1;
+  /*This leaks the file descriptor. The FD should be closed in JAVA but it
+   * apparently do not work */
+  btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP,
+                       SOCK_THREAD_FD_EXCEPTION, sock->id);
 
-  return stat;
+  return BT_STATUS_SUCCESS;
 }
 
 bt_status_t btsock_l2cap_listen(const char* name, int channel, int* sock_fd,
