@@ -466,9 +466,7 @@ tBTA_JV_STATUS BTA_JvL2capStopServerLE(uint16_t local_chan,
  *
  * Function         BTA_JvL2capRead
  *
- * Description      This function reads data from an L2CAP connecti;
-    tBTA_JV_RFC_CB  *p_cb = rc->p_cb;
-on
+ * Description      This function reads data from an L2CAP connection
  *                  When the operation is complete, tBTA_JV_L2CAP_CBACK is
  *                  called with BTA_JV_L2CAP_READ_EVT.
  *
@@ -478,28 +476,25 @@ on
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvL2capRead(uint32_t handle, uint32_t req_id,
                                uint8_t* p_data, uint16_t len) {
-  tBTA_JV_STATUS status = BTA_JV_FAILURE;
-  tBTA_JV_L2CAP_READ evt_data;
-
   APPL_TRACE_API("%s", __func__);
 
-  if (handle < BTA_JV_MAX_L2C_CONN && bta_jv_cb.l2c_cb[handle].p_cback) {
-    status = BTA_JV_SUCCESS;
-    evt_data.status = BTA_JV_FAILURE;
-    evt_data.handle = handle;
-    evt_data.req_id = req_id;
-    evt_data.p_data = p_data;
-    evt_data.len = 0;
+  if (handle >= BTA_JV_MAX_L2C_CONN || !bta_jv_cb.l2c_cb[handle].p_cback)
+    return BTA_JV_FAILURE;
 
-    if (BT_PASS ==
-        GAP_ConnReadData((uint16_t)handle, p_data, len, &evt_data.len)) {
-      evt_data.status = BTA_JV_SUCCESS;
-    }
-    bta_jv_cb.l2c_cb[handle].p_cback(BTA_JV_L2CAP_READ_EVT, (tBTA_JV*)&evt_data,
-                                     bta_jv_cb.l2c_cb[handle].l2cap_socket_id);
+  tBTA_JV_L2CAP_READ evt_data;
+  evt_data.status = BTA_JV_FAILURE;
+  evt_data.handle = handle;
+  evt_data.req_id = req_id;
+  evt_data.p_data = p_data;
+  evt_data.len = 0;
+
+  if (BT_PASS ==
+      GAP_ConnReadData((uint16_t)handle, p_data, len, &evt_data.len)) {
+    evt_data.status = BTA_JV_SUCCESS;
   }
-
-  return (status);
+  bta_jv_cb.l2c_cb[handle].p_cback(BTA_JV_L2CAP_READ_EVT, (tBTA_JV*)&evt_data,
+                                   bta_jv_cb.l2c_cb[handle].l2cap_socket_id);
+  return BTA_JV_SUCCESS;
 }
 
 /*******************************************************************************
