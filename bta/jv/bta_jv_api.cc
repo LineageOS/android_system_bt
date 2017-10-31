@@ -242,25 +242,17 @@ tBTA_JV_STATUS BTA_JvDeleteRecord(uint32_t handle) {
  *                  When the connection is established or failed,
  *                  tBTA_JV_L2CAP_CBACK is called with BTA_JV_L2CAP_OPEN_EVT
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
- *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE,
-                                    const tL2CAP_ERTM_INFO*,
-                                    uint16_t remote_chan, uint16_t,
-                                    tL2CAP_CFG_INFO*,
-                                    const RawAddress& peer_bd_addr,
-                                    tBTA_JV_L2CAP_CBACK* p_cback,
-                                    uint32_t l2cap_socket_id) {
+void BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE,
+                          const tL2CAP_ERTM_INFO*, uint16_t remote_chan,
+                          uint16_t, tL2CAP_CFG_INFO*,
+                          const RawAddress& peer_bd_addr,
+                          tBTA_JV_L2CAP_CBACK* p_cback,
+                          uint32_t l2cap_socket_id) {
   VLOG(2) << __func__;
-
-  if (p_cback == NULL) return BTA_JV_FAILURE; /* Nothing to do */
-
+  CHECK(p_cback);
   do_in_bta_thread(FROM_HERE, Bind(&bta_jv_l2cap_connect_le, remote_chan,
                                    peer_bd_addr, p_cback, l2cap_socket_id));
-
-  return BTA_JV_SUCCESS;
 }
 
 /*******************************************************************************
@@ -274,18 +266,15 @@ tBTA_JV_STATUS BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE,
  *                  When the connection is established or failed,
  *                  tBTA_JV_L2CAP_CBACK is called with BTA_JV_L2CAP_OPEN_EVT
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
- *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capConnect(
-    int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
-    const tL2CAP_ERTM_INFO* ertm_info, uint16_t remote_psm, uint16_t rx_mtu,
-    tL2CAP_CFG_INFO* cfg, const RawAddress& peer_bd_addr,
-    tBTA_JV_L2CAP_CBACK* p_cback, uint32_t l2cap_socket_id) {
+void BTA_JvL2capConnect(int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
+                        const tL2CAP_ERTM_INFO* ertm_info, uint16_t remote_psm,
+                        uint16_t rx_mtu, tL2CAP_CFG_INFO* cfg,
+                        const RawAddress& peer_bd_addr,
+                        tBTA_JV_L2CAP_CBACK* p_cback,
+                        uint32_t l2cap_socket_id) {
   VLOG(2) << __func__;
-
-  if (!p_cback) return BTA_JV_FAILURE; /* Nothing to do */
+  CHECK(p_cback);
 
   std::unique_ptr<tL2CAP_CFG_INFO> cfg_copy;
   if (cfg) cfg_copy = std::make_unique<tL2CAP_CFG_INFO>(*cfg);
@@ -298,7 +287,6 @@ tBTA_JV_STATUS BTA_JvL2capConnect(
       FROM_HERE, Bind(&bta_jv_l2cap_connect, conn_type, sec_mask, role,
                       remote_psm, rx_mtu, peer_bd_addr, base::Passed(&cfg_copy),
                       base::Passed(&ertm_info_copy), p_cback, l2cap_socket_id));
-  return BTA_JV_SUCCESS;
 }
 
 /*******************************************************************************
