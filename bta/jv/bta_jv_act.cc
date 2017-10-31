@@ -2397,28 +2397,19 @@ void bta_jv_l2cap_stop_server_le(tBTA_JV_MSG* p_data) {
   }
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_l2cap_start_server_le
- *
- * Description  starts an LE L2CAP server
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_l2cap_start_server_le(tBTA_JV_MSG* p_data) {
-  tBTA_JV_API_L2CAP_SERVER* ss = &(p_data->l2cap_server);
+/** starts an LE L2CAP server */
+void bta_jv_l2cap_start_server_le(uint16_t local_chan,
+                                  tBTA_JV_L2CAP_CBACK* p_cback,
+                                  uint32_t l2cap_socket_id) {
   tBTA_JV_L2CAP_START evt_data;
-  struct fc_client* t;
-
   evt_data.handle = GAP_INVALID_HANDLE;
   evt_data.status = BTA_JV_FAILURE;
 
-  t = fcclient_alloc(ss->local_chan, true, NULL);
+  struct fc_client* t = fcclient_alloc(local_chan, true, NULL);
   if (!t) goto out;
 
-  t->p_cback = ss->p_cback;
-  t->l2cap_socket_id = ss->l2cap_socket_id;
+  t->p_cback = p_cback;
+  t->l2cap_socket_id = l2cap_socket_id;
 
   // if we got here, we're registered...
   evt_data.status = BTA_JV_SUCCESS;
@@ -2428,7 +2419,7 @@ void bta_jv_l2cap_start_server_le(tBTA_JV_MSG* p_data) {
 out:
   tBTA_JV bta_jv;
   bta_jv.l2c_start = evt_data;
-  ss->p_cback(BTA_JV_L2CAP_START_EVT, &bta_jv, ss->l2cap_socket_id);
+  p_cback(BTA_JV_L2CAP_START_EVT, &bta_jv, l2cap_socket_id);
 }
 
 /* close a fixed channel connection. calls no callbacks. idempotent */
