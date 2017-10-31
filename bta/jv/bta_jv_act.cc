@@ -1184,65 +1184,47 @@ void bta_jv_l2cap_read(tBTA_JV_MSG* p_data) {
   rc->p_cback(BTA_JV_L2CAP_READ_EVT, &bta_jv, rc->l2cap_socket_id);
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_l2cap_write
- *
- * Description  Write data to an L2CAP connection
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_l2cap_write(tBTA_JV_MSG* p_data) {
-  tBTA_JV_L2CAP_WRITE evt_data;
-  tBTA_JV_API_L2CAP_WRITE* ls = &(p_data->l2cap_write);
-
+/* Write data to an L2CAP connection */
+void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, uint8_t* p_data,
+                        uint16_t len, uint32_t user_id, tBTA_JV_L2C_CB* p_cb) {
   /* As we check this callback exists before the tBTA_JV_API_L2CAP_WRITE can be
-   * send through the
-   * API this check should not be needed.
-   * But the API is not designed to be used (safely at least) in a
-   * multi-threaded scheduler, hence
+   * send through the API this check should not be needed. But the API is not
+   * designed to be used (safely at least) in a multi-threaded scheduler, hence
    * if the peer device disconnects the l2cap link after the API is called, but
-   * before this
-   * message is handled, the ->p_cback will be cleared at this point. At first
-   * glanch this seems
-   * highly unlikely, but for all obex-profiles with two channels connected -
-   * e.g. MAP, this
-   * happens around 1 of 4 disconnects, as a disconnect on the server channel
-   * causes a disconnect
+   * before this message is handled, the ->p_cback will be cleared at this
+   * point. At first glanch this seems highly unlikely, but for all
+   * obex-profiles with two channels connected - e.g. MAP, this happens around 1
+   * of 4 disconnects, as a disconnect on the server channel causes a disconnect
    * to be send on the client (notification) channel, but at the peer typically
-   * disconnects both
-   * the OBEX disconnect request crosses the incoming l2cap disconnect.
-   * If p_cback is cleared, we simply discard the data.
-   * RISK: The caller must handle any cleanup based on another signal than
-   * BTA_JV_L2CAP_WRITE_EVT,
-   *       which is typically not possible, as the pointer to the allocated
-   * buffer is stored
-   *       in this message, and can therefore not be freed, hence we have a
-   * mem-leak-by-design.*/
-  if (ls->p_cb->p_cback != NULL) {
-    evt_data.status = BTA_JV_FAILURE;
-    evt_data.handle = ls->handle;
-    evt_data.req_id = ls->req_id;
-    evt_data.p_data = ls->p_data;
-    evt_data.cong = ls->p_cb->cong;
-    evt_data.len = 0;
-    bta_jv_pm_conn_busy(ls->p_cb->p_pm_cb);
-    if (!evt_data.cong &&
-        BT_PASS ==
-            GAP_ConnWriteData(ls->handle, ls->p_data, ls->len, &evt_data.len)) {
-      evt_data.status = BTA_JV_SUCCESS;
-    }
-    tBTA_JV bta_jv;
-    bta_jv.l2c_write = evt_data;
-    ls->p_cb->p_cback(BTA_JV_L2CAP_WRITE_EVT, &bta_jv, ls->user_id);
-  } else {
+   * disconnects both the OBEX disconnect request crosses the incoming l2cap
+   * disconnect. If p_cback is cleared, we simply discard the data. RISK: The
+   * caller must handle any cleanup based on another signal than
+   * BTA_JV_L2CAP_WRITE_EVT, which is typically not possible, as the pointer to
+   * the allocated buffer is stored in this message, and can therefore not be
+   * freed, hence we have a mem-leak-by-design.*/
+  if (!p_cb->p_cback) {
     /* As this pointer is checked in the API function, this occurs only when the
-     * channel is
-     * disconnected after the API function is called, but before the message is
-     * handled. */
-    APPL_TRACE_ERROR("%s() ls->p_cb->p_cback == NULL", __func__);
+     * channel is disconnected after the API function is called, but before the
+     * message is handled. */
+    APPL_TRACE_ERROR("%s() p_cb->p_cback == NULL", __func__);
+    return;
   }
+
+  tBTA_JV_L2CAP_WRITE evt_data;
+  evt_data.status = BTA_JV_FAILURE;
+  evt_data.handle = handle;
+  evt_data.req_id = req_id;
+  evt_data.p_data = p_data;
+  evt_data.cong = p_cb->cong;
+  evt_data.len = 0;
+  bta_jv_pm_conn_busy(p_cb->p_pm_cb);
+  if (!evt_data.cong &&
+      BT_PASS == GAP_ConnWriteData(handle, p_data, len, &evt_data.len)) {
+    evt_data.status = BTA_JV_SUCCESS;
+  }
+  tBTA_JV bta_jv;
+  bta_jv.l2c_write = evt_data;
+  p_cb->p_cback(BTA_JV_L2CAP_WRITE_EVT, &bta_jv, user_id);
 }
 
 /*******************************************************************************

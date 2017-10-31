@@ -544,27 +544,14 @@ tBTA_JV_STATUS BTA_JvL2capReady(uint32_t handle, uint32_t* p_data_size) {
 tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id,
                                 uint8_t* p_data, uint16_t len,
                                 uint32_t user_id) {
-  tBTA_JV_STATUS status = BTA_JV_FAILURE;
-
   APPL_TRACE_API("%s", __func__);
 
-  if (handle < BTA_JV_MAX_L2C_CONN && bta_jv_cb.l2c_cb[handle].p_cback) {
-    tBTA_JV_API_L2CAP_WRITE* p_msg =
-        (tBTA_JV_API_L2CAP_WRITE*)osi_malloc(sizeof(tBTA_JV_API_L2CAP_WRITE));
-    p_msg->hdr.event = BTA_JV_API_L2CAP_WRITE_EVT;
-    p_msg->handle = handle;
-    p_msg->req_id = req_id;
-    p_msg->p_data = p_data;
-    p_msg->p_cb = &bta_jv_cb.l2c_cb[handle];
-    p_msg->len = len;
-    p_msg->user_id = user_id;
+  if (handle >= BTA_JV_MAX_L2C_CONN || !bta_jv_cb.l2c_cb[handle].p_cback)
+    return BTA_JV_FAILURE;
 
-    bta_sys_sendmsg(p_msg);
-
-    status = BTA_JV_SUCCESS;
-  }
-
-  return status;
+  do_in_bta_thread(FROM_HERE, Bind(&bta_jv_l2cap_write, handle, req_id, p_data,
+                                   len, user_id, &bta_jv_cb.l2c_cb[handle]));
+  return BTA_JV_SUCCESS;
 }
 
 /*******************************************************************************
