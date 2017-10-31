@@ -92,7 +92,6 @@ cc_library_static {
         "jv/bta_jv_act.cc",
         "jv/bta_jv_api.cc",
         "jv/bta_jv_cfg.cc",
-        "jv/bta_jv_main.cc",
         "mce/bta_mce_act.cc",
         "mce/bta_mce_api.cc",
         "mce/bta_mce_cfg.cc",
