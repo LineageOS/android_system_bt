@@ -40,11 +40,9 @@
 using base::Bind;
 using bluetooth::Uuid;
 
-/*****************************************************************************
- *  Constants
- ****************************************************************************/
-
-static const tBTA_SYS_REG bta_jv_reg = {bta_jv_sm_execute, NULL};
+namespace {
+bool bta_jv_enabled = false;
+}
 
 /*******************************************************************************
  *
@@ -61,35 +59,30 @@ static const tBTA_SYS_REG bta_jv_reg = {bta_jv_sm_execute, NULL};
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK* p_cback) {
-  tBTA_JV_STATUS status = BTA_JV_FAILURE;
-  int i;
+  if (!p_cback || bta_jv_enabled) {
+    APPL_TRACE_ERROR("JVenable fails");
+    return BTA_JV_FAILURE;
+  }
 
   APPL_TRACE_API("BTA_JvEnable");
-  if (p_cback && !bta_sys_is_register(BTA_ID_JV)) {
-    memset(&bta_jv_cb, 0, sizeof(tBTA_JV_CB));
-    /* set handle to invalid value by default */
-    for (i = 0; i < BTA_JV_PM_MAX_NUM; i++) {
-      bta_jv_cb.pm_cb[i].handle = BTA_JV_PM_HANDLE_CLEAR;
-    }
 
-    /* register with BTA system manager */
-    bta_sys_register(BTA_ID_JV, &bta_jv_reg);
-
-    if (p_cback) {
-      do_in_bta_thread(FROM_HERE, Bind(&bta_jv_enable, p_cback));
-      status = BTA_JV_SUCCESS;
-    }
-  } else {
-    APPL_TRACE_ERROR("JVenable fails");
+  memset(&bta_jv_cb, 0, sizeof(tBTA_JV_CB));
+  /* set handle to invalid value by default */
+  for (int i = 0; i < BTA_JV_PM_MAX_NUM; i++) {
+    bta_jv_cb.pm_cb[i].handle = BTA_JV_PM_HANDLE_CLEAR;
   }
-  return (status);
+
+  bta_jv_enabled = true;
+
+  do_in_bta_thread(FROM_HERE, Bind(&bta_jv_enable, p_cback));
+  return BTA_JV_SUCCESS;
 }
 
 /** Disable the Java I/F */
 void BTA_JvDisable(void) {
   APPL_TRACE_API("%s", __func__);
 
-  bta_sys_deregister(BTA_ID_JV);
+  bta_jv_enabled = false;
 
   do_in_bta_thread(FROM_HERE, Bind(&bta_jv_disable));
 }

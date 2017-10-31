@@ -36,11 +36,6 @@
  *  Constants
  ****************************************************************************/
 
-enum {
-  /* these events are handled by the state machine */
-  BTA_JV_MAX_INT_EVT = BTA_SYS_EVT_START(BTA_ID_JV),
-};
-
 #ifndef BTA_JV_RFC_EV_MASK
 #define BTA_JV_RFC_EV_MASK \
   (PORT_EV_RXCHAR | PORT_EV_TXEMPTY | PORT_EV_FC | PORT_EV_FCS)
@@ -111,24 +106,6 @@ typedef struct {
   int curr_sess;          /* current sessions count*/
 } tBTA_JV_RFC_CB;
 
-/* data type for BTA_JV_API_L2CAP_READ_EVT */
-typedef struct {
-  BT_HDR hdr;
-  uint32_t handle;
-  uint32_t req_id;
-  tBTA_JV_L2CAP_CBACK* p_cback;
-  uint8_t* p_data;
-  uint16_t len;
-  uint32_t l2cap_socket_id;
-} tBTA_JV_API_L2CAP_READ;
-
-/* union of all data types */
-typedef union {
-  /* GKI event buffer header */
-  BT_HDR hdr;
-  tBTA_JV_API_L2CAP_READ l2cap_read;
-} tBTA_JV_MSG;
-
 /* JV control block */
 typedef struct {
   /* the SDP handle reported to JV user is the (index + 1) to sdp_handle[].
@@ -161,8 +138,6 @@ extern tBTA_JV_CB bta_jv_cb;
 
 /* config struct */
 extern tBTA_JV_CFG* p_bta_jv_cfg;
-
-extern bool bta_jv_sm_execute(BT_HDR* p_msg);
 
 extern void bta_jv_enable(tBTA_JV_DM_CBACK* p_cback);
 extern void bta_jv_disable();
@@ -209,7 +184,6 @@ extern void bta_jv_rfcomm_write(uint32_t handle, uint32_t req_id,
                                 tBTA_JV_RFC_CB* p_cb, tBTA_JV_PCB* p_pcb);
 extern void bta_jv_set_pm_profile(uint32_t handle, tBTA_JV_PM_ID app_id,
                                   tBTA_JV_CONN_STATE init_st);
-extern void bta_jv_change_pm_state(tBTA_JV_MSG* p_data);
 extern void bta_jv_l2cap_connect_le(uint16_t remote_chan,
                                     const RawAddress& peer_bd_addr,
                                     tBTA_JV_L2CAP_CBACK* p_cback,
