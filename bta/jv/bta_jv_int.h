@@ -30,49 +30,16 @@
 #include "port_api.h"
 #include "rfcdefs.h"
 
+#include <memory>
+
 /*****************************************************************************
  *  Constants
  ****************************************************************************/
-
-enum {
-  /* these events are handled by the state machine */
-  BTA_JV_API_START_DISCOVERY_EVT = BTA_SYS_EVT_START(BTA_ID_JV),
-  BTA_JV_API_L2CAP_CONNECT_EVT,
-  BTA_JV_API_L2CAP_CLOSE_EVT,
-  BTA_JV_API_L2CAP_START_SERVER_EVT,
-  BTA_JV_API_L2CAP_STOP_SERVER_EVT,
-  BTA_JV_API_L2CAP_READ_EVT,
-  BTA_JV_API_L2CAP_WRITE_EVT,
-  BTA_JV_API_RFCOMM_CONNECT_EVT,
-  BTA_JV_API_RFCOMM_CLOSE_EVT,
-  BTA_JV_API_RFCOMM_START_SERVER_EVT,
-  BTA_JV_API_RFCOMM_STOP_SERVER_EVT,
-  BTA_JV_API_RFCOMM_WRITE_EVT,
-  BTA_JV_API_SET_PM_PROFILE_EVT,
-  BTA_JV_API_PM_STATE_CHANGE_EVT,
-  BTA_JV_API_L2CAP_CONNECT_LE_EVT,
-  BTA_JV_API_L2CAP_START_SERVER_LE_EVT,
-  BTA_JV_API_L2CAP_STOP_SERVER_LE_EVT,
-  BTA_JV_API_L2CAP_WRITE_FIXED_EVT,
-  BTA_JV_API_L2CAP_CLOSE_FIXED_EVT,
-  BTA_JV_MAX_INT_EVT
-};
 
 #ifndef BTA_JV_RFC_EV_MASK
 #define BTA_JV_RFC_EV_MASK \
   (PORT_EV_RXCHAR | PORT_EV_TXEMPTY | PORT_EV_FC | PORT_EV_FCS)
 #endif
-
-/* data type for BTA_JV_API_START_DISCOVERY_EVT */
-typedef struct {
-  BT_HDR hdr;
-  RawAddress bd_addr;
-  uint16_t num_uuid;
-  bluetooth::Uuid uuid_list[BTA_JV_MAX_UUIDS];
-  uint16_t num_attr;
-  uint16_t attr_list[BTA_JV_MAX_ATTRS];
-  uint32_t rfcomm_slot_id;
-} tBTA_JV_API_START_DISCOVERY;
 
 enum {
   BTA_JV_PM_FREE_ST = 0, /* empty PM slot */
@@ -139,164 +106,6 @@ typedef struct {
   int curr_sess;          /* current sessions count*/
 } tBTA_JV_RFC_CB;
 
-/* data type for BTA_JV_API_L2CAP_CONNECT_EVT & BTA_JV_API_L2CAP_CONNECT_LE_EVT
- */
-typedef struct {
-  BT_HDR hdr;
-  int32_t type; /* One of BTA_JV_CONN_TYPE_ */
-  tBTA_SEC sec_mask;
-  tBTA_JV_ROLE role;
-  union {
-    uint16_t remote_psm;
-    uint16_t remote_chan;
-  };
-  uint16_t rx_mtu;
-  RawAddress peer_bd_addr;
-  int32_t has_cfg;
-  tL2CAP_CFG_INFO cfg;
-  int32_t has_ertm_info;
-  tL2CAP_ERTM_INFO ertm_info;
-  tBTA_JV_L2CAP_CBACK* p_cback;
-  uint32_t l2cap_socket_id;
-} tBTA_JV_API_L2CAP_CONNECT;
-
-/* data type for BTA_JV_API_L2CAP_SERVER_EVT */
-typedef struct {
-  BT_HDR hdr;
-  int32_t type; /* One of BTA_JV_CONN_TYPE_ */
-  tBTA_SEC sec_mask;
-  tBTA_JV_ROLE role;
-  union {
-    uint16_t local_psm;
-    uint16_t local_chan;
-  };
-  uint16_t rx_mtu;
-  int32_t has_cfg;
-  tL2CAP_CFG_INFO cfg;
-  int32_t has_ertm_info;
-  tL2CAP_ERTM_INFO ertm_info;
-  tBTA_JV_L2CAP_CBACK* p_cback;
-  uint32_t l2cap_socket_id;
-} tBTA_JV_API_L2CAP_SERVER;
-
-/* data type for BTA_JV_API_L2CAP_CLOSE_EVT */
-typedef struct {
-  BT_HDR hdr;
-  uint32_t handle;
-  tBTA_JV_L2C_CB* p_cb;
-} tBTA_JV_API_L2CAP_CLOSE;
-
-/* data type for BTA_JV_API_L2CAP_READ_EVT */
-typedef struct {
-  BT_HDR hdr;
-  uint32_t handle;
-  uint32_t req_id;
-  tBTA_JV_L2CAP_CBACK* p_cback;
-  uint8_t* p_data;
-  uint16_t len;
-  uint32_t l2cap_socket_id;
-} tBTA_JV_API_L2CAP_READ;
-
-/* data type for BTA_JV_API_L2CAP_WRITE_EVT */
-typedef struct {
-  BT_HDR hdr;
-  uint32_t handle;
-  uint32_t req_id;
-  tBTA_JV_L2C_CB* p_cb;
-  uint8_t* p_data;
-  uint16_t len;
-  uint32_t user_id;
-} tBTA_JV_API_L2CAP_WRITE;
-
-/* data type for BTA_JV_API_L2CAP_WRITE_FIXED_EVT */
-typedef struct {
-  BT_HDR hdr;
-  uint16_t channel;
-  RawAddress addr;
-  uint32_t req_id;
-  tBTA_JV_L2CAP_CBACK* p_cback;
-  uint8_t* p_data;
-  uint16_t len;
-  uint32_t user_id;
-} tBTA_JV_API_L2CAP_WRITE_FIXED;
-
-/* data type for BTA_JV_API_RFCOMM_CONNECT_EVT */
-typedef struct {
-  BT_HDR hdr;
-  tBTA_SEC sec_mask;
-  tBTA_JV_ROLE role;
-  uint8_t remote_scn;
-  RawAddress peer_bd_addr;
-  tBTA_JV_RFCOMM_CBACK* p_cback;
-  uint32_t rfcomm_slot_id;
-} tBTA_JV_API_RFCOMM_CONNECT;
-
-/* data type for BTA_JV_API_RFCOMM_SERVER_EVT */
-typedef struct {
-  BT_HDR hdr;
-  tBTA_SEC sec_mask;
-  tBTA_JV_ROLE role;
-  uint8_t local_scn;
-  uint8_t max_session;
-  uint32_t handle;
-  tBTA_JV_RFCOMM_CBACK* p_cback;
-  uint32_t rfcomm_slot_id;
-} tBTA_JV_API_RFCOMM_SERVER;
-
-/* data type for BTA_JV_API_SET_PM_PROFILE_EVT */
-typedef struct {
-  BT_HDR hdr;
-  uint32_t handle;
-  tBTA_JV_PM_ID app_id;
-  tBTA_JV_CONN_STATE init_st;
-} tBTA_JV_API_SET_PM_PROFILE;
-
-/* data type for BTA_JV_API_PM_STATE_CHANGE_EVT */
-typedef struct {
-  BT_HDR hdr;
-  tBTA_JV_PM_CB* p_cb;
-  tBTA_JV_CONN_STATE state;
-} tBTA_JV_API_PM_STATE_CHANGE;
-
-/* data type for BTA_JV_API_RFCOMM_WRITE_EVT */
-typedef struct {
-  BT_HDR hdr;
-  uint32_t handle;
-  uint32_t req_id;
-  uint8_t* p_data;
-  int len;
-  tBTA_JV_RFC_CB* p_cb;
-  tBTA_JV_PCB* p_pcb;
-} tBTA_JV_API_RFCOMM_WRITE;
-
-/* data type for BTA_JV_API_RFCOMM_CLOSE_EVT */
-typedef struct {
-  BT_HDR hdr;
-  uint32_t handle;
-  tBTA_JV_RFC_CB* p_cb;
-  tBTA_JV_PCB* p_pcb;
-  uint32_t rfcomm_slot_id;
-} tBTA_JV_API_RFCOMM_CLOSE;
-
-/* union of all data types */
-typedef union {
-  /* GKI event buffer header */
-  BT_HDR hdr;
-  tBTA_JV_API_START_DISCOVERY start_discovery;
-  tBTA_JV_API_L2CAP_CONNECT l2cap_connect;
-  tBTA_JV_API_L2CAP_READ l2cap_read;
-  tBTA_JV_API_L2CAP_WRITE l2cap_write;
-  tBTA_JV_API_L2CAP_CLOSE l2cap_close;
-  tBTA_JV_API_L2CAP_SERVER l2cap_server;
-  tBTA_JV_API_RFCOMM_CONNECT rfcomm_connect;
-  tBTA_JV_API_RFCOMM_WRITE rfcomm_write;
-  tBTA_JV_API_SET_PM_PROFILE set_pm;
-  tBTA_JV_API_PM_STATE_CHANGE change_pm_state;
-  tBTA_JV_API_RFCOMM_CLOSE rfcomm_close;
-  tBTA_JV_API_RFCOMM_SERVER rfcomm_server;
-  tBTA_JV_API_L2CAP_WRITE_FIXED l2cap_write_fixed;
-} tBTA_JV_MSG;
-
 /* JV control block */
 typedef struct {
   /* the SDP handle reported to JV user is the (index + 1) to sdp_handle[].
@@ -330,35 +139,63 @@ extern tBTA_JV_CB bta_jv_cb;
 /* config struct */
 extern tBTA_JV_CFG* p_bta_jv_cfg;
 
-extern bool bta_jv_sm_execute(BT_HDR* p_msg);
-
 extern void bta_jv_enable(tBTA_JV_DM_CBACK* p_cback);
 extern void bta_jv_disable();
 extern void bta_jv_get_channel_id(int32_t type, int32_t channel,
                                   uint32_t l2cap_socket_id,
                                   uint32_t rfcomm_slot_id);
 extern void bta_jv_free_scn(int32_t type, uint16_t scn);
-extern void bta_jv_start_discovery(tBTA_JV_MSG* p_data);
+extern void bta_jv_start_discovery(const RawAddress& bd_addr, uint16_t num_uuid,
+                                   bluetooth::Uuid* uuid_list,
+                                   uint32_t rfcomm_slot_id);
 extern void bta_jv_create_record(uint32_t rfcomm_slot_id);
 extern void bta_jv_delete_record(uint32_t handle);
-extern void bta_jv_l2cap_connect(tBTA_JV_MSG* p_data);
-extern void bta_jv_l2cap_close(tBTA_JV_MSG* p_data);
-extern void bta_jv_l2cap_start_server(tBTA_JV_MSG* p_data);
-extern void bta_jv_l2cap_stop_server(tBTA_JV_MSG* p_data);
-extern void bta_jv_l2cap_read(tBTA_JV_MSG* p_data);
-extern void bta_jv_l2cap_write(tBTA_JV_MSG* p_data);
-extern void bta_jv_rfcomm_connect(tBTA_JV_MSG* p_data);
-extern void bta_jv_rfcomm_close(tBTA_JV_MSG* p_data);
-extern void bta_jv_rfcomm_start_server(tBTA_JV_MSG* p_data);
-extern void bta_jv_rfcomm_stop_server(tBTA_JV_MSG* p_data);
-extern void bta_jv_rfcomm_read(tBTA_JV_MSG* p_data);
-extern void bta_jv_rfcomm_write(tBTA_JV_MSG* p_data);
-extern void bta_jv_set_pm_profile(tBTA_JV_MSG* p_data);
-extern void bta_jv_change_pm_state(tBTA_JV_MSG* p_data);
-extern void bta_jv_l2cap_connect_le(tBTA_JV_MSG* p_data);
-extern void bta_jv_l2cap_start_server_le(tBTA_JV_MSG* p_data);
-extern void bta_jv_l2cap_stop_server_le(tBTA_JV_MSG* p_data);
-extern void bta_jv_l2cap_write_fixed(tBTA_JV_MSG* p_data);
-extern void bta_jv_l2cap_close_fixed(tBTA_JV_MSG* p_data);
+extern void bta_jv_l2cap_connect(int32_t type, tBTA_SEC sec_mask,
+                                 tBTA_JV_ROLE role, uint16_t remote_psm,
+                                 uint16_t rx_mtu,
+                                 const RawAddress& peer_bd_addr,
+                                 std::unique_ptr<tL2CAP_CFG_INFO> cfg,
+                                 std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info,
+                                 tBTA_JV_L2CAP_CBACK* p_cback,
+                                 uint32_t l2cap_socket_id);
+extern void bta_jv_l2cap_close(uint32_t handle, tBTA_JV_L2C_CB* p_cb);
+extern void bta_jv_l2cap_start_server(
+    int32_t type, tBTA_SEC sec_mask, tBTA_JV_ROLE role, uint16_t local_psm,
+    uint16_t rx_mtu, std::unique_ptr<tL2CAP_CFG_INFO> cfg_param,
+    std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info, tBTA_JV_L2CAP_CBACK* p_cback,
+    uint32_t l2cap_socket_id);
+extern void bta_jv_l2cap_stop_server(uint16_t local_psm,
+                                     uint32_t l2cap_socket_id);
+extern void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id,
+                               uint8_t* p_data, uint16_t len, uint32_t user_id,
+                               tBTA_JV_L2C_CB* p_cb);
+extern void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
+                                  uint8_t remote_scn,
+                                  const RawAddress& peer_bd_addr,
+                                  tBTA_JV_RFCOMM_CBACK* p_cback,
+                                  uint32_t rfcomm_slot_id);
+extern void bta_jv_rfcomm_close(uint32_t handle, uint32_t rfcomm_slot_id);
+extern void bta_jv_rfcomm_start_server(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
+                                       uint8_t local_scn, uint8_t max_session,
+                                       tBTA_JV_RFCOMM_CBACK* p_cback,
+                                       uint32_t rfcomm_slot_id);
+extern void bta_jv_rfcomm_stop_server(uint32_t handle, uint32_t rfcomm_slot_id);
+extern void bta_jv_rfcomm_write(uint32_t handle, uint32_t req_id,
+                                tBTA_JV_RFC_CB* p_cb, tBTA_JV_PCB* p_pcb);
+extern void bta_jv_set_pm_profile(uint32_t handle, tBTA_JV_PM_ID app_id,
+                                  tBTA_JV_CONN_STATE init_st);
+extern void bta_jv_l2cap_connect_le(uint16_t remote_chan,
+                                    const RawAddress& peer_bd_addr,
+                                    tBTA_JV_L2CAP_CBACK* p_cback,
+                                    uint32_t l2cap_socket_id);
+extern void bta_jv_l2cap_start_server_le(uint16_t local_chan,
+                                         tBTA_JV_L2CAP_CBACK* p_cback,
+                                         uint32_t l2cap_socket_id);
+extern void bta_jv_l2cap_stop_server_le(uint16_t local_chan);
+extern void bta_jv_l2cap_write_fixed(uint16_t channel, const RawAddress& addr,
+                                     uint32_t req_id, uint8_t* p_data,
+                                     uint16_t len, uint32_t user_id,
+                                     tBTA_JV_L2CAP_CBACK* p_cback);
+extern void bta_jv_l2cap_close_fixed(uint32_t handle);
 
 #endif /* BTA_JV_INT_H */
