@@ -616,28 +616,18 @@ tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvRfcommClose(uint32_t handle, uint32_t rfcomm_slot_id) {
-  tBTA_JV_STATUS status = BTA_JV_FAILURE;
   uint32_t hi = ((handle & BTA_JV_RFC_HDL_MASK) & ~BTA_JV_RFCOMM_MASK) - 1;
   uint32_t si = BTA_JV_RFC_HDL_TO_SIDX(handle);
 
   APPL_TRACE_API("%s", __func__);
 
-  if (hi < BTA_JV_MAX_RFC_CONN && bta_jv_cb.rfc_cb[hi].p_cback &&
-      si < BTA_JV_MAX_RFC_SR_SESSION && bta_jv_cb.rfc_cb[hi].rfc_hdl[si]) {
-    tBTA_JV_API_RFCOMM_CLOSE* p_msg =
-        (tBTA_JV_API_RFCOMM_CLOSE*)osi_malloc(sizeof(tBTA_JV_API_RFCOMM_CLOSE));
-    p_msg->hdr.event = BTA_JV_API_RFCOMM_CLOSE_EVT;
-    p_msg->handle = handle;
-    p_msg->p_cb = &bta_jv_cb.rfc_cb[hi];
-    p_msg->p_pcb = &bta_jv_cb.port_cb[p_msg->p_cb->rfc_hdl[si] - 1];
-    p_msg->rfcomm_slot_id = rfcomm_slot_id;
+  if (hi >= BTA_JV_MAX_RFC_CONN || !bta_jv_cb.rfc_cb[hi].p_cback ||
+      si >= BTA_JV_MAX_RFC_SR_SESSION || !bta_jv_cb.rfc_cb[hi].rfc_hdl[si])
+    return BTA_JV_FAILURE;
 
-    bta_sys_sendmsg(p_msg);
-
-    status = BTA_JV_SUCCESS;
-  }
-
-  return status;
+  do_in_bta_thread(FROM_HERE,
+                   Bind(&bta_jv_rfcomm_close, handle, rfcomm_slot_id));
+  return BTA_JV_SUCCESS;
 }
 
 /*******************************************************************************
