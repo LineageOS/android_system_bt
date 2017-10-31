@@ -1435,26 +1435,19 @@ static int find_rfc_pcb(uint32_t rfcomm_slot_id, tBTA_JV_RFC_CB** cb,
   return 0;
 }
 
-/*******************************************************************************
- *
- * Function     bta_jv_rfcomm_close
- *
- * Description  Close an RFCOMM connection
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_jv_rfcomm_close(tBTA_JV_MSG* p_data) {
-  tBTA_JV_API_RFCOMM_CLOSE* cc = &(p_data->rfcomm_close);
-  tBTA_JV_RFC_CB* p_cb = NULL;
-  tBTA_JV_PCB* p_pcb = NULL;
-  APPL_TRACE_DEBUG("bta_jv_rfcomm_close, rfc handle:%d", cc->handle);
-  if (!cc->handle) {
+/* Close an RFCOMM connection */
+void bta_jv_rfcomm_close(uint32_t handle, uint32_t rfcomm_slot_id) {
+  if (!handle) {
     APPL_TRACE_ERROR("bta_jv_rfcomm_close, rfc handle is null");
     return;
   }
 
-  if (!find_rfc_pcb(cc->rfcomm_slot_id, &p_cb, &p_pcb)) return;
+  APPL_TRACE_DEBUG("bta_jv_rfcomm_close, rfc handle:%d", handle);
+
+  tBTA_JV_RFC_CB* p_cb = NULL;
+  tBTA_JV_PCB* p_pcb = NULL;
+
+  if (!find_rfc_pcb(rfcomm_slot_id, &p_cb, &p_pcb)) return;
   bta_jv_free_rfc_cb(p_cb, p_pcb);
   APPL_TRACE_DEBUG("bta_jv_rfcomm_close: sec id in use:%d, rfc_cb in use:%d",
                    get_sec_id_used(), get_rfc_cb_used());
