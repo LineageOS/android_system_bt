@@ -324,7 +324,7 @@ void bta_hh_le_enable(void) {
 
   bta_hh_cb.gatt_if = BTA_GATTS_INVALID_IF;
 
-  for (xx = 0; xx < BTA_HH_MAX_DEVICE; xx++)
+  for (xx = 0; xx < ARRAY_SIZE(bta_hh_cb.le_cb_index); xx++)
     bta_hh_cb.le_cb_index[xx] = BTA_HH_IDX_INVALID;
 
   BTA_GATTC_AppRegister(bta_hh_gattc_callback,
@@ -385,6 +385,28 @@ bool bta_hh_is_le_device(tBTA_HH_DEV_CB* p_cb, const RawAddress& remote_bda) {
   return p_cb->is_le_device;
 }
 
+/******************************************************************************
+ *
+ * Function         bta_hh_le_get_le_cb
+ *
+ * Description      Allocate bta_hh_cb.le_cb_index
+ *
+ * Parameters:
+ *
+ ******************************************************************************/
+uint8_t bta_hh_le_get_le_dev_hdl(uint8_t cb_index) {
+  uint8_t i;
+  for (i = 0; i < ARRAY_SIZE(bta_hh_cb.le_cb_index); i++) {
+    if (bta_hh_cb.le_cb_index[i] == cb_index) return BTA_HH_GET_LE_DEV_HDL(i);
+  }
+
+  for (i = 0; i < ARRAY_SIZE(bta_hh_cb.le_cb_index); i++) {
+    if (bta_hh_cb.le_cb_index[i] == BTA_HH_IDX_INVALID)
+      return BTA_HH_GET_LE_DEV_HDL(i);
+  }
+  return BTA_HH_IDX_INVALID;
+}
+
 /*******************************************************************************
  *
  * Function         bta_hh_le_open_conn
@@ -395,8 +417,15 @@ bool bta_hh_is_le_device(tBTA_HH_DEV_CB* p_cb, const RawAddress& remote_bda) {
  *
  ******************************************************************************/
 void bta_hh_le_open_conn(tBTA_HH_DEV_CB* p_cb, const RawAddress& remote_bda) {
+  tBTA_HH_STATUS status = BTA_HH_ERR_NO_RES;
+
   /* update cb_index[] map */
-  p_cb->hid_handle = BTA_HH_GET_LE_DEV_HDL(p_cb->index);
+  p_cb->hid_handle = bta_hh_le_get_le_dev_hdl(p_cb->index);
+  if (p_cb->hid_handle == BTA_HH_IDX_INVALID) {
+    bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, (tBTA_HH_DATA*)&status);
+    return;
+  }
+
   p_cb->addr = remote_bda;
   bta_hh_cb.le_cb_index[BTA_HH_GET_LE_CB_IDX(p_cb->hid_handle)] = p_cb->index;
   p_cb->in_use = true;
@@ -1271,10 +1300,15 @@ void bta_hh_gatt_open(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_buf) {
       ((p2[4]) << 8) + p2[5], p_data->status);
 
   if (p_data->status == GATT_SUCCESS) {
+    p_cb->hid_handle = bta_hh_le_get_le_dev_hdl(p_cb->index);
+    if (p_cb->hid_handle == BTA_HH_IDX_INVALID) {
+      p_cb->conn_id = p_data->conn_id;
+      bta_hh_le_api_disc_act(p_cb);
+      return;
+    }
     p_cb->is_le_device = true;
     p_cb->in_use = true;
     p_cb->conn_id = p_data->conn_id;
-    p_cb->hid_handle = BTA_HH_GET_LE_DEV_HDL(p_cb->index);
 
     bta_hh_cb.le_cb_index[BTA_HH_GET_LE_CB_IDX(p_cb->hid_handle)] = p_cb->index;
 
@@ -2113,7 +2147,8 @@ static void bta_hh_le_add_dev_bg_conn(tBTA_HH_DEV_CB* p_cb, bool check_bond) {
  ******************************************************************************/
 uint8_t bta_hh_le_add_device(tBTA_HH_DEV_CB* p_cb,
                              tBTA_HH_MAINT_DEV* p_dev_info) {
-  p_cb->hid_handle = BTA_HH_GET_LE_DEV_HDL(p_cb->index);
+  p_cb->hid_handle = bta_hh_le_get_le_dev_hdl(p_cb->index);
+  if (p_cb->hid_handle == BTA_HH_INVALID_HANDLE) return BTA_HH_INVALID_HANDLE;
   bta_hh_cb.le_cb_index[BTA_HH_GET_LE_CB_IDX(p_cb->hid_handle)] = p_cb->index;
 
   /* update DI information */

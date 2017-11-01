@@ -24,6 +24,7 @@
  ******************************************************************************/
 #include <base/bind.h>
 #include <base/bind_helpers.h>
+#include <base/logging.h>
 #include <string.h>
 
 #include "bt_common.h"
@@ -60,11 +61,11 @@ bool bta_jv_enabled = false;
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK* p_cback) {
   if (!p_cback || bta_jv_enabled) {
-    APPL_TRACE_ERROR("JVenable fails");
+    LOG(ERROR) << __func__ << ": failure";
     return BTA_JV_FAILURE;
   }
 
-  APPL_TRACE_API("BTA_JvEnable");
+  VLOG(2) << __func__;
 
   memset(&bta_jv_cb, 0, sizeof(tBTA_JV_CB));
   /* set handle to invalid value by default */
@@ -80,7 +81,7 @@ tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK* p_cback) {
 
 /** Disable the Java I/F */
 void BTA_JvDisable(void) {
-  APPL_TRACE_API("%s", __func__);
+  VLOG(2) << __func__;
 
   bta_jv_enabled = false;
 
@@ -132,12 +133,12 @@ bool BTA_JvIsEncrypted(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvGetChannelId(int conn_type, uint32_t id, int32_t channel) {
-  APPL_TRACE_API("%s", __func__);
+  VLOG(2) << __func__;
 
   if (conn_type != BTA_JV_CONN_TYPE_RFCOMM &&
       conn_type != BTA_JV_CONN_TYPE_L2CAP &&
       conn_type != BTA_JV_CONN_TYPE_L2CAP_LE) {
-    APPL_TRACE_ERROR("%s: Invalid connection type");
+    LOG(ERROR) << __func__ << ": Invalid conn_type=" << conn_type;
     return BTA_JV_FAILURE;
   }
 
@@ -161,7 +162,7 @@ tBTA_JV_STATUS BTA_JvGetChannelId(int conn_type, uint32_t id, int32_t channel) {
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvFreeChannel(uint16_t channel, int conn_type) {
-  APPL_TRACE_API("%s", __func__);
+  VLOG(2) << __func__;
 
   do_in_bta_thread(FROM_HERE, Bind(&bta_jv_free_scn, conn_type, channel));
   return BTA_JV_SUCCESS;
@@ -183,7 +184,7 @@ tBTA_JV_STATUS BTA_JvFreeChannel(uint16_t channel, int conn_type) {
 tBTA_JV_STATUS BTA_JvStartDiscovery(const RawAddress& bd_addr,
                                     uint16_t num_uuid, const Uuid* p_uuid_list,
                                     uint32_t rfcomm_slot_id) {
-  APPL_TRACE_API("%s", __func__);
+  VLOG(2) << __func__;
 
   Uuid* uuid_list_copy = new Uuid[num_uuid];
   memcpy(uuid_list_copy, p_uuid_list, num_uuid * sizeof(Uuid));
@@ -207,7 +208,7 @@ tBTA_JV_STATUS BTA_JvStartDiscovery(const RawAddress& bd_addr,
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvCreateRecordByUser(uint32_t rfcomm_slot_id) {
-  APPL_TRACE_API("%s", __func__);
+  VLOG(2) << __func__;
 
   do_in_bta_thread(FROM_HERE, Bind(&bta_jv_create_record, rfcomm_slot_id));
   return BTA_JV_SUCCESS;
@@ -224,7 +225,7 @@ tBTA_JV_STATUS BTA_JvCreateRecordByUser(uint32_t rfcomm_slot_id) {
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvDeleteRecord(uint32_t handle) {
-  APPL_TRACE_API("%s", __func__);
+  VLOG(2) << __func__;
 
   do_in_bta_thread(FROM_HERE, Bind(&bta_jv_delete_record, handle));
   return BTA_JV_SUCCESS;
@@ -241,25 +242,17 @@ tBTA_JV_STATUS BTA_JvDeleteRecord(uint32_t handle) {
  *                  When the connection is established or failed,
  *                  tBTA_JV_L2CAP_CBACK is called with BTA_JV_L2CAP_OPEN_EVT
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
- *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE,
-                                    const tL2CAP_ERTM_INFO*,
-                                    uint16_t remote_chan, uint16_t,
-                                    tL2CAP_CFG_INFO*,
-                                    const RawAddress& peer_bd_addr,
-                                    tBTA_JV_L2CAP_CBACK* p_cback,
-                                    uint32_t l2cap_socket_id) {
-  APPL_TRACE_API("%s", __func__);
-
-  if (p_cback == NULL) return BTA_JV_FAILURE; /* Nothing to do */
-
+void BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE,
+                          const tL2CAP_ERTM_INFO*, uint16_t remote_chan,
+                          uint16_t, tL2CAP_CFG_INFO*,
+                          const RawAddress& peer_bd_addr,
+                          tBTA_JV_L2CAP_CBACK* p_cback,
+                          uint32_t l2cap_socket_id) {
+  VLOG(2) << __func__;
+  CHECK(p_cback);
   do_in_bta_thread(FROM_HERE, Bind(&bta_jv_l2cap_connect_le, remote_chan,
                                    peer_bd_addr, p_cback, l2cap_socket_id));
-
-  return BTA_JV_SUCCESS;
 }
 
 /*******************************************************************************
@@ -273,18 +266,15 @@ tBTA_JV_STATUS BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE,
  *                  When the connection is established or failed,
  *                  tBTA_JV_L2CAP_CBACK is called with BTA_JV_L2CAP_OPEN_EVT
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
- *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capConnect(
-    int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
-    const tL2CAP_ERTM_INFO* ertm_info, uint16_t remote_psm, uint16_t rx_mtu,
-    tL2CAP_CFG_INFO* cfg, const RawAddress& peer_bd_addr,
-    tBTA_JV_L2CAP_CBACK* p_cback, uint32_t l2cap_socket_id) {
-  APPL_TRACE_API("%s", __func__);
-
-  if (!p_cback) return BTA_JV_FAILURE; /* Nothing to do */
+void BTA_JvL2capConnect(int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
+                        const tL2CAP_ERTM_INFO* ertm_info, uint16_t remote_psm,
+                        uint16_t rx_mtu, tL2CAP_CFG_INFO* cfg,
+                        const RawAddress& peer_bd_addr,
+                        tBTA_JV_L2CAP_CBACK* p_cback,
+                        uint32_t l2cap_socket_id) {
+  VLOG(2) << __func__;
+  CHECK(p_cback);
 
   std::unique_ptr<tL2CAP_CFG_INFO> cfg_copy;
   if (cfg) cfg_copy = std::make_unique<tL2CAP_CFG_INFO>(*cfg);
@@ -297,7 +287,6 @@ tBTA_JV_STATUS BTA_JvL2capConnect(
       FROM_HERE, Bind(&bta_jv_l2cap_connect, conn_type, sec_mask, role,
                       remote_psm, rx_mtu, peer_bd_addr, base::Passed(&cfg_copy),
                       base::Passed(&ertm_info_copy), p_cback, l2cap_socket_id));
-  return BTA_JV_SUCCESS;
 }
 
 /*******************************************************************************
@@ -311,7 +300,7 @@ tBTA_JV_STATUS BTA_JvL2capConnect(
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvL2capClose(uint32_t handle) {
-  APPL_TRACE_API("%s", __func__);
+  VLOG(2) << __func__;
 
   if (handle >= BTA_JV_MAX_L2C_CONN || !bta_jv_cb.l2c_cb[handle].p_cback)
     return BTA_JV_FAILURE;
@@ -333,7 +322,7 @@ tBTA_JV_STATUS BTA_JvL2capClose(uint32_t handle) {
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvL2capCloseLE(uint32_t handle) {
-  APPL_TRACE_API("%s", __func__);
+  VLOG(2) << __func__;
 
   do_in_bta_thread(FROM_HERE, Bind(&bta_jv_l2cap_close_fixed, handle));
   return BTA_JV_SUCCESS;
@@ -361,7 +350,7 @@ tBTA_JV_STATUS BTA_JvL2capStartServer(int conn_type, tBTA_SEC sec_mask,
                                       tL2CAP_CFG_INFO* cfg,
                                       tBTA_JV_L2CAP_CBACK* p_cback,
                                       uint32_t l2cap_socket_id) {
-  APPL_TRACE_API("%s", __func__);
+  VLOG(2) << __func__;
 
   if (!p_cback) return BTA_JV_FAILURE; /* Nothing to do */
 
@@ -400,7 +389,7 @@ tBTA_JV_STATUS BTA_JvL2capStartServerLE(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
                                         tL2CAP_CFG_INFO* cfg,
                                         tBTA_JV_L2CAP_CBACK* p_cback,
                                         uint32_t l2cap_socket_id) {
-  APPL_TRACE_API("%s", __func__);
+  VLOG(2) << __func__;
 
   if (!p_cback) return BTA_JV_FAILURE; /* Nothing to do */
 
@@ -423,7 +412,7 @@ tBTA_JV_STATUS BTA_JvL2capStartServerLE(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvL2capStopServer(uint16_t local_psm,
                                      uint32_t l2cap_socket_id) {
-  APPL_TRACE_API("%s", __func__);
+  VLOG(2) << __func__;
 
   do_in_bta_thread(FROM_HERE,
                    Bind(&bta_jv_l2cap_stop_server, local_psm, l2cap_socket_id));
@@ -443,7 +432,7 @@ tBTA_JV_STATUS BTA_JvL2capStopServer(uint16_t local_psm,
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvL2capStopServerLE(uint16_t local_chan,
                                        uint32_t l2cap_socket_id) {
-  APPL_TRACE_API("%s", __func__);
+  VLOG(2) << __func__;
 
   do_in_bta_thread(FROM_HERE, Bind(&bta_jv_l2cap_stop_server_le, local_chan));
   return BTA_JV_SUCCESS;
@@ -463,7 +452,7 @@ tBTA_JV_STATUS BTA_JvL2capStopServerLE(uint16_t local_chan,
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvL2capRead(uint32_t handle, uint32_t req_id,
                                uint8_t* p_data, uint16_t len) {
-  APPL_TRACE_API("%s", __func__);
+  VLOG(2) << __func__;
 
   if (handle >= BTA_JV_MAX_L2C_CONN || !bta_jv_cb.l2c_cb[handle].p_cback)
     return BTA_JV_FAILURE;
@@ -498,7 +487,7 @@ tBTA_JV_STATUS BTA_JvL2capRead(uint32_t handle, uint32_t req_id,
 tBTA_JV_STATUS BTA_JvL2capReady(uint32_t handle, uint32_t* p_data_size) {
   tBTA_JV_STATUS status = BTA_JV_FAILURE;
 
-  APPL_TRACE_API("%s: %d", __func__, handle);
+  VLOG(2) << __func__ << ": handle=" << handle;
   if (p_data_size && handle < BTA_JV_MAX_L2C_CONN &&
       bta_jv_cb.l2c_cb[handle].p_cback) {
     *p_data_size = 0;
@@ -526,7 +515,7 @@ tBTA_JV_STATUS BTA_JvL2capReady(uint32_t handle, uint32_t* p_data_size) {
 tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id,
                                 uint8_t* p_data, uint16_t len,
                                 uint32_t user_id) {
-  APPL_TRACE_API("%s", __func__);
+  VLOG(2) << __func__;
 
   if (handle >= BTA_JV_MAX_L2C_CONN || !bta_jv_cb.l2c_cb[handle].p_cback)
     return BTA_JV_FAILURE;
@@ -554,7 +543,7 @@ tBTA_JV_STATUS BTA_JvL2capWriteFixed(uint16_t channel, const RawAddress& addr,
                                      tBTA_JV_L2CAP_CBACK* p_cback,
                                      uint8_t* p_data, uint16_t len,
                                      uint32_t user_id) {
-  APPL_TRACE_API("%s", __func__);
+  VLOG(2) << __func__;
 
   do_in_bta_thread(FROM_HERE, Bind(&bta_jv_l2cap_write_fixed, channel, addr,
                                    req_id, p_data, len, user_id, p_cback));
@@ -582,7 +571,7 @@ tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
                                    const RawAddress& peer_bd_addr,
                                    tBTA_JV_RFCOMM_CBACK* p_cback,
                                    uint32_t rfcomm_slot_id) {
-  APPL_TRACE_API("%s", __func__);
+  VLOG(2) << __func__;
 
   if (!p_cback) return BTA_JV_FAILURE; /* Nothing to do */
 
@@ -606,7 +595,7 @@ tBTA_JV_STATUS BTA_JvRfcommClose(uint32_t handle, uint32_t rfcomm_slot_id) {
   uint32_t hi = ((handle & BTA_JV_RFC_HDL_MASK) & ~BTA_JV_RFCOMM_MASK) - 1;
   uint32_t si = BTA_JV_RFC_HDL_TO_SIDX(handle);
 
-  APPL_TRACE_API("%s", __func__);
+  VLOG(2) << __func__;
 
   if (hi >= BTA_JV_MAX_RFC_CONN || !bta_jv_cb.rfc_cb[hi].p_cback ||
       si >= BTA_JV_MAX_RFC_SR_SESSION || !bta_jv_cb.rfc_cb[hi].rfc_hdl[si])
@@ -636,14 +625,14 @@ tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
                                        uint8_t local_scn, uint8_t max_session,
                                        tBTA_JV_RFCOMM_CBACK* p_cback,
                                        uint32_t rfcomm_slot_id) {
-  APPL_TRACE_API("%s", __func__);
+  VLOG(2) << __func__;
 
   if (p_cback == NULL) return BTA_JV_FAILURE; /* Nothing to do */
 
   if (max_session == 0) max_session = 1;
   if (max_session > BTA_JV_MAX_RFC_SR_SESSION) {
-    APPL_TRACE_DEBUG("max_session is too big. use max (%d)", max_session,
-                     BTA_JV_MAX_RFC_SR_SESSION);
+    LOG(INFO) << __func__ << "max_session is too big. use max "
+              << BTA_JV_MAX_RFC_SR_SESSION;
     max_session = BTA_JV_MAX_RFC_SR_SESSION;
   }
 
@@ -666,7 +655,7 @@ tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvRfcommStopServer(uint32_t handle,
                                       uint32_t rfcomm_slot_id) {
-  APPL_TRACE_API("%s", __func__);
+  VLOG(2) << __func__;
 
   do_in_bta_thread(FROM_HERE,
                    Bind(&bta_jv_rfcomm_stop_server, handle, rfcomm_slot_id));
@@ -708,15 +697,16 @@ tBTA_JV_STATUS BTA_JvRfcommWrite(uint32_t handle, uint32_t req_id) {
   uint32_t hi = ((handle & BTA_JV_RFC_HDL_MASK) & ~BTA_JV_RFCOMM_MASK) - 1;
   uint32_t si = BTA_JV_RFC_HDL_TO_SIDX(handle);
 
-  APPL_TRACE_API("%s", __func__);
+  VLOG(2) << __func__;
 
-  APPL_TRACE_DEBUG("handle:0x%x, hi:%d, si:%d", handle, hi, si);
+  VLOG(2) << __func__ << "handle=" << loghex(handle) << ", hi=" << hi
+          << ", si=" << si;
   if (hi >= BTA_JV_MAX_RFC_CONN || !bta_jv_cb.rfc_cb[hi].p_cback ||
       si >= BTA_JV_MAX_RFC_SR_SESSION || !bta_jv_cb.rfc_cb[hi].rfc_hdl[si]) {
     return BTA_JV_FAILURE;
   }
 
-  APPL_TRACE_API("write ok");
+  VLOG(2) << "write ok";
 
   tBTA_JV_RFC_CB* p_cb = &bta_jv_cb.rfc_cb[hi];
   do_in_bta_thread(FROM_HERE, Bind(&bta_jv_rfcomm_write, handle, req_id, p_cb,
@@ -749,7 +739,7 @@ tBTA_JV_STATUS BTA_JvRfcommWrite(uint32_t handle, uint32_t req_id) {
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvSetPmProfile(uint32_t handle, tBTA_JV_PM_ID app_id,
                                   tBTA_JV_CONN_STATE init_st) {
-  APPL_TRACE_API("%s handle:0x%x, app_id:%d", __func__, handle, app_id);
+  VLOG(2) << __func__ << " handle=" << loghex(handle) << ", app_id:" << app_id;
 
   do_in_bta_thread(FROM_HERE,
                    Bind(&bta_jv_set_pm_profile, handle, app_id, init_st));
