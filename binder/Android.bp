@@ -1,6 +1,7 @@
 cc_library_shared {
-    name: "bluetooth_binder_interface",
+    name: "libbluetooth-binder",
     srcs: [
+        "android/bluetooth/IBluetoothSocketManager.aidl",
 /* TODO: Uncomment this files as they get converted one-by-one into native implementation
         "android/bluetooth/IBluetooth.aidl",
         "android/bluetooth/IBluetoothA2dp.aidl",
