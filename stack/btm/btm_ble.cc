@@ -1999,7 +1999,8 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
 
   btm_ble_update_mode_operation(role, &bda, status);
 
-  btm_ble_advertiser_notify_terminated_legacy(status, handle);
+  if (role == HCI_ROLE_SLAVE)
+    btm_ble_advertiser_notify_terminated_legacy(status, handle);
 }
 
 /*****************************************************************************
