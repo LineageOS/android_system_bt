@@ -106,17 +106,16 @@ cc_test {
     name: "net_test_btif",
     defaults: ["fluoride_defaults"],
     include_dirs: btifCommonIncludes,
-    srcs: [
-        "test/btif_storage_test.cc",
-        "test/bogus_stack_dependency_btif_storage_test.cc",
-        ],
+    srcs: ["test/btif_storage_test.cc"],
     header_libs: ["libbluetooth_headers"],
     shared_libs: [
         "liblog",
         "libcutils",
     ],
     static_libs: [
+        "libbtcore",
         "libbtif",
+        "libbt-stack",
         "libbluetooth-types",
         "libosi",
     ],
