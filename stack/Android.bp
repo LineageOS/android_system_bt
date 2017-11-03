@@ -199,15 +199,25 @@ cc_test {
     ],
     srcs: ["test/stack_a2dp_test.cc"],
     shared_libs: [
+        "libhidlbase",
         "liblog",
+        "libprotobuf-cpp-lite",
         "libcutils",
+        "libutils",
     ],
     static_libs: [
+        "libbt-bta",
         "libbt-stack",
         "libbt-sbc-decoder",
         "libbt-sbc-encoder",
         "libFraunhoferAAC",
+        "libbtdevice",
+        "libbt-hci",
         "libosi",
+        "libbt-protos",
+    ],
+    whole_static_libs: [
+        "libbluetooth-for-tests",
     ],
 }
 
