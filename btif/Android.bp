@@ -109,15 +109,25 @@ cc_test {
     srcs: ["test/btif_storage_test.cc"],
     header_libs: ["libbluetooth_headers"],
     shared_libs: [
+        "libhidlbase",
         "liblog",
+        "libprotobuf-cpp-lite",
         "libcutils",
+        "libutils",
     ],
     static_libs: [
-        "libbtcore",
         "libbtif",
+        "libbt-bta",
+        "libbtcore",
         "libbt-stack",
+        "libbtdevice",
+        "libbt-hci",
         "libbluetooth-types",
         "libosi",
+        "libbt-protos",
+    ],
+    whole_static_libs: [
+        "libbluetooth-for-tests",
     ],
     cflags: ["-DBUILDCFG"],
 }

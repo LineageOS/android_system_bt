@@ -84,3 +84,28 @@ cc_library_shared {
         "-DBUILDCFG",
     ],
 }
+
+cc_library_static {
+    name: "libbluetooth-for-tests",
+    defaults: ["fluoride_defaults"],
+
+    srcs: [
+        "bte_init_cpp_logging.cc",
+        "bte_logmsg.cc",
+        "bte_main.cc",
+        "stack_config.cc",
+    ],
+    include_dirs: [
+        "system/bt",
+        "system/bt/bta/include",
+        "system/bt/btcore/include",
+        "system/bt/btif/include",
+        "system/bt/hci/include",
+        "system/bt/internal_include",
+        "system/bt/stack/include",
+        "system/bt/utils/include",
+    ],
+    cflags: [
+        "-DBUILDCFG",
+    ],
+}
