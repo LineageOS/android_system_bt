@@ -106,19 +106,28 @@ cc_test {
     name: "net_test_btif",
     defaults: ["fluoride_defaults"],
     include_dirs: btifCommonIncludes,
-    srcs: [
-        "test/btif_storage_test.cc",
-        "test/bogus_stack_dependency_btif_storage_test.cc",
-        ],
+    srcs: ["test/btif_storage_test.cc"],
     header_libs: ["libbluetooth_headers"],
     shared_libs: [
+        "libhidlbase",
         "liblog",
+        "libprotobuf-cpp-lite",
         "libcutils",
+        "libutils",
     ],
     static_libs: [
         "libbtif",
+        "libbt-bta",
+        "libbtcore",
+        "libbt-stack",
+        "libbtdevice",
+        "libbt-hci",
         "libbluetooth-types",
         "libosi",
+        "libbt-protos",
+    ],
+    whole_static_libs: [
+        "libbluetooth-for-tests",
     ],
     cflags: ["-DBUILDCFG"],
 }
