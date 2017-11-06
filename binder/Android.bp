@@ -1,6 +1,7 @@
 cc_library_shared {
     name: "libbluetooth-binder",
     srcs: [
+        "android/bluetooth/bluetooth_device.cc",
         "android/bluetooth/IBluetoothSocketManager.aidl",
         "android/os/parcel_file_descriptor.cc",
         "android/os/parcel_uuid.cc",
@@ -44,6 +45,7 @@ cc_library_shared {
 
              /* required for android.os.ParcelUuid, and android.os.ParcelFileDescriptor */
             "frameworks/base/core/java",
+            "system/bt/binder",
         ],
     },
     include_dirs: [
