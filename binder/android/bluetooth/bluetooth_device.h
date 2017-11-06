@@ -18,15 +18,16 @@
 
 #include <binder/Parcel.h>
 #include <binder/Parcelable.h>
-#include <bluetooth/uuid.h>
+
+#include <raw_address.h>
 
 namespace android {
-namespace os {
+namespace bluetooth {
 
-class ParcelUuid : public android::Parcelable {
+class BluetoothDevice : public android::Parcelable {
  public:
-  ParcelUuid() = default;
-  ~ParcelUuid() = default;
+  BluetoothDevice() = default;
+  ~BluetoothDevice() = default;
 
   // Write |this| parcelable to the given |parcel|.  Keep in mind that
   // implementations of writeToParcel must be manually kept in sync
@@ -42,8 +43,8 @@ class ParcelUuid : public android::Parcelable {
   // Returns android::OK on success and an appropriate error otherwise.
   android::status_t readFromParcel(const android::Parcel* parcel) override;
 
-  ::bluetooth::Uuid uuid;
+  RawAddress address;
 };
 
-}  // namespace os
+}  // namespace bluetooth
 }  // namespace android

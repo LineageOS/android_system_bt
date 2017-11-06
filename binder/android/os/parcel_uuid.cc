@@ -19,7 +19,7 @@
 using android::OK;
 using android::Parcel;
 using android::status_t;
-using bluetooth::Uuid;
+using ::bluetooth::Uuid;
 
 namespace android {
 namespace os {
