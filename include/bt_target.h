@@ -1592,4 +1592,12 @@ The maximum number of payload octets that the local device can receive in a sing
 #define WEAR_AUTO_CONN_IDLE_INTERVAL_1_25_MS  72
 #endif
 
+/*
+ * Disable the use of local GATT cache.  This forces service discovery on connection
+ * establishment.
+ */
+#ifndef WEAR_DISABLE_GATT_CACHE
+#define WEAR_DISABLE_GATT_CACHE               TRUE
+#endif
+
 #endif /* BT_TARGET_H */
