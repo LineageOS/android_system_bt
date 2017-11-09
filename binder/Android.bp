@@ -1,6 +1,9 @@
 cc_library_shared {
-    name: "bluetooth_binder_interface",
+    name: "libbluetooth-binder",
     srcs: [
+        "android/bluetooth/IBluetoothSocketManager.aidl",
+        "android/os/parcel_file_descriptor.cc",
+        "android/os/parcel_uuid.cc",
 /* TODO: Uncomment this files as they get converted one-by-one into native implementation
         "android/bluetooth/IBluetooth.aidl",
         "android/bluetooth/IBluetoothA2dp.aidl",
@@ -33,10 +36,14 @@ cc_library_shared {
         "android/bluetooth/le/IScannerCallback.aidl"
 */
      ],
+    export_include_dirs: [ "./"],
     aidl: {
         export_aidl_headers: true,
         include_dirs: [
             "frameworks/native/aidl/binder",
+
+             /* required for android.os.ParcelUuid, and android.os.ParcelFileDescriptor */
+            "frameworks/base/core/java",
         ],
     },
     include_dirs: [
