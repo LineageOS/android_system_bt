@@ -16,6 +16,9 @@
 
 package android.bluetooth;
 
+import android.os.ParcelUuid;
+import android.os.ParcelFileDescriptor;
+
 /**
  * API for Bluetooth Sockets service.
  *
@@ -23,4 +26,5 @@ package android.bluetooth;
  */
 interface IBluetoothSocketManager
 {
+    @nullable ParcelFileDescriptor createSocketChannel(int type, in @nullable String serviceName, in @nullable ParcelUuid uuid, int port, int flag);
 }
