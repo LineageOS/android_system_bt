@@ -99,7 +99,6 @@ interface IBluetooth
     void unregisterCallback(in IBluetoothCallback callback);
 
     // For Socket
-    ParcelFileDescriptor connectSocket(in BluetoothDevice device, int type, in ParcelUuid uuid, int port, int flag);
     IBluetoothSocketManager getSocketManager();
 
     boolean factoryReset();
