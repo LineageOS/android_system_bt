@@ -16,4 +16,4 @@
 
 package android.bluetooth;
 
-parcelable BluetoothDevice;
+parcelable BluetoothDevice cpp_header "android/bluetooth/bluetooth_device.h";

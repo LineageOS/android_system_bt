@@ -16,6 +16,7 @@
 
 package android.bluetooth;
 
+import android.bluetooth.BluetoothDevice;
 import android.os.ParcelUuid;
 import android.os.ParcelFileDescriptor;
 
@@ -26,5 +27,6 @@ import android.os.ParcelFileDescriptor;
  */
 interface IBluetoothSocketManager
 {
+    @nullable ParcelFileDescriptor connectSocket(in BluetoothDevice device, int type, in @nullable ParcelUuid uuid, int port, int flag);
     @nullable ParcelFileDescriptor createSocketChannel(int type, in @nullable String serviceName, in @nullable ParcelUuid uuid, int port, int flag);
 }
