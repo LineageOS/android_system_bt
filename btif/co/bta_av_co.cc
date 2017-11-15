@@ -896,7 +896,8 @@ static tBTA_AV_CO_SINK* bta_av_co_audio_set_codec(tBTA_AV_CO_PEER* p_peer) {
 
   // NOTE: Unconditionally dispatch the event to make sure a callback with
   // the most recent codec info is generated.
-  btif_dispatch_sm_event(BTIF_AV_SOURCE_CONFIG_UPDATED_EVT, NULL, 0);
+  btif_dispatch_sm_event(BTIF_AV_SOURCE_CONFIG_UPDATED_EVT, &p_peer->addr,
+                         sizeof(RawAddress));
 
   return p_sink;
 }
@@ -1146,12 +1147,20 @@ bool bta_av_co_set_codec_user_config(
   }
 
 done:
-  // NOTE: We uncoditionally send the upcall even if there is no change
+  // NOTE: We unconditionally send the upcall even if there is no change
   // or the user config failed. Thus, the caller would always know whether the
   // request succeeded or failed.
   // NOTE: Currently, the input is restarted by sending an upcall
   // and informing the Media Framework about the change.
-  btif_dispatch_sm_event(BTIF_AV_SOURCE_CONFIG_UPDATED_EVT, NULL, 0);
+  RawAddress empty_raw_address = RawAddress::kEmpty;
+  RawAddress* p_addr;
+  if (p_peer != nullptr) {
+    p_addr = &p_peer->addr;
+  } else {
+    p_addr = &empty_raw_address;
+  }
+  btif_dispatch_sm_event(BTIF_AV_SOURCE_CONFIG_UPDATED_EVT, p_addr,
+                         sizeof(RawAddress));
 
   return success;
 }
@@ -1231,7 +1240,8 @@ static bool bta_av_co_set_codec_ota_config(tBTA_AV_CO_PEER* p_peer,
   if (restart_input || config_updated) {
     // NOTE: Currently, the input is restarted by sending an upcall
     // and informing the Media Framework about the change.
-    btif_dispatch_sm_event(BTIF_AV_SOURCE_CONFIG_UPDATED_EVT, NULL, 0);
+    btif_dispatch_sm_event(BTIF_AV_SOURCE_CONFIG_UPDATED_EVT, &p_peer->addr,
+                           sizeof(RawAddress));
   }
 
   return true;
@@ -1297,7 +1307,8 @@ bool bta_av_co_set_codec_audio_config(
   if (config_updated) {
     // NOTE: Currently, the input is restarted by sending an upcall
     // and informing the Media Framework about the change.
-    btif_dispatch_sm_event(BTIF_AV_SOURCE_CONFIG_UPDATED_EVT, NULL, 0);
+    btif_dispatch_sm_event(BTIF_AV_SOURCE_CONFIG_UPDATED_EVT, &p_peer->addr,
+                           sizeof(RawAddress));
   }
 
   return true;
@@ -1342,5 +1353,7 @@ void bta_av_co_init(
 
   // NOTE: Unconditionally dispatch the event to make sure a callback with
   // the most recent codec info is generated.
-  btif_dispatch_sm_event(BTIF_AV_SOURCE_CONFIG_UPDATED_EVT, NULL, 0);
+  RawAddress empty_raw_address = RawAddress::kEmpty;
+  btif_dispatch_sm_event(BTIF_AV_SOURCE_CONFIG_UPDATED_EVT, &empty_raw_address,
+                         sizeof(RawAddress));
 }
