@@ -41,22 +41,22 @@ class BtAddress {
   // - each remaining character is a hexadecimal digit
   static bool IsValid(const std::string& addr);
 
-  inline bool operator==(const BtAddress& right) {
+  inline bool operator==(const BtAddress& right) const {
     return address_ == right.address_;
   }
-  inline bool operator!=(const BtAddress& right) {
+  inline bool operator!=(const BtAddress& right) const {
     return address_ != right.address_;
   }
-  inline bool operator<(const BtAddress& right) {
+  inline bool operator<(const BtAddress& right) const {
     return address_ < right.address_;
   }
-  inline bool operator>(const BtAddress& right) {
+  inline bool operator>(const BtAddress& right) const {
     return address_ > right.address_;
   }
-  inline bool operator<=(const BtAddress& right) {
+  inline bool operator<=(const BtAddress& right) const {
     return address_ <= right.address_;
   }
-  inline bool operator>=(const BtAddress& right) {
+  inline bool operator>=(const BtAddress& right) const {
     return address_ >= right.address_;
   }
 
