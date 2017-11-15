@@ -877,62 +877,6 @@ static void avrc_msg_cback(uint8_t handle, uint8_t label, uint8_t cr,
   if (do_free) osi_free(p_pkt);
 }
 
-static void AVRC_build_empty_packet(BT_HDR* p_pkt) {
-  uint8_t* p_start = ((uint8_t*)(p_pkt + 1) + p_pkt->offset);
-  *p_start = AVRC_RSP_ACCEPT & AVRC_CTYPE_MASK;
-  p_start += AVRC_VENDOR_HDR_SIZE;
-  UINT8_TO_BE_STREAM(p_start, 0);
-  UINT8_TO_BE_STREAM(p_start, AVRC_PKT_SINGLE);
-  UINT16_TO_BE_STREAM(p_start, 0);
-  p_pkt->len = AVRC_VENDOR_HDR_SIZE + 4;
-}
-
-static void AVRC_build_error_packet(BT_HDR* p_pkt) {
-  uint8_t* p_start = ((uint8_t*)(p_pkt + 1) + p_pkt->offset);
-  *p_start = AVRC_RSP_REJ & AVRC_CTYPE_MASK;
-  p_start += AVRC_VENDOR_HDR_SIZE;
-  UINT8_TO_BE_STREAM(p_start, 0);
-  UINT8_TO_BE_STREAM(p_start, AVRC_PKT_SINGLE);
-  UINT16_TO_BE_STREAM(p_start, 1);
-  UINT8_TO_BE_STREAM(p_start, AVRC_STS_BAD_PARAM);
-  p_pkt->len = AVRC_VENDOR_HDR_SIZE + 5;
-}
-
-static uint16_t AVRC_HandleContinueRsp(uint8_t handle, uint8_t label,
-                                       BT_HDR* p_pkt) {
-  AVRC_TRACE_DEBUG("%s()", __func__);
-
-  uint8_t* p_data =
-      ((uint8_t*)(p_pkt + 1) + p_pkt->offset + AVRC_VENDOR_HDR_SIZE);
-  tAVRC_FRAG_CB* p_fcb = &avrc_cb.fcb[handle];
-
-  uint8_t pdu, pkt_type, target_pdu;
-  uint16_t len;
-
-  BE_STREAM_TO_UINT8(pdu, p_data);
-  BE_STREAM_TO_UINT8(pkt_type, p_data);
-  BE_STREAM_TO_UINT16(len, p_data);
-  BE_STREAM_TO_UINT8(target_pdu, p_data);
-
-  if (pdu == AVRC_PDU_REQUEST_CONTINUATION_RSP &&
-      target_pdu == p_fcb->frag_pdu) {
-    return avrc_send_continue_frag(handle, label);
-  }
-
-  if (pdu == AVRC_PDU_ABORT_CONTINUATION_RSP && target_pdu == p_fcb->frag_pdu) {
-    AVRC_build_empty_packet(p_pkt);
-  } else {
-    AVRC_TRACE_ERROR("%s() error: target_pdu: 0x%02x, frag_pdu: 0x%02x",
-                     __func__, *(p_data + 4), p_fcb->frag_pdu);
-    AVRC_build_error_packet(p_pkt);
-  }
-
-  p_fcb->frag_enabled = false;
-  osi_free_and_reset((void**)&p_fcb->p_fmsg);
-
-  return AVCT_MsgReq(handle, label, AVCT_RSP, p_pkt);
-}
-
 /******************************************************************************
  *
  * Function         avrc_pass_msg
@@ -1149,12 +1093,6 @@ uint16_t AVRC_MsgReq(uint8_t handle, uint8_t label, uint8_t ctype,
                    handle, label, ctype, p_pkt->len);
 
   if (ctype >= AVRC_RSP_NOT_IMPL) cr = AVCT_RSP;
-
-  p_data = (uint8_t*)(p_pkt + 1) + p_pkt->offset;
-  if (*p_data == AVRC_PDU_REQUEST_CONTINUATION_RSP ||
-      *p_data == AVRC_PDU_ABORT_CONTINUATION_RSP) {
-    return AVRC_HandleContinueRsp(handle, label, p_pkt);
-  }
 
   if (p_pkt->event == AVRC_OP_VENDOR) {
     /* add AVRCP Vendor Dependent headers */
