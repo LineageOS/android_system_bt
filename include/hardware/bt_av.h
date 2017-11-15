@@ -131,20 +131,20 @@ typedef struct {
 /** Callback for connection state change.
  *  state will have one of the values from btav_connection_state_t
  */
-typedef void (*btav_connection_state_callback)(btav_connection_state_t state,
-                                               RawAddress* bd_addr);
+typedef void (*btav_connection_state_callback)(RawAddress* bd_addr,
+                                               btav_connection_state_t state);
 
 /** Callback for audiopath state change.
  *  state will have one of the values from btav_audio_state_t
  */
-typedef void (*btav_audio_state_callback)(btav_audio_state_t state,
-                                          RawAddress* bd_addr);
+typedef void (*btav_audio_state_callback)(RawAddress* bd_addr,
+                                          btav_audio_state_t state);
 
 /** Callback for audio configuration change.
  *  Used only for the A2DP Source interface.
  */
 typedef void (*btav_audio_source_config_callback)(
-    btav_a2dp_codec_config_t codec_config,
+    RawAddress* bd_addr, btav_a2dp_codec_config_t codec_config,
     std::vector<btav_a2dp_codec_config_t> codecs_local_capabilities,
     std::vector<btav_a2dp_codec_config_t> codecs_selectable_capabilities);
 
