@@ -106,104 +106,18 @@ typedef uint8_t tBTA_AV_HNDL;
 #endif
 
 /* operation id list for BTA_AvRemoteCmd */
-#define BTA_AV_RC_SELECT AVRC_ID_SELECT         /* select */
-#define BTA_AV_RC_UP AVRC_ID_UP                 /* up */
-#define BTA_AV_RC_DOWN AVRC_ID_DOWN             /* down */
-#define BTA_AV_RC_LEFT AVRC_ID_LEFT             /* left */
-#define BTA_AV_RC_RIGHT AVRC_ID_RIGHT           /* right */
-#define BTA_AV_RC_RIGHT_UP AVRC_ID_RIGHT_UP     /* right-up */
-#define BTA_AV_RC_RIGHT_DOWN AVRC_ID_RIGHT_DOWN /* right-down */
-#define BTA_AV_RC_LEFT_UP AVRC_ID_LEFT_UP       /* left-up */
-#define BTA_AV_RC_LEFT_DOWN AVRC_ID_LEFT_DOWN   /* left-down */
-#define BTA_AV_RC_ROOT_MENU AVRC_ID_ROOT_MENU   /* root menu */
-#define BTA_AV_RC_SETUP_MENU AVRC_ID_SETUP_MENU /* setup menu */
-#define BTA_AV_RC_CONT_MENU AVRC_ID_CONT_MENU   /* contents menu */
-#define BTA_AV_RC_FAV_MENU AVRC_ID_FAV_MENU     /* favorite menu */
-#define BTA_AV_RC_EXIT AVRC_ID_EXIT             /* exit */
-#define BTA_AV_RC_0 AVRC_ID_0                   /* 0 */
-#define BTA_AV_RC_1 AVRC_ID_1                   /* 1 */
-#define BTA_AV_RC_2 AVRC_ID_2                   /* 2 */
-#define BTA_AV_RC_3 AVRC_ID_3                   /* 3 */
-#define BTA_AV_RC_4 AVRC_ID_4                   /* 4 */
-#define BTA_AV_RC_5 AVRC_ID_5                   /* 5 */
-#define BTA_AV_RC_6 AVRC_ID_6                   /* 6 */
-#define BTA_AV_RC_7 AVRC_ID_7                   /* 7 */
-#define BTA_AV_RC_8 AVRC_ID_8                   /* 8 */
-#define BTA_AV_RC_9 AVRC_ID_9                   /* 9 */
-#define BTA_AV_RC_DOT AVRC_ID_DOT               /* dot */
-#define BTA_AV_RC_ENTER AVRC_ID_ENTER           /* enter */
-#define BTA_AV_RC_CLEAR AVRC_ID_CLEAR           /* clear */
-#define BTA_AV_RC_CHAN_UP AVRC_ID_CHAN_UP       /* channel up */
-#define BTA_AV_RC_CHAN_DOWN AVRC_ID_CHAN_DOWN   /* channel down */
-#define BTA_AV_RC_PREV_CHAN AVRC_ID_PREV_CHAN   /* previous channel */
-#define BTA_AV_RC_SOUND_SEL AVRC_ID_SOUND_SEL   /* sound select */
-#define BTA_AV_RC_INPUT_SEL AVRC_ID_INPUT_SEL   /* input select */
-#define BTA_AV_RC_DISP_INFO AVRC_ID_DISP_INFO   /* display information */
-#define BTA_AV_RC_HELP AVRC_ID_HELP             /* help */
-#define BTA_AV_RC_PAGE_UP AVRC_ID_PAGE_UP       /* page up */
-#define BTA_AV_RC_PAGE_DOWN AVRC_ID_PAGE_DOWN   /* page down */
-#define BTA_AV_RC_POWER AVRC_ID_POWER           /* power */
-#define BTA_AV_RC_VOL_UP AVRC_ID_VOL_UP         /* volume up */
-#define BTA_AV_RC_VOL_DOWN AVRC_ID_VOL_DOWN     /* volume down */
-#define BTA_AV_RC_MUTE AVRC_ID_MUTE             /* mute */
-#define BTA_AV_RC_PLAY AVRC_ID_PLAY             /* play */
-#define BTA_AV_RC_STOP AVRC_ID_STOP             /* stop */
-#define BTA_AV_RC_PAUSE AVRC_ID_PAUSE           /* pause */
-#define BTA_AV_RC_RECORD AVRC_ID_RECORD         /* record */
-#define BTA_AV_RC_REWIND AVRC_ID_REWIND         /* rewind */
-#define BTA_AV_RC_FAST_FOR AVRC_ID_FAST_FOR     /* fast forward */
-#define BTA_AV_RC_EJECT AVRC_ID_EJECT           /* eject */
-#define BTA_AV_RC_FORWARD AVRC_ID_FORWARD       /* forward */
-#define BTA_AV_RC_BACKWARD AVRC_ID_BACKWARD     /* backward */
-#define BTA_AV_RC_ANGLE AVRC_ID_ANGLE           /* angle */
-#define BTA_AV_RC_SUBPICT AVRC_ID_SUBPICT       /* subpicture */
-#define BTA_AV_RC_F1 AVRC_ID_F1                 /* F1 */
-#define BTA_AV_RC_F2 AVRC_ID_F2                 /* F2 */
-#define BTA_AV_RC_F3 AVRC_ID_F3                 /* F3 */
-#define BTA_AV_RC_F4 AVRC_ID_F4                 /* F4 */
-#define BTA_AV_RC_F5 AVRC_ID_F5                 /* F5 */
-#define BTA_AV_VENDOR AVRC_ID_VENDOR            /* vendor unique */
-
 typedef uint8_t tBTA_AV_RC;
 
 /* state flag for pass through command */
-#define BTA_AV_STATE_PRESS AVRC_STATE_PRESS     /* key pressed */
-#define BTA_AV_STATE_RELEASE AVRC_STATE_RELEASE /* key released */
-
 typedef uint8_t tBTA_AV_STATE;
 
 /* command codes for BTA_AvVendorCmd */
-#define BTA_AV_CMD_CTRL AVRC_CMD_CTRL
-#define BTA_AV_CMD_STATUS AVRC_CMD_STATUS
-#define BTA_AV_CMD_SPEC_INQ AVRC_CMD_SPEC_INQ
-#define BTA_AV_CMD_NOTIF AVRC_CMD_NOTIF
-#define BTA_AV_CMD_GEN_INQ AVRC_CMD_GEN_INQ
-
 typedef uint8_t tBTA_AV_CMD;
 
 /* response codes for BTA_AvVendorRsp */
-#define BTA_AV_RSP_NOT_IMPL AVRC_RSP_NOT_IMPL
-#define BTA_AV_RSP_ACCEPT AVRC_RSP_ACCEPT
-#define BTA_AV_RSP_REJ AVRC_RSP_REJ
-#define BTA_AV_RSP_IN_TRANS AVRC_RSP_IN_TRANS
-#define BTA_AV_RSP_IMPL_STBL AVRC_RSP_IMPL_STBL
-#define BTA_AV_RSP_CHANGED AVRC_RSP_CHANGED
-#define BTA_AV_RSP_INTERIM AVRC_RSP_INTERIM
-
 typedef uint8_t tBTA_AV_CODE;
 
 /* error codes for BTA_AvProtectRsp */
-#define BTA_AV_ERR_NONE A2DP_SUCCESS /* Success, no error */
-#define BTA_AV_ERR_BAD_STATE \
-  AVDT_ERR_BAD_STATE /* Message cannot be processed in this state */
-#define BTA_AV_ERR_RESOURCE AVDT_ERR_RESOURCE /* Insufficient resources */
-#define BTA_AV_ERR_BAD_CP_TYPE                                               \
-  A2DP_BAD_CP_TYPE /* The requested Content Protection Type is not supported \
-                      */
-#define BTA_AV_ERR_BAD_CP_FORMAT                                             \
-  A2DP_BAD_CP_FORMAT /* The format of Content Protection Data is not correct \
-                        */
-
 typedef uint8_t tBTA_AV_ERR;
 
 /* AV callback events */

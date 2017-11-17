@@ -730,7 +730,7 @@ void handle_rc_passthrough_cmd(tBTA_AV_REMOTE_CMD* p_remote_cmd) {
 
   /* If AVRC is open and peer sends PLAY but there is no AVDT, then we queue-up
    * this PLAY */
-  if ((p_remote_cmd->rc_id == BTA_AV_RC_PLAY) && (!btif_av_is_connected())) {
+  if ((p_remote_cmd->rc_id == AVRC_ID_PLAY) && (!btif_av_is_connected())) {
     if (p_remote_cmd->key_state == AVRC_STATE_PRESS) {
       APPL_TRACE_WARNING("%s: AVDT not open, queuing the PLAY command",
                          __func__);
@@ -740,14 +740,14 @@ void handle_rc_passthrough_cmd(tBTA_AV_REMOTE_CMD* p_remote_cmd) {
   }
 
   /* If we previously queued a play and we get a PAUSE, clear it. */
-  if ((p_remote_cmd->rc_id == BTA_AV_RC_PAUSE) && (p_dev->rc_pending_play)) {
+  if ((p_remote_cmd->rc_id == AVRC_ID_PAUSE) && (p_dev->rc_pending_play)) {
     APPL_TRACE_WARNING("%s: Clear the pending PLAY on PAUSE received",
                        __func__);
     p_dev->rc_pending_play = false;
     return;
   }
 
-  if ((p_remote_cmd->rc_id == BTA_AV_RC_STOP) &&
+  if ((p_remote_cmd->rc_id == AVRC_ID_STOP) &&
       (!btif_av_stream_started_ready())) {
     APPL_TRACE_WARNING("%s: Stream suspended, ignore STOP cmd", __func__);
     return;
@@ -4982,7 +4982,7 @@ static bt_status_t set_volume_rsp(RawAddress* bd_addr, uint8_t abs_vol,
     BTIF_TRACE_DEBUG("%s: msgreq being sent out with label: %d", __func__,
                      p_dev->rc_vol_label);
     if (p_msg != NULL) {
-      BTA_AvVendorRsp(p_dev->rc_handle, label, BTA_AV_RSP_ACCEPT, data_start,
+      BTA_AvVendorRsp(p_dev->rc_handle, label, AVRC_RSP_ACCEPT, data_start,
                       p_msg->len, 0);
       status = BT_STATUS_SUCCESS;
     }
