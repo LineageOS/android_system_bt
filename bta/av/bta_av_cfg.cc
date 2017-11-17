@@ -35,7 +35,7 @@
 #endif
 
 #ifndef BTA_AV_RC_PASS_RSP_CODE
-#define BTA_AV_RC_PASS_RSP_CODE BTA_AV_RSP_NOT_IMPL
+#define BTA_AV_RC_PASS_RSP_CODE AVRC_RSP_NOT_IMPL
 #endif
 
 const uint32_t bta_av_meta_caps_co_ids[] = {AVRC_CO_METADATA, AVRC_CO_BROADCOM};
@@ -264,9 +264,9 @@ const uint16_t bta_av_rc_id[] = {
  * bit mask: 0=POWER, 1=VOL_UP, 2=VOL_DOWN, 3=MUTE, 4=PLAY, 5=STOP,
              6=PAUSE, 7=RECORD, 8=REWIND, 9=FAST_FOR, 10=EJECT, 11=FORWARD,
              12=BACKWARD */
-#if (BTA_AV_RC_PASS_RSP_CODE == BTA_AV_RSP_INTERIM)
+#if (BTA_AV_RC_PASS_RSP_CODE == AVRC_RSP_INTERIM)
     0x0070, /* PLAY | STOP | PAUSE */
-#else       /* BTA_AV_RC_PASS_RSP_CODE != BTA_AV_RSP_INTERIM */
+#else       /* BTA_AV_RC_PASS_RSP_CODE != AVRC_RSP_INTERIM */
 #if (BTA_AVRCP_FF_RW_SUPPORT == TRUE)
     0x1b7E, /* PLAY | STOP | PAUSE | FF | RW | VOL_UP | VOL_DOWN | MUTE | FW |
                BACK */
@@ -283,7 +283,7 @@ const uint16_t bta_av_rc_id[] = {
                         4=F4, 5=F5 */
 };
 
-#if (BTA_AV_RC_PASS_RSP_CODE == BTA_AV_RSP_INTERIM)
+#if (BTA_AV_RC_PASS_RSP_CODE == AVRC_RSP_INTERIM)
 const uint16_t bta_av_rc_id_ac[] = {
     0x0000, /* bit mask: 0=SELECT, 1=UP, 2=DOWN, 3=LEFT,
                          4=RIGHT, 5=RIGHT_UP, 6=RIGHT_DOWN,
