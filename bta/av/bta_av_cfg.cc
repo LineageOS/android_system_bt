@@ -74,13 +74,9 @@ const uint16_t bta_av_audio_flush_to[] = {
 /* Note: if AVRC_SUPF_TG_GROUP_NAVI is set, bta_av_cfg.avrc_group should be true
  */
 #ifndef BTA_AV_RC_SUPF_TG
-#if (AVRC_METADATA_INCLUDED == TRUE)
 #define BTA_AV_RC_SUPF_TG                          \
   (AVRC_SUPF_TG_CAT1 | AVRC_SUPF_TG_MULTI_PLAYER | \
    AVRC_SUPF_TG_BROWSE) /* TODO: | AVRC_SUPF_TG_APP_SETTINGS) */
-#else
-#define BTA_AV_RC_SUPF_TG (AVRC_SUPF_TG_CAT1)
-#endif
 #endif
 
 /*
@@ -133,13 +129,8 @@ const uint8_t bta_av_meta_caps_evt_ids_avrcp13[] = {
 /* This configuration to be used when we are Src + TG + CT( only for abs vol) */
 const tBTA_AV_CFG bta_av_cfg = {
     BTA_AV_RC_COMP_ID, /* AVRCP Company ID */
-#if (AVRC_METADATA_INCLUDED == TRUE)
     512,                  /* AVRCP MTU at L2CAP for control channel */
     BTA_AV_MAX_RC_BR_MTU, /* AVRCP MTU at L2CAP for browsing channel */
-#else
-    48,                   /* AVRCP MTU at L2CAP for control channel */
-    BTA_AV_MAX_RC_BR_MTU, /* AVRCP MTU at L2CAP for browsing channel */
-#endif
     BTA_AV_RC_SUPF_CT,     /* AVRCP controller categories */
     BTA_AV_RC_SUPF_TG,     /* AVRCP target categories */
     672,                   /* AVDTP signaling channel MTU at L2CAP */
@@ -169,11 +160,7 @@ const tBTA_AV_CFG bta_av_cfg = {
  */
 const tBTA_AV_CFG bta_avk_cfg = {
     AVRC_CO_METADATA, /* AVRCP Company ID */
-#if (AVRC_METADATA_INCLUDED == TRUE)
     512, /* AVRCP MTU at L2CAP for control channel */
-#else
-    48,                   /* AVRCP MTU at L2CAP for control channel */
-#endif
     BTA_AV_MAX_RC_BR_MTU,  /* AVRCP MTU at L2CAP for browsing channel */
     BTA_AVK_RC_SUPF_CT,    /* AVRCP controller categories */
     BTA_AVK_RC_SUPF_TG,    /* AVRCP target categories */
@@ -203,13 +190,8 @@ const tBTA_AV_CFG bta_avk_cfg = {
 /* This configuration to be used when we are using AVRCP1.3 */
 const tBTA_AV_CFG bta_av_cfg_compatibility = {
     BTA_AV_RC_COMP_ID, /* AVRCP Company ID */
-#if (AVRC_METADATA_INCLUDED == TRUE)
     512,                  /* AVRCP MTU at L2CAP for control channel */
     BTA_AV_MAX_RC_BR_MTU, /* AVRCP MTU at L2CAP for browsing channel */
-#else
-    48,                   /* AVRCP MTU at L2CAP for control channel */
-    BTA_AV_MAX_RC_BR_MTU, /* AVRCP MTU at L2CAP for browsing channel */
-#endif
     BTA_AV_RC_SUPF_CT, /* AVRCP controller categories */
     AVRC_SUPF_TG_CAT1, /* Only support CAT1 for AVRCP1.3 */
     672,               /* AVDTP signaling channel MTU at L2CAP */
@@ -267,12 +249,8 @@ const uint16_t bta_av_rc_id[] = {
 #if (BTA_AV_RC_PASS_RSP_CODE == AVRC_RSP_INTERIM)
     0x0070, /* PLAY | STOP | PAUSE */
 #else       /* BTA_AV_RC_PASS_RSP_CODE != AVRC_RSP_INTERIM */
-#if (BTA_AVRCP_FF_RW_SUPPORT == TRUE)
     0x1b7E, /* PLAY | STOP | PAUSE | FF | RW | VOL_UP | VOL_DOWN | MUTE | FW |
                BACK */
-#else  /* BTA_AVRCP_FF_RW_SUPPORT == FALSE */
-    0x187E, /* PLAY | STOP | PAUSE | VOL_UP | VOL_DOWN | MUTE | FW | BACK */
-#endif /* BTA_AVRCP_FF_RW_SUPPORT */
 #endif /* BTA_AV_RC_PASS_RSP_CODE */
 
     0x0000, /* bit mask: 0=ANGLE, 1=SUBPICT */

@@ -21,8 +21,6 @@
 #include "avrc_int.h"
 #include "bt_common.h"
 
-#if (AVRC_METADATA_INCLUDED == TRUE)
-
 /**************************************************************************
  *
  * Function         AVRC_IsValidAvcType
@@ -230,5 +228,3 @@ bool avrc_is_valid_opcode(uint8_t opcode) {
   }
   return is_valid;
 }
-
-#endif /* (AVRC_METADATA_INCLUDED == TRUE) */

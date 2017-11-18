@@ -470,26 +470,6 @@ static const char* bta_av_sst_code(uint8_t state);
 
 /*******************************************************************************
  *
- * Function         bta_av_is_rcfg_sst
- *
- * Description      Check if stream state machine is in reconfig state.
- *
- *
- * Returns          true if stream state machine is in reconfig state.
- *
- ******************************************************************************/
-bool bta_av_is_rcfg_sst(tBTA_AV_SCB* p_scb) {
-  bool is_rcfg_sst = false;
-
-  if (p_scb != NULL) {
-    if (p_scb->state == BTA_AV_RCFG_SST) is_rcfg_sst = true;
-  }
-
-  return is_rcfg_sst;
-}
-
-/*******************************************************************************
- *
  * Function         bta_av_ssm_execute
  *
  * Description      Stream state machine event handling function for AV

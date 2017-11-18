@@ -89,13 +89,9 @@ const tAVDT_SCB_ACTION avdt_scb_action[] = {avdt_scb_hdl_abort_cmd,
                                             avdt_scb_hdl_suspend_cmd,
                                             avdt_scb_hdl_suspend_rsp,
                                             avdt_scb_hdl_tc_close,
-#if (AVDT_REPORTING == TRUE)
                                             avdt_scb_hdl_tc_close_sto,
-#endif
                                             avdt_scb_hdl_tc_open,
-#if (AVDT_REPORTING == TRUE)
                                             avdt_scb_hdl_tc_open_sto,
-#endif
                                             avdt_scb_snd_delay_rpt_req,
                                             avdt_scb_hdl_delay_rpt_cmd,
                                             avdt_scb_hdl_delay_rpt_rsp,
@@ -528,17 +524,10 @@ const uint8_t avdt_scb_st_open[][AVDT_SCB_NUM_COLS] = {
     {AVDT_SCB_HDL_SUSPEND_RSP, AVDT_SCB_IGNORE, AVDT_SCB_OPEN_ST},
     /* TC_TOUT_EVT */
     {AVDT_SCB_IGNORE, AVDT_SCB_IGNORE, AVDT_SCB_OPEN_ST},
-#if (AVDT_REPORTING == TRUE)
     /* TC_OPEN_EVT */
     {AVDT_SCB_HDL_TC_OPEN_STO, AVDT_SCB_IGNORE, AVDT_SCB_OPEN_ST},
     /* TC_CLOSE_EVT */
     {AVDT_SCB_HDL_TC_CLOSE_STO, AVDT_SCB_IGNORE, AVDT_SCB_OPEN_ST},
-#else
-    /* TC_OPEN_EVT */
-    {AVDT_SCB_IGNORE, AVDT_SCB_IGNORE, AVDT_SCB_OPEN_ST},
-    /* TC_CLOSE_EVT */
-    {AVDT_SCB_HDL_TC_CLOSE, AVDT_SCB_IGNORE, AVDT_SCB_OPEN_ST},
-#endif
     /* TC_CONG_EVT */
     {AVDT_SCB_CONG_STATE, AVDT_SCB_IGNORE, AVDT_SCB_OPEN_ST},
     /* TC_DATA_EVT */
