@@ -1,5 +1,10 @@
 cc_library_shared {
     name: "libbluetooth-binder",
+    product_variables: {
+        pdk: {
+            enabled: false,
+        },
+    },
     srcs: [
         "android/bluetooth/bluetooth_device.cc",
         "android/bluetooth/IBluetoothSocketManager.aidl",

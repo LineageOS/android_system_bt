@@ -784,7 +784,7 @@ static bool btif_av_state_opened_handler(btif_sm_event_t event, void* p_data) {
 
   if ((event == BTA_AV_REMOTE_CMD_EVT) &&
       (btif_av_cb.flags & BTIF_AV_FLAG_REMOTE_SUSPEND) &&
-      (p_av->remote_cmd.rc_id == BTA_AV_RC_PLAY)) {
+      (p_av->remote_cmd.rc_id == AVRC_ID_PLAY)) {
     BTIF_TRACE_EVENT("%s: Resetting remote suspend flag on RC PLAY", __func__);
     btif_av_cb.flags &= ~BTIF_AV_FLAG_REMOTE_SUSPEND;
   }
