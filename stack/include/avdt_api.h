@@ -394,14 +394,12 @@ typedef void(tAVDT_CTRL_CBACK)(uint8_t handle, const RawAddress* bd_addr,
 typedef void(tAVDT_SINK_DATA_CBACK)(uint8_t handle, BT_HDR* p_pkt,
                                     uint32_t time_stamp, uint8_t m_pt);
 
-#if (AVDT_REPORTING == TRUE)
 /* This is the report callback function.  It is executed when AVDTP has a
  * reporting packet ready for the application.  This function is required for
  * streams created with AVDT_PSC_REPORT.
 */
 typedef void(tAVDT_REPORT_CBACK)(uint8_t handle, AVDT_REPORT_TYPE type,
                                  tAVDT_REPORT_DATA* p_data);
-#endif
 
 typedef uint16_t(tAVDT_GETCAP_REQ)(const RawAddress& bd_addr, uint8_t seid,
                                    tAVDT_CFG* p_cfg, tAVDT_CTRL_CBACK* p_cback);
@@ -413,9 +411,7 @@ typedef struct {
   tAVDT_CFG cfg;                            /* SEP configuration */
   tAVDT_CTRL_CBACK* p_ctrl_cback;           /* Control callback function */
   tAVDT_SINK_DATA_CBACK* p_sink_data_cback; /* Sink data callback function */
-#if (AVDT_REPORTING == TRUE)
   tAVDT_REPORT_CBACK* p_report_cback; /* Report callback function. */
-#endif
   uint16_t mtu;       /* The L2CAP MTU of the transport channel */
   uint16_t flush_to;  /* The L2CAP flush timeout of the transport channel */
   uint8_t tsep;       /* SEP type */

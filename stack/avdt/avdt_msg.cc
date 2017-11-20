@@ -283,13 +283,11 @@ static void avdt_msg_bld_cfg(uint8_t** p, tAVDT_CFG* p_cfg) {
     *(*p)++ = 0; /* length */
   }
 
-#if (AVDT_REPORTING == TRUE)
   /* reporting transport */
   if (p_cfg->psc_mask & AVDT_PSC_REPORT) {
     *(*p)++ = AVDT_CAT_REPORT;
     *(*p)++ = 0; /* length */
   }
-#endif
 
   /* codec */
   if (p_cfg->num_codec != 0) {

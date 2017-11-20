@@ -208,36 +208,30 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
       }
       return;
     }
-  }
-  /* deal with simultaneous control channel connect case */
-  else {
+  } else {
+    /* deal with simultaneous control channel connect case */
     p_tbl = avdt_ad_tc_tbl_by_st(AVDT_CHAN_SIG, p_ccb, AVDT_AD_ST_CONN);
     if (p_tbl != NULL) {
       /* reject their connection */
       result = L2CAP_CONN_NO_RESOURCES;
-    }
-    /* this must be a traffic channel; are we accepting a traffic channel
-    ** for this ccb?
-    */
-    else {
+    } else {
+      /* This must be a traffic channel; are we accepting a traffic channel
+       * for this ccb?
+       */
       p_tbl = avdt_ad_tc_tbl_by_st(AVDT_CHAN_MEDIA, p_ccb, AVDT_AD_ST_ACP);
       if (p_tbl != NULL) {
         /* yes; proceed with connection */
         result = L2CAP_CONN_OK;
-      }
-#if (AVDT_REPORTING == TRUE)
-      /* this must be a reporting channel; are we accepting a reporting channel
-      ** for this ccb?
-      */
-      else {
+      } else {
+        /* this must be a reporting channel; are we accepting a reporting
+         * channel for this ccb?
+         */
         p_tbl = avdt_ad_tc_tbl_by_st(AVDT_CHAN_REPORT, p_ccb, AVDT_AD_ST_ACP);
         if (p_tbl != NULL) {
           /* yes; proceed with connection */
           result = L2CAP_CONN_OK;
-        }
-#endif
-        /* else we're not listening for traffic channel; reject */
-        else {
+        } else {
+          /* else we're not listening for traffic channel; reject */
           result = L2CAP_CONN_NO_PSM;
         }
       }

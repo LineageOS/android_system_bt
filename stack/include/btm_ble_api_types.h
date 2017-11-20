@@ -331,14 +331,6 @@ typedef void(tBTM_RAND_ENC_CB)(tBTM_RAND_ENC* p1);
 #define BTM_BLE_DATA_TX_TIME_MIN 0x0148
 #define BTM_BLE_DATA_TX_TIME_MAX 0x0848
 
-/* adv tx power level */
-#define BTM_BLE_ADV_TX_POWER_MIN 0   /* minimum tx power */
-#define BTM_BLE_ADV_TX_POWER_LOW 1   /* low tx power     */
-#define BTM_BLE_ADV_TX_POWER_MID 2   /* middle tx power  */
-#define BTM_BLE_ADV_TX_POWER_UPPER 3 /* upper tx power   */
-#define BTM_BLE_ADV_TX_POWER_MAX 4   /* maximum tx power */
-typedef uint8_t tBTM_BLE_ADV_TX_POWER;
-
 /* adv tx power in dBm */
 typedef struct {
   uint8_t adv_inst_max; /* max adv instance supported in controller */

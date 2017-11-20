@@ -166,10 +166,8 @@ static const uint16_t bta_av_stream_evt_ok[] = {
     BTA_AV_STR_WRITE_CFM_EVT,    /* AVDT_WRITE_CFM_EVT */
     BTA_AV_AVDT_CONNECT_EVT,     /* AVDT_CONNECT_IND_EVT */
     BTA_AV_AVDT_DISCONNECT_EVT,  /* AVDT_DISCONNECT_IND_EVT */
-#if (AVDT_REPORTING == TRUE)
     BTA_AV_AVDT_RPT_CONN_EVT, /* AVDT_REPORT_CONN_EVT */
     BTA_AV_AVDT_RPT_CONN_EVT, /* AVDT_REPORT_DISCONN_EVT */
-#endif
     BTA_AV_AVDT_DELAY_RPT_EVT, /* AVDT_DELAY_REPORT_EVT */
     0                          /* AVDT_DELAY_REPORT_CFM_EVT */
 };
@@ -193,10 +191,8 @@ static const uint16_t bta_av_stream_evt_fail[] = {
     BTA_AV_STR_WRITE_CFM_EVT,    /* AVDT_WRITE_CFM_EVT */
     BTA_AV_AVDT_CONNECT_EVT,     /* AVDT_CONNECT_IND_EVT */
     BTA_AV_AVDT_DISCONNECT_EVT,  /* AVDT_DISCONNECT_IND_EVT */
-#if (AVDT_REPORTING == TRUE)
     BTA_AV_AVDT_RPT_CONN_EVT, /* AVDT_REPORT_CONN_EVT */
     BTA_AV_AVDT_RPT_CONN_EVT, /* AVDT_REPORT_DISCONN_EVT */
-#endif
     BTA_AV_AVDT_DELAY_RPT_EVT, /* AVDT_DELAY_REPORT_EVT */
     0                          /* AVDT_DELAY_REPORT_CFM_EVT */
 };
@@ -388,15 +384,13 @@ static bool bta_av_next_getcap(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       p_scb->sep_info_idx = i;
 
       /* we got a stream; get its capabilities */
-      if (p_scb->p_cap == NULL)
-        p_scb->p_cap = (tAVDT_CFG*)osi_malloc(sizeof(tAVDT_CFG));
       if ((p_scb->avdt_version >= AVDT_VERSION_1_3) &&
           (A2DP_GetAvdtpVersion() >= AVDT_VERSION_1_3)) {
         p_req = AVDT_GetAllCapReq;
       } else {
         p_req = AVDT_GetCapReq;
       }
-      (*p_req)(p_scb->peer_addr, p_scb->sep_info[i].seid, p_scb->p_cap,
+      (*p_req)(p_scb->peer_addr, p_scb->sep_info[i].seid, &p_scb->peer_cap,
                bta_av_dt_cback[p_scb->hdi]);
       sent_cmd = true;
       break;
@@ -1028,7 +1022,6 @@ void bta_av_cleanup(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   APPL_TRACE_DEBUG("%s", __func__);
 
   /* free any buffers */
-  osi_free_and_reset((void**)&p_scb->p_cap);
   p_scb->sdp_discovery_started = false;
   p_scb->avdt_version = 0;
 
@@ -1665,9 +1658,9 @@ void bta_av_save_caps(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   APPL_TRACE_DEBUG("%s: num_seps:%d sep_info_idx:%d wait:x%x", __func__,
                    p_scb->num_seps, p_scb->sep_info_idx, p_scb->wait);
-  A2DP_DumpCodecInfo(p_scb->p_cap->codec_info);
+  A2DP_DumpCodecInfo(p_scb->peer_cap.codec_info);
 
-  memcpy(&cfg, p_scb->p_cap, sizeof(tAVDT_CFG));
+  memcpy(&cfg, &p_scb->peer_cap, sizeof(tAVDT_CFG));
   /* let application know the capability of the SNK */
   p_scb->p_cos->getcfg(p_scb->hndl, cfg.codec_info, &p_scb->sep_info_idx,
                        p_info->seid, &cfg.num_protect, cfg.protect_info);
@@ -1808,18 +1801,18 @@ void bta_av_getcap_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   memcpy(&cfg, &p_scb->cfg, sizeof(tAVDT_CFG));
   cfg.num_codec = 1;
-  cfg.num_protect = p_scb->p_cap->num_protect;
-  memcpy(cfg.codec_info, p_scb->p_cap->codec_info, AVDT_CODEC_SIZE);
-  memcpy(cfg.protect_info, p_scb->p_cap->protect_info, AVDT_PROTECT_SIZE);
-  media_type = A2DP_GetMediaType(p_scb->p_cap->codec_info);
+  cfg.num_protect = p_scb->peer_cap.num_protect;
+  memcpy(cfg.codec_info, p_scb->peer_cap.codec_info, AVDT_CODEC_SIZE);
+  memcpy(cfg.protect_info, p_scb->peer_cap.protect_info, AVDT_PROTECT_SIZE);
+  media_type = A2DP_GetMediaType(p_scb->peer_cap.codec_info);
 
-  APPL_TRACE_DEBUG("%s: num_codec %d", __func__, p_scb->p_cap->num_codec);
+  APPL_TRACE_DEBUG("%s: num_codec %d", __func__, p_scb->peer_cap.num_codec);
   APPL_TRACE_DEBUG("%s: media type x%x, x%x", __func__, media_type,
                    p_scb->media_type);
   A2DP_DumpCodecInfo(p_scb->cfg.codec_info);
 
   /* if codec present and we get a codec configuration */
-  if ((p_scb->p_cap->num_codec != 0) && (media_type == p_scb->media_type) &&
+  if ((p_scb->peer_cap.num_codec != 0) && (media_type == p_scb->media_type) &&
       (p_scb->p_cos->getcfg(p_scb->hndl, cfg.codec_info, &p_scb->sep_info_idx,
                             p_info->seid, &cfg.num_protect,
                             cfg.protect_info) == A2DP_SUCCESS)) {
@@ -1840,7 +1833,7 @@ void bta_av_getcap_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
                              bta_av_get_scb_handle(p_scb, AVDT_TSEP_SNK));
 
     /* use only the services peer supports */
-    cfg.psc_mask &= p_scb->p_cap->psc_mask;
+    cfg.psc_mask &= p_scb->peer_cap.psc_mask;
     p_scb->cur_psc_mask = cfg.psc_mask;
 
     if ((uuid_int == UUID_SERVCLASS_AUDIO_SINK) &&
@@ -1860,11 +1853,6 @@ void bta_av_getcap_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     /* open the stream */
     AVDT_OpenReq(p_scb->seps[p_scb->sep_idx].av_handle, p_scb->peer_addr,
                  p_scb->sep_info[p_scb->sep_info_idx].seid, &cfg);
-
-    if (!bta_av_is_rcfg_sst(p_scb)) {
-      /* free capabilities buffer */
-      osi_free_and_reset((void**)&p_scb->p_cap);
-    }
   } else {
     /* try the next stream, if any */
     p_scb->sep_info_idx++;
@@ -2096,8 +2084,6 @@ void bta_av_reconfig(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   p_scb->num_recfg = 0;
   /* store the new configuration in control block */
-  if (p_scb->p_cap == NULL)
-    p_scb->p_cap = (tAVDT_CFG*)osi_malloc(sizeof(tAVDT_CFG));
   p_cfg = &p_scb->cfg;
 
   alarm_cancel(p_scb->avrc_ct_timer);
@@ -2105,7 +2091,7 @@ void bta_av_reconfig(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   APPL_TRACE_DEBUG(
       "%s: p_scb->sep_info_idx=%d p_scb->rcfg_idx=%d p_rcfg->sep_info_idx=%d",
       __func__, p_scb->sep_info_idx, p_scb->rcfg_idx, p_rcfg->sep_info_idx);
-  A2DP_DumpCodecInfo(p_scb->p_cap->codec_info);
+  A2DP_DumpCodecInfo(p_scb->peer_cap.codec_info);
   A2DP_DumpCodecInfo(p_scb->cfg.codec_info);
   A2DP_DumpCodecInfo(p_rcfg->codec_info);
 
@@ -2676,7 +2662,6 @@ void bta_av_rcfg_str_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   /* rc listen */
   bta_av_st_rc_timer(p_scb, NULL);
-  osi_free_and_reset((void**)&p_scb->p_cap);
 
   /* No need to keep the role bits once reconfig is done. */
   p_scb->role &= ~BTA_AV_ROLE_AD_ACP;

@@ -40,12 +40,8 @@
 #include "sdp_api.h"
 #include "stack_config.h"
 
-#if (AVDT_INCLUDED == TRUE)
 #include "avdt_api.h"
-#endif
-#if (A2D_INCLUDED == TRUE)
 #include "a2dp_api.h"
-#endif
 #if (BNEP_INCLUDED == TRUE)
 #include "bnep_api.h"
 #endif
@@ -97,20 +93,12 @@ static tBTTRC_FUNC_MAP bttrc_set_level_map[] = {
      DEFAULT_CONF_TRACE_LEVEL},
     {BTTRC_ID_STK_RFCOMM, BTTRC_ID_STK_RFCOMM_DATA, PORT_SetTraceLevel,
      "TRC_RFCOMM", DEFAULT_CONF_TRACE_LEVEL},
-#if (AVDT_INCLUDED == TRUE)
     {BTTRC_ID_STK_AVDT, BTTRC_ID_STK_AVDT, AVDT_SetTraceLevel, "TRC_AVDT",
      DEFAULT_CONF_TRACE_LEVEL},
-#endif
     {BTTRC_ID_STK_AVRC, BTTRC_ID_STK_AVRC, AVRC_SetTraceLevel, "TRC_AVRC",
      DEFAULT_CONF_TRACE_LEVEL},
-#if (AVDT_INCLUDED == TRUE)
-//{BTTRC_ID_AVDT_SCB, BTTRC_ID_AVDT_CCB, NULL, "TRC_AVDT_SCB",
-// DEFAULT_CONF_TRACE_LEVEL},
-#endif
-#if (A2D_INCLUDED == TRUE)
     {BTTRC_ID_STK_A2DP, BTTRC_ID_STK_A2DP, A2DP_SetTraceLevel, "TRC_A2D",
      DEFAULT_CONF_TRACE_LEVEL},
-#endif
 #if (BNEP_INCLUDED == TRUE)
     {BTTRC_ID_STK_BNEP, BTTRC_ID_STK_BNEP, BNEP_SetTraceLevel, "TRC_BNEP",
      DEFAULT_CONF_TRACE_LEVEL},

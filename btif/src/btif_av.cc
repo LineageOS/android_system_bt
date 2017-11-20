@@ -1621,7 +1621,6 @@ bt_status_t btif_av_execute_service(bool b_enable) {
  * be initiated by the app/audioflinger layers */
 /* Support for browsing for SDP record should work only if we enable BROWSE
  * while registering. */
-#if (AVRC_METADATA_INCLUDED == TRUE)
     BTA_AvEnable(BTA_SEC_AUTHENTICATE,
                  BTA_AV_FEAT_RCTG | BTA_AV_FEAT_METADATA | BTA_AV_FEAT_VENDOR |
                      BTA_AV_FEAT_NO_SCO_SSPD
@@ -1631,10 +1630,6 @@ bt_status_t btif_av_execute_service(bool b_enable) {
 #endif
                  ,
                  bte_av_callback);
-#else
-    BTA_AvEnable(BTA_SEC_AUTHENTICATE,
-                 (BTA_AV_FEAT_RCTG | BTA_AV_FEAT_NO_SCO_SSPD), bte_av_callback);
-#endif
     BTA_AvRegister(BTA_AV_CHNL_AUDIO, BTIF_AV_SERVICE_NAME, 0, NULL,
                    UUID_SERVCLASS_AUDIO_SOURCE);
   } else {
