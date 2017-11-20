@@ -28,8 +28,6 @@
  *  Global data
  ****************************************************************************/
 
-#if (AVRC_METADATA_INCLUDED == TRUE)
-
 /*******************************************************************************
  *
  * Function         avrc_pars_vendor_rsp
@@ -685,4 +683,3 @@ tAVRC_STS AVRC_ParsResponse(tAVRC_MSG* p_msg, tAVRC_RESPONSE* p_result,
   }
   return status;
 }
-#endif /* (AVRC_METADATA_INCLUDED == TRUE) */

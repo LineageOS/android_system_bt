@@ -45,20 +45,13 @@
 enum {
   AVDT_CHAN_SIG,   /* signaling channel */
   AVDT_CHAN_MEDIA, /* media channel */
-#if (AVDT_REPORTING == TRUE)
   AVDT_CHAN_REPORT, /* reporting channel */
-#endif
   AVDT_CHAN_NUM_TYPES
 };
 
 /* protocol service capabilities of this AVDTP implementation */
-#if (AVDT_REPORTING == TRUE)
 #define AVDT_PSC (AVDT_PSC_TRANS | AVDT_PSC_REPORT | AVDT_PSC_DELAY_RPT)
 #define AVDT_LEG_PSC (AVDT_PSC_TRANS | AVDT_PSC_REPORT)
-#else /* AVDT_REPORTING  */
-#define AVDT_PSC (AVDT_PSC_TRANS | AVDT_PSC_DELAY_RPT)
-#define AVDT_LEG_PSC (AVDT_PSC_TRANS)
-#endif /* AVDT_REPORTING  */
 
 /* initiator/acceptor signaling roles */
 #define AVDT_CLOSE_ACP 0
@@ -216,13 +209,9 @@ enum {
   AVDT_SCB_HDL_SUSPEND_CMD,
   AVDT_SCB_HDL_SUSPEND_RSP,
   AVDT_SCB_HDL_TC_CLOSE,
-#if (AVDT_REPORTING == TRUE)
   AVDT_SCB_HDL_TC_CLOSE_STO,
-#endif
   AVDT_SCB_HDL_TC_OPEN,
-#if (AVDT_REPORTING == TRUE)
   AVDT_SCB_HDL_TC_OPEN_STO,
-#endif
   AVDT_SCB_SND_DELAY_RPT_REQ,
   AVDT_SCB_HDL_DELAY_RPT_CMD,
   AVDT_SCB_HDL_DELAY_RPT_RSP,
@@ -314,12 +303,8 @@ enum {
 };
 
 /* adaption layer number of stream routing table entries */
-#if (AVDT_REPORTING == TRUE)
 /* 2 channels(1 media, 1 report) for each SEP and one for signalling */
 #define AVDT_NUM_RT_TBL ((AVDT_NUM_SEPS << 1) + 1)
-#else
-#define AVDT_NUM_RT_TBL (AVDT_NUM_SEPS + 1)
-#endif
 
 /* adaption layer number of transport channel table entries - moved to target.h
 #define AVDT_NUM_TC_TBL     (AVDT_NUM_SEPS + AVDT_NUM_LINKS) */
