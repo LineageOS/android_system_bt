@@ -50,13 +50,8 @@ static BT_HDR* avrc_vendor_msg(tAVRC_MSG_VENDOR* p_msg) {
 
   CHECK(p_msg != NULL);
 
-#if (AVRC_METADATA_INCLUDED == TRUE)
   CHECK(AVRC_META_CMD_BUF_SIZE > (AVRC_MIN_CMD_LEN + p_msg->vendor_len));
   p_cmd = (BT_HDR*)osi_malloc(AVRC_META_CMD_BUF_SIZE);
-#else
-  CHECK(AVRC_CMD_BUF_SIZE > (AVRC_MIN_CMD_LEN + p_msg->vendor_len));
-  p_cmd = (BT_HDR*)osi_malloc(AVRC_CMD_BUF_SIZE);
-#endif
 
   p_cmd->offset = AVCT_MSG_OFFSET;
   p_data = (uint8_t*)(p_cmd + 1) + p_cmd->offset;

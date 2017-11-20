@@ -283,7 +283,6 @@ void avdt_scb_hdl_pkt_no_frag(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data) {
   }
 }
 
-#if (AVDT_REPORTING == TRUE)
 /*******************************************************************************
  *
  * Function         avdt_scb_hdl_report
@@ -357,7 +356,6 @@ uint8_t* avdt_scb_hdl_report(tAVDT_SCB* p_scb, uint8_t* p, uint16_t len) {
   p_start += len;
   return p_start;
 }
-#endif
 
 /*******************************************************************************
  *
@@ -369,14 +367,13 @@ uint8_t* avdt_scb_hdl_report(tAVDT_SCB* p_scb, uint8_t* p, uint16_t len) {
  *
  ******************************************************************************/
 void avdt_scb_hdl_pkt(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data) {
-#if (AVDT_REPORTING == TRUE)
   if (p_data->p_pkt->layer_specific == AVDT_CHAN_REPORT) {
     uint8_t* p = (uint8_t*)(p_data->p_pkt + 1) + p_data->p_pkt->offset;
     avdt_scb_hdl_report(p_scb, p, p_data->p_pkt->len);
     osi_free_and_reset((void**)&p_data->p_pkt);
-  } else
-#endif
+  } else {
     avdt_scb_hdl_pkt_no_frag(p_scb, p_data);
+  }
 }
 
 /*******************************************************************************
@@ -762,7 +759,6 @@ void avdt_scb_hdl_delay_rpt_rsp(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data) {
       AVDT_DELAY_REPORT_CFM_EVT, (tAVDT_CTRL*)&p_data->msg.hdr);
 }
 
-#if (AVDT_REPORTING == TRUE)
 /*******************************************************************************
  *
  * Function         avdt_scb_hdl_tc_close_sto
@@ -793,7 +789,6 @@ void avdt_scb_hdl_tc_close_sto(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data) {
     avdt_scb_hdl_tc_close(p_scb, p_data);
   }
 }
-#endif
 
 /*******************************************************************************
  *
@@ -809,9 +804,7 @@ void avdt_scb_hdl_tc_close_sto(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data) {
  ******************************************************************************/
 void avdt_scb_hdl_tc_open(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data) {
   uint8_t event;
-#if (AVDT_REPORTING == TRUE)
   uint8_t role;
-#endif
 
   alarm_cancel(p_scb->transport_channel_timer);
 
@@ -822,13 +815,11 @@ void avdt_scb_hdl_tc_open(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data) {
   AVDT_TRACE_DEBUG("psc_mask: cfg: 0x%x, req:0x%x, cur: 0x%x",
                    p_scb->cs.cfg.psc_mask, p_scb->req_cfg.psc_mask,
                    p_scb->curr_cfg.psc_mask);
-#if (AVDT_REPORTING == TRUE)
   if (p_scb->curr_cfg.psc_mask & AVDT_PSC_REPORT) {
     /* open the reporting channel, if both devices support it */
     role = (p_scb->role == AVDT_OPEN_INT) ? AVDT_INT : AVDT_ACP;
     avdt_ad_open_req(AVDT_CHAN_REPORT, p_scb->p_ccb, p_scb, role);
   }
-#endif
 
   /* call app callback */
   (*p_scb->cs.p_ctrl_cback)(avdt_scb_to_hdl(p_scb),
@@ -836,7 +827,6 @@ void avdt_scb_hdl_tc_open(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data) {
                             event, (tAVDT_CTRL*)&p_data->open);
 }
 
-#if (AVDT_REPORTING == TRUE)
 /*******************************************************************************
  *
  * Function         avdt_scb_hdl_tc_open_sto
@@ -862,7 +852,6 @@ void avdt_scb_hdl_tc_open_sto(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data) {
                               AVDT_REPORT_CONN_EVT, &avdt_ctrl);
   }
 }
-#endif
 
 /*******************************************************************************
  *
@@ -1246,10 +1235,8 @@ void avdt_scb_snd_setconfig_rsp(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data) {
  ******************************************************************************/
 void avdt_scb_snd_tc_close(tAVDT_SCB* p_scb,
                            UNUSED_ATTR tAVDT_SCB_EVT* p_data) {
-#if (AVDT_REPORTING == TRUE)
   if (p_scb->curr_cfg.psc_mask & AVDT_PSC_REPORT)
     avdt_ad_close_req(AVDT_CHAN_REPORT, p_scb->p_ccb, p_scb);
-#endif
   avdt_ad_close_req(AVDT_CHAN_MEDIA, p_scb->p_ccb, p_scb);
 }
 

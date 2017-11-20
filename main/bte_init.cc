@@ -26,10 +26,6 @@
 #include <string.h>
 #include "bt_target.h"
 
-#ifndef BTA_INCLUDED
-#define BTA_INCLUDED FALSE
-#endif
-
 #include "bte.h"
 
 /* Include initialization functions definitions */
@@ -46,10 +42,7 @@
 #endif
 
 #include "avrc_api.h"
-
-#if (A2D_INCLUDED == TRUE)
 #include "a2dp_api.h"
-#endif
 
 #if (HID_HOST_INCLUDED == TRUE)
 #include "hidh_api.h"
@@ -99,9 +92,7 @@ void BTE_InitStack(void) {
 /**************************
  * AVDT and its profiles **
  **************************/
-#if (A2D_INCLUDED == TRUE)
   A2DP_Init();
-#endif /* AADP */
 
   AVRC_Init();
 
