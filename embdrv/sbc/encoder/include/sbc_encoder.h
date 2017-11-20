@@ -150,10 +150,6 @@
 /*#define ENC_VX_BUFFER_SIZE MINIMUM_ENC_VX_BUFFER_SIZE + 1024*/
 #endif
 
-#ifndef SBC_FOR_EMBEDDED_LINUX
-#define SBC_FOR_EMBEDDED_LINUX FALSE
-#endif
-
 /*constants used for index calculation*/
 #define SBC_BLK (SBC_MAX_NUM_OF_CHANNELS * SBC_MAX_NUM_OF_SUBBANDS)
 

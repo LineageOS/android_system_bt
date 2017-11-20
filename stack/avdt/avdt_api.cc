@@ -104,13 +104,11 @@ void AVDT_Register(tAVDT_REG* p_reg, tAVDT_CTRL_CBACK* p_cback) {
   BTM_SetSecurityLevel(false, "", BTM_SEC_SERVICE_AVDTP_NOSEC, BTM_SEC_NONE,
                        AVDT_PSM, BTM_SEC_PROTO_AVDT, AVDT_CHAN_MEDIA);
 
-#if (AVDT_REPORTING == TRUE)
   /* do not use security on the reporting channel */
   BTM_SetSecurityLevel(true, "", BTM_SEC_SERVICE_AVDTP_NOSEC, BTM_SEC_NONE,
                        AVDT_PSM, BTM_SEC_PROTO_AVDT, AVDT_CHAN_REPORT);
   BTM_SetSecurityLevel(false, "", BTM_SEC_SERVICE_AVDTP_NOSEC, BTM_SEC_NONE,
                        AVDT_PSM, BTM_SEC_PROTO_AVDT, AVDT_CHAN_REPORT);
-#endif
 
   /* initialize AVDTP data structures */
   avdt_scb_init();
@@ -1120,7 +1118,6 @@ uint16_t AVDT_GetSignalChannel(uint8_t handle, const RawAddress& bd_addr) {
   return (lcid);
 }
 
-#if (AVDT_REPORTING == TRUE)
 /*******************************************************************************
  *
  * Function         AVDT_SendReport
@@ -1214,7 +1211,6 @@ uint16_t AVDT_SendReport(uint8_t handle, AVDT_REPORT_TYPE type,
 
   return result;
 }
-#endif
 
 /******************************************************************************
  *

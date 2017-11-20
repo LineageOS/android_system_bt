@@ -28,7 +28,6 @@
 /*****************************************************************************
  *  Global data
  ****************************************************************************/
-#if (AVRC_METADATA_INCLUDED == TRUE)
 #define AVRC_ITEM_PLAYER_IS_VALID(_p_player)                 \
   ((_p_player)->name.p_str &&                                \
    ((_p_player)->major_type & AVRC_MJ_TYPE_INVALID) == 0 &&  \
@@ -1518,5 +1517,3 @@ tAVRC_STS AVRC_BldResponse(uint8_t handle, tAVRC_RESPONSE* p_rsp,
   AVRC_TRACE_API("%s returning %d", __func__, status);
   return status;
 }
-
-#endif /* (AVRC_METADATA_INCLUDED == TRUE)*/
