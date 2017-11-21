@@ -1861,7 +1861,8 @@ void btm_process_inq_results(uint8_t* p, uint8_t inq_res_mode) {
 
       /* If a callback is registered, call it with the results */
       if (p_inq_results_cb)
-        (p_inq_results_cb)((tBTM_INQ_RESULTS*)p_cur, p_eir_data, 62);
+        (p_inq_results_cb)((tBTM_INQ_RESULTS*)p_cur, p_eir_data,
+                           HCI_EXT_INQ_RESPONSE_LEN);
     }
   }
 }
