@@ -246,7 +246,6 @@ static BT_HDR* avrc_copy_packet(BT_HDR* p_pkt, int rsp_pkt_len) {
   return p_pkt_copy;
 }
 
-#if (AVRC_METADATA_INCLUDED == TRUE)
 /******************************************************************************
  *
  * Function         avrc_prep_end_frag
@@ -604,7 +603,6 @@ static uint8_t avrc_proc_far_msg(uint8_t handle, uint8_t label, uint8_t cr,
 
   return drop_code;
 }
-#endif /* (AVRC_METADATA_INCLUDED == TRUE) */
 
 /******************************************************************************
  *
@@ -754,7 +752,6 @@ static void avrc_msg_cback(uint8_t handle, uint8_t label, uint8_t cr,
         p_msg->p_vendor_data = p_data;
         p_msg->vendor_len = p_pkt->len - (p_data - p_begin);
 
-#if (AVRC_METADATA_INCLUDED == TRUE)
         uint8_t drop_code = 0;
         if (p_msg->company_id == AVRC_CO_METADATA) {
           /* Validate length for metadata message */
@@ -789,7 +786,6 @@ static void avrc_msg_cback(uint8_t handle, uint8_t label, uint8_t cr,
               p_drop_msg = "sent_fragd";
           }
         }
-#endif /* (AVRC_METADATA_INCLUDED == TRUE) */
         /* If vendor response received, and did not ask for continuation */
         /* then check queue for addition commands to send */
         if ((cr == AVCT_RSP) && (drop_code != 2)) {
@@ -987,10 +983,8 @@ uint16_t AVRC_Open(uint8_t* p_handle, tAVRC_CONN_CB* p_ccb,
   if (status == AVCT_SUCCESS) {
     memcpy(&avrc_cb.ccb[*p_handle], p_ccb, sizeof(tAVRC_CONN_CB));
     memset(&avrc_cb.ccb_int[*p_handle], 0, sizeof(tAVRC_CONN_INT_CB));
-#if (AVRC_METADATA_INCLUDED == TRUE)
     memset(&avrc_cb.fcb[*p_handle], 0, sizeof(tAVRC_FRAG_CB));
     memset(&avrc_cb.rcb[*p_handle], 0, sizeof(tAVRC_RASM_CB));
-#endif
     avrc_cb.ccb_int[*p_handle].tle = alarm_new("avrcp.commandTimer");
     avrc_cb.ccb_int[*p_handle].cmd_q = fixed_queue_new(SIZE_MAX);
   }
@@ -1076,7 +1070,6 @@ uint16_t AVRC_CloseBrowse(uint8_t handle) { return AVCT_RemoveBrowse(handle); }
  *****************************************************************************/
 uint16_t AVRC_MsgReq(uint8_t handle, uint8_t label, uint8_t ctype,
                      BT_HDR* p_pkt) {
-#if (AVRC_METADATA_INCLUDED == TRUE)
   uint8_t* p_data;
   uint8_t cr = AVCT_CMD;
   bool chk_frag = true;
@@ -1226,9 +1219,6 @@ uint16_t AVRC_MsgReq(uint8_t handle, uint8_t label, uint8_t ctype,
   }
 
   return status;
-#else
-  return AVRC_NO_RESOURCES;
-#endif
 }
 
 /******************************************************************************

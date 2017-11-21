@@ -51,10 +51,6 @@
   (L2CAP_MTU_SIZE - L2CAP_MIN_OFFSET - RFCOMM_DATA_OVERHEAD)
 #endif
 
-#ifndef BTA_INCLUDED
-#define BTA_INCLUDED TRUE
-#endif
-
 #ifndef BTA_PAN_INCLUDED
 #define BTA_PAN_INCLUDED TRUE
 #endif
@@ -87,20 +83,12 @@
 #define BTA_DISABLE_DELAY 200 /* in milliseconds */
 #endif
 
-#ifndef SBC_FOR_EMBEDDED_LINUX
-#define SBC_FOR_EMBEDDED_LINUX TRUE
-#endif
-
 #ifndef AVDT_VERSION
 #define AVDT_VERSION 0x0102
 #endif
 
 #ifndef BTA_AG_AT_MAX_LEN
 #define BTA_AG_AT_MAX_LEN 512
-#endif
-
-#ifndef BTA_AVRCP_FF_RW_SUPPORT
-#define BTA_AVRCP_FF_RW_SUPPORT TRUE
 #endif
 
 #ifndef BTA_AG_SCO_PKT_TYPES
@@ -270,11 +258,6 @@
 #define BTA_HL_LRG_DATA_BUF_SIZE (10240 + 24)
 #endif
 
-/* GATT Server Database buffer size */
-#ifndef GATT_DB_BUF_SIZE
-#define GATT_DB_BUF_SIZE 128
-#endif
-
 /* GATT Data sending buffer size */
 #ifndef GATT_DATA_BUF_SIZE
 #define GATT_DATA_BUF_SIZE BT_DEFAULT_BUFFER_SIZE
@@ -371,11 +354,6 @@
 /* The number of SCO links. */
 #ifndef BTM_MAX_SCO_LINKS
 #define BTM_MAX_SCO_LINKS 3
-#endif
-
-/* The preferred type of SCO links (2-eSCO, 0-SCO). */
-#ifndef BTM_DEFAULT_SCO_MODE
-#define BTM_DEFAULT_SCO_MODE 2
 #endif
 
 /* The number of security records for peer devices. */
@@ -633,7 +611,7 @@
  *****************************************************************************/
 
 #ifndef LOCAL_BLE_CONTROLLER_ID
-#define LOCAL_BLE_CONTROLLER_ID (1)
+#define LOCAL_BLE_CONTROLLER_ID 1
 #endif
 
 /*
@@ -659,11 +637,6 @@
 #define BLE_VND_INCLUDED FALSE
 #endif
 
-#ifndef BTM_BLE_ADV_TX_POWER
-#define BTM_BLE_ADV_TX_POWER \
-  { -21, -15, -7, 1, 9 }
-#endif
-
 /* The maximum number of simultaneous applications that can register with LE
  * L2CAP. */
 #ifndef BLE_MAX_L2CAP_CLIENTS
@@ -679,26 +652,10 @@
 #define BLE_LLT_INCLUDED TRUE
 #endif
 
-#ifndef ATT_INCLUDED
-#define ATT_INCLUDED TRUE
-#endif
-
-#ifndef ATT_DEBUG
-#define ATT_DEBUG TRUE
-#endif
-
 #ifndef BLE_DELAY_REQUEST_ENC
 /* This flag is to work around IPHONE problem, We need to wait for iPhone ready
    before send encryption request to iPhone */
 #define BLE_DELAY_REQUEST_ENC FALSE
-#endif
-
-#ifndef GAP_TRANSPORT_SUPPORTED
-#define GAP_TRANSPORT_SUPPORTED GATT_TRANSPORT_LE_BR_EDR
-#endif
-
-#ifndef GATTP_TRANSPORT_SUPPORTED
-#define GATTP_TRANSPORT_SUPPORTED GATT_TRANSPORT_LE_BR_EDR
 #endif
 
 #ifndef GATT_MAX_SR_PROFILES
@@ -900,17 +857,6 @@
 #define PORT_FC_DEFAULT PORT_FC_CREDIT
 #endif
 
-/* The maximum number of credits receiver sends to peer when using credit-based
- * flow control. */
-#ifndef PORT_CREDIT_RX_MAX
-#define PORT_CREDIT_RX_MAX 16
-#endif
-
-/* The credit low watermark level. */
-#ifndef PORT_CREDIT_RX_LOW
-#define PORT_CREDIT_RX_LOW 8
-#endif
-
 /******************************************************************************
  *
  * OBEX
@@ -1051,15 +997,6 @@
  * AVDTP
  *
  *****************************************************************************/
-
-#ifndef AVDT_INCLUDED
-#define AVDT_INCLUDED TRUE
-#endif
-
-/* Include reporting capability in AVDTP */
-#ifndef AVDT_REPORTING
-#define AVDT_REPORTING TRUE
-#endif
 
 /* Number of simultaneous links to different peer devices. */
 #ifndef AVDT_NUM_LINKS
@@ -1205,10 +1142,6 @@
 #define HID_DEV_INCLUDED TRUE
 #endif
 
-#ifndef HID_DEV_SUBCLASS
-#define HID_DEV_SUBCLASS COD_MINOR_POINTING
-#endif
-
 #ifndef HID_CONTROL_BUF_SIZE
 #define HID_CONTROL_BUF_SIZE BT_DEFAULT_BUFFER_SIZE
 #endif
@@ -1260,18 +1193,11 @@
 #endif
 
 #ifndef HID_HOST_MAX_CONN_RETRY
-#define HID_HOST_MAX_CONN_RETRY (1)
+#define HID_HOST_MAX_CONN_RETRY 1
 #endif
 
 #ifndef HID_HOST_REPAGE_WIN
-#define HID_HOST_REPAGE_WIN (2)
-#endif
-
-/*************************************************************************
- * A2DP Definitions
- */
-#ifndef A2D_INCLUDED
-#define A2D_INCLUDED TRUE
+#define HID_HOST_REPAGE_WIN 2
 #endif
 
 /******************************************************************************
@@ -1295,10 +1221,6 @@
  * AVRCP
  *
  *****************************************************************************/
-
-#ifndef AVRC_METADATA_INCLUDED
-#define AVRC_METADATA_INCLUDED TRUE
-#endif
 
 #ifndef AVRC_ADV_CTRL_INCLUDED
 #define AVRC_ADV_CTRL_INCLUDED TRUE

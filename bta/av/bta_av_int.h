@@ -101,9 +101,7 @@ enum {
   BTA_AV_AVRC_BROWSE_CLOSE_EVT,
   BTA_AV_CONN_CHG_EVT,
   BTA_AV_DEREG_COMP_EVT,
-#if (AVDT_REPORTING == TRUE)
   BTA_AV_AVDT_RPT_CONN_EVT,
-#endif
   BTA_AV_API_START_EVT, /* the following 2 events must be in the same order as
                            the *AP_*EVT */
   BTA_AV_API_STOP_EVT
@@ -448,7 +446,7 @@ typedef struct {
   const tBTA_AV_CO_FUNCTS* p_cos; /* the associated callout functions */
   bool sdp_discovery_started; /* variable to determine whether SDP is started */
   tBTA_AV_SEP seps[BTAV_A2DP_CODEC_INDEX_MAX];
-  tAVDT_CFG* p_cap;  /* buffer used for get capabilities */
+  tAVDT_CFG peer_cap; /* buffer used for get capabilities */
   list_t* a2dp_list; /* used for audio channels only */
   tBTA_AV_Q_INFO q_info;
   tAVDT_SEP_INFO sep_info[BTA_AV_NUM_SEPS]; /* stream discovery results */
@@ -620,7 +618,6 @@ extern bool bta_av_hdl_event(BT_HDR* p_msg);
 extern const char* bta_av_evt_code(uint16_t evt_code);
 extern bool bta_av_switch_if_needed(tBTA_AV_SCB* p_scb);
 extern bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits);
-extern bool bta_av_is_rcfg_sst(tBTA_AV_SCB* p_scb);
 
 /* nsm action functions */
 extern void bta_av_api_disconnect(tBTA_AV_DATA* p_data);

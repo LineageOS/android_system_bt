@@ -25,7 +25,6 @@
 /*****************************************************************************
  *  Global data
  ****************************************************************************/
-#if (AVRC_METADATA_INCLUDED == TRUE)
 
 /*******************************************************************************
  *
@@ -545,5 +544,3 @@ tAVRC_STS AVRC_ParsCommand(tAVRC_MSG* p_msg, tAVRC_COMMAND* p_result,
   AVRC_TRACE_DEBUG("%s return status:0x%x", __func__, status);
   return status;
 }
-
-#endif /* (AVRC_METADATA_INCLUDED == TRUE) */
