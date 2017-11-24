@@ -31,7 +31,7 @@ extern const char* audio_ha_hw_dump_ctrl_event(tHEARING_AID_CTRL_CMD event);
 namespace {
 int bit_rate = 16;
 int sample_rate = 16000;
-int data_interval_ms = 20 /* msec */;
+int data_interval_ms = 10 /* msec */;
 int num_channels = 2;
 alarm_t* audio_timer = nullptr;
 
@@ -113,7 +113,7 @@ void hearing_aid_recv_ctrl_data() {
       break;
 
     case HEARING_AID_CTRL_CMD_START:
-      localAudioReceiver->OnAudioResume();
+      if (localAudioReceiver) localAudioReceiver->OnAudioResume();
       // timer is restarted in UIPC_Open
       UIPC_Open(*uipc_hearing_aid, UIPC_CH_ID_AV_AUDIO, hearing_aid_data_cb,
                 HEARING_AID_DATA_PATH);
@@ -126,7 +126,7 @@ void hearing_aid_recv_ctrl_data() {
 
     case HEARING_AID_CTRL_CMD_SUSPEND:
       if (audio_timer) alarm_cancel(audio_timer);
-      localAudioReceiver->OnAudioSuspend();
+      if (localAudioReceiver) localAudioReceiver->OnAudioSuspend();
       hearing_aid_send_ack(HEARING_AID_CTRL_ACK_SUCCESS);
       break;
 
