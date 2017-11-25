@@ -243,12 +243,12 @@ const char* A2DP_CodecIndexStrAac(void);
 // Gets the A2DP AAC Sink codec name.
 const char* A2DP_CodecIndexStrAacSink(void);
 
-// Initializes A2DP AAC Source codec information into |tAVDT_CFG|
+// Initializes A2DP AAC Source codec information into |AvdtpSepConfig|
 // configuration entry pointed by |p_cfg|.
-bool A2DP_InitCodecConfigAac(tAVDT_CFG* p_cfg);
+bool A2DP_InitCodecConfigAac(AvdtpSepConfig* p_cfg);
 
-// Initializes A2DP AAC Sink codec information into |tAVDT_CFG|
+// Initializes A2DP AAC Sink codec information into |AvdtpSepConfig|
 // configuration entry pointed by |p_cfg|.
-bool A2DP_InitCodecConfigAacSink(tAVDT_CFG* p_cfg);
+bool A2DP_InitCodecConfigAacSink(AvdtpSepConfig* p_cfg);
 
 #endif  // A2DP_AAC_H

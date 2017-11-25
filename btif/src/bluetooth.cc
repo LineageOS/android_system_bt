@@ -50,6 +50,7 @@
 #include "bta/include/bta_hf_client_api.h"
 #include "btif_a2dp.h"
 #include "btif_api.h"
+#include "btif_av.h"
 #include "btif_config.h"
 #include "btif_debug.h"
 #include "btif_debug_btsnoop.h"
@@ -312,6 +313,9 @@ static void dump(int fd, const char** arguments) {
   btif_debug_conn_dump(fd);
   btif_debug_bond_event_dump(fd);
   btif_debug_a2dp_dump(fd);
+  btif_debug_av_dump(fd);
+  bta_debug_av_dump(fd);
+  stack_debug_avdtp_api_dump(fd);
   btif_debug_config_dump(fd);
   BTA_HfClientDumpStatistics(fd);
   wakelock_debug_dump(fd);

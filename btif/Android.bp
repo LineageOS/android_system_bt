@@ -65,7 +65,6 @@ cc_library_static {
         "src/btif_rc.cc",
         "src/btif_sdp.cc",
         "src/btif_sdp_server.cc",
-        "src/btif_sm.cc",
         "src/btif_sock.cc",
         "src/btif_sock_rfc.cc",
         "src/btif_sock_l2cap.cc",
@@ -108,6 +107,7 @@ cc_test {
     srcs: ["test/btif_storage_test.cc"],
     header_libs: ["libbluetooth_headers"],
     shared_libs: [
+        "libaudioclient",
         "libhidlbase",
         "liblog",
         "libprotobuf-cpp-lite",
@@ -115,17 +115,20 @@ cc_test {
         "libutils",
     ],
     static_libs: [
-        "libbtif",
         "libbt-bta",
         "libbtcore",
         "libbt-stack",
+        "libbt-sbc-encoder",
+        "libFraunhoferAAC",
         "libbtdevice",
         "libbt-hci",
+        "libudrv-uipc",
         "libbluetooth-types",
         "libosi",
         "libbt-protos",
     ],
     whole_static_libs: [
+        "libbtif",
         "libbluetooth-for-tests",
     ],
     cflags: ["-DBUILDCFG"],
@@ -140,6 +143,28 @@ cc_test {
     srcs: [
       "src/btif_profile_queue.cc",
       "test/btif_profile_queue_test.cc"
+    ],
+    header_libs: ["libbluetooth_headers"],
+    shared_libs: [
+        "liblog",
+        "libcutils",
+    ],
+    static_libs: [
+        "libbluetooth-types",
+        "libosi",
+    ],
+    cflags: ["-DBUILDCFG"],
+}
+
+// btif state machine unit tests for target
+// ========================================================
+cc_test {
+    name: "net_test_btif_state_machine",
+    defaults: ["fluoride_defaults"],
+    include_dirs: btifCommonIncludes,
+    host_supported: true,
+    srcs: [
+      "test/btif_state_machine_test.cc"
     ],
     header_libs: ["libbluetooth_headers"],
     shared_libs: [

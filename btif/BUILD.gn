@@ -50,7 +50,6 @@ static_library("btif") {
     "src/btif_rc.cc",
     "src/btif_sdp.cc",
     "src/btif_sdp_server.cc",
-    "src/btif_sm.cc",
     "src/btif_sock.cc",
     "src/btif_sock_l2cap.cc",
     "src/btif_sock_rfc.cc",

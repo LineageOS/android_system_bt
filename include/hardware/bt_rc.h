@@ -20,7 +20,7 @@
 __BEGIN_DECLS
 
 /* Change this macro to use multiple RC */
-#define BT_RC_NUM_APP 1
+#define BT_RC_NUM_APP 12
 
 /* Macros */
 #define BTRC_MAX_ATTR_STR_LEN (1 << 16)

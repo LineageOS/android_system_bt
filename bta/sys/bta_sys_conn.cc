@@ -99,6 +99,8 @@ void bta_sys_ssr_cfg_register(tBTA_SYS_SSR_CFG_CBACK* p_cback) {
  ******************************************************************************/
 void bta_sys_notify_role_chg(const RawAddress& p_bda, uint8_t new_role,
                              uint8_t hci_status) {
+  APPL_TRACE_DEBUG("%s: peer %s new_role:%d hci_status:0x%x", __func__,
+                   p_bda.ToString().c_str(), new_role, hci_status);
   if (bta_sys_cb.p_role_cb) {
     bta_sys_cb.p_role_cb(BTA_SYS_ROLE_CHANGE, new_role, hci_status, p_bda);
   }

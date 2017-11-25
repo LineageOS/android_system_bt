@@ -42,12 +42,14 @@
 #include "bta_av_api.h"
 #include "btif_av.h"
 #include "btif_common.h"
+#include "btif_rc.h"
 #include "btif_util.h"
 #include "btu.h"
 #include "device/include/interop.h"
 #include "osi/include/list.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
+
 #define RC_INVALID_TRACK_ID (0xFFFFFFFFFFFFFFFFULL)
 
 /*****************************************************************************
@@ -489,13 +491,21 @@ void handle_rc_features(btif_rc_device_cb_t* p_dev) {
   CHECK(bt_rc_callbacks);
 
   btrc_remote_features_t rc_features = BTRC_FEAT_NONE;
-  RawAddress avdtp_addr = btif_av_get_addr();
+  RawAddress avdtp_source_active_peer_addr = btif_av_source_active_peer();
+  RawAddress avdtp_sink_active_peer_addr = btif_av_sink_active_peer();
 
-  BTIF_TRACE_DEBUG("%s: AVDTP Address: %s AVCTP address: %s", __func__,
-                   avdtp_addr.ToString().c_str(), rc_addr.ToString().c_str());
+  BTIF_TRACE_DEBUG(
+      "%s: AVDTP Source Active Peer Address: %s "
+      "AVDTP Sink Active Peer Address: %s "
+      "AVCTP address: %s",
+      __func__, avdtp_source_active_peer_addr.ToString().c_str(),
+      avdtp_sink_active_peer_addr.ToString().c_str(),
+      rc_addr.ToString().c_str());
 
   if (interop_match_addr(INTEROP_DISABLE_ABSOLUTE_VOLUME, &rc_addr) ||
-      absolute_volume_disabled() || avdtp_addr != rc_addr) {
+      absolute_volume_disabled() ||
+      (avdtp_source_active_peer_addr != rc_addr &&
+       avdtp_sink_active_peer_addr != rc_addr)) {
     p_dev->rc_features &= ~BTA_AV_FEAT_ADV_CTRL;
   }
 
@@ -1072,18 +1082,11 @@ void btif_rc_handler(tBTA_AV_EVT event, tBTA_AV* p_data) {
   }
 }
 
-/***************************************************************************
- **
- ** Function       btif_rc_get_connected_peer
- **
- ** Description    Fetches the connected headset's address if any
- **
- ***************************************************************************/
-bool btif_rc_get_connected_peer(RawAddress* peer_addr) {
+bool btif_rc_is_connected_peer(const RawAddress& peer_addr) {
   for (int idx = 0; idx < BTIF_RC_NUM_CONN; idx++) {
     btif_rc_device_cb_t* p_dev = get_connected_device(idx);
-    if (p_dev != NULL && (p_dev->rc_connected == TRUE)) {
-      *peer_addr = p_dev->rc_addr;
+    if (p_dev != NULL && (p_dev->rc_connected == TRUE) &&
+        peer_addr == p_dev->rc_addr) {
       return true;
     }
   }
