@@ -680,7 +680,7 @@ const char* A2DP_CodecIndexStrAac(void) { return "AAC"; }
 
 const char* A2DP_CodecIndexStrAacSink(void) { return "AAC SINK"; }
 
-bool A2DP_InitCodecConfigAac(tAVDT_CFG* p_cfg) {
+bool A2DP_InitCodecConfigAac(AvdtpSepConfig* p_cfg) {
   if (A2DP_BuildInfoAac(AVDT_MEDIA_TYPE_AUDIO, &a2dp_aac_caps,
                         p_cfg->codec_info) != A2DP_SUCCESS) {
     return false;
@@ -697,7 +697,7 @@ bool A2DP_InitCodecConfigAac(tAVDT_CFG* p_cfg) {
   return true;
 }
 
-bool A2DP_InitCodecConfigAacSink(tAVDT_CFG* p_cfg) {
+bool A2DP_InitCodecConfigAacSink(AvdtpSepConfig* p_cfg) {
   return A2DP_BuildInfoAac(AVDT_MEDIA_TYPE_AUDIO, &a2dp_aac_sink_caps,
                            p_cfg->codec_info) == A2DP_SUCCESS;
 }

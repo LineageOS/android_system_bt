@@ -250,12 +250,12 @@ const char* A2DP_CodecIndexStrSbc(void);
 // Gets the A2DP SBC Sink codec name.
 const char* A2DP_CodecIndexStrSbcSink(void);
 
-// Initializes A2DP SBC Source codec information into |tAVDT_CFG| configuration
-// entry pointed by |p_cfg|.
-bool A2DP_InitCodecConfigSbc(tAVDT_CFG* p_cfg);
+// Initializes A2DP SBC Source codec information into |AvdtpSepConfig|
+// configuration entry pointed by |p_cfg|.
+bool A2DP_InitCodecConfigSbc(AvdtpSepConfig* p_cfg);
 
-// Initializes A2DP SBC Sink codec information into |tAVDT_CFG| configuration
-// entry pointed by |p_cfg|.
-bool A2DP_InitCodecConfigSbcSink(tAVDT_CFG* p_cfg);
+// Initializes A2DP SBC Sink codec information into |AvdtpSepConfig|
+// configuration entry pointed by |p_cfg|.
+bool A2DP_InitCodecConfigSbcSink(AvdtpSepConfig* p_cfg);
 
 #endif  // A2DP_SBC_H

@@ -29,6 +29,7 @@
 #include "btif_a2dp_sink.h"
 #include "btif_a2dp_source.h"
 #include "btif_av.h"
+#include "btif_av_co.h"
 #include "btif_util.h"
 #include "osi/include/log.h"
 
@@ -42,7 +43,8 @@ void btif_a2dp_on_idle(void) {
   }
 }
 
-bool btif_a2dp_on_started(tBTA_AV_START* p_av_start, bool pending_start) {
+bool btif_a2dp_on_started(const RawAddress& peer_addr,
+                          tBTA_AV_START* p_av_start, bool pending_start) {
   bool ack = false;
 
   APPL_TRACE_WARNING("## ON A2DP STARTED ##");
@@ -69,7 +71,7 @@ bool btif_a2dp_on_started(tBTA_AV_START* p_av_start, bool pending_start) {
         /* We were remotely started, make sure codec
          * is setup before datapath is started.
          */
-        btif_a2dp_source_setup_codec();
+        btif_a2dp_source_setup_codec(peer_addr);
       }
 
       /* media task is autostarted upon a2dp audiopath connection */
@@ -126,4 +128,5 @@ void btif_a2dp_on_offload_started(tBTA_AV_STATUS status) {
 void btif_debug_a2dp_dump(int fd) {
   btif_a2dp_source_debug_dump(fd);
   btif_a2dp_sink_debug_dump(fd);
+  btif_a2dp_codec_debug_dump(fd);
 }
