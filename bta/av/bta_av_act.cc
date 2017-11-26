@@ -322,8 +322,8 @@ uint8_t bta_av_rc_create(tBTA_AV_CB* p_cb, uint8_t role, uint8_t shdl,
     }
   }
 
-  ccb.p_ctrl_cback = bta_av_rc_ctrl_cback;
-  ccb.p_msg_cback = bta_av_rc_msg_cback;
+  ccb.ctrl_cback = base::Bind(bta_av_rc_ctrl_cback);
+  ccb.msg_cback = base::Bind(bta_av_rc_msg_cback);
   ccb.company_id = p_bta_av_cfg->company_id;
   ccb.conn = role;
   /* note: BTA_AV_FEAT_RCTG = AVRC_CT_TARGET, BTA_AV_FEAT_RCCT = AVRC_CT_CONTROL
@@ -2002,7 +2002,7 @@ void bta_av_rc_disc(uint8_t disc) {
 
     /* searching for UUID_SERVCLASS_AV_REMOTE_CONTROL gets both TG and CT */
     if (AVRC_FindService(UUID_SERVCLASS_AV_REMOTE_CONTROL, *p_addr, &db_params,
-                         bta_av_avrc_sdp_cback) == AVRC_SUCCESS) {
+                         base::Bind(bta_av_avrc_sdp_cback)) == AVRC_SUCCESS) {
       p_cb->disc = disc;
       APPL_TRACE_DEBUG("%s: disc 0x%x", __func__, p_cb->disc);
     }
