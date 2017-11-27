@@ -55,6 +55,7 @@ cc_library_shared {
         "libbt-sbc-decoder",
         "libbt-sbc-encoder",
         "libFraunhoferAAC",
+        "libg722codec",
         "libudrv-uipc",
     ],
     whole_static_libs: [
