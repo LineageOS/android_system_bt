@@ -1320,8 +1320,8 @@ bt_status_t btif_storage_load_bonded_hid_info(void) {
       }
     } else {
       if (btif_config_get_int(name, "HidAttrMask", &value)) {
-        btif_storage_remove_hid_info(&bd_addr);
         RawAddress::FromString(name, bd_addr);
+        btif_storage_remove_hid_info(&bd_addr);
       }
     }
   }
