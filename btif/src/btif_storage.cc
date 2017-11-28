@@ -200,14 +200,18 @@ static int prop2cfg(const RawAddress* remote_bd_addr, bt_property_t* prop) {
       btif_config_set_int(bdstr, BTIF_STORAGE_PATH_REMOTE_DEVTIME,
                           (int)time(NULL));
       break;
-    case BT_PROPERTY_BDNAME:
-      strncpy(value, (char*)prop->val, prop->len);
-      value[prop->len] = '\0';
+    case BT_PROPERTY_BDNAME: {
+      int name_length = prop->len > BTM_MAX_LOC_BD_NAME_LEN
+                            ? BTM_MAX_LOC_BD_NAME_LEN
+                            : prop->len;
+      strncpy(value, (char*)prop->val, name_length);
+      value[name_length] = '\0';
       if (remote_bd_addr)
         btif_config_set_str(bdstr, BTIF_STORAGE_PATH_REMOTE_NAME, value);
       else
         btif_config_set_str("Adapter", BTIF_STORAGE_KEY_ADAPTER_NAME, value);
       break;
+    }
     case BT_PROPERTY_REMOTE_FRIENDLY_NAME:
       strncpy(value, (char*)prop->val, prop->len);
       value[prop->len] = '\0';
