@@ -88,6 +88,8 @@ static const tBTA_OP_FMT bta_ops_obj_fmt[OBEX_PUSH_NUM_FORMATS] = {
 
 #define UUID_MAX_LENGTH 16
 
+#define SPP_PROFILE_VERSION 0x0102
+
 // Adds a protocol list and service name (if provided) to an SDP record given by
 // |sdp_handle|, and marks it as browseable. This is a shortcut for defining a
 // set of protocols that includes L2CAP, RFCOMM, and optionally OBEX. If
@@ -355,6 +357,11 @@ static int add_spp_sdp(const char* name, const int channel) {
 
   stage = "service_class";
   if (!SDP_AddServiceClassIdList(handle, 1, &service)) goto error;
+
+  stage = "profile_descriptor_list";
+  if (!SDP_AddProfileDescriptorList(handle, UUID_SERVCLASS_SERIAL_PORT,
+                                    SPP_PROFILE_VERSION))
+    goto error;
 
   APPL_TRACE_DEBUG(
       "add_spp_sdp: service registered successfully, "
