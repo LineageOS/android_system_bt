@@ -211,7 +211,7 @@ bool config_save(const config_t& config, const std::string& filename) {
   const std::string temp_filename = filename + ".new";
 
   // Extract directory from file path (e.g. /data/misc/bluedroid).
-  const std::string& directoryname = base::FilePath(filename).DirName().value();
+  const std::string directoryname = base::FilePath(filename).DirName().value();
   if (directoryname.empty()) {
     LOG(ERROR) << __func__ << ": error extracting directory from '" << filename
                << "': " << strerror(errno);
