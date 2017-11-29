@@ -51,7 +51,8 @@ enum {
   BTA_PAN_CONN_OPEN,
   BTA_PAN_CONN_CLOSE,
   BTA_PAN_FREE_BUF,
-  BTA_PAN_IGNORE
+  BTA_PAN_IGNORE,
+  BTA_PAN_MAX_ACTIONS
 };
 
 /* type for action functions */
@@ -184,11 +185,9 @@ static void bta_pan_sm_execute(tBTA_PAN_SCB* p_scb, uint16_t event,
   /* execute action functions */
   for (i = 0; i < BTA_PAN_ACTIONS; i++) {
     action = state_table[event][i];
-    if (action != BTA_PAN_IGNORE) {
-      (*bta_pan_action[action])(p_scb, p_data);
-    } else {
-      break;
-    }
+    CHECK(action < BTA_PAN_MAX_ACTIONS);
+    if (action == BTA_PAN_IGNORE) continue;
+    (*bta_pan_action[action])(p_scb, p_data);
   }
 }
 
