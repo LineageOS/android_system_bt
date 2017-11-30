@@ -176,6 +176,7 @@ typedef struct {
 extern bt_status_t do_in_jni_thread(const base::Closure& task);
 extern bt_status_t do_in_jni_thread(const tracked_objects::Location& from_here,
                                     const base::Closure& task);
+extern bool is_on_jni_thread();
 /**
  * This template wraps callback into callback that will be executed on jni
  * thread
