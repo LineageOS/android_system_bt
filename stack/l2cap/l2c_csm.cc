@@ -279,11 +279,6 @@ static void l2c_csm_closed(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
     case L2CEVT_L2CA_DISCONNECT_REQ: /* Upper wants to disconnect */
       l2cu_release_ccb(p_ccb);
       break;
-
-    case L2CEVT_L2CA_SEND_FLOW_CONTROL_CREDIT:
-    case L2CEVT_L2CAP_RECV_FLOW_CONTROL_CREDIT:
-      osi_free(p_data);
-      break;
   }
 }
 
@@ -603,11 +598,6 @@ static void l2c_csm_w4_l2cap_connect_rsp(tL2C_CCB* p_ccb, uint16_t event,
                            l2c_ccb_timer_timeout, p_ccb);
         l2cu_send_peer_connect_req(p_ccb); /* Start Connection     */
       }
-      break;
-
-    case L2CEVT_L2CA_SEND_FLOW_CONTROL_CREDIT:
-    case L2CEVT_L2CAP_RECV_FLOW_CONTROL_CREDIT:
-      osi_free(p_data);
       break;
   }
 }
@@ -1180,11 +1170,6 @@ static void l2c_csm_w4_l2cap_disconnect_rsp(tL2C_CCB* p_ccb, uint16_t event,
 
     case L2CEVT_L2CAP_DATA:      /* Peer data packet rcvd    */
     case L2CEVT_L2CA_DATA_WRITE: /* Upper layer data to send */
-      osi_free(p_data);
-      break;
-
-    case L2CEVT_L2CA_SEND_FLOW_CONTROL_CREDIT:
-    case L2CEVT_L2CAP_RECV_FLOW_CONTROL_CREDIT:
       osi_free(p_data);
       break;
   }
