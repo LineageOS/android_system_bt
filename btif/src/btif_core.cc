@@ -31,6 +31,7 @@
 #include <base/at_exit.h>
 #include <base/bind.h>
 #include <base/run_loop.h>
+#include <base/threading/platform_thread.h>
 #include <base/threading/thread.h>
 #include <ctype.h>
 #include <dirent.h>
@@ -65,7 +66,9 @@
 #include "osi/include/thread.h"
 #include "stack_manager.h"
 
+using base::PlatformThread;
 using bluetooth::Uuid;
+
 /*******************************************************************************
  *  Constants & Macros
  ******************************************************************************/
@@ -129,6 +132,7 @@ static const char* BT_JNI_WORKQUEUE_NAME = "bt_jni_workqueue";
 static uid_set_t* uid_set = NULL;
 base::MessageLoop* message_loop_ = NULL;
 base::RunLoop* jni_run_loop = NULL;
+static base::PlatformThreadId btif_thread_id_ = -1;
 
 /*******************************************************************************
  *  Static functions
@@ -237,6 +241,10 @@ bt_status_t do_in_jni_thread(const base::Closure& task) {
   return do_in_jni_thread(FROM_HERE, task);
 }
 
+bool is_on_jni_thread() {
+  return btif_thread_id_ == PlatformThread::CurrentId();
+}
+
 /*******************************************************************************
  *
  * Function         btif_is_dut_mode
@@ -316,6 +324,7 @@ void btif_thread_post(thread_fn func, void* context) {
 
 void run_message_loop(UNUSED_ATTR void* context) {
   LOG_INFO(LOG_TAG, "%s entered", __func__);
+  btif_thread_id_ = PlatformThread::CurrentId();
 
   // TODO(jpawlowski): exit_manager should be defined in main(), but there is no
   // main method.
@@ -338,6 +347,7 @@ void run_message_loop(UNUSED_ATTR void* context) {
   delete jni_run_loop;
   jni_run_loop = NULL;
 
+  btif_thread_id_ = -1;
   LOG_INFO(LOG_TAG, "%s finished", __func__);
 }
 /*******************************************************************************
