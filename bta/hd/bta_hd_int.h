@@ -77,9 +77,9 @@ typedef struct {
 
 typedef struct {
   BT_HDR hdr;
-  char name[BTA_HD_APP_NAME_LEN + 1];
-  char description[BTA_HD_APP_DESCRIPTION_LEN + 1];
-  char provider[BTA_HD_APP_PROVIDER_LEN + 1];
+  char name[BTA_HD_APP_NAME_LEN];
+  char description[BTA_HD_APP_DESCRIPTION_LEN];
+  char provider[BTA_HD_APP_PROVIDER_LEN];
   uint8_t subclass;
   uint16_t d_len;
   uint8_t d_data[BTA_HD_APP_DESCRIPTOR_LEN];
