@@ -503,6 +503,7 @@ void btif_hh_remove_device(RawAddress bd_addr) {
 
 bool btif_hh_copy_hid_info(tBTA_HH_DEV_DSCP_INFO* dest,
                            tBTA_HH_DEV_DSCP_INFO* src) {
+  memset(dest, 0, sizeof(tBTA_HH_DEV_DSCP_INFO));
   dest->descriptor.dl_len = 0;
   if (src->descriptor.dl_len > 0) {
     dest->descriptor.dsc_list = (uint8_t*)osi_malloc(src->descriptor.dl_len);
@@ -1351,6 +1352,7 @@ static bt_status_t set_info(RawAddress* bd_addr, bthh_hid_info_t hid_info) {
     return BT_STATUS_FAIL;
   }
 
+  memset(&dscp_info, 0, sizeof(dscp_info));
   dscp_info.vendor_id = hid_info.vendor_id;
   dscp_info.product_id = hid_info.product_id;
   dscp_info.version = hid_info.version;
