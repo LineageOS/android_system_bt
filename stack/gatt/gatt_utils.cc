@@ -318,7 +318,6 @@ bool gatt_is_srv_chg_ind_pending(tGATT_TCB* p_tcb) {
  *
  ******************************************************************************/
 tGATTS_SRV_CHG* gatt_is_bda_in_the_srv_chg_clt_list(const RawAddress& bda) {
-  tGATTS_SRV_CHG* p_buf = NULL;
 
   VLOG(1) << __func__ << ": " << bda;
 
@@ -330,11 +329,11 @@ tGATTS_SRV_CHG* gatt_is_bda_in_the_srv_chg_clt_list(const RawAddress& bda) {
     tGATTS_SRV_CHG* p_buf = (tGATTS_SRV_CHG*)list_node(node);
     if (bda == p_buf->bda) {
       VLOG(1) << "bda is in the srv chg clt list";
-      break;
+      return p_buf;
     }
   }
 
-  return p_buf;
+  return NULL;
 }
 
 /*******************************************************************************
