@@ -17,17 +17,16 @@
 package android.bluetooth;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothHidDeviceAppConfiguration;
 import android.bluetooth.IBluetoothHidDeviceCallback;
 import android.bluetooth.BluetoothHidDeviceAppSdpSettings;
 import android.bluetooth.BluetoothHidDeviceAppQosSettings;
 
 /** @hide */
 interface IBluetoothHidDevice {
-    boolean registerApp(in BluetoothHidDeviceAppConfiguration config,
-            in BluetoothHidDeviceAppSdpSettings sdp, in BluetoothHidDeviceAppQosSettings inQos,
-            in BluetoothHidDeviceAppQosSettings outQos, in IBluetoothHidDeviceCallback callback);
-    boolean unregisterApp(in BluetoothHidDeviceAppConfiguration config);
+    boolean registerApp(in BluetoothHidDeviceAppSdpSettings sdp,
+            in BluetoothHidDeviceAppQosSettings inQos, in BluetoothHidDeviceAppQosSettings outQos,
+            in IBluetoothHidDeviceCallback callback);
+    boolean unregisterApp();
     boolean sendReport(in BluetoothDevice device, in int id, in byte[] data);
     boolean replyReport(in BluetoothDevice device, in byte type, in byte id, in byte[] data);
     boolean reportError(in BluetoothDevice device, byte error);
