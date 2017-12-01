@@ -17,27 +17,27 @@
  ******************************************************************************/
 #include <gtest/gtest.h>
 
+#include <base/bind.h>
+
 #include "btif/include/btif_profile_queue.h"
 #include "stack_manager.h"
 #include "types/raw_address.h"
 
-static bool sStackRunning;
-
-bool get_stack_is_running(void) { return sStackRunning; }
-
-static stack_manager_t sStackManager = {nullptr, nullptr, nullptr, nullptr,
-                                        get_stack_is_running};
-
-const stack_manager_t* stack_manager_get_interface() { return &sStackManager; }
-
 typedef void(tBTIF_CBACK)(uint16_t event, char* p_param);
 typedef void(tBTIF_COPY_CBACK)(uint16_t event, char* p_dest, char* p_src);
-bt_status_t btif_transfer_context(tBTIF_CBACK* p_cback, uint16_t event,
-                                  char* p_params, int param_len,
-                                  tBTIF_COPY_CBACK* p_copy_cback) {
-  p_cback(event, p_params);
+
+// NOTE: Local re-implementation of functions to avoid thread context switching
+static bool sStackRunning;
+bool get_stack_is_running(void) { return sStackRunning; }
+static stack_manager_t sStackManager = {nullptr, nullptr, nullptr, nullptr,
+                                        get_stack_is_running};
+const stack_manager_t* stack_manager_get_interface() { return &sStackManager; }
+bt_status_t do_in_jni_thread(const tracked_objects::Location& from_here,
+                             const base::Closure& task) {
+  task.Run();
   return BT_STATUS_SUCCESS;
 }
+bool is_on_jni_thread() { return true; }
 
 enum ResultType {
   NOT_SET = 0,
@@ -130,14 +130,30 @@ TEST_F(BtifProfileQueueTest, test_multiple_connects_without_advance) {
   sResult = NOT_SET;
   btif_queue_connect(kTestUuid2, &kTestAddr1, test_connect_cb);
   EXPECT_EQ(sResult, NOT_SET);
+  // Third item for same UUID1, but different address ADDR2
   sResult = NOT_SET;
+  btif_queue_connect(kTestUuid1, &kTestAddr2, test_connect_cb);
+  EXPECT_EQ(sResult, NOT_SET);
+  // Fourth item for same UUID2, but different address ADDR2
+  sResult = NOT_SET;
+  btif_queue_connect(kTestUuid2, &kTestAddr2, test_connect_cb);
+  EXPECT_EQ(sResult, NOT_SET);
   // Connect next doesn't work
+  sResult = NOT_SET;
   btif_queue_connect_next();
   EXPECT_EQ(sResult, NOT_SET);
-  // Advance moves queue to execute next item
+  // Advance moves queue to execute second item
   sResult = NOT_SET;
   btif_queue_advance();
   EXPECT_EQ(sResult, UUID2_ADDR1);
+  // Advance moves queue to execute third item
+  sResult = NOT_SET;
+  btif_queue_advance();
+  EXPECT_EQ(sResult, UUID1_ADDR2);
+  // Advance moves queue to execute fourth item
+  sResult = NOT_SET;
+  btif_queue_advance();
+  EXPECT_EQ(sResult, UUID2_ADDR2);
 }
 
 TEST_F(BtifProfileQueueTest, test_cleanup_first_allow_second) {
