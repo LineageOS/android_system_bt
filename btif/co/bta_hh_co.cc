@@ -473,7 +473,7 @@ void bta_hh_co_send_hid_info(btif_hh_device_t* p_dev, const char* dev_name,
   // Create and send hid descriptor to kernel
   memset(&ev, 0, sizeof(ev));
   ev.type = UHID_CREATE;
-  strncpy((char*)ev.u.create.name, dev_name, sizeof(ev.u.create.name) - 1);
+  strlcpy((char*)ev.u.create.name, dev_name, sizeof(ev.u.create.name));
   snprintf((char*)ev.u.create.uniq, sizeof(ev.u.create.uniq), "%s",
            p_dev->bd_addr.ToString().c_str());
   ev.u.create.rd_size = dscp_len;
@@ -562,7 +562,7 @@ tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(const RawAddress& remote_bda,
   const char* bdstr = addrstr.c_str();
 
   size_t len = btif_config_get_bin_length(bdstr, "HidReport");
-  if (!p_num_rpt && len < sizeof(tBTA_HH_RPT_CACHE_ENTRY)) return NULL;
+  if (!p_num_rpt || len < sizeof(tBTA_HH_RPT_CACHE_ENTRY)) return NULL;
 
   if (len > sizeof(sReportCache)) len = sizeof(sReportCache);
   btif_config_get_bin(bdstr, "HidReport", (uint8_t*)sReportCache, &len);
