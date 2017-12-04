@@ -319,6 +319,15 @@ typedef struct {
 
   /** Whether we will initiate SCO or not **/
   bt_status_t (*set_sco_allowed)(bool value);
+
+  /**
+   * Send +BSIR response code to enable/disable in-band ringtone in an active
+   * HFP service level connection
+   *
+   * @param value true for enabled, false for disable
+   * @param bd_addr remote device address
+   */
+  bt_status_t (*send_bsir)(bool value, RawAddress* bd_addr);
 } bthf_interface_t;
 
 __END_DECLS
