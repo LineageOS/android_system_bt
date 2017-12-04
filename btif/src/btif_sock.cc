@@ -50,7 +50,7 @@ static void btsock_signaled(int fd, int type, int flags, uint32_t user_id);
 static std::atomic_int thread_handle{-1};
 static thread_t* thread;
 
-btsock_interface_t* btif_sock_get_interface(void) {
+const btsock_interface_t* btif_sock_get_interface(void) {
   static btsock_interface_t interface = {sizeof(interface), btsock_listen,
                                          btsock_connect};
 
