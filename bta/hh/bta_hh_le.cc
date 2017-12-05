@@ -687,12 +687,11 @@ static void write_rpt_ctl_cfg_cb(uint16_t conn_id, tGATT_STATUS status,
   uint8_t srvc_inst_id, hid_inst_id;
 
   tBTA_HH_DEV_CB* p_dev_cb = (tBTA_HH_DEV_CB*)data;
-  const tBTA_GATTC_DESCRIPTOR* p_desc =
-      BTA_GATTC_GetDescriptor(conn_id, handle);
+  const tBTA_GATTC_CHARACTERISTIC* characteristic =
+      BTA_GATTC_GetOwningCharacteristic(conn_id, handle);
+  uint16_t char_uuid = characteristic->uuid.As16Bit();
 
-  uint16_t char_uuid = p_desc->characteristic->uuid.As16Bit();
-
-  srvc_inst_id = p_desc->characteristic->service->handle;
+  srvc_inst_id = BTA_GATTC_GetOwningService(conn_id, handle)->handle;
   hid_inst_id = srvc_inst_id;
   switch (char_uuid) {
     case GATT_UUID_BATTERY_LEVEL: /* battery level clt cfg registered */
@@ -1314,10 +1313,15 @@ static void read_report_ref_desc_cb(uint16_t conn_id, tGATT_STATUS status,
     return;
   }
 
+  const tBTA_GATTC_CHARACTERISTIC* characteristic =
+      BTA_GATTC_GetOwningCharacteristic(conn_id, handle);
+  const tBTA_GATTC_SERVICE* service =
+      BTA_GATTC_GetOwningService(conn_id, characteristic->value_handle);
+
   tBTA_HH_LE_RPT* p_rpt;
-  p_rpt = bta_hh_le_find_report_entry(
-      p_dev_cb, p_desc->characteristic->service->handle, GATT_UUID_HID_REPORT,
-      p_desc->characteristic->value_handle);
+  p_rpt = bta_hh_le_find_report_entry(p_dev_cb, service->handle,
+                                      GATT_UUID_HID_REPORT,
+                                      characteristic->value_handle);
   if (p_rpt) bta_hh_le_save_report_ref(p_dev_cb, p_rpt, status, value, len);
 }
 
@@ -1728,8 +1732,11 @@ static void read_report_cb(uint16_t conn_id, tGATT_STATUS status,
   hs_data.handle = p_dev_cb->hid_handle;
 
   if (status == GATT_SUCCESS) {
-    p_rpt = bta_hh_le_find_report_entry(p_dev_cb, p_char->service->handle,
-                                        char_uuid, p_char->value_handle);
+    const tBTA_GATTC_SERVICE* p_svc =
+        BTA_GATTC_GetOwningService(conn_id, p_char->value_handle);
+
+    p_rpt = bta_hh_le_find_report_entry(p_dev_cb, p_svc->handle, char_uuid,
+                                        p_char->value_handle);
 
     if (p_rpt != NULL && len) {
       p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + len + 1);
