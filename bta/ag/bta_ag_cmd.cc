@@ -1614,6 +1614,11 @@ void bta_ag_hfp_result(tBTA_AG_SCB* p_scb, tBTA_AG_API_RESULT* p_result) {
                       false);
       break;
 
+    case BTA_AG_IND_RES_ON_DEMAND:
+      bta_ag_send_ind(p_scb, p_result->data.ind.id, p_result->data.ind.value,
+                      true);
+      break;
+
     case BTA_AG_BVRA_RES:
       bta_ag_send_result(p_scb, p_result->result, NULL, p_result->data.state);
       break;
