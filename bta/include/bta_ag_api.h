@@ -140,6 +140,7 @@ typedef uint8_t tBTA_AG_STATUS;
 #define BTA_AG_UNAT_RES 20         /* Response to unknown AT command event */
 #define BTA_AG_MULTI_CALL_RES 21   /* SLC at three way call */
 #define BTA_AG_BIND_RES 22         /* Activate/Deactivate HF indicator */
+#define BTA_AG_IND_RES_ON_DEMAND 33 /* Update an indicator value forcible */
 
 typedef uint8_t tBTA_AG_RES;
 
