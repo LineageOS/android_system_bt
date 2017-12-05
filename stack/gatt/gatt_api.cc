@@ -944,7 +944,7 @@ tGATT_IF GATT_Register(const Uuid& app_uuid128, tGATT_CBACK* p_cb_info) {
   uint8_t i_gatt_if = 0;
   tGATT_IF gatt_if = 0;
 
-  LOG(INFO) << __func__ << app_uuid128;
+  LOG(INFO) << __func__ << " " << app_uuid128;
 
   for (i_gatt_if = 0, p_reg = gatt_cb.cl_rcb; i_gatt_if < GATT_MAX_APPS;
        i_gatt_if++, p_reg++) {
