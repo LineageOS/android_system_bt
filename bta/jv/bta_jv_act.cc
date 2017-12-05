@@ -51,6 +51,8 @@
 
 using bluetooth::Uuid;
 
+constexpr uint16_t DEFAULT_LE_MPS = 23;
+
 tBTA_JV_CB bta_jv_cb;
 
 /* one of these exists for each client */
@@ -933,9 +935,9 @@ void bta_jv_l2cap_connect(int32_t type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
     if ((type != BTA_JV_CONN_TYPE_L2CAP) ||
         (bta_jv_check_psm(remote_psm))) /* allowed */
     {
-      handle = GAP_ConnOpen("", sec_id, 0, &peer_bd_addr, remote_psm, &cfg,
-                            ertm_info.get(), sec_mask, chan_mode_mask,
-                            bta_jv_l2cap_client_cback, type);
+      handle = GAP_ConnOpen("", sec_id, 0, &peer_bd_addr, remote_psm,
+                            DEFAULT_LE_MPS, &cfg, ertm_info.get(), sec_mask,
+                            chan_mode_mask, bta_jv_l2cap_client_cback, type);
       if (handle != GAP_INVALID_HANDLE) {
         evt_data.status = BTA_JV_SUCCESS;
       }
@@ -1082,10 +1084,10 @@ void bta_jv_l2cap_start_server(int32_t type, tBTA_SEC sec_mask,
   /* PSM checking is not required for LE COC */
   if (0 == sec_id ||
       ((type == BTA_JV_CONN_TYPE_L2CAP) && (!bta_jv_check_psm(local_psm))) ||
-      (handle = GAP_ConnOpen("JV L2CAP", sec_id, 1, nullptr, local_psm, &cfg,
-                             ertm_info.get(), sec_mask, chan_mode_mask,
-                             bta_jv_l2cap_server_cback, type)) ==
-          GAP_INVALID_HANDLE) {
+      (handle = GAP_ConnOpen("JV L2CAP", sec_id, 1, nullptr, local_psm,
+                             DEFAULT_LE_MPS, &cfg, ertm_info.get(), sec_mask,
+                             chan_mode_mask, bta_jv_l2cap_server_cback,
+                             type)) == GAP_INVALID_HANDLE) {
     bta_jv_free_sec_id(&sec_id);
     evt_data.status = BTA_JV_FAILURE;
   } else {
