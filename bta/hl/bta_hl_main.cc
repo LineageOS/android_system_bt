@@ -678,11 +678,11 @@ static void bta_hl_api_register(tBTA_HL_CB* p_cb, tBTA_HL_DATA* p_data) {
         p_acb->sec_mask = p_data->api_reg.sec_mask;
         p_acb->dev_type = p_data->api_reg.dev_type;
         strlcpy(p_acb->srv_name, p_data->api_reg.srv_name,
-                BTA_SERVICE_NAME_LEN);
+                sizeof(p_acb->srv_name));
         strlcpy(p_acb->srv_desp, p_data->api_reg.srv_desp,
-                BTA_SERVICE_DESP_LEN);
+                sizeof(p_acb->srv_desp));
         strlcpy(p_acb->provider_name, p_data->api_reg.provider_name,
-                BTA_PROVIDER_NAME_LEN);
+                sizeof(p_acb->provider_name));
         bta_hl_cb.p_alloc_psm = L2CA_AllocatePSM;
         p_acb->ctrl_psm = bta_hl_cb.p_alloc_psm();
         p_acb->data_psm = bta_hl_cb.p_alloc_psm();
