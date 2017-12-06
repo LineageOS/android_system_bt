@@ -84,6 +84,9 @@ uint16_t gatt_profile_find_conn_id_by_bd_addr(const RawAddress& remote_bda) {
   uint16_t conn_id = GATT_INVALID_CONN_ID;
   GATT_GetConnIdIfConnected(gatt_cb.gatt_if, remote_bda, &conn_id,
                             BT_TRANSPORT_LE);
+  if (conn_id == GATT_INVALID_CONN_ID)
+    GATT_GetConnIdIfConnected(gatt_cb.gatt_if, remote_bda, &conn_id,
+                              BT_TRANSPORT_BR_EDR);
   return conn_id;
 }
 
