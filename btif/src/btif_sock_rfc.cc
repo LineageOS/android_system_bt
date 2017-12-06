@@ -159,7 +159,7 @@ static rfc_slot_t* find_rfc_slot_by_id(uint32_t id) {
   for (size_t i = 0; i < ARRAY_SIZE(rfc_slots); ++i)
     if (rfc_slots[i].id == id) return &rfc_slots[i];
 
-  LOG_ERROR(LOG_TAG, "%s unable to find RFCOMM slot id: %d", __func__, id);
+  LOG_ERROR(LOG_TAG, "%s unable to find RFCOMM slot id: %u", __func__, id);
   return NULL;
 }
 
@@ -620,7 +620,7 @@ static uint32_t rfcomm_cback(tBTA_JV_EVT event, tBTA_JV* p_data,
       break;
 
     default:
-      LOG_ERROR(LOG_TAG, "%s unhandled event %d, slot id: %zi", __func__, event,
+      LOG_ERROR(LOG_TAG, "%s unhandled event %d, slot id: %u", __func__, event,
                 rfcomm_slot_id);
       break;
   }
