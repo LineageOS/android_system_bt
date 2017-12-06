@@ -190,7 +190,8 @@ static void load_levels_from_config(const config_t* config) {
     int value = config_get_int(*config, CONFIG_DEFAULT_SECTION,
                                functions->trc_name, -1);
     if (value != -1) functions->trace_level = value;
-
+    LOG_INFO(LOG_TAG, "BTE_InitTraceLevels -- %s : Level %d",
+             functions->trc_name, functions->trace_level);
     if (functions->p_f) functions->p_f(functions->trace_level);
   }
 }
