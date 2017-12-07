@@ -1072,33 +1072,6 @@ static bt_status_t cind_response(int svc, int num_active, int num_held,
   return BT_STATUS_FAIL;
 }
 
-/*******************************************************************************
- *
- * Function         bind_response
- *
- * Description      Send +BIND response
- *
- * Returns          bt_status_t
- *
- ******************************************************************************/
-static bt_status_t bind_response(bthf_hf_ind_type_t ind_id,
-                                 bthf_hf_ind_status_t ind_status,
-                                 RawAddress* bd_addr) {
-  CHECK_BTHF_INIT();
-
-  int index = btif_hf_idx_by_bdaddr(bd_addr);
-  if (!is_connected(bd_addr) || index == BTIF_HF_INVALID_IDX)
-    return BT_STATUS_FAIL;
-
-  tBTA_AG_RES_DATA ag_res;
-  memset(&ag_res, 0, sizeof(ag_res));
-  ag_res.ind.id = ind_id;
-  ag_res.ind.on_demand = (ind_status == BTHF_HF_IND_ENABLED);
-
-  BTA_AgResult(btif_hf_cb[index].handle, BTA_AG_BIND_RES, &ag_res);
-  return BT_STATUS_SUCCESS;
-}
-
 static bt_status_t set_sco_allowed(bool value) {
   CHECK_BTHF_INIT();
 
@@ -1535,39 +1508,6 @@ static void cleanup(void) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         configure_wbs
- *
- * Description      set to over-ride the current WBS configuration.
- *                  It will not send codec setting cmd to the controller now.
- *                  It just change the configure.
- *
- * Returns          bt_status_t
- *
- ******************************************************************************/
-static bt_status_t configure_wbs(RawAddress* bd_addr,
-                                 bthf_wbs_config_t config) {
-  CHECK_BTHF_INIT();
-
-  int idx = btif_hf_idx_by_bdaddr(bd_addr);
-
-  if ((idx < 0) || (idx >= BTIF_HF_NUM_CB)) {
-    BTIF_TRACE_ERROR("%s: Invalid index %d", __func__, idx);
-    return BT_STATUS_FAIL;
-  }
-
-  BTIF_TRACE_EVENT("%s config is %d", __func__, config);
-  if (config == BTHF_WBS_YES)
-    BTA_AgSetCodec(btif_hf_cb[idx].handle, BTA_AG_CODEC_MSBC);
-  else if (config == BTHF_WBS_NO)
-    BTA_AgSetCodec(btif_hf_cb[idx].handle, BTA_AG_CODEC_CVSD);
-  else
-    BTA_AgSetCodec(btif_hf_cb[idx].handle, BTA_AG_CODEC_NONE);
-
-  return BT_STATUS_SUCCESS;
-}
-
 static const bthf_interface_t bthfInterface = {
     sizeof(bthfInterface),
     init,
@@ -1586,8 +1526,6 @@ static const bthf_interface_t bthfInterface = {
     clcc_response,
     phone_state_change,
     cleanup,
-    configure_wbs,
-    bind_response,
     set_sco_allowed,
 };
 
