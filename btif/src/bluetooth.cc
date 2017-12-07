@@ -83,35 +83,35 @@ bool restricted_mode = false;
 /* list all extended interfaces here */
 
 /* handsfree profile */
-extern bthf_interface_t* btif_hf_get_interface();
+extern const bthf_interface_t* btif_hf_get_interface();
 /* handsfree profile - client */
-extern bthf_client_interface_t* btif_hf_client_get_interface();
+extern const bthf_client_interface_t* btif_hf_client_get_interface();
 /* advanced audio profile */
-extern btav_source_interface_t* btif_av_get_src_interface();
-extern btav_sink_interface_t* btif_av_get_sink_interface();
+extern const btav_source_interface_t* btif_av_get_src_interface();
+extern const btav_sink_interface_t* btif_av_get_sink_interface();
 /*rfc l2cap*/
-extern btsock_interface_t* btif_sock_get_interface();
+extern const btsock_interface_t* btif_sock_get_interface();
 /* hid host profile */
-extern bthh_interface_t* btif_hh_get_interface();
+extern const bthh_interface_t* btif_hh_get_interface();
 /* hid device profile */
-extern bthd_interface_t* btif_hd_get_interface();
+extern const bthd_interface_t* btif_hd_get_interface();
 /* health device profile */
-extern bthl_interface_t* btif_hl_get_interface();
+extern const bthl_interface_t* btif_hl_get_interface();
 /*pan*/
-extern btpan_interface_t* btif_pan_get_interface();
+extern const btpan_interface_t* btif_pan_get_interface();
 /*map client*/
-extern btmce_interface_t* btif_mce_get_interface();
+extern const btmce_interface_t* btif_mce_get_interface();
 /* gatt */
 extern const btgatt_interface_t* btif_gatt_get_interface();
 /* avrc target */
-extern btrc_interface_t* btif_rc_get_interface();
+extern const btrc_interface_t* btif_rc_get_interface();
 /* avrc controller */
-extern btrc_interface_t* btif_rc_ctrl_get_interface();
+extern const btrc_ctrl_interface_t* btif_rc_ctrl_get_interface();
 /*SDP search client*/
-extern btsdp_interface_t* btif_sdp_get_interface();
+extern const btsdp_interface_t* btif_sdp_get_interface();
 
 /* List all test interface here */
-extern btmcap_test_interface_t* stack_mcap_get_interface();
+extern const btmcap_test_interface_t* stack_mcap_get_interface();
 
 /*******************************************************************************
  *  Functions

@@ -111,7 +111,7 @@ static btpan_interface_t pan_if = {
     sizeof(pan_if), btpan_jni_init,   btpan_enable,     btpan_get_local_role,
     btpan_connect,  btpan_disconnect, btpan_jni_cleanup};
 
-btpan_interface_t* btif_pan_get_interface() { return &pan_if; }
+const btpan_interface_t* btif_pan_get_interface() { return &pan_if; }
 
 /*******************************************************************************
  **
