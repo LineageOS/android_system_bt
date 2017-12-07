@@ -406,6 +406,10 @@ void bta_ag_rfc_close(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
   /* call close call-out */
   bta_ag_co_data_close(close.hdr.handle);
 
+  if (bta_ag_get_active_device() == p_scb->peer_addr) {
+    bta_clear_active_device();
+  }
+
   /* call close cback */
   (*bta_ag_cb.p_cback)(BTA_AG_CLOSE_EVT, (tBTA_AG*)&close);
 
@@ -764,7 +768,11 @@ void bta_ag_svc_conn_open(tBTA_AG_SCB* p_scb,
         (p_scb->callsetup_ind != BTA_AG_CALLSETUP_NONE)) {
       bta_sys_sco_use(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
     }
-
+    if (bta_ag_get_active_device().IsEmpty()) {
+      tBTA_AG_DATA data = {};
+      data.api_set_active_device.active_device_addr = p_scb->peer_addr;
+      bta_ag_api_set_active_device(&data);
+    }
     (*bta_ag_cb.p_cback)(BTA_AG_CONN_EVT, (tBTA_AG*)&evt);
   }
 }

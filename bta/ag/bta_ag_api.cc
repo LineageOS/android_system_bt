@@ -286,3 +286,14 @@ void BTA_AgSetScoAllowed(bool value) {
 
   bta_sys_sendmsg(p_buf);
 }
+
+void BTA_AgSetActiveDevice(const RawAddress& active_device_addr) {
+  tBTA_AG_API_SET_ACTIVE_DEVICE* p_buf =
+      (tBTA_AG_API_SET_ACTIVE_DEVICE*)osi_malloc(
+          sizeof(tBTA_AG_API_SET_ACTIVE_DEVICE));
+
+  p_buf->hdr.event = BTA_AG_API_SET_ACTIVE_DEVICE_EVT;
+  p_buf->active_device_addr = active_device_addr;
+
+  bta_sys_sendmsg(p_buf);
+}
