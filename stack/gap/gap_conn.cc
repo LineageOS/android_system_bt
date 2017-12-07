@@ -22,6 +22,7 @@
 #include "bt_utils.h"
 #include "btm_int.h"
 #include "btu.h"
+#include "device/include/controller.h"
 #include "gap_api.h"
 #include "l2c_int.h"
 #include "l2cdefs.h"
@@ -143,6 +144,7 @@ void gap_conn_init(void) {
  *                                remote BD Address, then NULL should be passed.
  *
  *                  psm         - the PSM used for the connection
+ *                  le_mps      - Maximum PDU Size for LE CoC
  *
  *                  p_config    - Optional pointer to configuration structure.
  *                                If NULL, the default GAP configuration will
@@ -161,9 +163,10 @@ void gap_conn_init(void) {
  ******************************************************************************/
 uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
                       bool is_server, const RawAddress* p_rem_bda, uint16_t psm,
-                      tL2CAP_CFG_INFO* p_cfg, tL2CAP_ERTM_INFO* ertm_info,
-                      uint16_t security, uint8_t chan_mode_mask,
-                      tGAP_CONN_CALLBACK* p_cb, tBT_TRANSPORT transport) {
+                      uint16_t le_mps, tL2CAP_CFG_INFO* p_cfg,
+                      tL2CAP_ERTM_INFO* ertm_info, uint16_t security,
+                      uint8_t chan_mode_mask, tGAP_CONN_CALLBACK* p_cb,
+                      tBT_TRANSPORT transport) {
   tGAP_CCB* p_ccb;
   uint16_t cid;
 
@@ -205,7 +208,13 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
   if (transport == BT_TRANSPORT_LE) {
     p_ccb->local_coc_cfg.credits = L2CAP_LE_DEFAULT_CREDIT;
     p_ccb->local_coc_cfg.mtu = p_cfg->mtu;
-    p_ccb->local_coc_cfg.mps = L2CAP_LE_DEFAULT_MPS;
+
+    uint16_t max_mps = controller_get_interface()->get_acl_data_size_ble();
+    if (le_mps > max_mps) {
+      LOG(INFO) << "Limiting MPS to one buffer size - " << max_mps;
+      le_mps = max_mps;
+    }
+    p_ccb->local_coc_cfg.mps = le_mps;
   }
 
   p_ccb->p_callback = p_cb;
