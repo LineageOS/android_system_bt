@@ -62,6 +62,7 @@ cc_library_static {
         "gatt/bta_gattc_api.cc",
         "gatt/bta_gattc_cache.cc",
         "gatt/bta_gattc_main.cc",
+        "gatt/bta_gattc_queue.cc",
         "gatt/bta_gattc_utils.cc",
         "gatt/bta_gatts_act.cc",
         "gatt/bta_gatts_api.cc",
