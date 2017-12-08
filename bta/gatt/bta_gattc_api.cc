@@ -309,6 +309,20 @@ const tBTA_GATTC_DESCRIPTOR* BTA_GATTC_GetDescriptor(uint16_t conn_id,
   return bta_gattc_get_descriptor(conn_id, handle);
 }
 
+/* Return characteristic that owns descriptor with handle equal to |handle|, or
+ * NULL */
+const tBTA_GATTC_CHARACTERISTIC* BTA_GATTC_GetOwningCharacteristic(
+    uint16_t conn_id, uint16_t handle) {
+  return bta_gattc_get_owning_characteristic(conn_id, handle);
+}
+
+/* Return service that owns descriptor or characteristic with handle equal to
+ * |handle|, or NULL */
+const tBTA_GATTC_SERVICE* BTA_GATTC_GetOwningService(uint16_t conn_id,
+                                                     uint16_t handle) {
+  return bta_gattc_get_service_for_handle(conn_id, handle);
+}
+
 /*******************************************************************************
  *
  * Function         BTA_GATTC_GetGattDb
