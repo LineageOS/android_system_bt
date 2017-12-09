@@ -24,7 +24,7 @@ namespace os {
 
 class ParcelFileDescriptor : public android::Parcelable {
  public:
-  ParcelFileDescriptor() = default;
+  ParcelFileDescriptor() : fd_(-1), takeOwnership_(false) {}
   ~ParcelFileDescriptor() = default;
 
   // Write |this| parcelable to the given |parcel|.  Keep in mind that
@@ -41,7 +41,11 @@ class ParcelFileDescriptor : public android::Parcelable {
   // Returns android::OK on success and an appropriate error otherwise.
   android::status_t readFromParcel(const android::Parcel* parcel) override;
 
-  int fd;
+  void setFileDescriptor(int fd, bool takeOwnership);
+
+ private:
+  int fd_;
+  bool takeOwnership_;
 };
 
 }  // namespace os
