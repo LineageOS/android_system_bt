@@ -25,16 +25,18 @@ namespace android {
 namespace os {
 
 status_t ParcelFileDescriptor::writeToParcel(Parcel* parcel) const {
-  status_t status = parcel->writeInt32(0);
-  if (status != OK) return status;
-
-  status = parcel->writeDupFileDescriptor(fd);
-  return status;
+  CHECK(fd_ >= 0);
+  return parcel->writeParcelFileDescriptor(fd_, takeOwnership_);
 }
 
 status_t ParcelFileDescriptor::readFromParcel(const Parcel* parcel) {
   LOG(FATAL) << "Don't know how to read ParcelFileDescriptor";
   return OK;
+}
+
+void ParcelFileDescriptor::setFileDescriptor(int fd, bool takeOwnership) {
+  fd_ = fd;
+  takeOwnership_ = takeOwnership;
 }
 
 }  // namespace os
