@@ -28,12 +28,9 @@
 
 #include <base/bind.h>
 #include <base/callback.h>
-#include <list>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
 #include "bta_gatt_api.h"
+#include "bta_gatt_queue.h"
 #include "bta_hh_co.h"
 #include "btm_api.h"
 #include "btm_ble_api.h"
@@ -73,160 +70,6 @@ static void bta_hh_le_add_dev_bg_conn(tBTA_HH_DEV_CB* p_cb, bool check_bond);
 // static void bta_hh_process_cache_rpt (tBTA_HH_DEV_CB *p_cb,
 //                                       tBTA_HH_RPT_CACHE_ENTRY *p_rpt_cache,
 //                                       uint8_t num_rpt);
-
-#define GATT_READ_CHAR 0
-#define GATT_READ_DESC 1
-#define GATT_WRITE_CHAR 2
-#define GATT_WRITE_DESC 3
-
-/* Holds pending GATT operations */
-struct gatt_operation {
-  uint8_t type;
-  uint16_t handle;
-  GATT_READ_OP_CB read_cb;
-  void* read_cb_data;
-  GATT_WRITE_OP_CB write_cb;
-  void* write_cb_data;
-
-  /* write-specific fields */
-  tGATT_WRITE_TYPE write_type;
-  vector<uint8_t> value;
-};
-
-// maps connection id to operations waiting for execution
-static std::unordered_map<uint16_t, std::list<gatt_operation>> gatt_op_queue;
-// contain connection ids that currently execute operations
-static std::unordered_set<uint16_t> gatt_op_queue_executing;
-
-static void mark_as_not_executing(uint16_t conn_id) {
-  gatt_op_queue_executing.erase(conn_id);
-}
-
-static void gatt_op_queue_clean(uint16_t conn_id) {
-  gatt_op_queue.erase(conn_id);
-  gatt_op_queue_executing.erase(conn_id);
-}
-
-static void gatt_execute_next_op(uint16_t conn_id);
-GATT_READ_OP_CB act_read_cb = NULL;
-void* act_read_cb_data = NULL;
-static void gatt_read_op_finished(uint16_t conn_id, tGATT_STATUS status,
-                                  uint16_t handle, uint16_t len, uint8_t* value,
-                                  void* data) {
-  GATT_READ_OP_CB tmp_cb = act_read_cb;
-  void* tmp_cb_data = act_read_cb_data;
-
-  act_read_cb = NULL;
-  act_read_cb_data = NULL;
-
-  mark_as_not_executing(conn_id);
-  gatt_execute_next_op(conn_id);
-
-  if (tmp_cb) {
-    tmp_cb(conn_id, status, handle, len, value, tmp_cb_data);
-    return;
-  }
-}
-
-GATT_WRITE_OP_CB act_write_cb = NULL;
-void* act_write_cb_data = NULL;
-static void gatt_write_op_finished(uint16_t conn_id, tGATT_STATUS status,
-                                   uint16_t handle, void* data) {
-  GATT_WRITE_OP_CB tmp_cb = act_write_cb;
-  void* tmp_cb_data = act_write_cb_data;
-  act_write_cb = NULL;
-  act_write_cb_data = NULL;
-
-  mark_as_not_executing(conn_id);
-  gatt_execute_next_op(conn_id);
-
-  if (tmp_cb) {
-    tmp_cb(conn_id, status, handle, tmp_cb_data);
-    return;
-  }
-}
-
-static void gatt_execute_next_op(uint16_t conn_id) {
-  APPL_TRACE_DEBUG("%s:", __func__, conn_id);
-  if (gatt_op_queue.empty()) {
-    APPL_TRACE_DEBUG("%s: op queue is empty", __func__);
-    return;
-  }
-
-  auto map_ptr = gatt_op_queue.find(conn_id);
-  if (map_ptr == gatt_op_queue.end() || map_ptr->second.empty()) {
-    APPL_TRACE_DEBUG("%s: no more operations queued for conn_id %d", __func__,
-                     conn_id);
-    return;
-  }
-
-  if (gatt_op_queue_executing.count(conn_id)) {
-    APPL_TRACE_DEBUG("%s: can't enqueue next op, already executing", __func__);
-    return;
-  }
-
-  gatt_op_queue_executing.insert(conn_id);
-
-  std::list<gatt_operation>& gatt_ops = map_ptr->second;
-
-  gatt_operation& op = gatt_ops.front();
-
-  if (op.type == GATT_READ_CHAR) {
-    act_read_cb = op.read_cb;
-    act_read_cb_data = op.read_cb_data;
-    BTA_GATTC_ReadCharacteristic(conn_id, op.handle, GATT_AUTH_REQ_NONE,
-                                 gatt_read_op_finished, NULL);
-
-  } else if (op.type == GATT_READ_DESC) {
-    act_read_cb = op.read_cb;
-    act_read_cb_data = op.read_cb_data;
-    BTA_GATTC_ReadCharDescr(conn_id, op.handle, GATT_AUTH_REQ_NONE,
-                            gatt_read_op_finished, NULL);
-
-  } else if (op.type == GATT_WRITE_CHAR) {
-    act_write_cb = op.write_cb;
-    act_write_cb_data = op.write_cb_data;
-    BTA_GATTC_WriteCharValue(conn_id, op.handle, op.write_type,
-                             std::move(op.value), GATT_AUTH_REQ_NONE,
-                             gatt_write_op_finished, NULL);
-
-  } else if (op.type == GATT_WRITE_DESC) {
-    act_write_cb = op.write_cb;
-    act_write_cb_data = op.write_cb_data;
-    BTA_GATTC_WriteCharDescr(conn_id, op.handle, std::move(op.value),
-                             GATT_AUTH_REQ_NONE, gatt_write_op_finished, NULL);
-  }
-
-  gatt_ops.pop_front();
-}
-
-static void gatt_queue_read_op(uint8_t op_type, uint16_t conn_id,
-                               uint16_t handle, GATT_READ_OP_CB cb,
-                               void* cb_data) {
-  gatt_operation op;
-  op.type = op_type;
-  op.handle = handle;
-  op.read_cb = cb;
-  op.read_cb_data = cb_data;
-  gatt_op_queue[conn_id].push_back(op);
-  gatt_execute_next_op(conn_id);
-}
-
-static void gatt_queue_write_op(uint8_t op_type, uint16_t conn_id,
-                                uint16_t handle, vector<uint8_t> value,
-                                tGATT_WRITE_TYPE write_type,
-                                GATT_WRITE_OP_CB cb, void* cb_data) {
-  gatt_operation op;
-  op.type = op_type;
-  op.handle = handle;
-  op.write_type = write_type;
-  op.write_cb = cb;
-  op.write_cb_data = cb_data;
-  op.value = std::move(value);
-
-  gatt_op_queue[conn_id].push_back(op);
-  gatt_execute_next_op(conn_id);
-}
 
 #if (BTA_HH_DEBUG == TRUE)
 static const char* bta_hh_le_rpt_name[4] = {"UNKNOWN", "INPUT", "OUTPUT",
@@ -643,8 +486,7 @@ static tBTA_HH_STATUS bta_hh_le_read_char_descriptor(tBTA_HH_DEV_CB* p_cb,
       find_descriptor_by_short_uuid(p_cb->conn_id, char_handle, short_uuid);
   if (!p_desc) return BTA_HH_ERR;
 
-  gatt_queue_read_op(GATT_READ_DESC, p_cb->conn_id, p_desc->handle, cb,
-                     cb_data);
+  BtaGattQueue::ReadDescriptor(p_cb->conn_id, p_desc->handle, cb, cb_data);
   return BTA_HH_OK;
 }
 
@@ -833,8 +675,8 @@ bool bta_hh_le_write_ccc(tBTA_HH_DEV_CB* p_cb, uint8_t char_handle,
   uint8_t* ptr = value.data();
   UINT16_TO_STREAM(ptr, clt_cfg_value);
 
-  gatt_queue_write_op(GATT_WRITE_DESC, p_cb->conn_id, p_desc->handle,
-                      std::move(value), GATT_WRITE, cb, cb_data);
+  BtaGattQueue::WriteDescriptor(p_cb->conn_id, p_desc->handle, std::move(value),
+                                GATT_WRITE, cb, cb_data);
   return true;
 }
 
@@ -845,12 +687,11 @@ static void write_rpt_ctl_cfg_cb(uint16_t conn_id, tGATT_STATUS status,
   uint8_t srvc_inst_id, hid_inst_id;
 
   tBTA_HH_DEV_CB* p_dev_cb = (tBTA_HH_DEV_CB*)data;
-  const tBTA_GATTC_DESCRIPTOR* p_desc =
-      BTA_GATTC_GetDescriptor(conn_id, handle);
+  const tBTA_GATTC_CHARACTERISTIC* characteristic =
+      BTA_GATTC_GetOwningCharacteristic(conn_id, handle);
+  uint16_t char_uuid = characteristic->uuid.As16Bit();
 
-  uint16_t char_uuid = p_desc->characteristic->uuid.As16Bit();
-
-  srvc_inst_id = p_desc->characteristic->service->handle;
+  srvc_inst_id = BTA_GATTC_GetOwningService(conn_id, handle)->handle;
   hid_inst_id = srvc_inst_id;
   switch (char_uuid) {
     case GATT_UUID_BATTERY_LEVEL: /* battery level clt cfg registered */
@@ -972,9 +813,9 @@ bool bta_hh_le_set_protocol_mode(tBTA_HH_DEV_CB* p_cb,
     mode = (mode == BTA_HH_PROTO_BOOT_MODE) ? BTA_HH_LE_PROTO_BOOT_MODE
                                             : BTA_HH_LE_PROTO_REPORT_MODE;
 
-    gatt_queue_write_op(GATT_WRITE_CHAR, p_cb->conn_id,
-                        p_cb->hid_srvc.proto_mode_handle, {mode},
-                        GATT_WRITE_NO_RSP, write_proto_mode_cb, p_cb);
+    BtaGattQueue::WriteCharacteristic(
+        p_cb->conn_id, p_cb->hid_srvc.proto_mode_handle, {mode},
+        GATT_WRITE_NO_RSP, write_proto_mode_cb, p_cb);
     return true;
   }
 
@@ -1035,9 +876,9 @@ void bta_hh_le_get_protocol_mode(tBTA_HH_DEV_CB* p_cb) {
   p_cb->w4_evt = BTA_HH_GET_PROTO_EVT;
 
   if (p_cb->hid_srvc.in_use && p_cb->hid_srvc.proto_mode_handle != 0) {
-    gatt_queue_read_op(GATT_READ_CHAR, p_cb->conn_id,
-                       p_cb->hid_srvc.proto_mode_handle, get_protocol_mode_cb,
-                       p_cb);
+    BtaGattQueue::ReadCharacteristic(p_cb->conn_id,
+                                     p_cb->hid_srvc.proto_mode_handle,
+                                     get_protocol_mode_cb, p_cb);
     return;
   }
 
@@ -1312,7 +1153,7 @@ void bta_hh_gatt_open(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_buf) {
 
     bta_hh_cb.le_cb_index[BTA_HH_GET_LE_CB_IDX(p_cb->hid_handle)] = p_cb->index;
 
-    gatt_op_queue_clean(p_cb->conn_id);
+    BtaGattQueue::Clean(p_cb->conn_id);
 
 #if (BTA_HH_DEBUG == TRUE)
     APPL_TRACE_DEBUG("hid_handle = %2x conn_id = %04x cb_index = %d",
@@ -1472,10 +1313,15 @@ static void read_report_ref_desc_cb(uint16_t conn_id, tGATT_STATUS status,
     return;
   }
 
+  const tBTA_GATTC_CHARACTERISTIC* characteristic =
+      BTA_GATTC_GetOwningCharacteristic(conn_id, handle);
+  const tBTA_GATTC_SERVICE* service =
+      BTA_GATTC_GetOwningService(conn_id, characteristic->value_handle);
+
   tBTA_HH_LE_RPT* p_rpt;
-  p_rpt = bta_hh_le_find_report_entry(
-      p_dev_cb, p_desc->characteristic->service->handle, GATT_UUID_HID_REPORT,
-      p_desc->characteristic->value_handle);
+  p_rpt = bta_hh_le_find_report_entry(p_dev_cb, service->handle,
+                                      GATT_UUID_HID_REPORT,
+                                      characteristic->value_handle);
   if (p_rpt) bta_hh_le_save_report_ref(p_dev_cb, p_rpt, status, value, len);
 }
 
@@ -1548,14 +1394,13 @@ static void bta_hh_le_search_hid_chars(tBTA_HH_DEV_CB* p_dev_cb,
         break;
       case GATT_UUID_HID_INFORMATION:
         /* only one instance per HID service */
-        gatt_queue_read_op(GATT_READ_CHAR, p_dev_cb->conn_id,
-                           charac.value_handle, read_hid_info_cb, p_dev_cb);
+        BtaGattQueue::ReadCharacteristic(p_dev_cb->conn_id, charac.value_handle,
+                                         read_hid_info_cb, p_dev_cb);
         break;
       case GATT_UUID_HID_REPORT_MAP:
         /* only one instance per HID service */
-        gatt_queue_read_op(GATT_READ_CHAR, p_dev_cb->conn_id,
-                           charac.value_handle, read_hid_report_map_cb,
-                           p_dev_cb);
+        BtaGattQueue::ReadCharacteristic(p_dev_cb->conn_id, charac.value_handle,
+                                         read_hid_report_map_cb, p_dev_cb);
         /* descriptor is optional */
         bta_hh_le_read_char_descriptor(p_dev_cb, charac.value_handle,
                                        GATT_UUID_EXT_RPT_REF_DESCR,
@@ -1666,10 +1511,9 @@ void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
       for (const tBTA_GATTC_CHARACTERISTIC& charac : service.characteristics) {
         if (charac.uuid == Uuid::From16Bit(GATT_UUID_GAP_PREF_CONN_PARAM)) {
           /* read the char value */
-          gatt_queue_read_op(GATT_READ_CHAR, p_dev_cb->conn_id,
-                             charac.value_handle, read_pref_conn_params_cb,
-                             p_dev_cb);
-
+          BtaGattQueue::ReadCharacteristic(p_dev_cb->conn_id,
+                                           charac.value_handle,
+                                           read_pref_conn_params_cb, p_dev_cb);
           break;
         }
       }
@@ -1834,7 +1678,7 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
  ******************************************************************************/
 void bta_hh_le_api_disc_act(tBTA_HH_DEV_CB* p_cb) {
   if (p_cb->conn_id != GATT_INVALID_CONN_ID) {
-    gatt_op_queue_clean(p_cb->conn_id);
+    BtaGattQueue::Clean(p_cb->conn_id);
     BTA_GATTC_Close(p_cb->conn_id);
     /* remove device from background connection if intended to disconnect,
        do not allow reconnection */
@@ -1888,8 +1732,11 @@ static void read_report_cb(uint16_t conn_id, tGATT_STATUS status,
   hs_data.handle = p_dev_cb->hid_handle;
 
   if (status == GATT_SUCCESS) {
-    p_rpt = bta_hh_le_find_report_entry(p_dev_cb, p_char->service->handle,
-                                        char_uuid, p_char->value_handle);
+    const tBTA_GATTC_SERVICE* p_svc =
+        BTA_GATTC_GetOwningService(conn_id, p_char->value_handle);
+
+    p_rpt = bta_hh_le_find_report_entry(p_dev_cb, p_svc->handle, char_uuid,
+                                        p_char->value_handle);
 
     if (p_rpt != NULL && len) {
       p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + len + 1);
@@ -1935,8 +1782,8 @@ void bta_hh_le_get_rpt(tBTA_HH_DEV_CB* p_cb, tBTA_HH_RPT_TYPE r_type,
   }
 
   p_cb->w4_evt = BTA_HH_GET_RPT_EVT;
-  gatt_queue_read_op(GATT_READ_CHAR, p_cb->conn_id, p_rpt->char_inst_id,
-                     read_report_cb, p_cb);
+  BtaGattQueue::ReadCharacteristic(p_cb->conn_id, p_rpt->char_inst_id,
+                                   read_report_cb, p_cb);
 }
 
 static void write_report_cb(uint16_t conn_id, tGATT_STATUS status,
@@ -2007,8 +1854,9 @@ void bta_hh_le_write_rpt(tBTA_HH_DEV_CB* p_cb, tBTA_HH_RPT_TYPE r_type,
   if (p_char && (p_char->properties & GATT_CHAR_PROP_BIT_WRITE_NR))
     write_type = GATT_WRITE_NO_RSP;
 
-  gatt_queue_write_op(GATT_WRITE_CHAR, p_cb->conn_id, p_rpt->char_inst_id,
-                      std::move(value), write_type, write_report_cb, p_cb);
+  BtaGattQueue::WriteCharacteristic(p_cb->conn_id, p_rpt->char_inst_id,
+                                    std::move(value), write_type,
+                                    write_report_cb, p_cb);
 }
 
 /*******************************************************************************
@@ -2025,9 +1873,9 @@ void bta_hh_le_suspend(tBTA_HH_DEV_CB* p_cb,
   ctrl_type -= BTA_HH_CTRL_SUSPEND;
 
   // We don't care about response
-  gatt_queue_write_op(GATT_WRITE_CHAR, p_cb->conn_id,
-                      p_cb->hid_srvc.control_point_handle, {(uint8_t)ctrl_type},
-                      GATT_WRITE_NO_RSP, NULL, NULL);
+  BtaGattQueue::WriteCharacteristic(
+      p_cb->conn_id, p_cb->hid_srvc.control_point_handle, {(uint8_t)ctrl_type},
+      GATT_WRITE_NO_RSP, NULL, NULL);
 }
 
 /*******************************************************************************

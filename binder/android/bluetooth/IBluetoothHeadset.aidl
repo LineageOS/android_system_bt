@@ -21,17 +21,17 @@ import android.bluetooth.BluetoothDevice;
 /**
  * API for Bluetooth Headset service
  *
+ * Note before adding anything new:
+ *   Internal interactions within com.android.bluetooth should be handled through
+ *   HeadsetService directly instead of going through binder
+ *
  * {@hide}
  */
 interface IBluetoothHeadset {
     // Public API
-    boolean connect(in BluetoothDevice device);
-    boolean disconnect(in BluetoothDevice device);
     List<BluetoothDevice> getConnectedDevices();
     List<BluetoothDevice> getDevicesMatchingConnectionStates(in int[] states);
     int getConnectionState(in BluetoothDevice device);
-    boolean setPriority(in BluetoothDevice device, int priority);
-    int getPriority(in BluetoothDevice device);
     boolean startVoiceRecognition(in BluetoothDevice device);
     boolean stopVoiceRecognition(in BluetoothDevice device);
     boolean isAudioConnected(in BluetoothDevice device);
@@ -39,14 +39,12 @@ interface IBluetoothHeadset {
                                          in String command,
                                          in String arg);
 
-    // APIs that can be made public in future
-    int getBatteryUsageHint(in BluetoothDevice device);
-
-    // Internal functions, not be made public
-    boolean acceptIncomingConnect(in BluetoothDevice device);
-    boolean rejectIncomingConnect(in BluetoothDevice device);
+    // Hidden API
+    boolean connect(in BluetoothDevice device);
+    boolean disconnect(in BluetoothDevice device);
+    boolean setPriority(in BluetoothDevice device, int priority);
+    int getPriority(in BluetoothDevice device);
     int getAudioState(in BluetoothDevice device);
-
     boolean isAudioOn();
     boolean connectAudio();
     boolean disconnectAudio();
@@ -58,7 +56,4 @@ interface IBluetoothHeadset {
     oneway void phoneStateChanged(int numActive, int numHeld, int callState, String number, int type);
     void clccResponse(int index, int direction, int status, int mode, boolean mpty,
                       String number, int type);
-    boolean enableWBS();
-    boolean disableWBS();
-    void bindResponse(int ind_id, boolean ind_status);
 }

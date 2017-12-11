@@ -394,14 +394,12 @@ struct tBTA_GATTC_CHARACTERISTIC {
   uint16_t declaration_handle;
   uint16_t value_handle;
   tGATT_CHAR_PROP properties;
-  tBTA_GATTC_SERVICE* service; /* owning service*/
   std::vector<tBTA_GATTC_DESCRIPTOR> descriptors;
 } __attribute__((packed, aligned(alignof(bluetooth::Uuid))));
 
 struct tBTA_GATTC_DESCRIPTOR {
   bluetooth::Uuid uuid;
   uint16_t handle;
-  tBTA_GATTC_CHARACTERISTIC* characteristic; /* owning characteristic */
 } __attribute__((packed));
 
 struct tBTA_GATTC_INCLUDED_SVC {
@@ -578,6 +576,16 @@ extern const tBTA_GATTC_CHARACTERISTIC* BTA_GATTC_GetCharacteristic(
  *
  ******************************************************************************/
 extern const tBTA_GATTC_DESCRIPTOR* BTA_GATTC_GetDescriptor(uint16_t conn_id,
+                                                            uint16_t handle);
+
+/* Return characteristic that owns descriptor with handle equal to |handle|, or
+ * NULL */
+extern const tBTA_GATTC_CHARACTERISTIC* BTA_GATTC_GetOwningCharacteristic(
+    uint16_t conn_id, uint16_t handle);
+
+/* Return service that owns descriptor or characteristic with handle equal to
+ * |handle|, or NULL */
+extern const tBTA_GATTC_SERVICE* BTA_GATTC_GetOwningService(uint16_t conn_id,
                                                             uint16_t handle);
 
 /*******************************************************************************

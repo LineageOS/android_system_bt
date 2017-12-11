@@ -163,7 +163,8 @@ typedef void(tGAP_BLE_CMPL_CBACK)(bool status, const RawAddress& addr,
  ******************************************************************************/
 extern uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
                              bool is_server, const RawAddress* p_rem_bda,
-                             uint16_t psm, tL2CAP_CFG_INFO* p_cfg,
+                             uint16_t psm, uint16_t le_mps,
+                             tL2CAP_CFG_INFO* p_cfg,
                              tL2CAP_ERTM_INFO* ertm_info, uint16_t security,
                              uint8_t chan_mode_mask, tGAP_CONN_CALLBACK* p_cb,
                              tBT_TRANSPORT transport);

@@ -1125,8 +1125,10 @@ bool bta_gattc_process_srvc_chg_ind(uint16_t conn_id, tBTA_GATTC_RCB* p_clrcb,
 
   const tBTA_GATTC_CHARACTERISTIC* p_char =
       bta_gattc_get_characteristic_srcb(p_srcb, p_notify->handle);
-  if (!p_char || p_char->service->uuid != gattp_uuid ||
-      p_char->uuid != srvc_chg_uuid) {
+  if (!p_char) return false;
+  const tBTA_GATTC_SERVICE* p_svc =
+      bta_gattc_get_service_for_handle_srcb(p_srcb, p_char->value_handle);
+  if (!p_svc || p_svc->uuid != gattp_uuid || p_char->uuid != srvc_chg_uuid) {
     return false;
   }
 

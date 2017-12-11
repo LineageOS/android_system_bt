@@ -433,10 +433,14 @@ extern const tBTA_GATTC_SERVICE* bta_gattc_get_service_for_handle(
     uint16_t conn_id, uint16_t handle);
 tBTA_GATTC_CHARACTERISTIC* bta_gattc_get_characteristic_srcb(
     tBTA_GATTC_SERV* p_srcb, uint16_t handle);
+extern tBTA_GATTC_SERVICE* bta_gattc_get_service_for_handle_srcb(
+    tBTA_GATTC_SERV* p_srcb, uint16_t handle);
 extern tBTA_GATTC_CHARACTERISTIC* bta_gattc_get_characteristic(uint16_t conn_id,
                                                                uint16_t handle);
 extern const tBTA_GATTC_DESCRIPTOR* bta_gattc_get_descriptor(uint16_t conn_id,
                                                              uint16_t handle);
+extern const tBTA_GATTC_CHARACTERISTIC* bta_gattc_get_owning_characteristic(
+    uint16_t conn_id, uint16_t handle);
 extern void bta_gattc_get_gatt_db(uint16_t conn_id, uint16_t start_handle,
                                   uint16_t end_handle, btgatt_db_element_t** db,
                                   int* count);
