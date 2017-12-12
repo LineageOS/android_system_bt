@@ -22,7 +22,7 @@
  *
  ******************************************************************************/
 
-#include <string.h>
+#include <cstring>
 
 #include "bt_common.h"
 #include "bta_ag_at.h"
@@ -43,7 +43,7 @@
  *
  *****************************************************************************/
 void bta_ag_at_init(tBTA_AG_AT_CB* p_cb) {
-  p_cb->p_cmd_buf = NULL;
+  p_cb->p_cmd_buf = nullptr;
   p_cb->cmd_pos = 0;
 }
 
@@ -129,7 +129,7 @@ void bta_ag_process_at(tBTA_AG_AT_CB* p_cb) {
         if (int_arg < (int16_t)p_cb->p_at_tbl[idx].min ||
             int_arg > (int16_t)p_cb->p_at_tbl[idx].max) {
           /* arg out of range; error */
-          (*p_cb->p_err_cback)((tBTA_AG_SCB*)p_cb->p_user, false, NULL);
+          (*p_cb->p_err_cback)((tBTA_AG_SCB*)p_cb->p_user, false, nullptr);
         } else {
           (*p_cb->p_cmd_cback)((tBTA_AG_SCB*)p_cb->p_user,
                                p_cb->p_at_tbl[idx].command_id, arg_type, p_arg,
@@ -143,7 +143,7 @@ void bta_ag_process_at(tBTA_AG_AT_CB* p_cb) {
     }
     /* else error */
     else {
-      (*p_cb->p_err_cback)((tBTA_AG_SCB*)p_cb->p_user, false, NULL);
+      (*p_cb->p_err_cback)((tBTA_AG_SCB*)p_cb->p_user, false, nullptr);
     }
   }
   /* else no match call error callback */
@@ -168,7 +168,7 @@ void bta_ag_at_parse(tBTA_AG_AT_CB* p_cb, char* p_buf, uint16_t len) {
   int i = 0;
   char* p_save;
 
-  if (p_cb->p_cmd_buf == NULL) {
+  if (p_cb->p_cmd_buf == nullptr) {
     p_cb->p_cmd_buf = (char*)osi_malloc(p_cb->cmd_max_len);
     p_cb->cmd_pos = 0;
   }

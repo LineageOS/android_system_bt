@@ -58,14 +58,6 @@
 #define BTA_AG_ACP 0 /* accepted connection */
 #define BTA_AG_INT 1 /* initiating connection */
 
-/* feature mask that matches spec */
-#define BTA_AG_BSRF_FEAT_SPEC                                   \
-  (BTA_AG_FEAT_3WAY | BTA_AG_FEAT_ECNR | BTA_AG_FEAT_VREC |     \
-   BTA_AG_FEAT_INBAND | BTA_AG_FEAT_VTAG | BTA_AG_FEAT_REJECT | \
-   BTA_AG_FEAT_ECS | BTA_AG_FEAT_ECC | BTA_AG_FEAT_EXTERR |     \
-   BTA_AG_FEAT_CODEC | BTA_AG_FEAT_HF_IND | BTA_AG_FEAT_ESCO |  \
-   BTA_AG_FEAT_VOIP)
-
 #define BTA_AG_SDP_FEAT_SPEC                                \
   (BTA_AG_FEAT_3WAY | BTA_AG_FEAT_ECNR | BTA_AG_FEAT_VREC | \
    BTA_AG_FEAT_INBAND | BTA_AG_FEAT_VTAG)

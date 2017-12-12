@@ -37,7 +37,6 @@ cc_library_static {
         "ag/bta_ag_api.cc",
         "ag/bta_ag_at.cc",
         "ag/bta_ag_cfg.cc",
-        "ag/bta_ag_ci.cc",
         "ag/bta_ag_cmd.cc",
         "ag/bta_ag_main.cc",
         "ag/bta_ag_rfc.cc",

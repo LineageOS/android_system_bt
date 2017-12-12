@@ -21,7 +21,6 @@
 #include "bta/include/bta_ag_co.h"
 #include "bta/ag/bta_ag_int.h"
 #include "bta/include/bta_ag_api.h"
-#include "bta/include/bta_ag_ci.h"
 #include "osi/include/osi.h"
 
 /*******************************************************************************

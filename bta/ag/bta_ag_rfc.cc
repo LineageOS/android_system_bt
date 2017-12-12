@@ -23,7 +23,7 @@
  *
  ******************************************************************************/
 
-#include <string.h>
+#include <cstring>
 
 #include "bt_common.h"
 #include "bta_ag_api.h"
@@ -80,7 +80,7 @@ static void bta_ag_port_cback(UNUSED_ATTR uint32_t code, uint16_t port_handle,
   tBTA_AG_SCB* p_scb;
 
   p_scb = bta_ag_scb_by_idx(handle);
-  if (p_scb != NULL) {
+  if (p_scb != nullptr) {
     /* ignore port events for port handles other than connected handle */
     if (port_handle != p_scb->conn_handle) {
       APPL_TRACE_DEBUG(
@@ -117,7 +117,7 @@ static void bta_ag_mgmt_cback(uint32_t code, uint16_t port_handle,
                    code, port_handle, handle);
 
   p_scb = bta_ag_scb_by_idx(handle);
-  if (p_scb != NULL) {
+  if (p_scb != nullptr) {
     /* ignore close event for port handles other than connected handle */
     if ((code != PORT_SUCCESS) && (port_handle != p_scb->conn_handle)) {
       APPL_TRACE_DEBUG("ag_mgmt_cback ignoring handle:%d", port_handle);
