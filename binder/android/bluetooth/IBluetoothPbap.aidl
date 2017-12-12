@@ -24,9 +24,8 @@ import android.bluetooth.BluetoothDevice;
  * {@hide}
  */
 interface IBluetoothPbap {
-    int getState();
-    BluetoothDevice getClient();
-    boolean connect(in BluetoothDevice device);
-    void disconnect();
-    boolean isConnected(in BluetoothDevice device);
+    List<BluetoothDevice> getConnectedDevices();
+    List<BluetoothDevice> getDevicesMatchingConnectionStates(in int[] states);
+    int getConnectionState(in BluetoothDevice device);
+    void disconnect(in BluetoothDevice device);
 }
