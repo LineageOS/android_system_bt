@@ -165,15 +165,17 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
           p_cb->secure_connections_only_mode_required =
               (btm_cb.security_mode == BTM_SEC_MODE_SC) ? true : false;
-
+          /* just for PTS, force SC bit */
           if (p_cb->secure_connections_only_mode_required) {
             p_cb->loc_auth_req |= SMP_SC_SUPPORT_BIT;
           }
 
-          if (!(p_cb->loc_auth_req & SMP_SC_SUPPORT_BIT) ||
-              lmp_version_below(p_cb->pairing_bda, HCI_PROTO_VERSION_4_2) ||
-              interop_match_addr(INTEROP_DISABLE_LE_SECURE_CONNECTIONS,
-                                 (const RawAddress*)&p_cb->pairing_bda)) {
+          if (!p_cb->secure_connections_only_mode_required &&
+              (!(p_cb->loc_auth_req & SMP_SC_SUPPORT_BIT) ||
+               lmp_version_below(p_cb->pairing_bda, HCI_PROTO_VERSION_4_2) ||
+               interop_match_addr(INTEROP_DISABLE_LE_SECURE_CONNECTIONS,
+                                  (const RawAddress*)&p_cb->pairing_bda))) {
+            p_cb->loc_auth_req &= ~SMP_SC_SUPPORT_BIT;
             p_cb->loc_auth_req &= ~SMP_KP_SUPPORT_BIT;
             p_cb->local_i_key &= ~SMP_SEC_KEY_TYPE_LK;
             p_cb->local_r_key &= ~SMP_SEC_KEY_TYPE_LK;

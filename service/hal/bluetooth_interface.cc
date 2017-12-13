@@ -54,8 +54,10 @@ shared_mutex_impl g_instance_lock;
 // defined below since it depends on BluetoothInterfaceImpl.
 base::ObserverList<BluetoothInterface::Observer>* GetObservers();
 
-#define FOR_EACH_BLUETOOTH_OBSERVER(func) \
-  FOR_EACH_OBSERVER(BluetoothInterface::Observer, *GetObservers(), func)
+#define FOR_EACH_BLUETOOTH_OBSERVER(func)  \
+  for (auto& observer : *GetObservers()) { \
+    observer.func;                         \
+  }
 
 #define VERIFY_INTERFACE_OR_RETURN()                                   \
   do {                                                                 \

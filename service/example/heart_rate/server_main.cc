@@ -153,7 +153,7 @@ int main(int argc, char* argv[]) {
   // received in dedicated threads set up by the ProcessState::startThreadPool
   // call above but we use this main loop for sending out heart rate
   // notifications.
-  main_loop.Run();
+  base::RunLoop().Run();
 
   LOG(INFO) << "Exiting";
   return EXIT_SUCCESS;

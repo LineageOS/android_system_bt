@@ -651,7 +651,8 @@ static void callback_dispatch(UNUSED_ATTR void* context) {
       }
 
       alarm->closure.i.Reset(Bind(alarm_ready_mloop, alarm));
-      get_message_loop()->PostTask(FROM_HERE, alarm->closure.i.callback());
+      get_message_loop()->task_runner()->PostTask(FROM_HERE,
+                                                  alarm->closure.i.callback());
     } else {
       fixed_queue_enqueue(alarm->queue, alarm);
     }
