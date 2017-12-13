@@ -108,7 +108,7 @@ void bta_hf_client_start_open(tBTA_HF_CLIENT_DATA* p_data) {
     /* Let the incoming connection goes through.                        */
     /* Issue collision for now.                                         */
     /* We will decide what to do when we find incoming connection later.*/
-    bta_hf_client_collision_cback(0, BTA_ID_HS, 0, &client_cb->peer_addr);
+    bta_hf_client_collision_cback(0, BTA_ID_HS, 0, client_cb->peer_addr);
     return;
   }
 
