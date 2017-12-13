@@ -205,7 +205,7 @@ void bta_gatts_register(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
     cb_data.reg_oper.server_if = BTA_GATTS_INVALID_IF;
     cb_data.reg_oper.uuid = p_msg->api_reg.app_uuid;
     if (first_unuse != 0xff) {
-      LOG(ERROR) << "register application first_unuse rcb_idx=" << +first_unuse;
+      LOG(INFO) << "register application first_unuse rcb_idx=" << +first_unuse;
 
       p_cb->rcb[first_unuse].in_use = true;
       p_cb->rcb[first_unuse].p_cback = p_msg->api_reg.p_cback;

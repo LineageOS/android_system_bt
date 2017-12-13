@@ -131,7 +131,7 @@ extern uint16_t BTA_GATTS_AddService(
   uint8_t rcb_idx =
       bta_gatts_find_app_rcb_idx_by_app_if(&bta_gatts_cb, server_if);
 
-  LOG(ERROR) << __func__ << ": rcb_idx=" << +rcb_idx;
+  LOG(INFO) << __func__ << ": rcb_idx=" << +rcb_idx;
 
   if (rcb_idx == BTA_GATTS_INVALID_APP) return GATT_ERROR;
 

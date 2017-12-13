@@ -163,7 +163,7 @@ static void add_service_to_gatt_db(std::vector<tBTA_GATTC_SERVICE>& gatt_db,
                                    uint16_t s_handle, uint16_t e_handle,
                                    const Uuid& uuid, bool is_primary) {
 #if (BTA_GATT_DEBUG == TRUE)
-  VLOG(1) << "Add a service into Service";
+  VLOG(1) << "Add a service into GATT DB";
 #endif
 
   gatt_db.emplace_back(tBTA_GATTC_SERVICE{
@@ -902,21 +902,11 @@ void bta_gattc_get_gatt_db(uint16_t conn_id, uint16_t start_handle,
                              count);
 }
 
-/*******************************************************************************
- *
- * Function         bta_gattc_rebuild_cache
- *
- * Description      rebuild server cache from NV cache.
- *
- * Parameters
- *
- * Returns          None.
- *
- ******************************************************************************/
+/* rebuild server cache from NV cache */
 void bta_gattc_rebuild_cache(tBTA_GATTC_SERV* p_srvc_cb, uint16_t num_attr,
                              tBTA_GATTC_NV_ATTR* p_attr) {
   /* first attribute loading, initialize buffer */
-  LOG(ERROR) << __func__;
+  LOG(INFO) << __func__ << " " << num_attr;
 
   // clear reallocating
   std::vector<tBTA_GATTC_SERVICE>().swap(p_srvc_cb->srvc_cache);
