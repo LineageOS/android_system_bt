@@ -1752,6 +1752,11 @@ void bta_ag_send_bcs(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_ag_send_ring(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
+  if (p_scb->callsetup_ind != BTA_AG_CALLSETUP_INCOMING) {
+    APPL_TRACE_DEBUG("%s: don't send the ring since there is no MT call setup",
+                     __func__);
+    return;
+  }
   /* send RING */
   bta_ag_send_result(p_scb, BTA_AG_LOCAL_RES_RING, NULL, 0);
 
