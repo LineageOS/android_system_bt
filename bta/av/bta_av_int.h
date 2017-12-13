@@ -384,7 +384,7 @@ typedef struct {
 #define BTA_AV_ROLE_SUSPEND_OPT 0x40 /* Suspend on Start option is set */
 
 /* union of all event datatypes */
-typedef union {
+union tBTA_AV_DATA {
   BT_HDR hdr;
   tBTA_AV_API_ENABLE api_enable;
   tBTA_AV_API_REG api_reg;
@@ -405,7 +405,7 @@ typedef union {
   tBTA_AV_SDP_RES sdp_res;
   tBTA_AV_API_META_RSP api_meta_rsp;
   tBTA_AV_API_STATUS_RSP api_status_rsp;
-} tBTA_AV_DATA;
+};
 
 typedef union {
   tBTA_AV_API_OPEN open; /* used only before open and role switch
@@ -441,7 +441,7 @@ typedef union {
   0x02 /* API open was called while incoming timer is running */
 
 /* type for AV stream control block */
-typedef struct {
+struct tBTA_AV_SCB {
   const tBTA_AV_ACT* p_act_tbl; /* the action table for stream state machine */
   const tBTA_AV_CO_FUNCTS* p_cos; /* the associated callout functions */
   bool sdp_discovery_started; /* variable to determine whether SDP is started */
@@ -498,7 +498,7 @@ typedef struct {
   uint16_t uuid_int; /*intended UUID of Initiator to connect to */
   bool offload_start_pending;
   bool skip_sdp; /* Decides if sdp to be done prior to profile connection */
-} tBTA_AV_SCB;
+};
 
 #define BTA_AV_RC_ROLE_MASK 0x10
 #define BTA_AV_RC_ROLE_INT 0x00
