@@ -19,6 +19,7 @@
 
 #include <base/bind.h>
 
+#include "base/location.h"
 #include "btif/include/btif_profile_queue.h"
 #include "stack_manager.h"
 #include "types/raw_address.h"
