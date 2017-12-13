@@ -510,12 +510,12 @@ static void bta_ag_collision_timer_cback(void* data) {
  ******************************************************************************/
 void bta_ag_collision_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status, uint8_t id,
                             UNUSED_ATTR uint8_t app_id,
-                            const RawAddress* peer_addr) {
+                            const RawAddress& peer_addr) {
   uint16_t handle;
   tBTA_AG_SCB* p_scb;
 
   /* Check if we have opening scb for the peer device. */
-  handle = bta_ag_idx_by_bdaddr(peer_addr);
+  handle = bta_ag_idx_by_bdaddr(&peer_addr);
   p_scb = bta_ag_scb_by_idx(handle);
 
   if (p_scb && (p_scb->state == BTA_AG_OPENING_ST)) {

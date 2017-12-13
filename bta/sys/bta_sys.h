@@ -139,7 +139,7 @@ typedef uint8_t tBTA_SYS_PREF_ROLES;
 
 /* conn callback for role / low power manager*/
 typedef void(tBTA_SYS_CONN_CBACK)(tBTA_SYS_CONN_STATUS status, uint8_t id,
-                                  uint8_t app_id, const RawAddress* peer_addr);
+                                  uint8_t app_id, const RawAddress& peer_addr);
 
 /* conn callback for role / low power manager*/
 typedef void(tBTA_SYS_SSR_CFG_CBACK)(uint8_t id, uint8_t app_id,
