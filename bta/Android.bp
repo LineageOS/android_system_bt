@@ -118,6 +118,7 @@ cc_test {
     defaults: ["fluoride_bta_defaults"],
     srcs: [
         "test/bta_hf_client_test.cc",
+        "test/gatt_cache_file_test.cc",
     ],
     shared_libs: [
         "liblog",
