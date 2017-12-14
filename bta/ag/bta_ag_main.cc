@@ -275,7 +275,7 @@ static tBTA_AG_SCB* bta_ag_scb_alloc(void) {
 
   if (i == BTA_AG_NUM_SCB) {
     /* out of scbs */
-    p_scb = NULL;
+    p_scb = nullptr;
     APPL_TRACE_WARNING("%s: Out of scbs", __func__);
   }
   return p_scb;
@@ -303,7 +303,7 @@ void bta_ag_scb_dealloc(tBTA_AG_SCB* p_scb) {
   alarm_free(p_scb->collision_timer);
 
   /* initialize control block */
-  memset(p_scb, 0, sizeof(tBTA_AG_SCB));
+  *p_scb = {};
   p_scb->sco_idx = BTM_INVALID_SCO_INDEX;
 
   /* If all scbs are deallocated, callback with disable event */
@@ -316,7 +316,7 @@ void bta_ag_scb_dealloc(tBTA_AG_SCB* p_scb) {
     }
 
     if (!allocated) {
-      (*bta_ag_cb.p_cback)(BTA_AG_DISABLE_EVT, NULL);
+      (*bta_ag_cb.p_cback)(BTA_AG_DISABLE_EVT, nullptr);
     }
   }
 }
@@ -353,11 +353,11 @@ tBTA_AG_SCB* bta_ag_scb_by_idx(uint16_t idx) {
   if (idx > 0 && idx <= BTA_AG_NUM_SCB) {
     p_scb = &bta_ag_cb.scb[idx - 1];
     if (!p_scb->in_use) {
-      p_scb = NULL;
+      p_scb = nullptr;
       APPL_TRACE_WARNING("ag scb idx %d not allocated", idx);
     }
   } else {
-    p_scb = NULL;
+    p_scb = nullptr;
     APPL_TRACE_DEBUG("ag scb idx %d out of range", idx);
   }
   return p_scb;
@@ -393,10 +393,8 @@ uint8_t bta_ag_service_to_idx(tBTA_SERVICE_MASK services) {
  ******************************************************************************/
 uint16_t bta_ag_idx_by_bdaddr(const RawAddress* peer_addr) {
   tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
-  uint16_t i;
-
-  if (peer_addr != NULL) {
-    for (i = 0; i < BTA_AG_NUM_SCB; i++, p_scb++) {
+  if (peer_addr != nullptr) {
+    for (uint16_t i = 0; i < BTA_AG_NUM_SCB; i++, p_scb++) {
       if (p_scb->in_use && *peer_addr == p_scb->peer_addr) {
         return (i + 1);
       }
@@ -420,15 +418,12 @@ uint16_t bta_ag_idx_by_bdaddr(const RawAddress* peer_addr) {
  ******************************************************************************/
 bool bta_ag_other_scb_open(tBTA_AG_SCB* p_curr_scb) {
   tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
-  int i;
-
-  for (i = 0; i < BTA_AG_NUM_SCB; i++, p_scb++) {
+  for (int i = 0; i < BTA_AG_NUM_SCB; i++, p_scb++) {
     if (p_scb->in_use && p_scb != p_curr_scb &&
         p_scb->state == BTA_AG_OPEN_ST) {
       return true;
     }
   }
-
   /* no other scb found */
   APPL_TRACE_DEBUG("No other ag scb open");
   return false;
@@ -445,11 +440,8 @@ bool bta_ag_other_scb_open(tBTA_AG_SCB* p_curr_scb) {
  *
  ******************************************************************************/
 bool bta_ag_scb_open(tBTA_AG_SCB* p_curr_scb) {
-  if (p_curr_scb && p_curr_scb->in_use && p_curr_scb->state == BTA_AG_OPEN_ST) {
-    return true;
-  }
-
-  return false;
+  return p_curr_scb && p_curr_scb->in_use &&
+         p_curr_scb->state == BTA_AG_OPEN_ST;
 }
 
 /*******************************************************************************
@@ -475,7 +467,7 @@ tBTA_AG_SCB* bta_ag_get_other_idle_scb(tBTA_AG_SCB* p_curr_scb) {
 
   /* no other scb found */
   APPL_TRACE_DEBUG("bta_ag_get_other_idle_scb: No idle AG scb");
-  return NULL;
+  return nullptr;
 }
 
 /*******************************************************************************
@@ -519,11 +511,11 @@ void bta_ag_collision_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status, uint8_t id,
   p_scb = bta_ag_scb_by_idx(handle);
 
   if (p_scb && (p_scb->state == BTA_AG_OPENING_ST)) {
-    if (id == BTA_ID_SYS) /* ACL collision */
-    {
+    if (id == BTA_ID_SYS) {
+      /* ACL collision */
       APPL_TRACE_WARNING("AG found collision (ACL) ...");
-    } else if (id == BTA_ID_AG) /* RFCOMM collision */
-    {
+    } else if (id == BTA_ID_AG) {
+      /* RFCOMM collision */
       APPL_TRACE_WARNING("AG found collision (RFCOMM) ...");
     } else {
       APPL_TRACE_WARNING("AG found collision (\?\?\?) ...");
@@ -534,7 +526,7 @@ void bta_ag_collision_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status, uint8_t id,
     /* Cancel SDP if it had been started. */
     if (p_scb->p_disc_db) {
       (void)SDP_CancelServiceSearch(p_scb->p_disc_db);
-      bta_ag_free_db(p_scb, NULL);
+      bta_ag_free_db(p_scb, nullptr);
     }
 
     /* reopen registered servers */
@@ -566,7 +558,7 @@ void bta_ag_resume_open(tBTA_AG_SCB* p_scb) {
     /* resume opening process.  */
     if (p_scb->state == BTA_AG_INIT_ST) {
       p_scb->state = BTA_AG_OPENING_ST;
-      bta_ag_start_open(p_scb, NULL);
+      bta_ag_start_open(p_scb, nullptr);
     }
   } else {
     APPL_TRACE_ERROR("bta_ag_resume_open, Null p_scb");
@@ -585,12 +577,12 @@ void bta_ag_resume_open(tBTA_AG_SCB* p_scb) {
  ******************************************************************************/
 static void bta_ag_api_enable(tBTA_AG_DATA* p_data) {
   /* initialize control block */
-  for (size_t i = 0; i < BTA_AG_NUM_SCB; i++) {
-    alarm_free(bta_ag_cb.scb[i].ring_timer);
-    alarm_free(bta_ag_cb.scb[i].codec_negotiation_timer);
-    alarm_free(bta_ag_cb.scb[i].collision_timer);
+  for (tBTA_AG_SCB& scb : bta_ag_cb.scb) {
+    alarm_free(scb.ring_timer);
+    alarm_free(scb.codec_negotiation_timer);
+    alarm_free(scb.collision_timer);
+    scb = {};
   }
-  memset(&bta_ag_cb, 0, sizeof(tBTA_AG_CB));
 
   /* store callback function */
   bta_ag_cb.p_cback = p_data->api_enable.p_cback;
@@ -602,7 +594,7 @@ static void bta_ag_api_enable(tBTA_AG_DATA* p_data) {
   bta_sys_collision_register(BTA_ID_AG, bta_ag_collision_cback);
 
   /* call callback with enable event */
-  (*bta_ag_cb.p_cback)(BTA_AG_ENABLE_EVT, NULL);
+  (*bta_ag_cb.p_cback)(BTA_AG_ENABLE_EVT, nullptr);
 }
 
 /*******************************************************************************
@@ -638,10 +630,10 @@ static void bta_ag_api_disable(tBTA_AG_DATA* p_data) {
 
   if (!do_dereg) {
     /* Done, send callback evt to app */
-    (*bta_ag_cb.p_cback)(BTA_AG_DISABLE_EVT, NULL);
+    (*bta_ag_cb.p_cback)(BTA_AG_DISABLE_EVT, nullptr);
   }
 
-  bta_sys_collision_register(BTA_ID_AG, NULL);
+  bta_sys_collision_register(BTA_ID_AG, nullptr);
 }
 
 /*******************************************************************************
@@ -659,11 +651,11 @@ static void bta_ag_api_register(tBTA_AG_DATA* p_data) {
 
   /* allocate an scb */
   p_scb = bta_ag_scb_alloc();
-  if (p_scb != NULL) {
+  if (p_scb != nullptr) {
     APPL_TRACE_DEBUG("bta_ag_api_register: p_scb 0x%08x ", p_scb);
     bta_ag_sm_execute(p_scb, p_data->hdr.event, p_data);
   } else {
-    tBTA_AG bta_ag;
+    tBTA_AG bta_ag = {};
     bta_ag.reg.status = BTA_AG_FAIL_RESOURCES;
     (*bta_ag_cb.p_cback)(BTA_AG_REGISTER_EVT, &bta_ag);
   }
@@ -685,7 +677,7 @@ static void bta_ag_api_result(tBTA_AG_DATA* p_data) {
 
   if (p_data->hdr.layer_specific != BTA_AG_HANDLE_ALL) {
     p_scb = bta_ag_scb_by_idx(p_data->hdr.layer_specific);
-    if (p_scb != NULL) {
+    if (p_scb != nullptr) {
       APPL_TRACE_DEBUG("bta_ag_api_result: p_scb 0x%08x ", p_scb);
       bta_ag_sm_execute(p_scb, BTA_AG_API_RESULT_EVT, p_data);
     }
@@ -804,7 +796,7 @@ bool bta_ag_hdl_event(BT_HDR* p_msg) {
     /* all others reference scb by handle */
     default:
       p_scb = bta_ag_scb_by_idx(p_msg->layer_specific);
-      if (p_scb != NULL) {
+      if (p_scb != nullptr) {
         APPL_TRACE_DEBUG("bta_ag_hdl_event: p_scb 0x%08x ", p_scb);
         bta_ag_sm_execute(p_scb, p_msg->event, (tBTA_AG_DATA*)p_msg);
       }

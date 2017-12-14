@@ -18,9 +18,9 @@
 
 #define LOG_TAG "bta_ag_cmd"
 
-#include <ctype.h>
-#include <stdio.h>
-#include <string.h>
+#include <cctype>
+#include <cstdio>
+#include <cstring>
 
 #include "bt_common.h"
 #include "bt_target.h"
@@ -173,7 +173,7 @@ static const tBTA_AG_RESULT* bta_ag_result_by_code(size_t code) {
        i != sizeof(bta_ag_result_tbl) / sizeof(bta_ag_result_tbl[0]); ++i) {
     if (code == bta_ag_result_tbl[i].result_id) return &bta_ag_result_tbl[i];
   }
-  return 0;
+  return nullptr;
 }
 
 const tBTA_AG_AT_CMD* bta_ag_at_tbl[BTA_AG_NUM_IDX] = {bta_ag_hsp_cmd,
@@ -215,15 +215,14 @@ static size_t bta_ag_indicator_by_result_code(size_t code) {
 static void bta_ag_send_result(tBTA_AG_SCB* p_scb, size_t code,
                                const char* p_arg, int16_t int_arg) {
   const tBTA_AG_RESULT* result = bta_ag_result_by_code(code);
-  if (result == 0) {
+  if (result == nullptr) {
     LOG_ERROR(LOG_TAG, "%s Unable to lookup result for code %zu", __func__,
               code);
     return;
   }
 
-  char buf[BTA_AG_AT_MAX_LEN + 16];
+  char buf[BTA_AG_AT_MAX_LEN + 16] = "";
   char* p = buf;
-  memset(buf, 0, sizeof(buf));
 
   /* init with \r\n */
   *p++ = '\r';
@@ -274,7 +273,7 @@ static void bta_ag_send_result(tBTA_AG_SCB* p_scb, size_t code,
  *
  ******************************************************************************/
 static void bta_ag_send_ok(tBTA_AG_SCB* p_scb) {
-  bta_ag_send_result(p_scb, BTA_AG_LOCAL_RES_OK, NULL, 0);
+  bta_ag_send_result(p_scb, BTA_AG_LOCAL_RES_OK, nullptr, 0);
 }
 
 /*******************************************************************************
@@ -291,9 +290,9 @@ static void bta_ag_send_ok(tBTA_AG_SCB* p_scb) {
 static void bta_ag_send_error(tBTA_AG_SCB* p_scb, int16_t errcode) {
   /* If HFP and extended audio gateway error codes are enabled */
   if (p_scb->conn_service == BTA_AG_HFP && p_scb->cmee_enabled)
-    bta_ag_send_result(p_scb, BTA_AG_LOCAL_RES_CMEE, NULL, errcode);
+    bta_ag_send_result(p_scb, BTA_AG_LOCAL_RES_CMEE, nullptr, errcode);
   else
-    bta_ag_send_result(p_scb, BTA_AG_LOCAL_RES_ERROR, NULL, 0);
+    bta_ag_send_result(p_scb, BTA_AG_LOCAL_RES_ERROR, nullptr, 0);
 }
 
 /*******************************************************************************
@@ -392,7 +391,7 @@ static bool bta_ag_parse_cmer(char* p_s, bool* p_enabled) {
     *p = 0;
     n[i] = utl_str2int(p_s);
     p_s = p + 1;
-    if (p_s == 0) {
+    if (p_s == nullptr) {
       break;
     }
   }
@@ -424,7 +423,6 @@ static bool bta_ag_parse_cmer(char* p_s, bool* p_enabled) {
  ******************************************************************************/
 static uint8_t bta_ag_parse_chld(UNUSED_ATTR tBTA_AG_SCB* p_scb, char* p_s) {
   uint8_t retval = 0;
-  int16_t idx = -1;
 
   if (!isdigit(p_s[0])) {
     return BTA_AG_INVALID_CHLD;
@@ -432,7 +430,7 @@ static uint8_t bta_ag_parse_chld(UNUSED_ATTR tBTA_AG_SCB* p_scb, char* p_s) {
 
   if (p_s[1] != 0) {
     /* p_idxstr++;  point to beginning of call number */
-    idx = utl_str2int(&p_s[1]);
+    int16_t idx = utl_str2int(&p_s[1]);
     if (idx != -1 && idx < 255) {
       retval = (uint8_t)idx;
     } else {
@@ -455,7 +453,6 @@ static uint8_t bta_ag_parse_chld(UNUSED_ATTR tBTA_AG_SCB* p_scb, char* p_s) {
 static tBTA_AG_PEER_CODEC bta_ag_parse_bac(tBTA_AG_SCB* p_scb, char* p_s) {
   tBTA_AG_PEER_CODEC retval = BTA_AG_CODEC_NONE;
   uint16_t uuid_codec;
-  bool cont = false; /* Continue processing */
   char* p;
 
   while (p_s) {
@@ -463,13 +460,12 @@ static tBTA_AG_PEER_CODEC bta_ag_parse_bac(tBTA_AG_SCB* p_scb, char* p_s) {
     for (p = p_s; *p != ',' && *p != 0; p++)
       ;
 
-    /* get integre value */
+    /* get integer value */
+    bool cont = false;  // Continue processing
     if (*p != 0) {
       *p = 0;
       cont = true;
-    } else
-      cont = false;
-
+    }
     uuid_codec = utl_str2int(p_s);
     switch (uuid_codec) {
       case UUID_CODEC_CVSD:
@@ -505,13 +501,11 @@ static tBTA_AG_PEER_CODEC bta_ag_parse_bac(tBTA_AG_SCB* p_scb, char* p_s) {
  ******************************************************************************/
 
 static void bta_ag_process_unat_res(char* unat_result) {
-  uint8_t str_leng;
-  uint8_t i = 0;
   uint8_t j = 0;
   uint8_t pairs_of_nl_cr;
   char trim_data[BTA_AG_AT_MAX_LEN];
 
-  str_leng = strlen(unat_result);
+  uint8_t str_leng = strlen(unat_result);
 
   /* If no extra CR and LF, just return */
   if (str_leng < 4) return;
@@ -521,19 +515,17 @@ static void bta_ag_process_unat_res(char* unat_result) {
          unat_result[str_leng - 2] == '\r' &&
          unat_result[str_leng - 1] == '\n') {
     pairs_of_nl_cr = 1;
-    for (i = 0; i < (str_leng - 4 * pairs_of_nl_cr); i++) {
+    for (int i = 0; i < (str_leng - 4 * pairs_of_nl_cr); i++) {
       trim_data[j++] = unat_result[i + pairs_of_nl_cr * 2];
     }
     /* Add EOF */
     trim_data[j] = '\0';
     str_leng = str_leng - 4;
     strlcpy(unat_result, trim_data, str_leng + 1);
-    i = 0;
     j = 0;
 
     if (str_leng < 4) return;
   }
-  return;
 }
 
 /*******************************************************************************
@@ -548,11 +540,7 @@ static void bta_ag_process_unat_res(char* unat_result) {
  ******************************************************************************/
 bool bta_ag_inband_enabled(tBTA_AG_SCB* p_scb) {
   /* if feature is enabled and no other scbs connected */
-  if (p_scb->inband_enabled && !bta_ag_other_scb_open(p_scb)) {
-    return true;
-  } else {
-    return false;
-  }
+  return p_scb->inband_enabled && !bta_ag_other_scb_open(p_scb);
 }
 
 /*******************************************************************************
@@ -566,7 +554,7 @@ bool bta_ag_inband_enabled(tBTA_AG_SCB* p_scb) {
  *
  ******************************************************************************/
 void bta_ag_send_call_inds(tBTA_AG_SCB* p_scb, tBTA_AG_RES result) {
-  uint8_t call = p_scb->call_ind;
+  uint8_t call;
 
   /* set new call and callsetup values based on BTA_AgResult */
   size_t callsetup = bta_ag_indicator_by_result_code(result);
@@ -603,7 +591,7 @@ void bta_ag_at_hsp_cback(tBTA_AG_SCB* p_scb, uint16_t command_id,
 
   bta_ag_send_ok(p_scb);
 
-  tBTA_AG_VAL val;
+  tBTA_AG_VAL val = {};
   val.hdr.handle = bta_ag_scb_to_idx(p_scb);
   val.hdr.app_id = p_scb->app_id;
   val.num = (uint16_t)int_arg;
@@ -678,9 +666,9 @@ static int bta_ag_find_hf_ind_by_id(tBTA_AG_HF_IND* p_hf_ind, int size,
  ******************************************************************************/
 static bool bta_ag_parse_bind_set(tBTA_AG_SCB* p_scb, tBTA_AG_VAL val) {
   char* p_token = strtok(val.str, ",");
-  if (p_token == NULL) return false;
+  if (p_token == nullptr) return false;
 
-  while (p_token != NULL) {
+  while (p_token != nullptr) {
     uint16_t rcv_ind_id = atoi(p_token);
     int index = bta_ag_find_empty_hf_ind(p_scb);
     if (index == -1) {
@@ -691,7 +679,7 @@ static bool bta_ag_parse_bind_set(tBTA_AG_SCB* p_scb, tBTA_AG_VAL val) {
     p_scb->peer_hf_indicators[index].ind_id = rcv_ind_id;
     APPL_TRACE_DEBUG("%s peer_hf_ind[%d] = %d", __func__, index, rcv_ind_id);
 
-    p_token = strtok(NULL, ",");
+    p_token = strtok(nullptr, ",");
   }
 
   return true;
@@ -708,8 +696,7 @@ static bool bta_ag_parse_bind_set(tBTA_AG_SCB* p_scb, tBTA_AG_VAL val) {
  *
  ******************************************************************************/
 static void bta_ag_bind_response(tBTA_AG_SCB* p_scb, uint8_t arg_type) {
-  char buffer[BTA_AG_AT_MAX_LEN];
-  memset(buffer, 0, BTA_AG_AT_MAX_LEN);
+  char buffer[BTA_AG_AT_MAX_LEN] = "";
 
   if (arg_type == BTA_AG_AT_TEST) {
     int index = 0;
@@ -757,7 +744,8 @@ static void bta_ag_bind_response(tBTA_AG_SCB* p_scb, uint8_t arg_type) {
         p += utl_itoa((uint16_t)p_scb->local_hf_indicators[i].is_enable, p);
 
         bta_ag_send_result(p_scb, BTA_AG_BIND_RES, buffer, 0);
-
+        // have to use memset here because assigning to "" will not zero
+        // initialize the rest of the buffer
         memset(buffer, 0, sizeof(buffer));
         p = buffer;
       } else {
@@ -769,7 +757,7 @@ static void bta_ag_bind_response(tBTA_AG_SCB* p_scb, uint8_t arg_type) {
     bta_ag_send_ok(p_scb);
 
     /* If the service level connection wan't already open, now it's open */
-    if (!p_scb->svc_conn) bta_ag_svc_conn_open(p_scb, NULL);
+    if (!p_scb->svc_conn) bta_ag_svc_conn_open(p_scb, nullptr);
   }
 }
 
@@ -787,7 +775,7 @@ static bool bta_ag_parse_biev_response(tBTA_AG_SCB* p_scb, tBTA_AG_VAL* val) {
   char* p_token = strtok(val->str, ",");
   uint16_t rcv_ind_id = atoi(p_token);
 
-  p_token = strtok(NULL, ",");
+  p_token = strtok(nullptr, ",");
   uint16_t rcv_ind_val = atoi(p_token);
 
   APPL_TRACE_DEBUG("%s BIEV indicator id %d, value %d", __func__, rcv_ind_id,
@@ -804,8 +792,8 @@ static bool bta_ag_parse_biev_response(tBTA_AG_SCB* p_scb, tBTA_AG_VAL* val) {
   int local_index = bta_ag_find_hf_ind_by_id(
       p_scb->local_hf_indicators, BTA_AG_MAX_NUM_LOCAL_HF_IND, rcv_ind_id);
   if (local_index == -1 ||
-      p_scb->local_hf_indicators[local_index].is_supported != true ||
-      p_scb->local_hf_indicators[local_index].is_enable != true) {
+      !p_scb->local_hf_indicators[local_index].is_supported ||
+      !p_scb->local_hf_indicators[local_index].is_enable) {
     APPL_TRACE_WARNING("%s indicator id %d not supported or disabled", __func__,
                        rcv_ind_id);
     return false;
@@ -836,11 +824,11 @@ static bool bta_ag_parse_biev_response(tBTA_AG_SCB* p_scb, tBTA_AG_VAL* val) {
  ******************************************************************************/
 void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
                          char* p_arg, int16_t int_arg) {
-  tBTA_AG_VAL val;
+  tBTA_AG_VAL val = {};
   tBTA_AG_SCB* ag_scb;
   uint32_t i, ind_id;
   uint32_t bia_masked_out;
-  if (p_arg == NULL) {
+  if (p_arg == nullptr) {
     APPL_TRACE_ERROR("%s: p_arg is null, send error and return", __func__);
     bta_ag_send_error(p_scb, BTA_AG_ERR_INV_CHAR_IN_TSTR);
     return;
@@ -849,7 +837,6 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
   APPL_TRACE_DEBUG("%s: AT command %d, arg_type %d, int_arg %d, arg %s",
                    __func__, cmd, arg_type, int_arg, p_arg);
 
-  memset(&val, 0, sizeof(tBTA_AG_VAL));
   val.hdr.handle = bta_ag_scb_to_idx(p_scb);
   val.hdr.app_id = p_scb->app_id;
   val.hdr.status = BTA_AG_SUCCESS;
@@ -946,7 +933,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
         bta_ag_send_ok(p_scb);
 
         /* if service level conn. not already open, now it's open */
-        bta_ag_svc_conn_open(p_scb, NULL);
+        bta_ag_svc_conn_open(p_scb, nullptr);
       } else {
         val.idx = bta_ag_parse_chld(p_scb, val.str);
 
@@ -1042,7 +1029,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
         if (!p_scb->svc_conn &&
             !((p_scb->features & BTA_AG_FEAT_3WAY) &&
               (p_scb->peer_features & BTA_AG_PEER_FEAT_3WAY))) {
-          bta_ag_svc_conn_open(p_scb, NULL);
+          bta_ag_svc_conn_open(p_scb, nullptr);
         }
       } else {
         bta_ag_send_error(p_scb, BTA_AG_ERR_INV_CHAR_IN_TSTR);
@@ -1089,7 +1076,8 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
                        p_scb->peer_features, features);
 
       /* send BRSF, send OK */
-      bta_ag_send_result(p_scb, BTA_AG_LOCAL_RES_BRSF, NULL, (int16_t)features);
+      bta_ag_send_result(p_scb, BTA_AG_LOCAL_RES_BRSF, nullptr,
+                         (int16_t)features);
       bta_ag_send_ok(p_scb);
       break;
     }
@@ -1112,7 +1100,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
           for (i = 0, ag_scb = &bta_ag_cb.scb[0]; i < BTA_AG_NUM_SCB;
                i++, ag_scb++) {
             if (ag_scb->in_use) {
-              bta_ag_send_result(ag_scb, BTA_AG_BTRH_RES, NULL, int_arg);
+              bta_ag_send_result(ag_scb, BTA_AG_BTRH_RES, nullptr, int_arg);
             }
           }
           bta_ag_send_ok(p_scb);
@@ -1246,10 +1234,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
       else
         codec_sent = p_scb->sco_codec;
 
-      if (codec_type == codec_sent)
-        bta_ag_sco_codec_nego(p_scb, true);
-      else
-        bta_ag_sco_codec_nego(p_scb, false);
+      bta_ag_sco_codec_nego(p_scb, codec_type == codec_sent);
 
       /* send final codec info to callback */
       val.num = codec_sent;
@@ -1257,7 +1242,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
     }
     case BTA_AG_LOCAL_EVT_BCC:
       bta_ag_send_ok(p_scb);
-      bta_ag_sco_open(p_scb, NULL);
+      bta_ag_sco_open(p_scb, nullptr);
       break;
 
     default:
@@ -1282,14 +1267,13 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
  *
  ******************************************************************************/
 void bta_ag_at_err_cback(tBTA_AG_SCB* p_scb, bool unknown, char* p_arg) {
-  tBTA_AG_VAL val;
-
   if (unknown && (!strlen(p_arg))) {
     APPL_TRACE_DEBUG("Empty AT cmd string received");
     bta_ag_send_ok(p_scb);
     return;
   }
 
+  tBTA_AG_VAL val = {};
   /* if unknown AT command and configured to pass these to app */
   if (unknown && (p_scb->features & BTA_AG_FEAT_UNAT)) {
     val.hdr.handle = bta_ag_scb_to_idx(p_scb);
@@ -1319,7 +1303,7 @@ void bta_ag_hsp_result(tBTA_AG_SCB* p_scb, tBTA_AG_API_RESULT* p_result) {
   switch (p_result->result) {
     case BTA_AG_SPK_RES:
     case BTA_AG_MIC_RES:
-      bta_ag_send_result(p_scb, p_result->result, NULL, p_result->data.num);
+      bta_ag_send_result(p_scb, p_result->result, nullptr, p_result->data.num);
       break;
 
     case BTA_AG_IN_CALL_RES:
@@ -1415,7 +1399,7 @@ void bta_ag_hfp_result(tBTA_AG_SCB* p_scb, tBTA_AG_API_RESULT* p_result) {
   switch (p_result->result) {
     case BTA_AG_SPK_RES:
     case BTA_AG_MIC_RES:
-      bta_ag_send_result(p_scb, p_result->result, NULL, p_result->data.num);
+      bta_ag_send_result(p_scb, p_result->result, nullptr, p_result->data.num);
       break;
 
     case BTA_AG_IN_CALL_RES:
@@ -1554,7 +1538,8 @@ void bta_ag_hfp_result(tBTA_AG_SCB* p_scb, tBTA_AG_API_RESULT* p_result) {
     case BTA_AG_INBAND_RING_RES:
       p_scb->inband_enabled = p_result->data.state;
       APPL_TRACE_DEBUG("inband_enabled set to %d", p_scb->inband_enabled);
-      bta_ag_send_result(p_scb, p_result->result, NULL, p_result->data.state);
+      bta_ag_send_result(p_scb, p_result->result, nullptr,
+                         p_result->data.state);
       break;
 
     case BTA_AG_CIND_RES:
@@ -1620,14 +1605,16 @@ void bta_ag_hfp_result(tBTA_AG_SCB* p_scb, tBTA_AG_API_RESULT* p_result) {
       break;
 
     case BTA_AG_BVRA_RES:
-      bta_ag_send_result(p_scb, p_result->result, NULL, p_result->data.state);
+      bta_ag_send_result(p_scb, p_result->result, nullptr,
+                         p_result->data.state);
       break;
 
     case BTA_AG_BTRH_RES:
       if (p_result->data.ok_flag != BTA_AG_OK_ERROR) {
         /* Don't respond to read if not in response & hold state */
         if (p_result->data.num != BTA_AG_BTRH_NO_RESP) {
-          bta_ag_send_result(p_scb, p_result->result, NULL, p_result->data.num);
+          bta_ag_send_result(p_scb, p_result->result, nullptr,
+                             p_result->data.num);
         }
 
         /* In case of a response to a read request we need to send OK */
@@ -1738,7 +1725,7 @@ void bta_ag_send_bcs(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
 
   /* send +BCS */
   APPL_TRACE_DEBUG("send +BCS codec is %d", codec_uuid);
-  bta_ag_send_result(p_scb, BTA_AG_LOCAL_RES_BCS, NULL, codec_uuid);
+  bta_ag_send_result(p_scb, BTA_AG_LOCAL_RES_BCS, nullptr, codec_uuid);
 }
 
 /*******************************************************************************
@@ -1758,7 +1745,7 @@ void bta_ag_send_ring(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
     return;
   }
   /* send RING */
-  bta_ag_send_result(p_scb, BTA_AG_LOCAL_RES_RING, NULL, 0);
+  bta_ag_send_result(p_scb, BTA_AG_LOCAL_RES_RING, nullptr, 0);
 
   /* if HFP and clip enabled and clip data send CLIP */
   if (p_scb->conn_service == BTA_AG_HFP && p_scb->clip_enabled &&
