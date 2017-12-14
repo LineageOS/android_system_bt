@@ -182,8 +182,12 @@ void bta_hh_le_enable(void) {
                             bta_hh_cb.gatt_if = BTA_GATTS_INVALID_IF;
                           }
 
-                          /* signal BTA call back event */
-                          (*bta_hh_cb.p_cback)(BTA_HH_ENABLE_EVT, &bta_hh);
+                          /* null check is needed in case HID profile is shut
+                           * down before BTA_GATTC_AppRegister is done */
+                          if (bta_hh_cb.p_cback) {
+                            /* signal BTA call back event */
+                            (*bta_hh_cb.p_cback)(BTA_HH_ENABLE_EVT, &bta_hh);
+                          }
                         }));
 }
 
