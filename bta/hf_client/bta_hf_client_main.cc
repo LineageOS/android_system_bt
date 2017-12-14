@@ -363,8 +363,8 @@ static void bta_hf_client_collision_timer_cback(void* data) {
  ******************************************************************************/
 void bta_hf_client_collision_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status,
                                    uint8_t id, UNUSED_ATTR uint8_t app_id,
-                                   const RawAddress* peer_addr) {
-  tBTA_HF_CLIENT_CB* client_cb = bta_hf_client_find_cb_by_bda(*peer_addr);
+                                   const RawAddress& peer_addr) {
+  tBTA_HF_CLIENT_CB* client_cb = bta_hf_client_find_cb_by_bda(peer_addr);
   if (client_cb != NULL && client_cb->state == BTA_HF_CLIENT_OPENING_ST) {
     if (id == BTA_ID_SYS) /* ACL collision */
     {

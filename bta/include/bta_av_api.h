@@ -363,7 +363,9 @@ typedef void(tBTA_AV_CBACK)(tBTA_AV_EVT event, tBTA_AV* p_data);
 typedef void(tBTA_AV_SINK_DATA_CBACK)(tBTA_AV_EVT event, tBTA_AV_MEDIA* p_data);
 
 /* type for stream state machine action functions */
-typedef void (*tBTA_AV_ACT)(void* p_cb, void* p_data);
+struct tBTA_AV_SCB;
+union tBTA_AV_DATA;
+typedef void (*tBTA_AV_ACT)(tBTA_AV_SCB* p_cb, tBTA_AV_DATA* p_data);
 
 /* type for registering VDP */
 typedef void(tBTA_AV_REG)(tAVDT_CS* p_cs, char* p_service_name, void* p_data);

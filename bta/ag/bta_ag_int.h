@@ -58,14 +58,6 @@
 #define BTA_AG_ACP 0 /* accepted connection */
 #define BTA_AG_INT 1 /* initiating connection */
 
-/* feature mask that matches spec */
-#define BTA_AG_BSRF_FEAT_SPEC                                   \
-  (BTA_AG_FEAT_3WAY | BTA_AG_FEAT_ECNR | BTA_AG_FEAT_VREC |     \
-   BTA_AG_FEAT_INBAND | BTA_AG_FEAT_VTAG | BTA_AG_FEAT_REJECT | \
-   BTA_AG_FEAT_ECS | BTA_AG_FEAT_ECC | BTA_AG_FEAT_EXTERR |     \
-   BTA_AG_FEAT_CODEC | BTA_AG_FEAT_HF_IND | BTA_AG_FEAT_ESCO |  \
-   BTA_AG_FEAT_VOIP)
-
 #define BTA_AG_SDP_FEAT_SPEC                                \
   (BTA_AG_FEAT_3WAY | BTA_AG_FEAT_ECNR | BTA_AG_FEAT_VREC | \
    BTA_AG_FEAT_INBAND | BTA_AG_FEAT_VTAG)
@@ -222,7 +214,7 @@ typedef enum {
 } tBTA_AG_SCO_MSBC_SETTINGS;
 
 /* type for each service control block */
-typedef struct {
+struct tBTA_AG_SCB {
   char clip[BTA_AG_AT_MAX_LEN + 1];     /* number string used for CLIP */
   uint16_t serv_handle[BTA_AG_NUM_IDX]; /* RFCOMM server handles */
   tBTA_AG_AT_CB at_cb;                  /* AT command interpreter */
@@ -278,7 +270,7 @@ typedef struct {
   tBTA_AG_HF_IND
       local_hf_indicators[BTA_AG_MAX_NUM_LOCAL_HF_IND]; /* Local supported
                                                     HF indicators */
-} tBTA_AG_SCB;
+};
 
 /* type for sco data */
 typedef struct {
@@ -332,7 +324,7 @@ extern void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event,
                               tBTA_AG_DATA* p_data);
 extern bool bta_ag_hdl_event(BT_HDR* p_msg);
 extern void bta_ag_collision_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
-                                   uint8_t app_id, const RawAddress* peer_addr);
+                                   uint8_t app_id, const RawAddress& peer_addr);
 extern void bta_ag_resume_open(tBTA_AG_SCB* p_scb);
 
 /* SDP functions */

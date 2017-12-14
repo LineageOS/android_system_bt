@@ -22,7 +22,7 @@
  *
  ******************************************************************************/
 
-#include <string.h>
+#include <cstring>
 
 #include "bta_ag_api.h"
 #include "bta_ag_co.h"
@@ -76,7 +76,7 @@ const tBTA_AG_ATCMD_CBACK bta_ag_at_cback_tbl[BTA_AG_NUM_IDX] = {
  ******************************************************************************/
 static void bta_ag_cback_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data,
                               tBTA_AG_STATUS status) {
-  tBTA_AG_OPEN open;
+  tBTA_AG_OPEN open = {};
 
   /* call app callback with open event */
   open.hdr.handle = bta_ag_scb_to_idx(p_scb);
@@ -106,7 +106,7 @@ static void bta_ag_cback_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data,
  *
  ******************************************************************************/
 void bta_ag_register(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
-  tBTA_AG_REGISTER reg;
+  tBTA_AG_REGISTER reg = {};
 
   /* initialize control block */
   p_scb->reg_services = p_data->api_register.services;
@@ -181,7 +181,7 @@ void bta_ag_start_dereg(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_ag_start_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
-  RawAddress pending_bd_addr;
+  RawAddress pending_bd_addr = {};
 
   /* store parameters */
   if (p_data) {
@@ -195,7 +195,7 @@ void bta_ag_start_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
     /* Let the incoming connection goes through.                        */
     /* Issue collision for this scb for now.                            */
     /* We will decide what to do when we find incoming connetion later. */
-    bta_ag_collision_cback(0, BTA_ID_AG, 0, &p_scb->peer_addr);
+    bta_ag_collision_cback(0, BTA_ID_AG, 0, p_scb->peer_addr);
     return;
   }
 
@@ -308,7 +308,7 @@ void bta_ag_disc_fail(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
   p_scb->peer_addr = RawAddress::kEmpty;
 
   /* call open cback w. failure */
-  bta_ag_cback_open(p_scb, NULL, BTA_AG_FAIL_SDP);
+  bta_ag_cback_open(p_scb, nullptr, BTA_AG_FAIL_SDP);
 }
 
 /*******************************************************************************
@@ -353,7 +353,7 @@ void bta_ag_rfc_fail(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
   bta_ag_start_servers(p_scb, p_scb->reg_services);
 
   /* call open cback w. failure */
-  bta_ag_cback_open(p_scb, NULL, BTA_AG_FAIL_RFCOMM);
+  bta_ag_cback_open(p_scb, nullptr, BTA_AG_FAIL_RFCOMM);
 }
 
 /*******************************************************************************
@@ -367,7 +367,7 @@ void bta_ag_rfc_fail(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_ag_rfc_close(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
-  tBTA_AG_CLOSE close;
+  tBTA_AG_CLOSE close = {};
   tBTA_SERVICE_MASK services;
   int i, num_active_conn = 0;
 
@@ -386,8 +386,12 @@ void bta_ag_rfc_close(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
   p_scb->hsp_version = HSP_VERSION_1_2;
   bta_ag_at_reinit(&p_scb->at_cb);
 
-  memset(&(p_scb->peer_hf_indicators), 0, sizeof(p_scb->peer_hf_indicators));
-  memset(&(p_scb->local_hf_indicators), 0, sizeof(p_scb->local_hf_indicators));
+  for (auto& peer_hf_indicator : p_scb->peer_hf_indicators) {
+    peer_hf_indicator = {};
+  }
+  for (auto& local_hf_indicator : p_scb->local_hf_indicators) {
+    local_hf_indicator = {};
+  }
 
   /* stop timers */
   alarm_cancel(p_scb->ring_timer);
@@ -421,7 +425,7 @@ void bta_ag_rfc_close(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
     p_scb->conn_handle = 0;
 
     /* Make sure SCO state is BTA_AG_SCO_SHUTDOWN_ST */
-    bta_ag_sco_shutdown(p_scb, NULL);
+    bta_ag_sco_shutdown(p_scb, nullptr);
 
     /* Check if all the SLCs are down */
     for (i = 0; i < BTA_AG_NUM_SCB; i++) {
@@ -475,7 +479,7 @@ void bta_ag_rfc_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
 
   bta_sys_conn_open(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
 
-  bta_ag_cback_open(p_scb, NULL, BTA_AG_SUCCESS);
+  bta_ag_cback_open(p_scb, nullptr, BTA_AG_SUCCESS);
 
   if (p_scb->conn_service == BTA_AG_HFP) {
     /* if hfp start timer for service level conn */
@@ -501,7 +505,7 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
   uint16_t lcid;
   int i;
   tBTA_AG_SCB *ag_scb, *other_scb;
-  RawAddress dev_addr;
+  RawAddress dev_addr = {};
   int status;
 
   /* set role */
@@ -584,9 +588,7 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
  ******************************************************************************/
 void bta_ag_rfc_data(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
   uint16_t len;
-  char buf[BTA_AG_RFC_READ_MAX];
-
-  memset(buf, 0, BTA_AG_RFC_READ_MAX);
+  char buf[BTA_AG_RFC_READ_MAX] = "";
 
   APPL_TRACE_DEBUG("%s", __func__);
 
@@ -740,7 +742,7 @@ void bta_ag_post_sco_close(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
  ******************************************************************************/
 void bta_ag_svc_conn_open(tBTA_AG_SCB* p_scb,
                           UNUSED_ATTR tBTA_AG_DATA* p_data) {
-  tBTA_AG_CONN evt;
+  tBTA_AG_CONN evt = {};
 
   if (!p_scb->svc_conn) {
     /* set state variable */
@@ -811,7 +813,7 @@ void bta_ag_rcvd_slc_ready(tBTA_AG_SCB* p_scb,
   if (bta_ag_cb.parse_mode == BTA_AG_PASS_THROUGH) {
     /* In pass-through mode, BTA knows that SLC is ready only through call-in.
      */
-    bta_ag_svc_conn_open(p_scb, NULL);
+    bta_ag_svc_conn_open(p_scb, nullptr);
   }
 }
 
@@ -827,7 +829,7 @@ void bta_ag_rcvd_slc_ready(tBTA_AG_SCB* p_scb,
  ******************************************************************************/
 void bta_ag_setcodec(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
   tBTA_AG_PEER_CODEC codec_type = p_data->api_setcodec.codec;
-  tBTA_AG_VAL val;
+  tBTA_AG_VAL val = {};
 
   /* Check if the requested codec type is valid */
   if ((codec_type != BTA_AG_CODEC_NONE) && (codec_type != BTA_AG_CODEC_CVSD) &&

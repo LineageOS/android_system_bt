@@ -25,7 +25,7 @@
  ******************************************************************************/
 
 #include "bta_ag_api.h"
-#include <string.h>
+#include <cstring>
 #include "bt_common.h"
 #include "bta_ag_int.h"
 #include "bta_api.h"
@@ -53,8 +53,8 @@ static const tBTA_SYS_REG bta_ag_reg = {bta_ag_hdl_event, BTA_AgDisable};
 tBTA_STATUS BTA_AgEnable(tBTA_AG_PARSE_MODE parse_mode,
                          tBTA_AG_CBACK* p_cback) {
   /* Error if AG is already enabled, or AG is in the middle of disabling. */
-  for (int idx = 0; idx < BTA_AG_NUM_SCB; idx++) {
-    if (bta_ag_cb.scb[idx].in_use) {
+  for (const tBTA_AG_SCB& scb : bta_ag_cb.scb) {
+    if (scb.in_use) {
       APPL_TRACE_ERROR("BTA_AgEnable: FAILED, AG already enabled.");
       return BTA_FAILURE;
     }
@@ -84,7 +84,7 @@ tBTA_STATUS BTA_AgEnable(tBTA_AG_PARSE_MODE parse_mode,
  * Returns          void
  *
  ******************************************************************************/
-void BTA_AgDisable(void) {
+void BTA_AgDisable() {
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
 
   p_buf->event = BTA_AG_API_DISABLE_EVT;

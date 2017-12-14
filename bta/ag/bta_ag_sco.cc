@@ -54,10 +54,6 @@ static char* bta_ag_sco_state_str(uint8_t state);
 
 static bool sco_allowed = true;
 
-#define BTA_AG_NO_EDR_ESCO                                       \
-  (ESCO_PKT_TYPES_MASK_NO_2_EV3 | ESCO_PKT_TYPES_MASK_NO_3_EV3 | \
-   ESCO_PKT_TYPES_MASK_NO_2_EV5 | ESCO_PKT_TYPES_MASK_NO_3_EV5)
-
 /* sco events */
 enum {
   BTA_AG_SCO_LISTEN_E,       /* listen request */
@@ -89,7 +85,7 @@ static void bta_ag_sco_conn_cback(uint16_t sco_idx) {
   tBTA_AG_SCB* p_scb;
 
   /* match callback to scb; first check current sco scb */
-  if (bta_ag_cb.sco.p_curr_scb != NULL && bta_ag_cb.sco.p_curr_scb->in_use) {
+  if (bta_ag_cb.sco.p_curr_scb != nullptr && bta_ag_cb.sco.p_curr_scb->in_use) {
     handle = bta_ag_scb_to_idx(bta_ag_cb.sco.p_curr_scb);
   }
   /* then check for scb connected to this peer */
@@ -107,7 +103,7 @@ static void bta_ag_sco_conn_cback(uint16_t sco_idx) {
     bta_sys_sendmsg(p_buf);
   } else {
     /* no match found; disconnect sco, init sco variables */
-    bta_ag_cb.sco.p_curr_scb = NULL;
+    bta_ag_cb.sco.p_curr_scb = nullptr;
     bta_ag_cb.sco.state = BTA_AG_SCO_SHUTDOWN_ST;
     BTM_RemoveSco(sco_idx);
   }
@@ -143,7 +139,7 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
       bta_ag_cb.scb[1].state);
 
   /* match callback to scb */
-  if (bta_ag_cb.sco.p_curr_scb != NULL && bta_ag_cb.sco.p_curr_scb->in_use) {
+  if (bta_ag_cb.sco.p_curr_scb != nullptr && bta_ag_cb.sco.p_curr_scb->in_use) {
     /* We only care about callbacks for the active SCO */
     if (bta_ag_cb.sco.p_curr_scb->sco_idx != sco_idx) {
       if (bta_ag_cb.sco.p_curr_scb->sco_idx != 0xFFFF) return;
@@ -202,9 +198,9 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
     APPL_TRACE_DEBUG("no scb for ag_sco_disc_cback");
 
     /* sco could be closed after scb dealloc'ed */
-    if (bta_ag_cb.sco.p_curr_scb != NULL) {
+    if (bta_ag_cb.sco.p_curr_scb != nullptr) {
       bta_ag_cb.sco.p_curr_scb->sco_idx = BTM_INVALID_SCO_INDEX;
-      bta_ag_cb.sco.p_curr_scb = NULL;
+      bta_ag_cb.sco.p_curr_scb = nullptr;
       bta_ag_cb.sco.state = BTA_AG_SCO_SHUTDOWN_ST;
     }
   }
@@ -279,7 +275,7 @@ static void bta_ag_esco_connreq_cback(tBTM_ESCO_EVT event,
   /* Only process connection requests */
   if (event == BTM_ESCO_CONN_REQ_EVT) {
     if ((handle = bta_ag_idx_by_bdaddr(BTM_ReadScoBdAddr(sco_inx))) != 0 &&
-        ((p_scb = bta_ag_scb_by_idx(handle)) != NULL) && p_scb->svc_conn) {
+        ((p_scb = bta_ag_scb_by_idx(handle)) != nullptr) && p_scb->svc_conn) {
       p_scb->sco_idx = sco_inx;
 
       /* If no other SCO active, allow this one */
@@ -302,7 +298,7 @@ static void bta_ag_esco_connreq_cback(tBTM_ESCO_EVT event,
           APPL_TRACE_ERROR(
               "%s: Nothing to remove,so accept Conn Request(sco_inx 0x%04x)",
               __func__, sco_inx);
-          bta_ag_cb.sco.p_xfer_scb = NULL;
+          bta_ag_cb.sco.p_xfer_scb = nullptr;
           bta_ag_cb.sco.state = BTA_AG_SCO_LISTEN_ST;
 
           bta_ag_sco_conn_rsp(p_scb, &p_data->conn_evt);
@@ -313,7 +309,7 @@ static void bta_ag_esco_connreq_cback(tBTM_ESCO_EVT event,
       APPL_TRACE_WARNING(
           "no scb for bta_ag_esco_connreq_cback or no resources");
       BTM_EScoConnRsp(p_data->conn_evt.sco_inx, HCI_ERR_HOST_REJECT_RESOURCES,
-                      (enh_esco_params_t*)NULL);
+                      (enh_esco_params_t*)nullptr);
     }
   } else if (event == BTM_ESCO_CHG_EVT) {
     /* Received a change in the esco link */
@@ -337,11 +333,9 @@ static void bta_ag_esco_connreq_cback(tBTM_ESCO_EVT event,
  *
  ******************************************************************************/
 static void bta_ag_cback_sco(tBTA_AG_SCB* p_scb, uint8_t event) {
-  tBTA_AG_HDR sco;
-
+  tBTA_AG_HDR sco = {};
   sco.handle = bta_ag_scb_to_idx(p_scb);
   sco.app_id = p_scb->app_id;
-
   /* call close cback */
   (*bta_ag_cb.p_cback)(event, (tBTA_AG*)&sco);
 }
@@ -456,7 +450,7 @@ static void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
  ******************************************************************************/
 static void bta_ag_create_pending_sco(tBTA_AG_SCB* p_scb, bool is_local) {
   tBTA_AG_PEER_CODEC esco_codec = p_scb->inuse_codec;
-  enh_esco_params_t params;
+  enh_esco_params_t params = {};
   bta_ag_cb.sco.p_curr_scb = p_scb;
   bta_ag_cb.sco.cur_idx = p_scb->sco_idx;
 
@@ -553,7 +547,7 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
     bta_sys_busy(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
 
     /* Send +BCS to the peer */
-    bta_ag_send_bcs(p_scb, NULL);
+    bta_ag_send_bcs(p_scb, nullptr);
 
     /* Start timer to handle timeout */
     alarm_set_on_mloop(p_scb->codec_negotiation_timer,
@@ -653,7 +647,7 @@ static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
           /* remove listening connection */
           bta_ag_remove_sco(p_scb, false);
 
-          if (p_scb == p_sco->p_curr_scb) p_sco->p_curr_scb = NULL;
+          if (p_scb == p_sco->p_curr_scb) p_sco->p_curr_scb = nullptr;
 
           /* If last SCO instance then finish shutting down */
           if (!bta_ag_other_scb_open(p_scb)) {
@@ -705,7 +699,7 @@ static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
           /* remove listening connection */
           bta_ag_remove_sco(p_scb, false);
 
-          if (p_scb == p_sco->p_curr_scb) p_sco->p_curr_scb = NULL;
+          if (p_scb == p_sco->p_curr_scb) p_sco->p_curr_scb = nullptr;
 
           /* If last SCO instance then finish shutting down */
           if (!bta_ag_other_scb_open(p_scb)) {
@@ -853,7 +847,7 @@ static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
           p_sco->state = BTA_AG_SCO_OPENING_ST;
           p_sco->p_curr_scb = p_sco->p_xfer_scb;
           p_sco->cur_idx = p_sco->p_xfer_scb->sco_idx;
-          p_sco->p_xfer_scb = NULL;
+          p_sco->p_xfer_scb = nullptr;
           break;
 
         default:
@@ -997,14 +991,14 @@ static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
 
         case BTA_AG_SCO_CLOSE_E:
           /* clear xfer scb */
-          p_sco->p_xfer_scb = NULL;
+          p_sco->p_xfer_scb = nullptr;
 
           p_sco->state = BTA_AG_SCO_CLOSING_ST;
           break;
 
         case BTA_AG_SCO_SHUTDOWN_E:
           /* clear xfer scb */
-          p_sco->p_xfer_scb = NULL;
+          p_sco->p_xfer_scb = nullptr;
 
           p_sco->state = BTA_AG_SCO_SHUTTING_ST;
           break;
@@ -1019,7 +1013,7 @@ static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
           /* start codec negotiation */
           p_sco->state = BTA_AG_SCO_CODEC_ST;
           tBTA_AG_SCB* p_cn_scb = p_sco->p_xfer_scb;
-          p_sco->p_xfer_scb = NULL;
+          p_sco->p_xfer_scb = nullptr;
           bta_ag_codec_negotiate(p_cn_scb);
           break;
         }
@@ -1056,7 +1050,7 @@ static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
 
           if (p_scb == p_sco->p_curr_scb) {
             p_sco->p_curr_scb->sco_idx = BTM_INVALID_SCO_INDEX;
-            p_sco->p_curr_scb = NULL;
+            p_sco->p_curr_scb = nullptr;
           }
           break;
 
@@ -1077,7 +1071,7 @@ static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
 
           if (p_scb == p_sco->p_curr_scb) {
             p_sco->p_curr_scb->sco_idx = BTM_INVALID_SCO_INDEX;
-            p_sco->p_curr_scb = NULL;
+            p_sco->p_curr_scb = nullptr;
           }
           break;
 
@@ -1165,7 +1159,8 @@ void bta_ag_sco_open(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
   }
 
   /* if another scb using sco, this is a transfer */
-  if (bta_ag_cb.sco.p_curr_scb != NULL && bta_ag_cb.sco.p_curr_scb != p_scb) {
+  if (bta_ag_cb.sco.p_curr_scb != nullptr &&
+      bta_ag_cb.sco.p_curr_scb != p_scb) {
     event = BTA_AG_SCO_XFER_E;
   }
   /* else it is an open */
@@ -1278,7 +1273,7 @@ void bta_ag_sco_conn_open(tBTA_AG_SCB* p_scb,
 void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb,
                            UNUSED_ATTR tBTA_AG_DATA* p_data) {
   /* clear current scb */
-  bta_ag_cb.sco.p_curr_scb = NULL;
+  bta_ag_cb.sco.p_curr_scb = nullptr;
   p_scb->sco_idx = BTM_INVALID_SCO_INDEX;
 
   /* codec_fallback is set when AG is initiator and connection failed for mSBC.
