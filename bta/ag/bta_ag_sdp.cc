@@ -23,7 +23,7 @@
  *
  ******************************************************************************/
 
-#include <string.h>
+#include <cstring>
 
 #include "bt_common.h"
 #include "bta_ag_api.h"
@@ -75,7 +75,7 @@ static void bta_ag_sdp_cback(uint16_t status, uint8_t idx) {
   APPL_TRACE_DEBUG("%s status:0x%x", __func__, status);
 
   p_scb = bta_ag_scb_by_idx(idx);
-  if (p_scb != NULL) {
+  if (p_scb != nullptr) {
     /* set event according to int/acp */
     if (p_scb->role == BTA_AG_ACP) {
       event = BTA_AG_DISC_ACP_RES_EVT;
@@ -135,8 +135,9 @@ bool bta_ag_add_record(uint16_t service_uuid, char* p_service_name, uint8_t scn,
 
   APPL_TRACE_DEBUG("%s uuid: %x", __func__, service_uuid);
 
-  memset(proto_elem_list, 0,
-         BTA_AG_NUM_PROTO_ELEMS * sizeof(tSDP_PROTOCOL_ELEM));
+  for (auto& proto_element : proto_elem_list) {
+    proto_element = {};
+  }
 
   /* add the protocol element sequence */
   proto_elem_list[0].protocol_uuid = UUID_PROTOCOL_L2CAP;
@@ -164,7 +165,7 @@ bool bta_ag_add_record(uint16_t service_uuid, char* p_service_name, uint8_t scn,
   result &= SDP_AddProfileDescriptorList(sdp_handle, profile_uuid, version);
 
   /* add service name */
-  if (p_service_name != NULL && p_service_name[0] != 0) {
+  if (p_service_name != nullptr && p_service_name[0] != 0) {
     result &= SDP_AddAttribute(
         sdp_handle, ATTR_ID_SERVICE_NAME, TEXT_STR_DESC_TYPE,
         (uint32_t)(strlen(p_service_name) + 1), (uint8_t*)p_service_name);
@@ -287,7 +288,7 @@ void bta_ag_del_records(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
  *
  ******************************************************************************/
 bool bta_ag_sdp_find_attr(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
-  tSDP_DISC_REC* p_rec = NULL;
+  tSDP_DISC_REC* p_rec = nullptr;
   tSDP_DISC_ATTR* p_attr;
   tSDP_PROTOCOL_ELEM pe;
   uint16_t uuid;
@@ -307,13 +308,13 @@ bool bta_ag_sdp_find_attr(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
   while (true) {
     /* get next record; if none found, we're done */
     p_rec = SDP_FindServiceInDb(p_scb->p_disc_db, uuid, p_rec);
-    if (p_rec == NULL) {
+    if (p_rec == nullptr) {
       if (uuid == UUID_SERVCLASS_HEADSET_HS) {
         /* Search again in case the peer device uses the old HSP UUID */
         uuid = UUID_SERVCLASS_HEADSET;
         p_scb->peer_version = HSP_VERSION_1_0;
         p_rec = SDP_FindServiceInDb(p_scb->p_disc_db, uuid, p_rec);
-        if (p_rec == NULL) {
+        if (p_rec == nullptr) {
           break;
         }
       } else
@@ -338,7 +339,7 @@ bool bta_ag_sdp_find_attr(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
     /* get features if HFP */
     if (service & BTA_HFP_SERVICE_MASK) {
       p_attr = SDP_FindAttributeInRec(p_rec, ATTR_ID_SUPPORTED_FEATURES);
-      if (p_attr != NULL) {
+      if (p_attr != nullptr) {
         /* Found attribute. Get value. */
         /* There might be race condition between SDP and BRSF.  */
         /* Do not update if we already received BRSF.           */
@@ -349,7 +350,7 @@ bool bta_ag_sdp_find_attr(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
     {
       p_attr =
           SDP_FindAttributeInRec(p_rec, ATTR_ID_REMOTE_AUDIO_VOLUME_CONTROL);
-      if (p_attr != NULL) {
+      if (p_attr != nullptr) {
         /* Remote volume control of HSP */
         if (p_attr->attr_value.v.u8)
           p_scb->peer_features |= BTA_AG_PEER_FEAT_VOL;
@@ -380,7 +381,6 @@ void bta_ag_do_disc(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
   uint16_t num_uuid = 1;
   uint16_t attr_list[4];
   uint8_t num_attr;
-  bool db_inited = false;
 
   /* HFP initiator; get proto list and features */
   if (service & BTA_HFP_SERVICE_MASK && p_scb->role == BTA_AG_INT) {
@@ -424,8 +424,9 @@ void bta_ag_do_disc(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
   /* allocate buffer for sdp database */
   p_scb->p_disc_db = (tSDP_DISCOVERY_DB*)osi_malloc(BTA_AG_DISC_BUF_SIZE);
   /* set up service discovery database; attr happens to be attr_list len */
-  db_inited = SDP_InitDiscoveryDb(p_scb->p_disc_db, BTA_AG_DISC_BUF_SIZE,
-                                  num_uuid, uuid_list, num_attr, attr_list);
+  bool db_inited =
+      SDP_InitDiscoveryDb(p_scb->p_disc_db, BTA_AG_DISC_BUF_SIZE, num_uuid,
+                          uuid_list, num_attr, attr_list);
 
   if (db_inited) {
     /*Service discovery not initiated */
@@ -436,9 +437,9 @@ void bta_ag_do_disc(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
 
   if (!db_inited) {
     /*free discover db */
-    bta_ag_free_db(p_scb, NULL);
+    bta_ag_free_db(p_scb, nullptr);
     /* sent failed event */
-    bta_ag_sm_execute(p_scb, BTA_AG_DISC_FAIL_EVT, NULL);
+    bta_ag_sm_execute(p_scb, BTA_AG_DISC_FAIL_EVT, nullptr);
   }
 }
 

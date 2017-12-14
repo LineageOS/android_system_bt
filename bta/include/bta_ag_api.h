@@ -472,7 +472,7 @@ tBTA_STATUS BTA_AgEnable(tBTA_AG_PARSE_MODE parse_mode, tBTA_AG_CBACK* p_cback);
  * Returns          void
  *
  ******************************************************************************/
-void BTA_AgDisable(void);
+void BTA_AgDisable();
 
 /*******************************************************************************
  *

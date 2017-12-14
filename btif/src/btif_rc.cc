@@ -347,7 +347,6 @@ static btrc_ctrl_callbacks_t* bt_rc_ctrl_callbacks = NULL;
 /*****************************************************************************
  *  Externs
  *****************************************************************************/
-extern bool btif_hf_call_terminated_recently();
 extern bool check_cod(const RawAddress* remote_bdaddr, uint32_t cod);
 
 /*****************************************************************************

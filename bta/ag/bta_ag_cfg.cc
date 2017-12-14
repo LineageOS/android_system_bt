@@ -62,11 +62,11 @@
 const tBTA_AG_HF_IND bta_ag_local_hf_ind_cfg[] = {
     /* The first row contains the number of indicators. Need to be updated
        accordingly */
-    {BTA_AG_NUM_LOCAL_HF_IND, 0, 0, 0, 0},
+    {BTA_AG_NUM_LOCAL_HF_IND, false, false, 0, 0},
 
-    {1, 1, 1, 0,
+    {1, true, true, 0,
      1}, /* Enhanced Driver Status, supported, enabled, range 0 ~ 1 */
-    {2, 1, 1, 0,
+    {2, true, true, 0,
      100} /* Battery Level Status, supported, enabled, range 0 ~ 100 */
 };
 
