@@ -623,6 +623,12 @@ static int a2dp_read_output_audio_config(
   }
 
   INFO(
+      "got output codec config (update_stream_config=%s): "
+      "sample_rate=0x%x bits_per_sample=0x%x channel_mode=0x%x",
+      update_stream_config ? "true" : "false", codec_config->sample_rate,
+      codec_config->bits_per_sample, codec_config->channel_mode);
+
+  INFO(
       "got output codec capability: sample_rate=0x%x bits_per_sample=0x%x "
       "channel_mode=0x%x",
       codec_capability->sample_rate, codec_capability->bits_per_sample,
