@@ -152,6 +152,8 @@ static btif_hf_cb_t btif_hf_cb[BTIF_HF_NUM_CB];
 
 bool btif_conf_hf_force_wbs = BTIF_HF_WBS_PREFERRED;
 
+using base::Bind;
+
 /*******************************************************************************
  *  Functions
  ******************************************************************************/
@@ -632,38 +634,6 @@ static void bte_hf_evt(tBTA_AG_EVT event, tBTA_AG* p_data) {
   ASSERTC(status == BT_STATUS_SUCCESS, "context transfer failed", status);
 }
 
-/*******************************************************************************
- *
- * Function         btif_in_hf_generic_evt
- *
- * Description     Processes generic events to be sent to JNI that are not
- *                      triggered from the BTA.
- *                      Always runs in BTIF context
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btif_in_hf_generic_evt(uint16_t event, char* p_param) {
-  int idx = btif_hf_idx_by_bdaddr((RawAddress*)p_param);
-
-  BTIF_TRACE_EVENT("%s: event=%d", __func__, event);
-
-  if ((idx < 0) || (idx >= BTIF_HF_NUM_CB)) {
-    BTIF_TRACE_ERROR("%s: Invalid index %d", __func__, idx);
-    return;
-  }
-
-  switch (event) {
-    case BTIF_HFP_CB_AUDIO_CONNECTING: {
-      HAL_CBACK(bt_hf_callbacks, audio_state_cb, BTHF_AUDIO_STATE_CONNECTING,
-                &btif_hf_cb[idx].connected_bda);
-    } break;
-    default: {
-      BTIF_TRACE_WARNING("%s : Unknown event 0x%x", __func__, event);
-    } break;
-  }
-}
-
 static bool inband_ringing_property_enabled() {
   char inband_ringing_flag[PROPERTY_VALUE_MAX] = {0};
   osi_property_get("persist.bluetooth.enableinbandringing", inband_ringing_flag,
@@ -811,8 +781,12 @@ static bt_status_t connect_audio(RawAddress* bd_addr) {
 
     /* Inform the application that the audio connection has been initiated
      * successfully */
-    btif_transfer_context(btif_in_hf_generic_evt, BTIF_HFP_CB_AUDIO_CONNECTING,
-                          (char*)bd_addr, sizeof(RawAddress), nullptr);
+    do_in_jni_thread(base::Bind(
+        [](RawAddress connected_address) {
+          HAL_CBACK(bt_hf_callbacks, audio_state_cb,
+                    BTHF_AUDIO_STATE_CONNECTING, &connected_address);
+        },
+        btif_hf_cb[idx].connected_bda));
     return BT_STATUS_SUCCESS;
   }
 
