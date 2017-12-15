@@ -427,11 +427,17 @@ static void event_packet_ready(void* pkt) {
 static void transmit_fragment(BT_HDR* packet, bool send_transmit_finished) {
   btsnoop->capture(packet, false);
 
+  // HCI command packets are freed on a different thread when the matching
+  // event is received. Check packet->event before sending to avoid a race.
+  bool free_after_transmit =
+      (packet->event & MSG_EVT_MASK) != MSG_STACK_TO_HC_HCI_CMD &&
+      send_transmit_finished;
+
   hci_transmit(packet);
 
-  uint16_t event = packet->event & MSG_EVT_MASK;
-  if (event != MSG_STACK_TO_HC_HCI_CMD && send_transmit_finished)
+  if (free_after_transmit) {
     buffer_allocator->free(packet);
+  }
 }
 
 static void fragmenter_transmit_finished(BT_HDR* packet,
