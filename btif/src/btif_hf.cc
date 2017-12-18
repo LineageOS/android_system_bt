@@ -1034,6 +1034,25 @@ static bt_status_t set_sco_allowed(bool value) {
   return BT_STATUS_SUCCESS;
 }
 
+static bt_status_t send_bsir(bool value, RawAddress* bd_addr) {
+  CHECK_BTHF_INIT();
+  int idx = btif_hf_idx_by_bdaddr(bd_addr);
+  if ((idx < 0) || (idx >= BTIF_HF_NUM_CB)) {
+    BTIF_TRACE_ERROR("%s: Invalid index %d for %s", __func__, idx,
+                     bd_addr->ToString().c_str());
+    return BT_STATUS_FAIL;
+  }
+  if (!is_connected(bd_addr)) {
+    BTIF_TRACE_ERROR("%s: Device not connected %s", __func__,
+                     bd_addr->ToString().c_str());
+    return BT_STATUS_FAIL;
+  }
+  tBTA_AG_RES_DATA ag_result = {};
+  ag_result.state = value;
+  BTA_AgResult(btif_hf_cb[idx].handle, BTA_AG_INBAND_RING_RES, &ag_result);
+  return BT_STATUS_SUCCESS;
+}
+
 /*******************************************************************************
  *
  * Function         formatted_at_response
@@ -1453,6 +1472,7 @@ static const bthf_interface_t bthfInterface = {
     phone_state_change,
     cleanup,
     set_sco_allowed,
+    send_bsir,
 };
 
 /*******************************************************************************
