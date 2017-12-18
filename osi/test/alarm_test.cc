@@ -347,7 +347,8 @@ TEST_F(AlarmTest, test_callback_ordering_on_mloop) {
 
   for (int i = 0; i < 100; i++) alarm_free(alarms[i]);
 
-  message_loop_->PostTask(FROM_HERE, run_loop_->QuitWhenIdleClosure());
+  message_loop_->task_runner()->PostTask(FROM_HERE,
+                                         run_loop_->QuitWhenIdleClosure());
   thread_free(message_loop_thread_);
   EXPECT_FALSE(WakeLockHeld());
 }
