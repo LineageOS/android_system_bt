@@ -46,6 +46,7 @@
 #include "port_api.h"
 #include "rfcdefs.h"
 #include "sdp_api.h"
+#include "stack/l2cap/l2c_int.h"
 #include "utl.h"
 
 #include "osi/include/osi.h"
@@ -687,6 +688,10 @@ void bta_jv_get_channel_id(
       }
       break;
     case BTA_JV_CONN_TYPE_L2CAP_LE:
+      psm = L2CA_AllocateLePSM();
+      if (psm == 0) {
+        LOG(ERROR) << __func__ << ": Error: No free LE PSM available";
+      }
       break;
     default:
       break;
@@ -715,7 +720,8 @@ void bta_jv_free_scn(int32_t type /* One of BTA_JV_CONN_TYPE_ */,
       bta_jv_set_free_psm(scn);
       break;
     case BTA_JV_CONN_TYPE_L2CAP_LE:
-      // TODO: Not yet implemented...
+      VLOG(2) << __func__ << ": type=BTA_JV_CONN_TYPE_L2CAP_LE. psm=" << scn;
+      L2CA_FreeLePSM(scn);
       break;
     default:
       break;
