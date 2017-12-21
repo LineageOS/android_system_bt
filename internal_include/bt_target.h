@@ -766,7 +766,7 @@
 
 /* The MTU size for the L2CAP configuration. */
 #ifndef SDP_MTU_SIZE
-#define SDP_MTU_SIZE 672
+#define SDP_MTU_SIZE 1024
 #endif
 
 /* The flush timeout for the L2CAP configuration. */
