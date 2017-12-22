@@ -25,6 +25,7 @@
  ******************************************************************************/
 
 #include <string.h>
+#include <base/logging.h>
 
 #include "bt_utils.h"
 #include "bta_api.h"
@@ -331,7 +332,7 @@ void bta_hf_client_do_disc(tBTA_HF_CLIENT_CB* client_cb) {
 
   if (!db_inited) {
     /*free discover db */
-    bta_hf_client_free_db(NULL);
+    osi_free_and_reset((void**)&client_cb->p_disc_db);
     /* sent failed event */
     tBTA_HF_CLIENT_DATA msg;
     msg.hdr.layer_specific = client_cb->handle;
@@ -350,6 +351,7 @@ void bta_hf_client_do_disc(tBTA_HF_CLIENT_CB* client_cb) {
  *
  ******************************************************************************/
 void bta_hf_client_free_db(tBTA_HF_CLIENT_DATA* p_data) {
+  CHECK(p_data != NULL);
   tBTA_HF_CLIENT_CB* client_cb =
       bta_hf_client_find_cb_by_handle(p_data->hdr.layer_specific);
   if (client_cb == NULL) {
