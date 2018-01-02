@@ -40,7 +40,6 @@ static_library("bta") {
     "dm/bta_dm_ci.cc",
     "dm/bta_dm_main.cc",
     "dm/bta_dm_pm.cc",
-    "dm/bta_dm_sco.cc",
     "gatt/bta_gattc_act.cc",
     "gatt/bta_gattc_api.cc",
     "gatt/bta_gattc_cache.cc",
