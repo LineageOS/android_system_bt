@@ -29,9 +29,6 @@
 #include "bta_ag_co.h"
 #include "bta_ag_int.h"
 #include "bta_api.h"
-#if (BTM_SCO_HCI_INCLUDED == TRUE)
-#include "bta_dm_co.h"
-#endif
 #include "btm_api.h"
 #include "device/include/controller.h"
 #include "device/include/esco_parameters.h"
@@ -148,14 +145,6 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
   }
 
   if (handle != 0) {
-#if (BTM_SCO_HCI_INCLUDED == TRUE)
-
-    tBTM_STATUS status =
-        BTM_ConfigScoPath(ESCO_DATA_PATH_PCM, NULL, NULL, true);
-    APPL_TRACE_DEBUG("%s: sco close config status = %d", __func__, status);
-    /* SCO clean up here */
-    bta_dm_sco_co_close();
-#endif
 
     /* Restore settings */
     if (bta_ag_cb.sco.p_curr_scb->inuse_codec == BTA_AG_CODEC_MSBC) {
@@ -205,27 +194,7 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
     }
   }
 }
-#if (BTM_SCO_HCI_INCLUDED == TRUE)
-/*******************************************************************************
- *
- * Function         bta_ag_sco_read_cback
- *
- * Description      Callback function is the callback function for incoming
- *                  SCO data over HCI.
- *
- * Returns          void
- *
- ******************************************************************************/
-static void bta_ag_sco_read_cback(uint16_t sco_inx, BT_HDR* p_data,
-                                  tBTM_SCO_DATA_FLAG status) {
-  if (status != BTM_SCO_DATA_CORRECT) {
-    APPL_TRACE_DEBUG("%s: status %d", __func__, status);
-  }
 
-  /* Callout function must free the data. */
-  bta_dm_sco_co_in_data(p_data, status);
-}
-#endif
 /*******************************************************************************
  *
  * Function         bta_ag_remove_sco
@@ -479,13 +448,6 @@ static void bta_ag_create_pending_sco(tBTA_AG_SCB* p_scb, bool is_local) {
         BTM_WriteVoiceSettings(BTM_VOICE_SETTING_CVSD);
     }
 
-#if (BTM_SCO_HCI_INCLUDED == TRUE)
-    /* initialize SCO setup, no voice setting for AG, data rate <==> sample
-     * rate */
-    BTM_ConfigScoPath(params.input_data_path, bta_ag_sco_read_cback, NULL,
-                      TRUE);
-#endif
-
     tBTM_STATUS status = BTM_CreateSco(
         &p_scb->peer_addr, true, params.packet_types, &p_scb->sco_idx,
         bta_ag_sco_conn_cback, bta_ag_sco_disc_cback);
@@ -574,9 +536,6 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
  ******************************************************************************/
 static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
   tBTA_AG_SCO_CB* p_sco = &bta_ag_cb.sco;
-#if (BTM_SCO_HCI_INCLUDED == TRUE)
-  BT_HDR* p_buf;
-#endif
 
 #if (BTA_AG_SCO_DEBUG == TRUE)
   uint8_t in_state = p_sco->state;
@@ -591,23 +550,6 @@ static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
   if (event != BTA_AG_SCO_CI_DATA_E) {
     APPL_TRACE_EVENT("%s: SCO Index 0x%04x, State %d, Event %d", __func__,
                      p_scb->sco_idx, p_sco->state, event);
-  }
-#endif
-
-#if (BTM_SCO_HCI_INCLUDED == TRUE)
-  if (event == BTA_AG_SCO_CI_DATA_E) {
-    while (true) {
-      bta_dm_sco_co_out_data(&p_buf);
-      if (p_buf) {
-        if (p_sco->state == BTA_AG_SCO_OPEN_ST)
-          BTM_WriteScoData(p_sco->p_curr_scb->sco_idx, p_buf);
-        else
-          osi_free(p_buf);
-      } else
-        break;
-    }
-
-    return;
   }
 #endif
 
@@ -1247,12 +1189,6 @@ void bta_ag_sco_conn_open(tBTA_AG_SCB* p_scb,
 
   bta_sys_sco_open(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
 
-#if (BTM_SCO_HCI_INCLUDED == TRUE)
-  /* open SCO codec if SCO is routed through transport */
-  bta_dm_sco_co_open(bta_ag_scb_to_idx(p_scb), BTA_SCO_OUT_PKT_SIZE,
-                     BTA_AG_CI_SCO_DATA_EVT);
-#endif
-
   /* call app callback */
   bta_ag_cback_sco(p_scb, BTA_AG_AUDIO_OPEN_EVT);
 
@@ -1328,10 +1264,6 @@ void bta_ag_sco_conn_rsp(tBTA_AG_SCB* p_scb,
     /* tell sys to stop av if any */
     bta_sys_sco_use(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
     /* When HS initiated SCO, it cannot be WBS. */
-#if (BTM_SCO_HCI_INCLUDED == TRUE)
-    /* Configure the transport being used */
-    BTM_ConfigScoPath(resp.input_data_path, bta_ag_sco_read_cback, NULL, TRUE);
-#endif
   }
 
   /* If SCO open was initiated from HS, it must be CVSD */
@@ -1352,9 +1284,6 @@ void bta_ag_sco_conn_rsp(tBTA_AG_SCB* p_scb,
  ******************************************************************************/
 void bta_ag_ci_sco_data(UNUSED_ATTR tBTA_AG_SCB* p_scb,
                         UNUSED_ATTR tBTA_AG_DATA* p_data) {
-#if (BTM_SCO_HCI_INCLUDED == TRUE)
-  bta_ag_sco_event(p_scb, BTA_AG_SCO_CI_DATA_E);
-#endif
 }
 
 void bta_ag_set_sco_allowed(tBTA_AG_DATA* p_data) {
