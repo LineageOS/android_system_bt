@@ -1379,44 +1379,6 @@ extern void BTA_DmCloseACL(const RawAddress& bd_addr, bool remove_dev,
 extern void bta_dmexecutecallback(tBTA_DM_EXEC_CBACK* p_callback,
                                   void* p_param);
 
-#if (BTM_SCO_HCI_INCLUDED == TRUE)
-/*******************************************************************************
- *
- * Function         BTA_DmPcmInitSamples
- *
- * Description      initialize the down sample converter.
- *
- *                  src_sps: original samples per second (source audio data)
- *                            (ex. 44100, 48000)
- *                  bits: number of bits per pcm sample (16)
- *                  n_channels: number of channels (i.e. mono(1), stereo(2)...)
- *
- * Returns          none
- *
- ******************************************************************************/
-extern void BTA_DmPcmInitSamples(uint32_t src_sps, uint32_t bits,
-                                 uint32_t n_channels);
-
-/*******************************************************************************
- * Function         BTA_DmPcmResample
- *
- * Description      Down sampling utility to convert higher sampling rate into
- *                  8K/16bits
- *                  PCM samples.
- *
- * Parameters       p_src: pointer to the buffer where the original sampling PCM
- *                              are stored.
- *                  in_bytes:  Length of the input PCM sample buffer in byte.
- *                  p_dst: pointer to the buffer which is to be used to store
- *                         the converted PCM samples.
- *
- *
- * Returns          int32_t: number of samples converted.
- *
- ******************************************************************************/
-extern int32_t BTA_DmPcmResample(void* p_src, uint32_t in_bytes, void* p_dst);
-#endif
-
 /* BLE related API functions */
 /*******************************************************************************
  *
