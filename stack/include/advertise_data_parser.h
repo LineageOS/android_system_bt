@@ -57,12 +57,7 @@ class AdvertiseDataParser {
       // end of the packet. Otherwise i.e. gluing scan response to advertise
       // data will result in data with zero padding in the middle.
       if (len == 0) {
-        size_t zeros_start = position;
-        for (size_t i = position + 1; i < ad_len; i++) {
-          if (ad[i] != 0) return;
-        }
-
-        ad.erase(ad.begin() + zeros_start, ad.end());
+        ad.erase(ad.begin() + position, ad.end());
         return;
       }
 
