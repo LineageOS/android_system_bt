@@ -451,12 +451,6 @@ using tBTM_BLE_PF_STATUS_CBACK =
 using tBTM_BLE_PF_PARAM_CB = base::Callback<void(
     uint8_t /* avbl_space */, uint8_t /* action */, uint8_t /* status */)>;
 
-typedef union {
-  uint16_t uuid16_mask;
-  uint32_t uuid32_mask;
-  uint8_t uuid128_mask[bluetooth::Uuid::kNumBytes128];
-} tBTM_BLE_PF_COND_MASK;
-
 /* per device filter + one generic filter indexed by 0 */
 #define BTM_BLE_MAX_FILTER_COUNTER (BTM_BLE_MAX_ADDR_FILTER + 1)
 
