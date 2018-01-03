@@ -53,31 +53,6 @@ void btif_to_bta_response(tGATTS_RSP* p_dest, btgatt_response_t* p_src) {
   memcpy(p_dest->attr_value.value, p_src->attr_value.value, GATT_MAX_ATTR_LEN);
 }
 
-void btif_to_bta_uuid_mask(tBTM_BLE_PF_COND_MASK* p_mask,
-                           const bluetooth::Uuid& uuid_mask,
-                           const bluetooth::Uuid& svc_uuid) {
-  // we use svc_uuid for uuid_mask length picking ?
-  int uuid_len = svc_uuid.GetShortestRepresentationSize();
-
-  switch (uuid_len) {
-    case Uuid::kNumBytes16:
-      p_mask->uuid16_mask = uuid_mask.As16Bit();
-      break;
-
-    case Uuid::kNumBytes32:
-      p_mask->uuid32_mask = uuid_mask.As32Bit();
-      break;
-
-    case Uuid::kNumBytes128:
-      memcpy(p_mask->uuid128_mask, uuid_mask.To128BitLE().data(),
-             Uuid::kNumBytes128);
-      break;
-
-    default:
-      break;
-  }
-}
-
 /*******************************************************************************
  * Encrypted link map handling
  ******************************************************************************/

@@ -25,9 +25,6 @@
 #include "bta/include/bta_gatt_api.h"
 
 void btif_to_bta_response(tGATTS_RSP* p_dest, btgatt_response_t* p_src);
-void btif_to_bta_uuid_mask(tBTM_BLE_PF_COND_MASK* p_mask,
-                           const bluetooth::Uuid& p_src,
-                           const bluetooth::Uuid& svc_uuid);
 
 void btif_gatt_check_encrypted_link(RawAddress bd_addr,
                                     tGATT_TRANSPORT transport);
