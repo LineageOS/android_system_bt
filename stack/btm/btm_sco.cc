@@ -69,21 +69,8 @@ static uint16_t btm_sco_voice_settings_to_legacy(enh_esco_params_t* p_parms);
  * Returns          void
  *
  ******************************************************************************/
-#if (BTM_SCO_HCI_INCLUDED == TRUE && BTM_MAX_SCO_LINKS > 0)
-void btm_sco_flush_sco_data(uint16_t sco_inx) {
-  tSCO_CONN* p;
-  BT_HDR* p_buf;
-
-  if (sco_inx < BTM_MAX_SCO_LINKS) {
-    p = &btm_cb.sco_cb.sco_db[sco_inx];
-    while ((p_buf = (BT_HDR*)fixed_queue_try_dequeue(p->xmit_data_q)) != NULL)
-      osi_free(p_buf);
-  }
-}
-}
-#else
 void btm_sco_flush_sco_data(UNUSED_ATTR uint16_t sco_inx) {}
-#endif
+
 /*******************************************************************************
  *
  * Function         btm_sco_init
@@ -94,10 +81,6 @@ void btm_sco_flush_sco_data(UNUSED_ATTR uint16_t sco_inx) {}
  *
  ******************************************************************************/
 void btm_sco_init(void) {
-#if (BTM_SCO_HCI_INCLUDED == TRUE)
-  for (int i = 0; i < BTM_MAX_SCO_LINKS; i++)
-    btm_cb.sco_cb.sco_db[i].xmit_data_q = fixed_queue_new(SIZE_MAX);
-#endif
   /* Initialize nonzero defaults */
   btm_cb.sco_cb.sco_disc_reason = BTM_INVALID_SCO_DISC_REASON;
   btm_cb.sco_cb.def_esco_parms = esco_parameters_for_codec(ESCO_CODEC_CVSD);
@@ -205,35 +188,6 @@ static void btm_esco_conn_rsp(uint16_t sco_inx, uint8_t hci_status,
 #endif
 }
 
-#if (BTM_SCO_HCI_INCLUDED == TRUE)
-/*******************************************************************************
- *
- * Function         btm_sco_check_send_pkts
- *
- * Description      This function is called to check if it can send packets
- *                  to the Host Controller.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_sco_check_send_pkts(uint16_t sco_inx) {
-  tSCO_CB* p_cb = &btm_cb.sco_cb;
-  tSCO_CONN* p_ccb = &p_cb->sco_db[sco_inx];
-
-  /* If there is data to send, send it now */
-  BT_HDR* p_buf;
-  while ((p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_ccb->xmit_data_q)) !=
-         NULL) {
-#if (BTM_SCO_HCI_DEBUG == TRUE)
-    BTM_TRACE_DEBUG("btm: [%d] buf in xmit_data_q",
-                    fixed_queue_length(p_ccb->xmit_data_q) + 1);
-#endif
-
-    HCI_SCO_DATA_TO_LOWER(p_buf);
-  }
-}
-#endif /* BTM_SCO_HCI_INCLUDED == TRUE */
-
 /*******************************************************************************
  *
  * Function         btm_route_sco_data
@@ -244,36 +198,7 @@ void btm_sco_check_send_pkts(uint16_t sco_inx) {
  *
  ******************************************************************************/
 void btm_route_sco_data(BT_HDR* p_msg) {
-#if (BTM_SCO_HCI_INCLUDED == TRUE)
-  uint16_t sco_inx, handle;
-  uint8_t* p = (uint8_t*)(p_msg + 1) + p_msg->offset;
-  uint8_t pkt_size = 0;
-  uint8_t pkt_status = 0;
-
-  /* Extract Packet_Status_Flag and handle */
-  STREAM_TO_UINT16(handle, p);
-  pkt_status = HCID_GET_EVENT(handle);
-  handle = HCID_GET_HANDLE(handle);
-
-  STREAM_TO_UINT8(pkt_size, p);
-
-  sco_inx = btm_find_scb_by_handle(handle);
-  if (sco_inx != BTM_MAX_SCO_LINKS) {
-    /* send data callback */
-    if (!btm_cb.sco_cb.p_data_cb)
-      /* if no data callback registered,  just free the buffer  */
-      osi_free(p_msg);
-    else {
-      (*btm_cb.sco_cb.p_data_cb)(sco_inx, p_msg,
-                                 (tBTM_SCO_DATA_FLAG)pkt_status);
-    }
-  } else /* no mapping handle SCO connection is active, free the buffer */
-  {
-    osi_free(p_msg);
-  }
-#else
   osi_free(p_msg);
-#endif
 }
 
 /*******************************************************************************
@@ -297,58 +222,10 @@ void btm_route_sco_data(BT_HDR* p_msg) {
  *
  *
  ******************************************************************************/
-#if (BTM_SCO_HCI_INCLUDED == TRUE && BTM_MAX_SCO_LINKS > 0)
-tBTM_STATUS BTM_WriteScoData(uint16_t sco_inx, BT_HDR* p_buf) {
-  tSCO_CONN* p_ccb = &btm_cb.sco_cb.sco_db[sco_inx];
-  uint8_t* p;
-  tBTM_STATUS status = BTM_SUCCESS;
-
-  if (sco_inx < BTM_MAX_SCO_LINKS && btm_cb.sco_cb.p_data_cb &&
-      p_ccb->state == SCO_ST_CONNECTED) {
-    /* Ensure we have enough space in the buffer for the SCO and HCI headers */
-    if (p_buf->offset < HCI_SCO_PREAMBLE_SIZE) {
-      BTM_TRACE_ERROR("BTM SCO - cannot send buffer, offset: %d",
-                      p_buf->offset);
-      osi_free(p_buf);
-      status = BTM_ILLEGAL_VALUE;
-    } else /* write HCI header */
-    {
-      /* Step back 3 bytes to add the headers */
-      p_buf->offset -= HCI_SCO_PREAMBLE_SIZE;
-      /* Set the pointer to the beginning of the data */
-      p = (uint8_t*)(p_buf + 1) + p_buf->offset;
-      /* add HCI handle */
-      UINT16_TO_STREAM(p, p_ccb->hci_handle);
-      /* only sent the first BTM_SCO_DATA_SIZE_MAX bytes data if more than max,
-         and set warning status */
-      if (p_buf->len > BTM_SCO_DATA_SIZE_MAX) {
-        p_buf->len = BTM_SCO_DATA_SIZE_MAX;
-        status = BTM_SCO_BAD_LENGTH;
-      }
-
-      UINT8_TO_STREAM(p, (uint8_t)p_buf->len);
-      p_buf->len += HCI_SCO_PREAMBLE_SIZE;
-
-      fixed_queue_enqueue(p_ccb->xmit_data_q, p_buf);
-
-      btm_sco_check_send_pkts(sco_inx);
-    }
-  } else {
-    osi_free(p_buf);
-
-    BTM_TRACE_ERROR("%s:invalid sco index: %d at state [%d]", __func__, sco_inx,
-                    btm_cb.sco_cb.sco_db[sco_inx].state);
-    status = BTM_UNKNOWN_ADDR;
-  }
-
-  return status;
-}
-#else
 tBTM_STATUS BTM_WriteScoData(UNUSED_ATTR uint16_t sco_inx,
                              UNUSED_ATTR BT_HDR* p_buf) {
   return (BTM_NO_RESOURCES);
 }
-#endif
 
 #if (BTM_MAX_SCO_LINKS > 0)
 /*******************************************************************************
