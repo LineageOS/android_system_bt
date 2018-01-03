@@ -1,0 +1,26 @@
+cc_library_static {
+    name: "lib-bt-packets-avrcp",
+    export_include_dirs: ["."],
+    host_supported: true,
+    srcs: [
+        "avrcp_packet.cc",
+        "vendor_packet.cc",
+        "capabilities_packet.cc",
+        "get_element_attributes_packet.cc",
+        "get_play_status_packet.cc",
+        "pass_through_packet.cc",
+        "register_notification_packet.cc",
+        "avrcp_reject_packet.cc",
+    ],
+    shared_libs: [
+        "libchrome",
+    ],
+    static_libs: [
+        "lib-bt-packets-base",
+    ],
+    cflags: [
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+    ],
+}
