@@ -97,7 +97,7 @@ static void btif_a2dp_recv_ctrl_data(void) {
        * Some headsets such as "Sony MW600", don't allow AVDTP START
        * while in a call, and respond with BAD_STATE.
        */
-      if (!btif_hf_is_call_idle()) {
+      if (!bluetooth::headset::IsCallIdle()) {
         btif_a2dp_command_ack(A2DP_CTRL_ACK_INCALL_FAILURE);
         break;
       }
