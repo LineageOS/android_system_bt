@@ -279,11 +279,6 @@
 #define BTM_SCO_INCLUDED TRUE /* TRUE includes SCO code */
 #endif
 
-/* Includes SCO if TRUE */
-#ifndef BTM_SCO_HCI_INCLUDED
-#define BTM_SCO_HCI_INCLUDED FALSE /* TRUE includes SCO over HCI code */
-#endif
-
 /*  This is used to work around a controller bug that doesn't like Disconnect
  *  issued while there is a role switch in progress
 */

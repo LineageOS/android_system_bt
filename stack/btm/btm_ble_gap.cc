@@ -2013,7 +2013,8 @@ static void btm_ble_process_adv_pkt_cont(
   bool is_start =
       ble_evt_type_is_legacy(evt_type) && is_scannable && !is_scan_resp;
 
-  if (is_start) AdvertiseDataParser::RemoveTrailingZeros(tmp);
+  if (ble_evt_type_is_legacy(evt_type))
+    AdvertiseDataParser::RemoveTrailingZeros(tmp);
 
   // We might have send scan request to this device before, but didn't get the
   // response. In such case make sure data is put at start, not appended to
