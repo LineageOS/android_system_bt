@@ -33,10 +33,10 @@
 #include <unistd.h>
 
 #include <hardware/bluetooth.h>
+#include <hardware/bluetooth_headset_interface.h>
 #include <hardware/bt_av.h>
 #include <hardware/bt_gatt.h>
 #include <hardware/bt_hd.h>
-#include <hardware/bt_hf.h>
 #include <hardware/bt_hf_client.h>
 #include <hardware/bt_hh.h>
 #include <hardware/bt_hl.h>
@@ -48,12 +48,13 @@
 
 #include "bt_utils.h"
 #include "bta/include/bta_hf_client_api.h"
-#include "btif/include/btif_debug_btsnoop.h"
-#include "btif/include/btif_debug_conn.h"
 #include "btif_a2dp.h"
 #include "btif_api.h"
 #include "btif_config.h"
 #include "btif_debug.h"
+#include "btif_debug_btsnoop.h"
+#include "btif_debug_conn.h"
+#include "btif_hf.h"
 #include "btif_storage.h"
 #include "btsnoop.h"
 #include "btsnoop_mem.h"
@@ -82,8 +83,6 @@ bool restricted_mode = false;
 
 /* list all extended interfaces here */
 
-/* handsfree profile */
-extern const bthf_interface_t* btif_hf_get_interface();
 /* handsfree profile - client */
 extern const bthf_client_interface_t* btif_hf_client_get_interface();
 /* advanced audio profile */
@@ -333,7 +332,7 @@ static const void* get_profile_interface(const char* profile_id) {
 
   /* check for supported profile interfaces */
   if (is_profile(profile_id, BT_PROFILE_HANDSFREE_ID))
-    return btif_hf_get_interface();
+    return bluetooth::headset::GetInterface();
 
   if (is_profile(profile_id, BT_PROFILE_HANDSFREE_CLIENT_ID))
     return btif_hf_client_get_interface();
