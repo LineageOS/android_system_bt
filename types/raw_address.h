@@ -50,6 +50,10 @@ class RawAddress final {
   // returns false. Otherwise, it returns true.
   static bool FromString(const std::string& from, RawAddress& to);
 
+  // Copies |from| raw Bluetooth address octets to the local object.
+  // Returns the number of copied octets - should be always RawAddress::kLength
+  size_t FromOctets(const uint8_t* from);
+
   static bool IsValidAddress(const std::string& address);
 
   static const RawAddress kEmpty;  // 00:00:00:00:00:00
