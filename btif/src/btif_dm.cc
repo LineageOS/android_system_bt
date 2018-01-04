@@ -52,6 +52,7 @@
 #include "btif_config.h"
 #include "btif_dm.h"
 #include "btif_hd.h"
+#include "btif_hf.h"
 #include "btif_hh.h"
 #include "btif_sdp.h"
 #include "btif_storage.h"
@@ -240,7 +241,6 @@ static void btif_stats_add_bond_event(const RawAddress& bd_addr,
 /******************************************************************************
  *  Externs
  *****************************************************************************/
-extern bt_status_t btif_hf_execute_service(bool b_enable);
 extern bt_status_t btif_av_execute_service(bool b_enable);
 extern bt_status_t btif_av_sink_execute_service(bool b_enable);
 extern bt_status_t btif_hh_execute_service(bool b_enable);
@@ -298,7 +298,7 @@ bt_status_t btif_in_execute_service_request(tBTA_SERVICE_ID service_id,
   switch (service_id) {
     case BTA_HFP_SERVICE_ID:
     case BTA_HSP_SERVICE_ID: {
-      btif_hf_execute_service(b_enable);
+      bluetooth::headset::ExecuteService(b_enable);
     } break;
     case BTA_A2DP_SOURCE_SERVICE_ID: {
       btif_av_execute_service(b_enable);
