@@ -23,6 +23,21 @@
 static const char* test_addr = "12:34:56:78:9a:bc";
 static const char* test_addr2 = "cb:a9:87:65:43:21";
 
+TEST(RawAddressUnittest, test_constructor_array) {
+  RawAddress bdaddr({0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc});
+
+  ASSERT_EQ(0x12, bdaddr.address[0]);
+  ASSERT_EQ(0x34, bdaddr.address[1]);
+  ASSERT_EQ(0x56, bdaddr.address[2]);
+  ASSERT_EQ(0x78, bdaddr.address[3]);
+  ASSERT_EQ(0x9A, bdaddr.address[4]);
+  ASSERT_EQ(0xBC, bdaddr.address[5]);
+
+  std::string ret = bdaddr.ToString();
+
+  ASSERT_STREQ(test_addr, ret.c_str());
+}
+
 TEST(RawAddressUnittest, test_is_empty) {
   RawAddress empty;
   RawAddress::FromString("00:00:00:00:00:00", empty);
@@ -36,6 +51,25 @@ TEST(RawAddressUnittest, test_is_empty) {
 TEST(RawAddressUnittest, test_to_from_str) {
   RawAddress bdaddr;
   RawAddress::FromString(test_addr, bdaddr);
+
+  ASSERT_EQ(0x12, bdaddr.address[0]);
+  ASSERT_EQ(0x34, bdaddr.address[1]);
+  ASSERT_EQ(0x56, bdaddr.address[2]);
+  ASSERT_EQ(0x78, bdaddr.address[3]);
+  ASSERT_EQ(0x9A, bdaddr.address[4]);
+  ASSERT_EQ(0xBC, bdaddr.address[5]);
+
+  std::string ret = bdaddr.ToString();
+
+  ASSERT_STREQ(test_addr, ret.c_str());
+}
+
+TEST(RawAddressUnittest, test_from_octets) {
+  static const uint8_t test_addr_array[] = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc};
+
+  RawAddress bdaddr;
+  size_t expected_result = RawAddress::kLength;
+  ASSERT_EQ(expected_result, bdaddr.FromOctets(test_addr_array));
 
   ASSERT_EQ(0x12, bdaddr.address[0]);
   ASSERT_EQ(0x34, bdaddr.address[1]);
