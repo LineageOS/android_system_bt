@@ -1132,8 +1132,8 @@ void bta_jv_l2cap_stop_server(uint16_t local_psm, uint32_t l2cap_socket_id) {
 }
 
 /* Write data to an L2CAP connection */
-void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, uint8_t* p_data,
-                        uint16_t len, uint32_t user_id, tBTA_JV_L2C_CB* p_cb) {
+void bta_jv_l2cap_write(uint32_t handle, const std::vector<uint8_t>& data,
+                        uint32_t user_id, tBTA_JV_L2C_CB* p_cb) {
   /* As we check this callback exists before the tBTA_JV_API_L2CAP_WRITE can be
    * send through the API this check should not be needed. But the API is not
    * designed to be used (safely at least) in a multi-threaded scheduler, hence
@@ -1144,11 +1144,7 @@ void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, uint8_t* p_data,
    * of 4 disconnects, as a disconnect on the server channel causes a disconnect
    * to be send on the client (notification) channel, but at the peer typically
    * disconnects both the OBEX disconnect request crosses the incoming l2cap
-   * disconnect. If p_cback is cleared, we simply discard the data. RISK: The
-   * caller must handle any cleanup based on another signal than
-   * BTA_JV_L2CAP_WRITE_EVT, which is typically not possible, as the pointer to
-   * the allocated buffer is stored in this message, and can therefore not be
-   * freed, hence we have a mem-leak-by-design.*/
+   * disconnect. If p_cback is cleared, we simply discard the data.*/
   if (!p_cb->p_cback) {
     /* As this pointer is checked in the API function, this occurs only when the
      * channel is disconnected after the API function is called, but before the
@@ -1160,13 +1156,12 @@ void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, uint8_t* p_data,
   tBTA_JV_L2CAP_WRITE evt_data;
   evt_data.status = BTA_JV_FAILURE;
   evt_data.handle = handle;
-  evt_data.req_id = req_id;
-  evt_data.p_data = p_data;
   evt_data.cong = p_cb->cong;
   evt_data.len = 0;
   bta_jv_pm_conn_busy(p_cb->p_pm_cb);
   if (!evt_data.cong &&
-      BT_PASS == GAP_ConnWriteData(handle, p_data, len, &evt_data.len)) {
+      BT_PASS ==
+          GAP_ConnWriteData(handle, data.data(), data.size(), &evt_data.len)) {
     evt_data.status = BTA_JV_SUCCESS;
   }
   tBTA_JV bta_jv;
@@ -1176,19 +1171,18 @@ void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, uint8_t* p_data,
 
 /* Write data to an L2CAP connection using Fixed channels */
 void bta_jv_l2cap_write_fixed(uint16_t channel, const RawAddress& addr,
-                              uint32_t req_id, uint8_t* p_data, uint16_t len,
+                              const std::vector<uint8_t>& data,
                               uint32_t user_id, tBTA_JV_L2CAP_CBACK* p_cback) {
   tBTA_JV_L2CAP_WRITE_FIXED evt_data;
   evt_data.status = BTA_JV_FAILURE;
   evt_data.channel = channel;
   evt_data.addr = addr;
-  evt_data.req_id = req_id;
-  evt_data.p_data = p_data;
   evt_data.len = 0;
 
-  BT_HDR* msg = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + len + L2CAP_MIN_OFFSET);
-  memcpy(((uint8_t*)(msg + 1)) + L2CAP_MIN_OFFSET, p_data, len);
-  msg->len = len;
+  BT_HDR* msg =
+      (BT_HDR*)osi_malloc(sizeof(BT_HDR) + data.size() + L2CAP_MIN_OFFSET);
+  memcpy(((uint8_t*)(msg + 1)) + L2CAP_MIN_OFFSET, data.data(), data.size());
+  msg->len = data.size();
   msg->offset = L2CAP_MIN_OFFSET;
 
   L2CA_SendFixedChnlData(channel, addr, msg);
