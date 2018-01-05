@@ -490,7 +490,7 @@ uint16_t GAP_ConnBTRead(uint16_t gap_handle, BT_HDR** pp_buf) {
  *                  GAP_CONGESTION          - system is congested
  *
  ******************************************************************************/
-uint16_t GAP_ConnWriteData(uint16_t gap_handle, uint8_t* p_data,
+uint16_t GAP_ConnWriteData(uint16_t gap_handle, const uint8_t* p_data,
                            uint16_t max_len, uint16_t* p_len) {
   tGAP_CCB* p_ccb = gap_find_ccb_by_handle(gap_handle);
   BT_HDR* p_buf;
