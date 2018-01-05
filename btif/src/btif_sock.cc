@@ -143,17 +143,18 @@ static bt_status_t btsock_listen(btsock_type_t type, const char* service_name,
       break;
     case BTSOCK_L2CAP_LE:
       if (flags & BTSOCK_FLAG_NO_SDP) {
-        channel = L2CAP_MASK_LE_COC_CHANNEL;
-      } else if (channel > 0) {
-        channel |= L2CAP_MASK_LE_COC_CHANNEL;
-      } else {
+        /* Set channel to zero so that it will be assigned */
+        channel = 0;
+      } else if (channel <= 0) {
         LOG_ERROR(LOG_TAG, "%s: type BTSOCK_L2CAP_LE: invalid channel=%d",
                   __func__, channel);
         break;
       }
-      LOG_DEBUG(LOG_TAG,
-                "%s: type=BTSOCK_L2CAP_LE, channel=0x%x, original=0x%x",
-                __func__, channel, original_channel);
+      flags |= BTSOCK_FLAG_LE_COC;
+      LOG_DEBUG(
+          LOG_TAG,
+          "%s: type=BTSOCK_L2CAP_LE, channel=0x%x, original=0x%x, flags=0x%x",
+          __func__, channel, original_channel, flags);
       status =
           btsock_l2cap_listen(service_name, channel, sock_fd, flags, app_uid);
       break;
@@ -190,9 +191,9 @@ static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type,
       break;
 
     case BTSOCK_L2CAP_LE:
-      channel |= L2CAP_MASK_LE_COC_CHANNEL;
-      LOG_DEBUG(LOG_TAG, "%s: type=BTSOCK_L2CAP_LE, channel=0x%x", __func__,
-                channel);
+      flags |= BTSOCK_FLAG_LE_COC;
+      LOG_DEBUG(LOG_TAG, "%s: type=BTSOCK_L2CAP_LE, channel=0x%x, flags=0x%x",
+                __func__, channel, flags);
       status = btsock_l2cap_connect(bd_addr, channel, sock_fd, flags, app_uid);
       break;
 

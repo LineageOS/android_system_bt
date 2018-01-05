@@ -857,9 +857,9 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
     // We need to auto assign a PSM
     fixed_chan = 0;
   } else {
+    is_le_coc = (flags & BTSOCK_FLAG_LE_COC) != 0;
     fixed_chan = (channel & L2CAP_MASK_FIXED_CHANNEL) != 0;
-    is_le_coc = (channel & L2CAP_MASK_LE_COC_CHANNEL) != 0;
-    channel &= ~(L2CAP_MASK_FIXED_CHANNEL | L2CAP_MASK_LE_COC_CHANNEL);
+    channel &= ~L2CAP_MASK_FIXED_CHANNEL;
   }
 
   if (!is_inited()) return BT_STATUS_NOT_READY;
