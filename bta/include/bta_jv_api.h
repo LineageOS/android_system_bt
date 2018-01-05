@@ -244,9 +244,7 @@ typedef struct {
 typedef struct {
   tBTA_JV_STATUS status; /* Whether the operation succeeded or failed. */
   uint32_t handle;       /* The connection handle */
-  uint32_t req_id;       /* The req_id in the associated BTA_JvL2capWrite() */
   uint16_t len;          /* The length of the data written. */
-  uint8_t* p_data;       /* The buffer where data is held */
   bool cong;             /* congestion status */
 } tBTA_JV_L2CAP_WRITE;
 
@@ -255,8 +253,6 @@ typedef struct {
   tBTA_JV_STATUS status; /* Whether the operation succeeded or failed. */
   uint16_t channel;      /* The connection channel */
   RawAddress addr;       /* The peer address */
-  uint32_t req_id;       /* The req_id in the associated BTA_JvL2capWrite() */
-  uint8_t* p_data;       /* The buffer where data is held */
   uint16_t len;          /* The length of the data written. */
   bool cong;             /* congestion status */
 } tBTA_JV_L2CAP_WRITE_FIXED;
@@ -680,8 +676,7 @@ tBTA_JV_STATUS BTA_JvL2capReady(uint32_t handle, uint32_t* p_data_size);
  *                  BTA_JV_FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id,
-                                uint8_t* p_data, uint16_t len,
+tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, std::vector<uint8_t> data,
                                 uint32_t user_id);
 
 /*******************************************************************************
@@ -697,11 +692,9 @@ tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id,
  *                  BTA_JV_FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capWriteFixed(uint16_t channel, const RawAddress& addr,
-                                     uint32_t req_id,
-                                     tBTA_JV_L2CAP_CBACK* p_cback,
-                                     uint8_t* p_data, uint16_t len,
-                                     uint32_t user_id);
+void BTA_JvL2capWriteFixed(uint16_t channel, const RawAddress& addr,
+                           tBTA_JV_L2CAP_CBACK* p_cback,
+                           std::vector<uint8_t> data, uint32_t user_id);
 
 /*******************************************************************************
  *

@@ -512,16 +512,15 @@ tBTA_JV_STATUS BTA_JvL2capReady(uint32_t handle, uint32_t* p_data_size) {
  *                  BTA_JV_FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id,
-                                uint8_t* p_data, uint16_t len,
+tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, std::vector<uint8_t> data,
                                 uint32_t user_id) {
   VLOG(2) << __func__;
 
   if (handle >= BTA_JV_MAX_L2C_CONN || !bta_jv_cb.l2c_cb[handle].p_cback)
     return BTA_JV_FAILURE;
 
-  do_in_bta_thread(FROM_HERE, Bind(&bta_jv_l2cap_write, handle, req_id, p_data,
-                                   len, user_id, &bta_jv_cb.l2c_cb[handle]));
+  do_in_bta_thread(FROM_HERE, Bind(&bta_jv_l2cap_write, handle, std::move(data),
+                                   user_id, &bta_jv_cb.l2c_cb[handle]));
   return BTA_JV_SUCCESS;
 }
 
@@ -534,20 +533,13 @@ tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id,
  *                  called with BTA_JV_L2CAP_WRITE_EVT. Works for
  *                  fixed-channel connections
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
- *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capWriteFixed(uint16_t channel, const RawAddress& addr,
-                                     uint32_t req_id,
-                                     tBTA_JV_L2CAP_CBACK* p_cback,
-                                     uint8_t* p_data, uint16_t len,
-                                     uint32_t user_id) {
+void BTA_JvL2capWriteFixed(uint16_t channel, const RawAddress& addr,
+                           tBTA_JV_L2CAP_CBACK* p_cback,
+                           std::vector<uint8_t> data, uint32_t user_id) {
   VLOG(2) << __func__;
-
   do_in_bta_thread(FROM_HERE, Bind(&bta_jv_l2cap_write_fixed, channel, addr,
-                                   req_id, p_data, len, user_id, p_cback));
-  return BTA_JV_SUCCESS;
+                                   std::move(data), user_id, p_cback));
 }
 
 /*******************************************************************************
