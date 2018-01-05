@@ -166,9 +166,9 @@ extern void bta_jv_l2cap_start_server(
     uint32_t l2cap_socket_id);
 extern void bta_jv_l2cap_stop_server(uint16_t local_psm,
                                      uint32_t l2cap_socket_id);
-extern void bta_jv_l2cap_write(uint32_t handle,
-                               const std::vector<uint8_t>& data,
-                               uint32_t user_id, tBTA_JV_L2C_CB* p_cb);
+extern void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id,
+                               uint8_t* p_data, uint16_t len, uint32_t user_id,
+                               tBTA_JV_L2C_CB* p_cb);
 extern void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
                                   uint8_t remote_scn,
                                   const RawAddress& peer_bd_addr,
@@ -193,8 +193,8 @@ extern void bta_jv_l2cap_start_server_le(uint16_t local_chan,
                                          uint32_t l2cap_socket_id);
 extern void bta_jv_l2cap_stop_server_le(uint16_t local_chan);
 extern void bta_jv_l2cap_write_fixed(uint16_t channel, const RawAddress& addr,
-                                     const std::vector<uint8_t>& data,
-                                     uint32_t user_id,
+                                     uint32_t req_id, uint8_t* p_data,
+                                     uint16_t len, uint32_t user_id,
                                      tBTA_JV_L2CAP_CBACK* p_cback);
 extern void bta_jv_l2cap_close_fixed(uint32_t handle);
 
