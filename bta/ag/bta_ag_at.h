@@ -61,7 +61,7 @@ typedef void(tBTA_AG_AT_CMD_CBACK)(tBTA_AG_SCB* p_user, uint16_t command_id,
 
 /* callback function executed to send "ERROR" result code */
 typedef void(tBTA_AG_AT_ERR_CBACK)(tBTA_AG_SCB* p_user, bool unknown,
-                                   char* p_arg);
+                                   const char* p_arg);
 
 /* AT command parsing control block */
 typedef struct {

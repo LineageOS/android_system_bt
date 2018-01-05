@@ -26,7 +26,6 @@
 #include "bt_common.h"
 #include "bta_ag_api.h"
 #include "bta_ag_int.h"
-#include "bta_api.h"
 
 #ifndef BTA_AG_CIND_INFO
 #define BTA_AG_CIND_INFO                                                       \
