@@ -622,8 +622,12 @@ static void on_l2cap_outgoing_congest(tBTA_JV_L2CAP_CONG* p, uint32_t id) {
   }
 }
 
-static void on_l2cap_write_done(uint16_t len, uint32_t id) {
+static void on_l2cap_write_done(void* req_id, uint16_t len, uint32_t id) {
   l2cap_socket* sock;
+
+  if (req_id != NULL) {
+    osi_free(req_id);  // free the buffer
+  }
 
   int app_uid = -1;
 
@@ -642,8 +646,12 @@ static void on_l2cap_write_done(uint16_t len, uint32_t id) {
   uid_set_add_tx(uid_set, app_uid, len);
 }
 
-static void on_l2cap_write_fixed_done(uint16_t len, uint32_t id) {
+static void on_l2cap_write_fixed_done(void* req_id, uint16_t len, uint32_t id) {
   l2cap_socket* sock;
+
+  if (req_id != NULL) {
+    osi_free(req_id);  // free the buffer
+  }
 
   int app_uid = -1;
   std::unique_lock<std::mutex> lock(state_lock);
@@ -747,12 +755,14 @@ static void btsock_l2cap_cbk(tBTA_JV_EVT event, tBTA_JV* p_data,
 
     case BTA_JV_L2CAP_WRITE_EVT:
       APPL_TRACE_DEBUG("BTA_JV_L2CAP_WRITE_EVT: id: %u", l2cap_socket_id);
-      on_l2cap_write_done(p_data->l2c_write.len, l2cap_socket_id);
+      on_l2cap_write_done(p_data->l2c_write.p_data, p_data->l2c_write.len,
+                          l2cap_socket_id);
       break;
 
     case BTA_JV_L2CAP_WRITE_FIXED_EVT:
       APPL_TRACE_DEBUG("BTA_JV_L2CAP_WRITE_FIXED_EVT: id: %u", l2cap_socket_id);
-      on_l2cap_write_fixed_done(p_data->l2c_write.len, l2cap_socket_id);
+      on_l2cap_write_fixed_done(p_data->l2c_write_fixed.p_data,
+                                p_data->l2c_write.len, l2cap_socket_id);
       break;
 
     case BTA_JV_L2CAP_CONG_EVT:
@@ -990,7 +1000,7 @@ void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
 
       if (!(flags & SOCK_THREAD_FD_EXCEPTION) ||
           (ioctl(sock->our_fd, FIONREAD, &size) == 0 && size)) {
-        std::vector<uint8_t> buffer(L2CAP_MAX_SDU_LENGTH);
+        uint8_t* buffer = (uint8_t*)osi_malloc(L2CAP_MAX_SDU_LENGTH);
         /* The socket is created with SOCK_SEQPACKET, hence we read one message
          * at the time. The maximum size of a message is allocated to ensure
          * data is not lost. This is okay to do as Android uses virtual memory,
@@ -1004,19 +1014,29 @@ void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
          * in a tight loop, hence we risk the ioctl will return the total amount
          * of data in the buffer, which could be multiple 64kbyte chunks.
          * UPDATE: As the stack cannot handle 64kbyte buffers, the size is
-         * reduced to around 8kbyte */
+         * reduced to around 8kbyte - and using malloc for buffer allocation
+         * here seems to be wrong
+         * UPDATE: Since we are responsible for freeing the buffer in the
+         * write_complete_ind, it is OK to use malloc. */
         ssize_t count;
-        OSI_NO_INTR(count = recv(fd, buffer.data(), buffer.size(),
+        OSI_NO_INTR(count = recv(fd, buffer, L2CAP_MAX_SDU_LENGTH,
                                  MSG_NOSIGNAL | MSG_DONTWAIT));
-        APPL_TRACE_DEBUG("%s: %d bytes received from socket", __func__, count);
-
-        buffer.resize((count == -1) ? 0 : count);
+        APPL_TRACE_DEBUG(
+            "btsock_l2cap_signaled - %d bytes received from socket", count);
 
         if (sock->fixed_chan) {
-          BTA_JvL2capWriteFixed(sock->channel, sock->addr, btsock_l2cap_cbk,
-                                std::move(buffer), user_id);
+          if (BTA_JvL2capWriteFixed(sock->channel, sock->addr,
+                                    PTR_TO_UINT(buffer), btsock_l2cap_cbk,
+                                    buffer, count, user_id) != BTA_JV_SUCCESS) {
+            // On fail, free the buffer
+            on_l2cap_write_fixed_done(buffer, count, user_id);
+          }
         } else {
-          BTA_JvL2capWrite(sock->handle, std::move(buffer), user_id);
+          if (BTA_JvL2capWrite(sock->handle, PTR_TO_UINT(buffer), buffer, count,
+                               user_id) != BTA_JV_SUCCESS) {
+            // On fail, free the buffer
+            on_l2cap_write_done(buffer, count, user_id);
+          }
         }
       }
     } else
