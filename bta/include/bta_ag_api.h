@@ -73,14 +73,6 @@
 
 typedef uint32_t tBTA_AG_FEAT;
 
-/* AG parse mode */
-#define BTA_AG_PARSE 0 /* Perform AT command parsing in AG */
-
-/* Pass data directly to phone's AT command interpreter */
-#define BTA_AG_PASS_THROUGH 1
-
-typedef uint8_t tBTA_AG_PARSE_MODE;
-
 /* AG open status */
 #define BTA_AG_SUCCESS 0        /* Connection successfully opened */
 #define BTA_AG_FAIL_SDP 1       /* Open failed due to SDP */
@@ -460,7 +452,7 @@ typedef struct {
  * Returns          BTA_SUCCESS if OK, BTA_FAILURE otherwise.
  *
  ******************************************************************************/
-tBTA_STATUS BTA_AgEnable(tBTA_AG_PARSE_MODE parse_mode, tBTA_AG_CBACK* p_cback);
+tBTA_STATUS BTA_AgEnable(tBTA_AG_CBACK* p_cback);
 
 /*******************************************************************************
  *
