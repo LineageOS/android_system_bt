@@ -26,6 +26,7 @@
 #include "bluetooth.h"
 
 #include <bluetooth/uuid.h>
+#include <vector>
 
 typedef struct {
   uint8_t client_if;
@@ -85,5 +86,19 @@ typedef struct {
   uint8_t found_timeout_cnt;
   uint16_t num_of_tracking_entries;
 } btgatt_filt_param_setup_t;
+
+// Advertising Packet Content Filter
+struct ApcfCommand {
+  uint8_t type;
+  RawAddress address;
+  uint8_t addr_type;
+  bluetooth::Uuid uuid;
+  bluetooth::Uuid uuid_mask;
+  std::vector<uint8_t> name;
+  uint16_t company;
+  uint16_t company_mask;
+  std::vector<uint8_t> data;
+  std::vector<uint8_t> data_mask;
+};
 
 #endif /* ANDROID_INCLUDE_BT_COMMON_TYPES_H */

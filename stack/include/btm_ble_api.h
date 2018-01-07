@@ -763,33 +763,9 @@ extern void BTM_BleAdvFilterParamSetup(
 /**
  * This functions are called to configure the adv data payload filter condition
  */
-extern void BTM_LE_PF_srvc_data(tBTM_BLE_SCAN_COND_OP action,
-                                tBTM_BLE_PF_FILT_INDEX filt_index);
-extern void BTM_LE_PF_addr_filter(tBTM_BLE_SCAN_COND_OP action,
-                                  tBTM_BLE_PF_FILT_INDEX filt_index,
-                                  tBLE_BD_ADDR addr, tBTM_BLE_PF_CFG_CBACK cb);
-extern void BTM_LE_PF_local_name(tBTM_BLE_SCAN_COND_OP action,
-                                 tBTM_BLE_PF_FILT_INDEX filt_index,
-                                 std::vector<uint8_t> name,
-                                 tBTM_BLE_PF_CFG_CBACK cb);
-extern void BTM_LE_PF_uuid_filter(tBTM_BLE_SCAN_COND_OP action,
-                                  tBTM_BLE_PF_FILT_INDEX filt_index,
-                                  tBTM_BLE_PF_COND_TYPE filter_type,
-                                  const bluetooth::Uuid& uuid,
-                                  tBTM_BLE_PF_LOGIC_TYPE cond_logic,
-                                  tBTM_BLE_PF_COND_MASK* p_uuid_mask,
-                                  tBTM_BLE_PF_CFG_CBACK cb);
-extern void BTM_LE_PF_manu_data(tBTM_BLE_SCAN_COND_OP action,
-                                tBTM_BLE_PF_FILT_INDEX filt_index,
-                                uint16_t company_id, uint16_t company_id_mask,
-                                std::vector<uint8_t> data,
-                                std::vector<uint8_t> data_mask,
-                                tBTM_BLE_PF_CFG_CBACK cb);
-extern void BTM_LE_PF_srvc_data_pattern(tBTM_BLE_SCAN_COND_OP action,
-                                        tBTM_BLE_PF_FILT_INDEX filt_index,
-                                        std::vector<uint8_t> data,
-                                        std::vector<uint8_t> data_mask,
-                                        tBTM_BLE_PF_CFG_CBACK cb);
+extern void BTM_LE_PF_set(tBTM_BLE_PF_FILT_INDEX filt_index,
+                          std::vector<ApcfCommand> commands,
+                          tBTM_BLE_PF_CFG_CBACK cb);
 extern void BTM_LE_PF_clear(tBTM_BLE_PF_FILT_INDEX filt_index,
                             tBTM_BLE_PF_CFG_CBACK cb);
 

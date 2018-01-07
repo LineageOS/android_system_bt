@@ -21,7 +21,6 @@
 #define BTIF_UTIL_H
 
 #include <hardware/bluetooth.h>
-#include <hardware/bt_hf.h>
 #include <stdbool.h>
 #include <sys/time.h>
 
@@ -51,10 +50,7 @@ const char* dump_hf_event(uint16_t event);
 const char* dump_hf_client_event(uint16_t event);
 const char* dump_hh_event(uint16_t event);
 const char* dump_hd_event(uint16_t event);
-const char* dump_hf_conn_state(uint16_t event);
-const char* dump_hf_call_state(bthf_call_state_t call_state);
 const char* dump_property_type(bt_property_type_t type);
-const char* dump_hf_audio_state(uint16_t event);
 const char* dump_adapter_scan_mode(bt_scan_mode_t mode);
 const char* dump_thread_evt(bt_cb_thread_evt evt);
 const char* dump_av_conn_state(uint16_t event);
