@@ -63,7 +63,6 @@ typedef struct {
   size_t rescheduled_count;
   size_t total_updates;
   period_ms_t last_update_ms;
-  stat_t callback_execution;
   stat_t overdue_scheduling;
   stat_t premature_scheduling;
 } alarm_stats_t;
@@ -133,8 +132,7 @@ static void timer_callback(void* data);
 static void callback_dispatch(void* context);
 static bool timer_create_internal(const clockid_t clock_id, timer_t* timer);
 static void update_scheduling_stats(alarm_stats_t* stats, period_ms_t now_ms,
-                                    period_ms_t deadline_ms,
-                                    period_ms_t execution_delta_ms);
+                                    period_ms_t deadline_ms);
 
 static void update_stat(stat_t* stat, period_ms_t delta) {
   if (stat->max_ms < delta) stat->max_ms = delta;
@@ -566,14 +564,12 @@ static void alarm_queue_ready(fixed_queue_t* queue, UNUSED_ATTR void* context) {
   std::lock_guard<std::recursive_mutex> cb_lock(*alarm->callback_mutex);
   lock.unlock();
 
-  period_ms_t t0 = now();
-  callback(data);
-  period_ms_t t1 = now();
-
   // Update the statistics
-  CHECK(t1 >= t0);
-  period_ms_t delta = t1 - t0;
-  update_scheduling_stats(&alarm->stats, t0, deadline, delta);
+  update_scheduling_stats(&alarm->stats, now(), deadline);
+
+  // NOTE: Do NOT access "alarm" after the callback, as a safety precaution
+  // in case the callback itself deleted the alarm.
+  callback(data);
 }
 
 // Callback function for wake alarms and our posix timer
@@ -654,12 +650,9 @@ static bool timer_create_internal(const clockid_t clock_id, timer_t* timer) {
 }
 
 static void update_scheduling_stats(alarm_stats_t* stats, period_ms_t now_ms,
-                                    period_ms_t deadline_ms,
-                                    period_ms_t execution_delta_ms) {
+                                    period_ms_t deadline_ms) {
   stats->total_updates++;
   stats->last_update_ms = now_ms;
-
-  update_stat(&stats->callback_execution, execution_delta_ms);
 
   if (deadline_ms < now_ms) {
     // Overdue scheduling
@@ -707,7 +700,7 @@ void alarm_debug_dump(int fd) {
     dprintf(fd, "%-51s: %zu / %zu / %zu / %zu\n",
             "    Action counts (sched/resched/exec/cancel)",
             stats->scheduled_count, stats->rescheduled_count,
-            stats->callback_execution.count, stats->canceled_count);
+            stats->total_updates, stats->canceled_count);
 
     dprintf(fd, "%-51s: %zu / %zu\n",
             "    Deviation counts (overdue/premature)",
@@ -718,9 +711,6 @@ void alarm_debug_dump(int fd) {
             (unsigned long long)(just_now - alarm->creation_time),
             (unsigned long long)alarm->period,
             (long long)(alarm->deadline - just_now));
-
-    dump_stat(fd, &stats->callback_execution,
-              "    Callback execution time in ms (total/max/avg)");
 
     dump_stat(fd, &stats->overdue_scheduling,
               "    Overdue scheduling time in ms (total/max/avg)");
