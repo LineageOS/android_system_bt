@@ -733,6 +733,7 @@ class HeadsetInterface : Interface {
   void Cleanup() override;
   bt_status_t SetScoAllowed(bool value) override;
   bt_status_t SendBsir(bool value, RawAddress* bd_addr) override;
+  bt_status_t SetActiveDevice(RawAddress* active_device_addr) override;
 };
 
 bt_status_t HeadsetInterface::Init(Callbacks* callbacks, int max_hf_clients,
@@ -1314,6 +1315,12 @@ bt_status_t HeadsetInterface::SendBsir(bool value, RawAddress* bd_addr) {
   tBTA_AG_RES_DATA ag_result = {};
   ag_result.state = value;
   BTA_AgResult(btif_hf_cb[idx].handle, BTA_AG_INBAND_RING_RES, &ag_result);
+  return BT_STATUS_SUCCESS;
+}
+
+bt_status_t HeadsetInterface::SetActiveDevice(RawAddress* active_device_addr) {
+  CHECK_BTHF_INIT();
+  BTA_AgSetActiveDevice(*active_device_addr);
   return BT_STATUS_SUCCESS;
 }
 
