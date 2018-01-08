@@ -32,6 +32,8 @@ interface IBluetoothA2dp {
     List<BluetoothDevice> getConnectedDevices();
     List<BluetoothDevice> getDevicesMatchingConnectionStates(in int[] states);
     int getConnectionState(in BluetoothDevice device);
+    boolean setActiveDevice(in BluetoothDevice device);
+    BluetoothDevice getActiveDevice();
     boolean setPriority(in BluetoothDevice device, int priority);
     int getPriority(in BluetoothDevice device);
     boolean isAvrcpAbsoluteVolumeSupported();
