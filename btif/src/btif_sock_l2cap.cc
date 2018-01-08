@@ -628,19 +628,15 @@ static void on_l2cap_outgoing_congest(tBTA_JV_L2CAP_CONG* p, uint32_t id) {
 }
 
 static void on_l2cap_write_done(void* req_id, uint16_t len, uint32_t id) {
-  l2cap_socket* sock;
-
   if (req_id != NULL) {
     osi_free(req_id);  // free the buffer
   }
 
-  int app_uid = -1;
-
   std::unique_lock<std::mutex> lock(state_lock);
-  sock = btsock_l2cap_find_by_id_l(id);
+  l2cap_socket* sock = btsock_l2cap_find_by_id_l(id);
   if (!sock) return;
 
-  app_uid = sock->app_uid;
+  int app_uid = sock->app_uid;
   if (!sock->outgoing_congest) {
     // monitor the fd for any outgoing data
     APPL_TRACE_DEBUG("on_l2cap_write_done: adding fd to btsock_thread...");
@@ -648,27 +644,6 @@ static void on_l2cap_write_done(void* req_id, uint16_t len, uint32_t id) {
                          sock->id);
   }
 
-  uid_set_add_tx(uid_set, app_uid, len);
-}
-
-static void on_l2cap_write_fixed_done(void* req_id, uint16_t len, uint32_t id) {
-  l2cap_socket* sock;
-
-  if (req_id != NULL) {
-    osi_free(req_id);  // free the buffer
-  }
-
-  int app_uid = -1;
-  std::unique_lock<std::mutex> lock(state_lock);
-  sock = btsock_l2cap_find_by_id_l(id);
-  if (!sock) return;
-
-  app_uid = sock->app_uid;
-  if (!sock->outgoing_congest) {
-    // monitor the fd for any outgoing data
-    btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD,
-                         sock->id);
-  }
   uid_set_add_tx(uid_set, app_uid, len);
 }
 
@@ -766,8 +741,8 @@ static void btsock_l2cap_cbk(tBTA_JV_EVT event, tBTA_JV* p_data,
 
     case BTA_JV_L2CAP_WRITE_FIXED_EVT:
       APPL_TRACE_DEBUG("BTA_JV_L2CAP_WRITE_FIXED_EVT: id: %u", l2cap_socket_id);
-      on_l2cap_write_fixed_done(p_data->l2c_write_fixed.p_data,
-                                p_data->l2c_write.len, l2cap_socket_id);
+      on_l2cap_write_done(p_data->l2c_write_fixed.p_data, p_data->l2c_write.len,
+                          l2cap_socket_id);
       break;
 
     case BTA_JV_L2CAP_CONG_EVT:
@@ -1031,7 +1006,7 @@ void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
                                     PTR_TO_UINT(buffer), btsock_l2cap_cbk,
                                     buffer, count, user_id) != BTA_JV_SUCCESS) {
             // On fail, free the buffer
-            on_l2cap_write_fixed_done(buffer, count, user_id);
+            on_l2cap_write_done(buffer, count, user_id);
           }
         } else {
           if (BTA_JvL2capWrite(sock->handle, PTR_TO_UINT(buffer), buffer, count,
