@@ -222,6 +222,13 @@ class Interface {
    * @param bd_addr remote device address
    */
   virtual bt_status_t SendBsir(bool value, RawAddress* bd_addr) = 0;
+
+  /**
+   * Set the current active headset device for SCO audio
+   *
+   * @param active_device_addr remote device address
+   */
+  virtual bt_status_t SetActiveDevice(RawAddress* active_device_addr) = 0;
 };
 
 }  // namespace headset

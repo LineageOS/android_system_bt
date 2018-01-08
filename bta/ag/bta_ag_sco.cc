@@ -50,6 +50,7 @@ static char* bta_ag_sco_state_str(uint8_t state);
 #endif
 
 static bool sco_allowed = true;
+RawAddress active_device_addr;
 
 /* sco events */
 enum {
@@ -1094,7 +1095,6 @@ void bta_ag_sco_listen(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
  ******************************************************************************/
 void bta_ag_sco_open(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
   uint8_t event;
-
   if (!sco_allowed) {
     APPL_TRACE_DEBUG("%s not opening sco, by policy", __func__);
     return;
@@ -1289,6 +1289,18 @@ void bta_ag_ci_sco_data(UNUSED_ATTR tBTA_AG_SCB* p_scb,
 void bta_ag_set_sco_allowed(tBTA_AG_DATA* p_data) {
   sco_allowed = p_data->api_set_sco_allowed.value;
   APPL_TRACE_DEBUG(sco_allowed ? "sco now allowed" : "sco now not allowed");
+}
+
+const RawAddress& bta_ag_get_active_device() { return active_device_addr; }
+
+void bta_clear_active_device() { active_device_addr = RawAddress::kEmpty; }
+
+void bta_ag_api_set_active_device(tBTA_AG_DATA* p_data) {
+  if (p_data->api_set_active_device.active_device_addr.IsEmpty()) {
+    APPL_TRACE_ERROR("%s: empty device", __func__);
+    return;
+  }
+  active_device_addr = p_data->api_set_active_device.active_device_addr;
 }
 
 /*******************************************************************************
