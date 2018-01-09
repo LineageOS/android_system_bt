@@ -92,7 +92,8 @@ enum {
   /* these events are handled outside of the state machine */
   BTA_AG_API_ENABLE_EVT,
   BTA_AG_API_DISABLE_EVT,
-  BTA_AG_API_SET_SCO_ALLOWED_EVT
+  BTA_AG_API_SET_SCO_ALLOWED_EVT,
+  BTA_AG_API_SET_ACTIVE_DEVICE_EVT
 };
 
 /* Actions to perform after a SCO event */
@@ -170,6 +171,11 @@ typedef struct {
   bool value;
 } tBTA_AG_API_SET_SCO_ALLOWED;
 
+typedef struct {
+  BT_HDR hdr;
+  RawAddress active_device_addr;
+} tBTA_AG_API_SET_ACTIVE_DEVICE;
+
 /* data type for BTA_AG_DISC_RESULT_EVT */
 typedef struct {
   BT_HDR hdr;
@@ -197,6 +203,7 @@ typedef union {
   tBTA_AG_API_RESULT api_result;
   tBTA_AG_API_SETCODEC api_setcodec;
   tBTA_AG_API_SET_SCO_ALLOWED api_set_sco_allowed;
+  tBTA_AG_API_SET_ACTIVE_DEVICE api_set_active_device;
   tBTA_AG_DISC_RESULT disc_result;
   tBTA_AG_RFC rfc;
   tBTA_AG_CI_RX_WRITE ci_rx_write;
@@ -395,5 +402,8 @@ extern void bta_ag_ci_sco_data(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 extern void bta_ag_ci_rx_data(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 extern void bta_ag_rcvd_slc_ready(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 extern void bta_ag_set_sco_allowed(tBTA_AG_DATA* p_data);
+extern const RawAddress& bta_ag_get_active_device();
+extern void bta_clear_active_device();
+extern void bta_ag_api_set_active_device(tBTA_AG_DATA* p_data);
 
 #endif /* BTA_AG_INT_H */
