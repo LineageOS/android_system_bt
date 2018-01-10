@@ -798,27 +798,6 @@ void bta_ag_ci_rx_data(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
 
 /*******************************************************************************
  *
- * Function         bta_ag_rcvd_slc_ready
- *
- * Description      Handles SLC ready call-in in case of pass-through mode.
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_ag_rcvd_slc_ready(tBTA_AG_SCB* p_scb,
-                           UNUSED_ATTR tBTA_AG_DATA* p_data) {
-  APPL_TRACE_DEBUG("bta_ag_rcvd_slc_ready: handle = %d",
-                   bta_ag_scb_to_idx(p_scb));
-
-  if (bta_ag_cb.parse_mode == BTA_AG_PASS_THROUGH) {
-    /* In pass-through mode, BTA knows that SLC is ready only through call-in.
-     */
-    bta_ag_svc_conn_open(p_scb, nullptr);
-  }
-}
-
-/*******************************************************************************
- *
  * Function         bta_ag_setcodec
  *
  * Description      Handle API SetCodec

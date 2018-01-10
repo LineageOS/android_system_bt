@@ -86,7 +86,6 @@ enum {
   BTA_AG_RING_TIMEOUT_EVT,
   BTA_AG_SVC_TIMEOUT_EVT,
   BTA_AG_CI_SCO_DATA_EVT,
-  BTA_AG_CI_SLC_READY_EVT,
   BTA_AG_MAX_EVT,
 
   /* these events are handled outside of the state machine */
@@ -130,7 +129,6 @@ enum {
 /* data type for BTA_AG_API_ENABLE_EVT */
 typedef struct {
   BT_HDR hdr;
-  tBTA_AG_PARSE_MODE parse_mode;
   tBTA_AG_CBACK* p_cback;
 } tBTA_AG_API_ENABLE;
 
@@ -295,7 +293,6 @@ typedef struct {
   tBTA_AG_PROFILE profile[BTA_AG_NUM_IDX]; /* profile-specific data */
   tBTA_AG_SCO_CB sco;                      /* SCO data */
   tBTA_AG_CBACK* p_cback;                  /* application callback */
-  tBTA_AG_PARSE_MODE parse_mode;           /* parse/pass-through mode */
 } tBTA_AG_CB;
 
 /*****************************************************************************
@@ -400,7 +397,6 @@ extern void bta_ag_send_bcs(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 extern void bta_ag_send_ring(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 extern void bta_ag_ci_sco_data(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 extern void bta_ag_ci_rx_data(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_rcvd_slc_ready(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 extern void bta_ag_set_sco_allowed(tBTA_AG_DATA* p_data);
 extern const RawAddress& bta_ag_get_active_device();
 extern void bta_clear_active_device();
