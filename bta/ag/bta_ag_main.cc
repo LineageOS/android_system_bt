@@ -24,7 +24,6 @@
 
 #include <string.h>
 
-#include "bta_ag_co.h"
 #include "bta_ag_int.h"
 #include "bta_api.h"
 #include "bta_sys.h"
@@ -79,7 +78,6 @@ enum {
   BTA_AG_SEND_RING,
   BTA_AG_CI_SCO_DATA,
   BTA_AG_CI_RX_DATA,
-  BTA_AG_RCVD_SLC_READY,
   BTA_AG_NUM_ACTIONS
 };
 
@@ -100,7 +98,7 @@ const tBTA_AG_ACTION bta_ag_action[] = {
     bta_ag_sco_close,      bta_ag_sco_shutdown,  bta_ag_post_sco_open,
     bta_ag_post_sco_close, bta_ag_svc_conn_open, bta_ag_result,
     bta_ag_setcodec,       bta_ag_send_ring,     bta_ag_ci_sco_data,
-    bta_ag_ci_rx_data,     bta_ag_rcvd_slc_ready};
+    bta_ag_ci_rx_data};
 
 /* state table information */
 #define BTA_AG_ACTIONS 2    /* number of actions */
@@ -131,15 +129,14 @@ const uint8_t bta_ag_st_init[][BTA_AG_NUM_COLS] = {
     /* CI_RX_WRITE_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_INIT_ST},
     /* RING_TOUT_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_INIT_ST},
     /* SVC_TOUT_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_INIT_ST},
-    /* CI_SCO_DATA_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_INIT_ST},
-    /* CI_SLC_READY_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_INIT_ST}};
+    /* CI_SCO_DATA_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_INIT_ST}};
 
 /* state table for opening state */
 const uint8_t bta_ag_st_opening[][BTA_AG_NUM_COLS] = {
     /* Event                    Action 1                Action 2 Next state */
     /* API_REGISTER_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_OPENING_ST},
-    /* API_DEREGISTER_EVT */ {BTA_AG_RFC_DO_CLOSE, BTA_AG_START_DEREG,
-                              BTA_AG_CLOSING_ST},
+    /* API_DEREGISTER_EVT */
+    {BTA_AG_RFC_DO_CLOSE, BTA_AG_START_DEREG, BTA_AG_CLOSING_ST},
     /* API_OPEN_EVT */ {BTA_AG_OPEN_FAIL, BTA_AG_IGNORE, BTA_AG_OPENING_ST},
     /* API_CLOSE_EVT */ {BTA_AG_RFC_DO_CLOSE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
     /* API_AUDIO_OPEN_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_OPENING_ST},
@@ -151,25 +148,24 @@ const uint8_t bta_ag_st_opening[][BTA_AG_NUM_COLS] = {
     /* RFC_SRV_CLOSE_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_OPENING_ST},
     /* RFC_DATA_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_OPENING_ST},
     /* SCO_OPEN_EVT */ {BTA_AG_SCO_CONN_OPEN, BTA_AG_IGNORE, BTA_AG_OPENING_ST},
-    /* SCO_CLOSE_EVT */ {BTA_AG_SCO_CONN_CLOSE, BTA_AG_IGNORE,
-                         BTA_AG_OPENING_ST},
+    /* SCO_CLOSE_EVT */
+    {BTA_AG_SCO_CONN_CLOSE, BTA_AG_IGNORE, BTA_AG_OPENING_ST},
     /* DISC_ACP_RES_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_OPENING_ST},
-    /* DISC_INT_RES_EVT */ {BTA_AG_DISC_INT_RES, BTA_AG_IGNORE,
-                            BTA_AG_OPENING_ST},
+    /* DISC_INT_RES_EVT */
+    {BTA_AG_DISC_INT_RES, BTA_AG_IGNORE, BTA_AG_OPENING_ST},
     /* DISC_OK_EVT */ {BTA_AG_RFC_DO_OPEN, BTA_AG_IGNORE, BTA_AG_OPENING_ST},
     /* DISC_FAIL_EVT */ {BTA_AG_DISC_FAIL, BTA_AG_IGNORE, BTA_AG_INIT_ST},
     /* CI_RX_WRITE_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_OPENING_ST},
     /* RING_TOUT_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_OPENING_ST},
     /* SVC_TOUT_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_OPENING_ST},
-    /* CI_SCO_DATA_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_OPENING_ST},
-    /* CI_SLC_READY_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_OPENING_ST}};
+    /* CI_SCO_DATA_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_OPENING_ST}};
 
 /* state table for open state */
 const uint8_t bta_ag_st_open[][BTA_AG_NUM_COLS] = {
     /* Event                    Action 1                Action 2 Next state */
     /* API_REGISTER_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_OPEN_ST},
-    /* API_DEREGISTER_EVT */ {BTA_AG_START_CLOSE, BTA_AG_START_DEREG,
-                              BTA_AG_CLOSING_ST},
+    /* API_DEREGISTER_EVT */
+    {BTA_AG_START_CLOSE, BTA_AG_START_DEREG, BTA_AG_CLOSING_ST},
     /* API_OPEN_EVT */ {BTA_AG_OPEN_FAIL, BTA_AG_IGNORE, BTA_AG_OPEN_ST},
     /* API_CLOSE_EVT */ {BTA_AG_START_CLOSE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
     /* API_AUDIO_OPEN_EVT */ {BTA_AG_SCO_OPEN, BTA_AG_IGNORE, BTA_AG_OPEN_ST},
@@ -180,10 +176,10 @@ const uint8_t bta_ag_st_open[][BTA_AG_NUM_COLS] = {
     /* RFC_CLOSE_EVT */ {BTA_AG_RFC_CLOSE, BTA_AG_IGNORE, BTA_AG_INIT_ST},
     /* RFC_SRV_CLOSE_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_OPEN_ST},
     /* RFC_DATA_EVT */ {BTA_AG_RFC_DATA, BTA_AG_IGNORE, BTA_AG_OPEN_ST},
-    /* SCO_OPEN_EVT */ {BTA_AG_SCO_CONN_OPEN, BTA_AG_POST_SCO_OPEN,
-                        BTA_AG_OPEN_ST},
-    /* SCO_CLOSE_EVT */ {BTA_AG_SCO_CONN_CLOSE, BTA_AG_POST_SCO_CLOSE,
-                         BTA_AG_OPEN_ST},
+    /* SCO_OPEN_EVT */
+    {BTA_AG_SCO_CONN_OPEN, BTA_AG_POST_SCO_OPEN, BTA_AG_OPEN_ST},
+    /* SCO_CLOSE_EVT */
+    {BTA_AG_SCO_CONN_CLOSE, BTA_AG_POST_SCO_CLOSE, BTA_AG_OPEN_ST},
     /* DISC_ACP_RES_EVT */ {BTA_AG_DISC_ACP_RES, BTA_AG_IGNORE, BTA_AG_OPEN_ST},
     /* DISC_INT_RES_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_OPEN_ST},
     /* DISC_OK_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_OPEN_ST},
@@ -191,16 +187,14 @@ const uint8_t bta_ag_st_open[][BTA_AG_NUM_COLS] = {
     /* CI_RX_WRITE_EVT */ {BTA_AG_CI_RX_DATA, BTA_AG_IGNORE, BTA_AG_OPEN_ST},
     /* RING_TOUT_EVT */ {BTA_AG_SEND_RING, BTA_AG_IGNORE, BTA_AG_OPEN_ST},
     /* SVC_TOUT_EVT */ {BTA_AG_START_CLOSE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
-    /* CI_SCO_DATA_EVT */ {BTA_AG_CI_SCO_DATA, BTA_AG_IGNORE, BTA_AG_OPEN_ST},
-    /* CI_SLC_READY_EVT */
-    {BTA_AG_RCVD_SLC_READY, BTA_AG_IGNORE, BTA_AG_OPEN_ST}};
+    /* CI_SCO_DATA_EVT */ {BTA_AG_CI_SCO_DATA, BTA_AG_IGNORE, BTA_AG_OPEN_ST}};
 
 /* state table for closing state */
 const uint8_t bta_ag_st_closing[][BTA_AG_NUM_COLS] = {
     /* Event                    Action 1                Action 2 Next state */
     /* API_REGISTER_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
-    /* API_DEREGISTER_EVT */ {BTA_AG_START_DEREG, BTA_AG_IGNORE,
-                              BTA_AG_CLOSING_ST},
+    /* API_DEREGISTER_EVT */
+    {BTA_AG_START_DEREG, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
     /* API_OPEN_EVT */ {BTA_AG_OPEN_FAIL, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
     /* API_CLOSE_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
     /* API_AUDIO_OPEN_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
@@ -212,8 +206,8 @@ const uint8_t bta_ag_st_closing[][BTA_AG_NUM_COLS] = {
     /* RFC_SRV_CLOSE_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
     /* RFC_DATA_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
     /* SCO_OPEN_EVT */ {BTA_AG_SCO_CONN_OPEN, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
-    /* SCO_CLOSE_EVT */ {BTA_AG_SCO_CONN_CLOSE, BTA_AG_POST_SCO_CLOSE,
-                         BTA_AG_CLOSING_ST},
+    /* SCO_CLOSE_EVT */
+    {BTA_AG_SCO_CONN_CLOSE, BTA_AG_POST_SCO_CLOSE, BTA_AG_CLOSING_ST},
     /* DISC_ACP_RES_EVT */ {BTA_AG_FREE_DB, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
     /* DISC_INT_RES_EVT */ {BTA_AG_FREE_DB, BTA_AG_IGNORE, BTA_AG_INIT_ST},
     /* DISC_OK_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
@@ -221,8 +215,7 @@ const uint8_t bta_ag_st_closing[][BTA_AG_NUM_COLS] = {
     /* CI_RX_WRITE_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
     /* RING_TOUT_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
     /* SVC_TOUT_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
-    /* CI_SCO_DATA_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST},
-    /* CI_SLC_READY_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST}};
+    /* CI_SCO_DATA_EVT */ {BTA_AG_IGNORE, BTA_AG_IGNORE, BTA_AG_CLOSING_ST}};
 
 /* type for state table */
 typedef const uint8_t (*tBTA_AG_ST_TBL)[BTA_AG_NUM_COLS];
@@ -586,10 +579,9 @@ static void bta_ag_api_enable(tBTA_AG_DATA* p_data) {
 
   /* store callback function */
   bta_ag_cb.p_cback = p_data->api_enable.p_cback;
-  bta_ag_cb.parse_mode = p_data->api_enable.parse_mode;
 
   /* call init call-out */
-  bta_ag_co_init();
+  BTM_WriteVoiceSettings(AG_VOICE_SETTINGS);
 
   bta_sys_collision_register(BTA_ID_AG, bta_ag_collision_cback);
 
@@ -903,8 +895,6 @@ static char* bta_ag_evt_str(uint16_t event, tBTA_AG_RES result) {
       return "Disable AG";
     case BTA_AG_CI_SCO_DATA_EVT:
       return "SCO data Callin";
-    case BTA_AG_CI_SLC_READY_EVT:
-      return "SLC Ready Callin";
     default:
       return "Unknown AG Event";
   }

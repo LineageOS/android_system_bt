@@ -287,6 +287,9 @@ cc_test {
         "liblog",
         "libgmock",
     ],
+    sanitize: {
+        cfi: false,
+    },
 }
 
 // Bluetooth stack advertise data parsing unit tests for target
@@ -337,4 +340,7 @@ cc_test {
         "libosi",
         "libbt-protos",
     ],
+    sanitize: {
+        cfi: false,
+    },
 }

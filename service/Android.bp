@@ -144,6 +144,9 @@ cc_test {
             ],
         },
     },
+    sanitize: {
+        cfi: false,
+    },
 }
 
 // Native system service CLI for target
