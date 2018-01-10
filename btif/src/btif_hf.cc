@@ -626,17 +626,6 @@ static void bte_hf_evt(tBTA_AG_EVT event, tBTA_AG* p_data) {
   ASSERTC(status == BT_STATUS_SUCCESS, "context transfer failed", status);
 }
 
-static bool inband_ringing_property_disabled() {
-  char disable_inband_ringing_flag[PROPERTY_VALUE_MAX] = {0};
-  osi_property_get("persist.bluetooth.disableinbandringing",
-                   disable_inband_ringing_flag, "false");
-  if (strncmp(disable_inband_ringing_flag, "true", 4) == 0) {
-    BTIF_TRACE_DEBUG("%s: In-band ringing disabled by property", __func__);
-    return true;
-  }
-  return false;
-}
-
 /*******************************************************************************
  *
  * Function         connect
@@ -699,7 +688,7 @@ class HeadsetInterface : Interface {
     return instance;
   }
   bt_status_t Init(Callbacks* callbacks, int max_hf_clients,
-                   bool inband_ringing_supported) override;
+                   bool inband_ringing_enabled) override;
   bt_status_t Connect(RawAddress* bd_addr) override;
   bt_status_t Disconnect(RawAddress* bd_addr) override;
   bt_status_t ConnectAudio(RawAddress* bd_addr) override;
@@ -737,19 +726,16 @@ class HeadsetInterface : Interface {
 };
 
 bt_status_t HeadsetInterface::Init(Callbacks* callbacks, int max_hf_clients,
-                                   bool inband_ringing_supported) {
-  bool inband_ringing_property_disable = inband_ringing_property_disabled();
-  if (inband_ringing_supported && !inband_ringing_property_disable) {
+                                   bool inband_ringing_enabled) {
+  if (inband_ringing_enabled) {
     btif_hf_features |= BTA_AG_FEAT_INBAND;
   } else {
     btif_hf_features &= ~BTA_AG_FEAT_INBAND;
   }
   btif_max_hf_clients = max_hf_clients;
   BTIF_TRACE_DEBUG(
-      "%s: btif_hf_features=%zu, max_hf_clients=%d, "
-      "inband_ringing=[supported=%d, enabled=%d]",
-      __func__, btif_hf_features, btif_max_hf_clients, inband_ringing_supported,
-      !inband_ringing_property_disable);
+      "%s: btif_hf_features=%zu, max_hf_clients=%d, inband_ringing_enabled=%d",
+      __func__, btif_hf_features, btif_max_hf_clients, inband_ringing_enabled);
   bt_hf_callbacks = callbacks;
   for (btif_hf_cb_t& hf_cb : btif_hf_cb) {
     hf_cb = {};
