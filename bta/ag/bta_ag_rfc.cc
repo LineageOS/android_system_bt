@@ -27,7 +27,6 @@
 
 #include "bt_common.h"
 #include "bta_ag_api.h"
-#include "bta_ag_co.h"
 #include "bta_ag_int.h"
 #include "bta_api.h"
 #include "bta_sys.h"
@@ -171,8 +170,6 @@ static void bta_ag_mgmt_cback(uint32_t code, uint16_t port_handle,
  ******************************************************************************/
 static int bta_ag_data_cback(UNUSED_ATTR uint16_t port_handle, void* p_data,
                              uint16_t len, uint16_t handle) {
-  /* call data call-out directly */
-  bta_ag_co_tx_write(handle, (uint8_t*)p_data, len);
   return 0;
 }
 
