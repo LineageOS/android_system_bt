@@ -22,6 +22,8 @@
  *
  ******************************************************************************/
 
+#include <cutils/log.h>
+
 #include <stdio.h>
 #include <string.h>
 #include "bt_common.h"
@@ -804,6 +806,13 @@ UINT8 *bnep_process_control_packet (tBNEP_CONN *p_bcb, UINT8 *p, UINT16 *rem_len
         break;
 
     case BNEP_SETUP_CONNECTION_REQUEST_MSG:
+        if (*rem_len < 1) {
+            BNEP_TRACE_ERROR(
+                "%s: Received BNEP_SETUP_CONNECTION_REQUEST_MSG with bad length",
+                __func__);
+            android_errorWriteLog(0x534e4554, "69177292");
+            goto bad_packet_length;
+        }
         len = *p++;
         if (*rem_len < ((2 * len) + 1)) {
             BNEP_TRACE_ERROR(
@@ -831,6 +840,13 @@ UINT8 *bnep_process_control_packet (tBNEP_CONN *p_bcb, UINT8 *p, UINT16 *rem_len
         break;
 
     case BNEP_FILTER_NET_TYPE_SET_MSG:
+        if (*rem_len < 2) {
+            BNEP_TRACE_ERROR(
+                "%s: Received BNEP_FILTER_NET_TYPE_SET_MSG with bad length",
+                __func__);
+            android_errorWriteLog(0x534e4554, "69177292");
+            goto bad_packet_length;
+        }
         BE_STREAM_TO_UINT16 (len, p);
         if (*rem_len < (len + 2))
         {
@@ -857,6 +873,13 @@ UINT8 *bnep_process_control_packet (tBNEP_CONN *p_bcb, UINT8 *p, UINT16 *rem_len
         break;
 
     case BNEP_FILTER_MULTI_ADDR_SET_MSG:
+        if (*rem_len < 2) {
+            BNEP_TRACE_ERROR(
+                "%s: Received BNEP_FILTER_MULTI_ADDR_SET_MSG with bad length",
+                __func__);
+            android_errorWriteLog(0x534e4554, "69177292");
+            goto bad_packet_length;
+        }
         BE_STREAM_TO_UINT16 (len, p);
         if (*rem_len < (len + 2))
         {
