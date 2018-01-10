@@ -82,10 +82,8 @@ enum {
   BTA_AG_DISC_INT_RES_EVT,
   BTA_AG_DISC_OK_EVT,
   BTA_AG_DISC_FAIL_EVT,
-  BTA_AG_CI_RX_WRITE_EVT,
   BTA_AG_RING_TIMEOUT_EVT,
   BTA_AG_SVC_TIMEOUT_EVT,
-  BTA_AG_CI_SCO_DATA_EVT,
   BTA_AG_MAX_EVT,
 
   /* these events are handled outside of the state machine */
@@ -186,12 +184,6 @@ typedef struct {
   uint16_t port_handle;
 } tBTA_AG_RFC;
 
-/* data type for BTA_AG_CI_RX_WRITE_EVT */
-typedef struct {
-  BT_HDR hdr;
-  //    char            p_data[BTA_AG_MTU+1];
-} tBTA_AG_CI_RX_WRITE;
-
 /* union of all event datatypes */
 typedef union {
   BT_HDR hdr;
@@ -204,7 +196,6 @@ typedef union {
   tBTA_AG_API_SET_ACTIVE_DEVICE api_set_active_device;
   tBTA_AG_DISC_RESULT disc_result;
   tBTA_AG_RFC rfc;
-  tBTA_AG_CI_RX_WRITE ci_rx_write;
 } tBTA_AG_DATA;
 
 /* type for each profile */
@@ -395,8 +386,6 @@ extern void bta_ag_result(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 extern void bta_ag_setcodec(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 extern void bta_ag_send_bcs(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 extern void bta_ag_send_ring(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_ci_sco_data(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_ci_rx_data(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 extern void bta_ag_set_sco_allowed(tBTA_AG_DATA* p_data);
 extern const RawAddress& bta_ag_get_active_device();
 extern void bta_clear_active_device();

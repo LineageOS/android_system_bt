@@ -771,33 +771,6 @@ void bta_ag_svc_conn_open(tBTA_AG_SCB* p_scb,
 
 /*******************************************************************************
  *
- * Function         bta_ag_ci_rx_data
- *
- * Description      Send result code
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_ag_ci_rx_data(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
-  uint16_t len;
-  tBTA_AG_CI_RX_WRITE* p_rx_write_msg = &p_data->ci_rx_write;
-  char* p_data_area =
-      (char*)(p_rx_write_msg + 1); /* Point to data area after header */
-
-  APPL_TRACE_DEBUG("bta_ag_ci_rx_data:");
-  /* send to RFCOMM */
-  bta_sys_busy(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
-  PORT_WriteData(p_scb->conn_handle, p_data_area, strlen(p_data_area), &len);
-  if ((p_scb->sco_idx != BTM_INVALID_SCO_INDEX) && bta_ag_sco_is_open(p_scb)) {
-    APPL_TRACE_DEBUG("bta_ag_rfc_data, change link policy for SCO");
-    bta_sys_sco_open(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
-  } else {
-    bta_sys_idle(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
-  }
-}
-
-/*******************************************************************************
- *
  * Function         bta_ag_setcodec
  *
  * Description      Handle API SetCodec
