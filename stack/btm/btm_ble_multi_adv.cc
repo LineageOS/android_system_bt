@@ -20,6 +20,7 @@
 #include <base/bind.h>
 #include <base/location.h>
 #include <base/logging.h>
+#include <base/memory/weak_ptr.h>
 #include <base/strings/string_number_conversions.h>
 #include <base/time/time.h>
 #include <string.h>
@@ -139,7 +140,7 @@ class BleAdvertisingManagerImpl;
 /* a temporary type for holding all the data needed in callbacks below*/
 struct CreatorParams {
   uint8_t inst_id;
-  BleAdvertisingManagerImpl* self;
+  base::WeakPtr<BleAdvertisingManagerImpl> self;
   IdTxPowerStatusCb cb;
   tBTM_BLE_ADV_PARAMS params;
   std::vector<uint8_t> advertise_data;
@@ -157,11 +158,11 @@ class BleAdvertisingManagerImpl
     : public BleAdvertisingManager,
       public BleAdvertiserHciInterface::AdvertisingEventObserver {
  public:
-  BleAdvertisingManagerImpl(BleAdvertiserHciInterface* interface) {
-    this->hci_interface = interface;
+  BleAdvertisingManagerImpl(BleAdvertiserHciInterface* interface)
+      : hci_interface(interface), weak_factory_(this) {
     hci_interface->ReadInstanceCount(
         base::Bind(&BleAdvertisingManagerImpl::ReadInstanceCountCb,
-                   base::Unretained(this)));
+                   weak_factory_.GetWeakPtr()));
   }
 
   ~BleAdvertisingManagerImpl() { adv_inst.clear(); }
@@ -210,7 +211,7 @@ class BleAdvertisingManagerImpl
   void GenerateRpa(base::Callback<void(RawAddress)> cb) {
     btm_gen_resolvable_private_addr(
         Bind(&BleAdvertisingManagerImpl::OnRpaGenerationComplete,
-             base::Unretained(this), std::move(cb)));
+             weak_factory_.GetWeakPtr(), std::move(cb)));
   }
 
   void ConfigureRpa(AdvertisingInstance* p_inst, MultiAdvCb configuredCb) {
@@ -308,7 +309,7 @@ class BleAdvertisingManagerImpl
     /* a temporary type for holding all the data needed in callbacks below*/
     struct CreatorParams {
       uint8_t inst_id;
-      BleAdvertisingManagerImpl* self;
+      base::WeakPtr<BleAdvertisingManagerImpl> self;
       MultiAdvCb cb;
       tBTM_BLE_ADV_PARAMS params;
       std::vector<uint8_t> advertise_data;
@@ -320,7 +321,7 @@ class BleAdvertisingManagerImpl
     std::unique_ptr<CreatorParams> c;
     c.reset(new CreatorParams());
 
-    c->self = this;
+    c->self = weak_factory_.GetWeakPtr();
     c->cb = std::move(cb);
     c->params = *params;
     c->advertise_data = std::move(advertise_data);
@@ -336,7 +337,12 @@ class BleAdvertisingManagerImpl
     // clang-format off
     c->self->SetParameters(c->inst_id, &c->params, Bind(
       [](c_type c, uint8_t status, int8_t tx_power) {
-        if (status != 0) {
+        if (!c->self) {
+          LOG(INFO) << "Stack was shut down";
+          return;
+        }
+
+        if (status) {
           LOG(ERROR) << "setting parameters failed, status: " << +status;
           c->cb.Run(status);
           return;
@@ -347,6 +353,11 @@ class BleAdvertisingManagerImpl
         const RawAddress& rpa = c->self->adv_inst[c->inst_id].own_address;
         c->self->GetHciInterface()->SetRandomAddress(c->inst_id, rpa, Bind(
           [](c_type c, uint8_t status) {
+            if (!c->self) {
+              LOG(INFO) << "Stack was shut down";
+              return;
+            }
+
             if (status != 0) {
               LOG(ERROR) << "setting random address failed, status: " << +status;
               c->cb.Run(status);
@@ -355,6 +366,11 @@ class BleAdvertisingManagerImpl
 
             c->self->SetData(c->inst_id, false, std::move(c->advertise_data), Bind(
               [](c_type c, uint8_t status) {
+                if (!c->self) {
+                  LOG(INFO) << "Stack was shut down";
+                  return;
+                }
+
                 if (status != 0) {
                   LOG(ERROR) << "setting advertise data failed, status: " << +status;
                   c->cb.Run(status);
@@ -363,6 +379,11 @@ class BleAdvertisingManagerImpl
 
                 c->self->SetData(c->inst_id, true, std::move(c->scan_response_data), Bind(
                   [](c_type c, uint8_t status) {
+                    if (!c->self) {
+                      LOG(INFO) << "Stack was shut down";
+                      return;
+                    }
+
                     if (status != 0) {
                       LOG(ERROR) << "setting scan response data failed, status: " << +status;
                       c->cb.Run(status);
@@ -388,7 +409,7 @@ class BleAdvertisingManagerImpl
     std::unique_ptr<CreatorParams> c;
     c.reset(new CreatorParams());
 
-    c->self = this;
+    c->self = weak_factory_.GetWeakPtr();
     c->cb = std::move(cb);
     c->params = *params;
     c->advertise_data = std::move(advertise_data);
@@ -404,8 +425,13 @@ class BleAdvertisingManagerImpl
     // clang-format off
     c->self->RegisterAdvertiser(Bind(
       [](c_type c, uint8_t advertiser_id, uint8_t status) {
+        if (!c->self) {
+          LOG(INFO) << "Stack was shut down";
+          return;
+        }
+
         if (status != 0) {
-          LOG(ERROR) << "registering advertiser failed, status: " << +status;
+          LOG(ERROR) << " failed, status: " << +status;
           c->cb.Run(0, 0, status);
           return;
         }
@@ -414,6 +440,11 @@ class BleAdvertisingManagerImpl
 
         c->self->SetParameters(c->inst_id, &c->params, Bind(
           [](c_type c, uint8_t status, int8_t tx_power) {
+            if (!c->self) {
+              LOG(INFO) << "Stack was shut down";
+              return;
+            }
+
             if (status != 0) {
               c->self->Unregister(c->inst_id);
               LOG(ERROR) << "setting parameters failed, status: " << +status;
@@ -432,6 +463,11 @@ class BleAdvertisingManagerImpl
             const RawAddress& rpa = c->self->adv_inst[c->inst_id].own_address;
             c->self->GetHciInterface()->SetRandomAddress(c->inst_id, rpa, Bind(
               [](c_type c, uint8_t status) {
+                if (!c->self) {
+                  LOG(INFO) << "Stack was shut down";
+                  return;
+                }
+
                 if (status != 0) {
                   c->self->Unregister(c->inst_id);
                   LOG(ERROR) << "setting random address failed, status: " << +status;
@@ -447,31 +483,51 @@ class BleAdvertisingManagerImpl
   }
 
   void StartAdvertisingSetAfterAddressPart(c_type c) {
-    c->self->SetData(c->inst_id, false, std::move(c->advertise_data), Bind(
-      [](c_type c, uint8_t status) {
-        if (status != 0) {
-          c->self->Unregister(c->inst_id);
-          LOG(ERROR) << "setting advertise data failed, status: " << +status;
-          c->cb.Run(0, 0, status);
-          return;
-        }
+    c->self->SetData(
+        c->inst_id, false, std::move(c->advertise_data),
+        Bind(
+            [](c_type c, uint8_t status) {
+              if (!c->self) {
+                LOG(INFO) << "Stack was shut down";
+                return;
+              }
 
-        c->self->SetData(c->inst_id, true, std::move(c->scan_response_data), Bind(
-          [](c_type c, uint8_t status) {
-            if (status != 0) {
-              c->self->Unregister(c->inst_id);
-              LOG(ERROR) << "setting scan response data failed, status: " << +status;
-              c->cb.Run(0, 0, status);
-              return;
-            }
+              if (status != 0) {
+                c->self->Unregister(c->inst_id);
+                LOG(ERROR) << "setting advertise data failed, status: "
+                           << +status;
+                c->cb.Run(0, 0, status);
+                return;
+              }
 
-            if (c->periodic_params.enable) {
-              c->self->StartAdvertisingSetPeriodicPart(std::move(c));
-            } else {
-              c->self->StartAdvertisingSetFinish(std::move(c));
-            }
-        }, base::Passed(&c)));
-    }, base::Passed(&c)));
+              c->self->SetData(
+                  c->inst_id, true, std::move(c->scan_response_data),
+                  Bind(
+                      [](c_type c, uint8_t status) {
+                        if (!c->self) {
+                          LOG(INFO) << "Stack was shut down";
+                          return;
+                        }
+
+                        if (status != 0) {
+                          c->self->Unregister(c->inst_id);
+                          LOG(ERROR)
+                              << "setting scan response data failed, status: "
+                              << +status;
+                          c->cb.Run(0, 0, status);
+                          return;
+                        }
+
+                        if (c->periodic_params.enable) {
+                          c->self->StartAdvertisingSetPeriodicPart(
+                              std::move(c));
+                        } else {
+                          c->self->StartAdvertisingSetFinish(std::move(c));
+                        }
+                      },
+                      base::Passed(&c)));
+            },
+            base::Passed(&c)));
   }
 
   void StartAdvertisingSetPeriodicPart(c_type c) {
@@ -480,6 +536,11 @@ class BleAdvertisingManagerImpl
     // clang-format off
     c->self->SetPeriodicAdvertisingParameters(c->inst_id, &c->periodic_params, Bind(
       [](c_type c, uint8_t status) {
+        if (!c->self) {
+          LOG(INFO) << "Stack was shut down";
+          return;
+        }
+
         if (status != 0) {
           c->self->Unregister(c->inst_id);
           LOG(ERROR) << "setting periodic parameters failed, status: " << +status;
@@ -489,6 +550,11 @@ class BleAdvertisingManagerImpl
 
         c->self->SetPeriodicAdvertisingData(c->inst_id, std::move(c->periodic_data), Bind(
           [](c_type c, uint8_t status) {
+            if (!c->self) {
+              LOG(INFO) << "Stack was shut down";
+              return;
+            }
+
             if (status != 0) {
               c->self->Unregister(c->inst_id);
               LOG(ERROR) << "setting periodic parameters failed, status: " << +status;
@@ -498,6 +564,11 @@ class BleAdvertisingManagerImpl
 
             c->self->SetPeriodicAdvertisingEnable(c->inst_id, true, Bind(
               [](c_type c, uint8_t status) {
+                if (!c->self) {
+                  LOG(INFO) << "Stack was shut down";
+                  return;
+                }
+
                 if (status != 0) {
                   c->self->Unregister(c->inst_id);
                   LOG(ERROR) << "enabling periodic advertising failed, status: " << +status;
@@ -518,9 +589,14 @@ class BleAdvertisingManagerImpl
     uint16_t duration = c->duration;
     uint8_t maxExtAdvEvents = c->maxExtAdvEvents;
     RegisterCb timeout_cb = std::move(c->timeout_cb);
-    BleAdvertisingManagerImpl* self = c->self;
+    base::WeakPtr<BleAdvertisingManagerImpl> self = c->self;
     MultiAdvCb enable_cb = Bind(
         [](c_type c, uint8_t status) {
+          if (!c->self) {
+            LOG(INFO) << "Stack was shut down";
+            return;
+          }
+
           if (status != 0) {
             c->self->Unregister(c->inst_id);
             LOG(ERROR) << "enabling advertiser failed, status: " << +status;
@@ -546,9 +622,9 @@ class BleAdvertisingManagerImpl
 
     p_inst->timeout_timer = alarm_new("btm_ble.adv_timeout");
 
-    base::Closure cb = Bind(&BleAdvertisingManagerImpl::Enable,
-                            base::Unretained(this), inst_id, 0 /* disable */,
-                            std::move(timeout_cb), 0, 0, base::Bind(DoNothing));
+    base::Closure cb = Bind(
+        &BleAdvertisingManagerImpl::Enable, weak_factory_.GetWeakPtr(), inst_id,
+        0 /* disable */, std::move(timeout_cb), 0, 0, base::Bind(DoNothing));
 
     // schedule disable when the timeout passes
     alarm_set_closure(FROM_HERE, p_inst->timeout_timer, duration * 10,
@@ -581,8 +657,8 @@ class BleAdvertisingManagerImpl
     if (enable && p_inst->address_update_required) {
       p_inst->address_update_required = false;
       ConfigureRpa(p_inst, base::Bind(&BleAdvertisingManagerImpl::EnableFinish,
-                                      base::Unretained(this), p_inst, enable,
-                                      std::move(cb)));
+                                      weak_factory_.GetWeakPtr(), p_inst,
+                                      enable, std::move(cb)));
       return;
     }
 
@@ -596,7 +672,7 @@ class BleAdvertisingManagerImpl
       // TODO(jpawlowski): HCI implementation that can't do duration should
       // emulate it, not EnableWithTimerCb.
       myCb = Bind(&BleAdvertisingManagerImpl::EnableWithTimerCb,
-                  base::Unretained(this), p_inst->inst_id, std::move(cb),
+                  weak_factory_.GetWeakPtr(), p_inst->inst_id, std::move(cb),
                   p_inst->duration, p_inst->timeout_cb);
     } else {
       myCb = std::move(cb);
@@ -694,7 +770,7 @@ class BleAdvertisingManagerImpl
     DivideAndSendData(
         inst_id, data, cb,
         base::Bind(&BleAdvertisingManagerImpl::SetDataAdvDataSender,
-                   base::Unretained(this), is_scan_rsp));
+                   weak_factory_.GetWeakPtr(), is_scan_rsp));
   }
 
   void SetDataAdvDataSender(uint8_t is_scan_rsp, uint8_t inst_id,
@@ -932,6 +1008,11 @@ class BleAdvertisingManagerImpl
   BleAdvertiserHciInterface* hci_interface = nullptr;
   std::vector<AdvertisingInstance> adv_inst;
   uint8_t inst_count;
+
+  // Member variables should appear before the WeakPtrFactory, to ensure
+  // that any WeakPtrs are invalidated before its members
+  // variable's destructors are executed, rendering them invalid.
+  base::WeakPtrFactory<BleAdvertisingManagerImpl> weak_factory_;
 };
 
 BleAdvertisingManager* instance;
