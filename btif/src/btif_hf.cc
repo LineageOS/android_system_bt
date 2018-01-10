@@ -1323,7 +1323,7 @@ bt_status_t ExecuteService(bool b_enable) {
   const char* p_service_names[] = BTIF_HF_SERVICE_NAMES;
   if (b_enable) {
     /* Enable and register with BTA-AG */
-    BTA_AgEnable(BTA_AG_PARSE, bte_hf_evt);
+    BTA_AgEnable(bte_hf_evt);
     for (int i = 0; i < btif_max_hf_clients; i++) {
       BTA_AgRegister(BTIF_HF_SERVICES, BTIF_HF_SECURITY, btif_hf_features,
                      p_service_names, bthf_hf_id[i]);

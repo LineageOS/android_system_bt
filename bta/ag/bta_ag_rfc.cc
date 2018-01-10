@@ -48,10 +48,6 @@ void bta_ag_mgmt_cback_1(uint32_t code, uint16_t port_handle);
 void bta_ag_mgmt_cback_2(uint32_t code, uint16_t port_handle);
 void bta_ag_mgmt_cback_3(uint32_t code, uint16_t port_handle);
 
-int bta_ag_data_cback_1(uint16_t port_handle, void* p_data, uint16_t len);
-int bta_ag_data_cback_2(uint16_t port_handle, void* p_data, uint16_t len);
-int bta_ag_data_cback_3(uint16_t port_handle, void* p_data, uint16_t len);
-
 /* rfcomm callback function tables */
 typedef tPORT_CALLBACK* tBTA_AG_PORT_CBACK;
 const tBTA_AG_PORT_CBACK bta_ag_port_cback_tbl[] = {
@@ -59,10 +55,6 @@ const tBTA_AG_PORT_CBACK bta_ag_port_cback_tbl[] = {
 
 const tBTA_AG_PORT_CBACK bta_ag_mgmt_cback_tbl[] = {
     bta_ag_mgmt_cback_1, bta_ag_mgmt_cback_2, bta_ag_mgmt_cback_3};
-
-typedef tPORT_DATA_CALLBACK* tBTA_AG_DATA_CBACK;
-const tBTA_AG_DATA_CBACK bta_ag_data_cback_tbl[] = {
-    bta_ag_data_cback_1, bta_ag_data_cback_2, bta_ag_data_cback_3};
 
 /*******************************************************************************
  *
@@ -160,21 +152,6 @@ static void bta_ag_mgmt_cback(uint32_t code, uint16_t port_handle,
 
 /*******************************************************************************
  *
- * Function         bta_ag_data_cback
- *
- * Description      RFCOMM data callback
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-static int bta_ag_data_cback(UNUSED_ATTR uint16_t port_handle, void* p_data,
-                             uint16_t len, uint16_t handle) {
-  return 0;
-}
-
-/*******************************************************************************
- *
  * Function         bta_ag_port_cback_1 to 3
  *                  bta_ag_mgmt_cback_1 to 3
  *
@@ -206,27 +183,6 @@ void bta_ag_port_cback_3(uint32_t code, uint16_t handle) {
 
 /*******************************************************************************
  *
- * Function         bta_ag_data_cback_1 to 3
- *
- * Description      RFCOMM data callback functions.  This is an easy way to
- *                  distinguish scb from the callback.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-int bta_ag_data_cback_1(uint16_t port_handle, void* p_data, uint16_t len) {
-  return bta_ag_data_cback(port_handle, p_data, len, 1);
-}
-int bta_ag_data_cback_2(uint16_t port_handle, void* p_data, uint16_t len) {
-  return bta_ag_data_cback(port_handle, p_data, len, 2);
-}
-int bta_ag_data_cback_3(uint16_t port_handle, void* p_data, uint16_t len) {
-  return bta_ag_data_cback(port_handle, p_data, len, 3);
-}
-
-/*******************************************************************************
- *
  * Function         bta_ag_setup_port
  *
  * Description      Setup RFCOMM port for use by AG.
@@ -237,12 +193,6 @@ int bta_ag_data_cback_3(uint16_t port_handle, void* p_data, uint16_t len) {
  ******************************************************************************/
 void bta_ag_setup_port(tBTA_AG_SCB* p_scb, uint16_t handle) {
   uint16_t i = bta_ag_scb_to_idx(p_scb) - 1;
-
-  /* set up data callback if using pass through mode */
-  if (bta_ag_cb.parse_mode == BTA_AG_PASS_THROUGH) {
-    PORT_SetDataCallback(handle, bta_ag_data_cback_tbl[i]);
-  }
-
   PORT_SetEventMask(handle, BTA_AG_PORT_EV_MASK);
   PORT_SetEventCallback(handle, bta_ag_port_cback_tbl[i]);
 }
