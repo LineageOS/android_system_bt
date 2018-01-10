@@ -3372,81 +3372,54 @@ void l2cu_set_acl_hci_header(BT_HDR* p_buf, tL2C_CCB* p_ccb) {
   p_buf->len += HCI_DATA_PREAMBLE_SIZE;
 }
 
-/******************************************************************************
- *
- * Function         l2cu_check_channel_congestion
- *
- * Description      check if any change in congestion status
- *
- * Returns          None
- *
- ******************************************************************************/
-void l2cu_check_channel_congestion(tL2C_CCB* p_ccb) {
-  size_t q_count = fixed_queue_length(p_ccb->xmit_hold_q);
+static void send_congestion_status_to_all_clients(tL2C_CCB* p_ccb,
+                                                  bool status) {
+  p_ccb->cong_sent = status;
 
-  /* If the CCB queue limit is subject to a quota, check for congestion */
-  /* if this channel has outgoing traffic */
-  if (p_ccb->buff_quota != 0) {
-    /* If this channel was congested */
-    if (p_ccb->cong_sent) {
-      /* If the channel is not congested now, tell the app */
-      if (q_count <= (p_ccb->buff_quota / 2)) {
-        p_ccb->cong_sent = false;
-        if (p_ccb->p_rcb && p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb) {
-          L2CAP_TRACE_DEBUG(
-              "L2CAP - Calling CongestionStatus_Cb (false), CID: 0x%04x  "
-              "xmit_hold_q.count: %u  buff_quota: %u",
-              p_ccb->local_cid, q_count, p_ccb->buff_quota);
+  if (p_ccb->p_rcb && p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb) {
+    L2CAP_TRACE_DEBUG(
+        "L2CAP - Calling CongestionStatus_Cb (%d), CID: 0x%04x "
+        "xmit_hold_q.count: %u  buff_quota: %u",
+        status, p_ccb->local_cid, fixed_queue_length(p_ccb->xmit_hold_q),
+        p_ccb->buff_quota);
 
-          /* Prevent recursive calling */
-          l2cb.is_cong_cback_context = true;
-          (*p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb)(p_ccb->local_cid,
-                                                         false);
-          l2cb.is_cong_cback_context = false;
-        }
+    /* Prevent recursive calling */
+    if (status == false) l2cb.is_cong_cback_context = true;
+
+    (*p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb)(p_ccb->local_cid, status);
+
+    if (status == false) l2cb.is_cong_cback_context = false;
+  }
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
-        else {
-          uint8_t xx;
-          for (xx = 0; xx < L2CAP_NUM_FIXED_CHNLS; xx++) {
-            if (p_ccb->p_lcb->p_fixed_ccbs[xx] == p_ccb) {
-              if (l2cb.fixed_reg[xx].pL2CA_FixedCong_Cb != NULL)
-                (*l2cb.fixed_reg[xx].pL2CA_FixedCong_Cb)(
-                    p_ccb->p_lcb->remote_bd_addr, false);
-              break;
-            }
-          }
-        }
-#endif
-      }
-    } else {
-      /* If this channel was not congested but it is congested now, tell the app
-       */
-      if (q_count > p_ccb->buff_quota) {
-        p_ccb->cong_sent = true;
-        if (p_ccb->p_rcb && p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb) {
-          L2CAP_TRACE_DEBUG(
-              "L2CAP - Calling CongestionStatus_Cb "
-              "(true),CID:0x%04x,XmitQ:%u,Quota:%u",
-              p_ccb->local_cid, q_count, p_ccb->buff_quota);
-
-          (*p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb)(p_ccb->local_cid,
-                                                         true);
-        }
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
-        else {
-          uint8_t xx;
-          for (xx = 0; xx < L2CAP_NUM_FIXED_CHNLS; xx++) {
-            if (p_ccb->p_lcb->p_fixed_ccbs[xx] == p_ccb) {
-              if (l2cb.fixed_reg[xx].pL2CA_FixedCong_Cb != NULL)
-                (*l2cb.fixed_reg[xx].pL2CA_FixedCong_Cb)(
-                    p_ccb->p_lcb->remote_bd_addr, true);
-              break;
-            }
-          }
-        }
-#endif
+  else {
+    for (uint8_t xx = 0; xx < L2CAP_NUM_FIXED_CHNLS; xx++) {
+      if (p_ccb->p_lcb->p_fixed_ccbs[xx] == p_ccb) {
+        if (l2cb.fixed_reg[xx].pL2CA_FixedCong_Cb != NULL)
+          (*l2cb.fixed_reg[xx].pL2CA_FixedCong_Cb)(p_ccb->p_lcb->remote_bd_addr,
+                                                   status);
+        break;
       }
     }
+  }
+#endif
+}
+
+/* check if any change in congestion status */
+void l2cu_check_channel_congestion(tL2C_CCB* p_ccb) {
+  /* If the CCB queue limit is subject to a quota, check for congestion if this
+   * channel has outgoing traffic */
+  if (p_ccb->buff_quota == 0) return;
+
+  size_t q_count = fixed_queue_length(p_ccb->xmit_hold_q);
+
+  if (p_ccb->cong_sent) {
+    /* if channel was congested, but is not congested now, tell the app */
+    if (q_count <= (p_ccb->buff_quota / 2))
+      send_congestion_status_to_all_clients(p_ccb, false);
+  } else {
+    /* if channel was not congested, but is congested now, tell the app */
+    if (q_count > p_ccb->buff_quota)
+      send_congestion_status_to_all_clients(p_ccb, true);
   }
 }
 
