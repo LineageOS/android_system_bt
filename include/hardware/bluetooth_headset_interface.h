@@ -34,12 +34,11 @@ class Interface {
    *
    * @param callbacks callbacks for the user of the native stack
    * @param max_hf_clients maximum number of headset clients
-   * @param inband_ringing_supported whether inband ringtone is supported by
-   * the platform hardware
+   * @param inband_ringing_enabled whether inband ringtone is enabled
    * @return BT_STATUS_SUCCESS on success
    */
   virtual bt_status_t Init(Callbacks* callbacks, int max_hf_clients,
-                           bool inband_ringing_supported) = 0;
+                           bool inband_ringing_enabled) = 0;
 
   /**
    * Connect to headset
