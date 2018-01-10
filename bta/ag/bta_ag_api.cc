@@ -37,6 +37,7 @@
  ****************************************************************************/
 
 static const tBTA_SYS_REG bta_ag_reg = {bta_ag_hdl_event, BTA_AgDisable};
+const tBTA_AG_RES_DATA tBTA_AG_RES_DATA::kEmpty = {};
 
 /*******************************************************************************
  *
