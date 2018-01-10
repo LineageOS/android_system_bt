@@ -62,7 +62,6 @@ enum {
   BTA_AG_SCO_SHUTDOWN_E,   /* shutdown request */
   BTA_AG_SCO_CONN_OPEN_E,  /* sco open */
   BTA_AG_SCO_CONN_CLOSE_E, /* sco closed */
-  BTA_AG_SCO_CI_DATA_E     /* SCO data ready */
 };
 
 static void bta_ag_create_pending_sco(tBTA_AG_SCB* p_scb, bool is_local);
@@ -540,17 +539,13 @@ static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
 #if (BTA_AG_SCO_DEBUG == TRUE)
   uint8_t in_state = p_sco->state;
 
-  if (event != BTA_AG_SCO_CI_DATA_E) {
-    APPL_TRACE_EVENT("%s: SCO Index 0x%04x, State %d (%s), Event %d (%s)",
-                     __func__, p_scb->sco_idx, p_sco->state,
-                     bta_ag_sco_state_str(p_sco->state), event,
-                     bta_ag_sco_evt_str(event));
-  }
+  APPL_TRACE_EVENT("%s: SCO Index 0x%04x, State %d (%s), Event %d (%s)",
+                   __func__, p_scb->sco_idx, p_sco->state,
+                   bta_ag_sco_state_str(p_sco->state), event,
+                   bta_ag_sco_evt_str(event));
 #else
-  if (event != BTA_AG_SCO_CI_DATA_E) {
-    APPL_TRACE_EVENT("%s: SCO Index 0x%04x, State %d, Event %d", __func__,
-                     p_scb->sco_idx, p_sco->state, event);
-  }
+  APPL_TRACE_EVENT("%s: SCO Index 0x%04x, State %d, Event %d", __func__,
+                   p_scb->sco_idx, p_sco->state, event);
 #endif
 
   switch (p_sco->state) {
@@ -1271,20 +1266,6 @@ void bta_ag_sco_conn_rsp(tBTA_AG_SCB* p_scb,
   bta_ag_create_pending_sco(p_scb, bta_ag_cb.sco.is_local);
 }
 
-/*******************************************************************************
- *
- * Function         bta_ag_ci_sco_data
- *
- * Description      Process the SCO data ready callin event
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_ag_ci_sco_data(UNUSED_ATTR tBTA_AG_SCB* p_scb,
-                        UNUSED_ATTR tBTA_AG_DATA* p_data) {
-}
-
 void bta_ag_set_sco_allowed(tBTA_AG_DATA* p_data) {
   sco_allowed = p_data->api_set_sco_allowed.value;
   APPL_TRACE_DEBUG(sco_allowed ? "sco now allowed" : "sco now not allowed");
@@ -1327,8 +1308,6 @@ static char* bta_ag_sco_evt_str(uint8_t event) {
       return "Opened";
     case BTA_AG_SCO_CONN_CLOSE_E:
       return "Closed";
-    case BTA_AG_SCO_CI_DATA_E:
-      return "Sco Data";
     default:
       return "Unknown SCO Event";
   }
