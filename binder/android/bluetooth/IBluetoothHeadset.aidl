@@ -58,4 +58,5 @@ interface IBluetoothHeadset {
                       String number, int type);
     boolean setActiveDevice(in BluetoothDevice device);
     BluetoothDevice getActiveDevice();
+    boolean isInbandRingingEnabled();
 }
