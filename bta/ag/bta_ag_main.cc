@@ -24,7 +24,6 @@
 
 #include <string.h>
 
-#include "bta_ag_co.h"
 #include "bta_ag_int.h"
 #include "bta_api.h"
 #include "bta_sys.h"
@@ -589,7 +588,7 @@ static void bta_ag_api_enable(tBTA_AG_DATA* p_data) {
   bta_ag_cb.parse_mode = p_data->api_enable.parse_mode;
 
   /* call init call-out */
-  bta_ag_co_init();
+  BTM_WriteVoiceSettings(AG_VOICE_SETTINGS);
 
   bta_sys_collision_register(BTA_ID_AG, bta_ag_collision_cback);
 
