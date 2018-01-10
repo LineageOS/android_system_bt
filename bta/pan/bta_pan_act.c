@@ -229,6 +229,11 @@ static void bta_pan_data_buf_ind_cback(UINT16 handle, BD_ADDR src, BD_ADDR dst, 
     BT_HDR * p_event;
     BT_HDR *p_new_buf;
 
+    p_scb = bta_pan_scb_by_handle(handle);
+    if (p_scb == NULL) {
+      return;
+    }
+
     if ( sizeof(tBTA_PAN_DATA_PARAMS) > p_buf->offset )
     {
         /* offset smaller than data structure in front of actual data */
@@ -237,7 +242,6 @@ static void bta_pan_data_buf_ind_cback(UINT16 handle, BD_ADDR src, BD_ADDR dst, 
           android_errorWriteLog(0x534e4554, "63146237");
           APPL_TRACE_ERROR("%s: received buffer length too large: %d", __func__,
                            p_buf->len);
-          GKI_freebuf(p_buf);
           return;
         }
         p_new_buf = (BT_HDR *)GKI_getpoolbuf( PAN_POOL_ID );
@@ -252,7 +256,6 @@ static void bta_pan_data_buf_ind_cback(UINT16 handle, BD_ADDR src, BD_ADDR dst, 
             memcpy( (UINT8 *)(p_new_buf+1)+sizeof(tBTA_PAN_DATA_PARAMS), (UINT8 *)(p_buf+1)+p_buf->offset, p_buf->len );
             p_new_buf->len    = p_buf->len;
             p_new_buf->offset = sizeof(tBTA_PAN_DATA_PARAMS);
-            GKI_freebuf( p_buf );
         }
     }
     else
@@ -266,13 +269,6 @@ static void bta_pan_data_buf_ind_cback(UINT16 handle, BD_ADDR src, BD_ADDR dst, 
     ((tBTA_PAN_DATA_PARAMS *)p_new_buf)->ext = ext;
     ((tBTA_PAN_DATA_PARAMS *)p_new_buf)->forward = forward;
 
-
-    if((p_scb = bta_pan_scb_by_handle(handle)) == NULL)
-    {
-
-        GKI_freebuf( p_new_buf );
-        return;
-    }
 
     GKI_enqueue(&p_scb->data_queue, p_new_buf);
     if ((p_event = (BT_HDR *) GKI_getbuf(sizeof(BT_HDR))) != NULL)
