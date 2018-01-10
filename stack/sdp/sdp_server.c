@@ -23,6 +23,8 @@
  *
  ******************************************************************************/
 
+#include <cutils/log.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -363,6 +365,12 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
         return;
     }
 
+    if (max_list_len < 4) {
+        sdpu_build_n_send_error(p_ccb, trans_num, SDP_ILLEGAL_PARAMETER, NULL);
+        android_errorWriteLog(0x534e4554, "68776054");
+        return;
+    }
+
     /* Check if this is a continuation request */
     if (*p_req)
     {
@@ -623,6 +631,12 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     }
 
     memcpy(&attr_seq_sav, &attr_seq, sizeof(tSDP_ATTR_SEQ)) ;
+
+    if (max_list_len < 4) {
+        sdpu_build_n_send_error(p_ccb, trans_num, SDP_ILLEGAL_PARAMETER, NULL);
+        android_errorWriteLog(0x534e4554, "68817966");
+        return;
+    }
 
     /* Check if this is a continuation request */
     if (*p_req)
