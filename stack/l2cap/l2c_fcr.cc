@@ -1789,18 +1789,11 @@ BT_HDR* l2c_fcr_get_next_xmit_sdu_seg(tL2C_CCB* p_ccb,
   return (p_xmit);
 }
 
-/*******************************************************************************
- *
- * Function         l2c_lcc_get_next_xmit_sdu_seg
- *
- * Description      Get the next SDU segment to transmit for LE connection
- *                  oriented channel
- *
- * Returns          pointer to buffer with segment or NULL
- *
- ******************************************************************************/
+/** Get the next PDU to transmit for LE connection oriented channel. Returns
+ * pointer to buffer with PDU. |last_piece_of_sdu| will be set to true, if
+ * returned PDU is last piece from this SDU.*/
 BT_HDR* l2c_lcc_get_next_xmit_sdu_seg(tL2C_CCB* p_ccb,
-                                      uint16_t max_packet_length) {
+                                      bool* last_piece_of_sdu) {
   bool first_seg = false; /* The segment is the first part of data  */
   bool last_seg = false;  /* The segment is the last part of data  */
   uint16_t no_of_bytes_to_send = 0;
@@ -1858,6 +1851,8 @@ BT_HDR* l2c_lcc_get_next_xmit_sdu_seg(tL2C_CCB* p_ccb,
     L2CAP_TRACE_ERROR("L2CAP - cannot get buffer, for segmentation");
     return (NULL);
   }
+
+  if (last_piece_of_sdu) *last_piece_of_sdu = last_seg;
 
   if (last_seg) {
     p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_ccb->xmit_hold_q);
