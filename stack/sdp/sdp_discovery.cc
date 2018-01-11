@@ -33,6 +33,7 @@
 #include "hcidefs.h"
 #include "hcimsgs.h"
 #include "l2cdefs.h"
+#include "log/log.h"
 #include "sdp_api.h"
 #include "sdpint.h"
 
@@ -45,9 +46,12 @@ using bluetooth::Uuid;
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
-static void process_service_search_rsp(tCONN_CB* p_ccb, uint8_t* p_reply);
-static void process_service_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply);
-static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply);
+static void process_service_search_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
+                                       uint8_t* p_reply_end);
+static void process_service_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
+                                     uint8_t* p_reply_end);
+static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
+                                            uint8_t* p_reply_end);
 static uint8_t* save_attr_seq(tCONN_CB* p_ccb, uint8_t* p, uint8_t* p_msg_end);
 static tSDP_DISC_REC* add_record(tSDP_DISCOVERY_DB* p_db,
                                  const RawAddress& p_bda);
@@ -190,7 +194,7 @@ void sdp_disc_connected(tCONN_CB* p_ccb) {
   if (p_ccb->is_attr_search) {
     p_ccb->disc_state = SDP_DISC_WAIT_SEARCH_ATTR;
 
-    process_service_search_attr_rsp(p_ccb, NULL);
+    process_service_search_attr_rsp(p_ccb, NULL, NULL);
   } else {
     /* First step is to get a list of the handles from the server. */
     /* We are not searching for a specific attribute, so we will   */
@@ -224,6 +228,7 @@ void sdp_disc_server_rsp(tCONN_CB* p_ccb, BT_HDR* p_msg) {
 
   /* Got a reply!! Check what we got back */
   p = (uint8_t*)(p_msg + 1) + p_msg->offset;
+  uint8_t* p_end = (uint8_t*)(p_msg + 1) + p_msg->len;
 
   BE_STREAM_TO_UINT8(rsp_pdu, p);
 
@@ -232,21 +237,21 @@ void sdp_disc_server_rsp(tCONN_CB* p_ccb, BT_HDR* p_msg) {
   switch (rsp_pdu) {
     case SDP_PDU_SERVICE_SEARCH_RSP:
       if (p_ccb->disc_state == SDP_DISC_WAIT_HANDLES) {
-        process_service_search_rsp(p_ccb, p);
+        process_service_search_rsp(p_ccb, p, p_end);
         invalid_pdu = false;
       }
       break;
 
     case SDP_PDU_SERVICE_ATTR_RSP:
       if (p_ccb->disc_state == SDP_DISC_WAIT_ATTR) {
-        process_service_attr_rsp(p_ccb, p);
+        process_service_attr_rsp(p_ccb, p, p_end);
         invalid_pdu = false;
       }
       break;
 
     case SDP_PDU_SERVICE_SEARCH_ATTR_RSP:
       if (p_ccb->disc_state == SDP_DISC_WAIT_SEARCH_ATTR) {
-        process_service_search_attr_rsp(p_ccb, p);
+        process_service_search_attr_rsp(p_ccb, p, p_end);
         invalid_pdu = false;
       }
       break;
@@ -269,7 +274,8 @@ void sdp_disc_server_rsp(tCONN_CB* p_ccb, BT_HDR* p_msg) {
  * Returns          void
  *
  ******************************************************************************/
-static void process_service_search_rsp(tCONN_CB* p_ccb, uint8_t* p_reply) {
+static void process_service_search_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
+                                       uint8_t* p_reply_end) {
   uint16_t xx;
   uint16_t total, cur_handles, orig;
   uint8_t cont_len;
@@ -301,6 +307,11 @@ static void process_service_search_rsp(tCONN_CB* p_ccb, uint8_t* p_reply) {
       sdp_disconnect(p_ccb, SDP_INVALID_CONT_STATE);
       return;
     }
+    if (p_reply + cont_len > p_reply_end) {
+      android_errorWriteLog(0x534e4554, "68161546");
+      sdp_disconnect(p_ccb, SDP_INVALID_CONT_STATE);
+      return;
+    }
     /* stay in the same state */
     sdp_snd_service_search_req(p_ccb, cont_len, p_reply);
   } else {
@@ -308,7 +319,7 @@ static void process_service_search_rsp(tCONN_CB* p_ccb, uint8_t* p_reply) {
     p_ccb->disc_state = SDP_DISC_WAIT_ATTR;
 
     /* Kick off the first attribute request */
-    process_service_attr_rsp(p_ccb, NULL);
+    process_service_attr_rsp(p_ccb, NULL, NULL);
   }
 }
 
@@ -373,7 +384,8 @@ static void sdp_copy_raw_data(tCONN_CB* p_ccb, bool offset) {
  * Returns          void
  *
  ******************************************************************************/
-static void process_service_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply) {
+static void process_service_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
+                                     uint8_t* p_reply_end) {
   uint8_t *p_start, *p_param_len;
   uint16_t param_len, list_byte_count;
   bool cont_request_needed = false;
@@ -472,8 +484,12 @@ static void process_service_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply) {
 
     /* Was this a continuation request ? */
     if (cont_request_needed) {
-      memcpy(p, p_reply, *p_reply + 1);
-      p += *p_reply + 1;
+      if ((p_reply + *p_reply + 1) <= p_reply_end) {
+        memcpy(p, p_reply, *p_reply + 1);
+        p += *p_reply + 1;
+      } else {
+        android_errorWriteLog(0x534e4554, "68161546");
+      }
     } else
       UINT8_TO_BE_STREAM(p, 0);
 
@@ -505,7 +521,8 @@ static void process_service_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply) {
  * Returns          void
  *
  ******************************************************************************/
-static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply) {
+static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
+                                            uint8_t* p_reply_end) {
   uint8_t *p, *p_start, *p_end, *p_param_len;
   uint8_t type;
   uint32_t seq_len;
@@ -602,8 +619,12 @@ static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply) {
 
     /* No continuation for first request */
     if (p_reply) {
-      memcpy(p, p_reply, *p_reply + 1);
-      p += *p_reply + 1;
+      if ((p_reply + *p_reply + 1) <= p_reply_end) {
+        memcpy(p, p_reply, *p_reply + 1);
+        p += *p_reply + 1;
+      } else {
+        android_errorWriteLog(0x534e4554, "68161546");
+      }
     } else
       UINT8_TO_BE_STREAM(p, 0);
 
