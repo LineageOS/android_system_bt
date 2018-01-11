@@ -21,6 +21,7 @@
 #include "avrc_api.h"
 #include "avrc_defs.h"
 #include "avrc_int.h"
+#include "log/log.h"
 
 /*****************************************************************************
 **  Global data
@@ -166,6 +167,11 @@ static tAVRC_STS avrc_pars_vendor_cmd(tAVRC_MSG_VENDOR *p_msg, tAVRC_COMMAND *p_
                     status = AVRC_STS_INTERNAL_ERR;
                 else
                 {
+                    if (p_result->get_app_val_txt.num_val > AVRC_MAX_APP_ATTR_SIZE) {
+                        android_errorWriteLog(0x534e4554, "63146237");
+                        p_result->get_app_val_txt.num_val = AVRC_MAX_APP_ATTR_SIZE;
+                    }
+
                     p_u8 = p_result->get_app_val_txt.vals;
                     for (xx=0; xx< p_result->get_app_val_txt.num_val; xx++)
                     {
