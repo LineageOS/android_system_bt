@@ -297,8 +297,7 @@ BOOLEAN  smp_send_msg_to_L2CAP(BD_ADDR rem_bda, BT_HDR *p_toL2CAP)
     if ((l2cap_ret = L2CA_SendFixedChnlData (fixed_cid, rem_bda, p_toL2CAP)) == L2CAP_DW_FAILED)
     {
         smp_cb.total_tx_unacked -= 1;
-        SMP_TRACE_ERROR("SMP   failed to pass msg:0x%0x to L2CAP",
-                         *((UINT8 *)(p_toL2CAP + 1) + p_toL2CAP->offset));
+        SMP_TRACE_ERROR("SMP failed to pass msg to L2CAP");
         return FALSE;
     }
     else
