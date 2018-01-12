@@ -223,7 +223,7 @@ void sdp_disc_server_rsp(tCONN_CB* p_ccb, BT_HDR* p_msg) {
 
   /* Got a reply!! Check what we got back */
   p = (uint8_t*)(p_msg + 1) + p_msg->offset;
-  uint8_t* p_end = (uint8_t*)(p_msg + 1) + p_msg->len;
+  uint8_t* p_end = p + p_msg->len;
 
   BE_STREAM_TO_UINT8(rsp_pdu, p);
 
