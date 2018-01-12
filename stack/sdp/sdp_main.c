@@ -85,6 +85,10 @@ void sdp_init (void)
     /* Clears all structures and local SDP database (if Server is enabled) */
     memset (&sdp_cb, 0, sizeof (tSDP_CB));
 
+    for (int i = 0; i < SDP_MAX_CONNECTIONS; i++) {
+      sdp_cb.ccb[i].sdp_conn_timer = alarm_new("sdp.sdp_conn_timer");
+    }
+
     /* Initialize the L2CAP configuration. We only care about MTU and flush */
     sdp_cb.l2cap_my_cfg.mtu_present       = TRUE;
     sdp_cb.l2cap_my_cfg.mtu               = SDP_MTU_SIZE;
@@ -137,6 +141,13 @@ void sdp_init (void)
     {
         SDP_TRACE_ERROR ("SDP Registration failed");
     }
+}
+
+void sdp_free(void) {
+  for (int i = 0; i < SDP_MAX_CONNECTIONS; i++) {
+    alarm_free(sdp_cb.ccb[i].sdp_conn_timer);
+    sdp_cb.ccb[i].sdp_conn_timer = NULL;
+  }
 }
 
 #if (defined(SDP_DEBUG) && SDP_DEBUG == TRUE)
