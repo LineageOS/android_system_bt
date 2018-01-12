@@ -3286,10 +3286,16 @@ BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb,
       L2CAP_TRACE_DEBUG("%s No credits to send packets", __func__);
       return NULL;
     }
-    p_buf = l2c_lcc_get_next_xmit_sdu_seg(p_ccb, 0);
-    if (p_buf == NULL) return (NULL);
 
+    bool last_piece_of_sdu = false;
+    p_buf = l2c_lcc_get_next_xmit_sdu_seg(p_ccb, &last_piece_of_sdu);
     p_ccb->peer_conn_cfg.credits--;
+
+    if (last_piece_of_sdu) {
+      // TODO: send callback up the stack. Investigate setting p_cbi->cb to
+      // notify after controller ack send.
+    }
+
   } else {
     if (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
       p_buf = l2c_fcr_get_next_xmit_sdu_seg(p_ccb, 0);
