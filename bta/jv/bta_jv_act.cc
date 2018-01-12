@@ -1163,10 +1163,9 @@ void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, uint8_t* p_data,
   evt_data.handle = handle;
   evt_data.req_id = req_id;
   evt_data.cong = p_cb->cong;
-  evt_data.len = 0;
+  evt_data.len = len;
   bta_jv_pm_conn_busy(p_cb->p_pm_cb);
-  if (!evt_data.cong &&
-      BT_PASS == GAP_ConnWriteData(handle, p_data, len, &evt_data.len)) {
+  if (!evt_data.cong && BT_PASS == GAP_ConnWriteData(handle, p_data, len)) {
     evt_data.status = BTA_JV_SUCCESS;
   }
 
