@@ -4480,6 +4480,13 @@ void btm_sec_disconnected(uint16_t handle, uint8_t reason) {
       (*btm_cb.api.p_auth_complete_callback)(p_dev_rec->bd_addr,
                                              p_dev_rec->dev_class,
                                              p_dev_rec->sec_bd_name, result);
+
+      // |btm_cb.api.p_auth_complete_callback| may cause |p_dev_rec| to be
+      // deallocated.
+      p_dev_rec = btm_find_dev_by_handle(handle);
+      if (!p_dev_rec) {
+        return;
+      }
     }
   }
 
