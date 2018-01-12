@@ -127,12 +127,25 @@ void sdp_server_handle_client_req (tCONN_CB *p_ccb, BT_HDR *p_msg)
     /* Start inactivity timer */
     alarm_set_on_queue(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
                        sdp_conn_timer_timeout, p_ccb, btu_general_alarm_queue);
+    if (p_req + sizeof(pdu_id) + sizeof(trans_num) > p_req_end) {
+        android_errorWriteLog(0x534e4554, "69384124");
+        trans_num = 0;
+        sdpu_build_n_send_error(p_ccb, trans_num, SDP_INVALID_REQ_SYNTAX,
+                                SDP_TEXT_BAD_HEADER);
+    }
 
     /* The first byte in the message is the pdu type */
     pdu_id = *p_req++;
 
     /* Extract the transaction number and parameter length */
     BE_STREAM_TO_UINT16 (trans_num, p_req);
+
+    if (p_req + sizeof(param_len) > p_req_end) {
+        android_errorWriteLog(0x534e4554, "69384124");
+        sdpu_build_n_send_error(p_ccb, trans_num, SDP_INVALID_REQ_SYNTAX,
+                                SDP_TEXT_BAD_HEADER);
+    }
+
     BE_STREAM_TO_UINT16 (param_len, p_req);
 
     if ((p_req + param_len) != p_req_end)
@@ -197,17 +210,17 @@ static void process_service_search (tCONN_CB *p_ccb, UINT16 trans_num,
     }
 
     /* Get the max replies we can send. Cap it at our max anyways. */
+    if (p_req + sizeof(max_replies) + sizeof(uint8_t) > p_req_end) {
+        android_errorWriteLog(0x534e4554, "69384124");
+        sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_REQ_SYNTAX, SDP_TEXT_BAD_MAX_RECORDS_LIST);
+        return;
+    }
     BE_STREAM_TO_UINT16 (max_replies, p_req);
 
     if (max_replies > SDP_MAX_RECORDS)
         max_replies = SDP_MAX_RECORDS;
 
 
-    if ((!p_req) || (p_req > p_req_end))
-    {
-        sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_REQ_SYNTAX, SDP_TEXT_BAD_MAX_RECORDS_LIST);
-        return;
-    }
 
 
     /* Get a list of handles that match the UUIDs given to us */
@@ -224,8 +237,8 @@ static void process_service_search (tCONN_CB *p_ccb, UINT16 trans_num,
     /* Check if this is a continuation request */
     if (*p_req)
     {
-        if (*p_req++ != SDP_CONTINUATION_LEN || (p_req >= p_req_end))
-        {
+        if (*p_req++ != SDP_CONTINUATION_LEN ||
+            (p_req + sizeof(cont_offset) > p_req_end)) {
             sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_CONT_STATE,
                                      SDP_TEXT_BAD_CONT_LEN);
             return;
@@ -329,14 +342,15 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     BOOLEAN         is_cont = FALSE;
     UINT16          attr_len;
 
-    /* Extract the record handle */
-    BE_STREAM_TO_UINT32 (rec_handle, p_req);
-
-    if (p_req > p_req_end)
-    {
-        sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_SERV_REC_HDL, SDP_TEXT_BAD_HANDLE);
+    if (p_req + sizeof(rec_handle) + sizeof(max_list_len) > p_req_end) {
+        android_errorWriteLog(0x534e4554, "69384124");
+        sdpu_build_n_send_error(p_ccb, trans_num, SDP_INVALID_SERV_REC_HDL,
+                                SDP_TEXT_BAD_HANDLE);
         return;
     }
+
+    /* Extract the record handle */
+    BE_STREAM_TO_UINT32 (rec_handle, p_req);
 
     /* Get the max list length we can send. Cap it at MTU size minus overhead */
     BE_STREAM_TO_UINT16 (max_list_len, p_req);
@@ -346,8 +360,8 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
 
     p_req = sdpu_extract_attr_seq (p_req, param_len, &attr_seq);
 
-    if ((!p_req) || (!attr_seq.num_attr) || (p_req > p_req_end))
-    {
+    if ((!p_req) || (!attr_seq.num_attr) ||
+        (p_req + sizeof(uint8_t) > p_req_end)) {
         sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_REQ_SYNTAX, SDP_TEXT_BAD_ATTR_LIST);
         return;
     }
@@ -374,7 +388,8 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
 
     /* Check if this is a continuation request */
     if (*p_req) {
-        if (*p_req++ != SDP_CONTINUATION_LEN) {
+        if (*p_req++ != SDP_CONTINUATION_LEN ||
+            (p_req + sizeof(cont_offset) > p_req_end)) {
             sdpu_build_n_send_error(p_ccb, trans_num, SDP_INVALID_CONT_STATE,
                                     SDP_TEXT_BAD_CONT_LEN);
             return;
@@ -570,8 +585,8 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     /* Extract the UUID sequence to search for */
     p_req = sdpu_extract_uid_seq (p_req, param_len, &uid_seq);
 
-    if ((!p_req) || (!uid_seq.num_uids))
-    {
+    if ((!p_req) || (!uid_seq.num_uids) ||
+        (p_req + sizeof(uint16_t) > p_req_end)) {
         sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_REQ_SYNTAX, SDP_TEXT_BAD_UUID_LIST);
         return;
     }
@@ -584,8 +599,8 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
 
     p_req = sdpu_extract_attr_seq (p_req, param_len, &attr_seq);
 
-    if ((!p_req) || (!attr_seq.num_attr))
-    {
+    if ((!p_req) || (!attr_seq.num_attr) ||
+        (p_req + sizeof(uint8_t) > p_req_end)) {
         sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_REQ_SYNTAX, SDP_TEXT_BAD_ATTR_LIST);
         return;
     }
@@ -604,7 +619,8 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
 
     /* Check if this is a continuation request */
     if (*p_req) {
-        if (*p_req++ != SDP_CONTINUATION_LEN) {
+        if (*p_req++ != SDP_CONTINUATION_LEN ||
+            (p_req + sizeof(uint16_t) > p_req_end)) {
             sdpu_build_n_send_error(p_ccb, trans_num, SDP_INVALID_CONT_STATE,
                                     SDP_TEXT_BAD_CONT_LEN);
             return;
