@@ -514,18 +514,17 @@ tBTA_JV_STATUS BTA_JvL2capReady(uint32_t handle, uint32_t* p_data_size) {
  *                  BTA_JV_FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id,
-                                uint8_t* p_data, uint16_t len,
+tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id, BT_HDR* msg,
                                 uint32_t user_id) {
   VLOG(2) << __func__;
 
   if (handle >= BTA_JV_MAX_L2C_CONN || !bta_jv_cb.l2c_cb[handle].p_cback) {
-    osi_free(p_data);
+    osi_free(msg);
     return BTA_JV_FAILURE;
   }
 
-  do_in_bta_thread(FROM_HERE, Bind(&bta_jv_l2cap_write, handle, req_id, p_data,
-                                   len, user_id, &bta_jv_cb.l2c_cb[handle]));
+  do_in_bta_thread(FROM_HERE, Bind(&bta_jv_l2cap_write, handle, req_id, msg,
+                                   user_id, &bta_jv_cb.l2c_cb[handle]));
   return BTA_JV_SUCCESS;
 }
 
@@ -539,20 +538,14 @@ tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id,
  *                  fixed-channel connections. This function takes ownership of
  *                  p_data, and will osi_free it.
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
- *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capWriteFixed(uint16_t channel, const RawAddress& addr,
-                                     uint32_t req_id,
-                                     tBTA_JV_L2CAP_CBACK* p_cback,
-                                     uint8_t* p_data, uint16_t len,
-                                     uint32_t user_id) {
+void BTA_JvL2capWriteFixed(uint16_t channel, const RawAddress& addr,
+                           uint32_t req_id, tBTA_JV_L2CAP_CBACK* p_cback,
+                           BT_HDR* msg, uint32_t user_id) {
   VLOG(2) << __func__;
 
   do_in_bta_thread(FROM_HERE, Bind(&bta_jv_l2cap_write_fixed, channel, addr,
-                                   req_id, p_data, len, user_id, p_cback));
-  return BTA_JV_SUCCESS;
+                                   req_id, msg, user_id, p_cback));
 }
 
 /*******************************************************************************

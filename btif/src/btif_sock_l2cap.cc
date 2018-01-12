@@ -961,6 +961,19 @@ static bool flush_incoming_que_on_wr_signal_l(l2cap_socket* sock) {
   return false;
 }
 
+inline BT_HDR* malloc_l2cap_buf(uint16_t len) {
+  // We need FCS only for L2CAP_FCR_ERTM_MODE, but it's just 2 bytes so it's ok
+  BT_HDR* msg = (BT_HDR*)osi_malloc(BT_HDR_SIZE + L2CAP_MIN_OFFSET + len +
+                                    L2CAP_FCS_LENGTH);
+  msg->offset = L2CAP_MIN_OFFSET;
+  msg->len = len;
+  return msg;
+}
+
+inline uint8_t* get_l2cap_sdu_start_ptr(BT_HDR* msg) {
+  return (uint8_t*)(msg) + BT_HDR_SIZE + msg->offset;
+}
+
 void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
   char drop_it = false;
 
@@ -984,11 +997,11 @@ void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
            by BT spec). */
         size = std::min(size, (int)sock->mps);
 
-        uint8_t* buffer = (uint8_t*)osi_malloc(size);
+        BT_HDR* buffer = malloc_l2cap_buf(size);
         /* The socket is created with SOCK_SEQPACKET, hence we read one message
          * at the time. */
         ssize_t count;
-        OSI_NO_INTR(count = recv(fd, buffer, size,
+        OSI_NO_INTR(count = recv(fd, get_l2cap_sdu_start_ptr(buffer), size,
                                  MSG_NOSIGNAL | MSG_DONTWAIT | MSG_TRUNC));
         if (count > L2CAP_LE_MAX_MPS) {
           /* This can't happen thanks to check in BluetoothSocket.java but leave
@@ -1002,11 +1015,10 @@ void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
         if (sock->fixed_chan) {
           // will take care of freeing buffer
           BTA_JvL2capWriteFixed(sock->channel, sock->addr, PTR_TO_UINT(buffer),
-                                btsock_l2cap_cbk, buffer, count, user_id);
+                                btsock_l2cap_cbk, buffer, user_id);
         } else {
           // will take care of freeing buffer
-          BTA_JvL2capWrite(sock->handle, PTR_TO_UINT(buffer), buffer, count,
-                           user_id);
+          BTA_JvL2capWrite(sock->handle, PTR_TO_UINT(buffer), buffer, user_id);
         }
       }
     } else
