@@ -109,8 +109,9 @@ tCONN_CB* sdpu_allocate_ccb(void) {
   /* Look through each connection control block for a free one */
   for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
     if (p_ccb->con_state == SDP_STATE_IDLE) {
+      alarm_t* alarm = p_ccb->sdp_conn_timer;
       memset(p_ccb, 0, sizeof(tCONN_CB));
-      p_ccb->sdp_conn_timer = alarm_new("sdp.sdp_conn_timer");
+      p_ccb->sdp_conn_timer = alarm;
       return (p_ccb);
     }
   }
@@ -130,8 +131,7 @@ tCONN_CB* sdpu_allocate_ccb(void) {
  ******************************************************************************/
 void sdpu_release_ccb(tCONN_CB* p_ccb) {
   /* Ensure timer is stopped */
-  alarm_free(p_ccb->sdp_conn_timer);
-  p_ccb->sdp_conn_timer = NULL;
+  alarm_cancel(p_ccb->sdp_conn_timer);
 
   /* Drop any response pointer we may be holding */
   p_ccb->con_state = SDP_STATE_IDLE;
