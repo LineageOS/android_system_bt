@@ -170,6 +170,12 @@ static tAVRC_STS avrc_pars_vendor_cmd(tAVRC_MSG_VENDOR *p_msg, tAVRC_COMMAND *p_
             status = AVRC_STS_INTERNAL_ERR;
             break;
         }
+
+        if (p_result->get_cur_app_val.num_attr > AVRC_MAX_APP_ATTR_SIZE) {
+          android_errorWriteLog(0x534e4554, "63146237");
+          p_result->get_cur_app_val.num_attr = AVRC_MAX_APP_ATTR_SIZE;
+        }
+
         p_u8 = p_result->get_cur_app_val.attrs;
         for (xx=0, yy=0; xx< p_result->get_cur_app_val.num_attr; xx++)
         {
