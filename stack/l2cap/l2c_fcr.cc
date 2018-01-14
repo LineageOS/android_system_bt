@@ -1789,77 +1789,45 @@ BT_HDR* l2c_fcr_get_next_xmit_sdu_seg(tL2C_CCB* p_ccb,
   return (p_xmit);
 }
 
-/*******************************************************************************
- *
- * Function         l2c_lcc_get_next_xmit_sdu_seg
- *
- * Description      Get the next SDU segment to transmit for LE connection
- *                  oriented channel
- *
- * Returns          pointer to buffer with segment or NULL
- *
- ******************************************************************************/
+/** Get the next PDU to transmit for LE connection oriented channel. Returns
+ * pointer to buffer with PDU. |last_piece_of_sdu| will be set to true, if
+ * returned PDU is last piece from this SDU.*/
 BT_HDR* l2c_lcc_get_next_xmit_sdu_seg(tL2C_CCB* p_ccb,
-                                      uint16_t max_packet_length) {
-  bool first_seg = false; /* The segment is the first part of data  */
-  bool last_seg = false;  /* The segment is the last part of data  */
-  uint16_t no_of_bytes_to_send = 0;
-  uint16_t sdu_len = 0;
-  BT_HDR *p_buf, *p_xmit;
-  uint8_t* p;
+                                      bool* last_piece_of_sdu) {
   uint16_t max_pdu = p_ccb->peer_conn_cfg.mps;
 
-  p_buf = (BT_HDR*)fixed_queue_try_peek_first(p_ccb->xmit_hold_q);
+  BT_HDR* p_buf = (BT_HDR*)fixed_queue_try_peek_first(p_ccb->xmit_hold_q);
+  bool first_pdu = (p_buf->event == 0) ? true : false;
 
-  /* We are using the "event" field to tell is if we already started
-   * segmentation */
-  if (p_buf->event == 0) {
-    first_seg = true;
-    sdu_len = p_buf->len;
-    if (p_buf->len <= (max_pdu - L2CAP_LCC_SDU_LENGTH)) {
-      last_seg = true;
-      no_of_bytes_to_send = p_buf->len;
-    } else
-      no_of_bytes_to_send = max_pdu - L2CAP_LCC_SDU_LENGTH;
-  } else if (p_buf->len <= max_pdu) {
-    last_seg = true;
-    no_of_bytes_to_send = p_buf->len;
-  } else {
-    /* Middle Packet */
-    no_of_bytes_to_send = max_pdu;
-  }
+  uint16_t no_of_bytes_to_send = std::min(
+      p_buf->len,
+      (uint16_t)(first_pdu ? (max_pdu - L2CAP_LCC_SDU_LENGTH) : max_pdu));
+  bool last_pdu = (no_of_bytes_to_send == p_buf->len);
 
   /* Get a new buffer and copy the data that can be sent in a PDU */
-  if (first_seg)
-    p_xmit = l2c_fcr_clone_buf(p_buf, L2CAP_LCC_OFFSET, no_of_bytes_to_send);
-  else
-    p_xmit = l2c_fcr_clone_buf(p_buf, L2CAP_MIN_OFFSET, no_of_bytes_to_send);
+  BT_HDR* p_xmit =
+      l2c_fcr_clone_buf(p_buf, first_pdu ? L2CAP_LCC_OFFSET : L2CAP_MIN_OFFSET,
+                        no_of_bytes_to_send);
 
-  if (p_xmit != NULL) {
-    p_buf->event = p_ccb->local_cid;
-    p_xmit->event = p_ccb->local_cid;
+  p_buf->event = p_ccb->local_cid;
+  p_xmit->event = p_ccb->local_cid;
 
-    if (first_seg) {
-      p_xmit->offset -= L2CAP_LCC_SDU_LENGTH; /* for writing the SDU length. */
-      p = (uint8_t*)(p_xmit + 1) + p_xmit->offset;
-      UINT16_TO_STREAM(p, sdu_len);
-      p_xmit->len += L2CAP_LCC_SDU_LENGTH;
-    }
-
-    p_buf->len -= no_of_bytes_to_send;
-    p_buf->offset += no_of_bytes_to_send;
-
-    /* copy PBF setting */
-    p_xmit->layer_specific = p_buf->layer_specific;
-
-  } else /* Should never happen if the application has configured buffers
-            correctly */
-  {
-    L2CAP_TRACE_ERROR("L2CAP - cannot get buffer, for segmentation");
-    return (NULL);
+  if (first_pdu) {
+    p_xmit->offset -= L2CAP_LCC_SDU_LENGTH; /* for writing the SDU length. */
+    uint8_t* p = (uint8_t*)(p_xmit + 1) + p_xmit->offset;
+    UINT16_TO_STREAM(p, p_buf->len);
+    p_xmit->len += L2CAP_LCC_SDU_LENGTH;
   }
 
-  if (last_seg) {
+  p_buf->len -= no_of_bytes_to_send;
+  p_buf->offset += no_of_bytes_to_send;
+
+  /* copy PBF setting */
+  p_xmit->layer_specific = p_buf->layer_specific;
+
+  if (last_piece_of_sdu) *last_piece_of_sdu = last_pdu;
+
+  if (last_pdu) {
     p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_ccb->xmit_hold_q);
     osi_free(p_buf);
   }
@@ -1869,7 +1837,7 @@ BT_HDR* l2c_lcc_get_next_xmit_sdu_seg(tL2C_CCB* p_ccb,
   p_xmit->len += L2CAP_PKT_OVERHEAD;
 
   /* Set the pointer to the beginning of the data */
-  p = (uint8_t*)(p_xmit + 1) + p_xmit->offset;
+  uint8_t* p = (uint8_t*)(p_xmit + 1) + p_xmit->offset;
 
   /* Note: if FCS has to be included then the length is recalculated later */
   UINT16_TO_STREAM(p, p_xmit->len - L2CAP_PKT_OVERHEAD);

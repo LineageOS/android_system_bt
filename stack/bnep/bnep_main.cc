@@ -34,6 +34,7 @@
 
 #include "l2c_api.h"
 #include "l2cdefs.h"
+#include "log/log.h"
 
 #include "btm_api.h"
 #include "btu.h"
@@ -445,6 +446,12 @@ static void bnep_data_ind(uint16_t l2cap_cid, BT_HDR* p_buf) {
   type = *p++;
   extension_present = type >> 7;
   type &= 0x7f;
+  if (type >= sizeof(bnep_frame_hdr_sizes) / sizeof(bnep_frame_hdr_sizes[0])) {
+    BNEP_TRACE_EVENT("BNEP - rcvd frame, bad type: 0x%02x", type);
+    android_errorWriteLog(0x534e4554, "68818034");
+    osi_free(p_buf);
+    return;
+  }
   if ((rem_len <= bnep_frame_hdr_sizes[type]) || (rem_len > BNEP_MTU_SIZE)) {
     BNEP_TRACE_EVENT("BNEP - rcvd frame, bad len: %d  type: 0x%02x", p_buf->len,
                      type);
@@ -473,18 +480,20 @@ static void bnep_data_ind(uint16_t l2cap_cid, BT_HDR* p_buf) {
       org_len = rem_len;
       new_len = 0;
       do {
+        if (org_len < 2) break;
         ext = *p++;
         length = *p++;
         p += length;
 
+        new_len = (length + 2);
+        if (new_len > org_len) break;
+
         if ((!(ext & 0x7F)) && (*p > BNEP_FILTER_MULTI_ADDR_RESPONSE_MSG))
           bnep_send_command_not_understood(p_bcb, *p);
 
-        new_len += (length + 2);
-
-        if (new_len > org_len) break;
-
+        org_len -= new_len;
       } while (ext & 0x80);
+      android_errorWriteLog(0x534e4554, "67863755");
     }
 
     osi_free(p_buf);
@@ -529,6 +538,8 @@ static void bnep_data_ind(uint16_t l2cap_cid, BT_HDR* p_buf) {
       } else {
         while (extension_present && p && rem_len) {
           ext_type = *p++;
+          rem_len--;
+          android_errorWriteLog(0x534e4554, "69271284");
           extension_present = ext_type >> 7;
           ext_type &= 0x7F;
 
@@ -595,6 +606,7 @@ static void bnep_data_ind(uint16_t l2cap_cid, BT_HDR* p_buf) {
   if (bnep_cb.p_data_buf_cb) {
     (*bnep_cb.p_data_buf_cb)(p_bcb->handle, *p_src_addr, *p_dst_addr, protocol,
                              p_buf, fw_ext_present);
+    osi_free(p_buf);
   } else if (bnep_cb.p_data_ind_cb) {
     (*bnep_cb.p_data_ind_cb)(p_bcb->handle, *p_src_addr, *p_dst_addr, protocol,
                              p, rem_len, fw_ext_present);
