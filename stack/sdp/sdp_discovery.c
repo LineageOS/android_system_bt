@@ -31,6 +31,7 @@
 #include "l2cdefs.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
+#include "log/log.h"
 #include "sdp_api.h"
 #include "sdpint.h"
 #include "btu.h"
@@ -45,9 +46,12 @@
 /*              L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /********************************************************************************/
 #if SDP_CLIENT_ENABLED == TRUE
-static void          process_service_search_rsp (tCONN_CB *p_ccb, UINT8 *p_reply);
-static void          process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply);
-static void          process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply);
+static void process_service_search_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
+                                       uint8_t* p_reply_end);
+static void process_service_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
+                                     uint8_t* p_reply_end);
+static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
+                                            uint8_t* p_reply_end);
 static UINT8         *save_attr_seq (tCONN_CB *p_ccb, UINT8 *p, UINT8 *p_msg_end);
 static tSDP_DISC_REC *add_record (tSDP_DISCOVERY_DB *p_db, BD_ADDR p_bda);
 static UINT8         *add_attr (UINT8 *p, tSDP_DISCOVERY_DB *p_db, tSDP_DISC_REC *p_rec,
@@ -193,7 +197,7 @@ void sdp_disc_connected (tCONN_CB *p_ccb)
     {
         p_ccb->disc_state = SDP_DISC_WAIT_SEARCH_ATTR;
 
-        process_service_search_attr_rsp (p_ccb, NULL);
+        process_service_search_attr_rsp(p_ccb, NULL, NULL);
     }
     else
     {
@@ -231,6 +235,7 @@ void sdp_disc_server_rsp (tCONN_CB *p_ccb, BT_HDR *p_msg)
 
     /* Got a reply!! Check what we got back */
     p = (UINT8 *)(p_msg + 1) + p_msg->offset;
+    uint8_t* p_end = p + p_msg->len;
 
     BE_STREAM_TO_UINT8 (rsp_pdu, p);
 
@@ -241,7 +246,7 @@ void sdp_disc_server_rsp (tCONN_CB *p_ccb, BT_HDR *p_msg)
     case SDP_PDU_SERVICE_SEARCH_RSP:
         if (p_ccb->disc_state == SDP_DISC_WAIT_HANDLES)
         {
-            process_service_search_rsp (p_ccb, p);
+            process_service_search_rsp(p_ccb, p, p_end);
             invalid_pdu = FALSE;
         }
         break;
@@ -249,7 +254,7 @@ void sdp_disc_server_rsp (tCONN_CB *p_ccb, BT_HDR *p_msg)
     case SDP_PDU_SERVICE_ATTR_RSP:
         if (p_ccb->disc_state == SDP_DISC_WAIT_ATTR)
         {
-            process_service_attr_rsp (p_ccb, p);
+            process_service_attr_rsp(p_ccb, p, p_end);
             invalid_pdu = FALSE;
         }
         break;
@@ -257,7 +262,7 @@ void sdp_disc_server_rsp (tCONN_CB *p_ccb, BT_HDR *p_msg)
     case SDP_PDU_SERVICE_SEARCH_ATTR_RSP:
         if (p_ccb->disc_state == SDP_DISC_WAIT_SEARCH_ATTR)
         {
-            process_service_search_attr_rsp (p_ccb, p);
+            process_service_search_attr_rsp(p_ccb, p, p_end);
             invalid_pdu = FALSE;
         }
         break;
@@ -280,8 +285,8 @@ void sdp_disc_server_rsp (tCONN_CB *p_ccb, BT_HDR *p_msg)
 ** Returns          void
 **
 *******************************************************************************/
-static void process_service_search_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
-{
+static void process_service_search_rsp(tCONN_CB *p_ccb, UINT8 *p_reply,
+                                       uint8_t* p_reply_end) {
     UINT16      xx;
     UINT16      total, cur_handles, orig;
     UINT8       cont_len;
@@ -317,6 +322,11 @@ static void process_service_search_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
             sdp_disconnect (p_ccb, SDP_INVALID_CONT_STATE);
             return;
         }
+        if (p_reply + cont_len > p_reply_end) {
+            android_errorWriteLog(0x534e4554, "68161546");
+            sdp_disconnect(p_ccb, SDP_INVALID_CONT_STATE);
+            return;
+        }
         /* stay in the same state */
         sdp_snd_service_search_req(p_ccb, cont_len, p_reply);
     }
@@ -326,7 +336,7 @@ static void process_service_search_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
         p_ccb->disc_state = SDP_DISC_WAIT_ATTR;
 
         /* Kick off the first attribute request */
-        process_service_attr_rsp (p_ccb, NULL);
+        process_service_attr_rsp(p_ccb, NULL, NULL);
     }
 }
 
@@ -394,8 +404,8 @@ static void sdp_copy_raw_data (tCONN_CB *p_ccb, BOOLEAN offset)
 ** Returns          void
 **
 *******************************************************************************/
-static void process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
-{
+static void process_service_attr_rsp(tCONN_CB *p_ccb, UINT8 *p_reply,
+                                     uint8_t* p_reply_end) {
     UINT8           *p_start, *p_param_len;
     UINT16          param_len, list_byte_count;
     BOOLEAN         cont_request_needed = FALSE;
@@ -501,8 +511,12 @@ static void process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
         /* Was this a continuation request ? */
         if (cont_request_needed)
         {
-            memcpy (p, p_reply, *p_reply + 1);
-            p += *p_reply + 1;
+            if ((p_reply + *p_reply + 1) <= p_reply_end) {
+                memcpy(p, p_reply, *p_reply + 1);
+                p += *p_reply + 1;
+            } else {
+                android_errorWriteLog(0x534e4554, "68161546");
+            }
         }
         else
             UINT8_TO_BE_STREAM (p, 0);
@@ -540,8 +554,8 @@ static void process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
 ** Returns          void
 **
 *******************************************************************************/
-static void process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
-{
+static void process_service_search_attr_rsp(tCONN_CB *p_ccb, UINT8 *p_reply,
+                                            uint8_t* p_reply_end) {
     UINT8           *p, *p_start, *p_end, *p_param_len;
     UINT8           type;
     UINT32          seq_len;
@@ -640,8 +654,12 @@ static void process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
         /* No continuation for first request */
         if (p_reply)
         {
-            memcpy (p, p_reply, *p_reply + 1);
-            p += *p_reply + 1;
+            if ((p_reply + *p_reply + 1) <= p_reply_end) {
+                memcpy(p, p_reply, *p_reply + 1);
+                p += *p_reply + 1;
+            } else {
+                android_errorWriteLog(0x534e4554, "68161546");
+            }
         }
         else
             UINT8_TO_BE_STREAM (p, 0);
