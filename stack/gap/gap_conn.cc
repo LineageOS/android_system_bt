@@ -502,12 +502,14 @@ uint16_t GAP_ConnWriteData(uint16_t gap_handle, uint8_t* p_data,
   if (p_ccb->con_state != GAP_CCB_STATE_CONNECTED) return (GAP_ERR_BAD_STATE);
 
   while (max_len) {
-    uint16_t data_len = std::min(p_ccb->rem_mtu_size, max_len);
-    size_t bufsize = BT_HDR_SIZE + L2CAP_MIN_OFFSET + data_len;
+    if (p_ccb->cfg.fcr.mode == L2CAP_FCR_ERTM_MODE)
+      p_buf = (BT_HDR*)osi_malloc(L2CAP_FCR_ERTM_BUF_SIZE);
+    else
+      p_buf = (BT_HDR*)osi_malloc(GAP_DATA_BUF_SIZE);
 
-    p_buf = (BT_HDR*)osi_malloc(bufsize);
     p_buf->offset = L2CAP_MIN_OFFSET;
-    p_buf->len = data_len;
+    p_buf->len =
+        (p_ccb->rem_mtu_size < max_len) ? p_ccb->rem_mtu_size : max_len;
     p_buf->event = BT_EVT_TO_BTU_SP_DATA;
 
     memcpy((uint8_t*)(p_buf + 1) + p_buf->offset, p_data, p_buf->len);
