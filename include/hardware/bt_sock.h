@@ -27,7 +27,8 @@ __BEGIN_DECLS
 typedef enum {
   BTSOCK_RFCOMM = 1,
   BTSOCK_SCO = 2,
-  BTSOCK_L2CAP = 3
+  BTSOCK_L2CAP = 3,
+  BTSOCK_L2CAP_LE = 4
 } btsock_type_t;
 
 /** Represents the standard BT SOCKET interface. */
