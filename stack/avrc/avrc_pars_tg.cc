@@ -21,6 +21,7 @@
 #include "avrc_defs.h"
 #include "avrc_int.h"
 #include "bt_common.h"
+#include "log/log.h"
 
 /*****************************************************************************
  *  Global data
@@ -158,6 +159,12 @@ static tAVRC_STS avrc_pars_vendor_cmd(tAVRC_MSG_VENDOR* p_msg,
         status = AVRC_STS_INTERNAL_ERR;
         break;
       }
+
+      if (p_result->get_cur_app_val.num_attr > AVRC_MAX_APP_ATTR_SIZE) {
+        android_errorWriteLog(0x534e4554, "63146237");
+        p_result->get_cur_app_val.num_attr = AVRC_MAX_APP_ATTR_SIZE;
+      }
+
       p_u8 = p_result->get_cur_app_val.attrs;
       for (xx = 0, yy = 0; xx < p_result->get_cur_app_val.num_attr; xx++) {
         /* only report the valid player app attributes */
