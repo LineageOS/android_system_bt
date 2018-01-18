@@ -1154,6 +1154,7 @@ void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, uint8_t* p_data,
      * channel is disconnected after the API function is called, but before the
      * message is handled. */
     LOG(ERROR) << __func__ << ": p_cb->p_cback == NULL";
+    osi_free(p_data);
     return;
   }
 
@@ -1161,7 +1162,6 @@ void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, uint8_t* p_data,
   evt_data.status = BTA_JV_FAILURE;
   evt_data.handle = handle;
   evt_data.req_id = req_id;
-  evt_data.p_data = p_data;
   evt_data.cong = p_cb->cong;
   evt_data.len = 0;
   bta_jv_pm_conn_busy(p_cb->p_pm_cb);
@@ -1169,6 +1169,9 @@ void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, uint8_t* p_data,
       BT_PASS == GAP_ConnWriteData(handle, p_data, len, &evt_data.len)) {
     evt_data.status = BTA_JV_SUCCESS;
   }
+
+  osi_free(p_data);
+
   tBTA_JV bta_jv;
   bta_jv.l2c_write = evt_data;
   p_cb->p_cback(BTA_JV_L2CAP_WRITE_EVT, &bta_jv, user_id);
@@ -1183,13 +1186,14 @@ void bta_jv_l2cap_write_fixed(uint16_t channel, const RawAddress& addr,
   evt_data.channel = channel;
   evt_data.addr = addr;
   evt_data.req_id = req_id;
-  evt_data.p_data = p_data;
   evt_data.len = 0;
 
   BT_HDR* msg = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + len + L2CAP_MIN_OFFSET);
   memcpy(((uint8_t*)(msg + 1)) + L2CAP_MIN_OFFSET, p_data, len);
   msg->len = len;
   msg->offset = L2CAP_MIN_OFFSET;
+
+  osi_free(p_data);
 
   L2CA_SendFixedChnlData(channel, addr, msg);
 
