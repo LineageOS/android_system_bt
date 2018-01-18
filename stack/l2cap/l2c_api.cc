@@ -194,6 +194,75 @@ uint16_t L2CA_AllocatePSM(void) {
 
 /*******************************************************************************
  *
+ * Function         L2CA_AllocateLePSM
+ *
+ * Description      To find an unused LE PSM for L2CAP services.
+ *
+ * Returns          LE_PSM to use if success. Otherwise returns 0.
+ *
+ ******************************************************************************/
+uint16_t L2CA_AllocateLePSM(void) {
+  bool done = false;
+  uint16_t psm = l2cb.le_dyn_psm;
+  uint16_t count = 0;
+
+  L2CAP_TRACE_API("%s: last psm=%d", __func__, psm);
+  while (!done) {
+    count++;
+    if (count > LE_DYNAMIC_PSM_RANGE) {
+      L2CAP_TRACE_ERROR("%s: Out of free BLE PSM", __func__);
+      return 0;
+    }
+
+    psm++;
+    if (psm > LE_DYNAMIC_PSM_END) {
+      psm = LE_DYNAMIC_PSM_START;
+    }
+
+    if (!l2cb.le_dyn_psm_assigned[psm - LE_DYNAMIC_PSM_START]) {
+      /* make sure the newly allocated psm is not used right now */
+      if (l2cu_find_ble_rcb_by_psm(psm)) {
+        L2CAP_TRACE_WARNING("%s: supposedly-free PSM=%d have allocated rcb!",
+                            __func__, psm);
+        continue;
+      }
+
+      l2cb.le_dyn_psm_assigned[psm - LE_DYNAMIC_PSM_START] = true;
+      L2CAP_TRACE_DEBUG("%s: assigned PSM=%d", __func__, psm);
+      done = true;
+      break;
+    }
+  }
+  l2cb.le_dyn_psm = psm;
+
+  return (psm);
+}
+
+/*******************************************************************************
+ *
+ * Function         L2CA_FreeLePSM
+ *
+ * Description      Free an assigned LE PSM.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void L2CA_FreeLePSM(uint16_t psm) {
+  L2CAP_TRACE_API("%s: to free psm=%d", __func__, psm);
+
+  if ((psm < LE_DYNAMIC_PSM_START) || (psm > LE_DYNAMIC_PSM_END)) {
+    L2CAP_TRACE_ERROR("%s: Invalid PSM=%d value!", __func__, psm);
+    return;
+  }
+
+  if (!l2cb.le_dyn_psm_assigned[psm - LE_DYNAMIC_PSM_START]) {
+    L2CAP_TRACE_WARNING("%s: PSM=%d was not allocated!", __func__, psm);
+  }
+  l2cb.le_dyn_psm_assigned[psm - LE_DYNAMIC_PSM_START] = false;
+}
+
+/*******************************************************************************
+ *
  * Function         L2CA_ConnectReq
  *
  * Description      Higher layers call this function to create an L2CAP
@@ -358,10 +427,12 @@ uint16_t L2CA_RegisterLECoc(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info) {
 
   /* Check if this is a registration for an outgoing-only connection to */
   /* a dynamic PSM. If so, allocate a "virtual" PSM for the app to use. */
-  if ((psm >= 0x0080) && (p_cb_info->pL2CA_ConnectInd_Cb == NULL)) {
-    for (vpsm = 0x0080; vpsm < 0x0100; vpsm++) {
-      p_rcb = l2cu_find_ble_rcb_by_psm(vpsm);
-      if (p_rcb == NULL) break;
+  if ((psm >= LE_DYNAMIC_PSM_START) &&
+      (p_cb_info->pL2CA_ConnectInd_Cb == NULL)) {
+    vpsm = L2CA_AllocateLePSM();
+    if (vpsm == 0) {
+      L2CAP_TRACE_ERROR("%s: Out of free BLE PSM", __func__);
+      return 0;
     }
 
     L2CAP_TRACE_API("%s Real PSM: 0x%04x  Virtual PSM: 0x%04x", __func__, psm,
@@ -371,6 +442,7 @@ uint16_t L2CA_RegisterLECoc(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info) {
   /* If registration block already there, just overwrite it */
   p_rcb = l2cu_find_ble_rcb_by_psm(vpsm);
   if (p_rcb == NULL) {
+    L2CAP_TRACE_API("%s Allocate rcp for Virtual PSM: 0x%04x", __func__, vpsm);
     p_rcb = l2cu_allocate_ble_rcb(vpsm);
     if (p_rcb == NULL) {
       L2CAP_TRACE_WARNING("%s No BLE RCB available, PSM: 0x%04x  vPSM: 0x%04x",
@@ -400,7 +472,8 @@ void L2CA_DeregisterLECoc(uint16_t psm) {
 
   tL2C_RCB* p_rcb = l2cu_find_ble_rcb_by_psm(psm);
   if (p_rcb == NULL) {
-    L2CAP_TRACE_WARNING("%s PSM: 0x%04x not found for deregistration", psm);
+    L2CAP_TRACE_WARNING("%s PSM: 0x%04x not found for deregistration", __func__,
+                        psm);
     return;
   }
 
@@ -419,7 +492,7 @@ void L2CA_DeregisterLECoc(uint16_t psm) {
       l2c_csm_execute(p_ccb, L2CEVT_L2CA_DISCONNECT_REQ, NULL);
   }
 
-  l2cu_release_rcb(p_rcb);
+  l2cu_release_ble_rcb(p_rcb);
 }
 
 /*******************************************************************************

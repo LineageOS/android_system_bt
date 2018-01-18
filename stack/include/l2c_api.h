@@ -379,6 +379,29 @@ extern uint16_t L2CA_AllocatePSM(void);
 
 /*******************************************************************************
  *
+ * Function         L2CA_AllocateLePSM
+ *
+ * Description      Other layers call this function to find an unused LE PSM for
+ *                  L2CAP services.
+ *
+ * Returns          LE_PSM to use if success. Otherwise returns 0.
+ *
+ ******************************************************************************/
+extern uint16_t L2CA_AllocateLePSM(void);
+
+/*******************************************************************************
+ *
+ * Function         L2CA_FreeLePSM
+ *
+ * Description      Free an assigned LE PSM.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+extern void L2CA_FreeLePSM(uint16_t psm);
+
+/*******************************************************************************
+ *
  * Function         L2CA_ConnectReq
  *
  * Description      Higher layers call this function to create an L2CAP

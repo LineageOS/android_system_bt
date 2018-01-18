@@ -133,7 +133,7 @@ bool BTA_JvIsEncrypted(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvGetChannelId(int conn_type, uint32_t id, int32_t channel) {
-  VLOG(2) << __func__;
+  VLOG(2) << __func__ << ": conn_type=" << conn_type;
 
   if (conn_type != BTA_JV_CONN_TYPE_RFCOMM &&
       conn_type != BTA_JV_CONN_TYPE_L2CAP &&
