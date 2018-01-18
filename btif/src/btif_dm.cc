@@ -3150,7 +3150,7 @@ bt_status_t btif_le_test_mode(uint16_t opcode, uint8_t* buf, uint8_t len) {
       BTM_BleReceiverTest(buf[0], btif_dm_ble_rx_test_cback);
       break;
     case HCI_BLE_TEST_END:
-      BTM_BleTestEnd((tBTM_CMPL_CB*)btif_dm_ble_test_end_cback);
+      BTM_BleTestEnd(btif_dm_ble_test_end_cback);
       break;
     default:
       BTIF_TRACE_ERROR("%s: Unknown LE Test Mode Command 0x%x", __func__,

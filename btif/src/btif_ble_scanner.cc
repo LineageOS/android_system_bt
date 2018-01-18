@@ -230,9 +230,8 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
           }
 
           btif_gattc_init_dev_cb();
-          do_in_bta_thread(FROM_HERE,
-                           Bind(&BTA_DmBleObserve, true, 0,
-                                (tBTA_DM_SEARCH_CBACK*)bta_scan_results_cb));
+          do_in_bta_thread(
+              FROM_HERE, Bind(&BTA_DmBleObserve, true, 0, bta_scan_results_cb));
         },
         start));
   }
