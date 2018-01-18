@@ -507,7 +507,8 @@ tBTA_JV_STATUS BTA_JvL2capReady(uint32_t handle, uint32_t* p_data_size) {
  *                  When the operation is complete, tBTA_JV_L2CAP_CBACK is
  *                  called with BTA_JV_L2CAP_WRITE_EVT. Works for
  *                  PSM-based connections. This function takes ownership of
- *                  p_data, and will osi_free it.
+ *                  p_data, and will osi_free it. Data length must be smaller
+ *                  than remote maximum SDU size.
  *
  * Returns          BTA_JV_SUCCESS, if the request is being processed.
  *                  BTA_JV_FAILURE, otherwise.

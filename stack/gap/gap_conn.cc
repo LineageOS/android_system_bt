@@ -472,6 +472,25 @@ uint16_t GAP_ConnBTRead(uint16_t gap_handle, BT_HDR** pp_buf) {
   }
 }
 
+/* Try to write the queued data to l2ca. Return true on success, or if queue is
+ * congested. False if error occured when writing. */
+static bool gap_try_write_queued_data(tGAP_CCB* p_ccb) {
+  if (p_ccb->is_congested) return true;
+
+  /* Send the buffer through L2CAP */
+  BT_HDR* p_buf;
+  while ((p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_ccb->tx_queue)) != NULL) {
+    uint8_t status = L2CA_DATA_WRITE(p_ccb->connection_id, p_buf);
+
+    if (status == L2CAP_DW_CONGESTED) {
+      p_ccb->is_congested = true;
+      return true;
+    } else if (status != L2CAP_DW_SUCCESS)
+      return false;
+  }
+  return true;
+}
+
 /*******************************************************************************
  *
  * Function         GAP_ConnWriteData
@@ -481,8 +500,7 @@ uint16_t GAP_ConnBTRead(uint16_t gap_handle, BT_HDR** pp_buf) {
  *
  * Parameters:      handle      - Handle of the connection returned in the Open
  *                  p_data      - Data area
- *                  max_len     - Byte count requested
- *                  p_len       - Byte count received
+ *                  data_len    - Data length, must be smaller thand remote MTU
  *
  * Returns          BT_PASS                 - data read
  *                  GAP_ERR_BAD_HANDLE      - invalid handle
@@ -491,52 +509,31 @@ uint16_t GAP_ConnBTRead(uint16_t gap_handle, BT_HDR** pp_buf) {
  *
  ******************************************************************************/
 uint16_t GAP_ConnWriteData(uint16_t gap_handle, uint8_t* p_data,
-                           uint16_t max_len, uint16_t* p_len) {
+                           uint16_t data_len) {
   tGAP_CCB* p_ccb = gap_find_ccb_by_handle(gap_handle);
-  BT_HDR* p_buf;
-
-  *p_len = 0;
 
   if (!p_ccb) return (GAP_ERR_BAD_HANDLE);
 
   if (p_ccb->con_state != GAP_CCB_STATE_CONNECTED) return (GAP_ERR_BAD_STATE);
 
-  while (max_len) {
-    uint16_t data_len = std::min(p_ccb->rem_mtu_size, max_len);
-    size_t bufsize = BT_HDR_SIZE + L2CAP_MIN_OFFSET + data_len;
-    if (p_ccb->cfg.fcr.mode == L2CAP_FCR_ERTM_MODE)
-      bufsize += 2; /* 2 byte FCS at end on PDU */
+  if (data_len > p_ccb->rem_mtu_size) return GAP_ERR_ILL_PARM;
 
-    p_buf = (BT_HDR*)osi_malloc(bufsize);
-    p_buf->offset = L2CAP_MIN_OFFSET;
-    p_buf->len = data_len;
-    p_buf->event = BT_EVT_TO_BTU_SP_DATA;
+  size_t bufsize = BT_HDR_SIZE + L2CAP_MIN_OFFSET + data_len;
+  if (p_ccb->cfg.fcr.mode == L2CAP_FCR_ERTM_MODE)
+    bufsize += 2; /* 2 byte FCS at end on PDU */
 
-    memcpy((uint8_t*)(p_buf + 1) + p_buf->offset, p_data, p_buf->len);
+  BT_HDR* p_buf = (BT_HDR*)osi_malloc(bufsize);
+  p_buf->offset = L2CAP_MIN_OFFSET;
+  p_buf->len = data_len;
+  p_buf->event = BT_EVT_TO_BTU_SP_DATA;
 
-    *p_len += p_buf->len;
-    max_len -= p_buf->len;
-    p_data += p_buf->len;
+  memcpy((uint8_t*)(p_buf + 1) + p_buf->offset, p_data, p_buf->len);
 
-    DVLOG(1) << StringPrintf("GAP_WriteData %d bytes", p_buf->len);
+  DVLOG(1) << StringPrintf("GAP_WriteData %d bytes", p_buf->len);
 
-    fixed_queue_enqueue(p_ccb->tx_queue, p_buf);
-  }
+  fixed_queue_enqueue(p_ccb->tx_queue, p_buf);
 
-  if (p_ccb->is_congested) {
-    return (BT_PASS);
-  }
-
-  /* Send the buffer through L2CAP */
-  while ((p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_ccb->tx_queue)) != NULL) {
-    uint8_t status = L2CA_DATA_WRITE(p_ccb->connection_id, p_buf);
-
-    if (status == L2CAP_DW_CONGESTED) {
-      p_ccb->is_congested = true;
-      break;
-    } else if (status != L2CAP_DW_SUCCESS)
-      return (GAP_ERR_BAD_STATE);
-  }
+  if (!gap_try_write_queued_data(p_ccb)) return GAP_ERR_BAD_STATE;
 
   return (BT_PASS);
 }
@@ -1008,35 +1005,19 @@ static void gap_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg) {
  *
  ******************************************************************************/
 static void gap_congestion_ind(uint16_t lcid, bool is_congested) {
-  tGAP_CCB* p_ccb;
-  uint16_t event;
-  BT_HDR* p_buf;
-  uint8_t status;
-
   DVLOG(1) << StringPrintf("GAP_CONN - Rcvd L2CAP Is Congested (%d), CID: 0x%x",
                   is_congested, lcid);
 
-  /* Find CCB based on CID */
-  p_ccb = gap_find_ccb_by_cid(lcid);
-  if (p_ccb == NULL) return;
+  tGAP_CCB* p_ccb = gap_find_ccb_by_cid(lcid); /* Find CCB based on CID */
+  if (!p_ccb) return;
 
   p_ccb->is_congested = is_congested;
 
-  event = (is_congested) ? GAP_EVT_CONN_CONGESTED : GAP_EVT_CONN_UNCONGESTED;
-  p_ccb->p_callback(p_ccb->gap_handle, event);
+  p_ccb->p_callback(p_ccb->gap_handle, (is_congested)
+                                           ? GAP_EVT_CONN_CONGESTED
+                                           : GAP_EVT_CONN_UNCONGESTED);
 
-  if (!is_congested) {
-    while ((p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_ccb->tx_queue)) !=
-           NULL) {
-      status = L2CA_DATA_WRITE(p_ccb->connection_id, p_buf);
-
-      if (status == L2CAP_DW_CONGESTED) {
-        p_ccb->is_congested = true;
-        break;
-      } else if (status != L2CAP_DW_SUCCESS)
-        break;
-    }
-  }
+  gap_try_write_queued_data(p_ccb);
 }
 
 /*******************************************************************************

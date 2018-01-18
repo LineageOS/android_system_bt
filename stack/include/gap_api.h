@@ -240,7 +240,7 @@ extern uint16_t GAP_ConnBTRead(uint16_t gap_handle, BT_HDR** pp_buf);
  *
  ******************************************************************************/
 extern uint16_t GAP_ConnWriteData(uint16_t gap_handle, uint8_t* p_data,
-                                  uint16_t max_len, uint16_t* p_len);
+                                  uint16_t max_len);
 
 /*******************************************************************************
  *
