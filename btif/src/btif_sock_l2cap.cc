@@ -627,11 +627,7 @@ static void on_l2cap_outgoing_congest(tBTA_JV_L2CAP_CONG* p, uint32_t id) {
   }
 }
 
-static void on_l2cap_write_done(void* req_id, uint16_t len, uint32_t id) {
-  if (req_id != NULL) {
-    osi_free(req_id);  // free the buffer
-  }
-
+static void on_l2cap_write_done(uint16_t len, uint32_t id) {
   std::unique_lock<std::mutex> lock(state_lock);
   l2cap_socket* sock = btsock_l2cap_find_by_id_l(id);
   if (!sock) return;
@@ -735,14 +731,12 @@ static void btsock_l2cap_cbk(tBTA_JV_EVT event, tBTA_JV* p_data,
 
     case BTA_JV_L2CAP_WRITE_EVT:
       APPL_TRACE_DEBUG("BTA_JV_L2CAP_WRITE_EVT: id: %u", l2cap_socket_id);
-      on_l2cap_write_done(p_data->l2c_write.p_data, p_data->l2c_write.len,
-                          l2cap_socket_id);
+      on_l2cap_write_done(p_data->l2c_write.len, l2cap_socket_id);
       break;
 
     case BTA_JV_L2CAP_WRITE_FIXED_EVT:
       APPL_TRACE_DEBUG("BTA_JV_L2CAP_WRITE_FIXED_EVT: id: %u", l2cap_socket_id);
-      on_l2cap_write_done(p_data->l2c_write_fixed.p_data, p_data->l2c_write.len,
-                          l2cap_socket_id);
+      on_l2cap_write_done(p_data->l2c_write.len, l2cap_socket_id);
       break;
 
     case BTA_JV_L2CAP_CONG_EVT:
@@ -1002,18 +996,13 @@ void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
         DVLOG(2) << __func__ << ": bytes received from socket: " << count;
 
         if (sock->fixed_chan) {
-          if (BTA_JvL2capWriteFixed(sock->channel, sock->addr,
-                                    PTR_TO_UINT(buffer), btsock_l2cap_cbk,
-                                    buffer, count, user_id) != BTA_JV_SUCCESS) {
-            // On fail, free the buffer
-            on_l2cap_write_done(buffer, count, user_id);
-          }
+          // will take care of freeing buffer
+          BTA_JvL2capWriteFixed(sock->channel, sock->addr, PTR_TO_UINT(buffer),
+                                btsock_l2cap_cbk, buffer, count, user_id);
         } else {
-          if (BTA_JvL2capWrite(sock->handle, PTR_TO_UINT(buffer), buffer, count,
-                               user_id) != BTA_JV_SUCCESS) {
-            // On fail, free the buffer
-            on_l2cap_write_done(buffer, count, user_id);
-          }
+          // will take care of freeing buffer
+          BTA_JvL2capWrite(sock->handle, PTR_TO_UINT(buffer), buffer, count,
+                           user_id);
         }
       }
     } else
