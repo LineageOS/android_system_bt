@@ -763,6 +763,9 @@ void l2c_init(void) {
   /* the psm is increased by 2 before being used */
   l2cb.dyn_psm = 0xFFF;
 
+  /* the LE PSM is increased by 1 before being used */
+  l2cb.le_dyn_psm = LE_DYNAMIC_PSM_START - 1;
+
   /* Put all the channel control blocks on the free queue */
   for (xx = 0; xx < MAX_L2CAP_CHANNELS - 1; xx++) {
     l2cb.ccb_pool[xx].p_next_ccb = &l2cb.ccb_pool[xx + 1];

@@ -1729,6 +1729,21 @@ void l2cu_release_rcb(tL2C_RCB* p_rcb) {
 
 /*******************************************************************************
  *
+ * Function         l2cu_release_ble_rcb
+ *
+ * Description      Mark an LE RCB as no longer in use
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void l2cu_release_ble_rcb(tL2C_RCB* p_rcb) {
+  L2CA_FreeLePSM(p_rcb->psm);
+  p_rcb->in_use = false;
+  p_rcb->psm = 0;
+}
+
+/*******************************************************************************
+ *
  * Function         l2cu_disconnect_chnl
  *
  * Description      Disconnect a channel. Typically, this is due to either
