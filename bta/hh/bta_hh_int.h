@@ -211,7 +211,7 @@ typedef struct {
 #define BTA_HH_GET_LE_DEV_HDL(x) (uint8_t)(((x) + 1) << 4)
 /* check to see if th edevice handle is a LE device handle */
 #define BTA_HH_IS_LE_DEV_HDL(x) ((x)&0xf0)
-#define BTA_HH_IS_LE_DEV_HDL_VALID(x) (((x) >> 4) <= BTA_HH_MAX_DEVICE)
+#define BTA_HH_IS_LE_DEV_HDL_VALID(x) (((x) >> 4) <= BTA_HH_LE_MAX_KNOWN)
 #endif
 
 /* device control block */
