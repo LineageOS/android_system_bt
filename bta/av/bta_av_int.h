@@ -131,7 +131,7 @@ enum {
 #define BTA_AV_RC_HANDLE_NONE 0xFF
 
 /* size of database for service discovery */
-#define BTA_AV_DISC_BUF_SIZE 1000
+#define BTA_AV_DISC_BUF_SIZE 2000
 
 /* maximum length of AVDTP security data */
 #define BTA_AV_SECURITY_MAX_LEN 400
