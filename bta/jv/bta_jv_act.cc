@@ -1171,8 +1171,18 @@ void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, uint8_t* p_data,
   evt_data.cong = p_cb->cong;
   evt_data.len = len;
   bta_jv_pm_conn_busy(p_cb->p_pm_cb);
-  if (!evt_data.cong && BT_PASS == GAP_ConnWriteData(handle, p_data, len)) {
-    evt_data.status = BTA_JV_SUCCESS;
+
+  if (!evt_data.cong) {
+    BT_HDR* msg = (BT_HDR*)osi_malloc(BT_HDR_SIZE + L2CAP_MIN_OFFSET + len +
+                                      L2CAP_FCS_LENGTH);
+    msg->offset = L2CAP_MIN_OFFSET;
+    msg->len = len;
+    memcpy((uint8_t*)(msg) + BT_HDR_SIZE + msg->offset, p_data, msg->len);
+    // TODO: this was set only for non-fixed channel packets. Get rid of it.
+    msg->event = BT_EVT_TO_BTU_SP_DATA;
+
+    if (GAP_ConnWriteData(handle, msg) == BT_PASS)
+      evt_data.status = BTA_JV_SUCCESS;
   }
 
   osi_free(p_data);
@@ -1194,9 +1204,9 @@ void bta_jv_l2cap_write_fixed(uint16_t channel, const RawAddress& addr,
   evt_data.len = 0;
 
   BT_HDR* msg = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + len + L2CAP_MIN_OFFSET);
-  memcpy(((uint8_t*)(msg + 1)) + L2CAP_MIN_OFFSET, p_data, len);
-  msg->len = len;
   msg->offset = L2CAP_MIN_OFFSET;
+  msg->len = len;
+  memcpy((uint8_t*)(msg) + BT_HDR_SIZE + msg->offset, p_data, msg->len);
 
   osi_free(p_data);
 
