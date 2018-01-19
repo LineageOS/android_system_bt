@@ -1225,6 +1225,10 @@ extern bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda);
 extern bool L2CA_UpdateBleConnParams(const RawAddress& rem_bdRa,
                                      uint16_t min_int, uint16_t max_int,
                                      uint16_t latency, uint16_t timeout);
+extern bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda,
+                                     uint16_t min_int, uint16_t max_int,
+                                     uint16_t latency, uint16_t timeout,
+                                     uint16_t min_ce_len, uint16_t max_ce_len);
 
 /*******************************************************************************
  *
