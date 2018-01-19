@@ -268,7 +268,7 @@ bool btif_a2dp_source_startup(void) {
 
   /* Start A2DP Source media task */
   btif_a2dp_source_cb.worker_thread =
-      thread_new("btif_a2dp_source_worker_thread");
+      thread_new_sized("btif_a2dp_source_worker_thread", SIZE_MAX);
   if (btif_a2dp_source_cb.worker_thread == NULL) {
     APPL_TRACE_ERROR("%s: unable to start up media thread", __func__);
     btif_a2dp_source_state = BTIF_A2DP_SOURCE_STATE_OFF;
