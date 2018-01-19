@@ -65,7 +65,7 @@ typedef void(tBTA_AG_AT_ERR_CBACK)(tBTA_AG_SCB* p_user, bool unknown,
 
 /* AT command parsing control block */
 typedef struct {
-  tBTA_AG_AT_CMD* p_at_tbl;          /* AT command table */
+  const tBTA_AG_AT_CMD* p_at_tbl;    /* AT command table */
   tBTA_AG_AT_CMD_CBACK* p_cmd_cback; /* command callback */
   tBTA_AG_AT_ERR_CBACK* p_err_cback; /* error callback */
   void* p_user;                      /* user-defined data */

@@ -465,10 +465,9 @@ void bta_ag_rfc_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
       ((p_scb->features & BTA_AG_FEAT_INBAND) == BTA_AG_FEAT_INBAND);
 
   /* set up AT command interpreter */
-  p_scb->at_cb.p_at_tbl = (tBTA_AG_AT_CMD*)bta_ag_at_tbl[p_scb->conn_service];
-  p_scb->at_cb.p_cmd_cback =
-      (tBTA_AG_AT_CMD_CBACK*)bta_ag_at_cback_tbl[p_scb->conn_service];
-  p_scb->at_cb.p_err_cback = (tBTA_AG_AT_ERR_CBACK*)bta_ag_at_err_cback;
+  p_scb->at_cb.p_at_tbl = bta_ag_at_tbl[p_scb->conn_service];
+  p_scb->at_cb.p_cmd_cback = bta_ag_at_cback_tbl[p_scb->conn_service];
+  p_scb->at_cb.p_err_cback = bta_ag_at_err_cback;
   p_scb->at_cb.p_user = p_scb;
   p_scb->at_cb.cmd_max_len = BTA_AG_CMD_MAX;
   bta_ag_at_init(&p_scb->at_cb);

@@ -532,7 +532,7 @@ static tBTA_JV_PM_CB* bta_jv_alloc_set_pm_profile_cb(uint32_t jv_handle,
   }
   LOG(WARNING) << __func__ << ": handle=" << loghex(jv_handle)
                << ", app_id=" << app_id << ", return NULL";
-  return (tBTA_JV_PM_CB*)NULL;
+  return NULL;
 }
 
 /*******************************************************************************
