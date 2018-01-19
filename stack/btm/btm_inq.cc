@@ -502,7 +502,7 @@ tBTM_STATUS BTM_CancelPeriodicInquiry(void) {
   /* Only cancel if one is active */
   if (btm_cb.btm_inq_vars.inq_active & BTM_PERIODIC_INQUIRY_ACTIVE) {
     btm_cb.btm_inq_vars.inq_active = BTM_INQUIRY_INACTIVE;
-    btm_cb.btm_inq_vars.p_inq_results_cb = (tBTM_INQ_RESULTS_CB*)NULL;
+    btm_cb.btm_inq_vars.p_inq_results_cb = NULL;
 
     btsnd_hcic_exit_per_inq();
 
@@ -663,10 +663,8 @@ tBTM_STATUS BTM_CancelInquiry(void) {
       (!(p_inq->inq_active & BTM_PERIODIC_INQUIRY_ACTIVE))) {
     p_inq->inq_active = BTM_INQUIRY_INACTIVE;
     p_inq->state = BTM_INQ_INACTIVE_STATE;
-    p_inq->p_inq_results_cb =
-        (tBTM_INQ_RESULTS_CB*)NULL; /* Do not notify caller anymore */
-    p_inq->p_inq_cmpl_cb =
-        (tBTM_CMPL_CB*)NULL; /* Do not notify caller anymore */
+    p_inq->p_inq_results_cb = NULL; /* Do not notify caller anymore */
+    p_inq->p_inq_cmpl_cb = NULL;    /* Do not notify caller anymore */
 
     /* If the event filter is in progress, mark it so that the processing of the
        return
@@ -1940,8 +1938,8 @@ void btm_process_inq_complete(uint8_t status, uint8_t mode) {
 
   if (p_inq->scan_type == INQ_LE_OBSERVE && !p_inq->inq_active) {
     /*end of LE observe*/
-    p_inq->p_inq_ble_results_cb = (tBTM_INQ_RESULTS_CB*)NULL;
-    p_inq->p_inq_ble_cmpl_cb = (tBTM_CMPL_CB*)NULL;
+    p_inq->p_inq_ble_results_cb = NULL;
+    p_inq->p_inq_ble_cmpl_cb = NULL;
     p_inq->scan_type = INQ_NONE;
   }
 
@@ -1975,9 +1973,9 @@ void btm_process_inq_complete(uint8_t status, uint8_t mode) {
       }
 
       /* Clear the results callback if set */
-      p_inq->p_inq_results_cb = (tBTM_INQ_RESULTS_CB*)NULL;
+      p_inq->p_inq_results_cb = NULL;
       p_inq->inq_active = BTM_INQUIRY_INACTIVE;
-      p_inq->p_inq_cmpl_cb = (tBTM_CMPL_CB*)NULL;
+      p_inq->p_inq_cmpl_cb = NULL;
 
       /* If we have a callback registered for inquiry complete, call it */
       BTM_TRACE_DEBUG("BTM Inq Compl Callback: status 0x%02x, num results %d",
