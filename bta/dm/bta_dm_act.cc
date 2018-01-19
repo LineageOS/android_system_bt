@@ -451,15 +451,14 @@ static void bta_dm_sys_hw_cback(tBTA_SYS_HW_EVT status) {
        which forces
        the DM_ENABLE_EVT to be sent only after all the init steps are complete
        */
-    BTM_ReadLocalDeviceNameFromController(
-        (tBTM_CMPL_CB*)bta_dm_local_name_cback);
+    BTM_ReadLocalDeviceNameFromController(bta_dm_local_name_cback);
 
-    bta_sys_rm_register((tBTA_SYS_CONN_CBACK*)bta_dm_rm_cback);
+    bta_sys_rm_register(bta_dm_rm_cback);
 
     /* initialize bluetooth low power manager */
     bta_dm_init_pm();
 
-    bta_sys_policy_register((tBTA_SYS_CONN_CBACK*)bta_dm_policy_cback);
+    bta_sys_policy_register(bta_dm_policy_cback);
 
     bta_dm_gattc_register();
 
@@ -1132,8 +1131,7 @@ void bta_dm_search_start(tBTA_DM_MSG* p_data) {
     *bta_dm_search_cb.p_srvc_uuid = *p_data->search.p_uuid;
   }
   result.status = BTM_StartInquiry((tBTM_INQ_PARMS*)&p_data->search.inq_params,
-                                   bta_dm_inq_results_cb,
-                                   (tBTM_CMPL_CB*)bta_dm_inq_cmpl_cb);
+                                   bta_dm_inq_results_cb, bta_dm_inq_cmpl_cb);
 
   APPL_TRACE_EVENT("%s status=%d", __func__, result.status);
   if (result.status != BTM_CMD_STARTED) {
@@ -1355,9 +1353,8 @@ static bool bta_dm_read_remote_device_name(const RawAddress& bd_addr,
   bta_dm_search_cb.peer_bdaddr = bd_addr;
   bta_dm_search_cb.peer_name[0] = 0;
 
-  btm_status =
-      BTM_ReadRemoteDeviceName(bta_dm_search_cb.peer_bdaddr,
-                               (tBTM_CMPL_CB*)bta_dm_remname_cback, transport);
+  btm_status = BTM_ReadRemoteDeviceName(bta_dm_search_cb.peer_bdaddr,
+                                        bta_dm_remname_cback, transport);
 
   if (btm_status == BTM_CMD_STARTED) {
     APPL_TRACE_DEBUG("%s: BTM_ReadRemoteDeviceName is started", __func__);
@@ -2294,9 +2291,9 @@ static void bta_dm_service_search_remname_cback(const RawAddress& bd_addr,
     bta_dm_remname_cback(&rem_name);
   } else {
     /* get name of device */
-    btm_status = BTM_ReadRemoteDeviceName(bta_dm_search_cb.peer_bdaddr,
-                                          (tBTM_CMPL_CB*)bta_dm_remname_cback,
-                                          BT_TRANSPORT_BR_EDR);
+    btm_status =
+        BTM_ReadRemoteDeviceName(bta_dm_search_cb.peer_bdaddr,
+                                 bta_dm_remname_cback, BT_TRANSPORT_BR_EDR);
     if (btm_status == BTM_BUSY) {
       /* wait for next chance(notification of remote name discovery done) */
       APPL_TRACE_DEBUG("%s: BTM_ReadRemoteDeviceName is busy", __func__);
@@ -2873,7 +2870,7 @@ static bool bta_dm_check_av(uint16_t event) {
         /* make master and take away the role switch policy */
         if (BTM_CMD_STARTED == BTM_SwitchRole(p_dev->peer_bdaddr,
                                               HCI_ROLE_MASTER,
-                                              (tBTM_CMPL_CB*)bta_dm_rs_cback)) {
+                                              bta_dm_rs_cback)) {
           /* the role switch command is actually sent */
           bta_dm_cb.rs_event = event;
           switching = true;
