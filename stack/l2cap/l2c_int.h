@@ -430,6 +430,8 @@ typedef struct t_l2c_linkcb {
   uint16_t max_interval;
   uint16_t latency;
   uint16_t timeout;
+  uint16_t min_ce_len;
+  uint16_t max_ce_len;
 
 #if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
   /* each priority group is limited burst transmission */
