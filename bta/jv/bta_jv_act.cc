@@ -1138,8 +1138,8 @@ void bta_jv_l2cap_stop_server(uint16_t local_psm, uint32_t l2cap_socket_id) {
 }
 
 /* Write data to an L2CAP connection */
-void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, uint8_t* p_data,
-                        uint16_t len, uint32_t user_id, tBTA_JV_L2C_CB* p_cb) {
+void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, BT_HDR* msg,
+                        uint32_t user_id, tBTA_JV_L2C_CB* p_cb) {
   /* As we check this callback exists before the tBTA_JV_API_L2CAP_WRITE can be
    * send through the API this check should not be needed. But the API is not
    * designed to be used (safely at least) in a multi-threaded scheduler, hence
@@ -1160,7 +1160,7 @@ void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, uint8_t* p_data,
      * channel is disconnected after the API function is called, but before the
      * message is handled. */
     LOG(ERROR) << __func__ << ": p_cb->p_cback == NULL";
-    osi_free(p_data);
+    osi_free(msg);
     return;
   }
 
@@ -1169,23 +1169,19 @@ void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, uint8_t* p_data,
   evt_data.handle = handle;
   evt_data.req_id = req_id;
   evt_data.cong = p_cb->cong;
-  evt_data.len = len;
+  evt_data.len = msg->len;
+
   bta_jv_pm_conn_busy(p_cb->p_pm_cb);
 
-  if (!evt_data.cong) {
-    BT_HDR* msg = (BT_HDR*)osi_malloc(BT_HDR_SIZE + L2CAP_MIN_OFFSET + len +
-                                      L2CAP_FCS_LENGTH);
-    msg->offset = L2CAP_MIN_OFFSET;
-    msg->len = len;
-    memcpy((uint8_t*)(msg) + BT_HDR_SIZE + msg->offset, p_data, msg->len);
-    // TODO: this was set only for non-fixed channel packets. Get rid of it.
-    msg->event = BT_EVT_TO_BTU_SP_DATA;
+  // TODO: this was set only for non-fixed channel packets. Is that needed ?
+  msg->event = BT_EVT_TO_BTU_SP_DATA;
 
+  if (evt_data.cong) {
+    osi_free(msg);
+  } else {
     if (GAP_ConnWriteData(handle, msg) == BT_PASS)
       evt_data.status = BTA_JV_SUCCESS;
   }
-
-  osi_free(p_data);
 
   tBTA_JV bta_jv;
   bta_jv.l2c_write = evt_data;
@@ -1194,21 +1190,14 @@ void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, uint8_t* p_data,
 
 /* Write data to an L2CAP connection using Fixed channels */
 void bta_jv_l2cap_write_fixed(uint16_t channel, const RawAddress& addr,
-                              uint32_t req_id, uint8_t* p_data, uint16_t len,
-                              uint32_t user_id, tBTA_JV_L2CAP_CBACK* p_cback) {
+                              uint32_t req_id, BT_HDR* msg, uint32_t user_id,
+                              tBTA_JV_L2CAP_CBACK* p_cback) {
   tBTA_JV_L2CAP_WRITE_FIXED evt_data;
   evt_data.status = BTA_JV_FAILURE;
   evt_data.channel = channel;
   evt_data.addr = addr;
   evt_data.req_id = req_id;
   evt_data.len = 0;
-
-  BT_HDR* msg = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + len + L2CAP_MIN_OFFSET);
-  msg->offset = L2CAP_MIN_OFFSET;
-  msg->len = len;
-  memcpy((uint8_t*)(msg) + BT_HDR_SIZE + msg->offset, p_data, msg->len);
-
-  osi_free(p_data);
 
   L2CA_SendFixedChnlData(channel, addr, msg);
 
