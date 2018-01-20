@@ -98,7 +98,8 @@ bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda) {
  ******************************************************************************/
 bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
                               uint16_t max_int, uint16_t latency,
-                              uint16_t timeout) {
+                              uint16_t timeout, uint16_t min_ce_len,
+                              uint16_t max_ce_len) {
   tL2C_LCB* p_lcb;
   tACL_CONN* p_acl_cb = btm_bda_to_acl(rem_bda, BT_TRANSPORT_LE);
 
@@ -121,10 +122,19 @@ bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
   p_lcb->latency = latency;
   p_lcb->timeout = timeout;
   p_lcb->conn_update_mask |= L2C_BLE_NEW_CONN_PARAM;
+  p_lcb->min_ce_len = min_ce_len;
+  p_lcb->max_ce_len = max_ce_len;
 
   l2cble_start_conn_update(p_lcb);
 
   return (true);
+}
+
+bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
+                              uint16_t max_int, uint16_t latency,
+                              uint16_t timeout) {
+  return L2CA_UpdateBleConnParams(rem_bda, min_int, max_int, latency, timeout,
+                                  0, 0);
 }
 
 /*******************************************************************************
@@ -503,7 +513,8 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
               ) {
         btsnd_hcic_ble_upd_ll_conn_params(p_lcb->handle, p_lcb->min_interval,
                                           p_lcb->max_interval, p_lcb->latency,
-                                          p_lcb->timeout, 0, 0);
+                                          p_lcb->timeout, p_lcb->min_ce_len,
+                                          p_lcb->max_ce_len);
         p_lcb->conn_update_mask |= L2C_BLE_UPDATE_PENDING;
       } else {
         l2cu_send_peer_ble_par_req(p_lcb, p_lcb->min_interval,
