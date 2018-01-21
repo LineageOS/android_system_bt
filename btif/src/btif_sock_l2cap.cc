@@ -245,7 +245,7 @@ static void btsock_l2cap_free_l(l2cap_socket* sock) {
       BTA_JvL2capClose(sock->handle);
     }
     if ((sock->channel >= 0) && (sock->server)) {
-      BTA_JvFreeChannel(sock->channel, BTA_JV_CONN_TYPE_L2CAP);
+      BTA_JvFreeChannel(sock->channel, BTA_JV_CONN_TYPE_L2CAP_LE);
     }
   } else {
     // Only call if we are non server connections
@@ -339,7 +339,7 @@ fail_sockpair:
 }
 
 bt_status_t btsock_l2cap_init(int handle, uid_set_t* set) {
-  APPL_TRACE_DEBUG("%s handle = %d", __func__);
+  APPL_TRACE_DEBUG("%s: handle = %d", __func__, handle);
   std::unique_lock<std::mutex> lock(state_lock);
   pth = handle;
   socks = NULL;
@@ -355,6 +355,7 @@ bt_status_t btsock_l2cap_cleanup() {
 }
 
 static inline bool send_app_psm_or_chan_l(l2cap_socket* sock) {
+  APPL_TRACE_DEBUG("%s: channel=%d", __func__, sock->channel);
   return sock_send_all(sock->our_fd, (const uint8_t*)&sock->channel,
                        sizeof(sock->channel)) == sizeof(sock->channel);
 }
@@ -799,6 +800,9 @@ static bt_status_t btSock_start_l2cap_server_l(l2cap_socket* sock) {
   cfg.fcr_present = true;
   cfg.fcr = obex_l2c_fcr_opts_def;
 
+  APPL_TRACE_DEBUG("%s: fixed_chan=%d, channel=%d, is_le_coc=%d", __func__,
+                   sock->fixed_chan, sock->channel, sock->is_le_coc);
+
   if (sock->fixed_chan) {
     if (BTA_JvL2capStartServerLE(sock->security, 0, NULL, sock->channel,
                                  L2CAP_DEFAULT_MTU, NULL, btsock_l2cap_cbk,
@@ -808,7 +812,7 @@ static bt_status_t btSock_start_l2cap_server_l(l2cap_socket* sock) {
   } else {
     /* If we have a channel specified in the request, just start the server,
      * else we request a PSM and start the server after we receive a PSM. */
-    if (sock->channel < 0) {
+    if (sock->channel <= 0) {
       if (sock->is_le_coc) {
         if (BTA_JvGetChannelId(BTA_JV_CONN_TYPE_L2CAP_LE, sock->id, 0) !=
             BTA_JV_SUCCESS)
@@ -957,6 +961,19 @@ static bool flush_incoming_que_on_wr_signal_l(l2cap_socket* sock) {
   return false;
 }
 
+inline BT_HDR* malloc_l2cap_buf(uint16_t len) {
+  // We need FCS only for L2CAP_FCR_ERTM_MODE, but it's just 2 bytes so it's ok
+  BT_HDR* msg = (BT_HDR*)osi_malloc(BT_HDR_SIZE + L2CAP_MIN_OFFSET + len +
+                                    L2CAP_FCS_LENGTH);
+  msg->offset = L2CAP_MIN_OFFSET;
+  msg->len = len;
+  return msg;
+}
+
+inline uint8_t* get_l2cap_sdu_start_ptr(BT_HDR* msg) {
+  return (uint8_t*)(msg) + BT_HDR_SIZE + msg->offset;
+}
+
 void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
   char drop_it = false;
 
@@ -980,11 +997,11 @@ void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
            by BT spec). */
         size = std::min(size, (int)sock->mps);
 
-        uint8_t* buffer = (uint8_t*)osi_malloc(size);
+        BT_HDR* buffer = malloc_l2cap_buf(size);
         /* The socket is created with SOCK_SEQPACKET, hence we read one message
          * at the time. */
         ssize_t count;
-        OSI_NO_INTR(count = recv(fd, buffer, size,
+        OSI_NO_INTR(count = recv(fd, get_l2cap_sdu_start_ptr(buffer), size,
                                  MSG_NOSIGNAL | MSG_DONTWAIT | MSG_TRUNC));
         if (count > L2CAP_LE_MAX_MPS) {
           /* This can't happen thanks to check in BluetoothSocket.java but leave
@@ -998,11 +1015,10 @@ void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
         if (sock->fixed_chan) {
           // will take care of freeing buffer
           BTA_JvL2capWriteFixed(sock->channel, sock->addr, PTR_TO_UINT(buffer),
-                                btsock_l2cap_cbk, buffer, count, user_id);
+                                btsock_l2cap_cbk, buffer, user_id);
         } else {
           // will take care of freeing buffer
-          BTA_JvL2capWrite(sock->handle, PTR_TO_UINT(buffer), buffer, count,
-                           user_id);
+          BTA_JvL2capWrite(sock->handle, PTR_TO_UINT(buffer), buffer, user_id);
         }
       }
     } else

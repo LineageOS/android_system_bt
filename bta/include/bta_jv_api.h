@@ -678,8 +678,7 @@ tBTA_JV_STATUS BTA_JvL2capReady(uint32_t handle, uint32_t* p_data_size);
  *                  BTA_JV_FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id,
-                                uint8_t* p_data, uint16_t len,
+tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id, BT_HDR* msg,
                                 uint32_t user_id);
 
 /*******************************************************************************
@@ -691,15 +690,10 @@ tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id,
  *                  called with BTA_JV_L2CAP_WRITE_FIXED_EVT. Works for
  *                  fixed-channel connections
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
- *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capWriteFixed(uint16_t channel, const RawAddress& addr,
-                                     uint32_t req_id,
-                                     tBTA_JV_L2CAP_CBACK* p_cback,
-                                     uint8_t* p_data, uint16_t len,
-                                     uint32_t user_id);
+void BTA_JvL2capWriteFixed(uint16_t channel, const RawAddress& addr,
+                           uint32_t req_id, tBTA_JV_L2CAP_CBACK* p_cback,
+                           BT_HDR* msg, uint32_t user_id);
 
 /*******************************************************************************
  *

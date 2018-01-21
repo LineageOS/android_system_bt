@@ -85,7 +85,7 @@ void bta_dm_init_pm(void) {
 
   /* if there are no power manger entries, so not register */
   if (p_bta_dm_pm_cfg[0].app_id != 0) {
-    bta_sys_pm_register((tBTA_SYS_CONN_CBACK*)bta_dm_pm_cback);
+    bta_sys_pm_register(bta_dm_pm_cback);
 
     BTM_PmRegister((BTM_PM_REG_SET | BTM_PM_REG_NOTIF), &bta_dm_cb.pm_id,
                    bta_dm_pm_btm_cback);
@@ -115,7 +115,7 @@ void bta_dm_disable_pm(void) {
    * Deregister the PM callback from the system handling to prevent
    * re-enabling the PM timers after this call if the callback is invoked.
    */
-  bta_sys_pm_register((tBTA_SYS_CONN_CBACK*)NULL);
+  bta_sys_pm_register(NULL);
 
   /* Need to stop all active timers. */
   for (int i = 0; i < BTA_DM_NUM_PM_TIMER; i++) {

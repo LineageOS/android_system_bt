@@ -43,6 +43,8 @@
 #define L2CAP_LCC_OFFSET \
   (L2CAP_MIN_OFFSET + L2CAP_LCC_SDU_LENGTH) /* plus SDU length(2) */
 
+#define L2CAP_FCS_LENGTH 2
+
 /* ping result codes */
 #define L2CAP_PING_RESULT_OK 0      /* Ping reply received OK     */
 #define L2CAP_PING_RESULT_NO_LINK 1 /* Link could not be setup    */
@@ -376,6 +378,29 @@ extern void L2CA_Deregister(uint16_t psm);
  *
  ******************************************************************************/
 extern uint16_t L2CA_AllocatePSM(void);
+
+/*******************************************************************************
+ *
+ * Function         L2CA_AllocateLePSM
+ *
+ * Description      Other layers call this function to find an unused LE PSM for
+ *                  L2CAP services.
+ *
+ * Returns          LE_PSM to use if success. Otherwise returns 0.
+ *
+ ******************************************************************************/
+extern uint16_t L2CA_AllocateLePSM(void);
+
+/*******************************************************************************
+ *
+ * Function         L2CA_FreeLePSM
+ *
+ * Description      Free an assigned LE PSM.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+extern void L2CA_FreeLePSM(uint16_t psm);
 
 /*******************************************************************************
  *
@@ -1200,6 +1225,10 @@ extern bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda);
 extern bool L2CA_UpdateBleConnParams(const RawAddress& rem_bdRa,
                                      uint16_t min_int, uint16_t max_int,
                                      uint16_t latency, uint16_t timeout);
+extern bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda,
+                                     uint16_t min_int, uint16_t max_int,
+                                     uint16_t latency, uint16_t timeout,
+                                     uint16_t min_ce_len, uint16_t max_ce_len);
 
 /*******************************************************************************
  *

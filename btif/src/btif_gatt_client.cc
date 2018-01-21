@@ -204,7 +204,9 @@ void bta_gattc_cback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
   ASSERTC(status == BT_STATUS_SUCCESS, "Context transfer failed!", status);
 }
 
-void btm_read_rssi_cb(tBTM_RSSI_RESULT* p_result) {
+void btm_read_rssi_cb(void* p_void) {
+  tBTM_RSSI_RESULT* p_result = (tBTM_RSSI_RESULT*)p_void;
+
   if (!p_result) return;
 
   CLI_CBACK_IN_JNI(read_remote_rssi_cb, rssi_request_client_if,
@@ -523,8 +525,8 @@ bt_status_t btif_gattc_read_remote_rssi(int client_if,
   CHECK_BTGATT_INIT();
   rssi_request_client_if = client_if;
 
-  return do_in_jni_thread(Bind(base::IgnoreResult(&BTM_ReadRSSI), bd_addr,
-                               (tBTM_CMPL_CB*)btm_read_rssi_cb));
+  return do_in_jni_thread(
+      Bind(base::IgnoreResult(&BTM_ReadRSSI), bd_addr, btm_read_rssi_cb));
 }
 
 bt_status_t btif_gattc_configure_mtu(int conn_id, int mtu) {
