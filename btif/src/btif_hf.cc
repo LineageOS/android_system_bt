@@ -232,7 +232,7 @@ static void send_at_result(uint8_t ok_flag, uint16_t errcode, int idx) {
   if (ok_flag == BTA_AG_OK_ERROR) {
     ag_res.errcode = errcode;
   }
-  BTA_AgResult(btif_hf_cb[idx].handle, BTA_AG_UNAT_RES, &ag_res);
+  BTA_AgResult(btif_hf_cb[idx].handle, BTA_AG_UNAT_RES, ag_res);
 }
 
 /*******************************************************************************
@@ -248,7 +248,7 @@ static void send_indicator_update(uint16_t indicator, uint16_t value) {
   tBTA_AG_RES_DATA ag_res = {};
   ag_res.ind.id = indicator;
   ag_res.ind.value = value;
-  BTA_AgResult(BTA_AG_HANDLE_ALL, BTA_AG_IND_RES, &ag_res);
+  BTA_AgResult(BTA_AG_HANDLE_ALL, BTA_AG_IND_RES, ag_res);
 }
 
 /*******************************************************************************
@@ -264,7 +264,7 @@ static void send_call_status_forcibly(uint16_t value) {
   tBTA_AG_RES_DATA ag_res = {};
   ag_res.ind.id = BTA_AG_IND_CALL;
   ag_res.ind.value = value;
-  BTA_AgResult(BTA_AG_HANDLE_ALL, BTA_AG_IND_RES_ON_DEMAND, &ag_res);
+  BTA_AgResult(BTA_AG_HANDLE_ALL, BTA_AG_IND_RES_ON_DEMAND, ag_res);
 }
 
 void clear_phone_state_multihf(int idx) {
@@ -837,7 +837,7 @@ bt_status_t HeadsetInterface::StartVoiceRecognition(RawAddress* bd_addr) {
   }
   tBTA_AG_RES_DATA ag_res = {};
   ag_res.state = true;
-  BTA_AgResult(btif_hf_cb[idx].handle, BTA_AG_BVRA_RES, &ag_res);
+  BTA_AgResult(btif_hf_cb[idx].handle, BTA_AG_BVRA_RES, ag_res);
   return BT_STATUS_SUCCESS;
 }
 
@@ -861,7 +861,7 @@ bt_status_t HeadsetInterface::StopVoiceRecognition(RawAddress* bd_addr) {
   }
   tBTA_AG_RES_DATA ag_res = {};
   ag_res.state = false;
-  BTA_AgResult(btif_hf_cb[idx].handle, BTA_AG_BVRA_RES, &ag_res);
+  BTA_AgResult(btif_hf_cb[idx].handle, BTA_AG_BVRA_RES, ag_res);
   return BT_STATUS_SUCCESS;
 }
 
@@ -882,7 +882,7 @@ bt_status_t HeadsetInterface::VolumeControl(bthf_volume_type_t type, int volume,
   ag_res.num = volume;
   BTA_AgResult(btif_hf_cb[idx].handle,
                (type == BTHF_VOLUME_TYPE_SPK) ? BTA_AG_SPK_RES : BTA_AG_MIC_RES,
-               &ag_res);
+               ag_res);
   return BT_STATUS_SUCCESS;
 }
 
@@ -921,7 +921,7 @@ bt_status_t HeadsetInterface::CopsResponse(const char* cops,
   /* Format the response */
   snprintf(ag_res.str, sizeof(ag_res.str), "0,0,\"%.16s\"", cops);
   ag_res.ok_flag = BTA_AG_OK_DONE;
-  BTA_AgResult(btif_hf_cb[idx].handle, BTA_AG_COPS_RES, &ag_res);
+  BTA_AgResult(btif_hf_cb[idx].handle, BTA_AG_COPS_RES, ag_res);
   return BT_STATUS_SUCCESS;
 }
 
@@ -953,7 +953,7 @@ bt_status_t HeadsetInterface::CindResponse(int svc, int num_active,
            roam,                                     /* Roaming indicator */
            batt_chg,                                 /* Battery level */
            ((num_held == 0) ? 0 : ((num_active == 0) ? 2 : 1))); /* Call held */
-  BTA_AgResult(btif_hf_cb[idx].handle, BTA_AG_CIND_RES, &ag_res);
+  BTA_AgResult(btif_hf_cb[idx].handle, BTA_AG_CIND_RES, ag_res);
   return BT_STATUS_SUCCESS;
 }
 
@@ -973,7 +973,7 @@ bt_status_t HeadsetInterface::FormattedAtResponse(const char* rsp,
   }
   /* Format the response and send */
   strncpy(ag_res.str, rsp, BTA_AG_AT_MAX_LEN);
-  BTA_AgResult(btif_hf_cb[idx].handle, BTA_AG_UNAT_RES, &ag_res);
+  BTA_AgResult(btif_hf_cb[idx].handle, BTA_AG_UNAT_RES, ag_res);
   return BT_STATUS_SUCCESS;
 }
 
@@ -1037,7 +1037,7 @@ bt_status_t HeadsetInterface::ClccResponse(
       snprintf(&ag_res.str[res_strlen], rem_bytes, ",\"%s\",%d", dialnum, type);
     }
   }
-  BTA_AgResult(btif_hf_cb[idx].handle, BTA_AG_CLCC_RES, &ag_res);
+  BTA_AgResult(btif_hf_cb[idx].handle, BTA_AG_CLCC_RES, ag_res);
   return BT_STATUS_SUCCESS;
 }
 
@@ -1082,7 +1082,8 @@ bt_status_t HeadsetInterface::PhoneStateChange(
       BTIF_TRACE_DEBUG("%s: Record call termination timestamp", __func__);
       clock_gettime(CLOCK_MONOTONIC, &btif_hf_cb[0].call_end_timestamp);
     }
-    BTA_AgResult(BTA_AG_HANDLE_ALL, BTA_AG_END_CALL_RES, nullptr);
+    tBTA_AG_RES_DATA ag_res = {};
+    BTA_AgResult(BTA_AG_HANDLE_ALL, BTA_AG_END_CALL_RES, ag_res);
     hf_idx = BTIF_HF_INVALID_IDX;
 
     /* if held call was present, reset that as well */
@@ -1120,7 +1121,7 @@ bt_status_t HeadsetInterface::PhoneStateChange(
       res = BTA_AG_MULTI_CALL_RES;
     else
       res = BTA_AG_OUT_CALL_CONN_RES;
-    BTA_AgResult(BTA_AG_HANDLE_ALL, res, &ag_res);
+    BTA_AgResult(BTA_AG_HANDLE_ALL, res, ag_res);
     activeCallUpdated = true;
   }
 
@@ -1200,7 +1201,7 @@ bt_status_t HeadsetInterface::PhoneStateChange(
     BTIF_TRACE_DEBUG("%s: Call setup state changed. res=%d, audio_handle=%d",
                      __func__, res, ag_res.audio_handle);
 
-    if (res) BTA_AgResult(BTA_AG_HANDLE_ALL, res, &ag_res);
+    if (res) BTA_AgResult(BTA_AG_HANDLE_ALL, res, ag_res);
 
     /* if call setup is idle, we have already updated call indicator, jump out
      */
@@ -1300,7 +1301,7 @@ bt_status_t HeadsetInterface::SendBsir(bool value, RawAddress* bd_addr) {
   }
   tBTA_AG_RES_DATA ag_result = {};
   ag_result.state = value;
-  BTA_AgResult(btif_hf_cb[idx].handle, BTA_AG_INBAND_RING_RES, &ag_result);
+  BTA_AgResult(btif_hf_cb[idx].handle, BTA_AG_INBAND_RING_RES, ag_result);
   return BT_STATUS_SUCCESS;
 }
 
@@ -1320,13 +1321,19 @@ bt_status_t HeadsetInterface::SetActiveDevice(RawAddress* active_device_addr) {
  *
  ******************************************************************************/
 bt_status_t ExecuteService(bool b_enable) {
-  const char* p_service_names[] = BTIF_HF_SERVICE_NAMES;
+  const char* service_names_raw[] = BTIF_HF_SERVICE_NAMES;
+  std::vector<std::string> service_names;
+  for (const char* service_name_raw : service_names_raw) {
+    if (service_name_raw) {
+      service_names.emplace_back(service_name_raw);
+    }
+  }
   if (b_enable) {
     /* Enable and register with BTA-AG */
     BTA_AgEnable(bte_hf_evt);
     for (int i = 0; i < btif_max_hf_clients; i++) {
       BTA_AgRegister(BTIF_HF_SERVICES, BTIF_HF_SECURITY, btif_hf_features,
-                     p_service_names, bthf_hf_id[i]);
+                     service_names, bthf_hf_id[i]);
     }
   } else {
     /* De-register AG */

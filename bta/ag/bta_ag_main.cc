@@ -22,6 +22,7 @@
  *
  ******************************************************************************/
 
+#include <stack/include/bt_types.h>
 #include <string.h>
 
 #include "bta_ag_int.h"
@@ -73,7 +74,7 @@ enum {
 #define BTA_AG_IGNORE BTA_AG_NUM_ACTIONS
 
 /* type for action functions */
-typedef void (*tBTA_AG_ACTION)(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
+typedef void (*tBTA_AG_ACTION)(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
 
 #define CASE_RETURN_STR(const) \
   case const:                  \
@@ -132,10 +133,6 @@ static const char* bta_ag_evt_str(uint16_t event) {
     CASE_RETURN_STR(BTA_AG_DISC_FAIL_EVT)
     CASE_RETURN_STR(BTA_AG_RING_TIMEOUT_EVT)
     CASE_RETURN_STR(BTA_AG_SVC_TIMEOUT_EVT)
-    CASE_RETURN_STR(BTA_AG_API_ENABLE_EVT)
-    CASE_RETURN_STR(BTA_AG_API_DISABLE_EVT)
-    CASE_RETURN_STR(BTA_AG_API_SET_SCO_ALLOWED_EVT)
-    CASE_RETURN_STR(BTA_AG_API_SET_ACTIVE_DEVICE_EVT)
     default:
       return "Unknown AG Event";
   }
@@ -287,6 +284,7 @@ const tBTA_AG_ST_TBL bta_ag_st_tbl[] = {bta_ag_st_init, bta_ag_st_opening,
 
 /* AG control block */
 tBTA_AG_CB bta_ag_cb;
+const tBTA_AG_DATA tBTA_AG_DATA::kEmpty = {};
 
 /*******************************************************************************
  *
@@ -576,7 +574,7 @@ void bta_ag_collision_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status, uint8_t id,
     /* Cancel SDP if it had been started. */
     if (p_scb->p_disc_db) {
       (void)SDP_CancelServiceSearch(p_scb->p_disc_db);
-      bta_ag_free_db(p_scb, nullptr);
+      bta_ag_free_db(p_scb, tBTA_AG_DATA::kEmpty);
     }
 
     /* reopen registered servers */
@@ -608,7 +606,7 @@ void bta_ag_resume_open(tBTA_AG_SCB* p_scb) {
     /* resume opening process.  */
     if (p_scb->state == BTA_AG_INIT_ST) {
       p_scb->state = BTA_AG_OPENING_ST;
-      bta_ag_start_open(p_scb, nullptr);
+      bta_ag_start_open(p_scb, tBTA_AG_DATA::kEmpty);
     }
   } else {
     APPL_TRACE_ERROR("bta_ag_resume_open, Null p_scb");
@@ -625,7 +623,7 @@ void bta_ag_resume_open(tBTA_AG_SCB* p_scb) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_ag_api_enable(tBTA_AG_DATA* p_data) {
+void bta_ag_api_enable(tBTA_AG_CBACK* p_cback) {
   /* initialize control block */
   for (tBTA_AG_SCB& scb : bta_ag_cb.scb) {
     alarm_free(scb.ring_timer);
@@ -635,7 +633,7 @@ static void bta_ag_api_enable(tBTA_AG_DATA* p_data) {
   }
 
   /* store callback function */
-  bta_ag_cb.p_cback = p_data->api_enable.p_cback;
+  bta_ag_cb.p_cback = p_cback;
 
   /* call init call-out */
   BTM_WriteVoiceSettings(AG_VOICE_SETTINGS);
@@ -656,7 +654,7 @@ static void bta_ag_api_enable(tBTA_AG_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_ag_api_disable(tBTA_AG_DATA* p_data) {
+void bta_ag_api_disable() {
   /* deregister all scbs in use */
   tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
   bool do_dereg = false;
@@ -672,7 +670,7 @@ static void bta_ag_api_disable(tBTA_AG_DATA* p_data) {
 
   for (i = 0; i < BTA_AG_NUM_SCB; i++, p_scb++) {
     if (p_scb->in_use) {
-      bta_ag_sm_execute(p_scb, BTA_AG_API_DEREGISTER_EVT, p_data);
+      bta_ag_sm_execute(p_scb, BTA_AG_API_DEREGISTER_EVT, tBTA_AG_DATA::kEmpty);
       do_dereg = true;
     }
   }
@@ -695,14 +693,27 @@ static void bta_ag_api_disable(tBTA_AG_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_ag_api_register(tBTA_AG_DATA* p_data) {
-  tBTA_AG_SCB* p_scb;
-
-  /* allocate an scb */
-  p_scb = bta_ag_scb_alloc();
-  if (p_scb != nullptr) {
+void bta_ag_api_register(tBTA_SERVICE_MASK services, tBTA_SEC sec_mask,
+                         tBTA_AG_FEAT features,
+                         const std::vector<std::string>& service_names,
+                         uint8_t app_id) {
+  tBTA_AG_SCB* p_scb = bta_ag_scb_alloc();
+  if (p_scb) {
     APPL_TRACE_DEBUG("bta_ag_api_register: p_scb 0x%08x ", p_scb);
-    bta_ag_sm_execute(p_scb, p_data->hdr.event, p_data);
+    tBTA_AG_DATA data = {};
+    data.api_register.features = features;
+    data.api_register.sec_mask = sec_mask;
+    data.api_register.services = services;
+    data.api_register.app_id = app_id;
+    for (int i = 0; i < BTA_AG_NUM_IDX; i++) {
+      if (!service_names[i].empty()) {
+        strlcpy(data.api_register.p_name[i], service_names[i].c_str(),
+                BTA_SERVICE_NAME_LEN);
+      } else {
+        data.api_register.p_name[i][0] = 0;
+      }
+    }
+    bta_ag_sm_execute(p_scb, BTA_AG_API_REGISTER_EVT, data);
   } else {
     tBTA_AG bta_ag = {};
     bta_ag.reg.status = BTA_AG_FAIL_RESOURCES;
@@ -720,21 +731,26 @@ static void bta_ag_api_register(tBTA_AG_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_ag_api_result(tBTA_AG_DATA* p_data) {
+void bta_ag_api_result(uint16_t handle, tBTA_AG_RES result,
+                       const tBTA_AG_RES_DATA& result_data) {
+  tBTA_AG_DATA event_data = {};
+  event_data.api_result.result = result;
+  event_data.api_result.data = result_data;
   tBTA_AG_SCB* p_scb;
-  int i;
-
-  if (p_data->hdr.layer_specific != BTA_AG_HANDLE_ALL) {
-    p_scb = bta_ag_scb_by_idx(p_data->hdr.layer_specific);
-    if (p_scb != nullptr) {
+  if (handle != BTA_AG_HANDLE_ALL) {
+    p_scb = bta_ag_scb_by_idx(handle);
+    if (p_scb) {
       APPL_TRACE_DEBUG("bta_ag_api_result: p_scb 0x%08x ", p_scb);
-      bta_ag_sm_execute(p_scb, BTA_AG_API_RESULT_EVT, p_data);
+      bta_ag_sm_execute(p_scb, static_cast<uint16_t>(BTA_AG_API_RESULT_EVT),
+                        event_data);
     }
   } else {
+    int i;
     for (i = 0, p_scb = &bta_ag_cb.scb[0]; i < BTA_AG_NUM_SCB; i++, p_scb++) {
       if (p_scb->in_use && p_scb->svc_conn) {
         APPL_TRACE_DEBUG("bta_ag_api_result p_scb 0x%08x ", p_scb);
-        bta_ag_sm_execute(p_scb, BTA_AG_API_RESULT_EVT, p_data);
+        bta_ag_sm_execute(p_scb, static_cast<uint16_t>(BTA_AG_API_RESULT_EVT),
+                          event_data);
       }
     }
   }
@@ -751,7 +767,7 @@ static void bta_ag_api_result(tBTA_AG_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event,
-                       tBTA_AG_DATA* p_data) {
+                       const tBTA_AG_DATA& data) {
   tBTA_AG_ST_TBL state_table;
   uint8_t action;
   int i;
@@ -767,7 +783,7 @@ void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event,
         "result=%s(0x%02x)",
         __func__, bta_ag_scb_to_idx(p_scb), bta_ag_state_str(p_scb->state),
         p_scb->state, bta_ag_evt_str(event), event,
-        bta_ag_res_str(p_data->api_result.result), p_data->api_result.result);
+        bta_ag_res_str(data.api_result.result), data.api_result.result);
   }
 
   event &= 0x00FF;
@@ -786,7 +802,7 @@ void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event,
   for (i = 0; i < BTA_AG_ACTIONS; i++) {
     action = state_table[event][i];
     if (action != BTA_AG_IGNORE) {
-      (*bta_ag_action[action])(p_scb, p_data);
+      (*bta_ag_action[action])(p_scb, data);
     } else {
       break;
     }
@@ -798,56 +814,36 @@ void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event,
         __func__, bta_ag_state_str(previous_state), previous_state,
         bta_ag_state_str(p_scb->state), p_scb->state,
         bta_ag_evt_str(previous_event), previous_event,
-        bta_ag_res_str(p_data->api_result.result), p_data->api_result.result);
+        bta_ag_res_str(data.api_result.result), data.api_result.result);
   }
 }
 
-/*******************************************************************************
+void bta_ag_sm_execute_by_handle(uint16_t handle, uint16_t event,
+                                 const tBTA_AG_DATA& data) {
+  tBTA_AG_SCB* p_scb = bta_ag_scb_by_idx(handle);
+  if (p_scb) {
+    APPL_TRACE_DEBUG("%s: p_scb 0x%08x ", __func__, p_scb);
+    bta_ag_sm_execute(p_scb, event, data);
+  }
+}
+
+/**
+ * Handles event from bta_sys_sendmsg(). It is here to support legacy alarm
+ * implementation that is mainly for timeouts.
  *
- * Function         bta_ag_hdl_event
- *
- * Description      Data gateway main event handling function.
- *
- *
- * Returns          bool
- *
- ******************************************************************************/
+ * @param p_msg event message
+ * @return True to free p_msg, or False if p_msg is freed within this function
+ */
 bool bta_ag_hdl_event(BT_HDR* p_msg) {
-  tBTA_AG_SCB* p_scb;
-
-  APPL_TRACE_DEBUG("bta_ag_hdl_event: Event 0x%04x ", p_msg->event);
   switch (p_msg->event) {
-    case BTA_AG_API_ENABLE_EVT:
-      bta_ag_api_enable((tBTA_AG_DATA*)p_msg);
+    case BTA_AG_RING_TIMEOUT_EVT:
+    case BTA_AG_SVC_TIMEOUT_EVT:
+      bta_ag_sm_execute_by_handle(p_msg->layer_specific, p_msg->event,
+                                  tBTA_AG_DATA::kEmpty);
       break;
-
-    case BTA_AG_API_DISABLE_EVT:
-      bta_ag_api_disable((tBTA_AG_DATA*)p_msg);
-      break;
-
-    case BTA_AG_API_REGISTER_EVT:
-      bta_ag_api_register((tBTA_AG_DATA*)p_msg);
-      break;
-
-    case BTA_AG_API_RESULT_EVT:
-      bta_ag_api_result((tBTA_AG_DATA*)p_msg);
-      break;
-
-    case BTA_AG_API_SET_SCO_ALLOWED_EVT:
-      bta_ag_set_sco_allowed((tBTA_AG_DATA*)p_msg);
-      break;
-
-    case BTA_AG_API_SET_ACTIVE_DEVICE_EVT:
-      bta_ag_api_set_active_device((tBTA_AG_DATA*)p_msg);
-      break;
-
-    /* all others reference scb by handle */
     default:
-      p_scb = bta_ag_scb_by_idx(p_msg->layer_specific);
-      if (p_scb != nullptr) {
-        APPL_TRACE_DEBUG("bta_ag_hdl_event: p_scb 0x%08x ", p_scb);
-        bta_ag_sm_execute(p_scb, p_msg->event, (tBTA_AG_DATA*)p_msg);
-      }
+      LOG(FATAL) << __func__ << ": bad event " << p_msg->event
+                 << " layer_specific=" << p_msg->layer_specific;
       break;
   }
   return true;
