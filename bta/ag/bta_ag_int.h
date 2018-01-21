@@ -85,12 +85,6 @@ enum {
   BTA_AG_RING_TIMEOUT_EVT,
   BTA_AG_SVC_TIMEOUT_EVT,
   BTA_AG_MAX_EVT,
-
-  /* these events are handled outside of the state machine */
-  BTA_AG_API_ENABLE_EVT,
-  BTA_AG_API_DISABLE_EVT,
-  BTA_AG_API_SET_SCO_ALLOWED_EVT,
-  BTA_AG_API_SET_ACTIVE_DEVICE_EVT
 };
 
 /* Actions to perform after a SCO event */
@@ -124,15 +118,8 @@ enum {
  *  Data types
  ****************************************************************************/
 
-/* data type for BTA_AG_API_ENABLE_EVT */
-typedef struct {
-  BT_HDR hdr;
-  tBTA_AG_CBACK* p_cback;
-} tBTA_AG_API_ENABLE;
-
 /* data type for BTA_AG_API_REGISTER_EVT */
 typedef struct {
-  BT_HDR hdr;
   char p_name[2][BTA_SERVICE_NAME_LEN + 1];
   tBTA_SERVICE_MASK services;
   tBTA_SEC sec_mask;
@@ -142,7 +129,6 @@ typedef struct {
 
 /* data type for BTA_AG_API_OPEN_EVT */
 typedef struct {
-  BT_HDR hdr;
   RawAddress bd_addr;
   tBTA_SERVICE_MASK services;
   tBTA_SEC sec_mask;
@@ -150,53 +136,35 @@ typedef struct {
 
 /* data type for BTA_AG_API_RESULT_EVT */
 typedef struct {
-  BT_HDR hdr;
   tBTA_AG_RES result;
   tBTA_AG_RES_DATA data;
 } tBTA_AG_API_RESULT;
 
 /* data type for BTA_AG_API_SETCODEC_EVT */
 typedef struct {
-  BT_HDR hdr;
   tBTA_AG_PEER_CODEC codec;
 } tBTA_AG_API_SETCODEC;
 
-/* data type for BTA_AG_API_SET_SCO_ALLOWED_EVT */
-typedef struct {
-  BT_HDR hdr;
-  bool value;
-} tBTA_AG_API_SET_SCO_ALLOWED;
-
-typedef struct {
-  BT_HDR hdr;
-  RawAddress active_device_addr;
-} tBTA_AG_API_SET_ACTIVE_DEVICE;
-
 /* data type for BTA_AG_DISC_RESULT_EVT */
 typedef struct {
-  BT_HDR hdr;
   uint16_t status;
 } tBTA_AG_DISC_RESULT;
 
 /* data type for RFCOMM events */
 typedef struct {
-  BT_HDR hdr;
   uint16_t port_handle;
 } tBTA_AG_RFC;
 
 /* union of all event datatypes */
-typedef union {
-  BT_HDR hdr;
-  tBTA_AG_API_ENABLE api_enable;
+union tBTA_AG_DATA {
   tBTA_AG_API_REGISTER api_register;
   tBTA_AG_API_OPEN api_open;
   tBTA_AG_API_RESULT api_result;
   tBTA_AG_API_SETCODEC api_setcodec;
-  tBTA_AG_API_SET_SCO_ALLOWED api_set_sco_allowed;
-  tBTA_AG_API_SET_ACTIVE_DEVICE api_set_active_device;
   tBTA_AG_DISC_RESULT disc_result;
   tBTA_AG_RFC rfc;
-} tBTA_AG_DATA;
+  static const tBTA_AG_DATA kEmpty;
+};
 
 /* type for each profile */
 typedef struct {
@@ -305,6 +273,18 @@ extern const tBTA_AG_HF_IND bta_ag_local_hf_ind_cfg[];
 /*****************************************************************************
  *  Function prototypes
  ****************************************************************************/
+bool bta_ag_hdl_event(BT_HDR* p_msg);
+
+/* API functions */
+extern void bta_ag_api_enable(tBTA_AG_CBACK* p_cback);
+extern void bta_ag_api_disable();
+extern void bta_ag_api_set_active_device(const RawAddress& new_active_device);
+extern void bta_ag_api_register(tBTA_SERVICE_MASK services, tBTA_SEC sec_mask,
+                                tBTA_AG_FEAT features,
+                                const std::vector<std::string>& service_names,
+                                uint8_t app_id);
+extern void bta_ag_api_result(uint16_t handle, tBTA_AG_RES result,
+                              const tBTA_AG_RES_DATA& result_data);
 
 /* main functions */
 extern void bta_ag_scb_dealloc(tBTA_AG_SCB* p_scb);
@@ -316,21 +296,22 @@ extern bool bta_ag_other_scb_open(tBTA_AG_SCB* p_curr_scb);
 extern bool bta_ag_scb_open(tBTA_AG_SCB* p_curr_scb);
 extern tBTA_AG_SCB* bta_ag_get_other_idle_scb(tBTA_AG_SCB* p_curr_scb);
 extern void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event,
-                              tBTA_AG_DATA* p_data);
-extern bool bta_ag_hdl_event(BT_HDR* p_msg);
+                              const tBTA_AG_DATA& data);
+extern void bta_ag_sm_execute_by_handle(uint16_t handle, uint16_t event,
+                                        const tBTA_AG_DATA& data);
 extern void bta_ag_collision_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
                                    uint8_t app_id, const RawAddress& peer_addr);
 extern void bta_ag_resume_open(tBTA_AG_SCB* p_scb);
 
 /* SDP functions */
-extern bool bta_ag_add_record(uint16_t service_uuid, char* p_service_name,
+extern bool bta_ag_add_record(uint16_t service_uuid, const char* p_service_name,
                               uint8_t scn, tBTA_AG_FEAT features,
                               uint32_t sdp_handle);
-extern void bta_ag_create_records(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_del_records(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
+extern void bta_ag_create_records(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_del_records(tBTA_AG_SCB* p_scb);
 extern bool bta_ag_sdp_find_attr(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service);
 extern void bta_ag_do_disc(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service);
-extern void bta_ag_free_db(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
+extern void bta_ag_free_db(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
 
 /* RFCOMM functions */
 extern void bta_ag_start_servers(tBTA_AG_SCB* p_scb,
@@ -338,57 +319,59 @@ extern void bta_ag_start_servers(tBTA_AG_SCB* p_scb,
 extern void bta_ag_close_servers(tBTA_AG_SCB* p_scb,
                                  tBTA_SERVICE_MASK services);
 extern bool bta_ag_is_server_closed(tBTA_AG_SCB* p_scb);
-extern void bta_ag_rfc_do_close(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_rfc_do_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
+extern void bta_ag_rfc_do_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_rfc_do_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
 
 /* SCO functions */
 extern bool bta_ag_sco_is_open(tBTA_AG_SCB* p_scb);
 extern bool bta_ag_sco_is_opening(tBTA_AG_SCB* p_scb);
 extern void bta_ag_sco_conn_rsp(tBTA_AG_SCB* p_scb,
-                                tBTM_ESCO_CONN_REQ_EVT_DATA* p_data);
+                                tBTM_ESCO_CONN_REQ_EVT_DATA* data);
 
 /* AT command functions */
 extern void bta_ag_at_hsp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd,
                                 uint8_t arg_type, char* p_arg, int16_t int_arg);
 extern void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd,
                                 uint8_t arg_type, char* p_arg, int16_t int_arg);
-extern void bta_ag_at_err_cback(tBTA_AG_SCB* p_scb, bool unknown, char* p_arg);
+extern void bta_ag_at_err_cback(tBTA_AG_SCB* p_scb, bool unknown,
+                                const char* p_arg);
 extern bool bta_ag_inband_enabled(tBTA_AG_SCB* p_scb);
 extern void bta_ag_send_call_inds(tBTA_AG_SCB* p_scb, tBTA_AG_RES result);
 
 /* Action functions */
-extern void bta_ag_register(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_deregister(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_start_dereg(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_start_close(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_start_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_disc_int_res(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_disc_acp_res(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_disc_fail(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_open_fail(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_rfc_fail(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_rfc_close(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_rfc_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_rfc_data(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_sco_listen(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_sco_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_sco_close(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
+extern void bta_ag_register(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_deregister(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_start_dereg(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_start_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_start_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_disc_int_res(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_disc_acp_res(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_disc_fail(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_open_fail(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_rfc_fail(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_rfc_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_rfc_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_rfc_data(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_sco_listen(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_sco_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_sco_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_sco_shutdown(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_sco_conn_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_post_sco_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_post_sco_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_svc_conn_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_result(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_setcodec(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+extern void bta_ag_send_ring(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+
+/* Internal utility functions */
 extern void bta_ag_sco_codec_nego(tBTA_AG_SCB* p_scb, bool result);
 extern void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb);
-extern void bta_ag_sco_shutdown(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_sco_conn_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_post_sco_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_post_sco_close(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_svc_conn_open(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_result(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_setcodec(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_send_bcs(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_send_ring(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
-extern void bta_ag_set_sco_allowed(tBTA_AG_DATA* p_data);
+extern void bta_ag_send_bcs(tBTA_AG_SCB* p_scb);
+extern void bta_ag_set_sco_allowed(bool value);
 extern const RawAddress& bta_ag_get_active_device();
 extern void bta_clear_active_device();
-extern void bta_ag_api_set_active_device(tBTA_AG_DATA* p_data);
 
 #endif /* BTA_AG_INT_H */

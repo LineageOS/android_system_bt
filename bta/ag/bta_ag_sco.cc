@@ -22,7 +22,7 @@
  *
  ******************************************************************************/
 
-#include <stddef.h>
+#include <cstddef>
 
 #include "bt_common.h"
 #include "bta_ag_api.h"
@@ -122,10 +122,9 @@ static void bta_ag_sco_conn_cback(uint16_t sco_idx) {
   }
 
   if (handle != 0) {
-    BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
-    p_buf->event = BTA_AG_SCO_OPEN_EVT;
-    p_buf->layer_specific = handle;
-    bta_sys_sendmsg(p_buf);
+    do_in_bta_thread(FROM_HERE,
+                     base::Bind(&bta_ag_sm_execute_by_handle, handle,
+                                BTA_AG_SCO_OPEN_EVT, tBTA_AG_DATA::kEmpty));
   } else {
     /* no match found; disconnect sco, init sco variables */
     bta_ag_cb.sco.p_curr_scb = nullptr;
@@ -206,10 +205,9 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
 
     bta_ag_cb.sco.p_curr_scb->inuse_codec = BTA_AG_CODEC_NONE;
 
-    BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
-    p_buf->event = BTA_AG_SCO_CLOSE_EVT;
-    p_buf->layer_specific = handle;
-    bta_sys_sendmsg(p_buf);
+    do_in_bta_thread(FROM_HERE,
+                     base::Bind(&bta_ag_sm_execute_by_handle, handle,
+                                BTA_AG_SCO_CLOSE_EVT, tBTA_AG_DATA::kEmpty));
   } else {
     /* no match found */
     APPL_TRACE_DEBUG("no scb for ag_sco_disc_cback");
@@ -537,7 +535,7 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
     bta_sys_busy(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
 
     /* Send +BCS to the peer */
-    bta_ag_send_bcs(p_scb, nullptr);
+    bta_ag_send_bcs(p_scb);
 
     /* Start timer to handle timeout */
     alarm_set_on_mloop(p_scb->codec_negotiation_timer,
@@ -1094,7 +1092,8 @@ bool bta_ag_sco_is_opening(tBTA_AG_SCB* p_scb) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_ag_sco_listen(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
+void bta_ag_sco_listen(tBTA_AG_SCB* p_scb,
+                       UNUSED_ATTR const tBTA_AG_DATA& data) {
   bta_ag_sco_event(p_scb, BTA_AG_SCO_LISTEN_E);
 }
 
@@ -1108,7 +1107,7 @@ void bta_ag_sco_listen(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_ag_sco_open(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
+void bta_ag_sco_open(tBTA_AG_SCB* p_scb, UNUSED_ATTR const tBTA_AG_DATA& data) {
   uint8_t event;
   if (!sco_allowed) {
     APPL_TRACE_DEBUG("%s not opening sco, by policy", __func__);
@@ -1138,8 +1137,9 @@ void bta_ag_sco_open(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_ag_sco_close(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
-/* if scb is in use */
+void bta_ag_sco_close(tBTA_AG_SCB* p_scb,
+                      UNUSED_ATTR const tBTA_AG_DATA& data) {
+  /* if scb is in use */
   /* sco_idx is not allocated in SCO_CODEC_ST, still need to move to listen
    * state. */
   if ((p_scb->sco_idx != BTM_INVALID_SCO_INDEX) ||
@@ -1184,7 +1184,8 @@ void bta_ag_sco_codec_nego(tBTA_AG_SCB* p_scb, bool result) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_ag_sco_shutdown(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
+void bta_ag_sco_shutdown(tBTA_AG_SCB* p_scb,
+                         UNUSED_ATTR const tBTA_AG_DATA& data) {
   bta_ag_sco_event(p_scb, BTA_AG_SCO_SHUTDOWN_E);
 }
 
@@ -1199,7 +1200,7 @@ void bta_ag_sco_shutdown(tBTA_AG_SCB* p_scb, UNUSED_ATTR tBTA_AG_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_ag_sco_conn_open(tBTA_AG_SCB* p_scb,
-                          UNUSED_ATTR tBTA_AG_DATA* p_data) {
+                          UNUSED_ATTR const tBTA_AG_DATA& data) {
   bta_ag_sco_event(p_scb, BTA_AG_SCO_CONN_OPEN_E);
 
   bta_sys_sco_open(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
@@ -1222,7 +1223,7 @@ void bta_ag_sco_conn_open(tBTA_AG_SCB* p_scb,
  *
  ******************************************************************************/
 void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb,
-                           UNUSED_ATTR tBTA_AG_DATA* p_data) {
+                           UNUSED_ATTR const tBTA_AG_DATA& data) {
   /* clear current scb */
   bta_ag_cb.sco.p_curr_scb = nullptr;
   p_scb->sco_idx = BTM_INVALID_SCO_INDEX;
@@ -1287,8 +1288,8 @@ void bta_ag_sco_conn_rsp(tBTA_AG_SCB* p_scb,
   bta_ag_create_pending_sco(p_scb, bta_ag_cb.sco.is_local);
 }
 
-void bta_ag_set_sco_allowed(tBTA_AG_DATA* p_data) {
-  sco_allowed = p_data->api_set_sco_allowed.value;
+void bta_ag_set_sco_allowed(bool value) {
+  sco_allowed = value;
   APPL_TRACE_DEBUG(sco_allowed ? "sco now allowed" : "sco now not allowed");
 }
 
@@ -1296,10 +1297,10 @@ const RawAddress& bta_ag_get_active_device() { return active_device_addr; }
 
 void bta_clear_active_device() { active_device_addr = RawAddress::kEmpty; }
 
-void bta_ag_api_set_active_device(tBTA_AG_DATA* p_data) {
-  if (p_data->api_set_active_device.active_device_addr.IsEmpty()) {
+void bta_ag_api_set_active_device(const RawAddress& new_active_device) {
+  if (new_active_device.IsEmpty()) {
     APPL_TRACE_ERROR("%s: empty device", __func__);
     return;
   }
-  active_device_addr = p_data->api_set_active_device.active_device_addr;
+  active_device_addr = new_active_device;
 }
