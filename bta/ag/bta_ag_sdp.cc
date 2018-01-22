@@ -295,7 +295,8 @@ bool bta_ag_sdp_find_attr(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
     uuid = UUID_SERVCLASS_HEADSET_HS;
     p_scb->peer_version = HSP_VERSION_1_2; /* Default version */
   } else {
-    return result;
+    uuid = UUID_SERVCLASS_HEADSET_HS;
+    p_scb->peer_version = HSP_VERSION_1_0;
   }
 
   /* loop through all records we found */
@@ -410,9 +411,21 @@ void bta_ag_do_disc(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
       uuid_list[0] = Uuid::From16Bit(UUID_SERVCLASS_HEADSET);
     }
   }
-  /* HSP acceptor; no discovery */
+  /* HSP acceptor; get features */
   else {
-    return;
+    attr_list[0] = ATTR_ID_SERVICE_CLASS_ID_LIST;
+    attr_list[1] = ATTR_ID_PROTOCOL_DESC_LIST;
+    attr_list[2] = ATTR_ID_BT_PROFILE_DESC_LIST;
+    attr_list[3] = ATTR_ID_REMOTE_AUDIO_VOLUME_CONTROL;
+    num_attr = 4;
+
+    if (p_scb->hsp_version >= HSP_VERSION_1_2) {
+      uuid_list[0] = Uuid::From16Bit(UUID_SERVCLASS_HEADSET_HS);
+      num_uuid = 2;
+    } else {
+      /* Legacy from HSP v1.0 */
+      uuid_list[0] = Uuid::From16Bit(UUID_SERVCLASS_HEADSET);
+    }
   }
 
   /* allocate buffer for sdp database */
