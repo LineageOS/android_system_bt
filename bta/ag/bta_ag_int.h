@@ -164,6 +164,23 @@ union tBTA_AG_DATA {
   tBTA_AG_DISC_RESULT disc_result;
   tBTA_AG_RFC rfc;
   static const tBTA_AG_DATA kEmpty;
+
+  /**
+   * Check if two tBTA_AG_DATA are equal in memory
+   *
+   * @param rhs other tBTA_AG_DATA
+   * @return true if both unions are equal in memory
+   */
+  bool operator==(const tBTA_AG_DATA& rhs) const {
+    return (std::memcmp(this, &rhs, sizeof(tBTA_AG_DATA)) == 0);
+  }
+
+  /**
+   * Check if this union is empty by comparing it to the kEmpty constant
+   *
+   * @return true if this union is empty
+   */
+  bool IsEmpty() const { return *this == kEmpty; }
 };
 
 /* type for each profile */
