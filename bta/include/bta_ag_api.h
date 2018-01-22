@@ -27,6 +27,9 @@
 
 #include "bta_api.h"
 
+#include <string>
+#include <vector>
+
 /*****************************************************************************
  *  Constants and data types
  ****************************************************************************/
@@ -477,7 +480,8 @@ void BTA_AgDisable();
  *
  ******************************************************************************/
 void BTA_AgRegister(tBTA_SERVICE_MASK services, tBTA_SEC sec_mask,
-                    tBTA_AG_FEAT features, const char* p_service_names[],
+                    tBTA_AG_FEAT features,
+                    const std::vector<std::string>& service_names,
                     uint8_t app_id);
 
 /*******************************************************************************
@@ -552,15 +556,13 @@ void BTA_AgAudioClose(uint16_t handle);
  * Function         BTA_AgResult
  *
  * Description      Send an AT result code to a headset or hands-free device.
- *                  This function is only used when the AG parse mode is set
- *                  to BTA_AG_PARSE.
  *
  *
  * Returns          void
  *
  ******************************************************************************/
 void BTA_AgResult(uint16_t handle, tBTA_AG_RES result,
-                  tBTA_AG_RES_DATA* p_data);
+                  const tBTA_AG_RES_DATA& data);
 
 /*******************************************************************************
  *
