@@ -245,18 +245,8 @@ uint8_t g_disc_raw_data_buf[MAX_DISC_RAW_DATA_BUF];
 
 extern DEV_CLASS local_device_default_class;
 
-/*******************************************************************************
- *
- * Function         bta_dm_enable
- *
- * Description      Initialises the BT device manager
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_dm_enable(tBTA_DM_MSG* p_data) {
-
+/** Initialises the BT device manager */
+void bta_dm_enable(tBTA_DM_SEC_CBACK* p_sec_cback) {
   /* if already in use, return an error */
   if (bta_dm_cb.is_bta_dm_active) {
     tBTA_DM_SEC enable_event;
@@ -264,8 +254,7 @@ void bta_dm_enable(tBTA_DM_MSG* p_data) {
                        __func__);
     memset(&enable_event, 0, sizeof(tBTA_DM_SEC));
     enable_event.enable.status = BTA_FAILURE;
-    if (p_data->enable.p_sec_cback != NULL)
-      p_data->enable.p_sec_cback(BTA_DM_ENABLE_EVT, &enable_event);
+    if (p_sec_cback != NULL) p_sec_cback(BTA_DM_ENABLE_EVT, &enable_event);
     return;
   }
 
@@ -275,8 +264,7 @@ void bta_dm_enable(tBTA_DM_MSG* p_data) {
   /* make sure security callback is saved - if no callback, do not erase the
   previous one,
   it could be an error recovery mechanism */
-  if (p_data->enable.p_sec_cback != NULL)
-    bta_dm_cb.p_sec_cback = p_data->enable.p_sec_cback;
+  if (p_sec_cback != NULL) bta_dm_cb.p_sec_cback = p_sec_cback;
   /* notify BTA DM is now active */
   bta_dm_cb.is_bta_dm_active = true;
 
@@ -466,17 +454,8 @@ static void bta_dm_sys_hw_cback(tBTA_SYS_HW_EVT status) {
     APPL_TRACE_DEBUG(" --- ignored event");
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_disable
- *
- * Description      Disables the BT device manager
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_dm_disable(UNUSED_ATTR tBTA_DM_MSG* p_data) {
+/** Disables the BT device manager */
+void bta_dm_disable() {
   /* Set l2cap idle timeout to 0 (so BTE immediately disconnects ACL link after
    * last channel is closed) */
   L2CA_SetIdleTimeoutByBdAddr(RawAddress::kAny, 0, BT_TRANSPORT_BR_EDR);
@@ -557,32 +536,16 @@ static void bta_dm_disable_timer_cback(void* data) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_set_dev_name
- *
- * Description      Sets local device name
- *
- *
- * Returns          void
- *
- ******************************************************************************/
+/** Sets local device name */
 void bta_dm_set_dev_name(tBTA_DM_MSG* p_data) {
   BTM_SetLocalDeviceName((char*)p_data->set_name.name);
   bta_dm_set_eir((char*)p_data->set_name.name);
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_set_visibility
- *
- * Description      Sets discoverability, connectability and pairability
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_dm_set_visibility(tBTA_DM_MSG* p_data) {
+/** Sets discoverability, connectability and pairability */
+void bta_dm_set_visibility(tBTA_DM_DISC disc_mode_param,
+                           tBTA_DM_CONN conn_mode_param, uint8_t pairable_mode,
+                           uint8_t conn_paired_only) {
   uint16_t window, interval;
   uint16_t le_disc_mode = BTM_BleReadDiscoverability();
   uint16_t le_conn_mode = BTM_BleReadConnectability();
@@ -590,55 +553,44 @@ void bta_dm_set_visibility(tBTA_DM_MSG* p_data) {
   uint16_t conn_mode = BTM_ReadConnectability(&window, &interval);
 
   /* set modes for Discoverability and connectability if not ignore */
-  if (p_data->set_visibility.disc_mode != (BTA_DM_IGNORE | BTA_DM_LE_IGNORE)) {
-    if ((p_data->set_visibility.disc_mode & BTA_DM_LE_IGNORE) ==
-        BTA_DM_LE_IGNORE)
-      p_data->set_visibility.disc_mode =
-          ((p_data->set_visibility.disc_mode & ~BTA_DM_LE_IGNORE) |
-           le_disc_mode);
-    if ((p_data->set_visibility.disc_mode & BTA_DM_IGNORE) == BTA_DM_IGNORE)
-      p_data->set_visibility.disc_mode =
-          ((p_data->set_visibility.disc_mode & ~BTA_DM_IGNORE) | disc_mode);
+  if (disc_mode_param != (BTA_DM_IGNORE | BTA_DM_LE_IGNORE)) {
+    if ((disc_mode_param & BTA_DM_LE_IGNORE) == BTA_DM_LE_IGNORE)
+      disc_mode_param = ((disc_mode_param & ~BTA_DM_LE_IGNORE) | le_disc_mode);
+    if ((disc_mode_param & BTA_DM_IGNORE) == BTA_DM_IGNORE)
+      disc_mode_param = ((disc_mode_param & ~BTA_DM_IGNORE) | disc_mode);
 
-    BTM_SetDiscoverability(p_data->set_visibility.disc_mode,
-                           bta_dm_cb.inquiry_scan_window,
+    BTM_SetDiscoverability(disc_mode_param, bta_dm_cb.inquiry_scan_window,
                            bta_dm_cb.inquiry_scan_interval);
   }
 
-  if (p_data->set_visibility.conn_mode != (BTA_DM_IGNORE | BTA_DM_LE_IGNORE)) {
-    if ((p_data->set_visibility.conn_mode & BTA_DM_LE_IGNORE) ==
-        BTA_DM_LE_IGNORE)
-      p_data->set_visibility.conn_mode =
-          ((p_data->set_visibility.conn_mode & ~BTA_DM_LE_IGNORE) |
-           le_conn_mode);
-    if ((p_data->set_visibility.conn_mode & BTA_DM_IGNORE) == BTA_DM_IGNORE)
-      p_data->set_visibility.conn_mode =
-          ((p_data->set_visibility.conn_mode & ~BTA_DM_IGNORE) | conn_mode);
+  if (conn_mode_param != (BTA_DM_IGNORE | BTA_DM_LE_IGNORE)) {
+    if ((conn_mode_param & BTA_DM_LE_IGNORE) == BTA_DM_LE_IGNORE)
+      conn_mode_param = ((conn_mode_param & ~BTA_DM_LE_IGNORE) | le_conn_mode);
+    if ((conn_mode_param & BTA_DM_IGNORE) == BTA_DM_IGNORE)
+      conn_mode_param = ((conn_mode_param & ~BTA_DM_IGNORE) | conn_mode);
 
-    BTM_SetConnectability(p_data->set_visibility.conn_mode,
-                          bta_dm_cb.page_scan_window,
+    BTM_SetConnectability(conn_mode_param, bta_dm_cb.page_scan_window,
                           bta_dm_cb.page_scan_interval);
   }
 
   /* Send False or True if not ignore */
-  if (p_data->set_visibility.pair_mode != BTA_DM_IGNORE) {
-    if (p_data->set_visibility.pair_mode == BTA_DM_NON_PAIRABLE)
+  if (pairable_mode != BTA_DM_IGNORE) {
+    if (pairable_mode == BTA_DM_NON_PAIRABLE)
       bta_dm_cb.disable_pair_mode = true;
     else
       bta_dm_cb.disable_pair_mode = false;
   }
 
   /* Send False or True if not ignore */
-  if (p_data->set_visibility.conn_paired_only != BTA_DM_IGNORE) {
-    if (p_data->set_visibility.conn_paired_only == BTA_DM_CONN_ALL)
+  if (conn_paired_only != BTA_DM_IGNORE) {
+    if (conn_paired_only == BTA_DM_CONN_ALL)
       bta_dm_cb.conn_paired_only = false;
     else
       bta_dm_cb.conn_paired_only = true;
   }
 
   /* Change mode if either mode is not ignore */
-  if (p_data->set_visibility.pair_mode != BTA_DM_IGNORE ||
-      p_data->set_visibility.conn_paired_only != BTA_DM_IGNORE)
+  if (pairable_mode != BTA_DM_IGNORE || conn_paired_only != BTA_DM_IGNORE)
     BTM_SetPairableMode((bool)(!(bta_dm_cb.disable_pair_mode)),
                         bta_dm_cb.conn_paired_only);
 }
@@ -669,26 +621,18 @@ void bta_dm_process_remove_device(const RawAddress& bd_addr) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_remove_device
- *
- * Description      Removes device, disconnects ACL link if required.
- ***
- ******************************************************************************/
-void bta_dm_remove_device(tBTA_DM_MSG* p_data) {
-  tBTA_DM_API_REMOVE_DEVICE* p_dev = &p_data->remove_dev;
+/** Removes device, disconnects ACL link if required */
+void bta_dm_remove_device(const RawAddress& bd_addr) {
   bool continue_delete_other_dev = false;
-  if (p_dev == NULL) return;
 
-  RawAddress other_address = p_dev->bd_addr;
+  RawAddress other_address = bd_addr;
 
   /* If ACL exists for the device in the remove_bond message*/
   bool continue_delete_dev = false;
   uint8_t other_transport = BT_TRANSPORT_INVALID;
 
-  if (BTM_IsAclConnectionUp(p_dev->bd_addr, BT_TRANSPORT_LE) ||
-      BTM_IsAclConnectionUp(p_dev->bd_addr, BT_TRANSPORT_BR_EDR)) {
+  if (BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE) ||
+      BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_BR_EDR)) {
     APPL_TRACE_DEBUG("%s: ACL Up count  %d", __func__,
                      bta_dm_cb.device_list.count);
     continue_delete_dev = false;
@@ -696,12 +640,12 @@ void bta_dm_remove_device(tBTA_DM_MSG* p_data) {
     /* Take the link down first, and mark the device for removal when
      * disconnected */
     for (int i = 0; i < bta_dm_cb.device_list.count; i++) {
-      if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr == p_dev->bd_addr) {
+      if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr == bd_addr) {
         uint8_t transport = BT_TRANSPORT_BR_EDR;
 
         transport = bta_dm_cb.device_list.peer_device[i].transport;
         bta_dm_cb.device_list.peer_device[i].conn_state = BTA_DM_UNPAIRING;
-        btm_remove_acl(p_dev->bd_addr, transport);
+        btm_remove_acl(bd_addr, transport);
         APPL_TRACE_DEBUG("%s:transport = %d", __func__,
                          bta_dm_cb.device_list.peer_device[i].transport);
 
@@ -743,7 +687,7 @@ void bta_dm_remove_device(tBTA_DM_MSG* p_data) {
     continue_delete_other_dev = true;
   }
   /* Delete the device mentioned in the msg */
-  if (continue_delete_dev) bta_dm_process_remove_device(p_dev->bd_addr);
+  if (continue_delete_dev) bta_dm_process_remove_device(bd_addr);
 
   /* Delete the other paired device too */
   if (continue_delete_other_dev && !other_address.IsEmpty())
@@ -797,59 +741,44 @@ void bta_dm_add_device(tBTA_DM_MSG* p_data) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_close_acl
- *
- * Description      This function forces to close the connection to a remote
- *                  device and optionaly remove the device from security
- *                  database if required.
- ***
- ******************************************************************************/
-void bta_dm_close_acl(tBTA_DM_MSG* p_data) {
-  tBTA_DM_API_REMOVE_ACL* p_remove_acl = &p_data->remove_acl;
+/** This function forces to close the connection to a remote device and
+ * optionaly remove the device from security database if required. */
+void bta_dm_close_acl(const RawAddress& bd_addr, bool remove_dev,
+                      tBTA_TRANSPORT transport) {
   uint8_t index;
 
   APPL_TRACE_DEBUG("bta_dm_close_acl");
 
-  if (BTM_IsAclConnectionUp(p_remove_acl->bd_addr, p_remove_acl->transport)) {
+  if (BTM_IsAclConnectionUp(bd_addr, transport)) {
     for (index = 0; index < bta_dm_cb.device_list.count; index++) {
-      if (bta_dm_cb.device_list.peer_device[index].peer_bdaddr ==
-          p_remove_acl->bd_addr)
+      if (bta_dm_cb.device_list.peer_device[index].peer_bdaddr == bd_addr)
         break;
     }
     if (index != bta_dm_cb.device_list.count) {
-      if (p_remove_acl->remove_dev)
+      if (remove_dev)
         bta_dm_cb.device_list.peer_device[index].remove_dev_pending = true;
     } else {
       APPL_TRACE_ERROR("unknown device, remove ACL failed");
     }
     /* Disconnect the ACL link */
-    btm_remove_acl(p_remove_acl->bd_addr, p_remove_acl->transport);
+    btm_remove_acl(bd_addr, transport);
   }
   /* if to remove the device from security database ? do it now */
-  else if (p_remove_acl->remove_dev) {
-    if (!BTM_SecDeleteDevice(p_remove_acl->bd_addr)) {
+  else if (remove_dev) {
+    if (!BTM_SecDeleteDevice(bd_addr)) {
       APPL_TRACE_ERROR("delete device from security database failed.");
     }
     /* need to remove all pending background connection if any */
-    BTA_GATTC_CancelOpen(0, p_remove_acl->bd_addr, false);
+    BTA_GATTC_CancelOpen(0, bd_addr, false);
     /* remove all cached GATT information */
-    BTA_GATTC_Refresh(p_remove_acl->bd_addr);
+    BTA_GATTC_Refresh(bd_addr);
   }
   /* otherwise, no action needed */
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_remove_all_acl
- *
- * Description      This function forces to close all the ACL links specified by
- *                  link type
- ***
- ******************************************************************************/
-void bta_dm_remove_all_acl(tBTA_DM_MSG* p_data) {
-  const tBTA_DM_LINK_TYPE link_type = p_data->remove_all_acl.link_type;
+// TODO: this is unused. remove?
+/** This function forces to close all the ACL links specified by link type */
+void bta_dm_remove_all_acl(const tBTA_DM_LINK_TYPE link_type) {
   tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
 
   APPL_TRACE_DEBUG("%s link type = %d", __func__, link_type);
@@ -868,31 +797,21 @@ void bta_dm_remove_all_acl(tBTA_DM_MSG* p_data) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_bond
- *
- * Description      Bonds with peer device
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_dm_bond(tBTA_DM_MSG* p_data) {
+/** Bonds with peer device */
+void bta_dm_bond(const RawAddress& bd_addr, tBTA_TRANSPORT transport) {
   tBTM_STATUS status;
   tBTA_DM_SEC sec_event;
   char* p_name;
 
-  if (p_data->bond.transport == BTA_TRANSPORT_UNKNOWN)
-    status = BTM_SecBond(p_data->bond.bd_addr, 0, NULL, 0);
+  if (transport == BTA_TRANSPORT_UNKNOWN)
+    status = BTM_SecBond(bd_addr, 0, NULL, 0);
   else
-    status = BTM_SecBondByTransport(p_data->bond.bd_addr,
-                                    p_data->bond.transport, 0, NULL, 0);
+    status = BTM_SecBondByTransport(bd_addr, transport, 0, NULL, 0);
 
   if (bta_dm_cb.p_sec_cback && (status != BTM_CMD_STARTED)) {
     memset(&sec_event, 0, sizeof(tBTA_DM_SEC));
-    sec_event.auth_cmpl.bd_addr = p_data->bond.bd_addr;
-    p_name = BTM_SecReadDevName(p_data->bond.bd_addr);
+    sec_event.auth_cmpl.bd_addr = bd_addr;
+    p_name = BTM_SecReadDevName(bd_addr);
     if (p_name != NULL) {
       memcpy(sec_event.auth_cmpl.bd_name, p_name, (BD_NAME_LEN - 1));
       sec_event.auth_cmpl.bd_name[BD_NAME_LEN - 1] = 0;
@@ -907,28 +826,19 @@ void bta_dm_bond(tBTA_DM_MSG* p_data) {
       sec_event.auth_cmpl.success = true;
     } else {
       /* delete this device entry from Sec Dev DB */
-      bta_dm_remove_sec_dev_entry(p_data->bond.bd_addr);
+      bta_dm_remove_sec_dev_entry(bd_addr);
     }
     bta_dm_cb.p_sec_cback(BTA_DM_AUTH_CMPL_EVT, &sec_event);
   }
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_bond_cancel
- *
- * Description      Cancels bonding with a peer device
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_dm_bond_cancel(tBTA_DM_MSG* p_data) {
+/** Cancels bonding with a peer device */
+void bta_dm_bond_cancel(const RawAddress& bd_addr) {
   tBTM_STATUS status;
   tBTA_DM_SEC sec_event;
 
   APPL_TRACE_EVENT(" bta_dm_bond_cancel ");
-  status = BTM_SecBondCancel(p_data->bond_cancel.bd_addr);
+  status = BTM_SecBondCancel(bd_addr);
 
   if (bta_dm_cb.p_sec_cback &&
       (status != BTM_CMD_STARTED && status != BTM_SUCCESS)) {
@@ -1029,33 +939,10 @@ static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
   }
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_confirm
- *
- * Description      Send the user confirm request reply in response to a
- *                  request from BTM
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_dm_confirm(tBTA_DM_MSG* p_data) {
-  tBTM_STATUS res = BTM_NOT_AUTHORIZED;
-
-  if (p_data->confirm.accept) res = BTM_SUCCESS;
-  BTM_ConfirmReqReply(res, p_data->confirm.bd_addr);
+/** Send the user confirm request reply in response to a request from BTM */
+void bta_dm_confirm(const RawAddress& bd_addr, bool accept) {
+  BTM_ConfirmReqReply(accept ? BTM_SUCCESS : BTM_NOT_AUTHORIZED, bd_addr);
 }
-
-/*******************************************************************************
- *
- * Function         bta_dm_loc_oob
- *
- * Description      Retrieve the OOB data from the local LM
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_dm_loc_oob(UNUSED_ATTR tBTA_DM_MSG* p_data) { BTM_ReadLocalOobData(); }
 
 /*******************************************************************************
  *
@@ -3744,53 +3631,9 @@ void bta_dm_eir_update_uuid(uint16_t uuid16, bool adding) {
 }
 #endif
 
-/*******************************************************************************
- *
- * Function         bta_dm_enable_test_mode
- *
- * Description      enable test mode
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_dm_enable_test_mode(UNUSED_ATTR tBTA_DM_MSG* p_data) {
-  BTM_EnableTestMode();
-}
+void bta_dm_enable_test_mode() { BTM_EnableTestMode(); }
 
-/*******************************************************************************
- *
- * Function         bta_dm_disable_test_mode
- *
- * Description      disable test mode
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_dm_disable_test_mode(UNUSED_ATTR tBTA_DM_MSG* p_data) {
-  BTM_DeviceReset(NULL);
-}
-
-/*******************************************************************************
- *
- * Function         bta_dm_execute_callback
- *
- * Description      Just execute a generic call back in the context of the
- *                  BTU/BTA tack
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_dm_execute_callback(tBTA_DM_MSG* p_data) {
-  /* sanity check */
-  if (p_data->exec_cback.p_exec_cback == NULL) {
-    return;
-  }
-
-  p_data->exec_cback.p_exec_cback(p_data->exec_cback.p_param);
-}
+void bta_dm_disable_test_mode() { BTM_DeviceReset(NULL); }
 
 /*******************************************************************************
  *
@@ -3843,44 +3686,32 @@ void bta_dm_encrypt_cback(const RawAddress* bd_addr, tBT_TRANSPORT transport,
   }
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_set_encryption
- *
- * Description      This function to encrypt the link
- *
- * Returns          None
- *
- ******************************************************************************/
-void bta_dm_set_encryption(tBTA_DM_MSG* p_data) {
+/**This function to encrypt the link */
+void bta_dm_set_encryption(const RawAddress& bd_addr, tBTA_TRANSPORT transport,
+                           tBTA_DM_ENCRYPT_CBACK* p_callback,
+                           tBTA_DM_BLE_SEC_ACT sec_act) {
   uint8_t i;
 
   APPL_TRACE_DEBUG("bta_dm_set_encryption");  // todo
-  if (!p_data->set_encryption.p_callback) {
+  if (!p_callback) {
     APPL_TRACE_ERROR("bta_dm_set_encryption callback is not provided");
     return;
   }
   for (i = 0; i < bta_dm_cb.device_list.count; i++) {
-    if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr ==
-            p_data->set_encryption.bd_addr &&
+    if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr == bd_addr &&
         bta_dm_cb.device_list.peer_device[i].conn_state == BTA_DM_CONNECTED)
       break;
   }
   if (i < bta_dm_cb.device_list.count) {
     if (bta_dm_cb.device_list.peer_device[i].p_encrypt_cback) {
       APPL_TRACE_ERROR("earlier enc was not done for same device");
-      (*p_data->set_encryption.p_callback)(p_data->set_encryption.bd_addr,
-                                           p_data->set_encryption.transport,
-                                           BTA_BUSY);
+      (*p_callback)(bd_addr, transport, BTA_BUSY);
       return;
     }
 
-    if (BTM_SetEncryption(p_data->set_encryption.bd_addr,
-                          p_data->set_encryption.transport,
-                          bta_dm_encrypt_cback, NULL,
-                          p_data->set_encryption.sec_act) == BTM_CMD_STARTED) {
-      bta_dm_cb.device_list.peer_device[i].p_encrypt_cback =
-          p_data->set_encryption.p_callback;
+    if (BTM_SetEncryption(bd_addr, transport, bta_dm_encrypt_cback, NULL,
+                          sec_act) == BTM_CMD_STARTED) {
+      bta_dm_cb.device_list.peer_device[i].p_encrypt_cback = p_callback;
     }
   }
 }
@@ -4157,12 +3988,10 @@ void bta_dm_add_blekey(tBTA_DM_MSG* p_data) {
  * Parameters:
  *
  ******************************************************************************/
-void bta_dm_add_ble_device(tBTA_DM_MSG* p_data) {
-  if (!BTM_SecAddBleDevice(p_data->add_ble_device.bd_addr, NULL,
-                           p_data->add_ble_device.dev_type,
-                           p_data->add_ble_device.addr_type)) {
-    LOG(ERROR) << "BTA_DM: Error adding BLE Device for device "
-               << p_data->add_ble_device.bd_addr;
+void bta_dm_add_ble_device(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
+                           tBT_DEVICE_TYPE dev_type) {
+  if (!BTM_SecAddBleDevice(bd_addr, NULL, dev_type, addr_type)) {
+    LOG(ERROR) << "BTA_DM: Error adding BLE Device for device " << bd_addr;
   }
 }
 
@@ -4178,152 +4007,69 @@ void bta_dm_add_ble_device(tBTA_DM_MSG* p_data) {
  * Parameters:
  *
  ******************************************************************************/
-void bta_dm_ble_passkey_reply(tBTA_DM_MSG* p_data) {
-  if (p_data->pin_reply.accept) {
-    BTM_BlePasskeyReply(p_data->ble_passkey_reply.bd_addr, BTM_SUCCESS,
-                        p_data->ble_passkey_reply.passkey);
-  } else {
-    BTM_BlePasskeyReply(p_data->ble_passkey_reply.bd_addr, BTM_NOT_AUTHORIZED,
-                        p_data->ble_passkey_reply.passkey);
-  }
+void bta_dm_ble_passkey_reply(const RawAddress& bd_addr, bool accept,
+                              uint32_t passkey) {
+  BTM_BlePasskeyReply(bd_addr, accept ? BTM_SUCCESS : BTM_NOT_AUTHORIZED,
+                      passkey);
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_ble_confirm_reply
- *
- * Description      This is response to SM numeric comparison request submitted
- *                  to application.
- *
- * Parameters:
- *
- ******************************************************************************/
-void bta_dm_ble_confirm_reply(tBTA_DM_MSG* p_data) {
-  if (p_data->confirm.accept) {
-    BTM_BleConfirmReply(p_data->confirm.bd_addr, BTM_SUCCESS);
-  } else {
-    BTM_BleConfirmReply(p_data->ble_passkey_reply.bd_addr, BTM_NOT_AUTHORIZED);
-  }
+/** This is response to SM numeric comparison request submitted to application.
+ */
+void bta_dm_ble_confirm_reply(const RawAddress& bd_addr, bool accept) {
+  BTM_BleConfirmReply(bd_addr, accept ? BTM_SUCCESS : BTM_NOT_AUTHORIZED);
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_security_grant
- *
- * Description      This function grant SMP security request access.
- *
- * Parameters:
- *
- ******************************************************************************/
-void bta_dm_security_grant(tBTA_DM_MSG* p_data) {
-  BTM_SecurityGrant(p_data->ble_sec_grant.bd_addr, p_data->ble_sec_grant.res);
+/** This function set the preferred connection parameters */
+void bta_dm_ble_set_conn_params(const RawAddress& bd_addr,
+                                uint16_t conn_int_min, uint16_t conn_int_max,
+                                uint16_t slave_latency,
+                                uint16_t supervision_tout) {
+  BTM_BleSetPrefConnParams(bd_addr, conn_int_min, conn_int_max, slave_latency,
+                           supervision_tout);
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_ble_set_bg_conn_type
- *
- * Description      This function set the BLE background connection type
- *
- * Parameters:
- *
- ******************************************************************************/
-void bta_dm_ble_set_bg_conn_type(tBTA_DM_MSG* p_data) {
-  BTM_BleStartAutoConn();
+/** This function set the preferred connection scan parameters */
+void bta_dm_ble_set_conn_scan_params(uint32_t scan_interval,
+                                     uint32_t scan_window) {
+  BTM_BleSetConnScanParams(scan_interval, scan_window);
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_ble_set_conn_params
- *
- * Description      This function set the preferred connection parameters.
- *
- * Parameters:
- *
- ******************************************************************************/
-void bta_dm_ble_set_conn_params(tBTA_DM_MSG* p_data) {
-  BTM_BleSetPrefConnParams(p_data->ble_set_conn_params.peer_bda,
-                           p_data->ble_set_conn_params.conn_int_min,
-                           p_data->ble_set_conn_params.conn_int_max,
-                           p_data->ble_set_conn_params.slave_latency,
-                           p_data->ble_set_conn_params.supervision_tout);
-}
-
-/*******************************************************************************
- *
- * Function         bta_dm_ble_set_conn_scan_params
- *
- * Description      This function set the preferred connection scan parameters.
- *
- * Parameters:
- *
- ******************************************************************************/
-void bta_dm_ble_set_conn_scan_params(tBTA_DM_MSG* p_data) {
-  BTM_BleSetConnScanParams(p_data->ble_set_conn_scan_params.scan_int,
-                           p_data->ble_set_conn_scan_params.scan_window);
-}
-/*******************************************************************************
- *
- * Function         bta_dm_ble_update_conn_params
- *
- * Description      This function update LE connection parameters.
- *
- * Parameters:
- *
- ******************************************************************************/
-void bta_dm_ble_update_conn_params(tBTA_DM_MSG* p_data) {
-  if (!L2CA_UpdateBleConnParams(p_data->ble_update_conn_params.bd_addr,
-                                p_data->ble_update_conn_params.min_int,
-                                p_data->ble_update_conn_params.max_int,
-                                p_data->ble_update_conn_params.latency,
-                                p_data->ble_update_conn_params.timeout)) {
+/** This function update LE connection parameters */
+void bta_dm_ble_update_conn_params(const RawAddress& bd_addr, uint16_t min_int,
+                                   uint16_t max_int, uint16_t latency,
+                                   uint16_t timeout) {
+  if (!L2CA_UpdateBleConnParams(bd_addr, min_int, max_int, latency, timeout)) {
     APPL_TRACE_ERROR("Update connection parameters failed!");
   }
 }
 
 #if (BLE_PRIVACY_SPT == TRUE)
-/*******************************************************************************
- *
- * Function         bta_dm_ble_config_local_privacy
- *
- * Description      This function set the local device LE privacy settings.
- *
- * Parameters:
- *
- ******************************************************************************/
-void bta_dm_ble_config_local_privacy(tBTA_DM_MSG* p_data) {
-  BTM_BleConfigPrivacy(p_data->ble_local_privacy.privacy_enable);
+/** This function set the local device LE privacy settings. */
+void bta_dm_ble_config_local_privacy(bool privacy_enable) {
+  BTM_BleConfigPrivacy(privacy_enable);
 }
 #endif
 
-/*******************************************************************************
- *
- * Function         bta_dm_ble_observe
- *
- * Description      This function set the preferred connection scan parameters.
- *
- * Parameters:
- *
- ******************************************************************************/
-void bta_dm_ble_observe(tBTA_DM_MSG* p_data) {
-  tBTM_STATUS status;
-  if (p_data->ble_observe.start) {
-    /*Save the  callback to be called when a scan results are available */
-    bta_dm_search_cb.p_scan_cback = p_data->ble_observe.p_cback;
-    status = BTM_BleObserve(true, p_data->ble_observe.duration,
-                            bta_dm_observe_results_cb, bta_dm_observe_cmpl_cb);
-    if (status != BTM_CMD_STARTED) {
-      tBTA_DM_SEARCH data;
-      APPL_TRACE_WARNING(" %s BTM_BleObserve  failed. status %d", __func__,
-                         status);
-      data.inq_cmpl.num_resps = 0;
-      if (bta_dm_search_cb.p_scan_cback) {
-        bta_dm_search_cb.p_scan_cback(BTA_DM_INQ_CMPL_EVT, &data);
-      }
-    }
-  } else {
+void bta_dm_ble_observe(bool start, uint8_t duration,
+                        tBTA_DM_SEARCH_CBACK* p_cback) {
+  if (!start) {
     bta_dm_search_cb.p_scan_cback = NULL;
     BTM_BleObserve(false, 0, NULL, NULL);
+    return;
+  }
+
+  /*Save the  callback to be called when a scan results are available */
+  bta_dm_search_cb.p_scan_cback = p_cback;
+  tBTM_STATUS status = BTM_BleObserve(true, duration, bta_dm_observe_results_cb,
+                                      bta_dm_observe_cmpl_cb);
+  if (status != BTM_CMD_STARTED) {
+    tBTA_DM_SEARCH data;
+    APPL_TRACE_WARNING(" %s BTM_BleObserve  failed. status %d", __func__,
+                       status);
+    data.inq_cmpl.num_resps = 0;
+    if (bta_dm_search_cb.p_scan_cback) {
+      bta_dm_search_cb.p_scan_cback(BTA_DM_INQ_CMPL_EVT, &data);
+    }
   }
 }
 /*******************************************************************************
@@ -4341,19 +4087,10 @@ void bta_dm_ble_set_adv_params(uint16_t adv_int_min, uint16_t adv_int_max,
                       BTA_DM_BLE_ADV_CHNL_MAP);
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_ble_set_data_length
- *
- * Description      This function set the maximum transmission packet size
- *
- * Parameters
- *
- ******************************************************************************/
-void bta_dm_ble_set_data_length(tBTA_DM_MSG* p_data) {
-  if (BTM_SetBleDataLength(p_data->ble_set_data_length.remote_bda,
-                           p_data->ble_set_data_length.tx_data_length) !=
-      BTM_SUCCESS) {
+/** This function set the maximum transmission packet size */
+void bta_dm_ble_set_data_length(const RawAddress& bd_addr,
+                                uint16_t tx_data_length) {
+  if (BTM_SetBleDataLength(bd_addr, tx_data_length) != BTM_SUCCESS) {
     APPL_TRACE_ERROR("%s failed", __func__);
   }
 }
@@ -4383,20 +4120,11 @@ static void bta_ble_energy_info_cmpl(tBTM_BLE_TX_TIME_MS tx_time,
                                   ctrl_state, st);
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_ble_get_energy_info
- *
- * Description      This function obtains the energy info
- *
- * Parameters:
- *
- ******************************************************************************/
-void bta_dm_ble_get_energy_info(tBTA_DM_MSG* p_data) {
-  tBTM_STATUS btm_status = 0;
-
-  bta_dm_cb.p_energy_info_cback = p_data->ble_energy_info.p_energy_info_cback;
-  btm_status = BTM_BleGetEnergyInfo(bta_ble_energy_info_cmpl);
+/** This function obtains the energy info */
+void bta_dm_ble_get_energy_info(
+    tBTA_BLE_ENERGY_INFO_CBACK* p_energy_info_cback) {
+  bta_dm_cb.p_energy_info_cback = p_energy_info_cback;
+  tBTM_STATUS btm_status = BTM_BleGetEnergyInfo(bta_ble_energy_info_cmpl);
   if (BTM_CMD_STARTED != btm_status)
     bta_ble_energy_info_cmpl(0, 0, 0, 0, btm_status);
 }
