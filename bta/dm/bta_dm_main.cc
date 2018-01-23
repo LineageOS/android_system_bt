@@ -39,24 +39,6 @@ tBTA_DM_DI_CB bta_dm_di_cb;
 /* type for action functions */
 typedef void (*tBTA_DM_ACTION)(tBTA_DM_MSG* p_data);
 
-/* action function list */
-const tBTA_DM_ACTION bta_dm_action[] = {
-
-    /* device manager local device API events */
-    bta_dm_set_dev_name, /* 1  BTA_DM_API_SET_NAME_EVT */
-    bta_dm_acl_change,   /* 2  BTA_DM_ACL_CHANGE_EVT */
-    bta_dm_add_device,   /* 3  BTA_DM_API_ADD_DEVICE_EVT */
-
-    /* security API events */
-    bta_dm_pin_reply, /* 4 BTA_DM_API_PIN_REPLY_EVT */
-
-    /* out of band pairing events */
-    bta_dm_ci_io_req_act,  /* 5 BTA_DM_CI_IO_REQ_EVT */
-    bta_dm_ci_rmt_oob_act, /* 6 BTA_DM_CI_RMT_OOB_EVT */
-
-    bta_dm_add_blekey, /*  7 BTA_DM_API_ADD_BLEKEY_EVT */
-};
-
 /* state machine action enumeration list */
 enum {
   BTA_DM_API_SEARCH,                 /* 0 bta_dm_search_start */
@@ -222,41 +204,6 @@ const tBTA_DM_ST_TBL bta_dm_search_st_tbl[] = {
     bta_dm_search_idle_st_table, bta_dm_search_search_active_st_table,
     bta_dm_search_search_cancelling_st_table,
     bta_dm_search_disc_active_st_table};
-
-/*******************************************************************************
- *
- * Function         bta_dm_sm_disable
- *
- * Description     unregister BTA DM
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_dm_sm_disable() { bta_sys_deregister(BTA_ID_DM); }
-
-/*******************************************************************************
- *
- * Function         bta_dm_sm_execute
- *
- * Description      State machine event handling function for DM
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-bool bta_dm_sm_execute(BT_HDR* p_msg) {
-  uint16_t event = p_msg->event & 0x00ff;
-
-  APPL_TRACE_EVENT("bta_dm_sm_execute event:0x%x", event);
-
-  /* execute action functions */
-  if (event < BTA_DM_NUM_ACTIONS) {
-    (*bta_dm_action[event])((tBTA_DM_MSG*)p_msg);
-  }
-
-  return true;
-}
 
 /*******************************************************************************
  *
