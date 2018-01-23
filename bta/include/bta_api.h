@@ -1073,7 +1073,7 @@ extern tBTA_STATUS BTA_DisableBluetooth(void);
  * Returns          tBTA_STATUS
  *
  ******************************************************************************/
-extern tBTA_STATUS BTA_EnableTestMode(void);
+extern void BTA_EnableTestMode(void);
 
 /*******************************************************************************
  *
@@ -1363,21 +1363,6 @@ extern tBTA_STATUS BTA_DmSetLocalDiRecord(tBTA_DI_RECORD* p_device_info,
  ******************************************************************************/
 extern void BTA_DmCloseACL(const RawAddress& bd_addr, bool remove_dev,
                            tBTA_TRANSPORT transport);
-
-/*******************************************************************************
- *
- * Function         bta_dmexecutecallback
- *
- * Description      This function will request BTA to execute a call back in the
- *                  context of BTU task.
- *                  This API was named in lower case because it is only intended
- *                  for the internal customers(like BTIF).
- *
- * Returns          void
- *
- ******************************************************************************/
-extern void bta_dmexecutecallback(tBTA_DM_EXEC_CBACK* p_callback,
-                                  void* p_param);
 
 /* BLE related API functions */
 /*******************************************************************************
