@@ -39,7 +39,9 @@
 #define HANDLE_MASK 0x0FFF
 #define START_PACKET_BOUNDARY 2
 #define CONTINUATION_PACKET_BOUNDARY 1
-#define L2CAP_HEADER_SIZE 4
+#define L2CAP_HEADER_PDU_LEN_SIZE 2
+#define L2CAP_HEADER_CID_SIZE 2
+#define L2CAP_HEADER_SIZE (L2CAP_HEADER_PDU_LEN_SIZE + L2CAP_HEADER_CID_SIZE)
 
 // Our interface and callbacks
 
@@ -146,9 +148,9 @@ static void reassemble_and_dispatch(UNUSED_ATTR BT_HDR* packet) {
         buffer_allocator->free(hdl);
       }
 
-      if (acl_length < L2CAP_HEADER_SIZE) {
+      if (acl_length < L2CAP_HEADER_PDU_LEN_SIZE) {
         LOG_WARN(LOG_TAG, "%s L2CAP packet too small (%d < %d). Dropping it.",
-                 __func__, packet->len, L2CAP_HEADER_SIZE);
+                 __func__, packet->len, L2CAP_HEADER_PDU_LEN_SIZE);
         buffer_allocator->free(packet);
         return;
       }
