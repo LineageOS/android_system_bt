@@ -74,6 +74,9 @@ using bluetooth::Uuid;
  *  Constants & Macros
  *****************************************************************************/
 
+const Uuid UUID_HEARING_AID =
+    Uuid::FromString("7312C48F-22CC-497F-85FD-A0616A3B9E05");
+
 #define COD_MASK 0x07FF
 
 #define COD_UNCLASSIFIED ((0x1F) << 8)
@@ -1452,8 +1455,9 @@ static void btif_dm_search_services_evt(uint16_t event, char* p_param) {
       BTIF_TRACE_DEBUG("%s: service %s", __func__,
                        p_data->disc_ble_res.service.ToString().c_str());
       int num_properties = 0;
-      if (p_data->disc_ble_res.service.As16Bit() == UUID_SERVCLASS_LE_HID) {
-        BTIF_TRACE_DEBUG("%s: Found HOGP UUID", __func__);
+      if (p_data->disc_ble_res.service.As16Bit() == UUID_SERVCLASS_LE_HID ||
+          p_data->disc_ble_res.service == UUID_HEARING_AID) {
+        BTIF_TRACE_DEBUG("%s: Found HOGP or HEARING AID UUID", __func__);
         bt_property_t prop[2];
         bt_status_t ret;
 
