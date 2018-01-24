@@ -32,11 +32,6 @@
 /*****************************************************************************
  *  Constants
  ****************************************************************************/
-/* Number of SCBs (AG service instances that can be registered) */
-#ifndef BTA_AG_NUM_SCB
-#define BTA_AG_NUM_SCB 2
-#endif
-
 /* Time to wait for retry in case of collision */
 #ifndef BTA_AG_COLLISION_TIMEOUT_MS
 #define BTA_AG_COLLISION_TIMEOUT_MS (2 * 1000) /* 2 seconds */
@@ -265,7 +260,7 @@ typedef struct {
 
 /* type for AG control block */
 typedef struct {
-  tBTA_AG_SCB scb[BTA_AG_NUM_SCB];         /* service control blocks */
+  tBTA_AG_SCB scb[BTA_AG_MAX_NUM_CLIENTS]; /* service control blocks */
   tBTA_AG_PROFILE profile[BTA_AG_NUM_IDX]; /* profile-specific data */
   tBTA_AG_SCO_CB sco;                      /* SCO data */
   tBTA_AG_CBACK* p_cback;                  /* application callback */
@@ -340,6 +335,7 @@ extern void bta_ag_rfc_do_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
 extern void bta_ag_rfc_do_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
 
 /* SCO functions */
+extern bool bta_ag_sco_is_active_device(const RawAddress& bd_addr);
 extern bool bta_ag_sco_is_open(tBTA_AG_SCB* p_scb);
 extern bool bta_ag_sco_is_opening(tBTA_AG_SCB* p_scb);
 extern void bta_ag_sco_conn_rsp(tBTA_AG_SCB* p_scb,

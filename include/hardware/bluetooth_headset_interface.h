@@ -106,11 +106,13 @@ class Interface {
    * @param svc_type Service type, roaming or home
    * @param signal Signal strength, 0 to 5, p86, HFP 1.7.1 spec
    * @param batt_chg Battery level of the phone, 0 to 5, p87, HFP 1.7.1 spec
+   * @param bd_addr remote device address
    * @return BT_STATUS_SUCCESS on success
    */
   virtual bt_status_t DeviceStatusNotification(bthf_network_state_t ntk_state,
                                                bthf_service_type_t svc_type,
-                                               int signal, int batt_chg) = 0;
+                                               int signal, int batt_chg,
+                                               RawAddress* bd_addr) = 0;
 
   /**
    * Response for COPS (Query Operator Selection) command
@@ -193,12 +195,14 @@ class Interface {
    * @param call_setup_state current call setup state
    * @param number phone number of the call
    * @param type type of the call
+   * @param bd_addr remote device address
    * @return BT_STATUS_SUCCESS on success
    */
   virtual bt_status_t PhoneStateChange(int num_active, int num_held,
                                        bthf_call_state_t call_setup_state,
                                        const char* number,
-                                       bthf_call_addrtype_t type) = 0;
+                                       bthf_call_addrtype_t type,
+                                       RawAddress* bd_addr) = 0;
 
   /**
    * Closes the interface.

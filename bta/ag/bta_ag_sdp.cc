@@ -54,11 +54,15 @@ using bluetooth::Uuid;
 void bta_ag_sdp_cback_1(uint16_t status);
 void bta_ag_sdp_cback_2(uint16_t status);
 void bta_ag_sdp_cback_3(uint16_t status);
+void bta_ag_sdp_cback_4(uint16_t status);
+void bta_ag_sdp_cback_5(uint16_t status);
+void bta_ag_sdp_cback_6(uint16_t status);
 
 /* SDP callback function table */
 typedef tSDP_DISC_CMPL_CB* tBTA_AG_SDP_CBACK;
 const tBTA_AG_SDP_CBACK bta_ag_sdp_cback_tbl[] = {
-    bta_ag_sdp_cback_1, bta_ag_sdp_cback_2, bta_ag_sdp_cback_3};
+    bta_ag_sdp_cback_1, bta_ag_sdp_cback_2, bta_ag_sdp_cback_3,
+    bta_ag_sdp_cback_4, bta_ag_sdp_cback_5, bta_ag_sdp_cback_6};
 
 /*******************************************************************************
  *
@@ -88,7 +92,7 @@ static void bta_ag_sdp_cback(uint16_t status, uint8_t idx) {
 
 /*******************************************************************************
  *
- * Function         bta_ag_sdp_cback_1 to 3
+ * Function         bta_ag_sdp_cback_1 to 6
  *
  * Description      SDP callback functions.  Since there is no way to
  *                  distinguish scb from the callback we need separate
@@ -101,6 +105,9 @@ static void bta_ag_sdp_cback(uint16_t status, uint8_t idx) {
 void bta_ag_sdp_cback_1(uint16_t status) { bta_ag_sdp_cback(status, 1); }
 void bta_ag_sdp_cback_2(uint16_t status) { bta_ag_sdp_cback(status, 2); }
 void bta_ag_sdp_cback_3(uint16_t status) { bta_ag_sdp_cback(status, 3); }
+void bta_ag_sdp_cback_4(uint16_t status) { bta_ag_sdp_cback(status, 4); }
+void bta_ag_sdp_cback_5(uint16_t status) { bta_ag_sdp_cback(status, 5); }
+void bta_ag_sdp_cback_6(uint16_t status) { bta_ag_sdp_cback(status, 6); }
 
 /******************************************************************************
  *
@@ -410,9 +417,8 @@ void bta_ag_do_disc(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
     } else {
       uuid_list[0] = Uuid::From16Bit(UUID_SERVCLASS_HEADSET);
     }
-  }
-  /* HSP acceptor; get features */
-  else {
+  } else {
+    /* HSP acceptor; get features */
     attr_list[0] = ATTR_ID_SERVICE_CLASS_ID_LIST;
     attr_list[1] = ATTR_ID_PROTOCOL_DESC_LIST;
     attr_list[2] = ATTR_ID_BT_PROFILE_DESC_LIST;
@@ -431,23 +437,23 @@ void bta_ag_do_disc(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
   /* allocate buffer for sdp database */
   p_scb->p_disc_db = (tSDP_DISCOVERY_DB*)osi_malloc(BTA_AG_DISC_BUF_SIZE);
   /* set up service discovery database; attr happens to be attr_list len */
-  bool db_inited =
-      SDP_InitDiscoveryDb(p_scb->p_disc_db, BTA_AG_DISC_BUF_SIZE, num_uuid,
-                          uuid_list, num_attr, attr_list);
-
-  if (db_inited) {
-    /*Service discovery not initiated */
-    db_inited = SDP_ServiceSearchAttributeRequest(
-        p_scb->peer_addr, p_scb->p_disc_db,
-        bta_ag_sdp_cback_tbl[bta_ag_scb_to_idx(p_scb) - 1]);
+  if (SDP_InitDiscoveryDb(p_scb->p_disc_db, BTA_AG_DISC_BUF_SIZE, num_uuid,
+                          uuid_list, num_attr, attr_list)) {
+    if (SDP_ServiceSearchAttributeRequest(
+            p_scb->peer_addr, p_scb->p_disc_db,
+            bta_ag_sdp_cback_tbl[bta_ag_scb_to_idx(p_scb) - 1])) {
+      return;
+    } else {
+      LOG(ERROR) << __func__ << ": failed to start SDP discovery for "
+                 << p_scb->peer_addr;
+    }
+  } else {
+    LOG(ERROR) << __func__ << ": failed to init SDP discovery database for "
+               << p_scb->peer_addr;
   }
-
-  if (!db_inited) {
-    /*free discover db */
-    bta_ag_free_db(p_scb, tBTA_AG_DATA::kEmpty);
-    /* sent failed event */
-    bta_ag_sm_execute(p_scb, BTA_AG_DISC_FAIL_EVT, tBTA_AG_DATA::kEmpty);
-  }
+  // Failure actions
+  bta_ag_free_db(p_scb, tBTA_AG_DATA::kEmpty);
+  bta_ag_sm_execute(p_scb, BTA_AG_DISC_FAIL_EVT, tBTA_AG_DATA::kEmpty);
 }
 
 /*******************************************************************************

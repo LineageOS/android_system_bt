@@ -33,6 +33,9 @@
 /*****************************************************************************
  *  Constants and data types
  ****************************************************************************/
+/* Number of SCBs (AG service instances that can be registered) */
+#define BTA_AG_MAX_NUM_CLIENTS 6
+
 #define HFP_VERSION_1_1 0x0101
 #define HFP_VERSION_1_5 0x0105
 #define HFP_VERSION_1_6 0x0106
@@ -264,7 +267,7 @@ typedef struct {
 } tBTA_AG_IND;
 
 /* data type for BTA_AgResult() */
-typedef struct {
+struct tBTA_AG_RES_DATA {
   char str[BTA_AG_AT_MAX_LEN + 1];
   tBTA_AG_IND ind;
   uint16_t num;
@@ -273,7 +276,8 @@ typedef struct {
   uint8_t
       ok_flag; /* Indicates if response is finished, and if error occurred */
   bool state;
-} tBTA_AG_RES_DATA;
+  static const tBTA_AG_RES_DATA kEmpty;
+};
 
 /* AG callback events */
 #define BTA_AG_ENABLE_EVT 0      /* AG enabled */
