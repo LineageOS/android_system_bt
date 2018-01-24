@@ -45,24 +45,6 @@
 
 #define BTA_SERVICE_ID_TO_SERVICE_MASK(id) (1 << (id))
 
-/* DM events */
-enum {
-  /* device manager local device API events */
-  BTA_DM_API_SET_NAME_EVT = BTA_SYS_EVT_START(BTA_ID_DM),
-
-  BTA_DM_ACL_CHANGE_EVT,
-  BTA_DM_API_ADD_DEVICE_EVT,
-
-  /* security API events */
-  BTA_DM_API_PIN_REPLY_EVT,
-
-  BTA_DM_CI_IO_REQ_EVT,
-  BTA_DM_CI_RMT_OOB_EVT,
-
-  BTA_DM_API_ADD_BLEKEY_EVT,
-  BTA_DM_MAX_EVT
-};
-
 /* DM search events */
 enum {
   /* DM search API events */
@@ -78,12 +60,6 @@ enum {
   BTA_DM_DISC_CLOSE_TOUT_EVT
 
 };
-
-/* data type for BTA_DM_API_SET_NAME_EVT */
-typedef struct {
-  BT_HDR hdr;
-  BD_NAME name; /* max 248 bytes name, plus must be Null terminated */
-} tBTA_DM_API_SET_NAME;
 
 enum {
   BTA_DM_RS_NONE, /* straight API call */
@@ -125,16 +101,13 @@ typedef struct {
   tBTA_DM_SEARCH_CBACK* p_cback;
 } tBTA_DM_API_DI_DISC;
 
-/* data type for BTA_DM_API_PIN_REPLY_EVT */
 typedef struct {
-  BT_HDR hdr;
   RawAddress bd_addr;
   bool accept;
   uint8_t pin_len;
   uint8_t p_pin[PIN_CODE_LEN];
 } tBTA_DM_API_PIN_REPLY;
 
-/* data type for BTA_DM_CI_IO_REQ_EVT */
 typedef struct {
   BT_HDR hdr;
   RawAddress bd_addr;
@@ -143,9 +116,7 @@ typedef struct {
   tBTA_AUTH_REQ auth_req;
 } tBTA_DM_CI_IO_REQ;
 
-/* data type for BTA_DM_CI_RMT_OOB_EVT */
 typedef struct {
-  BT_HDR hdr;
   RawAddress bd_addr;
   BT_OCTET16 c;
   BT_OCTET16 r;
@@ -176,23 +147,7 @@ typedef struct {
   uint16_t sdp_result;
 } tBTA_DM_SDP_RESULT;
 
-/* data type for BTA_DM_ACL_CHANGE_EVT */
 typedef struct {
-  BT_HDR hdr;
-  tBTM_BL_EVENT event;
-  uint8_t busy_level;
-  uint8_t busy_level_flags;
-  bool is_new;
-  uint8_t new_role;
-  RawAddress bd_addr;
-  uint8_t hci_status;
-  uint16_t handle;
-  tBT_TRANSPORT transport;
-} tBTA_DM_ACL_CHANGE;
-
-/* data type for BTA_DM_API_ADD_DEVICE_EVT */
-typedef struct {
-  BT_HDR hdr;
   RawAddress bd_addr;
   DEV_CLASS dc;
   LINK_KEY link_key;
@@ -210,14 +165,6 @@ typedef struct {
 
 typedef struct {
   BT_HDR hdr;
-  RawAddress bd_addr;
-  tBTA_LE_KEY_VALUE blekey;
-  tBTA_LE_KEY_TYPE key_type;
-
-} tBTA_DM_API_ADD_BLEKEY;
-
-typedef struct {
-  BT_HDR hdr;
   bool enable;
 } tBTA_DM_API_BLE_FEATURE;
 
@@ -225,18 +172,10 @@ typedef struct {
 typedef union {
   /* GKI event buffer header */
   BT_HDR hdr;
-  tBTA_DM_API_SET_NAME set_name;
-
-  tBTA_DM_API_ADD_DEVICE add_dev;
 
   tBTA_DM_API_SEARCH search;
 
   tBTA_DM_API_DISCOVER discover;
-
-  tBTA_DM_API_PIN_REPLY pin_reply;
-
-  tBTA_DM_CI_IO_REQ ci_io_req;
-  tBTA_DM_CI_RMT_OOB ci_rmt_oob;
 
   tBTA_DM_REM_NAME rem_name;
 
@@ -246,11 +185,8 @@ typedef union {
 
   tBTA_DM_SDP_RESULT sdp_event;
 
-  tBTA_DM_ACL_CHANGE acl_change;
-
   tBTA_DM_API_DI_DISC di_disc;
 
-  tBTA_DM_API_ADD_BLEKEY add_ble_key;
 } tBTA_DM_MSG;
 
 #define BTA_DM_NUM_PEER_DEVICE 7
@@ -530,23 +466,20 @@ extern tBTA_DM_SEARCH_CB bta_dm_search_cb;
 /* DI control block */
 extern tBTA_DM_DI_CB bta_dm_di_cb;
 
-extern bool bta_dm_sm_execute(BT_HDR* p_msg);
-extern void bta_dm_sm_disable(void);
 extern bool bta_dm_search_sm_execute(BT_HDR* p_msg);
 extern void bta_dm_search_sm_disable(void);
 
 extern void bta_dm_enable(tBTA_DM_SEC_CBACK*);
 extern void bta_dm_disable();
 extern void bta_dm_init_cb(void);
-extern void bta_dm_set_dev_name(tBTA_DM_MSG* p_data);
+extern void bta_dm_set_dev_name(const std::vector<uint8_t>&);
 extern void bta_dm_set_visibility(tBTA_DM_DISC, tBTA_DM_CONN, uint8_t, uint8_t);
 extern void bta_dm_set_scan_config(tBTA_DM_MSG* p_data);
 extern void bta_dm_vendor_spec_command(tBTA_DM_MSG* p_data);
 extern void bta_dm_bond(const RawAddress&, tBTA_TRANSPORT);
 extern void bta_dm_bond_cancel(const RawAddress&);
-extern void bta_dm_pin_reply(tBTA_DM_MSG* p_data);
-extern void bta_dm_acl_change(tBTA_DM_MSG* p_data);
-extern void bta_dm_add_device(tBTA_DM_MSG* p_data);
+extern void bta_dm_pin_reply(std::unique_ptr<tBTA_DM_API_PIN_REPLY> msg);
+extern void bta_dm_add_device(std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg);
 extern void bta_dm_remove_device(const RawAddress& bd_addr);
 extern void bta_dm_close_acl(const RawAddress&, bool, tBTA_TRANSPORT);
 
@@ -555,7 +488,9 @@ extern void bta_dm_pm_btm_status(const RawAddress&, tBTM_PM_STATUS, uint16_t,
 extern void bta_dm_pm_timer(const RawAddress&, tBTA_DM_PM_ACTION);
 extern void bta_dm_add_ampkey(tBTA_DM_MSG* p_data);
 
-extern void bta_dm_add_blekey(tBTA_DM_MSG* p_data);
+extern void bta_dm_add_blekey(const RawAddress& bd_addr,
+                              tBTA_LE_KEY_VALUE blekey,
+                              tBTA_LE_KEY_TYPE key_type);
 extern void bta_dm_add_ble_device(const RawAddress& bd_addr,
                                   tBLE_ADDR_TYPE addr_type,
                                   tBT_DEVICE_TYPE dev_type);
@@ -581,8 +516,10 @@ extern void bta_dm_ble_get_energy_info(tBTA_BLE_ENERGY_INFO_CBACK*);
 extern void bta_dm_set_encryption(const RawAddress&, tBTA_TRANSPORT,
                                   tBTA_DM_ENCRYPT_CBACK*, tBTA_DM_BLE_SEC_ACT);
 extern void bta_dm_confirm(const RawAddress&, bool);
-extern void bta_dm_ci_io_req_act(tBTA_DM_MSG* p_data);
-extern void bta_dm_ci_rmt_oob_act(tBTA_DM_MSG* p_data);
+extern void bta_dm_ci_io_req_act(const RawAddress& bd_addr, tBTA_IO_CAP io_cap,
+                                 tBTA_OOB_DATA oob_data,
+                                 tBTA_AUTH_REQ auth_req);
+extern void bta_dm_ci_rmt_oob_act(std::unique_ptr<tBTA_DM_CI_RMT_OOB> msg);
 
 extern void bta_dm_init_pm(void);
 extern void bta_dm_disable_pm(void);
@@ -611,9 +548,6 @@ extern tBTA_DM_PEER_DEVICE* bta_dm_find_peer_device(
     const RawAddress& peer_addr);
 
 void bta_dm_eir_update_uuid(uint16_t uuid16, bool adding);
-
-extern void bta_dm_enable_test_mode();
-extern void bta_dm_disable_test_mode();
 
 extern void bta_dm_remove_all_acl(const tBTA_DM_LINK_TYPE);
 #endif /* BTA_DM_INT_H */

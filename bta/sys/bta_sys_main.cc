@@ -599,7 +599,7 @@ void bta_sys_disable(tBTA_SYS_HW_MODULE module) {
 
   switch (module) {
     case BTA_SYS_HW_BLUETOOTH:
-      bta_id = BTA_ID_DM;
+      bta_id = BTA_ID_DM_SEARCH;
       bta_id_max = BTA_ID_BLUETOOTH_MAX;
       break;
     default:

@@ -41,8 +41,6 @@ using bluetooth::Uuid;
  *  Constants
  ****************************************************************************/
 
-static const tBTA_SYS_REG bta_dm_reg = {bta_dm_sm_execute, bta_dm_sm_disable};
-
 static const tBTA_SYS_REG bta_dm_search_reg = {bta_dm_search_sm_execute,
                                                bta_dm_search_sm_disable};
 
@@ -61,7 +59,6 @@ tBTA_STATUS BTA_EnableBluetooth(tBTA_DM_SEC_CBACK* p_cback) {
   /* Bluetooth disabling is in progress */
   if (bta_dm_cb.disabling) return BTA_FAILURE;
 
-  bta_sys_register(BTA_ID_DM, &bta_dm_reg);
   bta_sys_register(BTA_ID_DM_SEARCH, &bta_dm_search_reg);
 
   /* if UUID list is not provided as static data */
@@ -88,32 +85,21 @@ tBTA_STATUS BTA_DisableBluetooth(void) {
 
 /** Enables bluetooth device under test mode */
 void BTA_EnableTestMode(void) {
-  do_in_bta_thread(FROM_HERE, base::Bind(bta_dm_enable_test_mode));
+  do_in_bta_thread(FROM_HERE,
+                   base::Bind(base::IgnoreResult(BTM_EnableTestMode)));
 }
 
 /** Disable bluetooth device under test mode */
 void BTA_DisableTestMode(void) {
-  do_in_bta_thread(FROM_HERE, base::Bind(bta_dm_disable_test_mode));
+  do_in_bta_thread(FROM_HERE, base::Bind(BTM_DeviceReset, nullptr));
 }
 
-/*******************************************************************************
- *
- * Function         BTA_DmSetDeviceName
- *
- * Description      This function sets the Bluetooth name of local device
- *
- *
- * Returns          void
- *
- ******************************************************************************/
+/** This function sets the Bluetooth name of local device */
 void BTA_DmSetDeviceName(char* p_name) {
-  tBTA_DM_API_SET_NAME* p_msg =
-      (tBTA_DM_API_SET_NAME*)osi_malloc(sizeof(tBTA_DM_API_SET_NAME));
+  std::vector<uint8_t> name(BD_NAME_LEN);
+  strlcpy((char*)name.data(), p_name, BD_NAME_LEN);
 
-  p_msg->hdr.event = BTA_DM_API_SET_NAME_EVT;
-  strlcpy((char*)p_msg->name, p_name, BD_NAME_LEN);
-
-  bta_sys_sendmsg(p_msg);
+  do_in_bta_thread(FROM_HERE, base::Bind(bta_dm_set_dev_name, name));
 }
 
 /** This function sets the Bluetooth connectable, discoverable, pairable and
@@ -253,21 +239,18 @@ void BTA_DmBondCancel(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 void BTA_DmPinReply(const RawAddress& bd_addr, bool accept, uint8_t pin_len,
-                    uint8_t* p_pin)
+                    uint8_t* p_pin) {
+  std::unique_ptr<tBTA_DM_API_PIN_REPLY> msg =
+      std::make_unique<tBTA_DM_API_PIN_REPLY>();
 
-{
-  tBTA_DM_API_PIN_REPLY* p_msg =
-      (tBTA_DM_API_PIN_REPLY*)osi_malloc(sizeof(tBTA_DM_API_PIN_REPLY));
-
-  p_msg->hdr.event = BTA_DM_API_PIN_REPLY_EVT;
-  p_msg->bd_addr = bd_addr;
-  p_msg->accept = accept;
+  msg->bd_addr = bd_addr;
+  msg->accept = accept;
   if (accept) {
-    p_msg->pin_len = pin_len;
-    memcpy(p_msg->p_pin, p_pin, pin_len);
+    msg->pin_len = pin_len;
+    memcpy(msg->p_pin, p_pin, pin_len);
   }
 
-  bta_sys_sendmsg(p_msg);
+  do_in_bta_thread(FROM_HERE, base::Bind(bta_dm_pin_reply, base::Passed(&msg)));
 }
 
 /*******************************************************************************
@@ -316,32 +299,32 @@ void BTA_DmAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
                      LINK_KEY link_key, tBTA_SERVICE_MASK trusted_mask,
                      bool is_trusted, uint8_t key_type, tBTA_IO_CAP io_cap,
                      uint8_t pin_length) {
-  tBTA_DM_API_ADD_DEVICE* p_msg =
-      (tBTA_DM_API_ADD_DEVICE*)osi_calloc(sizeof(tBTA_DM_API_ADD_DEVICE));
+  std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg =
+      std::make_unique<tBTA_DM_API_ADD_DEVICE>();
 
-  p_msg->hdr.event = BTA_DM_API_ADD_DEVICE_EVT;
-  p_msg->bd_addr = bd_addr;
-  p_msg->tm = trusted_mask;
-  p_msg->is_trusted = is_trusted;
-  p_msg->io_cap = io_cap;
+  msg->bd_addr = bd_addr;
+  msg->tm = trusted_mask;
+  msg->is_trusted = is_trusted;
+  msg->io_cap = io_cap;
 
   if (link_key) {
-    p_msg->link_key_known = true;
-    p_msg->key_type = key_type;
-    memcpy(p_msg->link_key, link_key, LINK_KEY_LEN);
+    msg->link_key_known = true;
+    msg->key_type = key_type;
+    memcpy(msg->link_key, link_key, LINK_KEY_LEN);
   }
 
   /* Load device class if specified */
   if (dev_class) {
-    p_msg->dc_known = true;
-    memcpy(p_msg->dc, dev_class, DEV_CLASS_LEN);
+    msg->dc_known = true;
+    memcpy(msg->dc, dev_class, DEV_CLASS_LEN);
   }
 
-  memset(p_msg->bd_name, 0, BD_NAME_LEN + 1);
-  memset(p_msg->features, 0, sizeof(p_msg->features));
-  p_msg->pin_length = pin_length;
+  memset(msg->bd_name, 0, BD_NAME_LEN + 1);
+  memset(msg->features, 0, sizeof(msg->features));
+  msg->pin_length = pin_length;
 
-  bta_sys_sendmsg(p_msg);
+  do_in_bta_thread(FROM_HERE,
+                   base::Bind(bta_dm_add_device, base::Passed(&msg)));
 }
 
 /** This function removes a device fromthe security database list of peer
@@ -460,15 +443,8 @@ tBTA_STATUS BTA_DmSetLocalDiRecord(tBTA_DI_RECORD* p_device_info,
  ******************************************************************************/
 void BTA_DmAddBleKey(const RawAddress& bd_addr, tBTA_LE_KEY_VALUE* p_le_key,
                      tBTA_LE_KEY_TYPE key_type) {
-  tBTA_DM_API_ADD_BLEKEY* p_msg =
-      (tBTA_DM_API_ADD_BLEKEY*)osi_calloc(sizeof(tBTA_DM_API_ADD_BLEKEY));
-
-  p_msg->hdr.event = BTA_DM_API_ADD_BLEKEY_EVT;
-  p_msg->key_type = key_type;
-  p_msg->bd_addr = bd_addr;
-  memcpy(&p_msg->blekey, p_le_key, sizeof(tBTA_LE_KEY_VALUE));
-
-  bta_sys_sendmsg(p_msg);
+  do_in_bta_thread(FROM_HERE,
+                   base::Bind(bta_dm_add_blekey, bd_addr, *p_le_key, key_type));
 }
 
 /*******************************************************************************
