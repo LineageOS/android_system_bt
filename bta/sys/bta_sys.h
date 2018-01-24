@@ -61,7 +61,6 @@ typedef uint16_t tBTA_SYS_HW_MODULE;
 /* SW sub-systems */
 #define BTA_ID_SYS 0 /* system manager */
 /* BLUETOOTH PART - from 0 to BTA_ID_BLUETOOTH_MAX */
-#define BTA_ID_DM 1             /* device manager */
 #define BTA_ID_DM_SEARCH 2      /* device manager search */
 #define BTA_ID_DM_SEC 3         /* device manager security */
 #define BTA_ID_DG 4             /* data gateway */
