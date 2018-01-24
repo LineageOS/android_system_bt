@@ -300,7 +300,7 @@ static tBTA_AG_SCB* bta_ag_scb_alloc(void) {
   tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
   int i;
 
-  for (i = 0; i < BTA_AG_NUM_SCB; i++, p_scb++) {
+  for (i = 0; i < BTA_AG_MAX_NUM_CLIENTS; i++, p_scb++) {
     if (!p_scb->in_use) {
       /* initialize variables */
       p_scb->in_use = true;
@@ -321,7 +321,7 @@ static tBTA_AG_SCB* bta_ag_scb_alloc(void) {
     }
   }
 
-  if (i == BTA_AG_NUM_SCB) {
+  if (i == BTA_AG_MAX_NUM_CLIENTS) {
     /* out of scbs */
     p_scb = nullptr;
     APPL_TRACE_WARNING("%s: Out of scbs", __func__);
@@ -356,7 +356,7 @@ void bta_ag_scb_dealloc(tBTA_AG_SCB* p_scb) {
 
   /* If all scbs are deallocated, callback with disable event */
   if (!bta_sys_is_register(BTA_ID_AG)) {
-    for (idx = 0; idx < BTA_AG_NUM_SCB; idx++) {
+    for (idx = 0; idx < BTA_AG_MAX_NUM_CLIENTS; idx++) {
       if (bta_ag_cb.scb[idx].in_use) {
         allocated = true;
         break;
@@ -398,7 +398,7 @@ tBTA_AG_SCB* bta_ag_scb_by_idx(uint16_t idx) {
   tBTA_AG_SCB* p_scb;
 
   /* verify index */
-  if (idx > 0 && idx <= BTA_AG_NUM_SCB) {
+  if (idx > 0 && idx <= BTA_AG_MAX_NUM_CLIENTS) {
     p_scb = &bta_ag_cb.scb[idx - 1];
     if (!p_scb->in_use) {
       p_scb = nullptr;
@@ -442,7 +442,7 @@ uint8_t bta_ag_service_to_idx(tBTA_SERVICE_MASK services) {
 uint16_t bta_ag_idx_by_bdaddr(const RawAddress* peer_addr) {
   tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
   if (peer_addr != nullptr) {
-    for (uint16_t i = 0; i < BTA_AG_NUM_SCB; i++, p_scb++) {
+    for (uint16_t i = 0; i < BTA_AG_MAX_NUM_CLIENTS; i++, p_scb++) {
       if (p_scb->in_use && *peer_addr == p_scb->peer_addr) {
         return (i + 1);
       }
@@ -466,7 +466,7 @@ uint16_t bta_ag_idx_by_bdaddr(const RawAddress* peer_addr) {
  ******************************************************************************/
 bool bta_ag_other_scb_open(tBTA_AG_SCB* p_curr_scb) {
   tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
-  for (int i = 0; i < BTA_AG_NUM_SCB; i++, p_scb++) {
+  for (int i = 0; i < BTA_AG_MAX_NUM_CLIENTS; i++, p_scb++) {
     if (p_scb->in_use && p_scb != p_curr_scb &&
         p_scb->state == BTA_AG_OPEN_ST) {
       return true;
@@ -506,7 +506,7 @@ tBTA_AG_SCB* bta_ag_get_other_idle_scb(tBTA_AG_SCB* p_curr_scb) {
   tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
   uint8_t xx;
 
-  for (xx = 0; xx < BTA_AG_NUM_SCB; xx++, p_scb++) {
+  for (xx = 0; xx < BTA_AG_MAX_NUM_CLIENTS; xx++, p_scb++) {
     if (p_scb->in_use && (p_scb != p_curr_scb) &&
         (p_scb->state == BTA_AG_INIT_ST)) {
       return p_scb;
@@ -551,36 +551,35 @@ static void bta_ag_collision_timer_cback(void* data) {
 void bta_ag_collision_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status, uint8_t id,
                             UNUSED_ATTR uint8_t app_id,
                             const RawAddress& peer_addr) {
-  uint16_t handle;
-  tBTA_AG_SCB* p_scb;
-
   /* Check if we have opening scb for the peer device. */
-  handle = bta_ag_idx_by_bdaddr(&peer_addr);
-  p_scb = bta_ag_scb_by_idx(handle);
+  uint16_t handle = bta_ag_idx_by_bdaddr(&peer_addr);
+  tBTA_AG_SCB* p_scb = bta_ag_scb_by_idx(handle);
 
   if (p_scb && (p_scb->state == BTA_AG_OPENING_ST)) {
     if (id == BTA_ID_SYS) {
-      /* ACL collision */
-      APPL_TRACE_WARNING("AG found collision (ACL) ...");
+      LOG(WARNING) << __func__ << "AG found collision (ACL) for handle "
+                   << unsigned(handle) << " device " << peer_addr;
     } else if (id == BTA_ID_AG) {
-      /* RFCOMM collision */
-      APPL_TRACE_WARNING("AG found collision (RFCOMM) ...");
+      LOG(WARNING) << __func__ << "AG found collision (RFCOMM) for handle "
+                   << unsigned(handle) << " device " << peer_addr;
     } else {
-      APPL_TRACE_WARNING("AG found collision (\?\?\?) ...");
+      LOG(WARNING) << __func__ << "AG found collision (UNKNOWN) for handle "
+                   << unsigned(handle) << " device " << peer_addr;
     }
 
     p_scb->state = BTA_AG_INIT_ST;
 
     /* Cancel SDP if it had been started. */
     if (p_scb->p_disc_db) {
-      (void)SDP_CancelServiceSearch(p_scb->p_disc_db);
+      SDP_CancelServiceSearch(p_scb->p_disc_db);
       bta_ag_free_db(p_scb, tBTA_AG_DATA::kEmpty);
     }
 
     /* reopen registered servers */
     /* Collision may be detected before or after we close servers. */
-    if (bta_ag_is_server_closed(p_scb))
+    if (bta_ag_is_server_closed(p_scb)) {
       bta_ag_start_servers(p_scb, p_scb->reg_services);
+    }
 
     /* Start timer to han */
     alarm_set_on_mloop(p_scb->collision_timer, BTA_AG_COLLISION_TIMEOUT_MS,
@@ -600,16 +599,19 @@ void bta_ag_collision_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status, uint8_t id,
  ******************************************************************************/
 void bta_ag_resume_open(tBTA_AG_SCB* p_scb) {
   if (p_scb) {
-    APPL_TRACE_DEBUG("bta_ag_resume_open, Handle(%d)",
-                     bta_ag_scb_to_idx(p_scb));
-
+    APPL_TRACE_DEBUG("%s: handle=%d, bd_addr=%s", __func__,
+                     bta_ag_scb_to_idx(p_scb),
+                     p_scb->peer_addr.ToString().c_str());
     /* resume opening process.  */
     if (p_scb->state == BTA_AG_INIT_ST) {
+      LOG(WARNING) << __func__
+                   << ": handle=" << unsigned(bta_ag_scb_to_idx(p_scb))
+                   << ", bd_addr=" << p_scb->peer_addr;
       p_scb->state = BTA_AG_OPENING_ST;
       bta_ag_start_open(p_scb, tBTA_AG_DATA::kEmpty);
     }
   } else {
-    APPL_TRACE_ERROR("bta_ag_resume_open, Null p_scb");
+    LOG(ERROR) << __func__ << ": null p_scb";
   }
 }
 
@@ -668,7 +670,7 @@ void bta_ag_api_disable() {
   /* De-register with BTA system manager */
   bta_sys_deregister(BTA_ID_AG);
 
-  for (i = 0; i < BTA_AG_NUM_SCB; i++, p_scb++) {
+  for (i = 0; i < BTA_AG_MAX_NUM_CLIENTS; i++, p_scb++) {
     if (p_scb->in_use) {
       bta_ag_sm_execute(p_scb, BTA_AG_API_DEREGISTER_EVT, tBTA_AG_DATA::kEmpty);
       do_dereg = true;
@@ -746,7 +748,8 @@ void bta_ag_api_result(uint16_t handle, tBTA_AG_RES result,
     }
   } else {
     int i;
-    for (i = 0, p_scb = &bta_ag_cb.scb[0]; i < BTA_AG_NUM_SCB; i++, p_scb++) {
+    for (i = 0, p_scb = &bta_ag_cb.scb[0]; i < BTA_AG_MAX_NUM_CLIENTS;
+         i++, p_scb++) {
       if (p_scb->in_use && p_scb->svc_conn) {
         APPL_TRACE_DEBUG("bta_ag_api_result p_scb 0x%08x ", p_scb);
         bta_ag_sm_execute(p_scb, static_cast<uint16_t>(BTA_AG_API_RESULT_EVT),
@@ -774,17 +777,12 @@ void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event,
   uint16_t previous_event = event;
   uint8_t previous_state = p_scb->state;
 
-  /* Ignore displaying of AT results when not connected (Ignored in state
-   * machine) */
-  if (previous_event != BTA_AG_API_RESULT_EVT ||
-      p_scb->state == BTA_AG_OPEN_ST) {
-    APPL_TRACE_EVENT(
-        "%s: handle=0x%04x, state=%s(0x%02x), event=%s(0x%04x), "
-        "result=%s(0x%02x)",
-        __func__, bta_ag_scb_to_idx(p_scb), bta_ag_state_str(p_scb->state),
-        p_scb->state, bta_ag_evt_str(event), event,
-        bta_ag_res_str(data.api_result.result), data.api_result.result);
-  }
+  APPL_TRACE_EVENT(
+      "%s: handle=0x%04x, bd_addr=%s, state=%s(0x%02x), "
+      "event=%s(0x%04x), result=%s(0x%02x)",
+      __func__, bta_ag_scb_to_idx(p_scb), p_scb->peer_addr.ToString().c_str(),
+      bta_ag_state_str(p_scb->state), p_scb->state, bta_ag_evt_str(event),
+      event, bta_ag_res_str(data.api_result.result), data.api_result.result);
 
   event &= 0x00FF;
   if (event >= (BTA_AG_MAX_EVT & 0x00FF)) {
@@ -809,9 +807,10 @@ void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event,
   }
   if (p_scb->state != previous_state) {
     APPL_TRACE_EVENT(
-        "%s: state_change[%s(0x%02x)]->[%s(0x%02x)], "
-        "event[%s(0x%04x)], result[%s(0x%02x)]",
-        __func__, bta_ag_state_str(previous_state), previous_state,
+        "%s: handle=0x%04x, bd_addr=%s, state_change[%s(0x%02x)]->[%s(0x%02x)],"
+        " event[%s(0x%04x)], result[%s(0x%02x)]",
+        __func__, bta_ag_scb_to_idx(p_scb), p_scb->peer_addr.ToString().c_str(),
+        bta_ag_state_str(previous_state), previous_state,
         bta_ag_state_str(p_scb->state), p_scb->state,
         bta_ag_evt_str(previous_event), previous_event,
         bta_ag_res_str(data.api_result.result), data.api_result.result);
