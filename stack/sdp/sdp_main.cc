@@ -530,7 +530,6 @@ tCONN_CB* sdp_conn_originate(const RawAddress& p_bd_addr) {
 
   /* Save the BD Address and Channel ID. */
   p_ccb->device_address = p_bd_addr;
-  ;
 
   /* Transition to the next appropriate state, waiting for connection confirm.
    */
