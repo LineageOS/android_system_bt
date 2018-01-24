@@ -48,54 +48,18 @@
 /* DM events */
 enum {
   /* device manager local device API events */
-  BTA_DM_API_ENABLE_EVT = BTA_SYS_EVT_START(BTA_ID_DM),
-  BTA_DM_API_DISABLE_EVT,
-  BTA_DM_API_SET_NAME_EVT,
-  BTA_DM_API_SET_VISIBILITY_EVT,
+  BTA_DM_API_SET_NAME_EVT = BTA_SYS_EVT_START(BTA_ID_DM),
 
   BTA_DM_ACL_CHANGE_EVT,
   BTA_DM_API_ADD_DEVICE_EVT,
-  BTA_DM_API_REMOVE_ACL_EVT,
 
   /* security API events */
-  BTA_DM_API_BOND_EVT,
-  BTA_DM_API_BOND_CANCEL_EVT,
   BTA_DM_API_PIN_REPLY_EVT,
 
-  /* power manger events */
-  BTA_DM_PM_BTM_STATUS_EVT,
-  BTA_DM_PM_TIMER_EVT,
-
-  /* simple pairing events */
-  BTA_DM_API_CONFIRM_EVT,
-
-  BTA_DM_API_SET_ENCRYPTION_EVT,
-
-  BTA_DM_API_LOC_OOB_EVT,
   BTA_DM_CI_IO_REQ_EVT,
   BTA_DM_CI_RMT_OOB_EVT,
 
   BTA_DM_API_ADD_BLEKEY_EVT,
-  BTA_DM_API_ADD_BLEDEVICE_EVT,
-  BTA_DM_API_BLE_PASSKEY_REPLY_EVT,
-  BTA_DM_API_BLE_CONFIRM_REPLY_EVT,
-  BTA_DM_API_BLE_SEC_GRANT_EVT,
-  BTA_DM_API_BLE_SET_BG_CONN_TYPE,
-  BTA_DM_API_BLE_CONN_PARAM_EVT,
-  BTA_DM_API_BLE_CONN_SCAN_PARAM_EVT,
-  BTA_DM_API_BLE_OBSERVE_EVT,
-  BTA_DM_API_UPDATE_CONN_PARAM_EVT,
-#if (BLE_PRIVACY_SPT == TRUE)
-  BTA_DM_API_LOCAL_PRIVACY_EVT,
-#endif
-  BTA_DM_API_SET_DATA_LENGTH_EVT,
-  BTA_DM_API_BLE_ENERGY_INFO_EVT,
-
-  BTA_DM_API_ENABLE_TEST_MODE_EVT,
-  BTA_DM_API_DISABLE_TEST_MODE_EVT,
-  BTA_DM_API_EXECUTE_CBACK_EVT,
-  BTA_DM_API_REMOVE_ALL_ACL_EVT,
-  BTA_DM_API_REMOVE_DEVICE_EVT,
   BTA_DM_MAX_EVT
 };
 
@@ -115,26 +79,11 @@ enum {
 
 };
 
-/* data type for BTA_DM_API_ENABLE_EVT */
-typedef struct {
-  BT_HDR hdr;
-  tBTA_DM_SEC_CBACK* p_sec_cback;
-} tBTA_DM_API_ENABLE;
-
 /* data type for BTA_DM_API_SET_NAME_EVT */
 typedef struct {
   BT_HDR hdr;
   BD_NAME name; /* max 248 bytes name, plus must be Null terminated */
 } tBTA_DM_API_SET_NAME;
-
-/* data type for BTA_DM_API_SET_VISIBILITY_EVT */
-typedef struct {
-  BT_HDR hdr;
-  tBTA_DM_DISC disc_mode;
-  tBTA_DM_CONN conn_mode;
-  uint8_t pair_mode;
-  uint8_t conn_paired_only;
-} tBTA_DM_API_SET_VISIBILITY;
 
 enum {
   BTA_DM_RS_NONE, /* straight API call */
@@ -176,20 +125,6 @@ typedef struct {
   tBTA_DM_SEARCH_CBACK* p_cback;
 } tBTA_DM_API_DI_DISC;
 
-/* data type for BTA_DM_API_BOND_EVT */
-typedef struct {
-  BT_HDR hdr;
-  RawAddress bd_addr;
-  tBTA_TRANSPORT transport;
-} tBTA_DM_API_BOND;
-
-/* data type for BTA_DM_API_BOND_CANCEL_EVT */
-typedef struct {
-  BT_HDR hdr;
-  RawAddress bd_addr;
-  tBTA_TRANSPORT transport;
-} tBTA_DM_API_BOND_CANCEL;
-
 /* data type for BTA_DM_API_PIN_REPLY_EVT */
 typedef struct {
   BT_HDR hdr;
@@ -198,16 +133,6 @@ typedef struct {
   uint8_t pin_len;
   uint8_t p_pin[PIN_CODE_LEN];
 } tBTA_DM_API_PIN_REPLY;
-
-/* data type for BTA_DM_API_LOC_OOB_EVT */
-typedef struct { BT_HDR hdr; } tBTA_DM_API_LOC_OOB;
-
-/* data type for BTA_DM_API_CONFIRM_EVT */
-typedef struct {
-  BT_HDR hdr;
-  RawAddress bd_addr;
-  bool accept;
-} tBTA_DM_API_CONFIRM;
 
 /* data type for BTA_DM_CI_IO_REQ_EVT */
 typedef struct {
@@ -265,23 +190,6 @@ typedef struct {
   tBT_TRANSPORT transport;
 } tBTA_DM_ACL_CHANGE;
 
-/* data type for BTA_DM_PM_BTM_STATUS_EVT */
-typedef struct {
-  BT_HDR hdr;
-  RawAddress bd_addr;
-  tBTM_PM_STATUS status;
-  uint16_t value;
-  uint8_t hci_status;
-
-} tBTA_DM_PM_BTM_STATUS;
-
-/* data type for BTA_DM_PM_TIMER_EVT */
-typedef struct {
-  BT_HDR hdr;
-  RawAddress bd_addr;
-  tBTA_DM_PM_ACTION pm_request;
-} tBTA_DM_PM_TIMER;
-
 /* data type for BTA_DM_API_ADD_DEVICE_EVT */
 typedef struct {
   BT_HDR hdr;
@@ -300,28 +208,6 @@ typedef struct {
   uint8_t pin_length;
 } tBTA_DM_API_ADD_DEVICE;
 
-/* data type for BTA_DM_API_REMOVE_ACL_EVT */
-typedef struct {
-  BT_HDR hdr;
-  RawAddress bd_addr;
-} tBTA_DM_API_REMOVE_DEVICE;
-
-/* data type for BTA_DM_API_EXECUTE_CBACK_EVT */
-typedef struct {
-  BT_HDR hdr;
-  void* p_param;
-  tBTA_DM_EXEC_CBACK* p_exec_cback;
-} tBTA_DM_API_EXECUTE_CBACK;
-
-/* data type for tBTA_DM_API_SET_ENCRYPTION */
-typedef struct {
-  BT_HDR hdr;
-  tBTA_TRANSPORT transport;
-  tBTA_DM_ENCRYPT_CBACK* p_callback;
-  tBTA_DM_BLE_SEC_ACT sec_act;
-  RawAddress bd_addr;
-} tBTA_DM_API_SET_ENCRYPTION;
-
 typedef struct {
   BT_HDR hdr;
   RawAddress bd_addr;
@@ -332,141 +218,23 @@ typedef struct {
 
 typedef struct {
   BT_HDR hdr;
-  RawAddress bd_addr;
-  tBT_DEVICE_TYPE dev_type;
-  tBLE_ADDR_TYPE addr_type;
-
-} tBTA_DM_API_ADD_BLE_DEVICE;
-
-typedef struct {
-  BT_HDR hdr;
-  RawAddress bd_addr;
-  bool accept;
-  uint32_t passkey;
-} tBTA_DM_API_PASSKEY_REPLY;
-
-typedef struct {
-  BT_HDR hdr;
-  RawAddress bd_addr;
-  tBTA_DM_BLE_SEC_GRANT res;
-} tBTA_DM_API_BLE_SEC_GRANT;
-
-/* set prefered BLE connection parameters for a device */
-typedef struct {
-  BT_HDR hdr;
-  RawAddress peer_bda;
-  uint16_t conn_int_min;
-  uint16_t conn_int_max;
-  uint16_t supervision_tout;
-  uint16_t slave_latency;
-
-} tBTA_DM_API_BLE_CONN_PARAMS;
-
-typedef struct {
-  BT_HDR hdr;
-  RawAddress peer_bda;
-  bool privacy_enable;
-
-} tBTA_DM_API_ENABLE_PRIVACY;
-
-typedef struct {
-  BT_HDR hdr;
-  bool privacy_enable;
-} tBTA_DM_API_LOCAL_PRIVACY;
-
-/* set scan parameter for BLE connections */
-typedef struct {
-  BT_HDR hdr;
-  tGATT_IF client_if;
-  uint32_t scan_int;
-  uint32_t scan_window;
-  tBLE_SCAN_MODE scan_mode;
-  tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback;
-} tBTA_DM_API_BLE_SCAN_PARAMS;
-
-/* set scan parameter for BLE connections */
-typedef struct {
-  BT_HDR hdr;
-  uint16_t scan_int;
-  uint16_t scan_window;
-} tBTA_DM_API_BLE_CONN_SCAN_PARAMS;
-
-/* Data type for start/stop observe */
-typedef struct {
-  BT_HDR hdr;
-  bool start;
-  uint16_t duration;
-  tBTA_DM_SEARCH_CBACK* p_cback;
-} tBTA_DM_API_BLE_OBSERVE;
-
-typedef struct {
-  BT_HDR hdr;
-  RawAddress remote_bda;
-  uint16_t tx_data_length;
-} tBTA_DM_API_BLE_SET_DATA_LENGTH;
-
-/* set adv parameter for BLE advertising */
-
-typedef struct {
-  BT_HDR hdr;
   bool enable;
-
 } tBTA_DM_API_BLE_FEATURE;
-
-typedef struct {
-  BT_HDR hdr;
-  tBTA_BLE_ENERGY_INFO_CBACK* p_energy_info_cback;
-} tBTA_DM_API_ENERGY_INFO;
-
-/* data type for BTA_DM_API_REMOVE_ACL_EVT */
-typedef struct {
-  BT_HDR hdr;
-  RawAddress bd_addr;
-  bool remove_dev;
-  tBTA_TRANSPORT transport;
-} tBTA_DM_API_REMOVE_ACL;
-
-/* data type for BTA_DM_API_REMOVE_ALL_ACL_EVT */
-typedef struct {
-  BT_HDR hdr;
-  tBTA_DM_LINK_TYPE link_type;
-
-} tBTA_DM_API_REMOVE_ALL_ACL;
-typedef struct {
-  BT_HDR hdr;
-  RawAddress bd_addr;
-  uint16_t min_int;
-  uint16_t max_int;
-  uint16_t latency;
-  uint16_t timeout;
-} tBTA_DM_API_UPDATE_CONN_PARAM;
 
 /* union of all data types */
 typedef union {
   /* GKI event buffer header */
   BT_HDR hdr;
-  tBTA_DM_API_ENABLE enable;
-
   tBTA_DM_API_SET_NAME set_name;
 
-  tBTA_DM_API_SET_VISIBILITY set_visibility;
-
   tBTA_DM_API_ADD_DEVICE add_dev;
-
-  tBTA_DM_API_REMOVE_DEVICE remove_dev;
 
   tBTA_DM_API_SEARCH search;
 
   tBTA_DM_API_DISCOVER discover;
 
-  tBTA_DM_API_BOND bond;
-
-  tBTA_DM_API_BOND_CANCEL bond_cancel;
-
   tBTA_DM_API_PIN_REPLY pin_reply;
 
-  tBTA_DM_API_LOC_OOB loc_oob;
-  tBTA_DM_API_CONFIRM confirm;
   tBTA_DM_CI_IO_REQ ci_io_req;
   tBTA_DM_CI_RMT_OOB ci_rmt_oob;
 
@@ -480,33 +248,9 @@ typedef union {
 
   tBTA_DM_ACL_CHANGE acl_change;
 
-  tBTA_DM_PM_BTM_STATUS pm_status;
-
-  tBTA_DM_PM_TIMER pm_timer;
-
   tBTA_DM_API_DI_DISC di_disc;
 
-  tBTA_DM_API_EXECUTE_CBACK exec_cback;
-
-  tBTA_DM_API_SET_ENCRYPTION set_encryption;
-
   tBTA_DM_API_ADD_BLEKEY add_ble_key;
-  tBTA_DM_API_ADD_BLE_DEVICE add_ble_device;
-  tBTA_DM_API_PASSKEY_REPLY ble_passkey_reply;
-  tBTA_DM_API_BLE_SEC_GRANT ble_sec_grant;
-  tBTA_DM_API_BLE_CONN_PARAMS ble_set_conn_params;
-  tBTA_DM_API_BLE_CONN_SCAN_PARAMS ble_set_conn_scan_params;
-  tBTA_DM_API_BLE_OBSERVE ble_observe;
-  tBTA_DM_API_ENABLE_PRIVACY ble_remote_privacy;
-  tBTA_DM_API_LOCAL_PRIVACY ble_local_privacy;
-  tBTA_DM_API_UPDATE_CONN_PARAM ble_update_conn_params;
-  tBTA_DM_API_BLE_SET_DATA_LENGTH ble_set_data_length;
-
-  tBTA_DM_API_ENERGY_INFO ble_energy_info;
-
-  tBTA_DM_API_REMOVE_ACL remove_acl;
-  tBTA_DM_API_REMOVE_ALL_ACL remove_all_acl;
-
 } tBTA_DM_MSG;
 
 #define BTA_DM_NUM_PEER_DEVICE 7
@@ -791,49 +535,52 @@ extern void bta_dm_sm_disable(void);
 extern bool bta_dm_search_sm_execute(BT_HDR* p_msg);
 extern void bta_dm_search_sm_disable(void);
 
-extern void bta_dm_enable(tBTA_DM_MSG* p_data);
-extern void bta_dm_disable(tBTA_DM_MSG* p_data);
+extern void bta_dm_enable(tBTA_DM_SEC_CBACK*);
+extern void bta_dm_disable();
 extern void bta_dm_init_cb(void);
 extern void bta_dm_set_dev_name(tBTA_DM_MSG* p_data);
-extern void bta_dm_set_visibility(tBTA_DM_MSG* p_data);
-
+extern void bta_dm_set_visibility(tBTA_DM_DISC, tBTA_DM_CONN, uint8_t, uint8_t);
 extern void bta_dm_set_scan_config(tBTA_DM_MSG* p_data);
 extern void bta_dm_vendor_spec_command(tBTA_DM_MSG* p_data);
-extern void bta_dm_bond(tBTA_DM_MSG* p_data);
-extern void bta_dm_bond_cancel(tBTA_DM_MSG* p_data);
+extern void bta_dm_bond(const RawAddress&, tBTA_TRANSPORT);
+extern void bta_dm_bond_cancel(const RawAddress&);
 extern void bta_dm_pin_reply(tBTA_DM_MSG* p_data);
 extern void bta_dm_acl_change(tBTA_DM_MSG* p_data);
 extern void bta_dm_add_device(tBTA_DM_MSG* p_data);
-extern void bta_dm_remove_device(tBTA_DM_MSG* p_data);
-extern void bta_dm_close_acl(tBTA_DM_MSG* p_data);
+extern void bta_dm_remove_device(const RawAddress& bd_addr);
+extern void bta_dm_close_acl(const RawAddress&, bool, tBTA_TRANSPORT);
 
-extern void bta_dm_pm_btm_status(tBTA_DM_MSG* p_data);
-extern void bta_dm_pm_timer(tBTA_DM_MSG* p_data);
+extern void bta_dm_pm_btm_status(const RawAddress&, tBTM_PM_STATUS, uint16_t,
+                                 uint8_t);
+extern void bta_dm_pm_timer(const RawAddress&, tBTA_DM_PM_ACTION);
 extern void bta_dm_add_ampkey(tBTA_DM_MSG* p_data);
 
 extern void bta_dm_add_blekey(tBTA_DM_MSG* p_data);
-extern void bta_dm_add_ble_device(tBTA_DM_MSG* p_data);
-extern void bta_dm_ble_passkey_reply(tBTA_DM_MSG* p_data);
-extern void bta_dm_ble_confirm_reply(tBTA_DM_MSG* p_data);
-extern void bta_dm_security_grant(tBTA_DM_MSG* p_data);
-extern void bta_dm_ble_set_bg_conn_type(tBTA_DM_MSG* p_data);
-extern void bta_dm_ble_set_conn_params(tBTA_DM_MSG* p_data);
-extern void bta_dm_ble_set_conn_scan_params(tBTA_DM_MSG* p_data);
+extern void bta_dm_add_ble_device(const RawAddress& bd_addr,
+                                  tBLE_ADDR_TYPE addr_type,
+                                  tBT_DEVICE_TYPE dev_type);
+extern void bta_dm_ble_passkey_reply(const RawAddress& bd_addr, bool accept,
+                                     uint32_t passkey);
+extern void bta_dm_ble_confirm_reply(const RawAddress&, bool);
+extern void bta_dm_ble_set_conn_params(const RawAddress&, uint16_t, uint16_t,
+                                       uint16_t, uint16_t);
+extern void bta_dm_ble_set_conn_scan_params(uint32_t, uint32_t);
 extern void bta_dm_close_gatt_conn(tBTA_DM_MSG* p_data);
-extern void bta_dm_ble_observe(tBTA_DM_MSG* p_data);
-extern void bta_dm_ble_update_conn_params(tBTA_DM_MSG* p_data);
-extern void bta_dm_ble_config_local_privacy(tBTA_DM_MSG* p_data);
+extern void bta_dm_ble_observe(bool, uint8_t, tBTA_DM_SEARCH_CBACK*);
+extern void bta_dm_ble_update_conn_params(const RawAddress&, uint16_t, uint16_t,
+                                          uint16_t, uint16_t);
+extern void bta_dm_ble_config_local_privacy(bool);
 extern void bta_dm_ble_set_adv_params(uint16_t adv_int_min,
                                       uint16_t adv_int_max,
                                       tBLE_BD_ADDR* p_dir_bda);
 
-extern void bta_dm_ble_set_data_length(tBTA_DM_MSG* p_data);
+extern void bta_dm_ble_set_data_length(const RawAddress&, uint16_t);
 
-extern void bta_dm_ble_get_energy_info(tBTA_DM_MSG* p_data);
+extern void bta_dm_ble_get_energy_info(tBTA_BLE_ENERGY_INFO_CBACK*);
 
-extern void bta_dm_set_encryption(tBTA_DM_MSG* p_data);
-extern void bta_dm_confirm(tBTA_DM_MSG* p_data);
-extern void bta_dm_loc_oob(tBTA_DM_MSG* p_data);
+extern void bta_dm_set_encryption(const RawAddress&, tBTA_TRANSPORT,
+                                  tBTA_DM_ENCRYPT_CBACK*, tBTA_DM_BLE_SEC_ACT);
+extern void bta_dm_confirm(const RawAddress&, bool);
 extern void bta_dm_ci_io_req_act(tBTA_DM_MSG* p_data);
 extern void bta_dm_ci_rmt_oob_act(tBTA_DM_MSG* p_data);
 
@@ -865,9 +612,8 @@ extern tBTA_DM_PEER_DEVICE* bta_dm_find_peer_device(
 
 void bta_dm_eir_update_uuid(uint16_t uuid16, bool adding);
 
-extern void bta_dm_enable_test_mode(tBTA_DM_MSG* p_data);
-extern void bta_dm_disable_test_mode(tBTA_DM_MSG* p_data);
-extern void bta_dm_execute_callback(tBTA_DM_MSG* p_data);
+extern void bta_dm_enable_test_mode();
+extern void bta_dm_disable_test_mode();
 
-extern void bta_dm_remove_all_acl(tBTA_DM_MSG* p_data);
+extern void bta_dm_remove_all_acl(const tBTA_DM_LINK_TYPE);
 #endif /* BTA_DM_INT_H */
