@@ -40,6 +40,7 @@
 #include "bt_utils.h"
 #include "btm_api.h"
 #include "btm_int.h"
+#include "btm_int_types.h"
 #include "btu.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
@@ -147,13 +148,19 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
                              const tBTM_PM_PWR_MD* p_mode) {
   uint8_t* p_features;
   int ind, acl_ind;
-  tBTM_PM_MCB* p_cb = NULL; /* per ACL link */
+  tBTM_PM_MCB* p_cb = nullptr; /* per ACL link */
   tBTM_PM_MODE mode;
   int temp_pm_id;
 
-  if (pm_id >= BTM_MAX_PM_RECORDS) pm_id = BTM_PM_SET_ONLY_ID;
+  if (pm_id >= BTM_MAX_PM_RECORDS) {
+    pm_id = BTM_PM_SET_ONLY_ID;
+  }
 
-  if (p_mode == NULL) return BTM_ILLEGAL_VALUE;
+  if (!p_mode) {
+    LOG(ERROR) << __func__ << ": pm_id " << unsigned(pm_id)
+               << " p_mode is null for " << remote_bda;
+    return BTM_ILLEGAL_VALUE;
+  }
 
   VLOG(2) << __func__ << " pm_id " << pm_id << " BDA: " << remote_bda
           << " mode:0x" << std::hex << p_mode->mode;
@@ -170,12 +177,14 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
     /* check if the requested mode is supported */
     ind = mode - BTM_PM_MD_HOLD; /* make it base 0 */
     p_features = BTM_ReadLocalFeatures();
-    if (!(p_features[btm_pm_mode_off[ind]] & btm_pm_mode_msk[ind]))
+    if (!(p_features[btm_pm_mode_off[ind]] & btm_pm_mode_msk[ind])) {
+      LOG(ERROR) << __func__ << ": pm_id " << unsigned(pm_id) << " mode "
+                 << unsigned(mode) << " is not supported for " << remote_bda;
       return BTM_MODE_UNSUPPORTED;
+    }
   }
 
-  if (mode == p_cb->state) /* the requested mode is current mode */
-  {
+  if (mode == p_cb->state) {
     /* already in the requested mode and the current interval has less latency
      * than the max */
     if ((mode == BTM_PM_MD_ACTIVE) ||
@@ -183,14 +192,18 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
          (p_mode->min <= p_cb->interval)) ||
         ((p_mode->mode & BTM_PM_MD_FORCE) == 0 &&
          (p_mode->max >= p_cb->interval))) {
-      BTM_TRACE_DEBUG("BTM_SetPowerMode: mode:0x%x interval %d max:%d, min:%d",
-                      p_mode->mode, p_cb->interval, p_mode->max, p_mode->min);
+      LOG(INFO) << __func__ << " already in requested mode "
+                << unsigned(p_mode->mode) << ", interval "
+                << unsigned(p_cb->interval) << " max " << unsigned(p_mode->max)
+                << " min " << unsigned(p_mode->min);
       return BTM_SUCCESS;
     }
   }
 
   temp_pm_id = pm_id;
-  if (pm_id == BTM_PM_SET_ONLY_ID) temp_pm_id = BTM_MAX_PM_RECORDS;
+  if (pm_id == BTM_PM_SET_ONLY_ID) {
+    temp_pm_id = BTM_MAX_PM_RECORDS;
+  }
 
   /* update mode database */
   if (((pm_id != BTM_PM_SET_ONLY_ID) &&
@@ -213,12 +226,12 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
 #endif  // BTM_PM_DEBUG
   /* if mode == hold or pending, return */
   if ((p_cb->state == BTM_PM_STS_HOLD) || (p_cb->state == BTM_PM_STS_PENDING) ||
-      (btm_cb.pm_pend_link != MAX_L2CAP_LINKS)) /* command pending */
-  {
+      (btm_cb.pm_pend_link != MAX_L2CAP_LINKS)) {
+    /* command pending */
     if (acl_ind != btm_cb.pm_pend_link) {
       /* set the stored mask */
       p_cb->state |= BTM_PM_STORED_MASK;
-      BTM_TRACE_DEBUG("btm_pm state stored:%d", acl_ind);
+      BTM_TRACE_DEBUG("%s: btm_pm state stored:%d", __func__, acl_ind);
     }
     return BTM_CMD_STORED;
   }

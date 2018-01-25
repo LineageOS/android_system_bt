@@ -537,9 +537,9 @@ static void bta_dm_disable_timer_cback(void* data) {
 }
 
 /** Sets local device name */
-void bta_dm_set_dev_name(tBTA_DM_MSG* p_data) {
-  BTM_SetLocalDeviceName((char*)p_data->set_name.name);
-  bta_dm_set_eir((char*)p_data->set_name.name);
+void bta_dm_set_dev_name(const std::vector<uint8_t>& name) {
+  BTM_SetLocalDeviceName((char*)name.data());
+  bta_dm_set_eir((char*)name.data());
 }
 
 /** Sets discoverability, connectability and pairability */
@@ -703,8 +703,7 @@ void bta_dm_remove_device(const RawAddress& bd_addr) {
  *                  required information stored in the NVRAM.
  ***
  ******************************************************************************/
-void bta_dm_add_device(tBTA_DM_MSG* p_data) {
-  tBTA_DM_API_ADD_DEVICE* p_dev = &p_data->add_dev;
+void bta_dm_add_device(std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg) {
   uint8_t* p_dc = NULL;
   uint8_t* p_lc = NULL;
   uint32_t trusted_services_mask[BTM_SEC_SERVICE_ARRAY_SIZE];
@@ -714,30 +713,30 @@ void bta_dm_add_device(tBTA_DM_MSG* p_data) {
   memset(trusted_services_mask, 0, sizeof(trusted_services_mask));
 
   /* If not all zeros, the device class has been specified */
-  if (p_dev->dc_known) p_dc = (uint8_t*)p_dev->dc;
+  if (msg->dc_known) p_dc = (uint8_t*)msg->dc;
 
-  if (p_dev->link_key_known) p_lc = (uint8_t*)p_dev->link_key;
+  if (msg->link_key_known) p_lc = (uint8_t*)msg->link_key;
 
-  if (p_dev->is_trusted) {
+  if (msg->is_trusted) {
     /* covert BTA service mask to BTM mask */
-    while (p_dev->tm && (index < BTA_MAX_SERVICE_ID)) {
-      if (p_dev->tm & (uint32_t)(1 << index)) {
+    while (msg->tm && (index < BTA_MAX_SERVICE_ID)) {
+      if (msg->tm & (uint32_t)(1 << index)) {
         btm_mask_index =
             bta_service_id_to_btm_srv_id_lkup_tbl[index] / BTM_SEC_ARRAY_BITS;
         trusted_services_mask[btm_mask_index] |=
             (uint32_t)(1 << (bta_service_id_to_btm_srv_id_lkup_tbl[index] -
                              (uint32_t)(btm_mask_index * 32)));
 
-        p_dev->tm &= (uint32_t)(~(1 << index));
+        msg->tm &= (uint32_t)(~(1 << index));
       }
       index++;
     }
   }
 
-  if (!BTM_SecAddDevice(p_dev->bd_addr, p_dc, p_dev->bd_name, p_dev->features,
-                        trusted_services_mask, p_lc, p_dev->key_type,
-                        p_dev->io_cap, p_dev->pin_length)) {
-    LOG(ERROR) << "BTA_DM: Error adding device " << p_dev->bd_addr;
+  if (!BTM_SecAddDevice(msg->bd_addr, p_dc, msg->bd_name, msg->features,
+                        trusted_services_mask, p_lc, msg->key_type, msg->io_cap,
+                        msg->pin_length)) {
+    LOG(ERROR) << "BTA_DM: Error adding device " << msg->bd_addr;
   }
 }
 
@@ -848,35 +847,22 @@ void bta_dm_bond_cancel(const RawAddress& bd_addr) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_pin_reply
- *
- * Description      Send the pin_reply to a request from BTM
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_dm_pin_reply(tBTA_DM_MSG* p_data) {
+/** Send the pin_reply to a request from BTM */
+void bta_dm_pin_reply(std::unique_ptr<tBTA_DM_API_PIN_REPLY> msg) {
   uint32_t trusted_mask[BTM_SEC_SERVICE_ARRAY_SIZE];
-  uint32_t* current_trusted_mask;
 
-  current_trusted_mask = BTM_ReadTrustedMask(p_data->pin_reply.bd_addr);
-
+  uint32_t* current_trusted_mask = BTM_ReadTrustedMask(msg->bd_addr);
   if (current_trusted_mask) {
     memcpy(trusted_mask, current_trusted_mask, sizeof(trusted_mask));
   } else {
     memset(trusted_mask, 0, sizeof(trusted_mask));
   }
 
-  if (p_data->pin_reply.accept) {
-    BTM_PINCodeReply(p_data->pin_reply.bd_addr, BTM_SUCCESS,
-                     p_data->pin_reply.pin_len, p_data->pin_reply.p_pin,
+  if (msg->accept) {
+    BTM_PINCodeReply(msg->bd_addr, BTM_SUCCESS, msg->pin_len, msg->p_pin,
                      trusted_mask);
   } else {
-    BTM_PINCodeReply(p_data->pin_reply.bd_addr, BTM_NOT_AUTHORIZED, 0, NULL,
-                     trusted_mask);
+    BTM_PINCodeReply(msg->bd_addr, BTM_NOT_AUTHORIZED, 0, NULL, trusted_mask);
   }
 }
 
@@ -944,39 +930,17 @@ void bta_dm_confirm(const RawAddress& bd_addr, bool accept) {
   BTM_ConfirmReqReply(accept ? BTM_SUCCESS : BTM_NOT_AUTHORIZED, bd_addr);
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_ci_io_req_act
- *
- * Description      respond to the IO capabilities request from BTM
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_dm_ci_io_req_act(tBTA_DM_MSG* p_data) {
-  tBTM_AUTH_REQ auth_req = BTM_AUTH_AP_NO;
-  if (p_data->ci_io_req.auth_req) auth_req = BTM_AUTH_AP_YES;
-  BTM_IoCapRsp(p_data->ci_io_req.bd_addr, p_data->ci_io_req.io_cap,
-               p_data->ci_io_req.oob_data, auth_req);
+/** respond to the IO capabilities request from BTM */
+void bta_dm_ci_io_req_act(const RawAddress& bd_addr, tBTA_IO_CAP io_cap,
+                          tBTA_OOB_DATA oob_data, tBTA_AUTH_REQ auth_req) {
+  BTM_IoCapRsp(bd_addr, io_cap, oob_data,
+               auth_req ? BTM_AUTH_AP_YES : BTM_AUTH_AP_NO);
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_ci_rmt_oob_act
- *
- * Description      respond to the OOB data request for the remote device from
- *                  BTM
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_dm_ci_rmt_oob_act(tBTA_DM_MSG* p_data) {
-  tBTM_STATUS res = BTM_NOT_AUTHORIZED;
-
-  if (p_data->ci_rmt_oob.accept) res = BTM_SUCCESS;
-  BTM_RemoteOobDataReply(res, p_data->ci_rmt_oob.bd_addr, p_data->ci_rmt_oob.c,
-                         p_data->ci_rmt_oob.r);
+/** respond to the OOB data request for the remote device from BTM */
+void bta_dm_ci_rmt_oob_act(std::unique_ptr<tBTA_DM_CI_RMT_OOB> msg) {
+  BTM_RemoteOobDataReply(msg->accept ? BTM_SUCCESS : BTM_NOT_AUTHORIZED,
+                         msg->bd_addr, msg->c, msg->r);
 }
 
 /*******************************************************************************
@@ -2655,51 +2619,224 @@ static void bta_dm_local_name_cback(UNUSED_ATTR void* p_name) {
     bta_dm_cb.p_sec_cback(BTA_DM_ENABLE_EVT, &sec_event);
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_bl_change_cback
- *
- * Description      Callback from btm when acl connection goes up or down
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-static void bta_dm_bl_change_cback(tBTM_BL_EVENT_DATA* p_data) {
-  tBTA_DM_ACL_CHANGE* p_msg =
-      (tBTA_DM_ACL_CHANGE*)osi_malloc(sizeof(tBTA_DM_ACL_CHANGE));
+static void send_busy_level_update(uint8_t busy_level,
+                                   uint8_t busy_level_flags) {
+  if (!bta_dm_cb.p_sec_cback) return;
 
-  p_msg->event = p_data->event;
-  p_msg->is_new = false;
+  tBTA_DM_SEC conn;
+  memset(&conn, 0, sizeof(tBTA_DM_SEC));
+  conn.busy_level.level = busy_level;
+  conn.busy_level.level_flags = busy_level_flags;
+  bta_dm_cb.p_sec_cback(BTA_DM_BUSY_LEVEL_EVT, &conn);
+}
 
-  switch (p_msg->event) {
-    case BTM_BL_CONN_EVT:
-      p_msg->is_new = true;
-      p_msg->bd_addr = *p_data->conn.p_bda;
-      p_msg->transport = p_data->conn.transport;
-      p_msg->handle = p_data->conn.handle;
+static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
+                               uint8_t hci_status) {
+  tBTA_DM_SEC conn;
+  memset(&conn, 0, sizeof(tBTA_DM_SEC));
+
+  tBTA_DM_PEER_DEVICE* p_dev = bta_dm_find_peer_device(bd_addr);
+  if (!p_dev) return;
+  APPL_TRACE_DEBUG("role chg info:x%x new_role:%d dev count:%d", p_dev->info,
+                   new_role, bta_dm_cb.device_list.count);
+  if (p_dev->info & BTA_DM_DI_AV_ACTIVE) {
+    bool need_policy_change = false;
+
+    /* there's AV activity on this link */
+    if (new_role == HCI_ROLE_SLAVE && bta_dm_cb.device_list.count > 1 &&
+        hci_status == HCI_SUCCESS) {
+      /* more than one connections and the AV connection is role switched
+       * to slave
+       * switch it back to master and remove the switch policy */
+      BTM_SwitchRole(bd_addr, BTM_ROLE_MASTER, NULL);
+      need_policy_change = true;
+    } else if (p_bta_dm_cfg->avoid_scatter && (new_role == HCI_ROLE_MASTER)) {
+      /* if the link updated to be master include AV activities, remove
+       * the switch policy */
+      need_policy_change = true;
+    }
+
+    if (need_policy_change) {
+      bta_dm_policy_cback(BTA_SYS_PLCY_CLR, 0, HCI_ENABLE_MASTER_SLAVE_SWITCH,
+                          p_dev->peer_bdaddr);
+    }
+  } else {
+    /* there's AV no activity on this link and role switch happened
+     * check if AV is active
+     * if so, make sure the AV link is master */
+    bta_dm_check_av(0);
+  }
+  bta_sys_notify_role_chg(bd_addr, new_role, hci_status);
+  conn.role_chg.bd_addr = bd_addr;
+  conn.role_chg.new_role = (uint8_t)new_role;
+  if (bta_dm_cb.p_sec_cback) bta_dm_cb.p_sec_cback(BTA_DM_ROLE_CHG_EVT, &conn);
+}
+
+static void bta_dm_acl_change(bool is_new, const RawAddress& bd_addr,
+                              tBT_TRANSPORT transport, uint16_t handle) {
+  bool issue_unpair_cb = false;
+
+  tBTA_DM_SEC conn;
+  memset(&conn, 0, sizeof(tBTA_DM_SEC));
+
+  if (is_new) {
+    uint8_t i;
+    for (i = 0; i < bta_dm_cb.device_list.count; i++) {
+      if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr == bd_addr &&
+          bta_dm_cb.device_list.peer_device[i].conn_handle == handle)
+        break;
+    }
+
+    if (i == bta_dm_cb.device_list.count) {
+      if (bta_dm_cb.device_list.count < BTA_DM_NUM_PEER_DEVICE) {
+        bta_dm_cb.device_list.peer_device[bta_dm_cb.device_list.count]
+            .peer_bdaddr = bd_addr;
+        bta_dm_cb.device_list.peer_device[bta_dm_cb.device_list.count]
+            .link_policy = bta_dm_cb.cur_policy;
+        bta_dm_cb.device_list.count++;
+        bta_dm_cb.device_list.peer_device[i].conn_handle = handle;
+        if (transport == BT_TRANSPORT_LE) bta_dm_cb.device_list.le_count++;
+      } else {
+        APPL_TRACE_ERROR("%s max active connection reached, no resources",
+                         __func__);
+        return;
+      }
+    }
+
+    bta_dm_cb.device_list.peer_device[i].conn_state = BTA_DM_CONNECTED;
+    bta_dm_cb.device_list.peer_device[i].pref_role = BTA_ANY_ROLE;
+    conn.link_up.bd_addr = bd_addr;
+    bta_dm_cb.device_list.peer_device[i].info = BTA_DM_DI_NONE;
+    conn.link_up.link_type = transport;
+    bta_dm_cb.device_list.peer_device[i].transport = transport;
+
+    uint8_t* p;
+    if (((NULL != (p = BTM_ReadLocalFeatures())) &&
+         HCI_SNIFF_SUB_RATE_SUPPORTED(p)) &&
+        ((NULL != (p = BTM_ReadRemoteFeatures(bd_addr))) &&
+         HCI_SNIFF_SUB_RATE_SUPPORTED(p))) {
+      /* both local and remote devices support SSR */
+      bta_dm_cb.device_list.peer_device[i].info = BTA_DM_DI_USE_SSR;
+    }
+    APPL_TRACE_WARNING("%s info: 0x%x", __func__,
+                       bta_dm_cb.device_list.peer_device[i].info);
+
+    if (bta_dm_cb.p_sec_cback) bta_dm_cb.p_sec_cback(BTA_DM_LINK_UP_EVT, &conn);
+  } else {
+    for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
+      if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr != bd_addr ||
+          bta_dm_cb.device_list.peer_device[i].transport != transport)
+        continue;
+
+      if (bta_dm_cb.device_list.peer_device[i].conn_state == BTA_DM_UNPAIRING) {
+        if (BTM_SecDeleteDevice(
+                bta_dm_cb.device_list.peer_device[i].peer_bdaddr))
+          issue_unpair_cb = true;
+
+        APPL_TRACE_DEBUG("%s: Unpairing: issue unpair CB = %d ", __func__,
+                         issue_unpair_cb);
+      }
+
+      conn.link_down.is_removed =
+          bta_dm_cb.device_list.peer_device[i].remove_dev_pending;
+
+      // Iterate to the one before the last when shrinking the list,
+      // otherwise we memcpy garbage data into the record.
+      // Then clear out the last item in the list since we are shrinking.
+      for (; i < bta_dm_cb.device_list.count - 1; i++) {
+        memcpy(&bta_dm_cb.device_list.peer_device[i],
+               &bta_dm_cb.device_list.peer_device[i + 1],
+               sizeof(bta_dm_cb.device_list.peer_device[i]));
+      }
+      if (bta_dm_cb.device_list.count > 0) {
+        int clear_index = bta_dm_cb.device_list.count - 1;
+        memset(&bta_dm_cb.device_list.peer_device[clear_index], 0,
+               sizeof(bta_dm_cb.device_list.peer_device[clear_index]));
+      }
       break;
-    case BTM_BL_DISCN_EVT:
-      p_msg->bd_addr = *p_data->discn.p_bda;
-      p_msg->transport = p_data->discn.transport;
-      p_msg->handle = p_data->discn.handle;
-      break;
-    case BTM_BL_UPDATE_EVT:
-      p_msg->busy_level = p_data->update.busy_level;
-      p_msg->busy_level_flags = p_data->update.busy_level_flags;
-      break;
-    case BTM_BL_ROLE_CHG_EVT:
-      p_msg->new_role = p_data->role_chg.new_role;
-      p_msg->hci_status = p_data->role_chg.hci_status;
-      p_msg->bd_addr = *p_data->role_chg.p_bda;
-      break;
-    case BTM_BL_COLLISION_EVT:
-      p_msg->bd_addr = *p_data->conn.p_bda;
-      break;
+    }
+    if (bta_dm_cb.device_list.count) bta_dm_cb.device_list.count--;
+    if ((transport == BT_TRANSPORT_LE) && (bta_dm_cb.device_list.le_count))
+      bta_dm_cb.device_list.le_count--;
+    conn.link_down.link_type = transport;
+
+    if (bta_dm_search_cb.wait_disc && bta_dm_search_cb.peer_bdaddr == bd_addr) {
+      bta_dm_search_cb.wait_disc = false;
+
+      if (bta_dm_search_cb.sdp_results) {
+        APPL_TRACE_EVENT(" timer stopped  ");
+        alarm_cancel(bta_dm_search_cb.search_timer);
+        bta_dm_discover_next_device();
+      }
+    }
+
+    if (bta_dm_cb.disabling) {
+      if (!BTM_GetNumAclLinks()) {
+        /*
+         * Start a timer to make sure that the profiles
+         * get the disconnect event.
+         */
+        alarm_set_on_mloop(bta_dm_cb.disable_timer,
+                           BTA_DM_DISABLE_CONN_DOWN_TIMER_MS,
+                           bta_dm_disable_conn_down_timer_cback, NULL);
+      }
+    }
+    if (conn.link_down.is_removed) {
+      BTM_SecDeleteDevice(bd_addr);
+      /* need to remove all pending background connection */
+      BTA_GATTC_CancelOpen(0, bd_addr, false);
+      /* remove all cached GATT information */
+      BTA_GATTC_Refresh(bd_addr);
+    }
+
+    conn.link_down.bd_addr = bd_addr;
+    conn.link_down.status = (uint8_t)btm_get_acl_disc_reason_code();
+    if (bta_dm_cb.p_sec_cback) {
+      bta_dm_cb.p_sec_cback(BTA_DM_LINK_DOWN_EVT, &conn);
+      if (issue_unpair_cb)
+        bta_dm_cb.p_sec_cback(BTA_DM_DEV_UNPAIRED_EVT, &conn);
+    }
   }
 
-  p_msg->hdr.event = BTA_DM_ACL_CHANGE_EVT;
-  bta_sys_sendmsg(p_msg);
+  bta_dm_adjust_roles(true);
+}
+
+/** Callback from btm when acl connection goes up or down */
+static void bta_dm_bl_change_cback(tBTM_BL_EVENT_DATA* p_data) {
+  switch (p_data->event) {
+    case BTM_BL_CONN_EVT:
+      /* connection up */
+      do_in_bta_thread(FROM_HERE,
+                       base::Bind(bta_dm_acl_change, true, *p_data->conn.p_bda,
+                                  p_data->conn.transport, p_data->conn.handle));
+      break;
+    case BTM_BL_DISCN_EVT:
+      /* connection down */
+      do_in_bta_thread(
+          FROM_HERE, base::Bind(bta_dm_acl_change, false, *p_data->discn.p_bda,
+                                p_data->discn.transport, p_data->discn.handle));
+      break;
+
+    case BTM_BL_UPDATE_EVT: {
+      /* busy level update */
+      do_in_bta_thread(FROM_HERE, base::Bind(send_busy_level_update,
+                                             p_data->update.busy_level,
+                                             p_data->update.busy_level_flags));
+      return;
+    }
+    case BTM_BL_ROLE_CHG_EVT: {
+      const auto& tmp = p_data->role_chg;
+      do_in_bta_thread(FROM_HERE, base::Bind(handle_role_change, *tmp.p_bda,
+                                             tmp.new_role, tmp.hci_status));
+      return;
+    }
+
+    case BTM_BL_COLLISION_EVT:
+      /* Collision report from Stack: Notify profiles */
+      do_in_bta_thread(
+          FROM_HERE, base::Bind(bta_sys_notify_collision, *p_data->conn.p_bda));
+      return;
+  }
 }
 
 /*******************************************************************************
@@ -2770,215 +2907,6 @@ static bool bta_dm_check_av(uint16_t event) {
     }
   }
   return switching;
-}
-
-/*******************************************************************************
- *
- * Function         bta_dm_acl_change
- *
- * Description      Process BTA_DM_ACL_CHANGE_EVT
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_dm_acl_change(tBTA_DM_MSG* p_data) {
-  uint8_t i;
-  uint8_t* p;
-  tBTA_DM_SEC conn;
-  bool is_new = p_data->acl_change.is_new;
-  const RawAddress& p_bda = p_data->acl_change.bd_addr;
-  bool need_policy_change = false;
-  bool issue_unpair_cb = false;
-
-  tBTA_DM_PEER_DEVICE* p_dev;
-  memset(&conn, 0, sizeof(tBTA_DM_SEC));
-
-  switch (p_data->acl_change.event) {
-    case BTM_BL_UPDATE_EVT: /* busy level update */
-      if (bta_dm_cb.p_sec_cback) {
-        conn.busy_level.level = p_data->acl_change.busy_level;
-        conn.busy_level.level_flags = p_data->acl_change.busy_level_flags;
-        bta_dm_cb.p_sec_cback(BTA_DM_BUSY_LEVEL_EVT, &conn);
-      }
-      return;
-
-    case BTM_BL_ROLE_CHG_EVT: /* role change event */
-      p_dev = bta_dm_find_peer_device(p_bda);
-      if (p_dev) {
-        APPL_TRACE_DEBUG(
-            "bta_dm_acl_change role chg info:x%x new_role:%d dev count:%d",
-            p_dev->info, p_data->acl_change.new_role,
-            bta_dm_cb.device_list.count);
-        if (p_dev->info & BTA_DM_DI_AV_ACTIVE) {
-          /* there's AV activity on this link */
-          if (p_data->acl_change.new_role == HCI_ROLE_SLAVE &&
-              bta_dm_cb.device_list.count > 1 &&
-              p_data->acl_change.hci_status == HCI_SUCCESS) {
-            /* more than one connections and the AV connection is role switched
-             * to slave
-             * switch it back to master and remove the switch policy */
-            BTM_SwitchRole(p_bda, BTM_ROLE_MASTER, NULL);
-            need_policy_change = true;
-          } else if (p_bta_dm_cfg->avoid_scatter &&
-                     (p_data->acl_change.new_role == HCI_ROLE_MASTER)) {
-            /* if the link updated to be master include AV activities, remove
-             * the switch policy */
-            need_policy_change = true;
-          }
-
-          if (need_policy_change) {
-            bta_dm_policy_cback(BTA_SYS_PLCY_CLR, 0,
-                                HCI_ENABLE_MASTER_SLAVE_SWITCH,
-                                p_dev->peer_bdaddr);
-          }
-        } else {
-          /* there's AV no activity on this link and role switch happened
-           * check if AV is active
-           * if so, make sure the AV link is master */
-          bta_dm_check_av(0);
-        }
-        bta_sys_notify_role_chg(p_data->acl_change.bd_addr,
-                                p_data->acl_change.new_role,
-                                p_data->acl_change.hci_status);
-        conn.role_chg.bd_addr = p_bda;
-        conn.role_chg.new_role = (uint8_t)p_data->acl_change.new_role;
-        if (bta_dm_cb.p_sec_cback)
-          bta_dm_cb.p_sec_cback(BTA_DM_ROLE_CHG_EVT, &conn);
-      }
-      return;
-  }
-
-  /* Collision report from Stack: Notify profiles */
-  if (p_data->acl_change.event == BTM_BL_COLLISION_EVT) {
-    bta_sys_notify_collision(p_bda);
-    return;
-  }
-
-  if (is_new) {
-    for (i = 0; i < bta_dm_cb.device_list.count; i++) {
-      if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr == p_bda &&
-          bta_dm_cb.device_list.peer_device[i].conn_handle ==
-              p_data->acl_change.handle)
-        break;
-    }
-
-    if (i == bta_dm_cb.device_list.count) {
-      if (bta_dm_cb.device_list.count < BTA_DM_NUM_PEER_DEVICE) {
-        bta_dm_cb.device_list.peer_device[bta_dm_cb.device_list.count]
-            .peer_bdaddr = p_bda;
-        bta_dm_cb.device_list.peer_device[bta_dm_cb.device_list.count]
-            .link_policy = bta_dm_cb.cur_policy;
-        bta_dm_cb.device_list.count++;
-        bta_dm_cb.device_list.peer_device[i].conn_handle =
-            p_data->acl_change.handle;
-        if (p_data->acl_change.transport == BT_TRANSPORT_LE)
-          bta_dm_cb.device_list.le_count++;
-      } else {
-        APPL_TRACE_ERROR("%s max active connection reached, no resources",
-                         __func__);
-        return;
-      }
-    }
-
-    bta_dm_cb.device_list.peer_device[i].conn_state = BTA_DM_CONNECTED;
-    bta_dm_cb.device_list.peer_device[i].pref_role = BTA_ANY_ROLE;
-    conn.link_up.bd_addr = p_bda;
-    bta_dm_cb.device_list.peer_device[i].info = BTA_DM_DI_NONE;
-    conn.link_up.link_type = p_data->acl_change.transport;
-    bta_dm_cb.device_list.peer_device[i].transport =
-        p_data->acl_change.transport;
-
-    if (((NULL != (p = BTM_ReadLocalFeatures())) &&
-         HCI_SNIFF_SUB_RATE_SUPPORTED(p)) &&
-        ((NULL != (p = BTM_ReadRemoteFeatures(p_bda))) &&
-         HCI_SNIFF_SUB_RATE_SUPPORTED(p))) {
-      /* both local and remote devices support SSR */
-      bta_dm_cb.device_list.peer_device[i].info = BTA_DM_DI_USE_SSR;
-    }
-    APPL_TRACE_WARNING("%s info: 0x%x", __func__,
-                       bta_dm_cb.device_list.peer_device[i].info);
-
-    if (bta_dm_cb.p_sec_cback) bta_dm_cb.p_sec_cback(BTA_DM_LINK_UP_EVT, &conn);
-  } else {
-    for (i = 0; i < bta_dm_cb.device_list.count; i++) {
-      if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr != p_bda ||
-          bta_dm_cb.device_list.peer_device[i].transport !=
-              p_data->acl_change.transport)
-        continue;
-
-      if (bta_dm_cb.device_list.peer_device[i].conn_state == BTA_DM_UNPAIRING) {
-        if (BTM_SecDeleteDevice(
-                bta_dm_cb.device_list.peer_device[i].peer_bdaddr))
-          issue_unpair_cb = true;
-
-        APPL_TRACE_DEBUG("%s: Unpairing: issue unpair CB = %d ", __func__,
-                         issue_unpair_cb);
-      }
-
-      conn.link_down.is_removed =
-          bta_dm_cb.device_list.peer_device[i].remove_dev_pending;
-
-      // Iterate to the one before the last when shrinking the list,
-      // otherwise we memcpy garbage data into the record.
-      // Then clear out the last item in the list since we are shrinking.
-      for (; i < bta_dm_cb.device_list.count - 1; i++) {
-        memcpy(&bta_dm_cb.device_list.peer_device[i],
-               &bta_dm_cb.device_list.peer_device[i + 1],
-               sizeof(bta_dm_cb.device_list.peer_device[i]));
-      }
-      if (bta_dm_cb.device_list.count > 0) {
-        int clear_index = bta_dm_cb.device_list.count - 1;
-        memset(&bta_dm_cb.device_list.peer_device[clear_index], 0,
-               sizeof(bta_dm_cb.device_list.peer_device[clear_index]));
-      }
-      break;
-    }
-    if (bta_dm_cb.device_list.count) bta_dm_cb.device_list.count--;
-    if ((p_data->acl_change.transport == BT_TRANSPORT_LE) &&
-        (bta_dm_cb.device_list.le_count))
-      bta_dm_cb.device_list.le_count--;
-    conn.link_down.link_type = p_data->acl_change.transport;
-
-    if (bta_dm_search_cb.wait_disc && bta_dm_search_cb.peer_bdaddr == p_bda) {
-      bta_dm_search_cb.wait_disc = false;
-
-      if (bta_dm_search_cb.sdp_results) {
-        APPL_TRACE_EVENT(" timer stopped  ");
-        alarm_cancel(bta_dm_search_cb.search_timer);
-        bta_dm_discover_next_device();
-      }
-    }
-
-    if (bta_dm_cb.disabling) {
-      if (!BTM_GetNumAclLinks()) {
-        /*
-         * Start a timer to make sure that the profiles
-         * get the disconnect event.
-         */
-        alarm_set_on_mloop(bta_dm_cb.disable_timer,
-                           BTA_DM_DISABLE_CONN_DOWN_TIMER_MS,
-                           bta_dm_disable_conn_down_timer_cback, NULL);
-      }
-    }
-    if (conn.link_down.is_removed) {
-      BTM_SecDeleteDevice(p_bda);
-      /* need to remove all pending background connection */
-      BTA_GATTC_CancelOpen(0, p_bda, false);
-      /* remove all cached GATT information */
-      BTA_GATTC_Refresh(p_bda);
-    }
-
-    conn.link_down.bd_addr = p_bda;
-    conn.link_down.status = (uint8_t)btm_get_acl_disc_reason_code();
-    if (bta_dm_cb.p_sec_cback) {
-      bta_dm_cb.p_sec_cback(BTA_DM_LINK_DOWN_EVT, &conn);
-      if (issue_unpair_cb)
-        bta_dm_cb.p_sec_cback(BTA_DM_DEV_UNPAIRED_EVT, &conn);
-    }
-  }
-
-  bta_dm_adjust_roles(true);
 }
 
 /*******************************************************************************
@@ -3631,10 +3559,6 @@ void bta_dm_eir_update_uuid(uint16_t uuid16, bool adding) {
 }
 #endif
 
-void bta_dm_enable_test_mode() { BTM_EnableTestMode(); }
-
-void bta_dm_disable_test_mode() { BTM_DeviceReset(NULL); }
-
 /*******************************************************************************
  *
  * Function         bta_dm_encrypt_cback
@@ -3967,12 +3891,10 @@ static void bta_dm_ble_id_key_cback(uint8_t key_type,
  * Parameters:
  *
  ******************************************************************************/
-void bta_dm_add_blekey(tBTA_DM_MSG* p_data) {
-  if (!BTM_SecAddBleKey(p_data->add_ble_key.bd_addr,
-                        (tBTM_LE_KEY_VALUE*)&p_data->add_ble_key.blekey,
-                        p_data->add_ble_key.key_type)) {
-    LOG(ERROR) << "BTA_DM: Error adding BLE Key for device "
-               << p_data->add_ble_key.bd_addr;
+void bta_dm_add_blekey(const RawAddress& bd_addr, tBTA_LE_KEY_VALUE blekey,
+                       tBTA_LE_KEY_TYPE key_type) {
+  if (!BTM_SecAddBleKey(bd_addr, (tBTM_LE_KEY_VALUE*)&blekey, key_type)) {
+    LOG(ERROR) << "BTA_DM: Error adding BLE Key for device " << bd_addr;
   }
 }
 

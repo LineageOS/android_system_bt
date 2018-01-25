@@ -2569,7 +2569,7 @@ void btm_ble_update_mode_operation(uint8_t link_role, const RawAddress* bd_addr,
 
   /* in case of disconnected, we must cancel bgconn and restart
      in order to add back device to white list in order to reconnect */
-  btm_ble_bgconn_cancel_if_disconnected(*bd_addr);
+  if (bd_addr) btm_ble_bgconn_cancel_if_disconnected(*bd_addr);
 
   /* when no connection is attempted, and controller is not rejecting last
      request

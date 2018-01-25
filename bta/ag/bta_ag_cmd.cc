@@ -958,7 +958,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
           ** Application will set it back to 1
           ** callheld indicator will be sent across to the peer. */
           if (val.str[0] == '2') {
-            for (i = 0, ag_scb = &bta_ag_cb.scb[0]; i < BTA_AG_NUM_SCB;
+            for (i = 0, ag_scb = &bta_ag_cb.scb[0]; i < BTA_AG_MAX_NUM_CLIENTS;
                  i++, ag_scb++) {
               if (ag_scb->in_use) {
                 if ((ag_scb->call_ind == BTA_AG_CALL_ACTIVE) &&
@@ -1099,7 +1099,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
       if (p_scb->features & BTA_AG_FEAT_BTRH) {
         /* If set command; send response and notify app */
         if (arg_type == BTA_AG_AT_SET) {
-          for (i = 0, ag_scb = &bta_ag_cb.scb[0]; i < BTA_AG_NUM_SCB;
+          for (i = 0, ag_scb = &bta_ag_cb.scb[0]; i < BTA_AG_MAX_NUM_CLIENTS;
                i++, ag_scb++) {
             if (ag_scb->in_use) {
               bta_ag_send_result(ag_scb, BTA_AG_BTRH_RES, nullptr, int_arg);
@@ -1243,6 +1243,12 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
       break;
     }
     case BTA_AG_LOCAL_EVT_BCC: {
+      if (!bta_ag_sco_is_active_device(p_scb->peer_addr)) {
+        LOG(WARNING) << __func__ << ": AT+BCC rejected as " << p_scb->peer_addr
+                     << " is not the active device";
+        bta_ag_send_error(p_scb, BTA_AG_ERR_OP_NOT_ALLOWED);
+        break;
+      }
       bta_ag_send_ok(p_scb);
       bta_ag_sco_open(p_scb, tBTA_AG_DATA::kEmpty);
       break;
@@ -1435,7 +1441,8 @@ void bta_ag_hfp_result(tBTA_AG_SCB* p_scb, const tBTA_AG_API_RESULT& result) {
 
         /* if sco already opened or no inband ring send ring now */
         if (bta_ag_sco_is_open(p_scb) || !bta_ag_inband_enabled(p_scb) ||
-            (p_scb->features & BTA_AG_FEAT_NOSCO)) {
+            (p_scb->features & BTA_AG_FEAT_NOSCO) ||
+            (result.data.audio_handle != bta_ag_scb_to_idx(p_scb))) {
           bta_ag_send_ring(p_scb, tBTA_AG_DATA::kEmpty);
         } else {
           /* else open sco, send ring after sco opened */

@@ -968,7 +968,9 @@ static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p,
       break;
 
     case HCI_BLE_CREATE_LL_CONN:
-      btm_ble_create_ll_conn_complete(*p);
+    case HCI_LE_EXTENDED_CREATE_CONNECTION:
+      // No command complete event for those commands according to spec
+      LOG(ERROR) << "No command complete expected, but received!";
       break;
 
     case HCI_BLE_TRANSMITTER_TEST:
@@ -1143,6 +1145,7 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
             break;
 
           case HCI_BLE_CREATE_LL_CONN:
+          case HCI_LE_EXTENDED_CREATE_CONNECTION:
             btm_ble_create_ll_conn_complete(status);
             break;
 
