@@ -20,6 +20,7 @@
 #define BLE_ADVERTISER_H
 
 #include <base/bind.h>
+#include <base/memory/weak_ptr.h>
 #include <vector>
 #include "btm_ble_api.h"
 
@@ -72,7 +73,7 @@ class BleAdvertisingManager {
   static void Initialize(BleAdvertiserHciInterface* interface);
   static void CleanUp();
   static bool IsInitialized();
-  static BleAdvertisingManager* Get();
+  static base::WeakPtr<BleAdvertisingManager> Get();
 
   /* Register an advertising instance, status will be returned in |cb|
    * callback, with assigned id, if operation succeeds. Instance is freed when
