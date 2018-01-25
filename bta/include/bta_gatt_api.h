@@ -378,7 +378,7 @@ struct tBTA_GATTC_CHARACTERISTIC;
 struct tBTA_GATTC_DESCRIPTOR;
 struct tBTA_GATTC_INCLUDED_SVC;
 
-typedef struct {
+struct tBTA_GATTC_SERVICE {
   bluetooth::Uuid uuid;
   bool is_primary;
   uint16_t handle;
@@ -386,7 +386,7 @@ typedef struct {
   uint16_t e_handle;
   std::vector<tBTA_GATTC_CHARACTERISTIC> characteristics;
   std::vector<tBTA_GATTC_INCLUDED_SVC> included_svc;
-} __attribute__((packed, aligned(alignof(bluetooth::Uuid)))) tBTA_GATTC_SERVICE;
+};
 
 struct tBTA_GATTC_CHARACTERISTIC {
   bluetooth::Uuid uuid;
@@ -395,19 +395,19 @@ struct tBTA_GATTC_CHARACTERISTIC {
   uint16_t value_handle;
   tGATT_CHAR_PROP properties;
   std::vector<tBTA_GATTC_DESCRIPTOR> descriptors;
-} __attribute__((packed, aligned(alignof(bluetooth::Uuid))));
+};
 
 struct tBTA_GATTC_DESCRIPTOR {
   bluetooth::Uuid uuid;
   uint16_t handle;
-} __attribute__((packed));
+};
 
 struct tBTA_GATTC_INCLUDED_SVC {
   bluetooth::Uuid uuid;
   uint16_t handle;
   tBTA_GATTC_SERVICE* owning_service; /* owning service*/
   tBTA_GATTC_SERVICE* included_service;
-} __attribute__((packed));
+};
 
 /*****************************************************************************
  *  External Function Declarations
