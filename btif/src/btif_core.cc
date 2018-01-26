@@ -46,6 +46,7 @@
 #include "bt_common.h"
 #include "bt_utils.h"
 #include "bta_api.h"
+#include "bta_closure_api.h"
 #include "bte.h"
 #include "btif_api.h"
 #include "btif_av.h"
@@ -469,7 +470,7 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status) {
 bt_status_t btif_disable_bluetooth(void) {
   LOG_INFO(LOG_TAG, "%s entered", __func__);
 
-  btm_ble_multi_adv_cleanup();
+  do_in_bta_thread(FROM_HERE, base::Bind(&btm_ble_multi_adv_cleanup));
   // TODO(jpawlowski): this should do whole BTA_VendorCleanup(), but it would
   // kill the stack now.
 
