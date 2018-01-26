@@ -5205,7 +5205,7 @@ const btrc_ctrl_interface_t* btif_rc_ctrl_get_interface(void) {
  *      Returns          void
  ******************************************************************************/
 static void initialize_transaction(int lbl) {
-  std::unique_lock<std::recursive_mutex>(device.lbllock);
+  std::unique_lock<std::recursive_mutex> lock(device.lbllock);
   if (lbl < MAX_TRANSACTIONS_PER_SESSION) {
     if (alarm_is_scheduled(device.transaction[lbl].txn_timer)) {
       clear_cmd_timeout(lbl);
