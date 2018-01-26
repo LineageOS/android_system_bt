@@ -755,15 +755,16 @@ const tAVDT_SCB_ST_TBL avdt_scb_st_tbl[] = {
  * Returns          Nothing.
  *
  ******************************************************************************/
-void avdt_scb_event(tAVDT_SCB* p_scb, uint8_t event, tAVDT_SCB_EVT* p_data) {
+void avdt_scb_event(AvdtpScb* p_scb, uint8_t event, tAVDT_SCB_EVT* p_data) {
   tAVDT_SCB_ST_TBL state_table;
   uint8_t action;
   int i;
 
 #if (AVDT_DEBUG == TRUE)
-  AVDT_TRACE_EVENT("%s: SCB hdl=%d event=%d/%s state=%s", __func__,
-                   avdt_scb_to_hdl(p_scb), event, avdt_scb_evt_str[event],
-                   avdt_scb_st_str[p_scb->state]);
+  AVDT_TRACE_EVENT(
+      "%s: SCB hdl=%d event=%d/%s state=%s p_avdt_scb=%p scb_index=%d",
+      __func__, avdt_scb_to_hdl(p_scb), event, avdt_scb_evt_str[event],
+      avdt_scb_st_str[p_scb->state], p_scb, p_scb->stream_config.scb_index);
 #endif
   /* set current event */
   p_scb->curr_evt = event;
@@ -780,7 +781,7 @@ void avdt_scb_event(tAVDT_SCB* p_scb, uint8_t event, tAVDT_SCB_EVT* p_data) {
   for (i = 0; i < AVDT_SCB_ACTIONS; i++) {
     action = state_table[event][i];
     if (action != AVDT_SCB_IGNORE) {
-      (*avdt_cb.p_scb_act[action])(p_scb, p_data);
+      (*avdtp_cb.p_scb_act[action])(p_scb, p_data);
     } else {
       break;
     }
@@ -798,8 +799,13 @@ void avdt_scb_event(tAVDT_SCB* p_scb, uint8_t event, tAVDT_SCB_EVT* p_data) {
  *
  ******************************************************************************/
 void avdt_scb_init(void) {
-  memset(avdt_cb.scb, 0, sizeof(tAVDT_SCB) * AVDT_NUM_SEPS);
-  avdt_cb.p_scb_act = avdt_scb_action;
+  for (size_t i = 0; i < AVDT_NUM_LINKS; i++) {
+    for (size_t j = 0; j < AVDT_NUM_SEPS; j++) {
+      avdtp_cb.ccb[i].scb[j].Reset(0);
+    }
+  }
+
+  avdtp_cb.p_scb_act = avdt_scb_action;
 }
 
 /*******************************************************************************
@@ -812,33 +818,34 @@ void avdt_scb_init(void) {
  * Returns          pointer to the scb, or NULL if none could be allocated.
  *
  ******************************************************************************/
-tAVDT_SCB* avdt_scb_alloc(tAVDT_CS* p_cs) {
-  tAVDT_SCB* p_scb = &avdt_cb.scb[0];
-  int i;
+AvdtpScb* avdt_scb_alloc(uint8_t peer_id,
+                         const AvdtpStreamConfig& avdtp_stream_config) {
+  CHECK(peer_id < AVDT_NUM_LINKS);
 
-  /* find available scb */
-  for (i = 0; i < AVDT_NUM_SEPS; i++, p_scb++) {
+  // Find available entry
+  AvdtpScb* p_scb = &avdtp_cb.ccb[peer_id].scb[0];
+  for (int i = 0; i < AVDT_NUM_SEPS; i++, p_scb++) {
     if (!p_scb->allocated) {
-      memset(p_scb, 0, sizeof(tAVDT_SCB));
-      p_scb->allocated = true;
-      p_scb->p_ccb = NULL;
-
-      memcpy(&p_scb->cs, p_cs, sizeof(tAVDT_CS));
-      p_scb->transport_channel_timer =
-          alarm_new("avdt_scb.transport_channel_timer");
-      AVDT_TRACE_DEBUG("%s: hdl=%d, psc_mask:0x%x", __func__, i + 1,
-                       p_cs->cfg.psc_mask);
-      break;
+      p_scb->Allocate(&avdtp_cb.ccb[peer_id], avdtp_stream_config);
+      AVDT_TRACE_DEBUG("%s: allocated (handle=%d, psc_mask:0x%x)", __func__,
+                       p_scb->ScbHandle(), avdtp_stream_config.cfg.psc_mask);
+      return p_scb;
     }
   }
 
-  if (i == AVDT_NUM_SEPS) {
-    /* out of ccbs */
-    p_scb = NULL;
-    AVDT_TRACE_WARNING("Out of scbs");
-  }
+  AVDT_TRACE_WARNING("%s: out of AvdtScb entries for peer_id %d", __func__,
+                     peer_id);
+  return nullptr;
+}
 
-  return p_scb;
+void AvdtpScb::Allocate(AvdtpCcb* p_avdtp_ccb,
+                        const AvdtpStreamConfig& avdtp_stream_config) {
+  uint8_t scb_handle = avdtp_cb.ComputeScbHandle(this);
+  Reset(scb_handle);
+  p_ccb = p_avdtp_ccb;
+  stream_config = avdtp_stream_config;
+  transport_channel_timer = alarm_new("avdtp_scb.transport_channel_timer");
+  allocated = true;
 }
 
 /*******************************************************************************
@@ -851,10 +858,9 @@ tAVDT_SCB* avdt_scb_alloc(tAVDT_CS* p_cs) {
  * Returns          void.
  *
  ******************************************************************************/
-void avdt_scb_dealloc(tAVDT_SCB* p_scb, UNUSED_ATTR tAVDT_SCB_EVT* p_data) {
+void avdt_scb_dealloc(AvdtpScb* p_scb, UNUSED_ATTR tAVDT_SCB_EVT* p_data) {
   AVDT_TRACE_DEBUG("%s: hdl=%d", __func__, avdt_scb_to_hdl(p_scb));
-  alarm_free(p_scb->transport_channel_timer);
-  memset(p_scb, 0, sizeof(tAVDT_SCB));
+  p_scb->Recycle();
 }
 
 /*******************************************************************************
@@ -867,9 +873,7 @@ void avdt_scb_dealloc(tAVDT_SCB* p_scb, UNUSED_ATTR tAVDT_SCB_EVT* p_data) {
  * Returns          Index of scb.
  *
  ******************************************************************************/
-uint8_t avdt_scb_to_hdl(tAVDT_SCB* p_scb) {
-  return (uint8_t)(p_scb - avdt_cb.scb + 1);
-}
+uint8_t avdt_scb_to_hdl(AvdtpScb* p_scb) { return p_scb->ScbHandle(); }
 
 /*******************************************************************************
  *
@@ -882,22 +886,26 @@ uint8_t avdt_scb_to_hdl(tAVDT_SCB* p_scb) {
  *                  is not allocated.
  *
  ******************************************************************************/
-tAVDT_SCB* avdt_scb_by_hdl(uint8_t hdl) {
-  tAVDT_SCB* p_scb;
-
-  /* verify index */
-  if ((hdl > 0) && (hdl <= AVDT_NUM_SEPS)) {
-    p_scb = &avdt_cb.scb[hdl - 1];
-
-    /* verify scb is allocated */
-    if (!p_scb->allocated) {
-      p_scb = NULL;
-      AVDT_TRACE_WARNING("scb hdl %d not allocated", hdl);
-    }
-  } else {
-    p_scb = NULL;
-    AVDT_TRACE_WARNING("scb hdl %d out of range", hdl);
+AvdtpScb* avdt_scb_by_hdl(uint8_t hdl) {
+  // Verify the index
+  if ((hdl < 1) || (hdl > AVDT_NUM_LINKS * AVDT_NUM_SEPS)) {
+    AVDT_TRACE_WARNING("%s: SCB handle %d out of range", __func__, hdl);
+    return nullptr;
   }
+
+  uint8_t index = hdl - 1;
+  size_t i = index / AVDT_NUM_LINKS;
+  size_t j = index % AVDT_NUM_SEPS;
+
+  AvdtpScb* p_scb = &avdtp_cb.ccb[i].scb[j];
+  // Verify the whether the scb is allocated
+  if (!p_scb->allocated) {
+    AVDT_TRACE_WARNING("%s: SCB handle %d not allocated", __func__, hdl);
+    return nullptr;
+  }
+
+  AVDT_TRACE_DEBUG("%s: SCB for handle %d found: p_scb=%p scb_index=%d",
+                   __func__, hdl, p_scb, p_scb->stream_config.scb_index);
   return p_scb;
 }
 
@@ -911,10 +919,10 @@ tAVDT_SCB* avdt_scb_by_hdl(uint8_t hdl) {
  * Returns          SEID that failed, or 0 if success.
  *
  ******************************************************************************/
-uint8_t avdt_scb_verify(tAVDT_CCB* p_ccb, uint8_t state, uint8_t* p_seid,
+uint8_t avdt_scb_verify(AvdtpCcb* p_ccb, uint8_t state, uint8_t* p_seid,
                         uint16_t num_seid, uint8_t* p_err_code) {
   int i;
-  tAVDT_SCB* p_scb;
+  AvdtpScb* p_scb;
   uint8_t nsc_mask;
   uint8_t ret = 0;
 
@@ -922,7 +930,9 @@ uint8_t avdt_scb_verify(tAVDT_CCB* p_ccb, uint8_t state, uint8_t* p_seid,
   /* set nonsupported command mask */
   /* translate public state into private state */
   nsc_mask = 0;
-  if (state == AVDT_VERIFY_SUSPEND) nsc_mask = AVDT_NSC_SUSPEND;
+  if (state == AVDT_VERIFY_SUSPEND) {
+    nsc_mask = AvdtpStreamConfig::AVDT_NSC_SUSPEND;
+  }
 
   /* verify every scb */
   for (i = 0, *p_err_code = 0;
@@ -932,7 +942,7 @@ uint8_t avdt_scb_verify(tAVDT_CCB* p_ccb, uint8_t state, uint8_t* p_seid,
       *p_err_code = AVDT_ERR_BAD_STATE;
     else if (p_scb->p_ccb != p_ccb)
       *p_err_code = AVDT_ERR_BAD_STATE;
-    else if (p_scb->cs.nsc_mask & nsc_mask)
+    else if (p_scb->stream_config.nsc_mask & nsc_mask)
       *p_err_code = AVDT_ERR_NSC;
 
     switch (state) {
@@ -971,7 +981,7 @@ uint8_t avdt_scb_verify(tAVDT_CCB* p_ccb, uint8_t state, uint8_t* p_seid,
  ******************************************************************************/
 void avdt_scb_peer_seid_list(tAVDT_MULTI* p_multi) {
   int i;
-  tAVDT_SCB* p_scb;
+  AvdtpScb* p_scb;
 
   for (i = 0; i < p_multi->num_seps; i++) {
     p_scb = avdt_scb_by_hdl(p_multi->seid_list[i]);

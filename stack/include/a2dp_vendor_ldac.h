@@ -146,8 +146,8 @@ btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexLdac(
 // Gets the A2DP LDAC Source codec name.
 const char* A2DP_VendorCodecIndexStrLdac(void);
 
-// Initializes A2DP LDAC Source codec information into |tAVDT_CFG|
+// Initializes A2DP LDAC Source codec information into |AvdtpSepConfig|
 // configuration entry pointed by |p_cfg|.
-bool A2DP_VendorInitCodecConfigLdac(tAVDT_CFG* p_cfg);
+bool A2DP_VendorInitCodecConfigLdac(AvdtpSepConfig* p_cfg);
 
 #endif  // A2DP_VENDOR_LDAC_H

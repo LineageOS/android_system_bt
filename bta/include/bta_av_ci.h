@@ -35,7 +35,7 @@
  *
  * Description      This function sends an event to the AV indicating that
  *                  the phone has audio stream data ready to send and AV
- *                  should call bta_av_co_audio_src_data_path().
+ *                  should call bta_av_co_audio_source_data_path().
  *
  * Returns          void
  *
@@ -55,7 +55,7 @@ extern void bta_av_ci_src_data_ready(tBTA_AV_CHNL chnl);
  * Returns          void
  *
  ******************************************************************************/
-extern void bta_av_ci_setconfig(tBTA_AV_HNDL hndl, uint8_t err_code,
+extern void bta_av_ci_setconfig(tBTA_AV_HNDL bta_av_handle, uint8_t err_code,
                                 uint8_t category, uint8_t num_seid,
                                 uint8_t* p_seid, bool recfg_needed,
                                 uint8_t avdt_handle);

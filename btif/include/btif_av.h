@@ -16,177 +16,167 @@
  *
  ******************************************************************************/
 
-/*******************************************************************************
- *
- *  Filename:      btif_av.h
- *
- *  Description:   Main API header file for all BTIF AV functions accessed
- *                 from internal stack.
- *
- ******************************************************************************/
+/**
+ * BTIF AV API functions accessed internally.
+ */
 
 #ifndef BTIF_AV_H
 #define BTIF_AV_H
 
 #include "bta_av_api.h"
 #include "btif_common.h"
-#include "btif_sm.h"
 
-/*******************************************************************************
- *  Type definitions for callback functions
- ******************************************************************************/
+/**
+ * When the local device is A2DP source, get the address of the active peer.
+ */
+RawAddress btif_av_source_active_peer(void);
 
-typedef enum {
-  /* Reuse BTA_AV_XXX_EVT - No need to redefine them here */
-  BTIF_AV_CONNECT_REQ_EVT = BTA_AV_MAX_EVT,
-  BTIF_AV_DISCONNECT_REQ_EVT,
-  BTIF_AV_START_STREAM_REQ_EVT,
-  BTIF_AV_STOP_STREAM_REQ_EVT,
-  BTIF_AV_SUSPEND_STREAM_REQ_EVT,
-  BTIF_AV_SOURCE_CONFIG_REQ_EVT,
-  BTIF_AV_SOURCE_CONFIG_UPDATED_EVT,
-  BTIF_AV_SINK_CONFIG_REQ_EVT,
-  BTIF_AV_OFFLOAD_START_REQ_EVT,
-  BTIF_AV_CLEANUP_REQ_EVT,
-} btif_av_sm_event_t;
+/**
+ * When the local device is A2DP sink, get the address of the active peer.
+ */
+RawAddress btif_av_sink_active_peer(void);
 
-/*******************************************************************************
- *  BTIF AV API
- ******************************************************************************/
-
-/*******************************************************************************
- *
- * Function         btif_av_get_addr
- *
- * Description      Fetches current AV BD address
- *
- * Returns          BD address
- *
- ******************************************************************************/
-
-RawAddress btif_av_get_addr(void);
-
-/*******************************************************************************
- * Function         btif_av_is_sink_enabled
- *
- * Description      Checks if A2DP Sink is enabled or not
- *
- * Returns          true if A2DP Sink is enabled, false otherwise
- *
- ******************************************************************************/
-
+/**
+ * Check whether A2DP Sink is enabled.
+ */
 bool btif_av_is_sink_enabled(void);
 
-/*******************************************************************************
- *
- * Function         btif_av_stream_ready
- *
- * Description      Checks whether AV is ready for starting a stream
- *
- * Returns          None
- *
- ******************************************************************************/
+/**
+ * Start streaming.
+ */
+void btif_av_stream_start(void);
 
+/**
+ * Stop streaming.
+ */
+void btif_av_stream_stop(void);
+
+/**
+ * Suspend streaming.
+ */
+void btif_av_stream_suspend(void);
+
+/**
+ * Start offload streaming.
+ */
+void btif_av_stream_start_offload(void);
+
+/**
+ * Check whether ready to start the A2DP stream.
+ */
 bool btif_av_stream_ready(void);
 
-/*******************************************************************************
- *
- * Function         btif_av_stream_started_ready
- *
- * Description      Checks whether AV ready for media start in streaming state
- *
- * Returns          None
- *
- ******************************************************************************/
-
+/**
+ * Check whether the A2DP stream is in started state and ready
+ * for media start.
+ */
 bool btif_av_stream_started_ready(void);
 
-/*******************************************************************************
- *
- * Function         btif_dispatch_sm_event
- *
- * Description      Send event to AV statemachine
- *
- * Returns          None
- *
- ******************************************************************************/
-
-/* used to pass events to AV statemachine from other tasks */
-void btif_dispatch_sm_event(btif_av_sm_event_t event, void* p_data, int len);
-
-/*******************************************************************************
- *
- * Function         btif_av_init
- *
- * Description      Initializes btif AV if not already done
- *
- * Returns          bt_status_t
- *
- ******************************************************************************/
-
-bt_status_t btif_av_init(int service_id);
-
-/*******************************************************************************
- *
- * Function         btif_av_is_connected
- *
- * Description      Checks if av has a connected sink
- *
- * Returns          bool
- *
- ******************************************************************************/
-
+/**
+ * Check whether there is a connected peer (either Source or Sink)
+ */
 bool btif_av_is_connected(void);
 
-/*******************************************************************************
+/**
+ * Get the Stream Endpoint Type of the Active peer.
  *
- * Function         btif_av_get_peer_sep
- *
- * Description      Get the stream endpoint type.
- *
- * Returns          The stream endpoint type: either AVDT_TSEP_SRC or
- *                  AVDT_TSEP_SNK.
- *
- ******************************************************************************/
-
+ * @return the stream endpoint type: either AVDT_TSEP_SRC or AVDT_TSEP_SNK
+ */
 uint8_t btif_av_get_peer_sep(void);
 
-/*******************************************************************************
- *
- * Function         btif_av_is_peer_edr
- *
- * Description      Check if the connected a2dp device supports
- *                  EDR or not. Only when connected this function
- *                  will accurately provide a true capability of
- *                  remote peer. If not connected it will always be false.
- *
- * Returns          true if remote device is capable of EDR
- *
- ******************************************************************************/
-
-bool btif_av_is_peer_edr(void);
-
-/******************************************************************************
- *
- * Function         btif_av_clear_remote_suspend_flag
- *
- * Description      Clears remote suspended flag
- *
- * Returns          Void
- ******************************************************************************/
+/**
+ * Clear the remote suspended flag for the active peer.
+ */
 void btif_av_clear_remote_suspend_flag(void);
 
-/*******************************************************************************
+/**
+ * Process AVRCP Open event.
  *
- * Function         btif_av_peer_supports_3mbps
+ * @param peer_address the peer address
+ */
+void btif_av_avrcp_event_open(const RawAddress& peer_address);
+
+/**
+ * Process AVRCP Close event.
  *
- * Description      Check if the connected A2DP device supports
- *                  3 Mbps EDR. This function will only work while connected.
- *                  If not connected it will always return false.
+ * @param peer_address the peer address
+ */
+void btif_av_avrcp_event_close(const RawAddress& peer_address);
+
+/**
+ * Process AVRCP Remote Play event.
  *
- * Returns          true if remote device is EDR and supports 3 Mbps
+ * @param peer_address the peer address
+ */
+void btif_av_avrcp_event_remote_play(const RawAddress& peer_address);
+
+/**
+ * Check whether the connected A2DP peer supports EDR.
  *
- ******************************************************************************/
-bool btif_av_peer_supports_3mbps(void);
+ * The value can be provided only if the remote peer is connected.
+ * Otherwise, the answer will be always false.
+ *
+ * @param peer_address the peer address
+ * @return true if the remote peer is capable of EDR
+ */
+bool btif_av_is_peer_edr(const RawAddress& peer_address);
+
+/**
+ * Check whether the connected A2DP peer supports 3 Mbps EDR.
+ *
+ * The value can be provided only if the remote peer is connected.
+ * Otherwise, the answer will be always false.
+ *
+ * @param peer_address the peer address
+ * @return true if the remote peer is capable of EDR and supports 3 Mbps
+ */
+bool btif_av_peer_supports_3mbps(const RawAddress& peer_address);
+
+/**
+ * Report A2DP Source Codec State for a peer.
+ *
+ * @param peer_address the address of the peer to report
+ * @param codec_config the codec config to report
+ * @param codecs_local_capabilities the codecs local capabilities to report
+ * @param codecs_selectable_capabilities the codecs selectable capabilities
+ * to report
+ */
+void btif_av_report_source_codec_state(
+    const RawAddress& peer_address,
+    const btav_a2dp_codec_config_t& codec_config,
+    const std::vector<btav_a2dp_codec_config_t>& codecs_local_capabilities,
+    const std::vector<btav_a2dp_codec_config_t>&
+        codecs_selectable_capabilities);
+
+/**
+ * Initialize / shut down the A2DP Source service.
+ *
+ * @param enable true to enable the A2DP Source service, false to disable it
+ * @return BT_STATUS_SUCCESS on success, BT_STATUS_FAIL otherwise
+ */
+bt_status_t btif_av_source_execute_service(bool enable);
+
+/**
+ * Initialize / shut down the A2DP Sink service.
+ *
+ * @param enable true to enable the A2DP Sink service, false to disable it
+ * @return BT_STATUS_SUCCESS on success, BT_STATUS_FAIL otherwise
+ */
+bt_status_t btif_av_sink_execute_service(bool enable);
+
+/**
+ * Peer ACL disconnected.
+ *
+ * @param peer_address the disconnected peer address
+ */
+void btif_av_acl_disconnected(const RawAddress& peer_address);
+
+/**
+ * Dump debug-related information for the BTIF AV module.
+ *
+ * @param fd the file descriptor to use for writing the ASCII formatted
+ * information
+ */
+void btif_debug_av_dump(int fd);
 
 #endif /* BTIF_AV_H */

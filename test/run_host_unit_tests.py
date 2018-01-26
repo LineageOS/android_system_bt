@@ -22,6 +22,7 @@ import argparse
 # Must have 'host_supported: true'
 HOST_TESTS = [
   'bluetoothtbd_test',
+  'net_test_btif_state_machine',
   'net_test_btcore',
   'net_test_types',
 ]

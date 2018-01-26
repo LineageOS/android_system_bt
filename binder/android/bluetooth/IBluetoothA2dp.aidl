@@ -40,10 +40,11 @@ interface IBluetoothA2dp {
     oneway void adjustAvrcpAbsoluteVolume(int direction);
     oneway void setAvrcpAbsoluteVolume(int volume);
     boolean isA2dpPlaying(in BluetoothDevice device);
-    BluetoothCodecStatus getCodecStatus();
-    oneway void setCodecConfigPreference(in BluetoothCodecConfig codecConfig);
-    oneway void enableOptionalCodecs();
-    oneway void disableOptionalCodecs();
+    BluetoothCodecStatus getCodecStatus(in BluetoothDevice device);
+    oneway void setCodecConfigPreference(in BluetoothDevice device,
+                in BluetoothCodecConfig codecConfig);
+    oneway void enableOptionalCodecs(in BluetoothDevice device);
+    oneway void disableOptionalCodecs(in BluetoothDevice device);
     int supportsOptionalCodecs(in BluetoothDevice device);
     int getOptionalCodecsEnabled(in BluetoothDevice device);
     oneway void setOptionalCodecsEnabled(in BluetoothDevice device, int value);

@@ -139,8 +139,8 @@ btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexAptx(
 // Gets the A2DP aptX Source codec name.
 const char* A2DP_VendorCodecIndexStrAptx(void);
 
-// Initializes A2DP aptX Source codec information into |tAVDT_CFG|
+// Initializes A2DP aptX Source codec information into |AvdtpSepConfig|
 // configuration entry pointed by |p_cfg|.
-bool A2DP_VendorInitCodecConfigAptx(tAVDT_CFG* p_cfg);
+bool A2DP_VendorInitCodecConfigAptx(AvdtpSepConfig* p_cfg);
 
 #endif  // A2DP_VENDOR_APTX_H

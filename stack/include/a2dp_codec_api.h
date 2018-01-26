@@ -658,11 +658,12 @@ btav_a2dp_codec_index_t A2DP_SourceCodecIndex(const uint8_t* p_codec_info);
 // Gets the A2DP codec name for a given |codec_index|.
 const char* A2DP_CodecIndexStr(btav_a2dp_codec_index_t codec_index);
 
-// Initializes A2DP codec-specific information into |tAVDT_CFG| configuration
-// entry pointed by |p_cfg|. The selected codec is defined by |codec_index|.
+// Initializes A2DP codec-specific information into |AvdtpSepConfig|
+// configuration entry pointed by |p_cfg|. The selected codec is defined
+// by |codec_index|.
 // Returns true on success, otherwise false.
 bool A2DP_InitCodecConfig(btav_a2dp_codec_index_t codec_index,
-                          tAVDT_CFG* p_cfg);
+                          AvdtpSepConfig* p_cfg);
 
 // Decodes and displays A2DP codec info when using |LOG_DEBUG|.
 // |p_codec_info| is a pointer to the codec_info to decode and display.
