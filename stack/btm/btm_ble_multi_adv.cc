@@ -154,6 +154,9 @@ struct CreatorParams {
 
 using c_type = std::unique_ptr<CreatorParams>;
 
+BleAdvertisingManager* instance;
+base::WeakPtr<BleAdvertisingManagerImpl> instance_weakptr;
+
 class BleAdvertisingManagerImpl
     : public BleAdvertisingManager,
       public BleAdvertiserHciInterface::AdvertisingEventObserver {
@@ -233,9 +236,8 @@ class BleAdvertisingManagerImpl
           /* Connectable advertising set must be disabled when updating RPA */
           bool restart = p_inst->IsEnabled() && p_inst->IsConnectable();
 
-          auto hci_interface =
-              ((BleAdvertisingManagerImpl*)BleAdvertisingManager::Get())
-                  ->GetHciInterface();
+          if (!instance_weakptr.get()) return;
+          auto hci_interface = instance_weakptr.get()->GetHciInterface();
 
           if (restart) {
             p_inst->enable_status = false;
@@ -1002,6 +1004,10 @@ class BleAdvertisingManagerImpl
     }
   }
 
+  base::WeakPtr<BleAdvertisingManagerImpl> GetWeakPtr() {
+    return weak_factory_.GetWeakPtr();
+  }
+
  private:
   BleAdvertiserHciInterface* GetHciInterface() { return hci_interface; }
 
@@ -1015,23 +1021,22 @@ class BleAdvertisingManagerImpl
   base::WeakPtrFactory<BleAdvertisingManagerImpl> weak_factory_;
 };
 
-BleAdvertisingManager* instance;
-
 void btm_ble_adv_raddr_timer_timeout(void* data) {
-  ((BleAdvertisingManagerImpl*)BleAdvertisingManager::Get())
-      ->ConfigureRpa((AdvertisingInstance*)data, base::Bind(DoNothing));
+  BleAdvertisingManagerImpl* ptr = instance_weakptr.get();
+  if (ptr) ptr->ConfigureRpa((AdvertisingInstance*)data, base::Bind(DoNothing));
 }
 }  // namespace
 
 void BleAdvertisingManager::Initialize(BleAdvertiserHciInterface* interface) {
   instance = new BleAdvertisingManagerImpl(interface);
+  instance_weakptr = ((BleAdvertisingManagerImpl*)instance)->GetWeakPtr();
 }
 
 bool BleAdvertisingManager::IsInitialized() { return instance; }
 
-BleAdvertisingManager* BleAdvertisingManager::Get() {
+base::WeakPtr<BleAdvertisingManager> BleAdvertisingManager::Get() {
   CHECK(instance);
-  return instance;
+  return instance_weakptr;
 };
 
 void BleAdvertisingManager::CleanUp() {
@@ -1046,11 +1051,11 @@ void btm_ble_adv_init() {
   BleAdvertiserHciInterface::Initialize();
   BleAdvertisingManager::Initialize(BleAdvertiserHciInterface::Get());
   BleAdvertiserHciInterface::Get()->SetAdvertisingEventObserver(
-      (BleAdvertisingManagerImpl*)BleAdvertisingManager::Get());
+      (BleAdvertisingManagerImpl*)BleAdvertisingManager::Get().get());
 
   if (BleAdvertiserHciInterface::Get()->QuirkAdvertiserZeroHandle()) {
     // If handle 0 can't be used, register advertiser for it, but never use it.
-    BleAdvertisingManager::Get()->RegisterAdvertiser(Bind(DoNothing2));
+    BleAdvertisingManager::Get().get()->RegisterAdvertiser(Bind(DoNothing2));
   }
 }
 
@@ -1077,7 +1082,7 @@ void test_timeout_cb(uint8_t status) { timeout_triggered = true; }
 // verify that if duration passed, or is about to pass, recomputation will shut
 // down the advertiser completly
 void testRecomputeTimeout1() {
-  auto manager = (BleAdvertisingManagerImpl*)BleAdvertisingManager::Get();
+  auto manager = (BleAdvertisingManagerImpl*)BleAdvertisingManager::Get().get();
 
   TimeTicks start = TimeTicks::Now();
   TimeTicks end = start + TimeDelta::FromMilliseconds(111);
@@ -1097,7 +1102,7 @@ void testRecomputeTimeout1() {
 // verify that duration and maxExtAdvEvents are properly adjusted when
 // recomputing.
 void testRecomputeTimeout2() {
-  auto manager = (BleAdvertisingManagerImpl*)BleAdvertisingManager::Get();
+  auto manager = (BleAdvertisingManagerImpl*)BleAdvertisingManager::Get().get();
 
   TimeTicks start = TimeTicks::Now();
   TimeTicks end = start + TimeDelta::FromMilliseconds(250);
@@ -1120,7 +1125,7 @@ void testRecomputeTimeout2() {
 // verify that if maxExtAdvEvents were sent, or are close to end, recomputation
 // wil shut down the advertiser completly
 void testRecomputeTimeout3() {
-  auto manager = (BleAdvertisingManagerImpl*)BleAdvertisingManager::Get();
+  auto manager = (BleAdvertisingManagerImpl*)BleAdvertisingManager::Get().get();
 
   TimeTicks start = TimeTicks::Now();
   TimeTicks end = start + TimeDelta::FromMilliseconds(495);
