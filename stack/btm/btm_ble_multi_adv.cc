@@ -103,7 +103,11 @@ struct AdvertisingInstance {
 
   ~AdvertisingInstance() {
     alarm_free(adv_raddr_timer);
-    if (timeout_timer) alarm_free(timeout_timer);
+    adv_raddr_timer = nullptr;
+    if (timeout_timer) {
+      alarm_free(timeout_timer);
+      timeout_timer = nullptr;
+    }
   }
 };
 
@@ -1008,6 +1012,18 @@ class BleAdvertisingManagerImpl
     return weak_factory_.GetWeakPtr();
   }
 
+  void CancelAdvAlarms() {
+    AdvertisingInstance* p_inst = &adv_inst[0];
+    for (uint8_t i = 0; i < inst_count; i++, p_inst++) {
+      if (p_inst->timeout_timer) {
+        alarm_cancel(p_inst->timeout_timer);
+      }
+      if (p_inst->adv_raddr_timer) {
+        alarm_cancel(p_inst->adv_raddr_timer);
+      }
+    }
+  }
+
  private:
   BleAdvertiserHciInterface* GetHciInterface() { return hci_interface; }
 
@@ -1040,6 +1056,8 @@ base::WeakPtr<BleAdvertisingManager> BleAdvertisingManager::Get() {
 };
 
 void BleAdvertisingManager::CleanUp() {
+  if (instance_weakptr.get()) instance_weakptr.get()->CancelAdvAlarms();
+
   delete instance;
   instance = nullptr;
 };
