@@ -54,17 +54,19 @@ static void hidd_l2cif_disconnect_cfm(uint16_t cid, uint16_t result);
 static void hidd_l2cif_data_ind(uint16_t cid, BT_HDR* p_msg);
 static void hidd_l2cif_cong_ind(uint16_t cid, bool congested);
 
-static const tL2CAP_APPL_INFO dev_reg_info = {hidd_l2cif_connect_ind,
-                                              hidd_l2cif_connect_cfm,
-                                              NULL,
-                                              hidd_l2cif_config_ind,
-                                              hidd_l2cif_config_cfm,
-                                              hidd_l2cif_disconnect_ind,
-                                              hidd_l2cif_disconnect_cfm,
-                                              NULL,
-                                              hidd_l2cif_data_ind,
-                                              hidd_l2cif_cong_ind,
-                                              NULL};
+static const tL2CAP_APPL_INFO dev_reg_info = {
+    hidd_l2cif_connect_ind,
+    hidd_l2cif_connect_cfm,
+    NULL,
+    hidd_l2cif_config_ind,
+    hidd_l2cif_config_cfm,
+    hidd_l2cif_disconnect_ind,
+    hidd_l2cif_disconnect_cfm,
+    NULL,
+    hidd_l2cif_data_ind,
+    hidd_l2cif_cong_ind,
+    NULL,
+    NULL /* tL2CA_CREDITS_RECEIVED_CB */};
 
 /*******************************************************************************
  *
