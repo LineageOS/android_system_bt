@@ -72,8 +72,8 @@ static const tL2CAP_APPL_INFO hst_reg_info = {
     NULL,
     hidh_l2cif_data_ind,
     hidh_l2cif_cong_ind,
-    NULL /* tL2CA_TX_COMPLETE_CB */
-};
+    NULL, /* tL2CA_TX_COMPLETE_CB */
+    NULL /* tL2CA_CREDITS_RECEIVED_CB */};
 
 /*******************************************************************************
  *

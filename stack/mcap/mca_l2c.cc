@@ -33,17 +33,19 @@
 #include "osi/include/osi.h"
 
 /* L2CAP callback function structure */
-const tL2CAP_APPL_INFO mca_l2c_int_appl = {NULL,
-                                           mca_l2c_connect_cfm_cback,
-                                           NULL,
-                                           mca_l2c_config_ind_cback,
-                                           mca_l2c_config_cfm_cback,
-                                           mca_l2c_disconnect_ind_cback,
-                                           mca_l2c_disconnect_cfm_cback,
-                                           NULL,
-                                           mca_l2c_data_ind_cback,
-                                           mca_l2c_congestion_ind_cback,
-                                           NULL};
+const tL2CAP_APPL_INFO mca_l2c_int_appl = {
+    NULL,
+    mca_l2c_connect_cfm_cback,
+    NULL,
+    mca_l2c_config_ind_cback,
+    mca_l2c_config_cfm_cback,
+    mca_l2c_disconnect_ind_cback,
+    mca_l2c_disconnect_cfm_cback,
+    NULL,
+    mca_l2c_data_ind_cback,
+    mca_l2c_congestion_ind_cback,
+    NULL,
+    NULL /* tL2CA_CREDITS_RECEIVED_CB */};
 
 /* Control channel eL2CAP default options */
 const tL2CAP_FCR_OPTS mca_l2c_fcr_opts_def = {
