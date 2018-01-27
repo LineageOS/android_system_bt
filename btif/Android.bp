@@ -175,5 +175,10 @@ cc_test {
         "libbluetooth-types",
         "libosi",
     ],
+    target: {
+        darwin: {
+            enabled: false,
+        },
+    },
     cflags: ["-DBUILDCFG"],
 }
