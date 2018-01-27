@@ -952,6 +952,10 @@ static void bta_av_sco_chg_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
  *
  ******************************************************************************/
 bool bta_av_switch_if_needed(tBTA_AV_SCB* p_scb) {
+  // TODO: A workaround for devices that are connected first, become
+  // Master, and block follow-up role changes - b/72122792 .
+  return false;
+#if 0
   uint8_t role;
   bool needed = false;
   tBTA_AV_SCB* p_scbi;
@@ -987,6 +991,7 @@ bool bta_av_switch_if_needed(tBTA_AV_SCB* p_scb) {
     }
   }
   return needed;
+#endif
 }
 
 /*******************************************************************************
