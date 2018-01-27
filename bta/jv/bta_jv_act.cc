@@ -849,7 +849,8 @@ void bta_jv_delete_record(uint32_t handle) {
  * Returns      void
  *
  ******************************************************************************/
-static void bta_jv_l2cap_client_cback(uint16_t gap_handle, uint16_t event) {
+static void bta_jv_l2cap_client_cback(uint16_t gap_handle, uint16_t event,
+                                      tGAP_CB_DATA* data) {
   tBTA_JV_L2C_CB* p_cb = &bta_jv_cb.l2c_cb[gap_handle];
   tBTA_JV evt_data;
 
@@ -997,7 +998,8 @@ void bta_jv_l2cap_close(uint32_t handle, tBTA_JV_L2C_CB* p_cb) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_jv_l2cap_server_cback(uint16_t gap_handle, uint16_t event) {
+static void bta_jv_l2cap_server_cback(uint16_t gap_handle, uint16_t event,
+                                      tGAP_CB_DATA* data) {
   tBTA_JV_L2C_CB* p_cb = &bta_jv_cb.l2c_cb[gap_handle];
   tBTA_JV evt_data;
   tBTA_JV_L2CAP_CBACK* p_cback;
