@@ -73,13 +73,14 @@ void bta_ar_init(void) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_ar_avdt_cback(uint8_t handle, const RawAddress* bd_addr,
-                              uint8_t event, tAVDT_CTRL* p_data) {
+static void bta_ar_avdt_cback(uint8_t handle, const RawAddress& bd_addr,
+                              uint8_t event, tAVDT_CTRL* p_data,
+                              uint8_t scb_index) {
   /* route the AVDT registration callback to av or avk */
   if (bta_ar_cb.p_av_conn_cback)
-    (*bta_ar_cb.p_av_conn_cback)(handle, bd_addr, event, p_data);
+    (*bta_ar_cb.p_av_conn_cback)(handle, bd_addr, event, p_data, scb_index);
   if (bta_ar_cb.p_avk_conn_cback)
-    (*bta_ar_cb.p_avk_conn_cback)(handle, bd_addr, event, p_data);
+    (*bta_ar_cb.p_avk_conn_cback)(handle, bd_addr, event, p_data, scb_index);
 }
 
 /*******************************************************************************
@@ -91,7 +92,7 @@ static void bta_ar_avdt_cback(uint8_t handle, const RawAddress* bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-void bta_ar_reg_avdt(tAVDT_REG* p_reg, tAVDT_CTRL_CBACK* p_cback,
+void bta_ar_reg_avdt(AvdtpRcb* p_reg, tAVDT_CTRL_CBACK* p_cback,
                      tBTA_SYS_ID sys_id) {
   uint8_t mask = 0;
 
@@ -153,17 +154,18 @@ void bta_ar_dereg_avdt(tBTA_SYS_ID sys_id) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_ar_avdt_conn(tBTA_SYS_ID sys_id, const RawAddress& bd_addr) {
+void bta_ar_avdt_conn(tBTA_SYS_ID sys_id, const RawAddress& bd_addr,
+                      uint8_t scb_index) {
   uint8_t event = BTA_AR_AVDT_CONN_EVT;
   tAVDT_CTRL data;
 
   if (sys_id == BTA_ID_AV) {
     if (bta_ar_cb.p_avk_conn_cback) {
-      (*bta_ar_cb.p_avk_conn_cback)(0, &bd_addr, event, &data);
+      (*bta_ar_cb.p_avk_conn_cback)(0, bd_addr, event, &data, scb_index);
     }
   } else if (sys_id == BTA_ID_AVK) {
     if (bta_ar_cb.p_av_conn_cback) {
-      (*bta_ar_cb.p_av_conn_cback)(0, &bd_addr, event, &data);
+      (*bta_ar_cb.p_av_conn_cback)(0, bd_addr, event, &data, scb_index);
     }
   }
 }

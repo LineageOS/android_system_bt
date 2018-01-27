@@ -773,7 +773,7 @@ TEST_F(StackA2dpTest, test_a2dp_codec_index_str) {
 }
 
 TEST_F(StackA2dpTest, test_a2dp_init_codec_config) {
-  tAVDT_CFG avdt_cfg;
+  AvdtpSepConfig avdt_cfg;
 
   //
   // Test for SBC Source

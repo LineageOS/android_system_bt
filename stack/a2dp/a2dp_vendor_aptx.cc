@@ -387,7 +387,7 @@ btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexAptx(
 
 const char* A2DP_VendorCodecIndexStrAptx(void) { return "aptX"; }
 
-bool A2DP_VendorInitCodecConfigAptx(tAVDT_CFG* p_cfg) {
+bool A2DP_VendorInitCodecConfigAptx(AvdtpSepConfig* p_cfg) {
   if (A2DP_BuildInfoAptx(AVDT_MEDIA_TYPE_AUDIO, &a2dp_aptx_caps,
                          p_cfg->codec_info) != A2DP_SUCCESS) {
     return false;

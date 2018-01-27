@@ -468,7 +468,7 @@ btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexLdac(
 
 const char* A2DP_VendorCodecIndexStrLdac(void) { return "LDAC"; }
 
-bool A2DP_VendorInitCodecConfigLdac(tAVDT_CFG* p_cfg) {
+bool A2DP_VendorInitCodecConfigLdac(AvdtpSepConfig* p_cfg) {
   if (A2DP_BuildInfoLdac(AVDT_MEDIA_TYPE_AUDIO, &a2dp_ldac_caps,
                          p_cfg->codec_info) != A2DP_SUCCESS) {
     return false;

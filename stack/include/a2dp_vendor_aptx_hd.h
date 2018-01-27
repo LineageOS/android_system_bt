@@ -140,8 +140,8 @@ btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexAptxHd(
 // Gets the A2DP aptX-HD Source codec name.
 const char* A2DP_VendorCodecIndexStrAptxHd(void);
 
-// Initializes A2DP aptX-HD Source codec information into |tAVDT_CFG|
+// Initializes A2DP aptX-HD Source codec information into |AvdtpSepConfig|
 // configuration entry pointed by |p_cfg|.
-bool A2DP_VendorInitCodecConfigAptxHd(tAVDT_CFG* p_cfg);
+bool A2DP_VendorInitCodecConfigAptxHd(AvdtpSepConfig* p_cfg);
 
 #endif  // A2DP_VENDOR_APTX_HD_H
