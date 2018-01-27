@@ -286,6 +286,15 @@ typedef void(tL2CA_NOCP_CB)(const RawAddress&);
  */
 typedef void(tL2CA_TX_COMPLETE_CB)(uint16_t, uint16_t);
 
+/* Callback for receiving credits from the remote device.
+ * |credit_received| parameter represents number of credits received in "LE Flow
+ * Control Credit" packet from the remote. |credit_count| parameter represents
+ * the total available credits, including |credit_received|.
+ */
+typedef void(tL2CA_CREDITS_RECEIVED_CB)(uint16_t local_cid,
+                                        uint16_t credits_received,
+                                        uint16_t credit_count);
+
 /* Define the structure that applications use to register with
  * L2CAP. This structure includes callback functions. All functions
  * MUST be provided, with the exception of the "connect pending"
@@ -303,7 +312,7 @@ typedef struct {
   tL2CA_DATA_IND_CB* pL2CA_DataInd_Cb;
   tL2CA_CONGESTION_STATUS_CB* pL2CA_CongestionStatus_Cb;
   tL2CA_TX_COMPLETE_CB* pL2CA_TxComplete_Cb;
-
+  tL2CA_CREDITS_RECEIVED_CB* pL2CA_CreditsReceived_Cb;
 } tL2CAP_APPL_INFO;
 
 /* Define the structure that applications use to create or accept
