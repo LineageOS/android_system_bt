@@ -91,6 +91,8 @@ cc_library_static {
     defaults: ["fluoride_defaults"],
 
     srcs: [
+        "bte_conf.cc",
+        "bte_init.cc",
         "bte_init_cpp_logging.cc",
         "bte_logmsg.cc",
         "bte_main.cc",

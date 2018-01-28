@@ -782,7 +782,7 @@ bt_status_t HeadsetInterface::StartVoiceRecognition(RawAddress* bd_addr) {
   }
   if (!(btif_hf_cb[idx].peer_feat & BTA_AG_PEER_FEAT_VREC)) {
     BTIF_TRACE_ERROR("%s: voice recognition not supported, features=0x%x",
-                     btif_hf_cb[idx].peer_feat);
+                     __func__, btif_hf_cb[idx].peer_feat);
     return BT_STATUS_UNSUPPORTED;
   }
   tBTA_AG_RES_DATA ag_res = {};
@@ -806,7 +806,7 @@ bt_status_t HeadsetInterface::StopVoiceRecognition(RawAddress* bd_addr) {
   }
   if (!(btif_hf_cb[idx].peer_feat & BTA_AG_PEER_FEAT_VREC)) {
     BTIF_TRACE_ERROR("%s: voice recognition not supported, features=0x%x",
-                     btif_hf_cb[idx].peer_feat);
+                     __func__, btif_hf_cb[idx].peer_feat);
     return BT_STATUS_UNSUPPORTED;
   }
   tBTA_AG_RES_DATA ag_res = {};

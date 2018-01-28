@@ -478,27 +478,27 @@ static const char BTE_LOGMSG_MODULE[] = "bte_logmsg_module";
 /* AVDTP */
 #define AVDT_TRACE_ERROR(...)                                     \
   {                                                               \
-    if (avdt_cb.trace_level >= BT_TRACE_LEVEL_ERROR)              \
+    if (avdtp_cb.TraceLevel() >= BT_TRACE_LEVEL_ERROR)            \
       BT_TRACE(TRACE_LAYER_AVP, TRACE_TYPE_ERROR, ##__VA_ARGS__); \
   }
 #define AVDT_TRACE_WARNING(...)                                     \
   {                                                                 \
-    if (avdt_cb.trace_level >= BT_TRACE_LEVEL_WARNING)              \
+    if (avdtp_cb.TraceLevel() >= BT_TRACE_LEVEL_WARNING)            \
       BT_TRACE(TRACE_LAYER_AVP, TRACE_TYPE_WARNING, ##__VA_ARGS__); \
   }
 #define AVDT_TRACE_EVENT(...)                                     \
   {                                                               \
-    if (avdt_cb.trace_level >= BT_TRACE_LEVEL_EVENT)              \
+    if (avdtp_cb.TraceLevel() >= BT_TRACE_LEVEL_EVENT)            \
       BT_TRACE(TRACE_LAYER_AVP, TRACE_TYPE_EVENT, ##__VA_ARGS__); \
   }
 #define AVDT_TRACE_DEBUG(...)                                     \
   {                                                               \
-    if (avdt_cb.trace_level >= BT_TRACE_LEVEL_DEBUG)              \
+    if (avdtp_cb.TraceLevel() >= BT_TRACE_LEVEL_DEBUG)            \
       BT_TRACE(TRACE_LAYER_AVP, TRACE_TYPE_DEBUG, ##__VA_ARGS__); \
   }
 #define AVDT_TRACE_API(...)                                     \
   {                                                             \
-    if (avdt_cb.trace_level >= BT_TRACE_LEVEL_API)              \
+    if (avdtp_cb.TraceLevel() >= BT_TRACE_LEVEL_API)            \
       BT_TRACE(TRACE_LAYER_AVP, TRACE_TYPE_API, ##__VA_ARGS__); \
   }
 

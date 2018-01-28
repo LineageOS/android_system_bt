@@ -304,7 +304,7 @@ enum {
 
 /* adaption layer number of stream routing table entries */
 /* 2 channels(1 media, 1 report) for each SEP and one for signalling */
-#define AVDT_NUM_RT_TBL ((AVDT_NUM_SEPS << 1) + 1)
+#define AVDT_NUM_RT_TBL (AVDT_NUM_SEPS * AVDT_CHAN_NUM_TYPES + 1)
 
 /* adaption layer number of transport channel table entries - moved to target.h
 #define AVDT_NUM_TC_TBL     (AVDT_NUM_SEPS + AVDT_NUM_LINKS) */
@@ -320,7 +320,7 @@ enum {
 #define AVDT_AD_ST_SEC_INT 7 /* Security process as INT */
 #define AVDT_AD_ST_SEC_ACP 8 /* Security process as ACP */
 
-/* Configuration flags. tAVDT_TC_TBL.cfg_flags */
+/* Configuration flags. AvdtpTransportChannel.cfg_flags */
 #define AVDT_L2C_CFG_IND_DONE (1 << 0)
 #define AVDT_L2C_CFG_CFM_DONE (1 << 1)
 #define AVDT_L2C_CFG_CONN_INT (1 << 2)
@@ -360,7 +360,7 @@ typedef struct {
 typedef struct {
   tAVDT_EVT_HDR single;
   tAVDT_CTRL_CBACK* p_cback;
-  tAVDT_CFG* p_cfg;
+  AvdtpSepConfig* p_cfg;
 } tAVDT_CCB_API_GETCAP;
 
 /* data type for AVDT_CCB_API_CONNECT_REQ_EVT */
@@ -382,42 +382,6 @@ typedef union {
   bool llcong;
   uint8_t err_code;
 } tAVDT_CCB_EVT;
-
-/* channel control block type */
-typedef struct {
-  RawAddress peer_addr; /* BD address of peer */
-  /*
-   * NOTE: idle_ccb_timer, ret_ccb_timer and rsp_ccb_timer are mutually
-   * exclusive - no more than one timer should be running at the same time.
-   */
-  alarm_t* idle_ccb_timer; /* Idle CCB timer entry */
-  alarm_t* ret_ccb_timer;  /* Ret CCB timer entry */
-  alarm_t* rsp_ccb_timer;  /* Rsp CCB timer entry */
-  fixed_queue_t* cmd_q;    /* Queue for outgoing command messages */
-  fixed_queue_t* rsp_q;    /* Queue for outgoing response and reject messages */
-  tAVDT_CTRL_CBACK* proc_cback; /* Procedure callback function */
-  tAVDT_CTRL_CBACK*
-      p_conn_cback;   /* Connection/disconnection callback function */
-  void* p_proc_data;  /* Pointer to data storage for procedure */
-  BT_HDR* p_curr_cmd; /* Current command being sent awaiting response */
-  BT_HDR* p_curr_msg; /* Current message being sent */
-  BT_HDR* p_rx_msg;   /* Current message being received */
-  bool allocated;     /* Whether ccb is allocated */
-  uint8_t state;      /* The CCB state machine state */
-  bool ll_opened;     /* true if LL is opened */
-  bool proc_busy;     /* true when a discover or get capabilities procedure in
-                         progress */
-  uint8_t proc_param; /* Procedure parameter; either SEID for get capabilities
-                         or number of SEPS for discover */
-  bool cong;          /* Whether signaling channel is congested */
-  uint8_t label;      /* Message header "label" (sequence number) */
-  bool reconn;        /* If true, reinitiate connection after transitioning from
-                         CLOSING to IDLE state */
-  uint8_t ret_count;  /* Command retransmission count */
-} tAVDT_CCB;
-
-/* type for action functions */
-typedef void (*tAVDT_CCB_ACTION)(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
 
 /* type for AVDT_SCB_API_WRITE_REQ_EVT */
 typedef struct {
@@ -445,67 +409,404 @@ typedef union {
   BT_HDR* p_pkt;
 } tAVDT_SCB_EVT;
 
-/* stream control block type */
-typedef struct {
-  tAVDT_CS cs;                      /* stream creation struct */
-  tAVDT_CFG curr_cfg;               /* current configuration */
-  tAVDT_CFG req_cfg;                /* requested configuration */
-  alarm_t* transport_channel_timer; /* transport channel connect timer */
-  BT_HDR* p_pkt;                    /* packet waiting to be sent */
-  tAVDT_CCB* p_ccb;                 /* ccb associated with this scb */
-  uint16_t media_seq;               /* media packet sequence number */
-  bool allocated;                   /* whether scb is allocated or unused */
-  bool in_use;                      /* whether stream being used by peer */
-  uint8_t role;       /* initiator/acceptor role in current procedure */
-  bool remove;        /* whether CB is marked for removal */
-  uint8_t state;      /* state machine state */
-  uint8_t peer_seid;  /* SEID of peer stream */
-  uint8_t curr_evt;   /* current event; set only by state machine */
-  bool cong;          /* Whether media transport channel is congested */
-  uint8_t close_code; /* Error code received in close response */
-} tAVDT_SCB;
+class AvdtpCcb;
 
-/* type for action functions */
-typedef void (*tAVDT_SCB_ACTION)(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
+/**
+ * AVDTP Stream Control Block.
+ */
+class AvdtpScb {
+ public:
+  AvdtpScb()
+      : transport_channel_timer(nullptr),
+        p_pkt(nullptr),
+        p_ccb(nullptr),
+        media_seq(0),
+        allocated(false),
+        in_use(false),
+        role(0),
+        remove(false),
+        state(0),
+        peer_seid(0),
+        curr_evt(0),
+        cong(false),
+        close_code(0),
+        scb_handle_(0) {}
 
-/* adaption layer type for transport channel table */
-typedef struct {
-  uint16_t peer_mtu;    /* L2CAP mtu of the peer device */
-  uint16_t my_mtu;      /* Our MTU for this channel */
-  uint16_t my_flush_to; /* Our flush timeout for this channel */
+  /**
+   * Allocate the entry for usage.
+   * Previous state will be reset and initialized.
+   *
+   * @param p_avdtp_ccb the AvdtCcb entry to use
+   * @param avdtp_stream_config the stream config to use
+   */
+  void Allocate(AvdtpCcb* p_avdtp_ccb,
+                const AvdtpStreamConfig& avdtp_stream_config);
+
+  /**
+   * Recycle the entry by resetting it, mark it as allocated and keeping
+   * the following state:
+   *  - stream_config
+   *  - p_ccb
+   */
+  void Recycle() {
+    AvdtpStreamConfig stream_config_saved = stream_config;
+    AvdtpCcb* p_ccb_saved = p_ccb;
+    Allocate(p_ccb_saved, stream_config_saved);
+  }
+
+  /**
+   * Reset all the state.
+   *
+   * @param scb_handle the AVDTP SCB handle to use
+   */
+  void Reset(uint8_t scb_handle) {
+    stream_config.Reset();
+    curr_cfg.Reset();
+    req_cfg.Reset();
+
+    alarm_free(transport_channel_timer);
+    transport_channel_timer = nullptr;
+
+    p_pkt = nullptr;
+    p_ccb = nullptr;
+    media_seq = 0;
+    allocated = false;
+    in_use = false;
+    role = 0;
+    remove = false;
+    state = 0;
+    peer_seid = 0;
+    curr_evt = 0;
+    cong = false;
+    close_code = 0;
+    scb_handle_ = scb_handle;
+  }
+
+  /**
+   * Get the AVDTP SCB handle for this entry.
+   */
+  uint8_t ScbHandle() const { return scb_handle_; }
+
+  AvdtpStreamConfig stream_config;   // Stream configuration
+  AvdtpSepConfig curr_cfg;           // Current configuration
+  AvdtpSepConfig req_cfg;            // Requested configuration
+  alarm_t* transport_channel_timer;  // Transport channel connect timer
+  BT_HDR* p_pkt;                     // Packet waiting to be sent
+  AvdtpCcb* p_ccb;                   // CCB associated with this SCB
+  uint16_t media_seq;                // Media packet sequence number
+  bool allocated;                    // True if the SCB is allocated
+  bool in_use;                       // True if used by peer
+  uint8_t role;        // Initiator/acceptor role in current procedure
+  bool remove;         // True if the SCB is marked for removal
+  uint8_t state;       // State machine state
+  uint8_t peer_seid;   // SEID of peer stream
+  uint8_t curr_evt;    // current event; set only by the state machine
+  bool cong;           // True if the media transport channel is congested
+  uint8_t close_code;  // Error code received in close response
+
+ private:
+  uint8_t scb_handle_;  // Unique handle for this AvdtpScb entry
+};
+
+/**
+ * AVDTP Channel Control Block.
+ */
+class AvdtpCcb {
+ public:
+  AvdtpCcb()
+      : peer_addr(RawAddress::kEmpty),
+        scb{},
+        idle_ccb_timer(nullptr),
+        ret_ccb_timer(nullptr),
+        rsp_ccb_timer(nullptr),
+        cmd_q(nullptr),
+        rsp_q(nullptr),
+        proc_cback(nullptr),
+        p_conn_cback(nullptr),
+        p_proc_data(nullptr),
+        p_curr_cmd(nullptr),
+        p_curr_msg(nullptr),
+        p_rx_msg(nullptr),
+        allocated(false),
+        state(0),
+        ll_opened(false),
+        proc_busy(false),
+        proc_param(0),
+        cong(false),
+        label(0),
+        reconn(false),
+        ret_count(0),
+        bta_av_scb_index_(0) {}
+
+  /**
+   * Allocate the entry for usage.
+   *
+   * NOTE: The corresponding AvdtpScb entries are allocated independently.
+   * @param peer_address the peer address
+   */
+  void Allocate(const RawAddress& peer_address);
+
+  /**
+   * Reset all the state.
+   *
+   * @param bta_av_scb_index the BTA AV SCB index to use
+   */
+  void Reset(uint8_t bta_av_scb_index) {
+    bta_av_scb_index_ = bta_av_scb_index;
+    ResetCcb();
+    for (size_t i = 0; i < AVDT_NUM_SEPS; i++) {
+      scb[i].Reset(0);
+    }
+  }
+
+  /**
+   * Reset only the Channel Control Block state without the Stream
+   * Control Block entries. The bta_av_scb_index_ is also preserved.
+   */
+  void ResetCcb() {
+    peer_addr = RawAddress::kEmpty;
+
+    alarm_free(idle_ccb_timer);
+    idle_ccb_timer = nullptr;
+
+    alarm_free(ret_ccb_timer);
+    ret_ccb_timer = nullptr;
+
+    alarm_free(rsp_ccb_timer);
+    rsp_ccb_timer = nullptr;
+
+    fixed_queue_free(cmd_q, nullptr);
+    cmd_q = nullptr;
+
+    fixed_queue_free(rsp_q, nullptr);
+    rsp_q = nullptr;
+
+    proc_cback = nullptr;
+    p_conn_cback = nullptr;
+    p_proc_data = nullptr;
+    p_curr_cmd = nullptr;
+    p_curr_msg = nullptr;
+    p_rx_msg = nullptr;
+    allocated = false;
+    state = 0;
+    ll_opened = false;
+    proc_busy = false;
+    proc_param = 0;
+    cong = false;
+    label = 0;
+    reconn = false;
+    ret_count = 0;
+  }
+
+  /**
+   * Get the corresponding BTA AV stream control block index for this entry.
+   */
+  uint8_t BtaAvScbIndex() const { return bta_av_scb_index_; }
+
+  RawAddress peer_addr;         // Bluetooth address of peer
+  AvdtpScb scb[AVDT_NUM_SEPS];  // The AVDTP stream control blocks
+
+  /*
+   * NOTE: idle_ccb_timer, ret_ccb_timer and rsp_ccb_timer are mutually
+   * exclusive - no more than one timer should be running at the same time.
+   */
+  alarm_t* idle_ccb_timer;  // Idle CCB timer entry
+  alarm_t* ret_ccb_timer;   // Ret CCB timer entry
+  alarm_t* rsp_ccb_timer;   // Rsp CCB timer entry
+  fixed_queue_t* cmd_q;     // Queue for outgoing command messages
+  fixed_queue_t* rsp_q;     // Queue for outgoing response and reject messages
+  tAVDT_CTRL_CBACK* proc_cback;    // Procedure callback function
+  tAVDT_CTRL_CBACK* p_conn_cback;  // Connection/disconnection callback function
+  void* p_proc_data;               // Pointer to data storage for procedure
+  BT_HDR* p_curr_cmd;  // Current command being sent awaiting response
+  BT_HDR* p_curr_msg;  // Current message being sent
+  BT_HDR* p_rx_msg;    // Current message being received
+  bool allocated;      // Whether ccb is allocated
+  uint8_t state;       // The CCB state machine state
+  bool ll_opened;      // True if LL is opened
+  bool proc_busy;      // True when a discover or get capabilities procedure in
+                       // progress
+  uint8_t proc_param;  // Procedure parameter; either SEID for get capabilities
+                       // or number of SEPS for discover
+  bool cong;           // True if the signaling channel is congested
+  uint8_t label;       // Message header "label" (sequence number)
+  bool reconn;        // If true, reinitiate connection after transitioning from
+                      // CLOSING to IDLE state
+  uint8_t ret_count;  // Command retransmission count
+
+ private:
+  // The corresponding BTA AV stream control block index for this entry
+  uint8_t bta_av_scb_index_;
+};
+
+/**
+ * AVDTP transport channel entry.
+ * Used in the transport channel table in the adaptation layer.
+ */
+class AvdtpTransportChannel {
+ public:
+  AvdtpTransportChannel()
+      : peer_mtu(0),
+        my_mtu(0),
+        my_flush_to(0),
+        lcid(0),
+        tcid(0),
+        ccb_idx(0),
+        state(0),
+        cfg_flags(0),
+        id(0) {}
+
+  void Reset() {
+    peer_mtu = 0;
+    my_mtu = 0;
+    my_flush_to = 0;
+    lcid = 0;
+    tcid = 0;
+    ccb_idx = 0;
+    state = 0;
+    cfg_flags = 0;
+    id = 0;
+  }
+
+  uint16_t peer_mtu;     // L2CAP MTU of the peer device
+  uint16_t my_mtu;       // Our MTU for this channel
+  uint16_t my_flush_to;  // Our flush timeout for this channel
   uint16_t lcid;
-  uint8_t tcid;      /* transport channel id */
-  uint8_t ccb_idx;   /* channel control block associated with this tc */
-  uint8_t state;     /* transport channel state */
-  uint8_t cfg_flags; /* L2CAP configuration flags */
+  uint8_t tcid;       // Transport channel ID
+  uint8_t ccb_idx;    // Channel control block for with this transport channel
+  uint8_t state;      // Transport channel state
+  uint8_t cfg_flags;  // L2CAP configuration flags
   uint8_t id;
-} tAVDT_TC_TBL;
+};
 
-/* adaption layer type for stream routing table */
-typedef struct {
-  uint16_t lcid;   /* L2CAP LCID of the associated transport channel */
-  uint8_t scb_hdl; /* stream control block associated with this tc */
-} tAVDT_RT_TBL;
+/**
+ * AVDTP stream routing entry.
+ * Used in the routing table in the adaption layer.
+ */
+class AvdtpRoutingEntry {
+ public:
+  AvdtpRoutingEntry() : lcid(0), scb_hdl(0) {}
 
-/* adaption layer control block */
-typedef struct {
-  tAVDT_RT_TBL rt_tbl[AVDT_NUM_LINKS][AVDT_NUM_RT_TBL];
-  tAVDT_TC_TBL tc_tbl[AVDT_NUM_TC_TBL];
-  uint8_t lcid_tbl[MAX_L2CAP_CHANNELS]; /* map LCID to tc_tbl index */
-} tAVDT_AD;
+  void Reset() {
+    lcid = 0;
+    scb_hdl = 0;
+  }
 
-/* Control block for AVDT */
-typedef struct {
-  tAVDT_REG rcb;                   /* registration control block */
-  tAVDT_CCB ccb[AVDT_NUM_LINKS];   /* channel control blocks */
-  tAVDT_SCB scb[AVDT_NUM_SEPS];    /* stream control blocks */
-  tAVDT_AD ad;                     /* adaption layer control block */
-  tAVDTC_CTRL_CBACK* p_conf_cback; /* conformance callback function */
-  const tAVDT_CCB_ACTION* p_ccb_act; /* pointer to CCB action functions */
-  const tAVDT_SCB_ACTION* p_scb_act; /* pointer to SCB action functions */
-  tAVDT_CTRL_CBACK* p_conn_cback;  /* connection callback function */
-  uint8_t trace_level;             /* trace level */
-} tAVDT_CB;
+  uint16_t lcid;    // L2CAP LCID of the associated transport channel
+  uint8_t scb_hdl;  // Stream control block for this transport channel
+};
+
+/**
+ * AVDTP adaption layer control block.
+ */
+class AvdtpAdaptationLayer {
+ public:
+  AvdtpAdaptationLayer() : lcid_tbl{} {}
+
+  void Reset() {
+    for (size_t i = 0; i < AVDT_NUM_LINKS; i++) {
+      for (size_t j = 0; j < AVDT_NUM_RT_TBL; j++) {
+        rt_tbl[i][j].Reset();
+      }
+    }
+    for (size_t i = 0; i < AVDT_NUM_TC_TBL; i++) {
+      tc_tbl[i].Reset();
+    }
+    memset(lcid_tbl, 0, sizeof(lcid_tbl));
+  }
+
+  /**
+   * Lookup AvdtpScb entry for a transport channel.
+   *
+   * @param tc the transport channel
+   * @return the corresponding AvdtpScb entry or null of the transport
+   * channel is invalid.
+   */
+  AvdtpScb* LookupAvdtpScb(const AvdtpTransportChannel& tc);
+
+  AvdtpRoutingEntry rt_tbl[AVDT_NUM_LINKS][AVDT_NUM_RT_TBL];
+  AvdtpTransportChannel tc_tbl[AVDT_NUM_TC_TBL];
+  uint8_t lcid_tbl[MAX_L2CAP_CHANNELS];  // Map LCID to tc_tbl index
+};
+
+/**
+ * Types for action functions.
+ */
+typedef void (*tAVDT_CCB_ACTION)(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+typedef void (*tAVDT_SCB_ACTION)(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+
+/**
+ * Control block for AVDTP.
+ */
+class AvdtpCb {
+ public:
+  AvdtpCb()
+      : p_conf_cback(nullptr),
+        p_ccb_act(nullptr),
+        p_scb_act(nullptr),
+        p_conn_cback(nullptr),
+        trace_level_(0) {}
+
+  void Reset() {
+    rcb.Reset();
+    for (size_t i = 0; i < AVDT_NUM_LINKS; i++) {
+      ccb[i].Reset(i);
+    }
+    ad.Reset();
+    p_conf_cback = nullptr;
+    p_ccb_act = nullptr;
+    p_scb_act = nullptr;
+    p_conn_cback = nullptr;
+    trace_level_ = 0;
+  }
+
+  AvdtpRcb rcb;                       // Registration control block
+  AvdtpCcb ccb[AVDT_NUM_LINKS];       // Channel control blocks
+  AvdtpAdaptationLayer ad;            // Adaption layer control block
+  tAVDTC_CTRL_CBACK* p_conf_cback;    // Conformance callback function
+  const tAVDT_CCB_ACTION* p_ccb_act;  // Pointer to CCB action functions
+  const tAVDT_SCB_ACTION* p_scb_act;  // Pointer to SCB action functions
+  tAVDT_CTRL_CBACK* p_conn_cback;     // Connection callback function
+
+  /**
+   * Compute the SCB handle for a given AvdtpScb entry.
+   *
+   * @param p_scb the entry to use
+   * @return the computed SCB handle or 0 if the entry is invalid.
+   */
+  uint8_t ComputeScbHandle(const AvdtpScb* p_scb) const {
+    uint8_t scb_handle = 0;
+
+    // Find the entry and in the process compute the unique index
+    // TODO: This mechanism is sub-efficient and should be refactored.
+    for (size_t i = 0; i < AVDT_NUM_LINKS; i++) {
+      for (size_t j = 0; j < AVDT_NUM_SEPS; j++) {
+        scb_handle++;
+        if (&ccb[i].scb[j] == p_scb) {
+          return scb_handle;
+        }
+      }
+    }
+    return 0;  // Not found
+  }
+
+  /**
+   * Get the current trace level used for logging.
+   *
+   * @return the current trace level
+   */
+  uint8_t TraceLevel() const { return trace_level_; }
+
+  /**
+   * Set the current trace level used for logging.
+   *
+   * @param trace_level the trace level to set. Should be in the range [1, 6].
+   */
+  void SetTraceLevel(uint8_t trace_level) { trace_level_ = trace_level; }
+
+ private:
+  uint8_t trace_level_; /* trace level */
+};
 
 /*****************************************************************************
  * function declarations
@@ -513,156 +814,162 @@ typedef struct {
 
 /* CCB function declarations */
 extern void avdt_ccb_init(void);
-extern void avdt_ccb_event(tAVDT_CCB* p_ccb, uint8_t event,
+extern void avdt_ccb_event(AvdtpCcb* p_ccb, uint8_t event,
                            tAVDT_CCB_EVT* p_data);
-extern tAVDT_CCB* avdt_ccb_by_bd(const RawAddress& bd_addr);
-extern tAVDT_CCB* avdt_ccb_alloc(const RawAddress& bd_addr);
-extern void avdt_ccb_dealloc(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern uint8_t avdt_ccb_to_idx(tAVDT_CCB* p_ccb);
-extern tAVDT_CCB* avdt_ccb_by_idx(uint8_t idx);
+extern AvdtpCcb* avdt_ccb_by_bd(const RawAddress& bd_addr);
+extern AvdtpCcb* avdt_ccb_alloc(const RawAddress& bd_addr);
+extern AvdtpCcb* avdt_ccb_alloc_by_channel_index(const RawAddress& bd_addr,
+                                                 uint8_t channel_index);
+extern void avdt_ccb_dealloc(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern uint8_t avdt_ccb_to_idx(AvdtpCcb* p_ccb);
+extern AvdtpCcb* avdt_ccb_by_idx(uint8_t idx);
 
 /* CCB action functions */
-extern void avdt_ccb_chan_open(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_chan_close(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_chk_close(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_hdl_discover_cmd(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_hdl_discover_rsp(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_hdl_getcap_cmd(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_hdl_getcap_rsp(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_hdl_start_cmd(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_hdl_start_rsp(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_hdl_suspend_cmd(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_hdl_suspend_rsp(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_snd_discover_cmd(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_snd_discover_rsp(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_snd_getcap_cmd(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_snd_getcap_rsp(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_snd_start_cmd(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_snd_start_rsp(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_snd_suspend_cmd(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_snd_suspend_rsp(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_clear_cmds(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_cmd_fail(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_free_cmd(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_cong_state(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_ret_cmd(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_snd_cmd(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_snd_msg(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_set_reconn(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_clr_reconn(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_chk_reconn(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_chk_timer(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_set_conn(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_set_disconn(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_do_disconn(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_ll_closed(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
-extern void avdt_ccb_ll_opened(tAVDT_CCB* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_chan_open(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_chan_close(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_chk_close(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_hdl_discover_cmd(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_hdl_discover_rsp(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_hdl_getcap_cmd(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_hdl_getcap_rsp(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_hdl_start_cmd(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_hdl_start_rsp(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_hdl_suspend_cmd(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_hdl_suspend_rsp(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_snd_discover_cmd(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_snd_discover_rsp(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_snd_getcap_cmd(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_snd_getcap_rsp(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_snd_start_cmd(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_snd_start_rsp(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_snd_suspend_cmd(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_snd_suspend_rsp(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_clear_cmds(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_cmd_fail(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_free_cmd(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_cong_state(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_ret_cmd(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_snd_cmd(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_snd_msg(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_set_reconn(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_clr_reconn(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_chk_reconn(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_chk_timer(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_set_conn(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_set_disconn(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_do_disconn(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_ll_closed(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
+extern void avdt_ccb_ll_opened(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data);
 
 /* SCB function prototypes */
-extern void avdt_scb_event(tAVDT_SCB* p_scb, uint8_t event,
+extern void avdt_scb_event(AvdtpScb* p_scb, uint8_t event,
                            tAVDT_SCB_EVT* p_data);
 extern void avdt_scb_init(void);
-extern tAVDT_SCB* avdt_scb_alloc(tAVDT_CS* p_cs);
-extern void avdt_scb_dealloc(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern uint8_t avdt_scb_to_hdl(tAVDT_SCB* p_scb);
-extern tAVDT_SCB* avdt_scb_by_hdl(uint8_t hdl);
-extern uint8_t avdt_scb_verify(tAVDT_CCB* p_ccb, uint8_t state, uint8_t* p_seid,
+extern AvdtpScb* avdt_scb_alloc(uint8_t peer_id,
+                                const AvdtpStreamConfig& avdtp_stream_config);
+extern void avdt_scb_dealloc(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern uint8_t avdt_scb_to_hdl(AvdtpScb* p_scb);
+extern AvdtpScb* avdt_scb_by_hdl(uint8_t hdl);
+extern uint8_t avdt_scb_verify(AvdtpCcb* p_ccb, uint8_t state, uint8_t* p_seid,
                                uint16_t num_seid, uint8_t* p_err_code);
 extern void avdt_scb_peer_seid_list(tAVDT_MULTI* p_multi);
-extern uint32_t avdt_scb_gen_ssrc(tAVDT_SCB* p_scb);
+extern uint32_t avdt_scb_gen_ssrc(AvdtpScb* p_scb);
 
 /* SCB action functions */
-extern void avdt_scb_hdl_abort_cmd(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_abort_rsp(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_close_cmd(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_close_rsp(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_getconfig_cmd(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_getconfig_rsp(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_open_cmd(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_open_rej(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_open_rsp(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_pkt(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_drop_pkt(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_reconfig_cmd(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_reconfig_rsp(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_security_cmd(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_security_rsp(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_setconfig_cmd(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_setconfig_rej(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_setconfig_rsp(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_start_cmd(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_start_rsp(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_suspend_cmd(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_suspend_rsp(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_snd_delay_rpt_req(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_delay_rpt_cmd(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_delay_rpt_rsp(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_tc_close(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_tc_open(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_tc_close_sto(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_tc_open_sto(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_hdl_write_req(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_snd_abort_req(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_snd_abort_rsp(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_snd_close_req(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_snd_stream_close(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_snd_close_rsp(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_snd_getconfig_req(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_snd_getconfig_rsp(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_snd_open_req(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_snd_open_rsp(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_snd_reconfig_req(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_snd_reconfig_rsp(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_snd_security_req(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_snd_security_rsp(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_snd_setconfig_req(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_snd_setconfig_rej(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_snd_setconfig_rsp(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_snd_tc_close(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_cb_err(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_cong_state(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_rej_state(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_rej_in_use(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_rej_not_in_use(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_set_remove(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_free_pkt(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_chk_snd_pkt(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_clr_pkt(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_transport_channel_timer(tAVDT_SCB* p_scb,
+extern void avdt_scb_hdl_abort_cmd(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_abort_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_close_cmd(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_close_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_getconfig_cmd(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_getconfig_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_open_cmd(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_open_rej(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_open_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_pkt(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_drop_pkt(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_reconfig_cmd(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_reconfig_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_security_cmd(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_security_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_setconfig_cmd(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_setconfig_rej(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_setconfig_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_start_cmd(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_start_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_suspend_cmd(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_suspend_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_snd_delay_rpt_req(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_delay_rpt_cmd(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_delay_rpt_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_tc_close(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_tc_open(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_tc_close_sto(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_tc_open_sto(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_hdl_write_req(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_snd_abort_req(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_snd_abort_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_snd_close_req(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_snd_stream_close(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_snd_close_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_snd_getconfig_req(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_snd_getconfig_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_snd_open_req(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_snd_open_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_snd_reconfig_req(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_snd_reconfig_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_snd_security_req(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_snd_security_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_snd_setconfig_req(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_snd_setconfig_rej(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_snd_setconfig_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_snd_tc_close(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_cb_err(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_cong_state(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_rej_state(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_rej_in_use(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_rej_not_in_use(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_set_remove(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_free_pkt(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_chk_snd_pkt(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_clr_pkt(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_transport_channel_timer(AvdtpScb* p_scb,
                                              tAVDT_SCB_EVT* p_data);
-extern void avdt_scb_clr_vars(tAVDT_SCB* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_clr_vars(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
 
 /* msg function declarations */
-extern bool avdt_msg_send(tAVDT_CCB* p_ccb, BT_HDR* p_msg);
-extern void avdt_msg_send_cmd(tAVDT_CCB* p_ccb, void* p_scb, uint8_t sig_id,
+extern bool avdt_msg_send(AvdtpCcb* p_ccb, BT_HDR* p_msg);
+extern void avdt_msg_send_cmd(AvdtpCcb* p_ccb, void* p_scb, uint8_t sig_id,
                               tAVDT_MSG* p_params);
-extern void avdt_msg_send_rsp(tAVDT_CCB* p_ccb, uint8_t sig_id,
+extern void avdt_msg_send_rsp(AvdtpCcb* p_ccb, uint8_t sig_id,
                               tAVDT_MSG* p_params);
-extern void avdt_msg_send_rej(tAVDT_CCB* p_ccb, uint8_t sig_id,
+extern void avdt_msg_send_rej(AvdtpCcb* p_ccb, uint8_t sig_id,
                               tAVDT_MSG* p_params);
-extern void avdt_msg_send_grej(tAVDT_CCB* p_ccb, uint8_t sig_id,
+extern void avdt_msg_send_grej(AvdtpCcb* p_ccb, uint8_t sig_id,
                                tAVDT_MSG* p_params);
-extern void avdt_msg_ind(tAVDT_CCB* p_ccb, BT_HDR* p_buf);
+extern void avdt_msg_ind(AvdtpCcb* p_ccb, BT_HDR* p_buf);
 
 /* adaption layer function declarations */
 extern void avdt_ad_init(void);
-extern uint8_t avdt_ad_type_to_tcid(uint8_t type, tAVDT_SCB* p_scb);
-extern tAVDT_TC_TBL* avdt_ad_tc_tbl_by_st(uint8_t type, tAVDT_CCB* p_ccb,
-                                          uint8_t state);
-extern tAVDT_TC_TBL* avdt_ad_tc_tbl_by_lcid(uint16_t lcid);
-extern tAVDT_TC_TBL* avdt_ad_tc_tbl_alloc(tAVDT_CCB* p_ccb);
-extern uint8_t avdt_ad_tc_tbl_to_idx(tAVDT_TC_TBL* p_tbl);
-extern void avdt_ad_tc_close_ind(tAVDT_TC_TBL* p_tbl, uint16_t reason);
-extern void avdt_ad_tc_open_ind(tAVDT_TC_TBL* p_tbl);
-extern void avdt_ad_tc_cong_ind(tAVDT_TC_TBL* p_tbl, bool is_congested);
-extern void avdt_ad_tc_data_ind(tAVDT_TC_TBL* p_tbl, BT_HDR* p_buf);
-extern tAVDT_TC_TBL* avdt_ad_tc_tbl_by_type(uint8_t type, tAVDT_CCB* p_ccb,
-                                            tAVDT_SCB* p_scb);
-extern uint8_t avdt_ad_write_req(uint8_t type, tAVDT_CCB* p_ccb,
-                                 tAVDT_SCB* p_scb, BT_HDR* p_buf);
-extern void avdt_ad_open_req(uint8_t type, tAVDT_CCB* p_ccb, tAVDT_SCB* p_scb,
+extern uint8_t avdt_ad_type_to_tcid(uint8_t type, AvdtpScb* p_scb);
+extern AvdtpTransportChannel* avdt_ad_tc_tbl_by_st(uint8_t type,
+                                                   AvdtpCcb* p_ccb,
+                                                   uint8_t state);
+extern AvdtpTransportChannel* avdt_ad_tc_tbl_by_lcid(uint16_t lcid);
+extern AvdtpTransportChannel* avdt_ad_tc_tbl_alloc(AvdtpCcb* p_ccb);
+extern uint8_t avdt_ad_tc_tbl_to_idx(AvdtpTransportChannel* p_tbl);
+extern void avdt_ad_tc_close_ind(AvdtpTransportChannel* p_tbl, uint16_t reason);
+extern void avdt_ad_tc_open_ind(AvdtpTransportChannel* p_tbl);
+extern void avdt_ad_tc_cong_ind(AvdtpTransportChannel* p_tbl,
+                                bool is_congested);
+extern void avdt_ad_tc_data_ind(AvdtpTransportChannel* p_tbl, BT_HDR* p_buf);
+extern AvdtpTransportChannel* avdt_ad_tc_tbl_by_type(uint8_t type,
+                                                     AvdtpCcb* p_ccb,
+                                                     AvdtpScb* p_scb);
+extern uint8_t avdt_ad_write_req(uint8_t type, AvdtpCcb* p_ccb, AvdtpScb* p_scb,
+                                 BT_HDR* p_buf);
+extern void avdt_ad_open_req(uint8_t type, AvdtpCcb* p_ccb, AvdtpScb* p_scb,
                              uint8_t role);
-extern void avdt_ad_close_req(uint8_t type, tAVDT_CCB* p_ccb, tAVDT_SCB* p_scb);
+extern void avdt_ad_close_req(uint8_t type, AvdtpCcb* p_ccb, AvdtpScb* p_scb);
 
 extern void avdt_ccb_idle_ccb_timer_timeout(void* data);
 extern void avdt_ccb_ret_ccb_timer_timeout(void* data);
@@ -689,7 +996,7 @@ extern void avdt_scb_transport_channel_timer_timeout(void* data);
 /******************************************************************************
  * Main Control Block
  ******************************************************************************/
-extern tAVDT_CB avdt_cb;
+extern AvdtpCb avdtp_cb;
 
 /* L2CAP callback registration structure */
 extern const tL2CAP_APPL_INFO avdt_l2c_appl;

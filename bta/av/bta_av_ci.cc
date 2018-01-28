@@ -23,6 +23,10 @@
  *
  ******************************************************************************/
 
+#define LOG_TAG "bt_bta_av"
+
+#include "osi/include/log.h"
+
 #include "bta_av_ci.h"
 #include "bta_api.h"
 #include "bta_av_int.h"
@@ -36,7 +40,7 @@
  *
  * Description      This function sends an event to the AV indicating that
  *                  the phone has audio stream data ready to send and AV
- *                  should call bta_av_co_audio_src_data_path().
+ *                  should call bta_av_co_audio_source_data_path().
  *
  * Returns          void
  *
@@ -63,13 +67,19 @@ void bta_av_ci_src_data_ready(tBTA_AV_CHNL chnl) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_av_ci_setconfig(tBTA_AV_HNDL hndl, uint8_t err_code, uint8_t category,
-                         uint8_t num_seid, uint8_t* p_seid, bool recfg_needed,
-                         uint8_t avdt_handle) {
+void bta_av_ci_setconfig(tBTA_AV_HNDL bta_av_handle, uint8_t err_code,
+                         uint8_t category, uint8_t num_seid, uint8_t* p_seid,
+                         bool recfg_needed, uint8_t avdt_handle) {
+  LOG_DEBUG(LOG_TAG,
+            "%s: bta_av_handle=%d err_code=%d category=%d "
+            "num_seid=%d recfg_needed=%s avdt_handle=%d",
+            __func__, bta_av_handle, err_code, category, num_seid,
+            recfg_needed ? "true" : "false", avdt_handle);
+
   tBTA_AV_CI_SETCONFIG* p_buf =
       (tBTA_AV_CI_SETCONFIG*)osi_malloc(sizeof(tBTA_AV_CI_SETCONFIG));
 
-  p_buf->hdr.layer_specific = hndl;
+  p_buf->hdr.layer_specific = bta_av_handle;
   p_buf->hdr.event = (err_code == A2DP_SUCCESS) ? BTA_AV_CI_SETCONFIG_OK_EVT
                                                 : BTA_AV_CI_SETCONFIG_FAIL_EVT;
   p_buf->err_code = err_code;

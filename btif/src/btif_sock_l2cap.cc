@@ -1010,6 +1010,11 @@ void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
           count = L2CAP_LE_MAX_MPS;
         }
 
+        /* When multiple packets smaller than MTU are flushed to the socket, the
+           size of the single packet read could be smaller than the ioctl
+           reported total size of awaiting packets. Hence, we adjust the buffer
+           length. */
+        buffer->len = count;
         DVLOG(2) << __func__ << ": bytes received from socket: " << count;
 
         if (sock->fixed_chan) {

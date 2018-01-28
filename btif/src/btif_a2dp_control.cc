@@ -118,7 +118,7 @@ static void btif_a2dp_recv_ctrl_data(void) {
          * If we are the source, the ACK will be sent after the start
          * procedure is completed, othewise send it now.
          */
-        btif_dispatch_sm_event(BTIF_AV_START_STREAM_REQ_EVT, NULL, 0);
+        btif_av_stream_start();
         if (btif_av_get_peer_sep() == AVDT_TSEP_SRC)
           btif_a2dp_command_ack(A2DP_CTRL_ACK_SUCCESS);
         break;
@@ -145,15 +145,14 @@ static void btif_a2dp_recv_ctrl_data(void) {
         btif_a2dp_command_ack(A2DP_CTRL_ACK_SUCCESS);
         break;
       }
-
-      btif_dispatch_sm_event(BTIF_AV_STOP_STREAM_REQ_EVT, NULL, 0);
+      btif_av_stream_stop();
       btif_a2dp_command_ack(A2DP_CTRL_ACK_SUCCESS);
       break;
 
     case A2DP_CTRL_CMD_SUSPEND:
       /* Local suspend */
       if (btif_av_stream_started_ready()) {
-        btif_dispatch_sm_event(BTIF_AV_SUSPEND_STREAM_REQ_EVT, NULL, 0);
+        btif_av_stream_suspend();
         break;
       }
       /* If we are not in started state, just ack back ok and let
@@ -259,7 +258,7 @@ static void btif_a2dp_recv_ctrl_data(void) {
     }
 
     case A2DP_CTRL_CMD_OFFLOAD_START:
-      btif_dispatch_sm_event(BTIF_AV_OFFLOAD_START_REQ_EVT, NULL, 0);
+      btif_av_stream_start_offload();
       break;
 
     default:
@@ -330,7 +329,7 @@ static void btif_a2dp_data_cb(UNUSED_ATTR tUIPC_CH_ID ch_id,
        */
       if (btif_a2dp_source_is_streaming()) {
         /* Post stop event and wait for audio path to stop */
-        btif_dispatch_sm_event(BTIF_AV_STOP_STREAM_REQ_EVT, NULL, 0);
+        btif_av_stream_stop();
       }
       break;
 

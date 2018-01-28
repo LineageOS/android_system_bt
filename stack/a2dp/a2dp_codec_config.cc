@@ -1236,7 +1236,7 @@ const char* A2DP_CodecIndexStr(btav_a2dp_codec_index_t codec_index) {
 }
 
 bool A2DP_InitCodecConfig(btav_a2dp_codec_index_t codec_index,
-                          tAVDT_CFG* p_cfg) {
+                          AvdtpSepConfig* p_cfg) {
   LOG_VERBOSE(LOG_TAG, "%s: codec %s", __func__,
               A2DP_CodecIndexStr(codec_index));
 

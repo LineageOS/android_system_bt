@@ -46,8 +46,9 @@ bool btif_a2dp_source_media_task_is_shutting_down(void);
 bool btif_a2dp_source_is_streaming(void);
 
 // Setup the A2DP Source codec, and prepare the encoder.
+// The peer address is |peer_addr|.
 // This function should be called prior to starting A2DP streaming.
-void btif_a2dp_source_setup_codec(void);
+void btif_a2dp_source_setup_codec(const RawAddress& peer_addr);
 
 // Process a request to start the A2DP audio encoding task.
 void btif_a2dp_source_start_audio_req(void);
@@ -57,8 +58,10 @@ void btif_a2dp_source_stop_audio_req(void);
 
 // Process a request to update the A2DP audio encoder with user preferred
 // codec configuration.
+// The peer address is |peer_addr|.
 // |codec_user_config| contains the preferred codec user configuration.
 void btif_a2dp_source_encoder_user_config_update_req(
+    const RawAddress& peer_addr,
     const btav_a2dp_codec_config_t& codec_user_config);
 
 // Process a request to update the A2DP audio encoding with new audio

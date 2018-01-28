@@ -857,7 +857,7 @@ const char* A2DP_CodecIndexStrSbc(void) { return "SBC"; }
 
 const char* A2DP_CodecIndexStrSbcSink(void) { return "SBC SINK"; }
 
-bool A2DP_InitCodecConfigSbc(tAVDT_CFG* p_cfg) {
+bool A2DP_InitCodecConfigSbc(AvdtpSepConfig* p_cfg) {
   if (A2DP_BuildInfoSbc(AVDT_MEDIA_TYPE_AUDIO, &a2dp_sbc_caps,
                         p_cfg->codec_info) != A2DP_SUCCESS) {
     return false;
@@ -874,7 +874,7 @@ bool A2DP_InitCodecConfigSbc(tAVDT_CFG* p_cfg) {
   return true;
 }
 
-bool A2DP_InitCodecConfigSbcSink(tAVDT_CFG* p_cfg) {
+bool A2DP_InitCodecConfigSbcSink(AvdtpSepConfig* p_cfg) {
   if (A2DP_BuildInfoSbc(AVDT_MEDIA_TYPE_AUDIO, &a2dp_sbc_sink_caps,
                         p_cfg->codec_info) != A2DP_SUCCESS) {
     return false;

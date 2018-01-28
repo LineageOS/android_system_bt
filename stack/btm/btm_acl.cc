@@ -191,8 +191,9 @@ void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
   tACL_CONN* p;
   uint8_t xx;
 
-  BTM_TRACE_DEBUG("btm_acl_created hci_handle=%d link_role=%d  transport=%d",
-                  hci_handle, link_role, transport);
+  BTM_TRACE_DEBUG("%s: peer %s hci_handle=%d link_role=%d  transport=%d",
+                  __func__, bda.ToString().c_str(), hci_handle, link_role,
+                  transport);
   /* Ensure we don't have duplicates */
   p = btm_bda_to_acl(bda, transport);
   if (p != (tACL_CONN*)NULL) {
@@ -240,7 +241,8 @@ void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
       p_dev_rec = btm_find_dev_by_handle(hci_handle);
 
       if (p_dev_rec) {
-        BTM_TRACE_DEBUG("device_type=0x%x", p_dev_rec->device_type);
+        BTM_TRACE_DEBUG("%s: peer %s device_type=0x%x", __func__,
+                        bda.ToString().c_str(), p_dev_rec->device_type);
       }
 
       if (p_dev_rec && !(transport == BT_TRANSPORT_LE)) {
@@ -690,8 +692,8 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
       (*btm_cb.p_bl_changed_cb)(&btm_bl_event_data);
 
       BTM_TRACE_DEBUG(
-          "Role Switch Event: new_role 0x%02x, HCI Status 0x%02x, rs_st:%d",
-          evt.new_role, evt.hci_status, p->switch_role_state);
+          "%s: Role Switch Event: new_role 0x%02x, HCI Status 0x%02x, rs_st:%d",
+          __func__, evt.new_role, evt.hci_status, p->switch_role_state);
     }
 
 #if (BTM_DISC_DURING_RS == TRUE)
@@ -1435,7 +1437,9 @@ void btm_acl_role_changed(uint8_t hci_status, const RawAddress* bd_addr,
   tBTM_ROLE_SWITCH_CMPL* p_data = &btm_cb.devcb.switch_role_ref_data;
   tBTM_SEC_DEV_REC* p_dev_rec;
 
-  BTM_TRACE_DEBUG("btm_acl_role_changed");
+  BTM_TRACE_DEBUG("%s: peer %s hci_status:0x%x new_role:%d", __func__,
+                  (p_bda != nullptr) ? bd_addr->ToString().c_str() : "nullptr",
+                  hci_status, new_role);
   /* Ignore any stray events */
   if (p == NULL) {
     /* it could be a failure */
@@ -1498,7 +1502,9 @@ void btm_acl_role_changed(uint8_t hci_status, const RawAddress* bd_addr,
   }
 
   BTM_TRACE_DEBUG(
-      "Role Switch Event: new_role 0x%02x, HCI Status 0x%02x, rs_st:%d",
+      "%s: peer %s Role Switch Event: new_role 0x%02x, HCI Status 0x%02x, "
+      "rs_st:%d",
+      __func__, (p_bda != nullptr) ? p_bda->ToString().c_str() : "nullptr",
       p_data->role, p_data->hci_status, p->switch_role_state);
 
 #if (BTM_DISC_DURING_RS == TRUE)
@@ -1507,10 +1513,13 @@ void btm_acl_role_changed(uint8_t hci_status, const RawAddress* bd_addr,
   if (p_dev_rec != NULL) {
     if (p_dev_rec->rs_disc_pending == BTM_SEC_DISC_PENDING) {
       BTM_TRACE_WARNING(
-          "btm_acl_role_changed -> Issuing delayed HCI_Disconnect!!!");
+          "%s peer %s Issuing delayed HCI_Disconnect!!!", __func__,
+          (p_bda != nullptr) ? p_bda->ToString().c_str() : "nullptr");
       btsnd_hcic_disconnect(p_dev_rec->hci_handle, HCI_ERR_PEER_USER);
     }
-    BTM_TRACE_ERROR("tBTM_SEC_DEV:0x%x rs_disc_pending=%d",
+    BTM_TRACE_ERROR("%s: peer %s tBTM_SEC_DEV:0x%x rs_disc_pending=%d",
+                    __func__,
+                    (p_bda != nullptr) ? p_bda->ToString().c_str() : "nullptr",
                     PTR_TO_UINT(p_dev_rec), p_dev_rec->rs_disc_pending);
     p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
   }

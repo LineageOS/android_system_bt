@@ -187,12 +187,12 @@ btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndex(
 // Gets the A2DP vendor codec name for a given |codec_index|.
 const char* A2DP_VendorCodecIndexStr(btav_a2dp_codec_index_t codec_index);
 
-// Initializes A2DP vendor codec-specific information into |tAVDT_CFG|
+// Initializes A2DP vendor codec-specific information into |AvdtpSepConfig|
 // configuration entry pointed by |p_cfg|. The selected codec is defined by
 // |codec_index|.
 // Returns true on success, otherwise false.
 bool A2DP_VendorInitCodecConfig(btav_a2dp_codec_index_t codec_index,
-                                tAVDT_CFG* p_cfg);
+                                AvdtpSepConfig* p_cfg);
 
 // Decodes and displays A2DP vendor codec info when using |LOG_DEBUG|.
 // |p_codec_info| is a pointer to the codec_info to decode and display.

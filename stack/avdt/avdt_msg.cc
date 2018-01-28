@@ -271,7 +271,7 @@ const uint8_t avdt_msg_rej_2_evt[] = {
  * Returns          void.
  *
  ******************************************************************************/
-static void avdt_msg_bld_cfg(uint8_t** p, tAVDT_CFG* p_cfg) {
+static void avdt_msg_bld_cfg(uint8_t** p, AvdtpSepConfig* p_cfg) {
   uint8_t len;
 
   /* for now, just build media transport, codec, and content protection, and
@@ -467,10 +467,9 @@ static void avdt_msg_bld_discover_rsp(uint8_t** p, tAVDT_MSG* p_msg) {
  *
  ******************************************************************************/
 static void avdt_msg_bld_svccap(uint8_t** p, tAVDT_MSG* p_msg) {
-  tAVDT_CFG cfg;
+  AvdtpSepConfig cfg = *p_msg->svccap.p_cfg;
 
   /* make sure the delay report category is not reported */
-  memcpy(&cfg, p_msg->svccap.p_cfg, sizeof(tAVDT_CFG));
   cfg.psc_mask &= ~AVDT_PSC_DELAY_RPT;
   avdt_msg_bld_cfg(p, &cfg);
 }
@@ -518,7 +517,7 @@ static void avdt_msg_bld_security_rsp(uint8_t** p, tAVDT_MSG* p_msg) {
  *                  in p_elem.
  *
  ******************************************************************************/
-static uint8_t avdt_msg_prs_cfg(tAVDT_CFG* p_cfg, uint8_t* p, uint16_t len,
+static uint8_t avdt_msg_prs_cfg(AvdtpSepConfig* p_cfg, uint8_t* p, uint16_t len,
                                 uint8_t* p_elem, uint8_t sig_id) {
   uint8_t* p_end;
   uint8_t elem = 0;
@@ -1023,11 +1022,11 @@ static uint8_t avdt_msg_prs_delay_rpt(tAVDT_MSG* p_msg, uint8_t* p,
  * Returns          Congested state; true if CCB congested, false if not.
  *
  ******************************************************************************/
-bool avdt_msg_send(tAVDT_CCB* p_ccb, BT_HDR* p_msg) {
+bool avdt_msg_send(AvdtpCcb* p_ccb, BT_HDR* p_msg) {
   uint16_t curr_msg_len;
   uint8_t pkt_type;
   uint8_t hdr_len;
-  tAVDT_TC_TBL* p_tbl;
+  AvdtpTransportChannel* p_tbl;
   BT_HDR* p_buf;
   uint8_t* p;
   uint8_t label;
@@ -1119,16 +1118,16 @@ bool avdt_msg_send(tAVDT_CCB* p_ccb, BT_HDR* p_msg) {
       if (msg == AVDT_MSG_TYPE_CMD) {
         /* if retransmit timeout set to zero, sig doesn't use retransmit */
         if ((sig == AVDT_SIG_DISCOVER) || (sig == AVDT_SIG_GETCAP) ||
-            (sig == AVDT_SIG_SECURITY) || (avdt_cb.rcb.ret_tout == 0)) {
+            (sig == AVDT_SIG_SECURITY) || (avdtp_cb.rcb.ret_tout == 0)) {
           alarm_cancel(p_ccb->idle_ccb_timer);
           alarm_cancel(p_ccb->ret_ccb_timer);
-          period_ms_t interval_ms = avdt_cb.rcb.sig_tout * 1000;
+          period_ms_t interval_ms = avdtp_cb.rcb.sig_tout * 1000;
           alarm_set_on_mloop(p_ccb->rsp_ccb_timer, interval_ms,
                              avdt_ccb_rsp_ccb_timer_timeout, p_ccb);
         } else if (sig != AVDT_SIG_DELAY_RPT) {
           alarm_cancel(p_ccb->idle_ccb_timer);
           alarm_cancel(p_ccb->rsp_ccb_timer);
-          period_ms_t interval_ms = avdt_cb.rcb.ret_tout * 1000;
+          period_ms_t interval_ms = avdtp_cb.rcb.ret_tout * 1000;
           alarm_set_on_mloop(p_ccb->ret_ccb_timer, interval_ms,
                              avdt_ccb_ret_ccb_timer_timeout, p_ccb);
         }
@@ -1171,7 +1170,7 @@ bool avdt_msg_send(tAVDT_CCB* p_ccb, BT_HDR* p_msg) {
  *                  available.
  *
  ******************************************************************************/
-BT_HDR* avdt_msg_asmbl(tAVDT_CCB* p_ccb, BT_HDR* p_buf) {
+BT_HDR* avdt_msg_asmbl(AvdtpCcb* p_ccb, BT_HDR* p_buf) {
   uint8_t* p;
   uint8_t pkt_type;
   BT_HDR* p_ret;
@@ -1292,7 +1291,7 @@ BT_HDR* avdt_msg_asmbl(tAVDT_CCB* p_ccb, BT_HDR* p_buf) {
  * Returns          Nothing.
  *
  ******************************************************************************/
-void avdt_msg_send_cmd(tAVDT_CCB* p_ccb, void* p_scb, uint8_t sig_id,
+void avdt_msg_send_cmd(AvdtpCcb* p_ccb, void* p_scb, uint8_t sig_id,
                        tAVDT_MSG* p_params) {
   uint8_t* p;
   uint8_t* p_start;
@@ -1318,7 +1317,7 @@ void avdt_msg_send_cmd(tAVDT_CCB* p_ccb, void* p_scb, uint8_t sig_id,
     }
     /* for all others, p_scb points to scb as usual */
     else {
-      *p = avdt_scb_to_hdl((tAVDT_SCB*)p_scb);
+      *p = avdt_scb_to_hdl((AvdtpScb*)p_scb);
     }
   }
 
@@ -1349,7 +1348,7 @@ void avdt_msg_send_cmd(tAVDT_CCB* p_ccb, void* p_scb, uint8_t sig_id,
  * Returns          Nothing.
  *
  ******************************************************************************/
-void avdt_msg_send_rsp(tAVDT_CCB* p_ccb, uint8_t sig_id, tAVDT_MSG* p_params) {
+void avdt_msg_send_rsp(AvdtpCcb* p_ccb, uint8_t sig_id, tAVDT_MSG* p_params) {
   uint8_t* p;
   uint8_t* p_start;
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(AVDT_CMD_BUF_SIZE);
@@ -1389,7 +1388,7 @@ void avdt_msg_send_rsp(tAVDT_CCB* p_ccb, uint8_t sig_id, tAVDT_MSG* p_params) {
  * Returns          Nothing.
  *
  ******************************************************************************/
-void avdt_msg_send_rej(tAVDT_CCB* p_ccb, uint8_t sig_id, tAVDT_MSG* p_params) {
+void avdt_msg_send_rej(AvdtpCcb* p_ccb, uint8_t sig_id, tAVDT_MSG* p_params) {
   uint8_t* p;
   uint8_t* p_start;
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(AVDT_CMD_BUF_SIZE);
@@ -1440,7 +1439,7 @@ void avdt_msg_send_rej(tAVDT_CCB* p_ccb, uint8_t sig_id, tAVDT_MSG* p_params) {
  * Returns          Nothing.
  *
  ******************************************************************************/
-void avdt_msg_send_grej(tAVDT_CCB* p_ccb, uint8_t sig_id, tAVDT_MSG* p_params) {
+void avdt_msg_send_grej(AvdtpCcb* p_ccb, uint8_t sig_id, tAVDT_MSG* p_params) {
   uint8_t* p;
   uint8_t* p_start;
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(AVDT_CMD_BUF_SIZE);
@@ -1476,8 +1475,8 @@ void avdt_msg_send_grej(tAVDT_CCB* p_ccb, uint8_t sig_id, tAVDT_MSG* p_params) {
  * Returns          Nothing.
  *
  ******************************************************************************/
-void avdt_msg_ind(tAVDT_CCB* p_ccb, BT_HDR* p_buf) {
-  tAVDT_SCB* p_scb;
+void avdt_msg_ind(AvdtpCcb* p_ccb, BT_HDR* p_buf) {
+  AvdtpScb* p_scb;
   uint8_t* p;
   bool ok = true;
   bool handle_rsp = false;
@@ -1487,7 +1486,7 @@ void avdt_msg_ind(tAVDT_CCB* p_ccb, BT_HDR* p_buf) {
   uint8_t msg_type;
   uint8_t sig = 0;
   tAVDT_MSG msg;
-  tAVDT_CFG cfg;
+  AvdtpSepConfig cfg;
   uint8_t err;
   uint8_t evt = 0;
   uint8_t scb_hdl;
@@ -1552,7 +1551,7 @@ void avdt_msg_ind(tAVDT_CCB* p_ccb, BT_HDR* p_buf) {
     } else if ((msg_type == AVDT_MSG_TYPE_RSP) &&
                ((sig == AVDT_SIG_GETCAP) || (sig == AVDT_SIG_GET_ALLCAP))) {
       /* parse discover rsp message to struct supplied by app */
-      msg.svccap.p_cfg = (tAVDT_CFG*)p_ccb->p_proc_data;
+      msg.svccap.p_cfg = (AvdtpSepConfig*)p_ccb->p_proc_data;
     } else if ((msg_type == AVDT_MSG_TYPE_RSP) && (sig == AVDT_SIG_GETCONFIG)) {
       /* parse get config rsp message to struct allocated locally */
       msg.svccap.p_cfg = &cfg;

@@ -156,30 +156,40 @@ enum {
 
 /* function types for call-out functions */
 typedef bool (*tBTA_AV_CO_INIT)(btav_a2dp_codec_index_t codec_index,
-                                tAVDT_CFG* p_cfg);
-typedef void (*tBTA_AV_CO_DISC_RES)(tBTA_AV_HNDL hndl, uint8_t num_seps,
-                                    uint8_t num_snk, uint8_t num_src,
-                                    const RawAddress& addr,
-                                    uint16_t uuid_local);
-typedef tA2DP_STATUS (*tBTA_AV_CO_GETCFG)(tBTA_AV_HNDL hndl,
+                                AvdtpSepConfig* p_cfg);
+typedef void (*tBTA_AV_CO_DISC_RES)(tBTA_AV_HNDL bta_av_handle,
+                                    const RawAddress& peer_addr,
+                                    uint8_t num_seps, uint8_t num_snk,
+                                    uint8_t num_src, uint16_t uuid_local);
+typedef tA2DP_STATUS (*tBTA_AV_CO_GETCFG)(tBTA_AV_HNDL bta_av_handle,
+                                          const RawAddress& peer_addr,
                                           uint8_t* p_codec_info,
                                           uint8_t* p_sep_info_idx, uint8_t seid,
                                           uint8_t* p_num_protect,
                                           uint8_t* p_protect_info);
-typedef void (*tBTA_AV_CO_SETCFG)(tBTA_AV_HNDL hndl,
+typedef void (*tBTA_AV_CO_SETCFG)(tBTA_AV_HNDL bta_av_handle,
+                                  const RawAddress& peer_addr,
                                   const uint8_t* p_codec_info, uint8_t seid,
-                                  const RawAddress& addr, uint8_t num_protect,
+                                  uint8_t num_protect,
                                   const uint8_t* p_protect_info,
                                   uint8_t t_local_sep, uint8_t avdt_handle);
-typedef void (*tBTA_AV_CO_OPEN)(tBTA_AV_HNDL hndl, uint16_t mtu);
-typedef void (*tBTA_AV_CO_CLOSE)(tBTA_AV_HNDL hndl);
-typedef void (*tBTA_AV_CO_START)(tBTA_AV_HNDL hndl, uint8_t* p_codec_info,
-                                 bool* p_no_rtp_hdr);
-typedef void (*tBTA_AV_CO_STOP)(tBTA_AV_HNDL hndl);
-typedef void* (*tBTA_AV_CO_DATAPATH)(const uint8_t* p_codec_info,
-                                     uint32_t* p_timestamp);
-typedef void (*tBTA_AV_CO_DELAY)(tBTA_AV_HNDL hndl, uint16_t delay);
-typedef void (*tBTA_AV_CO_UPDATE_MTU)(tBTA_AV_HNDL hndl, uint16_t mtu);
+typedef void (*tBTA_AV_CO_OPEN)(tBTA_AV_HNDL bta_av_handle,
+                                const RawAddress& peer_addr, uint16_t mtu);
+typedef void (*tBTA_AV_CO_CLOSE)(tBTA_AV_HNDL bta_av_handle,
+                                 const RawAddress& peer_addr);
+typedef void (*tBTA_AV_CO_START)(tBTA_AV_HNDL bta_av_handle,
+                                 const RawAddress& peer_addr,
+                                 const uint8_t* p_codec_info,
+                                 bool* p_no_rtp_header);
+typedef void (*tBTA_AV_CO_STOP)(tBTA_AV_HNDL bta_av_handle,
+                                const RawAddress& peer_addr);
+typedef BT_HDR* (*tBTA_AV_CO_DATAPATH)(const uint8_t* p_codec_info,
+                                       uint32_t* p_timestamp);
+typedef void (*tBTA_AV_CO_DELAY)(tBTA_AV_HNDL bta_av_handle,
+                                 const RawAddress& peer_addr, uint16_t delay);
+typedef void (*tBTA_AV_CO_UPDATE_MTU)(tBTA_AV_HNDL bta_av_handle,
+                                      const RawAddress& peer_addr,
+                                      uint16_t mtu);
 
 /* the call-out functions for one stream */
 typedef struct {
@@ -313,9 +323,10 @@ typedef struct {
 /* data type for all stream events from AVDTP */
 typedef struct {
   BT_HDR hdr;
-  tAVDT_CFG cfg;   /* configuration/capabilities parameters */
+  AvdtpSepConfig cfg; /* configuration/capabilities parameters */
   tAVDT_CTRL msg;  /* AVDTP callback message parameters */
   RawAddress bd_addr; /* bd address */
+  uint8_t scb_index;
   uint8_t handle;
   uint8_t avdt_event;
   bool initiator; /* true, if local device initiates the SUSPEND */
@@ -446,11 +457,11 @@ struct tBTA_AV_SCB {
   const tBTA_AV_CO_FUNCTS* p_cos; /* the associated callout functions */
   bool sdp_discovery_started; /* variable to determine whether SDP is started */
   tBTA_AV_SEP seps[BTAV_A2DP_CODEC_INDEX_MAX];
-  tAVDT_CFG peer_cap; /* buffer used for get capabilities */
+  AvdtpSepConfig peer_cap; /* buffer used for get capabilities */
   list_t* a2dp_list; /* used for audio channels only */
   tBTA_AV_Q_INFO q_info;
   tAVDT_SEP_INFO sep_info[BTA_AV_NUM_SEPS]; /* stream discovery results */
-  tAVDT_CFG cfg;                            /* local SEP configuration */
+  AvdtpSepConfig cfg;                       /* local SEP configuration */
   alarm_t* avrc_ct_timer;                   /* delay timer for AVRC CT */
   RawAddress peer_addr;                     /* peer BD address */
   uint16_t l2c_cid;                         /* L2CAP channel ID */
@@ -488,13 +499,13 @@ struct tBTA_AV_SCB {
                         successfull, else False if command fails */
   bool suspend_sup;  /* true if Suspend stream is supported, else false if
                         suspend command fails */
-  bool deregistring; /* true if deregistering */
+  bool deregistering; /* true if deregistering */
   bool sco_suspend;  /* true if SUSPEND is issued automatically for SCO */
   uint8_t coll_mask; /* Mask to check incoming and outgoing collision */
   tBTA_AV_API_OPEN open_api; /* Saved OPEN api message */
   uint8_t wait;  /* set 0x1, when getting Caps as ACP, set 0x2, when started */
   uint8_t q_tag; /* identify the associated q_info union member */
-  bool no_rtp_hdr;   /* true if add no RTP header*/
+  bool no_rtp_header; /* true if add no RTP header */
   uint16_t uuid_int; /*intended UUID of Initiator to connect to */
   bool offload_start_pending;
   bool skip_sdp; /* Decides if sdp to be done prior to profile connection */
@@ -541,7 +552,6 @@ typedef struct {
       accept_signalling_timer;  /* timer to monitor signalling when accepting */
   uint32_t sdp_a2dp_handle;     /* SDP record handle for audio src */
   uint32_t sdp_a2dp_snk_handle; /* SDP record handle for audio snk */
-  uint32_t sdp_vdp_handle;      /* SDP record handle for video src */
   tBTA_AV_FEAT features;        /* features mask */
   tBTA_SEC sec_mask;            /* security mask */
   tBTA_AV_HNDL handle;          /* the handle for SDP activity */
@@ -549,19 +559,15 @@ typedef struct {
   uint8_t
       disc; /* (hdi+1) or (rc_handle|BTA_AV_CHNL_MSK) if p_disc_db is in use */
   uint8_t state;          /* state machine state */
-  uint8_t conn_rc;        /* handle mask of connected RCP channels */
   uint8_t conn_audio;     /* handle mask of connected audio channels */
-  uint8_t conn_video;     /* handle mask of connected video channels */
   uint8_t conn_lcb;       /* index mask of used LCBs */
   uint8_t audio_open_cnt; /* number of connected audio channels */
   uint8_t reg_audio;      /* handle mask of registered audio channels */
-  uint8_t reg_video;      /* handle mask of registered video channels */
   uint8_t rc_acp_handle;
   uint8_t rc_acp_idx; /* (index + 1) to RCB */
   uint8_t rs_idx;    /* (index + 1) to SCB for the one waiting for RS on open */
   bool sco_occupied; /* true if SCO is being used or call is in progress */
   uint8_t audio_streams; /* handle mask of streaming audio channels */
-  uint8_t video_streams; /* handle mask of streaming video channels */
 } tBTA_AV_CB;
 
 /*****************************************************************************
@@ -583,7 +589,6 @@ extern uint16_t* p_bta_av_rc_id_ac;
 
 extern const tBTA_AV_SACT bta_av_a2dp_action[];
 extern const tBTA_AV_CO_FUNCTS bta_av_a2dp_cos;
-extern tAVDT_CTRL_CBACK* const bta_av_dt_cback[];
 extern void bta_av_sink_data_cback(uint8_t handle, BT_HDR* p_pkt,
                                    uint32_t time_stamp, uint8_t m_pt);
 
@@ -595,8 +600,9 @@ extern tBTA_AV_SCB* bta_av_hndl_to_scb(uint16_t handle);
 extern bool bta_av_chk_start(tBTA_AV_SCB* p_scb);
 extern void bta_av_restore_switch(void);
 extern uint16_t bta_av_chk_mtu(tBTA_AV_SCB* p_scb, uint16_t mtu);
-extern void bta_av_conn_cback(uint8_t handle, const RawAddress* bd_addr,
-                              uint8_t event, tAVDT_CTRL* p_data);
+extern void bta_av_conn_cback(uint8_t handle, const RawAddress& bd_addr,
+                              uint8_t event, tAVDT_CTRL* p_data,
+                              uint8_t scb_index);
 extern uint8_t bta_av_rc_create(tBTA_AV_CB* p_cb, uint8_t role, uint8_t shdl,
                                 uint8_t lidx);
 extern void bta_av_stream_chg(tBTA_AV_SCB* p_scb, bool started);
@@ -606,6 +612,7 @@ extern void bta_av_set_scb_sst_init(tBTA_AV_SCB* p_scb);
 extern bool bta_av_is_scb_init(tBTA_AV_SCB* p_scb);
 extern void bta_av_set_scb_sst_incoming(tBTA_AV_SCB* p_scb);
 extern tBTA_AV_LCB* bta_av_find_lcb(const RawAddress& addr, uint8_t op);
+extern const char* bta_av_sst_code(uint8_t state);
 
 /* main functions */
 extern void bta_av_api_deregister(tBTA_AV_DATA* p_data);
@@ -645,6 +652,10 @@ extern void bta_av_rc_free_browse_msg(tBTA_AV_CB* p_cb, tBTA_AV_DATA* p_data);
 
 extern tBTA_AV_RCB* bta_av_get_rcb_by_shdl(uint8_t shdl);
 extern void bta_av_del_rc(tBTA_AV_RCB* p_rcb);
+
+extern void bta_av_proc_stream_evt(uint8_t handle, const RawAddress& bd_addr,
+                                   uint8_t event, tAVDT_CTRL* p_data,
+                                   uint8_t scb_index);
 
 /* ssm action functions */
 extern void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data);

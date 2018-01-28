@@ -34,11 +34,11 @@
 #include "l2c_api.h"
 #include "stack/include/a2dp_codec_api.h"
 
-/* Control block for AVDT */
-tAVDT_CB avdt_cb;
+/* Control block for AVDTP */
+AvdtpCb avdtp_cb;
 
 void avdt_ccb_idle_ccb_timer_timeout(void* data) {
-  tAVDT_CCB* p_ccb = (tAVDT_CCB*)data;
+  AvdtpCcb* p_ccb = (AvdtpCcb*)data;
   uint8_t avdt_event = AVDT_CCB_IDLE_TOUT_EVT;
   uint8_t err_code = AVDT_ERR_TIMEOUT;
 
@@ -48,7 +48,7 @@ void avdt_ccb_idle_ccb_timer_timeout(void* data) {
 }
 
 void avdt_ccb_ret_ccb_timer_timeout(void* data) {
-  tAVDT_CCB* p_ccb = (tAVDT_CCB*)data;
+  AvdtpCcb* p_ccb = (AvdtpCcb*)data;
   uint8_t avdt_event = AVDT_CCB_RET_TOUT_EVT;
   uint8_t err_code = AVDT_ERR_TIMEOUT;
 
@@ -58,7 +58,7 @@ void avdt_ccb_ret_ccb_timer_timeout(void* data) {
 }
 
 void avdt_ccb_rsp_ccb_timer_timeout(void* data) {
-  tAVDT_CCB* p_ccb = (tAVDT_CCB*)data;
+  AvdtpCcb* p_ccb = (AvdtpCcb*)data;
   uint8_t avdt_event = AVDT_CCB_RSP_TOUT_EVT;
   uint8_t err_code = AVDT_ERR_TIMEOUT;
 
@@ -68,7 +68,7 @@ void avdt_ccb_rsp_ccb_timer_timeout(void* data) {
 }
 
 void avdt_scb_transport_channel_timer_timeout(void* data) {
-  tAVDT_SCB* p_scb = (tAVDT_SCB*)data;
+  AvdtpScb* p_scb = (AvdtpScb*)data;
   uint8_t avdt_event = AVDT_SCB_TC_TOUT_EVT;
 
   avdt_scb_event(p_scb, avdt_event, NULL);
@@ -88,7 +88,7 @@ void avdt_scb_transport_channel_timer_timeout(void* data) {
  * Returns          void
  *
  ******************************************************************************/
-void AVDT_Register(tAVDT_REG* p_reg, tAVDT_CTRL_CBACK* p_cback) {
+void AVDT_Register(AvdtpRcb* p_reg, tAVDT_CTRL_CBACK* p_cback) {
   /* register PSM with L2CAP */
   L2CA_Register(AVDT_PSM, (tL2CAP_APPL_INFO*)&avdt_l2c_appl);
 
@@ -116,8 +116,8 @@ void AVDT_Register(tAVDT_REG* p_reg, tAVDT_CTRL_CBACK* p_cback) {
   avdt_ad_init();
 
   /* copy registration struct */
-  memcpy(&avdt_cb.rcb, p_reg, sizeof(tAVDT_REG));
-  avdt_cb.p_conn_cback = p_cback;
+  avdtp_cb.rcb = *p_reg;
+  avdtp_cb.p_conn_cback = p_cback;
 }
 
 /*******************************************************************************
@@ -142,7 +142,7 @@ void AVDT_Deregister(void) {
 void AVDT_AbortReq(uint8_t handle) {
   AVDT_TRACE_WARNING("%s: handle=%d", __func__, handle);
 
-  tAVDT_SCB* p_scb = avdt_scb_by_hdl(handle);
+  AvdtpScb* p_scb = avdt_scb_by_hdl(handle);
   if (p_scb != NULL) {
     avdt_scb_event(p_scb, AVDT_SCB_API_ABORT_REQ_EVT, NULL);
   } else {
@@ -164,20 +164,21 @@ void AVDT_AbortReq(uint8_t handle) {
  * Returns          AVDT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-uint16_t AVDT_CreateStream(uint8_t* p_handle, tAVDT_CS* p_cs) {
+uint16_t AVDT_CreateStream(uint8_t peer_id, uint8_t* p_handle,
+                           const AvdtpStreamConfig& avdtp_stream_config) {
   uint16_t result = AVDT_SUCCESS;
-  tAVDT_SCB* p_scb;
+  AvdtpScb* p_scb;
 
-  AVDT_TRACE_DEBUG("%s", __func__);
+  AVDT_TRACE_DEBUG("%s: peer_id=%d", __func__, peer_id);
 
   /* Verify parameters; if invalid, return failure */
-  if (((p_cs->cfg.psc_mask & (~AVDT_PSC)) != 0) ||
-      (p_cs->p_ctrl_cback == NULL)) {
+  if (((avdtp_stream_config.cfg.psc_mask & (~AVDT_PSC)) != 0) ||
+      (avdtp_stream_config.p_avdt_ctrl_cback == NULL)) {
     result = AVDT_BAD_PARAMS;
   }
   /* Allocate scb; if no scbs, return failure */
   else {
-    p_scb = avdt_scb_alloc(p_cs);
+    p_scb = avdt_scb_alloc(peer_id, avdtp_stream_config);
     if (p_scb == NULL) {
       result = AVDT_NO_RESOURCES;
     } else {
@@ -185,7 +186,8 @@ uint16_t AVDT_CreateStream(uint8_t* p_handle, tAVDT_CS* p_cs) {
     }
   }
 
-  AVDT_TRACE_DEBUG("%s: result=%d", __func__, result);
+  AVDT_TRACE_DEBUG("%s: result=%d handle=%d scb_index=%d", __func__, result,
+                   *p_handle, avdtp_stream_config.scb_index);
 
   return result;
 }
@@ -206,7 +208,7 @@ uint16_t AVDT_CreateStream(uint8_t* p_handle, tAVDT_CS* p_cs) {
  ******************************************************************************/
 uint16_t AVDT_RemoveStream(uint8_t handle) {
   uint16_t result = AVDT_SUCCESS;
-  tAVDT_SCB* p_scb;
+  AvdtpScb* p_scb;
 
   AVDT_TRACE_DEBUG("%s: handle=%d", __func__, handle);
 
@@ -250,9 +252,10 @@ uint16_t AVDT_RemoveStream(uint8_t handle) {
  * Returns          AVDT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-uint16_t AVDT_DiscoverReq(const RawAddress& bd_addr, tAVDT_SEP_INFO* p_sep_info,
-                          uint8_t max_seps, tAVDT_CTRL_CBACK* p_cback) {
-  tAVDT_CCB* p_ccb;
+uint16_t AVDT_DiscoverReq(const RawAddress& bd_addr, uint8_t channel_index,
+                          tAVDT_SEP_INFO* p_sep_info, uint8_t max_seps,
+                          tAVDT_CTRL_CBACK* p_cback) {
+  AvdtpCcb* p_ccb;
   uint16_t result = AVDT_SUCCESS;
   tAVDT_CCB_EVT evt;
 
@@ -261,7 +264,7 @@ uint16_t AVDT_DiscoverReq(const RawAddress& bd_addr, tAVDT_SEP_INFO* p_sep_info,
   /* find channel control block for this bd addr; if none, allocate one */
   p_ccb = avdt_ccb_by_bd(bd_addr);
   if (p_ccb == NULL) {
-    p_ccb = avdt_ccb_alloc(bd_addr);
+    p_ccb = avdt_ccb_alloc_by_channel_index(bd_addr, channel_index);
     if (p_ccb == NULL) {
       /* could not allocate channel control block */
       result = AVDT_NO_RESOURCES;
@@ -291,15 +294,15 @@ uint16_t AVDT_DiscoverReq(const RawAddress& bd_addr, tAVDT_SEP_INFO* p_sep_info,
  *
  * Function         avdt_get_cap_req
  *
- * Description      internal function to serve both AVDT_GetCapReq and
- *                  AVDT_GetAllCapReq
+ * Description      internal function to serve AVDT_GetCapReq
  *
  * Returns          AVDT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
 static uint16_t avdt_get_cap_req(const RawAddress& bd_addr,
+                                 uint8_t channel_index,
                                  tAVDT_CCB_API_GETCAP* p_evt) {
-  tAVDT_CCB* p_ccb = NULL;
+  AvdtpCcb* p_ccb = NULL;
   uint16_t result = AVDT_SUCCESS;
 
   AVDT_TRACE_DEBUG("%s", __func__);
@@ -314,7 +317,7 @@ static uint16_t avdt_get_cap_req(const RawAddress& bd_addr,
   else {
     p_ccb = avdt_ccb_by_bd(bd_addr);
     if (p_ccb == NULL) {
-      p_ccb = avdt_ccb_alloc(bd_addr);
+      p_ccb = avdt_ccb_alloc_by_channel_index(bd_addr, channel_index);
       if (p_ccb == NULL) {
         /* could not allocate channel control block */
         result = AVDT_NO_RESOURCES;
@@ -362,60 +365,23 @@ static uint16_t avdt_get_cap_req(const RawAddress& bd_addr,
  * Returns          AVDT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-uint16_t AVDT_GetCapReq(const RawAddress& bd_addr, uint8_t seid,
-                        tAVDT_CFG* p_cfg, tAVDT_CTRL_CBACK* p_cback) {
+uint16_t AVDT_GetCapReq(const RawAddress& bd_addr, uint8_t channel_index,
+                        uint8_t seid, AvdtpSepConfig* p_cfg,
+                        tAVDT_CTRL_CBACK* p_cback, bool get_all_cap) {
   tAVDT_CCB_API_GETCAP getcap;
   uint16_t result = AVDT_SUCCESS;
 
   AVDT_TRACE_DEBUG("%s", __func__);
 
   getcap.single.seid = seid;
-  getcap.single.sig_id = AVDT_SIG_GETCAP;
+  if (get_all_cap) {
+    getcap.single.sig_id = AVDT_SIG_GET_ALLCAP;
+  } else {
+    getcap.single.sig_id = AVDT_SIG_GETCAP;
+  }
   getcap.p_cfg = p_cfg;
   getcap.p_cback = p_cback;
-  result = avdt_get_cap_req(bd_addr, &getcap);
-
-  AVDT_TRACE_DEBUG("%s: result=%d", __func__, result);
-
-  return result;
-}
-
-/*******************************************************************************
- *
- * Function         AVDT_GetAllCapReq
- *
- * Description      This function initiates a connection to the AVDTP service
- *                  on the peer device, if not already present, and gets the
- *                  capabilities of a stream endpoint on the peer device.
- *                  This function can be called at any time regardless of
- *                  whether there is an AVDTP connection to the peer device.
- *
- *                  When the procedure is complete, an AVDT_GETCAP_CFM_EVT is
- *                  sent to the application via its callback function.  The
- *                  application must not call AVDT_GetCapReq() or
- *                  AVDT_DiscoverReq() again until the procedure is complete.
- *
- *                  The memory pointed to by p_cfg is allocated by the
- *                  application.  This memory is written to by AVDTP as part
- *                  of the get capabilities procedure.  This memory must
- *                  remain accessible until the application receives
- *                  the AVDT_GETCAP_CFM_EVT.
- *
- * Returns          AVDT_SUCCESS if successful, otherwise error.
- *
- ******************************************************************************/
-uint16_t AVDT_GetAllCapReq(const RawAddress& bd_addr, uint8_t seid,
-                           tAVDT_CFG* p_cfg, tAVDT_CTRL_CBACK* p_cback) {
-  tAVDT_CCB_API_GETCAP getcap;
-  uint16_t result = AVDT_SUCCESS;
-
-  AVDT_TRACE_DEBUG("%s", __func__);
-
-  getcap.single.seid = seid;
-  getcap.single.sig_id = AVDT_SIG_GET_ALLCAP;
-  getcap.p_cfg = p_cfg;
-  getcap.p_cback = p_cback;
-  result = avdt_get_cap_req(bd_addr, &getcap);
+  result = avdt_get_cap_req(bd_addr, channel_index, &getcap);
 
   AVDT_TRACE_DEBUG("%s: result=%d", __func__, result);
 
@@ -434,7 +400,7 @@ uint16_t AVDT_GetAllCapReq(const RawAddress& bd_addr, uint8_t seid,
  *
  ******************************************************************************/
 uint16_t AVDT_DelayReport(uint8_t handle, uint8_t seid, uint16_t delay) {
-  tAVDT_SCB* p_scb;
+  AvdtpScb* p_scb;
   uint16_t result = AVDT_SUCCESS;
   tAVDT_SCB_EVT evt;
 
@@ -472,10 +438,11 @@ uint16_t AVDT_DelayReport(uint8_t handle, uint8_t seid, uint16_t delay) {
  * Returns          AVDT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-uint16_t AVDT_OpenReq(uint8_t handle, const RawAddress& bd_addr, uint8_t seid,
-                      tAVDT_CFG* p_cfg) {
-  tAVDT_CCB* p_ccb = NULL;
-  tAVDT_SCB* p_scb = NULL;
+uint16_t AVDT_OpenReq(uint8_t handle, const RawAddress& bd_addr,
+                      uint8_t channel_index, uint8_t seid,
+                      AvdtpSepConfig* p_cfg) {
+  AvdtpCcb* p_ccb = NULL;
+  AvdtpScb* p_scb = NULL;
   uint16_t result = AVDT_SUCCESS;
   tAVDT_SCB_EVT evt;
 
@@ -495,7 +462,7 @@ uint16_t AVDT_OpenReq(uint8_t handle, const RawAddress& bd_addr, uint8_t seid,
     else {
       p_ccb = avdt_ccb_by_bd(bd_addr);
       if (p_ccb == NULL) {
-        p_ccb = avdt_ccb_alloc(bd_addr);
+        p_ccb = avdt_ccb_alloc_by_channel_index(bd_addr, channel_index);
         if (p_ccb == NULL) {
           /* could not allocate channel control block */
           result = AVDT_NO_RESOURCES;
@@ -534,13 +501,13 @@ uint16_t AVDT_OpenReq(uint8_t handle, const RawAddress& bd_addr, uint8_t seid,
  ******************************************************************************/
 uint16_t AVDT_ConfigRsp(uint8_t handle, uint8_t label, uint8_t error_code,
                         uint8_t category) {
-  tAVDT_SCB* p_scb;
+  AvdtpScb* p_scb;
   tAVDT_SCB_EVT evt;
   uint16_t result = AVDT_SUCCESS;
   uint8_t event_code;
 
-  AVDT_TRACE_DEBUG("%s: handle=%d label=%d error_code=%d category=%d", __func__,
-                   handle, label, error_code, category);
+  AVDT_TRACE_DEBUG("%s: handle=%d label=%d error_code=0x%x category=%d",
+                   __func__, handle, label, error_code, category);
 
   /* map handle to scb */
   p_scb = avdt_scb_by_hdl(handle);
@@ -587,7 +554,7 @@ uint16_t AVDT_ConfigRsp(uint8_t handle, uint8_t label, uint8_t error_code,
  *
  ******************************************************************************/
 uint16_t AVDT_StartReq(uint8_t* p_handles, uint8_t num_handles) {
-  tAVDT_SCB* p_scb = NULL;
+  AvdtpScb* p_scb = NULL;
   tAVDT_CCB_EVT evt;
   uint16_t result = AVDT_SUCCESS;
   int i;
@@ -639,7 +606,7 @@ uint16_t AVDT_StartReq(uint8_t* p_handles, uint8_t num_handles) {
  *
  ******************************************************************************/
 uint16_t AVDT_SuspendReq(uint8_t* p_handles, uint8_t num_handles) {
-  tAVDT_SCB* p_scb = NULL;
+  AvdtpScb* p_scb = NULL;
   tAVDT_CCB_EVT evt;
   uint16_t result = AVDT_SUCCESS;
   int i;
@@ -690,7 +657,7 @@ uint16_t AVDT_SuspendReq(uint8_t* p_handles, uint8_t num_handles) {
  *
  ******************************************************************************/
 uint16_t AVDT_CloseReq(uint8_t handle) {
-  tAVDT_SCB* p_scb;
+  AvdtpScb* p_scb;
   uint16_t result = AVDT_SUCCESS;
 
   AVDT_TRACE_DEBUG("%s: handle=%d", __func__, handle);
@@ -727,8 +694,8 @@ uint16_t AVDT_CloseReq(uint8_t handle) {
  * Returns          AVDT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-uint16_t AVDT_ReconfigReq(uint8_t handle, tAVDT_CFG* p_cfg) {
-  tAVDT_SCB* p_scb;
+uint16_t AVDT_ReconfigReq(uint8_t handle, AvdtpSepConfig* p_cfg) {
+  AvdtpScb* p_scb;
   uint16_t result = AVDT_SUCCESS;
   tAVDT_SCB_EVT evt;
 
@@ -766,12 +733,12 @@ uint16_t AVDT_ReconfigReq(uint8_t handle, tAVDT_CFG* p_cfg) {
  ******************************************************************************/
 uint16_t AVDT_ReconfigRsp(uint8_t handle, uint8_t label, uint8_t error_code,
                           uint8_t category) {
-  tAVDT_SCB* p_scb;
+  AvdtpScb* p_scb;
   tAVDT_SCB_EVT evt;
   uint16_t result = AVDT_SUCCESS;
 
-  AVDT_TRACE_DEBUG("%s: handle=%d label=%d error_code=%d category=%d", __func__,
-                   handle, label, error_code, category);
+  AVDT_TRACE_DEBUG("%s: handle=%d label=%d error_code=0x%x category=%d",
+                   __func__, handle, label, error_code, category);
 
   /* map handle to scb */
   p_scb = avdt_scb_by_hdl(handle);
@@ -806,7 +773,7 @@ uint16_t AVDT_ReconfigRsp(uint8_t handle, uint8_t label, uint8_t error_code,
  *
  ******************************************************************************/
 uint16_t AVDT_SecurityReq(uint8_t handle, uint8_t* p_data, uint16_t len) {
-  tAVDT_SCB* p_scb;
+  AvdtpScb* p_scb;
   uint16_t result = AVDT_SUCCESS;
   tAVDT_SCB_EVT evt;
 
@@ -845,11 +812,11 @@ uint16_t AVDT_SecurityReq(uint8_t handle, uint8_t* p_data, uint16_t len) {
  ******************************************************************************/
 uint16_t AVDT_SecurityRsp(uint8_t handle, uint8_t label, uint8_t error_code,
                           uint8_t* p_data, uint16_t len) {
-  tAVDT_SCB* p_scb;
+  AvdtpScb* p_scb;
   uint16_t result = AVDT_SUCCESS;
   tAVDT_SCB_EVT evt;
 
-  AVDT_TRACE_DEBUG("%s: handle=%d label=%d error_code=%d len=%d", __func__,
+  AVDT_TRACE_DEBUG("%s: handle=%d label=%d error_code=0x%x len=%d", __func__,
                    handle, label, error_code, len);
 
   /* map handle to scb */
@@ -910,7 +877,7 @@ uint16_t AVDT_SecurityRsp(uint8_t handle, uint8_t label, uint8_t error_code,
  ******************************************************************************/
 uint16_t AVDT_WriteReqOpt(uint8_t handle, BT_HDR* p_pkt, uint32_t time_stamp,
                           uint8_t m_pt, tAVDT_DATA_OPT_MASK opt) {
-  tAVDT_SCB* p_scb;
+  AvdtpScb* p_scb;
   tAVDT_SCB_EVT evt;
   uint16_t result = AVDT_SUCCESS;
 
@@ -988,18 +955,19 @@ uint16_t AVDT_WriteReq(uint8_t handle, BT_HDR* p_pkt, uint32_t time_stamp,
  * Returns          AVDT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-uint16_t AVDT_ConnectReq(const RawAddress& bd_addr, uint8_t sec_mask,
-                         tAVDT_CTRL_CBACK* p_cback) {
-  tAVDT_CCB* p_ccb = NULL;
+uint16_t AVDT_ConnectReq(const RawAddress& bd_addr, uint8_t channel_index,
+                         uint8_t sec_mask, tAVDT_CTRL_CBACK* p_cback) {
+  AvdtpCcb* p_ccb = NULL;
   uint16_t result = AVDT_SUCCESS;
   tAVDT_CCB_EVT evt;
 
-  AVDT_TRACE_DEBUG("%s: sec_mask=0x%x", __func__, sec_mask);
+  AVDT_TRACE_WARNING("%s: address=%s channel_index=%d sec_mask=0x%x", __func__,
+                     bd_addr.ToString().c_str(), channel_index, sec_mask);
 
   /* find channel control block for this bd addr; if none, allocate one */
   p_ccb = avdt_ccb_by_bd(bd_addr);
   if (p_ccb == NULL) {
-    p_ccb = avdt_ccb_alloc(bd_addr);
+    p_ccb = avdt_ccb_alloc_by_channel_index(bd_addr, channel_index);
     if (p_ccb == NULL) {
       /* could not allocate channel control block */
       result = AVDT_NO_RESOURCES;
@@ -1018,7 +986,8 @@ uint16_t AVDT_ConnectReq(const RawAddress& bd_addr, uint8_t sec_mask,
     avdt_ccb_event(p_ccb, AVDT_CCB_API_CONNECT_REQ_EVT, &evt);
   }
 
-  AVDT_TRACE_DEBUG("%s: result=%d", __func__, result);
+  AVDT_TRACE_WARNING("%s: address=%s result=%d", __func__,
+                     bd_addr.ToString().c_str(), result);
 
   return result;
 }
@@ -1037,7 +1006,7 @@ uint16_t AVDT_ConnectReq(const RawAddress& bd_addr, uint8_t sec_mask,
  ******************************************************************************/
 uint16_t AVDT_DisconnectReq(const RawAddress& bd_addr,
                             tAVDT_CTRL_CBACK* p_cback) {
-  tAVDT_CCB* p_ccb = NULL;
+  AvdtpCcb* p_ccb = NULL;
   uint16_t result = AVDT_SUCCESS;
   tAVDT_CCB_EVT evt;
 
@@ -1071,8 +1040,8 @@ uint16_t AVDT_DisconnectReq(const RawAddress& bd_addr,
  *
  ******************************************************************************/
 uint16_t AVDT_GetL2CapChannel(uint8_t handle) {
-  tAVDT_SCB* p_scb;
-  tAVDT_CCB* p_ccb;
+  AvdtpScb* p_scb;
+  AvdtpCcb* p_ccb;
   uint8_t tcid;
   uint16_t lcid = 0;
 
@@ -1082,7 +1051,7 @@ uint16_t AVDT_GetL2CapChannel(uint8_t handle) {
     /* get tcid from type, scb */
     tcid = avdt_ad_type_to_tcid(AVDT_CHAN_MEDIA, p_scb);
 
-    lcid = avdt_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][tcid].lcid;
+    lcid = avdtp_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][tcid].lcid;
   }
 
   return (lcid);
@@ -1099,19 +1068,19 @@ uint16_t AVDT_GetL2CapChannel(uint8_t handle) {
  *
  ******************************************************************************/
 uint16_t AVDT_GetSignalChannel(uint8_t handle, const RawAddress& bd_addr) {
-  tAVDT_SCB* p_scb;
-  tAVDT_CCB* p_ccb;
+  AvdtpScb* p_scb;
+  AvdtpCcb* p_ccb;
   uint8_t tcid = 0; /* tcid is always 0 for signal channel */
   uint16_t lcid = 0;
 
   /* map handle to scb */
   if (((p_scb = avdt_scb_by_hdl(handle)) != NULL) &&
       ((p_ccb = p_scb->p_ccb) != NULL)) {
-    lcid = avdt_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][tcid].lcid;
+    lcid = avdtp_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][tcid].lcid;
   } else {
     p_ccb = avdt_ccb_by_bd(bd_addr);
     if (p_ccb != NULL) {
-      lcid = avdt_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][tcid].lcid;
+      lcid = avdtp_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][tcid].lcid;
     }
   }
 
@@ -1131,9 +1100,9 @@ uint16_t AVDT_GetSignalChannel(uint8_t handle, const RawAddress& bd_addr) {
  ******************************************************************************/
 uint16_t AVDT_SendReport(uint8_t handle, AVDT_REPORT_TYPE type,
                          tAVDT_REPORT_DATA* p_data) {
-  tAVDT_SCB* p_scb;
+  AvdtpScb* p_scb;
   uint16_t result = AVDT_BAD_PARAMS;
-  tAVDT_TC_TBL* p_tbl;
+  AvdtpTransportChannel* p_tbl;
   uint8_t *p, *plen, *pm1, *p_end;
   uint32_t ssrc;
   uint16_t len;
@@ -1142,8 +1111,10 @@ uint16_t AVDT_SendReport(uint8_t handle, AVDT_REPORT_TYPE type,
 
   /* map handle to scb && verify parameters */
   if (((p_scb = avdt_scb_by_hdl(handle)) != NULL) && (p_scb->p_ccb != NULL) &&
-      (((type == AVDT_RTCP_PT_SR) && (p_scb->cs.tsep == AVDT_TSEP_SRC)) ||
-       ((type == AVDT_RTCP_PT_RR) && (p_scb->cs.tsep == AVDT_TSEP_SNK)) ||
+      (((type == AVDT_RTCP_PT_SR) &&
+        (p_scb->stream_config.tsep == AVDT_TSEP_SRC)) ||
+       ((type == AVDT_RTCP_PT_RR) &&
+        (p_scb->stream_config.tsep == AVDT_TSEP_SNK)) ||
        (type == AVDT_RTCP_PT_SDES))) {
     result = AVDT_NO_RESOURCES;
 
@@ -1234,7 +1205,63 @@ uint16_t AVDT_SendReport(uint8_t handle, AVDT_REPORT_TYPE type,
  *
  *****************************************************************************/
 uint8_t AVDT_SetTraceLevel(uint8_t new_level) {
-  if (new_level != 0xFF) avdt_cb.trace_level = new_level;
+  if (new_level != 0xFF) avdtp_cb.SetTraceLevel(new_level);
 
-  return (avdt_cb.trace_level);
+  return avdtp_cb.TraceLevel();
+}
+
+void stack_debug_avdtp_api_dump(int fd) {
+  dprintf(fd, "\nAVDTP Stack State:\n");
+  dprintf(fd, "  AVDTP signalling L2CAP channel MTU: %d\n",
+          avdtp_cb.rcb.ctrl_mtu);
+  dprintf(fd, "  Security mask: 0x%x\n", avdtp_cb.rcb.sec_mask);
+
+  for (size_t i = 0; i < AVDT_NUM_LINKS; i++) {
+    const AvdtpCcb& ccb = avdtp_cb.ccb[i];
+    dprintf(fd, "\n  Channel control block: %zu peer: %s\n", i,
+            ccb.peer_addr.ToString().c_str());
+    dprintf(fd, "    Allocated: %s\n", ccb.allocated ? "true" : "false");
+    dprintf(fd, "    State: %d\n", ccb.state);
+    dprintf(fd, "    Link-layer opened: %s\n",
+            ccb.ll_opened ? "true" : "false");
+    dprintf(fd, "    Discover in progress: %s\n",
+            ccb.proc_busy ? "true" : "false");
+    dprintf(fd, "    Congested: %s\n", ccb.cong ? "true" : "false");
+    dprintf(fd, "    Reinitiate connection on idle: %s\n",
+            ccb.reconn ? "true" : "false");
+    dprintf(fd, "    Command retransmission count: %d\n", ccb.ret_count);
+    dprintf(fd, "    BTA AV SCB index: %d\n", ccb.BtaAvScbIndex());
+
+    for (size_t i = 0; i < AVDT_NUM_SEPS; i++) {
+      const AvdtpScb& scb = ccb.scb[i];
+      dprintf(fd, "\n    Stream control block: %zu\n", i);
+      dprintf(fd, "      SEP codec: %s\n",
+              A2DP_CodecName(scb.stream_config.cfg.codec_info));
+      dprintf(fd, "      SEP type: 0x%x\n", scb.stream_config.tsep);
+      dprintf(fd, "      Media type: 0x%x\n", scb.stream_config.media_type);
+      dprintf(fd, "      MTU: %d\n", scb.stream_config.mtu);
+      dprintf(fd, "      SCB handle: %d\n", scb.ScbHandle());
+      dprintf(fd, "      SCB index: %d\n", scb.stream_config.scb_index);
+      dprintf(fd, "      Configured codec: %s\n",
+              A2DP_CodecName(scb.curr_cfg.codec_info));
+      dprintf(fd, "      Requested codec: %s\n",
+              A2DP_CodecName(scb.req_cfg.codec_info));
+      dprintf(fd, "      Transport channel connect timer: %s\n",
+              alarm_is_scheduled(scb.transport_channel_timer)
+                  ? "Scheduled"
+                  : "Not scheduled");
+      dprintf(fd, "      Channel control block peer: %s\n",
+              (scb.p_ccb != nullptr) ? scb.p_ccb->peer_addr.ToString().c_str()
+                                     : "null");
+      dprintf(fd, "      Allocated: %s\n", scb.allocated ? "true" : "false");
+      dprintf(fd, "      In use: %s\n", scb.in_use ? "true" : "false");
+      dprintf(fd, "      Role: 0x%x\n", scb.role);
+      dprintf(fd, "      Remove: %s\n", scb.remove ? "true" : "false");
+      dprintf(fd, "      State: %d\n", scb.state);
+      dprintf(fd, "      Peer SEID: %d\n", scb.peer_seid);
+      dprintf(fd, "      Current event: %d\n", scb.curr_evt);
+      dprintf(fd, "      Congested: %s\n", scb.cong ? "true" : "false");
+      dprintf(fd, "      Close response code: %d\n", scb.close_code);
+    }
+  }
 }

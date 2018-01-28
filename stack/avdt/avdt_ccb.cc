@@ -348,8 +348,10 @@ const tAVDT_CCB_ST_TBL avdt_ccb_st_tbl[] = {
  *
  ******************************************************************************/
 void avdt_ccb_init(void) {
-  memset(&avdt_cb.ccb[0], 0, sizeof(tAVDT_CCB) * AVDT_NUM_LINKS);
-  avdt_cb.p_ccb_act = avdt_ccb_action;
+  for (size_t i = 0; i < AVDT_NUM_LINKS; i++) {
+    avdtp_cb.ccb[i].Reset(i);
+  }
+  avdtp_cb.p_ccb_act = avdt_ccb_action;
 }
 
 /*******************************************************************************
@@ -362,15 +364,15 @@ void avdt_ccb_init(void) {
  * Returns          Nothing.
  *
  ******************************************************************************/
-void avdt_ccb_event(tAVDT_CCB* p_ccb, uint8_t event, tAVDT_CCB_EVT* p_data) {
+void avdt_ccb_event(AvdtpCcb* p_ccb, uint8_t event, tAVDT_CCB_EVT* p_data) {
   tAVDT_CCB_ST_TBL state_table;
   uint8_t action;
   int i;
 
 #if (AVDT_DEBUG == TRUE)
-  AVDT_TRACE_EVENT("%s: CCB ccb=%d event=%s state=%s", __func__,
+  AVDT_TRACE_EVENT("%s: CCB ccb=%d event=%s state=%s p_ccb=%p", __func__,
                    avdt_ccb_to_idx(p_ccb), avdt_ccb_evt_str[event],
-                   avdt_ccb_st_str[p_ccb->state]);
+                   avdt_ccb_st_str[p_ccb->state], p_ccb);
 #endif
 
   /* look up the state table for the current state */
@@ -388,7 +390,7 @@ void avdt_ccb_event(tAVDT_CCB* p_ccb, uint8_t event, tAVDT_CCB_EVT* p_data) {
                      avdt_ccb_evt_str[event], avdt_ccb_st_str[p_ccb->state],
                      action);
     if (action != AVDT_CCB_IGNORE) {
-      (*avdt_cb.p_ccb_act[action])(p_ccb, p_data);
+      (*avdtp_cb.p_ccb_act[action])(p_ccb, p_data);
     } else {
       break;
     }
@@ -405,8 +407,8 @@ void avdt_ccb_event(tAVDT_CCB* p_ccb, uint8_t event, tAVDT_CCB_EVT* p_data) {
  * Returns          pointer to the ccb, or NULL if none found.
  *
  ******************************************************************************/
-tAVDT_CCB* avdt_ccb_by_bd(const RawAddress& bd_addr) {
-  tAVDT_CCB* p_ccb = &avdt_cb.ccb[0];
+AvdtpCcb* avdt_ccb_by_bd(const RawAddress& bd_addr) {
+  AvdtpCcb* p_ccb = &avdtp_cb.ccb[0];
   int i;
 
   for (i = 0; i < AVDT_NUM_LINKS; i++, p_ccb++) {
@@ -435,30 +437,50 @@ tAVDT_CCB* avdt_ccb_by_bd(const RawAddress& bd_addr) {
  * Returns          pointer to the ccb, or NULL if none could be allocated.
  *
  ******************************************************************************/
-tAVDT_CCB* avdt_ccb_alloc(const RawAddress& bd_addr) {
-  tAVDT_CCB* p_ccb = &avdt_cb.ccb[0];
-  int i;
-
-  for (i = 0; i < AVDT_NUM_LINKS; i++, p_ccb++) {
+AvdtpCcb* avdt_ccb_alloc(const RawAddress& bd_addr) {
+  // Find available entry
+  AvdtpCcb* p_ccb = &avdtp_cb.ccb[0];
+  for (int i = 0; i < AVDT_NUM_LINKS; i++, p_ccb++) {
     if (!p_ccb->allocated) {
-      p_ccb->allocated = true;
-      p_ccb->peer_addr = bd_addr;
-      p_ccb->cmd_q = fixed_queue_new(SIZE_MAX);
-      p_ccb->rsp_q = fixed_queue_new(SIZE_MAX);
-      p_ccb->idle_ccb_timer = alarm_new("avdt_ccb.idle_ccb_timer");
-      p_ccb->ret_ccb_timer = alarm_new("avdt_ccb.ret_ccb_timer");
-      p_ccb->rsp_ccb_timer = alarm_new("avdt_ccb.rsp_ccb_timer");
-      AVDT_TRACE_DEBUG("avdt_ccb_alloc %d", i);
-      break;
+      p_ccb->Allocate(bd_addr);
+      AVDT_TRACE_DEBUG("%s: allocated (index %d)", __func__, i);
+      return p_ccb;
     }
   }
 
-  if (i == AVDT_NUM_LINKS) {
-    /* out of ccbs */
-    p_ccb = NULL;
-    AVDT_TRACE_WARNING("Out of ccbs");
+  AVDT_TRACE_WARNING("%s: out of AvdtpCcb entries", __func__);
+  return nullptr;
+}
+
+AvdtpCcb* avdt_ccb_alloc_by_channel_index(const RawAddress& bd_addr,
+                                          uint8_t channel_index) {
+  // Allocate the entry for the specified channel index
+  if (channel_index >= AVDT_NUM_LINKS) {
+    AVDT_TRACE_ERROR("%s: peer %s invalid channel index %d (max %d)", __func__,
+                     bd_addr.ToString().c_str(), channel_index, AVDT_NUM_LINKS);
+    return nullptr;
   }
+  AvdtpCcb* p_ccb = &avdtp_cb.ccb[channel_index];
+  if (p_ccb->allocated) {
+    AVDT_TRACE_ERROR("%s: peer %s channel index %d already allocated", __func__,
+                     bd_addr.ToString().c_str(), channel_index);
+    return nullptr;
+  }
+  p_ccb->Allocate(bd_addr);
+  AVDT_TRACE_DEBUG("%s: allocated (index %d) peer=%s p_ccb=%p", __func__,
+                   channel_index, p_ccb->peer_addr.ToString().c_str(), p_ccb);
   return p_ccb;
+}
+
+void AvdtpCcb::Allocate(const RawAddress& peer_address) {
+  ResetCcb();
+  peer_addr = peer_address;
+  cmd_q = fixed_queue_new(SIZE_MAX);
+  rsp_q = fixed_queue_new(SIZE_MAX);
+  idle_ccb_timer = alarm_new("avdtp_ccb.idle_ccb_timer");
+  ret_ccb_timer = alarm_new("avdtp_ccb.ret_ccb_timer");
+  rsp_ccb_timer = alarm_new("avdtp_ccb.rsp_ccb_timer");
+  allocated = true;
 }
 
 /*******************************************************************************
@@ -471,14 +493,11 @@ tAVDT_CCB* avdt_ccb_alloc(const RawAddress& bd_addr) {
  * Returns          void.
  *
  ******************************************************************************/
-void avdt_ccb_dealloc(tAVDT_CCB* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
-  AVDT_TRACE_DEBUG("avdt_ccb_dealloc %d", avdt_ccb_to_idx(p_ccb));
-  alarm_free(p_ccb->idle_ccb_timer);
-  alarm_free(p_ccb->ret_ccb_timer);
-  alarm_free(p_ccb->rsp_ccb_timer);
-  fixed_queue_free(p_ccb->cmd_q, NULL);
-  fixed_queue_free(p_ccb->rsp_q, NULL);
-  memset(p_ccb, 0, sizeof(tAVDT_CCB));
+void avdt_ccb_dealloc(AvdtpCcb* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
+  AVDT_TRACE_DEBUG("%s: deallocated (index %d) peer=%s p_ccb=%p", __func__,
+                   avdt_ccb_to_idx(p_ccb), p_ccb->peer_addr.ToString().c_str(),
+                   p_ccb);
+  p_ccb->ResetCcb();
 }
 
 /*******************************************************************************
@@ -491,9 +510,9 @@ void avdt_ccb_dealloc(tAVDT_CCB* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
  * Returns          Index of ccb.
  *
  ******************************************************************************/
-uint8_t avdt_ccb_to_idx(tAVDT_CCB* p_ccb) {
+uint8_t avdt_ccb_to_idx(AvdtpCcb* p_ccb) {
   /* use array arithmetic to determine index */
-  return (uint8_t)(p_ccb - avdt_cb.ccb);
+  return (uint8_t)(p_ccb - avdtp_cb.ccb);
 }
 
 /*******************************************************************************
@@ -506,12 +525,12 @@ uint8_t avdt_ccb_to_idx(tAVDT_CCB* p_ccb) {
  * Returns          pointer to the ccb, or NULL if none found.
  *
  ******************************************************************************/
-tAVDT_CCB* avdt_ccb_by_idx(uint8_t idx) {
-  tAVDT_CCB* p_ccb;
+AvdtpCcb* avdt_ccb_by_idx(uint8_t idx) {
+  AvdtpCcb* p_ccb;
 
   /* verify index */
   if (idx < AVDT_NUM_LINKS) {
-    p_ccb = &avdt_cb.ccb[idx];
+    p_ccb = &avdtp_cb.ccb[idx];
   } else {
     p_ccb = NULL;
     AVDT_TRACE_WARNING("No ccb for idx %d", idx);

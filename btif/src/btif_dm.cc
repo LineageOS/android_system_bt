@@ -49,6 +49,7 @@
 #include "bta_closure_api.h"
 #include "bta_gatt_api.h"
 #include "btif_api.h"
+#include "btif_av.h"
 #include "btif_config.h"
 #include "btif_dm.h"
 #include "btif_hd.h"
@@ -250,7 +251,6 @@ extern bt_status_t btif_hh_execute_service(bool b_enable);
 extern bt_status_t btif_hf_client_execute_service(bool b_enable);
 extern bt_status_t btif_sdp_execute_service(bool b_enable);
 extern int btif_hh_connect(const RawAddress* bd_addr);
-extern void btif_av_move_idle(RawAddress bd_addr);
 extern bt_status_t btif_hd_execute_service(bool b_enable);
 
 /******************************************************************************
@@ -304,7 +304,7 @@ bt_status_t btif_in_execute_service_request(tBTA_SERVICE_ID service_id,
       bluetooth::headset::ExecuteService(b_enable);
     } break;
     case BTA_A2DP_SOURCE_SERVICE_ID: {
-      btif_av_execute_service(b_enable);
+      btif_av_source_execute_service(b_enable);
     } break;
     case BTA_A2DP_SINK_SERVICE_ID: {
       btif_av_sink_execute_service(b_enable);
@@ -1683,7 +1683,7 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
     case BTA_DM_LINK_DOWN_EVT:
       bd_addr = p_data->link_down.bd_addr;
       btm_set_bond_type_dev(p_data->link_down.bd_addr, BOND_TYPE_UNKNOWN);
-      btif_av_move_idle(bd_addr);
+      btif_av_acl_disconnected(bd_addr);
       BTIF_TRACE_DEBUG(
           "BTA_DM_LINK_DOWN_EVT. Sending BT_ACL_STATE_DISCONNECTED");
       HAL_CBACK(bt_hal_cbacks, acl_state_changed_cb, BT_STATUS_SUCCESS,
@@ -1891,7 +1891,7 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
     case BTA_DM_ROLE_CHG_EVT:
 
     default:
-      BTIF_TRACE_WARNING("btif_dm_cback : unhandled event (%d)", event);
+      BTIF_TRACE_WARNING("%s: unhandled event (%d)", __func__, event);
       break;
   }
 

@@ -518,7 +518,7 @@ const char* A2DP_VendorCodecIndexStr(btav_a2dp_codec_index_t codec_index) {
 }
 
 bool A2DP_VendorInitCodecConfig(btav_a2dp_codec_index_t codec_index,
-                                tAVDT_CFG* p_cfg) {
+                                AvdtpSepConfig* p_cfg) {
   // Add checks based on codec_index
   switch (codec_index) {
     case BTAV_A2DP_CODEC_INDEX_SOURCE_SBC:
