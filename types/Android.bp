@@ -21,11 +21,6 @@ cc_library_static {
     ],
     header_libs: ["libbluetooth-types-header"],
     export_header_lib_headers: ["libbluetooth-types-header"],
-    target: {
-        darwin: {
-            enabled: false
-        }
-    }
 }
 
 // ========================================================
@@ -38,9 +33,4 @@ cc_test {
         "test/raw_address_unittest.cc",
         "test/bluetooth/uuid_unittest.cc",
     ],
-    target: {
-        darwin: {
-            enabled: false
-        }
-    }
 }

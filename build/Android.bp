@@ -39,8 +39,12 @@ fluoride_defaults {
             ],
         },
     },
-    shared_libs: [ "libchrome" ]
-    // Setup Bluetooth local make variables for handling configuration
+    shared_libs: [ "libchrome" ],
+    target: {
+        darwin: {
+            enabled: false,
+        },
+    },
 }
 
 fluoride_defaults {
