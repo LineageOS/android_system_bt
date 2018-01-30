@@ -78,7 +78,7 @@ class Packet : public ::bluetooth::Packet {
    *   Opcode opcode_;
    *   uint8_t[] payload_;
    */
-  static constexpr size_t kHeaderSize() { return 3; };
+  static constexpr size_t kMinSize() { return 3; };
 
   // Getter Functions
   CType GetCType() const;

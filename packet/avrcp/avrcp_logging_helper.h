@@ -83,6 +83,8 @@ inline std::string CommandPduText(const CommandPdu& pdu) {
     CASE_RETURN_TEXT(CommandPdu::GET_ELEMENT_ATTRIBUTES);
     CASE_RETURN_TEXT(CommandPdu::GET_PLAY_STATUS);
     CASE_RETURN_TEXT(CommandPdu::REGISTER_NOTIFICATION);
+    CASE_RETURN_TEXT(CommandPdu::SET_ADDRESSED_PLAYER);
+    CASE_RETURN_TEXT(CommandPdu::PLAY_ITEM);
     default:
       return "Unknown Command PDU: " + loghex(pdu);
   }
@@ -188,6 +190,49 @@ inline std::string StatusText(const Status& status) {
 
 inline std::ostream& operator<<(std::ostream& os, const Status& status) {
   return os << StatusText(status);
+}
+
+inline std::string BrowsePduText(const BrowsePdu& pdu) {
+  switch (pdu) {
+    CASE_RETURN_TEXT(BrowsePdu::SET_BROWSED_PLAYER);
+    CASE_RETURN_TEXT(BrowsePdu::GET_FOLDER_ITEMS);
+    CASE_RETURN_TEXT(BrowsePdu::CHANGE_PATH);
+    CASE_RETURN_TEXT(BrowsePdu::GET_ITEM_ATTRIBUTES);
+    default:
+      return "Unknown Browse Pdu: " + loghex(pdu);
+  }
+}
+
+inline std::ostream& operator<<(std::ostream& os, const BrowsePdu& pdu) {
+  return os << BrowsePduText(pdu);
+}
+
+inline std::string ScopeText(const Scope& scope) {
+  switch (scope) {
+    CASE_RETURN_TEXT(Scope::MEDIA_PLAYER_LIST);
+    CASE_RETURN_TEXT(Scope::VFS);
+    CASE_RETURN_TEXT(Scope::SEARCH);
+    CASE_RETURN_TEXT(Scope::NOW_PLAYING);
+    default:
+      return "Unknown Scope: " + loghex(scope);
+  }
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Scope& pdu) {
+  return os << ScopeText(pdu);
+}
+
+inline std::string DirectionText(const Direction& dir) {
+  switch (dir) {
+    CASE_RETURN_TEXT(Direction::UP);
+    CASE_RETURN_TEXT(Direction::DOWN);
+    default:
+      return "Unknown Direction: " + loghex(dir);
+  }
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Direction& dir) {
+  return os << DirectionText(dir);
 }
 
 }  // namespace avrcp

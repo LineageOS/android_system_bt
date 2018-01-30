@@ -24,3 +24,11 @@
 #include "avrcp/pass_through_packet.h"
 #include "avrcp/register_notification_packet.h"
 #include "avrcp/vendor_packet.h"
+
+#include "avrcp/avrcp_browse_packet.h"
+#include "avrcp/change_path.h"
+#include "avrcp/get_folder_items.h"
+#include "avrcp/get_item_attributes.h"
+#include "avrcp/get_total_number_of_items.h"
+#include "avrcp/play_item.h"
+#include "avrcp/set_browsed_player.h"

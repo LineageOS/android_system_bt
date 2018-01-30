@@ -28,7 +28,7 @@ GetCapabilitiesRequestBuilder::MakeBuilder(Capability capability) {
 }
 
 size_t GetCapabilitiesRequestBuilder::size() const {
-  return GetCapabilitiesRequest::kHeaderSize();
+  return GetCapabilitiesRequest::kMinSize();
 }
 
 bool GetCapabilitiesRequestBuilder::Serialize(
@@ -46,13 +46,13 @@ bool GetCapabilitiesRequestBuilder::Serialize(
 }
 
 Capability GetCapabilitiesRequest::GetCapabilityRequested() const {
-  auto value = *(begin() + VendorPacket::kHeaderSize());
+  auto value = *(begin() + VendorPacket::kMinSize());
   return static_cast<Capability>(value);
 }
 
 bool GetCapabilitiesRequest::IsValid() const {
   if (!VendorPacket::IsValid()) return false;
-  return (size() == VendorPacket::kHeaderSize() + 1);
+  return (size() == VendorPacket::kMinSize() + 1);
 }
 
 std::string GetCapabilitiesRequest::ToString() const {
@@ -120,7 +120,7 @@ size_t GetCapabilitiesResponseBuilder::size() const {
   size_t capability_count = elements_.size();
   size_t capability_size = capability_ == Capability::COMPANY_ID ? 3 : 1;
 
-  return GetCapabilitiesResponse::kHeaderSize() +
+  return GetCapabilitiesResponse::kMinSize() +
          (capability_count * capability_size);
 }
 
@@ -132,7 +132,7 @@ bool GetCapabilitiesResponseBuilder::Serialize(
   PacketBuilder::PushHeader(pkt);
 
   // Push the avrcp vendor command headers
-  uint16_t parameter_count = size() - VendorPacket::kHeaderSize();
+  uint16_t parameter_count = size() - VendorPacket::kMinSize();
   VendorPacketBuilder::PushHeader(pkt, parameter_count);
 
   // Push the capability, capability count, and elements

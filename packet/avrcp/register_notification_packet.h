@@ -83,9 +83,7 @@ class RegisterNotificationRequest : public VendorPacket {
    *     uint8_t event_id;
    *     uint32_t interval;  // Only used for PLAYBACK_POS_CHANGED
    */
-  static constexpr size_t kHeaderSize() {
-    return VendorPacket::kHeaderSize() + 5;
-  }
+  static constexpr size_t kMinSize() { return VendorPacket::kMinSize() + 5; }
 
   // Getter Functions
   Event GetEventRegistered() const;

@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-#include <base/logging.h>
-
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "avrcp_packet.h"
@@ -106,6 +103,7 @@ TEST(AvrcpPacketTest, payloadBoundsTest) {
 
   std::vector<uint8_t> get_cap_payload_data = {0x00, 0x19, 0x58, 0x10,
                                                0x00, 0x00, 0x01, 0x03};
+
   auto get_cap_payload_packet = TestAvrcpPacket::Make(test_avrcp_packet);
 
   // We are unable to do a direct vector compare here as one of the packets is
