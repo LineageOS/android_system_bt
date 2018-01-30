@@ -25,6 +25,7 @@ HOST_TESTS = [
   'net_test_btif_state_machine',
   'net_test_btcore',
   'net_test_types',
+  'net_test_btpackets',
 ]
 
 SOONG_UI_BASH = 'build/soong/soong_ui.bash'
