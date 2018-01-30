@@ -21,6 +21,11 @@ cc_test_library {
     host_supported: true,
     shared: {
         enabled: false
+    },
+    target: {
+        darwin: {
+            enabled: false
+        }
     }
 }
 
@@ -33,6 +38,11 @@ cc_test_library {
     host_supported: true,
     shared: {
         enabled: false
+    },
+    target: {
+        darwin: {
+            enabled: false
+        }
     }
 }
 
@@ -45,7 +55,12 @@ cc_library_static {
     proto: {
         export_proto_headers: true,
     },
-    host_supported: true
+    host_supported: true,
+    target: {
+        darwin: {
+            enabled: false
+        }
+    }
 }
 
 
