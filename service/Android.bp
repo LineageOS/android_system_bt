@@ -133,9 +133,7 @@ cc_test {
             ],
         },
         darwin: {
-            srcs: [
-                "test/stub_ipc_handler_linux.cc",
-            ],
+            enabled: false,
         },
         linux_glibc: {
             srcs: btserviceLinuxSrc + [
