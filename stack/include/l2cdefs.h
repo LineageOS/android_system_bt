@@ -328,7 +328,6 @@
  * Changed it to  8087 to have same value between BTIF and L2cap layers
  */
 #define L2CAP_MAX_SDU_LENGTH (8080 + 26 - (L2CAP_MIN_OFFSET + 6))
-#define L2CAP_MAX_BUF_SIZE (10240 + 24)
 
 /* Part of L2CAP_MIN_OFFSET that is not part of L2CAP
 */
