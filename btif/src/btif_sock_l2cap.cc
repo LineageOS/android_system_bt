@@ -25,6 +25,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <vector>
 
 #include <mutex>
 
@@ -675,13 +676,13 @@ static void on_l2cap_data_ind(tBTA_JV* evt, uint32_t id) {
     }
 
   } else {
-    uint8_t buffer[L2CAP_MAX_SDU_LENGTH];
     uint32_t count;
 
     if (BTA_JvL2capReady(sock->handle, &count) == BTA_JV_SUCCESS) {
-      if (BTA_JvL2capRead(sock->handle, sock->id, buffer, count) ==
+      std::vector<uint8_t> buffer(count);
+      if (BTA_JvL2capRead(sock->handle, sock->id, buffer.data(), count) ==
           BTA_JV_SUCCESS) {
-        if (packet_put_tail_l(sock, buffer, count)) {
+        if (packet_put_tail_l(sock, buffer.data(), count)) {
           bytes_read = count;
           btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP,
                                SOCK_THREAD_FD_WR, sock->id);
