@@ -840,7 +840,7 @@ void l2c_lcc_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
       return;
     }
 
-    p_data = (BT_HDR*)osi_malloc(L2CAP_MAX_BUF_SIZE);
+    p_data = (BT_HDR*)osi_malloc(BT_HDR_SIZE + sdu_length);
     if (p_data == NULL) {
       osi_free(p_buf);
       return;
@@ -1452,7 +1452,8 @@ static bool do_sar_reassembly(tL2C_CCB* p_ccb, BT_HDR* p_buf,
                             p_fcrb->rx_sdu_len, p_fcrb->rx_sdu_len);
         packet_ok = false;
       } else {
-        p_fcrb->p_rx_sdu = (BT_HDR*)osi_malloc(L2CAP_MAX_BUF_SIZE);
+        p_fcrb->p_rx_sdu = (BT_HDR*)osi_malloc(
+            BT_HDR_SIZE + OBX_BUF_MIN_OFFSET + p_fcrb->rx_sdu_len);
         p_fcrb->p_rx_sdu->offset = OBX_BUF_MIN_OFFSET;
         p_fcrb->p_rx_sdu->len = 0;
       }
