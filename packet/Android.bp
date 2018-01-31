@@ -34,9 +34,4 @@ cc_test {
         "lib-bt-packets",
     ],
     cflags: ["-DBUILDCFG","-g"],
-    target: {
-        darwin: {
-            enabled: false
-        }
-    }
 }
