@@ -102,4 +102,9 @@ cc_test_host {
         "-Werror",
         "-DLOG_NDEBUG=1",
     ],
+    target: {
+        darwin: {
+            enabled: false,
+        }
+    },
 }
