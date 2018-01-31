@@ -1004,11 +1004,11 @@ void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
         ssize_t count;
         OSI_NO_INTR(count = recv(fd, get_l2cap_sdu_start_ptr(buffer), size,
                                  MSG_NOSIGNAL | MSG_DONTWAIT | MSG_TRUNC));
-        if (count > L2CAP_LE_MAX_MPS) {
+        if (count > sock->mtu) {
           /* This can't happen thanks to check in BluetoothSocket.java but leave
            * this in case this socket is ever used anywhere else*/
           LOG(ERROR) << "recv more than MTU. Data will be lost: " << count;
-          count = L2CAP_LE_MAX_MPS;
+          count = sock->mtu;
         }
 
         /* When multiple packets smaller than MTU are flushed to the socket, the
