@@ -25,11 +25,6 @@ cc_library_static {
     shared_libs: [
         "libbase",
     ],
-    target: {
-        darwin: {
-            enabled: false
-        }
-    }
 }
 
 // Bluetooth Binder shared library
