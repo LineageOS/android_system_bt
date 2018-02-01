@@ -559,6 +559,14 @@ typedef struct {
   void (*dump)(int fd, const char** arguments);
 
   /**
+   * Native support for metrics protobuf dumping. The dumping format will be
+   * raw byte array
+   *
+   * @param output an externally allocated string to dump serialized protobuf
+   */
+  void (*dumpMetrics)(std::string* output);
+
+  /**
    * Clear /data/misc/bt_config.conf and erase all stored connections
    */
   int (*config_clear)(void);
