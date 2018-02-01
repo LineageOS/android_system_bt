@@ -22,11 +22,6 @@ cc_test_library {
     shared: {
         enabled: false
     },
-    target: {
-        darwin: {
-            enabled: false
-        }
-    }
 }
 
 cc_test_library {
@@ -39,11 +34,6 @@ cc_test_library {
     shared: {
         enabled: false
     },
-    target: {
-        darwin: {
-            enabled: false
-        }
-    }
 }
 
 // Bluetooth Protobuf static library for target and host
@@ -56,11 +46,6 @@ cc_library_static {
         export_proto_headers: true,
     },
     host_supported: true,
-    target: {
-        darwin: {
-            enabled: false
-        }
-    }
 }
 
 
@@ -106,9 +91,6 @@ cc_library_static {
     // should be compatible for a Linux host OS. We should figure out what to do for
     // a non-Linux host OS.
     target: {
-        darwin: {
-            enabled: false,
-        },
         linux_glibc: {
             cflags: [
                 "-D_GNU_SOURCE",
@@ -162,9 +144,6 @@ cc_test {
         linux_glibc: {
             cflags: ["-DOS_GENERIC"],
         },
-        darwin: {
-            enabled: false,
-        }
     },
     sanitize: {
         cfi: false,

@@ -18,9 +18,6 @@ cc_library_static {
     header_libs: ["libbluetooth_headers"],
     host_supported: true,
     target: {
-        darwin: {
-            enabled: false,
-        },
         linux_glibc: {
             cflags: ["-D_GNU_SOURCE"],
         },
@@ -50,9 +47,4 @@ cc_test {
         "libosi",
     ],
     host_supported: true,
-    target: {
-        darwin: {
-            enabled: false,
-        }
-    }
 }
