@@ -87,7 +87,7 @@ typedef struct l2cap_socket {
   uint16_t mtu;
 } l2cap_socket;
 
-static bt_status_t btSock_start_l2cap_server_l(l2cap_socket* sock);
+static void btsock_l2cap_server_listen(l2cap_socket* sock);
 
 static std::mutex state_lock;
 
@@ -473,9 +473,7 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
         -1;  // The fd is closed after sent to app in send_app_connect_signal()
     // But for some reason we still leak a FD - either the server socket
     // one or the accept socket one.
-    if (btSock_start_l2cap_server_l(sock) != BT_STATUS_SUCCESS) {
-      btsock_l2cap_free_l(sock);
-    }
+    btsock_l2cap_server_listen(sock);
   }
 }
 
@@ -787,59 +785,40 @@ void on_l2cap_psm_assigned(int id, int psm) {
 
   sock->channel = psm;
 
-  if (btSock_start_l2cap_server_l(sock) != BT_STATUS_SUCCESS)
-    btsock_l2cap_free_l(sock);
+  btsock_l2cap_server_listen(sock);
 }
 
-static bt_status_t btSock_start_l2cap_server_l(l2cap_socket* sock) {
-  tL2CAP_CFG_INFO cfg;
-  bt_status_t stat = BT_STATUS_SUCCESS;
-  /* Setup ETM settings:
-   *  mtu will be set below */
-  memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
-
-  cfg.fcr_present = true;
-  cfg.fcr = obex_l2c_fcr_opts_def;
-
+static void btsock_l2cap_server_listen(l2cap_socket* sock) {
   APPL_TRACE_DEBUG("%s: fixed_chan=%d, channel=%d, is_le_coc=%d", __func__,
                    sock->fixed_chan, sock->channel, sock->is_le_coc);
 
   if (sock->fixed_chan) {
-    if (BTA_JvL2capStartServerLE(sock->security, 0, NULL, sock->channel,
-                                 L2CAP_DEFAULT_MTU, NULL, btsock_l2cap_cbk,
-                                 sock->id) != BTA_JV_SUCCESS)
-      stat = BT_STATUS_FAIL;
-
-  } else {
-    /* If we have a channel specified in the request, just start the server,
-     * else we request a PSM and start the server after we receive a PSM. */
-    if (sock->channel <= 0) {
-      if (sock->is_le_coc) {
-        if (BTA_JvGetChannelId(BTA_JV_CONN_TYPE_L2CAP_LE, sock->id, 0) !=
-            BTA_JV_SUCCESS)
-          stat = BT_STATUS_FAIL;
-      } else {
-        if (BTA_JvGetChannelId(BTA_JV_CONN_TYPE_L2CAP, sock->id, 0) !=
-            BTA_JV_SUCCESS)
-          stat = BT_STATUS_FAIL;
-      }
-    } else {
-      if (sock->is_le_coc) {
-        if (BTA_JvL2capStartServer(BTA_JV_CONN_TYPE_L2CAP_LE, sock->security, 0,
-                                   NULL, sock->channel, L2CAP_MAX_SDU_LENGTH,
-                                   &cfg, btsock_l2cap_cbk,
-                                   sock->id) != BTA_JV_SUCCESS)
-          stat = BT_STATUS_FAIL;
-      } else {
-        if (BTA_JvL2capStartServer(BTA_JV_CONN_TYPE_L2CAP, sock->security, 0,
-                                   &obex_l2c_etm_opt, sock->channel,
-                                   L2CAP_MAX_SDU_LENGTH, &cfg, btsock_l2cap_cbk,
-                                   sock->id) != BTA_JV_SUCCESS)
-          stat = BT_STATUS_FAIL;
-      }
-    }
+    BTA_JvL2capStartServerLE(sock->channel, btsock_l2cap_cbk, sock->id);
+    return;
   }
-  return stat;
+
+  int connection_type =
+      sock->is_le_coc ? BTA_JV_CONN_TYPE_L2CAP_LE : BTA_JV_CONN_TYPE_L2CAP;
+
+  /* If we have a channel specified in the request, just start the server,
+   * else we request a PSM and start the server after we receive a PSM. */
+  if (sock->channel <= 0) {
+    BTA_JvGetChannelId(connection_type, sock->id, 0);
+    return;
+  }
+
+  /* Setup ETM settings:  mtu will be set below */
+  std::unique_ptr<tL2CAP_CFG_INFO> cfg = std::make_unique<tL2CAP_CFG_INFO>(
+      tL2CAP_CFG_INFO{.fcr_present = true, .fcr = obex_l2c_fcr_opts_def});
+
+  std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info;
+  if (!sock->is_le_coc) {
+    ertm_info.reset(new tL2CAP_ERTM_INFO(obex_l2c_etm_opt));
+  }
+
+  BTA_JvL2capStartServer(
+      connection_type, sock->security, 0, std::move(ertm_info), sock->channel,
+      L2CAP_MAX_SDU_LENGTH, std::move(cfg), btsock_l2cap_cbk, sock->id);
 }
 
 static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
@@ -886,10 +865,7 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
 
   /* "role" is never initialized in rfcomm code */
   if (listen) {
-    bt_status_t stat = btSock_start_l2cap_server_l(sock);
-    if (stat != BT_STATUS_SUCCESS) {
-      btsock_l2cap_free_l(sock);
-    }
+    btsock_l2cap_server_listen(sock);
   } else {
     if (fixed_chan) {
       BTA_JvL2capConnectLE(sock->security, 0, NULL, channel, L2CAP_DEFAULT_MTU,
