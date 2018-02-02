@@ -240,10 +240,7 @@ tBTA_JV_STATUS BTA_JvDeleteRecord(uint32_t handle) {
  *                  tBTA_JV_L2CAP_CBACK is called with BTA_JV_L2CAP_OPEN_EVT
  *
  ******************************************************************************/
-void BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE,
-                          const tL2CAP_ERTM_INFO*, uint16_t remote_chan,
-                          uint16_t, tL2CAP_CFG_INFO*,
-                          const RawAddress& peer_bd_addr,
+void BTA_JvL2capConnectLE(uint16_t remote_chan, const RawAddress& peer_bd_addr,
                           tBTA_JV_L2CAP_CBACK* p_cback,
                           uint32_t l2cap_socket_id) {
   VLOG(2) << __func__;
@@ -265,25 +262,19 @@ void BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE,
  *
  ******************************************************************************/
 void BTA_JvL2capConnect(int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
-                        const tL2CAP_ERTM_INFO* ertm_info, uint16_t remote_psm,
-                        uint16_t rx_mtu, tL2CAP_CFG_INFO* cfg,
+                        std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info,
+                        uint16_t remote_psm, uint16_t rx_mtu,
+                        std::unique_ptr<tL2CAP_CFG_INFO> cfg,
                         const RawAddress& peer_bd_addr,
                         tBTA_JV_L2CAP_CBACK* p_cback,
                         uint32_t l2cap_socket_id) {
   VLOG(2) << __func__;
   CHECK(p_cback);
 
-  std::unique_ptr<tL2CAP_CFG_INFO> cfg_copy;
-  if (cfg) cfg_copy = std::make_unique<tL2CAP_CFG_INFO>(*cfg);
-
-  std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info_copy;
-  if (ertm_info)
-    ertm_info_copy = std::make_unique<tL2CAP_ERTM_INFO>(*ertm_info);
-
-  do_in_bta_thread(
-      FROM_HERE, Bind(&bta_jv_l2cap_connect, conn_type, sec_mask, role,
-                      remote_psm, rx_mtu, peer_bd_addr, base::Passed(&cfg_copy),
-                      base::Passed(&ertm_info_copy), p_cback, l2cap_socket_id));
+  do_in_bta_thread(FROM_HERE,
+                   Bind(&bta_jv_l2cap_connect, conn_type, sec_mask, role,
+                        remote_psm, rx_mtu, peer_bd_addr, base::Passed(&cfg),
+                        base::Passed(&ertm_info), p_cback, l2cap_socket_id));
 }
 
 /*******************************************************************************

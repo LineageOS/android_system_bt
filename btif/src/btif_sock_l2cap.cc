@@ -807,7 +807,7 @@ static void btsock_l2cap_server_listen(l2cap_socket* sock) {
     return;
   }
 
-  /* Setup ETM settings:  mtu will be set below */
+  /* Setup ETM settings: mtu will be set below */
   std::unique_ptr<tL2CAP_CFG_INFO> cfg = std::make_unique<tL2CAP_CFG_INFO>(
       tL2CAP_CFG_INFO{.fcr_present = true, .fcr = obex_l2c_fcr_opts_def});
 
@@ -827,8 +827,6 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
                                                   int flags, char listen,
                                                   int app_uid) {
   int fixed_chan = 1;
-  l2cap_socket* sock;
-  tL2CAP_CFG_INFO cfg;
   bool is_le_coc = false;
 
   if (!sock_fd) return BT_STATUS_PARM_INVALID;
@@ -847,7 +845,7 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
   // TODO: This is kind of bad to lock here, but it is needed for the current
   // design.
   std::unique_lock<std::mutex> lock(state_lock);
-  sock = btsock_l2cap_alloc_l(name, addr, listen, flags);
+  l2cap_socket* sock = btsock_l2cap_alloc_l(name, addr, listen, flags);
   if (!sock) {
     return BT_STATUS_NOMEM;
   }
@@ -857,29 +855,29 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
   sock->app_uid = app_uid;
   sock->is_le_coc = is_le_coc;
 
-  /* Setup ETM settings: mtu will be set below */
-  memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
-
-  cfg.fcr_present = true;
-  cfg.fcr = obex_l2c_fcr_opts_def;
-
   /* "role" is never initialized in rfcomm code */
   if (listen) {
     btsock_l2cap_server_listen(sock);
   } else {
     if (fixed_chan) {
-      BTA_JvL2capConnectLE(sock->security, 0, NULL, channel, L2CAP_DEFAULT_MTU,
-                           NULL, sock->addr, btsock_l2cap_cbk, sock->id);
+      BTA_JvL2capConnectLE(channel, sock->addr, btsock_l2cap_cbk, sock->id);
     } else {
-      if (sock->is_le_coc) {
-        BTA_JvL2capConnect(BTA_JV_CONN_TYPE_L2CAP_LE, sock->security, 0, NULL,
-                           channel, L2CAP_MAX_SDU_LENGTH, &cfg, sock->addr,
-                           btsock_l2cap_cbk, sock->id);
-      } else {
-        BTA_JvL2capConnect(BTA_JV_CONN_TYPE_L2CAP, sock->security, 0,
-                           &obex_l2c_etm_opt, channel, L2CAP_MAX_SDU_LENGTH,
-                           &cfg, sock->addr, btsock_l2cap_cbk, sock->id);
+      int connection_type =
+          sock->is_le_coc ? BTA_JV_CONN_TYPE_L2CAP_LE : BTA_JV_CONN_TYPE_L2CAP;
+
+      /* Setup ETM settings: mtu will be set below */
+      std::unique_ptr<tL2CAP_CFG_INFO> cfg = std::make_unique<tL2CAP_CFG_INFO>(
+          tL2CAP_CFG_INFO{.fcr_present = true, .fcr = obex_l2c_fcr_opts_def});
+
+      std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info;
+      if (!sock->is_le_coc) {
+        ertm_info.reset(new tL2CAP_ERTM_INFO(obex_l2c_etm_opt));
       }
+
+      BTA_JvL2capConnect(connection_type, sock->security, 0,
+                         std::move(ertm_info), channel, L2CAP_MAX_SDU_LENGTH,
+                         std::move(cfg), sock->addr, btsock_l2cap_cbk,
+                         sock->id);
     }
   }
 
