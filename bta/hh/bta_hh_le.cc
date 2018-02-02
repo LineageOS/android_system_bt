@@ -1345,30 +1345,53 @@ void read_pref_conn_params_cb(uint16_t conn_id, tGATT_STATUS status,
   // TODO(jpawlowski): this should be done by GAP profile, remove when GAP is
   // fixed.
   uint8_t* pp = value;
-  uint16_t min, max, latency, tout;
-  STREAM_TO_UINT16(min, pp);
-  STREAM_TO_UINT16(max, pp);
+  uint16_t min_interval, max_interval, latency, timeout;
+  STREAM_TO_UINT16(min_interval, pp);
+  STREAM_TO_UINT16(max_interval, pp);
   STREAM_TO_UINT16(latency, pp);
-  STREAM_TO_UINT16(tout, pp);
+  STREAM_TO_UINT16(timeout, pp);
 
   // Make sure both min, and max are bigger than 11.25ms, lower values can
-  // introduce
-  // audio issues if A2DP is also active.
-  if (min < BTM_BLE_CONN_INT_MIN_LIMIT) min = BTM_BLE_CONN_INT_MIN_LIMIT;
-  if (max < BTM_BLE_CONN_INT_MIN_LIMIT) max = BTM_BLE_CONN_INT_MIN_LIMIT;
+  // introduce audio issues if A2DP is also active.
+  if (min_interval < BTM_BLE_CONN_INT_MIN_LIMIT) {
+    APPL_TRACE_DEBUG("%s: requested min_interval=%d too small. Set to %d",
+                     __func__, min_interval, BTM_BLE_CONN_INT_MIN_LIMIT);
+    min_interval = BTM_BLE_CONN_INT_MIN_LIMIT;
+  }
+  if (max_interval < BTM_BLE_CONN_INT_MIN_LIMIT) {
+    APPL_TRACE_DEBUG("%s: requested max_interval=%d too small. Set to %d",
+                     __func__, max_interval, BTM_BLE_CONN_INT_MIN_LIMIT);
+    max_interval = BTM_BLE_CONN_INT_MIN_LIMIT;
+  }
 
   // If the device has no preferred connection timeout, use the default.
-  if (tout == BTM_BLE_CONN_PARAM_UNDEF) tout = BTM_BLE_CONN_TIMEOUT_DEF;
+  if (timeout == BTM_BLE_CONN_PARAM_UNDEF) timeout = BTM_BLE_CONN_TIMEOUT_DEF;
+
+  if (min_interval < BTM_BLE_CONN_INT_MIN ||
+      min_interval > BTM_BLE_CONN_INT_MAX ||
+      max_interval < BTM_BLE_CONN_INT_MIN ||
+      max_interval > BTM_BLE_CONN_INT_MAX ||
+      latency > BTM_BLE_CONN_LATENCY_MAX ||
+      timeout < BTM_BLE_CONN_SUP_TOUT_MIN ||
+      timeout > BTM_BLE_CONN_SUP_TOUT_MAX || max_interval < min_interval) {
+    APPL_TRACE_ERROR(
+        "%s: Invalid connection parameters. min=%d, max=%d, latency=%d, "
+        "timeout=%d",
+        __func__, min_interval, max_interval, latency, timeout);
+    return;
+  }
 
   tBTA_HH_DEV_CB* p_dev_cb = (tBTA_HH_DEV_CB*)data;
 
   if (interop_match_addr(INTEROP_HID_PREF_CONN_SUP_TIMEOUT_3S,
                          (RawAddress*)&p_dev_cb->addr)) {
-    if (tout < 300) tout = 300;
+    if (timeout < 300) timeout = 300;
   }
 
-  BTM_BleSetPrefConnParams(p_dev_cb->addr, min, max, latency, tout);
-  L2CA_UpdateBleConnParams(p_dev_cb->addr, min, max, latency, tout);
+  BTM_BleSetPrefConnParams(p_dev_cb->addr, min_interval, max_interval, latency,
+                           timeout);
+  L2CA_UpdateBleConnParams(p_dev_cb->addr, min_interval, max_interval, latency,
+                           timeout);
 }
 
 /*******************************************************************************
