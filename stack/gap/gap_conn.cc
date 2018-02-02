@@ -210,7 +210,7 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
 
   /* Configure L2CAP COC, if transport is LE */
   if (transport == BT_TRANSPORT_LE) {
-    p_ccb->local_coc_cfg.credits = L2CAP_LE_DEFAULT_CREDIT;
+    p_ccb->local_coc_cfg.credits = L2CAP_LE_CREDIT_DEFAULT;
     p_ccb->local_coc_cfg.mtu = p_cfg->mtu;
 
     uint16_t max_mps = controller_get_interface()->get_acl_data_size_ble();
@@ -219,6 +219,10 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
       le_mps = max_mps;
     }
     p_ccb->local_coc_cfg.mps = le_mps;
+
+    VLOG(2) << __func__ << ": credits=" << p_ccb->local_coc_cfg.credits
+            << ", mps=" << p_ccb->local_coc_cfg.mps
+            << ", mtu=" << p_ccb->local_coc_cfg.mtu;
   }
 
   p_ccb->p_callback = p_cb;
