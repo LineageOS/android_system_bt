@@ -303,13 +303,6 @@ static int read_energy_info() {
 }
 
 static void dump(int fd, const char** arguments) {
-  if (arguments != NULL && arguments[0] != NULL) {
-    if (strncmp(arguments[0], "--proto-bin", 11) == 0) {
-      system_bt_osi::BluetoothMetricsLogger::GetInstance()->WriteBase64(fd,
-                                                                        true);
-      return;
-    }
-  }
   btif_debug_conn_dump(fd);
   btif_debug_bond_event_dump(fd);
   btif_debug_a2dp_dump(fd);
@@ -326,6 +319,11 @@ static void dump(int fd, const char** arguments) {
 #endif
 
   close(fd);
+}
+
+static void dumpMetrics(std::string* output) {
+  system_bt_osi::BluetoothMetricsLogger::GetInstance()->WriteString(output,
+                                                                    true);
 }
 
 static const void* get_profile_interface(const char* profile_id) {
@@ -447,6 +445,7 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
     set_os_callouts,
     read_energy_info,
     dump,
+    dumpMetrics,
     config_clear,
     interop_database_clear,
     interop_database_add,
