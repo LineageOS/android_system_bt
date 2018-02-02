@@ -76,7 +76,7 @@ bool interop_match_name(const interop_feature_t feature, const char* name) {
   return false;
 }
 
-void interop_database_add(const uint16_t feature, const RawAddress* addr,
+void interop_database_add(uint16_t feature, const RawAddress* addr,
                           size_t length) {
   CHECK(addr);
   CHECK(length > 0);
