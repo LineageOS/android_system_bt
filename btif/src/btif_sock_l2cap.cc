@@ -84,7 +84,7 @@ typedef struct l2cap_socket {
   unsigned outgoing_congest : 1;  // should we hold?
   unsigned server_psm_sent : 1;   // The server shall only send PSM once.
   bool is_le_coc;                 // is le connection oriented channel?
-  uint16_t mps;
+  uint16_t mtu;
 } l2cap_socket;
 
 static bt_status_t btSock_start_l2cap_server_l(l2cap_socket* sock);
@@ -310,7 +310,7 @@ static l2cap_socket* btsock_l2cap_alloc_l(const char* name,
   sock->first_packet = NULL;
   sock->last_packet = NULL;
 
-  sock->mps = L2CAP_LE_MIN_MPS;
+  sock->mtu = L2CAP_LE_MIN_MTU;
 
   sock->next = socks;
   sock->prev = NULL;
@@ -447,7 +447,7 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
   sock->handle =
       -1; /* We should no longer associate this handle with the server socket */
   accept_rs->is_le_coc = sock->is_le_coc;
-  accept_rs->mps = sock->mps;
+  accept_rs->mtu = sock->mtu;
 
   /* Swap IDs to hand over the GAP connection to the accepted socket, and start
      a new server on
@@ -498,7 +498,7 @@ static void on_srv_l2cap_le_connect_l(tBTA_JV_L2CAP_LE_OPEN* p_open,
     accept_rs->fixed_chan = sock->fixed_chan;
     accept_rs->channel = sock->channel;
     accept_rs->app_uid = sock->app_uid;
-    accept_rs->mps = sock->mps;
+    accept_rs->mtu = sock->mtu;
 
     // if we do not set a callback, this socket will be dropped */
     *(p_open->p_p_cback) = (void*)btsock_l2cap_cbk;
@@ -578,7 +578,7 @@ static void on_l2cap_connect(tBTA_JV* p_data, uint32_t id) {
     return;
   }
 
-  sock->mps = le_open->tx_mtu;
+  sock->mtu = le_open->tx_mtu;
   if (sock->fixed_chan && le_open->status == BTA_JV_SUCCESS) {
     if (!sock->server)
       on_cl_l2cap_le_connect_l(le_open, sock);
@@ -994,9 +994,9 @@ void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
            reading, might be bigger than awaiting packet.
 
            BluetoothSocket.write(...) guarantees that any packet send to this
-           socket is broken into pieces no bigger than MPS bytes (as requested
+           socket is broken into pieces no bigger than MTU bytes (as requested
            by BT spec). */
-        size = std::min(size, (int)sock->mps);
+        size = std::min(size, (int)sock->mtu);
 
         BT_HDR* buffer = malloc_l2cap_buf(size);
         /* The socket is created with SOCK_SEQPACKET, hence we read one message
@@ -1004,11 +1004,11 @@ void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
         ssize_t count;
         OSI_NO_INTR(count = recv(fd, get_l2cap_sdu_start_ptr(buffer), size,
                                  MSG_NOSIGNAL | MSG_DONTWAIT | MSG_TRUNC));
-        if (count > L2CAP_LE_MAX_MPS) {
+        if (count > sock->mtu) {
           /* This can't happen thanks to check in BluetoothSocket.java but leave
            * this in case this socket is ever used anywhere else*/
-          LOG(ERROR) << "recv more than MPS. Data will be lost: " << count;
-          count = L2CAP_LE_MAX_MPS;
+          LOG(ERROR) << "recv more than MTU. Data will be lost: " << count;
+          count = sock->mtu;
         }
 
         /* When multiple packets smaller than MTU are flushed to the socket, the
