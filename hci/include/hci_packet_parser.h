@@ -67,6 +67,12 @@ typedef struct {
   void (*parse_ble_read_suggested_default_data_length_response)(
       BT_HDR* response, uint16_t* ble_default_packet_length_ptr);
 
+  void (*parse_ble_read_maximum_data_length_response)(
+      BT_HDR* response, uint16_t* ble_supported_max_tx_octets,
+      uint16_t* ble_supported_max_tx_time,
+      uint16_t* ble_supported_max_rx_octets,
+      uint16_t* ble_supported_max_rx_time);
+
   void (*parse_ble_read_maximum_advertising_data_length)(
       BT_HDR* response, uint16_t* ble_maximum_advertising_data_length_ptr);
 
