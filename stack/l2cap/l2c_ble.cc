@@ -615,15 +615,23 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       STREAM_TO_UINT16(timeout, p);      /* 0x000A - 0x0C80 */
       /* If we are a master, the slave wants to update the parameters */
       if (p_lcb->link_role == HCI_ROLE_MASTER) {
-        if (min_interval < BTM_BLE_CONN_INT_MIN_LIMIT)
+        if (min_interval < BTM_BLE_CONN_INT_MIN_LIMIT) {
+          L2CAP_TRACE_DEBUG(
+              "%s: requested min_interval=%d too small. Set to %d", __func__,
+              min_interval, BTM_BLE_CONN_INT_MIN_LIMIT);
           min_interval = BTM_BLE_CONN_INT_MIN_LIMIT;
+        }
 
         // While this could result in connection parameters that fall
         // outside fo the range requested, this will allow the connection
         // to remain established.
         // In other words, this is a workaround for certain peripherals.
-        if (max_interval < BTM_BLE_CONN_INT_MIN_LIMIT)
+        if (max_interval < BTM_BLE_CONN_INT_MIN_LIMIT) {
+          L2CAP_TRACE_DEBUG(
+              "%s: requested max_interval=%d too small. Set to %d", __func__,
+              max_interval, BTM_BLE_CONN_INT_MIN_LIMIT);
           max_interval = BTM_BLE_CONN_INT_MIN_LIMIT;
+        }
 
         if (min_interval < BTM_BLE_CONN_INT_MIN ||
             min_interval > BTM_BLE_CONN_INT_MAX ||
