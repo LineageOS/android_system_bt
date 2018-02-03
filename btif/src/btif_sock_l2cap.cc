@@ -84,7 +84,8 @@ typedef struct l2cap_socket {
   unsigned outgoing_congest : 1;  // should we hold?
   unsigned server_psm_sent : 1;   // The server shall only send PSM once.
   bool is_le_coc;                 // is le connection oriented channel?
-  uint16_t mtu;
+  uint16_t rx_mtu;
+  uint16_t tx_mtu;
 } l2cap_socket;
 
 static void btsock_l2cap_server_listen(l2cap_socket* sock);
@@ -310,7 +311,7 @@ static l2cap_socket* btsock_l2cap_alloc_l(const char* name,
   sock->first_packet = NULL;
   sock->last_packet = NULL;
 
-  sock->mtu = L2CAP_LE_MIN_MTU;
+  sock->tx_mtu = L2CAP_LE_MIN_MTU;
 
   sock->next = socks;
   sock->prev = NULL;
@@ -362,13 +363,14 @@ static inline bool send_app_psm_or_chan_l(l2cap_socket* sock) {
 }
 
 static bool send_app_connect_signal(int fd, const RawAddress* addr, int channel,
-                                    int status, int send_fd, int tx_mtu) {
+                                    int status, int send_fd, uint16_t rx_mtu,
+                                    uint16_t tx_mtu) {
   sock_connect_signal_t cs;
   cs.size = sizeof(cs);
   cs.bd_addr = *addr;
   cs.channel = channel;
   cs.status = status;
-  cs.max_rx_packet_size = L2CAP_MAX_SDU_LENGTH;
+  cs.max_rx_packet_size = rx_mtu;
   cs.max_tx_packet_size = tx_mtu;
   if (send_fd != -1) {
     if (sock_send_fd(fd, (const uint8_t*)&cs, sizeof(cs), send_fd) ==
@@ -433,11 +435,10 @@ static void on_cl_l2cap_init(tBTA_JV_L2CAP_CL_INIT* p_init, uint32_t id) {
  * */
 static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
                                        l2cap_socket* sock) {
-  l2cap_socket* accept_rs;
-  uint32_t new_listen_id;
 
   // std::mutex locked by caller
-  accept_rs = btsock_l2cap_alloc_l(sock->name, &p_open->rem_bda, false, 0);
+  l2cap_socket* accept_rs =
+      btsock_l2cap_alloc_l(sock->name, &p_open->rem_bda, false, 0);
   accept_rs->connected = true;
   accept_rs->security = sock->security;
   accept_rs->fixed_chan = sock->fixed_chan;
@@ -447,121 +448,122 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
   sock->handle =
       -1; /* We should no longer associate this handle with the server socket */
   accept_rs->is_le_coc = sock->is_le_coc;
-  accept_rs->mtu = sock->mtu;
+  accept_rs->tx_mtu = sock->tx_mtu = p_open->tx_mtu;
 
   /* Swap IDs to hand over the GAP connection to the accepted socket, and start
-     a new server on
-     the newly create socket ID. */
-  new_listen_id = accept_rs->id;
+     a new server on the newly create socket ID. */
+  uint32_t new_listen_id = accept_rs->id;
   accept_rs->id = sock->id;
   sock->id = new_listen_id;
 
-  if (accept_rs) {
-    // start monitor the socket
-    btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP,
-                         SOCK_THREAD_FD_EXCEPTION, sock->id);
-    btsock_thread_add_fd(pth, accept_rs->our_fd, BTSOCK_L2CAP,
-                         SOCK_THREAD_FD_RD, accept_rs->id);
-    APPL_TRACE_DEBUG(
-        "sending connect signal & app fd: %d to app server to accept() the"
-        " connection",
-        accept_rs->app_fd);
-    APPL_TRACE_DEBUG("server fd:%d, scn:%d", sock->our_fd, sock->channel);
-    send_app_connect_signal(sock->our_fd, &accept_rs->addr, sock->channel, 0,
-                            accept_rs->app_fd, p_open->tx_mtu);
-    accept_rs->app_fd =
-        -1;  // The fd is closed after sent to app in send_app_connect_signal()
-    // But for some reason we still leak a FD - either the server socket
-    // one or the accept socket one.
-    btsock_l2cap_server_listen(sock);
-  }
+  // start monitor the socket
+  btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP,
+                       SOCK_THREAD_FD_EXCEPTION, sock->id);
+  btsock_thread_add_fd(pth, accept_rs->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD,
+                       accept_rs->id);
+  APPL_TRACE_DEBUG(
+      "sending connect signal & app fd: %d to app server to accept() the "
+      "connection",
+      accept_rs->app_fd);
+  APPL_TRACE_DEBUG("server fd:%d, scn:%d", sock->our_fd, sock->channel);
+  send_app_connect_signal(sock->our_fd, &accept_rs->addr, sock->channel, 0,
+                          accept_rs->app_fd, sock->rx_mtu, p_open->tx_mtu);
+  accept_rs->app_fd =
+      -1;  // The fd is closed after sent to app in send_app_connect_signal()
+  // But for some reason we still leak a FD - either the server socket
+  // one or the accept socket one.
+  btsock_l2cap_server_listen(sock);
 }
 
 static void on_srv_l2cap_le_connect_l(tBTA_JV_L2CAP_LE_OPEN* p_open,
                                       l2cap_socket* sock) {
-  l2cap_socket* accept_rs;
-  uint32_t new_listen_id;
-
   // std::mutex locked by caller
-  accept_rs = btsock_l2cap_alloc_l(sock->name, &p_open->rem_bda, false, 0);
-  if (accept_rs) {
-    // swap IDs
-    new_listen_id = accept_rs->id;
-    accept_rs->id = sock->id;
-    sock->id = new_listen_id;
+  l2cap_socket* accept_rs =
+      btsock_l2cap_alloc_l(sock->name, &p_open->rem_bda, false, 0);
+  if (!accept_rs) return;
 
-    accept_rs->handle = p_open->handle;
-    accept_rs->connected = true;
-    accept_rs->security = sock->security;
-    accept_rs->fixed_chan = sock->fixed_chan;
-    accept_rs->channel = sock->channel;
-    accept_rs->app_uid = sock->app_uid;
-    accept_rs->mtu = sock->mtu;
+  // swap IDs
+  uint32_t new_listen_id = accept_rs->id;
+  accept_rs->id = sock->id;
+  sock->id = new_listen_id;
 
-    // if we do not set a callback, this socket will be dropped */
-    *(p_open->p_p_cback) = (void*)btsock_l2cap_cbk;
-    *(p_open->p_user_data) = UINT_TO_PTR(accept_rs->id);
+  accept_rs->handle = p_open->handle;
+  accept_rs->connected = true;
+  accept_rs->security = sock->security;
+  accept_rs->fixed_chan = sock->fixed_chan;
+  accept_rs->channel = sock->channel;
+  accept_rs->app_uid = sock->app_uid;
+  accept_rs->tx_mtu = sock->tx_mtu = p_open->tx_mtu;
 
-    // start monitor the socket
-    btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP,
-                         SOCK_THREAD_FD_EXCEPTION, sock->id);
-    btsock_thread_add_fd(pth, accept_rs->our_fd, BTSOCK_L2CAP,
-                         SOCK_THREAD_FD_RD, accept_rs->id);
-    APPL_TRACE_DEBUG(
-        "sending connect signal & app fd:%dto app server to accept() the"
-        " connection",
-        accept_rs->app_fd);
-    APPL_TRACE_DEBUG("server fd:%d, scn:%d", sock->our_fd, sock->channel);
-    send_app_connect_signal(sock->our_fd, &accept_rs->addr, sock->channel, 0,
-                            accept_rs->app_fd, p_open->tx_mtu);
-    accept_rs->app_fd = -1;  // the fd is closed after sent to app
-  }
+  // if we do not set a callback, this socket will be dropped */
+  *(p_open->p_p_cback) = (void*)btsock_l2cap_cbk;
+  *(p_open->p_user_data) = UINT_TO_PTR(accept_rs->id);
+
+  // start monitor the socket
+  btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP,
+                       SOCK_THREAD_FD_EXCEPTION, sock->id);
+  btsock_thread_add_fd(pth, accept_rs->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD,
+                       accept_rs->id);
+  APPL_TRACE_DEBUG(
+      "sending connect signal & app fd:%dto app server to accept() the "
+      "connection",
+      accept_rs->app_fd);
+  APPL_TRACE_DEBUG("server fd:%d, scn:%d", sock->our_fd, sock->channel);
+  send_app_connect_signal(sock->our_fd, &accept_rs->addr, sock->channel, 0,
+                          accept_rs->app_fd, sock->rx_mtu, p_open->tx_mtu);
+  accept_rs->app_fd = -1;  // the fd is closed after sent to app
 }
 
 static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
                                       l2cap_socket* sock) {
   sock->addr = p_open->rem_bda;
+  sock->tx_mtu = p_open->tx_mtu;
 
   if (!send_app_psm_or_chan_l(sock)) {
     APPL_TRACE_ERROR("send_app_psm_or_chan_l failed");
     return;
   }
 
-  if (send_app_connect_signal(sock->our_fd, &sock->addr, sock->channel, 0, -1,
-                              p_open->tx_mtu)) {
-    // start monitoring the socketpair to get call back when app writing data
-    APPL_TRACE_DEBUG(
-        "on_l2cap_connect_ind, connect signal sent, slot id:%d, psm:%d,"
-        " server:%d",
-        sock->id, sock->channel, sock->server);
-    btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD,
-                         sock->id);
-    sock->connected = true;
-  } else
+  if (!send_app_connect_signal(sock->our_fd, &sock->addr, sock->channel, 0, -1,
+                               sock->rx_mtu, p_open->tx_mtu)) {
     APPL_TRACE_ERROR("send_app_connect_signal failed");
+    return;
+  }
+
+  // start monitoring the socketpair to get call back when app writing data
+  APPL_TRACE_DEBUG(
+      "on_l2cap_connect_ind, connect signal sent, slot id:%d, psm:%d, "
+      "server:%d",
+      sock->id, sock->channel, sock->server);
+  btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD,
+                       sock->id);
+  sock->connected = true;
 }
 
 static void on_cl_l2cap_le_connect_l(tBTA_JV_L2CAP_LE_OPEN* p_open,
                                      l2cap_socket* sock) {
   sock->addr = p_open->rem_bda;
+  sock->tx_mtu = p_open->tx_mtu;
 
   if (!send_app_psm_or_chan_l(sock)) {
     APPL_TRACE_ERROR("send_app_psm_or_chan_l failed");
     return;
   }
 
-  if (send_app_connect_signal(sock->our_fd, &sock->addr, sock->channel, 0, -1,
-                              p_open->tx_mtu)) {
-    // start monitoring the socketpair to get call back when app writing data
-    APPL_TRACE_DEBUG(
-        "on_l2cap_connect_ind, connect signal sent, slot id:%d, Chan:%d,"
-        " server:%d",
-        sock->id, sock->channel, sock->server);
-    btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD,
-                         sock->id);
-    sock->connected = true;
-  } else
+  if (!send_app_connect_signal(sock->our_fd, &sock->addr, sock->channel, 0, -1,
+                               sock->rx_mtu, p_open->tx_mtu)) {
     APPL_TRACE_ERROR("send_app_connect_signal failed");
+    return;
+  }
+
+  // start monitoring the socketpair to get call back when app writing data
+  APPL_TRACE_DEBUG(
+      "on_l2cap_connect_ind, connect signal sent, slot id:%d, Chan:%d, "
+      "server:%d",
+      sock->id, sock->channel, sock->server);
+  btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD,
+                       sock->id);
+  sock->connected = true;
 }
 
 static void on_l2cap_connect(tBTA_JV* p_data, uint32_t id) {
@@ -576,7 +578,7 @@ static void on_l2cap_connect(tBTA_JV* p_data, uint32_t id) {
     return;
   }
 
-  sock->mtu = le_open->tx_mtu;
+  sock->tx_mtu = le_open->tx_mtu;
   if (sock->fixed_chan && le_open->status == BTA_JV_SUCCESS) {
     if (!sock->server)
       on_cl_l2cap_le_connect_l(le_open, sock);
@@ -816,9 +818,9 @@ static void btsock_l2cap_server_listen(l2cap_socket* sock) {
     ertm_info.reset(new tL2CAP_ERTM_INFO(obex_l2c_etm_opt));
   }
 
-  BTA_JvL2capStartServer(
-      connection_type, sock->security, 0, std::move(ertm_info), sock->channel,
-      L2CAP_MAX_SDU_LENGTH, std::move(cfg), btsock_l2cap_cbk, sock->id);
+  BTA_JvL2capStartServer(connection_type, sock->security, 0,
+                         std::move(ertm_info), sock->channel, sock->rx_mtu,
+                         std::move(cfg), btsock_l2cap_cbk, sock->id);
 }
 
 static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
@@ -854,6 +856,7 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
   sock->channel = channel;
   sock->app_uid = app_uid;
   sock->is_le_coc = is_le_coc;
+  sock->rx_mtu = is_le_coc ? L2CAP_SDU_LENGTH_LE_MAX : L2CAP_SDU_LENGTH_MAX;
 
   /* "role" is never initialized in rfcomm code */
   if (listen) {
@@ -874,10 +877,9 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
         ertm_info.reset(new tL2CAP_ERTM_INFO(obex_l2c_etm_opt));
       }
 
-      BTA_JvL2capConnect(connection_type, sock->security, 0,
-                         std::move(ertm_info), channel, L2CAP_MAX_SDU_LENGTH,
-                         std::move(cfg), sock->addr, btsock_l2cap_cbk,
-                         sock->id);
+      BTA_JvL2capConnect(
+          connection_type, sock->security, 0, std::move(ertm_info), channel,
+          sock->rx_mtu, std::move(cfg), sock->addr, btsock_l2cap_cbk, sock->id);
     }
   }
 
@@ -970,7 +972,7 @@ void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
            BluetoothSocket.write(...) guarantees that any packet send to this
            socket is broken into pieces no bigger than MTU bytes (as requested
            by BT spec). */
-        size = std::min(size, (int)sock->mtu);
+        size = std::min(size, (int)sock->tx_mtu);
 
         BT_HDR* buffer = malloc_l2cap_buf(size);
         /* The socket is created with SOCK_SEQPACKET, hence we read one message
@@ -978,11 +980,11 @@ void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
         ssize_t count;
         OSI_NO_INTR(count = recv(fd, get_l2cap_sdu_start_ptr(buffer), size,
                                  MSG_NOSIGNAL | MSG_DONTWAIT | MSG_TRUNC));
-        if (count > sock->mtu) {
+        if (count > sock->tx_mtu) {
           /* This can't happen thanks to check in BluetoothSocket.java but leave
            * this in case this socket is ever used anywhere else*/
           LOG(ERROR) << "recv more than MTU. Data will be lost: " << count;
-          count = sock->mtu;
+          count = sock->tx_mtu;
         }
 
         /* When multiple packets smaller than MTU are flushed to the socket, the
