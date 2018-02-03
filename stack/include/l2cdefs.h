@@ -322,12 +322,14 @@
   (L2CAP_PKT_OVERHEAD + L2CAP_EXT_CONTROL_OVERHEAD + L2CAP_SDU_LEN_OVERHEAD + \
    L2CAP_FCS_LEN)
 
-/* To optimize this, it must be a multiple of the L2CAP PDU length AND match
- * the 3DH5 air including the l2cap headers in each packet. To match the latter,
- * the -5 is added.
- * Changed it to  8087 to have same value between BTIF and L2cap layers
+/* TODO: This value can probably be optimized per transport, and per L2CAP
+ * socket type, but this should not bring any big performance improvements. For
+ * LE CoC, it should be biggest multiple of "PDU length" smaller than 0xffff (so
+ * depend on controller buffer size), for Classic, making it multiple of PDU
+ * length and also of the 3DH5 air including the l2cap headers in each packet.
  */
-#define L2CAP_MAX_SDU_LENGTH (8080 + 26 - (L2CAP_MIN_OFFSET + 6))
+#define L2CAP_SDU_LENGTH_MAX (8080 + 26 - (L2CAP_MIN_OFFSET + 6))
+constexpr uint16_t L2CAP_SDU_LENGTH_LE_MAX = 0xffff;
 
 /* Part of L2CAP_MIN_OFFSET that is not part of L2CAP
 */
