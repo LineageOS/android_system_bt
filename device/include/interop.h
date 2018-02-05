@@ -113,7 +113,7 @@ bool interop_match_name(const interop_feature_t feature, const char* name);
 // |length| must be greater than 0 and less than RawAddress::kLength.
 // As |interop_feature_t| is not exposed in the public API, feature must be a
 // valid integer representing an option in the enum.
-void interop_database_add(const uint16_t feature, const RawAddress* addr,
+void interop_database_add(uint16_t feature, const RawAddress* addr,
                           size_t length);
 
 // Clear the dynamic portion of the interoperability workaround database.

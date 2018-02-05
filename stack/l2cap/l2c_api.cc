@@ -555,7 +555,10 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
   p_ccb->p_rcb = p_rcb;
 
   /* Save the configuration */
-  if (p_cfg) memcpy(&p_ccb->local_conn_cfg, p_cfg, sizeof(tL2CAP_LE_CFG_INFO));
+  if (p_cfg) {
+    memcpy(&p_ccb->local_conn_cfg, p_cfg, sizeof(tL2CAP_LE_CFG_INFO));
+    p_ccb->remote_credit_count = p_cfg->credits;
+  }
 
   /* If link is up, start the L2CAP connection */
   if (p_lcb->link_state == LST_CONNECTED) {
@@ -625,7 +628,10 @@ bool L2CA_ConnectLECocRsp(const RawAddress& p_bd_addr, uint8_t id,
     return false;
   }
 
-  if (p_cfg) memcpy(&p_ccb->local_conn_cfg, p_cfg, sizeof(tL2CAP_LE_CFG_INFO));
+  if (p_cfg) {
+    memcpy(&p_ccb->local_conn_cfg, p_cfg, sizeof(tL2CAP_LE_CFG_INFO));
+    p_ccb->remote_credit_count = p_cfg->credits;
+  }
 
   if (result == L2CAP_CONN_OK)
     l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONNECT_RSP, NULL);

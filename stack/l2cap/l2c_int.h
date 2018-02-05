@@ -37,12 +37,21 @@
 #define L2CAP_MIN_MTU 48 /* Minimum acceptable MTU is 48 bytes */
 
 /* LE credit based L2CAP connection parameters */
-#define L2CAP_LE_MIN_MTU 23
-#define L2CAP_LE_MIN_MPS 23
-#define L2CAP_LE_MAX_MPS 65533
-#define L2CAP_LE_MIN_CREDIT 0
-#define L2CAP_LE_MAX_CREDIT 65535
-#define L2CAP_LE_DEFAULT_CREDIT 1
+constexpr uint16_t L2CAP_LE_MIN_MTU = 23;  // Minimum SDU size
+constexpr uint16_t L2CAP_LE_MIN_MPS = 23;
+constexpr uint16_t L2CAP_LE_MAX_MPS = 65533;
+constexpr uint16_t L2CAP_LE_CREDIT_MAX = 65535;
+
+// This is initial amout of credits we send, and amount to which we increase
+// credits once they fall below threshold
+constexpr uint16_t L2CAP_LE_CREDIT_DEFAULT = 0xffff;
+
+// If credit count on remote fall below this value, we send back credits to
+// reach default value.
+constexpr uint16_t L2CAP_LE_CREDIT_THRESHOLD = 0x0040;
+
+static_assert(L2CAP_LE_CREDIT_THRESHOLD < L2CAP_LE_CREDIT_DEFAULT,
+              "Threshold must be smaller then default credits");
 
 /*
  * Timeout values (in milliseconds).
@@ -327,6 +336,10 @@ typedef struct t_l2c_ccb {
   uint16_t fixed_chnl_idle_tout; /* Idle timeout to use for the fixed channel */
 #endif
   uint16_t tx_data_len;
+
+  /* Number of LE frames that the remote can send to us (credit count in
+   * remote). Valid only for LE CoC */
+  uint16_t remote_credit_count;
 } tL2C_CCB;
 
 /***********************************************************************

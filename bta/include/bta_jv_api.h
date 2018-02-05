@@ -440,11 +440,10 @@ bool BTA_JvIsEncrypted(const RawAddress& bd_addr);
  *                  request a new channel will be made. set channel to <= 0 to
  *                  automatically assign an channel ID.
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
+ * Returns          void
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvGetChannelId(int conn_type, uint32_t id, int32_t channel);
+void BTA_JvGetChannelId(int conn_type, uint32_t id, int32_t channel);
 
 /*******************************************************************************
  *
@@ -514,10 +513,7 @@ tBTA_JV_STATUS BTA_JvDeleteRecord(uint32_t handle);
  *                  tBTA_JV_L2CAP_CBACK is called with BTA_JV_L2CAP_OPEN_EVT
  *
  ******************************************************************************/
-void BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
-                          const tL2CAP_ERTM_INFO* ertm_info,
-                          uint16_t remote_chan, uint16_t rx_mtu,
-                          tL2CAP_CFG_INFO* cfg, const RawAddress& peer_bd_addr,
+void BTA_JvL2capConnectLE(uint16_t remote_chan, const RawAddress& peer_bd_addr,
                           tBTA_JV_L2CAP_CBACK* p_cback,
                           uint32_t l2cap_socket_id);
 
@@ -534,8 +530,9 @@ void BTA_JvL2capConnectLE(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
  *
  ******************************************************************************/
 void BTA_JvL2capConnect(int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
-                        const tL2CAP_ERTM_INFO* ertm_info, uint16_t remote_psm,
-                        uint16_t rx_mtu, tL2CAP_CFG_INFO* cfg,
+                        std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info,
+                        uint16_t remote_psm, uint16_t rx_mtu,
+                        std::unique_ptr<tL2CAP_CFG_INFO> cfg,
                         const RawAddress& peer_bd_addr,
                         tBTA_JV_L2CAP_CBACK* p_cback, uint32_t l2cap_socket_id);
 
@@ -575,17 +572,15 @@ tBTA_JV_STATUS BTA_JvL2capCloseLE(uint32_t handle);
  *                  established, tBTA_JV_L2CAP_CBACK is called with
  *                  BTA_JV_L2CAP_OPEN_EVT.
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
+ * Returns          void
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capStartServer(int conn_type, tBTA_SEC sec_mask,
-                                      tBTA_JV_ROLE role,
-                                      const tL2CAP_ERTM_INFO* ertm_info,
-                                      uint16_t local_psm, uint16_t rx_mtu,
-                                      tL2CAP_CFG_INFO* cfg,
-                                      tBTA_JV_L2CAP_CBACK* p_cback,
-                                      uint32_t l2cap_socket_id);
+void BTA_JvL2capStartServer(int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
+                            std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info,
+                            uint16_t local_psm, uint16_t rx_mtu,
+                            std::unique_ptr<tL2CAP_CFG_INFO> cfg,
+                            tBTA_JV_L2CAP_CBACK* p_cback,
+                            uint32_t l2cap_socket_id);
 
 /*******************************************************************************
  *
@@ -598,16 +593,11 @@ tBTA_JV_STATUS BTA_JvL2capStartServer(int conn_type, tBTA_SEC sec_mask,
  *                  BTA_JV_L2CAP_START_EVT.  When the connection is established,
  *                  tBTA_JV_L2CAP_CBACK is called with BTA_JV_L2CAP_OPEN_EVT.
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
+ * Returns          void
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capStartServerLE(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
-                                        const tL2CAP_ERTM_INFO* ertm_info,
-                                        uint16_t local_chan, uint16_t rx_mtu,
-                                        tL2CAP_CFG_INFO* cfg,
-                                        tBTA_JV_L2CAP_CBACK* p_cback,
-                                        uint32_t l2cap_socket_id);
+void BTA_JvL2capStartServerLE(uint16_t local_chan, tBTA_JV_L2CAP_CBACK* p_cback,
+                              uint32_t l2cap_socket_id);
 
 /*******************************************************************************
  *

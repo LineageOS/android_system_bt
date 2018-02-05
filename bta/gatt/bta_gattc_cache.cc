@@ -397,9 +397,10 @@ static bool bta_gattc_srvc_in_list(std::vector<tBTA_GATTC_SERVICE>& services,
  *
  ******************************************************************************/
 void bta_gattc_sdp_callback(uint16_t sdp_status, void* user_data) {
-  tSDP_PROTOCOL_ELEM pe;
   tBTA_GATTC_CB_DATA* cb_data = (tBTA_GATTC_CB_DATA*)user_data;
   tBTA_GATTC_SERV* p_srvc_cb = bta_gattc_find_scb_by_cid(cb_data->sdp_conn_id);
+
+  bool no_pending_disc = p_srvc_cb->pending_discovery.empty();
 
   if (((sdp_status == SDP_SUCCESS) || (sdp_status == SDP_DB_FULL)) &&
       p_srvc_cb != NULL) {
@@ -410,6 +411,7 @@ void bta_gattc_sdp_callback(uint16_t sdp_status, void* user_data) {
       if (p_sdp_rec) {
         Uuid service_uuid;
         if (SDP_FindServiceUUIDInRec(p_sdp_rec, &service_uuid)) {
+          tSDP_PROTOCOL_ELEM pe;
           if (SDP_FindProtocolListElemInRec(p_sdp_rec, UUID_PROTOCOL_ATT,
                                             &pe)) {
             uint16_t start_handle = (uint16_t)pe.params[0];
@@ -437,6 +439,10 @@ void bta_gattc_sdp_callback(uint16_t sdp_status, void* user_data) {
   }
 
   if (p_srvc_cb != NULL) {
+    if (no_pending_disc) {
+      p_srvc_cb->pending_service = p_srvc_cb->pending_discovery.begin();
+    }
+
     /* start discover primary service */
     bta_gattc_explore_srvc(cb_data->sdp_conn_id, p_srvc_cb);
   } else {
