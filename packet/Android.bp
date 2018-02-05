@@ -9,6 +9,11 @@ cc_library_static {
         "lib-bt-packets-base",
         "lib-bt-packets-avrcp",
     ],
+    target: {
+        darwin: {
+            enabled: false
+        }
+    }
 }
 
 cc_test {
