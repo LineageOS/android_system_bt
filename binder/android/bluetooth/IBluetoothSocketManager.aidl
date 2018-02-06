@@ -29,4 +29,5 @@ interface IBluetoothSocketManager
 {
     @nullable ParcelFileDescriptor connectSocket(in BluetoothDevice device, int type, in @nullable ParcelUuid uuid, int port, int flag);
     @nullable ParcelFileDescriptor createSocketChannel(int type, in @nullable String serviceName, in @nullable ParcelUuid uuid, int port, int flag);
+    void requestMaximumTxDataLength(in BluetoothDevice device);
 }
