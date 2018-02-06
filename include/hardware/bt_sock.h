@@ -75,6 +75,15 @@ typedef struct {
   bt_status_t (*connect)(const RawAddress* bd_addr, btsock_type_t type,
                          const bluetooth::Uuid* uuid, int channel, int* sock_fd,
                          int flags, int callingUid);
+
+  /**
+   * Set the LE Data Length value to this connected peer to the
+   * maximum supported by this BT controller. This command
+   * suggests to the BT controller to set its maximum transmission
+   * packet size.
+   */
+  void (*request_max_tx_data_length)(const RawAddress& bd_addr);
+
 } btsock_interface_t;
 
 __END_DECLS
