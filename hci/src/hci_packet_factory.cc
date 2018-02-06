@@ -142,6 +142,10 @@ static BT_HDR* make_ble_read_suggested_default_data_length(void) {
   return make_command_no_params(HCI_BLE_READ_DEFAULT_DATA_LENGTH);
 }
 
+static BT_HDR* make_ble_read_maximum_data_length(void) {
+  return make_command_no_params(HCI_BLE_READ_MAXIMUM_DATA_LENGTH);
+}
+
 static BT_HDR* make_ble_read_maximum_advertising_data_length(void) {
   return make_command_no_params(HCI_LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH);
 }
@@ -212,6 +216,7 @@ static const hci_packet_factory_t interface = {
     make_ble_read_local_supported_features,
     make_ble_read_resolving_list_size,
     make_ble_read_suggested_default_data_length,
+    make_ble_read_maximum_data_length,
     make_ble_read_maximum_advertising_data_length,
     make_ble_read_number_of_supported_advertising_sets,
     make_ble_set_event_mask,
