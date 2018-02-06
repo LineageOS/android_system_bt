@@ -184,7 +184,23 @@ static void parse_ble_read_suggested_default_data_length_response(
     BT_HDR* response, uint16_t* ble_default_packet_length_ptr) {
   uint8_t* stream = read_command_complete_header(
       response, HCI_BLE_READ_DEFAULT_DATA_LENGTH, 2 /* bytes after */);
-  STREAM_TO_UINT8(*ble_default_packet_length_ptr, stream);
+  STREAM_TO_UINT16(*ble_default_packet_length_ptr, stream);
+
+  buffer_allocator->free(response);
+}
+
+static void parse_ble_read_maximum_data_length_response(
+    BT_HDR* response, uint16_t* ble_supported_max_tx_octets,
+    uint16_t* ble_supported_max_tx_time, uint16_t* ble_supported_max_rx_octets,
+    uint16_t* ble_supported_max_rx_time) {
+  uint8_t* stream = read_command_complete_header(
+      response, HCI_BLE_READ_MAXIMUM_DATA_LENGTH, 8 /* bytes after */);
+  STREAM_TO_UINT16(*ble_supported_max_tx_octets, stream);
+  STREAM_TO_UINT16(*ble_supported_max_tx_time, stream);
+  STREAM_TO_UINT16(*ble_supported_max_rx_octets, stream);
+  STREAM_TO_UINT16(*ble_supported_max_rx_time, stream);
+
+  buffer_allocator->free(response);
 }
 
 static void parse_ble_read_maximum_advertising_data_length(
@@ -262,6 +278,7 @@ static const hci_packet_parser_t interface = {
     parse_ble_read_local_supported_features_response,
     parse_ble_read_resolving_list_size_response,
     parse_ble_read_suggested_default_data_length_response,
+    parse_ble_read_maximum_data_length_response,
     parse_ble_read_maximum_advertising_data_length,
     parse_ble_read_number_of_supported_advertising_sets,
     parse_read_local_supported_codecs_response};

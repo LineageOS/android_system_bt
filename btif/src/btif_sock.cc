@@ -34,6 +34,7 @@
 #include "btif_sock_thread.h"
 #include "btif_uid.h"
 #include "btif_util.h"
+#include "device/include/controller.h"
 #include "osi/include/thread.h"
 
 using bluetooth::Uuid;
@@ -45,14 +46,19 @@ static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type,
                                   const Uuid* uuid, int channel, int* sock_fd,
                                   int flags, int app_uid);
 
+static void btsock_request_max_tx_data_length(const RawAddress& bd_addr);
+
 static void btsock_signaled(int fd, int type, int flags, uint32_t user_id);
 
 static std::atomic_int thread_handle{-1};
 static thread_t* thread;
 
 const btsock_interface_t* btif_sock_get_interface(void) {
-  static btsock_interface_t interface = {sizeof(interface), btsock_listen,
-                                         btsock_connect};
+  static btsock_interface_t interface = {
+      sizeof(interface), btsock_listen, /* listen */
+      btsock_connect,                   /* connect */
+      btsock_request_max_tx_data_length /* request_max_tx_data_length */
+  };
 
   return &interface;
 }
@@ -208,6 +214,15 @@ static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type,
       break;
   }
   return status;
+}
+
+static void btsock_request_max_tx_data_length(const RawAddress& remote_device) {
+  const controller_t* controller = controller_get_interface();
+  uint16_t max_len = controller->get_ble_maximum_tx_data_length();
+
+  DVLOG(2) << __func__ << ": max_len=" << max_len;
+
+  BTA_DmBleSetDataLength(remote_device, max_len);
 }
 
 static void btsock_signaled(int fd, int type, int flags, uint32_t user_id) {
