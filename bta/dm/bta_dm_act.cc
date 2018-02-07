@@ -2280,6 +2280,12 @@ static void bta_dm_pinname_cback(void* p_data) {
 
     /* 1 additional event data fields for this event */
     sec_event.cfm_req.just_works = bta_dm_cb.just_works;
+    /* retrieve the loc and rmt caps */
+    sec_event.cfm_req.loc_io_caps = bta_dm_cb.loc_io_caps;
+    sec_event.cfm_req.rmt_io_caps = bta_dm_cb.rmt_io_caps;
+    sec_event.cfm_req.loc_auth_req = bta_dm_cb.loc_auth_req;
+    sec_event.cfm_req.rmt_auth_req = bta_dm_cb.rmt_auth_req;
+
   } else {
     /* Retrieved saved device class and bd_addr */
     sec_event.pin_req.bd_addr = bta_dm_cb.pin_bd_addr;
@@ -2497,6 +2503,11 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
         if (p_data->cfm_req.bd_name[0] == 0) {
           bta_dm_cb.pin_evt = pin_evt;
           bta_dm_cb.pin_bd_addr = p_data->cfm_req.bd_addr;
+          bta_dm_cb.rmt_io_caps = sec_event.cfm_req.rmt_io_caps;
+          bta_dm_cb.loc_io_caps = sec_event.cfm_req.loc_io_caps;
+          bta_dm_cb.rmt_auth_req = sec_event.cfm_req.rmt_auth_req;
+          bta_dm_cb.loc_auth_req = sec_event.cfm_req.loc_auth_req;
+
           BTA_COPY_DEVICE_CLASS(bta_dm_cb.pin_dev_class,
                                 p_data->cfm_req.dev_class);
           if ((BTM_ReadRemoteDeviceName(
