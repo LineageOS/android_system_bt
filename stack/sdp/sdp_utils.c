@@ -381,6 +381,9 @@ UINT8 *sdpu_extract_uid_seq (UINT8 *p, UINT16 param_len, tSDP_UUID_SEQ *p_seq)
 
     /* A UID sequence is composed of a bunch of UIDs. */
 
+    if (sizeof(descr) > param_len) return (NULL);
+    param_len -= sizeof(descr);
+
     BE_STREAM_TO_UINT8 (descr, p);
     type = descr >> 3;
     size = descr & 7;
@@ -400,19 +403,25 @@ UINT8 *sdpu_extract_uid_seq (UINT8 *p, UINT16 param_len, tSDP_UUID_SEQ *p_seq)
         seq_len = 16;
         break;
     case SIZE_IN_NEXT_BYTE:
+        if (sizeof(uint8_t) > param_len) return (NULL);
+        param_len -= sizeof(uint8_t);
         BE_STREAM_TO_UINT8 (seq_len, p);
         break;
     case SIZE_IN_NEXT_WORD:
+        if (sizeof(uint16_t) > param_len) return (NULL);
+        param_len -= sizeof(uint16_t);
         BE_STREAM_TO_UINT16 (seq_len, p);
         break;
     case SIZE_IN_NEXT_LONG:
+        if (sizeof(uint32_t) > param_len) return (NULL);
+        param_len -= sizeof(uint32_t);
         BE_STREAM_TO_UINT32 (seq_len, p);
         break;
     default:
         return (NULL);
     }
 
-    if (seq_len >= param_len)
+    if (seq_len > param_len)
         return (NULL);
 
     p_seq_end = p + seq_len;
@@ -439,12 +448,15 @@ UINT8 *sdpu_extract_uid_seq (UINT8 *p, UINT16 param_len, tSDP_UUID_SEQ *p_seq)
             uuid_len = 16;
             break;
         case SIZE_IN_NEXT_BYTE:
+            if (p + sizeof(uint8_t) > p_seq_end) return NULL;
             BE_STREAM_TO_UINT8 (uuid_len, p);
             break;
         case SIZE_IN_NEXT_WORD:
+            if (p + sizeof(uint16_t) > p_seq_end) return NULL;
             BE_STREAM_TO_UINT16 (uuid_len, p);
             break;
         case SIZE_IN_NEXT_LONG:
+            if (p + sizeof(uint32_t) > p_seq_end) return NULL;
             BE_STREAM_TO_UINT32 (uuid_len, p);
             break;
         default:
@@ -452,8 +464,8 @@ UINT8 *sdpu_extract_uid_seq (UINT8 *p, UINT16 param_len, tSDP_UUID_SEQ *p_seq)
         }
 
         /* If UUID length is valid, copy it across */
-        if ((uuid_len == 2) || (uuid_len == 4) || (uuid_len == 16))
-        {
+        if (((uuid_len == 2) || (uuid_len == 4) || (uuid_len == 16)) &&
+            (p + uuid_len <= p_seq_end)) {
             p_seq->uuid_entry[p_seq->num_uids].len = (UINT16) uuid_len;
             BE_STREAM_TO_ARRAY (p, p_seq->uuid_entry[p_seq->num_uids].value, (int)uuid_len);
             p_seq->num_uids++;
@@ -494,33 +506,39 @@ UINT8 *sdpu_extract_attr_seq (UINT8 *p, UINT16 param_len, tSDP_ATTR_SEQ *p_seq)
     p_seq->num_attr = 0;
 
     /* Get attribute sequence info */
+    if (param_len < sizeof(descr)) return NULL;
+    param_len -= sizeof(descr);
     BE_STREAM_TO_UINT8 (descr, p);
     type = descr >> 3;
     size = descr & 7;
 
-    if (type != DATA_ELE_SEQ_DESC_TYPE)
-        return (p);
+    if (type != DATA_ELE_SEQ_DESC_TYPE) return NULL;
 
     switch (size)
     {
     case SIZE_IN_NEXT_BYTE:
+        if (param_len < sizeof(uint8_t)) return NULL;
+        param_len -= sizeof(uint8_t);
         BE_STREAM_TO_UINT8 (list_len, p);
         break;
 
     case SIZE_IN_NEXT_WORD:
+        if (param_len < sizeof(uint16_t)) return NULL;
+        param_len -= sizeof(uint16_t);
         BE_STREAM_TO_UINT16 (list_len, p);
         break;
 
     case SIZE_IN_NEXT_LONG:
+        if (param_len < sizeof(uint32_t)) return NULL;
+        param_len -= sizeof(uint32_t);
         BE_STREAM_TO_UINT32 (list_len, p);
         break;
 
     default:
-        return (p);
+        return NULL;
     }
 
-    if (list_len > param_len)
-        return (p);
+    if (list_len > param_len) return NULL;
 
     p_end_list = p + list_len;
 
@@ -531,8 +549,7 @@ UINT8 *sdpu_extract_attr_seq (UINT8 *p, UINT16 param_len, tSDP_ATTR_SEQ *p_seq)
         type = descr >> 3;
         size = descr & 7;
 
-        if (type != UINT_DESC_TYPE)
-            return (p);
+        if (type != UINT_DESC_TYPE) return NULL;
 
         switch (size)
         {
@@ -543,20 +560,24 @@ UINT8 *sdpu_extract_attr_seq (UINT8 *p, UINT16 param_len, tSDP_ATTR_SEQ *p_seq)
             attr_len = 4;
             break;
         case SIZE_IN_NEXT_BYTE:
+            if (p + sizeof(uint8_t) > p_end_list) return NULL;
             BE_STREAM_TO_UINT8 (attr_len, p);
             break;
         case SIZE_IN_NEXT_WORD:
+            if (p + sizeof(uint16_t) > p_end_list) return NULL;
             BE_STREAM_TO_UINT16 (attr_len, p);
             break;
         case SIZE_IN_NEXT_LONG:
+            if (p + sizeof(uint32_t) > p_end_list) return NULL;
             BE_STREAM_TO_UINT32 (attr_len, p);
             break;
         default:
-            return (NULL);
+            return NULL;
             break;
         }
 
         /* Attribute length must be 2-bytes or 4-bytes for a paired entry. */
+        if (p + attr_len > p_end_list) return NULL;
         if (attr_len == 2)
         {
             BE_STREAM_TO_UINT16 (p_seq->attr_entry[p_seq->num_attr].start, p);
