@@ -225,14 +225,20 @@ bt_status_t btif_transfer_context(tBTIF_CBACK* p_cback, uint16_t event,
  **/
 bt_status_t do_in_jni_thread(const tracked_objects::Location& from_here,
                              const base::Closure& task) {
-  if (!message_loop_ || !message_loop_->task_runner().get()) {
+  if (!message_loop_) {
     BTIF_TRACE_WARNING("%s: Dropped message, message_loop not initialized yet!",
                        __func__);
     return BT_STATUS_FAIL;
   }
 
-  if (message_loop_->task_runner()->PostTask(from_here, task))
-    return BT_STATUS_SUCCESS;
+  scoped_refptr<base::SingleThreadTaskRunner> task_runner =
+      message_loop_->task_runner();
+  if (!task_runner.get()) {
+    BTIF_TRACE_WARNING("%s: task runner is dead", __func__);
+    return BT_STATUS_FAIL;
+  }
+
+  if (task_runner->PostTask(from_here, task)) return BT_STATUS_SUCCESS;
 
   BTIF_TRACE_ERROR("%s: Post task to task runner failed!", __func__);
   return BT_STATUS_FAIL;
