@@ -891,8 +891,13 @@ extern void BTA_GATTS_AppDeregister(tGATT_IF server_if);
  *                  service cannot be added.
  *
  ******************************************************************************/
-extern uint16_t BTA_GATTS_AddService(tGATT_IF server_if,
-                                     std::vector<btgatt_db_element_t>& service);
+typedef base::Callback<void(uint8_t status, int server_if,
+                            std::vector<btgatt_db_element_t> service)>
+    BTA_GATTS_AddServiceCb;
+
+extern void BTA_GATTS_AddService(tGATT_IF server_if,
+                                 std::vector<btgatt_db_element_t> service,
+                                 BTA_GATTS_AddServiceCb cb);
 
 /*******************************************************************************
  *
