@@ -346,6 +346,12 @@ static bt_status_t btif_gatts_close(int server_if, const RawAddress& bd_addr,
       Bind(&btif_gatts_close_impl, server_if, bd_addr, conn_id));
 }
 
+static void on_service_added_cb(uint8_t status, int server_if,
+                                vector<btgatt_db_element_t> service) {
+  HAL_CBACK(bt_gatt_callbacks, server->service_added_cb, status, server_if,
+            std::move(service));
+}
+
 static void add_service_impl(int server_if,
                              vector<btgatt_db_element_t> service) {
   // TODO(jpawlowski): btif should be a pass through layer, and no checks should
@@ -359,16 +365,16 @@ static void add_service_impl(int server_if,
     return;
   }
 
-  int status = BTA_GATTS_AddService(server_if, service);
-  HAL_CBACK(bt_gatt_callbacks, server->service_added_cb, status, server_if,
-            std::move(service));
+  BTA_GATTS_AddService(
+      server_if, service,
+      jni_thread_wrapper(FROM_HERE, base::Bind(&on_service_added_cb)));
 }
 
 static bt_status_t btif_gatts_add_service(int server_if,
                                           vector<btgatt_db_element_t> service) {
   CHECK_BTGATT_INIT();
   return do_in_jni_thread(
-      Bind(&add_service_impl, server_if, std::move(service)));
+      FROM_HERE, Bind(&add_service_impl, server_if, std::move(service)));
 }
 
 static bt_status_t btif_gatts_stop_service(int server_if, int service_handle) {
