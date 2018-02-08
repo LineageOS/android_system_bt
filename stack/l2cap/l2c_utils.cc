@@ -1182,9 +1182,8 @@ void l2cu_enqueue_ccb(tL2C_CCB* p_ccb) {
   if (p_ccb->p_lcb != NULL) p_q = &p_ccb->p_lcb->ccb_queue;
 
   if ((!p_ccb->in_use) || (p_q == NULL)) {
-    L2CAP_TRACE_ERROR(
-        "l2cu_enqueue_ccb  CID: 0x%04x ERROR in_use: %u  p_lcb: 0x%08x",
-        p_ccb->local_cid, p_ccb->in_use, p_ccb->p_lcb);
+    L2CAP_TRACE_ERROR("%s: CID: 0x%04x ERROR in_use: %u  p_lcb: %p", __func__,
+                      p_ccb->local_cid, p_ccb->in_use, p_ccb->p_lcb);
     return;
   }
 
