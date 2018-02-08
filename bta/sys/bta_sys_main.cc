@@ -553,13 +553,19 @@ void bta_sys_sendmsg(void* p_msg) {
 void do_in_bta_thread(const tracked_objects::Location& from_here,
                       const base::Closure& task) {
   base::MessageLoop* bta_message_loop = get_message_loop();
-
-  if (!bta_message_loop || !bta_message_loop->task_runner().get()) {
+  if (!bta_message_loop) {
     APPL_TRACE_ERROR("%s: MessageLooper not initialized", __func__);
     return;
   }
 
-  bta_message_loop->task_runner()->PostTask(from_here, task);
+  scoped_refptr<base::SingleThreadTaskRunner> task_runner =
+      bta_message_loop->task_runner();
+  if (!task_runner.get()) {
+    APPL_TRACE_ERROR("%s: task runner is dead", __func__);
+    return;
+  }
+
+  task_runner->PostTask(from_here, task);
 }
 
 /*******************************************************************************
