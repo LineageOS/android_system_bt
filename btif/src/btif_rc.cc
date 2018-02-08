@@ -2499,7 +2499,6 @@ static bt_status_t get_total_num_of_items_rsp(RawAddress* bd_addr,
 static bt_status_t set_volume(uint8_t volume) {
   BTIF_TRACE_DEBUG("%s: volume: %d", __func__, volume);
   tAVRC_STS status = BT_STATUS_UNSUPPORTED;
-  rc_transaction_t* p_transaction = NULL;
 
   for (int idx = 0; idx < BTIF_RC_NUM_CONN; idx++) {
     if (!btif_rc_cb.rc_multi_cb[idx].rc_connected) {
@@ -2516,49 +2515,53 @@ static bt_status_t set_volume(uint8_t volume) {
       continue;
     }
 
-    if ((btif_rc_cb.rc_multi_cb[idx].rc_volume != volume) &&
-        btif_rc_cb.rc_multi_cb[idx].rc_state ==
+    if ((btif_rc_cb.rc_multi_cb[idx].rc_volume == volume) ||
+        btif_rc_cb.rc_multi_cb[idx].rc_state !=
             BTRC_CONNECTION_STATE_CONNECTED) {
-      if ((btif_rc_cb.rc_multi_cb[idx].rc_features & BTA_AV_FEAT_RCTG) == 0) {
-        status = BT_STATUS_NOT_READY;
-        continue;
-      } else {
-        tAVRC_COMMAND avrc_cmd = {0};
-        BT_HDR* p_msg = NULL;
-
-        if (btif_rc_cb.rc_multi_cb[idx].rc_features & BTA_AV_FEAT_ADV_CTRL) {
-          BTIF_TRACE_DEBUG("%s: Peer supports absolute volume. newVolume: %d",
-                           __func__, volume);
-          avrc_cmd.volume.opcode = AVRC_OP_VENDOR;
-          avrc_cmd.volume.pdu = AVRC_PDU_SET_ABSOLUTE_VOLUME;
-          avrc_cmd.volume.status = AVRC_STS_NO_ERROR;
-          avrc_cmd.volume.volume = volume;
-
-          if (AVRC_BldCommand(&avrc_cmd, &p_msg) == AVRC_STS_NO_ERROR) {
-            bt_status_t tran_status = get_transaction(&p_transaction);
-
-            if (BT_STATUS_SUCCESS == tran_status && NULL != p_transaction) {
-              BTIF_TRACE_DEBUG("%s: msgreq being sent out with label: %d",
-                               __func__, p_transaction->lbl);
-              BTA_AvMetaCmd(btif_rc_cb.rc_multi_cb[idx].rc_handle,
-                            p_transaction->lbl, AVRC_CMD_CTRL, p_msg);
-              status = BT_STATUS_SUCCESS;
-            } else {
-              osi_free_and_reset((void**)&p_msg);
-              BTIF_TRACE_ERROR(
-                  "%s: failed to obtain transaction details. status: 0x%02x",
-                  __func__, tran_status);
-              status = BT_STATUS_FAIL;
-            }
-          } else {
-            BTIF_TRACE_ERROR(
-                "%s: failed to build absolute volume command. status: 0x%02x",
-                __func__, status);
-            status = BT_STATUS_FAIL;
-          }
-        }
-      }
+      continue;
     }
+
+    if ((btif_rc_cb.rc_multi_cb[idx].rc_features & BTA_AV_FEAT_RCTG) == 0) {
+      status = BT_STATUS_NOT_READY;
+      continue;
+    }
+
+    if (!(btif_rc_cb.rc_multi_cb[idx].rc_features & BTA_AV_FEAT_ADV_CTRL))
+      continue;
+
+    BTIF_TRACE_DEBUG("%s: Peer supports absolute volume. newVolume: %d",
+                     __func__, volume);
+
+    tAVRC_COMMAND avrc_cmd = {.volume = {.opcode = AVRC_OP_VENDOR,
+                                         .pdu = AVRC_PDU_SET_ABSOLUTE_VOLUME,
+                                         .status = AVRC_STS_NO_ERROR,
+                                         .volume = volume}};
+
+    BT_HDR* p_msg = NULL;
+    if (AVRC_BldCommand(&avrc_cmd, &p_msg) != AVRC_STS_NO_ERROR) {
+      BTIF_TRACE_ERROR(
+          "%s: failed to build absolute volume command. status: 0x%02x",
+          __func__, status);
+      status = BT_STATUS_FAIL;
+      continue;
+    }
+
+    rc_transaction_t* p_transaction = NULL;
+    bt_status_t tran_status = get_transaction(&p_transaction);
+
+    if (tran_status != BT_STATUS_SUCCESS || !p_transaction) {
+      osi_free_and_reset((void**)&p_msg);
+      BTIF_TRACE_ERROR(
+          "%s: failed to obtain transaction details. status: 0x%02x", __func__,
+          tran_status);
+      status = BT_STATUS_FAIL;
+    }
+
+    BTIF_TRACE_DEBUG("%s: msgreq being sent out with label: %d", __func__,
+                     p_transaction->lbl);
+    BTA_AvMetaCmd(btif_rc_cb.rc_multi_cb[idx].rc_handle, p_transaction->lbl,
+                  AVRC_CMD_CTRL, p_msg);
+    status = BT_STATUS_SUCCESS;
   }
   return (bt_status_t)status;
 }
