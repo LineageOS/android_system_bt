@@ -4087,7 +4087,7 @@ static void btm_sec_connect_after_reject_timeout(UNUSED_ATTR void* data) {
  * Function         btm_sec_connected
  *
  * Description      This function is when a connection to the peer device is
- *                  establsihed
+ *                  established
  *
  * Returns          void
  *
@@ -4281,6 +4281,15 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
                                                p_dev_rec->dev_class,
                                                p_dev_rec->sec_bd_name, status);
       }
+    }
+
+    if (btm_cb.pairing_bda != bda) {
+      /* Don't callback unless this Connection-Complete-failure event has the
+       * same mac address as the bonding device */
+      VLOG(1) << __func__
+              << ": Different mac addresses: pairing_bda=" << btm_cb.pairing_bda
+              << ", bda=" << bda << ", do not callback";
+      return;
     }
 
     if (status == HCI_ERR_CONNECTION_TOUT ||
