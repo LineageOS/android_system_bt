@@ -35,7 +35,6 @@ fluoride_defaults {
         debuggable: {
             cflags: [
                 "-DBLUEDROID_DEBUG",
-                "-DDCHECK_ALWAYS_ON"
             ],
         },
     },
