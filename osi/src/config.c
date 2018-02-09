@@ -33,6 +33,7 @@
 #include "osi/include/config.h"
 #include "osi/include/list.h"
 #include "osi/include/log.h"
+#include "log/log.h"
 
 typedef struct {
   char *key;
@@ -214,16 +215,28 @@ void config_set_string(config_t *config, const char *section, const char *key, c
     list_append(config->sections, sec);
   }
 
+  size_t value_len = strlen(value);
+  char *value_no_newline = osi_strdup(value);
+  for (size_t i = 0; i < value_len; i++) {
+    if (value[i] == '\n') {
+      android_errorWriteLog(0x534e4554, "70808273");
+      value_no_newline[i] = '\0';
+      break;
+    }
+  }
+
   for (const list_node_t *node = list_begin(sec->entries); node != list_end(sec->entries); node = list_next(node)) {
     entry_t *entry = list_node(node);
     if (!strcmp(entry->key, key)) {
       osi_free(entry->value);
-      entry->value = osi_strdup(value);
+      entry->value = osi_strdup(value_no_newline);
+      osi_free(value_no_newline);
       return;
     }
   }
 
-  entry_t *entry = entry_new(key, value);
+  entry_t *entry = entry_new(key, value_no_newline);
+  osi_free(value_no_newline);
   list_append(sec->entries, entry);
 }
 
