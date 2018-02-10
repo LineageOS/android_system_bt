@@ -46,6 +46,9 @@
 #include "osi/include/time.h"
 #include "uipc.h"
 
+#include <condition_variable>
+#include <mutex>
+
 using system_bt_osi::BluetoothMetricsLogger;
 using system_bt_osi::A2dpSessionMetrics;
 
@@ -162,41 +165,42 @@ class BtWorkerThread {
       : thread_name_(thread_name),
         message_loop_(nullptr),
         run_loop_(nullptr),
-        message_loop_thread_(nullptr) {}
+        message_loop_thread_(nullptr),
+        started_(false) {}
 
   void StartUp() {
     if (message_loop_thread_ != nullptr) {
       return;  // Already started up
     }
-    message_loop_ = new base::MessageLoop();
-    run_loop_ = new base::RunLoop();
-    message_loop_->task_runner()->PostTask(
-        FROM_HERE,
-        base::Bind(&BtWorkerThread::NotifyStarted, base::Unretained(this)));
-
-    message_loop_thread_ = thread_new_sized(thread_name_.c_str(), SIZE_MAX);
+    message_loop_thread_ = thread_new(thread_name_.c_str());
     CHECK(message_loop_thread_ != nullptr);
-    // TODO: Not needed here - done by raise_priority_a2dp()
-    // thread_set_rt_priority(message_loop_thread_, THREAD_RT_PRIORITY);
+    started_ = false;
     thread_post(message_loop_thread_, &BtWorkerThread::RunThread, this);
+    {
+      // Block until run_loop_ is allocated and ready to run
+      std::unique_lock<std::mutex> start_lock(start_up_mutex_);
+      while (!started_) {
+        start_up_cv_.wait(start_lock);
+      }
+    }
   }
 
-  bt_status_t DoInThread(const tracked_objects::Location& from_here,
-                         const base::Closure& task) {
+  bool DoInThread(const tracked_objects::Location& from_here,
+                  const base::Closure& task) {
     if ((message_loop_ == nullptr) || !message_loop_->task_runner().get()) {
       LOG_ERROR(
           LOG_TAG,
           "%s: Dropping message for thread %s: message loop is not initialized",
           __func__, thread_name_.c_str());
-      return BT_STATUS_FAIL;
+      return false;
     }
     if (!message_loop_->task_runner()->PostTask(from_here, task)) {
       LOG_ERROR(LOG_TAG,
                 "%s: Posting task to message loop for thread %s failed",
                 __func__, thread_name_.c_str());
-      return BT_STATUS_FAIL;
+      return false;
     }
-    return BT_STATUS_SUCCESS;
+    return true;
   }
 
   void ShutDown() {
@@ -208,39 +212,40 @@ class BtWorkerThread {
     message_loop_thread_ = nullptr;
   }
 
-  void NotifyStarted() {
-    LOG_INFO(LOG_TAG, "%s: message loop for thread %s started", __func__,
-             thread_name_.c_str());
-  }
-
-  void NotifyFinished() {
-    LOG_INFO(LOG_TAG, "%s: message loop for thread %s finished", __func__,
-             thread_name_.c_str());
-  }
-
  private:
   static void RunThread(void* context) {
-    BtWorkerThread* wt = static_cast<BtWorkerThread*>(context);
+    auto wt = static_cast<BtWorkerThread*>(context);
     wt->Run();
   }
 
   void Run() {
-    CHECK(message_loop_ != nullptr);
-    CHECK(run_loop_ != nullptr);
+    LOG_INFO(LOG_TAG, "%s: message loop for thread %s started", __func__,
+             thread_name_.c_str());
+    message_loop_ = new base::MessageLoop();
+    run_loop_ = new base::RunLoop();
+    {
+      std::unique_lock<std::mutex> start_lock(start_up_mutex_);
+      started_ = true;
+      start_up_cv_.notify_all();
+    }
+    // Blocking util ShutDown() is called
     run_loop_->Run();
-
     delete message_loop_;
     message_loop_ = nullptr;
     delete run_loop_;
     run_loop_ = nullptr;
-
-    NotifyFinished();
+    LOG_INFO(LOG_TAG, "%s: message loop for thread %s finished", __func__,
+             thread_name_.c_str());
   }
 
   std::string thread_name_;
   base::MessageLoop* message_loop_;
   base::RunLoop* run_loop_;
   thread_t* message_loop_thread_;
+  // For start-up
+  bool started_;
+  std::mutex start_up_mutex_;
+  std::condition_variable start_up_cv_;
 };
 
 class BtifA2dpSource {
