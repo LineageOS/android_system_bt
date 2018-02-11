@@ -17,6 +17,7 @@
  ******************************************************************************/
 
 #include "osi/include/config.h"
+#include "log/log.h"
 
 #include <base/files/file_path.h>
 #include <base/logging.h>
@@ -155,14 +156,23 @@ void config_set_string(config_t* config, const std::string& section,
     sec = std::prev(config->sections.end());
   }
 
+  std::string value_no_newline;
+  size_t newline_position = value.find("\n");
+  if (newline_position != std::string::npos) {
+    android_errorWriteLog(0x534e4554, "70808273");
+    value_no_newline = value.substr(0, newline_position);
+  } else {
+    value_no_newline = value;
+  }
+
   for (entry_t& entry : sec->entries) {
     if (entry.key == key) {
-      entry.value = value;
+      entry.value = value_no_newline;
       return;
     }
   }
 
-  sec->entries.emplace_back(entry_t{.key = key, .value = value});
+  sec->entries.emplace_back(entry_t{.key = key, .value = value_no_newline});
 }
 
 bool config_remove_section(config_t* config, const std::string& section) {
