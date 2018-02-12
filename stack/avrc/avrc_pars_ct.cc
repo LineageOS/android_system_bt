@@ -22,6 +22,7 @@
 #include "avrc_int.h"
 #include "bt_common.h"
 #include "bt_utils.h"
+#include "log/log.h"
 #include "osi/include/osi.h"
 
 /*****************************************************************************
@@ -459,6 +460,12 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
       BE_STREAM_TO_UINT8(p_result->list_app_attr.num_attr, p);
       AVRC_TRACE_DEBUG("%s attr count = %d ", __func__,
                        p_result->list_app_attr.num_attr);
+
+      if (p_result->list_app_attr.num_attr > AVRC_MAX_APP_ATTR_SIZE) {
+        android_errorWriteLog(0x534e4554, "63146237");
+        p_result->list_app_attr.num_attr = AVRC_MAX_APP_ATTR_SIZE;
+      }
+
       for (int xx = 0; xx < p_result->list_app_attr.num_attr; xx++) {
         BE_STREAM_TO_UINT8(p_result->list_app_attr.attrs[xx], p);
       }
