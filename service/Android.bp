@@ -71,7 +71,6 @@ cc_binary {
     btserviceLinuxSrc +
     btserviceDaemonSrc +
     ["main.cc"],
-    required: ["libbluetooth-system"],
     static_libs: [
         "libbluetooth-binder-common",
         "libbtcore",
