@@ -497,8 +497,11 @@ static tAVRC_STS avrc_pars_browsing_cmd(tAVRC_MSG_BROWSE* p_msg,
       BE_STREAM_TO_UINT16(p_result->search.string.str_len, p);
       p_result->search.string.p_str = p_buf;
       if (p_buf) {
-        if (buf_len > p_result->search.string.str_len)
-          buf_len = p_result->search.string.str_len;
+        if (p_result->search.string.str_len > buf_len) {
+          p_result->search.string.str_len = buf_len;
+        } else {
+          android_errorWriteLog(0x534e4554, "63146237");
+        }
         BE_STREAM_TO_ARRAY(p, p_buf, p_result->search.string.str_len);
       } else {
         status = AVRC_STS_INTERNAL_ERR;
