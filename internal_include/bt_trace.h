@@ -734,7 +734,7 @@ std::string loghex(T x) {
                 "loghex parameter must be integral.");
   std::stringstream tmp;
   tmp << std::showbase << std::internal << std::hex << std::setfill('0')
-      << std::setw(sizeof(T) / 4 + 2) << x;
+      << std::setw((sizeof(T) * 2) + 2) << +x;
   return tmp.str();
 }
 
