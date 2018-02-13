@@ -285,7 +285,8 @@ void l2c_link_sec_comp2(const RawAddress& p_bda,
   tL2C_CCB* p_next_ccb;
   uint8_t event;
 
-  L2CAP_TRACE_DEBUG("l2c_link_sec_comp: %d, 0x%x", status, p_ref_data);
+  L2CAP_TRACE_DEBUG("%s: status=%d, p_ref_data=%p, BD_ADDR=%s", __func__,
+                    status, p_ref_data, p_bda.ToString().c_str());
 
   if (status == BTM_SUCCESS_NO_SECURITY) status = BTM_SUCCESS;
 

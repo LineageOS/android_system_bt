@@ -89,8 +89,9 @@ bool BTM_SecAddBleDevice(const RawAddress& bd_addr, BD_NAME bd_name,
     p_dev_rec->conn_params.supervision_tout = BTM_BLE_CONN_PARAM_UNDEF;
     p_dev_rec->conn_params.slave_latency = BTM_BLE_CONN_PARAM_UNDEF;
 
-    BTM_TRACE_DEBUG("%s: Device added, handle=0x%x ", __func__,
-                    p_dev_rec->ble_hci_handle);
+    BTM_TRACE_DEBUG("%s: Device added, handle=0x%x, p_dev_rec=%p, bd_addr=%s",
+                    __func__, p_dev_rec->ble_hci_handle, p_dev_rec,
+                    bd_addr.ToString().c_str());
   }
 
   memset(p_dev_rec->sec_bd_name, 0, sizeof(tBTM_BD_NAME));
@@ -1317,8 +1318,11 @@ void btm_sec_save_le_key(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
         p_rec->ble.static_addr = p_keys->pid_key.static_addr;
         p_rec->ble.static_addr_type = p_keys->pid_key.addr_type;
         p_rec->ble.key_type |= BTM_LE_KEY_PID;
-        BTM_TRACE_DEBUG("BTM_LE_KEY_PID key_type=0x%x save peer IRK",
-                        p_rec->ble.key_type);
+        BTM_TRACE_DEBUG(
+            "%s: BTM_LE_KEY_PID key_type=0x%x save peer IRK, change bd_addr=%s "
+            "to static_addr=%s",
+            __func__, p_rec->ble.key_type, p_rec->bd_addr.ToString().c_str(),
+            p_keys->pid_key.static_addr.ToString().c_str());
         /* update device record address as static address */
         p_rec->bd_addr = p_keys->pid_key.static_addr;
         /* combine DUMO device security record if needed */
@@ -1380,7 +1384,7 @@ void btm_sec_save_le_key(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
         return;
     }
 
-    VLOG(1) << "BLE key type 0x" << std::hex << key_type
+    VLOG(1) << "BLE key type 0x" << loghex(key_type)
             << " updated for BDA: " << bd_addr << " (btm_sec_save_le_key)";
 
     /* Notify the application that one of the BLE keys has been updated
@@ -1394,7 +1398,7 @@ void btm_sec_save_le_key(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
     return;
   }
 
-  LOG(WARNING) << "BLE key type 0x" << std::hex << key_type
+  LOG(WARNING) << "BLE key type 0x" << loghex(key_type)
                << " called for Unknown BDA or type: " << bd_addr
                << "(btm_sec_save_le_key)";
 
@@ -1866,13 +1870,15 @@ void btm_ble_connected(const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
   */
   if (p_dev_rec) {
     VLOG(1) << __func__ << " Security Manager: handle:" << handle
-            << " enc_mode:" << enc_mode << "  bda: " << bda
-            << " RName: " << p_dev_rec->sec_bd_name;
+            << " enc_mode:" << loghex(enc_mode) << "  bda: " << bda
+            << " RName: " << p_dev_rec->sec_bd_name
+            << " p_dev_rec:" << p_dev_rec;
 
     BTM_TRACE_DEBUG("btm_ble_connected sec_flags=0x%x", p_dev_rec->sec_flags);
   } else {
     VLOG(1) << __func__ << " Security Manager: handle:" << handle
-            << " enc_mode:" << enc_mode << "  bda: " << bda;
+            << " enc_mode:" << loghex(enc_mode) << "  bda: " << bda
+            << " p_dev_rec:" << p_dev_rec;
   }
 
   if (!p_dev_rec) {
