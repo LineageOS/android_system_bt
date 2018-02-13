@@ -88,6 +88,12 @@ bool A2DP_VendorCodecEqualsAptxHd(const uint8_t* p_codec_info_a,
 // contains invalid codec information.
 int A2DP_VendorGetTrackSampleRateAptxHd(const uint8_t* p_codec_info);
 
+// Gets the track bitrate value for the A2DP aptX-HD codec.
+// |p_codec_info| is a pointer to the aptX-HD codec_info to decode.
+// Returns the track sample rate on success, or -1 if |p_codec_info|
+// contains invalid codec information.
+int A2DP_VendorGetBitRateAptxHd(const uint8_t* p_codec_info);
+
 // Gets the channel count for the A2DP aptX-HD codec.
 // |p_codec_info| is a pointer to the aptX-HD codec_info to decode.
 // Returns the channel count on success, or -1 if |p_codec_info|

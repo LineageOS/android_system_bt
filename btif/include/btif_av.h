@@ -191,4 +191,18 @@ void btif_av_set_audio_delay(uint16_t delay);
  */
 void btif_av_reset_audio_delay(void);
 
+/**
+ * Called to disconnect peer device when
+ *  remote initiatied offload start failed
+ *
+ * @param peer_address to disconnect
+ *
+ */
+void btif_av_src_disconnect_sink(const RawAddress& peer_address);
+
+/**
+ *  check A2DP offload support enabled
+ *  @param  none
+ */
+bool btif_av_is_a2dp_offload_enabled(void);
 #endif /* BTIF_AV_H */
