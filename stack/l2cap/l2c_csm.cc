@@ -299,8 +299,11 @@ static void l2c_csm_orig_w4_sec_comp(tL2C_CCB* p_ccb, uint16_t event,
   tL2CA_CONNECT_CFM_CB* connect_cfm = p_ccb->p_rcb->api.pL2CA_ConnectCfm_Cb;
   uint16_t local_cid = p_ccb->local_cid;
 
-  L2CAP_TRACE_EVENT("L2CAP - LCID: 0x%04x  st: ORIG_W4_SEC_COMP  evt: %s",
-                    p_ccb->local_cid, l2c_csm_get_event_name(event));
+  L2CAP_TRACE_EVENT(
+      "%s: %sL2CAP - LCID: 0x%04x  st: ORIG_W4_SEC_COMP  evt: %s", __func__,
+      ((p_ccb->p_lcb) && (p_ccb->p_lcb->transport == BT_TRANSPORT_LE)) ? "LE "
+                                                                       : "",
+      p_ccb->local_cid, l2c_csm_get_event_name(event));
 
   switch (event) {
     case L2CEVT_LP_DISCONNECT_IND: /* Link was disconnected */

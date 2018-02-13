@@ -133,8 +133,10 @@ bool SMP_Register(tSMP_CALLBACK* p_cback) {
 tSMP_STATUS SMP_Pair(const RawAddress& bd_addr) {
   tSMP_CB* p_cb = &smp_cb;
 
-  SMP_TRACE_EVENT("%s state=%d br_state=%d flag=0x%x ", __func__, p_cb->state,
-                  p_cb->br_state, p_cb->flags);
+  SMP_TRACE_EVENT("%s: state=%d br_state=%d flag=0x%x, bd_addr=%s", __func__,
+                  p_cb->state, p_cb->br_state, p_cb->flags,
+                  bd_addr.ToString().c_str());
+
   if (p_cb->state != SMP_STATE_IDLE ||
       p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD || p_cb->smp_over_br) {
     /* pending security on going, reject this one */
@@ -171,8 +173,9 @@ tSMP_STATUS SMP_Pair(const RawAddress& bd_addr) {
 tSMP_STATUS SMP_BR_PairWith(const RawAddress& bd_addr) {
   tSMP_CB* p_cb = &smp_cb;
 
-  SMP_TRACE_EVENT("%s state=%d br_state=%d flag=0x%x ", __func__, p_cb->state,
-                  p_cb->br_state, p_cb->flags);
+  SMP_TRACE_EVENT("%s: state=%d br_state=%d flag=0x%x, bd_addr=%s", __func__,
+                  p_cb->state, p_cb->br_state, p_cb->flags,
+                  bd_addr.ToString().c_str());
 
   if (p_cb->state != SMP_STATE_IDLE || p_cb->smp_over_br ||
       p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD) {
