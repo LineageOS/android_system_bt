@@ -258,4 +258,8 @@ bool A2DP_InitCodecConfigSbc(AvdtpSepConfig* p_cfg);
 // configuration entry pointed by |p_cfg|.
 bool A2DP_InitCodecConfigSbcSink(AvdtpSepConfig* p_cfg);
 
+// Get SBC bitrate
+// Returns |uint32_t| bitrate value in bits per second
+uint32_t A2DP_GetBitrateSbc();
+
 #endif  // A2DP_SBC_H
