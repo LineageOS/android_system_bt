@@ -94,7 +94,9 @@ static void smp_connect_callback(uint16_t channel, const RawAddress& bd_addr,
   tSMP_CB* p_cb = &smp_cb;
   tSMP_INT_DATA int_data;
 
-  SMP_TRACE_EVENT("SMDBG l2c %s", __func__);
+  SMP_TRACE_EVENT("%s: SMDBG l2c: bd_addr=%s, p_cb->pairing_bda=%s", __func__,
+                  bd_addr.ToString().c_str(),
+                  p_cb->pairing_bda.ToString().c_str());
 
   if (transport == BT_TRANSPORT_BR_EDR || bd_addr.IsEmpty()) return;
 
@@ -138,9 +140,10 @@ static void smp_data_received(uint16_t channel, const RawAddress& bd_addr,
   tSMP_CB* p_cb = &smp_cb;
   uint8_t* p = (uint8_t*)(p_buf + 1) + p_buf->offset;
   uint8_t cmd;
-  SMP_TRACE_EVENT("SMDBG l2c %s", __func__);
 
   STREAM_TO_UINT8(cmd, p);
+
+  SMP_TRACE_EVENT("%s: SMDBG l2c, cmd=0x%x", __func__, cmd);
 
   /* sanity check */
   if ((SMP_OPCODE_MAX < cmd) || (SMP_OPCODE_MIN > cmd)) {
@@ -240,10 +243,11 @@ static void smp_br_connect_callback(uint16_t channel, const RawAddress& bd_addr,
     return;
   }
 
-  if (bd_addr != p_cb->pairing_bda) return;
-
   VLOG(1) << __func__ << " for pairing BDA: " << bd_addr
+          << ", pairing_bda:" << p_cb->pairing_bda
           << " Event: " << ((connected) ? "connected" : "disconnected");
+
+  if (bd_addr != p_cb->pairing_bda) return;
 
   if (connected) {
     if (!p_cb->connect_initialized) {

@@ -873,7 +873,8 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
   tACL_CONN* p = btm_bda_to_acl(bd_addr, transport);
   VLOG(1) << __func__ << " BDA: " << bd_addr;
 
-  BTM_TRACE_DEBUG("btm_sec_bond_by_transport: Transport used %d", transport);
+  BTM_TRACE_DEBUG("%s: Transport used %d, bd_addr=%s", __func__, transport,
+                  bd_addr.ToString().c_str());
 
   /* Other security process is in progress */
   if (btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) {
@@ -1286,9 +1287,9 @@ tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr,
 
   BTM_TRACE_API(
       "Security Manager: BTM_SetEncryption Handle:%d State:%d Flags:0x%x "
-      "Required:0x%x",
+      "Required:0x%x, p_dev_rec=%p, p_callback=%p",
       p_dev_rec->hci_handle, p_dev_rec->sec_state, p_dev_rec->sec_flags,
-      p_dev_rec->security_required);
+      p_dev_rec->security_required, p_dev_rec, p_callback);
 
   if (transport == BT_TRANSPORT_LE) {
     tACL_CONN* p = btm_bda_to_acl(bd_addr, transport);
@@ -1305,6 +1306,11 @@ tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr,
 
   if (rc != BTM_CMD_STARTED && rc != BTM_BUSY) {
     if (p_callback) {
+      BTM_TRACE_DEBUG(
+          "%s: clearing p_callback=%p, p_dev_rec=%p, transport=%d, "
+          "bd_addr=%s",
+          __func__, p_callback, p_dev_rec, transport,
+          bd_addr.ToString().c_str());
       p_dev_rec->p_callback = NULL;
       (*p_callback)(&bd_addr, transport, p_dev_rec->p_ref_data, rc);
     }
@@ -1938,8 +1944,8 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
 
   is_originator = conn_type;
 
-  BTM_TRACE_DEBUG("%s() is_originator:%d, 0x%x", __func__, is_originator,
-                  p_ref_data);
+  BTM_TRACE_DEBUG("%s() is_originator:%d, 0x%x, psm=0x%04x", __func__,
+                  is_originator, p_ref_data, psm);
 
   /* Find or get oldest record */
   p_dev_rec = btm_find_or_alloc_dev(bd_addr);
@@ -2226,6 +2232,8 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
 
   rc = btm_sec_execute_procedure(p_dev_rec);
   if (rc != BTM_CMD_STARTED) {
+    BTM_TRACE_DEBUG("%s: p_dev_rec=%p, clearing callback. old p_callback=%p",
+                    __func__, p_dev_rec, p_dev_rec->p_callback);
     p_dev_rec->p_callback = NULL;
     (*p_callback)(&bd_addr, transport, p_dev_rec->p_ref_data, (uint8_t)rc);
   }
@@ -2745,6 +2753,9 @@ void btm_sec_abort_access_req(const RawAddress& bd_addr) {
     return;
 
   p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
+
+  BTM_TRACE_DEBUG("%s: clearing callback. p_dev_rec=%p, p_callback=%p",
+                  __func__, p_dev_rec, p_dev_rec->p_callback);
   p_dev_rec->p_callback = NULL;
 }
 
@@ -3758,14 +3769,14 @@ void btm_sec_auth_complete(uint16_t handle, uint8_t status) {
   bool are_bonding = false;
 
   if (p_dev_rec) {
-    VLOG(2) << __func__ << "Security Manager: in state: "
+    VLOG(2) << __func__ << ": Security Manager: in state: "
             << btm_pair_state_descr(btm_cb.pairing_state)
             << " handle:" << handle << " status:" << status
             << "dev->sec_state:" << p_dev_rec->sec_state
             << " bda:" << p_dev_rec->bd_addr
             << "RName:" << p_dev_rec->sec_bd_name;
   } else {
-    VLOG(2) << __func__ << "Security Manager: in state: "
+    VLOG(2) << __func__ << ": Security Manager: in state: "
             << btm_pair_state_descr(btm_cb.pairing_state)
             << " handle:" << handle << " status:" << status;
   }
@@ -4032,6 +4043,8 @@ void btm_sec_encrypt_change(uint16_t handle, uint8_t status,
   if (p_dev_rec->sec_state != BTM_SEC_STATE_ENCRYPTING) {
     if (BTM_SEC_STATE_DELAY_FOR_ENC == p_dev_rec->sec_state) {
       p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
+      BTM_TRACE_DEBUG("%s: clearing callback. p_dev_rec=%p, p_callback=%p",
+                      __func__, p_dev_rec, p_dev_rec->p_callback);
       p_dev_rec->p_callback = NULL;
       l2cu_resubmit_pending_sec_req(&p_dev_rec->bd_addr);
     }
@@ -4103,16 +4116,16 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
   btm_acl_resubmit_page();
 
   if (p_dev_rec) {
-    VLOG(2) << __func__ << "Security Manager: in state: "
+    VLOG(2) << __func__ << ": Security Manager: in state: "
             << btm_pair_state_descr(btm_cb.pairing_state)
-            << " handle:" << handle << " status:" << status
-            << "enc_mode:" << enc_mode << " bda:" << bda
-            << "RName:" << p_dev_rec->sec_bd_name;
+            << " handle:" << handle << " status:" << loghex(status)
+            << " enc_mode:" << loghex(enc_mode) << " bda:" << bda
+            << " RName:" << p_dev_rec->sec_bd_name;
   } else {
-    VLOG(2) << __func__ << "Security Manager: in state: "
+    VLOG(2) << __func__ << ": Security Manager: in state: "
             << btm_pair_state_descr(btm_cb.pairing_state)
-            << " handle:" << handle << " status:" << status
-            << "enc_mode:" << enc_mode << " bda:" << bda;
+            << " handle:" << handle << " status:" << loghex(status)
+            << " enc_mode:" << loghex(enc_mode) << " bda:" << bda;
   }
 
   if (!p_dev_rec) {
@@ -4534,6 +4547,8 @@ void btm_sec_disconnected(uint16_t handle, uint8_t reason) {
 
   /* if security is pending, send callback to clean up the security state */
   if (p_callback) {
+    BTM_TRACE_DEBUG("%s: clearing callback. p_dev_rec=%p, p_callback=%p",
+                    __func__, p_dev_rec, p_dev_rec->p_callback);
     p_dev_rec->p_callback =
         NULL; /* when the peer device time out the authentication before
                  we do, this call back must be reset here */
@@ -5544,6 +5559,10 @@ static const char* btm_pair_state_descr(tBTM_PAIRING_STATE state) {
 void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec, uint8_t res,
                                  bool is_le_transport) {
   tBTM_SEC_CALLBACK* p_callback = p_dev_rec->p_callback;
+
+  BTM_TRACE_DEBUG("%s: p_callback=%p, is_le_transport=%d, res=%d, p_dev_rec=%p",
+                  __func__, p_dev_rec->p_callback, is_le_transport, res,
+                  p_dev_rec);
 
   if (p_dev_rec->p_callback) {
     p_dev_rec->p_callback = NULL;

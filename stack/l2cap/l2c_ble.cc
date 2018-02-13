@@ -1340,7 +1340,8 @@ void l2cble_sec_comp(const RawAddress* bda, tBT_TRANSPORT transport,
   uint8_t sec_act;
 
   if (!p_lcb) {
-    L2CAP_TRACE_WARNING("%s security complete for unknown device", __func__);
+    L2CAP_TRACE_WARNING("%s: security complete for unknown device. bda=%s",
+                        __func__, bda->ToString().c_str());
     return;
   }
 

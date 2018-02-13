@@ -1047,7 +1047,9 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
   bt_bond_state_t state = BT_BOND_STATE_NONE;
   bool skip_sdp = false;
 
-  BTIF_TRACE_DEBUG("%s: bond state=%d", __func__, pairing_cb.state);
+  BTIF_TRACE_DEBUG("%s: bond state=%d, success=%d, key_present=%d", __func__,
+                   pairing_cb.state, p_auth_cmpl->success,
+                   p_auth_cmpl->key_present);
 
   RawAddress bd_addr = p_auth_cmpl->bd_addr;
   if ((p_auth_cmpl->success) && (p_auth_cmpl->key_present)) {
@@ -2483,7 +2485,8 @@ bt_status_t btif_dm_get_remote_services(const RawAddress& remote_addr) {
  ******************************************************************************/
 bt_status_t btif_dm_get_remote_services_by_transport(RawAddress* remote_addr,
                                                      const int transport) {
-  BTIF_TRACE_EVENT("%s", __func__);
+  BTIF_TRACE_EVENT("%s: transport=%d, remote_addr=%s", __func__, transport,
+                   remote_addr->ToString().c_str());
 
   /* Set the mask extension */
   tBTA_SERVICE_MASK_EXT mask_ext;
