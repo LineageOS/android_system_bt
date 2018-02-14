@@ -30,7 +30,6 @@ HOST_TESTS = [
 
 SOONG_UI_BASH = 'build/soong/soong_ui.bash'
 
-
 def str2bool(argument, default=False):
   """ Convert a string to a booleen value. """
   argument = str(argument)
