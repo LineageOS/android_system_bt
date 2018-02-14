@@ -1,5 +1,6 @@
 cc_library_static {
     name: "lib-bt-packets",
+    defaults: ["libchrome_support_defaults"],
     host_supported: true,
     export_include_dirs: [
         "./include",
@@ -9,11 +10,6 @@ cc_library_static {
         "lib-bt-packets-base",
         "lib-bt-packets-avrcp",
     ],
-    target: {
-        darwin: {
-            enabled: false
-        }
-    }
 }
 
 cc_test {
