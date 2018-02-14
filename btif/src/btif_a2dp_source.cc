@@ -655,7 +655,7 @@ static void btif_a2dp_source_audio_tx_stop_event(void) {
   alarm_free(btif_a2dp_source_cb.media_alarm);
   btif_a2dp_source_cb.media_alarm = nullptr;
 
-  UIPC_Close(UIPC_CH_ID_AV_AUDIO);
+  UIPC_Close(UIPC_CH_ID_AV_AUDIO, UIPC_USER_A2DP);
 
   /*
    * Try to send acknowldegment once the media stream is

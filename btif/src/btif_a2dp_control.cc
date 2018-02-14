@@ -44,13 +44,13 @@ static void btif_a2dp_ctrl_cb(tUIPC_CH_ID ch_id, tUIPC_EVENT event);
 static tA2DP_CTRL_CMD a2dp_cmd_pending = A2DP_CTRL_CMD_NONE;
 
 void btif_a2dp_control_init(void) {
-  UIPC_Init(NULL);
+  UIPC_Init(NULL, UIPC_USER_A2DP);
   UIPC_Open(UIPC_CH_ID_AV_CTRL, btif_a2dp_ctrl_cb);
 }
 
 void btif_a2dp_control_cleanup(void) {
   /* This calls blocks until UIPC is fully closed */
-  UIPC_Close(UIPC_CH_ID_ALL);
+  UIPC_Close(UIPC_CH_ID_ALL, UIPC_USER_A2DP);
 }
 
 static void btif_a2dp_recv_ctrl_data(void) {
@@ -64,7 +64,7 @@ static void btif_a2dp_recv_ctrl_data(void) {
   /* detach on ctrl channel means audioflinger process was terminated */
   if (n == 0) {
     APPL_TRACE_WARNING("%s: CTRL CH DETACHED", __func__);
-    UIPC_Close(UIPC_CH_ID_AV_CTRL);
+    UIPC_Close(UIPC_CH_ID_AV_CTRL, UIPC_USER_A2DP);
     return;
   }
 
