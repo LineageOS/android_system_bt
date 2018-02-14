@@ -22,18 +22,18 @@ namespace bluetooth {
 namespace avrcp {
 
 uint64_t GetElementAttributesRequest::GetIdentifier() const {
-  auto it = begin() + VendorPacket::kHeaderSize();
+  auto it = begin() + VendorPacket::kMinSize();
   return it.extract<uint64_t>();
 }
 
 uint8_t GetElementAttributesRequest::GetNumAttributes() const {
-  auto it = begin() + VendorPacket::kHeaderSize() + static_cast<size_t>(8);
+  auto it = begin() + VendorPacket::kMinSize() + static_cast<size_t>(8);
   return it.extract<uint8_t>();
 }
 
 std::vector<Attribute> GetElementAttributesRequest::GetAttributesRequested()
     const {
-  auto it = begin() + VendorPacket::kHeaderSize() + static_cast<size_t>(8);
+  auto it = begin() + VendorPacket::kMinSize() + static_cast<size_t>(8);
 
   size_t number_of_attributes = it.extract<uint8_t>();
 
@@ -48,11 +48,10 @@ std::vector<Attribute> GetElementAttributesRequest::GetAttributesRequested()
 
 bool GetElementAttributesRequest::IsValid() const {
   if (!VendorPacket::IsValid()) return false;
-  if (size() < kHeaderSize()) return false;
+  if (size() < kMinSize()) return false;
 
   size_t num_attributes = GetNumAttributes();
-  auto attr_start =
-      begin() + VendorPacket::kHeaderSize() + static_cast<size_t>(9);
+  auto attr_start = begin() + VendorPacket::kMinSize() + static_cast<size_t>(9);
 
   // Casting the int returned from end - attr_start should be fine. If an
   // overflow occurs we can definitly say the packet is invalid
@@ -117,7 +116,7 @@ size_t GetElementAttributesResponseBuilder::size() const {
     attr_list_size += attribute_entry.second.length();
   }
 
-  return VendorPacket::kHeaderSize() + 1 + attr_list_size;
+  return VendorPacket::kMinSize() + 1 + attr_list_size;
 }
 
 bool GetElementAttributesResponseBuilder::Serialize(
@@ -126,7 +125,7 @@ bool GetElementAttributesResponseBuilder::Serialize(
 
   PacketBuilder::PushHeader(pkt);
 
-  VendorPacketBuilder::PushHeader(pkt, size() - VendorPacket::kHeaderSize());
+  VendorPacketBuilder::PushHeader(pkt, size() - VendorPacket::kMinSize());
 
   AddPayloadOctets1(pkt, entries_.size());
   for (auto attribute_entry : entries_) {

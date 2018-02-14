@@ -23,6 +23,8 @@ namespace avrcp {
 
 class VendorPacketBuilder : public avrcp::PacketBuilder {
  public:
+  virtual ~VendorPacketBuilder() = default;
+
   static std::unique_ptr<VendorPacketBuilder> MakeBuilder(
       CType ctype, CommandPdu pdu, PacketType packet_type,
       std::unique_ptr<::bluetooth::PacketBuilder> payload);
@@ -67,7 +69,7 @@ class VendorPacket : public avrcp::Packet {
    *     uint16_t parameter_length;
    *   uint8_t[] payload;
    */
-  static constexpr size_t kHeaderSize() { return Packet::kHeaderSize() + 7; };
+  static constexpr size_t kMinSize() { return Packet::kMinSize() + 7; };
 
   // Getter Functions
   uint32_t GetCompanyId() const;

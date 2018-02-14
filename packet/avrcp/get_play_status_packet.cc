@@ -35,7 +35,7 @@ GetPlayStatusResponseBuilder::MakeBuilder(uint32_t song_length,
 }
 
 size_t GetPlayStatusResponseBuilder::size() const {
-  return VendorPacket::kHeaderSize() + 4 + 4 + 1;
+  return VendorPacket::kMinSize() + 4 + 4 + 1;
 }
 
 bool GetPlayStatusResponseBuilder::Serialize(
@@ -46,7 +46,7 @@ bool GetPlayStatusResponseBuilder::Serialize(
   PacketBuilder::PushHeader(pkt);
 
   // Push the avrcp vendor command headers
-  uint16_t parameter_count = size() - VendorPacket::kHeaderSize();
+  uint16_t parameter_count = size() - VendorPacket::kMinSize();
   VendorPacketBuilder::PushHeader(pkt, parameter_count);
 
   AddPayloadOctets4(pkt, base::ByteSwap(song_length_));

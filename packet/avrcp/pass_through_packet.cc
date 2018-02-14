@@ -28,7 +28,7 @@ std::unique_ptr<PassThroughPacketBuilder> PassThroughPacketBuilder::MakeBuilder(
 }
 
 size_t PassThroughPacketBuilder::size() const {
-  return PassThroughPacket::kHeaderSize();
+  return PassThroughPacket::kMinSize();
 }
 
 bool PassThroughPacketBuilder::Serialize(
@@ -47,14 +47,14 @@ bool PassThroughPacketBuilder::Serialize(
 }
 
 bool PassThroughPacket::GetPushed() const {
-  return (*(begin() + Packet::kHeaderSize()) & 0b10000000) == 0;
+  return (*(begin() + Packet::kMinSize()) & 0b10000000) == 0;
 }
 
 uint8_t PassThroughPacket::GetOperationId() const {
-  return *(begin() + Packet::kHeaderSize()) & 0b01111111;
+  return *(begin() + Packet::kMinSize()) & 0b01111111;
 }
 
-bool PassThroughPacket::IsValid() const { return (size() == kHeaderSize()); }
+bool PassThroughPacket::IsValid() const { return size() == kMinSize(); }
 
 std::string PassThroughPacket::ToString() const {
   std::stringstream ss;
