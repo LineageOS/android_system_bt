@@ -2,6 +2,7 @@
 // ========================================================
 cc_library_static {
     name: "libbt-rootcanal",
+    defaults: ["libchrome_support_defaults"],
     proprietary: true,
     srcs: [
         "src/acl_packet.cc",
@@ -29,9 +30,6 @@ cc_library_static {
     ],
     cflags: [
         "-fvisibility=hidden",
-        "-Wall",
-        "-Wextra",
-        "-Werror",
         "-DHAS_NO_BDROID_BUILDCFG",
     ],
     local_include_dirs: [
@@ -50,7 +48,6 @@ cc_library_static {
     ],
     shared_libs: [
         "libbase",
-        "libchrome",
         "liblog",
     ],
     static_libs: [
@@ -62,6 +59,7 @@ cc_library_static {
 // ========================================================
 cc_test_host {
     name: "test-vendor_test_host",
+    defaults: ["libchrome_support_defaults"],
     srcs: [
         "src/async_manager.cc",
         "src/bt_address.cc",
@@ -90,21 +88,12 @@ cc_test_host {
     ],
     shared_libs: [
         "liblog",
-        "libchrome",
     ],
     static_libs: [
         "libbluetooth-types",
     ],
     cflags: [
         "-fvisibility=hidden",
-        "-Wall",
-        "-Wextra",
-        "-Werror",
         "-DLOG_NDEBUG=1",
     ],
-    target: {
-        darwin: {
-            enabled: false,
-        }
-    },
 }

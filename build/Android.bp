@@ -15,13 +15,26 @@ bootstrap_go_package {
 }
 
 fluoride_defaults {
-    name: "fluoride_types_defaults",
+    name: "libchrome_support_defaults",
+    shared_libs: ["libchrome"],
     cflags: [
-        "-DEXPORT_SYMBOL=__attribute__((visibility(\"default\")))",
-        "-fvisibility=hidden",
         "-Wall",
         "-Wextra",
         "-Werror",
+    ],
+    target: {
+        darwin: {
+            enabled: false,
+        },
+    },
+}
+
+fluoride_defaults {
+    name: "fluoride_types_defaults",
+    defaults: ["libchrome_support_defaults"],
+    cflags: [
+        "-DEXPORT_SYMBOL=__attribute__((visibility(\"default\")))",
+        "-fvisibility=hidden",
         // struct BT_HDR is defined as a variable-size header in a struct.
         "-Wno-gnu-variable-sized-type-not-at-end",
         // there are too many unused parameters in all the code.
@@ -36,12 +49,6 @@ fluoride_defaults {
             cflags: [
                 "-DBLUEDROID_DEBUG",
             ],
-        },
-    },
-    shared_libs: [ "libchrome" ],
-    target: {
-        darwin: {
-            enabled: false,
         },
     },
 }
