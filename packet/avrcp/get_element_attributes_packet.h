@@ -43,9 +43,7 @@ class GetElementAttributesRequest : public VendorPacket {
    *     uint8_t number_of_attributes;
    *     uint32_t attributes_requested[];
    */
-  static constexpr size_t kHeaderSize() {
-    return VendorPacket::kHeaderSize() + 9;
-  }
+  static constexpr size_t kMinSize() { return VendorPacket::kMinSize() + 9; }
 
   // Getter Functions
   uint64_t GetIdentifier() const;

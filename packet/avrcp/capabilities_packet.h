@@ -62,9 +62,7 @@ class GetCapabilitiesRequest : public VendorPacket {
    *   GetCapabilitiesRequestPacket:
    *     uint8_t capability_requested:
    */
-  static constexpr size_t kHeaderSize() {
-    return VendorPacket::kHeaderSize() + 1;
-  };
+  static constexpr size_t kMinSize() { return VendorPacket::kMinSize() + 1; };
 
   // Getter Functions
   Capability GetCapabilityRequested() const;
@@ -126,9 +124,7 @@ class GetCapabilitiesResponse : public VendorPacket {
    *        uint8_t company_id[3];
    *     } capability_array[];
    */
-  static constexpr size_t kHeaderSize() {
-    return VendorPacket::kHeaderSize() + 2;
-  };
+  static constexpr size_t kMinSize() { return VendorPacket::kMinSize() + 2; };
 
   // TODO: Implement these for AVRCP Controller
   // virtual uint8_t GetCapabilityReturned() const;

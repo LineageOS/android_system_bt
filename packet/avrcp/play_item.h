@@ -16,61 +16,62 @@
 
 #pragma once
 
-#include "avrcp_packet.h"
+#include "vendor_packet.h"
 
 namespace bluetooth {
 namespace avrcp {
 
-class PassThroughPacketBuilder : public PacketBuilder {
+class PlayItemResponseBuilder : public VendorPacketBuilder {
  public:
-  virtual ~PassThroughPacketBuilder() = default;
+  virtual ~PlayItemResponseBuilder() = default;
 
-  static std::unique_ptr<PassThroughPacketBuilder> MakeBuilder(
-      bool response, bool pushed, uint8_t operation_id);
+  static std::unique_ptr<PlayItemResponseBuilder> MakeBuilder(Status status);
 
   virtual size_t size() const override;
   virtual bool Serialize(
       const std::shared_ptr<::bluetooth::Packet>& pkt) override;
 
- private:
-  bool pushed_;
-  uint8_t opperation_id_;
+ protected:
+  Status status_;
 
-  PassThroughPacketBuilder(bool response, bool pushed, uint8_t opperation_id)
-      : PacketBuilder(response ? CType::ACCEPTED : CType::CONTROL, 0x09, 0x00,
-                      Opcode::PASS_THROUGH),
-        pushed_(pushed),
-        opperation_id_(opperation_id){};
+  PlayItemResponseBuilder(Status status)
+      : VendorPacketBuilder(CType::ACCEPTED, CommandPdu::PLAY_ITEM,
+                            PacketType::SINGLE),
+        status_(status){};
 };
 
-class PassThroughPacket : public Packet {
+class PlayItemRequest : public VendorPacket {
  public:
-  virtual ~PassThroughPacket() = default;
+  virtual ~PlayItemRequest() = default;
 
   /**
-   * Pass Through Packet Layout
+   * AVRCP Play Item Request Packet Layout
    *   AvrcpPacket:
    *     CType c_type_;
    *     uint8_t subunit_type_ : 5;
    *     uint8_t subunit_id_ : 3;
    *     Opcode opcode_;
-   *   PassThroughPacket:
-   *     uint8_t state : 1;
-   *     uint8_t opperation_id : 7;
-   *     uint8_t data_length;
+   *   VendorPacket:
+   *     uint8_t company_id[3];
+   *     uint8_t command_pdu;
+   *     uint8_t packet_type;
+   *     uint16_t parameter_length;
+   *   PlayItemRequest:
+   *     uint8_t scope_;
+   *     uint64_t uid_;
+   *     uint16_t uid_counter_;
    */
-  static constexpr size_t kMinSize() { return Packet::kMinSize() + 2; }
+  static constexpr size_t kMinSize() { return VendorPacket::kMinSize() + 11; }
 
-  // Getter Functions
-  bool GetPushed() const;
-  uint8_t GetOperationId() const;
+  Scope GetScope() const;
+  uint64_t GetUid() const;
+  uint16_t GetUidCounter() const;
 
-  // Overloaded Functions
   virtual bool IsValid() const override;
   virtual std::string ToString() const override;
 
  protected:
-  using Packet::Packet;
+  using VendorPacket::VendorPacket;
 };
 
 }  // namespace avrcp

@@ -27,7 +27,7 @@ std::unique_ptr<RejectBuilder> RejectBuilder::MakeBuilder(CommandPdu pdu,
   return builder;
 }
 
-size_t RejectBuilder::size() const { return VendorPacket::kHeaderSize() + 1; }
+size_t RejectBuilder::size() const { return VendorPacket::kMinSize() + 1; }
 
 bool RejectBuilder::Serialize(const std::shared_ptr<::bluetooth::Packet>& pkt) {
   ReserveSpace(pkt, size());

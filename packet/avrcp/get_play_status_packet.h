@@ -41,6 +41,7 @@ class GetPlayStatusRequest : public VendorPacket {
    *     uint8_t packet_type;
    *     uint16_t param_length = 0;
    */
+  static constexpr size_t kMinSize() { return Packet::kMinSize() + 7; }
 
   // Overloaded Functions
   virtual bool IsValid() const override;
