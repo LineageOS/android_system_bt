@@ -360,11 +360,24 @@ class BtifAvSource {
    */
   void DeleteIdlePeers();
 
+  /**
+   * Get the active peer.
+   *
+   * @return the active peer
+   */
   const RawAddress& ActivePeer() const { return active_peer_; }
+
+  /**
+   * Set the active peer.
+   *
+   * @param peer_address the active peer address or RawAddress::kEmpty to
+   * reset the active peer
+   * @return true on success, otherwise false
+   */
   bool SetActivePeer(const RawAddress& peer_address) {
     if (active_peer_ == peer_address) return true;  // Nothing has changed
     if (peer_address.IsEmpty()) {
-      BTIF_TRACE_EVENT("%s: peer address is empty, shutdown the audio source",
+      BTIF_TRACE_EVENT("%s: peer address is empty, shutdown the Audio source",
                        __func__);
       if (!bta_av_co_set_active_peer(peer_address)) {
         BTIF_TRACE_WARNING("%s: unable to set active peer to empty in BtaAvCo",
@@ -460,11 +473,24 @@ class BtifAvSink {
    */
   void DeleteIdlePeers();
 
+  /**
+   * Get the active peer.
+   *
+   * @return the active peer
+   */
   const RawAddress& ActivePeer() const { return active_peer_; }
+
+  /**
+   * Set the active peer.
+   *
+   * @param peer_address the active peer address or RawAddress::kEmpty to
+   * reset the active peer
+   * @return true on success, otherwise false
+   */
   bool SetActivePeer(const RawAddress& peer_address) {
     if (active_peer_ == peer_address) return true;  // Nothing has changed
     if (peer_address.IsEmpty()) {
-      BTIF_TRACE_EVENT("%s: peer address is empty, shutdown the audio sink",
+      BTIF_TRACE_EVENT("%s: peer address is empty, shutdown the Audio sink",
                        __func__);
       if (!bta_av_co_set_active_peer(peer_address)) {
         BTIF_TRACE_WARNING("%s: unable to set active peer to empty in BtaAvCo",
@@ -489,9 +515,9 @@ class BtifAvSink {
     bool should_startup = active_peer_.IsEmpty();
     active_peer_ = peer_address;
     if (should_startup) {
-      BTIF_TRACE_EVENT("%s: active peer is empty, startup the Audio source",
+      BTIF_TRACE_EVENT("%s: active peer is empty, startup the Audio sink",
                        __func__);
-      btif_a2dp_source_startup();
+      btif_a2dp_sink_startup();
     }
     return true;
   }
