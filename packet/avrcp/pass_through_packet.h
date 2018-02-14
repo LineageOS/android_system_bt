@@ -59,7 +59,7 @@ class PassThroughPacket : public Packet {
    *     uint8_t opperation_id : 7;
    *     uint8_t data_length;
    */
-  static constexpr size_t kHeaderSize() { return Packet::kHeaderSize() + 2; }
+  static constexpr size_t kMinSize() { return Packet::kMinSize() + 2; }
 
   // Getter Functions
   bool GetPushed() const;

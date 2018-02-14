@@ -37,7 +37,7 @@ std::unique_ptr<PacketBuilder> PacketBuilder::MakeBuilder(
 
 size_t PacketBuilder::size() const {
   // The size of the header for an Packet is 3
-  return payload_->size() + Packet::kHeaderSize();
+  return payload_->size() + Packet::kMinSize();
 }
 
 bool PacketBuilder::Serialize(const std::shared_ptr<::bluetooth::Packet>& pkt) {
@@ -91,7 +91,7 @@ Opcode Packet::GetOpcode() const {
   return static_cast<Opcode>(value);
 }
 
-bool Packet::IsValid() const { return size() >= kHeaderSize(); }
+bool Packet::IsValid() const { return size() >= kMinSize(); }
 
 std::string Packet::ToString() const {
   std::stringstream ss;

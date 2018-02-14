@@ -501,7 +501,9 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   uint8_t* p = p_data->p_data;
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(p_cb->pairing_bda);
 
-  SMP_TRACE_DEBUG("%s", __func__);
+  SMP_TRACE_DEBUG("%s: pairing_bda=%s", __func__,
+                  p_cb->pairing_bda.ToString().c_str());
+
   /* erase all keys if it is slave proc pairing req */
   if (p_dev_rec && (p_cb->role == HCI_ROLE_SLAVE))
     btm_sec_clear_ble_keys(p_dev_rec);

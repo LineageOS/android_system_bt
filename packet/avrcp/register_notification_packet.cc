@@ -104,7 +104,7 @@ size_t RegisterNotificationResponseBuilder::size() const {
   else if (event_ == Event::PLAYBACK_POS_CHANGED)
     data_size = 4;
 
-  return VendorPacket::kHeaderSize() + 1 + data_size;
+  return VendorPacket::kMinSize() + 1 + data_size;
 }
 
 bool RegisterNotificationResponseBuilder::Serialize(
@@ -146,17 +146,17 @@ bool RegisterNotificationResponseBuilder::Serialize(
 }
 
 Event RegisterNotificationRequest::GetEventRegistered() const {
-  auto value = *(begin() + VendorPacket::kHeaderSize());
+  auto value = *(begin() + VendorPacket::kMinSize());
   return static_cast<Event>(value);
 }
 
 uint32_t RegisterNotificationRequest::GetInterval() const {
-  auto it = begin() + VendorPacket::kHeaderSize() + static_cast<size_t>(1);
+  auto it = begin() + VendorPacket::kMinSize() + static_cast<size_t>(1);
   return base::ByteSwap(it.extract<uint32_t>());
 }
 
 bool RegisterNotificationRequest::IsValid() const {
-  return (size() == kHeaderSize());
+  return (size() == kMinSize());
 }
 
 std::string RegisterNotificationRequest::ToString() const {

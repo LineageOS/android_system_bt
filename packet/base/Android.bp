@@ -1,5 +1,6 @@
 cc_library_static {
     name: "lib-bt-packets-base",
+    defaults: ["libchrome_support_defaults"],
     export_include_dirs: ["./"],
     host_supported: true,
     srcs: [
@@ -7,17 +8,4 @@ cc_library_static {
         "iterator.cc",
         "packet_builder.cc",
     ],
-    shared_libs: [
-        "libchrome",
-    ],
-    cflags: [
-        "-Wall",
-        "-Wextra",
-        "-Werror",
-    ],
-    target: {
-        darwin: {
-            enabled: false
-        }
-    }
 }
