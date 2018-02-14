@@ -22,6 +22,7 @@
 #include "avrc_int.h"
 #include "bt_common.h"
 #include "bt_utils.h"
+#include "log/log.h"
 #include "osi/include/osi.h"
 
 /*****************************************************************************
@@ -459,6 +460,12 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
       BE_STREAM_TO_UINT8(p_result->list_app_attr.num_attr, p);
       AVRC_TRACE_DEBUG("%s attr count = %d ", __func__,
                        p_result->list_app_attr.num_attr);
+
+      if (p_result->list_app_attr.num_attr > AVRC_MAX_APP_ATTR_SIZE) {
+        android_errorWriteLog(0x534e4554, "63146237");
+        p_result->list_app_attr.num_attr = AVRC_MAX_APP_ATTR_SIZE;
+      }
+
       for (int xx = 0; xx < p_result->list_app_attr.num_attr; xx++) {
         BE_STREAM_TO_UINT8(p_result->list_app_attr.attrs[xx], p);
       }
@@ -487,6 +494,12 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
           p_result->get_cur_app_val.num_val * sizeof(tAVRC_APP_SETTING));
       AVRC_TRACE_DEBUG("%s attr count = %d ", __func__,
                        p_result->get_cur_app_val.num_val);
+
+      if (p_result->get_cur_app_val.num_val > AVRC_MAX_APP_ATTR_SIZE) {
+        android_errorWriteLog(0x534e4554, "63146237");
+        p_result->get_cur_app_val.num_val = AVRC_MAX_APP_ATTR_SIZE;
+      }
+
       for (int xx = 0; xx < p_result->get_cur_app_val.num_val; xx++) {
         BE_STREAM_TO_UINT8(app_sett[xx].attr_id, p);
         BE_STREAM_TO_UINT8(app_sett[xx].attr_val, p);
@@ -495,7 +508,6 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
     } break;
 
     case AVRC_PDU_GET_PLAYER_APP_ATTR_TEXT: {
-      tAVRC_APP_SETTING_TEXT* p_setting_text;
       uint8_t num_attrs;
 
       if (len == 0) {
@@ -503,10 +515,14 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
         break;
       }
       BE_STREAM_TO_UINT8(num_attrs, p);
+      if (num_attrs > AVRC_MAX_APP_ATTR_SIZE) {
+        num_attrs = AVRC_MAX_APP_ATTR_SIZE;
+      }
       AVRC_TRACE_DEBUG("%s attr count = %d ", __func__,
                        p_result->get_app_attr_txt.num_attr);
       p_result->get_app_attr_txt.num_attr = num_attrs;
-      p_setting_text = (tAVRC_APP_SETTING_TEXT*)osi_malloc(
+
+      p_result->get_app_attr_txt.p_attrs = (tAVRC_APP_SETTING_TEXT*)osi_malloc(
           num_attrs * sizeof(tAVRC_APP_SETTING_TEXT));
       for (int xx = 0; xx < num_attrs; xx++) {
         BE_STREAM_TO_UINT8(p_result->get_app_attr_txt.p_attrs[xx].attr_id, p);
@@ -526,7 +542,6 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
     } break;
 
     case AVRC_PDU_GET_PLAYER_APP_VALUE_TEXT: {
-      tAVRC_APP_SETTING_TEXT* p_setting_text;
       uint8_t num_vals;
 
       if (len == 0) {
@@ -534,11 +549,14 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
         break;
       }
       BE_STREAM_TO_UINT8(num_vals, p);
+      if (num_vals > AVRC_MAX_APP_ATTR_SIZE) {
+        num_vals = AVRC_MAX_APP_ATTR_SIZE;
+      }
       p_result->get_app_val_txt.num_attr = num_vals;
       AVRC_TRACE_DEBUG("%s value count = %d ", __func__,
                        p_result->get_app_val_txt.num_attr);
 
-      p_setting_text = (tAVRC_APP_SETTING_TEXT*)osi_malloc(
+      p_result->get_app_val_txt.p_attrs = (tAVRC_APP_SETTING_TEXT*)osi_malloc(
           num_vals * sizeof(tAVRC_APP_SETTING_TEXT));
       for (int i = 0; i < num_vals; i++) {
         BE_STREAM_TO_UINT8(p_result->get_app_val_txt.p_attrs[i].attr_id, p);
