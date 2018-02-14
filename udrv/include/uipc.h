@@ -37,6 +37,13 @@ typedef enum {
   UIPC_TX_DATA_READY_EVT = 0x0010
 } tUIPC_EVENT;
 
+/* UIPC users */
+typedef enum {
+  UIPC_USER_A2DP = 0,
+  UIPC_USER_HEARING_AID = 1,
+  UIPC_USER_NUM = 2
+} tUIPC_USER;
+
 /*
  * UIPC IOCTL Requests
  */
@@ -55,72 +62,62 @@ typedef void(tUIPC_RCV_CBACK)(
 
 const char* dump_uipc_event(tUIPC_EVENT event);
 
-/*******************************************************************************
+/**
+ * Initialize UIPC module
  *
- * Function         UIPC_Init
- *
- * Description      Initialize UIPC module
- *
- * Returns          void
- *
- ******************************************************************************/
-void UIPC_Init(void*);
+ * @param user User ID who uses UIPC
+ */
+void UIPC_Init(void*, int user);
 
-/*******************************************************************************
+/**
+ * Open a UIPC channel
  *
- * Function         UIPC_Open
- *
- * Description      Open UIPC interface
- *
- * Returns          void
- *
- ******************************************************************************/
+ * @param ch_id Channel ID
+ * @param p_cback Callback handler
+ * @return true on success, otherwise false
+ */
 bool UIPC_Open(tUIPC_CH_ID ch_id, tUIPC_RCV_CBACK* p_cback);
 
-/*******************************************************************************
+/**
+ * Closes a channel in UIPC or the entire UIPC module
  *
- * Function         UIPC_Close
- *
- * Description      Close UIPC interface
- *
- * Returns          void
- *
- ******************************************************************************/
-void UIPC_Close(tUIPC_CH_ID ch_id);
+ * @param ch_id Channel ID; if ch_id is UIPC_CH_ID_ALL, then cleanup UIPC
+ * @param user User ID who uses UIPC
+ */
+void UIPC_Close(tUIPC_CH_ID ch_id, int user);
 
-/*******************************************************************************
+/**
+ * Send a message over UIPC
  *
- * Function         UIPC_Send
- *
- * Description      Called to transmit a message over UIPC.
- *
- * Returns          void
- *
- ******************************************************************************/
+ * @param ch_id Channel ID
+ * @param msg_evt Message event type
+ * @param p_buf Buffer for the message
+ * @param msglen Message length
+ * @return true on success, otherwise false
+ */
 bool UIPC_Send(tUIPC_CH_ID ch_id, uint16_t msg_evt, const uint8_t* p_buf,
                uint16_t msglen);
 
-/*******************************************************************************
+/**
+ * Read a message from UIPC
  *
- * Function         UIPC_Read
- *
- * Description      Called to read a message from UIPC.
- *
- * Returns          void
- *
- ******************************************************************************/
+ * @param ch_id Channel ID
+ * @param p_msg_evt Message event type
+ * @param p_buf Buffer for the message
+ * @param len Bytes to read
+ * @return true on success, otherwise false
+ */
 uint32_t UIPC_Read(tUIPC_CH_ID ch_id, uint16_t* p_msg_evt, uint8_t* p_buf,
                    uint32_t len);
 
-/*******************************************************************************
+/**
+ * Control the UIPC parameter
  *
- * Function         UIPC_Ioctl
- *
- * Description      Called to control UIPC.
- *
- * Returns          void
- *
- ******************************************************************************/
+ * @param ch_id Channel ID
+ * @param request Request type
+ * @param param Optional parameters
+ * @return true on success, otherwise false
+ */
 bool UIPC_Ioctl(tUIPC_CH_ID ch_id, uint32_t request, void* param);
 
 #endif /* UIPC_H */

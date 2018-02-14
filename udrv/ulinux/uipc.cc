@@ -39,6 +39,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <mutex>
+#include <set>
 
 #include "audio_a2dp_hw/include/audio_a2dp_hw.h"
 #include "bt_common.h"
@@ -93,6 +94,7 @@ typedef struct {
   int signal_fds[2];
 
   tUIPC_CHAN ch[UIPC_CH_NUM];
+  std::set<int> active_users;
 } tUIPC_MAIN;
 
 /*****************************************************************************
@@ -247,6 +249,8 @@ void uipc_main_cleanup(void) {
 
   /* close any open channels */
   for (i = 0; i < UIPC_CH_NUM; i++) uipc_close_ch_locked(i);
+
+  uipc_main.active_users.clear();
 }
 
 /* check pending events in read task */
@@ -548,8 +552,17 @@ void uipc_stop_main_server_thread(void) {
  **
  ******************************************************************************/
 
-void UIPC_Init(UNUSED_ATTR void* p_data) {
+void UIPC_Init(UNUSED_ATTR void* p_data, int user) {
   BTIF_TRACE_DEBUG("UIPC_Init");
+  if (user < 0 || user >= UIPC_USER_NUM) {
+    BTIF_TRACE_ERROR("UIPC_Close : invalid user ID %d", user);
+    return;
+  }
+  std::lock_guard<std::recursive_mutex> lock(uipc_main.mutex);
+  auto result_insert = uipc_main.active_users.insert(user);
+  if ((uipc_main.active_users.size() != 1) || !result_insert.second) {
+    return;
+  }
 
   uipc_main_init();
   uipc_start_main_server_thread();
@@ -601,15 +614,27 @@ bool UIPC_Open(tUIPC_CH_ID ch_id, tUIPC_RCV_CBACK* p_cback) {
  **
  ******************************************************************************/
 
-void UIPC_Close(tUIPC_CH_ID ch_id) {
+void UIPC_Close(tUIPC_CH_ID ch_id, int user) {
   BTIF_TRACE_DEBUG("UIPC_Close : ch_id %d", ch_id);
-
+  if (user < 0 || user >= UIPC_USER_NUM) {
+    BTIF_TRACE_ERROR("UIPC_Close : invalid user ID %d", user);
+    return;
+  }
   /* special case handling uipc shutdown */
   if (ch_id != UIPC_CH_ID_ALL) {
     std::lock_guard<std::recursive_mutex> lock(uipc_main.mutex);
     uipc_close_locked(ch_id);
     return;
   }
+
+  if (uipc_main.active_users.erase(user) == 0) {
+    return;
+  }
+
+  if (!uipc_main.active_users.empty()) {
+    return;
+  }
+
   BTIF_TRACE_DEBUG("UIPC_Close : waiting for shutdown to complete");
   uipc_stop_main_server_thread();
   BTIF_TRACE_DEBUG("UIPC_Close : shutdown complete");
