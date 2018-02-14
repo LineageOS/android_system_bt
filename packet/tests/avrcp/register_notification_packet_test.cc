@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include <base/logging.h>
-
 #include <gtest/gtest.h>
 
 #include "avrcp_test_packets.h"

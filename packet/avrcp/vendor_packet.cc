@@ -35,7 +35,7 @@ std::unique_ptr<VendorPacketBuilder> VendorPacketBuilder::MakeBuilder(
 }
 
 size_t VendorPacketBuilder::size() const {
-  return VendorPacket::kHeaderSize() + payload_->size();
+  return VendorPacket::kMinSize() + payload_->size();
 }
 
 bool VendorPacketBuilder::Serialize(
@@ -79,29 +79,29 @@ bool VendorPacketBuilder::PushAttributeValue(
 }
 
 uint32_t VendorPacket::GetCompanyId() const {
-  return PullCompanyId(begin() + Packet::kHeaderSize());
+  return PullCompanyId(begin() + Packet::kMinSize());
 }
 
 CommandPdu VendorPacket::GetCommandPdu() const {
-  auto value = *(begin() + Packet::kHeaderSize() + static_cast<size_t>(3));
+  auto value = *(begin() + Packet::kMinSize() + static_cast<size_t>(3));
   return static_cast<CommandPdu>(value);
 }
 
 PacketType VendorPacket::GetPacketType() const {
-  auto value = *(begin() + Packet::kHeaderSize() + static_cast<size_t>(4));
+  auto value = *(begin() + Packet::kMinSize() + static_cast<size_t>(4));
   return static_cast<PacketType>(value);
 }
 
 uint16_t VendorPacket::GetParameterLength() const {
-  auto it = begin() + Packet::kHeaderSize() + static_cast<size_t>(5);
+  auto it = begin() + Packet::kMinSize() + static_cast<size_t>(5);
   // Swap to little endian
   return base::ByteSwap(it.extract<uint16_t>());
 }
 
 bool VendorPacket::IsValid() const {
-  if (size() < VendorPacket::kHeaderSize()) return false;
+  if (size() < VendorPacket::kMinSize()) return false;
 
-  auto start = begin() + VendorPacket::kHeaderSize();
+  auto start = begin() + VendorPacket::kMinSize();
   // Even if end is less than start and a sign extension occurs, thats fine as
   // its pretty definitive proof that the packet is poorly formated
   return GetParameterLength() == (end() - start);
