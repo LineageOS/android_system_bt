@@ -114,6 +114,16 @@ int config_get_int(const config_t& config, const std::string& section,
   return (*endptr == '\0') ? ret : def_value;
 }
 
+uint64_t config_get_uint64(const config_t& config, const std::string& section,
+                           const std::string& key, uint64_t def_value) {
+  const entry_t* entry = entry_find(config, section, key);
+  if (!entry) return def_value;
+
+  char* endptr;
+  uint64_t ret = strtoull(entry->value.c_str(), &endptr, 0);
+  return (*endptr == '\0') ? ret : def_value;
+}
+
 bool config_get_bool(const config_t& config, const std::string& section,
                      const std::string& key, bool def_value) {
   const entry_t* entry = entry_find(config, section, key);
@@ -137,6 +147,11 @@ const std::string* config_get_string(const config_t& config,
 
 void config_set_int(config_t* config, const std::string& section,
                     const std::string& key, int value) {
+  config_set_string(config, section, key, std::to_string(value));
+}
+
+void config_set_uint64(config_t* config, const std::string& section,
+                       const std::string& key, uint64_t value) {
   config_set_string(config, section, key, std::to_string(value));
 }
 
