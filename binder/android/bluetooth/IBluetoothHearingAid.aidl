@@ -32,10 +32,12 @@ interface IBluetoothHearingAid {
     int getConnectionState(in BluetoothDevice device);
     boolean setPriority(in BluetoothDevice device, int priority);
     int getPriority(in BluetoothDevice device);
-    boolean adjustVolume(int direction);
-    boolean setVolume(int volume);
+    void adjustVolume(int direction);
+    void setVolume(int volume);
     int getVolume();
-    int getClientId(in BluetoothDevice device);
+
+    const int HI_SYNC_ID_INVALID = 0;
+    long getHiSyncId(in BluetoothDevice device);
 
     const int SIDE_LEFT = 0;
     const int SIDE_RIGHT = 1;
