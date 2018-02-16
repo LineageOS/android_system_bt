@@ -44,6 +44,9 @@ version = 0x1111                                                                
 [DID]                                                                                \n\
 [DID]                                                                                \n\
 version = 0x1436                                                                     \n\
+                                                                                     \n\
+HiSyncId = 18446744073709551615                                                      \n\
+HiSyncId2 = 15001900                                                                 \n\
 ";
 
 class ConfigTest : public AllocationTestHarness {
@@ -124,6 +127,20 @@ TEST_F(ConfigTest, config_get_int_version) {
 TEST_F(ConfigTest, config_get_int_default) {
   std::unique_ptr<config_t> config = config_new(CONFIG_FILE);
   EXPECT_EQ(config_get_int(*config, "DID", "primaryRecord", 123), 123);
+}
+
+TEST_F(ConfigTest, config_get_uint64) {
+  std::unique_ptr<config_t> config = config_new(CONFIG_FILE);
+  EXPECT_EQ(config_get_uint64(*config, "DID", "HiSyncId", 0),
+            0xFFFFFFFFFFFFFFFF);
+  EXPECT_EQ(config_get_uint64(*config, "DID", "HiSyncId2", 0),
+            uint64_t(15001900));
+}
+
+TEST_F(ConfigTest, config_get_uint64_default) {
+  std::unique_ptr<config_t> config = config_new(CONFIG_FILE);
+  EXPECT_EQ(config_get_uint64(*config, "DID", "primaryRecord", 123),
+            uint64_t(123));
 }
 
 TEST_F(ConfigTest, config_remove_section) {
