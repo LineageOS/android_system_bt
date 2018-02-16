@@ -49,18 +49,6 @@ using base::StringPrintf;
     *(p)++ = (uint8_t)((u64) >> 56); \
   }
 
-#define STREAM_TO_UINT64(u64, p)                                      \
-  {                                                                   \
-    (u64) = (((uint64_t)(*(p))) + ((((uint64_t)(*((p) + 1)))) << 8) + \
-             ((((uint64_t)(*((p) + 2)))) << 16) +                     \
-             ((((uint64_t)(*((p) + 3)))) << 24) +                     \
-             ((((uint64_t)(*((p) + 4)))) << 32) +                     \
-             ((((uint64_t)(*((p) + 5)))) << 40) +                     \
-             ((((uint64_t)(*((p) + 6)))) << 48) +                     \
-             ((((uint64_t)(*((p) + 7)))) << 56));                     \
-    (p) += 8;                                                         \
-  }
-
 static const uint16_t dis_attr_uuid[DIS_MAX_CHAR_NUM] = {
     GATT_UUID_SYSTEM_ID,
     GATT_UUID_MODEL_NUMBER_STR,
