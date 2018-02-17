@@ -2442,6 +2442,10 @@ void btm_ble_read_remote_features_complete(uint8_t* p) {
     if (status != HCI_ERR_UNSUPPORTED_REM_FEATURE) return;
   }
 
+  // Older iphones might return HCI_ERR_UNSUPPORTED_REM_FEATURE - then don't copy.
+  if (status == HCI_ERR_CONN_FAILED_ESTABLISHMENT || status == HCI_ERR_UNSUPPORTED_REM_FEATURE)
+      return;
+
   int idx = btm_handle_to_acl_index(handle);
   if (idx == MAX_L2CAP_LINKS) {
     BTM_TRACE_ERROR("%s: can't find acl for handle: 0x%04d", __func__, handle);
