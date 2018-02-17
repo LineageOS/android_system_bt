@@ -611,6 +611,9 @@ using BtaAppRegisterCallback =
 extern void BTA_GATTC_AppRegister(tBTA_GATTC_CBACK* p_client_cb,
                                   BtaAppRegisterCallback cb);
 
+extern void BTA_GATTC_AppRegister(tBT_UUID* uuid, tBTA_GATTC_CBACK* p_client_cb,
+                                  BtaAppRegisterCallback cb);
+
 /*******************************************************************************
  *
  * Function         BTA_GATTC_AppDeregister

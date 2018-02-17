@@ -85,8 +85,18 @@ void BTA_GATTC_AppRegister(tBTA_GATTC_CBACK* p_client_cb,
   // base::Owned will own and free app_uuid
   tBT_UUID* uuid = new tBT_UUID;
   create_random_uuid(uuid);
-  do_in_bta_thread(FROM_HERE, base::Bind(&bta_gattc_register, base::Owned(uuid),
-                                         p_client_cb, std::move(cb)));
+
+  bta_gattc_register(uuid, p_client_cb, cb);
+}
+
+void BTA_GATTC_AppRegister(tBT_UUID* uuid, tBTA_GATTC_CBACK* p_client_cb,
+                           BtaAppRegisterCallback cb) {
+
+  APPL_TRACE_API("%s p_client_cb=0x%X, cb=0x%X", __func__, p_client_cb, &cb);
+  if (bta_sys_is_register(BTA_ID_GATTC) == false)
+    bta_sys_register(BTA_ID_GATTC, &bta_gattc_reg);
+
+  bta_gattc_register(uuid, p_client_cb, cb);
 }
 
 static void app_deregister_impl(tBTA_GATTC_IF client_if) {
