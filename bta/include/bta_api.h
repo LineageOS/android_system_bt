@@ -291,10 +291,6 @@ typedef struct {
                       */
   tBTA_DM_INQ_FILT filter_type; /* Filter condition type. */
   tBTA_DM_INQ_COND filter_cond; /* Filter condition data. */
-#if (BTA_HOST_INTERLEAVE_SEARCH == TRUE)
-  uint8_t intl_duration
-      [4]; /*duration array storing the interleave scan's time portions*/
-#endif
 } tBTA_DM_INQ;
 
 typedef struct {

@@ -291,10 +291,6 @@ typedef struct {
   uint8_t state;      /* Current state that the inquiry process is in */
   uint8_t inq_active; /* Bit Mask indicating type of inquiry is active */
   bool no_inc_ssp;    /* true, to stop inquiry on incoming SSP */
-#if (BTA_HOST_INTERLEAVE_SEARCH == TRUE)
-  btm_inq_state
-      next_state; /*interleaving state to determine next mode to be inquired*/
-#endif
 } tBTM_INQUIRY_VAR_ST;
 
 /* The MSB of the clock offset field indicates whether the offset is valid. */
