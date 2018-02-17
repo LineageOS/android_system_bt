@@ -107,11 +107,6 @@
 #define BTA_AV_CO_CP_SCMS_T FALSE
 #endif
 
-/* This feature is used to enable interleaved scan */
-#ifndef BTA_HOST_INTERLEAVE_SEARCH
-#define BTA_HOST_INTERLEAVE_SEARCH FALSE
-#endif
-
 #ifndef BTA_DM_SDP_DB_SIZE
 #define BTA_DM_SDP_DB_SIZE 8000
 #endif
