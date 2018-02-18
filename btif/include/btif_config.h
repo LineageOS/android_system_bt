@@ -35,6 +35,10 @@ bool btif_config_get_int(const std::string& section, const std::string& key,
                          int* value);
 bool btif_config_set_int(const std::string& section, const std::string& key,
                          int value);
+bool btif_config_get_uint64(const std::string& section, const std::string& key,
+                            uint64_t* value);
+bool btif_config_set_uint64(const std::string& section, const std::string& key,
+                            uint64_t value);
 bool btif_config_get_str(const std::string& section, const std::string& key,
                          char* value, int* size_bytes);
 bool btif_config_set_str(const std::string& section, const std::string& key,

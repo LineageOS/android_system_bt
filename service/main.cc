@@ -55,16 +55,14 @@ int main(int argc, char* argv[]) {
     return EXIT_SUCCESS;
   }
 
-#if !defined(OS_GENERIC)
   // TODO(armansito): Remove Chromecast specific property out of here. This
   // should just be obtained from global config.
   char disable_value[PROPERTY_VALUE_MAX];
-  int status = property_get(kDisableProperty, disable_value, nullptr);
+  int status = osi_property_get(kDisableProperty, disable_value, nullptr);
   if (status && !strcmp(disable_value, "1")) {
     LOG(INFO) << "service disabled";
     return EXIT_SUCCESS;
   }
-#endif  // !defined(OS_GENERIC)
 
   if (!bluetooth::Daemon::Initialize()) {
     LOG(ERROR) << "Failed to initialize Daemon";

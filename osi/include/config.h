@@ -71,6 +71,12 @@ bool config_has_key(const config_t& config, const std::string& section,
 int config_get_int(const config_t& config, const std::string& section,
                    const std::string& key, int def_value);
 
+// Returns the uint64_t value for a given |key| in |section|. If |section|
+// or |key| do not exist, or the value cannot be fully converted to an integer,
+// this function returns |def_value|.
+uint64_t config_get_uint64(const config_t& config, const std::string& section,
+                           const std::string& key, uint64_t def_value);
+
 // Returns the boolean value for a given |key| in |section|. If |section|
 // or |key| do not exist, or the value cannot be converted to a boolean, this
 // function returns |def_value|.
@@ -90,6 +96,11 @@ const std::string* config_get_string(const config_t& config,
 // not already exist, this function creates them. |config| must not be NULL.
 void config_set_int(config_t* config, const std::string& section,
                     const std::string& key, int value);
+
+// Sets a uint64_t value for the |key| in |section|. If |key| or |section| do
+// not already exist, this function creates them. |config| must not be NULL.
+void config_set_uint64(config_t* config, const std::string& section,
+                       const std::string& key, uint64_t value);
 
 // Sets a boolean value for the |key| in |section|. If |key| or |section| do
 // not already exist, this function creates them. |config| must not be NULL.

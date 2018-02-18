@@ -104,13 +104,6 @@ const Uuid UUID_HEARING_AID =
 #error "default btif local name size exceeds stack supported length"
 #endif
 
-#if (BTA_HOST_INTERLEAVE_SEARCH == TRUE)
-#define BTIF_DM_INTERLEAVE_DURATION_BR_ONE 2
-#define BTIF_DM_INTERLEAVE_DURATION_LE_ONE 2
-#define BTIF_DM_INTERLEAVE_DURATION_BR_TWO 3
-#define BTIF_DM_INTERLEAVE_DURATION_LE_TWO 4
-#endif
-
 #define ENCRYPTED_BREDR 2
 #define ENCRYPTED_LE 4
 
@@ -2159,12 +2152,6 @@ bt_status_t btif_dm_start_discovery(void) {
 
   /* Set inquiry params and call API */
   inq_params.mode = BTA_DM_GENERAL_INQUIRY | BTA_BLE_GENERAL_INQUIRY;
-#if (BTA_HOST_INTERLEAVE_SEARCH == TRUE)
-  inq_params.intl_duration[0] = BTIF_DM_INTERLEAVE_DURATION_BR_ONE;
-  inq_params.intl_duration[1] = BTIF_DM_INTERLEAVE_DURATION_LE_ONE;
-  inq_params.intl_duration[2] = BTIF_DM_INTERLEAVE_DURATION_BR_TWO;
-  inq_params.intl_duration[3] = BTIF_DM_INTERLEAVE_DURATION_LE_TWO;
-#endif
   inq_params.duration = BTIF_DM_DEFAULT_INQ_MAX_DURATION;
 
   inq_params.max_resps = BTIF_DM_DEFAULT_INQ_MAX_RESULTS;
