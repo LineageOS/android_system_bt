@@ -17,6 +17,7 @@ cc_library_static {
         "pass_through_packet.cc",
         "play_item.cc",
         "register_notification_packet.cc",
+        "set_absolute_volume.cc",
         "set_browsed_player.cc",
         "vendor_packet.cc",
     ],
