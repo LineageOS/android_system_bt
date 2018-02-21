@@ -822,6 +822,9 @@ bt_status_t BtifAvSource::Init(
   codec_priorities_ = codec_priorities;
   bta_av_co_init(codec_priorities_);
 
+  if (!btif_a2dp_source_startup()) {
+    return BT_STATUS_FAIL;  // Already running
+  }
   btif_enable_service(BTA_A2DP_SOURCE_SERVICE_ID);
   enabled_ = true;
   return BT_STATUS_SUCCESS;
@@ -990,6 +993,9 @@ bt_status_t BtifAvSink::Init(btav_sink_callbacks_t* callbacks) {
                              kDefaultMaxConnectedAudioDevices);
   callbacks_ = callbacks;
 
+  if (!btif_a2dp_sink_startup()) {
+    return BT_STATUS_FAIL;  // Already running
+  }
   btif_enable_service(BTA_A2DP_SINK_SERVICE_ID);
   enabled_ = true;
   return BT_STATUS_SUCCESS;
