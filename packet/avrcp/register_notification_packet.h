@@ -21,17 +21,50 @@
 namespace bluetooth {
 namespace avrcp {
 
+class RegisterNotificationResponse : public VendorPacket {
+ public:
+  virtual ~RegisterNotificationResponse() = default;
+
+  /**
+   *  Register Notificaiton Request Packet Layout
+   *   AvrcpPacket:
+   *     CType c_type_;
+   *     uint8_t subunit_type_ : 5;
+   *     uint8_t subunit_id_ : 3;
+   *     Opcode opcode_;
+   *   VendorPacket:
+   *     uint8_t company_id[3];
+   *     uint8_t command_pdu;
+   *     uint8_t packet_type;
+   *     uint16_t param_length;
+   *   RegisterNotificationRequestPacket:
+   *     uint8_t event_id;
+   *     uint8_t[] data;  // Length changes based on the event_id
+   */
+  static constexpr size_t kMinSize() { return VendorPacket::kMinSize() + 1; }
+
+  // TODO (apanicke): Add other getters when implementing AVRCP Controller
+  bool IsInterim() const;
+  Event GetEvent() const;
+  uint8_t GetVolume() const;
+
+  virtual bool IsValid() const override;
+  virtual std::string ToString() const override;
+
+ protected:
+  using VendorPacket::VendorPacket;
+};
+
 class RegisterNotificationResponseBuilder : public VendorPacketBuilder {
  public:
   virtual ~RegisterNotificationResponseBuilder() = default;
 
-  // Playback Status Changed Maker
   static std::unique_ptr<RegisterNotificationResponseBuilder>
   MakePlaybackStatusBuilder(bool interim, uint8_t play_status);
-  // Track Changed Maker
+
   static std::unique_ptr<RegisterNotificationResponseBuilder>
   MakeTrackChangedBuilder(bool interim, uint64_t track_uid);
-  // Playback Position Changed Maker
+
   static std::unique_ptr<RegisterNotificationResponseBuilder>
   MakePlaybackPositionBuilder(bool interim, uint32_t playback_pos);
 
@@ -95,6 +128,28 @@ class RegisterNotificationRequest : public VendorPacket {
 
  protected:
   using VendorPacket::VendorPacket;
+};
+
+class RegisterNotificationRequestBuilder : public VendorPacketBuilder {
+ public:
+  virtual ~RegisterNotificationRequestBuilder() = default;
+
+  static std::unique_ptr<RegisterNotificationRequestBuilder> MakeBuilder(
+      Event event, uint32_t interval);
+
+  virtual size_t size() const override;
+  virtual bool Serialize(
+      const std::shared_ptr<::bluetooth::Packet>& pkt) override;
+
+ protected:
+  Event event_;
+  uint32_t interval_;
+
+  RegisterNotificationRequestBuilder(Event event, uint32_t interval)
+      : VendorPacketBuilder(CType::NOTIFY, CommandPdu::REGISTER_NOTIFICATION,
+                            PacketType::SINGLE),
+        event_(event),
+        interval_(interval){};
 };
 
 }  // namespace avrcp
