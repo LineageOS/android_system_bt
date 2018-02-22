@@ -84,13 +84,13 @@ static void avrc_ctrl_cback(uint8_t handle, uint8_t event, uint16_t result,
                             const RawAddress* peer_addr) {
   uint8_t avrc_event;
 
-  if (event <= AVRC_MAX_RCV_CTRL_EVT && avrc_cb.ccb[handle].p_ctrl_cback) {
+  if (event <= AVRC_MAX_RCV_CTRL_EVT && avrc_cb.ccb[handle].ctrl_cback) {
     avrc_event = avrc_ctrl_event_map[event];
     if (event == AVCT_CONNECT_CFM_EVT) {
       if (result != 0) /* failed */
         avrc_event = AVRC_CLOSE_IND_EVT;
     }
-    (*avrc_cb.ccb[handle].p_ctrl_cback)(handle, avrc_event, result, peer_addr);
+    avrc_cb.ccb[handle].ctrl_cback.Run(handle, avrc_event, result, peer_addr);
   }
 
   if ((event == AVCT_DISCONNECT_CFM_EVT) ||
@@ -135,8 +135,8 @@ void avrc_process_timeout(void* data) {
                    param->handle, param->label);
 
   /* Notify app */
-  if (avrc_cb.ccb[param->handle].p_ctrl_cback) {
-    (*avrc_cb.ccb[param->handle].p_ctrl_cback)(
+  if (avrc_cb.ccb[param->handle].ctrl_cback) {
+    avrc_cb.ccb[param->handle].ctrl_cback.Run(
         param->handle, AVRC_CMD_TIMEOUT_EVT, param->label, NULL);
   }
 
@@ -859,7 +859,7 @@ static void avrc_msg_cback(uint8_t handle, uint8_t label, uint8_t cr,
 
   if (!drop) {
     msg.hdr.opcode = opcode;
-    (*avrc_cb.ccb[handle].p_msg_cback)(handle, label, opcode, &msg);
+    avrc_cb.ccb[handle].msg_cback.Run(handle, label, opcode, &msg);
   } else {
     AVRC_TRACE_WARNING("%s %s msg handle:%d, control:%d, cr:%d, opcode:x%x",
                        __func__, p_drop_msg, handle,
@@ -981,7 +981,7 @@ uint16_t AVRC_Open(uint8_t* p_handle, tAVRC_CONN_CB* p_ccb,
 
   status = AVCT_CreateConn(p_handle, &cc, peer_addr);
   if (status == AVCT_SUCCESS) {
-    memcpy(&avrc_cb.ccb[*p_handle], p_ccb, sizeof(tAVRC_CONN_CB));
+    avrc_cb.ccb[*p_handle] = *p_ccb;
     memset(&avrc_cb.ccb_int[*p_handle], 0, sizeof(tAVRC_CONN_INT_CB));
     memset(&avrc_cb.fcb[*p_handle], 0, sizeof(tAVRC_FRAG_CB));
     memset(&avrc_cb.rcb[*p_handle], 0, sizeof(tAVRC_RASM_CB));

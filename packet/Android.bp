@@ -31,6 +31,7 @@ cc_test {
         "tests/avrcp/pass_through_packet_test.cc",
         "tests/avrcp/play_item_packet_test.cc",
         "tests/avrcp/register_notification_packet_test.cc",
+        "tests/avrcp/set_absolute_volume_packet_test.cc",
         "tests/avrcp/set_browsed_player_packet_test.cc",
         "tests/avrcp/vendor_packet_test.cc",
         "tests/base/iterator_test.cc",

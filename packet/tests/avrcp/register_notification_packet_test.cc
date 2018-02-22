@@ -24,6 +24,7 @@ namespace bluetooth {
 namespace avrcp {
 
 using TestRegNotifReqPacket = TestPacketType<RegisterNotificationRequest>;
+using TestRegNotifRspPacket = TestPacketType<RegisterNotificationResponse>;
 
 TEST(RegisterNotificationRequestTest, getterTest) {
   auto test_packet =
@@ -50,7 +51,58 @@ TEST(RegisterNotificationRequestTest, invalidTest) {
   ASSERT_FALSE(test_packet->IsValid());
 }
 
-TEST(RegisterNotificationResponseTest, playStatusBuilderTest) {
+TEST(RegisterNotificationRequestBuilderTest, builderTest) {
+  auto builder =
+      RegisterNotificationRequestBuilder::MakeBuilder(Event::VOLUME_CHANGED, 0);
+  ASSERT_EQ(builder->size(), register_volume_changed_notification.size());
+
+  auto test_packet = TestRegNotifReqPacket::Make();
+  builder->Serialize(test_packet);
+  ASSERT_EQ(test_packet->GetData(), register_volume_changed_notification);
+}
+
+TEST(RegisterNotificationResponseTest, volumeGetterTest) {
+  auto test_packet =
+      TestRegNotifRspPacket::Make(interim_volume_changed_notification);
+
+  ASSERT_TRUE(test_packet->IsInterim());
+  ASSERT_EQ(test_packet->GetEvent(), Event::VOLUME_CHANGED);
+  ASSERT_EQ(test_packet->GetVolume(), 0x47);
+}
+
+TEST(RegisterNotificationResponseTest, validTest) {
+  auto test_packet =
+      TestRegNotifRspPacket::Make(interim_volume_changed_notification);
+
+  ASSERT_TRUE(test_packet->IsValid());
+}
+
+TEST(RegisterNotificationResponseTest, invalidTest) {
+  std::vector<uint8_t> packet_copy = interim_volume_changed_notification;
+  packet_copy.push_back(0x00);
+  auto test_packet = TestRegNotifRspPacket::Make(packet_copy);
+  ASSERT_FALSE(test_packet->IsValid());
+
+  std::vector<uint8_t> short_packet = {0, 1, 2, 3, 4};
+  test_packet = TestRegNotifRspPacket::Make(short_packet);
+  ASSERT_FALSE(test_packet->IsValid());
+
+  auto wrong_ctype = interim_volume_changed_notification;
+  wrong_ctype[0] = 0x00;
+  test_packet = TestRegNotifRspPacket::Make(short_packet);
+  ASSERT_FALSE(test_packet->IsValid());
+}
+
+TEST(RegisterNotificationResponseTest, wrongEventDeathTest) {
+  auto wrong_event = interim_volume_changed_notification;
+  wrong_event[10] = 0x00;
+  auto test_packet = TestRegNotifRspPacket::Make(wrong_event);
+
+  ASSERT_DEATH(test_packet->GetVolume(),
+               "GetEvent\\(\\) == Event::VOLUME_CHANGED");
+}
+
+TEST(RegisterNotificationResponseBuilderTest, playStatusBuilderTest) {
   auto builder = RegisterNotificationResponseBuilder::MakePlaybackStatusBuilder(
       true, 0x00);
   ASSERT_EQ(builder->size(), interim_play_status_notification.size());
@@ -59,7 +111,7 @@ TEST(RegisterNotificationResponseTest, playStatusBuilderTest) {
   ASSERT_EQ(test_packet->GetData(), interim_play_status_notification);
 }
 
-TEST(RegisterNotificationResponseTest, trackChangedBuilderTest) {
+TEST(RegisterNotificationResponseBuilderTest, trackChangedBuilderTest) {
   auto builder = RegisterNotificationResponseBuilder::MakeTrackChangedBuilder(
       true, 0x0000000000000000);
   ASSERT_EQ(builder->size(), interim_track_changed_notification.size());
@@ -68,7 +120,7 @@ TEST(RegisterNotificationResponseTest, trackChangedBuilderTest) {
   ASSERT_EQ(test_packet->GetData(), interim_track_changed_notification);
 }
 
-TEST(RegisterNotificationResponseTest, playPositionBuilderTest) {
+TEST(RegisterNotificationResponseBuilderTest, playPositionBuilderTest) {
   auto builder =
       RegisterNotificationResponseBuilder::MakePlaybackPositionBuilder(
           false, 0x00000000);

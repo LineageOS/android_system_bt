@@ -21,6 +21,54 @@
 namespace bluetooth {
 namespace avrcp {
 
+bool RegisterNotificationResponse::IsInterim() const {
+  return GetCType() == CType::INTERIM;
+}
+
+Event RegisterNotificationResponse::GetEvent() const {
+  auto value = *(begin() + VendorPacket::kMinSize());
+  return static_cast<Event>(value);
+}
+
+uint8_t RegisterNotificationResponse::GetVolume() const {
+  CHECK(GetEvent() == Event::VOLUME_CHANGED);
+  auto it = begin() + VendorPacket::kMinSize() + static_cast<size_t>(1);
+  return *it;
+}
+
+bool RegisterNotificationResponse::IsValid() const {
+  if (!VendorPacket::IsValid()) return false;
+  if (size() < kMinSize()) return false;
+  if (GetCType() != CType::INTERIM && GetCType() != CType::CHANGED)
+    return false;
+
+  switch (GetEvent()) {
+    case Event::VOLUME_CHANGED:
+      return size() == (kMinSize() + 1);
+    default:
+      // TODO (apanicke): Add the remaining events when implementing AVRCP
+      // Controller
+      return false;
+  }
+}
+
+std::string RegisterNotificationResponse::ToString() const {
+  std::stringstream ss;
+  ss << "RegisterNotificationResponse: " << std::endl;
+  ss << "  └ cType = " << GetCType() << std::endl;
+  ss << "  └ Subunit Type = " << loghex(GetSubunitType()) << std::endl;
+  ss << "  └ Subunit ID = " << loghex(GetSubunitId()) << std::endl;
+  ss << "  └ OpCode = " << GetOpcode() << std::endl;
+  ss << "  └ Company ID = " << loghex(GetCompanyId()) << std::endl;
+  ss << "  └ Command PDU = " << GetCommandPdu() << std::endl;
+  ss << "  └ PacketType = " << GetPacketType() << std::endl;
+  ss << "  └ Parameter Length = " << loghex(GetParameterLength()) << std::endl;
+  ss << "  └ Event Registered = " << GetEvent() << std::endl;
+  ss << std::endl;
+
+  return ss.str();
+}
+
 std::unique_ptr<RegisterNotificationResponseBuilder>
 RegisterNotificationResponseBuilder::MakePlaybackStatusBuilder(
     bool interim, uint8_t play_status) {
@@ -124,22 +172,43 @@ bool RegisterNotificationResponseBuilder::Serialize(
   VendorPacketBuilder::PushHeader(pkt, 1 + data_size);
 
   AddPayloadOctets1(pkt, static_cast<uint8_t>(event_));
-  if (event_ == Event::PLAYBACK_STATUS_CHANGED) {
-    uint8_t playback_status = data_ & 0xFF;
-    AddPayloadOctets1(pkt, playback_status);
-  } else if (event_ == Event::TRACK_CHANGED) {
-    AddPayloadOctets8(pkt, base::ByteSwap(data_));
-  } else if (event_ == Event::PLAYBACK_POS_CHANGED) {
-    uint32_t playback_pos = data_ & 0xFFFFFFFF;
-    AddPayloadOctets4(pkt, base::ByteSwap(playback_pos));
-  } else if (event_ == Event::ADDRESSED_PLAYER_CHANGED) {
-    uint16_t uid_counter = data_ & 0xFFFF;
-    uint16_t player_id = (data_ >> 16) & 0xFFFF;
-    AddPayloadOctets2(pkt, base::ByteSwap(player_id));
-    AddPayloadOctets2(pkt, base::ByteSwap(uid_counter));
-  } else if (event_ == Event::UIDS_CHANGED) {
-    uint16_t uid_counter = data_ & 0xFFFF;
-    AddPayloadOctets2(pkt, base::ByteSwap(uid_counter));
+  switch (event_) {
+    case Event::PLAYBACK_STATUS_CHANGED: {
+      uint8_t playback_status = data_ & 0xFF;
+      AddPayloadOctets1(pkt, playback_status);
+      break;
+    }
+    case Event::TRACK_CHANGED: {
+      AddPayloadOctets8(pkt, base::ByteSwap(data_));
+      break;
+    }
+    case Event::PLAYBACK_POS_CHANGED: {
+      uint32_t playback_pos = data_ & 0xFFFFFFFF;
+      AddPayloadOctets4(pkt, base::ByteSwap(playback_pos));
+      break;
+    }
+    case Event::PLAYER_APPLICATION_SETTING_CHANGED:
+      break;  // No additional data
+    case Event::NOW_PLAYING_CONTENT_CHANGED:
+      break;  // No additional data
+    case Event::AVAILABLE_PLAYERS_CHANGED:
+      break;  // No additional data
+    case Event::ADDRESSED_PLAYER_CHANGED: {
+      uint16_t uid_counter = data_ & 0xFFFF;
+      uint16_t player_id = (data_ >> 16) & 0xFFFF;
+      AddPayloadOctets2(pkt, base::ByteSwap(player_id));
+      AddPayloadOctets2(pkt, base::ByteSwap(uid_counter));
+      break;
+    }
+    case Event::UIDS_CHANGED: {
+      uint16_t uid_counter = data_ & 0xFFFF;
+      AddPayloadOctets2(pkt, base::ByteSwap(uid_counter));
+      break;
+    }
+    default:
+      // TODO (apanicke): Add Volume Changed builder for when we are controller.
+      LOG(FATAL) << "Unhandled event for register notification";
+      break;
   }
 
   return true;
@@ -175,6 +244,34 @@ std::string RegisterNotificationRequest::ToString() const {
   ss << std::endl;
 
   return ss.str();
+}
+
+std::unique_ptr<RegisterNotificationRequestBuilder>
+RegisterNotificationRequestBuilder::MakeBuilder(Event event,
+                                                uint32_t interval) {
+  std::unique_ptr<RegisterNotificationRequestBuilder> builder(
+      new RegisterNotificationRequestBuilder(event, interval));
+
+  return builder;
+}
+
+size_t RegisterNotificationRequestBuilder::size() const {
+  return RegisterNotificationRequest::kMinSize();
+}
+
+bool RegisterNotificationRequestBuilder::Serialize(
+    const std::shared_ptr<::bluetooth::Packet>& pkt) {
+  ReserveSpace(pkt, size());
+
+  PacketBuilder::PushHeader(pkt);
+
+  VendorPacketBuilder::PushHeader(pkt, size() - VendorPacket::kMinSize());
+
+  AddPayloadOctets1(pkt, static_cast<uint8_t>(event_));
+
+  AddPayloadOctets4(pkt, base::ByteSwap(interval_));
+
+  return true;
 }
 
 }  // namespace avrcp

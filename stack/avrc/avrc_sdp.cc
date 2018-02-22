@@ -61,7 +61,7 @@ static void avrc_sdp_cback(uint16_t status) {
   avrc_cb.service_uuid = 0;
 
   /* return info from sdp record in app callback function */
-  (*avrc_cb.p_cback)(status);
+  avrc_cb.find_cback.Run(status);
 
   return;
 }
@@ -107,13 +107,13 @@ static void avrc_sdp_cback(uint16_t status) {
  *****************************************************************************/
 uint16_t AVRC_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
                           tAVRC_SDP_DB_PARAMS* p_db,
-                          tAVRC_FIND_CBACK* p_cback) {
+                          const tAVRC_FIND_CBACK& find_cback) {
   bool result = true;
 
   AVRC_TRACE_API("%s uuid: %x", __func__, service_uuid);
   if ((service_uuid != UUID_SERVCLASS_AV_REM_CTRL_TARGET &&
        service_uuid != UUID_SERVCLASS_AV_REMOTE_CONTROL) ||
-      p_db == NULL || p_db->p_db == NULL || p_cback == NULL)
+      p_db == NULL || p_db->p_db == NULL || find_cback.is_null())
     return AVRC_BAD_PARAM;
 
   /* check if it is busy */
@@ -135,7 +135,7 @@ uint16_t AVRC_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
     /* store service_uuid and discovery db pointer */
     avrc_cb.p_db = p_db->p_db;
     avrc_cb.service_uuid = service_uuid;
-    avrc_cb.p_cback = p_cback;
+    avrc_cb.find_cback = find_cback;
 
     /* perform service search */
     result =
