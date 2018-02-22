@@ -147,7 +147,7 @@ typedef struct {
       ccb_int[AVCT_NUM_CONN]; /* Internal connection control block  */
   tAVRC_FRAG_CB fcb[AVCT_NUM_CONN];
   tAVRC_RASM_CB rcb[AVCT_NUM_CONN];
-  tAVRC_FIND_CBACK* p_cback; /* pointer to application callback */
+  tAVRC_FIND_CBACK find_cback; /* sdp discovery callback */
   tSDP_DISCOVERY_DB* p_db;   /* pointer to discovery database */
   uint16_t service_uuid;     /* service UUID to search */
   uint8_t trace_level;
