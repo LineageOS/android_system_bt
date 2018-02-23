@@ -60,3 +60,11 @@ int32_t osi_property_get_int32(const char* key, int32_t default_value) {
   return property_get_int32(key, default_value);
 #endif  // defined(OS_GENERIC)
 }
+
+bool osi_property_get_bool(const char* key, bool default_value) {
+#if defined(OS_GENERIC)
+  return default_value;
+#else
+  return property_get_bool(key, default_value);
+#endif  // defined(OS_GENERIC)
+}

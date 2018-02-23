@@ -179,4 +179,16 @@ void btif_av_acl_disconnected(const RawAddress& peer_address);
  */
 void btif_debug_av_dump(int fd);
 
+/**
+ * Set the audio delay for the stream.
+ *
+ * @param delay the delay to set in units of 1/10ms
+ */
+void btif_av_set_audio_delay(uint16_t delay);
+
+/**
+ * Reset the audio delay and count of audio bytes sent to zero.
+ */
+void btif_av_reset_audio_delay(void);
+
 #endif /* BTIF_AV_H */

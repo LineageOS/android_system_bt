@@ -1127,6 +1127,7 @@ void BtaAvCo::ProcessClose(tBTA_AV_HNDL bta_av_handle,
                            const RawAddress& peer_address) {
   APPL_TRACE_DEBUG("%s: peer %s bta_av_handle: 0x%x", __func__,
                    peer_address.ToString().c_str(), bta_av_handle);
+  btif_av_reset_audio_delay();
 
   // Find the peer
   BtaAvCoPeer* p_peer = FindPeerAndUpdate(bta_av_handle, peer_address);
@@ -1218,9 +1219,10 @@ void BtaAvCo::DataPacketWasDropped(tBTA_AV_HNDL bta_av_handle,
 void BtaAvCo::ProcessAudioDelay(tBTA_AV_HNDL bta_av_handle,
                                 const RawAddress& peer_address,
                                 uint16_t delay) {
-  APPL_TRACE_ERROR("%s: peer %s bta_av_handle: 0x%x delay:0x%x", __func__,
+  APPL_TRACE_DEBUG("%s: peer %s bta_av_handle: 0x%x delay:0x%x", __func__,
                    peer_address.ToString().c_str(), bta_av_handle, delay);
-  // Nothing to do
+
+  btif_av_set_audio_delay(delay);
 }
 
 void BtaAvCo::UpdateMtu(tBTA_AV_HNDL bta_av_handle,

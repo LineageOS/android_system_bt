@@ -20,6 +20,7 @@ cc_library {
     ],
     shared_libs: [
         "liblog",
+        "libcutils",
     ],
     static_libs: ["libosi"],
 }

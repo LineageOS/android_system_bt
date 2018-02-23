@@ -313,7 +313,8 @@ static bool btif_a2dp_source_audio_tx_flush_req(void);
 static void btif_a2dp_source_alarm_cb(void* context);
 static void btif_a2dp_source_audio_handle_timer(void);
 static uint32_t btif_a2dp_source_read_callback(uint8_t* p_buf, uint32_t len);
-static bool btif_a2dp_source_enqueue_callback(BT_HDR* p_buf, size_t frames_n);
+static bool btif_a2dp_source_enqueue_callback(BT_HDR* p_buf, size_t frames_n,
+                                              uint32_t bytes_read);
 static void log_tstamps_us(const char* comment, uint64_t timestamp_us);
 static void update_scheduling_stats(SchedulingStats* stats, uint64_t now_us,
                                     uint64_t expected_delta);
@@ -651,6 +652,13 @@ static void btif_a2dp_source_audio_tx_stop_event(void) {
 
   const bool send_ack = btif_a2dp_source_is_streaming();
 
+  uint8_t p_buf[AUDIO_STREAM_OUTPUT_BUFFER_SZ * 2];
+  uint16_t event;
+
+  // Keep track of audio data still left in the pipe
+  btif_a2dp_control_log_bytes_read(
+      UIPC_Read(UIPC_CH_ID_AV_AUDIO, &event, p_buf, sizeof(p_buf)));
+
   /* Stop the timer first */
   alarm_free(btif_a2dp_source_cb.media_alarm);
   btif_a2dp_source_cb.media_alarm = nullptr;
@@ -728,8 +736,10 @@ static uint32_t btif_a2dp_source_read_callback(uint8_t* p_buf, uint32_t len) {
   return bytes_read;
 }
 
-static bool btif_a2dp_source_enqueue_callback(BT_HDR* p_buf, size_t frames_n) {
+static bool btif_a2dp_source_enqueue_callback(BT_HDR* p_buf, size_t frames_n,
+                                              uint32_t bytes_read) {
   uint64_t now_us = time_get_os_boottime_us();
+  btif_a2dp_control_log_bytes_read(bytes_read);
 
   /* Check if timer was stopped (media task stopped) */
   if (!alarm_is_scheduled(btif_a2dp_source_cb.media_alarm)) {
