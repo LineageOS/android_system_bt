@@ -1060,11 +1060,6 @@ bool bta_gattc_cache_load(tBTA_GATTC_CLCB* p_clcb) {
     goto done;
   }
 
-  if (num_attr > 0xFFFF) {
-    LOG(ERROR) << __func__ << ": more than 0xFFFF GATT attributes: " << fname;
-    goto done;
-  }
-
   attr = (tBTA_GATTC_NV_ATTR*)osi_malloc(sizeof(tBTA_GATTC_NV_ATTR) * num_attr);
 
   if (fread(attr, sizeof(tBTA_GATTC_NV_ATTR), num_attr, fd) != num_attr) {
