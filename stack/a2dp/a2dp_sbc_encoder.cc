@@ -118,7 +118,7 @@ static void a2dp_sbc_encoder_update(uint16_t peer_mtu,
                                     bool* p_restart_input,
                                     bool* p_restart_output,
                                     bool* p_config_updated);
-static bool a2dp_sbc_read_feeding(void);
+static bool a2dp_sbc_read_feeding(uint32_t* bytes);
 static void a2dp_sbc_encode_frames(uint8_t nb_frame);
 static void a2dp_sbc_get_num_frame_iteration(uint8_t* num_of_iterations,
                                              uint8_t* num_of_frames,
@@ -529,8 +529,11 @@ static void a2dp_sbc_encode_frames(uint8_t nb_frame) {
       p_encoder_params->s16NumOfSubBands * p_encoder_params->s16NumOfBlocks;
 
   uint8_t last_frame_len = 0;
+
   while (nb_frame) {
     BT_HDR* p_buf = (BT_HDR*)osi_malloc(A2DP_SBC_BUFFER_SIZE);
+    uint32_t bytes_read = 0;
+
     p_buf->offset = A2DP_SBC_OFFSET;
     p_buf->len = 0;
     p_buf->layer_specific = 0;
@@ -540,11 +543,11 @@ static void a2dp_sbc_encode_frames(uint8_t nb_frame) {
       /* Fill allocated buffer with 0 */
       memset(a2dp_sbc_encoder_cb.pcmBuffer, 0,
              blocm_x_subband * p_encoder_params->s16NumOfChannels);
-
       //
       // Read the PCM data and encode it. If necessary, upsample the data.
       //
-      if (a2dp_sbc_read_feeding()) {
+      uint32_t num_bytes = 0;
+      if (a2dp_sbc_read_feeding(&num_bytes)) {
         uint8_t* output = (uint8_t*)(p_buf + 1) + p_buf->offset + p_buf->len;
         int16_t* input = a2dp_sbc_encoder_cb.pcmBuffer;
         uint16_t output_len = SBC_Encode(p_encoder_params, input, output);
@@ -554,6 +557,8 @@ static void a2dp_sbc_encode_frames(uint8_t nb_frame) {
         p_buf->len += output_len;
         nb_frame--;
         p_buf->layer_specific++;
+
+        bytes_read += num_bytes;
       } else {
         LOG_WARN(LOG_TAG, "%s: underflow %d, %d", __func__, nb_frame,
                  a2dp_sbc_encoder_cb.feeding_state.aa_feed_residue);
@@ -580,7 +585,9 @@ static void a2dp_sbc_encode_frames(uint8_t nb_frame) {
 
       uint8_t done_nb_frame = remain_nb_frame - nb_frame;
       remain_nb_frame = nb_frame;
-      if (!a2dp_sbc_encoder_cb.enqueue_callback(p_buf, done_nb_frame)) return;
+      if (!a2dp_sbc_encoder_cb.enqueue_callback(p_buf, done_nb_frame,
+                                                bytes_read))
+        return;
     } else {
       a2dp_sbc_encoder_cb.stats.media_read_total_dropped_packets++;
       osi_free(p_buf);
@@ -588,7 +595,7 @@ static void a2dp_sbc_encode_frames(uint8_t nb_frame) {
   }
 }
 
-static bool a2dp_sbc_read_feeding(void) {
+static bool a2dp_sbc_read_feeding(uint32_t* bytes_read) {
   SBC_ENC_PARAMS* p_encoder_params = &a2dp_sbc_encoder_cb.sbc_encoder_params;
   uint16_t blocm_x_subband =
       p_encoder_params->s16NumOfSubBands * p_encoder_params->s16NumOfBlocks;
@@ -639,6 +646,7 @@ static bool a2dp_sbc_read_feeding(void) {
     a2dp_sbc_encoder_cb.stats.media_read_total_actual_read_bytes +=
         nb_byte_read;
 
+    *bytes_read = nb_byte_read;
     if (nb_byte_read != read_size) {
       a2dp_sbc_encoder_cb.feeding_state.aa_feed_residue += nb_byte_read;
       return false;
