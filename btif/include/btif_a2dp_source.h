@@ -24,15 +24,24 @@
 
 #include "bta_av_api.h"
 
-// Initialize and startup the A2DP Source module.
+// Initialize the A2DP Source module.
 // This function should be called by the BTIF state machine prior to using the
 // module.
+bool btif_a2dp_source_init(void);
+
+// Startup the A2DP Source module.
+// This function should be called by the BTIF state machine after
+// btif_a2dp_source_init() to prepare to start streaming.
 bool btif_a2dp_source_startup(void);
 
-// Shutdown and cleanup the A2DP Source module.
-// This function should be called by the BTIF state machine during
-// graceful shutdown and cleanup.
+// Shutdown the A2DP Source module.
+// This function should be called by the BTIF state machine to stop streaming.
 void btif_a2dp_source_shutdown(void);
+
+// Cleanup the A2DP Source module.
+// This function should be called by the BTIF state machine during graceful
+// cleanup.
+void btif_a2dp_source_cleanup(void);
 
 // Check whether the A2DP Source media task is running.
 // Returns true if the A2DP Source media task is running, otherwise false.

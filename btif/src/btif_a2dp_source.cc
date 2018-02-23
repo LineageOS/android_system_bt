@@ -296,8 +296,10 @@ class BtifA2dpSource {
 static BtWorkerThread btif_a2dp_source_thread("btif_a2dp_source_thread");
 static BtifA2dpSource btif_a2dp_source_cb;
 
+static void btif_a2dp_source_init_delayed(void);
 static void btif_a2dp_source_startup_delayed(void);
 static void btif_a2dp_source_shutdown_delayed(void);
+static void btif_a2dp_source_cleanup_delayed(void);
 static void btif_a2dp_source_audio_tx_start_event(void);
 static void btif_a2dp_source_audio_tx_stop_event(void);
 static void btif_a2dp_source_audio_tx_flush_event(void);
@@ -372,6 +374,21 @@ void btif_a2dp_source_accumulate_stats(BtifMediaStats* src,
   src->Reset();
 }
 
+bool btif_a2dp_source_init(void) {
+  // Start A2DP Source media task
+  APPL_TRACE_EVENT("## A2DP SOURCE START MEDIA THREAD ##");
+  btif_a2dp_source_thread.StartUp();
+  APPL_TRACE_EVENT("## A2DP SOURCE MEDIA THREAD STARTED ##");
+
+  btif_a2dp_source_thread.DoInThread(
+      FROM_HERE, base::Bind(&btif_a2dp_source_init_delayed));
+  return true;
+}
+
+static void btif_a2dp_source_init_delayed(void) {
+  // Nothing to do
+}
+
 bool btif_a2dp_source_startup(void) {
   if (btif_a2dp_source_cb.State() != BtifA2dpSource::kStateOff) {
     APPL_TRACE_ERROR("%s: A2DP Source media task already running", __func__);
@@ -381,13 +398,6 @@ bool btif_a2dp_source_startup(void) {
   btif_a2dp_source_cb.Reset();
   btif_a2dp_source_cb.SetState(BtifA2dpSource::kStateStartingUp);
   btif_a2dp_source_cb.tx_audio_queue = fixed_queue_new(SIZE_MAX);
-
-  APPL_TRACE_EVENT("## A2DP SOURCE START MEDIA THREAD ##");
-
-  /* Start A2DP Source media task */
-  btif_a2dp_source_thread.StartUp();
-
-  APPL_TRACE_EVENT("## A2DP SOURCE MEDIA THREAD STARTED ##");
 
   /* Schedule the rest of the startup operations */
   btif_a2dp_source_thread.DoInThread(
@@ -413,12 +423,12 @@ void btif_a2dp_source_shutdown(void) {
   /* Make sure no channels are restarted while shutting down */
   btif_a2dp_source_cb.SetState(BtifA2dpSource::kStateShuttingDown);
 
-  APPL_TRACE_EVENT("## A2DP SOURCE STOP MEDIA THREAD ##");
+  // Stop the timer
+  alarm_free(btif_a2dp_source_cb.media_alarm);
+  btif_a2dp_source_cb.media_alarm = nullptr;
 
-  // Exit the thread
   btif_a2dp_source_thread.DoInThread(
       FROM_HERE, base::Bind(&btif_a2dp_source_shutdown_delayed));
-  btif_a2dp_source_thread.ShutDown();
 }
 
 static void btif_a2dp_source_shutdown_delayed(void) {
@@ -433,6 +443,22 @@ static void btif_a2dp_source_shutdown_delayed(void) {
   btif_a2dp_source_cb.SetState(BtifA2dpSource::kStateOff);
   BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionEnd(
       system_bt_osi::DISCONNECT_REASON_UNKNOWN, 0);
+}
+
+void btif_a2dp_source_cleanup(void) {
+  // Make sure the source is shutdown
+  btif_a2dp_source_shutdown();
+
+  btif_a2dp_source_thread.DoInThread(
+      FROM_HERE, base::Bind(&btif_a2dp_source_cleanup_delayed));
+
+  // Exit the thread
+  APPL_TRACE_EVENT("## A2DP SOURCE STOP MEDIA THREAD ##");
+  btif_a2dp_source_thread.ShutDown();
+}
+
+static void btif_a2dp_source_cleanup_delayed(void) {
+  // Nothing to do
 }
 
 bool btif_a2dp_source_media_task_is_running(void) {
