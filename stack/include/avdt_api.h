@@ -32,7 +32,7 @@
  *  Constants
  ****************************************************************************/
 #ifndef AVDT_VERSION
-#define AVDT_VERSION 0x0102
+#define AVDT_VERSION 0x0103
 #endif
 #define AVDT_VERSION_1_3 0x0103
 

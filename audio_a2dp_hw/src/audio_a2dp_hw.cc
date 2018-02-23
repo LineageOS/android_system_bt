@@ -58,6 +58,13 @@
 #define USEC_PER_SEC 1000000L
 #define SOCK_SEND_TIMEOUT_MS 2000 /* Timeout for sending */
 #define SOCK_RECV_TIMEOUT_MS 5000 /* Timeout for receiving */
+#define SEC_TO_MS 1000
+#define SEC_TO_NS 1000000000
+#define MS_TO_NS 1000000
+#define DELAY_TO_NS 100000
+
+#define MIN_DELAY_MS 100
+#define MAX_DELAY_MS 1000
 
 // set WRITE_POLL_MS to 0 for blocking sockets, nonzero for polled non-blocking
 // sockets
@@ -145,11 +152,14 @@ struct a2dp_stream_in {
  *  Static variables
  *****************************************************************************/
 
+static bool enable_delay_reporting = false;
+
 /*****************************************************************************
  *  Static functions
  *****************************************************************************/
 
 static size_t out_get_buffer_size(const struct audio_stream* stream);
+static uint32_t out_get_latency(const struct audio_stream_out* stream);
 
 /*****************************************************************************
  *  Externs
@@ -729,6 +739,36 @@ static int a2dp_write_output_audio_config(struct a2dp_stream_common* common) {
   return 0;
 }
 
+static int a2dp_get_presentation_position_cmd(struct a2dp_stream_common* common,
+                                              uint64_t* bytes, uint16_t* delay,
+                                              struct timespec* timestamp) {
+  if (a2dp_command(common, A2DP_CTRL_GET_PRESENTATION_POSITION) < 0) {
+    return -1;
+  }
+
+  if (a2dp_ctrl_receive(common, bytes, sizeof(*bytes)) < 0) {
+    return -1;
+  }
+
+  if (a2dp_ctrl_receive(common, delay, sizeof(*delay)) < 0) {
+    return -1;
+  }
+
+  uint32_t seconds;
+  if (a2dp_ctrl_receive(common, &seconds, sizeof(seconds)) < 0) {
+    return -1;
+  }
+
+  uint32_t nsec;
+  if (a2dp_ctrl_receive(common, &nsec, sizeof(nsec)) < 0) {
+    return -1;
+  }
+
+  timestamp->tv_sec = seconds;
+  timestamp->tv_nsec = nsec;
+  return 0;
+}
+
 static void a2dp_open_ctrl_path(struct a2dp_stream_common* common) {
   int i;
 
@@ -803,6 +843,10 @@ static int start_audio_datapath(struct a2dp_stream_common* common) {
     }
   }
   common->state = (a2dp_state_t)AUDIO_A2DP_STATE_STARTED;
+
+  /* check to see if delay reporting is enabled */
+  enable_delay_reporting = delay_reporting_enabled();
+
   return 0;
 
 error:
@@ -1286,17 +1330,44 @@ static int out_get_presentation_position(const struct audio_stream_out* stream,
   FNLOG();
   if (stream == NULL || frames == NULL || timestamp == NULL) return -EINVAL;
 
-  int ret = -EWOULDBLOCK;
   std::lock_guard<std::recursive_mutex> lock(*out->common.mutex);
+
+  // bytes is the total number of bytes sent by the Bluetooth stack to a
+  // remote headset
+  uint64_t bytes = 0;
+
+  // delay_report is the audio delay from the remote headset receiving data to
+  // the headset playing sound in units of 1/10ms
+  uint16_t delay_report = 0;
+
+  // If for some reason getting a delay fails or delay reports are disabled,
+  // default to old delay
+  if (enable_delay_reporting &&
+      a2dp_get_presentation_position_cmd(&out->common, &bytes, &delay_report,
+                                         timestamp) == 0) {
+    uint64_t delay_ns = delay_report * DELAY_TO_NS;
+    if (delay_ns > MIN_DELAY_MS * MS_TO_NS &&
+        delay_ns < MAX_DELAY_MS * MS_TO_NS) {
+      *frames = bytes / audio_stream_out_frame_size(stream);
+
+      timestamp->tv_nsec += delay_ns;
+      if (timestamp->tv_nsec > 1 * SEC_TO_NS) {
+        timestamp->tv_sec++;
+        timestamp->tv_nsec -= SEC_TO_NS;
+      }
+      return 0;
+    }
+  }
+
   uint64_t latency_frames =
       (uint64_t)out_get_latency(stream) * out->common.cfg.rate / 1000;
   if (out->frames_presented >= latency_frames) {
+    clock_gettime(CLOCK_MONOTONIC, timestamp);
     *frames = out->frames_presented - latency_frames;
-    clock_gettime(CLOCK_MONOTONIC,
-                  timestamp);  // could also be associated with out_write().
-    ret = 0;
+    return 0;
   }
-  return ret;
+
+  return -EWOULDBLOCK;
 }
 
 static int out_get_render_position(const struct audio_stream_out* stream,

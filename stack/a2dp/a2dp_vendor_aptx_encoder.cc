@@ -395,6 +395,7 @@ void a2dp_vendor_aptx_send_frames(uint64_t timestamp_us) {
               framing_params->pcm_reads, framing_params->pcm_bytes_per_read);
   size_t encoded_ptr_index = 0;
   size_t pcm_bytes_encoded = 0;
+  uint32_t bytes_read = 0;
   a2dp_aptx_encoder_cb.stats.media_read_total_expected_packets++;
   a2dp_aptx_encoder_cb.stats.media_read_total_expected_reads_count +=
       framing_params->pcm_reads;
@@ -404,6 +405,7 @@ void a2dp_vendor_aptx_send_frames(uint64_t timestamp_us) {
     uint16_t read_buffer16[A2DP_APTX_MAX_PCM_BYTES_PER_READ / sizeof(uint16_t)];
     size_t pcm_bytes_read = a2dp_aptx_encoder_cb.read_callback(
         (uint8_t*)read_buffer16, framing_params->pcm_bytes_per_read);
+    bytes_read += pcm_bytes_read;
     a2dp_aptx_encoder_cb.stats.media_read_total_actual_read_bytes +=
         pcm_bytes_read;
     if (pcm_bytes_read < framing_params->pcm_bytes_per_read) {
@@ -435,7 +437,7 @@ void a2dp_vendor_aptx_send_frames(uint64_t timestamp_us) {
   a2dp_aptx_encoder_cb.timestamp += rtp_timestamp;
 
   if (p_buf->len > 0) {
-    a2dp_aptx_encoder_cb.enqueue_callback(p_buf, 1);
+    a2dp_aptx_encoder_cb.enqueue_callback(p_buf, 1, bytes_read);
   } else {
     a2dp_aptx_encoder_cb.stats.media_read_total_dropped_packets++;
     osi_free(p_buf);
