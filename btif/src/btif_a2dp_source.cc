@@ -414,10 +414,6 @@ void btif_a2dp_source_shutdown(void) {
 
   APPL_TRACE_EVENT("## A2DP SOURCE STOP MEDIA THREAD ##");
 
-  // Stop the timer
-  alarm_free(btif_a2dp_source_cb.media_alarm);
-  btif_a2dp_source_cb.media_alarm = nullptr;
-
   // Exit the thread
   btif_a2dp_source_thread.DoInThread(
       FROM_HERE, base::Bind(&btif_a2dp_source_shutdown_delayed));
@@ -425,6 +421,10 @@ void btif_a2dp_source_shutdown(void) {
 }
 
 static void btif_a2dp_source_shutdown_delayed(void) {
+  // Stop the timer
+  alarm_free(btif_a2dp_source_cb.media_alarm);
+  btif_a2dp_source_cb.media_alarm = nullptr;
+
   btif_a2dp_control_cleanup();
   fixed_queue_free(btif_a2dp_source_cb.tx_audio_queue, nullptr);
   btif_a2dp_source_cb.tx_audio_queue = nullptr;
