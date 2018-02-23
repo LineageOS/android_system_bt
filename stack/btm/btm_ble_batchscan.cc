@@ -496,8 +496,8 @@ void BTM_BleReadScanReports(tBTM_BLE_BATCH_SCAN_MODE scan_mode,
 
   /* Check only for modes, as scan reports can be called after disabling batch
    * scan */
-  if (read_scan_mode < 0 || (scan_mode != BTM_BLE_BATCH_SCAN_MODE_PASS &&
-                             scan_mode != BTM_BLE_BATCH_SCAN_MODE_ACTI)) {
+  if (scan_mode != BTM_BLE_BATCH_SCAN_MODE_PASS &&
+      scan_mode != BTM_BLE_BATCH_SCAN_MODE_ACTI) {
     BTM_TRACE_ERROR("Illegal read scan params: %d, %d, %d", read_scan_mode,
                     scan_mode, ble_batchscan_cb.cur_state);
     cb.Run(BTM_ILLEGAL_VALUE, 0, 0, {});
