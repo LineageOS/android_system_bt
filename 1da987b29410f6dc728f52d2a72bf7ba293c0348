@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d160cfe5_b6be56d0",
+        "filename": "device/src/controller.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 372,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2018-02-24T18:41:31Z",
+      "side": 1,
+      "message": "Previous comment was to modify the bitmask to remove the flag checked by HCI_ENH_SETUP_SYNCH_CONN_SUPPORTED from being set in the first place.",
+      "range": {
+        "startLine": 372,
+        "startChar": 44,
+        "endLine": 372,
+        "endChar": 62
+      },
+      "revId": "1da987b29410f6dc728f52d2a72bf7ba293c0348",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
