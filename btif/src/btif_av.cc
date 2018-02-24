@@ -822,8 +822,8 @@ bt_status_t BtifAvSource::Init(
   codec_priorities_ = codec_priorities;
   bta_av_co_init(codec_priorities_);
 
-  if (!btif_a2dp_source_startup()) {
-    return BT_STATUS_FAIL;  // Already running
+  if (!btif_a2dp_source_init()) {
+    return BT_STATUS_FAIL;
   }
   btif_enable_service(BTA_A2DP_SOURCE_SERVICE_ID);
   enabled_ = true;
@@ -834,7 +834,7 @@ void BtifAvSource::Cleanup() {
   if (!enabled_) return;
 
   btif_queue_cleanup(UUID_SERVCLASS_AUDIO_SOURCE);
-  do_in_jni_thread(FROM_HERE, base::Bind(&btif_a2dp_source_shutdown));
+  do_in_jni_thread(FROM_HERE, base::Bind(&btif_a2dp_source_cleanup));
 
   btif_disable_service(BTA_A2DP_SOURCE_SERVICE_ID);
   CleanupAllPeers();
@@ -993,8 +993,8 @@ bt_status_t BtifAvSink::Init(btav_sink_callbacks_t* callbacks) {
                              kDefaultMaxConnectedAudioDevices);
   callbacks_ = callbacks;
 
-  if (!btif_a2dp_sink_startup()) {
-    return BT_STATUS_FAIL;  // Already running
+  if (!btif_a2dp_sink_init()) {
+    return BT_STATUS_FAIL;
   }
   btif_enable_service(BTA_A2DP_SINK_SERVICE_ID);
   enabled_ = true;
@@ -1005,7 +1005,7 @@ void BtifAvSink::Cleanup() {
   if (!enabled_) return;
 
   btif_queue_cleanup(UUID_SERVCLASS_AUDIO_SINK);
-  do_in_jni_thread(FROM_HERE, base::Bind(&btif_a2dp_sink_shutdown));
+  do_in_jni_thread(FROM_HERE, base::Bind(&btif_a2dp_sink_cleanup));
 
   btif_disable_service(BTA_A2DP_SINK_SERVICE_ID);
   CleanupAllPeers();
