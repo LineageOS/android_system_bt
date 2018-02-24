@@ -38,15 +38,26 @@ typedef enum {
   BTIF_A2DP_SINK_FOCUS_GRANTED = 1
 } btif_a2dp_sink_focus_state_t;
 
-// Initialize and startup the A2DP Sink module.
+// Initialize the A2DP Sink module.
 // This function should be called by the BTIF state machine prior to using the
 // module.
+bool btif_a2dp_sink_init(void);
+
+// Startup the A2DP Sink module.
+// This function should be called by the BTIF state machine after
+// btif_a2dp_sink_init() to prepare for receiving and processing audio
+// streaming.
 bool btif_a2dp_sink_startup(void);
 
-// Shutdown and cleanup the A2DP Sink module.
-// This function should be called by the BTIF state machine during
-// graceful shutdown and cleanup.
+// Shutdown the A2DP Sink module.
+// This function should be called by the BTIF state machine before
+// btif_a2dp_sink_cleanup() to shutdown the processing of the audio streaming.
 void btif_a2dp_sink_shutdown(void);
+
+// Cleanup the A2DP Sink module.
+// This function should be called by the BTIF state machine during graceful
+// cleanup.
+void btif_a2dp_sink_cleanup(void);
 
 // Get the audio sample rate for the A2DP Sink module.
 tA2DP_SAMPLE_RATE btif_a2dp_sink_get_sample_rate(void);
