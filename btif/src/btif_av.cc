@@ -822,8 +822,8 @@ bt_status_t BtifAvSource::Init(
   codec_priorities_ = codec_priorities;
   bta_av_co_init(codec_priorities_);
 
-  if (!btif_a2dp_source_startup()) {
-    return BT_STATUS_FAIL;  // Already running
+  if (!btif_a2dp_source_init()) {
+    return BT_STATUS_FAIL;
   }
   btif_enable_service(BTA_A2DP_SOURCE_SERVICE_ID);
   enabled_ = true;
@@ -834,7 +834,7 @@ void BtifAvSource::Cleanup() {
   if (!enabled_) return;
 
   btif_queue_cleanup(UUID_SERVCLASS_AUDIO_SOURCE);
-  do_in_jni_thread(FROM_HERE, base::Bind(&btif_a2dp_source_shutdown));
+  do_in_jni_thread(FROM_HERE, base::Bind(&btif_a2dp_source_cleanup));
 
   btif_disable_service(BTA_A2DP_SOURCE_SERVICE_ID);
   CleanupAllPeers();
@@ -993,8 +993,8 @@ bt_status_t BtifAvSink::Init(btav_sink_callbacks_t* callbacks) {
                              kDefaultMaxConnectedAudioDevices);
   callbacks_ = callbacks;
 
-  if (!btif_a2dp_sink_startup()) {
-    return BT_STATUS_FAIL;  // Already running
+  if (!btif_a2dp_sink_init()) {
+    return BT_STATUS_FAIL;
   }
   btif_enable_service(BTA_A2DP_SINK_SERVICE_ID);
   enabled_ = true;
@@ -1005,7 +1005,7 @@ void BtifAvSink::Cleanup() {
   if (!enabled_) return;
 
   btif_queue_cleanup(UUID_SERVCLASS_AUDIO_SINK);
-  do_in_jni_thread(FROM_HERE, base::Bind(&btif_a2dp_sink_shutdown));
+  do_in_jni_thread(FROM_HERE, base::Bind(&btif_a2dp_sink_cleanup));
 
   btif_disable_service(BTA_A2DP_SINK_SERVICE_ID);
   CleanupAllPeers();
@@ -2729,6 +2729,11 @@ bt_status_t btif_av_source_execute_service(bool enable) {
     // while registering.
     tBTA_AV_FEAT features = BTA_AV_FEAT_RCTG | BTA_AV_FEAT_METADATA |
                             BTA_AV_FEAT_VENDOR | BTA_AV_FEAT_NO_SCO_SSPD;
+
+    if (delay_reporting_enabled()) {
+      features |= BTA_AV_FEAT_DELAY_RPT;
+    }
+
 #if (AVRC_ADV_CTRL_INCLUDED == TRUE)
     features |= BTA_AV_FEAT_RCCT | BTA_AV_FEAT_ADV_CTRL | BTA_AV_FEAT_BROWSE;
 #endif
@@ -2981,3 +2986,9 @@ void btif_debug_av_dump(int fd) {
   btif_debug_av_source_dump(fd);
   btif_debug_av_sink_dump(fd);
 }
+
+void btif_av_set_audio_delay(uint16_t delay) {
+  btif_a2dp_control_set_audio_delay(delay);
+}
+
+void btif_av_reset_audio_delay(void) { btif_a2dp_control_reset_audio_delay(); }

@@ -93,8 +93,10 @@ static tBTIF_A2DP_SINK_CB btif_a2dp_sink_cb;
 
 static std::atomic<int> btif_a2dp_sink_state{BTIF_A2DP_SINK_STATE_OFF};
 
+static void btif_a2dp_sink_init_delayed(void* context);
 static void btif_a2dp_sink_startup_delayed(void* context);
 static void btif_a2dp_sink_shutdown_delayed(void* context);
+static void btif_a2dp_sink_cleanup_delayed(void* context);
 static void btif_a2dp_sink_command_ready(fixed_queue_t* queue, void* context);
 static void btif_a2dp_sink_audio_handle_stop_decoding(void);
 static void btif_decode_alarm_cb(void* context);
@@ -123,7 +125,7 @@ UNUSED_ATTR static const char* dump_media_event(uint16_t event) {
   return "UNKNOWN A2DP SINK EVENT";
 }
 
-bool btif_a2dp_sink_startup(void) {
+bool btif_a2dp_sink_init(void) {
   LockGuard lock(g_mutex);
 
   if (btif_a2dp_sink_state != BTIF_A2DP_SINK_STATE_OFF) {
@@ -156,22 +158,48 @@ bool btif_a2dp_sink_startup(void) {
 
   APPL_TRACE_EVENT("## A2DP SINK MEDIA THREAD STARTED ##");
 
-  /* Schedule the rest of the startup operations */
-  thread_post(btif_a2dp_sink_cb.worker_thread, btif_a2dp_sink_startup_delayed,
+  /* Schedule the rest of the operations */
+  thread_post(btif_a2dp_sink_cb.worker_thread, btif_a2dp_sink_init_delayed,
               NULL);
 
   return true;
 }
 
-static void btif_a2dp_sink_startup_delayed(UNUSED_ATTR void* context) {
+static void btif_a2dp_sink_init_delayed(UNUSED_ATTR void* context) {
   raise_priority_a2dp(TASK_HIGH_MEDIA);
   btif_a2dp_sink_state = BTIF_A2DP_SINK_STATE_RUNNING;
 }
 
+bool btif_a2dp_sink_startup(void) {
+  LockGuard lock(g_mutex);
+  thread_post(btif_a2dp_sink_cb.worker_thread, btif_a2dp_sink_startup_delayed,
+              NULL);
+  return true;
+}
+
+static void btif_a2dp_sink_startup_delayed(UNUSED_ATTR void* context) {
+  LockGuard lock(g_mutex);
+  // Nothing to do
+}
+
 void btif_a2dp_sink_shutdown(void) {
+  LockGuard lock(g_mutex);
+  thread_post(btif_a2dp_sink_cb.worker_thread, btif_a2dp_sink_shutdown_delayed,
+              NULL);
+}
+
+static void btif_a2dp_sink_shutdown_delayed(UNUSED_ATTR void* context) {
+  // Nothing to do
+}
+
+void btif_a2dp_sink_cleanup(void) {
   alarm_t* decode_alarm;
   fixed_queue_t* cmd_msg_queue;
   thread_t* worker_thread;
+
+  // Make sure the sink is shutdown
+  btif_a2dp_sink_shutdown();
+
   {
     LockGuard lock(g_mutex);
     if ((btif_a2dp_sink_state == BTIF_A2DP_SINK_STATE_OFF) ||
@@ -198,11 +226,11 @@ void btif_a2dp_sink_shutdown(void) {
 
   // Exit the thread
   fixed_queue_free(cmd_msg_queue, NULL);
-  thread_post(worker_thread, btif_a2dp_sink_shutdown_delayed, NULL);
+  thread_post(worker_thread, btif_a2dp_sink_cleanup_delayed, NULL);
   thread_free(worker_thread);
 }
 
-static void btif_a2dp_sink_shutdown_delayed(UNUSED_ATTR void* context) {
+static void btif_a2dp_sink_cleanup_delayed(UNUSED_ATTR void* context) {
   LockGuard lock(g_mutex);
   fixed_queue_free(btif_a2dp_sink_cb.rx_audio_queue, NULL);
   btif_a2dp_sink_cb.rx_audio_queue = NULL;

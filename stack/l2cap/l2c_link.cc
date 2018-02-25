@@ -397,19 +397,19 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
     if (p_lcb->ccb_queue.p_first_ccb != NULL || p_lcb->p_pending_ccb) {
       L2CAP_TRACE_DEBUG(
           "l2c_link_hci_disc_comp: Restarting pending ACL request");
+      /* Release any held buffers */
+      while (!list_is_empty(p_lcb->link_xmit_data_q)) {
+        BT_HDR* p_buf =
+            static_cast<BT_HDR*>(list_front(p_lcb->link_xmit_data_q));
+        list_remove(p_lcb->link_xmit_data_q, p_buf);
+        osi_free(p_buf);
+      }
       transport = p_lcb->transport;
       /* for LE link, always drop and re-open to ensure to get LE remote feature
        */
       if (p_lcb->transport == BT_TRANSPORT_LE) {
         l2cb.is_ble_connecting = false;
         btm_acl_removed(p_lcb->remote_bd_addr, p_lcb->transport);
-        /* Release any held buffers */
-        BT_HDR* p_buf;
-        while (!list_is_empty(p_lcb->link_xmit_data_q)) {
-          p_buf = static_cast<BT_HDR*>(list_front(p_lcb->link_xmit_data_q));
-          list_remove(p_lcb->link_xmit_data_q, p_buf);
-          osi_free(p_buf);
-        }
       } else {
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
         /* If we are going to re-use the LCB without dropping it, release all
