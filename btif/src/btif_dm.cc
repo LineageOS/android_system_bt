@@ -75,8 +75,7 @@ using bluetooth::Uuid;
  *  Constants & Macros
  *****************************************************************************/
 
-const Uuid UUID_HEARING_AID =
-    Uuid::FromString("7312C48F-22CC-497F-85FD-A0616A3B9E05");
+const Uuid UUID_HEARING_AID = Uuid::FromString("FDF0");
 
 #define COD_MASK 0x07FF
 
