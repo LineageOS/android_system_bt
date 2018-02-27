@@ -428,10 +428,6 @@ void btif_a2dp_source_shutdown(void) {
   /* Make sure no channels are restarted while shutting down */
   btif_a2dp_source_cb.SetState(BtifA2dpSource::kStateShuttingDown);
 
-  // Stop the timer
-  alarm_free(btif_a2dp_source_cb.media_alarm);
-  btif_a2dp_source_cb.media_alarm = nullptr;
-
   btif_a2dp_source_thread.DoInThread(
       FROM_HERE, base::Bind(&btif_a2dp_source_shutdown_delayed));
 }
