@@ -52,8 +52,6 @@
  *****************************************************************************/
 static const std::string kBtifAvSourceServiceName = "Advanced Audio Source";
 static const std::string kBtifAvSinkServiceName = "Advanced Audio Sink";
-static const std::string kBtifAvMaxConnectedAudioDevices =
-    "persist.bluetooth.maxconnectedaudiodevices";
 static constexpr int kDefaultMaxConnectedAudioDevices = 1;
 static constexpr tBTA_AV_HNDL kBtaHandleUnknown = 0;
 
@@ -326,7 +324,7 @@ class BtifAvSource {
 
   btav_source_callbacks_t* Callbacks() { return callbacks_; }
   bt_status_t Init(
-      btav_source_callbacks_t* callbacks,
+      btav_source_callbacks_t* callbacks, int max_connected_audio_devices,
       const std::vector<btav_a2dp_codec_config_t>& codec_priorities);
   void Cleanup();
 
@@ -810,14 +808,14 @@ bool BtifAvPeer::IsStreaming() const {
 BtifAvSource::~BtifAvSource() { CleanupAllPeers(); }
 
 bt_status_t BtifAvSource::Init(
-    btav_source_callbacks_t* callbacks,
+    btav_source_callbacks_t* callbacks, int max_connected_audio_devices,
     const std::vector<btav_a2dp_codec_config_t>& codec_priorities) {
+  LOG_INFO(LOG_TAG, "%s: max_connected_audio_devices=%d", __PRETTY_FUNCTION__,
+           max_connected_audio_devices);
   if (enabled_) return BT_STATUS_SUCCESS;
 
   CleanupAllPeers();
-  max_connected_peers_ =
-      osi_property_get_int32(kBtifAvMaxConnectedAudioDevices.c_str(),
-                             kDefaultMaxConnectedAudioDevices);
+  max_connected_peers_ = max_connected_audio_devices;
   callbacks_ = callbacks;
   codec_priorities_ = codec_priorities;
   bta_av_co_init(codec_priorities_);
@@ -831,6 +829,7 @@ bt_status_t BtifAvSource::Init(
 }
 
 void BtifAvSource::Cleanup() {
+  LOG_INFO(LOG_TAG, "%s", __PRETTY_FUNCTION__);
   if (!enabled_) return;
 
   btif_queue_cleanup(UUID_SERVCLASS_AUDIO_SOURCE);
@@ -985,12 +984,11 @@ void BtifAvSource::BtaHandleRegistered(uint8_t peer_id,
 BtifAvSink::~BtifAvSink() { CleanupAllPeers(); }
 
 bt_status_t BtifAvSink::Init(btav_sink_callbacks_t* callbacks) {
+  LOG_INFO(LOG_TAG, "%s", __PRETTY_FUNCTION__);
   if (enabled_) return BT_STATUS_SUCCESS;
 
   CleanupAllPeers();
-  max_connected_peers_ =
-      osi_property_get_int32(kBtifAvMaxConnectedAudioDevices.c_str(),
-                             kDefaultMaxConnectedAudioDevices);
+  max_connected_peers_ = kDefaultMaxConnectedAudioDevices;
   callbacks_ = callbacks;
 
   if (!btif_a2dp_sink_init()) {
@@ -1002,6 +1000,7 @@ bt_status_t BtifAvSink::Init(btav_sink_callbacks_t* callbacks) {
 }
 
 void BtifAvSink::Cleanup() {
+  LOG_INFO(LOG_TAG, "%s", __PRETTY_FUNCTION__);
   if (!enabled_) return;
 
   btif_queue_cleanup(UUID_SERVCLASS_AUDIO_SINK);
@@ -2399,10 +2398,11 @@ static void bta_av_sink_media_callback(tBTA_AV_EVT event,
 
 // Initializes the AV interface for source mode
 static bt_status_t init_src(
-    btav_source_callbacks_t* callbacks,
+    btav_source_callbacks_t* callbacks, int max_connected_audio_devices,
     std::vector<btav_a2dp_codec_config_t> codec_priorities) {
   BTIF_TRACE_EVENT("%s", __func__);
-  return btif_av_source.Init(callbacks, codec_priorities);
+  return btif_av_source.Init(callbacks, max_connected_audio_devices,
+                             codec_priorities);
 }
 
 // Initializes the AV interface for sink mode
