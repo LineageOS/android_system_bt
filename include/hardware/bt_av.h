@@ -290,6 +290,7 @@ typedef struct {
    * Register the BtAv callbacks.
    */
   bt_status_t (*init)(btav_source_callbacks_t* callbacks,
+                      int max_connected_audio_devices,
                       std::vector<btav_a2dp_codec_config_t> codec_priorities);
 
   /** connect to headset */
