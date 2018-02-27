@@ -126,22 +126,21 @@ UNUSED_ATTR static const char* dump_media_event(uint16_t event) {
 }
 
 bool btif_a2dp_sink_init(void) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   LockGuard lock(g_mutex);
 
   if (btif_a2dp_sink_state != BTIF_A2DP_SINK_STATE_OFF) {
-    APPL_TRACE_ERROR("%s: A2DP Sink media task already running", __func__);
+    LOG_ERROR(LOG_TAG, "%s: A2DP Sink media task already running", __func__);
     return false;
   }
 
   memset(&btif_a2dp_sink_cb, 0, sizeof(btif_a2dp_sink_cb));
   btif_a2dp_sink_state = BTIF_A2DP_SINK_STATE_STARTING_UP;
 
-  APPL_TRACE_EVENT("## A2DP SINK START MEDIA THREAD ##");
-
   /* Start A2DP Sink media task */
   btif_a2dp_sink_cb.worker_thread = thread_new("btif_a2dp_sink_worker_thread");
   if (btif_a2dp_sink_cb.worker_thread == NULL) {
-    APPL_TRACE_ERROR("%s: unable to start up media thread", __func__);
+    LOG_ERROR(LOG_TAG, "%s: unable to start up media thread", __func__);
     btif_a2dp_sink_state = BTIF_A2DP_SINK_STATE_OFF;
     return false;
   }
@@ -156,8 +155,6 @@ bool btif_a2dp_sink_init(void) {
       thread_get_reactor(btif_a2dp_sink_cb.worker_thread),
       btif_a2dp_sink_command_ready, NULL);
 
-  APPL_TRACE_EVENT("## A2DP SINK MEDIA THREAD STARTED ##");
-
   /* Schedule the rest of the operations */
   thread_post(btif_a2dp_sink_cb.worker_thread, btif_a2dp_sink_init_delayed,
               NULL);
@@ -166,11 +163,13 @@ bool btif_a2dp_sink_init(void) {
 }
 
 static void btif_a2dp_sink_init_delayed(UNUSED_ATTR void* context) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   raise_priority_a2dp(TASK_HIGH_MEDIA);
   btif_a2dp_sink_state = BTIF_A2DP_SINK_STATE_RUNNING;
 }
 
 bool btif_a2dp_sink_startup(void) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   LockGuard lock(g_mutex);
   thread_post(btif_a2dp_sink_cb.worker_thread, btif_a2dp_sink_startup_delayed,
               NULL);
@@ -178,21 +177,27 @@ bool btif_a2dp_sink_startup(void) {
 }
 
 static void btif_a2dp_sink_startup_delayed(UNUSED_ATTR void* context) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   LockGuard lock(g_mutex);
   // Nothing to do
 }
 
 void btif_a2dp_sink_shutdown(void) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   LockGuard lock(g_mutex);
   thread_post(btif_a2dp_sink_cb.worker_thread, btif_a2dp_sink_shutdown_delayed,
               NULL);
 }
 
 static void btif_a2dp_sink_shutdown_delayed(UNUSED_ATTR void* context) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
+  LockGuard lock(g_mutex);
   // Nothing to do
 }
 
 void btif_a2dp_sink_cleanup(void) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
+
   alarm_t* decode_alarm;
   fixed_queue_t* cmd_msg_queue;
   thread_t* worker_thread;
@@ -206,10 +211,8 @@ void btif_a2dp_sink_cleanup(void) {
         (btif_a2dp_sink_state == BTIF_A2DP_SINK_STATE_SHUTTING_DOWN)) {
       return;
     }
-    /* Make sure no channels are restarted while shutting down */
+    // Make sure no channels are restarted while shutting down
     btif_a2dp_sink_state = BTIF_A2DP_SINK_STATE_SHUTTING_DOWN;
-
-    APPL_TRACE_EVENT("## A2DP SINK STOP MEDIA THREAD ##");
 
     decode_alarm = btif_a2dp_sink_cb.decode_alarm;
     btif_a2dp_sink_cb.decode_alarm = NULL;
@@ -231,10 +234,11 @@ void btif_a2dp_sink_cleanup(void) {
 }
 
 static void btif_a2dp_sink_cleanup_delayed(UNUSED_ATTR void* context) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   LockGuard lock(g_mutex);
+
   fixed_queue_free(btif_a2dp_sink_cb.rx_audio_queue, NULL);
   btif_a2dp_sink_cb.rx_audio_queue = NULL;
-
   btif_a2dp_sink_state = BTIF_A2DP_SINK_STATE_OFF;
 }
 
@@ -273,7 +277,7 @@ static void btif_a2dp_sink_command_ready(fixed_queue_t* queue,
       btif_a2dp_sink_audio_rx_flush_event();
       break;
     default:
-      APPL_TRACE_ERROR("ERROR in %s unknown event %d", __func__, p_msg->event);
+      LOG_ERROR(LOG_TAG, "%s: unknown event %d", __func__, p_msg->event);
       break;
   }
 
@@ -282,6 +286,7 @@ static void btif_a2dp_sink_command_ready(fixed_queue_t* queue,
 }
 
 void btif_a2dp_sink_update_decoder(const uint8_t* p_codec_info) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   tBTIF_MEDIA_SINK_DECODER_UPDATE* p_buf =
       reinterpret_cast<tBTIF_MEDIA_SINK_DECODER_UPDATE*>(
           osi_malloc(sizeof(tBTIF_MEDIA_SINK_DECODER_UPDATE)));
@@ -297,26 +302,26 @@ void btif_a2dp_sink_update_decoder(const uint8_t* p_codec_info) {
 }
 
 void btif_a2dp_sink_on_idle(void) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   if (btif_a2dp_sink_state == BTIF_A2DP_SINK_STATE_OFF) return;
-
   btif_a2dp_sink_audio_handle_stop_decoding();
   btif_a2dp_sink_clear_track_event_req();
-  APPL_TRACE_DEBUG("Stopped BT track");
 }
 
 void btif_a2dp_sink_on_stopped(UNUSED_ATTR tBTA_AV_SUSPEND* p_av_suspend) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   if (btif_a2dp_sink_state == BTIF_A2DP_SINK_STATE_OFF) return;
-
   btif_a2dp_sink_audio_handle_stop_decoding();
 }
 
 void btif_a2dp_sink_on_suspended(UNUSED_ATTR tBTA_AV_SUSPEND* p_av_suspend) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   if (btif_a2dp_sink_state == BTIF_A2DP_SINK_STATE_OFF) return;
-
   btif_a2dp_sink_audio_handle_stop_decoding();
 }
 
 static void btif_a2dp_sink_audio_handle_stop_decoding(void) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   alarm_t* old_alarm;
   {
     LockGuard lock(g_mutex);
@@ -349,8 +354,8 @@ static void btif_decode_alarm_cb(UNUSED_ATTR void* context) {
 }
 
 static void btif_a2dp_sink_clear_track_event(void) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   LockGuard lock(g_mutex);
-  APPL_TRACE_DEBUG("%s", __func__);
 
 #ifndef OS_GENERIC
   BtifAvrcpAudioTrackStop(btif_a2dp_sink_cb.audio_track);
@@ -361,6 +366,7 @@ static void btif_a2dp_sink_clear_track_event(void) {
 
 // Must be called while locked.
 static void btif_a2dp_sink_audio_handle_start_decoding(void) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   if (btif_a2dp_sink_cb.decode_alarm != NULL)
     return;  // Already started decoding
 
@@ -388,13 +394,13 @@ static void btif_a2dp_sink_on_decode_complete(uint8_t* data, uint32_t len) {
 static void btif_a2dp_sink_handle_inc_media(BT_HDR* p_msg) {
   if ((btif_av_get_peer_sep() == AVDT_TSEP_SNK) ||
       (btif_a2dp_sink_cb.rx_flush)) {
-    APPL_TRACE_DEBUG("State Changed happened in this tick");
+    APPL_TRACE_DEBUG("%s: state changed happened in this tick", __func__);
     return;
   }
 
   CHECK(btif_a2dp_sink_cb.decoder_interface);
   if (!btif_a2dp_sink_cb.decoder_interface->decode_packet(p_msg)) {
-    APPL_TRACE_ERROR("%s Decoding failed!", __func__);
+    LOG_ERROR(LOG_TAG, "%s: decoding failed", __func__);
   }
 }
 
@@ -419,42 +425,40 @@ static void btif_a2dp_sink_avk_handle_timer(UNUSED_ATTR void* context) {
     return;
   }
 
-  APPL_TRACE_DEBUG(" Process Frames + ");
-
+  APPL_TRACE_DEBUG("%s: process frames begin", __func__);
   while (true) {
     p_msg = (BT_HDR*)fixed_queue_try_dequeue(btif_a2dp_sink_cb.rx_audio_queue);
     if (p_msg == NULL) {
       break;
     }
-    APPL_TRACE_DEBUG("Number of packets in queue %d",
+    APPL_TRACE_DEBUG("%s: number of packets in queue %zu", __func__,
                      fixed_queue_length(btif_a2dp_sink_cb.rx_audio_queue));
 
     /* Queue packet has less frames */
     btif_a2dp_sink_handle_inc_media(p_msg);
     osi_free(p_msg);
   }
-
-  APPL_TRACE_DEBUG("Process Frames - ");
+  APPL_TRACE_DEBUG("%s: process frames end", __func__);
 }
 
 /* when true media task discards any rx frames */
 void btif_a2dp_sink_set_rx_flush(bool enable) {
-  APPL_TRACE_EVENT("## DROP RX %d ##", enable);
+  LOG_INFO(LOG_TAG, "%s: enable=%s", __func__, (enable) ? "true" : "false");
   LockGuard lock(g_mutex);
 
   btif_a2dp_sink_cb.rx_flush = enable;
 }
 
 static void btif_a2dp_sink_audio_rx_flush_event(void) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   LockGuard lock(g_mutex);
-  /* Flush all received encoded audio buffers */
-  APPL_TRACE_DEBUG("%s", __func__);
-
+  // Flush all received encoded audio buffers
   fixed_queue_flush(btif_a2dp_sink_cb.rx_audio_queue, osi_free);
 }
 
 static void btif_a2dp_sink_decoder_update_event(
     tBTIF_MEDIA_SINK_DECODER_UPDATE* p_buf) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   LockGuard lock(g_mutex);
   APPL_TRACE_DEBUG("%s: p_codec_info[%x:%x:%x:%x:%x:%x]", __func__,
                    p_buf->codec_info[1], p_buf->codec_info[2],
@@ -463,39 +467,39 @@ static void btif_a2dp_sink_decoder_update_event(
 
   int sample_rate = A2DP_GetTrackSampleRate(p_buf->codec_info);
   if (sample_rate == -1) {
-    APPL_TRACE_ERROR("%s: cannot get the track frequency", __func__);
+    LOG_ERROR(LOG_TAG, "%s: cannot get the track frequency", __func__);
     return;
   }
   int channel_count = A2DP_GetTrackChannelCount(p_buf->codec_info);
   if (channel_count == -1) {
-    APPL_TRACE_ERROR("%s: cannot get the channel count", __func__);
+    LOG_ERROR(LOG_TAG, "%s: cannot get the channel count", __func__);
     return;
   }
   int channel_type = A2DP_GetSinkTrackChannelType(p_buf->codec_info);
   if (channel_type == -1) {
-    APPL_TRACE_ERROR("%s: cannot get the Sink channel type", __func__);
+    LOG_ERROR(LOG_TAG, "%s: cannot get the Sink channel type", __func__);
     return;
   }
   btif_a2dp_sink_cb.sample_rate = sample_rate;
   btif_a2dp_sink_cb.channel_count = channel_count;
 
   btif_a2dp_sink_cb.rx_flush = false;
-  APPL_TRACE_DEBUG("%s: Reset to Sink role", __func__);
+  APPL_TRACE_DEBUG("%s: reset to Sink role", __func__);
 
   btif_a2dp_sink_cb.decoder_interface = bta_av_co_get_decoder_interface();
   if (btif_a2dp_sink_cb.decoder_interface == NULL) {
-    APPL_TRACE_ERROR("%s: Cannot stream audio: no source decoder interface",
-                     __func__);
+    LOG_ERROR(LOG_TAG, "%s: cannot stream audio: no source decoder interface",
+              __func__);
     return;
   }
 
   if (!btif_a2dp_sink_cb.decoder_interface->decoder_init(
           btif_a2dp_sink_on_decode_complete)) {
-    APPL_TRACE_ERROR("%s: A2dpSink: Failed to initialize decoder", __func__);
+    LOG_ERROR(LOG_TAG, "%s: failed to initialize decoder", __func__);
     return;
   }
 
-  APPL_TRACE_DEBUG("%s: A2dpSink: create audio track", __func__);
+  APPL_TRACE_DEBUG("%s: create audio track", __func__);
   btif_a2dp_sink_cb.audio_track =
 #ifndef OS_GENERIC
       BtifAvrcpAudioTrackCreate(sample_rate, channel_type);
@@ -503,7 +507,7 @@ static void btif_a2dp_sink_decoder_update_event(
       NULL;
 #endif
   if (btif_a2dp_sink_cb.audio_track == NULL) {
-    APPL_TRACE_ERROR("%s: A2dpSink: Track creation failed", __func__);
+    LOG_ERROR(LOG_TAG, "%s: track creation failed", __func__);
     return;
   }
 }
@@ -538,6 +542,7 @@ uint8_t btif_a2dp_sink_enqueue_buf(BT_HDR* p_pkt) {
 }
 
 void btif_a2dp_sink_audio_rx_flush_req(void) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   if (fixed_queue_is_empty(btif_a2dp_sink_cb.rx_audio_queue)) {
     /* Queue is already empty */
     return;
@@ -553,12 +558,10 @@ void btif_a2dp_sink_debug_dump(UNUSED_ATTR int fd) {
 }
 
 void btif_a2dp_sink_set_focus_state_req(btif_a2dp_sink_focus_state_t state) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   tBTIF_MEDIA_SINK_FOCUS_UPDATE* p_buf =
       reinterpret_cast<tBTIF_MEDIA_SINK_FOCUS_UPDATE*>(
           osi_malloc(sizeof(tBTIF_MEDIA_SINK_FOCUS_UPDATE)));
-
-  APPL_TRACE_EVENT("%s", __func__);
-
   p_buf->focus_state = state;
   p_buf->hdr.event = BTIF_MEDIA_SINK_SET_FOCUS_STATE;
   fixed_queue_enqueue(btif_a2dp_sink_cb.cmd_msg_queue, p_buf);
@@ -566,7 +569,9 @@ void btif_a2dp_sink_set_focus_state_req(btif_a2dp_sink_focus_state_t state) {
 
 static void btif_a2dp_sink_set_focus_state_event(
     btif_a2dp_sink_focus_state_t state) {
+  LOG_INFO(LOG_TAG, "%s: state=%d", __func__, state);
   LockGuard lock(g_mutex);
+
   if (!btif_av_is_connected()) return;
   APPL_TRACE_DEBUG("%s: setting focus state to %d", __func__, state);
   btif_a2dp_sink_cb.rx_focus_state = state;
@@ -579,14 +584,16 @@ static void btif_a2dp_sink_set_focus_state_event(
 }
 
 void btif_a2dp_sink_set_audio_track_gain(float gain) {
-  APPL_TRACE_DEBUG("%s set gain to %f", __func__, gain);
+  LOG_INFO(LOG_TAG, "%s: set gain to %f", __func__, gain);
   LockGuard lock(g_mutex);
+
 #ifndef OS_GENERIC
   BtifAvrcpSetAudioTrackGain(btif_a2dp_sink_cb.audio_track, gain);
 #endif
 }
 
 static void btif_a2dp_sink_clear_track_event_req(void) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   BT_HDR* p_buf = reinterpret_cast<BT_HDR*>(osi_malloc(sizeof(BT_HDR)));
 
   p_buf->event = BTIF_MEDIA_SINK_CLEAR_TRACK;
