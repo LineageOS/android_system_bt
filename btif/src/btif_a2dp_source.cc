@@ -303,8 +303,7 @@ static void btif_a2dp_source_cleanup_delayed(void);
 static void btif_a2dp_source_audio_tx_start_event(void);
 static void btif_a2dp_source_audio_tx_stop_event(void);
 static void btif_a2dp_source_audio_tx_flush_event(void);
-static void btif_a2dp_source_encoder_init_event(
-    const tA2DP_ENCODER_INIT_PEER_PARAMS& peer_params,
+static void btif_a2dp_source_setup_codec_delayed(
     const RawAddress& peer_address);
 static void btif_a2dp_source_encoder_user_config_update_event(
     const RawAddress& peer_address,
@@ -429,10 +428,6 @@ void btif_a2dp_source_shutdown(void) {
   /* Make sure no channels are restarted while shutting down */
   btif_a2dp_source_cb.SetState(BtifA2dpSource::kStateShuttingDown);
 
-  // Stop the timer
-  alarm_free(btif_a2dp_source_cb.media_alarm);
-  btif_a2dp_source_cb.media_alarm = nullptr;
-
   btif_a2dp_source_thread.DoInThread(
       FROM_HERE, base::Bind(&btif_a2dp_source_shutdown_delayed));
 }
@@ -491,45 +486,18 @@ void btif_a2dp_source_setup_codec(const RawAddress& peer_address) {
   // we're using that in frame size calculations now.
   CHECK(CHAR_BIT == 8);
 
-  tA2DP_ENCODER_INIT_PEER_PARAMS peer_params;
-  bta_av_co_get_peer_params(peer_address, &peer_params);
   btif_a2dp_source_thread.DoInThread(
-      FROM_HERE, base::Bind(&btif_a2dp_source_encoder_init_event, peer_params,
-                            peer_address));
+      FROM_HERE,
+      base::Bind(&btif_a2dp_source_setup_codec_delayed, peer_address));
 }
 
-void btif_a2dp_source_start_audio_req(void) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
-
-  btif_a2dp_source_thread.DoInThread(
-      FROM_HERE, base::Bind(&btif_a2dp_source_audio_tx_start_event));
-  btif_a2dp_source_cb.stats.Reset();
-  // Assign session_start_us to 1 when time_get_os_boottime_us() is 0 to
-  // indicate btif_a2dp_source_start_audio_req() has been called
-  btif_a2dp_source_cb.stats.session_start_us = time_get_os_boottime_us();
-  if (btif_a2dp_source_cb.stats.session_start_us == 0) {
-    btif_a2dp_source_cb.stats.session_start_us = 1;
-  }
-  btif_a2dp_source_cb.stats.session_end_us = 0;
-}
-
-void btif_a2dp_source_stop_audio_req(void) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
-
-  btif_a2dp_source_thread.DoInThread(
-      FROM_HERE, base::Bind(&btif_a2dp_source_audio_tx_stop_event));
-
-  btif_a2dp_source_cb.stats.session_end_us = time_get_os_boottime_us();
-  btif_a2dp_source_update_metrics();
-  btif_a2dp_source_accumulate_stats(&btif_a2dp_source_cb.stats,
-                                    &btif_a2dp_source_cb.accumulated_stats);
-}
-
-static void btif_a2dp_source_encoder_init_event(
-    const tA2DP_ENCODER_INIT_PEER_PARAMS& peer_params,
+static void btif_a2dp_source_setup_codec_delayed(
     const RawAddress& peer_address) {
   LOG_INFO(LOG_TAG, "%s: peer_address=%s", __func__,
            peer_address.ToString().c_str());
+
+  tA2DP_ENCODER_INIT_PEER_PARAMS peer_params;
+  bta_av_co_get_peer_params(peer_address, &peer_params);
 
   if (!bta_av_co_set_active_peer(peer_address)) {
     LOG_ERROR(LOG_TAG, "%s: Cannot stream audio: cannot set active peer to %s",
@@ -557,6 +525,33 @@ static void btif_a2dp_source_encoder_init_event(
   // Save a local copy of the encoder_interval_ms
   btif_a2dp_source_cb.encoder_interval_ms =
       btif_a2dp_source_cb.encoder_interface->get_encoder_interval_ms();
+}
+
+void btif_a2dp_source_start_audio_req(void) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
+
+  btif_a2dp_source_thread.DoInThread(
+      FROM_HERE, base::Bind(&btif_a2dp_source_audio_tx_start_event));
+  btif_a2dp_source_cb.stats.Reset();
+  // Assign session_start_us to 1 when time_get_os_boottime_us() is 0 to
+  // indicate btif_a2dp_source_start_audio_req() has been called
+  btif_a2dp_source_cb.stats.session_start_us = time_get_os_boottime_us();
+  if (btif_a2dp_source_cb.stats.session_start_us == 0) {
+    btif_a2dp_source_cb.stats.session_start_us = 1;
+  }
+  btif_a2dp_source_cb.stats.session_end_us = 0;
+}
+
+void btif_a2dp_source_stop_audio_req(void) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
+
+  btif_a2dp_source_thread.DoInThread(
+      FROM_HERE, base::Bind(&btif_a2dp_source_audio_tx_stop_event));
+
+  btif_a2dp_source_cb.stats.session_end_us = time_get_os_boottime_us();
+  btif_a2dp_source_update_metrics();
+  btif_a2dp_source_accumulate_stats(&btif_a2dp_source_cb.stats,
+                                    &btif_a2dp_source_cb.accumulated_stats);
 }
 
 void btif_a2dp_source_encoder_user_config_update_req(
