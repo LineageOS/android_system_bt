@@ -527,7 +527,7 @@ void btif_disable_bluetooth_evt(void) {
 bt_status_t btif_cleanup_bluetooth(void) {
   LOG_INFO(LOG_TAG, "%s entered", __func__);
 
-  BTA_VendorCleanup();
+  do_in_bta_thread(FROM_HERE, base::Bind(&BTA_VendorCleanup));
 
   btif_dm_cleanup();
   btif_jni_disassociate();
