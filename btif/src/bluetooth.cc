@@ -37,6 +37,7 @@
 #include <hardware/bt_av.h>
 #include <hardware/bt_gatt.h>
 #include <hardware/bt_hd.h>
+#include <hardware/bt_hearing_aid.h>
 #include <hardware/bt_hf_client.h>
 #include <hardware/bt_hh.h>
 #include <hardware/bt_hl.h>
@@ -70,6 +71,8 @@
 
 /* Test interface includes */
 #include "mca_api.h"
+
+using bluetooth::hearing_aid::HearingAidInterface;
 
 /*******************************************************************************
  *  Static variables
@@ -109,6 +112,8 @@ extern const btrc_interface_t* btif_rc_get_interface();
 extern const btrc_ctrl_interface_t* btif_rc_ctrl_get_interface();
 /*SDP search client*/
 extern const btsdp_interface_t* btif_sdp_get_interface();
+/*Hearing Aid client*/
+extern HearingAidInterface* btif_hearing_aid_get_interface();
 
 /* List all test interface here */
 extern const btmcap_test_interface_t* stack_mcap_get_interface();
@@ -375,6 +380,8 @@ static const void* get_profile_interface(const char* profile_id) {
   if (is_profile(profile_id, BT_TEST_INTERFACE_MCAP_ID))
     return stack_mcap_get_interface();
 
+  if (is_profile(profile_id, BT_PROFILE_HEARING_AID_ID))
+    return btif_hearing_aid_get_interface();
   return NULL;
 }
 

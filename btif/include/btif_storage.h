@@ -195,6 +195,12 @@ bt_status_t btif_storage_load_bonded_hid_info(void);
  ******************************************************************************/
 bt_status_t btif_storage_remove_hid_info(RawAddress* remote_bd_addr);
 
+/** Loads information about bonded hearing aid devices */
+void btif_storage_load_bonded_hearing_aids();
+
+/** Deletes the bonded hearing aid device info from NVRAM */
+void btif_storage_remove_hearing_aid(const RawAddress& address);
+
 /*******************************************************************************
  *
  * Function         btif_storage_is_retricted_device
