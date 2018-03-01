@@ -22,6 +22,7 @@
 #include "include/bt_target.h"
 #include "stack/btm/btm_int.h"
 #include "stack/include/l2c_api.h"
+#include "stack/smp/p_256_ecc_pp.h"
 #include "stack/smp/smp_int.h"
 #include "utils/include/bt_utils.h"
 
@@ -655,6 +656,17 @@ void smp_process_pairing_public_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   STREAM_TO_ARRAY(p_cb->peer_publ_key.x, p, BT_OCTET32_LEN);
   STREAM_TO_ARRAY(p_cb->peer_publ_key.y, p, BT_OCTET32_LEN);
+
+  Point pt;
+  memcpy(pt.x, p_cb->peer_publ_key.x, BT_OCTET32_LEN);
+  memcpy(pt.y, p_cb->peer_publ_key.y, BT_OCTET32_LEN);
+
+  if (!ECC_ValidatePoint(pt)) {
+    android_errorWriteLog(0x534e4554, "72377774");
+    smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+    return;
+  }
+
   p_cb->flags |= SMP_PAIR_FLAG_HAVE_PEER_PUBL_KEY;
 
   smp_wait_for_both_public_keys(p_cb, NULL);
