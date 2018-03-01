@@ -232,6 +232,20 @@ class BtifAvPeer {
    */
   bool CanBeDeleted() const;
 
+  /**
+   * Check whether the peer is the active one.
+   *
+   * @return true if this peer is the active one
+   */
+  bool IsActivePeer() const { return (PeerAddress() == ActivePeerAddress()); }
+
+  /**
+   * Get the address of the active peer.
+   *
+   * @return the address of the active peer
+   */
+  const RawAddress& ActivePeerAddress() const;
+
   const RawAddress& PeerAddress() const { return peer_address_; }
   bool IsSource() const { return (peer_sep_ == AVDT_TSEP_SRC); }
   bool IsSink() const { return (peer_sep_ == AVDT_TSEP_SNK); }
@@ -800,6 +814,18 @@ bool BtifAvPeer::CanBeDeleted() const {
       (state_machine_.PreviousStateId() != BtifAvStateMachine::kStateInvalid));
 }
 
+const RawAddress& BtifAvPeer::ActivePeerAddress() const {
+  if (IsSource()) {
+    return btif_av_sink.ActivePeer();
+  }
+  if (IsSink()) {
+    return btif_av_source.ActivePeer();
+  }
+  LOG(FATAL) << __PRETTY_FUNCTION__ << ": A2DP peer " << PeerAddress()
+             << " is neither Source nor Sink";
+  return RawAddress::kEmpty;
+}
+
 bool BtifAvPeer::IsConnected() const {
   int state = state_machine_.StateId();
   return ((state == BtifAvStateMachine::kStateOpened) ||
@@ -1175,20 +1201,13 @@ void BtifAvStateMachine::StateIdle::OnEnter() {
   peer_.ClearAllFlags();
 
   // Stop A2DP if this is the active peer
-  RawAddress active_peer = RawAddress::kEmpty;
-  if (peer_.IsSink()) {
-    active_peer = btif_av_source.ActivePeer();
-  } else if (peer_.IsSource()) {
-    active_peer = btif_av_sink.ActivePeer();
-  }
-  if (peer_.PeerAddress() == active_peer || active_peer.IsEmpty()) {
+  if (peer_.IsActivePeer() || peer_.ActivePeerAddress().IsEmpty()) {
     btif_a2dp_on_idle();
   }
 
   // Reset the active peer if this was the active peer and
   // the Idle state was reentered
-  if (peer_.PeerAddress() == active_peer && !active_peer.IsEmpty() &&
-      peer_.CanBeDeleted()) {
+  if (peer_.IsActivePeer() && peer_.CanBeDeleted()) {
     if (peer_.IsSink()) {
       btif_av_source.SetActivePeer(RawAddress::kEmpty);
     } else if (peer_.IsSource()) {
@@ -1710,7 +1729,7 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
       // Remain in Open state if status failed
       if (p_av->start.status != BTA_AV_SUCCESS) return false;
 
-      if (peer_.IsSource()) {
+      if (peer_.IsSource() && peer_.IsActivePeer()) {
         // Remove flush state, ready for streaming
         btif_a2dp_sink_set_rx_flush(false);
       }
@@ -1740,7 +1759,9 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
 
     case BTA_AV_CLOSE_EVT:
       // AVDTP link is closed
-      btif_a2dp_on_stopped(nullptr);
+      if (peer_.IsActivePeer()) {
+        btif_a2dp_on_stopped(nullptr);
+      }
 
       // Inform the application that we are disconnected
       btif_report_connection_state(peer_.PeerAddress(),
@@ -1857,7 +1878,9 @@ bool BtifAvStateMachine::StateStarted::ProcessEvent(uint32_t event,
 
       if (peer_.IsSink()) {
         // Immediately stop transmission of frames while suspend is pending
-        btif_a2dp_source_set_tx_flush(true);
+        if (peer_.IsActivePeer()) {
+          btif_a2dp_source_set_tx_flush(true);
+        }
       } else if (peer_.IsSource()) {
         btif_a2dp_on_stopped(nullptr);
       }
@@ -1898,7 +1921,7 @@ bool BtifAvStateMachine::StateStarted::ProcessEvent(uint32_t event,
       if (p_av->suspend.status != BTA_AV_SUCCESS) {
         peer_.ClearFlags(BtifAvPeer::kFlagLocalSuspendPending);
 
-        if (peer_.IsSink()) {
+        if (peer_.IsSink() && peer_.IsActivePeer()) {
           // Suspend failed, reset back tx flush state
           btif_a2dp_source_set_tx_flush(false);
         }
@@ -1952,7 +1975,9 @@ bool BtifAvStateMachine::StateStarted::ProcessEvent(uint32_t event,
       peer_.SetFlags(BtifAvPeer::kFlagPendingStop);
 
       // AVDTP link is closed
-      btif_a2dp_on_stopped(nullptr);
+      if (peer_.IsActivePeer()) {
+        btif_a2dp_on_stopped(nullptr);
+      }
 
       // Inform the application that we are disconnected
       btif_report_connection_state(peer_.PeerAddress(),
@@ -1986,12 +2011,14 @@ void BtifAvStateMachine::StateClosing::OnEnter() {
   BTIF_TRACE_DEBUG("%s: Peer %s", __PRETTY_FUNCTION__,
                    peer_.PeerAddress().ToString().c_str());
 
-  if (peer_.IsSink()) {
-    // Immediately stop transmission of frames
-    btif_a2dp_source_set_tx_flush(true);
-    // Wait for Audio Flinger to stop A2DP
-  } else if (peer_.IsSource()) {
-    btif_a2dp_sink_set_rx_flush(true);
+  if (peer_.IsActivePeer()) {
+    if (peer_.IsSink()) {
+      // Immediately stop transmission of frames
+      btif_a2dp_source_set_tx_flush(true);
+      // Wait for Audio Flinger to stop A2DP
+    } else if (peer_.IsSource()) {
+      btif_a2dp_sink_set_rx_flush(true);
+    }
   }
 }
 
@@ -2014,7 +2041,9 @@ bool BtifAvStateMachine::StateClosing::ProcessEvent(uint32_t event,
 
     case BTA_AV_STOP_EVT:
     case BTIF_AV_STOP_STREAM_REQ_EVT:
-      btif_a2dp_on_stopped(nullptr);
+      if (peer_.IsActivePeer()) {
+        btif_a2dp_on_stopped(nullptr);
+      }
       break;
 
     case BTA_AV_CLOSE_EVT:
