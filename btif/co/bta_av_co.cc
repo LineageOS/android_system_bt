@@ -185,6 +185,14 @@ class BtaAvCo {
   A2dpCodecConfig* GetActivePeerCurrentCodec();
 
   /**
+   * Get the current codec configuration for a peer.
+   *
+   * @param peer_address the peer address
+   * @return the current codec configuration if found, otherwise nullptr
+   */
+  A2dpCodecConfig* GetPeerCurrentCodec(const RawAddress& peer_address);
+
+  /**
    * Find the peer UUID for a given BTA AV handle.
    *
    * @param bta_av_handle the BTA AV handle to use
@@ -697,6 +705,16 @@ A2dpCodecConfig* BtaAvCo::GetActivePeerCurrentCodec() {
     return nullptr;
   }
   return active_peer_->GetCodecs()->getCurrentCodecConfig();
+}
+
+A2dpCodecConfig* BtaAvCo::GetPeerCurrentCodec(const RawAddress& peer_address) {
+  std::lock_guard<std::recursive_mutex> lock(codec_lock_);
+
+  BtaAvCoPeer* peer = FindPeer(peer_address);
+  if (peer == nullptr || peer->GetCodecs() == nullptr) {
+    return nullptr;
+  }
+  return peer->GetCodecs()->getCurrentCodecConfig();
 }
 
 BtaAvCoPeer* BtaAvCo::FindPeer(const RawAddress& peer_address) {
@@ -1783,6 +1801,11 @@ void bta_av_co_init(
 
 A2dpCodecConfig* bta_av_get_a2dp_current_codec(void) {
   return bta_av_co_cb.GetActivePeerCurrentCodec();
+}
+
+A2dpCodecConfig* bta_av_get_a2dp_peer_current_codec(
+    const RawAddress& peer_address) {
+  return bta_av_co_cb.GetPeerCurrentCodec(peer_address);
 }
 
 bool bta_av_co_audio_init(btav_a2dp_codec_index_t codec_index,
