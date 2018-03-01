@@ -66,8 +66,15 @@ void bta_av_co_init(
     const std::vector<btav_a2dp_codec_config_t>& codec_priorities);
 
 // Gets the current A2DP codec for the active peer.
-// Returns a pointer to the current |A2dpCodec| if valid, otherwise nullptr.
+// Returns a pointer to the current |A2dpCodecConfig| if valid, otherwise
+// nullptr.
 A2dpCodecConfig* bta_av_get_a2dp_current_codec(void);
+
+// Gets the current A2DP codec for a peer identified by |peer_address|.
+// Returns a pointer to the current |A2dpCodecConfig| if valid, otherwise
+// nullptr.
+A2dpCodecConfig* bta_av_get_a2dp_peer_current_codec(
+    const RawAddress& peer_address);
 
 // Dump A2DP codec debug-related information for the A2DP module.
 // |fd| is the file descriptor to use for writing the ASCII formatted
