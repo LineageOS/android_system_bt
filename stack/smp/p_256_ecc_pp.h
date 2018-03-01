@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include <cstdbool>
 #include "p_256_multprecision.h"
 
 typedef struct {
@@ -54,6 +55,8 @@ typedef struct {
 
 extern elliptic_curve_t curve;
 extern elliptic_curve_t curve_p256;
+
+bool ECC_ValidatePoint(const Point& p);
 
 void ECC_PointMult_Bin_NAF(Point* q, Point* p, uint32_t* n, uint32_t keyLength);
 
