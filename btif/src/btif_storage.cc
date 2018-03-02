@@ -40,7 +40,9 @@
 #include <time.h>
 
 #include "bt_common.h"
+#include "bta_closure_api.h"
 #include "bta_hd_api.h"
+#include "bta_hearing_aid_api.h"
 #include "bta_hh_api.h"
 #include "btif_api.h"
 #include "btif_config.h"
@@ -54,6 +56,7 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 
+using base::Bind;
 using bluetooth::Uuid;
 
 /*******************************************************************************
@@ -1351,6 +1354,12 @@ bt_status_t btif_storage_remove_hid_info(RawAddress* remote_bd_addr) {
   btif_config_save();
   return BT_STATUS_SUCCESS;
 }
+
+/** Loads information about bonded hearing aid devices */
+void btif_storage_load_bonded_hearing_aids() {}
+
+/** Deletes the bonded hearing aid device info from NVRAM */
+void btif_storage_remove_hearing_aid(const RawAddress& address) {}
 
 /*******************************************************************************
  *
