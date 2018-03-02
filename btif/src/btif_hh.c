@@ -564,6 +564,7 @@ bt_status_t btif_hh_virtual_unplug(bt_bdaddr_t *bd_addr)
     BTIF_TRACE_DEBUG("%s", __FUNCTION__);
     btif_hh_device_t *p_dev;
     char bd_str[18];
+    int i;
     /* Check if this is not received while hid host service is disabled */
     if (btif_hh_cb.status == BTIF_HH_DISABLED)
     {
@@ -586,7 +587,20 @@ bt_status_t btif_hh_virtual_unplug(bt_bdaddr_t *bd_addr)
     }
     else
     {
-        BTIF_TRACE_ERROR("%s: Error, device %s not opened.", __FUNCTION__, bd_str);
+        BTIF_TRACE_ERROR("%s: Error, device %s not opened, status = %d",
+                          __FUNCTION__, bd_str, btif_hh_cb.status);
+        if ((btif_hh_cb.pending_conn_address.address[0] == bd_addr->address[0]) &&
+            (btif_hh_cb.pending_conn_address.address[1] == bd_addr->address[1]) &&
+            (btif_hh_cb.pending_conn_address.address[2] == bd_addr->address[2]) &&
+            (btif_hh_cb.pending_conn_address.address[3] == bd_addr->address[3]) &&
+            (btif_hh_cb.pending_conn_address.address[4] == bd_addr->address[4]) &&
+            (btif_hh_cb.pending_conn_address.address[5] == bd_addr->address[5]) &&
+           (btif_hh_cb.status == BTIF_HH_DEV_CONNECTING)) {
+              btif_hh_cb.status = (BTIF_HH_STATUS)BTIF_HH_DEV_DISCONNECTED;
+              for (i = 0; i < 6; i++) {
+                  btif_hh_cb.pending_conn_address.address[i] = 0;
+              }
+        }
         return BT_STATUS_FAIL;
     }
 }
