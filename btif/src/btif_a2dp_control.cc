@@ -52,7 +52,7 @@ std::unique_ptr<tUIPC_STATE> a2dp_uipc;
 
 void btif_a2dp_control_init(void) {
   a2dp_uipc = UIPC_Init();
-  UIPC_Open(*a2dp_uipc, UIPC_CH_ID_AV_CTRL, btif_a2dp_ctrl_cb);
+  UIPC_Open(*a2dp_uipc, UIPC_CH_ID_AV_CTRL, btif_a2dp_ctrl_cb, A2DP_CTRL_PATH);
 }
 
 void btif_a2dp_control_cleanup(void) {
@@ -118,7 +118,8 @@ static void btif_a2dp_recv_ctrl_data(void) {
 
       if (btif_av_stream_ready()) {
         /* Setup audio data channel listener */
-        UIPC_Open(*a2dp_uipc, UIPC_CH_ID_AV_AUDIO, btif_a2dp_data_cb);
+        UIPC_Open(*a2dp_uipc, UIPC_CH_ID_AV_AUDIO, btif_a2dp_data_cb,
+                  A2DP_DATA_PATH);
 
         /*
          * Post start event and wait for audio path to open.
@@ -136,7 +137,8 @@ static void btif_a2dp_recv_ctrl_data(void) {
          * Already started, setup audio data channel listener and ACK
          * back immediately.
          */
-        UIPC_Open(*a2dp_uipc, UIPC_CH_ID_AV_AUDIO, btif_a2dp_data_cb);
+        UIPC_Open(*a2dp_uipc, UIPC_CH_ID_AV_AUDIO, btif_a2dp_data_cb,
+                  A2DP_DATA_PATH);
         btif_a2dp_command_ack(A2DP_CTRL_ACK_SUCCESS);
         break;
       }
@@ -310,7 +312,8 @@ static void btif_a2dp_ctrl_cb(UNUSED_ATTR tUIPC_CH_ID ch_id,
     case UIPC_CLOSE_EVT:
       /* restart ctrl server unless we are shutting down */
       if (btif_a2dp_source_media_task_is_running())
-        UIPC_Open(*a2dp_uipc, UIPC_CH_ID_AV_CTRL, btif_a2dp_ctrl_cb);
+        UIPC_Open(*a2dp_uipc, UIPC_CH_ID_AV_CTRL, btif_a2dp_ctrl_cb,
+                  A2DP_CTRL_PATH);
       break;
 
     case UIPC_RX_DATA_READY_EVT:
