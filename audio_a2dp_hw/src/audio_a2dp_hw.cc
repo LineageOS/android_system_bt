@@ -245,6 +245,11 @@ static int skt_connect(const char* path, size_t buffer_sz) {
   INFO("connect to %s (sz %zu)", path, buffer_sz);
 
   skt_fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+  if(skt_fd < 0)
+  {
+    ERROR("failed to create socket");
+    return -1;
+  }
 
   if (osi_socket_local_client_connect(
           skt_fd, path, ANDROID_SOCKET_NAMESPACE_ABSTRACT, SOCK_STREAM) < 0) {
