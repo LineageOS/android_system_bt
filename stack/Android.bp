@@ -214,7 +214,7 @@ cc_test {
         "libbtdevice",
         "libbt-hci",
         "libosi",
-        "libbt-protos",
+        "libbt-protos-lite",
     ],
     whole_static_libs: [
         "libbluetooth-for-tests",
@@ -341,7 +341,7 @@ cc_test {
         "libbluetooth-types",
         "libgmock",
         "libosi",
-        "libbt-protos",
+        "libbt-protos-lite",
     ],
     sanitize: {
         cfi: false,
