@@ -63,11 +63,11 @@ cc_library_shared {
         "libbtdevice",
         "libbtif",
         "libbt-hci",
-        "libbt-protos",
         "libbt-stack",
         "libbt-utils",
         "libbtcore",
         "libosi",
+        "libbt-protos-lite",
     ],
     // Shared library link options.
     // References to global symbols and functions should bind to the library

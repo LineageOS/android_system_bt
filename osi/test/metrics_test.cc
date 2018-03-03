@@ -26,28 +26,30 @@
 
 #include <base/logging.h>
 
+#include "bluetooth/metrics/bluetooth.pb.h"
 #include "osi/include/metrics.h"
 #include "osi/include/time.h"
-#include "src/protos/bluetooth.pb.h"
 
 #define BTM_COD_MAJOR_AUDIO_TEST 0x04
 
 namespace testing {
 
-using clearcut::connectivity::A2DPSession;
-using clearcut::connectivity::BluetoothLog;
-using clearcut::connectivity::BluetoothSession;
-using clearcut::connectivity::BluetoothSession_ConnectionTechnologyType;
-using clearcut::connectivity::BluetoothSession_DisconnectReasonType;
-using clearcut::connectivity::DeviceInfo;
-using clearcut::connectivity::DeviceInfo_DeviceType;
-using clearcut::connectivity::PairEvent;
-using clearcut::connectivity::RFCommSession;
-using clearcut::connectivity::ScanEvent;
-using clearcut::connectivity::ScanEvent_ScanTechnologyType;
-using clearcut::connectivity::ScanEvent_ScanEventType;
-using clearcut::connectivity::WakeEvent;
-using clearcut::connectivity::WakeEvent_WakeEventType;
+using bluetooth::metrics::BluetoothMetricsProto::A2DPSession;
+using bluetooth::metrics::BluetoothMetricsProto::BluetoothLog;
+using bluetooth::metrics::BluetoothMetricsProto::BluetoothSession;
+using bluetooth::metrics::BluetoothMetricsProto::
+    BluetoothSession_ConnectionTechnologyType;
+using bluetooth::metrics::BluetoothMetricsProto::
+    BluetoothSession_DisconnectReasonType;
+using bluetooth::metrics::BluetoothMetricsProto::DeviceInfo;
+using bluetooth::metrics::BluetoothMetricsProto::DeviceInfo_DeviceType;
+using bluetooth::metrics::BluetoothMetricsProto::PairEvent;
+using bluetooth::metrics::BluetoothMetricsProto::RFCommSession;
+using bluetooth::metrics::BluetoothMetricsProto::ScanEvent;
+using bluetooth::metrics::BluetoothMetricsProto::ScanEvent_ScanTechnologyType;
+using bluetooth::metrics::BluetoothMetricsProto::ScanEvent_ScanEventType;
+using bluetooth::metrics::BluetoothMetricsProto::WakeEvent;
+using bluetooth::metrics::BluetoothMetricsProto::WakeEvent_WakeEventType;
 using system_bt_osi::BluetoothMetricsLogger;
 using system_bt_osi::A2dpSessionMetrics;
 

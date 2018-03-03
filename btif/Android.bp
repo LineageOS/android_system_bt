@@ -126,7 +126,7 @@ cc_test {
         "libudrv-uipc",
         "libbluetooth-types",
         "libosi",
-        "libbt-protos",
+        "libbt-protos-lite",
     ],
     whole_static_libs: [
         "libbtif",

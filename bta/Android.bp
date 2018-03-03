@@ -132,7 +132,7 @@ cc_test {
         "libbtcore",
         "libbt-bta",
         "libbluetooth-types",
+        "libbt-protos-lite",
         "libosi",
-        "libbt-protos",
     ],
 }
