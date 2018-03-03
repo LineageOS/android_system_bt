@@ -18,6 +18,8 @@
 #ifndef UIPC_H
 #define UIPC_H
 
+#include <mutex>
+
 #define UIPC_CH_ID_AV_CTRL 0
 #define UIPC_CH_ID_AV_AUDIO 1
 #define UIPC_CH_NUM 2
