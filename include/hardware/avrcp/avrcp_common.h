@@ -16,15 +16,16 @@
 
 #pragma once
 
-#include <base/sys_byteorder.h>
-
 #include <map>
 
-// This file contains the different AVRCP Constants
+#include <base/sys_byteorder.h>
+
 namespace bluetooth {
 namespace avrcp {
 
 constexpr uint32_t BLUETOOTH_COMPANY_ID = 0x001958;
+
+constexpr uint8_t MAX_TRANSACTION_LABEL = 0xF;
 
 enum class CType : uint8_t {
   CONTROL = 0x0,

@@ -1,4 +1,14 @@
 cc_library_headers {
+    name: "avrcp_headers",
+    include_dirs: ["system/bt/internal_include"],
+    export_include_dirs: ["./hardware/avrcp/"],
+    header_libs: ["internal_include_headers"],
+    export_header_lib_headers: ["internal_include_headers"],
+    vendor_available: true,
+    host_supported: true,
+}
+
+cc_library_headers {
     name: "libbluetooth_headers",
     header_libs: [
         "libbluetooth-types-header",

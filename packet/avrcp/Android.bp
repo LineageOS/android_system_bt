@@ -1,6 +1,8 @@
 cc_library_static {
     name: "lib-bt-packets-avrcp",
     defaults: ["libchrome_support_defaults"],
+    header_libs: ["avrcp_headers"],
+    export_header_lib_headers: ["avrcp_headers"],
     export_include_dirs: ["."],
     host_supported: true,
     srcs: [
