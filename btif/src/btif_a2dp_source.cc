@@ -52,6 +52,8 @@
 using system_bt_osi::BluetoothMetricsLogger;
 using system_bt_osi::A2dpSessionMetrics;
 
+extern std::unique_ptr<tUIPC_STATE> a2dp_uipc;
+
 /**
  * The typical runlevel of the tx queue size is ~1 buffer
  * but due to link flow control or thread preemption in lower
@@ -694,13 +696,13 @@ static void btif_a2dp_source_audio_tx_stop_event(void) {
 
   // Keep track of audio data still left in the pipe
   btif_a2dp_control_log_bytes_read(
-      UIPC_Read(UIPC_CH_ID_AV_AUDIO, &event, p_buf, sizeof(p_buf)));
+      UIPC_Read(*a2dp_uipc, UIPC_CH_ID_AV_AUDIO, &event, p_buf, sizeof(p_buf)));
 
   /* Stop the timer first */
   alarm_free(btif_a2dp_source_cb.media_alarm);
   btif_a2dp_source_cb.media_alarm = nullptr;
 
-  UIPC_Close(UIPC_CH_ID_AV_AUDIO, UIPC_USER_A2DP);
+  UIPC_Close(*a2dp_uipc, UIPC_CH_ID_AV_AUDIO);
 
   /*
    * Try to send acknowldegment once the media stream is
@@ -759,7 +761,8 @@ static void btif_a2dp_source_audio_handle_timer(void) {
 
 static uint32_t btif_a2dp_source_read_callback(uint8_t* p_buf, uint32_t len) {
   uint16_t event;
-  uint32_t bytes_read = UIPC_Read(UIPC_CH_ID_AV_AUDIO, &event, p_buf, len);
+  uint32_t bytes_read =
+      UIPC_Read(*a2dp_uipc, UIPC_CH_ID_AV_AUDIO, &event, p_buf, len);
 
   if (bytes_read < len) {
     LOG_WARN(LOG_TAG, "%s: UNDERFLOW: ONLY READ %d BYTES OUT OF %d", __func__,
@@ -869,7 +872,7 @@ static void btif_a2dp_source_audio_tx_flush_event(void) {
       time_get_os_boottime_us();
   fixed_queue_flush(btif_a2dp_source_cb.tx_audio_queue, osi_free);
 
-  UIPC_Ioctl(UIPC_CH_ID_AV_AUDIO, UIPC_REQ_RX_FLUSH, nullptr);
+  UIPC_Ioctl(*a2dp_uipc, UIPC_CH_ID_AV_AUDIO, UIPC_REQ_RX_FLUSH, nullptr);
 }
 
 static bool btif_a2dp_source_audio_tx_flush_req(void) {
