@@ -242,6 +242,9 @@ cc_test {
     srcs: [
         "smp/smp_keys.cc",
         "smp/aes.cc",
+        "smp/p_256_curvepara.cc",
+        "smp/p_256_ecc_pp.cc",
+        "smp/p_256_multprecision.cc",
         "smp/smp_api.cc",
         "smp/smp_main.cc",
         "smp/smp_utils.cc",

@@ -18,7 +18,7 @@
 
 #include <gtest/gtest.h>
 
-#include "audio_a2dp_hw/include/audio_a2dp_hw.h"
+#include "audio_hearing_aid_hw/include/audio_hearing_aid_hw.h"
 
 namespace {
 static uint32_t codec_sample_rate2value(
@@ -101,7 +101,7 @@ TEST_F(AudioA2dpHwTest, test_compute_buffer_size) {
   for (const auto codec_sample_rate : codec_sample_rate_array) {
     for (const auto codec_bits_per_sample : codec_bits_per_sample_array) {
       for (const auto codec_channel_mode : codec_channel_mode_array) {
-        size_t buffer_size = audio_a2dp_hw_stream_compute_buffer_size(
+        size_t buffer_size = audio_ha_hw_stream_compute_buffer_size(
             codec_sample_rate, codec_bits_per_sample, codec_channel_mode);
 
         // Check for invalid input

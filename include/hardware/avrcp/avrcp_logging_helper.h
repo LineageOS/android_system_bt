@@ -23,17 +23,7 @@
 #include <type_traits>
 
 #include "avrcp_common.h"
-
-// We have our own definition of loghex to avoid dependencies
-namespace {
-template <typename T>
-std::string loghex(T x) {
-  std::stringstream tmp;
-  tmp << "0x" << std::internal << std::hex << std::setfill('0')
-      << std::setw(sizeof(T) * 2) << (unsigned int)x;
-  return tmp.str();
-}
-}  // namespace
+#include "bt_trace.h"
 
 namespace bluetooth {
 namespace avrcp {
@@ -53,7 +43,7 @@ inline std::string CTypeText(const CType& type) {
     CASE_RETURN_TEXT(CType::CHANGED);
     CASE_RETURN_TEXT(CType::INTERIM);
     default:
-      return "Unknown CType: " + loghex(type);
+      return "Unknown CType: " + loghex((uint8_t)type);
   }
 }
 
@@ -68,7 +58,7 @@ inline std::string OpcodeText(const Opcode& opcode) {
     CASE_RETURN_TEXT(Opcode::SUBUNIT_INFO);
     CASE_RETURN_TEXT(Opcode::PASS_THROUGH);
     default:
-      return "Unknown Opcode: " + loghex(opcode);
+      return "Unknown Opcode: " + loghex((uint8_t)opcode);
   }
 }
 
@@ -83,10 +73,11 @@ inline std::string CommandPduText(const CommandPdu& pdu) {
     CASE_RETURN_TEXT(CommandPdu::GET_ELEMENT_ATTRIBUTES);
     CASE_RETURN_TEXT(CommandPdu::GET_PLAY_STATUS);
     CASE_RETURN_TEXT(CommandPdu::REGISTER_NOTIFICATION);
+    CASE_RETURN_TEXT(CommandPdu::SET_ABSOLUTE_VOLUME);
     CASE_RETURN_TEXT(CommandPdu::SET_ADDRESSED_PLAYER);
     CASE_RETURN_TEXT(CommandPdu::PLAY_ITEM);
     default:
-      return "Unknown Command PDU: " + loghex(pdu);
+      return "Unknown Command PDU: " + loghex((uint8_t)pdu);
   }
 }
 
@@ -98,7 +89,7 @@ inline std::string PacketTypeText(const PacketType& type) {
   switch (type) {
     CASE_RETURN_TEXT(PacketType::SINGLE);
     default:
-      return "Unknown Packet Type: " + loghex(type);
+      return "Unknown Packet Type: " + loghex((uint8_t)type);
   }
 }
 
@@ -111,7 +102,7 @@ inline std::string CapabilityText(const Capability& cap) {
     CASE_RETURN_TEXT(Capability::COMPANY_ID);
     CASE_RETURN_TEXT(Capability::EVENTS_SUPPORTED);
     default:
-      return "Unknown Capability: " + loghex(cap);
+      return "Unknown Capability: " + loghex((uint8_t)cap);
   }
 }
 
@@ -131,7 +122,7 @@ inline std::string EventText(const Event& event) {
     CASE_RETURN_TEXT(Event::UIDS_CHANGED);
     CASE_RETURN_TEXT(Event::VOLUME_CHANGED);
     default:
-      return "Unknown Event: " + loghex(event);
+      return "Unknown Event: " + loghex((uint8_t)event);
   }
 }
 
@@ -150,7 +141,7 @@ inline std::string AttributeText(const Attribute& attr) {
     CASE_RETURN_TEXT(Attribute::PLAYING_TIME);
     CASE_RETURN_TEXT(Attribute::DEFAULT_COVER_ART);
     default:
-      return "Unknown Attribute Value: " + loghex(attr);
+      return "Unknown Attribute Value: " + loghex((uint32_t)attr);
   }
 }
 
@@ -184,7 +175,7 @@ inline std::string StatusText(const Status& status) {
     CASE_RETURN_TEXT(Status::NO_AVAILABLE_PLAYERS);
     CASE_RETURN_TEXT(Status::ADDRESSED_PLAYER_CHANGED);
     default:
-      return "Unknown Status: " + loghex(status);
+      return "Unknown Status: " + loghex((uint8_t)status);
   }
 }
 
@@ -199,7 +190,7 @@ inline std::string BrowsePduText(const BrowsePdu& pdu) {
     CASE_RETURN_TEXT(BrowsePdu::CHANGE_PATH);
     CASE_RETURN_TEXT(BrowsePdu::GET_ITEM_ATTRIBUTES);
     default:
-      return "Unknown Browse Pdu: " + loghex(pdu);
+      return "Unknown Browse PDU: " + loghex((uint8_t)pdu);
   }
 }
 
@@ -214,7 +205,7 @@ inline std::string ScopeText(const Scope& scope) {
     CASE_RETURN_TEXT(Scope::SEARCH);
     CASE_RETURN_TEXT(Scope::NOW_PLAYING);
     default:
-      return "Unknown Scope: " + loghex(scope);
+      return "Unknown Scope: " + loghex((uint8_t)scope);
   }
 }
 
@@ -227,7 +218,7 @@ inline std::string DirectionText(const Direction& dir) {
     CASE_RETURN_TEXT(Direction::UP);
     CASE_RETURN_TEXT(Direction::DOWN);
     default:
-      return "Unknown Direction: " + loghex(dir);
+      return "Unknown Direction: " + loghex((uint8_t)dir);
   }
 }
 

@@ -66,6 +66,8 @@ cc_library_static {
         "gatt/bta_gatts_api.cc",
         "gatt/bta_gatts_main.cc",
         "gatt/bta_gatts_utils.cc",
+        "hearing_aid/hearing_aid.cc",
+        "hearing_aid/hearing_aid_audio_source.cc",
         "hf_client/bta_hf_client_act.cc",
         "hf_client/bta_hf_client_api.cc",
         "hf_client/bta_hf_client_at.cc",
@@ -106,6 +108,10 @@ cc_library_static {
         "sys/bta_sys_conn.cc",
         "sys/bta_sys_main.cc",
         "sys/utl.cc",
+    ],
+
+    whole_static_libs: [
+        "libaudio-hearing-aid-hw-utils",
     ],
 }
 

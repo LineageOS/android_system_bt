@@ -18,6 +18,8 @@
 #ifndef UIPC_H
 #define UIPC_H
 
+#include <mutex>
+
 #define UIPC_CH_ID_AV_CTRL 0
 #define UIPC_CH_ID_AV_AUDIO 1
 #define UIPC_CH_NUM 2
@@ -37,13 +39,6 @@ typedef enum {
   UIPC_TX_DATA_READY_EVT = 0x0010
 } tUIPC_EVENT;
 
-/* UIPC users */
-typedef enum {
-  UIPC_USER_A2DP = 0,
-  UIPC_USER_HEARING_AID = 1,
-  UIPC_USER_NUM = 2
-} tUIPC_USER;
-
 /*
  * UIPC IOCTL Requests
  */
@@ -62,12 +57,33 @@ typedef void(tUIPC_RCV_CBACK)(
 
 const char* dump_uipc_event(tUIPC_EVENT event);
 
+typedef struct {
+  int srvfd;
+  int fd;
+  int read_poll_tmo_ms;
+  int task_evt_flags; /* event flags pending to be processed in read task */
+  tUIPC_RCV_CBACK* cback;
+} tUIPC_CHAN;
+
+struct tUIPC_STATE {
+  pthread_t tid; /* main thread id */
+  int running;
+  std::recursive_mutex mutex;
+
+  fd_set active_set;
+  fd_set read_set;
+  int max_fd;
+  int signal_fds[2];
+
+  tUIPC_CHAN ch[UIPC_CH_NUM];
+};
+
 /**
  * Initialize UIPC module
  *
  * @param user User ID who uses UIPC
  */
-void UIPC_Init(void*, int user);
+std::unique_ptr<tUIPC_STATE> UIPC_Init();
 
 /**
  * Open a UIPC channel
@@ -76,15 +92,14 @@ void UIPC_Init(void*, int user);
  * @param p_cback Callback handler
  * @return true on success, otherwise false
  */
-bool UIPC_Open(tUIPC_CH_ID ch_id, tUIPC_RCV_CBACK* p_cback);
+bool UIPC_Open(tUIPC_STATE& uipc, tUIPC_CH_ID ch_id, tUIPC_RCV_CBACK* p_cback);
 
 /**
  * Closes a channel in UIPC or the entire UIPC module
  *
  * @param ch_id Channel ID; if ch_id is UIPC_CH_ID_ALL, then cleanup UIPC
- * @param user User ID who uses UIPC
  */
-void UIPC_Close(tUIPC_CH_ID ch_id, int user);
+void UIPC_Close(tUIPC_STATE& uipc, tUIPC_CH_ID ch_id);
 
 /**
  * Send a message over UIPC
@@ -95,8 +110,8 @@ void UIPC_Close(tUIPC_CH_ID ch_id, int user);
  * @param msglen Message length
  * @return true on success, otherwise false
  */
-bool UIPC_Send(tUIPC_CH_ID ch_id, uint16_t msg_evt, const uint8_t* p_buf,
-               uint16_t msglen);
+bool UIPC_Send(tUIPC_STATE& uipc, tUIPC_CH_ID ch_id, uint16_t msg_evt,
+               const uint8_t* p_buf, uint16_t msglen);
 
 /**
  * Read a message from UIPC
@@ -107,8 +122,8 @@ bool UIPC_Send(tUIPC_CH_ID ch_id, uint16_t msg_evt, const uint8_t* p_buf,
  * @param len Bytes to read
  * @return true on success, otherwise false
  */
-uint32_t UIPC_Read(tUIPC_CH_ID ch_id, uint16_t* p_msg_evt, uint8_t* p_buf,
-                   uint32_t len);
+uint32_t UIPC_Read(tUIPC_STATE& uipc, tUIPC_CH_ID ch_id, uint16_t* p_msg_evt,
+                   uint8_t* p_buf, uint32_t len);
 
 /**
  * Control the UIPC parameter
@@ -118,6 +133,7 @@ uint32_t UIPC_Read(tUIPC_CH_ID ch_id, uint16_t* p_msg_evt, uint8_t* p_buf,
  * @param param Optional parameters
  * @return true on success, otherwise false
  */
-bool UIPC_Ioctl(tUIPC_CH_ID ch_id, uint32_t request, void* param);
+bool UIPC_Ioctl(tUIPC_STATE& uipc, tUIPC_CH_ID ch_id, uint32_t request,
+                void* param);
 
 #endif /* UIPC_H */

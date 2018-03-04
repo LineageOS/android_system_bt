@@ -89,7 +89,9 @@ typedef enum {
   BTAV_A2DP_CODEC_SAMPLE_RATE_88200 = 0x1 << 2,
   BTAV_A2DP_CODEC_SAMPLE_RATE_96000 = 0x1 << 3,
   BTAV_A2DP_CODEC_SAMPLE_RATE_176400 = 0x1 << 4,
-  BTAV_A2DP_CODEC_SAMPLE_RATE_192000 = 0x1 << 5
+  BTAV_A2DP_CODEC_SAMPLE_RATE_192000 = 0x1 << 5,
+  BTAV_A2DP_CODEC_SAMPLE_RATE_16000 = 0x1 << 6,
+  BTAV_A2DP_CODEC_SAMPLE_RATE_24000 = 0x1 << 7
 } btav_a2dp_codec_sample_rate_t;
 
 typedef enum {
@@ -178,6 +180,12 @@ typedef struct {
     AppendCapability(sample_rate_str,
                      (sample_rate & BTAV_A2DP_CODEC_SAMPLE_RATE_192000),
                      "192000");
+    AppendCapability(sample_rate_str,
+                     (sample_rate & BTAV_A2DP_CODEC_SAMPLE_RATE_16000),
+                     "16000");
+    AppendCapability(sample_rate_str,
+                     (sample_rate & BTAV_A2DP_CODEC_SAMPLE_RATE_24000),
+                     "24000");
 
     std::string bits_per_sample_str;
     AppendCapability(bits_per_sample_str,
