@@ -174,6 +174,11 @@ static void bta_pan_data_buf_ind_cback(uint16_t handle, const RawAddress& src,
   tBTA_PAN_SCB* p_scb;
   BT_HDR* p_new_buf;
 
+  p_scb = bta_pan_scb_by_handle(handle);
+  if (p_scb == NULL) {
+    return;
+  }
+
   if (sizeof(tBTA_PAN_DATA_PARAMS) > p_buf->offset) {
     /* offset smaller than data structure in front of actual data */
     if (sizeof(BT_HDR) + sizeof(tBTA_PAN_DATA_PARAMS) + p_buf->len >
@@ -181,7 +186,6 @@ static void bta_pan_data_buf_ind_cback(uint16_t handle, const RawAddress& src,
       android_errorWriteLog(0x534e4554, "63146237");
       APPL_TRACE_ERROR("%s: received buffer length too large: %d", __func__,
                        p_buf->len);
-      osi_free(p_buf);
       return;
     }
     p_new_buf = (BT_HDR*)osi_malloc(PAN_BUF_SIZE);
@@ -189,7 +193,6 @@ static void bta_pan_data_buf_ind_cback(uint16_t handle, const RawAddress& src,
            (uint8_t*)(p_buf + 1) + p_buf->offset, p_buf->len);
     p_new_buf->len = p_buf->len;
     p_new_buf->offset = sizeof(tBTA_PAN_DATA_PARAMS);
-    osi_free(p_buf);
   } else {
     p_new_buf = p_buf;
   }
@@ -199,12 +202,6 @@ static void bta_pan_data_buf_ind_cback(uint16_t handle, const RawAddress& src,
   ((tBTA_PAN_DATA_PARAMS*)p_new_buf)->protocol = protocol;
   ((tBTA_PAN_DATA_PARAMS*)p_new_buf)->ext = ext;
   ((tBTA_PAN_DATA_PARAMS*)p_new_buf)->forward = forward;
-
-  p_scb = bta_pan_scb_by_handle(handle);
-  if (p_scb == NULL) {
-    osi_free(p_new_buf);
-    return;
-  }
 
   fixed_queue_enqueue(p_scb->data_queue, p_new_buf);
   BT_HDR* p_event = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
