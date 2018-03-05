@@ -474,6 +474,7 @@ static int ha_read_input_audio_config(struct ha_stream_common* common) {
 
   switch (sample_rate) {
     case 16000:
+    case 24000:
     case 44100:
     case 48000:
       common->cfg.rate = sample_rate;
@@ -563,6 +564,9 @@ static int ha_read_output_audio_config(
       break;
     case BTAV_A2DP_CODEC_SAMPLE_RATE_16000:
       stream_config.rate = 16000;
+      break;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_24000:
+      stream_config.rate = 24000;
       break;
     case BTAV_A2DP_CODEC_SAMPLE_RATE_NONE:
     default:
@@ -669,6 +673,9 @@ static int ha_write_output_audio_config(struct ha_stream_common* common) {
       break;
     case 16000:
       codec_config.sample_rate = BTAV_A2DP_CODEC_SAMPLE_RATE_16000;
+      break;
+    case 24000:
+      codec_config.sample_rate = BTAV_A2DP_CODEC_SAMPLE_RATE_24000;
       break;
     default:
       ERROR("Invalid sample rate: %" PRIu32, common->cfg.rate);
@@ -997,6 +1004,9 @@ size_t audio_ha_hw_stream_compute_buffer_size(
     case BTAV_A2DP_CODEC_SAMPLE_RATE_16000:
       sample_rate = 16000;
       break;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_24000:
+      sample_rate = 24000;
+      break;
     case BTAV_A2DP_CODEC_SAMPLE_RATE_NONE:
     default:
       ERROR("Invalid sample rate: 0x%x", codec_sample_rate);
@@ -1223,6 +1233,10 @@ static char* out_get_parameters(const struct audio_stream* stream,
     if (codec_capability.sample_rate & BTAV_A2DP_CODEC_SAMPLE_RATE_16000) {
       if (!param.empty()) param += "|";
       param += "16000";
+    }
+    if (codec_capability.sample_rate & BTAV_A2DP_CODEC_SAMPLE_RATE_24000) {
+      if (!param.empty()) param += "|";
+      param += "24000";
     }
     if (param.empty()) {
       ERROR("Invalid codec capability sample_rate=0x%x",
