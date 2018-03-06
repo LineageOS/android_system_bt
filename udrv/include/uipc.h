@@ -90,9 +90,11 @@ std::unique_ptr<tUIPC_STATE> UIPC_Init();
  *
  * @param ch_id Channel ID
  * @param p_cback Callback handler
+ * @param socket_path Path to the socket
  * @return true on success, otherwise false
  */
-bool UIPC_Open(tUIPC_STATE& uipc, tUIPC_CH_ID ch_id, tUIPC_RCV_CBACK* p_cback);
+bool UIPC_Open(tUIPC_STATE& uipc, tUIPC_CH_ID ch_id, tUIPC_RCV_CBACK* p_cback,
+               const char* socket_path);
 
 /**
  * Closes a channel in UIPC or the entire UIPC module
