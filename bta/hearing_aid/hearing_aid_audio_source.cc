@@ -115,7 +115,8 @@ void hearing_aid_recv_ctrl_data() {
     case HEARING_AID_CTRL_CMD_START:
       localAudioReceiver->OnAudioResume();
       // timer is restarted in UIPC_Open
-      UIPC_Open(*uipc_hearing_aid, UIPC_CH_ID_AV_AUDIO, hearing_aid_data_cb);
+      UIPC_Open(*uipc_hearing_aid, UIPC_CH_ID_AV_AUDIO, hearing_aid_data_cb,
+                HEARING_AID_DATA_PATH);
       hearing_aid_send_ack(HEARING_AID_CTRL_ACK_SUCCESS);
       break;
 
@@ -229,7 +230,8 @@ void hearing_aid_ctrl_cb(tUIPC_CH_ID, tUIPC_EVENT event) {
     case UIPC_OPEN_EVT:
       break;
     case UIPC_CLOSE_EVT:
-      UIPC_Open(*uipc_hearing_aid, UIPC_CH_ID_AV_CTRL, hearing_aid_ctrl_cb);
+      UIPC_Open(*uipc_hearing_aid, UIPC_CH_ID_AV_CTRL, hearing_aid_ctrl_cb,
+                HEARING_AID_CTRL_PATH);
       break;
     case UIPC_RX_DATA_READY_EVT:
       hearing_aid_recv_ctrl_data();
@@ -254,7 +256,8 @@ void HearingAidAudioSource::Stop() {
 
 void HearingAidAudioSource::Initialize() {
   uipc_hearing_aid = UIPC_Init();
-  UIPC_Open(*uipc_hearing_aid, UIPC_CH_ID_AV_CTRL, hearing_aid_ctrl_cb);
+  UIPC_Open(*uipc_hearing_aid, UIPC_CH_ID_AV_CTRL, hearing_aid_ctrl_cb,
+            HEARING_AID_CTRL_PATH);
 }
 
 void HearingAidAudioSource::CleanUp() {
