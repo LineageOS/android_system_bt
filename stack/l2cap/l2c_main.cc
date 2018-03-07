@@ -121,8 +121,8 @@ void l2c_rcv_acl_data(BT_HDR* p_msg) {
     if (list_length(l2cb.rcv_pending_q) == 1) {
       alarm_set_on_mloop(l2cb.receive_hold_timer, BT_1SEC_TIMEOUT_MS,
                          l2c_receive_hold_timer_timeout, NULL);
-      return;
     }
+    return;
   }
 
   /* Update the buffer header */

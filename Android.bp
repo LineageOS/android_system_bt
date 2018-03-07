@@ -19,4 +19,5 @@ subdirs = [
     "types",
     "udrv",
     "tools",
+    "proto",
 ]
