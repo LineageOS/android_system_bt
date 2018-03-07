@@ -29,31 +29,32 @@
 #include <base/base64.h>
 #include <base/logging.h>
 
+#include "bluetooth/metrics/bluetooth.pb.h"
 #include "osi/include/leaky_bonded_queue.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "osi/include/time.h"
 #include "stack/include/btm_api_types.h"
 
-#include "src/protos/bluetooth.pb.h"
-
 #include "osi/include/metrics.h"
 
 namespace system_bt_osi {
 
-using clearcut::connectivity::A2DPSession;
-using clearcut::connectivity::BluetoothLog;
-using clearcut::connectivity::BluetoothSession;
-using clearcut::connectivity::BluetoothSession_ConnectionTechnologyType;
-using clearcut::connectivity::BluetoothSession_DisconnectReasonType;
-using clearcut::connectivity::DeviceInfo;
-using clearcut::connectivity::DeviceInfo_DeviceType;
-using clearcut::connectivity::PairEvent;
-using clearcut::connectivity::ScanEvent;
-using clearcut::connectivity::ScanEvent_ScanTechnologyType;
-using clearcut::connectivity::ScanEvent_ScanEventType;
-using clearcut::connectivity::WakeEvent;
-using clearcut::connectivity::WakeEvent_WakeEventType;
+using bluetooth::metrics::BluetoothMetricsProto::A2DPSession;
+using bluetooth::metrics::BluetoothMetricsProto::BluetoothLog;
+using bluetooth::metrics::BluetoothMetricsProto::BluetoothSession;
+using bluetooth::metrics::BluetoothMetricsProto::
+    BluetoothSession_ConnectionTechnologyType;
+using bluetooth::metrics::BluetoothMetricsProto::
+    BluetoothSession_DisconnectReasonType;
+using bluetooth::metrics::BluetoothMetricsProto::DeviceInfo;
+using bluetooth::metrics::BluetoothMetricsProto::DeviceInfo_DeviceType;
+using bluetooth::metrics::BluetoothMetricsProto::PairEvent;
+using bluetooth::metrics::BluetoothMetricsProto::ScanEvent;
+using bluetooth::metrics::BluetoothMetricsProto::ScanEvent_ScanTechnologyType;
+using bluetooth::metrics::BluetoothMetricsProto::ScanEvent_ScanEventType;
+using bluetooth::metrics::BluetoothMetricsProto::WakeEvent;
+using bluetooth::metrics::BluetoothMetricsProto::WakeEvent_WakeEventType;
 
 /*
  * Get current OS boot time in millisecond

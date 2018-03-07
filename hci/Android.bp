@@ -73,6 +73,6 @@ cc_test {
         "libosi-AllocationTestHarness",
         "libcutils",
         "libbtcore",
-        "libbt-protos",
+        "libbt-protos-lite",
     ],
 }
