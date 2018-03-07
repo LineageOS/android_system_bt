@@ -2151,17 +2151,21 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   BT_HDR hdr;
   uint8_t policy = HCI_ENABLE_SNIFF_MODE;
   uint8_t cur_role;
+  uint8_t local_tsep = p_scb->seps[p_scb->sep_idx].tsep;
 
-  APPL_TRACE_DEBUG("%s: peer %s handle:%d wait:0x%x, role:0x%x", __func__,
-                   p_scb->peer_addr.ToString().c_str(), p_scb->hndl,
-                   p_scb->wait, p_scb->role);
+  APPL_TRACE_DEBUG("%s: peer %s handle:%d wait:0x%x role:0x%x local_tsep:%d",
+                   __func__, p_scb->peer_addr.ToString().c_str(), p_scb->hndl,
+                   p_scb->wait, p_scb->role, local_tsep);
 
   p_scb->started = true;
-  // The RTP Header marker bit
-  A2dpCodecConfig* codec_config =
-      bta_av_get_a2dp_peer_current_codec(p_scb->peer_addr);
-  CHECK(codec_config != nullptr);
-  p_scb->use_rtp_header_marker_bit = codec_config->useRtpHeaderMarkerBit();
+
+  if (local_tsep == AVDT_TSEP_SRC) {
+    // The RTP Header marker bit for the A2DP Source encoder
+    A2dpCodecConfig* codec_config =
+        bta_av_get_a2dp_peer_current_codec(p_scb->peer_addr);
+    CHECK(codec_config != nullptr);
+    p_scb->use_rtp_header_marker_bit = codec_config->useRtpHeaderMarkerBit();
+  }
 
   if (p_scb->sco_suspend) {
     p_scb->sco_suspend = false;
@@ -2171,7 +2175,7 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   /* for A2DP SINK we do not send get_caps */
   if ((p_scb->avdt_handle == p_scb->seps[p_scb->sep_idx].av_handle) &&
-      (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SNK)) {
+      (local_tsep == AVDT_TSEP_SNK)) {
     p_scb->wait &= ~(BTA_AV_WAIT_ACP_CAPS_ON);
     APPL_TRACE_DEBUG("%s: local SEP type is SNK new wait is 0x%x", __func__,
                      p_scb->wait);
