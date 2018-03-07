@@ -4,6 +4,7 @@ subdirs = [
     "btif",
     "btcore",
     "audio_a2dp_hw",
+    "audio_hearing_aid_hw",
     "hci",
     "utils",
     "device",
