@@ -123,13 +123,8 @@ RegisterNotificationResponseBuilder::MakeAddressedPlayerBuilder(
   std::unique_ptr<RegisterNotificationResponseBuilder> builder(
       new RegisterNotificationResponseBuilder(interim,
                                               Event::ADDRESSED_PLAYER_CHANGED));
-
-  LOG(ERROR) << loghex(player_id);
   builder->data_ = ((uint32_t)player_id) << 16;
-  LOG(ERROR) << loghex(builder->data_);
   builder->data_ |= uid_counter;
-  LOG(ERROR) << loghex(builder->data_);
-
   return builder;
 }
 
@@ -145,12 +140,38 @@ RegisterNotificationResponseBuilder::MakeUidsChangedBuilder(
 
 size_t RegisterNotificationResponseBuilder::size() const {
   size_t data_size = 0;
-  if (event_ == Event::PLAYBACK_STATUS_CHANGED)
-    data_size = 1;
-  else if (event_ == Event::TRACK_CHANGED)
-    data_size = 8;
-  else if (event_ == Event::PLAYBACK_POS_CHANGED)
-    data_size = 4;
+
+  // We specifically avoid having a default case here in order to ensure that
+  // there is an error in case an event isn't handled.
+  switch (event_) {
+    case Event::PLAYBACK_STATUS_CHANGED:
+      data_size = 1;
+      break;
+    case Event::TRACK_CHANGED:
+      data_size = 8;
+      break;
+    case Event::PLAYBACK_POS_CHANGED:
+      data_size = 4;
+      break;
+    case Event::PLAYER_APPLICATION_SETTING_CHANGED:
+      LOG(FATAL) << "Player Application Notification Not Implemented";
+      break;
+    case Event::NOW_PLAYING_CONTENT_CHANGED:
+      data_size = 0;
+      break;
+    case Event::AVAILABLE_PLAYERS_CHANGED:
+      data_size = 0;
+      break;
+    case Event::ADDRESSED_PLAYER_CHANGED:
+      data_size = 4;
+      break;
+    case Event::UIDS_CHANGED:
+      data_size = 2;
+      break;
+    case Event::VOLUME_CHANGED:
+      LOG(FATAL) << "Volume Changed Notification Not Implemented";
+      break;
+  }
 
   return VendorPacket::kMinSize() + 1 + data_size;
 }
@@ -161,15 +182,7 @@ bool RegisterNotificationResponseBuilder::Serialize(
 
   PacketBuilder::PushHeader(pkt);
 
-  size_t data_size = 0;
-  if (event_ == Event::PLAYBACK_STATUS_CHANGED)
-    data_size = 1;
-  else if (event_ == Event::TRACK_CHANGED)
-    data_size = 8;
-  else if (event_ == Event::PLAYBACK_POS_CHANGED)
-    data_size = 4;
-
-  VendorPacketBuilder::PushHeader(pkt, 1 + data_size);
+  VendorPacketBuilder::PushHeader(pkt, size() - VendorPacket::kMinSize());
 
   AddPayloadOctets1(pkt, static_cast<uint8_t>(event_));
   switch (event_) {
@@ -205,9 +218,9 @@ bool RegisterNotificationResponseBuilder::Serialize(
       AddPayloadOctets2(pkt, base::ByteSwap(uid_counter));
       break;
     }
-    default:
+    case Event::VOLUME_CHANGED:
       // TODO (apanicke): Add Volume Changed builder for when we are controller.
-      LOG(FATAL) << "Unhandled event for register notification";
+      LOG(FATAL) << "Volume Changed Notification Not Implemented";
       break;
   }
 
