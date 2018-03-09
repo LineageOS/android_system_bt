@@ -9,6 +9,7 @@ cc_library_static {
     ],
     export_include_dirs: ["./"],
     srcs: [
+        "connection_handler.cc",
         "device.cc",
     ],
     static_libs: [
@@ -28,6 +29,7 @@ cc_test {
         "system/bt/stack/include",
     ],
     srcs: [
+        "tests/avrcp_connection_handler_test.cc",
         "tests/avrcp_device_test.cc",
     ],
     static_libs: [
