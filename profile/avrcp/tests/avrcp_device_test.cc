@@ -24,6 +24,7 @@
 #include <gtest/gtest.h>
 
 #include "avrcp_packet.h"
+#include "avrcp_test_helper.h"
 #include "device.h"
 #include "tests/avrcp/avrcp_test_packets.h"
 #include "tests/packet_test_helper.h"
@@ -41,103 +42,20 @@ using TestBrowsePacket = TestPacketType<BrowsePacket>;
 using ::testing::_;
 using ::testing::MockFunction;
 using ::testing::Mock;
-using ::testing::MakeMatcher;
-using ::testing::Matcher;
-using ::testing::MatcherInterface;
-using ::testing::MatchResultListener;
 using ::testing::NiceMock;
 using ::testing::Return;
 
-ACTION_TEMPLATE(InvokeCb, HAS_1_TEMPLATE_PARAMS(int, k),
-                AND_1_VALUE_PARAMS(input)) {
-  ::testing::get<k>(args).Run(input);
-}
-
-ACTION_TEMPLATE(InvokeCb, HAS_1_TEMPLATE_PARAMS(int, k),
-                AND_2_VALUE_PARAMS(a, b)) {
-  ::testing::get<k>(args).Run(a, b);
-}
-
-ACTION_TEMPLATE(InvokeCb, HAS_1_TEMPLATE_PARAMS(int, k),
-                AND_3_VALUE_PARAMS(a, b, c)) {
-  ::testing::get<k>(args).Run(a, b, c);
-}
-
-class MockMediaInterface : public MediaInterface {
- public:
-  MOCK_METHOD2(SendKeyEvent, void(uint8_t, uint8_t));
-  MOCK_METHOD1(GetSongInfo, void(MediaInterface::SongInfoCallback));
-  MOCK_METHOD1(GetPlayStatus, void(MediaInterface::PlayStatusCallback));
-  MOCK_METHOD1(GetNowPlayingList, void(MediaInterface::NowPlayingCallback));
-  MOCK_METHOD1(GetMediaPlayerList, void(MediaInterface::MediaListCallback));
-  MOCK_METHOD3(GetFolderItems, void(uint16_t, std::string,
-                                    MediaInterface::FolderItemsCallback));
-  MOCK_METHOD2(SetBrowsedPlayer,
-               void(uint16_t, MediaInterface::SetBrowsedPlayerCallback));
-  MOCK_METHOD3(PlayItem, void(uint16_t, bool, std::string));
-  MOCK_METHOD1(SetActiveDevice, void(const RawAddress&));
-  MOCK_METHOD1(RegisterUpdateCallback, void(MediaCallbacks*));
-  MOCK_METHOD1(UnregisterUpdateCallback, void(MediaCallbacks*));
-};
-
-class MockA2dpInterface : public A2dpInterface {
- public:
-  MOCK_METHOD1(event_open, void(const RawAddress&));
-  MOCK_METHOD1(event_close, void(const RawAddress&));
-  MOCK_METHOD0(active_peer, RawAddress());
-};
-
-class MockVolumeInterface : public VolumeInterface {
- public:
-  MOCK_METHOD1(DeviceConnected, void(const RawAddress&));
-  MOCK_METHOD2(DeviceConnected, void(const RawAddress&, VolumeChangedCb));
-  MOCK_METHOD1(DeviceDisconnected, void(const RawAddress&));
-  MOCK_METHOD1(SetVolume, void(int8_t));
-};
-
-class PacketMatcher : public MatcherInterface<const AvrcpResponse&> {
- public:
-  AvrcpResponse pkt_to_compare_to_;
-
-  PacketMatcher(AvrcpResponse&& pkt) { pkt_to_compare_to_ = std::move(pkt); }
-
-  bool MatchAndExplain(const AvrcpResponse& r,
-                       MatchResultListener* listener) const override {
-    auto packet1 = TestAvrcpPacket::Make();
-    r->Serialize(packet1);
-
-    auto packet2 = TestAvrcpPacket::Make();
-    pkt_to_compare_to_->Serialize(packet2);
-
-    if (packet1->GetData() != packet2->GetData()) {
-      *listener << "\nPacket to compare to: \n";
-      *listener << packet2->ToString();
-      *listener << "\nActual packet: \n";
-      *listener << packet1->ToString();
-    }
-
-    return packet1->GetData() == packet2->GetData();
-  }
-
-  void DescribeTo(::std::ostream* os) const override { *os << "Packets match"; }
-};
-
-Matcher<const AvrcpResponse&> matchPacket(AvrcpResponse&& arg) {
-  return MakeMatcher(new PacketMatcher(std::move(arg)));
-}
-
+// TODO (apanicke): All the tests below are just basic positive unit tests.
+// Add more tests to increase code coverage.
 class AvrcpDeviceTest : public ::testing::Test {
  public:
   virtual void SetUp() override {
     // NOTE: We use a wrapper lambda for the MockFunction in order to
     // add a const qualifier to the response. Otherwise the MockFunction
     // type doesn't match the callback type and a compiler error occurs.
-    base::Callback<bool(uint8_t, bool, AvrcpResponse)> cb = base::Bind(
+    base::Callback<void(uint8_t, bool, AvrcpResponse)> cb = base::Bind(
         [](MockFunction<void(uint8_t, bool, const AvrcpResponse&)>* a,
-           uint8_t b, bool c, AvrcpResponse d) -> bool {
-          a->Call(b, c, d);
-          return true;
-        },
+           uint8_t b, bool c, AvrcpResponse d) { a->Call(b, c, d); },
         &response_cb);
 
     // TODO (apanicke): Test setting avrc13 to false once we have full
@@ -163,13 +81,10 @@ class AvrcpDeviceTest : public ::testing::Test {
 };
 
 TEST_F(AvrcpDeviceTest, addressTest) {
-  base::Callback<bool(uint8_t, bool, AvrcpResponse)> cb = base::Bind(
-      [](MockFunction<void(uint8_t, bool, const AvrcpResponse&)>* a, uint8_t b,
-         bool c, AvrcpResponse d) -> bool {
-        a->Call(b, c, d);
-        return true;
-      },
-      &response_cb);
+  base::Callback<void(uint8_t, bool, AvrcpResponse)> cb =
+      base::Bind([](MockFunction<void(uint8_t, bool, const AvrcpResponse&)>* a,
+                    uint8_t b, bool c, AvrcpResponse d) { a->Call(b, c, d); },
+                 &response_cb);
 
   Device device(RawAddress::kAny, true, cb);
   ASSERT_EQ(device.GetAddress(), RawAddress::kAny);
