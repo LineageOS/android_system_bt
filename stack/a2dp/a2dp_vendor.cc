@@ -287,6 +287,32 @@ bool A2DP_VendorCodecEquals(const uint8_t* p_codec_info_a,
   return false;
 }
 
+int A2DP_VendorGetBitRate(const uint8_t* p_codec_info) {
+  uint32_t vendor_id = A2DP_VendorCodecGetVendorId(p_codec_info);
+  uint16_t codec_id = A2DP_VendorCodecGetCodecId(p_codec_info);
+
+  // Check for aptX
+  if (vendor_id == A2DP_APTX_VENDOR_ID &&
+      codec_id == A2DP_APTX_CODEC_ID_BLUETOOTH) {
+    return A2DP_VendorGetBitRateAptx(p_codec_info);
+  }
+
+  // Check for aptX-HD
+  if (vendor_id == A2DP_APTX_HD_VENDOR_ID &&
+      codec_id == A2DP_APTX_HD_CODEC_ID_BLUETOOTH) {
+    return A2DP_VendorGetBitRateAptxHd(p_codec_info);
+  }
+
+  // Check for LDAC
+  if (vendor_id == A2DP_LDAC_VENDOR_ID && codec_id == A2DP_LDAC_CODEC_ID) {
+    return A2DP_VendorGetBitRateLdac(p_codec_info);
+  }
+
+  // Add checks based on <vendor_id, codec_id>
+
+  return -1;
+}
+
 int A2DP_VendorGetTrackSampleRate(const uint8_t* p_codec_info) {
   uint32_t vendor_id = A2DP_VendorCodecGetVendorId(p_codec_info);
   uint16_t codec_id = A2DP_VendorCodecGetCodecId(p_codec_info);

@@ -50,10 +50,12 @@ void btif_a2dp_on_suspended(tBTA_AV_SUSPEND* p_av_suspend);
 
 // Process 'offload start' request from the BTIF state machine to start
 // offloading of the A2DP streaming.
+// |peer_addr| is the peer address.
 // |status| is the processing status of the request prior to this call.
 // The value can be |BTA_AV_SUCCESS| if the processing has been successful
 // so far, or |BTA_AV_FAIL*| if the request has already failed.
-void btif_a2dp_on_offload_started(tBTA_AV_STATUS status);
+void btif_a2dp_on_offload_started(const RawAddress& peer_addr,
+                                  tBTA_AV_STATUS status);
 
 // Dump debug-related information for the A2DP module.
 // |fd| is the file descriptor to use for writing the ASCII formatted

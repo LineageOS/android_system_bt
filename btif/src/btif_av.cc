@@ -34,7 +34,9 @@
 #include "bt_common.h"
 #include "bt_utils.h"
 #include "bta_api.h"
+#include "btif/include/btif_a2dp_source.h"
 #include "btif_a2dp.h"
+#include "btif_a2dp_audio_interface.h"
 #include "btif_a2dp_control.h"
 #include "btif_a2dp_sink.h"
 #include "btif_av_co.h"
@@ -52,6 +54,8 @@
  *****************************************************************************/
 static const std::string kBtifAvSourceServiceName = "Advanced Audio Source";
 static const std::string kBtifAvSinkServiceName = "Advanced Audio Sink";
+static const std::string kBtifAvA2dpOffloadEnable =
+    "persist.bluetooth.a2dp_offload.enable";
 static constexpr int kDefaultMaxConnectedAudioDevices = 1;
 static constexpr tBTA_AV_HNDL kBtaHandleUnknown = 0;
 
@@ -333,6 +337,7 @@ class BtifAvSource {
   BtifAvSource()
       : callbacks_(nullptr),
         enabled_(false),
+        a2dp_offload_enabled_(false),
         max_connected_peers_(kDefaultMaxConnectedAudioDevices) {}
   ~BtifAvSource();
 
@@ -343,6 +348,8 @@ class BtifAvSource {
   void Cleanup();
 
   bool Enabled() const { return enabled_; }
+  bool A2dpOffloadEnabled() const { return a2dp_offload_enabled_; }
+
   BtifAvPeer* FindPeer(const RawAddress& peer_address);
   BtifAvPeer* FindPeerByHandle(tBTA_AV_HNDL bta_handle);
   BtifAvPeer* FindPeerByPeerId(uint8_t peer_id);
@@ -435,6 +442,7 @@ class BtifAvSource {
 
   btav_source_callbacks_t* callbacks_;
   bool enabled_;
+  bool a2dp_offload_enabled_;
   int max_connected_peers_;
   std::map<RawAddress, BtifAvPeer*> peers_;
   RawAddress active_peer_;
@@ -845,9 +853,15 @@ bt_status_t BtifAvSource::Init(
   LOG_INFO(LOG_TAG, "%s: max_connected_audio_devices=%d", __PRETTY_FUNCTION__,
            max_connected_audio_devices);
   if (enabled_) return BT_STATUS_SUCCESS;
-
   CleanupAllPeers();
   max_connected_peers_ = max_connected_audio_devices;
+
+  /* A2DP OFFLOAD */
+  char value[PROPERTY_VALUE_MAX] = {'\0'};
+  osi_property_get(kBtifAvA2dpOffloadEnable.c_str(), value, "false");
+  a2dp_offload_enabled_ = (strcmp(value, "true") == 0);
+  BTIF_TRACE_DEBUG("a2dp_offload.enable = %d", a2dp_offload_enabled_);
+
   callbacks_ = callbacks;
   codec_priorities_ = codec_priorities;
   bta_av_co_init(codec_priorities_);
@@ -922,7 +936,6 @@ BtifAvPeer* BtifAvSource::FindOrCreatePeer(const RawAddress& peer_address,
         __PRETTY_FUNCTION__, peer_address.ToString().c_str());
     return nullptr;
   }
-
   // Get the BTA Handle (if known)
   if (bta_handle == kBtaHandleUnknown) {
     auto it = peer_id2bta_handle_.find(peer_id);
@@ -1435,7 +1448,7 @@ bool BtifAvStateMachine::StateIdle::ProcessEvent(uint32_t event, void* p_data) {
                        __PRETTY_FUNCTION__,
                        peer_.PeerAddress().ToString().c_str(),
                        BtifAvEvent::EventName(event).c_str());
-      btif_a2dp_on_offload_started(BTA_AV_FAIL);
+      btif_a2dp_on_offload_started(peer_.PeerAddress(), BTA_AV_FAIL);
       break;
 
     default:
@@ -1599,7 +1612,7 @@ bool BtifAvStateMachine::StateOpening::ProcessEvent(uint32_t event,
                        __PRETTY_FUNCTION__,
                        peer_.PeerAddress().ToString().c_str(),
                        BtifAvEvent::EventName(event).c_str());
-      btif_a2dp_on_offload_started(BTA_AV_FAIL);
+      btif_a2dp_on_offload_started(peer_.PeerAddress(), BTA_AV_FAIL);
       break;
 
     case BTA_AV_CLOSE_EVT:
@@ -1749,6 +1762,9 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
         BTA_AvCloseRc(peer_.BtaHandle());
       }
 
+      if (btif_av_is_a2dp_offload_enabled()) {
+        btif_a2dp_audio_interface_deinit();
+      }
       // Inform the application that we are disconnecting
       btif_report_connection_state(peer_.PeerAddress(),
                                    BTAV_CONNECTION_STATE_DISCONNECTING);
@@ -1758,6 +1774,9 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
       break;
 
     case BTA_AV_CLOSE_EVT:
+      if (btif_av_is_a2dp_offload_enabled()) {
+        btif_a2dp_audio_interface_deinit();
+      }
       // AVDTP link is closed
       if (peer_.IsActivePeer()) {
         btif_a2dp_on_stopped(nullptr);
@@ -1801,7 +1820,7 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
                        __PRETTY_FUNCTION__,
                        peer_.PeerAddress().ToString().c_str(),
                        BtifAvEvent::EventName(event).c_str());
-      btif_a2dp_on_offload_started(BTA_AV_FAIL);
+      btif_a2dp_on_offload_started(peer_.PeerAddress(), BTA_AV_FAIL);
       break;
 
     case BTIF_AV_AVRCP_REMOTE_PLAY_EVT:
@@ -1899,6 +1918,10 @@ bool BtifAvStateMachine::StateStarted::ProcessEvent(uint32_t event,
         BTA_AvCloseRc(peer_.BtaHandle());
       }
 
+      if (btif_av_is_a2dp_offload_enabled()) {
+        btif_a2dp_audio_interface_deinit();
+      }
+
       // Inform the application that we are disconnecting
       btif_report_connection_state(peer_.PeerAddress(),
                                    BTAV_CONNECTION_STATE_DISCONNECTING);
@@ -1974,6 +1997,9 @@ bool BtifAvStateMachine::StateStarted::ProcessEvent(uint32_t event,
 
       peer_.SetFlags(BtifAvPeer::kFlagPendingStop);
 
+      if (btif_av_is_a2dp_offload_enabled()) {
+        btif_a2dp_audio_interface_deinit();
+      }
       // AVDTP link is closed
       if (peer_.IsActivePeer()) {
         btif_a2dp_on_stopped(nullptr);
@@ -1991,7 +2017,7 @@ bool BtifAvStateMachine::StateStarted::ProcessEvent(uint32_t event,
       break;
 
     case BTA_AV_OFFLOAD_START_RSP_EVT:
-      btif_a2dp_on_offload_started(p_av->status);
+      btif_a2dp_on_offload_started(peer_.PeerAddress(), p_av->status);
       break;
 
       CHECK_RC_EVENT(event, (tBTA_AV*)p_data);
@@ -2069,7 +2095,7 @@ bool BtifAvStateMachine::StateClosing::ProcessEvent(uint32_t event,
                        __PRETTY_FUNCTION__,
                        peer_.PeerAddress().ToString().c_str(),
                        BtifAvEvent::EventName(event).c_str());
-      btif_a2dp_on_offload_started(BTA_AV_FAIL);
+      btif_a2dp_on_offload_started(peer_.PeerAddress(), BTA_AV_FAIL);
       break;
 
     default:
@@ -2647,7 +2673,6 @@ static const btav_sink_interface_t bt_av_sink_interface = {
 RawAddress btif_av_source_active_peer(void) {
   return btif_av_source.ActivePeer();
 }
-
 RawAddress btif_av_sink_active_peer(void) { return btif_av_sink.ActivePeer(); }
 
 bool btif_av_is_sink_enabled(void) { return btif_av_sink.Enabled(); }
@@ -2680,6 +2705,10 @@ void btif_av_stream_suspend(void) {
 void btif_av_stream_start_offload(void) {
   btif_av_source_dispatch_sm_event(btif_av_source_active_peer(),
                                    BTIF_AV_OFFLOAD_START_REQ_EVT);
+}
+
+void btif_av_src_disconnect_sink(const RawAddress& peer_address) {
+  src_disconnect_sink(peer_address);
 }
 
 bool btif_av_stream_ready(void) {
@@ -3037,3 +3066,7 @@ void btif_av_set_audio_delay(uint16_t delay) {
 }
 
 void btif_av_reset_audio_delay(void) { btif_a2dp_control_reset_audio_delay(); }
+
+bool btif_av_is_a2dp_offload_enabled() {
+  return btif_av_source.A2dpOffloadEnabled();
+}

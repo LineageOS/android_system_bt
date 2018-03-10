@@ -33,6 +33,7 @@
 #include "a2dp_vendor.h"
 #include "a2dp_vendor_aptx_encoder.h"
 #include "bt_utils.h"
+#include "btif_av_co.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 
@@ -277,6 +278,13 @@ bool A2DP_VendorCodecEqualsAptx(const uint8_t* p_codec_info_a,
 
   return (aptx_cie_a.sampleRate == aptx_cie_b.sampleRate) &&
          (aptx_cie_a.channelMode == aptx_cie_b.channelMode);
+}
+
+int A2DP_VendorGetBitRateAptx(const uint8_t* p_codec_info) {
+  A2dpCodecConfig* CodecConfig = bta_av_get_a2dp_current_codec();
+  tA2DP_BITS_PER_SAMPLE bits_per_sample = CodecConfig->getAudioBitsPerSample();
+  uint16_t samplerate = A2DP_GetTrackSampleRate(p_codec_info);
+  return (samplerate * bits_per_sample * 2) / 4;
 }
 
 int A2DP_VendorGetTrackSampleRateAptx(const uint8_t* p_codec_info) {
