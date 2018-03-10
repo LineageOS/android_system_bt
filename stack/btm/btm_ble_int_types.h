@@ -85,13 +85,6 @@ inline bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x) {
   return ((x.address)[0] & BLE_RESOLVE_ADDR_MASK) == BLE_RESOLVE_ADDR_MSB;
 }
 
-#define BLE_PUBLIC_ADDR_MSB_MASK 0xC0
-/*  most significant bit, bit7, bit6 is 10 to be public address*/
-#define BLE_PUBLIC_ADDR_MSB 0x80
-inline bool BTM_IS_PUBLIC_BDA(const RawAddress& x) {
-  return ((x.address)[0] & BLE_PUBLIC_ADDR_MSB_MASK) == BLE_PUBLIC_ADDR_MSB;
-}
-
 /* LE scan activity bit mask, continue with LE inquiry bits */
 /* observe is in progress */
 #define BTM_LE_OBSERVE_ACTIVE 0x80
