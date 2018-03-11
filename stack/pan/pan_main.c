@@ -227,33 +227,30 @@ void pan_conn_ind_cb (UINT16 handle,
      * For reference, see Table 1 in PAN Profile v1.0 spec.
      * Note: the remote is the initiator.
      */
-    bool is_valid_interaction = false;
-    switch (remote_uuid->uu.uuid16)
-    {
-        case UUID_SERVCLASS_NAP:
-        case UUID_SERVCLASS_GN:
-            if (local_uuid->uu.uuid16 == UUID_SERVCLASS_PANU)
-                is_valid_interaction = true;
-            break;
-        case UUID_SERVCLASS_PANU:
-            is_valid_interaction = true;
-            break;
+    BOOLEAN is_valid_interaction = FALSE;
+    switch (remote_uuid->uu.uuid16) {
+    case UUID_SERVCLASS_NAP:
+    case UUID_SERVCLASS_GN:
+        if (local_uuid->uu.uuid16 == UUID_SERVCLASS_PANU)
+            is_valid_interaction = TRUE;
+        break;
+    case UUID_SERVCLASS_PANU:
+        is_valid_interaction = TRUE;
+        break;
     }
     /*
      * Explicitly disable connections to the local PANU if the remote is
      * not PANU.
      */
     if ((local_uuid->uu.uuid16 == UUID_SERVCLASS_PANU) &&
-        (remote_uuid->uu.uuid16 != UUID_SERVCLASS_PANU))
-    {
-        is_valid_interaction = false;
+        (remote_uuid->uu.uuid16 != UUID_SERVCLASS_PANU)) {
+        is_valid_interaction = FALSE;
     }
-    if (!is_valid_interaction)
-    {
+    if (!is_valid_interaction) {
         PAN_TRACE_ERROR(
-            "PAN Connection failed because of invalid PAN profile roles "
-            "interaction: Remote UUID 0x%x Local UUID 0x%x",
-            remote_uuid->uu.uuid16, local_uuid->uu.uuid16);
+          "PAN Connection failed because of invalid PAN profile roles "
+          "interaction: Remote UUID 0x%x Local UUID 0x%x",
+          remote_uuid->uu.uuid16, local_uuid->uu.uuid16);
         BNEP_ConnectResp(handle, BNEP_CONN_FAILED_SRC_UUID);
         return;
     }
