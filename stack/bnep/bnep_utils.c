@@ -150,7 +150,8 @@ void bnepu_release_bcb (tBNEP_CONN *p_bcb)
 
     /* Drop any response pointer we may be holding */
     p_bcb->con_state        = BNEP_STATE_IDLE;
-    GKI_freebuf(p_bcb->p_pending_data);
+    if (p_bcb->p_pending_data)
+        GKI_freebuf (p_bcb->p_pending_data);
     p_bcb->p_pending_data   = NULL;
 
     /* Free transmit queue */
@@ -787,14 +788,13 @@ UINT8 *bnep_process_control_packet (tBNEP_CONN *p_bcb, UINT8 *p, UINT16 *rem_len
     UINT8       control_type;
     UINT16      len, ext_len = 0;
 
-    if (p == NULL || rem_len == NULL)
-    {
+    if (p == NULL || rem_len == NULL) {
         if (rem_len != NULL) *rem_len = 0;
         BNEP_TRACE_DEBUG("%s: invalid packet: p = %p rem_len = %p", __func__, p,
                          rem_len);
         return NULL;
     }
-    uint16_t rem_len_orig = *rem_len;
+    UINT16 rem_len_orig = *rem_len;
 
     if (is_ext)
     {
@@ -807,34 +807,31 @@ UINT8 *bnep_process_control_packet (tBNEP_CONN *p_bcb, UINT8 *p, UINT16 *rem_len
     control_type = *p++;
     *rem_len = *rem_len - 1;
 
-    BNEP_TRACE_EVENT(
-        "%s: BNEP processing control packet rem_len %d, is_ext %d, ctrl_type %d",
-        __func__, *rem_len, is_ext, control_type);
+    BNEP_TRACE_EVENT("%s: BNEP processing control packet rem_len %d, is_ext %d, ctrl_type %d",
+                     __func__, *rem_len, is_ext, control_type);
 
     switch (control_type)
     {
     case BNEP_CONTROL_COMMAND_NOT_UNDERSTOOD:
-        if (*rem_len < 1)
-        {
+        if (*rem_len < 1) {
             BNEP_TRACE_ERROR(
-                "%s: Received BNEP_CONTROL_COMMAND_NOT_UNDERSTOOD with bad length",
-                __func__);
+              "%s: Received BNEP_CONTROL_COMMAND_NOT_UNDERSTOOD with bad length",
+              __func__);
             goto bad_packet_length;
         }
         BNEP_TRACE_ERROR(
-              "%s: Received BNEP_CONTROL_COMMAND_NOT_UNDERSTOOD for pkt type: %d",
-              __func__, *p);
+          "%s: Received BNEP_CONTROL_COMMAND_NOT_UNDERSTOOD for pkt type: %d",
+          __func__, *p);
         p++;
         *rem_len = *rem_len - 1;
         break;
 
     case BNEP_SETUP_CONNECTION_REQUEST_MSG:
         len = *p++;
-        if (*rem_len < ((2 * len) + 1))
-        {
+        if (*rem_len < ((2 * len) + 1)) {
             BNEP_TRACE_ERROR(
-                "%s: Received BNEP_SETUP_CONNECTION_REQUEST_MSG with bad length",
-                __func__);
+              "%s: Received BNEP_SETUP_CONNECTION_REQUEST_MSG with bad length",
+              __func__);
             goto bad_packet_length;
         }
         if (!is_ext)
@@ -844,11 +841,10 @@ UINT8 *bnep_process_control_packet (tBNEP_CONN *p_bcb, UINT8 *p, UINT16 *rem_len
         break;
 
     case BNEP_SETUP_CONNECTION_RESPONSE_MSG:
-        if (*rem_len < 2)
-        {
+        if (*rem_len < 2) {
             BNEP_TRACE_ERROR(
-                "%s: Received BNEP_SETUP_CONNECTION_RESPONSE_MSG with bad length",
-                __func__);
+              "%s: Received BNEP_SETUP_CONNECTION_RESPONSE_MSG with bad length",
+              __func__);
             goto bad_packet_length;
         }
         if (!is_ext)
@@ -862,8 +858,8 @@ UINT8 *bnep_process_control_packet (tBNEP_CONN *p_bcb, UINT8 *p, UINT16 *rem_len
         if (*rem_len < (len + 2))
         {
             BNEP_TRACE_ERROR(
-                "%s: Received BNEP_FILTER_NET_TYPE_SET_MSG with bad length",
-                __func__);
+              "%s: Received BNEP_FILTER_NET_TYPE_SET_MSG with bad length",
+              __func__);
             goto bad_packet_length;
         }
         bnepu_process_peer_filter_set (p_bcb, p, len);
@@ -872,11 +868,10 @@ UINT8 *bnep_process_control_packet (tBNEP_CONN *p_bcb, UINT8 *p, UINT16 *rem_len
         break;
 
     case BNEP_FILTER_NET_TYPE_RESPONSE_MSG:
-        if (*rem_len < 2)
-        {
+        if (*rem_len < 2) {
             BNEP_TRACE_ERROR(
-                "%s: Received BNEP_FILTER_NET_TYPE_RESPONSE_MSG with bad length",
-                __func__);
+              "%s: Received BNEP_FILTER_NET_TYPE_RESPONSE_MSG with bad length",
+              __func__);
             goto bad_packet_length;
         }
         bnepu_process_peer_filter_rsp (p_bcb, p);
@@ -889,8 +884,8 @@ UINT8 *bnep_process_control_packet (tBNEP_CONN *p_bcb, UINT8 *p, UINT16 *rem_len
         if (*rem_len < (len + 2))
         {
             BNEP_TRACE_ERROR(
-                "%s: Received BNEP_FILTER_MULTI_ADDR_SET_MSG with bad length",
-                __func__);
+              "%s: Received BNEP_FILTER_MULTI_ADDR_SET_MSG with bad length",
+              __func__);
             goto bad_packet_length;
         }
         bnepu_process_peer_multicast_filter_set (p_bcb, p, len);
@@ -899,11 +894,10 @@ UINT8 *bnep_process_control_packet (tBNEP_CONN *p_bcb, UINT8 *p, UINT16 *rem_len
         break;
 
     case BNEP_FILTER_MULTI_ADDR_RESPONSE_MSG:
-        if (*rem_len < 2)
-        {
+        if (*rem_len < 2) {
             BNEP_TRACE_ERROR(
-                "%s: Received BNEP_FILTER_MULTI_ADDR_RESPONSE_MSG with bad length",
-                __func__);
+              "%s: Received BNEP_FILTER_MULTI_ADDR_RESPONSE_MSG with bad length",
+              __func__);
             goto bad_packet_length;
         }
         bnepu_process_multicast_filter_rsp (p_bcb, p);
@@ -917,8 +911,7 @@ UINT8 *bnep_process_control_packet (tBNEP_CONN *p_bcb, UINT8 *p, UINT16 *rem_len
         bnep_send_command_not_understood (p_bcb, control_type);
         if (is_ext && (ext_len > 0))
         {
-            if (*rem_len < (ext_len - 1))
-            {
+            if (*rem_len < (ext_len - 1)) {
                 goto bad_packet_length;
             }
             p += (ext_len - 1);
