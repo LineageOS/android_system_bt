@@ -37,8 +37,8 @@ void Device::RegisterInterfaces(MediaInterface* media_interface,
                                 A2dpInterface* a2dp_interface,
                                 VolumeInterface* volume_interface) {
   CHECK(media_interface);
+  CHECK(a2dp_interface);
   a2dp_interface_ = a2dp_interface;
-  a2dp_interface_->event_open(address_);
   media_interface_ = media_interface;
   volume_interface_ = volume_interface;
 }
@@ -1027,7 +1027,6 @@ void Device::DeviceDisconnected() {
   // remove these conditionals.
   if (volume_interface_ != nullptr)
     volume_interface_->DeviceDisconnected(GetAddress());
-  if (a2dp_interface_ != nullptr) a2dp_interface_->event_close(address_);
 }
 
 std::ostream& operator<<(std::ostream& out, const Device& d) {
