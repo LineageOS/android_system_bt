@@ -224,4 +224,15 @@ void bta_av_co_audio_delay(tBTA_AV_HNDL bta_av_handle,
 void bta_av_co_audio_update_mtu(tBTA_AV_HNDL bta_av_handle,
                                 const RawAddress& peer_address, uint16_t mtu);
 
+/*******************************************************************************
+ **
+ ** Function         bta_av_co_content_protect_is_active
+ **
+ ** Description     Get the current configuration of content protection
+ **
+ ** Returns          TRUE if the current streaming has CP, FALSE otherwise
+ **
+ ******************************************************************************/
+bool bta_av_co_content_protect_is_active(const RawAddress& peer_address);
+
 #endif /* BTA_AV_CO_H */

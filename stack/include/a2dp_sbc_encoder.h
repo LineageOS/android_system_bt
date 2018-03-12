@@ -60,4 +60,7 @@ period_ms_t a2dp_sbc_get_encoder_interval_ms(void);
 // |timestamp_us| is the current timestamp (in microseconds).
 void a2dp_sbc_send_frames(uint64_t timestamp_us);
 
+// Get SBC bitrate
+// Returns |uint32_t| bitrate in bits per second
+uint32_t a2dp_sbc_get_bitrate();
 #endif  // A2DP_SBC_ENCODER_H

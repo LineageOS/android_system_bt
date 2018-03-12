@@ -130,5 +130,42 @@ TEST(RegisterNotificationResponseBuilderTest, playPositionBuilderTest) {
   ASSERT_EQ(test_packet->GetData(), changed_play_pos_notification);
 }
 
+TEST(RegisterNotificationResponseBuilderTest, nowPlayingBuilderTest) {
+  auto builder =
+      RegisterNotificationResponseBuilder::MakeNowPlayingBuilder(true);
+  ASSERT_EQ(builder->size(), interim_now_playing_notification.size());
+  auto test_packet = TestRegNotifReqPacket::Make();
+  builder->Serialize(test_packet);
+  ASSERT_EQ(test_packet->GetData(), interim_now_playing_notification);
+}
+
+TEST(RegisterNotificationResponseBuilderTest, availablePlayersBuilderTest) {
+  auto builder =
+      RegisterNotificationResponseBuilder::MakeAvailablePlayersBuilder(true);
+  ASSERT_EQ(builder->size(), interim_available_players_notification.size());
+  auto test_packet = TestRegNotifReqPacket::Make();
+  builder->Serialize(test_packet);
+  ASSERT_EQ(test_packet->GetData(), interim_available_players_notification);
+}
+
+TEST(RegisterNotificationResponseBuilderTest, addressedPlayerBuilderTest) {
+  auto builder =
+      RegisterNotificationResponseBuilder::MakeAddressedPlayerBuilder(true, 1,
+                                                                      0x0000);
+  ASSERT_EQ(builder->size(), interim_addressed_player_notification.size());
+  auto test_packet = TestRegNotifReqPacket::Make();
+  builder->Serialize(test_packet);
+  ASSERT_EQ(test_packet->GetData(), interim_addressed_player_notification);
+}
+
+TEST(RegisterNotificationResponseBuilderTest, uidsChangedBuilderTest) {
+  auto builder =
+      RegisterNotificationResponseBuilder::MakeUidsChangedBuilder(true, 0x0000);
+  ASSERT_EQ(builder->size(), interim_uids_notificaiton.size());
+  auto test_packet = TestRegNotifReqPacket::Make();
+  builder->Serialize(test_packet);
+  ASSERT_EQ(test_packet->GetData(), interim_uids_notificaiton);
+}
+
 }  // namespace avrcp
 }  // namespace bluetooth
