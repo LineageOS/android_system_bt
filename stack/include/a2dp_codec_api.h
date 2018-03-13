@@ -36,6 +36,8 @@
 #include "avdt_api.h"
 #include "osi/include/time.h"
 
+class tBT_A2DP_OFFLOAD;
+
 /**
  * Structure used to initialize the A2DP encoder with A2DP peer information
  */
@@ -66,6 +68,16 @@ class A2dpCodecConfig {
 
   // Gets the current priority of the codec.
   btav_a2dp_codec_priority_t codecPriority() const { return codec_priority_; }
+
+  // gets current OTA codec specific config to |p_a2dp_offload->codec_info|.
+  // Returns true if the current codec config is valid and copied,
+  // otherwise false.
+  bool getCodecSpecificConfig(tBT_A2DP_OFFLOAD* p_a2dp_offload);
+
+  // Gets the bitRate for the A2DP codec.
+  // Returns the bitrate of current codec configuration,
+  // or 0 if not configured
+  int getTrackBitRate();
 
   // Copies out the current OTA codec config to |p_codec_info|.
   // Returns true if the current codec config is valid and copied,

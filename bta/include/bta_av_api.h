@@ -154,6 +154,15 @@ typedef uint8_t tBTA_AV_ERR;
 
 typedef uint8_t tBTA_AV_EVT;
 
+typedef enum {
+  BTA_AV_CODEC_TYPE_UNKNOWN = 0x00,
+  BTA_AV_CODEC_TYPE_SBC = 0x01,
+  BTA_AV_CODEC_TYPE_AAC = 0x02,
+  BTA_AV_CODEC_TYPE_APTX = 0x04,
+  BTA_AV_CODEC_TYPE_APTXHD = 0x08,
+  BTA_AV_CODEC_TYPE_LDAC = 0x10
+} tBTA_AV_CODEC_TYPE;
+
 /* Event associated with BTA_AV_ENABLE_EVT */
 typedef struct { tBTA_AV_FEAT features; } tBTA_AV_ENABLE;
 

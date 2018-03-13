@@ -124,7 +124,7 @@ static void a2dp_sbc_get_num_frame_iteration(uint8_t* num_of_iterations,
                                              uint8_t* num_of_frames,
                                              uint64_t timestamp_us);
 static uint8_t calculate_max_frames_per_packet(void);
-static uint16_t a2dp_sbc_source_rate(void);
+static uint16_t a2dp_sbc_source_rate();
 static uint32_t a2dp_sbc_frame_length(void);
 
 bool A2DP_LoadEncoderSbc(void) {
@@ -368,7 +368,7 @@ static void a2dp_sbc_encoder_update(uint16_t peer_mtu,
   LOG_DEBUG(LOG_TAG, "%s: final bit rate %d, final bit pool %d", __func__,
             p_encoder_params->u16BitRate, p_encoder_params->s16BitPool);
 
-  /* Reset entirely the SBC encoder */
+  /* Reset the SBC encoder */
   SBC_Encoder_Init(&a2dp_sbc_encoder_cb.sbc_encoder_params);
   a2dp_sbc_encoder_cb.tx_sbc_frames = calculate_max_frames_per_packet();
 }
@@ -831,7 +831,7 @@ static uint8_t calculate_max_frames_per_packet(void) {
   return result;
 }
 
-static uint16_t a2dp_sbc_source_rate(void) {
+static uint16_t a2dp_sbc_source_rate() {
   uint16_t rate = A2DP_SBC_DEFAULT_BITRATE;
 
   /* restrict bitrate if a2dp link is non-edr */
@@ -899,6 +899,13 @@ static uint32_t a2dp_sbc_frame_length(void) {
   }
   LOG_VERBOSE(LOG_TAG, "%s: calculated frame length: %d", __func__, frame_len);
   return frame_len;
+}
+
+uint32_t a2dp_sbc_get_bitrate() {
+  SBC_ENC_PARAMS* p_encoder_params = &a2dp_sbc_encoder_cb.sbc_encoder_params;
+  LOG_DEBUG(LOG_TAG, "%s: bit rate %d ", __func__,
+            p_encoder_params->u16BitRate);
+  return p_encoder_params->u16BitRate * 1000;
 }
 
 period_ms_t A2dpCodecConfigSbc::encoderIntervalMs() const {
