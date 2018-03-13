@@ -42,6 +42,7 @@
 #include "btif_av_co.h"
 #include "btif_util.h"
 #include "osi/include/osi.h"
+#include "osi/include/properties.h"
 
 // Macro to retrieve the number of elements in a statically allocated array
 #define BTA_AV_CO_NUM_ELEMENTS(__a) (sizeof(__a) / sizeof((__a)[0]))
@@ -461,12 +462,6 @@ class BtaAvCo {
    */
   void DebugDump(int fd);
 
- private:
-  /**
-   * Reset the state.
-   */
-  void Reset();
-
   /**
    * Find the peer entry for a given peer address.
    *
@@ -474,6 +469,12 @@ class BtaAvCo {
    * @return the peer entry if found, otherwise nullptr
    */
   BtaAvCoPeer* FindPeer(const RawAddress& peer_address);
+
+ private:
+  /**
+   * Reset the state.
+   */
+  void Reset();
 
   /**
    * Find the peer entry for a given BTA AV handle.
@@ -624,7 +625,6 @@ static BtaAvCo bta_av_co_cb(kContentProtectEnabled);
 void BtaAvCoPeer::Init(
     const std::vector<btav_a2dp_codec_config_t>& codec_priorities) {
   Reset(bta_av_handle_);
-
   // Reset the current config
   codecs_ = new A2dpCodecs(codec_priorities);
   codecs_->init();
@@ -1928,6 +1928,12 @@ bool bta_av_co_set_codec_user_config(
 bool bta_av_co_set_codec_audio_config(
     const btav_a2dp_codec_config_t& codec_audio_config) {
   return bta_av_co_cb.SetCodecAudioConfig(codec_audio_config);
+}
+
+bool bta_av_co_content_protect_is_active(const RawAddress& peer_address) {
+  BtaAvCoPeer* p_peer = bta_av_co_cb.FindPeer(peer_address);
+  CHECK(p_peer != nullptr);
+  return p_peer->ContentProtectActive();
 }
 
 void btif_a2dp_codec_debug_dump(int fd) { bta_av_co_cb.DebugDump(fd); }
