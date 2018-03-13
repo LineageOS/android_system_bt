@@ -33,6 +33,7 @@
 #include "a2dp_vendor.h"
 #include "a2dp_vendor_ldac_encoder.h"
 #include "bt_utils.h"
+#include "btif_av_co.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 
@@ -299,6 +300,36 @@ bool A2DP_VendorCodecEqualsLdac(const uint8_t* p_codec_info_a,
 
   return (ldac_cie_a.sampleRate == ldac_cie_b.sampleRate) &&
          (ldac_cie_a.channelMode == ldac_cie_b.channelMode);
+}
+
+int A2DP_VendorGetBitRateLdac(const uint8_t* p_codec_info) {
+  A2dpCodecConfig* current_codec = bta_av_get_a2dp_current_codec();
+  btav_a2dp_codec_config_t codec_config_ = current_codec->getCodecConfig();
+  int samplerate = A2DP_GetTrackSampleRate(p_codec_info);
+  switch (codec_config_.codec_specific_1) {
+    case 1001:
+      if (samplerate == 44100 || samplerate == 88200)
+        return 606000;
+      else
+        return 660000;
+    case 1002:
+      if (samplerate == 44100 || samplerate == 88200)
+        return 303000;
+      else
+        return 330000;
+    case 1003:
+      if (samplerate == 44100 || samplerate == 88200)
+        return 909000;
+      else
+        return 990000;
+    case 1000:
+    default:
+      if (samplerate == 44100 || samplerate == 88200)
+        return 606000;
+      else
+        return 660000;
+  }
+  return 0;
 }
 
 int A2DP_VendorGetTrackSampleRateLdac(const uint8_t* p_codec_info) {

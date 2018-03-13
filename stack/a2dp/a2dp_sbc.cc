@@ -55,7 +55,7 @@ typedef struct {
 
 /* SBC SRC codec capabilities */
 static const tA2DP_SBC_CIE a2dp_sbc_caps = {
-    A2DP_SBC_IE_SAMP_FREQ_44,                           /* samp_freq */
+    (A2DP_SBC_IE_SAMP_FREQ_44),                         /* samp_freq */
     (A2DP_SBC_IE_CH_MD_MONO | A2DP_SBC_IE_CH_MD_JOINT), /* ch_mode */
     (A2DP_SBC_IE_BLOCKS_16 | A2DP_SBC_IE_BLOCKS_12 | A2DP_SBC_IE_BLOCKS_8 |
      A2DP_SBC_IE_BLOCKS_4),            /* block_len */
@@ -698,6 +698,7 @@ int A2DP_GetMaxBitpoolSbc(const uint8_t* p_codec_info) {
   return sbc_cie.max_bitpool;
 }
 
+uint32_t A2DP_GetBitrateSbc() { return a2dp_sbc_get_bitrate(); }
 int A2DP_GetSinkTrackChannelTypeSbc(const uint8_t* p_codec_info) {
   tA2DP_SBC_CIE sbc_cie;
 
