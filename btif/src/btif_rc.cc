@@ -3119,6 +3119,15 @@ static void handle_get_capability_response(tBTA_AV_META_MSG* pmeta_msg,
         list_append(p_dev->rc_supported_event_list, p_event);
       }
     }
+
+    // On occasion a remote device can intermittently send a poorly configured
+    // packet with 0 capabilities. This check ensures the stack does not crash.
+    // Typically the remote device will send a proper packet in the future and
+    // continue operation.
+    if (list_is_empty(p_dev->rc_supported_event_list)) {
+      return;
+    }
+
     p_event =
         (btif_rc_supported_event_t*)list_front(p_dev->rc_supported_event_list);
     if (p_event != NULL) {
