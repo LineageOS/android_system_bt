@@ -75,10 +75,17 @@ static void btif_a2dp_recv_ctrl_data(void) {
     return;
   }
 
-  APPL_TRACE_WARNING("%s: a2dp-ctrl-cmd : %s", __func__,
+  // Don't log A2DP_CTRL_GET_PRESENTATION_POSITION by default, because it
+  // could be very chatty when audio is streaming.
+  if (cmd == A2DP_CTRL_GET_PRESENTATION_POSITION) {
+    APPL_TRACE_DEBUG("%s: a2dp-ctrl-cmd : %s", __func__,
                      audio_a2dp_hw_dump_ctrl_event(cmd));
-  a2dp_cmd_pending = cmd;
+  } else {
+    APPL_TRACE_WARNING("%s: a2dp-ctrl-cmd : %s", __func__,
+                       audio_a2dp_hw_dump_ctrl_event(cmd));
+  }
 
+  a2dp_cmd_pending = cmd;
   switch (cmd) {
     case A2DP_CTRL_CMD_CHECK_READY:
       if (btif_a2dp_source_media_task_is_shutting_down()) {
@@ -296,14 +303,29 @@ static void btif_a2dp_recv_ctrl_data(void) {
       btif_a2dp_command_ack(A2DP_CTRL_ACK_FAILURE);
       break;
   }
-  APPL_TRACE_WARNING("%s: a2dp-ctrl-cmd : %s DONE", __func__,
+
+  // Don't log A2DP_CTRL_GET_PRESENTATION_POSITION by default, because it
+  // could be very chatty when audio is streaming.
+  if (cmd == A2DP_CTRL_GET_PRESENTATION_POSITION) {
+    APPL_TRACE_DEBUG("%s: a2dp-ctrl-cmd : %s DONE", __func__,
                      audio_a2dp_hw_dump_ctrl_event(cmd));
+  } else {
+    APPL_TRACE_WARNING("%s: a2dp-ctrl-cmd : %s DONE", __func__,
+                       audio_a2dp_hw_dump_ctrl_event(cmd));
+  }
 }
 
 static void btif_a2dp_ctrl_cb(UNUSED_ATTR tUIPC_CH_ID ch_id,
                               tUIPC_EVENT event) {
-  APPL_TRACE_WARNING("%s: A2DP-CTRL-CHANNEL EVENT %s", __func__,
+  // Don't log UIPC_RX_DATA_READY_EVT by default, because it
+  // could be very chatty when audio is streaming.
+  if (event == UIPC_RX_DATA_READY_EVT) {
+    APPL_TRACE_DEBUG("%s: A2DP-CTRL-CHANNEL EVENT %s", __func__,
                      dump_uipc_event(event));
+  } else {
+    APPL_TRACE_WARNING("%s: A2DP-CTRL-CHANNEL EVENT %s", __func__,
+                       dump_uipc_event(event));
+  }
 
   switch (event) {
     case UIPC_OPEN_EVT:
@@ -375,8 +397,15 @@ static void btif_a2dp_data_cb(UNUSED_ATTR tUIPC_CH_ID ch_id,
 void btif_a2dp_command_ack(tA2DP_CTRL_ACK status) {
   uint8_t ack = status;
 
-  APPL_TRACE_WARNING("%s: ## a2dp ack : %s, status %d ##", __func__,
+  // Don't log A2DP_CTRL_GET_PRESENTATION_POSITION by default, because it
+  // could be very chatty when audio is streaming.
+  if (a2dp_cmd_pending == A2DP_CTRL_GET_PRESENTATION_POSITION) {
+    APPL_TRACE_DEBUG("%s: ## a2dp ack : %s, status %d ##", __func__,
                      audio_a2dp_hw_dump_ctrl_event(a2dp_cmd_pending), status);
+  } else {
+    APPL_TRACE_WARNING("%s: ## a2dp ack : %s, status %d ##", __func__,
+                       audio_a2dp_hw_dump_ctrl_event(a2dp_cmd_pending), status);
+  }
 
   /* Sanity check */
   if (a2dp_cmd_pending == A2DP_CTRL_CMD_NONE) {
