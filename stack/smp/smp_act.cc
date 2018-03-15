@@ -2018,6 +2018,14 @@ void smp_br_process_link_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     return;
   }
 
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(p_cb->pairing_bda);
+  if (p_dev_rec) {
+    SMP_TRACE_DEBUG("%s: dev_type = %d ", __func__, p_dev_rec->device_type);
+    p_dev_rec->device_type |= BT_DEVICE_TYPE_BLE;
+  } else {
+    SMP_TRACE_ERROR("%s failed to find Security Record", __func__);
+  }
+
   SMP_TRACE_DEBUG("%s: LTK derivation from LK successfully completed",
                   __func__);
   smp_save_secure_connections_long_term_key(p_cb);
