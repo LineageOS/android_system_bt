@@ -335,7 +335,8 @@ typedef void(tBTM_RAND_ENC_CB)(tBTM_RAND_ENC* p1);
 /*  Preferred maximum number of microseconds that the local Controller
     should use to transmit a single Link Layer Data Channel PDU. */
 #define BTM_BLE_DATA_TX_TIME_MIN 0x0148
-#define BTM_BLE_DATA_TX_TIME_MAX 0x0848
+#define BTM_BLE_DATA_TX_TIME_MAX_LEGACY  0x0848
+#define BTM_BLE_DATA_TX_TIME_MAX         0x4290
 
 /* adv tx power in dBm */
 typedef struct {
