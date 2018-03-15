@@ -47,6 +47,7 @@
 #include <hardware/bt_sdp.h>
 #include <hardware/bt_sock.h>
 
+#include "avrcp_service.h"
 #include "bt_utils.h"
 #include "bta/include/bta_hf_client_api.h"
 #include "btif_a2dp.h"
@@ -422,6 +423,10 @@ static int config_clear(void) {
   return btif_config_clear() ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
+static bluetooth::avrcp::ServiceInterface* get_avrcp_service(void) {
+  return bluetooth::avrcp::AvrcpService::GetServiceInterface();
+}
+
 EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
     sizeof(bluetoothInterface),
     init,
@@ -456,4 +461,5 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
     config_clear,
     interop_database_clear,
     interop_database_add,
+    get_avrcp_service,
 };

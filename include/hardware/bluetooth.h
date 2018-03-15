@@ -22,8 +22,9 @@
 #include <sys/cdefs.h>
 #include <sys/types.h>
 
-#include <bluetooth/uuid.h>
-#include <raw_address.h>
+#include "avrcp/avrcp.h"
+#include "bluetooth/uuid.h"
+#include "raw_address.h"
 
 /**
  * The Bluetooth Hardware Module ID
@@ -585,6 +586,11 @@ typedef struct {
    */
   void (*interop_database_add)(uint16_t feature, const RawAddress* addr,
                                size_t len);
+
+  /**
+   * Get the AvrcpTarget Service interface to interact with the Avrcp Service
+   */
+  bluetooth::avrcp::ServiceInterface* (*get_avrcp_service)(void);
 } bt_interface_t;
 
 #define BLUETOOTH_INTERFACE_STRING "bluetoothInterface"
