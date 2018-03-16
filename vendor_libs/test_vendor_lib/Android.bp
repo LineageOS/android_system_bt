@@ -77,6 +77,9 @@ cc_test_host {
         "test/l2cap_test.cc",
         "test/l2cap_sdu_test.cc",
     ],
+    header_libs: [
+        "libbluetooth_headers",
+    ],
     local_include_dirs: [
         "include",
     ],
