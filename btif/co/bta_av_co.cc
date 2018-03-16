@@ -1484,9 +1484,11 @@ bool BtaAvCo::ReportSourceCodecState(BtaAvCoPeer* p_peer) {
 
   APPL_TRACE_DEBUG("%s: peer_address=%s", __func__,
                    p_peer->addr.ToString().c_str());
-  if (!p_peer->GetCodecs()->getCodecConfigAndCapabilities(
-          &codec_config, &codecs_local_capabilities,
-          &codecs_selectable_capabilities)) {
+  A2dpCodecs* codecs = p_peer->GetCodecs();
+  CHECK(codecs != nullptr);
+  if (!codecs->getCodecConfigAndCapabilities(&codec_config,
+                                             &codecs_local_capabilities,
+                                             &codecs_selectable_capabilities)) {
     APPL_TRACE_WARNING(
         "%s: Peer %s : error reporting audio source codec state: "
         "cannot get codec config and capabilities",
