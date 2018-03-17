@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "b226eb20_87de403f",
+        "filename": "device/src/controller.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2018-03-17T05:56:41Z",
+      "side": 0,
+      "message": "I think it makes more sense to unset that bit in the bitset based on the flag, rather than noop-ing the macro, in case the macro isn\u0027t the only thing checking the value.",
+      "parentUuid": "d3b9db67_ab0eec42",
+      "revId": "f76bc749bf923fe687e1ba9eebb1522afd72e87e",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e1122e27_7b0b9b02",
         "filename": "stack/include/hcidefs.h",
         "patchSetId": 2
