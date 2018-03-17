@@ -518,7 +518,6 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
 
     p_scb->suspend_sup = true;
     p_scb->recfg_sup = true;
-    p_scb->skip_sdp = false;
 
     avdtp_stream_config.scb_index = p_scb->hdi;
     avdtp_stream_config.p_avdt_ctrl_cback = &bta_av_proc_stream_evt;
@@ -1438,6 +1437,5 @@ void bta_debug_av_dump(int fd) {
             p_scb->no_rtp_header ? "true" : "false");
     dprintf(fd, "    Intended UUID of Initiator to connect to: 0x%x\n",
             p_scb->uuid_int);
-    dprintf(fd, "    Skip SDP: %s\n", p_scb->skip_sdp ? "true" : "false");
   }
 }
