@@ -191,8 +191,6 @@ void ConnectionHandler::InitiatorControlCb(uint8_t handle, uint8_t event,
                                            uint16_t result,
                                            const RawAddress* peer_addr) {
   DCHECK(!connection_cb_.is_null());
-  CHECK(peer_addr != nullptr);  // FIXME: Maybe this should change? I'm not
-                                // totally when this can be null.
 
   LOG(INFO) << __PRETTY_FUNCTION__ << ": handle=" << loghex(handle)
             << " result=" << loghex(result)
@@ -242,7 +240,7 @@ void ConnectionHandler::InitiatorControlCb(uint8_t handle, uint8_t event,
             << "Connection Close received from device that doesn't exist";
         return;
       }
-      feature_map_.erase(*peer_addr);
+      feature_map_.erase(device_map_[handle]->GetAddress());
       device_map_[handle]->DeviceDisconnected();
       device_map_.erase(handle);
     } break;
@@ -267,8 +265,6 @@ void ConnectionHandler::AcceptorControlCb(uint8_t handle, uint8_t event,
                                           uint16_t result,
                                           const RawAddress* peer_addr) {
   DCHECK(!connection_cb_.is_null());
-  CHECK(peer_addr != nullptr);  // FIXME: Maybe this should change? I'm not
-                                // totally when this can be null.
 
   LOG(INFO) << __PRETTY_FUNCTION__ << ": handle=" << loghex(handle)
             << " result=" << loghex(result)
@@ -322,7 +318,7 @@ void ConnectionHandler::AcceptorControlCb(uint8_t handle, uint8_t event,
             << "Connection Close received from device that doesn't exist";
         return;
       }
-      feature_map_.erase(*peer_addr);
+      feature_map_.erase(device_map_[handle]->GetAddress());
       device_map_[handle]->DeviceDisconnected();
       device_map_.erase(handle);
     } break;
