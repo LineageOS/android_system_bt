@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e1122e27_7b0b9b02",
+        "filename": "stack/include/hcidefs.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 1595,
+      "author": {
+        "id": 2936
+      },
+      "writtenOn": "2018-03-17T02:36:51Z",
+      "side": 0,
+      "message": "What normally sets this bit? Instead of no-oping the check, why not check what sets the value to begin with?",
+      "range": {
+        "startLine": 1595,
+        "startChar": 8,
+        "endLine": 1595,
+        "endChar": 42
+      },
+      "revId": "f76bc749bf923fe687e1ba9eebb1522afd72e87e",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
