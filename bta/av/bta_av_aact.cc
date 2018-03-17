@@ -34,6 +34,7 @@
 
 #include "a2dp_sbc.h"
 #include "avdt_api.h"
+#include "avrcp_service.h"
 #include "bt_utils.h"
 #include "bta_av_int.h"
 #include "btif/include/btif_av_co.h"
@@ -2900,7 +2901,12 @@ void bta_av_open_rc(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       }
     } else {
       /* use main SM for AVRC SDP activities */
-      bta_av_rc_disc((uint8_t)(p_scb->hdi + 1));
+      if (is_new_avrcp_enabled()) {
+        APPL_TRACE_WARNING("%s: Using the new AVRCP Profile", __func__);
+        bluetooth::avrcp::AvrcpService::Get()->ConnectDevice(p_scb->peer_addr);
+      } else {
+        bta_av_rc_disc((uint8_t)(p_scb->hdi + 1));
+      }
     }
   } else {
     if (BTA_AV_RC_HANDLE_NONE != p_scb->rc_handle) {
