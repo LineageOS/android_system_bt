@@ -468,26 +468,21 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
                         BTA_ID_AV);
 #endif
 
-        /* For the Audio Sink role we support additional TG 1.3 to support
+        /* For the Audio Sink role we support additional TG to support
          * absolute volume.
          */
         uint16_t profile_version = AVRC_REV_1_0;
 
-        if (profile_initialized == UUID_SERVCLASS_AUDIO_SOURCE) {
-          if (!strncmp(AVRCP_1_6_STRING, avrcp_version,
-                       sizeof(AVRCP_1_6_STRING))) {
-            profile_version = AVRC_REV_1_6;
-          } else if (!strncmp(AVRCP_1_5_STRING, avrcp_version,
-                              sizeof(AVRCP_1_5_STRING))) {
-            profile_version = AVRC_REV_1_5;
-          } else if (!strncmp(AVRCP_1_3_STRING, avrcp_version,
-                              sizeof(AVRCP_1_3_STRING))) {
-            profile_version = AVRC_REV_1_3;
-          } else {
-            profile_version = AVRC_REV_1_4;
-          }
-        } else if (profile_initialized == UUID_SERVCLASS_AUDIO_SINK) {
-          // Initialize AVRCP1.4 to provide Absolute Volume control.
+        if (!strncmp(AVRCP_1_6_STRING, avrcp_version,
+                     sizeof(AVRCP_1_6_STRING))) {
+          profile_version = AVRC_REV_1_6;
+        } else if (!strncmp(AVRCP_1_5_STRING, avrcp_version,
+                            sizeof(AVRCP_1_5_STRING))) {
+          profile_version = AVRC_REV_1_5;
+        } else if (!strncmp(AVRCP_1_3_STRING, avrcp_version,
+                            sizeof(AVRCP_1_3_STRING))) {
+          profile_version = AVRC_REV_1_3;
+        } else {
           profile_version = AVRC_REV_1_4;
         }
 
