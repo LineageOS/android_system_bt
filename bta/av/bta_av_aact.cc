@@ -821,18 +821,6 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   bta_sys_app_open(BTA_ID_AV, p_scb->app_id, p_scb->peer_addr);
 
-  if (p_scb->skip_sdp) {
-    tA2DP_Service a2dp_ser;
-    a2dp_ser.avdt_version = AVDT_VERSION;
-    p_scb->skip_sdp = false;
-    p_scb->uuid_int = p_data->api_open.uuid;
-    /* only one A2DP find service is active at a time */
-    bta_av_cb.handle = p_scb->hndl;
-    APPL_TRACE_WARNING("%s: Skip Sdp for incoming A2dp connection", __func__);
-    bta_av_a2dp_sdp_cback(true, &a2dp_ser);
-    return;
-  }
-
   /* only one A2DP find service is active at a time */
   bta_av_cb.handle = p_scb->hndl;
 
@@ -847,15 +835,20 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   else if (p_scb->uuid_int == UUID_SERVCLASS_AUDIO_SOURCE)
     sdp_uuid = UUID_SERVCLASS_AUDIO_SINK;
 
-  APPL_TRACE_DEBUG("%s: uuid_int 0x%x, Doing SDP For 0x%x", __func__,
-                   p_scb->uuid_int, sdp_uuid);
-  if (A2DP_FindService(sdp_uuid, p_scb->peer_addr, &db_params,
-                       bta_av_a2dp_sdp_cback) == A2DP_SUCCESS)
-    return;
-
-  /* when the code reaches here, either the DB is NULL
-   * or A2DP_FindService is not successful */
-  bta_av_a2dp_sdp_cback(false, NULL);
+  APPL_TRACE_DEBUG(
+      "%s: Initiate SDP discovery for peer %s : uuid_int=0x%x "
+      "sdp_uuid=0x%x",
+      __func__, p_scb->peer_addr.ToString().c_str(), p_scb->uuid_int, sdp_uuid);
+  tA2DP_STATUS find_service_status = A2DP_FindService(
+      sdp_uuid, p_scb->peer_addr, &db_params, bta_av_a2dp_sdp_cback);
+  if (find_service_status != A2DP_SUCCESS) {
+    APPL_TRACE_ERROR(
+        "%s: A2DP_FindService() failed for peer %s uuid_int=0x%x "
+        "sdp_uuid=0x%x : status=%d",
+        __func__, p_scb->peer_addr.ToString().c_str(), p_scb->uuid_int,
+        sdp_uuid, find_service_status);
+    bta_av_a2dp_sdp_cback(false, NULL);
+  }
 }
 
 /*******************************************************************************
@@ -904,7 +897,6 @@ void bta_av_cleanup(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
 
   p_scb->offload_start_pending = false;
 
-  p_scb->skip_sdp = false;
   if (p_scb->deregistering) {
     /* remove stream */
     for (int i = 0; i < BTAV_A2DP_CODEC_INDEX_MAX; i++) {
@@ -2949,7 +2941,6 @@ void bta_av_open_at_inc(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     tBTA_AV_API_OPEN* p_buf =
         (tBTA_AV_API_OPEN*)osi_malloc(sizeof(tBTA_AV_API_OPEN));
     memcpy(p_buf, &(p_scb->open_api), sizeof(tBTA_AV_API_OPEN));
-    p_scb->skip_sdp = true;
     bta_sys_sendmsg(p_buf);
   }
 }
