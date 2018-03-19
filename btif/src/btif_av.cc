@@ -341,12 +341,12 @@ class BtifAvSource {
         max_connected_peers_(kDefaultMaxConnectedAudioDevices) {}
   ~BtifAvSource();
 
-  btav_source_callbacks_t* Callbacks() { return callbacks_; }
   bt_status_t Init(
       btav_source_callbacks_t* callbacks, int max_connected_audio_devices,
       const std::vector<btav_a2dp_codec_config_t>& codec_priorities);
   void Cleanup();
 
+  btav_source_callbacks_t* Callbacks() { return callbacks_; }
   bool Enabled() const { return enabled_; }
   bool A2dpOffloadEnabled() const { return a2dp_offload_enabled_; }
 
@@ -447,7 +447,6 @@ class BtifAvSource {
   std::map<RawAddress, BtifAvPeer*> peers_;
   RawAddress active_peer_;
   std::map<uint8_t, tBTA_AV_HNDL> peer_id2bta_handle_;
-  std::vector<btav_a2dp_codec_config_t> codec_priorities_;
 };
 
 class BtifAvSink {
@@ -461,12 +460,13 @@ class BtifAvSink {
         enabled_(false),
         max_connected_peers_(kDefaultMaxConnectedAudioDevices) {}
   ~BtifAvSink();
-  bt_status_t Init(btav_sink_callbacks_t* callbacks);
 
-  btav_sink_callbacks_t* Callbacks() { return callbacks_; }
+  bt_status_t Init(btav_sink_callbacks_t* callbacks);
   void Cleanup();
 
+  btav_sink_callbacks_t* Callbacks() { return callbacks_; }
   bool Enabled() const { return enabled_; }
+
   BtifAvPeer* FindPeer(const RawAddress& peer_address);
   BtifAvPeer* FindPeerByHandle(tBTA_AV_HNDL bta_handle);
   BtifAvPeer* FindPeerByPeerId(uint8_t peer_id);
@@ -863,8 +863,7 @@ bt_status_t BtifAvSource::Init(
   BTIF_TRACE_DEBUG("a2dp_offload.enable = %d", a2dp_offload_enabled_);
 
   callbacks_ = callbacks;
-  codec_priorities_ = codec_priorities;
-  bta_av_co_init(codec_priorities_);
+  bta_av_co_init(codec_priorities);
 
   if (!btif_a2dp_source_init()) {
     return BT_STATUS_FAIL;
@@ -1040,6 +1039,9 @@ bt_status_t BtifAvSink::Init(btav_sink_callbacks_t* callbacks) {
   CleanupAllPeers();
   max_connected_peers_ = kDefaultMaxConnectedAudioDevices;
   callbacks_ = callbacks;
+
+  std::vector<btav_a2dp_codec_config_t> codec_priorities;  // Default priorities
+  bta_av_co_init(codec_priorities);
 
   if (!btif_a2dp_sink_init()) {
     return BT_STATUS_FAIL;
