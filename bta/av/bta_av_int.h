@@ -514,7 +514,6 @@ struct tBTA_AV_SCB {
   bool no_rtp_header; /* true if add no RTP header */
   uint16_t uuid_int; /*intended UUID of Initiator to connect to */
   bool offload_start_pending;
-  bool skip_sdp; /* Decides if sdp to be done prior to profile connection */
   bool offload_started;
 };
 
