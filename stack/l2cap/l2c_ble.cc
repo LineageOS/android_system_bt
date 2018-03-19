@@ -117,6 +117,10 @@ bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
     return (false);
   }
 
+  VLOG(2) << __func__ << ": BD_ADDR=" << rem_bda << ", min_int=" << min_int
+          << ", max_int=" << max_int << ", min_ce_len=" << min_ce_len
+          << ", max_ce_len=" << max_ce_len;
+
   p_lcb->min_interval = min_int;
   p_lcb->max_interval = max_int;
   p_lcb->latency = latency;
