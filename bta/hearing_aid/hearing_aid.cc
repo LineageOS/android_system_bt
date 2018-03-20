@@ -55,6 +55,10 @@ constexpr uint8_t CAPABILITY_RESERVED = 0xFC;
 constexpr uint8_t CONTROL_POINT_OP_START = 0x01;
 constexpr uint8_t CONTROL_POINT_OP_STOP = 0x02;
 
+// used to mark current_volume as not yet known, or possibly old
+constexpr int8_t VOLUME_UNKNOWN = 127;
+constexpr int8_t VOLUME_MIN = -127;
+
 namespace {
 
 // clang-format off
@@ -225,7 +229,10 @@ class HearingAidImpl : public HearingAid {
 
   HearingAidImpl(bluetooth::hearing_aid::HearingAidCallbacks* callbacks,
                  Closure initCb)
-      : gatt_if(0), seq_counter(0), callbacks(callbacks) {
+      : gatt_if(0),
+        seq_counter(0),
+        current_volume(VOLUME_UNKNOWN),
+        callbacks(callbacks) {
     DVLOG(2) << __func__;
     BTA_GATTC_AppRegister(
         hearingaid_gattc_callback,
@@ -696,12 +703,24 @@ class HearingAidImpl : public HearingAid {
   }
 
   void SendStart(const HearingDevice& device) {
-    std::vector<uint8_t> start(
-        {CONTROL_POINT_OP_START, codec_in_use, 0x02 /* media */});
+    std::vector<uint8_t> start({CONTROL_POINT_OP_START, codec_in_use,
+                                0x02 /* media */, (uint8_t)current_volume});
+
+    if (current_volume == VOLUME_UNKNOWN) start[3] = (uint8_t)VOLUME_MIN;
 
     BtaGattQueue::WriteCharacteristic(device.conn_id,
                                       device.audio_control_point_handle, start,
                                       GATT_WRITE, nullptr, nullptr);
+
+    // TODO(jpawlowski): this will be removed, once test devices get volume
+    // from start reqest
+    if (current_volume != VOLUME_UNKNOWN) {
+      std::vector<uint8_t> volume_value(
+          {static_cast<unsigned char>(current_volume)});
+      BtaGattQueue::WriteCharacteristic(device.conn_id, device.volume_handle,
+                                        volume_value, GATT_WRITE_NO_RSP,
+                                        nullptr, nullptr);
+    }
   }
 
   void OnAudioDataReady(const std::vector<uint8_t>& data) {
@@ -744,6 +763,7 @@ class HearingAidImpl : public HearingAid {
 
     if (left == nullptr && right == nullptr) {
       HearingAidAudioSource::Stop();
+      current_volume = VOLUME_UNKNOWN;
       return;
     }
 
@@ -970,6 +990,7 @@ class HearingAidImpl : public HearingAid {
 
   void SetVolume(int8_t volume) override {
     VLOG(2) << __func__ << ": " << +volume;
+    current_volume = volume;
     for (HearingDevice& device : hearingDevices.devices) {
       if (!device.accepting_audio) continue;
 
@@ -996,6 +1017,8 @@ class HearingAidImpl : public HearingAid {
  private:
   uint8_t gatt_if;
   uint8_t seq_counter;
+  /* current volume gain for the hearing aids*/
+  int8_t current_volume;
   bluetooth::hearing_aid::HearingAidCallbacks* callbacks;
 
   /* currently used codec */
