@@ -49,6 +49,16 @@ bool btif_a2dp_sink_init(void);
 // streaming.
 bool btif_a2dp_sink_startup(void);
 
+// Start the A2DP Sink session.
+// This function should be called by the BTIF state machine after
+// btif_a2dp_sink_startup() to start the streaming session for |peer_address|.
+bool btif_a2dp_sink_start_session(const RawAddress& peer_address);
+
+// End the A2DP Sink session.
+// This function should be called by the BTIF state machine to end the
+// streaming session for |peer_address|.
+bool btif_a2dp_sink_end_session(const RawAddress& peer_address);
+
 // Shutdown the A2DP Sink module.
 // This function should be called by the BTIF state machine before
 // btif_a2dp_sink_cleanup() to shutdown the processing of the audio streaming.
