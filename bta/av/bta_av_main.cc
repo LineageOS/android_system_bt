@@ -84,6 +84,10 @@
 #define AVRCP_1_3_STRING "avrcp13"
 #endif
 
+#ifndef AVRCP_DEFAULT_VERSION
+#define AVRCP_DEFAULT_VERSION AVRCP_1_5_STRING
+#endif
+
 /* state machine states */
 enum { BTA_AV_INIT_ST, BTA_AV_OPEN_ST };
 
@@ -407,7 +411,8 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
   registr.chnl = (tBTA_AV_CHNL)p_data->hdr.layer_specific;
 
   char avrcp_version[PROPERTY_VALUE_MAX] = {0};
-  osi_property_get(AVRCP_VERSION_PROPERTY, avrcp_version, AVRCP_1_4_STRING);
+  osi_property_get(AVRCP_VERSION_PROPERTY, avrcp_version,
+                   AVRCP_DEFAULT_VERSION);
   LOG_INFO(LOG_TAG, "%s: AVRCP version used for sdp: \"%s\"", __func__,
            avrcp_version);
 
