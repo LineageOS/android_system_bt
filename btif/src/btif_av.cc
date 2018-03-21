@@ -405,6 +405,7 @@ class BtifAvSource {
         BTIF_TRACE_WARNING("%s: unable to set active peer to empty in BtaAvCo",
                            __func__);
       }
+      btif_a2dp_source_end_session(active_peer_);
       btif_a2dp_source_shutdown();
       active_peer_ = peer_address;
       return true;
@@ -421,6 +422,11 @@ class BtifAvSource {
                        __func__, peer_address.ToString().c_str());
       return false;
     }
+
+    // Start/restart the session
+    if (!active_peer_.IsEmpty()) {
+      btif_a2dp_source_end_session(active_peer_);
+    }
     bool should_startup = active_peer_.IsEmpty();
     active_peer_ = peer_address;
     if (should_startup) {
@@ -428,6 +434,7 @@ class BtifAvSource {
                        __func__);
       btif_a2dp_source_startup();
     }
+    btif_a2dp_source_start_session(peer_address);
     return true;
   }
 
@@ -522,6 +529,7 @@ class BtifAvSink {
         BTIF_TRACE_WARNING("%s: unable to set active peer to empty in BtaAvCo",
                            __func__);
       }
+      btif_a2dp_sink_end_session(active_peer_);
       btif_a2dp_sink_shutdown();
       active_peer_ = peer_address;
       return true;
@@ -538,6 +546,11 @@ class BtifAvSink {
                        __func__, peer_address.ToString().c_str());
       return false;
     }
+
+    // Start/restart the session
+    if (!active_peer_.IsEmpty()) {
+      btif_a2dp_sink_end_session(active_peer_);
+    }
     bool should_startup = active_peer_.IsEmpty();
     active_peer_ = peer_address;
     if (should_startup) {
@@ -545,6 +558,7 @@ class BtifAvSink {
                        __func__);
       btif_a2dp_sink_startup();
     }
+    btif_a2dp_sink_start_session(peer_address);
     return true;
   }
 
@@ -1703,9 +1717,6 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
       break;  // Ignore
 
     case BTIF_AV_START_STREAM_REQ_EVT:
-      if (peer_.IsSink()) {
-        btif_a2dp_source_setup_codec(peer_.PeerAddress());
-      }
       BTA_AvStart(peer_.BtaHandle());
       peer_.SetFlags(BtifAvPeer::kFlagPendingStart);
       break;
