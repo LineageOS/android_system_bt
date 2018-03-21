@@ -34,6 +34,16 @@ bool btif_a2dp_source_init(void);
 // btif_a2dp_source_init() to prepare to start streaming.
 bool btif_a2dp_source_startup(void);
 
+// Start the A2DP Source session.
+// This function should be called by the BTIF state machine after
+// btif_a2dp_source_startup() to start the streaming session for |peer_address|.
+bool btif_a2dp_source_start_session(const RawAddress& peer_address);
+
+// End the A2DP Source session.
+// This function should be called by the BTIF state machine to end the
+// streaming session for |peer_address|.
+bool btif_a2dp_source_end_session(const RawAddress& peer_address);
+
 // Shutdown the A2DP Source module.
 // This function should be called by the BTIF state machine to stop streaming.
 void btif_a2dp_source_shutdown(void);

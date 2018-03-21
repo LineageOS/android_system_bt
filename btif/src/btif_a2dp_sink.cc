@@ -95,6 +95,8 @@ static std::atomic<int> btif_a2dp_sink_state{BTIF_A2DP_SINK_STATE_OFF};
 
 static void btif_a2dp_sink_init_delayed(void* context);
 static void btif_a2dp_sink_startup_delayed(void* context);
+static void btif_a2dp_sink_start_session_delayed(void* context);
+static void btif_a2dp_sink_end_session_delayed(void* context);
 static void btif_a2dp_sink_shutdown_delayed(void* context);
 static void btif_a2dp_sink_cleanup_delayed(void* context);
 static void btif_a2dp_sink_command_ready(fixed_queue_t* queue, void* context);
@@ -170,7 +172,6 @@ static void btif_a2dp_sink_init_delayed(UNUSED_ATTR void* context) {
 
 bool btif_a2dp_sink_startup(void) {
   LOG_INFO(LOG_TAG, "%s", __func__);
-  LockGuard lock(g_mutex);
   thread_post(btif_a2dp_sink_cb.worker_thread, btif_a2dp_sink_startup_delayed,
               NULL);
   return true;
@@ -182,9 +183,36 @@ static void btif_a2dp_sink_startup_delayed(UNUSED_ATTR void* context) {
   // Nothing to do
 }
 
-void btif_a2dp_sink_shutdown(void) {
+bool btif_a2dp_sink_start_session(const RawAddress& peer_address) {
+  LOG_INFO(LOG_TAG, "%s: peer_address=%s", __func__,
+           peer_address.ToString().c_str());
+  thread_post(btif_a2dp_sink_cb.worker_thread,
+              btif_a2dp_sink_start_session_delayed, NULL);
+  return true;
+}
+
+static void btif_a2dp_sink_start_session_delayed(UNUSED_ATTR void* context) {
   LOG_INFO(LOG_TAG, "%s", __func__);
   LockGuard lock(g_mutex);
+  // Nothing to do
+}
+
+bool btif_a2dp_sink_end_session(const RawAddress& peer_address) {
+  LOG_INFO(LOG_TAG, "%s: peer_address=%s", __func__,
+           peer_address.ToString().c_str());
+  thread_post(btif_a2dp_sink_cb.worker_thread,
+              btif_a2dp_sink_end_session_delayed, NULL);
+  return true;
+}
+
+static void btif_a2dp_sink_end_session_delayed(UNUSED_ATTR void* context) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
+  LockGuard lock(g_mutex);
+  // Nothing to do
+}
+
+void btif_a2dp_sink_shutdown(void) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   thread_post(btif_a2dp_sink_cb.worker_thread, btif_a2dp_sink_shutdown_delayed,
               NULL);
 }
