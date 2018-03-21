@@ -31,6 +31,7 @@
 #include <string.h>
 
 #include "avdt_api.h"
+#include "avrcp_service.h"
 #include "bta_av_api.h"
 #include "bta_av_int.h"
 #include "l2c_api.h"
@@ -303,6 +304,12 @@ static void bta_av_rc_msg_cback(uint8_t handle, uint8_t label, uint8_t opcode,
  ******************************************************************************/
 uint8_t bta_av_rc_create(tBTA_AV_CB* p_cb, uint8_t role, uint8_t shdl,
                          uint8_t lidx) {
+  if (is_new_avrcp_enabled()) {
+    APPL_TRACE_WARNING("%s: Skipping RC creation for the old AVRCP profile",
+                       __func__);
+    return BTA_AV_RC_HANDLE_NONE;
+  }
+
   tAVRC_CONN_CB ccb;
   RawAddress bda = RawAddress::kAny;
   uint8_t status = BTA_AV_RC_ROLE_ACP;
