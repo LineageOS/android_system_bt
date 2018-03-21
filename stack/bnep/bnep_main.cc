@@ -607,7 +607,6 @@ static void bnep_data_ind(uint16_t l2cap_cid, BT_HDR* p_buf) {
   if (bnep_cb.p_data_buf_cb) {
     (*bnep_cb.p_data_buf_cb)(p_bcb->handle, *p_src_addr, *p_dst_addr, protocol,
                              p_buf, fw_ext_present);
-    osi_free(p_buf);
   } else if (bnep_cb.p_data_ind_cb) {
     (*bnep_cb.p_data_ind_cb)(p_bcb->handle, *p_src_addr, *p_dst_addr, protocol,
                              p, rem_len, fw_ext_present);
