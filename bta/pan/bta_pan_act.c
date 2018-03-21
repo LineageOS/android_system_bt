@@ -225,44 +225,35 @@ static void bta_pan_data_flow_cb(UINT16 handle, tPAN_RESULT result)
 static void bta_pan_data_buf_ind_cback(UINT16 handle, BD_ADDR src, BD_ADDR dst, UINT16 protocol, BT_HDR *p_buf,
                                    BOOLEAN ext, BOOLEAN forward)
 {
-    tBTA_PAN_SCB *p_scb;
     BT_HDR * p_event;
-    BT_HDR *p_new_buf;
-
-    p_scb = bta_pan_scb_by_handle(handle);
+    tBTA_PAN_SCB* p_scb = bta_pan_scb_by_handle(handle);
     if (p_scb == NULL) {
       return;
     }
 
-    if ( sizeof(tBTA_PAN_DATA_PARAMS) > p_buf->offset )
-    {
-        if (sizeof(BT_HDR) + sizeof(tBTA_PAN_DATA_PARAMS) + p_buf->len >
-            GKI_get_pool_bufsize(PAN_POOL_ID)) {
-            android_errorWriteLog(0x534e4554, "63146237");
-            APPL_TRACE_ERROR("%s: received buffer length too large: %d", __func__,
-                             p_buf->len);
-            return;
-        }
+    if (sizeof(BT_HDR) + sizeof(tBTA_PAN_DATA_PARAMS) + p_buf->len >
+        GKI_get_pool_bufsize(PAN_POOL_ID)) {
+        android_errorWriteLog(0x534e4554, "63146237");
+        APPL_TRACE_ERROR("%s: received buffer length too large: %d", __func__,
+                         p_buf->len);
+        return;
+    }
 
-        /* offset smaller than data structure in front of actual data */
-        p_new_buf = (BT_HDR *)GKI_getpoolbuf( PAN_POOL_ID );
-        if(!p_new_buf)
-        {
-            APPL_TRACE_WARNING("Cannot get a PAN GKI buffer");
-            GKI_freebuf( p_buf );
-            return;
-        }
-        else
-        {
-            memcpy( (UINT8 *)(p_new_buf+1)+sizeof(tBTA_PAN_DATA_PARAMS), (UINT8 *)(p_buf+1)+p_buf->offset, p_buf->len );
-            p_new_buf->len    = p_buf->len;
-            p_new_buf->offset = sizeof(tBTA_PAN_DATA_PARAMS);
-        }
+
+    BT_HDR* p_new_buf = (BT_HDR *)GKI_getpoolbuf( PAN_POOL_ID );
+    if(!p_new_buf)
+    {
+        APPL_TRACE_WARNING("Cannot get a PAN GKI buffer");
+        GKI_freebuf( p_buf );
+        return;
     }
     else
     {
-        p_new_buf = p_buf;
+        memcpy( (UINT8 *)(p_new_buf+1)+sizeof(tBTA_PAN_DATA_PARAMS), (UINT8 *)(p_buf+1)+p_buf->offset, p_buf->len );
+        p_new_buf->len    = p_buf->len;
+        p_new_buf->offset = sizeof(tBTA_PAN_DATA_PARAMS);
     }
+
     /* copy params into the space before the data */
     bdcpy(((tBTA_PAN_DATA_PARAMS *)p_new_buf)->src, src);
     bdcpy(((tBTA_PAN_DATA_PARAMS *)p_new_buf)->dst, dst);
