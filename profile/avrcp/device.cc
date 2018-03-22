@@ -26,7 +26,7 @@ namespace avrcp {
 
 Device::Device(
     const RawAddress& bdaddr, bool avrcp13_compatibility,
-    base::Callback<bool(uint8_t label, bool browse,
+    base::Callback<void(uint8_t label, bool browse,
                         std::unique_ptr<::bluetooth::PacketBuilder> message)>
         send_msg_cb)
     : address_(bdaddr),
@@ -1022,8 +1022,12 @@ void Device::HandlePlayPosUpdate() {
 void Device::DeviceDisconnected() {
   DEVICE_LOG(INFO) << "Device was disconnected";
   play_pos_update_cb_.Cancel();
-  volume_interface_->DeviceDisconnected(GetAddress());
-  a2dp_interface_->event_close(address_);
+
+  // TODO (apanicke): Once the interfaces are set in the Device construction,
+  // remove these conditionals.
+  if (volume_interface_ != nullptr)
+    volume_interface_->DeviceDisconnected(GetAddress());
+  if (a2dp_interface_ != nullptr) a2dp_interface_->event_close(address_);
 }
 
 std::ostream& operator<<(std::ostream& out, const Device& d) {
