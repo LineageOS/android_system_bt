@@ -438,6 +438,32 @@ class BtifAvSource {
     return true;
   }
 
+  /**
+   * Update source codec configuration for a peer.
+   *
+   * @param peer_address the address of the peer to update
+   * @param codec_preferences the updated codec preferences
+   */
+  void UpdateCodecConfig(
+      const RawAddress& peer_address,
+      const std::vector<btav_a2dp_codec_config_t>& codec_preferences) {
+    // Restart the session if the codec for the active peer is updated
+    bool restart_session =
+        ((active_peer_ == peer_address) && !active_peer_.IsEmpty());
+    if (restart_session) {
+      btif_a2dp_source_end_session(active_peer_);
+    }
+
+    for (auto cp : codec_preferences) {
+      BTIF_TRACE_DEBUG("%s: codec_preference=%s", __func__,
+                       cp.ToString().c_str());
+      btif_a2dp_source_encoder_user_config_update_req(peer_address, cp);
+    }
+    if (restart_session) {
+      btif_a2dp_source_start_session(active_peer_);
+    }
+  }
+
   const std::map<RawAddress, BtifAvPeer*>& Peers() const { return peers_; }
 
   void RegisterAllBtaHandles();
@@ -2637,22 +2663,10 @@ static bt_status_t codec_config_src(
     return BT_STATUS_NOT_READY;
   }
 
-  for (auto cp : codec_preferences) {
-    BTIF_TRACE_DEBUG(
-        "%s: codec_type=%d codec_priority=%d "
-        "sample_rate=0x%x bits_per_sample=0x%x "
-        "channel_mode=0x%x codec_specific_1=%d "
-        "codec_specific_2=%d codec_specific_3=%d "
-        "codec_specific_4=%d",
-        __func__, cp.codec_type, cp.codec_priority, cp.sample_rate,
-        cp.bits_per_sample, cp.channel_mode, cp.codec_specific_1,
-        cp.codec_specific_2, cp.codec_specific_3, cp.codec_specific_4);
-    do_in_jni_thread(
-        FROM_HERE, base::Bind(&btif_a2dp_source_encoder_user_config_update_req,
-                              peer_address, cp));
-  }
-
-  return BT_STATUS_SUCCESS;
+  return do_in_jni_thread(
+      FROM_HERE, base::Bind(&BtifAvSource::UpdateCodecConfig,
+                            base::Unretained(&btif_av_source), peer_address,
+                            codec_preferences));
 }
 
 static void cleanup_src(void) {
