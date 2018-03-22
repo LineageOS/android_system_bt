@@ -2712,6 +2712,11 @@ void btm_ble_process_adv_pkt (UINT8 data_len, UINT8 *data)
 
         UINT8 *pkt_data = p;
         p += pkt_data_len; /* Advance to the the rssi byte */
+        if (p > data + data_len - sizeof(rssi))
+        {
+            BTM_TRACE_ERROR("Invalid pkt_data_len: %d", pkt_data_len);
+            return;
+        }
 
         STREAM_TO_INT8(rssi, p);
 
