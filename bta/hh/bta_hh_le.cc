@@ -1098,6 +1098,7 @@ void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb,
 
   /* if link has been encrypted */
   if (sec_flag & BTM_SEC_FLAG_ENCRYPTED) {
+    p_cb->status = BTA_HH_OK;
     bta_hh_sm_execute(p_cb, BTA_HH_ENC_CMPL_EVT, NULL);
   }
   /* if bonded and link not encrypted */
