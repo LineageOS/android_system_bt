@@ -344,6 +344,19 @@ void btm_ble_remove_from_white_list_complete(uint8_t* p,
   BTM_TRACE_EVENT("%s status=%d", __func__, *p);
 }
 
+void btm_ble_create_conn_cancel_complete(uint8_t* p) {
+  uint8_t status;
+  STREAM_TO_UINT8(status, p);
+
+  if (status == HCI_ERR_COMMAND_DISALLOWED) {
+    /* This is a sign that logic around keeping connection state is broken */
+    LOG(ERROR)
+        << "Attempt to cancel LE connection, when no connection is pending.";
+    btm_ble_set_conn_st(BLE_CONN_IDLE);
+    btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, nullptr, status);
+  }
+}
+
 void btm_send_hci_create_connection(
     uint16_t scan_int, uint16_t scan_win, uint8_t init_filter_policy,
     uint8_t addr_type_peer, const RawAddress& bda_peer, uint8_t addr_type_own,
