@@ -443,6 +443,9 @@ static void btif_a2dp_source_start_session_delayed(
     LOG_ERROR(LOG_TAG, "%s: A2DP Source media task is not running", __func__);
     return;
   }
+  if (btif_av_is_a2dp_offload_enabled()) {
+    btif_a2dp_audio_interface_start_session();
+  }
 }
 
 bool btif_a2dp_source_end_session(const RawAddress& peer_address) {
@@ -461,6 +464,9 @@ static void btif_a2dp_source_end_session_delayed(
   if (btif_a2dp_source_cb.State() != BtifA2dpSource::kStateRunning) {
     LOG_ERROR(LOG_TAG, "%s: A2DP Source media task is not running", __func__);
     return;
+  }
+  if (btif_av_is_a2dp_offload_enabled()) {
+    btif_a2dp_audio_interface_end_session();
   }
 }
 

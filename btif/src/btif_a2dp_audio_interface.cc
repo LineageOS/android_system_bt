@@ -175,17 +175,13 @@ static void btif_a2dp_get_codec_configuration(
 
 void btif_a2dp_audio_interface_init() {
   LOG_INFO(LOG_TAG, "%s", __func__);
-  CodecConfiguration codec_info;
 
-  btif_a2dp_get_codec_configuration(&codec_info);
   btAudio = IBluetoothAudioOffload::getService();
   CHECK(btAudio != nullptr);
 
   LOG_DEBUG(
       LOG_TAG, "%s: IBluetoothAudioOffload::getService() returned %p (%s)",
       __func__, btAudio.get(), (btAudio->isRemote() ? "remote" : "local"));
-  android::sp<IBluetoothAudioHost> host_if = new BluetoothAudioHost();
-  btAudio->startSession(host_if, codec_info);
   deinit_pending = false;
   LOG_INFO(LOG_TAG, "%s:Init returned", __func__);
 }
@@ -194,14 +190,29 @@ void btif_a2dp_audio_interface_deinit() {
   LOG_INFO(LOG_TAG, "%s: start", __func__);
   if (btAudio != nullptr) {
     deinit_pending = true;
-    auto ret = btAudio->endSession();
-    if (!ret.isOk()) {
-      LOG_ERROR(LOG_TAG, "HAL server is dead");
-    }
   }
   deinit_pending = false;
   btAudio = nullptr;
   LOG_INFO(LOG_TAG, "%s: exit", __func__);
+}
+
+void btif_a2dp_audio_interface_start_session() {
+  LOG_INFO(LOG_TAG, "%s", __func__);
+  CHECK(btAudio != nullptr);
+
+  CodecConfiguration codec_info;
+  btif_a2dp_get_codec_configuration(&codec_info);
+  android::sp<IBluetoothAudioHost> host_if = new BluetoothAudioHost();
+  btAudio->startSession(host_if, codec_info);
+}
+
+void btif_a2dp_audio_interface_end_session() {
+  LOG_INFO(LOG_TAG, "%s", __func__);
+  CHECK(btAudio != nullptr);
+  auto ret = btAudio->endSession();
+  if (!ret.isOk()) {
+    LOG_ERROR(LOG_TAG, "HAL server is dead");
+  }
 }
 
 void btif_a2dp_audio_on_started(tBTA_AV_STATUS status) {
