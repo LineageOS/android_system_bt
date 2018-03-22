@@ -89,6 +89,7 @@ void A2dpCodecConfig::setCodecPriority(
   } else {
     codec_priority_ = codec_priority;
   }
+  codec_config_.codec_priority = codec_priority_;
 }
 
 void A2dpCodecConfig::setDefaultCodecPriority() {
@@ -99,6 +100,7 @@ void A2dpCodecConfig::setDefaultCodecPriority() {
     uint32_t priority = 1000 * (codec_index_ + 1) + 1;
     codec_priority_ = static_cast<btav_a2dp_codec_priority_t>(priority);
   }
+  codec_config_.codec_priority = codec_priority_;
 }
 
 A2dpCodecConfig* A2dpCodecConfig::createCodec(
@@ -677,22 +679,8 @@ bool A2dpCodecs::setCodecUserConfig(
   *p_restart_output = false;
   *p_config_updated = false;
 
-  LOG_DEBUG(
-      LOG_TAG,
-      "%s: Configuring: codec_type=%d codec_priority=%d "
-      "sample_rate=0x%x bits_per_sample=0x%x "
-      "channel_mode=0x%x codec_specific_1=%" PRIi64
-      " "
-      "codec_specific_2=%" PRIi64
-      " "
-      "codec_specific_3=%" PRIi64
-      " "
-      "codec_specific_4=%" PRIi64,
-      __func__, codec_user_config.codec_type, codec_user_config.codec_priority,
-      codec_user_config.sample_rate, codec_user_config.bits_per_sample,
-      codec_user_config.channel_mode, codec_user_config.codec_specific_1,
-      codec_user_config.codec_specific_2, codec_user_config.codec_specific_3,
-      codec_user_config.codec_specific_4);
+  LOG_DEBUG(LOG_TAG, "%s: Configuring: %s", __func__,
+            codec_user_config.ToString().c_str());
 
   if (codec_user_config.codec_type < BTAV_A2DP_CODEC_INDEX_MAX) {
     auto iter = indexed_codecs_.find(codec_user_config.codec_type);
@@ -727,6 +715,7 @@ bool A2dpCodecs::setCodecUserConfig(
     // Check if there was no previous codec
     if (last_codec_config == nullptr) {
       current_codec_config_ = a2dp_codec_config;
+      *p_restart_input = true;
       *p_restart_output = true;
       break;
     }
@@ -762,6 +751,7 @@ bool A2dpCodecs::setCodecUserConfig(
       // connection to select a new codec.
       current_codec_config_ = a2dp_codec_config;
       last_codec_config->setDefaultCodecPriority();
+      *p_restart_input = true;
       *p_restart_output = true;
     }
   } while (false);
