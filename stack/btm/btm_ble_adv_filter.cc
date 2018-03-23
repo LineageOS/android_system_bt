@@ -76,30 +76,8 @@ static uint8_t btm_ble_cs_update_pf_counter(tBTM_BLE_SCAN_COND_OP action,
 #define BTM_BLE_ADV_FILT_CB_EVT_MASK 0xF0
 #define BTM_BLE_ADV_FILT_SUBCODE_MASK 0x0F
 
-/*******************************************************************************
- *
- * Function         btm_ble_obtain_vsc_details
- *
- * Description      This function obtains the VSC details
- *
- * Parameters
- *
- * Returns          status
- *
- ******************************************************************************/
-tBTM_STATUS btm_ble_obtain_vsc_details() {
-  tBTM_STATUS st = BTM_SUCCESS;
-
-#if (BLE_VND_INCLUDED == TRUE)
-  BTM_BleGetVendorCapabilities(&cmn_ble_vsc_cb);
-  if (cmn_ble_vsc_cb.filter_support && 0 == cmn_ble_vsc_cb.max_filter) {
-    st = BTM_MODE_UNSUPPORTED;
-    return st;
-  }
-#else
-  cmn_ble_vsc_cb.max_filter = BTM_BLE_MAX_FILTER_COUNTER;
-#endif
-  return st;
+bool is_filtering_supported() {
+  return cmn_ble_vsc_cb.filter_support != 0 && cmn_ble_vsc_cb.max_filter != 0;
 }
 
 /*******************************************************************************
@@ -460,8 +438,6 @@ uint8_t btm_ble_cs_update_pf_counter(tBTM_BLE_SCAN_COND_OP action,
   tBTM_BLE_PF_COUNT* p_addr_filter = NULL;
   uint8_t* p_counter = NULL;
 
-  btm_ble_obtain_vsc_details();
-
   if (cond_type > BTM_BLE_PF_TYPE_ALL) {
     BTM_TRACE_ERROR("unknown PF filter condition type %d", cond_type);
     return BTM_BLE_INVALID_COUNTER;
@@ -610,8 +586,12 @@ void DoNothing(uint8_t a, uint8_t b, uint8_t c) {}
 void BTM_LE_PF_set(tBTM_BLE_PF_FILT_INDEX filt_index,
                    std::vector<ApcfCommand> commands,
                    tBTM_BLE_PF_CFG_CBACK cb) {
-  int action = BTM_BLE_SCAN_COND_ADD;
+  if (!is_filtering_supported()) {
+    cb.Run(0, BTM_BLE_PF_ENABLE, 1 /* BTA_FAILURE */);
+    return;
+  }
 
+  int action = BTM_BLE_SCAN_COND_ADD;
   for (const ApcfCommand& cmd : commands) {
     /* If data is passed, both mask and data have to be the same length */
     if (cmd.data.size() != cmd.data_mask.size() && cmd.data.size() != 0 &&
@@ -673,6 +653,11 @@ void BTM_LE_PF_set(tBTM_BLE_PF_FILT_INDEX filt_index,
  */
 void BTM_LE_PF_clear(tBTM_BLE_PF_FILT_INDEX filt_index,
                      tBTM_BLE_PF_CFG_CBACK cb) {
+  if (!is_filtering_supported()) {
+    cb.Run(0, BTM_BLE_PF_ENABLE, 1 /* BTA_FAILURE */);
+    return;
+  }
+
   /* clear the general filter entry */
   {
     tBTM_BLE_PF_CFG_CBACK fDoNothing;
@@ -745,7 +730,7 @@ void BTM_BleAdvFilterParamSetup(
                 BTM_BLE_ADV_FILT_FEAT_SELN_LEN + BTM_BLE_ADV_FILT_TRACK_NUM;
   uint8_t param[len], *p;
 
-  if (BTM_SUCCESS != btm_ble_obtain_vsc_details()) {
+  if (!is_filtering_supported()) {
     cb.Run(0, BTM_BLE_PF_ENABLE, 1 /* BTA_FAILURE */);
     return;
   }
@@ -863,7 +848,7 @@ void enable_cmpl_cback(tBTM_BLE_PF_STATUS_CBACK p_stat_cback, uint8_t* p,
  ******************************************************************************/
 void BTM_BleEnableDisableFilterFeature(uint8_t enable,
                                        tBTM_BLE_PF_STATUS_CBACK p_stat_cback) {
-  if (BTM_SUCCESS != btm_ble_obtain_vsc_details()) {
+  if (!is_filtering_supported()) {
     if (p_stat_cback) p_stat_cback.Run(BTM_BLE_PF_ENABLE, 1 /* BTA_FAILURE */);
     return;
   }
@@ -893,7 +878,10 @@ void BTM_BleEnableDisableFilterFeature(uint8_t enable,
  ******************************************************************************/
 void btm_ble_adv_filter_init(void) {
   memset(&btm_ble_adv_filt_cb, 0, sizeof(tBTM_BLE_ADV_FILTER_CB));
-  if (BTM_SUCCESS != btm_ble_obtain_vsc_details()) return;
+
+  BTM_BleGetVendorCapabilities(&cmn_ble_vsc_cb);
+
+  if (!is_filtering_supported()) return;
 
   if (cmn_ble_vsc_cb.max_filter > 0) {
     btm_ble_adv_filt_cb.p_addr_filter_count = (tBTM_BLE_PF_COUNT*)osi_malloc(
