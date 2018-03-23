@@ -67,7 +67,11 @@ class Device {
   bool IsActive() const;
 
   /**
-   * Register a callback to be informed when a device receives a message.
+   * Register the interfaces that the device uses to get information. If the
+   * Volume Interface is null, then absolute volume is disabled.
+   * TODO (apanicke): Add these to the constructor/factory so that each device
+   * is created valid and can't be accidentally interacted with when no
+   * interfaces are registered.
    */
   void RegisterInterfaces(MediaInterface* interface,
                           A2dpInterface* a2dp_interface,

@@ -77,10 +77,6 @@ class SdpInterface {
 
 class A2dpInterface {
  public:
-  virtual void event_open(const RawAddress& address) = 0;
-
-  virtual void event_close(const RawAddress& address) = 0;
-
   virtual RawAddress active_peer() = 0;
 
   virtual ~A2dpInterface() = default;
