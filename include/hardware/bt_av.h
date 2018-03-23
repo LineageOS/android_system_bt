@@ -212,7 +212,9 @@ typedef struct {
                      (channel_mode & BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO),
                      "STEREO");
 
-    return "codec: " + codec_name_str + " sample_rate: " + sample_rate_str +
+    return "codec: " + codec_name_str +
+           " priority: " + std::to_string(codec_priority) +
+           " sample_rate: " + sample_rate_str +
            " bits_per_sample: " + bits_per_sample_str +
            " channel_mode: " + channel_mode_str +
            " codec_specific_1: " + std::to_string(codec_specific_1) +

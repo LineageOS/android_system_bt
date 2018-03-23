@@ -405,6 +405,7 @@ class BtifAvSource {
         BTIF_TRACE_WARNING("%s: unable to set active peer to empty in BtaAvCo",
                            __func__);
       }
+      btif_a2dp_source_end_session(active_peer_);
       btif_a2dp_source_shutdown();
       active_peer_ = peer_address;
       return true;
@@ -421,6 +422,11 @@ class BtifAvSource {
                        __func__, peer_address.ToString().c_str());
       return false;
     }
+
+    // Start/restart the session
+    if (!active_peer_.IsEmpty()) {
+      btif_a2dp_source_end_session(active_peer_);
+    }
     bool should_startup = active_peer_.IsEmpty();
     active_peer_ = peer_address;
     if (should_startup) {
@@ -428,7 +434,34 @@ class BtifAvSource {
                        __func__);
       btif_a2dp_source_startup();
     }
+    btif_a2dp_source_start_session(peer_address);
     return true;
+  }
+
+  /**
+   * Update source codec configuration for a peer.
+   *
+   * @param peer_address the address of the peer to update
+   * @param codec_preferences the updated codec preferences
+   */
+  void UpdateCodecConfig(
+      const RawAddress& peer_address,
+      const std::vector<btav_a2dp_codec_config_t>& codec_preferences) {
+    // Restart the session if the codec for the active peer is updated
+    bool restart_session =
+        ((active_peer_ == peer_address) && !active_peer_.IsEmpty());
+    if (restart_session) {
+      btif_a2dp_source_end_session(active_peer_);
+    }
+
+    for (auto cp : codec_preferences) {
+      BTIF_TRACE_DEBUG("%s: codec_preference=%s", __func__,
+                       cp.ToString().c_str());
+      btif_a2dp_source_encoder_user_config_update_req(peer_address, cp);
+    }
+    if (restart_session) {
+      btif_a2dp_source_start_session(active_peer_);
+    }
   }
 
   const std::map<RawAddress, BtifAvPeer*>& Peers() const { return peers_; }
@@ -522,6 +555,7 @@ class BtifAvSink {
         BTIF_TRACE_WARNING("%s: unable to set active peer to empty in BtaAvCo",
                            __func__);
       }
+      btif_a2dp_sink_end_session(active_peer_);
       btif_a2dp_sink_shutdown();
       active_peer_ = peer_address;
       return true;
@@ -538,6 +572,11 @@ class BtifAvSink {
                        __func__, peer_address.ToString().c_str());
       return false;
     }
+
+    // Start/restart the session
+    if (!active_peer_.IsEmpty()) {
+      btif_a2dp_sink_end_session(active_peer_);
+    }
     bool should_startup = active_peer_.IsEmpty();
     active_peer_ = peer_address;
     if (should_startup) {
@@ -545,6 +584,7 @@ class BtifAvSink {
                        __func__);
       btif_a2dp_sink_startup();
     }
+    btif_a2dp_sink_start_session(peer_address);
     return true;
   }
 
@@ -1703,9 +1743,6 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
       break;  // Ignore
 
     case BTIF_AV_START_STREAM_REQ_EVT:
-      if (peer_.IsSink()) {
-        btif_a2dp_source_setup_codec(peer_.PeerAddress());
-      }
       BTA_AvStart(peer_.BtaHandle());
       peer_.SetFlags(BtifAvPeer::kFlagPendingStart);
       break;
@@ -1764,9 +1801,6 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
         BTA_AvCloseRc(peer_.BtaHandle());
       }
 
-      if (btif_av_is_a2dp_offload_enabled()) {
-        btif_a2dp_audio_interface_deinit();
-      }
       // Inform the application that we are disconnecting
       btif_report_connection_state(peer_.PeerAddress(),
                                    BTAV_CONNECTION_STATE_DISCONNECTING);
@@ -1776,9 +1810,6 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
       break;
 
     case BTA_AV_CLOSE_EVT:
-      if (btif_av_is_a2dp_offload_enabled()) {
-        btif_a2dp_audio_interface_deinit();
-      }
       // AVDTP link is closed
       if (peer_.IsActivePeer()) {
         btif_a2dp_on_stopped(nullptr);
@@ -1920,10 +1951,6 @@ bool BtifAvStateMachine::StateStarted::ProcessEvent(uint32_t event,
         BTA_AvCloseRc(peer_.BtaHandle());
       }
 
-      if (btif_av_is_a2dp_offload_enabled()) {
-        btif_a2dp_audio_interface_deinit();
-      }
-
       // Inform the application that we are disconnecting
       btif_report_connection_state(peer_.PeerAddress(),
                                    BTAV_CONNECTION_STATE_DISCONNECTING);
@@ -1999,9 +2026,6 @@ bool BtifAvStateMachine::StateStarted::ProcessEvent(uint32_t event,
 
       peer_.SetFlags(BtifAvPeer::kFlagPendingStop);
 
-      if (btif_av_is_a2dp_offload_enabled()) {
-        btif_a2dp_audio_interface_deinit();
-      }
       // AVDTP link is closed
       if (peer_.IsActivePeer()) {
         btif_a2dp_on_stopped(nullptr);
@@ -2626,22 +2650,10 @@ static bt_status_t codec_config_src(
     return BT_STATUS_NOT_READY;
   }
 
-  for (auto cp : codec_preferences) {
-    BTIF_TRACE_DEBUG(
-        "%s: codec_type=%d codec_priority=%d "
-        "sample_rate=0x%x bits_per_sample=0x%x "
-        "channel_mode=0x%x codec_specific_1=%d "
-        "codec_specific_2=%d codec_specific_3=%d "
-        "codec_specific_4=%d",
-        __func__, cp.codec_type, cp.codec_priority, cp.sample_rate,
-        cp.bits_per_sample, cp.channel_mode, cp.codec_specific_1,
-        cp.codec_specific_2, cp.codec_specific_3, cp.codec_specific_4);
-    do_in_jni_thread(
-        FROM_HERE, base::Bind(&btif_a2dp_source_encoder_user_config_update_req,
-                              peer_address, cp));
-  }
-
-  return BT_STATUS_SUCCESS;
+  return do_in_jni_thread(
+      FROM_HERE, base::Bind(&BtifAvSource::UpdateCodecConfig,
+                            base::Unretained(&btif_av_source), peer_address,
+                            codec_preferences));
 }
 
 static void cleanup_src(void) {

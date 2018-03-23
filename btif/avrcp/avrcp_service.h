@@ -21,6 +21,7 @@
 
 #include "avrcp.h"
 #include "connection_handler.h"
+#include "osi/include/properties.h"
 #include "raw_address.h"
 
 namespace bluetooth {
@@ -93,3 +94,7 @@ class AvrcpService : public MediaCallbacks {
 
 }  // namespace avrcp
 }  // namespace bluetooth
+
+inline bool is_new_avrcp_enabled() {
+  return osi_property_get_bool("persist.bluetooth.enablenewavrcp", false);
+}
