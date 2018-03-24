@@ -965,11 +965,12 @@ class BleAdvertisingManagerImpl
       uint8_t status, uint8_t advertising_handle, uint16_t connection_handle,
       uint8_t num_completed_extended_adv_events) override {
     AdvertisingInstance* p_inst = &adv_inst[advertising_handle];
-    VLOG(1) << __func__ << "status: 0x" << std::hex << +status
-            << ", advertising_handle: 0x" << std::hex << +advertising_handle
-            << ", connection_handle: 0x" << std::hex << +connection_handle;
+    VLOG(1) << __func__ << "status: " << loghex(status)
+            << ", advertising_handle: " << loghex(advertising_handle)
+            << ", connection_handle: " << loghex(connection_handle);
 
-    if (status == 0x43 || status == 0x3C) {
+    if (status == HCI_ERR_LIMIT_REACHED ||
+        status == HCI_ERR_ADVERTISING_TIMEOUT) {
       // either duration elapsed, or maxExtAdvEvents reached
       p_inst->enable_status = false;
 
