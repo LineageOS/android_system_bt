@@ -1990,7 +1990,7 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
 #endif
   } else {
     role = HCI_ROLE_UNKNOWN;
-    if (status != HCI_ERR_DIRECTED_ADVERTISING_TIMEOUT) {
+    if (status != HCI_ERR_ADVERTISING_TIMEOUT) {
       btm_ble_set_conn_st(BLE_CONN_IDLE);
 #if (BLE_PRIVACY_SPT == TRUE)
       btm_ble_disable_resolving_list(BTM_BLE_RL_INIT, true);
