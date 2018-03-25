@@ -400,53 +400,53 @@ void bta_gattc_sdp_callback(uint16_t sdp_status, void* user_data) {
   tBTA_GATTC_CB_DATA* cb_data = (tBTA_GATTC_CB_DATA*)user_data;
   tBTA_GATTC_SERV* p_srvc_cb = bta_gattc_find_scb_by_cid(cb_data->sdp_conn_id);
 
-  bool no_pending_disc = p_srvc_cb->pending_discovery.empty();
+  if (p_srvc_cb == nullptr) {
+    LOG(ERROR) << "GATT service discovery is done on unknown connection";
+  } else {
+    bool no_pending_disc = p_srvc_cb->pending_discovery.empty();
 
-  if (((sdp_status == SDP_SUCCESS) || (sdp_status == SDP_DB_FULL)) &&
-      p_srvc_cb != NULL) {
-    tSDP_DISC_REC* p_sdp_rec = NULL;
-    do {
-      /* find a service record, report it */
-      p_sdp_rec = SDP_FindServiceInDb(cb_data->p_sdp_db, 0, p_sdp_rec);
-      if (p_sdp_rec) {
-        Uuid service_uuid;
-        if (SDP_FindServiceUUIDInRec(p_sdp_rec, &service_uuid)) {
-          tSDP_PROTOCOL_ELEM pe;
-          if (SDP_FindProtocolListElemInRec(p_sdp_rec, UUID_PROTOCOL_ATT,
-                                            &pe)) {
-            uint16_t start_handle = (uint16_t)pe.params[0];
-            uint16_t end_handle = (uint16_t)pe.params[1];
+    if ((sdp_status == SDP_SUCCESS) || (sdp_status == SDP_DB_FULL)) {
+      tSDP_DISC_REC* p_sdp_rec = NULL;
+      do {
+        /* find a service record, report it */
+        p_sdp_rec = SDP_FindServiceInDb(cb_data->p_sdp_db, 0, p_sdp_rec);
+        if (p_sdp_rec) {
+          Uuid service_uuid;
+          if (SDP_FindServiceUUIDInRec(p_sdp_rec, &service_uuid)) {
+            tSDP_PROTOCOL_ELEM pe;
+            if (SDP_FindProtocolListElemInRec(p_sdp_rec, UUID_PROTOCOL_ATT,
+                                              &pe)) {
+              uint16_t start_handle = (uint16_t)pe.params[0];
+              uint16_t end_handle = (uint16_t)pe.params[1];
 
 #if (BTA_GATT_DEBUG == TRUE)
-            VLOG(1) << "Found ATT service uuid=" << service_uuid
-                    << ", s_handle=" << loghex(start_handle)
-                    << ", e_handle=" << loghex(end_handle);
+              VLOG(1) << "Found ATT service uuid=" << service_uuid
+                      << ", s_handle=" << loghex(start_handle)
+                      << ", e_handle=" << loghex(end_handle);
 #endif
 
-            if (GATT_HANDLE_IS_VALID(start_handle) &&
-                GATT_HANDLE_IS_VALID(end_handle) && p_srvc_cb != NULL) {
-              /* discover services result, add services into a service list */
-              add_service_to_gatt_db(p_srvc_cb->pending_discovery, start_handle,
-                                     end_handle, service_uuid, true);
-            } else {
-              LOG(ERROR) << "invalid start_handle=" << loghex(start_handle)
-                         << ", end_handle=" << loghex(end_handle);
+              if (GATT_HANDLE_IS_VALID(start_handle) &&
+                  GATT_HANDLE_IS_VALID(end_handle) && p_srvc_cb != NULL) {
+                /* discover services result, add services into a service list */
+                add_service_to_gatt_db(p_srvc_cb->pending_discovery,
+                                       start_handle, end_handle, service_uuid,
+                                       true);
+              } else {
+                LOG(ERROR) << "invalid start_handle=" << loghex(start_handle)
+                           << ", end_handle=" << loghex(end_handle);
+              }
             }
           }
         }
-      }
-    } while (p_sdp_rec);
-  }
+      } while (p_sdp_rec);
+    }
 
-  if (p_srvc_cb != NULL) {
     if (no_pending_disc) {
       p_srvc_cb->pending_service = p_srvc_cb->pending_discovery.begin();
     }
 
     /* start discover primary service */
     bta_gattc_explore_srvc(cb_data->sdp_conn_id, p_srvc_cb);
-  } else {
-    LOG(ERROR) << "GATT service discovery is done on unknown connection";
   }
 
   /* both were allocated in bta_gattc_sdp_service_disc */

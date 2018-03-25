@@ -31,5 +31,7 @@ void btif_a2dp_audio_on_stopped(tBTA_AV_STATUS status);
 void btif_a2dp_audio_on_suspended(tBTA_AV_STATUS status);
 void btif_a2dp_audio_interface_init(void);
 void btif_a2dp_audio_interface_deinit(void);
+void btif_a2dp_audio_interface_start_session(void);
+void btif_a2dp_audio_interface_end_session(void);
 
 #endif /* BTIF_A2DP_AUDIO_INTERFACE_H */

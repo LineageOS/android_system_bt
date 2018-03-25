@@ -1909,13 +1909,20 @@ void btm_ble_process_ext_adv_pkt(uint8_t data_len, uint8_t* data) {
 
     uint8_t* pkt_data = p;
     p += pkt_data_len; /* Advance to the the next packet*/
-
-    if (rssi >= 21 && rssi <= 126) {
-      BTM_TRACE_ERROR("%s: bad rssi value in advertising report: ", __func__,
-                      pkt_data_len, rssi);
+    if (p > data + data_len) {
+      LOG(ERROR) << "Invalid pkt_data_len: " << +pkt_data_len;
+      return;
     }
 
-    btm_ble_process_adv_addr(bda, &addr_type);
+    if (rssi >= 21 && rssi <= 126) {
+      BTM_TRACE_ERROR("%s: bad rssi value in advertising report: %d", __func__,
+                      rssi);
+    }
+
+    if (addr_type != BLE_ADDR_ANONYMOUS) {
+      btm_ble_process_adv_addr(bda, &addr_type);
+    }
+
     btm_ble_process_adv_pkt_cont(event_type, addr_type, bda, primary_phy,
                                  secondary_phy, advertising_sid, tx_power, rssi,
                                  periodic_adv_int, pkt_data_len, pkt_data);
@@ -1954,6 +1961,10 @@ void btm_ble_process_adv_pkt(uint8_t data_len, uint8_t* data) {
 
     uint8_t* pkt_data = p;
     p += pkt_data_len; /* Advance to the the rssi byte */
+    if (p > data + data_len - sizeof(rssi)) {
+      LOG(ERROR) << "Invalid pkt_data_len: " << +pkt_data_len;
+      return;
+    }
 
     STREAM_TO_INT8(rssi, p);
 
@@ -2554,7 +2565,7 @@ void btm_ble_update_link_topology_mask(uint8_t link_role, bool increase) {
  ******************************************************************************/
 void btm_ble_update_mode_operation(uint8_t link_role, const RawAddress* bd_addr,
                                    uint8_t status) {
-  if (status == HCI_ERR_DIRECTED_ADVERTISING_TIMEOUT) {
+  if (status == HCI_ERR_ADVERTISING_TIMEOUT) {
     btm_cb.ble_ctr_cb.inq_var.adv_mode = BTM_BLE_ADV_DISABLE;
     /* make device fall back into undirected adv mode by default */
     btm_cb.ble_ctr_cb.inq_var.directed_conn = BTM_BLE_CONNECT_EVT;

@@ -36,6 +36,9 @@ namespace avrcp {
  * A class representing a connection with a remote AVRCP device. It holds all
  * the state and message handling for the device that it represents.
  */
+// TODO (apanicke): Once we move over to having the individual message
+// responders for Browse and Classic AVRCP Messages move the device around via a
+// weak pointer.
 class Device {
  public:
   /**
@@ -46,7 +49,7 @@ class Device {
 
   Device(
       const RawAddress& bdaddr, bool avrcp13_compatibility,
-      base::Callback<bool(uint8_t label, bool browse,
+      base::Callback<void(uint8_t label, bool browse,
                           std::unique_ptr<::bluetooth::PacketBuilder> message)>
           send_msg_cb);
   virtual ~Device() = default;
@@ -64,7 +67,11 @@ class Device {
   bool IsActive() const;
 
   /**
-   * Register a callback to be informed when a device receives a message.
+   * Register the interfaces that the device uses to get information. If the
+   * Volume Interface is null, then absolute volume is disabled.
+   * TODO (apanicke): Add these to the constructor/factory so that each device
+   * is created valid and can't be accidentally interacted with when no
+   * interfaces are registered.
    */
   void RegisterInterfaces(MediaInterface* interface,
                           A2dpInterface* a2dp_interface,
@@ -254,7 +261,7 @@ class Device {
   // such as browsing and playlists but has the highest chance of working.
   bool avrcp13_compatibility_ = false;
 
-  base::Callback<bool(uint8_t label, bool browse,
+  base::Callback<void(uint8_t label, bool browse,
                       std::unique_ptr<::bluetooth::PacketBuilder> message)>
       send_message_cb_;
 
@@ -262,6 +269,7 @@ class Device {
   std::set<uint8_t> active_labels_;
 
   int8_t volume_ = -1;
+  DISALLOW_COPY_AND_ASSIGN(Device);
 };
 
 }  // namespace avrcp

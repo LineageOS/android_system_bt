@@ -301,6 +301,10 @@ static BtifA2dpSource btif_a2dp_source_cb;
 
 static void btif_a2dp_source_init_delayed(void);
 static void btif_a2dp_source_startup_delayed(void);
+static void btif_a2dp_source_start_session_delayed(
+    const RawAddress& peer_address);
+static void btif_a2dp_source_end_session_delayed(
+    const RawAddress& peer_address);
 static void btif_a2dp_source_shutdown_delayed(void);
 static void btif_a2dp_source_cleanup_delayed(void);
 static void btif_a2dp_source_audio_tx_start_event(void);
@@ -421,6 +425,51 @@ static void btif_a2dp_source_startup_delayed(void) {
       system_bt_osi::CONNECTION_TECHNOLOGY_TYPE_BREDR, 0);
 }
 
+bool btif_a2dp_source_start_session(const RawAddress& peer_address) {
+  LOG_INFO(LOG_TAG, "%s: peer_address=%s", __func__,
+           peer_address.ToString().c_str());
+  btif_a2dp_source_setup_codec(peer_address);
+  btif_a2dp_source_thread.DoInThread(
+      FROM_HERE,
+      base::Bind(&btif_a2dp_source_start_session_delayed, peer_address));
+  return true;
+}
+
+static void btif_a2dp_source_start_session_delayed(
+    const RawAddress& peer_address) {
+  LOG_INFO(LOG_TAG, "%s: peer_address=%s", __func__,
+           peer_address.ToString().c_str());
+  if (btif_a2dp_source_cb.State() != BtifA2dpSource::kStateRunning) {
+    LOG_ERROR(LOG_TAG, "%s: A2DP Source media task is not running", __func__);
+    return;
+  }
+  if (btif_av_is_a2dp_offload_enabled()) {
+    btif_a2dp_audio_interface_start_session();
+  }
+}
+
+bool btif_a2dp_source_end_session(const RawAddress& peer_address) {
+  LOG_INFO(LOG_TAG, "%s: peer_address=%s", __func__,
+           peer_address.ToString().c_str());
+  btif_a2dp_source_thread.DoInThread(
+      FROM_HERE,
+      base::Bind(&btif_a2dp_source_end_session_delayed, peer_address));
+  return true;
+}
+
+static void btif_a2dp_source_end_session_delayed(
+    const RawAddress& peer_address) {
+  LOG_INFO(LOG_TAG, "%s: peer_address=%s", __func__,
+           peer_address.ToString().c_str());
+  if (btif_a2dp_source_cb.State() != BtifA2dpSource::kStateRunning) {
+    LOG_ERROR(LOG_TAG, "%s: A2DP Source media task is not running", __func__);
+    return;
+  }
+  if (btif_av_is_a2dp_offload_enabled()) {
+    btif_a2dp_audio_interface_end_session();
+  }
+}
+
 void btif_a2dp_source_shutdown(void) {
   LOG_INFO(LOG_TAG, "%s", __func__);
 
@@ -491,6 +540,7 @@ void btif_a2dp_source_setup_codec(const RawAddress& peer_address) {
   // we're using that in frame size calculations now.
   CHECK(CHAR_BIT == 8);
 
+  btif_a2dp_source_audio_tx_flush_req();
   btif_a2dp_source_thread.DoInThread(
       FROM_HERE,
       base::Bind(&btif_a2dp_source_setup_codec_delayed, peer_address));
