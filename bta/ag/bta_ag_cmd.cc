@@ -1757,7 +1757,8 @@ void bta_ag_send_bcs(tBTA_AG_SCB* p_scb) {
  ******************************************************************************/
 void bta_ag_send_ring(tBTA_AG_SCB* p_scb,
                       UNUSED_ATTR const tBTA_AG_DATA& data) {
-  if (p_scb->callsetup_ind != BTA_AG_CALLSETUP_INCOMING) {
+  if ((p_scb->conn_service == BTA_AG_HFP) &&
+      p_scb->callsetup_ind != BTA_AG_CALLSETUP_INCOMING) {
     APPL_TRACE_DEBUG("%s: don't send the ring since there is no MT call setup",
                      __func__);
     return;
