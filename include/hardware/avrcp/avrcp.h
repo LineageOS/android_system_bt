@@ -22,7 +22,6 @@
 #include <base/bind.h>
 
 #include "avrcp_common.h"
-#include "avrcp_logging_helper.h"
 #include "raw_address.h"
 
 namespace bluetooth {
