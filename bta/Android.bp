@@ -12,6 +12,7 @@ cc_defaults {
         "system/bt",
         "system/bt/bta/include",
         "system/bt/btcore/include",
+        "system/bt/btif/avrcp",
         "system/bt/hci/include",
         "system/bt/internal_include",
         "system/bt/stack/include",
@@ -109,7 +110,10 @@ cc_library_static {
         "sys/bta_sys_main.cc",
         "sys/utl.cc",
     ],
-
+    static_libs: [
+        "avrcp-target-service",
+        "lib-bt-packets",
+    ],
     whole_static_libs: [
         "libaudio-hearing-aid-hw-utils",
     ],
