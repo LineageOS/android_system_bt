@@ -111,13 +111,13 @@ A2dpCodecConfig* A2dpCodecConfig::createCodec(
   A2dpCodecConfig* codec_config = nullptr;
   switch (codec_index) {
     case BTAV_A2DP_CODEC_INDEX_SOURCE_SBC:
-      codec_config = new A2dpCodecConfigSbc(codec_priority);
+      codec_config = new A2dpCodecConfigSbcSource(codec_priority);
       break;
     case BTAV_A2DP_CODEC_INDEX_SINK_SBC:
       codec_config = new A2dpCodecConfigSbcSink(codec_priority);
       break;
     case BTAV_A2DP_CODEC_INDEX_SOURCE_AAC:
-      codec_config = new A2dpCodecConfigAac(codec_priority);
+      codec_config = new A2dpCodecConfigAacSource(codec_priority);
       break;
     case BTAV_A2DP_CODEC_INDEX_SINK_AAC:
       codec_config = new A2dpCodecConfigAacSink(codec_priority);
@@ -649,12 +649,39 @@ A2dpCodecConfig* A2dpCodecs::findSourceCodecConfig(
   return iter->second;
 }
 
+A2dpCodecConfig* A2dpCodecs::findSinkCodecConfig(const uint8_t* p_codec_info) {
+  std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
+  btav_a2dp_codec_index_t codec_index = A2DP_SinkCodecIndex(p_codec_info);
+  if (codec_index == BTAV_A2DP_CODEC_INDEX_MAX) return nullptr;
+
+  auto iter = indexed_codecs_.find(codec_index);
+  if (iter == indexed_codecs_.end()) return nullptr;
+  return iter->second;
+}
+
 bool A2dpCodecs::setCodecConfig(const uint8_t* p_peer_codec_info,
                                 bool is_capability,
                                 uint8_t* p_result_codec_config,
                                 bool select_current_codec) {
   std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
   A2dpCodecConfig* a2dp_codec_config = findSourceCodecConfig(p_peer_codec_info);
+  if (a2dp_codec_config == nullptr) return false;
+  if (!a2dp_codec_config->setCodecConfig(p_peer_codec_info, is_capability,
+                                         p_result_codec_config)) {
+    return false;
+  }
+  if (select_current_codec) {
+    current_codec_config_ = a2dp_codec_config;
+  }
+  return true;
+}
+
+bool A2dpCodecs::setSinkCodecConfig(const uint8_t* p_peer_codec_info,
+                                    bool is_capability,
+                                    uint8_t* p_result_codec_config,
+                                    bool select_current_codec) {
+  std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
+  A2dpCodecConfig* a2dp_codec_config = findSinkCodecConfig(p_peer_codec_info);
   if (a2dp_codec_config == nullptr) return false;
   if (!a2dp_codec_config->setCodecConfig(p_peer_codec_info, is_capability,
                                          p_result_codec_config)) {
@@ -1058,27 +1085,6 @@ void A2DP_InitDefaultCodec(uint8_t* p_codec_info) {
   A2DP_InitDefaultCodecSbc(p_codec_info);
 }
 
-tA2DP_STATUS A2DP_BuildSrc2SinkConfig(const uint8_t* p_src_cap,
-                                      uint8_t* p_pref_cfg) {
-  tA2DP_CODEC_TYPE codec_type = A2DP_GetCodecType(p_src_cap);
-
-  LOG_VERBOSE(LOG_TAG, "%s: codec_type = 0x%x", __func__, codec_type);
-
-  switch (codec_type) {
-    case A2DP_MEDIA_CT_SBC:
-      return A2DP_BuildSrc2SinkConfigSbc(p_src_cap, p_pref_cfg);
-    case A2DP_MEDIA_CT_AAC:
-      return A2DP_BuildSrc2SinkConfigAac(p_src_cap, p_pref_cfg);
-    case A2DP_MEDIA_CT_NON_A2DP:
-      return A2DP_VendorBuildSrc2SinkConfig(p_src_cap, p_pref_cfg);
-    default:
-      break;
-  }
-
-  LOG_ERROR(LOG_TAG, "%s: unsupported codec type 0x%x", __func__, codec_type);
-  return A2DP_NS_CODEC_TYPE;
-}
-
 bool A2DP_UsesRtpHeader(bool content_protection_enabled,
                         const uint8_t* p_codec_info) {
   tA2DP_CODEC_TYPE codec_type = A2DP_GetCodecType(p_codec_info);
@@ -1328,6 +1334,26 @@ btav_a2dp_codec_index_t A2DP_SourceCodecIndex(const uint8_t* p_codec_info) {
       return A2DP_SourceCodecIndexAac(p_codec_info);
     case A2DP_MEDIA_CT_NON_A2DP:
       return A2DP_VendorSourceCodecIndex(p_codec_info);
+    default:
+      break;
+  }
+
+  LOG_ERROR(LOG_TAG, "%s: unsupported codec type 0x%x", __func__, codec_type);
+  return BTAV_A2DP_CODEC_INDEX_MAX;
+}
+
+btav_a2dp_codec_index_t A2DP_SinkCodecIndex(const uint8_t* p_codec_info) {
+  tA2DP_CODEC_TYPE codec_type = A2DP_GetCodecType(p_codec_info);
+
+  LOG_VERBOSE(LOG_TAG, "%s: codec_type = 0x%x", __func__, codec_type);
+
+  switch (codec_type) {
+    case A2DP_MEDIA_CT_SBC:
+      return A2DP_SinkCodecIndexSbc(p_codec_info);
+    case A2DP_MEDIA_CT_AAC:
+      return A2DP_SinkCodecIndexAac(p_codec_info);
+    case A2DP_MEDIA_CT_NON_A2DP:
+      return A2DP_VendorSinkCodecIndex(p_codec_info);
     default:
       break;
   }
