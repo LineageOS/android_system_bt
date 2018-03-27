@@ -1106,18 +1106,19 @@ void BtaAvCo::ProcessSetConfig(tBTA_AV_HNDL bta_av_handle,
     if (t_local_sep == AVDT_TSEP_SRC) {
       APPL_TRACE_DEBUG("%s: peer %s is A2DP SINK", __func__,
                        p_peer->addr.ToString().c_str());
-      bool restart_output = false;
+      // Ignore the restart_output flag: accepting the remote device's
+      // codec selection should not trigger codec reconfiguration.
+      bool dummy_restart_output = false;
       if ((p_peer->GetCodecs() == nullptr) ||
           !SetCodecOtaConfig(p_peer, p_codec_info, num_protect, p_protect_info,
-                             &restart_output)) {
+                             &dummy_restart_output)) {
         APPL_TRACE_ERROR("%s: cannot set source codec %s for peer %s", __func__,
                          A2DP_CodecName(p_codec_info),
                          p_peer->addr.ToString().c_str());
       } else {
         codec_config_supported = true;
         // Check if reconfiguration is needed
-        if (restart_output ||
-            ((num_protect == 1) && !p_peer->ContentProtectActive())) {
+        if (((num_protect == 1) && !p_peer->ContentProtectActive())) {
           reconfig_needed = true;
         }
       }
