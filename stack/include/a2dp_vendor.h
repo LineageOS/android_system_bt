@@ -76,15 +76,6 @@ bool A2DP_IsVendorSinkCodecSupported(const uint8_t* p_codec_info);
 // device is supported, otherwise false.
 bool A2DP_IsVendorPeerSourceCodecSupported(const uint8_t* p_codec_info);
 
-// Builds a vendor-specific A2DP preferred Sink capability from a vendor
-// Source capability.
-// |p_src_cap| is the Source capability to use.
-// |p_pref_cfg| is the result Sink capability to store.
-// Returns |A2DP_SUCCESS| on success, otherwise the corresponding A2DP error
-// status code.
-tA2DP_STATUS A2DP_VendorBuildSrc2SinkConfig(const uint8_t* p_src_cap,
-                                            uint8_t* p_pref_cfg);
-
 // Gets the Vendor ID for the vendor-specific A2DP codec.
 // |p_codec_info| contains information about the codec capabilities.
 // Returns the Vendor ID for the vendor-specific A2DP codec.
@@ -189,6 +180,11 @@ bool A2DP_VendorAdjustCodec(uint8_t* p_codec_info);
 // otherwise |BTAV_A2DP_CODEC_INDEX_MAX|.
 btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndex(
     const uint8_t* p_codec_info);
+
+// Gets the A2DP vendor Sink codec index for a given |p_codec_info|.
+// Returns the corresponding |btav_a2dp_codec_index_t| on success,
+// otherwise |BTAV_A2DP_CODEC_INDEX_MAX|.
+btav_a2dp_codec_index_t A2DP_VendorSinkCodecIndex(const uint8_t* p_codec_info);
 
 // Gets the A2DP vendor codec name for a given |codec_index|.
 const char* A2DP_VendorCodecIndexStr(btav_a2dp_codec_index_t codec_index);
