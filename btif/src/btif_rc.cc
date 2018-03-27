@@ -2550,6 +2550,7 @@ static bt_status_t set_volume(uint8_t volume) {
           "%s: failed to obtain transaction details. status: 0x%02x", __func__,
           tran_status);
       status = BT_STATUS_FAIL;
+      continue;
     }
 
     BTIF_TRACE_DEBUG("%s: msgreq being sent out with label: %d", __func__,
