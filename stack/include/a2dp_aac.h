@@ -25,15 +25,28 @@
 #include "a2dp_codec_api.h"
 #include "avdt_api.h"
 
-class A2dpCodecConfigAac : public A2dpCodecConfig {
+class A2dpCodecConfigAacBase : public A2dpCodecConfig {
+ protected:
+  A2dpCodecConfigAacBase(btav_a2dp_codec_index_t codec_index,
+                         const std::string& name,
+                         btav_a2dp_codec_priority_t codec_priority,
+                         bool is_source)
+      : A2dpCodecConfig(codec_index, name, codec_priority),
+        is_source_(is_source) {}
+  bool setCodecConfig(const uint8_t* p_peer_codec_info, bool is_capability,
+                      uint8_t* p_result_codec_config) override;
+
+ private:
+  bool is_source_;  // True if local is Source
+};
+
+class A2dpCodecConfigAacSource : public A2dpCodecConfigAacBase {
  public:
-  A2dpCodecConfigAac(btav_a2dp_codec_priority_t codec_priority);
-  virtual ~A2dpCodecConfigAac();
+  A2dpCodecConfigAacSource(btav_a2dp_codec_priority_t codec_priority);
+  virtual ~A2dpCodecConfigAacSource();
 
   bool init() override;
   period_ms_t encoderIntervalMs() const override;
-  bool setCodecConfig(const uint8_t* p_peer_codec_info, bool is_capability,
-                      uint8_t* p_result_codec_config) override;
 
  private:
   bool useRtpHeaderMarkerBit() const override;
@@ -44,15 +57,13 @@ class A2dpCodecConfigAac : public A2dpCodecConfig {
   void debug_codec_dump(int fd) override;
 };
 
-class A2dpCodecConfigAacSink : public A2dpCodecConfig {
+class A2dpCodecConfigAacSink : public A2dpCodecConfigAacBase {
  public:
   A2dpCodecConfigAacSink(btav_a2dp_codec_priority_t codec_priority);
   virtual ~A2dpCodecConfigAacSink();
 
   bool init() override;
   period_ms_t encoderIntervalMs() const override;
-  bool setCodecConfig(const uint8_t* p_peer_codec_info, bool is_capability,
-                      uint8_t* p_result_codec_config) override;
 
  private:
   bool useRtpHeaderMarkerBit() const override;
@@ -109,14 +120,6 @@ bool A2DP_IsPeerSourceCodecSupportedAac(const uint8_t* p_codec_info);
 // false.
 bool A2DP_UsesRtpHeaderAac(bool content_protection_enabled,
                            const uint8_t* p_codec_info);
-
-// Builds A2DP preferred AAC Sink capability from AAC Source capability.
-// |p_src_cap| is the Source capability to use.
-// |p_pref_cfg| is the result Sink capability to store.
-// Returns |A2DP_SUCCESS| on success, otherwise the corresponding A2DP error
-// status code.
-tA2DP_STATUS A2DP_BuildSrc2SinkConfigAac(const uint8_t* p_src_cap,
-                                         uint8_t* p_pref_cfg);
 
 // Gets the A2DP AAC codec name for a given |p_codec_info|.
 const char* A2DP_CodecNameAac(const uint8_t* p_codec_info);
@@ -236,6 +239,11 @@ bool A2DP_AdjustCodecAac(uint8_t* p_codec_info);
 // Returns the corresponding |btav_a2dp_codec_index_t| on success,
 // otherwise |BTAV_A2DP_CODEC_INDEX_MAX|.
 btav_a2dp_codec_index_t A2DP_SourceCodecIndexAac(const uint8_t* p_codec_info);
+
+// Gets the A2DP AAC Sink codec index for a given |p_codec_info|.
+// Returns the corresponding |btav_a2dp_codec_index_t| on success,
+// otherwise |BTAV_A2DP_CODEC_INDEX_MAX|.
+btav_a2dp_codec_index_t A2DP_SinkCodecIndexAac(const uint8_t* p_codec_info);
 
 // Gets the A2DP AAC Source codec name.
 const char* A2DP_CodecIndexStrAac(void);
