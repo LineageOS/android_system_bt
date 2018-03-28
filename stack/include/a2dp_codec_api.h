@@ -287,6 +287,11 @@ class A2dpCodecs {
   // Returns the Source codec if found, otherwise nullptr.
   A2dpCodecConfig* findSourceCodecConfig(const uint8_t* p_codec_info);
 
+  // Finds the Sink codec that corresponds to the A2DP over-the-air
+  // |p_codec_info| information.
+  // Returns the Sink codec if found, otherwise nullptr.
+  A2dpCodecConfig* findSinkCodecConfig(const uint8_t* p_codec_info);
+
   // Gets the codec config that is currently selected.
   // Returns the codec config that is currently selected, or nullptr if
   // no codec is selected.
@@ -342,6 +347,13 @@ class A2dpCodecs {
   bool setCodecConfig(const uint8_t* p_peer_codec_info, bool is_capability,
                       uint8_t* p_result_codec_config,
                       bool select_current_codec);
+
+  // Sets the A2DP Sink codec configuration to be used with a peer Source
+  // device.
+  // [See setCodecConfig() for description]
+  bool setSinkCodecConfig(const uint8_t* p_peer_codec_info, bool is_capability,
+                          uint8_t* p_result_codec_config,
+                          bool select_current_codec);
 
   // Sets the user prefered codec configuration.
   // |codec_user_config| contains the preferred codec configuration.
@@ -572,14 +584,6 @@ bool A2DP_IsPeerSourceCodecSupported(const uint8_t* p_codec_info);
 // |p_codec_info|.
 void A2DP_InitDefaultCodec(uint8_t* p_codec_info);
 
-// Builds A2DP preferred Sink capability from Source capability.
-// |p_src_cap| is the Source capability to use.
-// |p_pref_cfg| is the result Sink capability to store.
-// Returns |A2DP_SUCCESS| on success, otherwise the corresponding A2DP error
-// status code.
-tA2DP_STATUS A2DP_BuildSrc2SinkConfig(const uint8_t* p_src_cap,
-                                      uint8_t* p_pref_cfg);
-
 // Checks whether the A2DP data packets should contain RTP header.
 // |content_protection_enabled| is true if Content Protection is
 // enabled. |p_codec_info| contains information about the codec capabilities.
@@ -669,6 +673,11 @@ bool A2DP_AdjustCodec(uint8_t* p_codec_info);
 // Returns the corresponding |btav_a2dp_codec_index_t| on success,
 // otherwise |BTAV_A2DP_CODEC_INDEX_MAX|.
 btav_a2dp_codec_index_t A2DP_SourceCodecIndex(const uint8_t* p_codec_info);
+
+// Gets the A2DP Sink codec index for a given |p_codec_info|.
+// Returns the corresponding |btav_a2dp_codec_index_t| on success,
+// otherwise |BTAV_A2DP_CODEC_INDEX_MAX|.
+btav_a2dp_codec_index_t A2DP_SinkCodecIndex(const uint8_t* p_codec_info);
 
 // Gets the A2DP codec name for a given |codec_index|.
 const char* A2DP_CodecIndexStr(btav_a2dp_codec_index_t codec_index);
