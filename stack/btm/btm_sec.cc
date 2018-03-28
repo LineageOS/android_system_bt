@@ -58,7 +58,6 @@ static tBTM_SEC_SERV_REC* btm_sec_find_mx_serv(uint8_t is_originator,
                                                uint32_t mx_proto_id,
                                                uint32_t mx_chan_id);
 
-static tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec);
 static bool btm_sec_start_get_name(tBTM_SEC_DEV_REC* p_dev_rec);
 static void btm_sec_start_authentication(tBTM_SEC_DEV_REC* p_dev_rec);
 static void btm_sec_start_encryption(tBTM_SEC_DEV_REC* p_dev_rec);
@@ -5014,7 +5013,7 @@ void btm_sec_update_clock_offset(uint16_t handle, uint16_t clock_offset) {
  *                  BTM_NO_RESOURCES  - permission declined
  *
  ******************************************************************************/
-static tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
+tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
   BTM_TRACE_EVENT(
       "btm_sec_execute_procedure: Required:0x%x Flags:0x%x State:%d",
       p_dev_rec->security_required, p_dev_rec->sec_flags, p_dev_rec->sec_state);
