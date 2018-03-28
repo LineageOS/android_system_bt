@@ -623,35 +623,28 @@ void bta_dm_process_remove_device(const RawAddress& bd_addr) {
 
 /** Removes device, disconnects ACL link if required */
 void bta_dm_remove_device(const RawAddress& bd_addr) {
-  bool continue_delete_other_dev = false;
-
-  RawAddress other_address = bd_addr;
-
   /* If ACL exists for the device in the remove_bond message*/
-  bool continue_delete_dev = false;
-  uint8_t other_transport = BT_TRANSPORT_INVALID;
+  bool is_bd_addr_connected =
+      BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE) ||
+      BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_BR_EDR);
 
-  if (BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE) ||
-      BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_BR_EDR)) {
-    APPL_TRACE_DEBUG("%s: ACL Up count  %d", __func__,
+  uint8_t other_transport = BT_TRANSPORT_INVALID;
+  if (is_bd_addr_connected) {
+    APPL_TRACE_DEBUG("%s: ACL Up count: %d", __func__,
                      bta_dm_cb.device_list.count);
-    continue_delete_dev = false;
 
     /* Take the link down first, and mark the device for removal when
      * disconnected */
     for (int i = 0; i < bta_dm_cb.device_list.count; i++) {
-      if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr == bd_addr) {
-        uint8_t transport = BT_TRANSPORT_BR_EDR;
-
-        transport = bta_dm_cb.device_list.peer_device[i].transport;
-        bta_dm_cb.device_list.peer_device[i].conn_state = BTA_DM_UNPAIRING;
-        btm_remove_acl(bd_addr, transport);
-        APPL_TRACE_DEBUG("%s:transport = %d", __func__,
-                         bta_dm_cb.device_list.peer_device[i].transport);
+      auto& peer_device = bta_dm_cb.device_list.peer_device[i];
+      if (peer_device.peer_bdaddr == bd_addr) {
+        peer_device.conn_state = BTA_DM_UNPAIRING;
+        btm_remove_acl(bd_addr, peer_device.transport);
+        APPL_TRACE_DEBUG("%s: transport: %d", __func__, peer_device.transport);
 
         /* save the other transport to check if device is connected on
          * other_transport */
-        if (bta_dm_cb.device_list.peer_device[i].transport == BT_TRANSPORT_LE)
+        if (peer_device.transport == BT_TRANSPORT_LE)
           other_transport = BT_TRANSPORT_BR_EDR;
         else
           other_transport = BT_TRANSPORT_LE;
@@ -659,39 +652,44 @@ void bta_dm_remove_device(const RawAddress& bd_addr) {
         break;
       }
     }
-  } else {
-    continue_delete_dev = true;
   }
+
+  RawAddress other_address = bd_addr;
+  RawAddress other_address2 = bd_addr;
+
   // If it is DUMO device and device is paired as different address, unpair that
   // device
-  // if different address
-  if ((other_transport &&
-       (BTM_ReadConnectedTransportAddress(&other_address, other_transport))) ||
-      (!other_transport &&
-       (BTM_ReadConnectedTransportAddress(&other_address,
-                                          BT_TRANSPORT_BR_EDR) ||
-        BTM_ReadConnectedTransportAddress(&other_address, BT_TRANSPORT_LE)))) {
-    continue_delete_other_dev = false;
+  bool other_address_connected =
+      (other_transport)
+          ? BTM_ReadConnectedTransportAddress(&other_address, other_transport)
+          : (BTM_ReadConnectedTransportAddress(&other_address,
+                                               BT_TRANSPORT_BR_EDR) ||
+             BTM_ReadConnectedTransportAddress(&other_address2,
+                                               BT_TRANSPORT_LE));
+  if (other_address == bd_addr) other_address = other_address2;
+
+  if (other_address_connected) {
     /* Take the link down first, and mark the device for removal when
      * disconnected */
     for (int i = 0; i < bta_dm_cb.device_list.count; i++) {
-      if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr == other_address) {
-        bta_dm_cb.device_list.peer_device[i].conn_state = BTA_DM_UNPAIRING;
-        btm_remove_acl(other_address,
-                       bta_dm_cb.device_list.peer_device[i].transport);
+      auto& peer_device = bta_dm_cb.device_list.peer_device[i];
+      if (peer_device.peer_bdaddr == other_address) {
+        peer_device.conn_state = BTA_DM_UNPAIRING;
+        btm_remove_acl(other_address, peer_device.transport);
         break;
       }
     }
-  } else {
-    APPL_TRACE_DEBUG("%s: continue to delete the other dev ", __func__);
-    continue_delete_other_dev = true;
   }
+
   /* Delete the device mentioned in the msg */
-  if (continue_delete_dev) bta_dm_process_remove_device(bd_addr);
+  if (!is_bd_addr_connected) {
+    bta_dm_process_remove_device(bd_addr);
+  }
 
   /* Delete the other paired device too */
-  if (continue_delete_other_dev && !other_address.IsEmpty())
+  if (!other_address_connected && !other_address.IsEmpty()) {
     bta_dm_process_remove_device(other_address);
+  }
 }
 
 /*******************************************************************************
