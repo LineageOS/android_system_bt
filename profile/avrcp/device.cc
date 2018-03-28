@@ -134,6 +134,9 @@ void Device::VendorPacketHandler(uint8_t label,
       // this currently since the current implementation only has one
       // player and the player will never change, but we need it for a
       // more complete implementation.
+      auto response =
+          SetAddressedPlayerResponseBuilder::MakeBuilder(Status::NO_ERROR);
+      send_message(label, false, std::move(response));
     } break;
 
     default: {

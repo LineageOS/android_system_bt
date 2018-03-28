@@ -32,4 +32,5 @@
 #include "avrcp/get_total_number_of_items.h"
 #include "avrcp/play_item.h"
 #include "avrcp/set_absolute_volume.h"
+#include "avrcp/set_addressed_player.h"
 #include "avrcp/set_browsed_player.h"

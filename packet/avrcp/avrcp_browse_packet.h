@@ -20,12 +20,11 @@
 #include <base/macros.h>
 #include <iostream>
 
+#include "avrcp_common.h"
+#include "avrcp_logging_helper.h"
 #include "iterator.h"
 #include "packet.h"
 #include "packet_builder.h"
-
-#include "avrcp_common.h"
-#include "avrcp_logging_helper.h"
 
 namespace bluetooth {
 namespace avrcp {
