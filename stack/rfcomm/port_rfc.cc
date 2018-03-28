@@ -282,14 +282,18 @@ void PORT_ParNegInd(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu, uint8_t cl,
     /* This can be a first request for this port */
     p_port = port_find_dlci_port(dlci);
     if (!p_port) {
+      LOG(ERROR) << __func__ << ": Disconnect RFCOMM, port not found, dlci="
+                 << std::to_string(dlci) << ", p_mcb=" << p_mcb
+                 << ", bd_addr=" << p_mcb->bd_addr;
       /* If the port cannot be opened, send a DM.  Per Errata 1205 */
       rfc_send_dm(p_mcb, dlci, false);
       /* check if this is the last port open, some headsets have
       problem, they don't disconnect if we send DM */
       rfc_check_mcb_active(p_mcb);
-      RFCOMM_TRACE_EVENT("PORT_ParNegInd: port not found");
       return;
     }
+    RFCOMM_TRACE_EVENT("%s: port_inx[dlci:%d]:%d->%d", __func__, dlci,
+                       p_mcb->port_inx[dlci], p_port->inx);
     p_mcb->port_inx[dlci] = p_port->inx;
   }
 
