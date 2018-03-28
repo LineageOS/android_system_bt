@@ -20,6 +20,7 @@ cc_library_static {
         "play_item.cc",
         "register_notification_packet.cc",
         "set_absolute_volume.cc",
+        "set_addressed_player.cc",
         "set_browsed_player.cc",
         "vendor_packet.cc",
     ],

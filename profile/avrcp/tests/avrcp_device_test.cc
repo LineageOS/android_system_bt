@@ -429,6 +429,23 @@ TEST_F(AvrcpDeviceTest, getItemAttributesNowPlayingTest) {
   SendBrowseMessage(1, request);
 }
 
+TEST_F(AvrcpDeviceTest, setAddressedPlayerTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  auto set_addr_player_rsp =
+      SetAddressedPlayerResponseBuilder::MakeBuilder(Status::NO_ERROR);
+
+  EXPECT_CALL(response_cb,
+              Call(1, false, matchPacket(std::move(set_addr_player_rsp))))
+      .Times(1);
+
+  auto request = TestAvrcpPacket::Make(set_addressed_player_request);
+  SendMessage(1, request);
+}
+
 TEST_F(AvrcpDeviceTest, volumeChangedTest) {
   MockMediaInterface interface;
   NiceMock<MockA2dpInterface> a2dp_interface;
