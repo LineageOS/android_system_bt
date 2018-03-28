@@ -32,6 +32,7 @@
 #include "bta_ag_int.h"
 #include "bta_api.h"
 #include "bta_sys.h"
+#include "btif_config.h"
 #include "btm_api.h"
 #include "osi/include/osi.h"
 #include "sdp_api.h"
@@ -297,7 +298,10 @@ bool bta_ag_sdp_find_attr(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
 
   if (service & BTA_HFP_SERVICE_MASK) {
     uuid = UUID_SERVCLASS_HF_HANDSFREE;
-    p_scb->peer_version = HFP_VERSION_1_1; /* Default version */
+    /* If there is no cached peer version, use default one */
+    if (p_scb->peer_version == HFP_HSP_VERSION_UNKNOWN) {
+      p_scb->peer_version = HFP_VERSION_1_1; /* Default version */
+    }
   } else if (service & BTA_HSP_SERVICE_MASK && p_scb->role == BTA_AG_INT) {
     uuid = UUID_SERVCLASS_HEADSET_HS;
     p_scb->peer_version = HSP_VERSION_1_2; /* Default version */
@@ -333,13 +337,27 @@ bool bta_ag_sdp_find_attr(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
     }
 
     /* get profile version (if failure, version parameter is not updated) */
-    if (!SDP_FindProfileVersionInRec(p_rec, uuid, &p_scb->peer_version)) {
+    uint16_t peer_version = HFP_HSP_VERSION_UNKNOWN;
+    if (!SDP_FindProfileVersionInRec(p_rec, uuid, &peer_version)) {
       APPL_TRACE_WARNING("%s: Get peer_version failed, using default 0x%04x",
                          __func__, p_scb->peer_version);
+      peer_version = p_scb->peer_version;
     }
 
-    /* get features if HFP */
     if (service & BTA_HFP_SERVICE_MASK) {
+      /* Update cached peer version if the new one is different */
+      if (peer_version != p_scb->peer_version) {
+        p_scb->peer_version = peer_version;
+        if (btif_config_set_bin(
+                p_scb->peer_addr.ToString(), HFP_VERSION_CONFIG_KEY,
+                (const uint8_t*)&peer_version, sizeof(peer_version))) {
+          btif_config_save();
+        } else {
+          APPL_TRACE_WARNING("%s: Failed to store peer HFP version for %s",
+                             __func__, p_scb->peer_addr.ToString().c_str());
+        }
+      }
+      /* get features if HFP */
       p_attr = SDP_FindAttributeInRec(p_rec, ATTR_ID_SUPPORTED_FEATURES);
       if (p_attr != nullptr) {
         /* Found attribute. Get value. */
@@ -348,8 +366,10 @@ bool bta_ag_sdp_find_attr(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
         if (p_scb->peer_features == 0)
           p_scb->peer_features = p_attr->attr_value.v.u16;
       }
-    } else /* HSP */
-    {
+    } else {
+      /* No peer version caching for HSP, use discovered one directly */
+      p_scb->peer_version = peer_version;
+      /* get features if HSP */
       p_attr =
           SDP_FindAttributeInRec(p_rec, ATTR_ID_REMOTE_AUDIO_VOLUME_CONTROL);
       if (p_attr != nullptr) {

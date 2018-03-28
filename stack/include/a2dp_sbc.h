@@ -25,15 +25,28 @@
 #include "a2dp_sbc_constants.h"
 #include "avdt_api.h"
 
-class A2dpCodecConfigSbc : public A2dpCodecConfig {
+class A2dpCodecConfigSbcBase : public A2dpCodecConfig {
+ protected:
+  A2dpCodecConfigSbcBase(btav_a2dp_codec_index_t codec_index,
+                         const std::string& name,
+                         btav_a2dp_codec_priority_t codec_priority,
+                         bool is_source)
+      : A2dpCodecConfig(codec_index, name, codec_priority),
+        is_source_(is_source) {}
+  bool setCodecConfig(const uint8_t* p_peer_codec_info, bool is_capability,
+                      uint8_t* p_result_codec_config) override;
+
+ private:
+  bool is_source_;  // True if local is Source
+};
+
+class A2dpCodecConfigSbcSource : public A2dpCodecConfigSbcBase {
  public:
-  A2dpCodecConfigSbc(btav_a2dp_codec_priority_t codec_priority);
-  virtual ~A2dpCodecConfigSbc();
+  A2dpCodecConfigSbcSource(btav_a2dp_codec_priority_t codec_priority);
+  virtual ~A2dpCodecConfigSbcSource();
 
   bool init() override;
   period_ms_t encoderIntervalMs() const override;
-  bool setCodecConfig(const uint8_t* p_peer_codec_info, bool is_capability,
-                      uint8_t* p_result_codec_config) override;
 
  private:
   bool useRtpHeaderMarkerBit() const override;
@@ -44,15 +57,13 @@ class A2dpCodecConfigSbc : public A2dpCodecConfig {
   void debug_codec_dump(int fd) override;
 };
 
-class A2dpCodecConfigSbcSink : public A2dpCodecConfig {
+class A2dpCodecConfigSbcSink : public A2dpCodecConfigSbcBase {
  public:
   A2dpCodecConfigSbcSink(btav_a2dp_codec_priority_t codec_priority);
   virtual ~A2dpCodecConfigSbcSink();
 
   bool init() override;
   period_ms_t encoderIntervalMs() const override;
-  bool setCodecConfig(const uint8_t* p_peer_codec_info, bool is_capability,
-                      uint8_t* p_result_codec_config) override;
 
  private:
   bool useRtpHeaderMarkerBit() const override;
@@ -105,14 +116,6 @@ bool A2DP_IsPeerSourceCodecSupportedSbc(const uint8_t* p_codec_info);
 // The initialized state with the codec capabilities is stored in
 // |p_codec_info|.
 void A2DP_InitDefaultCodecSbc(uint8_t* p_codec_info);
-
-// Builds A2DP preferred SBC Sink capability from SBC Source capability.
-// |p_src_cap| is the Source capability to use.
-// |p_pref_cfg| is the result Sink capability to store.
-// Returns |A2DP_SUCCESS| on success, otherwise the corresponding A2DP error
-// status code.
-tA2DP_STATUS A2DP_BuildSrc2SinkConfigSbc(const uint8_t* p_src_cap,
-                                         uint8_t* p_pref_cfg);
 
 // Gets the A2DP SBC codec name for a given |p_codec_info|.
 const char* A2DP_CodecNameSbc(const uint8_t* p_codec_info);
@@ -243,6 +246,11 @@ bool A2DP_AdjustCodecSbc(uint8_t* p_codec_info);
 // Returns the corresponding |btav_a2dp_codec_index_t| on success,
 // otherwise |BTAV_A2DP_CODEC_INDEX_MAX|.
 btav_a2dp_codec_index_t A2DP_SourceCodecIndexSbc(const uint8_t* p_codec_info);
+
+// Gets the A2DP SBC Sink codec index for a given |p_codec_info|.
+// Returns the corresponding |btav_a2dp_codec_index_t| on success,
+// otherwise |BTAV_A2DP_CODEC_INDEX_MAX|.
+btav_a2dp_codec_index_t A2DP_SinkCodecIndexSbc(const uint8_t* p_codec_info);
 
 // Gets the A2DP SBC Source codec name.
 const char* A2DP_CodecIndexStrSbc(void);

@@ -154,7 +154,7 @@ void a2dp_aac_encoder_init(const tA2DP_ENCODER_INIT_PEER_PARAMS* p_peer_params,
                           &restart_input, &restart_output, &config_updated);
 }
 
-bool A2dpCodecConfigAac::updateEncoderUserConfig(
+bool A2dpCodecConfigAacSource::updateEncoderUserConfig(
     const tA2DP_ENCODER_INIT_PEER_PARAMS* p_peer_params, bool* p_restart_input,
     bool* p_restart_output, bool* p_config_updated) {
   a2dp_aac_encoder_cb.is_peer_edr = p_peer_params->is_peer_edr;
@@ -693,11 +693,11 @@ static bool a2dp_aac_read_feeding(uint8_t* read_buffer, uint32_t* bytes_read) {
   return true;
 }
 
-period_ms_t A2dpCodecConfigAac::encoderIntervalMs() const {
+period_ms_t A2dpCodecConfigAacSource::encoderIntervalMs() const {
   return a2dp_aac_get_encoder_interval_ms();
 }
 
-void A2dpCodecConfigAac::debug_codec_dump(int fd) {
+void A2dpCodecConfigAacSource::debug_codec_dump(int fd) {
   a2dp_aac_encoder_stats_t* stats = &a2dp_aac_encoder_cb.stats;
 
   A2dpCodecConfig::debug_codec_dump(fd);

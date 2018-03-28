@@ -160,7 +160,7 @@ void a2dp_sbc_encoder_init(const tA2DP_ENCODER_INIT_PEER_PARAMS* p_peer_params,
                           &restart_input, &restart_output, &config_updated);
 }
 
-bool A2dpCodecConfigSbc::updateEncoderUserConfig(
+bool A2dpCodecConfigSbcSource::updateEncoderUserConfig(
     const tA2DP_ENCODER_INIT_PEER_PARAMS* p_peer_params, bool* p_restart_input,
     bool* p_restart_output, bool* p_config_updated) {
   a2dp_sbc_encoder_cb.is_peer_edr = p_peer_params->is_peer_edr;
@@ -908,11 +908,11 @@ uint32_t a2dp_sbc_get_bitrate() {
   return p_encoder_params->u16BitRate * 1000;
 }
 
-period_ms_t A2dpCodecConfigSbc::encoderIntervalMs() const {
+period_ms_t A2dpCodecConfigSbcSource::encoderIntervalMs() const {
   return a2dp_sbc_get_encoder_interval_ms();
 }
 
-void A2dpCodecConfigSbc::debug_codec_dump(int fd) {
+void A2dpCodecConfigSbcSource::debug_codec_dump(int fd) {
   a2dp_sbc_encoder_stats_t* stats = &a2dp_sbc_encoder_cb.stats;
 
   A2dpCodecConfig::debug_codec_dump(fd);
