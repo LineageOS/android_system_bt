@@ -1168,8 +1168,8 @@ void bta_av_conn_chg(tBTA_AV_DATA* p_data) {
           p_scb->rc_handle = p_cb->rc_acp_handle;
           p_rcb = &p_cb->rcb[p_cb->rc_acp_idx - 1];
           p_rcb->shdl = bta_av_get_shdl(p_scb);
-          APPL_TRACE_DEBUG("%s: update rc_acp shdl:%d/%d srch:%d", index + 1,
-                           __func__, p_rcb->shdl, p_scb->rc_handle);
+          APPL_TRACE_DEBUG("%s: update rc_acp shdl:%d/%d srch:%d", __func__,
+                           index + 1, p_rcb->shdl, p_scb->rc_handle);
 
           p_rcb2 = bta_av_get_rcb_by_shdl(p_rcb->shdl);
           if (p_rcb2) {
