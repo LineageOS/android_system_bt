@@ -115,41 +115,45 @@ static const char* result_code_strings[] = {"Success",
 int RFCOMM_CreateConnection(uint16_t uuid, uint8_t scn, bool is_server,
                             uint16_t mtu, const RawAddress& bd_addr,
                             uint16_t* p_handle, tPORT_CALLBACK* p_mgmt_cb) {
-  tPORT* p_port;
-  uint8_t dlci;
-  tRFC_MCB* p_mcb = port_find_mcb(bd_addr);
-  uint16_t rfcomm_mtu;
-
-  VLOG(0) << __func__ << " BDA: " << bd_addr;
-
   *p_handle = 0;
 
   if ((scn == 0) || (scn >= PORT_MAX_RFC_PORTS)) {
     /* Server Channel Number(SCN) should be in range 1...30 */
-    RFCOMM_TRACE_ERROR("%s - invalid SCN", __func__);
+    LOG(ERROR) << __func__ << ": Invalid SCN, bd_addr=" << bd_addr
+               << ", scn=" << static_cast<int>(scn)
+               << ", is_server=" << is_server
+               << ", mtu=" << static_cast<int>(mtu)
+               << ", uuid=" << loghex(uuid);
     return (PORT_INVALID_SCN);
   }
 
   /* For client that originate connection on the existing none initiator */
   /* multiplexer channel DLCI should be odd */
-  if (p_mcb && !p_mcb->is_initiator && !is_server)
-    dlci = (scn << 1) + 1;
-  else
+  uint8_t dlci;
+  tRFC_MCB* p_mcb = port_find_mcb(bd_addr);
+  if (p_mcb && !p_mcb->is_initiator && !is_server) {
+    dlci = static_cast<uint8_t>((scn << 1) + 1);
+  } else {
     dlci = (scn << 1);
-  RFCOMM_TRACE_API("%s: scn:%d, dlci:%d, is_server:%d mtu:%d, p_mcb:%p",
-                   __func__, scn, dlci, is_server, mtu, p_mcb);
+  }
 
   /* For the server side always allocate a new port.  On the client side */
   /* do not allow the same (dlci, bd_addr) to be opened twice by application */
+  tPORT* p_port;
   if (!is_server) {
     p_port = port_find_port(dlci, bd_addr);
-    if (p_port != NULL) {
+    if (p_port != nullptr) {
       /* if existing port is also a client port */
       if (!p_port->is_server) {
-        RFCOMM_TRACE_ERROR(
-            "%s - already opened state:%d, RFC state:%d, MCB state:%d",
-            __func__, p_port->state, p_port->rfc.state,
-            p_port->rfc.p_mcb ? p_port->rfc.p_mcb->state : 0);
+        LOG(ERROR) << __func__ << ": already at opened state "
+                   << static_cast<int>(p_port->state)
+                   << ", RFC_state=" << static_cast<int>(p_port->rfc.state)
+                   << ", MCB_state="
+                   << (p_port->rfc.p_mcb ? p_port->rfc.p_mcb->state : 0)
+                   << ", bd_addr=" << bd_addr << ", scn=" << std::to_string(scn)
+                   << ", is_server=" << is_server << ", mtu=" << mtu
+                   << ", uuid=" << loghex(uuid) << ", dlci=" << +dlci
+                   << ", p_mcb=" << p_mcb << ", port=" << +p_port->inx;
         *p_handle = p_port->inx;
         return (PORT_ALREADY_OPENED);
       }
@@ -157,16 +161,13 @@ int RFCOMM_CreateConnection(uint16_t uuid, uint8_t scn, bool is_server,
   }
 
   p_port = port_allocate_port(dlci, bd_addr);
-  if (p_port == NULL) {
-    RFCOMM_TRACE_WARNING("%s - no resources", __func__);
+  if (p_port == nullptr) {
+    LOG(ERROR) << __func__ << ": no resources, bd_addr=" << bd_addr
+               << ", scn=" << std::to_string(scn) << ", is_server=" << is_server
+               << ", mtu=" << mtu << ", uuid=" << loghex(uuid)
+               << ", dlci=" << +dlci;
     return (PORT_NO_RESOURCES);
   }
-  RFCOMM_TRACE_API(
-      "%s: scn:%d, dlci:%d, is_server:%d mtu:%d, p_mcb:%p, p_port:%p", __func__,
-      scn, dlci, is_server, mtu, p_mcb, p_port);
-
-  p_port->default_signal_state =
-      (PORT_DTRDSR_ON | PORT_CTSRTS_ON | PORT_DCD_ON);
 
   switch (uuid) {
     case UUID_PROTOCOL_OBEX:
@@ -182,10 +183,11 @@ int RFCOMM_CreateConnection(uint16_t uuid, uint8_t scn, bool is_server,
     case UUID_SERVCLASS_FAX:
       p_port->default_signal_state = PORT_DUN_DEFAULT_SIGNAL_STATE;
       break;
+    default:
+      p_port->default_signal_state =
+          (PORT_DTRDSR_ON | PORT_CTSRTS_ON | PORT_DCD_ON);
+      break;
   }
-
-  RFCOMM_TRACE_EVENT("%s dlci:%d signal state:0x%x", __func__, dlci,
-                     p_port->default_signal_state);
 
   *p_handle = p_port->inx;
 
@@ -201,12 +203,13 @@ int RFCOMM_CreateConnection(uint16_t uuid, uint8_t scn, bool is_server,
    * will know for sure our prefered MTU
    */
 
-  rfcomm_mtu = L2CAP_MTU_SIZE - RFCOMM_DATA_OVERHEAD;
+  uint16_t rfcomm_mtu = L2CAP_MTU_SIZE - RFCOMM_DATA_OVERHEAD;
 
-  if (mtu)
+  if (mtu) {
     p_port->mtu = (mtu < rfcomm_mtu) ? mtu : rfcomm_mtu;
-  else
+  } else {
     p_port->mtu = rfcomm_mtu;
+  }
 
   /* server doesn't need to release port when closing */
   if (is_server) {
@@ -223,6 +226,13 @@ int RFCOMM_CreateConnection(uint16_t uuid, uint8_t scn, bool is_server,
   p_port->p_mgmt_callback = p_mgmt_cb;
 
   p_port->bd_addr = bd_addr;
+
+  LOG(INFO) << __func__ << ": bd_addr=" << bd_addr
+            << ", scn=" << std::to_string(scn) << ", is_server=" << is_server
+            << ", mtu=" << mtu << ", uuid=" << loghex(uuid)
+            << ", dlci=" << std::to_string(dlci)
+            << ", signal_state=" << loghex(p_port->default_signal_state)
+            << ", p_port=" << p_port;
 
   /* If this is not initiator of the connection need to just wait */
   if (p_port->is_server) {
