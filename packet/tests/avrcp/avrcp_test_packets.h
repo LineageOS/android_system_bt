@@ -216,6 +216,11 @@ std::vector<uint8_t> change_path_request = {0x72, 0x00, 0x0b, 0x00, 0x00,
                                             0x01, 0x00, 0x00, 0x00, 0x00,
                                             0x00, 0x00, 0x00, 0x02};
 
+// AVRCP Browse Change Path Request up
+std::vector<uint8_t> change_path_up_request = {0x72, 0x00, 0x0b, 0x00, 0x00,
+                                               0x00, 0xFF, 0xFF, 0xFF, 0xFF,
+                                               0xFF, 0xFF, 0xFF, 0xFF};
+
 // AVRCP Browse Change Path Response with two items in current folder
 std::vector<uint8_t> change_path_response = {0x72, 0x00, 0x05, 0x04,
                                              0x00, 0x00, 0x00, 0x02};

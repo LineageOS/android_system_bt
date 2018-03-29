@@ -603,7 +603,8 @@ void Device::HandleChangePath(uint8_t label,
 
   if (pkt->GetDirection() == Direction::DOWN &&
       vfs_ids_.get_media_id(pkt->GetUid()) == "") {
-    DEVICE_LOG(ERROR) << "No item found for UID=" << pkt->GetUid();
+    DEVICE_LOG(ERROR) << __func__
+                      << ": No item found for UID=" << pkt->GetUid();
     auto builder =
         ChangePathResponseBuilder::MakeBuilder(Status::DOES_NOT_EXIST, 0);
     send_message(label, true, std::move(builder));
@@ -611,14 +612,13 @@ void Device::HandleChangePath(uint8_t label,
   }
 
   if (pkt->GetDirection() == Direction::DOWN) {
-    DEVICE_VLOG(2) << "Pushing Path to stack: \""
-                   << vfs_ids_.get_media_id(pkt->GetUid()) << "\"";
     current_path_.push(vfs_ids_.get_media_id(pkt->GetUid()));
+    DEVICE_VLOG(2) << "Pushing Path to stack: \"" << CurrentFolder() << "\"";
   } else {
     // Don't pop the root id off the stack
-    if (current_path_.size() > 1)
+    if (current_path_.size() > 1) {
       current_path_.pop();
-    else {
+    } else {
       DEVICE_LOG(ERROR) << "Trying to change directory up past root.";
       auto builder =
           ChangePathResponseBuilder::MakeBuilder(Status::DOES_NOT_EXIST, 0);
@@ -628,11 +628,13 @@ void Device::HandleChangePath(uint8_t label,
 
     DEVICE_VLOG(2) << "Popping Path from stack: new path=\"" << CurrentFolder()
                    << "\"";
-    vfs_ids_.clear();
   }
 
+  // All of the VFS ID's are no longer valid
+  vfs_ids_.clear();
+
   media_interface_->GetFolderItems(
-      curr_browsed_player_id_, vfs_ids_.get_media_id(pkt->GetUid()),
+      curr_browsed_player_id_, CurrentFolder(),
       base::Bind(&Device::ChangePathResponse, base::Unretained(this), label,
                  pkt));
 }
