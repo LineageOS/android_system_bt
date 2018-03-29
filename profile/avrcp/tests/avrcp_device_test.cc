@@ -391,6 +391,85 @@ TEST_F(AvrcpDeviceTest, getVFSFolderTest) {
   SendBrowseMessage(1, request);
 }
 
+TEST_F(AvrcpDeviceTest, changePathTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  FolderInfo info0 = {"test_id0", true, "Test Folder0"};
+  FolderInfo info1 = {"test_id1", true, "Test Folder1"};
+  ListItem item0 = {ListItem::FOLDER, info0, SongInfo()};
+  ListItem item1 = {ListItem::FOLDER, info1, SongInfo()};
+  std::vector<ListItem> list0 = {item0, item1};
+  EXPECT_CALL(interface, GetFolderItems(_, "", _))
+      .Times(1)
+      .WillRepeatedly(InvokeCb<2>(list0));
+
+  FolderInfo info2 = {"test_id2", true, "Test Folder2"};
+  FolderInfo info3 = {"test_id3", true, "Test Folder3"};
+  FolderInfo info4 = {"test_id4", true, "Test Folder4"};
+  ListItem item2 = {ListItem::FOLDER, info2, SongInfo()};
+  ListItem item3 = {ListItem::FOLDER, info3, SongInfo()};
+  ListItem item4 = {ListItem::FOLDER, info4, SongInfo()};
+  std::vector<ListItem> list1 = {item2, item3, item4};
+  EXPECT_CALL(interface, GetFolderItems(_, "test_id1", _))
+      .Times(3)
+      .WillRepeatedly(InvokeCb<2>(list1));
+
+  std::vector<ListItem> list2 = {};
+  EXPECT_CALL(interface, GetFolderItems(_, "test_id3", _))
+      .Times(1)
+      .WillOnce(InvokeCb<2>(list2));
+
+  // Populate the VFS ID map since we don't persist UIDs
+  auto folder_items_response =
+      GetFolderItemsResponseBuilder::MakeVFSBuilder(Status::NO_ERROR, 0x0000);
+  folder_items_response->AddFolder(FolderItem(1, 0, true, "Test Folder0"));
+  folder_items_response->AddFolder(FolderItem(2, 0, true, "Test Folder1"));
+  EXPECT_CALL(response_cb,
+              Call(1, true, matchPacket(std::move(folder_items_response))))
+      .Times(1);
+  auto request = TestBrowsePacket::Make(get_folder_items_request_vfs);
+  SendBrowseMessage(1, request);
+
+  // Change path down into Test Folder1
+  auto change_path_response =
+      ChangePathResponseBuilder::MakeBuilder(Status::NO_ERROR, list1.size());
+  EXPECT_CALL(response_cb,
+              Call(2, true, matchPacket(std::move(change_path_response))));
+  request = TestBrowsePacket::Make(change_path_request);
+  SendBrowseMessage(2, request);
+
+  // Populate the VFS ID map since we don't persist UIDs
+  folder_items_response =
+      GetFolderItemsResponseBuilder::MakeVFSBuilder(Status::NO_ERROR, 0x0000);
+  folder_items_response->AddFolder(FolderItem(1, 0, true, "Test Folder2"));
+  folder_items_response->AddFolder(FolderItem(2, 0, true, "Test Folder3"));
+  folder_items_response->AddFolder(FolderItem(3, 0, true, "Test Folder4"));
+  EXPECT_CALL(response_cb,
+              Call(3, true, matchPacket(std::move(folder_items_response))))
+      .Times(1);
+  request = TestBrowsePacket::Make(get_folder_items_request_vfs);
+  SendBrowseMessage(3, request);
+
+  // Change path down into Test Folder3
+  change_path_response =
+      ChangePathResponseBuilder::MakeBuilder(Status::NO_ERROR, list2.size());
+  EXPECT_CALL(response_cb,
+              Call(4, true, matchPacket(std::move(change_path_response))));
+  request = TestBrowsePacket::Make(change_path_request);
+  SendBrowseMessage(4, request);
+
+  // Change path up back into Test Folder1
+  change_path_response =
+      ChangePathResponseBuilder::MakeBuilder(Status::NO_ERROR, list1.size());
+  EXPECT_CALL(response_cb,
+              Call(5, true, matchPacket(std::move(change_path_response))));
+  request = TestBrowsePacket::Make(change_path_up_request);
+  SendBrowseMessage(5, request);
+}
+
 TEST_F(AvrcpDeviceTest, getItemAttributesNowPlayingTest) {
   MockMediaInterface interface;
   NiceMock<MockA2dpInterface> a2dp_interface;
@@ -427,6 +506,23 @@ TEST_F(AvrcpDeviceTest, getItemAttributesNowPlayingTest) {
   auto request =
       TestBrowsePacket::Make(get_item_attributes_request_all_attributes);
   SendBrowseMessage(1, request);
+}
+
+TEST_F(AvrcpDeviceTest, setAddressedPlayerTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  auto set_addr_player_rsp =
+      SetAddressedPlayerResponseBuilder::MakeBuilder(Status::NO_ERROR);
+
+  EXPECT_CALL(response_cb,
+              Call(1, false, matchPacket(std::move(set_addr_player_rsp))))
+      .Times(1);
+
+  auto request = TestAvrcpPacket::Make(set_addressed_player_request);
+  SendMessage(1, request);
 }
 
 TEST_F(AvrcpDeviceTest, volumeChangedTest) {
