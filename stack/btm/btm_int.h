@@ -289,5 +289,6 @@ extern void btm_acl_reset_paging(void);
 extern void btm_acl_paging(BT_HDR* p, const RawAddress& dest);
 extern uint8_t btm_sec_clr_service_by_psm(uint16_t psm);
 extern void btm_sec_clr_temp_auth_service(const RawAddress& bda);
+extern tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec);
 
 #endif
