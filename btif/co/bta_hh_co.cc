@@ -278,16 +278,10 @@ void bta_hh_co_open(uint8_t dev_handle, uint8_t sub_class,
         p_dev->dev_handle == dev_handle) {
       // We found a device with the same handle. Must be a device reconnected.
       APPL_TRACE_WARNING(
-          "%s: Found an existing device with the same handle "
-          "dev_status = %d",
-          __func__, p_dev->dev_status);
-      APPL_TRACE_WARNING("%s:     bd_addr = [%02X:%02X:%02X:%02X:%02X:]",
-                         __func__, p_dev->bd_addr.address[0],
-                         p_dev->bd_addr.address[1], p_dev->bd_addr.address[2],
-                         p_dev->bd_addr.address[3], p_dev->bd_addr.address[4]);
-      APPL_TRACE_WARNING(
-          "%s:     attr_mask = 0x%04x, sub_class = 0x%02x, app_id = %d",
-          __func__, p_dev->attr_mask, p_dev->sub_class, p_dev->app_id);
+          "%s: Found an existing device with the same handle dev_status=%d, "
+          "address=%s, attr_mask=0x%04x, sub_class=0x%02x, app_id=%d",
+          __func__, p_dev->dev_status, p_dev->bd_addr.ToString().c_str(),
+          p_dev->attr_mask, p_dev->sub_class, p_dev->app_id);
 
       if (p_dev->fd < 0) {
         p_dev->fd = open(dev_path, O_RDWR | O_CLOEXEC);
