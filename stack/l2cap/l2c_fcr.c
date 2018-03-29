@@ -24,6 +24,7 @@
  ******************************************************************************/
 
 #include <assert.h>
+#include <log/log.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -896,7 +897,24 @@ void l2c_lcc_proc_pdu(tL2C_CCB *p_ccb, BT_HDR *p_buf)
 
     }
     else
+    {
         p_data = p_ccb->ble_sdu;
+        if (p_buf->len > (p_ccb->ble_sdu_length - p_data->len)) {
+          L2CAP_TRACE_ERROR("%s: buffer length=%d too big. max=%d. Dropped",
+                            __func__, p_data->len,
+                            (p_ccb->ble_sdu_length - p_data->len));
+          android_errorWriteWithInfoLog(0x534e4554, "75298652", -1, NULL, 0);
+          osi_free(p_buf);
+
+          /* Throw away all pending fragments and disconnects */
+          p_ccb->is_first_seg = true;
+          osi_free(p_ccb->ble_sdu);
+          p_ccb->ble_sdu = NULL;
+          p_ccb->ble_sdu_length = 0;
+          l2cu_disconnect_chnl(p_ccb);
+          return;
+          }
+    }
 
     memcpy((UINT8*)(p_data + 1) + p_data->offset + p_data->len, (UINT8*)(p_buf + 1) + p_buf->offset, p_buf->len);
     p_data->len += p_buf->len;
@@ -911,11 +929,6 @@ void l2c_lcc_proc_pdu(tL2C_CCB *p_ccb, BT_HDR *p_buf)
     else if (p_data->len < p_ccb->ble_sdu_length)
     {
         p_ccb->is_first_seg = FALSE;
-    }
-    else
-    {
-        L2CAP_TRACE_ERROR ("%s Length in the SDU messed up",__func__);
-        // TODO: reset every thing may be???
     }
 
     osi_free(p_buf);
