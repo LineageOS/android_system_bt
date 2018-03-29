@@ -63,7 +63,7 @@ static const tA2DP_APTX_CIE a2dp_aptx_caps = {
 static const tA2DP_APTX_CIE a2dp_aptx_default_config = {
     A2DP_APTX_VENDOR_ID,               /* vendorId */
     A2DP_APTX_CODEC_ID_BLUETOOTH,      /* codecId */
-    A2DP_APTX_SAMPLERATE_44100,        /* sampleRate */
+    A2DP_APTX_SAMPLERATE_48000,        /* sampleRate */
     A2DP_APTX_CHANNELS_STEREO,         /* channelMode */
     A2DP_APTX_FUTURE_1,                /* future1 */
     A2DP_APTX_FUTURE_2,                /* future2 */
