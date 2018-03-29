@@ -534,10 +534,6 @@ bool btif_hh_copy_hid_info(tBTA_HH_DEV_DSCP_INFO* dest,
 bt_status_t btif_hh_virtual_unplug(const RawAddress* bd_addr) {
   BTIF_TRACE_DEBUG("%s", __func__);
   btif_hh_device_t* p_dev;
-  char bd_str[18];
-  snprintf(bd_str, sizeof(bd_str), "%02X:%02X:%02X:%02X:%02X:%02X",
-           bd_addr->address[0], bd_addr->address[1], bd_addr->address[2],
-           bd_addr->address[3], bd_addr->address[4], bd_addr->address[5]);
   p_dev = btif_hh_find_dev_by_bda(*bd_addr);
   if ((p_dev != NULL) && (p_dev->dev_status == BTHH_CONN_STATE_CONNECTED) &&
       (p_dev->attr_mask & HID_VIRTUAL_CABLE)) {
@@ -548,7 +544,8 @@ bt_status_t btif_hh_virtual_unplug(const RawAddress* bd_addr) {
     BTA_HhSendCtrl(p_dev->dev_handle, BTA_HH_CTRL_VIRTUAL_CABLE_UNPLUG);
     return BT_STATUS_SUCCESS;
   } else {
-    BTIF_TRACE_ERROR("%s: Error, device %s not opened.", __func__, bd_str);
+    BTIF_TRACE_ERROR("%s: Error, device %s not opened.", __func__,
+                     bd_addr->ToString().c_str());
     return BT_STATUS_FAIL;
   }
 }
@@ -1265,17 +1262,14 @@ static bt_status_t virtual_unplug(RawAddress* bd_addr) {
   CHECK_BTHH_INIT();
   BTIF_TRACE_EVENT("BTHH: %s", __func__);
   btif_hh_device_t* p_dev;
-  char bd_str[18];
-  snprintf(bd_str, sizeof(bd_str), "%02X:%02X:%02X:%02X:%02X:%02X",
-           bd_addr->address[0], bd_addr->address[1], bd_addr->address[2],
-           bd_addr->address[3], bd_addr->address[4], bd_addr->address[5]);
   if (btif_hh_cb.status == BTIF_HH_DISABLED) {
     BTIF_TRACE_ERROR("%s: Error, HH status = %d", __func__, btif_hh_cb.status);
     return BT_STATUS_FAIL;
   }
   p_dev = btif_hh_find_dev_by_bda(*bd_addr);
   if (!p_dev) {
-    BTIF_TRACE_ERROR("%s: Error, device %s not opened.", __func__, bd_str);
+    BTIF_TRACE_ERROR("%s: Error, device %s not opened.", __func__,
+                     bd_addr->ToString().c_str());
     return BT_STATUS_FAIL;
   }
   btif_transfer_context(btif_hh_handle_evt, BTIF_HH_VUP_REQ_EVT, (char*)bd_addr,
