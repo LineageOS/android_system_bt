@@ -309,6 +309,7 @@ static tBTA_AG_SCB* bta_ag_scb_alloc(void) {
       p_scb->codec_fallback = false;
       p_scb->peer_codecs = BTA_AG_CODEC_CVSD;
       p_scb->sco_codec = BTA_AG_CODEC_CVSD;
+      p_scb->peer_version = HFP_HSP_VERSION_UNKNOWN;
       /* set up timers */
       p_scb->ring_timer = alarm_new("bta_ag.scb_ring_timer");
       p_scb->collision_timer = alarm_new("bta_ag.scb_collision_timer");

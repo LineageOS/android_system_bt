@@ -200,10 +200,8 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
 
     case BTA_HD_OPEN_EVT: {
       RawAddress* addr = (RawAddress*)&p_data->conn.bda;
-      BTIF_TRACE_WARNING(
-          "BTA_HD_OPEN_EVT, address (%02x:%02x:%02x:%02x:%02x:%02x)",
-          addr->address[0], addr->address[1], addr->address[2],
-          addr->address[3], addr->address[4], addr->address[5]);
+      BTIF_TRACE_WARNING("BTA_HD_OPEN_EVT, address=%s",
+                         addr->ToString().c_str());
       /* Check if the connection is from hid host and not hid device */
       if (check_cod_hid(addr)) {
         /* Incoming connection from hid device, reject it */
@@ -253,8 +251,18 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
     case BTA_HD_VC_UNPLUG_EVT:
       HAL_CBACK(bt_hd_callbacks, connection_state_cb,
                 (RawAddress*)&p_data->conn.bda, BTHD_CONN_STATE_DISCONNECTED);
-      LOG(INFO) << __func__ << ": Only removing HID data";
-      btif_hd_remove_device(p_data->conn.bda);
+      if (bta_dm_check_if_only_hd_connected(p_data->conn.bda)) {
+        BTIF_TRACE_DEBUG("%s: Removing bonding as only HID profile connected",
+                         __func__);
+        BTA_DmRemoveDevice(p_data->conn.bda);
+      } else {
+        RawAddress* bd_addr = (RawAddress*)&p_data->conn.bda;
+        BTIF_TRACE_DEBUG(
+            "%s: Only removing HID data as some other profiles "
+            "connected",
+            __func__);
+        btif_hd_remove_device(*bd_addr);
+      }
       HAL_CBACK(bt_hd_callbacks, vc_unplug_cb);
       break;
 

@@ -1168,8 +1168,8 @@ void bta_av_conn_chg(tBTA_AV_DATA* p_data) {
           p_scb->rc_handle = p_cb->rc_acp_handle;
           p_rcb = &p_cb->rcb[p_cb->rc_acp_idx - 1];
           p_rcb->shdl = bta_av_get_shdl(p_scb);
-          APPL_TRACE_DEBUG("%s: update rc_acp shdl:%d/%d srch:%d", index + 1,
-                           __func__, p_rcb->shdl, p_scb->rc_handle);
+          APPL_TRACE_DEBUG("%s: update rc_acp shdl:%d/%d srch:%d", __func__,
+                           index + 1, p_rcb->shdl, p_scb->rc_handle);
 
           p_rcb2 = bta_av_get_rcb_by_shdl(p_rcb->shdl);
           if (p_rcb2) {
@@ -1878,11 +1878,6 @@ void bta_av_rc_closed(tBTA_AV_DATA* p_data) {
       } else {
         /* AVCT CCB is still there. dealloc */
         bta_av_del_rc(p_rcb);
-
-        /* if the AVRCP is no longer listening, create the listening channel */
-        if (bta_av_cb.rc_acp_handle == BTA_AV_RC_HANDLE_NONE &&
-            bta_av_cb.features & BTA_AV_FEAT_RCTG)
-          bta_av_rc_create(&bta_av_cb, AVCT_ACP, 0, BTA_AV_NUM_LINKS + 1);
       }
     } else if ((p_rcb->handle != BTA_AV_RC_HANDLE_NONE) &&
                (p_rcb->status & BTA_AV_RC_CONN_MASK)) {
@@ -1903,6 +1898,9 @@ void bta_av_rc_closed(tBTA_AV_DATA* p_data) {
   tBTA_AV bta_av_data;
   bta_av_data.rc_close = rc_close;
   (*p_cb->p_cback)(BTA_AV_RC_CLOSE_EVT, &bta_av_data);
+  if (bta_av_cb.rc_acp_handle == BTA_AV_RC_HANDLE_NONE
+                  && bta_av_cb.features & BTA_AV_FEAT_RCTG)
+      bta_av_rc_create(&bta_av_cb, AVCT_ACP, 0, BTA_AV_NUM_LINKS + 1);
 }
 
 /*******************************************************************************
