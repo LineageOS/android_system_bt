@@ -61,7 +61,7 @@ static tAPTX_ENCODER_SIZEOF_PARAMS aptx_encoder_sizeof_params_func;
 #define A2DP_APTX_OFFSET (AVDT_MEDIA_OFFSET - AVDT_MEDIA_HDR_SIZE)
 #endif
 
-#define A2DP_APTX_MAX_PCM_BYTES_PER_READ 1024
+#define A2DP_APTX_MAX_PCM_BYTES_PER_READ 4096
 
 typedef struct {
   uint64_t sleep_time_ns;
@@ -391,34 +391,38 @@ void a2dp_vendor_aptx_send_frames(uint64_t timestamp_us) {
   //
   // Read the PCM data and encode it
   //
-  LOG_VERBOSE(LOG_TAG, "%s: %u PCM reads of size %u", __func__,
-              framing_params->pcm_reads, framing_params->pcm_bytes_per_read);
+  uint16_t read_buffer16[A2DP_APTX_MAX_PCM_BYTES_PER_READ / sizeof(uint16_t)];
+  uint32_t expected_read_bytes =
+      framing_params->pcm_reads * framing_params->pcm_bytes_per_read;
   size_t encoded_ptr_index = 0;
   size_t pcm_bytes_encoded = 0;
   uint32_t bytes_read = 0;
+
   a2dp_aptx_encoder_cb.stats.media_read_total_expected_packets++;
-  a2dp_aptx_encoder_cb.stats.media_read_total_expected_reads_count +=
-      framing_params->pcm_reads;
+  a2dp_aptx_encoder_cb.stats.media_read_total_expected_reads_count++;
   a2dp_aptx_encoder_cb.stats.media_read_total_expected_read_bytes +=
-      framing_params->pcm_reads * framing_params->pcm_bytes_per_read;
-  for (size_t reads = 0; reads < framing_params->pcm_reads; reads++) {
-    uint16_t read_buffer16[A2DP_APTX_MAX_PCM_BYTES_PER_READ / sizeof(uint16_t)];
-    size_t pcm_bytes_read = a2dp_aptx_encoder_cb.read_callback(
-        (uint8_t*)read_buffer16, framing_params->pcm_bytes_per_read);
-    bytes_read += pcm_bytes_read;
-    a2dp_aptx_encoder_cb.stats.media_read_total_actual_read_bytes +=
-        pcm_bytes_read;
-    if (pcm_bytes_read < framing_params->pcm_bytes_per_read) {
-      LOG_WARN(LOG_TAG,
-               "%s: underflow at PCM reading iteration %zu: read %zu "
-               "instead of %d",
-               __func__, reads, pcm_bytes_read,
-               framing_params->pcm_bytes_per_read);
-      break;
-    }
-    a2dp_aptx_encoder_cb.stats.media_read_total_actual_reads_count++;
+      expected_read_bytes;
+
+  LOG_VERBOSE(LOG_TAG, "%s: PCM read of size %u", __func__,
+              expected_read_bytes);
+  bytes_read = a2dp_aptx_encoder_cb.read_callback((uint8_t*)read_buffer16,
+                                                  expected_read_bytes);
+  a2dp_aptx_encoder_cb.stats.media_read_total_actual_read_bytes += bytes_read;
+  if (bytes_read < expected_read_bytes) {
+    LOG_WARN(LOG_TAG,
+             "%s: underflow at PCM reading: read %u bytes instead of %u",
+             __func__, bytes_read, expected_read_bytes);
+    a2dp_aptx_encoder_cb.stats.media_read_total_dropped_packets++;
+    osi_free(p_buf);
+    return;
+  }
+  a2dp_aptx_encoder_cb.stats.media_read_total_actual_reads_count++;
+
+  for (uint32_t reads = 0, offset = 0; reads < framing_params->pcm_reads;
+       reads++, offset +=
+                (framing_params->pcm_bytes_per_read / sizeof(uint16_t))) {
     pcm_bytes_encoded += aptx_encode_16bit(framing_params, &encoded_ptr_index,
-                                           read_buffer16, encoded_ptr);
+                                           read_buffer16 + offset, encoded_ptr);
   }
 
   // Compute the number of encoded bytes
