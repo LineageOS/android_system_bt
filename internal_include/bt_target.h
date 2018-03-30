@@ -124,9 +124,15 @@
 #endif
 
 // How long to wait before activating sniff mode after entering the
-// idle state for FTS, OPS connections
+// idle state for server FT/RFCOMM, OPS connections
 #ifndef BTA_FTS_OPS_IDLE_TO_SNIFF_DELAY_MS
 #define BTA_FTS_OPS_IDLE_TO_SNIFF_DELAY_MS 7000
+#endif
+
+// How long to wait before activating sniff mode after entering the
+// idle state for client FT/RFCOMM connections
+#ifndef BTA_FTC_IDLE_TO_SNIFF_DELAY_MS
+#define BTA_FTC_IDLE_TO_SNIFF_DELAY_MS 5000
 #endif
 
 //------------------End added from bdroid_buildcfg.h---------------------
