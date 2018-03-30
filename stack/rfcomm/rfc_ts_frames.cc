@@ -616,7 +616,9 @@ void rfc_process_mx_message(tRFC_MCB* p_mcb, BT_HDR* p_buf) {
   p_rx_frame->type = *p_data++ & ~(RFCOMM_CR_MASK | RFCOMM_EA_MASK);
 
   if (!p_rx_frame->ea || !length) {
-    RFCOMM_TRACE_ERROR("Illegal MX Frame ea:%d len:%d", p_rx_frame->ea, length);
+    LOG(ERROR) << __func__
+               << ": Invalid MX frame ea=" << std::to_string(p_rx_frame->ea)
+               << ", len=" << length << ", bd_addr=" << p_mcb->bd_addr;
     osi_free(p_buf);
     return;
   }
@@ -636,14 +638,21 @@ void rfc_process_mx_message(tRFC_MCB* p_mcb, BT_HDR* p_buf) {
   }
 
   if (mx_len != length) {
-    RFCOMM_TRACE_ERROR("Bad MX frame");
+    LOG(ERROR) << __func__ << ": Bad MX frame, p_mcb=" << p_mcb
+               << ", bd_addr=" << p_mcb->bd_addr;
     osi_free(p_buf);
     return;
   }
 
+  RFCOMM_TRACE_DEBUG("%s: type=%d, p_mcb=%p", __func__, p_rx_frame->type,
+                     p_mcb);
   switch (p_rx_frame->type) {
     case RFCOMM_MX_PN:
-      if (length != RFCOMM_MX_PN_LEN) break;
+      if (length != RFCOMM_MX_PN_LEN) {
+        LOG(ERROR) << __func__ << ": Invalid PN length, p_mcb=" << p_mcb
+                   << ", bd_addr=" << p_mcb->bd_addr;
+        break;
+      }
 
       p_rx_frame->dlci = *p_data++ & RFCOMM_PN_DLCI_MASK;
       p_rx_frame->u.pn.frame_type = *p_data & RFCOMM_PN_FRAME_TYPE_MASK;
@@ -658,7 +667,8 @@ void rfc_process_mx_message(tRFC_MCB* p_mcb, BT_HDR* p_buf) {
       if (!p_rx_frame->dlci || !RFCOMM_VALID_DLCI(p_rx_frame->dlci) ||
           (p_rx_frame->u.pn.mtu < RFCOMM_MIN_MTU) ||
           (p_rx_frame->u.pn.mtu > RFCOMM_MAX_MTU)) {
-        RFCOMM_TRACE_ERROR("Bad PN frame");
+        LOG(ERROR) << __func__ << ": Bad PN frame, p_mcb=" << p_mcb
+                   << ", bd_addr=" << p_mcb->bd_addr;
         break;
       }
 

@@ -1292,7 +1292,8 @@ uint16_t L2CA_LocalLoopbackReq(uint16_t psm, uint16_t handle,
  *
  ******************************************************************************/
 bool L2CA_SetAclPriority(const RawAddress& bd_addr, uint8_t priority) {
-  VLOG(1) << __func__ << " BDA: " << bd_addr << ", priority: " << priority;
+  VLOG(1) << __func__ << " BDA: " << bd_addr
+          << ", priority: " << std::to_string(priority);
   return (l2cu_set_acl_priority(bd_addr, priority, false));
 }
 

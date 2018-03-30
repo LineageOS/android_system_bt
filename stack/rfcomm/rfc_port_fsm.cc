@@ -554,15 +554,22 @@ void rfc_process_pn(tRFC_MCB* p_mcb, bool is_command, MX_FRAME* p_frame) {
       PORT_ParNegInd(p_mcb, dlci, p_frame->u.pn.mtu, p_frame->u.pn.conv_layer,
                      p_frame->u.pn.k);
     } else {
+      LOG(WARNING) << __func__
+                   << ": MX PN while disconnecting, bd_addr=" << p_mcb->bd_addr
+                   << ", p_mcb=" << p_mcb;
       rfc_send_dm(p_mcb, dlci, false);
-      RFCOMM_TRACE_WARNING("***** MX PN while disconnecting *****");
     }
 
     return;
   }
   /* If we are not awaiting response just ignore it */
   p_port = port_find_mcb_dlci_port(p_mcb, dlci);
-  if ((p_port == NULL) || !(p_port->rfc.expected_rsp & RFC_RSP_PN)) return;
+  if ((p_port == nullptr) || !(p_port->rfc.expected_rsp & RFC_RSP_PN)) {
+    LOG(WARNING) << ": Ignore unwanted response, p_mcb=" << p_mcb
+                 << ", bd_addr=" << p_mcb->bd_addr
+                 << ", dlci=" << std::to_string(dlci);
+    return;
+  }
 
   p_port->rfc.expected_rsp &= ~RFC_RSP_PN;
 
@@ -586,7 +593,7 @@ void rfc_process_rpn(tRFC_MCB* p_mcb, bool is_command, bool is_request,
   tPORT* p_port;
 
   p_port = port_find_mcb_dlci_port(p_mcb, p_frame->dlci);
-  if (p_port == NULL) {
+  if (p_port == nullptr) {
     /* This is the first command on the port */
     if (is_command) {
       memset(&port_pars, 0, sizeof(tPORT_STATE));
@@ -600,7 +607,6 @@ void rfc_process_rpn(tRFC_MCB* p_mcb, bool is_command, bool is_request,
 
   if (is_command && is_request) {
     /* This is the special situation when peer just request local pars */
-    port_pars = p_port->peer_port_pars;
     rfc_send_rpn(p_mcb, p_frame->dlci, false, &p_port->peer_port_pars, 0);
     return;
   }
@@ -617,9 +623,12 @@ void rfc_process_rpn(tRFC_MCB* p_mcb, bool is_command, bool is_request,
 
   /* If we are not awaiting response just ignore it */
   p_port = port_find_mcb_dlci_port(p_mcb, p_frame->dlci);
-  if ((p_port == NULL) ||
-      !(p_port->rfc.expected_rsp & (RFC_RSP_RPN | RFC_RSP_RPN_REPLY)))
+  if ((p_port == nullptr) ||
+      !(p_port->rfc.expected_rsp & (RFC_RSP_RPN | RFC_RSP_RPN_REPLY))) {
+    LOG(WARNING) << __func__ << ": ignore DLC parameter negotiation as we are"
+                 << " not waiting for any";
     return;
+  }
 
   /* If we sent a request for port parameters to the peer he is replying with */
   /* mask 0. */
@@ -842,14 +851,11 @@ void rfc_process_l2cap_congestion(tRFC_MCB* p_mcb, bool is_congested) {
   p_mcb->l2cap_congested = is_congested;
 
   if (!is_congested) {
-    rfc_check_send_cmd(p_mcb, NULL);
+    rfc_check_send_cmd(p_mcb, nullptr);
   }
 
   if (!rfc_cb.rfc.peer_rx_disabled) {
-    if (!is_congested)
-      PORT_FlowInd(p_mcb, 0, true);
-    else
-      PORT_FlowInd(p_mcb, 0, false);
+    PORT_FlowInd(p_mcb, 0, !is_congested);
   }
 }
 
