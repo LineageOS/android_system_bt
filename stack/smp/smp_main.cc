@@ -18,6 +18,7 @@
 
 #include "bt_target.h"
 
+#include <cutils/log.h>
 #include <string.h>
 #include "smp_int.h"
 
@@ -954,6 +955,13 @@ void smp_sm_event(tSMP_CB* p_cb, tSMP_EVENT event, void* p_data) {
   uint8_t curr_state = p_cb->state;
   tSMP_SM_TBL state_table;
   uint8_t action, entry, i;
+
+  if (p_cb->role >= 2) {
+    SMP_TRACE_DEBUG("Invalid role: %d", p_cb->role);
+    android_errorWriteLog(0x534e4554, "74121126");
+    return;
+  }
+
   tSMP_ENTRY_TBL entry_table = smp_entry_table[p_cb->role];
 
   SMP_TRACE_EVENT("main smp_sm_event");
