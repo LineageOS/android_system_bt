@@ -62,10 +62,7 @@ extern void RFCOMM_ParNegRsp(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu,
 
 extern void RFCOMM_TestReq(uint8_t* p_data, uint16_t len);
 
-#define RFCOMM_FLOW_STATE_DISABLE 0
-#define RFCOMM_FLOW_STATE_ENABLE 1
-
-extern void RFCOMM_FlowReq(tRFC_MCB* p_mcb, uint8_t dlci, uint8_t state);
+extern void RFCOMM_FlowReq(tRFC_MCB* p_mcb, uint8_t dlci, bool state);
 
 extern void RFCOMM_PortNegReq(tRFC_MCB* p_mcb, uint8_t dlci,
                               tPORT_STATE* p_pars);

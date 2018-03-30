@@ -228,8 +228,6 @@ void bta_ag_create_records(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
       }
     }
   }
-
-  p_scb->hsp_version = HSP_VERSION_1_2;
 }
 
 /*******************************************************************************

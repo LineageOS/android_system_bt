@@ -34,7 +34,6 @@
 #define BT_STACK_MODULE_ID "bluetooth"
 
 /** Bluetooth profile interface IDs */
-
 #define BT_PROFILE_HANDSFREE_ID "handsfree"
 #define BT_PROFILE_HANDSFREE_CLIENT_ID "handsfree_client"
 #define BT_PROFILE_ADVANCED_AUDIO_ID "a2dp"
