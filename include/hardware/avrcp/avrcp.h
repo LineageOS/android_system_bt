@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include <map>
+#include <set>
 #include <string>
 
 #include <base/bind.h>
@@ -29,7 +29,7 @@ namespace avrcp {
 
 struct SongInfo {
   std::string media_id;  // This gets converted to a UID in the native service
-  std::map<Attribute, std::string> attributes;
+  std::set<AttributeEntry> attributes;
 };
 
 enum PlayState : uint8_t {

@@ -61,11 +61,19 @@ class AvrcpInterfaceImpl : public AvrcpInterface {
     return AVRC_OpenBrowse(handle, conn_role);
   }
 
-  uint16_t CloseBrowse(uint8_t handle) override {
-    return AVRC_CloseBrowse(handle);
+  uint16_t GetPeerMtu(uint8_t handle) override {
+    return AVCT_GetPeerMtu(handle);
+  }
+
+  uint16_t GetBrowseMtu(uint8_t handle) override {
+    return AVCT_GetBrowseMtu(handle);
   }
 
   uint16_t Close(uint8_t handle) override { return AVRC_Close(handle); }
+
+  uint16_t CloseBrowse(uint8_t handle) override {
+    return AVRC_CloseBrowse(handle);
+  }
 
   uint16_t MsgReq(uint8_t handle, uint8_t label, uint8_t ctype,
                   BT_HDR* p_pkt) override {

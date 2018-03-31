@@ -78,7 +78,7 @@ TEST(GetElementAttributesRequestPacketTest, invalidTest) {
 
 TEST(GetElementAttributesResponseBuilderTest, builderLengthTest) {
   // Attributes have a size of 8 + string length
-  auto builder = GetElementAttributesResponseBuilder::MakeBuilder();
+  auto builder = GetElementAttributesResponseBuilder::MakeBuilder(0xFFFF);
   ASSERT_EQ(builder->size(), 11u);
   builder->AddAttributeEntry(Attribute::TITLE, "test");
   ASSERT_EQ(builder->size(), 23u);
@@ -86,8 +86,8 @@ TEST(GetElementAttributesResponseBuilderTest, builderLengthTest) {
   ASSERT_EQ(builder->size(), 35u);
 }
 
-TEST(GetElementAttributesResonseBuilderTest, builderTest) {
-  auto builder = GetElementAttributesResponseBuilder::MakeBuilder();
+TEST(GetElementAttributesResponseBuilderTest, builderTest) {
+  auto builder = GetElementAttributesResponseBuilder::MakeBuilder(0xFFFF);
   builder->AddAttributeEntry(Attribute::TITLE, "Test Song");
   builder->AddAttributeEntry(Attribute::ARTIST_NAME, "Test Artist");
   builder->AddAttributeEntry(Attribute::ALBUM_NAME, "Test Album");
@@ -101,6 +101,32 @@ TEST(GetElementAttributesResonseBuilderTest, builderTest) {
   auto test_packet = TestGetElemAttrReqPacket::Make();
   builder->Serialize(test_packet);
   ASSERT_EQ(test_packet->GetData(), get_elements_attributes_response_full);
+}
+
+TEST(GetElementAttributesResponseBuilderTest, truncateBuilderTest) {
+  auto attribute = AttributeEntry(Attribute::TITLE, "1234");
+  size_t truncated_size = VendorPacket::kMinSize();
+  truncated_size += 1;                 // Number of attributes
+  truncated_size += attribute.size();  // Attribute size
+
+  auto truncated_builder =
+      GetElementAttributesResponseBuilder::MakeBuilder(truncated_size);
+  ASSERT_TRUE(
+      truncated_builder->AddAttributeEntry(Attribute::TITLE, "1234truncated"));
+  ASSERT_EQ(truncated_builder->size(), truncated_size);
+
+  ASSERT_FALSE(truncated_builder->AddAttributeEntry(Attribute::ARTIST_NAME,
+                                                    "Can not add"));
+
+  auto truncated_packet = TestGetElemAttrReqPacket::Make();
+  truncated_builder->Serialize(truncated_packet);
+
+  auto builder = GetElementAttributesResponseBuilder::MakeBuilder(0xFFFF);
+  builder->AddAttributeEntry(attribute);
+  auto test_packet = TestGetElemAttrReqPacket::Make();
+  builder->Serialize(test_packet);
+
+  ASSERT_EQ(truncated_packet->GetData(), test_packet->GetData());
 }
 
 }  // namespace avrcp
