@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include <map>
+#include <set>
 #include "vendor_packet.h"
 
 namespace bluetooth {
@@ -62,22 +62,24 @@ class GetElementAttributesResponseBuilder : public VendorPacketBuilder {
  public:
   virtual ~GetElementAttributesResponseBuilder() = default;
 
-  static std::unique_ptr<GetElementAttributesResponseBuilder> MakeBuilder();
+  static std::unique_ptr<GetElementAttributesResponseBuilder> MakeBuilder(
+      size_t mtu);
 
-  GetElementAttributesResponseBuilder* AddAttributeEntry(AttributeEntry entry);
-  GetElementAttributesResponseBuilder* AddAttributeEntry(Attribute attribute,
-                                                         std::string value);
+  bool AddAttributeEntry(AttributeEntry entry);
+  bool AddAttributeEntry(Attribute attribute, std::string value);
 
   virtual size_t size() const override;
   virtual bool Serialize(
       const std::shared_ptr<::bluetooth::Packet>& pkt) override;
 
  private:
-  std::map<Attribute, std::string> entries_;
+  std::set<AttributeEntry> entries_;
+  size_t mtu_;
 
-  GetElementAttributesResponseBuilder()
+  GetElementAttributesResponseBuilder(size_t mtu)
       : VendorPacketBuilder(CType::STABLE, CommandPdu::GET_ELEMENT_ATTRIBUTES,
-                            PacketType::SINGLE){};
+                            PacketType::SINGLE),
+        mtu_(mtu){};
 };
 
 }  // namespace avrcp

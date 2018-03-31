@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include <map>
+#include <set>
 
 #include "avrcp_browse_packet.h"
 
@@ -28,10 +28,10 @@ class GetItemAttributesResponseBuilder : public BrowsePacketBuilder {
   virtual ~GetItemAttributesResponseBuilder() = default;
 
   static std::unique_ptr<GetItemAttributesResponseBuilder> MakeBuilder(
-      Status status);
+      Status status, size_t mtu);
 
-  GetItemAttributesResponseBuilder* AddAttributeEntry(AttributeEntry entry);
-  GetItemAttributesResponseBuilder* AddAttributeEntry(Attribute, std::string);
+  bool AddAttributeEntry(AttributeEntry entry);
+  bool AddAttributeEntry(Attribute, std::string);
 
   virtual size_t size() const override;
   virtual bool Serialize(
@@ -39,10 +39,13 @@ class GetItemAttributesResponseBuilder : public BrowsePacketBuilder {
 
  private:
   Status status_;
-  std::map<Attribute, std::string> entries_;
+  size_t mtu_;
+  std::set<AttributeEntry> entries_;
 
-  GetItemAttributesResponseBuilder(Status status)
-      : BrowsePacketBuilder(BrowsePdu::GET_ITEM_ATTRIBUTES), status_(status) {}
+  GetItemAttributesResponseBuilder(Status status, size_t mtu)
+      : BrowsePacketBuilder(BrowsePdu::GET_ITEM_ATTRIBUTES),
+        status_(status),
+        mtu_(mtu) {}
 };
 
 class GetItemAttributesRequest : public BrowsePacket {
