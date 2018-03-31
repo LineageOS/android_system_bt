@@ -551,16 +551,16 @@ static void l2c_csm_w4_l2cap_connect_rsp(tL2C_CCB* p_ccb, uint16_t event,
       break;
 
     case L2CEVT_L2CAP_CONNECT_RSP_NEG: /* Peer rejected connection */
-      L2CAP_TRACE_API(
-          "L2CAP - Calling Connect_Cfm_Cb(), CID: 0x%04x, Failure Code: %d",
-          p_ccb->local_cid, p_ci->l2cap_result);
+      LOG(WARNING) << __func__ << ": L2CAP connection rejected, lcid="
+                   << loghex(p_ccb->local_cid)
+                   << ", reason=" << loghex(p_ci->l2cap_result);
       l2cu_release_ccb(p_ccb);
       (*connect_cfm)(local_cid, p_ci->l2cap_result);
       break;
 
     case L2CEVT_TIMEOUT:
-      L2CAP_TRACE_API("L2CAP - Calling Connect_Cfm_Cb(), CID: 0x%04x, Timeout",
-                      p_ccb->local_cid);
+      LOG(WARNING) << __func__ << ": L2CAP connection timeout, lcid="
+                   << loghex(p_ccb->local_cid);
       l2cu_release_ccb(p_ccb);
       (*connect_cfm)(local_cid, L2CAP_CONN_TIMEOUT);
       break;

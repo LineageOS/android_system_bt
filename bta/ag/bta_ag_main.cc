@@ -310,6 +310,7 @@ static tBTA_AG_SCB* bta_ag_scb_alloc(void) {
       p_scb->peer_codecs = BTA_AG_CODEC_CVSD;
       p_scb->sco_codec = BTA_AG_CODEC_CVSD;
       p_scb->peer_version = HFP_HSP_VERSION_UNKNOWN;
+      p_scb->hsp_version = HSP_VERSION_1_2;
       /* set up timers */
       p_scb->ring_timer = alarm_new("bta_ag.scb_ring_timer");
       p_scb->collision_timer = alarm_new("bta_ag.scb_collision_timer");
@@ -377,12 +378,12 @@ void bta_ag_scb_dealloc(tBTA_AG_SCB* p_scb) {
  * Description      Given a pointer to an scb, return its index.
  *
  *
- * Returns          Index of scb.
+ * Returns          Index of scb starting from 1
  *
  ******************************************************************************/
 uint16_t bta_ag_scb_to_idx(tBTA_AG_SCB* p_scb) {
   /* use array arithmetic to determine index */
-  return ((uint16_t)(p_scb - bta_ag_cb.scb)) + 1;
+  return static_cast<uint16_t>(p_scb - bta_ag_cb.scb + 1);
 }
 
 /*******************************************************************************
