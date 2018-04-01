@@ -283,8 +283,6 @@ void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
         } else {
           btm_establish_continue(p);
         }
-      } else {
-        btm_read_remote_features(p->hci_handle);
       }
 
       /* read page 1 - on rmt feature event for buffer reasons */
@@ -351,7 +349,7 @@ void btm_acl_removed(const RawAddress& bda, tBT_TRANSPORT transport) {
     if (p->link_up_issued) {
       p->link_up_issued = false;
 
-      /* If anyone cares, tell him database changed */
+      /* If anyone cares, indicate the database changed */
       if (btm_cb.p_bl_changed_cb) {
         tBTM_BL_EVENT_DATA evt_data;
         evt_data.event = BTM_BL_DISCN_EVT;
@@ -884,6 +882,10 @@ void btm_read_remote_version_complete(uint8_t* p) {
         STREAM_TO_UINT8(p_acl_cb->lmp_version, p);
         STREAM_TO_UINT16(p_acl_cb->manufacturer, p);
         STREAM_TO_UINT16(p_acl_cb->lmp_subversion, p);
+
+        if (p_acl_cb->transport == BT_TRANSPORT_BR_EDR) {
+          btm_read_remote_features(p_acl_cb->hci_handle);
+        }
       }
 
       if (p_acl_cb->transport == BT_TRANSPORT_LE) {
@@ -933,6 +935,16 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
            HCI_FEATURE_BYTES_PER_PAGE);
   }
 
+  if (!(p_dev_rec->sec_flags & BTM_SEC_NAME_KNOWN) ||
+      p_dev_rec->is_originator) {
+    BTM_TRACE_DEBUG("%s: Calling Next Security Procedure", __func__);
+    uint8_t status = btm_sec_execute_procedure(p_dev_rec);
+    if (status != BTM_CMD_STARTED) {
+      BTM_TRACE_ERROR("%s: Security procedure not started! status %d", __func__,
+                      status);
+      btm_sec_dev_rec_cback_event(p_dev_rec, status, false);
+    }
+  }
   const uint8_t req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
 
   /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
@@ -1177,6 +1189,10 @@ void btm_establish_continue(tACL_CONN* p_acl_cb) {
       BTM_SetLinkPolicy(p_acl_cb->remote_addr, &btm_cb.btm_def_link_policy);
   }
 #endif
+  if (p_acl_cb->link_up_issued) {
+    BTM_TRACE_ERROR("%s: Already link is up ", __func__);
+    return;
+  }
   p_acl_cb->link_up_issued = true;
 
   /* If anyone cares, tell him database changed */

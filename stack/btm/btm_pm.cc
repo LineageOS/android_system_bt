@@ -163,7 +163,7 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
   }
 
   VLOG(2) << __func__ << " pm_id " << pm_id << " BDA: " << remote_bda
-          << " mode:0x" << std::hex << p_mode->mode;
+          << " mode:" << std::to_string(p_mode->mode);
 
   /* take out the force bit */
   mode = p_mode->mode & ~BTM_PM_MD_FORCE;
@@ -192,10 +192,9 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
          (p_mode->min <= p_cb->interval)) ||
         ((p_mode->mode & BTM_PM_MD_FORCE) == 0 &&
          (p_mode->max >= p_cb->interval))) {
-      LOG(INFO) << __func__ << " already in requested mode "
-                << unsigned(p_mode->mode) << ", interval "
-                << unsigned(p_cb->interval) << " max " << unsigned(p_mode->max)
-                << " min " << unsigned(p_mode->min);
+      VLOG(1) << __func__ << " already in requested mode "
+              << std::to_string(p_mode->mode) << ", interval " << p_cb->interval
+              << " max " << p_mode->max << " min " << p_mode->min;
       return BTM_SUCCESS;
     }
   }

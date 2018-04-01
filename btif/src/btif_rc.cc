@@ -3112,6 +3112,7 @@ static void handle_get_capability_response(tBTA_AV_META_MSG* pmeta_msg,
       if ((p_rsp->param.event_id[xx] == AVRC_EVT_PLAY_STATUS_CHANGE) ||
           (p_rsp->param.event_id[xx] == AVRC_EVT_TRACK_CHANGE) ||
           (p_rsp->param.event_id[xx] == AVRC_EVT_APP_SETTING_CHANGE) ||
+          (p_rsp->param.event_id[xx] == AVRC_EVT_ADDR_PLAYER_CHANGE) ||
           (p_rsp->param.event_id[xx] == AVRC_EVT_UIDS_CHANGE)) {
         p_event = (btif_rc_supported_event_t*)osi_malloc(
             sizeof(btif_rc_supported_event_t));
@@ -3191,7 +3192,9 @@ static void handle_notification_response(tBTA_AV_META_MSG* pmeta_msg,
         /* Start timer to get play status periodically
          * if the play state is playing.
          */
-        if (p_rsp->param.play_status == AVRC_PLAYSTATE_PLAYING) {
+        if (p_rsp->param.play_status == AVRC_PLAYSTATE_PLAYING ||
+            p_rsp->param.play_status == AVRC_PLAYSTATE_REV_SEEK ||
+            p_rsp->param.play_status == AVRC_PLAYSTATE_FWD_SEEK) {
           rc_start_play_status_timer(p_dev);
         }
         HAL_CBACK(bt_rc_ctrl_callbacks, play_status_changed_cb, &rc_addr,
@@ -3220,6 +3223,8 @@ static void handle_notification_response(tBTA_AV_META_MSG* pmeta_msg,
         break;
 
       case AVRC_EVT_ADDR_PLAYER_CHANGE:
+        HAL_CBACK(bt_rc_ctrl_callbacks, set_addressed_player_cb, &rc_addr,
+                  BTRC_STS_ADDR_PLAY_CHGD);
         break;
 
       case AVRC_EVT_UIDS_CHANGE:
