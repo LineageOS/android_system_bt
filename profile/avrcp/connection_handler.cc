@@ -217,10 +217,13 @@ void ConnectionHandler::InitiatorControlCb(uint8_t handle, uint8_t event,
       // devices SDP is completed after the device connects AVRCP so that
       // information isn't very useful when trying to control our
       // capabilities. For now always use AVRCP 1.6.
-      std::shared_ptr<Device> newDevice =
-          std::make_shared<Device>(*peer_addr, !supports_browsing,
-                                   base::Bind(&ConnectionHandler::SendMessage,
-                                              base::Unretained(this), handle));
+      auto&& callback = base::Bind(&ConnectionHandler::SendMessage,
+                                   base::Unretained(this), handle);
+      auto&& ctrl_mtu = avrc_->GetPeerMtu(handle) - AVCT_HDR_LEN;
+      auto&& browse_mtu = avrc_->GetBrowseMtu(handle) - AVCT_HDR_LEN;
+      std::shared_ptr<Device> newDevice = std::make_shared<Device>(
+          *peer_addr, !supports_browsing, callback, ctrl_mtu, browse_mtu);
+
       device_map_[handle] = newDevice;
       // TODO (apanicke): Create the device with all of the interfaces it
       // needs. Return the new device where the service will register the
@@ -274,10 +277,13 @@ void ConnectionHandler::AcceptorControlCb(uint8_t handle, uint8_t event,
     case AVRC_OPEN_IND_EVT: {
       LOG(INFO) << __PRETTY_FUNCTION__ << ": Connection Opened Event";
 
-      std::shared_ptr<Device> newDevice =
-          std::make_shared<Device>(*peer_addr, false,
-                                   base::Bind(&ConnectionHandler::SendMessage,
-                                              base::Unretained(this), handle));
+      auto&& callback = base::Bind(&ConnectionHandler::SendMessage,
+                                   base::Unretained(this), handle);
+      auto&& ctrl_mtu = avrc_->GetPeerMtu(handle) - AVCT_HDR_LEN;
+      auto&& browse_mtu = avrc_->GetBrowseMtu(handle) - AVCT_HDR_LEN;
+      std::shared_ptr<Device> newDevice = std::make_shared<Device>(
+          *peer_addr, false, callback, ctrl_mtu, browse_mtu);
+
       device_map_[handle] = newDevice;
       connection_cb_.Run(newDevice);
 

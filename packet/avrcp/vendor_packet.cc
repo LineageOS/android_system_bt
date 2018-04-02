@@ -66,13 +66,14 @@ void VendorPacketBuilder::PushHeader(
 bool VendorPacketBuilder::PushAttributeValue(
     const std::shared_ptr<::bluetooth::Packet>& pkt,
     const AttributeEntry& entry) {
-  AddPayloadOctets4(pkt, base::ByteSwap(static_cast<uint32_t>(entry.first)));
+  AddPayloadOctets4(pkt,
+                    base::ByteSwap(static_cast<uint32_t>(entry.attribute())));
   uint16_t character_set = 0x006a;  // UTF-8
   AddPayloadOctets2(pkt, base::ByteSwap(character_set));
-  uint16_t value_length = entry.second.length();
+  uint16_t value_length = entry.value().length();
   AddPayloadOctets2(pkt, base::ByteSwap(value_length));
   for (int i = 0; i < value_length; i++) {
-    AddPayloadOctets1(pkt, entry.second[i]);
+    AddPayloadOctets1(pkt, entry.value()[i]);
   }
 
   return true;
