@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <bta/include/bta_api.h>
 #include <stdint.h>
 #include <memory>
 #include <string>
@@ -209,13 +210,20 @@ class BluetoothMetricsLogger {
    */
   void LogA2dpSession(const A2dpSessionMetrics& a2dp_session_metrics);
 
-  /*
-   * Writes the metrics, in base64 protobuf format, into the descriptor FD
-   * If CLEAR is true, metrics events are cleared afterwards.
+  /**
+   * Log Headset profile RFCOMM connection event
+   *
+   * @param service_id the BTA service ID for this headset connection
    */
-  void WriteBase64(int fd, bool clear);
-  void WriteBase64String(std::string* serialized, bool clear);
-  void WriteString(std::string* serialized, bool clear);
+  void LogHeadsetProfileRfcConnection(tBTA_SERVICE_ID service_id);
+
+  /*
+   * Writes the metrics, in base64 protobuf format, into the descriptor FD,
+   * metrics events are always cleared after dump
+   */
+  void WriteBase64(int fd);
+  void WriteBase64String(std::string* serialized);
+  void WriteString(std::string* serialized);
 
   /*
    * Reset the metrics logger by cleaning up its staging queues and existing
