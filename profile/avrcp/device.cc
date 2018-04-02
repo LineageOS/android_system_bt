@@ -16,6 +16,7 @@
 
 #include <base/message_loop/message_loop.h>
 
+#include "connection_handler.h"
 #include "device.h"
 
 namespace bluetooth {
@@ -28,10 +29,13 @@ Device::Device(
     const RawAddress& bdaddr, bool avrcp13_compatibility,
     base::Callback<void(uint8_t label, bool browse,
                         std::unique_ptr<::bluetooth::PacketBuilder> message)>
-        send_msg_cb)
+        send_msg_cb,
+    uint16_t ctrl_mtu, uint16_t browse_mtu)
     : address_(bdaddr),
       avrcp13_compatibility_(avrcp13_compatibility),
-      send_message_cb_(send_msg_cb) {}
+      send_message_cb_(send_msg_cb),
+      ctrl_mtu_(ctrl_mtu),
+      browse_mtu_(browse_mtu) {}
 
 void Device::RegisterInterfaces(MediaInterface* media_interface,
                                 A2dpInterface* a2dp_interface,
@@ -436,7 +440,7 @@ void Device::GetElementAttributesResponse(
   auto attributes_requested =
       get_element_attributes_pkt->GetAttributesRequested();
 
-  auto response = GetElementAttributesResponseBuilder::MakeBuilder();
+  auto response = GetElementAttributesResponseBuilder::MakeBuilder(ctrl_mtu_);
 
   last_song_info_ = info;
 
@@ -679,8 +683,8 @@ void Device::GetItemAttributesNowPlayingResponse(
     uint8_t label, std::shared_ptr<GetItemAttributesRequest> pkt,
     std::string curr_media_id, std::vector<SongInfo> song_list) {
   DEVICE_VLOG(2) << __func__ << ": uid=" << loghex(pkt->GetUid());
-  auto builder =
-      GetItemAttributesResponseBuilder::MakeBuilder(Status::NO_ERROR);
+  auto builder = GetItemAttributesResponseBuilder::MakeBuilder(Status::NO_ERROR,
+                                                               browse_mtu_);
 
   auto media_id = now_playing_ids_.get_media_id(pkt->GetUid());
   if (media_id == "") {
@@ -722,14 +726,14 @@ void Device::GetItemAttributesVFSResponse(
   auto media_id = vfs_ids_.get_media_id(pkt->GetUid());
   if (media_id == "") {
     LOG(WARNING) << __func__ << ": Item not found";
-    auto builder =
-        GetItemAttributesResponseBuilder::MakeBuilder(Status::DOES_NOT_EXIST);
+    auto builder = GetItemAttributesResponseBuilder::MakeBuilder(
+        Status::DOES_NOT_EXIST, browse_mtu_);
     send_message(label, true, std::move(builder));
     return;
   }
 
-  auto builder =
-      GetItemAttributesResponseBuilder::MakeBuilder(Status::NO_ERROR);
+  auto builder = GetItemAttributesResponseBuilder::MakeBuilder(Status::NO_ERROR,
+                                                               browse_mtu_);
 
   ListItem item_requested;
   for (const auto& temp : item_list) {
@@ -781,12 +785,12 @@ void Device::GetMediaPlayerListResponse(
 
   if (players.size() == 0) {
     auto no_items_rsp = GetFolderItemsResponseBuilder::MakePlayerListBuilder(
-        Status::RANGE_OUT_OF_BOUNDS, 0x0000);
+        Status::RANGE_OUT_OF_BOUNDS, 0x0000, browse_mtu_);
     send_message(label, true, std::move(no_items_rsp));
   }
 
   auto builder = GetFolderItemsResponseBuilder::MakePlayerListBuilder(
-      Status::NO_ERROR, 0x0000);
+      Status::NO_ERROR, 0x0000, browse_mtu_);
 
   // Move the current player to the first slot due to some carkits always
   // connecting to the first listed player rather than using the ID
@@ -811,9 +815,9 @@ void Device::GetMediaPlayerListResponse(
   send_message(label, true, std::move(builder));
 }
 
-std::map<Attribute, std::string> filter_attributes_requested(
+std::set<AttributeEntry> filter_attributes_requested(
     const SongInfo& song, const std::vector<Attribute>& attrs) {
-  std::map<Attribute, std::string> result;
+  std::set<AttributeEntry> result;
   for (const auto& attr : attrs) {
     if (song.attributes.find(attr) != song.attributes.end()) {
       result.insert(*song.attributes.find(attr));
@@ -830,8 +834,8 @@ void Device::GetVFSListResponse(uint8_t label,
                  << " end_item=" << pkt->GetEndItem();
 
   // The builder will automatically correct the status if there are zero items
-  auto builder =
-      GetFolderItemsResponseBuilder::MakeVFSBuilder(Status::NO_ERROR, 0x0000);
+  auto builder = GetFolderItemsResponseBuilder::MakeVFSBuilder(
+      Status::NO_ERROR, 0x0000, browse_mtu_);
 
   // TODO (apanicke): Add test that checks if vfs_ids_ is the correct size after
   // an operation.
@@ -861,10 +865,10 @@ void Device::GetVFSListResponse(uint8_t label,
       auto song = items[i].song;
       auto title =
           song.attributes.find(Attribute::TITLE) != song.attributes.end()
-              ? song.attributes[Attribute::TITLE]
+              ? song.attributes.find(Attribute::TITLE)->value()
               : "No Song Info";
       MediaElementItem song_item(vfs_ids_.get_uid(song.media_id), title,
-                                 std::map<Attribute, std::string>());
+                                 std::set<AttributeEntry>());
 
       if (pkt->GetNumAttributes() == 0x00) {  // All attributes requested
         song_item.attributes_ = std::move(song.attributes);
@@ -885,7 +889,7 @@ void Device::GetNowPlayingListResponse(
     std::string /* unused curr_song_id */, std::vector<SongInfo> song_list) {
   DEVICE_VLOG(2) << __func__;
   auto builder = GetFolderItemsResponseBuilder::MakeNowPlayingBuilder(
-      Status::NO_ERROR, 0x0000);
+      Status::NO_ERROR, 0x0000, browse_mtu_);
 
   now_playing_ids_.clear();
   for (const SongInfo& song : song_list) {
@@ -896,10 +900,10 @@ void Device::GetNowPlayingListResponse(
        i <= pkt->GetEndItem() && i < song_list.size(); i++) {
     auto song = song_list[i];
     auto title = song.attributes.find(Attribute::TITLE) != song.attributes.end()
-                     ? song.attributes[Attribute::TITLE]
+                     ? song.attributes.find(Attribute::TITLE)->value()
                      : "No Song Info";
 
-    MediaElementItem item(i + 1, title, std::map<Attribute, std::string>());
+    MediaElementItem item(i + 1, title, std::set<AttributeEntry>());
     if (pkt->GetNumAttributes() == 0x00) {
       item.attributes_ = std::move(song.attributes);
     } else {
@@ -1053,6 +1057,8 @@ std::ostream& operator<<(std::ostream& out, const Device& d) {
   out << "  └ Last Play State: " << d.last_play_status_.state << std::endl;
   out << "  └ Current Volume: " << d.volume_ << std::endl;
   out << "  └ Current Folder: " << d.CurrentFolder();
+  out << "  └ Control MTU Size: " << d.ctrl_mtu_ << std::endl;
+  out << "  └ Browse MTU Size: " << d.browse_mtu_ << std::endl;
   out << "  └ Features Supported: TO BE IMPLEMENTED" << std::endl;
   out << "  └ Last X Media Key Events: TO BE IMPLEMENTED" << std::endl;
   out << std::endl;

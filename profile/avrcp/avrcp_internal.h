@@ -44,9 +44,13 @@ class AvrcpInterface {
 
   virtual uint16_t OpenBrowse(uint8_t handle, uint8_t conn_role) = 0;
 
-  virtual uint16_t CloseBrowse(uint8_t handle) = 0;
+  virtual uint16_t GetPeerMtu(uint8_t handle) = 0;
+
+  virtual uint16_t GetBrowseMtu(uint8_t handle) = 0;
 
   virtual uint16_t Close(uint8_t handle) = 0;
+
+  virtual uint16_t CloseBrowse(uint8_t handle) = 0;
 
   virtual uint16_t MsgReq(uint8_t handle, uint8_t label, uint8_t ctype,
                           BT_HDR* p_pkt) = 0;
