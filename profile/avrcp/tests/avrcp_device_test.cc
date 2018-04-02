@@ -224,6 +224,20 @@ TEST_F(AvrcpDeviceTest, nowPlayingTest) {
 
   test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
 
+  SongInfo info = {"test_id",
+                   {// The attribute map
+                    AttributeEntry(Attribute::TITLE, "Test Song"),
+                    AttributeEntry(Attribute::ARTIST_NAME, "Test Artist"),
+                    AttributeEntry(Attribute::ALBUM_NAME, "Test Album"),
+                    AttributeEntry(Attribute::TRACK_NUMBER, "1"),
+                    AttributeEntry(Attribute::TOTAL_NUMBER_OF_TRACKS, "2"),
+                    AttributeEntry(Attribute::GENRE, "Test Genre"),
+                    AttributeEntry(Attribute::PLAYING_TIME, "1000")}};
+  std::vector<SongInfo> list = {info};
+  EXPECT_CALL(interface, GetNowPlayingList(_))
+      .Times(2)
+      .WillRepeatedly(InvokeCb<0>("test_id", list));
+
   // Test the interim response for now playing list changed
   auto interim_response =
       RegisterNotificationResponseBuilder::MakeNowPlayingBuilder(true);
