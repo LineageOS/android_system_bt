@@ -80,7 +80,7 @@ class ConnectionHandler {
    * either a smart pointer pointing to the connected AVRCP device or null
    * if the connection failed.
    *
-   * The order of opperations for this function is as follows.
+   * The order of operations for this function is as follows.
    *   1. Perform SDP on remote device
    *   2. Connect the AVCTP Channel
    *   2. (Optional) If supported connect the AVCTP Browse channel

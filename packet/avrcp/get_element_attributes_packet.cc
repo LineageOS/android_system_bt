@@ -83,37 +83,41 @@ std::string GetElementAttributesRequest::ToString() const {
 }
 
 std::unique_ptr<GetElementAttributesResponseBuilder>
-GetElementAttributesResponseBuilder::MakeBuilder() {
+GetElementAttributesResponseBuilder::MakeBuilder(size_t mtu) {
   std::unique_ptr<GetElementAttributesResponseBuilder> builder(
-      new GetElementAttributesResponseBuilder());
+      new GetElementAttributesResponseBuilder(mtu));
 
   return builder;
 }
 
-GetElementAttributesResponseBuilder*
-GetElementAttributesResponseBuilder::AddAttributeEntry(AttributeEntry entry) {
+bool GetElementAttributesResponseBuilder::AddAttributeEntry(
+    AttributeEntry entry) {
   CHECK_LT(entries_.size(), size_t(0xFF))
       << __func__ << ": attribute entry overflow";
 
-  entries_.insert(entry);
+  size_t remaining_space = mtu_ - size();
+  if (entry.size() > remaining_space) {
+    entry.resize(remaining_space);
+  }
 
-  return this;
+  if (entry.empty()) {
+    return false;
+  }
+
+  entries_.insert(entry);
+  return true;
 }
 
-GetElementAttributesResponseBuilder*
-GetElementAttributesResponseBuilder::AddAttributeEntry(Attribute attribute,
-                                                       std::string value) {
+bool GetElementAttributesResponseBuilder::AddAttributeEntry(Attribute attribute,
+                                                            std::string value) {
   return AddAttributeEntry(AttributeEntry(attribute, value));
 }
 
 size_t GetElementAttributesResponseBuilder::size() const {
   size_t attr_list_size = 0;
 
-  for (auto attribute_entry : entries_) {
-    attr_list_size += 4;  // Size of attr entry
-    attr_list_size += 2;  // Size of value length field
-    attr_list_size += 2;  // Size of character encoding
-    attr_list_size += attribute_entry.second.length();
+  for (auto& attribute_entry : entries_) {
+    attr_list_size += attribute_entry.size();
   }
 
   return VendorPacket::kMinSize() + 1 + attr_list_size;
