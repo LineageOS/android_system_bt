@@ -212,33 +212,25 @@ static void bta_pan_data_buf_ind_cback(UINT16 handle, BD_ADDR src, BD_ADDR dst, 
         return;
     }
 
-    if ( sizeof(tBTA_PAN_DATA_PARAMS) > p_buf->offset )
-    {
-        if (sizeof(BT_HDR) + sizeof(tBTA_PAN_DATA_PARAMS) + p_buf->len >
-            GKI_get_pool_bufsize(PAN_POOL_ID)) {
-            android_errorWriteLog(0x534e4554, "63146237");
-            APPL_TRACE_ERROR("%s: received buffer length too large: %d", __func__,
-                             p_buf->len);
-            return;
-        }
+    if (sizeof(BT_HDR) + sizeof(tBTA_PAN_DATA_PARAMS) + p_buf->len >
+        GKI_get_pool_bufsize(PAN_POOL_ID)) {
+        android_errorWriteLog(0x534e4554, "63146237");
+        APPL_TRACE_ERROR("%s: received buffer length too large: %d", __func__,
+                         p_buf->len);
+        return;
+    }
 
-        /* offset smaller than data structure in front of actual data */
-        p_new_buf = (BT_HDR *)GKI_getpoolbuf( PAN_POOL_ID );
-        if(!p_new_buf)
-        {
-            APPL_TRACE_WARNING("Cannot get a PAN GKI buffer");
-            return;
-        }
-        else
-        {
-            memcpy( (UINT8 *)(p_new_buf+1)+sizeof(tBTA_PAN_DATA_PARAMS), (UINT8 *)(p_buf+1)+p_buf->offset, p_buf->len );
-            p_new_buf->len    = p_buf->len;
-            p_new_buf->offset = sizeof(tBTA_PAN_DATA_PARAMS);
-        }
+    p_new_buf = (BT_HDR *)GKI_getpoolbuf( PAN_POOL_ID );
+    if(!p_new_buf)
+    {
+        APPL_TRACE_WARNING("Cannot get a PAN GKI buffer");
+        return;
     }
     else
     {
-        p_new_buf = p_buf;
+        memcpy( (UINT8 *)(p_new_buf+1)+sizeof(tBTA_PAN_DATA_PARAMS), (UINT8 *)(p_buf+1)+p_buf->offset, p_buf->len );
+        p_new_buf->len    = p_buf->len;
+        p_new_buf->offset = sizeof(tBTA_PAN_DATA_PARAMS);
     }
     /* copy params into the space before the data */
     bdcpy(((tBTA_PAN_DATA_PARAMS *)p_new_buf)->src, src);
