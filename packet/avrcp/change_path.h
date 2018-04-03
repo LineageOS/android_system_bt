@@ -69,5 +69,29 @@ class ChangePathRequest : public BrowsePacket {
   using BrowsePacket::BrowsePacket;
 };
 
+class ChangePathRequestBuilder : public BrowsePacketBuilder {
+ public:
+  virtual ~ChangePathRequestBuilder() = default;
+
+  static std::unique_ptr<ChangePathRequestBuilder> MakeBuilder(
+      uint16_t uid_counter, Direction direction, uint64_t folder_uid);
+
+  virtual size_t size() const override;
+  virtual bool Serialize(
+      const std::shared_ptr<::bluetooth::Packet>& pkt) override;
+
+ private:
+  ChangePathRequestBuilder(uint16_t uid_counter, Direction direction,
+                           uint64_t folder_uid)
+      : BrowsePacketBuilder(BrowsePdu::CHANGE_PATH),
+        uid_counter_(uid_counter),
+        direction_(direction),
+        folder_uid_(folder_uid){};
+
+  uint16_t uid_counter_;
+  Direction direction_;
+  uint64_t folder_uid_;
+};
+
 }  // namespace avrcp
 }  // namespace bluetooth
