@@ -123,6 +123,9 @@ class Device {
 
   // NOW PLAYING LIST CHANGED
   virtual void HandleNowPlayingUpdate();
+  virtual void HandleNowPlayingNotificationResponse(
+      uint8_t label, bool interim, std::string curr_song_id,
+      std::vector<SongInfo> song_list);
 
   // PLAY POSITION CHANGED
   virtual void HandlePlayPosUpdate();
