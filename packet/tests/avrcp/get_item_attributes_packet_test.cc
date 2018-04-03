@@ -27,7 +27,7 @@ using TestGetItemAttrsReqPacket = TestPacketType<GetItemAttributesRequest>;
 
 TEST(GetItemAttributesResponseBuilderTest, builderSizeTest) {
   auto builder =
-      GetItemAttributesResponseBuilder::MakeBuilder(Status::NO_ERROR);
+      GetItemAttributesResponseBuilder::MakeBuilder(Status::NO_ERROR, 0xFFFF);
   ASSERT_EQ(builder->size(), 5u);
 
   builder->AddAttributeEntry(Attribute::TITLE, "Test Song");
@@ -42,7 +42,7 @@ TEST(GetItemAttributesResponseBuilderTest, builderSizeTest) {
 
 TEST(GetItemAttributesResponseBuilderTest, builderTest) {
   auto builder =
-      GetItemAttributesResponseBuilder::MakeBuilder(Status::NO_ERROR);
+      GetItemAttributesResponseBuilder::MakeBuilder(Status::NO_ERROR, 0xFFFF);
   builder->AddAttributeEntry(Attribute::TITLE, "Test Song");
   builder->AddAttributeEntry(Attribute::ARTIST_NAME, "Test Artist");
   builder->AddAttributeEntry(Attribute::ALBUM_NAME, "Test Album");
@@ -52,10 +52,37 @@ TEST(GetItemAttributesResponseBuilderTest, builderTest) {
   ASSERT_EQ(test_packet->GetData(), get_item_attributes_song_response);
 }
 
+TEST(GetItemAttributesResponseBuilderTest, truncateBuilderTest) {
+  auto attribute = AttributeEntry(Attribute::TITLE, "1234");
+  size_t truncated_size = BrowsePacket::kMinSize();
+  truncated_size += 2;  // Status field  + Number of attributes field
+  truncated_size += attribute.size();  // Attribute size
+
+  auto truncated_builder = GetItemAttributesResponseBuilder::MakeBuilder(
+      Status::NO_ERROR, truncated_size);
+  ASSERT_TRUE(
+      truncated_builder->AddAttributeEntry(Attribute::TITLE, "1234truncated"));
+  ASSERT_EQ(truncated_builder->size(), truncated_size);
+
+  ASSERT_FALSE(truncated_builder->AddAttributeEntry(Attribute::ARTIST_NAME,
+                                                    "Can not add"));
+
+  auto truncated_packet = TestGetItemAttrsReqPacket::Make();
+  truncated_builder->Serialize(truncated_packet);
+
+  auto builder =
+      GetItemAttributesResponseBuilder::MakeBuilder(Status::NO_ERROR, 0xFFFF);
+  builder->AddAttributeEntry(attribute);
+  auto test_packet = TestGetItemAttrsReqPacket::Make();
+  builder->Serialize(test_packet);
+
+  ASSERT_EQ(truncated_packet->GetData(), test_packet->GetData());
+}
+
 TEST(GetItemAttributesResponseBuilderTest, errorStatusTest) {
   std::vector<uint8_t> does_not_exist_status = {0x73, 0x00, 0x01, 0x09};
-  auto builder =
-      GetItemAttributesResponseBuilder::MakeBuilder(Status::DOES_NOT_EXIST);
+  auto builder = GetItemAttributesResponseBuilder::MakeBuilder(
+      Status::DOES_NOT_EXIST, 0xFFFF);
   ASSERT_EQ(builder->size(), does_not_exist_status.size());
 
   auto test_packet = TestGetItemAttrsReqPacket::Make();

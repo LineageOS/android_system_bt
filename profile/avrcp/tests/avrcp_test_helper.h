@@ -62,11 +62,12 @@ class MockAvrcpInterface : public AvrcpInterface {
                                    uint32_t, bool, uint16_t));
   MOCK_METHOD4(FindService, uint16_t(uint16_t, const RawAddress&,
                                      tAVRC_SDP_DB_PARAMS*, tAVRC_FIND_CBACK));
-  MOCK_METHOD3(Open,
-               uint16_t(uint8_t*, tAVRC_CONN_CB*, const RawAddress& bd_addr));
+  MOCK_METHOD3(Open, uint16_t(uint8_t*, tAVRC_CONN_CB*, const RawAddress&));
   MOCK_METHOD2(OpenBrowse, uint16_t(uint8_t, uint8_t));
-  MOCK_METHOD1(CloseBrowse, uint16_t(uint8_t));
+  MOCK_METHOD1(GetPeerMtu, uint16_t(uint8_t));
+  MOCK_METHOD1(GetBrowseMtu, uint16_t(uint8_t));
   MOCK_METHOD1(Close, uint16_t(uint8_t));
+  MOCK_METHOD1(CloseBrowse, uint16_t(uint8_t));
   MOCK_METHOD4(MsgReq, uint16_t(uint8_t, uint8_t, uint8_t, BT_HDR*));
 };
 
