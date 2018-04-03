@@ -633,9 +633,6 @@ void Device::HandleChangePath(uint8_t label,
                    << "\"";
   }
 
-  // All of the VFS ID's are no longer valid
-  vfs_ids_.clear();
-
   media_interface_->GetFolderItems(
       curr_browsed_player_id_, CurrentFolder(),
       base::Bind(&Device::ChangePathResponse, base::Unretained(this), label,
@@ -838,7 +835,6 @@ void Device::GetVFSListResponse(uint8_t label,
 
   // TODO (apanicke): Add test that checks if vfs_ids_ is the correct size after
   // an operation.
-  vfs_ids_.clear();
   for (const auto& item : items) {
     if (item.type == ListItem::FOLDER) {
       vfs_ids_.insert(item.folder.media_id);

@@ -301,5 +301,45 @@ std::string GetFolderItemsRequest::ToString() const {
   return ss.str();
 }
 
+std::unique_ptr<GetFolderItemsRequestBuilder>
+GetFolderItemsRequestBuilder::MakeBuilder(
+    Scope scope, uint32_t start_item, uint32_t end_item,
+    const std::set<Attribute>& requested_attrs) {
+  std::unique_ptr<GetFolderItemsRequestBuilder> builder(
+      new GetFolderItemsRequestBuilder(scope, start_item, end_item,
+                                       requested_attrs));
+
+  return builder;
+}
+
+size_t GetFolderItemsRequestBuilder::size() const {
+  size_t len = GetFolderItemsRequest::kMinSize();
+  len += requested_attrs_.size() * sizeof(Attribute);
+  return len;
+}
+
+bool GetFolderItemsRequestBuilder::Serialize(
+    const std::shared_ptr<::bluetooth::Packet>& pkt) {
+  ReserveSpace(pkt, size());
+
+  BrowsePacketBuilder::PushHeader(pkt, size() - BrowsePacket::kMinSize());
+
+  AddPayloadOctets1(pkt, static_cast<uint8_t>(scope_));
+  AddPayloadOctets4(pkt, base::ByteSwap(start_item_));
+  AddPayloadOctets4(pkt, base::ByteSwap(end_item_));
+
+  if (requested_attrs_.size() == 0) {
+    // 0xFF is the value to signify that there are no attributes requested.
+    AddPayloadOctets1(pkt, 0xFF);
+    return true;
+  }
+
+  AddPayloadOctets1(pkt, requested_attrs_.size());
+  for (const auto& attr : requested_attrs_) {
+    AddPayloadOctets4(pkt, base::ByteSwap(static_cast<uint32_t>(attr)));
+  }
+  return true;
+}
+
 }  // namespace avrcp
 }  // namespace bluetooth
