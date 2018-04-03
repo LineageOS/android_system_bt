@@ -180,11 +180,10 @@ void Device::HandleNotification(
     } break;
 
     case Event::NOW_PLAYING_CONTENT_CHANGED: {
-      // Respond immediately since this notification doesn't require any info
       now_playing_changed_ = Notification(true, label);
-      auto response =
-          RegisterNotificationResponseBuilder::MakeNowPlayingBuilder(true);
-      send_message(label, false, std::move(response));
+      media_interface_->GetNowPlayingList(base::Bind(
+          &Device::HandleNowPlayingNotificationResponse, base::Unretained(this),
+          now_playing_changed_.second, true));
     } break;
 
     case Event::AVAILABLE_PLAYERS_CHANGED: {
@@ -1010,10 +1009,32 @@ void Device::HandleNowPlayingUpdate() {
     return;
   }
 
+  media_interface_->GetNowPlayingList(
+      base::Bind(&Device::HandleNowPlayingNotificationResponse,
+                 base::Unretained(this), now_playing_changed_.second, false));
+}
+
+void Device::HandleNowPlayingNotificationResponse(
+    uint8_t label, bool interim, std::string curr_song_id,
+    std::vector<SongInfo> song_list) {
+  if (!now_playing_changed_.first) {
+    LOG(WARNING) << "Device is not registered for now playing updates";
+    return;
+  }
+
+  now_playing_ids_.clear();
+  for (const SongInfo& song : song_list) {
+    now_playing_ids_.insert(song.media_id);
+  }
+
   auto response =
-      RegisterNotificationResponseBuilder::MakeNowPlayingBuilder(false);
+      RegisterNotificationResponseBuilder::MakeNowPlayingBuilder(interim);
   send_message(now_playing_changed_.second, false, std::move(response));
-  now_playing_changed_ = Notification(false, 0);
+
+  if (!interim) {
+    active_labels_.erase(label);
+    now_playing_changed_ = Notification(false, 0);
+  }
 }
 
 void Device::HandlePlayPosUpdate() {
