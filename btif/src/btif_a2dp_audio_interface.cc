@@ -63,6 +63,8 @@ uint8_t btif_a2dp_audio_process_request(uint8_t cmd);
 
 static void btif_a2dp_audio_send_start_req();
 static void btif_a2dp_audio_send_suspend_req();
+static void btif_a2dp_audio_interface_init();
+static void btif_a2dp_audio_interface_deinit();
 // Delay reporting
 // static void btif_a2dp_audio_send_sink_latency();
 
@@ -172,7 +174,7 @@ static void btif_a2dp_get_codec_configuration(
   p_codec_info->encodedAudioBitrate = CodecConfig->getTrackBitRate();
 }
 
-void btif_a2dp_audio_interface_init() {
+static void btif_a2dp_audio_interface_init() {
   LOG_INFO(LOG_TAG, "%s", __func__);
 
   btAudio = IBluetoothAudioOffload::getService();
@@ -181,19 +183,19 @@ void btif_a2dp_audio_interface_init() {
   LOG_DEBUG(
       LOG_TAG, "%s: IBluetoothAudioOffload::getService() returned %p (%s)",
       __func__, btAudio.get(), (btAudio->isRemote() ? "remote" : "local"));
+
   LOG_INFO(LOG_TAG, "%s:Init returned", __func__);
 }
 
-void btif_a2dp_audio_interface_deinit() {
+static void btif_a2dp_audio_interface_deinit() {
   LOG_INFO(LOG_TAG, "%s: start", __func__);
   btAudio = nullptr;
-  LOG_INFO(LOG_TAG, "%s: exit", __func__);
 }
 
 void btif_a2dp_audio_interface_start_session() {
   LOG_INFO(LOG_TAG, "%s", __func__);
+  btif_a2dp_audio_interface_init();
   CHECK(btAudio != nullptr);
-
   CodecConfiguration codec_info;
   btif_a2dp_get_codec_configuration(&codec_info);
   android::sp<IBluetoothAudioHost> host_if = new BluetoothAudioHost();
@@ -207,6 +209,7 @@ void btif_a2dp_audio_interface_end_session() {
   if (!ret.isOk()) {
     LOG_ERROR(LOG_TAG, "HAL server is dead");
   }
+  btif_a2dp_audio_interface_deinit();
 }
 
 void btif_a2dp_audio_on_started(tBTA_AV_STATUS status) {

@@ -419,7 +419,6 @@ static void btif_a2dp_source_startup_delayed(void) {
 
   raise_priority_a2dp(TASK_HIGH_MEDIA);
   btif_a2dp_control_init();
-  if (btif_av_is_a2dp_offload_enabled()) btif_a2dp_audio_interface_init();
   btif_a2dp_source_cb.SetState(BtifA2dpSource::kStateRunning);
   BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionStart(
       system_bt_osi::CONNECTION_TECHNOLOGY_TYPE_BREDR, 0);
@@ -493,7 +492,8 @@ static void btif_a2dp_source_shutdown_delayed(void) {
   btif_a2dp_source_cb.media_alarm = nullptr;
 
   btif_a2dp_control_cleanup();
-  if (btif_av_is_a2dp_offload_enabled()) btif_a2dp_audio_interface_deinit();
+  if (btif_av_is_a2dp_offload_enabled())
+    btif_a2dp_audio_interface_end_session();
   fixed_queue_free(btif_a2dp_source_cb.tx_audio_queue, nullptr);
   btif_a2dp_source_cb.tx_audio_queue = nullptr;
 
