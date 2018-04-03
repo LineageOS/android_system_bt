@@ -198,7 +198,7 @@ static void* a2dp_codec_parser(uint8_t *codec_cfg, audio_format_t *codec_type)
                  sbc_codec.sampling_rate = 44100;
                  break;
             case A2D_SBC_SAMP_FREQ_32:
-                 sbc_codec.sampling_rate = 3200;
+                 sbc_codec.sampling_rate = 32000;
                  break;
             case A2D_SBC_SAMP_FREQ_16:
                  sbc_codec.sampling_rate = 16000;
