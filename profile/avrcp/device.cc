@@ -25,6 +25,9 @@ namespace avrcp {
 #define DEVICE_LOG(LEVEL) LOG(LEVEL) << address_.ToString() << " : "
 #define DEVICE_VLOG(LEVEL) VLOG(LEVEL) << address_.ToString() << " : "
 
+#define VOL_NOT_SUPPORTED -1
+#define VOL_REGISTRATION_FAILED -2
+
 Device::Device(
     const RawAddress& bdaddr, bool avrcp13_compatibility,
     base::Callback<void(uint8_t label, bool browse,
@@ -253,6 +256,14 @@ void Device::HandleVolumeChanged(
   DEVICE_VLOG(1) << __func__ << ": interim=" << pkt->IsInterim();
   if (volume_interface_ == nullptr) return;
 
+  if (pkt->GetCType() == CType::REJECTED) {
+    // Disable Absolute Volume
+    active_labels_.erase(label);
+    volume_interface_ = nullptr;
+    volume_ = VOL_REGISTRATION_FAILED;
+    return;
+  }
+
   // We only update on interim and just re-register on changes.
   if (!pkt->IsInterim()) {
     active_labels_.erase(label);
@@ -261,7 +272,7 @@ void Device::HandleVolumeChanged(
   }
 
   // Handle the first volume update.
-  if (volume_ == -1) {
+  if (volume_ == VOL_NOT_SUPPORTED) {
     volume_ = pkt->GetVolume();
     volume_interface_->DeviceConnected(
         GetAddress(), base::Bind(&Device::SetVolume, base::Unretained(this)));
@@ -290,6 +301,7 @@ void Device::SetVolume(int8_t volume) {
     }
   }
 
+  volume_ = volume;
   send_message_cb_.Run(label, false, std::move(request));
 }
 
@@ -1055,6 +1067,13 @@ void Device::DeviceDisconnected() {
     volume_interface_->DeviceDisconnected(GetAddress());
 }
 
+static std::string volumeToStr(int8_t volume) {
+  if (volume == VOL_NOT_SUPPORTED) return "Absolute Volume not supported";
+  if (volume == VOL_REGISTRATION_FAILED)
+    return "Volume changed notification was rejected";
+  return std::to_string(volume);
+}
+
 std::ostream& operator<<(std::ostream& out, const Device& d) {
   out << "Avrcp Device: Address=" << d.address_.ToString() << std::endl;
   out << "  └ isActive: " << (d.IsActive() ? "YES" : "NO") << std::endl;
@@ -1072,7 +1091,7 @@ std::ostream& operator<<(std::ostream& out, const Device& d) {
   out << "    └ UIDs Changed: " << d.uids_changed_.first << std::endl;
   out << "  └ Last Song Sent ID: " << d.last_song_info_.media_id << std::endl;
   out << "  └ Last Play State: " << d.last_play_status_.state << std::endl;
-  out << "  └ Current Volume: " << d.volume_ << std::endl;
+  out << "  └ Current Volume: " << volumeToStr(d.volume_) << std::endl;
   out << "  └ Current Folder: " << d.CurrentFolder();
   out << "  └ Control MTU Size: " << d.ctrl_mtu_ << std::endl;
   out << "  └ Browse MTU Size: " << d.browse_mtu_ << std::endl;
