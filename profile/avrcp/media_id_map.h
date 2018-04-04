@@ -44,6 +44,10 @@ class MediaIdMap {
   }
 
   uint64_t insert(std::string media_id) {
+    if (media_id_to_uid_.find(media_id) != media_id_to_uid_.end()) {
+      return media_id_to_uid_[media_id];
+    }
+
     uint64_t uid = media_id_to_uid_.size() + 1;
     media_id_to_uid_.insert(std::pair<std::string, uint64_t>(media_id, uid));
     uid_to_media_id_.insert(std::pair<uint64_t, std::string>(uid, media_id));

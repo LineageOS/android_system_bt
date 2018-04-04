@@ -498,7 +498,7 @@ TEST_F(AvrcpDeviceTest, changePathTest) {
       .Times(1)
       .WillOnce(InvokeCb<2>(list2));
 
-  // Populate the VFS ID map since we don't persist UIDs
+  // Populate the VFS ID map
   auto folder_items_response = GetFolderItemsResponseBuilder::MakeVFSBuilder(
       Status::NO_ERROR, 0x0000, 0xFFFF);
   folder_items_response->AddFolder(FolderItem(1, 0, true, "Test Folder0"));
@@ -506,7 +506,11 @@ TEST_F(AvrcpDeviceTest, changePathTest) {
   EXPECT_CALL(response_cb,
               Call(1, true, matchPacket(std::move(folder_items_response))))
       .Times(1);
-  auto request = TestBrowsePacket::Make(get_folder_items_request_vfs);
+
+  auto folder_request_builder =
+      GetFolderItemsRequestBuilder::MakeBuilder(Scope::VFS, 0, 3, {});
+  auto request = TestBrowsePacket::Make();
+  folder_request_builder->Serialize(request);
   SendBrowseMessage(1, request);
 
   // Change path down into Test Folder1
@@ -514,19 +518,25 @@ TEST_F(AvrcpDeviceTest, changePathTest) {
       ChangePathResponseBuilder::MakeBuilder(Status::NO_ERROR, list1.size());
   EXPECT_CALL(response_cb,
               Call(2, true, matchPacket(std::move(change_path_response))));
-  request = TestBrowsePacket::Make(change_path_request);
+  auto path_request_builder =
+      ChangePathRequestBuilder::MakeBuilder(0, Direction::DOWN, 2);
+  request = TestBrowsePacket::Make();
+  path_request_builder->Serialize(request);
   SendBrowseMessage(2, request);
 
-  // Populate the VFS ID map since we don't persist UIDs
+  // Populate the new VFS ID
   folder_items_response = GetFolderItemsResponseBuilder::MakeVFSBuilder(
       Status::NO_ERROR, 0x0000, 0xFFFF);
-  folder_items_response->AddFolder(FolderItem(1, 0, true, "Test Folder2"));
-  folder_items_response->AddFolder(FolderItem(2, 0, true, "Test Folder3"));
-  folder_items_response->AddFolder(FolderItem(3, 0, true, "Test Folder4"));
+  folder_items_response->AddFolder(FolderItem(3, 0, true, "Test Folder2"));
+  folder_items_response->AddFolder(FolderItem(4, 0, true, "Test Folder3"));
+  folder_items_response->AddFolder(FolderItem(5, 0, true, "Test Folder4"));
   EXPECT_CALL(response_cb,
               Call(3, true, matchPacket(std::move(folder_items_response))))
       .Times(1);
-  request = TestBrowsePacket::Make(get_folder_items_request_vfs);
+  folder_request_builder =
+      GetFolderItemsRequestBuilder::MakeBuilder(Scope::VFS, 0, 3, {});
+  request = TestBrowsePacket::Make();
+  folder_request_builder->Serialize(request);
   SendBrowseMessage(3, request);
 
   // Change path down into Test Folder3
@@ -534,7 +544,10 @@ TEST_F(AvrcpDeviceTest, changePathTest) {
       ChangePathResponseBuilder::MakeBuilder(Status::NO_ERROR, list2.size());
   EXPECT_CALL(response_cb,
               Call(4, true, matchPacket(std::move(change_path_response))));
-  request = TestBrowsePacket::Make(change_path_request);
+  path_request_builder =
+      ChangePathRequestBuilder::MakeBuilder(0, Direction::DOWN, 4);
+  request = TestBrowsePacket::Make();
+  path_request_builder->Serialize(request);
   SendBrowseMessage(4, request);
 
   // Change path up back into Test Folder1
@@ -542,7 +555,10 @@ TEST_F(AvrcpDeviceTest, changePathTest) {
       ChangePathResponseBuilder::MakeBuilder(Status::NO_ERROR, list1.size());
   EXPECT_CALL(response_cb,
               Call(5, true, matchPacket(std::move(change_path_response))));
-  request = TestBrowsePacket::Make(change_path_up_request);
+  path_request_builder =
+      ChangePathRequestBuilder::MakeBuilder(0, Direction::UP, 0);
+  request = TestBrowsePacket::Make();
+  path_request_builder->Serialize(request);
   SendBrowseMessage(5, request);
 }
 

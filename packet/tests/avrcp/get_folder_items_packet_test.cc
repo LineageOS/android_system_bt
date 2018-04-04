@@ -222,5 +222,25 @@ TEST(GetFolderItemsRequestTest, getterTest) {
   ASSERT_EQ(test_packet->GetAttributesRequested(), attribute_list);
 }
 
+TEST(GetFolderItemsRequestBuilderTest, builderZeroAttrsTest) {
+  auto builder =
+      GetFolderItemsRequestBuilder::MakeBuilder(Scope::VFS, 0, 9, {});
+  ASSERT_EQ(builder->size(), get_folder_items_request_no_attrs.size());
+
+  auto test_packet = TestGetFolderItemsReqPacket::Make();
+  builder->Serialize(test_packet);
+  ASSERT_EQ(test_packet->GetData(), get_folder_items_request_no_attrs);
+}
+
+TEST(GetFolderItemsRequestBuilderTest, builderTest) {
+  auto builder = GetFolderItemsRequestBuilder::MakeBuilder(Scope::VFS, 0, 9,
+                                                           {Attribute::TITLE});
+  ASSERT_EQ(builder->size(), get_folder_items_request_title.size());
+
+  auto test_packet = TestGetFolderItemsReqPacket::Make();
+  builder->Serialize(test_packet);
+  ASSERT_EQ(test_packet->GetData(), get_folder_items_request_title);
+}
+
 }  // namespace avrcp
 }  // namespace bluetooth
