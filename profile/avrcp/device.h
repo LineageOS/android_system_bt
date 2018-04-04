@@ -51,10 +51,11 @@ class Device {
       const RawAddress& bdaddr, bool avrcp13_compatibility,
       base::Callback<void(uint8_t label, bool browse,
                           std::unique_ptr<::bluetooth::PacketBuilder> message)>
-          send_msg_cb);
+          send_msg_cb,
+      uint16_t ctrl_mtu, uint16_t browse_mtu);
   virtual ~Device() = default;
 
-  const RawAddress& GetAddress() { return address_; };
+  const RawAddress& GetAddress() const { return address_; };
 
   /**
    * Disconnects the AVRCP connection that this device represents.
@@ -122,6 +123,9 @@ class Device {
 
   // NOW PLAYING LIST CHANGED
   virtual void HandleNowPlayingUpdate();
+  virtual void HandleNowPlayingNotificationResponse(
+      uint8_t label, bool interim, std::string curr_song_id,
+      std::vector<SongInfo> song_list);
 
   // PLAY POSITION CHANGED
   virtual void HandlePlayPosUpdate();
@@ -229,6 +233,15 @@ class Device {
   // TODO (apanicke): Initialize all the variables in the constructor.
   RawAddress address_;
 
+  // Enables AVRCP 1.3 Compatibility mode. This disables any AVRCP 1.4+ features
+  // such as browsing and playlists but has the highest chance of working.
+  bool avrcp13_compatibility_ = false;
+  base::Callback<void(uint8_t label, bool browse,
+                      std::unique_ptr<::bluetooth::PacketBuilder> message)>
+      send_message_cb_;
+  uint16_t ctrl_mtu_;
+  uint16_t browse_mtu_;
+
   int curr_browsed_player_id_ = -1;
 
   std::stack<std::string> current_path_;
@@ -256,14 +269,6 @@ class Device {
   MediaInterface* media_interface_ = nullptr;
   A2dpInterface* a2dp_interface_ = nullptr;
   VolumeInterface* volume_interface_ = nullptr;
-
-  // Enables AVRCP 1.3 Compatibility mode. This disables any AVRCP 1.4+ features
-  // such as browsing and playlists but has the highest chance of working.
-  bool avrcp13_compatibility_ = false;
-
-  base::Callback<void(uint8_t label, bool browse,
-                      std::unique_ptr<::bluetooth::PacketBuilder> message)>
-      send_message_cb_;
 
   // Labels used for messages currently in flight.
   std::set<uint8_t> active_labels_;

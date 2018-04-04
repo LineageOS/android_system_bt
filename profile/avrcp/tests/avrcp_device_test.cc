@@ -60,7 +60,7 @@ class AvrcpDeviceTest : public ::testing::Test {
 
     // TODO (apanicke): Test setting avrc13 to false once we have full
     // functionality.
-    test_device = new Device(RawAddress::kAny, true, cb);
+    test_device = new Device(RawAddress::kAny, true, cb, 0xFFFF, 0xFFFF);
   }
 
   virtual void TearDown() override {
@@ -86,7 +86,7 @@ TEST_F(AvrcpDeviceTest, addressTest) {
                     uint8_t b, bool c, AvrcpResponse d) { a->Call(b, c, d); },
                  &response_cb);
 
-  Device device(RawAddress::kAny, true, cb);
+  Device device(RawAddress::kAny, true, cb, 0xFFFF, 0xFFFF);
   ASSERT_EQ(device.GetAddress(), RawAddress::kAny);
 }
 
@@ -224,6 +224,20 @@ TEST_F(AvrcpDeviceTest, nowPlayingTest) {
 
   test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
 
+  SongInfo info = {"test_id",
+                   {// The attribute map
+                    AttributeEntry(Attribute::TITLE, "Test Song"),
+                    AttributeEntry(Attribute::ARTIST_NAME, "Test Artist"),
+                    AttributeEntry(Attribute::ALBUM_NAME, "Test Album"),
+                    AttributeEntry(Attribute::TRACK_NUMBER, "1"),
+                    AttributeEntry(Attribute::TOTAL_NUMBER_OF_TRACKS, "2"),
+                    AttributeEntry(Attribute::GENRE, "Test Genre"),
+                    AttributeEntry(Attribute::PLAYING_TIME, "1000")}};
+  std::vector<SongInfo> list = {info};
+  EXPECT_CALL(interface, GetNowPlayingList(_))
+      .Times(2)
+      .WillRepeatedly(InvokeCb<0>("test_id", list));
+
   // Test the interim response for now playing list changed
   auto interim_response =
       RegisterNotificationResponseBuilder::MakeNowPlayingBuilder(true);
@@ -290,25 +304,55 @@ TEST_F(AvrcpDeviceTest, getElementAttributesTest) {
 
   EXPECT_CALL(interface, GetSongInfo(_)).WillRepeatedly(InvokeCb<0>(info));
 
-  auto compare_to_partial = GetElementAttributesResponseBuilder::MakeBuilder();
+  auto compare_to_partial =
+      GetElementAttributesResponseBuilder::MakeBuilder(0xFFFF);
   compare_to_partial->AddAttributeEntry(Attribute::TITLE, "Test Song");
   EXPECT_CALL(response_cb,
               Call(2, false, matchPacket(std::move(compare_to_partial))))
       .Times(1);
   SendMessage(2, TestAvrcpPacket::Make(get_element_attributes_request_partial));
 
-  auto compare_to_full = GetElementAttributesResponseBuilder::MakeBuilder();
-  compare_to_full->AddAttributeEntry(Attribute::TITLE, "Test Song")
-      ->AddAttributeEntry(Attribute::ARTIST_NAME, "Test Artist")
-      ->AddAttributeEntry(Attribute::ALBUM_NAME, "Test Album")
-      ->AddAttributeEntry(Attribute::TRACK_NUMBER, "1")
-      ->AddAttributeEntry(Attribute::TOTAL_NUMBER_OF_TRACKS, "2")
-      ->AddAttributeEntry(Attribute::GENRE, "Test Genre")
-      ->AddAttributeEntry(Attribute::PLAYING_TIME, "1000");
+  auto compare_to_full =
+      GetElementAttributesResponseBuilder::MakeBuilder(0xFFFF);
+  compare_to_full->AddAttributeEntry(Attribute::TITLE, "Test Song");
+  compare_to_full->AddAttributeEntry(Attribute::ARTIST_NAME, "Test Artist");
+  compare_to_full->AddAttributeEntry(Attribute::ALBUM_NAME, "Test Album");
+  compare_to_full->AddAttributeEntry(Attribute::TRACK_NUMBER, "1");
+  compare_to_full->AddAttributeEntry(Attribute::TOTAL_NUMBER_OF_TRACKS, "2");
+  compare_to_full->AddAttributeEntry(Attribute::GENRE, "Test Genre");
+  compare_to_full->AddAttributeEntry(Attribute::PLAYING_TIME, "1000");
   EXPECT_CALL(response_cb,
               Call(3, false, matchPacket(std::move(compare_to_full))))
       .Times(1);
   SendMessage(3, TestAvrcpPacket::Make(get_element_attributes_request_full));
+}
+
+TEST_F(AvrcpDeviceTest, getElementAttributesMtuTest) {
+  auto truncated_packet =
+      GetElementAttributesResponseBuilder::MakeBuilder(0xFFFF);
+  truncated_packet->AddAttributeEntry(Attribute::TITLE, "1234");
+
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  base::Callback<void(uint8_t, bool, AvrcpResponse)> cb =
+      base::Bind([](MockFunction<void(uint8_t, bool, const AvrcpResponse&)>* a,
+                    uint8_t b, bool c, AvrcpResponse d) { a->Call(b, c, d); },
+                 &response_cb);
+  Device device(RawAddress::kAny, true, cb, truncated_packet->size(), 0xFFFF);
+
+  device.RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  SongInfo info = {"test_id",
+                   {AttributeEntry(Attribute::TITLE, "1234truncated")}};
+  EXPECT_CALL(interface, GetSongInfo(_)).WillRepeatedly(InvokeCb<0>(info));
+
+  EXPECT_CALL(response_cb,
+              Call(1, false, matchPacket(std::move(truncated_packet))))
+      .Times(1);
+
+  device.MessageReceived(
+      1, TestAvrcpPacket::Make(get_element_attributes_request_full));
 }
 
 TEST_F(AvrcpDeviceTest, getMediaPlayerListTest) {
@@ -325,7 +369,7 @@ TEST_F(AvrcpDeviceTest, getMediaPlayerListTest) {
       .WillOnce(InvokeCb<0>(0, list));
 
   auto expected_response = GetFolderItemsResponseBuilder::MakePlayerListBuilder(
-      Status::NO_ERROR, 0x0000);
+      Status::NO_ERROR, 0x0000, 0xFFFF);
   expected_response->AddMediaPlayer(MediaPlayerItem(0, "Test Player", true));
   EXPECT_CALL(response_cb,
               Call(1, true, matchPacket(std::move(expected_response))))
@@ -356,7 +400,7 @@ TEST_F(AvrcpDeviceTest, getNowPlayingListTest) {
       .WillRepeatedly(InvokeCb<0>("test_id", list));
 
   auto expected_response = GetFolderItemsResponseBuilder::MakeNowPlayingBuilder(
-      Status::NO_ERROR, 0x0000);
+      Status::NO_ERROR, 0x0000, 0xFFFF);
   expected_response->AddSong(MediaElementItem(1, "Test Song", info.attributes));
   EXPECT_CALL(response_cb,
               Call(1, true, matchPacket(std::move(expected_response))))
@@ -380,8 +424,8 @@ TEST_F(AvrcpDeviceTest, getVFSFolderTest) {
       .Times(1)
       .WillOnce(InvokeCb<2>(list));
 
-  auto expected_response =
-      GetFolderItemsResponseBuilder::MakeVFSBuilder(Status::NO_ERROR, 0x0000);
+  auto expected_response = GetFolderItemsResponseBuilder::MakeVFSBuilder(
+      Status::NO_ERROR, 0x0000, 0xFFFF);
   expected_response->AddFolder(FolderItem(1, 0, true, "Test Folder"));
   EXPECT_CALL(response_cb,
               Call(1, true, matchPacket(std::move(expected_response))))
@@ -389,6 +433,38 @@ TEST_F(AvrcpDeviceTest, getVFSFolderTest) {
 
   auto request = TestBrowsePacket::Make(get_folder_items_request_vfs);
   SendBrowseMessage(1, request);
+}
+
+TEST_F(AvrcpDeviceTest, getFolderItemsMtuTest) {
+  auto truncated_packet = GetFolderItemsResponseBuilder::MakeVFSBuilder(
+      Status::NO_ERROR, 0x0000, 0xFFFF);
+  truncated_packet->AddFolder(FolderItem(1, 0, true, "Test Folder0"));
+  truncated_packet->AddFolder(FolderItem(2, 0, true, "Test Folder1"));
+
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+  base::Callback<void(uint8_t, bool, AvrcpResponse)> cb =
+      base::Bind([](MockFunction<void(uint8_t, bool, const AvrcpResponse&)>* a,
+                    uint8_t b, bool c, AvrcpResponse d) { a->Call(b, c, d); },
+                 &response_cb);
+  Device device(RawAddress::kAny, true, cb, 0xFFFF, truncated_packet->size());
+  device.RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  FolderInfo info0 = {"test_id0", true, "Test Folder0"};
+  FolderInfo info1 = {"test_id1", true, "Test Folder1"};
+  FolderInfo info2 = {"test_id1", true, "Truncated folder"};
+  ListItem item0 = {ListItem::FOLDER, info0, SongInfo()};
+  ListItem item1 = {ListItem::FOLDER, info1, SongInfo()};
+  ListItem item2 = {ListItem::FOLDER, info1, SongInfo()};
+  std::vector<ListItem> list0 = {item0, item1, item2};
+  EXPECT_CALL(interface, GetFolderItems(_, "", _))
+      .WillRepeatedly(InvokeCb<2>(list0));
+
+  EXPECT_CALL(response_cb,
+              Call(1, true, matchPacket(std::move(truncated_packet))))
+      .Times(1);
+  device.BrowseMessageReceived(
+      1, TestBrowsePacket::Make(get_folder_items_request_vfs));
 }
 
 TEST_F(AvrcpDeviceTest, changePathTest) {
@@ -422,15 +498,19 @@ TEST_F(AvrcpDeviceTest, changePathTest) {
       .Times(1)
       .WillOnce(InvokeCb<2>(list2));
 
-  // Populate the VFS ID map since we don't persist UIDs
-  auto folder_items_response =
-      GetFolderItemsResponseBuilder::MakeVFSBuilder(Status::NO_ERROR, 0x0000);
+  // Populate the VFS ID map
+  auto folder_items_response = GetFolderItemsResponseBuilder::MakeVFSBuilder(
+      Status::NO_ERROR, 0x0000, 0xFFFF);
   folder_items_response->AddFolder(FolderItem(1, 0, true, "Test Folder0"));
   folder_items_response->AddFolder(FolderItem(2, 0, true, "Test Folder1"));
   EXPECT_CALL(response_cb,
               Call(1, true, matchPacket(std::move(folder_items_response))))
       .Times(1);
-  auto request = TestBrowsePacket::Make(get_folder_items_request_vfs);
+
+  auto folder_request_builder =
+      GetFolderItemsRequestBuilder::MakeBuilder(Scope::VFS, 0, 3, {});
+  auto request = TestBrowsePacket::Make();
+  folder_request_builder->Serialize(request);
   SendBrowseMessage(1, request);
 
   // Change path down into Test Folder1
@@ -438,19 +518,25 @@ TEST_F(AvrcpDeviceTest, changePathTest) {
       ChangePathResponseBuilder::MakeBuilder(Status::NO_ERROR, list1.size());
   EXPECT_CALL(response_cb,
               Call(2, true, matchPacket(std::move(change_path_response))));
-  request = TestBrowsePacket::Make(change_path_request);
+  auto path_request_builder =
+      ChangePathRequestBuilder::MakeBuilder(0, Direction::DOWN, 2);
+  request = TestBrowsePacket::Make();
+  path_request_builder->Serialize(request);
   SendBrowseMessage(2, request);
 
-  // Populate the VFS ID map since we don't persist UIDs
-  folder_items_response =
-      GetFolderItemsResponseBuilder::MakeVFSBuilder(Status::NO_ERROR, 0x0000);
-  folder_items_response->AddFolder(FolderItem(1, 0, true, "Test Folder2"));
-  folder_items_response->AddFolder(FolderItem(2, 0, true, "Test Folder3"));
-  folder_items_response->AddFolder(FolderItem(3, 0, true, "Test Folder4"));
+  // Populate the new VFS ID
+  folder_items_response = GetFolderItemsResponseBuilder::MakeVFSBuilder(
+      Status::NO_ERROR, 0x0000, 0xFFFF);
+  folder_items_response->AddFolder(FolderItem(3, 0, true, "Test Folder2"));
+  folder_items_response->AddFolder(FolderItem(4, 0, true, "Test Folder3"));
+  folder_items_response->AddFolder(FolderItem(5, 0, true, "Test Folder4"));
   EXPECT_CALL(response_cb,
               Call(3, true, matchPacket(std::move(folder_items_response))))
       .Times(1);
-  request = TestBrowsePacket::Make(get_folder_items_request_vfs);
+  folder_request_builder =
+      GetFolderItemsRequestBuilder::MakeBuilder(Scope::VFS, 0, 3, {});
+  request = TestBrowsePacket::Make();
+  folder_request_builder->Serialize(request);
   SendBrowseMessage(3, request);
 
   // Change path down into Test Folder3
@@ -458,7 +544,10 @@ TEST_F(AvrcpDeviceTest, changePathTest) {
       ChangePathResponseBuilder::MakeBuilder(Status::NO_ERROR, list2.size());
   EXPECT_CALL(response_cb,
               Call(4, true, matchPacket(std::move(change_path_response))));
-  request = TestBrowsePacket::Make(change_path_request);
+  path_request_builder =
+      ChangePathRequestBuilder::MakeBuilder(0, Direction::DOWN, 4);
+  request = TestBrowsePacket::Make();
+  path_request_builder->Serialize(request);
   SendBrowseMessage(4, request);
 
   // Change path up back into Test Folder1
@@ -466,7 +555,10 @@ TEST_F(AvrcpDeviceTest, changePathTest) {
       ChangePathResponseBuilder::MakeBuilder(Status::NO_ERROR, list1.size());
   EXPECT_CALL(response_cb,
               Call(5, true, matchPacket(std::move(change_path_response))));
-  request = TestBrowsePacket::Make(change_path_up_request);
+  path_request_builder =
+      ChangePathRequestBuilder::MakeBuilder(0, Direction::UP, 0);
+  request = TestBrowsePacket::Make();
+  path_request_builder->Serialize(request);
   SendBrowseMessage(5, request);
 }
 
@@ -491,14 +583,14 @@ TEST_F(AvrcpDeviceTest, getItemAttributesNowPlayingTest) {
       .WillRepeatedly(InvokeCb<0>("test_id", list));
 
   auto compare_to_full =
-      GetItemAttributesResponseBuilder::MakeBuilder(Status::NO_ERROR);
-  compare_to_full->AddAttributeEntry(Attribute::TITLE, "Test Song")
-      ->AddAttributeEntry(Attribute::ARTIST_NAME, "Test Artist")
-      ->AddAttributeEntry(Attribute::ALBUM_NAME, "Test Album")
-      ->AddAttributeEntry(Attribute::TRACK_NUMBER, "1")
-      ->AddAttributeEntry(Attribute::TOTAL_NUMBER_OF_TRACKS, "2")
-      ->AddAttributeEntry(Attribute::GENRE, "Test Genre")
-      ->AddAttributeEntry(Attribute::PLAYING_TIME, "1000");
+      GetItemAttributesResponseBuilder::MakeBuilder(Status::NO_ERROR, 0xFFFF);
+  compare_to_full->AddAttributeEntry(Attribute::TITLE, "Test Song");
+  compare_to_full->AddAttributeEntry(Attribute::ARTIST_NAME, "Test Artist");
+  compare_to_full->AddAttributeEntry(Attribute::ALBUM_NAME, "Test Album");
+  compare_to_full->AddAttributeEntry(Attribute::TRACK_NUMBER, "1");
+  compare_to_full->AddAttributeEntry(Attribute::TOTAL_NUMBER_OF_TRACKS, "2");
+  compare_to_full->AddAttributeEntry(Attribute::GENRE, "Test Genre");
+  compare_to_full->AddAttributeEntry(Attribute::PLAYING_TIME, "1000");
   EXPECT_CALL(response_cb,
               Call(1, true, matchPacket(std::move(compare_to_full))))
       .Times(1);
@@ -506,6 +598,33 @@ TEST_F(AvrcpDeviceTest, getItemAttributesNowPlayingTest) {
   auto request =
       TestBrowsePacket::Make(get_item_attributes_request_all_attributes);
   SendBrowseMessage(1, request);
+}
+
+TEST_F(AvrcpDeviceTest, geItemAttributesMtuTest) {
+  auto truncated_packet =
+      GetItemAttributesResponseBuilder::MakeBuilder(Status::NO_ERROR, 0xFFFF);
+  truncated_packet->AddAttributeEntry(Attribute::TITLE, "1234");
+
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+  base::Callback<void(uint8_t, bool, AvrcpResponse)> cb =
+      base::Bind([](MockFunction<void(uint8_t, bool, const AvrcpResponse&)>* a,
+                    uint8_t b, bool c, AvrcpResponse d) { a->Call(b, c, d); },
+                 &response_cb);
+  Device device(RawAddress::kAny, true, cb, 0xFFFF, truncated_packet->size());
+  device.RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  SongInfo info = {"test_id",
+                   {AttributeEntry(Attribute::TITLE, "1234truncated")}};
+  std::vector<SongInfo> list = {info};
+  EXPECT_CALL(interface, GetNowPlayingList(_))
+      .WillRepeatedly(InvokeCb<0>("test_id", list));
+
+  EXPECT_CALL(response_cb,
+              Call(1, true, matchPacket(std::move(truncated_packet))))
+      .Times(1);
+  device.BrowseMessageReceived(
+      1, TestBrowsePacket::Make(get_item_attributes_request_all_attributes));
 }
 
 TEST_F(AvrcpDeviceTest, setAddressedPlayerTest) {

@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include <map>
+#include <set>
 
 #include <base/sys_byteorder.h>
 
@@ -137,19 +137,64 @@ enum class Direction : uint8_t {
   DOWN = 0x01,
 };
 
-using AttributeEntry = std::pair<Attribute, std::string>;
+class AttributeEntry {
+ public:
+  AttributeEntry(const Attribute& attribute, const std::string& value)
+      : attribute_(attribute), value_(value) {}
+
+  AttributeEntry(const Attribute& attribute) : attribute_(attribute) {}
+
+  AttributeEntry(const AttributeEntry&) = default;
+
+  Attribute attribute() const { return attribute_; }
+
+  std::string value() const { return value_; }
+
+  static constexpr size_t kHeaderSize() {
+    size_t ret = 0;
+    ret += 4;  // Size of attribute field
+    ret += 2;  // Size of length field
+    ret += 2;  // Size of character encoding field
+    return ret;
+  }
+
+  size_t size() const { return kHeaderSize() + value_.size(); }
+
+  void resize(size_t new_size) {
+    new_size = new_size < kHeaderSize() ? 0 : new_size - kHeaderSize();
+    if (value_.size() > new_size) {
+      value_.resize(new_size);
+    }
+  }
+
+  bool empty() { return value_.empty(); }
+
+  bool operator<(const AttributeEntry& rhs) const {
+    return attribute_ < rhs.attribute_;
+  }
+
+ private:
+  Attribute attribute_;
+  std::string value_;
+};
+
+constexpr size_t MAX_FIELD_LEN = 100;
 
 struct MediaPlayerItem {
   uint16_t id_;
   std::string name_;
   bool browsable_;
 
-  MediaPlayerItem(uint16_t id, std::string name, bool browsable)
-      : id_(id), name_(name), browsable_(browsable) {}
+  MediaPlayerItem(uint16_t id, const std::string& name, bool browsable)
+      : id_(id), name_(name), browsable_(browsable) {
+    if (name_.size() > MAX_FIELD_LEN) {
+      name_.resize(MAX_FIELD_LEN);
+    }
+  }
 
   MediaPlayerItem(const MediaPlayerItem&) = default;
 
-  static size_t size(const MediaPlayerItem& item) {
+  static constexpr size_t kHeaderSize() {
     size_t ret = 0;
     ret += 1;   // Media Player Type
     ret += 2;   // Item Length
@@ -160,9 +205,10 @@ struct MediaPlayerItem {
     ret += 16;  // Features
     ret += 2;   // UTF-8 character set
     ret += 2;   // Name Length
-    ret += item.name_.size();
     return ret;
   }
+
+  size_t size() const { return kHeaderSize() + name_.size(); }
 };
 
 struct FolderItem {
@@ -176,11 +222,15 @@ struct FolderItem {
       : uid_(uid),
         folder_type_(folder_type),
         is_playable_(is_playable),
-        name_(name) {}
+        name_(name) {
+    if (name_.size() > MAX_FIELD_LEN) {
+      name_.resize(MAX_FIELD_LEN);
+    }
+  }
 
   FolderItem(const FolderItem&) = default;
 
-  static size_t size(const FolderItem& item) {
+  static constexpr size_t kHeaderSize() {
     size_t ret = 0;
     ret += 1;  // Folder Item Type
     ret += 2;  // Item Length
@@ -189,24 +239,36 @@ struct FolderItem {
     ret += 1;  // Is Playable byte
     ret += 2;  // UTF-8 Character Set
     ret += 2;  // Name Length
-    ret += item.name_.size();
     return ret;
   }
+
+  size_t size() const { return kHeaderSize() + name_.size(); }
 };
 
 // NOTE: We never use media type field because we only support audio types
 struct MediaElementItem {
   uint64_t uid_ = 0;
   std::string name_;
-  std::map<Attribute, std::string> attributes_;
+  std::set<AttributeEntry> attributes_;
 
-  MediaElementItem(uint64_t uid, std::string name,
-                   std::map<Attribute, std::string> attributes)
-      : uid_(uid), name_(name), attributes_(attributes) {}
+  // Truncate the name and attribute fields so that we don't have a single item
+  // that can exceed the Browsing MTU
+  MediaElementItem(uint64_t uid, const std::string& name,
+                   std::set<AttributeEntry> attributes)
+      : uid_(uid), name_(name) {
+    if (name_.size() > MAX_FIELD_LEN) {
+      name_.resize(MAX_FIELD_LEN);
+    }
+
+    for (AttributeEntry val : attributes) {
+      val.resize(MAX_FIELD_LEN);
+      attributes_.insert(val);
+    }
+  }
 
   MediaElementItem(const MediaElementItem&) = default;
 
-  static size_t size(const MediaElementItem& item) {
+  size_t size() const {
     size_t ret = 0;
     ret += 1;  // Media Element Item Type
     ret += 2;  // Item Length
@@ -214,14 +276,10 @@ struct MediaElementItem {
     ret += 1;  // Media Type
     ret += 2;  // UTF-8 Character Set
     ret += 2;  // Name Length
-    ret += item.name_.size();
+    ret += name_.size();
     ret += 1;  // Number of Attributes
-    for (auto it = item.attributes_.begin(); it != item.attributes_.end();
-         it++) {
-      ret += 4;  // Attribute ID
-      ret += 2;  // UTF-8 Character Set
-      ret += 2;  // Attribute Length
-      ret += it->second.size();
+    for (const auto& entry : attributes_) {
+      ret += entry.size();
     }
 
     return ret;
@@ -272,17 +330,19 @@ struct MediaListItem {
     }
   }
 
-  static size_t size(const MediaListItem& item) {
-    switch (item.type_) {
+  size_t size() const {
+    switch (type_) {
       case PLAYER:
-        return MediaPlayerItem::size(item.player_);
+        return player_.size();
       case FOLDER:
-        return FolderItem::size(item.folder_);
+        return folder_.size();
       case SONG:
-        return MediaElementItem::size(item.song_);
+        return song_.size();
     }
   }
 };
+
+constexpr size_t AVCT_HDR_LEN = 3;
 
 }  // namespace avrcp
 }  // namespace bluetooth
