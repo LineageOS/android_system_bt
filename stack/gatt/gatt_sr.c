@@ -22,6 +22,7 @@
  *
  ******************************************************************************/
 
+#include <log/log.h>
 #include "bt_target.h"
 #include "bt_utils.h"
 
@@ -343,6 +344,13 @@ void gatt_process_exec_write_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
         return;
     }
 #endif
+
+    if (len < sizeof(flag)) {
+      android_errorWriteLog(0x534e4554, "73172115");
+      GATT_TRACE_ERROR("%s invalid length", __func__);
+      gatt_send_error_rsp(p_tcb, GATT_INVALID_PDU, GATT_REQ_EXEC_WRITE, 0, false);
+      return;
+    }
 
     STREAM_TO_UINT8(flag, p);
 
@@ -1142,6 +1150,14 @@ static void gatts_process_read_req(tGATT_TCB *p_tcb, tGATT_SR_REG *p_rcb, UINT8 
     UINT8           sec_flag, key_size, *p;
     UINT16          offset = 0, value_len = 0;
     BT_HDR          *p_msg = (BT_HDR *)osi_calloc(buf_len);
+
+    if (op_code == GATT_REQ_READ_BLOB && len < sizeof(UINT16)) {
+      /* Error: packet length is too short */
+      GATT_TRACE_ERROR("%s: packet length=%d too short. min=%d", __func__, len, sizeof(UINT16));
+      android_errorWriteWithInfoLog(0x534e4554, "73172115", -1, NULL, 0);
+      gatt_send_error_rsp(p_tcb, GATT_INVALID_PDU, op_code, 0, false);
+      return;
+    }
 
     UNUSED(len);
 
