@@ -180,6 +180,20 @@ class Callbacks {
    */
   virtual void AtBievCallback(bthf_hf_ind_type_t ind_id, int ind_value,
                               RawAddress* bd_addr) = 0;
+
+  /**
+   * Callback for BIA. Pass the change in AG indicator activation.
+   * NOTE: Call, Call Setup and Call Held indicators are mandatory and cannot
+   *       be disabled. Thus, they are not included here.
+   *
+   * @param service whether HF should receive network service state update
+   * @param roam whether HF should receive roaming state update
+   * @param signal whether HF should receive signal strength update
+   * @param battery whether HF should receive AG battery level update
+   * @param bd_addr remote HF device address
+   */
+  virtual void AtBiaCallback(bool service, bool roam, bool signal, bool battery,
+                             RawAddress* bd_addr) = 0;
 };
 
 }  // namespace headset
