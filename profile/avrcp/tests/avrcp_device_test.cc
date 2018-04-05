@@ -678,5 +678,24 @@ TEST_F(AvrcpDeviceTest, volumeChangedTest) {
   SendMessage(1, response);
 }
 
+TEST_F(AvrcpDeviceTest, volumeRejectedTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+  MockVolumeInterface vol_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, &vol_interface);
+
+  auto reg_notif =
+      RegisterNotificationRequestBuilder::MakeBuilder(Event::VOLUME_CHANGED, 0);
+  EXPECT_CALL(response_cb, Call(_, false, matchPacket(std::move(reg_notif))))
+      .Times(1);
+  test_device->RegisterVolumeChanged();
+
+  auto response = TestAvrcpPacket::Make(rejected_volume_changed_notification);
+  SendMessage(1, response);
+
+  EXPECT_CALL(response_cb, Call(_, _, _)).Times(0);
+}
+
 }  // namespace avrcp
 }  // namespace bluetooth
