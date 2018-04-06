@@ -134,6 +134,10 @@ std::vector<uint8_t> interim_uids_notificaiton = {0x0f, 0x48, 0x00, 0x00, 0x19,
 std::vector<uint8_t> interim_volume_changed_notification = {
     0x0f, 0x48, 0x00, 0x00, 0x19, 0x58, 0x31, 0x00, 0x00, 0x02, 0x0d, 0x47};
 
+// AVRCP Rejected Volume Changed Notification with volume at 0%
+std::vector<uint8_t> rejected_volume_changed_notification = {
+    0x0a, 0x48, 0x00, 0x00, 0x19, 0x58, 0x31, 0x00, 0x00, 0x02, 0x0d, 0x00};
+
 // AVRCP Changed Volume Changed Notification with volume at 55% (0x47)
 std::vector<uint8_t> changed_volume_changed_notification = {
     0x0d, 0x48, 0x00, 0x00, 0x19, 0x58, 0x31, 0x00, 0x00, 0x02, 0x0d, 0x47};
@@ -147,10 +151,30 @@ std::vector<uint8_t> reject_player_app_settings_response = {
 //    scope = 0x00 (Media Player List)
 //    start_item = 0x00
 //    end_item = 0x03
-//    attributes_requested: none
+//    attributes_requested: all
 std::vector<uint8_t> get_folder_items_request = {0x71, 0x00, 0x0a, 0x00, 0x00,
                                                  0x00, 0x00, 0x00, 0x00, 0x00,
                                                  0x00, 0x03, 0x00};
+
+// AVRCP Browse Get Folder Items Request packet for media players with
+// the following data:
+//    scope = 0x01 (VFS)
+//    start_item = 0x00
+//    end_item = 0x09
+//    attributes_requested: none
+std::vector<uint8_t> get_folder_items_request_no_attrs = {
+    0x71, 0x00, 0x0a, 0x01, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x09, 0xff};
+
+// AVRCP Browse Get Folder Items Request packet for media players with
+// the following data:
+//    scope = 0x01 (VFS)
+//    start_item = 0x00
+//    end_item = 0x09
+//    attributes_requested: Title
+std::vector<uint8_t> get_folder_items_request_title = {
+    0x71, 0x00, 0x0e, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x09, 0x01, 0x00, 0x00, 0x00, 0x1};
 
 // AVRCP Browse Get Folder Items Request packet for vfs with
 // the following data:

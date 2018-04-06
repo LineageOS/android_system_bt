@@ -97,5 +97,33 @@ class GetFolderItemsRequest : public BrowsePacket {
   using BrowsePacket::BrowsePacket;
 };
 
+class GetFolderItemsRequestBuilder : public BrowsePacketBuilder {
+ public:
+  virtual ~GetFolderItemsRequestBuilder() = default;
+
+  static std::unique_ptr<GetFolderItemsRequestBuilder> MakeBuilder(
+      Scope scope, uint32_t start_item, uint32_t end_item,
+      const std::set<Attribute>& requested_attrs);
+
+  virtual size_t size() const override;
+  virtual bool Serialize(
+      const std::shared_ptr<::bluetooth::Packet>& pkt) override;
+
+ protected:
+  GetFolderItemsRequestBuilder(Scope scope, uint32_t start_item,
+                               uint32_t end_item,
+                               const std::set<Attribute>& requested_attrs)
+      : BrowsePacketBuilder(BrowsePdu::GET_FOLDER_ITEMS),
+        scope_(scope),
+        start_item_(start_item),
+        end_item_(end_item),
+        requested_attrs_(requested_attrs){};
+
+  Scope scope_;
+  uint32_t start_item_;
+  uint32_t end_item_;
+  std::set<Attribute> requested_attrs_;
+};
+
 }  // namespace avrcp
 }  // namespace bluetooth

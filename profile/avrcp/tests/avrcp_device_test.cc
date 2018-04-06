@@ -224,6 +224,20 @@ TEST_F(AvrcpDeviceTest, nowPlayingTest) {
 
   test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
 
+  SongInfo info = {"test_id",
+                   {// The attribute map
+                    AttributeEntry(Attribute::TITLE, "Test Song"),
+                    AttributeEntry(Attribute::ARTIST_NAME, "Test Artist"),
+                    AttributeEntry(Attribute::ALBUM_NAME, "Test Album"),
+                    AttributeEntry(Attribute::TRACK_NUMBER, "1"),
+                    AttributeEntry(Attribute::TOTAL_NUMBER_OF_TRACKS, "2"),
+                    AttributeEntry(Attribute::GENRE, "Test Genre"),
+                    AttributeEntry(Attribute::PLAYING_TIME, "1000")}};
+  std::vector<SongInfo> list = {info};
+  EXPECT_CALL(interface, GetNowPlayingList(_))
+      .Times(2)
+      .WillRepeatedly(InvokeCb<0>("test_id", list));
+
   // Test the interim response for now playing list changed
   auto interim_response =
       RegisterNotificationResponseBuilder::MakeNowPlayingBuilder(true);
@@ -484,7 +498,7 @@ TEST_F(AvrcpDeviceTest, changePathTest) {
       .Times(1)
       .WillOnce(InvokeCb<2>(list2));
 
-  // Populate the VFS ID map since we don't persist UIDs
+  // Populate the VFS ID map
   auto folder_items_response = GetFolderItemsResponseBuilder::MakeVFSBuilder(
       Status::NO_ERROR, 0x0000, 0xFFFF);
   folder_items_response->AddFolder(FolderItem(1, 0, true, "Test Folder0"));
@@ -492,7 +506,11 @@ TEST_F(AvrcpDeviceTest, changePathTest) {
   EXPECT_CALL(response_cb,
               Call(1, true, matchPacket(std::move(folder_items_response))))
       .Times(1);
-  auto request = TestBrowsePacket::Make(get_folder_items_request_vfs);
+
+  auto folder_request_builder =
+      GetFolderItemsRequestBuilder::MakeBuilder(Scope::VFS, 0, 3, {});
+  auto request = TestBrowsePacket::Make();
+  folder_request_builder->Serialize(request);
   SendBrowseMessage(1, request);
 
   // Change path down into Test Folder1
@@ -500,19 +518,25 @@ TEST_F(AvrcpDeviceTest, changePathTest) {
       ChangePathResponseBuilder::MakeBuilder(Status::NO_ERROR, list1.size());
   EXPECT_CALL(response_cb,
               Call(2, true, matchPacket(std::move(change_path_response))));
-  request = TestBrowsePacket::Make(change_path_request);
+  auto path_request_builder =
+      ChangePathRequestBuilder::MakeBuilder(0, Direction::DOWN, 2);
+  request = TestBrowsePacket::Make();
+  path_request_builder->Serialize(request);
   SendBrowseMessage(2, request);
 
-  // Populate the VFS ID map since we don't persist UIDs
+  // Populate the new VFS ID
   folder_items_response = GetFolderItemsResponseBuilder::MakeVFSBuilder(
       Status::NO_ERROR, 0x0000, 0xFFFF);
-  folder_items_response->AddFolder(FolderItem(1, 0, true, "Test Folder2"));
-  folder_items_response->AddFolder(FolderItem(2, 0, true, "Test Folder3"));
-  folder_items_response->AddFolder(FolderItem(3, 0, true, "Test Folder4"));
+  folder_items_response->AddFolder(FolderItem(3, 0, true, "Test Folder2"));
+  folder_items_response->AddFolder(FolderItem(4, 0, true, "Test Folder3"));
+  folder_items_response->AddFolder(FolderItem(5, 0, true, "Test Folder4"));
   EXPECT_CALL(response_cb,
               Call(3, true, matchPacket(std::move(folder_items_response))))
       .Times(1);
-  request = TestBrowsePacket::Make(get_folder_items_request_vfs);
+  folder_request_builder =
+      GetFolderItemsRequestBuilder::MakeBuilder(Scope::VFS, 0, 3, {});
+  request = TestBrowsePacket::Make();
+  folder_request_builder->Serialize(request);
   SendBrowseMessage(3, request);
 
   // Change path down into Test Folder3
@@ -520,7 +544,10 @@ TEST_F(AvrcpDeviceTest, changePathTest) {
       ChangePathResponseBuilder::MakeBuilder(Status::NO_ERROR, list2.size());
   EXPECT_CALL(response_cb,
               Call(4, true, matchPacket(std::move(change_path_response))));
-  request = TestBrowsePacket::Make(change_path_request);
+  path_request_builder =
+      ChangePathRequestBuilder::MakeBuilder(0, Direction::DOWN, 4);
+  request = TestBrowsePacket::Make();
+  path_request_builder->Serialize(request);
   SendBrowseMessage(4, request);
 
   // Change path up back into Test Folder1
@@ -528,7 +555,10 @@ TEST_F(AvrcpDeviceTest, changePathTest) {
       ChangePathResponseBuilder::MakeBuilder(Status::NO_ERROR, list1.size());
   EXPECT_CALL(response_cb,
               Call(5, true, matchPacket(std::move(change_path_response))));
-  request = TestBrowsePacket::Make(change_path_up_request);
+  path_request_builder =
+      ChangePathRequestBuilder::MakeBuilder(0, Direction::UP, 0);
+  request = TestBrowsePacket::Make();
+  path_request_builder->Serialize(request);
   SendBrowseMessage(5, request);
 }
 
@@ -646,6 +676,25 @@ TEST_F(AvrcpDeviceTest, volumeChangedTest) {
   SendMessage(1, response);
   response = TestAvrcpPacket::Make(interim_volume_changed_notification);
   SendMessage(1, response);
+}
+
+TEST_F(AvrcpDeviceTest, volumeRejectedTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+  MockVolumeInterface vol_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, &vol_interface);
+
+  auto reg_notif =
+      RegisterNotificationRequestBuilder::MakeBuilder(Event::VOLUME_CHANGED, 0);
+  EXPECT_CALL(response_cb, Call(_, false, matchPacket(std::move(reg_notif))))
+      .Times(1);
+  test_device->RegisterVolumeChanged();
+
+  auto response = TestAvrcpPacket::Make(rejected_volume_changed_notification);
+  SendMessage(1, response);
+
+  EXPECT_CALL(response_cb, Call(_, _, _)).Times(0);
 }
 
 }  // namespace avrcp

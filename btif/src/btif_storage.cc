@@ -1518,13 +1518,23 @@ bt_status_t btif_storage_load_hidd(void) {
  *
  * Function         btif_storage_set_hidd
  *
- * Description      Stores hidd bonded device info in nvram.
+ * Description      Stores currently used HIDD device info in nvram and remove
+ *                  the "HidDeviceCabled" flag from unused devices
  *
  * Returns          BT_STATUS_SUCCESS
  *
  ******************************************************************************/
 bt_status_t btif_storage_set_hidd(RawAddress* remote_bd_addr) {
-  btif_config_set_int(remote_bd_addr->ToString(), "HidDeviceCabled", 1);
+  std::string remote_device_address_string = remote_bd_addr->ToString();
+  for (const section_t& section : btif_config_sections()) {
+    if (!RawAddress::IsValidAddress(section.name)) continue;
+    if (section.name == remote_device_address_string) continue;
+    if (btif_in_fetch_bonded_device(section.name) == BT_STATUS_SUCCESS) {
+      btif_config_remove(section.name, "HidDeviceCabled");
+    }
+  }
+
+  btif_config_set_int(remote_device_address_string, "HidDeviceCabled", 1);
   btif_config_save();
   return BT_STATUS_SUCCESS;
 }

@@ -284,8 +284,8 @@ tGATT_STATUS gatt_sr_process_app_rsp(tGATT_TCB& tcb, tGATT_IF gatt_if,
  * Returns          void
  *
  ******************************************************************************/
-void gatt_process_exec_write_req(tGATT_TCB& tcb, uint8_t op_code,
-                                 UNUSED_ATTR uint16_t len, uint8_t* p_data) {
+void gatt_process_exec_write_req(tGATT_TCB& tcb, uint8_t op_code, uint16_t len,
+                                 uint8_t* p_data) {
   uint8_t *p = p_data, flag, i = 0;
   uint32_t trans_id = 0;
   tGATT_IF gatt_if;
@@ -303,6 +303,13 @@ void gatt_process_exec_write_req(tGATT_TCB& tcb, uint8_t op_code,
     return;
   }
 #endif
+
+  if (len < sizeof(flag)) {
+    android_errorWriteLog(0x534e4554, "73172115");
+    LOG(ERROR) << __func__ << "invalid length";
+    gatt_send_error_rsp(tcb, GATT_INVALID_PDU, GATT_REQ_EXEC_WRITE, 0, false);
+    return;
+  }
 
   STREAM_TO_UINT8(flag, p);
 
