@@ -473,7 +473,8 @@ uint16_t AVDT_OpenReq(uint8_t handle, const RawAddress& bd_addr,
 
   /* send event to scb */
   if (result == AVDT_SUCCESS) {
-    A2DP_DumpCodecInfo(p_cfg->codec_info);
+    AVDT_TRACE_DEBUG("%s: codec: %s", __func__,
+                     A2DP_CodecInfoString(p_cfg->codec_info).c_str());
 
     evt.msg.config_cmd.hdr.seid = seid;
     evt.msg.config_cmd.hdr.ccb_idx = avdt_ccb_to_idx(p_ccb);
