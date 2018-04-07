@@ -340,35 +340,40 @@ bool A2DP_VendorBuildCodecHeaderAptx(UNUSED_ATTR const uint8_t* p_codec_info,
   return true;
 }
 
-bool A2DP_VendorDumpCodecInfoAptx(const uint8_t* p_codec_info) {
+std::string A2DP_VendorCodecInfoStringAptx(const uint8_t* p_codec_info) {
+  std::stringstream res;
+  std::string field;
   tA2DP_STATUS a2dp_status;
   tA2DP_APTX_CIE aptx_cie;
 
-  LOG_VERBOSE(LOG_TAG, "%s", __func__);
-
   a2dp_status = A2DP_ParseInfoAptx(&aptx_cie, p_codec_info, true);
   if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: A2DP_ParseInfoAptx fail:%d", __func__, a2dp_status);
-    return false;
+    res << "A2DP_ParseInfoAptx fail: " << loghex(a2dp_status);
+    return res.str();
   }
 
-  LOG_VERBOSE(LOG_TAG, "\tsamp_freq: 0x%x", aptx_cie.sampleRate);
-  if (aptx_cie.sampleRate & A2DP_APTX_SAMPLERATE_44100) {
-    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (44100)");
-  }
-  if (aptx_cie.sampleRate & A2DP_APTX_SAMPLERATE_48000) {
-    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (48000)");
-  }
+  res << "\tname: aptX\n";
 
-  LOG_VERBOSE(LOG_TAG, "\tch_mode: 0x%x", aptx_cie.channelMode);
-  if (aptx_cie.channelMode & A2DP_APTX_CHANNELS_MONO) {
-    LOG_VERBOSE(LOG_TAG, "\tch_mode: (Mono)");
-  }
-  if (aptx_cie.channelMode & A2DP_APTX_CHANNELS_STEREO) {
-    LOG_VERBOSE(LOG_TAG, "\tch_mode: (Stereo)");
-  }
+  // Sample frequency
+  field.clear();
+  AppendField(&field, (aptx_cie.sampleRate == 0), "NONE");
+  AppendField(&field, (aptx_cie.sampleRate & A2DP_APTX_SAMPLERATE_44100),
+              "44100");
+  AppendField(&field, (aptx_cie.sampleRate & A2DP_APTX_SAMPLERATE_48000),
+              "48000");
+  res << "\tsamp_freq: " << field << " (" << loghex(aptx_cie.sampleRate)
+      << ")\n";
 
-  return true;
+  // Channel mode
+  field.clear();
+  AppendField(&field, (aptx_cie.channelMode == 0), "NONE");
+  AppendField(&field, (aptx_cie.channelMode & A2DP_APTX_CHANNELS_MONO), "Mono");
+  AppendField(&field, (aptx_cie.channelMode & A2DP_APTX_CHANNELS_STEREO),
+              "Stereo");
+  res << "\tch_mode: " << field << " (" << loghex(aptx_cie.channelMode)
+      << ")\n";
+
+  return res.str();
 }
 
 const tA2DP_ENCODER_INTERFACE* A2DP_VendorGetEncoderInterfaceAptx(
