@@ -27,6 +27,7 @@
 
 #if BLE_INCLUDED == TRUE
 #include <string.h>
+#include <log/log.h>
 #include "gatt_int.h"
 #include "l2c_api.h"
 #include "l2c_int.h"
@@ -335,8 +336,6 @@ void gatt_process_exec_write_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
     tGATT_IF gatt_if;
     UINT16  conn_id;
 
-    UNUSED(len);
-
 #if GATT_CONFORMANCE_TESTING == TRUE
     if (gatt_cb.enable_err_rsp && gatt_cb.req_op_code == op_code)
     {
@@ -348,6 +347,13 @@ void gatt_process_exec_write_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
         return;
     }
 #endif
+
+    if (len < sizeof(flag)) {
+      android_errorWriteLog(0x534e4554, "73172115");
+      GATT_TRACE_ERROR("%s: invalid length", __func__);
+      gatt_send_error_rsp(p_tcb, GATT_INVALID_PDU, GATT_REQ_EXEC_WRITE, 0, false);
+      return;
+    }
 
     STREAM_TO_UINT8(flag, p);
 
@@ -1190,7 +1196,6 @@ static void gatts_process_read_req(tGATT_TCB *p_tcb, tGATT_SR_REG *p_rcb, UINT8 
     UINT8           sec_flag, key_size, *p;
     UINT16          offset = 0, value_len = 0;
 
-    UNUSED (len);
     if ((p_msg =  (BT_HDR *)GKI_getbuf(buf_len)) == NULL)
     {
         GATT_TRACE_ERROR("gatts_process_find_info failed. no resources.");
@@ -1199,6 +1204,15 @@ static void gatts_process_read_req(tGATT_TCB *p_tcb, tGATT_SR_REG *p_rcb, UINT8 
     }
     else
     {
+
+        if (op_code == GATT_REQ_READ_BLOB && len < sizeof(UINT16)) {
+          /* Error: packet length is too short */
+          android_errorWriteWithInfoLog(0x534e4554, "73172115", -1, NULL, 0);
+          GATT_TRACE_ERROR("%s: invalid length", __func__);
+          gatt_send_error_rsp(p_tcb, GATT_INVALID_PDU, op_code, 0, false);
+          return;
+        }
+
         if (op_code == GATT_REQ_READ_BLOB)
             STREAM_TO_UINT16(offset, p_data);
 
@@ -1232,7 +1246,7 @@ static void gatts_process_read_req(tGATT_TCB *p_tcb, tGATT_SR_REG *p_rcb, UINT8 
     {
         if (p_msg)  GKI_freebuf(p_msg);
 
-        /* in theroy BUSY is not possible(should already been checked), protected check */
+        /* in theory BUSY is not possible(should already been checked), protected check */
         if (reason != GATT_PENDING && reason != GATT_BUSY)
             gatt_send_error_rsp (p_tcb, reason, op_code, handle, FALSE);
     }
