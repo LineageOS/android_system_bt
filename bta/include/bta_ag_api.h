@@ -316,6 +316,7 @@ struct tBTA_AG_RES_DATA {
 #define BTA_AG_AT_BCS_EVT 27  /* Codec select */
 #define BTA_AG_AT_BIND_EVT 28 /* HF indicator */
 #define BTA_AG_AT_BIEV_EVT 29 /* HF indicator updates from peer */
+#define BTA_AG_AT_BIA_EVT 32  /* AG indicator activation event from peer */
 
 typedef uint8_t tBTA_AG_EVT;
 
@@ -359,7 +360,7 @@ typedef struct {
   tBTA_AG_HDR hdr;
   RawAddress bd_addr;
   char str[BTA_AG_AT_MAX_LEN + 1];
-  uint16_t num;
+  uint32_t num;
   uint8_t idx;   /* call number used by CLCC and CHLD */
   uint16_t lidx; /* long index, ex, HF indicator */
 } tBTA_AG_VAL;
