@@ -63,7 +63,6 @@ enum {
   BTA_AG_LOCAL_EVT_CMER,
   BTA_AG_LOCAL_EVT_BRSF,
   BTA_AG_LOCAL_EVT_CMEE,
-  BTA_AG_LOCAL_EVT_BIA,
   BTA_AG_LOCAL_EVT_BCC,
 };
 
@@ -105,7 +104,7 @@ const tBTA_AG_AT_CMD bta_ag_hfp_cmd[] = {
     {"+COPS", BTA_AG_AT_COPS_EVT, BTA_AG_AT_READ | BTA_AG_AT_SET, BTA_AG_AT_STR,
      0, 0},
     {"+CMEE", BTA_AG_LOCAL_EVT_CMEE, BTA_AG_AT_SET, BTA_AG_AT_INT, 0, 1},
-    {"+BIA", BTA_AG_LOCAL_EVT_BIA, BTA_AG_AT_SET, BTA_AG_AT_STR, 0, 20},
+    {"+BIA", BTA_AG_AT_BIA_EVT, BTA_AG_AT_SET, BTA_AG_AT_STR, 0, 20},
     {"+CBC", BTA_AG_AT_CBC_EVT, BTA_AG_AT_SET, BTA_AG_AT_INT, 0, 100},
     {"+BCC", BTA_AG_LOCAL_EVT_BCC, BTA_AG_AT_NONE, BTA_AG_AT_STR, 0, 0},
     {"+BCS", BTA_AG_AT_BCS_EVT, BTA_AG_AT_SET, BTA_AG_AT_INT, 0,
@@ -842,7 +841,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
   val.hdr.handle = bta_ag_scb_to_idx(p_scb);
   val.hdr.app_id = p_scb->app_id;
   val.hdr.status = BTA_AG_SUCCESS;
-  val.num = int_arg;
+  val.num = static_cast<uint32_t>(int_arg);
   val.bd_addr = p_scb->peer_addr;
   strlcpy(val.str, p_arg, sizeof(val.str));
 
@@ -853,7 +852,9 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
    * callback is NOT invoked.
    */
   tBTA_AG_EVT event = 0;
-  if (cmd < BTA_AG_LOCAL_EVT_FIRST) event = cmd;
+  if (cmd < BTA_AG_LOCAL_EVT_FIRST) {
+    event = static_cast<tBTA_AG_EVT>(cmd);
+  }
 
   switch (cmd) {
     case BTA_AG_AT_A_EVT:
@@ -1140,32 +1141,37 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
       event = 0;
       break;
 
-    case BTA_AG_LOCAL_EVT_BIA:
-      /* don't call callback */
-      event = 0;
-
+    case BTA_AG_AT_BIA_EVT:
       bia_masked_out = p_scb->bia_masked_out;
 
       /* Parse the indicator mask */
       for (i = 0, ind_id = 1; (val.str[i] != 0) && (ind_id <= 20);
            i++, ind_id++) {
-        if (val.str[i] == ',') continue;
+        if (val.str[i] == ',') {
+          continue;
+        }
 
-        if (val.str[i] == '0')
+        if (val.str[i] == '0') {
           bia_masked_out |= ((uint32_t)1 << ind_id);
-        else if (val.str[i] == '1')
+        } else if (val.str[i] == '1') {
           bia_masked_out &= ~((uint32_t)1 << ind_id);
-        else
+        } else {
           break;
+        }
 
         i++;
-        if ((val.str[i] == 0) || (val.str[i] != ',')) break;
+        if (val.str[i] != ',') {
+          break;
+        }
       }
       if (val.str[i] == 0) {
         p_scb->bia_masked_out = bia_masked_out;
+        val.num = bia_masked_out;
         bta_ag_send_ok(p_scb);
-      } else
+      } else {
+        event = 0;
         bta_ag_send_error(p_scb, BTA_AG_ERR_INVALID_INDEX);
+      }
       break;
 
     case BTA_AG_AT_CNUM_EVT:
