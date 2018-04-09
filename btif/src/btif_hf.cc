@@ -247,6 +247,10 @@ static void send_indicator_update(const btif_hf_cb_t& control_block,
   BTA_AgResult(control_block.handle, BTA_AG_IND_RES, ag_res);
 }
 
+static bool is_nth_bit_enabled(uint32_t value, int n) {
+  return (value & (static_cast<uint32_t>(1) << n)) != 0;
+}
+
 void clear_phone_state_multihf(int idx) {
   btif_hf_cb[idx].call_setup_state = BTHF_CALL_STATE_IDLE;
   btif_hf_cb[idx].num_active = 0;
@@ -517,6 +521,16 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
                                         &btif_hf_cb[idx].connected_bda);
       }
       break;
+    case BTA_AG_AT_BIA_EVT:
+      if (p_data->val.hdr.status == BTA_AG_SUCCESS) {
+        uint32_t bia_mask_out = p_data->val.num;
+        bool service = !is_nth_bit_enabled(bia_mask_out, BTA_AG_IND_SERVICE);
+        bool roam = !is_nth_bit_enabled(bia_mask_out, BTA_AG_IND_ROAM);
+        bool signal = !is_nth_bit_enabled(bia_mask_out, BTA_AG_IND_SIGNAL);
+        bool battery = !is_nth_bit_enabled(bia_mask_out, BTA_AG_IND_BATTCHG);
+        bt_hf_callbacks->AtBiaCallback(service, roam, signal, battery,
+                                       &btif_hf_cb[idx].connected_bda);
+      }
     default:
       BTIF_TRACE_WARNING("%s: Unhandled event: %d", __func__, event);
       break;
