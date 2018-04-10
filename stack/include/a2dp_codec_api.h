@@ -191,6 +191,12 @@ class A2dpCodecConfig {
       bool* p_restart_input, bool* p_restart_output,
       bool* p_config_updated) = 0;
 
+  // Sets the codec capabilities for a peer.
+  // |p_peer_codec_capabiltities| is the peer codec capabilities to set.
+  // Returns true on success, otherwise false.
+  virtual bool setPeerCodecCapabilities(
+      const uint8_t* p_peer_codec_capabilities) = 0;
+
   // Constructor where |codec_index| is the unique index that identifies the
   // codec. The user-friendly name is |name|.
   // The default codec priority is |codec_priority|. If the value is
@@ -413,6 +419,16 @@ class A2dpCodecs {
                          const tA2DP_ENCODER_INIT_PEER_PARAMS* p_peer_params,
                          uint8_t* p_result_codec_config, bool* p_restart_input,
                          bool* p_restart_output, bool* p_config_updated);
+
+  // Sets the codec capabilities for a Sink peer.
+  // |p_peer_codec_capabiltities| is the peer codec capabilities to set.
+  // Returns true on success, otherwise false.
+  bool setPeerSinkCodecCapabilities(const uint8_t* p_peer_codec_capabilities);
+
+  // Sets the codec capabilities for a Source peer.
+  // |p_peer_codec_capabiltities| is the peer codec capabilities to set.
+  // Returns true on success, otherwise false.
+  bool setPeerSourceCodecCapabilities(const uint8_t* p_peer_codec_capabilities);
 
   // Gets the current codec configuration and the capabilities of
   // all configured codecs.

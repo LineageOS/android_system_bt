@@ -35,6 +35,8 @@ class A2dpCodecConfigAacBase : public A2dpCodecConfig {
         is_source_(is_source) {}
   bool setCodecConfig(const uint8_t* p_peer_codec_info, bool is_capability,
                       uint8_t* p_result_codec_config) override;
+  bool setPeerCodecCapabilities(
+      const uint8_t* p_peer_codec_capabilities) override;
 
  private:
   bool is_source_;  // True if local is Source
