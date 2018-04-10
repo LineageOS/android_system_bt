@@ -653,11 +653,12 @@ class HearingAidImpl : public HearingAid {
     hearingDevice->accepting_audio = true;
     LOG(INFO) << __func__ << ": address=" << address
               << ", hi_sync_id=" << loghex(hearingDevice->hi_sync_id);
+
+    StartSendingAudio(*hearingDevice);
+
     callbacks->OnDeviceAvailable(hearingDevice->capabilities,
                                  hearingDevice->hi_sync_id, address);
     callbacks->OnConnectionState(ConnectionState::CONNECTED, address);
-
-    StartSendingAudio(*hearingDevice);
   }
 
   void StartSendingAudio(const HearingDevice& hearingDevice) {
@@ -682,17 +683,14 @@ class HearingAidImpl : public HearingAid {
           controller_get_interface()->supports_ble_2m_phy()) {
         codec_in_use = CODEC_G722_24KHZ;
         codec.sample_rate = 24000;
-        codec.bit_rate = 16;
-        codec.data_interval_ms = 10;
       } else if (codecs & (1 << CODEC_G722_16KHZ)) {
         codec_in_use = CODEC_G722_16KHZ;
         codec.sample_rate = 16000;
-        codec.bit_rate = 16;
-        codec.data_interval_ms = 10;
       }
 
-      // TODO: remove once we implement support for other codecs
-      codec_in_use = CODEC_G722_16KHZ;
+      codec.bit_rate = 16;
+      codec.data_interval_ms = 10;
+
       HearingAidAudioSource::Start(codec, audioReceiver);
     }
   }
