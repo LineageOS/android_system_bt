@@ -215,10 +215,10 @@ bool A2DP_GetPacketTimestampSbc(const uint8_t* p_codec_info,
 bool A2DP_BuildCodecHeaderSbc(const uint8_t* p_codec_info, BT_HDR* p_buf,
                               uint16_t frames_per_packet);
 
-// Decodes and displays A2DP SBC codec info when using |LOG_DEBUG|.
-// |p_codec_info| is a pointer to the SBC codec_info to decode and display.
-// Returns true if the codec information is valid, otherwise false.
-bool A2DP_DumpCodecInfoSbc(const uint8_t* p_codec_info);
+// Decodes A2DP SBC codec info into a human readable string.
+// |p_codec_info| is a pointer to the SBC codec_info to decode.
+// Returns a string describing the codec information.
+std::string A2DP_CodecInfoStringSbc(const uint8_t* p_codec_info);
 
 // Gets the A2DP SBC encoder interface that can be used to encode and prepare
 // A2DP packets for transmission - see |tA2DP_ENCODER_INTERFACE|.

@@ -689,10 +689,10 @@ const char* A2DP_CodecIndexStr(btav_a2dp_codec_index_t codec_index);
 bool A2DP_InitCodecConfig(btav_a2dp_codec_index_t codec_index,
                           AvdtpSepConfig* p_cfg);
 
-// Decodes and displays A2DP codec info when using |LOG_DEBUG|.
-// |p_codec_info| is a pointer to the codec_info to decode and display.
-// Returns true if the codec information is valid, otherwise false.
-bool A2DP_DumpCodecInfo(const uint8_t* p_codec_info);
+// Decodes A2DP codec info into a human readable string.
+// |p_codec_info| is a pointer to the codec_info to decode.
+// Returns a string describing the codec information.
+std::string A2DP_CodecInfoString(const uint8_t* p_codec_info);
 
 // Add enum-based flag operators to the btav_a2dp_codec_config_t fields
 #ifndef DEFINE_ENUM_FLAG_OPERATORS
