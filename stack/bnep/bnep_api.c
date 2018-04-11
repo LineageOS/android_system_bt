@@ -24,6 +24,7 @@
 
 #include <string.h>
 #include "bnep_api.h"
+#include <log/log.h>
 #include "bnep_int.h"
 
 
@@ -414,6 +415,10 @@ tBNEP_RESULT BNEP_WriteBuf (UINT16 handle,
             else
             {
                 new_len += 4;
+                if (new_len > org_len) {
+                  android_errorWriteLog(0x534e4554, "74947856");
+                  return BNEP_IGNORE_CMD;
+                }
                 p_data[2] = 0;
                 p_data[3] = 0;
             }
@@ -521,6 +526,10 @@ tBNEP_RESULT  BNEP_Write (UINT16 handle,
             else
             {
                 new_len += 4;
+                if (new_len > org_len) {
+                  android_errorWriteLog(0x534e4554, "74947856");
+                  return BNEP_IGNORE_CMD;
+                }
                 p_data[2] = 0;
                 p_data[3] = 0;
             }
