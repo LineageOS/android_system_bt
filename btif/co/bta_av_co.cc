@@ -855,7 +855,8 @@ tA2DP_STATUS BtaAvCo::ProcessSourceGetConfig(
   APPL_TRACE_DEBUG("%s: num_protect:0x%02x protect_info:0x%02x%02x%02x",
                    __func__, *p_num_protect, p_protect_info[0],
                    p_protect_info[1], p_protect_info[2]);
-  A2DP_DumpCodecInfo(p_codec_info);
+  APPL_TRACE_DEBUG("%s: codec: %s", __func__,
+                   A2DP_CodecInfoString(p_codec_info).c_str());
 
   // Find the peer
   BtaAvCoPeer* p_peer = FindPeerAndUpdate(bta_av_handle, peer_address);
@@ -946,7 +947,8 @@ tA2DP_STATUS BtaAvCo::ProcessSinkGetConfig(tBTA_AV_HNDL bta_av_handle,
   APPL_TRACE_DEBUG("%s: num_protect:0x%02x protect_info:0x%02x%02x%02x",
                    __func__, *p_num_protect, p_protect_info[0],
                    p_protect_info[1], p_protect_info[2]);
-  A2DP_DumpCodecInfo(p_codec_info);
+  APPL_TRACE_DEBUG("%s: codec: %s", __func__,
+                   A2DP_CodecInfoString(p_codec_info).c_str());
 
   // Find the peer
   BtaAvCoPeer* p_peer = FindPeerAndUpdate(bta_av_handle, peer_address);
@@ -1046,7 +1048,8 @@ void BtaAvCo::ProcessSetConfig(tBTA_AV_HNDL bta_av_handle,
   APPL_TRACE_DEBUG("%s: num_protect:0x%02x protect_info:0x%02x%02x%02x",
                    __func__, num_protect, p_protect_info[0], p_protect_info[1],
                    p_protect_info[2]);
-  A2DP_DumpCodecInfo(p_codec_info);
+  APPL_TRACE_DEBUG("%s: codec: %s", __func__,
+                   A2DP_CodecInfoString(p_codec_info).c_str());
 
   // Find the peer
   BtaAvCoPeer* p_peer = FindPeerAndUpdate(bta_av_handle, peer_address);
@@ -1846,7 +1849,8 @@ void BtaAvCo::SaveNewCodecConfig(BtaAvCoPeer* p_peer,
                                  uint8_t num_protect,
                                  const uint8_t* p_protect_info) {
   APPL_TRACE_DEBUG("%s: peer %s", __func__, p_peer->addr.ToString().c_str());
-  A2DP_DumpCodecInfo(new_codec_config);
+  APPL_TRACE_DEBUG("%s: codec: %s", __func__,
+                   A2DP_CodecInfoString(new_codec_config).c_str());
 
   std::lock_guard<std::recursive_mutex> lock(codec_lock_);
 
@@ -1872,7 +1876,8 @@ bool BtaAvCo::SetCodecOtaConfig(BtaAvCoPeer* p_peer,
 
   APPL_TRACE_DEBUG("%s: peer_address=%s", __func__,
                    p_peer->addr.ToString().c_str());
-  A2DP_DumpCodecInfo(p_ota_codec_config);
+  APPL_TRACE_DEBUG("%s: codec: %s", __func__,
+                   A2DP_CodecInfoString(p_ota_codec_config).c_str());
 
   *p_restart_output = false;
 
@@ -1913,7 +1918,8 @@ bool BtaAvCo::SetCodecOtaConfig(BtaAvCoPeer* p_peer,
 
   if (restart_output) {
     APPL_TRACE_DEBUG("%s: restart output", __func__);
-    A2DP_DumpCodecInfo(result_codec_config);
+    APPL_TRACE_DEBUG("%s: codec: %s", __func__,
+                     A2DP_CodecInfoString(result_codec_config).c_str());
 
     *p_restart_output = true;
     p_peer->p_sink = p_sink;
