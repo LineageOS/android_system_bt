@@ -684,80 +684,69 @@ bool A2DP_BuildCodecHeaderSbc(UNUSED_ATTR const uint8_t* p_codec_info,
   return true;
 }
 
-bool A2DP_DumpCodecInfoSbc(const uint8_t* p_codec_info) {
+std::string A2DP_CodecInfoStringSbc(const uint8_t* p_codec_info) {
+  std::stringstream res;
+  std::string field;
   tA2DP_STATUS a2dp_status;
   tA2DP_SBC_CIE sbc_cie;
 
-  LOG_VERBOSE(LOG_TAG, "%s", __func__);
-
   a2dp_status = A2DP_ParseInfoSbc(&sbc_cie, p_codec_info, true);
   if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: A2DP_ParseInfoSbc fail:%d", __func__, a2dp_status);
-    return false;
+    res << "A2DP_ParseInfoSbc fail: " << loghex(a2dp_status);
+    return res.str();
   }
 
-  LOG_VERBOSE(LOG_TAG, "\tsamp_freq: 0x%x", sbc_cie.samp_freq);
-  if (sbc_cie.samp_freq & A2DP_SBC_IE_SAMP_FREQ_16) {
-    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (16000)");
-  }
-  if (sbc_cie.samp_freq & A2DP_SBC_IE_SAMP_FREQ_32) {
-    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (32000)");
-  }
-  if (sbc_cie.samp_freq & A2DP_SBC_IE_SAMP_FREQ_44) {
-    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (44100)");
-  }
-  if (sbc_cie.samp_freq & A2DP_SBC_IE_SAMP_FREQ_48) {
-    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (48000)");
-  }
+  res << "\tname: SBC\n";
 
-  LOG_VERBOSE(LOG_TAG, "\tch_mode: 0x%x", sbc_cie.ch_mode);
-  if (sbc_cie.ch_mode & A2DP_SBC_IE_CH_MD_MONO) {
-    LOG_VERBOSE(LOG_TAG, "\tch_mode: (Mono)");
-  }
-  if (sbc_cie.ch_mode & A2DP_SBC_IE_CH_MD_DUAL) {
-    LOG_VERBOSE(LOG_TAG, "\tch_mode: (Dual)");
-  }
-  if (sbc_cie.ch_mode & A2DP_SBC_IE_CH_MD_STEREO) {
-    LOG_VERBOSE(LOG_TAG, "\tch_mode: (Stereo)");
-  }
-  if (sbc_cie.ch_mode & A2DP_SBC_IE_CH_MD_JOINT) {
-    LOG_VERBOSE(LOG_TAG, "\tch_mode: (Joint)");
-  }
+  // Sample frequency
+  field.clear();
+  AppendField(&field, (sbc_cie.samp_freq == 0), "NONE");
+  AppendField(&field, (sbc_cie.samp_freq & A2DP_SBC_IE_SAMP_FREQ_16), "16000");
+  AppendField(&field, (sbc_cie.samp_freq & A2DP_SBC_IE_SAMP_FREQ_32), "32000");
+  AppendField(&field, (sbc_cie.samp_freq & A2DP_SBC_IE_SAMP_FREQ_44), "44100");
+  AppendField(&field, (sbc_cie.samp_freq & A2DP_SBC_IE_SAMP_FREQ_48), "48000");
+  res << "\tsamp_freq: " << field << " (" << loghex(sbc_cie.samp_freq) << ")\n";
 
-  LOG_VERBOSE(LOG_TAG, "\tblock_len: 0x%x", sbc_cie.block_len);
-  if (sbc_cie.block_len & A2DP_SBC_IE_BLOCKS_4) {
-    LOG_VERBOSE(LOG_TAG, "\tblock_len: (4)");
-  }
-  if (sbc_cie.block_len & A2DP_SBC_IE_BLOCKS_8) {
-    LOG_VERBOSE(LOG_TAG, "\tblock_len: (8)");
-  }
-  if (sbc_cie.block_len & A2DP_SBC_IE_BLOCKS_12) {
-    LOG_VERBOSE(LOG_TAG, "\tblock_len: (12)");
-  }
-  if (sbc_cie.block_len & A2DP_SBC_IE_BLOCKS_16) {
-    LOG_VERBOSE(LOG_TAG, "\tblock_len: (16)");
-  }
+  // Channel mode
+  field.clear();
+  AppendField(&field, (sbc_cie.ch_mode == 0), "NONE");
+  AppendField(&field, (sbc_cie.ch_mode & A2DP_SBC_IE_CH_MD_MONO), "Mono");
+  AppendField(&field, (sbc_cie.ch_mode & A2DP_SBC_IE_CH_MD_DUAL), "Dual");
+  AppendField(&field, (sbc_cie.ch_mode & A2DP_SBC_IE_CH_MD_STEREO), "Stereo");
+  AppendField(&field, (sbc_cie.ch_mode & A2DP_SBC_IE_CH_MD_JOINT), "Joint");
+  res << "\tch_mode: " << field << " (" << loghex(sbc_cie.ch_mode) << ")\n";
 
-  LOG_VERBOSE(LOG_TAG, "\tnum_subbands: 0x%x", sbc_cie.num_subbands);
-  if (sbc_cie.num_subbands & A2DP_SBC_IE_SUBBAND_4) {
-    LOG_VERBOSE(LOG_TAG, "\tnum_subbands: (4)");
-  }
-  if (sbc_cie.num_subbands & A2DP_SBC_IE_SUBBAND_8) {
-    LOG_VERBOSE(LOG_TAG, "\tnum_subbands: (8)");
-  }
+  // Block length
+  field.clear();
+  AppendField(&field, (sbc_cie.block_len == 0), "NONE");
+  AppendField(&field, (sbc_cie.block_len & A2DP_SBC_IE_BLOCKS_4), "4");
+  AppendField(&field, (sbc_cie.block_len & A2DP_SBC_IE_BLOCKS_8), "8");
+  AppendField(&field, (sbc_cie.block_len & A2DP_SBC_IE_BLOCKS_12), "12");
+  AppendField(&field, (sbc_cie.block_len & A2DP_SBC_IE_BLOCKS_16), "16");
+  res << "\tblock_len: " << field << " (" << loghex(sbc_cie.block_len) << ")\n";
 
-  LOG_VERBOSE(LOG_TAG, "\talloc_method: 0x%x)", sbc_cie.alloc_method);
-  if (sbc_cie.alloc_method & A2DP_SBC_IE_ALLOC_MD_S) {
-    LOG_VERBOSE(LOG_TAG, "\talloc_method: (SNR)");
-  }
-  if (sbc_cie.alloc_method & A2DP_SBC_IE_ALLOC_MD_L) {
-    LOG_VERBOSE(LOG_TAG, "\talloc_method: (Loundess)");
-  }
+  // Number of subbands
+  field.clear();
+  AppendField(&field, (sbc_cie.num_subbands == 0), "NONE");
+  AppendField(&field, (sbc_cie.num_subbands & A2DP_SBC_IE_SUBBAND_4), "4");
+  AppendField(&field, (sbc_cie.num_subbands & A2DP_SBC_IE_SUBBAND_8), "8");
+  res << "\tnum_subbands: " << field << " (" << loghex(sbc_cie.num_subbands)
+      << ")\n";
 
-  LOG_VERBOSE(LOG_TAG, "\tBit pool Min:%d Max:%d", sbc_cie.min_bitpool,
-              sbc_cie.max_bitpool);
+  // Allocation method
+  field.clear();
+  AppendField(&field, (sbc_cie.alloc_method == 0), "NONE");
+  AppendField(&field, (sbc_cie.alloc_method & A2DP_SBC_IE_ALLOC_MD_S), "SNR");
+  AppendField(&field, (sbc_cie.alloc_method & A2DP_SBC_IE_ALLOC_MD_L),
+              "Loundess");
+  res << "\talloc_method: " << field << " (" << loghex(sbc_cie.alloc_method)
+      << ")\n";
 
-  return true;
+  // Min/max bitloop
+  res << "\tBit pool Min: " << std::to_string(sbc_cie.min_bitpool)
+      << " Max: " << std::to_string(sbc_cie.max_bitpool);
+
+  return res.str();
 }
 
 const tA2DP_ENCODER_INTERFACE* A2DP_GetEncoderInterfaceSbc(

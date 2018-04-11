@@ -118,10 +118,10 @@ bool A2DP_VendorBuildCodecHeaderAptxHd(const uint8_t* p_codec_info,
                                        BT_HDR* p_buf,
                                        uint16_t frames_per_packet);
 
-// Decodes and displays A2DP aptX-HD codec info when using |LOG_DEBUG|.
-// |p_codec_info| is a pointer to the aptX-HD codec_info to decode and display.
-// Returns true if the codec information is valid, otherwise false.
-bool A2DP_VendorDumpCodecInfoAptxHd(const uint8_t* p_codec_info);
+// Decodes A2DP aptX-HD codec info into a human readable string.
+// |p_codec_info| is a pointer to the aptX-HD codec_info to decode.
+// Returns a string describing the codec information.
+std::string A2DP_VendorCodecInfoStringAptxHd(const uint8_t* p_codec_info);
 
 // Gets the A2DP aptX-HD encoder interface that can be used to encode and
 // prepare A2DP packets for transmission - see |tA2DP_ENCODER_INTERFACE|.
