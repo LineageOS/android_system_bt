@@ -356,36 +356,41 @@ bool A2DP_VendorBuildCodecHeaderAptxHd(UNUSED_ATTR const uint8_t* p_codec_info,
   return true;
 }
 
-bool A2DP_VendorDumpCodecInfoAptxHd(const uint8_t* p_codec_info) {
+std::string A2DP_VendorCodecInfoStringAptxHd(const uint8_t* p_codec_info) {
+  std::stringstream res;
+  std::string field;
   tA2DP_STATUS a2dp_status;
   tA2DP_APTX_HD_CIE aptx_hd_cie;
 
-  LOG_VERBOSE(LOG_TAG, "%s", __func__);
-
   a2dp_status = A2DP_ParseInfoAptxHd(&aptx_hd_cie, p_codec_info, true);
   if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: A2DP_ParseInfoAptxHd fail:%d", __func__,
-              a2dp_status);
-    return false;
+    res << "A2DP_ParseInfoAptxHd fail: " << loghex(a2dp_status);
+    return res.str();
   }
 
-  LOG_VERBOSE(LOG_TAG, "\tsamp_freq: 0x%x", aptx_hd_cie.sampleRate);
-  if (aptx_hd_cie.sampleRate & A2DP_APTX_HD_SAMPLERATE_44100) {
-    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (44100)");
-  }
-  if (aptx_hd_cie.sampleRate & A2DP_APTX_HD_SAMPLERATE_48000) {
-    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (48000)");
-  }
+  res << "\tname: aptX-HD\n";
 
-  LOG_VERBOSE(LOG_TAG, "\tch_mode: 0x%x", aptx_hd_cie.channelMode);
-  if (aptx_hd_cie.channelMode & A2DP_APTX_HD_CHANNELS_MONO) {
-    LOG_VERBOSE(LOG_TAG, "\tch_mode: (Mono)");
-  }
-  if (aptx_hd_cie.channelMode & A2DP_APTX_HD_CHANNELS_STEREO) {
-    LOG_VERBOSE(LOG_TAG, "\tch_mode: (Stereo)");
-  }
+  // Sample frequency
+  field.clear();
+  AppendField(&field, (aptx_hd_cie.sampleRate == 0), "NONE");
+  AppendField(&field, (aptx_hd_cie.sampleRate & A2DP_APTX_HD_SAMPLERATE_44100),
+              "44100");
+  AppendField(&field, (aptx_hd_cie.sampleRate & A2DP_APTX_HD_SAMPLERATE_48000),
+              "48000");
+  res << "\tsamp_freq: " << field << " (" << loghex(aptx_hd_cie.sampleRate)
+      << ")\n";
 
-  return true;
+  // Channel mode
+  field.clear();
+  AppendField(&field, (aptx_hd_cie.channelMode == 0), "NONE");
+  AppendField(&field, (aptx_hd_cie.channelMode & A2DP_APTX_HD_CHANNELS_MONO),
+              "Mono");
+  AppendField(&field, (aptx_hd_cie.channelMode & A2DP_APTX_HD_CHANNELS_STEREO),
+              "Stereo");
+  res << "\tch_mode: " << field << " (" << loghex(aptx_hd_cie.channelMode)
+      << ")\n";
+
+  return res.str();
 }
 
 const tA2DP_ENCODER_INTERFACE* A2DP_VendorGetEncoderInterfaceAptxHd(
