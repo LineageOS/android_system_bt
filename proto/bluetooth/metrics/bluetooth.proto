@@ -51,6 +51,12 @@ message BluetoothLog {
 
   // Number of ScanEvent including discarded ones beyond capacity
   optional int64 num_scan_event = 9;
+
+  // Statistics about Bluetooth profile connections
+  repeated ProfileConnectionStats profile_connection_stats = 10;
+
+  // Statistics about Headset profile connections
+  repeated HeadsetProfileConnectionStats headset_profile_connection_stats = 11;
 }
 
 // The information about the device.
@@ -228,4 +234,53 @@ message ScanEvent {
   // Time of the event.
   optional int64 event_time_millis =
       5;  // [(datapol.semantic_type) = ST_TIMESTAMP];
+}
+
+// Profile IDs defined in BluetoothProfile API class
+// Values must match API class values
+enum ProfileId {
+  PROFILE_UNKNOWN = 0;
+  HEADSET = 1;
+  A2DP = 2;
+  HEALTH = 3;
+  HID_HOST = 4;
+  PAN = 5;
+  PBAP = 6;
+  GATT = 7;
+  GATT_SERVER = 8;
+  MAP = 9;
+  SAP = 10;
+  A2DP_SINK = 11;
+  AVRCP_CONTROLLER = 12;
+  AVRCP = 13;
+  HEADSET_CLIENT = 16;
+  PBAP_CLIENT = 17;
+  MAP_CLIENT = 18;
+  HID_DEVICE = 19;
+  OPP = 20;
+  HEARING_AID = 21;
+}
+
+// Statistics about Bluetooth profile connections
+message ProfileConnectionStats {
+  // Profile id defined in BluetoothProfile.java
+  optional ProfileId profile_id = 1;
+
+  // Number of times that this profile is connected since last metrics dump
+  optional int32 num_times_connected = 2;
+}
+
+enum HeadsetProfileType {
+  HEADSET_PROFILE_UNKNOWN = 0;
+  HSP = 1;
+  HFP = 2;
+}
+
+// Statistics about headset profile connections
+message HeadsetProfileConnectionStats {
+  // Type of headset profile connected
+  optional HeadsetProfileType headset_profile_type = 1;
+
+  // Number of times this type of headset profile is connected
+  optional int32 num_times_connected = 2;
 }
