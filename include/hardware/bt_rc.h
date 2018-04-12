@@ -600,7 +600,7 @@ typedef void (*btrc_ctrl_get_folder_items_callback)(
     const btrc_folder_items_t* folder_items, uint8_t count);
 
 typedef void (*btrc_ctrl_change_path_callback)(RawAddress* bd_addr,
-                                               uint8_t count);
+                                               uint32_t count);
 
 typedef void (*btrc_ctrl_set_browsed_player_callback)(RawAddress* bd_addr,
                                                       uint8_t num_items,
@@ -662,18 +662,18 @@ typedef struct {
   bt_status_t (*get_playback_state_cmd)(RawAddress* bd_addr);
 
   /** get the now playing list */
-  bt_status_t (*get_now_playing_list_cmd)(RawAddress* bd_addr, uint8_t start,
-                                          uint8_t items);
+  bt_status_t (*get_now_playing_list_cmd)(RawAddress* bd_addr, uint32_t start,
+                                          uint32_t end);
 
   /** get the folder list */
-  bt_status_t (*get_folder_list_cmd)(RawAddress* bd_addr, uint8_t start,
-                                     uint8_t items);
+  bt_status_t (*get_folder_list_cmd)(RawAddress* bd_addr, uint32_t start,
+                                     uint32_t end);
 
-  /** get the folder list */
-  bt_status_t (*get_player_list_cmd)(RawAddress* bd_addr, uint8_t start,
-                                     uint8_t items);
+  /** get the player list */
+  bt_status_t (*get_player_list_cmd)(RawAddress* bd_addr, uint32_t start,
+                                     uint32_t end);
 
-  /** get the folder list */
+  /** change the folder path */
   bt_status_t (*change_folder_path_cmd)(RawAddress* bd_addr, uint8_t direction,
                                         uint8_t* uid);
 
