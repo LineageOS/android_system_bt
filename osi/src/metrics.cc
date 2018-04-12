@@ -19,6 +19,7 @@
 
 #include <unistd.h>
 #include <algorithm>
+#include <array>
 #include <cerrno>
 #include <chrono>
 #include <cstdint>
@@ -55,7 +56,12 @@ using bluetooth::metrics::BluetoothMetricsProto::ScanEvent_ScanTechnologyType;
 using bluetooth::metrics::BluetoothMetricsProto::ScanEvent_ScanEventType;
 using bluetooth::metrics::BluetoothMetricsProto::WakeEvent;
 using bluetooth::metrics::BluetoothMetricsProto::WakeEvent_WakeEventType;
-
+using bluetooth::metrics::BluetoothMetricsProto::HeadsetProfileType;
+using bluetooth::metrics::BluetoothMetricsProto::HeadsetProfileType_MIN;
+using bluetooth::metrics::BluetoothMetricsProto::HeadsetProfileType_MAX;
+using bluetooth::metrics::BluetoothMetricsProto::HeadsetProfileType_ARRAYSIZE;
+using bluetooth::metrics::BluetoothMetricsProto::HeadsetProfileType_IsValid;
+using bluetooth::metrics::BluetoothMetricsProto::HeadsetProfileConnectionStats;
 /*
  * Get current OS boot time in millisecond
  */
@@ -233,6 +239,7 @@ struct BluetoothMetricsLogger::impl {
         wake_event_queue_(new LeakyBondedQueue<WakeEvent>(max_wake_event)),
         scan_event_queue_(new LeakyBondedQueue<ScanEvent>(max_scan_event)) {
     bluetooth_log_ = BluetoothLog::default_instance().New();
+    headset_profile_connection_counts_.fill(0);
     bluetooth_session_ = nullptr;
     bluetooth_session_start_time_ms_ = 0;
     a2dp_session_metrics_ = A2dpSessionMetrics();
@@ -240,6 +247,8 @@ struct BluetoothMetricsLogger::impl {
 
   /* Bluetooth log lock protected */
   BluetoothLog* bluetooth_log_;
+  std::array<int, HeadsetProfileType_ARRAYSIZE>
+      headset_profile_connection_counts_;
   std::recursive_mutex bluetooth_log_lock_;
   /* End Bluetooth log lock protected */
   /* Bluetooth session lock protected */
@@ -397,29 +406,44 @@ void BluetoothMetricsLogger::LogA2dpSession(
       pimpl_->a2dp_session_metrics_.buffer_underruns_count);
 }
 
-void BluetoothMetricsLogger::WriteString(std::string* serialized, bool clear) {
+void BluetoothMetricsLogger::LogHeadsetProfileRfcConnection(
+    tBTA_SERVICE_ID service_id) {
+  std::lock_guard<std::recursive_mutex> lock(pimpl_->bluetooth_log_lock_);
+  switch (service_id) {
+    case BTA_HSP_SERVICE_ID:
+      pimpl_->headset_profile_connection_counts_[HeadsetProfileType::HSP]++;
+      break;
+    case BTA_HFP_SERVICE_ID:
+      pimpl_->headset_profile_connection_counts_[HeadsetProfileType::HFP]++;
+      break;
+    default:
+      pimpl_->headset_profile_connection_counts_
+          [HeadsetProfileType::HEADSET_PROFILE_UNKNOWN]++;
+      break;
+  }
+  return;
+}
+
+void BluetoothMetricsLogger::WriteString(std::string* serialized) {
   std::lock_guard<std::recursive_mutex> lock(pimpl_->bluetooth_log_lock_);
   LOG_DEBUG(LOG_TAG, "%s building metrics", __func__);
   Build();
   LOG_DEBUG(LOG_TAG, "%s serializing metrics", __func__);
   if (!pimpl_->bluetooth_log_->SerializeToString(serialized)) {
     LOG_ERROR(LOG_TAG, "%s: error serializing metrics", __func__);
-    return;
   }
-  if (clear) {
-    pimpl_->bluetooth_log_->Clear();
-  }
+  // Always clean up log objects
+  pimpl_->bluetooth_log_->Clear();
 }
 
-void BluetoothMetricsLogger::WriteBase64String(std::string* serialized,
-                                               bool clear) {
-  this->WriteString(serialized, clear);
+void BluetoothMetricsLogger::WriteBase64String(std::string* serialized) {
+  this->WriteString(serialized);
   base::Base64Encode(*serialized, serialized);
 }
 
-void BluetoothMetricsLogger::WriteBase64(int fd, bool clear) {
+void BluetoothMetricsLogger::WriteBase64(int fd) {
   std::string protoBase64;
-  this->WriteBase64String(&protoBase64, clear);
+  this->WriteBase64String(&protoBase64);
   ssize_t ret;
   OSI_NO_INTR(ret = write(fd, protoBase64.c_str(), protoBase64.size()));
   if (ret == -1) {
@@ -476,6 +500,19 @@ void BluetoothMetricsLogger::Build() {
     bluetooth_log->mutable_wake_event()->AddAllocated(
         pimpl_->wake_event_queue_->Dequeue());
   }
+  for (size_t i = 0; i < HeadsetProfileType_ARRAYSIZE; ++i) {
+    int num_times_connected = pimpl_->headset_profile_connection_counts_[i];
+    if (HeadsetProfileType_IsValid(i) && num_times_connected > 0) {
+      HeadsetProfileConnectionStats* headset_profile_connection_stats =
+          bluetooth_log->add_headset_profile_connection_stats();
+      // Able to static_cast because HeadsetProfileType_IsValid(i) is true
+      headset_profile_connection_stats->set_headset_profile_type(
+          static_cast<HeadsetProfileType>(i));
+      headset_profile_connection_stats->set_num_times_connected(
+          num_times_connected);
+    }
+  }
+  pimpl_->headset_profile_connection_counts_.fill(0);
 }
 
 void BluetoothMetricsLogger::ResetSession() {
