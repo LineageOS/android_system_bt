@@ -3971,8 +3971,10 @@ void bta_dm_ble_set_conn_scan_params(uint32_t scan_interval,
 /** This function update LE connection parameters */
 void bta_dm_ble_update_conn_params(const RawAddress& bd_addr, uint16_t min_int,
                                    uint16_t max_int, uint16_t latency,
-                                   uint16_t timeout) {
-  if (!L2CA_UpdateBleConnParams(bd_addr, min_int, max_int, latency, timeout)) {
+                                   uint16_t timeout, uint16_t min_ce_len,
+                                   uint16_t max_ce_len) {
+  if (!L2CA_UpdateBleConnParams(bd_addr, min_int, max_int, latency, timeout,
+                                min_ce_len, max_ce_len)) {
     APPL_TRACE_ERROR("Update connection parameters failed!");
   }
 }
