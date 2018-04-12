@@ -727,9 +727,11 @@ void BTA_DmSearchExt(tBTA_DM_INQ* p_dm_inq, tBTA_SERVICE_MASK_EXT* p_services,
  ******************************************************************************/
 void BTA_DmBleUpdateConnectionParams(const RawAddress& bd_addr,
                                      uint16_t min_int, uint16_t max_int,
-                                     uint16_t latency, uint16_t timeout) {
-  do_in_bta_thread(FROM_HERE, base::Bind(bta_dm_ble_update_conn_params, bd_addr,
-                                         min_int, max_int, latency, timeout));
+                                     uint16_t latency, uint16_t timeout,
+                                     uint16_t min_ce_len, uint16_t max_ce_len) {
+  do_in_bta_thread(
+      FROM_HERE, base::Bind(bta_dm_ble_update_conn_params, bd_addr, min_int,
+                            max_int, latency, timeout, min_ce_len, max_ce_len));
 }
 
 /*******************************************************************************
