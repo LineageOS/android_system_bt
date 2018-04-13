@@ -63,7 +63,8 @@ class ConnectionHandler {
    * TODO: Add message loop to determine which thread events are posted to
    */
   static bool Initialize(const ConnectionCallback& callback,
-                         AvrcpInterface* avrcp, SdpInterface* sdp);
+                         AvrcpInterface* avrcp, SdpInterface* sdp,
+                         VolumeInterface* vol);
 
   /**
    * Clears the singleton and tears down SDP
@@ -120,6 +121,7 @@ class ConnectionHandler {
  private:
   AvrcpInterface* avrc_;
   SdpInterface* sdp_;
+  VolumeInterface* vol_;
 
   ConnectionCallback connection_cb_;
 
