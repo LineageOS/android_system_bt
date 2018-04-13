@@ -203,27 +203,29 @@ bool A2dpCodecConfig::getCodecSpecificConfig(tBT_A2DP_OFFLOAD* p_a2dp_offload) {
       p_a2dp_offload->codec_info[4] = (codec_id & 0x000000FF);
       p_a2dp_offload->codec_info[5] = (codec_id & 0x0000FF00) >> 8;
       if (vendor_id == A2DP_LDAC_VENDOR_ID && codec_id == A2DP_LDAC_CODEC_ID) {
-        switch (codec_config_.codec_specific_1) {
-          case 1000:
-            p_a2dp_offload->codec_info[6] =
-                A2DP_LDAC_QUALITY_ABR_OFFLOAD;  // ABR in offload
-            break;
-          case 1001:
-            p_a2dp_offload->codec_info[6] =
-                A2DP_LDAC_QUALITY_MID;  // Mid birate
-            break;
-          case 1002:
-            p_a2dp_offload->codec_info[6] =
-                A2DP_LDAC_QUALITY_LOW;  // Low birate
-            break;
-          case 1003:
-            p_a2dp_offload->codec_info[6] =
-                A2DP_LDAC_QUALITY_HIGH;  // High bitrate
-            break;
-          default:
-            p_a2dp_offload->codec_info[6] =
-                A2DP_LDAC_QUALITY_MID;  // Mid bitrate
-            break;
+        if (codec_config_.codec_specific_1 == 0) {  // default is 0, ABR
+          p_a2dp_offload->codec_info[6] =
+              A2DP_LDAC_QUALITY_ABR_OFFLOAD;  // ABR in offload
+        } else {
+          switch (codec_config_.codec_specific_1 % 10) {
+            case 0:
+              p_a2dp_offload->codec_info[6] =
+                  A2DP_LDAC_QUALITY_HIGH;  // High bitrate
+              break;
+            case 1:
+              p_a2dp_offload->codec_info[6] =
+                  A2DP_LDAC_QUALITY_MID;  // Mid birate
+              break;
+            case 2:
+              p_a2dp_offload->codec_info[6] =
+                  A2DP_LDAC_QUALITY_LOW;  // Low birate
+              break;
+            case 3:  // fall through
+            default:
+              p_a2dp_offload->codec_info[6] =
+                  A2DP_LDAC_QUALITY_ABR_OFFLOAD;  // ABR in offload
+              break;
+          }
         }
       }
       break;
