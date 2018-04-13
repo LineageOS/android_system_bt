@@ -788,7 +788,8 @@ static void gatts_process_mtu_req(tGATT_TCB& tcb, uint16_t len,
 void gatts_process_read_by_type_req(tGATT_TCB& tcb, uint8_t op_code,
                                     uint16_t len, uint8_t* p_data) {
   tBT_UUID uuid;
-  uint16_t s_hdl, e_hdl, err_hdl = 0;
+  uint16_t s_hdl = 0, e_hdl = 0, err_hdl = 0;
+  if (len < 4) android_errorWriteLog(0x534e4554, "73125709");
   tGATT_STATUS reason =
       gatts_validate_packet_format(op_code, len, p_data, &uuid, s_hdl, e_hdl);
 
