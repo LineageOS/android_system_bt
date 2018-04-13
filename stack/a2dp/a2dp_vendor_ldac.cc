@@ -306,28 +306,28 @@ int A2DP_VendorGetBitRateLdac(const uint8_t* p_codec_info) {
   A2dpCodecConfig* current_codec = bta_av_get_a2dp_current_codec();
   btav_a2dp_codec_config_t codec_config_ = current_codec->getCodecConfig();
   int samplerate = A2DP_GetTrackSampleRate(p_codec_info);
-  switch (codec_config_.codec_specific_1) {
-    case 1001:
-      if (samplerate == 44100 || samplerate == 88200)
-        return 606000;
-      else
-        return 660000;
-    case 1002:
-      if (samplerate == 44100 || samplerate == 88200)
-        return 303000;
-      else
-        return 330000;
-    case 1003:
+  switch (codec_config_.codec_specific_1 % 10) {
+    case 0:
       if (samplerate == 44100 || samplerate == 88200)
         return 909000;
       else
         return 990000;
-    case 1000:
-    default:
+    case 1:
       if (samplerate == 44100 || samplerate == 88200)
         return 606000;
       else
         return 660000;
+    case 2:
+      if (samplerate == 44100 || samplerate == 88200)
+        return 303000;
+      else
+        return 330000;
+    case 3:
+    default:
+      if (samplerate == 44100 || samplerate == 88200)
+        return 909000;
+      else
+        return 990000;
   }
   return 0;
 }
@@ -429,50 +429,51 @@ bool A2DP_VendorBuildCodecHeaderLdac(UNUSED_ATTR const uint8_t* p_codec_info,
   return true;
 }
 
-bool A2DP_VendorDumpCodecInfoLdac(const uint8_t* p_codec_info) {
+std::string A2DP_VendorCodecInfoStringLdac(const uint8_t* p_codec_info) {
+  std::stringstream res;
+  std::string field;
   tA2DP_STATUS a2dp_status;
   tA2DP_LDAC_CIE ldac_cie;
 
-  LOG_VERBOSE(LOG_TAG, "%s", __func__);
-
   a2dp_status = A2DP_ParseInfoLdac(&ldac_cie, p_codec_info, true);
   if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: A2DP_ParseInfoLdac fail:%d", __func__, a2dp_status);
-    return false;
+    res << "A2DP_ParseInfoLdac fail: " << loghex(a2dp_status);
+    return res.str();
   }
 
-  LOG_VERBOSE(LOG_TAG, "\tsamp_freq: 0x%x", ldac_cie.sampleRate);
-  if (ldac_cie.sampleRate & A2DP_LDAC_SAMPLING_FREQ_44100) {
-    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (44100)");
-  }
-  if (ldac_cie.sampleRate & A2DP_LDAC_SAMPLING_FREQ_48000) {
-    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (48000)");
-  }
-  if (ldac_cie.sampleRate & A2DP_LDAC_SAMPLING_FREQ_88200) {
-    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (88200)");
-  }
-  if (ldac_cie.sampleRate & A2DP_LDAC_SAMPLING_FREQ_96000) {
-    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (96000)");
-  }
-  if (ldac_cie.sampleRate & A2DP_LDAC_SAMPLING_FREQ_176400) {
-    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (176400)");
-  }
-  if (ldac_cie.sampleRate & A2DP_LDAC_SAMPLING_FREQ_192000) {
-    LOG_VERBOSE(LOG_TAG, "\tsamp_freq: (192000)");
-  }
+  res << "\tname: LDAC\n";
 
-  LOG_VERBOSE(LOG_TAG, "\tch_mode: 0x%x", ldac_cie.channelMode);
-  if (ldac_cie.channelMode & A2DP_LDAC_CHANNEL_MODE_MONO) {
-    LOG_VERBOSE(LOG_TAG, "\tch_mode: (Mono)");
-  }
-  if (ldac_cie.channelMode & A2DP_LDAC_CHANNEL_MODE_DUAL) {
-    LOG_VERBOSE(LOG_TAG, "\tch_mode: (Dual)");
-  }
-  if (ldac_cie.channelMode & A2DP_LDAC_CHANNEL_MODE_STEREO) {
-    LOG_VERBOSE(LOG_TAG, "\tch_mode: (Stereo)");
-  }
+  // Sample frequency
+  field.clear();
+  AppendField(&field, (ldac_cie.sampleRate == 0), "NONE");
+  AppendField(&field, (ldac_cie.sampleRate & A2DP_LDAC_SAMPLING_FREQ_44100),
+              "44100");
+  AppendField(&field, (ldac_cie.sampleRate & A2DP_LDAC_SAMPLING_FREQ_48000),
+              "48000");
+  AppendField(&field, (ldac_cie.sampleRate & A2DP_LDAC_SAMPLING_FREQ_88200),
+              "88200");
+  AppendField(&field, (ldac_cie.sampleRate & A2DP_LDAC_SAMPLING_FREQ_96000),
+              "96000");
+  AppendField(&field, (ldac_cie.sampleRate & A2DP_LDAC_SAMPLING_FREQ_176400),
+              "176400");
+  AppendField(&field, (ldac_cie.sampleRate & A2DP_LDAC_SAMPLING_FREQ_192000),
+              "192000");
+  res << "\tsamp_freq: " << field << " (" << loghex(ldac_cie.sampleRate)
+      << ")\n";
 
-  return true;
+  // Channel mode
+  field.clear();
+  AppendField(&field, (ldac_cie.channelMode == 0), "NONE");
+  AppendField(&field, (ldac_cie.channelMode & A2DP_LDAC_CHANNEL_MODE_MONO),
+              "Mono");
+  AppendField(&field, (ldac_cie.channelMode & A2DP_LDAC_CHANNEL_MODE_DUAL),
+              "Dual");
+  AppendField(&field, (ldac_cie.channelMode & A2DP_LDAC_CHANNEL_MODE_STEREO),
+              "Stereo");
+  res << "\tch_mode: " << field << " (" << loghex(ldac_cie.channelMode)
+      << ")\n";
+
+  return res.str();
 }
 
 const tA2DP_ENCODER_INTERFACE* A2DP_VendorGetEncoderInterfaceLdac(

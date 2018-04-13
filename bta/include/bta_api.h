@@ -1648,7 +1648,9 @@ extern void BTA_DmBleEnableRemotePrivacy(const RawAddress& bd_addr,
  ******************************************************************************/
 extern void BTA_DmBleUpdateConnectionParams(const RawAddress& bd_addr,
                                             uint16_t min_int, uint16_t max_int,
-                                            uint16_t latency, uint16_t timeout);
+                                            uint16_t latency, uint16_t timeout,
+                                            uint16_t min_ce_len,
+                                            uint16_t max_ce_len);
 
 /*******************************************************************************
  *

@@ -288,7 +288,9 @@ typedef struct {
   /** Request a connection parameter update */
   bt_status_t (*conn_parameter_update)(const RawAddress& bd_addr,
                                        int min_interval, int max_interval,
-                                       int latency, int timeout);
+                                       int latency, int timeout,
+                                       uint16_t min_ce_len,
+                                       uint16_t max_ce_len);
 
   bt_status_t (*set_preferred_phy)(const RawAddress& bd_addr, uint8_t tx_phy,
                                    uint8_t rx_phy, uint16_t phy_options);

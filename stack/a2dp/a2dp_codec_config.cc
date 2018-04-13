@@ -203,27 +203,29 @@ bool A2dpCodecConfig::getCodecSpecificConfig(tBT_A2DP_OFFLOAD* p_a2dp_offload) {
       p_a2dp_offload->codec_info[4] = (codec_id & 0x000000FF);
       p_a2dp_offload->codec_info[5] = (codec_id & 0x0000FF00) >> 8;
       if (vendor_id == A2DP_LDAC_VENDOR_ID && codec_id == A2DP_LDAC_CODEC_ID) {
-        switch (codec_config_.codec_specific_1) {
-          case 1000:
-            p_a2dp_offload->codec_info[6] =
-                A2DP_LDAC_QUALITY_ABR_OFFLOAD;  // ABR in offload
-            break;
-          case 1001:
-            p_a2dp_offload->codec_info[6] =
-                A2DP_LDAC_QUALITY_MID;  // Mid birate
-            break;
-          case 1002:
-            p_a2dp_offload->codec_info[6] =
-                A2DP_LDAC_QUALITY_LOW;  // Low birate
-            break;
-          case 1003:
-            p_a2dp_offload->codec_info[6] =
-                A2DP_LDAC_QUALITY_HIGH;  // High bitrate
-            break;
-          default:
-            p_a2dp_offload->codec_info[6] =
-                A2DP_LDAC_QUALITY_MID;  // Mid bitrate
-            break;
+        if (codec_config_.codec_specific_1 == 0) {  // default is 0, ABR
+          p_a2dp_offload->codec_info[6] =
+              A2DP_LDAC_QUALITY_ABR_OFFLOAD;  // ABR in offload
+        } else {
+          switch (codec_config_.codec_specific_1 % 10) {
+            case 0:
+              p_a2dp_offload->codec_info[6] =
+                  A2DP_LDAC_QUALITY_HIGH;  // High bitrate
+              break;
+            case 1:
+              p_a2dp_offload->codec_info[6] =
+                  A2DP_LDAC_QUALITY_MID;  // Mid birate
+              break;
+            case 2:
+              p_a2dp_offload->codec_info[6] =
+                  A2DP_LDAC_QUALITY_LOW;  // Low birate
+              break;
+            case 3:  // fall through
+            default:
+              p_a2dp_offload->codec_info[6] =
+                  A2DP_LDAC_QUALITY_ABR_OFFLOAD;  // ABR in offload
+              break;
+          }
         }
       }
       break;
@@ -1410,22 +1412,19 @@ bool A2DP_InitCodecConfig(btav_a2dp_codec_index_t codec_index,
   return false;
 }
 
-bool A2DP_DumpCodecInfo(const uint8_t* p_codec_info) {
+std::string A2DP_CodecInfoString(const uint8_t* p_codec_info) {
   tA2DP_CODEC_TYPE codec_type = A2DP_GetCodecType(p_codec_info);
-
-  LOG_VERBOSE(LOG_TAG, "%s: codec_type = 0x%x", __func__, codec_type);
 
   switch (codec_type) {
     case A2DP_MEDIA_CT_SBC:
-      return A2DP_DumpCodecInfoSbc(p_codec_info);
+      return A2DP_CodecInfoStringSbc(p_codec_info);
     case A2DP_MEDIA_CT_AAC:
-      return A2DP_DumpCodecInfoAac(p_codec_info);
+      return A2DP_CodecInfoStringAac(p_codec_info);
     case A2DP_MEDIA_CT_NON_A2DP:
-      return A2DP_VendorDumpCodecInfo(p_codec_info);
+      return A2DP_VendorCodecInfoString(p_codec_info);
     default:
       break;
   }
 
-  LOG_ERROR(LOG_TAG, "%s: unsupported codec type 0x%x", __func__, codec_type);
-  return false;
+  return "Unsupported codec type: " + loghex(codec_type);
 }

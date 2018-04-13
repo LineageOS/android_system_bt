@@ -31,19 +31,18 @@
 #include <cstring>
 #include <ctime>
 
-#include <bta/include/bta_ag_api.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bluetooth_headset_callbacks.h>
 #include <hardware/bluetooth_headset_interface.h>
 #include <hardware/bt_hf.h>
 
-#include "bta/include/bta_ag_api.h"
 #include "bta/include/utl.h"
 #include "bta_ag_api.h"
 #include "btif_common.h"
 #include "btif_hf.h"
 #include "btif_profile_queue.h"
 #include "btif_util.h"
+#include "osi/include/metrics.h"
 
 namespace bluetooth {
 namespace headset {
@@ -320,6 +319,8 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
         btif_hf_cb[idx].state = BTHF_CONNECTION_STATE_CONNECTED;
         btif_hf_cb[idx].peer_feat = 0;
         clear_phone_state_multihf(idx);
+        system_bt_osi::BluetoothMetricsLogger::GetInstance()
+            ->LogHeadsetProfileRfcConnection(p_data->open.service_id);
       } else if (btif_hf_cb[idx].state == BTHF_CONNECTION_STATE_CONNECTING) {
         LOG(ERROR) << __func__ << ": AG open failed for "
                    << btif_hf_cb[idx].connected_bda << ", status "

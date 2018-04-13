@@ -952,7 +952,7 @@ void bta_dm_ci_rmt_oob_act(std::unique_ptr<tBTA_DM_CI_RMT_OOB> msg) {
  *
  ******************************************************************************/
 void bta_dm_search_start(tBTA_DM_MSG* p_data) {
-  tBTM_INQUIRY_CMPL result;
+  tBTM_INQUIRY_CMPL result = {};
 
   size_t len = sizeof(Uuid) * p_data->search.num_uuid;
   bta_dm_gattc_register();
@@ -963,11 +963,12 @@ void bta_dm_search_start(tBTA_DM_MSG* p_data) {
   if (p_bta_dm_cfg->avoid_scatter &&
       (p_data->search.rs_res == BTA_DM_RS_NONE) &&
       bta_dm_check_av(BTA_DM_API_SEARCH_EVT)) {
+    LOG(INFO) << __func__ << ": delay search to avoid scatter";
     memcpy(&bta_dm_cb.search_msg, &p_data->search, sizeof(tBTA_DM_API_SEARCH));
     return;
   }
 
-  BTM_ClearInqDb(NULL);
+  BTM_ClearInqDb(nullptr);
   /* save search params */
   bta_dm_search_cb.p_search_cback = p_data->search.p_cback;
   bta_dm_search_cb.services = p_data->search.services;
@@ -975,7 +976,7 @@ void bta_dm_search_start(tBTA_DM_MSG* p_data) {
   osi_free_and_reset((void**)&bta_dm_search_cb.p_srvc_uuid);
 
   if ((bta_dm_search_cb.num_uuid = p_data->search.num_uuid) != 0 &&
-      p_data->search.p_uuid != NULL) {
+      p_data->search.p_uuid != nullptr) {
     bta_dm_search_cb.p_srvc_uuid = (Uuid*)osi_malloc(len);
     *bta_dm_search_cb.p_srvc_uuid = *p_data->search.p_uuid;
   }
@@ -984,6 +985,8 @@ void bta_dm_search_start(tBTA_DM_MSG* p_data) {
 
   APPL_TRACE_EVENT("%s status=%d", __func__, result.status);
   if (result.status != BTM_CMD_STARTED) {
+    LOG(ERROR) << __func__ << ": BTM_StartInquiry returned "
+               << std::to_string(result.status);
     result.num_resp = 0;
     bta_dm_inq_cmpl_cb((void*)&result);
   }
@@ -3968,8 +3971,10 @@ void bta_dm_ble_set_conn_scan_params(uint32_t scan_interval,
 /** This function update LE connection parameters */
 void bta_dm_ble_update_conn_params(const RawAddress& bd_addr, uint16_t min_int,
                                    uint16_t max_int, uint16_t latency,
-                                   uint16_t timeout) {
-  if (!L2CA_UpdateBleConnParams(bd_addr, min_int, max_int, latency, timeout)) {
+                                   uint16_t timeout, uint16_t min_ce_len,
+                                   uint16_t max_ce_len) {
+  if (!L2CA_UpdateBleConnParams(bd_addr, min_int, max_int, latency, timeout,
+                                min_ce_len, max_ce_len)) {
     APPL_TRACE_ERROR("Update connection parameters failed!");
   }
 }
