@@ -824,8 +824,8 @@ BtaAvCoPeer* BtaAvCo::FindPeerAndUpdate(tBTA_AV_HNDL bta_av_handle,
 
   BtaAvCoPeer* p_peer = FindPeer(bta_av_handle);
   if (p_peer == nullptr) {
-    APPL_TRACE_ERROR("%s: peer for BTA AV handle 0x%x not found", __func__,
-                     bta_av_handle);
+    APPL_TRACE_ERROR("%s: peer entry for BTA AV handle 0x%x peer %s not found",
+                     __func__, bta_av_handle, peer_address.ToString().c_str());
     return nullptr;
   }
 
@@ -927,7 +927,8 @@ tA2DP_STATUS BtaAvCo::ProcessSourceGetConfig(
       p_sink->num_protect = *p_num_protect;
       memcpy(p_sink->protect_info, p_protect_info, AVDT_CP_INFO_LEN);
     } else {
-      APPL_TRACE_ERROR("%s: no more room for Sink info", __func__);
+      APPL_TRACE_ERROR("%s: peer %s : no more room for Sink info", __func__,
+                       p_peer->addr.ToString().c_str());
     }
   }
 
@@ -1040,7 +1041,8 @@ tA2DP_STATUS BtaAvCo::ProcessSinkGetConfig(tBTA_AV_HNDL bta_av_handle,
       p_source->num_protect = *p_num_protect;
       memcpy(p_source->protect_info, p_protect_info, AVDT_CP_INFO_LEN);
     } else {
-      APPL_TRACE_ERROR("%s: no more room for Source info", __func__);
+      APPL_TRACE_ERROR("%s: peer %s : no more room for Source info", __func__,
+                       p_peer->addr.ToString().c_str());
     }
   }
 
@@ -1463,8 +1465,10 @@ bool BtaAvCo::SetCodecUserConfig(
     p_sink = p_peer->p_sink;
   }
   if (p_sink == nullptr) {
-    APPL_TRACE_ERROR("%s: cannot find peer SEP to configure for codec type %d",
-                     __func__, codec_user_config.codec_type);
+    APPL_TRACE_ERROR(
+        "%s: peer %s : cannot find peer SEP to configure for codec type %d",
+        __func__, p_peer->addr.ToString().c_str(),
+        codec_user_config.codec_type);
     success = false;
     goto done;
   }
@@ -1487,15 +1491,17 @@ bool BtaAvCo::SetCodecUserConfig(
 
     p_sink = SelectSourceCodec(p_peer);
     if (p_sink == nullptr) {
-      APPL_TRACE_ERROR("%s: cannot set up codec for the peer SINK", __func__);
+      APPL_TRACE_ERROR("%s: peer %s : cannot set up codec for the peer SINK",
+                       __func__, p_peer->addr.ToString().c_str());
       success = false;
       goto done;
     }
     // Don't call BTA_AvReconfig() prior to retrieving all peer's capabilities
     if ((p_peer->num_rx_sinks != p_peer->num_sinks) &&
         (p_peer->num_sup_sinks != BTA_AV_CO_NUM_ELEMENTS(p_peer->sinks))) {
-      APPL_TRACE_WARNING("%s: not all peer's capabilities have been retrieved",
-                         __func__);
+      APPL_TRACE_WARNING(
+          "%s: peer %s : not all peer's capabilities have been retrieved",
+          __func__, p_peer->addr.ToString().c_str());
       success = false;
       goto done;
     }
@@ -1539,7 +1545,8 @@ bool BtaAvCo::SetCodecAudioConfig(
   // Use the current sink codec
   const BtaAvCoSep* p_sink = p_peer->p_sink;
   if (p_sink == nullptr) {
-    APPL_TRACE_ERROR("%s: cannot find peer SEP to configure", __func__);
+    APPL_TRACE_ERROR("%s: peer %s : cannot find peer SEP to configure",
+                     __func__, p_peer->addr.ToString().c_str());
     return false;
   }
 
@@ -1563,8 +1570,9 @@ bool BtaAvCo::SetCodecAudioConfig(
     // Don't call BTA_AvReconfig() prior to retrieving all peer's capabilities
     if ((p_peer->num_rx_sinks != p_peer->num_sinks) &&
         (p_peer->num_sup_sinks != BTA_AV_CO_NUM_ELEMENTS(p_peer->sinks))) {
-      APPL_TRACE_WARNING("%s: not all peer's capabilities have been retrieved",
-                         __func__);
+      APPL_TRACE_WARNING(
+          "%s: peer %s : not all peer's capabilities have been retrieved",
+          __func__, p_peer->addr.ToString().c_str());
     } else {
       p_peer->acceptor = false;
       APPL_TRACE_DEBUG("%s: call BTA_AvReconfig(0x%x)", __func__,
@@ -1971,7 +1979,8 @@ bool BtaAvCo::SetCodecOtaConfig(BtaAvCoPeer* p_peer,
     // There are no peer SEPs if we didn't do the discovery procedure yet.
     // We have all the information we need from the peer, so we can
     // proceed with the OTA codec configuration.
-    APPL_TRACE_ERROR("%s: cannot find peer SEP to configure", __func__);
+    APPL_TRACE_ERROR("%s: peer %s : cannot find peer SEP to configure",
+                     __func__, p_peer->addr.ToString().c_str());
     return false;
   }
 
@@ -1980,7 +1989,8 @@ bool BtaAvCo::SetCodecOtaConfig(BtaAvCoPeer* p_peer,
   if (!p_peer->GetCodecs()->setCodecOtaConfig(
           p_ota_codec_config, &peer_params, result_codec_config, &restart_input,
           &restart_output, &config_updated)) {
-    APPL_TRACE_ERROR("%s: cannot set OTA config", __func__);
+    APPL_TRACE_ERROR("%s: peer %s : cannot set OTA config", __func__,
+                     p_peer->addr.ToString().c_str());
     return false;
   }
 
@@ -2054,8 +2064,9 @@ tA2DP_STATUS bta_av_co_audio_getconfig(tBTA_AV_HNDL bta_av_handle,
     default:
       break;
   }
-  APPL_TRACE_ERROR("%s: Invalid peer UUID: 0x%x for bta_av_handle 0x%x",
-                   peer_uuid, bta_av_handle);
+  APPL_TRACE_ERROR(
+      "%s: peer %s : Invalid peer UUID: 0x%x for bta_av_handle 0x%x",
+      peer_address.ToString().c_str(), peer_uuid, bta_av_handle);
   return A2DP_FAIL;
 }
 
