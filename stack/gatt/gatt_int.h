@@ -361,7 +361,7 @@ typedef struct {
   fixed_queue_t* sign_op_queue;
 
   uint16_t next_handle;     /* next available handle */
-  uint16_t last_primary_s_handle; /* handle of last primary service */
+  uint16_t last_service_handle; /* handle of last service */
   tGATT_SVC_CHG gattp_attr; /* GATT profile attribute service change */
   tGATT_IF gatt_if;
   std::list<tGATT_HDL_LIST_ELEM>* hdl_list_info;
