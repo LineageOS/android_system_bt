@@ -321,7 +321,7 @@ void get_folder_item_type_folder(const tAVRC_ITEM* avrc_item,
 void get_folder_item_type_player(const tAVRC_ITEM* avrc_item,
                                  btrc_folder_items_t* btrc_item);
 static bt_status_t get_folder_items_cmd(RawAddress* bd_addr, uint8_t scope,
-                                        uint8_t start_item, uint8_t num_items);
+                                        uint32_t start_item, uint32_t end_item);
 
 static void btif_rc_upstreams_evt(uint16_t event, tAVRC_COMMAND* p_param,
                                   uint8_t ctype, uint8_t label,
@@ -4491,18 +4491,18 @@ static bt_status_t get_playback_state_cmd(RawAddress* bd_addr) {
  * Description      Fetch the now playing list
  *
  * Paramters        start_item: First item to fetch (0 to fetch from beganning)
- *                  end_item: Last item to fetch (0xff to fetch until end)
+ *                  end_item: Last item to fetch (0xffffffff to fetch until end)
  *
  * Returns          BT_STATUS_SUCCESS if command issued successfully otherwise
  *                  BT_STATUS_FAIL.
  *
  **************************************************************************/
 static bt_status_t get_now_playing_list_cmd(RawAddress* bd_addr,
-                                            uint8_t start_item,
-                                            uint8_t num_items) {
-  BTIF_TRACE_DEBUG("%s start, end: (%d, %d)", __func__, start_item, num_items);
+                                            uint32_t start_item,
+                                            uint32_t end_item) {
+  BTIF_TRACE_DEBUG("%s start, end: (%d, %d)", __func__, start_item, end_item);
   return get_folder_items_cmd(bd_addr, AVRC_SCOPE_NOW_PLAYING, start_item,
-                              num_items);
+                              end_item);
 }
 
 /***************************************************************************
@@ -4512,17 +4512,17 @@ static bt_status_t get_now_playing_list_cmd(RawAddress* bd_addr,
  * Description      Fetch the currently selected folder list
  *
  * Paramters        start_item: First item to fetch (0 to fetch from beganning)
- *                  end_item: Last item to fetch (0xff to fetch until end)
+ *                  end_item: Last item to fetch (0xffffffff to fetch until end)
  *
  * Returns          BT_STATUS_SUCCESS if command issued successfully otherwise
  *                  BT_STATUS_FAIL.
  *
  **************************************************************************/
-static bt_status_t get_folder_list_cmd(RawAddress* bd_addr, uint8_t start_item,
-                                       uint8_t num_items) {
-  BTIF_TRACE_DEBUG("%s start, end: (%d, %d)", __func__, start_item, num_items);
+static bt_status_t get_folder_list_cmd(RawAddress* bd_addr, uint32_t start_item,
+                                       uint32_t end_item) {
+  BTIF_TRACE_DEBUG("%s start, end: (%d, %d)", __func__, start_item, end_item);
   return get_folder_items_cmd(bd_addr, AVRC_SCOPE_FILE_SYSTEM, start_item,
-                              num_items);
+                              end_item);
 }
 
 /***************************************************************************
@@ -4532,17 +4532,17 @@ static bt_status_t get_folder_list_cmd(RawAddress* bd_addr, uint8_t start_item,
  * Description      Fetch the player list
  *
  * Paramters        start_item: First item to fetch (0 to fetch from beganning)
- *                  end_item: Last item to fetch (0xff to fetch until end)
+ *                  end_item: Last item to fetch (0xffffffff to fetch until end)
  *
  * Returns          BT_STATUS_SUCCESS if command issued successfully otherwise
  *                  BT_STATUS_FAIL.
  *
  **************************************************************************/
-static bt_status_t get_player_list_cmd(RawAddress* bd_addr, uint8_t start_item,
-                                       uint8_t num_items) {
-  BTIF_TRACE_DEBUG("%s start, end: (%d, %d)", __func__, start_item, num_items);
+static bt_status_t get_player_list_cmd(RawAddress* bd_addr, uint32_t start_item,
+                                       uint32_t end_item) {
+  BTIF_TRACE_DEBUG("%s start, end: (%d, %d)", __func__, start_item, end_item);
   return get_folder_items_cmd(bd_addr, AVRC_SCOPE_PLAYER_LIST, start_item,
-                              num_items);
+                              end_item);
 }
 
 /***************************************************************************
@@ -4554,7 +4554,7 @@ static bt_status_t get_player_list_cmd(RawAddress* bd_addr, uint8_t start_item,
  * Paramters        direction: Direction (Up/Down) to change folder
  *                  uid: The UID of folder to move to
  *                  start_item: First item to fetch (0 to fetch from beganning)
- *                  end_item: Last item to fetch (0xff to fetch until end)
+ *                  end_item: Last item to fetch (0xffffffff to fetch until end)
  *
  * Returns          BT_STATUS_SUCCESS if command issued successfully otherwise
  *                  BT_STATUS_FAIL.
@@ -4706,14 +4706,15 @@ static bt_status_t set_addressed_player_cmd(RawAddress* bd_addr, uint16_t id) {
  * Paramters        scope: AVRC_SCOPE_NOW_PLAYING (etc) for various browseable
  *                  content
  *                  start_item: First item to fetch (0 to fetch from beganning)
- *                  end_item: Last item to fetch (0xff to fetch until end)
+ *                  end_item: Last item to fetch (0xffff to fetch until end)
  *
  * Returns          BT_STATUS_SUCCESS if command issued successfully otherwise
  *                  BT_STATUS_FAIL.
  *
  **************************************************************************/
 static bt_status_t get_folder_items_cmd(RawAddress* bd_addr, uint8_t scope,
-                                        uint8_t start_item, uint8_t end_item) {
+                                        uint32_t start_item,
+                                        uint32_t end_item) {
   /* Check that both avrcp and browse channel are connected. */
   btif_rc_device_cb_t* p_dev = btif_rc_get_device_by_bda(bd_addr);
   BTIF_TRACE_DEBUG("%s", __func__);
