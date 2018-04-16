@@ -279,7 +279,7 @@ void AvrcpService::Init(MediaInterface* media_interface,
 
   ConnectionHandler::Initialize(
       base::Bind(&AvrcpService::DeviceCallback, base::Unretained(instance_)),
-      &avrcp_interface_, &sdp_interface_);
+      &avrcp_interface_, &sdp_interface_, volume_interface);
   instance_->connection_handler_ = ConnectionHandler::Get();
 }
 
