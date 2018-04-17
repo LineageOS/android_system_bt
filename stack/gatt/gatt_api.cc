@@ -125,12 +125,13 @@ static bool is_gatt_attr_type(const Uuid& uuid) {
   return false;
 }
 
-/** Update the the last primary info for the service list info */
-static void gatt_update_last_pri_srv_info() {
-  gatt_cb.last_primary_s_handle = 0;
+/** Update the the last service info for the service list info */
+static void gatt_update_last_srv_info() {
+  gatt_cb.last_service_handle = 0;
 
-  for (tGATT_SRV_LIST_ELEM& el : *gatt_cb.srv_list_info)
-    if (el.is_primary) gatt_cb.last_primary_s_handle = el.s_hdl;
+  for (tGATT_SRV_LIST_ELEM& el : *gatt_cb.srv_list_info) {
+    gatt_cb.last_service_handle = el.s_hdl;
+  }
 }
 
 /*******************************************************************************
@@ -291,7 +292,7 @@ uint16_t GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
     elem.sdp_handle = 0;
   }
 
-  gatt_update_last_pri_srv_info();
+  gatt_update_last_srv_info();
 
   VLOG(1) << StringPrintf(
       "%s: allocated el: s_hdl=%d e_hdl=%d type=0x%x sdp_hdl=0x%x", __func__,
@@ -389,7 +390,7 @@ void GATTS_StopService(uint16_t service_handle) {
   }
 
   gatt_cb.srv_list_info->erase(it);
-  gatt_update_last_pri_srv_info();
+  gatt_update_last_srv_info();
 }
 /*******************************************************************************
  *
