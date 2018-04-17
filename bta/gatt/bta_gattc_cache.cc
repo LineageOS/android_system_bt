@@ -61,7 +61,7 @@ tBTA_GATTC_CHARACTERISTIC* bta_gattc_get_characteristic_srcb(
 #define BTA_GATT_SDP_DB_SIZE 4096
 
 #define GATT_CACHE_PREFIX "/data/misc/bluetooth/gatt_cache_"
-#define GATT_CACHE_VERSION 4
+#define GATT_CACHE_VERSION 5
 
 static void bta_gattc_generate_cache_file_name(char* buffer, size_t buffer_len,
                                                const RawAddress& bda) {
@@ -177,7 +177,7 @@ static void add_service_to_gatt_db(std::vector<tBTA_GATTC_SERVICE>& gatt_db,
 
 /** Add a characteristic into GATT database */
 static void add_characteristic_to_gatt_db(
-    std::vector<tBTA_GATTC_SERVICE>& gatt_db, uint16_t attr_handle,
+    std::vector<tBTA_GATTC_SERVICE>& gatt_db, uint16_t attribute_handle,
     uint16_t value_handle, const Uuid& uuid, uint8_t property) {
 #if (BTA_GATT_DEBUG == TRUE)
   VLOG(1) << __func__
@@ -186,7 +186,7 @@ static void add_characteristic_to_gatt_db(
 #endif
 
   tBTA_GATTC_SERVICE* service =
-      bta_gattc_find_matching_service(gatt_db, attr_handle);
+      bta_gattc_find_matching_service(gatt_db, attribute_handle);
   if (!service) {
     LOG(ERROR) << "Illegal action to add char/descr/incl srvc for non-existing "
                   "service!";
@@ -200,7 +200,7 @@ static void add_characteristic_to_gatt_db(
   if (service->e_handle < value_handle) service->e_handle = value_handle;
 
   service->characteristics.emplace_back(
-      tBTA_GATTC_CHARACTERISTIC{.declaration_handle = attr_handle,
+      tBTA_GATTC_CHARACTERISTIC{.declaration_handle = attribute_handle,
                                 .value_handle = value_handle,
                                 .properties = property,
                                 .uuid = uuid});
@@ -908,6 +908,13 @@ void bta_gattc_get_gatt_db(uint16_t conn_id, uint16_t start_handle,
                              count);
 }
 
+namespace {
+const Uuid PRIMARY_SERVICE = Uuid::From16Bit(GATT_UUID_PRI_SERVICE);
+const Uuid SECONDARY_SERVICE = Uuid::From16Bit(GATT_UUID_SEC_SERVICE);
+const Uuid INCLUDE = Uuid::From16Bit(GATT_UUID_INCLUDE_SERVICE);
+const Uuid CHARACTERISTIC = Uuid::From16Bit(GATT_UUID_CHAR_DECLARE);
+}  // namespace
+
 /* rebuild server cache from NV cache */
 void bta_gattc_rebuild_cache(tBTA_GATTC_SERV* p_srvc_cb, uint16_t num_attr,
                              tBTA_GATTC_NV_ATTR* p_attr) {
@@ -918,65 +925,30 @@ void bta_gattc_rebuild_cache(tBTA_GATTC_SERV* p_srvc_cb, uint16_t num_attr,
   std::vector<tBTA_GATTC_SERVICE>().swap(p_srvc_cb->srvc_cache);
 
   while (num_attr > 0 && p_attr != NULL) {
-    switch (p_attr->attr_type) {
-      case BTA_GATTC_ATTR_TYPE_SRVC:
-        add_service_to_gatt_db(p_srvc_cb->srvc_cache, p_attr->s_handle,
-                               p_attr->e_handle, p_attr->uuid,
-                               p_attr->is_primary);
-        break;
-
-      case BTA_GATTC_ATTR_TYPE_CHAR:
-        add_characteristic_to_gatt_db(p_srvc_cb->srvc_cache, p_attr->s_handle,
-                                      p_attr->s_handle, p_attr->uuid,
-                                      p_attr->prop);
-        break;
-
-      case BTA_GATTC_ATTR_TYPE_CHAR_DESCR:
-        add_descriptor_to_gatt_db(p_srvc_cb->srvc_cache, p_attr->s_handle,
-                                  p_attr->uuid);
-        break;
-      case BTA_GATTC_ATTR_TYPE_INCL_SRVC:
-        add_incl_srvc_to_gatt_db(p_srvc_cb->srvc_cache, p_attr->s_handle,
-                                 p_attr->uuid, p_attr->incl_srvc_handle);
-        break;
+    if (p_attr->type == PRIMARY_SERVICE || p_attr->type == SECONDARY_SERVICE) {
+      add_service_to_gatt_db(
+          p_srvc_cb->srvc_cache, p_attr->handle, p_attr->value.service.e_handle,
+          p_attr->value.service.uuid, (p_attr->type == PRIMARY_SERVICE));
+    } else if (p_attr->type == INCLUDE) {
+      add_incl_srvc_to_gatt_db(p_srvc_cb->srvc_cache, p_attr->handle,
+                               p_attr->value.included_service.uuid,
+                               p_attr->value.included_service.s_handle);
+    } else if (p_attr->type == CHARACTERISTIC) {
+      add_characteristic_to_gatt_db(p_srvc_cb->srvc_cache, p_attr->handle,
+                                    p_attr->value.characteristic.value_handle,
+                                    p_attr->value.characteristic.uuid,
+                                    p_attr->value.characteristic.properties);
+    } else {
+      add_descriptor_to_gatt_db(p_srvc_cb->srvc_cache, p_attr->handle,
+                                p_attr->type);
     }
+
     p_attr++;
     num_attr--;
   }
 }
 
-/*******************************************************************************
- *
- * Function         bta_gattc_fill_nv_attr
- *
- * Description      fill a NV attribute entry value
- *
- * Returns          None.
- *
- ******************************************************************************/
-void bta_gattc_fill_nv_attr(tBTA_GATTC_NV_ATTR* p_attr, uint8_t type,
-                            uint16_t s_handle, uint16_t e_handle, Uuid uuid,
-                            uint8_t prop, uint16_t incl_srvc_handle,
-                            bool is_primary) {
-  p_attr->s_handle = s_handle;
-  p_attr->e_handle = e_handle;
-  p_attr->attr_type = type;
-  p_attr->is_primary = is_primary;
-  p_attr->id = 0;
-  p_attr->prop = prop;
-  p_attr->incl_srvc_handle = incl_srvc_handle;
-  p_attr->uuid = uuid;
-}
-
-/*******************************************************************************
- *
- * Function         bta_gattc_cache_save
- *
- * Description      save the server cache into NV
- *
- * Returns          None.
- *
- ******************************************************************************/
+/** save the server cache into NV */
 void bta_gattc_cache_save(tBTA_GATTC_SERV* p_srvc_cb, uint16_t conn_id) {
   if (p_srvc_cb->srvc_cache.empty()) return;
 
@@ -986,29 +958,32 @@ void bta_gattc_cache_save(tBTA_GATTC_SERV* p_srvc_cb, uint16_t conn_id) {
       (tBTA_GATTC_NV_ATTR*)osi_malloc(db_size * sizeof(tBTA_GATTC_NV_ATTR));
 
   for (const tBTA_GATTC_SERVICE& service : p_srvc_cb->srvc_cache) {
-    bta_gattc_fill_nv_attr(&nv_attr[i++], BTA_GATTC_ATTR_TYPE_SRVC,
-                           service.s_handle, service.e_handle, service.uuid,
-                           0 /* properties */, 0 /* incl_srvc_handle */,
-                           service.is_primary);
+    nv_attr[i++] = {
+        service.s_handle,
+        service.is_primary ? PRIMARY_SERVICE : SECONDARY_SERVICE,
+        {.service = {.uuid = service.uuid, .e_handle = service.e_handle}}};
   }
 
   for (const tBTA_GATTC_SERVICE& service : p_srvc_cb->srvc_cache) {
-    for (const tBTA_GATTC_CHARACTERISTIC& charac : service.characteristics) {
-      bta_gattc_fill_nv_attr(
-          &nv_attr[i++], BTA_GATTC_ATTR_TYPE_CHAR, charac.value_handle, 0,
-          charac.uuid, charac.properties, 0 /* incl_srvc_handle */, false);
-
-      for (const tBTA_GATTC_DESCRIPTOR& desc : charac.descriptors) {
-        bta_gattc_fill_nv_attr(&nv_attr[i++], BTA_GATTC_ATTR_TYPE_CHAR_DESCR,
-                               desc.handle, 0, desc.uuid, 0 /* properties */,
-                               0 /* incl_srvc_handle */, false);
-      }
+    for (const tBTA_GATTC_INCLUDED_SVC& p_isvc : service.included_svc) {
+      nv_attr[i++] = {
+          p_isvc.handle,
+          INCLUDE,
+          {.included_service = {.s_handle = p_isvc.included_service->s_handle,
+                                .e_handle = p_isvc.included_service->e_handle,
+                                .uuid = p_isvc.uuid}}};
     }
 
-    for (const tBTA_GATTC_INCLUDED_SVC& p_isvc : service.included_svc) {
-      bta_gattc_fill_nv_attr(&nv_attr[i++], BTA_GATTC_ATTR_TYPE_INCL_SRVC,
-                             p_isvc.handle, 0, p_isvc.uuid, 0 /* properties */,
-                             p_isvc.included_service->s_handle, false);
+    for (const tBTA_GATTC_CHARACTERISTIC& charac : service.characteristics) {
+      nv_attr[i++] = {charac.declaration_handle,
+                      CHARACTERISTIC,
+                      {.characteristic = {.properties = charac.properties,
+                                          .value_handle = charac.value_handle,
+                                          .uuid = charac.uuid}}};
+
+      for (const tBTA_GATTC_DESCRIPTOR& desc : charac.descriptors) {
+        nv_attr[i++] = {desc.handle, desc.uuid, {}};
+      }
     }
   }
 

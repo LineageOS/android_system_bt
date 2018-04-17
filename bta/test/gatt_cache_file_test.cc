@@ -24,26 +24,31 @@
 
 using bluetooth::Uuid;
 
-/* This test makes sure that v3 cache element is properly encoded into file*/
-TEST(GattCacheTest, nv_attr_to_binary_test) {
-  tBTA_GATTC_NV_ATTR attr{
-      .uuid = Uuid::FromString("1800"),
-      .s_handle = 0x0001,
-      .e_handle = 0xFFFF,
-      .attr_type = 0x01,
-      .id = 0x02,
-      .prop = 0x03,
-      .is_primary = false,
-      .incl_srvc_handle = 0x4543,
+/* This test makes sure that cache element is properly encoded into file*/
+TEST(GattCacheTest, nv_attr_service_to_binary_test) {
+  tBTA_GATTC_NV_ATTR attr;
+
+  /* make sure padding at end of union is cleared */
+  memset(&attr, 0, sizeof(attr));
+
+  attr = {
+      .handle = 0x0001,
+      .type = Uuid::FromString("2800"),
+      .value = {.service = {.uuid = Uuid::FromString("1800"),
+                            .e_handle = 0x001c}},
   };
 
   constexpr size_t len = sizeof(tBTA_GATTC_NV_ATTR);
-  uint8_t binary_form[len] = {0x00, 0x00, 0x18, 0x00, 0x00, 0x00, 0x10,
-                              0x00, 0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B,
-                              0x34, 0xFB, 0x01, 0x00, 0xFF, 0xFF, 0x01,
-                              0x02, 0x03, 0x00, 0x43, 0x45};
+  // clang-format off
+  uint8_t binary_form[len] = {
+      /*handle */ 0x01, 0x00,
+      /* type*/ 0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB,
+      /* service uuid */ 0x00, 0x00, 0x18, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB,
+      /* end handle */ 0x1C, 0x00,
+      /* cleared padding at end of union*/ 0x00, 0x00};
+  // clang-format on
 
-  // USEFUL for debugging:
-  // LOG(ERROR) << " " << base::HexEncode(binary_form, len);
+  // useful for debugging:
+  // LOG(ERROR) << " " << base::HexEncode(&attr, len);
   EXPECT_EQ(memcmp(binary_form, &attr, len), 0);
 }
