@@ -97,24 +97,33 @@ typedef struct {
   uint16_t handles[BTA_GATTC_MULTI_MAX];
 } tBTA_GATTC_MULTI;
 
-enum {
-  BTA_GATTC_ATTR_TYPE_INCL_SRVC,
-  BTA_GATTC_ATTR_TYPE_CHAR,
-  BTA_GATTC_ATTR_TYPE_CHAR_DESCR,
-  BTA_GATTC_ATTR_TYPE_SRVC
-};
-typedef uint8_t tBTA_GATTC_ATTR_TYPE;
+/* Representation of GATT attribute for storage */
+struct tBTA_GATTC_NV_ATTR {
+  uint16_t handle;
+  bluetooth::Uuid type;
 
-typedef struct {
-  bluetooth::Uuid uuid;
-  uint16_t s_handle;
-  uint16_t e_handle; /* used for service only */
-  uint8_t attr_type;
-  uint8_t id;
-  uint8_t prop;              /* used when attribute type is characteristic */
-  bool is_primary;           /* used when attribute type is service */
-  uint16_t incl_srvc_handle; /* used when attribute type is included service */
-} tBTA_GATTC_NV_ATTR;
+  union {
+    /* primary or secondary service */
+    struct {
+      bluetooth::Uuid uuid;
+      uint16_t e_handle;
+    } service;
+
+    struct {
+      uint16_t s_handle;
+      uint16_t e_handle;
+      bluetooth::Uuid uuid;
+    } included_service;
+
+    struct {
+      uint8_t properties;
+      uint16_t value_handle;
+      bluetooth::Uuid uuid;
+    } characteristic;
+
+    /* for descriptor we don't store value*/
+  } value;
+};
 
 /* callback data structure */
 typedef struct {
