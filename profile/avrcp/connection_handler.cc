@@ -238,7 +238,7 @@ void ConnectionHandler::InitiatorControlCb(uint8_t handle, uint8_t event,
     case AVRC_CLOSE_IND_EVT: {
       LOG(INFO) << __PRETTY_FUNCTION__ << ": Connection Closed Event";
 
-      if (device_map_.find(handle) == device_map_.end()) {
+      if (device_map_[handle] == nullptr) {
         LOG(WARNING)
             << "Connection Close received from device that doesn't exist";
         return;
@@ -320,7 +320,7 @@ void ConnectionHandler::AcceptorControlCb(uint8_t handle, uint8_t event,
     case AVRC_CLOSE_IND_EVT: {
       LOG(INFO) << __PRETTY_FUNCTION__ << ": Connection Closed Event";
 
-      if (device_map_.find(handle) == device_map_.end()) {
+      if (device_map_[handle] == nullptr) {
         LOG(WARNING)
             << "Connection Close received from device that doesn't exist";
         return;
