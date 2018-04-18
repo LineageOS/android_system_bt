@@ -1675,9 +1675,9 @@ void bta_av_getcap_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   memcpy(cfg.codec_info, p_scb->peer_cap.codec_info, AVDT_CODEC_SIZE);
   memcpy(cfg.protect_info, p_scb->peer_cap.protect_info, AVDT_PROTECT_SIZE);
 
-  APPL_TRACE_DEBUG("%s: peer %s handle:%d num_codec:%d", __func__,
+  APPL_TRACE_DEBUG("%s: peer %s handle:%d num_codec:%d psc_mask=0x%x", __func__,
                    p_scb->peer_addr.ToString().c_str(), p_scb->hndl,
-                   p_scb->peer_cap.num_codec);
+                   p_scb->peer_cap.num_codec, p_scb->cfg.psc_mask);
   APPL_TRACE_DEBUG("%s: media type 0x%x, 0x%x", __func__, media_type,
                    p_scb->media_type);
   APPL_TRACE_DEBUG("%s: codec: %s", __func__,
@@ -1710,6 +1710,11 @@ void bta_av_getcap_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     /* use only the services peer supports */
     cfg.psc_mask &= p_scb->peer_cap.psc_mask;
     p_scb->cur_psc_mask = cfg.psc_mask;
+    APPL_TRACE_DEBUG(
+        "%s: peer %s handle:%d sep_idx:%d sep_info_idx:%d "
+        "cur_psc_mask:0x%x",
+        __func__, p_scb->peer_addr.ToString().c_str(), p_scb->hndl,
+        p_scb->sep_idx, p_scb->sep_info_idx, p_scb->cur_psc_mask);
 
     if ((uuid_int == UUID_SERVCLASS_AUDIO_SINK) &&
         (p_scb->seps[p_scb->sep_idx].p_app_sink_data_cback != NULL)) {
