@@ -219,7 +219,7 @@ class BtaAvCo {
 
   /**
    * Process retrieved codec configuration and content protection from
-   * Peer Source SEP.
+   * Peer Sink SEP.
    *
    * @param bta_av_handle the BTA AV handle to identify the peer
    * @param peer_address the peer address
@@ -478,6 +478,26 @@ class BtaAvCo {
    */
   BtaAvCoPeer* FindPeer(const RawAddress& peer_address);
 
+  /**
+   * Find the peer Sink SEP entry for a given codec index.
+   *
+   * @param p_peer the peer to use
+   * @param codec_index the codec index to use
+   * @return the peer Sink SEP for the codec index if found, otherwise nullptr
+   */
+  BtaAvCoSep* FindPeerSink(BtaAvCoPeer* p_peer,
+                           btav_a2dp_codec_index_t codec_index);
+
+  /**
+   * Find the peer Source SEP entry for a given codec index.
+   *
+   * @param p_peer the peer to use
+   * @param codec_config the codec index to use
+   * @return the peer Source SEP for the codec index if found, otherwise nullptr
+   */
+  BtaAvCoSep* FindPeerSource(BtaAvCoPeer* p_peer,
+                             btav_a2dp_codec_index_t codec_index);
+
  private:
   /**
    * Reset the state.
@@ -513,7 +533,7 @@ class BtaAvCo {
    * @return a pointer to the corresponding SEP Sink entry on success,
    * otherwise nullptr
    */
-  BtaAvCoSep* SelectSourceCodec(BtaAvCoPeer* p_peer);
+  const BtaAvCoSep* SelectSourceCodec(BtaAvCoPeer* p_peer);
 
   /**
    * Select the Sink codec configuration based on peer codec support.
@@ -525,7 +545,7 @@ class BtaAvCo {
    * @return a pointer to the corresponding SEP Source entry on success,
    * otherwise nullptr
    */
-  BtaAvCoSep* SelectSinkCodec(BtaAvCoPeer* p_peer);
+  const BtaAvCoSep* SelectSinkCodec(BtaAvCoPeer* p_peer);
 
   /**
    * Save new codec configuration.
@@ -562,6 +582,15 @@ class BtaAvCo {
                          bool* p_restart_output);
 
   /**
+   * Update all selectable Source codecs with the corresponding codec
+   * information from a Sink peer.
+   *
+   * @param p_peer the peer Sink SEP to use
+   * @return the number of codecs that have been updated
+   */
+  size_t UpdateAllSelectableSourceCodecs(BtaAvCoPeer* p_peer);
+
+  /**
    * Update a selectable Source codec with the corresponding codec information
    * from a Sink peer.
    *
@@ -571,6 +600,15 @@ class BtaAvCo {
    */
   bool UpdateSelectableSourceCodec(const A2dpCodecConfig& codec_config,
                                    BtaAvCoPeer* p_peer);
+
+  /**
+   * Update all selectable Sink codecs with the corresponding codec
+   * information from a Source peer.
+   *
+   * @param p_peer the peer Source SEP to use
+   * @return the number of codecs that have been updated
+   */
+  size_t UpdateAllSelectableSinkCodecs(BtaAvCoPeer* p_peer);
 
   /**
    * Update a selectable Sink codec with the corresponding codec information
@@ -591,8 +629,8 @@ class BtaAvCo {
    * @return a pointer to the corresponding SEP Sink entry on success,
    * otnerwise nullptr
    */
-  BtaAvCoSep* AttemptSourceCodecSelection(const A2dpCodecConfig& codec_config,
-                                          BtaAvCoPeer* p_peer);
+  const BtaAvCoSep* AttemptSourceCodecSelection(
+      const A2dpCodecConfig& codec_config, BtaAvCoPeer* p_peer);
 
   /**
    * Attempt to select Sink codec configuration for a Source peer.
@@ -602,8 +640,8 @@ class BtaAvCo {
    * @return a pointer to the corresponding SEP Source entry on success,
    * otnerwise nullptr
    */
-  BtaAvCoSep* AttemptSinkCodecSelection(const A2dpCodecConfig& codec_config,
-                                        BtaAvCoPeer* p_peer);
+  const BtaAvCoSep* AttemptSinkCodecSelection(
+      const A2dpCodecConfig& codec_config, BtaAvCoPeer* p_peer);
 
   /**
    * Check if a peer SEP has content protection enabled.
@@ -786,8 +824,8 @@ BtaAvCoPeer* BtaAvCo::FindPeerAndUpdate(tBTA_AV_HNDL bta_av_handle,
 
   BtaAvCoPeer* p_peer = FindPeer(bta_av_handle);
   if (p_peer == nullptr) {
-    APPL_TRACE_ERROR("%s: peer for BTA AV handle 0x%x not found", __func__,
-                     bta_av_handle);
+    APPL_TRACE_ERROR("%s: peer entry for BTA AV handle 0x%x peer %s not found",
+                     __func__, bta_av_handle, peer_address.ToString().c_str());
     return nullptr;
   }
 
@@ -838,6 +876,7 @@ void BtaAvCo::ProcessDiscoveryResult(tBTA_AV_HNDL bta_av_handle,
   p_peer->num_rx_sinks = 0;
   p_peer->num_rx_sources = 0;
   p_peer->num_sup_sinks = 0;
+  p_peer->num_sup_sources = 0;
   if (uuid_local == UUID_SERVCLASS_AUDIO_SINK) {
     p_peer->uuid_to_connect = UUID_SERVCLASS_AUDIO_SOURCE;
   } else if (uuid_local == UUID_SERVCLASS_AUDIO_SOURCE) {
@@ -888,7 +927,8 @@ tA2DP_STATUS BtaAvCo::ProcessSourceGetConfig(
       p_sink->num_protect = *p_num_protect;
       memcpy(p_sink->protect_info, p_protect_info, AVDT_CP_INFO_LEN);
     } else {
-      APPL_TRACE_ERROR("%s: no more room for Sink info", __func__);
+      APPL_TRACE_ERROR("%s: peer %s : no more room for Sink info", __func__,
+                       p_peer->addr.ToString().c_str());
     }
   }
 
@@ -898,13 +938,31 @@ tA2DP_STATUS BtaAvCo::ProcessSourceGetConfig(
       (p_peer->num_sup_sinks != BTA_AV_CO_NUM_ELEMENTS(p_peer->sinks))) {
     return A2DP_FAIL;
   }
-  APPL_TRACE_DEBUG("%s: last Sink reached", __func__);
+  APPL_TRACE_DEBUG("%s: last Sink codec reached for peer %s", __func__,
+                   p_peer->addr.ToString().c_str());
 
   // Select the Source codec
-  const BtaAvCoSep* p_sink = SelectSourceCodec(p_peer);
-  if (p_sink == nullptr) {
-    APPL_TRACE_ERROR("%s: cannot set up codec for the peer Sink", __func__);
-    return A2DP_FAIL;
+  const BtaAvCoSep* p_sink = nullptr;
+  if (p_peer->acceptor) {
+    UpdateAllSelectableSourceCodecs(p_peer);
+    if (p_peer->p_sink == nullptr) {
+      // Update the selected codec
+      p_peer->p_sink =
+          FindPeerSink(p_peer, A2DP_SourceCodecIndex(p_peer->codec_config));
+    }
+    p_sink = p_peer->p_sink;
+    if (p_sink == nullptr) {
+      APPL_TRACE_ERROR("%s: cannot find the selected codec for peer %s",
+                       __func__, p_peer->addr.ToString().c_str());
+      return A2DP_FAIL;
+    }
+  } else {
+    p_sink = SelectSourceCodec(p_peer);
+    if (p_sink == nullptr) {
+      APPL_TRACE_ERROR("%s: cannot set up codec for peer %s", __func__,
+                       p_peer->addr.ToString().c_str());
+      return A2DP_FAIL;
+    }
   }
 
   // By default, no content protection
@@ -915,18 +973,19 @@ tA2DP_STATUS BtaAvCo::ProcessSourceGetConfig(
   }
 
   // If acceptor -> reconfig otherwise reply for configuration
+  *p_sep_info_idx = p_sink->sep_info_idx;
+  APPL_TRACE_EVENT("%s: peer %s acceptor:%s reconfig_needed:%s", __func__,
+                   p_peer->addr.ToString().c_str(),
+                   (p_peer->acceptor) ? "true" : "false",
+                   (p_peer->reconfig_needed) ? "true" : "false");
   if (p_peer->acceptor) {
-    // Stop fetching caps once we retrieved a supported codec
-    APPL_TRACE_EVENT("%s: no need to fetch more SEPs", __func__);
-    *p_sep_info_idx = p_peer->num_seps;
     if (p_peer->reconfig_needed) {
-      APPL_TRACE_DEBUG("%s: call BTA_AvReconfig(0x%x)", __func__,
-                       bta_av_handle);
+      APPL_TRACE_DEBUG("%s: call BTA_AvReconfig(0x%x) for peer %s", __func__,
+                       bta_av_handle, p_peer->addr.ToString().c_str());
       BTA_AvReconfig(bta_av_handle, true, p_sink->sep_info_idx,
                      p_peer->codec_config, *p_num_protect, bta_av_co_cp_scmst);
     }
   } else {
-    *p_sep_info_idx = p_sink->sep_info_idx;
     memcpy(p_codec_info, p_peer->codec_config, AVDT_CODEC_SIZE);
   }
 
@@ -982,7 +1041,8 @@ tA2DP_STATUS BtaAvCo::ProcessSinkGetConfig(tBTA_AV_HNDL bta_av_handle,
       p_source->num_protect = *p_num_protect;
       memcpy(p_source->protect_info, p_protect_info, AVDT_CP_INFO_LEN);
     } else {
-      APPL_TRACE_ERROR("%s: no more room for Source info", __func__);
+      APPL_TRACE_ERROR("%s: peer %s : no more room for Source info", __func__,
+                       p_peer->addr.ToString().c_str());
     }
   }
 
@@ -992,13 +1052,31 @@ tA2DP_STATUS BtaAvCo::ProcessSinkGetConfig(tBTA_AV_HNDL bta_av_handle,
       (p_peer->num_sup_sources != BTA_AV_CO_NUM_ELEMENTS(p_peer->sources))) {
     return A2DP_FAIL;
   }
-  APPL_TRACE_DEBUG("%s: last Source reached", __func__);
+  APPL_TRACE_DEBUG("%s: last Source codec reached for peer %s", __func__,
+                   p_peer->addr.ToString().c_str());
 
   // Select the Sink codec
-  const BtaAvCoSep* p_source = SelectSinkCodec(p_peer);
-  if (p_source == nullptr) {
-    APPL_TRACE_ERROR("%s: cannot set up codec for the peer Source", __func__);
-    return A2DP_FAIL;
+  const BtaAvCoSep* p_source = nullptr;
+  if (p_peer->acceptor) {
+    UpdateAllSelectableSinkCodecs(p_peer);
+    if (p_peer->p_source == nullptr) {
+      // Update the selected codec
+      p_peer->p_source =
+          FindPeerSource(p_peer, A2DP_SinkCodecIndex(p_peer->codec_config));
+    }
+    p_source = p_peer->p_source;
+    if (p_source == nullptr) {
+      APPL_TRACE_ERROR("%s: cannot find the selected codec for peer %s",
+                       __func__, p_peer->addr.ToString().c_str());
+      return A2DP_FAIL;
+    }
+  } else {
+    p_source = SelectSinkCodec(p_peer);
+    if (p_source == nullptr) {
+      APPL_TRACE_ERROR("%s: cannot set up codec for the peer %s", __func__,
+                       p_peer->addr.ToString().c_str());
+      return A2DP_FAIL;
+    }
   }
 
   // By default, no content protection
@@ -1009,18 +1087,19 @@ tA2DP_STATUS BtaAvCo::ProcessSinkGetConfig(tBTA_AV_HNDL bta_av_handle,
   }
 
   // If acceptor -> reconfig otherwise reply for configuration
+  *p_sep_info_idx = p_source->sep_info_idx;
+  APPL_TRACE_EVENT("%s: peer %s acceptor:%s reconfig_needed:%s", __func__,
+                   p_peer->addr.ToString().c_str(),
+                   (p_peer->acceptor) ? "true" : "false",
+                   (p_peer->reconfig_needed) ? "true" : "false");
   if (p_peer->acceptor) {
-    // Stop fetching caps once we retrieved a supported codec
-    APPL_TRACE_EVENT("%s: no need to fetch more SEPs", __func__);
-    *p_sep_info_idx = p_peer->num_seps;
     if (p_peer->reconfig_needed) {
-      APPL_TRACE_DEBUG("%s: call BTA_AvReconfig(0x%x)", __func__,
-                       bta_av_handle);
+      APPL_TRACE_DEBUG("%s: call BTA_AvReconfig(0x%x) for peer %s", __func__,
+                       bta_av_handle, p_peer->addr.ToString().c_str());
       BTA_AvReconfig(bta_av_handle, true, p_source->sep_info_idx,
                      p_peer->codec_config, *p_num_protect, bta_av_co_cp_scmst);
     }
   } else {
-    *p_sep_info_idx = p_source->sep_info_idx;
     memcpy(p_codec_info, p_peer->codec_config, AVDT_CODEC_SIZE);
   }
 
@@ -1314,6 +1393,8 @@ bool BtaAvCo::SetActivePeer(const RawAddress& peer_address) {
 
   active_peer_ = p_peer;
   memcpy(codec_config_, active_peer_->codec_config, AVDT_CODEC_SIZE);
+  APPL_TRACE_DEBUG("%s: codec = %s", __func__,
+                   A2DP_CodecInfoString(codec_config_).c_str());
   ReportSourceCodecState(active_peer_);
   return true;
 }
@@ -1378,23 +1459,16 @@ bool BtaAvCo::SetCodecUserConfig(
 
   // Find the peer SEP codec to use
   if (codec_user_config.codec_type < BTAV_A2DP_CODEC_INDEX_MAX) {
-    for (size_t index = 0; index < p_peer->num_sup_sinks; index++) {
-      btav_a2dp_codec_index_t peer_codec_index =
-          A2DP_SourceCodecIndex(p_peer->sinks[index].codec_caps);
-      if (peer_codec_index != codec_user_config.codec_type) continue;
-      if (!AudioSepHasContentProtection(&p_peer->sinks[index])) {
-        continue;
-      }
-      p_sink = &p_peer->sinks[index];
-      break;
-    }
+    p_sink = FindPeerSink(p_peer, codec_user_config.codec_type);
   } else {
     // Use the current sink codec
     p_sink = p_peer->p_sink;
   }
   if (p_sink == nullptr) {
-    APPL_TRACE_ERROR("%s: cannot find peer SEP to configure for codec type %d",
-                     __func__, codec_user_config.codec_type);
+    APPL_TRACE_ERROR(
+        "%s: peer %s : cannot find peer SEP to configure for codec type %d",
+        __func__, p_peer->addr.ToString().c_str(),
+        codec_user_config.codec_type);
     success = false;
     goto done;
   }
@@ -1417,19 +1491,22 @@ bool BtaAvCo::SetCodecUserConfig(
 
     p_sink = SelectSourceCodec(p_peer);
     if (p_sink == nullptr) {
-      APPL_TRACE_ERROR("%s: cannot set up codec for the peer SINK", __func__);
+      APPL_TRACE_ERROR("%s: peer %s : cannot set up codec for the peer SINK",
+                       __func__, p_peer->addr.ToString().c_str());
       success = false;
       goto done;
     }
     // Don't call BTA_AvReconfig() prior to retrieving all peer's capabilities
     if ((p_peer->num_rx_sinks != p_peer->num_sinks) &&
         (p_peer->num_sup_sinks != BTA_AV_CO_NUM_ELEMENTS(p_peer->sinks))) {
-      APPL_TRACE_WARNING("%s: not all peer's capabilities have been retrieved",
-                         __func__);
+      APPL_TRACE_WARNING(
+          "%s: peer %s : not all peer's capabilities have been retrieved",
+          __func__, p_peer->addr.ToString().c_str());
       success = false;
       goto done;
     }
 
+    p_peer->acceptor = false;
     APPL_TRACE_DEBUG("%s: call BTA_AvReconfig(0x%x)", __func__,
                      p_peer->BtaAvHandle());
     BTA_AvReconfig(p_peer->BtaAvHandle(), true, p_sink->sep_info_idx,
@@ -1468,7 +1545,8 @@ bool BtaAvCo::SetCodecAudioConfig(
   // Use the current sink codec
   const BtaAvCoSep* p_sink = p_peer->p_sink;
   if (p_sink == nullptr) {
-    APPL_TRACE_ERROR("%s: cannot find peer SEP to configure", __func__);
+    APPL_TRACE_ERROR("%s: peer %s : cannot find peer SEP to configure",
+                     __func__, p_peer->addr.ToString().c_str());
     return false;
   }
 
@@ -1492,9 +1570,11 @@ bool BtaAvCo::SetCodecAudioConfig(
     // Don't call BTA_AvReconfig() prior to retrieving all peer's capabilities
     if ((p_peer->num_rx_sinks != p_peer->num_sinks) &&
         (p_peer->num_sup_sinks != BTA_AV_CO_NUM_ELEMENTS(p_peer->sinks))) {
-      APPL_TRACE_WARNING("%s: not all peer's capabilities have been retrieved",
-                         __func__);
+      APPL_TRACE_WARNING(
+          "%s: peer %s : not all peer's capabilities have been retrieved",
+          __func__, p_peer->addr.ToString().c_str());
     } else {
+      p_peer->acceptor = false;
       APPL_TRACE_DEBUG("%s: call BTA_AvReconfig(0x%x)", __func__,
                        p_peer->BtaAvHandle());
       BTA_AvReconfig(p_peer->BtaAvHandle(), true, p_sink->sep_info_idx,
@@ -1529,6 +1609,9 @@ bool BtaAvCo::ReportSourceCodecState(BtaAvCoPeer* p_peer) {
         __func__, p_peer->addr.ToString().c_str());
     return false;
   }
+  APPL_TRACE_DEBUG("%s: peer %s codec_config=%s", __func__,
+                   p_peer->addr.ToString().c_str(),
+                   codec_config.ToString().c_str());
   do_in_jni_thread(
       FROM_HERE,
       base::Bind(&btif_av_report_source_codec_state, p_peer->addr, codec_config,
@@ -1620,17 +1703,13 @@ bool BtaAvCo::AudioSepHasContentProtection(const BtaAvCoSep* p_sep) {
   return true;
 }
 
-BtaAvCoSep* BtaAvCo::SelectSourceCodec(BtaAvCoPeer* p_peer) {
-  BtaAvCoSep* p_sink = nullptr;
+const BtaAvCoSep* BtaAvCo::SelectSourceCodec(BtaAvCoPeer* p_peer) {
+  const BtaAvCoSep* p_sink = nullptr;
 
   // Update all selectable codecs.
   // This is needed to update the selectable parameters for each codec.
   // NOTE: The selectable codec info is used only for informational purpose.
-  for (const auto& iter : p_peer->GetCodecs()->orderedSourceCodecs()) {
-    APPL_TRACE_DEBUG("%s: updating selectable codec %s", __func__,
-                     iter->name().c_str());
-    UpdateSelectableSourceCodec(*iter, p_peer);
-  }
+  UpdateAllSelectableSourceCodecs(p_peer);
 
   // Select the codec
   for (const auto& iter : p_peer->GetCodecs()->orderedSourceCodecs()) {
@@ -1650,17 +1729,13 @@ BtaAvCoSep* BtaAvCo::SelectSourceCodec(BtaAvCoPeer* p_peer) {
   return p_sink;
 }
 
-BtaAvCoSep* BtaAvCo::SelectSinkCodec(BtaAvCoPeer* p_peer) {
-  BtaAvCoSep* p_source = nullptr;
+const BtaAvCoSep* BtaAvCo::SelectSinkCodec(BtaAvCoPeer* p_peer) {
+  const BtaAvCoSep* p_source = nullptr;
 
   // Update all selectable codecs.
   // This is needed to update the selectable parameters for each codec.
   // NOTE: The selectable codec info is used only for informational purpose.
-  for (const auto& iter : p_peer->GetCodecs()->orderedSinkCodecs()) {
-    APPL_TRACE_DEBUG("%s: updating selectable codec %s", __func__,
-                     iter->name().c_str());
-    UpdateSelectableSinkCodec(*iter, p_peer);
-  }
+  UpdateAllSelectableSinkCodecs(p_peer);
 
   // Select the codec
   for (const auto& iter : p_peer->GetCodecs()->orderedSinkCodecs()) {
@@ -1680,30 +1755,70 @@ BtaAvCoSep* BtaAvCo::SelectSinkCodec(BtaAvCoPeer* p_peer) {
   return p_source;
 }
 
-BtaAvCoSep* BtaAvCo::AttemptSourceCodecSelection(
+BtaAvCoSep* BtaAvCo::FindPeerSink(BtaAvCoPeer* p_peer,
+                                  btav_a2dp_codec_index_t codec_index) {
+  if (codec_index == BTAV_A2DP_CODEC_INDEX_MAX) {
+    APPL_TRACE_WARNING("%s: invalid codec index for peer %s", __func__,
+                       p_peer->addr.ToString().c_str());
+    return nullptr;
+  }
+
+  // Find the peer Sink for the codec
+  for (size_t index = 0; index < p_peer->num_sup_sinks; index++) {
+    BtaAvCoSep* p_sink = &p_peer->sinks[index];
+    btav_a2dp_codec_index_t peer_codec_index =
+        A2DP_SourceCodecIndex(p_sink->codec_caps);
+    if (peer_codec_index != codec_index) {
+      continue;
+    }
+    if (!AudioSepHasContentProtection(p_sink)) {
+      APPL_TRACE_DEBUG(
+          "%s: peer Sink for codec %s does not support "
+          "Content Protection",
+          __func__, A2DP_CodecIndexStr(codec_index));
+      continue;
+    }
+    return p_sink;
+  }
+  return nullptr;
+}
+
+BtaAvCoSep* BtaAvCo::FindPeerSource(BtaAvCoPeer* p_peer,
+                                    btav_a2dp_codec_index_t codec_index) {
+  if (codec_index == BTAV_A2DP_CODEC_INDEX_MAX) {
+    APPL_TRACE_WARNING("%s: invalid codec index for peer %s", __func__,
+                       p_peer->addr.ToString().c_str());
+    return nullptr;
+  }
+
+  // Find the peer Source for the codec
+  for (size_t index = 0; index < p_peer->num_sup_sources; index++) {
+    BtaAvCoSep* p_source = &p_peer->sources[index];
+    btav_a2dp_codec_index_t peer_codec_index =
+        A2DP_SinkCodecIndex(p_source->codec_caps);
+    if (peer_codec_index != codec_index) {
+      continue;
+    }
+    if (!AudioSepHasContentProtection(p_source)) {
+      APPL_TRACE_DEBUG(
+          "%s: peer Source for codec %s does not support "
+          "Content Protection",
+          __func__, A2DP_CodecIndexStr(codec_index));
+      continue;
+    }
+    return p_source;
+  }
+  return nullptr;
+}
+
+const BtaAvCoSep* BtaAvCo::AttemptSourceCodecSelection(
     const A2dpCodecConfig& codec_config, BtaAvCoPeer* p_peer) {
   uint8_t new_codec_config[AVDT_CODEC_SIZE];
 
   APPL_TRACE_DEBUG("%s", __func__);
 
   // Find the peer Sink for the codec
-  BtaAvCoSep* p_sink = nullptr;
-  for (size_t index = 0; index < p_peer->num_sup_sinks; index++) {
-    btav_a2dp_codec_index_t peer_codec_index =
-        A2DP_SourceCodecIndex(p_peer->sinks[index].codec_caps);
-    if (peer_codec_index != codec_config.codecIndex()) {
-      continue;
-    }
-    if (!AudioSepHasContentProtection(&p_peer->sinks[index])) {
-      APPL_TRACE_DEBUG(
-          "%s: peer Sink for codec %s does not support "
-          "Content Protection",
-          __func__, codec_config.name().c_str());
-      continue;
-    }
-    p_sink = &p_peer->sinks[index];
-    break;
-  }
+  BtaAvCoSep* p_sink = FindPeerSink(p_peer, codec_config.codecIndex());
   if (p_sink == nullptr) {
     APPL_TRACE_DEBUG("%s: peer Sink for codec %s not found", __func__,
                      codec_config.name().c_str());
@@ -1724,30 +1839,14 @@ BtaAvCoSep* BtaAvCo::AttemptSourceCodecSelection(
   return p_sink;
 }
 
-BtaAvCoSep* BtaAvCo::AttemptSinkCodecSelection(
+const BtaAvCoSep* BtaAvCo::AttemptSinkCodecSelection(
     const A2dpCodecConfig& codec_config, BtaAvCoPeer* p_peer) {
   uint8_t new_codec_config[AVDT_CODEC_SIZE];
 
   APPL_TRACE_DEBUG("%s", __func__);
 
   // Find the peer Source for the codec
-  BtaAvCoSep* p_source = nullptr;
-  for (size_t index = 0; index < p_peer->num_sup_sources; index++) {
-    btav_a2dp_codec_index_t peer_codec_index =
-        A2DP_SinkCodecIndex(p_peer->sources[index].codec_caps);
-    if (peer_codec_index != codec_config.codecIndex()) {
-      continue;
-    }
-    if (!AudioSepHasContentProtection(&p_peer->sources[index])) {
-      APPL_TRACE_DEBUG(
-          "%s: peer Source for codec %s does not support "
-          "Content Protection",
-          __func__, codec_config.name().c_str());
-      continue;
-    }
-    p_source = &p_peer->sources[index];
-    break;
-  }
+  BtaAvCoSep* p_source = FindPeerSource(p_peer, codec_config.codecIndex());
   if (p_source == nullptr) {
     APPL_TRACE_DEBUG("%s: peer Source for codec %s not found", __func__,
                      codec_config.name().c_str());
@@ -1768,77 +1867,69 @@ BtaAvCoSep* BtaAvCo::AttemptSinkCodecSelection(
   return p_source;
 }
 
+size_t BtaAvCo::UpdateAllSelectableSourceCodecs(BtaAvCoPeer* p_peer) {
+  APPL_TRACE_DEBUG("%s: peer %s", __func__, p_peer->addr.ToString().c_str());
+
+  size_t updated_codecs = 0;
+  for (const auto& iter : p_peer->GetCodecs()->orderedSourceCodecs()) {
+    APPL_TRACE_DEBUG("%s: updating selectable codec %s", __func__,
+                     iter->name().c_str());
+    if (UpdateSelectableSourceCodec(*iter, p_peer)) {
+      updated_codecs++;
+    }
+  }
+  return updated_codecs;
+}
+
 bool BtaAvCo::UpdateSelectableSourceCodec(const A2dpCodecConfig& codec_config,
                                           BtaAvCoPeer* p_peer) {
-  uint8_t new_codec_config[AVDT_CODEC_SIZE];
-
-  APPL_TRACE_DEBUG("%s", __func__);
+  APPL_TRACE_DEBUG("%s: peer %s", __func__, p_peer->addr.ToString().c_str());
 
   // Find the peer Sink for the codec
-  const BtaAvCoSep* p_sink = nullptr;
-  for (size_t index = 0; index < p_peer->num_sup_sinks; index++) {
-    btav_a2dp_codec_index_t peer_codec_index =
-        A2DP_SourceCodecIndex(p_peer->sinks[index].codec_caps);
-    if (peer_codec_index != codec_config.codecIndex()) {
-      continue;
-    }
-    if (!AudioSepHasContentProtection(&p_peer->sinks[index])) {
-      APPL_TRACE_DEBUG(
-          "%s: peer Sink for codec %s does not support "
-          "Content Protection",
-          __func__, codec_config.name().c_str());
-      continue;
-    }
-    p_sink = &p_peer->sinks[index];
-    break;
-  }
+  const BtaAvCoSep* p_sink = FindPeerSink(p_peer, codec_config.codecIndex());
   if (p_sink == nullptr) {
     // The peer Sink device does not support this codec
     return false;
   }
-  if (!p_peer->GetCodecs()->setCodecConfig(
-          p_sink->codec_caps, true /* is_capability */, new_codec_config,
-          false /* select_current_codec */)) {
-    APPL_TRACE_DEBUG("%s: cannot update source codec %s", __func__,
-                     codec_config.name().c_str());
+  if (!p_peer->GetCodecs()->setPeerSinkCodecCapabilities(p_sink->codec_caps)) {
+    APPL_TRACE_WARNING("%s: cannot update peer %s codec capabilities for %s",
+                       __func__, p_peer->addr.ToString().c_str(),
+                       A2DP_CodecName(p_sink->codec_caps));
     return false;
   }
   return true;
 }
 
+size_t BtaAvCo::UpdateAllSelectableSinkCodecs(BtaAvCoPeer* p_peer) {
+  APPL_TRACE_DEBUG("%s: peer %s", __func__, p_peer->addr.ToString().c_str());
+
+  size_t updated_codecs = 0;
+  for (const auto& iter : p_peer->GetCodecs()->orderedSinkCodecs()) {
+    APPL_TRACE_DEBUG("%s: updating selectable codec %s", __func__,
+                     iter->name().c_str());
+    if (UpdateSelectableSinkCodec(*iter, p_peer)) {
+      updated_codecs++;
+    }
+  }
+  return updated_codecs;
+}
+
 bool BtaAvCo::UpdateSelectableSinkCodec(const A2dpCodecConfig& codec_config,
                                         BtaAvCoPeer* p_peer) {
-  uint8_t new_codec_config[AVDT_CODEC_SIZE];
-
-  APPL_TRACE_DEBUG("%s", __func__);
+  APPL_TRACE_DEBUG("%s: peer %s", __func__, p_peer->addr.ToString().c_str());
 
   // Find the peer Source for the codec
-  const BtaAvCoSep* p_source = nullptr;
-  for (size_t index = 0; index < p_peer->num_sup_sources; index++) {
-    btav_a2dp_codec_index_t peer_codec_index =
-        A2DP_SinkCodecIndex(p_peer->sources[index].codec_caps);
-    if (peer_codec_index != codec_config.codecIndex()) {
-      continue;
-    }
-    if (!AudioSepHasContentProtection(&p_peer->sources[index])) {
-      APPL_TRACE_DEBUG(
-          "%s: peer Source for codec %s does not support "
-          "Content Protection",
-          __func__, codec_config.name().c_str());
-      continue;
-    }
-    p_source = &p_peer->sources[index];
-    break;
-  }
+  const BtaAvCoSep* p_source =
+      FindPeerSource(p_peer, codec_config.codecIndex());
   if (p_source == nullptr) {
     // The peer Source device does not support this codec
     return false;
   }
-  if (!p_peer->GetCodecs()->setSinkCodecConfig(
-          p_source->codec_caps, true /* is_capability */, new_codec_config,
-          false /* select_current_codec */)) {
-    APPL_TRACE_DEBUG("%s: cannot update source codec %s", __func__,
-                     codec_config.name().c_str());
+  if (!p_peer->GetCodecs()->setPeerSourceCodecCapabilities(
+          p_source->codec_caps)) {
+    APPL_TRACE_WARNING("%s: cannot update peer %s codec capabilities for %s",
+                       __func__, p_peer->addr.ToString().c_str(),
+                       A2DP_CodecName(p_source->codec_caps));
     return false;
   }
   return true;
@@ -1882,28 +1973,14 @@ bool BtaAvCo::SetCodecOtaConfig(BtaAvCoPeer* p_peer,
   *p_restart_output = false;
 
   // Find the peer SEP codec to use
-  btav_a2dp_codec_index_t ota_codec_index =
-      A2DP_SourceCodecIndex(p_ota_codec_config);
-  if (ota_codec_index == BTAV_A2DP_CODEC_INDEX_MAX) {
-    APPL_TRACE_WARNING("%s: invalid peer codec config", __func__);
-    return false;
-  }
-  const BtaAvCoSep* p_sink = nullptr;
-  for (size_t index = 0; index < p_peer->num_sup_sinks; index++) {
-    btav_a2dp_codec_index_t peer_codec_index =
-        A2DP_SourceCodecIndex(p_peer->sinks[index].codec_caps);
-    if (peer_codec_index != ota_codec_index) continue;
-    if (!AudioSepHasContentProtection(&p_peer->sinks[index])) {
-      continue;
-    }
-    p_sink = &p_peer->sinks[index];
-    break;
-  }
+  const BtaAvCoSep* p_sink =
+      FindPeerSink(p_peer, A2DP_SourceCodecIndex(p_ota_codec_config));
   if ((p_peer->num_sup_sinks > 0) && (p_sink == nullptr)) {
     // There are no peer SEPs if we didn't do the discovery procedure yet.
     // We have all the information we need from the peer, so we can
     // proceed with the OTA codec configuration.
-    APPL_TRACE_ERROR("%s: cannot find peer SEP to configure", __func__);
+    APPL_TRACE_ERROR("%s: peer %s : cannot find peer SEP to configure",
+                     __func__, p_peer->addr.ToString().c_str());
     return false;
   }
 
@@ -1912,7 +1989,8 @@ bool BtaAvCo::SetCodecOtaConfig(BtaAvCoPeer* p_peer,
   if (!p_peer->GetCodecs()->setCodecOtaConfig(
           p_ota_codec_config, &peer_params, result_codec_config, &restart_input,
           &restart_output, &config_updated)) {
-    APPL_TRACE_ERROR("%s: cannot set OTA config", __func__);
+    APPL_TRACE_ERROR("%s: peer %s : cannot set OTA config", __func__,
+                     p_peer->addr.ToString().c_str());
     return false;
   }
 
@@ -1986,8 +2064,9 @@ tA2DP_STATUS bta_av_co_audio_getconfig(tBTA_AV_HNDL bta_av_handle,
     default:
       break;
   }
-  APPL_TRACE_ERROR("%s: Invalid peer UUID: 0x%x for bta_av_handle 0x%x",
-                   peer_uuid, bta_av_handle);
+  APPL_TRACE_ERROR(
+      "%s: peer %s : Invalid peer UUID: 0x%x for bta_av_handle 0x%x",
+      peer_address.ToString().c_str(), peer_uuid, bta_av_handle);
   return A2DP_FAIL;
 }
 
