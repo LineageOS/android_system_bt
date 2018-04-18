@@ -379,8 +379,10 @@ static void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
     return;
   }
 
+#if (DISABLE_WBS == FALSE)
   if ((p_scb->sco_codec == BTA_AG_CODEC_MSBC) && !p_scb->codec_fallback)
     esco_codec = BTA_AG_CODEC_MSBC;
+#endif
 
   if (p_scb->codec_fallback) {
     p_scb->codec_fallback = false;
@@ -621,9 +623,14 @@ static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
           /* remove listening connection */
           bta_ag_remove_sco(p_scb, false);
 
+#if (DISABLE_WBS == FALSE)
           /* start codec negotiation */
           p_sco->state = BTA_AG_SCO_CODEC_ST;
           bta_ag_codec_negotiate(p_scb);
+#else
+          bta_ag_create_sco(p_scb, true);
+          p_sco->state = BTA_AG_SCO_OPENING_ST;
+#endif
           break;
 
         case BTA_AG_SCO_SHUTDOWN_E:
@@ -718,11 +725,13 @@ static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
           }
           break;
 
+#if (DISABLE_WBS == FALSE)
         case BTA_AG_SCO_REOPEN_E:
           /* start codec negotiation */
           p_sco->state = BTA_AG_SCO_CODEC_ST;
           bta_ag_codec_negotiate(p_scb);
           break;
+#endif
 
         case BTA_AG_SCO_XFER_E:
           /* save xfer scb */
@@ -995,11 +1004,18 @@ static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
           bta_ag_create_sco(p_scb, false);
           bta_ag_remove_sco(p_sco->p_xfer_scb, false);
 
+#if (DISABLE_WBS == FALSE)
           /* start codec negotiation */
           p_sco->state = BTA_AG_SCO_CODEC_ST;
           tBTA_AG_SCB* p_cn_scb = p_sco->p_xfer_scb;
           p_sco->p_xfer_scb = nullptr;
           bta_ag_codec_negotiate(p_cn_scb);
+#else
+          /* create sco connection to peer */
+          bta_ag_create_sco(p_sco->p_xfer_scb, true);
+          p_sco->p_xfer_scb = nullptr;
+          p_sco->state = BTA_AG_SCO_OPENING_ST;
+#endif
           break;
         }
 
