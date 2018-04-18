@@ -908,6 +908,28 @@ fail:
   return false;
 }
 
+bool A2dpCodecs::setPeerSinkCodecCapabilities(
+    const uint8_t* p_peer_codec_capabilities) {
+  std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
+
+  if (!A2DP_IsPeerSinkCodecValid(p_peer_codec_capabilities)) return false;
+  A2dpCodecConfig* a2dp_codec_config =
+      findSourceCodecConfig(p_peer_codec_capabilities);
+  if (a2dp_codec_config == nullptr) return false;
+  return a2dp_codec_config->setPeerCodecCapabilities(p_peer_codec_capabilities);
+}
+
+bool A2dpCodecs::setPeerSourceCodecCapabilities(
+    const uint8_t* p_peer_codec_capabilities) {
+  std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
+
+  if (!A2DP_IsPeerSourceCodecValid(p_peer_codec_capabilities)) return false;
+  A2dpCodecConfig* a2dp_codec_config =
+      findSinkCodecConfig(p_peer_codec_capabilities);
+  if (a2dp_codec_config == nullptr) return false;
+  return a2dp_codec_config->setPeerCodecCapabilities(p_peer_codec_capabilities);
+}
+
 bool A2dpCodecs::getCodecConfigAndCapabilities(
     btav_a2dp_codec_config_t* p_codec_config,
     std::vector<btav_a2dp_codec_config_t>* p_codecs_local_capabilities,

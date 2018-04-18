@@ -1523,24 +1523,30 @@ void bta_av_save_caps(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   cfg = p_scb->peer_cap;
   /* let application know the capability of the SNK */
-  p_scb->p_cos->getcfg(p_scb->hndl, p_scb->peer_addr, cfg.codec_info,
-                       &p_scb->sep_info_idx, p_info->seid, &cfg.num_protect,
-                       cfg.protect_info);
-
-  p_scb->sep_info_idx++;
-  APPL_TRACE_DEBUG("%s: result: sep_info_idx:%d", __func__,
-                   p_scb->sep_info_idx);
+  if (p_scb->p_cos->getcfg(p_scb->hndl, p_scb->peer_addr, cfg.codec_info,
+                           &p_scb->sep_info_idx, p_info->seid, &cfg.num_protect,
+                           cfg.protect_info) != A2DP_SUCCESS) {
+    p_scb->sep_info_idx++;
+    APPL_TRACE_DEBUG("%s: result: next sep_info_idx:%d", __func__,
+                     p_scb->sep_info_idx);
+  } else {
+    // All capabilities found
+    getcap_done = true;
+    APPL_TRACE_DEBUG("%s: result: done sep_info_idx:%d", __func__,
+                     p_scb->sep_info_idx);
+  }
   APPL_TRACE_DEBUG("%s: codec: %s", __func__,
                    A2DP_CodecInfoString(cfg.codec_info).c_str());
 
-  if (p_scb->num_seps > p_scb->sep_info_idx) {
+  if (p_scb->num_seps > p_scb->sep_info_idx && !getcap_done) {
     /* Some devices have seps at the end of the discover list, which is not */
     /* matching media type(video not audio).                                */
     /* In this case, we are done with getcap without sending another        */
     /* request to AVDT.                                                     */
     if (!bta_av_next_getcap(p_scb, p_data)) getcap_done = true;
-  } else
+  } else {
     getcap_done = true;
+  }
 
   if (getcap_done) {
     APPL_TRACE_DEBUG("%s: getcap_done: num_seps:%d sep_info_idx:%d wait:0x%x",
@@ -1669,9 +1675,9 @@ void bta_av_getcap_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   memcpy(cfg.codec_info, p_scb->peer_cap.codec_info, AVDT_CODEC_SIZE);
   memcpy(cfg.protect_info, p_scb->peer_cap.protect_info, AVDT_PROTECT_SIZE);
 
-  APPL_TRACE_DEBUG("%s: peer %s handle:%d num_codec:%d", __func__,
+  APPL_TRACE_DEBUG("%s: peer %s handle:%d num_codec:%d psc_mask=0x%x", __func__,
                    p_scb->peer_addr.ToString().c_str(), p_scb->hndl,
-                   p_scb->peer_cap.num_codec);
+                   p_scb->peer_cap.num_codec, p_scb->cfg.psc_mask);
   APPL_TRACE_DEBUG("%s: media type 0x%x, 0x%x", __func__, media_type,
                    p_scb->media_type);
   APPL_TRACE_DEBUG("%s: codec: %s", __func__,
@@ -1704,6 +1710,11 @@ void bta_av_getcap_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     /* use only the services peer supports */
     cfg.psc_mask &= p_scb->peer_cap.psc_mask;
     p_scb->cur_psc_mask = cfg.psc_mask;
+    APPL_TRACE_DEBUG(
+        "%s: peer %s handle:%d sep_idx:%d sep_info_idx:%d "
+        "cur_psc_mask:0x%x",
+        __func__, p_scb->peer_addr.ToString().c_str(), p_scb->hndl,
+        p_scb->sep_idx, p_scb->sep_info_idx, p_scb->cur_psc_mask);
 
     if ((uuid_int == UUID_SERVCLASS_AUDIO_SINK) &&
         (p_scb->seps[p_scb->sep_idx].p_app_sink_data_cback != NULL)) {
