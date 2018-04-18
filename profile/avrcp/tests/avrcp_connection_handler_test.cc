@@ -31,6 +31,7 @@ using ::testing::SaveArgPointee;
 using ::testing::SetArgPointee;
 using ::testing::MockFunction;
 using ::testing::NiceMock;
+using ::testing::StrictMock;
 
 namespace bluetooth {
 namespace avrcp {
@@ -83,6 +84,7 @@ class AvrcpConnectionHandlerTest : public testing::Test {
   NiceMock<MockFunction<void(device_ptr)>> device_cb;
   NiceMock<MockAvrcpInterface> mock_avrcp_;
   NiceMock<MockSdpInterface> mock_sdp_;
+  NiceMock<MockVolumeInterface> mock_volume_;
 };
 
 TEST_F(AvrcpConnectionHandlerTest, initializeTest) {
@@ -96,8 +98,8 @@ TEST_F(AvrcpConnectionHandlerTest, initializeTest) {
 
   auto bound_callback = base::Bind(&MockFunction<void(device_ptr)>::Call,
                                    base::Unretained(&device_cb));
-  ASSERT_TRUE(
-      ConnectionHandler::Initialize(bound_callback, &mock_avrcp_, &mock_sdp_));
+  ASSERT_TRUE(ConnectionHandler::Initialize(bound_callback, &mock_avrcp_,
+                                            &mock_sdp_, &mock_volume_));
   connection_handler_ = ConnectionHandler::Get();
 
   // Check that the callback was sent with us as the acceptor
@@ -123,8 +125,8 @@ TEST_F(AvrcpConnectionHandlerTest, remoteDeviceConnectionTest) {
   // Initialize the interface
   auto bound_callback = base::Bind(&MockFunction<void(device_ptr)>::Call,
                                    base::Unretained(&device_cb));
-  ASSERT_TRUE(
-      ConnectionHandler::Initialize(bound_callback, &mock_avrcp_, &mock_sdp_));
+  ASSERT_TRUE(ConnectionHandler::Initialize(bound_callback, &mock_avrcp_,
+                                            &mock_sdp_, &mock_volume_));
   connection_handler_ = ConnectionHandler::Get();
 
   // Check that the callback was sent with us as the acceptor
@@ -151,6 +153,79 @@ TEST_F(AvrcpConnectionHandlerTest, remoteDeviceConnectionTest) {
   ConnectionHandler::CleanUp();
 }
 
+// Check that when a device does not support absolute volume, that the
+// handler reports that via the volume interface.
+TEST_F(AvrcpConnectionHandlerTest, noAbsoluteVolumeTest) {
+  // Set an Expectation that Open will be called twice as an acceptor and save
+  // the connection callback once it is called.
+  tAVRC_CONN_CB conn_cb;
+  EXPECT_CALL(mock_avrcp_, Open(_, _, RawAddress::kAny))
+      .Times(2)
+      .WillOnce(
+          DoAll(SetArgPointee<0>(1), SaveArgPointee<1>(&conn_cb), Return(0)))
+      .WillOnce(
+          DoAll(SetArgPointee<0>(2), SaveArgPointee<1>(&conn_cb), Return(0)));
+
+  // Initialize the interface
+  auto bound_callback = base::Bind(&MockFunction<void(device_ptr)>::Call,
+                                   base::Unretained(&device_cb));
+  ASSERT_TRUE(ConnectionHandler::Initialize(bound_callback, &mock_avrcp_,
+                                            &mock_sdp_, &mock_volume_));
+  connection_handler_ = ConnectionHandler::Get();
+
+  // Set an Expectations that SDP will be performed
+  tAVRC_FIND_CBACK sdp_cb;
+  SetUpSdp(&sdp_cb, false, false);
+
+  EXPECT_CALL(mock_volume_, DeviceConnected(RawAddress::kAny)).Times(1);
+
+  // Call the callback with a message saying that a remote device has connected
+  conn_cb.ctrl_cback.Run(1, AVRC_OPEN_IND_EVT, 0, &RawAddress::kAny);
+
+  // Run the SDP callback with status success
+  sdp_cb.Run(0);
+
+  connection_handler_ = nullptr;
+  ConnectionHandler::CleanUp();
+}
+
+// Check that when a device does support absolute volume, that the handler
+// doesn't report it. Instead that will be left up to the device.
+TEST_F(AvrcpConnectionHandlerTest, absoluteVolumeTest) {
+  // Set an Expectation that Open will be called twice as an acceptor and save
+  // the connection callback once it is called.
+  tAVRC_CONN_CB conn_cb;
+  EXPECT_CALL(mock_avrcp_, Open(_, _, RawAddress::kAny))
+      .Times(2)
+      .WillOnce(
+          DoAll(SetArgPointee<0>(1), SaveArgPointee<1>(&conn_cb), Return(0)))
+      .WillOnce(
+          DoAll(SetArgPointee<0>(2), SaveArgPointee<1>(&conn_cb), Return(0)));
+
+  // Initialize the interface
+  auto bound_callback = base::Bind(&MockFunction<void(device_ptr)>::Call,
+                                   base::Unretained(&device_cb));
+
+  StrictMock<MockVolumeInterface> strict_volume;
+  ASSERT_TRUE(ConnectionHandler::Initialize(bound_callback, &mock_avrcp_,
+                                            &mock_sdp_, &strict_volume));
+  connection_handler_ = ConnectionHandler::Get();
+
+  // Set an Expectations that SDP will be performed with absolute volume
+  // supported
+  tAVRC_FIND_CBACK sdp_cb;
+  SetUpSdp(&sdp_cb, false, true);
+
+  // Call the callback with a message saying that a remote device has connected
+  conn_cb.ctrl_cback.Run(1, AVRC_OPEN_IND_EVT, 0, &RawAddress::kAny);
+
+  // Run the SDP callback with status success
+  sdp_cb.Run(0);
+
+  connection_handler_ = nullptr;
+  ConnectionHandler::CleanUp();
+}
+
 TEST_F(AvrcpConnectionHandlerTest, disconnectTest) {
   // Set an Expectation that Open will be called twice as an acceptor and save
   // the connection callback once it is called.
@@ -164,8 +239,8 @@ TEST_F(AvrcpConnectionHandlerTest, disconnectTest) {
   // Initialize the interface
   auto bound_callback = base::Bind(&MockFunction<void(device_ptr)>::Call,
                                    base::Unretained(&device_cb));
-  ASSERT_TRUE(
-      ConnectionHandler::Initialize(bound_callback, &mock_avrcp_, &mock_sdp_));
+  ASSERT_TRUE(ConnectionHandler::Initialize(bound_callback, &mock_avrcp_,
+                                            &mock_sdp_, &mock_volume_));
   connection_handler_ = ConnectionHandler::Get();
 
   // Call the callback with a message saying that a remote device has connected
@@ -200,8 +275,8 @@ TEST_F(AvrcpConnectionHandlerTest, multipleRemoteDeviceConnectionTest) {
   // Initialize the interface
   auto bound_callback = base::Bind(&MockFunction<void(device_ptr)>::Call,
                                    base::Unretained(&device_cb));
-  ASSERT_TRUE(
-      ConnectionHandler::Initialize(bound_callback, &mock_avrcp_, &mock_sdp_));
+  ASSERT_TRUE(ConnectionHandler::Initialize(bound_callback, &mock_avrcp_,
+                                            &mock_sdp_, &mock_volume_));
   connection_handler_ = ConnectionHandler::Get();
 
   // Check that the callback was sent with us as the acceptor
@@ -259,8 +334,8 @@ TEST_F(AvrcpConnectionHandlerTest, cleanupTest) {
   // Initialize the interface
   auto bound_callback = base::Bind(&MockFunction<void(device_ptr)>::Call,
                                    base::Unretained(&device_cb));
-  ASSERT_TRUE(
-      ConnectionHandler::Initialize(bound_callback, &mock_avrcp_, &mock_sdp_));
+  ASSERT_TRUE(ConnectionHandler::Initialize(bound_callback, &mock_avrcp_,
+                                            &mock_sdp_, &mock_volume_));
   connection_handler_ = ConnectionHandler::Get();
 
   // Call the callback twice with a message saying that a remote device has
@@ -281,8 +356,8 @@ TEST_F(AvrcpConnectionHandlerTest, connectToRemoteDeviceTest) {
   // Initialize the interface
   auto bound_callback = base::Bind(&MockFunction<void(device_ptr)>::Call,
                                    base::Unretained(&device_cb));
-  ASSERT_TRUE(
-      ConnectionHandler::Initialize(bound_callback, &mock_avrcp_, &mock_sdp_));
+  ASSERT_TRUE(ConnectionHandler::Initialize(bound_callback, &mock_avrcp_,
+                                            &mock_sdp_, &mock_volume_));
   connection_handler_ = ConnectionHandler::Get();
 
   // Set an Expectation that SDP will be performed
@@ -326,8 +401,8 @@ TEST_F(AvrcpConnectionHandlerTest, connectToBrowsableRemoteDeviceTest) {
   // Initialize the interface
   auto bound_callback = base::Bind(&MockFunction<void(device_ptr)>::Call,
                                    base::Unretained(&device_cb));
-  ASSERT_TRUE(
-      ConnectionHandler::Initialize(bound_callback, &mock_avrcp_, &mock_sdp_));
+  ASSERT_TRUE(ConnectionHandler::Initialize(bound_callback, &mock_avrcp_,
+                                            &mock_sdp_, &mock_volume_));
   connection_handler_ = ConnectionHandler::Get();
 
   // Set an Expectation that SDP will be performed
@@ -380,8 +455,8 @@ TEST_F(AvrcpConnectionHandlerTest, disconnectWhileDoingSdpTest) {
   // Initialize the interface
   auto bound_callback = base::Bind(&MockFunction<void(device_ptr)>::Call,
                                    base::Unretained(&device_cb));
-  ASSERT_TRUE(
-      ConnectionHandler::Initialize(bound_callback, &mock_avrcp_, &mock_sdp_));
+  ASSERT_TRUE(ConnectionHandler::Initialize(bound_callback, &mock_avrcp_,
+                                            &mock_sdp_, &mock_volume_));
   connection_handler_ = ConnectionHandler::Get();
 
   // Set an Expectation that SDP will be performed
