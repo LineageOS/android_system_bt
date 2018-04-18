@@ -263,8 +263,7 @@ static void a2dp_vendor_aptx_encoder_update(uint16_t peer_mtu,
   LOG_DEBUG(LOG_TAG, "%s: sample_rate=%u bits_per_sample=%u channel_count=%u",
             __func__, p_feeding_params->sample_rate,
             p_feeding_params->bits_per_sample, p_feeding_params->channel_count);
-
-  aptx_init_framing_params(&a2dp_aptx_encoder_cb.framing_params);
+  a2dp_vendor_aptx_feeding_reset();
 }
 
 void a2dp_vendor_aptx_encoder_cleanup(void) {
