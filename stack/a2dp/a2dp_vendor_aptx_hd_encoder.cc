@@ -264,8 +264,7 @@ static void a2dp_vendor_aptx_hd_encoder_update(
   LOG_DEBUG(LOG_TAG, "%s: sample_rate=%u bits_per_sample=%u channel_count=%u",
             __func__, p_feeding_params->sample_rate,
             p_feeding_params->bits_per_sample, p_feeding_params->channel_count);
-
-  aptx_hd_init_framing_params(&a2dp_aptx_hd_encoder_cb.framing_params);
+  a2dp_vendor_aptx_hd_feeding_reset();
 }
 
 void a2dp_vendor_aptx_hd_encoder_cleanup(void) {
