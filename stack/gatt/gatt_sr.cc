@@ -467,7 +467,7 @@ static tGATT_STATUS gatt_build_primary_service_rsp(
     if (!p_uuid) continue;
 
     if (op_code == GATT_REQ_READ_BY_GRP_TYPE)
-      handle_len = 4 + p_uuid->GetShortestRepresentationSize();
+      handle_len = 4 + gatt_build_uuid_to_stream_len(*p_uuid);
 
     /* get the length byte in the repsonse */
     if (p_msg->offset == 0) {
