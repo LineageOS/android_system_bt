@@ -1753,6 +1753,10 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
       break;  // Ignore
 
     case BTIF_AV_START_STREAM_REQ_EVT:
+      LOG_INFO(LOG_TAG, "%s: Peer %s : event=%s flags=%s", __PRETTY_FUNCTION__,
+               peer_.PeerAddress().ToString().c_str(),
+               BtifAvEvent::EventName(event).c_str(),
+               peer_.FlagsToString().c_str());
       BTA_AvStart(peer_.BtaHandle());
       peer_.SetFlags(BtifAvPeer::kFlagPendingStart);
       break;
@@ -1918,7 +1922,11 @@ bool BtifAvStateMachine::StateStarted::ProcessEvent(uint32_t event,
       break;  // Ignore
 
     case BTIF_AV_START_STREAM_REQ_EVT:
-      // We were remotely started, just ACK back the local request
+      LOG_INFO(LOG_TAG, "%s: Peer %s : event=%s flags=%s", __PRETTY_FUNCTION__,
+               peer_.PeerAddress().ToString().c_str(),
+               BtifAvEvent::EventName(event).c_str(),
+               peer_.FlagsToString().c_str());
+      // We were started remotely, just ACK back the local request
       if (peer_.IsSink())
         btif_a2dp_on_started(peer_.PeerAddress(), nullptr, true);
       break;
@@ -2749,9 +2757,9 @@ bool btif_av_stream_ready(void) {
   }
 
   int state = peer->StateMachine().StateId();
-  BTIF_TRACE_DEBUG("%s: Peer %s : state=%d, flags=%s", __func__,
-                   peer->PeerAddress().ToString().c_str(), state,
-                   peer->FlagsToString().c_str());
+  LOG_INFO(LOG_TAG, "%s: Peer %s : state=%d, flags=%s", __func__,
+           peer->PeerAddress().ToString().c_str(), state,
+           peer->FlagsToString().c_str());
   // check if we are remotely suspended or stop is pending
   if (peer->CheckFlags(BtifAvPeer::kFlagRemoteSuspend |
                        BtifAvPeer::kFlagPendingStop)) {

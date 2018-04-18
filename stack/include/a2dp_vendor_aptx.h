@@ -34,6 +34,8 @@ class A2dpCodecConfigAptx : public A2dpCodecConfig {
   period_ms_t encoderIntervalMs() const override;
   bool setCodecConfig(const uint8_t* p_peer_codec_info, bool is_capability,
                       uint8_t* p_result_codec_config) override;
+  bool setPeerCodecCapabilities(
+      const uint8_t* p_peer_codec_capabilities) override;
 
  private:
   bool useRtpHeaderMarkerBit() const override;
