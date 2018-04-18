@@ -549,13 +549,17 @@ bool A2dpCodecs::init() {
   char* tok = NULL;
   char* tmp_token = NULL;
   bool offload_codec_support[BTAV_A2DP_CODEC_INDEX_MAX] = {false};
-  char value_cap[PROPERTY_VALUE_MAX], value_enable[PROPERTY_VALUE_MAX];
-  osi_property_get("persist.bluetooth.a2dp_offload.cap", value_cap, "false");
-  osi_property_get("persist.bluetooth.a2dp_offload.enable", value_enable,
+  char value_sup[PROPERTY_VALUE_MAX], value_dis[PROPERTY_VALUE_MAX];
+
+  osi_property_get("ro.bluetooth.a2dp_offload.supported", value_sup, "false");
+  osi_property_get("persist.bluetooth.a2dp_offload.disabled", value_dis,
                    "false");
-  a2dp_offload_status = (strcmp(value_enable, "true") == 0);
+  a2dp_offload_status =
+      (strcmp(value_sup, "true") == 0) && (strcmp(value_dis, "false") == 0);
 
   if (a2dp_offload_status) {
+    char value_cap[PROPERTY_VALUE_MAX];
+    osi_property_get("persist.bluetooth.a2dp_offload.cap", value_cap, "");
     tok = strtok_r((char*)value_cap, "-", &tmp_token);
     while (tok != NULL) {
       if (strcmp(tok, "sbc") == 0) {
