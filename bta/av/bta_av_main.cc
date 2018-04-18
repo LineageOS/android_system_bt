@@ -330,6 +330,17 @@ static tBTA_AV_SCB* bta_av_alloc_scb(tBTA_AV_CHNL chnl) {
   return nullptr;
 }
 
+void bta_av_free_scb(tBTA_AV_SCB* p_scb) {
+  if (p_scb == nullptr) return;
+  uint8_t scb_index = p_scb->hdi;
+  CHECK(scb_index < BTA_AV_NUM_STRS);
+
+  CHECK(p_scb == bta_av_cb.p_scb[scb_index]);
+  bta_av_cb.p_scb[scb_index] = nullptr;
+  alarm_free(p_scb->avrc_ct_timer);
+  osi_free(p_scb);
+}
+
 /*******************************************************************************
  ******************************************************************************/
 void bta_av_conn_cback(UNUSED_ATTR uint8_t handle, const RawAddress& bd_addr,
