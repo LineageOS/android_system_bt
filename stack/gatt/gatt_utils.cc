@@ -454,6 +454,14 @@ tGATT_TCB* gatt_allocate_tcb_by_bdaddr(const RawAddress& bda,
   return NULL;
 }
 
+/** gatt_build_uuid_to_stream will convert 32bit UUIDs to 128bit. This function
+ * will return lenght required to build uuid, either |UUID:kNumBytes16| or
+ * |UUID::kNumBytes128| */
+uint8_t gatt_build_uuid_to_stream_len(const Uuid& uuid) {
+  size_t len = uuid.GetShortestRepresentationSize();
+  return len == Uuid::kNumBytes32 ? Uuid::kNumBytes128 : len;
+}
+
 /** Add UUID into stream. Returns UUID length. */
 uint8_t gatt_build_uuid_to_stream(uint8_t** p_dst, const Uuid& uuid) {
   uint8_t* p = *p_dst;

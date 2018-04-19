@@ -42,7 +42,8 @@ ConnectionHandler* ConnectionHandler::Get() {
 }
 
 bool ConnectionHandler::Initialize(const ConnectionCallback& callback,
-                                   AvrcpInterface* avrcp, SdpInterface* sdp) {
+                                   AvrcpInterface* avrcp, SdpInterface* sdp,
+                                   VolumeInterface* vol) {
   CHECK(instance_ == nullptr);
   CHECK(avrcp != nullptr);
   CHECK(sdp != nullptr);
@@ -53,6 +54,7 @@ bool ConnectionHandler::Initialize(const ConnectionCallback& callback,
   instance_->connection_cb_ = callback;
   instance_->avrc_ = avrcp;
   instance_->sdp_ = sdp;
+  instance_->vol_ = vol;
 
   // Set up the AVRCP acceptor connection
   if (!instance_->AvrcpConnect(false, RawAddress::kAny)) {
@@ -232,13 +234,16 @@ void ConnectionHandler::InitiatorControlCb(uint8_t handle, uint8_t event,
 
       if (feature_iter->second & BTA_AV_FEAT_ADV_CTRL) {
         newDevice->RegisterVolumeChanged();
+      } else if (instance_->vol_ != nullptr) {
+        instance_->vol_->DeviceConnected(newDevice->GetAddress());
       }
+
     } break;
 
     case AVRC_CLOSE_IND_EVT: {
       LOG(INFO) << __PRETTY_FUNCTION__ << ": Connection Closed Event";
 
-      if (device_map_[handle] == nullptr) {
+      if (device_map_.find(handle) == device_map_.end()) {
         LOG(WARNING)
             << "Connection Close received from device that doesn't exist";
         return;
@@ -308,6 +313,8 @@ void ConnectionHandler::AcceptorControlCb(uint8_t handle, uint8_t event,
         // connected that doesn't support absolute volume.
         if (features & BTA_AV_FEAT_ADV_CTRL) {
           device->RegisterVolumeChanged();
+        } else if (instance_->vol_ != nullptr) {
+          instance_->vol_->DeviceConnected(device->GetAddress());
         }
       };
 
@@ -320,7 +327,7 @@ void ConnectionHandler::AcceptorControlCb(uint8_t handle, uint8_t event,
     case AVRC_CLOSE_IND_EVT: {
       LOG(INFO) << __PRETTY_FUNCTION__ << ": Connection Closed Event";
 
-      if (device_map_[handle] == nullptr) {
+      if (device_map_.find(handle) == device_map_.end()) {
         LOG(WARNING)
             << "Connection Close received from device that doesn't exist";
         return;

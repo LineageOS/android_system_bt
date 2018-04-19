@@ -222,6 +222,7 @@ static void a2dp_aac_encoder_update(uint16_t peer_mtu,
   LOG_DEBUG(LOG_TAG, "%s: sample_rate=%u bits_per_sample=%u channel_count=%u",
             __func__, p_feeding_params->sample_rate,
             p_feeding_params->bits_per_sample, p_feeding_params->channel_count);
+  a2dp_aac_feeding_reset();
 
   // The codec parameters
   p_encoder_params->sample_rate =
