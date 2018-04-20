@@ -54,8 +54,6 @@
  *****************************************************************************/
 static const std::string kBtifAvSourceServiceName = "Advanced Audio Source";
 static const std::string kBtifAvSinkServiceName = "Advanced Audio Sink";
-static const std::string kBtifAvA2dpOffloadEnable =
-    "persist.bluetooth.a2dp_offload.enable";
 static constexpr int kDefaultMaxConnectedAudioDevices = 1;
 static constexpr tBTA_AV_HNDL kBtaHandleUnknown = 0;
 
@@ -907,9 +905,13 @@ bt_status_t BtifAvSource::Init(
   max_connected_peers_ = max_connected_audio_devices;
 
   /* A2DP OFFLOAD */
-  char value[PROPERTY_VALUE_MAX] = {'\0'};
-  osi_property_get(kBtifAvA2dpOffloadEnable.c_str(), value, "false");
-  a2dp_offload_enabled_ = (strcmp(value, "true") == 0);
+  char value_sup[PROPERTY_VALUE_MAX] = {'\0'};
+  char value_dis[PROPERTY_VALUE_MAX] = {'\0'};
+  osi_property_get("ro.bluetooth.a2dp_offload.supported", value_sup, "false");
+  osi_property_get("persist.bluetooth.a2dp_offload.disabled", value_dis,
+                   "false");
+  a2dp_offload_enabled_ =
+      (strcmp(value_sup, "true") == 0) && (strcmp(value_dis, "false") == 0);
   BTIF_TRACE_DEBUG("a2dp_offload.enable = %d", a2dp_offload_enabled_);
 
   callbacks_ = callbacks;
@@ -1753,6 +1755,10 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
       break;  // Ignore
 
     case BTIF_AV_START_STREAM_REQ_EVT:
+      LOG_INFO(LOG_TAG, "%s: Peer %s : event=%s flags=%s", __PRETTY_FUNCTION__,
+               peer_.PeerAddress().ToString().c_str(),
+               BtifAvEvent::EventName(event).c_str(),
+               peer_.FlagsToString().c_str());
       BTA_AvStart(peer_.BtaHandle());
       peer_.SetFlags(BtifAvPeer::kFlagPendingStart);
       break;
@@ -1918,7 +1924,11 @@ bool BtifAvStateMachine::StateStarted::ProcessEvent(uint32_t event,
       break;  // Ignore
 
     case BTIF_AV_START_STREAM_REQ_EVT:
-      // We were remotely started, just ACK back the local request
+      LOG_INFO(LOG_TAG, "%s: Peer %s : event=%s flags=%s", __PRETTY_FUNCTION__,
+               peer_.PeerAddress().ToString().c_str(),
+               BtifAvEvent::EventName(event).c_str(),
+               peer_.FlagsToString().c_str());
+      // We were started remotely, just ACK back the local request
       if (peer_.IsSink())
         btif_a2dp_on_started(peer_.PeerAddress(), nullptr, true);
       break;
@@ -2749,9 +2759,9 @@ bool btif_av_stream_ready(void) {
   }
 
   int state = peer->StateMachine().StateId();
-  BTIF_TRACE_DEBUG("%s: Peer %s : state=%d, flags=%s", __func__,
-                   peer->PeerAddress().ToString().c_str(), state,
-                   peer->FlagsToString().c_str());
+  LOG_INFO(LOG_TAG, "%s: Peer %s : state=%d, flags=%s", __func__,
+           peer->PeerAddress().ToString().c_str(), state,
+           peer->FlagsToString().c_str());
   // check if we are remotely suspended or stop is pending
   if (peer->CheckFlags(BtifAvPeer::kFlagRemoteSuspend |
                        BtifAvPeer::kFlagPendingStop)) {

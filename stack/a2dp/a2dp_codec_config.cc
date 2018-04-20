@@ -549,13 +549,17 @@ bool A2dpCodecs::init() {
   char* tok = NULL;
   char* tmp_token = NULL;
   bool offload_codec_support[BTAV_A2DP_CODEC_INDEX_MAX] = {false};
-  char value_cap[PROPERTY_VALUE_MAX], value_enable[PROPERTY_VALUE_MAX];
-  osi_property_get("persist.bluetooth.a2dp_offload.cap", value_cap, "false");
-  osi_property_get("persist.bluetooth.a2dp_offload.enable", value_enable,
+  char value_sup[PROPERTY_VALUE_MAX], value_dis[PROPERTY_VALUE_MAX];
+
+  osi_property_get("ro.bluetooth.a2dp_offload.supported", value_sup, "false");
+  osi_property_get("persist.bluetooth.a2dp_offload.disabled", value_dis,
                    "false");
-  a2dp_offload_status = (strcmp(value_enable, "true") == 0);
+  a2dp_offload_status =
+      (strcmp(value_sup, "true") == 0) && (strcmp(value_dis, "false") == 0);
 
   if (a2dp_offload_status) {
+    char value_cap[PROPERTY_VALUE_MAX];
+    osi_property_get("persist.bluetooth.a2dp_offload.cap", value_cap, "");
     tok = strtok_r((char*)value_cap, "-", &tmp_token);
     while (tok != NULL) {
       if (strcmp(tok, "sbc") == 0) {
@@ -906,6 +910,28 @@ bool A2dpCodecs::setCodecOtaConfig(
 fail:
   current_codec_config_ = last_codec_config;
   return false;
+}
+
+bool A2dpCodecs::setPeerSinkCodecCapabilities(
+    const uint8_t* p_peer_codec_capabilities) {
+  std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
+
+  if (!A2DP_IsPeerSinkCodecValid(p_peer_codec_capabilities)) return false;
+  A2dpCodecConfig* a2dp_codec_config =
+      findSourceCodecConfig(p_peer_codec_capabilities);
+  if (a2dp_codec_config == nullptr) return false;
+  return a2dp_codec_config->setPeerCodecCapabilities(p_peer_codec_capabilities);
+}
+
+bool A2dpCodecs::setPeerSourceCodecCapabilities(
+    const uint8_t* p_peer_codec_capabilities) {
+  std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
+
+  if (!A2DP_IsPeerSourceCodecValid(p_peer_codec_capabilities)) return false;
+  A2dpCodecConfig* a2dp_codec_config =
+      findSinkCodecConfig(p_peer_codec_capabilities);
+  if (a2dp_codec_config == nullptr) return false;
+  return a2dp_codec_config->setPeerCodecCapabilities(p_peer_codec_capabilities);
 }
 
 bool A2dpCodecs::getCodecConfigAndCapabilities(

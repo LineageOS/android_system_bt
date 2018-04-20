@@ -148,13 +148,13 @@ static tGATT_STATUS gatts_check_attr_readability(const tGATT_ATTR& attr,
  *
  * Description      Utility function to read an attribute value.
  *
- * Parameter        p_attr: pointer to the attribute to read.
+ * Parameter        attr16: pointer to the attribute to read.
  *                  offset: read offset.
- *                  p_value: output parameter to carry out the attribute value.
- *                  p_len: output parameter to carry out the attribute length.
+ *                  p_data: output parameter to carry out the attribute value.
  *                  read_long: this is a read blob request.
  *                  mtu: MTU
- *                  sec_flag: current link security status.
+ *                  p_len: output parameter to carry out the attribute length.
+ *                   sec_flag: current link security status.
  *                  key_size: encryption key size.
  *
  * Returns          status of operation.
@@ -182,7 +182,7 @@ static tGATT_STATUS read_attr_value(tGATT_ATTR& attr16, uint16_t offset,
   uint16_t uuid16 = attr16.uuid.As16Bit();
 
   if (uuid16 == GATT_UUID_PRI_SERVICE || uuid16 == GATT_UUID_SEC_SERVICE) {
-    *p_len = attr16.p_value->uuid.GetShortestRepresentationSize();
+    *p_len = gatt_build_uuid_to_stream_len(attr16.p_value->uuid);
     if (mtu < *p_len) return GATT_NO_RESOURCES;
 
     gatt_build_uuid_to_stream(&p, attr16.p_value->uuid);

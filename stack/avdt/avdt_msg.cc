@@ -469,6 +469,9 @@ static void avdt_msg_bld_discover_rsp(uint8_t** p, tAVDT_MSG* p_msg) {
 static void avdt_msg_bld_svccap(uint8_t** p, tAVDT_MSG* p_msg) {
   AvdtpSepConfig cfg = *p_msg->svccap.p_cfg;
 
+  // Include only the Basic Capability
+  cfg.psc_mask &= AVDT_LEG_PSC;
+
   avdt_msg_bld_cfg(p, &cfg);
 }
 

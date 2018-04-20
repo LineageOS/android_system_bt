@@ -1425,12 +1425,13 @@ bool A2dpCodecConfigSbcBase::setCodecConfig(const uint8_t* p_peer_codec_info,
   // Create a local copy of the peer codec capability/config, and the
   // result codec config.
   if (is_capability) {
-    memcpy(ota_codec_peer_capability_, p_peer_codec_info,
-           sizeof(ota_codec_peer_capability_));
+    status = A2DP_BuildInfoSbc(AVDT_MEDIA_TYPE_AUDIO, &peer_info_cie,
+                               ota_codec_peer_capability_);
   } else {
-    memcpy(ota_codec_peer_config_, p_peer_codec_info,
-           sizeof(ota_codec_peer_config_));
+    status = A2DP_BuildInfoSbc(AVDT_MEDIA_TYPE_AUDIO, &peer_info_cie,
+                               ota_codec_peer_config_);
   }
+  CHECK(status == A2DP_SUCCESS);
   status = A2DP_BuildInfoSbc(AVDT_MEDIA_TYPE_AUDIO, &result_config_cie,
                              ota_codec_config_);
   CHECK(status == A2DP_SUCCESS);
@@ -1448,6 +1449,77 @@ fail:
          sizeof(ota_codec_peer_capability_));
   memcpy(ota_codec_peer_config_, saved_ota_codec_peer_config,
          sizeof(ota_codec_peer_config_));
+  return false;
+}
+
+bool A2dpCodecConfigSbcBase::setPeerCodecCapabilities(
+    const uint8_t* p_peer_codec_capabilities) {
+  std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
+  tA2DP_SBC_CIE peer_info_cie;
+  uint8_t samp_freq;
+  uint8_t ch_mode;
+  const tA2DP_SBC_CIE* p_a2dp_sbc_caps =
+      (is_source_) ? &a2dp_sbc_source_caps : &a2dp_sbc_sink_caps;
+
+  // Save the internal state
+  btav_a2dp_codec_config_t saved_codec_selectable_capability =
+      codec_selectable_capability_;
+  uint8_t saved_ota_codec_peer_capability[AVDT_CODEC_SIZE];
+  memcpy(saved_ota_codec_peer_capability, ota_codec_peer_capability_,
+         sizeof(ota_codec_peer_capability_));
+
+  tA2DP_STATUS status =
+      A2DP_ParseInfoSbc(&peer_info_cie, p_peer_codec_capabilities, true);
+  if (status != A2DP_SUCCESS) {
+    LOG_ERROR(LOG_TAG, "%s: can't parse peer's capabilities: error = %d",
+              __func__, status);
+    goto fail;
+  }
+
+  // Compute the selectable capability - sample rate
+  samp_freq = p_a2dp_sbc_caps->samp_freq & peer_info_cie.samp_freq;
+  if (samp_freq & A2DP_SBC_IE_SAMP_FREQ_44) {
+    codec_selectable_capability_.sample_rate |=
+        BTAV_A2DP_CODEC_SAMPLE_RATE_44100;
+  }
+  if (samp_freq & A2DP_SBC_IE_SAMP_FREQ_48) {
+    codec_selectable_capability_.sample_rate |=
+        BTAV_A2DP_CODEC_SAMPLE_RATE_48000;
+  }
+
+  // Compute the selectable capability - bits per sample
+  codec_selectable_capability_.bits_per_sample =
+      p_a2dp_sbc_caps->bits_per_sample;
+
+  // Compute the selectable capability - channel mode
+  ch_mode = p_a2dp_sbc_caps->ch_mode & peer_info_cie.ch_mode;
+  if (ch_mode & A2DP_SBC_IE_CH_MD_MONO) {
+    codec_selectable_capability_.channel_mode |=
+        BTAV_A2DP_CODEC_CHANNEL_MODE_MONO;
+  }
+  if (ch_mode & A2DP_SBC_IE_CH_MD_JOINT) {
+    codec_selectable_capability_.channel_mode |=
+        BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO;
+  }
+  if (ch_mode & A2DP_SBC_IE_CH_MD_STEREO) {
+    codec_selectable_capability_.channel_mode |=
+        BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO;
+  }
+  if (ch_mode & A2DP_SBC_IE_CH_MD_DUAL) {
+    codec_selectable_capability_.channel_mode |=
+        BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO;
+  }
+
+  status = A2DP_BuildInfoSbc(AVDT_MEDIA_TYPE_AUDIO, &peer_info_cie,
+                             ota_codec_peer_capability_);
+  CHECK(status == A2DP_SUCCESS);
+  return true;
+
+fail:
+  // Restore the internal state
+  codec_selectable_capability_ = saved_codec_selectable_capability;
+  memcpy(ota_codec_peer_capability_, saved_ota_codec_peer_capability,
+         sizeof(ota_codec_peer_capability_));
   return false;
 }
 
