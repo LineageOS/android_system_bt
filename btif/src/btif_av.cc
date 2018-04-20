@@ -54,8 +54,6 @@
  *****************************************************************************/
 static const std::string kBtifAvSourceServiceName = "Advanced Audio Source";
 static const std::string kBtifAvSinkServiceName = "Advanced Audio Sink";
-static const std::string kBtifAvA2dpOffloadEnable =
-    "persist.bluetooth.a2dp_offload.enable";
 static constexpr int kDefaultMaxConnectedAudioDevices = 1;
 static constexpr tBTA_AV_HNDL kBtaHandleUnknown = 0;
 
@@ -907,9 +905,13 @@ bt_status_t BtifAvSource::Init(
   max_connected_peers_ = max_connected_audio_devices;
 
   /* A2DP OFFLOAD */
-  char value[PROPERTY_VALUE_MAX] = {'\0'};
-  osi_property_get(kBtifAvA2dpOffloadEnable.c_str(), value, "false");
-  a2dp_offload_enabled_ = (strcmp(value, "true") == 0);
+  char value_sup[PROPERTY_VALUE_MAX] = {'\0'};
+  char value_dis[PROPERTY_VALUE_MAX] = {'\0'};
+  osi_property_get("ro.bluetooth.a2dp_offload.supported", value_sup, "false");
+  osi_property_get("persist.bluetooth.a2dp_offload.disabled", value_dis,
+                   "false");
+  a2dp_offload_enabled_ =
+      (strcmp(value_sup, "true") == 0) && (strcmp(value_dis, "false") == 0);
   BTIF_TRACE_DEBUG("a2dp_offload.enable = %d", a2dp_offload_enabled_);
 
   callbacks_ = callbacks;
