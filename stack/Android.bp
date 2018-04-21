@@ -197,7 +197,9 @@ cc_test {
         "system/bt",
         "system/bt/internal_include",
     ],
-    srcs: ["test/stack_a2dp_test.cc"],
+    srcs: [
+        "test/stack_a2dp_test.cc",
+    ],
     shared_libs: [
         "libhidlbase",
         "liblog",
@@ -219,6 +221,56 @@ cc_test {
     whole_static_libs: [
         "libbluetooth-for-tests",
     ],
+}
+
+cc_test {
+  name: "net_test_stack_rfcomm",
+  defaults: ["fluoride_defaults"],
+  host_supported: true,
+  local_include_dirs: [
+      "include",
+      "btm",
+      "l2cap",
+      "smp",
+      "rfcomm",
+      "test/common",
+  ],
+  include_dirs: [
+      "system/bt",
+      "system/bt/internal_include",
+      "system/bt/btcore/include",
+      "system/bt/hci/include",
+      "system/bt/utils/include",
+  ],
+  srcs: [
+      "rfcomm/port_api.cc",
+      "rfcomm/port_rfc.cc",
+      "rfcomm/port_utils.cc",
+      "rfcomm/rfc_l2cap_if.cc",
+      "rfcomm/rfc_mx_fsm.cc",
+      "rfcomm/rfc_port_fsm.cc",
+      "rfcomm/rfc_port_if.cc",
+      "rfcomm/rfc_ts_frames.cc",
+      "rfcomm/rfc_utils.cc",
+      "test/common/mock_btm_layer.cc",
+      "test/common/mock_btu_layer.cc",
+      "test/common/mock_l2cap_layer.cc",
+      "test/common/stack_test_packet_utils.cc",
+      "test/rfcomm/stack_rfcomm_test.cc",
+      "test/rfcomm/stack_rfcomm_test_main.cc",
+      "test/rfcomm/stack_rfcomm_test_utils.cc",
+      "test/rfcomm/stack_rfcomm_test_utils_test.cc",
+  ],
+  shared_libs: [
+      "libcutils",
+      "libprotobuf-cpp-lite",
+  ],
+  static_libs: [
+      "liblog",
+      "libgmock",
+      "libosi",
+      "libbt-protos-lite",
+  ],
 }
 
 // Bluetooth stack smp unit tests for target
