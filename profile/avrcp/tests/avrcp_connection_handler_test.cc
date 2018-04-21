@@ -133,6 +133,30 @@ TEST_F(AvrcpConnectionHandlerTest, notConnectedDisconnectTest) {
   ConnectionHandler::CleanUp();
 };
 
+// Test calling the connection callback after the handler is cleaned up
+TEST_F(AvrcpConnectionHandlerTest, disconnectAfterCleanupTest) {
+  // Set an Expectation that Open will be called twice as an acceptor and save
+  // the connection callback once it is called.
+  tAVRC_CONN_CB conn_cb;
+  EXPECT_CALL(mock_avrcp_, Open(_, _, RawAddress::kAny))
+      .Times(1)
+      .WillOnce(
+          DoAll(SetArgPointee<0>(1), SaveArgPointee<1>(&conn_cb), Return(0)));
+
+  // Initialize the interface
+  auto bound_callback = base::Bind(&MockFunction<void(device_ptr)>::Call,
+                                   base::Unretained(&device_cb));
+  ASSERT_TRUE(ConnectionHandler::Initialize(bound_callback, &mock_avrcp_,
+                                            &mock_sdp_, &mock_volume_));
+  connection_handler_ = ConnectionHandler::Get();
+
+  connection_handler_ = nullptr;
+  ConnectionHandler::CleanUp();
+
+  // Call the callback with a message saying the connection has closed
+  conn_cb.ctrl_cback.Run(1, AVRC_CLOSE_IND_EVT, 0, &RawAddress::kAny);
+};
+
 // Check that we can handle having a remote device connect to us, start SDP, and
 // open another acceptor connection
 TEST_F(AvrcpConnectionHandlerTest, remoteDeviceConnectionTest) {
