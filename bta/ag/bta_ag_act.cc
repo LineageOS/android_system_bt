@@ -174,8 +174,6 @@ void bta_ag_start_dereg(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
  *
  ******************************************************************************/
 void bta_ag_start_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
-  RawAddress pending_bd_addr = {};
-
   /* store parameters */
   if (!data.IsEmpty()) {
     p_scb->peer_addr = data.api_open.bd_addr;
@@ -184,7 +182,8 @@ void bta_ag_start_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   }
 
   /* Check if RFCOMM has any incoming connection to avoid collision. */
-  if (PORT_IsOpening(pending_bd_addr)) {
+  RawAddress pending_bd_addr = RawAddress::kEmpty;
+  if (PORT_IsOpening(&pending_bd_addr)) {
     /* Let the incoming connection goes through.                        */
     /* Issue collision for this scb for now.                            */
     /* We will decide what to do when we find incoming connetion later. */
@@ -502,44 +501,34 @@ void bta_ag_rfc_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
  *
  ******************************************************************************/
 void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
-  uint16_t lcid;
-  int i;
-  tBTA_AG_SCB *ag_scb, *other_scb;
-  RawAddress dev_addr = {};
-  int status;
-
+  APPL_TRACE_DEBUG("%s: serv_handle0 = %d serv_handle1 = %d", __func__,
+                   p_scb->serv_handle[0], p_scb->serv_handle[1]);
   /* set role */
   p_scb->role = BTA_AG_ACP;
 
-  APPL_TRACE_DEBUG("bta_ag_rfc_acp_open: serv_handle0 = %d serv_handle1 = %d",
-                   p_scb->serv_handle[0], p_scb->serv_handle[1]);
-
   /* get bd addr of peer */
-  if (PORT_SUCCESS !=
-      (status = PORT_CheckConnection(data.rfc.port_handle, dev_addr, &lcid))) {
-    APPL_TRACE_DEBUG(
-        "bta_ag_rfc_acp_open error PORT_CheckConnection returned status %d",
-        status);
+  uint16_t lcid = 0;
+  RawAddress dev_addr = RawAddress::kEmpty;
+  int status = PORT_CheckConnection(data.rfc.port_handle, &dev_addr, &lcid);
+  if (status != PORT_SUCCESS) {
+    LOG(ERROR) << __func__ << ", PORT_CheckConnection returned " << status;
   }
 
   /* Collision Handling */
-  for (i = 0, ag_scb = &bta_ag_cb.scb[0]; i < BTA_AG_MAX_NUM_CLIENTS;
-       i++, ag_scb++) {
-    if (ag_scb->in_use && alarm_is_scheduled(ag_scb->collision_timer)) {
-      alarm_cancel(ag_scb->collision_timer);
-
-      if (dev_addr == ag_scb->peer_addr) {
+  for (tBTA_AG_SCB& ag_scb : bta_ag_cb.scb) {
+    if (ag_scb.in_use && alarm_is_scheduled(ag_scb.collision_timer)) {
+      alarm_cancel(ag_scb.collision_timer);
+      if (dev_addr == ag_scb.peer_addr) {
         /* If incoming and outgoing device are same, nothing more to do. */
         /* Outgoing conn will be aborted because we have successful incoming
          * conn.  */
       } else {
         /* Resume outgoing connection. */
-        other_scb = bta_ag_get_other_idle_scb(p_scb);
+        tBTA_AG_SCB* other_scb = bta_ag_get_other_idle_scb(p_scb);
         if (other_scb) {
-          other_scb->peer_addr = ag_scb->peer_addr;
-          other_scb->open_services = ag_scb->open_services;
-          other_scb->cli_sec_mask = ag_scb->cli_sec_mask;
-
+          other_scb->peer_addr = ag_scb.peer_addr;
+          other_scb->open_services = ag_scb.open_services;
+          other_scb->cli_sec_mask = ag_scb.cli_sec_mask;
           bta_ag_resume_open(other_scb);
         }
       }
@@ -551,7 +540,7 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   p_scb->peer_addr = dev_addr;
 
   /* determine connected service from port handle */
-  for (i = 0; i < BTA_AG_NUM_IDX; i++) {
+  for (uint8_t i = 0; i < BTA_AG_NUM_IDX; i++) {
     APPL_TRACE_DEBUG(
         "bta_ag_rfc_acp_open: i = %d serv_handle = %d port_handle = %d", i,
         p_scb->serv_handle[i], data.rfc.port_handle);

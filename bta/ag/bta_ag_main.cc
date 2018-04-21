@@ -505,16 +505,11 @@ bool bta_ag_scb_open(tBTA_AG_SCB* p_curr_scb) {
  *
  ******************************************************************************/
 tBTA_AG_SCB* bta_ag_get_other_idle_scb(tBTA_AG_SCB* p_curr_scb) {
-  tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
-  uint8_t xx;
-
-  for (xx = 0; xx < BTA_AG_MAX_NUM_CLIENTS; xx++, p_scb++) {
-    if (p_scb->in_use && (p_scb != p_curr_scb) &&
-        (p_scb->state == BTA_AG_INIT_ST)) {
-      return p_scb;
+  for (tBTA_AG_SCB& scb : bta_ag_cb.scb) {
+    if (scb.in_use && (&scb != p_curr_scb) && (scb.state == BTA_AG_INIT_ST)) {
+      return &scb;
     }
   }
-
   /* no other scb found */
   APPL_TRACE_DEBUG("bta_ag_get_other_idle_scb: No idle AG scb");
   return nullptr;
@@ -559,13 +554,13 @@ void bta_ag_collision_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status, uint8_t id,
 
   if (p_scb && (p_scb->state == BTA_AG_OPENING_ST)) {
     if (id == BTA_ID_SYS) {
-      LOG(WARNING) << __func__ << "AG found collision (ACL) for handle "
+      LOG(WARNING) << __func__ << ": AG found collision (ACL) for handle "
                    << unsigned(handle) << " device " << peer_addr;
     } else if (id == BTA_ID_AG) {
-      LOG(WARNING) << __func__ << "AG found collision (RFCOMM) for handle "
+      LOG(WARNING) << __func__ << ": AG found collision (RFCOMM) for handle "
                    << unsigned(handle) << " device " << peer_addr;
     } else {
-      LOG(WARNING) << __func__ << "AG found collision (UNKNOWN) for handle "
+      LOG(WARNING) << __func__ << ": AG found collision (UNKNOWN) for handle "
                    << unsigned(handle) << " device " << peer_addr;
     }
 

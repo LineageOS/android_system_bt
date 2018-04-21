@@ -285,7 +285,7 @@ void rfc_check_mcb_active(tRFC_MCB* p_mcb) {
   uint16_t i;
 
   for (i = 0; i < RFCOMM_MAX_DLCI; i++) {
-    if (p_mcb->port_inx[i] != 0) {
+    if (p_mcb->port_handles[i] != 0) {
       p_mcb->is_disc_initiator = false;
       return;
     }
@@ -353,7 +353,7 @@ void rfc_port_closed(tPORT* p_port) {
 
   /* If multiplexer channel was up mark it as down */
   if (p_mcb) {
-    p_mcb->port_inx[p_port->dlci] = 0;
+    p_mcb->port_handles[p_port->dlci] = 0;
 
     /* If there are no more ports opened on this MCB release it */
     rfc_check_mcb_active(p_mcb);

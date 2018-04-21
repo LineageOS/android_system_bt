@@ -153,14 +153,19 @@ void rfc_send_buf_uih(tRFC_MCB* p_mcb, uint8_t dlci, BT_HDR* p_buf) {
   uint8_t credits;
 
   p_buf->offset -= RFCOMM_CTRL_FRAME_LEN;
-  if (p_buf->len > 127) p_buf->offset--;
+  if (p_buf->len > 127) {
+    p_buf->offset--;
+  }
 
-  if (dlci)
+  if (dlci) {
     credits = (uint8_t)p_buf->layer_specific;
-  else
+  } else {
     credits = 0;
+  }
 
-  if (credits) p_buf->offset--;
+  if (credits) {
+    p_buf->offset--;
+  }
 
   p_data = (uint8_t*)(p_buf + 1) + p_buf->offset;
 
@@ -218,11 +223,11 @@ void rfc_send_pn(tRFC_MCB* p_mcb, uint8_t dlci, bool is_command, uint16_t mtu,
   ** We will use the fact that we reply in the same context so rx_frame can
   *still be used.
   */
-  if (is_command)
+  if (is_command) {
     *p_data++ = RFCOMM_PN_PRIORITY_0;
-  else
+  } else {
     *p_data++ = rfc_cb.rfc.rx_frame.u.pn.priority;
-
+  }
   *p_data++ = RFCOMM_T1_DSEC;
   *p_data++ = mtu & 0xFF;
   *p_data++ = mtu >> 8;
@@ -527,8 +532,9 @@ uint8_t rfc_parse_data(tRFC_MCB* p_mcb, MX_FRAME* p_frame, BT_HDR* p_buf) {
     p_frame->credit = *p_data++;
     p_buf->len--;
     p_buf->offset++;
-  } else
+  } else {
     p_frame->credit = 0;
+  }
 
   if (p_buf->len != len) {
     RFCOMM_TRACE_ERROR("Bad Length2 %d %d", p_buf->len, len);
@@ -589,8 +595,9 @@ uint8_t rfc_parse_data(tRFC_MCB* p_mcb, MX_FRAME* p_frame, BT_HDR* p_buf) {
         /* we assume that this is ok to allow bad implementations to work */
         RFCOMM_TRACE_ERROR("Bad UIH - response");
         return (RFC_EVENT_UIH);
-      } else
+      } else {
         return (RFC_EVENT_UIH);
+      }
   }
 
   return (RFC_EVENT_BAD_FRAME);
@@ -609,7 +616,6 @@ void rfc_process_mx_message(tRFC_MCB* p_mcb, BT_HDR* p_buf) {
   MX_FRAME* p_rx_frame = &rfc_cb.rfc.rx_frame;
   uint16_t length = p_buf->len;
   uint8_t ea, cr, mx_len;
-  bool is_command;
 
   p_rx_frame->ea = *p_data & RFCOMM_EA;
   p_rx_frame->cr = (*p_data & RFCOMM_CR_MASK) >> RFCOMM_SHIFT_CR;
@@ -625,7 +631,7 @@ void rfc_process_mx_message(tRFC_MCB* p_mcb, BT_HDR* p_buf) {
 
   length--;
 
-  is_command = p_rx_frame->cr;
+  bool is_command = p_rx_frame->cr;
 
   ea = *p_data & RFCOMM_EA;
 
@@ -644,8 +650,8 @@ void rfc_process_mx_message(tRFC_MCB* p_mcb, BT_HDR* p_buf) {
     return;
   }
 
-  RFCOMM_TRACE_DEBUG("%s: type=%d, p_mcb=%p", __func__, p_rx_frame->type,
-                     p_mcb);
+  RFCOMM_TRACE_DEBUG("%s: type=0x%02x, bd_addr=%s", __func__, p_rx_frame->type,
+                     p_mcb->bd_addr.ToString().c_str());
   switch (p_rx_frame->type) {
     case RFCOMM_MX_PN:
       if (length != RFCOMM_MX_PN_LEN) {
