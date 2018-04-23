@@ -488,7 +488,7 @@ void bta_av_ssm_execute(tBTA_AV_SCB* p_scb, uint16_t event,
 
   APPL_TRACE_VERBOSE(
       "%s: peer %s AV event(0x%x)=0x%x(%s) state=%d(%s) p_scb=%p", __func__,
-      p_scb->peer_addr.ToString().c_str(), p_scb->hndl, event,
+      p_scb->PeerAddress().ToString().c_str(), p_scb->hndl, event,
       bta_av_evt_code(event), p_scb->state, bta_av_sst_code(p_scb->state),
       p_scb);
 
@@ -500,7 +500,7 @@ void bta_av_ssm_execute(tBTA_AV_SCB* p_scb, uint16_t event,
   p_scb->state = state_table[event][BTA_AV_SNEXT_STATE];
 
   APPL_TRACE_VERBOSE("%s: peer %s AV next state=%d(%s) p_scb=%p", __func__,
-                     p_scb->peer_addr.ToString().c_str(), p_scb->state,
+                     p_scb->PeerAddress().ToString().c_str(), p_scb->state,
                      bta_av_sst_code(p_scb->state), p_scb);
 
   /* execute action functions */
@@ -572,9 +572,9 @@ void bta_av_set_scb_sst_init(tBTA_AV_SCB* p_scb) {
 
   APPL_TRACE_VERBOSE(
       "%s: peer %s AV (hndl=0x%x) state=%d(%s) next state=%d(%s) p_scb=%p",
-      __func__, p_scb->peer_addr.ToString().c_str(), p_scb->hndl, p_scb->state,
-      bta_av_sst_code(p_scb->state), next_state, bta_av_sst_code(next_state),
-      p_scb);
+      __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->hndl,
+      p_scb->state, bta_av_sst_code(p_scb->state), next_state,
+      bta_av_sst_code(next_state), p_scb);
 
   p_scb->state = next_state;
 }

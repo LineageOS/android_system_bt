@@ -31,10 +31,9 @@
 /*****************************************************************************
  *  Constants
  ****************************************************************************/
-#ifndef AVDT_VERSION
-#define AVDT_VERSION 0x0103
-#endif
 #define AVDT_VERSION_1_3 0x0103
+
+#define AVDTP_VERSION_CONFIG_KEY "AvdtpVersion"
 
 /* Maximum size in bytes of the codec capabilities information element. */
 #define AVDT_CODEC_SIZE 20
