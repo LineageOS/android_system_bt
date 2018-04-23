@@ -31,6 +31,7 @@
 #include <cstring>
 #include <ctime>
 
+#include <bta/include/bta_ag_api.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bluetooth_headset_callbacks.h>
 #include <hardware/bluetooth_headset_interface.h>
@@ -327,11 +328,11 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
                    << unsigned(p_data->open.status);
         btif_hf_cb[idx].state = BTHF_CONNECTION_STATE_DISCONNECTED;
       } else {
-        BTIF_TRACE_WARNING(
-            "%s: AG open failed, but another device connected. status=%d "
-            "state=%d connected device=%s",
-            __func__, p_data->open.status, btif_hf_cb[idx].state,
-            btif_hf_cb[idx].connected_bda.ToString().c_str());
+        LOG(WARNING) << __func__ << ": AG open failed for "
+                     << p_data->open.bd_addr << ", error "
+                     << std::to_string(p_data->open.status)
+                     << ", local device is " << btif_hf_cb[idx].connected_bda
+                     << ". Ignoring as not expecting to open";
         break;
       }
       bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state,
