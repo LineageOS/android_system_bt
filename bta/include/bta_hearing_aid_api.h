@@ -46,7 +46,8 @@ class HearingAid {
                              uint8_t capabilities, uint16_t codec,
                              uint16_t audioControlPointHandle,
                              uint16_t volumeHandle, uint64_t hiSyncId,
-                             uint16_t render_delay, uint16_t preparation_delay);
+                             uint16_t render_delay, uint16_t preparation_delay,
+                             uint16_t is_white_listed);
 
   virtual void Connect(const RawAddress& address) = 0;
   virtual void Disconnect(const RawAddress& address) = 0;
