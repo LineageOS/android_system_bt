@@ -91,8 +91,8 @@ class HearingAidInterfaceImpl
     DVLOG(2) << __func__ << " address: " << address;
     do_in_bta_thread(FROM_HERE, Bind(&HearingAid::Disconnect,
                                      Unretained(HearingAid::Get()), address));
-    do_in_jni_thread(FROM_HERE,
-                     Bind(&btif_storage_remove_hearing_aid, address));
+    do_in_jni_thread(
+        FROM_HERE, Bind(&btif_storage_remove_hearing_aid_white_list, address));
   }
 
   void SetVolume(int8_t volume) override {
