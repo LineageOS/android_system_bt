@@ -264,11 +264,12 @@ static uint8_t bta_av_get_scb_sep_type(tBTA_AV_SCB* p_scb,
  * Returns          void
  *
  ******************************************************************************/
-static void bta_av_save_addr(tBTA_AV_SCB* p_scb, const RawAddress& b) {
+static void bta_av_save_addr(tBTA_AV_SCB* p_scb, const RawAddress& bd_addr) {
   APPL_TRACE_DEBUG("%s: r:%d, s:%d", __func__, p_scb->recfg_sup,
                    p_scb->suspend_sup);
-  if (p_scb->peer_addr != b) {
-    APPL_TRACE_ERROR("%s: reset flags", __func__);
+  if (p_scb->peer_addr != bd_addr) {
+    LOG(INFO) << __func__ << ": reset flags old_addr=" << p_scb->peer_addr
+              << ", new_addr=" << bd_addr;
     /* a new addr, reset the supported flags */
     p_scb->recfg_sup = true;
     p_scb->suspend_sup = true;
@@ -276,7 +277,7 @@ static void bta_av_save_addr(tBTA_AV_SCB* p_scb, const RawAddress& b) {
 
   /* do this copy anyway, just in case the first addr matches
    * the control block one by accident */
-  p_scb->peer_addr = b;
+  p_scb->peer_addr = bd_addr;
 }
 
 /*******************************************************************************

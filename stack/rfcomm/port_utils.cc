@@ -61,36 +61,36 @@ static const tPORT_STATE default_port_pars = {
  *
  ******************************************************************************/
 tPORT* port_allocate_port(uint8_t dlci, const RawAddress& bd_addr) {
-  tPORT* p_port = &rfc_cb.port.port[0];
-  uint8_t xx, yy;
-
-  for (xx = 0, yy = rfc_cb.rfc.last_port + 1; xx < MAX_RFC_PORTS; xx++, yy++) {
-    if (yy >= MAX_RFC_PORTS) yy = 0;
-
-    p_port = &rfc_cb.port.port[yy];
+  uint8_t port_index = rfc_cb.rfc.last_port_index + static_cast<uint8_t>(1);
+  // Loop at most MAX_RFC_PORTS items
+  for (int loop_counter = 0; loop_counter < MAX_RFC_PORTS;
+       loop_counter++, port_index++) {
+    if (port_index >= MAX_RFC_PORTS) {
+      port_index = 0;
+    }
+    tPORT* p_port = &rfc_cb.port.port[port_index];
     if (!p_port->in_use) {
+      // Assume that we already called port_release_port on this
       memset(p_port, 0, sizeof(tPORT));
-
       p_port->in_use = true;
-      p_port->inx = yy + 1;
-
-      /* During the open set default state for the port connection */
+      // handle is a port handle starting from 1
+      p_port->handle = port_index + static_cast<uint8_t>(1);
+      // During the open set default state for the port connection
       port_set_defaults(p_port);
-
       p_port->rfc.port_timer = alarm_new("rfcomm_port.port_timer");
-      rfc_cb.rfc.last_port = yy;
-
       p_port->dlci = dlci;
       p_port->bd_addr = bd_addr;
-
-      RFCOMM_TRACE_DEBUG("rfc_cb.port.port[%d]:%p allocated, last_port:%d", yy,
-                         p_port, rfc_cb.rfc.last_port);
-      VLOG(1) << __func__ << ": bd_addr:" << bd_addr;
-      return (p_port);
+      rfc_cb.rfc.last_port_index = port_index;
+      RFCOMM_TRACE_DEBUG(
+          "%s: rfc_cb.port.port[%d]:%p chosen, "
+          "last_port_index:%d, bd_addr=%s",
+          __func__, port_index, p_port, rfc_cb.rfc.last_port_index,
+          bd_addr.ToString().c_str());
+      return p_port;
     }
   }
-
-  /* If here, no free PORT found */
+  LOG(WARNING) << __func__ << ": running out of free ports for dlci "
+               << std::to_string(dlci) << ", bd_addr " << bd_addr;
   return nullptr;
 }
 
@@ -146,7 +146,7 @@ void port_select_mtu(tPORT* p_port) {
     packet_size = btm_get_max_packet_size(p_port->bd_addr);
     if (packet_size == 0) {
       /* something is very wrong */
-      RFCOMM_TRACE_WARNING("port_select_mtu bad packet size");
+      LOG(WARNING) << __func__ << ": bad packet size 0 for" << p_port->bd_addr;
       p_port->mtu = RFCOMM_DEFAULT_MTU;
     } else {
       /* We try to negotiate MTU that each packet can be split into whole
@@ -166,17 +166,16 @@ void port_select_mtu(tPORT* p_port) {
         p_port->mtu = ((L2CAP_MTU_SIZE + L2CAP_PKT_OVERHEAD) / packet_size *
                        packet_size) -
                       RFCOMM_DATA_OVERHEAD - L2CAP_PKT_OVERHEAD;
-        RFCOMM_TRACE_DEBUG(
-            "port_select_mtu selected %d based on connection speed",
-            p_port->mtu);
+        RFCOMM_TRACE_DEBUG("%s: selected %d based on connection speed",
+                           __func__, p_port->mtu);
       } else {
         p_port->mtu = L2CAP_MTU_SIZE - RFCOMM_DATA_OVERHEAD;
-        RFCOMM_TRACE_DEBUG(
-            "port_select_mtu selected %d based on l2cap PDU size", p_port->mtu);
+        RFCOMM_TRACE_DEBUG("%s: selected %d based on l2cap PDU size", __func__,
+                           p_port->mtu);
       }
     }
   } else {
-    RFCOMM_TRACE_DEBUG("port_select_mtu application selected %d", p_port->mtu);
+    RFCOMM_TRACE_DEBUG("%s: application selected %d", __func__, p_port->mtu);
   }
   p_port->credit_rx_max = (PORT_RX_HIGH_WM / p_port->mtu);
   if (p_port->credit_rx_max > PORT_RX_BUF_HIGH_WM)
@@ -188,7 +187,7 @@ void port_select_mtu(tPORT* p_port) {
   if (p_port->rx_buf_critical > PORT_RX_BUF_CRITICAL_WM)
     p_port->rx_buf_critical = PORT_RX_BUF_CRITICAL_WM;
   RFCOMM_TRACE_DEBUG(
-      "port_select_mtu credit_rx_max %d, credit_rx_low %d, rx_buf_critical %d",
+      "%s: credit_rx_max %d, credit_rx_low %d, rx_buf_critical %d", __func__,
       p_port->credit_rx_max, p_port->credit_rx_low, p_port->rx_buf_critical);
 }
 
@@ -226,7 +225,7 @@ void port_release_port(tPORT* p_port) {
 
   if (p_port->rfc.state == RFC_STATE_CLOSED) {
     if (p_port->rfc.p_mcb) {
-      p_port->rfc.p_mcb->port_inx[p_port->dlci] = 0;
+      p_port->rfc.p_mcb->port_handles[p_port->dlci] = 0;
 
       /* If there are no more ports opened on this MCB release it */
       rfc_check_mcb_active(p_port->rfc.p_mcb);
@@ -242,7 +241,8 @@ void port_release_port(tPORT* p_port) {
     mutex_global_unlock();
 
     if (p_port->keep_port_handle) {
-      RFCOMM_TRACE_DEBUG("%s Re-initialize handle: %d", __func__, p_port->inx);
+      RFCOMM_TRACE_DEBUG("%s Re-initialize handle: %d", __func__,
+                         p_port->handle);
 
       /* save event mask and callback */
       uint32_t mask = p_port->ev_mask;
@@ -264,7 +264,7 @@ void port_release_port(tPORT* p_port) {
       p_port->local_ctrl.modem_signal = p_port->default_signal_state;
       p_port->bd_addr = RawAddress::kAny;
     } else {
-      RFCOMM_TRACE_DEBUG("%s Clean-up handle: %d", __func__, p_port->inx);
+      RFCOMM_TRACE_DEBUG("%s Clean-up handle: %d", __func__, p_port->handle);
       alarm_free(p_port->rfc.port_timer);
       memset(p_port, 0, sizeof(tPORT));
     }
@@ -317,15 +317,14 @@ tPORT* port_find_mcb_dlci_port(tRFC_MCB* p_mcb, uint8_t dlci) {
     return nullptr;
   }
 
-  uint8_t inx = p_mcb->port_inx[dlci];
-  if (inx == 0) {
-    LOG(WARNING) << __func__
-                 << ": Cannot find allocated RFCOMM app port for DLCI "
-                 << std::to_string(dlci) << " on " << p_mcb->bd_addr
-                 << ", p_mcb=" << p_mcb;
+  uint8_t handle = p_mcb->port_handles[dlci];
+  if (handle == 0) {
+    LOG(INFO) << __func__ << ": Cannot find allocated RFCOMM app port for DLCI "
+              << std::to_string(dlci) << " on " << p_mcb->bd_addr
+              << ", p_mcb=" << p_mcb;
     return nullptr;
   }
-  return &rfc_cb.port.port[inx - 1];
+  return &rfc_cb.port.port[handle - 1];
 }
 
 /*******************************************************************************
