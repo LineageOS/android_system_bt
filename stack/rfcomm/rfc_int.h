@@ -56,18 +56,23 @@ extern void RFCOMM_DataReq(tRFC_MCB* p_mcb, uint8_t dlci, BT_HDR* p_buf);
 
 extern void RFCOMM_DlcReleaseReq(tRFC_MCB* p_mcb, uint8_t dlci);
 
-extern void RFCOMM_ParNegReq(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu);
-extern void RFCOMM_ParNegRsp(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu,
-                             uint8_t cl, uint8_t k);
+extern void RFCOMM_ParameterNegotiationRequest(tRFC_MCB* p_mcb, uint8_t dlci,
+                                               uint16_t mtu);
+extern void RFCOMM_ParameterNegotiationResponse(tRFC_MCB* p_mcb, uint8_t dlci,
+                                                uint16_t mtu, uint8_t cl,
+                                                uint8_t k);
 
 extern void RFCOMM_TestReq(uint8_t* p_data, uint16_t len);
 
 extern void RFCOMM_FlowReq(tRFC_MCB* p_mcb, uint8_t dlci, bool state);
 
-extern void RFCOMM_PortNegReq(tRFC_MCB* p_mcb, uint8_t dlci,
-                              tPORT_STATE* p_pars);
-extern void RFCOMM_PortNegRsp(tRFC_MCB* p_mcb, uint8_t dlci,
-                              tPORT_STATE* p_pars, uint16_t param_mask);
+extern void RFCOMM_PortParameterNegotiationRequest(tRFC_MCB* p_mcb,
+                                                   uint8_t dlci,
+                                                   tPORT_STATE* p_pars);
+extern void RFCOMM_PortParameterNegotiationResponse(tRFC_MCB* p_mcb,
+                                                    uint8_t dlci,
+                                                    tPORT_STATE* p_pars,
+                                                    uint16_t param_mask);
 
 extern void RFCOMM_ControlReq(tRFC_MCB* p_mcb, uint8_t dlci,
                               tPORT_CTRL* p_pars);
@@ -221,7 +226,7 @@ typedef struct {
   tRFC_MCB* p_rfc_lcid_mcb[MAX_L2CAP_CHANNELS];
   bool peer_rx_disabled; /* If true peer sent FCOFF */
   uint8_t last_mux;      /* Last mux allocated */
-  uint8_t last_port;     /* Last port allocated */
+  uint8_t last_port_index;  // Index of last port allocated in rfc_cb.port
 } tRFCOMM_CB;
 
 /* Main Control Block for the RFCOMM Layer (PORT and RFC) */
