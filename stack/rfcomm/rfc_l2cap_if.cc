@@ -110,14 +110,14 @@ void RFCOMM_ConnectInd(const RawAddress& bd_addr, uint16_t lcid,
     } else {
       /* we cannot accept connection request from peer at this state */
       /* don't update lcid */
-      p_mcb = NULL;
+      p_mcb = nullptr;
     }
   } else {
     /* store mcb even if null */
     rfc_save_lcid_mcb(p_mcb, lcid);
   }
 
-  if (p_mcb == NULL) {
+  if (p_mcb == nullptr) {
     L2CA_ConnectRsp(bd_addr, id, lcid, L2CAP_CONN_NO_RESOURCES, 0);
     return;
   }
@@ -163,13 +163,13 @@ void RFCOMM_ConnectCnf(uint16_t lcid, uint16_t result) {
 
       /* update direction bit */
       for (int i = 0; i < RFCOMM_MAX_DLCI; i += 2) {
-        uint8_t idx = p_mcb->port_inx[i];
-        if (idx != 0) {
-          p_mcb->port_inx[i] = 0;
-          p_mcb->port_inx[i + 1] = idx;
-          rfc_cb.port.port[idx - 1].dlci += 1;
-          RFCOMM_TRACE_DEBUG("RFCOMM MX, port_handle=%d, DLCI[%d->%d]", idx, i,
-                             rfc_cb.port.port[idx - 1].dlci);
+        uint8_t handle = p_mcb->port_handles[i];
+        if (handle != 0) {
+          p_mcb->port_handles[i] = 0;
+          p_mcb->port_handles[i + 1] = handle;
+          rfc_cb.port.port[handle - 1].dlci += 1;
+          RFCOMM_TRACE_DEBUG("RFCOMM MX, port_handle=%d, DLCI[%d->%d]", handle,
+                             i, rfc_cb.port.port[handle - 1].dlci);
         }
       }
 
@@ -254,17 +254,16 @@ void RFCOMM_QoSViolationInd(UNUSED_ATTR const RawAddress& bd_addr) {}
  *
  ******************************************************************************/
 void RFCOMM_DisconnectInd(uint16_t lcid, bool is_conf_needed) {
+  VLOG(1) << __func__ << ": lcid=" << loghex(lcid)
+          << ", is_conf_needed=" << is_conf_needed;
   tRFC_MCB* p_mcb = rfc_find_lcid_mcb(lcid);
-
   if (is_conf_needed) {
     L2CA_DisconnectRsp(lcid);
   }
-
   if (!p_mcb) {
-    RFCOMM_TRACE_WARNING("RFCOMM_DisconnectInd LCID:0x%x", lcid);
+    LOG(WARNING) << __func__ << ": no mcb for lcid " << loghex(lcid);
     return;
   }
-
   rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_DISC_IND, nullptr);
 }
 
@@ -299,7 +298,7 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
   }
 
   if (rfc_cb.rfc.rx_frame.dlci == RFCOMM_MX_DLCI) {
-    RFCOMM_TRACE_DEBUG("%s: Handle multiplexer event %d, p_mcb=%p", __func__,
+    RFCOMM_TRACE_DEBUG("%s: handle multiplexer event %d, p_mcb=%p", __func__,
                        event, p_mcb);
     /* Take special care of the Multiplexer Control Messages */
     if (event == RFC_EVENT_UIH) {
@@ -341,10 +340,11 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
       osi_free(p_buf);
       return;
     }
-    RFCOMM_TRACE_DEBUG("%s: port_inx[dlci=%d]:%d->%d, p_mcb=%p", __func__,
+    RFCOMM_TRACE_DEBUG("%s: port_handles[dlci=%d]:%d->%d, p_mcb=%p", __func__,
                        rfc_cb.rfc.rx_frame.dlci,
-                       p_mcb->port_inx[rfc_cb.rfc.rx_frame.dlci], p_port->inx);
-    p_mcb->port_inx[rfc_cb.rfc.rx_frame.dlci] = p_port->inx;
+                       p_mcb->port_handles[rfc_cb.rfc.rx_frame.dlci],
+                       p_port->handle);
+    p_mcb->port_handles[rfc_cb.rfc.rx_frame.dlci] = p_port->handle;
     p_port->rfc.p_mcb = p_mcb;
   }
 
@@ -419,6 +419,14 @@ tRFC_MCB* rfc_find_lcid_mcb(uint16_t lcid) {
  *
  ******************************************************************************/
 void rfc_save_lcid_mcb(tRFC_MCB* p_mcb, uint16_t lcid) {
-  if (lcid < L2CAP_BASE_APPL_CID) return;
-  rfc_cb.rfc.p_rfc_lcid_mcb[lcid - L2CAP_BASE_APPL_CID] = p_mcb;
+  if (lcid < L2CAP_BASE_APPL_CID) {
+    LOG(ERROR) << __func__ << ": LCID " << lcid << " is too small";
+    return;
+  }
+  auto mcb_index = static_cast<size_t>(lcid - L2CAP_BASE_APPL_CID);
+  if (mcb_index >= MAX_L2CAP_CHANNELS) {
+    LOG(ERROR) << __func__ << ": LCID " << lcid << " is too large";
+    return;
+  }
+  rfc_cb.rfc.p_rfc_lcid_mcb[mcb_index] = p_mcb;
 }

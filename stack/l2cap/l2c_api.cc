@@ -275,7 +275,7 @@ void L2CA_FreeLePSM(uint16_t psm) {
  *
  ******************************************************************************/
 uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
-  return L2CA_ErtmConnectReq(psm, p_bd_addr, NULL);
+  return L2CA_ErtmConnectReq(psm, p_bd_addr, nullptr);
 }
 
 /*******************************************************************************
@@ -297,10 +297,6 @@ uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
  ******************************************************************************/
 uint16_t L2CA_ErtmConnectReq(uint16_t psm, const RawAddress& p_bd_addr,
                              tL2CAP_ERTM_INFO* p_ertm_info) {
-  tL2C_LCB* p_lcb;
-  tL2C_CCB* p_ccb;
-  tL2C_RCB* p_rcb;
-
   VLOG(1) << __func__ << "BDA " << p_bd_addr
           << StringPrintf(" PSM: 0x%04x allowed:0x%x preferred:%d", psm,
                           (p_ertm_info) ? p_ertm_info->allowed_modes : 0,
@@ -308,36 +304,36 @@ uint16_t L2CA_ErtmConnectReq(uint16_t psm, const RawAddress& p_bd_addr,
 
   /* Fail if we have not established communications with the controller */
   if (!BTM_IsDeviceUp()) {
-    L2CAP_TRACE_WARNING("L2CAP connect req - BTU not ready");
-    return (0);
+    LOG(WARNING) << __func__ << ": BTU not ready";
+    return 0;
   }
   /* Fail if the PSM is not registered */
-  p_rcb = l2cu_find_rcb_by_psm(psm);
-  if (p_rcb == NULL) {
-    L2CAP_TRACE_WARNING("L2CAP - no RCB for L2CA_conn_req, PSM: 0x%04x", psm);
-    return (0);
+  tL2C_RCB* p_rcb = l2cu_find_rcb_by_psm(psm);
+  if (p_rcb == nullptr) {
+    LOG(WARNING) << __func__ << ": no RCB, PSM=" << loghex(psm);
+    return 0;
   }
 
   /* First, see if we already have a link to the remote */
   /* assume all ERTM l2cap connection is going over BR/EDR for now */
-  p_lcb = l2cu_find_lcb_by_bd_addr(p_bd_addr, BT_TRANSPORT_BR_EDR);
-  if (p_lcb == NULL) {
+  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(p_bd_addr, BT_TRANSPORT_BR_EDR);
+  if (p_lcb == nullptr) {
     /* No link. Get an LCB and start link establishment */
     p_lcb = l2cu_allocate_lcb(p_bd_addr, false, BT_TRANSPORT_BR_EDR);
     /* currently use BR/EDR for ERTM mode l2cap connection */
-    if ((p_lcb == NULL) || (!l2cu_create_conn(p_lcb, BT_TRANSPORT_BR_EDR))) {
-      L2CAP_TRACE_WARNING(
-          "L2CAP - conn not started for PSM: 0x%04x  p_lcb: 0x%08x", psm,
-          p_lcb);
-      return (0);
+    if ((p_lcb == nullptr) || (!l2cu_create_conn(p_lcb, BT_TRANSPORT_BR_EDR))) {
+      LOG(WARNING) << __func__
+                   << ": connection not started for PSM=" << loghex(psm)
+                   << ", p_lcb=" << p_lcb;
+      return 0;
     }
   }
 
   /* Allocate a channel control block */
-  p_ccb = l2cu_allocate_ccb(p_lcb, 0);
-  if (p_ccb == NULL) {
-    L2CAP_TRACE_WARNING("L2CAP - no CCB for L2CA_conn_req, PSM: 0x%04x", psm);
-    return (0);
+  tL2C_CCB* p_ccb = l2cu_allocate_ccb(p_lcb, 0);
+  if (p_ccb == nullptr) {
+    LOG(WARNING) << __func__ << ": no CCB, PSM=" << loghex(psm);
+    return 0;
   }
 
   /* Save registration info */
@@ -366,16 +362,14 @@ uint16_t L2CA_ErtmConnectReq(uint16_t psm, const RawAddress& p_bd_addr,
 
   /* If link is up, start the L2CAP connection */
   if (p_lcb->link_state == LST_CONNECTED) {
-    l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONNECT_REQ, NULL);
-  }
-
-  /* If link is disconnecting, save link info to retry after disconnect
-   * Possible Race condition when a reconnect occurs
-   * on the channel during a disconnect of link. This
-   * ccb will be automatically retried after link disconnect
-   * arrives
-   */
-  else if (p_lcb->link_state == LST_DISCONNECTING) {
+    l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONNECT_REQ, nullptr);
+  } else if (p_lcb->link_state == LST_DISCONNECTING) {
+    /* If link is disconnecting, save link info to retry after disconnect
+     * Possible Race condition when a reconnect occurs
+     * on the channel during a disconnect of link. This
+     * ccb will be automatically retried after link disconnect
+     * arrives
+     */
     L2CAP_TRACE_DEBUG("L2CAP API - link disconnecting: RETRY LATER");
 
     /* Save ccb so it can be started after disconnect is finished */
@@ -386,7 +380,7 @@ uint16_t L2CA_ErtmConnectReq(uint16_t psm, const RawAddress& p_bd_addr,
                   psm, p_ccb->local_cid);
 
   /* Return the local CID as our handle */
-  return (p_ccb->local_cid);
+  return p_ccb->local_cid;
 }
 
 /*******************************************************************************
