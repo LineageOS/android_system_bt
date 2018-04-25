@@ -90,8 +90,8 @@ typedef struct {
 typedef struct {
   alarm_t* mcb_timer;   /* MCB timer */
   fixed_queue_t* cmd_q; /* Queue for command messages on this mux */
-  uint8_t port_inx[RFCOMM_MAX_DLCI + 1]; /* Array for quick access to  */
-                                         /* tPORT based on dlci        */
+  uint8_t port_handles[RFCOMM_MAX_DLCI + 1]; /* Array for quick access to  */
+  /* port handles based on dlci        */
   RawAddress bd_addr;                    /* BD ADDR of the peer if initiator */
   uint16_t lcid;                         /* Local cid used for this channel */
   uint16_t peer_l2cap_mtu; /* Max frame that can be sent to peer L2CAP */
@@ -139,7 +139,7 @@ typedef struct {
  * Define control block containing information about PORT connection
 */
 typedef struct {
-  uint8_t inx; /* Index of this control block in the port_info array */
+  uint8_t handle;  // Starting from 1, unique for this object
   bool in_use; /* True when structure is allocated */
 
 #define PORT_STATE_CLOSED 0

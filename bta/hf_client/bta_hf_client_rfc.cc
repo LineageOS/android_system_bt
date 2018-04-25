@@ -98,9 +98,12 @@ static void bta_hf_client_mgmt_cback(uint32_t code, uint16_t port_handle) {
       APPL_TRACE_DEBUG("%s: allocating a new CB for incoming connection",
                        __func__);
       // Find the BDADDR of the peer device
-      RawAddress peer_addr;
-      uint16_t lcid;
-      PORT_CheckConnection(port_handle, peer_addr, &lcid);
+      RawAddress peer_addr = RawAddress::kEmpty;
+      uint16_t lcid = 0;
+      int status = PORT_CheckConnection(port_handle, &peer_addr, &lcid);
+      if (status != PORT_SUCCESS) {
+        LOG(ERROR) << __func__ << ": PORT_CheckConnection returned " << status;
+      }
 
       // Since we accepted a remote request we should allocate a handle first.
       uint16_t tmp_handle = -1;
