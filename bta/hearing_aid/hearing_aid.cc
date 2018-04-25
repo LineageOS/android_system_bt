@@ -259,19 +259,23 @@ class HearingAidImpl : public HearingAid {
                       uint8_t capabilities, uint16_t codecs,
                       uint16_t audio_control_point_handle,
                       uint16_t volume_handle, uint64_t hiSyncId,
-                      uint16_t render_delay, uint16_t preparation_delay) {
-    DVLOG(2) << __func__ << " " << address << ", hiSyncId=" << loghex(hiSyncId);
-    hearingDevices.Add(HearingDevice(
-        address, psm, capabilities, codecs, audio_control_point_handle,
-        volume_handle, hiSyncId, render_delay, preparation_delay));
+                      uint16_t render_delay, uint16_t preparation_delay,
+                      uint16_t is_white_listed) {
+    DVLOG(2) << __func__ << " " << address << ", hiSyncId=" << loghex(hiSyncId)
+             << ", isWhiteListed=" << is_white_listed;
+    if (is_white_listed) {
+      hearingDevices.Add(HearingDevice(
+          address, psm, capabilities, codecs, audio_control_point_handle,
+          volume_handle, hiSyncId, render_delay, preparation_delay));
 
-    // TODO: we should increase the scanning window for few seconds, to get
-    // faster initial connection, same after hearing aid disconnects, i.e.
-    // BTM_BleSetConnScanParams(2048, 1024);
+      // TODO: we should increase the scanning window for few seconds, to get
+      // faster initial connection, same after hearing aid disconnects, i.e.
+      // BTM_BleSetConnScanParams(2048, 1024);
 
-    /* add device into BG connection to accept remote initiated connection */
-    BTA_GATTC_Open(gatt_if, address, false, GATT_TRANSPORT_LE, false);
-    BTA_DmBleStartAutoConn();
+      /* add device into BG connection to accept remote initiated connection */
+      BTA_GATTC_Open(gatt_if, address, false, GATT_TRANSPORT_LE, false);
+      BTA_DmBleStartAutoConn();
+    }
 
     callbacks->OnDeviceAvailable(capabilities, hiSyncId, address);
   }
@@ -1125,14 +1129,15 @@ void HearingAid::AddFromStorage(const RawAddress& address, uint16_t psm,
                                 uint16_t audio_control_point_handle,
                                 uint16_t volume_handle, uint64_t hiSyncId,
                                 uint16_t render_delay,
-                                uint16_t preparation_delay) {
+                                uint16_t preparation_delay,
+                                uint16_t is_white_listed) {
   if (!instance) {
     LOG(ERROR) << "Not initialized yet";
   }
 
   instance->AddFromStorage(address, psm, capabilities, codecs,
                            audio_control_point_handle, volume_handle, hiSyncId,
-                           render_delay, preparation_delay);
+                           render_delay, preparation_delay, is_white_listed);
 };
 
 void HearingAid::CleanUp() {

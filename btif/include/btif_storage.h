@@ -201,6 +201,9 @@ void btif_storage_load_bonded_hearing_aids();
 /** Deletes the bonded hearing aid device info from NVRAM */
 void btif_storage_remove_hearing_aid(const RawAddress& address);
 
+/** Remove the hearing aid device from white list */
+void btif_storage_remove_hearing_aid_white_list(const RawAddress& address);
+
 /*******************************************************************************
  *
  * Function         btif_storage_is_retricted_device
