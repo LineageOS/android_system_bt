@@ -1364,6 +1364,7 @@ constexpr char HEARING_AID_VOLUME_HANDLE[] = "HearingAidVolumeHandle";
 constexpr char HEARING_AID_SYNC_ID[] = "HearingAidSyncId";
 constexpr char HEARING_AID_RENDER_DELAY[] = "HearingAidRenderDelay";
 constexpr char HEARING_AID_PREPARATION_DELAY[] = "HearingAidPreparationDelay";
+constexpr char HEARING_AID_IS_WHITE_LISTED[] = "HearingAidIsWhiteListed";
 
 void btif_storage_add_hearing_aid(const RawAddress& address, uint16_t psm,
                                   uint8_t capabilities, uint16_t codecs,
@@ -1391,6 +1392,7 @@ void btif_storage_add_hearing_aid(const RawAddress& address, uint16_t psm,
             btif_config_set_int(bdstr, HEARING_AID_RENDER_DELAY, render_delay);
             btif_config_set_int(bdstr, HEARING_AID_PREPARATION_DELAY,
                                 preparation_delay);
+            btif_config_set_int(bdstr, HEARING_AID_IS_WHITE_LISTED, true);
             btif_config_save();
           },
           address, psm, capabilities, codecs, audio_control_point_handle,
@@ -1446,13 +1448,18 @@ void btif_storage_load_bonded_hearing_aids() {
     if (btif_config_get_int(name, HEARING_AID_PREPARATION_DELAY, &value))
       preparation_delay = value;
 
+    uint16_t is_white_listed = 0;
+    if (btif_config_get_int(name, HEARING_AID_IS_WHITE_LISTED, &value))
+      is_white_listed = value;
+
     RawAddress bd_addr;
     RawAddress::FromString(name, bd_addr);
     // add extracted information to BTA Hearing Aid
     do_in_bta_thread(
-        FROM_HERE, Bind(&HearingAid::AddFromStorage, bd_addr, psm, capabilities,
-                        codecs, audio_control_point_handle, volume_handle,
-                        hi_sync_id, render_delay, preparation_delay));
+        FROM_HERE,
+        Bind(&HearingAid::AddFromStorage, bd_addr, psm, capabilities, codecs,
+             audio_control_point_handle, volume_handle, hi_sync_id,
+             render_delay, preparation_delay, is_white_listed));
   }
 }
 
@@ -1466,7 +1473,15 @@ void btif_storage_remove_hearing_aid(const RawAddress& address) {
   btif_config_remove(addrstr, HEARING_AID_AUDIO_CONTROL_POINT);
   btif_config_remove(addrstr, HEARING_AID_VOLUME_HANDLE);
   btif_config_remove(addrstr, HEARING_AID_SYNC_ID);
+  btif_config_remove(addrstr, HEARING_AID_IS_WHITE_LISTED);
   btif_config_save();
+}
+
+/** Remove the hearing aid device from white list */
+void btif_storage_remove_hearing_aid_white_list(const RawAddress& address) {
+  std::string addrstr = address.ToString();
+
+  btif_config_set_int(addrstr, HEARING_AID_IS_WHITE_LISTED, false);
 }
 
 /*******************************************************************************

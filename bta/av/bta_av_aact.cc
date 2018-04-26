@@ -38,6 +38,7 @@
 #include "bt_utils.h"
 #include "bta_av_int.h"
 #include "btif/include/btif_av_co.h"
+#include "btif/include/btif_config.h"
 #include "btif/include/btif_storage.h"
 #include "btm_int.h"
 #include "device/include/controller.h"
@@ -264,11 +265,13 @@ static uint8_t bta_av_get_scb_sep_type(tBTA_AV_SCB* p_scb,
  * Returns          void
  *
  ******************************************************************************/
-static void bta_av_save_addr(tBTA_AV_SCB* p_scb, const RawAddress& b) {
+static void bta_av_save_addr(tBTA_AV_SCB* p_scb, const RawAddress& bd_addr) {
   APPL_TRACE_DEBUG("%s: r:%d, s:%d", __func__, p_scb->recfg_sup,
                    p_scb->suspend_sup);
-  if (p_scb->peer_addr != b) {
-    APPL_TRACE_ERROR("%s: reset flags", __func__);
+  if (p_scb->PeerAddress() != bd_addr) {
+    LOG_INFO(LOG_TAG, "%s: reset flags old_addr=%s new_addr=%s", __func__,
+             p_scb->PeerAddress().ToString().c_str(),
+             bd_addr.ToString().c_str());
     /* a new addr, reset the supported flags */
     p_scb->recfg_sup = true;
     p_scb->suspend_sup = true;
@@ -276,7 +279,7 @@ static void bta_av_save_addr(tBTA_AV_SCB* p_scb, const RawAddress& b) {
 
   /* do this copy anyway, just in case the first addr matches
    * the control block one by accident */
-  p_scb->peer_addr = b;
+  p_scb->OnConnected(bd_addr);
 }
 
 /*******************************************************************************
@@ -360,9 +363,9 @@ static bool bta_av_next_getcap(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       p_scb->sep_info_idx = i;
 
       /* we got a stream; get its capabilities */
-      bool get_all_cap = (p_scb->avdt_version >= AVDT_VERSION_1_3) &&
+      bool get_all_cap = (p_scb->AvdtpVersion() >= AVDT_VERSION_1_3) &&
                          (A2DP_GetAvdtpVersion() >= AVDT_VERSION_1_3);
-      AVDT_GetCapReq(p_scb->peer_addr, p_scb->hdi, p_scb->sep_info[i].seid,
+      AVDT_GetCapReq(p_scb->PeerAddress(), p_scb->hdi, p_scb->sep_info[i].seid,
                      &p_scb->peer_cap, &bta_av_proc_stream_evt, get_all_cap);
       sent_cmd = true;
       break;
@@ -372,7 +375,7 @@ static bool bta_av_next_getcap(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   /* if no streams available then stream open fails */
   if (!sent_cmd) {
     APPL_TRACE_ERROR("%s: BTA_AV_STR_GETCAP_FAIL_EVT: peer_addr=%s", __func__,
-                     p_scb->peer_addr.ToString().c_str());
+                     p_scb->PeerAddress().ToString().c_str());
     bta_av_ssm_execute(p_scb, BTA_AV_STR_GETCAP_FAIL_EVT, p_data);
   }
 
@@ -391,8 +394,9 @@ static bool bta_av_next_getcap(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 void bta_av_proc_stream_evt(uint8_t handle, const RawAddress& bd_addr,
                             uint8_t event, tAVDT_CTRL* p_data,
                             uint8_t scb_index) {
-  uint16_t sec_len = 0;
+  CHECK_LT(scb_index, BTA_AV_NUM_STRS);
   tBTA_AV_SCB* p_scb = bta_av_cb.p_scb[scb_index];
+  uint16_t sec_len = 0;
 
   APPL_TRACE_EVENT(
       "%s: peer_address: %s avdt_handle: %d event=0x%x scb_index=%d p_scb=%p",
@@ -531,8 +535,10 @@ void bta_av_sink_data_cback(uint8_t handle, BT_HDR* p_pkt, uint32_t time_stamp,
  * Returns          void
  *
  ******************************************************************************/
-static void bta_av_a2dp_sdp_cback(bool found, tA2DP_Service* p_service) {
-  APPL_TRACE_DEBUG("%s: found=%s", __func__, (found) ? "true" : "false");
+static void bta_av_a2dp_sdp_cback(bool found, tA2DP_Service* p_service,
+                                  const RawAddress& peer_address) {
+  APPL_TRACE_DEBUG("%s: peer %s : found=%s", __func__,
+                   peer_address.ToString().c_str(), (found) ? "true" : "false");
 
   tBTA_AV_SCB* p_scb = bta_av_hndl_to_scb(bta_av_cb.handle);
   if (p_scb == NULL) {
@@ -543,10 +549,10 @@ static void bta_av_a2dp_sdp_cback(bool found, tA2DP_Service* p_service) {
 
   if (!found) {
     APPL_TRACE_ERROR("%s: peer %s A2DP service discovery failed", __func__,
-                     p_scb->peer_addr.ToString().c_str());
+                     p_scb->PeerAddress().ToString().c_str());
   }
   APPL_TRACE_DEBUG("%s: peer %s found=%s", __func__,
-                   p_scb->peer_addr.ToString().c_str(),
+                   p_scb->PeerAddress().ToString().c_str(),
                    (found) ? "true" : "false");
 
   tBTA_AV_SDP_RES* p_msg =
@@ -556,12 +562,24 @@ static void bta_av_a2dp_sdp_cback(bool found, tA2DP_Service* p_service) {
   } else {
     p_msg->hdr.event = BTA_AV_SDP_DISC_FAIL_EVT;
     APPL_TRACE_ERROR("%s: BTA_AV_SDP_DISC_FAIL_EVT: peer_addr=%s", __func__,
-                     p_scb->peer_addr.ToString().c_str());
+                     p_scb->PeerAddress().ToString().c_str());
   }
-  if (found && (p_service != NULL))
-    p_scb->avdt_version = p_service->avdt_version;
-  else
-    p_scb->avdt_version = 0x00;
+  if (found && (p_service != NULL)) {
+    p_scb->SetAvdtpVersion(p_service->avdt_version);
+    if (p_service->avdt_version != 0) {
+      if (btif_config_set_bin(p_scb->PeerAddress().ToString(),
+                              AVDTP_VERSION_CONFIG_KEY,
+                              (const uint8_t*)&p_service->avdt_version,
+                              sizeof(p_service->avdt_version))) {
+        btif_config_save();
+      } else {
+        APPL_TRACE_WARNING("%s: Failed to store peer AVDTP version for %s",
+                           __func__, p_scb->PeerAddress().ToString().c_str());
+      }
+    }
+  } else {
+    p_scb->SetAvdtpVersion(0);
+  }
   p_msg->hdr.layer_specific = bta_av_cb.handle;
 
   bta_sys_sendmsg(p_msg);
@@ -608,7 +626,7 @@ void bta_av_switch_role(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   tBTA_AV_API_OPEN* p_buf = &p_scb->q_info.open;
 
   APPL_TRACE_DEBUG("%s: peer %s wait:0x%x", __func__,
-                   p_scb->peer_addr.ToString().c_str(), p_scb->wait);
+                   p_scb->PeerAddress().ToString().c_str(), p_scb->wait);
   if (p_scb->wait & BTA_AV_WAIT_ROLE_SW_RES_START)
     p_scb->wait |= BTA_AV_WAIT_ROLE_SW_RETRY;
 
@@ -628,7 +646,7 @@ void bta_av_switch_role(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   } else {
     /* report failure on OPEN */
     APPL_TRACE_ERROR("%s: peer %s role switch failed (wait=0x%x)", __func__,
-                     p_scb->peer_addr.ToString().c_str(), p_scb->wait);
+                     p_scb->PeerAddress().ToString().c_str(), p_scb->wait);
     switch_res = BTA_AV_RS_FAIL;
   }
 
@@ -665,7 +683,7 @@ void bta_av_role_res(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       p_scb->wait &= ~BTA_AV_WAIT_ROLE_SW_BITS;
       if (p_data->role_res.hci_status != HCI_SUCCESS) {
         p_scb->role &= ~BTA_AV_ROLE_START_INT;
-        bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
+        bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->PeerAddress());
         /* start failed because of role switch. */
         tBTA_AV_START start;
         start.chnl = p_scb->chnl;
@@ -688,7 +706,7 @@ void bta_av_role_res(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       if (p_data->role_res.hci_status != HCI_SUCCESS) {
         /* Open failed because of role switch. */
         tBTA_AV_OPEN av_open;
-        av_open.bd_addr = p_scb->peer_addr;
+        av_open.bd_addr = p_scb->PeerAddress();
         av_open.chnl = p_scb->chnl;
         av_open.hndl = p_scb->hndl;
         av_open.status = BTA_AV_FAIL_ROLE;
@@ -728,9 +746,9 @@ void bta_av_role_res(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
  ******************************************************************************/
 void bta_av_delay_co(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   APPL_TRACE_DEBUG("%s: peer %s handle:%d delay:%d", __func__,
-                   p_scb->peer_addr.ToString().c_str(), p_scb->hndl,
+                   p_scb->PeerAddress().ToString().c_str(), p_scb->hndl,
                    p_data->str_msg.msg.delay_rpt_cmd.delay);
-  p_scb->p_cos->delay(p_scb->hndl, p_scb->peer_addr,
+  p_scb->p_cos->delay(p_scb->hndl, p_scb->PeerAddress(),
                       p_data->str_msg.msg.delay_rpt_cmd.delay);
 }
 
@@ -775,7 +793,7 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       /* report a new failure event  */
       p_scb->open_status = BTA_AV_FAIL_ROLE;
       APPL_TRACE_ERROR("%s: BTA_AV_SDP_DISC_FAIL_EVT: peer_addr=%s", __func__,
-                       p_scb->peer_addr.ToString().c_str());
+                       p_scb->PeerAddress().ToString().c_str());
       bta_av_ssm_execute(p_scb, BTA_AV_SDP_DISC_FAIL_EVT, NULL);
       break;
 
@@ -820,7 +838,7 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   p_scb->sec_mask = p_data->api_open.sec_mask;
   p_scb->use_rc = p_data->api_open.use_rc;
 
-  bta_sys_app_open(BTA_ID_AV, p_scb->app_id, p_scb->peer_addr);
+  bta_sys_app_open(BTA_ID_AV, p_scb->app_id, p_scb->PeerAddress());
 
   /* only one A2DP find service is active at a time */
   bta_av_cb.handle = p_scb->hndl;
@@ -839,16 +857,17 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   APPL_TRACE_DEBUG(
       "%s: Initiate SDP discovery for peer %s : uuid_int=0x%x "
       "sdp_uuid=0x%x",
-      __func__, p_scb->peer_addr.ToString().c_str(), p_scb->uuid_int, sdp_uuid);
+      __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->uuid_int,
+      sdp_uuid);
   tA2DP_STATUS find_service_status = A2DP_FindService(
-      sdp_uuid, p_scb->peer_addr, &db_params, bta_av_a2dp_sdp_cback);
+      sdp_uuid, p_scb->PeerAddress(), &db_params, bta_av_a2dp_sdp_cback);
   if (find_service_status != A2DP_SUCCESS) {
     APPL_TRACE_ERROR(
         "%s: A2DP_FindService() failed for peer %s uuid_int=0x%x "
         "sdp_uuid=0x%x : status=%d",
-        __func__, p_scb->peer_addr.ToString().c_str(), p_scb->uuid_int,
+        __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->uuid_int,
         sdp_uuid, find_service_status);
-    bta_av_a2dp_sdp_cback(false, NULL);
+    bta_av_a2dp_sdp_cback(false, nullptr, RawAddress::kEmpty);
   }
 }
 
@@ -869,7 +888,7 @@ void bta_av_cleanup(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
 
   /* free any buffers */
   p_scb->sdp_discovery_started = false;
-  p_scb->avdt_version = 0;
+  p_scb->SetAvdtpVersion(0);
 
   /* initialize some control block variables */
   p_scb->open_status = BTA_AV_SUCCESS;
@@ -909,7 +928,7 @@ void bta_av_cleanup(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   } else {
     /* report stream closed to main SM */
     msg.is_up = false;
-    msg.peer_addr = p_scb->peer_addr;
+    msg.peer_addr = p_scb->PeerAddress();
     bta_av_conn_chg((tBTA_AV_DATA*)&msg);
   }
 }
@@ -949,7 +968,8 @@ void bta_av_config_ind(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   p_scb->avdt_label = p_data->str_msg.msg.hdr.label;
 
   APPL_TRACE_DEBUG("%s: peer %s handle:%d local_sep:%d", __func__,
-                   p_scb->peer_addr.ToString().c_str(), p_scb->hndl, local_sep);
+                   p_scb->PeerAddress().ToString().c_str(), p_scb->hndl,
+                   local_sep);
   APPL_TRACE_DEBUG("%s: codec: %s", __func__,
                    A2DP_CodecInfoString(p_evt_cfg->codec_info).c_str());
 
@@ -995,15 +1015,15 @@ void bta_av_config_ind(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     /*  in case of A2DP SINK this is the first time peer data is being sent to
      * co functions */
     if (local_sep == AVDT_TSEP_SNK) {
-      p_scb->p_cos->setcfg(p_scb->hndl, p_scb->peer_addr, p_evt_cfg->codec_info,
-                           p_info->seid, p_evt_cfg->num_protect,
-                           p_evt_cfg->protect_info, AVDT_TSEP_SNK,
-                           p_msg->handle);
+      p_scb->p_cos->setcfg(p_scb->hndl, p_scb->PeerAddress(),
+                           p_evt_cfg->codec_info, p_info->seid,
+                           p_evt_cfg->num_protect, p_evt_cfg->protect_info,
+                           AVDT_TSEP_SNK, p_msg->handle);
     } else {
-      p_scb->p_cos->setcfg(p_scb->hndl, p_scb->peer_addr, p_evt_cfg->codec_info,
-                           p_info->seid, p_evt_cfg->num_protect,
-                           p_evt_cfg->protect_info, AVDT_TSEP_SRC,
-                           p_msg->handle);
+      p_scb->p_cos->setcfg(p_scb->hndl, p_scb->PeerAddress(),
+                           p_evt_cfg->codec_info, p_info->seid,
+                           p_evt_cfg->num_protect, p_evt_cfg->protect_info,
+                           AVDT_TSEP_SRC, p_msg->handle);
     }
   }
 }
@@ -1022,7 +1042,8 @@ void bta_av_disconnect_req(tBTA_AV_SCB* p_scb,
   tBTA_AV_RCB* p_rcb;
 
   APPL_TRACE_WARNING("%s: conn_lcb: 0x%x peer_addr: %s", __func__,
-                     bta_av_cb.conn_lcb, p_scb->peer_addr.ToString().c_str());
+                     bta_av_cb.conn_lcb,
+                     p_scb->PeerAddress().ToString().c_str());
 
   alarm_cancel(bta_av_cb.link_signalling_timer);
   alarm_cancel(p_scb->avrc_ct_timer);
@@ -1030,7 +1051,7 @@ void bta_av_disconnect_req(tBTA_AV_SCB* p_scb,
   if (bta_av_cb.conn_lcb) {
     p_rcb = bta_av_get_rcb_by_shdl((uint8_t)(p_scb->hdi + 1));
     if (p_rcb) bta_av_del_rc(p_rcb);
-    AVDT_DisconnectReq(p_scb->peer_addr, &bta_av_proc_stream_evt);
+    AVDT_DisconnectReq(p_scb->PeerAddress(), &bta_av_proc_stream_evt);
   } else {
     bta_av_ssm_execute(p_scb, BTA_AV_AVDT_DISCONNECT_EVT, NULL);
   }
@@ -1093,14 +1114,14 @@ void bta_av_setconfig_rsp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   local_sep = bta_av_get_scb_sep_type(p_scb, avdt_handle);
   bta_av_adjust_seps_idx(p_scb, avdt_handle);
   APPL_TRACE_DEBUG("%s: peer %s handle: sep_idx: %d cur_psc_mask:0x%x",
-                   __func__, p_scb->peer_addr.ToString().c_str(),
+                   __func__, p_scb->PeerAddress().ToString().c_str(),
                    p_scb->sep_idx, p_scb->cur_psc_mask);
 
   if ((AVDT_TSEP_SNK == local_sep) &&
       (p_data->ci_setconfig.err_code == AVDT_SUCCESS) &&
       (p_scb->seps[p_scb->sep_idx].p_app_sink_data_cback != NULL)) {
     tBTA_AV_MEDIA av_sink_codec_info;
-    av_sink_codec_info.avk_config.bd_addr = p_scb->peer_addr;
+    av_sink_codec_info.avk_config.bd_addr = p_scb->PeerAddress();
     av_sink_codec_info.avk_config.codec_info = p_scb->cfg.codec_info;
     p_scb->seps[p_scb->sep_idx].p_app_sink_data_cback(BTA_AV_SINK_MEDIA_CFG_EVT,
                                                       &av_sink_codec_info);
@@ -1122,7 +1143,7 @@ void bta_av_setconfig_rsp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     p_scb->num_seps = num;
 
     if (p_scb->cur_psc_mask & AVDT_PSC_DELAY_RPT)
-      p_scb->avdt_version = AVDT_VERSION_1_3;
+      p_scb->SetAvdtpVersion(AVDT_VERSION_1_3);
 
     if (A2DP_GetCodecType(p_scb->cfg.codec_info) == A2DP_MEDIA_CT_SBC ||
         num > 1) {
@@ -1132,7 +1153,7 @@ void bta_av_setconfig_rsp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       /* this is called in A2DP SRC path only, In case of SINK we don't need it
        */
       if (local_sep == AVDT_TSEP_SRC)
-        p_scb->p_cos->disc_res(p_scb->hndl, p_scb->peer_addr, num, num, 0,
+        p_scb->p_cos->disc_res(p_scb->hndl, p_scb->PeerAddress(), num, num, 0,
                                UUID_SERVCLASS_AUDIO_SOURCE);
     } else {
       /* we do not know the peer device and it is using non-SBC codec
@@ -1175,11 +1196,11 @@ void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   uint16_t mtu;
 
   APPL_TRACE_DEBUG("%s: peer %s handle: %d", __func__,
-                   p_scb->peer_addr.ToString().c_str(), p_scb->hndl);
+                   p_scb->PeerAddress().ToString().c_str(), p_scb->hndl);
 
   msg.hdr.layer_specific = p_scb->hndl;
   msg.is_up = true;
-  msg.peer_addr = p_scb->peer_addr;
+  msg.peer_addr = p_scb->PeerAddress();
   p_scb->l2c_cid = AVDT_GetL2CapChannel(p_scb->avdt_handle);
   bta_av_conn_chg((tBTA_AV_DATA*)&msg);
   /* set the congestion flag, so AV would not send media packets by accident */
@@ -1197,11 +1218,11 @@ void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   L2CA_SetTxPriority(p_scb->l2c_cid, L2CAP_CHNL_PRIORITY_HIGH);
   L2CA_SetChnlFlushability(p_scb->l2c_cid, true);
 
-  bta_sys_conn_open(BTA_ID_AV, p_scb->app_id, p_scb->peer_addr);
+  bta_sys_conn_open(BTA_ID_AV, p_scb->app_id, p_scb->PeerAddress());
   memset(&p_scb->q_info, 0, sizeof(tBTA_AV_Q_INFO));
 
   p_scb->l2c_bufs = 0;
-  p_scb->p_cos->open(p_scb->hndl, p_scb->peer_addr, mtu);
+  p_scb->p_cos->open(p_scb->hndl, p_scb->PeerAddress(), mtu);
 
   {
     /* TODO check if other audio channel is open.
@@ -1215,17 +1236,18 @@ void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
      */
     /* check if other audio channel is started. If yes, start */
     tBTA_AV_OPEN open;
-    open.bd_addr = p_scb->peer_addr;
+    open.bd_addr = p_scb->PeerAddress();
     open.chnl = p_scb->chnl;
     open.hndl = p_scb->hndl;
     open.status = BTA_AV_SUCCESS;
     open.starting = bta_av_chk_start(p_scb);
     open.edr = 0;
-    p = BTM_ReadRemoteFeatures(p_scb->peer_addr);
+    p = BTM_ReadRemoteFeatures(p_scb->PeerAddress());
     if (p != NULL) {
       if (HCI_EDR_ACL_2MPS_SUPPORTED(p)) open.edr |= BTA_AV_EDR_2MBPS;
       if (HCI_EDR_ACL_3MPS_SUPPORTED(p)) {
-        if (!interop_match_addr(INTEROP_2MBPS_LINK_ONLY, &p_scb->peer_addr)) {
+        if (!interop_match_addr(INTEROP_2MBPS_LINK_ONLY,
+                                &p_scb->PeerAddress())) {
           open.edr |= BTA_AV_EDR_3MBPS;
         }
       }
@@ -1356,7 +1378,7 @@ void bta_av_do_close(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
  ******************************************************************************/
 void bta_av_connect_req(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   APPL_TRACE_DEBUG("%s: peer %s coll_mask:0x%x", __func__,
-                   p_scb->peer_addr.ToString().c_str(), p_scb->coll_mask);
+                   p_scb->PeerAddress().ToString().c_str(), p_scb->coll_mask);
   p_scb->sdp_discovery_started = false;
   if (p_scb->coll_mask & BTA_AV_COLL_INC_TMR) {
     /* SNK initiated L2C connection while SRC was doing SDP.    */
@@ -1368,7 +1390,7 @@ void bta_av_connect_req(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
     return;
   }
 
-  AVDT_ConnectReq(p_scb->peer_addr, p_scb->hdi, p_scb->sec_mask,
+  AVDT_ConnectReq(p_scb->PeerAddress(), p_scb->hdi, p_scb->sec_mask,
                   &bta_av_proc_stream_evt);
 }
 
@@ -1383,7 +1405,7 @@ void bta_av_connect_req(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
  ******************************************************************************/
 void bta_av_sdp_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   APPL_TRACE_ERROR("%s: peer_addr=%s open_status=%d", __func__,
-                   p_scb->peer_addr.ToString().c_str(), p_scb->open_status);
+                   p_scb->PeerAddress().ToString().c_str(), p_scb->open_status);
 
   if (p_scb->open_status == BTA_AV_SUCCESS) {
     p_scb->open_status = BTA_AV_FAIL_SDP;
@@ -1410,7 +1432,8 @@ void bta_av_disc_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   uint16_t uuid_int = p_scb->uuid_int;
 
   APPL_TRACE_DEBUG("%s: peer %s handle: %d initiator UUID 0x%x", __func__,
-                   p_scb->peer_addr.ToString().c_str(), p_scb->hndl, uuid_int);
+                   p_scb->PeerAddress().ToString().c_str(), p_scb->hndl,
+                   uuid_int);
 
   /* store number of stream endpoints returned */
   p_scb->num_seps = p_data->str_msg.msg.discover_cfm.num_seps;
@@ -1429,7 +1452,7 @@ void bta_av_disc_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     }
   }
 
-  p_scb->p_cos->disc_res(p_scb->hndl, p_scb->peer_addr, p_scb->num_seps,
+  p_scb->p_cos->disc_res(p_scb->hndl, p_scb->PeerAddress(), p_scb->num_seps,
                          num_snks, num_srcs, uuid_int);
   p_scb->num_disc_snks = num_snks;
   p_scb->num_disc_srcs = num_srcs;
@@ -1445,7 +1468,7 @@ void bta_av_disc_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   /* else we got discover response but with no streams; we're done */
   else {
     APPL_TRACE_ERROR("%s: BTA_AV_STR_DISC_FAIL_EVT: peer_addr=%s", __func__,
-                     p_scb->peer_addr.ToString().c_str());
+                     p_scb->PeerAddress().ToString().c_str());
     bta_av_ssm_execute(p_scb, BTA_AV_STR_DISC_FAIL_EVT, p_data);
   }
 }
@@ -1465,7 +1488,7 @@ void bta_av_disc_res_as_acp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   uint8_t num_snks = 0, i;
 
   APPL_TRACE_DEBUG("%s: peer %s handle: %d", __func__,
-                   p_scb->peer_addr.ToString().c_str(), p_scb->hndl);
+                   p_scb->PeerAddress().ToString().c_str(), p_scb->hndl);
 
   /* store number of stream endpoints returned */
   p_scb->num_seps = p_data->str_msg.msg.discover_cfm.num_seps;
@@ -1478,7 +1501,7 @@ void bta_av_disc_res_as_acp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       num_snks++;
     }
   }
-  p_scb->p_cos->disc_res(p_scb->hndl, p_scb->peer_addr, p_scb->num_seps,
+  p_scb->p_cos->disc_res(p_scb->hndl, p_scb->PeerAddress(), p_scb->num_seps,
                          num_snks, 0, UUID_SERVCLASS_AUDIO_SOURCE);
   p_scb->num_disc_snks = num_snks;
   p_scb->num_disc_srcs = 0;
@@ -1494,7 +1517,7 @@ void bta_av_disc_res_as_acp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   /* else we got discover response but with no streams; we're done */
   else {
     APPL_TRACE_ERROR("%s: BTA_AV_STR_DISC_FAIL_EVT: peer_addr=%s", __func__,
-                     p_scb->peer_addr.ToString().c_str());
+                     p_scb->PeerAddress().ToString().c_str());
     bta_av_ssm_execute(p_scb, BTA_AV_STR_DISC_FAIL_EVT, p_data);
   }
 }
@@ -1516,14 +1539,14 @@ void bta_av_save_caps(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   APPL_TRACE_DEBUG(
       "%s: peer %s handle:%d num_seps:%d sep_info_idx:%d wait:0x%x", __func__,
-      p_scb->peer_addr.ToString().c_str(), p_scb->hndl, p_scb->num_seps,
+      p_scb->PeerAddress().ToString().c_str(), p_scb->hndl, p_scb->num_seps,
       p_scb->sep_info_idx, p_scb->wait);
   APPL_TRACE_DEBUG("%s: codec: %s", __func__,
                    A2DP_CodecInfoString(p_scb->peer_cap.codec_info).c_str());
 
   cfg = p_scb->peer_cap;
   /* let application know the capability of the SNK */
-  if (p_scb->p_cos->getcfg(p_scb->hndl, p_scb->peer_addr, cfg.codec_info,
+  if (p_scb->p_cos->getcfg(p_scb->hndl, p_scb->PeerAddress(), cfg.codec_info,
                            &p_scb->sep_info_idx, p_info->seid, &cfg.num_protect,
                            cfg.protect_info) != A2DP_SUCCESS) {
     p_scb->sep_info_idx++;
@@ -1585,11 +1608,11 @@ void bta_av_cco_close(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   uint16_t mtu;
 
   APPL_TRACE_DEBUG("%s: peer %s handle:%d", __func__,
-                   p_scb->peer_addr.ToString().c_str(), p_scb->hndl);
+                   p_scb->PeerAddress().ToString().c_str(), p_scb->hndl);
 
   mtu = bta_av_chk_mtu(p_scb, BTA_AV_MAX_A2DP_MTU);
 
-  p_scb->p_cos->close(p_scb->hndl, p_scb->peer_addr);
+  p_scb->p_cos->close(p_scb->hndl, p_scb->PeerAddress());
 }
 
 /*******************************************************************************
@@ -1607,7 +1630,7 @@ void bta_av_open_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   uint8_t idx;
 
   APPL_TRACE_ERROR("%s: peer_addr=%s", __func__,
-                   p_scb->peer_addr.ToString().c_str());
+                   p_scb->PeerAddress().ToString().c_str());
   p_scb->open_status = BTA_AV_FAIL_STREAM;
   bta_av_cco_close(p_scb, p_data);
 
@@ -1616,7 +1639,7 @@ void bta_av_open_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   for (idx = 0; (idx < BTA_AV_NUM_STRS) && (!is_av_opened); idx++) {
     p_opened_scb = bta_av_cb.p_scb[idx];
     if (p_opened_scb && (p_opened_scb->state == BTA_AV_OPEN_SST) &&
-        (p_opened_scb->peer_addr == p_scb->peer_addr))
+        (p_opened_scb->PeerAddress() == p_scb->PeerAddress()))
       is_av_opened = true;
   }
 
@@ -1625,7 +1648,7 @@ void bta_av_open_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
      BTA_AV_FAIL_GET_CAP status */
   if (is_av_opened) {
     tBTA_AV_OPEN open;
-    open.bd_addr = p_scb->peer_addr;
+    open.bd_addr = p_scb->PeerAddress();
     open.chnl = p_scb->chnl;
     open.hndl = p_scb->hndl;
     open.status = BTA_AV_FAIL_GET_CAP;
@@ -1650,7 +1673,7 @@ void bta_av_open_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     bta_av_data.open = open;
     (*bta_av_cb.p_cback)(BTA_AV_OPEN_EVT, &bta_av_data);
   } else {
-    AVDT_DisconnectReq(p_scb->peer_addr, &bta_av_proc_stream_evt);
+    AVDT_DisconnectReq(p_scb->PeerAddress(), &bta_av_proc_stream_evt);
   }
 }
 
@@ -1676,7 +1699,7 @@ void bta_av_getcap_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   memcpy(cfg.protect_info, p_scb->peer_cap.protect_info, AVDT_PROTECT_SIZE);
 
   APPL_TRACE_DEBUG("%s: peer %s handle:%d num_codec:%d psc_mask=0x%x", __func__,
-                   p_scb->peer_addr.ToString().c_str(), p_scb->hndl,
+                   p_scb->PeerAddress().ToString().c_str(), p_scb->hndl,
                    p_scb->peer_cap.num_codec, p_scb->cfg.psc_mask);
   APPL_TRACE_DEBUG("%s: media type 0x%x, 0x%x", __func__, media_type,
                    p_scb->media_type);
@@ -1685,9 +1708,10 @@ void bta_av_getcap_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   /* if codec present and we get a codec configuration */
   if ((p_scb->peer_cap.num_codec != 0) && (media_type == p_scb->media_type) &&
-      (p_scb->p_cos->getcfg(
-           p_scb->hndl, p_scb->peer_addr, cfg.codec_info, &p_scb->sep_info_idx,
-           p_info->seid, &cfg.num_protect, cfg.protect_info) == A2DP_SUCCESS)) {
+      (p_scb->p_cos->getcfg(p_scb->hndl, p_scb->PeerAddress(), cfg.codec_info,
+                            &p_scb->sep_info_idx, p_info->seid,
+                            &cfg.num_protect,
+                            cfg.protect_info) == A2DP_SUCCESS)) {
     /* UUID for which connection was initiatied */
     uint16_t uuid_int = p_scb->uuid_int;
 
@@ -1713,14 +1737,14 @@ void bta_av_getcap_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     APPL_TRACE_DEBUG(
         "%s: peer %s handle:%d sep_idx:%d sep_info_idx:%d "
         "cur_psc_mask:0x%x",
-        __func__, p_scb->peer_addr.ToString().c_str(), p_scb->hndl,
+        __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->hndl,
         p_scb->sep_idx, p_scb->sep_info_idx, p_scb->cur_psc_mask);
 
     if ((uuid_int == UUID_SERVCLASS_AUDIO_SINK) &&
         (p_scb->seps[p_scb->sep_idx].p_app_sink_data_cback != NULL)) {
       APPL_TRACE_DEBUG("%s: configure decoder for Sink connection", __func__);
       tBTA_AV_MEDIA av_sink_codec_info;
-      av_sink_codec_info.avk_config.bd_addr = p_scb->peer_addr;
+      av_sink_codec_info.avk_config.bd_addr = p_scb->PeerAddress();
       av_sink_codec_info.avk_config.codec_info = p_scb->cfg.codec_info;
       p_scb->seps[p_scb->sep_idx].p_app_sink_data_cback(
           BTA_AV_SINK_MEDIA_CFG_EVT, &av_sink_codec_info);
@@ -1731,7 +1755,7 @@ void bta_av_getcap_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     }
 
     /* open the stream */
-    AVDT_OpenReq(p_scb->seps[p_scb->sep_idx].av_handle, p_scb->peer_addr,
+    AVDT_OpenReq(p_scb->seps[p_scb->sep_idx].av_handle, p_scb->PeerAddress(),
                  p_scb->hdi, p_scb->sep_info[p_scb->sep_info_idx].seid, &cfg);
   } else {
     /* try the next stream, if any */
@@ -1777,7 +1801,7 @@ void bta_av_setconfig_rej(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 void bta_av_discover_req(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   /* send avdtp discover request */
 
-  AVDT_DiscoverReq(p_scb->peer_addr, p_scb->hdi, p_scb->sep_info,
+  AVDT_DiscoverReq(p_scb->PeerAddress(), p_scb->hdi, p_scb->sep_info,
                    BTA_AV_NUM_SEPS, &bta_av_proc_stream_evt);
 }
 
@@ -1792,7 +1816,7 @@ void bta_av_discover_req(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
  ******************************************************************************/
 void bta_av_conn_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   APPL_TRACE_ERROR("%s: peer_addr=%s open_status=%d", __func__,
-                   p_scb->peer_addr.ToString().c_str(), p_scb->open_status);
+                   p_scb->PeerAddress().ToString().c_str(), p_scb->open_status);
 
   p_scb->open_status = BTA_AV_FAIL_STREAM;
   bta_av_str_closed(p_scb, p_data);
@@ -1821,16 +1845,16 @@ void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   /* disallow role switch during streaming, only if we are the master role
    * i.e. allow role switch, if we are slave.
    * It would not hurt us, if the peer device wants us to be master */
-  if ((BTM_GetRole(p_scb->peer_addr, &cur_role) == BTM_SUCCESS) &&
+  if ((BTM_GetRole(p_scb->PeerAddress(), &cur_role) == BTM_SUCCESS) &&
       (cur_role == BTM_ROLE_MASTER)) {
     policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
   }
 
-  bta_sys_clear_policy(BTA_ID_AV, policy, p_scb->peer_addr);
+  bta_sys_clear_policy(BTA_ID_AV, policy, p_scb->PeerAddress());
 
   if ((!p_scb->started) && ((p_scb->role & BTA_AV_ROLE_START_INT) == 0)) {
     p_scb->role |= BTA_AV_ROLE_START_INT;
-    bta_sys_busy(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
+    bta_sys_busy(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->PeerAddress());
 
     AVDT_StartReq(&p_scb->avdt_handle, 1);
   } else if (p_scb->started) {
@@ -1865,14 +1889,14 @@ void bta_av_str_stopped(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   APPL_TRACE_ERROR(
       "%s: peer %s handle:%d audio_open_cnt:%d, p_data %p start:%d", __func__,
-      p_scb->peer_addr.ToString().c_str(), p_scb->hndl,
+      p_scb->PeerAddress().ToString().c_str(), p_scb->hndl,
       bta_av_cb.audio_open_cnt, p_data, start);
 
-  bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
+  bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->PeerAddress());
   if ((bta_av_cb.features & BTA_AV_FEAT_MASTER) == 0 ||
       bta_av_cb.audio_open_cnt == 1)
     policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
-  bta_sys_set_policy(BTA_ID_AV, policy, p_scb->peer_addr);
+  bta_sys_set_policy(BTA_ID_AV, policy, p_scb->PeerAddress());
 
   if (p_scb->co_started) {
     if (p_scb->offload_started) {
@@ -1883,8 +1907,8 @@ void bta_av_str_stopped(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     bta_av_stream_chg(p_scb, false);
     p_scb->co_started = false;
 
-    p_scb->p_cos->stop(p_scb->hndl, p_scb->peer_addr);
-    L2CA_SetFlushTimeout(p_scb->peer_addr, L2CAP_DEFAULT_FLUSH_TO);
+    p_scb->p_cos->stop(p_scb->hndl, p_scb->PeerAddress());
+    L2CA_SetFlushTimeout(p_scb->PeerAddress(), L2CAP_DEFAULT_FLUSH_TO);
   }
 
   /* if q_info.a2dp_list is not empty, drop it now */
@@ -2143,7 +2167,7 @@ void bta_av_data_path(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
           list_prepend(p_scb->a2dp_list, p_buf);
         } else {
           /* too many buffers in a2dp_list, drop it. */
-          bta_av_co_audio_drop(p_scb->hndl, p_scb->peer_addr);
+          bta_av_co_audio_drop(p_scb->hndl, p_scb->PeerAddress());
           osi_free(p_buf);
         }
       }
@@ -2171,15 +2195,15 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   uint8_t local_tsep = p_scb->seps[p_scb->sep_idx].tsep;
 
   APPL_TRACE_DEBUG("%s: peer %s handle:%d wait:0x%x role:0x%x local_tsep:%d",
-                   __func__, p_scb->peer_addr.ToString().c_str(), p_scb->hndl,
-                   p_scb->wait, p_scb->role, local_tsep);
+                   __func__, p_scb->PeerAddress().ToString().c_str(),
+                   p_scb->hndl, p_scb->wait, p_scb->role, local_tsep);
 
   p_scb->started = true;
 
   if (local_tsep == AVDT_TSEP_SRC) {
     // The RTP Header marker bit for the A2DP Source encoder
     A2dpCodecConfig* codec_config =
-        bta_av_get_a2dp_peer_current_codec(p_scb->peer_addr);
+        bta_av_get_a2dp_peer_current_codec(p_scb->PeerAddress());
     CHECK(codec_config != nullptr);
     p_scb->use_rtp_header_marker_bit = codec_config->useRtpHeaderMarkerBit();
   }
@@ -2201,20 +2225,21 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     /* role switch has failed */
     APPL_TRACE_ERROR(
         "%s: peer %s role switch failed: handle:%d wait:0x%x, role:0x%x",
-        __func__, p_scb->peer_addr.ToString().c_str(), p_scb->hndl, p_scb->wait,
-        p_scb->role);
+        __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->hndl,
+        p_scb->wait, p_scb->role);
     p_scb->wait &= ~BTA_AV_WAIT_ROLE_SW_FAILED;
     p_data = (tBTA_AV_DATA*)&hdr;
     hdr.offset = BTA_AV_RS_FAIL;
   }
   APPL_TRACE_DEBUG("%s: peer %s wait:0x%x use_rtp_header_marker_bit:%s",
-                   __func__, p_scb->peer_addr.ToString().c_str(), p_scb->wait,
+                   __func__, p_scb->PeerAddress().ToString().c_str(),
+                   p_scb->wait,
                    (p_scb->use_rtp_header_marker_bit) ? "true" : "false");
 
   if (p_data && (p_data->hdr.offset != BTA_AV_RS_NONE)) {
     p_scb->wait &= ~BTA_AV_WAIT_ROLE_SW_BITS;
     if (p_data->hdr.offset == BTA_AV_RS_FAIL) {
-      bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
+      bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->PeerAddress());
       tBTA_AV_START start;
       start.chnl = p_scb->chnl;
       start.status = BTA_AV_FAIL_ROLE;
@@ -2247,7 +2272,7 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   if (p_scb->wait) {
     APPL_TRACE_ERROR("%s: peer %s wait:0x%x q_tag:%d not started", __func__,
-                     p_scb->peer_addr.ToString().c_str(), p_scb->wait,
+                     p_scb->PeerAddress().ToString().c_str(), p_scb->wait,
                      p_scb->q_tag);
     /* Clear first bit of p_scb->wait and not to return from this point else
      * HAL layer gets blocked. And if there is delay in Get Capability response
@@ -2260,9 +2285,9 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   }
 
   /* tell role manager to check M/S role */
-  bta_sys_conn_open(BTA_ID_AV, p_scb->app_id, p_scb->peer_addr);
+  bta_sys_conn_open(BTA_ID_AV, p_scb->app_id, p_scb->PeerAddress());
 
-  bta_sys_busy(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
+  bta_sys_busy(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->PeerAddress());
 
   if (p_scb->media_type == AVDT_MEDIA_TYPE_AUDIO) {
     /* in normal logic, conns should be bta_av_cb.audio_count - 1,
@@ -2276,7 +2301,7 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   } else {
     flush_to = 0;
   }
-  L2CA_SetFlushTimeout(p_scb->peer_addr, flush_to);
+  L2CA_SetFlushTimeout(p_scb->PeerAddress(), flush_to);
 
   /* clear the congestion flag */
   p_scb->cong = false;
@@ -2300,12 +2325,12 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
        * Otherwise allow role switch, if source is slave.
        * Because it would not hurt source, if the peer device wants source to be
        * master */
-      if ((BTM_GetRole(p_scb->peer_addr, &cur_role) == BTM_SUCCESS) &&
+      if ((BTM_GetRole(p_scb->PeerAddress(), &cur_role) == BTM_SUCCESS) &&
           (cur_role == BTM_ROLE_MASTER)) {
         policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
       }
 
-      bta_sys_clear_policy(BTA_ID_AV, policy, p_scb->peer_addr);
+      bta_sys_clear_policy(BTA_ID_AV, policy, p_scb->PeerAddress());
     }
 
     p_scb->role = new_role;
@@ -2313,13 +2338,13 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     p_scb->role &= ~BTA_AV_ROLE_SUSPEND_OPT;
 
     p_scb->no_rtp_header = false;
-    p_scb->p_cos->start(p_scb->hndl, p_scb->peer_addr, p_scb->cfg.codec_info,
-                        &p_scb->no_rtp_header);
+    p_scb->p_cos->start(p_scb->hndl, p_scb->PeerAddress(),
+                        p_scb->cfg.codec_info, &p_scb->no_rtp_header);
     p_scb->co_started = true;
 
     APPL_TRACE_DEBUG("%s: peer %s suspending: %d, role:0x%x, init %d", __func__,
-                     p_scb->peer_addr.ToString().c_str(), suspend, p_scb->role,
-                     initiator);
+                     p_scb->PeerAddress().ToString().c_str(), suspend,
+                     p_scb->role, initiator);
 
     tBTA_AV_START start;
     start.suspending = suspend;
@@ -2336,7 +2361,7 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       p_scb->role |= BTA_AV_ROLE_SUSPEND;
       p_scb->cong = true; /* do not allow the media data to go through */
       /* do not duplicate the media packets to this channel */
-      p_scb->p_cos->stop(p_scb->hndl, p_scb->peer_addr);
+      p_scb->p_cos->stop(p_scb->hndl, p_scb->PeerAddress());
       p_scb->co_started = false;
       stop.flush = false;
       stop.suspend = true;
@@ -2357,13 +2382,13 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
  ******************************************************************************/
 void bta_av_start_failed(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   if (!p_scb->started && !p_scb->co_started) {
-    bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
+    bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->PeerAddress());
     notify_start_failed(p_scb);
   }
 
   bta_sys_set_policy(BTA_ID_AV,
                      (HCI_ENABLE_SNIFF_MODE | HCI_ENABLE_MASTER_SLAVE_SWITCH),
-                     p_scb->peer_addr);
+                     p_scb->PeerAddress());
   p_scb->sco_suspend = false;
 }
 
@@ -2383,13 +2408,13 @@ void bta_av_str_closed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   APPL_TRACE_WARNING(
       "%s: peer %s handle:%d open_status:%d chnl:%d co_started:%d", __func__,
-      p_scb->peer_addr.ToString().c_str(), p_scb->hndl, p_scb->open_status,
+      p_scb->PeerAddress().ToString().c_str(), p_scb->hndl, p_scb->open_status,
       p_scb->chnl, p_scb->co_started);
 
   if ((bta_av_cb.features & BTA_AV_FEAT_MASTER) == 0 ||
       bta_av_cb.audio_open_cnt == 1)
     policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
-  bta_sys_set_policy(BTA_ID_AV, policy, p_scb->peer_addr);
+  bta_sys_set_policy(BTA_ID_AV, policy, p_scb->PeerAddress());
   if (bta_av_cb.audio_open_cnt <= 1) {
     /* last connection - restore the allow switch flag */
     L2CA_SetDesireRole(L2CAP_ROLE_ALLOW_SWITCH);
@@ -2397,7 +2422,7 @@ void bta_av_str_closed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   if (p_scb->open_status != BTA_AV_SUCCESS) {
     /* must be failure when opening the stream */
-    data.open.bd_addr = p_scb->peer_addr;
+    data.open.bd_addr = p_scb->PeerAddress();
     data.open.status = p_scb->open_status;
     data.open.chnl = p_scb->chnl;
     data.open.hndl = p_scb->hndl;
@@ -2410,7 +2435,7 @@ void bta_av_str_closed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     event = BTA_AV_OPEN_EVT;
     p_scb->open_status = BTA_AV_SUCCESS;
 
-    bta_sys_conn_close(BTA_ID_AV, p_scb->app_id, p_scb->peer_addr);
+    bta_sys_conn_close(BTA_ID_AV, p_scb->app_id, p_scb->PeerAddress());
     bta_av_cleanup(p_scb, p_data);
     (*bta_av_cb.p_cback)(event, &data);
   } else {
@@ -2420,12 +2445,12 @@ void bta_av_str_closed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     }
 
     {
-      p_scb->p_cos->close(p_scb->hndl, p_scb->peer_addr);
+      p_scb->p_cos->close(p_scb->hndl, p_scb->PeerAddress());
       data.close.chnl = p_scb->chnl;
       data.close.hndl = p_scb->hndl;
       event = BTA_AV_CLOSE_EVT;
 
-      bta_sys_conn_close(BTA_ID_AV, p_scb->app_id, p_scb->peer_addr);
+      bta_sys_conn_close(BTA_ID_AV, p_scb->app_id, p_scb->PeerAddress());
       bta_av_cleanup(p_scb, p_data);
       (*bta_av_cb.p_cback)(event, &data);
     }
@@ -2463,8 +2488,8 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   uint8_t policy = HCI_ENABLE_SNIFF_MODE;
 
   APPL_TRACE_DEBUG("%s: peer %s handle:%d audio_open_cnt:%d err_code:%d",
-                   __func__, p_scb->peer_addr.ToString().c_str(), p_scb->hndl,
-                   bta_av_cb.audio_open_cnt, err_code);
+                   __func__, p_scb->PeerAddress().ToString().c_str(),
+                   p_scb->hndl, bta_av_cb.audio_open_cnt, err_code);
 
   if (!p_scb->started) {
     /* handle the condition where there is a collision of SUSPEND req from
@@ -2498,11 +2523,11 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     p_scb->cong = false;
   }
 
-  bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
+  bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->PeerAddress());
   if ((bta_av_cb.features & BTA_AV_FEAT_MASTER) == 0 ||
       bta_av_cb.audio_open_cnt == 1)
     policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
-  bta_sys_set_policy(BTA_ID_AV, policy, p_scb->peer_addr);
+  bta_sys_set_policy(BTA_ID_AV, policy, p_scb->PeerAddress());
 
   /* in case that we received suspend_ind, we may need to call co_stop here */
   if (p_scb->co_started) {
@@ -2514,9 +2539,9 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
     {
       p_scb->co_started = false;
-      p_scb->p_cos->stop(p_scb->hndl, p_scb->peer_addr);
+      p_scb->p_cos->stop(p_scb->hndl, p_scb->PeerAddress());
     }
-    L2CA_SetFlushTimeout(p_scb->peer_addr, L2CAP_DEFAULT_FLUSH_TO);
+    L2CA_SetFlushTimeout(p_scb->PeerAddress(), L2CAP_DEFAULT_FLUSH_TO);
   }
 
   {
@@ -2541,7 +2566,7 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 void bta_av_rcfg_str_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   p_scb->l2c_cid = AVDT_GetL2CapChannel(p_scb->avdt_handle);
   APPL_TRACE_DEBUG("%s: peer %s handle:%d l2c_cid:%d", __func__,
-                   p_scb->peer_addr.ToString().c_str(), p_scb->hndl,
+                   p_scb->PeerAddress().ToString().c_str(), p_scb->hndl,
                    p_scb->l2c_cid);
 
   if (p_data != NULL) {
@@ -2552,7 +2577,7 @@ void bta_av_rcfg_str_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     APPL_TRACE_DEBUG("%s: l2c_cid: 0x%x stream_mtu: %d mtu: %d", __func__,
                      p_scb->l2c_cid, p_scb->stream_mtu, mtu);
     if (mtu == 0 || mtu > p_scb->stream_mtu) mtu = p_scb->stream_mtu;
-    p_scb->p_cos->update_mtu(p_scb->hndl, p_scb->peer_addr, mtu);
+    p_scb->p_cos->update_mtu(p_scb->hndl, p_scb->PeerAddress(), mtu);
   }
 
   /* rc listen */
@@ -2587,7 +2612,7 @@ void bta_av_rcfg_str_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 void bta_av_rcfg_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   APPL_TRACE_ERROR("%s: num_recfg=%d conn_lcb=0x%x peer_addr=%s", __func__,
                    p_scb->num_recfg, bta_av_cb.conn_lcb,
-                   p_scb->peer_addr.ToString().c_str());
+                   p_scb->PeerAddress().ToString().c_str());
 
   if (p_scb->num_recfg > BTA_AV_RECONFIG_RETRY) {
     bta_av_cco_close(p_scb, p_data);
@@ -2605,7 +2630,7 @@ void bta_av_rcfg_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     /* open failed. try again */
     p_scb->num_recfg++;
     if (bta_av_cb.conn_lcb) {
-      AVDT_DisconnectReq(p_scb->peer_addr, &bta_av_proc_stream_evt);
+      AVDT_DisconnectReq(p_scb->PeerAddress(), &bta_av_proc_stream_evt);
     } else {
       bta_av_connect_req(p_scb, NULL);
     }
@@ -2631,7 +2656,7 @@ void bta_av_rcfg_connect(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
     /* let bta_av_rcfg_failed report fail */
     bta_av_rcfg_failed(p_scb, NULL);
   } else {
-    AVDT_ConnectReq(p_scb->peer_addr, p_scb->hdi, p_scb->sec_mask,
+    AVDT_ConnectReq(p_scb->PeerAddress(), p_scb->hdi, p_scb->sec_mask,
                     &bta_av_proc_stream_evt);
   }
 }
@@ -2648,7 +2673,7 @@ void bta_av_rcfg_connect(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
 void bta_av_rcfg_discntd(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   APPL_TRACE_ERROR("%s: num_recfg=%d conn_lcb=0x%x peer_addr=%s", __func__,
                    p_scb->num_recfg, bta_av_cb.conn_lcb,
-                   p_scb->peer_addr.ToString().c_str());
+                   p_scb->PeerAddress().ToString().c_str());
 
   p_scb->num_recfg++;
   if (p_scb->num_recfg > BTA_AV_RECONFIG_RETRY) {
@@ -2663,7 +2688,7 @@ void bta_av_rcfg_discntd(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
     /* report close event & go to init state */
     bta_av_ssm_execute(p_scb, BTA_AV_STR_DISC_FAIL_EVT, NULL);
   } else {
-    AVDT_ConnectReq(p_scb->peer_addr, p_scb->hdi, p_scb->sec_mask,
+    AVDT_ConnectReq(p_scb->PeerAddress(), p_scb->hdi, p_scb->sec_mask,
                     &bta_av_proc_stream_evt);
   }
 }
@@ -2694,7 +2719,7 @@ void bta_av_suspend_cont(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       bta_av_data.reconfig = reconfig;
       (*bta_av_cb.p_cback)(BTA_AV_RECONFIG_EVT, &bta_av_data);
       APPL_TRACE_ERROR("%s: BTA_AV_STR_DISC_FAIL_EVT: peer_addr=%s", __func__,
-                       p_scb->peer_addr.ToString().c_str());
+                       p_scb->PeerAddress().ToString().c_str());
       bta_av_ssm_execute(p_scb, BTA_AV_STR_DISC_FAIL_EVT, NULL);
     } else {
       APPL_TRACE_ERROR("%s: suspend rejected, try close", __func__);
@@ -2738,14 +2763,16 @@ void bta_av_rcfg_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   bool disable_avdtp_reconfigure = false;
   {
     char remote_name[BTM_MAX_REM_BD_NAME_LEN] = "";
-    if (btif_storage_get_stored_remote_name(p_scb->peer_addr, remote_name)) {
+    if (btif_storage_get_stored_remote_name(p_scb->PeerAddress(),
+                                            remote_name)) {
       if (interop_match_name(INTEROP_DISABLE_AVDTP_RECONFIGURE, remote_name) ||
           interop_match_addr(INTEROP_DISABLE_AVDTP_RECONFIGURE,
-                             (const RawAddress*)&p_scb->peer_addr)) {
+                             (const RawAddress*)&p_scb->PeerAddress())) {
         LOG_INFO(LOG_TAG,
                  "%s: disable AVDTP RECONFIGURE: interop matched "
                  "name %s address %s",
-                 __func__, remote_name, p_scb->peer_addr.ToString().c_str());
+                 __func__, remote_name,
+                 p_scb->PeerAddress().ToString().c_str());
         disable_avdtp_reconfigure = true;
       }
     }
@@ -2787,15 +2814,15 @@ void bta_av_rcfg_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
  ******************************************************************************/
 void bta_av_rcfg_open(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   APPL_TRACE_DEBUG("%s: peer %s handle:%d num_disc_snks:%d", __func__,
-                   p_scb->peer_addr.ToString().c_str(), p_scb->hndl,
+                   p_scb->PeerAddress().ToString().c_str(), p_scb->hndl,
                    p_scb->num_disc_snks);
 
   if (p_scb->num_disc_snks == 0) {
     /* Need to update call-out module so that it will be ready for discover */
-    p_scb->p_cos->stop(p_scb->hndl, p_scb->peer_addr);
+    p_scb->p_cos->stop(p_scb->hndl, p_scb->PeerAddress());
 
     /* send avdtp discover request */
-    AVDT_DiscoverReq(p_scb->peer_addr, p_scb->hdi, p_scb->sep_info,
+    AVDT_DiscoverReq(p_scb->PeerAddress(), p_scb->hdi, p_scb->sep_info,
                      BTA_AV_NUM_SEPS, &bta_av_proc_stream_evt);
   } else {
     APPL_TRACE_DEBUG("%s: calling AVDT_OpenReq()", __func__);
@@ -2808,7 +2835,7 @@ void bta_av_rcfg_open(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
 
     /* open the stream with the new config */
     p_scb->sep_info_idx = p_scb->rcfg_idx;
-    AVDT_OpenReq(p_scb->avdt_handle, p_scb->peer_addr, p_scb->hdi,
+    AVDT_OpenReq(p_scb->avdt_handle, p_scb->PeerAddress(), p_scb->hdi,
                  p_scb->sep_info[p_scb->sep_info_idx].seid, &p_scb->cfg);
   }
 }
@@ -2860,7 +2887,7 @@ void bta_av_chk_2nd_start(tBTA_AV_SCB* p_scb,
           if (p_scbi->co_started != bta_av_cb.audio_open_cnt) {
             p_scbi->co_started = bta_av_cb.audio_open_cnt;
             L2CA_SetFlushTimeout(
-                p_scbi->peer_addr,
+                p_scbi->PeerAddress(),
                 p_bta_av_cfg->p_audio_flush_to[p_scbi->co_started - 1]);
           }
         }
@@ -2925,7 +2952,8 @@ void bta_av_open_rc(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       /* use main SM for AVRC SDP activities */
       if (is_new_avrcp_enabled()) {
         APPL_TRACE_WARNING("%s: Using the new AVRCP Profile", __func__);
-        bluetooth::avrcp::AvrcpService::Get()->ConnectDevice(p_scb->peer_addr);
+        bluetooth::avrcp::AvrcpService::Get()->ConnectDevice(
+            p_scb->PeerAddress());
       } else {
         bta_av_rc_disc((uint8_t)(p_scb->hdi + 1));
       }
@@ -2953,7 +2981,7 @@ void bta_av_open_at_inc(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   memcpy(&(p_scb->open_api), &(p_data->api_open), sizeof(tBTA_AV_API_OPEN));
 
   APPL_TRACE_DEBUG("%s: peer %s coll_mask:0x%x", __func__,
-                   p_scb->peer_addr.ToString().c_str(), p_scb->coll_mask);
+                   p_scb->PeerAddress().ToString().c_str(), p_scb->coll_mask);
 
   if (p_scb->coll_mask & BTA_AV_COLL_INC_TMR) {
     p_scb->coll_mask |= BTA_AV_COLL_API_CALLED;
@@ -3172,8 +3200,9 @@ static void bta_av_offload_codec_builder(tBTA_AV_SCB* p_scb,
   p_a2dp_offload->max_latency = 0;
   p_a2dp_offload->mtu = mtu;
   p_a2dp_offload->acl_hdl =
-      BTM_GetHCIConnHandle(p_scb->peer_addr, BT_TRANSPORT_BR_EDR);
-  p_a2dp_offload->scms_t_enable = p_scb->p_cos->cp_is_active(p_scb->peer_addr);
+      BTM_GetHCIConnHandle(p_scb->PeerAddress(), BT_TRANSPORT_BR_EDR);
+  p_a2dp_offload->scms_t_enable =
+      p_scb->p_cos->cp_is_active(p_scb->PeerAddress());
   APPL_TRACE_DEBUG("%s: scms_t_enable =%d", __func__,
                    p_a2dp_offload->scms_t_enable);
 
