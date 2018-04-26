@@ -235,6 +235,10 @@ static int prop2cfg(bt_bdaddr_t *remote_bd_addr, bt_property_t *prop)
                 bt_uuid_t *p_uuid = (bt_uuid_t*)prop->val + i;
                 memset(buf, 0, sizeof(buf));
                 uuid_to_string_legacy(p_uuid, buf);
+                if (strlen(value) + strlen(buf) + 1 > (int) sizeof(value) - 1) {
+                  android_errorWriteLog(0x534e4554, "73963551");
+                  return FALSE;
+                }
                 strlcat(value, buf, size);
                 strlcat(value, " ", size);
             }
