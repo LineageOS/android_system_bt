@@ -28,7 +28,7 @@ cc_test {
 // Bluetooth test suite for target
 // ========================================================
 cc_test {
-    name: "net_test_rfcomm",
+    name: "net_test_rfcomm_suite",
     defaults: ["fluoride_defaults"],
     include_dirs: ["system/bt"],
     srcs: [
