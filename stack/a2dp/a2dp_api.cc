@@ -68,6 +68,7 @@ static void a2dp_sdp_cback(uint16_t status) {
   bool found = false;
   tA2DP_Service a2dp_svc;
   tSDP_PROTOCOL_ELEM elem;
+  RawAddress peer_address = RawAddress::kEmpty;
 
   LOG_VERBOSE(LOG_TAG, "%s: status: %d", __func__, status);
 
@@ -80,6 +81,7 @@ static void a2dp_sdp_cback(uint16_t status) {
         break;
       }
       memset(&a2dp_svc, 0, sizeof(tA2DP_Service));
+      peer_address = p_rec->remote_bd_addr;
 
       /* get service name */
       if ((p_attr = SDP_FindAttributeInRec(p_rec, ATTR_ID_SERVICE_NAME)) !=
@@ -118,7 +120,7 @@ static void a2dp_sdp_cback(uint16_t status) {
   osi_free_and_reset((void**)&a2dp_cb.find.p_db);
   /* return info from sdp record in app callback function */
   if (a2dp_cb.find.p_cback != NULL) {
-    (*a2dp_cb.find.p_cback)(found, &a2dp_svc);
+    (*a2dp_cb.find.p_cback)(found, &a2dp_svc, peer_address);
   }
 
   return;
