@@ -48,19 +48,19 @@ TEST(GetTotalNumberOfItemsResponseBuilderTest, errorStatusTest) {
 }
 
 TEST(GetTotalNumberOfItemsRequestTest, getterTest) {
-  auto test_packet =
-      TestGetTotalNumItemsReqPacket::Make(get_total_number_of_items_request);
+  auto test_packet = TestGetTotalNumItemsReqPacket::Make(
+      get_total_number_of_items_request_now_playing);
   ASSERT_EQ(test_packet->GetScope(), Scope::NOW_PLAYING);
 }
 
 TEST(GetTotalNumberOfItemsRequestTest, validTest) {
-  auto test_packet =
-      TestGetTotalNumItemsReqPacket::Make(get_total_number_of_items_request);
+  auto test_packet = TestGetTotalNumItemsReqPacket::Make(
+      get_total_number_of_items_request_now_playing);
   ASSERT_TRUE(test_packet->IsValid());
 }
 
 TEST(GetTotalNumberOfItemsRequestTest, invalidTest) {
-  auto packet_copy = get_total_number_of_items_request;
+  auto packet_copy = get_total_number_of_items_request_now_playing;
   packet_copy.push_back(0x00);
   auto test_packet = TestGetTotalNumItemsReqPacket::Make(packet_copy);
   ASSERT_FALSE(test_packet->IsValid());
