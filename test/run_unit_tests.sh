@@ -20,10 +20,11 @@ known_tests=(
   net_test_btu_message_loop
   net_test_osi
   net_test_performance
+  net_test_stack_rfcomm
 )
 
 known_remote_tests=(
-  net_test_rfcomm
+  net_test_rfcomm_suite
 )
 
 
