@@ -97,12 +97,12 @@ void bta_sys_ssr_cfg_register(tBTA_SYS_SSR_CFG_CBACK* p_cback) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_sys_notify_role_chg(const RawAddress& p_bda, uint8_t new_role,
+void bta_sys_notify_role_chg(const RawAddress& peer_addr, uint8_t new_role,
                              uint8_t hci_status) {
   APPL_TRACE_DEBUG("%s: peer %s new_role:%d hci_status:0x%x", __func__,
-                   p_bda.ToString().c_str(), new_role, hci_status);
+                   peer_addr.ToString().c_str(), new_role, hci_status);
   if (bta_sys_cb.p_role_cb) {
-    bta_sys_cb.p_role_cb(BTA_SYS_ROLE_CHANGE, new_role, hci_status, p_bda);
+    bta_sys_cb.p_role_cb(BTA_SYS_ROLE_CHANGE, new_role, hci_status, peer_addr);
   }
 }
 
@@ -139,13 +139,13 @@ void bta_sys_collision_register(uint8_t bta_id, tBTA_SYS_CONN_CBACK* p_cback) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_sys_notify_collision(const RawAddress& p_bda) {
+void bta_sys_notify_collision(const RawAddress& peer_addr) {
   uint8_t index;
 
   for (index = 0; index < MAX_COLLISION_REG; index++) {
     if ((bta_sys_cb.colli_reg.id[index] != 0) &&
         (bta_sys_cb.colli_reg.p_coll_cback[index] != NULL)) {
-      bta_sys_cb.colli_reg.p_coll_cback[index](0, BTA_ID_SYS, 0, p_bda);
+      bta_sys_cb.colli_reg.p_coll_cback[index](0, BTA_ID_SYS, 0, peer_addr);
     }
   }
 }
@@ -368,6 +368,8 @@ void bta_sys_chg_ssr_config(uint8_t id, uint8_t app_id, uint16_t max_latency,
  ******************************************************************************/
 void bta_sys_set_policy(uint8_t id, uint8_t policy,
                         const RawAddress& peer_addr) {
+  APPL_TRACE_DEBUG("%s: peer %s id:%d policy:0x%x", __func__,
+                   peer_addr.ToString().c_str(), id, policy);
   if (bta_sys_cb.p_policy_cb) {
     bta_sys_cb.p_policy_cb(BTA_SYS_PLCY_SET, id, policy, peer_addr);
   }
@@ -385,6 +387,8 @@ void bta_sys_set_policy(uint8_t id, uint8_t policy,
  ******************************************************************************/
 void bta_sys_clear_policy(uint8_t id, uint8_t policy,
                           const RawAddress& peer_addr) {
+  APPL_TRACE_DEBUG("%s: peer %s id:%d policy:0x%x", __func__,
+                   peer_addr.ToString().c_str(), id, policy);
   if (bta_sys_cb.p_policy_cb) {
     bta_sys_cb.p_policy_cb(BTA_SYS_PLCY_CLR, id, policy, peer_addr);
   }
@@ -401,6 +405,7 @@ void bta_sys_clear_policy(uint8_t id, uint8_t policy,
  *
  ******************************************************************************/
 void bta_sys_set_default_policy(uint8_t id, uint8_t policy) {
+  APPL_TRACE_DEBUG("%s: id:%d policy:0x%x", __func__, id, policy);
   if (bta_sys_cb.p_policy_cb) {
     bta_sys_cb.p_policy_cb(BTA_SYS_PLCY_DEF_SET, id, policy,
                            RawAddress::kEmpty);
@@ -418,6 +423,7 @@ void bta_sys_set_default_policy(uint8_t id, uint8_t policy) {
  *
  ******************************************************************************/
 void bta_sys_clear_default_policy(uint8_t id, uint8_t policy) {
+  APPL_TRACE_DEBUG("%s: id:%d policy:0x%x", __func__, id, policy);
   if (bta_sys_cb.p_policy_cb) {
     bta_sys_cb.p_policy_cb(BTA_SYS_PLCY_DEF_CLR, id, policy,
                            RawAddress::kEmpty);
