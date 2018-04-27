@@ -266,11 +266,11 @@ extern void bta_sys_chg_ssr_config(uint8_t id, uint8_t app_id,
 #endif
 
 extern void bta_sys_role_chg_register(tBTA_SYS_CONN_CBACK* p_cback);
-extern void bta_sys_notify_role_chg(const RawAddress& p_bda, uint8_t new_role,
-                                    uint8_t hci_status);
+extern void bta_sys_notify_role_chg(const RawAddress& peer_addr,
+                                    uint8_t new_role, uint8_t hci_status);
 extern void bta_sys_collision_register(uint8_t bta_id,
                                        tBTA_SYS_CONN_CBACK* p_cback);
-extern void bta_sys_notify_collision(const RawAddress& p_bda);
+extern void bta_sys_notify_collision(const RawAddress& peer_addr);
 
 #if (BTA_EIR_CANNED_UUID_LIST != TRUE)
 extern void bta_sys_eir_register(tBTA_SYS_EIR_CBACK* p_cback);
