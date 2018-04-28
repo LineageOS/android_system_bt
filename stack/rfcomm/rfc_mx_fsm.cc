@@ -69,7 +69,9 @@ static void rfc_mx_conf_cnf(tRFC_MCB* p_mcb, tL2CAP_CFG_INFO* p_cfg);
  *
  ******************************************************************************/
 void rfc_mx_sm_execute(tRFC_MCB* p_mcb, uint16_t event, void* p_data) {
-  RFCOMM_TRACE_DEBUG("%s: STATE=%d, EVENT=%d", __func__, p_mcb->state, event);
+  CHECK(p_mcb != nullptr) << __func__ << ": NULL mcb for event " << event;
+  VLOG(1) << __func__ << ": bd_addr=" << p_mcb->bd_addr
+          << ", state=" << std::to_string(p_mcb->state) << ", event=" << event;
   switch (p_mcb->state) {
     case RFC_MX_STATE_IDLE:
       rfc_mx_sm_state_idle(p_mcb, event, p_data);
