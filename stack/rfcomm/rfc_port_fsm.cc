@@ -64,14 +64,11 @@ static void rfc_set_port_state(tPORT_STATE* port_pars, MX_FRAME* p_frame);
  *
  ******************************************************************************/
 void rfc_port_sm_execute(tPORT* p_port, uint16_t event, void* p_data) {
-  VLOG(1) << __func__ << ": PORT=" << std::to_string(p_port->handle)
+  CHECK(p_port != nullptr) << __func__ << ": NULL port event " << event;
+  VLOG(1) << __func__ << ": BD_ADDR=" << p_port->bd_addr
+          << ", PORT=" << std::to_string(p_port->handle)
           << ", STATE=" << std::to_string(p_port->rfc.state)
           << ", EVENT=" << event;
-  if (!p_port) {
-    LOG(WARNING) << __func__ << ": NULL port event " << event;
-    return;
-  }
-
   switch (p_port->rfc.state) {
     case RFC_STATE_CLOSED:
       rfc_port_sm_state_closed(p_port, event, p_data);
