@@ -319,10 +319,9 @@ tPORT* port_find_mcb_dlci_port(tRFC_MCB* p_mcb, uint8_t dlci) {
 
   uint8_t inx = p_mcb->port_inx[dlci];
   if (inx == 0) {
-    LOG(WARNING) << __func__
-                 << ": Cannot find allocated RFCOMM app port for DLCI "
-                 << std::to_string(dlci) << " on " << p_mcb->bd_addr
-                 << ", p_mcb=" << p_mcb;
+    LOG(INFO) << __func__ << ": Cannot find allocated RFCOMM app port for DLCI "
+              << std::to_string(dlci) << " on " << p_mcb->bd_addr
+              << ", p_mcb=" << p_mcb;
     return nullptr;
   }
   return &rfc_cb.port.port[inx - 1];
