@@ -404,6 +404,7 @@ class BtifAvSource {
         BTIF_TRACE_WARNING("%s: unable to set active peer to empty in BtaAvCo",
                            __func__);
       }
+      btif_av_stream_stop();
       btif_a2dp_source_end_session(active_peer_);
       btif_a2dp_source_shutdown();
       active_peer_ = peer_address;
