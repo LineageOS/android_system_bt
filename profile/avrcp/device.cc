@@ -578,8 +578,12 @@ void Device::BrowseMessageReceived(uint8_t label,
       HandleGetItemAttributes(
           label, Packet::Specialize<GetItemAttributesRequest>(pkt));
       break;
+    case BrowsePdu::GET_TOTAL_NUMBER_OF_ITEMS:
+      HandleGetTotalNumberOfItems(
+          label, Packet::Specialize<GetTotalNumberOfItemsRequest>(pkt));
+      break;
     default:
-      DEVICE_LOG(WARNING) << __func__ << ": " << pkt->GetPdu();
+      DEVICE_LOG(FATAL) << __func__ << ": " << pkt->GetPdu();
       break;
   }
 }
@@ -609,6 +613,61 @@ void Device::HandleGetFolderItems(uint8_t label,
       DEVICE_LOG(ERROR) << __func__ << ": " << pkt->GetScope();
       break;
   }
+}
+
+void Device::HandleGetTotalNumberOfItems(
+    uint8_t label, std::shared_ptr<GetTotalNumberOfItemsRequest> pkt) {
+  DEVICE_VLOG(2) << __func__ << ": scope=" << pkt->GetScope();
+
+  switch (pkt->GetScope()) {
+    case Scope::MEDIA_PLAYER_LIST: {
+      media_interface_->GetMediaPlayerList(
+          base::Bind(&Device::GetTotalNumberOfItemsMediaPlayersResponse,
+                     base::Unretained(this), label));
+      break;
+    }
+    case Scope::VFS:
+      media_interface_->GetFolderItems(
+          curr_browsed_player_id_, CurrentFolder(),
+          base::Bind(&Device::GetTotalNumberOfItemsVFSResponse,
+                     base::Unretained(this), label));
+      break;
+    case Scope::NOW_PLAYING:
+      media_interface_->GetNowPlayingList(
+          base::Bind(&Device::GetTotalNumberOfItemsNowPlayingResponse,
+                     base::Unretained(this), label));
+      break;
+    default:
+      DEVICE_LOG(ERROR) << __func__ << ": " << pkt->GetScope();
+      break;
+  }
+}
+
+void Device::GetTotalNumberOfItemsMediaPlayersResponse(
+    uint8_t label, uint16_t curr_player, std::vector<MediaPlayerInfo> list) {
+  DEVICE_VLOG(2) << __func__ << ": num_items=" << list.size();
+
+  auto builder = GetTotalNumberOfItemsResponseBuilder::MakeBuilder(
+      Status::NO_ERROR, 0x0000, list.size());
+  send_message(label, true, std::move(builder));
+}
+
+void Device::GetTotalNumberOfItemsVFSResponse(uint8_t label,
+                                              std::vector<ListItem> list) {
+  DEVICE_VLOG(2) << __func__ << ": num_items=" << list.size();
+
+  auto builder = GetTotalNumberOfItemsResponseBuilder::MakeBuilder(
+      Status::NO_ERROR, 0x0000, list.size());
+  send_message(label, true, std::move(builder));
+}
+
+void Device::GetTotalNumberOfItemsNowPlayingResponse(
+    uint8_t label, std::string curr_song_id, std::vector<SongInfo> list) {
+  DEVICE_VLOG(2) << __func__ << ": num_items=" << list.size();
+
+  auto builder = GetTotalNumberOfItemsResponseBuilder::MakeBuilder(
+      Status::NO_ERROR, 0x0000, list.size());
+  send_message(label, true, std::move(builder));
 }
 
 void Device::HandleChangePath(uint8_t label,
