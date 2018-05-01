@@ -38,6 +38,7 @@
 #include "bta_dm_co.h"
 #include "bta_dm_int.h"
 #include "bta_sys.h"
+#include "btif_storage.h"
 #include "btm_api.h"
 #include "btm_int.h"
 #include "btu.h"
@@ -245,6 +246,9 @@ uint8_t g_disc_raw_data_buf[MAX_DISC_RAW_DATA_BUF];
 
 extern DEV_CLASS local_device_default_class;
 
+// Stores the local Input/Output Capabilities of the Bluetooth device.
+static uint8_t btm_local_io_caps;
+
 /** Initialises the BT device manager */
 void bta_dm_enable(tBTA_DM_SEC_CBACK* p_sec_cback) {
   /* if already in use, return an error */
@@ -275,6 +279,8 @@ void bta_dm_enable(tBTA_DM_SEC_CBACK* p_sec_cback) {
   sys_enable_event->hw_module = BTA_SYS_HW_BLUETOOTH;
 
   bta_sys_sendmsg(sys_enable_event);
+
+  btm_local_io_caps = btif_storage_get_local_io_caps();
 }
 
 /*******************************************************************************
@@ -2463,20 +2469,20 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
   /* TODO_SP */
   switch (event) {
     case BTM_SP_IO_REQ_EVT:
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
-      /* translate auth_req */
-      bta_dm_co_io_req(p_data->io_req.bd_addr, &p_data->io_req.io_cap,
-                       &p_data->io_req.oob_data, &p_data->io_req.auth_req,
-                       p_data->io_req.is_orig);
-#endif
+      if (btm_local_io_caps != BTM_IO_CAP_NONE) {
+        /* translate auth_req */
+        bta_dm_co_io_req(p_data->io_req.bd_addr, &p_data->io_req.io_cap,
+                         &p_data->io_req.oob_data, &p_data->io_req.auth_req,
+                         p_data->io_req.is_orig);
+      }
       APPL_TRACE_EVENT("io mitm: %d oob_data:%d", p_data->io_req.auth_req,
                        p_data->io_req.oob_data);
       break;
     case BTM_SP_IO_RSP_EVT:
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
-      bta_dm_co_io_rsp(p_data->io_rsp.bd_addr, p_data->io_rsp.io_cap,
-                       p_data->io_rsp.oob_data, p_data->io_rsp.auth_req);
-#endif
+      if (btm_local_io_caps != BTM_IO_CAP_NONE) {
+        bta_dm_co_io_rsp(p_data->io_rsp.bd_addr, p_data->io_rsp.io_cap,
+                         p_data->io_rsp.oob_data, p_data->io_rsp.auth_req);
+      }
       break;
 
     case BTM_SP_CFM_REQ_EVT:
@@ -2489,12 +2495,16 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
       sec_event.cfm_req.rmt_io_caps = p_data->cfm_req.rmt_io_caps;
 
     /* continue to next case */
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
     /* Passkey entry mode, mobile device with output capability is very
         unlikely to receive key request, so skip this event */
     /*case BTM_SP_KEY_REQ_EVT: */
     case BTM_SP_KEY_NOTIF_EVT:
-#endif
+      if (btm_local_io_caps == BTM_IO_CAP_NONE &&
+          BTM_SP_KEY_NOTIF_EVT == event) {
+        status = BTM_NOT_AUTHORIZED;
+        break;
+      }
+
       bta_dm_cb.num_val = sec_event.key_notif.passkey =
           p_data->key_notif.passkey;
 
@@ -3761,13 +3771,12 @@ static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
   memset(&sec_event, 0, sizeof(tBTA_DM_SEC));
   switch (event) {
     case BTM_LE_IO_REQ_EVT:
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
-
-      bta_dm_co_ble_io_req(
-          bda, &p_data->io_req.io_cap, &p_data->io_req.oob_data,
-          &p_data->io_req.auth_req, &p_data->io_req.max_key_size,
-          &p_data->io_req.init_keys, &p_data->io_req.resp_keys);
-#endif
+      if (btm_local_io_caps != BTM_IO_CAP_NONE) {
+        bta_dm_co_ble_io_req(
+            bda, &p_data->io_req.io_cap, &p_data->io_req.oob_data,
+            &p_data->io_req.auth_req, &p_data->io_req.max_key_size,
+            &p_data->io_req.init_keys, &p_data->io_req.resp_keys);
+      }
       APPL_TRACE_EVENT("io mitm: %d oob_data:%d", p_data->io_req.auth_req,
                        p_data->io_req.oob_data);
 

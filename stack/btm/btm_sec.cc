@@ -35,6 +35,7 @@
 
 #include "bt_types.h"
 #include "bt_utils.h"
+#include "btif_storage.h"
 #include "btm_int.h"
 #include "btu.h"
 #include "hcimsgs.h"
@@ -1432,7 +1433,6 @@ void BTM_ConfirmReqReply(tBTM_STATUS res, const RawAddress& bd_addr) {
  *                  BTM_MAX_PASSKEY_VAL(999999(0xF423F)).
  *
  ******************************************************************************/
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
 void BTM_PasskeyReqReply(tBTM_STATUS res, const RawAddress& bd_addr,
                          uint32_t passkey) {
   BTM_TRACE_API("BTM_PasskeyReqReply: State: %s  res:%d",
@@ -1479,7 +1479,6 @@ void BTM_PasskeyReqReply(tBTM_STATUS res, const RawAddress& bd_addr,
     btsnd_hcic_user_passkey_reply(bd_addr, passkey);
   }
 }
-#endif
 
 /*******************************************************************************
  *
@@ -1495,13 +1494,11 @@ void BTM_PasskeyReqReply(tBTM_STATUS res, const RawAddress& bd_addr,
  *                  type - notification type
  *
  ******************************************************************************/
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
 void BTM_SendKeypressNotif(const RawAddress& bd_addr, tBTM_SP_KEY_TYPE type) {
   /* This API only make sense between PASSKEY_REQ and SP complete */
   if (btm_cb.pairing_state == BTM_PAIR_STATE_KEY_ENTRY)
     btsnd_hcic_send_keypress_notif(bd_addr, type);
 }
-#endif
 
 /*******************************************************************************
  *
@@ -2719,7 +2716,7 @@ void btm_sec_device_down(void) {
 void btm_sec_dev_reset(void) {
   if (controller_get_interface()->supports_simple_pairing()) {
     /* set the default IO capabilities */
-    btm_cb.devcb.loc_io_caps = BTM_LOCAL_IO_CAPS;
+    btm_cb.devcb.loc_io_caps = btif_storage_get_local_io_caps();
     /* add mx service to use no security */
     BTM_SetSecurityLevel(false, "RFC_MUX", BTM_SEC_SERVICE_RFC_MUX,
                          BTM_SEC_NONE, BT_PSM_RFCOMM, BTM_SEC_PROTO_RFCOMM, 0);
@@ -3398,26 +3395,27 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, uint8_t* p) {
 
         evt_data.cfm_req.just_works = true;
 
-/* process user confirm req in association with the auth_req param */
-#if (BTM_LOCAL_IO_CAPS == BTM_IO_CAP_IO)
-        if (p_dev_rec->rmt_io_caps == BTM_IO_CAP_UNKNOWN) {
-          BTM_TRACE_ERROR(
-              "%s did not receive IO cap response prior"
-              " to BTM_SP_CFM_REQ_EVT, failing pairing request",
-              __func__);
-          status = BTM_WRONG_MODE;
-          BTM_ConfirmReqReply(status, p_bda);
-          return;
+        /* process user confirm req in association with the auth_req param */
+        if (btm_cb.devcb.loc_io_caps == BTM_IO_CAP_IO) {
+          if (p_dev_rec->rmt_io_caps == BTM_IO_CAP_UNKNOWN) {
+            BTM_TRACE_ERROR(
+                "%s did not receive IO cap response prior"
+                " to BTM_SP_CFM_REQ_EVT, failing pairing request",
+                __func__);
+            status = BTM_WRONG_MODE;
+            BTM_ConfirmReqReply(status, p_bda);
+            return;
+          }
+          if ((p_dev_rec->rmt_io_caps == BTM_IO_CAP_IO) &&
+              (btm_cb.devcb.loc_io_caps == BTM_IO_CAP_IO) &&
+              ((p_dev_rec->rmt_auth_req & BTM_AUTH_SP_YES) ||
+               (btm_cb.devcb.loc_auth_req & BTM_AUTH_SP_YES))) {
+            /* Both devices are DisplayYesNo and one or both devices want to
+               authenticate -> use authenticated link key */
+            evt_data.cfm_req.just_works = false;
+          }
         }
-        if ((p_dev_rec->rmt_io_caps == BTM_IO_CAP_IO) &&
-            (btm_cb.devcb.loc_io_caps == BTM_IO_CAP_IO) &&
-            ((p_dev_rec->rmt_auth_req & BTM_AUTH_SP_YES) ||
-             (btm_cb.devcb.loc_auth_req & BTM_AUTH_SP_YES))) {
-          /* Both devices are DisplayYesNo and one or both devices want to
-             authenticate -> use authenticated link key */
-          evt_data.cfm_req.just_works = false;
-        }
-#endif
+
         BTM_TRACE_DEBUG(
             "btm_proc_sp_req_evt()  just_works:%d, io loc:%d, rmt:%d, auth "
             "loc:%d, rmt:%d",
@@ -3440,12 +3438,12 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, uint8_t* p) {
         btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_AUTH_COMPLETE);
         break;
 
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
       case BTM_SP_KEY_REQ_EVT:
-        /* HCI_USER_PASSKEY_REQUEST_EVT */
-        btm_sec_change_pairing_state(BTM_PAIR_STATE_KEY_ENTRY);
+        if (btm_cb.devcb.loc_io_caps != BTM_IO_CAP_NONE) {
+          /* HCI_USER_PASSKEY_REQUEST_EVT */
+          btm_sec_change_pairing_state(BTM_PAIR_STATE_KEY_ENTRY);
+        }
         break;
-#endif
     }
 
     if (btm_cb.api.p_sp_callback) {
@@ -3463,12 +3461,10 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, uint8_t* p) {
     if (event == BTM_SP_CFM_REQ_EVT) {
       BTM_TRACE_DEBUG("calling BTM_ConfirmReqReply with status: %d", status);
       BTM_ConfirmReqReply(status, p_bda);
-    }
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
-    else if (event == BTM_SP_KEY_REQ_EVT) {
+    } else if (btm_cb.devcb.loc_io_caps != BTM_IO_CAP_NONE &&
+               event == BTM_SP_KEY_REQ_EVT) {
       BTM_PasskeyReqReply(status, p_bda, 0);
     }
-#endif
     return;
   }
 
@@ -3489,12 +3485,9 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, uint8_t* p) {
     if (p_dev_rec != NULL) {
       btm_sec_disconnect(p_dev_rec->hci_handle, HCI_ERR_AUTH_FAILURE);
     }
-  }
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
-  else {
+  } else if (btm_cb.devcb.loc_io_caps != BTM_IO_CAP_NONE) {
     btsnd_hcic_user_passkey_neg_reply(p_bda);
   }
-#endif
 }
 
 /*******************************************************************************
@@ -4739,11 +4732,9 @@ void btm_sec_link_key_request(const RawAddress& bda) {
 static void btm_sec_pairing_timeout(UNUSED_ATTR void* data) {
   tBTM_CB* p_cb = &btm_cb;
   tBTM_SEC_DEV_REC* p_dev_rec;
-#if (BTM_LOCAL_IO_CAPS == BTM_IO_CAP_NONE)
-  tBTM_AUTH_REQ auth_req = BTM_AUTH_AP_NO;
-#else
-  tBTM_AUTH_REQ auth_req = BTM_AUTH_AP_YES;
-#endif
+  tBTM_AUTH_REQ auth_req = (btm_cb.devcb.loc_io_caps == BTM_IO_CAP_NONE)
+                               ? BTM_AUTH_AP_NO
+                               : BTM_AUTH_AP_YES;
   uint8_t name[2];
 
   p_dev_rec = btm_find_dev(p_cb->pairing_bda);
@@ -4779,12 +4770,13 @@ static void btm_sec_pairing_timeout(UNUSED_ATTR void* data) {
       /* btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE); */
       break;
 
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
     case BTM_PAIR_STATE_KEY_ENTRY:
-      btsnd_hcic_user_passkey_neg_reply(p_cb->pairing_bda);
-      /* btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE); */
+      if (btm_cb.devcb.loc_io_caps != BTM_IO_CAP_NONE) {
+        btsnd_hcic_user_passkey_neg_reply(p_cb->pairing_bda);
+      } else {
+        btm_sec_change_pairing_state(BTM_PAIR_STATE_IDLE);
+      }
       break;
-#endif /* !BTM_IO_CAP_NONE */
 
     case BTM_PAIR_STATE_WAIT_LOCAL_IOCAPS:
       if (btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD)

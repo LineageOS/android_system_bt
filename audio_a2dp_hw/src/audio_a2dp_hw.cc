@@ -427,10 +427,12 @@ static int a2dp_command(struct a2dp_stream_common* common, tA2DP_CTRL_CMD cmd) {
   DEBUG("A2DP COMMAND %s", audio_a2dp_hw_dump_ctrl_event(cmd));
 
   if (common->ctrl_fd == AUDIO_SKT_DISCONNECTED) {
-    INFO("starting up or recovering from previous error");
+    INFO("starting up or recovering from previous error: command=%s",
+         audio_a2dp_hw_dump_ctrl_event(cmd));
     a2dp_open_ctrl_path(common);
     if (common->ctrl_fd == AUDIO_SKT_DISCONNECTED) {
-      ERROR("failure to open ctrl path");
+      ERROR("failure to open ctrl path: command=%s",
+            audio_a2dp_hw_dump_ctrl_event(cmd));
       return -1;
     }
   }
@@ -439,7 +441,8 @@ static int a2dp_command(struct a2dp_stream_common* common, tA2DP_CTRL_CMD cmd) {
   ssize_t sent;
   OSI_NO_INTR(sent = send(common->ctrl_fd, &cmd, 1, MSG_NOSIGNAL));
   if (sent == -1) {
-    ERROR("cmd failed (%s)", strerror(errno));
+    ERROR("cmd failed (%s): command=%s", strerror(errno),
+          audio_a2dp_hw_dump_ctrl_event(cmd));
     skt_disconnect(common->ctrl_fd);
     common->ctrl_fd = AUDIO_SKT_DISCONNECTED;
     return -1;
@@ -454,7 +457,10 @@ static int a2dp_command(struct a2dp_stream_common* common, tA2DP_CTRL_CMD cmd) {
   DEBUG("A2DP COMMAND %s DONE STATUS %d", audio_a2dp_hw_dump_ctrl_event(cmd),
         ack);
 
-  if (ack == A2DP_CTRL_ACK_INCALL_FAILURE) return ack;
+  if (ack == A2DP_CTRL_ACK_INCALL_FAILURE) {
+    ERROR("A2DP COMMAND %s error %d", audio_a2dp_hw_dump_ctrl_event(cmd), ack);
+    return ack;
+  }
   if (ack != A2DP_CTRL_ACK_SUCCESS) {
     ERROR("A2DP COMMAND %s error %d", audio_a2dp_hw_dump_ctrl_event(cmd), ack);
     return -1;

@@ -547,25 +547,29 @@ void bta_sys_sendmsg(void* p_msg) {
  *
  * Description      Post a closure to be ran in the bta thread
  *
- * Returns          void
+ * Returns          BT_STATUS_SUCCESS on success
  *
  ******************************************************************************/
-void do_in_bta_thread(const tracked_objects::Location& from_here,
-                      const base::Closure& task) {
+bt_status_t do_in_bta_thread(const tracked_objects::Location& from_here,
+                             const base::Closure& task) {
   base::MessageLoop* bta_message_loop = get_message_loop();
   if (!bta_message_loop) {
     APPL_TRACE_ERROR("%s: MessageLooper not initialized", __func__);
-    return;
+    return BT_STATUS_FAIL;
   }
 
   scoped_refptr<base::SingleThreadTaskRunner> task_runner =
       bta_message_loop->task_runner();
   if (!task_runner.get()) {
     APPL_TRACE_ERROR("%s: task runner is dead", __func__);
-    return;
+    return BT_STATUS_FAIL;
   }
 
-  task_runner->PostTask(from_here, task);
+  if (!task_runner->PostTask(from_here, task)) {
+    APPL_TRACE_ERROR("%s: Post task to task runner failed!", __func__);
+    return BT_STATUS_FAIL;
+  }
+  return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************

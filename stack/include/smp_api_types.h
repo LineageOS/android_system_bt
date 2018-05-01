@@ -109,10 +109,6 @@ typedef uint8_t tSMP_STATUS;
 #define SMP_IO_CAP_MAX BTM_IO_CAP_MAX
 typedef uint8_t tSMP_IO_CAP;
 
-#ifndef SMP_DEFAULT_IO_CAPS
-#define SMP_DEFAULT_IO_CAPS SMP_IO_CAP_KBDISP
-#endif
-
 /* OOB data present or not */
 enum { SMP_OOB_NONE, SMP_OOB_PRESENT, SMP_OOB_UNKNOWN };
 typedef uint8_t tSMP_OOB_FLAG;

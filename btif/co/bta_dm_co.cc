@@ -25,12 +25,17 @@
 #include "bta_sys.h"
 #include "bte_appl.h"
 #include "btif_dm.h"
+#include "btif_storage.h"
 #include "osi/include/osi.h"
 
+// tBTE_APPL_CFG.ble_io_cap is set to BTM_IO_CAP_UNKNOWN at structure
+// initialization since btif_storage isn't ready yet for data to be fetched.
+// This value is initialized properly during first use by fetching properly
+// from btif_storage.
 tBTE_APPL_CFG bte_appl_cfg = {
     BTA_LE_AUTH_REQ_SC_MITM_BOND,  // Authentication requirements
-    BTM_LOCAL_IO_CAPS_BLE, BTM_BLE_INITIATOR_KEY_SIZE,
-    BTM_BLE_RESPONDER_KEY_SIZE, BTM_BLE_MAX_KEY_SIZE};
+    BTM_IO_CAP_UNKNOWN, BTM_BLE_INITIATOR_KEY_SIZE, BTM_BLE_RESPONDER_KEY_SIZE,
+    BTM_BLE_MAX_KEY_SIZE};
 
 /*******************************************************************************
  *
@@ -241,6 +246,8 @@ void bta_dm_co_ble_io_req(const RawAddress& bd_addr, tBTA_IO_CAP* p_io_cap,
                           tBTA_LE_AUTH_REQ* p_auth_req, uint8_t* p_max_key_size,
                           tBTA_LE_KEY_TYPE* p_init_key,
                           tBTA_LE_KEY_TYPE* p_resp_key) {
+  bte_appl_cfg.ble_io_cap = btif_storage_get_local_io_caps_ble();
+
   /* Retrieve the properties from file system if possible */
   tBTE_APPL_CFG nv_config;
   if (btif_dm_get_smp_config(&nv_config)) bte_appl_cfg = nv_config;

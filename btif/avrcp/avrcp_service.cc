@@ -273,13 +273,16 @@ void AvrcpService::Init(MediaInterface* media_interface,
   instance_->media_interface_ = new MediaInterfaceWrapper(media_interface);
   media_interface->RegisterUpdateCallback(instance_);
 
+  VolumeInterfaceWrapper* wrapped_volume_interface = nullptr;
   if (volume_interface != nullptr) {
-    instance_->volume_interface_ = new VolumeInterfaceWrapper(volume_interface);
+    wrapped_volume_interface = new VolumeInterfaceWrapper(volume_interface);
   }
+
+  instance_->volume_interface_ = wrapped_volume_interface;
 
   ConnectionHandler::Initialize(
       base::Bind(&AvrcpService::DeviceCallback, base::Unretained(instance_)),
-      &avrcp_interface_, &sdp_interface_, volume_interface);
+      &avrcp_interface_, &sdp_interface_, wrapped_volume_interface);
   instance_->connection_handler_ = ConnectionHandler::Get();
 }
 
