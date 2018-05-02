@@ -405,19 +405,19 @@ bool AvrcpService::ServiceInterfaceImpl::Cleanup() {
 
 void AvrcpService::DebugDump(int fd) {
   if (instance_ == nullptr) {
-    dprintf(fd, "AVRCP Target Service not started");
+    dprintf(fd, "\nAVRCP Target Service not started\n");
     return;
   }
 
-  dprintf(fd, "Avrcp Service:\n");
-
   auto device_list = instance_->connection_handler_->GetListOfDevices();
-  dprintf(fd, "Number of connected deviced: %zu\n", device_list.size());
+  dprintf(fd, "\nAVRCP Target Native Service: %zu devices\n",
+          device_list.size());
+
   std::stringstream stream;
   for (auto device : device_list) {
-    stream << device;
+    stream << *device << std::endl;
   }
-  dprintf(fd, "%s\n", stream.str().c_str());
+  dprintf(fd, "%s", stream.str().c_str());
 }
 
 }  // namespace avrcp
