@@ -651,6 +651,10 @@ TEST_F(AvrcpDeviceTest, volumeChangedTest) {
 
   test_device->RegisterInterfaces(&interface, &a2dp_interface, &vol_interface);
 
+  // Pretend the device is active
+  EXPECT_CALL(a2dp_interface, active_peer())
+      .WillRepeatedly(Return(test_device->GetAddress()));
+
   auto reg_notif =
       RegisterNotificationRequestBuilder::MakeBuilder(Event::VOLUME_CHANGED, 0);
   EXPECT_CALL(response_cb, Call(_, false, matchPacket(std::move(reg_notif))))
@@ -668,6 +672,46 @@ TEST_F(AvrcpDeviceTest, volumeChangedTest) {
   SendMessage(1, response);
 
   EXPECT_CALL(vol_interface, SetVolume(0x47)).Times(1);
+  auto reg_notif2 =
+      RegisterNotificationRequestBuilder::MakeBuilder(Event::VOLUME_CHANGED, 0);
+  EXPECT_CALL(response_cb, Call(_, false, matchPacket(std::move(reg_notif2))))
+      .Times(1);
+  response = TestAvrcpPacket::Make(changed_volume_changed_notification);
+  SendMessage(1, response);
+  response = TestAvrcpPacket::Make(interim_volume_changed_notification);
+  SendMessage(1, response);
+}
+
+TEST_F(AvrcpDeviceTest, volumeChangedNonActiveTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+  MockVolumeInterface vol_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, &vol_interface);
+
+  // Pretend the device is active
+  EXPECT_CALL(a2dp_interface, active_peer())
+      .WillRepeatedly(Return(RawAddress::kEmpty));
+
+  auto reg_notif =
+      RegisterNotificationRequestBuilder::MakeBuilder(Event::VOLUME_CHANGED, 0);
+  EXPECT_CALL(response_cb, Call(_, false, matchPacket(std::move(reg_notif))))
+      .Times(1);
+  test_device->RegisterVolumeChanged();
+
+  EXPECT_CALL(vol_interface, DeviceConnected(test_device->GetAddress(), _))
+      .Times(1)
+      .WillOnce(InvokeCb<1>(0x30));
+  auto set_vol = SetAbsoluteVolumeRequestBuilder::MakeBuilder(0x30);
+  EXPECT_CALL(response_cb, Call(_, false, matchPacket(std::move(set_vol))))
+      .Times(1);
+
+  auto response = TestAvrcpPacket::Make(interim_volume_changed_notification);
+  SendMessage(1, response);
+
+  // Ensure that SetVolume is never called
+  EXPECT_CALL(vol_interface, SetVolume(0x47)).Times(0);
+
   auto reg_notif2 =
       RegisterNotificationRequestBuilder::MakeBuilder(Event::VOLUME_CHANGED, 0);
   EXPECT_CALL(response_cb, Call(_, false, matchPacket(std::move(reg_notif2))))
