@@ -76,6 +76,8 @@ bool ConnectionHandler::CleanUp() {
   instance_->device_map_.clear();
   instance_->feature_map_.clear();
 
+  instance_->weak_ptr_factory_.InvalidateWeakPtrs();
+
   delete instance_;
   instance_ = nullptr;
 
@@ -168,10 +170,10 @@ bool ConnectionHandler::AvrcpConnect(bool initiator, const RawAddress& bdaddr) {
   tAVRC_CONN_CB open_cb;
   if (initiator) {
     open_cb.ctrl_cback = base::Bind(&ConnectionHandler::InitiatorControlCb,
-                                    base::Unretained(this));
+                                    weak_ptr_factory_.GetWeakPtr());
   } else {
     open_cb.ctrl_cback = base::Bind(&ConnectionHandler::AcceptorControlCb,
-                                    base::Unretained(this));
+                                    weak_ptr_factory_.GetWeakPtr());
   }
   open_cb.msg_cback =
       base::Bind(&ConnectionHandler::MessageCb, base::Unretained(this));
