@@ -1612,10 +1612,9 @@ bool BtaAvCo::ReportSourceCodecState(BtaAvCoPeer* p_peer) {
   APPL_TRACE_DEBUG("%s: peer %s codec_config=%s", __func__,
                    p_peer->addr.ToString().c_str(),
                    codec_config.ToString().c_str());
-  do_in_jni_thread(
-      FROM_HERE,
-      base::Bind(&btif_av_report_source_codec_state, p_peer->addr, codec_config,
-                 codecs_local_capabilities, codecs_selectable_capabilities));
+  btif_av_report_source_codec_state(p_peer->addr, codec_config,
+                                    codecs_local_capabilities,
+                                    codecs_selectable_capabilities);
   return true;
 }
 
