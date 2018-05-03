@@ -282,6 +282,12 @@ void Device::HandleVolumeChanged(
     return;
   }
 
+  if (!IsActive()) {
+    DEVICE_VLOG(3) << __func__
+                   << ": Ignoring volume changes from non active device";
+    return;
+  }
+
   volume_ = pkt->GetVolume();
   DEVICE_VLOG(1) << __func__ << ": Volume has changed to " << (uint32_t)volume_;
   volume_interface_->SetVolume(volume_);
