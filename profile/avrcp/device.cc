@@ -491,14 +491,13 @@ void Device::MessageReceived(uint8_t label, std::shared_ptr<Packet> pkt) {
     case Opcode::PASS_THROUGH: {
       auto pass_through_packet = Packet::Specialize<PassThroughPacket>(pkt);
       auto response = PassThroughPacketBuilder::MakeBuilder(
-          true, pass_through_packet->GetPushed(),
+          true, pass_through_packet->GetKeyState() == KeyState::PUSHED,
           pass_through_packet->GetOperationId());
       send_message(label, false, std::move(response));
 
-      // TODO (apanicke): Use an enum for media key ID's also handle
-      // other keys like forward and back for device switching.
+      // TODO (apanicke): Use an enum for media key ID's
       if (pass_through_packet->GetOperationId() == 0x44 &&
-          !pass_through_packet->GetPushed()) {
+          pass_through_packet->GetKeyState() == KeyState::PUSHED) {
         // We need to get the play status since we need to know
         // what the actual playstate is without being modified
         // by whether the device is active.
@@ -516,14 +515,16 @@ void Device::MessageReceived(uint8_t label, std::shared_ptr<Packet> pkt) {
                 }
               }
 
-              d->media_interface_->SendKeyEvent(0x44, 0);
+              d->media_interface_->SendKeyEvent(0x44, KeyState::PUSHED);
             },
             base::Unretained(this)));
         return;
       }
 
-      media_interface_->SendKeyEvent(pass_through_packet->GetOperationId(),
-                                     pass_through_packet->GetPushed() ? 0 : 1);
+      if (IsActive()) {
+        media_interface_->SendKeyEvent(pass_through_packet->GetOperationId(),
+                                       pass_through_packet->GetKeyState());
+      }
     } break;
     case Opcode::VENDOR: {
       auto vendor_pkt = Packet::Specialize<VendorPacket>(pkt);

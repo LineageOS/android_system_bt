@@ -101,7 +101,7 @@ class MediaCallbacks {
 // behavior in case the threading model changes on either side.
 class MediaInterface {
  public:
-  virtual void SendKeyEvent(uint8_t key, uint8_t status) = 0;
+  virtual void SendKeyEvent(uint8_t key, KeyState state) = 0;
 
   using SongInfoCallback = base::Callback<void(SongInfo)>;
   virtual void GetSongInfo(SongInfoCallback info_cb) = 0;

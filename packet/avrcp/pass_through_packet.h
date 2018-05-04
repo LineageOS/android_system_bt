@@ -62,7 +62,7 @@ class PassThroughPacket : public Packet {
   static constexpr size_t kMinSize() { return Packet::kMinSize() + 2; }
 
   // Getter Functions
-  bool GetPushed() const;
+  KeyState GetKeyState() const;
   uint8_t GetOperationId() const;
 
   // Overloaded Functions
