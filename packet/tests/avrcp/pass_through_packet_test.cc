@@ -42,11 +42,11 @@ TEST(PassThroughPacketBuilderTest, builderTest) {
 TEST(PassThroughPacketTest, getterTest) {
   auto test_packet =
       TestPassThroughPacket::Make(pass_through_command_play_pushed);
-  ASSERT_TRUE(test_packet->GetPushed());
+  ASSERT_EQ(test_packet->GetKeyState(), KeyState::PUSHED);
   ASSERT_EQ(test_packet->GetOperationId(), 0x44);
 
   test_packet = TestPassThroughPacket::Make(pass_through_command_play_released);
-  ASSERT_FALSE(test_packet->GetPushed());
+  ASSERT_EQ(test_packet->GetKeyState(), KeyState::RELEASED);
   ASSERT_EQ(test_packet->GetOperationId(), 0x44);
 }
 

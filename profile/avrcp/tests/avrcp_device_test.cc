@@ -762,7 +762,7 @@ TEST_F(AvrcpDeviceTest, volumeChangedNonActiveTest) {
 
   test_device->RegisterInterfaces(&interface, &a2dp_interface, &vol_interface);
 
-  // Pretend the device is active
+  // Pretend the device isn't active
   EXPECT_CALL(a2dp_interface, active_peer())
       .WillRepeatedly(Return(RawAddress::kEmpty));
 
@@ -812,6 +812,130 @@ TEST_F(AvrcpDeviceTest, volumeRejectedTest) {
   SendMessage(1, response);
 
   EXPECT_CALL(response_cb, Call(_, _, _)).Times(0);
+}
+
+TEST_F(AvrcpDeviceTest, playPushedActiveDeviceTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+  MockVolumeInterface vol_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, &vol_interface);
+
+  // Pretend the device is active
+  EXPECT_CALL(a2dp_interface, active_peer())
+      .WillRepeatedly(Return(test_device->GetAddress()));
+
+  auto play_pushed = PassThroughPacketBuilder::MakeBuilder(false, true, 0x44);
+  auto play_pushed_response =
+      PassThroughPacketBuilder::MakeBuilder(true, true, 0x44);
+  EXPECT_CALL(response_cb,
+              Call(_, false, matchPacket(std::move(play_pushed_response))))
+      .Times(1);
+
+  PlayStatus status = {0x1234, 0x5678, PlayState::PLAYING};
+  EXPECT_CALL(interface, GetPlayStatus(_))
+      .Times(1)
+      .WillOnce(InvokeCb<0>(status));
+
+  EXPECT_CALL(interface, SendKeyEvent(0x44, KeyState::PUSHED)).Times(1);
+
+  auto play_pushed_pkt = TestAvrcpPacket::Make();
+  play_pushed->Serialize(play_pushed_pkt);
+
+  SendMessage(1, play_pushed_pkt);
+}
+
+TEST_F(AvrcpDeviceTest, playPushedInactiveDeviceTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+  MockVolumeInterface vol_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, &vol_interface);
+
+  // Pretend the device is not active
+  EXPECT_CALL(a2dp_interface, active_peer())
+      .WillRepeatedly(Return(RawAddress::kEmpty));
+
+  auto play_pushed = PassThroughPacketBuilder::MakeBuilder(false, true, 0x44);
+  auto play_pushed_response =
+      PassThroughPacketBuilder::MakeBuilder(true, true, 0x44);
+  EXPECT_CALL(response_cb,
+              Call(_, false, matchPacket(std::move(play_pushed_response))))
+      .Times(1);
+
+  // Expect that the device will try to set itself as active
+  EXPECT_CALL(interface, SetActiveDevice(test_device->GetAddress())).Times(1);
+
+  // No play command should be sent since the music is already playing
+  PlayStatus status = {0x1234, 0x5678, PlayState::PLAYING};
+  EXPECT_CALL(interface, GetPlayStatus(_))
+      .Times(1)
+      .WillOnce(InvokeCb<0>(status));
+  EXPECT_CALL(interface, SendKeyEvent(0x44, KeyState::PUSHED)).Times(0);
+
+  auto play_pushed_pkt = TestAvrcpPacket::Make();
+  play_pushed->Serialize(play_pushed_pkt);
+
+  SendMessage(1, play_pushed_pkt);
+}
+
+TEST_F(AvrcpDeviceTest, mediaKeyActiveDeviceTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+  MockVolumeInterface vol_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, &vol_interface);
+
+  // Pretend the device is active
+  EXPECT_CALL(a2dp_interface, active_peer())
+      .WillRepeatedly(Return(test_device->GetAddress()));
+
+  auto play_released =
+      PassThroughPacketBuilder::MakeBuilder(false, false, 0x44);
+  auto play_released_response =
+      PassThroughPacketBuilder::MakeBuilder(true, false, 0x44);
+  EXPECT_CALL(response_cb,
+              Call(_, false, matchPacket(std::move(play_released_response))))
+      .Times(1);
+
+  EXPECT_CALL(interface, GetPlayStatus(_)).Times(0);
+
+  EXPECT_CALL(interface, SendKeyEvent(0x44, KeyState::RELEASED)).Times(1);
+
+  auto play_released_pkt = TestAvrcpPacket::Make();
+  play_released->Serialize(play_released_pkt);
+
+  SendMessage(1, play_released_pkt);
+}
+
+TEST_F(AvrcpDeviceTest, mediaKeyInactiveDeviceTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+  MockVolumeInterface vol_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, &vol_interface);
+
+  // Pretend the device is not active
+  EXPECT_CALL(a2dp_interface, active_peer())
+      .WillRepeatedly(Return(RawAddress::kEmpty));
+
+  auto play_released =
+      PassThroughPacketBuilder::MakeBuilder(false, false, 0x44);
+  auto play_released_response =
+      PassThroughPacketBuilder::MakeBuilder(true, false, 0x44);
+  EXPECT_CALL(response_cb,
+              Call(_, false, matchPacket(std::move(play_released_response))))
+      .Times(1);
+
+  EXPECT_CALL(interface, GetPlayStatus(_)).Times(0);
+
+  // Expect that the key event wont be sent to the media interface
+  EXPECT_CALL(interface, SendKeyEvent(0x44, KeyState::RELEASED)).Times(0);
+
+  auto play_released_pkt = TestAvrcpPacket::Make();
+  play_released->Serialize(play_released_pkt);
+
+  SendMessage(1, play_released_pkt);
 }
 
 }  // namespace avrcp
