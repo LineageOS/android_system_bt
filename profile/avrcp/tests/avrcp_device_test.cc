@@ -355,6 +355,79 @@ TEST_F(AvrcpDeviceTest, getElementAttributesMtuTest) {
       1, TestAvrcpPacket::Make(get_element_attributes_request_full));
 }
 
+TEST_F(AvrcpDeviceTest, getTotalNumberOfItemsMediaPlayersTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  std::vector<MediaPlayerInfo> player_list = {
+      {0, "player1", true}, {1, "player2", true}, {2, "player3", true},
+  };
+
+  EXPECT_CALL(interface, GetMediaPlayerList(_))
+      .Times(1)
+      .WillOnce(InvokeCb<0>(0, player_list));
+
+  auto expected_response = GetTotalNumberOfItemsResponseBuilder::MakeBuilder(
+      Status::NO_ERROR, 0, player_list.size());
+  EXPECT_CALL(response_cb,
+              Call(1, true, matchPacket(std::move(expected_response))))
+      .Times(1);
+
+  SendBrowseMessage(1, TestBrowsePacket::Make(
+                           get_total_number_of_items_request_media_players));
+}
+
+TEST_F(AvrcpDeviceTest, getTotalNumberOfItemsVFSTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  std::vector<ListItem> vfs_list = {
+      {ListItem::FOLDER, {"id1", true, "folder1"}, SongInfo()},
+      {ListItem::FOLDER, {"id2", true, "folder2"}, SongInfo()},
+  };
+
+  EXPECT_CALL(interface, GetFolderItems(_, "", _))
+      .Times(1)
+      .WillOnce(InvokeCb<2>(vfs_list));
+
+  auto expected_response = GetTotalNumberOfItemsResponseBuilder::MakeBuilder(
+      Status::NO_ERROR, 0, vfs_list.size());
+  EXPECT_CALL(response_cb,
+              Call(1, true, matchPacket(std::move(expected_response))))
+      .Times(1);
+
+  SendBrowseMessage(
+      1, TestBrowsePacket::Make(get_total_number_of_items_request_vfs));
+}
+
+TEST_F(AvrcpDeviceTest, getTotalNumberOfItemsNowPlayingTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  std::vector<SongInfo> now_playing_list = {
+      {"test_id1", {}}, {"test_id2", {}}, {"test_id3", {}},
+      {"test_id4", {}}, {"test_id5", {}},
+  };
+
+  EXPECT_CALL(interface, GetNowPlayingList(_))
+      .WillRepeatedly(InvokeCb<0>("test_id1", now_playing_list));
+
+  auto expected_response = GetTotalNumberOfItemsResponseBuilder::MakeBuilder(
+      Status::NO_ERROR, 0, now_playing_list.size());
+  EXPECT_CALL(response_cb,
+              Call(1, true, matchPacket(std::move(expected_response))))
+      .Times(1);
+
+  SendBrowseMessage(
+      1, TestBrowsePacket::Make(get_total_number_of_items_request_now_playing));
+}
+
 TEST_F(AvrcpDeviceTest, getMediaPlayerListTest) {
   MockMediaInterface interface;
   NiceMock<MockA2dpInterface> a2dp_interface;
@@ -651,6 +724,10 @@ TEST_F(AvrcpDeviceTest, volumeChangedTest) {
 
   test_device->RegisterInterfaces(&interface, &a2dp_interface, &vol_interface);
 
+  // Pretend the device is active
+  EXPECT_CALL(a2dp_interface, active_peer())
+      .WillRepeatedly(Return(test_device->GetAddress()));
+
   auto reg_notif =
       RegisterNotificationRequestBuilder::MakeBuilder(Event::VOLUME_CHANGED, 0);
   EXPECT_CALL(response_cb, Call(_, false, matchPacket(std::move(reg_notif))))
@@ -668,6 +745,46 @@ TEST_F(AvrcpDeviceTest, volumeChangedTest) {
   SendMessage(1, response);
 
   EXPECT_CALL(vol_interface, SetVolume(0x47)).Times(1);
+  auto reg_notif2 =
+      RegisterNotificationRequestBuilder::MakeBuilder(Event::VOLUME_CHANGED, 0);
+  EXPECT_CALL(response_cb, Call(_, false, matchPacket(std::move(reg_notif2))))
+      .Times(1);
+  response = TestAvrcpPacket::Make(changed_volume_changed_notification);
+  SendMessage(1, response);
+  response = TestAvrcpPacket::Make(interim_volume_changed_notification);
+  SendMessage(1, response);
+}
+
+TEST_F(AvrcpDeviceTest, volumeChangedNonActiveTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+  MockVolumeInterface vol_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, &vol_interface);
+
+  // Pretend the device is active
+  EXPECT_CALL(a2dp_interface, active_peer())
+      .WillRepeatedly(Return(RawAddress::kEmpty));
+
+  auto reg_notif =
+      RegisterNotificationRequestBuilder::MakeBuilder(Event::VOLUME_CHANGED, 0);
+  EXPECT_CALL(response_cb, Call(_, false, matchPacket(std::move(reg_notif))))
+      .Times(1);
+  test_device->RegisterVolumeChanged();
+
+  EXPECT_CALL(vol_interface, DeviceConnected(test_device->GetAddress(), _))
+      .Times(1)
+      .WillOnce(InvokeCb<1>(0x30));
+  auto set_vol = SetAbsoluteVolumeRequestBuilder::MakeBuilder(0x30);
+  EXPECT_CALL(response_cb, Call(_, false, matchPacket(std::move(set_vol))))
+      .Times(1);
+
+  auto response = TestAvrcpPacket::Make(interim_volume_changed_notification);
+  SendMessage(1, response);
+
+  // Ensure that SetVolume is never called
+  EXPECT_CALL(vol_interface, SetVolume(0x47)).Times(0);
+
   auto reg_notif2 =
       RegisterNotificationRequestBuilder::MakeBuilder(Event::VOLUME_CHANGED, 0);
   EXPECT_CALL(response_cb, Call(_, false, matchPacket(std::move(reg_notif2))))

@@ -282,6 +282,12 @@ void Device::HandleVolumeChanged(
     return;
   }
 
+  if (!IsActive()) {
+    DEVICE_VLOG(3) << __func__
+                   << ": Ignoring volume changes from non active device";
+    return;
+  }
+
   volume_ = pkt->GetVolume();
   DEVICE_VLOG(1) << __func__ << ": Volume has changed to " << (uint32_t)volume_;
   volume_interface_->SetVolume(volume_);
@@ -578,8 +584,12 @@ void Device::BrowseMessageReceived(uint8_t label,
       HandleGetItemAttributes(
           label, Packet::Specialize<GetItemAttributesRequest>(pkt));
       break;
+    case BrowsePdu::GET_TOTAL_NUMBER_OF_ITEMS:
+      HandleGetTotalNumberOfItems(
+          label, Packet::Specialize<GetTotalNumberOfItemsRequest>(pkt));
+      break;
     default:
-      DEVICE_LOG(WARNING) << __func__ << ": " << pkt->GetPdu();
+      DEVICE_LOG(FATAL) << __func__ << ": " << pkt->GetPdu();
       break;
   }
 }
@@ -609,6 +619,61 @@ void Device::HandleGetFolderItems(uint8_t label,
       DEVICE_LOG(ERROR) << __func__ << ": " << pkt->GetScope();
       break;
   }
+}
+
+void Device::HandleGetTotalNumberOfItems(
+    uint8_t label, std::shared_ptr<GetTotalNumberOfItemsRequest> pkt) {
+  DEVICE_VLOG(2) << __func__ << ": scope=" << pkt->GetScope();
+
+  switch (pkt->GetScope()) {
+    case Scope::MEDIA_PLAYER_LIST: {
+      media_interface_->GetMediaPlayerList(
+          base::Bind(&Device::GetTotalNumberOfItemsMediaPlayersResponse,
+                     base::Unretained(this), label));
+      break;
+    }
+    case Scope::VFS:
+      media_interface_->GetFolderItems(
+          curr_browsed_player_id_, CurrentFolder(),
+          base::Bind(&Device::GetTotalNumberOfItemsVFSResponse,
+                     base::Unretained(this), label));
+      break;
+    case Scope::NOW_PLAYING:
+      media_interface_->GetNowPlayingList(
+          base::Bind(&Device::GetTotalNumberOfItemsNowPlayingResponse,
+                     base::Unretained(this), label));
+      break;
+    default:
+      DEVICE_LOG(ERROR) << __func__ << ": " << pkt->GetScope();
+      break;
+  }
+}
+
+void Device::GetTotalNumberOfItemsMediaPlayersResponse(
+    uint8_t label, uint16_t curr_player, std::vector<MediaPlayerInfo> list) {
+  DEVICE_VLOG(2) << __func__ << ": num_items=" << list.size();
+
+  auto builder = GetTotalNumberOfItemsResponseBuilder::MakeBuilder(
+      Status::NO_ERROR, 0x0000, list.size());
+  send_message(label, true, std::move(builder));
+}
+
+void Device::GetTotalNumberOfItemsVFSResponse(uint8_t label,
+                                              std::vector<ListItem> list) {
+  DEVICE_VLOG(2) << __func__ << ": num_items=" << list.size();
+
+  auto builder = GetTotalNumberOfItemsResponseBuilder::MakeBuilder(
+      Status::NO_ERROR, 0x0000, list.size());
+  send_message(label, true, std::move(builder));
+}
+
+void Device::GetTotalNumberOfItemsNowPlayingResponse(
+    uint8_t label, std::string curr_song_id, std::vector<SongInfo> list) {
+  DEVICE_VLOG(2) << __func__ << ": num_items=" << list.size();
+
+  auto builder = GetTotalNumberOfItemsResponseBuilder::MakeBuilder(
+      Status::NO_ERROR, 0x0000, list.size());
+  send_message(label, true, std::move(builder));
 }
 
 void Device::HandleChangePath(uint8_t label,
@@ -1075,29 +1140,42 @@ static std::string volumeToStr(int8_t volume) {
 }
 
 std::ostream& operator<<(std::ostream& out, const Device& d) {
-  out << "Avrcp Device: Address=" << d.address_.ToString() << std::endl;
-  out << "  └ isActive: " << (d.IsActive() ? "YES" : "NO") << std::endl;
-  out << "  └ Current Browsed Player: " << d.curr_browsed_player_id_
-      << std::endl;
-  out << "  └ Registered Notifications: " << std::endl;
-  out << "    └ Track: " << d.track_changed_.first << std::endl;
-  out << "    └ Play Status: " << d.play_status_changed_.first << std::endl;
-  out << "    └ Play Position: " << d.play_pos_changed_.first << std::endl;
-  out << "    └ Now Playing: " << d.now_playing_changed_.first << std::endl;
-  out << "    └ Addressed Player: " << d.addr_player_changed_.first
-      << std::endl;
-  out << "    └ Available Players: " << d.avail_players_changed_.first
-      << std::endl;
-  out << "    └ UIDs Changed: " << d.uids_changed_.first << std::endl;
-  out << "  └ Last Song Sent ID: " << d.last_song_info_.media_id << std::endl;
-  out << "  └ Last Play State: " << d.last_play_status_.state << std::endl;
-  out << "  └ Current Volume: " << volumeToStr(d.volume_) << std::endl;
-  out << "  └ Current Folder: " << d.CurrentFolder();
-  out << "  └ Control MTU Size: " << d.ctrl_mtu_ << std::endl;
-  out << "  └ Browse MTU Size: " << d.browse_mtu_ << std::endl;
-  out << "  └ Features Supported: TO BE IMPLEMENTED" << std::endl;
-  out << "  └ Last X Media Key Events: TO BE IMPLEMENTED" << std::endl;
+  out << "  " << d.address_.ToString();
+  if (d.IsActive()) out << " <Active>";
   out << std::endl;
+  out << "    Current Volume: " << volumeToStr(d.volume_) << std::endl;
+  out << "    Current Browsed Player ID: " << d.curr_browsed_player_id_
+      << std::endl;
+  out << "    Registered Notifications: " << std::endl;
+  if (d.track_changed_.first) {
+    out << "      Track Changed" << std::endl;
+  }
+  if (d.play_status_changed_.first) {
+    out << "      Play Status" << std::endl;
+  }
+  if (d.play_pos_changed_.first) {
+    out << "      Play Position" << std::endl;
+  }
+  if (d.now_playing_changed_.first) {
+    out << "      Now Playing" << std::endl;
+  }
+  if (d.addr_player_changed_.first) {
+    out << "      Addressed Player" << std::endl;
+  }
+  if (d.avail_players_changed_.first) {
+    out << "      Available Players" << std::endl;
+  }
+  if (d.uids_changed_.first) {
+    out << "      UIDs Changed" << std::endl;
+  }
+
+  out << "    Last Play State: " << d.last_play_status_.state << std::endl;
+  out << "    Last Song Sent ID: \"" << d.last_song_info_.media_id << "\""
+      << std::endl;
+  out << "    Current Folder: \"" << d.CurrentFolder() << "\"" << std::endl;
+  out << "    MTU Sizes: CTRL=" << d.ctrl_mtu_ << " BROWSE=" << d.browse_mtu_
+      << std::endl;
+  // TODO (apanicke): Add supported features as well as media keys
   return out;
 }
 

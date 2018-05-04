@@ -291,9 +291,17 @@ std::vector<uint8_t> set_browsed_player_response = {
     0x70, 0x00, 0x0a, 0x04, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x04, 0x00, 0x6a, 0x00};
 
+// AVRCP Get Total Number of Items Request with Scope = Media Player List
+std::vector<uint8_t> get_total_number_of_items_request_media_players = {
+    0x75, 0x00, 0x01, 0x00};
+
+// AVRCP Get Total Number of Items Request with Scope = VFS
+std::vector<uint8_t> get_total_number_of_items_request_vfs = {0x75, 0x00, 0x01,
+                                                              0x01};
+
 // AVRCP Get Total Number of Items Request with Scope = Now Playing List
-std::vector<uint8_t> get_total_number_of_items_request = {0x75, 0x00, 0x01,
-                                                          0x03};
+std::vector<uint8_t> get_total_number_of_items_request_now_playing = {
+    0x75, 0x00, 0x01, 0x03};
 
 // AVRCP Get Total number of Items Response with 5 items in folder
 std::vector<uint8_t> get_total_number_of_items_response = {
