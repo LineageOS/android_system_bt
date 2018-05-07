@@ -722,6 +722,7 @@ void BTM_BleStartAutoConn() {
  *
  ******************************************************************************/
 void BTM_BleClearBgConnDev(void) {
+  if (!controller_get_interface()->supports_ble()) return;
   btm_ble_start_auto_conn(false);
   btm_ble_clear_white_list();
   gatt_reset_bgdev_list();
