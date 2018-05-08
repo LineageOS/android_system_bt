@@ -226,5 +226,18 @@ inline std::ostream& operator<<(std::ostream& os, const Direction& dir) {
   return os << DirectionText(dir);
 }
 
+inline std::string KeyStateText(const KeyState& state) {
+  switch (state) {
+    CASE_RETURN_TEXT(KeyState::PUSHED);
+    CASE_RETURN_TEXT(KeyState::RELEASED);
+    default:
+      return "Unknown KeyState: " + loghex((uint8_t)state);
+  }
+}
+
+inline std::ostream& operator<<(std::ostream& os, const KeyState& dir) {
+  return os << KeyStateText(dir);
+}
+
 }  // namespace avrcp
 }  // namespace bluetooth
