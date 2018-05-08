@@ -567,7 +567,7 @@ static tGATT_STATUS read_handles(uint16_t& len, uint8_t*& p, uint16_t& s_hdl,
 
   if (s_hdl > e_hdl || !GATT_HANDLE_IS_VALID(s_hdl) ||
       !GATT_HANDLE_IS_VALID(e_hdl)) {
-    return GATT_INVALID_PDU;
+    return GATT_INVALID_HANDLE;
   }
 
   return GATT_SUCCESS;
