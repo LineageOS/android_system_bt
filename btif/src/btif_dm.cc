@@ -43,6 +43,7 @@
 
 #include <bluetooth/uuid.h>
 #include <hardware/bluetooth.h>
+#include <hardware/bt_hearing_aid.h>
 
 #include "advertise_data_parser.h"
 #include "bt_common.h"
@@ -244,6 +245,8 @@ extern bt_status_t btif_hf_client_execute_service(bool b_enable);
 extern bt_status_t btif_sdp_execute_service(bool b_enable);
 extern int btif_hh_connect(const RawAddress* bd_addr);
 extern bt_status_t btif_hd_execute_service(bool b_enable);
+extern bluetooth::hearing_aid::HearingAidInterface*
+btif_hearing_aid_get_interface();
 
 /******************************************************************************
  *  Functions
@@ -1648,6 +1651,7 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
 #if (defined(BTA_HD_INCLUDED) && (BTA_HD_INCLUDED == TRUE))
       btif_hd_remove_device(bd_addr);
 #endif
+      btif_hearing_aid_get_interface()->RemoveDevice(bd_addr);
       btif_storage_remove_bonded_device(&bd_addr);
       bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_NONE);
       break;
