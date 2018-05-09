@@ -22,7 +22,6 @@
 #include "uipc.h"
 
 #include <base/files/file_util.h>
-#include <base/strings/string_number_conversions.h>
 #include <include/hardware/bt_av.h>
 
 using base::FilePath;
@@ -38,8 +37,24 @@ alarm_t* audio_timer = nullptr;
 HearingAidAudioReceiver* localAudioReceiver;
 std::unique_ptr<tUIPC_STATE> uipc_hearing_aid;
 
+struct AudioHalStats {
+  size_t media_read_total_underflow_bytes;
+  size_t media_read_total_underflow_count;
+  uint64_t media_read_last_underflow_us;
+
+  AudioHalStats() { Reset(); }
+
+  void Reset() {
+    media_read_total_underflow_bytes = 0;
+    media_read_total_underflow_count = 0;
+    media_read_last_underflow_us = 0;
+  }
+};
+
+AudioHalStats stats;
+
 void send_audio_data(void*) {
-  int bytes_per_tick =
+  uint32_t bytes_per_tick =
       (num_channels * sample_rate * data_interval_ms * (bit_rate / 8)) / 1000;
 
   uint16_t event;
@@ -49,6 +64,11 @@ void send_audio_data(void*) {
                                   &event, p_buf, bytes_per_tick);
 
   VLOG(2) << "bytes_read: " << bytes_read;
+  if (bytes_read < bytes_per_tick) {
+    stats.media_read_total_underflow_bytes += bytes_per_tick - bytes_read;
+    stats.media_read_total_underflow_count++;
+    stats.media_read_last_underflow_us = time_get_os_boottime_us();
+  }
 
   std::vector<uint8_t> data(p_buf, p_buf + bytes_read);
 
@@ -246,6 +266,7 @@ void HearingAidAudioSource::Start(const CodecConfiguration& codecConfiguration,
                                   HearingAidAudioReceiver* audioReceiver) {
   localAudioReceiver = audioReceiver;
   VLOG(2) << "Hearing Aid UIPC Open";
+  stats.Reset();
 }
 
 void HearingAidAudioSource::Stop() {
@@ -262,4 +283,22 @@ void HearingAidAudioSource::Initialize() {
 
 void HearingAidAudioSource::CleanUp() {
   UIPC_Close(*uipc_hearing_aid, UIPC_CH_ID_ALL);
+}
+
+void HearingAidAudioSource::DebugDump(int fd) {
+  uint64_t now_us = time_get_os_boottime_us();
+  std::stringstream stream;
+  stream << "  Hearing Aid Audio HAL:"
+         << "\n    Counts (underflow)                                      : "
+         << stats.media_read_total_underflow_count
+         << "\n    Bytes (underflow)                                       : "
+         << stats.media_read_total_underflow_bytes
+         << "\n    Last update time ago in ms (underflow)                  : "
+         << (stats.media_read_last_underflow_us > 0
+                 ? (unsigned long long)(now_us -
+                                        stats.media_read_last_underflow_us) /
+                       1000
+                 : 0)
+         << std::endl;
+  dprintf(fd, "%s", stream.str().c_str());
 }
