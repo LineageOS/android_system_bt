@@ -29,7 +29,6 @@ cc_binary {
       "system/bt/stack/include",
       "system/bt/btcore/include",
     ],
-    tags: ["debug", "optional"],
     shared_libs: [
       "libcutils",
       "libutils",
