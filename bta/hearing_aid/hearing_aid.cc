@@ -951,6 +951,7 @@ class HearingAidImpl : public HearingAid {
 
     VLOG(2) << __func__ << ": " << address;
 
+    bool connected = hearingDevice->accepting_audio;
     hearingDevice->accepting_audio = false;
 
     if (hearingDevice->connecting_actively) {
@@ -972,7 +973,8 @@ class HearingAidImpl : public HearingAid {
 
     hearingDevices.Remove(address);
 
-    callbacks->OnConnectionState(ConnectionState::DISCONNECTED, address);
+    if (connected)
+      callbacks->OnConnectionState(ConnectionState::DISCONNECTED, address);
   }
 
   void OnGattDisconnected(tGATT_STATUS status, uint16_t conn_id,
