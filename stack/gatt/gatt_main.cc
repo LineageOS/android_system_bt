@@ -967,8 +967,11 @@ void gatt_data_process(tGATT_TCB& tcb, BT_HDR* p_buf) {
   pseudo_op_code = op_code & (~GATT_WRITE_CMD_MASK);
 
   if (pseudo_op_code >= GATT_OP_CODE_MAX) {
-    LOG(ERROR) << "ATT - Rcvd L2CAP data, unknown cmd: 0x" << std::hex
-               << op_code;
+    /* Note: PTS: GATT/SR/UNS/BI-01-C mandates error on unsupported ATT request.
+     */
+    LOG(ERROR) << __func__
+               << ": ATT - Rcvd L2CAP data, unknown cmd: " << loghex(op_code);
+    gatt_send_error_rsp(tcb, GATT_REQ_NOT_SUPPORTED, op_code, 0, false);
     return;
   }
 
