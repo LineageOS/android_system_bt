@@ -1823,6 +1823,9 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
 
       // Change state to Idle, send acknowledgement if start is pending
       if (peer_.CheckFlags(BtifAvPeer::kFlagPendingStart)) {
+        BTIF_TRACE_WARNING("%s: Peer %s : failed pending start request",
+                           __PRETTY_FUNCTION__,
+                           peer_.PeerAddress().ToString().c_str());
         btif_a2dp_command_ack(A2DP_CTRL_ACK_FAILURE);
         // Pending start flag will be cleared when exit current state
       }
@@ -1841,6 +1844,9 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
                  __PRETTY_FUNCTION__, peer_.PeerAddress().ToString().c_str());
         BTA_AvStart(peer_.BtaHandle());
       } else if (peer_.CheckFlags(BtifAvPeer::kFlagPendingStart)) {
+        BTIF_TRACE_WARNING("%s: Peer %s : failed reconfiguration",
+                           __PRETTY_FUNCTION__,
+                           peer_.PeerAddress().ToString().c_str());
         peer_.ClearFlags(BtifAvPeer::kFlagPendingStart);
         btif_a2dp_command_ack(A2DP_CTRL_ACK_FAILURE);
       }
