@@ -268,7 +268,7 @@ void btif_a2dp_audio_send_suspend_req() {
 }*/
 
 uint8_t btif_a2dp_audio_process_request(uint8_t cmd) {
-  APPL_TRACE_DEBUG(LOG_TAG, "%s: cmd: %s", __func__,
+  APPL_TRACE_DEBUG("%s: cmd: %s", __func__,
                    audio_a2dp_hw_dump_ctrl_event((tA2DP_CTRL_CMD)cmd));
   a2dp_cmd_pending = cmd;
   uint8_t status;
@@ -280,6 +280,9 @@ uint8_t btif_a2dp_audio_process_request(uint8_t cmd) {
        * while in a call, and respond with BAD_STATE.
        */
       if (!bluetooth::headset::IsCallIdle()) {
+        APPL_TRACE_WARNING("%s: A2DP command %s failed as call state is busy",
+                           __func__,
+                           audio_a2dp_hw_dump_ctrl_event((tA2DP_CTRL_CMD)cmd));
         status = A2DP_CTRL_ACK_INCALL_FAILURE;
         break;
       }
@@ -349,7 +352,7 @@ uint8_t btif_a2dp_audio_process_request(uint8_t cmd) {
       status = A2DP_CTRL_ACK_FAILURE;
       break;
   }
-  APPL_TRACE_DEBUG("a2dp-ctrl-cmd : %s DONE",
-                   audio_a2dp_hw_dump_ctrl_event((tA2DP_CTRL_CMD)cmd));
+  APPL_TRACE_DEBUG("a2dp-ctrl-cmd : %s DONE returning status %d",
+                   audio_a2dp_hw_dump_ctrl_event((tA2DP_CTRL_CMD)cmd), status);
   return status;
 }
