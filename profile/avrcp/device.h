@@ -239,6 +239,7 @@ class Device {
     active_labels_.erase(label);
     send_message_cb_.Run(label, browse, std::move(message));
   }
+  base::WeakPtrFactory<Device> weak_ptr_factory_;
 
   // TODO (apanicke): Initialize all the variables in the constructor.
   RawAddress address_;
