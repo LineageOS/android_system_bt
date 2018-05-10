@@ -31,6 +31,7 @@
 #include "btu.h"
 #include "device/include/controller.h"
 #include "hcimsgs.h"
+#include "l2c_api.h"
 #include "l2c_int.h"
 #include "l2cdefs.h"
 #include "osi/include/osi.h"
@@ -52,11 +53,19 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb);
  *
  ******************************************************************************/
 bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda) {
-  tL2C_LCB* p_lcb;
-
+  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(rem_bda, BT_TRANSPORT_LE);
   /* There can be only one BLE connection request outstanding at a time */
   if (btm_ble_get_conn_st() == BLE_CONN_IDLE) {
     L2CAP_TRACE_WARNING("%s - no connection pending", __func__);
+    tACL_CONN* p_acl = btm_bda_to_acl(rem_bda, BT_TRANSPORT_LE);
+    if (p_acl) {
+      if (p_lcb != NULL &&
+          p_lcb->link_state == LST_CONNECTING && !l2cb.is_ble_connecting) {
+        L2CAP_TRACE_WARNING("%s - disconnecting the LE link", __func__);
+        L2CA_RemoveFixedChnl(L2CAP_ATT_CID, rem_bda);
+        return (true);
+      }
+    }
     return (false);
   }
 
@@ -71,7 +80,6 @@ bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda) {
 
   btsnd_hcic_ble_create_conn_cancel();
 
-  p_lcb = l2cu_find_lcb_by_bd_addr(rem_bda, BT_TRANSPORT_LE);
   /* Do not remove lcb if an LE link is already up as a peripheral */
   if (p_lcb != NULL &&
       !(p_lcb->link_role == HCI_ROLE_SLAVE &&
