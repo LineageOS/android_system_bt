@@ -310,6 +310,10 @@ static void btif_a2dp_source_cleanup_delayed(void);
 static void btif_a2dp_source_audio_tx_start_event(void);
 static void btif_a2dp_source_audio_tx_stop_event(void);
 static void btif_a2dp_source_audio_tx_flush_event(void);
+// Set up the A2DP Source codec, and prepare the encoder.
+// The peer address is |peer_addr|.
+// This function should be called prior to starting A2DP streaming.
+static void btif_a2dp_source_setup_codec(const RawAddress& peer_addr);
 static void btif_a2dp_source_setup_codec_delayed(
     const RawAddress& peer_address);
 static void btif_a2dp_source_encoder_user_config_update_event(
@@ -326,6 +330,9 @@ static bool btif_a2dp_source_enqueue_callback(BT_HDR* p_buf, size_t frames_n,
 static void log_tstamps_us(const char* comment, uint64_t timestamp_us);
 static void update_scheduling_stats(SchedulingStats* stats, uint64_t now_us,
                                     uint64_t expected_delta);
+// Update the A2DP Source related metrics.
+// This function should be called before collecting the metrics.
+static void btif_a2dp_source_update_metrics(void);
 static void btm_read_rssi_cb(void* data);
 static void btm_read_failed_contact_counter_cb(void* data);
 static void btm_read_automatic_flush_timeout_cb(void* data);
@@ -447,6 +454,38 @@ static void btif_a2dp_source_start_session_delayed(
   }
 }
 
+bool btif_a2dp_source_restart_session(const RawAddress& old_peer_address,
+                                      const RawAddress& new_peer_address) {
+  bool is_streaming = alarm_is_scheduled(btif_a2dp_source_cb.media_alarm);
+  LOG_INFO(LOG_TAG,
+           "%s: old_peer_address=%s new_peer_address=%s is_streaming=%s",
+           __func__, old_peer_address.ToString().c_str(),
+           new_peer_address.ToString().c_str(), logbool(is_streaming).c_str());
+
+  CHECK(!new_peer_address.IsEmpty());
+
+  // Must stop first the audio streaming
+  if (is_streaming) {
+    btif_a2dp_source_stop_audio_req();
+  }
+
+  // If the old active peer was valid, end the old session.
+  // Otherwise, time to startup the A2DP Source processing.
+  if (!old_peer_address.IsEmpty()) {
+    btif_a2dp_source_end_session(old_peer_address);
+  } else {
+    btif_a2dp_source_startup();
+  }
+
+  // Start the session.
+  // If audio was streaming before, start audio streaming as well.
+  btif_a2dp_source_start_session(new_peer_address);
+  if (is_streaming) {
+    btif_a2dp_source_start_audio_req();
+  }
+  return true;
+}
+
 bool btif_a2dp_source_end_session(const RawAddress& peer_address) {
   LOG_INFO(LOG_TAG, "%s: peer_address=%s", __func__,
            peer_address.ToString().c_str());
@@ -532,7 +571,7 @@ bool btif_a2dp_source_is_streaming(void) {
   return alarm_is_scheduled(btif_a2dp_source_cb.media_alarm);
 }
 
-void btif_a2dp_source_setup_codec(const RawAddress& peer_address) {
+static void btif_a2dp_source_setup_codec(const RawAddress& peer_address) {
   LOG_INFO(LOG_TAG, "%s: peer_address=%s", __func__,
            peer_address.ToString().c_str());
 
@@ -1173,7 +1212,7 @@ void btif_a2dp_source_debug_dump(int fd) {
       (unsigned long long)ave_time_us / 1000);
 }
 
-void btif_a2dp_source_update_metrics(void) {
+static void btif_a2dp_source_update_metrics(void) {
   const BtifMediaStats& stats = btif_a2dp_source_cb.stats;
   const SchedulingStats& enqueue_stats = stats.tx_queue_enqueue_stats;
   A2dpSessionMetrics metrics;
