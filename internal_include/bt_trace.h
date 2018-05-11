@@ -771,4 +771,53 @@ inline std::string& AppendField(std::string* p_result, bool append,
   return *p_result;
 }
 
+// This object puts the stream in a state where every time that a new line
+// occurs, the next line is indented a certain number of spaces. The stream is
+// reset to its previous state when the object is destroyed.
+class ScopedIndent {
+ public:
+  ScopedIndent(std::ostream& stream, int indent_size = DEFAULT_TAB)
+      : indented_buf_(stream, indent_size) {
+    old_stream_ = &stream;
+    old_stream_buf_ = stream.rdbuf();
+    stream.rdbuf(&indented_buf_);
+  }
+
+  ~ScopedIndent() { old_stream_->rdbuf(old_stream_buf_); }
+
+  static const size_t DEFAULT_TAB = 2;
+
+ private:
+  class IndentedStreamBuf : public std::streambuf {
+   public:
+    IndentedStreamBuf(std::ostream& stream, int indent_size)
+        : wrapped_buf_(stream.rdbuf()),
+          indent_size_(indent_size),
+          indent_next_line_(true){};
+
+   protected:
+    virtual int overflow(int character) override {
+      if (indent_next_line_ && character != '\n') {
+        for (int i = 0; i < indent_size_; i++) wrapped_buf_->sputc(' ');
+      }
+
+      indent_next_line_ = false;
+      if (character == '\n') {
+        indent_next_line_ = true;
+      }
+
+      return wrapped_buf_->sputc(character);
+    }
+
+   private:
+    std::streambuf* wrapped_buf_;
+    int indent_size_;
+    bool indent_next_line_;
+  };
+
+  std::ostream* old_stream_;
+  std::streambuf* old_stream_buf_;
+  IndentedStreamBuf indented_buf_;
+};
+
 #endif
