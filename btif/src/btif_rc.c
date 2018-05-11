@@ -47,6 +47,7 @@
 #include "osi/include/list.h"
 #include "osi/include/properties.h"
 #include "btu.h"
+#include "log/log.h"
 #define RC_INVALID_TRACK_ID (0xFFFFFFFFFFFFFFFFULL)
 
 /*****************************************************************************
@@ -2764,6 +2765,12 @@ static void handle_app_cur_val_response (tBTA_AV_META_MSG *pmeta_msg, tAVRC_GET_
     bdcpy(rc_addr.address, btif_rc_cb.rc_addr);
 
     app_settings.num_attr = p_rsp->num_val;
+
+    if (app_settings.num_attr > BTRC_MAX_APP_SETTINGS) {
+        android_errorWriteLog(0x534e4554, "73824150");
+        app_settings.num_attr = BTRC_MAX_APP_SETTINGS;
+    }
+
     for (xx = 0; xx < app_settings.num_attr; xx++)
     {
         app_settings.attr_ids[xx] = p_rsp->p_vals[xx].attr_id;
