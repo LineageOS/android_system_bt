@@ -122,6 +122,10 @@ void avrc_parse_notification_rsp (UINT8 *p_stream, tAVRC_REG_NOTIF_RSP *p_rsp)
 
         case AVRC_EVT_APP_SETTING_CHANGE:
             BE_STREAM_TO_UINT8(p_rsp->param.player_setting.num_attr, p_stream);
+            if (p_rsp->param.player_setting.num_attr > AVRC_MAX_APP_SETTINGS) {
+              android_errorWriteLog(0x534e4554, "73782082");
+              p_rsp->param.player_setting.num_attr = AVRC_MAX_APP_SETTINGS;
+            }
             for (int index = 0; index < p_rsp->param.player_setting.num_attr; index++)
             {
                 BE_STREAM_TO_UINT8(p_rsp->param.player_setting.attr_id[index], p_stream);
