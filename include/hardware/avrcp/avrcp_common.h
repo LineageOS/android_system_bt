@@ -137,6 +137,11 @@ enum class Direction : uint8_t {
   DOWN = 0x01,
 };
 
+enum class KeyState : uint8_t {
+  PUSHED = 0x00,
+  RELEASED = 0x01,
+};
+
 class AttributeEntry {
  public:
   AttributeEntry(const Attribute& attribute, const std::string& value)

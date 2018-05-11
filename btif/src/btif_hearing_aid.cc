@@ -101,6 +101,19 @@ class HearingAidInterfaceImpl
                                      Unretained(HearingAid::Get()), volume));
   }
 
+  void RemoveDevice(const RawAddress& address) override {
+    DVLOG(2) << __func__ << " address: " << address;
+
+    // RemoveDevice can be called on devices that don't have HA enabled
+    if (HearingAid::IsInitialized()) {
+      do_in_bta_thread(FROM_HERE, Bind(&HearingAid::Disconnect,
+                                       Unretained(HearingAid::Get()), address));
+    }
+
+    do_in_jni_thread(FROM_HERE,
+                     Bind(&btif_storage_remove_hearing_aid, address));
+  }
+
   void Cleanup(void) {
     DVLOG(2) << __func__;
     do_in_bta_thread(FROM_HERE, Bind(&HearingAid::CleanUp));

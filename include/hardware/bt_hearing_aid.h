@@ -64,6 +64,9 @@ class HearingAidInterface {
 
   /** Closes the interface. */
   virtual void Cleanup(void) = 0;
+
+  /* Called when Hearing Aid is unbonded. */
+  virtual void RemoveDevice(const RawAddress& address) = 0;
 };
 
 }  // namespace hearing_aid

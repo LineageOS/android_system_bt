@@ -748,7 +748,8 @@ static int a2dp_write_output_audio_config(struct a2dp_stream_common* common) {
 static int a2dp_get_presentation_position_cmd(struct a2dp_stream_common* common,
                                               uint64_t* bytes, uint16_t* delay,
                                               struct timespec* timestamp) {
-  if (common->ctrl_fd == AUDIO_SKT_DISCONNECTED) {  // Already disconnected
+  if ((common->ctrl_fd == AUDIO_SKT_DISCONNECTED) ||
+      (common->state != AUDIO_A2DP_STATE_STARTED)) {  // Audio is not streaming
     return -1;
   }
 
