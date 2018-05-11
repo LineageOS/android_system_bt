@@ -197,6 +197,32 @@ static void btif_a2dp_sink_start_session_delayed(UNUSED_ATTR void* context) {
   // Nothing to do
 }
 
+bool btif_a2dp_sink_restart_session(const RawAddress& old_peer_address,
+                                    const RawAddress& new_peer_address) {
+  LOG_INFO(LOG_TAG, "%s: old_peer_address=%s new_peer_address=%s", __func__,
+           old_peer_address.ToString().c_str(),
+           new_peer_address.ToString().c_str());
+
+  CHECK(!new_peer_address.IsEmpty());
+
+  if (!old_peer_address.IsEmpty()) {
+    btif_a2dp_sink_end_session(old_peer_address);
+  }
+
+  if (!bta_av_co_set_active_peer(new_peer_address)) {
+    LOG_ERROR(LOG_TAG, "%s: Cannot stream audio: cannot set active peer to %s",
+              __func__, new_peer_address.ToString().c_str());
+    return false;
+  }
+
+  if (old_peer_address.IsEmpty()) {
+    btif_a2dp_sink_startup();
+  }
+  btif_a2dp_sink_start_session(new_peer_address);
+
+  return true;
+}
+
 bool btif_a2dp_sink_end_session(const RawAddress& peer_address) {
   LOG_INFO(LOG_TAG, "%s: peer_address=%s", __func__,
            peer_address.ToString().c_str());
