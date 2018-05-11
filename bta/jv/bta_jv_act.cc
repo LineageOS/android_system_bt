@@ -941,7 +941,7 @@ void bta_jv_l2cap_connect(int32_t type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
     if ((type != BTA_JV_CONN_TYPE_L2CAP) ||
         (bta_jv_check_psm(remote_psm))) /* allowed */
     {
-      uint16_t max_mps = controller_get_interface()->get_acl_data_size_ble();
+      uint16_t max_mps = 0xffff;  // Let GAP_ConnOpen set the max_mps.
       handle = GAP_ConnOpen("", sec_id, 0, &peer_bd_addr, remote_psm, max_mps,
                             &cfg, ertm_info.get(), sec_mask, chan_mode_mask,
                             bta_jv_l2cap_client_cback, type);
@@ -1089,7 +1089,7 @@ void bta_jv_l2cap_start_server(int32_t type, tBTA_SEC sec_mask,
   */
 
   uint8_t sec_id = bta_jv_alloc_sec_id();
-  uint16_t max_mps = controller_get_interface()->get_acl_data_size_ble();
+  uint16_t max_mps = 0xffff;  // Let GAP_ConnOpen set the max_mps.
   /* PSM checking is not required for LE COC */
   if (0 == sec_id ||
       ((type == BTA_JV_CONN_TYPE_L2CAP) && (!bta_jv_check_psm(local_psm))) ||
