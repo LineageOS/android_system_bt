@@ -88,6 +88,22 @@ inline uint8_t* get_l2cap_sdu_start_ptr(BT_HDR* msg) {
   return (uint8_t*)(msg) + BT_HDR_SIZE + L2CAP_MIN_OFFSET;
 }
 
+struct AudioStats {
+  size_t packet_flush_count;
+  size_t packet_send_count;
+  size_t frame_flush_count;
+  size_t frame_send_count;
+
+  AudioStats() { Reset(); }
+
+  void Reset() {
+    packet_flush_count = 0;
+    packet_send_count = 0;
+    frame_flush_count = 0;
+    frame_send_count = 0;
+  }
+};
+
 class HearingAidImpl;
 HearingAidImpl* instance;
 HearingAidAudioReceiver* audioReceiver;
@@ -124,6 +140,8 @@ struct HearingDevice {
   uint16_t render_delay;
   uint16_t preparation_delay;
   uint16_t codecs;
+
+  AudioStats audio_stats;
 
   HearingDevice(const RawAddress& address, uint16_t psm, uint8_t capabilities,
                 uint16_t codecs, uint16_t audio_control_point_handle,
@@ -787,12 +805,12 @@ class HearingAidImpl : public HearingAid {
       encoded_data_left.resize(encoded_size);
 
       uint16_t cid = GAP_ConnGetL2CAPCid(left->gap_handle);
-      if (DCHECK_IS_ON() && VLOG_IS_ON(2)) {
-        uint16_t packets_to_flush =
-            L2CA_FlushChannel(cid, L2CAP_FLUSH_CHANS_GET);
-        if (packets_to_flush)
-          VLOG(2) << left->address << " skipping " << packets_to_flush
-                  << " packets";
+      uint16_t packets_to_flush = L2CA_FlushChannel(cid, L2CAP_FLUSH_CHANS_GET);
+      if (packets_to_flush) {
+        VLOG(2) << left->address << " skipping " << packets_to_flush
+                << " packets";
+        left->audio_stats.packet_flush_count += packets_to_flush;
+        left->audio_stats.frame_flush_count++;
       }
       // flush all packets stuck in queue
       L2CA_FlushChannel(cid, 0xffff);
@@ -807,12 +825,12 @@ class HearingAidImpl : public HearingAid {
       encoded_data_right.resize(encoded_size);
 
       uint16_t cid = GAP_ConnGetL2CAPCid(right->gap_handle);
-      if (DCHECK_IS_ON() && VLOG_IS_ON(2)) {
-        uint16_t packets_to_flush =
-            L2CA_FlushChannel(cid, L2CAP_FLUSH_CHANS_GET);
-        if (packets_to_flush)
-          VLOG(2) << right->address << " skipping " << packets_to_flush
-                  << " packets";
+      uint16_t packets_to_flush = L2CA_FlushChannel(cid, L2CAP_FLUSH_CHANS_GET);
+      if (packets_to_flush) {
+        VLOG(2) << right->address << " skipping " << packets_to_flush
+                << " packets";
+        right->audio_stats.packet_flush_count += packets_to_flush;
+        right->audio_stats.frame_flush_count++;
       }
       // flush all packets stuck in queue
       L2CA_FlushChannel(cid, 0xffff);
@@ -832,10 +850,18 @@ class HearingAidImpl : public HearingAid {
     }
 
     for (size_t i = 0; i < encoded_data_size; i += packet_size) {
-      if (left) SendAudio(encoded_data_left.data() + i, packet_size, left);
-      if (right) SendAudio(encoded_data_right.data() + i, packet_size, right);
+      if (left) {
+        left->audio_stats.packet_send_count++;
+        SendAudio(encoded_data_left.data() + i, packet_size, left);
+      }
+      if (right) {
+        right->audio_stats.packet_send_count++;
+        SendAudio(encoded_data_right.data() + i, packet_size, right);
+      }
       seq_counter++;
     }
+    if (left) left->audio_stats.frame_send_count++;
+    if (right) right->audio_stats.frame_send_count++;
   }
 
   void SendAudio(uint8_t* encoded_data, uint16_t packet_size,
@@ -939,6 +965,27 @@ class HearingAidImpl : public HearingAid {
   static void GapCallbackStatic(uint16_t gap_handle, uint16_t event,
                                 tGAP_CB_DATA* data) {
     if (instance) instance->GapCallback(gap_handle, event, data);
+  }
+
+  void Dump(int fd) {
+    std::stringstream stream;
+    for (const auto& device : hearingDevices.devices) {
+      bool side = device.capabilities & CAPABILITY_SIDE;
+      bool standalone = device.capabilities & CAPABILITY_BINAURAL;
+      stream << "  " << device.address.ToString() << " "
+             << (device.accepting_audio ? "" : "not ") << "connected"
+             << "\n    " << (standalone ? "binaural" : "monaural") << " "
+             << (side ? "right" : "left") << " " << loghex(device.hi_sync_id)
+             << std::endl;
+      stream
+          << "    Packet counts (enqueued/flushed)                        : "
+          << device.audio_stats.packet_send_count << " / "
+          << device.audio_stats.packet_flush_count
+          << "\n    Frame counts (enqueued/flushed)                         : "
+          << device.audio_stats.frame_send_count << " / "
+          << device.audio_stats.frame_flush_count << std::endl;
+    }
+    dprintf(fd, "%s", stream.str().c_str());
   }
 
   void Disconnect(const RawAddress& address) override {
@@ -1153,3 +1200,9 @@ void HearingAid::CleanUp() {
   instance = nullptr;
   delete ptr;
 };
+
+void HearingAid::DebugDump(int fd) {
+  dprintf(fd, "\nHearing Aid Manager:\n");
+  if (instance) instance->Dump(fd);
+  HearingAidAudioSource::DebugDump(fd);
+}
