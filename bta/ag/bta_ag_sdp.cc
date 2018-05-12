@@ -361,8 +361,32 @@ bool bta_ag_sdp_find_attr(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
         /* Found attribute. Get value. */
         /* There might be race condition between SDP and BRSF.  */
         /* Do not update if we already received BRSF.           */
-        if (p_scb->peer_features == 0)
-          p_scb->peer_features = p_attr->attr_value.v.u16;
+        uint16_t sdp_features = p_attr->attr_value.v.u16;
+        bool sdp_wbs_support = sdp_features & BTA_AG_FEAT_WBS_SUPPORT;
+        if (!p_scb->received_at_bac && sdp_wbs_support) {
+          // Workaround for misbehaving HFs (e.g. some Hyundai car kit) that:
+          // 1. Indicate WBS support in SDP and codec negotiation in BRSF
+          // 2. But do not send required AT+BAC command
+          // Will assume mSBC is enabled and try codec negotiation by default
+          p_scb->codec_updated = true;
+          p_scb->peer_codecs = BTA_AG_CODEC_CVSD & BTA_AG_CODEC_MSBC;
+          p_scb->sco_codec = UUID_CODEC_MSBC;
+        }
+        if (sdp_features != p_scb->peer_sdp_features) {
+          p_scb->peer_sdp_features = sdp_features;
+          if (btif_config_set_bin(
+                  p_scb->peer_addr.ToString(), HFP_SDP_FEATURES_CONFIG_KEY,
+                  (const uint8_t*)&sdp_features, sizeof(sdp_features))) {
+            btif_config_save();
+          } else {
+            APPL_TRACE_WARNING(
+                "%s: Failed to store peer HFP SDP Features for %s", __func__,
+                p_scb->peer_addr.ToString().c_str());
+          }
+        }
+        if (p_scb->peer_features == 0) {
+          p_scb->peer_features = sdp_features & HFP_SDP_BRSF_FEATURES_MASK;
+        }
       }
     } else {
       /* No peer version caching for HSP, use discovered one directly */
