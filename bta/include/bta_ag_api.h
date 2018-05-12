@@ -46,6 +46,7 @@
 #define HSP_VERSION_1_2 0x0102
 
 #define HFP_VERSION_CONFIG_KEY "HfpVersion"
+#define HFP_SDP_FEATURES_CONFIG_KEY "HfpSdpFeatures"
 
 /* Note, if you change the default version here, please also change the one in
  * bta_hs_api.h, they are meant to be the same.
@@ -65,6 +66,12 @@
 #define BTA_AG_FEAT_ECC 0x00000080    /* Enhanced Call Control */
 #define BTA_AG_FEAT_EXTERR 0x00000100 /* Extended error codes */
 #define BTA_AG_FEAT_CODEC 0x00000200  /* Codec Negotiation */
+
+/* AG SDP feature masks */
+#define BTA_AG_FEAT_WBS_SUPPORT 0x0020 /* Supports WBS */
+
+/* Only SDP feature bits 0 to 4 matches BRSF feature bits */
+#define HFP_SDP_BRSF_FEATURES_MASK 0x001F
 
 /* Valid feature bit mask for HFP 1.6 (and below) */
 #define HFP_1_6_FEAT_MASK 0x000003FF
