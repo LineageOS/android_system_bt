@@ -54,6 +54,16 @@ bool btif_a2dp_sink_startup(void);
 // btif_a2dp_sink_startup() to start the streaming session for |peer_address|.
 bool btif_a2dp_sink_start_session(const RawAddress& peer_address);
 
+// Restart the A2DP Sink session.
+// This function should be called by the BTIF state machine after
+// btif_a2dp_sink_startup() to restart the streaming session.
+// |old_peer_address| is the peer address of the old session. This address
+// can be empty.
+// |new_peer_address| is the peer address of the new session. This address
+// cannot be empty.
+bool btif_a2dp_sink_restart_session(const RawAddress& old_peer_address,
+                                    const RawAddress& new_peer_address);
+
 // End the A2DP Sink session.
 // This function should be called by the BTIF state machine to end the
 // streaming session for |peer_address|.
@@ -108,10 +118,6 @@ uint8_t btif_a2dp_sink_enqueue_buf(BT_HDR* p_buf);
 // |fd| is the file descriptor to use for writing the ASCII formatted
 // information.
 void btif_a2dp_sink_debug_dump(int fd);
-
-// Update the A2DP Sink related metrics.
-// This function should be called before collecting the metrics.
-void btif_a2dp_sink_update_metrics(void);
 
 // Create a request to set the audio focus state for the audio track.
 // |state| is the new state value - see |btif_a2dp_sink_focus_state_t|

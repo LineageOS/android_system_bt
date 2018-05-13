@@ -112,6 +112,8 @@ static void btif_a2dp_recv_ctrl_data(void) {
        * while in a call, and respond with BAD_STATE.
        */
       if (!bluetooth::headset::IsCallIdle()) {
+        APPL_TRACE_WARNING("%s: A2DP command %s while call state is busy",
+                           __func__, audio_a2dp_hw_dump_ctrl_event(cmd));
         btif_a2dp_command_ack(A2DP_CTRL_ACK_INCALL_FAILURE);
         break;
       }
