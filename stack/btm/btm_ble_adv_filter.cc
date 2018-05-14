@@ -499,6 +499,19 @@ void BTM_LE_PF_addr_filter(tBTM_BLE_SCAN_COND_OP action,
   UINT8_TO_STREAM(p, filt_index);
 
   if (action != BTM_BLE_SCAN_COND_CLEAR) {
+#if (BLE_PRIVACY_SPT == TRUE)
+    if (addr.type == BLE_ADDR_PUBLIC_ID) {
+      LOG(INFO) << __func__ << " Filter address " << addr.bda
+                << " has type PUBLIC_ID, try to get identity address";
+      /* If no matching identity address is found for the input address,
+       * this call will have no effect. */
+      btm_random_pseudo_to_identity_addr(&addr.bda, &addr.type);
+    }
+#endif
+
+    LOG(INFO) << __func__
+              << " Adding scan filter with peer address: " << addr.bda;
+
     BDADDR_TO_STREAM(p, addr.bda);
     UINT8_TO_STREAM(p, addr.type);
   }
