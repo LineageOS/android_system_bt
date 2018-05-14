@@ -114,6 +114,10 @@ class Device {
       uint8_t label, bool interim, std::string curr_song_id,
       std::vector<SongInfo> song_list);
 
+  // GET CAPABILITY
+  virtual void HandleGetCapabilities(
+      uint8_t label, const std::shared_ptr<GetCapabilitiesRequest>& pkt);
+
   // REGISTER NOTIFICATION
   virtual void HandleNotification(
       uint8_t label, const std::shared_ptr<RegisterNotificationRequest>& pkt);
