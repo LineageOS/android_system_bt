@@ -91,30 +91,8 @@ void Device::VendorPacketHandler(uint8_t label,
 
   switch (pkt->GetCommandPdu()) {
     case CommandPdu::GET_CAPABILITIES: {
-      auto capability_request_pkt =
-          Packet::Specialize<GetCapabilitiesRequest>(pkt);
-      if (capability_request_pkt->GetCapabilityRequested() ==
-          Capability::COMPANY_ID) {
-        auto response =
-            GetCapabilitiesResponseBuilder::MakeCompanyIdBuilder(0x001958);
-        response->AddCompanyId(0x002345);
-        send_message_cb_.Run(label, false, std::move(response));
-      } else {
-        auto response =
-            GetCapabilitiesResponseBuilder::MakeEventsSupportedBuilder(
-                Event::PLAYBACK_STATUS_CHANGED);
-        response->AddEvent(Event::TRACK_CHANGED);
-        response->AddEvent(Event::PLAYBACK_POS_CHANGED);
-
-        if (!avrcp13_compatibility_) {
-          response->AddEvent(Event::AVAILABLE_PLAYERS_CHANGED);
-          response->AddEvent(Event::ADDRESSED_PLAYER_CHANGED);
-          response->AddEvent(Event::UIDS_CHANGED);
-          response->AddEvent(Event::NOW_PLAYING_CONTENT_CHANGED);
-        }
-
-        send_message(label, false, std::move(response));
-      }
+      HandleGetCapabilities(label,
+                            Packet::Specialize<GetCapabilitiesRequest>(pkt));
     } break;
 
     case CommandPdu::REGISTER_NOTIFICATION: {
@@ -152,6 +130,46 @@ void Device::VendorPacketHandler(uint8_t label,
       DEVICE_LOG(ERROR) << "Unhandled Vendor Packet: " << pkt->ToString();
       auto response = RejectBuilder::MakeBuilder(
           (CommandPdu)pkt->GetCommandPdu(), Status::INVALID_COMMAND);
+      send_message(label, false, std::move(response));
+    } break;
+  }
+}
+
+void Device::HandleGetCapabilities(
+    uint8_t label, const std::shared_ptr<GetCapabilitiesRequest>& pkt) {
+  DEVICE_VLOG(4) << __func__
+                 << ": capability=" << pkt->GetCapabilityRequested();
+
+  switch (pkt->GetCapabilityRequested()) {
+    case Capability::COMPANY_ID: {
+      auto response =
+          GetCapabilitiesResponseBuilder::MakeCompanyIdBuilder(0x001958);
+      response->AddCompanyId(0x002345);
+      send_message_cb_.Run(label, false, std::move(response));
+    } break;
+
+    case Capability::EVENTS_SUPPORTED: {
+      auto response =
+          GetCapabilitiesResponseBuilder::MakeEventsSupportedBuilder(
+              Event::PLAYBACK_STATUS_CHANGED);
+      response->AddEvent(Event::TRACK_CHANGED);
+      response->AddEvent(Event::PLAYBACK_POS_CHANGED);
+
+      if (!avrcp13_compatibility_) {
+        response->AddEvent(Event::AVAILABLE_PLAYERS_CHANGED);
+        response->AddEvent(Event::ADDRESSED_PLAYER_CHANGED);
+        response->AddEvent(Event::UIDS_CHANGED);
+        response->AddEvent(Event::NOW_PLAYING_CONTENT_CHANGED);
+      }
+
+      send_message(label, false, std::move(response));
+    } break;
+
+    default: {
+      DEVICE_LOG(WARNING) << "Unhandled Capability: "
+                          << pkt->GetCapabilityRequested();
+      auto response = RejectBuilder::MakeBuilder(CommandPdu::GET_CAPABILITIES,
+                                                 Status::INVALID_PARAMETER);
       send_message(label, false, std::move(response));
     } break;
   }
