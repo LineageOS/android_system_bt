@@ -938,5 +938,53 @@ TEST_F(AvrcpDeviceTest, mediaKeyInactiveDeviceTest) {
   SendMessage(1, play_released_pkt);
 }
 
+TEST_F(AvrcpDeviceTest, getCapabilitiesTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  // GetCapabilities with CapabilityID COMPANY_ID
+  auto request_company_id_response =
+      GetCapabilitiesResponseBuilder::MakeCompanyIdBuilder(0x001958);
+  request_company_id_response->AddCompanyId(0x002345);
+  EXPECT_CALL(
+      response_cb,
+      Call(1, false, matchPacket(std::move(request_company_id_response))))
+      .Times(1);
+
+  auto request_company_id =
+      TestAvrcpPacket::Make(get_capabilities_request_company_id);
+  SendMessage(1, request_company_id);
+
+  // GetCapabilities with CapabilityID EVENTS_SUPPORTED
+  auto request_events_supported_response =
+      GetCapabilitiesResponseBuilder::MakeEventsSupportedBuilder(
+          Event::PLAYBACK_STATUS_CHANGED);
+  request_events_supported_response->AddEvent(Event::TRACK_CHANGED);
+  request_events_supported_response->AddEvent(Event::PLAYBACK_POS_CHANGED);
+
+  EXPECT_CALL(
+      response_cb,
+      Call(2, false, matchPacket(std::move(request_events_supported_response))))
+      .Times(1);
+
+  auto request_events_supported =
+      TestAvrcpPacket::Make(get_capabilities_request);
+  SendMessage(2, request_events_supported);
+
+  // GetCapabilities with CapabilityID UNKNOWN
+  auto request_unknown_response = RejectBuilder::MakeBuilder(
+      CommandPdu::GET_CAPABILITIES, Status::INVALID_PARAMETER);
+
+  EXPECT_CALL(response_cb,
+              Call(3, false, matchPacket(std::move(request_unknown_response))))
+      .Times(1);
+
+  auto request_unknown =
+      TestAvrcpPacket::Make(get_capabilities_request_unknown);
+  SendMessage(3, request_unknown);
+}
+
 }  // namespace avrcp
 }  // namespace bluetooth
