@@ -27,6 +27,7 @@
 
 #include "avrcp/avrcp_browse_packet.h"
 #include "avrcp/change_path.h"
+#include "avrcp/general_reject_packet.h"
 #include "avrcp/get_folder_items.h"
 #include "avrcp/get_item_attributes.h"
 #include "avrcp/get_total_number_of_items.h"

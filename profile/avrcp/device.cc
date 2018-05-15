@@ -613,7 +613,11 @@ void Device::BrowseMessageReceived(uint8_t label,
           label, Packet::Specialize<GetTotalNumberOfItemsRequest>(pkt));
       break;
     default:
-      DEVICE_LOG(FATAL) << __func__ << ": " << pkt->GetPdu();
+      DEVICE_LOG(WARNING) << __func__ << ": " << pkt->GetPdu();
+      auto response = GeneralRejectBuilder::MakeBuilder(
+          BrowsePdu::GENERAL_REJECT, Status::INVALID_COMMAND);
+      send_message(label, true, std::move(response));
+
       break;
   }
 }

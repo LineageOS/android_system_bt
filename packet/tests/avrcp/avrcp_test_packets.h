@@ -154,6 +154,10 @@ std::vector<uint8_t> changed_volume_changed_notification = {
 std::vector<uint8_t> reject_player_app_settings_response = {
     0x0a, 0x48, 0x00, 0x00, 0x19, 0x58, 0x11, 0x00, 0x00, 0x01, 0x00};
 
+// AVRCP Browse General Reject packet for invalid PDU ID
+std::vector<uint8_t> general_reject_invalid_command_packet = {0xa0, 0x00, 0x01,
+                                                              0x00};
+
 // AVRCP Browse Get Folder Items Request packet for media players with
 // the following data:
 //    scope = 0x00 (Media Player List)
