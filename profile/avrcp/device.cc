@@ -1009,8 +1009,13 @@ void Device::SetBrowsedPlayerResponse(
   DEVICE_VLOG(2) << __func__ << ": success=" << success << " root_id=\""
                  << root_id << "\" num_items=" << num_items;
 
-  // TODO (apanicke): Check success. Right now this is ok since it will
-  // always succeed since we only have one player in the media layer.
+  if (!success) {
+    auto response = SetBrowsedPlayerResponseBuilder::MakeBuilder(
+        Status::INVALID_PLAYER_ID, 0x0000, num_items, 0, "");
+    send_message(label, true, std::move(response));
+    return;
+  }
+
   curr_browsed_player_id_ = pkt->GetPlayerId();
 
   // Clear the path and push the new root.
