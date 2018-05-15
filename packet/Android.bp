@@ -22,6 +22,7 @@ cc_test {
         "tests/avrcp/avrcp_packet_test.cc",
         "tests/avrcp/avrcp_reject_packet_test.cc",
         "tests/avrcp/change_path_packet_test.cc",
+        "tests/avrcp/general_reject_packet_test.cc",
         "tests/avrcp/get_capabilities_packet_test.cc",
         "tests/avrcp/get_element_attributes_packet_test.cc",
         "tests/avrcp/get_folder_items_packet_test.cc",
