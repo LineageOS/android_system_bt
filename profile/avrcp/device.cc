@@ -753,7 +753,15 @@ void Device::ChangePathResponse(uint8_t label,
 void Device::HandleGetItemAttributes(
     uint8_t label, std::shared_ptr<GetItemAttributesRequest> pkt) {
   DEVICE_VLOG(2) << __func__ << ": scope=" << pkt->GetScope()
-                 << " uid=" << loghex(pkt->GetUid());
+                 << " uid=" << loghex(pkt->GetUid())
+                 << " uid counter=" << loghex(pkt->GetUidCounter());
+  if (pkt->GetUidCounter() != 0x0000) {  // For database unaware player, use 0
+    DEVICE_LOG(WARNING) << "UidCounter is invalid";
+    auto builder = GetItemAttributesResponseBuilder::MakeBuilder(
+        Status::UIDS_CHANGED, browse_mtu_);
+    send_message(label, true, std::move(builder));
+    return;
+  }
   switch (pkt->GetScope()) {
     case Scope::NOW_PLAYING: {
       media_interface_->GetNowPlayingList(
