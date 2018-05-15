@@ -788,12 +788,7 @@ constexpr uint8_t HCI_LE_STATES_INIT_MASTER_SLAVE_BIT = 41;
     0x0000000000200000 Connectionless Broadcast Channel Map Change Event
     0x0000000000400000 Inquiry Response Notification Event
 */
-#if (BLE_PRIVACY_SPT == TRUE)
-/* BLE event mask */
-#define HCI_BLE_EVENT_MASK_DEF "\x00\x00\x00\x00\x00\x00\x07\xff"
-#else
-#define HCI_BLE_EVENT_MASK_DEF "\x00\x00\x00\x00\x00\x00\x00\x7f"
-#endif
+
 /*
  * Definitions for packet type masks (BT1.2 and BT2.0 definitions)
 */
