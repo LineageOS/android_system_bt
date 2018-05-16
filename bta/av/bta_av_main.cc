@@ -1082,46 +1082,6 @@ bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits) {
 
 /*******************************************************************************
  *
- * Function         bta_av_chk_mtu
- *
- * Description      if this is audio channel, check if more than one audio
- *                  channel is connected.
- *
- * Returns          The smallest mtu of the connected audio channels
- *
- ******************************************************************************/
-uint16_t bta_av_chk_mtu(tBTA_AV_SCB* p_scb, UNUSED_ATTR uint16_t mtu) {
-  uint16_t ret_mtu = BTA_AV_MAX_A2DP_MTU;
-  tBTA_AV_SCB* p_scbi;
-  int i;
-  uint8_t mask;
-
-  /* TODO_MV mess with the mtu according to the number of EDR/non-EDR headsets
-   */
-  if (p_scb->chnl == BTA_AV_CHNL_AUDIO) {
-    if (bta_av_cb.audio_open_cnt >= 2) {
-      /* more than one audio channel is connected */
-      for (i = 0; i < BTA_AV_NUM_STRS; i++) {
-        p_scbi = bta_av_cb.p_scb[i];
-        if ((p_scb != p_scbi) && p_scbi &&
-            (p_scbi->chnl == BTA_AV_CHNL_AUDIO)) {
-          mask = BTA_AV_HNDL_TO_MSK(i);
-          APPL_TRACE_DEBUG("%s: [%d] mtu: %d, mask:0x%x", __func__, i,
-                           p_scbi->stream_mtu, mask);
-          if (bta_av_cb.conn_audio & mask) {
-            if (ret_mtu > p_scbi->stream_mtu) ret_mtu = p_scbi->stream_mtu;
-          }
-        }
-      }
-    }
-    APPL_TRACE_DEBUG("%s: count:%d, conn_audio:0x%x, ret:%d", __func__,
-                     bta_av_cb.audio_open_cnt, bta_av_cb.conn_audio, ret_mtu);
-  }
-  return ret_mtu;
-}
-
-/*******************************************************************************
- *
  * Function         bta_av_dup_audio_buf
  *
  * Description      dup the audio data to the q_info.a2dp of other audio
