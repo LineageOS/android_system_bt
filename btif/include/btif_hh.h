@@ -88,6 +88,7 @@ typedef struct {
   btif_hh_added_device_t added_devices[BTIF_HH_MAX_ADDED_DEV];
   btif_hh_device_t* p_curr_dev;
   bool service_dereg_active;
+  RawAddress pending_conn_address;
 } btif_hh_cb_t;
 
 /*******************************************************************************
