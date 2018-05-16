@@ -18,6 +18,7 @@
 
 #include "connection_handler.h"
 #include "device.h"
+#include "stack_config.h"
 
 namespace bluetooth {
 namespace avrcp {
@@ -362,6 +363,10 @@ void Device::TrackChangedNotificationResponse(uint8_t label, bool interim,
   if (curr_song_id == "") {
     DEVICE_LOG(WARNING) << "Empty media ID";
     uid = 0;
+    if (stack_config_get_interface()->get_pts_avrcp_test()) {
+      DEVICE_LOG(WARNING) << __func__ << ": pts test mode";
+      uid = 0xffffffffffffffff;
+    }
   }
 
   auto response = RegisterNotificationResponseBuilder::MakeTrackChangedBuilder(

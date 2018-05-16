@@ -26,6 +26,7 @@
 #include "avrcp_packet.h"
 #include "avrcp_test_helper.h"
 #include "device.h"
+#include "stack_config.h"
 #include "tests/avrcp/avrcp_test_packets.h"
 #include "tests/packet_test_helper.h"
 
@@ -44,6 +45,12 @@ using ::testing::MockFunction;
 using ::testing::Mock;
 using ::testing::NiceMock;
 using ::testing::Return;
+
+bool get_pts_avrcp_test(void) { return false; }
+
+const stack_config_t interface = {
+    nullptr, get_pts_avrcp_test, nullptr, nullptr, nullptr, nullptr, nullptr,
+    nullptr};
 
 // TODO (apanicke): All the tests below are just basic positive unit tests.
 // Add more tests to increase code coverage.
@@ -1026,3 +1033,7 @@ TEST_F(AvrcpDeviceTest, getInvalidItemAttributesTest) {
 
 }  // namespace avrcp
 }  // namespace bluetooth
+
+const stack_config_t* stack_config_get_interface(void) {
+  return &bluetooth::avrcp::interface;
+}

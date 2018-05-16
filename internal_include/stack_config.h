@@ -27,6 +27,7 @@ static const char STACK_CONFIG_MODULE[] = "stack_config_module";
 
 typedef struct {
   bool (*get_trace_config_enabled)(void);
+  bool (*get_pts_avrcp_test)(void);
   bool (*get_pts_secure_only_mode)(void);
   bool (*get_pts_conn_updates_disabled)(void);
   bool (*get_pts_crosskey_sdp_disable)(void);
