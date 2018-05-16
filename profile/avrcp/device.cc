@@ -237,7 +237,7 @@ void Device::HandleNotification(
       DEVICE_LOG(ERROR) << __func__ << " : Unknown event registered. Event ID="
                         << pkt->GetEventRegistered();
       auto response = RejectBuilder::MakeBuilder(
-          (CommandPdu)pkt->GetCommandPdu(), Status::INVALID_COMMAND);
+          (CommandPdu)pkt->GetCommandPdu(), Status::INVALID_PARAMETER);
       send_message(label, false, std::move(response));
     } break;
   }
