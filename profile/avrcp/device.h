@@ -149,7 +149,12 @@ class Device {
       uint8_t label, std::shared_ptr<GetElementAttributesRequest> pkt,
       SongInfo info);
 
+  // AVAILABLE PLAYER CHANGED
+  virtual void HandleAvailablePlayerUpdate();
+
   // ADDRESSED PLAYER CHANGED
+  virtual void HandleAddressedPlayerUpdate();
+  virtual void RejectNotification();
   virtual void AddressedPlayerNotificationResponse(
       uint8_t label, bool interim, uint16_t curr_player,
       std::vector<MediaPlayerInfo> /* unused */);
