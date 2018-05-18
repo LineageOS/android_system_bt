@@ -277,6 +277,27 @@ static tBTA_AV_SCB* bta_av_addr_to_scb(const RawAddress& bd_addr) {
   return p_scb;
 }
 
+int BTA_AvObtainPeerChannelIndex(const RawAddress& peer_address) {
+  // Find the entry for the peer (if exists)
+  tBTA_AV_SCB* p_scb = bta_av_addr_to_scb(peer_address);
+  if (p_scb != nullptr) {
+    return p_scb->hdi;
+  }
+
+  // Find the index for an entry that is not used
+  for (int index = 0; index < BTA_AV_NUM_STRS; index++) {
+    tBTA_AV_SCB* p_scb = bta_av_cb.p_scb[index];
+    if (p_scb == nullptr) {
+      continue;
+    }
+    if (p_scb->PeerAddress().IsEmpty()) {
+      return p_scb->hdi;
+    }
+  }
+
+  return -1;
+}
+
 /*******************************************************************************
  *
  * Function         bta_av_hndl_to_scb
@@ -1422,7 +1443,7 @@ void bta_debug_av_dump(int fd) {
     dprintf(fd, "    Congested: %s\n", p_scb->cong ? "true" : "false");
     dprintf(fd, "    Open status: %d\n", p_scb->open_status);
     dprintf(fd, "    Channel: %d\n", p_scb->chnl);
-    dprintf(fd, "    BTA handle: %d\n", p_scb->hndl);
+    dprintf(fd, "    BTA handle: 0x%x\n", p_scb->hndl);
     dprintf(fd, "    Protocol service capabilities mask: 0x%x\n",
             p_scb->cur_psc_mask);
     dprintf(fd, "    AVDTP handle: %d\n", p_scb->avdt_handle);
