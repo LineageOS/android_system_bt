@@ -123,6 +123,7 @@ enum class BrowsePdu : uint8_t {
   CHANGE_PATH = 0x72,
   GET_ITEM_ATTRIBUTES = 0x73,
   GET_TOTAL_NUMBER_OF_ITEMS = 0x75,
+  GENERAL_REJECT = 0xa0,
 };
 
 enum class Scope : uint8_t {
