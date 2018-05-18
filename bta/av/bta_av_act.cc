@@ -1323,6 +1323,56 @@ void bta_av_api_disconnect(tBTA_AV_DATA* p_data) {
   alarm_cancel(bta_av_cb.link_signalling_timer);
 }
 
+/**
+ * Find the index for the free LCB entry to use.
+ *
+ * The selection order is:
+ * (1) Find the index if there is already SCB entry for the peer address
+ * (2) If there is no SCB entry for the peer address, find the first
+ * SCB entry that is not assigned.
+ *
+ * @param peer_address the peer address to use
+ * @return the index for the free LCB entry to use or BTA_AV_NUM_LINKS
+ * if no entry is found
+ */
+static uint8_t bta_av_find_lcb_index_by_scb_and_address(
+    const RawAddress& peer_address) {
+  APPL_TRACE_DEBUG("%s: peer_address: %s conn_lcb: 0x%x", __func__,
+                   peer_address.ToString().c_str(), bta_av_cb.conn_lcb);
+
+  // Find the index if there is already SCB entry for the peer address
+  for (uint8_t index = 0; index < BTA_AV_NUM_LINKS; index++) {
+    uint8_t mask = 1 << index;
+    if (mask & bta_av_cb.conn_lcb) {
+      continue;
+    }
+    tBTA_AV_SCB* p_scb = bta_av_cb.p_scb[index];
+    if (p_scb == nullptr) {
+      continue;
+    }
+    if (p_scb->PeerAddress() == peer_address) {
+      return index;
+    }
+  }
+
+  // Find the first SCB entry that is not assigned.
+  for (uint8_t index = 0; index < BTA_AV_NUM_LINKS; index++) {
+    uint8_t mask = 1 << index;
+    if (mask & bta_av_cb.conn_lcb) {
+      continue;
+    }
+    tBTA_AV_SCB* p_scb = bta_av_cb.p_scb[index];
+    if (p_scb == nullptr) {
+      continue;
+    }
+    if (!p_scb->IsAssigned()) {
+      return index;
+    }
+  }
+
+  return BTA_AV_NUM_LINKS;
+}
+
 /*******************************************************************************
  *
  * Function         bta_av_sig_chg
@@ -1341,66 +1391,64 @@ void bta_av_sig_chg(tBTA_AV_DATA* p_data) {
 
   APPL_TRACE_DEBUG("%s: event: %d", __func__, event);
   if (event == AVDT_CONNECT_IND_EVT) {
+    APPL_TRACE_DEBUG("%s: AVDT_CONNECT_IND_EVT: peer %s", __func__,
+                     p_data->str_msg.bd_addr.ToString().c_str());
+
     p_lcb = bta_av_find_lcb(p_data->str_msg.bd_addr, BTA_AV_LCB_FIND);
     if (!p_lcb) {
       /* if the address does not have an LCB yet, alloc one */
-      for (xx = 0; xx < BTA_AV_NUM_LINKS; xx++) {
-        mask = 1 << xx;
-        APPL_TRACE_DEBUG("%s: conn_lcb: 0x%x", __func__, p_cb->conn_lcb);
-        /* look for a p_lcb with its p_scb registered */
-        if ((!(mask & p_cb->conn_lcb)) && (p_cb->p_scb[xx] != NULL)) {
-          p_lcb = &p_cb->lcb[xx];
-          p_lcb->lidx = xx + 1;
-          p_lcb->addr = p_data->str_msg.bd_addr;
-          p_lcb->conn_msk = 0; /* clear the connect mask */
-          /* start listening when the signal channel is open */
-          if (p_cb->features & BTA_AV_FEAT_RCTG) {
-            bta_av_rc_create(p_cb, AVCT_ACP, 0, p_lcb->lidx);
-          }
-          /* this entry is not used yet. */
-          p_cb->conn_lcb |= mask; /* mark it as used */
-          APPL_TRACE_DEBUG("%s: start sig timer %d", __func__,
-                           p_data->hdr.offset);
-          if (p_data->hdr.offset == AVDT_ACP) {
-            APPL_TRACE_DEBUG(
-                "%s: Incoming L2CAP acquired, set state as incoming", __func__);
-            p_cb->p_scb[xx]->OnConnected(p_data->str_msg.bd_addr);
-            p_cb->p_scb[xx]->use_rc =
-                true; /* allowing RC for incoming connection */
-            bta_av_ssm_execute(p_cb->p_scb[xx], BTA_AV_ACP_CONNECT_EVT, p_data);
-
-            /* The Pending Event should be sent as soon as the L2CAP signalling
-             * channel
-             * is set up, which is NOW. Earlier this was done only after
-             * BTA_AV_SIGNALLING_TIMEOUT_MS.
-             * The following function shall send the event and start the
-             * recurring timer
-             */
-            bta_av_signalling_timer(NULL);
-
-            APPL_TRACE_DEBUG("%s: Re-start timer for AVDTP service", __func__);
-            bta_sys_conn_open(BTA_ID_AV, p_cb->p_scb[xx]->app_id,
-                              p_cb->p_scb[xx]->PeerAddress());
-            /* Possible collision : need to avoid outgoing processing while the
-             * timer is running */
-            p_cb->p_scb[xx]->coll_mask = BTA_AV_COLL_INC_TMR;
-            alarm_set_on_mloop(p_cb->accept_signalling_timer,
-                               BTA_AV_ACCEPT_SIGNALLING_TIMEOUT_MS,
-                               bta_av_accept_signalling_timer_cback,
-                               UINT_TO_PTR(xx));
-          }
-          break;
-        }
-      }
+      xx = bta_av_find_lcb_index_by_scb_and_address(p_data->str_msg.bd_addr);
 
       /* check if we found something */
-      if (xx == BTA_AV_NUM_LINKS) {
+      if (xx >= BTA_AV_NUM_LINKS) {
         /* We do not have scb for this avdt connection.     */
         /* Silently close the connection.                   */
-        APPL_TRACE_ERROR("%s: av scb not available for avdt connection",
-                         __func__);
+        APPL_TRACE_ERROR("%s: av scb not available for avdt connection for %s",
+                         __func__, p_data->str_msg.bd_addr.ToString().c_str());
         AVDT_DisconnectReq(p_data->str_msg.bd_addr, NULL);
         return;
+      }
+      LOG_INFO(LOG_TAG,
+               "%s: AVDT_CONNECT_IND_EVT: peer %s selected lcb_index %d",
+               __func__, p_data->str_msg.bd_addr.ToString().c_str(), xx);
+
+      tBTA_AV_SCB* p_scb = p_cb->p_scb[xx];
+      mask = 1 << xx;
+      p_lcb = &p_cb->lcb[xx];
+      p_lcb->lidx = xx + 1;
+      p_lcb->addr = p_data->str_msg.bd_addr;
+      p_lcb->conn_msk = 0; /* clear the connect mask */
+      /* start listening when the signal channel is open */
+      if (p_cb->features & BTA_AV_FEAT_RCTG) {
+        bta_av_rc_create(p_cb, AVCT_ACP, 0, p_lcb->lidx);
+      }
+      /* this entry is not used yet. */
+      p_cb->conn_lcb |= mask; /* mark it as used */
+      APPL_TRACE_DEBUG("%s: start sig timer %d", __func__, p_data->hdr.offset);
+      if (p_data->hdr.offset == AVDT_ACP) {
+        APPL_TRACE_DEBUG("%s: Incoming L2CAP acquired, set state as incoming",
+                         __func__);
+        p_scb->OnConnected(p_data->str_msg.bd_addr);
+        p_scb->use_rc = true; /* allowing RC for incoming connection */
+        bta_av_ssm_execute(p_scb, BTA_AV_ACP_CONNECT_EVT, p_data);
+
+        /* The Pending Event should be sent as soon as the L2CAP signalling
+         * channel
+         * is set up, which is NOW. Earlier this was done only after
+         * BTA_AV_SIGNALLING_TIMEOUT_MS.
+         * The following function shall send the event and start the
+         * recurring timer
+         */
+        bta_av_signalling_timer(NULL);
+
+        APPL_TRACE_DEBUG("%s: Re-start timer for AVDTP service", __func__);
+        bta_sys_conn_open(BTA_ID_AV, p_scb->app_id, p_scb->PeerAddress());
+        /* Possible collision : need to avoid outgoing processing while the
+         * timer is running */
+        p_scb->coll_mask = BTA_AV_COLL_INC_TMR;
+        alarm_set_on_mloop(
+            p_cb->accept_signalling_timer, BTA_AV_ACCEPT_SIGNALLING_TIMEOUT_MS,
+            bta_av_accept_signalling_timer_cback, UINT_TO_PTR(xx));
       }
     }
   }
@@ -1458,12 +1506,16 @@ void bta_av_signalling_timer(UNUSED_ATTR tBTA_AV_DATA* p_data) {
   uint8_t mask;
   tBTA_AV_LCB* p_lcb = NULL;
 
-  APPL_TRACE_DEBUG("%s", __func__);
+  APPL_TRACE_DEBUG("%s: conn_lcb=0x%x", __func__, p_cb->conn_lcb);
   for (xx = 0; xx < BTA_AV_NUM_LINKS; xx++) {
+    p_lcb = &p_cb->lcb[xx];
     mask = 1 << xx;
+    APPL_TRACE_DEBUG(
+        "%s: index=%d conn_lcb=0x%x peer=%s conn_mask=0x%x lidx=%d", __func__,
+        xx, p_cb->conn_lcb, p_lcb->addr.ToString().c_str(), p_lcb->conn_msk,
+        p_lcb->lidx);
     if (mask & p_cb->conn_lcb) {
       /* this entry is used. check if it is connected */
-      p_lcb = &p_cb->lcb[xx];
       if (!p_lcb->conn_msk) {
         bta_sys_start_timer(p_cb->link_signalling_timer,
                             BTA_AV_SIGNALLING_TIMEOUT_MS,
@@ -1472,6 +1524,10 @@ void bta_av_signalling_timer(UNUSED_ATTR tBTA_AV_DATA* p_data) {
         pend.bd_addr = p_lcb->addr;
         tBTA_AV bta_av_data;
         bta_av_data.pend = pend;
+        APPL_TRACE_DEBUG(
+            "%s: BTA_AV_PENDING_EVT for %s index=%d conn_mask=0x%x lidx=%d",
+            __func__, pend.bd_addr.ToString().c_str(), xx, p_lcb->conn_msk,
+            p_lcb->lidx);
         (*p_cb->p_cback)(BTA_AV_PENDING_EVT, &bta_av_data);
       }
     }
