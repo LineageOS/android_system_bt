@@ -31,6 +31,7 @@ enum class CType : uint8_t {
   CONTROL = 0x0,
   STATUS = 0x1,
   NOTIFY = 0x3,
+  NOT_IMPLEMENTED = 0x8,
   ACCEPTED = 0x9,
   REJECTED = 0xa,
   STABLE = 0xc,
