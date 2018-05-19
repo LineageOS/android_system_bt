@@ -60,7 +60,11 @@ void Device::VendorPacketHandler(uint8_t label,
   CHECK(media_interface_);
   DEVICE_VLOG(3) << __func__ << ": pdu=" << pkt->GetCommandPdu();
 
-  // All CTypes at and above ACCEPTED are all response types.
+  // All CTypes at and above NOT_IMPLEMENTED are all response types.
+  if (pkt->GetCType() == CType::NOT_IMPLEMENTED) {
+    return;
+  }
+
   if (pkt->GetCType() >= CType::ACCEPTED) {
     switch (pkt->GetCommandPdu()) {
       // VOLUME_CHANGED is the only notification we register for while target.
