@@ -31,6 +31,7 @@ enum class CType : uint8_t {
   CONTROL = 0x0,
   STATUS = 0x1,
   NOTIFY = 0x3,
+  NOT_IMPLEMENTED = 0x8,
   ACCEPTED = 0x9,
   REJECTED = 0xa,
   STABLE = 0xc,
@@ -123,6 +124,7 @@ enum class BrowsePdu : uint8_t {
   CHANGE_PATH = 0x72,
   GET_ITEM_ATTRIBUTES = 0x73,
   GET_TOTAL_NUMBER_OF_ITEMS = 0x75,
+  GENERAL_REJECT = 0xa0,
 };
 
 enum class Scope : uint8_t {

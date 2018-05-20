@@ -11,6 +11,7 @@ cc_library_static {
         "avrcp_reject_packet.cc",
         "capabilities_packet.cc",
         "change_path.cc",
+        "general_reject_packet.cc",
         "get_element_attributes_packet.cc",
         "get_folder_items.cc",
         "get_item_attributes.cc",

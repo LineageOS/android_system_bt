@@ -60,7 +60,11 @@ void Device::VendorPacketHandler(uint8_t label,
   CHECK(media_interface_);
   DEVICE_VLOG(3) << __func__ << ": pdu=" << pkt->GetCommandPdu();
 
-  // All CTypes at and above ACCEPTED are all response types.
+  // All CTypes at and above NOT_IMPLEMENTED are all response types.
+  if (pkt->GetCType() == CType::NOT_IMPLEMENTED) {
+    return;
+  }
+
   if (pkt->GetCType() >= CType::ACCEPTED) {
     switch (pkt->GetCommandPdu()) {
       // VOLUME_CHANGED is the only notification we register for while target.
@@ -237,7 +241,7 @@ void Device::HandleNotification(
       DEVICE_LOG(ERROR) << __func__ << " : Unknown event registered. Event ID="
                         << pkt->GetEventRegistered();
       auto response = RejectBuilder::MakeBuilder(
-          (CommandPdu)pkt->GetCommandPdu(), Status::INVALID_COMMAND);
+          (CommandPdu)pkt->GetCommandPdu(), Status::INVALID_PARAMETER);
       send_message(label, false, std::move(response));
     } break;
   }
@@ -613,7 +617,11 @@ void Device::BrowseMessageReceived(uint8_t label,
           label, Packet::Specialize<GetTotalNumberOfItemsRequest>(pkt));
       break;
     default:
-      DEVICE_LOG(FATAL) << __func__ << ": " << pkt->GetPdu();
+      DEVICE_LOG(WARNING) << __func__ << ": " << pkt->GetPdu();
+      auto response = GeneralRejectBuilder::MakeBuilder(
+          BrowsePdu::GENERAL_REJECT, Status::INVALID_COMMAND);
+      send_message(label, true, std::move(response));
+
       break;
   }
 }
@@ -753,7 +761,15 @@ void Device::ChangePathResponse(uint8_t label,
 void Device::HandleGetItemAttributes(
     uint8_t label, std::shared_ptr<GetItemAttributesRequest> pkt) {
   DEVICE_VLOG(2) << __func__ << ": scope=" << pkt->GetScope()
-                 << " uid=" << loghex(pkt->GetUid());
+                 << " uid=" << loghex(pkt->GetUid())
+                 << " uid counter=" << loghex(pkt->GetUidCounter());
+  if (pkt->GetUidCounter() != 0x0000) {  // For database unaware player, use 0
+    DEVICE_LOG(WARNING) << "UidCounter is invalid";
+    auto builder = GetItemAttributesResponseBuilder::MakeBuilder(
+        Status::UIDS_CHANGED, browse_mtu_);
+    send_message(label, true, std::move(builder));
+    return;
+  }
   switch (pkt->GetScope()) {
     case Scope::NOW_PLAYING: {
       media_interface_->GetNowPlayingList(
@@ -1027,8 +1043,13 @@ void Device::SetBrowsedPlayerResponse(
   DEVICE_VLOG(2) << __func__ << ": success=" << success << " root_id=\""
                  << root_id << "\" num_items=" << num_items;
 
-  // TODO (apanicke): Check success. Right now this is ok since it will
-  // always succeed since we only have one player in the media layer.
+  if (!success) {
+    auto response = SetBrowsedPlayerResponseBuilder::MakeBuilder(
+        Status::INVALID_PLAYER_ID, 0x0000, num_items, 0, "");
+    send_message(label, true, std::move(response));
+    return;
+  }
+
   curr_browsed_player_id_ = pkt->GetPlayerId();
 
   // Clear the path and push the new root.

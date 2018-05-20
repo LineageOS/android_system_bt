@@ -1403,10 +1403,7 @@ void BtaAvCo::GetPeerEncoderParameters(
     const RawAddress& peer_address,
     tA2DP_ENCODER_INIT_PEER_PARAMS* p_peer_params) {
   uint16_t min_mtu = 0xFFFF;
-
-  APPL_TRACE_DEBUG("%s: peer_address=%s", __func__,
-                   peer_address.ToString().c_str());
-  CHECK(p_peer_params != nullptr);
+  CHECK(p_peer_params != nullptr) << "Peer address " << peer_address;
 
   std::lock_guard<std::recursive_mutex> lock(codec_lock_);
 
@@ -1421,6 +1418,11 @@ void BtaAvCo::GetPeerEncoderParameters(
   p_peer_params->is_peer_edr = btif_av_is_peer_edr(peer_address);
   p_peer_params->peer_supports_3mbps =
       btif_av_peer_supports_3mbps(peer_address);
+  APPL_TRACE_DEBUG(
+      "%s: peer_address=%s peer_mtu=%d is_peer_edr=%s peer_supports_3mbps=%s",
+      __func__, peer_address.ToString().c_str(), p_peer_params->peer_mtu,
+      logbool(p_peer_params->is_peer_edr).c_str(),
+      logbool(p_peer_params->peer_supports_3mbps).c_str());
 }
 
 const tA2DP_ENCODER_INTERFACE* BtaAvCo::GetSourceEncoderInterface() {

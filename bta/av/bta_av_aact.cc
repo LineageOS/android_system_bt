@@ -1193,7 +1193,6 @@ void bta_av_setconfig_rsp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   tBTA_AV_CONN_CHG msg;
   uint8_t* p;
-  uint16_t mtu;
 
   APPL_TRACE_DEBUG("%s: peer %s handle: %d", __func__,
                    p_scb->PeerAddress().ToString().c_str(), p_scb->hndl);
@@ -1209,10 +1208,8 @@ void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   p_scb->stream_mtu =
       p_data->str_msg.msg.open_ind.peer_mtu - AVDT_MEDIA_HDR_SIZE;
-  mtu = bta_av_chk_mtu(p_scb, p_scb->stream_mtu);
-  APPL_TRACE_DEBUG("%s: l2c_cid: 0x%x stream_mtu: %d mtu: %d", __func__,
-                   p_scb->l2c_cid, p_scb->stream_mtu, mtu);
-  if (mtu == 0 || mtu > p_scb->stream_mtu) mtu = p_scb->stream_mtu;
+  APPL_TRACE_DEBUG("%s: l2c_cid: 0x%x stream_mtu: %d", __func__, p_scb->l2c_cid,
+                   p_scb->stream_mtu);
 
   /* Set the media channel as high priority */
   L2CA_SetTxPriority(p_scb->l2c_cid, L2CAP_CHNL_PRIORITY_HIGH);
@@ -1222,7 +1219,7 @@ void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   memset(&p_scb->q_info, 0, sizeof(tBTA_AV_Q_INFO));
 
   p_scb->l2c_bufs = 0;
-  p_scb->p_cos->open(p_scb->hndl, p_scb->PeerAddress(), mtu);
+  p_scb->p_cos->open(p_scb->hndl, p_scb->PeerAddress(), p_scb->stream_mtu);
 
   {
     /* TODO check if other audio channel is open.
@@ -1605,13 +1602,8 @@ void bta_av_set_use_rc(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_cco_close(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
-  uint16_t mtu;
-
   APPL_TRACE_DEBUG("%s: peer %s handle:%d", __func__,
                    p_scb->PeerAddress().ToString().c_str(), p_scb->hndl);
-
-  mtu = bta_av_chk_mtu(p_scb, BTA_AV_MAX_A2DP_MTU);
-
   p_scb->p_cos->close(p_scb->hndl, p_scb->PeerAddress());
 }
 
@@ -2582,11 +2574,10 @@ void bta_av_rcfg_str_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     // p_data could be NULL if the reconfig was triggered by the local device
     p_scb->stream_mtu =
         p_data->str_msg.msg.open_ind.peer_mtu - AVDT_MEDIA_HDR_SIZE;
-    uint16_t mtu = bta_av_chk_mtu(p_scb, p_scb->stream_mtu);
-    APPL_TRACE_DEBUG("%s: l2c_cid: 0x%x stream_mtu: %d mtu: %d", __func__,
-                     p_scb->l2c_cid, p_scb->stream_mtu, mtu);
-    if (mtu == 0 || mtu > p_scb->stream_mtu) mtu = p_scb->stream_mtu;
-    p_scb->p_cos->update_mtu(p_scb->hndl, p_scb->PeerAddress(), mtu);
+    APPL_TRACE_DEBUG("%s: l2c_cid: 0x%x stream_mtu: %d", __func__,
+                     p_scb->l2c_cid, p_scb->stream_mtu);
+    p_scb->p_cos->update_mtu(p_scb->hndl, p_scb->PeerAddress(),
+                             p_scb->stream_mtu);
   }
 
   /* rc listen */
@@ -3103,7 +3094,6 @@ void bta_av_offload_req(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, &bta_av_data);
   }
   /* TODO(eisenbach): RE-IMPLEMENT USING VSC OR HAL EXTENSION
-  uint16_t mtu = bta_av_chk_mtu(p_scb, p_scb->stream_mtu);
   else if (bta_av_cb.audio_open_cnt == 1 &&
              p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SRC &&
              p_scb->chnl == BTA_AV_CHNL_AUDIO) {
@@ -3120,8 +3110,7 @@ void bta_av_offload_req(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
       a2dp_offload_start.bta_av_handle = p_scb->hndl;
       a2dp_offload_start.xmit_quota = BTA_AV_A2DP_OFFLOAD_XMIT_QUOTA;
-      a2dp_offload_start.stream_mtu =
-          (mtu < p_scb->stream_mtu) ? mtu : p_scb->stream_mtu;
+      a2dp_offload_start.stream_mtu = p_scb->stream_mtu;
       a2dp_offload_start.local_cid = p_scb->l2c_cid;
       a2dp_offload_start.is_flushable = true;
       a2dp_offload_start.stream_source =
@@ -3175,8 +3164,7 @@ static void bta_av_offload_codec_builder(tBTA_AV_SCB* p_scb,
   btav_a2dp_codec_index_t codec_index =
       A2DP_SourceCodecIndex(p_scb->cfg.codec_info);
   uint32_t codec_type = 0;
-  uint16_t mtu = bta_av_chk_mtu(p_scb, p_scb->stream_mtu);
-  if (mtu == 0 || mtu > p_scb->stream_mtu) mtu = p_scb->stream_mtu;
+  uint16_t mtu = p_scb->stream_mtu;
   APPL_TRACE_DEBUG("%s:codec_index = %d", __func__, codec_index);
   switch (codec_index) {
     case BTAV_A2DP_CODEC_INDEX_SOURCE_SBC:
