@@ -126,7 +126,6 @@ typedef struct {
 /* data type for BTA_AG_API_OPEN_EVT */
 typedef struct {
   RawAddress bd_addr;
-  tBTA_SERVICE_MASK services;
   tBTA_SEC sec_mask;
 } tBTA_AG_API_OPEN;
 
