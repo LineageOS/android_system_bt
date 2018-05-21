@@ -587,33 +587,35 @@ static void bte_hf_evt(tBTA_AG_EVT event, tBTA_AG* p_data) {
  ******************************************************************************/
 static bt_status_t connect_int(RawAddress* bd_addr, uint16_t uuid) {
   CHECK_BTHF_INIT();
-  int i;
-  for (i = 0; i < btif_max_hf_clients;) {
-    if (((btif_hf_cb[i].state == BTHF_CONNECTION_STATE_CONNECTED) ||
-         (btif_hf_cb[i].state == BTHF_CONNECTION_STATE_SLC_CONNECTED))) {
-      i++;
-    } else {
-      break;
-    }
-  }
-
-  if (i == btif_max_hf_clients) {
-    BTIF_TRACE_WARNING(
-        "%s: Cannot connect %s: maximum %d clients already connected", __func__,
-        bd_addr->ToString().c_str(), btif_max_hf_clients);
-    return BT_STATUS_BUSY;
-  }
   if (is_connected(bd_addr)) {
     BTIF_TRACE_WARNING("%s: device %s is already connected", __func__,
                        bd_addr->ToString().c_str());
     return BT_STATUS_BUSY;
   }
-
-  btif_hf_cb[i].state = BTHF_CONNECTION_STATE_CONNECTING;
-  btif_hf_cb[i].connected_bda = *bd_addr;
-
-  BTA_AgOpen(btif_hf_cb[i].handle, btif_hf_cb[i].connected_bda,
-             BTIF_HF_SECURITY, BTIF_HF_SERVICES);
+  btif_hf_cb_t* hf_cb = nullptr;
+  for (int i = 0; i < btif_max_hf_clients; i++) {
+    if (btif_hf_cb[i].state == BTHF_CONNECTION_STATE_DISCONNECTED) {
+      hf_cb = &btif_hf_cb[i];
+      break;
+    }
+    // Due to btif queue implementation, when connect_int is called, no btif
+    // control block should be in connecting state
+    // Crash here to prevent future code changes from breaking this mechanism
+    if (btif_hf_cb[i].state == BTHF_CONNECTION_STATE_CONNECTING) {
+      LOG(FATAL) << __func__ << ": " << btif_hf_cb[i].connected_bda
+                 << ", handle " << btif_hf_cb[i].handle
+                 << ", is still in connecting state " << btif_hf_cb[i].state;
+    }
+  }
+  if (hf_cb == nullptr) {
+    BTIF_TRACE_WARNING(
+        "%s: Cannot connect %s: maximum %d clients already connected", __func__,
+        bd_addr->ToString().c_str(), btif_max_hf_clients);
+    return BT_STATUS_BUSY;
+  }
+  hf_cb->state = BTHF_CONNECTION_STATE_CONNECTING;
+  hf_cb->connected_bda = *bd_addr;
+  BTA_AgOpen(hf_cb->handle, hf_cb->connected_bda, BTIF_HF_SECURITY);
   return BT_STATUS_SUCCESS;
 }
 
