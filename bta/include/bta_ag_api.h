@@ -524,8 +524,7 @@ void BTA_AgDeregister(uint16_t handle);
  * Returns          void
  *
  ******************************************************************************/
-void BTA_AgOpen(uint16_t handle, const RawAddress& bd_addr, tBTA_SEC sec_mask,
-                tBTA_SERVICE_MASK services);
+void BTA_AgOpen(uint16_t handle, const RawAddress& bd_addr, tBTA_SEC sec_mask);
 
 /*******************************************************************************
  *
