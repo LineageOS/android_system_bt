@@ -357,7 +357,7 @@ static void sdp_copy_raw_data(tCONN_CB* p_ccb, bool offset) {
       type = *p++;
       p = sdpu_get_len_from_type(p, type, &list_len);
     }
-    if (list_len && list_len < cpy_len) {
+    if (list_len < cpy_len) {
       cpy_len = list_len;
     }
     SDP_TRACE_WARNING(
