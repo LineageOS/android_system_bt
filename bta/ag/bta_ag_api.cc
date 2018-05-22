@@ -127,11 +127,9 @@ void BTA_AgDeregister(uint16_t handle) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_AgOpen(uint16_t handle, const RawAddress& bd_addr, tBTA_SEC sec_mask,
-                tBTA_SERVICE_MASK services) {
+void BTA_AgOpen(uint16_t handle, const RawAddress& bd_addr, tBTA_SEC sec_mask) {
   tBTA_AG_DATA data = {};
   data.api_open.bd_addr = bd_addr;
-  data.api_open.services = services;
   data.api_open.sec_mask = sec_mask;
   do_in_bta_thread(FROM_HERE, base::Bind(&bta_ag_sm_execute_by_handle, handle,
                                          BTA_AG_API_OPEN_EVT, data));
