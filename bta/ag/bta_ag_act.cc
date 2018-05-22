@@ -178,8 +178,8 @@ void bta_ag_start_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
 
   /* store parameters */
   p_scb->peer_addr = data.api_open.bd_addr;
-  p_scb->open_services = data.api_open.services;
   p_scb->cli_sec_mask = data.api_open.sec_mask;
+  p_scb->open_services = p_scb->reg_services;
 
   /* Check if RFCOMM has any incoming connection to avoid collision. */
   if (PORT_IsOpening(pending_bd_addr)) {
