@@ -32,6 +32,7 @@ class A2dpCodecConfigLdac : public A2dpCodecConfig {
 
   bool init() override;
   period_ms_t encoderIntervalMs() const override;
+  int getEffectiveMtu() const override;
   bool setCodecConfig(const uint8_t* p_peer_codec_info, bool is_capability,
                       uint8_t* p_result_codec_config) override;
   bool setPeerCodecCapabilities(
