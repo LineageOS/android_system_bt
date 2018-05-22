@@ -704,6 +704,17 @@ void BTA_AvOffloadStart(tBTA_AV_HNDL hndl);
 void BTA_AvOffloadStartRsp(tBTA_AV_HNDL hndl, tBTA_AV_STATUS status);
 
 /**
+ * Obtain the Channel Index for a peer.
+ * If the peer already has associated internal state, the corresponding
+ * Channel Index for that state is returned. Otherwise, the Channel Index
+ * for unused internal state is returned instead.
+ *
+ * @param peer_address the peer address
+ * @return the peer Channel Index index if obtained, otherwise -1
+ */
+int BTA_AvObtainPeerChannelIndex(const RawAddress& peer_address);
+
+/**
  * Dump debug-related information for the BTA AV module.
  *
  * @param fd the file descriptor to use for writing the ASCII formatted
