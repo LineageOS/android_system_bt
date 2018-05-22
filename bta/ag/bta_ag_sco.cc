@@ -1141,7 +1141,7 @@ void bta_ag_sco_listen(tBTA_AG_SCB* p_scb,
  ******************************************************************************/
 void bta_ag_sco_open(tBTA_AG_SCB* p_scb, UNUSED_ATTR const tBTA_AG_DATA& data) {
   if (!sco_allowed) {
-    APPL_TRACE_DEBUG("%s not opening sco, by policy", __func__);
+    LOG(INFO) << __func__ << ": not opening sco, by policy";
     return;
   }
   /* if another scb using sco, this is a transfer */
