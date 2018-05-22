@@ -763,6 +763,10 @@ period_ms_t A2dpCodecConfigLdac::encoderIntervalMs() const {
   return a2dp_vendor_ldac_get_encoder_interval_ms();
 }
 
+int A2dpCodecConfigLdac::getEffectiveMtu() const {
+  return a2dp_ldac_encoder_cb.TxAaMtuSize;
+}
+
 void A2dpCodecConfigLdac::debug_codec_dump(int fd) {
   a2dp_ldac_encoder_stats_t* stats = &a2dp_ldac_encoder_cb.stats;
   tA2DP_LDAC_ENCODER_PARAMS* p_encoder_params =
