@@ -625,17 +625,17 @@ tGATT_STATUS GATTC_Discover(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
   tGATT_TCB* p_tcb = gatt_get_tcb_by_idx(tcb_idx);
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
 
+  if ((p_tcb == NULL) || (p_reg == NULL) || (p_param == NULL) ||
+      (disc_type >= GATT_DISC_MAX)) {
+    LOG(ERROR) << __func__ << " Illegal param: disc_type=" << +disc_type
+               << " conn_id=" << loghex(conn_id);
+    return GATT_ILLEGAL_PARAMETER;
+  }
+
   LOG(INFO) << __func__ << " conn_id=" << loghex(conn_id)
             << ", disc_type=" << +disc_type
             << ", s_handle=" << loghex(p_param->s_handle)
             << ", e_handle=" << loghex(p_param->e_handle);
-
-  if ((p_tcb == NULL) || (p_reg == NULL) || (p_param == NULL) ||
-      (disc_type >= GATT_DISC_MAX)) {
-    LOG(ERROR) << "Illegal param: disc_type=" << +disc_type
-               << " conn_id=" << loghex(conn_id);
-    return GATT_ILLEGAL_PARAMETER;
-  }
 
   if (!GATT_HANDLE_IS_VALID(p_param->s_handle) ||
       !GATT_HANDLE_IS_VALID(p_param->e_handle) ||
