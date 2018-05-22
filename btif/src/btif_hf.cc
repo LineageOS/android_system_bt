@@ -1139,6 +1139,9 @@ bt_status_t HeadsetInterface::PhoneStateChange(
           res = BTA_AG_CALL_WAIT_RES;
         } else {
           res = BTA_AG_IN_CALL_RES;
+          if (is_active_device(*bd_addr)) {
+            ag_res.audio_handle = control_block.handle;
+          }
         }
         if (number) {
           int xx = 0;
