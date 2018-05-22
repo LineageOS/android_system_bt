@@ -1559,3 +1559,8 @@ period_ms_t A2dpCodecConfigSbcSink::encoderIntervalMs() const {
   // TODO: This method applies only to Source codecs
   return 0;
 }
+
+int A2dpCodecConfigSbcSink::getEffectiveMtu() const {
+  // TODO: This method applies only to Source codecs
+  return 0;
+}

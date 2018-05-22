@@ -114,13 +114,10 @@ static void btif_a2dp_get_codec_configuration(
     CodecConfiguration* p_codec_info) {
   LOG_INFO(LOG_TAG, "%s", __func__);
   tBT_A2DP_OFFLOAD a2dp_offload;
-  tA2DP_ENCODER_INIT_PEER_PARAMS peer_param;
-  A2dpCodecConfig* CodecConfig = bta_av_get_a2dp_current_codec();
-  CodecConfig->getCodecSpecificConfig(&a2dp_offload);
+  A2dpCodecConfig* a2dpCodecConfig = bta_av_get_a2dp_current_codec();
+  a2dpCodecConfig->getCodecSpecificConfig(&a2dp_offload);
   btav_a2dp_codec_config_t codec_config;
-  codec_config = CodecConfig->getCodecConfig();
-  RawAddress peer_addr = btif_av_source_active_peer();
-  bta_av_co_get_peer_params(peer_addr, &peer_param);
+  codec_config = a2dpCodecConfig->getCodecConfig();
   switch (codec_config.codec_type) {
     case BTAV_A2DP_CODEC_INDEX_SOURCE_SBC:
       p_codec_info->codecType =
@@ -161,7 +158,20 @@ static void btif_a2dp_get_codec_configuration(
       APPL_TRACE_ERROR("%s: Unknown Codec type :%d ", __func__,
                        codec_config.codec_type);
   }
-  p_codec_info->peerMtu = peer_param.peer_mtu;
+
+  // Obtain the MTU
+  RawAddress peer_addr = btif_av_source_active_peer();
+  tA2DP_ENCODER_INIT_PEER_PARAMS peer_param;
+  bta_av_co_get_peer_params(peer_addr, &peer_param);
+  int effectiveMtu = a2dpCodecConfig->getEffectiveMtu();
+  if (effectiveMtu > 0 && effectiveMtu < peer_param.peer_mtu) {
+    p_codec_info->peerMtu = effectiveMtu;
+  } else {
+    p_codec_info->peerMtu = peer_param.peer_mtu;
+  }
+  LOG_INFO(LOG_TAG, "%s: peer MTU: %d effective MTU: %d result MTU: %d",
+           __func__, peer_param.peer_mtu, effectiveMtu, p_codec_info->peerMtu);
+
   p_codec_info->sampleRate =
       (::android::hardware::bluetooth::a2dp::V1_0::SampleRate)
           codec_config.sample_rate;
@@ -171,7 +181,7 @@ static void btif_a2dp_get_codec_configuration(
   p_codec_info->channelMode =
       (::android::hardware::bluetooth::a2dp::V1_0::ChannelMode)
           codec_config.channel_mode;
-  p_codec_info->encodedAudioBitrate = CodecConfig->getTrackBitRate();
+  p_codec_info->encodedAudioBitrate = a2dpCodecConfig->getTrackBitRate();
 }
 
 static void btif_a2dp_audio_interface_init() {
