@@ -23,6 +23,7 @@
 #include <stdlib.h>
 
 #include <base/bind.h>
+#include <base/message_loop/message_loop.h>
 #include <base/tracked_objects.h>
 #include <hardware/bluetooth.h>
 
@@ -177,6 +178,7 @@ extern bt_status_t do_in_jni_thread(const base::Closure& task);
 extern bt_status_t do_in_jni_thread(const tracked_objects::Location& from_here,
                                     const base::Closure& task);
 extern bool is_on_jni_thread();
+extern base::MessageLoop* get_jni_message_loop();
 /**
  * This template wraps callback into callback that will be executed on jni
  * thread
