@@ -266,7 +266,8 @@ static uint8_t bta_av_get_scb_sep_type(tBTA_AV_SCB* p_scb,
  *
  ******************************************************************************/
 static void bta_av_save_addr(tBTA_AV_SCB* p_scb, const RawAddress& bd_addr) {
-  APPL_TRACE_DEBUG("%s: r:%d, s:%d", __func__, p_scb->recfg_sup,
+  APPL_TRACE_DEBUG("%s: peer=%s recfg_sup:%d, suspend_sup:%d", __func__,
+                   bd_addr.ToString().c_str(), p_scb->recfg_sup,
                    p_scb->suspend_sup);
   if (p_scb->PeerAddress() != bd_addr) {
     LOG_INFO(LOG_TAG, "%s: reset flags old_addr=%s new_addr=%s", __func__,
@@ -423,8 +424,8 @@ void bta_av_proc_stream_evt(uint8_t handle, const RawAddress& bd_addr,
 
     p_msg->bd_addr = bd_addr;
     p_msg->scb_index = scb_index;
-    APPL_TRACE_EVENT(LOG_TAG, "%s: stream event bd_addr: %s scb_index: %u",
-                     __func__, p_msg->bd_addr.ToString().c_str(), scb_index);
+    APPL_TRACE_EVENT("%s: stream event bd_addr: %s scb_index: %u", __func__,
+                     p_msg->bd_addr.ToString().c_str(), scb_index);
 
     if (p_data != NULL) {
       memcpy(&p_msg->msg, p_data, sizeof(tAVDT_CTRL));
@@ -769,7 +770,8 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
                           ATTR_ID_BT_PROFILE_DESC_LIST};
   uint16_t sdp_uuid = 0; /* UUID for which SDP has to be done */
 
-  APPL_TRACE_DEBUG("%s: use_rc: %d switch_res:%d, oc:%d", __func__,
+  APPL_TRACE_DEBUG("%s: peer_addr: %s use_rc: %d switch_res:%d, oc:%d",
+                   __func__, p_data->api_open.bd_addr.ToString().c_str(),
                    p_data->api_open.use_rc, p_data->api_open.switch_res,
                    bta_av_cb.audio_open_cnt);
 

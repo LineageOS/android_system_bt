@@ -29,6 +29,7 @@
 #include "bt_target.h"
 #include "bt_types.h"
 #include "bt_utils.h"
+#include "bta/include/bta_av_api.h"
 #include "btm_api.h"
 #include "btm_int.h"
 #include "device/include/interop.h"
@@ -173,7 +174,13 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
   p_ccb = avdt_ccb_by_bd(bd_addr);
   if (p_ccb == NULL) {
     /* no, allocate ccb */
-    p_ccb = avdt_ccb_alloc(bd_addr);
+    int channel_index = BTA_AvObtainPeerChannelIndex(bd_addr);
+    if (channel_index >= 0) {
+      p_ccb = avdt_ccb_alloc_by_channel_index(bd_addr, channel_index);
+    }
+    if (p_ccb == nullptr) {
+      p_ccb = avdt_ccb_alloc(bd_addr);
+    }
     if (p_ccb == NULL) {
       /* no ccb available, reject L2CAP connection */
       result = L2CAP_CONN_NO_RESOURCES;
