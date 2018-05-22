@@ -545,6 +545,13 @@ struct tBTA_AV_SCB final {
    */
   void SetAvdtpVersion(uint16_t avdtp_version);
 
+  /**
+   * Check whether the entry is assigned and currenty used.
+   *
+   * @return true if the entry is assigned and currently used
+   */
+  bool IsAssigned() const { return !peer_address_.IsEmpty(); }
+
  private:
   RawAddress peer_address_;  // Peer address
   uint16_t avdtp_version_;   // The AVDTP version of the peer device

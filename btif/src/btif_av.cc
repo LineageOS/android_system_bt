@@ -950,6 +950,9 @@ BtifAvPeer* BtifAvSource::FindPeerByPeerId(uint8_t peer_id) {
 
 BtifAvPeer* BtifAvSource::FindOrCreatePeer(const RawAddress& peer_address,
                                            tBTA_AV_HNDL bta_handle) {
+  BTIF_TRACE_DEBUG("%s: peer_address=%s bta_handle=0x%x", __PRETTY_FUNCTION__,
+                   peer_address.ToString().c_str(), bta_handle);
+
   BtifAvPeer* peer = FindPeer(peer_address);
   if (peer != nullptr) return peer;
 
@@ -973,6 +976,10 @@ BtifAvPeer* BtifAvSource::FindOrCreatePeer(const RawAddress& peer_address,
     }
   }
 
+  LOG_INFO(LOG_TAG,
+           "%s: Create peer: peer_address=%s bta_handle=0x%x peer_id=%d",
+           __PRETTY_FUNCTION__, peer_address.ToString().c_str(), bta_handle,
+           peer_id);
   peer = new BtifAvPeer(peer_address, AVDT_TSEP_SNK, bta_handle, peer_id);
   peers_.insert(std::make_pair(peer_address, peer));
   peer->Init();
@@ -1016,8 +1023,8 @@ void BtifAvSource::DeleteIdlePeers() {
     BtifAvPeer* peer = it->second;
     auto prev_it = it++;
     if (!peer->CanBeDeleted()) continue;
-    BTIF_TRACE_WARNING("%s: Deleting idle peer: %s", __func__,
-                       peer->PeerAddress().ToString().c_str());
+    LOG_INFO(LOG_TAG, "%s: Deleting idle peer: %s bta_handle=0x%x", __func__,
+             peer->PeerAddress().ToString().c_str(), peer->BtaHandle());
     peer->Cleanup();
     peers_.erase(prev_it);
     delete peer;
@@ -1128,6 +1135,9 @@ BtifAvPeer* BtifAvSink::FindPeerByPeerId(uint8_t peer_id) {
 
 BtifAvPeer* BtifAvSink::FindOrCreatePeer(const RawAddress& peer_address,
                                          tBTA_AV_HNDL bta_handle) {
+  BTIF_TRACE_DEBUG("%s: peer_address=%s bta_handle=0x%x", __PRETTY_FUNCTION__,
+                   peer_address.ToString().c_str(), bta_handle);
+
   BtifAvPeer* peer = FindPeer(peer_address);
   if (peer != nullptr) return peer;
 
@@ -1152,6 +1162,10 @@ BtifAvPeer* BtifAvSink::FindOrCreatePeer(const RawAddress& peer_address,
     }
   }
 
+  LOG_INFO(LOG_TAG,
+           "%s: Create peer: peer_address=%s bta_handle=0x%x peer_id=%d",
+           __PRETTY_FUNCTION__, peer_address.ToString().c_str(), bta_handle,
+           peer_id);
   peer = new BtifAvPeer(peer_address, AVDT_TSEP_SRC, bta_handle, peer_id);
   peers_.insert(std::make_pair(peer_address, peer));
   peer->Init();
@@ -1195,8 +1209,8 @@ void BtifAvSink::DeleteIdlePeers() {
     BtifAvPeer* peer = it->second;
     auto prev_it = it++;
     if (!peer->CanBeDeleted()) continue;
-    BTIF_TRACE_WARNING("%s: Deleting idle peer: %s", __func__,
-                       peer->PeerAddress().ToString().c_str());
+    LOG_INFO(LOG_TAG, "%s: Deleting idle peer: %s bta_handle=0x%x", __func__,
+             peer->PeerAddress().ToString().c_str(), peer->BtaHandle());
     peer->Cleanup();
     peers_.erase(prev_it);
     delete peer;
@@ -1674,13 +1688,11 @@ void BtifAvStateMachine::StateOpened::OnEnter() {
   peer_.ClearFlags(BtifAvPeer::kFlagPendingStart |
                    BtifAvPeer::kFlagPendingStop);
 
-  // Set the active peer if the first connected device
-  if (peer_.IsSink() && btif_av_source.ActivePeer().IsEmpty()) {
-    if (!btif_av_source.SetActivePeer(peer_.PeerAddress())) {
-      BTIF_TRACE_ERROR("%s: Error setting %s as active Sink peer", __func__,
-                       peer_.PeerAddress().ToString().c_str());
-    }
-  }
+  // Set the active peer if the first connected device.
+  // NOTE: This should be done only if we are A2DP Sink, because the A2DP Sink
+  // implementation in Java doesn't support active devices (yet).
+  // For A2DP Source, the setting of the Active device is done by the
+  // ActiveDeviceManager in Java.
   if (peer_.IsSource() && btif_av_sink.ActivePeer().IsEmpty()) {
     if (!btif_av_sink.SetActivePeer(peer_.PeerAddress())) {
       BTIF_TRACE_ERROR("%s: Error setting %s as active Source peer", __func__,
@@ -2286,7 +2298,7 @@ static void btif_av_handle_event(uint8_t peer_sep,
                                  tBTA_AV_HNDL bta_handle,
                                  const BtifAvEvent& btif_av_event) {
   BtifAvPeer* peer = nullptr;
-  BTIF_TRACE_EVENT("%s: peer_sep=%s (%d) peer_address=%s handle=%d event=%s",
+  BTIF_TRACE_EVENT("%s: peer_sep=%s (%d) peer_address=%s handle=0x%x event=%s",
                    __func__, (peer_sep == AVDT_TSEP_SRC) ? "Source" : "Sink",
                    peer_sep, peer_address.ToString().c_str(), bta_handle,
                    btif_av_event.ToString().c_str());
@@ -2307,7 +2319,7 @@ static void btif_av_handle_event(uint8_t peer_sep,
   }
   if (peer == nullptr) {
     BTIF_TRACE_ERROR(
-        "%s: Cannot find or create %s peer for peer_address=%s handle=%d : "
+        "%s: Cannot find or create %s peer for peer_address=%s handle=0x%x : "
         "event dropped: %s",
         __func__, (peer_sep == AVDT_TSEP_SRC) ? "Source" : "Sink",
         peer_address.ToString().c_str(), bta_handle,
@@ -2348,7 +2360,7 @@ static void btif_av_handle_bta_av_event(uint8_t peer_sep,
       const tBTA_AV_REGISTER& registr = p_data->registr;
       bta_handle = registr.hndl;
       uint8_t peer_id = registr.app_id;  // The PeerId is used as AppId
-      BTIF_TRACE_DEBUG("%s: handle=%d app_id=%d", __func__, bta_handle,
+      BTIF_TRACE_DEBUG("%s: handle=0x%x app_id=%d", __func__, bta_handle,
                        registr.app_id);
       if (peer_sep == AVDT_TSEP_SNK) {
         btif_av_source.BtaHandleRegistered(peer_id, bta_handle);
@@ -2446,7 +2458,7 @@ static void btif_av_handle_bta_av_event(uint8_t peer_sep,
       break;
     }
   }
-  BTIF_TRACE_DEBUG("%s: peer_address=%s handle=%d", __func__,
+  BTIF_TRACE_DEBUG("%s: peer_address=%s handle=0x%x", __func__,
                    peer_address.ToString().c_str(), bta_handle);
 
   btif_av_handle_event(peer_sep, peer_address, bta_handle, btif_av_event);
@@ -3060,7 +3072,7 @@ static void btif_debug_av_peer_dump(int fd, const BtifAvPeer& peer) {
   dprintf(fd, "    OpenOnRcTimer: %s\n",
           alarm_is_scheduled(peer.AvOpenOnRcTimer()) ? "Scheduled"
                                                      : "Not scheduled");
-  dprintf(fd, "    BTA Handle: %d\n", peer.BtaHandle());
+  dprintf(fd, "    BTA Handle: 0x%x\n", peer.BtaHandle());
   dprintf(fd, "    Peer ID: %d\n", peer.PeerId());
   dprintf(fd, "    EDR: %s\n", peer.IsEdr() ? "true" : "false");
   dprintf(fd, "    Support 3Mbps: %s\n", peer.Is3Mbps() ? "true" : "false");
