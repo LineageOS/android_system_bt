@@ -1420,6 +1420,11 @@ period_ms_t A2dpCodecConfigAacSink::encoderIntervalMs() const {
   return 0;
 }
 
+int A2dpCodecConfigAacSink::getEffectiveMtu() const {
+  // TODO: This method applies only to Source codecs
+  return 0;
+}
+
 bool A2dpCodecConfigAacSink::useRtpHeaderMarkerBit() const {
   // TODO: This method applies only to Source codecs
   return false;
