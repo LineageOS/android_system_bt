@@ -107,10 +107,14 @@ void gatt_act_discovery(tGATT_CLCB* p_clcb) {
 
     size_t size = p_clcb->uuid.GetShortestRepresentationSize();
     cl_req.find_type_value.value_len = size;
-    if (size == Uuid::kNumBytes32) {
+    if (size == Uuid::kNumBytes16) {
+      uint8_t* p = cl_req.find_type_value.value;
+      UINT16_TO_STREAM(p, p_clcb->uuid.As16Bit());
+    } else if (size == Uuid::kNumBytes32) {
       /* if service type is 32 bits UUID, convert it now */
       memcpy(cl_req.find_type_value.value, p_clcb->uuid.To128BitLE().data(),
-             Uuid::kNumBytes128);
+            Uuid::kNumBytes128);
+      cl_req.find_type_value.value_len = Uuid::kNumBytes128;
     } else
       memcpy(cl_req.find_type_value.value, p_clcb->uuid.To128BitLE().data(),
              size);
