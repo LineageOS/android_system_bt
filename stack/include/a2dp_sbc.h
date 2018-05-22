@@ -49,6 +49,7 @@ class A2dpCodecConfigSbcSource : public A2dpCodecConfigSbcBase {
 
   bool init() override;
   period_ms_t encoderIntervalMs() const override;
+  int getEffectiveMtu() const override;
 
  private:
   bool useRtpHeaderMarkerBit() const override;
@@ -66,6 +67,7 @@ class A2dpCodecConfigSbcSink : public A2dpCodecConfigSbcBase {
 
   bool init() override;
   period_ms_t encoderIntervalMs() const override;
+  int getEffectiveMtu() const override;
 
  private:
   bool useRtpHeaderMarkerBit() const override;
