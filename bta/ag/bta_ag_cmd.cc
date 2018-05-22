@@ -1760,8 +1760,9 @@ void bta_ag_send_ring(tBTA_AG_SCB* p_scb,
                       UNUSED_ATTR const tBTA_AG_DATA& data) {
   if ((p_scb->conn_service == BTA_AG_HFP) &&
       p_scb->callsetup_ind != BTA_AG_CALLSETUP_INCOMING) {
-    APPL_TRACE_DEBUG("%s: don't send the ring since there is no MT call setup",
-                     __func__);
+    LOG(WARNING) << __func__ << ": don't send RING, conn_service="
+                 << std::to_string(p_scb->conn_service)
+                 << ", callsetup_ind=" << std::to_string(p_scb->callsetup_ind);
     return;
   }
   /* send RING */
