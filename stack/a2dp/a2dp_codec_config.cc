@@ -145,7 +145,7 @@ A2dpCodecConfig* A2dpCodecConfig::createCodec(
   return codec_config;
 }
 
-int A2dpCodecConfig::getTrackBitRate() {
+int A2dpCodecConfig::getTrackBitRate() const {
   uint8_t p_codec_info[AVDT_CODEC_SIZE];
   memcpy(p_codec_info, ota_codec_config_, sizeof(ota_codec_config_));
   tA2DP_CODEC_TYPE codec_type = A2DP_GetCodecType(p_codec_info);
@@ -499,6 +499,7 @@ void A2dpCodecConfig::debug_codec_dump(int fd) {
   dprintf(fd, "\nA2DP %s State:\n", name().c_str());
   dprintf(fd, "  Priority: %d\n", codecPriority());
   dprintf(fd, "  Encoder interval (ms): %" PRIu64 "\n", encoderIntervalMs());
+  dprintf(fd, "  Effective MTU: %d\n", getEffectiveMtu());
 
   result = codecConfig2Str(getCodecConfig());
   dprintf(fd, "  Config: %s\n", result.c_str());

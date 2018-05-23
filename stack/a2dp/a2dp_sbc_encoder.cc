@@ -913,6 +913,10 @@ period_ms_t A2dpCodecConfigSbcSource::encoderIntervalMs() const {
   return a2dp_sbc_get_encoder_interval_ms();
 }
 
+int A2dpCodecConfigSbcSource::getEffectiveMtu() const {
+  return a2dp_sbc_encoder_cb.TxAaMtuSize;
+}
+
 void A2dpCodecConfigSbcSource::debug_codec_dump(int fd) {
   a2dp_sbc_encoder_stats_t* stats = &a2dp_sbc_encoder_cb.stats;
 

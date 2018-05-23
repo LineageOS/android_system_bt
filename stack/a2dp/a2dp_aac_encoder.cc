@@ -698,6 +698,10 @@ period_ms_t A2dpCodecConfigAacSource::encoderIntervalMs() const {
   return a2dp_aac_get_encoder_interval_ms();
 }
 
+int A2dpCodecConfigAacSource::getEffectiveMtu() const {
+  return a2dp_aac_encoder_cb.TxAaMtuSize;
+}
+
 void A2dpCodecConfigAacSource::debug_codec_dump(int fd) {
   a2dp_aac_encoder_stats_t* stats = &a2dp_aac_encoder_cb.stats;
 
