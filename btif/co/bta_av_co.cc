@@ -1626,16 +1626,32 @@ bool BtaAvCo::ReportSinkCodecState(BtaAvCoPeer* p_peer) {
   // Nothing to do (for now)
   return true;
 }
+
 void BtaAvCo::DebugDump(int fd) {
   std::lock_guard<std::recursive_mutex> lock(codec_lock_);
 
-  dprintf(fd, "\nA2DP Codecs and Peers State:\n");
+  //
+  // Active peer codec-specific stats
+  //
+  if (active_peer_ != nullptr) {
+    A2dpCodecs* a2dp_codecs = active_peer_->GetCodecs();
+    if (a2dp_codecs != nullptr) {
+      a2dp_codecs->debug_codec_dump(fd);
+    }
+  }
+
+  if (appl_trace_level < BT_TRACE_LEVEL_DEBUG) return;
+
+  dprintf(fd, "\nA2DP Peers State:\n");
   dprintf(fd, "  Active peer: %s\n",
           (active_peer_ != nullptr) ? active_peer_->addr.ToString().c_str()
                                     : "null");
 
   for (size_t i = 0; i < BTA_AV_CO_NUM_ELEMENTS(peers_); i++) {
     const BtaAvCoPeer& peer = peers_[i];
+    if (peer.addr.IsEmpty()) {
+      continue;
+    }
     dprintf(fd, "  Peer: %s\n", peer.addr.ToString().c_str());
     dprintf(fd, "    Number of sinks: %u\n", peer.num_sinks);
     dprintf(fd, "    Number of sources: %u\n", peer.num_sources);
@@ -1651,16 +1667,6 @@ void BtaAvCo::DebugDump(int fd) {
     dprintf(fd, "    MTU: %u\n", peer.mtu);
     dprintf(fd, "    UUID to connect: 0x%x\n", peer.uuid_to_connect);
     dprintf(fd, "    BTA AV handle: %u\n", peer.BtaAvHandle());
-  }
-
-  //
-  // Active peer codec-specific stats
-  //
-  if (active_peer_ != nullptr) {
-    A2dpCodecs* a2dp_codecs = active_peer_->GetCodecs();
-    if (a2dp_codecs != nullptr) {
-      a2dp_codecs->debug_codec_dump(fd);
-    }
   }
 }
 
