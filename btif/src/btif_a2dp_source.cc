@@ -504,6 +504,7 @@ static void btif_a2dp_source_end_session_delayed(
     return;
   }
   if (btif_av_is_a2dp_offload_enabled()) {
+    btif_av_stream_stop();
     btif_a2dp_audio_interface_end_session();
   }
 }
