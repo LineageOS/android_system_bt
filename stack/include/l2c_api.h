@@ -1280,4 +1280,7 @@ extern uint8_t L2CA_GetBleConnRole(const RawAddress& bd_addr);
 extern uint16_t L2CA_GetDisconnectReason(const RawAddress& remote_bda,
                                          tBT_TRANSPORT transport);
 
+extern void L2CA_AdjustConnectionIntervals(uint16_t* min_interval,
+                                           uint16_t* max_interval,
+                                           uint16_t floor_interval);
 #endif /* L2C_API_H */

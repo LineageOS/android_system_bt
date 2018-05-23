@@ -235,6 +235,8 @@ class HearingDevices {
     return false;
   }
 
+  size_t size() { return (devices.size()); }
+
   std::vector<HearingDevice> devices;
 };
 
@@ -297,6 +299,8 @@ class HearingAidImpl : public HearingAid {
 
     callbacks->OnDeviceAvailable(capabilities, hiSyncId, address);
   }
+
+  int GetDeviceCount() { return (hearingDevices.size()); }
 
   void OnGattConnected(tGATT_STATUS status, uint16_t conn_id,
                        tGATT_IF client_if, RawAddress address,
@@ -1188,6 +1192,15 @@ void HearingAid::AddFromStorage(const RawAddress& address, uint16_t psm,
                            audio_control_point_handle, volume_handle, hiSyncId,
                            render_delay, preparation_delay, is_white_listed);
 };
+
+int HearingAid::GetDeviceCount() {
+  if (!instance) {
+    LOG(INFO) << __func__ << ": Not initialized yet";
+    return 0;
+  }
+
+  return (instance->GetDeviceCount());
+}
 
 void HearingAid::CleanUp() {
   // Must stop audio source to make sure it doesn't call any of callbacks on our
