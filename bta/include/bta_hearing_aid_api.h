@@ -49,6 +49,8 @@ class HearingAid {
                              uint16_t render_delay, uint16_t preparation_delay,
                              uint16_t is_white_listed);
 
+  static int GetDeviceCount();
+
   virtual void Connect(const RawAddress& address) = 0;
   virtual void Disconnect(const RawAddress& address) = 0;
   virtual void SetVolume(int8_t volume) = 0;
