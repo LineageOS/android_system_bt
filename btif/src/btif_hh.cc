@@ -682,6 +682,21 @@ void btif_hh_service_registration(bool enable) {
   }
 }
 
+/*******************************************************************************
+ *
+ *
+ * Function         btif_hh_getreport
+ *
+ * Description      getreport initiated from the BTIF thread context
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void btif_hh_getreport(btif_hh_device_t* p_dev, bthh_report_type_t r_type,
+                       uint8_t reportId, uint16_t bufferSize) {
+  BTA_HhGetReport(p_dev->dev_handle, r_type, reportId, bufferSize);
+}
+
 /*****************************************************************************
  *   Section name (Group of functions)
  ****************************************************************************/
