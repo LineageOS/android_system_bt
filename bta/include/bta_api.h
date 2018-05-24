@@ -877,7 +877,7 @@ typedef uint8_t tBTA_DM_PM_ACTION;
 
 #ifndef BTA_DM_PM_PARK_IDX
 #define BTA_DM_PM_PARK_IDX \
-  5 /* the actual index to bta_dm_pm_md[] for PARK mode */
+  6 /* the actual index to bta_dm_pm_md[] for PARK mode */
 #endif
 
 #ifndef BTA_DM_PM_SNIFF_A2DP_IDX
@@ -966,6 +966,13 @@ typedef uint8_t tBTA_DM_PM_ACTION;
 #define BTA_DM_PM_SNIFF5_MIN 30
 #define BTA_DM_PM_SNIFF5_ATTEMPT 2
 #define BTA_DM_PM_SNIFF5_TIMEOUT 0
+#endif
+
+#ifndef BTA_DM_PM_SNIFF6_MAX
+#define BTA_DM_PM_SNIFF6_MAX 18
+#define BTA_DM_PM_SNIFF6_MIN 14
+#define BTA_DM_PM_SNIFF6_ATTEMPT 1
+#define BTA_DM_PM_SNIFF6_TIMEOUT 0
 #endif
 
 #ifndef BTA_DM_PM_PARK_MAX
