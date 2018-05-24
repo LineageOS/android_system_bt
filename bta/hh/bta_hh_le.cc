@@ -1354,16 +1354,8 @@ void read_pref_conn_params_cb(uint16_t conn_id, tGATT_STATUS status,
 
   // Make sure both min, and max are bigger than 11.25ms, lower values can
   // introduce audio issues if A2DP is also active.
-  if (min_interval < BTM_BLE_CONN_INT_MIN_LIMIT) {
-    APPL_TRACE_DEBUG("%s: requested min_interval=%d too small. Set to %d",
-                     __func__, min_interval, BTM_BLE_CONN_INT_MIN_LIMIT);
-    min_interval = BTM_BLE_CONN_INT_MIN_LIMIT;
-  }
-  if (max_interval < BTM_BLE_CONN_INT_MIN_LIMIT) {
-    APPL_TRACE_DEBUG("%s: requested max_interval=%d too small. Set to %d",
-                     __func__, max_interval, BTM_BLE_CONN_INT_MIN_LIMIT);
-    max_interval = BTM_BLE_CONN_INT_MIN_LIMIT;
-  }
+  L2CA_AdjustConnectionIntervals(&min_interval, &max_interval,
+                                 BTM_BLE_CONN_INT_MIN_LIMIT);
 
   // If the device has no preferred connection timeout, use the default.
   if (timeout == BTM_BLE_CONN_PARAM_UNDEF) timeout = BTM_BLE_CONN_TIMEOUT_DEF;
