@@ -282,12 +282,14 @@ class VolumeInterfaceWrapper : public VolumeInterface {
 void AvrcpService::Init(MediaInterface* media_interface,
                         VolumeInterface* volume_interface) {
   LOG(INFO) << "AVRCP Target Service started";
-  std::lock_guard<std::mutex> lock(jni_mutex_);
   if (instance_ == nullptr) {
     instance_ = new AvrcpService();
   }
 
-  jni_message_loop_ = get_jni_message_loop();
+  {
+    std::lock_guard<std::mutex> lock(jni_mutex_);
+    jni_message_loop_ = get_jni_message_loop();
+  }
 
   // TODO (apanicke): Add a function that sets up the SDP records once we
   // remove the AVRCP SDP setup in AVDTP (bta_av_main.cc)
@@ -310,10 +312,11 @@ void AvrcpService::Init(MediaInterface* media_interface,
 
 void AvrcpService::Cleanup() {
   LOG(INFO) << "AVRCP Target Service stopped";
-  std::lock_guard<std::mutex> lock(jni_mutex_);
-
-  task_tracker_.TryCancelAll();
-  jni_message_loop_ = nullptr;
+  {
+    std::lock_guard<std::mutex> lock(jni_mutex_);
+    task_tracker_.TryCancelAll();
+    jni_message_loop_ = nullptr;
+  }
 
   instance_->connection_handler_->CleanUp();
   instance_->connection_handler_ = nullptr;
