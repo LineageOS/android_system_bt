@@ -27,6 +27,7 @@
 #include <string.h>
 #include "bt_target.h"
 #include "bt_utils.h"
+#include "bta_hearing_aid_api.h"
 #include "btm_int.h"
 #include "btu.h"
 #include "device/include/controller.h"
@@ -483,6 +484,10 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
         p_lcb->min_interval > BTM_BLE_CONN_INT_MIN) {
       /* use 7.5 ms as fast connection parameter, 0 slave latency */
       min_conn_int = max_conn_int = BTM_BLE_CONN_INT_MIN;
+
+      L2CA_AdjustConnectionIntervals(&min_conn_int, &max_conn_int,
+                                     BTM_BLE_CONN_INT_MIN);
+
       slave_latency = BTM_BLE_CONN_SLAVE_LATENCY_DEF;
       supervision_tout = BTM_BLE_CONN_TIMEOUT_DEF;
 
@@ -620,23 +625,8 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       STREAM_TO_UINT16(timeout, p);      /* 0x000A - 0x0C80 */
       /* If we are a master, the slave wants to update the parameters */
       if (p_lcb->link_role == HCI_ROLE_MASTER) {
-        if (min_interval < BTM_BLE_CONN_INT_MIN_LIMIT) {
-          L2CAP_TRACE_DEBUG(
-              "%s: requested min_interval=%d too small. Set to %d", __func__,
-              min_interval, BTM_BLE_CONN_INT_MIN_LIMIT);
-          min_interval = BTM_BLE_CONN_INT_MIN_LIMIT;
-        }
-
-        // While this could result in connection parameters that fall
-        // outside fo the range requested, this will allow the connection
-        // to remain established.
-        // In other words, this is a workaround for certain peripherals.
-        if (max_interval < BTM_BLE_CONN_INT_MIN_LIMIT) {
-          L2CAP_TRACE_DEBUG(
-              "%s: requested max_interval=%d too small. Set to %d", __func__,
-              max_interval, BTM_BLE_CONN_INT_MIN_LIMIT);
-          max_interval = BTM_BLE_CONN_INT_MIN_LIMIT;
-        }
+        L2CA_AdjustConnectionIntervals(&min_interval, &max_interval,
+                                       BTM_BLE_CONN_INT_MIN_LIMIT);
 
         if (min_interval < BTM_BLE_CONN_INT_MIN ||
             min_interval > BTM_BLE_CONN_INT_MAX ||
@@ -1454,4 +1444,38 @@ bool l2ble_sec_access_req(const RawAddress& bd_addr, uint16_t psm,
                                    &l2cble_sec_comp, p_ref_data);
 
   return status;
+}
+
+/* This function is called to adjust the connection intervals based on various
+ * constraints. For example, when there is at least one Hearing Aid device
+ * bonded, the minimum interval is raised. On return, min_interval and
+ * max_interval are updated. */
+void L2CA_AdjustConnectionIntervals(uint16_t* min_interval,
+                                    uint16_t* max_interval,
+                                    uint16_t floor_interval) {
+  uint16_t phone_min_interval = floor_interval;
+
+  if (HearingAid::GetDeviceCount() > 0) {
+    // When there are bonded Hearing Aid devices, we will constrained this
+    // minimum interval.
+    phone_min_interval = BTM_BLE_CONN_INT_MIN_HEARINGAID;
+    L2CAP_TRACE_DEBUG("%s: Have Hearing Aids. Min. interval is set to %d",
+                      __func__, phone_min_interval);
+  }
+
+  if (*min_interval < phone_min_interval) {
+    L2CAP_TRACE_DEBUG("%s: requested min_interval=%d too small. Set to %d",
+                      __func__, *min_interval, phone_min_interval);
+    *min_interval = phone_min_interval;
+  }
+
+  // While this could result in connection parameters that fall
+  // outside fo the range requested, this will allow the connection
+  // to remain established.
+  // In other words, this is a workaround for certain peripherals.
+  if (*max_interval < phone_min_interval) {
+    L2CAP_TRACE_DEBUG("%s: requested max_interval=%d too small. Set to %d",
+                      __func__, *max_interval, phone_min_interval);
+    *max_interval = phone_min_interval;
+  }
 }

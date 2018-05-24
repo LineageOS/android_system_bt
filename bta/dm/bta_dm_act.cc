@@ -3958,6 +3958,9 @@ void bta_dm_ble_set_conn_params(const RawAddress& bd_addr,
                                 uint16_t conn_int_min, uint16_t conn_int_max,
                                 uint16_t slave_latency,
                                 uint16_t supervision_tout) {
+  L2CA_AdjustConnectionIntervals(&conn_int_min, &conn_int_max,
+                                 BTM_BLE_CONN_INT_MIN);
+
   BTM_BleSetPrefConnParams(bd_addr, conn_int_min, conn_int_max, slave_latency,
                            supervision_tout);
 }
@@ -3973,6 +3976,8 @@ void bta_dm_ble_update_conn_params(const RawAddress& bd_addr, uint16_t min_int,
                                    uint16_t max_int, uint16_t latency,
                                    uint16_t timeout, uint16_t min_ce_len,
                                    uint16_t max_ce_len) {
+  L2CA_AdjustConnectionIntervals(&min_int, &max_int, BTM_BLE_CONN_INT_MIN);
+
   if (!L2CA_UpdateBleConnParams(bd_addr, min_int, max_int, latency, timeout,
                                 min_ce_len, max_ce_len)) {
     APPL_TRACE_ERROR("Update connection parameters failed!");
