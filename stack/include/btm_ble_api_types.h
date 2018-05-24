@@ -197,6 +197,12 @@ typedef uint8_t tBTM_BLE_SFP;
 #define BTM_BLE_CONN_INT_MIN_LIMIT 0x0009
 #endif
 
+/* minimum acceptable connection interval when there is bonded Hearing Aid
+ * device */
+#ifndef BTM_BLE_CONN_INT_MIN_HEARINGAID
+#define BTM_BLE_CONN_INT_MIN_HEARINGAID 0x0010
+#endif
+
 #define BTM_BLE_DIR_CONN_FALLBACK_UNDIR 1
 #define BTM_BLE_DIR_CONN_FALLBACK_NO_ADV 2
 
