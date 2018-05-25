@@ -1,5 +1,5 @@
 #
-#  Copyright 2015 Google, Inc.
+#  Copyright 2018 Android Open Source Project
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -14,18 +14,20 @@
 #  limitations under the License.
 #
 
-source_set("udrv") {
+static_library("profile_avrcp") {
   sources = [
-    "ulinux/uipc.cc",
+    "connection_handler.cc",
+    "device.cc",
   ]
 
   include_dirs = [
-    "include",
-    "uipc",
     "//",
     "//internal_include",
     "//stack/include",
-    "//utils/include",
-    "//third_party/libchrome",
+    "//profile/avrcp",
+  ]
+
+  deps = [
+    "//third_party/libchrome:base"
   ]
 }

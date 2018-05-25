@@ -73,6 +73,7 @@ shared_library("bluetooth") {
     "//embdrv/sbc",
     "//hci",
     "//osi",
+    "//packet",
     "//stack",
     "//third_party/libchrome:base",
     "//third_party/tinyxml2",
