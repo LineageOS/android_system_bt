@@ -296,10 +296,11 @@ void bta_ag_disc_fail(tBTA_AG_SCB* p_scb,
   /* reinitialize stuff */
 
   /* clear the remote BD address */
+  RawAddress peer_addr = p_scb->peer_addr;
   p_scb->peer_addr = RawAddress::kEmpty;
 
   /* call open cback w. failure */
-  bta_ag_cback_open(p_scb, RawAddress::kEmpty, BTA_AG_FAIL_SDP);
+  bta_ag_cback_open(p_scb, peer_addr, BTA_AG_FAIL_SDP);
 }
 
 /*******************************************************************************
@@ -534,14 +535,17 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   for (tBTA_AG_SCB& ag_scb : bta_ag_cb.scb) {
     // Cancel any pending collision timers
     if (ag_scb.in_use && alarm_is_scheduled(ag_scb.collision_timer)) {
+      VLOG(1) << __func__ << ": cancel collision alarm for "
+              << ag_scb.peer_addr;
       alarm_cancel(ag_scb.collision_timer);
       if (dev_addr != ag_scb.peer_addr && p_scb != &ag_scb) {
         // Resume outgoing connection if incoming is not on the same device
         bta_ag_resume_open(&ag_scb);
       }
-      break;
     }
     if (dev_addr == ag_scb.peer_addr && p_scb != &ag_scb) {
+      VLOG(1) << __func__ << ": fail outgoing connection before accepting "
+              << ag_scb.peer_addr;
       // Fail the outgoing connection to clean up any upper layer states
       bta_ag_rfc_fail(&ag_scb, tBTA_AG_DATA::kEmpty);
       // If client port is opened, close it
@@ -555,6 +559,10 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
         }
       }
     }
+    VLOG(1) << __func__ << ": dev_addr=" << dev_addr
+            << ", peer_addr=" << ag_scb.peer_addr
+            << ", in_use=" << ag_scb.in_use
+            << ", index=" << bta_ag_scb_to_idx(p_scb);
   }
 
   p_scb->peer_addr = dev_addr;
@@ -607,11 +615,13 @@ void bta_ag_rfc_data(tBTA_AG_SCB* p_scb, UNUSED_ATTR const tBTA_AG_DATA& data) {
     /* read data from rfcomm; if bad status, we're done */
     if (PORT_ReadData(p_scb->conn_handle, buf, BTA_AG_RFC_READ_MAX, &len) !=
         PORT_SUCCESS) {
+      LOG(ERROR) << __func__ << ": failed to read data " << p_scb->peer_addr;
       break;
     }
 
     /* if no data, we're done */
     if (len == 0) {
+      LOG(WARNING) << __func__ << ": no data for " << p_scb->peer_addr;
       break;
     }
 
@@ -794,6 +804,7 @@ void bta_ag_svc_conn_open(tBTA_AG_SCB* p_scb,
 void bta_ag_setcodec(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   tBTA_AG_PEER_CODEC codec_type = data.api_setcodec.codec;
   tBTA_AG_VAL val = {};
+  val.hdr.handle = bta_ag_scb_to_idx(p_scb);
 
   /* Check if the requested codec type is valid */
   if ((codec_type != BTA_AG_CODEC_NONE) && (codec_type != BTA_AG_CODEC_CVSD) &&
