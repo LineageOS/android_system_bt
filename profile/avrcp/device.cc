@@ -19,6 +19,13 @@
 #include "connection_handler.h"
 #include "device.h"
 
+#include "packet/avrcp/avrcp_reject_packet.h"
+#include "packet/avrcp/general_reject_packet.h"
+#include "packet/avrcp/get_play_status_packet.h"
+#include "packet/avrcp/pass_through_packet.h"
+#include "packet/avrcp/set_absolute_volume.h"
+#include "packet/avrcp/set_addressed_player.h"
+
 namespace bluetooth {
 namespace avrcp {
 

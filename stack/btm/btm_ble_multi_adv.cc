@@ -931,7 +931,7 @@ class BleAdvertisingManagerImpl
     }
   }
 
-  void Suspend() {
+  void Suspend() override {
     std::vector<SetEnableData> sets;
 
     for (AdvertisingInstance& inst : adv_inst) {
