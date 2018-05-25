@@ -62,12 +62,12 @@ additional description:
     action that `bta_dm_pm_set_mode` will take, the connection will be removed
     from `bta_dm_conn_srvcs` and no longer be considered for power management
     decisions.
-  - `BTA_DM_PM_SNIFF` through `BTA_DM_PM_SNIFF4` are special, in that each
+  - `BTA_DM_PM_SNIFF` through `BTA_DM_PM_SNIFF6` are special, in that each
     level specifies a set of parameters for the SNIFF mode which relate to the
     min and max intervals, the number of attempts and the timeout. The overall
     action is still the same, however -- SNIFF mode is attempted. There are
     definitions available up to SNIFF7, but actual SSR values are only defined
-    up to SNIFF4. Params are defined in `bta_dm_ssr_spec`.
+    up to SNIFF6. Params are defined in `bta_dm_ssr_spec`.
   - `BTA_DM_PM_ACTIVE` is full-on power.
   - `BTA_DM_PM_RETRY` has the same effect as `BTA_DM_PM_NO_ACTION`, except a
     timeout is possible to be set, which effectively allows a power operation to
