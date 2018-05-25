@@ -70,7 +70,7 @@ static void a2dp_sdp_cback(uint16_t status) {
   tSDP_PROTOCOL_ELEM elem;
   RawAddress peer_address = RawAddress::kEmpty;
 
-  LOG_VERBOSE(LOG_TAG, "%s: status: %d", __func__, status);
+  LOG_INFO(LOG_TAG, "%s: status: %d", __func__, status);
 
   if (status == SDP_SUCCESS) {
     /* loop through all records we found */
@@ -275,15 +275,24 @@ tA2DP_STATUS A2DP_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
                               tA2DP_FIND_CBACK* p_cback) {
   bool result = true;
 
-  LOG_VERBOSE(LOG_TAG, "%s: uuid: 0x%x", __func__, service_uuid);
+  LOG_INFO(LOG_TAG, "%s: peer: %s UUID: 0x%x", __func__,
+           bd_addr.ToString().c_str(), service_uuid);
   if ((service_uuid != UUID_SERVCLASS_AUDIO_SOURCE &&
        service_uuid != UUID_SERVCLASS_AUDIO_SINK) ||
-      p_db == NULL || p_cback == NULL)
+      p_db == NULL || p_cback == NULL) {
+    LOG_ERROR(LOG_TAG,
+              "%s: cannot find service for peer %s UUID 0x%x: "
+              "invalid parameters",
+              __func__, bd_addr.ToString().c_str(), service_uuid);
     return A2DP_INVALID_PARAMS;
+  }
 
   if (a2dp_cb.find.service_uuid == UUID_SERVCLASS_AUDIO_SOURCE ||
-      a2dp_cb.find.service_uuid == UUID_SERVCLASS_AUDIO_SINK)
+      a2dp_cb.find.service_uuid == UUID_SERVCLASS_AUDIO_SINK) {
+    LOG_ERROR(LOG_TAG, "%s: cannot find service for peer %s UUID 0x%x: busy",
+              __func__, bd_addr.ToString().c_str(), service_uuid);
     return A2DP_BUSY;
+  }
 
   if (p_db->p_attrs == NULL || p_db->num_attr == 0) {
     p_db->p_attrs = a2dp_attr_list;
@@ -309,8 +318,15 @@ tA2DP_STATUS A2DP_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
       a2dp_cb.find.service_uuid = 0;
     }
   }
+  if (!result) {
+    LOG_ERROR(LOG_TAG,
+              "%s: cannot find service for peer %s UUID 0x%x: "
+              "SDP error",
+              __func__, bd_addr.ToString().c_str(), service_uuid);
+    return A2DP_FAIL;
+  }
 
-  return (result ? A2DP_SUCCESS : A2DP_FAIL);
+  return A2DP_SUCCESS;
 }
 
 /******************************************************************************

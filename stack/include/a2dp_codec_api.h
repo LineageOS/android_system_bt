@@ -75,9 +75,8 @@ class A2dpCodecConfig {
   bool getCodecSpecificConfig(tBT_A2DP_OFFLOAD* p_a2dp_offload);
 
   // Gets the bitRate for the A2DP codec.
-  // Returns the bitrate of current codec configuration,
-  // or 0 if not configured
-  int getTrackBitRate();
+  // Returns the bitrate of current codec configuration, or 0 if not configured
+  int getTrackBitRate() const;
 
   // Copies out the current OTA codec config to |p_codec_info|.
   // Returns true if the current codec config is valid and copied,
@@ -125,6 +124,11 @@ class A2dpCodecConfig {
   // Returns true if the encoded data packets have RTP headers, and
   // the Marker bit in the header is set according to RFC 6416.
   virtual bool useRtpHeaderMarkerBit() const = 0;
+
+  // Gets the effective MTU for the A2DP codec.
+  // Returns the effective MTU of current codec configuration, or 0 if not
+  // configured.
+  virtual int getEffectiveMtu() const = 0;
 
   // Checks whether |codec_config| is empty and contains no configuration.
   // Returns true if |codec_config| is empty, otherwise false.

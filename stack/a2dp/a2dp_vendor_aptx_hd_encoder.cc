@@ -90,7 +90,7 @@ typedef struct {
   bool use_SCMS_T;
   bool is_peer_edr;          // True if the peer device supports EDR
   bool peer_supports_3mbps;  // True if the peer device supports 3Mbps EDR
-  uint16_t peer_mtu;         // // MTU of the A2DP peer
+  uint16_t peer_mtu;         // MTU of the A2DP peer
   uint32_t timestamp;        // Timestamp for the A2DP frames
 
   tA2DP_FEEDING_PARAMS feeding_params;
@@ -479,6 +479,10 @@ static size_t aptx_hd_encode_24bit(tAPTX_HD_FRAMING_PARAMS* framing_params,
 
 period_ms_t A2dpCodecConfigAptxHd::encoderIntervalMs() const {
   return a2dp_vendor_aptx_hd_get_encoder_interval_ms();
+}
+
+int A2dpCodecConfigAptxHd::getEffectiveMtu() const {
+  return a2dp_aptx_hd_encoder_cb.peer_mtu;
 }
 
 void A2dpCodecConfigAptxHd::debug_codec_dump(int fd) {
