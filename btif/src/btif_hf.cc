@@ -1039,6 +1039,15 @@ bt_status_t HeadsetInterface::PhoneStateChange(
     LOG(WARNING) << ": SLC not connected for " << *bd_addr;
     return BT_STATUS_NOT_READY;
   }
+  if (call_setup_state == BTHF_CALL_STATE_DISCONNECTED) {
+    // HFP spec does not handle cases when a call is being disconnected.
+    // Since DISCONNECTED state must lead to IDLE state, ignoring it here.s
+    LOG(INFO) << __func__
+              << ": Ignore call state change to DISCONNECTED, idx=" << idx
+              << ", addr=" << *bd_addr << ", num_active=" << num_active
+              << ", num_held=" << num_held;
+    return BT_STATUS_SUCCESS;
+  }
   LOG(INFO) << __func__ << ": idx=" << idx << ", addr=" << *bd_addr
             << ", active_bda=" << active_bda << ", num_active=" << num_active
             << ", prev_num_active" << control_block.num_active
@@ -1047,13 +1056,14 @@ bt_status_t HeadsetInterface::PhoneStateChange(
             << ", call_state=" << dump_hf_call_state(call_setup_state)
             << ", prev_call_state="
             << dump_hf_call_state(control_block.call_setup_state);
-  tBTA_AG_RES res = 0xff;
+  tBTA_AG_RES res = 0xFF;
   bt_status_t status = BT_STATUS_SUCCESS;
   bool active_call_updated = false;
 
   /* if all indicators are 0, send end call and return */
   if (num_active == 0 && num_held == 0 &&
       call_setup_state == BTHF_CALL_STATE_IDLE) {
+    VLOG(1) << __func__ << ": call ended";
     BTA_AgResult(control_block.handle, BTA_AG_END_CALL_RES,
                  tBTA_AG_RES_DATA::kEmpty);
     /* if held call was present, reset that as well */
@@ -1170,9 +1180,6 @@ bt_status_t HeadsetInterface::PhoneStateChange(
         }
         res = BTA_AG_OUT_CALL_ALERT_RES;
         break;
-      case BTHF_CALL_STATE_DISCONNECTED:
-        res = 0;
-        break;
       default:
         BTIF_TRACE_ERROR("%s: Incorrect call state prev=%d, now=%d", __func__,
                          control_block.call_setup_state, call_setup_state);
@@ -1182,7 +1189,7 @@ bt_status_t HeadsetInterface::PhoneStateChange(
     BTIF_TRACE_DEBUG("%s: Call setup state changed. res=%d, audio_handle=%d",
                      __func__, res, ag_res.audio_handle);
 
-    if (res) {
+    if (res != 0xFF) {
       BTA_AgResult(control_block.handle, res, ag_res);
     }
 
@@ -1199,18 +1206,23 @@ bt_status_t HeadsetInterface::PhoneStateChange(
     }
   }
 
-  /* per the errata 2043, call=1 implies atleast one call is in progress
-   *(active/held)
-   ** https://www.bluetooth.org/errata/errata_view.cfm?errata_id=2043
-   ** Handle call indicator change
+  /**
+   * Handle call indicator change
+   *
+   * Per the errata 2043, call=1 implies at least one call is in progress
+   * (active or held)
+   * See: https://www.bluetooth.org/errata/errata_view.cfm?errata_id=2043
+   *
    **/
   if (!active_call_updated &&
       ((num_active + num_held) !=
        (control_block.num_active + control_block.num_held))) {
-    BTIF_TRACE_DEBUG("%s: Active call states changed. old: %d new: %d",
-                     __func__, control_block.num_active, num_active);
+    VLOG(1) << __func__ << ": in progress call states changed, active=["
+            << control_block.num_active << "->" << num_active << "], held=["
+            << control_block.num_held << "->" << num_held;
     send_indicator_update(control_block, BTA_AG_IND_CALL,
-                          ((num_active + num_held) > 0) ? 1 : 0);
+                          ((num_active + num_held) > 0) ? BTA_AG_CALL_ACTIVE
+                                                        : BTA_AG_CALL_INACTIVE);
   }
 
   /* Held Changed? */
