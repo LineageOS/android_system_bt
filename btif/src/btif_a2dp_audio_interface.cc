@@ -214,7 +214,7 @@ void btif_a2dp_audio_interface_start_session() {
 
 void btif_a2dp_audio_interface_end_session() {
   LOG_INFO(LOG_TAG, "%s", __func__);
-  CHECK(btAudio != nullptr);
+  if (btAudio == nullptr) return;
   auto ret = btAudio->endSession();
   if (!ret.isOk()) {
     LOG_ERROR(LOG_TAG, "HAL server is dead");
@@ -260,6 +260,7 @@ void btif_a2dp_audio_send_start_req() {
   }
 }
 void btif_a2dp_audio_send_suspend_req() {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   uint8_t resp;
   resp = btif_a2dp_audio_process_request(A2DP_CTRL_CMD_SUSPEND);
   if (btAudio != nullptr) {
@@ -278,8 +279,8 @@ void btif_a2dp_audio_send_suspend_req() {
 }*/
 
 uint8_t btif_a2dp_audio_process_request(uint8_t cmd) {
-  APPL_TRACE_DEBUG("%s: cmd: %s", __func__,
-                   audio_a2dp_hw_dump_ctrl_event((tA2DP_CTRL_CMD)cmd));
+  LOG_INFO(LOG_TAG, "%s: cmd: %s", __func__,
+           audio_a2dp_hw_dump_ctrl_event((tA2DP_CTRL_CMD)cmd));
   a2dp_cmd_pending = cmd;
   uint8_t status;
   switch (cmd) {
@@ -362,7 +363,7 @@ uint8_t btif_a2dp_audio_process_request(uint8_t cmd) {
       status = A2DP_CTRL_ACK_FAILURE;
       break;
   }
-  APPL_TRACE_DEBUG("a2dp-ctrl-cmd : %s DONE returning status %d",
-                   audio_a2dp_hw_dump_ctrl_event((tA2DP_CTRL_CMD)cmd), status);
+  LOG_INFO(LOG_TAG, "a2dp-ctrl-cmd : %s DONE returning status %d",
+           audio_a2dp_hw_dump_ctrl_event((tA2DP_CTRL_CMD)cmd), status);
   return status;
 }
