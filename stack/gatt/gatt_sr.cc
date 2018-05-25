@@ -749,7 +749,7 @@ static void gatts_process_mtu_req(tGATT_TCB& tcb, uint16_t len,
   else
     tcb.payload_size = mtu;
 
-  LOG(ERROR) << "MTU request PDU with MTU size " << +tcb.payload_size;
+  LOG(INFO) << "MTU request PDU with MTU size " << +tcb.payload_size;
 
   l2cble_set_fixed_channel_tx_data_length(tcb.peer_bda, L2CAP_ATT_CID,
                                           tcb.payload_size);
