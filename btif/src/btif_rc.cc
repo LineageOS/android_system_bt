@@ -677,6 +677,12 @@ void handle_rc_disconnect(tBTA_AV_RC_CLOSE* p_rc_close) {
     BTIF_TRACE_ERROR("Got disconnect of unknown device");
     return;
   }
+  /* report connection state if device is AVRCP target */
+  if (bt_rc_ctrl_callbacks != NULL) {
+    do_in_jni_thread(
+        FROM_HERE, base::Bind(bt_rc_ctrl_callbacks->connection_state_cb, false,
+                              false, p_dev->rc_addr));
+  }
   /* Clean up AVRCP procedure flags */
   memset(&p_dev->rc_app_settings, 0, sizeof(btif_rc_player_app_settings_t));
   p_dev->rc_features_processed = false;
@@ -708,12 +714,6 @@ void handle_rc_disconnect(tBTA_AV_RC_CLOSE* p_rc_close) {
   }
 
   p_dev->rc_addr = RawAddress::kEmpty;
-  /* report connection state if device is AVRCP target */
-  if (bt_rc_ctrl_callbacks != NULL) {
-    do_in_jni_thread(
-        FROM_HERE, base::Bind(bt_rc_ctrl_callbacks->connection_state_cb, false,
-                              false, p_dev->rc_addr));
-  }
 }
 
 /***************************************************************************
