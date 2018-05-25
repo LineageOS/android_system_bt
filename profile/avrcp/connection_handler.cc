@@ -22,9 +22,9 @@
 
 #include "avrc_defs.h"
 #include "avrcp_message_converter.h"
-#include "avrcp_packet.h"
 #include "bt_types.h"
 #include "btu.h"
+#include "packet/avrcp/avrcp_packet.h"
 // TODO (apanicke): Remove dependency on this header once we cleanup feature
 // handling.
 #include "bta/include/bta_av_api.h"

@@ -20,11 +20,11 @@
 #include <base/macros.h>
 #include <iostream>
 
-#include "avrcp_common.h"
-#include "avrcp_logging_helper.h"
-#include "iterator.h"
-#include "packet.h"
-#include "packet_builder.h"
+#include "hardware/avrcp/avrcp_common.h"
+#include "hardware/avrcp/avrcp_logging_helper.h"
+#include "packet/base/iterator.h"
+#include "packet/base/packet.h"
+#include "packet/base/packet_builder.h"
 
 namespace bluetooth {
 namespace avrcp {
@@ -87,7 +87,7 @@ class Packet : public ::bluetooth::Packet {
   Opcode GetOpcode() const;
 
   // Overloaded Functions
-  virtual bool IsValid() const;
+  virtual bool IsValid() const override;
   virtual std::string ToString() const override;
 
  protected:
@@ -103,7 +103,7 @@ class Packet : public ::bluetooth::Packet {
   }
 
  private:
-  virtual std::pair<size_t, size_t> GetPayloadIndecies() const;
+  virtual std::pair<size_t, size_t> GetPayloadIndecies() const override;
   DISALLOW_COPY_AND_ASSIGN(Packet);
 };
 
