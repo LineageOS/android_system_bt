@@ -47,6 +47,7 @@ static_library("osi") {
 
   include_dirs = [
     "//",
+    "//internal_include",
     "//utils/include",
     "//stack/include",
   ]

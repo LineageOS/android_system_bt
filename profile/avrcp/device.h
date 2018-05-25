@@ -23,10 +23,21 @@
 #include <base/bind.h>
 #include <base/cancelable_callback.h>
 
-#include "avrcp.h"
 #include "avrcp_internal.h"
-#include "avrcp_packet.h"
-#include "media_id_map.h"
+#include "hardware/avrcp/avrcp.h"
+#include "packet/avrcp/avrcp_browse_packet.h"
+#include "packet/avrcp/avrcp_packet.h"
+#include "packet/avrcp/capabilities_packet.h"
+#include "packet/avrcp/change_path.h"
+#include "packet/avrcp/get_element_attributes_packet.h"
+#include "packet/avrcp/get_folder_items.h"
+#include "packet/avrcp/get_item_attributes.h"
+#include "packet/avrcp/get_total_number_of_items.h"
+#include "packet/avrcp/play_item.h"
+#include "packet/avrcp/register_notification_packet.h"
+#include "packet/avrcp/set_browsed_player.h"
+#include "packet/avrcp/vendor_packet.h"
+#include "profile/avrcp/media_id_map.h"
 #include "raw_address.h"
 
 namespace bluetooth {

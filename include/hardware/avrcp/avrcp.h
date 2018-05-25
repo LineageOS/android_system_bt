@@ -19,7 +19,7 @@
 #include <set>
 #include <string>
 
-#include <base/bind.h>
+#include <base/callback_forward.h>
 
 #include "avrcp_common.h"
 #include "raw_address.h"

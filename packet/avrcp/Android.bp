@@ -5,6 +5,10 @@ cc_library_static {
     export_header_lib_headers: ["avrcp_headers"],
     export_include_dirs: ["."],
     host_supported: true,
+    include_dirs: [
+        "system/bt/",
+        "system/bt/include",
+    ],
     srcs: [
         "avrcp_browse_packet.cc",
         "avrcp_packet.cc",

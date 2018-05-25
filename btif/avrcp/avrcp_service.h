@@ -19,9 +19,9 @@
 #include <map>
 #include <memory>
 
-#include "avrcp.h"
-#include "connection_handler.h"
+#include "hardware/avrcp/avrcp.h"
 #include "osi/include/properties.h"
+#include "profile/avrcp/connection_handler.h"
 #include "raw_address.h"
 
 namespace bluetooth {
