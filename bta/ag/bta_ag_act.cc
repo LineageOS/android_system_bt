@@ -514,7 +514,7 @@ void bta_ag_rfc_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
  *
  ******************************************************************************/
 void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
-  APPL_TRACE_DEBUG("%s: serv_handle0 = %d serv_handle1 = %d", __func__,
+  APPL_TRACE_DEBUG("%s: serv_handle0 = %d serv_handle = %d", __func__,
                    p_scb->serv_handle[0], p_scb->serv_handle[1]);
   /* set role */
   p_scb->role = BTA_AG_ACP;
