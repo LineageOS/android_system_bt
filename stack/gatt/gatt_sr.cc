@@ -335,7 +335,7 @@ void gatt_process_exec_write_req(tGATT_TCB& tcb, uint8_t op_code, uint16_t len,
   } else /* nothing needs to be executed , send response now */
   {
     LOG(ERROR) << "gatt_process_exec_write_req: no prepare write pending";
-    gatt_send_error_rsp(tcb, GATT_ERROR, GATT_REQ_EXEC_WRITE, 0, false);
+    gatt_send_error_rsp(tcb, GATT_INVALID_OFFSET, GATT_REQ_EXEC_WRITE, 0, false);
   }
 }
 
@@ -749,7 +749,7 @@ static void gatts_process_mtu_req(tGATT_TCB& tcb, uint16_t len,
   else
     tcb.payload_size = mtu;
 
-  LOG(ERROR) << "MTU request PDU with MTU size " << +tcb.payload_size;
+  LOG(INFO) << "MTU request PDU with MTU size " << +tcb.payload_size;
 
   l2cble_set_fixed_channel_tx_data_length(tcb.peer_bda, L2CAP_ATT_CID,
                                           tcb.payload_size);

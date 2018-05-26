@@ -172,7 +172,13 @@ static void bta_hh_snd_write_dev(uint8_t dev_handle, uint8_t t_type,
  ******************************************************************************/
 void BTA_HhSetReport(uint8_t dev_handle, tBTA_HH_RPT_TYPE r_type,
                      BT_HDR* p_data) {
-  bta_hh_snd_write_dev(dev_handle, HID_TRANS_SET_REPORT, r_type, 0, 0, p_data);
+  /* send feature report on control channel */
+  if (r_type == BTA_HH_RPTT_FEATURE)
+    bta_hh_snd_write_dev(dev_handle, HID_TRANS_SET_REPORT, r_type, 0, 0,
+                         p_data);
+  /* send output data report on interrupt channel */
+  else
+    bta_hh_snd_write_dev(dev_handle, HID_TRANS_DATA, r_type, 0, 0, p_data);
 }
 /*******************************************************************************
  *

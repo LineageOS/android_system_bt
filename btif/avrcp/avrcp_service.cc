@@ -18,6 +18,9 @@
 
 #include <base/bind.h>
 #include <base/logging.h>
+#include <base/task/cancelable_task_tracker.h>
+#include <base/threading/thread.h>
+#include <mutex>
 #include <sstream>
 
 #include "bta_closure_api.h"
@@ -30,6 +33,22 @@ namespace avrcp {
 // Static variables and interface definitions
 AvrcpService* AvrcpService::instance_ = nullptr;
 AvrcpService::ServiceInterfaceImpl* AvrcpService::service_interface_ = nullptr;
+
+std::mutex jni_mutex_;
+base::MessageLoop* jni_message_loop_ = nullptr;
+base::CancelableTaskTracker task_tracker_;
+
+void do_in_avrcp_jni(const base::Closure& task) {
+  std::lock_guard<std::mutex> lock(jni_mutex_);
+
+  if (jni_message_loop_ == nullptr) {
+    LOG(WARNING) << __func__ << ": jni_message_loop_ is null";
+    return;
+  }
+
+  task_tracker_.PostTask(jni_message_loop_->task_runner().get(), FROM_HERE,
+                         task);
+}
 
 class A2dpInterfaceImpl : public A2dpInterface {
   RawAddress active_peer() override { return btif_av_source_active_peer(); }
@@ -116,8 +135,8 @@ class MediaInterfaceWrapper : public MediaInterface {
   MediaInterfaceWrapper(MediaInterface* cb) : wrapped_(cb){};
 
   void SendKeyEvent(uint8_t key, KeyState state) override {
-    do_in_jni_thread(base::Bind(&MediaInterface::SendKeyEvent,
-                                base::Unretained(wrapped_), key, state));
+    do_in_avrcp_jni(base::Bind(&MediaInterface::SendKeyEvent,
+                               base::Unretained(wrapped_), key, state));
   }
 
   void GetSongInfo(SongInfoCallback info_cb) override {
@@ -127,8 +146,8 @@ class MediaInterfaceWrapper : public MediaInterface {
 
     auto bound_cb = base::Bind(cb_lambda, info_cb);
 
-    do_in_jni_thread(base::Bind(&MediaInterface::GetSongInfo,
-                                base::Unretained(wrapped_), bound_cb));
+    do_in_avrcp_jni(base::Bind(&MediaInterface::GetSongInfo,
+                               base::Unretained(wrapped_), bound_cb));
   }
 
   void GetPlayStatus(PlayStatusCallback status_cb) override {
@@ -138,8 +157,8 @@ class MediaInterfaceWrapper : public MediaInterface {
 
     auto bound_cb = base::Bind(cb_lambda, status_cb);
 
-    do_in_jni_thread(base::Bind(&MediaInterface::GetPlayStatus,
-                                base::Unretained(wrapped_), bound_cb));
+    do_in_avrcp_jni(base::Bind(&MediaInterface::GetPlayStatus,
+                               base::Unretained(wrapped_), bound_cb));
   }
 
   void GetNowPlayingList(NowPlayingCallback now_playing_cb) override {
@@ -151,8 +170,8 @@ class MediaInterfaceWrapper : public MediaInterface {
 
     auto bound_cb = base::Bind(cb_lambda, now_playing_cb);
 
-    do_in_jni_thread(base::Bind(&MediaInterface::GetNowPlayingList,
-                                base::Unretained(wrapped_), bound_cb));
+    do_in_avrcp_jni(base::Bind(&MediaInterface::GetNowPlayingList,
+                               base::Unretained(wrapped_), bound_cb));
   }
 
   void GetMediaPlayerList(MediaListCallback list_cb) override {
@@ -164,8 +183,8 @@ class MediaInterfaceWrapper : public MediaInterface {
 
     auto bound_cb = base::Bind(cb_lambda, list_cb);
 
-    do_in_jni_thread(base::Bind(&MediaInterface::GetMediaPlayerList,
-                                base::Unretained(wrapped_), bound_cb));
+    do_in_avrcp_jni(base::Bind(&MediaInterface::GetMediaPlayerList,
+                               base::Unretained(wrapped_), bound_cb));
   }
 
   void GetFolderItems(uint16_t player_id, std::string media_id,
@@ -177,9 +196,9 @@ class MediaInterfaceWrapper : public MediaInterface {
 
     auto bound_cb = base::Bind(cb_lambda, folder_cb);
 
-    do_in_jni_thread(base::Bind(&MediaInterface::GetFolderItems,
-                                base::Unretained(wrapped_), player_id, media_id,
-                                bound_cb));
+    do_in_avrcp_jni(base::Bind(&MediaInterface::GetFolderItems,
+                               base::Unretained(wrapped_), player_id, media_id,
+                               bound_cb));
   }
 
   void SetBrowsedPlayer(uint16_t player_id,
@@ -191,21 +210,21 @@ class MediaInterfaceWrapper : public MediaInterface {
 
     auto bound_cb = base::Bind(cb_lambda, browse_cb);
 
-    do_in_jni_thread(base::Bind(&MediaInterface::SetBrowsedPlayer,
-                                base::Unretained(wrapped_), player_id,
-                                bound_cb));
+    do_in_avrcp_jni(base::Bind(&MediaInterface::SetBrowsedPlayer,
+                               base::Unretained(wrapped_), player_id,
+                               bound_cb));
   }
 
   void PlayItem(uint16_t player_id, bool now_playing,
                 std::string media_id) override {
-    do_in_jni_thread(base::Bind(&MediaInterface::PlayItem,
-                                base::Unretained(wrapped_), player_id,
-                                now_playing, media_id));
+    do_in_avrcp_jni(base::Bind(&MediaInterface::PlayItem,
+                               base::Unretained(wrapped_), player_id,
+                               now_playing, media_id));
   }
 
   void SetActiveDevice(const RawAddress& address) override {
-    do_in_jni_thread(base::Bind(&MediaInterface::SetActiveDevice,
-                                base::Unretained(wrapped_), address));
+    do_in_avrcp_jni(base::Bind(&MediaInterface::SetActiveDevice,
+                               base::Unretained(wrapped_), address));
   }
 
   void RegisterUpdateCallback(MediaCallbacks* callback) override {
@@ -227,7 +246,7 @@ class VolumeInterfaceWrapper : public VolumeInterface {
   VolumeInterfaceWrapper(VolumeInterface* interface) : wrapped_(interface){};
 
   void DeviceConnected(const RawAddress& bdaddr) override {
-    do_in_jni_thread(
+    do_in_avrcp_jni(
         base::Bind(static_cast<void (VolumeInterface::*)(const RawAddress&)>(
                        &VolumeInterface::DeviceConnected),
                    base::Unretained(wrapped_), bdaddr));
@@ -240,20 +259,20 @@ class VolumeInterfaceWrapper : public VolumeInterface {
 
     auto bound_cb = base::Bind(cb_lambda, cb);
 
-    do_in_jni_thread(base::Bind(static_cast<void (VolumeInterface::*)(
-                                    const RawAddress&, VolumeChangedCb)>(
-                                    &VolumeInterface::DeviceConnected),
-                                base::Unretained(wrapped_), bdaddr, bound_cb));
+    do_in_avrcp_jni(base::Bind(static_cast<void (VolumeInterface::*)(
+                                   const RawAddress&, VolumeChangedCb)>(
+                                   &VolumeInterface::DeviceConnected),
+                               base::Unretained(wrapped_), bdaddr, bound_cb));
   }
 
   void DeviceDisconnected(const RawAddress& bdaddr) override {
-    do_in_jni_thread(base::Bind(&VolumeInterface::DeviceDisconnected,
-                                base::Unretained(wrapped_), bdaddr));
+    do_in_avrcp_jni(base::Bind(&VolumeInterface::DeviceDisconnected,
+                               base::Unretained(wrapped_), bdaddr));
   }
 
   void SetVolume(int8_t volume) override {
-    do_in_jni_thread(base::Bind(&VolumeInterface::SetVolume,
-                                base::Unretained(wrapped_), volume));
+    do_in_avrcp_jni(base::Bind(&VolumeInterface::SetVolume,
+                               base::Unretained(wrapped_), volume));
   }
 
  private:
@@ -265,6 +284,11 @@ void AvrcpService::Init(MediaInterface* media_interface,
   LOG(INFO) << "AVRCP Target Service started";
   if (instance_ == nullptr) {
     instance_ = new AvrcpService();
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(jni_mutex_);
+    jni_message_loop_ = get_jni_message_loop();
   }
 
   // TODO (apanicke): Add a function that sets up the SDP records once we
@@ -288,6 +312,11 @@ void AvrcpService::Init(MediaInterface* media_interface,
 
 void AvrcpService::Cleanup() {
   LOG(INFO) << "AVRCP Target Service stopped";
+  {
+    std::lock_guard<std::mutex> lock(jni_mutex_);
+    task_tracker_.TryCancelAll();
+    jni_message_loop_ = nullptr;
+  }
 
   instance_->connection_handler_->CleanUp();
   instance_->connection_handler_ = nullptr;

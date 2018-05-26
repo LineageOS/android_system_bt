@@ -20,7 +20,6 @@ static_library("bta") {
     "ag/bta_ag_api.cc",
     "ag/bta_ag_at.cc",
     "ag/bta_ag_cfg.cc",
-    "ag/bta_ag_ci.cc",
     "ag/bta_ag_cmd.cc",
     "ag/bta_ag_main.cc",
     "ag/bta_ag_rfc.cc",
@@ -50,6 +49,8 @@ static_library("bta") {
     "gatt/bta_gatts_api.cc",
     "gatt/bta_gatts_main.cc",
     "gatt/bta_gatts_utils.cc",
+    "hearing_aid/hearing_aid.cc",
+    "hearing_aid/hearing_aid_audio_source.cc",
     "hf_client/bta_hf_client_act.cc",
     "hf_client/bta_hf_client_api.cc",
     "hf_client/bta_hf_client_at.cc",
@@ -100,6 +101,7 @@ static_library("bta") {
     "include",
     "sys",
     "//",
+    "//internal_include",
     "//btcore/include",
     "//hci/include",
     "//internal_include",
@@ -108,6 +110,12 @@ static_library("bta") {
     "//udrv/include",
     "//utils/include",
     "//vnd/include",
+    "//btif/include",
+    "//btif/avrcp",
+    "//include/hardware/avrcp",
+    "//profile/avrcp",
+    "//packet/avrcp",
+    "//packet/base",
   ]
 
   deps = [

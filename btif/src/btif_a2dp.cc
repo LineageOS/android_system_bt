@@ -82,11 +82,6 @@ bool btif_a2dp_on_started(const RawAddress& peer_addr,
           }
           ack = true;
         }
-      } else {
-        // We were started remotely
-        if (btif_av_is_a2dp_offload_enabled()) {
-          btif_av_stream_start_offload();
-        }
       }
 
       /* media task is autostarted upon a2dp audiopath connection */

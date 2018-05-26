@@ -79,10 +79,15 @@ static void bta_ag_port_cback(UNUSED_ATTR uint32_t code, uint16_t port_handle,
   if (p_scb != nullptr) {
     /* ignore port events for port handles other than connected handle */
     if (port_handle != p_scb->conn_handle) {
-      APPL_TRACE_DEBUG(
+      APPL_TRACE_ERROR(
           "ag_port_cback ignoring handle:%d conn_handle = %d other handle = %d",
           port_handle, p_scb->conn_handle, handle);
       return;
+    }
+    if (!bta_ag_scb_open(p_scb)) {
+      LOG(ERROR) << __func__ << ": rfcomm data on an unopened control block "
+                 << handle << " peer_addr " << p_scb->peer_addr << " state "
+                 << std::to_string(p_scb->state);
     }
     do_in_bta_thread(FROM_HERE,
                      base::Bind(&bta_ag_sm_execute_by_handle, handle,

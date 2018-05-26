@@ -54,7 +54,7 @@ class HearingAidInterfaceImpl
       public HearingAidCallbacks {
   ~HearingAidInterfaceImpl() = default;
 
-  void Init(HearingAidCallbacks* callbacks) {
+  void Init(HearingAidCallbacks* callbacks) override {
     DVLOG(2) << __func__;
     this->callbacks = callbacks;
     do_in_bta_thread(
@@ -114,7 +114,7 @@ class HearingAidInterfaceImpl
                      Bind(&btif_storage_remove_hearing_aid, address));
   }
 
-  void Cleanup(void) {
+  void Cleanup(void) override {
     DVLOG(2) << __func__;
     do_in_bta_thread(FROM_HERE, Bind(&HearingAid::CleanUp));
   }
