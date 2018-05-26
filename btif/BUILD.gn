@@ -17,7 +17,9 @@
 static_library("btif") {
   sources = [
     "//audio_a2dp_hw/src/audio_a2dp_hw_utils.cc",
+    "//audio_hearing_aid_hw/src/audio_hearing_aid_hw_utils.cc",
     "src/btif_a2dp.cc",
+    "src/btif_a2dp_audio_interface_linux.cc",
     "src/btif_a2dp_control.cc",
     "src/btif_a2dp_sink.cc",
     "src/btif_a2dp_source.cc",
@@ -79,6 +81,7 @@ static_library("btif") {
     "include",
     "//",
     "//audio_a2dp_hw/include",
+    "//audio_hearing_aid_hw/include",
     "//bta/include",
     "//bta/sys",
     "//btcore/include",
