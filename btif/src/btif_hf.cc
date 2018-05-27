@@ -107,6 +107,7 @@ static Callbacks* bt_hf_callbacks = nullptr;
 /* BTIF-HF control block to map bdaddr to BTA handle */
 struct btif_hf_cb_t {
   uint16_t handle;
+  bool is_initiator;
   RawAddress connected_bda;
   bthf_connection_state_t state;
   tBTA_AG_PEER_FEAT peer_feat;
@@ -251,10 +252,18 @@ static bool is_nth_bit_enabled(uint32_t value, int n) {
   return (value & (static_cast<uint32_t>(1) << n)) != 0;
 }
 
-void clear_phone_state_multihf(int idx) {
-  btif_hf_cb[idx].call_setup_state = BTHF_CALL_STATE_IDLE;
-  btif_hf_cb[idx].num_active = 0;
-  btif_hf_cb[idx].num_held = 0;
+void clear_phone_state_multihf(btif_hf_cb_t* hf_cb) {
+  hf_cb->call_setup_state = BTHF_CALL_STATE_IDLE;
+  hf_cb->num_active = 0;
+  hf_cb->num_held = 0;
+}
+
+static void reset_control_block(btif_hf_cb_t* hf_cb) {
+  hf_cb->state = BTHF_CONNECTION_STATE_DISCONNECTED;
+  hf_cb->is_initiator = false;
+  hf_cb->connected_bda = RawAddress::kEmpty;
+  hf_cb->peer_feat = 0;
+  clear_phone_state_multihf(hf_cb);
 }
 
 /**
@@ -287,6 +296,14 @@ static bool IsSlcConnected(RawAddress* bd_addr) {
  *
  ******************************************************************************/
 static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
+  if (event == BTA_AG_ENABLE_EVT || event == BTA_AG_DISABLE_EVT) {
+    LOG(INFO) << __func__ << ": AG enable/disable event " << event;
+    return;
+  }
+  if (p_param == nullptr) {
+    LOG(ERROR) << __func__ << ": parameter is null";
+    return;
+  }
   tBTA_AG* p_data = (tBTA_AG*)p_param;
   int idx = p_data->hdr.handle - 1;
 
@@ -302,74 +319,79 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
   }
 
   switch (event) {
-    case BTA_AG_ENABLE_EVT:
-    case BTA_AG_DISABLE_EVT:
-      break;
-
     case BTA_AG_REGISTER_EVT:
       btif_hf_cb[idx].handle = p_data->reg.hdr.handle;
-      BTIF_TRACE_DEBUG(
-          "%s: BTA_AG_REGISTER_EVT,"
-          "btif_hf_cb.handle = %d",
-          __func__, btif_hf_cb[idx].handle);
+      BTIF_TRACE_DEBUG("%s: BTA_AG_REGISTER_EVT, btif_hf_cb.handle = %d",
+                       __func__, btif_hf_cb[idx].handle);
       break;
-
+    // RFCOMM connected or failed to connect
     case BTA_AG_OPEN_EVT:
+      // Check if an outoging connection is pending
+      if (btif_hf_cb[idx].is_initiator) {
+        CHECK_EQ(btif_hf_cb[idx].state, BTHF_CONNECTION_STATE_CONNECTING)
+            << "Control block must be in connecting state when initiating";
+        CHECK(!btif_hf_cb[idx].connected_bda.IsEmpty())
+            << "Remote device address must not be empty when initiating";
+        CHECK_EQ(btif_hf_cb[idx].connected_bda, p_data->open.bd_addr)
+            << "Incoming message's address must match expected one";
+      }
       if (p_data->open.status == BTA_AG_SUCCESS) {
+        // In case this is an incoming connection
         btif_hf_cb[idx].connected_bda = p_data->open.bd_addr;
         btif_hf_cb[idx].state = BTHF_CONNECTION_STATE_CONNECTED;
         btif_hf_cb[idx].peer_feat = 0;
-        clear_phone_state_multihf(idx);
+        clear_phone_state_multihf(&btif_hf_cb[idx]);
         system_bt_osi::BluetoothMetricsLogger::GetInstance()
             ->LogHeadsetProfileRfcConnection(p_data->open.service_id);
-      } else if (btif_hf_cb[idx].state == BTHF_CONNECTION_STATE_CONNECTING) {
-        LOG(ERROR) << __func__ << ": AG open failed for "
-                   << btif_hf_cb[idx].connected_bda << ", status "
-                   << unsigned(p_data->open.status);
-        btif_hf_cb[idx].state = BTHF_CONNECTION_STATE_DISCONNECTED;
+        bt_hf_callbacks->ConnectionStateCallback(
+            btif_hf_cb[idx].state, &btif_hf_cb[idx].connected_bda);
       } else {
-        LOG(WARNING) << __func__ << ": AG open failed for "
-                     << p_data->open.bd_addr << ", error "
-                     << std::to_string(p_data->open.status)
-                     << ", local device is " << btif_hf_cb[idx].connected_bda
-                     << ". Ignoring as not expecting to open";
-        break;
+        if (!btif_hf_cb[idx].is_initiator) {
+          // Ignore remote initiated open failures
+          LOG(WARNING) << __func__ << ": Unexpected AG open failure "
+                       << std::to_string(p_data->open.status) << " for "
+                       << p_data->open.bd_addr << " is ignored";
+          break;
+        }
+        LOG(ERROR) << __func__ << ": self initiated AG open failed for "
+                   << btif_hf_cb[idx].connected_bda << ", status "
+                   << std::to_string(p_data->open.status);
+        RawAddress connected_bda = btif_hf_cb[idx].connected_bda;
+        reset_control_block(&btif_hf_cb[idx]);
+        bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state,
+                                                 &connected_bda);
+        btif_queue_advance();
       }
-      bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state,
-                                               &btif_hf_cb[idx].connected_bda);
-
-      if (btif_hf_cb[idx].state == BTHF_CONNECTION_STATE_DISCONNECTED)
-        btif_hf_cb[idx].connected_bda = RawAddress::kAny;
-
-      if (p_data->open.status != BTA_AG_SUCCESS) btif_queue_advance();
       break;
-
-    case BTA_AG_CLOSE_EVT:
-      btif_hf_cb[idx].state = BTHF_CONNECTION_STATE_DISCONNECTED;
-      BTIF_TRACE_DEBUG(
-          "%s: BTA_AG_CLOSE_EVT,"
-          "idx = %d, btif_hf_cb.handle = %d",
-          __func__, idx, btif_hf_cb[idx].handle);
+    // SLC and RFCOMM both disconnected
+    case BTA_AG_CLOSE_EVT: {
+      BTIF_TRACE_DEBUG("%s: BTA_AG_CLOSE_EVT, idx = %d, btif_hf_cb.handle = %d",
+                       __func__, idx, btif_hf_cb[idx].handle);
+      // If AG_OPEN was received but SLC was not connected in time, then
+      // AG_CLOSE may be received. We need to advance the queue here.
+      bool failed_to_setup_slc =
+          (btif_hf_cb[idx].state != BTHF_CONNECTION_STATE_SLC_CONNECTED) &&
+          btif_hf_cb[idx].is_initiator;
+      RawAddress connected_bda = btif_hf_cb[idx].connected_bda;
+      reset_control_block(&btif_hf_cb[idx]);
       bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state,
-                                               &btif_hf_cb[idx].connected_bda);
-      btif_hf_cb[idx].connected_bda = RawAddress::kAny;
-      btif_hf_cb[idx].peer_feat = 0;
-      clear_phone_state_multihf(idx);
-      /* If AG_OPEN was received but SLC was not setup in a specified time (10
-       *seconds),
-       ** then AG_CLOSE may be received. We need to advance the queue here
-       */
-      btif_queue_advance();
+                                               &connected_bda);
+      if (failed_to_setup_slc) {
+        LOG(ERROR) << __func__ << ": failed to setup SLC for " << connected_bda;
+        btif_queue_advance();
+      }
       break;
-
+    }
+    // SLC connected
     case BTA_AG_CONN_EVT:
       BTIF_TRACE_DEBUG("%s: BTA_AG_CONN_EVT, idx = %d ", __func__, idx);
       btif_hf_cb[idx].peer_feat = p_data->conn.peer_feat;
       btif_hf_cb[idx].state = BTHF_CONNECTION_STATE_SLC_CONNECTED;
-
       bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state,
                                                &btif_hf_cb[idx].connected_bda);
-      btif_queue_advance();
+      if (btif_hf_cb[idx].is_initiator) {
+        btif_queue_advance();
+      }
       break;
 
     case BTA_AG_AUDIO_OPEN_EVT:
@@ -533,8 +555,9 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
         bt_hf_callbacks->AtBiaCallback(service, roam, signal, battery,
                                        &btif_hf_cb[idx].connected_bda);
       }
+      break;
     default:
-      BTIF_TRACE_WARNING("%s: Unhandled event: %d", __func__, event);
+      LOG(WARNING) << __func__ << ": unhandled event " << event;
       break;
   }
 }
@@ -615,6 +638,8 @@ static bt_status_t connect_int(RawAddress* bd_addr, uint16_t uuid) {
   }
   hf_cb->state = BTHF_CONNECTION_STATE_CONNECTING;
   hf_cb->connected_bda = *bd_addr;
+  hf_cb->is_initiator = true;
+  hf_cb->peer_feat = 0;
   BTA_AgOpen(hf_cb->handle, hf_cb->connected_bda, BTIF_HF_SECURITY);
   return BT_STATUS_SUCCESS;
 }
@@ -710,7 +735,7 @@ bt_status_t HeadsetInterface::Init(Callbacks* callbacks, int max_hf_clients,
       __func__, btif_hf_features, btif_max_hf_clients, inband_ringing_enabled);
   bt_hf_callbacks = callbacks;
   for (btif_hf_cb_t& hf_cb : btif_hf_cb) {
-    hf_cb = {};
+    reset_control_block(&hf_cb);
   }
 
 // Invoke the enable service API to the core to set the appropriate service_id
@@ -722,7 +747,6 @@ bt_status_t HeadsetInterface::Init(Callbacks* callbacks, int max_hf_clients,
   btif_enable_service(BTA_HSP_SERVICE_ID);
 #endif
 
-  for (int i = 0; i < btif_max_hf_clients; i++) clear_phone_state_multihf(i);
   return BT_STATUS_SUCCESS;
 }
 
