@@ -2649,8 +2649,10 @@ static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
 
   tBTA_DM_PEER_DEVICE* p_dev = bta_dm_find_peer_device(bd_addr);
   if (!p_dev) return;
-  APPL_TRACE_DEBUG("role chg info:x%x new_role:%d dev count:%d", p_dev->info,
-                   new_role, bta_dm_cb.device_list.count);
+  LOG_INFO(LOG_TAG,
+           "%s: peer %s info:0x%x new_role:0x%x dev count:%d hci_status=%d",
+           __func__, bd_addr.ToString().c_str(), p_dev->info, new_role,
+           bta_dm_cb.device_list.count, hci_status);
   if (p_dev->info & BTA_DM_DI_AV_ACTIVE) {
     bool need_policy_change = false;
 
