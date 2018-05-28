@@ -31,6 +31,8 @@
  *
  *****************************************************************************/
 
+#define LOG_TAG "btm_acl"
+
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,6 +50,7 @@
 #include "hcidefs.h"
 #include "hcimsgs.h"
 #include "l2c_int.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 
 static void btm_read_remote_features(uint16_t handle);
@@ -540,7 +543,10 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role,
   tBTM_STATUS status;
   tBTM_PM_MODE pwr_mode;
   tBTM_PM_PWR_MD settings;
-  VLOG(1) << __func__ << " BDA: " << remote_bd_addr;
+
+  LOG_INFO(LOG_TAG, "%s: peer %s new_role=0x%x p_cb=%p p_switch_role_cb=%p",
+           __func__, remote_bd_addr.ToString().c_str(), new_role, p_cb,
+           btm_cb.devcb.p_switch_role_cb);
 
   /* Make sure the local device supports switching */
   if (!controller_get_interface()->supports_master_slave_role_switch())

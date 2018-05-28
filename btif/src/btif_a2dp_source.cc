@@ -503,8 +503,8 @@ static void btif_a2dp_source_end_session_delayed(
     LOG_ERROR(LOG_TAG, "%s: A2DP Source media task is not running", __func__);
     return;
   }
+  btif_av_stream_stop(peer_address);
   if (btif_av_is_a2dp_offload_enabled()) {
-    btif_av_stream_stop();
     btif_a2dp_audio_interface_end_session();
   }
 }
