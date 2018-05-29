@@ -622,9 +622,11 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
 
     /* Extract the record handle */
     BE_STREAM_TO_UINT32(rec_handle, p_req);
+    param_len -= sizeof(rec_handle);
 
     /* Get the max list length we can send. Cap it at MTU size minus overhead */
     BE_STREAM_TO_UINT16 (max_list_len, p_req);
+    param_len -= sizeof(max_list_len);
 
     if (max_list_len > (p_ccb->rem_mtu_size - SDP_MAX_ATTR_RSPHDR_LEN))
         max_list_len = p_ccb->rem_mtu_size - SDP_MAX_ATTR_RSPHDR_LEN;
