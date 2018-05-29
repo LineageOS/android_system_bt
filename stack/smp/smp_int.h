@@ -419,7 +419,6 @@ extern void smp_send_pair_rsp(tSMP_CB* p_cb, tSMP_INT_DATA* p_data);
 extern void smp_key_distribution(tSMP_CB* p_cb, tSMP_INT_DATA* p_data);
 extern void smp_proc_srk_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data);
 extern void smp_generate_csrk(tSMP_CB* p_cb, tSMP_INT_DATA* p_data);
-extern void smp_fast_conn_param(tSMP_CB* p_cb, tSMP_INT_DATA* p_data);
 extern void smp_key_pick_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data);
 extern void smp_both_have_public_keys(tSMP_CB* p_cb, tSMP_INT_DATA* p_data);
 extern void smp_start_secure_connection_phase1(tSMP_CB* p_cb,
