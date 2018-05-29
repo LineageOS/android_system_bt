@@ -176,6 +176,11 @@ void BluetoothMetricsLogger::LogA2dpSession(
   // TODO(siyuanh): Implement for linux
 }
 
+void BluetoothMetricsLogger::LogHeadsetProfileRfcConnection(
+    tBTA_SERVICE_ID service_id) {
+  // TODO: Implement for linux
+}
+
 void BluetoothMetricsLogger::WriteString(std::string* serialized) {
   // TODO(siyuanh): Implement for linux
 }

@@ -41,7 +41,7 @@ class VectorPacket : public ::bluetooth::Packet {
 
   const std::vector<uint8_t>& GetData() { return *data_; };
 
-  virtual std::string ToString() const {
+  virtual std::string ToString() const override {
     std::stringstream ss;
     ss << "VectorPacket:" << std::endl;
     ss << "  └ Payload =";
