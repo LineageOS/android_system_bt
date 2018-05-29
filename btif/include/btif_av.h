@@ -48,8 +48,10 @@ void btif_av_stream_start(void);
 
 /**
  * Stop streaming.
+ *
+ * @param peer_address the peer address or RawAddress::kEmpty to stop all peers
  */
-void btif_av_stream_stop(void);
+void btif_av_stream_stop(const RawAddress& peer_address);
 
 /**
  * Suspend streaming.
