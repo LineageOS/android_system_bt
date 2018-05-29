@@ -36,8 +36,8 @@
 #include "osi/include/log.h"
 
 void btif_a2dp_on_idle(void) {
-  APPL_TRACE_WARNING("## ON A2DP IDLE ## peer_sep = %d",
-                     btif_av_get_peer_sep());
+  LOG_INFO(LOG_TAG, "%s: ## ON A2DP IDLE ## peer_sep = %d", __func__,
+           btif_av_get_peer_sep());
   if (btif_av_get_peer_sep() == AVDT_TSEP_SNK) {
     btif_a2dp_source_on_idle();
   } else if (btif_av_get_peer_sep() == AVDT_TSEP_SRC) {
@@ -49,7 +49,10 @@ bool btif_a2dp_on_started(const RawAddress& peer_addr,
                           tBTA_AV_START* p_av_start, bool pending_start) {
   bool ack = false;
 
-  APPL_TRACE_WARNING("## ON A2DP STARTED ##");
+  LOG_INFO(LOG_TAG,
+           "%s: ## ON A2DP STARTED ## peer %s pending_start:%s p_av_start:%p",
+           __func__, peer_addr.ToString().c_str(),
+           logbool(pending_start).c_str(), p_av_start);
 
   if (p_av_start == NULL) {
     /* ack back a local start request */
@@ -60,16 +63,19 @@ bool btif_a2dp_on_started(const RawAddress& peer_addr,
     } else if (bluetooth::headset::IsCallIdle()) {
       btif_av_stream_start_offload();
     } else {
-      APPL_TRACE_ERROR("%s: call in progress, do not start offload", __func__);
+      LOG_ERROR(LOG_TAG, "%s: peer %s call in progress, do not start offload",
+                __func__, peer_addr.ToString().c_str());
       btif_a2dp_audio_on_started(A2DP_CTRL_ACK_INCALL_FAILURE);
     }
     return true;
   }
 
-  APPL_TRACE_WARNING(
-      "%s: pending_start = %d status = %d suspending = %d initiator = %d",
-      __func__, pending_start, p_av_start->status, p_av_start->suspending,
-      p_av_start->initiator);
+  LOG_INFO(LOG_TAG,
+           "%s: peer %s pending_start:%s status:%d suspending:%s initiator:%s",
+           __func__, peer_addr.ToString().c_str(),
+           logbool(pending_start).c_str(), p_av_start->status,
+           logbool(p_av_start->suspending).c_str(),
+           logbool(p_av_start->initiator).c_str());
 
   if (p_av_start->status == BTA_AV_SUCCESS) {
     if (!p_av_start->suspending) {
@@ -87,8 +93,8 @@ bool btif_a2dp_on_started(const RawAddress& peer_addr,
       /* media task is autostarted upon a2dp audiopath connection */
     }
   } else if (pending_start) {
-    APPL_TRACE_WARNING("%s: A2DP start request failed: status = %d", __func__,
-                       p_av_start->status);
+    LOG_ERROR(LOG_TAG, "%s: peer %s A2DP start request failed: status = %d",
+              __func__, peer_addr.ToString().c_str(), p_av_start->status);
     btif_a2dp_command_ack(A2DP_CTRL_ACK_FAILURE);
     ack = true;
   }
@@ -96,7 +102,8 @@ bool btif_a2dp_on_started(const RawAddress& peer_addr,
 }
 
 void btif_a2dp_on_stopped(tBTA_AV_SUSPEND* p_av_suspend) {
-  APPL_TRACE_WARNING("## ON A2DP STOPPED ##");
+  LOG_INFO(LOG_TAG, "%s: ## ON A2DP STOPPED ## p_av_suspend=%p", __func__,
+           p_av_suspend);
 
   if (btif_av_get_peer_sep() == AVDT_TSEP_SRC) {
     btif_a2dp_sink_on_stopped(p_av_suspend);
@@ -110,7 +117,8 @@ void btif_a2dp_on_stopped(tBTA_AV_SUSPEND* p_av_suspend) {
 }
 
 void btif_a2dp_on_suspended(tBTA_AV_SUSPEND* p_av_suspend) {
-  APPL_TRACE_EVENT("## ON A2DP SUSPENDED ##");
+  LOG_INFO(LOG_TAG, "%s: ## ON A2DP SUSPENDED ## p_av_suspend=%p", __func__,
+           p_av_suspend);
   if (!btif_av_is_a2dp_offload_enabled()) {
     if (btif_av_get_peer_sep() == AVDT_TSEP_SRC) {
       btif_a2dp_sink_on_suspended(p_av_suspend);
@@ -125,18 +133,21 @@ void btif_a2dp_on_suspended(tBTA_AV_SUSPEND* p_av_suspend) {
 void btif_a2dp_on_offload_started(const RawAddress& peer_addr,
                                   tBTA_AV_STATUS status) {
   tA2DP_CTRL_ACK ack;
-  APPL_TRACE_EVENT("%s status %d", __func__, status);
+  LOG_INFO(LOG_TAG, "%s: peer %s status %d", __func__,
+           peer_addr.ToString().c_str(), status);
 
   switch (status) {
     case BTA_AV_SUCCESS:
       ack = A2DP_CTRL_ACK_SUCCESS;
       break;
     case BTA_AV_FAIL_RESOURCES:
-      APPL_TRACE_ERROR("%s FAILED UNSUPPORTED", __func__);
+      LOG_ERROR(LOG_TAG, "%s: peer %s FAILED UNSUPPORTED", __func__,
+                peer_addr.ToString().c_str());
       ack = A2DP_CTRL_ACK_UNSUPPORTED;
       break;
     default:
-      APPL_TRACE_ERROR("%s FAILED: status = %d", __func__, status);
+      LOG_ERROR(LOG_TAG, "%s: peer %s FAILED: status = %d", __func__,
+                peer_addr.ToString().c_str(), status);
       ack = A2DP_CTRL_ACK_FAILURE;
       break;
   }
@@ -146,7 +157,8 @@ void btif_a2dp_on_offload_started(const RawAddress& peer_addr,
       // Offload request will return with failure from btif_av sm if
       // suspend is triggered for remote start. Disconnect only if SoC
       // returned failure for offload VSC
-      APPL_TRACE_ERROR("%s: offload start failed", __func__);
+      LOG_ERROR(LOG_TAG, "%s: peer %s offload start failed", __func__,
+                peer_addr.ToString().c_str());
       btif_av_src_disconnect_sink(peer_addr);
     }
   } else {

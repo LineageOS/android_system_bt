@@ -334,7 +334,7 @@ uint8_t btif_a2dp_audio_process_request(uint8_t cmd) {
         status = A2DP_CTRL_ACK_SUCCESS;
         break;
       }
-      btif_av_stream_stop();
+      btif_av_stream_stop(RawAddress::kEmpty);
       return A2DP_CTRL_ACK_SUCCESS;
       break;
 

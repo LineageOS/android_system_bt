@@ -1075,8 +1075,9 @@ static uint8_t bta_av_get_shdl(tBTA_AV_SCB* p_scb) {
 void bta_av_stream_chg(tBTA_AV_SCB* p_scb, bool started) {
   uint8_t started_msk = BTA_AV_HNDL_TO_MSK(p_scb->hdi);
 
-  APPL_TRACE_DEBUG("%s: started:%d started_msk:x%x", __func__, started,
-                   started_msk);
+  APPL_TRACE_DEBUG("%s: peer %s started:%s started_msk:0x%x", __func__,
+                   p_scb->PeerAddress().ToString().c_str(),
+                   logbool(started).c_str(), started_msk);
 
   if (started) {
     bta_av_cb.audio_streams |= started_msk;
