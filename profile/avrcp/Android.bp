@@ -4,6 +4,7 @@ cc_library_static {
     host_supported: true,
     include_dirs: [
         "system/bt",
+        "system/bt/btcore/include",
         "system/bt/internal_include",
         "system/bt/stack/include",
     ],
@@ -25,6 +26,7 @@ cc_test {
     host_supported: true,
     include_dirs: [
         "system/bt",
+        "system/bt/btcore/include",
         "system/bt/internal_include",
         "system/bt/stack/include",
     ],
