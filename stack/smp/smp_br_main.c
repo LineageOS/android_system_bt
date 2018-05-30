@@ -19,6 +19,7 @@
 #include "bt_target.h"
 
 #include <string.h>
+#include "log/log.h"
 #include "smp_int.h"
 
 #if BLE_INCLUDED == TRUE
@@ -341,6 +342,13 @@ void smp_br_state_machine_event(tSMP_CB *p_cb, tSMP_BR_EVENT event, void *p_data
     if (curr_state >= SMP_BR_STATE_MAX)
     {
         SMP_TRACE_DEBUG( "Invalid br_state: %d", curr_state) ;
+        return;
+    }
+
+    if (p_cb->role > HCI_ROLE_SLAVE)
+    {
+        SMP_TRACE_ERROR("%s: invalid role %d", __func__, p_cb->role);
+        android_errorWriteLog(0x534e4554, "80145946");
         return;
     }
 
