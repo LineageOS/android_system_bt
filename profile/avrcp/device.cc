@@ -126,8 +126,8 @@ void Device::VendorPacketHandler(uint8_t label,
       // this currently since the current implementation only has one
       // player and the player will never change, but we need it for a
       // more complete implementation.
-      auto response =
-          SetAddressedPlayerResponseBuilder::MakeBuilder(Status::NO_ERROR);
+      auto response = RejectBuilder::MakeBuilder(
+          CommandPdu::SET_ADDRESSED_PLAYER, Status::INVALID_PLAYER_ID);
       send_message(label, false, std::move(response));
     } break;
 
@@ -605,8 +605,8 @@ void Device::HandlePlayItem(uint8_t label,
 
   if (media_id == "") {
     DEVICE_VLOG(2) << "Could not find item";
-    auto response =
-        PlayItemResponseBuilder::MakeBuilder(Status::DOES_NOT_EXIST);
+    auto response = RejectBuilder::MakeBuilder(CommandPdu::PLAY_ITEM,
+                                               Status::DOES_NOT_EXIST);
     send_message(label, false, std::move(response));
     return;
   }

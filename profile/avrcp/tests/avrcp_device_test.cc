@@ -713,8 +713,8 @@ TEST_F(AvrcpDeviceTest, setAddressedPlayerTest) {
 
   test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
 
-  auto set_addr_player_rsp =
-      SetAddressedPlayerResponseBuilder::MakeBuilder(Status::NO_ERROR);
+  auto set_addr_player_rsp = RejectBuilder::MakeBuilder(
+      CommandPdu::SET_ADDRESSED_PLAYER, Status::INVALID_PLAYER_ID);
 
   EXPECT_CALL(response_cb,
               Call(1, false, matchPacket(std::move(set_addr_player_rsp))))
