@@ -366,6 +366,11 @@ void Device::TrackChangedNotificationResponse(uint8_t label, bool interim,
     }
   }
 
+  if (curr_song_id == "") {
+    DEVICE_LOG(WARNING) << "Empty media ID";
+    uid = 0;
+  }
+
   auto response = RegisterNotificationResponseBuilder::MakeTrackChangedBuilder(
       interim, uid);
   send_message_cb_.Run(label, false, std::move(response));
