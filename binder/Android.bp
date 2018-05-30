@@ -8,7 +8,6 @@ cc_library_shared {
     srcs: [
         "android/bluetooth/bluetooth_device.cc",
         "android/bluetooth/IBluetoothSocketManager.aidl",
-        "android/os/parcel_file_descriptor.cc",
         "android/os/parcel_uuid.cc",
 /* TODO: Uncomment this files as they get converted one-by-one into native implementation
         "android/bluetooth/IBluetooth.aidl",
