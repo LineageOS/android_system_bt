@@ -404,7 +404,6 @@ class BtifAvSource {
         BTIF_TRACE_WARNING("%s: unable to set active peer to empty in BtaAvCo",
                            __func__);
       }
-      btif_av_stream_stop();
       btif_a2dp_source_end_session(active_peer_);
       btif_a2dp_source_shutdown();
       active_peer_ = peer_address;
@@ -2729,11 +2728,19 @@ RawAddress btif_av_sink_active_peer(void) { return btif_av_sink.ActivePeer(); }
 bool btif_av_is_sink_enabled(void) { return btif_av_sink.Enabled(); }
 
 void btif_av_stream_start(void) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   btif_av_source_dispatch_sm_event(btif_av_source_active_peer(),
                                    BTIF_AV_START_STREAM_REQ_EVT);
 }
 
-void btif_av_stream_stop(void) {
+void btif_av_stream_stop(const RawAddress& peer_address) {
+  LOG_INFO(LOG_TAG, "%s peer %s", __func__, peer_address.ToString().c_str());
+
+  if (!peer_address.IsEmpty()) {
+    btif_av_source_dispatch_sm_event(peer_address, BTIF_AV_STOP_STREAM_REQ_EVT);
+    return;
+  }
+
   // The active peer might have changed and we might be in the process
   // of reconfiguring the stream. We need to stop the appopriate peer(s).
   for (auto it : btif_av_source.Peers()) {
@@ -2744,6 +2751,7 @@ void btif_av_stream_stop(void) {
 }
 
 void btif_av_stream_suspend(void) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   // The active peer might have changed and we might be in the process
   // of reconfiguring the stream. We need to suspend the appropriate peer(s).
   for (auto it : btif_av_source.Peers()) {
@@ -2754,11 +2762,13 @@ void btif_av_stream_suspend(void) {
 }
 
 void btif_av_stream_start_offload(void) {
+  LOG_INFO(LOG_TAG, "%s", __func__);
   btif_av_source_dispatch_sm_event(btif_av_source_active_peer(),
                                    BTIF_AV_OFFLOAD_START_REQ_EVT);
 }
 
 void btif_av_src_disconnect_sink(const RawAddress& peer_address) {
+  LOG_INFO(LOG_TAG, "%s: peer %s", __func__, peer_address.ToString().c_str());
   src_disconnect_sink(peer_address);
 }
 

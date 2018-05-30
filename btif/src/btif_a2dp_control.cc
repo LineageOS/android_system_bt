@@ -163,7 +163,7 @@ static void btif_a2dp_recv_ctrl_data(void) {
         btif_a2dp_command_ack(A2DP_CTRL_ACK_SUCCESS);
         break;
       }
-      btif_av_stream_stop();
+      btif_av_stream_stop(RawAddress::kEmpty);
       btif_a2dp_command_ack(A2DP_CTRL_ACK_SUCCESS);
       break;
 
@@ -385,7 +385,7 @@ static void btif_a2dp_data_cb(UNUSED_ATTR tUIPC_CH_ID ch_id,
        */
       if (btif_a2dp_source_is_streaming()) {
         /* Post stop event and wait for audio path to stop */
-        btif_av_stream_stop();
+        btif_av_stream_stop(RawAddress::kEmpty);
       }
       break;
 
