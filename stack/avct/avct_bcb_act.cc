@@ -69,6 +69,12 @@ static BT_HDR* avct_bcb_msg_asmbl(UNUSED_ATTR tAVCT_BCB* p_bcb, BT_HDR* p_buf) {
   uint8_t* p;
   uint8_t pkt_type;
 
+  if (p_buf->len == 0) {
+    osi_free_and_reset((void**)&p_buf);
+    android_errorWriteLog(0x534e4554, "79944113");
+    return nullptr;
+  }
+
   /* parse the message header */
   p = (uint8_t*)(p_buf + 1) + p_buf->offset;
   pkt_type = AVCT_PKT_TYPE(p);
