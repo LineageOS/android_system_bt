@@ -3246,8 +3246,9 @@ static void handle_notification_response(tBTA_AV_META_MSG* pmeta_msg,
 
       case AVRC_EVT_ADDR_PLAYER_CHANGE:
         do_in_jni_thread(
-            FROM_HERE, base::Bind(bt_rc_ctrl_callbacks->set_addressed_player_cb,
-                                  p_dev->rc_addr, BTRC_STS_ADDR_PLAY_CHGD));
+            FROM_HERE,
+            base::Bind(bt_rc_ctrl_callbacks->addressed_player_changed_cb,
+                       p_dev->rc_addr, p_rsp->param.addr_player.player_id));
         break;
 
       case AVRC_EVT_UIDS_CHANGE:
