@@ -29,7 +29,7 @@
 #include <string.h>
 #include "btm_ble_api.h"
 #include "l2c_api.h"
-
+#include "log/log.h"
 #include "smp_int.h"
 
 
@@ -260,6 +260,12 @@ static void smp_br_connect_callback(UINT16 channel, BD_ADDR bd_addr, BOOLEAN con
                      (bd_addr[0]<<24)+(bd_addr[1]<<16)+(bd_addr[2]<<8) + bd_addr[3],
                      (bd_addr[4]<<8)+bd_addr[5],
                      (connected) ? "connected" : "disconnected");
+
+    if (p_cb->role > HCI_ROLE_SLAVE) {
+        SMP_TRACE_ERROR ("%s: invalid role %d", __func__, p_cb->role);
+        android_errorWriteLog(0x534e4554, "80145946");
+        return;
+    }
 
     if (connected)
     {
