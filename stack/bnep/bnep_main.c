@@ -483,6 +483,12 @@ static void bnep_data_ind (UINT16 l2cap_cid, BT_HDR *p_buf)
     UINT16        protocol = 0;
     UINT8         *p_src_addr, *p_dst_addr;
 
+    if (rem_len == 0)
+    {
+        android_errorWriteLog(0x534e4554, "78286118");
+        osi_free(p_buf);
+        return;
+    }
 
     /* Find CCB based on CID */
     if ((p_bcb = bnepu_find_bcb_by_cid (l2cap_cid)) == NULL)
@@ -529,24 +535,40 @@ static void bnep_data_ind (UINT16 l2cap_cid, BT_HDR *p_buf)
             UINT16      org_len, new_len;
             /* parse the extension headers and process unknown control headers */
             org_len = rem_len;
-            new_len = 0;
             do {
-                if (org_len < 2) break;
+                if (org_len < 2)
+                {
+                    android_errorWriteLog(0x534e4554, "67863755");
+                    break;
+                }
                 ext     = *p++;
                 length  = *p++;
-                p += length;
 
                 new_len = (length + 2);
-                if (new_len > org_len) break;
+                if (new_len > org_len)
+                {
+                    android_errorWriteLog(0x534e4554, "67863755");
+                    break;
+                }
 
-                if ((!(ext & 0x7F)) && (*p > BNEP_FILTER_MULTI_ADDR_RESPONSE_MSG))
-                    bnep_send_command_not_understood (p_bcb, *p);
+                if ((ext & 0x7F) == BNEP_EXTENSION_FILTER_CONTROL)
+                {
+                    if (length == 0)
+                    {
+                        android_errorWriteLog(0x534e4554, "79164722");
+                        break;
+                    }
+                    if (*p > BNEP_FILTER_MULTI_ADDR_RESPONSE_MSG)
+                    {
+                        bnep_send_command_not_understood(p_bcb, *p);
+                    }
+                }
+
+                p += length;
 
                 org_len -= new_len;
             } while (ext & 0x80);
-            android_errorWriteLog(0x534e4554, "67863755");
         }
-
         osi_free(p_buf);
         return;
     }
@@ -594,14 +616,14 @@ static void bnep_data_ind (UINT16 l2cap_cid, BT_HDR *p_buf)
             {
                 ext_type = *p++;
                 rem_len--;
-                android_errorWriteLog(0x534e4554, "69271284");
                 extension_present = ext_type >> 7;
                 ext_type &= 0x7F;
 
                 /* if unknown extension present stop processing */
-                if (ext_type)
+                if (ext_type != BNEP_EXTENSION_FILTER_CONTROL)
                     break;
 
+                android_errorWriteLog(0x534e4554, "69271284");
                 p = bnep_process_control_packet (p_bcb, p, &rem_len, TRUE);
             }
         }
