@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2014 Google, Inc.
+ *  Copyright (C) 2018 Android Open Source Project
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,24 +16,22 @@
  *
  ******************************************************************************/
 
-#pragma once
+#include "btif_a2dp_audio_interface.h"
 
-#include <stdbool.h>
+#include <base/logging.h>
 
-#include "module.h"
-#include "osi/include/config.h"
-
-static const char STACK_CONFIG_MODULE[] = "stack_config_module";
-
-typedef struct {
-  bool (*get_trace_config_enabled)(void);
-  bool (*get_pts_avrcp_test)(void);
-  bool (*get_pts_secure_only_mode)(void);
-  bool (*get_pts_conn_updates_disabled)(void);
-  bool (*get_pts_crosskey_sdp_disable)(void);
-  const std::string* (*get_pts_smp_options)(void);
-  int (*get_pts_smp_failure_case)(void);
-  config_t* (*get_all)(void);
-} stack_config_t;
-
-const stack_config_t* stack_config_get_interface(void);
+void btif_a2dp_audio_on_started(tBTA_AV_STATUS status) {
+  LOG(FATAL) << "Unimplemented yet";
+}
+void btif_a2dp_audio_on_stopped(tBTA_AV_STATUS status) {
+  LOG(FATAL) << "Unimplemented yet";
+}
+void btif_a2dp_audio_on_suspended(tBTA_AV_STATUS status) {
+  LOG(FATAL) << "Unimplemented yet";
+}
+void btif_a2dp_audio_interface_start_session(void) {
+  LOG(FATAL) << "Unimplemented yet";
+}
+void btif_a2dp_audio_interface_end_session(void) {
+  LOG(FATAL) << "Unimplemented yet";
+}

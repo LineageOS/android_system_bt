@@ -70,6 +70,7 @@ shared_library("bluetooth") {
     "//btcore",
     "//btif",
     "//device",
+    "//embdrv/g722",
     "//embdrv/sbc",
     "//hci",
     "//osi",

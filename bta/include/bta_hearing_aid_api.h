@@ -27,8 +27,8 @@ class HearingAidAudioReceiver {
  public:
   virtual ~HearingAidAudioReceiver() = default;
   virtual void OnAudioDataReady(const std::vector<uint8_t>& data) = 0;
-  virtual void OnAudioSuspend();
-  virtual void OnAudioResume();
+  virtual void OnAudioSuspend() = 0;
+  virtual void OnAudioResume() = 0;
 };
 
 class HearingAid {

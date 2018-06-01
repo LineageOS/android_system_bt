@@ -18,6 +18,7 @@
 
 #include "connection_handler.h"
 #include "device.h"
+#include "stack_config.h"
 
 #include "packet/avrcp/avrcp_reject_packet.h"
 #include "packet/avrcp/general_reject_packet.h"
@@ -132,8 +133,8 @@ void Device::VendorPacketHandler(uint8_t label,
       // this currently since the current implementation only has one
       // player and the player will never change, but we need it for a
       // more complete implementation.
-      auto response =
-          SetAddressedPlayerResponseBuilder::MakeBuilder(Status::NO_ERROR);
+      auto response = RejectBuilder::MakeBuilder(
+          CommandPdu::SET_ADDRESSED_PLAYER, Status::INVALID_PLAYER_ID);
       send_message(label, false, std::move(response));
     } break;
 
@@ -233,7 +234,7 @@ void Device::HandleNotification(
       addr_player_changed_ = Notification(true, label);
       media_interface_->GetMediaPlayerList(
           base::Bind(&Device::AddressedPlayerNotificationResponse,
-                     weak_ptr_factory_.GetWeakPtr(), label, false));
+                     weak_ptr_factory_.GetWeakPtr(), label, true));
     } break;
 
     case Event::UIDS_CHANGED: {
@@ -366,6 +367,15 @@ void Device::TrackChangedNotificationResponse(uint8_t label, bool interim,
     }
   }
 
+  if (curr_song_id == "") {
+    DEVICE_LOG(WARNING) << "Empty media ID";
+    uid = 0;
+    if (stack_config_get_interface()->get_pts_avrcp_test()) {
+      DEVICE_LOG(WARNING) << __func__ << ": pts test mode";
+      uid = 0xffffffffffffffff;
+    }
+  }
+
   auto response = RegisterNotificationResponseBuilder::MakeTrackChangedBuilder(
       interim, uid);
   send_message_cb_.Run(label, false, std::move(response));
@@ -462,12 +472,28 @@ void Device::AddressedPlayerNotificationResponse(
 
   auto response =
       RegisterNotificationResponseBuilder::MakeAddressedPlayerBuilder(
-          true, curr_player, 0x0000);
+          interim, curr_player, 0x0000);
   send_message_cb_.Run(label, false, std::move(response));
 
   if (!interim) {
     active_labels_.erase(label);
     addr_player_changed_ = Notification(false, 0);
+    RejectNotification();
+  }
+}
+
+void Device::RejectNotification() {
+  DEVICE_VLOG(1) << __func__;
+  Notification* rejectNotification[] = {&play_status_changed_, &track_changed_,
+                                        &play_pos_changed_,
+                                        &now_playing_changed_};
+  for (int i = 0; i < 4; i++) {
+    uint8_t label = rejectNotification[i]->second;
+    auto response = RejectBuilder::MakeBuilder(
+        CommandPdu::REGISTER_NOTIFICATION, Status::ADDRESSED_PLAYER_CHANGED);
+    send_message_cb_.Run(label, false, std::move(response));
+    active_labels_.erase(label);
+    rejectNotification[i] = new Notification(false, 0);
   }
 }
 
@@ -586,8 +612,8 @@ void Device::HandlePlayItem(uint8_t label,
 
   if (media_id == "") {
     DEVICE_VLOG(2) << "Could not find item";
-    auto response =
-        PlayItemResponseBuilder::MakeBuilder(Status::DOES_NOT_EXIST);
+    auto response = RejectBuilder::MakeBuilder(CommandPdu::PLAY_ITEM,
+                                               Status::DOES_NOT_EXIST);
     send_message(label, false, std::move(response));
     return;
   }
@@ -1091,16 +1117,12 @@ void Device::SendFolderUpdate(bool available_players, bool addressed_player,
   DEVICE_VLOG(4) << __func__;
 
   if (available_players) {
-    // TODO (apanicke): Right now this isn't needed since we only show one
-    // player. Implement this in the future for a more complete
-    // implementation though.
+    HandleAvailablePlayerUpdate();
   }
 
   if (addressed_player) {
-    // TODO (apanicke): See above TODO.
+    HandleAddressedPlayerUpdate();
   }
-
-  CHECK(false) << "NEED TO IMPLEMENT";
 }
 
 void Device::HandleTrackUpdate() {
@@ -1173,6 +1195,37 @@ void Device::HandlePlayPosUpdate() {
   media_interface_->GetPlayStatus(base::Bind(
       &Device::PlaybackPosNotificationResponse, weak_ptr_factory_.GetWeakPtr(),
       play_pos_changed_.second, false));
+}
+
+void Device::HandleAvailablePlayerUpdate() {
+  DEVICE_VLOG(1) << __func__;
+
+  if (!avail_players_changed_.first) {
+    LOG(WARNING) << "Device is not registered for available player updates";
+    return;
+  }
+
+  auto response =
+      RegisterNotificationResponseBuilder::MakeAvailablePlayersBuilder(false);
+  send_message_cb_.Run(avail_players_changed_.second, false,
+                       std::move(response));
+
+  if (!avail_players_changed_.first) {
+    active_labels_.erase(avail_players_changed_.second);
+    avail_players_changed_ = Notification(false, 0);
+  }
+}
+
+void Device::HandleAddressedPlayerUpdate() {
+  DEVICE_VLOG(1) << __func__;
+  if (!addr_player_changed_.first) {
+    DEVICE_LOG(WARNING)
+        << "Device is not registered for addressed player updates";
+    return;
+  }
+  media_interface_->GetMediaPlayerList(base::Bind(
+      &Device::AddressedPlayerNotificationResponse,
+      weak_ptr_factory_.GetWeakPtr(), addr_player_changed_.second, false));
 }
 
 void Device::DeviceDisconnected() {
