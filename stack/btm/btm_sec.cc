@@ -4104,6 +4104,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bda);
   uint8_t res;
   bool is_pairing_device = false;
+  bool addr_matched;
   tACL_CONN* p_acl_cb;
   uint8_t bit_shift = 0;
 
@@ -4193,8 +4194,9 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
 
   p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
 
-  if ((btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
-      (btm_cb.pairing_bda == bda)) {
+  addr_matched = (btm_cb.pairing_bda == bda);
+
+  if ((btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) && addr_matched) {
     /* if we rejected incoming connection from bonding device */
     if ((status == HCI_ERR_HOST_REJECT_DEVICE) &&
         (btm_cb.pairing_flags & BTM_PAIR_FLAGS_REJECTED_CONNECT)) {
@@ -4290,7 +4292,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
       }
     }
 
-    if (btm_cb.pairing_bda != bda) {
+    if (!addr_matched) {
       /* Don't callback unless this Connection-Complete-failure event has the
        * same mac address as the bonding device */
       VLOG(1) << __func__
