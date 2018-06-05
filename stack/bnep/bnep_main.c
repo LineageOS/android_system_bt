@@ -486,7 +486,7 @@ static void bnep_data_ind (UINT16 l2cap_cid, BT_HDR *p_buf)
     if (rem_len == 0)
     {
         android_errorWriteLog(0x534e4554, "78286118");
-        GKI_freebuf(p_buf);
+        osi_free(p_buf);
         return;
     }
 
