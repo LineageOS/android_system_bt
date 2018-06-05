@@ -786,8 +786,6 @@ static void btif_a2dp_source_audio_tx_stop_event(void) {
 
   if (btif_av_is_a2dp_offload_enabled()) return;
 
-  const bool send_ack = btif_a2dp_source_is_streaming();
-
   uint8_t p_buf[AUDIO_STREAM_OUTPUT_BUFFER_SZ * 2];
   uint16_t event;
 
@@ -814,7 +812,7 @@ static void btif_a2dp_source_audio_tx_stop_event(void) {
    * to get the ACK for any pending command in such cases.
    */
 
-  if (send_ack) btif_a2dp_command_ack(A2DP_CTRL_ACK_SUCCESS);
+  btif_a2dp_command_ack(A2DP_CTRL_ACK_SUCCESS);
 
   /* audio engine stopped, reset tx suspended flag */
   btif_a2dp_source_cb.tx_flush = false;
