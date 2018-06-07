@@ -37,9 +37,6 @@ namespace avrcp {
  */
 class AvrcpService : public MediaCallbacks {
  public:
-  static void Init(MediaInterface* media_interface,
-                   VolumeInterface* volume_interface);
-
   /**
    * Gets a handle to the AvrcpService
    *
@@ -56,10 +53,11 @@ class AvrcpService : public MediaCallbacks {
    */
   static ServiceInterface* GetServiceInterface();
 
+  void Init(MediaInterface* media_interface, VolumeInterface* volume_interface);
   void Cleanup();
 
-  bool ConnectDevice(const RawAddress& bdaddr);
-  bool DisconnectDevice(const RawAddress& bdaddr);
+  void ConnectDevice(const RawAddress& bdaddr);
+  void DisconnectDevice(const RawAddress& bdaddr);
 
   // Functions inherited from MediaCallbacks in order to receive updates
   void SendMediaUpdate(bool track_changed, bool play_state,
@@ -75,6 +73,9 @@ class AvrcpService : public MediaCallbacks {
     bool ConnectDevice(const RawAddress& bdaddr) override;
     bool DisconnectDevice(const RawAddress& bdaddr) override;
     bool Cleanup() override;
+
+   private:
+    std::mutex service_interface_lock_;
   };
 
   static void DebugDump(int fd);
