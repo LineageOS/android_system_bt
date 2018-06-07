@@ -4039,8 +4039,6 @@ void btm_sec_encrypt_change(uint16_t handle, uint8_t status,
                       __func__, p_dev_rec, p_dev_rec->p_callback);
       p_dev_rec->p_callback = NULL;
       l2cu_resubmit_pending_sec_req(&p_dev_rec->bd_addr);
-    } else if (p_dev_rec->sec_state == BTM_SEC_STATE_AUTHENTICATING) {
-      p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
     }
     return;
   }
@@ -4697,7 +4695,6 @@ void btm_sec_link_key_request(const RawAddress& bda) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(bda);
 
   VLOG(2) << __func__ << " bda: " << bda;
-  p_dev_rec->sec_state = BTM_SEC_STATE_AUTHENTICATING;
 
   if ((btm_cb.pairing_state == BTM_PAIR_STATE_WAIT_PIN_REQ) &&
       (btm_cb.collision_start_time != 0) &&
