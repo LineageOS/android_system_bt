@@ -252,6 +252,8 @@ bool is_on_jni_thread() {
   return btif_thread_id_ == PlatformThread::CurrentId();
 }
 
+base::MessageLoop* get_jni_message_loop() { return message_loop_; }
+
 /*******************************************************************************
  *
  * Function         btif_is_dut_mode
