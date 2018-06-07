@@ -29,6 +29,7 @@
 
 #include "gki.h"
 #include "bt_types.h"
+#include "log/log.h"
 
 #include "l2cdefs.h"
 #include "l2c_api.h"
@@ -801,6 +802,13 @@ static void hidh_l2cif_data_ind (UINT16 l2cap_cid, BT_HDR *p_msg)
         return;
     }
 
+    if (p_msg->len < 1)
+    {
+        HIDH_TRACE_WARNING ("HID-Host Rcvd L2CAP data, invalid length");
+        GKI_freebuf (p_msg);
+        android_errorWriteLog(0x534e4554, "80493272");
+        return;
+    }
 
     ttype    = HID_GET_TRANS_FROM_HDR(*p_data);
     param    = HID_GET_PARAM_FROM_HDR(*p_data);
