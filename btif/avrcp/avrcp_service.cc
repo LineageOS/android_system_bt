@@ -282,19 +282,11 @@ class VolumeInterfaceWrapper : public VolumeInterface {
 void AvrcpService::Init(MediaInterface* media_interface,
                         VolumeInterface* volume_interface) {
   LOG(INFO) << "AVRCP Target Service started";
-  if (instance_ == nullptr) {
-    instance_ = new AvrcpService();
-  }
-
-  {
-    std::lock_guard<std::mutex> lock(jni_mutex_);
-    jni_message_loop_ = get_jni_message_loop();
-  }
 
   // TODO (apanicke): Add a function that sets up the SDP records once we
   // remove the AVRCP SDP setup in AVDTP (bta_av_main.cc)
 
-  instance_->media_interface_ = new MediaInterfaceWrapper(media_interface);
+  media_interface_ = new MediaInterfaceWrapper(media_interface);
   media_interface->RegisterUpdateCallback(instance_);
 
   VolumeInterfaceWrapper* wrapped_volume_interface = nullptr;
@@ -302,28 +294,23 @@ void AvrcpService::Init(MediaInterface* media_interface,
     wrapped_volume_interface = new VolumeInterfaceWrapper(volume_interface);
   }
 
-  instance_->volume_interface_ = wrapped_volume_interface;
+  volume_interface_ = wrapped_volume_interface;
 
   ConnectionHandler::Initialize(
       base::Bind(&AvrcpService::DeviceCallback, base::Unretained(instance_)),
       &avrcp_interface_, &sdp_interface_, wrapped_volume_interface);
-  instance_->connection_handler_ = ConnectionHandler::Get();
+  connection_handler_ = ConnectionHandler::Get();
 }
 
 void AvrcpService::Cleanup() {
   LOG(INFO) << "AVRCP Target Service stopped";
-  {
-    std::lock_guard<std::mutex> lock(jni_mutex_);
-    task_tracker_.TryCancelAll();
-    jni_message_loop_ = nullptr;
-  }
 
-  instance_->connection_handler_->CleanUp();
-  instance_->connection_handler_ = nullptr;
-  if (instance_->volume_interface_ != nullptr) {
-    delete instance_->volume_interface_;
+  connection_handler_->CleanUp();
+  connection_handler_ = nullptr;
+  if (volume_interface_ != nullptr) {
+    delete volume_interface_;
   }
-  delete instance_->media_interface_;
+  delete media_interface_;
 }
 
 AvrcpService* AvrcpService::Get() {
@@ -339,15 +326,15 @@ ServiceInterface* AvrcpService::GetServiceInterface() {
   return service_interface_;
 }
 
-bool AvrcpService::ConnectDevice(const RawAddress& bdaddr) {
+void AvrcpService::ConnectDevice(const RawAddress& bdaddr) {
   LOG(INFO) << __PRETTY_FUNCTION__ << ": address=" << bdaddr.ToString();
 
-  return connection_handler_->ConnectDevice(bdaddr);
+  connection_handler_->ConnectDevice(bdaddr);
 }
 
-bool AvrcpService::DisconnectDevice(const RawAddress& bdaddr) {
+void AvrcpService::DisconnectDevice(const RawAddress& bdaddr) {
   LOG(INFO) << __PRETTY_FUNCTION__ << ": address=" << bdaddr.ToString();
-  return connection_handler_->DisconnectDevice(bdaddr);
+  connection_handler_->DisconnectDevice(bdaddr);
 }
 
 void AvrcpService::SendMediaUpdate(bool track_changed, bool play_state,
@@ -398,37 +385,62 @@ void AvrcpService::DeviceCallback(std::shared_ptr<Device> new_device) {
 
 // Service Interface
 void AvrcpService::ServiceInterfaceImpl::Init(
-    MediaInterface* mediaInterface, VolumeInterface* volume_interface) {
-  // TODO (apanicke): Run this in a message loop. This currently works though
-  // since the underlying AVRC_API will correctly run this in a message loop so
-  // no race conditions can occur, but if that changes it could change the
-  // behaviour here.
-  CHECK(instance_ == nullptr);
+    MediaInterface* media_interface, VolumeInterface* volume_interface) {
+  std::lock_guard<std::mutex> lock(service_interface_lock_);
 
-  AvrcpService::Init(mediaInterface, volume_interface);
+  // TODO: This function should block until the service is completely up so
+  // that its possible to call Get() on the service immediately after calling
+  // init without issues.
+
+  CHECK(instance_ == nullptr);
+  instance_ = new AvrcpService();
+
+  {
+    std::lock_guard<std::mutex> jni_lock(jni_mutex_);
+    jni_message_loop_ = get_jni_message_loop();
+  }
+
+  do_in_bta_thread(FROM_HERE,
+                   base::Bind(&AvrcpService::Init, base::Unretained(instance_),
+                              media_interface, volume_interface));
 }
 
 bool AvrcpService::ServiceInterfaceImpl::ConnectDevice(
     const RawAddress& bdaddr) {
-  // TODO (apanicke): Same as above
+  std::lock_guard<std::mutex> lock(service_interface_lock_);
   CHECK(instance_ != nullptr);
-  return instance_->ConnectDevice(bdaddr);
+  do_in_bta_thread(FROM_HERE, base::Bind(&AvrcpService::ConnectDevice,
+                                         base::Unretained(instance_), bdaddr));
+  return true;
 }
 
 bool AvrcpService::ServiceInterfaceImpl::DisconnectDevice(
     const RawAddress& bdaddr) {
-  // TODO (apanicke): Same as above
+  std::lock_guard<std::mutex> lock(service_interface_lock_);
   CHECK(instance_ != nullptr);
-  return instance_->DisconnectDevice(bdaddr);
+  do_in_bta_thread(FROM_HERE, base::Bind(&AvrcpService::DisconnectDevice,
+                                         base::Unretained(instance_), bdaddr));
+  return true;
 }
 
 bool AvrcpService::ServiceInterfaceImpl::Cleanup() {
-  // TODO (apanicke): Same as above
+  std::lock_guard<std::mutex> lock(service_interface_lock_);
+
   if (instance_ == nullptr) return false;
 
-  instance_->Cleanup();
-  delete instance_;
+  {
+    std::lock_guard<std::mutex> jni_lock(jni_mutex_);
+    task_tracker_.TryCancelAll();
+    jni_message_loop_ = nullptr;
+  }
+
+  do_in_bta_thread(FROM_HERE,
+                   base::Bind(&AvrcpService::Cleanup, base::Owned(instance_)));
+
+  // Setting instance to nullptr here is fine since it will be deleted on the
+  // other thread.
   instance_ = nullptr;
+
   return true;
 }
 
