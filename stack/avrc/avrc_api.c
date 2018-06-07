@@ -345,15 +345,15 @@ static BT_HDR * avrc_proc_vendor_command(UINT8 handle, UINT8 label,
 
     if (status != AVRC_STS_NO_ERROR)
     {
-        /* use the current GKI buffer to build/send the reject message */
-        p_data = (UINT8 *)(p_pkt+1) + p_pkt->offset;
+        p_rsp = (BT_HDR*)GKI_getbuf(GKI_MAX_BUF_SIZE);
+        p_rsp->offset = p_pkt->offset;
+        p_data = (uint8_t*)(p_rsp + 1) + p_pkt->offset;
         *p_data++ = AVRC_RSP_REJ;
         p_data += AVRC_VENDOR_HDR_SIZE; /* pdu */
         *p_data++ = 0;                  /* pkt_type */
         UINT16_TO_BE_STREAM(p_data, 1); /* len */
         *p_data++ = status;             /* error code */
-        p_pkt->len = AVRC_VENDOR_HDR_SIZE + 5;
-        p_rsp = p_pkt;
+        p_rsp->len = AVRC_VENDOR_HDR_SIZE + 5;
     }
 
     return p_rsp;
@@ -508,6 +508,8 @@ static UINT8 avrc_proc_far_msg(UINT8 handle, UINT8 label, UINT8 cr, BT_HDR **pp_
             if (p_rsp)
             {
                 AVCT_MsgReq( handle, label, AVCT_RSP, p_rsp);
+                GKI_freebuf(*pp_pkt);
+                *pp_pkt = NULL;
                 drop_code = 3;
             }
             else if (p_msg->hdr.opcode == AVRC_OP_DROP)
