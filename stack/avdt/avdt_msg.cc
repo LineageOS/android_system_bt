@@ -26,6 +26,7 @@
  *
  ******************************************************************************/
 
+#include <log/log.h>
 #include <string.h>
 #include "avdt_api.h"
 #include "avdt_int.h"
@@ -600,6 +601,11 @@ static uint8_t avdt_msg_prs_cfg(AvdtpSepConfig* p_cfg, uint8_t* p, uint16_t len,
 
       case AVDT_CAT_PROTECT:
         p_cfg->psc_mask &= ~AVDT_PSC_PROTECT;
+        if (p + elem_len > p_end) {
+          err = AVDT_ERR_LENGTH;
+          android_errorWriteLog(0x534e4554, "78288378");
+          break;
+        }
         if ((elem_len + protect_offset) < AVDT_PROTECT_SIZE) {
           p_cfg->num_protect++;
           p_cfg->protect_info[protect_offset] = elem_len;
@@ -619,6 +625,11 @@ static uint8_t avdt_msg_prs_cfg(AvdtpSepConfig* p_cfg, uint8_t* p, uint16_t len,
         tmp = elem_len;
         if (elem_len >= AVDT_CODEC_SIZE) {
           tmp = AVDT_CODEC_SIZE - 1;
+        }
+        if (p + tmp > p_end) {
+          err = AVDT_ERR_LENGTH;
+          android_errorWriteLog(0x534e4554, "78288378");
+          break;
         }
         p_cfg->num_codec++;
         p_cfg->codec_info[0] = elem_len;
