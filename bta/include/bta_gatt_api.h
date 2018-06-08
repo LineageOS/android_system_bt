@@ -476,7 +476,7 @@ extern void BTA_GATTC_ServiceSearchRequest(uint16_t conn_id,
  * PTS tests.
  */
 extern void BTA_GATTC_DiscoverServiceByUuid(uint16_t conn_id,
-                                            const bluetooth::Uuid& p_srvc_uuid);
+                                            const bluetooth::Uuid& srvc_uuid);
 
 /*******************************************************************************
  *
