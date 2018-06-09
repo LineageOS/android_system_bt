@@ -94,7 +94,8 @@ void hearing_aid_data_cb(tUIPC_CH_ID, tUIPC_EVENT event) {
       UIPC_Ioctl(*uipc_hearing_aid, UIPC_CH_ID_AV_AUDIO, UIPC_SET_READ_POLL_TMO,
                  reinterpret_cast<void*>(0));
 
-      if (data_interval_ms != 10) {
+      if (data_interval_ms != HA_INTERVAL_10_MS &&
+          data_interval_ms != HA_INTERVAL_20_MS) {
         LOG(FATAL) << " Unsupported data interval: " << data_interval_ms;
       }
 
