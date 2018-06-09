@@ -29,6 +29,7 @@
 
 #include <base/base64.h>
 #include <base/logging.h>
+#include <include/hardware/bt_av.h>
 
 #include "bluetooth/metrics/bluetooth.pb.h"
 #include "osi/include/leaky_bonded_queue.h"
@@ -42,6 +43,7 @@
 namespace system_bt_osi {
 
 using bluetooth::metrics::BluetoothMetricsProto::A2DPSession;
+using bluetooth::metrics::BluetoothMetricsProto::A2dpSourceCodec;
 using bluetooth::metrics::BluetoothMetricsProto::BluetoothLog;
 using bluetooth::metrics::BluetoothMetricsProto::BluetoothSession;
 using bluetooth::metrics::BluetoothMetricsProto::
@@ -140,6 +142,12 @@ void A2dpSessionMetrics::Update(const A2dpSessionMetrics& metrics) {
       buffer_underruns_count += metrics.buffer_underruns_count;
     }
   }
+  if (codec_index < 0) {
+    codec_index = metrics.codec_index;
+  }
+  if (!is_a2dp_offload) {
+    is_a2dp_offload = metrics.is_a2dp_offload;
+  }
 }
 
 bool A2dpSessionMetrics::operator==(const A2dpSessionMetrics& rhs) const {
@@ -151,7 +159,9 @@ bool A2dpSessionMetrics::operator==(const A2dpSessionMetrics& rhs) const {
          buffer_overruns_max_count == rhs.buffer_overruns_max_count &&
          buffer_overruns_total == rhs.buffer_overruns_total &&
          buffer_underruns_average == rhs.buffer_underruns_average &&
-         buffer_underruns_count == rhs.buffer_underruns_count;
+         buffer_underruns_count == rhs.buffer_underruns_count &&
+         codec_index == rhs.codec_index &&
+         is_a2dp_offload == rhs.is_a2dp_offload;
 }
 
 static DeviceInfo_DeviceType get_device_type(device_type_t type) {
@@ -227,6 +237,23 @@ static BluetoothSession_DisconnectReasonType get_disconnect_reason_type(
     default:
       return BluetoothSession_DisconnectReasonType::
           BluetoothSession_DisconnectReasonType_UNKNOWN;
+  }
+}
+
+static A2dpSourceCodec get_a2dp_source_codec(int64_t codec_index) {
+  switch (codec_index) {
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_SBC:
+      return A2dpSourceCodec::A2DP_SOURCE_CODEC_SBC;
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_AAC:
+      return A2dpSourceCodec::A2DP_SOURCE_CODEC_AAC;
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_APTX:
+      return A2dpSourceCodec::A2DP_SOURCE_CODEC_APTX;
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD:
+      return A2dpSourceCodec::A2DP_SOURCE_CODEC_APTX_HD;
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC:
+      return A2dpSourceCodec::A2DP_SOURCE_CODEC_LDAC;
+    default:
+      return A2dpSourceCodec::A2DP_SOURCE_CODEC_UNKNOWN;
   }
 }
 
@@ -356,6 +383,7 @@ void BluetoothMetricsLogger::LogBluetoothSessionEnd(
       get_disconnect_reason_type(disconnect_reason));
   pimpl_->bt_session_queue_->Enqueue(pimpl_->bluetooth_session_);
   pimpl_->bluetooth_session_ = nullptr;
+  pimpl_->a2dp_session_metrics_ = A2dpSessionMetrics();
   {
     std::lock_guard<std::recursive_mutex> log_lock(pimpl_->bluetooth_log_lock_);
     pimpl_->bluetooth_log_->set_num_bluetooth_session(
@@ -404,6 +432,10 @@ void BluetoothMetricsLogger::LogA2dpSession(
       pimpl_->a2dp_session_metrics_.buffer_underruns_average);
   a2dp_session->set_buffer_underruns_count(
       pimpl_->a2dp_session_metrics_.buffer_underruns_count);
+  a2dp_session->set_source_codec(
+      get_a2dp_source_codec(pimpl_->a2dp_session_metrics_.codec_index));
+  a2dp_session->set_is_a2dp_offload(
+      pimpl_->a2dp_session_metrics_.is_a2dp_offload);
 }
 
 void BluetoothMetricsLogger::LogHeadsetProfileRfcConnection(
