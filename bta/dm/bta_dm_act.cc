@@ -28,6 +28,7 @@
 #include <base/bind.h>
 #include <base/callback.h>
 #include <base/logging.h>
+#include <cutils/log.h>
 #include <string.h>
 
 #include "bt_common.h"
@@ -145,6 +146,8 @@ static void bta_dm_ctrl_features_rd_cmpl_cback(tBTM_STATUS result);
 #ifndef BTA_DM_SWITCH_DELAY_TIMER_MS
 #define BTA_DM_SWITCH_DELAY_TIMER_MS 500
 #endif
+
+#define BTA_MAX_SERVICES 32
 
 static void bta_dm_reset_sec_dev_pending(const RawAddress& remote_bd_addr);
 static void bta_dm_remove_sec_dev_entry(const RawAddress& remote_bd_addr);
@@ -1486,7 +1489,7 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
   tBT_UUID service_uuid;
 
   uint32_t num_uuids = 0;
-  uint8_t uuid_list[32][MAX_UUID_SIZE];  // assuming a max of 32 services
+  uint8_t uuid_list[BTA_MAX_SERVICES][MAX_UUID_SIZE];  // assuming a max of 32 services
 
   if ((p_data->sdp_event.sdp_result == SDP_SUCCESS) ||
       (p_data->sdp_event.sdp_result == SDP_NO_RECS_MATCH) ||
@@ -1554,8 +1557,12 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
                 bta_service_id_to_uuid_lkup_tbl[bta_dm_search_cb.service_index -
                                                 1];
             /* Add to the list of UUIDs */
-            sdpu_uuid16_to_uuid128(tmp_svc, uuid_list[num_uuids]);
-            num_uuids++;
+            if (num_uuids < BTA_MAX_SERVICES) {
+              sdpu_uuid16_to_uuid128(tmp_svc, uuid_list[num_uuids]);
+              num_uuids++;
+            } else {
+              android_errorWriteLog(0x534e4554, "74016921");
+            }
           }
         }
       }
@@ -1587,8 +1594,12 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
             SDP_FindServiceInDb_128bit(bta_dm_search_cb.p_sdp_db, p_sdp_rec);
         if (p_sdp_rec) {
           if (SDP_FindServiceUUIDInRec_128bit(p_sdp_rec, &temp_uuid)) {
-            memcpy(uuid_list[num_uuids], temp_uuid.uu.uuid128, MAX_UUID_SIZE);
-            num_uuids++;
+            if (num_uuids < BTA_MAX_SERVICES) {
+              memcpy(uuid_list[num_uuids], temp_uuid.uu.uuid128, MAX_UUID_SIZE);
+              num_uuids++;
+            } else {
+              android_errorWriteLog(0x534e4554, "74016921");
+            }
           }
         }
       } while (p_sdp_rec);
