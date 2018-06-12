@@ -21,7 +21,6 @@
 #include <base/callback_forward.h>
 #include <hardware/bt_hearing_aid.h>
 
-
 /** Implementations of HearingAid will also implement this interface */
 class HearingAidAudioReceiver {
  public:
