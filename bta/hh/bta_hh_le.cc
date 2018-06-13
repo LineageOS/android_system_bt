@@ -457,9 +457,9 @@ tBTA_HH_LE_RPT* bta_hh_le_find_alloc_report_entry(tBTA_HH_DEV_CB* p_cb,
   return NULL;
 }
 
-static const tBTA_GATTC_DESCRIPTOR* find_descriptor_by_short_uuid(
+static const gatt::Descriptor* find_descriptor_by_short_uuid(
     uint16_t conn_id, uint16_t char_handle, uint16_t short_uuid) {
-  const tBTA_GATTC_CHARACTERISTIC* p_char =
+  const gatt::Characteristic* p_char =
       BTA_GATTC_GetCharacteristic(conn_id, char_handle);
 
   if (!p_char) {
@@ -467,7 +467,7 @@ static const tBTA_GATTC_DESCRIPTOR* find_descriptor_by_short_uuid(
     return NULL;
   }
 
-  for (const tBTA_GATTC_DESCRIPTOR& desc : p_char->descriptors) {
+  for (const gatt::Descriptor& desc : p_char->descriptors) {
     if (desc.uuid == Uuid::From16Bit(short_uuid)) return &desc;
   }
 
@@ -486,7 +486,7 @@ static tBTA_HH_STATUS bta_hh_le_read_char_descriptor(tBTA_HH_DEV_CB* p_cb,
                                                      uint16_t short_uuid,
                                                      GATT_READ_OP_CB cb,
                                                      void* cb_data) {
-  const tBTA_GATTC_DESCRIPTOR* p_desc =
+  const gatt::Descriptor* p_desc =
       find_descriptor_by_short_uuid(p_cb->conn_id, char_handle, short_uuid);
   if (!p_desc) return BTA_HH_ERR;
 
@@ -671,7 +671,7 @@ void bta_hh_le_open_cmpl(tBTA_HH_DEV_CB* p_cb) {
 bool bta_hh_le_write_ccc(tBTA_HH_DEV_CB* p_cb, uint8_t char_handle,
                          uint16_t clt_cfg_value, GATT_WRITE_OP_CB cb,
                          void* cb_data) {
-  const tBTA_GATTC_DESCRIPTOR* p_desc = find_descriptor_by_short_uuid(
+  const gatt::Descriptor* p_desc = find_descriptor_by_short_uuid(
       p_cb->conn_id, char_handle, GATT_UUID_CHAR_CLIENT_CONFIG);
   if (!p_desc) return false;
 
@@ -691,7 +691,7 @@ static void write_rpt_ctl_cfg_cb(uint16_t conn_id, tGATT_STATUS status,
   uint8_t srvc_inst_id, hid_inst_id;
 
   tBTA_HH_DEV_CB* p_dev_cb = (tBTA_HH_DEV_CB*)data;
-  const tBTA_GATTC_CHARACTERISTIC* characteristic =
+  const gatt::Characteristic* characteristic =
       BTA_GATTC_GetOwningCharacteristic(conn_id, handle);
   uint16_t char_uuid = characteristic->uuid.As16Bit();
 
@@ -1310,17 +1310,16 @@ static void read_report_ref_desc_cb(uint16_t conn_id, tGATT_STATUS status,
   }
 
   tBTA_HH_DEV_CB* p_dev_cb = (tBTA_HH_DEV_CB*)data;
-  const tBTA_GATTC_DESCRIPTOR* p_desc =
-      BTA_GATTC_GetDescriptor(conn_id, handle);
+  const gatt::Descriptor* p_desc = BTA_GATTC_GetDescriptor(conn_id, handle);
 
   if (!p_desc) {
     APPL_TRACE_ERROR("%s: error: descriptor is null!", __func__);
     return;
   }
 
-  const tBTA_GATTC_CHARACTERISTIC* characteristic =
+  const gatt::Characteristic* characteristic =
       BTA_GATTC_GetOwningCharacteristic(conn_id, handle);
-  const tBTA_GATTC_SERVICE* service =
+  const gatt::Service* service =
       BTA_GATTC_GetOwningService(conn_id, characteristic->value_handle);
 
   tBTA_HH_LE_RPT* p_rpt;
@@ -1398,10 +1397,10 @@ void read_pref_conn_params_cb(uint16_t conn_id, tGATT_STATUS status,
  *
  ******************************************************************************/
 static void bta_hh_le_search_hid_chars(tBTA_HH_DEV_CB* p_dev_cb,
-                                       const tBTA_GATTC_SERVICE* service) {
+                                       const gatt::Service* service) {
   tBTA_HH_LE_RPT* p_rpt;
 
-  for (const tBTA_GATTC_CHARACTERISTIC& charac : service->characteristics) {
+  for (const gatt::Characteristic& charac : service->characteristics) {
     if (!charac.uuid.Is16Bit()) continue;
 
     uint16_t uuid16 = charac.uuid.As16Bit();
@@ -1460,7 +1459,7 @@ static void bta_hh_le_search_hid_chars(tBTA_HH_DEV_CB* p_dev_cb,
   }
 
   /* Make sure PROTO_MODE is processed as last */
-  for (const tBTA_GATTC_CHARACTERISTIC& charac : service->characteristics) {
+  for (const gatt::Characteristic& charac : service->characteristics) {
     if (charac.uuid == Uuid::From16Bit(GATT_UUID_HID_PROTO_MODE)) {
       p_dev_cb->hid_srvc.proto_mode_handle = charac.value_handle;
       bta_hh_le_set_protocol_mode(p_dev_cb, p_dev_cb->mode);
@@ -1491,11 +1490,11 @@ void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
     return;
   }
 
-  const std::vector<tBTA_GATTC_SERVICE>* services =
+  const std::vector<gatt::Service>* services =
       BTA_GATTC_GetServices(p_data->conn_id);
 
   bool have_hid = false;
-  for (const tBTA_GATTC_SERVICE& service : *services) {
+  for (const gatt::Service& service : *services) {
     if (service.uuid == Uuid::From16Bit(UUID_SERVCLASS_LE_HID) &&
         service.is_primary && !have_hid) {
       have_hid = true;
@@ -1513,7 +1512,7 @@ void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
     } else if (service.uuid == Uuid::From16Bit(UUID_SERVCLASS_SCAN_PARAM)) {
       p_dev_cb->scan_refresh_char_handle = 0;
 
-      for (const tBTA_GATTC_CHARACTERISTIC& charac : service.characteristics) {
+      for (const gatt::Characteristic& charac : service.characteristics) {
         if (charac.uuid == Uuid::From16Bit(GATT_UUID_SCAN_REFRESH)) {
           p_dev_cb->scan_refresh_char_handle = charac.value_handle;
 
@@ -1528,7 +1527,7 @@ void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
     } else if (service.uuid == Uuid::From16Bit(UUID_SERVCLASS_GAP_SERVER)) {
       // TODO(jpawlowski): this should be done by GAP profile, remove when GAP
       // is fixed.
-      for (const tBTA_GATTC_CHARACTERISTIC& charac : service.characteristics) {
+      for (const gatt::Characteristic& charac : service.characteristics) {
         if (charac.uuid == Uuid::From16Bit(GATT_UUID_GAP_PREF_CONN_PARAM)) {
           /* read the char value */
           BtaGattQueue::ReadCharacteristic(p_dev_cb->conn_id,
@@ -1565,7 +1564,7 @@ void bta_hh_le_input_rpt_notify(tBTA_GATTC_NOTIFY* p_data) {
     return;
   }
 
-  const tBTA_GATTC_CHARACTERISTIC* p_char =
+  const gatt::Characteristic* p_char =
       BTA_GATTC_GetCharacteristic(p_dev_cb->conn_id, p_data->handle);
   if (p_char == NULL) {
     APPL_TRACE_ERROR(
@@ -1719,7 +1718,7 @@ void bta_hh_le_api_disc_act(tBTA_HH_DEV_CB* p_cb) {
 static void read_report_cb(uint16_t conn_id, tGATT_STATUS status,
                            uint16_t handle, uint16_t len, uint8_t* value,
                            void* data) {
-  const tBTA_GATTC_CHARACTERISTIC* p_char =
+  const gatt::Characteristic* p_char =
       BTA_GATTC_GetCharacteristic(conn_id, handle);
 
   if (p_char == NULL) return;
@@ -1752,7 +1751,7 @@ static void read_report_cb(uint16_t conn_id, tGATT_STATUS status,
   hs_data.handle = p_dev_cb->hid_handle;
 
   if (status == GATT_SUCCESS) {
-    const tBTA_GATTC_SERVICE* p_svc =
+    const gatt::Service* p_svc =
         BTA_GATTC_GetOwningService(conn_id, p_char->value_handle);
 
     p_rpt = bta_hh_le_find_report_entry(p_dev_cb, p_svc->handle, char_uuid,
@@ -1818,7 +1817,7 @@ static void write_report_cb(uint16_t conn_id, tGATT_STATUS status,
   APPL_TRACE_DEBUG("bta_hh_le_write_cmpl w4_evt: %d", p_dev_cb->w4_evt);
 #endif
 
-  const tBTA_GATTC_CHARACTERISTIC* p_char =
+  const gatt::Characteristic* p_char =
       BTA_GATTC_GetCharacteristic(conn_id, handle);
   uint16_t uuid = p_char->uuid.As16Bit();
   if (uuid != GATT_UUID_HID_REPORT && uuid != GATT_UUID_HID_BT_KB_INPUT &&
@@ -1867,7 +1866,7 @@ void bta_hh_le_write_rpt(tBTA_HH_DEV_CB* p_cb, tBTA_HH_RPT_TYPE r_type,
 
   p_cb->w4_evt = w4_evt;
 
-  const tBTA_GATTC_CHARACTERISTIC* p_char =
+  const gatt::Characteristic* p_char =
       BTA_GATTC_GetCharacteristic(p_cb->conn_id, p_rpt->char_inst_id);
 
   tGATT_WRITE_TYPE write_type = GATT_WRITE;

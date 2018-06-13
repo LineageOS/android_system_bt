@@ -444,11 +444,10 @@ class HearingAidImpl : public HearingAid {
       return;
     }
 
-    const std::vector<tBTA_GATTC_SERVICE>* services =
-        BTA_GATTC_GetServices(conn_id);
+    const std::vector<gatt::Service>* services = BTA_GATTC_GetServices(conn_id);
 
-    const tBTA_GATTC_SERVICE* service = nullptr;
-    for (const tBTA_GATTC_SERVICE& tmp : *services) {
+    const gatt::Service* service = nullptr;
+    for (const gatt::Service& tmp : *services) {
       if (tmp.uuid != HEARING_AID_UUID) continue;
       LOG(INFO) << "Found Hearing Aid service, handle=" << loghex(tmp.handle);
       service = &tmp;
@@ -463,7 +462,7 @@ class HearingAidImpl : public HearingAid {
     }
 
     uint16_t psm_handle = 0x0000;
-    for (const tBTA_GATTC_CHARACTERISTIC& charac : service->characteristics) {
+    for (const gatt::Characteristic& charac : service->characteristics) {
       if (charac.uuid == READ_ONLY_PROPERTIES_UUID) {
         DVLOG(2) << "Reading read only properties "
                  << loghex(charac.value_handle);
