@@ -25,6 +25,7 @@
 #ifndef BTA_GATT_API_H
 #define BTA_GATT_API_H
 
+#include "bta/gatt/database.h"
 #include "bta_api.h"
 #include "gatt_api.h"
 
@@ -96,34 +97,6 @@ typedef struct {
   uint8_t num_attr;
   uint16_t handles[BTA_GATTC_MULTI_MAX];
 } tBTA_GATTC_MULTI;
-
-/* Representation of GATT attribute for storage */
-struct tBTA_GATTC_NV_ATTR {
-  uint16_t handle;
-  bluetooth::Uuid type;
-
-  union {
-    /* primary or secondary service */
-    struct {
-      bluetooth::Uuid uuid;
-      uint16_t e_handle;
-    } service;
-
-    struct {
-      uint16_t s_handle;
-      uint16_t e_handle;
-      bluetooth::Uuid uuid;
-    } included_service;
-
-    struct {
-      uint8_t properties;
-      uint16_t value_handle;
-      bluetooth::Uuid uuid;
-    } characteristic;
-
-    /* for descriptor we don't store value*/
-  } value;
-};
 
 /* callback data structure */
 typedef struct {
@@ -383,41 +356,6 @@ typedef void(tBTA_GATTS_ENB_CBACK)(tGATT_STATUS status);
 /* Server callback function */
 typedef void(tBTA_GATTS_CBACK)(tBTA_GATTS_EVT event, tBTA_GATTS* p_data);
 
-struct tBTA_GATTC_CHARACTERISTIC;
-struct tBTA_GATTC_DESCRIPTOR;
-struct tBTA_GATTC_INCLUDED_SVC;
-
-struct tBTA_GATTC_SERVICE {
-  bluetooth::Uuid uuid;
-  bool is_primary;
-  uint16_t handle;
-  uint16_t s_handle;
-  uint16_t e_handle;
-  std::vector<tBTA_GATTC_CHARACTERISTIC> characteristics;
-  std::vector<tBTA_GATTC_INCLUDED_SVC> included_svc;
-};
-
-struct tBTA_GATTC_CHARACTERISTIC {
-  bluetooth::Uuid uuid;
-  // this is used only during discovery, and not persisted in cache
-  uint16_t declaration_handle;
-  uint16_t value_handle;
-  tGATT_CHAR_PROP properties;
-  std::vector<tBTA_GATTC_DESCRIPTOR> descriptors;
-};
-
-struct tBTA_GATTC_DESCRIPTOR {
-  bluetooth::Uuid uuid;
-  uint16_t handle;
-};
-
-struct tBTA_GATTC_INCLUDED_SVC {
-  bluetooth::Uuid uuid;
-  uint16_t handle;
-  tBTA_GATTC_SERVICE* owning_service; /* owning service*/
-  tBTA_GATTC_SERVICE* included_service;
-};
-
 /*****************************************************************************
  *  External Function Declarations
  ****************************************************************************/
@@ -549,10 +487,10 @@ extern void BTA_GATTC_DiscoverServiceByUuid(uint16_t conn_id,
  *
  * Parameters       conn_id: connection ID which identify the server.
  *
- * Returns          returns list of tBTA_GATTC_SERVICE or NULL.
+ * Returns          returns list of gatt::Service or NULL.
  *
  ******************************************************************************/
-extern const std::vector<tBTA_GATTC_SERVICE>* BTA_GATTC_GetServices(
+extern const std::vector<gatt::Service>* BTA_GATTC_GetServices(
     uint16_t conn_id);
 
 /*******************************************************************************
@@ -565,11 +503,11 @@ extern const std::vector<tBTA_GATTC_SERVICE>* BTA_GATTC_GetServices(
  * Parameters       conn_id: connection ID which identify the server.
  *                  handle: characteristic handle
  *
- * Returns          returns pointer to tBTA_GATTC_CHARACTERISTIC or NULL.
+ * Returns          returns pointer to gatt::Characteristic or NULL.
  *
  ******************************************************************************/
-extern const tBTA_GATTC_CHARACTERISTIC* BTA_GATTC_GetCharacteristic(
-    uint16_t conn_id, uint16_t handle);
+extern const gatt::Characteristic* BTA_GATTC_GetCharacteristic(uint16_t conn_id,
+                                                               uint16_t handle);
 
 /*******************************************************************************
  *
@@ -581,21 +519,21 @@ extern const tBTA_GATTC_CHARACTERISTIC* BTA_GATTC_GetCharacteristic(
  * Parameters       conn_id: connection ID which identify the server.
  *                  handle: descriptor handle
  *
- * Returns          returns pointer to tBTA_GATTC_DESCRIPTOR or NULL.
+ * Returns          returns pointer to gatt::Descriptor or NULL.
  *
  ******************************************************************************/
-extern const tBTA_GATTC_DESCRIPTOR* BTA_GATTC_GetDescriptor(uint16_t conn_id,
-                                                            uint16_t handle);
+extern const gatt::Descriptor* BTA_GATTC_GetDescriptor(uint16_t conn_id,
+                                                       uint16_t handle);
 
 /* Return characteristic that owns descriptor with handle equal to |handle|, or
  * NULL */
-extern const tBTA_GATTC_CHARACTERISTIC* BTA_GATTC_GetOwningCharacteristic(
+extern const gatt::Characteristic* BTA_GATTC_GetOwningCharacteristic(
     uint16_t conn_id, uint16_t handle);
 
 /* Return service that owns descriptor or characteristic with handle equal to
  * |handle|, or NULL */
-extern const tBTA_GATTC_SERVICE* BTA_GATTC_GetOwningService(uint16_t conn_id,
-                                                            uint16_t handle);
+extern const gatt::Service* BTA_GATTC_GetOwningService(uint16_t conn_id,
+                                                       uint16_t handle);
 
 /*******************************************************************************
  *
