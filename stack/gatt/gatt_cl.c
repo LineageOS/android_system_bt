@@ -321,7 +321,7 @@ void gatt_send_queue_write_cancel (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, tGATT_E
 BOOLEAN gatt_check_write_long_terminate(tGATT_TCB  *p_tcb, tGATT_CLCB *p_clcb, tGATT_VALUE *p_rsp_value)
 {
     tGATT_VALUE         *p_attr = (tGATT_VALUE *)p_clcb->p_attr_buf;
-    BOOLEAN             exec = FALSE;
+    BOOLEAN             terminate = FALSE;
     tGATT_EXEC_FLAG     flag = GATT_PREP_WRITE_EXEC;
 
     GATT_TRACE_DEBUG("gatt_check_write_long_terminate ");
@@ -335,22 +335,21 @@ BOOLEAN gatt_check_write_long_terminate(tGATT_TCB  *p_tcb, tGATT_CLCB *p_clcb, t
             /* data does not match    */
             p_clcb->status = GATT_ERROR;
             flag = GATT_PREP_WRITE_CANCEL;
-            exec = TRUE;
+            terminate = TRUE;
         }
         else /* response checking is good */
         {
             p_clcb->status = GATT_SUCCESS;
             /* update write offset and check if end of attribute value */
             if ((p_attr->offset += p_rsp_value->len) >= p_attr->len)
-                exec = TRUE;
+                terminate = TRUE;
         }
     }
-    if (exec)
+    if (terminate && p_clcb->op_subtype != GATT_WRITE_PREPARE)
     {
         gatt_send_queue_write_cancel (p_tcb, p_clcb, flag);
-        return TRUE;
     }
-    return FALSE;
+    return terminate;
 }
 /*******************************************************************************
 **
@@ -654,18 +653,17 @@ void gatt_process_prep_write_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 op
 
     memcpy (value.value, p, value.len);
 
+    if (!gatt_check_write_long_terminate(p_tcb, p_clcb, &value))
+    {
+        gatt_send_prepare_write(p_tcb, p_clcb);
+        return;
+    }
+
     if (p_clcb->op_subtype == GATT_WRITE_PREPARE)
     {
-        p_clcb->status = GATT_SUCCESS;
         /* application should verify handle offset
            and value are matched or not */
-
         gatt_end_operation(p_clcb, p_clcb->status, &value);
-    }
-    else if (p_clcb->op_subtype == GATT_WRITE )
-    {
-        if (!gatt_check_write_long_terminate(p_tcb, p_clcb, &value))
-            gatt_send_prepare_write(p_tcb, p_clcb);
     }
 
 }
