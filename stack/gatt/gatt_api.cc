@@ -613,20 +613,22 @@ tGATT_STATUS GATTC_ConfigureMTU(uint16_t conn_id, uint16_t mtu) {
  *
  * Parameters       conn_id: connection identifier.
  *                  disc_type:discovery type.
- *                  p_param: parameters of discovery requirement.
+ *                  start_handle and end_handle: range of handles for discovery
+ *                  uuid: uuid to discovery. set to Uuid::kEmpty for requests
+ *                        that don't need it
  *
  * Returns          GATT_SUCCESS if command received/sent successfully.
  *
  ******************************************************************************/
 tGATT_STATUS GATTC_Discover(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
-                            tGATT_DISC_PARAM* p_param) {
+                            uint16_t start_handle, uint16_t end_handle,
+                            const Uuid& uuid) {
   tGATT_IF gatt_if = GATT_GET_GATT_IF(conn_id);
   uint8_t tcb_idx = GATT_GET_TCB_IDX(conn_id);
   tGATT_TCB* p_tcb = gatt_get_tcb_by_idx(tcb_idx);
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
 
-  if ((p_tcb == NULL) || (p_reg == NULL) || (p_param == NULL) ||
-      (disc_type >= GATT_DISC_MAX)) {
+  if ((p_tcb == NULL) || (p_reg == NULL) || (disc_type >= GATT_DISC_MAX)) {
     LOG(ERROR) << __func__ << " Illegal param: disc_type=" << +disc_type
                << " conn_id=" << loghex(conn_id);
     return GATT_ILLEGAL_PARAMETER;
@@ -634,13 +636,13 @@ tGATT_STATUS GATTC_Discover(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
 
   LOG(INFO) << __func__ << " conn_id=" << loghex(conn_id)
             << ", disc_type=" << +disc_type
-            << ", s_handle=" << loghex(p_param->s_handle)
-            << ", e_handle=" << loghex(p_param->e_handle);
+            << ", s_handle=" << loghex(start_handle)
+            << ", e_handle=" << loghex(end_handle);
 
-  if (!GATT_HANDLE_IS_VALID(p_param->s_handle) ||
-      !GATT_HANDLE_IS_VALID(p_param->e_handle) ||
+  if (!GATT_HANDLE_IS_VALID(start_handle) ||
+      !GATT_HANDLE_IS_VALID(end_handle) ||
       /* search by type does not have a valid UUID param */
-      (disc_type == GATT_DISC_SRVC_BY_UUID && p_param->service.IsEmpty())) {
+      (disc_type == GATT_DISC_SRVC_BY_UUID && uuid.IsEmpty())) {
     return GATT_ILLEGAL_PARAMETER;
   }
 
@@ -654,12 +656,18 @@ tGATT_STATUS GATTC_Discover(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
 
   p_clcb->operation = GATTC_OPTYPE_DISCOVERY;
   p_clcb->op_subtype = disc_type;
-  p_clcb->s_handle = p_param->s_handle;
-  p_clcb->e_handle = p_param->e_handle;
-  p_clcb->uuid = p_param->service;
+  p_clcb->s_handle = start_handle;
+  p_clcb->e_handle = end_handle;
+  p_clcb->uuid = uuid;
 
   gatt_act_discovery(p_clcb);
   return GATT_SUCCESS;
+}
+
+tGATT_STATUS GATTC_Discover(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
+                            uint16_t start_handle, uint16_t end_handle) {
+  return GATTC_Discover(conn_id, disc_type, start_handle, end_handle,
+                        Uuid::kEmpty);
 }
 
 /*******************************************************************************

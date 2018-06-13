@@ -137,8 +137,7 @@ tGATT_STATUS bta_gattc_discover_pri_service(uint16_t conn_id,
   if (!p_clcb) return GATT_ERROR;
 
   if (p_clcb->transport == BTA_TRANSPORT_LE) {
-    tGATT_DISC_PARAM param{.s_handle = 0x0001, .e_handle = 0xFFFF};
-    return GATTC_Discover(conn_id, disc_type, &param);
+    return GATTC_Discover(conn_id, disc_type, 0x0001, 0xFFFF);
   }
 
   // only for Classic transport
@@ -164,9 +163,7 @@ static void bta_gattc_explore_next_service(uint16_t conn_id,
   VLOG(1) << "Start service discovery";
 
   /* start discovering included services */
-  tGATT_DISC_PARAM param = {.s_handle = service.first,
-                            .e_handle = service.second};
-  GATTC_Discover(conn_id, GATT_DISC_INC_SRVC, &param);
+  GATTC_Discover(conn_id, GATT_DISC_INC_SRVC, service.first, service.second);
 }
 
 static void bta_gattc_explore_srvc_finished(uint16_t conn_id,
@@ -207,11 +204,9 @@ void bta_gattc_start_disc_char_dscp(uint16_t conn_id,
     goto descriptor_discovery_done;
   }
 
-  {
-    tGATT_DISC_PARAM param{.s_handle = range.first, .e_handle = range.second};
-    if (GATTC_Discover(conn_id, GATT_DISC_CHAR_DSCPT, &param) != 0) {
-      goto descriptor_discovery_done;
-    }
+  if (GATTC_Discover(conn_id, GATT_DISC_CHAR_DSCPT, range.first,
+                     range.second) != 0) {
+    goto descriptor_discovery_done;
   }
   return;
 
@@ -384,9 +379,7 @@ void bta_gattc_disc_cmpl_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
     case GATT_DISC_INC_SRVC: {
       auto& service = p_srvc_cb->pending_discovery.CurrentlyExploredService();
       /* start discovering characteristic */
-      tGATT_DISC_PARAM param = {.s_handle = service.first,
-                                .e_handle = service.second};
-      GATTC_Discover(conn_id, GATT_DISC_CHAR, &param);
+      GATTC_Discover(conn_id, GATT_DISC_CHAR, service.first, service.second);
       break;
     }
 
