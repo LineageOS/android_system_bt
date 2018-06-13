@@ -243,6 +243,8 @@ void btif_storage_remove_hearing_aid_white_list(const RawAddress& address);
  ******************************************************************************/
 bool btif_storage_is_restricted_device(const RawAddress* remote_bd_addr);
 
+int btif_storage_get_num_bonded_devices(void);
+
 bt_status_t btif_storage_add_ble_bonding_key(RawAddress* remote_bd_addr,
                                              const uint8_t* key,
                                              uint8_t key_type,
