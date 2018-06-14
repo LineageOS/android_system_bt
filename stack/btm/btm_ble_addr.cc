@@ -94,12 +94,8 @@ void btm_gen_resolve_paddr_low(BT_OCTET8 rand) {
   p_cb->private_addr.address[0] = rand[2];
 
   /* encrypt with ur IRK */
-  if (!SMP_Encrypt(btm_cb.devcb.id_keys.irk, BT_OCTET16_LEN, rand, 3,
-                   &output)) {
-    btm_gen_resolve_paddr_cmpl(NULL);
-  } else {
-    btm_gen_resolve_paddr_cmpl(&output);
-  }
+  SMP_Encrypt(btm_cb.devcb.id_keys.irk, rand, 3, &output);
+  btm_gen_resolve_paddr_cmpl(&output);
 }
 /*******************************************************************************
  *
@@ -244,7 +240,7 @@ bool btm_ble_addr_resolvable(const RawAddress& rpa,
     rand[2] = rpa.address[0];
 
     /* generate X = E irk(R0, R1, R2) and R is random address 3 LSO */
-    SMP_Encrypt(p_dev_rec->ble.keys.irk, BT_OCTET16_LEN, &rand[0], 3, &output);
+    SMP_Encrypt(p_dev_rec->ble.keys.irk, &rand[0], 3, &output);
 
     rand[0] = rpa.address[5];
     rand[1] = rpa.address[4];
@@ -292,7 +288,7 @@ static bool btm_ble_match_random_bda(void* data, void* context) {
     return true;
 
   /* generate X = E irk(R0, R1, R2) and R is random address 3 LSO */
-  SMP_Encrypt(p_dev_rec->ble.keys.irk, BT_OCTET16_LEN, &rand[0], 3, &output);
+  SMP_Encrypt(p_dev_rec->ble.keys.irk, &rand[0], 3, &output);
   // if it was match, finish iteration, otherwise continue
   return !btm_ble_proc_resolve_x(output, *random_bda);
 }

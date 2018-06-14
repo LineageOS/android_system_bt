@@ -1467,10 +1467,8 @@ void smp_save_secure_connections_long_term_key(tSMP_CB* p_cb) {
  *                  MacKey is used in dhkey calculation, LTK is used to encrypt
  *                  the link.
  *
- * Returns          false if out of resources, true otherwise.
- *
  ******************************************************************************/
-bool smp_calculate_f5_mackey_and_long_term_key(tSMP_CB* p_cb) {
+void smp_calculate_f5_mackey_and_long_term_key(tSMP_CB* p_cb) {
   uint8_t a[7];
   uint8_t b[7];
   uint8_t* p_na;
@@ -1490,14 +1488,9 @@ bool smp_calculate_f5_mackey_and_long_term_key(tSMP_CB* p_cb) {
     p_nb = p_cb->rand;
   }
 
-  if (!smp_calculate_f5(p_cb->dhkey, p_na, p_nb, a, b, p_cb->mac_key,
-                        p_cb->ltk)) {
-    SMP_TRACE_ERROR("%s failed", __func__);
-    return false;
-  }
+  smp_calculate_f5(p_cb->dhkey, p_na, p_nb, a, b, p_cb->mac_key, p_cb->ltk);
 
   SMP_TRACE_EVENT("%s is completed", __func__);
-  return true;
 }
 
 /*******************************************************************************

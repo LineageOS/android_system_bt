@@ -489,22 +489,18 @@ void SMP_SecureConnectionOobDataReply(uint8_t* p_data) {
  * Description      This function is called to encrypt the data with the
  *                  specified key
  *
- * Parameters:      key                 - Pointer to key key[0] conatins the MSB
- *                  key_len             - key length
+ * Parameters:      key                 - Pointer to key key conatins the MSB,
+ *                                        must be 128bit
  *                  plain_text          - Pointer to data to be encrypted
  *                                        plain_text[0] conatins the MSB
  *                  pt_len              - plain text length
- *                  p_out                - output of the encrypted texts
- *
- *  Returns         Boolean - request is successful
+ *                  p_out               - output of the encrypted texts
  ******************************************************************************/
-bool SMP_Encrypt(uint8_t* key, uint8_t key_len, uint8_t* plain_text,
-                 uint8_t pt_len, tSMP_ENC* p_out)
+void SMP_Encrypt(uint8_t* key, uint8_t* plain_text, uint8_t pt_len,
+                 tSMP_ENC* p_out)
 
 {
-  bool status = false;
-  status = smp_encrypt_data(key, key_len, plain_text, pt_len, p_out);
-  return status;
+  smp_encrypt_data(key, plain_text, pt_len, p_out);
 }
 
 /*******************************************************************************
