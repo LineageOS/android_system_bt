@@ -105,6 +105,8 @@ class A2dpSessionMetrics {
   int32_t buffer_overruns_total = -1;
   float buffer_underruns_average = -1;
   int32_t buffer_underruns_count = -1;
+  int64_t codec_index = -1;
+  bool is_a2dp_offload = false;
 };
 
 class BluetoothMetricsLogger {
