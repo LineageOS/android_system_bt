@@ -246,15 +246,14 @@ void BTA_GATTC_ServiceSearchRequest(uint16_t conn_id, Uuid* p_srvc_uuid) {
   bta_sys_sendmsg(p_buf);
 }
 
-void BTA_GATTC_DiscoverServiceByUuid(uint16_t conn_id,
-                                     const Uuid& p_srvc_uuid) {
-  tGATT_DISC_PARAM* param = new tGATT_DISC_PARAM;
-  param->s_handle = 0x0001;
-  param->e_handle = 0xFFFF;
-  param->service = p_srvc_uuid;
-  do_in_bta_thread(FROM_HERE,
-                   base::Bind(base::IgnoreResult(&GATTC_Discover), conn_id,
-                              GATT_DISC_SRVC_BY_UUID, base::Owned(param)));
+void BTA_GATTC_DiscoverServiceByUuid(uint16_t conn_id, const Uuid& srvc_uuid) {
+  do_in_bta_thread(
+      FROM_HERE,
+      base::Bind(
+          base::IgnoreResult<tGATT_STATUS (*)(uint16_t, tGATT_DISC_TYPE,
+                                              uint16_t, uint16_t, const Uuid&)>(
+              &GATTC_Discover),
+          conn_id, GATT_DISC_SRVC_BY_UUID, 0x0001, 0xFFFF, srvc_uuid));
 }
 
 /*******************************************************************************

@@ -410,14 +410,6 @@ enum {
 };
 typedef uint8_t tGATT_DISC_TYPE;
 
-/* Discover parameters of different discovery types
-*/
-typedef struct {
-  bluetooth::Uuid service;
-  uint16_t s_handle;
-  uint16_t e_handle;
-} tGATT_DISC_PARAM;
-
 /* GATT read type enumeration
 */
 enum {
@@ -825,13 +817,19 @@ extern tGATT_STATUS GATTC_ConfigureMTU(uint16_t conn_id, uint16_t mtu);
  *
  * Parameters       conn_id: connection identifier.
  *                  disc_type:discovery type.
- *                  p_param: parameters of discovery requirement.
+ *                  start_handle and end_handle: range of handles for discovery
+ *                  uuid: uuid to discovery. set to Uuid::kEmpty for requests
+ *                        that don't need it
  *
  * Returns          GATT_SUCCESS if command received/sent successfully.
  *
  ******************************************************************************/
 extern tGATT_STATUS GATTC_Discover(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
-                                   tGATT_DISC_PARAM* p_param);
+                                   uint16_t start_handle, uint16_t end_handle,
+                                   const bluetooth::Uuid& uuid);
+extern tGATT_STATUS GATTC_Discover(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
+                                   uint16_t start_handle, uint16_t end_handle);
+
 /*******************************************************************************
  *
  * Function         GATTC_Read
