@@ -475,8 +475,8 @@ extern void smp_mask_enc_key(uint8_t loc_enc_size, uint8_t* p_data);
 extern void smp_rsp_timeout(void* data);
 extern void smp_delayed_auth_complete_timeout(void* data);
 extern void smp_xor_128(BT_OCTET16 a, BT_OCTET16 b);
-extern bool smp_encrypt_data(uint8_t* key, uint8_t key_len, uint8_t* plain_text,
-                             uint8_t pt_len, tSMP_ENC* p_out);
+extern void smp_encrypt_data(uint8_t* key, uint8_t* plain_text, uint8_t pt_len,
+                             tSMP_ENC* p_out);
 extern bool smp_command_has_invalid_parameters(tSMP_CB* p_cb);
 extern void smp_reject_unexpected_pairing_command(const RawAddress& bd_addr);
 extern tSMP_ASSO_MODEL smp_select_association_model(tSMP_CB* p_cb);
@@ -488,7 +488,7 @@ extern void smp_collect_local_ble_address(uint8_t* le_addr, tSMP_CB* p_cb);
 extern void smp_collect_peer_ble_address(uint8_t* le_addr, tSMP_CB* p_cb);
 extern bool smp_check_commitment(tSMP_CB* p_cb);
 extern void smp_save_secure_connections_long_term_key(tSMP_CB* p_cb);
-extern bool smp_calculate_f5_mackey_and_long_term_key(tSMP_CB* p_cb);
+extern void smp_calculate_f5_mackey_and_long_term_key(tSMP_CB* p_cb);
 extern void smp_remove_fixed_channel(tSMP_CB* p_cb);
 extern bool smp_request_oob_data(tSMP_CB* p_cb);
 
@@ -518,27 +518,23 @@ extern void smp_calculate_f4(uint8_t* u, uint8_t* v, uint8_t* x, uint8_t z,
                              uint8_t* c);
 extern uint32_t smp_calculate_g2(uint8_t* u, uint8_t* v, uint8_t* x,
                                  uint8_t* y);
-extern bool smp_calculate_f5(uint8_t* w, uint8_t* n1, uint8_t* n2, uint8_t* a1,
+extern void smp_calculate_f5(uint8_t* w, uint8_t* n1, uint8_t* n2, uint8_t* a1,
                              uint8_t* a2, uint8_t* mac_key, uint8_t* ltk);
-extern bool smp_calculate_f5_mackey_or_long_term_key(
+extern void smp_calculate_f5_mackey_or_long_term_key(
     uint8_t* t, uint8_t* counter, uint8_t* key_id, uint8_t* n1, uint8_t* n2,
     uint8_t* a1, uint8_t* a2, uint8_t* length, uint8_t* mac);
-extern bool smp_calculate_f5_key(uint8_t* w, uint8_t* t);
-extern bool smp_calculate_f6(uint8_t* w, uint8_t* n1, uint8_t* n2, uint8_t* r,
+extern void smp_calculate_f5_key(uint8_t* w, uint8_t* t);
+extern void smp_calculate_f6(uint8_t* w, uint8_t* n1, uint8_t* n2, uint8_t* r,
                              uint8_t* iocap, uint8_t* a1, uint8_t* a2,
                              uint8_t* f3);
-extern bool smp_calculate_h6(uint8_t* w, uint8_t* keyid, uint8_t* h2);
-extern bool smp_calculate_h7(uint8_t* salt, uint8_t* w, uint8_t* h2);
+extern void smp_calculate_h6(uint8_t* w, uint8_t* keyid, uint8_t* h2);
+extern void smp_calculate_h7(uint8_t* salt, uint8_t* w, uint8_t* h2);
 #if (SMP_DEBUG == TRUE)
 extern void smp_debug_print_nbyte_little_endian(uint8_t* p,
                                                 const char* key_name,
                                                 uint8_t len);
 #endif
 
-/* smp_cmac.cc */
-extern bool aes_cipher_msg_auth_code(BT_OCTET16 key, uint8_t* input,
-                                     uint16_t length, uint16_t tlen,
-                                     uint8_t* p_signature);
 extern void print128(BT_OCTET16 x, const uint8_t* key_name);
 
 #endif /* SMP_INT_H */
