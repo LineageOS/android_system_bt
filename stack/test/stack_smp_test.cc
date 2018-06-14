@@ -206,8 +206,7 @@ TEST_F(SmpCalculateConfirmTest, test_SMP_Encrypt_as_master) {
   ASSERT_THAT(p1_xor_r_str, StrEq(expected_p1_xor_r_str));
   tSMP_ENC output;
   memset(&output, 0, sizeof(tSMP_ENC));
-  ASSERT_TRUE(
-      SMP_Encrypt(p_cb_.tk, BT_OCTET16_LEN, p1, BT_OCTET16_LEN, &output));
+  SMP_Encrypt(p_cb_.tk, p1, BT_OCTET16_LEN, &output);
   const char expected_p1_prime_str[] = "02c7aa2a9857ac866ff91232df0e3c95";
   char p1_prime_str[2 * sizeof(BT_OCTET16) + 1];
   dump_uint128_reverse(output.param_buf, p1_prime_str);

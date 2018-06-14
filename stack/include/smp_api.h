@@ -180,8 +180,8 @@ extern void SMP_SecureConnectionOobDataReply(uint8_t* p_data);
  *
  * Description      Encrypt the data with the specified key.
  *
- * Parameters:      key                 - Pointer to key key[0] conatins the MSB
- *                  key_len             - key length
+ * Parameters:      key                 - Pointer to key key conatins the MSB,
+ *                                        must be 128bit
  *                  plain_text          - Pointer to data to be encrypted
  *                                        plain_text[0] conatins the MSB
  *                  pt_len              - plain text length
@@ -189,8 +189,8 @@ extern void SMP_SecureConnectionOobDataReply(uint8_t* p_data);
  *
  *  Returns         Boolean - true: encryption is successful
  ******************************************************************************/
-extern bool SMP_Encrypt(uint8_t* key, uint8_t key_len, uint8_t* plain_text,
-                        uint8_t pt_len, tSMP_ENC* p_out);
+extern void SMP_Encrypt(uint8_t* key, uint8_t* plain_text, uint8_t pt_len,
+                        tSMP_ENC* p_out);
 
 /*******************************************************************************
  *
@@ -234,9 +234,8 @@ extern void smp_link_encrypted(const RawAddress& bda, uint8_t encr_enable);
 // |length| - length of the input in byte.
 // |tlen| - lenth of mac desired
 // |p_signature| - data pointer to where signed data to be stored, tlen long.
-// Returns false if out of resources, true in other cases.
 //
-bool aes_cipher_msg_auth_code(BT_OCTET16 key, uint8_t* input, uint16_t length,
+void aes_cipher_msg_auth_code(BT_OCTET16 key, uint8_t* input, uint16_t length,
                               uint16_t tlen, uint8_t* p_signature);
 
 #endif /* SMP_API_H */
