@@ -204,8 +204,7 @@ class BleAdvertisingManagerImpl
     BTM_GetDeviceIDRoot(irk);
     tSMP_ENC output;
 
-    if (!SMP_Encrypt(irk, BT_OCTET16_LEN, rand, 3, &output))
-      LOG_ASSERT(false) << "SMP_Encrypt failed";
+    SMP_Encrypt(irk, rand, 3, &output);
 
     /* set hash to be LSB of rpAddress */
     bda.address[5] = output.param_buf[0];
