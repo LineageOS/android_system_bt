@@ -21,6 +21,9 @@
 #include <base/callback_forward.h>
 #include <hardware/bt_hearing_aid.h>
 
+constexpr uint16_t HA_INTERVAL_10_MS = 10;
+constexpr uint16_t HA_INTERVAL_20_MS = 20;
+
 /** Implementations of HearingAid will also implement this interface */
 class HearingAidAudioReceiver {
  public:

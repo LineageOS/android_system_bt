@@ -44,9 +44,6 @@
 #include "osi/include/osi.h"
 #include "smp_api.h"
 
-extern bool aes_cipher_msg_auth_code(BT_OCTET16 key, uint8_t* input,
-                                     uint16_t length, uint16_t tlen,
-                                     uint8_t* p_signature);
 extern void gatt_notify_phy_updated(uint8_t status, uint16_t handle,
                                     uint8_t tx_phy, uint8_t rx_phy);
 extern void btm_ble_advertiser_notify_terminated_legacy(
@@ -2177,45 +2174,42 @@ bool BTM_BleDataSignature(const RawAddress& bd_addr, uint8_t* p_text,
   tBTM_SEC_DEV_REC* p_rec = btm_find_dev(bd_addr);
 
   BTM_TRACE_DEBUG("%s", __func__);
-  bool ret = false;
   if (p_rec == NULL) {
     BTM_TRACE_ERROR("%s-data signing can not be done from unknown device",
                     __func__);
-  } else {
-    uint8_t* p_mac = (uint8_t*)signature;
-    uint8_t* pp;
-    uint8_t* p_buf = (uint8_t*)osi_malloc(len + 4);
-
-    BTM_TRACE_DEBUG("%s-Start to generate Local CSRK", __func__);
-    pp = p_buf;
-    /* prepare plain text */
-    if (p_text) {
-      memcpy(p_buf, p_text, len);
-      pp = (p_buf + len);
-    }
-
-    UINT32_TO_STREAM(pp, p_rec->ble.keys.local_counter);
-    UINT32_TO_STREAM(p_mac, p_rec->ble.keys.local_counter);
-
-    ret = aes_cipher_msg_auth_code(p_rec->ble.keys.lcsrk, p_buf,
-                                   (uint16_t)(len + 4), BTM_CMAC_TLEN_SIZE,
-                                   p_mac);
-    if (ret) {
-      btm_ble_increment_sign_ctr(bd_addr, true);
-    }
-
-    BTM_TRACE_DEBUG("%s p_mac = %d", __func__, p_mac);
-    BTM_TRACE_DEBUG(
-        "p_mac[0] = 0x%02x p_mac[1] = 0x%02x p_mac[2] = 0x%02x p_mac[3] = "
-        "0x%02x",
-        *p_mac, *(p_mac + 1), *(p_mac + 2), *(p_mac + 3));
-    BTM_TRACE_DEBUG(
-        "p_mac[4] = 0x%02x p_mac[5] = 0x%02x p_mac[6] = 0x%02x p_mac[7] = "
-        "0x%02x",
-        *(p_mac + 4), *(p_mac + 5), *(p_mac + 6), *(p_mac + 7));
-    osi_free(p_buf);
+    return false;
   }
-  return ret;
+
+  uint8_t* p_mac = (uint8_t*)signature;
+  uint8_t* pp;
+  uint8_t* p_buf = (uint8_t*)osi_malloc(len + 4);
+
+  BTM_TRACE_DEBUG("%s-Start to generate Local CSRK", __func__);
+  pp = p_buf;
+  /* prepare plain text */
+  if (p_text) {
+    memcpy(p_buf, p_text, len);
+    pp = (p_buf + len);
+  }
+
+  UINT32_TO_STREAM(pp, p_rec->ble.keys.local_counter);
+  UINT32_TO_STREAM(p_mac, p_rec->ble.keys.local_counter);
+
+  aes_cipher_msg_auth_code(p_rec->ble.keys.lcsrk, p_buf, (uint16_t)(len + 4),
+                           BTM_CMAC_TLEN_SIZE, p_mac);
+  btm_ble_increment_sign_ctr(bd_addr, true);
+
+  BTM_TRACE_DEBUG("%s p_mac = %d", __func__, p_mac);
+  BTM_TRACE_DEBUG(
+      "p_mac[0] = 0x%02x p_mac[1] = 0x%02x p_mac[2] = 0x%02x p_mac[3] = "
+      "0x%02x",
+      *p_mac, *(p_mac + 1), *(p_mac + 2), *(p_mac + 3));
+  BTM_TRACE_DEBUG(
+      "p_mac[4] = 0x%02x p_mac[5] = 0x%02x p_mac[6] = 0x%02x p_mac[7] = "
+      "0x%02x",
+      *(p_mac + 4), *(p_mac + 5), *(p_mac + 6), *(p_mac + 7));
+  osi_free(p_buf);
+  return true;
 }
 
 /*******************************************************************************
@@ -2249,12 +2243,11 @@ bool BTM_BleVerifySignature(const RawAddress& bd_addr, uint8_t* p_orig,
     BTM_TRACE_DEBUG("%s rcv_cnt=%d >= expected_cnt=%d", __func__, counter,
                     p_rec->ble.keys.counter);
 
-    if (aes_cipher_msg_auth_code(p_rec->ble.keys.pcsrk, p_orig, len,
-                                 BTM_CMAC_TLEN_SIZE, p_mac)) {
-      if (memcmp(p_mac, p_comp, BTM_CMAC_TLEN_SIZE) == 0) {
-        btm_ble_increment_sign_ctr(bd_addr, false);
-        verified = true;
-      }
+    aes_cipher_msg_auth_code(p_rec->ble.keys.pcsrk, p_orig, len,
+                             BTM_CMAC_TLEN_SIZE, p_mac);
+    if (memcmp(p_mac, p_comp, BTM_CMAC_TLEN_SIZE) == 0) {
+      btm_ble_increment_sign_ctr(bd_addr, false);
+      verified = true;
     }
   }
   return verified;
@@ -2476,7 +2469,6 @@ static void btm_ble_process_irk(tSMP_ENC* p) {
  ******************************************************************************/
 static void btm_ble_process_dhk(tSMP_ENC* p) {
   uint8_t btm_ble_irk_pt = 0x01;
-  tSMP_ENC output;
 
   BTM_TRACE_DEBUG("btm_ble_process_dhk");
 
@@ -2484,14 +2476,10 @@ static void btm_ble_process_dhk(tSMP_ENC* p) {
     memcpy(btm_cb.devcb.id_keys.dhk, p->param_buf, BT_OCTET16_LEN);
     BTM_TRACE_DEBUG("BLE DHK generated.");
 
+    tSMP_ENC output;
     /* IRK = D1(IR, 1) */
-    if (!SMP_Encrypt(btm_cb.devcb.id_keys.ir, BT_OCTET16_LEN, &btm_ble_irk_pt,
-                     1, &output)) {
-      /* reset all identity root related key */
-      memset(&btm_cb.devcb.id_keys, 0, sizeof(tBTM_BLE_LOCAL_ID_KEYS));
-    } else {
-      btm_ble_process_irk(&output);
-    }
+    SMP_Encrypt(btm_cb.devcb.id_keys.ir, &btm_ble_irk_pt, 1, &output);
+    btm_ble_process_irk(&output);
   } else {
     /* reset all identity root related key */
     memset(&btm_cb.devcb.id_keys, 0, sizeof(tBTM_BLE_LOCAL_ID_KEYS));
@@ -2525,8 +2513,7 @@ void btm_ble_reset_id(void) {
       memcpy(&btm_cb.devcb.id_keys.ir[8], rand, BT_OCTET8_LEN);
       /* generate DHK= Eir({0x03, 0x00, 0x00 ...}) */
 
-      SMP_Encrypt(btm_cb.devcb.id_keys.ir, BT_OCTET16_LEN, &btm_ble_dhk_pt, 1,
-                  &output);
+      SMP_Encrypt(btm_cb.devcb.id_keys.ir, &btm_ble_dhk_pt, 1, &output);
       btm_ble_process_dhk(&output);
 
       BTM_TRACE_DEBUG("BLE IR generated.");

@@ -385,41 +385,35 @@ static void gatt_cl_op_cmpl_cback(UNUSED_ATTR uint16_t conn_id,
  *
  ******************************************************************************/
 static void gatt_cl_start_config_ccc(tGATT_PROFILE_CLCB* p_clcb) {
-  tGATT_DISC_PARAM srvc_disc_param;
-  tGATT_VALUE ccc_value;
 
   VLOG(1) << __func__ << ": stage: " << +p_clcb->ccc_stage;
 
-  memset(&srvc_disc_param, 0, sizeof(tGATT_DISC_PARAM));
-  memset(&ccc_value, 0, sizeof(tGATT_VALUE));
-
   switch (p_clcb->ccc_stage) {
     case GATT_SVC_CHANGED_SERVICE: /* discover GATT service */
-      srvc_disc_param.s_handle = 1;
-      srvc_disc_param.e_handle = 0xffff;
-      srvc_disc_param.service = Uuid::From16Bit(UUID_SERVCLASS_GATT_SERVER);
-      GATTC_Discover(p_clcb->conn_id, GATT_DISC_SRVC_BY_UUID, &srvc_disc_param);
+      GATTC_Discover(p_clcb->conn_id, GATT_DISC_SRVC_BY_UUID, 0x0001, 0xffff,
+                     Uuid::From16Bit(UUID_SERVCLASS_GATT_SERVER));
       break;
 
     case GATT_SVC_CHANGED_CHARACTERISTIC: /* discover service change char */
-      srvc_disc_param.s_handle = 1;
-      srvc_disc_param.e_handle = p_clcb->e_handle;
-      srvc_disc_param.service = Uuid::From16Bit(GATT_UUID_GATT_SRV_CHGD);
-      GATTC_Discover(p_clcb->conn_id, GATT_DISC_CHAR, &srvc_disc_param);
+      GATTC_Discover(p_clcb->conn_id, GATT_DISC_CHAR, 0x0001, p_clcb->e_handle,
+                     Uuid::From16Bit(GATT_UUID_GATT_SRV_CHGD));
       break;
 
     case GATT_SVC_CHANGED_DESCRIPTOR: /* discover service change ccc */
-      srvc_disc_param.s_handle = p_clcb->s_handle;
-      srvc_disc_param.e_handle = p_clcb->e_handle;
-      GATTC_Discover(p_clcb->conn_id, GATT_DISC_CHAR_DSCPT, &srvc_disc_param);
+      GATTC_Discover(p_clcb->conn_id, GATT_DISC_CHAR_DSCPT, p_clcb->s_handle,
+                     p_clcb->e_handle);
       break;
 
     case GATT_SVC_CHANGED_CONFIGURE_CCCD: /* write ccc */
+    {
+      tGATT_VALUE ccc_value;
+      memset(&ccc_value, 0, sizeof(tGATT_VALUE));
       ccc_value.handle = p_clcb->s_handle;
       ccc_value.len = 2;
       ccc_value.value[0] = GATT_CLT_CONFIG_INDICATION;
       GATTC_Write(p_clcb->conn_id, GATT_WRITE, &ccc_value);
       break;
+    }
   }
 }
 

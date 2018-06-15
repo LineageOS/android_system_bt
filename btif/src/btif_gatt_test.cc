@@ -219,24 +219,18 @@ bt_status_t btif_gattc_test_command_impl(int command,
 
     case 0x04: /* Discover */
     {
-      tGATT_DISC_PARAM param;
-      memset(&param, 0, sizeof(tGATT_DISC_PARAM));
-
       if (params->u1 >= GATT_DISC_MAX) {
         LOG_ERROR(LOG_TAG, "%s: DISCOVER - Invalid type (%d)!", __func__,
                   params->u1);
         return (bt_status_t)0;
       }
 
-      param.s_handle = params->u2;
-      param.e_handle = params->u3;
-      param.service = *params->uuid1;
-
       LOG_DEBUG(LOG_TAG,
                 "%s: DISCOVER (%s), conn_id=%d, uuid=%s, handles=0x%04x-0x%04x",
                 __func__, disc_name[params->u1], test_cb.conn_id,
-                param.service.ToString().c_str(), params->u2, params->u3);
-      GATTC_Discover(test_cb.conn_id, params->u1, &param);
+                params->uuid1->ToString().c_str(), params->u2, params->u3);
+      GATTC_Discover(test_cb.conn_id, params->u1, params->u2, params->u3,
+                     *params->uuid1);
       break;
     }
 
