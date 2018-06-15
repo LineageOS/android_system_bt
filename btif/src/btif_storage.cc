@@ -413,9 +413,9 @@ static int cfg2prop(const RawAddress* remote_bd_addr, bt_property_t* prop) {
 static bt_status_t btif_in_fetch_bonded_device(const std::string& bdstr) {
   bool bt_linkkey_file_found = false;
 
-  LINK_KEY link_key;
-  size_t size = sizeof(link_key);
-  if (btif_config_get_bin(bdstr, "LinkKey", (uint8_t*)link_key, &size)) {
+  LinkKey link_key;
+  size_t size = link_key.size();
+  if (btif_config_get_bin(bdstr, "LinkKey", link_key.data(), &size)) {
     int linkkey_type;
     if (btif_config_get_int(bdstr, "LinkKeyType", &linkkey_type)) {
       bt_linkkey_file_found = true;
@@ -457,9 +457,9 @@ static bt_status_t btif_in_fetch_bonded_devices(
     if (!RawAddress::IsValidAddress(name)) continue;
 
     BTIF_TRACE_DEBUG("Remote device:%s", name.c_str());
-    LINK_KEY link_key;
+    LinkKey link_key;
     size_t size = sizeof(link_key);
-    if (btif_config_get_bin(name, "LinkKey", link_key, &size)) {
+    if (btif_config_get_bin(name, "LinkKey", link_key.data(), &size)) {
       int linkkey_type;
       if (btif_config_get_int(name, "LinkKeyType", &linkkey_type)) {
         RawAddress bd_addr;
@@ -815,12 +815,13 @@ bt_status_t btif_storage_add_remote_device(const RawAddress* remote_bd_addr,
  ******************************************************************************/
 
 bt_status_t btif_storage_add_bonded_device(RawAddress* remote_bd_addr,
-                                           LINK_KEY link_key, uint8_t key_type,
+                                           LinkKey link_key, uint8_t key_type,
                                            uint8_t pin_length) {
   std::string bdstr = remote_bd_addr->ToString();
   int ret = btif_config_set_int(bdstr, "LinkKeyType", (int)key_type);
   ret &= btif_config_set_int(bdstr, "PinLength", (int)pin_length);
-  ret &= btif_config_set_bin(bdstr, "LinkKey", link_key, sizeof(LINK_KEY));
+  ret &=
+      btif_config_set_bin(bdstr, "LinkKey", link_key.data(), link_key.size());
 
   if (is_restricted_mode()) {
     BTIF_TRACE_WARNING("%s: '%s' pairing will be removed if unrestricted",
@@ -1125,8 +1126,8 @@ bt_status_t btif_storage_remove_ble_bonding_keys(
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_add_ble_local_key(char* key, uint8_t key_type,
-                                           uint8_t key_length) {
+bt_status_t btif_storage_add_ble_local_key(const Octet16& key,
+                                           uint8_t key_type) {
   const char* name;
   switch (key_type) {
     case BTIF_DM_LE_LOCAL_KEY_IR:
@@ -1144,24 +1145,17 @@ bt_status_t btif_storage_add_ble_local_key(char* key, uint8_t key_type,
     default:
       return BT_STATUS_FAIL;
   }
-  int ret =
-      btif_config_set_bin("Adapter", name, (const uint8_t*)key, key_length);
+  int ret = btif_config_set_bin("Adapter", name, key.data(), key.size());
   btif_config_save();
   return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
-/*******************************************************************************
- *
- * Function         btif_storage_get_ble_local_key
- *
- * Description
- *
- * Returns          BT_STATUS_SUCCESS if the fetch was successful,
- *                  BT_STATUS_FAIL otherwise
- *
- ******************************************************************************/
-bt_status_t btif_storage_get_ble_local_key(uint8_t key_type, char* key_value,
-                                           int key_length) {
+/** Stores local key of |key_type| into |key_value|
+ * Returns BT_STATUS_SUCCESS if the fetch was successful, BT_STATUS_FAIL
+ * otherwise
+ */
+bt_status_t btif_storage_get_ble_local_key(uint8_t key_type,
+                                           Octet16* key_value) {
   const char* name;
   switch (key_type) {
     case BTIF_DM_LE_LOCAL_KEY_IR:
@@ -1179,8 +1173,8 @@ bt_status_t btif_storage_get_ble_local_key(uint8_t key_type, char* key_value,
     default:
       return BT_STATUS_FAIL;
   }
-  size_t length = key_length;
-  int ret = btif_config_get_bin("Adapter", name, (uint8_t*)key_value, &length);
+  size_t length = key_value->size();
+  int ret = btif_config_get_bin("Adapter", name, key_value->data(), &length);
   return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 

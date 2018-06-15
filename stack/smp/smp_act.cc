@@ -350,7 +350,7 @@ void smp_send_enc_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   smp_send_cmd(SMP_OPCODE_MASTER_ID, p_cb);
 
   /* save the DIV and key size information when acting as slave device */
-  memcpy(le_key.ltk, p_cb->ltk, BT_OCTET16_LEN);
+  le_key.ltk = p_cb->ltk;
   le_key.div = p_cb->div;
   le_key.key_size = p_cb->loc_enc_size;
   le_key.sec_level = p_cb->sec_level;
@@ -385,10 +385,7 @@ void smp_send_id_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   smp_key_distribution_by_transport(p_cb, NULL);
 }
 
-/*******************************************************************************
- * Function     smp_send_csrk_info
- * Description  send CSRK command.
- ******************************************************************************/
+/**  send CSRK command. */
 void smp_send_csrk_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   tBTM_LE_LCSRK_KEYS key;
   SMP_TRACE_DEBUG("%s", __func__);
@@ -398,7 +395,7 @@ void smp_send_csrk_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     key.div = p_cb->div;
     key.sec_level = p_cb->sec_level;
     key.counter = 0; /* initialize the local counter */
-    memcpy(key.csrk, p_cb->csrk, BT_OCTET16_LEN);
+    key.csrk = p_cb->csrk;
     btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LCSRK,
                         (tBTM_LE_KEY_VALUE*)&key, true);
   }
@@ -412,8 +409,11 @@ void smp_send_csrk_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  ******************************************************************************/
 void smp_send_ltk_reply(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   SMP_TRACE_DEBUG("%s", __func__);
+
+  Octet16 stk;
+  memcpy(stk.data(), p_data->key.p_data, stk.size());
   /* send stk as LTK response */
-  btm_ble_ltk_request_reply(p_cb->pairing_bda, true, p_data->key.p_data);
+  btm_ble_ltk_request_reply(p_cb->pairing_bda, true, stk);
 }
 
 /*******************************************************************************
@@ -585,10 +585,7 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   }
 }
 
-/*******************************************************************************
- * Function     smp_proc_confirm
- * Description  process pairing confirm from peer device
- ******************************************************************************/
+/** process pairing confirm from peer device */
 void smp_proc_confirm(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   uint8_t* p = p_data->p_data;
 
@@ -603,16 +600,13 @@ void smp_proc_confirm(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   if (p != NULL) {
     /* save the SConfirm for comparison later */
-    STREAM_TO_ARRAY(p_cb->rconfirm, p, BT_OCTET16_LEN);
+    STREAM_TO_ARRAY(p_cb->rconfirm.data(), p, OCTET16_LEN);
   }
 
   p_cb->flags |= SMP_PAIR_FLAGS_CMD_CONFIRM;
 }
 
-/*******************************************************************************
- * Function     smp_proc_init
- * Description  process pairing initializer from peer device
- ******************************************************************************/
+/** process pairing initializer from peer device */
 void smp_proc_init(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   uint8_t* p = p_data->p_data;
 
@@ -626,7 +620,7 @@ void smp_proc_init(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   }
 
   /* save the SRand for comparison */
-  STREAM_TO_ARRAY(p_cb->rrand, p, BT_OCTET16_LEN);
+  STREAM_TO_ARRAY(p_cb->rrand.data(), p, OCTET16_LEN);
 }
 
 /*******************************************************************************
@@ -646,7 +640,7 @@ void smp_proc_rand(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   }
 
   /* save the SRand for comparison */
-  STREAM_TO_ARRAY(p_cb->rrand, p, BT_OCTET16_LEN);
+  STREAM_TO_ARRAY(p_cb->rrand.data(), p, OCTET16_LEN);
 }
 
 /*******************************************************************************
@@ -695,7 +689,7 @@ void smp_process_pairing_commitment(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   p_cb->flags |= SMP_PAIR_FLAG_HAVE_PEER_COMM;
 
   if (p != NULL) {
-    STREAM_TO_ARRAY(p_cb->remote_commitment, p, BT_OCTET16_LEN);
+    STREAM_TO_ARRAY(p_cb->remote_commitment.data(), p, OCTET16_LEN);
   }
 }
 
@@ -716,7 +710,7 @@ void smp_process_dhkey_check(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   }
 
   if (p != NULL) {
-    STREAM_TO_ARRAY(p_cb->remote_dhkey_check, p, BT_OCTET16_LEN);
+    STREAM_TO_ARRAY(p_cb->remote_dhkey_check.data(), p, OCTET16_LEN);
   }
 
   p_cb->flags |= SMP_PAIR_FLAG_HAVE_PEER_DHK_CHK;
@@ -895,22 +889,17 @@ void smp_br_select_next_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   }
 }
 
-/*******************************************************************************
- * Function     smp_proc_enc_info
- * Description  process encryption information from peer device
- ******************************************************************************/
+/** process encryption information from peer device */
 void smp_proc_enc_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   uint8_t* p = p_data->p_data;
 
   SMP_TRACE_DEBUG("%s", __func__);
-  STREAM_TO_ARRAY(p_cb->ltk, p, BT_OCTET16_LEN);
+  STREAM_TO_ARRAY(p_cb->ltk.data(), p, OCTET16_LEN);
 
   smp_key_distribution(p_cb, NULL);
 }
-/*******************************************************************************
- * Function     smp_proc_master_id
- * Description  process master ID from slave device
- ******************************************************************************/
+
+/** process master ID from slave device */
 void smp_proc_master_id(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   uint8_t* p = p_data->p_data;
   tBTM_LE_PENC_KEYS le_key;
@@ -922,7 +911,7 @@ void smp_proc_master_id(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   STREAM_TO_ARRAY(le_key.rand, p, BT_OCTET8_LEN);
 
   /* store the encryption keys from peer device */
-  memcpy(le_key.ltk, p_cb->ltk, BT_OCTET16_LEN);
+  le_key.ltk = p_cb->ltk;
   le_key.sec_level = p_cb->sec_level;
   le_key.key_size = p_cb->loc_enc_size;
 
@@ -934,22 +923,16 @@ void smp_proc_master_id(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   smp_key_distribution(p_cb, NULL);
 }
 
-/*******************************************************************************
- * Function     smp_proc_enc_info
- * Description  process identity information from peer device
- ******************************************************************************/
+/** process identity information from peer device */
 void smp_proc_id_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   uint8_t* p = p_data->p_data;
 
   SMP_TRACE_DEBUG("%s", __func__);
-  STREAM_TO_ARRAY(p_cb->tk, p, BT_OCTET16_LEN); /* reuse TK for IRK */
+  STREAM_TO_ARRAY(p_cb->tk.data(), p, OCTET16_LEN); /* reuse TK for IRK */
   smp_key_distribution_by_transport(p_cb, NULL);
 }
 
-/*******************************************************************************
- * Function     smp_proc_id_addr
- * Description  process identity address from peer device
- ******************************************************************************/
+/** process identity address from peer device */
 void smp_proc_id_addr(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   uint8_t* p = p_data->p_data;
   tBTM_LE_PID_KEYS pid_key;
@@ -959,7 +942,7 @@ void smp_proc_id_addr(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   STREAM_TO_UINT8(pid_key.addr_type, p);
   STREAM_TO_BDADDR(pid_key.static_addr, p);
-  memcpy(pid_key.irk, p_cb->tk, BT_OCTET16_LEN);
+  pid_key.irk = p_cb->tk;
 
   /* to use as BD_ADDR for lk derived from ltk */
   p_cb->id_addr_rcvd = true;
@@ -974,10 +957,7 @@ void smp_proc_id_addr(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   smp_key_distribution_by_transport(p_cb, NULL);
 }
 
-/*******************************************************************************
- * Function     smp_proc_srk_info
- * Description  process security information from peer device
- ******************************************************************************/
+/* process security information from peer device */
 void smp_proc_srk_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   tBTM_LE_PCSRK_KEYS le_key;
 
@@ -988,7 +968,7 @@ void smp_proc_srk_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   le_key.sec_level = p_cb->sec_level;
 
   /* get peer CSRK */
-  maybe_non_aligned_memcpy(le_key.csrk, p_data->p_data, BT_OCTET16_LEN);
+  maybe_non_aligned_memcpy(le_key.csrk.data(), p_data->p_data, OCTET16_LEN);
 
   /* initialize the peer counter */
   le_key.counter = 0;
@@ -1006,7 +986,7 @@ void smp_proc_srk_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  ******************************************************************************/
 void smp_proc_compare(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   SMP_TRACE_DEBUG("%s", __func__);
-  if (!memcmp(p_cb->rconfirm, p_data->key.p_data, BT_OCTET16_LEN)) {
+  if (!memcmp(p_cb->rconfirm.data(), p_data->key.p_data, OCTET16_LEN)) {
     /* compare the max encryption key size, and save the smaller one for the
      * link */
     if (p_cb->peer_enc_size < p_cb->loc_enc_size)
@@ -1056,10 +1036,12 @@ void smp_start_enc(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   tBTM_STATUS cmd;
 
   SMP_TRACE_DEBUG("%s", __func__);
-  if (p_data != NULL)
-    cmd = btm_ble_start_encrypt(p_cb->pairing_bda, true, p_data->key.p_data);
-  else
+  if (p_data != NULL) {
+    cmd = btm_ble_start_encrypt(p_cb->pairing_bda, true,
+                                (Octet16*)p_data->key.p_data);
+  } else {
     cmd = btm_ble_start_encrypt(p_cb->pairing_bda, false, NULL);
+  }
 
   if (cmd != BTM_CMD_STARTED && cmd != BTM_BUSY) {
     tSMP_INT_DATA smp_int_data;
@@ -1244,10 +1226,10 @@ void smp_decide_association_model(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
         tSMP_KEY key;
         key.key_type = SMP_KEY_TYPE_TK;
-        key.p_data = p_cb->tk;
+        key.p_data = p_cb->tk.data();
         smp_int_data.key = key;
 
-        memset(p_cb->tk, 0, BT_OCTET16_LEN);
+        p_cb->tk = {0};
         /* TK, ready  */
         int_evt = SMP_KEY_READY_EVT;
       }
@@ -1448,7 +1430,7 @@ void smp_start_secure_connection_phase1(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   switch (p_cb->selected_association_model) {
     case SMP_MODEL_SEC_CONN_JUSTWORKS:
     case SMP_MODEL_SEC_CONN_NUM_COMP:
-      memset(p_cb->local_random, 0, BT_OCTET16_LEN);
+      p_cb->local_random = {0};
       smp_start_nonce_generation(p_cb);
       break;
     case SMP_MODEL_SEC_CONN_PASSKEY_ENT:
@@ -1638,10 +1620,10 @@ void smp_process_peer_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  *              received from the peer DHKey check value.
  ******************************************************************************/
 void smp_match_dhkey_checks(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
-
   SMP_TRACE_DEBUG("%s", __func__);
 
-  if (memcmp(p_data->key.p_data, p_cb->remote_dhkey_check, BT_OCTET16_LEN)) {
+  if (memcmp(p_data->key.p_data, p_cb->remote_dhkey_check.data(),
+             OCTET16_LEN)) {
     SMP_TRACE_WARNING("dhkey chcks do no match");
     tSMP_INT_DATA smp_int_data;
     smp_int_data.status = SMP_DHKEY_CHK_FAIL;
@@ -1727,10 +1709,10 @@ void smp_start_passkey_verification(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   uint8_t* p = NULL;
 
   SMP_TRACE_DEBUG("%s", __func__);
-  p = p_cb->local_random;
+  p = p_cb->local_random.data();
   UINT32_TO_STREAM(p, p_data->passkey);
 
-  p = p_cb->peer_random;
+  p = p_cb->peer_random.data();
   UINT32_TO_STREAM(p, p_data->passkey);
 
   p_cb->round = 0;
@@ -1747,21 +1729,18 @@ void smp_process_secure_connection_oob_data(tSMP_CB* p_cb,
 
   tSMP_SC_OOB_DATA* p_sc_oob_data = &p_cb->sc_oob_data;
   if (p_sc_oob_data->loc_oob_data.present) {
-    memcpy(p_cb->local_random, p_sc_oob_data->loc_oob_data.randomizer,
-           sizeof(p_cb->local_random));
+    p_cb->local_random = p_sc_oob_data->loc_oob_data.randomizer;
   } else {
     SMP_TRACE_EVENT("%s: local OOB randomizer is absent", __func__);
-    memset(p_cb->local_random, 0, sizeof(p_cb->local_random));
+    p_cb->local_random = {0};
   }
 
   if (!p_sc_oob_data->peer_oob_data.present) {
     SMP_TRACE_EVENT("%s: peer OOB data is absent", __func__);
-    memset(p_cb->peer_random, 0, sizeof(p_cb->peer_random));
+    p_cb->peer_random = {0};
   } else {
-    memcpy(p_cb->peer_random, p_sc_oob_data->peer_oob_data.randomizer,
-           sizeof(p_cb->peer_random));
-    memcpy(p_cb->remote_commitment, p_sc_oob_data->peer_oob_data.commitment,
-           sizeof(p_cb->remote_commitment));
+    p_cb->peer_random = p_sc_oob_data->peer_oob_data.randomizer;
+    p_cb->remote_commitment = p_sc_oob_data->peer_oob_data.commitment;
 
     /* check commitment */
     if (!smp_check_commitment(p_cb)) {
@@ -1777,7 +1756,7 @@ void smp_process_secure_connection_oob_data(tSMP_CB* p_cb,
       SMP_TRACE_EVENT(
           "%s: peer didn't receive local OOB data, set local randomizer to 0",
           __func__);
-      memset(p_cb->local_random, 0, sizeof(p_cb->local_random));
+      p_cb->local_random = {0};
     }
   }
 
@@ -1809,12 +1788,12 @@ void smp_set_local_oob_keys(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  ******************************************************************************/
 void smp_set_local_oob_random_commitment(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   SMP_TRACE_DEBUG("%s", __func__);
-  memcpy(p_cb->sc_oob_data.loc_oob_data.randomizer, p_cb->rand, BT_OCTET16_LEN);
+  p_cb->sc_oob_data.loc_oob_data.randomizer = p_cb->rand;
 
-  smp_calculate_f4(p_cb->sc_oob_data.loc_oob_data.publ_key_used.x,
-                   p_cb->sc_oob_data.loc_oob_data.publ_key_used.x,
-                   p_cb->sc_oob_data.loc_oob_data.randomizer, 0,
-                   p_cb->sc_oob_data.loc_oob_data.commitment);
+  p_cb->sc_oob_data.loc_oob_data.commitment =
+      smp_calculate_f4(p_cb->sc_oob_data.loc_oob_data.publ_key_used.x,
+                       p_cb->sc_oob_data.loc_oob_data.publ_key_used.x,
+                       p_cb->sc_oob_data.loc_oob_data.randomizer, 0);
 
 #if (SMP_DEBUG == TRUE)
   uint8_t* p_print = NULL;
@@ -1832,9 +1811,9 @@ void smp_set_local_oob_random_commitment(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   smp_debug_print_nbyte_little_endian(p_print, "publ_key_used.y",
                                       BT_OCTET32_LEN);
   p_print = (uint8_t*)&p_cb->sc_oob_data.loc_oob_data.randomizer;
-  smp_debug_print_nbyte_little_endian(p_print, "randomizer", BT_OCTET16_LEN);
+  smp_debug_print_nbyte_little_endian(p_print, "randomizer", OCTET16_LEN);
   p_print = (uint8_t*)&p_cb->sc_oob_data.loc_oob_data.commitment;
-  smp_debug_print_nbyte_little_endian(p_print, "commitment", BT_OCTET16_LEN);
+  smp_debug_print_nbyte_little_endian(p_print, "commitment", OCTET16_LEN);
   SMP_TRACE_DEBUG("");
 #endif
 

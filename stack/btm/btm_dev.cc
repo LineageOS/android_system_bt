@@ -60,7 +60,7 @@
  ******************************************************************************/
 bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
                       BD_NAME bd_name, uint8_t* features,
-                      uint32_t trusted_mask[], LINK_KEY link_key,
+                      uint32_t trusted_mask[], LinkKey* p_link_key,
                       uint8_t key_type, tBTM_IO_CAP io_cap,
                       uint8_t pin_length) {
   BTM_TRACE_API("%s: link key type:%x", __func__, key_type);
@@ -120,10 +120,10 @@ bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
 
   BTM_SEC_COPY_TRUSTED_DEVICE(trusted_mask, p_dev_rec->trusted_mask);
 
-  if (link_key) {
+  if (p_link_key) {
     VLOG(2) << __func__ << ": BDA: " << bd_addr;
     p_dev_rec->sec_flags |= BTM_SEC_LINK_KEY_KNOWN;
-    memcpy(p_dev_rec->link_key, link_key, LINK_KEY_LEN);
+    p_dev_rec->link_key = *p_link_key;
     p_dev_rec->link_key_type = key_type;
     p_dev_rec->pin_code_length = pin_length;
 

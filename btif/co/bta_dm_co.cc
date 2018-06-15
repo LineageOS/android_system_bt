@@ -137,7 +137,7 @@ void bta_dm_co_lk_upgrade(UNUSED_ATTR const RawAddress& bd_addr,
  * Returns          void.
  *
  ******************************************************************************/
-void bta_dm_co_loc_oob(bool valid, BT_OCTET16 c, BT_OCTET16 r) {
+void bta_dm_co_loc_oob(bool valid, const Octet16& c, const Octet16& r) {
   BTIF_TRACE_DEBUG("bta_dm_co_loc_oob, valid = %d", valid);
 #ifdef BTIF_DM_OOB_TEST
   btif_dm_proc_loc_oob(valid, c, r);
@@ -158,16 +158,16 @@ void bta_dm_co_loc_oob(bool valid, BT_OCTET16 c, BT_OCTET16 r) {
  *
  ******************************************************************************/
 void bta_dm_co_rmt_oob(const RawAddress& bd_addr) {
-  BT_OCTET16 p_c;
-  BT_OCTET16 p_r;
+  Octet16 c;
+  Octet16 r;
   bool result = false;
 
 #ifdef BTIF_DM_OOB_TEST
-  result = btif_dm_proc_rmt_oob(bd_addr, p_c, p_r);
+  result = btif_dm_proc_rmt_oob(bd_addr, &c, &r);
 #endif
 
   BTIF_TRACE_DEBUG("bta_dm_co_rmt_oob: result=%d", result);
-  bta_dm_ci_rmt_oob(result, bd_addr, p_c, p_r);
+  bta_dm_ci_rmt_oob(result, bd_addr, c, r);
 }
 
 /*******************************************************************************
@@ -212,13 +212,13 @@ void bta_dm_co_le_io_key_req(UNUSED_ATTR const RawAddress& bd_addr,
  *
  ******************************************************************************/
 void bta_dm_co_ble_load_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK* p_key_mask,
-                                   BT_OCTET16 er,
+                                   Octet16* p_er,
                                    tBTA_BLE_LOCAL_ID_KEYS* p_id_keys) {
   BTIF_TRACE_DEBUG("##################################");
   BTIF_TRACE_DEBUG(
       "bta_dm_co_ble_load_local_keys:  Load local keys if any are persisted");
   BTIF_TRACE_DEBUG("##################################");
-  btif_dm_get_ble_local_keys(p_key_mask, er, p_id_keys);
+  btif_dm_get_ble_local_keys(p_key_mask, p_er, p_id_keys);
 }
 
 /*******************************************************************************
