@@ -596,8 +596,10 @@ bool A2dpCodecs::init() {
     }
 
     // In offload mode, disable the codecs based on the property
-    if (a2dp_offload_status && (offload_codec_support[i] != true))
+    if ((codec_index < BTAV_A2DP_CODEC_INDEX_SOURCE_MAX) &&
+        a2dp_offload_status && (offload_codec_support[i] != true)) {
       codec_priority = BTAV_A2DP_CODEC_PRIORITY_DISABLED;
+    }
 
     A2dpCodecConfig* codec_config =
         A2dpCodecConfig::createCodec(codec_index, codec_priority);
