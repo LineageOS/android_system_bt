@@ -111,7 +111,7 @@ bool DatabaseBuilder::StartNextServiceExploration() {
     services_to_discover.erase(handle_range);
 
     // Empty service declaration, nothing to explore, skip to next.
-    if (handle_range->first == handle_range->second) continue;
+    if (pending_service.first == pending_service.second) continue;
 
     pending_characteristic = HANDLE_MIN;
     return true;
