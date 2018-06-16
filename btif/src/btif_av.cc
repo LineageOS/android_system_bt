@@ -1684,7 +1684,8 @@ void BtifAvStateMachine::StateOpened::OnEnter() {
   BTIF_TRACE_DEBUG("%s: Peer %s", __PRETTY_FUNCTION__,
                    peer_.PeerAddress().ToString().c_str());
 
-  peer_.ClearFlags(BtifAvPeer::kFlagPendingStart |
+  peer_.ClearFlags(BtifAvPeer::kFlagLocalSuspendPending |
+                   BtifAvPeer::kFlagPendingStart |
                    BtifAvPeer::kFlagPendingStop);
 
   // Set the active peer if the first connected device.
@@ -2017,6 +2018,8 @@ bool BtifAvStateMachine::StateStarted::ProcessEvent(uint32_t event,
                peer_.FlagsToString().c_str());
 
       peer_.SetFlags(BtifAvPeer::kFlagPendingStop);
+      peer_.ClearFlags(BtifAvPeer::kFlagLocalSuspendPending);
+
       btif_a2dp_on_stopped(&p_av->suspend);
 
       btif_report_audio_state(peer_.PeerAddress(), BTAV_AUDIO_STATE_STOPPED);
