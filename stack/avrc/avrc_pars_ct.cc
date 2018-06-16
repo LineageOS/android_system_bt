@@ -137,6 +137,9 @@ void avrc_parse_notification_rsp(uint8_t* p_stream,
       break;
 
     case AVRC_EVT_ADDR_PLAYER_CHANGE:
+      BE_STREAM_TO_UINT16(p_rsp->param.addr_player.player_id, p_stream);
+      BE_STREAM_TO_UINT16(p_rsp->param.addr_player.uid_counter, p_stream);
+
       break;
 
     case AVRC_EVT_UIDS_CHANGE:
