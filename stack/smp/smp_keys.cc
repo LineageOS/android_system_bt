@@ -115,6 +115,7 @@ void smp_encrypt_data(BT_OCTET16 key, uint8_t* message, uint8_t length,
   if (length > SMP_ENCRYT_DATA_SIZE) length = SMP_ENCRYT_DATA_SIZE;
 
   uint8_t p_start[SMP_ENCRYT_DATA_SIZE * 4];
+  memset(p_start, 0, SMP_ENCRYT_DATA_SIZE * 4);
   p = p_start;
   ARRAY_TO_STREAM(p, message, length);             /* byte 0 to byte 15 */
   p_rev_data = p = p_start + SMP_ENCRYT_DATA_SIZE; /* start at byte 16 */
