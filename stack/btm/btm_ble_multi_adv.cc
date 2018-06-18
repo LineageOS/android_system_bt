@@ -202,14 +202,14 @@ class BleAdvertisingManagerImpl
 
     BT_OCTET16 irk;
     BTM_GetDeviceIDRoot(irk);
-    tSMP_ENC output;
 
-    SMP_Encrypt(irk, rand, 3, &output);
+    BT_OCTET16 output;
+    SMP_Encrypt(irk, rand, 3, output);
 
     /* set hash to be LSB of rpAddress */
-    bda.address[5] = output.param_buf[0];
-    bda.address[4] = output.param_buf[1];
-    bda.address[3] = output.param_buf[2];
+    bda.address[5] = output[0];
+    bda.address[4] = output[1];
+    bda.address[3] = output[2];
 
     cb.Run(bda);
   }

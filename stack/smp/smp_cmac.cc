@@ -123,7 +123,7 @@ static void cmac_aes_cleanup(void) {
  ******************************************************************************/
 static void cmac_aes_k_calculate(BT_OCTET16 key, uint8_t* p_signature,
                                  uint16_t tlen) {
-  tSMP_ENC output;
+  BT_OCTET16 output;
   uint8_t i = 1;
   uint8_t x[16] = {0};
   uint8_t* p_mac;
@@ -135,13 +135,13 @@ static void cmac_aes_k_calculate(BT_OCTET16 key, uint8_t* p_signature,
                 x); /* Mi' := Mi (+) X  */
 
     SMP_Encrypt(key, &cmac_cb.text[(cmac_cb.round - i) * BT_OCTET16_LEN],
-                BT_OCTET16_LEN, &output);
+                BT_OCTET16_LEN, output);
 
-    memcpy(x, output.param_buf, BT_OCTET16_LEN);
+    memcpy(x, output, BT_OCTET16_LEN);
     i++;
   }
 
-  p_mac = output.param_buf + (BT_OCTET16_LEN - tlen);
+  p_mac = output + (BT_OCTET16_LEN - tlen);
   memcpy(p_signature, p_mac, tlen);
 
   SMP_TRACE_DEBUG("tlen = %d p_mac = %d", tlen, p_mac);
@@ -184,19 +184,11 @@ static void cmac_prepare_last_block(BT_OCTET16 k1, BT_OCTET16 k2) {
     smp_xor_128(&cmac_cb.text[0], k2);
   }
 }
-/*******************************************************************************
- *
- * Function         cmac_subkey_cont
- *
- * Description      This is the callback function when CIPHk(0[128]) is
- *                  completed.
- *
- * Returns          void
- *
- ******************************************************************************/
-static void cmac_subkey_cont(tSMP_ENC* p) {
+
+/* This is the callback function when CIPHk(0[128]) is completed. */
+static void cmac_subkey_cont(BT_OCTET16 p) {
   uint8_t k1[BT_OCTET16_LEN], k2[BT_OCTET16_LEN];
-  uint8_t* pp = p->param_buf;
+  uint8_t* pp = p;
   SMP_TRACE_EVENT("cmac_subkey_cont ");
   print128(pp, (const uint8_t*)"K1 before shift");
 
@@ -233,12 +225,12 @@ static void cmac_subkey_cont(tSMP_ENC* p) {
  *
  ******************************************************************************/
 static void cmac_generate_subkey(BT_OCTET16 key) {
-  BT_OCTET16 z = {0};
-  tSMP_ENC output;
   SMP_TRACE_EVENT(" cmac_generate_subkey");
 
-  SMP_Encrypt(key, z, BT_OCTET16_LEN, &output);
-  cmac_subkey_cont(&output);
+  BT_OCTET16 z = {0};
+  BT_OCTET16 output;
+  SMP_Encrypt(key, z, BT_OCTET16_LEN, output);
+  cmac_subkey_cont(output);
 }
 /*******************************************************************************
  *
