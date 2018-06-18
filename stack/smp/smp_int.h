@@ -345,29 +345,6 @@ extern void smp_init(void);
 extern void smp_sm_event(tSMP_CB* p_cb, tSMP_EVENT event,
                          tSMP_INT_DATA* p_data);
 
-extern void smp_proc_sec_request(tSMP_CB* p_cb, tSMP_INT_DATA* p_data);
-extern void smp_set_fail_nc(bool enable);
-extern void smp_set_fail_conf(bool enable);
-extern void smp_set_passk_entry_fail(bool enable);
-extern void smp_set_oob_fail(bool enable);
-extern void smp_set_peer_sc_notif(bool enable);
-extern void smp_aes_cmac_rfc4493_chk(uint8_t* key, uint8_t* msg,
-                                     uint8_t msg_len, uint8_t mac_len,
-                                     uint8_t* mac);
-extern void smp_f4_calc_chk(uint8_t* U, uint8_t* V, uint8_t* X, uint8_t* Z,
-                            uint8_t* mac);
-extern void smp_g2_calc_chk(uint8_t* U, uint8_t* V, uint8_t* X, uint8_t* Y);
-extern void smp_h6_calc_chk(uint8_t* key, uint8_t* key_id, uint8_t* mac);
-extern void smp_f5_key_calc_chk(uint8_t* w, uint8_t* mac);
-extern void smp_f5_mackey_or_ltk_calc_chk(uint8_t* t, uint8_t* counter,
-                                          uint8_t* key_id, uint8_t* n1,
-                                          uint8_t* n2, uint8_t* a1, uint8_t* a2,
-                                          uint8_t* length, uint8_t* mac);
-extern void smp_f5_calc_chk(uint8_t* w, uint8_t* n1, uint8_t* n2, uint8_t* a1,
-                            uint8_t* a2, uint8_t* mac_key, uint8_t* ltk);
-extern void smp_f6_calc_chk(uint8_t* w, uint8_t* n1, uint8_t* n2, uint8_t* r,
-                            uint8_t* iocap, uint8_t* a1, uint8_t* a2,
-                            uint8_t* mac);
 extern tSMP_STATE smp_get_state(void);
 extern void smp_set_state(tSMP_STATE state);
 
