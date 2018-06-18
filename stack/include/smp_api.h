@@ -174,23 +174,11 @@ extern void SMP_OobDataReply(const RawAddress& bd_addr, tSMP_STATUS res,
  ******************************************************************************/
 extern void SMP_SecureConnectionOobDataReply(uint8_t* p_data);
 
-/*******************************************************************************
- *
- * Function         SMP_Encrypt
- *
- * Description      Encrypt the data with the specified key.
- *
- * Parameters:      key                 - Pointer to key key conatins the MSB,
- *                                        must be 128bit
- *                  plain_text          - Pointer to data to be encrypted
- *                                        plain_text[0] conatins the MSB
- *                  pt_len              - plain text length
- *                  p_out               - pointer to the encrypted outputs
- *
- *  Returns         Boolean - true: encryption is successful
- ******************************************************************************/
-extern void SMP_Encrypt(uint8_t* key, uint8_t* plain_text, uint8_t pt_len,
-                        tSMP_ENC* p_out);
+/* This function computes AES_128(key, message). |key| must be 128bit.
+ * |message| can be at most 16 bytes long, it's length in bytes is given in
+ * |length| */
+extern void SMP_Encrypt(BT_OCTET16 key, uint8_t* message, uint8_t length,
+                        BT_OCTET16 p_out);
 
 /*******************************************************************************
  *

@@ -89,7 +89,7 @@ extern void smp_gen_p2_4_confirm(tSMP_CB* p_cb, const RawAddress& remote_bda,
                                  BT_OCTET16 p2);
 
 extern tSMP_STATUS smp_calculate_comfirm(tSMP_CB* p_cb, BT_OCTET16 rand,
-                                         tSMP_ENC* output);
+                                         BT_OCTET16 output);
 
 namespace testing {
 
@@ -204,24 +204,24 @@ TEST_F(SmpCalculateConfirmTest, test_SMP_Encrypt_as_master) {
   char p1_xor_r_str[2 * sizeof(BT_OCTET16) + 1];
   dump_uint128_reverse(p1, p1_xor_r_str);
   ASSERT_THAT(p1_xor_r_str, StrEq(expected_p1_xor_r_str));
-  tSMP_ENC output;
-  memset(&output, 0, sizeof(tSMP_ENC));
-  SMP_Encrypt(p_cb_.tk, p1, BT_OCTET16_LEN, &output);
+  BT_OCTET16 output;
+  memset(&output, 0, BT_OCTET16_LEN);
+  SMP_Encrypt(p_cb_.tk, p1, BT_OCTET16_LEN, output);
   const char expected_p1_prime_str[] = "02c7aa2a9857ac866ff91232df0e3c95";
   char p1_prime_str[2 * sizeof(BT_OCTET16) + 1];
-  dump_uint128_reverse(output.param_buf, p1_prime_str);
+  dump_uint128_reverse(output, p1_prime_str);
   ASSERT_THAT(p1_prime_str, StrEq(expected_p1_prime_str));
 }
 
 // Test smp_calculate_comfirm function implementation
 TEST_F(SmpCalculateConfirmTest, test_smp_calculate_comfirm_as_master) {
-  tSMP_ENC output;
-  tSMP_STATUS status = smp_calculate_comfirm(&p_cb_, rand_, &output);
+  BT_OCTET16 output;
+  tSMP_STATUS status = smp_calculate_comfirm(&p_cb_, rand_, output);
   EXPECT_EQ(status, SMP_SUCCESS);
   // Correct MConfirm is 0x1e1e3fef878988ead2a74dc5bef13b86
   const char expected_confirm_str[] = "1e1e3fef878988ead2a74dc5bef13b86";
   char confirm_str[2 * sizeof(BT_OCTET16) + 1];
-  dump_uint128_reverse(output.param_buf, confirm_str);
+  dump_uint128_reverse(output, confirm_str);
   ASSERT_THAT(confirm_str, StrEq(expected_confirm_str));
 }
 
