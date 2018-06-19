@@ -60,15 +60,15 @@ void bta_dm_ci_io_req(const RawAddress& bd_addr, tBTA_IO_CAP io_cap,
  * Returns          void
  *
  ******************************************************************************/
-void bta_dm_ci_rmt_oob(bool accept, const RawAddress& bd_addr, BT_OCTET16 c,
-                       BT_OCTET16 r) {
+void bta_dm_ci_rmt_oob(bool accept, const RawAddress& bd_addr, const Octet16& c,
+                       const Octet16& r) {
   std::unique_ptr<tBTA_DM_CI_RMT_OOB> msg =
       std::make_unique<tBTA_DM_CI_RMT_OOB>();
 
   msg->bd_addr = bd_addr;
   msg->accept = accept;
-  memcpy(msg->c, c, BT_OCTET16_LEN);
-  memcpy(msg->r, r, BT_OCTET16_LEN);
+  msg->c = c;
+  msg->r = r;
 
   do_in_bta_thread(FROM_HERE,
                    base::Bind(bta_dm_ci_rmt_oob_act, base::Passed(&msg)));

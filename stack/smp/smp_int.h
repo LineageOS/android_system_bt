@@ -273,18 +273,18 @@ typedef struct {
   uint8_t cb_evt;
   tSMP_SEC_LEVEL sec_level;
   bool connect_initialized;
-  BT_OCTET16 confirm;
-  BT_OCTET16 rconfirm;
-  BT_OCTET16 rrand; /* for SC this is peer nonce */
-  BT_OCTET16 rand;  /* for SC this is local nonce */
+  Octet16 confirm;
+  Octet16 rconfirm;
+  Octet16 rrand; /* for SC this is peer nonce */
+  Octet16 rand;  /* for SC this is local nonce */
   BT_OCTET32 private_key;
   BT_OCTET32 dhkey;
-  BT_OCTET16 commitment;
-  BT_OCTET16 remote_commitment;
-  BT_OCTET16 local_random; /* local randomizer - passkey or OOB randomizer */
-  BT_OCTET16 peer_random;  /* peer randomizer - passkey or OOB randomizer */
-  BT_OCTET16 dhkey_check;
-  BT_OCTET16 remote_dhkey_check;
+  Octet16 commitment;
+  Octet16 remote_commitment;
+  Octet16 local_random; /* local randomizer - passkey or OOB randomizer */
+  Octet16 peer_random;  /* peer randomizer - passkey or OOB randomizer */
+  Octet16 dhkey_check;
+  Octet16 remote_dhkey_check;
   tSMP_PUBLIC_KEY loc_publ_key;
   tSMP_PUBLIC_KEY peer_publ_key;
   tSMP_OOB_DATA_TYPE req_oob_type;
@@ -307,7 +307,7 @@ typedef struct {
   uint8_t
       round; /* authentication stage 1 round for passkey association model */
   uint32_t number_to_display;
-  BT_OCTET16 mac_key;
+  Octet16 mac_key;
   uint8_t peer_enc_size;
   uint8_t loc_enc_size;
   uint8_t peer_i_key;
@@ -315,10 +315,10 @@ typedef struct {
   uint8_t local_i_key;
   uint8_t local_r_key;
 
-  BT_OCTET16 tk;
-  BT_OCTET16 ltk;
+  Octet16 tk;
+  Octet16 ltk;
   uint16_t div;
-  BT_OCTET16 csrk; /* storage for local CSRK */
+  Octet16 csrk; /* storage for local CSRK */
   uint16_t ediv;
   BT_OCTET8 enc_rand;
   uint8_t addr_type;
@@ -470,13 +470,13 @@ extern bool smp_send_cmd(uint8_t cmd_code, tSMP_CB* p_cb);
 extern void smp_cb_cleanup(tSMP_CB* p_cb);
 extern void smp_reset_control_value(tSMP_CB* p_cb);
 extern void smp_proc_pairing_cmpl(tSMP_CB* p_cb);
-extern void smp_convert_string_to_tk(BT_OCTET16 tk, uint32_t passkey);
-extern void smp_mask_enc_key(uint8_t loc_enc_size, uint8_t* p_data);
+extern void smp_convert_string_to_tk(Octet16* tk, uint32_t passkey);
+extern void smp_mask_enc_key(uint8_t loc_enc_size, Octet16* p_data);
 extern void smp_rsp_timeout(void* data);
 extern void smp_delayed_auth_complete_timeout(void* data);
-extern void smp_xor_128(BT_OCTET16 a, BT_OCTET16 b);
-extern void smp_encrypt_data(BT_OCTET16 key, uint8_t* message, uint8_t length,
-                             BT_OCTET16 p_out);
+extern void smp_xor_128(Octet16* a, const Octet16& b);
+extern Octet16 smp_encrypt_data(const Octet16& key, uint8_t* message,
+                                uint8_t length);
 extern bool smp_command_has_invalid_parameters(tSMP_CB* p_cb);
 extern void smp_reject_unexpected_pairing_command(const RawAddress& bd_addr);
 extern tSMP_ASSO_MODEL smp_select_association_model(tSMP_CB* p_cb);
@@ -504,7 +504,7 @@ extern void smp_create_private_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data);
 extern void smp_use_oob_private_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data);
 extern void smp_compute_dhkey(tSMP_CB* p_cb);
 extern void smp_calculate_local_commitment(tSMP_CB* p_cb);
-extern void smp_calculate_peer_commitment(tSMP_CB* p_cb, BT_OCTET16 output_buf);
+extern Octet16 smp_calculate_peer_commitment(tSMP_CB* p_cb);
 extern void smp_calculate_numeric_comparison_display_number(
     tSMP_CB* p_cb, tSMP_INT_DATA* p_data);
 extern void smp_calculate_local_dhkey_check(tSMP_CB* p_cb,
@@ -514,27 +514,35 @@ extern void smp_calculate_peer_dhkey_check(tSMP_CB* p_cb,
 extern void smp_start_nonce_generation(tSMP_CB* p_cb);
 extern bool smp_calculate_link_key_from_long_term_key(tSMP_CB* p_cb);
 extern bool smp_calculate_long_term_key_from_link_key(tSMP_CB* p_cb);
-extern void smp_calculate_f4(uint8_t* u, uint8_t* v, uint8_t* x, uint8_t z,
-                             uint8_t* c);
-extern uint32_t smp_calculate_g2(uint8_t* u, uint8_t* v, uint8_t* x,
-                                 uint8_t* y);
-extern void smp_calculate_f5(uint8_t* w, uint8_t* n1, uint8_t* n2, uint8_t* a1,
-                             uint8_t* a2, uint8_t* mac_key, uint8_t* ltk);
-extern void smp_calculate_f5_mackey_or_long_term_key(
-    uint8_t* t, uint8_t* counter, uint8_t* key_id, uint8_t* n1, uint8_t* n2,
-    uint8_t* a1, uint8_t* a2, uint8_t* length, uint8_t* mac);
-extern void smp_calculate_f5_key(uint8_t* w, uint8_t* t);
-extern void smp_calculate_f6(uint8_t* w, uint8_t* n1, uint8_t* n2, uint8_t* r,
-                             uint8_t* iocap, uint8_t* a1, uint8_t* a2,
-                             uint8_t* f3);
-extern void smp_calculate_h6(uint8_t* w, uint8_t* keyid, uint8_t* h2);
-extern void smp_calculate_h7(uint8_t* salt, uint8_t* w, uint8_t* h2);
+extern Octet16 smp_calculate_f4(uint8_t* u, uint8_t* v, const Octet16& x,
+                                uint8_t z);
+extern uint32_t smp_calculate_g2(uint8_t* u, uint8_t* v, const Octet16& x,
+                                 const Octet16& y);
+extern void smp_calculate_f5(uint8_t* w, const Octet16& n1, const Octet16& n2,
+                             uint8_t* a1, uint8_t* a2, Octet16* mac_key,
+                             Octet16* ltk);
+extern Octet16 smp_calculate_f5_mackey_or_long_term_key(
+    const Octet16& t, uint8_t* counter, uint8_t* key_id, const Octet16& n1,
+    const Octet16& n2, uint8_t* a1, uint8_t* a2, uint8_t* length);
+extern Octet16 smp_calculate_f5_key(uint8_t* w);
+extern Octet16 smp_calculate_f6(const Octet16& w, const Octet16& n1,
+                                const Octet16& n2, const Octet16& r,
+                                uint8_t* iocap, uint8_t* a1, uint8_t* a2);
+extern Octet16 smp_calculate_h6(const Octet16& w, uint8_t* keyid);
+extern Octet16 smp_calculate_h7(const Octet16& salt, const Octet16& w);
 #if (SMP_DEBUG == TRUE)
 extern void smp_debug_print_nbyte_little_endian(uint8_t* p,
                                                 const char* key_name,
                                                 uint8_t len);
+
+inline void smp_debug_print_nbyte_little_endian(const Octet16& p,
+                                                const char* key_name,
+                                                uint8_t len) {
+  smp_debug_print_nbyte_little_endian(const_cast<uint8_t*>(p.data()), key_name,
+                                      len);
+}
 #endif
 
-extern void print128(BT_OCTET16 x, const uint8_t* key_name);
+extern void print128(const Octet16& x, const uint8_t* key_name);
 
 #endif /* SMP_INT_H */

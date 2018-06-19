@@ -35,15 +35,37 @@
 #include "btm_ble_int.h"
 #include "smp_api.h"
 
-/** callback - resolvable private address generation is complete */
-static void btm_gen_resolve_paddr_cmpl(BT_OCTET16 p) {
-  tBTM_LE_RANDOM_CB* p_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
-  BTM_TRACE_EVENT("%s", __func__);
+/* This function generates Resolvable Private Address (RPA) from Identity
+ * Resolving Key |irk| and |random|*/
+RawAddress generate_rpa_from_irk_and_rand(const Octet16& irk,
+                                          BT_OCTET8 random) {
+  random[2] &= (~BLE_RESOLVE_ADDR_MASK);
+  random[2] |= BLE_RESOLVE_ADDR_MSB;
+
+  RawAddress address;
+  address.address[2] = random[0];
+  address.address[1] = random[1];
+  address.address[0] = random[2];
+
+  /* encrypt with IRK */
+  Octet16 p = SMP_Encrypt(irk, random, 3);
 
   /* set hash to be LSB of rpAddress */
-  p_cb->private_addr.address[5] = p[0];
-  p_cb->private_addr.address[4] = p[1];
-  p_cb->private_addr.address[3] = p[2];
+  address.address[5] = p[0];
+  address.address[4] = p[1];
+  address.address[3] = p[2];
+  return address;
+}
+
+/** This function is called when random address for local controller was
+ * generated */
+void btm_gen_resolve_paddr_low(const RawAddress& address) {
+  tBTM_LE_RANDOM_CB* p_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
+
+  BTM_TRACE_EVENT("btm_gen_resolve_paddr_low");
+
+  p_cb->private_addr = address;
+
   /* set it to controller */
   btm_ble_set_random_address(p_cb->private_addr);
 
@@ -57,46 +79,20 @@ static void btm_gen_resolve_paddr_cmpl(BT_OCTET16 p) {
   alarm_set_on_mloop(p_cb->refresh_raddr_timer, interval_ms,
                      btm_ble_refresh_raddr_timer_timeout, NULL);
 }
-/*******************************************************************************
- *
- * Function         btm_gen_resolve_paddr_low
- *
- * Description      This function is called when random address has generate the
- *                  random number base for low 3 byte bd address.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_gen_resolve_paddr_low(BT_OCTET8 rand) {
-  tBTM_LE_RANDOM_CB* p_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
 
-  BTM_TRACE_EVENT("btm_gen_resolve_paddr_low");
-  rand[2] &= (~BLE_RESOLVE_ADDR_MASK);
-  rand[2] |= BLE_RESOLVE_ADDR_MSB;
-
-  p_cb->private_addr.address[2] = rand[0];
-  p_cb->private_addr.address[1] = rand[1];
-  p_cb->private_addr.address[0] = rand[2];
-
-  /* encrypt with ur IRK */
-  BT_OCTET16 output;
-  SMP_Encrypt(btm_cb.devcb.id_keys.irk, rand, 3, output);
-  btm_gen_resolve_paddr_cmpl(output);
-}
-/*******************************************************************************
- *
- * Function         btm_gen_resolvable_private_addr
- *
- * Description      This function generate a resolvable private address.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_gen_resolvable_private_addr(base::Callback<void(BT_OCTET8)> cb) {
+/** This function generate a resolvable private address using local IRK */
+void btm_gen_resolvable_private_addr(
+    base::Callback<void(const RawAddress&)> cb) {
   BTM_TRACE_EVENT("%s", __func__);
   /* generate 3B rand as BD LSB, SRK with it, get BD MSB */
-  btsnd_hcic_ble_rand(std::move(cb));
+  btsnd_hcic_ble_rand(base::Bind(
+      [](base::Callback<void(const RawAddress&)> cb, BT_OCTET8 random) {
+        const Octet16& irk = BTM_GetDeviceIDRoot();
+        cb.Run(generate_rpa_from_irk_and_rand(irk, random));
+      },
+      std::move(cb)));
 }
+
 /*******************************************************************************
  *
  * Function         btm_gen_non_resolve_paddr_cmpl
@@ -151,25 +147,6 @@ void btm_gen_non_resolvable_private_addr(tBTM_BLE_ADDR_CBACK* p_cback,
 /*******************************************************************************
  *  Utility functions for Random address resolving
  ******************************************************************************/
-/* This function compares the X with random address 3 MSO bytes to find a match
- */
-static bool btm_ble_proc_resolve_x(const BT_OCTET16 encrypt_output,
-                                   const RawAddress& random_bda) {
-  BTM_TRACE_EVENT("btm_ble_proc_resolve_x");
-
-  /* compare the hash with 3 LSB of bd address */
-  uint8_t comp[3];
-  comp[0] = random_bda.address[5];
-  comp[1] = random_bda.address[4];
-  comp[2] = random_bda.address[3];
-
-  if (!memcmp(encrypt_output, comp, 3)) {
-    BTM_TRACE_EVENT("match is found");
-    return true;
-  }
-
-  return false;
-}
 
 /*******************************************************************************
  *
@@ -191,69 +168,55 @@ bool btm_ble_init_pseudo_addr(tBTM_SEC_DEV_REC* p_dev_rec,
   return false;
 }
 
-/*******************************************************************************
- *
- * Function         btm_ble_addr_resolvable
- *
- * Description      This function checks if a RPA is resolvable by the device
- *                  key.
- *
- * Returns          true is resolvable; false otherwise.
- *
- ******************************************************************************/
+/* Return true if given Resolvable Privae Address |rpa| matches Identity
+ * Resolving Key |irk| */
+static bool rpa_matches_irk(const RawAddress& rpa, const Octet16& irk) {
+  /* use the 3 MSB of bd address as prand */
+  uint8_t rand[3];
+  rand[0] = rpa.address[2];
+  rand[1] = rpa.address[1];
+  rand[2] = rpa.address[0];
+
+  /* generate X = E irk(R0, R1, R2) and R is random address 3 LSO */
+  Octet16 x = SMP_Encrypt(irk, &rand[0], 3);
+
+  rand[0] = rpa.address[5];
+  rand[1] = rpa.address[4];
+  rand[2] = rpa.address[3];
+
+  if (memcmp(x.data(), &rand[0], 3) == 0) {
+    // match
+    return true;
+  }
+  // not a match
+  return false;
+}
+
+/** This function checks if a RPA is resolvable by the device key.
+ *  Returns true is resolvable; false otherwise.
+ */
 bool btm_ble_addr_resolvable(const RawAddress& rpa,
                              tBTM_SEC_DEV_REC* p_dev_rec) {
-  bool rt = false;
+  if (!BTM_BLE_IS_RESOLVE_BDA(rpa)) return false;
 
-  if (!BTM_BLE_IS_RESOLVE_BDA(rpa)) return rt;
-
-  uint8_t rand[3];
   if ((p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) &&
       (p_dev_rec->ble.key_type & BTM_LE_KEY_PID)) {
     BTM_TRACE_DEBUG("%s try to resolve", __func__);
-    /* use the 3 MSB of bd address as prand */
-    rand[0] = rpa.address[2];
-    rand[1] = rpa.address[1];
-    rand[2] = rpa.address[0];
 
-    /* generate X = E irk(R0, R1, R2) and R is random address 3 LSO */
-    BT_OCTET16 output;
-    SMP_Encrypt(p_dev_rec->ble.keys.irk, &rand[0], 3, output);
-
-    rand[0] = rpa.address[5];
-    rand[1] = rpa.address[4];
-    rand[2] = rpa.address[3];
-
-    if (!memcmp(output, &rand[0], 3)) {
+    if (rpa_matches_irk(rpa, p_dev_rec->ble.keys.irk)) {
       btm_ble_init_pseudo_addr(p_dev_rec, rpa);
-      rt = true;
+      return true;
     }
   }
-  return rt;
+  return false;
 }
 
-/*******************************************************************************
- *
- * Function         btm_ble_match_random_bda
- *
- * Description      This function match the random address to the appointed
- *                  device record, starting from calculating IRK. If the record
- *                  index exceeds the maximum record number, matching failed and
- *                  send a callback.
- *
- * Returns          None.
- *
- ******************************************************************************/
+/** This function match the random address to the appointed device record,
+ * starting from calculating IRK. If the record index exceeds the maximum record
+ * number, matching failed and send a callback. */
 static bool btm_ble_match_random_bda(void* data, void* context) {
-  RawAddress* random_bda = (RawAddress*)context;
-  /* use the 3 MSB of bd address as prand */
-
-  uint8_t rand[3];
-  rand[0] = random_bda->address[2];
-  rand[1] = random_bda->address[1];
-  rand[2] = random_bda->address[0];
-
   BTM_TRACE_EVENT("%s next iteration", __func__);
+  RawAddress* random_bda = (RawAddress*)context;
 
   tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(data);
 
@@ -264,23 +227,20 @@ static bool btm_ble_match_random_bda(void* data, void* context) {
       !(p_dev_rec->ble.key_type & BTM_LE_KEY_PID))
     return true;
 
-  /* generate X = E irk(R0, R1, R2) and R is random address 3 LSO */
-  BT_OCTET16 output;
-  SMP_Encrypt(p_dev_rec->ble.keys.irk, &rand[0], 3, output);
-  // if it was match, finish iteration, otherwise continue
-  return !btm_ble_proc_resolve_x(output, *random_bda);
+  if (rpa_matches_irk(*random_bda, p_dev_rec->ble.keys.irk)) {
+    BTM_TRACE_EVENT("match is found");
+    // if it was match, finish iteration, otherwise continue
+    return false;
+  }
+
+  // not a match, continue iteration
+  return true;
 }
 
-/*******************************************************************************
- *
- * Function         btm_ble_resolve_random_addr
- *
- * Description      This function is called to resolve a random address.
- *
- * Returns          pointer to the security record of the device whom a random
- *                  address is matched to.
- *
- ******************************************************************************/
+/** This function is called to resolve a random address.
+ * Returns pointer to the security record of the device whom a random address is
+ * matched to.
+ */
 tBTM_SEC_DEV_REC* btm_ble_resolve_random_addr(const RawAddress& random_bda) {
   BTM_TRACE_EVENT("%s", __func__);
 
