@@ -21,7 +21,7 @@
 
 #include "stack/include/smp_api.h"
 #include "stack/smp/aes.h"
-#include "stack/smp/smp_int.h"
+#include "stack/smp/crypto_toolbox.h"
 
 #include <base/logging.h>
 #include <base/strings/string_number_conversions.h>
@@ -289,7 +289,7 @@ TEST(CryptoToolboxTest, bt_spec_example_d_6_test) {
   std::reverse(std::begin(keyID), std::end(keyID));
   std::reverse(std::begin(expected_aes_cmac), std::end(expected_aes_cmac));
 
-  Octet16 aes_cmac = smp_calculate_h6(key, keyID.data());
+  Octet16 aes_cmac = smp_calculate_h6(key, keyID);
   EXPECT_EQ(aes_cmac, expected_aes_cmac);
 }
 

@@ -155,6 +155,7 @@ cc_library_static {
         "sdp/sdp_main.cc",
         "sdp/sdp_server.cc",
         "sdp/sdp_utils.cc",
+        "smp/crypto_toolbox.cc",
         "smp/aes.cc",
         "smp/p_256_curvepara.cc",
         "smp/p_256_ecc_pp.cc",
@@ -293,6 +294,7 @@ cc_test {
     ],
     srcs: [
         "smp/smp_keys.cc",
+        "smp/crypto_toolbox.cc",
         "smp/aes.cc",
         "smp/smp_api.cc",
         "smp/smp_cmac.cc",
