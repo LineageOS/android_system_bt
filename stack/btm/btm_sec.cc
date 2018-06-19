@@ -224,7 +224,6 @@ static bool btm_serv_trusted(tBTM_SEC_DEV_REC* p_dev_rec,
  *
  ******************************************************************************/
 bool BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info) {
-  BT_OCTET16 temp_value = {0};
 
   BTM_TRACE_EVENT("%s application registered", __func__);
 
@@ -233,8 +232,9 @@ bool BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info) {
   if (p_cb_info->p_le_callback) {
     BTM_TRACE_EVENT("%s SMP_Register( btm_proc_smp_cback )", __func__);
     SMP_Register(btm_proc_smp_cback);
+    Octet16 zero{0};
     /* if no IR is loaded, need to regenerate all the keys */
-    if (memcmp(btm_cb.devcb.id_keys.ir, &temp_value, sizeof(BT_OCTET16)) == 0) {
+    if (btm_cb.devcb.id_keys.ir == zero) {
       btm_ble_reset_id();
     }
   } else {
@@ -1169,15 +1169,15 @@ tBTM_STATUS BTM_SecBondCancel(const RawAddress& bd_addr) {
  *                  the device or device record does not contain link key info
  *
  * Parameters:      bd_addr      - Address of the device
- *                  link_key     - Link Key is copied into this array
+ *                  link_key     - Link Key is copied into this pointer
  *
  ******************************************************************************/
 tBTM_STATUS BTM_SecGetDeviceLinkKey(const RawAddress& bd_addr,
-                                    LINK_KEY link_key) {
+                                    LinkKey* link_key) {
   tBTM_SEC_DEV_REC* p_dev_rec;
   p_dev_rec = btm_find_dev(bd_addr);
   if ((p_dev_rec != NULL) && (p_dev_rec->sec_flags & BTM_SEC_LINK_KEY_KNOWN)) {
-    memcpy(link_key, p_dev_rec->link_key, LINK_KEY_LEN);
+    *link_key = p_dev_rec->link_key;
     return (BTM_SUCCESS);
   }
   return (BTM_UNKNOWN_ADDR);
@@ -1558,7 +1558,7 @@ void BTM_ReadLocalOobData(void) { btsnd_hcic_read_local_oob_data(); }
  *
  ******************************************************************************/
 void BTM_RemoteOobDataReply(tBTM_STATUS res, const RawAddress& bd_addr,
-                            BT_OCTET16 c, BT_OCTET16 r) {
+                            const Octet16& c, const Octet16& r) {
   BTM_TRACE_EVENT("%s() - State: %s res: %d", __func__,
                   btm_pair_state_descr(btm_cb.pairing_state), res);
 
@@ -1596,8 +1596,8 @@ void BTM_RemoteOobDataReply(tBTM_STATUS res, const RawAddress& bd_addr,
  * Returns          Number of bytes in p_data.
  *
  ******************************************************************************/
-uint16_t BTM_BuildOobData(uint8_t* p_data, uint16_t max_len, BT_OCTET16 c,
-                          BT_OCTET16 r, uint8_t name_len) {
+uint16_t BTM_BuildOobData(uint8_t* p_data, uint16_t max_len, const Octet16& c,
+                          const Octet16& r, uint8_t name_len) {
   uint8_t* p = p_data;
   uint16_t len = 0;
   uint16_t name_size;
@@ -1618,7 +1618,7 @@ uint16_t BTM_BuildOobData(uint8_t* p_data, uint16_t max_len, BT_OCTET16 c,
     if (max_len >= delta) {
       *p++ = BTM_OOB_HASH_C_SIZE + 1;
       *p++ = BTM_EIR_OOB_SSP_HASH_C_TYPE;
-      ARRAY_TO_STREAM(p, c, BTM_OOB_HASH_C_SIZE);
+      ARRAY_TO_STREAM(p, c.data(), BTM_OOB_HASH_C_SIZE);
       len += delta;
       max_len -= delta;
     }
@@ -1628,7 +1628,7 @@ uint16_t BTM_BuildOobData(uint8_t* p_data, uint16_t max_len, BT_OCTET16 c,
     if (max_len >= delta) {
       *p++ = BTM_OOB_RAND_R_SIZE + 1;
       *p++ = BTM_EIR_OOB_SSP_RAND_R_TYPE;
-      ARRAY_TO_STREAM(p, r, BTM_OOB_RAND_R_SIZE);
+      ARRAY_TO_STREAM(p, r.data(), BTM_OOB_RAND_R_SIZE);
       len += delta;
       max_len -= delta;
     }
@@ -3602,8 +3602,8 @@ void btm_simple_pair_complete(uint8_t* p) {
 void btm_rem_oob_req(uint8_t* p) {
   tBTM_SP_RMT_OOB evt_data;
   tBTM_SEC_DEV_REC* p_dev_rec;
-  BT_OCTET16 c;
-  BT_OCTET16 r;
+  Octet16 c;
+  Octet16 r;
 
   RawAddress& p_bda = evt_data.bd_addr;
 
@@ -3648,8 +3648,8 @@ void btm_read_local_oob_complete(uint8_t* p) {
   BTM_TRACE_EVENT("btm_read_local_oob_complete:%d", status);
   if (status == HCI_SUCCESS) {
     evt_data.status = BTM_SUCCESS;
-    STREAM_TO_ARRAY16(evt_data.c, p);
-    STREAM_TO_ARRAY16(evt_data.r, p);
+    STREAM_TO_ARRAY16(evt_data.c.data(), p);
+    STREAM_TO_ARRAY16(evt_data.r.data(), p);
   } else
     evt_data.status = BTM_ERR_PROCESSING;
 
@@ -4551,18 +4551,9 @@ void btm_sec_disconnected(uint16_t handle, uint8_t reason) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         btm_sec_link_key_notification
- *
- * Description      This function is called when a new connection link key is
- *                  generated
- *
- * Returns          Pointer to the record or NULL
- *
- ******************************************************************************/
-void btm_sec_link_key_notification(const RawAddress& p_bda, uint8_t* p_link_key,
-                                   uint8_t key_type) {
+/** This function is called when a new connection link key is generated */
+void btm_sec_link_key_notification(const RawAddress& p_bda,
+                                   const Octet16& link_key, uint8_t key_type) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(p_bda);
   bool we_are_bonding = false;
   bool ltk_derived_lk = false;
@@ -4595,7 +4586,7 @@ void btm_sec_link_key_notification(const RawAddress& p_bda, uint8_t* p_link_key,
 
   /* BR/EDR connection, update the encryption key size to be 16 as always */
   p_dev_rec->enc_key_size = 16;
-  memcpy(p_dev_rec->link_key, p_link_key, LINK_KEY_LEN);
+  p_dev_rec->link_key = link_key;
 
   if ((btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
       (btm_cb.pairing_bda == p_bda)) {
@@ -4611,7 +4602,7 @@ void btm_sec_link_key_notification(const RawAddress& p_bda, uint8_t* p_link_key,
       BTM_TRACE_DEBUG("%s() Save LTK derived LK (key_type = %d)", __func__,
                       p_dev_rec->link_key_type);
       (*btm_cb.api.p_link_key_callback)(p_bda, p_dev_rec->dev_class,
-                                        p_dev_rec->sec_bd_name, p_link_key,
+                                        p_dev_rec->sec_bd_name, link_key,
                                         p_dev_rec->link_key_type);
     }
   } else {
@@ -4675,7 +4666,7 @@ void btm_sec_link_key_notification(const RawAddress& p_bda, uint8_t* p_link_key,
             p_dev_rec->link_key_type);
       } else {
         (*btm_cb.api.p_link_key_callback)(p_bda, p_dev_rec->dev_class,
-                                          p_dev_rec->sec_bd_name, p_link_key,
+                                          p_dev_rec->sec_bd_name, link_key,
                                           p_dev_rec->link_key_type);
       }
     }

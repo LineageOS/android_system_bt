@@ -279,7 +279,7 @@ typedef struct {
   uint8_t status;
   uint8_t param_len;
   uint16_t opcode;
-  uint8_t param_buf[BT_OCTET16_LEN];
+  uint8_t param_buf[OCTET16_LEN];
 } tBTM_RAND_ENC;
 
 /* General callback function for notifying an application that a synchronous

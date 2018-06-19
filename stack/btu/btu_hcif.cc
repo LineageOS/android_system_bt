@@ -1381,11 +1381,11 @@ static void btu_hcif_link_key_request_evt(uint8_t* p) {
  ******************************************************************************/
 static void btu_hcif_link_key_notification_evt(uint8_t* p) {
   RawAddress bda;
-  LINK_KEY key;
+  Octet16 key;
   uint8_t key_type;
 
   STREAM_TO_BDADDR(bda, p);
-  STREAM_TO_ARRAY16(key, p);
+  STREAM_TO_ARRAY16(key.data(), p);
   STREAM_TO_UINT8(key_type, p);
 
   btm_sec_link_key_notification(bda, key, key_type);

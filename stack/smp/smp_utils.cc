@@ -37,20 +37,21 @@
 #include "smp_int.h"
 
 #define SMP_PAIRING_REQ_SIZE 7
-#define SMP_CONFIRM_CMD_SIZE (BT_OCTET16_LEN + 1)
-#define SMP_RAND_CMD_SIZE (BT_OCTET16_LEN + 1)
-#define SMP_INIT_CMD_SIZE (BT_OCTET16_LEN + 1)
-#define SMP_ENC_INFO_SIZE (BT_OCTET16_LEN + 1)
+#define SMP_CONFIRM_CMD_SIZE (OCTET16_LEN + 1)
+#define SMP_RAND_CMD_SIZE (OCTET16_LEN + 1)
+#define SMP_INIT_CMD_SIZE (OCTET16_LEN + 1)
+#define SMP_ENC_INFO_SIZE (OCTET16_LEN + 1)
 #define SMP_MASTER_ID_SIZE (BT_OCTET8_LEN + 2 + 1)
-#define SMP_ID_INFO_SIZE (BT_OCTET16_LEN + 1)
+#define SMP_ID_INFO_SIZE (OCTET16_LEN + 1)
 #define SMP_ID_ADDR_SIZE (BD_ADDR_LEN + 1 + 1)
-#define SMP_SIGN_INFO_SIZE (BT_OCTET16_LEN + 1)
+#define SMP_SIGN_INFO_SIZE (OCTET16_LEN + 1)
 #define SMP_PAIR_FAIL_SIZE 2
 #define SMP_SECURITY_REQUEST_SIZE 2
 #define SMP_PAIR_PUBL_KEY_SIZE (1 /* opcode */ + (2 * BT_OCTET32_LEN))
-#define SMP_PAIR_COMMITM_SIZE (1 /* opcode */ + BT_OCTET16_LEN /*Commitment*/)
+#define SMP_PAIR_COMMITM_SIZE (1 /* opcode */ + OCTET16_LEN /*Commitment*/)
 #define SMP_PAIR_DHKEY_CHECK_SIZE \
-  (1 /* opcode */ + BT_OCTET16_LEN /*DHKey Check*/)
+  (1 /* opcode */ + OCTET16_LEN /*DHKey \
+                                                                   Check*/)
 #define SMP_PAIR_KEYPR_NOTIF_SIZE (1 /* opcode */ + 1 /*Notif Type*/)
 
 /* SMP command sizes per spec */
@@ -453,7 +454,7 @@ static BT_HDR* smp_build_confirm_cmd(UNUSED_ATTR uint8_t cmd_code,
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
   UINT8_TO_STREAM(p, SMP_OPCODE_CONFIRM);
-  ARRAY_TO_STREAM(p, p_cb->confirm, BT_OCTET16_LEN);
+  ARRAY_TO_STREAM(p, p_cb->confirm, OCTET16_LEN);
 
   p_buf->offset = L2CAP_MIN_OFFSET;
   p_buf->len = SMP_CONFIRM_CMD_SIZE;
@@ -477,7 +478,7 @@ static BT_HDR* smp_build_rand_cmd(UNUSED_ATTR uint8_t cmd_code, tSMP_CB* p_cb) {
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_RAND);
-  ARRAY_TO_STREAM(p, p_cb->rand, BT_OCTET16_LEN);
+  ARRAY_TO_STREAM(p, p_cb->rand, OCTET16_LEN);
 
   p_buf->offset = L2CAP_MIN_OFFSET;
   p_buf->len = SMP_RAND_CMD_SIZE;
@@ -502,7 +503,7 @@ static BT_HDR* smp_build_encrypt_info_cmd(UNUSED_ATTR uint8_t cmd_code,
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_ENCRYPT_INFO);
-  ARRAY_TO_STREAM(p, p_cb->ltk, BT_OCTET16_LEN);
+  ARRAY_TO_STREAM(p, p_cb->ltk, OCTET16_LEN);
 
   p_buf->offset = L2CAP_MIN_OFFSET;
   p_buf->len = SMP_ENC_INFO_SIZE;
@@ -546,7 +547,6 @@ static BT_HDR* smp_build_master_id_cmd(UNUSED_ATTR uint8_t cmd_code,
 static BT_HDR* smp_build_identity_info_cmd(UNUSED_ATTR uint8_t cmd_code,
                                            UNUSED_ATTR tSMP_CB* p_cb) {
   uint8_t* p;
-  BT_OCTET16 irk;
   BT_HDR* p_buf =
       (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_ID_INFO_SIZE + L2CAP_MIN_OFFSET);
 
@@ -554,10 +554,10 @@ static BT_HDR* smp_build_identity_info_cmd(UNUSED_ATTR uint8_t cmd_code,
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
-  BTM_GetDeviceIDRoot(irk);
+  const Octet16& irk = BTM_GetDeviceIDRoot();
 
   UINT8_TO_STREAM(p, SMP_OPCODE_IDENTITY_INFO);
-  ARRAY_TO_STREAM(p, irk, BT_OCTET16_LEN);
+  ARRAY_TO_STREAM(p, irk.data(), OCTET16_LEN);
 
   p_buf->offset = L2CAP_MIN_OFFSET;
   p_buf->len = SMP_ID_INFO_SIZE;
@@ -608,7 +608,7 @@ static BT_HDR* smp_build_signing_info_cmd(UNUSED_ATTR uint8_t cmd_code,
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_SIGN_INFO);
-  ARRAY_TO_STREAM(p, p_cb->csrk, BT_OCTET16_LEN);
+  ARRAY_TO_STREAM(p, p_cb->csrk, OCTET16_LEN);
 
   p_buf->offset = L2CAP_MIN_OFFSET;
   p_buf->len = SMP_SIGN_INFO_SIZE;
@@ -715,7 +715,7 @@ static BT_HDR* smp_build_pairing_commitment_cmd(UNUSED_ATTR uint8_t cmd_code,
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_CONFIRM);
-  ARRAY_TO_STREAM(p, p_cb->commitment, BT_OCTET16_LEN);
+  ARRAY_TO_STREAM(p, p_cb->commitment, OCTET16_LEN);
 
   p_buf->offset = L2CAP_MIN_OFFSET;
   p_buf->len = SMP_PAIR_COMMITM_SIZE;
@@ -740,7 +740,7 @@ static BT_HDR* smp_build_pair_dhkey_check_cmd(UNUSED_ATTR uint8_t cmd_code,
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_PAIR_DHKEY_CHECK);
-  ARRAY_TO_STREAM(p, p_cb->dhkey_check, BT_OCTET16_LEN);
+  ARRAY_TO_STREAM(p, p_cb->dhkey_check, OCTET16_LEN);
 
   p_buf->offset = L2CAP_MIN_OFFSET;
   p_buf->len = SMP_PAIR_DHKEY_CHECK_SIZE;
@@ -773,66 +773,43 @@ static BT_HDR* smp_build_pairing_keypress_notification_cmd(
   return p_buf;
 }
 
-/*******************************************************************************
- *
- * Function         smp_convert_string_to_tk
- *
- * Description      This function is called to convert a 6 to 16 digits numeric
- *                  character string into SMP TK.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void smp_convert_string_to_tk(BT_OCTET16 tk, uint32_t passkey) {
-  uint8_t* p = tk;
+/** This function is called to convert a 6 to 16 digits numeric character string
+ * into SMP TK. */
+void smp_convert_string_to_tk(Octet16* tk, uint32_t passkey) {
+  uint8_t* p = tk->data();
   tSMP_KEY key;
   SMP_TRACE_EVENT("smp_convert_string_to_tk");
   UINT32_TO_STREAM(p, passkey);
 
   key.key_type = SMP_KEY_TYPE_TK;
-  key.p_data = tk;
+  key.p_data = tk->data();
 
   tSMP_INT_DATA smp_int_data;
   smp_int_data.key = key;
   smp_sm_event(&smp_cb, SMP_KEY_READY_EVT, &smp_int_data);
 }
 
-/*******************************************************************************
- *
- * Function         smp_mask_enc_key
- *
- * Description      This function is called to mask off the encryption key based
- *                  on the maximum encryption key size.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void smp_mask_enc_key(uint8_t loc_enc_size, uint8_t* p_data) {
+/** This function is called to mask off the encryption key based on the maximum
+ * encryption key size. */
+void smp_mask_enc_key(uint8_t loc_enc_size, Octet16* p_data) {
   SMP_TRACE_EVENT("smp_mask_enc_key");
-  if (loc_enc_size < BT_OCTET16_LEN) {
-    for (; loc_enc_size < BT_OCTET16_LEN; loc_enc_size++)
-      *(p_data + loc_enc_size) = 0;
+  if (loc_enc_size < OCTET16_LEN) {
+    for (; loc_enc_size < OCTET16_LEN; loc_enc_size++)
+      (*p_data)[loc_enc_size] = 0;
   }
   return;
 }
 
-/*******************************************************************************
- *
- * Function         smp_xor_128
- *
- * Description      utility function to do an biteise exclusive-OR of two bit
- *                  strings of the length of BT_OCTET16_LEN.
- *
- * Returns          void
- *
- ******************************************************************************/
-void smp_xor_128(BT_OCTET16 a, BT_OCTET16 b) {
-  uint8_t i, *aa = a, *bb = b;
+/** utility function to do an biteise exclusive-OR of two bit strings of the
+ * length of OCTET16_LEN. Result is stored in first argument.
+ */
+void smp_xor_128(Octet16* a, const Octet16& b) {
+  CHECK(a);
+  uint8_t i, *aa = a->data();
+  const uint8_t* bb = b.data();
 
   SMP_TRACE_EVENT("smp_xor_128");
-  for (i = 0; i < BT_OCTET16_LEN; i++) {
+  for (i = 0; i < OCTET16_LEN; i++) {
     aa[i] = aa[i] ^ bb[i];
   }
 }
@@ -1408,15 +1385,14 @@ void smp_collect_peer_ble_address(uint8_t* le_addr, tSMP_CB* p_cb) {
  *
  ******************************************************************************/
 bool smp_check_commitment(tSMP_CB* p_cb) {
-  BT_OCTET16 expected;
 
   SMP_TRACE_DEBUG("%s", __func__);
 
-  smp_calculate_peer_commitment(p_cb, expected);
+  Octet16 expected = smp_calculate_peer_commitment(p_cb);
   print128(expected, (const uint8_t*)"calculated peer commitment");
   print128(p_cb->remote_commitment, (const uint8_t*)"received peer commitment");
 
-  if (memcmp(p_cb->remote_commitment, expected, BT_OCTET16_LEN)) {
+  if (memcmp(p_cb->remote_commitment.data(), expected.data(), OCTET16_LEN)) {
     SMP_TRACE_WARNING("%s: Commitment check fails", __func__);
     return false;
   }
@@ -1440,7 +1416,7 @@ void smp_save_secure_connections_long_term_key(tSMP_CB* p_cb) {
   tBTM_LE_PENC_KEYS ple_key;
 
   SMP_TRACE_DEBUG("%s-Save LTK as local LTK key", __func__);
-  memcpy(lle_key.ltk, p_cb->ltk, BT_OCTET16_LEN);
+  lle_key.ltk = p_cb->ltk;
   lle_key.div = 0;
   lle_key.key_size = p_cb->loc_enc_size;
   lle_key.sec_level = p_cb->sec_level;
@@ -1450,44 +1426,37 @@ void smp_save_secure_connections_long_term_key(tSMP_CB* p_cb) {
   SMP_TRACE_DEBUG("%s-Save LTK as peer LTK key", __func__);
   ple_key.ediv = 0;
   memset(ple_key.rand, 0, BT_OCTET8_LEN);
-  memcpy(ple_key.ltk, p_cb->ltk, BT_OCTET16_LEN);
+  ple_key.ltk = p_cb->ltk;
   ple_key.sec_level = p_cb->sec_level;
   ple_key.key_size = p_cb->loc_enc_size;
   btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PENC,
                       (tBTM_LE_KEY_VALUE*)&ple_key, true);
 }
 
-/*******************************************************************************
- *
- * Function         smp_calculate_f5_mackey_and_long_term_key
- *
- * Description      The function calculates MacKey and LTK and saves them in CB.
- *                  To calculate MacKey and LTK it calls smp_calc_f5(...).
- *                  MacKey is used in dhkey calculation, LTK is used to encrypt
- *                  the link.
- *
- ******************************************************************************/
+/** The function calculates MacKey and LTK and saves them in CB. To calculate
+ * MacKey and LTK it calls smp_calc_f5(...). MacKey is used in dhkey
+ * calculation, LTK is used to encrypt the link. */
 void smp_calculate_f5_mackey_and_long_term_key(tSMP_CB* p_cb) {
   uint8_t a[7];
   uint8_t b[7];
-  uint8_t* p_na;
-  uint8_t* p_nb;
+  Octet16 na;
+  Octet16 nb;
 
   SMP_TRACE_DEBUG("%s", __func__);
 
   if (p_cb->role == HCI_ROLE_MASTER) {
     smp_collect_local_ble_address(a, p_cb);
     smp_collect_peer_ble_address(b, p_cb);
-    p_na = p_cb->rand;
-    p_nb = p_cb->rrand;
+    na = p_cb->rand;
+    nb = p_cb->rrand;
   } else {
     smp_collect_local_ble_address(b, p_cb);
     smp_collect_peer_ble_address(a, p_cb);
-    p_na = p_cb->rrand;
-    p_nb = p_cb->rand;
+    na = p_cb->rrand;
+    nb = p_cb->rand;
   }
 
-  smp_calculate_f5(p_cb->dhkey, p_na, p_nb, a, b, p_cb->mac_key, p_cb->ltk);
+  smp_calculate_f5(p_cb->dhkey, na, nb, a, b, &p_cb->mac_key, &p_cb->ltk);
 
   SMP_TRACE_EVENT("%s is completed", __func__);
 }

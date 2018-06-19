@@ -196,43 +196,14 @@ extern tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
                                   tBTM_INQ_RESULTS_CB* p_results_cb,
                                   tBTM_CMPL_CB* p_cmpl_cb);
 
-/*******************************************************************************
- *
- * Function         BTM_GetDeviceIDRoot
- *
- * Description      This function is called to read the local device identity
- *                  root.
- *
- * Returns          void
- *                  the local device ER is copied into er
- *
- ******************************************************************************/
-extern void BTM_GetDeviceIDRoot(BT_OCTET16 ir);
+/** Returns local device encryption root (ER) */
+const Octet16& BTM_GetDeviceEncRoot();
 
-/*******************************************************************************
- *
- * Function         BTM_GetDeviceEncRoot
- *
- * Description      This function is called to read the local device encryption
- *                  root.
- *
- * Returns          void
- *                  the local device ER is copied into er
- *
- ******************************************************************************/
-extern void BTM_GetDeviceEncRoot(BT_OCTET16 er);
+/** Returns local device identity root (IR) */
+extern const Octet16& BTM_GetDeviceIDRoot();
 
-/*******************************************************************************
- *
- * Function         BTM_GetDeviceDHK
- *
- * Description      This function is called to read the local device DHK.
- *
- * Returns          void
- *                  the local device DHK is copied into dhk
- *
- ******************************************************************************/
-extern void BTM_GetDeviceDHK(BT_OCTET16 dhk);
+/** Return local device DHK. */
+extern const Octet16& BTM_GetDeviceDHK();
 
 /*******************************************************************************
  *
