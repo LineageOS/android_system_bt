@@ -105,7 +105,7 @@ extern void bta_dm_co_lk_upgrade(const RawAddress& bd_addr, bool* p_upgrade);
  * Returns          void.
  *
  ******************************************************************************/
-extern void bta_dm_co_loc_oob(bool valid, BT_OCTET16 c, BT_OCTET16 r);
+extern void bta_dm_co_loc_oob(bool valid, const Octet16& c, const Octet16& r);
 
 /*******************************************************************************
  *
@@ -207,7 +207,7 @@ extern void bta_dm_co_ble_io_req(
  *
  ******************************************************************************/
 extern void bta_dm_co_ble_load_local_keys(
-    tBTA_DM_BLE_LOCAL_KEY_MASK* p_key_mask, BT_OCTET16 er,
+    tBTA_DM_BLE_LOCAL_KEY_MASK* p_key_mask, Octet16* p_er,
     tBTA_BLE_LOCAL_ID_KEYS* p_id_keys);
 
 #endif /* BTA_DM_CO_H */

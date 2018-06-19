@@ -728,8 +728,8 @@ bool btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC* p_dev_rec) {
 
   btm_ble_update_resolving_list(p_dev_rec->bd_addr, true);
   if (controller_get_interface()->supports_ble_privacy()) {
-    uint8_t* peer_irk = p_dev_rec->ble.keys.irk;
-    uint8_t* local_irk = btm_cb.devcb.id_keys.irk;
+    const Octet16& peer_irk = p_dev_rec->ble.keys.irk;
+    const Octet16& local_irk = btm_cb.devcb.id_keys.irk;
 
     if (p_dev_rec->ble.static_addr.IsEmpty()) {
       p_dev_rec->ble.static_addr = p_dev_rec->bd_addr;
@@ -754,7 +754,7 @@ bool btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC* p_dev_rec) {
     uint8_t* p = param;
 
     UINT8_TO_STREAM(p, BTM_BLE_META_ADD_IRK_ENTRY);
-    ARRAY_TO_STREAM(p, p_dev_rec->ble.keys.irk, BT_OCTET16_LEN);
+    ARRAY_TO_STREAM(p, p_dev_rec->ble.keys.irk, OCTET16_LEN);
     UINT8_TO_STREAM(p, p_dev_rec->ble.static_addr_type);
     BDADDR_TO_STREAM(p, p_dev_rec->ble.static_addr);
 

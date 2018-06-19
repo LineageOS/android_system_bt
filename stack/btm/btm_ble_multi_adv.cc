@@ -44,7 +44,7 @@ using IdTxPowerStatusCb = base::Callback<void(
     uint8_t /* inst_id */, int8_t /* tx_power */, uint8_t /* status */)>;
 using SetEnableData = BleAdvertiserHciInterface::SetEnableData;
 extern void btm_gen_resolvable_private_addr(
-    base::Callback<void(uint8_t[8])> cb);
+    base::Callback<void(const RawAddress& rpa)> cb);
 
 constexpr int ADV_DATA_LEN_MAX = 251;
 
@@ -187,37 +187,8 @@ class BleAdvertisingManagerImpl
     }
   }
 
-  void OnRpaGenerationComplete(base::Callback<void(RawAddress)> cb,
-                               uint8_t rand[8]) {
-    VLOG(1) << __func__;
-
-    RawAddress bda;
-
-    rand[2] &= (~BLE_RESOLVE_ADDR_MASK);
-    rand[2] |= BLE_RESOLVE_ADDR_MSB;
-
-    bda.address[2] = rand[0];
-    bda.address[1] = rand[1];
-    bda.address[0] = rand[2];
-
-    BT_OCTET16 irk;
-    BTM_GetDeviceIDRoot(irk);
-
-    BT_OCTET16 output;
-    SMP_Encrypt(irk, rand, 3, output);
-
-    /* set hash to be LSB of rpAddress */
-    bda.address[5] = output[0];
-    bda.address[4] = output[1];
-    bda.address[3] = output[2];
-
-    cb.Run(bda);
-  }
-
-  void GenerateRpa(base::Callback<void(RawAddress)> cb) {
-    btm_gen_resolvable_private_addr(
-        Bind(&BleAdvertisingManagerImpl::OnRpaGenerationComplete,
-             weak_factory_.GetWeakPtr(), std::move(cb)));
+  void GenerateRpa(base::Callback<void(const RawAddress&)> cb) {
+    btm_gen_resolvable_private_addr(std::move(cb));
   }
 
   void ConfigureRpa(AdvertisingInstance* p_inst, MultiAdvCb configuredCb) {
@@ -235,7 +206,7 @@ class BleAdvertisingManagerImpl
 
     GenerateRpa(Bind(
         [](AdvertisingInstance* p_inst, MultiAdvCb configuredCb,
-           RawAddress bda) {
+           const RawAddress& bda) {
           /* Connectable advertising set must be disabled when updating RPA */
           bool restart = p_inst->IsEnabled() && p_inst->IsConnectable();
 
@@ -284,7 +255,7 @@ class BleAdvertisingManagerImpl
             [](AdvertisingInstance* p_inst,
                base::Callback<void(uint8_t /* inst_id */, uint8_t /* status */)>
                    cb,
-               RawAddress bda) {
+               const RawAddress& bda) {
               p_inst->own_address = bda;
 
               alarm_set_on_mloop(p_inst->adv_raddr_timer,

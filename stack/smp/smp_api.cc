@@ -328,7 +328,7 @@ void SMP_PasskeyReply(const RawAddress& bd_addr, uint8_t res,
     smp_int_data.passkey = passkey;
     smp_sm_event(&smp_cb, SMP_SC_KEY_READY_EVT, &smp_int_data);
   } else {
-    smp_convert_string_to_tk(p_cb->tk, passkey);
+    smp_convert_string_to_tk(&p_cb->tk, passkey);
   }
 
   return;
@@ -406,12 +406,12 @@ void SMP_OobDataReply(const RawAddress& bd_addr, tSMP_STATUS res, uint8_t len,
     smp_int_data.status = SMP_OOB_FAIL;
     smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
   } else {
-    if (len > BT_OCTET16_LEN) len = BT_OCTET16_LEN;
+    if (len > OCTET16_LEN) len = OCTET16_LEN;
 
-    memcpy(p_cb->tk, p_data, len);
+    memcpy(p_cb->tk.data(), p_data, len);
 
     key.key_type = SMP_KEY_TYPE_TK;
-    key.p_data = p_cb->tk;
+    key.p_data = p_cb->tk.data();
 
     tSMP_INT_DATA smp_int_data;
     smp_int_data.key = key;
@@ -485,9 +485,8 @@ void SMP_SecureConnectionOobDataReply(uint8_t* p_data) {
 /* This function computes AES_128(key, message). |key| must be 128bit.
  * |message| can be at most 16 bytes long, it's length in bytes is given in
  * |length| */
-void SMP_Encrypt(BT_OCTET16 key, uint8_t* message, uint8_t length,
-                 BT_OCTET16 p_out) {
-  smp_encrypt_data(key, message, length, p_out);
+Octet16 SMP_Encrypt(const Octet16& key, uint8_t* message, uint8_t length) {
+  return smp_encrypt_data(key, message, length);
 }
 
 /*******************************************************************************

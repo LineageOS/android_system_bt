@@ -80,7 +80,7 @@ extern void btm_ble_link_sec_check(const RawAddress& bd_addr,
                                    tBTM_LE_AUTH_REQ auth_req,
                                    tBTM_BLE_SEC_REQ_ACT* p_sec_req_act);
 extern void btm_ble_ltk_request_reply(const RawAddress& bda, bool use_stk,
-                                      BT_OCTET16 stk);
+                                      const Octet16& stk);
 extern uint8_t btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr,
                                   tSMP_EVT_DATA* p_data);
 extern tBTM_STATUS btm_ble_set_encryption(const RawAddress& bd_addr,
@@ -89,7 +89,7 @@ extern tBTM_STATUS btm_ble_set_encryption(const RawAddress& bd_addr,
 extern void btm_ble_ltk_request(uint16_t handle, uint8_t rand[8],
                                 uint16_t ediv);
 extern tBTM_STATUS btm_ble_start_encrypt(const RawAddress& bda, bool use_stk,
-                                         BT_OCTET16 stk);
+                                         Octet16* p_stk);
 extern void btm_ble_link_encrypted(const RawAddress& bd_addr,
                                    uint8_t encr_enable);
 
@@ -154,12 +154,13 @@ extern void btm_ble_enqueue_direct_conn_req(void* p_param);
 extern void btm_ble_dequeue_direct_conn_req(const RawAddress& rem_bda);
 
 /* BLE address management */
-extern void btm_gen_resolvable_private_addr(base::Callback<void(BT_OCTET8)> cb);
+extern void btm_gen_resolvable_private_addr(
+    base::Callback<void(const RawAddress& rpa)> cb);
 extern void btm_gen_non_resolvable_private_addr(tBTM_BLE_ADDR_CBACK* p_cback,
                                                 void* p);
 extern tBTM_SEC_DEV_REC* btm_ble_resolve_random_addr(
     const RawAddress& random_bda);
-extern void btm_gen_resolve_paddr_low(BT_OCTET8 rand);
+extern void btm_gen_resolve_paddr_low(const RawAddress& address);
 
 /*  privacy function */
 #if (BLE_PRIVACY_SPT == TRUE)
