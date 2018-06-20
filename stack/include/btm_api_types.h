@@ -1806,63 +1806,6 @@ typedef struct {
 
 } tBTM_DELETE_STORED_LINK_KEY_COMPLETE;
 
-/* MIP evnets, callbacks    */
-enum {
-  BTM_MIP_MODE_CHG_EVT,
-  BTM_MIP_DISCONNECT_EVT,
-  BTM_MIP_PKTS_COMPL_EVT,
-  BTM_MIP_RXDATA_EVT
-};
-typedef uint8_t tBTM_MIP_EVT;
-
-typedef struct {
-  tBTM_MIP_EVT event;
-  RawAddress bd_addr;
-  uint16_t mip_id;
-} tBTM_MIP_MODE_CHANGE;
-
-typedef struct {
-  tBTM_MIP_EVT event;
-  uint16_t mip_id;
-  uint8_t disc_reason;
-} tBTM_MIP_CONN_TIMEOUT;
-
-#define BTM_MIP_MAX_RX_LEN 17
-
-typedef struct {
-  tBTM_MIP_EVT event;
-  uint16_t mip_id;
-  uint8_t rx_len;
-  uint8_t rx_data[BTM_MIP_MAX_RX_LEN];
-} tBTM_MIP_RXDATA;
-
-typedef struct {
-  tBTM_MIP_EVT event;
-  RawAddress bd_addr;
-  uint8_t data[11]; /* data[0] shows Vender-specific device type */
-} tBTM_MIP_EIR_HANDSHAKE;
-
-typedef struct {
-  tBTM_MIP_EVT event;
-  uint16_t num_sent; /* Completed packet count at the controller */
-} tBTM_MIP_PKTS_COMPL;
-
-typedef union {
-  tBTM_MIP_EVT event;
-  tBTM_MIP_MODE_CHANGE mod_chg;
-  tBTM_MIP_CONN_TIMEOUT conn_tmo;
-  tBTM_MIP_EIR_HANDSHAKE eir;
-  tBTM_MIP_PKTS_COMPL completed;
-  tBTM_MIP_RXDATA rxdata;
-} tBTM_MIP_EVENT_DATA;
-
-/* MIP event callback function  */
-typedef void(tBTM_MIP_EVENTS_CB)(tBTM_MIP_EVT event, tBTM_MIP_EVENT_DATA data);
-
-/* MIP Device query callback function  */
-typedef bool(tBTM_MIP_QUERY_CB)(const RawAddress& dev_addr, uint8_t* p_mode,
-                                LinkKey link_key);
-
 /* ACL link on, SCO link ongoing, sniff mode */
 #define BTM_CONTRL_ACTIVE 1
 /* Scan state - paging/inquiry/trying to connect*/
