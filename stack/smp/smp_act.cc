@@ -1805,9 +1805,9 @@ void smp_set_local_oob_random_commitment(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   p_cb->sc_oob_data.loc_oob_data.randomizer = p_cb->rand;
 
   p_cb->sc_oob_data.loc_oob_data.commitment =
-      smp_calculate_f4(p_cb->sc_oob_data.loc_oob_data.publ_key_used.x,
-                       p_cb->sc_oob_data.loc_oob_data.publ_key_used.x,
-                       p_cb->sc_oob_data.loc_oob_data.randomizer, 0);
+      crypto_toolbox::f4(p_cb->sc_oob_data.loc_oob_data.publ_key_used.x,
+                         p_cb->sc_oob_data.loc_oob_data.publ_key_used.x,
+                         p_cb->sc_oob_data.loc_oob_data.randomizer, 0);
 
 #if (SMP_DEBUG == TRUE)
   uint8_t* p_print = NULL;

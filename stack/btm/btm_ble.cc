@@ -42,7 +42,7 @@
 #include "l2c_int.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
-#include "smp_api.h"
+#include "stack/crypto_toolbox/crypto_toolbox.h"
 
 extern void gatt_notify_phy_updated(uint8_t status, uint16_t handle,
                                     uint8_t tx_phy, uint8_t rx_phy);
@@ -2143,7 +2143,7 @@ bool BTM_BleDataSignature(const RawAddress& bd_addr, uint8_t* p_text,
   UINT32_TO_STREAM(pp, p_rec->ble.keys.local_counter);
   UINT32_TO_STREAM(p_mac, p_rec->ble.keys.local_counter);
 
-  aes_cipher_msg_auth_code(p_rec->ble.keys.lcsrk, p_buf, (uint16_t)(len + 4),
+  crypto_toolbox::aes_cmac(p_rec->ble.keys.lcsrk, p_buf, (uint16_t)(len + 4),
                            BTM_CMAC_TLEN_SIZE, p_mac);
   btm_ble_increment_sign_ctr(bd_addr, true);
 
@@ -2191,7 +2191,7 @@ bool BTM_BleVerifySignature(const RawAddress& bd_addr, uint8_t* p_orig,
     BTM_TRACE_DEBUG("%s rcv_cnt=%d >= expected_cnt=%d", __func__, counter,
                     p_rec->ble.keys.counter);
 
-    aes_cipher_msg_auth_code(p_rec->ble.keys.pcsrk, p_orig, len,
+    crypto_toolbox::aes_cmac(p_rec->ble.keys.pcsrk, p_orig, len,
                              BTM_CMAC_TLEN_SIZE, p_mac);
     if (memcmp(p_mac, p_comp, BTM_CMAC_TLEN_SIZE) == 0) {
       btm_ble_increment_sign_ctr(bd_addr, false);
@@ -2365,12 +2365,12 @@ static void btm_ble_reset_id_impl(const Octet16& rand1, const Octet16& rand2) {
 
   /* generate DHK= Eir({0x03, 0x00, 0x00 ...}) */
   btm_cb.devcb.id_keys.dhk =
-      SMP_Encrypt(btm_cb.devcb.id_keys.ir, &btm_ble_dhk_pt, 1);
+      crypto_toolbox::aes_128(btm_cb.devcb.id_keys.ir, &btm_ble_dhk_pt, 1);
 
   uint8_t btm_ble_irk_pt = 0x01;
   /* IRK = D1(IR, 1) */
   btm_cb.devcb.id_keys.irk =
-      SMP_Encrypt(btm_cb.devcb.id_keys.ir, &btm_ble_irk_pt, 1);
+      crypto_toolbox::aes_128(btm_cb.devcb.id_keys.ir, &btm_ble_irk_pt, 1);
 
   btm_notify_new_key(BTM_BLE_KEY_TYPE_ID);
 

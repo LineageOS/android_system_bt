@@ -14,12 +14,8 @@
  * limitations under the License.
  */
 
-#include "bt_target.h"
-
-#include "aes.h"
-#include "bt_utils.h"
-#include "p_256_ecc_pp.h"
-#include "smp_int.h"
+#include "stack/crypto_toolbox/crypto_toolbox.h"
+#include "stack/crypto_toolbox/aes.h"
 
 #include <algorithm>
 
@@ -28,32 +24,34 @@
 
 using base::HexEncode;
 
-Octet16 smp_calculate_h6(const Octet16& w, std::array<uint8_t, 4> keyid) {
+namespace crypto_toolbox {
+
+Octet16 h6(const Octet16& w, std::array<uint8_t, 4> keyid) {
   return aes_cmac(w, keyid.data(), keyid.size());
 }
 
-Octet16 smp_calculate_h7(const Octet16& salt, const Octet16& w) {
+Octet16 h7(const Octet16& salt, const Octet16& w) {
   return aes_cmac(salt, w.data(), w.size());
 }
 
-Octet16 smp_calculate_f4(uint8_t* u, uint8_t* v, const Octet16& x, uint8_t z) {
+Octet16 f4(uint8_t* u, uint8_t* v, const Octet16& x, uint8_t z) {
   constexpr size_t msg_len = BT_OCTET32_LEN /* U size */ +
                              BT_OCTET32_LEN /* V size */ + 1 /* Z size */;
 
   DVLOG(2) << "U=" << HexEncode(u, BT_OCTET32_LEN)
            << ", V=" << HexEncode(v, BT_OCTET32_LEN)
-           << ", X=" << HexEncode(x.data(), x.size()) << " Z=" << loghex(z);
+           << ", X=" << HexEncode(x.data(), x.size()) << ", Z=" << std::hex
+           << +z;
 
-  uint8_t msg[msg_len];
-  uint8_t* p = msg;
-  UINT8_TO_STREAM(p, z);
-  ARRAY_TO_STREAM(p, v, BT_OCTET32_LEN);
-  ARRAY_TO_STREAM(p, u, BT_OCTET32_LEN);
-
-  return aes_cmac(x, msg, msg_len);
+  std::array<uint8_t, msg_len> msg;
+  auto it = msg.begin();
+  it = std::copy(&z, &z + 1, it);
+  it = std::copy(v, v + BT_OCTET32_LEN, it);
+  it = std::copy(u, u + BT_OCTET32_LEN, it);
+  return aes_cmac(x, msg.data(), msg.size());
 }
 
-/** helper for smp_calculate_f5 */
+/** helper for f5 */
 static Octet16 calculate_mac_key_or_ltk(const Octet16& t, uint8_t counter,
                                         uint8_t* key_id, const Octet16& n1,
                                         const Octet16& n2, uint8_t* a1,
@@ -62,22 +60,21 @@ static Octet16 calculate_mac_key_or_ltk(const Octet16& t, uint8_t counter,
                              OCTET16_LEN /* N1 size */ +
                              OCTET16_LEN /* N2 size */ + 7 /* A1 size*/ +
                              7 /* A2 size*/ + 2 /* Length size */;
-  uint8_t msg[msg_len];
-  uint8_t* p = msg;
-  ARRAY_TO_STREAM(p, length, 2);
-  ARRAY_TO_STREAM(p, a2, 7);
-  ARRAY_TO_STREAM(p, a1, 7);
-  ARRAY_TO_STREAM(p, n2.data(), OCTET16_LEN);
-  ARRAY_TO_STREAM(p, n1.data(), OCTET16_LEN);
-  ARRAY_TO_STREAM(p, key_id, 4);
-  ARRAY_TO_STREAM(p, &counter, 1);
+  std::array<uint8_t, msg_len> msg;
+  auto it = msg.begin();
+  it = std::copy(length, length + 2, it);
+  it = std::copy(a2, a2 + 7, it);
+  it = std::copy(a1, a1 + 7, it);
+  it = std::copy(n2.begin(), n2.end(), it);
+  it = std::copy(n1.begin(), n1.end(), it);
+  it = std::copy(key_id, key_id + 4, it);
+  it = std::copy(&counter, &counter + 1, it);
 
-  return aes_cmac(t, msg, msg_len);
+  return aes_cmac(t, msg.data(), msg.size());
 }
 
-void smp_calculate_f5(uint8_t* w, const Octet16& n1, const Octet16& n2,
-                      uint8_t* a1, uint8_t* a2, Octet16* mac_key,
-                      Octet16* ltk) {
+void f5(uint8_t* w, const Octet16& n1, const Octet16& n2, uint8_t* a1,
+        uint8_t* a2, Octet16* mac_key, Octet16* ltk) {
   DVLOG(2) << __func__ << "W=" << HexEncode(w, BT_OCTET32_LEN)
            << ", N1=" << HexEncode(n1.data(), n1.size())
            << ", N2=" << HexEncode(n2.data(), n2.size())
@@ -100,9 +97,8 @@ void smp_calculate_f5(uint8_t* w, const Octet16& n1, const Octet16& n2,
   DVLOG(2) << "ltk=" << HexEncode(ltk->data(), ltk->size());
 }
 
-Octet16 smp_calculate_f6(const Octet16& w, const Octet16& n1, const Octet16& n2,
-                         const Octet16& r, uint8_t* iocap, uint8_t* a1,
-                         uint8_t* a2) {
+Octet16 f6(const Octet16& w, const Octet16& n1, const Octet16& n2,
+           const Octet16& r, uint8_t* iocap, uint8_t* a1, uint8_t* a2) {
   const uint8_t msg_len = OCTET16_LEN /* N1 size */ +
                           OCTET16_LEN /* N2 size */ + OCTET16_LEN /* R size */ +
                           3 /* IOcap size */ + 7 /* A1 size*/
@@ -127,8 +123,7 @@ Octet16 smp_calculate_f6(const Octet16& w, const Octet16& n1, const Octet16& n2,
   return aes_cmac(w, msg.data(), msg.size());
 }
 
-uint32_t smp_calculate_g2(uint8_t* u, uint8_t* v, const Octet16& x,
-                          const Octet16& y) {
+uint32_t g2(uint8_t* u, uint8_t* v, const Octet16& x, const Octet16& y) {
   constexpr size_t msg_len = BT_OCTET32_LEN /* U size */ +
                              BT_OCTET32_LEN /* V size */
                              + OCTET16_LEN /* Y size */;
@@ -138,53 +133,55 @@ uint32_t smp_calculate_g2(uint8_t* u, uint8_t* v, const Octet16& x,
            << ", X=" << HexEncode(x.data(), x.size())
            << ", Y=" << HexEncode(y.data(), y.size());
 
-  uint8_t msg[msg_len];
-  uint8_t* p = msg;
-  ARRAY_TO_STREAM(p, y.data(), OCTET16_LEN);
-  ARRAY_TO_STREAM(p, v, BT_OCTET32_LEN);
-  ARRAY_TO_STREAM(p, u, BT_OCTET32_LEN);
+  std::array<uint8_t, msg_len> msg;
+  auto it = msg.begin();
+  it = std::copy(y.begin(), y.end(), it);
+  it = std::copy(v, v + BT_OCTET32_LEN, it);
+  it = std::copy(u, u + BT_OCTET32_LEN, it);
 
-  Octet16 cmac = aes_cmac(x, msg, msg_len);
+  Octet16 cmac = aes_cmac(x, msg.data(), msg.size());
 
   /* vres = cmac mod 2**32 mod 10**6 */
   uint32_t vres;
-  p = cmac.data();
+  uint8_t* p = cmac.data();
   STREAM_TO_UINT32(vres, p);
 
-  vres = vres % (BTM_MAX_PASSKEY_VAL + 1);
+  vres = vres % 1000000;
   return vres;
 }
 
-Octet16 smp_calculate_ltk_to_link_key(const Octet16& ltk, bool use_h7) {
+Octet16 ltk_to_link_key(const Octet16& ltk, bool use_h7) {
   Octet16 ilk; /* intermidiate link key */
   if (use_h7) {
     constexpr Octet16 salt{0x31, 0x70, 0x6D, 0x74, 0x00, 0x00, 0x00, 0x00,
                            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    ilk = smp_calculate_h7(salt, ltk);
+    ilk = h7(salt, ltk);
   } else {
     /* "tmp1" mapping to extended ASCII, little endian*/
     constexpr std::array<uint8_t, 4> keyID_tmp1 = {0x31, 0x70, 0x6D, 0x74};
-    ilk = smp_calculate_h6(ltk, keyID_tmp1);
+    ilk = h6(ltk, keyID_tmp1);
   }
 
   /* "lebr" mapping to extended ASCII, little endian */
   constexpr std::array<uint8_t, 4> keyID_lebr = {0x72, 0x62, 0x65, 0x6c};
-  return smp_calculate_h6(ilk, keyID_lebr);
+  return h6(ilk, keyID_lebr);
 }
 
-Octet16 smp_calculate_link_key_to_ltk(const Octet16& link_key, bool use_h7) {
+Octet16 link_key_to_ltk(const Octet16& link_key, bool use_h7) {
   Octet16 iltk; /* intermidiate long term key */
   if (use_h7) {
     constexpr Octet16 salt{0x32, 0x70, 0x6D, 0x74, 0x00, 0x00, 0x00, 0x00,
                            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    iltk = smp_calculate_h7(salt, link_key);
+    iltk = h7(salt, link_key);
   } else {
     /* "tmp2" mapping to extended ASCII, little endian */
     constexpr std::array<uint8_t, 4> keyID_tmp2 = {0x32, 0x70, 0x6D, 0x74};
-    iltk = smp_calculate_h6(link_key, keyID_tmp2);
+    iltk = h6(link_key, keyID_tmp2);
   }
 
   /* "brle" mapping to extended ASCII, little endian */
   constexpr std::array<uint8_t, 4> keyID_brle = {0x65, 0x6c, 0x72, 0x62};
-  return smp_calculate_h6(iltk, keyID_brle);
+  return h6(iltk, keyID_brle);
 }
+
+}  // namespace crypto_toolbox
