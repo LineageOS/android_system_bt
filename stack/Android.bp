@@ -302,7 +302,7 @@ cc_test {
         "smp/smp_main.cc",
         "smp/smp_utils.cc",
         "test/stack_smp_test.cc",
-        "test/stack_smp_aes_cmac_test.cc",
+        "test/crypto_toolbox_test.cc",
     ],
     shared_libs: [
         "libcutils",
