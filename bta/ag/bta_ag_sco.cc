@@ -553,6 +553,14 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
   APPL_TRACE_DEBUG("%s", __func__);
   bta_ag_cb.sco.p_curr_scb = p_scb;
 
+  // Workaround for misbehaving HFs such as Sony XAV AX100 car kit and Sony
+  // MW600 Headset, which indicate WBS support in SDP, but no codec
+  // negotiation support in BRSF. In this case, using mSBC codec can result
+  // background noise or no audio. Thus, defaulting to CVSD instead.
+  if (!(p_scb->peer_features & BTA_AG_PEER_FEAT_CODEC)) {
+    p_scb->sco_codec = UUID_CODEC_CVSD;
+  }
+
   if ((p_scb->codec_updated || p_scb->codec_fallback) &&
       (p_scb->peer_features & BTA_AG_PEER_FEAT_CODEC)) {
     /* Change the power mode to Active until SCO open is completed. */
