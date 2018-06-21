@@ -170,8 +170,8 @@ TEST_F(SmpCalculateConfirmTest, test_smp_gen_p2_4_confirm_as_master) {
   ASSERT_THAT(p2_str, StrEq(expected_p2_str));
 }
 
-// Test smp_gen_p1_4_confirm and SMP_Encrypt function implementation
-TEST_F(SmpCalculateConfirmTest, test_SMP_Encrypt_as_master) {
+// Test smp_gen_p1_4_confirm and aes_128 function implementation
+TEST_F(SmpCalculateConfirmTest, test_aes_128_as_master) {
   RawAddress remote_bda;
   tBLE_ADDR_TYPE remote_bd_addr_type = 0;
   BTM_ReadRemoteConnectionAddr(p_cb_.pairing_bda, remote_bda,
@@ -189,7 +189,7 @@ TEST_F(SmpCalculateConfirmTest, test_SMP_Encrypt_as_master) {
   char p1_xor_r_str[2 * OCTET16_LEN + 1];
   dump_uint128_reverse(p1, p1_xor_r_str);
   ASSERT_THAT(p1_xor_r_str, StrEq(expected_p1_xor_r_str));
-  Octet16 output = SMP_Encrypt(p_cb_.tk, p1.data(), OCTET16_LEN);
+  Octet16 output = crypto_toolbox::aes_128(p_cb_.tk, p1.data(), OCTET16_LEN);
   const char expected_p1_prime_str[] = "02c7aa2a9857ac866ff91232df0e3c95";
   char p1_prime_str[2 * OCTET16_LEN + 1];
   dump_uint128_reverse(output, p1_prime_str);

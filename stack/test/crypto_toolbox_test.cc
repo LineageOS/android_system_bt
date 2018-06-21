@@ -19,15 +19,16 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "stack/include/smp_api.h"
-#include "stack/smp/aes.h"
-#include "stack/smp/crypto_toolbox.h"
+#include "stack/crypto_toolbox/aes.h"
+#include "stack/crypto_toolbox/crypto_toolbox.h"
 
 #include <base/logging.h>
 #include <base/strings/string_number_conversions.h>
 #include <vector>
 
 using ::testing::ElementsAreArray;
+
+namespace crypto_toolbox {
 
 // BT Spec 5.0 | Vol 3, Part H D.1
 TEST(CryptoToolboxTest, bt_spec_test_d_1_test) {
@@ -173,7 +174,7 @@ TEST(CryptoToolboxTest, bt_spec_example_d_2_test) {
   std::reverse(std::begin(x), std::end(x));
   std::reverse(std::begin(aes_cmac_k_m), std::end(aes_cmac_k_m));
 
-  Octet16 output = smp_calculate_f4(u.data(), v.data(), x, z);
+  Octet16 output = f4(u.data(), v.data(), x, z);
 
   EXPECT_EQ(output, aes_cmac_k_m);
 }
@@ -206,8 +207,7 @@ TEST(CryptoToolboxTest, bt_spec_example_d_3_test) {
   std::reverse(std::begin(expected_mac_key), std::end(expected_mac_key));
 
   Octet16 mac_key, ltk;
-  smp_calculate_f5(dhkey_w.data(), n1, n2, a1.data(), a2.data(), &mac_key,
-                   &ltk);
+  f5(dhkey_w.data(), n1, n2, a1.data(), a2.data(), &mac_key, &ltk);
 
   EXPECT_EQ(mac_key, expected_mac_key);
   EXPECT_EQ(ltk, expected_ltk);
@@ -241,8 +241,7 @@ TEST(CryptoToolboxTest, bt_spec_example_d_4_test) {
   std::reverse(std::begin(MacKey), std::end(MacKey));
   std::reverse(std::begin(expected_aes_cmac), std::end(expected_aes_cmac));
 
-  Octet16 aes_cmac =
-      smp_calculate_f6(MacKey, n1, n2, r, IOcap.data(), a1.data(), a2.data());
+  Octet16 aes_cmac = f6(MacKey, n1, n2, r, IOcap.data(), a1.data(), a2.data());
 
   EXPECT_EQ(aes_cmac, expected_aes_cmac);
 }
@@ -269,11 +268,11 @@ TEST(CryptoToolboxTest, bt_spec_example_d_5_test) {
   std::reverse(std::begin(x), std::end(x));
   std::reverse(std::begin(y), std::end(y));
 
-  uint32_t g2 = smp_calculate_g2(u.data(), v.data(), x, y);
+  uint32_t val = g2(u.data(), v.data(), x, y);
 
   /* the returned value is already mod 1000000, so do mod on the test result
    * value too */
-  EXPECT_EQ(g2, 0x2f9ed5baU % 1000000);
+  EXPECT_EQ(val, 0x2f9ed5baU % 1000000);
 }
 
 // BT Spec 5.0 | Vol 3, Part H D.6
@@ -289,7 +288,7 @@ TEST(CryptoToolboxTest, bt_spec_example_d_6_test) {
   std::reverse(std::begin(keyID), std::end(keyID));
   std::reverse(std::begin(expected_aes_cmac), std::end(expected_aes_cmac));
 
-  Octet16 aes_cmac = smp_calculate_h6(key, keyID);
+  Octet16 aes_cmac = h6(key, keyID);
   EXPECT_EQ(aes_cmac, expected_aes_cmac);
 }
 
@@ -309,13 +308,13 @@ TEST(CryptoToolboxTest, bt_spec_example_d_7_test) {
   std::reverse(std::begin(expected_aes_128), std::end(expected_aes_128));
   std::reverse(std::begin(expected_ah), std::end(expected_ah));
 
-  Octet16 aes_128 = SMP_Encrypt(IRK, prand.data(), 3);
-  EXPECT_EQ(expected_aes_128, aes_128);
+  Octet16 result = aes_128(IRK, prand.data(), 3);
+  EXPECT_EQ(expected_aes_128, result);
 
   // little/big endian 24 bits
-  EXPECT_EQ(aes_128[0], expected_ah[0]);
-  EXPECT_EQ(aes_128[1], expected_ah[1]);
-  EXPECT_EQ(aes_128[2], expected_ah[2]);
+  EXPECT_EQ(result[0], expected_ah[0]);
+  EXPECT_EQ(result[1], expected_ah[1]);
+  EXPECT_EQ(result[2], expected_ah[2]);
 }
 
 // BT Spec 5.0 | Vol 3, Part H D.8
@@ -332,7 +331,7 @@ TEST(CryptoToolboxTest, bt_spec_example_d_8_test) {
   std::reverse(std::begin(SALT), std::end(SALT));
   std::reverse(std::begin(expected_aes_cmac), std::end(expected_aes_cmac));
 
-  Octet16 aes_cmac = smp_calculate_h7(SALT, Key);
+  Octet16 aes_cmac = h7(SALT, Key);
   EXPECT_EQ(expected_aes_cmac, aes_cmac);
 }
 
@@ -349,7 +348,7 @@ TEST(CryptoToolboxTest, bt_spec_example_d_9_test) {
   std::reverse(std::begin(LTK), std::end(LTK));
   std::reverse(std::begin(expected_link_key), std::end(expected_link_key));
 
-  Octet16 link_key = smp_calculate_ltk_to_link_key(LTK, true);
+  Octet16 link_key = ltk_to_link_key(LTK, true);
   EXPECT_EQ(expected_link_key, link_key);
 }
 
@@ -364,12 +363,9 @@ TEST(CryptoToolboxTest, bt_spec_example_d_10_test) {
   std::reverse(std::begin(LTK), std::end(LTK));
   std::reverse(std::begin(expected_link_key), std::end(expected_link_key));
 
-  Octet16 link_key = smp_calculate_ltk_to_link_key(LTK, false);
+  Octet16 link_key = ltk_to_link_key(LTK, false);
   EXPECT_EQ(expected_link_key, link_key);
 }
-
-extern Octet16 smp_calculate_link_key_to_ltk(const Octet16& link_key,
-                                             bool use_h7);
 
 // // BT Spec 5.0 | Vol 3, Part H D.11
 TEST(CryptoToolboxTest, bt_spec_example_d_11_test) {
@@ -382,7 +378,7 @@ TEST(CryptoToolboxTest, bt_spec_example_d_11_test) {
   std::reverse(std::begin(link_key), std::end(link_key));
   std::reverse(std::begin(expected_ltk), std::end(expected_ltk));
 
-  Octet16 ltk = smp_calculate_link_key_to_ltk(link_key, true);
+  Octet16 ltk = link_key_to_ltk(link_key, true);
   EXPECT_EQ(expected_ltk, ltk);
 }
 
@@ -397,6 +393,8 @@ TEST(CryptoToolboxTest, bt_spec_example_d_12_test) {
   std::reverse(std::begin(link_key), std::end(link_key));
   std::reverse(std::begin(expected_ltk), std::end(expected_ltk));
 
-  Octet16 ltk = smp_calculate_link_key_to_ltk(link_key, false);
+  Octet16 ltk = link_key_to_ltk(link_key, false);
   EXPECT_EQ(expected_ltk, ltk);
 }
+
+}  // namespace crypto_toolbox
