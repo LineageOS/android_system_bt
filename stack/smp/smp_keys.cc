@@ -39,6 +39,8 @@
 #include "p_256_ecc_pp.h"
 #include "smp_int.h"
 
+#include <algorithm>
+
 using base::Bind;
 
 #ifndef SMP_MAX_ENC_REPEAT
@@ -987,7 +989,6 @@ uint32_t smp_calculate_g2(uint8_t* u, uint8_t* v, const Octet16& x,
   constexpr size_t msg_len = BT_OCTET32_LEN /* U size */ +
                              BT_OCTET32_LEN /* V size */
                              + OCTET16_LEN /* Y size */;
-  uint32_t vres;
 
   SMP_TRACE_DEBUG("%s", __func__);
 
@@ -1015,6 +1016,7 @@ uint32_t smp_calculate_g2(uint8_t* u, uint8_t* v, const Octet16& x,
 #endif
 
   /* vres = cmac mod 2**32 mod 10**6 */
+  uint32_t vres;
   p = cmac.data();
   STREAM_TO_UINT32(vres, p);
 #if (SMP_DEBUG == TRUE)
@@ -1022,7 +1024,8 @@ uint32_t smp_calculate_g2(uint8_t* u, uint8_t* v, const Octet16& x,
   smp_debug_print_nbyte_little_endian(p_prnt, "cmac mod 2**32", 4);
 #endif
 
-  while (vres > BTM_MAX_PASSKEY_VAL) vres -= (BTM_MAX_PASSKEY_VAL + 1);
+  vres = vres % (BTM_MAX_PASSKEY_VAL + 1);
+
 #if (SMP_DEBUG == TRUE)
   p_prnt = (uint8_t*)&vres;
   smp_debug_print_nbyte_little_endian(p_prnt, "cmac mod 2**32 mod 10**6", 4);
@@ -1427,6 +1430,22 @@ Octet16 smp_calculate_f6(const Octet16& w, const Octet16& n1, const Octet16& n2,
   return cmac;
 }
 
+Octet16 smp_calculate_ltk_to_link_key(const Octet16& ltk, bool use_h7) {
+  /* intermidiate link key */
+  Octet16 ilk;
+  if (use_h7) {
+    constexpr Octet16 salt{0x31, 0x70, 0x6D, 0x74, 0x00, 0x00, 0x00, 0x00,
+                           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    ilk = smp_calculate_h7(salt, ltk);
+  } else {
+    /* "tmp1" obtained from the spec */
+    ilk = smp_calculate_h6(ltk, (uint8_t*)"1pmt" /* reversed "tmp1" */);
+  }
+
+  /* "lebr" obtained from the spec */
+  return smp_calculate_h6(ilk, (uint8_t*)"rbel" /* reversed "lebr" */);
+}
+
 /*******************************************************************************
  *
  * Function         smp_calculate_link_key_from_long_term_key
@@ -1441,8 +1460,6 @@ bool smp_calculate_link_key_from_long_term_key(tSMP_CB* p_cb) {
   tBTM_SEC_DEV_REC* p_dev_rec;
   RawAddress bda_for_lk;
   tBLE_ADDR_TYPE conn_addr_type;
-  Octet16 salt{0x31, 0x70, 0x6D, 0x74, 0x00, 0x00, 0x00, 0x00,
-               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
   SMP_TRACE_DEBUG("%s", __func__);
 
@@ -1465,16 +1482,9 @@ bool smp_calculate_link_key_from_long_term_key(tSMP_CB* p_cb) {
     return false;
   }
 
-  Octet16 intermediate_link_key;
+  Octet16 link_key =
+      smp_calculate_ltk_to_link_key(p_cb->ltk, p_cb->key_derivation_h7_used);
 
-  if (p_cb->key_derivation_h7_used)
-    intermediate_link_key = smp_calculate_h7(salt, p_cb->ltk);
-  else
-    intermediate_link_key =
-        smp_calculate_h6(p_cb->ltk, (uint8_t*)"1pmt" /* reversed "tmp1" */);
-
-  Octet16 link_key = smp_calculate_h6(intermediate_link_key,
-                                      (uint8_t*)"rbel" /* reversed "lebr" */);
   uint8_t link_key_type;
   if (btm_cb.security_mode == BTM_SEC_MODE_SC) {
     /* Secure Connections Only Mode */
@@ -1507,11 +1517,25 @@ bool smp_calculate_link_key_from_long_term_key(tSMP_CB* p_cb) {
   return true;
 }
 
+Octet16 smp_calculate_link_key_to_ltk(const Octet16& link_key, bool use_h7) {
+  /* intermidiate long term key */
+  Octet16 iltk;
+  if (use_h7) {
+    constexpr Octet16 salt{0x32, 0x70, 0x6D, 0x74, 0x00, 0x00, 0x00, 0x00,
+                           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    iltk = smp_calculate_h7(salt, link_key);
+  } else {
+    /* "tmp2" obtained from the spec */
+    iltk = smp_calculate_h6(link_key, (uint8_t*)"2pmt" /* reversed "tmp2" */);
+  }
+
+  /* "brle" obtained from the spec */
+  return smp_calculate_h6(iltk, (uint8_t*)"elrb" /* reversed "brle" */);
+}
+
 /** The function calculates and saves SC LTK derived from BR/EDR link key. */
 bool smp_calculate_long_term_key_from_link_key(tSMP_CB* p_cb) {
   tBTM_SEC_DEV_REC* p_dev_rec;
-  Octet16 salt{0x32, 0x70, 0x6D, 0x74, 0x00, 0x00, 0x00, 0x00,
-               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
   SMP_TRACE_DEBUG("%s", __func__);
 
@@ -1536,24 +1560,10 @@ bool smp_calculate_long_term_key_from_link_key(tSMP_CB* p_cb) {
   }
 
   Octet16 rev_link_key;
-  uint8_t* p1;
-  uint8_t* p2;
-  p1 = rev_link_key.data();
-  p2 = p_dev_rec->link_key.data();
-  REVERSE_ARRAY_TO_STREAM(p1, p2, 16);  // TODO: array.reverse ?
-
-  Octet16 intermediate_long_term_key;
-  if (p_cb->key_derivation_h7_used) {
-    intermediate_long_term_key = smp_calculate_h7(salt, rev_link_key);
-  } else {
-    /* "tmp2" obtained from the spec */
-    intermediate_long_term_key =
-        smp_calculate_h6(rev_link_key, (uint8_t*)"2pmt" /* reversed "tmp2" */);
-  }
-
-  /* "brle" obtained from the spec */
-  p_cb->ltk = smp_calculate_h6(intermediate_long_term_key,
-                               (uint8_t*)"elrb" /* reversed "brle" */);
+  std::reverse_copy(p_dev_rec->link_key.begin(), p_dev_rec->link_key.end(),
+                    rev_link_key.begin());
+  p_cb->ltk =
+      smp_calculate_link_key_to_ltk(rev_link_key, p_cb->key_derivation_h7_used);
 
   p_cb->sec_level = (br_link_key_type == BTM_LKEY_TYPE_AUTH_COMB_P_256)
                         ? SMP_SEC_AUTHENTICATED
