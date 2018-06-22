@@ -27,6 +27,7 @@
 #include "btm_api.h"
 #include "btm_ble_api.h"
 #include "btu.h"
+#include "crypto_toolbox.h"
 #include "smp_api.h"
 
 /* Legacy mode */
@@ -491,22 +492,7 @@ extern void smp_calculate_peer_dhkey_check(tSMP_CB* p_cb,
 extern void smp_start_nonce_generation(tSMP_CB* p_cb);
 extern bool smp_calculate_link_key_from_long_term_key(tSMP_CB* p_cb);
 extern bool smp_calculate_long_term_key_from_link_key(tSMP_CB* p_cb);
-extern Octet16 smp_calculate_f4(uint8_t* u, uint8_t* v, const Octet16& x,
-                                uint8_t z);
-extern uint32_t smp_calculate_g2(uint8_t* u, uint8_t* v, const Octet16& x,
-                                 const Octet16& y);
-extern void smp_calculate_f5(uint8_t* w, const Octet16& n1, const Octet16& n2,
-                             uint8_t* a1, uint8_t* a2, Octet16* mac_key,
-                             Octet16* ltk);
-extern Octet16 smp_calculate_f5_mackey_or_long_term_key(
-    const Octet16& t, uint8_t* counter, uint8_t* key_id, const Octet16& n1,
-    const Octet16& n2, uint8_t* a1, uint8_t* a2, uint8_t* length);
-extern Octet16 smp_calculate_f5_key(uint8_t* w);
-extern Octet16 smp_calculate_f6(const Octet16& w, const Octet16& n1,
-                                const Octet16& n2, const Octet16& r,
-                                uint8_t* iocap, uint8_t* a1, uint8_t* a2);
-extern Octet16 smp_calculate_h6(const Octet16& w, uint8_t* keyid);
-extern Octet16 smp_calculate_h7(const Octet16& salt, const Octet16& w);
+
 #if (SMP_DEBUG == TRUE)
 extern void smp_debug_print_nbyte_little_endian(uint8_t* p,
                                                 const char* key_name,
