@@ -177,8 +177,8 @@ extern void SMP_SecureConnectionOobDataReply(uint8_t* p_data);
 /* This function computes AES_128(key, message). |key| must be 128bit.
  * |message| can be at most 16 bytes long, it's length in bytes is given in
  * |length| */
-extern void SMP_Encrypt(BT_OCTET16 key, uint8_t* message, uint8_t length,
-                        BT_OCTET16 p_out);
+extern Octet16 SMP_Encrypt(const Octet16& key, uint8_t* message,
+                           uint8_t length);
 
 /*******************************************************************************
  *
@@ -218,12 +218,24 @@ extern void smp_link_encrypted(const RawAddress& bda, uint8_t encr_enable);
 //
 // The AES-CMAC Generation Function with tlen implemented.
 // |key| - CMAC key in little endian order, expect SRK when used by SMP.
-// |input| - text to be signed in little endian byte order.
-// |length| - length of the input in byte.
+// |message| - text to be signed in little endian byte order.
+// |length| - length of the message in byte.
 // |tlen| - lenth of mac desired
 // |p_signature| - data pointer to where signed data to be stored, tlen long.
 //
-void aes_cipher_msg_auth_code(BT_OCTET16 key, uint8_t* input, uint16_t length,
-                              uint16_t tlen, uint8_t* p_signature);
+void aes_cipher_msg_auth_code(const Octet16& key, const uint8_t* message,
+                              uint16_t length, uint16_t tlen,
+                              uint8_t* p_signature);
+
+inline Octet16 aes_cmac(const Octet16& key, const uint8_t* message,
+                        const uint16_t length) {
+  Octet16 ret;
+  aes_cipher_msg_auth_code(key, message, length, 16, ret.data());
+  return ret;
+}
+
+inline Octet16 aes_cmac(const Octet16& key, const Octet16& message) {
+  return aes_cmac(key, message.data(), message.size());
+}
 
 #endif /* SMP_API_H */

@@ -125,15 +125,17 @@ typedef struct {
   btif_dm_ble_cb_t ble;
 } btif_dm_pairing_cb_t;
 
+// TODO(jpawlowski): unify ?
+// btif_dm_local_key_id_t == tBTM_BLE_LOCAL_ID_KEYS == tBTA_BLE_LOCAL_ID_KEYS
 typedef struct {
-  uint8_t ir[BT_OCTET16_LEN];
-  uint8_t irk[BT_OCTET16_LEN];
-  uint8_t dhk[BT_OCTET16_LEN];
+  Octet16 ir;
+  Octet16 irk;
+  Octet16 dhk;
 } btif_dm_local_key_id_t;
 
 typedef struct {
   bool is_er_rcvd;
-  uint8_t er[BT_OCTET16_LEN];
+  Octet16 er;
   bool is_id_keys_rcvd;
   btif_dm_local_key_id_t id_keys; /* ID kyes */
 
@@ -1791,25 +1793,22 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
     case BTA_DM_BLE_LOCAL_IR_EVT:
       BTIF_TRACE_DEBUG("BTA_DM_BLE_LOCAL_IR_EVT. ");
       ble_local_key_cb.is_id_keys_rcvd = true;
-      memcpy(&ble_local_key_cb.id_keys.irk[0], &p_data->ble_id_keys.irk[0],
-             sizeof(BT_OCTET16));
-      memcpy(&ble_local_key_cb.id_keys.ir[0], &p_data->ble_id_keys.ir[0],
-             sizeof(BT_OCTET16));
-      memcpy(&ble_local_key_cb.id_keys.dhk[0], &p_data->ble_id_keys.dhk[0],
-             sizeof(BT_OCTET16));
-      btif_storage_add_ble_local_key((char*)&ble_local_key_cb.id_keys.irk[0],
-                                     BTIF_DM_LE_LOCAL_KEY_IRK, BT_OCTET16_LEN);
-      btif_storage_add_ble_local_key((char*)&ble_local_key_cb.id_keys.ir[0],
-                                     BTIF_DM_LE_LOCAL_KEY_IR, BT_OCTET16_LEN);
-      btif_storage_add_ble_local_key((char*)&ble_local_key_cb.id_keys.dhk[0],
-                                     BTIF_DM_LE_LOCAL_KEY_DHK, BT_OCTET16_LEN);
+      ble_local_key_cb.id_keys.irk = p_data->ble_id_keys.irk;
+      ble_local_key_cb.id_keys.ir = p_data->ble_id_keys.ir;
+      ble_local_key_cb.id_keys.dhk = p_data->ble_id_keys.dhk;
+      btif_storage_add_ble_local_key(ble_local_key_cb.id_keys.irk,
+                                     BTIF_DM_LE_LOCAL_KEY_IRK);
+      btif_storage_add_ble_local_key(ble_local_key_cb.id_keys.ir,
+                                     BTIF_DM_LE_LOCAL_KEY_IR);
+      btif_storage_add_ble_local_key(ble_local_key_cb.id_keys.dhk,
+                                     BTIF_DM_LE_LOCAL_KEY_DHK);
       break;
     case BTA_DM_BLE_LOCAL_ER_EVT:
       BTIF_TRACE_DEBUG("BTA_DM_BLE_LOCAL_ER_EVT. ");
       ble_local_key_cb.is_er_rcvd = true;
-      memcpy(&ble_local_key_cb.er[0], &p_data->ble_er[0], sizeof(BT_OCTET16));
-      btif_storage_add_ble_local_key((char*)&ble_local_key_cb.er[0],
-                                     BTIF_DM_LE_LOCAL_KEY_ER, BT_OCTET16_LEN);
+      ble_local_key_cb.er = p_data->ble_er;
+      btif_storage_add_ble_local_key(ble_local_key_cb.er,
+                                     BTIF_DM_LE_LOCAL_KEY_ER);
       break;
 
     case BTA_DM_BLE_AUTH_CMPL_EVT:
@@ -2649,7 +2648,7 @@ void btif_dm_load_local_oob(void) {
   }
 }
 
-void btif_dm_proc_loc_oob(bool valid, BT_OCTET16 c, BT_OCTET16 r) {
+void btif_dm_proc_loc_oob(bool valid, const Octet16& c, const Octet16& r) {
   FILE* fp;
   const char* path_a = "/data/misc/bluedroid/LOCAL/a.key";
   const char* path_b = "/data/misc/bluedroid/LOCAL/b.key";
@@ -2658,8 +2657,8 @@ void btif_dm_proc_loc_oob(bool valid, BT_OCTET16 c, BT_OCTET16 r) {
   BTIF_TRACE_DEBUG("%s: valid=%d", __func__, valid);
   if (is_empty_128bit(oob_cb.oob_data.c192) && valid) {
     BTIF_TRACE_DEBUG("save local OOB data in memory");
-    memcpy(oob_cb.oob_data.c192, c, BT_OCTET16_LEN);
-    memcpy(oob_cb.oob_data.r192, r, BT_OCTET16_LEN);
+    memcpy(oob_cb.oob_data.c192, c.data(), OCTET16_LEN);
+    memcpy(oob_cb.oob_data.r192, r.data(), OCTET16_LEN);
     osi_property_get("service.brcm.bt.oob", prop_oob, "3");
     BTIF_TRACE_DEBUG("%s: prop_oob = %s", __func__, prop_oob);
     if (prop_oob[0] == '1')
@@ -2674,8 +2673,8 @@ void btif_dm_proc_loc_oob(bool valid, BT_OCTET16 c, BT_OCTET16 r) {
       } else {
         BTIF_TRACE_DEBUG("%s: save local OOB data into file %s", __func__,
                          path);
-        fwrite(c, 1, BT_OCTET16_LEN, fp);
-        fwrite(r, 1, BT_OCTET16_LEN, fp);
+        fwrite(c.data(), 1, OCTET16_LEN, fp);
+        fwrite(r.data(), 1, OCTET16_LEN, fp);
         fclose(fp);
       }
     }
@@ -2745,8 +2744,8 @@ bool btif_dm_get_smp_config(tBTE_APPL_CFG* p_cfg) {
   return true;
 }
 
-bool btif_dm_proc_rmt_oob(const RawAddress& bd_addr, BT_OCTET16 p_c,
-                          BT_OCTET16 p_r) {
+bool btif_dm_proc_rmt_oob(const RawAddress& bd_addr, Octet16* p_c,
+                          Octet16* p_r) {
   const char* path_a = "/data/misc/bluedroid/LOCAL/a.key";
   const char* path_b = "/data/misc/bluedroid/LOCAL/b.key";
   const char* path = NULL;
@@ -2769,8 +2768,8 @@ bool btif_dm_proc_rmt_oob(const RawAddress& bd_addr, BT_OCTET16 p_c,
   }
 
   BTIF_TRACE_DEBUG("%s: read OOB data from %s", __func__, path);
-  fread(p_c, 1, BT_OCTET16_LEN, fp);
-  fread(p_r, 1, BT_OCTET16_LEN, fp);
+  fread(p_c->data(), 1, OCTET16_LEN, fp);
+  fread(p_r->data(), 1, OCTET16_LEN, fp);
   fclose(fp);
 
   RawAddress bt_bd_addr = bd_addr;
@@ -2872,41 +2871,37 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
 void btif_dm_load_ble_local_keys(void) {
   memset(&ble_local_key_cb, 0, sizeof(btif_dm_local_key_cb_t));
 
-  if (btif_storage_get_ble_local_key(BTIF_DM_LE_LOCAL_KEY_ER,
-                                     (char*)&ble_local_key_cb.er[0],
-                                     BT_OCTET16_LEN) == BT_STATUS_SUCCESS) {
+  if (btif_storage_get_ble_local_key(
+          BTIF_DM_LE_LOCAL_KEY_ER, &ble_local_key_cb.er) == BT_STATUS_SUCCESS) {
     ble_local_key_cb.is_er_rcvd = true;
     BTIF_TRACE_DEBUG("%s BLE ER key loaded", __func__);
   }
 
   if ((btif_storage_get_ble_local_key(BTIF_DM_LE_LOCAL_KEY_IR,
-                                      (char*)&ble_local_key_cb.id_keys.ir[0],
-                                      BT_OCTET16_LEN) == BT_STATUS_SUCCESS) &&
+                                      &ble_local_key_cb.id_keys.ir) ==
+       BT_STATUS_SUCCESS) &&
       (btif_storage_get_ble_local_key(BTIF_DM_LE_LOCAL_KEY_IRK,
-                                      (char*)&ble_local_key_cb.id_keys.irk[0],
-                                      BT_OCTET16_LEN) == BT_STATUS_SUCCESS) &&
+                                      &ble_local_key_cb.id_keys.irk) ==
+       BT_STATUS_SUCCESS) &&
       (btif_storage_get_ble_local_key(BTIF_DM_LE_LOCAL_KEY_DHK,
-                                      (char*)&ble_local_key_cb.id_keys.dhk[0],
-                                      BT_OCTET16_LEN) == BT_STATUS_SUCCESS)) {
+                                      &ble_local_key_cb.id_keys.dhk) ==
+       BT_STATUS_SUCCESS)) {
     ble_local_key_cb.is_id_keys_rcvd = true;
     BTIF_TRACE_DEBUG("%s BLE ID keys loaded", __func__);
   }
 }
 void btif_dm_get_ble_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK* p_key_mask,
-                                BT_OCTET16 er,
+                                Octet16* p_er,
                                 tBTA_BLE_LOCAL_ID_KEYS* p_id_keys) {
   if (ble_local_key_cb.is_er_rcvd) {
-    memcpy(&er[0], &ble_local_key_cb.er[0], sizeof(BT_OCTET16));
+    *p_er = ble_local_key_cb.er;
     *p_key_mask |= BTA_BLE_LOCAL_KEY_TYPE_ER;
   }
 
   if (ble_local_key_cb.is_id_keys_rcvd) {
-    memcpy(&p_id_keys->ir[0], &ble_local_key_cb.id_keys.ir[0],
-           sizeof(BT_OCTET16));
-    memcpy(&p_id_keys->irk[0], &ble_local_key_cb.id_keys.irk[0],
-           sizeof(BT_OCTET16));
-    memcpy(&p_id_keys->dhk[0], &ble_local_key_cb.id_keys.dhk[0],
-           sizeof(BT_OCTET16));
+    p_id_keys->ir = ble_local_key_cb.id_keys.ir;
+    p_id_keys->irk = ble_local_key_cb.id_keys.irk;
+    p_id_keys->dhk = ble_local_key_cb.id_keys.dhk;
     *p_key_mask |= BTA_BLE_LOCAL_KEY_TYPE_ID;
   }
   BTIF_TRACE_DEBUG("%s  *p_key_mask=0x%02x", __func__, *p_key_mask);

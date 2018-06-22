@@ -1330,8 +1330,8 @@ typedef uint8_t(tBTM_PIN_CALLBACK)(const RawAddress& bd_addr,
 */
 typedef uint8_t(tBTM_LINK_KEY_CALLBACK)(const RawAddress& bd_addr,
                                         DEV_CLASS dev_class,
-                                        tBTM_BD_NAME bd_name, uint8_t* key,
-                                        uint8_t key_type);
+                                        tBTM_BD_NAME bd_name,
+                                        const LinkKey& key, uint8_t key_type);
 
 /* Remote Name Resolved.  Parameters are
  *              BD Address of remote
@@ -1478,8 +1478,8 @@ typedef struct {
 /* data type for BTM_SP_LOC_OOB_EVT */
 typedef struct {
   tBTM_STATUS status; /* */
-  BT_OCTET16 c;       /* Simple Pairing Hash C */
-  BT_OCTET16 r;       /* Simple Pairing Randomnizer R */
+  Octet16 c;          /* Simple Pairing Hash C */
+  Octet16 r;          /* Simple Pairing Randomnizer R */
 } tBTM_SP_LOC_OOB;
 
 /* data type for BTM_SP_RMT_OOB_EVT */
@@ -1629,7 +1629,7 @@ typedef struct {
 
 /* BLE encryption keys */
 typedef struct {
-  BT_OCTET16 ltk;
+  Octet16 ltk;
   BT_OCTET8 rand;
   uint16_t ediv;
   uint8_t sec_level;
@@ -1639,13 +1639,13 @@ typedef struct {
 /* BLE CSRK keys */
 typedef struct {
   uint32_t counter;
-  BT_OCTET16 csrk;
+  Octet16 csrk;
   uint8_t sec_level;
 } tBTM_LE_PCSRK_KEYS;
 
 /* BLE Encryption reproduction keys */
 typedef struct {
-  BT_OCTET16 ltk;
+  Octet16 ltk;
   uint16_t div;
   uint8_t key_size;
   uint8_t sec_level;
@@ -1656,11 +1656,11 @@ typedef struct {
   uint32_t counter;
   uint16_t div;
   uint8_t sec_level;
-  BT_OCTET16 csrk;
+  Octet16 csrk;
 } tBTM_LE_LCSRK_KEYS;
 
 typedef struct {
-  BT_OCTET16 irk;
+  Octet16 irk;
   tBLE_ADDR_TYPE addr_type;
   RawAddress static_addr;
 } tBTM_LE_PID_KEYS;
@@ -1702,15 +1702,15 @@ typedef uint8_t(tBTM_LE_CALLBACK)(tBTM_LE_EVT event, const RawAddress& bda,
 #define BTM_BLE_KEY_TYPE_COUNTER 3  // tobe obsolete
 
 typedef struct {
-  BT_OCTET16 ir;
-  BT_OCTET16 irk;
-  BT_OCTET16 dhk;
+  Octet16 ir;
+  Octet16 irk;
+  Octet16 dhk;
 
 } tBTM_BLE_LOCAL_ID_KEYS;
 
 typedef union {
   tBTM_BLE_LOCAL_ID_KEYS id_keys;
-  BT_OCTET16 er;
+  Octet16 er;
 } tBTM_BLE_LOCAL_KEYS;
 
 /* New LE identity key for local device.
@@ -1805,63 +1805,6 @@ typedef struct {
   uint16_t num_keys;
 
 } tBTM_DELETE_STORED_LINK_KEY_COMPLETE;
-
-/* MIP evnets, callbacks    */
-enum {
-  BTM_MIP_MODE_CHG_EVT,
-  BTM_MIP_DISCONNECT_EVT,
-  BTM_MIP_PKTS_COMPL_EVT,
-  BTM_MIP_RXDATA_EVT
-};
-typedef uint8_t tBTM_MIP_EVT;
-
-typedef struct {
-  tBTM_MIP_EVT event;
-  RawAddress bd_addr;
-  uint16_t mip_id;
-} tBTM_MIP_MODE_CHANGE;
-
-typedef struct {
-  tBTM_MIP_EVT event;
-  uint16_t mip_id;
-  uint8_t disc_reason;
-} tBTM_MIP_CONN_TIMEOUT;
-
-#define BTM_MIP_MAX_RX_LEN 17
-
-typedef struct {
-  tBTM_MIP_EVT event;
-  uint16_t mip_id;
-  uint8_t rx_len;
-  uint8_t rx_data[BTM_MIP_MAX_RX_LEN];
-} tBTM_MIP_RXDATA;
-
-typedef struct {
-  tBTM_MIP_EVT event;
-  RawAddress bd_addr;
-  uint8_t data[11]; /* data[0] shows Vender-specific device type */
-} tBTM_MIP_EIR_HANDSHAKE;
-
-typedef struct {
-  tBTM_MIP_EVT event;
-  uint16_t num_sent; /* Completed packet count at the controller */
-} tBTM_MIP_PKTS_COMPL;
-
-typedef union {
-  tBTM_MIP_EVT event;
-  tBTM_MIP_MODE_CHANGE mod_chg;
-  tBTM_MIP_CONN_TIMEOUT conn_tmo;
-  tBTM_MIP_EIR_HANDSHAKE eir;
-  tBTM_MIP_PKTS_COMPL completed;
-  tBTM_MIP_RXDATA rxdata;
-} tBTM_MIP_EVENT_DATA;
-
-/* MIP event callback function  */
-typedef void(tBTM_MIP_EVENTS_CB)(tBTM_MIP_EVT event, tBTM_MIP_EVENT_DATA data);
-
-/* MIP Device query callback function  */
-typedef bool(tBTM_MIP_QUERY_CB)(const RawAddress& dev_addr, uint8_t* p_mode,
-                                LINK_KEY link_key);
 
 /* ACL link on, SCO link ongoing, sniff mode */
 #define BTM_CONTRL_ACTIVE 1

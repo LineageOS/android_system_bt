@@ -57,8 +57,10 @@ using android::hardware::bluetooth::a2dp::V1_0::ChannelMode;
 using android::hardware::ProcessState;
 using ::android::hardware::Return;
 using ::android::hardware::Void;
+using ::android::hardware::hidl_death_recipient;
 using ::android::hardware::hidl_vec;
 using ::android::sp;
+using ::android::wp;
 android::sp<IBluetoothAudioOffload> btAudio;
 
 #define CASE_RETURN_STR(const) \
@@ -73,6 +75,7 @@ static void btif_a2dp_audio_send_suspend_req();
 static void btif_a2dp_audio_send_stop_req();
 static void btif_a2dp_audio_interface_init();
 static void btif_a2dp_audio_interface_deinit();
+static void btif_a2dp_audio_interface_restart_session();
 // Delay reporting
 // static void btif_a2dp_audio_send_sink_latency();
 
@@ -152,6 +155,20 @@ class BluetoothAudioHost : public IBluetoothAudioHost {
           return Void();
       }*/
 };
+
+class BluetoothAudioDeathRecipient : public hidl_death_recipient {
+ public:
+  virtual void serviceDied(
+      uint64_t /*cookie*/,
+      const wp<::android::hidl::base::V1_0::IBase>& /*who*/) {
+    LOG_ERROR(LOG_TAG, "%s", __func__);
+    // Restart the session on the correct thread
+    do_in_bta_thread(FROM_HERE,
+                     base::Bind(&btif_a2dp_audio_interface_restart_session));
+  }
+};
+sp<BluetoothAudioDeathRecipient> bluetoothAudioDeathRecipient =
+    new BluetoothAudioDeathRecipient();
 
 static Status mapToStatus(uint8_t resp) {
   switch (resp) {
@@ -253,6 +270,12 @@ static void btif_a2dp_audio_interface_init() {
   btAudio = IBluetoothAudioOffload::getService();
   CHECK(btAudio != nullptr);
 
+  auto death_link = btAudio->linkToDeath(bluetoothAudioDeathRecipient, 0);
+  if (!death_link.isOk()) {
+    LOG_ERROR(LOG_TAG, "%s: Cannot observe the Bluetooth Audio HAL's death",
+              __func__);
+  }
+
   LOG_DEBUG(
       LOG_TAG, "%s: IBluetoothAudioOffload::getService() returned %p (%s)",
       __func__, btAudio.get(), (btAudio->isRemote() ? "remote" : "local"));
@@ -262,6 +285,14 @@ static void btif_a2dp_audio_interface_init() {
 
 static void btif_a2dp_audio_interface_deinit() {
   LOG_INFO(LOG_TAG, "%s: start", __func__);
+  if (btAudio != nullptr) {
+    auto death_unlink = btAudio->unlinkToDeath(bluetoothAudioDeathRecipient);
+    if (!death_unlink.isOk()) {
+      LOG_ERROR(LOG_TAG,
+                "%s: Error unlinking death observer from Bluetooth Audio HAL",
+                __func__);
+    }
+  }
   btAudio = nullptr;
 }
 
@@ -290,6 +321,18 @@ void btif_a2dp_audio_interface_end_session() {
     LOG_ERROR(LOG_TAG, "HAL server is dead");
   }
   btif_a2dp_audio_interface_deinit();
+}
+
+// Conditionally restart the session only if it was started before
+static void btif_a2dp_audio_interface_restart_session() {
+  LOG_INFO(LOG_TAG, "%s", __func__);
+  if (btAudio == nullptr) {
+    LOG_INFO(LOG_TAG, "%s: nothing to restart - session was not started",
+             __func__);
+    return;
+  }
+  btAudio = nullptr;
+  btif_a2dp_audio_interface_start_session();
 }
 
 void btif_a2dp_audio_on_started(tBTA_AV_STATUS status) {
