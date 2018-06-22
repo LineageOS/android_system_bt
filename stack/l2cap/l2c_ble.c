@@ -609,6 +609,13 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
     UINT16          credit;
     p_pkt_end = p + pkt_len;
 
+    if (p + 4 > p_pkt_end)
+    {
+        android_errorWriteLog(0x534e4554, "80261585");
+        L2CAP_TRACE_ERROR("invalid read");
+        return;
+    }
+
     STREAM_TO_UINT8  (cmd_code, p);
     STREAM_TO_UINT8  (id, p);
     STREAM_TO_UINT16 (cmd_len, p);
@@ -634,6 +641,13 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
             break;
 
         case L2CAP_CMD_BLE_UPDATE_REQ:
+            if (p + 8 > p_pkt_end)
+            {
+                android_errorWriteLog(0x534e4554, "80261585");
+                L2CAP_TRACE_ERROR("invalid read");
+                return;
+            }
+
             STREAM_TO_UINT16 (min_interval, p); /* 0x0006 - 0x0C80 */
             STREAM_TO_UINT16 (max_interval, p); /* 0x0006 - 0x0C80 */
             STREAM_TO_UINT16 (latency, p);  /* 0x0000 - 0x03E8 */
@@ -676,6 +690,13 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
             break;
 
         case L2CAP_CMD_BLE_CREDIT_BASED_CONN_REQ:
+            if (p + 10 > p_pkt_end)
+            {
+                android_errorWriteLog(0x534e4554, "80261585");
+                L2CAP_TRACE_ERROR("invalid read");
+                return;
+            }
+
             STREAM_TO_UINT16 (con_info.psm, p);
             STREAM_TO_UINT16 (rcid, p);
             STREAM_TO_UINT16 (mtu, p);
@@ -750,6 +771,13 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
             if (p_ccb)
             {
                 L2CAP_TRACE_DEBUG ("I remember the connection req");
+                if (p + 10 > p_pkt_end)
+                {
+                    android_errorWriteLog(0x534e4554, "80261585");
+                    L2CAP_TRACE_ERROR("invalid read");
+                    return;
+                }
+
                 STREAM_TO_UINT16 (p_ccb->remote_cid, p);
                 STREAM_TO_UINT16 (p_ccb->peer_conn_cfg.mtu, p);
                 STREAM_TO_UINT16 (p_ccb->peer_conn_cfg.mps, p);
@@ -796,6 +824,13 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
             break;
 
         case L2CAP_CMD_BLE_FLOW_CTRL_CREDIT:
+            if (p + 4 > p_pkt_end)
+            {
+                android_errorWriteLog(0x534e4554, "80261585");
+                L2CAP_TRACE_ERROR("invalid read");
+                return;
+            }
+
             STREAM_TO_UINT16(lcid, p);
             if((p_ccb = l2cu_find_ccb_by_remote_cid(p_lcb, lcid)) == NULL)
             {
@@ -831,6 +866,12 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
             break;
 
          case L2CAP_CMD_DISC_RSP:
+            if (p + 4 > p_pkt_end)
+            {
+                android_errorWriteLog(0x534e4554, "80261585");
+                L2CAP_TRACE_ERROR("invalid read");
+                return;
+            }
             STREAM_TO_UINT16 (rcid, p);
             STREAM_TO_UINT16 (lcid, p);
 
