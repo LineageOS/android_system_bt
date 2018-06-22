@@ -28,6 +28,7 @@
 
 #define LOG_TAG "bt_btif_sdp_server"
 
+#include <log/log.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>

@@ -22,6 +22,7 @@ static_library("profile_avrcp") {
 
   include_dirs = [
     "//",
+    "//btcore/include",
     "//internal_include",
     "//stack/include",
     "//profile/avrcp",
