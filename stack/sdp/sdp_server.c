@@ -736,6 +736,14 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
             /* if there is a partial attribute pending to be sent */
             if (p_ccb->cont_info.attr_offset)
             {
+                if (attr_len < p_ccb->cont_info.attr_offset)
+                {
+                    android_errorWriteLog(0x534e4554, "79217770");
+                    LOG(ERROR) << "offset is bigger than attribute length";
+                    sdpu_build_n_send_error(p_ccb, trans_num, SDP_INVALID_CONT_STATE,
+                                            SDP_TEXT_BAD_CONT_LEN);
+                    return;
+                }
                 p_rsp = sdpu_build_partial_attrib_entry (p_rsp, p_attr, rem_len,
                                                          &p_ccb->cont_info.attr_offset);
 
@@ -1090,6 +1098,14 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
                 /* if there is a partial attribute pending to be sent */
                 if (p_ccb->cont_info.attr_offset)
                 {
+                    if (attr_len < p_ccb->cont_info.attr_offset)
+                    {
+                        android_errorWriteLog(0x534e4554, "79217770");
+                        LOG(ERROR) << "offset is bigger than attribute length";
+                        sdpu_build_n_send_error(p_ccb, trans_num, SDP_INVALID_CONT_STATE,
+                                                SDP_TEXT_BAD_CONT_LEN);
+                        return;
+                    }
                     p_rsp = sdpu_build_partial_attrib_entry (p_rsp, p_attr, rem_len,
                                                              &p_ccb->cont_info.attr_offset);
 
