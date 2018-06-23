@@ -80,6 +80,7 @@ static_library("btif") {
   include_dirs = [
     "include",
     "//",
+    "//linux_include",
     "//audio_a2dp_hw/include",
     "//audio_hearing_aid_hw/include",
     "//bta/include",

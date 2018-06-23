@@ -49,6 +49,8 @@ static_library("bta") {
     "gatt/bta_gatts_api.cc",
     "gatt/bta_gatts_main.cc",
     "gatt/bta_gatts_utils.cc",
+    "gatt/database.cc",
+    "gatt/database_builder.cc",
     "hearing_aid/hearing_aid.cc",
     "hearing_aid/hearing_aid_audio_source.cc",
     "hf_client/bta_hf_client_act.cc",
@@ -101,6 +103,8 @@ static_library("bta") {
     "include",
     "sys",
     "//",
+    "//linux_include",
+    "//bta",
     "//internal_include",
     "//btcore/include",
     "//hci/include",
@@ -121,5 +125,31 @@ static_library("bta") {
   deps = [
     "//third_party/libchrome:base"
   ]
+}
 
+executable("net_test_bta") {
+  testonly = true
+  sources = [
+        "test/gatt/database_builder_test.cc",
+        "test/gatt/database_builder_sample_device_test.cc",
+        "test/gatt/database_test.cc",
+        "gatt/database.cc",
+        "gatt/database_builder.cc",
+  ]
+
+  include_dirs = [
+    "include",
+    "//",
+    "//bta",
+    "//btcore/include",
+    "//hci/include",
+    "//internal_include",
+    "//stack/btm",
+  ]
+
+  deps = [
+    "//types",
+    "//third_party/googletest:gmock_main",
+    "//third_party/libchrome:base",
+  ]
 }
