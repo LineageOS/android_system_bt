@@ -35,6 +35,7 @@
 #include "packet/avrcp/get_total_number_of_items.h"
 #include "packet/avrcp/play_item.h"
 #include "packet/avrcp/register_notification_packet.h"
+#include "packet/avrcp/set_addressed_player.h"
 #include "packet/avrcp/set_browsed_player.h"
 #include "packet/avrcp/vendor_packet.h"
 #include "profile/avrcp/media_id_map.h"
@@ -220,6 +221,11 @@ class Device {
   // PLAY ITEM
   virtual void HandlePlayItem(uint8_t label,
                               std::shared_ptr<PlayItemRequest> request);
+
+  // SET ADDRESSED PLAYER
+  virtual void HandleSetAddressedPlayer(
+      uint8_t label, std::shared_ptr<SetAddressedPlayerRequest> request,
+      uint16_t curr_player, std::vector<MediaPlayerInfo> players);
 
   /********************
    * MESSAGE REQUESTS
