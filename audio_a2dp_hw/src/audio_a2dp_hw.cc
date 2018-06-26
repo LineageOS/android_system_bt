@@ -1187,7 +1187,7 @@ static int out_set_parameters(struct audio_stream* stream,
   if (params["A2dpSuspended"].compare("true") == 0) {
     if (out->common.state == AUDIO_A2DP_STATE_STARTED)
       status = suspend_audio_datapath(&out->common, false);
-  } else {
+  } else if (params["A2dpSuspended"].compare("false") == 0) {
     /* Do not start the streaming automatically. If the phone was streaming
      * prior to being suspended, the next out_write shall trigger the
      * AVDTP start procedure */
