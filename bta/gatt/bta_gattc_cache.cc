@@ -46,6 +46,8 @@
 #include "sdpdefs.h"
 #include "utl.h"
 
+#include <base/strings/string_number_conversions.h>
+
 using base::StringPrintf;
 using bluetooth::Uuid;
 using gatt::Characteristic;
@@ -70,7 +72,7 @@ static void bta_gattc_explore_srvc_finished(uint16_t conn_id,
 #define BTA_GATT_SDP_DB_SIZE 4096
 
 #define GATT_CACHE_PREFIX "/data/misc/bluetooth/gatt_cache_"
-#define GATT_CACHE_VERSION 5
+#define GATT_CACHE_VERSION 6
 
 static void bta_gattc_generate_cache_file_name(char* buffer, size_t buffer_len,
                                                const RawAddress& bda) {
@@ -153,16 +155,44 @@ static void bta_gattc_explore_next_service(uint16_t conn_id,
     return;
   }
 
-  if (!p_srvc_cb->pending_discovery.StartNextServiceExploration()) {
-    bta_gattc_explore_srvc_finished(conn_id, p_srvc_cb);
+  if (p_srvc_cb->pending_discovery.StartNextServiceExploration()) {
+    const auto& service =
+        p_srvc_cb->pending_discovery.CurrentlyExploredService();
+    VLOG(1) << "Start service discovery";
+
+    /* start discovering included services */
+    GATTC_Discover(conn_id, GATT_DISC_INC_SRVC, service.first, service.second);
+    return;
+  }
+  // No more services to discover
+
+  // As part of service discovery, read the values of "Characteristic Extended
+  // Properties" descriptor
+  const auto& descriptors =
+      p_srvc_cb->pending_discovery.DescriptorHandlesToRead();
+  if (!descriptors.empty()) {
+    // TODO(jpawlowski): as a limit we should use MTU/2 rather than
+    // GATT_MAX_READ_MULTI_HANDLES
+    /* each descriptor contains just 2 bytes, so response size is same as
+     * request size */
+    size_t num_handles =
+        std::min(descriptors.size(), (size_t)GATT_MAX_READ_MULTI_HANDLES);
+
+    tGATT_READ_PARAM read_param;
+    memset(&read_param, 0, sizeof(tGATT_READ_PARAM));
+
+    read_param.read_multiple.num_handles = num_handles;
+    read_param.read_multiple.auth_req = GATT_AUTH_REQ_NONE;
+    memcpy(&read_param.read_multiple.handles, descriptors.data(),
+           sizeof(uint16_t) * num_handles);
+    GATTC_Read(conn_id, GATT_READ_MULTIPLE, &read_param);
+
+    // asynchronous continuation in bta_gattc_op_cmpl_during_discovery, when
+    // read is finished
     return;
   }
 
-  const auto& service = p_srvc_cb->pending_discovery.CurrentlyExploredService();
-  VLOG(1) << "Start service discovery";
-
-  /* start discovering included services */
-  GATTC_Discover(conn_id, GATT_DISC_INC_SRVC, service.first, service.second);
+  bta_gattc_explore_srvc_finished(conn_id, p_srvc_cb);
 }
 
 static void bta_gattc_explore_srvc_finished(uint16_t conn_id,
@@ -313,6 +343,53 @@ static tGATT_STATUS bta_gattc_sdp_service_disc(uint16_t conn_id,
 
   cb_data->sdp_conn_id = conn_id;
   return GATT_SUCCESS;
+}
+
+/** operation completed */
+void bta_gattc_op_cmpl_during_discovery(UNUSED_ATTR tBTA_GATTC_CLCB* p_clcb,
+                                        tBTA_GATTC_DATA* p_data) {
+  uint8_t op = (uint8_t)p_data->op_cmpl.op_code;
+
+  if (op != GATTC_OPTYPE_READ) {
+    /* receive op complete when discovery is started, ignore the response,
+       and wait for discovery finish and resent */
+    VLOG(1) << __func__ << ": op = " << +p_data->hdr.layer_specific;
+    return;
+  }
+
+  // our read operation is finished.
+  // TODO: check if we can get here when any other read operation i.e. initiated
+  // by upper layer apps, can get us there.
+  const uint8_t status = p_data->op_cmpl.status;
+  if (status != GATT_SUCCESS) {
+    if (status == GATT_REQ_NOT_SUPPORTED) {
+      // TODO: handle case when read multiple is not supported on remote device.
+    }
+    LOG(WARNING) << "Discovery on server failed: " << loghex(status);
+    bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_ERROR);
+  }
+
+  const tGATT_VALUE& att_value = p_data->op_cmpl.p_cmpl->att_value;
+
+  const uint8_t* p = att_value.value;
+  std::vector<uint16_t> value_of_descriptors;
+  while (p < att_value.value + att_value.len) {
+    uint16_t extended_properties;
+    STREAM_TO_UINT16(extended_properties, p);
+    value_of_descriptors.push_back(extended_properties);
+  }
+
+  tBTA_GATTC_SERV* p_srvc_cb = p_clcb->p_srcb;
+  bool ret =
+      p_srvc_cb->pending_discovery.SetValueOfDescriptors(value_of_descriptors);
+  if (!ret) {
+    LOG(WARNING) << __func__
+                 << " Problem setting Extended Properties descriptors values";
+    bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_ERROR);
+  }
+
+  // Continue service discovery
+  bta_gattc_explore_next_service(p_clcb->bta_conn_id, p_srvc_cb);
 }
 
 /** callback function to GATT client stack */

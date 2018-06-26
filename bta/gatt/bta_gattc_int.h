@@ -363,8 +363,8 @@ extern void bta_gattc_read_multi(tBTA_GATTC_CLCB* p_clcb,
 extern void bta_gattc_ci_open(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data);
 extern void bta_gattc_ci_close(tBTA_GATTC_CLCB* p_clcb,
                                tBTA_GATTC_DATA* p_data);
-extern void bta_gattc_ignore_op_cmpl(tBTA_GATTC_CLCB* p_clcb,
-                                     tBTA_GATTC_DATA* p_data);
+extern void bta_gattc_op_cmpl_during_discovery(tBTA_GATTC_CLCB* p_clcb,
+                                               tBTA_GATTC_DATA* p_data);
 extern void bta_gattc_restart_discover(tBTA_GATTC_CLCB* p_clcb,
                                        tBTA_GATTC_DATA* p_msg);
 extern void bta_gattc_init_bk_conn(tBTA_GATTC_API_OPEN* p_data,

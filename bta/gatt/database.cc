@@ -35,6 +35,8 @@ const Uuid PRIMARY_SERVICE = Uuid::From16Bit(GATT_UUID_PRI_SERVICE);
 const Uuid SECONDARY_SERVICE = Uuid::From16Bit(GATT_UUID_SEC_SERVICE);
 const Uuid INCLUDE = Uuid::From16Bit(GATT_UUID_INCLUDE_SERVICE);
 const Uuid CHARACTERISTIC = Uuid::From16Bit(GATT_UUID_CHAR_DECLARE);
+const Uuid CHARACTERISTIC_EXTENDED_PROPERTIES =
+    Uuid::From16Bit(GATT_UUID_CHAR_EXT_PROP);
 
 bool HandleInRange(const Service& svc, uint16_t handle) {
   return handle >= svc.handle && handle <= svc.end_handle;
@@ -116,7 +118,14 @@ std::vector<StoredAttribute> Database::Serialize() const {
                                .uuid = charac.uuid}}});
 
       for (const Descriptor& desc : charac.descriptors) {
-        nv_attr.push_back({desc.handle, desc.uuid, {}});
+        if (desc.uuid == CHARACTERISTIC_EXTENDED_PROPERTIES) {
+          nv_attr.push_back({desc.handle,
+                             desc.uuid,
+                             {.characteristic_extended_properties =
+                                  desc.characteristic_extended_properties}});
+        } else {
+          nv_attr.push_back({desc.handle, desc.uuid, {}});
+        }
       }
     }
   }
@@ -183,8 +192,17 @@ Database Database::Deserialize(const std::vector<StoredAttribute>& nv_attr,
       });
 
     } else {
-      current_service_it->characteristics.back().descriptors.emplace_back(
-          Descriptor{.handle = attr.handle, .uuid = attr.type});
+      if (attr.type == CHARACTERISTIC_EXTENDED_PROPERTIES) {
+        current_service_it->characteristics.back().descriptors.emplace_back(
+            Descriptor{.handle = attr.handle,
+                       .uuid = attr.type,
+                       .characteristic_extended_properties =
+                           attr.value.characteristic_extended_properties});
+
+      } else {
+        current_service_it->characteristics.back().descriptors.emplace_back(
+            Descriptor{.handle = attr.handle, .uuid = attr.type});
+      }
     }
   }
   *success = true;
