@@ -27,8 +27,8 @@
 #include "btm_api.h"
 #include "btm_ble_api.h"
 #include "btu.h"
-#include "crypto_toolbox.h"
 #include "smp_api.h"
+#include "stack/crypto_toolbox/crypto_toolbox.h"
 
 /* Legacy mode */
 #define SMP_MODEL_ENCRYPTION_ONLY 0 /* Just Works model */
@@ -245,10 +245,6 @@ typedef union {
 /* check if authentication requirement need MITM protection */
 #define SMP_NO_MITM_REQUIRED(x) (((x)&SMP_AUTH_YN_BIT) == 0)
 
-#define SMP_ENCRYT_KEY_SIZE 16
-#define SMP_ENCRYT_DATA_SIZE 16
-#define SMP_ECNCRPYT_STATUS HCI_SUCCESS
-
 typedef struct {
   RawAddress bd_addr;
   BT_HDR* p_copy;
@@ -452,9 +448,6 @@ extern void smp_convert_string_to_tk(Octet16* tk, uint32_t passkey);
 extern void smp_mask_enc_key(uint8_t loc_enc_size, Octet16* p_data);
 extern void smp_rsp_timeout(void* data);
 extern void smp_delayed_auth_complete_timeout(void* data);
-extern void smp_xor_128(Octet16* a, const Octet16& b);
-extern Octet16 smp_encrypt_data(const Octet16& key, uint8_t* message,
-                                uint8_t length);
 extern bool smp_command_has_invalid_parameters(tSMP_CB* p_cb);
 extern void smp_reject_unexpected_pairing_command(const RawAddress& bd_addr);
 extern tSMP_ASSO_MODEL smp_select_association_model(tSMP_CB* p_cb);
@@ -507,5 +500,6 @@ inline void smp_debug_print_nbyte_little_endian(const Octet16& p,
 #endif
 
 extern void print128(const Octet16& x, const uint8_t* key_name);
+extern void smp_xor_128(Octet16* a, const Octet16& b);
 
 #endif /* SMP_INT_H */

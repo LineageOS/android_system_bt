@@ -174,12 +174,6 @@ extern void SMP_OobDataReply(const RawAddress& bd_addr, tSMP_STATUS res,
  ******************************************************************************/
 extern void SMP_SecureConnectionOobDataReply(uint8_t* p_data);
 
-/* This function computes AES_128(key, message). |key| must be 128bit.
- * |message| can be at most 16 bytes long, it's length in bytes is given in
- * |length| */
-extern Octet16 SMP_Encrypt(const Octet16& key, uint8_t* message,
-                           uint8_t length);
-
 /*******************************************************************************
  *
  * Function         SMP_KeypressNotification
@@ -214,28 +208,5 @@ extern bool smp_proc_ltk_request(const RawAddress& bda);
 // Called when link is encrypted and notified to slave device.
 // Proceed to send LTK, DIV and ER to master if bonding the devices.
 extern void smp_link_encrypted(const RawAddress& bda, uint8_t encr_enable);
-
-//
-// The AES-CMAC Generation Function with tlen implemented.
-// |key| - CMAC key in little endian order, expect SRK when used by SMP.
-// |message| - text to be signed in little endian byte order.
-// |length| - length of the message in byte.
-// |tlen| - lenth of mac desired
-// |p_signature| - data pointer to where signed data to be stored, tlen long.
-//
-void aes_cipher_msg_auth_code(const Octet16& key, const uint8_t* message,
-                              uint16_t length, uint16_t tlen,
-                              uint8_t* p_signature);
-
-inline Octet16 aes_cmac(const Octet16& key, const uint8_t* message,
-                        const uint16_t length) {
-  Octet16 ret;
-  aes_cipher_msg_auth_code(key, message, length, 16, ret.data());
-  return ret;
-}
-
-inline Octet16 aes_cmac(const Octet16& key, const Octet16& message) {
-  return aes_cmac(key, message.data(), message.size());
-}
 
 #endif /* SMP_API_H */
