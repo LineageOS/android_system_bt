@@ -1,3 +1,9 @@
+crypto_toolbox_srcs = [
+    "crypto_toolbox/aes.cc",
+    "crypto_toolbox/aes_cmac.cc",
+    "crypto_toolbox/crypto_toolbox.cc",
+]
+
 // Bluetooth stack static library for target
 // ========================================================
 cc_library_static {
@@ -40,7 +46,7 @@ cc_library_static {
         "system/bt/bta/sys",
         "system/bt/utils/include",
     ],
-    srcs: [
+    srcs: crypto_toolbox_srcs + [
         "a2dp/a2dp_aac.cc",
         "a2dp/a2dp_aac_decoder.cc",
         "a2dp/a2dp_aac_encoder.cc",
@@ -155,15 +161,12 @@ cc_library_static {
         "sdp/sdp_main.cc",
         "sdp/sdp_server.cc",
         "sdp/sdp_utils.cc",
-        "smp/crypto_toolbox.cc",
-        "smp/aes.cc",
         "smp/p_256_curvepara.cc",
         "smp/p_256_ecc_pp.cc",
         "smp/p_256_multprecision.cc",
         "smp/smp_act.cc",
         "smp/smp_api.cc",
         "smp/smp_br_main.cc",
-        "smp/smp_cmac.cc",
         "smp/smp_keys.cc",
         "smp/smp_l2c.cc",
         "smp/smp_main.cc",
@@ -183,7 +186,7 @@ cc_library_static {
     required: [
         "libldacBT_enc",
         "libldacBT_abr",
-    ]
+    ],
 }
 
 // Bluetooth stack unit tests for target
@@ -225,53 +228,53 @@ cc_test {
 }
 
 cc_test {
-  name: "net_test_stack_rfcomm",
-  defaults: ["fluoride_defaults"],
-  host_supported: true,
-  local_include_dirs: [
-      "include",
-      "btm",
-      "l2cap",
-      "smp",
-      "rfcomm",
-      "test/common",
-  ],
-  include_dirs: [
-      "system/bt",
-      "system/bt/internal_include",
-      "system/bt/btcore/include",
-      "system/bt/hci/include",
-      "system/bt/utils/include",
-  ],
-  srcs: [
-      "rfcomm/port_api.cc",
-      "rfcomm/port_rfc.cc",
-      "rfcomm/port_utils.cc",
-      "rfcomm/rfc_l2cap_if.cc",
-      "rfcomm/rfc_mx_fsm.cc",
-      "rfcomm/rfc_port_fsm.cc",
-      "rfcomm/rfc_port_if.cc",
-      "rfcomm/rfc_ts_frames.cc",
-      "rfcomm/rfc_utils.cc",
-      "test/common/mock_btm_layer.cc",
-      "test/common/mock_btu_layer.cc",
-      "test/common/mock_l2cap_layer.cc",
-      "test/common/stack_test_packet_utils.cc",
-      "test/rfcomm/stack_rfcomm_test.cc",
-      "test/rfcomm/stack_rfcomm_test_main.cc",
-      "test/rfcomm/stack_rfcomm_test_utils.cc",
-      "test/rfcomm/stack_rfcomm_test_utils_test.cc",
-  ],
-  shared_libs: [
-      "libcutils",
-      "libprotobuf-cpp-lite",
-  ],
-  static_libs: [
-      "liblog",
-      "libgmock",
-      "libosi",
-      "libbt-protos-lite",
-  ],
+    name: "net_test_stack_rfcomm",
+    defaults: ["fluoride_defaults"],
+    host_supported: true,
+    local_include_dirs: [
+        "include",
+        "btm",
+        "l2cap",
+        "smp",
+        "rfcomm",
+        "test/common",
+    ],
+    include_dirs: [
+        "system/bt",
+        "system/bt/internal_include",
+        "system/bt/btcore/include",
+        "system/bt/hci/include",
+        "system/bt/utils/include",
+    ],
+    srcs: [
+        "rfcomm/port_api.cc",
+        "rfcomm/port_rfc.cc",
+        "rfcomm/port_utils.cc",
+        "rfcomm/rfc_l2cap_if.cc",
+        "rfcomm/rfc_mx_fsm.cc",
+        "rfcomm/rfc_port_fsm.cc",
+        "rfcomm/rfc_port_if.cc",
+        "rfcomm/rfc_ts_frames.cc",
+        "rfcomm/rfc_utils.cc",
+        "test/common/mock_btm_layer.cc",
+        "test/common/mock_btu_layer.cc",
+        "test/common/mock_l2cap_layer.cc",
+        "test/common/stack_test_packet_utils.cc",
+        "test/rfcomm/stack_rfcomm_test.cc",
+        "test/rfcomm/stack_rfcomm_test_main.cc",
+        "test/rfcomm/stack_rfcomm_test_utils.cc",
+        "test/rfcomm/stack_rfcomm_test_utils_test.cc",
+    ],
+    shared_libs: [
+        "libcutils",
+        "libprotobuf-cpp-lite",
+    ],
+    static_libs: [
+        "liblog",
+        "libgmock",
+        "libosi",
+        "libbt-protos-lite",
+    ],
 }
 
 // Bluetooth stack smp unit tests for target
@@ -292,19 +295,16 @@ cc_test {
         "system/bt/hci/include",
         "system/bt/utils/include",
     ],
-    srcs: [
+    srcs: crypto_toolbox_srcs + [
         "smp/smp_keys.cc",
-        "smp/crypto_toolbox.cc",
-        "smp/aes.cc",
         "smp/p_256_curvepara.cc",
         "smp/p_256_ecc_pp.cc",
         "smp/p_256_multprecision.cc",
         "smp/smp_api.cc",
-        "smp/smp_cmac.cc",
         "smp/smp_main.cc",
         "smp/smp_utils.cc",
-        "test/stack_smp_test.cc",
         "test/crypto_toolbox_test.cc",
+        "test/stack_smp_test.cc",
     ],
     shared_libs: [
         "libcutils",
@@ -315,7 +315,6 @@ cc_test {
         "libosi",
     ],
 }
-
 
 // Bluetooth stack multi-advertising unit tests for target
 // ========================================================

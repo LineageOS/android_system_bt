@@ -28,7 +28,6 @@
 #endif
 #include <base/bind.h>
 #include <string.h>
-#include "aes.h"
 #include "bt_utils.h"
 #include "btm_ble_api.h"
 #include "btm_ble_int.h"
@@ -38,11 +37,12 @@
 #include "osi/include/osi.h"
 #include "p_256_ecc_pp.h"
 #include "smp_int.h"
-#include "stack/smp/crypto_toolbox.h"
+#include "stack/crypto_toolbox/crypto_toolbox.h"
 
 #include <algorithm>
 
 using base::Bind;
+using crypto_toolbox::aes_128;
 
 #ifndef SMP_MAX_ENC_REPEAT
 #define SMP_MAX_ENC_REPEAT 3
@@ -105,51 +105,6 @@ void smp_debug_print_nbyte_big_endian(uint8_t* p, const char* key_name,
     SMP_TRACE_DEBUG("[%03d]: %s", row * ncols, p_buf);
   }
 #endif
-}
-
-/* This function computes AES_128(key, message). |key| must be 128bit.
- * |message| can be at most 16 bytes long, it's length in bytes is given in
- * |length| */
-Octet16 smp_encrypt_data(const Octet16& key, uint8_t* message, uint8_t length) {
-  uint8_t* p = NULL;
-  uint8_t* p_rev_data = NULL;   /* input data in big endilan format */
-  uint8_t* p_rev_key = NULL;    /* input key in big endilan format */
-  uint8_t* p_rev_output = NULL; /* encrypted output in big endilan format */
-
-  SMP_TRACE_DEBUG("%s", __func__);
-
-  if (length > SMP_ENCRYT_DATA_SIZE) length = SMP_ENCRYT_DATA_SIZE;
-
-  uint8_t p_start[SMP_ENCRYT_DATA_SIZE * 4];
-  memset(p_start, 0, SMP_ENCRYT_DATA_SIZE * 4);
-  p = p_start;
-  ARRAY_TO_STREAM(p, message, length);             /* byte 0 to byte 15 */
-  p_rev_data = p = p_start + SMP_ENCRYT_DATA_SIZE; /* start at byte 16 */
-  REVERSE_ARRAY_TO_STREAM(p, p_start,
-                          SMP_ENCRYT_DATA_SIZE);        /* byte 16 to byte 31 */
-  p_rev_key = p;                                        /* start at byte 32 */
-  REVERSE_ARRAY_TO_STREAM(p, key.data(),
-                          SMP_ENCRYT_KEY_SIZE); /* byte 32 to byte 47 */
-
-#if (SMP_DEBUG == TRUE && SMP_DEBUG_VERBOSE == TRUE)
-  smp_debug_print_nbyte_little_endian(key.data(), "Key", SMP_ENCRYT_KEY_SIZE);
-  smp_debug_print_nbyte_little_endian(p_start, "Plain text",
-                                      SMP_ENCRYT_DATA_SIZE);
-#endif
-  p_rev_output = p;
-
-  aes_context ctx;
-  aes_set_key(p_rev_key, SMP_ENCRYT_KEY_SIZE, &ctx);
-  aes_encrypt(p_rev_data, p, &ctx); /* outputs in byte 48 to byte 63 */
-
-  Octet16 output;
-  p = output.data();
-  REVERSE_ARRAY_TO_STREAM(p, p_rev_output, SMP_ENCRYT_DATA_SIZE);
-#if (SMP_DEBUG == TRUE && SMP_DEBUG_VERBOSE == TRUE)
-  smp_debug_print_nbyte_little_endian(p_out->param_buf, "Encrypted text",
-                                      SMP_ENCRYT_KEY_SIZE);
-#endif
-  return output;
 }
 
 /** This function is called to process a passkey. */
@@ -247,7 +202,7 @@ void smp_compute_csrk(uint16_t div, tSMP_CB* p_cb) {
   UINT16_TO_STREAM(p, p_cb->div);
   UINT16_TO_STREAM(p, r);
 
-  p_cb->csrk = SMP_Encrypt(er, buffer, 4);
+  p_cb->csrk = aes_128(er, buffer, 4);
   smp_send_csrk_info(p_cb, NULL);
 }
 
@@ -402,7 +357,7 @@ tSMP_STATUS smp_calculate_comfirm(tSMP_CB* p_cb, const Octet16& rand,
   smp_debug_print_nbyte_little_endian(p1, "p1' = p1 XOR r", 16);
   /* calculate e1 = e(k, p1'), where k = TK */
   smp_debug_print_nbyte_little_endian(p_cb->tk.data(), "TK", 16);
-  Octet16 e1 = SMP_Encrypt(p_cb->tk, p1.data(), OCTET16_LEN);
+  Octet16 e1 = aes_128(p_cb->tk, p1);
   smp_debug_print_nbyte_little_endian(e1.data(), "e1 = e(k, p1')", 16);
   /* generate p2 = padding || ia || ra */
   Octet16 p2 = smp_gen_p2_4_confirm(p_cb, remote_bda);
@@ -410,7 +365,7 @@ tSMP_STATUS smp_calculate_comfirm(tSMP_CB* p_cb, const Octet16& rand,
   smp_xor_128(&p2, e1);
   smp_debug_print_nbyte_little_endian(p2, "p2' = p2 XOR e1", 16);
   /* calculate: c1 = e(k, p2') */
-  *output = SMP_Encrypt(p_cb->tk, p2.data(), OCTET16_LEN);
+  *output = aes_128(p_cb->tk, p2);
   return SMP_SUCCESS;
 }
 
@@ -559,7 +514,7 @@ static void smp_generate_y(tSMP_CB* p_cb, BT_OCTET8 rand) {
   const Octet16& dhk = BTM_GetDeviceDHK();
 
   memcpy(p_cb->enc_rand, rand, BT_OCTET8_LEN);
-  Octet16 output = SMP_Encrypt(dhk, rand, BT_OCTET8_LEN);
+  Octet16 output = aes_128(dhk, rand, BT_OCTET8_LEN);
   smp_process_ediv(p_cb, output);
 }
 
@@ -573,7 +528,7 @@ static void smp_generate_ltk_cont(uint16_t div, tSMP_CB* p_cb) {
   const Octet16& er = BTM_GetDeviceEncRoot();
 
   /* LTK = d1(ER, DIV, 0)= e(ER, DIV)*/
-  Octet16 ltk = SMP_Encrypt(er, (uint8_t*)&p_cb->div, sizeof(uint16_t));
+  Octet16 ltk = aes_128(er, (uint8_t*)&p_cb->div, sizeof(uint16_t));
   /* mask the LTK */
   smp_mask_enc_key(p_cb->loc_enc_size, &ltk);
   p_cb->ltk = ltk;
@@ -640,7 +595,7 @@ Octet16 smp_calculate_legacy_short_term_key(tSMP_CB* p_cb) {
   }
 
   /* generate STK = Etk(rand|rrand)*/
-  return SMP_Encrypt(p_cb->tk, text.data(), OCTET16_LEN);
+  return aes_128(p_cb->tk, text);
 }
 
 /*******************************************************************************
@@ -803,21 +758,21 @@ void smp_calculate_local_commitment(tSMP_CB* p_cb) {
         SMP_TRACE_WARNING(
             "local commitment calc on master is not expected "
             "for Just Works/Numeric Comparison models");
-      p_cb->commitment = smp_calculate_f4(p_cb->loc_publ_key.x,
-                                          p_cb->peer_publ_key.x, p_cb->rand, 0);
+      p_cb->commitment = crypto_toolbox::f4(
+          p_cb->loc_publ_key.x, p_cb->peer_publ_key.x, p_cb->rand, 0);
       break;
     case SMP_MODEL_SEC_CONN_PASSKEY_ENT:
     case SMP_MODEL_SEC_CONN_PASSKEY_DISP:
       random_input =
           smp_calculate_random_input(p_cb->local_random.data(), p_cb->round);
       p_cb->commitment =
-          smp_calculate_f4(p_cb->loc_publ_key.x, p_cb->peer_publ_key.x,
-                           p_cb->rand, random_input);
+          crypto_toolbox::f4(p_cb->loc_publ_key.x, p_cb->peer_publ_key.x,
+                             p_cb->rand, random_input);
       break;
     case SMP_MODEL_SEC_CONN_OOB:
       SMP_TRACE_WARNING(
           "local commitment calc is expected for OOB model BEFORE pairing");
-      p_cb->commitment = smp_calculate_f4(
+      p_cb->commitment = crypto_toolbox::f4(
           p_cb->loc_publ_key.x, p_cb->loc_publ_key.x, p_cb->local_random, 0);
       break;
     default:
@@ -842,18 +797,18 @@ Octet16 smp_calculate_peer_commitment(tSMP_CB* p_cb) {
         SMP_TRACE_WARNING(
             "peer commitment calc on slave is not expected "
             "for Just Works/Numeric Comparison models");
-      output = smp_calculate_f4(p_cb->peer_publ_key.x, p_cb->loc_publ_key.x,
-                                p_cb->rrand, 0);
+      output = crypto_toolbox::f4(p_cb->peer_publ_key.x, p_cb->loc_publ_key.x,
+                                  p_cb->rrand, 0);
       break;
     case SMP_MODEL_SEC_CONN_PASSKEY_ENT:
     case SMP_MODEL_SEC_CONN_PASSKEY_DISP:
       ri = smp_calculate_random_input(p_cb->peer_random.data(), p_cb->round);
-      output = smp_calculate_f4(p_cb->peer_publ_key.x, p_cb->loc_publ_key.x,
-                                p_cb->rrand, ri);
+      output = crypto_toolbox::f4(p_cb->peer_publ_key.x, p_cb->loc_publ_key.x,
+                                  p_cb->rrand, ri);
       break;
     case SMP_MODEL_SEC_CONN_OOB:
-      output = smp_calculate_f4(p_cb->peer_publ_key.x, p_cb->peer_publ_key.x,
-                                p_cb->peer_random, 0);
+      output = crypto_toolbox::f4(p_cb->peer_publ_key.x, p_cb->peer_publ_key.x,
+                                  p_cb->peer_random, 0);
       break;
     default:
       SMP_TRACE_ERROR("Association Model = %d is not used in LE SC",
@@ -880,10 +835,10 @@ void smp_calculate_numeric_comparison_display_number(tSMP_CB* p_cb,
   SMP_TRACE_DEBUG("%s", __func__);
 
   if (p_cb->role == HCI_ROLE_MASTER) {
-    p_cb->number_to_display = smp_calculate_g2(
+    p_cb->number_to_display = crypto_toolbox::g2(
         p_cb->loc_publ_key.x, p_cb->peer_publ_key.x, p_cb->rand, p_cb->rrand);
   } else {
-    p_cb->number_to_display = smp_calculate_g2(
+    p_cb->number_to_display = crypto_toolbox::g2(
         p_cb->peer_publ_key.x, p_cb->loc_publ_key.x, p_cb->rrand, p_cb->rand);
   }
 
@@ -904,87 +859,6 @@ void smp_calculate_numeric_comparison_display_number(tSMP_CB* p_cb,
   return;
 }
 
-/*******************************************************************************
- *
- * Function         smp_calculate_f5_mackey_or_long_term_key
- *
- * Description      The function calculates the value of MacKey or LTK by the
- *                  rules defined for f5 function.
- *                  At the moment exactly the same formula is used to calculate
- *                  LTK and MacKey.
- *                  The difference is the value of input parameter Counter:
- *                  - in MacKey calculations the value is 0;
- *                  - in LTK calculations the value is 1.
- *                  The formula:
- *                  mac = AES-CMAC (Counter||keyID||N1||N2||A1||A2||Length)
- *                                T
- *                  where
- *                  input:      T       is 256 bits;
- *                              Counter is 8 bits, its value is 0 for MacKey,
- *                                                              1 for LTK;
- *                              keyID   is 32 bits, its value is 0x62746c65;
- *                              N1      is 128 bits;
- *                              N2      is 128 bits;
- *                              A1      is 56 bits;
- *                              A2      is 56 bits;
- *                              Length  is 16 bits, its value is 0x0100
- *                  output:     LTK     is 128 bit.
- *
- * Note             The LSB is the first octet, the MSB is the last octet of
- *                  the AES-CMAC input/output stream.
- *
- ******************************************************************************/
-Octet16 smp_calculate_f5_mackey_or_long_term_key(
-    const Octet16& t, uint8_t* counter, uint8_t* key_id, const Octet16& n1,
-    const Octet16& n2, uint8_t* a1, uint8_t* a2, uint8_t* length) {
-  constexpr size_t msg_len = 1 /* Counter size */ + 4 /* keyID size */ +
-                             OCTET16_LEN /* N1 size */ +
-                             OCTET16_LEN /* N2 size */ + 7 /* A1 size*/ +
-                             7 /* A2 size*/ + 2 /* Length size */;
-
-  SMP_TRACE_DEBUG("%s", __func__);
-#if (SMP_DEBUG == TRUE)
-  uint8_t* p_prnt = t;
-  smp_debug_print_nbyte_little_endian(p_prnt, "T", OCTET16_LEN);
-  p_prnt = counter;
-  smp_debug_print_nbyte_little_endian(p_prnt, "Counter", 1);
-  p_prnt = key_id;
-  smp_debug_print_nbyte_little_endian(p_prnt, "KeyID", 4);
-  p_prnt = n1;
-  smp_debug_print_nbyte_little_endian(p_prnt, "N1", OCTET16_LEN);
-  p_prnt = n2;
-  smp_debug_print_nbyte_little_endian(p_prnt, "N2", OCTET16_LEN);
-  p_prnt = a1;
-  smp_debug_print_nbyte_little_endian(p_prnt, "A1", 7);
-  p_prnt = a2;
-  smp_debug_print_nbyte_little_endian(p_prnt, "A2", 7);
-  p_prnt = length;
-  smp_debug_print_nbyte_little_endian(p_prnt, "Length", 2);
-#endif
-
-  uint8_t msg[msg_len];
-  uint8_t* p = msg;
-  ARRAY_TO_STREAM(p, length, 2);
-  ARRAY_TO_STREAM(p, a2, 7);
-  ARRAY_TO_STREAM(p, a1, 7);
-  ARRAY_TO_STREAM(p, n2.data(), OCTET16_LEN);
-  ARRAY_TO_STREAM(p, n1.data(), OCTET16_LEN);
-  ARRAY_TO_STREAM(p, key_id, 4);
-  ARRAY_TO_STREAM(p, counter, 1);
-#if (SMP_DEBUG == TRUE)
-  p_prnt = msg;
-  smp_debug_print_nbyte_little_endian(p_prnt, "M", msg_len);
-#endif
-
-  Octet16 cmac = aes_cmac(t, msg, msg_len);
-
-#if (SMP_DEBUG == TRUE)
-  p_prnt = cmac;
-  smp_debug_print_nbyte_little_endian(p_prnt, "AES-CMAC", OCTET16_LEN);
-#endif
-
-  return cmac;
-}
 
 /*******************************************************************************
  *
@@ -1011,8 +885,8 @@ void smp_calculate_local_dhkey_check(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   smp_collect_local_ble_address(a, p_cb);
   smp_collect_peer_ble_address(b, p_cb);
-  p_cb->dhkey_check = smp_calculate_f6(p_cb->mac_key, p_cb->rand, p_cb->rrand,
-                                       p_cb->peer_random, iocap, a, b);
+  p_cb->dhkey_check = crypto_toolbox::f6(p_cb->mac_key, p_cb->rand, p_cb->rrand,
+                                         p_cb->peer_random, iocap, a, b);
 
   SMP_TRACE_EVENT("local DHKey check calculation is completed");
 }
@@ -1036,8 +910,8 @@ void smp_calculate_peer_dhkey_check(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   smp_collect_local_ble_address(a, p_cb);
   smp_collect_peer_ble_address(b, p_cb);
-  Octet16 param_buf = smp_calculate_f6(p_cb->mac_key, p_cb->rrand, p_cb->rand,
-                                       p_cb->local_random, iocap, b, a);
+  Octet16 param_buf = crypto_toolbox::f6(p_cb->mac_key, p_cb->rrand, p_cb->rand,
+                                         p_cb->local_random, iocap, b, a);
 
   SMP_TRACE_EVENT("peer DHKey check calculation is completed");
 #if (SMP_DEBUG == TRUE)
@@ -1089,7 +963,7 @@ bool smp_calculate_link_key_from_long_term_key(tSMP_CB* p_cb) {
   }
 
   Octet16 link_key =
-      smp_calculate_ltk_to_link_key(p_cb->ltk, p_cb->key_derivation_h7_used);
+      crypto_toolbox::ltk_to_link_key(p_cb->ltk, p_cb->key_derivation_h7_used);
 
   uint8_t link_key_type;
   if (btm_cb.security_mode == BTM_SEC_MODE_SC) {
@@ -1152,8 +1026,8 @@ bool smp_calculate_long_term_key_from_link_key(tSMP_CB* p_cb) {
   Octet16 rev_link_key;
   std::reverse_copy(p_dev_rec->link_key.begin(), p_dev_rec->link_key.end(),
                     rev_link_key.begin());
-  p_cb->ltk =
-      smp_calculate_link_key_to_ltk(rev_link_key, p_cb->key_derivation_h7_used);
+  p_cb->ltk = crypto_toolbox::link_key_to_ltk(rev_link_key,
+                                              p_cb->key_derivation_h7_used);
 
   p_cb->sec_level = (br_link_key_type == BTM_LKEY_TYPE_AUTH_COMB_P_256)
                         ? SMP_SEC_AUTHENTICATED

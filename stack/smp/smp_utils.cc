@@ -808,7 +808,6 @@ void smp_xor_128(Octet16* a, const Octet16& b) {
   uint8_t i, *aa = a->data();
   const uint8_t* bb = b.data();
 
-  SMP_TRACE_EVENT("smp_xor_128");
   for (i = 0; i < OCTET16_LEN; i++) {
     aa[i] = aa[i] ^ bb[i];
   }
@@ -1456,7 +1455,7 @@ void smp_calculate_f5_mackey_and_long_term_key(tSMP_CB* p_cb) {
     nb = p_cb->rand;
   }
 
-  smp_calculate_f5(p_cb->dhkey, na, nb, a, b, &p_cb->mac_key, &p_cb->ltk);
+  crypto_toolbox::f5(p_cb->dhkey, na, nb, a, b, &p_cb->mac_key, &p_cb->ltk);
 
   SMP_TRACE_EVENT("%s is completed", __func__);
 }
@@ -1498,4 +1497,16 @@ bool smp_request_oob_data(tSMP_CB* p_cb) {
   smp_sm_event(p_cb, SMP_TK_REQ_EVT, &smp_int_data);
 
   return true;
+}
+
+void print128(const Octet16& x, const uint8_t* key_name) {
+  if (VLOG_IS_ON(2) && DLOG_IS_ON(INFO)) {
+    uint8_t* p = (uint8_t*)x.data();
+
+    DVLOG(2) << key_name << " (MSB ~ LSB) = ";
+    for (int i = 0; i < 4; i++) {
+      DVLOG(2) << +p[OCTET16_LEN - i * 4 - 1] << +p[OCTET16_LEN - i * 4 - 2]
+               << +p[OCTET16_LEN - i * 4 - 3] << +p[OCTET16_LEN - i * 4 - 4];
+    }
+  }
 }
