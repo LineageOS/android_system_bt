@@ -45,6 +45,7 @@ using ::testing::MockFunction;
 using ::testing::Mock;
 using ::testing::NiceMock;
 using ::testing::Return;
+using ::testing::SaveArg;
 
 bool get_pts_avrcp_test(void) { return false; }
 
@@ -189,7 +190,9 @@ TEST_F(AvrcpDeviceTest, playPositionTest) {
 
   test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
 
-  PlayStatus status1 = {0x1234, 0x5678, PlayState::PLAYING};
+  // TODO (apanicke): Add an underlying message loop so we can test the playing
+  // state.
+  PlayStatus status1 = {0x1234, 0x5678, PlayState::PAUSED};
   PlayStatus status2 = {0x5678, 0x9ABC, PlayState::STOPPED};
 
   EXPECT_CALL(interface, GetPlayStatus(_))
@@ -201,28 +204,311 @@ TEST_F(AvrcpDeviceTest, playPositionTest) {
   EXPECT_CALL(a2dp_interface, active_peer())
       .WillRepeatedly(Return(test_device->GetAddress()));
 
-  // Test the interim response for play status changed
+  // Test the interim response for play position changed
+  auto interim_response =
+      RegisterNotificationResponseBuilder::MakePlaybackPositionBuilder(true,
+                                                                       0x1234);
+  EXPECT_CALL(response_cb,
+              Call(1, false, matchPacket(std::move(interim_response))))
+      .Times(1);
+
+  auto request = RegisterNotificationRequestBuilder::MakeBuilder(
+      Event::PLAYBACK_POS_CHANGED, 0);
+  auto pkt = TestAvrcpPacket::Make();
+  request->Serialize(pkt);
+  SendMessage(1, pkt);
+
+  // Test the changed response for play position changed
+  auto changed_response =
+      RegisterNotificationResponseBuilder::MakePlaybackPositionBuilder(false,
+                                                                       0x5678);
+  EXPECT_CALL(response_cb,
+              Call(1, false, matchPacket(std::move(changed_response))))
+      .Times(1);
+  test_device->HandlePlayPosUpdate();
+}
+
+TEST_F(AvrcpDeviceTest, trackChangedBeforeInterimTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  // Pretend the device is active
+  EXPECT_CALL(a2dp_interface, active_peer())
+      .WillRepeatedly(Return(test_device->GetAddress()));
+
+  SongInfo info = {"test_id",
+                   {// The attribute map
+                    AttributeEntry(Attribute::TITLE, "Test Song"),
+                    AttributeEntry(Attribute::ARTIST_NAME, "Test Artist"),
+                    AttributeEntry(Attribute::ALBUM_NAME, "Test Album"),
+                    AttributeEntry(Attribute::TRACK_NUMBER, "1"),
+                    AttributeEntry(Attribute::TOTAL_NUMBER_OF_TRACKS, "2"),
+                    AttributeEntry(Attribute::GENRE, "Test Genre"),
+                    AttributeEntry(Attribute::PLAYING_TIME, "1000")}};
+  std::vector<SongInfo> list = {info};
+
+  MediaInterface::NowPlayingCallback interim_cb;
+  MediaInterface::NowPlayingCallback changed_cb;
+
+  EXPECT_CALL(interface, GetNowPlayingList(_))
+      .Times(2)
+      .WillOnce(SaveArg<0>(&interim_cb))
+      .WillOnce(SaveArg<0>(&changed_cb));
+
+  // Test that the changed response doesn't get sent before the interim
+  ::testing::InSequence s;
+  auto interim_response =
+      RegisterNotificationResponseBuilder::MakeTrackChangedBuilder(true, 0x01);
+  EXPECT_CALL(response_cb,
+              Call(1, false, matchPacket(std::move(interim_response))))
+      .Times(1);
+  auto changed_response =
+      RegisterNotificationResponseBuilder::MakeTrackChangedBuilder(false, 0x01);
+  EXPECT_CALL(response_cb,
+              Call(1, false, matchPacket(std::move(changed_response))))
+      .Times(1);
+
+  // Register for the update, sets interim_cb
+  auto request =
+      RegisterNotificationRequestBuilder::MakeBuilder(Event::TRACK_CHANGED, 0);
+  auto pkt = TestAvrcpPacket::Make();
+  request->Serialize(pkt);
+  SendMessage(1, pkt);
+
+  // Try to send track changed update, should fail and do nothing
+  test_device->HandleTrackUpdate();
+
+  // Send the interim response
+  interim_cb.Run("test_id", list);
+
+  // Try to send track changed update, should succeed
+  test_device->HandleTrackUpdate();
+  changed_cb.Run("test_id", list);
+}
+
+TEST_F(AvrcpDeviceTest, playStatusChangedBeforeInterimTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  // Pretend the device is active
+  EXPECT_CALL(a2dp_interface, active_peer())
+      .WillRepeatedly(Return(test_device->GetAddress()));
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  MediaInterface::PlayStatusCallback interim_cb;
+  MediaInterface::PlayStatusCallback changed_cb;
+
+  EXPECT_CALL(interface, GetPlayStatus(_))
+      .Times(2)
+      .WillOnce(SaveArg<0>(&interim_cb))
+      .WillOnce(SaveArg<0>(&changed_cb));
+
+  // Test that the changed response doesn't get sent before the interim
+  ::testing::InSequence s;
   auto interim_response =
       RegisterNotificationResponseBuilder::MakePlaybackStatusBuilder(
           true, PlayState::PLAYING);
   EXPECT_CALL(response_cb,
               Call(1, false, matchPacket(std::move(interim_response))))
       .Times(1);
-
-  auto request = RegisterNotificationRequestBuilder::MakeBuilder(
-      Event::PLAYBACK_STATUS_CHANGED, 0);
-  auto pkt = TestAvrcpPacket::Make();
-  request->Serialize(pkt);
-  SendMessage(1, pkt);
-
-  // Test the changed response for play status changed
   auto changed_response =
       RegisterNotificationResponseBuilder::MakePlaybackStatusBuilder(
           false, PlayState::STOPPED);
   EXPECT_CALL(response_cb,
               Call(1, false, matchPacket(std::move(changed_response))))
       .Times(1);
+
+  // Send the registration packet
+  auto request = RegisterNotificationRequestBuilder::MakeBuilder(
+      Event::PLAYBACK_STATUS_CHANGED, 0);
+  auto pkt = TestAvrcpPacket::Make();
+  request->Serialize(pkt);
+  SendMessage(1, pkt);
+
+  // Send a play status update, should be ignored since the interim response
+  // hasn't been sent yet.
   test_device->HandlePlayStatusUpdate();
+
+  // Send the interim response.
+  PlayStatus status1 = {0x1234, 0x5678, PlayState::PLAYING};
+  interim_cb.Run(status1);
+
+  // Send the changed response, should succeed this time
+  test_device->HandlePlayStatusUpdate();
+  PlayStatus status2 = {0x1234, 0x5678, PlayState::STOPPED};
+  changed_cb.Run(status2);
+}
+
+TEST_F(AvrcpDeviceTest, playPositionChangedBeforeInterimTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  // Pretend the device is active
+  EXPECT_CALL(a2dp_interface, active_peer())
+      .WillRepeatedly(Return(test_device->GetAddress()));
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  MediaInterface::PlayStatusCallback interim_cb;
+  MediaInterface::PlayStatusCallback changed_cb;
+
+  EXPECT_CALL(interface, GetPlayStatus(_))
+      .Times(2)
+      .WillOnce(SaveArg<0>(&interim_cb))
+      .WillOnce(SaveArg<0>(&changed_cb));
+
+  // Test that the changed response doesn't get sent before the interim
+  ::testing::InSequence s;
+  auto interim_response =
+      RegisterNotificationResponseBuilder::MakePlaybackPositionBuilder(true,
+                                                                       0x1234);
+  EXPECT_CALL(response_cb,
+              Call(1, false, matchPacket(std::move(interim_response))))
+      .Times(1);
+  auto changed_response =
+      RegisterNotificationResponseBuilder::MakePlaybackPositionBuilder(false,
+                                                                       0x5678);
+  EXPECT_CALL(response_cb,
+              Call(1, false, matchPacket(std::move(changed_response))))
+      .Times(1);
+
+  // Send the registration packet
+  auto request = RegisterNotificationRequestBuilder::MakeBuilder(
+      Event::PLAYBACK_POS_CHANGED, 0);
+  auto pkt = TestAvrcpPacket::Make();
+  request->Serialize(pkt);
+  SendMessage(1, pkt);
+
+  // Send a play position update, should be ignored since the notification
+  // isn't registered since no interim response has been sent.
+  test_device->HandlePlayPosUpdate();
+
+  // Run the interim callback for GetPlayStatus which should be pointing to the
+  // GetPlayStatus call made by the update.
+  PlayStatus status1 = {0x1234, 0x5678, PlayState::PAUSED};
+  interim_cb.Run(status1);
+
+  // Send a play position update, this one should succeed.
+  test_device->HandlePlayPosUpdate();
+  PlayStatus status2 = {0x5678, 0x9ABC, PlayState::STOPPED};
+  changed_cb.Run(status2);
+}
+
+TEST_F(AvrcpDeviceTest, nowPlayingChangedBeforeInterim) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  SongInfo info = {"test_id",
+                   {// The attribute map
+                    AttributeEntry(Attribute::TITLE, "Test Song"),
+                    AttributeEntry(Attribute::ARTIST_NAME, "Test Artist"),
+                    AttributeEntry(Attribute::ALBUM_NAME, "Test Album"),
+                    AttributeEntry(Attribute::TRACK_NUMBER, "1"),
+                    AttributeEntry(Attribute::TOTAL_NUMBER_OF_TRACKS, "2"),
+                    AttributeEntry(Attribute::GENRE, "Test Genre"),
+                    AttributeEntry(Attribute::PLAYING_TIME, "1000")}};
+  std::vector<SongInfo> list = {info};
+
+  MediaInterface::NowPlayingCallback interim_cb;
+  MediaInterface::NowPlayingCallback changed_cb;
+
+  EXPECT_CALL(interface, GetNowPlayingList(_))
+      .Times(2)
+      .WillOnce(SaveArg<0>(&interim_cb))
+      .WillOnce(SaveArg<0>(&changed_cb));
+
+  // Test that the changed response doesn't get sent before the interim
+  ::testing::InSequence s;
+  auto interim_response =
+      RegisterNotificationResponseBuilder::MakeNowPlayingBuilder(true);
+  EXPECT_CALL(response_cb,
+              Call(1, false, matchPacket(std::move(interim_response))))
+      .Times(1);
+  auto changed_response =
+      RegisterNotificationResponseBuilder::MakeNowPlayingBuilder(false);
+  EXPECT_CALL(response_cb,
+              Call(1, false, matchPacket(std::move(changed_response))))
+      .Times(1);
+
+  // Send the registration packet
+  auto request = RegisterNotificationRequestBuilder::MakeBuilder(
+      Event::NOW_PLAYING_CONTENT_CHANGED, 0);
+  auto pkt = TestAvrcpPacket::Make();
+  request->Serialize(pkt);
+  SendMessage(1, pkt);
+
+  // Send now playing changed, should fail since the interim response hasn't
+  // been sent
+  test_device->HandleNowPlayingUpdate();
+
+  // Send the data needed for the interim response
+  interim_cb.Run("test_id", list);
+
+  // Send now playing changed, should succeed
+  test_device->HandleNowPlayingUpdate();
+  changed_cb.Run("test_id", list);
+}
+
+TEST_F(AvrcpDeviceTest, addressPlayerChangedBeforeInterim) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  MediaInterface::MediaListCallback interim_cb;
+  MediaInterface::MediaListCallback changed_cb;
+
+  EXPECT_CALL(interface, GetMediaPlayerList(_))
+      .Times(2)
+      .WillOnce(SaveArg<0>(&interim_cb))
+      .WillOnce(SaveArg<0>(&changed_cb));
+
+  // Test that the changed response doesn't get sent before the interim
+  ::testing::InSequence s;
+  auto interim_response =
+      RegisterNotificationResponseBuilder::MakeAddressedPlayerBuilder(true, 0,
+                                                                      0);
+  EXPECT_CALL(response_cb,
+              Call(1, false, matchPacket(std::move(interim_response))))
+      .Times(1);
+  auto changed_response =
+      RegisterNotificationResponseBuilder::MakeAddressedPlayerBuilder(false, 0,
+                                                                      0);
+  EXPECT_CALL(response_cb,
+              Call(1, false, matchPacket(std::move(changed_response))))
+      .Times(1);
+  // TODO (apanicke): Remove this expectation once b/110957802 is fixed and
+  // we don't try to reject notifications that aren't registered.
+  auto rejected_response = RejectBuilder::MakeBuilder(
+      CommandPdu::REGISTER_NOTIFICATION, Status::ADDRESSED_PLAYER_CHANGED);
+  EXPECT_CALL(response_cb,
+              Call(_, false, matchPacket(std::move(rejected_response))))
+      .Times(4);
+
+  // Send the registration packet
+  auto request = RegisterNotificationRequestBuilder::MakeBuilder(
+      Event::ADDRESSED_PLAYER_CHANGED, 0);
+  auto pkt = TestAvrcpPacket::Make();
+  request->Serialize(pkt);
+  SendMessage(1, pkt);
+
+  // Send addressed player update, should fail since the interim response
+  // hasn't been sent
+  test_device->HandleAddressedPlayerUpdate();
+
+  // Send the data needed for the interim response
+  MediaPlayerInfo info = {0, "Test Player", true};
+  std::vector<MediaPlayerInfo> list = {info};
+  interim_cb.Run(0, list);
+
+  // Send addressed player update, should succeed
+  test_device->HandleAddressedPlayerUpdate();
+  changed_cb.Run(0, list);
 }
 
 TEST_F(AvrcpDeviceTest, nowPlayingTest) {
