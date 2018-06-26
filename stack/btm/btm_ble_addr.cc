@@ -33,7 +33,7 @@
 #include "hcimsgs.h"
 
 #include "btm_ble_int.h"
-#include "smp_api.h"
+#include "stack/crypto_toolbox/crypto_toolbox.h"
 
 /* This function generates Resolvable Private Address (RPA) from Identity
  * Resolving Key |irk| and |random|*/
@@ -48,7 +48,7 @@ RawAddress generate_rpa_from_irk_and_rand(const Octet16& irk,
   address.address[0] = random[2];
 
   /* encrypt with IRK */
-  Octet16 p = SMP_Encrypt(irk, random, 3);
+  Octet16 p = crypto_toolbox::aes_128(irk, random, 3);
 
   /* set hash to be LSB of rpAddress */
   address.address[5] = p[0];
@@ -178,7 +178,7 @@ static bool rpa_matches_irk(const RawAddress& rpa, const Octet16& irk) {
   rand[2] = rpa.address[0];
 
   /* generate X = E irk(R0, R1, R2) and R is random address 3 LSO */
-  Octet16 x = SMP_Encrypt(irk, &rand[0], 3);
+  Octet16 x = crypto_toolbox::aes_128(irk, &rand[0], 3);
 
   rand[0] = rpa.address[5];
   rand[1] = rpa.address[4];
