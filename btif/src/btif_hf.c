@@ -34,6 +34,7 @@
 
 #include <hardware/bluetooth.h>
 #include <hardware/bt_hf.h>
+#include <log/log.h>
 
 #include "bta_ag_api.h"
 #include "btcore/include/bdaddr.h"
@@ -1330,13 +1331,20 @@ static bt_status_t clcc_response(int index, bthf_call_direction_t dir,
                           index, dir, state, mode, number, type);
             xx = sprintf (ag_res.str, "%d,%d,%d,%d,%d",
                          index, dir, state, mode, mpty);
+            char number_copy[sizeof(ag_res.str)];
+            // 9 = [,]["][+]["][,][3_digit_type][null_terminator]
+            int max_number_len = sizeof(ag_res.str) - xx - 9;
+            int number_len = snprintf(number_copy, max_number_len, "%s", number);
+            if (number_len >= max_number_len) {
+              android_errorWriteLog(0x534e4554, "79266386");
+            }
 
             if (number)
             {
                 if ((type == BTHF_CALL_ADDRTYPE_INTERNATIONAL) && (*number != '+'))
-                    sprintf (&ag_res.str[xx], ",\"+%s\",%d", number, type);
+                    sprintf (&ag_res.str[xx], ",\"+%s\",%d", number_copy, type);
                 else
-                    sprintf (&ag_res.str[xx], ",\"%s\",%d", number, type);
+                    sprintf (&ag_res.str[xx], ",\"%s\",%d", number_copy, type);
             }
         }
         BTA_AgResult (btif_hf_cb[idx].handle, BTA_AG_CLCC_RES, &ag_res);
@@ -1489,10 +1497,17 @@ static bt_status_t phone_state_change(int num_active, int num_held, bthf_call_st
                 if (number)
                 {
                     int xx = 0;
+                    char number_copy[sizeof(ag_res.str)];
+                    // 8 = ["][+]["][,][3_digit_type][null_terminator]
+                    int max_number_len = sizeof(ag_res.str) - xx - 8;
+                    int number_len = snprintf(number_copy, max_number_len, "%s", number);
+                    if (number_len >= max_number_len) {
+                      android_errorWriteLog(0x534e4554, "79431031");
+                    }
                     if ((type == BTHF_CALL_ADDRTYPE_INTERNATIONAL) && (*number != '+'))
-                        xx = sprintf (ag_res.str, "\"+%s\"", number);
+                        xx = sprintf (ag_res.str, "\"+%s\"", number_copy);
                     else
-                        xx = sprintf (ag_res.str, "\"%s\"", number);
+                        xx = sprintf (ag_res.str, "\"%s\"", number_copy);
                     ag_res.num = type;
 
                     if (res == BTA_AG_CALL_WAIT_RES)
