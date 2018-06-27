@@ -710,12 +710,18 @@ static void bta_gattc_get_gatt_db_impl(tBTA_GATTC_SERV* p_srvc_cb,
                                 charac.value_handle, 0 /* s_handle */,
                                 0 /* e_handle */, charac.value_handle,
                                 charac.uuid, charac.properties);
+      btgatt_db_element_t* characteristic = curr_db_attr;
       curr_db_attr++;
 
       for (const Descriptor& desc : charac.descriptors) {
         bta_gattc_fill_gatt_db_el(
             curr_db_attr, BTGATT_DB_DESCRIPTOR, desc.handle, 0 /* s_handle */,
             0 /* e_handle */, desc.handle, desc.uuid, 0 /* property */);
+
+        if (desc.uuid == Uuid::From16Bit(GATT_UUID_CHAR_EXT_PROP)) {
+          characteristic->extended_properties =
+              desc.characteristic_extended_properties;
+        }
         curr_db_attr++;
       }
     }
