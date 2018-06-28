@@ -470,9 +470,10 @@ static void btif_a2dp_source_start_session_delayed(
   }
   if (btif_av_is_a2dp_offload_enabled()) {
     btif_a2dp_audio_interface_start_session();
+  } else {
+    BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionStart(
+        system_bt_osi::CONNECTION_TECHNOLOGY_TYPE_BREDR, 0);
   }
-  BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionStart(
-      system_bt_osi::CONNECTION_TECHNOLOGY_TYPE_BREDR, 0);
 }
 
 bool btif_a2dp_source_restart_session(const RawAddress& old_peer_address,
@@ -524,8 +525,10 @@ static void btif_a2dp_source_end_session_delayed(
   LOG_INFO(LOG_TAG, "%s: peer_address=%s state=%s", __func__,
            peer_address.ToString().c_str(),
            btif_a2dp_source_cb.StateStr().c_str());
-  BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionEnd(
-      system_bt_osi::DISCONNECT_REASON_UNKNOWN, 0);
+  if (!btif_av_is_a2dp_offload_enabled()) {
+    BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionEnd(
+        system_bt_osi::DISCONNECT_REASON_UNKNOWN, 0);
+  }
   if (btif_a2dp_source_cb.State() == BtifA2dpSource::kStateRunning) {
     btif_av_stream_stop(peer_address);
   } else {
