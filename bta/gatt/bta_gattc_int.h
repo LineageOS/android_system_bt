@@ -214,6 +214,10 @@ typedef struct {
 
   gatt::DatabaseBuilder pending_discovery;
 
+  /* used only during service discovery, when reading Extended Characteristic
+   * Properties */
+  bool read_multiple_not_supported;
+
   uint8_t srvc_hdl_chg; /* service handle change indication pending */
   uint16_t attr_index;  /* cahce NV saving/loading attribute index */
 

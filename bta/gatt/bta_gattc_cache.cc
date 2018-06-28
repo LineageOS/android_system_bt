@@ -171,6 +171,15 @@ static void bta_gattc_explore_next_service(uint16_t conn_id,
   const auto& descriptors =
       p_srvc_cb->pending_discovery.DescriptorHandlesToRead();
   if (!descriptors.empty()) {
+    if (p_srvc_cb->read_multiple_not_supported) {
+      tGATT_READ_PARAM read_param{
+          .by_handle = {.handle = descriptors.front(),
+                        .auth_req = GATT_AUTH_REQ_NONE}};
+      GATTC_Read(conn_id, GATT_READ_BY_HANDLE, &read_param);
+      // asynchronous continuation in bta_gattc_op_cmpl_during_discovery
+      return;
+    }
+
     // TODO(jpawlowski): as a limit we should use MTU/2 rather than
     // GATT_MAX_READ_MULTI_HANDLES
     /* each descriptor contains just 2 bytes, so response size is same as
@@ -187,8 +196,7 @@ static void bta_gattc_explore_next_service(uint16_t conn_id,
            sizeof(uint16_t) * num_handles);
     GATTC_Read(conn_id, GATT_READ_MULTIPLE, &read_param);
 
-    // asynchronous continuation in bta_gattc_op_cmpl_during_discovery, when
-    // read is finished
+    // asynchronous continuation in bta_gattc_op_cmpl_during_discovery
     return;
   }
 
@@ -356,21 +364,35 @@ void bta_gattc_op_cmpl_during_discovery(UNUSED_ATTR tBTA_GATTC_CLCB* p_clcb,
     VLOG(1) << __func__ << ": op = " << +p_data->hdr.layer_specific;
     return;
   }
-
   // our read operation is finished.
   // TODO: check if we can get here when any other read operation i.e. initiated
   // by upper layer apps, can get us there.
+
+  tBTA_GATTC_SERV* p_srvc_cb = p_clcb->p_srcb;
   const uint8_t status = p_data->op_cmpl.status;
+
+  if (status == GATT_REQ_NOT_SUPPORTED &&
+      !p_srvc_cb->read_multiple_not_supported) {
+    // can't do "read multiple request", fall back to "read request"
+    p_srvc_cb->read_multiple_not_supported = true;
+    bta_gattc_explore_next_service(p_clcb->bta_conn_id, p_srvc_cb);
+    return;
+  }
+
   if (status != GATT_SUCCESS) {
-    if (status == GATT_REQ_NOT_SUPPORTED) {
-      // TODO: handle case when read multiple is not supported on remote device.
-    }
     LOG(WARNING) << "Discovery on server failed: " << loghex(status);
     bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_ERROR);
   }
 
   const tGATT_VALUE& att_value = p_data->op_cmpl.p_cmpl->att_value;
+  if (!p_srvc_cb->read_multiple_not_supported && att_value.len != 2) {
+    // Just one Characteristic Extended Properties value at a time in Read
+    // Response
+    LOG(WARNING) << __func__ << " Read Response should be just 2 bytes!";
+    bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_ERROR);
+  }
 
+  // Parsing is same for "Read Multiple Response", and for "Read Response"
   const uint8_t* p = att_value.value;
   std::vector<uint16_t> value_of_descriptors;
   while (p < att_value.value + att_value.len) {
@@ -379,7 +401,6 @@ void bta_gattc_op_cmpl_during_discovery(UNUSED_ATTR tBTA_GATTC_CLCB* p_clcb,
     value_of_descriptors.push_back(extended_properties);
   }
 
-  tBTA_GATTC_SERV* p_srvc_cb = p_clcb->p_srcb;
   bool ret =
       p_srvc_cb->pending_discovery.SetValueOfDescriptors(value_of_descriptors);
   if (!ret) {
