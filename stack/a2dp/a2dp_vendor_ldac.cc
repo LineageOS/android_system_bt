@@ -910,6 +910,7 @@ bool A2dpCodecConfigLdac::setCodecConfig(const uint8_t* p_peer_codec_info,
         codec_capability_.sample_rate = codec_user_config_.sample_rate;
         codec_config_.sample_rate = codec_user_config_.sample_rate;
       }
+      break;
     case BTAV_A2DP_CODEC_SAMPLE_RATE_16000:
     case BTAV_A2DP_CODEC_SAMPLE_RATE_24000:
     case BTAV_A2DP_CODEC_SAMPLE_RATE_NONE:

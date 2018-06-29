@@ -482,13 +482,6 @@ void SMP_SecureConnectionOobDataReply(uint8_t* p_data) {
   smp_sm_event(&smp_cb, SMP_SC_OOB_DATA_EVT, &smp_int_data);
 }
 
-/* This function computes AES_128(key, message). |key| must be 128bit.
- * |message| can be at most 16 bytes long, it's length in bytes is given in
- * |length| */
-Octet16 SMP_Encrypt(const Octet16& key, uint8_t* message, uint8_t length) {
-  return smp_encrypt_data(key, message, length);
-}
-
 /*******************************************************************************
  *
  * Function         SMP_KeypressNotification

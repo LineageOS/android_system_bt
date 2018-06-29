@@ -14,6 +14,22 @@
 #  limitations under the License.
 #
 
+static_library("crypto_toolbox") {
+  sources = [
+    "crypto_toolbox/crypto_toolbox.cc",
+    "crypto_toolbox/aes.cc",
+    "crypto_toolbox/aes_cmac.cc",
+  ]
+
+  include_dirs = [
+    "//",
+  ]
+
+  deps = [
+    "//third_party/libchrome:base",
+  ]
+}
+
 static_library("stack") {
   sources = [
     "a2dp/a2dp_aac.cc",
@@ -130,14 +146,12 @@ static_library("stack") {
     "sdp/sdp_main.cc",
     "sdp/sdp_server.cc",
     "sdp/sdp_utils.cc",
-    "smp/aes.cc",
     "smp/p_256_curvepara.cc",
     "smp/p_256_ecc_pp.cc",
     "smp/p_256_multprecision.cc",
     "smp/smp_act.cc",
     "smp/smp_api.cc",
     "smp/smp_br_main.cc",
-    "smp/smp_cmac.cc",
     "smp/smp_keys.cc",
     "smp/smp_l2c.cc",
     "smp/smp_main.cc",
@@ -180,6 +194,7 @@ static_library("stack") {
   ]
 
   deps = [
+    ":crypto_toolbox",
     "//types",
     "//third_party/libchrome:base",
     "//third_party/libldac:libldacBT_enc",
@@ -231,6 +246,73 @@ executable("stack_unittests") {
     "//hci",
     "//types",
     "//main:bluetooth",
+    "//third_party/googletest:gmock_main",
+    "//third_party/libchrome:base",
+  ]
+}
+
+executable("net_test_stack_crypto_toolbox") {
+  testonly = true
+  sources = [
+    "test/crypto_toolbox_test.cc",
+  ]
+
+  include_dirs = [
+    "//",
+  ]
+
+  deps = [
+    ":crypto_toolbox",
+    "//third_party/googletest:gmock_main",
+    "//third_party/libchrome:base",
+  ]
+}
+
+executable("net_test_stack_smp") {
+  testonly = true
+  sources = [
+        "smp/smp_keys.cc",
+        "smp/smp_api.cc",
+        "smp/smp_main.cc",
+        "smp/smp_utils.cc",
+        "test/stack_smp_test.cc",
+  ]
+
+  include_dirs = [
+    "//",
+    "//internal_include",
+    "//btcore/include",
+    "//hci/include",
+    "//utils/include",
+    "//bta/include",
+    "//bta/sys",
+    "//btcore/include",
+    "//embdrv/sbc/encoder/include",
+    "//hci/include",
+    "//internal_include",
+    "//stack/a2dp",
+    "//stack/l2cap",
+    "//stack/btm",
+    "//stack/include",
+    "//third_party/tinyxml2",
+    "//udrv/include",
+    "//utils/include",
+    "//vnd/include"
+  ]
+
+  libs = [
+    "-ldl",
+    "-lpthread",
+    "-lresolv",
+    "-lrt",
+    "-lz",
+    "-latomic",
+  ]
+
+  deps = [
+    ":crypto_toolbox",
+    "//osi",
+    "//types",
     "//third_party/googletest:gmock_main",
     "//third_party/libchrome:base",
   ]
