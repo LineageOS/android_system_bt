@@ -45,6 +45,7 @@
 #include "btif_util.h"
 #include "btu.h"
 #include "device/include/interop.h"
+#include "log/log.h"
 #include "osi/include/list.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
@@ -3502,6 +3503,12 @@ static void handle_app_cur_val_response(tBTA_AV_META_MSG* pmeta_msg,
   RawAddress rc_addr = p_dev->rc_addr;
 
   app_settings.num_attr = p_rsp->num_val;
+
+  if (app_settings.num_attr > BTRC_MAX_APP_SETTINGS) {
+    android_errorWriteLog(0x534e4554, "73824150");
+    app_settings.num_attr = BTRC_MAX_APP_SETTINGS;
+  }
+
   for (xx = 0; xx < app_settings.num_attr; xx++) {
     app_settings.attr_ids[xx] = p_rsp->p_vals[xx].attr_id;
     app_settings.attr_values[xx] = p_rsp->p_vals[xx].attr_val;
