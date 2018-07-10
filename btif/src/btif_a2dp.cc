@@ -100,7 +100,11 @@ bool btif_a2dp_on_started(const RawAddress& peer_addr,
   } else if (pending_start) {
     LOG_ERROR(LOG_TAG, "%s: peer %s A2DP start request failed: status = %d",
               __func__, peer_addr.ToString().c_str(), p_av_start->status);
-    btif_a2dp_command_ack(A2DP_CTRL_ACK_FAILURE);
+    if (btif_av_is_a2dp_offload_enabled()) {
+      btif_a2dp_audio_on_started(p_av_start->status);
+    } else {
+      btif_a2dp_command_ack(A2DP_CTRL_ACK_FAILURE);
+    }
     ack = true;
   }
   return ack;
