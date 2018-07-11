@@ -3351,15 +3351,16 @@ extern BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class,
                                  UINT8 key_type, tBTM_IO_CAP io_cap, UINT8 pin_length);
 
 
-/*******************************************************************************
-**
-** Function         BTM_SecDeleteDevice
-**
-** Description      Free resources associated with the device.
-**
-** Returns          TRUE if rmoved OK, FALSE if not found
-**
-*******************************************************************************/
+/** Free resources associated with the device associated with |bd_addr| address.
+ *
+ * *** WARNING ***
+ * tBTM_SEC_DEV_REC associated with bd_addr becomes invalid after this function
+ * is called, also any of it's fields. i.e. if you use p_dev_rec->bd_addr, it is
+ * no longer valid!
+ * *** WARNING ***
+ *
+ * Returns true if removed OK, false if not found or ACL link is active.
+ */
 extern BOOLEAN BTM_SecDeleteDevice (BD_ADDR bd_addr);
 
 /*******************************************************************************
