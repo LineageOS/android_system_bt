@@ -3627,12 +3627,15 @@ static void bta_dm_remove_sec_dev_entry(BD_ADDR remote_bd_addr)
     }
     else
     {
-        BTM_SecDeleteDevice (remote_bd_addr);
+        // remote_bd_addr comes from security record, which is removed in
+        // BTM_SecDeleteDevice.
+        RawAddress addr_copy = remote_bd_addr;
+        BTM_SecDeleteDevice(addr_copy);
 #if (BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE)
         /* need to remove all pending background connection */
-        BTA_GATTC_CancelOpen(0, remote_bd_addr, FALSE);
+        BTA_GATTC_CancelOpen(0, addr_copy, false);
         /* remove all cached GATT information */
-        BTA_GATTC_Refresh(remote_bd_addr);
+        BTA_GATTC_Refresh(addr_copy);
 #endif
     }
 }
