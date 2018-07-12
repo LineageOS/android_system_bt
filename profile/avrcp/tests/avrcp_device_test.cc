@@ -1031,6 +1031,22 @@ TEST_F(AvrcpDeviceTest, getInvalidItemAttributesTest) {
   SendBrowseMessage(1, request);
 }
 
+TEST_F(AvrcpDeviceTest, invalidRegisterNotificationTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  auto reg_notif_rej_rsp = RejectBuilder::MakeBuilder(
+      CommandPdu::REGISTER_NOTIFICATION, Status::INVALID_PARAMETER);
+  EXPECT_CALL(response_cb,
+              Call(1, false, matchPacket(std::move(reg_notif_rej_rsp))))
+      .Times(1);
+
+  auto reg_notif_request = TestAvrcpPacket::Make(register_notification_invalid);
+  SendMessage(1, reg_notif_request);
+}
+
 }  // namespace avrcp
 }  // namespace bluetooth
 
