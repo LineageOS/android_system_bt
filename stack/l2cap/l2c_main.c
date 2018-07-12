@@ -568,6 +568,11 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
                     /* sanity check option length */
                     if ((cfg_len + L2CAP_CFG_OPTION_OVERHEAD) <= cmd_len)
                     {
+                        if (p + cfg_len > p_next_cmd)
+                        {
+                            android_errorWriteLog(0x534e4554, "79488381");
+                            return;
+                        }
                         p += cfg_len;
                         if ((cfg_code & 0x80) == 0)
                         {
