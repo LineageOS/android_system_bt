@@ -189,6 +189,14 @@ void Device::HandleGetCapabilities(
 
 void Device::HandleNotification(
     uint8_t label, const std::shared_ptr<RegisterNotificationRequest>& pkt) {
+  if (!pkt->IsValid()) {
+    DEVICE_LOG(ERROR) << __func__ << ": Request packet is not valid";
+    auto response = RejectBuilder::MakeBuilder(pkt->GetCommandPdu(),
+                                               Status::INVALID_PARAMETER);
+    send_message(label, false, std::move(response));
+    return;
+  }
+
   DEVICE_VLOG(4) << __func__ << ": event=" << pkt->GetEventRegistered();
 
   switch (pkt->GetEventRegistered()) {
