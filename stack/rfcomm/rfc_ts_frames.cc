@@ -520,7 +520,7 @@ uint8_t rfc_parse_data(tRFC_MCB* p_mcb, MX_FRAME* p_frame, BT_HDR* p_buf) {
 
   eal = *(p_data)&RFCOMM_EA;
   len = *(p_data)++ >> RFCOMM_SHIFT_LENGTH1;
-  if (eal == 0 && p_buf->len < RFCOMM_CTRL_FRAME_LEN) {
+  if (eal == 0 && p_buf->len > RFCOMM_CTRL_FRAME_LEN) {
     len += (*(p_data)++ << RFCOMM_SHIFT_LENGTH2);
   } else if (eal == 0) {
     RFCOMM_TRACE_ERROR("Bad Length when EAL = 0: %d", p_buf->len);
