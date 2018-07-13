@@ -33,6 +33,7 @@
 #include "device/include/controller.h"
 #include "stack_config.h"
 #include "btif_debug_l2c.h"
+#include "log/log.h"
 
 #if (BLE_INCLUDED == TRUE)
 
