@@ -353,7 +353,7 @@
 
 /* The number of SCO links. */
 #ifndef BTM_MAX_SCO_LINKS
-#define BTM_MAX_SCO_LINKS 3
+#define BTM_MAX_SCO_LINKS 6
 #endif
 
 /* The number of security records for peer devices. */
