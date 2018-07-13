@@ -3117,11 +3117,15 @@ void bta_dm_acl_change(tBTA_DM_MSG* p_data) {
       }
     }
     if (conn.link_down.is_removed) {
-      BTM_SecDeleteDevice(p_bda);
+      // p_bda points to security record, which is removed in
+      // BTM_SecDeleteDevice.
+      BD_ADDR addr_copy;
+      memcpy(addr_copy, p_bda, BD_ADDR_LEN);
+      BTM_SecDeleteDevice(addr_copy);
       /* need to remove all pending background connection */
-      BTA_GATTC_CancelOpen(0, p_bda, false);
+      BTA_GATTC_CancelOpen(0, addr_copy, false);
       /* remove all cached GATT information */
-      BTA_GATTC_Refresh(p_bda);
+      BTA_GATTC_Refresh(addr_copy);
     }
 
     bdcpy(conn.link_down.bd_addr, p_bda);
