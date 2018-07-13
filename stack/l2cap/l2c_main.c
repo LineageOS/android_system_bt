@@ -73,7 +73,7 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
     UINT8       pkt_type;
     tL2C_LCB    *p_lcb;
     tL2C_CCB    *p_ccb = NULL;
-    UINT16      l2cap_len, rcv_cid, psm;
+    UINT16      l2cap_len, rcv_cid;
     UINT16      credit;
 
     /* Extract the handle */
@@ -185,8 +185,6 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
     else if (rcv_cid == L2CAP_CONNECTIONLESS_CID)
     {
         /* process_connectionless_data (p_lcb); */
-        STREAM_TO_UINT16 (psm, p);
-        L2CAP_TRACE_DEBUG( "GOT CONNECTIONLESS DATA PSM:%d", psm ) ;
 
 #if (L2CAP_UCD_INCLUDED == TRUE)
         /* if it is not broadcast, check UCD registration */
