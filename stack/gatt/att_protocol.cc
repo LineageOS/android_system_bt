@@ -330,8 +330,7 @@ tGATT_STATUS attp_send_msg_to_l2cap(tGATT_TCB& tcb, BT_HDR* p_toL2CAP) {
     l2cap_ret = (uint16_t)L2CA_DataWrite(tcb.att_lcid, p_toL2CAP);
 
   if (l2cap_ret == L2CAP_DW_FAILED) {
-    GATT_TRACE_ERROR("ATT   failed to pass msg:0x%0x to L2CAP",
-                     *((uint8_t*)(p_toL2CAP + 1) + p_toL2CAP->offset));
+    GATT_TRACE_ERROR("ATT failed to pass msg to L2CAP");
     return GATT_INTERNAL_ERROR;
   } else if (l2cap_ret == L2CAP_DW_CONGESTED) {
     GATT_TRACE_DEBUG("ATT congested, message accepted");
