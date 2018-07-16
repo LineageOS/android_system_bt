@@ -382,8 +382,16 @@ static void sdp_copy_raw_data (tCONN_CB *p_ccb, BOOLEAN offset)
 
         if(offset)
         {
+            cpy_len -= 1;
             type = *p++;
+            uint8_t* old_p = p;
             p = sdpu_get_len_from_type (p, type, &list_len);
+            if ((int)cpy_len < (p - old_p))
+            {
+                SDP_TRACE_WARNING("%s: no bytes left for data", __func__);
+                return;
+            }
+            cpy_len -= (p - old_p);
         }
         if (list_len < cpy_len)
         {
