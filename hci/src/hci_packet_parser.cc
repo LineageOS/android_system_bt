@@ -128,12 +128,12 @@ static void parse_read_local_extended_features_response(
   uint8_t* stream = read_command_complete_header(
       response, HCI_READ_LOCAL_EXT_FEATURES,
       2 + sizeof(bt_device_features_t) /* bytes after */);
-  CHECK(stream != NULL);
+  if (stream == NULL) return; // just stop here and don't crash
 
   STREAM_TO_UINT8(*page_number_ptr, stream);
   STREAM_TO_UINT8(*max_page_number_ptr, stream);
 
-  CHECK(*page_number_ptr < feature_pages_count);
+  if (*page_number_ptr >= feature_pages_count) return; // just stop here and don't crash
   STREAM_TO_ARRAY(feature_pages[*page_number_ptr].as_array, stream,
                   (int)sizeof(bt_device_features_t));
 
