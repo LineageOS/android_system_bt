@@ -264,6 +264,12 @@ typedef uint16_t tBTA_AG_PEER_CODEC;
 #define BTA_AG_BTRH_READ 3     /* Read the current value */
 #define BTA_AG_BTRH_NO_RESP 4  /* Not in RH States (reply to read) */
 
+/* clip type constants */
+#define BTA_AG_CLIP_TYPE_MIN 128
+#define BTA_AG_CLIP_TYPE_MAX 175
+#define BTA_AG_CLIP_TYPE_DEFAULT 129
+#define BTA_AG_CLIP_TYPE_VOIP 255
+
 /* ASCII character string of arguments to the AT command or result */
 #ifndef BTA_AG_AT_MAX_LEN
 #define BTA_AG_AT_MAX_LEN 256
