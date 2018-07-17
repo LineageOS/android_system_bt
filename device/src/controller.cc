@@ -192,8 +192,12 @@ static future_t* start_up(void) {
   }
 #endif
 
+  // Force this to 1 because 0 or less is wrong
+  if (last_features_classic_page_index < 1) last_features_classic_page_index = 1;
+
   ble_supported = last_features_classic_page_index >= 1 &&
                   HCI_LE_HOST_SUPPORTED(features_classic[1].as_array);
+  ble_supported = true; // Force ble. Should be supported anyways
   if (ble_supported) {
     // Request the ble white list size next
     response = AWAIT_COMMAND(packet_factory->make_ble_read_white_list_size());
