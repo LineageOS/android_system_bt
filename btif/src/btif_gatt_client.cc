@@ -220,24 +220,21 @@ bt_status_t btif_gattc_register_app(const bt_uuid_t& uuid) {
   tBT_UUID bt_uuid;
   btif_to_bta_uuid(&bt_uuid, &uuid);
 
-  return do_in_jni_thread(Bind(
-      [](tBT_UUID bt_uuid) {
-        BTA_GATTC_AppRegister(
-            bta_gattc_cback,
-            base::Bind(
-                [](tBT_UUID bt_uuid, uint8_t client_id, uint8_t status) {
-                  do_in_jni_thread(Bind(
-                      [](tBT_UUID bt_uuid, uint8_t client_id, uint8_t status) {
-                        bt_uuid_t app_uuid;
-                        bta_to_btif_uuid(&app_uuid, &bt_uuid);
-                        HAL_CBACK(bt_gatt_callbacks, client->register_client_cb,
-                                  status, client_id, app_uuid);
-                      },
-                      bt_uuid, client_id, status));
-                },
-                bt_uuid));
-      },
-      bt_uuid));
+  BTA_GATTC_AppRegister(&bt_uuid, bta_gattc_cback,
+              base::Bind(
+                  [](tBT_UUID bt_uuid, uint8_t client_id, uint8_t status) {
+                    do_in_jni_thread(Bind(
+                        [](tBT_UUID bt_uuid, uint8_t client_id, uint8_t status) {
+                          bt_uuid_t app_uuid;
+                          bta_to_btif_uuid(&app_uuid, &bt_uuid);
+                          HAL_CBACK(bt_gatt_callbacks, client->register_client_cb,
+                                    status, client_id, app_uuid);
+                        },
+                        bt_uuid, client_id, status));
+                  },
+                  bt_uuid));
+
+  return BT_STATUS_SUCCESS;
 }
 
 void btif_gattc_unregister_app_impl(int client_if) {
