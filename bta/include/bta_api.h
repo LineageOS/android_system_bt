@@ -1384,11 +1384,6 @@ extern void BTA_DmCloseACL(const RawAddress& bd_addr, bool remove_dev,
 extern void BTA_DmBleSecurityGrant(const RawAddress& bd_addr,
                                    tBTA_DM_BLE_SEC_GRANT res);
 
-/**
- * Set BLE connectable mode to auto connect
- */
-extern void BTA_DmBleStartAutoConn();
-
 /*******************************************************************************
  *
  * Function         BTA_DmBlePasskeyReply

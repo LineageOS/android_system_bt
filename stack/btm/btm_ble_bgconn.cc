@@ -468,11 +468,7 @@ bool btm_ble_stop_auto_conn() {
  ******************************************************************************/
 bool btm_ble_suspend_bg_conn(void) {
   BTM_TRACE_EVENT("%s", __func__);
-
-  if (btm_cb.ble_ctr_cb.bg_conn_type == BTM_BLE_CONN_AUTO)
-    return btm_ble_stop_auto_conn();
-
-  return false;
+  return btm_ble_stop_auto_conn();
 }
 
 /*******************************************************************************
@@ -487,14 +483,7 @@ bool btm_ble_suspend_bg_conn(void) {
  * Returns          none.
  *
  ******************************************************************************/
-bool btm_ble_resume_bg_conn(void) {
-  tBTM_BLE_CB* p_cb = &btm_cb.ble_ctr_cb;
-  if (p_cb->bg_conn_type == BTM_BLE_CONN_AUTO) {
-    return btm_ble_start_auto_conn();
-  }
-
-  return false;
-}
+bool btm_ble_resume_bg_conn(void) { return btm_ble_start_auto_conn(); }
 /*******************************************************************************
  *
  * Function         btm_ble_get_conn_st
