@@ -713,8 +713,25 @@ TEST_F(AvrcpDeviceTest, setAddressedPlayerTest) {
 
   test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
 
-  auto set_addr_player_rsp = RejectBuilder::MakeBuilder(
+  MediaPlayerInfo info = {0, "Test Player", true};
+  std::vector<MediaPlayerInfo> list = {info};
+
+  EXPECT_CALL(interface, GetMediaPlayerList(_))
+      .WillRepeatedly(InvokeCb<0>(0, list));
+
+  auto set_addr_player_rej_rsp = RejectBuilder::MakeBuilder(
       CommandPdu::SET_ADDRESSED_PLAYER, Status::INVALID_PLAYER_ID);
+
+  EXPECT_CALL(response_cb,
+              Call(1, false, matchPacket(std::move(set_addr_player_rej_rsp))))
+      .Times(1);
+
+  auto player_id_1_request =
+      TestAvrcpPacket::Make(set_addressed_player_id_1_request);
+  SendMessage(1, player_id_1_request);
+
+  auto set_addr_player_rsp =
+      SetAddressedPlayerResponseBuilder::MakeBuilder(Status::NO_ERROR);
 
   EXPECT_CALL(response_cb,
               Call(1, false, matchPacket(std::move(set_addr_player_rsp))))
