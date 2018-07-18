@@ -858,8 +858,12 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
 bool l2cble_init_direct_conn(tL2C_LCB* p_lcb) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(p_lcb->remote_bd_addr);
   tBTM_BLE_CB* p_cb = &btm_cb.ble_ctr_cb;
-  uint16_t scan_int;
-  uint16_t scan_win;
+  uint16_t scan_int = (p_cb->scan_int == BTM_BLE_SCAN_PARAM_UNDEF)
+                          ? BTM_BLE_SCAN_FAST_INT
+                          : p_cb->scan_int;
+  uint16_t scan_win = (p_cb->scan_win == BTM_BLE_SCAN_PARAM_UNDEF)
+                          ? BTM_BLE_SCAN_FAST_WIN
+                          : p_cb->scan_win;
   RawAddress peer_addr;
   uint8_t peer_addr_type = BLE_ADDR_PUBLIC;
   uint8_t own_addr_type = BLE_ADDR_PUBLIC;
@@ -869,13 +873,6 @@ bool l2cble_init_direct_conn(tL2C_LCB* p_lcb) {
     L2CAP_TRACE_WARNING("unknown device, can not initate connection");
     return (false);
   }
-
-  scan_int = (p_cb->scan_int == BTM_BLE_SCAN_PARAM_UNDEF)
-                 ? BTM_BLE_SCAN_FAST_INT
-                 : p_cb->scan_int;
-  scan_win = (p_cb->scan_win == BTM_BLE_SCAN_PARAM_UNDEF)
-                 ? BTM_BLE_SCAN_FAST_WIN
-                 : p_cb->scan_win;
 
   peer_addr_type = p_lcb->ble_addr_type;
   peer_addr = p_lcb->remote_bd_addr;
