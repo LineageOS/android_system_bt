@@ -24,12 +24,12 @@
 #ifndef AVRC_API_H
 #define AVRC_API_H
 
-#include <base/bind.h>
-
 #include "avct_api.h"
 #include "avrc_defs.h"
 #include "bt_target.h"
 #include "sdp_api.h"
+
+#include <base/callback.h>
 
 /*****************************************************************************
  *  constants

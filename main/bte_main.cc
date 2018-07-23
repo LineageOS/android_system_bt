@@ -96,8 +96,7 @@ extern void btu_hci_msg_process(BT_HDR* p_msg);
  * Returns          None
  *
  *****************************************************************************/
-void post_to_main_message_loop(const tracked_objects::Location& from_here,
-                               BT_HDR* p_msg) {
+void post_to_main_message_loop(const base::Location& from_here, BT_HDR* p_msg) {
   if (do_in_main_thread(from_here, base::Bind(&btu_hci_msg_process, p_msg)) !=
       BT_STATUS_SUCCESS) {
     LOG(ERROR) << __func__ << ": do_in_main_thread failed from "

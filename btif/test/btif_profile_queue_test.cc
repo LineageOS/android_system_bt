@@ -15,12 +15,14 @@
  *  limitations under the License.
  *
  ******************************************************************************/
+#include "btif/include/btif_profile_queue.h"
+
 #include <gtest/gtest.h>
 
 #include <base/bind.h>
+#include <base/callback.h>
+#include <base/location.h>
 
-#include "base/location.h"
-#include "btif/include/btif_profile_queue.h"
 #include "stack_manager.h"
 #include "types/raw_address.h"
 
@@ -33,7 +35,7 @@ bool get_stack_is_running(void) { return sStackRunning; }
 static stack_manager_t sStackManager = {nullptr, nullptr, nullptr, nullptr,
                                         get_stack_is_running};
 const stack_manager_t* stack_manager_get_interface() { return &sStackManager; }
-bt_status_t do_in_jni_thread(const tracked_objects::Location& from_here,
+bt_status_t do_in_jni_thread(const base::Location& from_here,
                              base::OnceClosure task) {
   std::move(task).Run();
   return BT_STATUS_SUCCESS;

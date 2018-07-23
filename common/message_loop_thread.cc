@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
+#include "message_loop_thread.h"
+
 #include <sys/syscall.h>
 #include <unistd.h>
 #include <thread>
 
 #include <base/strings/stringprintf.h>
-
-#include "message_loop_thread.h"
 
 namespace bluetooth {
 
@@ -56,14 +56,14 @@ void MessageLoopThread::StartUp() {
   start_up_future.wait();
 }
 
-bool MessageLoopThread::DoInThread(const tracked_objects::Location& from_here,
+bool MessageLoopThread::DoInThread(const base::Location& from_here,
                                    base::OnceClosure task) {
   return DoInThreadDelayed(from_here, std::move(task), base::TimeDelta());
 }
 
-bool MessageLoopThread::DoInThreadDelayed(
-    const tracked_objects::Location& from_here, base::OnceClosure task,
-    const base::TimeDelta& delay) {
+bool MessageLoopThread::DoInThreadDelayed(const base::Location& from_here,
+                                          base::OnceClosure task,
+                                          const base::TimeDelta& delay) {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
   if (message_loop_ == nullptr) {
     LOG(ERROR) << __func__ << ": message loop is null for thread " << *this
