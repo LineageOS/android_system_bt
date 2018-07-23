@@ -220,7 +220,7 @@ bt_status_t btif_transfer_context(tBTIF_CBACK* p_cback, uint16_t event,
  * This function posts a task into the btif message loop, that executes it in
  * the JNI message loop.
  **/
-bt_status_t do_in_jni_thread(const tracked_objects::Location& from_here,
+bt_status_t do_in_jni_thread(const base::Location& from_here,
                              base::OnceClosure task) {
   if (!jni_thread.DoInThread(from_here, std::move(task))) {
     LOG(ERROR) << __func__ << ": Post task to task runner failed!";

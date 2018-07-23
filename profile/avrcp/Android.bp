@@ -18,6 +18,9 @@ cc_library_static {
         "libbluetooth-types",
         "libosi",
     ],
+    shared_libs: [
+        "libchrome",
+    ],
 }
 
 cc_test {
@@ -43,6 +46,9 @@ cc_test {
         "libcutils",
         "libbtdevice",
         "avrcp-target-service",
+    ],
+    shared_libs: [
+        "libchrome",
     ],
     sanitize: {
         cfi: false,

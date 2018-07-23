@@ -29,6 +29,7 @@
 #include "btif_profile_queue.h"
 
 #include <base/bind.h>
+#include <base/callback.h>
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
 #include <string.h>

@@ -16,13 +16,15 @@
 
 #include "service/low_energy_advertiser.h"
 
-#include <base/bind.h>
-#include <base/logging.h>
-
 #include "service/adapter.h"
 #include "service/logging_helpers.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/hcidefs.h"
+
+#include <base/bind.h>
+#include <base/bind_helpers.h>
+#include <base/callback.h>
+#include <base/logging.h>
 
 using std::lock_guard;
 using std::mutex;
@@ -113,8 +115,6 @@ void GetAdvertiseParams(const AdvertiseSettings& settings, bool has_scan_rsp,
   out_params->scan_request_notification_enable = 0;
 }
 
-void DoNothing(uint8_t status) {}
-
 }  // namespace
 
 // LowEnergyAdvertiser implementation
@@ -133,8 +133,7 @@ LowEnergyAdvertiser::~LowEnergyAdvertiser() {
 
   // Stop advertising and ignore the result.
   hal::BluetoothGattInterface::Get()->GetAdvertiserHALInterface()->Enable(
-      advertiser_id_, false, base::Bind(&DoNothing), 0, 0,
-      base::Bind(&DoNothing));
+      advertiser_id_, false, base::DoNothing(), 0, 0, base::DoNothing());
   hal::BluetoothGattInterface::Get()->GetAdvertiserHALInterface()->Unregister(
       advertiser_id_);
 }

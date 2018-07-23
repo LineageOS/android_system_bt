@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "device.h"
 
 #include <base/message_loop/message_loop.h>
 
 #include "connection_handler.h"
-#include "device.h"
-#include "stack_config.h"
-
 #include "packet/avrcp/avrcp_reject_packet.h"
 #include "packet/avrcp/general_reject_packet.h"
 #include "packet/avrcp/get_play_status_packet.h"
 #include "packet/avrcp/pass_through_packet.h"
 #include "packet/avrcp/set_absolute_volume.h"
 #include "packet/avrcp/set_addressed_player.h"
+#include "stack_config.h"
 
 namespace bluetooth {
 namespace avrcp {
