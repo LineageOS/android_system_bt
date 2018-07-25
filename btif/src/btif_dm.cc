@@ -97,8 +97,9 @@ const Uuid UUID_HEARING_AID = Uuid::FromString("FDF0");
 #define BTIF_DM_MAX_SDP_ATTEMPTS_AFTER_PAIRING 2
 
 #define NUM_TIMEOUT_RETRIES 5
-
+#ifndef PROPERTY_PRODUCT_MODEL
 #define PROPERTY_PRODUCT_MODEL "ro.product.model"
+#endif
 #define DEFAULT_LOCAL_NAME_MAX 31
 #if (DEFAULT_LOCAL_NAME_MAX > BTM_MAX_LOC_BD_NAME_LEN)
 #error "default btif local name size exceeds stack supported length"
