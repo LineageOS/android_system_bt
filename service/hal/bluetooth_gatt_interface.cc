@@ -148,7 +148,7 @@ void RegisterForNotificationCallback(int conn_id, int registered, int status,
   LOG(INFO) << __func__ << " - conn_id: " << conn_id << " - status: " << status
             << " - registered: " << registered << " - handle: " << handle;
   FOR_EACH_CLIENT_OBSERVER(RegisterForNotificationCallback(
-      g_interface, conn_id, status, registered, handle));
+      g_interface, conn_id, registered, status, handle));
 }
 
 void NotifyCallback(int conn_id, const btgatt_notify_params_t& p_data) {
@@ -594,7 +594,7 @@ void BluetoothGattInterface::ClientObserver::SearchCompleteCallback(
 
 void BluetoothGattInterface::ClientObserver::RegisterForNotificationCallback(
     BluetoothGattInterface* /* gatt_iface */, int /* conn_id */,
-    int /* status */, int /* registered */, uint16_t /* handle */) {
+    int /* registered */, int /* status */, uint16_t /* handle */) {
   // Do nothing
 }
 
