@@ -81,8 +81,8 @@ class BluetoothGattInterface {
                                         int conn_id, int status);
 
     virtual void RegisterForNotificationCallback(
-        BluetoothGattInterface* gatt_iface, int conn_id, int status,
-        int registered, uint16_t handle);
+        BluetoothGattInterface* gatt_iface, int conn_id, int registered,
+        int status, uint16_t handle);
 
     virtual void NotifyCallback(BluetoothGattInterface* gatt_iface, int conn_id,
                                 const btgatt_notify_params_t& p_data);
