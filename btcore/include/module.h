@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 
+#include "common/message_loop_thread.h"
 #include "osi/include/future.h"
 #include "osi/include/thread.h"
 
@@ -63,6 +64,6 @@ void module_clean_up(const module_t* module);
 // has finished, |callback| is called within the context of |callback_thread|
 // with |FUTURE_SUCCESS| or |FUTURE_FAIL| depending on whether startup succeeded
 // or not.
-void module_start_up_callbacked_wrapper(const module_t* module,
-                                        thread_t* callback_thread,
-                                        thread_fn callback);
+void module_start_up_callbacked_wrapper(
+    const module_t* module,
+    bluetooth::common::MessageLoopThread* callback_thread, thread_fn callback);

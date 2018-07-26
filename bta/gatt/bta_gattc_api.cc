@@ -30,11 +30,11 @@
 #include <base/bind_helpers.h>
 #include <base/callback.h>
 #include "bt_common.h"
-#include "bta_closure_api.h"
 #include "bta_gatt_api.h"
 #include "bta_gattc_int.h"
 #include "bta_sys.h"
 #include "device/include/controller.h"
+#include "stack/include/btu.h"
 
 using bluetooth::Uuid;
 

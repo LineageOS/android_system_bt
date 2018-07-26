@@ -29,13 +29,13 @@
 
 #include "bt_common.h"
 #include "bta_api.h"
-#include "bta_closure_api.h"
 #include "bta_jv_api.h"
 #include "bta_jv_int.h"
 #include "bta_sys.h"
 #include "gap_api.h"
 #include "port_api.h"
 #include "sdp_api.h"
+#include "stack/include/btu.h"
 #include "utl.h"
 
 using base::Bind;

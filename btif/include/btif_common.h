@@ -174,9 +174,9 @@ typedef struct {
  *  Functions
  ******************************************************************************/
 
-extern bt_status_t do_in_jni_thread(const base::Closure& task);
+extern bt_status_t do_in_jni_thread(base::OnceClosure task);
 extern bt_status_t do_in_jni_thread(const tracked_objects::Location& from_here,
-                                    const base::Closure& task);
+                                    base::OnceClosure task);
 extern bool is_on_jni_thread();
 extern base::MessageLoop* get_jni_message_loop();
 /**

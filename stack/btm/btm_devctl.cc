@@ -34,16 +34,16 @@
 #include "btcore/include/module.h"
 #include "btm_int.h"
 #include "btu.h"
+#include "common/message_loop_thread.h"
 #include "device/include/controller.h"
 #include "hci_layer.h"
 #include "hcimsgs.h"
 #include "l2c_int.h"
 #include "osi/include/osi.h"
-#include "osi/include/thread.h"
 
 #include "gatt_int.h"
 
-extern thread_t* bt_workqueue_thread;
+extern bluetooth::common::MessageLoopThread bt_workqueue_thread;
 
 /******************************************************************************/
 /*               L O C A L    D A T A    D E F I N I T I O N S                */
@@ -76,7 +76,7 @@ static void btm_decode_ext_features_page(uint8_t page_number,
  * Returns          void
  *
  ******************************************************************************/
-void btm_dev_init(void) {
+void btm_dev_init() {
   /* Initialize nonzero defaults */
   memset(btm_cb.cfg.bd_name, 0, sizeof(tBTM_LOC_BD_NAME));
 
@@ -231,7 +231,7 @@ void BTM_DeviceReset(UNUSED_ATTR tBTM_CMPL_CB* p_cb) {
   btm_db_reset();
 
   module_start_up_callbacked_wrapper(get_module(CONTROLLER_MODULE),
-                                     bt_workqueue_thread, reset_complete);
+                                     &bt_workqueue_thread, reset_complete);
 }
 
 /*******************************************************************************
