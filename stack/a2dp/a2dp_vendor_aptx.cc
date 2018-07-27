@@ -155,7 +155,16 @@ static tA2DP_STATUS A2DP_ParseInfoAptx(tA2DP_APTX_CIE* p_ie,
   p_ie->sampleRate = *p_codec_info & 0xF0;
   p_codec_info++;
 
-  if (is_capability) return A2DP_SUCCESS;
+  if (is_capability) {
+    // NOTE: The checks here are very liberal. We should be using more
+    // pedantic checks specific to the SRC or SNK as specified in the spec.
+    if (A2DP_BitsSet(p_ie->sampleRate) == A2DP_SET_ZERO_BIT)
+      return A2DP_BAD_SAMP_FREQ;
+    if (A2DP_BitsSet(p_ie->channelMode) == A2DP_SET_ZERO_BIT)
+      return A2DP_BAD_CH_MODE;
+
+    return A2DP_SUCCESS;
+  }
 
   if (A2DP_BitsSet(p_ie->sampleRate) != A2DP_SET_ONE_BIT)
     return A2DP_BAD_SAMP_FREQ;

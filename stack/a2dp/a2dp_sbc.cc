@@ -197,7 +197,22 @@ static tA2DP_STATUS A2DP_ParseInfoSbc(tA2DP_SBC_CIE* p_ie,
     return A2DP_BAD_MAX_BITPOOL;
   }
 
-  if (is_capability) return A2DP_SUCCESS;
+  if (is_capability) {
+    // NOTE: The checks here are very liberal. We should be using more
+    // pedantic checks specific to the SRC or SNK as specified in the spec.
+    if (A2DP_BitsSet(p_ie->samp_freq) == A2DP_SET_ZERO_BIT)
+      return A2DP_BAD_SAMP_FREQ;
+    if (A2DP_BitsSet(p_ie->ch_mode) == A2DP_SET_ZERO_BIT)
+      return A2DP_BAD_CH_MODE;
+    if (A2DP_BitsSet(p_ie->block_len) == A2DP_SET_ZERO_BIT)
+      return A2DP_BAD_BLOCK_LEN;
+    if (A2DP_BitsSet(p_ie->num_subbands) == A2DP_SET_ZERO_BIT)
+      return A2DP_BAD_SUBBANDS;
+    if (A2DP_BitsSet(p_ie->alloc_method) == A2DP_SET_ZERO_BIT)
+      return A2DP_BAD_ALLOC_METHOD;
+
+    return A2DP_SUCCESS;
+  }
 
   if (A2DP_BitsSet(p_ie->samp_freq) != A2DP_SET_ONE_BIT)
     return A2DP_BAD_SAMP_FREQ;
