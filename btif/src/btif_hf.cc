@@ -783,14 +783,12 @@ bt_status_t HeadsetInterface::ConnectAudio(RawAddress* bd_addr) {
     LOG(ERROR) << ": SLC not connected for " << *bd_addr;
     return BT_STATUS_NOT_READY;
   }
-  BTA_AgAudioOpen(btif_hf_cb[idx].handle);
-  // Inform the application that the audio connection has been initiated
-  // successfully
   do_in_jni_thread(base::Bind(&Callbacks::AudioStateCallback,
                               // Manual pointer management for now
                               base::Unretained(bt_hf_callbacks),
                               BTHF_AUDIO_STATE_CONNECTING,
                               &btif_hf_cb[idx].connected_bda));
+  BTA_AgAudioOpen(btif_hf_cb[idx].handle);
   return BT_STATUS_SUCCESS;
 }
 
