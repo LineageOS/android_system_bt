@@ -28,6 +28,7 @@
 
 #include "bt_common.h"
 #include "btm_api.h"
+#include "btm_ble_api.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
 #include "osi/include/alarm.h"
@@ -800,10 +801,11 @@ extern void l2cble_credit_based_conn_res(tL2C_CCB* p_ccb, uint16_t result);
 extern void l2cble_send_peer_disc_req(tL2C_CCB* p_ccb);
 extern void l2cble_send_flow_control_credit(tL2C_CCB* p_ccb,
                                             uint16_t credit_value);
-extern bool l2ble_sec_access_req(const RawAddress& bd_addr, uint16_t psm,
-                                 bool is_originator,
-                                 tL2CAP_SEC_CBACK* p_callback,
-                                 void* p_ref_data);
+extern tL2CAP_LE_RESULT_CODE l2ble_sec_access_req(const RawAddress& bd_addr,
+                                                  uint16_t psm,
+                                                  bool is_originator,
+                                                  tL2CAP_SEC_CBACK* p_callback,
+                                                  void* p_ref_data);
 
 #if (BLE_LLT_INCLUDED == TRUE)
 extern void l2cble_process_rc_param_request_evt(uint16_t handle,
