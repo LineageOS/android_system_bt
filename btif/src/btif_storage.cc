@@ -40,7 +40,6 @@
 #include <time.h>
 
 #include "bt_common.h"
-#include "bta_closure_api.h"
 #include "bta_hd_api.h"
 #include "bta_hearing_aid_api.h"
 #include "bta_hh_api.h"

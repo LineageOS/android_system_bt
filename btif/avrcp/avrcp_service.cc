@@ -23,10 +23,10 @@
 #include <mutex>
 #include <sstream>
 
-#include "bta_closure_api.h"
 #include "btif_av.h"
 #include "btif_common.h"
 #include "device.h"
+#include "stack/include/btu.h"
 
 namespace bluetooth {
 namespace avrcp {

@@ -18,10 +18,10 @@
 
 /* Hearing Aid Profile Interface */
 
-#include "bta_closure_api.h"
 #include "bta_hearing_aid_api.h"
 #include "btif_common.h"
 #include "btif_storage.h"
+#include "stack/include/btu.h"
 
 #include <base/bind.h>
 #include <base/location.h>

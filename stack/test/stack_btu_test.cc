@@ -26,9 +26,9 @@
 #include <unistd.h>
 
 #include "btcore/include/module.h"
+#include "common/message_loop_thread.h"
 #include "osi/include/alarm.h"
 #include "osi/include/fixed_queue.h"
-#include "osi/include/thread.h"
 #include "stack/include/btu.h"
 
 class TimeoutHelper {
@@ -67,10 +67,11 @@ void btu_task_shut_down(void* context);
 /* Below are methods and variables that must be implemented if we don't want to
  * compile the whole stack. They will be removed, or changed into mocks one by
  * one in the future, as the refactoring progresses */
-void btif_transfer_context(void (*)(unsigned short, char*), uint16_t, char*,
-                           int, void (*)(unsigned short, char*, char*)) {
+bt_status_t do_in_jni_thread(const tracked_objects::Location& from_here,
+                             base::OnceClosure task) {
   helper.notify();
-};
+  return BT_STATUS_SUCCESS;
+}
 
 void btu_init_core(){};
 void btif_init_ok(unsigned short, char*){};
@@ -82,7 +83,7 @@ const module_t* get_module(const char*) { return nullptr; };
 bool module_init(module_t const*) { return true; };
 void module_clean_up(module_t const*){};
 
-thread_t* bt_workqueue_thread;
+bluetooth::common::MessageLoopThread bt_workqueue_thread("test alarm thread");
 
 class BtuMessageLoopTest : public testing::Test {
  public:
@@ -92,8 +93,7 @@ class BtuMessageLoopTest : public testing::Test {
   virtual void SetUp() {
     // Initialize alarms to prevent btu_task_shut_down from crashing
     alarm_new("test alarm");
-    bt_workqueue_thread = thread_new("test alarm thread");
-
+    bt_workqueue_thread.StartUp();
     // btu_task_start_up calls btif_transfer_context to let the stack know
     // start up is finished
     btu_task_start_up(nullptr);
@@ -104,6 +104,7 @@ class BtuMessageLoopTest : public testing::Test {
   virtual void TearDown() {
     btu_task_shut_down(nullptr);
     alarm_cleanup();
+    bt_workqueue_thread.ShutDown();
   }
 
   void Fail(std::string message) { FAIL() << message; }
