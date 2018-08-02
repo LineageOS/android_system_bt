@@ -22,14 +22,15 @@
 
 #include "AlarmTestHarness.h"
 
+#include "common/message_loop_thread.h"
 #include "osi/include/alarm.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/osi.h"
 #include "osi/include/semaphore.h"
-#include "osi/include/thread.h"
 
 using base::Closure;
 using base::TimeDelta;
+using bluetooth::common::MessageLoopThread;
 
 static semaphore_t* semaphore;
 static int cb_counter;
@@ -39,23 +40,7 @@ static const uint64_t EPSILON_MS = 50;
 
 static void msleep(uint64_t ms) { usleep(ms * 1000); }
 
-base::MessageLoop* message_loop_;
-base::RunLoop* run_loop_;
-static semaphore_t* msg_loop_ready;
-
-void message_loop_run(UNUSED_ATTR void* context) {
-  message_loop_ = new base::MessageLoop();
-  run_loop_ = new base::RunLoop();
-
-  semaphore_post(msg_loop_ready);
-  run_loop_->Run();
-
-  delete message_loop_;
-  message_loop_ = nullptr;
-
-  delete run_loop_;
-  run_loop_ = nullptr;
-}
+static base::MessageLoop* message_loop_;
 
 base::MessageLoop* get_message_loop() { return message_loop_; }
 
@@ -318,15 +303,12 @@ TEST_F(AlarmTest, test_callback_ordering_on_mloop) {
   alarm_t* alarms[100];
 
   // Initialize MesageLoop, and wait till it's initialized.
-  msg_loop_ready = semaphore_new(0);
-  thread_t* message_loop_thread_ = thread_new("btu message loop");
-  if (!message_loop_thread_) {
+  MessageLoopThread message_loop_thread("btu message loop");
+  message_loop_thread.StartUp();
+  if (!message_loop_thread.IsRunning()) {
     FAIL() << "unable to create btu message loop thread.";
   }
-
-  thread_post(message_loop_thread_, message_loop_run, nullptr);
-  semaphore_wait(msg_loop_ready);
-  semaphore_free(msg_loop_ready);
+  message_loop_ = message_loop_thread.message_loop();
 
   for (int i = 0; i < 100; i++) {
     const std::string alarm_name =
@@ -347,9 +329,7 @@ TEST_F(AlarmTest, test_callback_ordering_on_mloop) {
 
   for (int i = 0; i < 100; i++) alarm_free(alarms[i]);
 
-  message_loop_->task_runner()->PostTask(FROM_HERE,
-                                         run_loop_->QuitWhenIdleClosure());
-  thread_free(message_loop_thread_);
+  message_loop_thread.ShutDown();
   EXPECT_FALSE(WakeLockHeld());
 }
 

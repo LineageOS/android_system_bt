@@ -28,10 +28,10 @@
 #include <string.h>
 
 #include "bt_common.h"
-#include "bta_closure_api.h"
 #include "bta_gatt_api.h"
 #include "bta_gatts_int.h"
 #include "bta_sys.h"
+#include "stack/include/btu.h"
 
 /*****************************************************************************
  *  Constants

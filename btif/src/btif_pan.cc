@@ -54,7 +54,6 @@
 
 #include "bt_common.h"
 #include "bta_api.h"
-#include "bta_closure_api.h"
 #include "bta_pan_api.h"
 #include "btif_common.h"
 #include "btif_pan_internal.h"
@@ -65,6 +64,7 @@
 #include "device/include/controller.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
+#include "stack/include/btu.h"
 
 #define FORWARD_IGNORE 1
 #define FORWARD_SUCCESS 0

@@ -25,8 +25,8 @@
 #include <vector>
 
 #include "ble_advertiser.h"
-#include "bta_closure_api.h"
 #include "btif_common.h"
+#include "stack/include/btu.h"
 
 using base::Bind;
 using base::Owned;

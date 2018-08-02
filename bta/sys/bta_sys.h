@@ -31,8 +31,6 @@
 #include <base/logging.h>
 #include <base/threading/thread.h>
 
-#include "bta/include/bta_closure_api.h"
-
 /*****************************************************************************
  *  Constants and data types
  ****************************************************************************/
