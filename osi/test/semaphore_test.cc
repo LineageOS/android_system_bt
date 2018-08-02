@@ -6,10 +6,12 @@
 #include <sys/select.h>
 #include <unistd.h>
 
+#include "common/message_loop_thread.h"
 #include "osi/include/osi.h"
 #include "osi/include/reactor.h"
 #include "osi/include/semaphore.h"
-#include "osi/include/thread.h"
+
+using bluetooth::common::MessageLoopThread;
 
 struct SemaphoreTestSequenceHelper {
   semaphore_t* semaphore;
@@ -71,16 +73,18 @@ TEST_F(SemaphoreTest, test_wait_after_post) {
 TEST_F(SemaphoreTest, test_ensure_wait) {
   semaphore_t* semaphore = semaphore_new(0);
   ASSERT_TRUE(semaphore != NULL);
-  thread_t* thread = thread_new("semaphore_test_thread");
-  ASSERT_TRUE(thread != NULL);
+  MessageLoopThread thread("semaphore_test_thread");
+  thread.StartUp();
+  ASSERT_TRUE(thread.IsRunning());
 
   EXPECT_FALSE(semaphore_try_wait(semaphore));
   SemaphoreTestSequenceHelper sequence_helper = {semaphore, 0};
-  thread_post(thread, sleep_then_increment_counter, &sequence_helper);
+  thread.DoInThread(FROM_HERE,
+                    base::Bind(sleep_then_increment_counter, &sequence_helper));
   semaphore_wait(semaphore);
   EXPECT_EQ(sequence_helper.counter, 1)
       << "semaphore_wait() did not wait for counter to increment";
 
   semaphore_free(semaphore);
-  thread_free(thread);
+  thread.ShutDown();
 }

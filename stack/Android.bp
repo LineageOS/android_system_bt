@@ -213,6 +213,7 @@ cc_test {
     ],
     static_libs: [
         "libbt-bta",
+        "libbt-common",
         "libbt-stack",
         "libbt-sbc-decoder",
         "libbt-sbc-encoder",
@@ -393,6 +394,7 @@ cc_test {
         "libprotobuf-cpp-lite",
     ],
     static_libs: [
+        "libbt-common",
         "libbluetooth-types",
         "libgmock",
         "libosi",

@@ -131,6 +131,7 @@ cc_test {
     static_libs: [
         "libbt-bta",
         "libbtcore",
+        "libbt-common",
         "libbt-stack",
         "libbt-sbc-encoder",
         "libbt-utils",

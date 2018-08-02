@@ -42,6 +42,7 @@
 #include "btif_hf.h"
 #include "osi/include/metrics.h"
 #include "osi/include/osi.h"
+#include "stack/include/btu.h"
 
 using system_bt_osi::A2dpSessionMetrics;
 using system_bt_osi::BluetoothMetricsLogger;
