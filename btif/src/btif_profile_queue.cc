@@ -210,7 +210,6 @@ void btif_queue_release() {
   LOG_INFO(LOG_TAG, "%s", __func__);
   if (do_in_jni_thread(FROM_HERE, base::Bind(&queue_int_release)) !=
       BT_STATUS_SUCCESS) {
-    // Scheduling failed - the thread to schedule on is probably dead
-    queue_int_release();
+    LOG(FATAL) << __func__ << ": Failed to schedule on JNI thread";
   }
 }

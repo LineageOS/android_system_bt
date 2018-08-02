@@ -40,7 +40,6 @@
 
 #include "bt_common.h"
 #include "bta_api.h"
-#include "bta_closure_api.h"
 #include "bta_gatt_api.h"
 #include "btif_config.h"
 #include "btif_dm.h"
@@ -48,6 +47,7 @@
 #include "btif_gatt_util.h"
 #include "btif_storage.h"
 #include "osi/include/log.h"
+#include "stack/include/btu.h"
 
 using base::Bind;
 using base::Owned;

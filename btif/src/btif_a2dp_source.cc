@@ -39,16 +39,13 @@
 #include "btif_av.h"
 #include "btif_av_co.h"
 #include "btif_util.h"
+#include "common/message_loop_thread.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/log.h"
 #include "osi/include/metrics.h"
 #include "osi/include/osi.h"
-#include "osi/include/thread.h"
 #include "osi/include/time.h"
 #include "uipc.h"
-
-#include <condition_variable>
-#include <mutex>
 
 using system_bt_osi::BluetoothMetricsLogger;
 using system_bt_osi::A2dpSessionMetrics;
@@ -165,95 +162,6 @@ class BtifMediaStats {
   int codec_index = -1;
 };
 
-class BtWorkerThread {
- public:
-  BtWorkerThread(const std::string& thread_name)
-      : thread_name_(thread_name),
-        message_loop_(nullptr),
-        run_loop_(nullptr),
-        message_loop_thread_(nullptr),
-        started_(false) {}
-
-  void StartUp() {
-    if (message_loop_thread_ != nullptr) {
-      return;  // Already started up
-    }
-    message_loop_thread_ = thread_new(thread_name_.c_str());
-    CHECK(message_loop_thread_ != nullptr);
-    started_ = false;
-    thread_post(message_loop_thread_, &BtWorkerThread::RunThread, this);
-    {
-      // Block until run_loop_ is allocated and ready to run
-      std::unique_lock<std::mutex> start_lock(start_up_mutex_);
-      while (!started_) {
-        start_up_cv_.wait(start_lock);
-      }
-    }
-  }
-
-  bool DoInThread(const tracked_objects::Location& from_here,
-                  const base::Closure& task) {
-    if ((message_loop_ == nullptr) || !message_loop_->task_runner().get()) {
-      LOG_ERROR(
-          LOG_TAG,
-          "%s: Dropping message for thread %s: message loop is not initialized",
-          __func__, thread_name_.c_str());
-      return false;
-    }
-    if (!message_loop_->task_runner()->PostTask(from_here, task)) {
-      LOG_ERROR(LOG_TAG,
-                "%s: Posting task to message loop for thread %s failed",
-                __func__, thread_name_.c_str());
-      return false;
-    }
-    return true;
-  }
-
-  void ShutDown() {
-    if ((run_loop_ != nullptr) && (message_loop_ != nullptr)) {
-      message_loop_->task_runner()->PostTask(FROM_HERE,
-                                             run_loop_->QuitClosure());
-    }
-    thread_free(message_loop_thread_);
-    message_loop_thread_ = nullptr;
-  }
-
- private:
-  static void RunThread(void* context) {
-    auto wt = static_cast<BtWorkerThread*>(context);
-    wt->Run();
-  }
-
-  void Run() {
-    LOG_INFO(LOG_TAG, "%s: message loop for thread %s started", __func__,
-             thread_name_.c_str());
-    message_loop_ = new base::MessageLoop();
-    run_loop_ = new base::RunLoop();
-    {
-      std::unique_lock<std::mutex> start_lock(start_up_mutex_);
-      started_ = true;
-      start_up_cv_.notify_all();
-    }
-    // Blocking util ShutDown() is called
-    run_loop_->Run();
-    delete message_loop_;
-    message_loop_ = nullptr;
-    delete run_loop_;
-    run_loop_ = nullptr;
-    LOG_INFO(LOG_TAG, "%s: message loop for thread %s finished", __func__,
-             thread_name_.c_str());
-  }
-
-  std::string thread_name_;
-  base::MessageLoop* message_loop_;
-  base::RunLoop* run_loop_;
-  thread_t* message_loop_thread_;
-  // For start-up
-  bool started_;
-  std::mutex start_up_mutex_;
-  std::condition_variable start_up_cv_;
-};
-
 class BtifA2dpSource {
  public:
   enum RunState {
@@ -312,7 +220,8 @@ class BtifA2dpSource {
   BtifA2dpSource::RunState state_;
 };
 
-static BtWorkerThread btif_a2dp_source_thread("btif_a2dp_source_thread");
+static bluetooth::common::MessageLoopThread btif_a2dp_source_thread(
+    "btif_a2dp_source_thread");
 static BtifA2dpSource btif_a2dp_source_cb;
 
 static void btif_a2dp_source_init_delayed(void);
@@ -439,11 +348,12 @@ bool btif_a2dp_source_startup(void) {
   return true;
 }
 
-static void btif_a2dp_source_startup_delayed(void) {
+static void btif_a2dp_source_startup_delayed() {
   LOG_INFO(LOG_TAG, "%s: state=%s", __func__,
            btif_a2dp_source_cb.StateStr().c_str());
-
-  raise_priority_a2dp(TASK_HIGH_MEDIA);
+  if (!btif_a2dp_source_thread.EnableRealTimeScheduling()) {
+    LOG(FATAL) << __func__ << ": unable to enable real time scheduling";
+  }
   btif_a2dp_control_init();
   btif_a2dp_source_cb.SetState(BtifA2dpSource::kStateRunning);
 }

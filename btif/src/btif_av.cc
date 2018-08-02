@@ -34,7 +34,6 @@
 #include "bt_common.h"
 #include "bt_utils.h"
 #include "bta/include/bta_api.h"
-#include "bta/include/bta_closure_api.h"
 #include "btif/include/btif_a2dp_source.h"
 #include "btif_a2dp.h"
 #include "btif_a2dp_audio_interface.h"

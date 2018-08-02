@@ -32,22 +32,18 @@
 #include "btcore/include/module.h"
 #include "bte.h"
 #include "btif/include/btif_common.h"
+#include "common/message_loop_thread.h"
 #include "osi/include/osi.h"
-#include "osi/include/thread.h"
 #include "stack/btm/btm_int.h"
 #include "stack/include/btu.h"
 #include "stack/l2cap/l2c_int.h"
 
-static const int THREAD_RT_PRIORITY = 1;
+using bluetooth::common::MessageLoopThread;
 
 /* Define BTU storage area */
 uint8_t btu_trace_level = HCI_INITIAL_TRACE_LEVEL;
 
-extern thread_t* bt_workqueue_thread;
-
-static base::MessageLoop* message_loop_ = NULL;
-static base::RunLoop* run_loop_ = NULL;
-static thread_t* message_loop_thread_;
+static MessageLoopThread btu_message_loop_thread("btu_message_loop");
 
 void btu_hci_msg_process(BT_HDR* p_msg) {
   /* Determine the input message type. */
@@ -83,24 +79,16 @@ void btu_hci_msg_process(BT_HDR* p_msg) {
   }
 }
 
-base::MessageLoop* get_message_loop() { return message_loop_; }
+base::MessageLoop* get_message_loop() {
+  return btu_message_loop_thread.message_loop();
+}
 
-void btu_message_loop_run(UNUSED_ATTR void* context) {
-  message_loop_ = new base::MessageLoop();
-  run_loop_ = new base::RunLoop();
-
-  // Inform the bt jni thread initialization is ok.
-  message_loop_->task_runner()->PostTask(
-      FROM_HERE, base::Bind(base::IgnoreResult(&btif_transfer_context),
-                            btif_init_ok, 0, nullptr, 0, nullptr));
-
-  run_loop_->Run();
-
-  delete message_loop_;
-  message_loop_ = NULL;
-
-  delete run_loop_;
-  run_loop_ = NULL;
+bt_status_t do_in_bta_thread(const tracked_objects::Location& from_here,
+                             base::OnceClosure task) {
+  if (!btu_message_loop_thread.DoInThread(from_here, std::move(task))) {
+    return BT_STATUS_FAIL;
+  }
+  return BT_STATUS_SUCCESS;
 }
 
 void btu_task_start_up(UNUSED_ATTR void* context) {
@@ -123,21 +111,22 @@ void btu_task_start_up(UNUSED_ATTR void* context) {
    */
   module_init(get_module(BTE_LOGMSG_MODULE));
 
-  message_loop_thread_ = thread_new("btu message loop");
-  if (!message_loop_thread_) {
-    LOG(FATAL) << __func__ << " unable to create btu message loop thread.";
+  btu_message_loop_thread.StartUp();
+  if (!btu_message_loop_thread.IsRunning()) {
+    LOG(FATAL) << __func__ << ": unable to start btu message loop thread.";
   }
-
-  thread_set_rt_priority(message_loop_thread_, THREAD_RT_PRIORITY);
-  thread_post(message_loop_thread_, btu_message_loop_run, nullptr);
-
+  if (!btu_message_loop_thread.EnableRealTimeScheduling()) {
+    LOG(FATAL) << __func__ << ": unable to enable real time scheduling";
+  }
+  if (do_in_jni_thread(FROM_HERE, base::Bind(btif_init_ok, 0, nullptr)) !=
+      BT_STATUS_SUCCESS) {
+    LOG(FATAL) << __func__ << ": unable to continue starting Bluetooth";
+  }
 }
 
 void btu_task_shut_down(UNUSED_ATTR void* context) {
   // Shutdown message loop on task completed
-  if (run_loop_ && message_loop_) {
-    message_loop_->task_runner()->PostTask(FROM_HERE, run_loop_->QuitClosure());
-  }
+  btu_message_loop_thread.ShutDown();
 
   module_clean_up(get_module(BTE_LOGMSG_MODULE));
 

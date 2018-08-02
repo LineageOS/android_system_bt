@@ -32,6 +32,7 @@
 #include <base/threading/thread.h>
 #include "bt_common.h"
 #include "bt_target.h"
+#include "common/message_loop_thread.h"
 #include "osi/include/alarm.h"
 
 /* Global BTU data */
@@ -57,6 +58,8 @@ void btu_free_core(void);
  ***********************************
 */
 base::MessageLoop* get_message_loop();
+bt_status_t do_in_bta_thread(const tracked_objects::Location& from_here,
+                             base::OnceClosure task);
 
 void BTU_StartUp(void);
 void BTU_ShutDown(void);
