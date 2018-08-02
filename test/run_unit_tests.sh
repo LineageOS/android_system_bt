@@ -1,6 +1,7 @@
 #!/bin/sh
 
 known_tests=(
+  bluetooth_test_common
   bluetoothtbd_test
   net_test_audio_a2dp_hw
   net_test_avrcp
