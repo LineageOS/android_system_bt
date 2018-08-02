@@ -49,21 +49,3 @@ cc_test {
         "libbluetoothtbd_hal",
     ],
 }
-
-// Bluetooth test suite for target
-// ========================================================
-cc_test {
-    name: "net_test_performance",
-    defaults: ["fluoride_defaults"],
-    include_dirs: ["system/bt"],
-    srcs: [
-        "core/thread_performance_test.cc",
-    ],
-    shared_libs: [
-        "liblog",
-    ],
-    static_libs: [
-        "libgmock",
-        "libosi",
-    ],
-}
