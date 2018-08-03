@@ -46,7 +46,6 @@ cc_benchmark {
     name: "bluetooth_benchmark_thread_performance",
     defaults: ["fluoride_defaults"],
     include_dirs: ["system/bt"],
-    host_supported: true,
     srcs: [
         "benchmark/thread_performance_benchmark.cc",
     ],
