@@ -1,0 +1,59 @@
+cc_library_static {
+    name: "libbt-common",
+    defaults: ["fluoride_defaults"],
+    host_supported: true,
+    include_dirs: ["system/bt"],
+    srcs: [
+        "message_loop_thread.cc",
+        "execution_barrier.cc",
+    ],
+}
+
+cc_test {
+    name: "bluetooth_test_common",
+    test_suites: ["device-tests"],
+    defaults: ["fluoride_defaults"],
+    host_supported: true,
+    include_dirs: ["system/bt"],
+    srcs : [
+        "message_loop_thread_unittest.cc",
+        "execution_barrier_unittest.cc",
+    ],
+    static_libs : [
+        "libbt-common",
+    ]
+}
+
+cc_test {
+    name: "net_test_performance",
+    defaults: ["fluoride_defaults"],
+    include_dirs: ["system/bt"],
+    host_supported: true,
+    srcs: [
+        "test/thread_performance_test.cc",
+    ],
+    shared_libs: [
+        "liblog",
+    ],
+    static_libs: [
+        "libgmock",
+        "libosi",
+        "libbt-common"
+    ],
+}
+
+cc_benchmark {
+    name: "bluetooth_benchmark_thread_performance",
+    defaults: ["fluoride_defaults"],
+    include_dirs: ["system/bt"],
+    srcs: [
+        "benchmark/thread_performance_benchmark.cc",
+    ],
+    shared_libs: [
+        "liblog",
+    ],
+    static_libs: [
+        "libosi",
+        "libbt-common"
+    ],
+}

@@ -46,7 +46,6 @@
 #include "bt_common.h"
 #include "bt_utils.h"
 #include "bta_api.h"
-#include "bta_closure_api.h"
 #include "bte.h"
 #include "btif_api.h"
 #include "btif_av.h"
@@ -58,17 +57,18 @@
 #include "btif_uid.h"
 #include "btif_util.h"
 #include "btu.h"
+#include "common/message_loop_thread.h"
 #include "device/include/controller.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/future.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
-#include "osi/include/thread.h"
 #include "stack_manager.h"
 
 using base::PlatformThread;
 using bluetooth::Uuid;
+using bluetooth::common::MessageLoopThread;
 
 /*******************************************************************************
  *  Constants & Macros
@@ -128,12 +128,9 @@ static tBTA_SERVICE_MASK btif_enabled_services = 0;
  */
 static uint8_t btif_dut_mode = 0;
 
-static thread_t* bt_jni_workqueue_thread;
-static const char* BT_JNI_WORKQUEUE_NAME = "bt_jni_workqueue";
-static uid_set_t* uid_set = NULL;
-base::MessageLoop* message_loop_ = NULL;
-base::RunLoop* jni_run_loop = NULL;
-static base::PlatformThreadId btif_thread_id_ = -1;
+static MessageLoopThread bt_jni_workqueue_thread("bt_jni_workqueue");
+static base::AtExitManager* exit_manager;
+static uid_set_t* uid_set;
 
 /*******************************************************************************
  *  Static functions
@@ -224,35 +221,25 @@ bt_status_t btif_transfer_context(tBTIF_CBACK* p_cback, uint16_t event,
  * the JNI message loop.
  **/
 bt_status_t do_in_jni_thread(const tracked_objects::Location& from_here,
-                             const base::Closure& task) {
-  if (!message_loop_) {
-    BTIF_TRACE_WARNING("%s: Dropped message, message_loop not initialized yet!",
-                       __func__);
+                             base::OnceClosure task) {
+  if (!bt_jni_workqueue_thread.DoInThread(from_here, std::move(task))) {
+    LOG(ERROR) << __func__ << ": Post task to task runner failed!";
     return BT_STATUS_FAIL;
   }
-
-  scoped_refptr<base::SingleThreadTaskRunner> task_runner =
-      message_loop_->task_runner();
-  if (!task_runner.get()) {
-    BTIF_TRACE_WARNING("%s: task runner is dead", __func__);
-    return BT_STATUS_FAIL;
-  }
-
-  if (task_runner->PostTask(from_here, task)) return BT_STATUS_SUCCESS;
-
-  BTIF_TRACE_ERROR("%s: Post task to task runner failed!", __func__);
-  return BT_STATUS_FAIL;
+  return BT_STATUS_SUCCESS;
 }
 
-bt_status_t do_in_jni_thread(const base::Closure& task) {
-  return do_in_jni_thread(FROM_HERE, task);
+bt_status_t do_in_jni_thread(base::OnceClosure task) {
+  return do_in_jni_thread(FROM_HERE, std::move(task));
 }
 
 bool is_on_jni_thread() {
-  return btif_thread_id_ == PlatformThread::CurrentId();
+  return bt_jni_workqueue_thread.GetThreadId() == PlatformThread::CurrentId();
 }
 
-base::MessageLoop* get_jni_message_loop() { return message_loop_; }
+base::MessageLoop* get_jni_message_loop() {
+  return bt_jni_workqueue_thread.message_loop();
+}
 
 /*******************************************************************************
  *
@@ -260,11 +247,11 @@ base::MessageLoop* get_jni_message_loop() { return message_loop_; }
  *
  * Description      checks if BTIF is currently in DUT mode
  *
- * Returns          1 if test mode, otherwize 0
+ * Returns          true if test mode, otherwise false
  *
  ******************************************************************************/
 
-uint8_t btif_is_dut_mode(void) { return (btif_dut_mode == 1); }
+bool btif_is_dut_mode() { return btif_dut_mode == 1; }
 
 /*******************************************************************************
  *
@@ -327,38 +314,6 @@ void btif_sendmsg(void* p_msg) {
   do_in_jni_thread(base::Bind(&bt_jni_msg_ready, p_msg));
 }
 
-void btif_thread_post(thread_fn func, void* context) {
-  do_in_jni_thread(base::Bind(func, context));
-}
-
-void run_message_loop(UNUSED_ATTR void* context) {
-  LOG_INFO(LOG_TAG, "%s entered", __func__);
-  btif_thread_id_ = PlatformThread::CurrentId();
-
-  // TODO(jpawlowski): exit_manager should be defined in main(), but there is no
-  // main method.
-  // It is therefore defined in bt_jni_workqueue_thread, and will be deleted
-  // when we free it.
-  base::AtExitManager exit_manager;
-
-  message_loop_ = new base::MessageLoop(base::MessageLoop::Type::TYPE_DEFAULT);
-
-  // Associate this workqueue thread with JNI.
-  message_loop_->task_runner()->PostTask(FROM_HERE,
-                                         base::Bind(&btif_jni_associate));
-
-  jni_run_loop = new base::RunLoop();
-  jni_run_loop->Run();
-
-  delete message_loop_;
-  message_loop_ = NULL;
-
-  delete jni_run_loop;
-  jni_run_loop = NULL;
-
-  btif_thread_id_ = -1;
-  LOG_INFO(LOG_TAG, "%s finished", __func__);
-}
 /*******************************************************************************
  *
  * Function         btif_init_bluetooth
@@ -370,27 +325,12 @@ void run_message_loop(UNUSED_ATTR void* context) {
  ******************************************************************************/
 bt_status_t btif_init_bluetooth() {
   LOG_INFO(LOG_TAG, "%s entered", __func__);
-
+  exit_manager = new base::AtExitManager();
   bte_main_boot_entry();
-
-  bt_jni_workqueue_thread = thread_new(BT_JNI_WORKQUEUE_NAME);
-  if (bt_jni_workqueue_thread == NULL) {
-    LOG_ERROR(LOG_TAG, "%s Unable to create thread %s", __func__,
-              BT_JNI_WORKQUEUE_NAME);
-    goto error_exit;
-  }
-
-  thread_post(bt_jni_workqueue_thread, run_message_loop, nullptr);
-
+  bt_jni_workqueue_thread.StartUp();
+  bt_jni_workqueue_thread.DoInThread(FROM_HERE, base::Bind(btif_jni_associate));
   LOG_INFO(LOG_TAG, "%s finished", __func__);
   return BT_STATUS_SUCCESS;
-
-error_exit:;
-  thread_free(bt_jni_workqueue_thread);
-
-  bt_jni_workqueue_thread = NULL;
-
-  return BT_STATUS_FAIL;
 }
 
 /*******************************************************************************
@@ -475,7 +415,7 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status) {
  * Returns          void
  *
  ******************************************************************************/
-bt_status_t btif_disable_bluetooth(void) {
+bt_status_t btif_disable_bluetooth() {
   LOG_INFO(LOG_TAG, "%s entered", __func__);
 
   do_in_bta_thread(FROM_HERE, base::Bind(&btm_ble_multi_adv_cleanup));
@@ -505,7 +445,7 @@ bt_status_t btif_disable_bluetooth(void) {
  *
  ******************************************************************************/
 
-void btif_disable_bluetooth_evt(void) {
+void btif_disable_bluetooth_evt() {
   LOG_INFO(LOG_TAG, "%s entered", __func__);
 
   bte_main_disable();
@@ -526,29 +466,19 @@ void btif_disable_bluetooth_evt(void) {
  *
  ******************************************************************************/
 
-bt_status_t btif_cleanup_bluetooth(void) {
+bt_status_t btif_cleanup_bluetooth() {
   LOG_INFO(LOG_TAG, "%s entered", __func__);
-
   do_in_bta_thread(FROM_HERE, base::Bind(&BTA_VendorCleanup));
-
   btif_dm_cleanup();
-  btif_jni_disassociate();
+  bt_jni_workqueue_thread.DoInThread(FROM_HERE,
+                                     base::BindOnce(btif_jni_disassociate));
   btif_queue_release();
-
-  if (jni_run_loop && message_loop_) {
-    message_loop_->task_runner()->PostTask(FROM_HERE,
-                                           jni_run_loop->QuitClosure());
-  }
-
-  thread_free(bt_jni_workqueue_thread);
-  bt_jni_workqueue_thread = NULL;
-
+  bt_jni_workqueue_thread.ShutDown();
   bte_main_cleanup();
-
+  delete exit_manager;
+  exit_manager = nullptr;
   btif_dut_mode = 0;
-
   LOG_INFO(LOG_TAG, "%s finished", __func__);
-
   return BT_STATUS_SUCCESS;
 }
 

@@ -47,7 +47,6 @@
 
 #include "advertise_data_parser.h"
 #include "bt_common.h"
-#include "bta_closure_api.h"
 #include "bta_gatt_api.h"
 #include "btif_api.h"
 #include "btif_av.h"

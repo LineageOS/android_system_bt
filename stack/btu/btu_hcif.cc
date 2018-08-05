@@ -126,18 +126,6 @@ static void btu_ble_rc_param_req_evt(uint8_t* p);
 static void btu_ble_proc_enhanced_conn_cmpl(uint8_t* p, uint16_t evt_len);
 #endif
 
-static void do_in_hci_thread(const tracked_objects::Location& from_here,
-                             const base::Closure& task) {
-  base::MessageLoop* hci_message_loop = get_message_loop();
-  if (!hci_message_loop || !hci_message_loop->task_runner().get()) {
-    LOG_ERROR(LOG_TAG, "%s: HCI message loop not running, accessed from %s",
-              __func__, from_here.ToString().c_str());
-    return;
-  }
-
-  hci_message_loop->task_runner()->PostTask(from_here, task);
-}
-
 /*******************************************************************************
  *
  * Function         btu_hcif_process_event
@@ -433,7 +421,7 @@ static void btu_hcif_command_complete_evt_with_cb_on_task(BT_HDR* event,
 
 static void btu_hcif_command_complete_evt_with_cb(BT_HDR* response,
                                                   void* context) {
-  do_in_hci_thread(FROM_HERE,
+  do_in_bta_thread(FROM_HERE,
                    base::Bind(btu_hcif_command_complete_evt_with_cb_on_task,
                               response, context));
 }
@@ -466,7 +454,7 @@ static void btu_hcif_command_status_evt_with_cb(uint8_t status, BT_HDR* command,
     return;
   }
 
-  do_in_hci_thread(
+  do_in_bta_thread(
       FROM_HERE, base::Bind(btu_hcif_command_status_evt_with_cb_on_task, status,
                             command, context));
 }
@@ -1039,7 +1027,7 @@ static void btu_hcif_command_complete_evt_on_task(BT_HDR* event,
 }
 
 static void btu_hcif_command_complete_evt(BT_HDR* response, void* context) {
-  do_in_hci_thread(FROM_HERE, base::Bind(btu_hcif_command_complete_evt_on_task,
+  do_in_bta_thread(FROM_HERE, base::Bind(btu_hcif_command_complete_evt_on_task,
                                          response, context));
 }
 
@@ -1214,7 +1202,7 @@ static void btu_hcif_command_status_evt_on_task(uint8_t status, BT_HDR* event,
 
 static void btu_hcif_command_status_evt(uint8_t status, BT_HDR* command,
                                         void* context) {
-  do_in_hci_thread(FROM_HERE, base::Bind(btu_hcif_command_status_evt_on_task,
+  do_in_bta_thread(FROM_HERE, base::Bind(btu_hcif_command_status_evt_on_task,
                                          status, command, context));
 }
 

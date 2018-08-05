@@ -26,8 +26,6 @@
 
 #include <base/bind.h>
 #include <base/logging.h>
-#include <base/threading/thread.h>
-#include <pthread.h>
 #include <string.h>
 
 #include "bt_common.h"
@@ -40,7 +38,6 @@
 #include "osi/include/fixed_queue.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
-#include "osi/include/thread.h"
 #include "utl.h"
 
 #if (defined BTA_AR_INCLUDED) && (BTA_AR_INCLUDED == TRUE)
@@ -49,8 +46,6 @@
 
 /* system manager control block definition */
 tBTA_SYS_CB bta_sys_cb;
-
-extern thread_t* bt_workqueue_thread;
 
 /* trace level */
 /* TODO Hard-coded trace levels -  Needs to be configurable */
@@ -539,37 +534,6 @@ void bta_sys_sendmsg(void* p_msg) {
 
   bta_message_loop->task_runner()->PostTask(
       FROM_HERE, base::Bind(&bta_sys_event, static_cast<BT_HDR*>(p_msg)));
-}
-
-/*******************************************************************************
- *
- * Function         do_in_bta_thread
- *
- * Description      Post a closure to be ran in the bta thread
- *
- * Returns          BT_STATUS_SUCCESS on success
- *
- ******************************************************************************/
-bt_status_t do_in_bta_thread(const tracked_objects::Location& from_here,
-                             const base::Closure& task) {
-  base::MessageLoop* bta_message_loop = get_message_loop();
-  if (!bta_message_loop) {
-    APPL_TRACE_ERROR("%s: MessageLooper not initialized", __func__);
-    return BT_STATUS_FAIL;
-  }
-
-  scoped_refptr<base::SingleThreadTaskRunner> task_runner =
-      bta_message_loop->task_runner();
-  if (!task_runner.get()) {
-    APPL_TRACE_ERROR("%s: task runner is dead", __func__);
-    return BT_STATUS_FAIL;
-  }
-
-  if (!task_runner->PostTask(from_here, task)) {
-    APPL_TRACE_ERROR("%s: Post task to task runner failed!", __func__);
-    return BT_STATUS_FAIL;
-  }
-  return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************

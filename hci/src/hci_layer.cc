@@ -37,6 +37,7 @@
 #include "btcore/include/module.h"
 #include "btsnoop.h"
 #include "buffer_allocator.h"
+#include "common/message_loop_thread.h"
 #include "hci_inject.h"
 #include "hci_internals.h"
 #include "hcidefs.h"
@@ -49,6 +50,8 @@
 #include "packet_fragmenter.h"
 
 #define BT_HCI_TIMEOUT_TAG_NUM 1010000
+
+using bluetooth::common::MessageLoopThread;
 
 extern void hci_initialize();
 extern void hci_transmit(BT_HDR* packet);
@@ -73,9 +76,6 @@ typedef struct {
 #define DEFAULT_STARTUP_TIMEOUT_MS 8000
 #define STRING_VALUE_OF(x) #x
 
-// RT priority for HCI thread
-static const int BT_HCI_RT_PRIORITY = 1;
-
 // Abort if there is no response to an HCI command.
 static const uint32_t COMMAND_PENDING_TIMEOUT_MS = 2000;
 static const uint32_t COMMAND_PENDING_MUTEX_ACQUIRE_TIMEOUT_MS = 500;
@@ -92,10 +92,7 @@ static const btsnoop_t* btsnoop;
 static const packet_fragmenter_t* packet_fragmenter;
 
 static future_t* startup_future;
-static thread_t* thread;  // We own this
-static std::mutex message_loop_mutex;
-static base::MessageLoop* message_loop_ = nullptr;
-static base::RunLoop* run_loop_ = nullptr;
+static MessageLoopThread thread("hci_thread");  // We own this
 
 static alarm_t* startup_timer;
 
@@ -138,9 +135,7 @@ static const packet_fragmenter_callbacks_t packet_fragmenter_callbacks = {
     transmit_fragment, dispatch_reassembled, fragmenter_transmit_finished};
 
 void initialization_complete() {
-  std::lock_guard<std::mutex> lock(message_loop_mutex);
-  message_loop_->task_runner()->PostTask(
-      FROM_HERE, base::Bind(&event_finish_startup, nullptr));
+  thread.DoInThread(FROM_HERE, base::Bind(&event_finish_startup, nullptr));
 }
 
 void hci_event_received(const tracked_objects::Location& from_here,
@@ -165,26 +160,6 @@ void sco_data_received(BT_HDR* packet) {
 // Module lifecycle functions
 
 static future_t* hci_module_shut_down();
-
-void message_loop_run(UNUSED_ATTR void* context) {
-  {
-    std::lock_guard<std::mutex> lock(message_loop_mutex);
-    message_loop_ = new base::MessageLoop();
-    run_loop_ = new base::RunLoop();
-  }
-
-  message_loop_->task_runner()->PostTask(FROM_HERE,
-                                         base::Bind(&hci_initialize));
-  run_loop_->Run();
-
-  {
-    std::lock_guard<std::mutex> lock(message_loop_mutex);
-    delete message_loop_;
-    message_loop_ = nullptr;
-    delete run_loop_;
-    run_loop_ = nullptr;
-  }
-}
 
 static future_t* hci_module_start_up(void) {
   LOG_INFO(LOG_TAG, "%s", __func__);
@@ -217,13 +192,14 @@ static future_t* hci_module_start_up(void) {
     goto error;
   }
 
-  thread = thread_new("hci_thread");
-  if (!thread) {
-    LOG_ERROR(LOG_TAG, "%s unable to create thread.", __func__);
+  thread.StartUp();
+  if (!thread.IsRunning()) {
+    LOG_ERROR(LOG_TAG, "%s unable to start thread.", __func__);
     goto error;
   }
-  if (!thread_set_rt_priority(thread, BT_HCI_RT_PRIORITY)) {
+  if (!thread.EnableRealTimeScheduling()) {
     LOG_ERROR(LOG_TAG, "%s unable to make thread RT.", __func__);
+    goto error;
   }
 
   commands_pending_response = list_new(NULL);
@@ -242,7 +218,7 @@ static future_t* hci_module_start_up(void) {
 
   packet_fragmenter->init(&packet_fragmenter_callbacks);
 
-  thread_post(thread, message_loop_run, NULL);
+  thread.DoInThread(FROM_HERE, base::Bind(&hci_initialize));
 
   LOG_DEBUG(LOG_TAG, "%s starting async portion", __func__);
   return local_startup_future;
@@ -265,16 +241,7 @@ static future_t* hci_module_shut_down() {
     startup_timer = NULL;
   }
 
-  {
-    std::lock_guard<std::mutex> lock(message_loop_mutex);
-    message_loop_->task_runner()->PostTask(FROM_HERE, run_loop_->QuitClosure());
-  }
-
-  // Stop the thread to prevent Send() calls.
-  if (thread) {
-    thread_stop(thread);
-    thread_join(thread);
-  }
+  thread.ShutDown();
 
   // Close HCI to prevent callbacks.
   hci_close();
@@ -287,9 +254,6 @@ static future_t* hci_module_shut_down() {
   }
 
   packet_fragmenter->cleanup();
-
-  thread_free(thread);
-  thread = NULL;
 
   // Clean up abort timer, if it exists.
   if (hci_timeout_abort_timer != NULL) {
@@ -405,14 +369,12 @@ static void enqueue_command(waiting_command_t* wait_entry) {
 
   std::lock_guard<std::mutex> command_credits_lock(command_credits_mutex);
   if (command_credits > 0) {
-    std::lock_guard<std::mutex> message_loop_lock(message_loop_mutex);
-    if (message_loop_ == nullptr) {
-      // HCI Layer was shut down
+    if (!thread.DoInThread(FROM_HERE, std::move(callback))) {
+      // HCI Layer was shut down or not running
       buffer_allocator->free(wait_entry->command);
       osi_free(wait_entry);
       return;
     }
-    message_loop_->task_runner()->PostTask(FROM_HERE, std::move(callback));
     command_credits--;
   } else {
     command_queue.push(std::move(callback));
@@ -434,14 +396,11 @@ static void event_command_ready(waiting_command_t* wait_entry) {
 }
 
 static void enqueue_packet(void* packet) {
-  std::lock_guard<std::mutex> lock(message_loop_mutex);
-  if (message_loop_ == nullptr) {
-    // HCI Layer was shut down
+  if (!thread.DoInThread(FROM_HERE, base::Bind(&event_packet_ready, packet))) {
+    // HCI Layer was shut down or not running
     buffer_allocator->free(packet);
     return;
   }
-  message_loop_->task_runner()->PostTask(
-      FROM_HERE, base::Bind(&event_packet_ready, packet));
 }
 
 static void event_packet_ready(void* pkt) {
@@ -576,19 +535,19 @@ static void command_timed_out(void* original_wait_entry) {
 // Event/packet receiving functions
 void process_command_credits(int credits) {
   std::lock_guard<std::mutex> command_credits_lock(command_credits_mutex);
-  std::lock_guard<std::mutex> message_loop_lock(message_loop_mutex);
 
-  if (message_loop_ == nullptr) {
-    // HCI Layer was shut down
+  if (!thread.IsRunning()) {
+    // HCI Layer was shut down or not running
     return;
   }
 
   // Subtract commands in flight.
   command_credits = credits - get_num_waiting_commands();
 
-  while (command_credits > 0 && command_queue.size() > 0) {
-    message_loop_->task_runner()->PostTask(FROM_HERE,
-                                           std::move(command_queue.front()));
+  while (command_credits > 0 && !command_queue.empty()) {
+    if (!thread.DoInThread(FROM_HERE, std::move(command_queue.front()))) {
+      LOG(ERROR) << __func__ << ": failed to enqueue command";
+    }
     command_queue.pop();
     command_credits--;
   }

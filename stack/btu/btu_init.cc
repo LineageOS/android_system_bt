@@ -25,6 +25,7 @@
 #include "bt_target.h"
 #include "btm_int.h"
 #include "btu.h"
+#include "common/message_loop_thread.h"
 #include "device/include/controller.h"
 #include "gatt_api.h"
 #include "gatt_int.h"
@@ -32,20 +33,12 @@
 #include "osi/include/alarm.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/log.h"
-#include "osi/include/thread.h"
 #include "sdpint.h"
 #include "smp_int.h"
 
-// RT priority for audio-related tasks
-#define BTU_TASK_RT_PRIORITY 1
+using bluetooth::common::MessageLoopThread;
 
-// Communication queue from hci thread to bt_workqueue.
-extern fixed_queue_t* btu_hci_msg_queue;
-
-thread_t* bt_workqueue_thread;
-static const char* BT_WORKQUEUE_NAME = "bt_workqueue";
-
-extern void PLATFORM_DisableHciTransport(uint8_t bDisable);
+MessageLoopThread bt_workqueue_thread("bt_workqueue");
 
 void btu_task_start_up(void* context);
 void btu_task_shut_down(void* context);
@@ -60,7 +53,7 @@ void btu_task_shut_down(void* context);
  * Returns          void
  *
  *****************************************************************************/
-void btu_init_core(void) {
+void btu_init_core() {
   /* Initialize the mandatory core stack components */
   btm_init();
 
@@ -85,7 +78,7 @@ void btu_init_core(void) {
  * Returns          void
  *
  *****************************************************************************/
-void btu_free_core(void) {
+void btu_free_core() {
   /* Free the mandatory core stack components */
   gatt_free();
 
@@ -108,29 +101,27 @@ void btu_free_core(void) {
  * Returns          void
  *
  *****************************************************************************/
-void BTU_StartUp(void) {
+void BTU_StartUp() {
   btu_trace_level = HCI_INITIAL_TRACE_LEVEL;
-
-  bt_workqueue_thread = thread_new(BT_WORKQUEUE_NAME);
-  if (bt_workqueue_thread == NULL) goto error_exit;
-
-  thread_set_rt_priority(bt_workqueue_thread, BTU_TASK_RT_PRIORITY);
-
-  // Continue startup on bt workqueue thread.
-  thread_post(bt_workqueue_thread, btu_task_start_up, NULL);
-  return;
-
-error_exit:;
-  LOG_ERROR(LOG_TAG, "%s Unable to allocate resources for bt_workqueue",
-            __func__);
-  BTU_ShutDown();
+  bt_workqueue_thread.StartUp();
+  if (!bt_workqueue_thread.EnableRealTimeScheduling()) {
+    LOG(ERROR) << __func__
+               << ": Unable to set real time scheduling policy for"
+                  " bt_workqueue thread";
+    BTU_ShutDown();
+    return;
+  }
+  if (!bt_workqueue_thread.DoInThread(FROM_HERE,
+                                      base::Bind(btu_task_start_up, nullptr))) {
+    LOG(ERROR) << __func__
+               << ": Unable to continue start-up on bt_workqueue"
+                  " thread";
+    BTU_ShutDown();
+    return;
+  }
 }
 
-void BTU_ShutDown(void) {
-  btu_task_shut_down(NULL);
-
-
-  thread_free(bt_workqueue_thread);
-
-  bt_workqueue_thread = NULL;
+void BTU_ShutDown() {
+  btu_task_shut_down(nullptr);
+  bt_workqueue_thread.ShutDown();
 }

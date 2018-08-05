@@ -30,13 +30,13 @@
 #include <base/callback.h>
 #include "bt_common.h"
 #include "bt_target.h"
-#include "bta_closure_api.h"
 #include "bta_gattc_int.h"
 #include "bta_sys.h"
 #include "btif/include/btif_debug_conn.h"
 #include "l2c_api.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
+#include "stack/include/btu.h"
 #include "stack/l2cap/l2c_int.h"
 #include "utl.h"
 
