@@ -35,6 +35,7 @@
 #include "l2c_api.h"
 #include "l2c_int.h"
 #include "l2cdefs.h"
+#include "log/log.h"
 #include "osi/include/osi.h"
 #include "stack_config.h"
 
@@ -809,6 +810,10 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       break;
 
     case L2CAP_CMD_DISC_REQ:
+      if (p + 4 > p_pkt_end) {
+        android_errorWriteLog(0x534e4554, "74121659");
+        return;
+      }
       STREAM_TO_UINT16(lcid, p);
       STREAM_TO_UINT16(rcid, p);
 

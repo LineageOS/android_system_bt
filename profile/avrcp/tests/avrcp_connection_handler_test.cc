@@ -133,7 +133,7 @@ TEST_F(AvrcpConnectionHandlerTest, notConnectedDisconnectTest) {
   ConnectionHandler::CleanUp();
 };
 
-// Check that disconnecting without an active connection
+// Test calling the connection callback after the handler is cleaned up
 TEST_F(AvrcpConnectionHandlerTest, disconnectAfterCleanupTest) {
   // Set an Expectation that Open will be called twice as an acceptor and save
   // the connection callback once it is called.

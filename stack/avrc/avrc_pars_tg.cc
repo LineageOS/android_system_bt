@@ -21,6 +21,7 @@
 #include "avrc_defs.h"
 #include "avrc_int.h"
 #include "bt_common.h"
+#include "log/log.h"
 
 /*****************************************************************************
  *  Global data
@@ -157,6 +158,12 @@ static tAVRC_STS avrc_pars_vendor_cmd(tAVRC_MSG_VENDOR* p_msg,
         status = AVRC_STS_INTERNAL_ERR;
         break;
       }
+
+      if (p_result->get_cur_app_val.num_attr > AVRC_MAX_APP_ATTR_SIZE) {
+        android_errorWriteLog(0x534e4554, "63146237");
+        p_result->get_cur_app_val.num_attr = AVRC_MAX_APP_ATTR_SIZE;
+      }
+
       p_u8 = p_result->get_cur_app_val.attrs;
       for (xx = 0, yy = 0; xx < p_result->get_cur_app_val.num_attr; xx++) {
         /* only report the valid player app attributes */
@@ -212,6 +219,11 @@ static tAVRC_STS avrc_pars_vendor_cmd(tAVRC_MSG_VENDOR* p_msg,
               p_result->get_app_val_txt.num_val)
             status = AVRC_STS_INTERNAL_ERR;
           else {
+            if (p_result->get_app_val_txt.num_val > AVRC_MAX_APP_ATTR_SIZE) {
+              android_errorWriteLog(0x534e4554, "63146237");
+              p_result->get_app_val_txt.num_val = AVRC_MAX_APP_ATTR_SIZE;
+            }
+
             p_u8 = p_result->get_app_val_txt.vals;
             for (xx = 0; xx < p_result->get_app_val_txt.num_val; xx++) {
               p_u8[xx] = *p++;
@@ -484,8 +496,11 @@ static tAVRC_STS avrc_pars_browsing_cmd(tAVRC_MSG_BROWSE* p_msg,
       BE_STREAM_TO_UINT16(p_result->search.string.str_len, p);
       p_result->search.string.p_str = p_buf;
       if (p_buf) {
-        if (buf_len > p_result->search.string.str_len)
-          buf_len = p_result->search.string.str_len;
+        if (p_result->search.string.str_len > buf_len) {
+          p_result->search.string.str_len = buf_len;
+        } else {
+          android_errorWriteLog(0x534e4554, "63146237");
+        }
         BE_STREAM_TO_ARRAY(p, p_buf, p_result->search.string.str_len);
       } else {
         status = AVRC_STS_INTERNAL_ERR;
