@@ -19,6 +19,8 @@
  ******************************************************************************/
 #include <string.h>
 
+#include <log/log.h>
+
 #include "gki.h"
 #include "avrc_api.h"
 #include "avrc_defs.h"
@@ -197,6 +199,12 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPON
             break;
         }
         BE_STREAM_TO_UINT8(p_result->list_app_values.num_val,p);
+        if (p_result->list_app_values.num_val > AVRC_MAX_APP_ATTR_SIZE)
+        {
+            android_errorWriteLog(0x534e4554, "78526423");
+            p_result->list_app_values.num_val = AVRC_MAX_APP_ATTR_SIZE;
+        }
+
         AVRC_TRACE_DEBUG("AVRC_PDU_LIST_PLAYER_APP_ATTR count = %d ",
                                           p_result->list_app_attr.num_attr);
         for(xx = 0; xx < p_result->list_app_values.num_val; xx++)
