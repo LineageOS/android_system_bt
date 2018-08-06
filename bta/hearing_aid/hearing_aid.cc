@@ -179,7 +179,7 @@ struct HearingDevice {
         gap_handle(0),
         psm(0) {}
 
-  HearingDevice() { HearingDevice(RawAddress::kEmpty, false); }
+  HearingDevice() : HearingDevice(RawAddress::kEmpty, false) {}
 
   /* return true if this device represents left Hearing Aid. Returned value is
    * valid only after capabilities are discovered */
