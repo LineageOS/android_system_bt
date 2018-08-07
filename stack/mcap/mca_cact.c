@@ -22,6 +22,7 @@
  *  Functions.
  *
  ******************************************************************************/
+#include <log/log.h>
 #include <string.h>
 #include "bt_target.h"
 #include "bt_utils.h"
@@ -272,8 +273,17 @@ void mca_ccb_hdl_req(tMCA_CCB *p_ccb, tMCA_CCB_EVT *p_data)
     p_rx_msg = (tMCA_CCB_MSG *)p_pkt;
     p = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
     evt_data.hdr.op_code = *p++;
-    BE_STREAM_TO_UINT16 (evt_data.hdr.mdl_id, p);
     reject_opcode = evt_data.hdr.op_code+1;
+
+    if (p_pkt->len >= 3)
+    {
+        BE_STREAM_TO_UINT16(evt_data.hdr.mdl_id, p);
+    }
+    else
+    {
+        android_errorWriteLog(0x534e4554, "110791536");
+        evt_data.hdr.mdl_id = 0;
+    }
 
     MCA_TRACE_DEBUG ("received mdl id: %d ", evt_data.hdr.mdl_id);
     if (p_ccb->status == MCA_CCB_STAT_PENDING)
