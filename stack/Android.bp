@@ -213,8 +213,8 @@ cc_test {
     ],
     static_libs: [
         "libbt-bta",
-        "libbt-common",
         "libbt-stack",
+        "libbt-common",
         "libbt-sbc-decoder",
         "libbt-sbc-encoder",
         "libFraunhoferAAC",
