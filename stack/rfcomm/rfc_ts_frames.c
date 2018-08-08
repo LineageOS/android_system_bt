@@ -22,6 +22,9 @@
  *
  ******************************************************************************/
 
+#define LOG_TAG "rfc_ts_frames"
+#include "osi/include/log.h"
+
 #include <stddef.h>
 #include "bt_target.h"
 #include "bt_common.h"
@@ -670,6 +673,14 @@ void rfc_process_mx_message (tRFC_MCB *p_mcb, BT_HDR *p_buf)
     UINT8        ea, cr, mx_len;
     BOOLEAN      is_command;
 
+    if (length < 2)
+    {
+        RFCOMM_TRACE_ERROR("%s: Illegal MX Frame len when reading EA, C/R. len:%d < 2",
+                           __func__, length);
+        LOG_ERROR(LOG_TAG, "111937065");
+        osi_free(p_buf);
+        return;
+    }
     p_rx_frame->ea   = *p_data & RFCOMM_EA;
     p_rx_frame->cr   = (*p_data & RFCOMM_CR_MASK) >> RFCOMM_SHIFT_CR;
     p_rx_frame->type = *p_data++ & ~(RFCOMM_CR_MASK | RFCOMM_EA_MASK);
@@ -692,6 +703,14 @@ void rfc_process_mx_message (tRFC_MCB *p_mcb, BT_HDR *p_buf)
 
     if (!ea)
     {
+        if (length < 1)
+        {
+            RFCOMM_TRACE_ERROR("%s: Illegal MX Frame when EA = 0. len:%d < 1",
+                               __func__, length);
+            LOG_ERROR(LOG_TAG, "111937065");
+            osi_free(p_buf);
+            return;
+        }
         mx_len += *p_data++ << RFCOMM_SHIFT_LENGTH2;
         length --;
     }
@@ -768,6 +787,14 @@ void rfc_process_mx_message (tRFC_MCB *p_mcb, BT_HDR *p_buf)
         return;
 
     case RFCOMM_MX_MSC:
+        if (length != RFCOMM_MX_MSC_LEN_WITH_BREAK &&
+            length != RFCOMM_MX_MSC_LEN_NO_BREAK)
+        {
+            RFCOMM_TRACE_ERROR("%s: Illegal MX MSC Frame len:%d", __func__, length);
+            LOG_ERROR(LOG_TAG, "111937065");
+            osi_free(p_buf);
+            return;
+        }
 
         ea                   = *p_data & RFCOMM_EA;
         cr                   = (*p_data & RFCOMM_CR_MASK) >> RFCOMM_SHIFT_CR;
