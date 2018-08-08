@@ -829,13 +829,19 @@ void smp_process_keypress_notification(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     UINT8 reason = SMP_INVALID_PARAMETERS;
 
     SMP_TRACE_DEBUG("%s", __func__);
-    p_cb->status = *(UINT8 *)p_data;
 
     if (smp_command_has_invalid_parameters(p_cb))
     {
+        if (p_cb->rcvd_cmd_len < 2)
+        {
+            // 1 (opcode) + 1 (Notif Type) bytes
+            android_errorWriteLog(0x534e4554, "111936834");
+        }
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
         return;
     }
+
+    p_cb->status = *(UINT8 *)p_data;
 
     if (p != NULL)
     {
