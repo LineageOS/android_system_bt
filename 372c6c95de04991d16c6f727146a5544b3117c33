@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2e60c566_3d270bc7",
+        "filename": "stack/bnep/bnep_main.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 486,
+      "author": {
+        "id": 15173
+      },
+      "writtenOn": "2018-08-08T02:34:59Z",
+      "side": 1,
+      "message": "This really goes after the variable declarations",
+      "range": {
+        "startLine": 481,
+        "startChar": 0,
+        "endLine": 486,
+        "endChar": 5
+      },
+      "revId": "372c6c95de04991d16c6f727146a5544b3117c33",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
