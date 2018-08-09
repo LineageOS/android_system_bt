@@ -163,6 +163,9 @@ void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
       /* Ignore for now */
       break;
 
+    case BTA_GATTC_SEARCH_RES_EVT:
+      break;
+
     case BTA_GATTC_CANCEL_OPEN_EVT:
       break;
 
