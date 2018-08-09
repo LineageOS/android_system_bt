@@ -466,11 +466,12 @@ void handle_rc_ctrl_features(btif_rc_device_cb_t* p_dev) {
     rc_features |= BTRC_FEAT_ABSOLUTE_VOLUME;
   }
 
-  if ((p_dev->rc_features & BTA_AV_FEAT_METADATA) &&
-      (p_dev->rc_features & BTA_AV_FEAT_VENDOR) &&
-      (p_dev->rc_features_processed != true)) {
+  if (p_dev->rc_features & BTA_AV_FEAT_METADATA) {
     rc_features |= BTRC_FEAT_METADATA;
+  }
 
+  if ((p_dev->rc_features & BTA_AV_FEAT_VENDOR) &&
+      (p_dev->rc_features_processed != true)) {
     /* Mark rc features processed to avoid repeating
      * the AVRCP procedure every time on receiving this
      * update.
