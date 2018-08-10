@@ -22,6 +22,7 @@
  *
  ******************************************************************************/
 
+#include <log/log.h>
 #include "bt_target.h"
 #include "bt_utils.h"
 #include "osi/include/osi.h"
@@ -281,8 +282,8 @@ tGATT_STATUS gatt_sr_process_app_rsp(tGATT_TCB& tcb, tGATT_IF gatt_if,
  * Returns          void
  *
  ******************************************************************************/
-void gatt_process_exec_write_req(tGATT_TCB& tcb, uint8_t op_code,
-                                 UNUSED_ATTR uint16_t len, uint8_t* p_data) {
+void gatt_process_exec_write_req(tGATT_TCB& tcb, uint8_t op_code, uint16_t len,
+                                 uint8_t* p_data) {
   uint8_t *p = p_data, flag, i = 0;
   uint32_t trans_id = 0;
   tGATT_IF gatt_if;
@@ -300,6 +301,13 @@ void gatt_process_exec_write_req(tGATT_TCB& tcb, uint8_t op_code,
     return;
   }
 #endif
+
+  if (len < sizeof(flag)) {
+    android_errorWriteLog(0x534e4554, "73172115");
+    LOG(ERROR) << __func__ << "invalid length";
+    gatt_send_error_rsp(tcb, GATT_INVALID_PDU, GATT_REQ_EXEC_WRITE, 0, false);
+    return;
+  }
 
   STREAM_TO_UINT8(flag, p);
 
@@ -780,7 +788,8 @@ static void gatts_process_mtu_req(tGATT_TCB& tcb, uint16_t len,
 void gatts_process_read_by_type_req(tGATT_TCB& tcb, uint8_t op_code,
                                     uint16_t len, uint8_t* p_data) {
   tBT_UUID uuid;
-  uint16_t s_hdl, e_hdl, err_hdl = 0;
+  uint16_t s_hdl = 0, e_hdl = 0, err_hdl = 0;
+  if (len < 4) android_errorWriteLog(0x534e4554, "73125709");
   tGATT_STATUS reason =
       gatts_validate_packet_format(op_code, len, p_data, &uuid, s_hdl, e_hdl);
 
@@ -940,9 +949,19 @@ void gatts_process_write_req(tGATT_TCB& tcb, tGATT_SRV_LIST_ELEM& el,
  */
 static void gatts_process_read_req(tGATT_TCB& tcb, tGATT_SRV_LIST_ELEM& el,
                                    uint8_t op_code, uint16_t handle,
-                                   UNUSED_ATTR uint16_t len, uint8_t* p_data) {
+                                   uint16_t len, uint8_t* p_data) {
   size_t buf_len = sizeof(BT_HDR) + tcb.payload_size + L2CAP_MIN_OFFSET;
   uint16_t offset = 0;
+
+  if (op_code == GATT_REQ_READ_BLOB && len < sizeof(uint16_t)) {
+    /* Error: packet length is too short */
+    LOG(ERROR) << __func__ << ": packet length=" << len
+               << " too short. min=" << sizeof(uint16_t);
+    android_errorWriteWithInfoLog(0x534e4554, "73172115", -1, NULL, 0);
+    gatt_send_error_rsp(tcb, GATT_INVALID_PDU, op_code, 0, false);
+    return;
+  }
+
   BT_HDR* p_msg = (BT_HDR*)osi_calloc(buf_len);
 
   if (op_code == GATT_REQ_READ_BLOB) STREAM_TO_UINT16(offset, p_data);
@@ -964,7 +983,7 @@ static void gatts_process_read_req(tGATT_TCB& tcb, tGATT_SRV_LIST_ELEM& el,
   if (reason != GATT_SUCCESS) {
     osi_free(p_msg);
 
-    /* in theroy BUSY is not possible(should already been checked), protected
+    /* in theory BUSY is not possible(should already been checked), protected
      * check */
     if (reason != GATT_PENDING && reason != GATT_BUSY)
       gatt_send_error_rsp(tcb, reason, op_code, handle, false);
