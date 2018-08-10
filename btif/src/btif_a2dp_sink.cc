@@ -113,6 +113,7 @@ class BtifA2dpSinkControlBlock {
   bool rx_flush; /* discards any incoming data when true */
   alarm_t* decode_alarm;
   tA2DP_SAMPLE_RATE sample_rate;
+  tA2DP_BITS_PER_SAMPLE bits_per_sample;
   tA2DP_CHANNEL_COUNT channel_count;
   btif_a2dp_sink_focus_state_t rx_focus_state; /* audio focus state */
   void* audio_track;
@@ -318,6 +319,11 @@ static void btif_a2dp_sink_cleanup_delayed() {
 tA2DP_SAMPLE_RATE btif_a2dp_sink_get_sample_rate() {
   LockGuard lock(g_mutex);
   return btif_a2dp_sink_cb.sample_rate;
+}
+
+tA2DP_BITS_PER_SAMPLE btif_a2dp_sink_get_bits_per_sample() {
+  LockGuard lock(g_mutex);
+  return btif_a2dp_sink_cb.bits_per_sample;
 }
 
 tA2DP_CHANNEL_COUNT btif_a2dp_sink_get_channel_count() {
@@ -539,6 +545,11 @@ static void btif_a2dp_sink_decoder_update_event(
     LOG_ERROR(LOG_TAG, "%s: cannot get the track frequency", __func__);
     return;
   }
+  int bits_per_sample = A2DP_GetTrackBitsPerSample(p_buf->codec_info);
+  if (bits_per_sample == -1) {
+    LOG_ERROR(LOG_TAG, "%s: cannot get the bits per sample", __func__);
+    return;
+  }
   int channel_count = A2DP_GetTrackChannelCount(p_buf->codec_info);
   if (channel_count == -1) {
     LOG_ERROR(LOG_TAG, "%s: cannot get the channel count", __func__);
@@ -550,6 +561,7 @@ static void btif_a2dp_sink_decoder_update_event(
     return;
   }
   btif_a2dp_sink_cb.sample_rate = sample_rate;
+  btif_a2dp_sink_cb.bits_per_sample = bits_per_sample;
   btif_a2dp_sink_cb.channel_count = channel_count;
 
   btif_a2dp_sink_cb.rx_flush = false;
@@ -571,7 +583,7 @@ static void btif_a2dp_sink_decoder_update_event(
   APPL_TRACE_DEBUG("%s: create audio track", __func__);
   btif_a2dp_sink_cb.audio_track =
 #ifndef OS_GENERIC
-      BtifAvrcpAudioTrackCreate(sample_rate, channel_type);
+      BtifAvrcpAudioTrackCreate(sample_rate, bits_per_sample, channel_type);
 #else
       NULL;
 #endif
