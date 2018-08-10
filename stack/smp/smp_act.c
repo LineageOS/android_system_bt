@@ -1016,6 +1016,14 @@ void smp_proc_enc_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     UINT8   *p = (UINT8 *)p_data;
 
     SMP_TRACE_DEBUG("%s", __func__);
+
+    if (smp_command_has_invalid_parameters(p_cb)) {
+        uint8_t reason = SMP_INVALID_PARAMETERS;
+        android_errorWriteLog(0x534e4554, "111937065");
+        smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+        return;
+    }
+
     STREAM_TO_ARRAY(p_cb->ltk, p, BT_OCTET16_LEN);
 
     smp_key_distribution(p_cb, NULL);
@@ -1057,7 +1065,7 @@ void smp_proc_master_id(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 }
 
 /*******************************************************************************
-** Function     smp_proc_enc_info
+** Function     smp_proc_id_info
 ** Description  process identity information from peer device
 *******************************************************************************/
 void smp_proc_id_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
@@ -1065,6 +1073,14 @@ void smp_proc_id_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     UINT8   *p = (UINT8 *)p_data;
 
     SMP_TRACE_DEBUG("%s", __func__);
+
+    if (smp_command_has_invalid_parameters(p_cb)) {
+        uint8_t reason = SMP_INVALID_PARAMETERS;
+        android_errorWriteLog(0x534e4554, "111937065");
+        smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+        return;
+    }
+
     STREAM_TO_ARRAY (p_cb->tk, p, BT_OCTET16_LEN);   /* reuse TK for IRK */
     smp_key_distribution_by_transport(p_cb, NULL);
 }
