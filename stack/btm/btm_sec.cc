@@ -49,6 +49,9 @@
 bool(APPL_AUTH_WRITE_EXCEPTION)(const RawAddress& bd_addr);
 #endif
 
+extern void btm_ble_advertiser_notify_terminated_legacy(
+    uint8_t status, uint16_t connection_handle);
+
 /*******************************************************************************
  *             L O C A L    F U N C T I O N     P R O T O T Y P E S            *
  ******************************************************************************/
@@ -4514,6 +4517,12 @@ void btm_sec_disconnected(uint16_t handle, uint8_t reason) {
     p_dev_rec->ble_hci_handle = BTM_SEC_INVALID_HANDLE;
     p_dev_rec->sec_flags &= ~(BTM_SEC_LE_AUTHENTICATED | BTM_SEC_LE_ENCRYPTED);
     p_dev_rec->enc_key_size = 0;
+
+    // This is for chips that don't support being in connected and advertising
+    // state at same time.
+    if (!p_dev_rec->is_originator) {
+      btm_ble_advertiser_notify_terminated_legacy(HCI_SUCCESS, handle);
+    }
   } else {
     p_dev_rec->hci_handle = BTM_SEC_INVALID_HANDLE;
     p_dev_rec->sec_flags &=
