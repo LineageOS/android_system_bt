@@ -578,7 +578,7 @@ void BTM_LE_PF_uuid_filter(tBTM_BLE_SCAN_COND_OP action,
         UINT32_TO_STREAM(p, uuid_mask.As32Bit());
         len += Uuid::kNumBytes32;
       } else if (uuid_len == Uuid::kNumBytes128) {
-        const auto& tmp = uuid.To128BitLE();
+        const auto& tmp = uuid_mask.To128BitLE();
         ARRAY_TO_STREAM(p, tmp.data(), (int)Uuid::kNumBytes128);
         len += Uuid::kNumBytes128;
       }
