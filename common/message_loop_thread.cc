@@ -34,7 +34,8 @@ MessageLoopThread::MessageLoopThread(const std::string& thread_name)
       run_loop_(nullptr),
       thread_(nullptr),
       thread_id_(-1),
-      linux_tid_(-1) {}
+      linux_tid_(-1),
+      weak_ptr_factory_(this) {}
 
 MessageLoopThread::~MessageLoopThread() {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
@@ -58,13 +59,20 @@ void MessageLoopThread::StartUp() {
 
 bool MessageLoopThread::DoInThread(const tracked_objects::Location& from_here,
                                    base::OnceClosure task) {
+  return DoInThreadDelayed(from_here, std::move(task), base::TimeDelta());
+}
+
+bool MessageLoopThread::DoInThreadDelayed(
+    const tracked_objects::Location& from_here, base::OnceClosure task,
+    const base::TimeDelta& delay) {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
   if (message_loop_ == nullptr) {
     LOG(ERROR) << __func__ << ": message loop is null for thread " << *this
                << ", from " << from_here.ToString();
     return false;
   }
-  if (!message_loop_->task_runner()->PostTask(from_here, std::move(task))) {
+  if (!message_loop_->task_runner()->PostDelayedTask(from_here, std::move(task),
+                                                     delay)) {
     LOG(ERROR) << __func__
                << ": failed to post task to message loop for thread " << *this
                << ", from " << from_here.ToString();
@@ -143,6 +151,11 @@ bool MessageLoopThread::EnableRealTimeScheduling() {
     return false;
   }
   return true;
+}
+
+base::WeakPtr<MessageLoopThread> MessageLoopThread::GetWeakPtr() {
+  std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
+  return weak_ptr_factory_.GetWeakPtr();
 }
 
 // Non API method, should NOT be protected by API mutex to avoid deadlock

@@ -9,6 +9,7 @@
 
 known_benchmarks=(
   bluetooth_benchmark_thread_performance
+  bluetooth_benchmark_timer_performance
 )
 
 usage() {
