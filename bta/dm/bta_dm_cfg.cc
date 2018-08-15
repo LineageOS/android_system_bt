@@ -171,7 +171,7 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
           {BTA_DM_PM_NO_ACTION, 0}}, /* sco open, active */
          {{BTA_DM_PM_SNIFF_A2DP_IDX, 7000},
           {BTA_DM_PM_NO_ACTION, 0}}, /* sco close sniff  */
-         {{BTA_DM_PM_NO_ACTION, 0}, {BTA_DM_PM_NO_ACTION, 0}}, /* idle */
+         {{BTA_DM_PM_SNIFF_A2DP_IDX, 7000}, {BTA_DM_PM_NO_ACTION, 0}}, /* idle */
          {{BTA_DM_PM_ACTIVE, 0}, {BTA_DM_PM_NO_ACTION, 0}},    /* busy */
          {{BTA_DM_PM_RETRY, 7000},
           {BTA_DM_PM_NO_ACTION, 0}} /* mode change retry */
