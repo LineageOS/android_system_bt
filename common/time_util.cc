@@ -16,28 +16,32 @@
  *
  ******************************************************************************/
 
-#define LOG_TAG "bt_osi_time"
-
 #include <sys/time.h>
 #include <time.h>
 
-#include "osi/include/time.h"
+#include "common/time_util.h"
 
-uint32_t time_get_os_boottime_ms(void) {
-  return (uint32_t)(time_get_os_boottime_us() / 1000);
-}
+namespace bluetooth {
 
-uint64_t time_get_os_boottime_us(void) {
-  struct timespec ts_now;
+namespace common {
+
+uint64_t time_get_os_boottime_ms() { return time_get_os_boottime_us() / 1000; }
+
+uint64_t time_get_os_boottime_us() {
+  struct timespec ts_now = {};
   clock_gettime(CLOCK_BOOTTIME, &ts_now);
 
   return ((uint64_t)ts_now.tv_sec * 1000000L) +
          ((uint64_t)ts_now.tv_nsec / 1000);
 }
 
-uint64_t time_gettimeofday_us(void) {
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
+uint64_t time_gettimeofday_us() {
+  struct timeval tv = {};
+  gettimeofday(&tv, nullptr);
   return static_cast<uint64_t>(tv.tv_sec) * 1000000ULL +
          static_cast<uint64_t>(tv.tv_usec);
 }
+
+}  // namespace common
+
+}  // namespace bluetooth

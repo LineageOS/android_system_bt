@@ -20,11 +20,11 @@
 
 #include <base/logging.h>
 
-#include "osi/include/leaky_bonded_queue.h"
+#include "common/leaky_bonded_queue.h"
 
 namespace testing {
 
-using system_bt_osi::LeakyBondedQueue;
+using bluetooth::common::LeakyBondedQueue;
 
 #define ITEM_EQ(a, b)                  \
   do {                                 \
@@ -239,4 +239,4 @@ TEST(LeakyBondedQueueTest, TestPushNullDeleteQueue) {
   queue->Enqueue(item2);
   delete queue;
 }
-}
+}  // namespace testing

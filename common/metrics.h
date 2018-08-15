@@ -23,7 +23,9 @@
 #include <memory>
 #include <string>
 
-namespace system_bt_osi {
+namespace bluetooth {
+
+namespace common {
 
 // Typedefs to hide protobuf definition to the rest of stack
 
@@ -76,7 +78,7 @@ typedef enum {
  *    buffer_underruns_count: number of times there was no enough
  *                            audio data to add to the media buffer.
  * NOTE: Negative values are invalid
-*/
+ */
 class A2dpSessionMetrics {
  public:
   A2dpSessionMetrics() {}
@@ -273,4 +275,7 @@ class BluetoothMetricsLogger {
   struct impl;
   std::unique_ptr<impl> const pimpl_;
 };
-}
+
+}  // namespace common
+
+}  // namespace bluetooth

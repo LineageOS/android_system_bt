@@ -212,7 +212,7 @@ typedef struct {
   alarm_t* mon_retrans_timer; /* Timer Monitor or Retransmission */
 
 #if (L2CAP_ERTM_STATS == TRUE)
-  uint32_t connect_tick_count;  /* Time channel was established */
+  uint64_t connect_tick_count;  /* Time channel was established */
   uint32_t ertm_pkt_counts[2];  /* Packets sent and received */
   uint32_t ertm_byte_counts[2]; /* Bytes   sent and received */
   uint32_t s_frames_sent[4];    /* S-frames sent (RR, REJ, RNR, SREJ) */
