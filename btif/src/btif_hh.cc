@@ -543,6 +543,14 @@ bt_status_t btif_hh_virtual_unplug(const RawAddress* bd_addr) {
     p_dev->local_vup = true;
     BTA_HhSendCtrl(p_dev->dev_handle, BTA_HH_CTRL_VIRTUAL_CABLE_UNPLUG);
     return BT_STATUS_SUCCESS;
+  } else if ((p_dev != NULL) &&
+             (p_dev->dev_status == BTHH_CONN_STATE_CONNECTED)) {
+    BTIF_TRACE_ERROR("%s: Virtual unplug not suported, disconnecting device");
+    /* start the timer */
+    btif_hh_start_vup_timer(bd_addr);
+    p_dev->local_vup = true;
+    BTA_HhClose(p_dev->dev_handle);
+    return BT_STATUS_SUCCESS;
   } else {
     BTIF_TRACE_ERROR("%s: Error, device %s not opened, status = %d", __func__,
                      bd_addr->ToString().c_str(), btif_hh_cb.status);
