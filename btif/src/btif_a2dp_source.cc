@@ -212,7 +212,7 @@ class BtifA2dpSource {
   bool tx_flush; /* Discards any outgoing data when true */
   alarm_t* media_alarm;
   const tA2DP_ENCODER_INTERFACE* encoder_interface;
-  period_ms_t encoder_interval_ms; /* Local copy of the encoder interval */
+  uint64_t encoder_interval_ms; /* Local copy of the encoder interval */
   BtifMediaStats stats;
   BtifMediaStats accumulated_stats;
 

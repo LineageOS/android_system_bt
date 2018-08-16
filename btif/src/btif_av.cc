@@ -218,7 +218,7 @@ class BtifAvPeer {
     kFlagPendingStart = 0x4,
     kFlagPendingStop = 0x8,
   };
-  static constexpr period_ms_t kTimeoutAvOpenOnRcMs = 2 * 1000;  // 2s
+  static constexpr uint64_t kTimeoutAvOpenOnRcMs = 2 * 1000;  // 2s
 
   BtifAvPeer(const RawAddress& peer_address, uint8_t peer_sep,
              tBTA_AV_HNDL bta_handle, uint8_t peer_id);

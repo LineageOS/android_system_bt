@@ -65,13 +65,13 @@ typedef struct {
   size_t released_count;
   size_t acquired_errors;
   size_t released_errors;
-  period_ms_t min_acquired_interval_ms;
-  period_ms_t max_acquired_interval_ms;
-  period_ms_t last_acquired_interval_ms;
-  period_ms_t total_acquired_interval_ms;
-  period_ms_t last_acquired_timestamp_ms;
-  period_ms_t last_released_timestamp_ms;
-  period_ms_t last_reset_timestamp_ms;
+  uint64_t min_acquired_interval_ms;
+  uint64_t max_acquired_interval_ms;
+  uint64_t last_acquired_interval_ms;
+  uint64_t total_acquired_interval_ms;
+  uint64_t last_acquired_timestamp_ms;
+  uint64_t last_released_timestamp_ms;
+  uint64_t last_reset_timestamp_ms;
   int last_acquired_error;
   int last_released_error;
 } wakelock_stats_t;
@@ -224,7 +224,7 @@ void wakelock_set_paths(const char* lock_path, const char* unlock_path) {
   if (unlock_path) wake_unlock_path = unlock_path;
 }
 
-static period_ms_t now(void) {
+static uint64_t now_ms(void) {
   struct timespec ts;
   if (clock_gettime(CLOCK_ID, &ts) == -1) {
     LOG_ERROR(LOG_TAG, "%s unable to get current time: %s", __func__,
@@ -251,7 +251,7 @@ static void reset_wakelock_stats(void) {
   wakelock_stats.total_acquired_interval_ms = 0;
   wakelock_stats.last_acquired_timestamp_ms = 0;
   wakelock_stats.last_released_timestamp_ms = 0;
-  wakelock_stats.last_reset_timestamp_ms = now();
+  wakelock_stats.last_reset_timestamp_ms = now_ms();
 }
 
 //
@@ -263,7 +263,7 @@ static void reset_wakelock_stats(void) {
 // This function is thread-safe.
 //
 static void update_wakelock_acquired_stats(bt_status_t acquired_status) {
-  const period_ms_t now_ms = now();
+  const uint64_t just_now_ms = now_ms();
 
   std::lock_guard<std::mutex> lock(stats_mutex);
 
@@ -278,10 +278,10 @@ static void update_wakelock_acquired_stats(bt_status_t acquired_status) {
 
   wakelock_stats.is_acquired = true;
   wakelock_stats.acquired_count++;
-  wakelock_stats.last_acquired_timestamp_ms = now_ms;
+  wakelock_stats.last_acquired_timestamp_ms = just_now_ms;
 
   BluetoothMetricsLogger::GetInstance()->LogWakeEvent(
-      system_bt_osi::WAKE_EVENT_ACQUIRED, "", "", now_ms);
+      system_bt_osi::WAKE_EVENT_ACQUIRED, "", "", just_now_ms);
 }
 
 //
@@ -293,7 +293,7 @@ static void update_wakelock_acquired_stats(bt_status_t acquired_status) {
 // This function is thread-safe.
 //
 static void update_wakelock_released_stats(bt_status_t released_status) {
-  const period_ms_t now_ms = now();
+  const uint64_t just_now_ms = now_ms();
 
   std::lock_guard<std::mutex> lock(stats_mutex);
 
@@ -308,10 +308,10 @@ static void update_wakelock_released_stats(bt_status_t released_status) {
 
   wakelock_stats.is_acquired = false;
   wakelock_stats.released_count++;
-  wakelock_stats.last_released_timestamp_ms = now_ms;
+  wakelock_stats.last_released_timestamp_ms = just_now_ms;
 
   // Compute the acquired interval and update the statistics
-  period_ms_t delta_ms = now_ms - wakelock_stats.last_acquired_timestamp_ms;
+  uint64_t delta_ms = just_now_ms - wakelock_stats.last_acquired_timestamp_ms;
   if (delta_ms < wakelock_stats.min_acquired_interval_ms ||
       wakelock_stats.released_count == 1) {
     wakelock_stats.min_acquired_interval_ms = delta_ms;
@@ -323,32 +323,32 @@ static void update_wakelock_released_stats(bt_status_t released_status) {
   wakelock_stats.total_acquired_interval_ms += delta_ms;
 
   BluetoothMetricsLogger::GetInstance()->LogWakeEvent(
-      system_bt_osi::WAKE_EVENT_RELEASED, "", "", now_ms);
+      system_bt_osi::WAKE_EVENT_RELEASED, "", "", just_now_ms);
 }
 
 void wakelock_debug_dump(int fd) {
-  const period_ms_t now_ms = now();
+  const uint64_t just_now_ms = now_ms();
 
   std::lock_guard<std::mutex> lock(stats_mutex);
 
   // Compute the last acquired interval if the wakelock is still acquired
-  period_ms_t delta_ms = 0;
-  period_ms_t last_interval = wakelock_stats.last_acquired_interval_ms;
-  period_ms_t min_interval = wakelock_stats.min_acquired_interval_ms;
-  period_ms_t max_interval = wakelock_stats.max_acquired_interval_ms;
-  period_ms_t ave_interval = 0;
+  uint64_t delta_ms = 0;
+  uint64_t last_interval_ms = wakelock_stats.last_acquired_interval_ms;
+  uint64_t min_interval_ms = wakelock_stats.min_acquired_interval_ms;
+  uint64_t max_interval_ms = wakelock_stats.max_acquired_interval_ms;
+  uint64_t avg_interval_ms = 0;
 
   if (wakelock_stats.is_acquired) {
-    delta_ms = now_ms - wakelock_stats.last_acquired_timestamp_ms;
-    if (delta_ms > max_interval) max_interval = delta_ms;
-    if (delta_ms < min_interval) min_interval = delta_ms;
-    last_interval = delta_ms;
+    delta_ms = just_now_ms - wakelock_stats.last_acquired_timestamp_ms;
+    if (delta_ms > max_interval_ms) max_interval_ms = delta_ms;
+    if (delta_ms < min_interval_ms) min_interval_ms = delta_ms;
+    last_interval_ms = delta_ms;
   }
-  period_ms_t total_interval =
+  uint64_t total_interval_ms =
       wakelock_stats.total_acquired_interval_ms + delta_ms;
 
   if (wakelock_stats.acquired_count > 0)
-    ave_interval = total_interval / wakelock_stats.acquired_count;
+    avg_interval_ms = total_interval_ms / wakelock_stats.acquired_count;
 
   dprintf(fd, "\nBluetooth Wakelock Statistics:\n");
   dprintf(fd, "  Is acquired                    : %s\n",
@@ -361,13 +361,14 @@ void wakelock_debug_dump(int fd) {
           wakelock_stats.last_acquired_error,
           wakelock_stats.last_released_error);
   dprintf(fd, "  Last acquired time (ms)        : %llu\n",
-          (unsigned long long)last_interval);
+          (unsigned long long)last_interval_ms);
   dprintf(fd, "  Acquired time min/max/avg (ms) : %llu / %llu / %llu\n",
-          (unsigned long long)min_interval, (unsigned long long)max_interval,
-          (unsigned long long)ave_interval);
+          (unsigned long long)min_interval_ms,
+          (unsigned long long)max_interval_ms,
+          (unsigned long long)avg_interval_ms);
   dprintf(fd, "  Total acquired time (ms)       : %llu\n",
-          (unsigned long long)total_interval);
-  dprintf(
-      fd, "  Total run time (ms)            : %llu\n",
-      (unsigned long long)(now_ms - wakelock_stats.last_reset_timestamp_ms));
+          (unsigned long long)total_interval_ms);
+  dprintf(fd, "  Total run time (ms)            : %llu\n",
+          (unsigned long long)(just_now_ms -
+                               wakelock_stats.last_reset_timestamp_ms));
 }

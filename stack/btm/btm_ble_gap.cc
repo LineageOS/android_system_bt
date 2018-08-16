@@ -452,7 +452,7 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
       btm_cb.ble_ctr_cb.scan_activity |= BTM_LE_OBSERVE_ACTIVE;
       if (duration != 0) {
         /* start observer timer */
-        period_ms_t duration_ms = duration * 1000;
+        uint64_t duration_ms = duration * 1000;
         alarm_set_on_mloop(btm_cb.ble_ctr_cb.observer_timer, duration_ms,
                            btm_ble_observer_timer_timeout, NULL);
       }
@@ -1416,7 +1416,7 @@ tBTM_STATUS btm_ble_start_inquiry(uint8_t mode, uint8_t duration) {
 
     if (duration != 0) {
       /* start inquiry timer */
-      period_ms_t duration_ms = duration * 1000;
+      uint64_t duration_ms = duration * 1000;
       alarm_set_on_mloop(p_ble_cb->inq_var.inquiry_timer, duration_ms,
                          btm_ble_inquiry_timer_timeout, NULL);
     }
