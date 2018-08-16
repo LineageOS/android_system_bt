@@ -133,6 +133,7 @@ cc_test {
         "libbtcore",
         "libbt-common",
         "libbt-stack",
+        "libbt-sbc-decoder",
         "libbt-sbc-encoder",
         "libbt-utils",
         "libFraunhoferAAC",
