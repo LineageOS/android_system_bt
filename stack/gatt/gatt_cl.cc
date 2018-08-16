@@ -297,7 +297,7 @@ void gatt_send_queue_write_cancel(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
 bool gatt_check_write_long_terminate(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
                                      tGATT_VALUE* p_rsp_value) {
   tGATT_VALUE* p_attr = (tGATT_VALUE*)p_clcb->p_attr_buf;
-  bool exec = false;
+  bool terminate = false;
   tGATT_EXEC_FLAG flag = GATT_PREP_WRITE_EXEC;
 
   VLOG(1) << __func__;
@@ -310,19 +310,18 @@ bool gatt_check_write_long_terminate(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
       /* data does not match    */
       p_clcb->status = GATT_ERROR;
       flag = GATT_PREP_WRITE_CANCEL;
-      exec = true;
+      terminate = true;
     } else /* response checking is good */
     {
       p_clcb->status = GATT_SUCCESS;
       /* update write offset and check if end of attribute value */
-      if ((p_attr->offset += p_rsp_value->len) >= p_attr->len) exec = true;
+      if ((p_attr->offset += p_rsp_value->len) >= p_attr->len) terminate = true;
     }
   }
-  if (exec) {
+  if (terminate && p_clcb->op_subtype != GATT_WRITE_PREPARE) {
     gatt_send_queue_write_cancel(tcb, p_clcb, flag);
-    return true;
   }
-  return false;
+  return terminate;
 }
 
 /** Send prepare write */
@@ -586,15 +585,15 @@ void gatt_process_prep_write_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
 
   memcpy(value.value, p, value.len);
 
+  if (!gatt_check_write_long_terminate(tcb, p_clcb, &value)) {
+    gatt_send_prepare_write(tcb, p_clcb);
+    return;
+  }
+
   if (p_clcb->op_subtype == GATT_WRITE_PREPARE) {
-    p_clcb->status = GATT_SUCCESS;
     /* application should verify handle offset
        and value are matched or not */
-
     gatt_end_operation(p_clcb, p_clcb->status, &value);
-  } else if (p_clcb->op_subtype == GATT_WRITE) {
-    if (!gatt_check_write_long_terminate(tcb, p_clcb, &value))
-      gatt_send_prepare_write(tcb, p_clcb);
   }
 }
 /*******************************************************************************
