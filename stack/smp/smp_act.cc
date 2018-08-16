@@ -16,6 +16,7 @@
  *
  ******************************************************************************/
 
+#include <log/log.h>
 #include <string.h>
 #include "btif_common.h"
 #include "device/include/interop.h"
@@ -725,12 +726,16 @@ void smp_process_keypress_notification(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   uint8_t reason = SMP_INVALID_PARAMETERS;
 
   SMP_TRACE_DEBUG("%s", __func__);
-  p_cb->status = *(uint8_t*)p_data;
 
   if (smp_command_has_invalid_parameters(p_cb)) {
+    if (p_cb->rcvd_cmd_len < 2) {  // 1 (opcode) + 1 (Notif Type) bytes
+      android_errorWriteLog(0x534e4554, "111936834");
+    }
     smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
     return;
   }
+
+  p_cb->status = *(uint8_t*)p_data;
 
   if (p != NULL) {
     STREAM_TO_UINT8(p_cb->peer_keypress_notification, p);
@@ -894,6 +899,14 @@ void smp_proc_enc_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   uint8_t* p = (uint8_t*)p_data;
 
   SMP_TRACE_DEBUG("%s", __func__);
+
+  if (smp_command_has_invalid_parameters(p_cb)) {
+    uint8_t reason = SMP_INVALID_PARAMETERS;
+    android_errorWriteLog(0x534e4554, "111937065");
+    smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+    return;
+  }
+
   STREAM_TO_ARRAY(p_cb->ltk, p, BT_OCTET16_LEN);
 
   smp_key_distribution(p_cb, NULL);
@@ -907,6 +920,14 @@ void smp_proc_master_id(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   tBTM_LE_PENC_KEYS le_key;
 
   SMP_TRACE_DEBUG("%s", __func__);
+
+  if (p_cb->rcvd_cmd_len < 11) {  // 1(Code) + 2(EDIV) + 8(Rand)
+    android_errorWriteLog(0x534e4554, "111937027");
+    SMP_TRACE_ERROR("%s: Invalid command length: %d, should be at least 11",
+                    __func__, p_cb->rcvd_cmd_len);
+    return;
+  }
+
   smp_update_key_mask(p_cb, SMP_SEC_KEY_TYPE_ENC, true);
 
   STREAM_TO_UINT16(le_key.ediv, p);
@@ -926,13 +947,21 @@ void smp_proc_master_id(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 }
 
 /*******************************************************************************
- * Function     smp_proc_enc_info
+ * Function     smp_proc_id_info
  * Description  process identity information from peer device
  ******************************************************************************/
 void smp_proc_id_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   uint8_t* p = (uint8_t*)p_data;
 
   SMP_TRACE_DEBUG("%s", __func__);
+
+  if (smp_command_has_invalid_parameters(p_cb)) {
+    uint8_t reason = SMP_INVALID_PARAMETERS;
+    android_errorWriteLog(0x534e4554, "111937065");
+    smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+    return;
+  }
+
   STREAM_TO_ARRAY(p_cb->tk, p, BT_OCTET16_LEN); /* reuse TK for IRK */
   smp_key_distribution_by_transport(p_cb, NULL);
 }
