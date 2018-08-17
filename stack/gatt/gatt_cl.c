@@ -571,7 +571,7 @@ void gatt_process_error_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 op_code,
     if (len < 4)
     {
         android_errorWriteLog(0x534e4554, "79591688");
-        ALOGE("Error response too short");
+        GATT_TRACE_ERROR("Error response too short");
         // Specification does not clearly define what should happen if error
         // response is too short. General rule in BT Spec 5.0 Vol 3, Part F 3.4.1.1
         // is: "If an error code is received in the Error Response that is not
