@@ -37,8 +37,11 @@ cc_test {
     static_libs: [
         "libgmock",
         "lib-bt-packets",
-        "libosi",
         "avrcp-target-service",
+        "libbtdevice",
+        "libosi",
+        "liblog",
+        "libcutils",
     ],
     sanitize: {
         cfi: false,
