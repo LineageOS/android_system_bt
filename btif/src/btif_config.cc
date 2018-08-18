@@ -63,7 +63,7 @@ static const char* CONFIG_BACKUP_PATH = "/data/misc/bluedroid/bt_config.bak";
 static const char* CONFIG_LEGACY_FILE_PATH =
     "/data/misc/bluedroid/bt_config.xml";
 #endif  // defined(OS_GENERIC)
-static const period_ms_t CONFIG_SETTLE_PERIOD_MS = 3000;
+static const uint64_t CONFIG_SETTLE_PERIOD_MS = 3000;
 
 static void timer_config_save_cb(void* data);
 static void btif_config_write(uint16_t event, char* p_param);

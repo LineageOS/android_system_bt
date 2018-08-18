@@ -52,7 +52,7 @@ void a2dp_vendor_ldac_feeding_reset(void);
 void a2dp_vendor_ldac_feeding_flush(void);
 
 // Get the A2DP LDAC encoder interval (in milliseconds).
-period_ms_t a2dp_vendor_ldac_get_encoder_interval_ms(void);
+uint64_t a2dp_vendor_ldac_get_encoder_interval_ms(void);
 
 // Prepare and send A2DP LDAC encoded frames.
 // |timestamp_us| is the current timestamp (in microseconds).

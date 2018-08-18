@@ -216,7 +216,7 @@ typedef struct { uint8_t handle; } btif_rc_handle_t;
 
 rc_device_t device;
 
-static void sleep_ms(period_ms_t timeout_ms);
+static void sleep_ms(uint64_t timeout_ms);
 
 /* Response status code - Unknown Error - this is changed to "reserved" */
 #define BTIF_STS_GEN_ERROR 0x06
@@ -5345,7 +5345,7 @@ void release_transaction(uint8_t lbl) {
  *
  *      Returns        void
  ******************************************************************************/
-static void sleep_ms(period_ms_t timeout_ms) {
+static void sleep_ms(uint64_t timeout_ms) {
   struct timespec delay;
   delay.tv_sec = timeout_ms / 1000;
   delay.tv_nsec = 1000 * 1000 * (timeout_ms % 1000);

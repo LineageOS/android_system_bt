@@ -217,7 +217,7 @@ bool l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
       alarm_set_on_mloop(p_lcb->l2c_lcb_timer, L2CAP_ECHO_RSP_TIMEOUT_MS,
                          l2c_lcb_timer_timeout, p_lcb);
     } else if (!p_lcb->ccb_queue.p_first_ccb) {
-      period_ms_t timeout_ms = L2CAP_LINK_STARTUP_TOUT * 1000;
+      uint64_t timeout_ms = L2CAP_LINK_STARTUP_TOUT * 1000;
       alarm_set_on_mloop(p_lcb->l2c_lcb_timer, timeout_ms,
                          l2c_lcb_timer_timeout, p_lcb);
     }
@@ -557,7 +557,7 @@ void l2c_link_timeout(tL2C_LCB* p_lcb) {
 
     /* If no channels in use, drop the link. */
     if (!p_lcb->ccb_queue.p_first_ccb) {
-      period_ms_t timeout_ms;
+      uint64_t timeout_ms;
       bool start_timeout = true;
 
       rc = btm_sec_disconnect(p_lcb->handle, HCI_ERR_PEER_USER);

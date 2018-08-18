@@ -546,14 +546,14 @@ void bta_sys_sendmsg(void* p_msg) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_sys_start_timer(alarm_t* alarm, period_ms_t interval, uint16_t event,
+void bta_sys_start_timer(alarm_t* alarm, uint64_t interval_ms, uint16_t event,
                          uint16_t layer_specific) {
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
 
   p_buf->event = event;
   p_buf->layer_specific = layer_specific;
 
-  alarm_set_on_mloop(alarm, interval, bta_sys_sendmsg, p_buf);
+  alarm_set_on_mloop(alarm, interval_ms, bta_sys_sendmsg, p_buf);
 }
 
 /*******************************************************************************

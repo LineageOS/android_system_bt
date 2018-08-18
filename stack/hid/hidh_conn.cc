@@ -656,7 +656,7 @@ static void hidh_l2cif_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
         (!(hh_cb.devices[dhandle].attr_mask & HID_RECONN_INIT)) &&
         (hh_cb.devices[dhandle].attr_mask & HID_NORMALLY_CONNECTABLE)) {
       hh_cb.devices[dhandle].conn_tries = 0;
-      period_ms_t interval_ms = HID_HOST_REPAGE_WIN * 1000;
+      uint64_t interval_ms = HID_HOST_REPAGE_WIN * 1000;
       alarm_set_on_mloop(hh_cb.devices[dhandle].conn.process_repage_timer,
                          interval_ms, hidh_process_repage_timer_timeout,
                          UINT_TO_PTR(dhandle));
@@ -1073,7 +1073,7 @@ static void hidh_conn_retry(uint8_t dhandle) {
 
   p_dev->conn.conn_state = HID_CONN_STATE_UNUSED;
 #if (HID_HOST_REPAGE_WIN > 0)
-  period_ms_t interval_ms = HID_HOST_REPAGE_WIN * 1000;
+  uint64_t interval_ms = HID_HOST_REPAGE_WIN * 1000;
   alarm_set_on_mloop(p_dev->conn.process_repage_timer, interval_ms,
                      hidh_process_repage_timer_timeout, UINT_TO_PTR(dhandle));
 #else
