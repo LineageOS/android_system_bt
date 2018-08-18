@@ -86,6 +86,16 @@ void InterfaceWithInstancesBase::UnregisterAllBase() {
   id_to_instance_.clear();
 }
 
+void InterfaceWithInstancesBase::ForEachCallback(
+    const std::function<void(IInterface*)>& func) {
+  VLOG(2) << __func__;
+  std::lock_guard<std::mutex> lock(maps_lock_);
+  for (auto& pair : id_to_instance_) {
+    auto cb = id_to_cb_.Get(pair.first);
+    func(cb.get());
+  }
+}
+
 android::sp<IInterface> InterfaceWithInstancesBase::GetCallback(
     int instance_id) {
   return id_to_cb_.Get(instance_id);

@@ -57,6 +57,8 @@ class BluetoothInterface {
                                                 RawAddress* remote_bd_addr,
                                                 int num_properties,
                                                 bt_property_t* properties);
+    virtual void DeviceFoundCallback(int num_properties,
+                                     bt_property_t* properties);
     virtual void DiscoveryStateChangedCallback(bt_discovery_state_t state);
     virtual void PinRequestCallback(RawAddress* remote_bd_addr,
                                     bt_bdname_t* bd_name, uint32_t cod,
