@@ -225,7 +225,7 @@ void rfc_release_multiplexer_channel(tRFC_MCB* p_mcb) {
 void rfc_timer_start(tRFC_MCB* p_mcb, uint16_t timeout) {
   RFCOMM_TRACE_EVENT("%s - timeout:%d seconds", __func__, timeout);
 
-  period_ms_t interval_ms = timeout * 1000;
+  uint64_t interval_ms = timeout * 1000;
   alarm_set_on_mloop(p_mcb->mcb_timer, interval_ms, rfcomm_mcb_timer_timeout,
                      p_mcb);
 }
@@ -253,7 +253,7 @@ void rfc_timer_stop(tRFC_MCB* p_mcb) {
 void rfc_port_timer_start(tPORT* p_port, uint16_t timeout) {
   RFCOMM_TRACE_EVENT("%s - timeout:%d seconds", __func__, timeout);
 
-  period_ms_t interval_ms = timeout * 1000;
+  uint64_t interval_ms = timeout * 1000;
   alarm_set_on_mloop(p_port->rfc.port_timer, interval_ms,
                      rfcomm_port_timer_timeout, p_port);
 }

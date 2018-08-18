@@ -130,7 +130,7 @@ static void alarm_closure_cb(void* p) {
 
 // Periodic alarms are not supported, because we clean up data in callback
 void alarm_set_closure(const tracked_objects::Location& posted_from,
-                       alarm_t* alarm, period_ms_t interval_ms,
+                       alarm_t* alarm, uint64_t interval_ms,
                        base::Closure user_task) {
   closure_data* data = new closure_data;
   data->posted_from = posted_from;

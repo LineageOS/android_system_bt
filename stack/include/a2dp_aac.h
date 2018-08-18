@@ -48,7 +48,7 @@ class A2dpCodecConfigAacSource : public A2dpCodecConfigAacBase {
   virtual ~A2dpCodecConfigAacSource();
 
   bool init() override;
-  period_ms_t encoderIntervalMs() const override;
+  uint64_t encoderIntervalMs() const override;
   int getEffectiveMtu() const override;
 
  private:
@@ -66,7 +66,7 @@ class A2dpCodecConfigAacSink : public A2dpCodecConfigAacBase {
   virtual ~A2dpCodecConfigAacSink();
 
   bool init() override;
-  period_ms_t encoderIntervalMs() const override;
+  uint64_t encoderIntervalMs() const override;
   int getEffectiveMtu() const override;
 
  private:
