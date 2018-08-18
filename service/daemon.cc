@@ -22,6 +22,8 @@
 #include <base/run_loop.h>
 
 #include "service/adapter.h"
+#include "service/hal/bluetooth_av_interface.h"
+#include "service/hal/bluetooth_avrcp_interface.h"
 #include "service/hal/bluetooth_gatt_interface.h"
 #include "service/hal/bluetooth_interface.h"
 #include "service/ipc/ipc_manager.h"
@@ -69,6 +71,10 @@ class DaemonImpl : public Daemon, public ipc::IPCManager::Delegate {
 
     if (!hal::BluetoothGattInterface::Initialize()) goto failed;
 
+    if (!hal::BluetoothAvInterface::Initialize()) goto failed;
+
+    if (!hal::BluetoothAvrcpInterface::Initialize()) goto failed;
+
     return true;
 
   failed:
@@ -81,6 +87,10 @@ class DaemonImpl : public Daemon, public ipc::IPCManager::Delegate {
       hal::BluetoothGattInterface::CleanUp();
     if (hal::BluetoothInterface::IsInitialized())
       hal::BluetoothInterface::CleanUp();
+    if (hal::BluetoothAvInterface::IsInitialized())
+      hal::BluetoothAvInterface::CleanUp();
+    if (hal::BluetoothAvrcpInterface::IsInitialized())
+      hal::BluetoothAvrcpInterface::CleanUp();
   }
 
   void CleanUpBluetoothStack() {
