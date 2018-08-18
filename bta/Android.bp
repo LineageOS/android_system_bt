@@ -22,6 +22,14 @@ cc_defaults {
         "system/bt/vnd/include",
         "system/bt/utils/include",
     ],
+    target: {
+        linux_glibc: {
+            cflags: [
+                "-D_GNU_SOURCE",
+                "-DOS_GENERIC",
+            ],
+        },
+    },
     shared_libs: [
         "libcutils",
     ],

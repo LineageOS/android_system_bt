@@ -61,6 +61,14 @@ cc_test {
     srcs: [
         "test/packet_fragmenter_test.cc",
     ],
+    target: {
+        linux_glibc: {
+            cflags: [
+                "-D_GNU_SOURCE",
+                "-DOS_GENERIC",
+            ],
+        },
+    },
     shared_libs: [
         "liblog",
         "libdl",

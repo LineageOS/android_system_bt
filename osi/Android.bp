@@ -68,6 +68,22 @@ cc_library_static {
         "src/time.cc",
         "src/wakelock.cc",
     ],
+    target: {
+        linux_glibc: {
+            cflags: [
+                "-D_GNU_SOURCE",
+                "-DOS_GENERIC",
+            ],
+        },
+    },
+    target: {
+        linux_glibc: {
+            cflags: [
+                "-D_GNU_SOURCE",
+                "-DOS_GENERIC",
+            ],
+        },
+    },
     shared_libs: [
         "liblog",
     ],

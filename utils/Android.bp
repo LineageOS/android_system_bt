@@ -11,5 +11,13 @@ cc_library_static {
         "system/bt/btcore/include",
         "system/bt/stack/include",
     ],
+    target: {
+        linux_glibc: {
+            cflags: [
+                "-D_GNU_SOURCE",
+                "-DOS_GENERIC",
+            ],
+        },
+    },
     srcs: ["src/bt_utils.cc"],
 }
