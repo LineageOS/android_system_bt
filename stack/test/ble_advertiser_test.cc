@@ -56,7 +56,7 @@ void btm_gen_resolvable_private_addr(
 
 alarm_callback_t last_alarm_cb = nullptr;
 void* last_alarm_data = nullptr;
-void alarm_set_on_mloop(alarm_t* alarm, period_ms_t interval_ms,
+void alarm_set_on_mloop(alarm_t* alarm, uint64_t interval_ms,
                         alarm_callback_t cb, void* data) {
   last_alarm_cb = cb;
   last_alarm_data = data;

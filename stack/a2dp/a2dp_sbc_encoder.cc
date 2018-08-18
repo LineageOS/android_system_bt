@@ -399,7 +399,7 @@ void a2dp_sbc_feeding_flush(void) {
   a2dp_sbc_encoder_cb.feeding_state.aa_feed_residue = 0;
 }
 
-period_ms_t a2dp_sbc_get_encoder_interval_ms(void) {
+uint64_t a2dp_sbc_get_encoder_interval_ms(void) {
   return A2DP_SBC_ENCODER_INTERVAL_MS;
 }
 
@@ -909,7 +909,7 @@ uint32_t a2dp_sbc_get_bitrate() {
   return p_encoder_params->u16BitRate * 1000;
 }
 
-period_ms_t A2dpCodecConfigSbcSource::encoderIntervalMs() const {
+uint64_t A2dpCodecConfigSbcSource::encoderIntervalMs() const {
   return a2dp_sbc_get_encoder_interval_ms();
 }
 

@@ -1135,13 +1135,13 @@ bool avdt_msg_send(AvdtpCcb* p_ccb, BT_HDR* p_msg) {
             (sig == AVDT_SIG_SECURITY) || (avdtp_cb.rcb.ret_tout == 0)) {
           alarm_cancel(p_ccb->idle_ccb_timer);
           alarm_cancel(p_ccb->ret_ccb_timer);
-          period_ms_t interval_ms = avdtp_cb.rcb.sig_tout * 1000;
+          uint64_t interval_ms = avdtp_cb.rcb.sig_tout * 1000;
           alarm_set_on_mloop(p_ccb->rsp_ccb_timer, interval_ms,
                              avdt_ccb_rsp_ccb_timer_timeout, p_ccb);
         } else if (sig != AVDT_SIG_DELAY_RPT) {
           alarm_cancel(p_ccb->idle_ccb_timer);
           alarm_cancel(p_ccb->rsp_ccb_timer);
-          period_ms_t interval_ms = avdtp_cb.rcb.ret_tout * 1000;
+          uint64_t interval_ms = avdtp_cb.rcb.ret_tout * 1000;
           alarm_set_on_mloop(p_ccb->ret_ccb_timer, interval_ms,
                              avdt_ccb_ret_ccb_timer_timeout, p_ccb);
         }

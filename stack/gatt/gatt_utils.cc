@@ -528,7 +528,7 @@ bool gatt_parse_uuid_from_cmd(Uuid* p_uuid_rec, uint16_t uuid_size,
  *
  ******************************************************************************/
 void gatt_start_rsp_timer(tGATT_CLCB* p_clcb) {
-  period_ms_t timeout_ms = GATT_WAIT_FOR_RSP_TIMEOUT_MS;
+  uint64_t timeout_ms = GATT_WAIT_FOR_RSP_TIMEOUT_MS;
 
   if (p_clcb->operation == GATTC_OPTYPE_DISCOVERY &&
       p_clcb->op_subtype == GATT_DISC_SRVC_ALL) {

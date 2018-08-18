@@ -52,7 +52,7 @@ void a2dp_vendor_aptx_hd_feeding_reset(void);
 void a2dp_vendor_aptx_hd_feeding_flush(void);
 
 // Get the A2DP aptX-HD encoder interval (in milliseconds).
-period_ms_t a2dp_vendor_aptx_hd_get_encoder_interval_ms(void);
+uint64_t a2dp_vendor_aptx_hd_get_encoder_interval_ms(void);
 
 // Prepare and send A2DP aptX-HD encoded frames.
 // |timestamp_us| is the current timestamp (in microseconds).

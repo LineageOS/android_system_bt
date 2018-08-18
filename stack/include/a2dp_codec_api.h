@@ -217,7 +217,7 @@ class A2dpCodecConfig {
   virtual bool isValid() const;
 
   // Returns the encoder's periodic interval (in milliseconds).
-  virtual period_ms_t encoderIntervalMs() const = 0;
+  virtual uint64_t encoderIntervalMs() const = 0;
 
   // Checks whether the A2DP Codec Configuration is valid.
   // Returns true if A2DP Codec Configuration stored in |codec_config|
@@ -527,7 +527,7 @@ typedef struct {
   void (*feeding_flush)(void);
 
   // Get the A2DP encoder interval (in milliseconds).
-  period_ms_t (*get_encoder_interval_ms)(void);
+  uint64_t (*get_encoder_interval_ms)(void);
 
   // Prepare and send A2DP encoded frames.
   // |timestamp_us| is the current timestamp (in microseconds).

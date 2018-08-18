@@ -171,7 +171,7 @@ static future_t* hci_module_start_up(void) {
   command_credits = 1;
 
   // For now, always use the default timeout on non-Android builds.
-  period_ms_t startup_timeout_ms = DEFAULT_STARTUP_TIMEOUT_MS;
+  uint64_t startup_timeout_ms = DEFAULT_STARTUP_TIMEOUT_MS;
 
   // Grab the override startup timeout ms, if present.
   char timeout_prop[PROPERTY_VALUE_MAX];
