@@ -71,13 +71,13 @@ void alarm_free(alarm_t* alarm);
 // thread is not same as the caller’s thread. If two (or more)
 // alarms are set back-to-back with the same |interval_ms|, the
 // callbacks will be called in the order the alarms are set.
-void alarm_set(alarm_t* alarm, period_ms_t interval_ms, alarm_callback_t cb,
+void alarm_set(alarm_t* alarm, uint64_t interval_ms, alarm_callback_t cb,
                void* data);
 
 // Sets an |alarm| to execute a callback in the main message loop. This function
 // is same as |alarm_set| except that the |cb| callback is scheduled for
 // execution in the context of the main message loop.
-void alarm_set_on_mloop(alarm_t* alarm, period_ms_t interval_ms,
+void alarm_set_on_mloop(alarm_t* alarm, uint64_t interval_ms,
                         alarm_callback_t cb, void* data);
 
 // This function cancels the |alarm| if it was previously set.
@@ -94,7 +94,7 @@ bool alarm_is_scheduled(const alarm_t* alarm);
 // Figure out how much time until next expiration.
 // Returns 0 if not armed. |alarm| may not be NULL.
 // TODO: Remove this function once PM timers can be re-factored
-period_ms_t alarm_get_remaining_ms(const alarm_t* alarm);
+uint64_t alarm_get_remaining_ms(const alarm_t* alarm);
 
 // Cleanup the alarm internal state.
 // This function should be called by the OSI module cleanup during
