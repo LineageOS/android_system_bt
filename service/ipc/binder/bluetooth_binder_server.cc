@@ -18,6 +18,8 @@
 
 #include <base/logging.h>
 
+#include "service/ipc/binder/bluetooth_a2dp_sink_binder_server.h"
+#include "service/ipc/binder/bluetooth_avrcp_control_binder_server.h"
 #include "service/ipc/binder/bluetooth_gatt_client_binder_server.h"
 #include "service/ipc/binder/bluetooth_gatt_server_binder_server.h"
 #include "service/ipc/binder/bluetooth_le_advertiser_binder_server.h"
@@ -107,6 +109,59 @@ Status BluetoothBinderServer::GetName(::android::String16* _aidl_return) {
   return Status::ok();
 }
 
+Status BluetoothBinderServer::SetScanMode(int32_t scan_mode,
+                                          bool* _aidl_return) {
+  VLOG(2) << __func__;
+  *_aidl_return = adapter_->SetScanMode(scan_mode);
+  return Status::ok();
+}
+
+Status BluetoothBinderServer::SetScanEnable(bool scan_enable,
+                                            bool* _aidl_return) {
+  VLOG(2) << __func__;
+  *_aidl_return = adapter_->SetScanEnable(scan_enable);
+  return Status::ok();
+}
+
+Status BluetoothBinderServer::SspReply(
+    const ::android::String16& device_address, int32_t variant, bool accept,
+    int32_t passkey, bool* _aidl_return) {
+  VLOG(2) << __func__;
+  *_aidl_return = adapter_->SspReply(String8(device_address).string(), variant,
+                                     accept, passkey);
+  return Status::ok();
+}
+
+Status BluetoothBinderServer::CreateBond(
+    const ::android::String16& device_address, int32_t transport,
+    bool* _aidl_return) {
+  VLOG(2) << __func__;
+  *_aidl_return =
+      adapter_->CreateBond(String8(device_address).string(), transport);
+  return Status::ok();
+}
+
+Status BluetoothBinderServer::GetBondedDevices(bool* _aidl_return) {
+  VLOG(2) << __func__;
+  *_aidl_return = adapter_->GetBondedDevices();
+  return Status::ok();
+}
+
+Status BluetoothBinderServer::RemoveBond(
+    const ::android::String16& device_address, bool* _aidl_return) {
+  VLOG(2) << __func__;
+  *_aidl_return = adapter_->RemoveBond(String8(device_address).string());
+  return Status::ok();
+}
+
+Status BluetoothBinderServer::GetRemoteDeviceProperties(
+    const ::android::String16& device_address, bool* _aidl_return) {
+  VLOG(2) << __func__;
+  *_aidl_return =
+      adapter_->GetRemoteDeviceProperties(String8(device_address).string());
+  return Status::ok();
+}
+
 Status BluetoothBinderServer::RegisterCallback(
     const ::android::sp<IBluetoothCallback>& callback) {
   VLOG(2) << __func__;
@@ -133,6 +188,29 @@ Status BluetoothBinderServer::IsMultiAdvertisementSupported(
     bool* _aidl_return) {
   VLOG(2) << __func__;
   *_aidl_return = adapter_->IsMultiAdvertisementSupported();
+  return Status::ok();
+}
+
+Status BluetoothBinderServer::GetA2dpSinkInterface(
+    ::android::sp<IBluetoothA2dpSink>* _aidl_return) {
+  VLOG(2) << __func__;
+
+  if (!adapter_->IsEnabled()) {
+    LOG(ERROR) << "Cannot obtain IBluetoothA2dpSink interface while disabled";
+    *_aidl_return = nullptr;
+    return Status::ok();
+  }
+
+  if (!a2dp_sink_interface_.get())
+    a2dp_sink_interface_ = new BluetoothA2dpSinkBinderServer(adapter_);
+
+  if (a2dp_sink_interface_->HasInstance()) {
+    LOG(ERROR) << "Only one A2dpSink interface allowed at a time";
+    *_aidl_return = nullptr;
+    return Status::ok();
+  }
+
+  *_aidl_return = a2dp_sink_interface_;
   return Status::ok();
 }
 
@@ -222,6 +300,24 @@ Status BluetoothBinderServer::GetGattServerInterface(
   return Status::ok();
 }
 
+Status BluetoothBinderServer::GetAvrcpControlInterface(
+    ::android::sp<IBluetoothAvrcpControl>* _aidl_return) {
+  VLOG(2) << __func__;
+
+  if (!adapter_->IsEnabled()) {
+    LOG(ERROR)
+        << "Cannot obtain IBluetoothAvrcpControl interface while disabled";
+    *_aidl_return = NULL;
+    return Status::ok();
+  }
+
+  if (!avrcp_control_interface_.get())
+    avrcp_control_interface_ = new BluetoothAvrcpControlBinderServer(adapter_);
+
+  *_aidl_return = avrcp_control_interface_;
+  return Status::ok();
+}
+
 android::status_t BluetoothBinderServer::dump(
     int fd, const android::Vector<android::String16>& args) {
   VLOG(2) << __func__ << " called with fd " << fd;
@@ -246,6 +342,98 @@ void BluetoothBinderServer::OnAdapterStateChanged(
           << " new: " << new_state;
   callbacks_.ForEach([prev_state, new_state](IBluetoothCallback* callback) {
     callback->OnBluetoothStateChange(prev_state, new_state);
+  });
+}
+
+void BluetoothBinderServer::OnDeviceConnectionStateChanged(
+    bluetooth::Adapter* adapter, const std::string& device_address,
+    bool connected) {
+  CHECK_EQ(adapter, adapter_);
+  auto addr_s16 = String16(device_address.c_str(), device_address.size());
+  callbacks_.ForEach([&addr_s16, connected](IBluetoothCallback* callback) {
+    callback->OnDeviceConnectionStateChanged(addr_s16, connected);
+  });
+}
+
+void BluetoothBinderServer::OnScanEnableChanged(bluetooth::Adapter* adapter,
+                                                bool scan_enabled) {
+  CHECK_EQ(adapter, adapter_);
+  callbacks_.ForEach([scan_enabled](IBluetoothCallback* callback) {
+    callback->OnScanEnableChanged(scan_enabled);
+  });
+}
+
+void BluetoothBinderServer::OnSspRequest(bluetooth::Adapter* adapter,
+                                         const std::string& device_address,
+                                         const std::string& device_name,
+                                         int cod, int pairing_variant,
+                                         int pass_key) {
+  CHECK_EQ(adapter, adapter_);
+  VLOG(2) << "Received ssp request: device_address: " << device_address
+          << ", device_name: " << device_name << ", cod: " << cod
+          << ", pairing_variant: " << pairing_variant
+          << ", pass_key: " << pass_key;
+
+  android::String16 addr_s16(device_address.c_str());
+  android::String16 name_s16(device_name.c_str());
+  callbacks_.ForEach([&addr_s16, &name_s16, cod, pairing_variant,
+                      pass_key](IBluetoothCallback* callback) {
+    callback->OnSspRequest(addr_s16, name_s16, cod, pairing_variant, pass_key);
+  });
+}
+
+void BluetoothBinderServer::OnBondStateChanged(
+    bluetooth::Adapter* adapter, int status, const std::string& device_address,
+    int state) {
+  CHECK_EQ(adapter, adapter_);
+  VLOG(2) << "Received " << __func__ << " "
+          << "status: " << status << ", device_address: " << device_address
+          << ", state: " << state;
+  android::String16 addr_s16(device_address.c_str(), device_address.size());
+  callbacks_.ForEach([status, &addr_s16, state](IBluetoothCallback* callback) {
+    callback->OnBondStateChanged(status, addr_s16, state);
+  });
+}
+
+void BluetoothBinderServer::OnGetBondedDevices(
+    bluetooth::Adapter* adapter, int status,
+    const std::vector<std::string>& bonded_devices) {
+  CHECK_EQ(adapter, adapter_);
+  VLOG(2) << "Received " << __func__;
+  std::vector<android::String16> devices_s16;
+  devices_s16.reserve(bonded_devices.size());
+  for (const auto& device : bonded_devices)
+    devices_s16.emplace_back(device.c_str(), device.size());
+
+  callbacks_.ForEach([status, &devices_s16](IBluetoothCallback* callback) {
+    callback->OnGetBondedDevices(status, devices_s16);
+  });
+}
+
+void BluetoothBinderServer::OnGetRemoteDeviceProperties(
+    bluetooth::Adapter* adapter, int status, const std::string& device_address,
+    const bluetooth::RemoteDeviceProps& properties) {
+  CHECK_EQ(adapter, adapter_);
+  VLOG(2) << "Received " << __func__ << " "
+          << "status: " << status << ", device_address: " << device_address;
+  android::String16 addr_s16(device_address.c_str(), device_address.size());
+  auto binder_props =
+      android::bluetooth::BluetoothRemoteDeviceProps(properties);
+  callbacks_.ForEach(
+      [status, &addr_s16, &binder_props](IBluetoothCallback* callback) {
+        callback->OnGetRemoteDeviceProperties(status, addr_s16, binder_props);
+      });
+}
+
+void BluetoothBinderServer::OnDeviceFound(
+    bluetooth::Adapter* adapter,
+    const bluetooth::RemoteDeviceProps& properties) {
+  CHECK_EQ(adapter, adapter_);
+  VLOG(2) << "Received " << __func__ << " ";
+  auto binder_props =
+      android::bluetooth::BluetoothRemoteDeviceProps(properties);
+  callbacks_.ForEach([&binder_props](IBluetoothCallback* callback) {
+    callback->OnDeviceFound(binder_props);
   });
 }
 

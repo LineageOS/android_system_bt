@@ -24,6 +24,8 @@
 #include <base/logging.h>
 #include <base/observer_list.h>
 
+#include "service/a2dp_sink.h"
+#include "service/avrcp_control.h"
 #include "service/common/bluetooth/util/atomic_string.h"
 #include "service/gatt_client.h"
 #include "service/gatt_server.h"
@@ -33,10 +35,96 @@
 #include "service/low_energy_client.h"
 #include "service/low_energy_scanner.h"
 
+using android::String16;
 using std::lock_guard;
 using std::mutex;
 
 namespace bluetooth {
+
+namespace {
+
+RemoteDeviceProps ParseRemoteDeviceProps(int num_properties,
+                                         bt_property_t* properties) {
+  android::String16 name;
+  android::String16 address;
+  std::vector<Uuid> service_uuids;
+  int32_t device_class = 0;
+  int32_t device_type = 0;
+  int32_t rssi = 0;
+
+  for (int i = 0; i < num_properties; ++i) {
+    bt_property_t* property = properties + i;
+    switch (property->type) {
+      case BT_PROPERTY_BDNAME: {
+        if (property->len < 0) {
+          NOTREACHED() << "Invalid length for BT_PROPERTY_BDNAME";
+          break;
+        }
+        bt_bdname_t* hal_name = reinterpret_cast<bt_bdname_t*>(property->val);
+        name = String16(reinterpret_cast<char*>(hal_name->name));
+        break;
+      }
+      case BT_PROPERTY_BDADDR: {
+        if (property->len != sizeof(RawAddress)) {
+          NOTREACHED() << "Invalid length for BT_PROPERTY_BDADDR";
+          break;
+        }
+        std::string remote_bdaddr_str =
+            BtAddrString(reinterpret_cast<RawAddress*>(property->val));
+        address = String16(remote_bdaddr_str.c_str(), remote_bdaddr_str.size());
+        break;
+      }
+      case BT_PROPERTY_UUIDS: {
+        if (property->len < 0) {
+          NOTREACHED() << "Negative length on BT_PROPERTY_UUIDS:";
+          break;
+        }
+        if (property->len % sizeof(Uuid::UUID128Bit) != 0) {
+          NOTREACHED() << "Trailing bytes on BT_PROPERTY_UUIDS:";
+        }
+        auto uuids = static_cast<const Uuid::UUID128Bit*>(property->val);
+
+        for (size_t i = 0; i < property->len / sizeof(Uuid::UUID128Bit); ++i) {
+          service_uuids.push_back(Uuid::From128BitLE(uuids[i]));
+        }
+        break;
+      }
+      case BT_PROPERTY_CLASS_OF_DEVICE: {
+        if (property->len != sizeof(int32_t)) {
+          NOTREACHED() << "Invalid length for BT_PROPERTY_CLASS_OF_DEVICE";
+          break;
+        }
+        device_class = *reinterpret_cast<const int32_t*>(property->val);
+        break;
+      }
+      case BT_PROPERTY_TYPE_OF_DEVICE: {
+        if (property->len != sizeof(int32_t)) {
+          NOTREACHED() << "Invalid length for BT_PROPERTY_TYPE_OF_DEVICE";
+          break;
+        }
+        device_type = *reinterpret_cast<const int32_t*>(property->val);
+        break;
+      }
+      case BT_PROPERTY_REMOTE_RSSI: {
+        if (property->len != sizeof(int8_t)) {
+          NOTREACHED() << "Invalid length for BT_PROPERTY_REMOTE_RSSI";
+          break;
+        }
+        rssi = *reinterpret_cast<const int8_t*>(property->val);
+        break;
+      }
+      default:
+        VLOG(1) << "Unhandled adapter property: "
+                << BtPropertyText(property->type);
+        break;
+    }
+  }
+
+  return RemoteDeviceProps(name, address, service_uuids, device_class,
+                           device_type, rssi);
+}
+
+}  // namespace
 
 // static
 const char Adapter::kDefaultAddress[] = "00:00:00:00:00:00";
@@ -69,6 +157,41 @@ void Adapter::Observer::OnDeviceConnectionStateChanged(
   // Default implementation does nothing
 }
 
+void Adapter::Observer::OnScanEnableChanged(Adapter* adapter,
+                                            bool scan_enabled) {
+  // Default implementation does nothing
+}
+
+void Adapter::Observer::OnSspRequest(Adapter* adapter,
+                                     const std::string& device_address,
+                                     const std::string& device_name, int cod,
+                                     int pairing_variant, int pass_key) {
+  // Default implementation does nothing
+}
+
+void Adapter::Observer::OnBondStateChanged(Adapter* adapter, int status,
+                                           const std::string& device_address,
+                                           int state) {
+  // Default implementation does nothing
+}
+
+void Adapter::Observer::OnGetBondedDevices(
+    Adapter* adapter, int status,
+    const std::vector<std::string>& bonded_devices) {
+  // Default implementation does nothing
+}
+
+void Adapter::Observer::OnGetRemoteDeviceProperties(
+    Adapter* adapter, int status, const std::string& device_address,
+    const RemoteDeviceProps& properties) {
+  // Default implementation does nothing
+}
+
+void Adapter::Observer::OnDeviceFound(Adapter* adapter,
+                                      const RemoteDeviceProps& properties) {
+  // Default implementation does nothing
+}
+
 // The real Adapter implementation used in production.
 class AdapterImpl : public Adapter, public hal::BluetoothInterface::Observer {
  public:
@@ -78,6 +201,8 @@ class AdapterImpl : public Adapter, public hal::BluetoothInterface::Observer {
         name_(kDefaultName) {
     memset(&local_le_features_, 0, sizeof(local_le_features_));
     hal::BluetoothInterface::Get()->AddObserver(this);
+    a2dp_sink_factory_.reset(new A2dpSinkFactory);
+    avrcp_control_factory_.reset(new AvrcpControlFactory);
     ble_client_factory_.reset(new LowEnergyClientFactory(*this));
     ble_advertiser_factory_.reset(new LowEnergyAdvertiserFactory());
     ble_scanner_factory_.reset(new LowEnergyScannerFactory(*this));
@@ -183,6 +308,84 @@ class AdapterImpl : public Adapter, public hal::BluetoothInterface::Observer {
 
   std::string GetAddress() const override { return address_.Get(); }
 
+  bool SetScanMode(int scan_mode) override {
+    switch (scan_mode) {
+      case BT_SCAN_MODE_NONE:
+      case BT_SCAN_MODE_CONNECTABLE:
+      case BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE:
+        break;
+      default:
+        LOG(ERROR) << "Unknown scan mode: " << scan_mode;
+        return false;
+    }
+
+    auto bd_scanmode = static_cast<bt_scan_mode_t>(scan_mode);
+
+    if (!SetAdapterProperty(BT_PROPERTY_ADAPTER_SCAN_MODE, &bd_scanmode,
+                            sizeof(bd_scanmode))) {
+      LOG(ERROR) << "Failed to set scan mode to : " << scan_mode;
+      return false;
+    }
+
+    return true;
+  }
+
+  bool SetScanEnable(bool scan_enable) override {
+    if (scan_enable) {
+      int status =
+          hal::BluetoothInterface::Get()->GetHALInterface()->start_discovery();
+      if (status != BT_STATUS_SUCCESS) {
+        LOG(ERROR) << "Failed to enable scanning";
+        return false;
+      }
+    } else {
+      int status =
+          hal::BluetoothInterface::Get()->GetHALInterface()->cancel_discovery();
+      if (status != BT_STATUS_SUCCESS) {
+        LOG(ERROR) << "Failed to disable scanning";
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool SspReply(const std::string& device_address, int variant, bool accept,
+                int32_t pass_key) override {
+    RawAddress addr;
+    if (!RawAddress::FromString(device_address, addr)) {
+      LOG(ERROR) << "Invalid device address given: " << device_address;
+      return false;
+    }
+
+    int status = hal::BluetoothInterface::Get()->GetHALInterface()->ssp_reply(
+        &addr, static_cast<bt_ssp_variant_t>(variant), accept, pass_key);
+    if (status != BT_STATUS_SUCCESS) {
+      LOG(ERROR) << "Failed to send SSP response - status: "
+                 << BtStatusText((const bt_status_t)status);
+      return false;
+    }
+
+    return true;
+  }
+
+  bool CreateBond(const std::string& device_address, int transport) override {
+    RawAddress addr;
+    if (!RawAddress::FromString(device_address, addr)) {
+      LOG(ERROR) << "Invalid device address given: " << device_address;
+      return false;
+    }
+
+    int status = hal::BluetoothInterface::Get()->GetHALInterface()->create_bond(
+        &addr, transport);
+    if (status != BT_STATUS_SUCCESS) {
+      LOG(ERROR) << "Failed to create bond - status: "
+                 << BtStatusText((const bt_status_t)status);
+      return false;
+    }
+
+    return true;
+  }
+
   bool IsMultiAdvertisementSupported() override {
     lock_guard<mutex> lock(local_le_features_lock_);
     return local_le_features_.max_adv_instance >= kMinAdvInstancesForMultiAdv;
@@ -207,6 +410,64 @@ class AdapterImpl : public Adapter, public hal::BluetoothInterface::Observer {
     lock_guard<mutex> lock(local_le_features_lock_);
     return local_le_features_.scan_result_storage_size >=
            kMinOffloadedScanStorageBytes;
+  }
+
+  bool GetBondedDevices() override {
+    int status =
+        hal::BluetoothInterface::Get()->GetHALInterface()->get_adapter_property(
+            BT_PROPERTY_ADAPTER_BONDED_DEVICES);
+    if (status != BT_STATUS_SUCCESS) {
+      LOG(ERROR) << "Failed to get bonded devices. Status: "
+                 << BtStatusText(static_cast<bt_status_t>(status));
+      return false;
+    }
+
+    return true;
+  }
+
+  bool RemoveBond(const std::string& device_address) override {
+    RawAddress addr;
+    if (!RawAddress::FromString(device_address, addr)) {
+      LOG(ERROR) << "Invalid device address given: " << device_address;
+      return false;
+    }
+
+    int status =
+        hal::BluetoothInterface::Get()->GetHALInterface()->remove_bond(&addr);
+    if (status != BT_STATUS_SUCCESS) {
+      LOG(ERROR) << "Failed to send remove bond - status: "
+                 << BtStatusText(static_cast<bt_status_t>(status));
+      return false;
+    }
+
+    return true;
+  }
+
+  bool GetRemoteDeviceProperties(const std::string& device_address) override {
+    RawAddress addr;
+    if (!RawAddress::FromString(device_address, addr)) {
+      LOG(ERROR) << "Invalid device address given: " << device_address;
+      return false;
+    }
+
+    int status = hal::BluetoothInterface::Get()
+                     ->GetHALInterface()
+                     ->get_remote_device_properties(&addr);
+    if (status != BT_STATUS_SUCCESS) {
+      LOG(ERROR) << "Failed to send GetRemoteDeviceProperties - status: "
+                 << BtStatusText((const bt_status_t)status);
+      return false;
+    }
+
+    return true;
+  }
+
+  A2dpSinkFactory* GetA2dpSinkFactory() const override {
+    return a2dp_sink_factory_.get();
+  }
+
+  AvrcpControlFactory* GetAvrcpControlFactory() const override {
+    return avrcp_control_factory_.get();
   }
 
   LowEnergyClientFactory* GetLowEnergyClientFactory() const override {
@@ -257,6 +518,16 @@ class AdapterImpl : public Adapter, public hal::BluetoothInterface::Observer {
 
     if (status != BT_STATUS_SUCCESS) {
       LOG(ERROR) << "status: " << BtStatusText(status);
+
+      for (int i = 0; i < num_properties; ++i) {
+        bt_property_t* property = properties + i;
+        if (property->type == BT_PROPERTY_ADAPTER_BONDED_DEVICES) {
+          lock_guard<mutex> lock(observers_lock_);
+          for (auto& observer : observers_) {
+            observer.OnGetBondedDevices(this, status, {});
+          }
+        }
+      }
       return;
     }
 
@@ -290,6 +561,29 @@ class AdapterImpl : public Adapter, public hal::BluetoothInterface::Observer {
           LOG(INFO) << "Supported LE features updated";
           break;
         }
+        case BT_PROPERTY_ADAPTER_BONDED_DEVICES: {
+          if (property->len < 0) {
+            NOTREACHED() << "Negative property length";
+            break;
+          }
+          auto addrs = reinterpret_cast<const RawAddress*>(property->val);
+          if (property->len % sizeof(addrs[0]) != 0) {
+            LOG(ERROR) << "Invalid property length: " << property->len;
+            // TODO(bcf): Seems to be a bug where we hit this somewhat
+            // frequently.
+            break;
+          }
+          std::vector<std::string> str_addrs;
+
+          for (size_t i = 0; i < property->len / sizeof(addrs[0]); ++i)
+            str_addrs.push_back(BtAddrString(addrs + i));
+
+          lock_guard<mutex> lock(observers_lock_);
+          for (auto& observer : observers_) {
+            observer.OnGetBondedDevices(this, status, str_addrs);
+          }
+          break;
+        }
         default:
           VLOG(1) << "Unhandled adapter property: "
                   << BtPropertyText(property->type);
@@ -300,9 +594,84 @@ class AdapterImpl : public Adapter, public hal::BluetoothInterface::Observer {
     }
   }
 
-  void SSPRequestCallback(RawAddress*, bt_bdname_t*, uint32_t, bt_ssp_variant_t,
+  void RemoteDevicePropertiesCallback(bt_status_t status,
+                                      RawAddress* remote_bdaddr,
+                                      int num_properties,
+                                      bt_property_t* properties) override {
+    std::string device_address = BtAddrString(remote_bdaddr);
+    if (status != BT_STATUS_SUCCESS) {
+      lock_guard<mutex> lock(observers_lock_);
+      for (auto& observer : observers_) {
+        observer.OnGetRemoteDeviceProperties(this, status, device_address,
+                                             RemoteDeviceProps());
+      }
+      return;
+    }
+
+    RemoteDeviceProps props =
+        ParseRemoteDeviceProps(num_properties, properties);
+
+    std::string remote_bdaddr_str = BtAddrString(remote_bdaddr);
+    android::String16 address =
+        String16(remote_bdaddr_str.c_str(), remote_bdaddr_str.size());
+    props.set_address(address);
+
+    lock_guard<mutex> lock(observers_lock_);
+    for (auto& observer : observers_) {
+      observer.OnGetRemoteDeviceProperties(this, status, device_address, props);
+    }
+  }
+
+  void DeviceFoundCallback(int num_properties,
+                           bt_property_t* properties) override {
+    RemoteDeviceProps props =
+        ParseRemoteDeviceProps(num_properties, properties);
+
+    lock_guard<mutex> lock(observers_lock_);
+    for (auto& observer : observers_) {
+      observer.OnDeviceFound(this, props);
+    }
+  }
+
+  void DiscoveryStateChangedCallback(bt_discovery_state_t state) override {
+    bool enabled = false;
+    switch (state) {
+      case BT_DISCOVERY_STOPPED:
+        enabled = false;
+        break;
+      case BT_DISCOVERY_STARTED:
+        enabled = true;
+        break;
+      default:
+        NOTREACHED();
+    }
+
+    for (auto& observer : observers_) {
+      observer.OnScanEnableChanged(this, enabled);
+    }
+  }
+
+  void SSPRequestCallback(RawAddress* remote_bdaddr, bt_bdname_t* bd_name,
+                          uint32_t cod, bt_ssp_variant_t pairing_variant,
                           uint32_t pass_key) override {
-    LOG(INFO) << "Passkey is: " << pass_key;
+    std::string device_address = BtAddrString(remote_bdaddr);
+    std::string name = reinterpret_cast<char*>(bd_name->name);
+
+    lock_guard<mutex> lock(observers_lock_);
+    for (auto& observer : observers_) {
+      observer.OnSspRequest(this, device_address, name, cod, pairing_variant,
+                            pass_key);
+    }
+  }
+
+  void BondStateChangedCallback(bt_status_t status, RawAddress* remote_bdaddr,
+                                bt_bond_state_t state) override {
+    std::string device_address = BtAddrString(remote_bdaddr);
+
+    lock_guard<mutex> lock(observers_lock_);
+    for (auto& observer : observers_) {
+      observer.OnBondStateChanged(this, status, device_address, state);
+    }
   }
 
   void AclStateChangedCallback(bt_status_t status,
@@ -391,6 +760,12 @@ class AdapterImpl : public Adapter, public hal::BluetoothInterface::Observer {
   // List of devices addresses that are currently connected.
   std::mutex connected_devices_lock_;
   std::unordered_set<std::string> connected_devices_;
+
+  // Factory used to create per-app A2dpSink instances.
+  std::unique_ptr<A2dpSinkFactory> a2dp_sink_factory_;
+
+  // Factory used to create per-app AvrcpControl instances.
+  std::unique_ptr<AvrcpControlFactory> avrcp_control_factory_;
 
   // Factory used to create per-app LowEnergyClient instances.
   std::unique_ptr<LowEnergyClientFactory> ble_client_factory_;
