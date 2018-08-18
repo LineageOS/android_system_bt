@@ -20,7 +20,7 @@
 
 #include <cstdint>
 
-#define PROPERTY_VALUE_MAX 92
+// #define PROPERTY_VALUE_MAX 92
 #define BUILD_SANITY_PROPERTY_VALUE_MAX 92
 
 // Get value associated with key |key| into |value|.
