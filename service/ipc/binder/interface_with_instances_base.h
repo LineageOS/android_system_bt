@@ -1,5 +1,5 @@
 //
-//  Copyright 2015 Google, Inc.
+//  Copyright (C) 2015 Google, Inc.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@
 #include <unordered_map>
 
 #include <base/macros.h>
-#include <bluetooth/uuid.h>
 
+#include "bluetooth/uuid.h"
 #include "service/bluetooth_instance.h"
 #include "service/ipc/binder/remote_callback_map.h"
 
@@ -56,6 +56,8 @@ class InterfaceWithInstancesBase
 
   // Unregisters all registered instances.
   void UnregisterAllBase();
+
+  void ForEachCallback(const std::function<void(IInterface*)>& func);
 
   // Returns a handle to the lock used to synchronize access to the internal
   // data structures. Subclasses should acquire this before accessing the maps.

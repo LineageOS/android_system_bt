@@ -98,6 +98,13 @@ void RemoteDevicePropertiesCallback(bt_status_t status,
       status, remote_bd_addr, num_properties, properties));
 }
 
+void DeviceFoundCallback(int num_properties, bt_property_t* properties) {
+  shared_lock<shared_mutex_impl> lock(g_instance_lock);
+  VERIFY_INTERFACE_OR_RETURN();
+  VLOG(1) << " Device found.";
+  FOR_EACH_BLUETOOTH_OBSERVER(DeviceFoundCallback(num_properties, properties));
+}
+
 void DiscoveryStateChangedCallback(bt_discovery_state_t state) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VERIFY_INTERFACE_OR_RETURN();
@@ -190,7 +197,7 @@ bt_callbacks_t bt_callbacks = {
     AdapterStateChangedCallback,
     AdapterPropertiesCallback,
     RemoteDevicePropertiesCallback,
-    nullptr, /* device_found_cb */
+    DeviceFoundCallback,
     DiscoveryStateChangedCallback,
     PinRequestCallback,
     SSPRequestCallback,
@@ -305,6 +312,11 @@ void BluetoothInterface::Observer::AdapterPropertiesCallback(
 
 void BluetoothInterface::Observer::RemoteDevicePropertiesCallback(
     bt_status_t /* status */, RawAddress* /* remote_bd_addr */,
+    int /* num_properties */, bt_property_t* /* properties */) {
+  // Do nothing.
+}
+
+void BluetoothInterface::Observer::DeviceFoundCallback(
     int /* num_properties */, bt_property_t* /* properties */) {
   // Do nothing.
 }
