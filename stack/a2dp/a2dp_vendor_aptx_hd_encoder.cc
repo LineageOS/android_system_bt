@@ -353,7 +353,7 @@ void a2dp_vendor_aptx_hd_feeding_flush(void) {
   aptx_hd_init_framing_params(&a2dp_aptx_hd_encoder_cb.framing_params);
 }
 
-period_ms_t a2dp_vendor_aptx_hd_get_encoder_interval_ms(void) {
+uint64_t a2dp_vendor_aptx_hd_get_encoder_interval_ms(void) {
   return a2dp_aptx_hd_encoder_cb.framing_params.sleep_time_ns / (1000 * 1000);
 }
 
@@ -477,7 +477,7 @@ static size_t aptx_hd_encode_24bit(tAPTX_HD_FRAMING_PARAMS* framing_params,
   return pcm_bytes_encoded;
 }
 
-period_ms_t A2dpCodecConfigAptxHd::encoderIntervalMs() const {
+uint64_t A2dpCodecConfigAptxHd::encoderIntervalMs() const {
   return a2dp_vendor_aptx_hd_get_encoder_interval_ms();
 }
 

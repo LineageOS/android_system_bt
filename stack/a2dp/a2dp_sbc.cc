@@ -1570,7 +1570,7 @@ bool A2dpCodecConfigSbcSink::updateEncoderUserConfig(
   return false;
 }
 
-period_ms_t A2dpCodecConfigSbcSink::encoderIntervalMs() const {
+uint64_t A2dpCodecConfigSbcSink::encoderIntervalMs() const {
   // TODO: This method applies only to Source codecs
   return 0;
 }

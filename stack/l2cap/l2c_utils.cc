@@ -1537,7 +1537,7 @@ bool l2cu_start_post_bond_timer(uint16_t handle) {
   if ((p_lcb->link_state == LST_CONNECTED) ||
       (p_lcb->link_state == LST_CONNECTING) ||
       (p_lcb->link_state == LST_DISCONNECTING)) {
-    period_ms_t timeout_ms = L2CAP_BONDING_TIMEOUT * 1000;
+    uint64_t timeout_ms = L2CAP_BONDING_TIMEOUT * 1000;
 
     if (p_lcb->idle_timeout == 0) {
       btsnd_hcic_disconnect(p_lcb->handle, HCI_ERR_PEER_USER);
@@ -2608,7 +2608,7 @@ bool l2cu_initialize_fixed_ccb(tL2C_LCB* p_lcb, uint16_t fixed_cid,
  ******************************************************************************/
 void l2cu_no_dynamic_ccbs(tL2C_LCB* p_lcb) {
   tBTM_STATUS rc;
-  period_ms_t timeout_ms = p_lcb->idle_timeout * 1000;
+  uint64_t timeout_ms = p_lcb->idle_timeout * 1000;
   bool start_timeout = true;
 
 #if (L2CAP_NUM_FIXED_CHNLS > 0)

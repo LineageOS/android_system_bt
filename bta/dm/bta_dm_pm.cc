@@ -273,7 +273,7 @@ static void bta_dm_pm_stop_timer_by_srvc_id(const RawAddress& peer_addr,
  *
  ******************************************************************************/
 static void bta_dm_pm_start_timer(tBTA_PM_TIMER* p_timer, uint8_t timer_idx,
-                                  period_ms_t timeout_ms, uint8_t srvc_id,
+                                  uint64_t timeout_ms, uint8_t srvc_id,
                                   uint8_t pm_action) {
   std::unique_lock<std::recursive_mutex> schedule_lock(pm_timer_schedule_mutex);
   std::unique_lock<std::recursive_mutex> state_lock(pm_timer_state_mutex);
@@ -501,7 +501,7 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr,
                                tBTA_DM_PM_ACTION pm_request,
                                tBTA_DM_PM_REQ pm_req) {
   tBTA_DM_PM_ACTION pm_action = BTA_DM_PM_NO_ACTION;
-  period_ms_t timeout_ms = 0;
+  uint64_t timeout_ms = 0;
   uint8_t i, j;
   tBTA_DM_PM_ACTION failed_pm = 0;
   tBTA_DM_PEER_DEVICE* p_peer_device = NULL;
@@ -514,7 +514,7 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr,
   tBTA_DM_SRVCS* p_srvcs = NULL;
   bool timer_started = false;
   uint8_t timer_idx, available_timer = BTA_DM_PM_MODE_TIMER_MAX;
-  period_ms_t remaining_ms = 0;
+  uint64_t remaining_ms = 0;
 
   if (!bta_dm_cb.device_list.count) return;
 

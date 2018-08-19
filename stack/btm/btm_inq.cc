@@ -1951,7 +1951,7 @@ void btm_process_cancel_complete(uint8_t status, uint8_t mode) {
  *
  ******************************************************************************/
 tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda, uint8_t origin,
-                                  period_ms_t timeout_ms, tBTM_CMPL_CB* p_cb) {
+                                  uint64_t timeout_ms, tBTM_CMPL_CB* p_cb) {
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
 
   /*** Make sure the device is ready ***/

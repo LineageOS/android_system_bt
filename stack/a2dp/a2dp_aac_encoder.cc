@@ -483,7 +483,7 @@ void a2dp_aac_feeding_flush(void) {
   a2dp_aac_encoder_cb.aac_feeding_state.counter = 0;
 }
 
-period_ms_t a2dp_aac_get_encoder_interval_ms(void) {
+uint64_t a2dp_aac_get_encoder_interval_ms(void) {
   return A2DP_AAC_ENCODER_INTERVAL_MS;
 }
 
@@ -694,7 +694,7 @@ static bool a2dp_aac_read_feeding(uint8_t* read_buffer, uint32_t* bytes_read) {
   return true;
 }
 
-period_ms_t A2dpCodecConfigAacSource::encoderIntervalMs() const {
+uint64_t A2dpCodecConfigAacSource::encoderIntervalMs() const {
   return a2dp_aac_get_encoder_interval_ms();
 }
 

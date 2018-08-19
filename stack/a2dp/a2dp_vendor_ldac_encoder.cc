@@ -533,7 +533,7 @@ void a2dp_vendor_ldac_feeding_flush(void) {
   a2dp_ldac_encoder_cb.ldac_feeding_state.counter = 0;
 }
 
-period_ms_t a2dp_vendor_ldac_get_encoder_interval_ms(void) {
+uint64_t a2dp_vendor_ldac_get_encoder_interval_ms(void) {
   return A2DP_LDAC_ENCODER_INTERVAL_MS;
 }
 
@@ -759,7 +759,7 @@ void a2dp_vendor_ldac_set_transmit_queue_length(size_t transmit_queue_length) {
   a2dp_ldac_encoder_cb.TxQueueLength = transmit_queue_length;
 }
 
-period_ms_t A2dpCodecConfigLdac::encoderIntervalMs() const {
+uint64_t A2dpCodecConfigLdac::encoderIntervalMs() const {
   return a2dp_vendor_ldac_get_encoder_interval_ms();
 }
 

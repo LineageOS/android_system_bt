@@ -1426,7 +1426,7 @@ bool A2dpCodecConfigAacSink::init() {
   return true;
 }
 
-period_ms_t A2dpCodecConfigAacSink::encoderIntervalMs() const {
+uint64_t A2dpCodecConfigAacSink::encoderIntervalMs() const {
   // TODO: This method applies only to Source codecs
   return 0;
 }
