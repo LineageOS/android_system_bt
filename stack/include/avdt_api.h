@@ -71,6 +71,9 @@
 */
 #define AVDT_MARKER_SET 0x80
 
+#define MAX_2MBPS_AVDTP_MTU 663   // 2DH5 MTU=679, -12 for AVDTP, -4 for L2CAP
+#define MAX_3MBPS_AVDTP_MTU 1005  // 3DH5 MTU=1021, -12 for AVDTP, -4 for L2CAP
+
 /* SEP Type.  This indicates the stream endpoint type. */
 #define AVDT_TSEP_SRC 0     /* Source SEP */
 #define AVDT_TSEP_SNK 1     /* Sink SEP */
