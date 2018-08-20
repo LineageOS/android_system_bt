@@ -37,12 +37,6 @@
 // A2DP AAC encoder interval in milliseconds
 #define A2DP_AAC_ENCODER_INTERVAL_MS 20
 
-/*
- * 2DH5 payload size of:
- * 679 bytes - (4 bytes L2CAP Header + 12 bytes AVDTP Header)
- */
-#define MAX_2MBPS_AVDTP_MTU 663
-
 // offset
 #if (BTA_AV_CO_CP_SCMS_T == TRUE)
 #define A2DP_AAC_OFFSET (AVDT_MEDIA_OFFSET + 1)

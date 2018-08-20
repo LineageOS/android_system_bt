@@ -134,7 +134,7 @@ const tBTA_AV_CFG bta_av_cfg = {
     BTA_AV_RC_SUPF_CT,     /* AVRCP controller categories */
     BTA_AV_RC_SUPF_TG,     /* AVRCP target categories */
     672,                   /* AVDTP signaling channel MTU at L2CAP */
-    BTA_AV_MAX_A2DP_MTU,   /* AVDTP audio transport channel MTU at L2CAP */
+    MAX_3MBPS_AVDTP_MTU,   /* AVDTP audio transport channel MTU at L2CAP */
     bta_av_audio_flush_to, /* AVDTP audio transport channel flush
                               timeout */
     6,                     /* AVDTP audio channel max data queue size */
@@ -161,7 +161,7 @@ const tBTA_AV_CFG bta_avk_cfg = {
     BTA_AVK_RC_SUPF_CT,    /* AVRCP controller categories */
     BTA_AVK_RC_SUPF_TG,    /* AVRCP target categories */
     672,                   /* AVDTP signaling channel MTU at L2CAP */
-    BTA_AV_MAX_A2DP_MTU,   /* AVDTP audio transport channel MTU at L2CAP */
+    MAX_3MBPS_AVDTP_MTU,   /* AVDTP audio transport channel MTU at L2CAP */
     bta_av_audio_flush_to, /* AVDTP audio transport channel flush timeout */
     6,                     /* AVDTP audio channel max data queue size */
     false, /* true, to accept AVRC 1.3 group nevigation command */
@@ -186,7 +186,7 @@ const tBTA_AV_CFG bta_av_cfg_compatibility = {
     BTA_AV_RC_SUPF_CT,     /* AVRCP controller categories */
     AVRC_SUPF_TG_CAT1,     /* Only support CAT1 for AVRCP1.3 */
     672,                   /* AVDTP signaling channel MTU at L2CAP */
-    BTA_AV_MAX_A2DP_MTU,   /* AVDTP audio transport channel MTU at L2CAP */
+    MAX_3MBPS_AVDTP_MTU,   /* AVDTP audio transport channel MTU at L2CAP */
     bta_av_audio_flush_to, /* AVDTP audio transport channel flush timeout */
     6,                     /* AVDTP audio channel max data queue size */
     false, /* true, to accept AVRC 1.3 group nevigation command */
