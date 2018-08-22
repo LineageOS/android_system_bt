@@ -28,7 +28,9 @@
 namespace bluetooth {
 
 class A2dpSinkFactory;
+class A2dpSourceFactory;
 class AvrcpControlFactory;
+class AvrcpTargetFactory;
 class GattClientFactory;
 class GattServerFactory;
 class LowEnergyAdvertiserFactory;
@@ -183,10 +185,20 @@ class Adapter {
   // operations.
   virtual A2dpSinkFactory* GetA2dpSinkFactory() const = 0;
 
+  // Returns a pointer to the A2dpSourceFactory. This can be used to
+  // register per-application A2dpSourceClient instances to perform A2DP source
+  // operations.
+  virtual A2dpSourceFactory* GetA2dpSourceFactory() const = 0;
+
   // Returns a pointer to the AvrcpControlFactory. This can be used to register
   // per-application AvrcpControlClient instances to perform AVRCP control
   // operations.
   virtual AvrcpControlFactory* GetAvrcpControlFactory() const = 0;
+
+  // Returns a pointer to the AvrcpTargetFactory. This can be used to register
+  // per-application AvrcpTargetClient instances to perform AVRCP target
+  // operations.
+  virtual AvrcpTargetFactory* GetAvrcpTargetFactory() const = 0;
 
   // Returns a pointer to the LowEnergyClientFactory. This can be used to
   // register per-application LowEnergyClient instances to perform BLE GAP
