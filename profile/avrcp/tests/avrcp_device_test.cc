@@ -527,16 +527,24 @@ TEST_F(AvrcpDeviceTest, getFolderItemsMtuTest) {
       base::Bind([](MockFunction<void(uint8_t, bool, const AvrcpResponse&)>* a,
                     uint8_t b, bool c, AvrcpResponse d) { a->Call(b, c, d); },
                  &response_cb);
-  Device device(RawAddress::kAny, true, cb, 0xFFFF, truncated_packet->size());
+
+  Device device(RawAddress::kAny, true, cb, 0xFFFF,
+                truncated_packet->size() + FolderItem::kHeaderSize() + 5);
   device.RegisterInterfaces(&interface, &a2dp_interface, nullptr);
 
   FolderInfo info0 = {"test_id0", true, "Test Folder0"};
   FolderInfo info1 = {"test_id1", true, "Test Folder1"};
-  FolderInfo info2 = {"test_id1", true, "Truncated folder"};
+  FolderInfo info2 = {"test_id2", true, "Truncated folder"};
+  // Used to ensure that adding an item that would fit in the MTU fails if
+  // adding a large item failed.
+  FolderInfo small_info = {"test_id2", true, "Small"};
+
   ListItem item0 = {ListItem::FOLDER, info0, SongInfo()};
   ListItem item1 = {ListItem::FOLDER, info1, SongInfo()};
-  ListItem item2 = {ListItem::FOLDER, info1, SongInfo()};
-  std::vector<ListItem> list0 = {item0, item1, item2};
+  ListItem item2 = {ListItem::FOLDER, info2, SongInfo()};
+  ListItem item3 = {ListItem::FOLDER, small_info, SongInfo()};
+
+  std::vector<ListItem> list0 = {item0, item1, item2, item3};
   EXPECT_CALL(interface, GetFolderItems(_, "", _))
       .WillRepeatedly(InvokeCb<2>(list0));
 

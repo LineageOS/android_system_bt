@@ -1036,7 +1036,7 @@ void Device::GetVFSListResponse(uint8_t label,
       // right now we always use folders of mixed type
       FolderItem folder_item(vfs_ids_.get_uid(folder.media_id), 0x00,
                              folder.is_playable, folder.name);
-      builder->AddFolder(folder_item);
+      if (!builder->AddFolder(folder_item)) break;
     } else if (items[i].type == ListItem::SONG) {
       auto song = items[i].song;
       auto title =
@@ -1053,7 +1053,9 @@ void Device::GetVFSListResponse(uint8_t label,
             filter_attributes_requested(song, pkt->GetAttributesRequested());
       }
 
-      builder->AddSong(song_item);
+      // If we fail to add a song, don't accidentally add one later that might
+      // fit.
+      if (!builder->AddSong(song_item)) break;
     }
   }
 
@@ -1086,7 +1088,10 @@ void Device::GetNowPlayingListResponse(
       item.attributes_ =
           filter_attributes_requested(song, pkt->GetAttributesRequested());
     }
-    builder->AddSong(item);
+
+    // If we fail to add a song, don't accidentally add one later that might
+    // fit.
+    if (!builder->AddSong(item)) break;
   }
 
   send_message(label, true, std::move(builder));
