@@ -38,6 +38,9 @@ cc_test {
         "libgmock",
         "lib-bt-packets",
         "libosi",
+        "liblog",
+        "libcutils",
+        "libbtdevice",
         "avrcp-target-service",
     ],
     sanitize: {

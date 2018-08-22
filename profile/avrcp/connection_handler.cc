@@ -28,7 +28,9 @@
 // TODO (apanicke): Remove dependency on this header once we cleanup feature
 // handling.
 #include "bta/include/bta_av_api.h"
+#include "device/include/interop.h"
 #include "osi/include/allocator.h"
+#include "osi/include/properties.h"
 
 namespace bluetooth {
 namespace avrcp {
@@ -39,6 +41,20 @@ ConnectionHandler* ConnectionHandler::Get() {
   CHECK(instance_);
 
   return instance_;
+}
+
+bool IsAbsoluteVolumeEnabled(const RawAddress* bdaddr) {
+  char volume_disabled[PROPERTY_VALUE_MAX] = {0};
+  osi_property_get("persist.bluetooth.disableabsvol", volume_disabled, "false");
+  if (strncmp(volume_disabled, "true", 4) == 0) {
+    LOG(INFO) << "Absolute volume disabled by property";
+    return false;
+  }
+  if (interop_match_addr(INTEROP_DISABLE_ABSOLUTE_VOLUME, bdaddr)) {
+    LOG(INFO) << "Absolute volume disabled by IOP table";
+    return false;
+  }
+  return true;
 }
 
 bool ConnectionHandler::Initialize(const ConnectionCallback& callback,
@@ -429,7 +445,9 @@ void ConnectionHandler::SdpCb(const RawAddress& bdaddr, SdpCallback cb,
           if (categories & AVRC_SUPF_CT_CAT2) {
             LOG(INFO) << __PRETTY_FUNCTION__ << ": Device " << bdaddr.ToString()
                       << " supports advanced control";
-            peer_features |= (BTA_AV_FEAT_ADV_CTRL);
+            if (IsAbsoluteVolumeEnabled(&bdaddr)) {
+              peer_features |= (BTA_AV_FEAT_ADV_CTRL);
+            }
           }
           if (categories & AVRC_SUPF_CT_BROWSE) {
             LOG(INFO) << __PRETTY_FUNCTION__ << ": Device " << bdaddr.ToString()
@@ -468,7 +486,9 @@ void ConnectionHandler::SdpCb(const RawAddress& bdaddr, SdpCallback cb,
           if (categories & AVRC_SUPF_CT_CAT2) {
             LOG(INFO) << __PRETTY_FUNCTION__ << ": Device " << bdaddr.ToString()
                       << " supports advanced control";
-            peer_features |= (BTA_AV_FEAT_ADV_CTRL);
+            if (IsAbsoluteVolumeEnabled(&bdaddr)) {
+              peer_features |= (BTA_AV_FEAT_ADV_CTRL);
+            }
           }
         }
       }

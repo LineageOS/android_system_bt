@@ -276,6 +276,9 @@ cc_test {
         "libosi",
         "libbt-protos-lite",
     ],
+    sanitize: {
+        cfi: false,
+    },
 }
 
 // Bluetooth stack smp unit tests for target
