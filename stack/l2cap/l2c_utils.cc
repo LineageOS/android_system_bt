@@ -2617,6 +2617,12 @@ void l2cu_no_dynamic_ccbs(tL2C_LCB* p_lcb) {
   for (xx = 0; xx < L2CAP_NUM_FIXED_CHNLS; xx++) {
     if ((p_lcb->p_fixed_ccbs[xx] != NULL) &&
         (p_lcb->p_fixed_ccbs[xx]->fixed_chnl_idle_tout * 1000 > timeout_ms)) {
+
+      if (p_lcb->p_fixed_ccbs[xx]->fixed_chnl_idle_tout == L2CAP_NO_IDLE_TIMEOUT) {
+         L2CAP_TRACE_DEBUG("%s NO IDLE timeout set for fixed cid 0x%04x", __func__,
+            p_lcb->p_fixed_ccbs[xx]->local_cid);
+         start_timeout = false;
+      }
       timeout_ms = p_lcb->p_fixed_ccbs[xx]->fixed_chnl_idle_tout * 1000;
     }
   }
