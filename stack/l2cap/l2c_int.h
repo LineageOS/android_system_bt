@@ -54,6 +54,8 @@ constexpr uint16_t L2CAP_LE_CREDIT_THRESHOLD = 0x0040;
 static_assert(L2CAP_LE_CREDIT_THRESHOLD < L2CAP_LE_CREDIT_DEFAULT,
               "Threshold must be smaller then default credits");
 
+#define L2CAP_NO_IDLE_TIMEOUT 0xFFFF
+
 /*
  * Timeout values (in milliseconds).
  */
