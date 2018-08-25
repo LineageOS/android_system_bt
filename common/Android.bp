@@ -8,7 +8,6 @@ cc_library_static {
     ],
     srcs: [
         "message_loop_thread.cc",
-        "execution_barrier.cc",
         "metrics.cc",
         "time_util.cc",
     ],
@@ -27,7 +26,6 @@ cc_test {
         "system/bt/stack/include",
     ],
     srcs : [
-        "execution_barrier_unittest.cc",
         "leaky_bonded_queue_unittest.cc",
         "message_loop_thread_unittest.cc",
         "metrics_unittest.cc",
