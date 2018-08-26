@@ -114,6 +114,13 @@ class HearingAidImpl;
 HearingAidImpl* instance;
 HearingAidAudioReceiver* audioReceiver;
 
+/** Possible states for the Connection Update status */
+typedef enum {
+  NONE,      // Connection Update not pending or has completed
+  AWAITING,  // Waiting for start the Connection Update operation
+  STARTED    // Connection Update has started
+} connection_update_status_t;
+
 struct HearingDevice {
   RawAddress address;
   /* This is true only during first connection to profile, until we store the
@@ -126,11 +133,11 @@ struct HearingDevice {
 
   /* For two hearing aids, you must update their parameters one after another,
    * not simulteanously, to ensure start of connection events for both devices
-   * are far from each other. This flag means that this device is waiting for
-   * update of parameters, that should happen after "LE Connection Update
+   * are far from each other. This status tracks whether this device is waiting
+   * for update of parameters, that should happen after "LE Connection Update
    * Complete" event
    */
-  bool connection_update_pending;
+  connection_update_status_t connection_update_status;
 
   /* if true, we are connected, L2CAP socket is open, we can stream audio*/
   bool accepting_audio;
@@ -156,7 +163,7 @@ struct HearingDevice {
       : address(address),
         first_connection(false),
         connecting_actively(false),
-        connection_update_pending(false),
+        connection_update_status(NONE),
         accepting_audio(false),
         conn_id(0),
         gap_handle(0),
@@ -173,7 +180,7 @@ struct HearingDevice {
       : address(address),
         first_connection(first_connection),
         connecting_actively(first_connection),
-        connection_update_pending(false),
+        connection_update_status(NONE),
         accepting_audio(false),
         conn_id(0),
         gap_handle(0),
@@ -233,9 +240,9 @@ class HearingDevices {
     return (iter == devices.end()) ? nullptr : &(*iter);
   }
 
-  bool IsAnyConnectionUpdatePending() {
+  bool IsAnyConnectionUpdateStarted() {
     for (const auto& d : devices) {
-      if (d.connection_update_pending) return true;
+      if (d.connection_update_status == STARTED) return true;
     }
 
     return false;
@@ -377,12 +384,14 @@ class HearingAidImpl : public HearingAid {
      * to move anchor point of both connections away from each other, to make
      * sure we'll be able to fit all the data we want in one connection event.
      */
-    bool any_update_pending = hearingDevices.IsAnyConnectionUpdatePending();
+    bool any_update_pending = hearingDevices.IsAnyConnectionUpdateStarted();
     // mark the device as pending connection update. If we don't start the
     // update now, it'll be started once current device finishes.
-    hearingDevice->connection_update_pending = true;
     if (!any_update_pending) {
+      hearingDevice->connection_update_status = STARTED;
       UpdateBleConnParams(address);
+    } else {
+      hearingDevice->connection_update_status = AWAITING;
     }
 
     // Set data length
@@ -428,10 +437,16 @@ class HearingAidImpl : public HearingAid {
       return;
     }
 
-    hearingDevice->connection_update_pending = false;
+    if (hearingDevice->connection_update_status != STARTED) {
+      LOG(INFO) << __func__
+                << ": Inconsistent state. Expecting state=STARTED but current="
+                << hearingDevice->connection_update_status;
+    }
+    hearingDevice->connection_update_status = NONE;
 
     for (auto& device : hearingDevices.devices) {
-      if (device.conn_id && device.connection_update_pending) {
+      if (device.conn_id && (device.connection_update_status == AWAITING)) {
+        device.connection_update_status = STARTED;
         UpdateBleConnParams(device.address);
         return;
       }
@@ -1113,6 +1128,16 @@ class HearingAidImpl : public HearingAid {
     if (!hearingDevice) {
       VLOG(2) << "Skipping unknown device disconnect, conn_id=" << conn_id;
       return;
+    }
+
+    if (hearingDevice->connection_update_status != NONE) {
+      LOG(INFO) << __func__ << ": connection update not completed. Current="
+                << hearingDevice->connection_update_status;
+
+      if (hearingDevice->connection_update_status == STARTED) {
+        OnConnectionUpdateComplete(conn_id);
+      }
+      hearingDevice->connection_update_status = NONE;
     }
 
     hearingDevice->accepting_audio = false;
