@@ -213,6 +213,10 @@ static void wakelock_initialize_native(void) {
 }
 
 void wakelock_cleanup(void) {
+  if (wakelock_stats.is_acquired) {
+    LOG_ERROR(LOG_TAG, "%s releasing wake lock as part of cleanup", __func__);
+    wakelock_release();
+  }
   wake_lock_path.clear();
   wake_unlock_path.clear();
   initialized = PTHREAD_ONCE_INIT;
