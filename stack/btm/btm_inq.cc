@@ -30,9 +30,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "common/time_util.h"
 #include "device/include/controller.h"
 #include "osi/include/osi.h"
-#include "osi/include/time.h"
 
 #include "advertise_data_parser.h"
 #include "bt_common.h"
@@ -1324,7 +1324,7 @@ tINQ_DB_ENT* btm_inq_db_new(const RawAddress& p_bda) {
   uint16_t xx;
   tINQ_DB_ENT* p_ent = btm_cb.btm_inq_vars.inq_db;
   tINQ_DB_ENT* p_old = btm_cb.btm_inq_vars.inq_db;
-  uint32_t ot = 0xFFFFFFFF;
+  uint64_t ot = UINT64_MAX;
 
   for (xx = 0; xx < BTM_INQ_DB_SIZE; xx++, p_ent++) {
     if (!p_ent->in_use) {
@@ -1738,7 +1738,7 @@ void btm_process_inq_results(uint8_t* p, uint8_t inq_res_mode) {
       p_cur->dev_class[2] = dc[2];
       p_cur->clock_offset = clock_offset | BTM_CLOCK_OFFSET_VALID;
 
-      p_i->time_of_resp = time_get_os_boottime_ms();
+      p_i->time_of_resp = bluetooth::common::time_get_os_boottime_ms();
 
       if (p_i->inq_count != p_inq->inq_counter)
         p_inq->inq_cmpl_info.num_resp++; /* A new response was found */

@@ -15,7 +15,6 @@
  *  limitations under the License.
  *
  ******************************************************************************/
-#define LOG_TAG "bt_osi_metrics"
 
 #include <unistd.h>
 #include <algorithm>
@@ -32,15 +31,16 @@
 #include <include/hardware/bt_av.h>
 
 #include "bluetooth/metrics/bluetooth.pb.h"
-#include "osi/include/leaky_bonded_queue.h"
-#include "osi/include/log.h"
 #include "osi/include/osi.h"
-#include "osi/include/time.h"
 #include "stack/include/btm_api_types.h"
 
-#include "osi/include/metrics.h"
+#include "leaky_bonded_queue.h"
+#include "metrics.h"
+#include "time_util.h"
 
-namespace system_bt_osi {
+namespace bluetooth {
+
+namespace common {
 
 using bluetooth::metrics::BluetoothMetricsProto::A2DPSession;
 using bluetooth::metrics::BluetoothMetricsProto::A2dpSourceCodec;
@@ -52,24 +52,18 @@ using bluetooth::metrics::BluetoothMetricsProto::
     BluetoothSession_DisconnectReasonType;
 using bluetooth::metrics::BluetoothMetricsProto::DeviceInfo;
 using bluetooth::metrics::BluetoothMetricsProto::DeviceInfo_DeviceType;
-using bluetooth::metrics::BluetoothMetricsProto::PairEvent;
-using bluetooth::metrics::BluetoothMetricsProto::ScanEvent;
-using bluetooth::metrics::BluetoothMetricsProto::ScanEvent_ScanTechnologyType;
-using bluetooth::metrics::BluetoothMetricsProto::ScanEvent_ScanEventType;
-using bluetooth::metrics::BluetoothMetricsProto::WakeEvent;
-using bluetooth::metrics::BluetoothMetricsProto::WakeEvent_WakeEventType;
+using bluetooth::metrics::BluetoothMetricsProto::HeadsetProfileConnectionStats;
 using bluetooth::metrics::BluetoothMetricsProto::HeadsetProfileType;
-using bluetooth::metrics::BluetoothMetricsProto::HeadsetProfileType_MIN;
-using bluetooth::metrics::BluetoothMetricsProto::HeadsetProfileType_MAX;
 using bluetooth::metrics::BluetoothMetricsProto::HeadsetProfileType_ARRAYSIZE;
 using bluetooth::metrics::BluetoothMetricsProto::HeadsetProfileType_IsValid;
-using bluetooth::metrics::BluetoothMetricsProto::HeadsetProfileConnectionStats;
-/*
- * Get current OS boot time in millisecond
- */
-static int64_t time_get_os_boottime_ms(void) {
-  return time_get_os_boottime_us() / 1000;
-}
+using bluetooth::metrics::BluetoothMetricsProto::HeadsetProfileType_MAX;
+using bluetooth::metrics::BluetoothMetricsProto::HeadsetProfileType_MIN;
+using bluetooth::metrics::BluetoothMetricsProto::PairEvent;
+using bluetooth::metrics::BluetoothMetricsProto::ScanEvent;
+using bluetooth::metrics::BluetoothMetricsProto::ScanEvent_ScanEventType;
+using bluetooth::metrics::BluetoothMetricsProto::ScanEvent_ScanTechnologyType;
+using bluetooth::metrics::BluetoothMetricsProto::WakeEvent;
+using bluetooth::metrics::BluetoothMetricsProto::WakeEvent_WakeEventType;
 
 static float combine_averages(float avg_a, int64_t ct_a, float avg_b,
                               int64_t ct_b) {
@@ -359,7 +353,7 @@ void BluetoothMetricsLogger::LogBluetoothSessionStart(
                            0);
   }
   if (timestamp_ms == 0) {
-    timestamp_ms = time_get_os_boottime_ms();
+    timestamp_ms = bluetooth::common::time_get_os_boottime_ms();
   }
   pimpl_->bluetooth_session_start_time_ms_ = timestamp_ms;
   pimpl_->bluetooth_session_ = new BluetoothSession();
@@ -374,7 +368,7 @@ void BluetoothMetricsLogger::LogBluetoothSessionEnd(
     return;
   }
   if (timestamp_ms == 0) {
-    timestamp_ms = time_get_os_boottime_ms();
+    timestamp_ms = bluetooth::common::time_get_os_boottime_ms();
   }
   int64_t session_duration_sec =
       (timestamp_ms - pimpl_->bluetooth_session_start_time_ms_) / 1000;
@@ -458,11 +452,11 @@ void BluetoothMetricsLogger::LogHeadsetProfileRfcConnection(
 
 void BluetoothMetricsLogger::WriteString(std::string* serialized) {
   std::lock_guard<std::recursive_mutex> lock(pimpl_->bluetooth_log_lock_);
-  LOG_DEBUG(LOG_TAG, "%s building metrics", __func__);
+  LOG(INFO) << __func__ << ": building metrics";
   Build();
-  LOG_DEBUG(LOG_TAG, "%s serializing metrics", __func__);
+  LOG(INFO) << __func__ << ": serializing metrics";
   if (!pimpl_->bluetooth_log_->SerializeToString(serialized)) {
-    LOG_ERROR(LOG_TAG, "%s: error serializing metrics", __func__);
+    LOG(ERROR) << __func__ << ": error serializing metrics";
   }
   // Always clean up log objects
   pimpl_->bluetooth_log_->Clear();
@@ -479,8 +473,9 @@ void BluetoothMetricsLogger::WriteBase64(int fd) {
   ssize_t ret;
   OSI_NO_INTR(ret = write(fd, protoBase64.c_str(), protoBase64.size()));
   if (ret == -1) {
-    LOG_ERROR(LOG_TAG, "%s: error writing to dumpsys fd: %s (%d)", __func__,
-              strerror(errno), errno);
+    LOG(ERROR) << __func__
+               << ": error writing to dumpsys fd: " << strerror(errno) << " ("
+               << std::to_string(errno) << ")";
   }
 }
 
@@ -493,7 +488,8 @@ void BluetoothMetricsLogger::CutoffSession() {
     new_bt_session->clear_rfcomm_session();
     LogBluetoothSessionEnd(DISCONNECT_REASON_METRICS_DUMP, 0);
     pimpl_->bluetooth_session_ = new_bt_session;
-    pimpl_->bluetooth_session_start_time_ms_ = time_get_os_boottime_ms();
+    pimpl_->bluetooth_session_start_time_ms_ =
+        bluetooth::common::time_get_os_boottime_ms();
     pimpl_->a2dp_session_metrics_ = A2dpSessionMetrics();
   }
 }
@@ -571,4 +567,6 @@ void BluetoothMetricsLogger::Reset() {
   pimpl_->scan_event_queue_->Clear();
 }
 
-}  // namespace system_bt_osi
+}  // namespace common
+
+}  // namespace bluetooth

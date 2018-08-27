@@ -20,7 +20,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "osi/include/time.h"
 
 typedef struct alarm_t alarm_t;
 typedef struct fixed_queue_t fixed_queue_t;

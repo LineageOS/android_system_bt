@@ -24,6 +24,8 @@
 #include <base/files/file_util.h>
 #include <include/hardware/bt_av.h>
 
+#include "common/time_util.h"
+
 using base::FilePath;
 extern const char* audio_ha_hw_dump_ctrl_event(tHEARING_AID_CTRL_CMD event);
 
@@ -67,7 +69,8 @@ void send_audio_data(void*) {
   if (bytes_read < bytes_per_tick) {
     stats.media_read_total_underflow_bytes += bytes_per_tick - bytes_read;
     stats.media_read_total_underflow_count++;
-    stats.media_read_last_underflow_us = time_get_os_boottime_us();
+    stats.media_read_last_underflow_us =
+        bluetooth::common::time_get_os_boottime_us();
   }
 
   std::vector<uint8_t> data(p_buf, p_buf + bytes_read);
@@ -296,7 +299,7 @@ void HearingAidAudioSource::CleanUp() {
 }
 
 void HearingAidAudioSource::DebugDump(int fd) {
-  uint64_t now_us = time_get_os_boottime_us();
+  uint64_t now_us = bluetooth::common::time_get_os_boottime_us();
   std::stringstream stream;
   stream << "  Hearing Aid Audio HAL:"
          << "\n    Counts (underflow)                                      : "

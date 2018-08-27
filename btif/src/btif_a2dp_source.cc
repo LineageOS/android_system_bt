@@ -40,15 +40,15 @@
 #include "btif_av_co.h"
 #include "btif_util.h"
 #include "common/message_loop_thread.h"
+#include "common/metrics.h"
+#include "common/time_util.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/log.h"
-#include "osi/include/metrics.h"
 #include "osi/include/osi.h"
-#include "osi/include/time.h"
 #include "uipc.h"
 
-using system_bt_osi::BluetoothMetricsLogger;
-using system_bt_osi::A2dpSessionMetrics;
+using bluetooth::common::A2dpSessionMetrics;
+using bluetooth::common::BluetoothMetricsLogger;
 
 extern std::unique_ptr<tUIPC_STATE> a2dp_uipc;
 
@@ -382,7 +382,7 @@ static void btif_a2dp_source_start_session_delayed(
     btif_a2dp_audio_interface_start_session();
   } else {
     BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionStart(
-        system_bt_osi::CONNECTION_TECHNOLOGY_TYPE_BREDR, 0);
+        bluetooth::common::CONNECTION_TECHNOLOGY_TYPE_BREDR, 0);
   }
 }
 
@@ -437,7 +437,7 @@ static void btif_a2dp_source_end_session_delayed(
            btif_a2dp_source_cb.StateStr().c_str());
   if (!btif_av_is_a2dp_offload_enabled()) {
     BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionEnd(
-        system_bt_osi::DISCONNECT_REASON_UNKNOWN, 0);
+        bluetooth::common::DISCONNECT_REASON_UNKNOWN, 0);
   }
   if (btif_a2dp_source_cb.State() == BtifA2dpSource::kStateRunning) {
     btif_av_stream_stop(peer_address);
@@ -722,9 +722,11 @@ static void btif_a2dp_source_audio_tx_start_event(void) {
             btif_a2dp_source_alarm_cb, nullptr);
 
   btif_a2dp_source_cb.stats.Reset();
-  // Assign session_start_us to 1 when time_get_os_boottime_us() is 0 to
-  // indicate btif_a2dp_source_start_audio_req() has been called
-  btif_a2dp_source_cb.stats.session_start_us = time_get_os_boottime_us();
+  // Assign session_start_us to 1 when
+  // bluetooth::common::time_get_os_boottime_us() is 0 to indicate
+  // btif_a2dp_source_start_audio_req() has been called
+  btif_a2dp_source_cb.stats.session_start_us =
+      bluetooth::common::time_get_os_boottime_us();
   if (btif_a2dp_source_cb.stats.session_start_us == 0) {
     btif_a2dp_source_cb.stats.session_start_us = 1;
   }
@@ -744,7 +746,8 @@ static void btif_a2dp_source_audio_tx_stop_event(void) {
 
   if (btif_av_is_a2dp_offload_enabled()) return;
 
-  btif_a2dp_source_cb.stats.session_end_us = time_get_os_boottime_us();
+  btif_a2dp_source_cb.stats.session_end_us =
+      bluetooth::common::time_get_os_boottime_us();
   btif_a2dp_source_update_metrics();
   btif_a2dp_source_accumulate_stats(&btif_a2dp_source_cb.stats,
                                     &btif_a2dp_source_cb.accumulated_stats);
@@ -793,7 +796,7 @@ static void btif_a2dp_source_alarm_cb(UNUSED_ATTR void* context) {
 static void btif_a2dp_source_audio_handle_timer(void) {
   if (btif_av_is_a2dp_offload_enabled()) return;
 
-  uint64_t timestamp_us = time_get_os_boottime_us();
+  uint64_t timestamp_us = bluetooth::common::time_get_os_boottime_us();
   log_tstamps_us("A2DP Source tx timer", timestamp_us);
 
   if (!alarm_is_scheduled(btif_a2dp_source_cb.media_alarm)) {
@@ -831,7 +834,7 @@ static uint32_t btif_a2dp_source_read_callback(uint8_t* p_buf, uint32_t len) {
         (len - bytes_read);
     btif_a2dp_source_cb.stats.media_read_total_underflow_count++;
     btif_a2dp_source_cb.stats.media_read_last_underflow_us =
-        time_get_os_boottime_us();
+        bluetooth::common::time_get_os_boottime_us();
   }
 
   return bytes_read;
@@ -839,7 +842,7 @@ static uint32_t btif_a2dp_source_read_callback(uint8_t* p_buf, uint32_t len) {
 
 static bool btif_a2dp_source_enqueue_callback(BT_HDR* p_buf, size_t frames_n,
                                               uint32_t bytes_read) {
-  uint64_t now_us = time_get_os_boottime_us();
+  uint64_t now_us = bluetooth::common::time_get_os_boottime_us();
   btif_a2dp_control_log_bytes_read(bytes_read);
 
   /* Check if timer was stopped (media task stopped) */
@@ -931,7 +934,7 @@ static void btif_a2dp_source_audio_tx_flush_event(void) {
   btif_a2dp_source_cb.stats.tx_queue_total_flushed_messages +=
       fixed_queue_length(btif_a2dp_source_cb.tx_audio_queue);
   btif_a2dp_source_cb.stats.tx_queue_last_flushed_us =
-      time_get_os_boottime_us();
+      bluetooth::common::time_get_os_boottime_us();
   fixed_queue_flush(btif_a2dp_source_cb.tx_audio_queue, osi_free);
 
   UIPC_Ioctl(*a2dp_uipc, UIPC_CH_ID_AV_AUDIO, UIPC_REQ_RX_FLUSH, nullptr);
@@ -947,7 +950,7 @@ static bool btif_a2dp_source_audio_tx_flush_req(void) {
 }
 
 BT_HDR* btif_a2dp_source_audio_readbuf(void) {
-  uint64_t now_us = time_get_os_boottime_us();
+  uint64_t now_us = bluetooth::common::time_get_os_boottime_us();
   BT_HDR* p_buf =
       (BT_HDR*)fixed_queue_try_dequeue(btif_a2dp_source_cb.tx_audio_queue);
 
@@ -1014,7 +1017,7 @@ static void update_scheduling_stats(SchedulingStats* stats, uint64_t now_us,
 void btif_a2dp_source_debug_dump(int fd) {
   btif_a2dp_source_accumulate_stats(&btif_a2dp_source_cb.stats,
                                     &btif_a2dp_source_cb.accumulated_stats);
-  uint64_t now_us = time_get_os_boottime_us();
+  uint64_t now_us = bluetooth::common::time_get_os_boottime_us();
   BtifMediaStats* accumulated_stats = &btif_a2dp_source_cb.accumulated_stats;
   SchedulingStats* enqueue_stats = &accumulated_stats->tx_queue_enqueue_stats;
   SchedulingStats* dequeue_stats = &accumulated_stats->tx_queue_dequeue_stats;
@@ -1186,7 +1189,7 @@ static void btif_a2dp_source_update_metrics(void) {
   // mark the metric duration as invalid (-1) in this case
   if (stats.session_start_us != 0) {
     int64_t session_end_us = stats.session_end_us == 0
-                                 ? time_get_os_boottime_us()
+                                 ? bluetooth::common::time_get_os_boottime_us()
                                  : stats.session_end_us;
     if (static_cast<uint64_t>(session_end_us) > stats.session_start_us) {
       metrics.audio_duration_ms =
