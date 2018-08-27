@@ -21,7 +21,7 @@
 #include <time.h>
 
 #include "btif/include/btif_debug_conn.h"
-#include "osi/include/time.h"
+#include "common/time_util.h"
 
 #define NUM_CONNECTION_EVENTS 16
 #define TEMP_BUFFER_SIZE 30
@@ -69,7 +69,7 @@ void btif_debug_conn_state(const RawAddress& bda,
   next_event();
 
   conn_event_t* evt = &connection_events[current_event];
-  evt->ts = time_gettimeofday_us();
+  evt->ts = bluetooth::common::time_gettimeofday_us();
   evt->state = state;
   evt->disconnect_reason = disconnect_reason;
   evt->bda = bda;

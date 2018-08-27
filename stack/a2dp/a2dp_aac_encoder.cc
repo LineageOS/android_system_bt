@@ -27,6 +27,7 @@
 
 #include "a2dp_aac.h"
 #include "bt_common.h"
+#include "common/time_util.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 
@@ -125,7 +126,8 @@ void a2dp_aac_encoder_init(const tA2DP_ENCODER_INIT_PEER_PARAMS* p_peer_params,
     aacEncClose(&a2dp_aac_encoder_cb.aac_handle);
   memset(&a2dp_aac_encoder_cb, 0, sizeof(a2dp_aac_encoder_cb));
 
-  a2dp_aac_encoder_cb.stats.session_start_us = time_get_os_boottime_us();
+  a2dp_aac_encoder_cb.stats.session_start_us =
+      bluetooth::common::time_get_os_boottime_us();
 
   a2dp_aac_encoder_cb.read_callback = read_callback;
   a2dp_aac_encoder_cb.enqueue_callback = enqueue_callback;

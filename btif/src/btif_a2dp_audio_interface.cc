@@ -40,12 +40,13 @@
 #include "btif_av.h"
 #include "btif_av_co.h"
 #include "btif_hf.h"
-#include "osi/include/metrics.h"
+#include "common/metrics.h"
+#include "common/time_util.h"
 #include "osi/include/osi.h"
 #include "stack/include/btu.h"
 
-using system_bt_osi::A2dpSessionMetrics;
-using system_bt_osi::BluetoothMetricsLogger;
+using bluetooth::common::A2dpSessionMetrics;
+using bluetooth::common::BluetoothMetricsLogger;
 
 using android::hardware::bluetooth::a2dp::V1_0::IBluetoothAudioOffload;
 using android::hardware::bluetooth::a2dp::V1_0::IBluetoothAudioHost;
@@ -108,11 +109,11 @@ class A2dpOffloadAudioStats {
   }
   void LogAudioStart() {
     std::lock_guard<std::recursive_mutex> lock(lock_);
-    audio_start_time_ms_ = time_get_os_boottime_ms();
+    audio_start_time_ms_ = bluetooth::common::time_get_os_boottime_ms();
   }
   void LogAudioStop() {
     std::lock_guard<std::recursive_mutex> lock(lock_);
-    audio_stop_time_ms_ = time_get_os_boottime_ms();
+    audio_stop_time_ms_ = bluetooth::common::time_get_os_boottime_ms();
   }
   void LogAudioStopMetricsAndReset() {
     std::lock_guard<std::recursive_mutex> lock(lock_);
@@ -300,7 +301,7 @@ static void btif_a2dp_audio_interface_deinit() {
 void btif_a2dp_audio_interface_start_session() {
   LOG_INFO(LOG_TAG, "%s", __func__);
   BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionStart(
-      system_bt_osi::CONNECTION_TECHNOLOGY_TYPE_BREDR, 0);
+      bluetooth::common::CONNECTION_TECHNOLOGY_TYPE_BREDR, 0);
   a2dp_offload_audio_stats.Reset();
   btif_a2dp_audio_interface_init();
   CHECK(btAudio != nullptr);
@@ -314,7 +315,7 @@ void btif_a2dp_audio_interface_end_session() {
   LOG_INFO(LOG_TAG, "%s", __func__);
   a2dp_offload_audio_stats.LogAudioStopMetricsAndReset();
   BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionEnd(
-      system_bt_osi::DISCONNECT_REASON_UNKNOWN, 0);
+      bluetooth::common::DISCONNECT_REASON_UNKNOWN, 0);
   a2dp_offload_audio_stats.Reset();
   if (btAudio == nullptr) return;
   auto ret = btAudio->endSession();
