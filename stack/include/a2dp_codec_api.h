@@ -34,7 +34,6 @@
 #include "a2dp_api.h"
 #include "audio_a2dp_hw/include/audio_a2dp_hw.h"
 #include "avdt_api.h"
-#include "osi/include/time.h"
 
 class tBT_A2DP_OFFLOAD;
 

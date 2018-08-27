@@ -22,7 +22,6 @@
 #define A2DP_VENDOR_APTX_HD_ENCODER_H
 
 #include "a2dp_codec_api.h"
-#include "osi/include/time.h"
 
 // Loads the A2DP aptX-HD encoder.
 // Return true on success, otherwise false.

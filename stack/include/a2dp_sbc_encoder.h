@@ -25,7 +25,6 @@
 #define A2DP_SBC_ENCODER_H
 
 #include "a2dp_codec_api.h"
-#include "osi/include/time.h"
 
 // Loads the A2DP SBC encoder.
 // Return true on success, otherwise false.

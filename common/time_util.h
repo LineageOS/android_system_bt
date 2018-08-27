@@ -18,23 +18,21 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
+
+namespace bluetooth {
+
+namespace common {
 
 // Get the OS boot time in milliseconds.
-//
-// NOTE: The return value will rollover every 49.7 days,
-// hence it cannot be used for absolute time comparison.
-// Relative time comparison using 32-bits integers such
-// as (t2_u32 - t1_u32 < delta_u32) should work as expected as long
-// as there is no multiple rollover between t2_u32 and t1_u32.
-//
-// TODO: This function's return type should be modified to |uint64_t|.
-// Be careful: some of the code that is using it assumes the return type
-// is uint32_t.
-uint32_t time_get_os_boottime_ms(void);
+uint64_t time_get_os_boottime_ms();
 
 // Get the OS boot time in microseconds.
-uint64_t time_get_os_boottime_us(void);
+uint64_t time_get_os_boottime_us();
 
 // Get the current wall clock time in microseconds.
-uint64_t time_gettimeofday_us(void);
+uint64_t time_gettimeofday_us();
+
+}  // namespace common
+
+}  // namespace bluetooth

@@ -30,6 +30,7 @@
 #include "bt_target.h"
 #include "btm_int.h"
 #include "btu.h"
+#include "common/time_util.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
 #include "l2c_int.h"
@@ -816,7 +817,8 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
           }
 
 #if (L2CAP_ERTM_STATS == TRUE)
-          p_ccb->fcrb.connect_tick_count = time_get_os_boottime_ms();
+          p_ccb->fcrb.connect_tick_count =
+              bluetooth::common::time_get_os_boottime_ms();
 #endif
           /* See if we can forward anything on the hold queue */
           if (!fixed_queue_is_empty(p_ccb->xmit_hold_q)) {
@@ -904,7 +906,8 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
       if (p_ccb->fcrb.wait_ack) l2c_fcr_start_timer(p_ccb);
 
 #if (L2CAP_ERTM_STATS == TRUE)
-      p_ccb->fcrb.connect_tick_count = time_get_os_boottime_ms();
+      p_ccb->fcrb.connect_tick_count =
+          bluetooth::common::time_get_os_boottime_ms();
 #endif
 
       /* See if we can forward anything on the hold queue */
