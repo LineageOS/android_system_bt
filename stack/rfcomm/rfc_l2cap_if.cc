@@ -26,8 +26,8 @@
 #include "bt_target.h"
 
 #include "bt_common.h"
+#include "common/time_util.h"
 #include "osi/include/osi.h"
-#include "osi/include/time.h"
 
 #include "bt_utils.h"
 #include "l2c_api.h"
@@ -105,7 +105,9 @@ void RFCOMM_ConnectInd(const RawAddress& bd_addr, uint16_t lcid,
           "LCID(0x%x), acceptor's LCID(0x%x)",
           p_mcb->lcid, p_mcb->pending_lcid);
 
-      rfc_timer_start(p_mcb, (uint16_t)(time_get_os_boottime_ms() % 10 + 2));
+      rfc_timer_start(
+          p_mcb,
+          (uint16_t)(bluetooth::common::time_get_os_boottime_ms() % 10 + 2));
       return;
     } else {
       /* we cannot accept connection request from peer at this state */

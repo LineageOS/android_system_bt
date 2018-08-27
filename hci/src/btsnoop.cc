@@ -36,12 +36,12 @@
 #include <unistd.h>
 
 #include "bt_types.h"
+#include "common/time_util.h"
 #include "hci/include/btsnoop.h"
 #include "hci/include/btsnoop_mem.h"
 #include "hci_layer.h"
 #include "osi/include/log.h"
 #include "osi/include/properties.h"
-#include "osi/include/time.h"
 #include "stack_config.h"
 
 // The number of of packets per btsnoop file before we rotate to the next
@@ -129,7 +129,7 @@ static void capture(const BT_HDR* buffer, bool is_received) {
   uint8_t* p = const_cast<uint8_t*>(buffer->data + buffer->offset);
 
   std::lock_guard<std::mutex> lock(btsnoop_mutex);
-  uint64_t timestamp_us = time_gettimeofday_us();
+  uint64_t timestamp_us = bluetooth::common::time_gettimeofday_us();
   btsnoop_mem_capture(buffer, timestamp_us);
 
   if (logfile_fd == INVALID_FD) return;

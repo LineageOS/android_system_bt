@@ -2,10 +2,18 @@ cc_library_static {
     name: "libbt-common",
     defaults: ["fluoride_defaults"],
     host_supported: true,
-    include_dirs: ["system/bt"],
+    include_dirs: [
+        "system/bt",
+        "system/bt/stack/include",
+    ],
     srcs: [
         "message_loop_thread.cc",
         "execution_barrier.cc",
+        "metrics.cc",
+        "time_util.cc",
+    ],
+    static_libs: [
+        "libbt-protos-lite",
     ],
 }
 
@@ -14,14 +22,28 @@ cc_test {
     test_suites: ["device-tests"],
     defaults: ["fluoride_defaults"],
     host_supported: true,
-    include_dirs: ["system/bt"],
+    include_dirs: [
+        "system/bt",
+        "system/bt/stack/include",
+    ],
     srcs : [
-        "message_loop_thread_unittest.cc",
         "execution_barrier_unittest.cc",
+        "leaky_bonded_queue_unittest.cc",
+        "message_loop_thread_unittest.cc",
+        "metrics_unittest.cc",
+        "time_util_unittest.cc",
+    ],
+    shared_libs: [
+        "libprotobuf-cpp-lite",
     ],
     static_libs : [
+        "libgmock",
         "libbt-common",
-    ]
+        "libbt-protos-lite",
+    ],
+    sanitize: {
+        cfi: false,
+    },
 }
 
 cc_test {

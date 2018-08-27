@@ -143,5 +143,6 @@ cc_test {
         "libbluetooth-types",
         "libbt-protos-lite",
         "libosi",
+        "libbt-common",
     ],
 }
