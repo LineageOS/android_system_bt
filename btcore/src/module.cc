@@ -168,7 +168,7 @@ class CallbackWrapper {
                            MessageLoopThread* callback_thread,
                            thread_fn callback)
       : module(module),
-        lifecycle_thread("module_wrapper"),
+        lifecycle_thread("bt_module_lifecycle_thread"),
         callback_thread(callback_thread),
         callback(callback),
         success(false) {}

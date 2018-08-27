@@ -91,7 +91,7 @@ const hci_t* hci_layer_get_test_interface(
     const btsnoop_t* btsnoop_interface,
     const packet_fragmenter_t* packet_fragmenter_interface);
 
-void post_to_hci_message_loop(const tracked_objects::Location& from_here,
-                              BT_HDR* p_msg);
+void post_to_main_message_loop(const tracked_objects::Location& from_here,
+                               BT_HDR* p_msg);
 
 void hci_layer_cleanup_interface();

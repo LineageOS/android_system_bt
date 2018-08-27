@@ -2827,34 +2827,34 @@ static void bta_dm_bl_change_cback(tBTM_BL_EVENT_DATA* p_data) {
   switch (p_data->event) {
     case BTM_BL_CONN_EVT:
       /* connection up */
-      do_in_bta_thread(FROM_HERE,
-                       base::Bind(bta_dm_acl_change, true, *p_data->conn.p_bda,
-                                  p_data->conn.transport, p_data->conn.handle));
+      do_in_main_thread(
+          FROM_HERE, base::Bind(bta_dm_acl_change, true, *p_data->conn.p_bda,
+                                p_data->conn.transport, p_data->conn.handle));
       break;
     case BTM_BL_DISCN_EVT:
       /* connection down */
-      do_in_bta_thread(
+      do_in_main_thread(
           FROM_HERE, base::Bind(bta_dm_acl_change, false, *p_data->discn.p_bda,
                                 p_data->discn.transport, p_data->discn.handle));
       break;
 
     case BTM_BL_UPDATE_EVT: {
       /* busy level update */
-      do_in_bta_thread(FROM_HERE, base::Bind(send_busy_level_update,
-                                             p_data->update.busy_level,
-                                             p_data->update.busy_level_flags));
+      do_in_main_thread(FROM_HERE, base::Bind(send_busy_level_update,
+                                              p_data->update.busy_level,
+                                              p_data->update.busy_level_flags));
       return;
     }
     case BTM_BL_ROLE_CHG_EVT: {
       const auto& tmp = p_data->role_chg;
-      do_in_bta_thread(FROM_HERE, base::Bind(handle_role_change, *tmp.p_bda,
-                                             tmp.new_role, tmp.hci_status));
+      do_in_main_thread(FROM_HERE, base::Bind(handle_role_change, *tmp.p_bda,
+                                              tmp.new_role, tmp.hci_status));
       return;
     }
 
     case BTM_BL_COLLISION_EVT:
       /* Collision report from Stack: Notify profiles */
-      do_in_bta_thread(
+      do_in_main_thread(
           FROM_HERE, base::Bind(bta_sys_notify_collision, *p_data->conn.p_bda));
       return;
   }
