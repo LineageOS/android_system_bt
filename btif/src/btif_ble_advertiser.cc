@@ -93,7 +93,7 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface {
   }
 
   void RegisterAdvertiser(IdStatusCallback cb) override {
-    do_in_bta_thread(
+    do_in_main_thread(
         FROM_HERE, Bind(&BleAdvertisingManager::RegisterAdvertiser,
                         BleAdvertisingManager::Get(),
                         Bind(&BleAdvertiserInterfaceImpl::RegisterAdvertiserCb,
@@ -101,7 +101,7 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface {
   }
 
   void Unregister(uint8_t advertiser_id) override {
-    do_in_bta_thread(
+    do_in_main_thread(
         FROM_HERE,
         Bind(
             [](uint8_t advertiser_id) {
@@ -116,10 +116,10 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface {
 
   void GetOwnAddress(uint8_t advertiser_id, GetAddressCallback cb) override {
     if (!BleAdvertisingManager::IsInitialized()) return;
-    do_in_bta_thread(FROM_HERE,
-                     Bind(&BleAdvertisingManager::GetOwnAddress,
-                          BleAdvertisingManager::Get(), advertiser_id,
-                          jni_thread_wrapper(FROM_HERE, cb)));
+    do_in_main_thread(FROM_HERE,
+                      Bind(&BleAdvertisingManager::GetOwnAddress,
+                           BleAdvertisingManager::Get(), advertiser_id,
+                           jni_thread_wrapper(FROM_HERE, cb)));
   }
 
   void SetParameters(uint8_t advertiser_id, AdvertiseParameters params,
@@ -130,16 +130,16 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface {
     tBTM_BLE_ADV_PARAMS* p_params = new tBTM_BLE_ADV_PARAMS;
     parseParams(p_params, params);
 
-    do_in_bta_thread(FROM_HERE, Bind(&BleAdvertisingManager::SetParameters,
-                                     BleAdvertisingManager::Get(),
-                                     advertiser_id, base::Owned(p_params),
-                                     jni_thread_wrapper(FROM_HERE, cb)));
+    do_in_main_thread(FROM_HERE, Bind(&BleAdvertisingManager::SetParameters,
+                                      BleAdvertisingManager::Get(),
+                                      advertiser_id, base::Owned(p_params),
+                                      jni_thread_wrapper(FROM_HERE, cb)));
   }
 
   void SetData(int advertiser_id, bool set_scan_rsp, vector<uint8_t> data,
                StatusCallback cb) override {
     if (!BleAdvertisingManager::IsInitialized()) return;
-    do_in_bta_thread(
+    do_in_main_thread(
         FROM_HERE,
         Bind(&BleAdvertisingManager::SetData, BleAdvertisingManager::Get(),
              advertiser_id, set_scan_rsp, std::move(data),
@@ -153,7 +153,7 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface {
             << " ,enable: " << enable;
 
     if (!BleAdvertisingManager::IsInitialized()) return;
-    do_in_bta_thread(
+    do_in_main_thread(
         FROM_HERE,
         Bind(&BleAdvertisingManager::Enable, BleAdvertisingManager::Get(),
              advertiser_id, enable, jni_thread_wrapper(FROM_HERE, cb), duration,
@@ -171,7 +171,7 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface {
     tBTM_BLE_ADV_PARAMS* p_params = new tBTM_BLE_ADV_PARAMS;
     parseParams(p_params, params);
 
-    do_in_bta_thread(
+    do_in_main_thread(
         FROM_HERE,
         Bind(&BleAdvertisingManager::StartAdvertising,
              BleAdvertisingManager::Get(), advertiser_id,
@@ -197,7 +197,7 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface {
     tBLE_PERIODIC_ADV_PARAMS* p_periodic_params = new tBLE_PERIODIC_ADV_PARAMS;
     parsePeriodicParams(p_periodic_params, periodic_params);
 
-    do_in_bta_thread(
+    do_in_main_thread(
         FROM_HERE,
         Bind(&BleAdvertisingManager::StartAdvertisingSet,
              BleAdvertisingManager::Get(), jni_thread_wrapper(FROM_HERE, cb),
@@ -216,7 +216,7 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface {
     tBLE_PERIODIC_ADV_PARAMS* p_periodic_params = new tBLE_PERIODIC_ADV_PARAMS;
     parsePeriodicParams(p_periodic_params, periodic_params);
 
-    do_in_bta_thread(
+    do_in_main_thread(
         FROM_HERE,
         Bind(&BleAdvertisingManager::SetPeriodicAdvertisingParameters,
              BleAdvertisingManager::Get(), advertiser_id,
@@ -229,10 +229,10 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface {
     VLOG(1) << __func__ << " advertiser_id: " << +advertiser_id;
 
     if (!BleAdvertisingManager::IsInitialized()) return;
-    do_in_bta_thread(FROM_HERE,
-                     Bind(&BleAdvertisingManager::SetPeriodicAdvertisingData,
-                          BleAdvertisingManager::Get(), advertiser_id,
-                          std::move(data), jni_thread_wrapper(FROM_HERE, cb)));
+    do_in_main_thread(FROM_HERE,
+                      Bind(&BleAdvertisingManager::SetPeriodicAdvertisingData,
+                           BleAdvertisingManager::Get(), advertiser_id,
+                           std::move(data), jni_thread_wrapper(FROM_HERE, cb)));
   }
 
   void SetPeriodicAdvertisingEnable(int advertiser_id, bool enable,
@@ -241,10 +241,10 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface {
             << " ,enable: " << enable;
 
     if (!BleAdvertisingManager::IsInitialized()) return;
-    do_in_bta_thread(FROM_HERE,
-                     Bind(&BleAdvertisingManager::SetPeriodicAdvertisingEnable,
-                          BleAdvertisingManager::Get(), advertiser_id, enable,
-                          jni_thread_wrapper(FROM_HERE, cb)));
+    do_in_main_thread(FROM_HERE,
+                      Bind(&BleAdvertisingManager::SetPeriodicAdvertisingEnable,
+                           BleAdvertisingManager::Get(), advertiser_id, enable,
+                           jni_thread_wrapper(FROM_HERE, cb)));
   }
 };
 

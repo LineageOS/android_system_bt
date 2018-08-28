@@ -18,4 +18,4 @@
 
 #include <base/message_loop/message_loop.h>
 
-base::MessageLoop* get_message_loop() { return nullptr; }
+base::MessageLoop* get_main_message_loop() { return nullptr; }

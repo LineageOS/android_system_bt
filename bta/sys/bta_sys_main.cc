@@ -525,15 +525,11 @@ bool bta_sys_is_register(uint8_t id) { return bta_sys_cb.is_reg[id]; }
  *
  ******************************************************************************/
 void bta_sys_sendmsg(void* p_msg) {
-  base::MessageLoop* bta_message_loop = get_message_loop();
-
-  if (!bta_message_loop || !bta_message_loop->task_runner().get()) {
-    APPL_TRACE_ERROR("%s: MessageLooper not initialized", __func__);
-    return;
+  if (do_in_main_thread(
+          FROM_HERE, base::Bind(&bta_sys_event, static_cast<BT_HDR*>(p_msg))) !=
+      BT_STATUS_SUCCESS) {
+    LOG(ERROR) << __func__ << ": do_in_main_thread failed";
   }
-
-  bta_message_loop->task_runner()->PostTask(
-      FROM_HERE, base::Bind(&bta_sys_event, static_cast<BT_HDR*>(p_msg)));
 }
 
 /*******************************************************************************

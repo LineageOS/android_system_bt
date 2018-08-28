@@ -192,7 +192,8 @@ void bta_gattc_register(const Uuid& app_uuid, tBTA_GATTC_CBACK* p_cback,
         /* BTA use the same client interface as BTE GATT statck */
         client_if = bta_gattc_cb.cl_rcb[i].client_if;
 
-        do_in_bta_thread(FROM_HERE, base::Bind(&bta_gattc_start_if, client_if));
+        do_in_main_thread(FROM_HERE,
+                          base::Bind(&bta_gattc_start_if, client_if));
 
         status = GATT_SUCCESS;
         break;
@@ -1076,8 +1077,8 @@ static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, const RawAddress& bda) {
 
   VLOG(1) << __func__ << ": cif:" << +gattc_if;
 
-  do_in_bta_thread(FROM_HERE,
-                   base::Bind(&bta_gattc_process_enc_cmpl, gattc_if, bda));
+  do_in_main_thread(FROM_HERE,
+                    base::Bind(&bta_gattc_process_enc_cmpl, gattc_if, bda));
 }
 
 /** process refresh API to delete cache and start a new discovery if currently

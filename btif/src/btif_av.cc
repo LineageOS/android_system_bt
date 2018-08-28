@@ -907,11 +907,11 @@ void BtifAvSource::Cleanup() {
 
   btif_queue_cleanup(UUID_SERVCLASS_AUDIO_SOURCE);
 
-  do_in_bta_thread(
+  do_in_main_thread(
       FROM_HERE,
       base::Bind(base::IgnoreResult(&BtifAvSource::SetActivePeer),
                  base::Unretained(&btif_av_source), RawAddress::kEmpty));
-  do_in_bta_thread(FROM_HERE, base::Bind(&btif_a2dp_source_cleanup));
+  do_in_main_thread(FROM_HERE, base::Bind(&btif_a2dp_source_cleanup));
 
   btif_disable_service(BTA_A2DP_SOURCE_SERVICE_ID);
   CleanupAllPeers();
@@ -1092,11 +1092,11 @@ void BtifAvSink::Cleanup() {
 
   btif_queue_cleanup(UUID_SERVCLASS_AUDIO_SINK);
 
-  do_in_bta_thread(
+  do_in_main_thread(
       FROM_HERE,
       base::Bind(base::IgnoreResult(&BtifAvSink::SetActivePeer),
                  base::Unretained(&btif_av_sink), RawAddress::kEmpty));
-  do_in_bta_thread(FROM_HERE, base::Bind(&btif_a2dp_sink_cleanup));
+  do_in_main_thread(FROM_HERE, base::Bind(&btif_a2dp_sink_cleanup));
 
   btif_disable_service(BTA_A2DP_SINK_SERVICE_ID);
   CleanupAllPeers();
@@ -1274,11 +1274,11 @@ void BtifAvStateMachine::StateIdle::OnEnter() {
 
   // Delete peers that are re-entering the Idle state
   if (peer_.IsSink()) {
-    do_in_bta_thread(FROM_HERE, base::Bind(&BtifAvSource::DeleteIdlePeers,
-                                           base::Unretained(&btif_av_source)));
+    do_in_main_thread(FROM_HERE, base::Bind(&BtifAvSource::DeleteIdlePeers,
+                                            base::Unretained(&btif_av_source)));
   } else if (peer_.IsSource()) {
-    do_in_bta_thread(FROM_HERE, base::Bind(&BtifAvSink::DeleteIdlePeers,
-                                           base::Unretained(&btif_av_sink)));
+    do_in_main_thread(FROM_HERE, base::Bind(&BtifAvSink::DeleteIdlePeers,
+                                            base::Unretained(&btif_av_sink)));
   }
 }
 
@@ -2475,16 +2475,16 @@ static void bta_av_source_callback(tBTA_AV_EVT event, tBTA_AV* p_data) {
   BtifAvEvent btif_av_event(event, p_data, sizeof(tBTA_AV));
   BTIF_TRACE_EVENT("%s: event=%s", __func__, btif_av_event.ToString().c_str());
 
-  do_in_bta_thread(FROM_HERE,
-                   base::Bind(&btif_av_handle_bta_av_event,
-                              AVDT_TSEP_SNK /* peer_sep */, btif_av_event));
+  do_in_main_thread(FROM_HERE,
+                    base::Bind(&btif_av_handle_bta_av_event,
+                               AVDT_TSEP_SNK /* peer_sep */, btif_av_event));
 }
 
 static void bta_av_sink_callback(tBTA_AV_EVT event, tBTA_AV* p_data) {
   BtifAvEvent btif_av_event(event, p_data, sizeof(tBTA_AV));
-  do_in_bta_thread(FROM_HERE,
-                   base::Bind(&btif_av_handle_bta_av_event,
-                              AVDT_TSEP_SRC /* peer_sep */, btif_av_event));
+  do_in_main_thread(FROM_HERE,
+                    base::Bind(&btif_av_handle_bta_av_event,
+                               AVDT_TSEP_SRC /* peer_sep */, btif_av_event));
 }
 
 // TODO: All processing should be done on the JNI thread
@@ -2526,10 +2526,11 @@ static void bta_av_sink_media_callback(tBTA_AV_EVT event,
       config_req.peer_address = p_data->avk_config.bd_addr;
       BtifAvEvent btif_av_event(BTIF_AV_SINK_CONFIG_REQ_EVT, &config_req,
                                 sizeof(config_req));
-      do_in_bta_thread(FROM_HERE, base::Bind(&btif_av_handle_event,
-                                             AVDT_TSEP_SRC,  // peer_sep
-                                             config_req.peer_address,
-                                             kBtaHandleUnknown, btif_av_event));
+      do_in_main_thread(FROM_HERE,
+                        base::Bind(&btif_av_handle_event,
+                                   AVDT_TSEP_SRC,  // peer_sep
+                                   config_req.peer_address, kBtaHandleUnknown,
+                                   btif_av_event));
       break;
     }
     default:
@@ -2649,7 +2650,7 @@ static bt_status_t src_disconnect_sink(const RawAddress& peer_address) {
 
   BtifAvEvent btif_av_event(BTIF_AV_DISCONNECT_REQ_EVT, &peer_address,
                             sizeof(peer_address));
-  return do_in_bta_thread(
+  return do_in_main_thread(
       FROM_HERE, base::Bind(&btif_av_handle_event,
                             AVDT_TSEP_SNK,  // peer_sep
                             peer_address, kBtaHandleUnknown, btif_av_event));
@@ -2665,7 +2666,7 @@ static bt_status_t sink_disconnect_src(const RawAddress& peer_address) {
 
   BtifAvEvent btif_av_event(BTIF_AV_DISCONNECT_REQ_EVT, &peer_address,
                             sizeof(peer_address));
-  return do_in_bta_thread(
+  return do_in_main_thread(
       FROM_HERE, base::Bind(&btif_av_handle_event,
                             AVDT_TSEP_SRC,  // peer_sep
                             peer_address, kBtaHandleUnknown, btif_av_event));
@@ -2679,9 +2680,9 @@ static bt_status_t src_set_active_sink(const RawAddress& peer_address) {
     return BT_STATUS_NOT_READY;
   }
 
-  return do_in_bta_thread(FROM_HERE, base::Bind(&set_active_peer_int,
-                                                AVDT_TSEP_SNK,  // peer_sep
-                                                peer_address));
+  return do_in_main_thread(FROM_HERE, base::Bind(&set_active_peer_int,
+                                                 AVDT_TSEP_SNK,  // peer_sep
+                                                 peer_address));
 }
 
 static bt_status_t codec_config_src(
@@ -2694,7 +2695,7 @@ static bt_status_t codec_config_src(
     return BT_STATUS_NOT_READY;
   }
 
-  return do_in_bta_thread(
+  return do_in_main_thread(
       FROM_HERE, base::Bind(&BtifAvSource::UpdateCodecConfig,
                             base::Unretained(&btif_av_source), peer_address,
                             codec_preferences));
@@ -2702,14 +2703,14 @@ static bt_status_t codec_config_src(
 
 static void cleanup_src(void) {
   BTIF_TRACE_EVENT("%s", __func__);
-  do_in_bta_thread(FROM_HERE, base::Bind(&BtifAvSource::Cleanup,
-                                         base::Unretained(&btif_av_source)));
+  do_in_main_thread(FROM_HERE, base::Bind(&BtifAvSource::Cleanup,
+                                          base::Unretained(&btif_av_source)));
 }
 
 static void cleanup_sink(void) {
   BTIF_TRACE_EVENT("%s", __func__);
-  do_in_bta_thread(FROM_HERE, base::Bind(&BtifAvSink::Cleanup,
-                                         base::Unretained(&btif_av_sink)));
+  do_in_main_thread(FROM_HERE, base::Bind(&BtifAvSink::Cleanup,
+                                          base::Unretained(&btif_av_sink)));
 }
 
 static const btav_source_interface_t bt_av_src_interface = {
@@ -2837,10 +2838,10 @@ static void btif_av_source_dispatch_sm_event(const RawAddress& peer_address,
                    peer_address.ToString().c_str(),
                    btif_av_event.ToString().c_str());
 
-  do_in_bta_thread(FROM_HERE,
-                   base::Bind(&btif_av_handle_event,
-                              AVDT_TSEP_SNK,  // peer_sep
-                              peer_address, kBtaHandleUnknown, btif_av_event));
+  do_in_main_thread(FROM_HERE,
+                    base::Bind(&btif_av_handle_event,
+                               AVDT_TSEP_SNK,  // peer_sep
+                               peer_address, kBtaHandleUnknown, btif_av_event));
 }
 
 static void btif_av_sink_dispatch_sm_event(const RawAddress& peer_address,
@@ -2850,10 +2851,10 @@ static void btif_av_sink_dispatch_sm_event(const RawAddress& peer_address,
                    peer_address.ToString().c_str(),
                    btif_av_event.ToString().c_str());
 
-  do_in_bta_thread(FROM_HERE,
-                   base::Bind(&btif_av_handle_event,
-                              AVDT_TSEP_SRC,  // peer_sep
-                              peer_address, kBtaHandleUnknown, btif_av_event));
+  do_in_main_thread(FROM_HERE,
+                    base::Bind(&btif_av_handle_event,
+                               AVDT_TSEP_SRC,  // peer_sep
+                               peer_address, kBtaHandleUnknown, btif_av_event));
 }
 
 bt_status_t btif_av_source_execute_service(bool enable) {
