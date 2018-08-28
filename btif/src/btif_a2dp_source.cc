@@ -221,7 +221,7 @@ class BtifA2dpSource {
 };
 
 static bluetooth::common::MessageLoopThread btif_a2dp_source_thread(
-    "btif_a2dp_source_thread");
+    "bt_a2dp_source_worker_thread");
 static BtifA2dpSource btif_a2dp_source_cb;
 
 static void btif_a2dp_source_init_delayed(void);

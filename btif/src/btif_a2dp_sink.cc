@@ -122,8 +122,7 @@ class BtifA2dpSinkControlBlock {
 // Mutex for below data structures.
 static std::mutex g_mutex;
 
-static BtifA2dpSinkControlBlock btif_a2dp_sink_cb(
-    "btif_a2dp_sink_worker_thread");
+static BtifA2dpSinkControlBlock btif_a2dp_sink_cb("bt_a2dp_sink_worker_thread");
 
 static std::atomic<int> btif_a2dp_sink_state{BTIF_A2DP_SINK_STATE_OFF};
 

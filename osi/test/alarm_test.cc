@@ -42,7 +42,7 @@ static void msleep(uint64_t ms) { usleep(ms * 1000); }
 
 static base::MessageLoop* message_loop_;
 
-base::MessageLoop* get_message_loop() { return message_loop_; }
+base::MessageLoop* get_main_message_loop() { return message_loop_; }
 
 class AlarmTest : public AlarmTestHarness {
  protected:

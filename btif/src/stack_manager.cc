@@ -39,7 +39,7 @@
 
 using bluetooth::common::MessageLoopThread;
 
-static MessageLoopThread management_thread("stack_manager");
+static MessageLoopThread management_thread("bt_stack_manager_thread");
 
 // If initialized, any of the bluetooth API functions can be called.
 // (e.g. turning logging on and off, enabling/disabling the stack, etc)

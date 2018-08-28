@@ -88,8 +88,8 @@ static void bta_ag_sdp_cback(uint16_t status, uint8_t idx) {
       event = BTA_AG_DISC_INT_RES_EVT;
     }
     tBTA_AG_DATA disc_result = {.disc_result.status = status};
-    do_in_bta_thread(FROM_HERE, base::Bind(&bta_ag_sm_execute_by_handle, idx,
-                                           event, disc_result));
+    do_in_main_thread(FROM_HERE, base::Bind(&bta_ag_sm_execute_by_handle, idx,
+                                            event, disc_result));
   }
 }
 

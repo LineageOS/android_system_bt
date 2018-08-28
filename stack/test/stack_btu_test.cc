@@ -60,7 +60,6 @@ class TimeoutHelper {
 TimeoutHelper helper;
 
 // External function definitions
-void btu_message_loop_run(void* context);
 void btu_task_start_up(void* context);
 void btu_task_shut_down(void* context);
 
@@ -83,7 +82,7 @@ const module_t* get_module(const char*) { return nullptr; };
 bool module_init(module_t const*) { return true; };
 void module_clean_up(module_t const*){};
 
-bluetooth::common::MessageLoopThread bt_workqueue_thread("test alarm thread");
+bluetooth::common::MessageLoopThread bt_startup_thread("test alarm thread");
 
 class BtuMessageLoopTest : public testing::Test {
  public:
@@ -93,7 +92,7 @@ class BtuMessageLoopTest : public testing::Test {
   virtual void SetUp() {
     // Initialize alarms to prevent btu_task_shut_down from crashing
     alarm_new("test alarm");
-    bt_workqueue_thread.StartUp();
+    bt_startup_thread.StartUp();
     // btu_task_start_up calls btif_transfer_context to let the stack know
     // start up is finished
     btu_task_start_up(nullptr);
@@ -104,14 +103,14 @@ class BtuMessageLoopTest : public testing::Test {
   virtual void TearDown() {
     btu_task_shut_down(nullptr);
     alarm_cleanup();
-    bt_workqueue_thread.ShutDown();
+    bt_startup_thread.ShutDown();
   }
 
   void Fail(std::string message) { FAIL() << message; }
 };
 
 TEST_F(BtuMessageLoopTest, send_message) {
-  message_loop = get_message_loop();
+  message_loop = get_main_message_loop();
   EXPECT_FALSE(message_loop == nullptr);
 
   EXPECT_CALL(*this, TestCallback()).Times(1);

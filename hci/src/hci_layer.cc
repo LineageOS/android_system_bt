@@ -92,7 +92,7 @@ static const btsnoop_t* btsnoop;
 static const packet_fragmenter_t* packet_fragmenter;
 
 static future_t* startup_future;
-static MessageLoopThread thread("hci_thread");  // We own this
+static MessageLoopThread hci_thread("bt_hci_thread");
 
 static alarm_t* startup_timer;
 
@@ -135,7 +135,7 @@ static const packet_fragmenter_callbacks_t packet_fragmenter_callbacks = {
     transmit_fragment, dispatch_reassembled, fragmenter_transmit_finished};
 
 void initialization_complete() {
-  thread.DoInThread(FROM_HERE, base::Bind(&event_finish_startup, nullptr));
+  hci_thread.DoInThread(FROM_HERE, base::Bind(&event_finish_startup, nullptr));
 }
 
 void hci_event_received(const tracked_objects::Location& from_here,
@@ -192,12 +192,12 @@ static future_t* hci_module_start_up(void) {
     goto error;
   }
 
-  thread.StartUp();
-  if (!thread.IsRunning()) {
+  hci_thread.StartUp();
+  if (!hci_thread.IsRunning()) {
     LOG_ERROR(LOG_TAG, "%s unable to start thread.", __func__);
     goto error;
   }
-  if (!thread.EnableRealTimeScheduling()) {
+  if (!hci_thread.EnableRealTimeScheduling()) {
     LOG_ERROR(LOG_TAG, "%s unable to make thread RT.", __func__);
     goto error;
   }
@@ -218,7 +218,7 @@ static future_t* hci_module_start_up(void) {
 
   packet_fragmenter->init(&packet_fragmenter_callbacks);
 
-  thread.DoInThread(FROM_HERE, base::Bind(&hci_initialize));
+  hci_thread.DoInThread(FROM_HERE, base::Bind(&hci_initialize));
 
   LOG_DEBUG(LOG_TAG, "%s starting async portion", __func__);
   return local_startup_future;
@@ -241,7 +241,7 @@ static future_t* hci_module_shut_down() {
     startup_timer = NULL;
   }
 
-  thread.ShutDown();
+  hci_thread.ShutDown();
 
   // Close HCI to prevent callbacks.
   hci_close();
@@ -374,7 +374,7 @@ static void enqueue_command(waiting_command_t* wait_entry) {
 
   std::lock_guard<std::mutex> command_credits_lock(command_credits_mutex);
   if (command_credits > 0) {
-    if (!thread.DoInThread(FROM_HERE, std::move(callback))) {
+    if (!hci_thread.DoInThread(FROM_HERE, std::move(callback))) {
       // HCI Layer was shut down or not running
       buffer_allocator->free(wait_entry->command);
       osi_free(wait_entry);
@@ -401,7 +401,8 @@ static void event_command_ready(waiting_command_t* wait_entry) {
 }
 
 static void enqueue_packet(void* packet) {
-  if (!thread.DoInThread(FROM_HERE, base::Bind(&event_packet_ready, packet))) {
+  if (!hci_thread.DoInThread(FROM_HERE,
+                             base::Bind(&event_packet_ready, packet))) {
     // HCI Layer was shut down or not running
     buffer_allocator->free(packet);
     return;
@@ -541,7 +542,7 @@ static void command_timed_out(void* original_wait_entry) {
 void process_command_credits(int credits) {
   std::lock_guard<std::mutex> command_credits_lock(command_credits_mutex);
 
-  if (!thread.IsRunning()) {
+  if (!hci_thread.IsRunning()) {
     // HCI Layer was shut down or not running
     return;
   }
@@ -550,7 +551,7 @@ void process_command_credits(int credits) {
   command_credits = credits - get_num_waiting_commands();
 
   while (command_credits > 0 && !command_queue.empty()) {
-    if (!thread.DoInThread(FROM_HERE, std::move(command_queue.front()))) {
+    if (!hci_thread.DoInThread(FROM_HERE, std::move(command_queue.front()))) {
       LOG(ERROR) << __func__ << ": failed to enqueue command";
     }
     command_queue.pop();

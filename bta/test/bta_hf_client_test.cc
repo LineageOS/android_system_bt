@@ -25,7 +25,7 @@ namespace base {
 class MessageLoop;
 }  // namespace base
 
-base::MessageLoop* get_message_loop() { return NULL; }
+base::MessageLoop* get_main_message_loop() { return NULL; }
 
 namespace {
 const RawAddress bdaddr1({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});

@@ -43,7 +43,7 @@
 
 #include "gatt_int.h"
 
-extern bluetooth::common::MessageLoopThread bt_workqueue_thread;
+extern bluetooth::common::MessageLoopThread bt_startup_thread;
 
 /******************************************************************************/
 /*               L O C A L    D A T A    D E F I N I T I O N S                */
@@ -231,7 +231,7 @@ void BTM_DeviceReset(UNUSED_ATTR tBTM_CMPL_CB* p_cb) {
   btm_db_reset();
 
   module_start_up_callbacked_wrapper(get_module(CONTROLLER_MODULE),
-                                     &bt_workqueue_thread, reset_complete);
+                                     &bt_startup_thread, reset_complete);
 }
 
 /*******************************************************************************
