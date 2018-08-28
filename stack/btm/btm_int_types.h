@@ -210,7 +210,7 @@ typedef struct {
 } tINQ_BDADDR;
 
 typedef struct {
-  uint32_t time_of_resp;
+  uint64_t time_of_resp;
   uint32_t
       inq_count; /* "timestamps" the entry with a particular inquiry count   */
                  /* Used for determining if a response has already been      */
@@ -801,8 +801,7 @@ typedef struct {
 
   tBTM_SEC_DEV_REC* p_collided_dev_rec;
   alarm_t* sec_collision_timer;
-  uint32_t collision_start_time;
-  uint32_t max_collision_delay;
+  uint64_t collision_start_time;
   uint32_t dev_rec_count; /* Counter used for device record timestamp */
   uint8_t security_mode;
   bool pairing_disabled;

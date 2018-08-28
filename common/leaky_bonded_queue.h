@@ -21,7 +21,9 @@
 #include <mutex>
 #include <queue>
 
-namespace system_bt_osi {
+namespace bluetooth {
+
+namespace common {
 
 /*
  *   LeakyBondedQueue<T>
@@ -86,8 +88,8 @@ class LeakyBondedQueue {
 };
 
 /*
-* Definitions must be in the header for template classes
-*/
+ * Definitions must be in the header for template classes
+ */
 
 template <class T>
 LeakyBondedQueue<T>::LeakyBondedQueue(size_t capacity) {
@@ -155,4 +157,6 @@ bool LeakyBondedQueue<T>::Empty() {
   return queue_.empty();
 }
 
-}  // namespace system_bt_osi
+}  // namespace common
+
+}  // namespace bluetooth

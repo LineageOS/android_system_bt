@@ -59,12 +59,12 @@
 #include "btif_storage.h"
 #include "btif_util.h"
 #include "btu.h"
+#include "common/metrics.h"
 #include "device/include/controller.h"
 #include "device/include/interop.h"
 #include "internal_include/stack_config.h"
 #include "osi/include/allocator.h"
 #include "osi/include/log.h"
-#include "osi/include/metrics.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
 #include "stack/btm/btm_int.h"
@@ -3230,26 +3230,26 @@ static void btif_stats_add_bond_event(const RawAddress& bd_addr,
   int type;
   btif_get_device_type(bd_addr, &type);
 
-  system_bt_osi::device_type_t device_type;
+  bluetooth::common::device_type_t device_type;
   switch (type) {
     case BT_DEVICE_TYPE_BREDR:
-      device_type = system_bt_osi::DEVICE_TYPE_BREDR;
+      device_type = bluetooth::common::DEVICE_TYPE_BREDR;
       break;
     case BT_DEVICE_TYPE_BLE:
-      device_type = system_bt_osi::DEVICE_TYPE_LE;
+      device_type = bluetooth::common::DEVICE_TYPE_LE;
       break;
     case BT_DEVICE_TYPE_DUMO:
-      device_type = system_bt_osi::DEVICE_TYPE_DUMO;
+      device_type = bluetooth::common::DEVICE_TYPE_DUMO;
       break;
     default:
-      device_type = system_bt_osi::DEVICE_TYPE_UNKNOWN;
+      device_type = bluetooth::common::DEVICE_TYPE_UNKNOWN;
       break;
   }
 
   uint32_t cod = get_cod(&bd_addr);
   uint64_t ts =
       event->timestamp.tv_sec * 1000 + event->timestamp.tv_nsec / 1000000;
-  system_bt_osi::BluetoothMetricsLogger::GetInstance()->LogPairEvent(
+  bluetooth::common::BluetoothMetricsLogger::GetInstance()->LogPairEvent(
       0, ts, cod, device_type);
 }
 

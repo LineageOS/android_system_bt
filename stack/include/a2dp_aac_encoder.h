@@ -22,7 +22,6 @@
 #define A2DP_AAC_ENCODER_H
 
 #include "a2dp_codec_api.h"
-#include "osi/include/time.h"
 
 // Loads the A2DP AAC encoder.
 // Return true on success, otherwise false.

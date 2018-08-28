@@ -27,7 +27,6 @@
 #include "hci/include/btsnoop_mem.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/ringbuffer.h"
-#include "osi/include/time.h"
 
 #define REDUCE_HCI_TYPE_TO_SIGNIFICANT_BITS(type) ((type) >> 8)
 
