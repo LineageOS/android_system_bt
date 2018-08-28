@@ -26,10 +26,8 @@
 #include <sys/capability.h>
 #include <syscall.h>
 
-#include "execution_barrier.h"
 #include "message_loop_thread.h"
 
-using bluetooth::common::ExecutionBarrier;
 using bluetooth::common::MessageLoopThread;
 
 /**
@@ -39,34 +37,28 @@ class MessageLoopThreadTest : public ::testing::Test {
  public:
   void ShouldNotHappen() { FAIL() << "Should not happen"; }
 
-  void GetThreadId(base::PlatformThreadId* thread_id,
-                   std::shared_ptr<ExecutionBarrier> execution_barrier) {
-    *thread_id = base::PlatformThread::CurrentId();
-    execution_barrier->NotifyFinished();
+  void GetThreadId(std::promise<base::PlatformThreadId> thread_id_promise) {
+    thread_id_promise.set_value(base::PlatformThread::CurrentId());
   }
 
-  void GetLinuxTid(pid_t* tid,
-                   std::shared_ptr<ExecutionBarrier> execution_barrier) {
-    *tid = static_cast<pid_t>(syscall(SYS_gettid));
-    execution_barrier->NotifyFinished();
+  void GetLinuxTid(std::promise<pid_t> tid_promise) {
+    tid_promise.set_value(static_cast<pid_t>(syscall(SYS_gettid)));
   }
 
-  void GetName(std::string* name,
-               std::shared_ptr<ExecutionBarrier> execution_barrier) {
+  void GetName(std::promise<std::string> name_promise) {
     char my_name[256];
     pthread_getname_np(pthread_self(), my_name, sizeof(my_name));
-    name->append(my_name);
-    execution_barrier->NotifyFinished();
+    name_promise.set_value(my_name);
   }
 
-  void GetSchedulingPolicyAndPriority(
-      int* scheduling_policy, int* schedule_priority,
-      std::shared_ptr<ExecutionBarrier> execution_barrier) {
+  void GetSchedulingPolicyAndPriority(int* scheduling_policy,
+                                      int* schedule_priority,
+                                      std::promise<void> execution_promise) {
     *scheduling_policy = sched_getscheduler(0);
     struct sched_param param = {};
     ASSERT_EQ(sched_getparam(0, &param), 0);
     *schedule_priority = param.sched_priority;
-    execution_barrier->NotifyFinished();
+    execution_promise.set_value();
   }
 
  protected:
@@ -133,15 +125,14 @@ TEST_F(MessageLoopThreadTest, test_name) {
   MessageLoopThread message_loop_thread(name);
   message_loop_thread.StartUp();
   ASSERT_GE(message_loop_thread.GetThreadId(), 0);
-  std::shared_ptr<ExecutionBarrier> execution_barrier =
-      std::make_shared<ExecutionBarrier>();
-  std::string myName;
+  std::promise<std::string> name_promise;
+  std::future<std::string> name_future = name_promise.get_future();
   message_loop_thread.DoInThread(
       FROM_HERE,
-      base::Bind(&MessageLoopThreadTest::GetName, base::Unretained(this),
-                 &myName, execution_barrier));
-  execution_barrier->WaitForExecution();
-  ASSERT_EQ(name, myName);
+      base::BindOnce(&MessageLoopThreadTest::GetName, base::Unretained(this),
+                     std::move(name_promise)));
+  std::string my_name = name_future.get();
+  ASSERT_EQ(name, my_name);
   ASSERT_EQ(name, message_loop_thread.GetName());
 }
 
@@ -151,14 +142,14 @@ TEST_F(MessageLoopThreadTest, test_thread_id) {
   message_loop_thread.StartUp();
   base::PlatformThreadId thread_id = message_loop_thread.GetThreadId();
   ASSERT_GE(thread_id, 0);
-  std::shared_ptr<ExecutionBarrier> execution_barrier =
-      std::make_shared<ExecutionBarrier>();
-  base::PlatformThreadId my_thread_id;
+  std::promise<base::PlatformThreadId> thread_id_promise;
+  std::future<base::PlatformThreadId> thread_id_future =
+      thread_id_promise.get_future();
   message_loop_thread.DoInThread(
       FROM_HERE,
-      base::Bind(&MessageLoopThreadTest::GetThreadId, base::Unretained(this),
-                 &my_thread_id, execution_barrier));
-  execution_barrier->WaitForExecution();
+      base::BindOnce(&MessageLoopThreadTest::GetThreadId,
+                     base::Unretained(this), std::move(thread_id_promise)));
+  base::PlatformThreadId my_thread_id = thread_id_future.get();
   ASSERT_EQ(thread_id, my_thread_id);
 }
 
@@ -187,26 +178,26 @@ TEST_F(MessageLoopThreadTest, test_set_realtime_priority_success) {
       return;
     }
   }
-  std::shared_ptr<ExecutionBarrier> execution_barrier =
-      std::make_shared<ExecutionBarrier>();
+  std::promise<void> execution_promise;
+  std::future<void> execution_future = execution_promise.get_future();
   int scheduling_policy = -1;
   int scheduling_priority = -1;
   message_loop_thread.DoInThread(
       FROM_HERE,
-      base::Bind(&MessageLoopThreadTest::GetSchedulingPolicyAndPriority,
-                 base::Unretained(this), &scheduling_policy,
-                 &scheduling_priority, execution_barrier));
-  execution_barrier->WaitForExecution();
+      base::BindOnce(&MessageLoopThreadTest::GetSchedulingPolicyAndPriority,
+                     base::Unretained(this), &scheduling_policy,
+                     &scheduling_priority, std::move(execution_promise)));
+  execution_future.wait();
   ASSERT_EQ(scheduling_policy, SCHED_FIFO);
   // Internal implementation verified here
   ASSERT_EQ(scheduling_priority, 1);
-  execution_barrier = std::make_shared<ExecutionBarrier>();
-  pid_t linux_tid = -1;
+  std::promise<pid_t> tid_promise;
+  std::future<pid_t> tid_future = tid_promise.get_future();
   message_loop_thread.DoInThread(
       FROM_HERE,
-      base::Bind(&MessageLoopThreadTest::GetLinuxTid, base::Unretained(this),
-                 &linux_tid, execution_barrier));
-  execution_barrier->WaitForExecution();
+      base::BindOnce(&MessageLoopThreadTest::GetLinuxTid,
+                     base::Unretained(this), std::move(tid_promise)));
+  pid_t linux_tid = tid_future.get();
   ASSERT_GT(linux_tid, 0);
   ASSERT_EQ(sched_getscheduler(linux_tid), SCHED_FIFO);
   struct sched_param param = {};
