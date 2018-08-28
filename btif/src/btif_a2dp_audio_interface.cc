@@ -165,8 +165,8 @@ class BluetoothAudioDeathRecipient : public hidl_death_recipient {
       const wp<::android::hidl::base::V1_0::IBase>& /*who*/) {
     LOG_ERROR(LOG_TAG, "%s", __func__);
     // Restart the session on the correct thread
-    do_in_bta_thread(FROM_HERE,
-                     base::Bind(&btif_a2dp_audio_interface_restart_session));
+    do_in_main_thread(FROM_HERE,
+                      base::Bind(&btif_a2dp_audio_interface_restart_session));
   }
 };
 sp<BluetoothAudioDeathRecipient> bluetoothAudioDeathRecipient =

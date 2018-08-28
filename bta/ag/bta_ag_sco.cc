@@ -134,9 +134,9 @@ static void bta_ag_sco_conn_cback(uint16_t sco_idx) {
   }
 
   if (handle != 0) {
-    do_in_bta_thread(FROM_HERE,
-                     base::Bind(&bta_ag_sm_execute_by_handle, handle,
-                                BTA_AG_SCO_OPEN_EVT, tBTA_AG_DATA::kEmpty));
+    do_in_main_thread(FROM_HERE,
+                      base::Bind(&bta_ag_sm_execute_by_handle, handle,
+                                 BTA_AG_SCO_OPEN_EVT, tBTA_AG_DATA::kEmpty));
   } else {
     /* no match found; disconnect sco, init sco variables */
     bta_ag_cb.sco.p_curr_scb = nullptr;
@@ -217,9 +217,9 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
 
     bta_ag_cb.sco.p_curr_scb->inuse_codec = BTA_AG_CODEC_NONE;
 
-    do_in_bta_thread(FROM_HERE,
-                     base::Bind(&bta_ag_sm_execute_by_handle, handle,
-                                BTA_AG_SCO_CLOSE_EVT, tBTA_AG_DATA::kEmpty));
+    do_in_main_thread(FROM_HERE,
+                      base::Bind(&bta_ag_sm_execute_by_handle, handle,
+                                 BTA_AG_SCO_CLOSE_EVT, tBTA_AG_DATA::kEmpty));
   } else {
     /* no match found */
     APPL_TRACE_DEBUG("no scb for ag_sco_disc_cback");
@@ -373,7 +373,7 @@ static void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
                  << " is not active, active_device=" << active_device_addr;
     if (bta_ag_cb.sco.p_curr_scb != nullptr &&
         bta_ag_cb.sco.p_curr_scb->in_use && p_scb == bta_ag_cb.sco.p_curr_scb) {
-      do_in_bta_thread(
+      do_in_main_thread(
           FROM_HERE, base::Bind(&bta_ag_sm_execute, p_scb, BTA_AG_SCO_CLOSE_EVT,
                                 tBTA_AG_DATA::kEmpty));
     }

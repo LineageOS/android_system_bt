@@ -43,7 +43,7 @@ using bluetooth::common::MessageLoopThread;
 /* Define BTU storage area */
 uint8_t btu_trace_level = HCI_INITIAL_TRACE_LEVEL;
 
-static MessageLoopThread btu_message_loop_thread("btu_message_loop");
+static MessageLoopThread main_thread("bt_main_thread");
 
 void btu_hci_msg_process(BT_HDR* p_msg) {
   /* Determine the input message type. */
@@ -79,13 +79,14 @@ void btu_hci_msg_process(BT_HDR* p_msg) {
   }
 }
 
-base::MessageLoop* get_message_loop() {
-  return btu_message_loop_thread.message_loop();
+base::MessageLoop* get_main_message_loop() {
+  return main_thread.message_loop();
 }
 
-bt_status_t do_in_bta_thread(const tracked_objects::Location& from_here,
-                             base::OnceClosure task) {
-  if (!btu_message_loop_thread.DoInThread(from_here, std::move(task))) {
+bt_status_t do_in_main_thread(const tracked_objects::Location& from_here,
+                              base::OnceClosure task) {
+  if (!main_thread.DoInThread(from_here, std::move(task))) {
+    LOG(ERROR) << __func__ << ": failed from " << from_here.ToString();
     return BT_STATUS_FAIL;
   }
   return BT_STATUS_SUCCESS;
@@ -111,11 +112,11 @@ void btu_task_start_up(UNUSED_ATTR void* context) {
    */
   module_init(get_module(BTE_LOGMSG_MODULE));
 
-  btu_message_loop_thread.StartUp();
-  if (!btu_message_loop_thread.IsRunning()) {
+  main_thread.StartUp();
+  if (!main_thread.IsRunning()) {
     LOG(FATAL) << __func__ << ": unable to start btu message loop thread.";
   }
-  if (!btu_message_loop_thread.EnableRealTimeScheduling()) {
+  if (!main_thread.EnableRealTimeScheduling()) {
     LOG(FATAL) << __func__ << ": unable to enable real time scheduling";
   }
   if (do_in_jni_thread(FROM_HERE, base::Bind(btif_init_ok, 0, nullptr)) !=
@@ -126,7 +127,7 @@ void btu_task_start_up(UNUSED_ATTR void* context) {
 
 void btu_task_shut_down(UNUSED_ATTR void* context) {
   // Shutdown message loop on task completed
-  btu_message_loop_thread.ShutDown();
+  main_thread.ShutDown();
 
   module_clean_up(get_module(BTE_LOGMSG_MODULE));
 

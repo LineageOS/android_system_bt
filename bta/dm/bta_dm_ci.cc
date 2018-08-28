@@ -46,8 +46,8 @@ void bta_dm_ci_io_req(const RawAddress& bd_addr, tBTA_IO_CAP io_cap,
                       tBTA_OOB_DATA oob_data, tBTA_AUTH_REQ auth_req)
 
 {
-  do_in_bta_thread(FROM_HERE, base::Bind(bta_dm_ci_io_req_act, bd_addr, io_cap,
-                                         oob_data, auth_req));
+  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_ci_io_req_act, bd_addr, io_cap,
+                                          oob_data, auth_req));
 }
 
 /*******************************************************************************
@@ -71,7 +71,7 @@ void bta_dm_ci_rmt_oob(bool accept, const RawAddress& bd_addr, const Octet16& c,
   msg->c = c;
   msg->r = r;
 
-  do_in_bta_thread(FROM_HERE,
-                   base::Bind(bta_dm_ci_rmt_oob_act, base::Passed(&msg)));
+  do_in_main_thread(FROM_HERE,
+                    base::Bind(bta_dm_ci_rmt_oob_act, base::Passed(&msg)));
 }
 

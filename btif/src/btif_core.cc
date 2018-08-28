@@ -128,7 +128,7 @@ static tBTA_SERVICE_MASK btif_enabled_services = 0;
  */
 static uint8_t btif_dut_mode = 0;
 
-static MessageLoopThread bt_jni_workqueue_thread("bt_jni_workqueue");
+static MessageLoopThread jni_thread("bt_jni_thread");
 static base::AtExitManager* exit_manager;
 static uid_set_t* uid_set;
 
@@ -222,7 +222,7 @@ bt_status_t btif_transfer_context(tBTIF_CBACK* p_cback, uint16_t event,
  **/
 bt_status_t do_in_jni_thread(const tracked_objects::Location& from_here,
                              base::OnceClosure task) {
-  if (!bt_jni_workqueue_thread.DoInThread(from_here, std::move(task))) {
+  if (!jni_thread.DoInThread(from_here, std::move(task))) {
     LOG(ERROR) << __func__ << ": Post task to task runner failed!";
     return BT_STATUS_FAIL;
   }
@@ -234,12 +234,10 @@ bt_status_t do_in_jni_thread(base::OnceClosure task) {
 }
 
 bool is_on_jni_thread() {
-  return bt_jni_workqueue_thread.GetThreadId() == PlatformThread::CurrentId();
+  return jni_thread.GetThreadId() == PlatformThread::CurrentId();
 }
 
-base::MessageLoop* get_jni_message_loop() {
-  return bt_jni_workqueue_thread.message_loop();
-}
+base::MessageLoop* get_jni_message_loop() { return jni_thread.message_loop(); }
 
 /*******************************************************************************
  *
@@ -327,8 +325,8 @@ bt_status_t btif_init_bluetooth() {
   LOG_INFO(LOG_TAG, "%s entered", __func__);
   exit_manager = new base::AtExitManager();
   bte_main_boot_entry();
-  bt_jni_workqueue_thread.StartUp();
-  bt_jni_workqueue_thread.DoInThread(FROM_HERE, base::Bind(btif_jni_associate));
+  jni_thread.StartUp();
+  jni_thread.DoInThread(FROM_HERE, base::Bind(btif_jni_associate));
   LOG_INFO(LOG_TAG, "%s finished", __func__);
   return BT_STATUS_SUCCESS;
 }
@@ -418,7 +416,7 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status) {
 bt_status_t btif_disable_bluetooth() {
   LOG_INFO(LOG_TAG, "%s entered", __func__);
 
-  do_in_bta_thread(FROM_HERE, base::Bind(&btm_ble_multi_adv_cleanup));
+  do_in_main_thread(FROM_HERE, base::Bind(&btm_ble_multi_adv_cleanup));
   // TODO(jpawlowski): this should do whole BTA_VendorCleanup(), but it would
   // kill the stack now.
 
@@ -468,12 +466,11 @@ void btif_disable_bluetooth_evt() {
 
 bt_status_t btif_cleanup_bluetooth() {
   LOG_INFO(LOG_TAG, "%s entered", __func__);
-  do_in_bta_thread(FROM_HERE, base::Bind(&BTA_VendorCleanup));
+  do_in_main_thread(FROM_HERE, base::Bind(&BTA_VendorCleanup));
   btif_dm_cleanup();
-  bt_jni_workqueue_thread.DoInThread(FROM_HERE,
-                                     base::BindOnce(btif_jni_disassociate));
+  jni_thread.DoInThread(FROM_HERE, base::BindOnce(btif_jni_disassociate));
   btif_queue_release();
-  bt_jni_workqueue_thread.ShutDown();
+  jni_thread.ShutDown();
   bte_main_cleanup();
   delete exit_manager;
   exit_manager = nullptr;
