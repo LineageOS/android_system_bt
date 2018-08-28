@@ -19,22 +19,21 @@
 #include <base/run_loop.h>
 #include <base/threading/thread.h>
 #include <benchmark/benchmark.h>
+#include <future>
 #include <memory>
 #include <thread>
 
-#include "common/execution_barrier.h"
 #include "common/message_loop_thread.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/thread.h"
 
 using ::benchmark::State;
-using bluetooth::common::ExecutionBarrier;
 using bluetooth::common::MessageLoopThread;
 
 #define NUM_MESSAGES_TO_SEND 100000
 
 volatile static int g_counter = 0;
-static std::unique_ptr<ExecutionBarrier> g_counter_barrier = nullptr;
+static std::unique_ptr<std::promise<void>> g_counter_promise = nullptr;
 
 void pthread_callback_batch(void* context) {
   auto queue = static_cast<fixed_queue_t*>(context);
@@ -42,16 +41,16 @@ void pthread_callback_batch(void* context) {
   fixed_queue_dequeue(queue);
   g_counter++;
   if (g_counter >= NUM_MESSAGES_TO_SEND) {
-    g_counter_barrier->NotifyFinished();
+    g_counter_promise->set_value();
   }
 }
 
-void callback_sequential(void* context) { g_counter_barrier->NotifyFinished(); }
+void callback_sequential(void* context) { g_counter_promise->set_value(); }
 
 void callback_sequential_queue(fixed_queue_t* queue, void* context) {
   CHECK_NE(queue, nullptr);
   fixed_queue_dequeue(queue);
-  g_counter_barrier->NotifyFinished();
+  g_counter_promise->set_value();
 }
 
 void callback_batch(fixed_queue_t* queue, void* data) {
@@ -59,7 +58,7 @@ void callback_batch(fixed_queue_t* queue, void* data) {
   fixed_queue_dequeue(queue);
   g_counter++;
   if (g_counter >= NUM_MESSAGES_TO_SEND) {
-    g_counter_barrier->NotifyFinished();
+    g_counter_promise->set_value();
   }
 }
 
@@ -67,19 +66,19 @@ class BM_ThreadPerformance : public ::benchmark::Fixture {
  protected:
   void SetUp(State& st) override {
     benchmark::Fixture::SetUp(st);
-    set_up_barrier_ = std::make_unique<ExecutionBarrier>();
+    set_up_promise_ = std::make_unique<std::promise<void>>();
     g_counter = 0;
     bt_msg_queue_ = fixed_queue_new(SIZE_MAX);
   }
   void TearDown(State& st) override {
     fixed_queue_free(bt_msg_queue_, nullptr);
     bt_msg_queue_ = nullptr;
-    set_up_barrier_.reset(nullptr);
-    g_counter_barrier.reset(nullptr);
+    set_up_promise_.reset(nullptr);
+    g_counter_promise.reset(nullptr);
     benchmark::Fixture::TearDown(st);
   }
   fixed_queue_t* bt_msg_queue_ = nullptr;
-  std::unique_ptr<ExecutionBarrier> set_up_barrier_;
+  std::unique_ptr<std::promise<void>> set_up_promise_;
 };
 
 class BM_MessageLoop : public BM_ThreadPerformance {
@@ -97,8 +96,8 @@ class BM_MessageLoop : public BM_ThreadPerformance {
     message_loop_ = new base::MessageLoop();
     run_loop_ = new base::RunLoop();
     message_loop_->task_runner()->PostTask(
-        FROM_HERE, base::BindOnce(&ExecutionBarrier::NotifyFinished,
-                                  base::Unretained(set_up_barrier_.get())));
+        FROM_HERE, base::BindOnce(&std::promise<void>::set_value,
+                                  base::Unretained(set_up_promise_.get())));
     run_loop_->Run();
     delete message_loop_;
     message_loop_ = nullptr;
@@ -115,9 +114,10 @@ class BM_MessageLoopOsiThread : public BM_MessageLoop {
  protected:
   void SetUp(State& st) override {
     BM_MessageLoop::SetUp(st);
+    std::future<void> set_up_future = set_up_promise_->get_future();
     thread_ = thread_new("BM_MessageLoopOnOsiThread thread");
     thread_post(thread_, &BM_MessageLoop::RunThread, this);
-    set_up_barrier_->WaitForExecution();
+    set_up_future.wait();
   }
 
   void TearDown(State& st) override {
@@ -134,23 +134,25 @@ class BM_MessageLoopOsiThread : public BM_MessageLoop {
 BENCHMARK_F(BM_MessageLoopOsiThread, batch_enque_dequeue)(State& state) {
   for (auto _ : state) {
     g_counter = 0;
-    g_counter_barrier = std::make_unique<ExecutionBarrier>();
+    g_counter_promise = std::make_unique<std::promise<void>>();
+    std::future<void> counter_future = g_counter_promise->get_future();
     for (int i = 0; i < NUM_MESSAGES_TO_SEND; i++) {
       fixed_queue_enqueue(bt_msg_queue_, (void*)&g_counter);
       message_loop_->task_runner()->PostTask(
           FROM_HERE, base::BindOnce(&callback_batch, bt_msg_queue_, nullptr));
     }
-    g_counter_barrier->WaitForExecution();
+    counter_future.wait();
   }
 };
 
 BENCHMARK_F(BM_MessageLoopOsiThread, sequential_execution)(State& state) {
   for (auto _ : state) {
     for (int i = 0; i < NUM_MESSAGES_TO_SEND; i++) {
-      g_counter_barrier = std::make_unique<ExecutionBarrier>();
+      g_counter_promise = std::make_unique<std::promise<void>>();
+      std::future<void> counter_future = g_counter_promise->get_future();
       message_loop_->task_runner()->PostTask(
           FROM_HERE, base::BindOnce(&callback_sequential, nullptr));
-      g_counter_barrier->WaitForExecution();
+      counter_future.wait();
     }
   }
 };
@@ -159,8 +161,9 @@ class BM_MessageLoopStlThread : public BM_MessageLoop {
  protected:
   void SetUp(State& st) override {
     BM_MessageLoop::SetUp(st);
+    std::future<void> set_up_future = set_up_promise_->get_future();
     thread_ = new std::thread(&BM_MessageLoop::RunThread, this);
-    set_up_barrier_->WaitForExecution();
+    set_up_future.wait();
   }
 
   void TearDown(State& st) override {
@@ -178,23 +181,25 @@ class BM_MessageLoopStlThread : public BM_MessageLoop {
 BENCHMARK_F(BM_MessageLoopStlThread, batch_enque_dequeue)(State& state) {
   for (auto _ : state) {
     g_counter = 0;
-    g_counter_barrier = std::make_unique<ExecutionBarrier>();
+    g_counter_promise = std::make_unique<std::promise<void>>();
+    std::future<void> counter_future = g_counter_promise->get_future();
     for (int i = 0; i < NUM_MESSAGES_TO_SEND; i++) {
       fixed_queue_enqueue(bt_msg_queue_, (void*)&g_counter);
       message_loop_->task_runner()->PostTask(
           FROM_HERE, base::BindOnce(&callback_batch, bt_msg_queue_, nullptr));
     }
-    g_counter_barrier->WaitForExecution();
+    counter_future.wait();
   }
 };
 
 BENCHMARK_F(BM_MessageLoopStlThread, sequential_execution)(State& state) {
   for (auto _ : state) {
     for (int i = 0; i < NUM_MESSAGES_TO_SEND; i++) {
-      g_counter_barrier = std::make_unique<ExecutionBarrier>();
+      g_counter_promise = std::make_unique<std::promise<void>>();
+      std::future<void> counter_future = g_counter_promise->get_future();
       message_loop_->task_runner()->PostTask(
           FROM_HERE, base::BindOnce(&callback_sequential, nullptr));
-      g_counter_barrier->WaitForExecution();
+      counter_future.wait();
     }
   }
 };
@@ -203,8 +208,9 @@ class BM_MessageLoopPosixThread : public BM_MessageLoop {
  protected:
   void SetUp(State& st) override {
     BM_MessageLoop::SetUp(st);
+    std::future<void> set_up_future = set_up_promise_->get_future();
     pthread_create(&thread_, nullptr, &BM_MessageLoop::RunPThread, (void*)this);
-    set_up_barrier_->WaitForExecution();
+    set_up_future.wait();
   }
 
   void TearDown(State& st) override {
@@ -220,23 +226,25 @@ class BM_MessageLoopPosixThread : public BM_MessageLoop {
 BENCHMARK_F(BM_MessageLoopPosixThread, batch_enque_dequeue)(State& state) {
   for (auto _ : state) {
     g_counter = 0;
-    g_counter_barrier = std::make_unique<ExecutionBarrier>();
+    g_counter_promise = std::make_unique<std::promise<void>>();
+    std::future<void> counter_future = g_counter_promise->get_future();
     for (int i = 0; i < NUM_MESSAGES_TO_SEND; i++) {
       fixed_queue_enqueue(bt_msg_queue_, (void*)&g_counter);
       message_loop_->task_runner()->PostTask(
           FROM_HERE, base::BindOnce(&callback_batch, bt_msg_queue_, nullptr));
     }
-    g_counter_barrier->WaitForExecution();
+    counter_future.wait();
   }
 };
 
 BENCHMARK_F(BM_MessageLoopPosixThread, sequential_execution)(State& state) {
   for (auto _ : state) {
     for (int i = 0; i < NUM_MESSAGES_TO_SEND; i++) {
-      g_counter_barrier = std::make_unique<ExecutionBarrier>();
+      g_counter_promise = std::make_unique<std::promise<void>>();
+      std::future<void> counter_future = g_counter_promise->get_future();
       message_loop_->task_runner()->PostTask(
           FROM_HERE, base::BindOnce(&callback_sequential, nullptr));
-      g_counter_barrier->WaitForExecution();
+      counter_future.wait();
     }
   }
 };
@@ -261,12 +269,13 @@ BENCHMARK_F(BM_OsiReactorThread, batch_enque_dequeue_using_thread_post)
 (State& state) {
   for (auto _ : state) {
     g_counter = 0;
-    g_counter_barrier = std::make_unique<ExecutionBarrier>();
+    g_counter_promise = std::make_unique<std::promise<void>>();
+    std::future<void> counter_future = g_counter_promise->get_future();
     for (int i = 0; i < NUM_MESSAGES_TO_SEND; i++) {
       fixed_queue_enqueue(bt_msg_queue_, (void*)&g_counter);
       thread_post(thread_, pthread_callback_batch, bt_msg_queue_);
     }
-    g_counter_barrier->WaitForExecution();
+    counter_future.wait();
   }
 };
 
@@ -274,9 +283,10 @@ BENCHMARK_F(BM_OsiReactorThread, sequential_execution_using_thread_post)
 (State& state) {
   for (auto _ : state) {
     for (int i = 0; i < NUM_MESSAGES_TO_SEND; i++) {
-      g_counter_barrier = std::make_unique<ExecutionBarrier>();
+      g_counter_promise = std::make_unique<std::promise<void>>();
+      std::future<void> counter_future = g_counter_promise->get_future();
       thread_post(thread_, callback_sequential, nullptr);
-      g_counter_barrier->WaitForExecution();
+      counter_future.wait();
     }
   }
 };
@@ -287,11 +297,12 @@ BENCHMARK_F(BM_OsiReactorThread, batch_enque_dequeue_using_reactor)
                                callback_batch, nullptr);
   for (auto _ : state) {
     g_counter = 0;
-    g_counter_barrier = std::make_unique<ExecutionBarrier>();
+    g_counter_promise = std::make_unique<std::promise<void>>();
+    std::future<void> counter_future = g_counter_promise->get_future();
     for (int i = 0; i < NUM_MESSAGES_TO_SEND; i++) {
       fixed_queue_enqueue(bt_msg_queue_, (void*)&g_counter);
     }
-    g_counter_barrier->WaitForExecution();
+    counter_future.wait();
   }
 };
 
@@ -301,9 +312,10 @@ BENCHMARK_F(BM_OsiReactorThread, sequential_execution_using_reactor)
                                callback_sequential_queue, nullptr);
   for (auto _ : state) {
     for (int i = 0; i < NUM_MESSAGES_TO_SEND; i++) {
-      g_counter_barrier = std::make_unique<ExecutionBarrier>();
+      g_counter_promise = std::make_unique<std::promise<void>>();
+      std::future<void> counter_future = g_counter_promise->get_future();
       fixed_queue_enqueue(bt_msg_queue_, (void*)&g_counter);
-      g_counter_barrier->WaitForExecution();
+      counter_future.wait();
     }
   }
 };
@@ -312,13 +324,14 @@ class BM_MessageLooopThread : public BM_ThreadPerformance {
  protected:
   void SetUp(State& st) override {
     BM_ThreadPerformance::SetUp(st);
+    std::future<void> set_up_future = set_up_promise_->get_future();
     message_loop_thread_ =
         new MessageLoopThread("BM_MessageLooopThread thread");
     message_loop_thread_->StartUp();
     message_loop_thread_->DoInThread(
-        FROM_HERE, base::BindOnce(&ExecutionBarrier::NotifyFinished,
-                                  base::Unretained(set_up_barrier_.get())));
-    set_up_barrier_->WaitForExecution();
+        FROM_HERE, base::BindOnce(&std::promise<void>::set_value,
+                                  base::Unretained(set_up_promise_.get())));
+    set_up_future.wait();
   }
 
   void TearDown(State& st) override {
@@ -334,23 +347,25 @@ class BM_MessageLooopThread : public BM_ThreadPerformance {
 BENCHMARK_F(BM_MessageLooopThread, batch_enque_dequeue)(State& state) {
   for (auto _ : state) {
     g_counter = 0;
-    g_counter_barrier = std::make_unique<ExecutionBarrier>();
+    g_counter_promise = std::make_unique<std::promise<void>>();
+    std::future<void> counter_future = g_counter_promise->get_future();
     for (int i = 0; i < NUM_MESSAGES_TO_SEND; i++) {
       fixed_queue_enqueue(bt_msg_queue_, (void*)&g_counter);
       message_loop_thread_->DoInThread(
           FROM_HERE, base::BindOnce(&callback_batch, bt_msg_queue_, nullptr));
     }
-    g_counter_barrier->WaitForExecution();
+    counter_future.wait();
   }
 };
 
 BENCHMARK_F(BM_MessageLooopThread, sequential_execution)(State& state) {
   for (auto _ : state) {
     for (int i = 0; i < NUM_MESSAGES_TO_SEND; i++) {
-      g_counter_barrier = std::make_unique<ExecutionBarrier>();
+      g_counter_promise = std::make_unique<std::promise<void>>();
+      std::future<void> counter_future = g_counter_promise->get_future();
       message_loop_thread_->DoInThread(
           FROM_HERE, base::BindOnce(&callback_sequential, nullptr));
-      g_counter_barrier->WaitForExecution();
+      counter_future.wait();
     }
   }
 };
@@ -359,12 +374,13 @@ class BM_LibChromeThread : public BM_ThreadPerformance {
  protected:
   void SetUp(State& st) override {
     BM_ThreadPerformance::SetUp(st);
+    std::future<void> set_up_future = set_up_promise_->get_future();
     thread_ = new base::Thread("BM_LibChromeThread thread");
     thread_->Start();
     thread_->task_runner()->PostTask(
-        FROM_HERE, base::BindOnce(&ExecutionBarrier::NotifyFinished,
-                                  base::Unretained(set_up_barrier_.get())));
-    set_up_barrier_->WaitForExecution();
+        FROM_HERE, base::BindOnce(&std::promise<void>::set_value,
+                                  base::Unretained(set_up_promise_.get())));
+    set_up_future.wait();
   }
 
   void TearDown(State& st) override {
@@ -380,23 +396,25 @@ class BM_LibChromeThread : public BM_ThreadPerformance {
 BENCHMARK_F(BM_LibChromeThread, batch_enque_dequeue)(State& state) {
   for (auto _ : state) {
     g_counter = 0;
-    g_counter_barrier = std::make_unique<ExecutionBarrier>();
+    g_counter_promise = std::make_unique<std::promise<void>>();
+    std::future<void> counter_future = g_counter_promise->get_future();
     for (int i = 0; i < NUM_MESSAGES_TO_SEND; i++) {
       fixed_queue_enqueue(bt_msg_queue_, (void*)&g_counter);
       thread_->task_runner()->PostTask(
           FROM_HERE, base::BindOnce(&callback_batch, bt_msg_queue_, nullptr));
     }
-    g_counter_barrier->WaitForExecution();
+    counter_future.wait();
   }
 };
 
 BENCHMARK_F(BM_LibChromeThread, sequential_execution)(State& state) {
   for (auto _ : state) {
     for (int i = 0; i < NUM_MESSAGES_TO_SEND; i++) {
-      g_counter_barrier = std::make_unique<ExecutionBarrier>();
+      g_counter_promise = std::make_unique<std::promise<void>>();
+      std::future<void> counter_future = g_counter_promise->get_future();
       thread_->task_runner()->PostTask(
           FROM_HERE, base::BindOnce(&callback_sequential, nullptr));
-      g_counter_barrier->WaitForExecution();
+      counter_future.wait();
     }
   }
 };
