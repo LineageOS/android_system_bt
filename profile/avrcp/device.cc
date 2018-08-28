@@ -59,6 +59,11 @@ void Device::RegisterInterfaces(MediaInterface* media_interface,
   volume_interface_ = volume_interface;
 }
 
+void Device::SetBrowseMtu(uint16_t browse_mtu) {
+  DEVICE_LOG(INFO) << __PRETTY_FUNCTION__ << ": browse_mtu = " << browse_mtu;
+  browse_mtu_ = browse_mtu;
+}
+
 bool Device::IsActive() const {
   return address_ == a2dp_interface_->active_peer();
 }
