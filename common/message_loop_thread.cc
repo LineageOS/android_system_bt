@@ -49,11 +49,11 @@ void MessageLoopThread::StartUp() {
     LOG(WARNING) << __func__ << ": thread " << *this << " is already started";
     return;
   }
-  std::shared_ptr<ExecutionBarrier> start_up_barrier =
-      std::make_shared<ExecutionBarrier>();
-  thread_ =
-      new std::thread(&MessageLoopThread::RunThread, this, start_up_barrier);
-  start_up_barrier->WaitForExecution();
+  std::promise<void> start_up_promise;
+  std::future<void> start_up_future = start_up_promise.get_future();
+  thread_ = new std::thread(&MessageLoopThread::RunThread, this,
+                            std::move(start_up_promise));
+  start_up_future.wait();
 }
 
 bool MessageLoopThread::DoInThread(const tracked_objects::Location& from_here,
@@ -116,10 +116,9 @@ bool MessageLoopThread::IsRunning() const {
 }
 
 // Non API method, should not be protected by API mutex
-void MessageLoopThread::RunThread(
-    MessageLoopThread* thread,
-    std::shared_ptr<ExecutionBarrier> start_up_barrier) {
-  thread->Run(std::move(start_up_barrier));
+void MessageLoopThread::RunThread(MessageLoopThread* thread,
+                                  std::promise<void> start_up_promise) {
+  thread->Run(std::move(start_up_promise));
 }
 
 base::MessageLoop* MessageLoopThread::message_loop() const {
@@ -147,8 +146,7 @@ bool MessageLoopThread::EnableRealTimeScheduling() {
 }
 
 // Non API method, should NOT be protected by API mutex to avoid deadlock
-void MessageLoopThread::Run(
-    std::shared_ptr<ExecutionBarrier> start_up_barrier) {
+void MessageLoopThread::Run(std::promise<void> start_up_promise) {
   LOG(INFO) << __func__ << ": message loop starting for thread "
             << thread_name_;
   base::PlatformThread::SetName(thread_name_);
@@ -156,7 +154,7 @@ void MessageLoopThread::Run(
   run_loop_ = new base::RunLoop();
   thread_id_ = base::PlatformThread::CurrentId();
   linux_tid_ = static_cast<pid_t>(syscall(SYS_gettid));
-  start_up_barrier->NotifyFinished();
+  start_up_promise.set_value();
   // Blocking until ShutDown() is called
   run_loop_->Run();
   thread_id_ = -1;
