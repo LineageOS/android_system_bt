@@ -52,7 +52,9 @@ class MockAdapter : public Adapter {
   MOCK_METHOD1(GetRemoteDeviceProperties,
                bool(const std::string& device_address));
   MOCK_CONST_METHOD0(GetA2dpSinkFactory, A2dpSinkFactory*());
+  MOCK_CONST_METHOD0(GetA2dpSourceFactory, A2dpSourceFactory*());
   MOCK_CONST_METHOD0(GetAvrcpControlFactory, AvrcpControlFactory*());
+  MOCK_CONST_METHOD0(GetAvrcpTargetFactory, AvrcpTargetFactory*());
   MOCK_CONST_METHOD0(GetLowEnergyClientFactory, LowEnergyClientFactory*());
   MOCK_CONST_METHOD0(GetLeAdvertiserFactory, LowEnergyAdvertiserFactory*());
   MOCK_CONST_METHOD0(GetLeScannerFactory, LowEnergyScannerFactory*());
