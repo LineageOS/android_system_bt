@@ -91,22 +91,18 @@ extern void btu_hci_msg_process(BT_HDR* p_msg);
  *
  * Function         post_to_hci_message_loop
  *
- * Description      Post an HCI event to the hci message queue
+ * Description      Post an HCI event to the main thread
  *
  * Returns          None
  *
  *****************************************************************************/
-void post_to_hci_message_loop(const tracked_objects::Location& from_here,
-                              BT_HDR* p_msg) {
-  base::MessageLoop* hci_message_loop = get_message_loop();
-  if (!hci_message_loop || !hci_message_loop->task_runner().get()) {
-    LOG_ERROR(LOG_TAG, "%s: HCI message loop not running, accessed from %s",
-              __func__, from_here.ToString().c_str());
-    return;
+void post_to_main_message_loop(const tracked_objects::Location& from_here,
+                               BT_HDR* p_msg) {
+  if (do_in_main_thread(from_here, base::Bind(&btu_hci_msg_process, p_msg)) !=
+      BT_STATUS_SUCCESS) {
+    LOG(ERROR) << __func__ << ": do_in_main_thread failed from "
+               << from_here.ToString();
   }
-
-  hci_message_loop->task_runner()->PostTask(
-      from_here, base::Bind(&btu_hci_msg_process, p_msg));
 }
 
 /******************************************************************************
@@ -127,7 +123,7 @@ void bte_main_boot_entry(void) {
     return;
   }
 
-  hci->set_data_cb(base::Bind(&post_to_hci_message_loop));
+  hci->set_data_cb(base::Bind(&post_to_main_message_loop));
 
   module_init(get_module(STACK_CONFIG_MODULE));
 }

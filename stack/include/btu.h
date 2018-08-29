@@ -57,9 +57,9 @@ void btu_free_core(void);
 /* Functions provided by btu_task.cc
  ***********************************
 */
-base::MessageLoop* get_message_loop();
-bt_status_t do_in_bta_thread(const tracked_objects::Location& from_here,
-                             base::OnceClosure task);
+base::MessageLoop* get_main_message_loop();
+bt_status_t do_in_main_thread(const tracked_objects::Location& from_here,
+                              base::OnceClosure task);
 
 void BTU_StartUp(void);
 void BTU_ShutDown(void);

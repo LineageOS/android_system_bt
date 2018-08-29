@@ -91,6 +91,12 @@ class Device {
                           VolumeInterface* volume_interface);
 
   /**
+   * Set the maximum size of a AVRCP Browsing Packet. This is done after the
+   * connection of the Browsing channel.
+   */
+  void SetBrowseMtu(uint16_t browse_mtu);
+
+  /**
    * Notify the device that metadata, play_status, and/or queue have updated
    * via a boolean. Each boolean represents whether its respective content has
    * updated.

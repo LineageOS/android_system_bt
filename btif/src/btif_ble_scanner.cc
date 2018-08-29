@@ -206,31 +206,31 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
   ~BleScannerInterfaceImpl(){};
 
   void RegisterScanner(RegisterCallback cb) override {
-    do_in_bta_thread(FROM_HERE,
-                     Bind(
-                         [](RegisterCallback cb) {
-                           BTA_GATTC_AppRegister(
-                               bta_cback,
-                               jni_thread_wrapper(FROM_HERE, std::move(cb)));
-                         },
-                         std::move(cb)));
+    do_in_main_thread(FROM_HERE,
+                      Bind(
+                          [](RegisterCallback cb) {
+                            BTA_GATTC_AppRegister(
+                                bta_cback,
+                                jni_thread_wrapper(FROM_HERE, std::move(cb)));
+                          },
+                          std::move(cb)));
   }
 
   void Unregister(int scanner_id) override {
-    do_in_bta_thread(FROM_HERE, Bind(&BTA_GATTC_AppDeregister, scanner_id));
+    do_in_main_thread(FROM_HERE, Bind(&BTA_GATTC_AppDeregister, scanner_id));
   }
 
   void Scan(bool start) override {
     do_in_jni_thread(Bind(
         [](bool start) {
           if (!start) {
-            do_in_bta_thread(FROM_HERE,
-                             Bind(&BTA_DmBleObserve, false, 0, nullptr));
+            do_in_main_thread(FROM_HERE,
+                              Bind(&BTA_DmBleObserve, false, 0, nullptr));
             return;
           }
 
           btif_gattc_init_dev_cb();
-          do_in_bta_thread(
+          do_in_main_thread(
               FROM_HERE, Bind(&BTA_DmBleObserve, true, 0, bta_scan_results_cb));
         },
         start));
@@ -243,22 +243,22 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
     BTIF_TRACE_DEBUG("%s", __func__);
 
     if (filt_param && filt_param->dely_mode == 1) {
-      do_in_bta_thread(
+      do_in_main_thread(
           FROM_HERE, base::Bind(BTM_BleTrackAdvertiser, bta_track_adv_event_cb,
                                 client_if));
     }
 
-    do_in_bta_thread(FROM_HERE,
-                     base::Bind(&BTM_BleAdvFilterParamSetup, action, filt_index,
-                                base::Passed(&filt_param),
-                                jni_thread_wrapper(FROM_HERE, std::move(cb))));
+    do_in_main_thread(
+        FROM_HERE, base::Bind(&BTM_BleAdvFilterParamSetup, action, filt_index,
+                              base::Passed(&filt_param),
+                              jni_thread_wrapper(FROM_HERE, std::move(cb))));
   }
 
   void ScanFilterAdd(int filter_index, std::vector<ApcfCommand> filters,
                      FilterConfigCallback cb) override {
     BTIF_TRACE_DEBUG("%s: %d", __func__, filter_index);
 
-    do_in_bta_thread(
+    do_in_main_thread(
         FROM_HERE,
         base::Bind(
             &BTM_LE_PF_set, filter_index, std::move(filters),
@@ -270,24 +270,24 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
 
   void ScanFilterClear(int filter_index, FilterConfigCallback cb) override {
     BTIF_TRACE_DEBUG("%s: filter_index: %d", __func__, filter_index);
-    do_in_bta_thread(FROM_HERE,
-                     base::Bind(&BTM_LE_PF_clear, filter_index,
-                                jni_thread_wrapper(
-                                    FROM_HERE, Bind(cb, BTM_BLE_PF_TYPE_ALL))));
+    do_in_main_thread(
+        FROM_HERE, base::Bind(&BTM_LE_PF_clear, filter_index,
+                              jni_thread_wrapper(
+                                  FROM_HERE, Bind(cb, BTM_BLE_PF_TYPE_ALL))));
   }
 
   void ScanFilterEnable(bool enable, EnableCallback cb) override {
     BTIF_TRACE_DEBUG("%s: enable: %d", __func__, enable);
 
     uint8_t action = enable ? 1 : 0;
-    do_in_bta_thread(FROM_HERE,
-                     base::Bind(&BTM_BleEnableDisableFilterFeature, action,
-                                jni_thread_wrapper(FROM_HERE, std::move(cb))));
+    do_in_main_thread(FROM_HERE,
+                      base::Bind(&BTM_BleEnableDisableFilterFeature, action,
+                                 jni_thread_wrapper(FROM_HERE, std::move(cb))));
   }
 
   void SetScanParameters(int scan_interval, int scan_window,
                          Callback cb) override {
-    do_in_bta_thread(
+    do_in_main_thread(
         FROM_HERE, base::Bind(&BTM_BleSetScanParams, scan_interval, scan_window,
                               BTM_BLE_SCAN_MODE_ACTI,
                               jni_thread_wrapper(FROM_HERE, std::move(cb))));
@@ -297,7 +297,7 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
                               int batch_scan_trunc_max,
                               int batch_scan_notify_threshold,
                               Callback cb) override {
-    do_in_bta_thread(
+    do_in_main_thread(
         FROM_HERE,
         base::Bind(&BTM_BleSetStorageConfig, (uint8_t)batch_scan_full_max,
                    (uint8_t)batch_scan_trunc_max,
@@ -308,21 +308,21 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
 
   void BatchscanEnable(int scan_mode, int scan_interval, int scan_window,
                        int addr_type, int discard_rule, Callback cb) override {
-    do_in_bta_thread(
+    do_in_main_thread(
         FROM_HERE, base::Bind(&BTM_BleEnableBatchScan, scan_mode, scan_interval,
                               scan_window, discard_rule, addr_type,
                               jni_thread_wrapper(FROM_HERE, cb)));
   }
 
   void BatchscanDisable(Callback cb) override {
-    do_in_bta_thread(FROM_HERE, base::Bind(&BTM_BleDisableBatchScan,
-                                           jni_thread_wrapper(FROM_HERE, cb)));
+    do_in_main_thread(FROM_HERE, base::Bind(&BTM_BleDisableBatchScan,
+                                            jni_thread_wrapper(FROM_HERE, cb)));
   }
 
   void BatchscanReadReports(int client_if, int scan_mode) override {
-    do_in_bta_thread(FROM_HERE,
-                     base::Bind(&BTM_BleReadScanReports, (uint8_t)scan_mode,
-                                Bind(bta_batch_scan_reports_cb, client_if)));
+    do_in_main_thread(FROM_HERE,
+                      base::Bind(&BTM_BleReadScanReports, (uint8_t)scan_mode,
+                                 Bind(bta_batch_scan_reports_cb, client_if)));
   }
 
   void StartSync(uint8_t sid, RawAddress address, uint16_t skip,

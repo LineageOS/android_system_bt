@@ -1523,7 +1523,7 @@ void btif_storage_load_bonded_hearing_aids() {
     RawAddress bd_addr;
     RawAddress::FromString(name, bd_addr);
     // add extracted information to BTA Hearing Aid
-    do_in_bta_thread(
+    do_in_main_thread(
         FROM_HERE,
         Bind(&HearingAid::AddFromStorage, bd_addr, psm, capabilities, codecs,
              audio_control_point_handle, volume_handle, hi_sync_id,

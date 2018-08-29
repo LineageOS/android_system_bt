@@ -273,13 +273,20 @@ void ConnectionHandler::InitiatorControlCb(uint8_t handle, uint8_t event,
       device_map_.erase(handle);
     } break;
 
-    case AVRC_BROWSE_OPEN_IND_EVT:
+    case AVRC_BROWSE_OPEN_IND_EVT: {
       LOG(INFO) << __PRETTY_FUNCTION__ << ": Browse Open Event";
       // NOTE (apanicke): We don't need to explicitly handle this message
       // since the AVCTP Layer will still send us browsing messages
       // regardless. It would be useful to note this though for future
       // compatibility issues.
-      break;
+      if (device_map_.find(handle) == device_map_.end()) {
+        LOG(WARNING) << "Browse Opened received from device that doesn't exist";
+        return;
+      }
+
+      auto browse_mtu = avrc_->GetBrowseMtu(handle) - AVCT_HDR_LEN;
+      device_map_[handle]->SetBrowseMtu(browse_mtu);
+    } break;
     case AVRC_BROWSE_CLOSE_IND_EVT:
       LOG(INFO) << __PRETTY_FUNCTION__ << ": Browse Close Event";
       break;
@@ -357,13 +364,20 @@ void ConnectionHandler::AcceptorControlCb(uint8_t handle, uint8_t event,
       device_map_.erase(handle);
     } break;
 
-    case AVRC_BROWSE_OPEN_IND_EVT:
+    case AVRC_BROWSE_OPEN_IND_EVT: {
       LOG(INFO) << __PRETTY_FUNCTION__ << ": Browse Open Event";
       // NOTE (apanicke): We don't need to explicitly handle this message
       // since the AVCTP Layer will still send us browsing messages
       // regardless. It would be useful to note this though for future
       // compatibility issues.
-      break;
+      if (device_map_.find(handle) == device_map_.end()) {
+        LOG(WARNING) << "Browse Opened received from device that doesn't exist";
+        return;
+      }
+
+      auto browse_mtu = avrc_->GetBrowseMtu(handle) - AVCT_HDR_LEN;
+      device_map_[handle]->SetBrowseMtu(browse_mtu);
+    } break;
     case AVRC_BROWSE_CLOSE_IND_EVT:
       LOG(INFO) << __PRETTY_FUNCTION__ << ": Browse Close Event";
       break;

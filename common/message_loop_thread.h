@@ -17,6 +17,7 @@
 #pragma once
 
 #include <unistd.h>
+#include <future>
 #include <memory>
 #include <string>
 #include <thread>
@@ -26,8 +27,6 @@
 #include <base/run_loop.h>
 #include <base/threading/platform_thread.h>
 #include <base/tracked_objects.h>
-
-#include "common/execution_barrier.h"
 
 namespace bluetooth {
 
@@ -138,19 +137,19 @@ class MessageLoopThread final {
    * This is used instead of a C++ lambda because of the use of std::shared_ptr
    *
    * @param context needs to be a pointer to an instance of MessageLoopThread
-   * @param start_up_barrier an ExecutionBarrier that is used to notify calling
+   * @param start_up_promise a std::promise that is used to notify calling
    * thread the completion of message loop start-up
    */
   static void RunThread(MessageLoopThread* context,
-                        std::shared_ptr<ExecutionBarrier> start_up_barrier);
+                        std::promise<void> start_up_promise);
 
   /**
    * Actual method to run the thread, blocking until ShutDown() is called
    *
-   * @param start_up_barrier an ExecutionBarrier that is used to notify calling
+   * @param start_up_promise a std::promise that is used to notify calling
    * thread the completion of message loop start-up
    */
-  void Run(std::shared_ptr<ExecutionBarrier> start_up_barrier);
+  void Run(std::promise<void> start_up_promise);
 
   mutable std::recursive_mutex api_mutex_;
   std::string thread_name_;
