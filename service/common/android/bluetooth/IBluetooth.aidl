@@ -23,7 +23,9 @@ import android.bluetooth.IBluetoothLeScanner;
 import android.bluetooth.IBluetoothGattClient;
 import android.bluetooth.IBluetoothGattServer;
 import android.bluetooth.IBluetoothA2dpSink;
+import android.bluetooth.IBluetoothA2dpSource;
 import android.bluetooth.IBluetoothAvrcpControl;
+import android.bluetooth.IBluetoothAvrcpTarget;
 
 import android.bluetooth.UUID;
 
@@ -61,5 +63,7 @@ interface IBluetooth {
   IBluetoothGattClient GetGattClientInterface();
   IBluetoothGattServer GetGattServerInterface();
   IBluetoothA2dpSink GetA2dpSinkInterface();
+  IBluetoothA2dpSource GetA2dpSourceInterface();
   IBluetoothAvrcpControl GetAvrcpControlInterface();
+  IBluetoothAvrcpTarget GetAvrcpTargetInterface();
 }

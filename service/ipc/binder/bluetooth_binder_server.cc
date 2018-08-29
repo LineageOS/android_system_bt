@@ -19,7 +19,9 @@
 #include <base/logging.h>
 
 #include "service/ipc/binder/bluetooth_a2dp_sink_binder_server.h"
+#include "service/ipc/binder/bluetooth_a2dp_source_binder_server.h"
 #include "service/ipc/binder/bluetooth_avrcp_control_binder_server.h"
+#include "service/ipc/binder/bluetooth_avrcp_target_binder_server.h"
 #include "service/ipc/binder/bluetooth_gatt_client_binder_server.h"
 #include "service/ipc/binder/bluetooth_gatt_server_binder_server.h"
 #include "service/ipc/binder/bluetooth_le_advertiser_binder_server.h"
@@ -214,6 +216,29 @@ Status BluetoothBinderServer::GetA2dpSinkInterface(
   return Status::ok();
 }
 
+Status BluetoothBinderServer::GetA2dpSourceInterface(
+    ::android::sp<IBluetoothA2dpSource>* _aidl_return) {
+  VLOG(2) << __func__;
+
+  if (!adapter_->IsEnabled()) {
+    LOG(ERROR) << "Cannot obtain IBluetoothA2dpSource interface while disabled";
+    *_aidl_return = nullptr;
+    return Status::ok();
+  }
+
+  if (!a2dp_source_interface_.get())
+    a2dp_source_interface_ = new BluetoothA2dpSourceBinderServer(adapter_);
+
+  if (a2dp_source_interface_->HasInstance()) {
+    LOG(ERROR) << "Only one A2dpSource interface allowed at a time";
+    *_aidl_return = nullptr;
+    return Status::ok();
+  }
+
+  *_aidl_return = a2dp_source_interface_;
+  return Status::ok();
+}
+
 Status BluetoothBinderServer::GetLowEnergyInterface(
     ::android::sp<IBluetoothLowEnergy>* _aidl_return) {
   VLOG(2) << __func__;
@@ -315,6 +340,30 @@ Status BluetoothBinderServer::GetAvrcpControlInterface(
     avrcp_control_interface_ = new BluetoothAvrcpControlBinderServer(adapter_);
 
   *_aidl_return = avrcp_control_interface_;
+  return Status::ok();
+}
+
+Status BluetoothBinderServer::GetAvrcpTargetInterface(
+    ::android::sp<IBluetoothAvrcpTarget>* _aidl_return) {
+  VLOG(2) << __func__;
+
+  if (!adapter_->IsEnabled()) {
+    LOG(ERROR)
+        << "Cannot obtain IBluetoothAvrcpTarget interface while disabled";
+    *_aidl_return = NULL;
+    return Status::ok();
+  }
+
+  if (!avrcp_target_interface_.get())
+    avrcp_target_interface_ = new BluetoothAvrcpTargetBinderServer(adapter_);
+
+  if (avrcp_target_interface_->HasInstance()) {
+    LOG(ERROR) << "Only one AVRCP target interface allowed at a time";
+    *_aidl_return = nullptr;
+    return Status::ok();
+  }
+
+  *_aidl_return = avrcp_target_interface_;
   return Status::ok();
 }
 

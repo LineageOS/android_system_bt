@@ -25,7 +25,9 @@
 
 #include <android/bluetooth/BnBluetooth.h>
 #include <android/bluetooth/IBluetoothA2dpSink.h>
+#include <android/bluetooth/IBluetoothA2dpSource.h>
 #include <android/bluetooth/IBluetoothAvrcpControl.h>
+#include <android/bluetooth/IBluetoothAvrcpTarget.h>
 #include <android/bluetooth/IBluetoothCallback.h>
 #include <android/bluetooth/IBluetoothGattClient.h>
 #include <android/bluetooth/IBluetoothGattServer.h>
@@ -42,7 +44,9 @@ using android::binder::Status;
 
 using android::bluetooth::BnBluetooth;
 using android::bluetooth::IBluetoothA2dpSink;
+using android::bluetooth::IBluetoothA2dpSource;
 using android::bluetooth::IBluetoothAvrcpControl;
+using android::bluetooth::IBluetoothAvrcpTarget;
 using android::bluetooth::IBluetoothCallback;
 using android::bluetooth::IBluetoothGattClient;
 using android::bluetooth::IBluetoothGattServer;
@@ -54,6 +58,8 @@ namespace ipc {
 namespace binder {
 
 class BluetoothA2dpSinkBinderServer;
+class BluetoothA2dpSourceBinderServer;
+class BluetoothAvrcpTargetBinderServer;
 
 // Implements the server side of the IBluetooth Binder interface.
 class BluetoothBinderServer : public BnBluetooth,
@@ -93,6 +99,8 @@ class BluetoothBinderServer : public BnBluetooth,
   Status IsMultiAdvertisementSupported(bool* _aidl_return) override;
   Status GetA2dpSinkInterface(
       ::android::sp<IBluetoothA2dpSink>* _aidl_return) override;
+  Status GetA2dpSourceInterface(
+      ::android::sp<IBluetoothA2dpSource>* _aidl_return) override;
   Status GetLowEnergyInterface(
       ::android::sp<IBluetoothLowEnergy>* _aidl_return) override;
   Status GetLeAdvertiserInterface(
@@ -105,6 +113,8 @@ class BluetoothBinderServer : public BnBluetooth,
       ::android::sp<IBluetoothGattServer>* _aidl_return) override;
   Status GetAvrcpControlInterface(
       ::android::sp<IBluetoothAvrcpControl>* _aidl_return) override;
+  Status GetAvrcpTargetInterface(
+      ::android::sp<IBluetoothAvrcpTarget>* _aidl_return) override;
 
   android::status_t dump(
       int fd, const android::Vector<android::String16>& args) override;
@@ -147,6 +157,10 @@ class BluetoothBinderServer : public BnBluetooth,
   // first call to GetA2dpSinkInterface().
   android::sp<BluetoothA2dpSinkBinderServer> a2dp_sink_interface_;
 
+  // The IBluetoothA2dpSource interface handle. This is lazily initialized on
+  // the first call to GetA2dpSourceInterface().
+  android::sp<BluetoothA2dpSourceBinderServer> a2dp_source_interface_;
+
   // The IBluetoothLowEnergy interface handle. This is lazily initialized on the
   // first call to GetLowEnergyInterface().
   android::sp<IBluetoothLowEnergy> low_energy_interface_;
@@ -170,6 +184,10 @@ class BluetoothBinderServer : public BnBluetooth,
   // The IBluetoothAvrcpControl interface handle. This is lazily initialized on
   // the first call to GetAvrcpControlInterface().
   android::sp<IBluetoothAvrcpControl> avrcp_control_interface_;
+
+  // The IBluetoothAvrcpTarget interface handle. This is lazily initialized on
+  // the first call to GetAvrcpTargetInterface().
+  android::sp<BluetoothAvrcpTargetBinderServer> avrcp_target_interface_;
 
   DISALLOW_COPY_AND_ASSIGN(BluetoothBinderServer);
 };
