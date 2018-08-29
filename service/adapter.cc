@@ -79,13 +79,13 @@ RemoteDeviceProps ParseRemoteDeviceProps(int num_properties,
           NOTREACHED() << "Negative length on BT_PROPERTY_UUIDS:";
           break;
         }
-        if (property->len % sizeof(Uuid::UUID128Bit) != 0) {
+        if (property->len % sizeof(Uuid) != 0) {
           NOTREACHED() << "Trailing bytes on BT_PROPERTY_UUIDS:";
         }
-        auto uuids = static_cast<const Uuid::UUID128Bit*>(property->val);
+        auto uuids = static_cast<const Uuid*>(property->val);
 
-        for (size_t i = 0; i < property->len / sizeof(Uuid::UUID128Bit); ++i) {
-          service_uuids.push_back(Uuid::From128BitLE(uuids[i]));
+        for (size_t i = 0; i < property->len / sizeof(Uuid); ++i) {
+          service_uuids.push_back(uuids[i]);
         }
         break;
       }
