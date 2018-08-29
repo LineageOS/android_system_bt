@@ -15,8 +15,10 @@ cc_defaults {
 // ========================================================
 btserviceDaemonSrc = [
     "a2dp_sink.cc",
+    "a2dp_source.cc",
     "adapter.cc",
     "avrcp_control.cc",
+    "avrcp_target.cc",
     "daemon.cc",
     "gatt_client.cc",
     "gatt_server.cc",
@@ -41,7 +43,9 @@ btserviceLinuxSrc = [
 
 btserviceBinderDaemonSrc = [
     "ipc/binder/bluetooth_a2dp_sink_binder_server.cc",
+    "ipc/binder/bluetooth_a2dp_source_binder_server.cc",
     "ipc/binder/bluetooth_avrcp_control_binder_server.cc",
+    "ipc/binder/bluetooth_avrcp_target_binder_server.cc",
     "ipc/binder/bluetooth_binder_server.cc",
     "ipc/binder/bluetooth_gatt_client_binder_server.cc",
     "ipc/binder/bluetooth_gatt_server_binder_server.cc",

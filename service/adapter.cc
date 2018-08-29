@@ -25,7 +25,9 @@
 #include <base/observer_list.h>
 
 #include "service/a2dp_sink.h"
+#include "service/a2dp_source.h"
 #include "service/avrcp_control.h"
+#include "service/avrcp_target.h"
 #include "service/common/bluetooth/util/atomic_string.h"
 #include "service/gatt_client.h"
 #include "service/gatt_server.h"
@@ -202,7 +204,9 @@ class AdapterImpl : public Adapter, public hal::BluetoothInterface::Observer {
     memset(&local_le_features_, 0, sizeof(local_le_features_));
     hal::BluetoothInterface::Get()->AddObserver(this);
     a2dp_sink_factory_.reset(new A2dpSinkFactory);
+    a2dp_source_factory_.reset(new A2dpSourceFactory);
     avrcp_control_factory_.reset(new AvrcpControlFactory);
+    avrcp_target_factory_.reset(new AvrcpTargetFactory);
     ble_client_factory_.reset(new LowEnergyClientFactory(*this));
     ble_advertiser_factory_.reset(new LowEnergyAdvertiserFactory());
     ble_scanner_factory_.reset(new LowEnergyScannerFactory(*this));
@@ -466,8 +470,16 @@ class AdapterImpl : public Adapter, public hal::BluetoothInterface::Observer {
     return a2dp_sink_factory_.get();
   }
 
+  A2dpSourceFactory* GetA2dpSourceFactory() const override {
+    return a2dp_source_factory_.get();
+  }
+
   AvrcpControlFactory* GetAvrcpControlFactory() const override {
     return avrcp_control_factory_.get();
+  }
+
+  AvrcpTargetFactory* GetAvrcpTargetFactory() const override {
+    return avrcp_target_factory_.get();
   }
 
   LowEnergyClientFactory* GetLowEnergyClientFactory() const override {
@@ -764,8 +776,14 @@ class AdapterImpl : public Adapter, public hal::BluetoothInterface::Observer {
   // Factory used to create per-app A2dpSink instances.
   std::unique_ptr<A2dpSinkFactory> a2dp_sink_factory_;
 
+  // Factory used to create per-app A2dpSource instances.
+  std::unique_ptr<A2dpSourceFactory> a2dp_source_factory_;
+
   // Factory used to create per-app AvrcpControl instances.
   std::unique_ptr<AvrcpControlFactory> avrcp_control_factory_;
+
+  // Factory used to create per-app AvrcpTarget instances.
+  std::unique_ptr<AvrcpTargetFactory> avrcp_target_factory_;
 
   // Factory used to create per-app LowEnergyClient instances.
   std::unique_ptr<LowEnergyClientFactory> ble_client_factory_;
