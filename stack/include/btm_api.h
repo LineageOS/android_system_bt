@@ -1411,15 +1411,16 @@ extern bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
                              uint8_t key_type, tBTM_IO_CAP io_cap,
                              uint8_t pin_length);
 
-/*******************************************************************************
+/** Free resources associated with the device associated with |bd_addr| address.
  *
- * Function         BTM_SecDeleteDevice
+ * *** WARNING ***
+ * tBTM_SEC_DEV_REC associated with bd_addr becomes invalid after this function
+ * is called, also any of it's fields. i.e. if you use p_dev_rec->bd_addr, it is
+ * no longer valid!
+ * *** WARNING ***
  *
- * Description      Free resources associated with the device.
- *
- * Returns          true if rmoved OK, false if not found
- *
- ******************************************************************************/
+ * Returns true if removed OK, false if not found or ACL link is active.
+ */
 extern bool BTM_SecDeleteDevice(const RawAddress& bd_addr);
 
 /*******************************************************************************
