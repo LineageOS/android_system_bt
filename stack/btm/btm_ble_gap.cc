@@ -485,38 +485,37 @@ static void btm_ble_vendor_capability_vsc_cmpl_cback(
   BTM_TRACE_DEBUG("%s", __func__);
 
   /* Check status of command complete event */
-  CHECK(p_vcs_cplt_params->opcode == HCI_BLE_VENDOR_CAP_OCF);
-  CHECK(p_vcs_cplt_params->param_len > 0);
-
-  p = p_vcs_cplt_params->p_param_buf;
-  STREAM_TO_UINT8(status, p);
-
-  if (status != HCI_SUCCESS) {
-    BTM_TRACE_DEBUG("%s: Status = 0x%02x (0 is success)", __func__, status);
-    return;
-  }
-  STREAM_TO_UINT8(btm_cb.cmn_ble_vsc_cb.adv_inst_max, p);
-  STREAM_TO_UINT8(btm_cb.cmn_ble_vsc_cb.rpa_offloading, p);
-  STREAM_TO_UINT16(btm_cb.cmn_ble_vsc_cb.tot_scan_results_strg, p);
-  STREAM_TO_UINT8(btm_cb.cmn_ble_vsc_cb.max_irk_list_sz, p);
-  STREAM_TO_UINT8(btm_cb.cmn_ble_vsc_cb.filter_support, p);
-  STREAM_TO_UINT8(btm_cb.cmn_ble_vsc_cb.max_filter, p);
-  STREAM_TO_UINT8(btm_cb.cmn_ble_vsc_cb.energy_support, p);
-
-  if (p_vcs_cplt_params->param_len >
-      BTM_VSC_CHIP_CAPABILITY_RSP_LEN_L_RELEASE) {
-    STREAM_TO_UINT16(btm_cb.cmn_ble_vsc_cb.version_supported, p);
-  } else {
-    btm_cb.cmn_ble_vsc_cb.version_supported = BTM_VSC_CHIP_CAPABILITY_L_VERSION;
+  if ((p_vcs_cplt_params->opcode == HCI_BLE_VENDOR_CAP_OCF) &&
+      (p_vcs_cplt_params->param_len > 0)) {
+    p = p_vcs_cplt_params->p_param_buf;
+    STREAM_TO_UINT8(status, p);
   }
 
-  if (btm_cb.cmn_ble_vsc_cb.version_supported >=
-      BTM_VSC_CHIP_CAPABILITY_M_VERSION) {
-    STREAM_TO_UINT16(btm_cb.cmn_ble_vsc_cb.total_trackable_advertisers, p);
-    STREAM_TO_UINT16(btm_cb.cmn_ble_vsc_cb.extended_scan_support, p);
-    STREAM_TO_UINT16(btm_cb.cmn_ble_vsc_cb.debug_logging_supported, p);
+  if (status == HCI_SUCCESS) {
+    STREAM_TO_UINT8(btm_cb.cmn_ble_vsc_cb.adv_inst_max, p);
+    STREAM_TO_UINT8(btm_cb.cmn_ble_vsc_cb.rpa_offloading, p);
+    STREAM_TO_UINT16(btm_cb.cmn_ble_vsc_cb.tot_scan_results_strg, p);
+    STREAM_TO_UINT8(btm_cb.cmn_ble_vsc_cb.max_irk_list_sz, p);
+    STREAM_TO_UINT8(btm_cb.cmn_ble_vsc_cb.filter_support, p);
+    STREAM_TO_UINT8(btm_cb.cmn_ble_vsc_cb.max_filter, p);
+    STREAM_TO_UINT8(btm_cb.cmn_ble_vsc_cb.energy_support, p);
+
+    if (p_vcs_cplt_params->param_len >
+        BTM_VSC_CHIP_CAPABILITY_RSP_LEN_L_RELEASE) {
+      STREAM_TO_UINT16(btm_cb.cmn_ble_vsc_cb.version_supported, p);
+    } else {
+      btm_cb.cmn_ble_vsc_cb.version_supported =
+          BTM_VSC_CHIP_CAPABILITY_L_VERSION;
+    }
+
+    if (btm_cb.cmn_ble_vsc_cb.version_supported >=
+        BTM_VSC_CHIP_CAPABILITY_M_VERSION) {
+      STREAM_TO_UINT16(btm_cb.cmn_ble_vsc_cb.total_trackable_advertisers, p);
+      STREAM_TO_UINT16(btm_cb.cmn_ble_vsc_cb.extended_scan_support, p);
+      STREAM_TO_UINT16(btm_cb.cmn_ble_vsc_cb.debug_logging_supported, p);
+    }
+    btm_cb.cmn_ble_vsc_cb.values_read = true;
   }
-  btm_cb.cmn_ble_vsc_cb.values_read = true;
 
   BTM_TRACE_DEBUG(
       "%s: stat=%d, irk=%d, ADV ins:%d, rpa=%d, ener=%d, ext_scan=%d", __func__,
