@@ -31,6 +31,7 @@
 **  Global data
 *****************************************************************************/
 
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
 #if (AVRC_METADATA_INCLUDED == TRUE)
 
 /*******************************************************************************
@@ -120,19 +121,35 @@ static tAVRC_STS avrc_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPONSE *p
 *******************************************************************************/
 static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPONSE *p_result, UINT8* p_buf, UINT16* buf_len)
 {
+    if (p_msg->vendor_len < 4) {
+        android_errorWriteLog(0x534e4554, "111450417");
+        AVRC_TRACE_WARNING("%s: message length %d too short: must be at least 4",
+                           __func__, p_msg->vendor_len);
+        return AVRC_STS_INTERNAL_ERR;
+    }
+
     tAVRC_STS  status = AVRC_STS_NO_ERROR;
     UINT8   *p = p_msg->p_vendor_data;
     UINT16  len;
+    UINT16  min_len = 0;
     UINT8   xx, yy;
     UINT8 eventid=0;
 
     BE_STREAM_TO_UINT8 (p_result->pdu, p);
     p++; /* skip the reserved/packe_type byte */
     BE_STREAM_TO_UINT16 (len, p);
-    AVRC_TRACE_DEBUG("avrc_ctrl_pars_vendor_rsp() ctype:0x%x pdu:0x%x, len:%d",
-                                         p_msg->hdr.ctype, p_result->pdu, len);
+    AVRC_TRACE_DEBUG("avrc_ctrl_pars_vendor_rsp() ctype:0x%x pdu:0x%x, len:%d vendor_len=0x%x",
+                                         p_msg->hdr.ctype, p_result->pdu, len, p_msg->vendor_len);
+    if (p_msg->vendor_len < len + 4) {
+        android_errorWriteLog(0x534e4554, "111450417");
+        AVRC_TRACE_WARNING("%s: message length %d too short: must be at least %d",
+                           __func__, p_msg->vendor_len, len + 4);
+        return AVRC_STS_INTERNAL_ERR;
+    }
     if (p_msg->hdr.ctype == AVRC_RSP_REJ)
     {
+        min_len += 1;
+        if (len < min_len) goto length_error;
         p_result->rsp.status = *p;
         return p_result->rsp.status;
     }
@@ -159,12 +176,16 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPON
             p_result->get_caps.capability_id = 0;
             break;
         }
+        min_len += 2;
+        if (len < min_len) goto length_error;
         BE_STREAM_TO_UINT8(p_result->get_caps.capability_id,p);
         BE_STREAM_TO_UINT8(p_result->get_caps.count,p);
         AVRC_TRACE_DEBUG("AVRC_PDU_GET_CAPABILITIES cap id =%d, cap_count = %d "
                                      ,p_result->get_caps.capability_id,p_result->get_caps.count);
         if (p_result->get_caps.capability_id == AVRC_CAP_COMPANY_ID)
         {
+            min_len += MIN(p_result->get_caps.count, AVRC_CAP_MAX_NUM_COMP_ID) * 3;
+            if (len < min_len) goto length_error;
             for(xx =0; ((xx<=p_result->get_caps.count) && (xx <AVRC_CAP_MAX_NUM_COMP_ID)); xx++)
             {
                 BE_STREAM_TO_UINT24(p_result->get_caps.param.company_id[xx],p);
@@ -172,6 +193,8 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPON
         }
         else if (p_result->get_caps.capability_id == AVRC_CAP_EVENTS_SUPPORTED)
         {
+            min_len += MIN(p_result->get_caps.count, AVRC_CAP_MAX_NUM_EVT_ID);
+            if (len < min_len) goto length_error;
             for(xx =0; ((xx<=p_result->get_caps.count) && (xx <AVRC_CAP_MAX_NUM_EVT_ID)); xx++)
             {
                 BE_STREAM_TO_UINT8(p_result->get_caps.param.event_id[xx],p);
@@ -184,9 +207,13 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPON
             p_result->list_app_attr.num_attr = 0;
             break;
         }
+        min_len += 1;
         BE_STREAM_TO_UINT8(p_result->list_app_attr.num_attr,p);
         AVRC_TRACE_DEBUG("AVRC_PDU_LIST_PLAYER_APP_ATTR count = %d ",
                                            p_result->list_app_attr.num_attr);
+
+        min_len += p_result->list_app_attr.num_attr;
+        if (len < min_len) goto length_error;
         for(xx = 0; xx < p_result->list_app_attr.num_attr;xx++)
         {
             BE_STREAM_TO_UINT8(p_result->list_app_attr.attrs[xx],p);
@@ -198,6 +225,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPON
             p_result->list_app_values.num_val = 0;
             break;
         }
+        min_len += 1;
         BE_STREAM_TO_UINT8(p_result->list_app_values.num_val,p);
         if (p_result->list_app_values.num_val > AVRC_MAX_APP_ATTR_SIZE)
         {
@@ -207,6 +235,8 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPON
 
         AVRC_TRACE_DEBUG("AVRC_PDU_LIST_PLAYER_APP_ATTR count = %d ",
                                           p_result->list_app_attr.num_attr);
+        min_len += p_result->list_app_values.num_val;
+        if (len < min_len) goto length_error;
         for(xx = 0; xx < p_result->list_app_values.num_val; xx++)
         {
             BE_STREAM_TO_UINT8(p_result->list_app_values.vals[xx],p);
@@ -220,11 +250,17 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPON
             p_result->get_cur_app_val.num_val = 0;
             break;
         }
+        min_len += 1;
         BE_STREAM_TO_UINT8(p_result->get_cur_app_val.num_val,p);
-        app_sett =
-            (tAVRC_APP_SETTING*)GKI_getbuf(p_result->get_cur_app_val.num_val*sizeof(tAVRC_APP_SETTING));
         AVRC_TRACE_DEBUG("AVRC_PDU_GET_CUR_PLAYER_APP_VALUE count = %d "
                                      ,p_result->get_cur_app_val.num_val);
+        min_len += p_result->get_cur_app_val.num_val * 2;
+        if (len < min_len) {
+            p_result->get_cur_app_val.num_val = 0;
+            goto length_error;
+        }
+        app_sett =
+            (tAVRC_APP_SETTING*)GKI_getbuf(p_result->get_cur_app_val.num_val*sizeof(tAVRC_APP_SETTING));
         for (xx = 0; xx < p_result->get_cur_app_val.num_val; xx++)
         {
             BE_STREAM_TO_UINT8(app_sett[xx].attr_id,p);
@@ -242,6 +278,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPON
             p_result->get_elem_attrs.num_attr = 0;
             break;
         }
+        min_len += 1;
         BE_STREAM_TO_UINT8(p_result->get_elem_attrs.num_attr,p);
         memcpy(p_buf,p,len-1); // 1 byte of len already read.
         *buf_len = len-1;
@@ -252,6 +289,8 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPON
             buf_len = 0;
             break;
         }
+        min_len += 9;
+        if (len < min_len) goto length_error;
         memcpy(p_buf,p,len);
         *buf_len = len;
         break;
@@ -262,6 +301,12 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPON
     }
 
     return status;
+
+length_error:
+    android_errorWriteLog(0x534e4554, "111450417");
+    AVRC_TRACE_WARNING("%s: invalid parameter length %d: must be at least %d",
+                       __func__, len, min_len);
+    return AVRC_STS_INTERNAL_ERR;
 }
 #endif /* (AVRC_ADV_CTRL_INCLUDED == TRUE) */
 /*******************************************************************************
