@@ -58,13 +58,32 @@ static tAVRC_STS avrc_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPONSE *p
     if (p_msg->p_vendor_data == NULL)
         return AVRC_STS_INTERNAL_ERR;
 
+    if (p_msg->vendor_len < 4) {
+        android_errorWriteLog(0x534e4554, "111450531");
+        AVRC_TRACE_WARNING("%s: message length %d too short: must be at least 4",
+                           __func__, p_msg->vendor_len);
+        return AVRC_STS_INTERNAL_ERR;
+    }
     p = p_msg->p_vendor_data;
     BE_STREAM_TO_UINT8 (p_result->pdu, p);
     p++; /* skip the reserved/packe_type byte */
     BE_STREAM_TO_UINT16 (len, p);
-    AVRC_TRACE_DEBUG("avrc_pars_vendor_rsp() ctype:0x%x pdu:0x%x, len:%d/0x%x", p_msg->hdr.ctype, p_result->pdu, len, len);
+    AVRC_TRACE_DEBUG("avrc_pars_vendor_rsp() ctype:0x%x pdu:0x%x, len:%d/0x%x vendor_len=0x%x", p_msg->hdr.ctype, p_result->pdu, len, len, p_msg->vendor_len);
+    if (p_msg->vendor_len < len + 4) {
+        android_errorWriteLog(0x534e4554, "111450531");
+        AVRC_TRACE_WARNING("%s: message length %d too short: must be at least %d",
+                           __func__, p_msg->vendor_len, len + 4);
+        return AVRC_STS_INTERNAL_ERR;
+    }
+
     if (p_msg->hdr.ctype == AVRC_RSP_REJ)
     {
+        if (len < 1) {
+            android_errorWriteLog(0x534e4554, "111450531");
+            AVRC_TRACE_WARNING("%s: invalid parameter length %d: must be at least 1",
+                               __func__, len);
+            return AVRC_STS_INTERNAL_ERR;
+        }
         p_result->rsp.status = *p;
         return p_result->rsp.status;
     }
@@ -87,11 +106,25 @@ static tAVRC_STS avrc_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPONSE *p
 
     case AVRC_PDU_REGISTER_NOTIFICATION:    /* 0x31 */
 #if (AVRC_ADV_CTRL_INCLUDED == TRUE)
+        if (len < 1) {
+            android_errorWriteLog(0x534e4554, "111450531");
+            AVRC_TRACE_WARNING(
+                "%s: invalid parameter length %d: must be at least 1", __func__,
+                len);
+            return AVRC_STS_INTERNAL_ERR;
+        }
         BE_STREAM_TO_UINT8 (eventid, p);
         if(AVRC_EVT_VOLUME_CHANGE==eventid
             && (AVRC_RSP_CHANGED==p_msg->hdr.ctype || AVRC_RSP_INTERIM==p_msg->hdr.ctype
             || AVRC_RSP_REJ==p_msg->hdr.ctype || AVRC_RSP_NOT_IMPL==p_msg->hdr.ctype))
         {
+            if (len < 2) {
+                android_errorWriteLog(0x534e4554, "111450531");
+                AVRC_TRACE_WARNING(
+                    "%s: invalid parameter length %d: must be at least 2", __func__,
+                    len);
+                return AVRC_STS_INTERNAL_ERR;
+            }
             p_result->reg_notif.status=p_msg->hdr.ctype;
             p_result->reg_notif.event_id=eventid;
             BE_STREAM_TO_UINT8 (p_result->reg_notif.param.volume, p);
