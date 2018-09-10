@@ -1319,7 +1319,8 @@ void HearingAid::CleanUp() {
 };
 
 void HearingAid::DebugDump(int fd) {
-  dprintf(fd, "\nHearing Aid Manager:\n");
+  dprintf(fd, "Hearing Aid Manager:\n");
   if (instance) instance->Dump(fd);
   HearingAidAudioSource::DebugDump(fd);
+  dprintf(fd, "\n");
 }
