@@ -61,7 +61,7 @@ BrowsePdu BrowsePacket::GetPdu() const {
 
 uint16_t BrowsePacket::GetLength() const {
   auto it = begin() + static_cast<size_t>(1);
-  return base::ByteSwap(it.extract<uint16_t>());
+  return it.extractBE<uint16_t>();
 }
 
 bool BrowsePacket::IsValid() const {
