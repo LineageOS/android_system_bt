@@ -668,6 +668,11 @@ A2dpCodecConfig* A2dpCodecs::findSinkCodecConfig(const uint8_t* p_codec_info) {
   return iter->second;
 }
 
+bool A2dpCodecs::isSupportedCodec(btav_a2dp_codec_index_t codec_index) {
+  std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
+  return indexed_codecs_.find(codec_index) != indexed_codecs_.end();
+}
+
 bool A2dpCodecs::setCodecConfig(const uint8_t* p_peer_codec_info,
                                 bool is_capability,
                                 uint8_t* p_result_codec_config,
