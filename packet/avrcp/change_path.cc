@@ -52,7 +52,7 @@ bool ChangePathResponseBuilder::Serialize(
 
 uint16_t ChangePathRequest::GetUidCounter() const {
   auto it = begin() + BrowsePacket::kMinSize();
-  return base::ByteSwap(it.extract<uint16_t>());
+  return it.extractBE<uint16_t>();
 }
 
 Direction ChangePathRequest::GetDirection() const {
@@ -62,7 +62,7 @@ Direction ChangePathRequest::GetDirection() const {
 
 uint64_t ChangePathRequest::GetUid() const {
   auto it = begin() + BrowsePacket::kMinSize() + static_cast<size_t>(3);
-  return base::ByteSwap(it.extract<uint64_t>());
+  return it.extractBE<uint64_t>();
 }
 
 bool ChangePathRequest::IsValid() const {

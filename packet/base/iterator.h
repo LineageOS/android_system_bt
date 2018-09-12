@@ -71,6 +71,22 @@ class Iterator
     return extracted_value;
   }
 
+  // Extract in Little Endian Format
+  template <typename FixedWidthIntegerType>
+  FixedWidthIntegerType extractBE() {
+    static_assert(std::is_integral<FixedWidthIntegerType>::value,
+                  "Iterator::extract requires an integral type.");
+
+    FixedWidthIntegerType extracted_value = 0;
+    for (size_t i = 0; i < sizeof(FixedWidthIntegerType); i++) {
+      extracted_value |= static_cast<FixedWidthIntegerType>(**this)
+                         << (sizeof(FixedWidthIntegerType) - 1 - i) * 8;
+      (*this)++;
+    }
+
+    return extracted_value;
+  }
+
   uint8_t extract8() { return extract<uint8_t>(); }
   uint16_t extract16() { return extract<uint16_t>(); }
   uint32_t extract32() { return extract<uint32_t>(); }

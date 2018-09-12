@@ -96,7 +96,7 @@ PacketType VendorPacket::GetPacketType() const {
 uint16_t VendorPacket::GetParameterLength() const {
   auto it = begin() + Packet::kMinSize() + static_cast<size_t>(5);
   // Swap to little endian
-  return base::ByteSwap(it.extract<uint16_t>());
+  return it.extractBE<uint16_t>();
 }
 
 bool VendorPacket::IsValid() const {

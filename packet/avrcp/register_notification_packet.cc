@@ -234,7 +234,7 @@ Event RegisterNotificationRequest::GetEventRegistered() const {
 
 uint32_t RegisterNotificationRequest::GetInterval() const {
   auto it = begin() + VendorPacket::kMinSize() + static_cast<size_t>(1);
-  return base::ByteSwap(it.extract<uint32_t>());
+  return it.extractBE<uint32_t>();
 }
 
 bool RegisterNotificationRequest::IsValid() const {
