@@ -301,6 +301,10 @@ class A2dpCodecs {
   // Returns the Sink codec if found, otherwise nullptr.
   A2dpCodecConfig* findSinkCodecConfig(const uint8_t* p_codec_info);
 
+  // Checks whether the codec for |codec_index| is supported.
+  // Returns true if the codec is supported, otherwise false.
+  bool isSupportedCodec(btav_a2dp_codec_index_t codec_index);
+
   // Gets the codec config that is currently selected.
   // Returns the codec config that is currently selected, or nullptr if
   // no codec is selected.
