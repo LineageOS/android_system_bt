@@ -65,6 +65,10 @@ bool bta_av_co_set_codec_audio_config(
 void bta_av_co_init(
     const std::vector<btav_a2dp_codec_config_t>& codec_priorities);
 
+// Checks whether the codec for |codec_index| is supported.
+// Returns true if the codec is supported, otherwise false.
+bool bta_av_co_is_supported_codec(btav_a2dp_codec_index_t codec_index);
+
 // Gets the current A2DP codec for the active peer.
 // Returns a pointer to the current |A2dpCodecConfig| if valid, otherwise
 // nullptr.
