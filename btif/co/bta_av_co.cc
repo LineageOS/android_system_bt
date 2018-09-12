@@ -179,6 +179,14 @@ class BtaAvCo {
   void Init(const std::vector<btav_a2dp_codec_config_t>& codec_priorities);
 
   /**
+   * Checks whether a codec is supported.
+   *
+   * @param codec_index the index of the codec to check
+   * @return true if the codec is supported, otherwise false
+   */
+  bool IsSupportedCodec(btav_a2dp_codec_index_t codec_index);
+
+  /**
    * Get the current codec configuration for the active peer.
    *
    * @return the current codec configuration if found, otherwise nullptr
@@ -767,6 +775,14 @@ void BtaAvCo::Reset() {
     BtaAvCoPeer* p_peer = &peers_[i];
     p_peer->Reset(BTA_AV_CO_AUDIO_INDEX_TO_HANDLE(i));
   }
+}
+
+bool BtaAvCo::IsSupportedCodec(btav_a2dp_codec_index_t codec_index) {
+  // All peer state is initialized with the same local codec config,
+  // hence we check only the first peer.
+  A2dpCodecs* codecs = peers_[0].GetCodecs();
+  CHECK(codecs != nullptr);
+  return codecs->isSupportedCodec(codec_index);
 }
 
 A2dpCodecConfig* BtaAvCo::GetActivePeerCurrentCodec() {
@@ -2024,6 +2040,10 @@ bool BtaAvCo::SetCodecOtaConfig(BtaAvCoPeer* p_peer,
 void bta_av_co_init(
     const std::vector<btav_a2dp_codec_config_t>& codec_priorities) {
   bta_av_co_cb.Init(codec_priorities);
+}
+
+bool bta_av_co_is_supported_codec(btav_a2dp_codec_index_t codec_index) {
+  return bta_av_co_cb.IsSupportedCodec(codec_index);
 }
 
 A2dpCodecConfig* bta_av_get_a2dp_current_codec(void) {
