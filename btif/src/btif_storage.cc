@@ -682,6 +682,7 @@ bt_status_t btif_storage_get_adapter_property(bt_property_t* property) {
                 Uuid::From16Bit(UUID_SERVCLASS_AG_HANDSFREE);
             num_uuids++;
           }
+            FALLTHROUGH_INTENDED; /* FALLTHROUGH */
           /* intentional fall through: Send both BFP & HSP UUIDs if HFP is
            * enabled */
           case BTA_HSP_SERVICE_ID: {

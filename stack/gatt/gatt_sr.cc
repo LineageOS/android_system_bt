@@ -884,13 +884,13 @@ void gatts_process_write_req(tGATT_TCB& tcb, tGATT_SRV_LIST_ELEM& el,
       sr_data.write_req.is_prep = true;
       STREAM_TO_UINT16(sr_data.write_req.offset, p);
       len -= 2;
-    /* fall through */
+      FALLTHROUGH_INTENDED; /* FALLTHROUGH */
     case GATT_SIGN_CMD_WRITE:
       if (op_code == GATT_SIGN_CMD_WRITE) {
         VLOG(1) << "Write CMD with data sigining";
         len -= GATT_AUTH_SIGN_LEN;
       }
-    /* fall through */
+      FALLTHROUGH_INTENDED; /* FALLTHROUGH */
     case GATT_CMD_WRITE:
     case GATT_REQ_WRITE:
       if (op_code == GATT_REQ_WRITE || op_code == GATT_REQ_PREPARE_WRITE)

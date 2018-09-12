@@ -700,8 +700,8 @@ static int a2dp_write_output_audio_config(struct a2dp_stream_common* common) {
       codec_config.bits_per_sample = BTAV_A2DP_CODEC_BITS_PER_SAMPLE_32;
       break;
     case AUDIO_FORMAT_PCM_8_24_BIT:
-    // FALLTHROUGH
-    // All 24-bit audio is expected in AUDIO_FORMAT_PCM_24_BIT_PACKED format
+      // All 24-bit audio is expected in AUDIO_FORMAT_PCM_24_BIT_PACKED format
+      FALLTHROUGH_INTENDED; /* FALLTHROUGH */
     default:
       ERROR("Invalid audio format: 0x%x", common->cfg.format);
       return -1;
