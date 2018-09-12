@@ -80,7 +80,7 @@ bool SetBrowsedPlayerResponseBuilder::Serialize(
 
 uint16_t SetBrowsedPlayerRequest::GetPlayerId() const {
   auto it = begin() + BrowsePacket::kMinSize();
-  return base::ByteSwap(it.extract<uint16_t>());
+  return it.extractBE<uint16_t>();
 }
 
 bool SetBrowsedPlayerRequest::IsValid() const {

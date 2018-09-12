@@ -236,12 +236,12 @@ Scope GetFolderItemsRequest::GetScope() const {
 
 uint32_t GetFolderItemsRequest::GetStartItem() const {
   auto it = begin() + BrowsePacket::kMinSize() + static_cast<size_t>(1);
-  return base::ByteSwap(it.extract<uint32_t>());
+  return it.extractBE<uint32_t>();
 }
 
 uint32_t GetFolderItemsRequest::GetEndItem() const {
   auto it = begin() + BrowsePacket::kMinSize() + static_cast<size_t>(5);
-  return base::ByteSwap(it.extract<uint32_t>());
+  return it.extractBE<uint32_t>();
 }
 
 uint8_t GetFolderItemsRequest::GetNumAttributes() const {
@@ -263,7 +263,7 @@ std::vector<Attribute> GetFolderItemsRequest::GetAttributesRequested() const {
   // to have this function return a vector with all the attributes
 
   for (size_t i = 0; i < number_of_attributes; i++) {
-    attribute_list.push_back((Attribute)base::ByteSwap(it.extract<uint32_t>()));
+    attribute_list.push_back((Attribute)it.extractBE<uint32_t>());
   }
 
   return attribute_list;

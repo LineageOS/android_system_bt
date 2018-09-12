@@ -40,7 +40,7 @@ std::vector<Attribute> GetElementAttributesRequest::GetAttributesRequested()
   std::vector<Attribute> attribute_list;
 
   for (size_t i = 0; i < number_of_attributes; i++) {
-    attribute_list.push_back((Attribute)base::ByteSwap(it.extract<uint32_t>()));
+    attribute_list.push_back((Attribute)it.extractBE<uint32_t>());
   }
 
   return attribute_list;

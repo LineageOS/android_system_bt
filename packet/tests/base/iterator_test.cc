@@ -65,6 +65,16 @@ TEST_F(IteratorTest, extractTest) {
   ASSERT_EQ(0x00010000000a0013u, general_case.extract<uint64_t>());
 }
 
+TEST_F(IteratorTest, extractBETest) {
+  auto packet = TestPacket::Make(test_l2cap_data);
+  Iterator general_case = packet->begin();
+
+  ASSERT_EQ(0x02u, general_case.extractBE<uint8_t>());
+  ASSERT_EQ(0xdc2eu, general_case.extractBE<uint16_t>());
+  ASSERT_EQ(0x66006200u, general_case.extractBE<uint32_t>());
+  ASSERT_EQ(0x13000a0000000100u, general_case.extractBE<uint64_t>());
+}
+
 TEST_P(IteratorTest, payloadBoundsTest) {
   auto packet = GetTestPacket();
   ASSERT_EQ(static_cast<size_t>(packet->end() - packet->begin()),
@@ -86,6 +96,19 @@ TEST_P(IteratorTest, extractBoundsDeathTest) {
   ASSERT_DEATH(bounds_test.extract<uint32_t>(),
                "index_ != packet_->packet_end_index_");
   ASSERT_DEATH(bounds_test.extract<uint64_t>(),
+               "index_ != packet_->packet_end_index_");
+}
+
+TEST_P(IteratorTest, extractBEBoundsDeathTest) {
+  auto packet = GetTestPacket();
+  Iterator bounds_test = packet->end();
+  ASSERT_DEATH(bounds_test.extractBE<uint8_t>(),
+               "index_ != packet_->packet_end_index_");
+  ASSERT_DEATH(bounds_test.extractBE<uint16_t>(),
+               "index_ != packet_->packet_end_index_");
+  ASSERT_DEATH(bounds_test.extractBE<uint32_t>(),
+               "index_ != packet_->packet_end_index_");
+  ASSERT_DEATH(bounds_test.extractBE<uint64_t>(),
                "index_ != packet_->packet_end_index_");
 }
 

@@ -53,12 +53,12 @@ Scope PlayItemRequest::GetScope() const {
 
 uint64_t PlayItemRequest::GetUid() const {
   auto it = begin() + VendorPacket::kMinSize() + static_cast<size_t>(1);
-  return base::ByteSwap(it.extract<uint64_t>());
+  return it.extractBE<uint64_t>();
 }
 
 uint16_t PlayItemRequest::GetUidCounter() const {
   auto it = begin() + VendorPacket::kMinSize() + static_cast<size_t>(9);
-  return base::ByteSwap(it.extract<uint16_t>());
+  return it.extractBE<uint16_t>();
 }
 
 bool PlayItemRequest::IsValid() const {
