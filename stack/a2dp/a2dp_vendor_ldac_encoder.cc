@@ -315,7 +315,7 @@ void a2dp_vendor_ldac_encoder_init(
                                   &restart_output, &config_updated);
 }
 
-bool A2dpCodecConfigLdac::updateEncoderUserConfig(
+bool A2dpCodecConfigLdacSource::updateEncoderUserConfig(
     const tA2DP_ENCODER_INIT_PEER_PARAMS* p_peer_params, bool* p_restart_input,
     bool* p_restart_output, bool* p_config_updated) {
   a2dp_ldac_encoder_cb.is_peer_edr = p_peer_params->is_peer_edr;
@@ -761,15 +761,15 @@ void a2dp_vendor_ldac_set_transmit_queue_length(size_t transmit_queue_length) {
   a2dp_ldac_encoder_cb.TxQueueLength = transmit_queue_length;
 }
 
-uint64_t A2dpCodecConfigLdac::encoderIntervalMs() const {
+uint64_t A2dpCodecConfigLdacSource::encoderIntervalMs() const {
   return a2dp_vendor_ldac_get_encoder_interval_ms();
 }
 
-int A2dpCodecConfigLdac::getEffectiveMtu() const {
+int A2dpCodecConfigLdacSource::getEffectiveMtu() const {
   return a2dp_ldac_encoder_cb.TxAaMtuSize;
 }
 
-void A2dpCodecConfigLdac::debug_codec_dump(int fd) {
+void A2dpCodecConfigLdacSource::debug_codec_dump(int fd) {
   a2dp_ldac_encoder_stats_t* stats = &a2dp_ldac_encoder_cb.stats;
   tA2DP_LDAC_ENCODER_PARAMS* p_encoder_params =
       &a2dp_ldac_encoder_cb.ldac_encoder_params;
