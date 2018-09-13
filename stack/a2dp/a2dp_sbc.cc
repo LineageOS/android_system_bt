@@ -483,6 +483,20 @@ int A2DP_GetTrackSampleRateSbc(const uint8_t* p_codec_info) {
   return -1;
 }
 
+int A2DP_GetTrackBitsPerSampleSbc(const uint8_t* p_codec_info) {
+  tA2DP_SBC_CIE sbc_cie;
+
+  tA2DP_STATUS a2dp_status = A2DP_ParseInfoSbc(&sbc_cie, p_codec_info, false);
+  if (a2dp_status != A2DP_SUCCESS) {
+    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
+              a2dp_status);
+    return -1;
+  }
+
+  // NOTE: The bits per sample never changes for SBC
+  return 16;
+}
+
 int A2DP_GetTrackChannelCountSbc(const uint8_t* p_codec_info) {
   tA2DP_SBC_CIE sbc_cie;
 
@@ -855,8 +869,8 @@ UNUSED_ATTR static void build_codec_config(const tA2DP_SBC_CIE& config_cie,
 
 A2dpCodecConfigSbcSource::A2dpCodecConfigSbcSource(
     btav_a2dp_codec_priority_t codec_priority)
-    : A2dpCodecConfigSbcBase(BTAV_A2DP_CODEC_INDEX_SOURCE_SBC, "SBC",
-                             codec_priority, true) {
+    : A2dpCodecConfigSbcBase(BTAV_A2DP_CODEC_INDEX_SOURCE_SBC,
+                             A2DP_CodecIndexStrSbc(), codec_priority, true) {
   // Compute the local capability
   if (a2dp_sbc_source_caps.samp_freq & A2DP_SBC_IE_SAMP_FREQ_44) {
     codec_local_capability_.sample_rate |= BTAV_A2DP_CODEC_SAMPLE_RATE_44100;
@@ -1540,8 +1554,9 @@ fail:
 
 A2dpCodecConfigSbcSink::A2dpCodecConfigSbcSink(
     btav_a2dp_codec_priority_t codec_priority)
-    : A2dpCodecConfigSbcBase(BTAV_A2DP_CODEC_INDEX_SINK_SBC, "SBC(Sink)",
-                             codec_priority, false) {}
+    : A2dpCodecConfigSbcBase(BTAV_A2DP_CODEC_INDEX_SINK_SBC,
+                             A2DP_CodecIndexStrSbcSink(), codec_priority,
+                             false) {}
 
 A2dpCodecConfigSbcSink::~A2dpCodecConfigSbcSink() {}
 

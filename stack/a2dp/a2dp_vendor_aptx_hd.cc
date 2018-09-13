@@ -328,6 +328,22 @@ int A2DP_VendorGetTrackSampleRateAptxHd(const uint8_t* p_codec_info) {
   return -1;
 }
 
+int A2DP_VendorGetTrackBitsPerSampleAptxHd(const uint8_t* p_codec_info) {
+  tA2DP_APTX_HD_CIE aptx_hd_cie;
+
+  // Check whether the codec info contains valid data
+  tA2DP_STATUS a2dp_status =
+      A2DP_ParseInfoAptxHd(&aptx_hd_cie, p_codec_info, false);
+  if (a2dp_status != A2DP_SUCCESS) {
+    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
+              a2dp_status);
+    return -1;
+  }
+
+  // NOTE: The bits per sample never changes for aptX-HD
+  return 24;
+}
+
 int A2DP_VendorGetTrackChannelCountAptxHd(const uint8_t* p_codec_info) {
   tA2DP_APTX_HD_CIE aptx_hd_cie;
 
@@ -445,8 +461,8 @@ bool A2DP_VendorInitCodecConfigAptxHd(AvdtpSepConfig* p_cfg) {
 
 A2dpCodecConfigAptxHd::A2dpCodecConfigAptxHd(
     btav_a2dp_codec_priority_t codec_priority)
-    : A2dpCodecConfig(BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD, "aptX-HD",
-                      codec_priority) {
+    : A2dpCodecConfig(BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD,
+                      A2DP_VendorCodecIndexStrAptxHd(), codec_priority) {
   // Compute the local capability
   if (a2dp_aptx_hd_source_caps.sampleRate & A2DP_APTX_HD_SAMPLERATE_44100) {
     codec_local_capability_.sample_rate |= BTAV_A2DP_CODEC_SAMPLE_RATE_44100;

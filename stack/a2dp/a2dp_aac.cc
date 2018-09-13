@@ -402,6 +402,21 @@ int A2DP_GetTrackSampleRateAac(const uint8_t* p_codec_info) {
   return -1;
 }
 
+int A2DP_GetTrackBitsPerSampleAac(const uint8_t* p_codec_info) {
+  tA2DP_AAC_CIE aac_cie;
+
+  // Check whether the codec info contains valid data
+  tA2DP_STATUS a2dp_status = A2DP_ParseInfoAac(&aac_cie, p_codec_info, false);
+  if (a2dp_status != A2DP_SUCCESS) {
+    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
+              a2dp_status);
+    return -1;
+  }
+
+  // NOTE: The bits per sample never changes for AAC
+  return 16;
+}
+
 int A2DP_GetTrackChannelCountAac(const uint8_t* p_codec_info) {
   tA2DP_AAC_CIE aac_cie;
 
@@ -1335,6 +1350,7 @@ fail:
          sizeof(ota_codec_peer_config_));
   return false;
 }
+
 bool A2dpCodecConfigAacBase::setPeerCodecCapabilities(
     const uint8_t* p_peer_codec_capabilities) {
   std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
