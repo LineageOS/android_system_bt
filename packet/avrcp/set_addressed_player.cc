@@ -48,7 +48,7 @@ bool SetAddressedPlayerResponseBuilder::Serialize(
 
 uint16_t SetAddressedPlayerRequest::GetPlayerId() const {
   auto it = begin() + VendorPacket::kMinSize();
-  return base::ByteSwap(it.extract<uint16_t>());
+  return it.extractBE<uint16_t>();
 }
 
 bool SetAddressedPlayerRequest::IsValid() const {
