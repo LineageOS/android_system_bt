@@ -196,6 +196,11 @@ static void btif_a2dp_get_codec_configuration(
   LOG_INFO(LOG_TAG, "%s", __func__);
   tBT_A2DP_OFFLOAD a2dp_offload;
   A2dpCodecConfig* a2dpCodecConfig = bta_av_get_a2dp_current_codec();
+  if (!a2dpCodecConfig) {
+      APPL_TRACE_ERROR("%s: failed to get current a2dp codec config", __func__);
+      return;
+  }
+
   a2dpCodecConfig->getCodecSpecificConfig(&a2dp_offload);
   btav_a2dp_codec_config_t codec_config;
   codec_config = a2dpCodecConfig->getCodecConfig();
