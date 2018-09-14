@@ -61,6 +61,11 @@ class MessageLoopThreadTest : public ::testing::Test {
     execution_promise.set_value();
   }
 
+  void SleepAndGetName(std::promise<std::string> name_promise, int sleep_ms) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms));
+    GetName(std::move(name_promise));
+  }
+
  protected:
   static bool CanSetCurrentThreadPriority() {
     struct __user_cap_header_struct linux_user_header = {
@@ -77,6 +82,16 @@ class MessageLoopThreadTest : public ::testing::Test {
     return ((linux_user_data.permitted >> CAP_SYS_NICE) & 0x1) != 0;
   }
 };
+
+TEST_F(MessageLoopThreadTest, get_weak_ptr) {
+  base::WeakPtr<MessageLoopThread> message_loop_thread_ptr;
+  {
+    MessageLoopThread message_loop_thread("test_thread");
+    message_loop_thread_ptr = message_loop_thread.GetWeakPtr();
+    ASSERT_NE(message_loop_thread_ptr, nullptr);
+  }
+  ASSERT_EQ(message_loop_thread_ptr, nullptr);
+}
 
 TEST_F(MessageLoopThreadTest, test_running_thread) {
   MessageLoopThread message_loop_thread("test_thread");
@@ -247,4 +262,21 @@ TEST_F(MessageLoopThreadTest, test_to_string_method) {
   // String representation should look the same when thread is not running
   ASSERT_STREQ(thread_string_after_shutdown.c_str(),
                thread_string_before_start.c_str());
+}
+
+// Verify the message loop thread will shutdown after callback finishes
+TEST_F(MessageLoopThreadTest, shut_down_while_in_callback) {
+  std::string name = "test_thread";
+  MessageLoopThread message_loop_thread(name);
+  message_loop_thread.StartUp();
+  std::promise<std::string> name_promise;
+  std::future<std::string> name_future = name_promise.get_future();
+  uint32_t delay_ms = 5;
+  message_loop_thread.DoInThread(
+      FROM_HERE, base::BindOnce(&MessageLoopThreadTest::SleepAndGetName,
+                                base::Unretained(this), std::move(name_promise),
+                                delay_ms));
+  message_loop_thread.ShutDown();
+  std::string my_name = name_future.get();
+  ASSERT_EQ(name, my_name);
 }
