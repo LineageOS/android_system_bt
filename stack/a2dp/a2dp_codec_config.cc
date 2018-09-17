@@ -326,6 +326,9 @@ bool A2dpCodecConfig::setCodecUserConfig(
     uint8_t* p_result_codec_config, bool* p_restart_input,
     bool* p_restart_output, bool* p_config_updated) {
   std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
+  auto stereo_dualchannel_inv_mask =
+      ~(BTAV_A2DP_CODEC_CHANNEL_MODE_DUAL_CHANNEL |
+        BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO);
   *p_restart_input = false;
   *p_restart_output = false;
   *p_config_updated = false;
@@ -356,7 +359,9 @@ bool A2dpCodecConfig::setCodecUserConfig(
   if ((saved_codec_config.sample_rate != new_codec_config.sample_rate) ||
       (saved_codec_config.bits_per_sample !=
        new_codec_config.bits_per_sample) ||
-      (saved_codec_config.channel_mode != new_codec_config.channel_mode)) {
+      ((saved_codec_config.channel_mode != new_codec_config.channel_mode) &&
+       (saved_codec_config.channel_mode & stereo_dualchannel_inv_mask) !=
+           (new_codec_config.channel_mode & stereo_dualchannel_inv_mask))) {
     *p_restart_input = true;
   }
 
@@ -484,6 +489,10 @@ std::string A2dpCodecConfig::codecChannelMode2Str(
   if (codec_channel_mode & BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO) {
     if (!result.empty()) result += "|";
     result += "STEREO";
+  }
+  if (codec_channel_mode & BTAV_A2DP_CODEC_CHANNEL_MODE_DUAL_CHANNEL) {
+    if (!result.empty()) result += "|";
+    result += "DUALCHANNEL";
   }
   if (result.empty()) {
     std::stringstream ss;
