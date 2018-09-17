@@ -498,7 +498,7 @@ void rfc_port_sm_disc_wait_ua(tPORT* p_port, uint16_t event, void* p_data) {
 
     case RFC_EVENT_UA:
       p_port->rfc.p_mcb->is_disc_initiator = true;
-    /* Case falls through */
+      FALLTHROUGH_INTENDED; /* FALLTHROUGH */
 
     case RFC_EVENT_DM:
       RFCOMM_TRACE_WARNING("%s, RFC_EVENT_DM|RFC_EVENT_UA[%d], index=%d",

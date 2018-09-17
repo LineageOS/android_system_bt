@@ -122,9 +122,9 @@ static size_t btsnoop_calculate_packet_length(uint16_t type,
 
     case BT_EVT_TO_LM_HCI_SCO:
     case BT_EVT_TO_BTU_HCI_SCO:
-    // We're not logging SCO packets at this time since they are not currently
-    // used.
-    // FALLTHROUGH
+      // We're not logging SCO packets at this time since they are not currently
+      // used.
+      FALLTHROUGH_INTENDED; /* FALLTHROUGH */
     default:
       return 0;
   }

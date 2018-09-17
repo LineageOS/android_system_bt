@@ -701,7 +701,7 @@ static void write_rpt_ctl_cfg_cb(uint16_t conn_id, tGATT_STATUS status,
     case GATT_UUID_BATTERY_LEVEL: /* battery level clt cfg registered */
       hid_inst_id = bta_hh_le_find_service_inst_by_battery_inst_id(
           p_dev_cb, srvc_inst_id);
-    /* FALLTHROUGH */
+      FALLTHROUGH_INTENDED; /* FALLTHROUGH */
     case GATT_UUID_HID_BT_KB_INPUT:
     case GATT_UUID_HID_BT_MOUSE_INPUT:
     case GATT_UUID_HID_REPORT:
