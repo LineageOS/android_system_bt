@@ -73,6 +73,7 @@
 
 #define MAX_2MBPS_AVDTP_MTU 663   // 2DH5 MTU=679, -12 for AVDTP, -4 for L2CAP
 #define MAX_3MBPS_AVDTP_MTU 1005  // 3DH5 MTU=1021, -12 for AVDTP, -4 for L2CAP
+#define MIN_3MBPS_AVDTP_SAFE_MTU 801 // 3DH5 minimum safe payload size for 4 audio frames
 
 /* SEP Type.  This indicates the stream endpoint type. */
 #define AVDT_TSEP_SRC 0     /* Source SEP */

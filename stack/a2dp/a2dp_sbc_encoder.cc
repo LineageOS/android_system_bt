@@ -47,6 +47,14 @@
 #define A2DP_SBC_DEFAULT_BITRATE 454
 #define A2DP_SBC_48KHZ_BITRATE 494
 
+/*
+ * SBC Dual Channel (SBC HD) 3DH5 bitrates.
+ * 600 kbps @ 48 khz, 551.3 kbps @ 44.1 khz.
+ * Up to 5 frames for 3DH5.
+ */
+#define A2DP_SBC_3DH5_DEFAULT_BITRATE 552
+#define A2DP_SBC_3DH5_48KHZ_BITRATE 601
+
 #define A2DP_SBC_NON_EDR_MAX_RATE 229
 
 #define A2DP_SBC_MAX_PCM_ITER_NUM_PER_TICK 3
@@ -852,8 +860,14 @@ static uint8_t calculate_max_frames_per_packet(void) {
 static uint16_t a2dp_sbc_source_rate() {
   uint16_t rate = A2DP_SBC_DEFAULT_BITRATE;
 
-  if (a2dp_sbc_encoder_cb.sbc_encoder_params.s16SamplingFreq == SBC_sf48000) {
+  if (a2dp_sbc_encoder_cb.sbc_encoder_params.s16SamplingFreq == SBC_sf48000)
     rate = A2DP_SBC_48KHZ_BITRATE;
+
+  if (a2dp_sbc_encoder_cb.peer_supports_3mbps &&
+      a2dp_sbc_encoder_cb.TxAaMtuSize >= MIN_3MBPS_AVDTP_SAFE_MTU) {
+    rate = A2DP_SBC_3DH5_DEFAULT_BITRATE;
+    if (a2dp_sbc_encoder_cb.sbc_encoder_params.s16SamplingFreq == SBC_sf48000)
+      rate = A2DP_SBC_3DH5_48KHZ_BITRATE;
   }
 
   /* restrict bitrate if a2dp link is non-edr */
