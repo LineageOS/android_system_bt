@@ -651,7 +651,7 @@ void bta_hh_handsk_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
     /* GET_ transsaction, handshake indicate unsupported request */
     case BTA_HH_GET_PROTO_EVT:
       bta_hh.hs_data.rsp_data.proto_mode = BTA_HH_PROTO_UNKNOWN;
-    /* fall through */
+      FALLTHROUGH_INTENDED; /* FALLTHROUGH */
     case BTA_HH_GET_RPT_EVT:
     case BTA_HH_GET_IDLE_EVT:
       bta_hh.hs_data.handle = p_cb->hid_handle;
@@ -748,11 +748,11 @@ void bta_hh_ctrl_dat_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
       break;
     /* should not expect control DATA for SET_ transaction */
     case BTA_HH_SET_PROTO_EVT:
-    /* fall through */
+      FALLTHROUGH_INTENDED; /* FALLTHROUGH */
     case BTA_HH_SET_RPT_EVT:
-    /* fall through */
+      FALLTHROUGH_INTENDED; /* FALLTHROUGH */
     case BTA_HH_SET_IDLE_EVT:
-    /* fall through */
+      FALLTHROUGH_INTENDED; /* FALLTHROUGH */
     default:
 #if (BTA_HH_DEBUG == TRUE)
       APPL_TRACE_DEBUG("invalid  transaction type for DATA payload: 4_evt[%s]",
@@ -1054,21 +1054,21 @@ void bta_hh_write_dev_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
     } else {
       switch (p_data->api_sndcmd.t_type) {
         case HID_TRANS_SET_PROTOCOL:
-        /* fall through */
+          FALLTHROUGH_INTENDED; /* FALLTHROUGH */
         case HID_TRANS_GET_REPORT:
-        /* fall through */
+          FALLTHROUGH_INTENDED; /* FALLTHROUGH */
         case HID_TRANS_SET_REPORT:
-        /* fall through */
+          FALLTHROUGH_INTENDED; /* FALLTHROUGH */
         case HID_TRANS_GET_PROTOCOL:
-        /* fall through */
+          FALLTHROUGH_INTENDED; /* FALLTHROUGH */
         case HID_TRANS_GET_IDLE:
-        /* fall through */
+          FALLTHROUGH_INTENDED;  /* FALLTHROUGH */
         case HID_TRANS_SET_IDLE: /* set w4_handsk event name for callback
                                     function use */
           p_cb->w4_evt = event;
           break;
         case HID_TRANS_DATA: /* output report */
-                             /* fall through */
+          FALLTHROUGH_INTENDED; /* FALLTHROUGH */
         case HID_TRANS_CONTROL:
           /* no handshake event will be generated */
           /* if VC_UNPLUG is issued, set flag */
