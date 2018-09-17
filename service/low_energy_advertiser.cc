@@ -53,7 +53,7 @@ int GetAdvertisingIntervalUnit(AdvertiseSettings::Mode mode) {
       ms = kAdvertisingIntervalLowMs;
       break;
     case AdvertiseSettings::MODE_LOW_POWER:
-    // Fall through
+      FALLTHROUGH_INTENDED; /* FALLTHROUGH */
     default:
       ms = kAdvertisingIntervalHighMs;
       break;
@@ -77,7 +77,7 @@ int8_t GetAdvertisingTxPower(AdvertiseSettings::TxPowerLevel tx_power) {
       power = -7;
       break;
     case AdvertiseSettings::TX_POWER_LEVEL_HIGH:
-    // Fall through
+      FALLTHROUGH_INTENDED; /* FALLTHROUGH */
     default:
       power = 1;
       break;

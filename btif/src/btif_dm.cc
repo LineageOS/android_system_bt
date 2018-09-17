@@ -1155,7 +1155,7 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
           btif_dm_cb_create_bond(bd_addr, BTA_TRANSPORT_UNKNOWN);
           return;
         }
-      /* Fall-through */
+        FALLTHROUGH_INTENDED; /* FALLTHROUGH */
       case HCI_ERR_CONNECTION_TOUT:
         status = BT_STATUS_RMT_DEV_DOWN;
         break;

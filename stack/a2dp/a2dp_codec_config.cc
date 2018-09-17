@@ -223,7 +223,8 @@ bool A2dpCodecConfig::getCodecSpecificConfig(tBT_A2DP_OFFLOAD* p_a2dp_offload) {
               p_a2dp_offload->codec_info[6] =
                   A2DP_LDAC_QUALITY_LOW;  // Low birate
               break;
-            case 3:  // fall through
+            case 3:
+              FALLTHROUGH_INTENDED; /* FALLTHROUGH */
             default:
               p_a2dp_offload->codec_info[6] =
                   A2DP_LDAC_QUALITY_ABR_OFFLOAD;  // ABR in offload
