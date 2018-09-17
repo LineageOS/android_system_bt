@@ -24,6 +24,7 @@
  ******************************************************************************/
 
 #include <base/logging.h>
+#include <log/log.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -836,6 +837,14 @@ void l2c_lcc_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
     STREAM_TO_UINT16(sdu_length, p);
     /* Check the SDU Length with local MTU size */
     if (sdu_length > p_ccb->local_conn_cfg.mtu) {
+      /* Discard the buffer */
+      osi_free(p_buf);
+      return;
+    }
+
+    if (sdu_length < p_buf->len) {
+      L2CAP_TRACE_ERROR("%s: Invalid sdu_length: %d", __func__, sdu_length);
+      android_errorWriteWithInfoLog(0x534e4554, "112321180", -1, NULL, 0);
       /* Discard the buffer */
       osi_free(p_buf);
       return;
