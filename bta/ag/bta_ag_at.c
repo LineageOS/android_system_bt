@@ -25,7 +25,11 @@
 #include <string.h>
 #include "bt_common.h"
 #include "bta_ag_at.h"
+#include "bta_ag_int.h"
+#include "log/log.h"
 #include "utl.h"
+
+#define nullptr ((void*)0)
 
 /*****************************************************************************
 **  Constants
@@ -77,7 +81,7 @@ void bta_ag_at_reinit(tBTA_AG_AT_CB *p_cb)
 ** Returns          void
 **
 ******************************************************************************/
-void bta_ag_process_at(tBTA_AG_AT_CB *p_cb)
+void bta_ag_process_at(tBTA_AG_AT_CB *p_cb, char *p_end)
 {
     UINT16      idx;
     UINT8       arg_type;
@@ -97,6 +101,12 @@ void bta_ag_process_at(tBTA_AG_AT_CB *p_cb)
     {
         /* start of argument is p + strlen matching command */
         p_arg = p_cb->p_cmd_buf + strlen(p_cb->p_at_tbl[idx].p_cmd);
+        if (p_arg > p_end)
+        {
+            (*p_cb->p_err_cback)((tBTA_AG_SCB*)p_cb->p_user, false, nullptr);
+            android_errorWriteLog(0x534e4554, "112860487");
+            return;
+        }
 
         /* if no argument */
         if (p_arg[0] == 0)
@@ -149,12 +159,14 @@ void bta_ag_process_at(tBTA_AG_AT_CB *p_cb)
                 else
                 {
 
-                    (*p_cb->p_cmd_cback)(p_cb->p_user, idx, arg_type, p_arg, int_arg);
+                    (*p_cb->p_cmd_cback)(p_cb->p_user, idx, arg_type, p_arg,
+                                         p_end, int_arg);
                 }
             }
             else
             {
-                (*p_cb->p_cmd_cback)(p_cb->p_user, idx, arg_type, p_arg, int_arg);
+                (*p_cb->p_cmd_cback)(p_cb->p_user, idx, arg_type, p_arg,
+                                     p_end, int_arg);
             }
         }
         /* else error */
@@ -212,8 +224,9 @@ void bta_ag_at_parse(tBTA_AG_AT_CB *p_cb, char *p_buf, UINT16 len)
                     (p_cb->p_cmd_buf[1] == 'T' || p_cb->p_cmd_buf[1] == 't'))
                 {
                     p_save = p_cb->p_cmd_buf;
+                    char* p_end = p_cb->p_cmd_buf + p_cb->cmd_pos;
                     p_cb->p_cmd_buf += 2;
-                    bta_ag_process_at(p_cb);
+                    bta_ag_process_at(p_cb, p_end);
                     p_cb->p_cmd_buf = p_save;
                 }
 
