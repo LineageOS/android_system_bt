@@ -34,6 +34,7 @@
 #include "bta_api.h"
 #include "bta_sys.h"
 #include "gki.h"
+#include "log/log.h"
 #include "port_api.h"
 #include "utl.h"
 
@@ -602,25 +603,25 @@ static void bta_ag_send_ind(tBTA_AG_SCB *p_scb, UINT16 id, UINT16 value, BOOLEAN
 ** Returns          TRUE if parsed ok, FALSE otherwise.
 **
 *******************************************************************************/
-static BOOLEAN bta_ag_parse_cmer(char *p_s, BOOLEAN *p_enabled)
+static BOOLEAN bta_ag_parse_cmer(char *p_s, char *p_end, BOOLEAN *p_enabled)
 {
     INT16   n[4] = {-1, -1, -1, -1};
     int     i;
     char    *p;
 
-    for (i = 0; i < 4; i++)
+    for (i = 0; i < 4; i++, p_s = p + 1)
     {
         /* skip to comma delimiter */
-        for (p = p_s; *p != ',' && *p != 0; p++);
+        for (p = p_s; p < p_end && *p != ',' && *p != 0; p++)
 
         /* get integer value */
+        if (p > p_end)
+        {
+            android_errorWriteLog(0x534e4554, "112860487");
+            return false;
+        }
         *p = 0;
         n[i] = utl_str2int(p_s);
-        p_s = p + 1;
-        if (p_s == 0)
-        {
-            break;
-        }
     }
 
     /* process values */
@@ -748,7 +749,8 @@ static BOOLEAN bta_ag_parse_biev(tBTA_AG_SCB *p_scb, char *p_s)
 ** Returns          Returns bitmap of supported codecs.
 **
 *******************************************************************************/
-static tBTA_AG_PEER_CODEC bta_ag_parse_bac(tBTA_AG_SCB *p_scb, char *p_s)
+static tBTA_AG_PEER_CODEC bta_ag_parse_bac(tBTA_AG_SCB *p_scb, char *p_s,
+                                           char *p_end)
 {
     tBTA_AG_PEER_CODEC  retval = BTA_AG_CODEC_NONE;
     UINT16  uuid_codec;
@@ -758,9 +760,14 @@ static tBTA_AG_PEER_CODEC bta_ag_parse_bac(tBTA_AG_SCB *p_scb, char *p_s)
     while(p_s)
     {
         /* skip to comma delimiter */
-        for(p = p_s; *p != ',' && *p != 0; p++);
+        for (p = p_s; p < p_end && *p != ',' && *p != 0; p++)
 
         /* get integre value */
+        if (p > p_end)
+        {
+            android_errorWriteLog(0x534e4554, "112860487");
+            break;
+        }
         if (*p != 0)
         {
             *p = 0;
@@ -968,7 +975,7 @@ void bta_ag_send_call_inds(tBTA_AG_SCB *p_scb, tBTA_AG_RES result)
 **
 *******************************************************************************/
 void bta_ag_at_hsp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
-                                char *p_arg, INT16 int_arg)
+                                char *p_arg, char *p_end, INT16 int_arg)
 {
     tBTA_AG_VAL val;
 
@@ -981,6 +988,13 @@ void bta_ag_at_hsp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
     val.hdr.handle = bta_ag_scb_to_idx(p_scb);
     val.hdr.app_id = p_scb->app_id;
     val.num = (UINT16) int_arg;
+
+    if ((p_end - p_arg + 1) >= (long)sizeof(val.str)) {
+        APPL_TRACE_ERROR("%s: p_arg is too long, send error and return", __func__);
+        bta_ag_send_error(p_scb, BTA_AG_ERR_TEXT_TOO_LONG);
+        android_errorWriteLog(0x534e4554, "112860487");
+        return;
+    }
     BCM_STRNCPY_S(val.str, sizeof(val.str), p_arg, BTA_AG_AT_MAX_LEN);
     val.str[BTA_AG_AT_MAX_LEN] = 0;
 
@@ -999,7 +1013,7 @@ void bta_ag_at_hsp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
 **
 *******************************************************************************/
 void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
-                                char *p_arg, INT16 int_arg)
+                                char *p_arg, char *p_end, INT16 int_arg)
 {
     tBTA_AG_VAL     val;
     tBTA_AG_EVT   event;
@@ -1024,6 +1038,13 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
     val.hdr.app_id = p_scb->app_id;
     val.num = int_arg;
     bdcpy(val.bd_addr, p_scb->peer_addr);
+
+    if ((p_end - p_arg + 1) >= (long)sizeof(val.str)) {
+        APPL_TRACE_ERROR("%s: p_arg is too long, send error and return", __func__);
+        bta_ag_send_error(p_scb, BTA_AG_ERR_TEXT_TOO_LONG);
+        android_errorWriteLog(0x534e4554, "112860487");
+        return;
+    }
     BCM_STRNCPY_S(val.str, sizeof(val.str), p_arg, BTA_AG_AT_MAX_LEN);
     val.str[BTA_AG_AT_MAX_LEN] = 0;
 
@@ -1178,7 +1199,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
 
         case BTA_AG_HF_CMD_CMER:
             /* if parsed ok store setting, send OK */
-            if (bta_ag_parse_cmer(p_arg, &p_scb->cmer_enabled))
+            if (bta_ag_parse_cmer(p_arg, p_end, &p_scb->cmer_enabled))
             {
                 bta_ag_send_ok(p_scb);
 
@@ -1369,7 +1390,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
             /* store available codecs from the peer */
             if((p_scb->peer_features & BTA_AG_PEER_FEAT_CODEC) && (p_scb->features & BTA_AG_FEAT_CODEC))
             {
-                p_scb->peer_codecs = bta_ag_parse_bac(p_scb, p_arg);
+                p_scb->peer_codecs = bta_ag_parse_bac(p_scb, p_arg, p_end);
                 p_scb->codec_updated = TRUE;
 
                 if (p_scb->peer_codecs & BTA_AG_CODEC_MSBC)
