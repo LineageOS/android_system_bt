@@ -857,7 +857,7 @@ static uint32_t a2dp_sbc_frame_length(void) {
 
   switch (p_encoder_params->s16ChannelMode) {
     case SBC_MONO:
-    /* FALLTHROUGH */
+      FALLTHROUGH_INTENDED; /* FALLTHROUGH */
     case SBC_DUAL:
       frame_len = A2DP_SBC_FRAME_HEADER_SIZE_BYTES +
                   ((uint32_t)(A2DP_SBC_SCALE_FACTOR_BITS *

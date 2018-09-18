@@ -1534,6 +1534,7 @@ tBTM_STATUS btm_ble_set_encryption(const RawAddress& bd_addr,
       }
     /* if salve role then fall through to call SMP_Pair below which will send a
        sec_request to request the master to encrypt the link */
+      FALLTHROUGH_INTENDED; /* FALLTHROUGH */
     case BTM_BLE_SEC_ENCRYPT_NO_MITM:
     case BTM_BLE_SEC_ENCRYPT_MITM:
       auth_req = (sec_act == BTM_BLE_SEC_ENCRYPT_NO_MITM)
@@ -2033,8 +2034,8 @@ uint8_t btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr,
       case SMP_OOB_REQ_EVT:
       case SMP_NC_REQ_EVT:
       case SMP_SC_OOB_REQ_EVT:
-        /* fall through */
         p_dev_rec->sec_flags |= BTM_SEC_LE_AUTHENTICATED;
+        FALLTHROUGH_INTENDED; /* FALLTHROUGH */
 
       case SMP_SEC_REQUEST_EVT:
         if (event == SMP_SEC_REQUEST_EVT &&
@@ -2045,7 +2046,7 @@ uint8_t btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr,
         btm_cb.pairing_bda = bd_addr;
         p_dev_rec->sec_state = BTM_SEC_STATE_AUTHENTICATING;
         btm_cb.pairing_flags |= BTM_PAIR_FLAGS_LE_ACTIVE;
-      /* fall through */
+        FALLTHROUGH_INTENDED; /* FALLTHROUGH */
 
       case SMP_COMPLT_EVT:
         if (btm_cb.api.p_le_callback) {
