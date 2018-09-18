@@ -71,7 +71,7 @@ const tBTA_SERVICE_MASK bta_ag_svc_mask[BTA_AG_NUM_IDX] =
 };
 
 typedef void (*tBTA_AG_ATCMD_CBACK)(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
-                                    char *p_arg, INT16 int_arg);
+                                    char *p_arg, char *p_end, INT16 int_arg);
 
 const tBTA_AG_ATCMD_CBACK bta_ag_at_cback_tbl[BTA_AG_NUM_IDX] =
 {
