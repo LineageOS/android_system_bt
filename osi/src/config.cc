@@ -172,7 +172,7 @@ void config_set_string(config_t* config, const std::string& section,
   }
 
   std::string value_no_newline;
-  size_t newline_position = value.find("\n");
+  size_t newline_position = value.find('\n');
   if (newline_position != std::string::npos) {
     android_errorWriteLog(0x534e4554, "70808273");
     value_no_newline = value.substr(0, newline_position);
