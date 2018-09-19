@@ -22,6 +22,7 @@ cc_library_static {
 
 cc_test {
     name: "net_test_avrcp",
+    test_suites: ["general-tests"],
     defaults: ["fluoride_defaults"],
     host_supported: true,
     include_dirs: [
