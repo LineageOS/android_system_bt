@@ -65,15 +65,16 @@ bool Timer::ScheduleTaskHelper(const base::WeakPtr<MessageLoopThread>& thread,
   CancelAndWait();
   expected_time_next_task_us_ = time_next_task_us;
   task_ = std::move(task);
+  task_wrapper_.Reset(base::Bind(&Timer::RunTask, base::Unretained(this)));
   uint64_t time_until_next_us = time_next_task_us - time_get_os_boottime_us();
   if (!thread->DoInThreadDelayed(
-          from_here, task_wrapper_,
+          from_here, task_wrapper_.callback(),
           base::TimeDelta::FromMicroseconds(time_until_next_us))) {
     LOG(ERROR) << __func__
                << ": failed to post task to message loop for thread " << *thread
                << ", from " << from_here.ToString();
     expected_time_next_task_us_ = 0;
-    task_.Reset();
+    task_wrapper_.Cancel();
     return false;
   }
   message_loop_thread_ = thread;
@@ -99,17 +100,16 @@ void Timer::CancelAndWait() {
 // This runs on user thread
 void Timer::CancelHelper(std::promise<void> promise) {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
-  if (message_loop_thread_ == nullptr) {
+  MessageLoopThread* scheduled_thread = message_loop_thread_.get();
+  if (scheduled_thread == nullptr) {
     promise.set_value();
     return;
   }
-  if (!message_loop_thread_->IsRunning() ||
-      message_loop_thread_->GetThreadId() ==
-          base::PlatformThread::CurrentId()) {
+  if (scheduled_thread->GetThreadId() == base::PlatformThread::CurrentId()) {
     CancelClosure(std::move(promise));
     return;
   }
-  message_loop_thread_->DoInThread(
+  scheduled_thread->DoInThread(
       FROM_HERE, base::BindOnce(&Timer::CancelClosure, base::Unretained(this),
                                 std::move(promise)));
 }
@@ -117,7 +117,8 @@ void Timer::CancelHelper(std::promise<void> promise) {
 // This runs on message loop thread
 void Timer::CancelClosure(std::promise<void> promise) {
   message_loop_thread_ = nullptr;
-  task_.Reset();
+  task_wrapper_.Cancel();
+  task_ = {};
   period_ = base::TimeDelta();
   is_periodic_ = false;
   expected_time_next_task_us_ = 0;
@@ -159,7 +160,7 @@ void Timer::RunPeriodicTask() {
     remaining_time_us = (remaining_time_us % period_us + period_us) % period_us;
   }
   message_loop_thread_->DoInThreadDelayed(
-      FROM_HERE, task_wrapper_,
+      FROM_HERE, task_wrapper_.callback(),
       base::TimeDelta::FromMicroseconds(remaining_time_us));
 
   uint64_t time_before_task_us = time_get_os_boottime_us();
@@ -176,11 +177,13 @@ void Timer::RunPeriodicTask() {
 
 // This runs on message loop thread
 void Timer::RunSingleTask() {
-  task_.Run();
-  message_loop_thread_ = nullptr;
-  task_.Reset();
+  base::OnceClosure current_task = std::move(task_);
+  task_wrapper_.Cancel();
+  task_ = {};
   period_ = base::TimeDelta();
   expected_time_next_task_us_ = 0;
+  std::move(current_task).Run();
+  message_loop_thread_ = nullptr;
 }
 
 }  // namespace common

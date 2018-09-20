@@ -36,10 +36,7 @@ class MessageLoopThread;
  */
 class Timer final {
  public:
-  Timer()
-      : task_wrapper_(base::Bind(&Timer::RunTask, base::Unretained(this))),
-        is_periodic_(false),
-        expected_time_next_task_us_(0) {}
+  Timer() : is_periodic_(false), expected_time_next_task_us_(0) {}
   ~Timer();
   Timer(const Timer&) = delete;
   Timer& operator=(const Timer&) = delete;
@@ -95,7 +92,7 @@ class Timer final {
 
  private:
   base::WeakPtr<MessageLoopThread> message_loop_thread_;
-  const base::Closure task_wrapper_;
+  base::CancelableClosure task_wrapper_;
   base::Closure task_;
   base::TimeDelta period_;
   bool is_periodic_;
