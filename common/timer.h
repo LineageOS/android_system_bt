@@ -105,13 +105,15 @@ class Timer final {
                           const tracked_objects::Location& from_here,
                           base::Closure task, base::TimeDelta delay,
                           bool is_periodic);
-  void CancelHelper(bool is_synchronous);
+  void CancelHelper(std::promise<void> promise);
   void CancelClosure(std::promise<void> promise);
 
   /**
    * Wraps a task. It posts another same task if the scheduled task is periodic.
    */
   void RunTask();
+  void RunSingleTask();
+  void RunPeriodicTask();
 };
 
 }  // namespace common
