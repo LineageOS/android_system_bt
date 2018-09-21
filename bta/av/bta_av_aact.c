@@ -72,11 +72,7 @@ extern BOOLEAN is_sniff_disabled;
 
 static const size_t SBC_MAX_BITPOOL_OFFSET = 6;
 
-#ifdef BTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
-static const size_t SBC_MAX_BITPOOL = 51;
-#else
-static const size_t SBC_MAX_BITPOOL = 53;
-#endif
+static const size_t SBC_MAX_BITPOOL = 76;
 
 /* ACL quota we are letting FW use for A2DP Offload Tx. */
 #define BTA_AV_A2DP_OFFLOAD_XMIT_QUOTA      4
