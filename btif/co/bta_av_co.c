@@ -43,6 +43,7 @@
 #include "btif_av_co.h"
 #include "btif_util.h"
 #include "osi/include/mutex.h"
+#include "osi/include/properties.h"
 
 #include "bt_utils.h"
 #include "a2d_aptx.h"
@@ -81,6 +82,7 @@
 #else
 #define BTA_AV_CO_SBC_MAX_BITPOOL  53
 #endif
+#define A2DP_SBC_HD_ENABLE_PROP "persist.bt.sbc_hd_enabled"
 
 /* SCMS-T protect info */
 const UINT8 bta_av_co_cp_scmst[BTA_AV_CP_INFO_LEN] = "\x02\x02\x00";
@@ -131,6 +133,18 @@ const tA2D_SBC_CIE btif_av_sbc_default_config =
 {
     BTIF_AV_SBC_DEFAULT_SAMP_FREQ,   /* samp_freq */
     A2D_SBC_IE_CH_MD_JOINT,         /* ch_mode */
+    A2D_SBC_IE_BLOCKS_16,           /* block_len */
+    A2D_SBC_IE_SUBBAND_8,           /* num_subbands */
+    A2D_SBC_IE_ALLOC_MD_L,          /* alloc_mthd */
+    BTA_AV_CO_SBC_MAX_BITPOOL,      /* max_bitpool */
+    A2D_SBC_IE_MIN_BITPOOL          /* min_bitpool */
+};
+
+/* Alternative SBC codec configuration */
+const tA2D_SBC_CIE btif_av_sbc_alt_config =
+{
+    BTIF_AV_SBC_DEFAULT_SAMP_FREQ,   /* samp_freq */
+    A2D_SBC_IE_CH_MD_DUAL,          /* ch_mode */
     A2D_SBC_IE_BLOCKS_16,           /* block_len */
     A2D_SBC_IE_SUBBAND_8,           /* num_subbands */
     A2D_SBC_IE_ALLOC_MD_L,          /* alloc_mthd */
@@ -566,7 +580,10 @@ void bta_av_build_src_cfg (UINT8 *p_pref_cfg, UINT8 *p_src_cap)
     else if (src_cap.samp_freq & A2D_SBC_IE_SAMP_FREQ_44)
         pref_cap.samp_freq = A2D_SBC_IE_SAMP_FREQ_44;
 
-    if (src_cap.ch_mode & A2D_SBC_IE_CH_MD_JOINT)
+    if (property_get_int32(A2DP_SBC_HD_ENABLE_PROP, 0)
+            && (src_cap.ch_mode & A2D_SBC_IE_CH_MD_DUAL))
+        pref_cap.ch_mode = A2D_SBC_IE_CH_MD_DUAL;
+    else if (src_cap.ch_mode & A2D_SBC_IE_CH_MD_JOINT)
         pref_cap.ch_mode = A2D_SBC_IE_CH_MD_JOINT;
     else if (src_cap.ch_mode & A2D_SBC_IE_CH_MD_STEREO)
         pref_cap.ch_mode = A2D_SBC_IE_CH_MD_STEREO;
@@ -2209,6 +2226,8 @@ BOOLEAN bta_av_co_audio_set_codec(const tBTIF_AV_MEDIA_FEEDINGS *p_feeding, tBTI
         new_cfg_sbc.id = BTIF_AV_CODEC_SBC;
 
         sbc_config = btif_av_sbc_default_config;
+        if (property_get_int32(A2DP_SBC_HD_ENABLE_PROP, 0))
+            sbc_config = btif_av_sbc_alt_config;
         if ((p_feeding->cfg.pcm.num_channel != 1) &&
             (p_feeding->cfg.pcm.num_channel != 2))
         {
