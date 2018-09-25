@@ -833,16 +833,6 @@ class HearingAidImpl : public HearingAid {
     BtaGattQueue::WriteCharacteristic(device.conn_id,
                                       device.audio_control_point_handle, start,
                                       GATT_WRITE, nullptr, nullptr);
-
-    // TODO(jpawlowski): this will be removed, once test devices get volume
-    // from start reqest
-    if (current_volume != VOLUME_UNKNOWN) {
-      std::vector<uint8_t> volume_value(
-          {static_cast<unsigned char>(current_volume)});
-      BtaGattQueue::WriteCharacteristic(device.conn_id, device.volume_handle,
-                                        volume_value, GATT_WRITE_NO_RSP,
-                                        nullptr, nullptr);
-    }
   }
 
   void OnAudioDataReady(const std::vector<uint8_t>& data) {
