@@ -220,6 +220,18 @@ TEST_F(TimerTest, cancel_single_task) {
   std::this_thread::sleep_for(std::chrono::milliseconds(delay_error_ms));
 }
 
+TEST_F(TimerTest, cancel_single_task_near_fire_no_race_condition) {
+  std::string name = "test_thread";
+  MessageLoopThread message_loop_thread(name);
+  message_loop_thread.StartUp();
+  uint32_t delay_ms = 5;
+  timer_->SchedulePeriodic(message_loop_thread.GetWeakPtr(), FROM_HERE,
+                           base::Bind([]() {}),
+                           base::TimeDelta::FromMilliseconds(delay_ms));
+  std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
+  timer_->CancelAndWait();
+}
+
 TEST_F(TimerTest, cancel_periodic_task) {
   std::string name = "test_thread";
   MessageLoopThread message_loop_thread(name);
@@ -333,5 +345,56 @@ TEST_F(TimerTest, schedule_task_cancel_previous_task) {
                               &my_name, promise_),
                    base::TimeDelta::FromMilliseconds(delay_ms));
   future.wait();
+  ASSERT_EQ(name, my_name);
+}
+
+TEST_F(TimerTest, reschedule_task_dont_invoke_new_task_early) {
+  std::string name = "test_thread";
+  MessageLoopThread message_loop_thread(name);
+  message_loop_thread.StartUp();
+  uint32_t delay_ms = 5;
+  timer_->Schedule(message_loop_thread.GetWeakPtr(), FROM_HERE,
+                   base::Bind([]() {}),
+                   base::TimeDelta::FromMilliseconds(delay_ms));
+  std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms - 2));
+  timer_->Schedule(
+      message_loop_thread.GetWeakPtr(), FROM_HERE,
+      base::Bind(&TimerTest::ShouldNotHappen, base::Unretained(this)),
+      base::TimeDelta::FromMilliseconds(delay_ms + 1000));
+  std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
+}
+
+TEST_F(TimerTest, reschedule_task_when_firing_dont_invoke_new_task_early) {
+  std::string name = "test_thread";
+  MessageLoopThread message_loop_thread(name);
+  message_loop_thread.StartUp();
+  uint32_t delay_ms = 5;
+  timer_->Schedule(message_loop_thread.GetWeakPtr(), FROM_HERE,
+                   base::Bind([]() {}),
+                   base::TimeDelta::FromMilliseconds(delay_ms));
+  std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
+  timer_->Schedule(
+      message_loop_thread.GetWeakPtr(), FROM_HERE,
+      base::Bind(&TimerTest::ShouldNotHappen, base::Unretained(this)),
+      base::TimeDelta::FromMilliseconds(delay_ms + 1000));
+  std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
+}
+
+TEST_F(TimerTest, reschedule_task_when_firing_must_schedule_new_task) {
+  std::string name = "test_thread";
+  MessageLoopThread message_loop_thread(name);
+  message_loop_thread.StartUp();
+  uint32_t delay_ms = 5;
+  std::string my_name;
+  auto future = promise_->get_future();
+  timer_->Schedule(message_loop_thread.GetWeakPtr(), FROM_HERE,
+                   base::Bind([]() {}),
+                   base::TimeDelta::FromMilliseconds(delay_ms));
+  std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
+  timer_->Schedule(message_loop_thread.GetWeakPtr(), FROM_HERE,
+                   base::Bind(&TimerTest::GetName, base::Unretained(this),
+                              &my_name, promise_),
+                   base::TimeDelta::FromMilliseconds(delay_ms));
+  future.wait_for(std::chrono::milliseconds(delay_ms + delay_error_ms));
   ASSERT_EQ(name, my_name);
 }

@@ -36,10 +36,7 @@ class MessageLoopThread;
  */
 class Timer final {
  public:
-  Timer()
-      : task_wrapper_(base::Bind(&Timer::RunTask, base::Unretained(this))),
-        is_periodic_(false),
-        expected_time_next_task_us_(0) {}
+  Timer() : is_periodic_(false), expected_time_next_task_us_(0) {}
   ~Timer();
   Timer(const Timer&) = delete;
   Timer& operator=(const Timer&) = delete;
@@ -95,7 +92,7 @@ class Timer final {
 
  private:
   base::WeakPtr<MessageLoopThread> message_loop_thread_;
-  const base::Closure task_wrapper_;
+  base::CancelableClosure task_wrapper_;
   base::Closure task_;
   base::TimeDelta period_;
   bool is_periodic_;
@@ -105,13 +102,15 @@ class Timer final {
                           const tracked_objects::Location& from_here,
                           base::Closure task, base::TimeDelta delay,
                           bool is_periodic);
-  void CancelHelper(bool is_synchronous);
+  void CancelHelper(std::promise<void> promise);
   void CancelClosure(std::promise<void> promise);
 
   /**
    * Wraps a task. It posts another same task if the scheduled task is periodic.
    */
   void RunTask();
+  void RunSingleTask();
+  void RunPeriodicTask();
 };
 
 }  // namespace common
