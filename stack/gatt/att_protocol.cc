@@ -352,8 +352,6 @@ BT_HDR* attp_build_sr_msg(tGATT_TCB& tcb, uint8_t op_code,
           "ATT_RSP_READ_BLOB/GATT_RSP_PREPARE_WRITE: len = %d offset = %d",
           p_msg->attr_value.len, p_msg->attr_value.offset);
       offset = p_msg->attr_value.offset;
-      /* Coverity: [FALSE-POSITIVE error] intended fall through */
-      /* Missing break statement between cases in switch statement */
       FALLTHROUGH_INTENDED; /* FALLTHROUGH */
     case GATT_RSP_READ_BY_TYPE:
     case GATT_RSP_READ:
