@@ -65,7 +65,7 @@ static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER* p_timer,
  * can use it */
 #define BTA_DM_PM_SSR_HH BTA_DM_PM_SSR1
 #endif
-static void bta_dm_pm_ssr(const RawAddress& peer_addr);
+static void bta_dm_pm_ssr(const RawAddress& peer_addr, int ssr);
 #endif
 
 tBTA_DM_CONNECTED_SRVCS bta_dm_conn_srvcs;
@@ -363,6 +363,13 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
   if ((BTA_SYS_CONN_OPEN == status) && p_dev &&
       (p_dev->info & BTA_DM_DI_USE_SSR)) {
     index = p_bta_dm_pm_spec[p_bta_dm_pm_cfg[i].spec_idx].ssr;
+  } else if (BTA_ID_AV == id) {
+    if (BTA_SYS_CONN_BUSY == status) {
+      /* set SSR4 for A2DP on SYS CONN BUSY */
+      index = BTA_DM_PM_SSR4;
+    } else if (BTA_SYS_CONN_IDLE == status) {
+      index = p_bta_dm_pm_spec[p_bta_dm_pm_cfg[i].spec_idx].ssr;
+    }
   }
 #endif
 
@@ -446,7 +453,7 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
       || index == BTA_DM_PM_SSR_HH
 #endif
       ) {
-    bta_dm_pm_ssr(peer_addr);
+    bta_dm_pm_ssr(peer_addr, index);
   } else {
     uint8_t* p = NULL;
     if (((NULL != (p = BTM_ReadLocalFeatures())) &&
@@ -459,7 +466,7 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
         BTM_SetSsrParams(peer_addr, 0, 0, 0);
       } else if (status == BTA_SYS_SCO_CLOSE) {
         APPL_TRACE_DEBUG("%s: SCO active, back to old SSR", __func__);
-        bta_dm_pm_ssr(peer_addr);
+        bta_dm_pm_ssr(peer_addr, BTA_DM_PM_SSR0);
       }
     }
   }
@@ -751,9 +758,9 @@ static bool bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
  *
  ******************************************************************************/
 #if (BTM_SSR_INCLUDED == TRUE)
-static void bta_dm_pm_ssr(const RawAddress& peer_addr) {
+static void bta_dm_pm_ssr(const RawAddress& peer_addr, int ssr) {
   int current_ssr_index;
-  int ssr_index = BTA_DM_PM_SSR0;
+  int ssr_index = ssr;
   tBTA_DM_SSR_SPEC* p_spec = &p_bta_dm_ssr_spec[ssr_index];
 
   /* go through the connected services */
@@ -913,7 +920,7 @@ void bta_dm_pm_btm_status(const RawAddress& bd_addr, tBTM_PM_STATUS status,
 #if (BTM_SSR_INCLUDED == TRUE)
         if (p_dev->prev_low) {
           /* need to send the SSR paramaters to controller again */
-          bta_dm_pm_ssr(p_dev->peer_bdaddr);
+          bta_dm_pm_ssr(p_dev->peer_bdaddr, BTA_DM_PM_SSR0);
         }
         p_dev->prev_low = BTM_PM_STS_ACTIVE;
 #endif
