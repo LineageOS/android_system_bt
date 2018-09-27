@@ -60,4 +60,5 @@ fluoride_defaults {
     static_libs: [
         "libbluetooth-types",
     ],
+    cpp_std: "c++17",
 }
