@@ -1116,7 +1116,8 @@ class HearingAidImpl : public HearingAid {
                           tBTA_GATT_REASON reason) {
     HearingDevice* hearingDevice = hearingDevices.FindByConnId(conn_id);
     if (!hearingDevice) {
-      VLOG(2) << "Skipping unknown device disconnect, conn_id=" << conn_id;
+      VLOG(2) << "Skipping unknown device disconnect, conn_id="
+              << loghex(conn_id);
       return;
     }
 
