@@ -338,8 +338,8 @@ void bta_gattc_open_error(tBTA_GATTC_CLCB* p_clcb,
 void bta_gattc_open_fail(tBTA_GATTC_CLCB* p_clcb,
                          UNUSED_ATTR tBTA_GATTC_DATA* p_data) {
   LOG(WARNING) << __func__ << ": Cannot establish Connection. conn_id="
-               << +p_clcb->bta_conn_id << ". Return GATT_ERROR(" << +GATT_ERROR
-               << ")";
+               << loghex(p_clcb->bta_conn_id) << ". Return GATT_ERROR("
+               << +GATT_ERROR << ")";
 
   bta_gattc_send_open_cback(p_clcb->p_rcb, GATT_ERROR, p_clcb->bda,
                             p_clcb->bta_conn_id, p_clcb->transport, 0);
@@ -462,7 +462,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
   VLOG(1) << __func__ << ": server cache state=" << +p_clcb->p_srcb->state;
 
   if (p_data != NULL) {
-    VLOG(1) << __func__ << ": conn_id=" << +p_data->hdr.layer_specific;
+    VLOG(1) << __func__ << ": conn_id=" << loghex(p_data->hdr.layer_specific);
     p_clcb->bta_conn_id = p_data->int_conn.hdr.layer_specific;
 
     GATT_GetConnectionInfor(p_data->hdr.layer_specific, &gatt_if, p_clcb->bda,
@@ -535,7 +535,7 @@ void bta_gattc_close(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
   tBTA_GATTC_RCB* p_clreg = p_clcb->p_rcb;
   tBTA_GATTC cb_data;
 
-  VLOG(1) << __func__ << ": conn_id=" << +p_clcb->bta_conn_id;
+  VLOG(1) << __func__ << ": conn_id=" << loghex(p_clcb->bta_conn_id);
 
   cb_data.close.client_if = p_clcb->p_rcb->client_if;
   cb_data.close.conn_id = p_clcb->bta_conn_id;
@@ -575,7 +575,8 @@ void bta_gattc_reset_discover_st(tBTA_GATTC_SERV* p_srcb, tGATT_STATUS status) {
 
 /** close a GATTC connection while in discovery state */
 void bta_gattc_disc_close(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
-  VLOG(1) << __func__ << ": Discovery cancel conn_id=" << +p_clcb->bta_conn_id;
+  VLOG(1) << __func__
+          << ": Discovery cancel conn_id=" << loghex(p_clcb->bta_conn_id);
 
   if (p_clcb->disc_active)
     bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_ERROR);
@@ -632,7 +633,7 @@ void bta_gattc_cfg_mtu(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
 /** Start a discovery on server */
 void bta_gattc_start_discover(tBTA_GATTC_CLCB* p_clcb,
                               UNUSED_ATTR tBTA_GATTC_DATA* p_data) {
-  VLOG(1) << __func__ << ": conn_id:" << +p_clcb->bta_conn_id
+  VLOG(1) << __func__ << ": conn_id:" << loghex(p_clcb->bta_conn_id)
           << " p_clcb->p_srcb->state:" << +p_clcb->p_srcb->state;
 
   if (((p_clcb->p_q_cmd == NULL ||
@@ -681,7 +682,7 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB* p_clcb,
                          UNUSED_ATTR tBTA_GATTC_DATA* p_data) {
   tBTA_GATTC_DATA* p_q_cmd = p_clcb->p_q_cmd;
 
-  VLOG(1) << __func__ << ": conn_id=" << +p_clcb->bta_conn_id;
+  VLOG(1) << __func__ << ": conn_id=" << loghex(p_clcb->bta_conn_id);
 
   if (p_clcb->transport == BTA_TRANSPORT_LE)
     L2CA_EnableUpdateBleConnParams(p_clcb->p_srcb->server_bda, true);
@@ -978,7 +979,7 @@ void bta_gattc_ignore_op_cmpl(UNUSED_ATTR tBTA_GATTC_CLCB* p_clcb,
 void bta_gattc_search(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
   tGATT_STATUS status = GATT_INTERNAL_ERROR;
   tBTA_GATTC cb_data;
-  VLOG(1) << __func__ << ": conn_id=" << +p_clcb->bta_conn_id;
+  VLOG(1) << __func__ << ": conn_id=" << loghex(p_clcb->bta_conn_id);
   if (p_clcb->p_srcb && !p_clcb->p_srcb->gatt_database.IsEmpty()) {
     status = GATT_SUCCESS;
     /* search the local cache of a server device */
