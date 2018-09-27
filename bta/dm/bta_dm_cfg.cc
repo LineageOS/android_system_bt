@@ -171,8 +171,9 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
           {BTA_DM_PM_NO_ACTION, 0}}, /* sco open, active */
          {{BTA_DM_PM_SNIFF_A2DP_IDX, 7000},
           {BTA_DM_PM_NO_ACTION, 0}}, /* sco close sniff  */
-         {{BTA_DM_PM_SNIFF_A2DP_IDX, 7000}, {BTA_DM_PM_NO_ACTION, 0}}, /* idle */
-         {{BTA_DM_PM_ACTIVE, 0}, {BTA_DM_PM_NO_ACTION, 0}},    /* busy */
+         {{BTA_DM_PM_SNIFF_A2DP_IDX, 7000},
+          {BTA_DM_PM_NO_ACTION, 0}},                        /* idle */
+         {{BTA_DM_PM_ACTIVE, 0}, {BTA_DM_PM_NO_ACTION, 0}}, /* busy */
          {{BTA_DM_PM_RETRY, 7000},
           {BTA_DM_PM_NO_ACTION, 0}} /* mode change retry */
      }},
@@ -241,7 +242,7 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
     /* AV : 4 */
     {(BTA_DM_PM_SNIFF), /* allow sniff */
 #if (BTM_SSR_INCLUDED == TRUE)
-     (BTA_DM_PM_SSR0), /* the SSR entry */
+     (BTA_DM_PM_SSR2), /* the SSR entry */
 #endif
      {
          {{BTA_DM_PM_SNIFF_A2DP_IDX, 7000},
@@ -585,8 +586,9 @@ tBTA_DM_SSR_SPEC bta_dm_ssr_spec[] = {
        default max latency and min remote timeout as 0, and always read
        individual device preference from HH module */
     {0, 0, 2},
-    {1200, 2, 2},    /* BTA_DM_PM_SSR2 - others (as long as sniff is allowed)*/
-    {360, 160, 1600} /* BTA_DM_PM_SSR3 - HD */
+    {1200, 2, 2},     /* BTA_DM_PM_SSR2 - others (as long as sniff is allowed)*/
+    {360, 160, 1600}, /* BTA_DM_PM_SSR3 - HD */
+    {1200, 65534, 65534} /* BTA_DM_PM_SSR4 - A2DP streaming */
 };
 
 tBTA_DM_SSR_SPEC* p_bta_dm_ssr_spec = &bta_dm_ssr_spec[0];
