@@ -70,7 +70,7 @@ std::set<RawAddress> remote_bdaddr_cache;
 std::queue<RawAddress> remote_bdaddr_cache_ordered;
 const size_t remote_bdaddr_cache_max_size = 1024;
 
-void btif_gattc_add_remote_bdaddr(const RawAddress& p_bda, uint8_t addr_type) {
+void btif_address_cache_add(const RawAddress& p_bda, uint8_t addr_type) {
   // Remove the oldest entries
   while (remote_bdaddr_cache.size() >= remote_bdaddr_cache_max_size) {
     const RawAddress& raw_address = remote_bdaddr_cache_ordered.front();
@@ -81,11 +81,11 @@ void btif_gattc_add_remote_bdaddr(const RawAddress& p_bda, uint8_t addr_type) {
   remote_bdaddr_cache_ordered.push(p_bda);
 }
 
-bool btif_gattc_find_bdaddr(const RawAddress& p_bda) {
+bool btif_address_cache_find(const RawAddress& p_bda) {
   return (remote_bdaddr_cache.find(p_bda) != remote_bdaddr_cache.end());
 }
 
-void btif_gattc_init_dev_cb(void) {
+void btif_address_cache_init(void) {
   remote_bdaddr_cache.clear();
   remote_bdaddr_cache_ordered = {};
 }
@@ -121,8 +121,8 @@ void bta_scan_results_cb_impl(RawAddress bd_addr, tBT_DEVICE_TYPE device_type,
   }
 
   if ((addr_type != BLE_ADDR_RANDOM) || (p_eir_remote_name)) {
-    if (!btif_gattc_find_bdaddr(bd_addr)) {
-      btif_gattc_add_remote_bdaddr(bd_addr, addr_type);
+    if (!btif_address_cache_find(bd_addr)) {
+      btif_address_cache_add(bd_addr, addr_type);
 
       if (p_eir_remote_name) {
         if (remote_name_len > BD_NAME_LEN + 1 ||
@@ -229,7 +229,7 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
             return;
           }
 
-          btif_gattc_init_dev_cb();
+          btif_address_cache_init();
           do_in_main_thread(
               FROM_HERE, Bind(&BTA_DmBleObserve, true, 0, bta_scan_results_cb));
         },
