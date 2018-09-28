@@ -23,3 +23,10 @@ subdirs = [
     "tools",
     "proto",
 ]
+
+filegroup {
+  name: "BluetoothTestConfigTemplate",
+  srcs: [
+    "AndroidTestTemplate.xml"
+  ]
+}
