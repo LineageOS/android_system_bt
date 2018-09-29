@@ -188,7 +188,7 @@ class MessageLoopThread final {
   void Run(std::promise<void> start_up_promise);
 
   mutable std::recursive_mutex api_mutex_;
-  std::string thread_name_;
+  const std::string thread_name_;
   base::MessageLoop* message_loop_;
   base::RunLoop* run_loop_;
   std::thread* thread_;
@@ -196,6 +196,7 @@ class MessageLoopThread final {
   // Linux specific abstractions
   pid_t linux_tid_;
   base::WeakPtrFactory<MessageLoopThread> weak_ptr_factory_;
+  bool shutting_down_;
 
   DISALLOW_COPY_AND_ASSIGN(MessageLoopThread);
 };
