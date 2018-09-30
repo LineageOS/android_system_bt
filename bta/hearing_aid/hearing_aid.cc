@@ -1105,6 +1105,8 @@ class HearingAidImpl : public HearingAid {
     // cancel autoconnect
     BTA_GATTC_CancelOpen(gatt_if, address, false);
 
+    DoDisconnectCleanUp(hearingDevice);
+
     hearingDevices.Remove(address);
 
     if (connected)
@@ -1116,26 +1118,31 @@ class HearingAidImpl : public HearingAid {
                           tBTA_GATT_REASON reason) {
     HearingDevice* hearingDevice = hearingDevices.FindByConnId(conn_id);
     if (!hearingDevice) {
-      VLOG(2) << "Skipping unknown device disconnect, conn_id=" << conn_id;
+      VLOG(2) << "Skipping unknown device disconnect, conn_id="
+              << loghex(conn_id);
       return;
     }
 
+    DoDisconnectCleanUp(hearingDevice);
+
+    callbacks->OnConnectionState(ConnectionState::DISCONNECTED, remote_bda);
+  }
+
+  void DoDisconnectCleanUp(HearingDevice* hearingDevice) {
     if (hearingDevice->connection_update_status != NONE) {
       LOG(INFO) << __func__ << ": connection update not completed. Current="
                 << hearingDevice->connection_update_status;
 
       if (hearingDevice->connection_update_status == STARTED) {
-        OnConnectionUpdateComplete(conn_id);
+        OnConnectionUpdateComplete(hearingDevice->conn_id);
       }
       hearingDevice->connection_update_status = NONE;
     }
 
+    BtaGattQueue::Clean(hearingDevice->conn_id);
+
     hearingDevice->accepting_audio = false;
     hearingDevice->conn_id = 0;
-
-    BtaGattQueue::Clean(conn_id);
-
-    callbacks->OnConnectionState(ConnectionState::DISCONNECTED, remote_bda);
   }
 
   void SetVolume(int8_t volume) override {

@@ -55,9 +55,11 @@ fluoride_defaults {
 
 fluoride_defaults {
     name: "fluoride_defaults",
+    test_config_template: ":BluetoothTestConfigTemplate",
     defaults: ["fluoride_types_defaults"],
     header_libs: ["libbluetooth_headers"],
     static_libs: [
         "libbluetooth-types",
     ],
+    cpp_std: "c++17",
 }
