@@ -89,13 +89,6 @@
     (pf) = (*(p_data)++ & RFCOMM_PF_MASK) >> RFCOMM_PF_OFFSET; \
   }
 
-#define RFCOMM_PARSE_LEN_FIELD(ea, length, p_data)                \
-  {                                                               \
-    (ea) = (*(p_data)&RFCOMM_EA);                                 \
-    (length) = (*(p_data)++ >> RFCOMM_SHIFT_LENGTH1);             \
-    if (!(ea)) (length) += (*(p_data)++ << RFCOMM_SHIFT_LENGTH2); \
-  }
-
 #define RFCOMM_FRAME_IS_CMD(initiator, cr) \
   (((initiator) && !(cr)) || (!(initiator) && (cr)))
 

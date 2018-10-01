@@ -1180,6 +1180,14 @@ void btif_av_event_deep_copy(uint16_t event, char* p_dest, char* p_src) {
           memcpy(p_msg_dest->vendor.p_vendor_data,
                  p_msg_src->vendor.p_vendor_data, p_msg_src->vendor.vendor_len);
         }
+        if ((p_msg_src->hdr.opcode == AVRC_OP_BROWSE) &&
+            p_msg_src->browse.p_browse_data && p_msg_src->browse.browse_len) {
+          p_msg_dest->browse.p_browse_data =
+              (uint8_t*)osi_calloc(p_msg_src->browse.browse_len);
+          memcpy(p_msg_dest->browse.p_browse_data,
+                 p_msg_src->browse.p_browse_data, p_msg_src->browse.browse_len);
+          android_errorWriteLog(0x534e4554, "109699112");
+        }
       }
       break;
 
@@ -1197,6 +1205,9 @@ static void btif_av_event_free_data(btif_sm_event_t event, void* p_data) {
       if (av->meta_msg.p_msg) {
         if (av->meta_msg.p_msg->hdr.opcode == AVRC_OP_VENDOR) {
           osi_free(av->meta_msg.p_msg->vendor.p_vendor_data);
+        }
+        if (av->meta_msg.p_msg->hdr.opcode == AVRC_OP_BROWSE) {
+          osi_free(av->meta_msg.p_msg->browse.p_browse_data);
         }
         osi_free_and_reset((void**)&av->meta_msg.p_msg);
       }
