@@ -131,6 +131,8 @@ typedef struct desc_info {
 
 #define HID_SSR_PARAM_INVALID 0xffff
 
+#define HIDD_APP_DESCRIPTOR_LEN 2048
+
 typedef struct sdp_info {
   char svc_name[HID_MAX_SVC_NAME_LEN];   /*Service Name */
   char svc_descr[HID_MAX_SVC_DESCR_LEN]; /*Service Description*/
