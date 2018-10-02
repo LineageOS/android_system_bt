@@ -325,6 +325,18 @@ class HearingAidImpl : public HearingAid {
     BTA_GATTC_Open(gatt_if, address, true, GATT_TRANSPORT_LE, false);
   }
 
+  void AddToWhiteList(const RawAddress& address) override {
+    VLOG(2) << __func__ << " address: " << address;
+    hearingDevices.Add(HearingDevice(address, true));
+    BTA_GATTC_Open(gatt_if, address, false, GATT_TRANSPORT_LE, false);
+    BTA_DmBleStartAutoConn();
+  }
+
+  void RemoveFromWhiteList(const RawAddress& address) override {
+    VLOG(2) << __func__ << " address: " << address;
+    BTA_GATTC_CancelOpen(gatt_if, address, false);
+  }
+
   void AddFromStorage(const RawAddress& address, uint16_t psm,
                       uint8_t capabilities, uint16_t codecs,
                       uint16_t audio_control_point_handle,
