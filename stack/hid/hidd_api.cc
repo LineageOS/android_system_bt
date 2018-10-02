@@ -293,7 +293,13 @@ tHID_STATUS HID_DevAddRecord(uint32_t handle, char* p_name, char* p_description,
       uint8_t* p_buf;
       uint8_t seq_len = 4 + desc_len;
 
-      p_buf = (uint8_t*)osi_malloc(2048);
+      if (desc_len > HIDD_APP_DESCRIPTOR_LEN) {
+        HIDD_TRACE_ERROR("%s: descriptor length = %d, larger than max %d",
+                         __func__, desc_len, HIDD_APP_DESCRIPTOR_LEN);
+        return HID_ERR_NOT_REGISTERED;
+      };
+
+      p_buf = (uint8_t*)osi_malloc(HIDD_APP_DESCRIPTOR_LEN + 6);
 
       if (p_buf == NULL) {
         HIDD_TRACE_ERROR("%s: Buffer allocation failure for size = 2048 ",
