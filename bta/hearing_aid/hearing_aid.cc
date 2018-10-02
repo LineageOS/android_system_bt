@@ -25,6 +25,7 @@
 #include "embdrv/g722/g722_enc_dec.h"
 #include "gap_api.h"
 #include "gatt_api.h"
+#include "osi/include/properties.h"
 
 #include <base/bind.h>
 #include <base/logging.h>
@@ -35,6 +36,13 @@
 using base::Closure;
 using bluetooth::Uuid;
 using bluetooth::hearing_aid::ConnectionState;
+
+// The MIN_CE_LEN parameter for Connection Parameters based on the current
+// Connection Interval
+constexpr uint16_t MIN_CE_LEN_10MS_CI = 0x0006;
+constexpr uint16_t MIN_CE_LEN_20MS_CI = 0x000C;
+constexpr uint16_t CONNECTION_INTERVAL_10MS_PARAM = 0x0008;
+constexpr uint16_t CONNECTION_INTERVAL_20MS_PARAM = 0x0010;
 
 void btif_storage_add_hearing_aid(const RawAddress& address, uint16_t psm,
                                   uint8_t capabilities, uint16_t codecs,
@@ -69,8 +77,6 @@ Uuid AUDIO_STATUS_UUID         = Uuid::FromString("38663f1a-e711-4cac-b641-326b5
 Uuid VOLUME_UUID               = Uuid::FromString("00e4ca9e-ab14-41e4-8823-f9e70c7e91df");
 Uuid LE_PSM_UUID               = Uuid::FromString("2d410339-82b6-42aa-b34e-e2e01df8cc1a");
 // clang-format on
-
-constexpr uint16_t MIN_CE_LEN_1M = 0x0006;
 
 void hearingaid_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data);
 void encryption_callback(const RawAddress*, tGATT_TRANSPORT, void*,
@@ -108,6 +114,13 @@ class HearingAidImpl;
 HearingAidImpl* instance;
 HearingAidAudioReceiver* audioReceiver;
 
+/** Possible states for the Connection Update status */
+typedef enum {
+  NONE,      // Connection Update not pending or has completed
+  AWAITING,  // Waiting for start the Connection Update operation
+  STARTED    // Connection Update has started
+} connection_update_status_t;
+
 struct HearingDevice {
   RawAddress address;
   /* This is true only during first connection to profile, until we store the
@@ -120,11 +133,11 @@ struct HearingDevice {
 
   /* For two hearing aids, you must update their parameters one after another,
    * not simulteanously, to ensure start of connection events for both devices
-   * are far from each other. This flag means that this device is waiting for
-   * update of parameters, that should happen after "LE Connection Update
+   * are far from each other. This status tracks whether this device is waiting
+   * for update of parameters, that should happen after "LE Connection Update
    * Complete" event
    */
-  bool connection_update_pending;
+  connection_update_status_t connection_update_status;
 
   /* if true, we are connected, L2CAP socket is open, we can stream audio*/
   bool accepting_audio;
@@ -150,7 +163,7 @@ struct HearingDevice {
       : address(address),
         first_connection(false),
         connecting_actively(false),
-        connection_update_pending(false),
+        connection_update_status(NONE),
         accepting_audio(false),
         conn_id(0),
         gap_handle(0),
@@ -167,7 +180,7 @@ struct HearingDevice {
       : address(address),
         first_connection(first_connection),
         connecting_actively(first_connection),
-        connection_update_pending(false),
+        connection_update_status(NONE),
         accepting_audio(false),
         conn_id(0),
         gap_handle(0),
@@ -227,9 +240,9 @@ class HearingDevices {
     return (iter == devices.end()) ? nullptr : &(*iter);
   }
 
-  bool IsAnyConnectionUpdatePending() {
+  bool IsAnyConnectionUpdateStarted() {
     for (const auto& d : devices) {
-      if (d.connection_update_pending) return true;
+      if (d.connection_update_status == STARTED) return true;
     }
 
     return false;
@@ -252,8 +265,20 @@ class HearingAidImpl : public HearingAid {
       : gatt_if(0),
         seq_counter(0),
         current_volume(VOLUME_UNKNOWN),
-        callbacks(callbacks) {
-    DVLOG(2) << __func__;
+        callbacks(callbacks),
+        codec_in_use(0) {
+    default_data_interval_ms = (uint16_t)osi_property_get_int32(
+        "persist.bluetooth.hearingaid.interval", (int32_t)HA_INTERVAL_20_MS);
+    if ((default_data_interval_ms != HA_INTERVAL_10_MS) &&
+        (default_data_interval_ms != HA_INTERVAL_20_MS)) {
+      LOG(ERROR) << __func__
+                 << ": invalid interval=" << default_data_interval_ms
+                 << "ms. Overwriting back to default";
+      default_data_interval_ms = HA_INTERVAL_20_MS;
+    }
+    VLOG(2) << __func__
+            << ", default_data_interval_ms=" << default_data_interval_ms;
+
     BTA_GATTC_AppRegister(
         hearingaid_gattc_callback,
         base::Bind(
@@ -269,10 +294,47 @@ class HearingAidImpl : public HearingAid {
             initCb));
   }
 
+  void UpdateBleConnParams(const RawAddress& address) {
+    /* List of parameters that depends on the chosen Connection Interval */
+    uint16_t min_ce_len;
+    uint16_t connection_interval;
+
+    switch (default_data_interval_ms) {
+      case HA_INTERVAL_10_MS:
+        min_ce_len = MIN_CE_LEN_10MS_CI;
+        connection_interval = CONNECTION_INTERVAL_10MS_PARAM;
+        break;
+      case HA_INTERVAL_20_MS:
+        min_ce_len = MIN_CE_LEN_20MS_CI;
+        connection_interval = CONNECTION_INTERVAL_20MS_PARAM;
+        break;
+      default:
+        LOG(ERROR) << __func__ << ":Error: invalid default_data_interval_ms="
+                   << default_data_interval_ms;
+        min_ce_len = MIN_CE_LEN_10MS_CI;
+        connection_interval = CONNECTION_INTERVAL_10MS_PARAM;
+    }
+
+    L2CA_UpdateBleConnParams(address, connection_interval, connection_interval,
+                             0x000A, 0x0064 /*1s*/, min_ce_len, min_ce_len);
+  }
+
   void Connect(const RawAddress& address) override {
     DVLOG(2) << __func__ << " " << address;
     hearingDevices.Add(HearingDevice(address, true));
     BTA_GATTC_Open(gatt_if, address, true, GATT_TRANSPORT_LE, false);
+  }
+
+  void AddToWhiteList(const RawAddress& address) override {
+    VLOG(2) << __func__ << " address: " << address;
+    hearingDevices.Add(HearingDevice(address, true));
+    BTA_GATTC_Open(gatt_if, address, false, GATT_TRANSPORT_LE, false);
+    BTA_DmBleStartAutoConn();
+  }
+
+  void RemoveFromWhiteList(const RawAddress& address) override {
+    VLOG(2) << __func__ << " address: " << address;
+    BTA_GATTC_CancelOpen(gatt_if, address, false);
   }
 
   void AddFromStorage(const RawAddress& address, uint16_t psm,
@@ -334,18 +396,19 @@ class HearingAidImpl : public HearingAid {
      * to move anchor point of both connections away from each other, to make
      * sure we'll be able to fit all the data we want in one connection event.
      */
-    bool any_update_pending = hearingDevices.IsAnyConnectionUpdatePending();
+    bool any_update_pending = hearingDevices.IsAnyConnectionUpdateStarted();
     // mark the device as pending connection update. If we don't start the
     // update now, it'll be started once current device finishes.
-    hearingDevice->connection_update_pending = true;
     if (!any_update_pending) {
-      L2CA_UpdateBleConnParams(address, 0x0008, 0x0008, 0x000A, 0x0064 /*1s*/,
-                               MIN_CE_LEN_1M, MIN_CE_LEN_1M);
+      hearingDevice->connection_update_status = STARTED;
+      UpdateBleConnParams(address);
+    } else {
+      hearingDevice->connection_update_status = AWAITING;
     }
 
     // Set data length
     // TODO(jpawlowski: for 16khz only 87 is required, optimize
-    BTM_SetBleDataLength(address, 147);
+    BTM_SetBleDataLength(address, 168);
 
     tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(address);
     if (p_dev_rec) {
@@ -386,12 +449,17 @@ class HearingAidImpl : public HearingAid {
       return;
     }
 
-    hearingDevice->connection_update_pending = false;
+    if (hearingDevice->connection_update_status != STARTED) {
+      LOG(INFO) << __func__
+                << ": Inconsistent state. Expecting state=STARTED but current="
+                << hearingDevice->connection_update_status;
+    }
+    hearingDevice->connection_update_status = NONE;
 
     for (auto& device : hearingDevices.devices) {
-      if (device.conn_id && device.connection_update_pending) {
-        L2CA_UpdateBleConnParams(device.address, 0x0008, 0x0008, 0x000A,
-                                 0x0064 /*1s*/, MIN_CE_LEN_1M, MIN_CE_LEN_1M);
+      if (device.conn_id && (device.connection_update_status == AWAITING)) {
+        device.connection_update_status = STARTED;
+        UpdateBleConnParams(device.address);
         return;
       }
     }
@@ -557,6 +625,49 @@ class HearingAidImpl : public HearingAid {
     }
   }
 
+  uint16_t CalcCompressedAudioPacketSize(uint16_t codec_type,
+                                         int connection_interval) {
+    int sample_rate;
+
+    const int sample_bit_rate = 16;  /* 16 bits per sample */
+    const int compression_ratio = 4; /* G.722 has a 4:1 compression ratio */
+    if (codec_type == CODEC_G722_24KHZ) {
+      sample_rate = 24000;
+    } else {
+      sample_rate = 16000;
+    }
+
+    // compressed_data_packet_size is the size in bytes of the compressed audio
+    // data buffer that is generated for each connection interval.
+    uint32_t compressed_data_packet_size =
+        (sample_rate * connection_interval * (sample_bit_rate / 8) /
+         compression_ratio) /
+        1000;
+    return ((uint16_t)compressed_data_packet_size);
+  }
+
+  void ChooseCodec(const HearingDevice& hearingDevice) {
+    if (codec_in_use) return;
+
+    // use the best codec available for this pair of devices.
+    uint16_t codecs = hearingDevice.codecs;
+    if (hearingDevice.hi_sync_id != 0) {
+      for (const auto& device : hearingDevices.devices) {
+        if (device.hi_sync_id != hearingDevice.hi_sync_id) continue;
+
+        codecs &= device.codecs;
+      }
+    }
+
+    if ((codecs & (1 << CODEC_G722_24KHZ)) &&
+        controller_get_interface()->supports_ble_2m_phy() &&
+        default_data_interval_ms == HA_INTERVAL_10_MS) {
+      codec_in_use = CODEC_G722_24KHZ;
+    } else if (codecs & (1 << CODEC_G722_16KHZ)) {
+      codec_in_use = CODEC_G722_16KHZ;
+    }
+  }
+
   void OnAudioStatus(uint16_t conn_id, tGATT_STATUS status, uint16_t handle,
                      uint16_t len, uint8_t* value, void* data) {
     DVLOG(2) << __func__ << " " << base::HexEncode(value, len);
@@ -648,16 +759,20 @@ class HearingAidImpl : public HearingAid {
       hearingDevice->first_connection = false;
     }
 
+    ChooseCodec(*hearingDevice);
+
     SendStart(*hearingDevice);
 
     hearingDevice->accepting_audio = true;
     LOG(INFO) << __func__ << ": address=" << address
-              << ", hi_sync_id=" << loghex(hearingDevice->hi_sync_id);
+              << ", hi_sync_id=" << loghex(hearingDevice->hi_sync_id)
+              << ", codec_in_use=" << loghex(codec_in_use);
+
+    StartSendingAudio(*hearingDevice);
+
     callbacks->OnDeviceAvailable(hearingDevice->capabilities,
                                  hearingDevice->hi_sync_id, address);
     callbacks->OnConnectionState(ConnectionState::CONNECTED, address);
-
-    StartSendingAudio(*hearingDevice);
   }
 
   void StartSendingAudio(const HearingDevice& hearingDevice) {
@@ -678,21 +793,15 @@ class HearingAidImpl : public HearingAid {
         }
       }
 
-      if ((codecs & (1 << CODEC_G722_24KHZ)) &&
-          controller_get_interface()->supports_ble_2m_phy()) {
-        codec_in_use = CODEC_G722_24KHZ;
+      CodecConfiguration codec;
+      if (codec_in_use == CODEC_G722_24KHZ) {
         codec.sample_rate = 24000;
-        codec.bit_rate = 16;
-        codec.data_interval_ms = 10;
-      } else if (codecs & (1 << CODEC_G722_16KHZ)) {
-        codec_in_use = CODEC_G722_16KHZ;
+      } else {
         codec.sample_rate = 16000;
-        codec.bit_rate = 16;
-        codec.data_interval_ms = 10;
       }
+      codec.bit_rate = 16;
+      codec.data_interval_ms = default_data_interval_ms;
 
-      // TODO: remove once we implement support for other codecs
-      codec_in_use = CODEC_G722_16KHZ;
       HearingAidAudioSource::Start(codec, audioReceiver);
     }
   }
@@ -737,16 +846,6 @@ class HearingAidImpl : public HearingAid {
     BtaGattQueue::WriteCharacteristic(device.conn_id,
                                       device.audio_control_point_handle, start,
                                       GATT_WRITE, nullptr, nullptr);
-
-    // TODO(jpawlowski): this will be removed, once test devices get volume
-    // from start reqest
-    if (current_volume != VOLUME_UNKNOWN) {
-      std::vector<uint8_t> volume_value(
-          {static_cast<unsigned char>(current_volume)});
-      BtaGattQueue::WriteCharacteristic(device.conn_id, device.volume_handle,
-                                        volume_value, GATT_WRITE_NO_RSP,
-                                        nullptr, nullptr);
-    }
   }
 
   void OnAudioDataReady(const std::vector<uint8_t>& data) {
@@ -802,7 +901,9 @@ class HearingAidImpl : public HearingAid {
     // TODO: this should basically fit the encoded data, tune the size later
     std::vector<uint8_t> encoded_data_left;
     if (left) {
-      encoded_data_left.resize(2000);
+      // TODO: instead of a magic number, we need to figure out the correct
+      // buffer size
+      encoded_data_left.resize(4000);
       int encoded_size =
           g722_encode(encoder_state_left, encoded_data_left.data(),
                       (const int16_t*)chan_left.data(), chan_left.size());
@@ -822,7 +923,9 @@ class HearingAidImpl : public HearingAid {
 
     std::vector<uint8_t> encoded_data_right;
     if (right) {
-      encoded_data_right.resize(2000);
+      // TODO: instead of a magic number, we need to figure out the correct
+      // buffer size
+      encoded_data_right.resize(4000);
       int encoded_size =
           g722_encode(encoder_state_right, encoded_data_right.data(),
                       (const int16_t*)chan_right.data(), chan_right.size());
@@ -843,15 +946,8 @@ class HearingAidImpl : public HearingAid {
     size_t encoded_data_size =
         std::max(encoded_data_left.size(), encoded_data_right.size());
 
-    // TODO: make it also dependent on the interval, when we support intervals
-    // different than 10ms
-    uint16_t packet_size;
-
-    if (codec_in_use == CODEC_G722_24KHZ) {
-      packet_size = 120;
-    } else /* if (codec_in_use == CODEC_G722_16KHZ) */ {
-      packet_size = 80;
-    }
+    uint16_t packet_size =
+        CalcCompressedAudioPacketSize(codec_in_use, default_data_interval_ms);
 
     for (size_t i = 0; i < encoded_data_size; i += packet_size) {
       if (left) {
@@ -1022,6 +1118,8 @@ class HearingAidImpl : public HearingAid {
     // cancel autoconnect
     BTA_GATTC_CancelOpen(gatt_if, address, false);
 
+    DoDisconnectCleanUp(hearingDevice);
+
     hearingDevices.Remove(address);
 
     if (connected)
@@ -1037,12 +1135,26 @@ class HearingAidImpl : public HearingAid {
       return;
     }
 
-    hearingDevice->accepting_audio = false;
-    hearingDevice->conn_id = 0;
-
-    BtaGattQueue::Clean(conn_id);
+    DoDisconnectCleanUp(hearingDevice);
 
     callbacks->OnConnectionState(ConnectionState::DISCONNECTED, remote_bda);
+  }
+
+  void DoDisconnectCleanUp(HearingDevice* hearingDevice) {
+    if (hearingDevice->connection_update_status != NONE) {
+      LOG(INFO) << __func__ << ": connection update not completed. Current="
+                << hearingDevice->connection_update_status;
+
+      if (hearingDevice->connection_update_status == STARTED) {
+        OnConnectionUpdateComplete(hearingDevice->conn_id);
+      }
+      hearingDevice->connection_update_status = NONE;
+    }
+
+    BtaGattQueue::Clean(hearingDevice->conn_id);
+
+    hearingDevice->accepting_audio = false;
+    hearingDevice->conn_id = 0;
   }
 
   void SetVolume(int8_t volume) override {
@@ -1080,7 +1192,8 @@ class HearingAidImpl : public HearingAid {
 
   /* currently used codec */
   uint8_t codec_in_use;
-  CodecConfiguration codec;
+
+  uint16_t default_data_interval_ms;
 
   HearingDevices hearingDevices;
 };
