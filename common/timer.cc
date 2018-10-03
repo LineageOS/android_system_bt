@@ -66,6 +66,9 @@ bool Timer::ScheduleTaskHelper(const base::WeakPtr<MessageLoopThread>& thread,
   expected_time_next_task_us_ = time_next_task_us;
   task_ = std::move(task);
   task_wrapper_.Reset(base::Bind(&Timer::RunTask, base::Unretained(this)));
+  message_loop_thread_ = thread;
+  period_ = delay;
+  is_periodic_ = is_periodic;
   uint64_t time_until_next_us = time_next_task_us - time_get_os_boottime_us();
   if (!thread->DoInThreadDelayed(
           from_here, task_wrapper_.callback(),
@@ -75,11 +78,11 @@ bool Timer::ScheduleTaskHelper(const base::WeakPtr<MessageLoopThread>& thread,
                << ", from " << from_here.ToString();
     expected_time_next_task_us_ = 0;
     task_wrapper_.Cancel();
+    message_loop_thread_ = nullptr;
+    period_ = {};
+    is_periodic_ = false;
     return false;
   }
-  message_loop_thread_ = thread;
-  period_ = delay;
-  is_periodic_ = is_periodic;
   return true;
 }
 
