@@ -134,6 +134,7 @@ TEST_F(TimerTest, schedule_task) {
   EXPECT_TRUE(timer_->IsScheduled());
   future.get();
   ASSERT_EQ(name, my_name);
+  std::this_thread::sleep_for(std::chrono::milliseconds(delay_error_ms));
   EXPECT_FALSE(timer_->IsScheduled());
 }
 
@@ -173,7 +174,7 @@ TEST_F(TimerTest, periodic_run) {
                  num_tasks, promise_),
       base::TimeDelta::FromMilliseconds(delay_ms));
   future.get();
-  ASSERT_EQ(counter_, num_tasks);
+  ASSERT_GE(counter_, num_tasks);
   timer_->CancelAndWait();
 }
 
@@ -288,43 +289,28 @@ TEST_F(TimerTest, schedule_multiple_delayed_slow_tasks_stress) {
   VerifyMultipleDelayedTasks(100, 10, 20);
 }
 
-// Verify that when MessageLoopThread is shutdown, the pending task will be
-// cancelled
-TEST_F(TimerTest, message_loop_thread_down_cancel_pending_task) {
+TEST_F(TimerTest, message_loop_thread_down_cancel_scheduled_periodic_task) {
   std::string name = "test_thread";
   MessageLoopThread message_loop_thread(name);
   message_loop_thread.StartUp();
   std::string my_name;
+  auto future = promise_->get_future();
   uint32_t delay_ms = 5;
+  int num_tasks = 5;
 
-  timer_->Schedule(
+  timer_->SchedulePeriodic(
       message_loop_thread.GetWeakPtr(), FROM_HERE,
-      base::Bind(&TimerTest::ShouldNotHappen, base::Unretained(this)),
+      base::Bind(&TimerTest::IncreaseTaskCounter, base::Unretained(this),
+                 num_tasks, promise_),
       base::TimeDelta::FromMilliseconds(delay_ms));
-  EXPECT_TRUE(timer_->IsScheduled());
-  std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms - 3));
+  future.wait();
   message_loop_thread.ShutDown();
-  std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
-}
-
-// Verify that when MessageLoopThread is shutdown, the pending periodic task
-// will be cancelled
-TEST_F(TimerTest, message_loop_thread_down_cancel_pending_periodic_task) {
-  std::string name = "test_thread";
-  MessageLoopThread message_loop_thread(name);
-  message_loop_thread.StartUp();
-  uint32_t delay_ms = 5;
-
-  timer_->Schedule(
-      message_loop_thread.GetWeakPtr(), FROM_HERE,
-      base::Bind(&TimerTest::ShouldNotHappen, base::Unretained(this)),
-      base::TimeDelta::FromMilliseconds(delay_ms));
-  EXPECT_TRUE(timer_->IsScheduled());
-  std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms - 2));
-  message_loop_thread.ShutDown();
-  timer_->CancelAndWait();
-  EXPECT_FALSE(timer_->IsScheduled());
-  std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
+  std::this_thread::sleep_for(
+      std::chrono::milliseconds(delay_ms + delay_error_ms));
+  int counter = counter_;
+  std::this_thread::sleep_for(
+      std::chrono::milliseconds(delay_ms + delay_error_ms));
+  ASSERT_EQ(counter, counter_);
 }
 
 TEST_F(TimerTest, schedule_task_cancel_previous_task) {
@@ -334,18 +320,23 @@ TEST_F(TimerTest, schedule_task_cancel_previous_task) {
   std::string my_name;
   auto future = promise_->get_future();
   uint32_t delay_ms = 5;
+  int num_tasks = 5;
 
   timer_->SchedulePeriodic(
       message_loop_thread.GetWeakPtr(), FROM_HERE,
-      base::Bind(&TimerTest::ShouldNotHappen, base::Unretained(this)),
+      base::Bind(&TimerTest::IncreaseTaskCounter, base::Unretained(this),
+                 num_tasks, promise_),
       base::TimeDelta::FromMilliseconds(delay_ms));
-  std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms - 2));
-  timer_->Schedule(message_loop_thread.GetWeakPtr(), FROM_HERE,
-                   base::Bind(&TimerTest::GetName, base::Unretained(this),
-                              &my_name, promise_),
-                   base::TimeDelta::FromMilliseconds(delay_ms));
   future.wait();
-  ASSERT_EQ(name, my_name);
+  timer_->Schedule(message_loop_thread.GetWeakPtr(), FROM_HERE,
+                   base::Bind([]() {}),
+                   base::TimeDelta::FromMilliseconds(delay_ms));
+  std::this_thread::sleep_for(
+      std::chrono::milliseconds(delay_ms + delay_error_ms));
+  int counter = counter_;
+  std::this_thread::sleep_for(
+      std::chrono::milliseconds(delay_ms + delay_error_ms));
+  ASSERT_EQ(counter, counter_);
 }
 
 TEST_F(TimerTest, reschedule_task_dont_invoke_new_task_early) {
