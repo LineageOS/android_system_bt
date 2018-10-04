@@ -280,3 +280,53 @@ TEST_F(MessageLoopThreadTest, shut_down_while_in_callback) {
   std::string my_name = name_future.get();
   ASSERT_EQ(name, my_name);
 }
+
+// Verify the message loop thread will shutdown after callback finishes
+TEST_F(MessageLoopThreadTest, shut_down_while_in_callback_check_lock) {
+  std::string name = "test_thread";
+  MessageLoopThread message_loop_thread(name);
+  message_loop_thread.StartUp();
+  message_loop_thread.DoInThread(
+      FROM_HERE,
+      base::BindOnce([](MessageLoopThread* thread) { thread->IsRunning(); },
+                     &message_loop_thread));
+  message_loop_thread.ShutDown();
+}
+
+// Verify multiple threads try shutdown, no deadlock/crash
+TEST_F(MessageLoopThreadTest, shut_down_multi_thread) {
+  std::string name = "test_thread";
+  MessageLoopThread message_loop_thread(name);
+  message_loop_thread.StartUp();
+  auto thread = std::thread(&MessageLoopThread::ShutDown, &message_loop_thread);
+  message_loop_thread.ShutDown();
+  thread.join();
+}
+
+// Verify multiple threads try startup, no deadlock/crash
+TEST_F(MessageLoopThreadTest, start_up_multi_thread) {
+  std::string name = "test_thread";
+  MessageLoopThread message_loop_thread(name);
+  message_loop_thread.StartUp();
+  auto thread = std::thread(&MessageLoopThread::StartUp, &message_loop_thread);
+  thread.join();
+}
+
+// Verify multiple threads try startup/shutdown, no deadlock/crash
+TEST_F(MessageLoopThreadTest, start_up_shut_down_multi_thread) {
+  std::string name = "test_thread";
+  MessageLoopThread message_loop_thread(name);
+  message_loop_thread.StartUp();
+  auto thread = std::thread(&MessageLoopThread::ShutDown, &message_loop_thread);
+  thread.join();
+}
+
+// Verify multiple threads try shutdown/startup, no deadlock/crash
+TEST_F(MessageLoopThreadTest, shut_down_start_up_multi_thread) {
+  std::string name = "test_thread";
+  MessageLoopThread message_loop_thread(name);
+  message_loop_thread.StartUp();
+  message_loop_thread.ShutDown();
+  auto thread = std::thread(&MessageLoopThread::StartUp, &message_loop_thread);
+  thread.join();
+}

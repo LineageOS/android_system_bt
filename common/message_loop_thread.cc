@@ -35,25 +35,24 @@ MessageLoopThread::MessageLoopThread(const std::string& thread_name)
       thread_(nullptr),
       thread_id_(-1),
       linux_tid_(-1),
-      weak_ptr_factory_(this) {}
+      weak_ptr_factory_(this),
+      shutting_down_(false) {}
 
-MessageLoopThread::~MessageLoopThread() {
-  std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
-  if (thread_ != nullptr) {
-    ShutDown();
-  }
-}
+MessageLoopThread::~MessageLoopThread() { ShutDown(); }
 
 void MessageLoopThread::StartUp() {
-  std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
-  if (thread_ != nullptr) {
-    LOG(WARNING) << __func__ << ": thread " << *this << " is already started";
-    return;
-  }
   std::promise<void> start_up_promise;
   std::future<void> start_up_future = start_up_promise.get_future();
-  thread_ = new std::thread(&MessageLoopThread::RunThread, this,
-                            std::move(start_up_promise));
+  {
+    std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
+    if (thread_ != nullptr) {
+      LOG(WARNING) << __func__ << ": thread " << *this << " is already started";
+
+      return;
+    }
+    thread_ = new std::thread(&MessageLoopThread::RunThread, this,
+                              std::move(start_up_promise));
+  }
   start_up_future.wait();
 }
 
@@ -82,15 +81,24 @@ bool MessageLoopThread::DoInThreadDelayed(
 }
 
 void MessageLoopThread::ShutDown() {
-  std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
-  if (thread_ == nullptr) {
-    LOG(WARNING) << __func__ << ": thread " << *this << " is already stopped";
-    return;
-  }
-  CHECK_NE(thread_id_, base::PlatformThread::CurrentId())
-      << __func__ << " should not be called on the thread itself. "
-      << "Otherwise, deadlock may happen.";
-  if (message_loop_ != nullptr) {
+  {
+    std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
+    if (thread_ == nullptr) {
+      LOG(INFO) << __func__ << ": thread " << *this << " is already stopped";
+      return;
+    }
+    if (message_loop_ == nullptr) {
+      LOG(INFO) << __func__ << ": message_loop_ is null. Already stopping";
+      return;
+    }
+    if (shutting_down_) {
+      LOG(INFO) << __func__ << ": waiting for thread to join";
+      return;
+    }
+    shutting_down_ = true;
+    CHECK_NE(thread_id_, base::PlatformThread::CurrentId())
+        << __func__ << " should not be called on the thread itself. "
+        << "Otherwise, deadlock may happen.";
     if (!message_loop_->task_runner()->PostTask(
             FROM_HERE, run_loop_->QuitWhenIdleClosure())) {
       LOG(FATAL) << __func__
@@ -99,8 +107,12 @@ void MessageLoopThread::ShutDown() {
     }
   }
   thread_->join();
-  delete thread_;
-  thread_ = nullptr;
+  {
+    std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
+    delete thread_;
+    thread_ = nullptr;
+    shutting_down_ = false;
+  }
 }
 
 base::PlatformThreadId MessageLoopThread::GetThreadId() const {
@@ -109,7 +121,6 @@ base::PlatformThreadId MessageLoopThread::GetThreadId() const {
 }
 
 std::string MessageLoopThread::GetName() const {
-  std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
   return thread_name_;
 }
 
@@ -158,26 +169,33 @@ base::WeakPtr<MessageLoopThread> MessageLoopThread::GetWeakPtr() {
   return weak_ptr_factory_.GetWeakPtr();
 }
 
-// Non API method, should NOT be protected by API mutex to avoid deadlock
 void MessageLoopThread::Run(std::promise<void> start_up_promise) {
-  LOG(INFO) << __func__ << ": message loop starting for thread "
-            << thread_name_;
-  base::PlatformThread::SetName(thread_name_);
-  message_loop_ = new base::MessageLoop();
-  run_loop_ = new base::RunLoop();
-  thread_id_ = base::PlatformThread::CurrentId();
-  linux_tid_ = static_cast<pid_t>(syscall(SYS_gettid));
-  start_up_promise.set_value();
+  {
+    std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
+    LOG(INFO) << __func__ << ": message loop starting for thread "
+              << thread_name_;
+    base::PlatformThread::SetName(thread_name_);
+    message_loop_ = new base::MessageLoop();
+    run_loop_ = new base::RunLoop();
+    thread_id_ = base::PlatformThread::CurrentId();
+    linux_tid_ = static_cast<pid_t>(syscall(SYS_gettid));
+    start_up_promise.set_value();
+  }
+
   // Blocking until ShutDown() is called
   run_loop_->Run();
-  thread_id_ = -1;
-  linux_tid_ = -1;
-  delete message_loop_;
-  message_loop_ = nullptr;
-  delete run_loop_;
-  run_loop_ = nullptr;
-  LOG(INFO) << __func__ << ": message loop finished for thread "
-            << thread_name_;
+
+  {
+    std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
+    thread_id_ = -1;
+    linux_tid_ = -1;
+    delete message_loop_;
+    message_loop_ = nullptr;
+    delete run_loop_;
+    run_loop_ = nullptr;
+    LOG(INFO) << __func__ << ": message loop finished for thread "
+              << thread_name_;
+  }
 }
 
 }  // namespace common
