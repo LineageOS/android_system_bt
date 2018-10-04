@@ -54,6 +54,7 @@ typedef enum {
   BTAV_A2DP_CODEC_INDEX_SOURCE_APTX,
   BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD,
   BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC,
+  BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_TWS,
 
   BTAV_A2DP_CODEC_INDEX_SOURCE_MAX,
 
@@ -148,6 +149,9 @@ typedef struct {
         break;
       case BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC:
         codec_name_str = "LDAC";
+        break;
+      case BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_TWS:
+        codec_name_str = "aptX TWS";
         break;
       case BTAV_A2DP_CODEC_INDEX_SINK_SBC:
         codec_name_str = "SBC (Sink)";
