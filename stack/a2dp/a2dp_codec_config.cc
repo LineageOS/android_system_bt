@@ -142,6 +142,8 @@ A2dpCodecConfig* A2dpCodecConfig::createCodec(
       codec_config = new A2dpCodecConfigLdacSink(codec_priority);
       break;
 #endif
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_TWS:
+      break;
     case BTAV_A2DP_CODEC_INDEX_MAX:
     default:
       break;
