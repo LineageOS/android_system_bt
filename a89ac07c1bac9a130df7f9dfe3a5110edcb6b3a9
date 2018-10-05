@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "97a5035a_ab9d6d25",
+        "filename": "bta/av/bta_av_act.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 867,
+      "author": {
+        "id": 20370
+      },
+      "writtenOn": "2018-10-05T04:23:00Z",
+      "side": 1,
+      "message": "This line breaks the build due to missing }\n\nsystem/bt/bta/./av/bta_av_act.c:871:13: error: expected expression\n            else",
+      "revId": "a89ac07c1bac9a130df7f9dfe3a5110edcb6b3a9",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
