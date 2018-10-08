@@ -18,7 +18,9 @@
 
 #include <gtest/gtest.h>
 
-#include "btif/include/btif_state_machine.h"
+#include "common/state_machine.h"
+
+using bluetooth::common::StateMachine;
 
 namespace {
 static constexpr uint32_t kInvalidEvent = 0xffffffff;
@@ -31,7 +33,7 @@ static char dataOne = 1;
 static char dataTwo = 2;
 }  // namespace
 
-class BtifStateMachineImpl : public BtifStateMachine {
+class StateMachineImpl : public StateMachine {
  public:
   enum {
     kStateZero,
@@ -41,7 +43,7 @@ class BtifStateMachineImpl : public BtifStateMachine {
 
   class StateZero : public State {
    public:
-    StateZero(BtifStateMachine& sm)
+    StateZero(StateMachine& sm)
         : State(sm, kStateZero),
           on_enter_(false),
           on_exit_(false),
@@ -70,7 +72,7 @@ class BtifStateMachineImpl : public BtifStateMachine {
 
   class StateOne : public State {
    public:
-    StateOne(BtifStateMachine& sm)
+    StateOne(StateMachine& sm)
         : State(sm, kStateOne),
           on_enter_(false),
           on_exit_(false),
@@ -99,7 +101,7 @@ class BtifStateMachineImpl : public BtifStateMachine {
 
   class StateTwo : public State {
    public:
-    StateTwo(BtifStateMachine& sm)
+    StateTwo(StateMachine& sm)
         : State(sm, kStateTwo),
           on_enter_(false),
           on_exit_(false),
@@ -126,7 +128,7 @@ class BtifStateMachineImpl : public BtifStateMachine {
     void* data_;
   };
 
-  BtifStateMachineImpl() {
+  StateMachineImpl() {
     state_zero_ = new StateZero(*this);
     state_one_ = new StateOne(*this);
     state_two_ = new StateTwo(*this);
@@ -142,23 +144,23 @@ class BtifStateMachineImpl : public BtifStateMachine {
   StateTwo* state_two_;
 };
 
-class BtifStateMachineTest : public ::testing::Test {
+class StateMachineTest : public ::testing::Test {
  protected:
-  BtifStateMachineTest() {}
+  StateMachineTest() {}
 
   void SetUp() override { sm_.Start(); }
 
   void TearDown() override { sm_.Quit(); }
 
-  BtifStateMachineImpl sm_;
+  StateMachineImpl sm_;
 };
 
-TEST_F(BtifStateMachineTest, test_initial_state) {
+TEST_F(StateMachineTest, test_initial_state) {
   ASSERT_EQ(sm_.kStateZero, sm_.StateId());
   ASSERT_EQ(sm_.kStateInvalid, sm_.PreviousStateId());
 }
 
-TEST_F(BtifStateMachineTest, test_invalid_state) {
+TEST_F(StateMachineTest, test_invalid_state) {
   sm_.Quit();
   ASSERT_EQ(sm_.kStateInvalid, sm_.StateId());
   ASSERT_EQ(sm_.kStateInvalid, sm_.PreviousStateId());
@@ -167,7 +169,7 @@ TEST_F(BtifStateMachineTest, test_invalid_state) {
   ASSERT_EQ(sm_.kStateInvalid, sm_.PreviousStateId());
 }
 
-TEST_F(BtifStateMachineTest, test_transition_to) {
+TEST_F(StateMachineTest, test_transition_to) {
   // Initial state: StateZero
   ASSERT_EQ(sm_.kStateZero, sm_.StateId());
   ASSERT_EQ(sm_.kStateInvalid, sm_.PreviousStateId());
@@ -195,7 +197,7 @@ TEST_F(BtifStateMachineTest, test_transition_to) {
   ASSERT_FALSE(sm_.state_two_->on_exit_);
 }
 
-TEST_F(BtifStateMachineTest, test_process_event) {
+TEST_F(StateMachineTest, test_process_event) {
   // Initial state: StateZero
   ASSERT_EQ(sm_.kStateZero, sm_.StateId());
   ASSERT_EQ(sm_.kStateInvalid, sm_.PreviousStateId());

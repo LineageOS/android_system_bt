@@ -173,25 +173,3 @@ cc_test {
     ],
     cflags: ["-DBUILDCFG"],
 }
-
-// btif state machine unit tests for target
-// ========================================================
-cc_test {
-    name: "net_test_btif_state_machine",
-    defaults: ["fluoride_defaults"],
-    include_dirs: btifCommonIncludes,
-    host_supported: true,
-    srcs: [
-      "test/btif_state_machine_test.cc"
-    ],
-    header_libs: ["libbluetooth_headers"],
-    shared_libs: [
-        "liblog",
-        "libcutils",
-    ],
-    static_libs: [
-        "libbluetooth-types",
-        "libosi",
-    ],
-    cflags: ["-DBUILDCFG"],
-}
