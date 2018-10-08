@@ -1895,6 +1895,11 @@ void smp_link_encrypted(const RawAddress& bda, uint8_t encr_enable) {
   }
 }
 
+void smp_cancel_start_encryption_attempt() {
+  SMP_TRACE_ERROR("%s: Encryption request cancelled", __func__);
+  smp_sm_event(&smp_cb, SMP_DISCARD_SEC_REQ_EVT, NULL);
+}
+
 /*******************************************************************************
  *
  * Function         smp_proc_ltk_request
