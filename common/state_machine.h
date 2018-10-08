@@ -14,18 +14,21 @@
  * limitations under the License.
  */
 
-#ifndef BTIF_STATE_MACHINE_H
-#define BTIF_STATE_MACHINE_H
+#pragma once
 
 #include <map>
 #include <utility>
 
 #include <base/logging.h>
 
+namespace bluetooth {
+
+namespace common {
+
 /**
- * State machine used by BTIF components.
+ * State machine used by Bluetooth native stack.
  */
-class BtifStateMachine {
+class StateMachine {
  public:
   enum { kStateInvalid = -1 };
 
@@ -33,7 +36,7 @@ class BtifStateMachine {
    * A class to represent the state in the State Machine.
    */
   class State {
-    friend class BtifStateMachine;
+    friend class StateMachine;
 
    public:
     /**
@@ -42,7 +45,7 @@ class BtifStateMachine {
      * @param sm the State Machine to use
      * @param state_id the unique State ID. It should be a non-negative number.
      */
-    State(BtifStateMachine& sm, int state_id) : sm_(sm), state_id_(state_id) {}
+    State(StateMachine& sm, int state_id) : sm_(sm), state_id_(state_id) {}
 
     virtual ~State() = default;
 
@@ -88,20 +91,20 @@ class BtifStateMachine {
      *
      * @param dest_state the state to transition to. It cannot be nullptr.
      */
-    void TransitionTo(BtifStateMachine::State* dest_state) {
+    void TransitionTo(StateMachine::State* dest_state) {
       sm_.TransitionTo(dest_state);
     }
 
    private:
-    BtifStateMachine& sm_;
+    StateMachine& sm_;
     int state_id_;
   };
 
-  BtifStateMachine()
+  StateMachine()
       : initial_state_(nullptr),
         previous_state_(nullptr),
         current_state_(nullptr) {}
-  ~BtifStateMachine() {
+  ~StateMachine() {
     for (auto& kv : states_) delete kv.second;
   }
 
@@ -172,7 +175,7 @@ class BtifStateMachine {
    *
    * @param dest_state the state to transition to. It cannot be nullptr.
    */
-  void TransitionTo(BtifStateMachine::State* dest_state) {
+  void TransitionTo(StateMachine::State* dest_state) {
     if (current_state_ != nullptr) {
       current_state_->OnExit();
     }
@@ -206,4 +209,6 @@ class BtifStateMachine {
   std::map<int, State*> states_;
 };
 
-#endif  // BTIF_STATE_MACHINE_H
+}  // namespace common
+
+}  // namespace bluetooth
