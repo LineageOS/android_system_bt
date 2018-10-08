@@ -53,6 +53,7 @@ using tracked_objects::Location;
 
 extern void btm_process_cancel_complete(uint8_t status, uint8_t mode);
 extern void btm_ble_test_command_complete(uint8_t* p);
+extern void smp_cancel_start_encryption_attempt();
 
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
@@ -725,6 +726,11 @@ static void btu_hcif_encryption_change_evt(uint8_t* p) {
   STREAM_TO_UINT16(handle, p);
   STREAM_TO_UINT8(encr_enable, p);
 
+  if (status == HCI_ERR_CONNECTION_TOUT) {
+    smp_cancel_start_encryption_attempt();
+    return;
+  }
+
   btm_acl_encrypt_change(handle, status, encr_enable);
   btm_sec_encrypt_change(handle, status, encr_enable);
 }
@@ -1128,6 +1134,15 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
             /* Device refused to start authentication.  That should be treated
              * as authentication failure. */
             btm_sec_auth_complete(BTM_INVALID_HCI_HANDLE, status);
+            break;
+
+          case HCI_BLE_START_ENC:
+            // Race condition: disconnection happened right before we send
+            // "LE Encrypt", controller responds with no connection, we should
+            // cancel the encryption attempt, rather than unpair the device.
+            if (status == HCI_ERR_NO_CONNECTION) {
+              smp_cancel_start_encryption_attempt();
+            }
             break;
 
           case HCI_SET_CONN_ENCRYPTION:
