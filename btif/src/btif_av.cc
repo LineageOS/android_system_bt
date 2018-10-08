@@ -42,9 +42,9 @@
 #include "btif_av_co.h"
 #include "btif_profile_queue.h"
 #include "btif_rc.h"
-#include "btif_state_machine.h"
 #include "btif_util.h"
 #include "btu.h"
+#include "common/state_machine.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
@@ -114,7 +114,7 @@ class BtifAvPeer;
 // different than Open state. Suspend flags are needed however to prevent
 // media task from trying to restart stream during remote Suspend or while
 // we are in the process of a local Suspend.
-class BtifAvStateMachine : public BtifStateMachine {
+class BtifAvStateMachine : public bluetooth::common::StateMachine {
  public:
   enum {
     kStateIdle,     // AVDTP disconnected
