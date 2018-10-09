@@ -49,10 +49,10 @@ class TimerTest : public ::testing::Test {
     promise->set_value();
   }
 
-  void SleepAndGetName(std::string* name, std::promise<void>* name_promise,
-                       int sleep_ms) {
+  void SleepAndIncreaseCounter(std::promise<void>* promise, int sleep_ms) {
+    promise->set_value();
     std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms));
-    GetName(name, name_promise);
+    counter_++;
   }
 
   void VerifyDelayTimeAndSleep(std::chrono::steady_clock::time_point start_time,
@@ -64,7 +64,7 @@ class TimerTest : public ::testing::Test {
         end_time - start_time);
     counter_++;
     int64_t scheduled_delay_ms = interval_ms * counter_;
-    if (counter_ >= scheduled_tasks) {
+    if (counter_ == scheduled_tasks) {
       promise->set_value();
     }
     ASSERT_NEAR(scheduled_delay_ms, actual_delay.count(), delay_error_ms);
@@ -210,15 +210,27 @@ TEST_F(TimerTest, cancel_single_task) {
   std::string name = "test_thread";
   MessageLoopThread message_loop_thread(name);
   message_loop_thread.StartUp();
-  uint32_t delay_ms = 5;
-  uint32_t time_cancellation_ms = 3;
-  timer_->SchedulePeriodic(
+  uint32_t delay_ms = 100000000;
+  timer_->Schedule(
       message_loop_thread.GetWeakPtr(), FROM_HERE,
       base::Bind(&TimerTest::ShouldNotHappen, base::Unretained(this)),
       base::TimeDelta::FromMilliseconds(delay_ms));
-  std::this_thread::sleep_for(std::chrono::milliseconds(time_cancellation_ms));
-  timer_->Cancel();
   std::this_thread::sleep_for(std::chrono::milliseconds(delay_error_ms));
+  timer_->CancelAndWait();
+}
+
+TEST_F(TimerTest, message_loop_thread_down_cancel_task) {
+  std::string name = "test_thread";
+  {
+    MessageLoopThread message_loop_thread(name);
+    message_loop_thread.StartUp();
+    uint32_t delay_ms = 100000000;
+    timer_->Schedule(
+        message_loop_thread.GetWeakPtr(), FROM_HERE,
+        base::Bind(&TimerTest::ShouldNotHappen, base::Unretained(this)),
+        base::TimeDelta::FromMilliseconds(delay_ms));
+    std::this_thread::sleep_for(std::chrono::milliseconds(delay_error_ms));
+  }
 }
 
 TEST_F(TimerTest, cancel_single_task_near_fire_no_race_condition) {
@@ -254,20 +266,16 @@ TEST_F(TimerTest, cancel_current_task_no_effect) {
   MessageLoopThread message_loop_thread(name);
   message_loop_thread.StartUp();
   auto future = promise_->get_future();
-  std::string my_name;
   uint32_t delay_ms = 5;
 
-  timer_->Schedule(
-      message_loop_thread.GetWeakPtr(), FROM_HERE,
-      base::Bind(&TimerTest::SleepAndGetName, base::Unretained(this), &my_name,
-                 promise_, delay_ms),
-      base::TimeDelta::FromMilliseconds(delay_ms));
+  timer_->Schedule(message_loop_thread.GetWeakPtr(), FROM_HERE,
+                   base::Bind(&TimerTest::SleepAndIncreaseCounter,
+                              base::Unretained(this), promise_, delay_ms),
+                   base::TimeDelta::FromMilliseconds(delay_ms));
   EXPECT_TRUE(timer_->IsScheduled());
-  std::this_thread::sleep_for(
-      std::chrono::milliseconds(delay_ms + delay_error_ms));
-  timer_->CancelAndWait();
   future.get();
-  ASSERT_EQ(name, my_name);
+  timer_->CancelAndWait();
+  ASSERT_EQ(counter_, 1);
   EXPECT_FALSE(timer_->IsScheduled());
 }
 
@@ -281,12 +289,6 @@ TEST_F(TimerTest, schedule_multiple_delayed_tasks) {
 // ms; verify the functionality
 TEST_F(TimerTest, schedule_multiple_delayed_slow_tasks) {
   VerifyMultipleDelayedTasks(10, 1, 2);
-}
-
-// Schedule 100 periodic tasks with interval 20 ms between each and each takes
-// 10 ms; verify the functionality
-TEST_F(TimerTest, schedule_multiple_delayed_slow_tasks_stress) {
-  VerifyMultipleDelayedTasks(100, 10, 20);
 }
 
 TEST_F(TimerTest, message_loop_thread_down_cancel_scheduled_periodic_task) {
