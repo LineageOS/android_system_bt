@@ -3848,8 +3848,20 @@ static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
       if (p_data->complt.reason != 0) {
         sec_event.auth_cmpl.fail_reason =
             BTA_DM_AUTH_CONVERT_SMP_CODE(((uint8_t)p_data->complt.reason));
-        /* delete this device entry from Sec Dev DB */
-        bta_dm_remove_sec_dev_entry(bda);
+
+        if (btm_sec_is_a_bonded_dev(bda) &&
+            p_data->complt.reason == SMP_CONN_TOUT) {
+          // Bonded device failed to encrypt - to test this remove battery from
+          // HID device right after connection, but before encryption is
+          // established
+          LOG(INFO) << __func__
+                    << ": bonded device disconnected when encrypting - no "
+                       "reason to unbond";
+        } else {
+          /* delete this device entry from Sec Dev DB */
+          bta_dm_remove_sec_dev_entry(bda);
+        }
+
       } else {
         sec_event.auth_cmpl.success = true;
         if (!p_data->complt.smp_over_br)

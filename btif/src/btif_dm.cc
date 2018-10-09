@@ -2857,10 +2857,23 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
       case BTA_DM_AUTH_SMP_PAIR_AUTH_FAIL:
       case BTA_DM_AUTH_SMP_CONFIRM_VALUE_FAIL:
       case BTA_DM_AUTH_SMP_UNKNOWN_ERR:
-      case BTA_DM_AUTH_SMP_CONN_TOUT:
         btif_dm_remove_ble_bonding_keys();
         status = BT_STATUS_AUTH_FAILURE;
         break;
+
+      case BTA_DM_AUTH_SMP_CONN_TOUT: {
+        if (btm_sec_is_a_bonded_dev(bd_addr)) {
+          LOG(INFO) << __func__ << " Bonded device addr=" << bd_addr
+                    << " timed out - will not remove the keys";
+          // Don't send state change to upper layers - otherwise Java think we
+          // unbonded, and will disconnect HID profile.
+          return;
+        }
+
+        btif_dm_remove_ble_bonding_keys();
+        status = BT_STATUS_AUTH_FAILURE;
+        break;
+      }
       case BTA_DM_AUTH_SMP_PAIR_NOT_SUPPORT:
         status = BT_STATUS_AUTH_REJECTED;
         break;
