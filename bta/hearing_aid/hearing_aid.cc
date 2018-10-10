@@ -67,6 +67,9 @@ constexpr uint8_t CONTROL_POINT_OP_STOP = 0x02;
 constexpr int8_t VOLUME_UNKNOWN = 127;
 constexpr int8_t VOLUME_MIN = -127;
 
+// audio type
+constexpr uint8_t AUDIOTYPE_UNKNOWN = 0x00;
+
 namespace {
 
 // clang-format off
@@ -408,7 +411,7 @@ class HearingAidImpl : public HearingAid {
 
     // Set data length
     // TODO(jpawlowski: for 16khz only 87 is required, optimize
-    BTM_SetBleDataLength(address, 168);
+    BTM_SetBleDataLength(address, 167);
 
     tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(address);
     if (p_dev_rec) {
@@ -839,7 +842,7 @@ class HearingAidImpl : public HearingAid {
 
   void SendStart(const HearingDevice& device) {
     std::vector<uint8_t> start({CONTROL_POINT_OP_START, codec_in_use,
-                                0x02 /* media */, (uint8_t)current_volume});
+                                AUDIOTYPE_UNKNOWN, (uint8_t)current_volume});
 
     if (current_volume == VOLUME_UNKNOWN) start[3] = (uint8_t)VOLUME_MIN;
 
