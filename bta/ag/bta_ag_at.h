@@ -55,7 +55,7 @@ typedef struct {
 
 /* callback function executed when command is parsed */
 typedef void(tBTA_AG_AT_CMD_CBACK)(void* p_user, uint16_t command_id,
-                                   uint8_t arg_type, char* p_arg,
+                                   uint8_t arg_type, char* p_arg, char* p_end,
                                    int16_t int_arg);
 
 /* callback function executed to send "ERROR" result code */
