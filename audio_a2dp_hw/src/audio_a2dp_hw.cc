@@ -1680,6 +1680,8 @@ static void adev_close_output_stream(struct audio_hw_device* dev,
   struct a2dp_audio_device* a2dp_dev = (struct a2dp_audio_device*)dev;
   struct a2dp_stream_out* out = (struct a2dp_stream_out*)stream;
 
+  INFO("%s: state %d", __func__, out->common.state);
+
   // prevent interference with adev_set_parameters.
   std::lock_guard<std::recursive_mutex> lock(*a2dp_dev->mutex);
   {
