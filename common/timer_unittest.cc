@@ -250,14 +250,22 @@ TEST_F(TimerTest, cancel_periodic_task) {
   MessageLoopThread message_loop_thread(name);
   message_loop_thread.StartUp();
   uint32_t delay_ms = 5;
-  uint32_t time_cancellation_ms = 3;
+  int num_tasks = 5;
+  auto future = promise_->get_future();
+
   timer_->SchedulePeriodic(
       message_loop_thread.GetWeakPtr(), FROM_HERE,
-      base::Bind(&TimerTest::ShouldNotHappen, base::Unretained(this)),
+      base::Bind(&TimerTest::IncreaseTaskCounter, base::Unretained(this),
+                 num_tasks, promise_),
       base::TimeDelta::FromMilliseconds(delay_ms));
-  std::this_thread::sleep_for(std::chrono::milliseconds(time_cancellation_ms));
+  future.wait();
   timer_->CancelAndWait();
-  std::this_thread::sleep_for(std::chrono::milliseconds(delay_error_ms));
+  std::this_thread::sleep_for(
+      std::chrono::milliseconds(delay_ms + delay_error_ms));
+  int counter = counter_;
+  std::this_thread::sleep_for(
+      std::chrono::milliseconds(delay_ms + delay_error_ms));
+  ASSERT_EQ(counter, counter_);
 }
 
 // Verify that if a task is being executed, then cancelling it is no-op
@@ -388,6 +396,6 @@ TEST_F(TimerTest, reschedule_task_when_firing_must_schedule_new_task) {
                    base::Bind(&TimerTest::GetName, base::Unretained(this),
                               &my_name, promise_),
                    base::TimeDelta::FromMilliseconds(delay_ms));
-  future.wait_for(std::chrono::milliseconds(delay_ms + delay_error_ms));
+  future.get();
   ASSERT_EQ(name, my_name);
 }
