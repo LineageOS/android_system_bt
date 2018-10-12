@@ -1663,8 +1663,8 @@ typedef struct {
 
 typedef struct {
   Octet16 irk;
-  tBLE_ADDR_TYPE addr_type;
-  RawAddress static_addr;
+  tBLE_ADDR_TYPE identity_addr_type;
+  RawAddress identity_addr;
 } tBTM_LE_PID_KEYS;
 
 typedef union {
