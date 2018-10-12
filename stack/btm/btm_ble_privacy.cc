@@ -415,15 +415,15 @@ tBTM_STATUS btm_ble_remove_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_rec) {
     return BTM_WRONG_MODE;
 
   if (controller_get_interface()->supports_ble_privacy()) {
-    btsnd_hcic_ble_rm_device_resolving_list(p_dev_rec->ble.static_addr_type,
-                                            p_dev_rec->ble.static_addr);
+    btsnd_hcic_ble_rm_device_resolving_list(p_dev_rec->ble.identity_addr_type,
+                                            p_dev_rec->ble.identity_addr);
   } else {
     uint8_t param[20] = {0};
     uint8_t* p = param;
 
     UINT8_TO_STREAM(p, BTM_BLE_META_REMOVE_IRK_ENTRY);
-    UINT8_TO_STREAM(p, p_dev_rec->ble.static_addr_type);
-    BDADDR_TO_STREAM(p, p_dev_rec->ble.static_addr);
+    UINT8_TO_STREAM(p, p_dev_rec->ble.identity_addr_type);
+    BDADDR_TO_STREAM(p, p_dev_rec->ble.identity_addr);
 
     BTM_VendorSpecificCommand(HCI_VENDOR_BLE_RPA_VSC,
                               BTM_BLE_META_REMOVE_IRK_LEN, param,
@@ -474,8 +474,8 @@ tBTM_STATUS btm_ble_read_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_rec) {
     return BTM_WRONG_MODE;
 
   if (controller_get_interface()->supports_ble_privacy()) {
-    btsnd_hcic_ble_read_resolvable_addr_peer(p_dev_rec->ble.static_addr_type,
-                                             p_dev_rec->ble.static_addr);
+    btsnd_hcic_ble_read_resolvable_addr_peer(p_dev_rec->ble.identity_addr_type,
+                                             p_dev_rec->ble.identity_addr);
   } else {
     uint8_t param[20] = {0};
     uint8_t* p = param;
@@ -731,23 +731,23 @@ bool btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC* p_dev_rec) {
     const Octet16& peer_irk = p_dev_rec->ble.keys.irk;
     const Octet16& local_irk = btm_cb.devcb.id_keys.irk;
 
-    if (p_dev_rec->ble.static_addr.IsEmpty()) {
-      p_dev_rec->ble.static_addr = p_dev_rec->bd_addr;
-      p_dev_rec->ble.static_addr_type = p_dev_rec->ble.ble_addr_type;
+    if (p_dev_rec->ble.identity_addr.IsEmpty()) {
+      p_dev_rec->ble.identity_addr = p_dev_rec->bd_addr;
+      p_dev_rec->ble.identity_addr_type = p_dev_rec->ble.ble_addr_type;
     }
 
     BTM_TRACE_DEBUG("%s: adding device %s to controller resolving list",
-                    __func__, p_dev_rec->ble.static_addr.ToString().c_str());
+                    __func__, p_dev_rec->ble.identity_addr.ToString().c_str());
 
     // use identical IRK for now
-    btsnd_hcic_ble_add_device_resolving_list(p_dev_rec->ble.static_addr_type,
-                                             p_dev_rec->ble.static_addr,
+    btsnd_hcic_ble_add_device_resolving_list(p_dev_rec->ble.identity_addr_type,
+                                             p_dev_rec->ble.identity_addr,
                                              peer_irk, local_irk);
 
     if (controller_get_interface()->supports_ble_set_privacy_mode()) {
       BTM_TRACE_DEBUG("%s: adding device privacy mode", __func__);
-      btsnd_hcic_ble_set_privacy_mode(p_dev_rec->ble.static_addr_type,
-                                      p_dev_rec->ble.static_addr, 0x01);
+      btsnd_hcic_ble_set_privacy_mode(p_dev_rec->ble.identity_addr_type,
+                                      p_dev_rec->ble.identity_addr, 0x01);
     }
   } else {
     uint8_t param[40] = {0};
@@ -755,8 +755,8 @@ bool btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC* p_dev_rec) {
 
     UINT8_TO_STREAM(p, BTM_BLE_META_ADD_IRK_ENTRY);
     ARRAY_TO_STREAM(p, p_dev_rec->ble.keys.irk, OCTET16_LEN);
-    UINT8_TO_STREAM(p, p_dev_rec->ble.static_addr_type);
-    BDADDR_TO_STREAM(p, p_dev_rec->ble.static_addr);
+    UINT8_TO_STREAM(p, p_dev_rec->ble.identity_addr_type);
+    BDADDR_TO_STREAM(p, p_dev_rec->ble.identity_addr);
 
     BTM_VendorSpecificCommand(HCI_VENDOR_BLE_RPA_VSC, BTM_BLE_META_ADD_IRK_LEN,
                               param, btm_ble_resolving_list_vsc_op_cmpl);

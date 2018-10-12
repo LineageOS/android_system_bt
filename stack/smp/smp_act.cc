@@ -980,14 +980,14 @@ void smp_proc_id_addr(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   SMP_TRACE_DEBUG("%s", __func__);
   smp_update_key_mask(p_cb, SMP_SEC_KEY_TYPE_ID, true);
 
-  STREAM_TO_UINT8(pid_key.addr_type, p);
-  STREAM_TO_BDADDR(pid_key.static_addr, p);
+  STREAM_TO_UINT8(pid_key.identity_addr_type, p);
+  STREAM_TO_BDADDR(pid_key.identity_addr, p);
   pid_key.irk = p_cb->tk;
 
   /* to use as BD_ADDR for lk derived from ltk */
   p_cb->id_addr_rcvd = true;
-  p_cb->id_addr_type = pid_key.addr_type;
-  p_cb->id_addr = pid_key.static_addr;
+  p_cb->id_addr_type = pid_key.identity_addr_type;
+  p_cb->id_addr = pid_key.identity_addr;
 
   /* store the ID key from peer device */
   if ((p_cb->peer_auth_req & SMP_AUTH_BOND) &&

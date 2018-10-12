@@ -260,13 +260,7 @@ tBTM_SEC_DEV_REC* btm_ble_resolve_random_addr(const RawAddress& random_bda) {
 /*******************************************************************************
  *  address mapping between pseudo address and real connection address
  ******************************************************************************/
-/*******************************************************************************
- *
- * Function         btm_find_dev_by_identity_addr
- *
- * Description      find the security record whose LE static address is matching
- *
- ******************************************************************************/
+/** Find the security record whose LE identity address is matching */
 tBTM_SEC_DEV_REC* btm_find_dev_by_identity_addr(const RawAddress& bd_addr,
                                                 uint8_t addr_type) {
 #if (BLE_PRIVACY_SPT == TRUE)
@@ -275,12 +269,12 @@ tBTM_SEC_DEV_REC* btm_find_dev_by_identity_addr(const RawAddress& bd_addr,
        node = list_next(node)) {
     tBTM_SEC_DEV_REC* p_dev_rec =
         static_cast<tBTM_SEC_DEV_REC*>(list_node(node));
-    if (p_dev_rec->ble.static_addr == bd_addr) {
-      if ((p_dev_rec->ble.static_addr_type & (~BLE_ADDR_TYPE_ID_BIT)) !=
+    if (p_dev_rec->ble.identity_addr == bd_addr) {
+      if ((p_dev_rec->ble.identity_addr_type & (~BLE_ADDR_TYPE_ID_BIT)) !=
           (addr_type & (~BLE_ADDR_TYPE_ID_BIT)))
         BTM_TRACE_WARNING(
             "%s find pseudo->random match with diff addr type: %d vs %d",
-            __func__, p_dev_rec->ble.static_addr_type, addr_type);
+            __func__, p_dev_rec->ble.identity_addr_type, addr_type);
 
       /* found the match */
       return p_dev_rec;
@@ -333,16 +327,16 @@ bool btm_identity_addr_to_random_pseudo(RawAddress* bd_addr,
  *
  ******************************************************************************/
 bool btm_random_pseudo_to_identity_addr(RawAddress* random_pseudo,
-                                        uint8_t* p_static_addr_type) {
+                                        uint8_t* p_identity_addr_type) {
 #if (BLE_PRIVACY_SPT == TRUE)
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(*random_pseudo);
 
   if (p_dev_rec != NULL) {
     if (p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
-      *p_static_addr_type = p_dev_rec->ble.static_addr_type;
-      *random_pseudo = p_dev_rec->ble.static_addr;
+      *p_identity_addr_type = p_dev_rec->ble.identity_addr_type;
+      *random_pseudo = p_dev_rec->ble.identity_addr;
       if (controller_get_interface()->supports_ble_privacy())
-        *p_static_addr_type |= BLE_ADDR_TYPE_ID_BIT;
+        *p_identity_addr_type |= BLE_ADDR_TYPE_ID_BIT;
       return true;
     }
   }
@@ -392,10 +386,10 @@ void btm_ble_refresh_peer_resolvable_private_addr(const RawAddress& pseudo_bda,
 
   if (p_acl != NULL) {
     if (rra_type == BTM_BLE_ADDR_PSEUDO) {
-      /* use static address, resolvable_private_addr is empty */
+      /* use identity address, resolvable_private_addr is empty */
       if (rra_dummy) {
-        p_acl->active_remote_addr_type = p_sec_rec->ble.static_addr_type;
-        p_acl->active_remote_addr = p_sec_rec->ble.static_addr;
+        p_acl->active_remote_addr_type = p_sec_rec->ble.identity_addr_type;
+        p_acl->active_remote_addr = p_sec_rec->ble.identity_addr;
       } else {
         p_acl->active_remote_addr_type = BLE_ADDR_RANDOM;
         p_acl->active_remote_addr = rpa;
