@@ -163,8 +163,8 @@ bool btm_ble_get_acl_remote_addr(tBTM_SEC_DEV_REC* p_dev_rec,
       break;
 
     case BTM_BLE_ADDR_STATIC:
-      conn_addr = p_dev_rec->ble.static_addr;
-      *p_addr_type = p_dev_rec->ble.static_addr_type;
+      conn_addr = p_dev_rec->ble.identity_addr;
+      *p_addr_type = p_dev_rec->ble.identity_addr_type;
       break;
 
     default:

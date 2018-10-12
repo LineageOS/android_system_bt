@@ -171,10 +171,10 @@ bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
         background_connection_add(p_dev_rec->ble.ble_addr_type, bd_addr);
         started = true;
         p_dev_rec->ble.in_controller_list |= BTM_WHITE_LIST_BIT;
-      } else if (p_dev_rec->ble.static_addr != bd_addr &&
-                 !p_dev_rec->ble.static_addr.IsEmpty()) {
-        background_connection_add(p_dev_rec->ble.static_addr_type,
-                                  p_dev_rec->ble.static_addr);
+      } else if (p_dev_rec->ble.identity_addr != bd_addr &&
+                 !p_dev_rec->ble.identity_addr.IsEmpty()) {
+        background_connection_add(p_dev_rec->ble.identity_addr_type,
+                                  p_dev_rec->ble.identity_addr);
         started = true;
         p_dev_rec->ble.in_controller_list |= BTM_WHITE_LIST_BIT;
       }
@@ -185,9 +185,9 @@ bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
         started = true;
       }
 
-      if (!p_dev_rec->ble.static_addr.IsEmpty() &&
-          p_dev_rec->ble.static_addr != bd_addr) {
-        background_connection_remove(p_dev_rec->ble.static_addr);
+      if (!p_dev_rec->ble.identity_addr.IsEmpty() &&
+          p_dev_rec->ble.identity_addr != bd_addr) {
+        background_connection_remove(p_dev_rec->ble.identity_addr);
         started = true;
       }
 
