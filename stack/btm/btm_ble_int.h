@@ -169,7 +169,7 @@ extern bool btm_identity_addr_to_random_pseudo(RawAddress* bd_addr,
                                                uint8_t* p_addr_type,
                                                bool refresh);
 extern bool btm_random_pseudo_to_identity_addr(RawAddress* random_pseudo,
-                                               uint8_t* p_static_addr_type);
+                                               uint8_t* p_identity_addr_type);
 extern void btm_ble_refresh_peer_resolvable_private_addr(
     const RawAddress& pseudo_bda, const RawAddress& rra, uint8_t rra_type);
 extern void btm_ble_refresh_local_resolvable_private_addr(
