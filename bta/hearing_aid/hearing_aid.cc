@@ -691,8 +691,11 @@ class HearingAidImpl : public HearingAid {
   void ConnectSocket(HearingDevice* hearingDevice) {
     tL2CAP_CFG_INFO cfg_info = tL2CAP_CFG_INFO{.mtu = 512};
 
+    uint8_t service_id = hearingDevice->isLeft()
+                             ? BTM_SEC_SERVICE_HEARING_AID_LEFT
+                             : BTM_SEC_SERVICE_HEARING_AID_RIGHT;
     uint16_t gap_handle = GAP_ConnOpen(
-        "", 0, false, &hearingDevice->address, hearingDevice->psm,
+        "", service_id, false, &hearingDevice->address, hearingDevice->psm,
         514 /* MPS */, &cfg_info, nullptr,
         BTM_SEC_NONE /* TODO: request security ? */, L2CAP_FCR_LE_COC_MODE,
         HearingAidImpl::GapCallbackStatic, BT_TRANSPORT_LE);
