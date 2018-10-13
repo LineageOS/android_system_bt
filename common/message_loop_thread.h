@@ -23,10 +23,10 @@
 #include <thread>
 
 #include <base/bind.h>
+#include <base/location.h>
 #include <base/message_loop/message_loop.h>
 #include <base/run_loop.h>
 #include <base/threading/platform_thread.h>
-#include <base/tracked_objects.h>
 
 namespace bluetooth {
 
@@ -67,8 +67,7 @@ class MessageLoopThread final {
    * @return true if task is successfully scheduled, false if task cannot be
    * scheduled
    */
-  bool DoInThread(const tracked_objects::Location& from_here,
-                  base::OnceClosure task);
+  bool DoInThread(const base::Location& from_here, base::OnceClosure task);
 
   /**
    * Shutdown the current thread as if it is never started. IsRunning() and
@@ -174,7 +173,7 @@ class MessageLoopThread final {
    * @return true if task is successfully scheduled, false if task cannot be
    * scheduled
    */
-  bool DoInThreadDelayed(const tracked_objects::Location& from_here,
+  bool DoInThreadDelayed(const base::Location& from_here,
                          base::OnceClosure task, const base::TimeDelta& delay);
 
   friend class Timer;  // allow Timer to use DoInThreadDelayed()

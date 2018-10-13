@@ -66,7 +66,7 @@ void btu_task_shut_down(void* context);
 /* Below are methods and variables that must be implemented if we don't want to
  * compile the whole stack. They will be removed, or changed into mocks one by
  * one in the future, as the refactoring progresses */
-bt_status_t do_in_jni_thread(const tracked_objects::Location& from_here,
+bt_status_t do_in_jni_thread(const base::Location& from_here,
                              base::OnceClosure task) {
   helper.notify();
   return BT_STATUS_SUCCESS;

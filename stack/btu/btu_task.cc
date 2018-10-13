@@ -23,11 +23,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <base/bind.h>
-#include <base/logging.h>
-#include <base/run_loop.h>
-#include <base/threading/thread.h>
-
 #include "bta/sys/bta_sys.h"
 #include "btcore/include/module.h"
 #include "bte.h"
@@ -37,6 +32,11 @@
 #include "stack/btm/btm_int.h"
 #include "stack/include/btu.h"
 #include "stack/l2cap/l2c_int.h"
+
+#include <base/bind.h>
+#include <base/logging.h>
+#include <base/run_loop.h>
+#include <base/threading/thread.h>
 
 using bluetooth::common::MessageLoopThread;
 
@@ -83,7 +83,7 @@ base::MessageLoop* get_main_message_loop() {
   return main_thread.message_loop();
 }
 
-bt_status_t do_in_main_thread(const tracked_objects::Location& from_here,
+bt_status_t do_in_main_thread(const base::Location& from_here,
                               base::OnceClosure task) {
   if (!main_thread.DoInThread(from_here, std::move(task))) {
     LOG(ERROR) << __func__ << ": failed from " << from_here.ToString();
