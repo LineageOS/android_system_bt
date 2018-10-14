@@ -18,6 +18,7 @@
 
 #include "audio_hearing_aid_hw/include/audio_hearing_aid_hw.h"
 #include "bta_hearing_aid_api.h"
+#include "btu.h"
 #include "osi/include/alarm.h"
 #include "uipc.h"
 
@@ -141,7 +142,17 @@ void hearing_aid_recv_ctrl_data() {
       break;
 
     case HEARING_AID_CTRL_CMD_START:
-      if (localAudioReceiver) localAudioReceiver->OnAudioResume();
+      if (localAudioReceiver) {
+        // Call OnAudioResume and block till it returns.
+        std::promise<void> do_resume_promise;
+        std::future<void> do_resume_future = do_resume_promise.get_future();
+        do_in_main_thread(
+            FROM_HERE, base::BindOnce(&HearingAidAudioReceiver::OnAudioResume,
+                                      base::Unretained(localAudioReceiver),
+                                      std::move(do_resume_promise)));
+        do_resume_future.wait();
+      }
+
       // timer is restarted in UIPC_Open
       UIPC_Open(*uipc_hearing_aid, UIPC_CH_ID_AV_AUDIO, hearing_aid_data_cb,
                 HEARING_AID_DATA_PATH);
@@ -154,7 +165,16 @@ void hearing_aid_recv_ctrl_data() {
 
     case HEARING_AID_CTRL_CMD_SUSPEND:
       if (audio_timer) alarm_cancel(audio_timer);
-      if (localAudioReceiver) localAudioReceiver->OnAudioSuspend();
+      if (localAudioReceiver) {
+        // Call OnAudioSuspend and block till it returns.
+        std::promise<void> do_suspend_promise;
+        std::future<void> do_suspend_future = do_suspend_promise.get_future();
+        do_in_main_thread(
+            FROM_HERE, base::BindOnce(&HearingAidAudioReceiver::OnAudioSuspend,
+                                      base::Unretained(localAudioReceiver),
+                                      std::move(do_suspend_promise)));
+        do_suspend_future.wait();
+      }
       hearing_aid_send_ack(HEARING_AID_CTRL_ACK_SUCCESS);
       break;
 
