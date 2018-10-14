@@ -41,10 +41,7 @@ namespace {
 std::string kServiceName = "bluetooth-service";
 
 void QuitMessageLoop() {
-  // I don't know why both of these calls are necessary but the message loop
-  // doesn't stop unless I call both. Bug in base::MessageLoop?
   base::RunLoop().Quit();
-  base::MessageLoop::current()->QuitNow();
 }
 
 // Handles the case where the Bluetooth process dies.
@@ -134,7 +131,7 @@ int main(int argc, char* argv[]) {
     }
 
     LOG(ERROR) << "Starting Heart Rate server failed asynchronously";
-    main_loop.QuitWhenIdle();
+    base::RunLoop().QuitWhenIdle();
   };
 
   bool advertise =

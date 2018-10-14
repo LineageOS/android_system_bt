@@ -132,7 +132,7 @@ void hearing_aid_recv_ctrl_data() {
     return;
   }
 
-  VLOG(2) << __func__ << " " << audio_ha_hw_dump_ctrl_event(cmd);
+  LOG(INFO) << __func__ << " " << audio_ha_hw_dump_ctrl_event(cmd);
   //  a2dp_cmd_pending = cmd;
 
   switch (cmd) {
@@ -248,8 +248,9 @@ void hearing_aid_recv_ctrl_data() {
       hearing_aid_send_ack(HEARING_AID_CTRL_ACK_FAILURE);
       break;
   }
-  VLOG(2) << __func__ << " a2dp-ctrl-cmd : " << audio_ha_hw_dump_ctrl_event(cmd)
-          << " DONE";
+  LOG(INFO) << __func__
+            << " a2dp-ctrl-cmd : " << audio_ha_hw_dump_ctrl_event(cmd)
+            << " DONE";
 }
 
 void hearing_aid_ctrl_cb(tUIPC_CH_ID, tUIPC_EVENT event) {

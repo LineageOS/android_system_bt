@@ -108,8 +108,7 @@ static std::recursive_timed_mutex commands_pending_response_mutex;
 static alarm_t* hci_timeout_abort_timer;
 
 // The hand-off point for data going to a higher layer, set by the higher layer
-static base::Callback<void(const tracked_objects::Location&, BT_HDR*)>
-    send_data_upwards;
+static base::Callback<void(const base::Location&, BT_HDR*)> send_data_upwards;
 
 static bool filter_incoming_event(BT_HDR* packet);
 static waiting_command_t* get_waiting_command(command_opcode_t opcode);
@@ -138,8 +137,7 @@ void initialization_complete() {
   hci_thread.DoInThread(FROM_HERE, base::Bind(&event_finish_startup, nullptr));
 }
 
-void hci_event_received(const tracked_objects::Location& from_here,
-                        BT_HDR* packet) {
+void hci_event_received(const base::Location& from_here, BT_HDR* packet) {
   btsnoop->capture(packet, true);
 
   if (!filter_incoming_event(packet)) {
@@ -280,8 +278,7 @@ EXPORT_SYMBOL extern const module_t hci_module = {
 // Interface functions
 
 static void set_data_cb(
-    base::Callback<void(const tracked_objects::Location&, BT_HDR*)>
-        send_data_cb) {
+    base::Callback<void(const base::Location&, BT_HDR*)> send_data_cb) {
   send_data_upwards = std::move(send_data_cb);
 }
 

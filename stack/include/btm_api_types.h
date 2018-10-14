@@ -1192,9 +1192,11 @@ typedef uint8_t tBTM_LINK_KEY_TYPE;
 #define BTM_SEC_SERVICE_HIDD_SEC_CTRL 51
 #define BTM_SEC_SERVICE_HIDD_NOSEC_CTRL 52
 #define BTM_SEC_SERVICE_HIDD_INTR 53
+#define BTM_SEC_SERVICE_HEARING_AID_LEFT 54
+#define BTM_SEC_SERVICE_HEARING_AID_RIGHT 55
 
 /* Update these as services are added */
-#define BTM_SEC_SERVICE_FIRST_EMPTY 54
+#define BTM_SEC_SERVICE_FIRST_EMPTY 56
 
 #ifndef BTM_SEC_MAX_SERVICES
 #define BTM_SEC_MAX_SERVICES 75
@@ -1661,8 +1663,8 @@ typedef struct {
 
 typedef struct {
   Octet16 irk;
-  tBLE_ADDR_TYPE addr_type;
-  RawAddress static_addr;
+  tBLE_ADDR_TYPE identity_addr_type;
+  RawAddress identity_addr;
 } tBTM_LE_PID_KEYS;
 
 typedef union {

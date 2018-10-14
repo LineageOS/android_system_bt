@@ -47,8 +47,7 @@ using ::android::hardware::Void;
 using ::android::hardware::hidl_vec;
 
 extern void initialization_complete();
-extern void hci_event_received(const tracked_objects::Location& from_here,
-                               BT_HDR* packet);
+extern void hci_event_received(const base::Location& from_here, BT_HDR* packet);
 extern void acl_event_received(BT_HDR* packet);
 extern void sco_data_received(BT_HDR* packet);
 
