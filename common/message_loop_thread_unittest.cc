@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "message_loop_thread.h"
 
 #include <condition_variable>
 #include <memory>
@@ -22,11 +23,8 @@
 
 #include <base/bind.h>
 #include <base/threading/platform_thread.h>
-#include <base/tracked_objects.h>
 #include <sys/capability.h>
 #include <syscall.h>
-
-#include "message_loop_thread.h"
 
 using bluetooth::common::MessageLoopThread;
 

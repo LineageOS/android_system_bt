@@ -208,7 +208,7 @@ source_set("base_sources") {
     "base/trace_event/trace_event_synthetic_delay.cc",
     "base/trace_event/trace_log.cc",
     "base/trace_event/trace_log_constants.cc",
-    "base/tracked_objects.cc",
+    "base/base.cc",
     "base/tracking_info.cc",
     "base/values.cc",
     "base/vlog.cc",

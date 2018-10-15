@@ -37,11 +37,12 @@ using bluetooth::hearing_aid::HearingAidInterface;
 
 // template specialization
 template <>
-base::Callback<void()> jni_thread_wrapper(
-    const tracked_objects::Location& from_here, base::Callback<void()> cb) {
+base::Callback<void()> jni_thread_wrapper(const base::Location& from_here,
+                                          base::Callback<void()> cb) {
   return base::Bind(
-      [](const tracked_objects::Location& from_here,
-         base::Callback<void()> cb) { do_in_jni_thread(from_here, cb); },
+      [](const base::Location& from_here, base::Callback<void()> cb) {
+        do_in_jni_thread(from_here, cb);
+      },
       from_here, std::move(cb));
 }
 

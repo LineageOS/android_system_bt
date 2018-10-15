@@ -91,6 +91,7 @@ cc_binary {
     ],
 
     shared_libs: [
+        "libchrome",
         "libbinder",
         "libcutils",
         "liblog",
@@ -123,6 +124,10 @@ cc_test {
         "libbluetooth-types",
         "libutils",
     ],
+    shared_libs: [
+        "libchrome",
+    ],
+
     host_supported: true,
     target: {
         // This includes Binder related tests that can only be run
