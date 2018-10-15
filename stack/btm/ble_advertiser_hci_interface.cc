@@ -17,16 +17,19 @@
  ******************************************************************************/
 
 #include "ble_advertiser_hci_interface.h"
-#include <base/callback.h>
-#include <base/location.h>
-#include <base/logging.h>
-#include <queue>
-#include <utility>
 #include "btm_api.h"
 #include "btm_ble_api.h"
 #include "btm_int_types.h"
 #include "device/include/controller.h"
 #include "hcidefs.h"
+
+#include <queue>
+#include <utility>
+
+#include <base/bind.h>
+#include <base/callback.h>
+#include <base/location.h>
+#include <base/logging.h>
 
 #define BTM_BLE_MULTI_ADV_SET_RANDOM_ADDR_LEN 8
 #define BTM_BLE_MULTI_ADV_ENB_LEN 3
@@ -44,9 +47,9 @@ using status_cb = BleAdvertiserHciInterface::status_cb;
 
 using hci_cmd_cb = base::Callback<void(uint8_t* /* return_parameters */,
                                        uint16_t /* return_parameters_length*/)>;
-extern void btu_hcif_send_cmd_with_cb(
-    const tracked_objects::Location& posted_from, uint16_t opcode,
-    uint8_t* params, uint8_t params_len, hci_cmd_cb cb);
+extern void btu_hcif_send_cmd_with_cb(const base::Location& posted_from,
+                                      uint16_t opcode, uint8_t* params,
+                                      uint8_t params_len, hci_cmd_cb cb);
 
 namespace {
 BleAdvertiserHciInterface* instance = nullptr;
@@ -91,9 +94,8 @@ void known_tx_pwr(BleAdvertiserHciInterface::parameters_cb cb, int8_t tx_power,
 }
 
 class BleAdvertiserVscHciInterfaceImpl : public BleAdvertiserHciInterface {
-  void SendAdvCmd(const tracked_objects::Location& posted_from,
-                  uint8_t param_len, uint8_t* param_buf,
-                  status_cb command_complete) {
+  void SendAdvCmd(const base::Location& posted_from, uint8_t param_len,
+                  uint8_t* param_buf, status_cb command_complete) {
     btu_hcif_send_cmd_with_cb(posted_from, HCI_BLE_MULTI_ADV_OCF, param_buf,
                               param_len,
                               base::Bind(&btm_ble_multi_adv_vsc_cmpl_cback,
@@ -304,7 +306,7 @@ void adv_cmd_cmpl_cback(status_cb cb, uint8_t* return_parameters,
 }
 
 class BleAdvertiserLegacyHciInterfaceImpl : public BleAdvertiserHciInterface {
-  void SendAdvCmd(const tracked_objects::Location& posted_from, uint16_t opcode,
+  void SendAdvCmd(const base::Location& posted_from, uint16_t opcode,
                   uint8_t* param_buf, uint8_t param_buf_len,
                   status_cb command_complete) {
     btu_hcif_send_cmd_with_cb(
@@ -475,7 +477,7 @@ class BleAdvertiserLegacyHciInterfaceImpl : public BleAdvertiserHciInterface {
 };
 
 class BleAdvertiserHciExtendedImpl : public BleAdvertiserHciInterface {
-  void SendAdvCmd(const tracked_objects::Location& posted_from, uint16_t opcode,
+  void SendAdvCmd(const base::Location& posted_from, uint16_t opcode,
                   uint8_t* param_buf, uint8_t param_buf_len,
                   status_cb command_complete) {
     btu_hcif_send_cmd_with_cb(

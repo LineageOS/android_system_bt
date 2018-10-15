@@ -34,14 +34,14 @@ Timer::~Timer() {
 
 // This runs on user thread
 bool Timer::Schedule(const base::WeakPtr<MessageLoopThread>& thread,
-                     const tracked_objects::Location& from_here,
-                     base::Closure task, base::TimeDelta delay) {
+                     const base::Location& from_here, base::Closure task,
+                     base::TimeDelta delay) {
   return ScheduleTaskHelper(thread, from_here, std::move(task), delay, false);
 }
 
 // This runs on user thread
 bool Timer::SchedulePeriodic(const base::WeakPtr<MessageLoopThread>& thread,
-                             const tracked_objects::Location& from_here,
+                             const base::Location& from_here,
                              base::Closure task, base::TimeDelta period) {
   if (period < kMinimumPeriod) {
     LOG(ERROR) << __func__ << ": period must be at least " << kMinimumPeriod;
@@ -52,7 +52,7 @@ bool Timer::SchedulePeriodic(const base::WeakPtr<MessageLoopThread>& thread,
 
 // This runs on user thread
 bool Timer::ScheduleTaskHelper(const base::WeakPtr<MessageLoopThread>& thread,
-                               const tracked_objects::Location& from_here,
+                               const base::Location& from_here,
                                base::Closure task, base::TimeDelta delay,
                                bool is_periodic) {
   uint64_t time_now_us = time_get_os_boottime_us();

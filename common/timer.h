@@ -18,7 +18,7 @@
 
 #include <base/bind.h>
 #include <base/cancelable_callback.h>
-#include <base/tracked_objects.h>
+#include <base/location.h>
 #include <future>
 
 namespace bluetooth {
@@ -54,7 +54,7 @@ class Timer final {
    * @return true iff task is scheduled successfully
    */
   bool Schedule(const base::WeakPtr<MessageLoopThread>& thread,
-                const tracked_objects::Location& from_here, base::Closure task,
+                const base::Location& from_here, base::Closure task,
                 base::TimeDelta delay);
 
   /**
@@ -70,8 +70,8 @@ class Timer final {
    * @return true iff task is scheduled successfully
    */
   bool SchedulePeriodic(const base::WeakPtr<MessageLoopThread>& thread,
-                        const tracked_objects::Location& from_here,
-                        base::Closure task, base::TimeDelta period);
+                        const base::Location& from_here, base::Closure task,
+                        base::TimeDelta period);
 
   /**
    * Post an event which cancels the current task asynchronously
@@ -99,9 +99,8 @@ class Timer final {
   uint64_t expected_time_next_task_us_;  // Using clock boot time in time_util.h
   mutable std::recursive_mutex api_mutex_;
   bool ScheduleTaskHelper(const base::WeakPtr<MessageLoopThread>& thread,
-                          const tracked_objects::Location& from_here,
-                          base::Closure task, base::TimeDelta delay,
-                          bool is_periodic);
+                          const base::Location& from_here, base::Closure task,
+                          base::TimeDelta delay, bool is_periodic);
   void CancelHelper(std::promise<void> promise);
   void CancelClosure(std::promise<void> promise);
 
