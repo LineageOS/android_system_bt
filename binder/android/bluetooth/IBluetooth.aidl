@@ -176,6 +176,7 @@ interface IBluetooth
     oneway void requestActivityInfo(in ResultReceiver result);
 
     void onLeServiceUp();
+    void updateQuietModeStatus(boolean quietMode);
     void onBrEdrDown();
     int setSocketOpt(int type, int port, int optionName, in byte [] optionVal, int optionLen);
     int getSocketOpt(int type, int port, int optionName, out byte [] optionVal);
