@@ -894,7 +894,7 @@ AvdtpScb* avdt_scb_by_hdl(uint8_t hdl) {
   }
 
   uint8_t index = hdl - 1;
-  size_t i = index / AVDT_NUM_LINKS;
+  size_t i = index / AVDT_NUM_SEPS;
   size_t j = index % AVDT_NUM_SEPS;
 
   AvdtpScb* p_scb = &avdtp_cb.ccb[i].scb[j];
