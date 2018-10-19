@@ -326,6 +326,7 @@ uint8_t bta_av_rc_create(tBTA_AV_CB* p_cb, uint8_t role, uint8_t shdl,
     p_rcb = bta_av_get_rcb_by_shdl(shdl);
     if (p_rcb != NULL) {
       APPL_TRACE_ERROR("%s: ACP handle exist for shdl:%d", __func__, shdl);
+      p_rcb->lidx = lidx;
       return p_rcb->handle;
     }
   }
