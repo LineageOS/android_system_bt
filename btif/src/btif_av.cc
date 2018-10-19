@@ -1684,7 +1684,8 @@ void BtifAvStateMachine::StateOpened::OnEnter() {
   BTIF_TRACE_DEBUG("%s: Peer %s", __PRETTY_FUNCTION__,
                    peer_.PeerAddress().ToString().c_str());
 
-  peer_.ClearFlags(BtifAvPeer::kFlagPendingStart |
+  peer_.ClearFlags(BtifAvPeer::kFlagLocalSuspendPending |
+                   BtifAvPeer::kFlagPendingStart |
                    BtifAvPeer::kFlagPendingStop);
 
   // Set the active peer if the first connected device.
@@ -1755,12 +1756,13 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
 
       // If remote tries to start A2DP when DUT is A2DP Source, then Suspend.
       // If A2DP is Sink and call is active, then disconnect the AVDTP channel.
-      if (peer_.IsSink() && !peer_.CheckFlags(BtifAvPeer::kFlagPendingStart)) {
+      bool should_suspend = false;
+      if (peer_.IsSink() && !peer_.CheckFlags(BtifAvPeer::kFlagPendingStart |
+                                              BtifAvPeer::kFlagRemoteSuspend)) {
         BTIF_TRACE_WARNING("%s: Peer %s : trigger Suspend as remote initiated",
                            __PRETTY_FUNCTION__,
                            peer_.PeerAddress().ToString().c_str());
-        btif_av_source_dispatch_sm_event(peer_.PeerAddress(),
-                                         BTIF_AV_SUSPEND_STREAM_REQ_EVT);
+        should_suspend = true;
       }
 
       // If peer is A2DP Source, we do not want to ACK commands on UIPC
@@ -1784,6 +1786,11 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
       if (peer_.IsSink() && peer_.CheckFlags(BtifAvPeer::kFlagPendingStart)) {
         btif_a2dp_on_started(peer_.PeerAddress(), nullptr, true);
         // Pending start flag will be cleared when exit current state
+      }
+
+      if (should_suspend) {
+        btif_av_source_dispatch_sm_event(peer_.PeerAddress(),
+                                         BTIF_AV_SUSPEND_STREAM_REQ_EVT);
       }
       peer_.StateMachine().TransitionTo(BtifAvStateMachine::kStateStarted);
 
@@ -2017,6 +2024,8 @@ bool BtifAvStateMachine::StateStarted::ProcessEvent(uint32_t event,
                peer_.FlagsToString().c_str());
 
       peer_.SetFlags(BtifAvPeer::kFlagPendingStop);
+      peer_.ClearFlags(BtifAvPeer::kFlagLocalSuspendPending);
+
       btif_a2dp_on_stopped(&p_av->suspend);
 
       btif_report_audio_state(peer_.PeerAddress(), BTAV_AUDIO_STATE_STOPPED);

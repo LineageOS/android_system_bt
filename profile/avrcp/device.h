@@ -210,6 +210,11 @@ class Device {
   virtual void HandlePlayItem(uint8_t label,
                               std::shared_ptr<PlayItemRequest> request);
 
+  // SET ADDRESSED PLAYER
+  virtual void HandleSetAddressedPlayer(
+      uint8_t label, std::shared_ptr<SetAddressedPlayerRequest> request,
+      uint16_t curr_player, std::vector<MediaPlayerInfo> players);
+
   /********************
    * MESSAGE REQUESTS
    ********************/

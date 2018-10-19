@@ -121,6 +121,7 @@ cc_test {
     header_libs: ["libbluetooth_headers"],
     shared_libs: [
         "libaudioclient",
+        "android.hardware.bluetooth.a2dp@1.0",
         "libhidlbase",
         "liblog",
         "libprotobuf-cpp-lite",
@@ -132,7 +133,9 @@ cc_test {
         "libbtcore",
         "libbt-stack",
         "libbt-sbc-encoder",
+        "libbt-utils",
         "libFraunhoferAAC",
+        "libg722codec",
         "libbtdevice",
         "libbt-hci",
         "libudrv-uipc",
