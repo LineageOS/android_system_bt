@@ -173,9 +173,6 @@ void l2c_rcv_acl_data(BT_HDR* p_msg) {
 
   if (rcv_cid == L2CAP_CONNECTIONLESS_CID) {
     /* process_connectionless_data (p_lcb); */
-    uint16_t psm;
-    STREAM_TO_UINT16(psm, p);
-    L2CAP_TRACE_DEBUG("GOT CONNECTIONLESS DATA PSM:%d", psm);
     osi_free(p_msg);
     return;
   }
@@ -511,6 +508,7 @@ static void process_l2cap_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
             default:
               /* sanity check option length */
               if ((cfg_len + L2CAP_CFG_OPTION_OVERHEAD) <= cmd_len) {
+                if (p + cfg_len > p_next_cmd) return;
                 p += cfg_len;
                 if ((cfg_code & 0x80) == 0) {
                   cfg_rej_len += cfg_len + L2CAP_CFG_OPTION_OVERHEAD;
