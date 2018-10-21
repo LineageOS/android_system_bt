@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1db4ce18_f36a4c3e",
+        "filename": "stack/l2cap/l2c_ble.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 991,
+      "author": {
+        "id": 20478
+      },
+      "writtenOn": "2018-10-21T07:05:37Z",
+      "side": 1,
+      "message": "Instead of writing log here, there should be a err_code.h header where all the codes are mentioned . for example \n#define ERR_0x534e4554 \"invalid read\"\nsomething like that is more structured.\nalso L2CAP_TRACE_ERROR(\"%s invalid read\", __func__); would be nicer.",
+      "range": {
+        "startLine": 991,
+        "startChar": 27,
+        "endLine": 991,
+        "endChar": 39
+      },
+      "revId": "abfe371159ceb4689dd001f42f93a9307f50affb",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
