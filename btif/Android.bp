@@ -107,7 +107,10 @@ cc_library_static {
         "libaudio-a2dp-hw-utils",
         "lib-bt-packets",
     ],
-    cflags: ["-DBUILDCFG"],
+    cflags: [
+        "-DBUILDCFG",
+        "-Wno-implicit-fallthrough",
+    ],
 
 }
 
