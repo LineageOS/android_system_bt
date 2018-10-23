@@ -15,12 +15,19 @@
  *  limitations under the License.
  *
  ******************************************************************************/
+#pragma once
 
 /* This file provides empty implementation of android_errorWriteLog, which is
  * not required on linux. It should be on include path only for linux build. */
 
 #if defined(OS_GENERIC)
 
-inline int android_errorWriteLog(int, const char*) { return 0; };
+#include <cstdint>
 
+inline int android_errorWriteLog(int, const char*) { return 0; };
+inline int android_errorWriteWithInfoLog(int tag, const char* subTag,
+                                         int32_t uid, const char* data,
+                                         uint32_t dataLen) {
+  return 0;
+};
 #endif
