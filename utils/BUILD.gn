@@ -24,5 +24,6 @@ static_library("utils") {
     "//",
     "//stack/include",
     "//third_party/libchrome",
+    "//third_party/googletest/googletest/include/",
   ]
 }
