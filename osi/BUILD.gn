@@ -27,7 +27,6 @@ static_library("osi") {
     "src/future.cc",
     "src/hash_map_utils.cc",
     "src/list.cc",
-    "src/metrics_linux.cc",
     "src/mutex.cc",
     "src/osi.cc",
     "src/properties.cc",
@@ -41,12 +40,12 @@ static_library("osi") {
     "src/socket_utils/socket_local_client.cc",
     "src/socket_utils/socket_local_server.cc",
     "src/thread.cc",
-    "src/time.cc",
     "src/wakelock.cc",
   ]
 
   include_dirs = [
     "//",
+    "//linux_include",
     "//internal_include",
     "//utils/include",
     "//stack/include",
