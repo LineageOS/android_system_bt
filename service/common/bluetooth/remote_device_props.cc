@@ -16,14 +16,14 @@
 
 #include "bluetooth/remote_device_props.h"
 
-using android::String16;
+using std::string;
 
 namespace bluetooth {
 
 RemoteDeviceProps::RemoteDeviceProps() = default;
 RemoteDeviceProps::RemoteDeviceProps(const RemoteDeviceProps& other) = default;
-RemoteDeviceProps::RemoteDeviceProps(const android::String16& name,
-                                     const android::String16& address,
+RemoteDeviceProps::RemoteDeviceProps(const std::string& name,
+                                     const std::string& address,
                                      const std::vector<Uuid>& service_uuids,
                                      int32_t device_class, int32_t device_type,
                                      int32_t rssi)

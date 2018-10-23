@@ -28,7 +28,6 @@ source_set("service") {
     "common/bluetooth/avrcp_int_value.cc",
     "common/bluetooth/avrcp_media_attr.cc",
     "common/bluetooth/avrcp_register_notification_response.cc",
-    "common/bluetooth/avrcp_string_value.cc",
     "common/bluetooth/characteristic.cc",
     "common/bluetooth/descriptor.cc",
     "common/bluetooth/remote_device_props.cc",
