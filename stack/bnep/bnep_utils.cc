@@ -22,10 +22,10 @@
  *
  ******************************************************************************/
 
-#include <cutils/log.h>
-
+#include <log/log.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "bnep_int.h"
 #include "bt_common.h"
 #include "bt_types.h"

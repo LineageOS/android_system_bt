@@ -16,6 +16,7 @@
  *
  ******************************************************************************/
 
+#include <log/log.h>
 #include <string.h>
 #include "btif_common.h"
 #include "btif_storage.h"
