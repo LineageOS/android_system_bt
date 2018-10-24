@@ -16,7 +16,6 @@ cc_library_static {
         "bluetooth/avrcp_int_value.cc",
         "bluetooth/avrcp_media_attr.cc",
         "bluetooth/avrcp_register_notification_response.cc",
-        "bluetooth/avrcp_string_value.cc",
         "bluetooth/characteristic.cc",
         "bluetooth/descriptor.cc",
         "bluetooth/remote_device_props.cc",

@@ -16,15 +16,15 @@
 
 #include "bluetooth/avrcp_media_attr.h"
 
-using android::String16;
-
 namespace bluetooth {
 
 AvrcpMediaAttr::AvrcpMediaAttr() = default;
 AvrcpMediaAttr::AvrcpMediaAttr(const AvrcpMediaAttr& other) = default;
-AvrcpMediaAttr::AvrcpMediaAttr(const String16& title, const String16& artist,
-                               const String16& album, const String16& genre,
-                               int track_num, int num_tracks, int play_time)
+AvrcpMediaAttr::AvrcpMediaAttr(const std::string& title,
+                               const std::string& artist,
+                               const std::string& album,
+                               const std::string& genre, int track_num,
+                               int num_tracks, int play_time)
     : title_(title),
       artist_(artist),
       album_(album),
