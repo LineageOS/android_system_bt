@@ -149,7 +149,7 @@ void btm_ble_bgconn_cancel_if_disconnected(const RawAddress& bd_addr) {
     BackgroundConnection* connection = &map_it->second;
     if (!connection->in_controller_wl && !connection->pending_removal &&
         !BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
-      btm_ble_start_auto_conn(false);
+      btm_ble_stop_auto_conn();
     }
   }
 }
@@ -264,7 +264,7 @@ bool btm_update_dev_to_white_list(bool to_add, const RawAddress& bd_addr) {
   }
 
   if (p_cb->wl_state & BTM_BLE_WL_INIT) {
-    btm_ble_start_auto_conn(false);
+    btm_ble_stop_auto_conn();
   }
   btm_add_dev_to_controller(to_add, bd_addr);
   btm_ble_resume_bg_conn();
@@ -386,20 +386,12 @@ void btm_send_hci_create_connection(
   }
 }
 
-/*******************************************************************************
- *
- * Function         btm_ble_start_auto_conn
- *
- * Description      This function is to start/stop auto connection procedure.
- *
- * Parameters       start: true to start; false to stop.
- *
- * Returns          void
- *
- ******************************************************************************/
-bool btm_ble_start_auto_conn(bool start) {
+/** This function is to start auto connection procedure */
+bool btm_ble_start_auto_conn() {
   tBTM_BLE_CB* p_cb = &btm_cb.ble_ctr_cb;
-  bool exec = true;
+
+  BTM_TRACE_EVENT("%s", __func__);
+
   uint16_t scan_int = (p_cb->scan_int == BTM_BLE_SCAN_PARAM_UNDEF)
                           ? BTM_BLE_SCAN_SLOW_INT_1
                           : p_cb->scan_int;
@@ -413,54 +405,62 @@ bool btm_ble_start_auto_conn(bool start) {
   if (controller_get_interface()->supports_ble_2m_phy()) phy |= PHY_LE_2M;
   if (controller_get_interface()->supports_ble_coded_phy()) phy |= PHY_LE_CODED;
 
-  BTM_TRACE_EVENT("%s start=%d", __func__, start);
+  if (!btm_ble_topology_check(BTM_BLE_STATE_INIT)) {
+    LOG(INFO) << "initate background connection fail, topology limitation";
+    return false;
+  }
 
-  if (start) {
-    if (p_cb->conn_state == BLE_CONN_IDLE && background_connections_pending() &&
-        btm_ble_topology_check(BTM_BLE_STATE_INIT) && l2cu_can_allocate_lcb()) {
-      p_cb->wl_state |= BTM_BLE_WL_INIT;
+  if (p_cb->conn_state != BLE_CONN_IDLE || !background_connections_pending() ||
+      !l2cu_can_allocate_lcb()) {
+    return false;
+  }
 
-      btm_execute_wl_dev_operation();
+  p_cb->wl_state |= BTM_BLE_WL_INIT;
+
+  btm_execute_wl_dev_operation();
 
 #if (BLE_PRIVACY_SPT == TRUE)
-      btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_INIT);
-      if (btm_cb.ble_ctr_cb.rl_state != BTM_BLE_RL_IDLE &&
-          controller_get_interface()->supports_ble_privacy()) {
-        own_addr_type |= BLE_ADDR_TYPE_ID_BIT;
-        peer_addr_type |= BLE_ADDR_TYPE_ID_BIT;
-      }
+  btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_INIT);
+  if (btm_cb.ble_ctr_cb.rl_state != BTM_BLE_RL_IDLE &&
+      controller_get_interface()->supports_ble_privacy()) {
+    own_addr_type |= BLE_ADDR_TYPE_ID_BIT;
+    peer_addr_type |= BLE_ADDR_TYPE_ID_BIT;
+  }
 #endif
 
-      btm_send_hci_create_connection(
-          scan_int,                       /* uint16_t scan_int      */
-          scan_win,                       /* uint16_t scan_win      */
-          0x01,                           /* uint8_t white_list     */
-          peer_addr_type,                 /* uint8_t addr_type_peer */
-          RawAddress::kEmpty,             /* BD_ADDR bda_peer     */
-          own_addr_type,                  /* uint8_t addr_type_own */
-          BTM_BLE_CONN_INT_MIN_DEF,       /* uint16_t conn_int_min  */
-          BTM_BLE_CONN_INT_MAX_DEF,       /* uint16_t conn_int_max  */
-          BTM_BLE_CONN_SLAVE_LATENCY_DEF, /* uint16_t conn_latency  */
-          BTM_BLE_CONN_TIMEOUT_DEF,       /* uint16_t conn_timeout  */
-          0,                              /* uint16_t min_len       */
-          0,                              /* uint16_t max_len       */
-          phy);
-      btm_ble_set_conn_st(BLE_BG_CONN);
-    } else {
-      exec = false;
-    }
-  } else {
-    if (p_cb->conn_state == BLE_BG_CONN) {
-      btsnd_hcic_ble_create_conn_cancel();
-      btm_ble_set_conn_st(BLE_CONN_CANCEL);
-      p_cb->wl_state &= ~BTM_BLE_WL_INIT;
-    } else {
-      BTM_TRACE_DEBUG("conn_st = %d, not in auto conn state, cannot stop",
-                      p_cb->conn_state);
-      exec = false;
-    }
+  btm_send_hci_create_connection(
+      scan_int,                       /* uint16_t scan_int      */
+      scan_win,                       /* uint16_t scan_win      */
+      0x01,                           /* uint8_t white_list     */
+      peer_addr_type,                 /* uint8_t addr_type_peer */
+      RawAddress::kEmpty,             /* BD_ADDR bda_peer     */
+      own_addr_type,                  /* uint8_t addr_type_own */
+      BTM_BLE_CONN_INT_MIN_DEF,       /* uint16_t conn_int_min  */
+      BTM_BLE_CONN_INT_MAX_DEF,       /* uint16_t conn_int_max  */
+      BTM_BLE_CONN_SLAVE_LATENCY_DEF, /* uint16_t conn_latency  */
+      BTM_BLE_CONN_TIMEOUT_DEF,       /* uint16_t conn_timeout  */
+      0,                              /* uint16_t min_len       */
+      0,                              /* uint16_t max_len       */
+      phy);
+  btm_ble_set_conn_st(BLE_BG_CONN);
+  return true;
+}
+
+/** This function is to stop auto connection procedure */
+bool btm_ble_stop_auto_conn() {
+  BTM_TRACE_EVENT("%s", __func__);
+
+  tBTM_BLE_CB* p_cb = &btm_cb.ble_ctr_cb;
+  if (p_cb->conn_state != BLE_BG_CONN) {
+    BTM_TRACE_DEBUG("conn_st = %d, not in auto conn state, cannot stop",
+                    p_cb->conn_state);
+    return false;
   }
-  return exec;
+
+  btsnd_hcic_ble_create_conn_cancel();
+  btm_ble_set_conn_st(BLE_CONN_CANCEL);
+  p_cb->wl_state &= ~BTM_BLE_WL_INIT;
+  return true;
 }
 
 /*******************************************************************************
@@ -479,7 +479,7 @@ bool btm_ble_suspend_bg_conn(void) {
   BTM_TRACE_EVENT("%s", __func__);
 
   if (btm_cb.ble_ctr_cb.bg_conn_type == BTM_BLE_CONN_AUTO)
-    return btm_ble_start_auto_conn(false);
+    return btm_ble_stop_auto_conn();
 
   return false;
 }
@@ -499,7 +499,7 @@ bool btm_ble_suspend_bg_conn(void) {
 bool btm_ble_resume_bg_conn(void) {
   tBTM_BLE_CB* p_cb = &btm_cb.ble_ctr_cb;
   if (p_cb->bg_conn_type == BTM_BLE_CONN_AUTO) {
-    return btm_ble_start_auto_conn(true);
+    return btm_ble_start_auto_conn();
   }
 
   return false;
