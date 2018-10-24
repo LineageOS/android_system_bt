@@ -22,12 +22,13 @@
  *
  ******************************************************************************/
 
-#include <log/log.h>
 #include "bt_target.h"
 #include "bt_utils.h"
 #include "osi/include/osi.h"
 
+#include <log/log.h>
 #include <string.h>
+
 #include "gatt_int.h"
 #include "l2c_api.h"
 #include "l2c_int.h"
