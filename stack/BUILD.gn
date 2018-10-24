@@ -176,6 +176,7 @@ static_library("stack") {
     "sdp",
     "smp",
     "srvc",
+    "//linux_include",
     "//internal_include",
     "//btcore/include",
     "//vnd/include",
