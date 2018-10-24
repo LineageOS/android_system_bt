@@ -704,7 +704,7 @@ void BTM_BleStartAutoConn() {
   if (!controller_get_interface()->supports_ble()) return;
 
   if (btm_cb.ble_ctr_cb.bg_conn_type != BTM_BLE_CONN_AUTO) {
-    btm_ble_start_auto_conn(true);
+    btm_ble_start_auto_conn();
     btm_cb.ble_ctr_cb.bg_conn_type = BTM_BLE_CONN_AUTO;
   }
 }
@@ -724,7 +724,7 @@ void BTM_BleStartAutoConn() {
  ******************************************************************************/
 void BTM_BleClearBgConnDev(void) {
   if (!controller_get_interface()->supports_ble()) return;
-  btm_ble_start_auto_conn(false);
+  btm_ble_stop_auto_conn();
   btm_ble_clear_white_list();
   gatt_reset_bgdev_list();
 }
