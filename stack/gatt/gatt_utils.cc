@@ -1359,16 +1359,6 @@ bool gatt_add_bg_dev_list(tGATT_REG* p_reg, const RawAddress& bd_addr) {
   return true;
 }
 
-/** Remove the application interface for the specified background device */
-bool gatt_remove_bg_dev_for_app(tGATT_IF gatt_if, const RawAddress& bd_addr) {
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
-  bool status;
-
-  if (p_tcb) gatt_update_app_use_link_flag(gatt_if, p_tcb, false, false);
-  status = gatt_update_auto_connect_dev(gatt_if, false, bd_addr);
-  return status;
-}
-
 /** Removes all registrations for background connection for given device.
  * Returns true if anything was removed, false otherwise */
 uint8_t gatt_clear_bg_dev_for_addr(const RawAddress& bd_addr) {
@@ -1397,6 +1387,7 @@ bool gatt_remove_bg_dev_from_list(tGATT_REG* p_reg, const RawAddress& bd_addr) {
   gatt_cb.bgconn_dev.erase(dev_it);
   return true;
 }
+
 /** deregister all related back ground connetion device. */
 void gatt_deregister_bgdev_list(tGATT_IF gatt_if) {
   auto it = gatt_cb.bgconn_dev.begin();
@@ -1414,48 +1405,33 @@ void gatt_deregister_bgdev_list(tGATT_IF gatt_if) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         gatt_reset_bgdev_list
- *
- * Description      reset bg device list
- *
- * Returns          pointer to the device record
- *
- ******************************************************************************/
+/** reset bg device list */
 void gatt_reset_bgdev_list(void) { gatt_cb.bgconn_dev.clear(); }
-/*******************************************************************************
+
+/**
+ * This function add a device for background connection procedure.
  *
- * Function         gatt_update_auto_connect_dev
- *
- * Description      This function add or remove a device for background
- *                  connection procedure.
- *
- * Parameters       gatt_if: Application ID.
- *                  add: add peer device
+ * Parameters       p_reg: application record,
  *                  bd_addr: peer device address.
  *
  * Returns          true if connection started; false otherwise.
- *
- ******************************************************************************/
-bool gatt_update_auto_connect_dev(tGATT_IF gatt_if, bool add,
-                                  const RawAddress& bd_addr) {
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
-
+ */
+bool gatt_auto_connect_dev_add(tGATT_REG* p_reg, const RawAddress& bd_addr) {
   VLOG(1) << __func__;
-  /* Make sure app is registered */
-  tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
-  if (!p_reg) {
-    LOG(ERROR) << __func__ << " gatt_if is not registered " << +gatt_if;
-    return false;
-  }
 
-  if (!add) return gatt_remove_bg_dev_from_list(p_reg, bd_addr);
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
 
   bool ret = gatt_add_bg_dev_list(p_reg, bd_addr);
   if (ret && p_tcb != NULL) {
     /* if a connected device, update the link holding number */
-    gatt_update_app_use_link_flag(gatt_if, p_tcb, true, true);
+    gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, true);
   }
   return ret;
+}
+
+/** Remove the application interface for the specified background device */
+bool gatt_auto_connect_dev_remove(tGATT_REG* p_reg, const RawAddress& bd_addr) {
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
+  if (p_tcb) gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, false, false);
+  return gatt_remove_bg_dev_from_list(p_reg, bd_addr);
 }
