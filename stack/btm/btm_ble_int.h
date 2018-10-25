@@ -137,7 +137,8 @@ extern void btm_send_hci_create_connection(
     uint16_t conn_int_min, uint16_t conn_int_max, uint16_t conn_latency,
     uint16_t conn_timeout, uint16_t min_ce_len, uint16_t max_ce_len,
     uint8_t phy);
-extern bool btm_ble_start_auto_conn(bool start);
+extern bool btm_ble_start_auto_conn();
+extern bool btm_ble_stop_auto_conn();
 extern bool btm_ble_start_select_conn(bool start);
 extern bool btm_ble_renew_bg_conn_params(bool add, const RawAddress& bd_addr);
 extern void btm_write_dir_conn_wl(const RawAddress& target_addr);
