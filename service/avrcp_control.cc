@@ -28,7 +28,6 @@
 
 #include "stack/include/avrc_defs.h"
 
-using android::String16;
 
 namespace bluetooth {
 
@@ -163,10 +162,10 @@ void AvrcpControl::CtrlTrackChangedCallback(const RawAddress& bd_addr,
                                             btrc_element_attr_val_t* p_attrs) {
   std::string device_address = BtAddrString(&bd_addr);
 
-  String16 title;
-  String16 artist;
-  String16 album;
-  String16 genre;
+  std::string title;
+  std::string artist;
+  std::string album;
+  std::string genre;
   int track_num = -1;
   int num_tracks = -1;
   int play_time = -1;
@@ -175,13 +174,13 @@ void AvrcpControl::CtrlTrackChangedCallback(const RawAddress& bd_addr,
     auto attr_text = reinterpret_cast<char*>(p_attrs[i].text);
     switch (p_attrs[i].attr_id) {
       case BTRC_MEDIA_ATTR_ID_TITLE:
-        title = String16(attr_text);
+        title = attr_text;
         break;
       case BTRC_MEDIA_ATTR_ID_ARTIST:
-        artist = String16(attr_text);
+        artist = attr_text;
         break;
       case BTRC_MEDIA_ATTR_ID_ALBUM:
-        album = String16(attr_text);
+        album = attr_text;
         break;
       case BTRC_MEDIA_ATTR_ID_TRACK_NUM:
         if (!base::StringToInt(attr_text, &track_num)) {
@@ -194,7 +193,7 @@ void AvrcpControl::CtrlTrackChangedCallback(const RawAddress& bd_addr,
         }
         break;
       case BTRC_MEDIA_ATTR_ID_GENRE:
-        genre = String16(attr_text);
+        genre = attr_text;
         break;
       case BTRC_MEDIA_ATTR_ID_PLAYING_TIME:
         if (!base::StringToInt(attr_text, &play_time)) {
