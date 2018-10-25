@@ -26,6 +26,7 @@
 
 #if defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE)
 
+#include <log/log.h>
 #include <string.h>
 
 #include "bta_sys.h"
@@ -782,6 +783,13 @@ void bta_hh_ctrl_dat_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA * p_data)
     APPL_TRACE_DEBUG("Ctrl DATA received w4: event[%s]",
                         bta_hh_get_w4_event(p_cb->w4_evt));
 #endif
+    if (pdata->len == 0)
+    {
+        android_errorWriteLog(0x534e4554, "116108738");
+        p_cb->w4_evt = 0;
+        GKI_freebuf(pdata);
+        return;
+    }
     hs_data.status  = BTA_HH_OK;
     hs_data.handle  = p_cb->hid_handle;
 
