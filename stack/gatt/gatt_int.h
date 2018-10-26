@@ -473,11 +473,11 @@ extern tGATT_HDL_LIST_ELEM* gatt_find_hdl_buffer_by_handle(uint16_t handle);
 extern tGATTS_SRV_CHG* gatt_add_srv_chg_clt(tGATTS_SRV_CHG* p_srv_chg);
 
 /* for background connection */
-extern bool gatt_update_auto_connect_dev(tGATT_IF gatt_if, bool add,
+extern bool gatt_auto_connect_dev_add(tGATT_REG* p_reg,
+                                      const RawAddress& bd_addr);
+extern bool gatt_auto_connect_dev_remove(tGATT_REG* p_reg,
                                          const RawAddress& bd_addr);
 extern bool gatt_is_bg_dev_for_app(tGATT_BG_CONN_DEV* p_dev, tGATT_IF gatt_if);
-extern bool gatt_remove_bg_dev_for_app(tGATT_IF gatt_if,
-                                       const RawAddress& bd_addr);
 extern uint8_t gatt_clear_bg_dev_for_addr(const RawAddress& bd_addr);
 extern tGATT_BG_CONN_DEV* gatt_find_bg_dev(const RawAddress& remote_bda);
 extern void gatt_deregister_bgdev_list(tGATT_IF gatt_if);

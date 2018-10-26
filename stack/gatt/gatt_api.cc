@@ -1124,7 +1124,7 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
                               initiating_phys);
   else {
     if (transport == BT_TRANSPORT_LE)
-      status = gatt_update_auto_connect_dev(gatt_if, true, bd_addr);
+      status = gatt_auto_connect_dev_add(p_reg, bd_addr);
     else {
       LOG(ERROR) << "Unsupported transport for background connection";
     }
@@ -1152,9 +1152,13 @@ bool GATT_CancelConnect(tGATT_IF gatt_if, const RawAddress& bd_addr,
                         bool is_direct) {
   LOG(INFO) << __func__ << ": gatt_if=" << +gatt_if;
 
-  if (gatt_if && !gatt_get_regcb(gatt_if)) {
-    LOG(ERROR) << "gatt_if=" << +gatt_if << " is not registered";
-    return false;
+  tGATT_REG* p_reg;
+  if (gatt_if) {
+    p_reg = gatt_get_regcb(gatt_if);
+    if (!p_reg) {
+      LOG(ERROR) << "gatt_if=" << +gatt_if << " is not registered";
+      return false;
+    }
   }
 
   if (is_direct) {
@@ -1183,7 +1187,7 @@ bool GATT_CancelConnect(tGATT_IF gatt_if, const RawAddress& bd_addr,
   }
   // is not direct
 
-  if (gatt_if) return gatt_remove_bg_dev_for_app(gatt_if, bd_addr);
+  if (gatt_if) return gatt_auto_connect_dev_remove(p_reg, bd_addr);
 
   if (!gatt_clear_bg_dev_for_addr(bd_addr)) {
     LOG(ERROR)
