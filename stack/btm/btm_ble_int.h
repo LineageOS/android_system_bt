@@ -116,8 +116,6 @@ extern void btm_ble_update_sec_key_size(const RawAddress& bd_addr,
 extern uint8_t btm_ble_read_sec_key_size(const RawAddress& bd_addr);
 
 /* white list function */
-extern bool btm_update_dev_to_white_list(bool to_add,
-                                         const RawAddress& bd_addr);
 extern void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy);
 extern void btm_update_adv_filter_policy(tBTM_BLE_AFP adv_policy);
 extern void btm_ble_clear_white_list(void);
