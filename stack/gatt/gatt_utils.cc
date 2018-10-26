@@ -155,25 +155,13 @@ void gatt_set_srv_chg(void) {
   }
 }
 
-/*******************************************************************************
- *
- * Function     gatt_add_pending_ind
- *
- * Description  Add a pending indication
- *
- * Returns    Pointer to the current pending indication buffer, NULL no buffer
- *            available
- *
- ******************************************************************************/
-tGATT_VALUE* gatt_add_pending_ind(tGATT_TCB* p_tcb, tGATT_VALUE* p_ind) {
-  tGATT_VALUE* p_buf = (tGATT_VALUE*)osi_malloc(sizeof(tGATT_VALUE));
-
+/** Add a pending indication */
+void gatt_add_pending_ind(tGATT_TCB* p_tcb, tGATT_VALUE* p_ind) {
   VLOG(1) << __func__ << "enqueue a pending indication";
 
+  tGATT_VALUE* p_buf = (tGATT_VALUE*)osi_malloc(sizeof(tGATT_VALUE));
   memcpy(p_buf, p_ind, sizeof(tGATT_VALUE));
   fixed_queue_enqueue(p_tcb->pending_ind_q, p_buf);
-
-  return p_buf;
 }
 
 /*******************************************************************************
