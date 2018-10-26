@@ -707,15 +707,6 @@ void BTM_BleStartAutoConn() {
   }
 }
 
-/** Clear the whitelist, end any pending whitelist connections, reset the local
- * bg device list */
-void BTM_BleClearBgConnDev(void) {
-  if (!controller_get_interface()->supports_ble()) return;
-  btm_ble_stop_auto_conn();
-  btm_ble_clear_white_list();
-  gatt_reset_bgdev_list();
-}
-
 /*******************************************************************************
  *
  * Function         BTM_BleSetConnectableMode

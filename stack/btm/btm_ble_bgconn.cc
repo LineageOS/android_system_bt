@@ -247,19 +247,6 @@ bool btm_execute_wl_dev_operation(void) {
 
 /*******************************************************************************
  *
- * Function         btm_ble_clear_white_list
- *
- * Description      This function clears the white list.
- *
- ******************************************************************************/
-void btm_ble_clear_white_list() {
-  BTM_TRACE_EVENT("btm_ble_clear_white_list");
-  btsnd_hcic_ble_clear_white_list();
-  background_connections_clear();
-}
-
-/*******************************************************************************
- *
  * Function         btm_ble_clear_white_list_complete
  *
  * Description      Indicates white list cleared.
@@ -609,4 +596,13 @@ void BTM_WhiteListRemove(const RawAddress& address) {
   }
   btm_add_dev_to_controller(false, address);
   btm_ble_resume_bg_conn();
+}
+
+/** Clear the whitelist, end any pending whitelist connections */
+void BTM_WhiteListClear() {
+  VLOG(1) << __func__;
+  if (!controller_get_interface()->supports_ble()) return;
+  btm_ble_stop_auto_conn();
+  btsnd_hcic_ble_clear_white_list();
+  background_connections_clear();
 }

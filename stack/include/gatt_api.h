@@ -1082,7 +1082,8 @@ extern void gatt_free(void);
 // initiated outside GATT.
 extern void gatt_notify_enc_cmpl(const RawAddress& bd_addr);
 
-// Reset bg device list.
-extern void gatt_reset_bgdev_list(void);
+/** Reset bg device list. If called after controller reset, set |after_reset| to
+ * true, as there is no need to wipe controller white list in this case. */
+extern void gatt_reset_bgdev_list(bool after_reset);
 
 #endif /* GATT_API_H */
