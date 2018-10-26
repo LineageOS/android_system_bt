@@ -1393,8 +1393,12 @@ void gatt_deregister_bgdev_list(tGATT_IF gatt_if) {
   }
 }
 
-/** reset bg device list */
-void gatt_reset_bgdev_list(void) { gatt_cb.bgconn_dev.clear(); }
+/** Reset bg device list. If called after controller reset, set |after_reset| to
+ * true, as there is no need to wipe controller white list in this case. */
+void gatt_reset_bgdev_list(bool after_reset) {
+  gatt_cb.bgconn_dev.clear();
+  if (!after_reset) BTM_WhiteListClear();
+}
 
 /**
  * This function add a device for background connection procedure.
