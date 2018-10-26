@@ -133,8 +133,6 @@ executable("net_test_bta") {
         "test/gatt/database_builder_test.cc",
         "test/gatt/database_builder_sample_device_test.cc",
         "test/gatt/database_test.cc",
-        "gatt/database.cc",
-        "gatt/database_builder.cc",
   ]
 
   include_dirs = [
@@ -148,6 +146,7 @@ executable("net_test_bta") {
   ]
 
   deps = [
+    "//bta",
     "//types",
     "//third_party/googletest:gmock_main",
     "//third_party/libchrome:base",
