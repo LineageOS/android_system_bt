@@ -1338,7 +1338,7 @@ bool gatt_add_bg_dev_list(tGATT_REG* p_reg, const RawAddress& bd_addr) {
   }
   // the device is not in the whitelist
 
-  if (!BTM_BleUpdateBgConnDev(true, bd_addr)) return false;
+  if (!BTM_WhiteListAdd(bd_addr)) return false;
 
   gatt_cb.bgconn_dev.emplace_back();
   tGATT_BG_CONN_DEV& dev = gatt_cb.bgconn_dev.back();
@@ -1353,7 +1353,7 @@ uint8_t gatt_clear_bg_dev_for_addr(const RawAddress& bd_addr) {
   auto dev_it = gatt_find_bg_dev_it(bd_addr);
   if (dev_it == gatt_cb.bgconn_dev.end()) return false;
 
-  CHECK(BTM_BleUpdateBgConnDev(false, dev_it->remote_bda));
+  BTM_WhiteListRemove(dev_it->remote_bda);
   gatt_cb.bgconn_dev.erase(dev_it);
   return true;
 }
@@ -1371,7 +1371,7 @@ bool gatt_remove_bg_dev_from_list(tGATT_REG* p_reg, const RawAddress& bd_addr) {
   if (!dev_it->gatt_if.empty()) return true;
 
   // no more apps interested - remove from whitelist and delete record
-  CHECK(BTM_BleUpdateBgConnDev(false, dev_it->remote_bda));
+  BTM_WhiteListRemove(dev_it->remote_bda);
   gatt_cb.bgconn_dev.erase(dev_it);
   return true;
 }
@@ -1388,7 +1388,7 @@ void gatt_deregister_bgdev_list(tGATT_IF gatt_if) {
       continue;
     }
 
-    BTM_BleUpdateBgConnDev(false, it->remote_bda);
+    BTM_WhiteListRemove(it->remote_bda);
     it = gatt_cb.bgconn_dev.erase(it);
   }
 }

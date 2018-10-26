@@ -247,32 +247,6 @@ bool btm_execute_wl_dev_operation(void) {
 
 /*******************************************************************************
  *
- * Function         btm_update_dev_to_white_list
- *
- * Description      This function adds or removes a device into/from
- *                  the white list.
- *
- ******************************************************************************/
-bool btm_update_dev_to_white_list(bool to_add, const RawAddress& bd_addr) {
-  tBTM_BLE_CB* p_cb = &btm_cb.ble_ctr_cb;
-
-  if (to_add &&
-      background_connections_count() ==
-          controller_get_interface()->get_ble_white_list_size()) {
-    BTM_TRACE_ERROR("%s Whitelist full, unable to add device", __func__);
-    return false;
-  }
-
-  if (p_cb->wl_state & BTM_BLE_WL_INIT) {
-    btm_ble_stop_auto_conn();
-  }
-  btm_add_dev_to_controller(to_add, bd_addr);
-  btm_ble_resume_bg_conn();
-  return true;
-}
-
-/*******************************************************************************
- *
  * Function         btm_ble_clear_white_list
  *
  * Description      This function clears the white list.
@@ -606,4 +580,33 @@ bool btm_send_pending_direct_conn(void) {
   }
 
   return rt;
+}
+
+/** Adds the device into white list. Returns false if white list is full and
+ * device can't be added, true otherwise. */
+bool BTM_WhiteListAdd(const RawAddress& address) {
+  VLOG(1) << __func__ << ": " << address;
+
+  if (background_connections_count() ==
+      controller_get_interface()->get_ble_white_list_size()) {
+    BTM_TRACE_ERROR("%s Whitelist full, unable to add device", __func__);
+    return false;
+  }
+
+  if (btm_cb.ble_ctr_cb.wl_state & BTM_BLE_WL_INIT) {
+    btm_ble_stop_auto_conn();
+  }
+  btm_add_dev_to_controller(true, address);
+  btm_ble_resume_bg_conn();
+  return true;
+}
+
+/** Removes the device from white list */
+void BTM_WhiteListRemove(const RawAddress& address) {
+  VLOG(1) << __func__ << ": " << address;
+  if (btm_cb.ble_ctr_cb.wl_state & BTM_BLE_WL_INIT) {
+    btm_ble_stop_auto_conn();
+  }
+  btm_add_dev_to_controller(false, address);
+  btm_ble_resume_bg_conn();
 }
