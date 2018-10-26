@@ -461,7 +461,7 @@ extern bool gatt_find_the_connected_bda(uint8_t start_idx, RawAddress& bda,
                                         tBT_TRANSPORT* p_transport);
 extern void gatt_set_srv_chg(void);
 extern void gatt_delete_dev_from_srv_chg_clt_list(const RawAddress& bd_addr);
-extern tGATT_VALUE* gatt_add_pending_ind(tGATT_TCB* p_tcb, tGATT_VALUE* p_ind);
+extern void gatt_add_pending_ind(tGATT_TCB* p_tcb, tGATT_VALUE* p_ind);
 extern void gatt_free_srvc_db_buffer_app_id(const bluetooth::Uuid& app_id);
 extern bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb);
 
