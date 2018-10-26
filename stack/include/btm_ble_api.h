@@ -374,9 +374,8 @@ extern bool BTM_WhiteListAdd(const RawAddress& address);
 /** Removes the device from white list */
 extern void BTM_WhiteListRemove(const RawAddress& address);
 
-/** Clear the whitelist, end any pending whitelist connections, reset the local
- * bg device list */
-extern void BTM_BleClearBgConnDev(void);
+/** Clear the whitelist, end any pending whitelist connections */
+extern void BTM_WhiteListClear();
 
 /********************************************************
  *
