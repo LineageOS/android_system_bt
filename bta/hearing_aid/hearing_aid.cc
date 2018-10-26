@@ -945,20 +945,6 @@ class HearingAidImpl : public HearingAid {
     if (num_samples % 2 != 0)
       LOG(FATAL) << "num_samples is not even: " << num_samples;
 
-    std::vector<uint16_t> chan_left;
-    std::vector<uint16_t> chan_right;
-    // TODO: encode data into G.722 left/right or mono.
-    for (int i = 0; i < num_samples; i++) {
-      const uint8_t* sample = data.data() + i * 4;
-
-      uint16_t left = (int16_t)((*(sample + 1) << 8) + *sample) >> 1;
-      chan_left.push_back(left);
-
-      sample += 2;
-      uint16_t right = (int16_t)((*(sample + 1) << 8) + *sample) >> 1;
-      chan_right.push_back(right);
-    }
-
     // TODO: we should cache left/right and current state, instad of recomputing
     // it for each packet, 100 times a second.
     HearingDevice* left = nullptr;
@@ -976,6 +962,34 @@ class HearingAidImpl : public HearingAid {
       HearingAidAudioSource::Stop();
       current_volume = VOLUME_UNKNOWN;
       return;
+    }
+
+    std::vector<uint16_t> chan_left;
+    std::vector<uint16_t> chan_right;
+    if (left == nullptr || right == nullptr) {
+      for (int i = 0; i < num_samples; i++) {
+        const uint8_t* sample = data.data() + i * 4;
+
+        int16_t left = (int16_t)((*(sample + 1) << 8) + *sample) >> 1;
+
+        sample += 2;
+        int16_t right = (int16_t)((*(sample + 1) << 8) + *sample) >> 1;
+
+        uint16_t mono_data = (int16_t)(((uint32_t)left + (uint32_t)right) >> 1);
+        chan_left.push_back(mono_data);
+        chan_right.push_back(mono_data);
+      }
+    } else {
+      for (int i = 0; i < num_samples; i++) {
+        const uint8_t* sample = data.data() + i * 4;
+
+        uint16_t left = (int16_t)((*(sample + 1) << 8) + *sample) >> 1;
+        chan_left.push_back(left);
+
+        sample += 2;
+        uint16_t right = (int16_t)((*(sample + 1) << 8) + *sample) >> 1;
+        chan_right.push_back(right);
+      }
     }
 
     // TODO: monural, binarual check
