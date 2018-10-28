@@ -696,57 +696,15 @@ bool BTM_BleLocalPrivacyEnabled(void) {
 #endif
 }
 
-/**
- * Set BLE connectable mode to auto connect
- */
+/** Set BLE connectable mode to auto connect */
 void BTM_BleStartAutoConn() {
   BTM_TRACE_EVENT("%s", __func__);
   if (!controller_get_interface()->supports_ble()) return;
 
   if (btm_cb.ble_ctr_cb.bg_conn_type != BTM_BLE_CONN_AUTO) {
-    btm_ble_start_auto_conn(true);
+    btm_ble_start_auto_conn();
     btm_cb.ble_ctr_cb.bg_conn_type = BTM_BLE_CONN_AUTO;
   }
-}
-
-/*******************************************************************************
- *
- * Function         BTM_BleClearBgConnDev
- *
- * Description      This function is called to clear the whitelist,
- *                  end any pending whitelist connections,
- *                  and reset the local bg device list.
- *
- * Parameters       void
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_BleClearBgConnDev(void) {
-  if (!controller_get_interface()->supports_ble()) return;
-  btm_ble_start_auto_conn(false);
-  btm_ble_clear_white_list();
-  gatt_reset_bgdev_list();
-}
-
-/*******************************************************************************
- *
- * Function         BTM_BleUpdateBgConnDev
- *
- * Description      This function is called to add or remove a device into/from
- *                  background connection procedure. The background connection
- *                  procedure is decided by the background connection type, it
- *                  can be auto connection, or selective connection.
- *
- * Parameters       add_remove: true to add; false to remove.
- *                  remote_bda: device address to add/remove.
- *
- * Returns          void
- *
- ******************************************************************************/
-bool BTM_BleUpdateBgConnDev(bool add_remove, const RawAddress& remote_bda) {
-  BTM_TRACE_EVENT("%s() add=%d", __func__, add_remove);
-  return btm_update_dev_to_white_list(add_remove, remote_bda);
 }
 
 /*******************************************************************************

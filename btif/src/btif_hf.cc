@@ -36,6 +36,7 @@
 #include <hardware/bluetooth_headset_callbacks.h>
 #include <hardware/bluetooth_headset_interface.h>
 #include <hardware/bt_hf.h>
+#include <log/log.h>
 
 #include "bta/include/utl.h"
 #include "bta_ag_api.h"

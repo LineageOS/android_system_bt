@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include <utils/String16.h>
+#include <string>
 
 namespace bluetooth {
 
@@ -24,25 +24,24 @@ class AvrcpMediaAttr {
  public:
   AvrcpMediaAttr();
   AvrcpMediaAttr(const AvrcpMediaAttr& other);
-  AvrcpMediaAttr(const android::String16& title,
-                 const android::String16& artist,
-                 const android::String16& album, const android::String16& genre,
+  AvrcpMediaAttr(const std::string& title, const std::string& artist,
+                 const std::string& album, const std::string& genre,
                  int track_num, int num_tracks, int play_time);
   ~AvrcpMediaAttr();
 
-  const android::String16& title() const { return title_; }
-  const android::String16& artist() const { return artist_; }
-  const android::String16& album() const { return album_; }
-  const android::String16& genre() const { return genre_; }
+  const std::string& title() const { return title_; }
+  const std::string& artist() const { return artist_; }
+  const std::string& album() const { return album_; }
+  const std::string& genre() const { return genre_; }
   int track_num() const { return track_num_; }
   int num_tracks() const { return num_tracks_; }
   int play_time() const { return play_time_; }
 
  protected:
-  android::String16 title_;
-  android::String16 artist_;
-  android::String16 album_;
-  android::String16 genre_;
+  std::string title_;
+  std::string artist_;
+  std::string album_;
+  std::string genre_;
   int track_num_ = -1;
   int num_tracks_ = -1;
   int play_time_ = -1;

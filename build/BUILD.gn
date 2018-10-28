@@ -59,6 +59,8 @@ config("linux") {
     # current build is done by GN or via Android.mk. This is a temporary
     # workaround until we can remove all Android-specific dependencies.
     "OS_GENERIC",
+
+    "FALLTHROUGH_INTENDED",
   ]
 }
 

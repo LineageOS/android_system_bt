@@ -17,7 +17,6 @@
  ******************************************************************************/
 
 #include "osi/include/config.h"
-#include "log/log.h"
 
 #include <base/files/file_path.h>
 #include <base/logging.h>
@@ -25,6 +24,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <libgen.h>
+#include <log/log.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
