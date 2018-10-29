@@ -32,6 +32,7 @@
 #include "btm_int.h"
 #include "gatt_api.h"
 #include "gatt_int.h"
+#include "gatt_utils_white_list.h"
 #include "gattdefs.h"
 #include "l2cdefs.h"
 #include "sdp_api.h"
@@ -1303,22 +1304,21 @@ uint8_t* gatt_dbg_op_name(uint8_t op_code) {
  *
  * Returns          true if connection started; false otherwise.
  */
-bool gatt_auto_connect_dev_add(tGATT_REG* p_reg, const RawAddress& bd_addr) {
+bool gatt_auto_connect_dev_add(tGATT_IF gatt_if, const RawAddress& bd_addr) {
   VLOG(1) << __func__;
 
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
-
-  bool ret = gatt_add_bg_dev_list(p_reg, bd_addr);
+  bool ret = gatt_add_bg_dev_list(gatt_if, bd_addr);
   if (ret && p_tcb != NULL) {
     /* if a connected device, update the link holding number */
-    gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, true);
+    gatt_update_app_use_link_flag(gatt_if, p_tcb, true, true);
   }
   return ret;
 }
 
 /** Remove the application interface for the specified background device */
-bool gatt_auto_connect_dev_remove(tGATT_REG* p_reg, const RawAddress& bd_addr) {
+bool gatt_auto_connect_dev_remove(tGATT_IF gatt_if, const RawAddress& bd_addr) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
-  if (p_tcb) gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, false, false);
-  return gatt_remove_bg_dev_from_list(p_reg, bd_addr);
+  if (p_tcb) gatt_update_app_use_link_flag(gatt_if, p_tcb, false, false);
+  return gatt_remove_bg_dev_from_list(gatt_if, bd_addr);
 }

@@ -1117,7 +1117,7 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
     LOG(ERROR) << "Unsupported transport for background connection";
     return false;
   }
-  return gatt_auto_connect_dev_add(p_reg, bd_addr);
+  return gatt_auto_connect_dev_add(gatt_if, bd_addr);
 }
 
 /*******************************************************************************
@@ -1174,7 +1174,7 @@ bool GATT_CancelConnect(tGATT_IF gatt_if, const RawAddress& bd_addr,
   }
   // is not direct
 
-  if (gatt_if) return gatt_auto_connect_dev_remove(p_reg, bd_addr);
+  if (gatt_if) return gatt_auto_connect_dev_remove(p_reg->gatt_if, bd_addr);
 
   if (!gatt_clear_bg_dev_for_addr(bd_addr)) {
     LOG(ERROR)

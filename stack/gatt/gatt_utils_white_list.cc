@@ -19,9 +19,24 @@
 #include "gatt_utils_white_list.h"
 
 #include <base/logging.h>
+#include <list>
+
+#include "stack/btm/btm_ble_bgconn.h"
 
 namespace {
 std::list<tGATT_BG_CONN_DEV> bgconn_dev;
+
+std::list<tGATT_BG_CONN_DEV>::iterator gatt_find_bg_dev_it(
+    const RawAddress& remote_bda) {
+  auto& list = bgconn_dev;
+  for (auto it = list.begin(); it != list.end(); it++) {
+    if (it->remote_bda == remote_bda) {
+      return it;
+    }
+  }
+  return list.end();
+}
+
 }  // namespace
 
 /** Returns true if this is one of the background devices for the application,
@@ -41,22 +56,9 @@ tGATT_BG_CONN_DEV* gatt_find_bg_dev(const RawAddress& remote_bda) {
   return nullptr;
 }
 
-std::list<tGATT_BG_CONN_DEV>::iterator gatt_find_bg_dev_it(
-    const RawAddress& remote_bda) {
-  auto& list = bgconn_dev;
-  for (auto it = list.begin(); it != list.end(); it++) {
-    if (it->remote_bda == remote_bda) {
-      return it;
-    }
-  }
-  return list.end();
-}
-
 /** Add a device from the background connection list.  Returns true if device
  * added to the list, or already in list, false otherwise */
-bool gatt_add_bg_dev_list(tGATT_REG* p_reg, const RawAddress& bd_addr) {
-  tGATT_IF gatt_if = p_reg->gatt_if;
-
+bool gatt_add_bg_dev_list(tGATT_IF gatt_if, const RawAddress& bd_addr) {
   tGATT_BG_CONN_DEV* p_dev = gatt_find_bg_dev(bd_addr);
   if (p_dev) {
     // device already in the whitelist, just add interested app to the list
@@ -91,8 +93,7 @@ uint8_t gatt_clear_bg_dev_for_addr(const RawAddress& bd_addr) {
 /** Remove device from the background connection device list or listening to
  * advertising list.  Returns true if device was on the list and was succesfully
  * removed */
-bool gatt_remove_bg_dev_from_list(tGATT_REG* p_reg, const RawAddress& bd_addr) {
-  tGATT_IF gatt_if = p_reg->gatt_if;
+bool gatt_remove_bg_dev_from_list(tGATT_IF gatt_if, const RawAddress& bd_addr) {
   auto dev_it = gatt_find_bg_dev_it(bd_addr);
   if (dev_it == bgconn_dev.end()) return false;
 

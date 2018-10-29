@@ -467,9 +467,9 @@ extern tGATT_HDL_LIST_ELEM* gatt_find_hdl_buffer_by_handle(uint16_t handle);
 extern tGATTS_SRV_CHG* gatt_add_srv_chg_clt(tGATTS_SRV_CHG* p_srv_chg);
 
 /* for background connection */
-extern bool gatt_auto_connect_dev_add(tGATT_REG* p_reg,
+extern bool gatt_auto_connect_dev_add(tGATT_IF gatt_if,
                                       const RawAddress& bd_addr);
-extern bool gatt_auto_connect_dev_remove(tGATT_REG* p_reg,
+extern bool gatt_auto_connect_dev_remove(tGATT_IF gatt_if,
                                          const RawAddress& bd_addr);
 
 /* server function */
