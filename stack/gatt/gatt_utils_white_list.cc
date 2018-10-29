@@ -16,12 +16,13 @@
  *
  ******************************************************************************/
 
-#include "gatt_int.h"
+#include "gatt_utils_white_list.h"
 
 #include <base/logging.h>
 
-#include "btm_int.h"
-#include "gatt_api.h"
+namespace {
+std::list<tGATT_BG_CONN_DEV> bgconn_dev;
+}  // namespace
 
 /** Returns true if this is one of the background devices for the application,
  * false otherwise */
@@ -32,7 +33,7 @@ bool gatt_is_bg_dev_for_app(tGATT_BG_CONN_DEV* p_dev, tGATT_IF gatt_if) {
 /** background connection device from the list. Returns pointer to the device
  * record, or nullptr if not found */
 tGATT_BG_CONN_DEV* gatt_find_bg_dev(const RawAddress& remote_bda) {
-  for (tGATT_BG_CONN_DEV& dev : gatt_cb.bgconn_dev) {
+  for (tGATT_BG_CONN_DEV& dev : bgconn_dev) {
     if (dev.remote_bda == remote_bda) {
       return &dev;
     }
@@ -42,7 +43,7 @@ tGATT_BG_CONN_DEV* gatt_find_bg_dev(const RawAddress& remote_bda) {
 
 std::list<tGATT_BG_CONN_DEV>::iterator gatt_find_bg_dev_it(
     const RawAddress& remote_bda) {
-  auto& list = gatt_cb.bgconn_dev;
+  auto& list = bgconn_dev;
   for (auto it = list.begin(); it != list.end(); it++) {
     if (it->remote_bda == remote_bda) {
       return it;
@@ -69,8 +70,8 @@ bool gatt_add_bg_dev_list(tGATT_REG* p_reg, const RawAddress& bd_addr) {
 
   if (!BTM_WhiteListAdd(bd_addr)) return false;
 
-  gatt_cb.bgconn_dev.emplace_back();
-  tGATT_BG_CONN_DEV& dev = gatt_cb.bgconn_dev.back();
+  bgconn_dev.emplace_back();
+  tGATT_BG_CONN_DEV& dev = bgconn_dev.back();
   dev.remote_bda = bd_addr;
   dev.gatt_if.insert(gatt_if);
   return true;
@@ -80,10 +81,10 @@ bool gatt_add_bg_dev_list(tGATT_REG* p_reg, const RawAddress& bd_addr) {
  * Returns true if anything was removed, false otherwise */
 uint8_t gatt_clear_bg_dev_for_addr(const RawAddress& bd_addr) {
   auto dev_it = gatt_find_bg_dev_it(bd_addr);
-  if (dev_it == gatt_cb.bgconn_dev.end()) return false;
+  if (dev_it == bgconn_dev.end()) return false;
 
   BTM_WhiteListRemove(dev_it->remote_bda);
-  gatt_cb.bgconn_dev.erase(dev_it);
+  bgconn_dev.erase(dev_it);
   return true;
 }
 
@@ -93,7 +94,7 @@ uint8_t gatt_clear_bg_dev_for_addr(const RawAddress& bd_addr) {
 bool gatt_remove_bg_dev_from_list(tGATT_REG* p_reg, const RawAddress& bd_addr) {
   tGATT_IF gatt_if = p_reg->gatt_if;
   auto dev_it = gatt_find_bg_dev_it(bd_addr);
-  if (dev_it == gatt_cb.bgconn_dev.end()) return false;
+  if (dev_it == bgconn_dev.end()) return false;
 
   if (!dev_it->gatt_if.erase(gatt_if)) return false;
 
@@ -101,14 +102,14 @@ bool gatt_remove_bg_dev_from_list(tGATT_REG* p_reg, const RawAddress& bd_addr) {
 
   // no more apps interested - remove from whitelist and delete record
   BTM_WhiteListRemove(dev_it->remote_bda);
-  gatt_cb.bgconn_dev.erase(dev_it);
+  bgconn_dev.erase(dev_it);
   return true;
 }
 
 /** deregister all related back ground connetion device. */
 void gatt_deregister_bgdev_list(tGATT_IF gatt_if) {
-  auto it = gatt_cb.bgconn_dev.begin();
-  auto end = gatt_cb.bgconn_dev.end();
+  auto it = bgconn_dev.begin();
+  auto end = bgconn_dev.end();
   /* update the BG conn device list */
   while (it != end) {
     it->gatt_if.erase(gatt_if);
@@ -118,13 +119,13 @@ void gatt_deregister_bgdev_list(tGATT_IF gatt_if) {
     }
 
     BTM_WhiteListRemove(it->remote_bda);
-    it = gatt_cb.bgconn_dev.erase(it);
+    it = bgconn_dev.erase(it);
   }
 }
 
 /** Reset bg device list. If called after controller reset, set |after_reset| to
  * true, as there is no need to wipe controller white list in this case. */
 void gatt_reset_bgdev_list(bool after_reset) {
-  gatt_cb.bgconn_dev.clear();
+  bgconn_dev.clear();
   if (!after_reset) BTM_WhiteListClear();
 }

@@ -32,6 +32,7 @@
 #include "gatt_api.h"
 #include "gatt_int.h"
 #include "l2c_api.h"
+#include "stack/gatt/gatt_utils_white_list.h"
 
 using bluetooth::Uuid;
 

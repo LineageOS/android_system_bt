@@ -331,11 +331,6 @@ typedef struct {
   uint32_t service_change;
 } tGATT_SVC_CHG;
 
-typedef struct {
-  std::unordered_set<tGATT_IF> gatt_if;
-  RawAddress remote_bda;
-} tGATT_BG_CONN_DEV;
-
 #define GATT_SVC_CHANGED_CONNECTING 1     /* wait for connection */
 #define GATT_SVC_CHANGED_SERVICE 2        /* GATT service discovery */
 #define GATT_SVC_CHANGED_CHARACTERISTIC 3 /* service change char discovery */
@@ -386,7 +381,6 @@ typedef struct {
   tGATT_APPL_INFO cb_info;
 
   tGATT_HDL_CFG hdl_cfg;
-  std::list<tGATT_BG_CONN_DEV> bgconn_dev;
 } tGATT_CB;
 
 #define GATT_SIZE_OF_SRV_CHG_HNDL_RANGE 4
@@ -477,10 +471,6 @@ extern bool gatt_auto_connect_dev_add(tGATT_REG* p_reg,
                                       const RawAddress& bd_addr);
 extern bool gatt_auto_connect_dev_remove(tGATT_REG* p_reg,
                                          const RawAddress& bd_addr);
-extern bool gatt_is_bg_dev_for_app(tGATT_BG_CONN_DEV* p_dev, tGATT_IF gatt_if);
-extern uint8_t gatt_clear_bg_dev_for_addr(const RawAddress& bd_addr);
-extern tGATT_BG_CONN_DEV* gatt_find_bg_dev(const RawAddress& remote_bda);
-extern void gatt_deregister_bgdev_list(tGATT_IF gatt_if);
 
 /* server function */
 extern std::list<tGATT_SRV_LIST_ELEM>::iterator gatt_sr_find_i_rcb_by_handle(

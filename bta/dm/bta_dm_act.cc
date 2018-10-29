@@ -47,6 +47,7 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "sdp_api.h"
+#include "stack/gatt/gatt_utils_white_list.h"
 #include "utl.h"
 
 #if (GAP_INCLUDED == TRUE)

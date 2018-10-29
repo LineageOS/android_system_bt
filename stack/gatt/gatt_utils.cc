@@ -35,6 +35,7 @@
 #include "gattdefs.h"
 #include "l2cdefs.h"
 #include "sdp_api.h"
+#include "stack/gatt/gatt_utils_white_list.h"
 
 using base::StringPrintf;
 using bluetooth::Uuid;
