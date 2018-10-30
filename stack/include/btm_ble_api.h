@@ -364,18 +364,7 @@ extern bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr,
  ******************************************************************************/
 extern void BTM_BleLoadLocalKeys(uint8_t key_type, tBTM_BLE_LOCAL_KEYS* p_key);
 
-/** Set BLE connectable mode to auto connect */
-extern void BTM_BleStartAutoConn();
-
-/** Adds the device into white list. Returns false if white list is full and
- * device can't be added, true otherwise. */
-extern bool BTM_WhiteListAdd(const RawAddress& address);
-
-/** Removes the device from white list */
-extern void BTM_WhiteListRemove(const RawAddress& address);
-
-/** Clear the whitelist, end any pending whitelist connections */
-extern void BTM_WhiteListClear();
+#include "stack/btm/btm_ble_bgconn.h"
 
 /********************************************************
  *

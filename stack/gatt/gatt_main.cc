@@ -31,6 +31,7 @@
 #include "btm_int.h"
 #include "device/include/interop.h"
 #include "gatt_int.h"
+#include "gatt_utils_white_list.h"
 #include "l2c_api.h"
 #include "osi/include/osi.h"
 
@@ -101,6 +102,7 @@ void gatt_init(void) {
   VLOG(1) << __func__;
 
   gatt_cb = tGATT_CB();
+  gatt_reset_bgdev_list(true);
   memset(&fixed_reg, 0, sizeof(tL2CAP_FIXED_CHNL_REG));
 
   gatt_cb.def_mtu_size = GATT_DEF_BLE_MTU_SIZE;

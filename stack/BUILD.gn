@@ -108,6 +108,7 @@ static_library("stack") {
     "gatt/gatt_main.cc",
     "gatt/gatt_sr.cc",
     "gatt/gatt_utils.cc",
+    "gatt/gatt_utils_white_list.cc",
     "hcic/hciblecmds.cc",
     "hcic/hcicmds.cc",
     "hid/hidh_api.cc",
