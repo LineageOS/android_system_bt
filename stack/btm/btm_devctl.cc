@@ -40,6 +40,7 @@
 #include "hcimsgs.h"
 #include "l2c_int.h"
 #include "osi/include/osi.h"
+#include "stack/gatt/gatt_utils_white_list.h"
 
 #include "gatt_int.h"
 
