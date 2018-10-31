@@ -47,7 +47,7 @@ void btu_hcif_send_cmd(uint8_t controller_id, BT_HDR* p_msg);
 void btu_hcif_send_cmd_with_cb(const base::Location& posted_from,
                                uint16_t opcode, uint8_t* params,
                                uint8_t params_len,
-                               base::Callback<void(uint8_t*, uint16_t)> cb);
+                               base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
 /* Functions provided by btu_init.cc
  ***********************************

@@ -384,8 +384,8 @@ void btu_hcif_send_cmd(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_buf) {
       vsc_callback);
 }
 
-using hci_cmd_cb = base::Callback<void(uint8_t* /* return_parameters */,
-                                       uint16_t /* return_parameters_length*/)>;
+using hci_cmd_cb = base::OnceCallback<void(
+    uint8_t* /* return_parameters */, uint16_t /* return_parameters_length*/)>;
 
 struct cmd_with_cb_data {
   hci_cmd_cb cb;
@@ -413,7 +413,7 @@ static void btu_hcif_command_complete_evt_with_cb_on_task(BT_HDR* event,
   cmd_with_cb_data* cb_wrapper = (cmd_with_cb_data*)context;
   HCI_TRACE_DEBUG("command complete for: %s",
                   cb_wrapper->posted_from.ToString().c_str());
-  cb_wrapper->cb.Run(stream, event->len - 5);
+  std::move(cb_wrapper->cb).Run(stream, event->len - 5);
   cmd_with_cb_data_cleanup(cb_wrapper);
   osi_free(cb_wrapper);
 
@@ -440,7 +440,7 @@ static void btu_hcif_command_status_evt_with_cb_on_task(uint8_t status,
   cmd_with_cb_data* cb_wrapper = (cmd_with_cb_data*)context;
   HCI_TRACE_DEBUG("command status for: %s",
                   cb_wrapper->posted_from.ToString().c_str());
-  cb_wrapper->cb.Run(&status, sizeof(uint16_t));
+  std::move(cb_wrapper->cb).Run(&status, sizeof(uint16_t));
   cmd_with_cb_data_cleanup(cb_wrapper);
   osi_free(cb_wrapper);
 
@@ -482,7 +482,7 @@ void btu_hcif_send_cmd_with_cb(const Location& posted_from, uint16_t opcode,
       (cmd_with_cb_data*)osi_malloc(sizeof(cmd_with_cb_data));
 
   cmd_with_cb_data_init(cb_wrapper);
-  cb_wrapper->cb = cb;
+  cb_wrapper->cb = std::move(cb);
   cb_wrapper->posted_from = posted_from;
 
   hci_layer_get_interface()->transmit_command(
