@@ -153,7 +153,7 @@ struct a2dp_stream_in {
  *****************************************************************************/
 
 static bool enable_delay_reporting = false;
-
+static int open_ctrl_chnl_fail_count = 0;
 /*****************************************************************************
  *  Static functions
  *****************************************************************************/
@@ -429,9 +429,11 @@ static int a2dp_ctrl_send(struct a2dp_stream_common* common, const void* buffer,
 static int a2dp_command(struct a2dp_stream_common* common, tA2DP_CTRL_CMD cmd) {
   char ack;
 
-  DEBUG("A2DP COMMAND %s", audio_a2dp_hw_dump_ctrl_event(cmd));
+  DEBUG("A2DP COMMAND %s, , fail count: %d", audio_a2dp_hw_dump_ctrl_event(cmd),
+                                             open_ctrl_chnl_fail_count);
 
-  if (common->ctrl_fd == AUDIO_SKT_DISCONNECTED) {
+  if ((common->ctrl_fd == AUDIO_SKT_DISCONNECTED)
+       && (open_ctrl_chnl_fail_count < 5)) {
     INFO("starting up or recovering from previous error: command=%s",
          audio_a2dp_hw_dump_ctrl_event(cmd));
     a2dp_open_ctrl_path(common);
@@ -440,6 +442,9 @@ static int a2dp_command(struct a2dp_stream_common* common, tA2DP_CTRL_CMD cmd) {
             audio_a2dp_hw_dump_ctrl_event(cmd));
       return -1;
     }
+  } else if (open_ctrl_chnl_fail_count >= 5) {
+      WARN("control channel open alreday failed 5 times, bailing out");
+      return -1;
   }
 
   /* send command */
@@ -796,7 +801,11 @@ static void a2dp_open_ctrl_path(struct a2dp_stream_common* common) {
     if ((common->ctrl_fd = skt_connect(
              A2DP_CTRL_PATH, AUDIO_STREAM_CONTROL_OUTPUT_BUFFER_SZ)) >= 0) {
       /* success, now check if stack is ready */
-      if (check_a2dp_ready(common) == 0) break;
+      if (check_a2dp_ready(common) == 0) {
+        open_ctrl_chnl_fail_count = 0;
+        WARN("a2dp_open_ctrl_path : Fail count reset to 0");
+        break;
+      }
 
       ERROR("error : a2dp not ready, wait 250 ms and retry");
       usleep(250000);
@@ -806,6 +815,12 @@ static void a2dp_open_ctrl_path(struct a2dp_stream_common* common) {
 
     /* ctrl channel not ready, wait a bit */
     usleep(250000);
+  }
+  INFO("a2dp_open_ctrl_path : ctrl_fd: %d", common->ctrl_fd);
+  if (common->ctrl_fd <= 0) {
+    open_ctrl_chnl_fail_count += 1;
+    WARN("a2dp_open_ctrl_path : Fail count raised to: %d",
+                               open_ctrl_chnl_fail_count);
   }
 }
 
@@ -1585,6 +1600,7 @@ static int adev_open_output_stream(struct audio_hw_device* dev,
   struct a2dp_audio_device* a2dp_dev = (struct a2dp_audio_device*)dev;
   struct a2dp_stream_out* out;
   int ret = 0;
+  open_ctrl_chnl_fail_count = 0;
 
   INFO("opening output");
   // protect against adev->output and stream_out from being inconsistent
