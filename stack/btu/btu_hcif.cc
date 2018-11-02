@@ -936,18 +936,6 @@ static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p,
       break;
 
     /* BLE Commands sComplete*/
-    case HCI_BLE_ADD_WHITE_LIST:
-      btm_ble_add_2_white_list_complete(*p);
-      break;
-
-    case HCI_BLE_CLEAR_WHITE_LIST:
-      btm_ble_clear_white_list_complete(p, evt_len);
-      break;
-
-    case HCI_BLE_REMOVE_WHITE_LIST:
-      btm_ble_remove_from_white_list_complete(p, evt_len);
-      break;
-
     case HCI_BLE_RAND:
     case HCI_BLE_ENCRYPT:
       btm_ble_rand_enc_complete(p, opcode, (tBTM_RAND_ENC_CB*)p_cplt_cback);
