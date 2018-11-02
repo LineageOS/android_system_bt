@@ -54,7 +54,7 @@ static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
                                             uint8_t* p_reply_end);
 static UINT8         *save_attr_seq (tCONN_CB *p_ccb, UINT8 *p, UINT8 *p_msg_end);
 static tSDP_DISC_REC *add_record (tSDP_DISCOVERY_DB *p_db, BD_ADDR p_bda);
-static UINT8         *add_attr (UINT8 *p, tSDP_DISCOVERY_DB *p_db, tSDP_DISC_REC *p_rec,
+static UINT8         *add_attr (UINT8 *p, UINT8 *p_end, tSDP_DISCOVERY_DB *p_db, tSDP_DISC_REC *p_rec,
                                 UINT16 attr_id, tSDP_DISC_ATTR *p_parent_attr, UINT8 nest_level);
 
 /* Safety check in case we go crazy */
@@ -819,7 +819,7 @@ static UINT8 *save_attr_seq (tCONN_CB *p_ccb, UINT8 *p, UINT8 *p_msg_end)
         BE_STREAM_TO_UINT16 (attr_id, p);
 
         /* Now, add the attribute value */
-        p = add_attr (p, p_ccb->p_db, p_rec, attr_id, NULL, 0);
+        p = add_attr (p, p_seq_end, p_ccb->p_db, p_rec, attr_id, NULL, 0);
 
         if (!p)
         {
@@ -885,7 +885,7 @@ tSDP_DISC_REC *add_record (tSDP_DISCOVERY_DB *p_db, BD_ADDR p_bda)
 ** Returns          pointer to next byte in data stream
 **
 *******************************************************************************/
-static UINT8 *add_attr (UINT8 *p, tSDP_DISCOVERY_DB *p_db, tSDP_DISC_REC *p_rec,
+static UINT8 *add_attr (UINT8 *p, UINT8 *p_end, tSDP_DISCOVERY_DB *p_db, tSDP_DISC_REC *p_rec,
                         UINT16 attr_id, tSDP_DISC_ATTR *p_parent_attr, UINT8 nest_level)
 {
     tSDP_DISC_ATTR  *p_attr;
@@ -894,7 +894,7 @@ static UINT8 *add_attr (UINT8 *p, tSDP_DISCOVERY_DB *p_db, tSDP_DISC_REC *p_rec,
     UINT16          attr_type;
     UINT16          id;
     UINT8           type;
-    UINT8           *p_end;
+    UINT8           *p_attr_end;
     UINT8           is_additional_list = nest_level & SDP_ADDITIONAL_LIST_MASK;
 
     nest_level &= ~(SDP_ADDITIONAL_LIST_MASK);
@@ -910,6 +910,13 @@ static UINT8 *add_attr (UINT8 *p, tSDP_DISCOVERY_DB *p_db, tSDP_DISC_REC *p_rec,
         total_len = attr_len - 4 + (UINT16)sizeof (tSDP_DISC_ATTR);
     else
         total_len = sizeof (tSDP_DISC_ATTR);
+
+    p_attr_end = p + attr_len;
+    if (p_attr_end > p_end) {
+        android_errorWriteLog(0x534e4554, "115900043");
+        SDP_TRACE_WARNING("%s: SDP - Attribute length beyond p_end", __func__);
+        return NULL;
+    }
 
     /* Ensure it is a multiple of 4 */
     total_len = (total_len + 3) & ~3;
@@ -937,18 +944,17 @@ static UINT8 *add_attr (UINT8 *p, tSDP_DISCOVERY_DB *p_db, tSDP_DISC_REC *p_rec,
                 /* Reserve the memory for the attribute now, as we need to add sub-attributes */
                 p_db->p_free_mem += sizeof (tSDP_DISC_ATTR);
                 p_db->mem_free   -= sizeof (tSDP_DISC_ATTR);
-                p_end             = p + attr_len;
                 total_len         = 0;
 
                 /* SDP_TRACE_DEBUG ("SDP - attr nest level:%d(list)", nest_level); */
                 if (nest_level >= MAX_NEST_LEVELS)
                 {
                     SDP_TRACE_ERROR ("SDP - attr nesting too deep");
-                    return (p_end);
+                    return p_attr_end;
                 }
 
                 /* Now, add the list entry */
-                p = add_attr (p, p_db, p_rec, ATTR_ID_PROTOCOL_DESC_LIST, p_attr, (UINT8)(nest_level + 1));
+                p = add_attr (p, p_end, p_db, p_rec, ATTR_ID_PROTOCOL_DESC_LIST, p_attr, (UINT8)(nest_level + 1));
 
                 break;
             }
@@ -1021,7 +1027,7 @@ static UINT8 *add_attr (UINT8 *p, tSDP_DISCOVERY_DB *p_db, tSDP_DISC_REC *p_rec,
             break;
         default:
             SDP_TRACE_WARNING ("SDP - bad len in UUID attr: %d", attr_len);
-            return (p + attr_len);
+            return p_attr_end;
         }
         break;
 
@@ -1030,23 +1036,22 @@ static UINT8 *add_attr (UINT8 *p, tSDP_DISCOVERY_DB *p_db, tSDP_DISC_REC *p_rec,
         /* Reserve the memory for the attribute now, as we need to add sub-attributes */
         p_db->p_free_mem += sizeof (tSDP_DISC_ATTR);
         p_db->mem_free   -= sizeof (tSDP_DISC_ATTR);
-        p_end             = p + attr_len;
         total_len         = 0;
 
         /* SDP_TRACE_DEBUG ("SDP - attr nest level:%d", nest_level); */
         if (nest_level >= MAX_NEST_LEVELS)
         {
             SDP_TRACE_ERROR ("SDP - attr nesting too deep");
-            return (p_end);
+            return p_attr_end;
         }
         if(is_additional_list != 0 || attr_id == ATTR_ID_ADDITION_PROTO_DESC_LISTS)
             nest_level |= SDP_ADDITIONAL_LIST_MASK;
         /* SDP_TRACE_DEBUG ("SDP - attr nest level:0x%x(finish)", nest_level); */
 
-        while (p < p_end)
+        while (p < p_attr_end)
         {
             /* Now, add the list entry */
-            p = add_attr (p, p_db, p_rec, 0, p_attr, (UINT8)(nest_level + 1));
+            p = add_attr (p, p_end, p_db, p_rec, 0, p_attr, (UINT8)(nest_level + 1));
 
             if (!p)
                 return (NULL);
@@ -1066,7 +1071,7 @@ static UINT8 *add_attr (UINT8 *p, tSDP_DISCOVERY_DB *p_db, tSDP_DISC_REC *p_rec,
             break;
         default:
             SDP_TRACE_WARNING ("SDP - bad len in boolean attr: %d", attr_len);
-            return (p + attr_len);
+            return p_attr_end;
         }
         break;
 
