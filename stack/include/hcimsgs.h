@@ -758,13 +758,16 @@ extern void btsnd_hcic_ble_create_conn_cancel(void);
 
 extern void btsnd_hcic_ble_read_white_list_size(void);
 
-extern void btsnd_hcic_ble_clear_white_list(void);
+extern void btsnd_hcic_ble_clear_white_list(
+    base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
-extern void btsnd_hcic_ble_add_white_list(uint8_t addr_type,
-                                          const RawAddress& bda);
+extern void btsnd_hcic_ble_add_white_list(
+    uint8_t addr_type, const RawAddress& bda,
+    base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
-extern void btsnd_hcic_ble_remove_from_white_list(uint8_t addr_type,
-                                                  const RawAddress& bda);
+extern void btsnd_hcic_ble_remove_from_white_list(
+    uint8_t addr_type, const RawAddress& bda,
+    base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
 extern void btsnd_hcic_ble_upd_ll_conn_params(
     uint16_t handle, uint16_t conn_int_min, uint16_t conn_int_max,
