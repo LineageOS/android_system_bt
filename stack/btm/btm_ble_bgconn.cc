@@ -205,6 +205,21 @@ bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
 
   return started;
 }
+
+/** White list add complete */
+void wl_add_complete(uint8_t* p_data, uint16_t /* evt_len */) {
+  uint8_t status;
+  STREAM_TO_UINT8(status, p_data);
+  VLOG(2) << __func__ << ": status=" << loghex(status);
+}
+
+/** White list element remove complete */
+void wl_remove_complete(uint8_t* p_data, uint16_t /* evt_len */) {
+  uint8_t status;
+  STREAM_TO_UINT8(status, p_data);
+  VLOG(2) << __func__ << ": status=" << loghex(status);
+}
+
 /*******************************************************************************
  *
  * Function         btm_execute_wl_dev_operation
@@ -218,8 +233,9 @@ bool btm_execute_wl_dev_operation(void) {
        map_it != background_connections.end();) {
     BackgroundConnection* connection = &map_it->second;
     if (connection->pending_removal) {
-      btsnd_hcic_ble_remove_from_white_list(connection->addr_type_in_wl,
-                                            connection->address);
+      btsnd_hcic_ble_remove_from_white_list(
+          connection->addr_type_in_wl, connection->address,
+          base::BindOnce(&wl_remove_complete));
       map_it = background_connections.erase(map_it);
     } else
       ++map_it;
@@ -229,7 +245,8 @@ bool btm_execute_wl_dev_operation(void) {
     const bool connected =
         BTM_IsAclConnectionUp(connection->address, BT_TRANSPORT_LE);
     if (!connection->in_controller_wl && !connected) {
-      btsnd_hcic_ble_add_white_list(connection->addr_type, connection->address);
+      btsnd_hcic_ble_add_white_list(connection->addr_type, connection->address,
+                                    base::BindOnce(&wl_add_complete));
       connection->in_controller_wl = true;
       connection->addr_type_in_wl = connection->addr_type;
     } else if (connection->in_controller_wl && connected) {
@@ -237,27 +254,13 @@ bool btm_execute_wl_dev_operation(void) {
          connection between two LE addresses. Not all controllers handle this
          correctly, therefore we must make sure connected devices are not in
          the white list when bg connection attempt is active. */
-      btsnd_hcic_ble_remove_from_white_list(connection->addr_type_in_wl,
-                                            connection->address);
+      btsnd_hcic_ble_remove_from_white_list(
+          connection->addr_type_in_wl, connection->address,
+          base::BindOnce(&wl_remove_complete));
       connection->in_controller_wl = false;
     }
   }
   return true;
-}
-
-/*******************************************************************************
- *
- * Function         btm_ble_clear_white_list_complete
- *
- * Description      Indicates white list cleared.
- *
- ******************************************************************************/
-void btm_ble_clear_white_list_complete(uint8_t* p_data,
-                                       UNUSED_ATTR uint16_t evt_len) {
-  uint8_t status;
-
-  STREAM_TO_UINT8(status, p_data);
-  BTM_TRACE_EVENT("%s status=%d", __func__, status);
 }
 
 /*******************************************************************************
@@ -269,29 +272,6 @@ void btm_ble_clear_white_list_complete(uint8_t* p_data,
  ******************************************************************************/
 void btm_ble_white_list_init(uint8_t white_list_size) {
   BTM_TRACE_DEBUG("%s white_list_size = %d", __func__, white_list_size);
-}
-
-/*******************************************************************************
- *
- * Function         btm_ble_add_2_white_list_complete
- *
- * Description      White list element added
- *
- ******************************************************************************/
-void btm_ble_add_2_white_list_complete(uint8_t status) {
-  BTM_TRACE_EVENT("%s status=%d", __func__, status);
-}
-
-/*******************************************************************************
- *
- * Function         btm_ble_remove_from_white_list_complete
- *
- * Description      White list element removal complete
- *
- ******************************************************************************/
-void btm_ble_remove_from_white_list_complete(uint8_t* p,
-                                             UNUSED_ATTR uint16_t evt_len) {
-  BTM_TRACE_EVENT("%s status=%d", __func__, *p);
 }
 
 void btm_ble_create_conn_cancel_complete(uint8_t* p) {
@@ -598,11 +578,18 @@ void BTM_WhiteListRemove(const RawAddress& address) {
   btm_ble_resume_bg_conn();
 }
 
+/** clear white list complete */
+void wl_clear_complete(uint8_t* p_data, uint16_t /* evt_len */) {
+  uint8_t status;
+  STREAM_TO_UINT8(status, p_data);
+  VLOG(2) << __func__ << ": status=" << loghex(status);
+}
+
 /** Clear the whitelist, end any pending whitelist connections */
 void BTM_WhiteListClear() {
   VLOG(1) << __func__;
   if (!controller_get_interface()->supports_ble()) return;
   btm_ble_stop_auto_conn();
-  btsnd_hcic_ble_clear_white_list();
+  btsnd_hcic_ble_clear_white_list(base::BindOnce(&wl_clear_complete));
   background_connections_clear();
 }

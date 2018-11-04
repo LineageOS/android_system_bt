@@ -118,11 +118,6 @@ extern uint8_t btm_ble_read_sec_key_size(const RawAddress& bd_addr);
 /* white list function */
 extern void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy);
 extern void btm_update_adv_filter_policy(tBTM_BLE_AFP adv_policy);
-extern void btm_read_white_list_size_complete(uint8_t* p, uint16_t evt_len);
-extern void btm_ble_add_2_white_list_complete(uint8_t status);
-extern void btm_ble_remove_from_white_list_complete(uint8_t* p,
-                                                    uint16_t evt_len);
-extern void btm_ble_clear_white_list_complete(uint8_t* p, uint16_t evt_len);
 extern void btm_ble_white_list_init(uint8_t white_list_size);
 
 /* background connection function */
