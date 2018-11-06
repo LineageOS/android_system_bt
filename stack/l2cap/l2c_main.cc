@@ -173,9 +173,6 @@ void l2c_rcv_acl_data(BT_HDR* p_msg) {
 
   if (rcv_cid == L2CAP_CONNECTIONLESS_CID) {
     /* process_connectionless_data (p_lcb); */
-    uint16_t psm;
-    STREAM_TO_UINT16(psm, p);
-    L2CAP_TRACE_DEBUG("GOT CONNECTIONLESS DATA PSM:%d", psm);
     osi_free(p_msg);
     return;
   }

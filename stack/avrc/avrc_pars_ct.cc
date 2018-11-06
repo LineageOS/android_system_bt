@@ -29,6 +29,8 @@
  *  Global data
  ****************************************************************************/
 
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
+
 /*******************************************************************************
  *
  * Function         avrc_pars_vendor_rsp
@@ -54,13 +56,33 @@ static tAVRC_STS avrc_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
   if (p_msg->vendor_len == 0) return AVRC_STS_NO_ERROR;
   if (p_msg->p_vendor_data == NULL) return AVRC_STS_INTERNAL_ERR;
 
+  if (p_msg->vendor_len < 4) {
+    android_errorWriteLog(0x534e4554, "111450531");
+    AVRC_TRACE_WARNING("%s: message length %d too short: must be at least 4",
+                       __func__, p_msg->vendor_len);
+    return AVRC_STS_INTERNAL_ERR;
+  }
   p = p_msg->p_vendor_data;
   BE_STREAM_TO_UINT8(p_result->pdu, p);
   p++; /* skip the reserved/packe_type byte */
   BE_STREAM_TO_UINT16(len, p);
-  AVRC_TRACE_DEBUG("%s ctype:0x%x pdu:0x%x, len:%d/0x%x", __func__,
-                   p_msg->hdr.ctype, p_result->pdu, len, len);
+  AVRC_TRACE_DEBUG("%s ctype:0x%x pdu:0x%x, len:%d/0x%x vendor_len=0x%x",
+                   __func__, p_msg->hdr.ctype, p_result->pdu, len, len,
+                   p_msg->vendor_len);
+  if (p_msg->vendor_len < len + 4) {
+    android_errorWriteLog(0x534e4554, "111450531");
+    AVRC_TRACE_WARNING("%s: message length %d too short: must be at least %d",
+                       __func__, p_msg->vendor_len, len + 4);
+    return AVRC_STS_INTERNAL_ERR;
+  }
+
   if (p_msg->hdr.ctype == AVRC_RSP_REJ) {
+    if (len < 1) {
+      android_errorWriteLog(0x534e4554, "111450531");
+      AVRC_TRACE_WARNING("%s: invalid parameter length %d: must be at least 1",
+                         __func__, len);
+      return AVRC_STS_INTERNAL_ERR;
+    }
     p_result->rsp.status = *p;
     return p_result->rsp.status;
   }
@@ -81,12 +103,26 @@ static tAVRC_STS avrc_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
 
     case AVRC_PDU_REGISTER_NOTIFICATION: /* 0x31 */
 #if (AVRC_ADV_CTRL_INCLUDED == TRUE)
+      if (len < 1) {
+        android_errorWriteLog(0x534e4554, "111450531");
+        AVRC_TRACE_WARNING(
+            "%s: invalid parameter length %d: must be at least 1", __func__,
+            len);
+        return AVRC_STS_INTERNAL_ERR;
+      }
       BE_STREAM_TO_UINT8(eventid, p);
       if (AVRC_EVT_VOLUME_CHANGE == eventid &&
           (AVRC_RSP_CHANGED == p_msg->hdr.ctype ||
            AVRC_RSP_INTERIM == p_msg->hdr.ctype ||
            AVRC_RSP_REJ == p_msg->hdr.ctype ||
            AVRC_RSP_NOT_IMPL == p_msg->hdr.ctype)) {
+        if (len < 2) {
+          android_errorWriteLog(0x534e4554, "111450531");
+          AVRC_TRACE_WARNING(
+              "%s: invalid parameter length %d: must be at least 2", __func__,
+              len);
+          return AVRC_STS_INTERNAL_ERR;
+        }
         p_result->reg_notif.status = p_msg->hdr.ctype;
         p_result->reg_notif.event_id = eventid;
         BE_STREAM_TO_UINT8(p_result->reg_notif.param.volume, p);
@@ -103,24 +139,35 @@ static tAVRC_STS avrc_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
   return status;
 }
 
-void avrc_parse_notification_rsp(uint8_t* p_stream,
-                                 tAVRC_REG_NOTIF_RSP* p_rsp) {
+tAVRC_STS avrc_parse_notification_rsp(uint8_t* p_stream, uint16_t len,
+                                      tAVRC_REG_NOTIF_RSP* p_rsp) {
+  uint16_t min_len = 1;
+
+  if (len < min_len) goto length_error;
   BE_STREAM_TO_UINT8(p_rsp->event_id, p_stream);
   switch (p_rsp->event_id) {
     case AVRC_EVT_PLAY_STATUS_CHANGE:
+      min_len += 1;
+      if (len < min_len) goto length_error;
       BE_STREAM_TO_UINT8(p_rsp->param.play_status, p_stream);
       break;
 
     case AVRC_EVT_TRACK_CHANGE:
+      min_len += 8;
+      if (len < min_len) goto length_error;
       BE_STREAM_TO_ARRAY(p_stream, p_rsp->param.track, 8);
       break;
 
     case AVRC_EVT_APP_SETTING_CHANGE:
+      min_len += 1;
+      if (len < min_len) goto length_error;
       BE_STREAM_TO_UINT8(p_rsp->param.player_setting.num_attr, p_stream);
       if (p_rsp->param.player_setting.num_attr > AVRC_MAX_APP_SETTINGS) {
         android_errorWriteLog(0x534e4554, "73782082");
         p_rsp->param.player_setting.num_attr = AVRC_MAX_APP_SETTINGS;
       }
+      min_len += p_rsp->param.player_setting.num_attr * 2;
+      if (len < min_len) goto length_error;
       for (int index = 0; index < p_rsp->param.player_setting.num_attr;
            index++) {
         BE_STREAM_TO_UINT8(p_rsp->param.player_setting.attr_id[index],
@@ -150,6 +197,14 @@ void avrc_parse_notification_rsp(uint8_t* p_stream,
     default:
       break;
   }
+
+  return AVRC_STS_NO_ERROR;
+
+length_error:
+  android_errorWriteLog(0x534e4554, "111450417");
+  AVRC_TRACE_WARNING("%s: invalid parameter length %d: must be at least %d",
+                     __func__, len, min_len);
+  return AVRC_STS_INTERNAL_ERR;
 }
 
 static tAVRC_STS avrc_pars_browse_rsp(tAVRC_MSG_BROWSE* p_msg,
@@ -404,16 +459,32 @@ static tAVRC_STS avrc_pars_browse_rsp(tAVRC_MSG_BROWSE* p_msg,
 static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
                                            tAVRC_RESPONSE* p_result,
                                            uint8_t* p_buf, uint16_t* buf_len) {
+  if (p_msg->vendor_len < 4) {
+    android_errorWriteLog(0x534e4554, "111450417");
+    AVRC_TRACE_WARNING("%s: message length %d too short: must be at least 4",
+                       __func__, p_msg->vendor_len);
+    return AVRC_STS_INTERNAL_ERR;
+  }
+
   uint8_t* p = p_msg->p_vendor_data;
   BE_STREAM_TO_UINT8(p_result->pdu, p);
   p++; /* skip the reserved/packe_type byte */
 
   uint16_t len;
+  uint16_t min_len = 0;
   BE_STREAM_TO_UINT16(len, p);
-  AVRC_TRACE_DEBUG("%s ctype:0x%x pdu:0x%x, len:%d", __func__, p_msg->hdr.ctype,
-                   p_result->pdu, len);
+  AVRC_TRACE_DEBUG("%s ctype:0x%x pdu:0x%x, len:%d  vendor_len=0x%x", __func__,
+                   p_msg->hdr.ctype, p_result->pdu, len, p_msg->vendor_len);
+  if (p_msg->vendor_len < len + 4) {
+    android_errorWriteLog(0x534e4554, "111450417");
+    AVRC_TRACE_WARNING("%s: message length %d too short: must be at least %d",
+                       __func__, p_msg->vendor_len, len + 4);
+    return AVRC_STS_INTERNAL_ERR;
+  }
   /* Todo: Issue in handling reject, check */
   if (p_msg->hdr.ctype == AVRC_RSP_REJ) {
+    min_len += 1;
+    if (len < min_len) goto length_error;
     p_result->rsp.status = *p;
     return p_result->rsp.status;
   }
@@ -424,8 +495,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
     /* case AVRC_PDU_ABORT_CONTINUATION_RSP:   0x41 */
 
     case AVRC_PDU_REGISTER_NOTIFICATION:
-      avrc_parse_notification_rsp(p, &p_result->reg_notif);
-      break;
+      return avrc_parse_notification_rsp(p, len, &p_result->reg_notif);
 
     case AVRC_PDU_GET_CAPABILITIES:
       if (len == 0) {
@@ -433,12 +503,16 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
         p_result->get_caps.capability_id = 0;
         break;
       }
+      min_len += 2;
+      if (len < min_len) goto length_error;
       BE_STREAM_TO_UINT8(p_result->get_caps.capability_id, p);
       BE_STREAM_TO_UINT8(p_result->get_caps.count, p);
       AVRC_TRACE_DEBUG("%s cap id = %d, cap_count = %d ", __func__,
                        p_result->get_caps.capability_id,
                        p_result->get_caps.count);
       if (p_result->get_caps.capability_id == AVRC_CAP_COMPANY_ID) {
+        min_len += MIN(p_result->get_caps.count, AVRC_CAP_MAX_NUM_COMP_ID) * 3;
+        if (len < min_len) goto length_error;
         for (int xx = 0; ((xx < p_result->get_caps.count) &&
                           (xx < AVRC_CAP_MAX_NUM_COMP_ID));
              xx++) {
@@ -446,6 +520,8 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
         }
       } else if (p_result->get_caps.capability_id ==
                  AVRC_CAP_EVENTS_SUPPORTED) {
+        min_len += MIN(p_result->get_caps.count, AVRC_CAP_MAX_NUM_EVT_ID);
+        if (len < min_len) goto length_error;
         for (int xx = 0; ((xx < p_result->get_caps.count) &&
                           (xx < AVRC_CAP_MAX_NUM_EVT_ID));
              xx++) {
@@ -459,6 +535,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
         p_result->list_app_attr.num_attr = 0;
         break;
       }
+      min_len += 1;
       BE_STREAM_TO_UINT8(p_result->list_app_attr.num_attr, p);
       AVRC_TRACE_DEBUG("%s attr count = %d ", __func__,
                        p_result->list_app_attr.num_attr);
@@ -468,6 +545,8 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
         p_result->list_app_attr.num_attr = AVRC_MAX_APP_ATTR_SIZE;
       }
 
+      min_len += p_result->list_app_attr.num_attr;
+      if (len < min_len) goto length_error;
       for (int xx = 0; xx < p_result->list_app_attr.num_attr; xx++) {
         BE_STREAM_TO_UINT8(p_result->list_app_attr.attrs[xx], p);
       }
@@ -478,6 +557,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
         p_result->list_app_values.num_val = 0;
         break;
       }
+      min_len += 1;
       BE_STREAM_TO_UINT8(p_result->list_app_values.num_val, p);
       if (p_result->list_app_values.num_val > AVRC_MAX_APP_ATTR_SIZE) {
         android_errorWriteLog(0x534e4554, "78526423");
@@ -486,6 +566,8 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
 
       AVRC_TRACE_DEBUG("%s value count = %d ", __func__,
                        p_result->list_app_values.num_val);
+      min_len += p_result->list_app_values.num_val;
+      if (len < min_len) goto length_error;
       for (int xx = 0; xx < p_result->list_app_values.num_val; xx++) {
         BE_STREAM_TO_UINT8(p_result->list_app_values.vals[xx], p);
       }
@@ -496,9 +578,8 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
         p_result->get_cur_app_val.num_val = 0;
         break;
       }
+      min_len += 1;
       BE_STREAM_TO_UINT8(p_result->get_cur_app_val.num_val, p);
-      tAVRC_APP_SETTING* app_sett = (tAVRC_APP_SETTING*)osi_malloc(
-          p_result->get_cur_app_val.num_val * sizeof(tAVRC_APP_SETTING));
       AVRC_TRACE_DEBUG("%s attr count = %d ", __func__,
                        p_result->get_cur_app_val.num_val);
 
@@ -507,6 +588,13 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
         p_result->get_cur_app_val.num_val = AVRC_MAX_APP_ATTR_SIZE;
       }
 
+      min_len += p_result->get_cur_app_val.num_val * 2;
+      if (len < min_len) {
+        p_result->get_cur_app_val.num_val = 0;
+        goto length_error;
+      }
+      tAVRC_APP_SETTING* app_sett = (tAVRC_APP_SETTING*)osi_calloc(
+          p_result->get_cur_app_val.num_val * sizeof(tAVRC_APP_SETTING));
       for (int xx = 0; xx < p_result->get_cur_app_val.num_val; xx++) {
         BE_STREAM_TO_UINT8(app_sett[xx].attr_id, p);
         BE_STREAM_TO_UINT8(app_sett[xx].attr_val, p);
@@ -521,6 +609,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
         p_result->get_app_attr_txt.num_attr = 0;
         break;
       }
+      min_len += 1;
       BE_STREAM_TO_UINT8(num_attrs, p);
       if (num_attrs > AVRC_MAX_APP_ATTR_SIZE) {
         num_attrs = AVRC_MAX_APP_ATTR_SIZE;
@@ -529,15 +618,33 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
                        p_result->get_app_attr_txt.num_attr);
       p_result->get_app_attr_txt.num_attr = num_attrs;
 
-      p_result->get_app_attr_txt.p_attrs = (tAVRC_APP_SETTING_TEXT*)osi_malloc(
+      p_result->get_app_attr_txt.p_attrs = (tAVRC_APP_SETTING_TEXT*)osi_calloc(
           num_attrs * sizeof(tAVRC_APP_SETTING_TEXT));
       for (int xx = 0; xx < num_attrs; xx++) {
+        min_len += 4;
+        if (len < min_len) {
+          for (int j = 0; j < xx; j++) {
+            osi_free(p_result->get_app_attr_txt.p_attrs[j].p_str);
+          }
+          osi_free_and_reset((void**)&p_result->get_app_attr_txt.p_attrs);
+          p_result->get_app_attr_txt.num_attr = 0;
+          goto length_error;
+        }
         BE_STREAM_TO_UINT8(p_result->get_app_attr_txt.p_attrs[xx].attr_id, p);
         BE_STREAM_TO_UINT16(p_result->get_app_attr_txt.p_attrs[xx].charset_id,
                             p);
         BE_STREAM_TO_UINT8(p_result->get_app_attr_txt.p_attrs[xx].str_len, p);
+        min_len += p_result->get_app_attr_txt.p_attrs[xx].str_len;
+        if (len < min_len) {
+          for (int j = 0; j < xx; j++) {
+            osi_free(p_result->get_app_attr_txt.p_attrs[j].p_str);
+          }
+          osi_free_and_reset((void**)&p_result->get_app_attr_txt.p_attrs);
+          p_result->get_app_attr_txt.num_attr = 0;
+          goto length_error;
+        }
         if (p_result->get_app_attr_txt.p_attrs[xx].str_len != 0) {
-          uint8_t* p_str = (uint8_t*)osi_malloc(
+          uint8_t* p_str = (uint8_t*)osi_calloc(
               p_result->get_app_attr_txt.p_attrs[xx].str_len);
           BE_STREAM_TO_ARRAY(p, p_str,
                              p_result->get_app_attr_txt.p_attrs[xx].str_len);
@@ -555,6 +662,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
         p_result->get_app_val_txt.num_attr = 0;
         break;
       }
+      min_len += 1;
       BE_STREAM_TO_UINT8(num_vals, p);
       if (num_vals > AVRC_MAX_APP_ATTR_SIZE) {
         num_vals = AVRC_MAX_APP_ATTR_SIZE;
@@ -563,14 +671,32 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
       AVRC_TRACE_DEBUG("%s value count = %d ", __func__,
                        p_result->get_app_val_txt.num_attr);
 
-      p_result->get_app_val_txt.p_attrs = (tAVRC_APP_SETTING_TEXT*)osi_malloc(
+      p_result->get_app_val_txt.p_attrs = (tAVRC_APP_SETTING_TEXT*)osi_calloc(
           num_vals * sizeof(tAVRC_APP_SETTING_TEXT));
       for (int i = 0; i < num_vals; i++) {
+        min_len += 4;
+        if (len < min_len) {
+          for (int j = 0; j < i; j++) {
+            osi_free(p_result->get_app_val_txt.p_attrs[j].p_str);
+          }
+          osi_free_and_reset((void**)&p_result->get_app_val_txt.p_attrs);
+          p_result->get_app_val_txt.num_attr = 0;
+          goto length_error;
+        }
         BE_STREAM_TO_UINT8(p_result->get_app_val_txt.p_attrs[i].attr_id, p);
         BE_STREAM_TO_UINT16(p_result->get_app_val_txt.p_attrs[i].charset_id, p);
         BE_STREAM_TO_UINT8(p_result->get_app_val_txt.p_attrs[i].str_len, p);
+        min_len += p_result->get_app_val_txt.p_attrs[i].str_len;
+        if (len < min_len) {
+          for (int j = 0; j < i; j++) {
+            osi_free(p_result->get_app_val_txt.p_attrs[j].p_str);
+          }
+          osi_free_and_reset((void**)&p_result->get_app_val_txt.p_attrs);
+          p_result->get_app_val_txt.num_attr = 0;
+          goto length_error;
+        }
         if (p_result->get_app_val_txt.p_attrs[i].str_len != 0) {
-          uint8_t* p_str = (uint8_t*)osi_malloc(
+          uint8_t* p_str = (uint8_t*)osi_calloc(
               p_result->get_app_val_txt.p_attrs[i].str_len);
           BE_STREAM_TO_ARRAY(p, p_str,
                              p_result->get_app_val_txt.p_attrs[i].str_len);
@@ -592,20 +718,41 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
         p_result->get_attrs.num_attrs = 0;
         break;
       }
+      min_len += 1;
       BE_STREAM_TO_UINT8(num_attrs, p);
       p_result->get_attrs.num_attrs = num_attrs;
       if (num_attrs) {
         tAVRC_ATTR_ENTRY* p_attrs =
-            (tAVRC_ATTR_ENTRY*)osi_malloc(num_attrs * sizeof(tAVRC_ATTR_ENTRY));
+            (tAVRC_ATTR_ENTRY*)osi_calloc(num_attrs * sizeof(tAVRC_ATTR_ENTRY));
         for (int i = 0; i < num_attrs; i++) {
+          min_len += 8;
+          if (len < min_len) {
+            for (int j = 0; j < i; j++) {
+              osi_free(p_attrs[j].name.p_str);
+            }
+            osi_free(p_attrs);
+            p_result->get_attrs.num_attrs = 0;
+            goto length_error;
+          }
           BE_STREAM_TO_UINT32(p_attrs[i].attr_id, p);
           BE_STREAM_TO_UINT16(p_attrs[i].name.charset_id, p);
           BE_STREAM_TO_UINT16(p_attrs[i].name.str_len, p);
+          min_len += p_attrs[i].name.str_len;
+          if (len < min_len) {
+            for (int j = 0; j < i; j++) {
+              osi_free(p_attrs[j].name.p_str);
+            }
+            osi_free(p_attrs);
+            p_result->get_attrs.num_attrs = 0;
+            goto length_error;
+          }
           if (p_attrs[i].name.str_len > 0) {
             p_attrs[i].name.p_str =
-                (uint8_t*)osi_malloc(p_attrs[i].name.str_len);
+                (uint8_t*)osi_calloc(p_attrs[i].name.str_len);
             BE_STREAM_TO_ARRAY(p, p_attrs[i].name.p_str,
                                p_attrs[i].name.str_len);
+          } else {
+            p_attrs[i].name.p_str = NULL;
           }
         }
         p_result->get_attrs.p_attrs = p_attrs;
@@ -616,6 +763,8 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
       if (len == 0) {
         break;
       }
+      min_len += 9;
+      if (len < min_len) goto length_error;
       BE_STREAM_TO_UINT32(p_result->get_play_status.song_len, p);
       BE_STREAM_TO_UINT32(p_result->get_play_status.song_pos, p);
       BE_STREAM_TO_UINT8(p_result->get_play_status.status, p);
@@ -633,6 +782,12 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
       return AVRC_STS_BAD_CMD;
   }
   return AVRC_STS_NO_ERROR;
+
+length_error:
+  android_errorWriteLog(0x534e4554, "111450417");
+  AVRC_TRACE_WARNING("%s: invalid parameter length %d: must be at least %d",
+                     __func__, len, min_len);
+  return AVRC_STS_INTERNAL_ERR;
 }
 
 /*******************************************************************************

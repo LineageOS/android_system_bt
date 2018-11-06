@@ -19,6 +19,9 @@
 #define LOG_TAG "btif_a2dp_audio_interface"
 
 #include "btif_a2dp_audio_interface.h"
+
+#include <mutex>
+
 #include <a2dp_vendor.h>
 #include <a2dp_vendor_ldac_constants.h>
 #include <android/hardware/bluetooth/a2dp/1.0/IBluetoothAudioHost.h>
@@ -37,7 +40,11 @@
 #include "btif_av.h"
 #include "btif_av_co.h"
 #include "btif_hf.h"
+#include "osi/include/metrics.h"
 #include "osi/include/osi.h"
+
+using system_bt_osi::A2dpSessionMetrics;
+using system_bt_osi::BluetoothMetricsLogger;
 
 using android::hardware::bluetooth::a2dp::V1_0::IBluetoothAudioOffload;
 using android::hardware::bluetooth::a2dp::V1_0::IBluetoothAudioHost;
@@ -50,8 +57,10 @@ using android::hardware::bluetooth::a2dp::V1_0::ChannelMode;
 using android::hardware::ProcessState;
 using ::android::hardware::Return;
 using ::android::hardware::Void;
+using ::android::hardware::hidl_death_recipient;
 using ::android::hardware::hidl_vec;
 using ::android::sp;
+using ::android::wp;
 android::sp<IBluetoothAudioOffload> btAudio;
 
 #define CASE_RETURN_STR(const) \
@@ -63,10 +72,66 @@ uint8_t btif_a2dp_audio_process_request(uint8_t cmd);
 
 static void btif_a2dp_audio_send_start_req();
 static void btif_a2dp_audio_send_suspend_req();
+static void btif_a2dp_audio_send_stop_req();
 static void btif_a2dp_audio_interface_init();
 static void btif_a2dp_audio_interface_deinit();
+static void btif_a2dp_audio_interface_restart_session();
 // Delay reporting
 // static void btif_a2dp_audio_send_sink_latency();
+
+class A2dpOffloadAudioStats {
+ public:
+  A2dpOffloadAudioStats() { Reset(); }
+  void Reset() {
+    std::lock_guard<std::recursive_mutex> lock(lock_);
+    ResetPreserveSession();
+    codec_index_ = -1;
+  }
+  void ResetPreserveSession() {
+    std::lock_guard<std::recursive_mutex> lock(lock_);
+    audio_start_time_ms_ = -1;
+    audio_stop_time_ms_ = -1;
+  }
+  void StoreMetrics() {
+    std::lock_guard<std::recursive_mutex> lock(lock_);
+    if (audio_start_time_ms_ < 0 || audio_stop_time_ms_ < 0) {
+      return;
+    }
+    A2dpSessionMetrics metrics;
+    metrics.codec_index = codec_index_;
+    metrics.is_a2dp_offload = true;
+    if (audio_stop_time_ms_ > audio_start_time_ms_) {
+      metrics.audio_duration_ms = audio_stop_time_ms_ - audio_start_time_ms_;
+    }
+    BluetoothMetricsLogger::GetInstance()->LogA2dpSession(metrics);
+  }
+  void LogAudioStart() {
+    std::lock_guard<std::recursive_mutex> lock(lock_);
+    audio_start_time_ms_ = time_get_os_boottime_ms();
+  }
+  void LogAudioStop() {
+    std::lock_guard<std::recursive_mutex> lock(lock_);
+    audio_stop_time_ms_ = time_get_os_boottime_ms();
+  }
+  void LogAudioStopMetricsAndReset() {
+    std::lock_guard<std::recursive_mutex> lock(lock_);
+    LogAudioStop();
+    StoreMetrics();
+    ResetPreserveSession();
+  }
+  void SetCodecIndex(int64_t codec_index) {
+    std::lock_guard<std::recursive_mutex> lock(lock_);
+    codec_index_ = codec_index;
+  }
+
+ private:
+  std::recursive_mutex lock_;
+  int64_t audio_start_time_ms_ = -1;
+  int64_t audio_stop_time_ms_ = -1;
+  int64_t codec_index_ = -1;
+};
+
+static A2dpOffloadAudioStats a2dp_offload_audio_stats;
 
 class BluetoothAudioHost : public IBluetoothAudioHost {
  public:
@@ -79,7 +144,7 @@ class BluetoothAudioHost : public IBluetoothAudioHost {
     return Void();
   }
   Return<void> stopStream() {
-    btif_a2dp_audio_process_request(A2DP_CTRL_CMD_STOP);
+    btif_a2dp_audio_send_stop_req();
     return Void();
   }
 
@@ -90,6 +155,20 @@ class BluetoothAudioHost : public IBluetoothAudioHost {
           return Void();
       }*/
 };
+
+class BluetoothAudioDeathRecipient : public hidl_death_recipient {
+ public:
+  virtual void serviceDied(
+      uint64_t /*cookie*/,
+      const wp<::android::hidl::base::V1_0::IBase>& /*who*/) {
+    LOG_ERROR(LOG_TAG, "%s", __func__);
+    // Restart the session on the correct thread
+    do_in_bta_thread(FROM_HERE,
+                     base::Bind(&btif_a2dp_audio_interface_restart_session));
+  }
+};
+sp<BluetoothAudioDeathRecipient> bluetoothAudioDeathRecipient =
+    new BluetoothAudioDeathRecipient();
 
 static Status mapToStatus(uint8_t resp) {
   switch (resp) {
@@ -118,6 +197,7 @@ static void btif_a2dp_get_codec_configuration(
   a2dpCodecConfig->getCodecSpecificConfig(&a2dp_offload);
   btav_a2dp_codec_config_t codec_config;
   codec_config = a2dpCodecConfig->getCodecConfig();
+  a2dp_offload_audio_stats.SetCodecIndex(a2dpCodecConfig->codecIndex());
   switch (codec_config.codec_type) {
     case BTAV_A2DP_CODEC_INDEX_SOURCE_SBC:
       p_codec_info->codecType =
@@ -190,6 +270,12 @@ static void btif_a2dp_audio_interface_init() {
   btAudio = IBluetoothAudioOffload::getService();
   CHECK(btAudio != nullptr);
 
+  auto death_link = btAudio->linkToDeath(bluetoothAudioDeathRecipient, 0);
+  if (!death_link.isOk()) {
+    LOG_ERROR(LOG_TAG, "%s: Cannot observe the Bluetooth Audio HAL's death",
+              __func__);
+  }
+
   LOG_DEBUG(
       LOG_TAG, "%s: IBluetoothAudioOffload::getService() returned %p (%s)",
       __func__, btAudio.get(), (btAudio->isRemote() ? "remote" : "local"));
@@ -199,11 +285,22 @@ static void btif_a2dp_audio_interface_init() {
 
 static void btif_a2dp_audio_interface_deinit() {
   LOG_INFO(LOG_TAG, "%s: start", __func__);
+  if (btAudio != nullptr) {
+    auto death_unlink = btAudio->unlinkToDeath(bluetoothAudioDeathRecipient);
+    if (!death_unlink.isOk()) {
+      LOG_ERROR(LOG_TAG,
+                "%s: Error unlinking death observer from Bluetooth Audio HAL",
+                __func__);
+    }
+  }
   btAudio = nullptr;
 }
 
 void btif_a2dp_audio_interface_start_session() {
   LOG_INFO(LOG_TAG, "%s", __func__);
+  BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionStart(
+      system_bt_osi::CONNECTION_TECHNOLOGY_TYPE_BREDR, 0);
+  a2dp_offload_audio_stats.Reset();
   btif_a2dp_audio_interface_init();
   CHECK(btAudio != nullptr);
   CodecConfiguration codec_info;
@@ -214,6 +311,10 @@ void btif_a2dp_audio_interface_start_session() {
 
 void btif_a2dp_audio_interface_end_session() {
   LOG_INFO(LOG_TAG, "%s", __func__);
+  a2dp_offload_audio_stats.LogAudioStopMetricsAndReset();
+  BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionEnd(
+      system_bt_osi::DISCONNECT_REASON_UNKNOWN, 0);
+  a2dp_offload_audio_stats.Reset();
   if (btAudio == nullptr) return;
   auto ret = btAudio->endSession();
   if (!ret.isOk()) {
@@ -222,12 +323,28 @@ void btif_a2dp_audio_interface_end_session() {
   btif_a2dp_audio_interface_deinit();
 }
 
+// Conditionally restart the session only if it was started before
+static void btif_a2dp_audio_interface_restart_session() {
+  LOG_INFO(LOG_TAG, "%s", __func__);
+  if (btAudio == nullptr) {
+    LOG_INFO(LOG_TAG, "%s: nothing to restart - session was not started",
+             __func__);
+    return;
+  }
+  btAudio = nullptr;
+  btif_a2dp_audio_interface_start_session();
+}
+
 void btif_a2dp_audio_on_started(tBTA_AV_STATUS status) {
   LOG_INFO(LOG_TAG, "%s: status = %d", __func__, status);
   if (btAudio != nullptr) {
     if (a2dp_cmd_pending == A2DP_CTRL_CMD_START) {
       LOG_INFO(LOG_TAG, "%s: calling method onStarted", __func__);
-      btAudio->streamStarted(mapToStatus(status));
+      auto hal_status = mapToStatus(status);
+      btAudio->streamStarted(hal_status);
+      if (hal_status == Status::SUCCESS) {
+        a2dp_offload_audio_stats.LogAudioStart();
+      }
     }
   }
 }
@@ -237,7 +354,11 @@ void btif_a2dp_audio_on_suspended(tBTA_AV_STATUS status) {
   if (btAudio != nullptr) {
     if (a2dp_cmd_pending == A2DP_CTRL_CMD_SUSPEND) {
       LOG_INFO(LOG_TAG, "calling method onSuspended");
-      btAudio->streamSuspended(mapToStatus(status));
+      auto hal_status = mapToStatus(status);
+      btAudio->streamSuspended(hal_status);
+      if (hal_status == Status::SUCCESS) {
+        a2dp_offload_audio_stats.LogAudioStopMetricsAndReset();
+      }
     }
   }
 }
@@ -248,6 +369,7 @@ void btif_a2dp_audio_on_stopped(tBTA_AV_STATUS status) {
     LOG_INFO(LOG_TAG, "%s: Remote disconnected when start under progress",
              __func__);
     btAudio->streamStarted(mapToStatus(A2DP_CTRL_ACK_DISCONNECT_IN_PROGRESS));
+    a2dp_offload_audio_stats.LogAudioStopMetricsAndReset();
   }
 }
 void btif_a2dp_audio_send_start_req() {
@@ -255,7 +377,11 @@ void btif_a2dp_audio_send_start_req() {
   uint8_t resp;
   resp = btif_a2dp_audio_process_request(A2DP_CTRL_CMD_START);
   if (btAudio != nullptr) {
-    auto ret = btAudio->streamStarted(mapToStatus(resp));
+    auto status = mapToStatus(resp);
+    auto ret = btAudio->streamStarted(status);
+    if (status == Status::SUCCESS) {
+      a2dp_offload_audio_stats.LogAudioStart();
+    }
     if (!ret.isOk()) LOG_ERROR(LOG_TAG, "HAL server died");
   }
 }
@@ -264,10 +390,21 @@ void btif_a2dp_audio_send_suspend_req() {
   uint8_t resp;
   resp = btif_a2dp_audio_process_request(A2DP_CTRL_CMD_SUSPEND);
   if (btAudio != nullptr) {
-    auto ret = btAudio->streamSuspended(mapToStatus(resp));
+    auto status = mapToStatus(resp);
+    auto ret = btAudio->streamSuspended(status);
+    if (status == Status::SUCCESS) {
+      a2dp_offload_audio_stats.LogAudioStopMetricsAndReset();
+    }
     if (!ret.isOk()) LOG_ERROR(LOG_TAG, "HAL server died");
   }
 }
+
+void btif_a2dp_audio_send_stop_req() {
+  LOG_INFO(LOG_TAG, "%s", __func__);
+  btif_a2dp_audio_process_request(A2DP_CTRL_CMD_STOP);
+  a2dp_offload_audio_stats.LogAudioStopMetricsAndReset();
+}
+
 /*void btif_a2dp_audio_send_sink_latency()
 {
   LOG_INFO(LOG_TAG, "%s", __func__);
