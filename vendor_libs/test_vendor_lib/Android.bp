@@ -35,7 +35,10 @@ cc_library_static {
     local_include_dirs: [
         "include",
     ],
-    export_include_dirs: ["include"],
+    export_include_dirs: [
+        "include",
+        ".",
+    ],
     header_libs: [
         "libbluetooth_headers",
     ],
@@ -52,14 +55,19 @@ cc_library_static {
     ],
     static_libs: [
         "libbluetooth-types",
-    ]
+        "libbt-rootcanal-packets",
+    ],
 }
 
 // test-vendor unit tests for host
 // ========================================================
 cc_test_host {
     name: "test-vendor_test_host",
-    defaults: ["libchrome_support_defaults"],
+    defaults: [
+        "libchrome_support_defaults",
+        "clang_file_coverage",
+        "clang_coverage_bin",
+    ],
     srcs: [
         "src/async_manager.cc",
         "src/bt_address.cc",
@@ -94,6 +102,7 @@ cc_test_host {
     ],
     static_libs: [
         "libbluetooth-types",
+        "libbt-rootcanal-packets",
     ],
     cflags: [
         "-fvisibility=hidden",
