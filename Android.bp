@@ -5,6 +5,7 @@ subdirs = [
     "btcore",
     "common",
     "audio_a2dp_hw",
+    "audio_bluetooth_hw",
     "audio_hearing_aid_hw",
     "hci",
     "utils",

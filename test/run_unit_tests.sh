@@ -1,6 +1,7 @@
 #!/bin/sh
 
 known_tests=(
+  audio_bluetooth_hw_test
   bluetooth_test_common
   bluetoothtbd_test
   net_test_audio_a2dp_hw
