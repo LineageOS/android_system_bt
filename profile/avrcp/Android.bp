@@ -1,6 +1,9 @@
 cc_library_static {
     name: "avrcp-target-service",
-    defaults: ["fluoride_defaults"],
+    defaults: [
+        "fluoride_defaults",
+        "clang_file_coverage"
+    ],
     host_supported: true,
     include_dirs: [
         "system/bt",
@@ -26,7 +29,10 @@ cc_library_static {
 cc_test {
     name: "net_test_avrcp",
     test_suites: ["general-tests"],
-    defaults: ["fluoride_defaults"],
+    defaults: [
+        "fluoride_defaults",
+        "clang_coverage_bin",
+    ],
     host_supported: true,
     include_dirs: [
         "system/bt",
