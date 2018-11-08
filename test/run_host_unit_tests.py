@@ -200,6 +200,20 @@ def main():
       print 'TEST FAILLED: ' + HOST_TESTS[index]
     sys.exit(0)
   print 'TEST PASSED ' + str(len(test_results)) + ' tests were run'
+
+  dist_dir = get_android_dist_dir_or_die()
+  log_output_path = os.path.join(dist_dir, 'gtest/coverage')
+  cmd_path = os.path.join(get_android_root_or_die(), 'system/bt/test')
+  print cmd_path
+  cmd = [
+    os.path.join(cmd_path, 'gen_coverage.py'),
+    '--skip-html',
+    '--json-file',
+    '-o',
+    log_output_path,
+  ]
+  subprocess.call(cmd)
+
   sys.exit(0)
 
 
