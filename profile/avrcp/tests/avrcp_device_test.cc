@@ -41,8 +41,8 @@ using TestAvrcpPacket = TestPacketType<Packet>;
 using TestBrowsePacket = TestPacketType<BrowsePacket>;
 
 using ::testing::_;
-using ::testing::MockFunction;
 using ::testing::Mock;
+using ::testing::MockFunction;
 using ::testing::NiceMock;
 using ::testing::Return;
 using ::testing::SaveArg;
