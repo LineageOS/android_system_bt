@@ -16,7 +16,7 @@
  *
  ******************************************************************************/
 
-#include "gatt_utils_white_list.h"
+#include "connection_manager.h"
 
 #include <base/logging.h>
 #include <list>
