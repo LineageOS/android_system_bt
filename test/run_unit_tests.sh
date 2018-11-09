@@ -21,6 +21,7 @@ known_tests=(
   net_test_osi
   net_test_performance
   net_test_stack_rfcomm
+  net_test_gatt_conn_multiplexing
 )
 
 known_remote_tests=(
