@@ -20,12 +20,12 @@
 
 #include <base/logging.h>
 #include <list>
-#include <unordered_set>
+#include <set>
 
 #include "stack/btm/btm_ble_bgconn.h"
 
 struct tGATT_BG_CONN_DEV {
-  std::unordered_set<tGATT_IF> gatt_if;
+  std::set<tGATT_IF> gatt_if;
   RawAddress remote_bda;
 };
 
@@ -48,10 +48,13 @@ std::list<tGATT_BG_CONN_DEV>::iterator gatt_find_bg_dev_it(
 
 }  // namespace
 
-/** Returns true if this is one of the background devices for the application,
- * false otherwise */
-bool gatt_is_bg_dev_for_app(tGATT_BG_CONN_DEV* p_dev, tGATT_IF gatt_if) {
-  return p_dev->gatt_if.count(gatt_if);
+/** background connection device from the list. Returns pointer to the device
+ * record, or nullptr if not found */
+std::set<tGATT_IF> get_apps_connecting_to(const RawAddress& address) {
+  for (tGATT_BG_CONN_DEV& dev : bgconn_dev)
+    if (dev.remote_bda == address) return dev.gatt_if;
+
+  return std::set<tGATT_IF>();
 }
 
 /** background connection device from the list. Returns pointer to the device
