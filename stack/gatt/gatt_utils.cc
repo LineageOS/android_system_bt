@@ -30,13 +30,13 @@
 #include "stdio.h"
 
 #include "btm_int.h"
+#include "connection_manager.h"
 #include "gatt_api.h"
 #include "gatt_int.h"
-#include "gatt_utils_white_list.h"
 #include "gattdefs.h"
 #include "l2cdefs.h"
 #include "sdp_api.h"
-#include "stack/gatt/gatt_utils_white_list.h"
+#include "stack/gatt/connection_manager.h"
 
 using base::StringPrintf;
 using bluetooth::Uuid;
