@@ -24,16 +24,22 @@
 
 typedef uint8_t tGATT_IF;
 
-struct tGATT_BG_CONN_DEV {
-  std::unordered_set<tGATT_IF> gatt_if;
-  RawAddress remote_bda;
-};
+struct tGATT_BG_CONN_DEV;
+
+namespace gatt {
+namespace connection_manager {
 
 /* for background connection */
-extern bool gatt_add_bg_dev_list(tGATT_IF gatt_if, const RawAddress& bd_addr);
-extern bool gatt_remove_bg_dev_from_list(tGATT_IF gatt_if,
-                                         const RawAddress& bd_addr);
+extern bool background_connect_add(tGATT_IF gatt_if, const RawAddress& bd_addr);
+extern bool background_connect_remove(tGATT_IF gatt_if,
+                                      const RawAddress& bd_addr);
+extern bool background_connect_remove_unconditional(const RawAddress& bd_addr);
+
+extern void reset(bool after_reset);
+
+extern void on_app_deregistered(tGATT_IF gatt_if);
+
 extern bool gatt_is_bg_dev_for_app(tGATT_BG_CONN_DEV* p_dev, tGATT_IF gatt_if);
-extern uint8_t gatt_clear_bg_dev_for_addr(const RawAddress& bd_addr);
 extern tGATT_BG_CONN_DEV* gatt_find_bg_dev(const RawAddress& remote_bda);
-extern void gatt_deregister_bgdev_list(tGATT_IF gatt_if);
+}  // namespace connection_manager
+}  // namespace gatt
