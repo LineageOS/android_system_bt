@@ -1031,7 +1031,7 @@ void GATT_Deregister(tGATT_IF gatt_if) {
     }
   }
 
-  gatt_deregister_bgdev_list(gatt_if);
+  gatt::connection_manager::on_app_deregistered(gatt_if);
 
   memset(p_reg, 0, sizeof(tGATT_REG));
 }
@@ -1176,7 +1176,8 @@ bool GATT_CancelConnect(tGATT_IF gatt_if, const RawAddress& bd_addr,
 
   if (gatt_if) return gatt_auto_connect_dev_remove(p_reg->gatt_if, bd_addr);
 
-  if (!gatt_clear_bg_dev_for_addr(bd_addr)) {
+  if (!gatt::connection_manager::background_connect_remove_unconditional(
+          bd_addr)) {
     LOG(ERROR)
         << __func__
         << ": no app associated with the bg device for unconditional removal";

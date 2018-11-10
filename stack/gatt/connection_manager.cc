@@ -20,8 +20,17 @@
 
 #include <base/logging.h>
 #include <list>
+#include <unordered_set>
 
 #include "stack/btm/btm_ble_bgconn.h"
+
+struct tGATT_BG_CONN_DEV {
+  std::unordered_set<tGATT_IF> gatt_if;
+  RawAddress remote_bda;
+};
+
+namespace gatt {
+namespace connection_manager {
 
 namespace {
 std::list<tGATT_BG_CONN_DEV> bgconn_dev;
@@ -58,7 +67,7 @@ tGATT_BG_CONN_DEV* gatt_find_bg_dev(const RawAddress& remote_bda) {
 
 /** Add a device from the background connection list.  Returns true if device
  * added to the list, or already in list, false otherwise */
-bool gatt_add_bg_dev_list(tGATT_IF gatt_if, const RawAddress& bd_addr) {
+bool background_connect_add(tGATT_IF gatt_if, const RawAddress& bd_addr) {
   tGATT_BG_CONN_DEV* p_dev = gatt_find_bg_dev(bd_addr);
   if (p_dev) {
     // device already in the whitelist, just add interested app to the list
@@ -81,7 +90,7 @@ bool gatt_add_bg_dev_list(tGATT_IF gatt_if, const RawAddress& bd_addr) {
 
 /** Removes all registrations for background connection for given device.
  * Returns true if anything was removed, false otherwise */
-uint8_t gatt_clear_bg_dev_for_addr(const RawAddress& bd_addr) {
+bool background_connect_remove_unconditional(const RawAddress& bd_addr) {
   auto dev_it = gatt_find_bg_dev_it(bd_addr);
   if (dev_it == bgconn_dev.end()) return false;
 
@@ -93,7 +102,7 @@ uint8_t gatt_clear_bg_dev_for_addr(const RawAddress& bd_addr) {
 /** Remove device from the background connection device list or listening to
  * advertising list.  Returns true if device was on the list and was succesfully
  * removed */
-bool gatt_remove_bg_dev_from_list(tGATT_IF gatt_if, const RawAddress& bd_addr) {
+bool background_connect_remove(tGATT_IF gatt_if, const RawAddress& bd_addr) {
   auto dev_it = gatt_find_bg_dev_it(bd_addr);
   if (dev_it == bgconn_dev.end()) return false;
 
@@ -108,7 +117,7 @@ bool gatt_remove_bg_dev_from_list(tGATT_IF gatt_if, const RawAddress& bd_addr) {
 }
 
 /** deregister all related back ground connetion device. */
-void gatt_deregister_bgdev_list(tGATT_IF gatt_if) {
+void on_app_deregistered(tGATT_IF gatt_if) {
   auto it = bgconn_dev.begin();
   auto end = bgconn_dev.end();
   /* update the BG conn device list */
@@ -126,7 +135,10 @@ void gatt_deregister_bgdev_list(tGATT_IF gatt_if) {
 
 /** Reset bg device list. If called after controller reset, set |after_reset| to
  * true, as there is no need to wipe controller white list in this case. */
-void gatt_reset_bgdev_list(bool after_reset) {
+void reset(bool after_reset) {
   bgconn_dev.clear();
   if (!after_reset) BTM_WhiteListClear();
 }
+
+}  // namespace connection_manager
+}  // namespace gatt

@@ -102,7 +102,7 @@ void gatt_init(void) {
   VLOG(1) << __func__;
 
   gatt_cb = tGATT_CB();
-  gatt_reset_bgdev_list(true);
+  gatt::connection_manager::reset(true);
   memset(&fixed_reg, 0, sizeof(tL2CAP_FIXED_CHNL_REG));
 
   gatt_cb.def_mtu_size = GATT_DEF_BLE_MTU_SIZE;
@@ -801,13 +801,15 @@ static void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
   tGATT_REG* p_reg;
   uint16_t conn_id;
 
-  tGATT_BG_CONN_DEV* p_bg_dev = gatt_find_bg_dev(p_tcb->peer_bda);
+  tGATT_BG_CONN_DEV* p_bg_dev =
+      gatt::connection_manager::gatt_find_bg_dev(p_tcb->peer_bda);
 
   /* notifying all applications for the connection up event */
   for (i = 0, p_reg = gatt_cb.cl_rcb; i < GATT_MAX_APPS; i++, p_reg++) {
     if (!p_reg->in_use) continue;
 
-    if (p_bg_dev && gatt_is_bg_dev_for_app(p_bg_dev, p_reg->gatt_if))
+    if (p_bg_dev && gatt::connection_manager::gatt_is_bg_dev_for_app(
+                        p_bg_dev, p_reg->gatt_if))
       gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, true);
 
     if (p_reg->app_cb.p_conn_cb) {
