@@ -30,13 +30,13 @@
 #include "stdio.h"
 
 #include "btm_int.h"
+#include "connection_manager.h"
 #include "gatt_api.h"
 #include "gatt_int.h"
-#include "gatt_utils_white_list.h"
 #include "gattdefs.h"
 #include "l2cdefs.h"
 #include "sdp_api.h"
-#include "stack/gatt/gatt_utils_white_list.h"
+#include "stack/gatt/connection_manager.h"
 
 using base::StringPrintf;
 using bluetooth::Uuid;
@@ -1308,7 +1308,7 @@ bool gatt_auto_connect_dev_add(tGATT_IF gatt_if, const RawAddress& bd_addr) {
   VLOG(1) << __func__;
 
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
-  bool ret = gatt_add_bg_dev_list(gatt_if, bd_addr);
+  bool ret = gatt::connection_manager::background_connect_add(gatt_if, bd_addr);
   if (ret && p_tcb != NULL) {
     /* if a connected device, update the link holding number */
     gatt_update_app_use_link_flag(gatt_if, p_tcb, true, true);
@@ -1320,5 +1320,5 @@ bool gatt_auto_connect_dev_add(tGATT_IF gatt_if, const RawAddress& bd_addr) {
 bool gatt_auto_connect_dev_remove(tGATT_IF gatt_if, const RawAddress& bd_addr) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
   if (p_tcb) gatt_update_app_use_link_flag(gatt_if, p_tcb, false, false);
-  return gatt_remove_bg_dev_from_list(gatt_if, bd_addr);
+  return gatt::connection_manager::background_connect_remove(gatt_if, bd_addr);
 }

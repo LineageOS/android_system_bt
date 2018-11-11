@@ -40,7 +40,7 @@
 #include "hcimsgs.h"
 #include "l2c_int.h"
 #include "osi/include/osi.h"
-#include "stack/gatt/gatt_utils_white_list.h"
+#include "stack/gatt/connection_manager.h"
 
 #include "gatt_int.h"
 
@@ -190,7 +190,7 @@ static void reset_complete(void* result) {
 
   btm_cb.ble_ctr_cb.conn_state = BLE_CONN_IDLE;
   btm_cb.ble_ctr_cb.bg_conn_type = BTM_BLE_CONN_NONE;
-  gatt_reset_bgdev_list(true);
+  gatt::connection_manager::reset(true);
 
   btm_pm_reset();
 

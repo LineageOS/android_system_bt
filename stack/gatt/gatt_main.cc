@@ -29,9 +29,9 @@
 #include "btif_storage.h"
 #include "btm_ble_int.h"
 #include "btm_int.h"
+#include "connection_manager.h"
 #include "device/include/interop.h"
 #include "gatt_int.h"
-#include "gatt_utils_white_list.h"
 #include "l2c_api.h"
 #include "osi/include/osi.h"
 
@@ -102,7 +102,7 @@ void gatt_init(void) {
   VLOG(1) << __func__;
 
   gatt_cb = tGATT_CB();
-  gatt_reset_bgdev_list(true);
+  gatt::connection_manager::reset(true);
   memset(&fixed_reg, 0, sizeof(tL2CAP_FIXED_CHNL_REG));
 
   gatt_cb.def_mtu_size = GATT_DEF_BLE_MTU_SIZE;
@@ -224,33 +224,31 @@ bool gatt_connect(const RawAddress& rem_bda, tGATT_TCB* p_tcb,
  *
  ******************************************************************************/
 bool gatt_disconnect(tGATT_TCB* p_tcb) {
-  bool ret = false;
-  tGATT_CH_STATE ch_state;
-
   VLOG(1) << __func__;
 
-  if (p_tcb != NULL) {
-    ret = true;
-    ch_state = gatt_get_ch_state(p_tcb);
-    if (ch_state != GATT_CH_CLOSING) {
-      if (p_tcb->att_lcid == L2CAP_ATT_CID) {
-        if (ch_state == GATT_CH_OPEN) {
-          /* only LCB exist between remote device and local */
-          ret = L2CA_RemoveFixedChnl(L2CAP_ATT_CID, p_tcb->peer_bda);
-        } else {
-          ret = L2CA_CancelBleConnectReq(p_tcb->peer_bda);
-          if (!ret) gatt_set_ch_state(p_tcb, GATT_CH_CLOSE);
-        }
-        gatt_set_ch_state(p_tcb, GATT_CH_CLOSING);
-      } else {
-        if ((ch_state == GATT_CH_OPEN) || (ch_state == GATT_CH_CFG))
-          ret = L2CA_DisconnectReq(p_tcb->att_lcid);
-        else
-          VLOG(1) << __func__ << " gatt_disconnect channel not opened";
-      }
+  if (!p_tcb) return false;
+
+  tGATT_CH_STATE ch_state = gatt_get_ch_state(p_tcb);
+  if (ch_state == GATT_CH_CLOSING) {
+    VLOG(1) << __func__ << " already in closing state";
+    return true;
+  }
+
+  bool ret = true;
+  if (p_tcb->att_lcid == L2CAP_ATT_CID) {
+    if (ch_state == GATT_CH_OPEN) {
+      /* only LCB exist between remote device and local */
+      ret = L2CA_RemoveFixedChnl(L2CAP_ATT_CID, p_tcb->peer_bda);
     } else {
-      VLOG(1) << __func__ << " already in closing state";
+      ret = L2CA_CancelBleConnectReq(p_tcb->peer_bda);
+      if (!ret) gatt_set_ch_state(p_tcb, GATT_CH_CLOSE);
     }
+    gatt_set_ch_state(p_tcb, GATT_CH_CLOSING);
+  } else {
+    if ((ch_state == GATT_CH_OPEN) || (ch_state == GATT_CH_CFG))
+      ret = L2CA_DisconnectReq(p_tcb->att_lcid);
+    else
+      VLOG(1) << __func__ << " gatt_disconnect channel not opened";
   }
 
   return ret;
@@ -343,26 +341,16 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
   }
 }
 
-/*******************************************************************************
- *
- * Function         gatt_act_connect
- *
- * Description      GATT connection initiation.
- *
- * Returns          void.
- *
- ******************************************************************************/
+/** GATT connection initiation */
 bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr,
                       tBT_TRANSPORT transport, bool opportunistic,
                       int8_t initiating_phys) {
   bool ret = false;
-  tGATT_TCB* p_tcb;
-  uint8_t st;
 
-  p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
   if (p_tcb != NULL) {
     ret = true;
-    st = gatt_get_ch_state(p_tcb);
+    uint8_t st = gatt_get_ch_state(p_tcb);
 
     /* before link down, another app try to open a GATT connection */
     if (st == GATT_CH_OPEN && p_tcb->app_hold_link.empty() &&
@@ -375,16 +363,16 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr,
     }
   } else {
     p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, transport);
-    if (p_tcb != NULL) {
+    if (!p_tcb) {
+      ret = 0;
+      LOG(ERROR) << "Max TCB for gatt_if [ " << +p_reg->gatt_if << "] reached.";
+    } else {
       if (!gatt_connect(bd_addr, p_tcb, transport, initiating_phys)) {
         LOG(ERROR) << "gatt_connect failed";
         fixed_queue_free(p_tcb->pending_ind_q, NULL);
         *p_tcb = tGATT_TCB();
       } else
         ret = true;
-    } else {
-      ret = 0;
-      LOG(ERROR) << "Max TCB for gatt_if [ " << +p_reg->gatt_if << "] reached.";
     }
   }
 
@@ -399,15 +387,9 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr,
   return ret;
 }
 
-/*******************************************************************************
- *
- * Function         gatt_le_connect_cback
- *
- * Description      This callback function is called by L2CAP to indicate that
- *                  the ATT fixed channel for LE is
- *                      connected (conn = true)/disconnected (conn = false).
- *
- ******************************************************************************/
+/** This callback function is called by L2CAP to indicate that the ATT fixed
+ * channel for LE is connected (conn = true)/disconnected (conn = false).
+ */
 static void gatt_le_connect_cback(uint16_t chan, const RawAddress& bd_addr,
                                   bool connected, uint16_t reason,
                                   tBT_TRANSPORT transport) {
@@ -429,54 +411,47 @@ static void gatt_le_connect_cback(uint16_t chan, const RawAddress& bd_addr,
       gatt_add_a_bonded_dev_for_srv_chg(bd_addr);
   }
 
-  if (connected) {
-    /* do we have a channel initiating a connection? */
-    if (p_tcb) {
-      /* we are initiating connection */
-      if (gatt_get_ch_state(p_tcb) == GATT_CH_CONN) {
-        /* send callback */
-        gatt_set_ch_state(p_tcb, GATT_CH_OPEN);
-        p_tcb->payload_size = GATT_DEF_BLE_MTU_SIZE;
-
-        gatt_send_conn_cback(p_tcb);
-      }
-      if (check_srv_chg) gatt_chk_srv_chg(p_srv_chg_clt);
-    }
-    /* this is incoming connection or background connection callback */
-
-    else {
-      p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, BT_TRANSPORT_LE);
-      if (p_tcb != NULL) {
-        p_tcb->att_lcid = L2CAP_ATT_CID;
-
-        gatt_set_ch_state(p_tcb, GATT_CH_OPEN);
-
-        p_tcb->payload_size = GATT_DEF_BLE_MTU_SIZE;
-
-        gatt_send_conn_cback(p_tcb);
-        if (check_srv_chg) {
-          gatt_chk_srv_chg(p_srv_chg_clt);
-        }
-      } else {
-        LOG(ERROR) << "CCB max out, no rsources";
-      }
-    }
-  } else {
+  if (!connected) {
     gatt_cleanup_upon_disc(bd_addr, reason, transport);
     VLOG(1) << "ATT disconnected";
+    return;
+  }
+
+  /* do we have a channel initiating a connection? */
+  if (p_tcb) {
+    /* we are initiating connection */
+    if (gatt_get_ch_state(p_tcb) == GATT_CH_CONN) {
+      /* send callback */
+      gatt_set_ch_state(p_tcb, GATT_CH_OPEN);
+      p_tcb->payload_size = GATT_DEF_BLE_MTU_SIZE;
+
+      gatt_send_conn_cback(p_tcb);
+    }
+    if (check_srv_chg) gatt_chk_srv_chg(p_srv_chg_clt);
+  }
+  /* this is incoming connection or background connection callback */
+
+  else {
+    p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, BT_TRANSPORT_LE);
+    if (!p_tcb) {
+      LOG(ERROR) << "CCB max out, no rsources";
+      return;
+    }
+
+    p_tcb->att_lcid = L2CAP_ATT_CID;
+
+    gatt_set_ch_state(p_tcb, GATT_CH_OPEN);
+
+    p_tcb->payload_size = GATT_DEF_BLE_MTU_SIZE;
+
+    gatt_send_conn_cback(p_tcb);
+    if (check_srv_chg) {
+      gatt_chk_srv_chg(p_srv_chg_clt);
+    }
   }
 }
 
-/*******************************************************************************
- *
- * Function         gatt_channel_congestion
- *
- * Description      This function is called to process the congestion callback
- *                  from lcb
- *
- * Returns          void
- *
- ******************************************************************************/
+/** This function is called to process the congestion callback from lcb */
 static void gatt_channel_congestion(tGATT_TCB* p_tcb, bool congested) {
   uint8_t i = 0;
   tGATT_REG* p_reg = NULL;
@@ -507,7 +482,7 @@ void gatt_notify_phy_updated(uint8_t status, uint16_t handle, uint8_t tx_phy,
 
   tGATT_TCB* p_tcb =
       gatt_find_tcb_by_addr(p_dev_rec->ble.pseudo_addr, BT_TRANSPORT_LE);
-  if (p_tcb == NULL) return;
+  if (!p_tcb) return;
 
   for (int i = 0; i < GATT_MAX_APPS; i++) {
     tGATT_REG* p_reg = &gatt_cb.cl_rcb[i];
@@ -523,13 +498,11 @@ void gatt_notify_conn_update(uint16_t handle, uint16_t interval,
                              uint16_t latency, uint16_t timeout,
                              uint8_t status) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
-  if (!p_dev_rec) {
-    return;
-  }
+  if (!p_dev_rec) return;
 
   tGATT_TCB* p_tcb =
       gatt_find_tcb_by_addr(p_dev_rec->ble.pseudo_addr, BT_TRANSPORT_LE);
-  if (p_tcb == NULL) return;
+  if (!p_tcb) return;
 
   for (int i = 0; i < GATT_MAX_APPS; i++) {
     tGATT_REG* p_reg = &gatt_cb.cl_rcb[i];
@@ -541,23 +514,14 @@ void gatt_notify_conn_update(uint16_t handle, uint16_t interval,
   }
 }
 
-/*******************************************************************************
- *
- * Function         gatt_le_cong_cback
- *
- * Description      This function is called when GATT fixed channel is congested
- *                  or uncongested.
- *
- * Returns          void
- *
- ******************************************************************************/
+/** This function is called when GATT fixed channel is congested or uncongested
+ */
 static void gatt_le_cong_cback(const RawAddress& remote_bda, bool congested) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(remote_bda, BT_TRANSPORT_LE);
+  if (!p_tcb) return;
 
   /* if uncongested, check to see if there is any more pending data */
-  if (p_tcb != NULL) {
     gatt_channel_congestion(p_tcb, congested);
-  }
 }
 
 /*******************************************************************************
@@ -578,10 +542,10 @@ static void gatt_le_cong_cback(const RawAddress& remote_bda, bool congested) {
  ******************************************************************************/
 static void gatt_le_data_ind(uint16_t chan, const RawAddress& bd_addr,
                              BT_HDR* p_buf) {
-  tGATT_TCB* p_tcb;
 
   /* Find CCB based on bd addr */
-  if ((p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE)) != NULL) {
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
+  if (p_tcb) {
     if (gatt_get_ch_state(p_tcb) < GATT_CH_OPEN) {
       LOG(WARNING) << "ATT - Ignored L2CAP data while in state: "
                    << +gatt_get_ch_state(p_tcb);
@@ -606,13 +570,11 @@ static void gatt_le_data_ind(uint16_t chan, const RawAddress& bd_addr,
 static void gatt_l2cif_connect_ind_cback(const RawAddress& bd_addr,
                                          uint16_t lcid,
                                          UNUSED_ATTR uint16_t psm, uint8_t id) {
-  /* do we already have a control channel for this peer? */
   uint8_t result = L2CAP_CONN_OK;
-  tL2CAP_CFG_INFO cfg;
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_BR_EDR);
+  LOG(INFO) << "Connection indication cid = " << +lcid;
 
-  LOG(ERROR) << "Connection indication cid = " << +lcid;
   /* new connection ? */
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_BR_EDR);
   if (p_tcb == NULL) {
     /* allocate tcb */
     p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, BT_TRANSPORT_BR_EDR);
@@ -631,253 +593,192 @@ static void gatt_l2cif_connect_ind_cback(const RawAddress& bd_addr,
   L2CA_ConnectRsp(bd_addr, id, lcid, result, 0);
 
   /* if result ok, proceed with connection */
-  if (result == L2CAP_CONN_OK) {
-    /* transition to configuration state */
-    gatt_set_ch_state(p_tcb, GATT_CH_CFG);
+  if (result != L2CAP_CONN_OK) return;
 
-    /* Send L2CAP config req */
-    memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
-    cfg.mtu_present = true;
-    cfg.mtu = GATT_MAX_MTU_SIZE;
+  /* transition to configuration state */
+  gatt_set_ch_state(p_tcb, GATT_CH_CFG);
 
-    L2CA_ConfigReq(lcid, &cfg);
-  }
+  /* Send L2CAP config req */
+  tL2CAP_CFG_INFO cfg;
+  memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
+  cfg.mtu_present = true;
+  cfg.mtu = GATT_MAX_MTU_SIZE;
+
+  L2CA_ConfigReq(lcid, &cfg);
 }
 
-/*******************************************************************************
- *
- * Function         gatt_l2c_connect_cfm_cback
- *
- * Description      This is the L2CAP connect confirm callback function.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
+/** This is the L2CAP connect confirm callback function */
 static void gatt_l2cif_connect_cfm_cback(uint16_t lcid, uint16_t result) {
   tGATT_TCB* p_tcb;
   tL2CAP_CFG_INFO cfg;
 
   /* look up clcb for this channel */
   p_tcb = gatt_find_tcb_by_cid(lcid);
-  if (p_tcb != NULL) {
-    VLOG(1) << __func__
-            << StringPrintf(" result: %d ch_state: %d, lcid:0x%x", result,
-                            gatt_get_ch_state(p_tcb), p_tcb->att_lcid);
+  if (!p_tcb) return;
 
-    /* if in correct state */
-    if (gatt_get_ch_state(p_tcb) == GATT_CH_CONN) {
-      /* if result successful */
-      if (result == L2CAP_CONN_OK) {
-        /* set channel state */
-        gatt_set_ch_state(p_tcb, GATT_CH_CFG);
+  VLOG(1) << __func__
+          << StringPrintf(" result: %d ch_state: %d, lcid:0x%x", result,
+                          gatt_get_ch_state(p_tcb), p_tcb->att_lcid);
 
-        /* Send L2CAP config req */
-        memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
-        cfg.mtu_present = true;
-        cfg.mtu = GATT_MAX_MTU_SIZE;
-        L2CA_ConfigReq(lcid, &cfg);
-      }
-      /* else initiating connection failure */
-      else {
-        gatt_cleanup_upon_disc(p_tcb->peer_bda, result, GATT_TRANSPORT_BR_EDR);
-      }
-    } else /* wrong state, disconnect it */
-    {
-      if (result == L2CAP_CONN_OK) {
-        /* just in case the peer also accepts our connection - Send L2CAP
-         * disconnect req */
-        L2CA_DisconnectReq(lcid);
-      }
+  /* if in correct state */
+  if (gatt_get_ch_state(p_tcb) == GATT_CH_CONN) {
+    /* if result successful */
+    if (result == L2CAP_CONN_OK) {
+      /* set channel state */
+      gatt_set_ch_state(p_tcb, GATT_CH_CFG);
+
+      /* Send L2CAP config req */
+      memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
+      cfg.mtu_present = true;
+      cfg.mtu = GATT_MAX_MTU_SIZE;
+      L2CA_ConfigReq(lcid, &cfg);
+    }
+    /* else initiating connection failure */
+    else {
+      gatt_cleanup_upon_disc(p_tcb->peer_bda, result, GATT_TRANSPORT_BR_EDR);
+    }
+  } else /* wrong state, disconnect it */
+  {
+    if (result == L2CAP_CONN_OK) {
+      /* just in case the peer also accepts our connection - Send L2CAP
+       * disconnect req */
+      L2CA_DisconnectReq(lcid);
     }
   }
 }
 
-/*******************************************************************************
- *
- * Function         gatt_l2cif_config_cfm_cback
- *
- * Description      This is the L2CAP config confirm callback function.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
+/** This is the L2CAP config confirm callback function */
 void gatt_l2cif_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
-  tGATT_TCB* p_tcb;
-  tGATTS_SRV_CHG* p_srv_chg_clt = NULL;
 
   /* look up clcb for this channel */
-  p_tcb = gatt_find_tcb_by_cid(lcid);
-  if (p_tcb != NULL) {
-    /* if in correct state */
-    if (gatt_get_ch_state(p_tcb) == GATT_CH_CFG) {
-      /* if result successful */
-      if (p_cfg->result == L2CAP_CFG_OK) {
-        /* update flags */
-        p_tcb->ch_flags |= GATT_L2C_CFG_CFM_DONE;
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
+  if (!p_tcb) return;
 
-        /* if configuration complete */
-        if (p_tcb->ch_flags & GATT_L2C_CFG_IND_DONE) {
-          gatt_set_ch_state(p_tcb, GATT_CH_OPEN);
+  /* if in incorrect state */
+  if (gatt_get_ch_state(p_tcb) != GATT_CH_CFG) return;
 
-          p_srv_chg_clt = gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda);
-          if (p_srv_chg_clt != NULL) {
-            gatt_chk_srv_chg(p_srv_chg_clt);
-          } else {
-            if (btm_sec_is_a_bonded_dev(p_tcb->peer_bda))
-              gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
-          }
-
-          /* send callback */
-          gatt_send_conn_cback(p_tcb);
-        }
-      }
-      /* else failure */
-      else {
-        /* Send L2CAP disconnect req */
-        L2CA_DisconnectReq(lcid);
-      }
-    }
+  /* if result not successful */
+  if (p_cfg->result != L2CAP_CFG_OK) {
+    /* Send L2CAP disconnect req */
+    L2CA_DisconnectReq(lcid);
+    return;
   }
+
+  /* update flags */
+  p_tcb->ch_flags |= GATT_L2C_CFG_CFM_DONE;
+
+  /* if configuration not complete */
+  if (!(p_tcb->ch_flags & GATT_L2C_CFG_IND_DONE)) return;
+
+  gatt_set_ch_state(p_tcb, GATT_CH_OPEN);
+
+  tGATTS_SRV_CHG* p_srv_chg_clt =
+      gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda);
+  if (p_srv_chg_clt != NULL) {
+    gatt_chk_srv_chg(p_srv_chg_clt);
+  } else {
+    if (btm_sec_is_a_bonded_dev(p_tcb->peer_bda))
+      gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
+  }
+
+  /* send callback */
+  gatt_send_conn_cback(p_tcb);
 }
 
-/*******************************************************************************
- *
- * Function         gatt_l2cif_config_ind_cback
- *
- * Description      This is the L2CAP config indication callback function.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
+/** This is the L2CAP config indication callback function */
 void gatt_l2cif_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
-  tGATT_TCB* p_tcb;
   tGATTS_SRV_CHG* p_srv_chg_clt = NULL;
   /* look up clcb for this channel */
-  p_tcb = gatt_find_tcb_by_cid(lcid);
-  if (p_tcb != NULL) {
-    /* GATT uses the smaller of our MTU and peer's MTU  */
-    if (p_cfg->mtu_present &&
-        (p_cfg->mtu >= GATT_MIN_BR_MTU_SIZE && p_cfg->mtu < L2CAP_DEFAULT_MTU))
-      p_tcb->payload_size = p_cfg->mtu;
-    else
-      p_tcb->payload_size = L2CAP_DEFAULT_MTU;
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
+  if (!p_tcb) return;
 
-    /* send L2CAP configure response */
-    memset(p_cfg, 0, sizeof(tL2CAP_CFG_INFO));
-    p_cfg->result = L2CAP_CFG_OK;
-    L2CA_ConfigRsp(lcid, p_cfg);
+  /* GATT uses the smaller of our MTU and peer's MTU  */
+  if (p_cfg->mtu_present &&
+      (p_cfg->mtu >= GATT_MIN_BR_MTU_SIZE && p_cfg->mtu < L2CAP_DEFAULT_MTU))
+    p_tcb->payload_size = p_cfg->mtu;
+  else
+    p_tcb->payload_size = L2CAP_DEFAULT_MTU;
 
-    /* if first config ind */
-    if ((p_tcb->ch_flags & GATT_L2C_CFG_IND_DONE) == 0) {
-      /* update flags */
-      p_tcb->ch_flags |= GATT_L2C_CFG_IND_DONE;
+  /* send L2CAP configure response */
+  memset(p_cfg, 0, sizeof(tL2CAP_CFG_INFO));
+  p_cfg->result = L2CAP_CFG_OK;
+  L2CA_ConfigRsp(lcid, p_cfg);
 
-      /* if configuration complete */
-      if (p_tcb->ch_flags & GATT_L2C_CFG_CFM_DONE) {
-        gatt_set_ch_state(p_tcb, GATT_CH_OPEN);
-        p_srv_chg_clt = gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda);
-        if (p_srv_chg_clt != NULL) {
-          gatt_chk_srv_chg(p_srv_chg_clt);
-        } else {
-          if (btm_sec_is_a_bonded_dev(p_tcb->peer_bda))
-            gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
-        }
+  /* if not first config ind */
+  if ((p_tcb->ch_flags & GATT_L2C_CFG_IND_DONE)) return;
 
-        /* send callback */
-        gatt_send_conn_cback(p_tcb);
-      }
-    }
+  /* update flags */
+  p_tcb->ch_flags |= GATT_L2C_CFG_IND_DONE;
+
+  /* if configuration not complete */
+  if ((p_tcb->ch_flags & GATT_L2C_CFG_CFM_DONE) == 0) return;
+
+  gatt_set_ch_state(p_tcb, GATT_CH_OPEN);
+  p_srv_chg_clt = gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda);
+  if (p_srv_chg_clt != NULL) {
+    gatt_chk_srv_chg(p_srv_chg_clt);
+  } else {
+    if (btm_sec_is_a_bonded_dev(p_tcb->peer_bda))
+      gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
   }
+
+  /* send callback */
+  gatt_send_conn_cback(p_tcb);
 }
 
-/*******************************************************************************
- *
- * Function         gatt_l2cif_disconnect_ind_cback
- *
- * Description      This is the L2CAP disconnect indication callback function.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
+/** This is the L2CAP disconnect indication callback function */
 void gatt_l2cif_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
-  tGATT_TCB* p_tcb;
-  uint16_t reason;
 
   /* look up clcb for this channel */
-  p_tcb = gatt_find_tcb_by_cid(lcid);
-  if (p_tcb != NULL) {
-    if (ack_needed) {
-      /* send L2CAP disconnect response */
-      L2CA_DisconnectRsp(lcid);
-    }
-    if (gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda) == NULL) {
-      if (btm_sec_is_a_bonded_dev(p_tcb->peer_bda))
-        gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
-    }
-    /* if ACL link is still up, no reason is logged, l2cap is disconnect from
-     * peer */
-    reason = L2CA_GetDisconnectReason(p_tcb->peer_bda, p_tcb->transport);
-    if (reason == 0) reason = GATT_CONN_TERMINATE_PEER_USER;
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
+  if (!p_tcb) return;
 
-    /* send disconnect callback */
-    gatt_cleanup_upon_disc(p_tcb->peer_bda, reason, GATT_TRANSPORT_BR_EDR);
+  if (ack_needed) {
+    /* send L2CAP disconnect response */
+    L2CA_DisconnectRsp(lcid);
   }
+
+  if (gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda) == NULL) {
+    if (btm_sec_is_a_bonded_dev(p_tcb->peer_bda))
+      gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
+  }
+  /* if ACL link is still up, no reason is logged, l2cap is disconnect from
+   * peer */
+  uint16_t reason = L2CA_GetDisconnectReason(p_tcb->peer_bda, p_tcb->transport);
+  if (reason == 0) reason = GATT_CONN_TERMINATE_PEER_USER;
+
+  /* send disconnect callback */
+  gatt_cleanup_upon_disc(p_tcb->peer_bda, reason, GATT_TRANSPORT_BR_EDR);
 }
 
-/*******************************************************************************
- *
- * Function         gatt_l2cif_disconnect_cfm_cback
- *
- * Description      This is the L2CAP disconnect confirm callback function.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
+/** This is the L2CAP disconnect confirm callback function */
 static void gatt_l2cif_disconnect_cfm_cback(uint16_t lcid,
                                             UNUSED_ATTR uint16_t result) {
-  tGATT_TCB* p_tcb;
-  uint16_t reason;
 
   /* look up clcb for this channel */
-  p_tcb = gatt_find_tcb_by_cid(lcid);
-  if (p_tcb != NULL) {
-    /* If the device is not in the service changed client list, add it... */
-    if (gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda) == NULL) {
-      if (btm_sec_is_a_bonded_dev(p_tcb->peer_bda))
-        gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
-    }
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
+  if (!p_tcb) return;
 
-    /* send disconnect callback */
-    /* if ACL link is still up, no reason is logged, l2cap is disconnect from
-     * peer */
-    reason = L2CA_GetDisconnectReason(p_tcb->peer_bda, p_tcb->transport);
-    if (reason == 0) reason = GATT_CONN_TERMINATE_LOCAL_HOST;
-
-    gatt_cleanup_upon_disc(p_tcb->peer_bda, reason, GATT_TRANSPORT_BR_EDR);
+  /* If the device is not in the service changed client list, add it... */
+  if (gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda) == NULL) {
+    if (btm_sec_is_a_bonded_dev(p_tcb->peer_bda))
+      gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
   }
+
+  /* send disconnect callback */
+  /* if ACL link is still up, no reason is logged, l2cap is disconnect from
+   * peer */
+  uint16_t reason = L2CA_GetDisconnectReason(p_tcb->peer_bda, p_tcb->transport);
+  if (reason == 0) reason = GATT_CONN_TERMINATE_LOCAL_HOST;
+
+  gatt_cleanup_upon_disc(p_tcb->peer_bda, reason, GATT_TRANSPORT_BR_EDR);
 }
 
-/*******************************************************************************
- *
- * Function         gatt_l2cif_data_ind_cback
- *
- * Description      This is the L2CAP data indication callback function.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
+/** This is the L2CAP data indication callback function */
 static void gatt_l2cif_data_ind_cback(uint16_t lcid, BT_HDR* p_buf) {
-  tGATT_TCB* p_tcb;
-
   /* look up clcb for this channel */
-  if ((p_tcb = gatt_find_tcb_by_cid(lcid)) != NULL &&
-      gatt_get_ch_state(p_tcb) == GATT_CH_OPEN) {
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
+  if (p_tcb && gatt_get_ch_state(p_tcb) == GATT_CH_OPEN) {
     /* process the data */
     gatt_data_process(*p_tcb, p_buf);
   }
@@ -885,15 +786,7 @@ static void gatt_l2cif_data_ind_cback(uint16_t lcid, BT_HDR* p_buf) {
   osi_free(p_buf);
 }
 
-/*******************************************************************************
- *
- * Function         gatt_l2cif_congest_cback
- *
- * Description      L2CAP congestion callback
- *
- * Returns          void
- *
- ******************************************************************************/
+/** L2CAP congestion callback */
 static void gatt_l2cif_congest_cback(uint16_t lcid, bool congested) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
 
@@ -902,34 +795,27 @@ static void gatt_l2cif_congest_cback(uint16_t lcid, bool congested) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         gatt_send_conn_cback
- *
- * Description      Callback used to notify layer above about a connection.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
+/** Callback used to notify layer above about a connection */
 static void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
   uint8_t i;
   tGATT_REG* p_reg;
   uint16_t conn_id;
 
-  tGATT_BG_CONN_DEV* p_bg_dev = gatt_find_bg_dev(p_tcb->peer_bda);
+  tGATT_BG_CONN_DEV* p_bg_dev =
+      gatt::connection_manager::gatt_find_bg_dev(p_tcb->peer_bda);
 
   /* notifying all applications for the connection up event */
   for (i = 0, p_reg = gatt_cb.cl_rcb; i < GATT_MAX_APPS; i++, p_reg++) {
-    if (p_reg->in_use) {
-      if (p_bg_dev && gatt_is_bg_dev_for_app(p_bg_dev, p_reg->gatt_if))
-        gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, true);
+    if (!p_reg->in_use) continue;
 
-      if (p_reg->app_cb.p_conn_cb) {
-        conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, p_reg->gatt_if);
-        (*p_reg->app_cb.p_conn_cb)(p_reg->gatt_if, p_tcb->peer_bda, conn_id,
-                                   true, 0, p_tcb->transport);
-      }
+    if (p_bg_dev && gatt::connection_manager::gatt_is_bg_dev_for_app(
+                        p_bg_dev, p_reg->gatt_if))
+      gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, true);
+
+    if (p_reg->app_cb.p_conn_cb) {
+      conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, p_reg->gatt_if);
+      (*p_reg->app_cb.p_conn_cb)(p_reg->gatt_if, p_tcb->peer_bda, conn_id, true,
+                                 0, p_tcb->transport);
     }
   }
 
@@ -992,71 +878,45 @@ void gatt_data_process(tGATT_TCB& tcb, BT_HDR* p_buf) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         gatt_add_a_bonded_dev_for_srv_chg
- *
- * Description      Add a bonded dev to the service changed client list
- *
- * Returns          void
- *
- ******************************************************************************/
+/** Add a bonded dev to the service changed client list */
 void gatt_add_a_bonded_dev_for_srv_chg(const RawAddress& bda) {
   tGATTS_SRV_CHG_REQ req;
   tGATTS_SRV_CHG srv_chg_clt;
 
   srv_chg_clt.bda = bda;
   srv_chg_clt.srv_changed = false;
-  if (gatt_add_srv_chg_clt(&srv_chg_clt) != NULL) {
-    req.srv_chg.bda = bda;
-    req.srv_chg.srv_changed = false;
-    if (gatt_cb.cb_info.p_srv_chg_callback)
-      (*gatt_cb.cb_info.p_srv_chg_callback)(GATTS_SRV_CHG_CMD_ADD_CLIENT, &req,
-                                            NULL);
-  }
+  if (!gatt_add_srv_chg_clt(&srv_chg_clt)) return;
+
+  req.srv_chg.bda = bda;
+  req.srv_chg.srv_changed = false;
+  if (gatt_cb.cb_info.p_srv_chg_callback)
+    (*gatt_cb.cb_info.p_srv_chg_callback)(GATTS_SRV_CHG_CMD_ADD_CLIENT, &req,
+                                          NULL);
 }
 
-/*******************************************************************************
- *
- * Function         gatt_send_srv_chg_ind
- *
- * Description      This function is called to send a service chnaged indication
- *                  to the specified bd address
- *
- * Returns          void
- *
- ******************************************************************************/
+/** This function is called to send a service chnaged indication to the
+ * specified bd address */
 void gatt_send_srv_chg_ind(const RawAddress& peer_bda) {
+  VLOG(1) << __func__;
+
+  if (!gatt_cb.handle_of_h_r) return;
+
+  uint16_t conn_id = gatt_profile_find_conn_id_by_bd_addr(peer_bda);
+  if (conn_id == GATT_INVALID_CONN_ID) {
+    LOG(ERROR) << "Unable to find conn_id for " << peer_bda;
+    return;
+  }
+
   uint8_t handle_range[GATT_SIZE_OF_SRV_CHG_HNDL_RANGE];
   uint8_t* p = handle_range;
-  uint16_t conn_id;
-
-  VLOG(1) << "gatt_send_srv_chg_ind";
-
-  if (gatt_cb.handle_of_h_r) {
-    conn_id = gatt_profile_find_conn_id_by_bd_addr(peer_bda);
-    if (conn_id != GATT_INVALID_CONN_ID) {
-      UINT16_TO_STREAM(p, 1);
-      UINT16_TO_STREAM(p, 0xFFFF);
-      GATTS_HandleValueIndication(conn_id, gatt_cb.handle_of_h_r,
-                                  GATT_SIZE_OF_SRV_CHG_HNDL_RANGE,
-                                  handle_range);
-    } else {
-      LOG(ERROR) << "Unable to find conn_id for " << peer_bda;
-    }
-  }
+  UINT16_TO_STREAM(p, 1);
+  UINT16_TO_STREAM(p, 0xFFFF);
+  GATTS_HandleValueIndication(conn_id, gatt_cb.handle_of_h_r,
+                              GATT_SIZE_OF_SRV_CHG_HNDL_RANGE, handle_range);
 }
 
-/*******************************************************************************
- *
- * Function         gatt_chk_srv_chg
- *
- * Description      Check sending service chnaged Indication is required or not
- *                  if required then send the Indication
- *
- * Returns          void
- *
- ******************************************************************************/
+/** Check sending service chnaged Indication is required or not if required then
+ * send the Indication */
 void gatt_chk_srv_chg(tGATTS_SRV_CHG* p_srv_chg_clt) {
   VLOG(1) << __func__ << " srv_changed=" << +p_srv_chg_clt->srv_changed;
 
@@ -1065,130 +925,92 @@ void gatt_chk_srv_chg(tGATTS_SRV_CHG* p_srv_chg_clt) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         gatt_init_srv_chg
- *
- * Description      This function is used to initialize the service changed
- *                  attribute value
- *
- * Returns          void
- *
- ******************************************************************************/
+/** This function is used to initialize the service changed attribute value */
 void gatt_init_srv_chg(void) {
   tGATTS_SRV_CHG_REQ req;
   tGATTS_SRV_CHG_RSP rsp;
-  bool status;
-  uint8_t num_clients, i;
   tGATTS_SRV_CHG srv_chg_clt;
 
   VLOG(1) << __func__;
-  if (gatt_cb.cb_info.p_srv_chg_callback) {
-    status = (*gatt_cb.cb_info.p_srv_chg_callback)(
-        GATTS_SRV_CHG_CMD_READ_NUM_CLENTS, NULL, &rsp);
+  if (!gatt_cb.cb_info.p_srv_chg_callback) {
+    VLOG(1) << __func__ << " callback not registered yet";
+    return;
+  }
 
-    if (status && rsp.num_clients) {
-      VLOG(1) << "num_srv_chg_clt_clients=" << +rsp.num_clients;
-      num_clients = rsp.num_clients;
-      i = 1; /* use one based index */
-      while ((i <= num_clients) && status) {
-        req.client_read_index = i;
-        status = (*gatt_cb.cb_info.p_srv_chg_callback)(
-            GATTS_SRV_CHG_CMD_READ_CLENT, &req, &rsp);
-        if (status) {
-          memcpy(&srv_chg_clt, &rsp.srv_chg, sizeof(tGATTS_SRV_CHG));
-          if (gatt_add_srv_chg_clt(&srv_chg_clt) == NULL) {
-            LOG(ERROR) << "Unable to add a service change client";
-            status = false;
-          }
-        }
-        i++;
+  bool status = (*gatt_cb.cb_info.p_srv_chg_callback)(
+      GATTS_SRV_CHG_CMD_READ_NUM_CLENTS, NULL, &rsp);
+
+  if (!(status && rsp.num_clients)) return;
+
+  VLOG(1) << "num_srv_chg_clt_clients=" << +rsp.num_clients;
+  uint8_t num_clients = rsp.num_clients;
+  uint8_t i = 1; /* use one based index */
+  while ((i <= num_clients) && status) {
+    req.client_read_index = i;
+    status = (*gatt_cb.cb_info.p_srv_chg_callback)(GATTS_SRV_CHG_CMD_READ_CLENT,
+                                                   &req, &rsp);
+    if (status) {
+      memcpy(&srv_chg_clt, &rsp.srv_chg, sizeof(tGATTS_SRV_CHG));
+      if (gatt_add_srv_chg_clt(&srv_chg_clt) == NULL) {
+        LOG(ERROR) << "Unable to add a service change client";
+        status = false;
       }
     }
-  } else {
-    VLOG(1) << __func__ << " callback not registered yet";
+    i++;
   }
 }
 
-/*******************************************************************************
- *
- * Function         gatt_proc_srv_chg
- *
- * Description      This function is process the service changed request
- *
- * Returns          void
- *
- ******************************************************************************/
+/**This function is process the service changed request */
 void gatt_proc_srv_chg(void) {
-  uint8_t start_idx, found_idx;
   RawAddress bda;
-  tGATT_TCB* p_tcb;
   tBT_TRANSPORT transport;
+  uint8_t found_idx;
 
   VLOG(1) << __func__;
 
-  if (gatt_cb.cb_info.p_srv_chg_callback && gatt_cb.handle_of_h_r) {
-    gatt_set_srv_chg();
-    start_idx = 0;
-    while (
-        gatt_find_the_connected_bda(start_idx, bda, &found_idx, &transport)) {
-      p_tcb = &gatt_cb.tcb[found_idx];
+  if (!gatt_cb.cb_info.p_srv_chg_callback || !gatt_cb.handle_of_h_r) return;
 
-      bool send_indication = true;
+  gatt_set_srv_chg();
+  uint8_t start_idx = 0;
+  while (gatt_find_the_connected_bda(start_idx, bda, &found_idx, &transport)) {
+    tGATT_TCB* p_tcb = &gatt_cb.tcb[found_idx];
 
-      if (gatt_is_srv_chg_ind_pending(p_tcb)) {
-        send_indication = false;
-        VLOG(1) << "discard srv chg - already has one in the queue";
-      }
+    bool send_indication = true;
 
-      // Some LE GATT clients don't respond to service changed indications.
-      char remote_name[BTM_MAX_REM_BD_NAME_LEN] = "";
-      if (send_indication &&
-          btif_storage_get_stored_remote_name(bda, remote_name)) {
-        if (interop_match_name(INTEROP_GATTC_NO_SERVICE_CHANGED_IND,
-                               remote_name)) {
-          VLOG(1) << "discard srv chg - interop matched " << remote_name;
-          send_indication = false;
-        }
-      }
-
-      if (send_indication) gatt_send_srv_chg_ind(bda);
-
-      start_idx = ++found_idx;
+    if (gatt_is_srv_chg_ind_pending(p_tcb)) {
+      send_indication = false;
+      VLOG(1) << "discard srv chg - already has one in the queue";
     }
+
+    // Some LE GATT clients don't respond to service changed indications.
+    char remote_name[BTM_MAX_REM_BD_NAME_LEN] = "";
+    if (send_indication &&
+        btif_storage_get_stored_remote_name(bda, remote_name)) {
+      if (interop_match_name(INTEROP_GATTC_NO_SERVICE_CHANGED_IND,
+                             remote_name)) {
+        VLOG(1) << "discard srv chg - interop matched " << remote_name;
+        send_indication = false;
+      }
+    }
+
+    if (send_indication) gatt_send_srv_chg_ind(bda);
+
+    start_idx = ++found_idx;
   }
 }
 
-/*******************************************************************************
- *
- * Function         gatt_set_ch_state
- *
- * Description      This function set the ch_state in tcb
- *
- * Returns          none
- *
- ******************************************************************************/
+/** This function set the ch_state in tcb */
 void gatt_set_ch_state(tGATT_TCB* p_tcb, tGATT_CH_STATE ch_state) {
-  if (p_tcb) {
-    VLOG(1) << __func__ << ": old=" << +p_tcb->ch_state << " new=" << ch_state;
-    p_tcb->ch_state = ch_state;
-  }
+  if (!p_tcb) return;
+
+  VLOG(1) << __func__ << ": old=" << +p_tcb->ch_state << " new=" << ch_state;
+  p_tcb->ch_state = ch_state;
 }
 
-/*******************************************************************************
- *
- * Function         gatt_get_ch_state
- *
- * Description      This function get the ch_state in tcb
- *
- * Returns          none
- *
- ******************************************************************************/
+/** This function get the ch_state in tcb */
 tGATT_CH_STATE gatt_get_ch_state(tGATT_TCB* p_tcb) {
-  tGATT_CH_STATE ch_state = GATT_CH_CLOSE;
-  if (p_tcb) {
-    VLOG(1) << "gatt_get_ch_state: ch_state=" << +p_tcb->ch_state;
-    ch_state = p_tcb->ch_state;
-  }
-  return ch_state;
+  if (!p_tcb) return GATT_CH_CLOSE;
+
+  VLOG(1) << "gatt_get_ch_state: ch_state=" << +p_tcb->ch_state;
+  return p_tcb->ch_state;
 }
