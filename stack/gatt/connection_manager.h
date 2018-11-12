@@ -18,13 +18,11 @@
 
 #pragma once
 
-#include <unordered_set>
+#include <set>
 
 #include "types/raw_address.h"
 
 typedef uint8_t tGATT_IF;
-
-struct tGATT_BG_CONN_DEV;
 
 namespace gatt {
 namespace connection_manager {
@@ -39,7 +37,6 @@ extern void reset(bool after_reset);
 
 extern void on_app_deregistered(tGATT_IF gatt_if);
 
-extern bool gatt_is_bg_dev_for_app(tGATT_BG_CONN_DEV* p_dev, tGATT_IF gatt_if);
-extern tGATT_BG_CONN_DEV* gatt_find_bg_dev(const RawAddress& remote_bda);
+extern std::set<tGATT_IF> get_apps_connecting_to(const RawAddress& remote_bda);
 }  // namespace connection_manager
 }  // namespace gatt
