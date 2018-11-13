@@ -343,48 +343,37 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
 
 /** GATT connection initiation */
 bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr,
-                      tBT_TRANSPORT transport, bool opportunistic,
-                      int8_t initiating_phys) {
-  bool ret = false;
-
+                      tBT_TRANSPORT transport, int8_t initiating_phys) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
   if (p_tcb != NULL) {
-    ret = true;
-    uint8_t st = gatt_get_ch_state(p_tcb);
-
     /* before link down, another app try to open a GATT connection */
+    uint8_t st = gatt_get_ch_state(p_tcb);
     if (st == GATT_CH_OPEN && p_tcb->app_hold_link.empty() &&
         transport == BT_TRANSPORT_LE) {
       if (!gatt_connect(bd_addr, p_tcb, transport, initiating_phys))
-        ret = false;
+        return false;
     } else if (st == GATT_CH_CLOSING) {
       /* need to complete the closing first */
-      ret = false;
+      return false;
     }
-  } else {
-    p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, transport);
-    if (!p_tcb) {
-      ret = 0;
-      LOG(ERROR) << "Max TCB for gatt_if [ " << +p_reg->gatt_if << "] reached.";
-    } else {
-      if (!gatt_connect(bd_addr, p_tcb, transport, initiating_phys)) {
-        LOG(ERROR) << "gatt_connect failed";
-        fixed_queue_free(p_tcb->pending_ind_q, NULL);
-        *p_tcb = tGATT_TCB();
-      } else
-        ret = true;
-    }
+
+    return true;
   }
 
-  if (ret) {
-    if (!opportunistic)
-      gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, false);
-    else
-      VLOG(1) << __func__
-              << ": connection is opportunistic, not updating app usage";
+  p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, transport);
+  if (!p_tcb) {
+    LOG(ERROR) << "Max TCB for gatt_if [ " << +p_reg->gatt_if << "] reached.";
+    return false;
   }
 
-  return ret;
+  if (!gatt_connect(bd_addr, p_tcb, transport, initiating_phys)) {
+    LOG(ERROR) << "gatt_connect failed";
+    fixed_queue_free(p_tcb->pending_ind_q, NULL);
+    *p_tcb = tGATT_TCB();
+    return false;
+  }
+
+  return true;
 }
 
 /** This callback function is called by L2CAP to indicate that the ATT fixed
