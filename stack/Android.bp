@@ -411,3 +411,37 @@ cc_test {
         cfi: false,
     },
 }
+
+// Bluetooth stack connection multiplexing
+// ========================================================
+cc_test {
+    name: "net_test_gatt_conn_multiplexing",
+    defaults: ["fluoride_defaults"],
+    local_include_dirs: [
+        "include",
+        "btm",
+    ],
+    include_dirs: [
+        "system/bt",
+        "system/bt/internal_include",
+        "system/bt/btcore/include",
+        "system/bt/hci/include",
+        "system/bt/internal_include",
+        "system/bt/utils/include",
+    ],
+    srcs: [
+        "gatt/connection_manager.cc",
+        "test/gatt_connection_manager_test.cc",
+    ],
+    shared_libs: [
+        "libcutils",
+    ],
+    static_libs: [
+        "libbluetooth-types",
+        "liblog",
+        "libgmock",
+    ],
+    sanitize: {
+        cfi: false,
+    },
+}
