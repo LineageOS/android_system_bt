@@ -370,6 +370,12 @@ static void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
   if (!bta_ag_sco_is_active_device(p_scb->peer_addr)) {
     LOG(WARNING) << __func__ << ": device " << p_scb->peer_addr
                  << " is not active, active_device=" << active_device_addr;
+    if (bta_ag_cb.sco.p_curr_scb != nullptr &&
+        bta_ag_cb.sco.p_curr_scb->in_use && p_scb == bta_ag_cb.sco.p_curr_scb) {
+      do_in_bta_thread(
+          FROM_HERE, base::Bind(&bta_ag_sm_execute, p_scb, BTA_AG_SCO_CLOSE_EVT,
+                                tBTA_AG_DATA::kEmpty));
+    }
     return;
   }
   /* Make sure this SCO handle is not already in use */

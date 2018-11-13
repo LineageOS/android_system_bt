@@ -133,6 +133,15 @@ message RFCommSession {
   optional int32 tx_bytes = 2;
 }
 
+enum A2dpSourceCodec {
+  A2DP_SOURCE_CODEC_UNKNOWN = 0;
+  A2DP_SOURCE_CODEC_SBC = 1;
+  A2DP_SOURCE_CODEC_AAC = 2;
+  A2DP_SOURCE_CODEC_APTX = 3;
+  A2DP_SOURCE_CODEC_APTX_HD = 4;
+  A2DP_SOURCE_CODEC_LDAC = 5;
+}
+
 // Session information that gets logged for A2DP session.
 message A2DPSession {
   // Media timer in milliseconds.
@@ -158,6 +167,12 @@ message A2DPSession {
 
   // Total audio time in this A2DP session
   optional int64 audio_duration_millis = 8;
+
+  // Audio codec used in this A2DP session in A2DP source role
+  optional A2dpSourceCodec source_codec = 9;
+
+  // Whether A2DP offload is enabled in this A2DP session
+  optional bool is_a2dp_offload = 10;
 }
 
 message PairEvent {
