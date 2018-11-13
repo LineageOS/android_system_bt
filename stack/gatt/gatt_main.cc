@@ -801,15 +801,14 @@ static void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
   tGATT_REG* p_reg;
   uint16_t conn_id;
 
-  tGATT_BG_CONN_DEV* p_bg_dev =
-      gatt::connection_manager::gatt_find_bg_dev(p_tcb->peer_bda);
+  std::set<tGATT_IF> apps =
+      gatt::connection_manager::get_apps_connecting_to(p_tcb->peer_bda);
 
   /* notifying all applications for the connection up event */
   for (i = 0, p_reg = gatt_cb.cl_rcb; i < GATT_MAX_APPS; i++, p_reg++) {
     if (!p_reg->in_use) continue;
 
-    if (p_bg_dev && gatt::connection_manager::gatt_is_bg_dev_for_app(
-                        p_bg_dev, p_reg->gatt_if))
+    if (apps.find(p_reg->gatt_if) != apps.end())
       gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, true);
 
     if (p_reg->app_cb.p_conn_cb) {
