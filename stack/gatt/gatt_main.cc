@@ -194,7 +194,8 @@ void gatt_free(void) {
  *
  ******************************************************************************/
 bool gatt_connect(const RawAddress& rem_bda, tGATT_TCB* p_tcb,
-                  tBT_TRANSPORT transport, uint8_t initiating_phys) {
+                  tBT_TRANSPORT transport, uint8_t initiating_phys,
+                  tGATT_IF gatt_if) {
   bool gatt_ret = false;
 
   if (gatt_get_ch_state(p_tcb) != GATT_CH_OPEN)
@@ -202,7 +203,8 @@ bool gatt_connect(const RawAddress& rem_bda, tGATT_TCB* p_tcb,
 
   if (transport == BT_TRANSPORT_LE) {
     p_tcb->att_lcid = L2CAP_ATT_CID;
-    gatt_ret = L2CA_ConnectFixedChnl(L2CAP_ATT_CID, rem_bda, initiating_phys);
+
+    gatt_ret = gatt::connection_manager::direct_connect_add(gatt_if, rem_bda);
   } else {
     p_tcb->att_lcid = L2CA_ConnectReq(BT_PSM_ATT, rem_bda);
     if (p_tcb->att_lcid != 0) gatt_ret = true;
@@ -350,7 +352,8 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr,
     uint8_t st = gatt_get_ch_state(p_tcb);
     if (st == GATT_CH_OPEN && p_tcb->app_hold_link.empty() &&
         transport == BT_TRANSPORT_LE) {
-      if (!gatt_connect(bd_addr, p_tcb, transport, initiating_phys))
+      if (!gatt_connect(bd_addr, p_tcb, transport, initiating_phys,
+                        p_reg->gatt_if))
         return false;
     } else if (st == GATT_CH_CLOSING) {
       /* need to complete the closing first */
@@ -366,7 +369,8 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr,
     return false;
   }
 
-  if (!gatt_connect(bd_addr, p_tcb, transport, initiating_phys)) {
+  if (!gatt_connect(bd_addr, p_tcb, transport, initiating_phys,
+                    p_reg->gatt_if)) {
     LOG(ERROR) << "gatt_connect failed";
     fixed_queue_free(p_tcb->pending_ind_q, NULL);
     *p_tcb = tGATT_TCB();

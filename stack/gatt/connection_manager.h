@@ -28,16 +28,20 @@ namespace gatt {
 namespace connection_manager {
 
 /* for background connection */
-extern bool background_connect_add(tGATT_IF gatt_if, const RawAddress& bd_addr);
+extern bool background_connect_add(tGATT_IF gatt_if, const RawAddress& address);
 extern bool background_connect_remove(tGATT_IF gatt_if,
-                                      const RawAddress& bd_addr);
-extern bool background_connect_remove_unconditional(const RawAddress& bd_addr);
+                                      const RawAddress& address);
+extern bool background_connect_remove_unconditional(const RawAddress& address);
 
 extern void reset(bool after_reset);
 
 extern void on_app_deregistered(tGATT_IF gatt_if);
+extern void on_connection_complete(const RawAddress& address);
 
 extern std::set<tGATT_IF> get_apps_connecting_to(const RawAddress& remote_bda);
+
+extern bool direct_connect_add(tGATT_IF gatt_if, const RawAddress& address);
+extern bool direct_connect_remove(tGATT_IF gatt_if, const RawAddress& address);
 
 extern void dump(int fd);
 }  // namespace connection_manager
