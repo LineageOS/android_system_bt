@@ -141,8 +141,12 @@ struct HearingDevice {
    * Complete" event
    */
   connection_update_status_t connection_update_status;
+  uint16_t requested_connection_interval;
 
-  /* if true, we are connected, L2CAP socket is open, we can stream audio*/
+  /* if true, we are connected, L2CAP socket is open, we can stream audio.
+     However, the actual audio stream also depends on whether the
+     Audio Service has resumed.
+   */
   bool accepting_audio;
 
   uint16_t conn_id;
@@ -158,6 +162,11 @@ struct HearingDevice {
   uint16_t codecs;
 
   AudioStats audio_stats;
+  /* Keep tracks of whether the "Start Cmd" has been send to this device. When
+     the "Stop Cmd" is send or when this device disconnects, then this flag is
+     cleared. Please note that the "Start Cmd" is not send during device
+     connection in the case when the audio is suspended. */
+  bool playback_started;
 
   HearingDevice(const RawAddress& address, uint16_t psm, uint8_t capabilities,
                 uint16_t codecs, uint16_t audio_control_point_handle,
@@ -177,7 +186,8 @@ struct HearingDevice {
         hi_sync_id(hiSyncId),
         render_delay(render_delay),
         preparation_delay(preparation_delay),
-        codecs(codecs) {}
+        codecs(codecs),
+        playback_started(false) {}
 
   HearingDevice(const RawAddress& address, bool first_connection)
       : address(address),
@@ -187,7 +197,8 @@ struct HearingDevice {
         accepting_audio(false),
         conn_id(0),
         gap_handle(0),
-        psm(0) {}
+        psm(0),
+        playback_started(false) {}
 
   HearingDevice() : HearingDevice(RawAddress::kEmpty, false) {}
 
@@ -260,12 +271,17 @@ g722_encode_state_t* encoder_state_left = nullptr;
 g722_encode_state_t* encoder_state_right = nullptr;
 
 class HearingAidImpl : public HearingAid {
+ private:
+  // Keep track of whether the Audio Service has resumed audio playback
+  bool audio_running;
+
  public:
   virtual ~HearingAidImpl() = default;
 
   HearingAidImpl(bluetooth::hearing_aid::HearingAidCallbacks* callbacks,
                  Closure initCb)
-      : gatt_if(0),
+      : audio_running(false),
+        gatt_if(0),
         seq_counter(0),
         current_volume(VOLUME_UNKNOWN),
         callbacks(callbacks),
@@ -297,7 +313,7 @@ class HearingAidImpl : public HearingAid {
             initCb));
   }
 
-  void UpdateBleConnParams(const RawAddress& address) {
+  uint16_t UpdateBleConnParams(const RawAddress& address) {
     /* List of parameters that depends on the chosen Connection Interval */
     uint16_t min_ce_len;
     uint16_t connection_interval;
@@ -320,6 +336,7 @@ class HearingAidImpl : public HearingAid {
 
     L2CA_UpdateBleConnParams(address, connection_interval, connection_interval,
                              0x000A, 0x0064 /*1s*/, min_ce_len, min_ce_len);
+    return connection_interval;
   }
 
   void Connect(const RawAddress& address) override {
@@ -358,7 +375,7 @@ class HearingAidImpl : public HearingAid {
   void OnGattConnected(tGATT_STATUS status, uint16_t conn_id,
                        tGATT_IF client_if, RawAddress address,
                        tBTA_TRANSPORT transport, uint16_t mtu) {
-    VLOG(2) << __func__ << " " << address;
+    VLOG(2) << __func__ << ": address=" << address << ", conn_id=" << conn_id;
 
     HearingDevice* hearingDevice = hearingDevices.FindByAddress(address);
     if (!hearingDevice) {
@@ -392,7 +409,8 @@ class HearingAidImpl : public HearingAid {
     // update now, it'll be started once current device finishes.
     if (!any_update_pending) {
       hearingDevice->connection_update_status = STARTED;
-      UpdateBleConnParams(address);
+      hearingDevice->requested_connection_interval =
+          UpdateBleConnParams(address);
     } else {
       hearingDevice->connection_update_status = AWAITING;
     }
@@ -433,24 +451,45 @@ class HearingAidImpl : public HearingAid {
     OnEncryptionComplete(address, true);
   }
 
-  void OnConnectionUpdateComplete(uint16_t conn_id) {
+  void OnConnectionUpdateComplete(uint16_t conn_id, tBTA_GATTC* p_data) {
     HearingDevice* hearingDevice = hearingDevices.FindByConnId(conn_id);
     if (!hearingDevice) {
       DVLOG(2) << "Skipping unknown device, conn_id=" << loghex(conn_id);
       return;
     }
 
+    if (p_data) {
+      if ((p_data->conn_update.status == 0) &&
+          (hearingDevice->requested_connection_interval !=
+           p_data->conn_update.interval)) {
+        LOG(WARNING) << __func__ << ": Ignored. Different connection interval="
+                     << p_data->conn_update.interval << ", expected="
+                     << hearingDevice->requested_connection_interval
+                     << ", conn_id=" << conn_id;
+        return;
+      }
+      LOG(INFO) << __func__ << ": interval=" << p_data->conn_update.interval
+                << ": status=" << loghex(p_data->conn_update.status)
+                << ", conn_id=" << conn_id;
+    }
+
     if (hearingDevice->connection_update_status != STARTED) {
+      // TODO: We may get extra connection updates during service discovery and
+      // these updates are not accounted for.
       LOG(INFO) << __func__
-                << ": Inconsistent state. Expecting state=STARTED but current="
-                << hearingDevice->connection_update_status;
+                << ": Unexpected connection update complete. Expecting "
+                   "state=STARTED but current="
+                << hearingDevice->connection_update_status
+                << ", conn_id=" << conn_id
+                << ", device=" << hearingDevice->address;
     }
     hearingDevice->connection_update_status = NONE;
 
     for (auto& device : hearingDevices.devices) {
       if (device.conn_id && (device.connection_update_status == AWAITING)) {
         device.connection_update_status = STARTED;
-        UpdateBleConnParams(device.address);
+        device.requested_connection_interval =
+            UpdateBleConnParams(device.address);
         return;
       }
     }
@@ -754,7 +793,7 @@ class HearingAidImpl : public HearingAid {
 
     ChooseCodec(*hearingDevice);
 
-    SendStart(*hearingDevice);
+    SendStart(hearingDevice);
 
     hearingDevice->accepting_audio = true;
     LOG(INFO) << __func__ << ": address=" << address
@@ -800,20 +839,38 @@ class HearingAidImpl : public HearingAid {
   }
 
   void OnAudioSuspend() {
-    DVLOG(2) << __func__;
+    if (!audio_running) {
+      LOG(WARNING) << __func__ << ": Unexpected audio suspend";
+    } else {
+      LOG(INFO) << __func__ << ": audio_running=" << audio_running;
+    }
+    audio_running = false;
 
     std::vector<uint8_t> stop({CONTROL_POINT_OP_STOP});
-    for (const auto& device : hearingDevices.devices) {
+    for (auto& device : hearingDevices.devices) {
       if (!device.accepting_audio) continue;
 
-      BtaGattQueue::WriteCharacteristic(device.conn_id,
-                                        device.audio_control_point_handle, stop,
-                                        GATT_WRITE, nullptr, nullptr);
+      if (!device.playback_started) {
+        LOG(WARNING) << __func__
+                     << ": Playback not started, skip send Stop cmd, device="
+                     << device.address;
+      } else {
+        LOG(INFO) << __func__ << ": send Stop cmd, device=" << device.address;
+        device.playback_started = false;
+        BtaGattQueue::WriteCharacteristic(device.conn_id,
+                                          device.audio_control_point_handle,
+                                          stop, GATT_WRITE, nullptr, nullptr);
+      }
     }
   }
 
   void OnAudioResume() {
-    DVLOG(2) << __func__;
+    if (audio_running) {
+      LOG(ERROR) << __func__ << ": Unexpected Audio Resume";
+    } else {
+      LOG(INFO) << __func__ << ": audio_running=" << audio_running;
+    }
+    audio_running = true;
 
     // TODO: shall we also reset the encoder ?
     if (encoder_state_left != nullptr) {
@@ -824,21 +881,44 @@ class HearingAidImpl : public HearingAid {
     }
     seq_counter = 0;
 
-    for (const auto& device : hearingDevices.devices) {
+    for (auto& device : hearingDevices.devices) {
       if (!device.accepting_audio) continue;
-      SendStart(device);
+      SendStart(&device);
     }
   }
 
-  void SendStart(const HearingDevice& device) {
+  void SendStart(HearingDevice* device) {
     std::vector<uint8_t> start({CONTROL_POINT_OP_START, codec_in_use,
                                 AUDIOTYPE_UNKNOWN, (uint8_t)current_volume});
 
+    if (!audio_running) {
+      if (!device->playback_started) {
+        LOG(INFO) << __func__
+                  << ": Skip Send Start since audio is not running, device="
+                  << device->address;
+      } else {
+        LOG(ERROR) << __func__
+                   << ": Audio not running but Playback has started, device="
+                   << device->address;
+      }
+      return;
+    }
+
     if (current_volume == VOLUME_UNKNOWN) start[3] = (uint8_t)VOLUME_MIN;
 
-    BtaGattQueue::WriteCharacteristic(device.conn_id,
-                                      device.audio_control_point_handle, start,
-                                      GATT_WRITE, nullptr, nullptr);
+    if (device->playback_started) {
+      LOG(ERROR) << __func__
+                 << ": Playback already started, skip send Start cmd, device="
+                 << device->address;
+    } else {
+      LOG(INFO) << __func__ << ": send Start cmd, volume=" << loghex(start[3])
+                << ", audio type=" << loghex(start[2])
+                << ", device=" << device->address;
+      device->playback_started = true;
+      BtaGattQueue::WriteCharacteristic(device->conn_id,
+                                        device->audio_control_point_handle,
+                                        start, GATT_WRITE, nullptr, nullptr);
+    }
   }
 
   void OnAudioDataReady(const std::vector<uint8_t>& data) {
@@ -973,6 +1053,12 @@ class HearingAidImpl : public HearingAid {
 
   void SendAudio(uint8_t* encoded_data, uint16_t packet_size,
                  HearingDevice* hearingAid) {
+    if (!hearingAid->playback_started) {
+      LOG(INFO) << __func__
+                << ": Playback not started, device=" << hearingAid->address;
+      return;
+    }
+
     BT_HDR* audio_packet = malloc_l2cap_buf(packet_size + 1);
     uint8_t* p = get_l2cap_sdu_start_ptr(audio_packet);
     *p = seq_counter;
@@ -991,7 +1077,7 @@ class HearingAidImpl : public HearingAid {
   void GapCallback(uint16_t gap_handle, uint16_t event, tGAP_CB_DATA* data) {
     HearingDevice* hearingDevice = hearingDevices.FindByGapHandle(gap_handle);
     if (!hearingDevice) {
-      DVLOG(2) << "Skipping unknown device, gap_handle=" << gap_handle;
+      LOG(INFO) << "Skipping unknown device, gap_handle=" << gap_handle;
       return;
     }
 
@@ -1007,9 +1093,12 @@ class HearingAidImpl : public HearingAid {
 
       // TODO: handle properly!
       case GAP_EVT_CONN_CLOSED:
-        DVLOG(2) << "GAP_EVT_CONN_CLOSED";
+        LOG(INFO) << __func__
+                  << ": GAP_EVT_CONN_CLOSED: " << hearingDevice->address
+                  << ", playback_started=" << hearingDevice->playback_started;
         hearingDevice->accepting_audio = false;
         hearingDevice->gap_handle = 0;
+        hearingDevice->playback_started = false;
         break;
       case GAP_EVT_CONN_DATA_AVAIL: {
         DVLOG(2) << "GAP_EVT_CONN_DATA_AVAIL";
@@ -1108,6 +1197,10 @@ class HearingAidImpl : public HearingAid {
     bool connected = hearingDevice->accepting_audio;
     hearingDevice->accepting_audio = false;
 
+    LOG(INFO) << "GAP_EVT_CONN_CLOSED: " << hearingDevice->address
+              << ", playback_started=" << hearingDevice->playback_started;
+    hearingDevice->playback_started = false;
+
     if (hearingDevice->connecting_actively) {
       // cancel pending direct connect
       BTA_GATTC_CancelOpen(gatt_if, address, true);
@@ -1151,10 +1244,11 @@ class HearingAidImpl : public HearingAid {
   void DoDisconnectCleanUp(HearingDevice* hearingDevice) {
     if (hearingDevice->connection_update_status != NONE) {
       LOG(INFO) << __func__ << ": connection update not completed. Current="
-                << hearingDevice->connection_update_status;
+                << hearingDevice->connection_update_status
+                << ", device=" << hearingDevice->address;
 
       if (hearingDevice->connection_update_status == STARTED) {
-        OnConnectionUpdateComplete(hearingDevice->conn_id);
+        OnConnectionUpdateComplete(hearingDevice->conn_id, NULL);
       }
       hearingDevice->connection_update_status = NONE;
     }
@@ -1163,6 +1257,9 @@ class HearingAidImpl : public HearingAid {
 
     hearingDevice->accepting_audio = false;
     hearingDevice->conn_id = 0;
+    LOG(INFO) << __func__ << ": device=" << hearingDevice->address
+              << ", playback_started=" << hearingDevice->playback_started;
+    hearingDevice->playback_started = false;
   }
 
   void SetVolume(int8_t volume) override {
@@ -1246,7 +1343,7 @@ void hearingaid_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
 
     case BTA_GATTC_CONN_UPDATE_EVT:
       if (!instance) return;
-      instance->OnConnectionUpdateComplete(p_data->conn_update.conn_id);
+      instance->OnConnectionUpdateComplete(p_data->conn_update.conn_id, p_data);
       break;
 
     default:
@@ -1267,12 +1364,14 @@ class HearingAidAudioReceiverImpl : public HearingAidAudioReceiver {
   void OnAudioDataReady(const std::vector<uint8_t>& data) override {
     if (instance) instance->OnAudioDataReady(data);
   }
-  void OnAudioSuspend() override {
+  void OnAudioSuspend(std::promise<void> do_suspend_promise) override {
     if (instance) instance->OnAudioSuspend();
+    do_suspend_promise.set_value();
   }
 
-  void OnAudioResume() override {
+  void OnAudioResume(std::promise<void> do_resume_promise) override {
     if (instance) instance->OnAudioResume();
+    do_resume_promise.set_value();
   }
 };
 
