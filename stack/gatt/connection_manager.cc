@@ -19,119 +19,101 @@
 #include "connection_manager.h"
 
 #include <base/logging.h>
-#include <list>
+#include <map>
 #include <set>
 
 #include "stack/btm/btm_ble_bgconn.h"
 
 struct tGATT_BG_CONN_DEV {
-  std::set<tGATT_IF> gatt_if;
-  RawAddress remote_bda;
+  // ids of clients doing background connection to given device
+  std::set<tGATT_IF> doing_bg_conn;
+
+  // TODO: keep clients doing direct connection here
 };
 
 namespace gatt {
 namespace connection_manager {
 
 namespace {
-std::list<tGATT_BG_CONN_DEV> bgconn_dev;
+// Maps address to apps trying to connect to address
+std::map<RawAddress, tGATT_BG_CONN_DEV> bgconn_dev;
 
-std::list<tGATT_BG_CONN_DEV>::iterator gatt_find_bg_dev_it(
-    const RawAddress& remote_bda) {
-  auto& list = bgconn_dev;
-  for (auto it = list.begin(); it != list.end(); it++) {
-    if (it->remote_bda == remote_bda) {
-      return it;
-    }
-  }
-  return list.end();
+bool anyone_connecting(
+    const std::map<RawAddress, tGATT_BG_CONN_DEV>::iterator it) {
+  return !it->second.doing_bg_conn.empty();
 }
 
 }  // namespace
 
-/** background connection device from the list. Returns pointer to the device
- * record, or nullptr if not found */
+/** Return ids of applications attempting to connect to device with given
+ * address */
 std::set<tGATT_IF> get_apps_connecting_to(const RawAddress& address) {
-  for (tGATT_BG_CONN_DEV& dev : bgconn_dev)
-    if (dev.remote_bda == address) return dev.gatt_if;
-
-  return std::set<tGATT_IF>();
+  auto it = bgconn_dev.find(address);
+  return (it != bgconn_dev.end()) ? it->second.doing_bg_conn
+                                  : std::set<tGATT_IF>();
 }
 
-/** background connection device from the list. Returns pointer to the device
- * record, or nullptr if not found */
-tGATT_BG_CONN_DEV* gatt_find_bg_dev(const RawAddress& remote_bda) {
-  for (tGATT_BG_CONN_DEV& dev : bgconn_dev) {
-    if (dev.remote_bda == remote_bda) {
-      return &dev;
-    }
-  }
-  return nullptr;
-}
-
-/** Add a device from the background connection list.  Returns true if device
- * added to the list, or already in list, false otherwise */
-bool background_connect_add(tGATT_IF gatt_if, const RawAddress& bd_addr) {
-  tGATT_BG_CONN_DEV* p_dev = gatt_find_bg_dev(bd_addr);
-  if (p_dev) {
+/** Add a device to the background connection procedure. Returns true if device
+ * was added succesfully, or was already in it, false otherwise */
+bool background_connect_add(tGATT_IF gatt_if, const RawAddress& address) {
+  auto it = bgconn_dev.find(address);
+  if (it != bgconn_dev.end()) {
     // device already in the whitelist, just add interested app to the list
-    if (!p_dev->gatt_if.insert(gatt_if).second) {
-      LOG(ERROR) << "device already in iniator white list";
+    if (!it->second.doing_bg_conn.insert(gatt_if).second) {
+      LOG(INFO) << "device already in iniator white list";
     }
 
     return true;
   }
   // the device is not in the whitelist
 
-  if (!BTM_WhiteListAdd(bd_addr)) return false;
+  if (!BTM_WhiteListAdd(address)) return false;
 
-  bgconn_dev.emplace_back();
-  tGATT_BG_CONN_DEV& dev = bgconn_dev.back();
-  dev.remote_bda = bd_addr;
-  dev.gatt_if.insert(gatt_if);
+  // create endtry for address, and insert gatt_if.
+  bgconn_dev[address].doing_bg_conn.insert(gatt_if);
   return true;
 }
 
 /** Removes all registrations for background connection for given device.
  * Returns true if anything was removed, false otherwise */
-bool background_connect_remove_unconditional(const RawAddress& bd_addr) {
-  auto dev_it = gatt_find_bg_dev_it(bd_addr);
-  if (dev_it == bgconn_dev.end()) return false;
+bool background_connect_remove_unconditional(const RawAddress& address) {
+  auto it = bgconn_dev.find(address);
+  if (it == bgconn_dev.end()) return false;
 
-  BTM_WhiteListRemove(dev_it->remote_bda);
-  bgconn_dev.erase(dev_it);
+  BTM_WhiteListRemove(address);
+  bgconn_dev.erase(it);
   return true;
 }
 
-/** Remove device from the background connection device list or listening to
- * advertising list.  Returns true if device was on the list and was succesfully
- * removed */
-bool background_connect_remove(tGATT_IF gatt_if, const RawAddress& bd_addr) {
-  auto dev_it = gatt_find_bg_dev_it(bd_addr);
-  if (dev_it == bgconn_dev.end()) return false;
+/** Remove device from the background connection procedure. Returns true if
+ * device was on the list and was succesfully removed */
+bool background_connect_remove(tGATT_IF gatt_if, const RawAddress& address) {
+  auto it = bgconn_dev.find(address);
+  if (it == bgconn_dev.end()) return false;
 
-  if (!dev_it->gatt_if.erase(gatt_if)) return false;
+  if (!it->second.doing_bg_conn.erase(gatt_if)) return false;
 
-  if (!dev_it->gatt_if.empty()) return true;
+  if (anyone_connecting(it)) return true;
 
   // no more apps interested - remove from whitelist and delete record
-  BTM_WhiteListRemove(dev_it->remote_bda);
-  bgconn_dev.erase(dev_it);
+  BTM_WhiteListRemove(it->first);
+  bgconn_dev.erase(it);
   return true;
 }
 
-/** deregister all related back ground connetion device. */
+/** Deregister all related background connetion device. */
 void on_app_deregistered(tGATT_IF gatt_if) {
   auto it = bgconn_dev.begin();
   auto end = bgconn_dev.end();
   /* update the BG conn device list */
   while (it != end) {
-    it->gatt_if.erase(gatt_if);
-    if (it->gatt_if.size()) {
+    it->second.doing_bg_conn.erase(gatt_if);
+    if (it->second.doing_bg_conn.size()) {
       it++;
       continue;
     }
 
-    BTM_WhiteListRemove(it->remote_bda);
+    BTM_WhiteListRemove(it->first);
     it = bgconn_dev.erase(it);
   }
 }
