@@ -34,6 +34,14 @@
 #include "rfc_int.h"
 #include "rfcdefs.h"
 
+#include <set>
+#include "hci/include/btsnoop.h"
+
+static const std::set<uint16_t> uuid_logging_whitelist = {
+    UUID_SERVCLASS_HEADSET_AUDIO_GATEWAY,
+    UUID_SERVCLASS_AG_HANDSFREE,
+};
+
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
@@ -206,6 +214,13 @@ void rfc_port_sm_sabme_wait_ua(tPORT* p_port, uint16_t event, void* p_data) {
     case RFC_EVENT_UA:
       rfc_port_timer_stop(p_port);
       p_port->rfc.state = RFC_STATE_OPENED;
+
+      if (uuid_logging_whitelist.find(p_port->uuid) !=
+          uuid_logging_whitelist.end()) {
+        btsnoop_get_interface()->whitelist_rfc_dlci(p_port->rfc.p_mcb->lcid,
+                                                    p_port->dlci);
+      }
+
       PORT_DlcEstablishCnf(p_port->rfc.p_mcb, p_port->dlci,
                            p_port->rfc.p_mcb->peer_l2cap_mtu, RFCOMM_SUCCESS);
       return;
@@ -317,6 +332,12 @@ void rfc_port_sm_term_wait_sec_check(tPORT* p_port, uint16_t event,
       } else {
         rfc_send_ua(p_port->rfc.p_mcb, p_port->dlci);
         p_port->rfc.state = RFC_STATE_OPENED;
+
+        if (uuid_logging_whitelist.find(p_port->uuid) !=
+            uuid_logging_whitelist.end()) {
+          btsnoop_get_interface()->whitelist_rfc_dlci(p_port->rfc.p_mcb->lcid,
+                                                      p_port->dlci);
+        }
       }
       return;
   }
