@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "db4415cd_eedcded1",
+        "filename": "stack/mcap/mca_cact.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 20478
+      },
+      "writtenOn": "2018-11-18T11:11:30Z",
+      "side": 1,
+      "message": "put it in macro and move to header",
+      "range": {
+        "startLine": 282,
+        "startChar": 22,
+        "endLine": 282,
+        "endChar": 23
+      },
+      "revId": "aa1c0edaabb7d7f33177dc2de1877eaa30478ec2",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    }
+  ]
+}
