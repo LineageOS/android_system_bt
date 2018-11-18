@@ -38,5 +38,7 @@ extern void reset(bool after_reset);
 extern void on_app_deregistered(tGATT_IF gatt_if);
 
 extern std::set<tGATT_IF> get_apps_connecting_to(const RawAddress& remote_bda);
+
+extern void dump(int fd);
 }  // namespace connection_manager
 }  // namespace gatt

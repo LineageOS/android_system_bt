@@ -20,6 +20,7 @@
 
 #include <base/callback_forward.h>
 #include <hardware/bt_hearing_aid.h>
+#include <future>
 
 constexpr uint16_t HA_INTERVAL_10_MS = 10;
 constexpr uint16_t HA_INTERVAL_20_MS = 20;
@@ -29,8 +30,8 @@ class HearingAidAudioReceiver {
  public:
   virtual ~HearingAidAudioReceiver() = default;
   virtual void OnAudioDataReady(const std::vector<uint8_t>& data) = 0;
-  virtual void OnAudioSuspend() = 0;
-  virtual void OnAudioResume() = 0;
+  virtual void OnAudioSuspend(std::promise<void> do_suspend_promise) = 0;
+  virtual void OnAudioResume(std::promise<void> do_resume_promise) = 0;
 };
 
 class HearingAid {
