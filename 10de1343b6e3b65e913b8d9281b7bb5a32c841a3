@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "37d388d6_0ed9e917",
+        "filename": "stack/smp/smp_act.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 979,
+      "author": {
+        "id": 20478
+      },
+      "writtenOn": "2018-11-18T11:07:39Z",
+      "side": 1,
+      "message": "put it in a macro in header and add comment there",
+      "range": {
+        "startLine": 979,
+        "startChar": 29,
+        "endLine": 979,
+        "endChar": 31
+      },
+      "revId": "10de1343b6e3b65e913b8d9281b7bb5a32c841a3",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    }
+  ]
+}
