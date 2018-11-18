@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d8e4820f_8bee356b",
+        "filename": "bta/av/bta_av_act.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 865,
+      "author": {
+        "id": 20478
+      },
+      "writtenOn": "2018-11-18T11:09:45Z",
+      "side": 1,
+      "message": "move to header in macro",
+      "range": {
+        "startLine": 865,
+        "startChar": 40,
+        "endLine": 865,
+        "endChar": 41
+      },
+      "revId": "32e4c395a87b39adfaedde9a0a4a9216cafe7d7c",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    }
+  ]
+}
