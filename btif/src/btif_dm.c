@@ -191,6 +191,7 @@ typedef struct
 #define BTA_SERVICE_ID_TO_SERVICE_MASK(id)       (1 << (id))
 
 #define UUID_HUMAN_INTERFACE_DEVICE "00001124-0000-1000-8000-00805f9b34fb"
+#define UUID_EMPTY "00000000-0000-0000-0000-000000000000"
 
 #define MAX_BTIF_BOND_EVENT_ENTRIES 15
 
@@ -268,6 +269,11 @@ static bool is_empty_128bit(uint8_t *data)
 {
     static const uint8_t zero[16] = { 0 };
     return !memcmp(zero, data, sizeof(zero));
+}
+
+static bool is_bonding_or_sdp() {
+    return pairing_cb.state == BT_BOND_STATE_BONDING ||
+            (pairing_cb.state == BT_BOND_STATE_BONDED && pairing_cb.sdp_attempts);
 }
 
 static void btif_dm_data_copy(uint16_t event, char *dst, char *src)
@@ -551,15 +557,19 @@ static void bond_state_changed(bt_status_t status, bt_bdaddr_t *bd_addr, bt_bond
 
     HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, status, bd_addr, state);
 
-    if (state == BT_BOND_STATE_BONDING)
+    int dev_type;
+    if (!btif_get_device_type(bd_addr->address, &dev_type))
     {
+        dev_type = BT_DEVICE_TYPE_BREDR;
+    }
+    if (state == BT_BOND_STATE_BONDING ||
+        (state == BT_BOND_STATE_BONDED && pairing_cb.sdp_attempts > 0))
+    {
+        // Save state for the device is bonding or SDP.
         pairing_cb.state = state;
         bdcpy(pairing_cb.bd_addr, bd_addr->address);
     } else {
-        if (!pairing_cb.sdp_attempts)
-            memset(&pairing_cb, 0, sizeof(pairing_cb));
-        else
-            BTIF_TRACE_DEBUG("%s: BR-EDR service discovery active", __func__);
+        memset(&pairing_cb, 0, sizeof(pairing_cb));
     }
 }
 
@@ -1212,6 +1222,8 @@ static void btif_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
 
                 // Ensure inquiry is stopped before attempting service discovery
                 btif_dm_cancel_discovery();
+                // Report bonded to Java before start SDP
+                bond_state_changed(BT_STATUS_SUCCESS, &bd_addr, BT_BOND_STATE_BONDED);
 
                 /* Trigger SDP on the device */
                 pairing_cb.sdp_attempts = 1;
@@ -1505,7 +1517,7 @@ static void btif_dm_search_services_evt(UINT16 event, char *p_param)
             BTIF_TRACE_DEBUG("%s:(result=0x%x, services 0x%x)", __FUNCTION__,
                     p_data->disc_res.result, p_data->disc_res.services);
             if  ((p_data->disc_res.result != BTA_SUCCESS) &&
-                 (pairing_cb.state == BT_BOND_STATE_BONDING ) &&
+                 (pairing_cb.state == BT_BOND_STATE_BONDED) &&
                  (pairing_cb.sdp_attempts < BTIF_DM_MAX_SDP_ATTEMPTS_AFTER_PAIRING))
             {
                 BTIF_TRACE_WARNING("%s:SDP failed after bonding re-attempting", __FUNCTION__);
@@ -1530,21 +1542,44 @@ static void btif_dm_search_services_evt(UINT16 event, char *p_param)
             /* onUuidChanged requires getBondedDevices to be populated.
             ** bond_state_changed needs to be sent prior to remote_device_property
             */
-            if ((pairing_cb.state == BT_BOND_STATE_BONDING) &&
+            if ((pairing_cb.state == BT_BOND_STATE_BONDED && pairing_cb.sdp_attempts) &&
                 ((bdcmp(p_data->disc_res.bd_addr, pairing_cb.bd_addr) == 0) ||
-                 (bdcmp(p_data->disc_res.bd_addr, pairing_cb.static_bdaddr.address) == 0)) &&
-                  pairing_cb.sdp_attempts > 0)
+                 (bdcmp(p_data->disc_res.bd_addr, pairing_cb.static_bdaddr.address) == 0)))
             {
-                 BTIF_TRACE_DEBUG("%s Remote Service SDP done. Call bond_state_changed_cb BONDED",
-                                   __FUNCTION__);
+                 LOG_INFO(LOG_TAG, "%s Remote Service SDP done.", __FUNCTION__);
                  pairing_cb.sdp_attempts  = 0;
 
-                 // If bonding occured due to cross-key pairing, send bonding callback
+                 // If bond occured due to cross-key pairing, send bond state callback
                  // for static address now
                  if (bdcmp(p_data->disc_res.bd_addr, pairing_cb.static_bdaddr.address) == 0)
-                    bond_state_changed(BT_STATUS_SUCCESS, &bd_addr, BT_BOND_STATE_BONDING);
+                 {
+                      bond_state_changed(BT_STATUS_SUCCESS, &bd_addr, BT_BOND_STATE_BONDING);
+                      bond_state_changed(BT_STATUS_SUCCESS, &bd_addr, BT_BOND_STATE_BONDED);
+                 }
+                 if (pairing_cb.state == BT_BOND_STATE_BONDED) {
+                      if (p_data->disc_res.result == BTA_SUCCESS) {
+                          // Device is bonded and SDP completed. Clear the pairing control
+                          // block.
+                          memset(&pairing_cb, 0, sizeof(pairing_cb));
+                      } else {
+                          // Report empty UUID to Java if SDP report negative result while
+                          // pairing.
+                          bt_property_t prop;
+                          bt_uuid_t uuid;
+                          char uuid_str[128] = UUID_EMPTY;
 
-                 bond_state_changed(BT_STATUS_SUCCESS, &bd_addr, BT_BOND_STATE_BONDED);
+                          string_to_uuid(uuid_str, &uuid);
+
+                          prop.type = BT_PROPERTY_UUIDS;
+                          prop.val = uuid.uu;
+                          prop.len = MAX_UUID_SIZE;
+
+                          /* Send the event to the BTIF */
+                          HAL_CBACK(bt_hal_cbacks, remote_device_properties_cb,
+                                  BT_STATUS_SUCCESS, &bd_addr, 1, &prop);
+                          break;
+                      }
+                 }
             }
 
             if (p_data->disc_res.num_uuids != 0)
@@ -1768,7 +1803,7 @@ static void btif_dm_upstreams_evt(UINT16 event, char* p_param)
             break;
 
         case BTA_DM_BOND_CANCEL_CMPL_EVT:
-            if (pairing_cb.state == BT_BOND_STATE_BONDING)
+            if (is_bonding_or_sdp())
             {
                 bdcpy(bd_addr.address, pairing_cb.bd_addr);
                 btm_set_bond_type_dev(pairing_cb.bd_addr, BOND_TYPE_UNKNOWN);
@@ -2435,7 +2470,7 @@ bt_status_t btif_dm_cancel_bond(const bt_bdaddr_t *bd_addr)
     **  1. Restore scan modes
     **  2. special handling for HID devices
     */
-    if (pairing_cb.state == BT_BOND_STATE_BONDING)
+    if (is_bonding_or_sdp())
     {
 
 #if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
@@ -2497,7 +2532,7 @@ bt_status_t btif_dm_cancel_bond(const bt_bdaddr_t *bd_addr)
 
 void btif_dm_hh_open_failed(bt_bdaddr_t *bdaddr)
 {
-    if (pairing_cb.state == BT_BOND_STATE_BONDING &&
+    if (is_bonding_or_sdp() &&
             bdcmp(bdaddr->address, pairing_cb.bd_addr) == 0)
     {
         bond_state_changed(BT_STATUS_FAIL, bdaddr, BT_BOND_STATE_NONE);
@@ -3487,7 +3522,7 @@ bt_status_t btif_le_test_mode(uint16_t opcode, uint8_t *buf, uint8_t len)
 void btif_dm_on_disable()
 {
     /* cancel any pending pairing requests */
-    if (pairing_cb.state == BT_BOND_STATE_BONDING)
+    if (is_bonding_or_sdp())
     {
         bt_bdaddr_t bd_addr;
 
