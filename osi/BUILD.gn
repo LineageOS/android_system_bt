@@ -52,6 +52,7 @@ static_library("osi") {
   ]
 
   deps = [
+    "//common",
     "//third_party/libchrome:base",
   ]
 }
@@ -68,14 +69,12 @@ executable("net_test_osi") {
     "test/config_test.cc",
     "test/future_test.cc",
     "test/hash_map_utils_test.cc",
-    "test/leaky_bonded_queue_test.cc",
     "test/list_test.cc",
     "test/properties_test.cc",
     "test/rand_test.cc",
     "test/reactor_test.cc",
     "test/ringbuffer_test.cc",
     "test/thread_test.cc",
-    "test/time_test.cc",
   ]
 
   include_dirs = [

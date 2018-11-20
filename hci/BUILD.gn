@@ -38,6 +38,7 @@ static_library("hci") {
   ]
 
   deps = [
+    "//common",
     "//third_party/libchrome:base",
   ]
 }
