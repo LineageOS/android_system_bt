@@ -77,22 +77,6 @@ extern bool BTM_SecAddBleKey(const RawAddress& bd_addr,
 
 /*******************************************************************************
  *
- * Function         BTM_BleSetAdvParams
- *
- * Description      This function is called to set advertising parameters.
- *
- * Parameters:       None.
- *
- * Returns          void
- *
- ******************************************************************************/
-extern tBTM_STATUS BTM_BleSetAdvParams(uint16_t adv_int_min,
-                                       uint16_t adv_int_max,
-                                       tBLE_BD_ADDR* p_dir_bda,
-                                       tBTM_BLE_ADV_CHNL_MAP chnl_map);
-
-/*******************************************************************************
- *
  * Function         BTM_BleObtainVendorCapabilities
  *
  * Description      This function is called to obatin vendor capabilties
