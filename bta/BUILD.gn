@@ -130,9 +130,10 @@ static_library("bta") {
 executable("net_test_bta") {
   testonly = true
   sources = [
-        "test/gatt/database_builder_test.cc",
-        "test/gatt/database_builder_sample_device_test.cc",
-        "test/gatt/database_test.cc",
+    "gatt/database_builder.cc",
+    "test/gatt/database_builder_test.cc",
+    "test/gatt/database_builder_sample_device_test.cc",
+    "test/gatt/database_test.cc",
   ]
 
   include_dirs = [
