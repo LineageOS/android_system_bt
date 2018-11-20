@@ -1564,15 +1564,14 @@ static void bta_hl_sdp_query_results(tBTA_HL_CB *p_cb, tBTA_HL_DATA *p_data)
     tBTA_HL_MCL_CB      *p_mcb =  BTA_HL_GET_MCL_CB_PTR( app_idx,  mcl_idx);
     tBTA_HL_SDP         *p_sdp=NULL;
     UINT16              event;
-    BOOLEAN             release_sdp_buf=FALSE;
     UNUSED(p_cb);
 
     event = p_data->hdr.event;
 
     if (event == BTA_HL_SDP_QUERY_OK_EVT) {
+        // this is freed in btif_hl_proc_sdp_query_cfm
         p_sdp = (tBTA_HL_SDP *)osi_malloc(sizeof(tBTA_HL_SDP));
         memcpy(p_sdp, &p_mcb->sdp, sizeof(tBTA_HL_SDP));
-        release_sdp_buf = TRUE;
     } else {
         status = BTA_HL_STATUS_SDP_FAIL;
     }
@@ -1588,9 +1587,6 @@ static void bta_hl_sdp_query_results(tBTA_HL_CB *p_cb, tBTA_HL_DATA *p_data)
     bta_hl_build_sdp_query_cfm(&evt_data,p_mcb->app_id, p_acb->app_handle,
                                p_mcb->bd_addr,p_sdp,status);
     p_acb->p_cback(BTA_HL_SDP_QUERY_CFM_EVT,(tBTA_HL *) &evt_data );
-
-    if (release_sdp_buf)
-        osi_free_and_reset((void **)&p_sdp);
 
     if (p_data->cch_sdp.release_mcl_cb) {
         memset(p_mcb, 0, sizeof(tBTA_HL_MCL_CB));
