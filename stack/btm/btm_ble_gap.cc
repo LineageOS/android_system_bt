@@ -833,64 +833,6 @@ static uint8_t btm_set_conn_mode_adv_init_addr(
   return evt_type;
 }
 
-/*******************************************************************************
- *
- * Function         BTM_BleSetAdvParams
- *
- * Description      This function is called to set advertising parameters.
- *
- * Parameters       adv_int_min: minimum advertising interval
- *                  adv_int_max: maximum advertising interval
- *                  p_dir_bda: connectable direct initiator's LE device address
- *                  chnl_map: advertising channel map.
- *
- * Returns          void
- *
- ******************************************************************************/
-tBTM_STATUS BTM_BleSetAdvParams(uint16_t adv_int_min, uint16_t adv_int_max,
-                                const RawAddress& p_dir_bda,
-                                tBTM_BLE_ADV_CHNL_MAP chnl_map) {
-  tBTM_LE_RANDOM_CB* p_addr_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
-  tBTM_BLE_INQ_CB* p_cb = &btm_cb.ble_ctr_cb.inq_var;
-  tBTM_STATUS status = BTM_SUCCESS;
-  RawAddress address = RawAddress::kEmpty;
-  tBLE_ADDR_TYPE init_addr_type = BLE_ADDR_PUBLIC;
-  tBLE_ADDR_TYPE own_addr_type = p_addr_cb->own_addr_type;
-  uint8_t adv_mode = p_cb->adv_mode;
-
-  BTM_TRACE_EVENT("BTM_BleSetAdvParams");
-
-  if (!controller_get_interface()->supports_ble()) return BTM_ILLEGAL_VALUE;
-
-  if (!BTM_BLE_ISVALID_PARAM(adv_int_min, BTM_BLE_ADV_INT_MIN,
-                             BTM_BLE_ADV_INT_MAX) ||
-      !BTM_BLE_ISVALID_PARAM(adv_int_max, BTM_BLE_ADV_INT_MIN,
-                             BTM_BLE_ADV_INT_MAX)) {
-    return BTM_ILLEGAL_VALUE;
-  }
-
-  p_cb->adv_interval_min = adv_int_min;
-  p_cb->adv_interval_max = adv_int_max;
-  p_cb->adv_chnl_map = chnl_map;
-  p_cb->direct_bda.bda = p_dir_bda;
-
-  BTM_TRACE_EVENT("update params for an active adv");
-
-  btm_ble_stop_adv();
-
-  p_cb->evt_type = btm_set_conn_mode_adv_init_addr(
-      p_cb, address, &init_addr_type, &own_addr_type);
-
-  /* update adv params */
-  btsnd_hcic_ble_write_adv_params(
-      p_cb->adv_interval_min, p_cb->adv_interval_max, p_cb->evt_type,
-      own_addr_type, init_addr_type, address, p_cb->adv_chnl_map, p_cb->afp);
-
-  if (adv_mode == BTM_BLE_ADV_ENABLE) btm_ble_start_adv();
-
-  return status;
-}
-
 /**
  * This function is called to set scan parameters. |cb| is called with operation
  * status
