@@ -274,6 +274,9 @@ executable("net_test_stack_crypto_toolbox") {
 executable("net_test_stack_smp") {
   testonly = true
   sources = [
+        "smp/p_256_curvepara.cc",
+        "smp/p_256_ecc_pp.cc",
+        "smp/p_256_multprecision.cc",
         "smp/smp_keys.cc",
         "smp/smp_api.cc",
         "smp/smp_main.cc",
@@ -283,6 +286,7 @@ executable("net_test_stack_smp") {
 
   include_dirs = [
     "//",
+    "//linux_include",
     "//internal_include",
     "//btcore/include",
     "//hci/include",
