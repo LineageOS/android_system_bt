@@ -2968,49 +2968,6 @@ void btif_av_clear_remote_suspend_flag(void) {
   peer->ClearFlags(BtifAvPeer::kFlagRemoteSuspend);
 }
 
-void btif_av_avrcp_event_open(const RawAddress& peer_address) {
-  // TODO: We need a better demultipexing mechanism whether the remote device
-  // is an A2DP Source or a Sink.
-  if (btif_av_source.Enabled()) {
-    BtifAvPeer* peer =
-        btif_av_source.FindOrCreatePeer(peer_address, kBtaHandleUnknown);
-    if (peer != nullptr) {
-      btif_av_source_dispatch_sm_event(peer_address, BTIF_AV_AVRCP_OPEN_EVT);
-      return;
-    }
-  } else if (btif_av_sink.Enabled()) {
-    BtifAvPeer* peer =
-        btif_av_sink.FindOrCreatePeer(peer_address, kBtaHandleUnknown);
-    if (peer != nullptr) {
-      btif_av_sink_dispatch_sm_event(peer_address, BTIF_AV_AVRCP_OPEN_EVT);
-      return;
-    }
-  }
-  BTIF_TRACE_ERROR("%s: event ignored: cannot find or create peer state for %s",
-                   __func__, peer_address.ToString().c_str());
-}
-
-void btif_av_avrcp_event_close(const RawAddress& peer_address) {
-  // TODO: We need a better demultipexing mechanism whether the remote device
-  // is an A2DP Source or a Sink.
-  if (btif_av_source.Enabled()) {
-    btif_av_source_dispatch_sm_event(peer_address, BTIF_AV_AVRCP_CLOSE_EVT);
-  } else if (btif_av_sink.Enabled()) {
-    btif_av_sink_dispatch_sm_event(peer_address, BTIF_AV_AVRCP_CLOSE_EVT);
-  }
-}
-
-void btif_av_avrcp_event_remote_play(const RawAddress& peer_address) {
-  // TODO: We need a better demultipexing mechanism whether the remote device
-  // is an A2DP Source or a Sink.
-  if (btif_av_source.Enabled()) {
-    btif_av_source_dispatch_sm_event(peer_address,
-                                     BTIF_AV_AVRCP_REMOTE_PLAY_EVT);
-  } else if (btif_av_sink.Enabled()) {
-    btif_av_sink_dispatch_sm_event(peer_address, BTIF_AV_AVRCP_REMOTE_PLAY_EVT);
-  }
-}
-
 bool btif_av_is_peer_edr(const RawAddress& peer_address) {
   BtifAvPeer* peer = btif_av_find_peer(peer_address);
   if (peer == nullptr) {
