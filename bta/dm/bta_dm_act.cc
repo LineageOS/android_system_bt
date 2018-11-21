@@ -4039,20 +4039,6 @@ void bta_dm_ble_observe(bool start, uint8_t duration,
     }
   }
 }
-/*******************************************************************************
- *
- * Function         bta_dm_ble_set_adv_params
- *
- * Description      This function set the adv parameters.
- *
- * Parameters:
- *
- ******************************************************************************/
-void bta_dm_ble_set_adv_params(uint16_t adv_int_min, uint16_t adv_int_max,
-                               tBLE_BD_ADDR* p_dir_bda) {
-  BTM_BleSetAdvParams(adv_int_min, adv_int_max, p_dir_bda,
-                      BTA_DM_BLE_ADV_CHNL_MAP);
-}
 
 /** This function set the maximum transmission packet size */
 void bta_dm_ble_set_data_length(const RawAddress& bd_addr,
