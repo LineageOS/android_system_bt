@@ -195,6 +195,7 @@ class Interface {
    * @param call_setup_state current call setup state
    * @param number phone number of the call
    * @param type type of the call
+   * @param name caller display name
    * @param bd_addr remote device address
    * @return BT_STATUS_SUCCESS on success
    */
@@ -202,6 +203,7 @@ class Interface {
                                        bthf_call_state_t call_setup_state,
                                        const char* number,
                                        bthf_call_addrtype_t type,
+                                       const char* name,
                                        RawAddress* bd_addr) = 0;
 
   /**
