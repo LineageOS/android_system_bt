@@ -237,7 +237,8 @@ static void btsock_signaled(int fd, int type, int flags, uint32_t user_id) {
       btsock_l2cap_signaled(fd, flags, user_id);
       break;
     default:
-      CHECK(false && "Invalid socket type");
+      LOG(FATAL) << "Invalid socket type! type=" << type << " fd=" << fd
+                 << " flags=" << flags << " user_id=" << user_id;
       break;
   }
 }
