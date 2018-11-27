@@ -396,7 +396,7 @@ void smp_send_keypress_notification(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_send_enc_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
-    tBTM_LE_LENC_KEYS   le_key;
+    tBTM_LE_KEY_VALUE key;
 
     SMP_TRACE_DEBUG("%s p_cb->loc_enc_size = %d", __func__, p_cb->loc_enc_size);
     smp_update_key_mask (p_cb, SMP_SEC_KEY_TYPE_ENC, FALSE);
@@ -405,14 +405,13 @@ void smp_send_enc_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     smp_send_cmd(SMP_OPCODE_MASTER_ID, p_cb);
 
     /* save the DIV and key size information when acting as slave device */
-    memcpy(le_key.ltk, p_cb->ltk, BT_OCTET16_LEN);
-    le_key.div =  p_cb->div;
-    le_key.key_size = p_cb->loc_enc_size;
-    le_key.sec_level = p_cb->sec_level;
+    memcpy(key.lenc_key.ltk, p_cb->ltk, BT_OCTET16_LEN);
+    key.lenc_key.div =  p_cb->div;
+    key.lenc_key.key_size = p_cb->loc_enc_size;
+    key.lenc_key.sec_level = p_cb->sec_level;
 
     if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND))
-        btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LENC,
-                            (tBTM_LE_KEY_VALUE *)&le_key, TRUE);
+        btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LENC, &key, TRUE);
 
     SMP_TRACE_WARNING ("%s", __func__);
 
@@ -446,17 +445,17 @@ void smp_send_id_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_send_csrk_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
-    tBTM_LE_LCSRK_KEYS  key;
+    tBTM_LE_KEY_VALUE  key;
     SMP_TRACE_DEBUG("%s", __func__);
     smp_update_key_mask (p_cb, SMP_SEC_KEY_TYPE_CSRK, FALSE);
 
     if (smp_send_cmd(SMP_OPCODE_SIGN_INFO, p_cb))
     {
-        key.div = p_cb->div;
-        key.sec_level = p_cb->sec_level;
-        key.counter = 0; /* initialize the local counter */
-        memcpy (key.csrk, p_cb->csrk, BT_OCTET16_LEN);
-        btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LCSRK, (tBTM_LE_KEY_VALUE *)&key, TRUE);
+        key.lcsrk_key.div = p_cb->div;
+        key.lcsrk_key.sec_level = p_cb->sec_level;
+        key.lcsrk_key.counter = 0; /* initialize the local counter */
+        memcpy (key.lcsrk_key.csrk, p_cb->csrk, BT_OCTET16_LEN);
+        btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LCSRK, &key, TRUE);
     }
 
     smp_key_distribution_by_transport(p_cb, NULL);
@@ -1030,7 +1029,7 @@ void smp_proc_enc_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 void smp_proc_master_id(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
     UINT8   *p = (UINT8 *)p_data;
-    tBTM_LE_PENC_KEYS   le_key;
+    tBTM_LE_KEY_VALUE   le_key;
 
     SMP_TRACE_DEBUG("%s", __func__);
 
@@ -1043,18 +1042,16 @@ void smp_proc_master_id(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     smp_update_key_mask (p_cb, SMP_SEC_KEY_TYPE_ENC, TRUE);
 
-    STREAM_TO_UINT16(le_key.ediv, p);
-    STREAM_TO_ARRAY(le_key.rand, p, BT_OCTET8_LEN );
+    STREAM_TO_UINT16(le_key.penc_key.ediv, p);
+    STREAM_TO_ARRAY(le_key.penc_key.rand, p, BT_OCTET8_LEN );
 
     /* store the encryption keys from peer device */
-    memcpy(le_key.ltk, p_cb->ltk, BT_OCTET16_LEN);
-    le_key.sec_level = p_cb->sec_level;
-    le_key.key_size  = p_cb->loc_enc_size;
+    memcpy(le_key.penc_key.ltk, p_cb->ltk, BT_OCTET16_LEN);
+    le_key.penc_key.sec_level = p_cb->sec_level;
+    le_key.penc_key.key_size  = p_cb->loc_enc_size;
 
     if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND))
-        btm_sec_save_le_key(p_cb->pairing_bda,
-                            BTM_LE_KEY_PENC,
-                            (tBTM_LE_KEY_VALUE *)&le_key, TRUE);
+        btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PENC, &le_key, TRUE);
 
     smp_key_distribution(p_cb, NULL);
 }
@@ -1087,24 +1084,23 @@ void smp_proc_id_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 void smp_proc_id_addr(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
     UINT8   *p = (UINT8 *)p_data;
-    tBTM_LE_PID_KEYS    pid_key;
+    tBTM_LE_KEY_VALUE    pid_key;
 
     SMP_TRACE_DEBUG("%s", __func__);
     smp_update_key_mask (p_cb, SMP_SEC_KEY_TYPE_ID, TRUE);
 
-    STREAM_TO_UINT8(pid_key.addr_type, p);
-    STREAM_TO_BDADDR(pid_key.static_addr, p);
-    memcpy(pid_key.irk, p_cb->tk, BT_OCTET16_LEN);
+    STREAM_TO_UINT8(pid_key.pid_key.addr_type, p);
+    STREAM_TO_BDADDR(pid_key.pid_key.static_addr, p);
+    memcpy(pid_key.pid_key.irk, p_cb->tk, BT_OCTET16_LEN);
 
     /* to use as BD_ADDR for lk derived from ltk */
     p_cb->id_addr_rcvd = TRUE;
-    p_cb->id_addr_type = pid_key.addr_type;
-    memcpy(p_cb->id_addr, pid_key.static_addr, BD_ADDR_LEN);
+    p_cb->id_addr_type = pid_key.pid_key.addr_type;
+    memcpy(p_cb->id_addr, pid_key.pid_key.static_addr, BD_ADDR_LEN);
 
     /* store the ID key from peer device */
     if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND))
-        btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PID,
-                            (tBTM_LE_KEY_VALUE *)&pid_key, TRUE);
+        btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PID, &pid_key, TRUE);
     smp_key_distribution_by_transport(p_cb, NULL);
 }
 
@@ -1114,20 +1110,18 @@ void smp_proc_id_addr(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_proc_srk_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
-    tBTM_LE_PCSRK_KEYS   le_key;
+    tBTM_LE_KEY_VALUE   le_key;
 
     SMP_TRACE_DEBUG("%s", __func__);
     smp_update_key_mask (p_cb, SMP_SEC_KEY_TYPE_CSRK, TRUE);
 
     /* save CSRK to security record */
-    le_key.sec_level = p_cb->sec_level;
-    memcpy (le_key.csrk, p_data, BT_OCTET16_LEN);   /* get peer CSRK */
-    le_key.counter = 0; /* initialize the peer counter */
+    le_key.pcsrk_key.sec_level = p_cb->sec_level;
+    memcpy (le_key.pcsrk_key.csrk, p_data, BT_OCTET16_LEN);   /* get peer CSRK */
+    le_key.pcsrk_key.counter = 0; /* initialize the peer counter */
 
     if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND))
-        btm_sec_save_le_key(p_cb->pairing_bda,
-                            BTM_LE_KEY_PCSRK,
-                            (tBTM_LE_KEY_VALUE *)&le_key, TRUE);
+        btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PCSRK, &le_key, TRUE);
     smp_key_distribution_by_transport(p_cb, NULL);
 }
 
