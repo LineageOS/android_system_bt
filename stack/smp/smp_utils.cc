@@ -1436,25 +1436,23 @@ bool smp_check_commitment(tSMP_CB* p_cb) {
  *
  ******************************************************************************/
 void smp_save_secure_connections_long_term_key(tSMP_CB* p_cb) {
-  tBTM_LE_LENC_KEYS lle_key;
-  tBTM_LE_PENC_KEYS ple_key;
+  tBTM_LE_KEY_VALUE lle_key;
+  tBTM_LE_KEY_VALUE ple_key;
 
   SMP_TRACE_DEBUG("%s-Save LTK as local LTK key", __func__);
-  memcpy(lle_key.ltk, p_cb->ltk, BT_OCTET16_LEN);
-  lle_key.div = 0;
-  lle_key.key_size = p_cb->loc_enc_size;
-  lle_key.sec_level = p_cb->sec_level;
-  btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LENC,
-                      (tBTM_LE_KEY_VALUE*)&lle_key, true);
+  memcpy(lle_key.lenc_key.ltk, p_cb->ltk, BT_OCTET16_LEN);
+  lle_key.lenc_key.div = 0;
+  lle_key.lenc_key.key_size = p_cb->loc_enc_size;
+  lle_key.lenc_key.sec_level = p_cb->sec_level;
+  btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LENC, &lle_key, true);
 
   SMP_TRACE_DEBUG("%s-Save LTK as peer LTK key", __func__);
-  ple_key.ediv = 0;
-  memset(ple_key.rand, 0, BT_OCTET8_LEN);
-  memcpy(ple_key.ltk, p_cb->ltk, BT_OCTET16_LEN);
-  ple_key.sec_level = p_cb->sec_level;
-  ple_key.key_size = p_cb->loc_enc_size;
-  btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PENC,
-                      (tBTM_LE_KEY_VALUE*)&ple_key, true);
+  ple_key.penc_key.ediv = 0;
+  memset(ple_key.penc_key.rand, 0, BT_OCTET8_LEN);
+  memcpy(ple_key.penc_key.ltk, p_cb->ltk, BT_OCTET16_LEN);
+  ple_key.penc_key.sec_level = p_cb->sec_level;
+  ple_key.penc_key.key_size = p_cb->loc_enc_size;
+  btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PENC, &ple_key, true);
 }
 
 /*******************************************************************************
