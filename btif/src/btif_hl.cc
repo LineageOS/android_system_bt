@@ -2128,6 +2128,10 @@ static bool btif_hl_proc_sdp_query_cfm(tBTA_HL* p_data) {
       }
     }
   }
+
+  // this was allocated in bta_hl_sdp_query_results
+  osi_free_and_reset((void**)&p_data->sdp_query_cfm.p_sdp);
+
   return status;
 }
 
