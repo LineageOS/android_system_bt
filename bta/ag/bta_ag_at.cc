@@ -27,6 +27,7 @@
 #include "bt_common.h"
 #include "bta_ag_at.h"
 #include "utl.h"
+#include "osi/include/log.h"
 
 /*****************************************************************************
  *  Constants
@@ -81,6 +82,9 @@ void bta_ag_process_at(tBTA_AG_AT_CB* p_cb) {
   uint8_t arg_type;
   char* p_arg;
   int16_t int_arg = 0;
+
+  LOG_INFO("bta_ag_cmd", "AT command <-- %s", p_cb->p_cmd_buf);
+
   /* loop through at command table looking for match */
   for (idx = 0; p_cb->p_at_tbl[idx].p_cmd[0] != 0; idx++) {
     if (!utl_strucmp(p_cb->p_at_tbl[idx].p_cmd, p_cb->p_cmd_buf)) {

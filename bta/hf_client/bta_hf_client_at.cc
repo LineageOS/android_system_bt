@@ -30,7 +30,7 @@
 #include "port_api.h"
 
 /* Uncomment to enable AT traffic dumping */
-/* #define BTA_HF_CLIENT_AT_DUMP 1 */
+#define BTA_HF_CLIENT_AT_DUMP 1
 
 /* minimum length of AT event */
 #define BTA_HF_CLIENT_AT_EVENT_MIN_LEN 3

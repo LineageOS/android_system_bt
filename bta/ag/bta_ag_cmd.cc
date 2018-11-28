@@ -252,9 +252,13 @@ static void bta_ag_send_result(tBTA_AG_SCB* p_scb, size_t code,
     p += strlen(p_arg);
   }
 
+  *p = 0;
+  LOG_INFO(LOG_TAG, "AT command --> %s", buf);
+
   /* finish with \r\n */
   *p++ = '\r';
   *p++ = '\n';
+
 
   /* send to RFCOMM */
   uint16_t len = 0;
