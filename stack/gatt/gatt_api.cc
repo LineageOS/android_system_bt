@@ -36,6 +36,7 @@
 
 using bluetooth::Uuid;
 
+extern bool BTM_BackgroundConnectAddressKnown(const RawAddress& address);
 /**
  * Add an service handle range to the list in decending order of the start
  * handle. Return reference to the newly added element.
@@ -1117,7 +1118,15 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
   if (is_direct) {
     ret = gatt_act_connect(p_reg, bd_addr, transport, initiating_phys);
   } else {
-    ret = gatt::connection_manager::background_connect_add(gatt_if, bd_addr);
+    if (!BTM_BackgroundConnectAddressKnown(bd_addr)) {
+      //  RPA can rotate, and cause device to "expire" in the background
+      //  connection list. RPA is allowed for direct connect, as such request
+      //  times out after 30 seconds
+      LOG(INFO) << "Can't add RPA to background connection.";
+      ret = true;
+    } else {
+      ret = gatt::connection_manager::background_connect_add(gatt_if, bd_addr);
+    }
   }
 
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
