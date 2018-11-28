@@ -1296,26 +1296,6 @@ uint8_t* gatt_dbg_op_name(uint8_t op_code) {
     return (uint8_t*)"Op Code Exceed Max";
 }
 
-/**
- * This function add a device for background connection procedure.
- *
- * Parameters       p_reg: application record,
- *                  bd_addr: peer device address.
- *
- * Returns          true if connection started; false otherwise.
- */
-bool gatt_auto_connect_dev_add(tGATT_IF gatt_if, const RawAddress& bd_addr) {
-  VLOG(1) << __func__;
-
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
-  bool ret = gatt::connection_manager::background_connect_add(gatt_if, bd_addr);
-  if (ret && p_tcb != NULL) {
-    /* if a connected device, update the link holding number */
-    gatt_update_app_use_link_flag(gatt_if, p_tcb, true, true);
-  }
-  return ret;
-}
-
 /** Remove the application interface for the specified background device */
 bool gatt_auto_connect_dev_remove(tGATT_IF gatt_if, const RawAddress& bd_addr) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
