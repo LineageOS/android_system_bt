@@ -396,8 +396,7 @@ extern void gatt_set_err_rsp(bool enable, uint8_t req_op_code,
 /* from gatt_main.cc */
 extern bool gatt_disconnect(tGATT_TCB* p_tcb);
 extern bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr,
-                             tBT_TRANSPORT transport, bool opportunistic,
-                             int8_t initiating_phys);
+                             tBT_TRANSPORT transport, int8_t initiating_phys);
 extern bool gatt_connect(const RawAddress& rem_bda, tGATT_TCB* p_tcb,
                          tBT_TRANSPORT transport, uint8_t initiating_phys);
 extern void gatt_data_process(tGATT_TCB& p_tcb, BT_HDR* p_buf);
@@ -467,8 +466,6 @@ extern tGATT_HDL_LIST_ELEM* gatt_find_hdl_buffer_by_handle(uint16_t handle);
 extern tGATTS_SRV_CHG* gatt_add_srv_chg_clt(tGATTS_SRV_CHG* p_srv_chg);
 
 /* for background connection */
-extern bool gatt_auto_connect_dev_add(tGATT_IF gatt_if,
-                                      const RawAddress& bd_addr);
 extern bool gatt_auto_connect_dev_remove(tGATT_IF gatt_if,
                                          const RawAddress& bd_addr);
 
