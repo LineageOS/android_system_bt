@@ -154,6 +154,30 @@ void btm_ble_bgconn_cancel_if_disconnected(const RawAddress& bd_addr) {
   }
 }
 
+bool BTM_BackgroundConnectAddressKnown(const RawAddress& address) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(address);
+
+  //  not a known device, or a classic device, we assume public address
+  if (p_dev_rec == NULL || (p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) == 0)
+    return true;
+
+  // bonded device with identity address known
+  if (p_dev_rec->ble.identity_addr != address &&
+      !p_dev_rec->ble.identity_addr.IsEmpty()) {
+    return true;
+  }
+
+  // Public address, Random Static, or Random Non-Resolvable Address known
+  if (p_dev_rec->ble.ble_addr_type == BLE_ADDR_PUBLIC ||
+      !BTM_BLE_IS_RESOLVE_BDA(address)) {
+    return true;
+  }
+
+  // Only Resolvable Private Address (RPA) is known, we don't allow it into
+  // the background connection procedure.
+  return false;
+}
+
 /*******************************************************************************
  *
  * Function         btm_add_dev_to_controller
@@ -162,33 +186,34 @@ void btm_ble_bgconn_cancel_if_disconnected(const RawAddress& bd_addr) {
  ******************************************************************************/
 bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
-  bool started = false;
 
   if (p_dev_rec != NULL && p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) {
     if (to_add) {
-      if (p_dev_rec->ble.ble_addr_type == BLE_ADDR_PUBLIC ||
-          !BTM_BLE_IS_RESOLVE_BDA(bd_addr)) {
-        background_connection_add(p_dev_rec->ble.ble_addr_type, bd_addr);
-        started = true;
-        p_dev_rec->ble.in_controller_list |= BTM_WHITE_LIST_BIT;
-      } else if (p_dev_rec->ble.identity_addr != bd_addr &&
-                 !p_dev_rec->ble.identity_addr.IsEmpty()) {
+      if (p_dev_rec->ble.identity_addr != bd_addr &&
+          !p_dev_rec->ble.identity_addr.IsEmpty()) {
         background_connection_add(p_dev_rec->ble.identity_addr_type,
                                   p_dev_rec->ble.identity_addr);
-        started = true;
-        p_dev_rec->ble.in_controller_list |= BTM_WHITE_LIST_BIT;
-      }
-    } else {
-      if (p_dev_rec->ble.ble_addr_type == BLE_ADDR_PUBLIC ||
-          !BTM_BLE_IS_RESOLVE_BDA(bd_addr)) {
-        background_connection_remove(bd_addr);
-        started = true;
+      } else {
+        background_connection_add(p_dev_rec->ble.ble_addr_type, bd_addr);
+
+        if (p_dev_rec->ble.ble_addr_type == BLE_ADDR_RANDOM &&
+            BTM_BLE_IS_RESOLVE_BDA(bd_addr)) {
+          LOG(INFO) << __func__ << " addig RPA into white list";
+        }
       }
 
+      p_dev_rec->ble.in_controller_list |= BTM_WHITE_LIST_BIT;
+    } else {
       if (!p_dev_rec->ble.identity_addr.IsEmpty() &&
           p_dev_rec->ble.identity_addr != bd_addr) {
         background_connection_remove(p_dev_rec->ble.identity_addr);
-        started = true;
+      } else {
+        background_connection_remove(bd_addr);
+
+        if (p_dev_rec->ble.ble_addr_type == BLE_ADDR_RANDOM &&
+            BTM_BLE_IS_RESOLVE_BDA(bd_addr)) {
+          LOG(INFO) << __func__ << " removing RPA from white list";
+        }
       }
 
       p_dev_rec->ble.in_controller_list &= ~BTM_WHITE_LIST_BIT;
@@ -196,14 +221,13 @@ bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
   } else {
     /* not a known device, i.e. attempt to connect to device never seen before
      */
-    started = true;
     if (to_add)
       background_connection_add(BLE_ADDR_PUBLIC, bd_addr);
     else
       background_connection_remove(bd_addr);
   }
 
-  return started;
+  return true;
 }
 
 /** White list add complete */
