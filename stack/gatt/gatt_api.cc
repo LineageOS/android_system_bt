@@ -36,6 +36,7 @@
 
 using bluetooth::Uuid;
 
+extern bool BTM_BackgroundConnectAddressKnown(const RawAddress& address);
 /**
  * Add an service handle range to the list in decending order of the start
  * handle. Return reference to the newly added element.
@@ -1099,25 +1100,47 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
 bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
                   tBT_TRANSPORT transport, bool opportunistic,
                   uint8_t initiating_phys) {
-  LOG(INFO) << __func__ << "gatt_if=" << +gatt_if << " " << bd_addr;
+  LOG(INFO) << __func__ << "gatt_if=" << +gatt_if << ", address=" << bd_addr;
 
   /* Make sure app is registered */
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
   if (!p_reg) {
     LOG(ERROR) << "gatt_if = " << +gatt_if << " is not registered";
-    return (false);
+    return false;
   }
 
-  if (is_direct)
-    return gatt_act_connect(p_reg, bd_addr, transport, opportunistic,
-                            initiating_phys);
-
-  // is not direct
-  if (transport != BT_TRANSPORT_LE) {
+  if (!is_direct && transport != BT_TRANSPORT_LE) {
     LOG(ERROR) << "Unsupported transport for background connection";
     return false;
   }
-  return gatt_auto_connect_dev_add(gatt_if, bd_addr);
+
+  bool ret;
+  if (is_direct) {
+    ret = gatt_act_connect(p_reg, bd_addr, transport, initiating_phys);
+  } else {
+    if (!BTM_BackgroundConnectAddressKnown(bd_addr)) {
+      //  RPA can rotate, and cause device to "expire" in the background
+      //  connection list. RPA is allowed for direct connect, as such request
+      //  times out after 30 seconds
+      LOG(INFO) << "Can't add RPA to background connection.";
+      ret = true;
+    } else {
+      ret = gatt::connection_manager::background_connect_add(gatt_if, bd_addr);
+    }
+  }
+
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
+  // background connections don't necesarly create tcb
+  if (!p_tcb) return ret;
+
+  if (ret) {
+    if (!opportunistic)
+      gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, !is_direct);
+    else
+      VLOG(1) << __func__
+              << ": connection is opportunistic, not updating app usage";
+  }
+  return ret;
 }
 
 /*******************************************************************************
