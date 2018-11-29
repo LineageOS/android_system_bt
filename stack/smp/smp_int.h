@@ -479,6 +479,7 @@ extern void smp_xor_128(BT_OCTET16 a, BT_OCTET16 b);
 extern bool smp_encrypt_data(uint8_t* key, uint8_t key_len, uint8_t* plain_text,
                              uint8_t pt_len, tSMP_ENC* p_out);
 extern bool smp_command_has_invalid_parameters(tSMP_CB* p_cb);
+extern bool smp_command_has_invalid_length(tSMP_CB* p_cb);
 extern void smp_reject_unexpected_pairing_command(const RawAddress& bd_addr);
 extern tSMP_ASSO_MODEL smp_select_association_model(tSMP_CB* p_cb);
 extern void smp_reverse_array(uint8_t* arr, uint8_t len);
