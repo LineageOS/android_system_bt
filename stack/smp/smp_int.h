@@ -488,6 +488,7 @@ extern void smp_xor_128(BT_OCTET16 a, BT_OCTET16 b);
 extern BOOLEAN smp_encrypt_data (UINT8 *key, UINT8 key_len,
                                  UINT8 *plain_text, UINT8 pt_len,
                                  tSMP_ENC *p_out);
+extern BOOLEAN smp_command_has_invalid_length(tSMP_CB *p_cb);
 extern BOOLEAN smp_command_has_invalid_parameters(tSMP_CB *p_cb);
 extern void smp_reject_unexpected_pairing_command(BD_ADDR bd_addr);
 extern tSMP_ASSO_MODEL smp_select_association_model(tSMP_CB *p_cb);
