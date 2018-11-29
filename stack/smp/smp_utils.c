@@ -963,6 +963,35 @@ void smp_proc_pairing_cmpl(tSMP_CB *p_cb)
 }
 
 /*******************************************************************************
+ *
+ * Function         smp_command_has_invalid_length
+ *
+ * Description      Checks if the received SMP command has invalid length
+ *                  It returns true if the command has invalid length.
+ *
+ * Returns          true if the command has invalid length, false otherwise.
+ *
+ ******************************************************************************/
+BOOLEAN smp_command_has_invalid_length(tSMP_CB* p_cb)
+{
+    UINT8 cmd_code = p_cb->rcvd_cmd_code;
+
+    if ((cmd_code > (SMP_OPCODE_MAX + 1 /* for SMP_OPCODE_PAIR_COMMITM */)) ||
+        (cmd_code < SMP_OPCODE_MIN))
+    {
+        SMP_TRACE_WARNING("%s: Received command with RESERVED code 0x%02x",
+                          __func__, cmd_code);
+        return TRUE;
+    }
+
+    if (!smp_command_has_valid_fixed_length(p_cb)) {
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+/*******************************************************************************
 **
 ** Function         smp_command_has_invalid_parameters
 **
