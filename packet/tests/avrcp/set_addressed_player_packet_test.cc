@@ -39,7 +39,7 @@ TEST(SetAddressedPlayerRequestTest, getterTest) {
   auto test_packet =
       TestSetAddrPlayerPacket::Make(set_addressed_player_request);
 
-  ASSERT_EQ(test_packet->GetPlayerId(), 0x0001u);
+  ASSERT_EQ(test_packet->GetPlayerId(), 0x0000u);
 }
 
 TEST(SetAddressedPlayerRequestTest, validTest) {

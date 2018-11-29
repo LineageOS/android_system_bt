@@ -126,9 +126,9 @@ void Device::VendorPacketHandler(uint8_t label,
       // this currently since the current implementation only has one
       // player and the player will never change, but we need it for a
       // more complete implementation.
-      auto response = RejectBuilder::MakeBuilder(
-          CommandPdu::SET_ADDRESSED_PLAYER, Status::INVALID_PLAYER_ID);
-      send_message(label, false, std::move(response));
+      media_interface_->GetMediaPlayerList(base::Bind(
+          &Device::HandleSetAddressedPlayer, weak_ptr_factory_.GetWeakPtr(),
+          label, Packet::Specialize<SetAddressedPlayerRequest>(pkt)));
     } break;
 
     default: {
@@ -182,6 +182,14 @@ void Device::HandleGetCapabilities(
 
 void Device::HandleNotification(
     uint8_t label, const std::shared_ptr<RegisterNotificationRequest>& pkt) {
+  if (!pkt->IsValid()) {
+    DEVICE_LOG(ERROR) << __func__ << ": Request packet is not valid";
+    auto response = RejectBuilder::MakeBuilder(pkt->GetCommandPdu(),
+                                               Status::INVALID_PARAMETER);
+    send_message(label, false, std::move(response));
+    return;
+  }
+
   DEVICE_VLOG(4) << __func__ << ": event=" << pkt->GetEventRegistered();
 
   switch (pkt->GetEventRegistered()) {
@@ -615,6 +623,24 @@ void Device::HandlePlayItem(uint8_t label,
                              pkt->GetScope() == Scope::NOW_PLAYING, media_id);
 
   auto response = PlayItemResponseBuilder::MakeBuilder(Status::NO_ERROR);
+  send_message(label, false, std::move(response));
+}
+
+void Device::HandleSetAddressedPlayer(
+    uint8_t label, std::shared_ptr<SetAddressedPlayerRequest> pkt,
+    uint16_t curr_player, std::vector<MediaPlayerInfo> players) {
+  DEVICE_VLOG(2) << __func__ << ": PlayerId=" << pkt->GetPlayerId();
+
+  if (curr_player != pkt->GetPlayerId()) {
+    DEVICE_VLOG(2) << "Reject invalid addressed player ID";
+    auto response = RejectBuilder::MakeBuilder(CommandPdu::SET_ADDRESSED_PLAYER,
+                                               Status::INVALID_PLAYER_ID);
+    send_message(label, false, std::move(response));
+    return;
+  }
+
+  auto response =
+      SetAddressedPlayerResponseBuilder::MakeBuilder(Status::NO_ERROR);
   send_message(label, false, std::move(response));
 }
 
