@@ -513,6 +513,14 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   p_cb->flags |= SMP_PAIR_FLAG_ENC_AFTER_PAIR;
 
+  if (smp_command_has_invalid_length(p_cb)) {
+    tSMP_INT_DATA smp_int_data;
+    smp_int_data.status = SMP_INVALID_PARAMETERS;
+    android_errorWriteLog(0x534e4554, "111850706");
+    smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
+    return;
+  }
+
   STREAM_TO_UINT8(p_cb->peer_io_caps, p);
   STREAM_TO_UINT8(p_cb->peer_oob_flag, p);
   STREAM_TO_UINT8(p_cb->peer_auth_req, p);
@@ -780,6 +788,14 @@ void smp_br_process_pairing_command(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   p_cb->flags |= SMP_PAIR_FLAG_ENC_AFTER_PAIR;
 
+  if (smp_command_has_invalid_length(p_cb)) {
+    tSMP_INT_DATA smp_int_data;
+    smp_int_data.status = SMP_INVALID_PARAMETERS;
+    android_errorWriteLog(0x534e4554, "111213909");
+    smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &smp_int_data);
+    return;
+  }
+
   STREAM_TO_UINT8(p_cb->peer_io_caps, p);
   STREAM_TO_UINT8(p_cb->peer_oob_flag, p);
   STREAM_TO_UINT8(p_cb->peer_auth_req, p);
@@ -979,6 +995,15 @@ void smp_proc_id_addr(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   tBTM_LE_PID_KEYS pid_key;
 
   SMP_TRACE_DEBUG("%s", __func__);
+
+  if (smp_command_has_invalid_parameters(p_cb)) {
+    tSMP_INT_DATA smp_int_data;
+    smp_int_data.status = SMP_INVALID_PARAMETERS;
+    android_errorWriteLog(0x534e4554, "111214770");
+    smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
+    return;
+  }
+
   smp_update_key_mask(p_cb, SMP_SEC_KEY_TYPE_ID, true);
 
   STREAM_TO_UINT8(pid_key.identity_addr_type, p);
@@ -1003,6 +1028,15 @@ void smp_proc_srk_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   tBTM_LE_PCSRK_KEYS le_key;
 
   SMP_TRACE_DEBUG("%s", __func__);
+
+  if (smp_command_has_invalid_parameters(p_cb)) {
+    tSMP_INT_DATA smp_int_data;
+    smp_int_data.status = SMP_INVALID_PARAMETERS;
+    android_errorWriteLog(0x534e4554, "111214470");
+    smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
+    return;
+  }
+
   smp_update_key_mask(p_cb, SMP_SEC_KEY_TYPE_CSRK, true);
 
   /* save CSRK to security record */

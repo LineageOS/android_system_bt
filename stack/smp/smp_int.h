@@ -448,6 +448,7 @@ extern void smp_convert_string_to_tk(Octet16* tk, uint32_t passkey);
 extern void smp_mask_enc_key(uint8_t loc_enc_size, Octet16* p_data);
 extern void smp_rsp_timeout(void* data);
 extern void smp_delayed_auth_complete_timeout(void* data);
+extern bool smp_command_has_invalid_length(tSMP_CB* p_cb);
 extern bool smp_command_has_invalid_parameters(tSMP_CB* p_cb);
 extern void smp_reject_unexpected_pairing_command(const RawAddress& bd_addr);
 extern tSMP_ASSO_MODEL smp_select_association_model(tSMP_CB* p_cb);
