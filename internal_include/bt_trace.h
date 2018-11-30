@@ -729,7 +729,7 @@ void LogMsg(uint32_t trace_set_mask, const char* fmt_str, ...);
 
 #include <base/logging.h>
 
-/* Prints intergral parameter x as hex string, with '0' fill */
+/* Prints integral parameter x as hex string, with '0' fill */
 template <typename T>
 std::string loghex(T x) {
   static_assert(std::is_integral<T>::value,
@@ -737,6 +737,19 @@ std::string loghex(T x) {
   std::stringstream tmp;
   tmp << std::showbase << std::internal << std::hex << std::setfill('0')
       << std::setw((sizeof(T) * 2) + 2) << +x;
+  return tmp.str();
+}
+
+/* Prints integral array as hex string, with '0' fill */
+template <typename T, size_t N>
+std::string loghex(std::array<T, N> array) {
+  static_assert(std::is_integral<T>::value,
+                "type stored in array must be integral.");
+  std::stringstream tmp;
+  for (const auto& x : array) {
+    tmp << std::internal << std::hex << std::setfill('0')
+        << std::setw((sizeof(uint8_t) * 2) + 2) << +x;
+  }
   return tmp.str();
 }
 
