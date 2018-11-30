@@ -7,10 +7,14 @@ cc_library_static {
         "system/bt/stack/include",
     ],
     srcs: [
+        "address_obfuscator.cc",
         "timer.cc",
         "message_loop_thread.cc",
         "metrics.cc",
         "time_util.cc",
+    ],
+    shared_libs: [
+        "libcrypto",
     ],
     static_libs: [
         "libbt-protos-lite",
@@ -27,6 +31,7 @@ cc_test {
         "system/bt/stack/include",
     ],
     srcs : [
+        "address_obfuscator_unittest.cc",
         "timer_unittest.cc",
         "leaky_bonded_queue_unittest.cc",
         "message_loop_thread_unittest.cc",
@@ -36,6 +41,7 @@ cc_test {
     ],
     shared_libs: [
         "libprotobuf-cpp-lite",
+        "libcrypto",
     ],
     static_libs : [
         "libgmock",
