@@ -561,11 +561,16 @@ static void alarm_ready_generic(alarm_t* alarm,
   if (alarm == NULL) {
     return;  // The alarm was probably canceled
   }
+
   //
   // If the alarm is not periodic, we've fully serviced it now, and can reset
   // some of its internal state. This is useful to distinguish between expired
   // alarms and active ones.
   //
+  if (!alarm->callback) {
+    LOG(FATAL) << __func__
+               << ": timer callback is NULL! Name=" << alarm->stats.name;
+  }
   alarm_callback_t callback = alarm->callback;
   void* data = alarm->data;
   uint64_t deadline_ms = alarm->deadline_ms;
