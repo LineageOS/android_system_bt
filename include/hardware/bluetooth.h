@@ -616,6 +616,14 @@ typedef struct {
    * Get the AvrcpTarget Service interface to interact with the Avrcp Service
    */
   bluetooth::avrcp::ServiceInterface* (*get_avrcp_service)(void);
+
+  /**
+   * Obfuscate Bluetooth MAC address into a PII free ID string
+   *
+   * @param address Bluetooth MAC address to be obfuscated
+   * @return a string of uint8_t that is unique to this MAC address
+   */
+  std::string (*obfuscate_address)(const RawAddress& address);
 } bt_interface_t;
 
 #define BLUETOOTH_INTERFACE_STRING "bluetoothInterface"

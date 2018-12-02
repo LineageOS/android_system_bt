@@ -25,6 +25,9 @@
     <option name="run-command" value="settings put global ble_scan_always_enabled 0" />
     <option name="run-command" value="svc bluetooth disable" />
   </target_preparer>
+  <target_preparer class="com.android.tradefed.targetprep.FolderSaver">
+    <option name="device-path" value="/data/vendor/ssrdump" />
+  </target_preparer>
   <test class="com.android.tradefed.testtype.GTest" >
     <option name="native-test-device-path" value="/data/local/tmp" />
     <option name="module-name" value="{MODULE}" />
