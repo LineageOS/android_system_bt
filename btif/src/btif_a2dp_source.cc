@@ -41,8 +41,8 @@
 #include "btif_util.h"
 #include "common/message_loop_thread.h"
 #include "common/metrics.h"
+#include "common/repeating_timer.h"
 #include "common/time_util.h"
-#include "common/timer.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
@@ -51,7 +51,7 @@
 
 using bluetooth::common::A2dpSessionMetrics;
 using bluetooth::common::BluetoothMetricsLogger;
-using bluetooth::common::Timer;
+using bluetooth::common::RepeatingTimer;
 
 extern std::unique_ptr<tUIPC_STATE> a2dp_uipc;
 
@@ -212,7 +212,7 @@ class BtifA2dpSource {
 
   fixed_queue_t* tx_audio_queue;
   bool tx_flush; /* Discards any outgoing data when true */
-  Timer media_alarm;
+  RepeatingTimer media_alarm;
   const tA2DP_ENCODER_INTERFACE* encoder_interface;
   uint64_t encoder_interval_ms; /* Local copy of the encoder interval */
   BtifMediaStats stats;

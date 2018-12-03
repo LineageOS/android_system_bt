@@ -21,14 +21,16 @@
 #include <future>
 
 #include "common/message_loop_thread.h"
+#include "common/once_timer.h"
+#include "common/repeating_timer.h"
 #include "common/time_util.h"
-#include "common/timer.h"
 #include "osi/include/alarm.h"
 
 using ::benchmark::State;
 using bluetooth::common::MessageLoopThread;
+using bluetooth::common::OnceTimer;
+using bluetooth::common::RepeatingTimer;
 using bluetooth::common::time_get_os_boottime_us;
-using bluetooth::common::Timer;
 
 // fake get_main_message_loop implementation for alarm
 base::MessageLoop* get_main_message_loop() { return nullptr; }
@@ -104,14 +106,17 @@ class BM_AlarmTaskTimer : public ::benchmark::Fixture {
     message_loop_thread_ = new MessageLoopThread("timer_benchmark");
     message_loop_thread_->StartUp();
     message_loop_thread_->EnableRealTimeScheduling();
-    timer_ = new Timer();
+    once_timer_ = new OnceTimer();
+    repeating_timer_ = new RepeatingTimer();
     g_promise = std::make_shared<std::promise<void>>();
   }
 
   void TearDown(State& st) override {
     g_promise = nullptr;
-    delete timer_;
-    timer_ = nullptr;
+    delete once_timer_;
+    once_timer_ = nullptr;
+    delete repeating_timer_;
+    repeating_timer_ = nullptr;
     message_loop_thread_->ShutDown();
     delete message_loop_thread_;
     message_loop_thread_ = nullptr;
@@ -119,18 +124,19 @@ class BM_AlarmTaskTimer : public ::benchmark::Fixture {
   }
 
   MessageLoopThread* message_loop_thread_;
-  Timer* timer_;
+  OnceTimer* once_timer_;
+  RepeatingTimer* repeating_timer_;
 };
 
 BENCHMARK_DEFINE_F(BM_AlarmTaskTimer, timer_performance_ms)(State& state) {
   auto milliseconds = static_cast<int>(state.range(0));
   for (auto _ : state) {
     auto start_time_point = time_get_os_boottime_us();
-    timer_->Schedule(message_loop_thread_->GetWeakPtr(), FROM_HERE,
-                     base::Bind(&TimerFire, nullptr),
-                     base::TimeDelta::FromMilliseconds(milliseconds));
+    once_timer_->Schedule(message_loop_thread_->GetWeakPtr(), FROM_HERE,
+                          base::BindOnce(&TimerFire, nullptr),
+                          base::TimeDelta::FromMilliseconds(milliseconds));
     g_promise->get_future().get();
-    timer_->Cancel();
+    once_timer_->Cancel();
     auto end_time_point = time_get_os_boottime_us();
     auto duration = end_time_point - start_time_point;
     state.SetIterationTime(duration * 1e-6);
@@ -204,7 +210,8 @@ class BM_AlarmTaskPeriodicTimer : public ::benchmark::Fixture {
     message_loop_thread_ = new MessageLoopThread("timer_benchmark");
     message_loop_thread_->StartUp();
     message_loop_thread_->EnableRealTimeScheduling();
-    timer_ = new Timer();
+    once_timer_ = new OnceTimer();
+    repeating_timer_ = new RepeatingTimer();
     g_map.clear();
     g_promise = std::make_shared<std::promise<void>>();
     g_scheduled_tasks = 0;
@@ -215,8 +222,10 @@ class BM_AlarmTaskPeriodicTimer : public ::benchmark::Fixture {
 
   void TearDown(State& st) override {
     g_promise = nullptr;
-    delete timer_;
-    timer_ = nullptr;
+    delete once_timer_;
+    once_timer_ = nullptr;
+    delete repeating_timer_;
+    repeating_timer_ = nullptr;
     message_loop_thread_->ShutDown();
     delete message_loop_thread_;
     message_loop_thread_ = nullptr;
@@ -224,7 +233,8 @@ class BM_AlarmTaskPeriodicTimer : public ::benchmark::Fixture {
   }
 
   MessageLoopThread* message_loop_thread_;
-  Timer* timer_;
+  OnceTimer* once_timer_;
+  RepeatingTimer* repeating_timer_;
 };
 
 BENCHMARK_DEFINE_F(BM_AlarmTaskPeriodicTimer, periodic_accuracy)
@@ -234,12 +244,12 @@ BENCHMARK_DEFINE_F(BM_AlarmTaskPeriodicTimer, periodic_accuracy)
     g_task_length = state.range(1);
     g_task_interval = state.range(2);
     g_start_time = time_get_os_boottime_us();
-    timer_->SchedulePeriodic(
+    repeating_timer_->SchedulePeriodic(
         message_loop_thread_->GetWeakPtr(), FROM_HERE,
-        base::Bind(&AlarmSleepAndCountDelayedTime, nullptr),
+        base::BindRepeating(&AlarmSleepAndCountDelayedTime, nullptr),
         base::TimeDelta::FromMilliseconds(g_task_interval));
     g_promise->get_future().get();
-    timer_->Cancel();
+    repeating_timer_->Cancel();
   }
   for (const auto& delay : g_map) {
     state.counters[std::to_string(delay.first)] = delay.second;

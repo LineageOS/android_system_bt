@@ -8,9 +8,10 @@ cc_library_static {
     ],
     srcs: [
         "address_obfuscator.cc",
-        "timer.cc",
         "message_loop_thread.cc",
         "metrics.cc",
+        "once_timer.cc",
+        "repeating_timer.cc",
         "time_util.cc",
     ],
     shared_libs: [
@@ -32,10 +33,11 @@ cc_test {
     ],
     srcs : [
         "address_obfuscator_unittest.cc",
-        "timer_unittest.cc",
         "leaky_bonded_queue_unittest.cc",
         "message_loop_thread_unittest.cc",
         "metrics_unittest.cc",
+        "once_timer_unittest.cc",
+        "repeating_timer_unittest.cc",
         "state_machine_unittest.cc",
         "time_util_unittest.cc",
     ],
