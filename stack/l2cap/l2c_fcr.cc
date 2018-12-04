@@ -841,6 +841,14 @@ void l2c_lcc_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
       return;
     }
 
+    if (sdu_length < p_buf->len) {
+      L2CAP_TRACE_ERROR("%s: Invalid sdu_length: %d", __func__, sdu_length);
+      android_errorWriteWithInfoLog(0x534e4554, "112321180", -1, NULL, 0);
+      /* Discard the buffer */
+      osi_free(p_buf);
+      return;
+    }
+
     p_data = (BT_HDR*)osi_malloc(BT_HDR_SIZE + sdu_length);
     if (p_data == NULL) {
       osi_free(p_buf);
