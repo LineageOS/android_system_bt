@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#include "timer.h"
+#include "repeating_timer.h"
+
 #include "message_loop_thread.h"
 #include "time_util.h"
 
@@ -25,7 +26,7 @@ namespace common {
 constexpr base::TimeDelta kMinimumPeriod = base::TimeDelta::FromMicroseconds(1);
 
 // This runs on user thread
-Timer::~Timer() {
+RepeatingTimer::~RepeatingTimer() {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
   if (message_loop_thread_ != nullptr && message_loop_thread_->IsRunning()) {
     CancelAndWait();
@@ -33,30 +34,17 @@ Timer::~Timer() {
 }
 
 // This runs on user thread
-bool Timer::Schedule(const base::WeakPtr<MessageLoopThread>& thread,
-                     const base::Location& from_here, base::Closure task,
-                     base::TimeDelta delay) {
-  return ScheduleTaskHelper(thread, from_here, std::move(task), delay, false);
-}
-
-// This runs on user thread
-bool Timer::SchedulePeriodic(const base::WeakPtr<MessageLoopThread>& thread,
-                             const base::Location& from_here,
-                             base::Closure task, base::TimeDelta period) {
+bool RepeatingTimer::SchedulePeriodic(
+    const base::WeakPtr<MessageLoopThread>& thread,
+    const base::Location& from_here, base::Closure task,
+    base::TimeDelta period) {
   if (period < kMinimumPeriod) {
     LOG(ERROR) << __func__ << ": period must be at least " << kMinimumPeriod;
     return false;
   }
-  return ScheduleTaskHelper(thread, from_here, std::move(task), period, true);
-}
 
-// This runs on user thread
-bool Timer::ScheduleTaskHelper(const base::WeakPtr<MessageLoopThread>& thread,
-                               const base::Location& from_here,
-                               base::Closure task, base::TimeDelta delay,
-                               bool is_periodic) {
   uint64_t time_now_us = time_get_os_boottime_us();
-  uint64_t time_next_task_us = time_now_us + delay.InMicroseconds();
+  uint64_t time_next_task_us = time_now_us + period.InMicroseconds();
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
   if (thread == nullptr) {
     LOG(ERROR) << __func__ << ": thread must be non-null";
@@ -65,10 +53,10 @@ bool Timer::ScheduleTaskHelper(const base::WeakPtr<MessageLoopThread>& thread,
   CancelAndWait();
   expected_time_next_task_us_ = time_next_task_us;
   task_ = std::move(task);
-  task_wrapper_.Reset(base::Bind(&Timer::RunTask, base::Unretained(this)));
+  task_wrapper_.Reset(
+      base::Bind(&RepeatingTimer::RunTask, base::Unretained(this)));
   message_loop_thread_ = thread;
-  period_ = delay;
-  is_periodic_ = is_periodic;
+  period_ = period;
   uint64_t time_until_next_us = time_next_task_us - time_get_os_boottime_us();
   if (!thread->DoInThreadDelayed(
           from_here, task_wrapper_.callback(),
@@ -80,20 +68,19 @@ bool Timer::ScheduleTaskHelper(const base::WeakPtr<MessageLoopThread>& thread,
     task_wrapper_.Cancel();
     message_loop_thread_ = nullptr;
     period_ = {};
-    is_periodic_ = false;
     return false;
   }
   return true;
 }
 
 // This runs on user thread
-void Timer::Cancel() {
+void RepeatingTimer::Cancel() {
   std::promise<void> promise;
   CancelHelper(std::move(promise));
 }
 
 // This runs on user thread
-void Timer::CancelAndWait() {
+void RepeatingTimer::CancelAndWait() {
   std::promise<void> promise;
   auto future = promise.get_future();
   CancelHelper(std::move(promise));
@@ -101,7 +88,7 @@ void Timer::CancelAndWait() {
 }
 
 // This runs on user thread
-void Timer::CancelHelper(std::promise<void> promise) {
+void RepeatingTimer::CancelHelper(std::promise<void> promise) {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
   MessageLoopThread* scheduled_thread = message_loop_thread_.get();
   if (scheduled_thread == nullptr) {
@@ -113,29 +100,28 @@ void Timer::CancelHelper(std::promise<void> promise) {
     return;
   }
   scheduled_thread->DoInThread(
-      FROM_HERE, base::BindOnce(&Timer::CancelClosure, base::Unretained(this),
-                                std::move(promise)));
+      FROM_HERE, base::BindOnce(&RepeatingTimer::CancelClosure,
+                                base::Unretained(this), std::move(promise)));
 }
 
 // This runs on message loop thread
-void Timer::CancelClosure(std::promise<void> promise) {
+void RepeatingTimer::CancelClosure(std::promise<void> promise) {
   message_loop_thread_ = nullptr;
   task_wrapper_.Cancel();
   task_ = {};
   period_ = base::TimeDelta();
-  is_periodic_ = false;
   expected_time_next_task_us_ = 0;
   promise.set_value();
 }
 
 // This runs on user thread
-bool Timer::IsScheduled() const {
+bool RepeatingTimer::IsScheduled() const {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
   return message_loop_thread_ != nullptr && message_loop_thread_->IsRunning();
 }
 
 // This runs on message loop thread
-void Timer::RunTask() {
+void RepeatingTimer::RunTask() {
   if (message_loop_thread_ == nullptr || !message_loop_thread_->IsRunning()) {
     LOG(ERROR) << __func__
                << ": message_loop_thread_ is null or is not running";
@@ -144,15 +130,7 @@ void Timer::RunTask() {
   CHECK_EQ(message_loop_thread_->GetThreadId(),
            base::PlatformThread::CurrentId())
       << ": task must run on message loop thread";
-  if (is_periodic_) {
-    RunPeriodicTask();
-  } else {
-    RunSingleTask();
-  }
-}
 
-// This runs on message loop thread
-void Timer::RunPeriodicTask() {
   int64_t period_us = period_.InMicroseconds();
   expected_time_next_task_us_ += period_us;
   uint64_t time_now_us = time_get_os_boottime_us();
@@ -176,17 +154,6 @@ void Timer::RunPeriodicTask() {
                << " microseconds, longer than interval "
                << period_.InMicroseconds() << " microseconds";
   }
-}
-
-// This runs on message loop thread
-void Timer::RunSingleTask() {
-  base::OnceClosure current_task = std::move(task_);
-  task_wrapper_.Cancel();
-  task_ = {};
-  period_ = base::TimeDelta();
-  expected_time_next_task_us_ = 0;
-  std::move(current_task).Run();
-  message_loop_thread_ = nullptr;
 }
 
 }  // namespace common
