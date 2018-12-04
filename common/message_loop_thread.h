@@ -176,7 +176,8 @@ class MessageLoopThread final {
   bool DoInThreadDelayed(const base::Location& from_here,
                          base::OnceClosure task, const base::TimeDelta& delay);
 
-  friend class Timer;  // allow Timer to use DoInThreadDelayed()
+  friend class RepeatingTimer;  // allow Timer to use DoInThreadDelayed()
+  friend class OnceTimer;       // allow OnceTimer to use DoInThreadDelayed()
 
   /**
    * Actual method to run the thread, blocking until ShutDown() is called
