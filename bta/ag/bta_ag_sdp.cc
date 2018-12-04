@@ -470,7 +470,6 @@ void bta_ag_do_disc(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
 
     if (p_scb->hsp_version >= HSP_VERSION_1_2) {
       uuid_list[0] = Uuid::From16Bit(UUID_SERVCLASS_HEADSET_HS);
-      num_uuid = 2;
     } else {
       /* Legacy from HSP v1.0 */
       uuid_list[0] = Uuid::From16Bit(UUID_SERVCLASS_HEADSET);
