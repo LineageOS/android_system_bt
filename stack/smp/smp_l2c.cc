@@ -22,6 +22,7 @@
  *
  ******************************************************************************/
 
+#include <cutils/log.h>
 #include "bt_target.h"
 
 #include <string.h>
@@ -140,6 +141,14 @@ static void smp_data_received(uint16_t channel, const RawAddress& bd_addr,
   tSMP_CB* p_cb = &smp_cb;
   uint8_t* p = (uint8_t*)(p_buf + 1) + p_buf->offset;
   uint8_t cmd;
+
+  if (p_buf->len < 1) {
+    android_errorWriteLog(0x534e4554, "111215315");
+    SMP_TRACE_WARNING("%s: smp packet length %d too short: must be at least 1",
+                      __func__, p_buf->len);
+    osi_free(p_buf);
+    return;
+  }
 
   STREAM_TO_UINT8(cmd, p);
 
@@ -281,6 +290,14 @@ static void smp_br_data_received(uint16_t channel, const RawAddress& bd_addr,
   uint8_t* p = (uint8_t*)(p_buf + 1) + p_buf->offset;
   uint8_t cmd;
   SMP_TRACE_EVENT("SMDBG l2c %s", __func__);
+
+  if (p_buf->len < 1) {
+    android_errorWriteLog(0x534e4554, "111215315");
+    SMP_TRACE_WARNING("%s: smp packet length %d too short: must be at least 1",
+                      __func__, p_buf->len);
+    osi_free(p_buf);
+    return;
+  }
 
   STREAM_TO_UINT8(cmd, p);
 
