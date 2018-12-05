@@ -539,6 +539,10 @@ uint8_t rfc_parse_data(tRFC_MCB* p_mcb, MX_FRAME* p_frame, BT_HDR* p_buf) {
   /* handle credit if credit based flow control */
   if ((p_mcb->flow == PORT_FC_CREDIT) && (p_frame->type == RFCOMM_UIH) &&
       (p_frame->dlci != RFCOMM_MX_DLCI) && (p_frame->pf == 1)) {
+    if (p_buf->len < sizeof(uint8_t)) {
+      RFCOMM_TRACE_ERROR("Bad Length in flow control: %d", p_buf->len);
+      return RFC_EVENT_BAD_FRAME;
+    }
     p_frame->credit = *p_data++;
     p_buf->len--;
     p_buf->offset++;
