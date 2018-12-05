@@ -1974,12 +1974,13 @@ static void bta_dm_discover_device(const RawAddress& remote_bd_addr) {
       /* check whether connection already exists to the device
          if connection exists, we don't have to wait for ACL
          link to go down to start search on next device */
-      if (BTM_IsAclConnectionUp(bta_dm_search_cb.peer_bdaddr,
-                                BT_TRANSPORT_BR_EDR))
-        bta_dm_search_cb.wait_disc = false;
-      else
-        bta_dm_search_cb.wait_disc = true;
-
+      if (transport == BT_TRANSPORT_BR_EDR) {
+        if (BTM_IsAclConnectionUp(bta_dm_search_cb.peer_bdaddr,
+                                  BT_TRANSPORT_BR_EDR))
+          bta_dm_search_cb.wait_disc = false;
+        else
+          bta_dm_search_cb.wait_disc = true;
+      }
       if (bta_dm_search_cb.p_btm_inq_info) {
         APPL_TRACE_DEBUG(
             "%s p_btm_inq_info 0x%x results.device_type 0x%x "
@@ -2782,7 +2783,9 @@ static void bta_dm_acl_change(bool is_new, const RawAddress& bd_addr,
       bta_dm_cb.device_list.le_count--;
     conn.link_down.link_type = transport;
 
-    if (bta_dm_search_cb.wait_disc && bta_dm_search_cb.peer_bdaddr == bd_addr) {
+    if ((transport == BT_TRANSPORT_BR_EDR) &&
+        (bta_dm_search_cb.wait_disc &&
+         bta_dm_search_cb.peer_bdaddr == bd_addr)) {
       bta_dm_search_cb.wait_disc = false;
 
       if (bta_dm_search_cb.sdp_results) {
