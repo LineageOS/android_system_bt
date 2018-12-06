@@ -41,7 +41,7 @@ class HearingAid {
   static void Initialize(bluetooth::hearing_aid::HearingAidCallbacks* callbacks,
                          base::Closure initCb);
   static void CleanUp();
-  static bool IsInitialized();
+  static bool IsHearingAidRunning();
   static HearingAid* Get();
   static void DebugDump(int fd);
 
