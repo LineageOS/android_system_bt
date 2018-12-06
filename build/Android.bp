@@ -62,6 +62,9 @@ fluoride_defaults {
         "libbluetooth-types",
     ],
     cpp_std: "c++17",
+    sanitize: {
+        misc_undefined: ["bounds"],
+    },
 }
 
 // Enables code coverage for a set of source files. Must be combined with
