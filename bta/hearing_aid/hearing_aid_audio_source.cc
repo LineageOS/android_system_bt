@@ -306,8 +306,11 @@ void hearing_aid_ctrl_cb(tUIPC_CH_ID, tUIPC_EVENT event) {
     case UIPC_OPEN_EVT:
       break;
     case UIPC_CLOSE_EVT:
-      UIPC_Open(*uipc_hearing_aid, UIPC_CH_ID_AV_CTRL, hearing_aid_ctrl_cb,
-                HEARING_AID_CTRL_PATH);
+      /* restart ctrl server unless we are shutting down */
+      if (HearingAid::IsHearingAidRunning()) {
+        UIPC_Open(*uipc_hearing_aid, UIPC_CH_ID_AV_CTRL, hearing_aid_ctrl_cb,
+                  HEARING_AID_CTRL_PATH);
+      }
       break;
     case UIPC_RX_DATA_READY_EVT:
       hearing_aid_recv_ctrl_data();
