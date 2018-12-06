@@ -106,7 +106,7 @@ class HearingAidInterfaceImpl
     DVLOG(2) << __func__ << " address: " << address;
 
     // RemoveDevice can be called on devices that don't have HA enabled
-    if (HearingAid::IsInitialized()) {
+    if (HearingAid::IsHearingAidRunning()) {
       do_in_main_thread(FROM_HERE,
                         Bind(&HearingAid::Disconnect,
                              Unretained(HearingAid::Get()), address));
