@@ -77,6 +77,9 @@ cc_library_shared {
         "-Wextra",
         "-Wno-unused-parameter",
     ],
+    sanitize: {
+        scs: true,
+    },
 }
 
 // AIDL interface between libbluetooth-binder and framework.jar
