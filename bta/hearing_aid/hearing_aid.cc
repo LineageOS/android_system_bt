@@ -1195,24 +1195,13 @@ class HearingAidImpl : public HearingAid {
     VLOG(2) << __func__ << ": " << address;
 
     bool connected = hearingDevice->accepting_audio;
-    hearingDevice->accepting_audio = false;
 
     LOG(INFO) << "GAP_EVT_CONN_CLOSED: " << hearingDevice->address
               << ", playback_started=" << hearingDevice->playback_started;
-    hearingDevice->playback_started = false;
 
     if (hearingDevice->connecting_actively) {
       // cancel pending direct connect
       BTA_GATTC_CancelOpen(gatt_if, address, true);
-    }
-
-    if (hearingDevice->conn_id) {
-      BTA_GATTC_Close(hearingDevice->conn_id);
-    }
-
-    if (hearingDevice->gap_handle) {
-      GAP_ConnClose(hearingDevice->gap_handle);
-      hearingDevice->gap_handle = 0;
     }
 
     // cancel autoconnect
@@ -1253,10 +1242,18 @@ class HearingAidImpl : public HearingAid {
       hearingDevice->connection_update_status = NONE;
     }
 
-    BtaGattQueue::Clean(hearingDevice->conn_id);
+    if (hearingDevice->conn_id) {
+      BtaGattQueue::Clean(hearingDevice->conn_id);
+      BTA_GATTC_Close(hearingDevice->conn_id);
+      hearingDevice->conn_id = 0;
+    }
+
+    if (hearingDevice->gap_handle) {
+      GAP_ConnClose(hearingDevice->gap_handle);
+      hearingDevice->gap_handle = 0;
+    }
 
     hearingDevice->accepting_audio = false;
-    hearingDevice->conn_id = 0;
     LOG(INFO) << __func__ << ": device=" << hearingDevice->address
               << ", playback_started=" << hearingDevice->playback_started;
     hearingDevice->playback_started = false;
@@ -1278,14 +1275,10 @@ class HearingAidImpl : public HearingAid {
   void CleanUp() {
     BTA_GATTC_AppDeregister(gatt_if);
     for (HearingDevice& device : hearingDevices.devices) {
-      if (!device.gap_handle) continue;
-
-      GAP_ConnClose(device.gap_handle);
-      device.gap_handle = 0;
+      DoDisconnectCleanUp(&device);
     }
 
     hearingDevices.devices.clear();
-    HearingAidAudioSource::Stop();
   }
 
  private:
@@ -1390,7 +1383,7 @@ void HearingAid::Initialize(
   HearingAidAudioSource::Initialize();
 }
 
-bool HearingAid::IsInitialized() { return instance; }
+bool HearingAid::IsHearingAidRunning() { return instance; }
 
 HearingAid* HearingAid::Get() {
   CHECK(instance);
@@ -1426,11 +1419,13 @@ void HearingAid::CleanUp() {
   // Must stop audio source to make sure it doesn't call any of callbacks on our
   // soon to be  null instance
   HearingAidAudioSource::Stop();
-  HearingAidAudioSource::CleanUp();
 
-  instance->CleanUp();
   HearingAidImpl* ptr = instance;
   instance = nullptr;
+  HearingAidAudioSource::CleanUp();
+
+  ptr->CleanUp();
+
   delete ptr;
 };
 
