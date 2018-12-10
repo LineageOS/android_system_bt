@@ -27,6 +27,7 @@
 
 #if defined(BTA_HD_INCLUDED) && (BTA_HD_INCLUDED == TRUE)
 
+#include <log/log.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -124,6 +125,10 @@ extern void BTA_HdRegisterApp(tBTA_HD_APP_INFO* p_app_info,
 
   p_buf->subclass = p_app_info->subclass;
 
+  if (p_app_info->descriptor.dl_len > BTA_HD_APP_DESCRIPTOR_LEN) {
+    p_app_info->descriptor.dl_len = BTA_HD_APP_DESCRIPTOR_LEN;
+    android_errorWriteLog(0x534e4554, "113111784");
+  }
   p_buf->d_len = p_app_info->descriptor.dl_len;
   memcpy(p_buf->d_data, p_app_info->descriptor.dsc_list,
          p_app_info->descriptor.dl_len);
