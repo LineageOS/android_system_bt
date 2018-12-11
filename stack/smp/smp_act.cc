@@ -16,6 +16,7 @@
  *
  ******************************************************************************/
 
+#include <cutils/log.h>
 #include <log/log.h>
 #include <string.h>
 #include "btif_common.h"
@@ -488,7 +489,15 @@ void smp_proc_sec_grant(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  ******************************************************************************/
 void smp_proc_pair_fail(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   SMP_TRACE_DEBUG("%s", __func__);
-  p_cb->status = p_data->status;
+
+  if (p_cb->rcvd_cmd_len < 2) {
+    android_errorWriteLog(0x534e4554, "111214739");
+    SMP_TRACE_WARNING("%s: rcvd_cmd_len %d too short: must be at least 2",
+                      __func__, p_cb->rcvd_cmd_len);
+    p_cb->status = SMP_INVALID_PARAMETERS;
+  } else {
+    p_cb->status = p_data->status;
+  }
 
   /* Cancel pending auth complete timer if set */
   alarm_cancel(p_cb->delayed_auth_timer_ent);
