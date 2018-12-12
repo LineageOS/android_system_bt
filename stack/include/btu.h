@@ -58,6 +58,7 @@ void btu_free_core(void);
 /* Functions provided by btu_task.cc
  ***********************************
 */
+bluetooth::common::MessageLoopThread* get_main_thread();
 base::MessageLoop* get_main_message_loop();
 bt_status_t do_in_main_thread(const base::Location& from_here,
                               base::OnceClosure task);
