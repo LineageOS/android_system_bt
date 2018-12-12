@@ -1,0 +1,65 @@
+// packet library for libbt-rootcanal
+// ========================================================
+cc_library_static {
+    name: "libbt-rootcanal-packets",
+    defaults: [
+        "libchrome_support_defaults",
+        "clang_file_coverage",
+    ],
+    host_supported: true,
+    proprietary: true,
+    srcs: [
+        "iterator.cc",
+        "packet_view.cc",
+        "view.cc",
+    ],
+    cflags: [
+        "-fvisibility=hidden",
+    ],
+    local_include_dirs: [
+        ".",
+    ],
+    export_include_dirs: ["."],
+    include_dirs: [
+        "system/bt/vendor_libs/test_vendor_lib/include",
+        "system/bt/vendor_libs/test_vendor_lib/",
+        "system/bt/",
+    ],
+    shared_libs: [
+        "libbase",
+        "liblog",
+    ],
+}
+
+// Unit tests for the host
+// ========================================================
+cc_test_host {
+    name: "rootcanal-packets_test_host",
+    defaults: [
+        "libchrome_support_defaults",
+        "clang_file_coverage",
+        "clang_coverage_bin",
+    ],
+    srcs: [
+        "test/packet_view_test.cc",
+    ],
+    header_libs: [
+        "libbluetooth_headers",
+    ],
+    local_include_dirs: [
+        ".",
+    ],
+    include_dirs: [
+        "system/bt",
+        "system/bt/hci/include",
+        "system/bt/vendor_libs/test_vendor_lib",
+        "system/bt/vendor_libs/test_vendor_lib/include",
+    ],
+    shared_libs: [
+        "liblog",
+    ],
+    static_libs: [
+        "libbluetooth-types",
+        "libbt-rootcanal-packets",
+    ],
+}
