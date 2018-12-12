@@ -20,16 +20,22 @@
 #include <benchmark/benchmark.h>
 #include <future>
 
+#include "common/alarm.h"
 #include "common/message_loop_thread.h"
 #include "common/once_timer.h"
+#include "common/repeating_alarm.h"
 #include "common/repeating_timer.h"
+#include "common/thread.h"
 #include "common/time_util.h"
 #include "osi/include/alarm.h"
 
 using ::benchmark::State;
+using bluetooth::common::Alarm;
 using bluetooth::common::MessageLoopThread;
 using bluetooth::common::OnceTimer;
+using bluetooth::common::RepeatingAlarm;
 using bluetooth::common::RepeatingTimer;
+using bluetooth::common::Thread;
 using bluetooth::common::time_get_os_boottime_us;
 
 // fake get_main_message_loop implementation for alarm
@@ -257,6 +263,88 @@ BENCHMARK_DEFINE_F(BM_AlarmTaskPeriodicTimer, periodic_accuracy)
 };
 
 BENCHMARK_REGISTER_F(BM_AlarmTaskPeriodicTimer, periodic_accuracy)
+    ->Args({2000, 1, 5})
+    ->Args({2000, 3, 5})
+    ->Args({2000, 1, 7})
+    ->Args({2000, 3, 7})
+    ->Args({2000, 1, 20})
+    ->Args({2000, 5, 20})
+    ->Args({2000, 10, 20})
+    ->Args({2000, 15, 20})
+    ->Iterations(1)
+    ->UseRealTime();
+
+class BM_ReactableAlarm : public ::benchmark::Fixture {
+ protected:
+  void SetUp(State& st) override {
+    ::benchmark::Fixture::SetUp(st);
+    thread_ = std::make_unique<Thread>("timer_benchmark", Thread::Priority::REAL_TIME);
+    alarm_ = std::make_unique<Alarm>(thread_.get());
+    repeating_alarm_ = std::make_unique<RepeatingAlarm>(thread_.get());
+    g_map.clear();
+    g_promise = std::make_shared<std::promise<void>>();
+    g_scheduled_tasks = 0;
+    g_task_length = 0;
+    g_task_interval = 0;
+    g_task_counter = 0;
+  }
+
+  void TearDown(State& st) override {
+    g_promise = nullptr;
+    alarm_ = nullptr;
+    repeating_alarm_ = nullptr;
+    thread_->Stop();
+    thread_ = nullptr;
+    ::benchmark::Fixture::TearDown(st);
+  }
+
+  std::unique_ptr<Thread> thread_;
+  std::unique_ptr<Alarm> alarm_;
+  std::unique_ptr<RepeatingAlarm> repeating_alarm_;
+};
+
+BENCHMARK_DEFINE_F(BM_ReactableAlarm, timer_performance_ms)(State& state) {
+  auto milliseconds = static_cast<int>(state.range(0));
+  for (auto _ : state) {
+    auto start_time_point = time_get_os_boottime_us();
+    alarm_->Schedule(std::bind(TimerFire, nullptr), std::chrono::milliseconds(milliseconds));
+    g_promise->get_future().get();
+    auto end_time_point = time_get_os_boottime_us();
+    auto duration = end_time_point - start_time_point;
+    state.SetIterationTime(duration * 1e-6);
+    alarm_->Cancel();
+  }
+};
+
+BENCHMARK_REGISTER_F(BM_ReactableAlarm, timer_performance_ms)
+    ->Arg(1)
+    ->Arg(5)
+    ->Arg(10)
+    ->Arg(20)
+    ->Arg(100)
+    ->Arg(1000)
+    ->Arg(2000)
+    ->Iterations(1)
+    ->UseRealTime();
+
+BENCHMARK_DEFINE_F(BM_ReactableAlarm, periodic_accuracy)
+(State& state) {
+  for (auto _ : state) {
+    g_scheduled_tasks = state.range(0);
+    g_task_length = state.range(1);
+    g_task_interval = state.range(2);
+    g_start_time = time_get_os_boottime_us();
+    repeating_alarm_->Schedule([] { AlarmSleepAndCountDelayedTime(nullptr); },
+                               std::chrono::milliseconds(g_task_interval));
+    g_promise->get_future().get();
+    repeating_alarm_->Cancel();
+  }
+  for (const auto& delay : g_map) {
+    state.counters[std::to_string(delay.first)] = delay.second;
+  }
+};
+
+BENCHMARK_REGISTER_F(BM_ReactableAlarm, periodic_accuracy)
     ->Args({2000, 1, 5})
     ->Args({2000, 3, 5})
     ->Args({2000, 1, 7})
