@@ -391,7 +391,7 @@ void HandleDisable(IBluetooth* bt_iface, const vector<string>& args) {
 void HandleEnable(IBluetooth* bt_iface, const vector<string>& args) {
   bool is_restricted_mode = false;
 
-  for (auto iter : args) {
+  for (const auto& iter : args) {
     const std::string& arg = iter;
     if (arg == "-h") {
       static const char kUsage[] =
