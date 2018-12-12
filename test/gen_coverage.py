@@ -68,6 +68,17 @@ COVERAGE_TESTS = [
         "covered_files": [
             "system/bt/profile/sdp",
         ],
+    }, {
+        "test_name": "test-vendor_test_host",
+        "covered_files": [
+            "system/bt/vendor_libs/test_vendor_lib/include",
+            "system/bt/vendor_libs/test_vendor_lib/src",
+        ],
+    }, {
+        "test_name": "rootcanal-packets_test_host",
+        "covered_files": [
+            "system/bt/vendor_libs/test_vendor_lib/packets",
+        ],
     },
 ]
 
