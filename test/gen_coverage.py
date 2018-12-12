@@ -79,6 +79,11 @@ COVERAGE_TESTS = [
         "covered_files": [
             "system/bt/vendor_libs/test_vendor_lib/packets",
         ],
+    }, {
+        "test_name": "bluetooth_test_common",
+        "covered_files": [
+            "system/bt/common",
+        ],
     },
 ]
 
