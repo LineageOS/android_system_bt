@@ -174,7 +174,6 @@ cc_library_static {
         "smp/smp_l2c.cc",
         "smp/smp_main.cc",
         "smp/smp_utils.cc",
-        "srvc/srvc_battery.cc",
         "srvc/srvc_dis.cc",
         "srvc/srvc_eng.cc",
     ],
