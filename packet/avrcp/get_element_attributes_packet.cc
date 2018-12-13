@@ -132,7 +132,7 @@ bool GetElementAttributesResponseBuilder::Serialize(
   VendorPacketBuilder::PushHeader(pkt, size() - VendorPacket::kMinSize());
 
   AddPayloadOctets1(pkt, entries_.size());
-  for (auto attribute_entry : entries_) {
+  for (const auto& attribute_entry : entries_) {
     PushAttributeValue(pkt, attribute_entry);
   }
 

@@ -151,7 +151,7 @@ bool ConnectionHandler::DisconnectDevice(const RawAddress& bdaddr) {
 std::vector<std::shared_ptr<Device>> ConnectionHandler::GetListOfDevices()
     const {
   std::vector<std::shared_ptr<Device>> list;
-  for (auto device : device_map_) {
+  for (const auto& device : device_map_) {
     list.push_back(device.second);
   }
   return list;
