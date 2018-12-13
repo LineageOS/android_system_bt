@@ -70,7 +70,7 @@ bool GetItemAttributesResponseBuilder::Serialize(
   if (status_ != Status::NO_ERROR) return true;
 
   AddPayloadOctets1(pkt, entries_.size());
-  for (auto entry : entries_) {
+  for (const auto& entry : entries_) {
     AddPayloadOctets4(pkt, base::ByteSwap((uint32_t)entry.attribute()));
     uint16_t character_set = 0x006a;  // UTF-8
     AddPayloadOctets2(pkt, base::ByteSwap(character_set));
