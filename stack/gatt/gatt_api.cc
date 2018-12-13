@@ -1039,43 +1039,6 @@ void GATT_Deregister(tGATT_IF gatt_if) {
 
 /*******************************************************************************
  *
- * Function         GATT_StartIf
- *
- * Description      This function is called after registration to start
- *                  receiving callbacks for registered interface.  Function may
- *                  call back with connection status and queued notifications
- *
- * Parameter        gatt_if: applicaiton interface.
- *
- * Returns          None.
- *
- ******************************************************************************/
-void GATT_StartIf(tGATT_IF gatt_if) {
-  tGATT_REG* p_reg;
-  tGATT_TCB* p_tcb;
-  RawAddress bda;
-  uint8_t start_idx, found_idx;
-  uint16_t conn_id;
-  tGATT_TRANSPORT transport;
-
-  VLOG(1) << __func__ << " gatt_if=" << +gatt_if;
-  p_reg = gatt_get_regcb(gatt_if);
-  if (p_reg != NULL) {
-    start_idx = 0;
-    while (
-        gatt_find_the_connected_bda(start_idx, bda, &found_idx, &transport)) {
-      p_tcb = gatt_find_tcb_by_addr(bda, transport);
-      if (p_reg->app_cb.p_conn_cb && p_tcb) {
-        conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, gatt_if);
-        (*p_reg->app_cb.p_conn_cb)(gatt_if, bda, conn_id, true, 0, transport);
-      }
-      start_idx = ++found_idx;
-    }
-  }
-}
-
-/*******************************************************************************
- *
  * Function         GATT_Connect
  *
  * Description      This function initiate a connecttion to a remote device on
