@@ -279,7 +279,6 @@ void btif_gattc_open_impl(int client_if, RawAddress address, bool is_direct,
         return;
       }
     }
-    BTA_DmBleStartAutoConn();
   }
 
   // Determine transport
@@ -302,6 +301,10 @@ void btif_gattc_open_impl(int client_if, RawAddress address, bool is_direct,
           transport = GATT_TRANSPORT_BR_EDR;
         break;
     }
+  }
+
+  if (transport == GATT_TRANSPORT_LE) {
+    BTA_DmBleStartAutoConn();
   }
 
   // Connect!

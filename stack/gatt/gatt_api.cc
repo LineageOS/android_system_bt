@@ -409,7 +409,6 @@ void GATTS_StopService(uint16_t service_handle) {
  ******************************************************************************/
 tGATT_STATUS GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_handle,
                                          uint16_t val_len, uint8_t* p_val) {
-
   tGATT_IF gatt_if = GATT_GET_GATT_IF(conn_id);
   uint8_t tcb_idx = GATT_GET_TCB_IDX(conn_id);
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
@@ -999,7 +998,8 @@ void GATT_Deregister(tGATT_IF gatt_if) {
     other application
     deregisteration need to bed performed in an orderly fashion
     no check for now */
-  for (auto it = gatt_cb.srv_list_info->begin(); it != gatt_cb.srv_list_info->end(); ) {
+  for (auto it = gatt_cb.srv_list_info->begin();
+       it != gatt_cb.srv_list_info->end();) {
     if (it->gatt_if == gatt_if) {
       GATTS_StopService(it++->s_hdl);
     } else {
@@ -1077,12 +1077,17 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
     return false;
   }
 
+  if (opportunistic) {
+    LOG(INFO) << __func__ << " opportunistic connection";
+    return true;
+  }
+
   bool ret;
   if (is_direct) {
     ret = gatt_act_connect(p_reg, bd_addr, transport, initiating_phys);
   } else {
     if (!BTM_BackgroundConnectAddressKnown(bd_addr)) {
-      //  RPA can rotate, and cause device to "expire" in the background
+      //  RPA can rotate, causing address to "expire" in the background
       //  connection list. RPA is allowed for direct connect, as such request
       //  times out after 30 seconds
       LOG(INFO) << "Can't add RPA to background connection.";
@@ -1093,16 +1098,10 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
   }
 
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
-  // background connections don't necesarly create tcb
-  if (!p_tcb) return ret;
+  // background connections don't necessarily create tcb
+  if (p_tcb && ret)
+    gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, !is_direct);
 
-  if (ret) {
-    if (!opportunistic)
-      gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, !is_direct);
-    else
-      VLOG(1) << __func__
-              << ": connection is opportunistic, not updating app usage";
-  }
   return ret;
 }
 
@@ -1123,7 +1122,8 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
  ******************************************************************************/
 bool GATT_CancelConnect(tGATT_IF gatt_if, const RawAddress& bd_addr,
                         bool is_direct) {
-  LOG(INFO) << __func__ << ": gatt_if=" << +gatt_if;
+  LOG(INFO) << __func__ << ": gatt_if:" << +gatt_if << ", address: " << bd_addr
+            << ", direct:" << is_direct;
 
   tGATT_REG* p_reg;
   if (gatt_if) {
@@ -1132,14 +1132,16 @@ bool GATT_CancelConnect(tGATT_IF gatt_if, const RawAddress& bd_addr,
       LOG(ERROR) << "gatt_if=" << +gatt_if << " is not registered";
       return false;
     }
+
+    if (is_direct)
+      return gatt_cancel_open(gatt_if, bd_addr);
+    else
+      return gatt_auto_connect_dev_remove(p_reg->gatt_if, bd_addr);
   }
 
-  if (is_direct) {
-    if (gatt_if) {
-      return gatt_cancel_open(gatt_if, bd_addr);
-    }
+  VLOG(1) << " unconditional";
 
-    VLOG(1) << " unconditional";
+  if (is_direct) {
     /* only LE connection can be cancelled */
     tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
     if (!p_tcb || p_tcb->app_hold_link.empty()) {
@@ -1158,10 +1160,8 @@ bool GATT_CancelConnect(tGATT_IF gatt_if, const RawAddress& bd_addr,
 
     return true;
   }
+
   // is not direct
-
-  if (gatt_if) return gatt_auto_connect_dev_remove(p_reg->gatt_if, bd_addr);
-
   if (!gatt::connection_manager::background_connect_remove_unconditional(
           bd_addr)) {
     LOG(ERROR)
