@@ -214,13 +214,6 @@ void bta_gatts_register(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
           GATT_Register(p_msg->api_reg.app_uuid, &bta_gatts_cback);
       if (!p_cb->rcb[first_unuse].gatt_if) {
         status = GATT_NO_RESOURCES;
-      } else {
-        tBTA_GATTS_INT_START_IF* p_buf = (tBTA_GATTS_INT_START_IF*)osi_malloc(
-            sizeof(tBTA_GATTS_INT_START_IF));
-        p_buf->hdr.event = BTA_GATTS_INT_START_IF_EVT;
-        p_buf->server_if = p_cb->rcb[first_unuse].gatt_if;
-
-        bta_sys_sendmsg(p_buf);
       }
     } else {
       status = GATT_NO_RESOURCES;
@@ -231,24 +224,6 @@ void bta_gatts_register(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
     (*p_msg->api_reg.p_cback)(BTA_GATTS_REG_EVT, &cb_data);
 }
 
-/*******************************************************************************
- *
- * Function         bta_gatts_start_if
- *
- * Description      start an application interface.
- *
- * Returns          none.
- *
- ******************************************************************************/
-void bta_gatts_start_if(UNUSED_ATTR tBTA_GATTS_CB* p_cb,
-                        tBTA_GATTS_DATA* p_msg) {
-  if (bta_gatts_find_app_rcb_by_app_if(p_msg->int_start_if.server_if)) {
-    GATT_StartIf(p_msg->int_start_if.server_if);
-  } else {
-    LOG(ERROR) << "Unable to start app.: Unknown interface="
-               << +p_msg->int_start_if.server_if;
-  }
-}
 /*******************************************************************************
  *
  * Function         bta_gatts_deregister

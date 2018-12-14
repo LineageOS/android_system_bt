@@ -403,8 +403,6 @@ void gap_attr_db_init(void) {
 
   gatt_if = GATT_Register(app_uuid, &gap_cback);
 
-  GATT_StartIf(gatt_if);
-
   Uuid svc_uuid = Uuid::From16Bit(UUID_SERVCLASS_GAP_SERVER);
   Uuid name_uuid = Uuid::From16Bit(GATT_UUID_GAP_DEVICE_NAME);
   Uuid icon_uuid = Uuid::From16Bit(GATT_UUID_GAP_ICON);
