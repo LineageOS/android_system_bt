@@ -278,7 +278,6 @@ void gatt_profile_db_init(void) {
 
   /* Create a GATT profile service */
   gatt_cb.gatt_if = GATT_Register(Uuid::From128BitBE(tmp), &gatt_profile_cback);
-  GATT_StartIf(gatt_cb.gatt_if);
 
   Uuid service_uuid = Uuid::From16Bit(UUID_SERVCLASS_GATT_SERVER);
 
