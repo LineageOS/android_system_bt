@@ -43,6 +43,7 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/crypto_toolbox/crypto_toolbox.h"
+#include "stack/gatt/connection_manager.h"
 
 extern void gatt_notify_phy_updated(uint8_t status, uint16_t handle,
                                     uint8_t tx_phy, uint8_t rx_phy);
@@ -1957,6 +1958,7 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
     }
 #endif
 
+    gatt::connection_manager::on_connection_complete(bda);
     btm_ble_connected(bda, handle, HCI_ENCRYPT_MODE_DISABLED, role, bda_type,
                       match);
 

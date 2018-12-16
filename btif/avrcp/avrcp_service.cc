@@ -346,7 +346,8 @@ void AvrcpService::SendMediaUpdate(bool track_changed, bool play_state,
 
   // This function may be called on any thread, we need to make sure that the
   // device update happens on the main thread.
-  for (auto device : instance_->connection_handler_->GetListOfDevices()) {
+  for (const auto& device :
+       instance_->connection_handler_->GetListOfDevices()) {
     do_in_main_thread(FROM_HERE, base::Bind(&Device::SendMediaUpdate,
                                             base::Unretained(device.get()),
                                             track_changed, play_state, queue));
@@ -361,7 +362,8 @@ void AvrcpService::SendFolderUpdate(bool available_players,
             << " uids=" << uids;
 
   // Ensure that the update is posted to the correct thread
-  for (auto device : instance_->connection_handler_->GetListOfDevices()) {
+  for (const auto& device :
+       instance_->connection_handler_->GetListOfDevices()) {
     do_in_main_thread(
         FROM_HERE,
         base::Bind(&Device::SendFolderUpdate, base::Unretained(device.get()),
@@ -457,7 +459,7 @@ void AvrcpService::DebugDump(int fd) {
   std::stringstream stream;
   {
     ScopedIndent indent(stream);
-    for (auto device : device_list) {
+    for (const auto& device : device_list) {
       stream << *device << std::endl;
     }
   }

@@ -165,35 +165,4 @@ extern tDIS_STATUS DIS_SrUpdate(tDIS_ATTR_BIT dis_attr_bit, tDIS_ATTR* p_info);
 extern bool DIS_ReadDISInfo(const RawAddress& peer_bda,
                             tDIS_READ_CBACK* p_cback, tDIS_ATTR_MASK mask);
 
-/*******************************************************************************
- *      BATTERY SERVICE API
- ******************************************************************************/
-/*******************************************************************************
- *
- * Function         Battery_Instantiate
- *
- * Description      Instantiate a Battery service
- *
- ******************************************************************************/
-extern uint16_t Battery_Instantiate(uint8_t app_id, tBA_REG_INFO* p_reg_info);
-
-/*******************************************************************************
- *
- * Function         Battery_Rsp
- *
- * Description      Respond to a battery service request
- *
- ******************************************************************************/
-extern void Battery_Rsp(uint8_t app_id, tGATT_STATUS st, uint8_t event,
-                        tBA_RSP_DATA* p_rsp);
-/*******************************************************************************
- *
- * Function         Battery_Notify
- *
- * Description      Send battery level notification
- *
- ******************************************************************************/
-extern void Battery_Notify(uint8_t app_id, const RawAddress& remote_bda,
-                           uint8_t battery_level);
-
 #endif

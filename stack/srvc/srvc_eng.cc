@@ -23,7 +23,6 @@
 #include "osi/include/osi.h"
 #include "srvc_eng_int.h"
 
-#include "srvc_battery_int.h"
 #include "srvc_dis_int.h"
 
 using base::StringPrintf;
@@ -213,12 +212,6 @@ uint8_t srvc_eng_process_read_req(uint8_t clcb_idx, tGATT_READ_REQ* p_data,
   if (dis_valid_handle_range(p_data->handle))
     act = dis_read_attr_value(clcb_idx, p_data->handle, &p_rsp->attr_value,
                               p_data->is_long, p_status);
-
-  else if (battery_valid_handle_range(p_data->handle))
-    act =
-        battery_s_read_attr_value(clcb_idx, p_data->handle, &p_rsp->attr_value,
-                                  p_data->is_long, p_status);
-
   else
     *p_status = status;
   return act;
@@ -233,8 +226,6 @@ uint8_t srvc_eng_process_write_req(uint8_t clcb_idx, tGATT_WRITE_REQ* p_data,
 
   if (dis_valid_handle_range(p_data->handle)) {
     act = dis_write_attr_value(p_data, p_status);
-  } else if (battery_valid_handle_range(p_data->handle)) {
-    act = battery_s_write_attr_value(clcb_idx, p_data, p_status);
   } else
     *p_status = GATT_NOT_FOUND;
 
@@ -412,7 +403,6 @@ tGATT_STATUS srvc_eng_init(void) {
     bluetooth::Uuid app_uuid =
         bluetooth::Uuid::From16Bit(UUID_SERVCLASS_DEVICE_INFO);
     srvc_eng_cb.gatt_if = GATT_Register(app_uuid, &srvc_gatt_cback);
-    GATT_StartIf(srvc_eng_cb.gatt_if);
 
     VLOG(1) << "Srvc_Init:  gatt_if=" << +srvc_eng_cb.gatt_if;
 

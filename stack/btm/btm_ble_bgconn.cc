@@ -351,6 +351,32 @@ void btm_send_hci_create_connection(
   }
 }
 
+bool BTM_SetLeConnectionModeToFast() {
+  VLOG(2) << __func__;
+  tBTM_BLE_CB* p_cb = &btm_cb.ble_ctr_cb;
+  if ((p_cb->scan_int == BTM_BLE_SCAN_PARAM_UNDEF &&
+       p_cb->scan_win == BTM_BLE_SCAN_PARAM_UNDEF) ||
+      (p_cb->scan_int == BTM_BLE_SCAN_SLOW_INT_1 &&
+       p_cb->scan_win == BTM_BLE_SCAN_SLOW_WIN_1)) {
+    p_cb->scan_int = BTM_BLE_SCAN_FAST_INT;
+    p_cb->scan_win = BTM_BLE_SCAN_FAST_WIN;
+    return true;
+  }
+  return false;
+}
+
+void BTM_SetLeConnectionModeToSlow() {
+  VLOG(2) << __func__;
+  tBTM_BLE_CB* p_cb = &btm_cb.ble_ctr_cb;
+  if ((p_cb->scan_int == BTM_BLE_SCAN_PARAM_UNDEF &&
+       p_cb->scan_win == BTM_BLE_SCAN_PARAM_UNDEF) ||
+      (p_cb->scan_int == BTM_BLE_SCAN_FAST_INT &&
+       p_cb->scan_win == BTM_BLE_SCAN_FAST_WIN)) {
+    p_cb->scan_int = BTM_BLE_SCAN_SLOW_INT_1;
+    p_cb->scan_win = BTM_BLE_SCAN_SLOW_WIN_1;
+  }
+}
+
 /** This function is to start auto connection procedure */
 bool btm_ble_start_auto_conn() {
   tBTM_BLE_CB* p_cb = &btm_cb.ble_ctr_cb;
