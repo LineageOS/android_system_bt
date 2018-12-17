@@ -141,11 +141,6 @@ extern bool btm_execute_wl_dev_operation(void);
 extern void btm_ble_update_link_topology_mask(uint8_t role, bool increase);
 extern void btm_ble_bgconn_cancel_if_disconnected(const RawAddress& bd_addr);
 
-/* direct connection utility */
-extern bool btm_send_pending_direct_conn(void);
-extern void btm_ble_enqueue_direct_conn_req(void* p_param);
-extern void btm_ble_dequeue_direct_conn_req(const RawAddress& rem_bda);
-
 /* BLE address management */
 extern void btm_gen_resolvable_private_addr(
     base::Callback<void(const RawAddress& rpa)> cb);
