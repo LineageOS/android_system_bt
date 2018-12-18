@@ -119,9 +119,10 @@ HearingAidAudioReceiver* audioReceiver;
 
 /** Possible states for the Connection Update status */
 typedef enum {
-  NONE,      // Connection Update not pending or has completed
+  NONE,      // Not Connected
   AWAITING,  // Waiting for start the Connection Update operation
-  STARTED    // Connection Update has started
+  STARTED,   // Connection Update has started
+  COMPLETED  // Connection Update is completed successfully
 } connection_update_status_t;
 
 struct HearingDevice {
@@ -459,31 +460,64 @@ class HearingAidImpl : public HearingAid {
     }
 
     if (p_data) {
-      if ((p_data->conn_update.status == 0) &&
-          (hearingDevice->requested_connection_interval !=
-           p_data->conn_update.interval)) {
-        LOG(WARNING) << __func__ << ": Ignored. Different connection interval="
-                     << p_data->conn_update.interval << ", expected="
-                     << hearingDevice->requested_connection_interval
-                     << ", conn_id=" << conn_id;
-        return;
-      }
-      LOG(INFO) << __func__ << ": interval=" << p_data->conn_update.interval
-                << ": status=" << loghex(p_data->conn_update.status)
-                << ", conn_id=" << conn_id;
-    }
+      if (p_data->conn_update.status == 0) {
+        bool same_conn_interval =
+            (hearingDevice->requested_connection_interval ==
+             p_data->conn_update.interval);
 
-    if (hearingDevice->connection_update_status != STARTED) {
-      // TODO: We may get extra connection updates during service discovery and
-      // these updates are not accounted for.
-      LOG(INFO) << __func__
-                << ": Unexpected connection update complete. Expecting "
-                   "state=STARTED but current="
-                << hearingDevice->connection_update_status
-                << ", conn_id=" << conn_id
-                << ", device=" << hearingDevice->address;
+        switch (hearingDevice->connection_update_status) {
+          case COMPLETED:
+            if (!same_conn_interval) {
+              LOG(WARNING) << __func__
+                           << ": Unexpected change. Redo. connection interval="
+                           << p_data->conn_update.interval << ", expected="
+                           << hearingDevice->requested_connection_interval
+                           << ", conn_id=" << conn_id
+                           << ", connection_update_status="
+                           << hearingDevice->connection_update_status;
+              // Redo this connection interval change.
+              hearingDevice->connection_update_status = AWAITING;
+            }
+            break;
+          case STARTED:
+            if (same_conn_interval) {
+              LOG(INFO) << __func__
+                        << ": Connection update completed. conn_id=" << conn_id
+                        << ", device=" << hearingDevice->address;
+              hearingDevice->connection_update_status = COMPLETED;
+            } else {
+              LOG(WARNING) << __func__
+                           << ": Ignored. Different connection interval="
+                           << p_data->conn_update.interval << ", expected="
+                           << hearingDevice->requested_connection_interval
+                           << ", conn_id=" << conn_id
+                           << ", connection_update_status="
+                           << hearingDevice->connection_update_status;
+              // Wait for the right Connection Update Completion.
+              return;
+            }
+            break;
+          case AWAITING:
+          case NONE:
+            break;
+        }
+      } else {
+        LOG(INFO) << __func__
+                  << ": error status=" << loghex(p_data->conn_update.status)
+                  << ", conn_id=" << conn_id
+                  << ", device=" << hearingDevice->address
+                  << ", connection_update_status="
+                  << hearingDevice->connection_update_status;
+
+        if (hearingDevice->connection_update_status == STARTED) {
+          // Redo this connection interval change.
+          LOG(ERROR) << __func__ << ": Redo Connection Interval change";
+          hearingDevice->connection_update_status = AWAITING;
+        }
+      }
+    } else {
+      hearingDevice->connection_update_status = NONE;
     }
-    hearingDevice->connection_update_status = NONE;
 
     for (auto& device : hearingDevices.devices) {
       if (device.conn_id && (device.connection_update_status == AWAITING)) {
@@ -1231,7 +1265,7 @@ class HearingAidImpl : public HearingAid {
   }
 
   void DoDisconnectCleanUp(HearingDevice* hearingDevice) {
-    if (hearingDevice->connection_update_status != NONE) {
+    if (hearingDevice->connection_update_status != COMPLETED) {
       LOG(INFO) << __func__ << ": connection update not completed. Current="
                 << hearingDevice->connection_update_status
                 << ", device=" << hearingDevice->address;
@@ -1239,8 +1273,8 @@ class HearingAidImpl : public HearingAid {
       if (hearingDevice->connection_update_status == STARTED) {
         OnConnectionUpdateComplete(hearingDevice->conn_id, NULL);
       }
-      hearingDevice->connection_update_status = NONE;
     }
+    hearingDevice->connection_update_status = NONE;
 
     if (hearingDevice->conn_id) {
       BtaGattQueue::Clean(hearingDevice->conn_id);
