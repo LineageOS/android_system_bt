@@ -54,6 +54,10 @@ bool bta_gatts_hdl_event(BT_HDR* p_msg) {
       bta_gatts_register(p_cb, (tBTA_GATTS_DATA*)p_msg);
       break;
 
+    case BTA_GATTS_INT_START_IF_EVT:
+      bta_gatts_start_if(p_cb, (tBTA_GATTS_DATA*)p_msg);
+      break;
+
     case BTA_GATTS_API_DEREG_EVT:
       bta_gatts_deregister(p_cb, (tBTA_GATTS_DATA*)p_msg);
       break;

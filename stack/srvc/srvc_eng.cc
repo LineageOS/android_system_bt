@@ -403,6 +403,7 @@ tGATT_STATUS srvc_eng_init(void) {
     bluetooth::Uuid app_uuid =
         bluetooth::Uuid::From16Bit(UUID_SERVCLASS_DEVICE_INFO);
     srvc_eng_cb.gatt_if = GATT_Register(app_uuid, &srvc_gatt_cback);
+    GATT_StartIf(srvc_eng_cb.gatt_if);
 
     VLOG(1) << "Srvc_Init:  gatt_if=" << +srvc_eng_cb.gatt_if;
 
