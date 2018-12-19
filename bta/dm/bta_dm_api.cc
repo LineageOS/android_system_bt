@@ -567,11 +567,6 @@ void BTA_DmSetBleConnScanParams(uint32_t scan_interval, uint32_t scan_window) {
                                           scan_interval, scan_window));
 }
 
-/** Set BLE connectable mode to auto connect */
-void BTA_DmBleStartAutoConn() {
-  do_in_main_thread(FROM_HERE, base::Bind(BTM_BleStartAutoConn));
-}
-
 /*******************************************************************************
  *
  * Function         bta_dm_discover_send_msg

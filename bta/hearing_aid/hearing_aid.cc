@@ -365,7 +365,6 @@ class HearingAidImpl : public HearingAid {
 
       /* add device into BG connection to accept remote initiated connection */
       BTA_GATTC_Open(gatt_if, address, false, GATT_TRANSPORT_LE, false);
-      BTA_DmBleStartAutoConn();
     }
 
     callbacks->OnDeviceAvailable(capabilities, hiSyncId, address);
@@ -814,7 +813,6 @@ class HearingAidImpl : public HearingAid {
     if (hearingDevice->first_connection) {
       /* add device into BG connection to accept remote initiated connection */
       BTA_GATTC_Open(gatt_if, address, false, GATT_TRANSPORT_LE, false);
-      BTA_DmBleStartAutoConn();
 
       btif_storage_add_hearing_aid(
           address, hearingDevice->psm, hearingDevice->capabilities,

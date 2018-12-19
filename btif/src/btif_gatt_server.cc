@@ -291,9 +291,6 @@ static void btif_gatts_open_impl(int server_if, const RawAddress& address,
     BTA_DmAddBleDevice(address, addr_type, device_type);
   }
 
-  // Mark background connections
-  if (!is_direct) BTA_DmBleStartAutoConn();
-
   // Determine transport
   if (transport_param != GATT_TRANSPORT_AUTO) {
     transport = transport_param;
