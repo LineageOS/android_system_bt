@@ -696,17 +696,6 @@ bool BTM_BleLocalPrivacyEnabled(void) {
 #endif
 }
 
-/** Set BLE connectable mode to auto connect */
-void BTM_BleStartAutoConn() {
-  BTM_TRACE_EVENT("%s", __func__);
-  if (!controller_get_interface()->supports_ble()) return;
-
-  if (btm_cb.ble_ctr_cb.bg_conn_type != BTM_BLE_CONN_AUTO) {
-    btm_ble_start_auto_conn();
-    btm_cb.ble_ctr_cb.bg_conn_type = BTM_BLE_CONN_AUTO;
-  }
-}
-
 /*******************************************************************************
  *
  * Function         BTM_BleSetConnectableMode

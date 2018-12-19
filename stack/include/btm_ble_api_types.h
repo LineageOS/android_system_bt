@@ -495,9 +495,6 @@ typedef uint8_t BTM_BLE_ADV_INFO_PRESENT;
 typedef uint8_t BTM_BLE_RSSI_VALUE;
 typedef uint16_t BTM_BLE_ADV_INFO_TIMESTAMP;
 
-enum { BTM_BLE_CONN_NONE, BTM_BLE_CONN_AUTO };
-typedef uint8_t tBTM_BLE_CONN_TYPE;
-
 #define ADV_INFO_PRESENT 0x00
 #define NO_ADV_INFO_PRESENT 0x01
 
