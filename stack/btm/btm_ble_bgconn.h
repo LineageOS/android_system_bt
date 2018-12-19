@@ -18,9 +18,6 @@
 
 #include "types/raw_address.h"
 
-/** Set BLE connectable mode to auto connect */
-extern void BTM_BleStartAutoConn();
-
 /** Adds the device into white list. Returns false if white list is full and
  * device can't be added, true otherwise. */
 extern bool BTM_WhiteListAdd(const RawAddress& address);
