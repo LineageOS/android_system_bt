@@ -156,6 +156,16 @@ void bta_gattc_disable() {
   }
 }
 
+/** start an application interface */
+void bta_gattc_start_if(uint8_t client_if) {
+  if (!bta_gattc_cl_get_regcb(client_if)) {
+    LOG(ERROR) << "Unable to start app.: Unknown client_if=" << +client_if;
+    return;
+  }
+
+  GATT_StartIf(client_if);
+}
+
 /** Register a GATT client application with BTA */
 void bta_gattc_register(const Uuid& app_uuid, tBTA_GATTC_CBACK* p_cback,
                         BtaAppRegisterCallback cb) {
@@ -181,6 +191,10 @@ void bta_gattc_register(const Uuid& app_uuid, tBTA_GATTC_CBACK* p_cback,
 
         /* BTA use the same client interface as BTE GATT statck */
         client_if = bta_gattc_cb.cl_rcb[i].client_if;
+
+        do_in_main_thread(FROM_HERE,
+                          base::Bind(&bta_gattc_start_if, client_if));
+
         status = GATT_SUCCESS;
         break;
       }

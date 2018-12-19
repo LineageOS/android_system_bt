@@ -184,6 +184,7 @@ bt_status_t btif_gattc_test_command_impl(int command,
         tmp.fill(0xAE);
         test_cb.gatt_if = GATT_Register(bluetooth::Uuid::From128BitBE(tmp),
                                         &btif_test_callbacks);
+        GATT_StartIf(test_cb.gatt_if);
       } else {
         GATT_Deregister(test_cb.gatt_if);
         test_cb.gatt_if = 0;
