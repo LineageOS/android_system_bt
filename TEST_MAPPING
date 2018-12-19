@@ -50,6 +50,10 @@
     },
     {
       "name" : "net_test_types"
+    },
+    {
+      "name" : "net_test_avrcp",
+      "host" : true
     }
   ]
 }
