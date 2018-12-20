@@ -269,31 +269,22 @@ void l2cble_notify_le_connection(const RawAddress& bda) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         l2cble_scanner_conn_comp
- *
- * Description      This function is called when an HCI Connection Complete
- *                  event is received while we are a scanner (so we are master).
- *
- * Returns          void
- *
- ******************************************************************************/
+/* This function is called when an HCI Connection Complete event is received
+ * while we are a scanner (so we are master). */
 void l2cble_scanner_conn_comp(uint16_t handle, const RawAddress& bda,
                               tBLE_ADDR_TYPE type, uint16_t conn_interval,
                               uint16_t conn_latency, uint16_t conn_timeout) {
-  tL2C_LCB* p_lcb;
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(bda);
 
   L2CAP_TRACE_DEBUG(
       "l2cble_scanner_conn_comp: HANDLE=%d addr_type=%d conn_interval=%d "
       "slave_latency=%d supervision_tout=%d",
       handle, type, conn_interval, conn_latency, conn_timeout);
 
+  btm_ble_set_conn_st(BLE_CONN_IDLE);
   l2cb.is_ble_connecting = false;
 
   /* See if we have a link control block for the remote device */
-  p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
+  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
 
   /* If we don't have one, create one. this is auto connection complete. */
   if (!p_lcb) {
@@ -301,7 +292,6 @@ void l2cble_scanner_conn_comp(uint16_t handle, const RawAddress& bda,
     if (!p_lcb) {
       btm_sec_disconnect(handle, HCI_ERR_NO_CONNECTION);
       L2CAP_TRACE_ERROR("l2cble_scanner_conn_comp - failed to allocate LCB");
-      btm_ble_set_conn_st(BLE_CONN_IDLE);
       return;
     } else {
       if (!l2cu_initialize_fixed_ccb(
@@ -310,14 +300,12 @@ void l2cble_scanner_conn_comp(uint16_t handle, const RawAddress& bda,
                    .fixed_chnl_opts)) {
         btm_sec_disconnect(handle, HCI_ERR_NO_CONNECTION);
         L2CAP_TRACE_WARNING("l2cble_scanner_conn_comp - LCB but no CCB");
-        btm_ble_set_conn_st(BLE_CONN_IDLE);
         return;
       }
     }
   } else if (p_lcb->link_state != LST_CONNECTING) {
     L2CAP_TRACE_ERROR("L2CAP got BLE scanner conn_comp in bad state: %d",
                       p_lcb->link_state);
-    btm_ble_set_conn_st(BLE_CONN_IDLE);
     return;
   }
   alarm_cancel(p_lcb->l2c_lcb_timer);
@@ -337,6 +325,7 @@ void l2cble_scanner_conn_comp(uint16_t handle, const RawAddress& bda,
   p_lcb->conn_update_mask = L2C_BLE_NOT_DEFAULT_PARAM;
 
   /* Tell BTM Acl management about the link */
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(bda);
   btm_acl_created(bda, NULL, p_dev_rec->sec_bd_name, handle, p_lcb->link_role,
                   BT_TRANSPORT_LE);
 
@@ -344,34 +333,21 @@ void l2cble_scanner_conn_comp(uint16_t handle, const RawAddress& bda,
                              L2CAP_FIXED_CHNL_BLE_SIG_BIT |
                              L2CAP_FIXED_CHNL_SMP_BIT;
 
-  btm_ble_set_conn_st(BLE_CONN_IDLE);
-
 #if (BLE_PRIVACY_SPT == TRUE)
   btm_ble_disable_resolving_list(BTM_BLE_RL_INIT, true);
 #endif
 }
 
-/*******************************************************************************
- *
- * Function         l2cble_advertiser_conn_comp
- *
- * Description      This function is called when an HCI Connection Complete
- *                  event is received while we are an advertiser (so we are
- *                  slave).
- *
- * Returns          void
- *
- ******************************************************************************/
+/* This function is called when an HCI Connection Complete event is received
+ * while we are an advertiser (so we are slave). */
 void l2cble_advertiser_conn_comp(uint16_t handle, const RawAddress& bda,
                                  UNUSED_ATTR tBLE_ADDR_TYPE type,
                                  UNUSED_ATTR uint16_t conn_interval,
                                  UNUSED_ATTR uint16_t conn_latency,
                                  UNUSED_ATTR uint16_t conn_timeout) {
-  tL2C_LCB* p_lcb;
-  tBTM_SEC_DEV_REC* p_dev_rec;
 
   /* See if we have a link control block for the remote device */
-  p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
+  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
 
   /* If we don't have one, create one and accept the connection. */
   if (!p_lcb) {
@@ -407,18 +383,17 @@ void l2cble_advertiser_conn_comp(uint16_t handle, const RawAddress& bda,
   p_lcb->conn_update_mask = L2C_BLE_NOT_DEFAULT_PARAM;
 
   /* Tell BTM Acl management about the link */
-  p_dev_rec = btm_find_or_alloc_dev(bda);
-
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(bda);
   btm_acl_created(bda, NULL, p_dev_rec->sec_bd_name, handle, p_lcb->link_role,
                   BT_TRANSPORT_LE);
-
-#if (BLE_PRIVACY_SPT == TRUE)
-  btm_ble_disable_resolving_list(BTM_BLE_RL_ADV, true);
-#endif
 
   p_lcb->peer_chnl_mask[0] = L2CAP_FIXED_CHNL_ATT_BIT |
                              L2CAP_FIXED_CHNL_BLE_SIG_BIT |
                              L2CAP_FIXED_CHNL_SMP_BIT;
+
+#if (BLE_PRIVACY_SPT == TRUE)
+  btm_ble_disable_resolving_list(BTM_BLE_RL_ADV, true);
+#endif
 
   if (!HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(
           controller_get_interface()->get_features_ble()->as_array)) {
