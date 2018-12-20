@@ -32,6 +32,9 @@
 #include <base/location.h>
 #include <base/logging.h>
 #include <base/threading/thread.h>
+#include <frameworks/base/core/proto/android/bluetooth/enums.pb.h>
+#include <frameworks/base/core/proto/android/bluetooth/hci/enums.pb.h>
+#include <statslog.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,6 +45,7 @@
 #include "btm_api.h"
 #include "btm_int.h"
 #include "btu.h"
+#include "common/metrics.h"
 #include "device/include/controller.h"
 #include "hci_layer.h"
 #include "hcimsgs.h"
@@ -353,6 +357,183 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
   }
 }
 
+static void btu_hcif_log_command_metrics(uint16_t opcode, uint8_t* p_cmd,
+                                         uint32_t cmd_status,
+                                         bool is_cmd_status) {
+  static uint32_t kUnknownBleEvt = android::bluetooth::hci::BLE_EVT_UNKNOWN;
+
+  uint32_t hci_event = android::bluetooth::hci::EVT_COMMAND_STATUS;
+  if (!is_cmd_status) {
+    hci_event = android::bluetooth::hci::EVT_UNKNOWN;
+    cmd_status = android::bluetooth::hci::STATUS_UNKNOWN;
+  }
+
+  RawAddress bd_addr;
+  uint16_t handle;
+  uint8_t reason;
+
+  switch (opcode) {
+    case HCI_CREATE_CONNECTION:
+    case HCI_CREATE_CONNECTION_CANCEL:
+      STREAM_TO_BDADDR(bd_addr, p_cmd);
+      bluetooth::common::LogLinkLayerConnectionEvent(
+          &bd_addr, bluetooth::common::kUnknownConnectionHandle,
+          android::bluetooth::DIRECTION_OUTGOING,
+          android::bluetooth::LINK_TYPE_ACL, opcode, hci_event, kUnknownBleEvt,
+          cmd_status, android::bluetooth::hci::STATUS_UNKNOWN);
+      break;
+    case HCI_DISCONNECT:
+      STREAM_TO_UINT16(handle, p_cmd);
+      STREAM_TO_UINT8(reason, p_cmd);
+      bluetooth::common::LogLinkLayerConnectionEvent(
+          nullptr, handle, android::bluetooth::DIRECTION_UNKNOWN,
+          android::bluetooth::LINK_TYPE_UNKNOWN, opcode, hci_event,
+          kUnknownBleEvt, cmd_status, reason);
+      break;
+    case HCI_SETUP_ESCO_CONNECTION:
+    case HCI_ENH_SETUP_ESCO_CONNECTION:
+      STREAM_TO_UINT16(handle, p_cmd);
+      bluetooth::common::LogLinkLayerConnectionEvent(
+          nullptr, handle, android::bluetooth::DIRECTION_OUTGOING,
+          android::bluetooth::LINK_TYPE_UNKNOWN, opcode, hci_event,
+          kUnknownBleEvt, cmd_status, android::bluetooth::hci::STATUS_UNKNOWN);
+      break;
+    case HCI_ACCEPT_CONNECTION_REQUEST:
+    case HCI_ACCEPT_ESCO_CONNECTION:
+    case HCI_ENH_ACCEPT_ESCO_CONNECTION:
+      STREAM_TO_BDADDR(bd_addr, p_cmd);
+      bluetooth::common::LogLinkLayerConnectionEvent(
+          &bd_addr, bluetooth::common::kUnknownConnectionHandle,
+          android::bluetooth::DIRECTION_INCOMING,
+          android::bluetooth::LINK_TYPE_UNKNOWN, opcode, hci_event,
+          kUnknownBleEvt, cmd_status, android::bluetooth::hci::STATUS_UNKNOWN);
+      break;
+    case HCI_REJECT_CONNECTION_REQUEST:
+    case HCI_REJECT_ESCO_CONNECTION:
+      STREAM_TO_BDADDR(bd_addr, p_cmd);
+      STREAM_TO_UINT8(reason, p_cmd);
+      bluetooth::common::LogLinkLayerConnectionEvent(
+          &bd_addr, bluetooth::common::kUnknownConnectionHandle,
+          android::bluetooth::DIRECTION_INCOMING,
+          android::bluetooth::LINK_TYPE_UNKNOWN, opcode, hci_event,
+          kUnknownBleEvt, cmd_status, reason);
+      break;
+
+      // BLE Commands
+    case HCI_BLE_CREATE_LL_CONN: {
+      p_cmd += 2;  // Skip LE_Scan_Interval
+      p_cmd += 2;  // Skip LE_Scan_Window;
+      uint8_t initiator_filter_policy;
+      STREAM_TO_UINT8(initiator_filter_policy, p_cmd);
+      uint8_t peer_address_type;
+      STREAM_TO_UINT8(peer_address_type, p_cmd);
+      STREAM_TO_BDADDR(bd_addr, p_cmd);
+      // Peer address should not be used if initiator filter policy is not 0x00
+      const RawAddress* bd_addr_p = nullptr;
+      if (initiator_filter_policy == 0x00) {
+        bd_addr_p = &bd_addr;
+#if (BLE_PRIVACY_SPT == TRUE)
+        if (peer_address_type == BLE_ADDR_PUBLIC_ID ||
+            peer_address_type == BLE_ADDR_RANDOM_ID) {
+          // if identity address is not matched, this address is invalid
+          if (!btm_identity_addr_to_random_pseudo(&bd_addr, &peer_address_type,
+                                                  false)) {
+            bd_addr_p = nullptr;
+          }
+        }
+#endif
+      }
+      if (initiator_filter_policy == 0x00 ||
+          (cmd_status != HCI_SUCCESS && !is_cmd_status)) {
+        // Selectively log to avoid log spam due to whitelist connections:
+        // - When doing non-whitelist connection
+        // - When there is an error in command status
+        bluetooth::common::LogLinkLayerConnectionEvent(
+            bd_addr_p, bluetooth::common::kUnknownConnectionHandle,
+            android::bluetooth::DIRECTION_OUTGOING,
+            android::bluetooth::LINK_TYPE_ACL, opcode, hci_event,
+            kUnknownBleEvt, cmd_status,
+            android::bluetooth::hci::STATUS_UNKNOWN);
+      }
+      break;
+    }
+    case HCI_LE_EXTENDED_CREATE_CONNECTION: {
+      uint8_t initiator_filter_policy;
+      STREAM_TO_UINT8(initiator_filter_policy, p_cmd);
+      p_cmd += 1;  // Skip Own_Address_Type
+      uint8_t peer_addr_type;
+      STREAM_TO_UINT8(peer_addr_type, p_cmd);
+      STREAM_TO_BDADDR(bd_addr, p_cmd);
+      // Peer address should not be used if initiator filter policy is not 0x00
+      const RawAddress* bd_addr_p = nullptr;
+      if (initiator_filter_policy == 0x00) {
+        bd_addr_p = &bd_addr;
+#if (BLE_PRIVACY_SPT == TRUE)
+        // if identity address is not matched, this should be a static address
+        btm_identity_addr_to_random_pseudo(&bd_addr, &peer_addr_type, false);
+#endif
+      }
+      if (initiator_filter_policy == 0x00 ||
+          (cmd_status != HCI_SUCCESS && !is_cmd_status)) {
+        // Selectively log to avoid log spam due to whitelist connections:
+        // - When doing non-whitelist connection
+        // - When there is an error in command status
+        bluetooth::common::LogLinkLayerConnectionEvent(
+            bd_addr_p, bluetooth::common::kUnknownConnectionHandle,
+            android::bluetooth::DIRECTION_OUTGOING,
+            android::bluetooth::LINK_TYPE_ACL, opcode, hci_event,
+            kUnknownBleEvt, cmd_status,
+            android::bluetooth::hci::STATUS_UNKNOWN);
+      }
+      break;
+    }
+    case HCI_BLE_CREATE_CONN_CANCEL:
+      if (cmd_status != HCI_SUCCESS && !is_cmd_status) {
+        // Only log errors to prevent log spam due to whitelist connections
+        bluetooth::common::LogLinkLayerConnectionEvent(
+            nullptr, bluetooth::common::kUnknownConnectionHandle,
+            android::bluetooth::DIRECTION_OUTGOING,
+            android::bluetooth::LINK_TYPE_ACL, opcode, hci_event,
+            kUnknownBleEvt, cmd_status,
+            android::bluetooth::hci::STATUS_UNKNOWN);
+      }
+      break;
+    case HCI_BLE_CLEAR_WHITE_LIST:
+      bluetooth::common::LogLinkLayerConnectionEvent(
+          nullptr, bluetooth::common::kUnknownConnectionHandle,
+          android::bluetooth::DIRECTION_INCOMING,
+          android::bluetooth::LINK_TYPE_ACL, opcode, hci_event, kUnknownBleEvt,
+          cmd_status, android::bluetooth::hci::STATUS_UNKNOWN);
+      break;
+    case HCI_BLE_ADD_WHITE_LIST:
+    case HCI_BLE_REMOVE_WHITE_LIST: {
+      uint8_t peer_addr_type;
+      STREAM_TO_UINT8(peer_addr_type, p_cmd);
+      STREAM_TO_BDADDR(bd_addr, p_cmd);
+      const RawAddress* bd_addr_p = nullptr;
+      // When peer_addr_type is 0xFF, bd_addr should be ignored per BT spec
+      if (peer_addr_type != BLE_ADDR_ANONYMOUS) {
+        bd_addr_p = &bd_addr;
+#if (BLE_PRIVACY_SPT == TRUE)
+        bool addr_is_rpa = peer_addr_type == BLE_ADDR_RANDOM &&
+                           BTM_BLE_IS_RESOLVE_BDA(bd_addr);
+        // Only try to match identity address for pseudo if address is not RPA
+        if (!addr_is_rpa) {
+          // if identity address is not matched, this should be a static address
+          btm_identity_addr_to_random_pseudo(&bd_addr, &peer_addr_type, false);
+        }
+#endif
+      }
+      bluetooth::common::LogLinkLayerConnectionEvent(
+          bd_addr_p, bluetooth::common::kUnknownConnectionHandle,
+          android::bluetooth::DIRECTION_INCOMING,
+          android::bluetooth::LINK_TYPE_ACL, opcode, hci_event, kUnknownBleEvt,
+          cmd_status, android::bluetooth::hci::STATUS_UNKNOWN);
+      break;
+    }
+  }
+}
+
 /*******************************************************************************
  *
  * Function         btu_hcif_send_cmd
@@ -378,6 +559,11 @@ void btu_hcif_send_cmd(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_buf) {
       (opcode == HCI_BLE_RAND) || (opcode == HCI_BLE_ENCRYPT)) {
     vsc_callback = *((void**)(p_buf + 1));
   }
+
+  // Skip parameter length before logging
+  stream++;
+  btu_hcif_log_command_metrics(opcode, stream,
+                               android::bluetooth::hci::STATUS_UNKNOWN, false);
 
   hci_layer_get_interface()->transmit_command(
       p_buf, btu_hcif_command_complete_evt, btu_hcif_command_status_evt,
@@ -575,6 +761,13 @@ static void btu_hcif_connection_comp_evt(uint8_t* p) {
 
   handle = HCID_GET_HANDLE(handle);
 
+  bluetooth::common::LogLinkLayerConnectionEvent(
+      &bda, handle, android::bluetooth::DIRECTION_UNKNOWN, link_type,
+      android::bluetooth::hci::CMD_UNKNOWN,
+      android::bluetooth::hci::EVT_CONNECTION_COMP,
+      android::bluetooth::hci::BLE_EVT_UNKNOWN, status,
+      android::bluetooth::hci::STATUS_UNKNOWN);
+
   if (status != HCI_SUCCESS) {
     HCI_TRACE_DEBUG(
         "%s: Connection failed: status=%d, handle=%d, link_type=%d, "
@@ -612,6 +805,14 @@ static void btu_hcif_connection_request_evt(uint8_t* p) {
   STREAM_TO_DEVCLASS(dc, p);
   STREAM_TO_UINT8(link_type, p);
 
+  bluetooth::common::LogLinkLayerConnectionEvent(
+      &bda, bluetooth::common::kUnknownConnectionHandle,
+      android::bluetooth::DIRECTION_INCOMING, link_type,
+      android::bluetooth::hci::CMD_UNKNOWN,
+      android::bluetooth::hci::EVT_CONNECTION_REQUEST,
+      android::bluetooth::hci::BLE_EVT_UNKNOWN,
+      android::bluetooth::hci::STATUS_UNKNOWN,
+      android::bluetooth::hci::STATUS_UNKNOWN);
   /* Pass request to security manager to check connect filters before */
   /* passing request to l2cap */
   if (link_type == HCI_LINK_TYPE_ACL) {
@@ -631,14 +832,22 @@ static void btu_hcif_connection_request_evt(uint8_t* p) {
  *
  ******************************************************************************/
 static void btu_hcif_disconnection_comp_evt(uint8_t* p) {
+  uint8_t status;
   uint16_t handle;
   uint8_t reason;
 
-  ++p;
+  STREAM_TO_UINT8(status, p);
   STREAM_TO_UINT16(handle, p);
   STREAM_TO_UINT8(reason, p);
 
   handle = HCID_GET_HANDLE(handle);
+
+  bluetooth::common::LogLinkLayerConnectionEvent(
+      nullptr, handle, android::bluetooth::DIRECTION_UNKNOWN,
+      android::bluetooth::LINK_TYPE_UNKNOWN,
+      android::bluetooth::hci::CMD_UNKNOWN,
+      android::bluetooth::hci::EVT_DISCONNECTION_COMP,
+      android::bluetooth::hci::BLE_EVT_UNKNOWN, status, reason);
 
   if ((reason != HCI_ERR_CONN_CAUSE_LOCAL_HOST) &&
       (reason != HCI_ERR_PEER_USER)) {
@@ -825,6 +1034,15 @@ static void btu_hcif_esco_connection_comp_evt(uint8_t* p) {
   STREAM_TO_UINT16(data.tx_pkt_len, p);
   STREAM_TO_UINT8(data.air_mode, p);
 
+  handle = HCID_GET_HANDLE(handle);
+
+  bluetooth::common::LogLinkLayerConnectionEvent(
+      &bda, handle, android::bluetooth::DIRECTION_UNKNOWN, data.link_type,
+      android::bluetooth::hci::CMD_UNKNOWN,
+      android::bluetooth::hci::EVT_ESCO_CONNECTION_COMP,
+      android::bluetooth::hci::BLE_EVT_UNKNOWN, status,
+      android::bluetooth::hci::STATUS_UNKNOWN);
+
   data.bd_addr = bda;
   btm_sco_connected(status, &bda, handle, &data);
 }
@@ -853,6 +1071,16 @@ static void btu_hcif_esco_connection_chg_evt(uint8_t* p) {
   STREAM_TO_UINT8(retrans_window, p);
   STREAM_TO_UINT16(rx_pkt_len, p);
   STREAM_TO_UINT16(tx_pkt_len, p);
+
+  handle = HCID_GET_HANDLE(handle);
+
+  bluetooth::common::LogLinkLayerConnectionEvent(
+      nullptr, handle, android::bluetooth::DIRECTION_UNKNOWN,
+      android::bluetooth::LINK_TYPE_UNKNOWN,
+      android::bluetooth::hci::CMD_UNKNOWN,
+      android::bluetooth::hci::EVT_ESCO_CONNECTION_CHANGED,
+      android::bluetooth::hci::BLE_EVT_UNKNOWN, status,
+      android::bluetooth::hci::STATUS_UNKNOWN);
 
   btm_esco_proc_conn_chg(status, handle, tx_interval, retrans_window,
                          rx_pkt_len, tx_pkt_len);
@@ -943,6 +1171,21 @@ static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p,
       btm_ble_create_conn_cancel_complete(p);
       break;
 
+    case HCI_BLE_CLEAR_WHITE_LIST:
+    case HCI_BLE_ADD_WHITE_LIST:
+    case HCI_BLE_REMOVE_WHITE_LIST: {
+      uint8_t status;
+      STREAM_TO_UINT8(status, p);
+      bluetooth::common::LogLinkLayerConnectionEvent(
+          nullptr, bluetooth::common::kUnknownConnectionHandle,
+          android::bluetooth::DIRECTION_INCOMING,
+          android::bluetooth::LINK_TYPE_ACL, opcode,
+          android::bluetooth::hci::EVT_COMMAND_COMPLETE,
+          android::bluetooth::hci::BLE_EVT_UNKNOWN, status,
+          android::bluetooth::hci::STATUS_UNKNOWN);
+      break;
+    }
+
     case HCI_BLE_TRANSMITTER_TEST:
     case HCI_BLE_RECEIVER_TEST:
     case HCI_BLE_TEST_END:
@@ -1023,6 +1266,8 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
                                         void* p_vsc_status_cback) {
   CHECK_NE(p_cmd, nullptr) << "Null command for opcode 0x" << loghex(opcode);
   p_cmd++;  // Skip parameter total length
+
+  btu_hcif_log_command_metrics(opcode, p_cmd, status, true);
 
   RawAddress bd_addr;
   uint16_t handle;
