@@ -1958,6 +1958,10 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
     }
 #endif
 
+    if (role == HCI_ROLE_MASTER) {
+      btm_ble_set_conn_st(BLE_CONN_IDLE);
+    }
+
     gatt::connection_manager::on_connection_complete(bda);
     btm_ble_connected(bda, handle, HCI_ENCRYPT_MODE_DISABLED, role, bda_type,
                       match);

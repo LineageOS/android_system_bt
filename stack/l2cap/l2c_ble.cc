@@ -285,7 +285,6 @@ void l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
       __func__, handle, type, conn_interval, conn_latency, conn_timeout);
 
   if (role == HCI_ROLE_MASTER) {
-    btm_ble_set_conn_st(BLE_CONN_IDLE);
     l2cb.is_ble_connecting = false;
   }
 
