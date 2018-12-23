@@ -37,6 +37,7 @@
  ****************************************************************************/
 enum {
   BTA_GATTS_API_REG_EVT = BTA_SYS_EVT_START(BTA_ID_GATTS),
+  BTA_GATTS_INT_START_IF_EVT,
   BTA_GATTS_API_DEREG_EVT,
   BTA_GATTS_API_INDICATION_EVT,
 
@@ -66,7 +67,9 @@ typedef struct {
 typedef struct {
   BT_HDR hdr;
   tGATT_IF server_if;
-} tBTA_GATTS_API_DEREG;
+} tBTA_GATTS_INT_START_IF;
+
+typedef tBTA_GATTS_INT_START_IF tBTA_GATTS_API_DEREG;
 
 typedef struct {
   BT_HDR hdr;
@@ -115,6 +118,8 @@ typedef union {
   tBTA_GATTS_API_RSP api_rsp;
   tBTA_GATTS_API_OPEN api_open;
   tBTA_GATTS_API_CANCEL_OPEN api_cancel_open;
+
+  tBTA_GATTS_INT_START_IF int_start_if;
 } tBTA_GATTS_DATA;
 
 /* application registration control block */
@@ -156,6 +161,7 @@ extern bool bta_gatts_hdl_event(BT_HDR* p_msg);
 extern void bta_gatts_api_disable(tBTA_GATTS_CB* p_cb);
 extern void bta_gatts_api_enable(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_data);
 extern void bta_gatts_register(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg);
+extern void bta_gatts_start_if(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg);
 extern void bta_gatts_deregister(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg);
 extern void bta_gatts_delete_service(tBTA_GATTS_SRVC_CB* p_srvc_cb,
                                      tBTA_GATTS_DATA* p_msg);

@@ -303,10 +303,6 @@ void btif_gattc_open_impl(int client_if, RawAddress address, bool is_direct,
     }
   }
 
-  if (transport == GATT_TRANSPORT_LE) {
-    BTA_DmBleStartAutoConn();
-  }
-
   // Connect!
   BTIF_TRACE_DEBUG("%s Transport=%d, device type=%d, phy=%d", __func__,
                    transport, device_type, initiating_phys);

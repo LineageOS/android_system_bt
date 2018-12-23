@@ -269,39 +269,34 @@ void l2cble_notify_le_connection(const RawAddress& bda) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         l2cble_scanner_conn_comp
- *
- * Description      This function is called when an HCI Connection Complete
- *                  event is received while we are a scanner (so we are master).
- *
- * Returns          void
- *
- ******************************************************************************/
-void l2cble_scanner_conn_comp(uint16_t handle, const RawAddress& bda,
-                              tBLE_ADDR_TYPE type, uint16_t conn_interval,
-                              uint16_t conn_latency, uint16_t conn_timeout) {
-  tL2C_LCB* p_lcb;
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(bda);
+/** This function is called when an HCI Connection Complete event is received.
+ */
+void l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
+                      tBLE_ADDR_TYPE type, uint16_t conn_interval,
+                      uint16_t conn_latency, uint16_t conn_timeout) {
+  btm_ble_update_link_topology_mask(role, true);
+
+  // role == HCI_ROLE_MASTER => scanner completed connection
+  // role == HCI_ROLE_SLAVE => advertiser completed connection
 
   L2CAP_TRACE_DEBUG(
-      "l2cble_scanner_conn_comp: HANDLE=%d addr_type=%d conn_interval=%d "
+      "%s: HANDLE=%d addr_type=%d conn_interval=%d "
       "slave_latency=%d supervision_tout=%d",
-      handle, type, conn_interval, conn_latency, conn_timeout);
+      __func__, handle, type, conn_interval, conn_latency, conn_timeout);
 
-  l2cb.is_ble_connecting = false;
+  if (role == HCI_ROLE_MASTER) {
+    l2cb.is_ble_connecting = false;
+  }
 
   /* See if we have a link control block for the remote device */
-  p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
+  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
 
   /* If we don't have one, create one. this is auto connection complete. */
   if (!p_lcb) {
     p_lcb = l2cu_allocate_lcb(bda, false, BT_TRANSPORT_LE);
     if (!p_lcb) {
       btm_sec_disconnect(handle, HCI_ERR_NO_CONNECTION);
-      L2CAP_TRACE_ERROR("l2cble_scanner_conn_comp - failed to allocate LCB");
-      btm_ble_set_conn_st(BLE_CONN_IDLE);
+      LOG(ERROR) << __func__ << "failed to allocate LCB";
       return;
     } else {
       if (!l2cu_initialize_fixed_ccb(
@@ -309,25 +304,24 @@ void l2cble_scanner_conn_comp(uint16_t handle, const RawAddress& bda,
               &l2cb.fixed_reg[L2CAP_ATT_CID - L2CAP_FIRST_FIXED_CHNL]
                    .fixed_chnl_opts)) {
         btm_sec_disconnect(handle, HCI_ERR_NO_CONNECTION);
-        L2CAP_TRACE_WARNING("l2cble_scanner_conn_comp - LCB but no CCB");
-        btm_ble_set_conn_st(BLE_CONN_IDLE);
+        LOG(WARNING) << __func__ << "LCB but no CCB";
         return;
       }
     }
-  } else if (p_lcb->link_state != LST_CONNECTING) {
-    L2CAP_TRACE_ERROR("L2CAP got BLE scanner conn_comp in bad state: %d",
-                      p_lcb->link_state);
-    btm_ble_set_conn_st(BLE_CONN_IDLE);
+  } else if (role == HCI_ROLE_MASTER && p_lcb->link_state != LST_CONNECTING) {
+    LOG(ERROR) << "L2CAP got BLE scanner conn_comp in bad state: "
+               << +p_lcb->link_state;
     return;
   }
-  alarm_cancel(p_lcb->l2c_lcb_timer);
+
+  if (role == HCI_ROLE_MASTER) alarm_cancel(p_lcb->l2c_lcb_timer);
 
   /* Save the handle */
   p_lcb->handle = handle;
 
   /* Connected OK. Change state to connected, we were scanning so we are master
    */
-  p_lcb->link_role = HCI_ROLE_MASTER;
+  p_lcb->link_role = role;
   p_lcb->transport = BT_TRANSPORT_LE;
 
   /* update link parameter, set slave link as non-spec default upon link up */
@@ -337,122 +331,29 @@ void l2cble_scanner_conn_comp(uint16_t handle, const RawAddress& bda,
   p_lcb->conn_update_mask = L2C_BLE_NOT_DEFAULT_PARAM;
 
   /* Tell BTM Acl management about the link */
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(bda);
   btm_acl_created(bda, NULL, p_dev_rec->sec_bd_name, handle, p_lcb->link_role,
                   BT_TRANSPORT_LE);
 
   p_lcb->peer_chnl_mask[0] = L2CAP_FIXED_CHNL_ATT_BIT |
                              L2CAP_FIXED_CHNL_BLE_SIG_BIT |
                              L2CAP_FIXED_CHNL_SMP_BIT;
-
-  btm_ble_set_conn_st(BLE_CONN_IDLE);
 
 #if (BLE_PRIVACY_SPT == TRUE)
   btm_ble_disable_resolving_list(BTM_BLE_RL_INIT, true);
 #endif
-}
 
-/*******************************************************************************
- *
- * Function         l2cble_advertiser_conn_comp
- *
- * Description      This function is called when an HCI Connection Complete
- *                  event is received while we are an advertiser (so we are
- *                  slave).
- *
- * Returns          void
- *
- ******************************************************************************/
-void l2cble_advertiser_conn_comp(uint16_t handle, const RawAddress& bda,
-                                 UNUSED_ATTR tBLE_ADDR_TYPE type,
-                                 UNUSED_ATTR uint16_t conn_interval,
-                                 UNUSED_ATTR uint16_t conn_latency,
-                                 UNUSED_ATTR uint16_t conn_timeout) {
-  tL2C_LCB* p_lcb;
-  tBTM_SEC_DEV_REC* p_dev_rec;
-
-  /* See if we have a link control block for the remote device */
-  p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
-
-  /* If we don't have one, create one and accept the connection. */
-  if (!p_lcb) {
-    p_lcb = l2cu_allocate_lcb(bda, false, BT_TRANSPORT_LE);
-    if (!p_lcb) {
-      btm_sec_disconnect(handle, HCI_ERR_NO_CONNECTION);
-      L2CAP_TRACE_ERROR("l2cble_advertiser_conn_comp - failed to allocate LCB");
-      return;
-    } else {
-      if (!l2cu_initialize_fixed_ccb(
-              p_lcb, L2CAP_ATT_CID,
-              &l2cb.fixed_reg[L2CAP_ATT_CID - L2CAP_FIRST_FIXED_CHNL]
-                   .fixed_chnl_opts)) {
-        btm_sec_disconnect(handle, HCI_ERR_NO_CONNECTION);
-        L2CAP_TRACE_WARNING("l2cble_scanner_conn_comp - LCB but no CCB");
-        return;
-      }
+  if (role == HCI_ROLE_SLAVE) {
+    if (!HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(
+            controller_get_interface()->get_features_ble()->as_array)) {
+      p_lcb->link_state = LST_CONNECTED;
+      l2cu_process_fixed_chnl_resp(p_lcb);
     }
-  }
 
-  /* Save the handle */
-  p_lcb->handle = handle;
-
-  /* Connected OK. Change state to connected, we were advertising, so we are
-   * slave */
-  p_lcb->link_role = HCI_ROLE_SLAVE;
-  p_lcb->transport = BT_TRANSPORT_LE;
-
-  /* update link parameter, set slave link as non-spec default upon link up */
-  p_lcb->min_interval = p_lcb->max_interval = conn_interval;
-  p_lcb->timeout = conn_timeout;
-  p_lcb->latency = conn_latency;
-  p_lcb->conn_update_mask = L2C_BLE_NOT_DEFAULT_PARAM;
-
-  /* Tell BTM Acl management about the link */
-  p_dev_rec = btm_find_or_alloc_dev(bda);
-
-  btm_acl_created(bda, NULL, p_dev_rec->sec_bd_name, handle, p_lcb->link_role,
-                  BT_TRANSPORT_LE);
-
-#if (BLE_PRIVACY_SPT == TRUE)
-  btm_ble_disable_resolving_list(BTM_BLE_RL_ADV, true);
-#endif
-
-  p_lcb->peer_chnl_mask[0] = L2CAP_FIXED_CHNL_ATT_BIT |
-                             L2CAP_FIXED_CHNL_BLE_SIG_BIT |
-                             L2CAP_FIXED_CHNL_SMP_BIT;
-
-  if (!HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(
-          controller_get_interface()->get_features_ble()->as_array)) {
-    p_lcb->link_state = LST_CONNECTED;
-    l2cu_process_fixed_chnl_resp(p_lcb);
-  }
-
-  /* when adv and initiating are both active, cancel the direct connection */
-  if (l2cb.is_ble_connecting && bda == l2cb.ble_connecting_bda) {
-    L2CA_CancelBleConnectReq(bda);
-  }
-}
-
-/*******************************************************************************
- *
- * Function         l2cble_conn_comp
- *
- * Description      This function is called when an HCI Connection Complete
- *                  event is received.
- *
- * Returns          void
- *
- ******************************************************************************/
-void l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
-                      tBLE_ADDR_TYPE type, uint16_t conn_interval,
-                      uint16_t conn_latency, uint16_t conn_timeout) {
-  btm_ble_update_link_topology_mask(role, true);
-
-  if (role == HCI_ROLE_MASTER) {
-    l2cble_scanner_conn_comp(handle, bda, type, conn_interval, conn_latency,
-                             conn_timeout);
-  } else {
-    l2cble_advertiser_conn_comp(handle, bda, type, conn_interval, conn_latency,
-                                conn_timeout);
+    /* when adv and initiating are both active, cancel the direct connection */
+    if (l2cb.is_ble_connecting && bda == l2cb.ble_connecting_bda) {
+      L2CA_CancelBleConnectReq(bda);
+    }
   }
 }
 

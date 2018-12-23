@@ -945,6 +945,21 @@ extern void GATT_Deregister(tGATT_IF gatt_if);
 
 /*******************************************************************************
  *
+ * Function         GATT_StartIf
+ *
+ * Description      This function is called after registration to start
+ *                  receiving callbacks for registered interface.  Function may
+ *                  call back with connection status and queued notifications
+ *
+ * Parameter        gatt_if: applicaiton interface.
+ *
+ * Returns          None
+ *
+ ******************************************************************************/
+extern void GATT_StartIf(tGATT_IF gatt_if);
+
+/*******************************************************************************
+ *
  * Function         GATT_Connect
  *
  * Description      This function initiate a connecttion to a remote device on

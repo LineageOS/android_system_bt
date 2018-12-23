@@ -286,7 +286,6 @@ typedef struct {
   alarm_t* observer_timer;
 
   /* background connection procedure cb value */
-  tBTM_BLE_CONN_TYPE bg_conn_type;
   uint16_t scan_int;
   uint16_t scan_win;
 

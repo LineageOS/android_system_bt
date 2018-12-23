@@ -1995,8 +1995,6 @@ static void bta_hh_le_add_dev_bg_conn(tBTA_HH_DEV_CB* p_cb, bool check_bond) {
     BTA_GATTC_Open(bta_hh_cb.gatt_if, p_cb->addr, false, GATT_TRANSPORT_LE,
                    false);
     p_cb->in_bg_conn = true;
-
-    BTA_DmBleStartAutoConn();
   }
   return;
 }
