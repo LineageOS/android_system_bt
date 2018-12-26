@@ -91,6 +91,8 @@ struct HearingDevice {
   uint16_t conn_id;
   uint16_t gap_handle;
   uint16_t audio_control_point_handle;
+  uint16_t audio_status_handle;
+  uint16_t audio_status_ccc_handle;
   uint16_t volume_handle;
   uint16_t psm;
 
@@ -106,9 +108,13 @@ struct HearingDevice {
      cleared. Please note that the "Start Cmd" is not send during device
      connection in the case when the audio is suspended. */
   bool playback_started;
+  /* This tracks whether the last command to Hearing Aids device is
+   * ACKnowledged. */
+  bool command_acked;
 
   HearingDevice(const RawAddress& address, uint16_t psm, uint8_t capabilities,
                 uint16_t codecs, uint16_t audio_control_point_handle,
+                uint16_t audio_status_handle, uint16_t audio_status_ccc_handle,
                 uint16_t volume_handle, uint64_t hiSyncId,
                 uint16_t render_delay, uint16_t preparation_delay)
       : address(address),
@@ -119,6 +125,8 @@ struct HearingDevice {
         conn_id(0),
         gap_handle(0),
         audio_control_point_handle(audio_control_point_handle),
+        audio_status_handle(audio_status_handle),
+        audio_status_ccc_handle(audio_status_ccc_handle),
         volume_handle(volume_handle),
         psm(psm),
         capabilities(capabilities),
@@ -126,7 +134,8 @@ struct HearingDevice {
         render_delay(render_delay),
         preparation_delay(preparation_delay),
         codecs(codecs),
-        playback_started(false) {}
+        playback_started(false),
+        command_acked(false) {}
 
   HearingDevice(const RawAddress& address, bool first_connection)
       : address(address),
@@ -136,8 +145,11 @@ struct HearingDevice {
         accepting_audio(false),
         conn_id(0),
         gap_handle(0),
+        audio_status_handle(0),
+        audio_status_ccc_handle(0),
         psm(0),
-        playback_started(false) {}
+        playback_started(false),
+        command_acked(false) {}
 
   HearingDevice() : HearingDevice(RawAddress::kEmpty, false) {}
 

@@ -1430,6 +1430,10 @@ constexpr char HEARING_AID_CODECS[] = "HearingAidCodecs";
 constexpr char HEARING_AID_AUDIO_CONTROL_POINT[] =
     "HearingAidAudioControlPoint";
 constexpr char HEARING_AID_VOLUME_HANDLE[] = "HearingAidVolumeHandle";
+constexpr char HEARING_AID_AUDIO_STATUS_HANDLE[] =
+    "HearingAidAudioStatusHandle";
+constexpr char HEARING_AID_AUDIO_STATUS_CCC_HANDLE[] =
+    "HearingAidAudioStatusCccHandle";
 constexpr char HEARING_AID_SYNC_ID[] = "HearingAidSyncId";
 constexpr char HEARING_AID_RENDER_DELAY[] = "HearingAidRenderDelay";
 constexpr char HEARING_AID_PREPARATION_DELAY[] = "HearingAidPreparationDelay";
@@ -1450,6 +1454,10 @@ void btif_storage_add_hearing_aid(const HearingDevice& dev_info) {
                                 dev_info.audio_control_point_handle);
             btif_config_set_int(bdstr, HEARING_AID_VOLUME_HANDLE,
                                 dev_info.volume_handle);
+            btif_config_set_int(bdstr, HEARING_AID_AUDIO_STATUS_HANDLE,
+                                dev_info.audio_status_handle);
+            btif_config_set_int(bdstr, HEARING_AID_AUDIO_STATUS_CCC_HANDLE,
+                                dev_info.audio_status_ccc_handle);
             btif_config_set_uint64(bdstr, HEARING_AID_SYNC_ID,
                                    dev_info.hi_sync_id);
             btif_config_set_int(bdstr, HEARING_AID_RENDER_DELAY,
@@ -1494,6 +1502,14 @@ void btif_storage_load_bonded_hearing_aids() {
     if (btif_config_get_int(name, HEARING_AID_AUDIO_CONTROL_POINT, &value))
       audio_control_point_handle = value;
 
+    uint16_t audio_status_handle = 0;
+    if (btif_config_get_int(name, HEARING_AID_AUDIO_STATUS_HANDLE, &value))
+      audio_status_handle = value;
+
+    uint16_t audio_status_ccc_handle = 0;
+    if (btif_config_get_int(name, HEARING_AID_AUDIO_STATUS_CCC_HANDLE, &value))
+      audio_status_ccc_handle = value;
+
     uint16_t volume_handle = 0;
     if (btif_config_get_int(name, HEARING_AID_VOLUME_HANDLE, &value))
       volume_handle = value;
@@ -1523,8 +1539,9 @@ void btif_storage_load_bonded_hearing_aids() {
         FROM_HERE,
         Bind(&HearingAid::AddFromStorage,
              HearingDevice(bd_addr, psm, capabilities, codecs,
-                           audio_control_point_handle, volume_handle,
-                           hi_sync_id, render_delay, preparation_delay),
+                           audio_control_point_handle, audio_status_handle,
+                           audio_status_ccc_handle, volume_handle, hi_sync_id,
+                           render_delay, preparation_delay),
              is_white_listed));
   }
 }
