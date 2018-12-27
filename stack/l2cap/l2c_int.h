@@ -506,8 +506,6 @@ typedef struct {
 #endif
 
   uint16_t num_ble_links_active; /* Number of LE links active */
-  bool is_ble_connecting;
-  RawAddress ble_connecting_bda;
   uint16_t controller_le_xmit_window; /* Total ACL window for all links */
   tL2C_BLE_FIXED_CHNLS_MASK l2c_ble_fixed_chnls_mask;  // LE fixed channels mask
   uint16_t num_lm_ble_bufs;         /* # of ACL buffers on controller */
