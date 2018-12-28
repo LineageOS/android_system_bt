@@ -75,8 +75,6 @@ bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda) {
     LOG(WARNING) << __func__
                  << " different BDA Connecting: " << l2cb.ble_connecting_bda
                  << " Cancel: " << rem_bda;
-
-    btm_ble_dequeue_direct_conn_req(rem_bda);
     return (false);
   }
 
@@ -782,16 +780,9 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         l2cble_init_direct_conn
- *
- * Description      This function is to initate a direct connection
- *
- * Returns          true connection initiated, false otherwise.
- *
- ******************************************************************************/
-bool l2cble_init_direct_conn(tL2C_LCB* p_lcb) {
+/** This function is to initate a direct connection. Returns true if connection
+ * initiated, false otherwise. */
+bool l2cble_create_conn(tL2C_LCB* p_lcb) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(p_lcb->remote_bd_addr);
   tBTM_BLE_CB* p_cb = &btm_cb.ble_ctr_cb;
   uint16_t scan_int = (p_cb->scan_int == BTM_BLE_SCAN_PARAM_UNDEF)
@@ -873,35 +864,6 @@ bool l2cble_init_direct_conn(tL2C_LCB* p_lcb) {
   btm_ble_set_conn_st(BLE_DIR_CONN);
 
   return (true);
-}
-
-/*******************************************************************************
- *
- * Function         l2cble_create_conn
- *
- * Description      This function initiates an acl connection via HCI
- *
- * Returns          true if successful, false if connection not started.
- *
- ******************************************************************************/
-bool l2cble_create_conn(tL2C_LCB* p_lcb) {
-  tBTM_BLE_CONN_ST conn_st = btm_ble_get_conn_st();
-  bool rt = false;
-
-  /* There can be only one BLE connection request outstanding at a time */
-  if (conn_st == BLE_CONN_IDLE) {
-    rt = l2cble_init_direct_conn(p_lcb);
-  } else {
-    L2CAP_TRACE_WARNING(
-        "L2CAP - LE - cannot start new connection at conn st: %d", conn_st);
-
-    btm_ble_enqueue_direct_conn_req(p_lcb);
-
-    if (conn_st == BLE_BG_CONN) btm_ble_suspend_bg_conn();
-
-    rt = true;
-  }
-  return rt;
 }
 
 /*******************************************************************************
