@@ -171,11 +171,6 @@ void l2cu_release_lcb(tL2C_LCB* p_lcb) {
     }
   }
 
-  // Reset BLE connecting flag only if the address matches
-  if (p_lcb->transport == BT_TRANSPORT_LE &&
-      l2cb.ble_connecting_bda == p_lcb->remote_bd_addr)
-    l2cb.is_ble_connecting = false;
-
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
   l2cu_process_fixed_disc_cback(p_lcb);
 #endif
@@ -1633,7 +1628,7 @@ void l2cu_release_ccb(tL2C_CCB* p_ccb) {
         /* Link is still active, adjust channel quotas. */
         l2c_link_adjust_chnl_allocation();
       }
-    } else if (p_lcb->link_state == LST_CONNECTING && !l2cb.is_ble_connecting) {
+    } else if (p_lcb->link_state == LST_CONNECTING) {
       if (!p_lcb->ccb_queue.p_first_ccb) {
         if (p_lcb->transport == BT_TRANSPORT_LE &&
             p_ccb->local_cid == L2CAP_ATT_CID) {
@@ -2107,7 +2102,6 @@ void l2cu_device_reset(void) {
       l2c_link_hci_disc_comp(p_lcb->handle, (uint8_t)-1);
     }
   }
-  l2cb.is_ble_connecting = false;
 }
 
 bool l2cu_create_conn_le(tL2C_LCB* p_lcb) {
