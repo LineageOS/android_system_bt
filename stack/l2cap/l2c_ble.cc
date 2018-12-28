@@ -60,8 +60,7 @@ bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda) {
 
   tACL_CONN* p_acl = btm_bda_to_acl(rem_bda, BT_TRANSPORT_LE);
   if (p_acl) {
-    if (p_lcb != NULL && p_lcb->link_state == LST_CONNECTING &&
-        !l2cb.is_ble_connecting) {
+    if (p_lcb != NULL && p_lcb->link_state == LST_CONNECTING) {
       L2CAP_TRACE_WARNING("%s - disconnecting the LE link", __func__);
       L2CA_RemoveFixedChnl(L2CAP_ATT_CID, rem_bda);
       return (true);
@@ -269,10 +268,6 @@ void l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
       "slave_latency=%d supervision_tout=%d",
       __func__, handle, type, conn_interval, conn_latency, conn_timeout);
 
-  if (role == HCI_ROLE_MASTER) {
-    l2cb.is_ble_connecting = false;
-  }
-
   /* See if we have a link control block for the remote device */
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
 
@@ -333,11 +328,6 @@ void l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
             controller_get_interface()->get_features_ble()->as_array)) {
       p_lcb->link_state = LST_CONNECTED;
       l2cu_process_fixed_chnl_resp(p_lcb);
-    }
-
-    /* when adv and initiating are both active, cancel the direct connection */
-    if (l2cb.is_ble_connecting && bda == l2cb.ble_connecting_bda) {
-      L2CA_CancelBleConnectReq(bda);
     }
   }
 }
@@ -775,12 +765,6 @@ bool l2cble_create_conn(tL2C_LCB* p_lcb) {
   if (!ret) return ret;
 
   p_lcb->link_state = LST_CONNECTING;
-
-  // TODO(jpawlowski): these variables make no sense any more, as we might be
-  // attempting multiple connections at same time. Get rid of them in next
-  // patch.
-  l2cb.is_ble_connecting = true;
-  l2cb.ble_connecting_bda = p_lcb->remote_bd_addr;
 
   // TODO: we should not need this timer at all, the connection failure should
   // be reported from lower layer
