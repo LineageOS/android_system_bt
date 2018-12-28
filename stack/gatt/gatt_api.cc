@@ -1032,7 +1032,7 @@ void GATT_Deregister(tGATT_IF gatt_if) {
     }
   }
 
-  gatt::connection_manager::on_app_deregistered(gatt_if);
+  connection_manager::on_app_deregistered(gatt_if);
 
   memset(p_reg, 0, sizeof(tGATT_REG));
 }
@@ -1130,7 +1130,7 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
       LOG(INFO) << "Can't add RPA to background connection.";
       ret = true;
     } else {
-      ret = gatt::connection_manager::background_connect_add(gatt_if, bd_addr);
+      ret = connection_manager::background_connect_add(gatt_if, bd_addr);
     }
   }
 
@@ -1199,8 +1199,7 @@ bool GATT_CancelConnect(tGATT_IF gatt_if, const RawAddress& bd_addr,
   }
 
   // is not direct
-  if (!gatt::connection_manager::background_connect_remove_unconditional(
-          bd_addr)) {
+  if (!connection_manager::background_connect_remove_unconditional(bd_addr)) {
     LOG(ERROR)
         << __func__
         << ": no app associated with the bg device for unconditional removal";

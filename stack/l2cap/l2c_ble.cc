@@ -67,7 +67,7 @@ bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda) {
     }
   }
 
-  gatt::connection_manager::direct_connect_remove(CONN_MGR_ID_L2CAP, rem_bda);
+  connection_manager::direct_connect_remove(CONN_MGR_ID_L2CAP, rem_bda);
 
   /* Do not remove lcb if an LE link is already up as a peripheral */
   if (p_lcb != NULL &&
@@ -760,8 +760,8 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
 /** This function is to initate a direct connection. Returns true if connection
  * initiated, false otherwise. */
 bool l2cble_create_conn(tL2C_LCB* p_lcb) {
-  bool ret = gatt::connection_manager::direct_connect_add(
-      CONN_MGR_ID_L2CAP, p_lcb->remote_bd_addr);
+  bool ret = connection_manager::direct_connect_add(CONN_MGR_ID_L2CAP,
+                                                    p_lcb->remote_bd_addr);
   if (!ret) return ret;
 
   p_lcb->link_state = LST_CONNECTING;
