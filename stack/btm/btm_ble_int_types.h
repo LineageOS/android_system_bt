@@ -292,7 +292,6 @@ typedef struct {
   /* white list information */
   uint8_t wl_state;
 
-  fixed_queue_t* conn_pending_q;
   tBTM_BLE_CONN_ST conn_state;
 
   /* random address management control block */

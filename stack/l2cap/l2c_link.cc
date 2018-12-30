@@ -413,7 +413,6 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
       /* for LE link, always drop and re-open to ensure to get LE remote feature
        */
       if (p_lcb->transport == BT_TRANSPORT_LE) {
-        l2cb.is_ble_connecting = false;
         btm_acl_removed(p_lcb->remote_bd_addr, p_lcb->transport);
       } else {
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
@@ -534,9 +533,7 @@ void l2c_link_timeout(tL2C_LCB* p_lcb) {
 
       p_ccb = pn;
     }
-    if (p_lcb->link_state == LST_CONNECTING && l2cb.is_ble_connecting) {
-      L2CA_CancelBleConnectReq(l2cb.ble_connecting_bda);
-    }
+
     /* Release the LCB */
     l2cu_release_lcb(p_lcb);
   }
