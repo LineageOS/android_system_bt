@@ -99,6 +99,7 @@ cc_library_static {
         "btm/btm_ble_adv_filter.cc",
         "btm/btm_ble_batchscan.cc",
         "btm/btm_ble_bgconn.cc",
+        "btm/btm_ble_connection_establishment.cc",
         "btm/btm_ble_cont_energy.cc",
         "btm/btm_ble_gap.cc",
         "btm/btm_ble_multi_adv.cc",
