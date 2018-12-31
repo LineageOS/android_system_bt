@@ -325,7 +325,7 @@ static void dump(int fd, const char** arguments) {
   osi_allocator_debug_dump(fd);
   alarm_debug_dump(fd);
   HearingAid::DebugDump(fd);
-  gatt::connection_manager::dump(fd);
+  connection_manager::dump(fd);
 #if (BTSNOOP_MEM == TRUE)
   btif_debug_btsnoop_dump(fd);
 #endif

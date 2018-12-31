@@ -14,6 +14,8 @@ using testing::Mock;
 using testing::Return;
 using testing::SaveArg;
 
+using connection_manager::tAPP_ID;
+
 namespace {
 // convinience mock, for verifying whitelist operaitons on lower layer are
 // actually scheduled
@@ -32,10 +34,10 @@ std::unique_ptr<WhiteListMock> localWhiteListMock;
 RawAddress address1{{0x01, 0x01, 0x01, 0x01, 0x01, 0x01}};
 RawAddress address2{{0x22, 0x22, 0x02, 0x22, 0x33, 0x22}};
 
-constexpr tGATT_IF CLIENT1 = 1;
-constexpr tGATT_IF CLIENT2 = 2;
-constexpr tGATT_IF CLIENT3 = 3;
-constexpr tGATT_IF CLIENT10 = 10;
+constexpr tAPP_ID CLIENT1 = 1;
+constexpr tAPP_ID CLIENT2 = 2;
+constexpr tAPP_ID CLIENT3 = 3;
+constexpr tAPP_ID CLIENT10 = 10;
 
 // Implementation of btm_ble_bgconn.h API for test.
 bool BTM_WhiteListAdd(const RawAddress& address) {
@@ -56,16 +58,14 @@ void BTM_SetLeConnectionModeToSlow() {
   localWhiteListMock->SetLeConnectionModeToSlow();
 }
 
-namespace gatt {
 namespace connection_manager {
-
-class BleGattConnectionManager : public testing::Test {
+class BleConnectionManager : public testing::Test {
   virtual void SetUp() {
     localWhiteListMock = std::make_unique<WhiteListMock>();
   }
 
   virtual void TearDown() {
-    gatt::connection_manager::reset(true);
+    connection_manager::reset(true);
     AlarmMock::Reset();
     localWhiteListMock.reset();
   }
@@ -73,7 +73,7 @@ class BleGattConnectionManager : public testing::Test {
 
 /** Verify that app can add a device to white list, it is returned as interested
  * app, and then can remove the device later. */
-TEST_F(BleGattConnectionManager, test_background_connection_add_remove) {
+TEST_F(BleConnectionManager, test_background_connection_add_remove) {
   EXPECT_CALL(*localWhiteListMock, WhiteListAdd(address1))
       .WillOnce(Return(true));
   EXPECT_CALL(*localWhiteListMock, WhiteListRemove(_)).Times(0);
@@ -82,7 +82,7 @@ TEST_F(BleGattConnectionManager, test_background_connection_add_remove) {
 
   Mock::VerifyAndClearExpectations(localWhiteListMock.get());
 
-  std::set<tGATT_IF> apps = get_apps_connecting_to(address1);
+  std::set<tAPP_ID> apps = get_apps_connecting_to(address1);
   EXPECT_EQ(apps.size(), 1UL);
   EXPECT_EQ(apps.count(CLIENT1), 1UL);
 
@@ -99,7 +99,7 @@ TEST_F(BleGattConnectionManager, test_background_connection_add_remove) {
 /** Verify that multiple clients adding same device multiple times, result in
  * device being added to whtie list only once, also, that device is removed only
  * after last client removes it. */
-TEST_F(BleGattConnectionManager, test_background_connection_multiple_clients) {
+TEST_F(BleConnectionManager, test_background_connection_multiple_clients) {
   EXPECT_CALL(*localWhiteListMock, WhiteListAdd(address1))
       .WillOnce(Return(true));
   EXPECT_CALL(*localWhiteListMock, WhiteListRemove(_)).Times(0);
@@ -131,7 +131,7 @@ TEST_F(BleGattConnectionManager, test_background_connection_multiple_clients) {
 }
 
 /** Verify adding/removing device to direct connection. */
-TEST_F(BleGattConnectionManager, test_direct_connection_client) {
+TEST_F(BleConnectionManager, test_direct_connection_client) {
   // Direct connect attempt: use faster scan parameters, add to white list,
   // start 30 timeout
   EXPECT_CALL(*localWhiteListMock, SetLeConnectionModeToFast()).Times(1);
@@ -164,7 +164,7 @@ TEST_F(BleGattConnectionManager, test_direct_connection_client) {
 
 /** Verify direct connection timeout does remove device from white list, and
  * lower the connection scan parameters */
-TEST_F(BleGattConnectionManager, test_direct_connect_timeout) {
+TEST_F(BleConnectionManager, test_direct_connect_timeout) {
   EXPECT_CALL(*localWhiteListMock, SetLeConnectionModeToFast()).Times(1);
   EXPECT_CALL(*localWhiteListMock, WhiteListAdd(address1))
       .WillOnce(Return(true));
@@ -192,7 +192,7 @@ TEST_F(BleGattConnectionManager, test_direct_connect_timeout) {
 }
 
 /** Verify that we properly handle successfull direct connection */
-TEST_F(BleGattConnectionManager, test_direct_connection_success) {
+TEST_F(BleConnectionManager, test_direct_connection_success) {
   EXPECT_CALL(*localWhiteListMock, SetLeConnectionModeToFast()).Times(1);
   EXPECT_CALL(*localWhiteListMock, WhiteListAdd(address1))
       .WillOnce(Return(true));
@@ -213,7 +213,7 @@ TEST_F(BleGattConnectionManager, test_direct_connection_success) {
 }
 
 /** Verify that we properly handle application unregistration */
-TEST_F(BleGattConnectionManager, test_app_unregister) {
+TEST_F(BleConnectionManager, test_app_unregister) {
   /* Test scenario:
    * - Client 1 connecting to address1 and address2.
    * - Client 2 connecting to address2
@@ -239,7 +239,7 @@ TEST_F(BleGattConnectionManager, test_app_unregister) {
 }
 
 /** Verify adding device to both direct connection and background connection. */
-TEST_F(BleGattConnectionManager, test_direct_and_background_connect) {
+TEST_F(BleConnectionManager, test_direct_and_background_connect) {
   EXPECT_CALL(*localWhiteListMock, SetLeConnectionModeToFast()).Times(1);
   EXPECT_CALL(*localWhiteListMock, WhiteListAdd(address1))
       .WillOnce(Return(true));
@@ -266,4 +266,3 @@ TEST_F(BleGattConnectionManager, test_direct_and_background_connect) {
 }
 
 }  // namespace connection_manager
-}  // namespace gatt

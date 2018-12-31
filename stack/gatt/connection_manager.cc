@@ -56,23 +56,22 @@ void alarm_set_closure(const base::Location& posted_from, alarm_t* alarm,
 
 using unique_alarm_ptr = std::unique_ptr<alarm_t, decltype(&alarm_free)>;
 
-struct tGATT_BG_CONN_DEV {
+namespace connection_manager {
+
+struct tAPPS_CONNECTING {
   // ids of clients doing background connection to given device
-  std::set<tGATT_IF> doing_bg_conn;
+  std::set<tAPP_ID> doing_bg_conn;
 
   // Apps trying to do direct connection.
-  std::map<tGATT_IF, unique_alarm_ptr> doing_direct_conn;
+  std::map<tAPP_ID, unique_alarm_ptr> doing_direct_conn;
 };
-
-namespace gatt {
-namespace connection_manager {
 
 namespace {
 // Maps address to apps trying to connect to it
-std::map<RawAddress, tGATT_BG_CONN_DEV> bgconn_dev;
+std::map<RawAddress, tAPPS_CONNECTING> bgconn_dev;
 
 bool anyone_connecting(
-    const std::map<RawAddress, tGATT_BG_CONN_DEV>::iterator it) {
+    const std::map<RawAddress, tAPPS_CONNECTING>::iterator it) {
   return (!it->second.doing_bg_conn.empty() ||
           !it->second.doing_direct_conn.empty());
 }
@@ -81,21 +80,21 @@ bool anyone_connecting(
 
 /** background connection device from the list. Returns pointer to the device
  * record, or nullptr if not found */
-std::set<tGATT_IF> get_apps_connecting_to(const RawAddress& address) {
+std::set<tAPP_ID> get_apps_connecting_to(const RawAddress& address) {
   auto it = bgconn_dev.find(address);
   return (it != bgconn_dev.end()) ? it->second.doing_bg_conn
-                                  : std::set<tGATT_IF>();
+                                  : std::set<tAPP_ID>();
 }
 
 /** Add a device from the background connection list.  Returns true if device
  * added to the list, or already in list, false otherwise */
-bool background_connect_add(tGATT_IF gatt_if, const RawAddress& address) {
+bool background_connect_add(uint8_t app_id, const RawAddress& address) {
   auto it = bgconn_dev.find(address);
   bool in_white_list = false;
   if (it != bgconn_dev.end()) {
     // device already in the whitelist, just add interested app to the list
-    if (it->second.doing_bg_conn.count(gatt_if)) {
-      LOG(INFO) << "App id=" << loghex(gatt_if)
+    if (it->second.doing_bg_conn.count(app_id)) {
+      LOG(INFO) << "App id=" << loghex(app_id)
                 << "already doing background connection to " << address;
       return true;
     }
@@ -111,8 +110,8 @@ bool background_connect_add(tGATT_IF gatt_if, const RawAddress& address) {
     if (!BTM_WhiteListAdd(address)) return false;
   }
 
-  // create endtry for address, and insert gatt_if.
-  bgconn_dev[address].doing_bg_conn.insert(gatt_if);
+  // create endtry for address, and insert app_id.
+  bgconn_dev[address].doing_bg_conn.insert(app_id);
   return true;
 }
 
@@ -130,12 +129,12 @@ bool background_connect_remove_unconditional(const RawAddress& address) {
 /** Remove device from the background connection device list or listening to
  * advertising list.  Returns true if device was on the list and was succesfully
  * removed */
-bool background_connect_remove(tGATT_IF gatt_if, const RawAddress& address) {
+bool background_connect_remove(uint8_t app_id, const RawAddress& address) {
   VLOG(2) << __func__;
   auto it = bgconn_dev.find(address);
   if (it == bgconn_dev.end()) return false;
 
-  if (!it->second.doing_bg_conn.erase(gatt_if)) return false;
+  if (!it->second.doing_bg_conn.erase(app_id)) return false;
 
   if (anyone_connecting(it)) return true;
 
@@ -146,14 +145,14 @@ bool background_connect_remove(tGATT_IF gatt_if, const RawAddress& address) {
 }
 
 /** deregister all related background connetion device. */
-void on_app_deregistered(tGATT_IF gatt_if) {
+void on_app_deregistered(uint8_t app_id) {
   auto it = bgconn_dev.begin();
   auto end = bgconn_dev.end();
   /* update the BG conn device list */
   while (it != end) {
-    it->second.doing_bg_conn.erase(gatt_if);
+    it->second.doing_bg_conn.erase(app_id);
 
-    it->second.doing_direct_conn.erase(gatt_if);
+    it->second.doing_direct_conn.erase(app_id);
 
     if (anyone_connecting(it)) {
       it++;
@@ -171,8 +170,8 @@ void on_connection_complete(const RawAddress& address) {
   if (it == bgconn_dev.end()) return;
 
   while (!it->second.doing_direct_conn.empty()) {
-    uint8_t gatt_if = it->second.doing_direct_conn.begin()->first;
-    direct_connect_remove(gatt_if, address);
+    uint8_t app_id = it->second.doing_direct_conn.begin()->first;
+    direct_connect_remove(app_id, address);
   }
 }
 
@@ -183,23 +182,22 @@ void reset(bool after_reset) {
   if (!after_reset) BTM_WhiteListClear();
 }
 
-void gatt_wl_direct_connect_timeout_cb(tGATT_IF gatt_if,
-                                       const RawAddress& address) {
+void wl_direct_connect_timeout_cb(uint8_t app_id, const RawAddress& address) {
   // TODO: this would free the timer, from within the timer callback, which is
   // bad.
-  direct_connect_remove(gatt_if, address);
+  direct_connect_remove(app_id, address);
 }
 
 /** Add a device to the direcgt connection list.  Returns true if device
  * added to the list, false otherwise */
-bool direct_connect_add(tGATT_IF gatt_if, const RawAddress& address) {
+bool direct_connect_add(uint8_t app_id, const RawAddress& address) {
   auto it = bgconn_dev.find(address);
   bool in_white_list = false;
 
   if (it != bgconn_dev.end()) {
     // app already trying to connect to this particular device
-    if (it->second.doing_direct_conn.count(gatt_if)) {
-      LOG(INFO) << "direct connect attempt from gatt_if=" << loghex(gatt_if)
+    if (it->second.doing_direct_conn.count(app_id)) {
+      LOG(INFO) << "direct connect attempt from app_id=" << loghex(app_id)
                 << " already in progress";
       return false;
     }
@@ -221,13 +219,13 @@ bool direct_connect_add(tGATT_IF gatt_if, const RawAddress& address) {
   }
 
   // Setup a timer
-  alarm_t* timeout = alarm_new("gatt_wl_conn_params_30s");
+  alarm_t* timeout = alarm_new("wl_conn_params_30s");
   alarm_set_closure(
       FROM_HERE, timeout, DIRECT_CONNECT_TIMEOUT,
-      base::BindOnce(&gatt_wl_direct_connect_timeout_cb, gatt_if, address));
+      base::BindOnce(&wl_direct_connect_timeout_cb, app_id, address));
 
   bgconn_dev[address].doing_direct_conn.emplace(
-      gatt_if, unique_alarm_ptr(timeout, &alarm_free));
+      app_id, unique_alarm_ptr(timeout, &alarm_free));
   return true;
 }
 
@@ -238,13 +236,13 @@ bool any_direct_connect_left() {
   return false;
 }
 
-bool direct_connect_remove(tGATT_IF gatt_if, const RawAddress& address) {
+bool direct_connect_remove(uint8_t app_id, const RawAddress& address) {
   VLOG(2) << __func__ << ": "
-          << "gatt_if: " << +gatt_if << ", address:" << address;
+          << "app_id: " << +app_id << ", address:" << address;
   auto it = bgconn_dev.find(address);
   if (it == bgconn_dev.end()) return false;
 
-  auto app_it = it->second.doing_direct_conn.find(gatt_if);
+  auto app_it = it->second.doing_direct_conn.find(app_id);
   if (app_it == it->second.doing_direct_conn.end()) return false;
 
   // this will free the alarm
@@ -265,7 +263,7 @@ bool direct_connect_remove(tGATT_IF gatt_if, const RawAddress& address) {
 }
 
 void dump(int fd) {
-  dprintf(fd, "\ngatt::connection_manager state:\n");
+  dprintf(fd, "\nconnection_manager state:\n");
   if (bgconn_dev.empty()) {
     dprintf(fd, "\n\tno Low Energy connection attempts\n");
     return;
@@ -293,4 +291,3 @@ void dump(int fd) {
 }
 
 }  // namespace connection_manager
-}  // namespace gatt

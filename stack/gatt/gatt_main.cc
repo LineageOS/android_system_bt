@@ -102,7 +102,7 @@ void gatt_init(void) {
   VLOG(1) << __func__;
 
   gatt_cb = tGATT_CB();
-  gatt::connection_manager::reset(true);
+  connection_manager::reset(true);
   memset(&fixed_reg, 0, sizeof(tL2CAP_FIXED_CHNL_REG));
 
   gatt_cb.def_mtu_size = GATT_DEF_BLE_MTU_SIZE;
@@ -204,7 +204,7 @@ bool gatt_connect(const RawAddress& rem_bda, tGATT_TCB* p_tcb,
   if (transport == BT_TRANSPORT_LE) {
     p_tcb->att_lcid = L2CAP_ATT_CID;
 
-    gatt_ret = gatt::connection_manager::direct_connect_add(gatt_if, rem_bda);
+    gatt_ret = connection_manager::direct_connect_add(gatt_if, rem_bda);
   } else {
     p_tcb->att_lcid = L2CA_ConnectReq(BT_PSM_ATT, rem_bda);
     if (p_tcb->att_lcid != 0) gatt_ret = true;
@@ -795,7 +795,7 @@ static void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
   uint16_t conn_id;
 
   std::set<tGATT_IF> apps =
-      gatt::connection_manager::get_apps_connecting_to(p_tcb->peer_bda);
+      connection_manager::get_apps_connecting_to(p_tcb->peer_bda);
 
   /* notifying all applications for the connection up event */
   for (i = 0, p_reg = gatt_cb.cl_rcb; i < GATT_MAX_APPS; i++, p_reg++) {
