@@ -22,27 +22,35 @@
 
 #include "types/raw_address.h"
 
-typedef uint8_t tGATT_IF;
-
-namespace gatt {
+/* connection_manager takes care of all the low-level details of LE connection
+ * initiation. It accept requests from multiple subsystems to connect to
+ * devices, and multiplex them into whitelist add/remove, and scan parameter
+ * changes.
+ *
+ * There is no code for app_id generation. GATT clients use their GATT_IF, and
+ * L2CAP layer uses CONN_MGR_ID_L2CAP as fixed app_id. In case any further
+ * subsystems also use connection_manager, we should consider adding a proper
+ * mechanism for app_id generation.
+ */
 namespace connection_manager {
 
+using tAPP_ID = uint8_t;
+
 /* for background connection */
-extern bool background_connect_add(tGATT_IF gatt_if, const RawAddress& address);
-extern bool background_connect_remove(tGATT_IF gatt_if,
+extern bool background_connect_add(tAPP_ID app_id, const RawAddress& address);
+extern bool background_connect_remove(tAPP_ID app_id,
                                       const RawAddress& address);
 extern bool background_connect_remove_unconditional(const RawAddress& address);
 
 extern void reset(bool after_reset);
 
-extern void on_app_deregistered(tGATT_IF gatt_if);
+extern void on_app_deregistered(tAPP_ID app_id);
 extern void on_connection_complete(const RawAddress& address);
 
-extern std::set<tGATT_IF> get_apps_connecting_to(const RawAddress& remote_bda);
+extern std::set<tAPP_ID> get_apps_connecting_to(const RawAddress& remote_bda);
 
-extern bool direct_connect_add(tGATT_IF gatt_if, const RawAddress& address);
-extern bool direct_connect_remove(tGATT_IF gatt_if, const RawAddress& address);
+extern bool direct_connect_add(tAPP_ID app_id, const RawAddress& address);
+extern bool direct_connect_remove(tAPP_ID app_id, const RawAddress& address);
 
 extern void dump(int fd);
 }  // namespace connection_manager
-}  // namespace gatt
