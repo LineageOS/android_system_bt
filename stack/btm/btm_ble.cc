@@ -469,7 +469,7 @@ void BTM_BleSetConnScanParams(uint32_t scan_interval, uint32_t scan_window) {
       new_param = true;
     }
 
-    if (new_param && p_ble_cb->conn_state == BLE_BG_CONN) {
+    if (new_param && btm_ble_get_conn_st() == BLE_CONNECTING) {
       btm_ble_suspend_bg_conn();
     }
   } else {
@@ -2336,11 +2336,6 @@ void btm_ble_set_random_address(const RawAddress& random_bda) {
   bool adv_mode = btm_cb.ble_ctr_cb.inq_var.adv_mode;
 
   BTM_TRACE_DEBUG("%s", __func__);
-  if (btm_ble_get_conn_st() == BLE_DIR_CONN) {
-    BTM_TRACE_ERROR("%s: Cannot set random address. Direct conn ongoing",
-                    __func__);
-    return;
-  }
 
   if (adv_mode == BTM_BLE_ADV_ENABLE)
     btsnd_hcic_ble_set_adv_enable(BTM_BLE_ADV_DISABLE);
