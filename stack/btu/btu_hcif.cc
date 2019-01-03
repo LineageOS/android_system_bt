@@ -565,9 +565,7 @@ static void btu_hcif_connection_comp_evt(uint8_t* p) {
   RawAddress bda;
   uint8_t link_type;
   uint8_t enc_mode;
-#if (BTM_SCO_INCLUDED == TRUE)
   tBTM_ESCO_DATA esco_data;
-#endif
 
   STREAM_TO_UINT8(status, p);
   STREAM_TO_UINT16(handle, p);
@@ -588,15 +586,12 @@ static void btu_hcif_connection_comp_evt(uint8_t* p) {
     btm_sec_connected(bda, handle, status, enc_mode);
 
     l2c_link_hci_conn_comp(status, handle, bda);
-  }
-#if (BTM_SCO_INCLUDED == TRUE)
-  else {
+  } else {
     memset(&esco_data, 0, sizeof(tBTM_ESCO_DATA));
     /* esco_data.link_type = HCI_LINK_TYPE_SCO; already zero */
     esco_data.bd_addr = bda;
     btm_sco_connected(status, &bda, handle, &esco_data);
   }
-#endif /* BTM_SCO_INCLUDED */
 }
 
 /*******************************************************************************
@@ -621,12 +616,9 @@ static void btu_hcif_connection_request_evt(uint8_t* p) {
   /* passing request to l2cap */
   if (link_type == HCI_LINK_TYPE_ACL) {
     btm_sec_conn_req(bda, dc);
-  }
-#if (BTM_SCO_INCLUDED == TRUE)
-  else {
+  } else {
     btm_sco_conn_req(bda, dc, link_type);
   }
-#endif /* BTM_SCO_INCLUDED */
 }
 
 /*******************************************************************************
@@ -655,12 +647,8 @@ static void btu_hcif_disconnection_comp_evt(uint8_t* p) {
                     __func__, reason, handle);
   }
 
-#if (BTM_SCO_INCLUDED == TRUE)
   /* If L2CAP doesn't know about it, send it to SCO */
   if (!l2c_link_hci_disc_comp(handle, reason)) btm_sco_removed(handle, reason);
-#else
-  l2c_link_hci_disc_comp(handle, reason);
-#endif /* BTM_SCO_INCLUDED */
 
   /* Notify security manager */
   btm_sec_disconnected(handle, reason);
@@ -821,7 +809,6 @@ static void btu_hcif_qos_setup_comp_evt(uint8_t* p) {
  *
  ******************************************************************************/
 static void btu_hcif_esco_connection_comp_evt(uint8_t* p) {
-#if (BTM_SCO_INCLUDED == TRUE)
   tBTM_ESCO_DATA data;
   uint16_t handle;
   RawAddress bda;
@@ -840,7 +827,6 @@ static void btu_hcif_esco_connection_comp_evt(uint8_t* p) {
 
   data.bd_addr = bda;
   btm_sco_connected(status, &bda, handle, &data);
-#endif
 }
 
 /*******************************************************************************
@@ -853,7 +839,6 @@ static void btu_hcif_esco_connection_comp_evt(uint8_t* p) {
  *
  ******************************************************************************/
 static void btu_hcif_esco_connection_chg_evt(uint8_t* p) {
-#if (BTM_SCO_INCLUDED == TRUE)
   uint16_t handle;
   uint16_t tx_pkt_len;
   uint16_t rx_pkt_len;
@@ -871,7 +856,6 @@ static void btu_hcif_esco_connection_chg_evt(uint8_t* p) {
 
   btm_esco_proc_conn_chg(status, handle, tx_interval, retrans_window,
                          rx_pkt_len, tx_pkt_len);
-#endif
 }
 
 /*******************************************************************************
@@ -1039,9 +1023,7 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
                                         void* p_vsc_status_cback) {
   RawAddress bd_addr;
   uint16_t handle;
-#if (BTM_SCO_INCLUDED == TRUE)
   tBTM_ESCO_DATA esco_data;
-#endif
 
   switch (opcode) {
     case HCI_EXIT_SNIFF_MODE:
@@ -1144,7 +1126,6 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
             btm_ble_create_ll_conn_complete(status);
             break;
 
-#if (BTM_SCO_INCLUDED == TRUE)
           case HCI_SETUP_ESCO_CONNECTION:
           case HCI_ENH_SETUP_ESCO_CONNECTION:
             /* read handle out of stored command */
@@ -1160,7 +1141,6 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
                 btm_sco_connected(status, NULL, handle, &esco_data);
             }
             break;
-#endif
 
           /* This is commented out until an upper layer cares about returning
           event

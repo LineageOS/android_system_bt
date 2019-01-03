@@ -285,10 +285,8 @@ bool btm_dev_support_switch(const RawAddress& bd_addr) {
   uint8_t xx;
   bool feature_empty = true;
 
-#if (BTM_SCO_INCLUDED == TRUE)
   /* Role switch is not allowed if a SCO is up */
   if (btm_is_sco_active_by_bdaddr(bd_addr)) return (false);
-#endif
   p_dev_rec = btm_find_dev(bd_addr);
   if (p_dev_rec &&
       controller_get_interface()->supports_master_slave_role_switch()) {
