@@ -388,11 +388,9 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
       p_ccb = pn;
     }
 
-#if (BTM_SCO_INCLUDED == TRUE)
     if (p_lcb->transport == BT_TRANSPORT_BR_EDR)
       /* Tell SCO management to drop any SCOs on this ACL */
       btm_sco_acl_removed(&p_lcb->remote_bd_addr);
-#endif
 
     /* If waiting for disconnect and reconnect is pending start the reconnect
        now

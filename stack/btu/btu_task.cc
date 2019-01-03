@@ -59,10 +59,8 @@ void btu_hci_msg_process(BT_HDR* p_msg) {
       break;
 
     case BT_EVT_TO_BTU_HCI_SCO:
-#if (BTM_SCO_INCLUDED == TRUE)
       btm_route_sco_data(p_msg);
       break;
-#endif
 
     case BT_EVT_TO_BTU_HCI_EVT:
       btu_hcif_process_event((uint8_t)(p_msg->event & BT_SUB_EVT_MASK), p_msg);

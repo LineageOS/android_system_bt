@@ -152,10 +152,8 @@ void l2cu_release_lcb(tL2C_LCB* p_lcb) {
   /* Release any unfinished L2CAP packet on this link */
   osi_free_and_reset((void**)&p_lcb->p_hcit_rcv_acl);
 
-#if (BTM_SCO_INCLUDED == TRUE)
   if (p_lcb->transport == BT_TRANSPORT_BR_EDR) /* Release all SCO links */
     btm_remove_sco_links(p_lcb->remote_bd_addr);
-#endif
 
   if (p_lcb->sent_not_acked > 0) {
     if (p_lcb->transport == BT_TRANSPORT_LE) {
@@ -2131,9 +2129,7 @@ bool l2cu_create_conn_le(tL2C_LCB* p_lcb, uint8_t initiating_phys) {
 bool l2cu_create_conn_br_edr(tL2C_LCB* p_lcb) {
   int xx;
   tL2C_LCB* p_lcb_cur = &l2cb.lcb_pool[0];
-#if (BTM_SCO_INCLUDED == TRUE)
   bool is_sco_active;
-#endif
 
   /* If there is a connection where we perform as a slave, try to switch roles
      for this connection */
@@ -2142,7 +2138,6 @@ bool l2cu_create_conn_br_edr(tL2C_LCB* p_lcb) {
     if (p_lcb_cur == p_lcb) continue;
 
     if ((p_lcb_cur->in_use) && (p_lcb_cur->link_role == HCI_ROLE_SLAVE)) {
-#if (BTM_SCO_INCLUDED == TRUE)
       /* The LMP_switch_req shall be sent only if the ACL logical transport
       is in active mode, when encryption is disabled, and all synchronous
       logical transports on the same physical link are disabled." */
@@ -2156,7 +2151,6 @@ bool l2cu_create_conn_br_edr(tL2C_LCB* p_lcb) {
 
       if (is_sco_active)
         continue; /* No Master Slave switch not allowed when SCO Active */
-#endif
       /*4_1_TODO check  if btm_cb.devcb.local_features to be used instead */
       if (HCI_SWITCH_SUPPORTED(BTM_ReadLocalFeatures())) {
         /* mark this lcb waiting for switch to be completed and
