@@ -813,10 +813,8 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
       (*btm_cb.pm_reg_db[yy].cback)(p->remote_addr, mode, interval, hci_status);
     }
   }
-#if (BTM_SCO_INCLUDED == TRUE)
   /*check if sco disconnect  is waiting for the mode change */
   btm_sco_disc_chk_pend_for_modechange(hci_handle);
-#endif
 
   /* If mode change was because of an active role switch or change link key */
   btm_cont_rswitch(p, btm_find_dev(p->remote_addr), hci_status);
