@@ -89,10 +89,8 @@ extern void btsnd_hcic_disconnect(uint16_t handle, uint8_t reason);
 #define HCI_DISC_REASON_OFF 2
 /* Disconnect */
 
-#if (BTM_SCO_INCLUDED == TRUE)
 /* Add SCO Connection */
 extern void btsnd_hcic_add_SCO_conn(uint16_t handle, uint16_t packet_types);
-#endif /* BTM_SCO_INCLUDED */
 
 #define HCIC_PARAM_SIZE_ADD_SCO_CONN 4
 

@@ -369,20 +369,12 @@ typedef struct {
   esco_data_path_t sco_route; /* HCI, PCM, or TEST */
 } tSCO_CB;
 
-#if (BTM_SCO_INCLUDED == TRUE)
 extern void btm_set_sco_ind_cback(tBTM_SCO_IND_CBACK* sco_ind_cb);
 extern void btm_accept_sco_link(uint16_t sco_inx, enh_esco_params_t* p_setup,
                                 tBTM_SCO_CB* p_conn_cb, tBTM_SCO_CB* p_disc_cb);
 extern void btm_reject_sco_link(uint16_t sco_inx);
 extern void btm_sco_chk_pend_rolechange(uint16_t hci_handle);
 extern void btm_sco_disc_chk_pend_for_modechange(uint16_t hci_handle);
-
-#else
-#define btm_accept_sco_link(sco_inx, p_setup, p_conn_cb, p_disc_cb)
-#define btm_reject_sco_link(sco_inx)
-#define btm_set_sco_ind_cback(sco_ind_cb)
-#define btm_sco_chk_pend_rolechange(hci_handle)
-#endif /* BTM_SCO_INCLUDED */
 
 /*
  * Define structure for Security Service Record.
@@ -784,12 +776,10 @@ typedef struct {
   *****************************************************/
   tBTM_INQUIRY_VAR_ST btm_inq_vars;
 
-/*****************************************************
-**      SCO Management
-*****************************************************/
-#if (BTM_SCO_INCLUDED == TRUE)
+  /*****************************************************
+  **      SCO Management
+  *****************************************************/
   tSCO_CB sco_cb;
-#endif
 
   /*****************************************************
   **      Security Management

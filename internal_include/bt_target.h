@@ -275,11 +275,6 @@
 #define BTM_NO_SSP_ON_INQUIRY FALSE
 #endif
 
-/* Includes SCO if TRUE */
-#ifndef BTM_SCO_INCLUDED
-#define BTM_SCO_INCLUDED TRUE /* TRUE includes SCO code */
-#endif
-
 #ifndef DISABLE_WBS
 #define DISABLE_WBS FALSE
 #endif
