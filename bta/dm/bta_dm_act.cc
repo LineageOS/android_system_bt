@@ -191,12 +191,10 @@ const uint16_t bta_service_id_to_uuid_lkup_tbl[BTA_MAX_SERVICE_ID] = {
 
 /*
  * NOTE : The number of element in bta_service_id_to_btm_srv_id_lkup_tbl should
- * be matching with
- *        the value BTA_MAX_SERVICE_ID in bta_api.h
+ * be matching with the value BTA_MAX_SERVICE_ID in bta_api.h
  *
- *        i.e., If you add new Service ID for BTA, the correct security ID of
- * the new service
- *              from Security service definitions (btm_api.h) should be added to
+ * i.e., If you add new Service ID for BTA, the correct security ID of the new
+ * service from Security service definitions (btm_api.h) should be added to
  * this lookup table.
  */
 const uint32_t bta_service_id_to_btm_srv_id_lkup_tbl[BTA_MAX_SERVICE_ID] = {
