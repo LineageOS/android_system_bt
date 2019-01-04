@@ -39,10 +39,3 @@ group("bluetooth_tests") {
     "//device:net_test_device",
   ]
 }
-
-group("test_tools") {
-  testonly = true
-  deps = [
-    "//tools/mcap_tool:mcap_tool"
-  ]
-}

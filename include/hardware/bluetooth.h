@@ -38,7 +38,6 @@
 #define BT_PROFILE_HANDSFREE_CLIENT_ID "handsfree_client"
 #define BT_PROFILE_ADVANCED_AUDIO_ID "a2dp"
 #define BT_PROFILE_ADVANCED_AUDIO_SINK_ID "a2dp_sink"
-#define BT_PROFILE_HEALTH_ID "health"
 #define BT_PROFILE_SOCKETS_ID "socket"
 #define BT_PROFILE_HIDHOST_ID "hidhost"
 #define BT_PROFILE_HIDDEV_ID "hiddev"
@@ -49,9 +48,6 @@
 #define BT_PROFILE_AV_RC_ID "avrcp"
 #define BT_PROFILE_AV_RC_CTRL_ID "avrcp_ctrl"
 #define BT_PROFILE_HEARING_AID_ID "hearing_aid"
-
-/** Bluetooth test interface IDs */
-#define BT_TEST_INTERFACE_MCAP_ID "mcap_test"
 
 /** Bluetooth Device Name */
 typedef struct { uint8_t name[249]; } __attribute__((packed)) bt_bdname_t;
