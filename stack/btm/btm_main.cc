@@ -66,9 +66,7 @@ void btm_init(void) {
     btm_sec_init(BTM_SEC_MODE_SC);
   else
     btm_sec_init(BTM_SEC_MODE_SP);
-#if (BTM_SCO_INCLUDED == TRUE)
   btm_sco_init(); /* SCO Database and Structures (If included) */
-#endif
 
   btm_cb.sec_dev_rec = list_new(osi_free);
 

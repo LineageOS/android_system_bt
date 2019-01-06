@@ -320,9 +320,7 @@ static void btm_decode_ext_features_page(uint8_t page_number,
 
       /* Create (e)SCO supported packet types mask */
       btm_cb.btm_sco_pkt_types_supported = 0;
-#if (BTM_SCO_INCLUDED == TRUE)
       btm_cb.sco_cb.esco_supported = false;
-#endif
       if (HCI_SCO_LINK_SUPPORTED(p_features)) {
         btm_cb.btm_sco_pkt_types_supported = ESCO_PKT_TYPES_MASK_HV1;
 

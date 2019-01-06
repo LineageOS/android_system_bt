@@ -142,7 +142,6 @@ void btsnd_hcic_disconnect(uint16_t handle, uint8_t reason) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-#if (BTM_SCO_INCLUDED == TRUE)
 void btsnd_hcic_add_SCO_conn(uint16_t handle, uint16_t packet_types) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
@@ -158,7 +157,6 @@ void btsnd_hcic_add_SCO_conn(uint16_t handle, uint16_t packet_types) {
 
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
-#endif /* BTM_SCO_INCLUDED */
 
 void btsnd_hcic_create_conn_cancel(const RawAddress& dest) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);

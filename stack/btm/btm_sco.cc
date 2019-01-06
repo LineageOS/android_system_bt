@@ -40,8 +40,6 @@
 #include "hcimsgs.h"
 #include "osi/include/osi.h"
 
-#if (BTM_SCO_INCLUDED == TRUE)
-
 /******************************************************************************/
 /*               L O C A L    D A T A    D E F I N I T I O N S                */
 /******************************************************************************/
@@ -1691,43 +1689,3 @@ static uint16_t btm_sco_voice_settings_to_legacy(enh_esco_params_t* p_params) {
 
   return (voice_settings);
 }
-
-#else /* SCO_EXCLUDED == TRUE (Link in stubs) */
-
-tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
-                          uint16_t pkt_types, uint16_t* p_sco_inx,
-                          tBTM_SCO_CB* p_conn_cb, tBTM_SCO_CB* p_disc_cb) {
-  return (BTM_NO_RESOURCES);
-}
-tBTM_STATUS BTM_RemoveSco(uint16_t sco_inx) { return (BTM_NO_RESOURCES); }
-tBTM_STATUS BTM_SetScoPacketTypes(uint16_t sco_inx, uint16_t pkt_types) {
-  return (BTM_NO_RESOURCES);
-}
-uint16_t BTM_ReadScoPacketTypes(uint16_t sco_inx) { return (0); }
-uint16_t BTM_ReadDeviceScoPacketTypes(void) { return (0); }
-uint16_t BTM_ReadScoHandle(uint16_t sco_inx) {
-  return (BTM_INVALID_HCI_HANDLE);
-}
-const RawAddress* BTM_ReadScoBdAddr(uint16_t sco_inx) {
-  return ((uint8_t*)NULL);
-}
-uint16_t BTM_ReadScoDiscReason(void) { return (BTM_INVALID_SCO_DISC_REASON); }
-tBTM_STATUS BTM_SetEScoMode(enh_esco_params_t* p_parms) {
-  return (BTM_MODE_UNSUPPORTED);
-}
-tBTM_STATUS BTM_RegForEScoEvts(uint16_t sco_inx,
-                               tBTM_ESCO_CBACK* p_esco_cback) {
-  return (BTM_ILLEGAL_VALUE);
-}
-tBTM_STATUS BTM_ReadEScoLinkParms(uint16_t sco_inx, tBTM_ESCO_DATA* p_parms) {
-  return (BTM_MODE_UNSUPPORTED);
-}
-tBTM_STATUS BTM_ChangeEScoLinkParms(uint16_t sco_inx,
-                                    tBTM_CHG_ESCO_PARAMS* p_parms) {
-  return (BTM_MODE_UNSUPPORTED);
-}
-void BTM_EScoConnRsp(uint16_t sco_inx, uint8_t hci_status,
-                     enh_esco_params_t* p_parms) {}
-uint8_t BTM_GetNumScoLinks(void) { return (0); }
-
-#endif /* If SCO is being used */

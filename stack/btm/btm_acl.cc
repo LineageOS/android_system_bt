@@ -537,9 +537,7 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role,
                            tBTM_CMPL_CB* p_cb) {
   tACL_CONN* p;
   tBTM_SEC_DEV_REC* p_dev_rec = NULL;
-#if (BTM_SCO_INCLUDED == TRUE)
   bool is_sco_active;
-#endif
   tBTM_STATUS status;
   tBTM_PM_MODE pwr_mode;
   tBTM_PM_PWR_MD settings;
@@ -567,12 +565,10 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role,
   if (interop_match_addr(INTEROP_DISABLE_ROLE_SWITCH, &remote_bd_addr))
     return BTM_DEV_BLACKLISTED;
 
-#if (BTM_SCO_INCLUDED == TRUE)
   /* Check if there is any SCO Active on this BD Address */
   is_sco_active = btm_is_sco_active_by_bdaddr(remote_bd_addr);
 
   if (is_sco_active) return (BTM_NO_RESOURCES);
-#endif
 
   /* Ignore role switch request if the previous request was not completed */
   if (p->switch_role_state != BTM_ACL_SWKEY_STATE_IDLE) {
