@@ -32,6 +32,14 @@
 #include "hcimsgs.h"
 #include "l2c_int.h"
 
+extern void btm_send_hci_create_connection(
+    uint16_t scan_int, uint16_t scan_win, uint8_t init_filter_policy,
+    uint8_t addr_type_peer, const RawAddress& bda_peer, uint8_t addr_type_own,
+    uint16_t conn_int_min, uint16_t conn_int_max, uint16_t conn_latency,
+    uint16_t conn_timeout, uint16_t min_ce_len, uint16_t max_ce_len,
+    uint8_t phy);
+extern void btm_ble_create_conn_cancel();
+
 // Unfortunately (for now?) we have to maintain a copy of the device whitelist
 // on the host to determine if a device is pending to be connected or not. This
 // controls whether the host should keep trying to scan for whitelisted
@@ -142,7 +150,7 @@ void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy) {
  *
  ******************************************************************************/
 void btm_ble_bgconn_cancel_if_disconnected(const RawAddress& bd_addr) {
-  if (btm_cb.ble_ctr_cb.conn_state != BLE_BG_CONN) return;
+  if (btm_ble_get_conn_st() != BLE_BG_CONN) return;
 
   auto map_it = background_connections.find(bd_addr);
   if (map_it != background_connections.end()) {
@@ -298,59 +306,6 @@ void btm_ble_white_list_init(uint8_t white_list_size) {
   BTM_TRACE_DEBUG("%s white_list_size = %d", __func__, white_list_size);
 }
 
-void btm_ble_create_conn_cancel_complete(uint8_t* p) {
-  uint8_t status;
-  STREAM_TO_UINT8(status, p);
-
-  if (status == HCI_ERR_COMMAND_DISALLOWED) {
-    /* This is a sign that logic around keeping connection state is broken */
-    LOG(ERROR)
-        << "Attempt to cancel LE connection, when no connection is pending.";
-    if (btm_ble_get_conn_st() == BLE_CONN_CANCEL) {
-      btm_ble_set_conn_st(BLE_CONN_IDLE);
-      btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, nullptr, status);
-    }
-  }
-}
-
-void btm_send_hci_create_connection(
-    uint16_t scan_int, uint16_t scan_win, uint8_t init_filter_policy,
-    uint8_t addr_type_peer, const RawAddress& bda_peer, uint8_t addr_type_own,
-    uint16_t conn_int_min, uint16_t conn_int_max, uint16_t conn_latency,
-    uint16_t conn_timeout, uint16_t min_ce_len, uint16_t max_ce_len,
-    uint8_t initiating_phys) {
-  if (controller_get_interface()->supports_ble_extended_advertising()) {
-    EXT_CONN_PHY_CFG phy_cfg[3];  // maximum three phys
-
-    int phy_cnt =
-        std::bitset<std::numeric_limits<uint8_t>::digits>(initiating_phys)
-            .count();
-
-    LOG_ASSERT(phy_cnt < 3) << "More than three phys provided";
-    // TODO(jpawlowski): tune parameters for different transports
-    for (int i = 0; i < phy_cnt; i++) {
-      phy_cfg[i].scan_int = scan_int;
-      phy_cfg[i].scan_win = scan_win;
-      phy_cfg[i].conn_int_min = conn_int_min;
-      phy_cfg[i].conn_int_max = conn_int_max;
-      phy_cfg[i].conn_latency = conn_latency;
-      phy_cfg[i].sup_timeout = conn_timeout;
-      phy_cfg[i].min_ce_len = min_ce_len;
-      phy_cfg[i].max_ce_len = max_ce_len;
-    }
-
-    addr_type_peer &= ~BLE_ADDR_TYPE_ID_BIT;
-    btsnd_hcic_ble_ext_create_conn(init_filter_policy, addr_type_own,
-                                   addr_type_peer, bda_peer, initiating_phys,
-                                   phy_cfg);
-  } else {
-    btsnd_hcic_ble_create_ll_conn(scan_int, scan_win, init_filter_policy,
-                                  addr_type_peer, bda_peer, addr_type_own,
-                                  conn_int_min, conn_int_max, conn_latency,
-                                  conn_timeout, min_ce_len, max_ce_len);
-  }
-}
-
 bool BTM_SetLeConnectionModeToFast() {
   VLOG(2) << __func__;
   tBTM_BLE_CB* p_cb = &btm_cb.ble_ctr_cb;
@@ -433,7 +388,6 @@ bool btm_ble_start_auto_conn() {
       0,                              /* uint16_t min_len       */
       0,                              /* uint16_t max_len       */
       phy);
-  btm_ble_set_conn_st(BLE_BG_CONN);
   return true;
 }
 
@@ -448,8 +402,8 @@ bool btm_ble_stop_auto_conn() {
     return false;
   }
 
-  btsnd_hcic_ble_create_conn_cancel();
-  btm_ble_set_conn_st(BLE_CONN_CANCEL);
+  btm_ble_create_conn_cancel();
+
   p_cb->wl_state &= ~BTM_BLE_WL_INIT;
   return true;
 }
@@ -484,35 +438,6 @@ bool btm_ble_suspend_bg_conn(void) {
  *
  ******************************************************************************/
 bool btm_ble_resume_bg_conn(void) { return btm_ble_start_auto_conn(); }
-/*******************************************************************************
- *
- * Function         btm_ble_get_conn_st
- *
- * Description      This function get BLE connection state
- *
- * Returns          connection state
- *
- ******************************************************************************/
-tBTM_BLE_CONN_ST btm_ble_get_conn_st(void) {
-  return btm_cb.ble_ctr_cb.conn_state;
-}
-/*******************************************************************************
- *
- * Function         btm_ble_set_conn_st
- *
- * Description      This function set BLE connection state
- *
- * Returns          None.
- *
- ******************************************************************************/
-void btm_ble_set_conn_st(tBTM_BLE_CONN_ST new_st) {
-  btm_cb.ble_ctr_cb.conn_state = new_st;
-
-  if (new_st == BLE_BG_CONN || new_st == BLE_DIR_CONN)
-    btm_ble_set_topology_mask(BTM_BLE_STATE_INIT_BIT);
-  else
-    btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
-}
 
 /** Adds the device into white list. Returns false if white list is full and
  * device can't be added, true otherwise. */
