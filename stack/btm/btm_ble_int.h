@@ -68,7 +68,6 @@ extern void btm_ble_conn_complete(uint8_t* p, uint16_t evt_len, bool enhanced);
 extern void btm_read_ble_local_supported_states_complete(uint8_t* p,
                                                          uint16_t evt_len);
 extern tBTM_BLE_CONN_ST btm_ble_get_conn_st(void);
-extern void btm_ble_set_conn_st(tBTM_BLE_CONN_ST new_st);
 extern tBTM_STATUS btm_ble_start_adv(void);
 extern tBTM_STATUS btm_ble_stop_adv(void);
 extern void btm_le_on_advertising_set_terminated(uint8_t* p, uint16_t length);
@@ -123,17 +122,8 @@ extern void btm_ble_white_list_init(uint8_t white_list_size);
 /* background connection function */
 extern bool btm_ble_suspend_bg_conn(void);
 extern bool btm_ble_resume_bg_conn(void);
-extern void btm_send_hci_create_connection(
-    uint16_t scan_int, uint16_t scan_win, uint8_t init_filter_policy,
-    uint8_t addr_type_peer, const RawAddress& bda_peer, uint8_t addr_type_own,
-    uint16_t conn_int_min, uint16_t conn_int_max, uint16_t conn_latency,
-    uint16_t conn_timeout, uint16_t min_ce_len, uint16_t max_ce_len,
-    uint8_t phy);
 extern bool btm_ble_start_auto_conn();
 extern bool btm_ble_stop_auto_conn();
-extern bool btm_ble_start_select_conn(bool start);
-extern bool btm_ble_renew_bg_conn_params(bool add, const RawAddress& bd_addr);
-extern void btm_write_dir_conn_wl(const RawAddress& target_addr);
 extern void btm_ble_update_mode_operation(uint8_t link_role,
                                           const RawAddress* bda,
                                           uint8_t status);
