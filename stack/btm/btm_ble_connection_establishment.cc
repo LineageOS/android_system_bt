@@ -35,7 +35,7 @@ tBTM_BLE_CONN_ST btm_ble_get_conn_st(void) {
 void btm_ble_set_conn_st(tBTM_BLE_CONN_ST new_st) {
   btm_cb.ble_ctr_cb.conn_state = new_st;
 
-  if (new_st == BLE_BG_CONN || new_st == BLE_DIR_CONN)
+  if (new_st == BLE_CONNECTING)
     btm_ble_set_topology_mask(BTM_BLE_STATE_INIT_BIT);
   else
     btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
@@ -78,7 +78,7 @@ void btm_send_hci_create_connection(
                                   conn_timeout, min_ce_len, max_ce_len);
   }
 
-  btm_ble_set_conn_st(BLE_BG_CONN);
+  btm_ble_set_conn_st(BLE_CONNECTING);
 }
 
 /** LE connection complete. */
