@@ -43,12 +43,9 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/crypto_toolbox/crypto_toolbox.h"
-#include "stack/gatt/connection_manager.h"
 
 extern void gatt_notify_phy_updated(uint8_t status, uint16_t handle,
                                     uint8_t tx_phy, uint8_t rx_phy);
-extern void btm_ble_advertiser_notify_terminated_legacy(
-    uint8_t status, uint16_t connection_handle);
 
 /******************************************************************************/
 /* External Function to be called by other modules                            */
@@ -1887,141 +1884,6 @@ void btm_ble_connected(const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
   return;
 }
 
-/*****************************************************************************
- *  Function        btm_ble_conn_complete
- *
- *  Description     LE connection complete.
- *
- *****************************************************************************/
-void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
-                           bool enhanced) {
-#if (BLE_PRIVACY_SPT == TRUE)
-  uint8_t peer_addr_type;
-#endif
-  RawAddress local_rpa, peer_rpa;
-  uint8_t role, status, bda_type;
-  uint16_t handle;
-  RawAddress bda;
-  uint16_t conn_interval, conn_latency, conn_timeout;
-  bool match = false;
-
-  STREAM_TO_UINT8(status, p);
-  STREAM_TO_UINT16(handle, p);
-  STREAM_TO_UINT8(role, p);
-  STREAM_TO_UINT8(bda_type, p);
-  STREAM_TO_BDADDR(bda, p);
-
-  if (status == 0) {
-    if (enhanced) {
-      STREAM_TO_BDADDR(local_rpa, p);
-      STREAM_TO_BDADDR(peer_rpa, p);
-    }
-
-    STREAM_TO_UINT16(conn_interval, p);
-    STREAM_TO_UINT16(conn_latency, p);
-    STREAM_TO_UINT16(conn_timeout, p);
-    handle = HCID_GET_HANDLE(handle);
-
-#if (BLE_PRIVACY_SPT == TRUE)
-    peer_addr_type = bda_type;
-    bool addr_is_rpa =
-        (peer_addr_type == BLE_ADDR_RANDOM && BTM_BLE_IS_RESOLVE_BDA(bda));
-
-    /* We must translate whatever address we received into the "pseudo" address.
-     * i.e. if we bonded with device that was using RPA for first connection,
-     * "pseudo" address is equal to this RPA. If it later decides to use Public
-     * address, or Random Static Address, we convert it into the "pseudo"
-     * address here. */
-    if (!addr_is_rpa || peer_addr_type & BLE_ADDR_TYPE_ID_BIT) {
-      match = btm_identity_addr_to_random_pseudo(&bda, &bda_type, true);
-    }
-
-    /* possiblly receive connection complete with resolvable random while
-       the device has been paired */
-    if (!match && addr_is_rpa) {
-      tBTM_SEC_DEV_REC* match_rec = btm_ble_resolve_random_addr(bda);
-      if (match_rec) {
-        LOG_INFO(LOG_TAG, "%s matched and resolved random address", __func__);
-        match = true;
-        match_rec->ble.active_addr_type = BTM_BLE_ADDR_RRA;
-        match_rec->ble.cur_rand_addr = bda;
-        if (!btm_ble_init_pseudo_addr(match_rec, bda)) {
-          /* assign the original address to be the current report address */
-          bda = match_rec->ble.pseudo_addr;
-        } else {
-          bda = match_rec->bd_addr;
-        }
-      } else {
-        LOG_INFO(LOG_TAG, "%s unable to match and resolve random address",
-                 __func__);
-      }
-    }
-#endif
-
-    if (role == HCI_ROLE_MASTER) {
-      btm_ble_set_conn_st(BLE_CONN_IDLE);
-    }
-
-    connection_manager::on_connection_complete(bda);
-    btm_ble_connected(bda, handle, HCI_ENCRYPT_MODE_DISABLED, role, bda_type,
-                      match);
-
-    l2cble_conn_comp(handle, role, bda, bda_type, conn_interval, conn_latency,
-                     conn_timeout);
-
-#if (BLE_PRIVACY_SPT == TRUE)
-    if (enhanced) {
-      btm_ble_refresh_local_resolvable_private_addr(bda, local_rpa);
-
-      if (peer_addr_type & BLE_ADDR_TYPE_ID_BIT)
-        btm_ble_refresh_peer_resolvable_private_addr(bda, peer_rpa,
-                                                     BLE_ADDR_RANDOM);
-    }
-#endif
-  } else {
-    role = HCI_ROLE_UNKNOWN;
-    if (status != HCI_ERR_ADVERTISING_TIMEOUT) {
-      btm_ble_set_conn_st(BLE_CONN_IDLE);
-#if (BLE_PRIVACY_SPT == TRUE)
-      btm_ble_disable_resolving_list(BTM_BLE_RL_INIT, true);
-#endif
-    } else {
-#if (BLE_PRIVACY_SPT == TRUE)
-      btm_cb.ble_ctr_cb.inq_var.adv_mode = BTM_BLE_ADV_DISABLE;
-      btm_ble_disable_resolving_list(BTM_BLE_RL_ADV, true);
-#endif
-    }
-  }
-
-  btm_ble_update_mode_operation(role, &bda, status);
-
-  if (role == HCI_ROLE_SLAVE)
-    btm_ble_advertiser_notify_terminated_legacy(status, handle);
-}
-
-/*****************************************************************************
- * Function btm_ble_create_ll_conn_complete
- *
- * Description LE connection complete.
- *
- *****************************************************************************/
-void btm_ble_create_ll_conn_complete(uint8_t status) {
-  if (status == HCI_SUCCESS) return;
-
-  btm_ble_set_conn_st(BLE_CONN_IDLE);
-  btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, NULL, status);
-
-  LOG(WARNING) << "LE Create Connection attempt failed, status="
-               << loghex(status);
-
-  if (status == HCI_ERR_COMMAND_DISALLOWED) {
-    /* There is already either direct connect, or whitelist connection
-     * pending, but we don't know which one, or to which state should we
-     * transition now. This can be triggered only in case of rare race
-     * condition. Crash to recover. */
-    LOG(FATAL) << "LE Create Connection - command disallowed";
-  }
-}
 /*****************************************************************************
  *  Function        btm_proc_smp_cback
  *
