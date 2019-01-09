@@ -514,12 +514,6 @@ bool btm_ble_suspend_resolving_list_activity(void) {
   /* if already suspended */
   if (p_ble_cb->suspended_rl_state != BTM_BLE_RL_IDLE) return true;
 
-  /* direct connection active, wait until it completed */
-  if (btm_ble_get_conn_st() == BLE_DIR_CONN) {
-    BTM_TRACE_ERROR("resolving list can not be edited, EnQ now");
-    return false;
-  }
-
   p_ble_cb->suspended_rl_state = BTM_BLE_RL_IDLE;
 
   if (p_ble_cb->inq_var.adv_mode == BTM_BLE_ADV_ENABLE) {
