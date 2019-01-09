@@ -483,8 +483,7 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
     if (p->state == SCO_ST_UNUSED) {
       if (remote_bda) {
         if (is_orig) {
-/* can not create SCO link if in park mode */
-#if (BTM_SCO_WAKE_PARKED_LINK == TRUE)
+          // can not create SCO link if in park mode
           tBTM_PM_STATE state;
           if ((btm_read_power_mode_state(*remote_bda, &state) == BTM_SUCCESS)) {
             if (state == BTM_PM_ST_SNIFF || state == BTM_PM_ST_PARK ||
@@ -501,12 +500,6 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
             LOG(ERROR) << __func__ << ": failed to read power mode for "
                        << *remote_bda;
           }
-#else   // BTM_SCO_WAKE_PARKED_LINK
-          uint8_t mode;
-          if ((BTM_ReadPowerMode(*remote_bda, &mode) == BTM_SUCCESS) &&
-              (mode == BTM_PM_MD_PARK))
-            return (BTM_WRONG_MODE);
-#endif  // BTM_SCO_WAKE_PARKED_LINK
         }
         p->esco.data.bd_addr = *remote_bda;
         p->rem_bd_known = true;
@@ -578,7 +571,6 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
   return BTM_NO_RESOURCES;
 }
 
-#if (BTM_SCO_WAKE_PARKED_LINK == TRUE)
 /*******************************************************************************
  *
  * Function         btm_sco_chk_pend_unpark
@@ -612,7 +604,6 @@ void btm_sco_chk_pend_unpark(uint8_t hci_status, uint16_t hci_handle) {
   }
 #endif  // BTM_MAX_SCO_LINKS
 }
-#endif  // BTM_SCO_WAKE_PARKED_LINK
 
 /*******************************************************************************
  *
