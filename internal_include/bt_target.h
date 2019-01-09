@@ -404,14 +404,8 @@
 #define BTM_PM_DEBUG FALSE
 #endif
 
-/* This is set to TRUE if link is to be unparked due to BTM_CreateSCO API. */
-#ifndef BTM_SCO_WAKE_PARKED_LINK
-#define BTM_SCO_WAKE_PARKED_LINK TRUE
-#endif
-
 /* If the user does not respond to security process requests within this many
- * seconds,
- * a negative response would be sent automatically.
+ * seconds, a negative response would be sent automatically.
  * 30 is LMP response timeout value */
 #ifndef BTM_SEC_TIMEOUT_VALUE
 #define BTM_SEC_TIMEOUT_VALUE 35
