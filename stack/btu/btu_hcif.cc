@@ -1060,7 +1060,7 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
             btm_sec_rmt_name_request_complete(NULL, NULL, status);
             break;
 
-          case HCI_QOS_SETUP_COMP_EVT:
+          case HCI_QOS_SETUP:
             /* Tell qos setup that we are done */
             btm_qos_setup_complete(status, 0, NULL);
             break;
