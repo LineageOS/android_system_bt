@@ -1435,37 +1435,31 @@ constexpr char HEARING_AID_RENDER_DELAY[] = "HearingAidRenderDelay";
 constexpr char HEARING_AID_PREPARATION_DELAY[] = "HearingAidPreparationDelay";
 constexpr char HEARING_AID_IS_WHITE_LISTED[] = "HearingAidIsWhiteListed";
 
-void btif_storage_add_hearing_aid(const RawAddress& address, uint16_t psm,
-                                  uint8_t capabilities, uint16_t codecs,
-                                  uint16_t audio_control_point_handle,
-                                  uint16_t volume_handle, uint64_t hi_sync_id,
-                                  uint16_t render_delay,
-                                  uint16_t preparation_delay) {
+void btif_storage_add_hearing_aid(const HearingDevice& dev_info) {
   do_in_jni_thread(
       FROM_HERE,
       Bind(
-          [](const RawAddress& address, uint16_t psm, uint8_t capabilities,
-             uint16_t codecs, uint16_t audio_control_point_handle,
-             uint16_t volume_handle, uint64_t hi_sync_id, uint16_t render_delay,
-             uint16_t preparation_delay) {
-            std::string bdstr = address.ToString();
+          [](const HearingDevice& dev_info) {
+            std::string bdstr = dev_info.address.ToString();
             VLOG(2) << "saving hearing aid device: " << bdstr;
-            btif_config_set_int(bdstr, HEARING_AID_PSM, psm);
-            btif_config_set_int(bdstr, HEARING_AID_CAPABILITIES, capabilities);
-            btif_config_set_int(bdstr, HEARING_AID_CODECS, codecs);
+            btif_config_set_int(bdstr, HEARING_AID_PSM, dev_info.psm);
+            btif_config_set_int(bdstr, HEARING_AID_CAPABILITIES,
+                                dev_info.capabilities);
+            btif_config_set_int(bdstr, HEARING_AID_CODECS, dev_info.codecs);
             btif_config_set_int(bdstr, HEARING_AID_AUDIO_CONTROL_POINT,
-                                audio_control_point_handle);
+                                dev_info.audio_control_point_handle);
             btif_config_set_int(bdstr, HEARING_AID_VOLUME_HANDLE,
-                                volume_handle);
-            btif_config_set_uint64(bdstr, HEARING_AID_SYNC_ID, hi_sync_id);
-            btif_config_set_int(bdstr, HEARING_AID_RENDER_DELAY, render_delay);
+                                dev_info.volume_handle);
+            btif_config_set_uint64(bdstr, HEARING_AID_SYNC_ID,
+                                   dev_info.hi_sync_id);
+            btif_config_set_int(bdstr, HEARING_AID_RENDER_DELAY,
+                                dev_info.render_delay);
             btif_config_set_int(bdstr, HEARING_AID_PREPARATION_DELAY,
-                                preparation_delay);
+                                dev_info.preparation_delay);
             btif_config_set_int(bdstr, HEARING_AID_IS_WHITE_LISTED, true);
             btif_config_save();
           },
-          address, psm, capabilities, codecs, audio_control_point_handle,
-          volume_handle, hi_sync_id, render_delay, preparation_delay));
+          dev_info));
 }
 
 /** Loads information about bonded hearing aid devices */
@@ -1523,12 +1517,15 @@ void btif_storage_load_bonded_hearing_aids() {
 
     RawAddress bd_addr;
     RawAddress::FromString(name, bd_addr);
+
     // add extracted information to BTA Hearing Aid
     do_in_main_thread(
         FROM_HERE,
-        Bind(&HearingAid::AddFromStorage, bd_addr, psm, capabilities, codecs,
-             audio_control_point_handle, volume_handle, hi_sync_id,
-             render_delay, preparation_delay, is_white_listed));
+        Bind(&HearingAid::AddFromStorage,
+             HearingDevice(bd_addr, psm, capabilities, codecs,
+                           audio_control_point_handle, volume_handle,
+                           hi_sync_id, render_delay, preparation_delay),
+             is_white_listed));
   }
 }
 
