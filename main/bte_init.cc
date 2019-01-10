@@ -48,10 +48,6 @@
 #include "hidh_api.h"
 #endif
 
-#if (MCA_INCLUDED == TRUE)
-#include "mca_api.h"
-#endif
-
 #include "gatt_api.h"
 #include "smp_api.h"
 
@@ -103,9 +99,5 @@ void BTE_InitStack(void) {
 
 #if (HID_HOST_INCLUDED == TRUE)
   HID_HostInit();
-#endif
-
-#if (MCA_INCLUDED == TRUE)
-  MCA_Init();
 #endif
 }

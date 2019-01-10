@@ -48,7 +48,6 @@ static_library("btif") {
     "src/btif_hf_client.cc",
     "src/btif_hh.cc",
     "src/btif_hd.cc",
-    "src/btif_hl.cc",
     "src/btif_mce.cc",
     "src/btif_pan.cc",
     "src/btif_profile_queue.cc",
@@ -73,7 +72,6 @@ static_library("btif") {
     "co/bta_dm_co.cc",
     "co/bta_av_co.cc",
     "co/bta_hh_co.cc",
-    "co/bta_hl_co.cc",
     "co/bta_pan_co.cc",
     "co/bta_gatts_co.cc",
   ]
