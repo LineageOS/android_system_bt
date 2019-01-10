@@ -52,7 +52,27 @@
       "name" : "net_test_types"
     },
     {
+      "name" : "bluetooth_test_common",
+      "host" : true
+    },
+    {
+      "name" : "bluetoothtbd_test",
+      "host" : true
+    },
+    {
       "name" : "net_test_avrcp",
+      "host" : true
+    },
+    {
+      "name" : "net_test_btcore",
+      "host" : true
+    },
+    {
+      "name" : "net_test_btpackets",
+      "host" : true
+    },
+    {
+      "name" : "net_test_types",
       "host" : true
     }
   ]

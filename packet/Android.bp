@@ -15,6 +15,7 @@ cc_library_static {
 cc_test {
     name: "net_test_btpackets",
     defaults: ["fluoride_defaults"],
+    test_suites: ["device-tests"],
     host_supported: true,
     local_include_dirs: ["tests"],
     include_dirs: [
