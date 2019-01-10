@@ -15,6 +15,5 @@ AVCTP              | 1.4     | Controller, Target
 AVDTP              | 1.2     | Source, Initiator, Acceptor
 BNEP               | 1.0     |
 GAVDP              | 1.2     | Initiator, Acceptor
-MCAP               | 1.0     | Sink
 RFCOMM             | 1.2     |
 SPP                | 1.2     | A, B

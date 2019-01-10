@@ -143,11 +143,6 @@
 #define ATTR_ID_HID_SSR_HOST_MAX_LAT 0x020F
 #define ATTR_ID_HID_SSR_HOST_MIN_TOUT 0x0210
 
-/* These values are for the HDP profile */
-#define ATTR_ID_HDP_SUP_FEAT_LIST 0x0200  /* Supported features list */
-#define ATTR_ID_HDP_DATA_EXCH_SPEC 0x0301 /* Data exchange specification */
-#define ATTR_ID_HDP_MCAP_SUP_PROC 0x0302  /* MCAP supported procedures */
-
 /* Define common 16-bit protocol UUIDs
 */
 #define UUID_PROTOCOL_SDP 0x0001
