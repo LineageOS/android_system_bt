@@ -404,14 +404,8 @@
 #define BTM_PM_DEBUG FALSE
 #endif
 
-/* This is set to TRUE if link is to be unparked due to BTM_CreateSCO API. */
-#ifndef BTM_SCO_WAKE_PARKED_LINK
-#define BTM_SCO_WAKE_PARKED_LINK TRUE
-#endif
-
 /* If the user does not respond to security process requests within this many
- * seconds,
- * a negative response would be sent automatically.
+ * seconds, a negative response would be sent automatically.
  * 30 is LMP response timeout value */
 #ifndef BTM_SEC_TIMEOUT_VALUE
 #define BTM_SEC_TIMEOUT_VALUE 35
@@ -1228,118 +1222,6 @@
 
 #ifndef DUMP_PCM_DATA
 #define DUMP_PCM_DATA FALSE
-#endif
-
-/******************************************************************************
- *
- * MCAP
- *
- *****************************************************************************/
-#ifndef MCA_INCLUDED
-#define MCA_INCLUDED FALSE
-#endif
-
-/* The MTU size for the L2CAP configuration on control channel. 48 is the
- * minimal */
-#ifndef MCA_CTRL_MTU
-#define MCA_CTRL_MTU 60
-#endif
-
-/* The maximum number of registered MCAP instances. */
-#ifndef MCA_NUM_REGS
-#define MCA_NUM_REGS 12
-#endif
-
-/* The maximum number of control channels (to difference devices) per registered
- * MCAP instances. */
-#ifndef MCA_NUM_LINKS
-#define MCA_NUM_LINKS 3
-#endif
-
-/* The maximum number of MDEP (including HDP echo) per registered MCAP
- * instances. */
-#ifndef MCA_NUM_DEPS
-#define MCA_NUM_DEPS 13
-#endif
-
-/* The maximum number of MDL link per control channel. */
-#ifndef MCA_NUM_MDLS
-#define MCA_NUM_MDLS 4
-#endif
-
-/* Buffer size to reassemble the SDU. */
-#ifndef MCA_USER_RX_BUF_SIZE
-#define MCA_USER_RX_BUF_SIZE BT_DEFAULT_BUFFER_SIZE
-#endif
-
-/* Buffer size to hold the SDU. */
-#ifndef MCA_USER_TX_BUF_SIZE
-#define MCA_USER_TX_BUF_SIZE BT_DEFAULT_BUFFER_SIZE
-#endif
-
-/*
- * Buffer size used to hold MPS segments during SDU reassembly
- */
-#ifndef MCA_FCR_RX_BUF_SIZE
-#define MCA_FCR_RX_BUF_SIZE BT_DEFAULT_BUFFER_SIZE
-#endif
-
-/*
- * Default buffer size used to hold MPS segments used in (re)transmissions.
- * The size of each buffer must be able to hold the maximum MPS segment size
- * passed in tL2CAP_FCR_OPTIONS plus BT_HDR (8) + HCI preamble (4) +
- * L2CAP_MIN_OFFSET (11 - as of BT 2.1 + EDR Spec).
- */
-#ifndef MCA_FCR_TX_BUF_SIZE
-#define MCA_FCR_TX_BUF_SIZE BT_DEFAULT_BUFFER_SIZE
-#endif
-
-/* MCAP control channel FCR Option:
-Size of the transmission window when using enhanced retransmission mode.
-1 is defined by HDP specification for control channel.
-*/
-#ifndef MCA_FCR_OPT_TX_WINDOW_SIZE
-#define MCA_FCR_OPT_TX_WINDOW_SIZE 1
-#endif
-
-/* MCAP control channel FCR Option:
-Number of transmission attempts for a single I-Frame before taking
-Down the connection. Used In ERTM mode only. Value is Ignored in basic and
-Streaming modes.
-Range: 0, 1-0xFF
-0 - infinite retransmissions
-1 - single transmission
-*/
-#ifndef MCA_FCR_OPT_MAX_TX_B4_DISCNT
-#define MCA_FCR_OPT_MAX_TX_B4_DISCNT 20
-#endif
-
-/* MCAP control channel FCR Option: Retransmission Timeout
-The AVRCP specification set a value in the range of 300 - 2000 ms
-Timeout (in msecs) to detect Lost I-Frames. Only used in Enhanced retransmission
-mode.
-Range: Minimum 2000 (2 secs) when supporting PBF.
- */
-#ifndef MCA_FCR_OPT_RETX_TOUT
-#define MCA_FCR_OPT_RETX_TOUT 2000
-#endif
-
-/* MCAP control channel FCR Option: Monitor Timeout
-The AVRCP specification set a value in the range of 300 - 2000 ms
-Timeout (in msecs) to detect Lost S-Frames. Only used in Enhanced retransmission
-mode.
-Range: Minimum 12000 (12 secs) when supporting PBF.
-*/
-#ifndef MCA_FCR_OPT_MONITOR_TOUT
-#define MCA_FCR_OPT_MONITOR_TOUT 12000
-#endif
-
-/* MCAP control channel FCR Option: Maximum PDU payload size.
-The maximum number of payload octets that the local device can receive in a
-single PDU.
-*/
-#ifndef MCA_FCR_OPT_MPS_SIZE
-#define MCA_FCR_OPT_MPS_SIZE 1000
 #endif
 
 /******************************************************************************

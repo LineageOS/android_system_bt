@@ -66,8 +66,7 @@ static const char BTE_LOGMSG_MODULE[] = "bte_logmsg_module";
 #define BTTRC_ID_STK_SPP 39
 #define BTTRC_ID_STK_TCS 40
 #define BTTRC_ID_STK_VDP 41
-#define BTTRC_ID_STK_MCAP 42
-#define BTTRC_ID_STK_GATT 43
+// Deprecated: BTTRC_ID_STK_GATT 43
 #define BTTRC_ID_STK_SMP 44
 #define BTTRC_ID_STK_NFC 45
 #define BTTRC_ID_STK_NCI 46
@@ -180,10 +179,6 @@ static const char BTE_LOGMSG_MODULE[] = "bte_logmsg_module";
 
 #ifndef AVRC_INITIAL_TRACE_LEVEL
 #define AVRC_INITIAL_TRACE_LEVEL BT_TRACE_LEVEL_WARNING
-#endif
-
-#ifndef MCA_INITIAL_TRACE_LEVEL
-#define MCA_INITIAL_TRACE_LEVEL BT_TRACE_LEVEL_WARNING
 #endif
 
 #ifndef HID_INITIAL_TRACE_LEVEL
@@ -554,33 +549,6 @@ static const char BTE_LOGMSG_MODULE[] = "bte_logmsg_module";
   {                                                             \
     if (avrc_cb.trace_level >= BT_TRACE_LEVEL_API)              \
       BT_TRACE(TRACE_LAYER_AVP, TRACE_TYPE_API, ##__VA_ARGS__); \
-  }
-
-/* MCAP */
-#define MCA_TRACE_ERROR(...)                                      \
-  {                                                               \
-    if (mca_cb.trace_level >= BT_TRACE_LEVEL_ERROR)               \
-      BT_TRACE(TRACE_LAYER_MCA, TRACE_TYPE_ERROR, ##__VA_ARGS__); \
-  }
-#define MCA_TRACE_WARNING(...)                                      \
-  {                                                                 \
-    if (mca_cb.trace_level >= BT_TRACE_LEVEL_WARNING)               \
-      BT_TRACE(TRACE_LAYER_MCA, TRACE_TYPE_WARNING, ##__VA_ARGS__); \
-  }
-#define MCA_TRACE_EVENT(...)                                      \
-  {                                                               \
-    if (mca_cb.trace_level >= BT_TRACE_LEVEL_EVENT)               \
-      BT_TRACE(TRACE_LAYER_MCA, TRACE_TYPE_EVENT, ##__VA_ARGS__); \
-  }
-#define MCA_TRACE_DEBUG(...)                                      \
-  {                                                               \
-    if (mca_cb.trace_level >= BT_TRACE_LEVEL_DEBUG)               \
-      BT_TRACE(TRACE_LAYER_MCA, TRACE_TYPE_DEBUG, ##__VA_ARGS__); \
-  }
-#define MCA_TRACE_API(...)                                      \
-  {                                                             \
-    if (mca_cb.trace_level >= BT_TRACE_LEVEL_API)               \
-      BT_TRACE(TRACE_LAYER_MCA, TRACE_TYPE_API, ##__VA_ARGS__); \
   }
 
 /* Define tracing for the SMP unit */
