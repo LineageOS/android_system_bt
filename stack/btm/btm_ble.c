@@ -39,6 +39,7 @@
 #include "device/include/controller.h"
 #include "gap_api.h"
 #include "hcimsgs.h"
+#include "log/log.h"
 #include "l2c_int.h"
 #include "osi/include/log.h"
 #include "smp_api.h"
@@ -2090,6 +2091,12 @@ UINT8 btm_proc_smp_cback(tSMP_EVT event, BD_ADDR bd_addr, tSMP_EVT_DATA *p_data)
 
                 if (event == SMP_COMPLT_EVT)
                 {
+                    p_dev_rec = btm_find_dev(bd_addr);
+                    if (p_dev_rec == NULL) {
+                      BTM_TRACE_ERROR("%s: p_dev_rec is NULL", __func__);
+                      android_errorWriteLog(0x534e4554, "120612744");
+                      return 0;
+                    }
                     BTM_TRACE_DEBUG ("evt=SMP_COMPLT_EVT before update sec_level=0x%x sec_flags=0x%x", p_data->cmplt.sec_level , p_dev_rec->sec_flags );
 
                     res = (p_data->cmplt.reason == SMP_SUCCESS) ? BTM_SUCCESS : BTM_ERR_PROCESSING;
