@@ -118,6 +118,7 @@ cc_library_static {
 cc_test {
     name: "net_test_btif",
     defaults: ["fluoride_defaults"],
+    test_suites: ["device-tests"],
     include_dirs: btifCommonIncludes,
     srcs: ["test/btif_storage_test.cc"],
     header_libs: ["libbluetooth_headers"],
@@ -160,6 +161,7 @@ cc_test {
 cc_test {
     name: "net_test_btif_profile_queue",
     defaults: ["fluoride_defaults"],
+    test_suites: ["device-tests"],
     include_dirs: btifCommonIncludes,
     srcs: [
       "src/btif_profile_queue.cc",
