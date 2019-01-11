@@ -589,8 +589,6 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
 /** process pairing confirm from peer device */
 void smp_proc_confirm(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
-  uint8_t* p = p_data->p_data;
-
   SMP_TRACE_DEBUG("%s", __func__);
 
   if (smp_command_has_invalid_parameters(p_cb)) {
@@ -600,9 +598,12 @@ void smp_proc_confirm(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     return;
   }
 
-  if (p != NULL) {
-    /* save the SConfirm for comparison later */
-    STREAM_TO_ARRAY(p_cb->rconfirm.data(), p, OCTET16_LEN);
+  if (p_data) {
+    uint8_t* p = p_data->p_data;
+    if (p != NULL) {
+      /* save the SConfirm for comparison later */
+      STREAM_TO_ARRAY(p_cb->rconfirm.data(), p, OCTET16_LEN);
+    }
   }
 
   p_cb->flags |= SMP_PAIR_FLAGS_CMD_CONFIRM;
