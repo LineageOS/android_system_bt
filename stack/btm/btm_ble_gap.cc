@@ -1473,7 +1473,7 @@ uint8_t btm_ble_is_discoverable(const RawAddress& bda,
   if (!adv_data.empty()) {
     const uint8_t* p_flag = AdvertiseDataParser::GetFieldByType(
         adv_data, BTM_BLE_AD_TYPE_FLAG, &data_len);
-    if (p_flag != NULL) {
+    if (p_flag != NULL && data_len != 0) {
       flag = *p_flag;
 
       if ((btm_cb.btm_inq_vars.inq_active & BTM_BLE_GENERAL_INQUIRY) &&
@@ -1659,7 +1659,7 @@ void btm_ble_update_inq_result(tINQ_DB_ENT* p_i, uint8_t addr_type,
   if (!data.empty()) {
     const uint8_t* p_flag =
         AdvertiseDataParser::GetFieldByType(data, BTM_BLE_AD_TYPE_FLAG, &len);
-    if (p_flag != NULL) p_cur->flag = *p_flag;
+    if (p_flag != NULL && len != 0) p_cur->flag = *p_flag;
   }
 
   if (!data.empty()) {
