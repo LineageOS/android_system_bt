@@ -66,7 +66,8 @@ static const char BTE_LOGMSG_MODULE[] = "bte_logmsg_module";
 #define BTTRC_ID_STK_SPP 39
 #define BTTRC_ID_STK_TCS 40
 #define BTTRC_ID_STK_VDP 41
-// Deprecated: BTTRC_ID_STK_GATT 43
+#define BTTRC_ID_STK_MCAP 42 /* OBSOLETE */
+#define BTTRC_ID_STK_GATT 43
 #define BTTRC_ID_STK_SMP 44
 #define BTTRC_ID_STK_NFC 45
 #define BTTRC_ID_STK_NCI 46
