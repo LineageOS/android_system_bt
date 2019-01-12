@@ -94,6 +94,8 @@ interface IBluetooth
     boolean setPairingConfirmation(in BluetoothDevice device, boolean accept);
 
     int getPhonebookAccessPermission(in BluetoothDevice device);
+    boolean setSilenceMode(in BluetoothDevice device, boolean silence);
+    boolean getSilenceMode(in BluetoothDevice device);
     boolean setPhonebookAccessPermission(in BluetoothDevice device, int value);
     int getMessageAccessPermission(in BluetoothDevice device);
     boolean setMessageAccessPermission(in BluetoothDevice device, int value);

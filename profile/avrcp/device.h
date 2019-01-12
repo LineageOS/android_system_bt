@@ -75,6 +75,11 @@ class Device {
   bool Disconnect();
 
   /**
+   * Returns true if the current device is silenced.
+   */
+  bool IsInSilenceMode() const;
+
+  /**
    * Returns true if the current device is active.
    */
   bool IsActive() const;
