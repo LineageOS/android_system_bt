@@ -190,6 +190,7 @@ cc_library_static {
 cc_test {
     name: "net_test_stack",
     defaults: ["fluoride_defaults"],
+    test_suites: ["device-tests"],
     local_include_dirs: [
         "include",
     ],
@@ -227,6 +228,7 @@ cc_test {
 cc_test {
     name: "net_test_stack_rfcomm",
     defaults: ["fluoride_defaults"],
+    test_suites: ["device-tests"],
     host_supported: true,
     local_include_dirs: [
         "include",
@@ -283,6 +285,7 @@ cc_test {
 cc_test {
     name: "net_test_stack_smp",
     defaults: ["fluoride_defaults"],
+    test_suites: ["device-tests"],
     local_include_dirs: [
         "include",
         "btm",
@@ -322,6 +325,7 @@ cc_test {
 cc_test {
     name: "net_test_stack_multi_adv",
     defaults: ["fluoride_defaults"],
+    test_suites: ["device-tests"],
     local_include_dirs: [
         "include",
         "btm",
@@ -356,6 +360,7 @@ cc_test {
 cc_test {
     name: "net_test_stack_ad_parser",
     defaults: ["fluoride_defaults"],
+    test_suites: ["device-tests"],
     local_include_dirs: [
         "include",
     ],

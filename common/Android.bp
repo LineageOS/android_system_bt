@@ -58,6 +58,7 @@ cc_test {
 cc_test {
     name: "net_test_performance",
     defaults: ["fluoride_defaults"],
+    test_suites: ["device-tests"],
     include_dirs: ["system/bt"],
     host_supported: true,
     srcs: [
