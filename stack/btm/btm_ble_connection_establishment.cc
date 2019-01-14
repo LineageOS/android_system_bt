@@ -85,18 +85,15 @@ void btm_send_hci_create_connection(
 void btm_ble_create_ll_conn_complete(uint8_t status) {
   if (status == HCI_SUCCESS) return;
 
-  btm_ble_set_conn_st(BLE_CONN_IDLE);
-  btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, NULL, status);
-
   LOG(WARNING) << "LE Create Connection attempt failed, status="
                << loghex(status);
 
   if (status == HCI_ERR_COMMAND_DISALLOWED) {
-    /* There is already either direct connect, or whitelist connection
-     * pending, but we don't know which one, or to which state should we
-     * transition now. This can be triggered only in case of rare race
-     * condition. Crash to recover. */
-    LOG(FATAL) << "LE Create Connection - command disallowed";
+    btm_ble_set_conn_st(BLE_CONNECTING);
+    LOG(ERROR) << "LE Create Connection - command disallowed";
+  } else {
+    btm_ble_set_conn_st(BLE_CONN_IDLE);
+    btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, NULL, status);
   }
 }
 
