@@ -314,12 +314,19 @@ uint8_t bta_av_rc_create(tBTA_AV_CB* p_cb, uint8_t role, uint8_t shdl,
   tAVRC_CONN_CB ccb;
   RawAddress bda = RawAddress::kAny;
   uint8_t status = BTA_AV_RC_ROLE_ACP;
-  tBTA_AV_SCB* p_scb = p_cb->p_scb[shdl - 1];
   int i;
   uint8_t rc_handle;
   tBTA_AV_RCB* p_rcb;
 
   if (role == AVCT_INT) {
+    // Can't grab a stream control block that doesn't have a valid handle
+    if (!shdl) {
+      APPL_TRACE_ERROR(
+          "%s: Can't grab stream control block for shdl = %d -> index = %d",
+          __func__, shdl, shdl - 1);
+      return BTA_AV_RC_HANDLE_NONE;
+    }
+    tBTA_AV_SCB* p_scb = p_cb->p_scb[shdl - 1];
     bda = p_scb->PeerAddress();
     status = BTA_AV_RC_ROLE_INT;
   } else {
