@@ -422,7 +422,7 @@ void smp_send_ltk_reply(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Description  process security request.
  ******************************************************************************/
 void smp_proc_sec_req(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
-  tBTM_LE_AUTH_REQ auth_req = *(tBTM_LE_AUTH_REQ*)p_data;
+  tBTM_LE_AUTH_REQ auth_req = *(tBTM_LE_AUTH_REQ*)p_data->p_data;
   tBTM_BLE_SEC_REQ_ACT sec_req_act;
 
   SMP_TRACE_DEBUG("%s: auth_req=0x%x", __func__, auth_req);
