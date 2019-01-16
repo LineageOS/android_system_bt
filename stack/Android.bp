@@ -267,7 +267,6 @@ cc_test {
     shared_libs: [
         "libcutils",
         "libprotobuf-cpp-lite",
-        "libcrypto",
     ],
     static_libs: [
         "liblog",

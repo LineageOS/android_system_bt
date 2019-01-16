@@ -24,13 +24,10 @@
 
 #define LOG_TAG "bt_btm_sec"
 
-#include <frameworks/base/core/proto/android/bluetooth/enums.pb.h>
-#include <frameworks/base/core/proto/android/bluetooth/hci/enums.pb.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "common/metrics.h"
 #include "common/time_util.h"
 #include "device/include/controller.h"
 #include "osi/include/log.h"
@@ -2609,18 +2606,10 @@ static void btm_sec_bond_cancel_complete(void) {
  ******************************************************************************/
 void btm_create_conn_cancel_complete(uint8_t* p) {
   uint8_t status;
+
   STREAM_TO_UINT8(status, p);
-  RawAddress bd_addr;
-  STREAM_TO_BDADDR(bd_addr, p);
   BTM_TRACE_EVENT("btm_create_conn_cancel_complete(): in State: %s  status:%d",
                   btm_pair_state_descr(btm_cb.pairing_state), status);
-  bluetooth::common::LogLinkLayerConnectionEvent(
-      &bd_addr, bluetooth::common::kUnknownConnectionHandle,
-      android::bluetooth::DIRECTION_OUTGOING, android::bluetooth::LINK_TYPE_ACL,
-      android::bluetooth::hci::CMD_CREATE_CONNECTION_CANCEL,
-      android::bluetooth::hci::EVT_COMMAND_COMPLETE,
-      android::bluetooth::hci::BLE_EVT_UNKNOWN, status,
-      android::bluetooth::hci::STATUS_UNKNOWN);
 
   /* if the create conn cancel cmd was issued by the bond cancel,
   ** the application needs to be notified that bond cancel succeeded

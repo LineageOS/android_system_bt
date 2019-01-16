@@ -19,7 +19,6 @@
 #pragma once
 
 #include <bta/include/bta_api.h>
-#include <frameworks/base/core/proto/android/bluetooth/enums.pb.h>
 #include <stdint.h>
 #include <memory>
 #include <string>
@@ -276,33 +275,6 @@ class BluetoothMetricsLogger {
   struct impl;
   std::unique_ptr<impl> const pimpl_;
 };
-
-/**
- * Unknown connection handle for metrics purpose
- */
-static const uint32_t kUnknownConnectionHandle = 0xFFFF;
-
-/**
- * Log link layer connection event
- *
- * @param address Stack wide consistent Bluetooth address of this event,
- *                nullptr if unknown
- * @param connection_handle connection handle of this event,
- *                          {@link kUnknownConnectionHandle} if unknown
- * @param direction direction of this connection
- * @param link_type type of the link
- * @param hci_cmd HCI command opecode associated with this event, if any
- * @param hci_event HCI event code associated with this event, if any
- * @param hci_ble_event HCI BLE event code associated with this event, if any
- * @param cmd_status Command status associated with this event, if any
- * @param reason_code Reason code associated with this event, if any
- */
-void LogLinkLayerConnectionEvent(const RawAddress* address,
-                                 uint32_t connection_handle,
-                                 android::bluetooth::DirectionEnum direction,
-                                 uint32_t link_type, uint32_t hci_cmd,
-                                 uint32_t hci_event, uint32_t hci_ble_event,
-                                 uint32_t cmd_status, uint32_t reason_code);
 
 }  // namespace common
 

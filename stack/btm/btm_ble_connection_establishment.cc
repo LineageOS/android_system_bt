@@ -16,12 +16,8 @@
  *
  ******************************************************************************/
 
-#include <frameworks/base/core/proto/android/bluetooth/enums.pb.h>
-#include <frameworks/base/core/proto/android/bluetooth/hci/enums.pb.h>
-
 #include "bt_types.h"
 #include "btm_int.h"
-#include "common/metrics.h"
 #include "device/include/controller.h"
 #include "l2c_int.h"
 #include "stack/gatt/connection_manager.h"
@@ -119,20 +115,18 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
   STREAM_TO_UINT8(role, p);
   STREAM_TO_UINT8(bda_type, p);
   STREAM_TO_BDADDR(bda, p);
-  if (enhanced) {
-    STREAM_TO_BDADDR(local_rpa, p);
-    STREAM_TO_BDADDR(peer_rpa, p);
-  }
-  STREAM_TO_UINT16(conn_interval, p);
-  STREAM_TO_UINT16(conn_latency, p);
-  STREAM_TO_UINT16(conn_timeout, p);
-  handle = HCID_GET_HANDLE(handle);
 
-  uint32_t hci_ble_event =
-      enhanced ? android::bluetooth::hci::BLE_EVT_ENHANCED_CONN_COMPLETE_EVT
-               : android::bluetooth::hci::BLE_EVT_CONN_COMPLETE_EVT;
+  if (status == 0) {
+    if (enhanced) {
+      STREAM_TO_BDADDR(local_rpa, p);
+      STREAM_TO_BDADDR(peer_rpa, p);
+    }
 
-  if (status == HCI_SUCCESS) {
+    STREAM_TO_UINT16(conn_interval, p);
+    STREAM_TO_UINT16(conn_latency, p);
+    STREAM_TO_UINT16(conn_timeout, p);
+    handle = HCID_GET_HANDLE(handle);
+
 #if (BLE_PRIVACY_SPT == TRUE)
     peer_addr_type = bda_type;
     bool addr_is_rpa =
@@ -167,12 +161,6 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
       }
     }
 #endif
-    // Log for the HCI success case after resolving Bluetooth address
-    bluetooth::common::LogLinkLayerConnectionEvent(
-        &bda, handle, android::bluetooth::DIRECTION_UNKNOWN,
-        android::bluetooth::LINK_TYPE_ACL, android::bluetooth::hci::CMD_UNKNOWN,
-        android::bluetooth::hci::EVT_BLE_META, hci_ble_event, status,
-        android::bluetooth::hci::STATUS_UNKNOWN);
 
     if (role == HCI_ROLE_MASTER) {
       btm_ble_set_conn_st(BLE_CONN_IDLE);
@@ -195,13 +183,6 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
     }
 #endif
   } else {
-    // Log for non HCI success case
-    bluetooth::common::LogLinkLayerConnectionEvent(
-        &bda, handle, android::bluetooth::DIRECTION_UNKNOWN,
-        android::bluetooth::LINK_TYPE_ACL, android::bluetooth::hci::CMD_UNKNOWN,
-        android::bluetooth::hci::EVT_BLE_META, hci_ble_event, status,
-        android::bluetooth::hci::STATUS_UNKNOWN);
-
     role = HCI_ROLE_UNKNOWN;
     if (status != HCI_ERR_ADVERTISING_TIMEOUT) {
       btm_ble_set_conn_st(BLE_CONN_IDLE);
@@ -230,17 +211,6 @@ void btm_ble_create_conn_cancel() {
 void btm_ble_create_conn_cancel_complete(uint8_t* p) {
   uint8_t status;
   STREAM_TO_UINT8(status, p);
-  if (status != HCI_SUCCESS) {
-    // Only log errors to prevent log spam due to whitelist connections
-    bluetooth::common::LogLinkLayerConnectionEvent(
-        nullptr, bluetooth::common::kUnknownConnectionHandle,
-        android::bluetooth::DIRECTION_OUTGOING,
-        android::bluetooth::LINK_TYPE_ACL,
-        android::bluetooth::hci::CMD_BLE_CREATE_CONN_CANCEL,
-        android::bluetooth::hci::EVT_COMMAND_COMPLETE,
-        android::bluetooth::hci::BLE_EVT_UNKNOWN, status,
-        android::bluetooth::hci::STATUS_UNKNOWN);
-  }
 
   if (status == HCI_ERR_COMMAND_DISALLOWED) {
     /* This is a sign that logic around keeping connection state is broken */

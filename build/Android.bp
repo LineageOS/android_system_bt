@@ -62,10 +62,8 @@ fluoride_defaults {
     },
     defaults: ["fluoride_types_defaults"],
     header_libs: ["libbluetooth_headers"],
-    shared_libs: ["libstatslog"],
     static_libs: [
         "libbluetooth-types",
-        "libbt-platform-protos-lite",
     ],
     cpp_std: "c++17",
     sanitize: {
