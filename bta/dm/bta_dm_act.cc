@@ -3775,12 +3775,10 @@ static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
   memset(&sec_event, 0, sizeof(tBTA_DM_SEC));
   switch (event) {
     case BTM_LE_IO_REQ_EVT:
-      if (btm_local_io_caps != BTM_IO_CAP_NONE) {
-        bta_dm_co_ble_io_req(
-            bda, &p_data->io_req.io_cap, &p_data->io_req.oob_data,
-            &p_data->io_req.auth_req, &p_data->io_req.max_key_size,
-            &p_data->io_req.init_keys, &p_data->io_req.resp_keys);
-      }
+      bta_dm_co_ble_io_req(
+          bda, &p_data->io_req.io_cap, &p_data->io_req.oob_data,
+          &p_data->io_req.auth_req, &p_data->io_req.max_key_size,
+          &p_data->io_req.init_keys, &p_data->io_req.resp_keys);
       APPL_TRACE_EVENT("io mitm: %d oob_data:%d", p_data->io_req.auth_req,
                        p_data->io_req.oob_data);
 
