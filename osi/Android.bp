@@ -115,6 +115,7 @@ cc_test {
         "liblog",
         "libprotobuf-cpp-lite",
         "libcutils",
+        "libcrypto",
     ],
     static_libs: [
         "libbt-common",
