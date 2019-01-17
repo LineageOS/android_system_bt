@@ -639,7 +639,7 @@ tGATT_STATUS BTA_GATTC_RegisterForNotifications(tGATT_IF client_if,
   uint8_t i;
 
   if (!handle) {
-    LOG(ERROR) << "deregistration failed, handle is 0";
+    LOG(ERROR) << __func__ << ": registration failed, handle is 0";
     return status;
   }
 
