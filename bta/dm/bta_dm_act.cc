@@ -48,6 +48,7 @@
 #include "osi/include/osi.h"
 #include "sdp_api.h"
 #include "stack/gatt/connection_manager.h"
+#include "stack/include/gatt_api.h"
 #include "utl.h"
 
 #if (GAP_INCLUDED == TRUE)
@@ -644,6 +645,10 @@ void bta_dm_remove_device(const RawAddress& bd_addr) {
       auto& peer_device = bta_dm_cb.device_list.peer_device[i];
       if (peer_device.peer_bdaddr == bd_addr) {
         peer_device.conn_state = BTA_DM_UNPAIRING;
+
+        /* Make sure device is not in white list before we disconnect */
+        GATT_CancelConnect(0, bd_addr, false);
+
         btm_remove_acl(bd_addr, peer_device.transport);
         APPL_TRACE_DEBUG("%s: transport: %d", __func__, peer_device.transport);
 
@@ -680,6 +685,10 @@ void bta_dm_remove_device(const RawAddress& bd_addr) {
       auto& peer_device = bta_dm_cb.device_list.peer_device[i];
       if (peer_device.peer_bdaddr == other_address) {
         peer_device.conn_state = BTA_DM_UNPAIRING;
+
+        /* Make sure device is not in white list before we disconnect */
+        GATT_CancelConnect(0, bd_addr, false);
+
         btm_remove_acl(other_address, peer_device.transport);
         break;
       }
@@ -761,6 +770,10 @@ void bta_dm_close_acl(const RawAddress& bd_addr, bool remove_dev,
     } else {
       APPL_TRACE_ERROR("unknown device, remove ACL failed");
     }
+
+    /* Make sure device is not in white list before we disconnect */
+    GATT_CancelConnect(0, bd_addr, false);
+
     /* Disconnect the ACL link */
     btm_remove_acl(bd_addr, transport);
   }

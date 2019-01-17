@@ -115,9 +115,9 @@ bool background_connect_add(uint8_t app_id, const RawAddress& address) {
   return true;
 }
 
-/** Removes all registrations for background connection for given device.
+/** Removes all registrations for connection for given device.
  * Returns true if anything was removed, false otherwise */
-bool background_connect_remove_unconditional(const RawAddress& address) {
+bool remove_unconditional(const RawAddress& address) {
   auto it = bgconn_dev.find(address);
   if (it == bgconn_dev.end()) return false;
 
