@@ -52,6 +52,11 @@ constexpr uint8_t CODEC_G722_24KHZ = 0x02;
 // audio control point opcodes
 constexpr uint8_t CONTROL_POINT_OP_START = 0x01;
 constexpr uint8_t CONTROL_POINT_OP_STOP = 0x02;
+constexpr uint8_t CONTROL_POINT_OP_STATE_CHANGE = 0x03;
+
+constexpr uint8_t STATE_CHANGE_OTHER_SIDE_DISCONNECTED = 0x00;
+constexpr uint8_t STATE_CHANGE_OTHER_SIDE_CONNECTED = 0x01;
+constexpr uint8_t STATE_CHANGE_CONN_UPDATE = 0x02;
 
 // used to mark current_volume as not yet known, or possibly old
 constexpr int8_t VOLUME_UNKNOWN = 127;
@@ -59,6 +64,10 @@ constexpr int8_t VOLUME_MIN = -127;
 
 // audio type
 constexpr uint8_t AUDIOTYPE_UNKNOWN = 0x00;
+
+// Status of the other side Hearing Aids device
+constexpr uint8_t OTHER_SIDE_NOT_STREAMING = 0x00;
+constexpr uint8_t OTHER_SIDE_IS_STREAMING = 0x01;
 
 namespace {
 
@@ -387,6 +396,14 @@ class HearingAidImpl : public HearingAid {
           case NONE:
             break;
         }
+
+        // Inform this side and other side device (if any) of Connection
+        // Updates.
+        std::vector<uint8_t> conn_update(
+            {CONTROL_POINT_OP_STATE_CHANGE, STATE_CHANGE_CONN_UPDATE,
+             (uint8_t)p_data->conn_update.interval});
+        send_state_change_to_other_side(hearingDevice, conn_update);
+        send_state_change(hearingDevice, conn_update);
       } else {
         LOG(INFO) << __func__
                   << ": error status=" << loghex(p_data->conn_update.status)
@@ -794,10 +811,18 @@ class HearingAidImpl : public HearingAid {
 
     SendStart(hearingDevice);
 
+    if (audio_running) {
+      // Inform the other side (if any) of this connection
+      std::vector<uint8_t> inform_conn_state(
+          {CONTROL_POINT_OP_STATE_CHANGE, STATE_CHANGE_OTHER_SIDE_CONNECTED});
+      send_state_change_to_other_side(hearingDevice, inform_conn_state);
+    }
+
     hearingDevice->accepting_audio = true;
     LOG(INFO) << __func__ << ": address=" << address
               << ", hi_sync_id=" << loghex(hearingDevice->hi_sync_id)
-              << ", codec_in_use=" << loghex(codec_in_use);
+              << ", codec_in_use=" << loghex(codec_in_use)
+              << ", audio_running=" << audio_running;
 
     StartSendingAudio(*hearingDevice);
 
@@ -887,9 +912,25 @@ class HearingAidImpl : public HearingAid {
     }
   }
 
+  uint8_t GetOtherSideStreamStatus(HearingDevice* this_side_device) {
+    for (auto& device : hearingDevices.devices) {
+      if ((device.address == this_side_device->address) ||
+          (device.hi_sync_id != this_side_device->hi_sync_id)) {
+        continue;
+      }
+      if (audio_running && (device.conn_id != 0)) {
+        return (OTHER_SIDE_IS_STREAMING);
+      } else {
+        return (OTHER_SIDE_NOT_STREAMING);
+      }
+    }
+    return (OTHER_SIDE_NOT_STREAMING);
+  }
+
   void SendStart(HearingDevice* device) {
     std::vector<uint8_t> start({CONTROL_POINT_OP_START, codec_in_use,
-                                AUDIOTYPE_UNKNOWN, (uint8_t)current_volume});
+                                AUDIOTYPE_UNKNOWN, (uint8_t)current_volume,
+                                OTHER_SIDE_NOT_STREAMING});
 
     if (!audio_running) {
       if (!device->playback_started) {
@@ -911,9 +952,11 @@ class HearingAidImpl : public HearingAid {
                  << ": Playback already started, skip send Start cmd, device="
                  << device->address;
     } else {
+      start[4] = GetOtherSideStreamStatus(device);
       LOG(INFO) << __func__ << ": send Start cmd, volume=" << loghex(start[3])
                 << ", audio type=" << loghex(start[2])
-                << ", device=" << device->address;
+                << ", device=" << device->address
+                << ", other side streaming=" << loghex(start[4]);
       device->playback_started = true;
       device->command_acked = false;
       BtaGattQueue::WriteCharacteristic(device->conn_id,
@@ -1211,6 +1254,11 @@ class HearingAidImpl : public HearingAid {
     // cancel autoconnect
     BTA_GATTC_CancelOpen(gatt_if, address, false);
 
+    // Inform the other side (if any) of this disconnection
+    std::vector<uint8_t> inform_disconn_state(
+        {CONTROL_POINT_OP_STATE_CHANGE, STATE_CHANGE_OTHER_SIDE_DISCONNECTED});
+    send_state_change_to_other_side(hearingDevice, inform_disconn_state);
+
     DoDisconnectCleanUp(hearingDevice);
 
     hearingDevices.Remove(address);
@@ -1228,6 +1276,11 @@ class HearingAidImpl : public HearingAid {
               << loghex(conn_id);
       return;
     }
+
+    // Inform the other side (if any) of this disconnection
+    std::vector<uint8_t> inform_disconn_state(
+        {CONTROL_POINT_OP_STATE_CHANGE, STATE_CHANGE_OTHER_SIDE_DISCONNECTED});
+    send_state_change_to_other_side(hearingDevice, inform_disconn_state);
 
     DoDisconnectCleanUp(hearingDevice);
 
@@ -1317,6 +1370,28 @@ class HearingAidImpl : public HearingAid {
     }
 
     return 0;
+  }
+
+  void send_state_change(HearingDevice* device, std::vector<uint8_t> payload) {
+    if (device->conn_id != 0) {
+      // Send the data packet
+      LOG(INFO) << __func__ << ": Send State Change. device=" << device->address
+                << ", status=" << loghex(payload[1]);
+      BtaGattQueue::WriteCharacteristic(device->conn_id,
+                                        device->audio_control_point_handle,
+                                        payload, GATT_WRITE, nullptr, nullptr);
+    }
+  }
+
+  void send_state_change_to_other_side(HearingDevice* this_side_device,
+                                       std::vector<uint8_t> payload) {
+    for (auto& device : hearingDevices.devices) {
+      if ((device.address == this_side_device->address) ||
+          (device.hi_sync_id != this_side_device->hi_sync_id)) {
+        continue;
+      }
+      send_state_change(&device, payload);
+    }
   }
 };
 
