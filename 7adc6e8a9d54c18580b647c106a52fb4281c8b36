@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c66ec9c4_ad70d3da",
+        "filename": "bta/ag/bta_ag_at.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 15173
+      },
+      "writtenOn": "2019-01-18T05:18:58Z",
+      "side": 1,
+      "message": "why define nullptr as opposed to just using NULL?",
+      "range": {
+        "startLine": 32,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 26
+      },
+      "revId": "7adc6e8a9d54c18580b647c106a52fb4281c8b36",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    }
+  ]
+}
