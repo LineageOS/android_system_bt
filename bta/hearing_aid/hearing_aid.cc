@@ -52,6 +52,11 @@ constexpr uint8_t CODEC_G722_24KHZ = 0x02;
 // audio control point opcodes
 constexpr uint8_t CONTROL_POINT_OP_START = 0x01;
 constexpr uint8_t CONTROL_POINT_OP_STOP = 0x02;
+constexpr uint8_t CONTROL_POINT_OP_STATE_CHANGE = 0x03;
+
+constexpr uint8_t STATE_CHANGE_OTHER_SIDE_DISCONNECTED = 0x00;
+constexpr uint8_t STATE_CHANGE_OTHER_SIDE_CONNECTED = 0x01;
+constexpr uint8_t STATE_CHANGE_CONN_UPDATE = 0x02;
 
 // used to mark current_volume as not yet known, or possibly old
 constexpr int8_t VOLUME_UNKNOWN = 127;
@@ -59,6 +64,10 @@ constexpr int8_t VOLUME_MIN = -127;
 
 // audio type
 constexpr uint8_t AUDIOTYPE_UNKNOWN = 0x00;
+
+// Status of the other side Hearing Aids device
+constexpr uint8_t OTHER_SIDE_NOT_STREAMING = 0x00;
+constexpr uint8_t OTHER_SIDE_IS_STREAMING = 0x01;
 
 namespace {
 
@@ -150,6 +159,14 @@ class HearingDevices {
 
   std::vector<HearingDevice> devices;
 };
+
+static void write_rpt_ctl_cfg_cb(uint16_t conn_id, tGATT_STATUS status,
+                                 uint16_t handle, void* data) {
+  if (status != GATT_SUCCESS) {
+    LOG(ERROR) << __func__ << ": handle=" << handle << ", conn_id=" << conn_id
+               << ", status=" << loghex(status);
+  }
+}
 
 g722_encode_state_t* encoder_state_left = nullptr;
 g722_encode_state_t* encoder_state_right = nullptr;
@@ -379,6 +396,14 @@ class HearingAidImpl : public HearingAid {
           case NONE:
             break;
         }
+
+        // Inform this side and other side device (if any) of Connection
+        // Updates.
+        std::vector<uint8_t> conn_update(
+            {CONTROL_POINT_OP_STATE_CHANGE, STATE_CHANGE_CONN_UPDATE,
+             (uint8_t)p_data->conn_update.interval});
+        send_state_change_to_other_side(hearingDevice, conn_update);
+        send_state_change(hearingDevice, conn_update);
       } else {
         LOG(INFO) << __func__
                   << ": error status=" << loghex(p_data->conn_update.status)
@@ -434,6 +459,26 @@ class HearingAidImpl : public HearingAid {
     BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, &HEARING_AID_UUID);
   }
 
+  void OnServiceChangeEvent(const RawAddress& address) {
+    HearingDevice* hearingDevice = hearingDevices.FindByAddress(address);
+    if (!hearingDevice) {
+      VLOG(2) << "Skipping unknown device" << address;
+      return;
+    }
+    LOG(INFO) << __func__ << ": address=" << address;
+
+    /* Re-register the Audio Status Notification since the Service Change will
+     * clear it */
+    tGATT_STATUS register_status;
+    register_status = BTA_GATTC_RegisterForNotifications(
+        gatt_if, address, hearingDevice->audio_status_handle);
+    if (register_status != GATT_SUCCESS) {
+      LOG(INFO) << __func__
+                << ": BTA_GATTC_RegisterForNotifications failed, status="
+                << loghex(register_status);
+    }
+  }
+
   void OnServiceSearchComplete(uint16_t conn_id, tGATT_STATUS status) {
     HearingDevice* hearingDevice = hearingDevices.FindByConnId(conn_id);
     if (!hearingDevice) {
@@ -483,10 +528,18 @@ class HearingAidImpl : public HearingAid {
         hearingDevice->audio_control_point_handle = charac.value_handle;
         // store audio control point!
       } else if (charac.uuid == AUDIO_STATUS_UUID) {
-        DVLOG(2) << "Reading Audio status " << loghex(charac.value_handle);
-        BtaGattQueue::ReadCharacteristic(conn_id, charac.value_handle,
-                                         HearingAidImpl::OnAudioStatusStatic,
-                                         nullptr);
+        hearingDevice->audio_status_handle = charac.value_handle;
+
+        hearingDevice->audio_status_ccc_handle =
+            find_ccc_handle(conn_id, charac.value_handle);
+        if (!hearingDevice->audio_status_ccc_handle) {
+          LOG(ERROR) << __func__ << ": cannot find Audio Status CCC descriptor";
+          continue;
+        }
+
+        LOG(INFO) << __func__
+                  << ": audio_status_handle=" << loghex(charac.value_handle)
+                  << ", ccc=" << loghex(hearingDevice->audio_status_ccc_handle);
       } else if (charac.uuid == VOLUME_UUID) {
         hearingDevice->volume_handle = charac.value_handle;
       } else if (charac.uuid == LE_PSM_UUID) {
@@ -501,6 +554,40 @@ class HearingAidImpl : public HearingAid {
       BtaGattQueue::ReadCharacteristic(
           conn_id, psm_handle, HearingAidImpl::OnPsmReadStatic, nullptr);
     }
+  }
+
+  void OnNotificationEvent(uint16_t conn_id, uint16_t handle, uint16_t len,
+                           uint8_t* value) {
+    HearingDevice* device = hearingDevices.FindByConnId(conn_id);
+    if (!device) {
+      LOG(INFO) << __func__
+                << ": Skipping unknown device, conn_id=" << loghex(conn_id);
+      return;
+    }
+
+    if (device->audio_status_handle != handle) {
+      LOG(INFO) << __func__ << ": Mismatched handle, "
+                << loghex(device->audio_status_handle)
+                << "!=" << loghex(handle);
+      return;
+    }
+
+    if (len < 1) {
+      LOG(ERROR) << __func__ << ": Data Length too small, len=" << len
+                 << ", expecting at least 1";
+      return;
+    }
+
+    if (value[0] != 0) {
+      LOG(INFO) << __func__
+                << ": Invalid returned status. data=" << loghex(value[0]);
+      return;
+    }
+
+    LOG(INFO) << __func__
+              << ": audio status success notification. command_acked="
+              << device->command_acked;
+    device->command_acked = true;
   }
 
   void OnReadOnlyPropertiesRead(uint16_t conn_id, tGATT_STATUS status,
@@ -698,14 +785,44 @@ class HearingAidImpl : public HearingAid {
       hearingDevice->first_connection = false;
     }
 
+    LOG(INFO) << __func__ << ": audio_status_handle="
+              << loghex(hearingDevice->audio_status_handle)
+              << ", audio_status_ccc_handle="
+              << loghex(hearingDevice->audio_status_ccc_handle);
+
+    /* Register and enable the Audio Status Notification */
+    tGATT_STATUS register_status;
+    register_status = BTA_GATTC_RegisterForNotifications(
+        gatt_if, address, hearingDevice->audio_status_handle);
+    if (register_status != GATT_SUCCESS) {
+      LOG(ERROR) << __func__
+                 << ": BTA_GATTC_RegisterForNotifications failed, status="
+                 << loghex(register_status);
+      return;
+    }
+    std::vector<uint8_t> value(2);
+    uint8_t* ptr = value.data();
+    UINT16_TO_STREAM(ptr, GATT_CHAR_CLIENT_CONFIG_NOTIFICATION);
+    BtaGattQueue::WriteDescriptor(
+        hearingDevice->conn_id, hearingDevice->audio_status_ccc_handle,
+        std::move(value), GATT_WRITE, write_rpt_ctl_cfg_cb, nullptr);
+
     ChooseCodec(*hearingDevice);
 
     SendStart(hearingDevice);
 
+    if (audio_running) {
+      // Inform the other side (if any) of this connection
+      std::vector<uint8_t> inform_conn_state(
+          {CONTROL_POINT_OP_STATE_CHANGE, STATE_CHANGE_OTHER_SIDE_CONNECTED});
+      send_state_change_to_other_side(hearingDevice, inform_conn_state);
+    }
+
     hearingDevice->accepting_audio = true;
     LOG(INFO) << __func__ << ": address=" << address
               << ", hi_sync_id=" << loghex(hearingDevice->hi_sync_id)
-              << ", codec_in_use=" << loghex(codec_in_use);
+              << ", codec_in_use=" << loghex(codec_in_use)
+              << ", audio_running=" << audio_running;
 
     StartSendingAudio(*hearingDevice);
 
@@ -715,7 +832,7 @@ class HearingAidImpl : public HearingAid {
   }
 
   void StartSendingAudio(const HearingDevice& hearingDevice) {
-    VLOG(0) << __func__ << hearingDevice.address;
+    VLOG(0) << __func__ << ": device=" << hearingDevice.address;
 
     if (encoder_state_left == nullptr) {
       encoder_state_left = g722_encode_init(nullptr, 64000, G722_PACKED);
@@ -764,6 +881,7 @@ class HearingAidImpl : public HearingAid {
       } else {
         LOG(INFO) << __func__ << ": send Stop cmd, device=" << device.address;
         device.playback_started = false;
+        device.command_acked = false;
         BtaGattQueue::WriteCharacteristic(device.conn_id,
                                           device.audio_control_point_handle,
                                           stop, GATT_WRITE, nullptr, nullptr);
@@ -794,9 +912,25 @@ class HearingAidImpl : public HearingAid {
     }
   }
 
+  uint8_t GetOtherSideStreamStatus(HearingDevice* this_side_device) {
+    for (auto& device : hearingDevices.devices) {
+      if ((device.address == this_side_device->address) ||
+          (device.hi_sync_id != this_side_device->hi_sync_id)) {
+        continue;
+      }
+      if (audio_running && (device.conn_id != 0)) {
+        return (OTHER_SIDE_IS_STREAMING);
+      } else {
+        return (OTHER_SIDE_NOT_STREAMING);
+      }
+    }
+    return (OTHER_SIDE_NOT_STREAMING);
+  }
+
   void SendStart(HearingDevice* device) {
     std::vector<uint8_t> start({CONTROL_POINT_OP_START, codec_in_use,
-                                AUDIOTYPE_UNKNOWN, (uint8_t)current_volume});
+                                AUDIOTYPE_UNKNOWN, (uint8_t)current_volume,
+                                OTHER_SIDE_NOT_STREAMING});
 
     if (!audio_running) {
       if (!device->playback_started) {
@@ -818,10 +952,13 @@ class HearingAidImpl : public HearingAid {
                  << ": Playback already started, skip send Start cmd, device="
                  << device->address;
     } else {
+      start[4] = GetOtherSideStreamStatus(device);
       LOG(INFO) << __func__ << ": send Start cmd, volume=" << loghex(start[3])
                 << ", audio type=" << loghex(start[2])
-                << ", device=" << device->address;
+                << ", device=" << device->address
+                << ", other side streaming=" << loghex(start[4]);
       device->playback_started = true;
+      device->command_acked = false;
       BtaGattQueue::WriteCharacteristic(device->conn_id,
                                         device->audio_control_point_handle,
                                         start, GATT_WRITE, nullptr, nullptr);
@@ -960,9 +1097,11 @@ class HearingAidImpl : public HearingAid {
 
   void SendAudio(uint8_t* encoded_data, uint16_t packet_size,
                  HearingDevice* hearingAid) {
-    if (!hearingAid->playback_started) {
-      LOG(INFO) << __func__
-                << ": Playback not started, device=" << hearingAid->address;
+    if (!hearingAid->playback_started || !hearingAid->command_acked) {
+      VLOG(2) << __func__
+              << ": Playback stalled, device=" << hearingAid->address
+              << ", cmd send=" << hearingAid->playback_started
+              << ", cmd acked=" << hearingAid->command_acked;
       return;
     }
 
@@ -1006,6 +1145,7 @@ class HearingAidImpl : public HearingAid {
         hearingDevice->accepting_audio = false;
         hearingDevice->gap_handle = 0;
         hearingDevice->playback_started = false;
+        hearingDevice->command_acked = false;
         break;
       case GAP_EVT_CONN_DATA_AVAIL: {
         DVLOG(2) << "GAP_EVT_CONN_DATA_AVAIL";
@@ -1114,6 +1254,11 @@ class HearingAidImpl : public HearingAid {
     // cancel autoconnect
     BTA_GATTC_CancelOpen(gatt_if, address, false);
 
+    // Inform the other side (if any) of this disconnection
+    std::vector<uint8_t> inform_disconn_state(
+        {CONTROL_POINT_OP_STATE_CHANGE, STATE_CHANGE_OTHER_SIDE_DISCONNECTED});
+    send_state_change_to_other_side(hearingDevice, inform_disconn_state);
+
     DoDisconnectCleanUp(hearingDevice);
 
     hearingDevices.Remove(address);
@@ -1131,6 +1276,11 @@ class HearingAidImpl : public HearingAid {
               << loghex(conn_id);
       return;
     }
+
+    // Inform the other side (if any) of this disconnection
+    std::vector<uint8_t> inform_disconn_state(
+        {CONTROL_POINT_OP_STATE_CHANGE, STATE_CHANGE_OTHER_SIDE_DISCONNECTED});
+    send_state_change_to_other_side(hearingDevice, inform_disconn_state);
 
     DoDisconnectCleanUp(hearingDevice);
 
@@ -1164,6 +1314,7 @@ class HearingAidImpl : public HearingAid {
     LOG(INFO) << __func__ << ": device=" << hearingDevice->address
               << ", playback_started=" << hearingDevice->playback_started;
     hearingDevice->playback_started = false;
+    hearingDevice->command_acked = false;
   }
 
   void SetVolume(int8_t volume) override {
@@ -1201,6 +1352,47 @@ class HearingAidImpl : public HearingAid {
   uint16_t default_data_interval_ms;
 
   HearingDevices hearingDevices;
+
+  // Find the handle for the client characteristics configuration of a given
+  // characteristics
+  uint16_t find_ccc_handle(uint16_t conn_id, uint16_t char_handle) {
+    const gatt::Characteristic* p_char =
+        BTA_GATTC_GetCharacteristic(conn_id, char_handle);
+
+    if (!p_char) {
+      LOG(WARNING) << __func__ << ": No such characteristic: " << char_handle;
+      return 0;
+    }
+
+    for (const gatt::Descriptor& desc : p_char->descriptors) {
+      if (desc.uuid == Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG))
+        return desc.handle;
+    }
+
+    return 0;
+  }
+
+  void send_state_change(HearingDevice* device, std::vector<uint8_t> payload) {
+    if (device->conn_id != 0) {
+      // Send the data packet
+      LOG(INFO) << __func__ << ": Send State Change. device=" << device->address
+                << ", status=" << loghex(payload[1]);
+      BtaGattQueue::WriteCharacteristic(device->conn_id,
+                                        device->audio_control_point_handle,
+                                        payload, GATT_WRITE, nullptr, nullptr);
+    }
+  }
+
+  void send_state_change_to_other_side(HearingDevice* this_side_device,
+                                       std::vector<uint8_t> payload) {
+    for (auto& device : hearingDevices.devices) {
+      if ((device.address == this_side_device->address) ||
+          (device.hi_sync_id != this_side_device->hi_sync_id)) {
+        continue;
+      }
+      send_state_change(&device, payload);
+    }
+  }
 };
 
 void hearingaid_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
@@ -1234,6 +1426,16 @@ void hearingaid_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
       break;
 
     case BTA_GATTC_NOTIF_EVT:
+      if (!instance) return;
+      if (!p_data->notify.is_notify || p_data->notify.len > GATT_MAX_ATTR_LEN) {
+        LOG(ERROR) << __func__ << ": rejected BTA_GATTC_NOTIF_EVT. is_notify="
+                   << p_data->notify.is_notify
+                   << ", len=" << p_data->notify.len;
+        break;
+      }
+      instance->OnNotificationEvent(p_data->notify.conn_id,
+                                    p_data->notify.handle, p_data->notify.len,
+                                    p_data->notify.value);
       break;
 
     case BTA_GATTC_ENC_CMPL_CB_EVT:
@@ -1244,6 +1446,11 @@ void hearingaid_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
     case BTA_GATTC_CONN_UPDATE_EVT:
       if (!instance) return;
       instance->OnConnectionUpdateComplete(p_data->conn_update.conn_id, p_data);
+      break;
+
+    case BTA_GATTC_SRVC_CHG_EVT:
+      if (!instance) return;
+      instance->OnServiceChangeEvent(p_data->remote_bda);
       break;
 
     default:
