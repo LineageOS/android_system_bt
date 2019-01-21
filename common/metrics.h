@@ -304,6 +304,14 @@ void LogLinkLayerConnectionEvent(const RawAddress* address,
                                  uint32_t hci_event, uint32_t hci_ble_event,
                                  uint32_t cmd_status, uint32_t reason_code);
 
+/**
+ * Logs when Bluetooth controller failed to reply with command status within
+ * a timeout period after receiving an HCI command from the host
+ *
+ * @param hci_cmd opcode of HCI command that caused this timeout
+ */
+void LogHciTimeoutEvent(uint32_t hci_cmd);
+
 }  // namespace common
 
 }  // namespace bluetooth

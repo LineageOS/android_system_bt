@@ -597,6 +597,16 @@ void LogLinkLayerConnectionEvent(const RawAddress* address,
   }
 }
 
+void LogHciTimeoutEvent(uint32_t hci_cmd) {
+  int ret =
+      android::util::stats_write(android::util::BLUETOOTH_HCI_TIMEOUT_REPORTED,
+                                 static_cast<int64_t>(hci_cmd));
+  if (ret < 0) {
+    LOG(WARNING) << __func__ << ": failed for opcode " << loghex(hci_cmd)
+                 << ", error " << ret;
+  }
+}
+
 }  // namespace common
 
 }  // namespace bluetooth
