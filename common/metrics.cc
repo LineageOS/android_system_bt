@@ -619,6 +619,122 @@ void LogRemoteVersionInfo(uint16_t handle, uint8_t status, uint8_t version,
                  << ", subversion " << loghex(subversion) << ", error " << ret;
   }
 }
+
+void LogA2dpAudioUnderrunEvent(const RawAddress& address,
+                               uint64_t encoding_interval_millis,
+                               int num_missing_pcm_bytes) {
+  std::string obfuscated_id;
+  if (!address.IsEmpty()) {
+    obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(address);
+  }
+  // nullptr and size 0 represent missing value for obfuscated_id
+  android::util::BytesField bytes_field(
+      address.IsEmpty() ? nullptr : obfuscated_id.c_str(),
+      address.IsEmpty() ? 0 : obfuscated_id.size());
+  int64_t encoding_interval_nanos = encoding_interval_millis * 1000000;
+  int ret = android::util::stats_write(
+      android::util::BLUETOOTH_A2DP_AUDIO_UNDERRUN_REPORTED, bytes_field,
+      encoding_interval_nanos, num_missing_pcm_bytes);
+  if (ret < 0) {
+    LOG(WARNING) << __func__ << ": failed for " << address
+                 << ", encoding_interval_nanos " << encoding_interval_nanos
+                 << ", num_missing_pcm_bytes " << num_missing_pcm_bytes
+                 << ", error " << ret;
+  }
+}
+
+void LogA2dpAudioOverrunEvent(const RawAddress& address,
+                              uint64_t encoding_interval_millis,
+                              int num_dropped_buffers,
+                              int num_dropped_encoded_frames,
+                              int num_dropped_encoded_bytes) {
+  std::string obfuscated_id;
+  if (!address.IsEmpty()) {
+    obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(address);
+  }
+  // nullptr and size 0 represent missing value for obfuscated_id
+  android::util::BytesField bytes_field(
+      address.IsEmpty() ? nullptr : obfuscated_id.c_str(),
+      address.IsEmpty() ? 0 : obfuscated_id.size());
+  int64_t encoding_interval_nanos = encoding_interval_millis * 1000000;
+  int ret = android::util::stats_write(
+      android::util::BLUETOOTH_A2DP_AUDIO_OVERRUN_REPORTED, bytes_field,
+      encoding_interval_nanos, num_dropped_buffers, num_dropped_encoded_frames,
+      num_dropped_encoded_bytes);
+  if (ret < 0) {
+    LOG(WARNING) << __func__ << ": failed to log for " << address
+                 << ", encoding_interval_nanos " << encoding_interval_nanos
+                 << ", num_dropped_buffers " << num_dropped_buffers
+                 << ", num_dropped_encoded_frames "
+                 << num_dropped_encoded_frames << ", num_dropped_encoded_bytes "
+                 << num_dropped_encoded_bytes << ", error " << ret;
+  }
+}
+
+void LogReadRssiResult(const RawAddress& address, uint16_t handle,
+                       uint32_t cmd_status, int8_t rssi) {
+  std::string obfuscated_id;
+  if (!address.IsEmpty()) {
+    obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(address);
+  }
+  // nullptr and size 0 represent missing value for obfuscated_id
+  android::util::BytesField bytes_field(
+      address.IsEmpty() ? nullptr : obfuscated_id.c_str(),
+      address.IsEmpty() ? 0 : obfuscated_id.size());
+  int ret =
+      android::util::stats_write(android::util::BLUETOOTH_DEVICE_RSSI_REPORTED,
+                                 bytes_field, handle, cmd_status, rssi);
+  if (ret < 0) {
+    LOG(WARNING) << __func__ << ": failed for " << address << ", handle "
+                 << handle << ", status " << loghex(cmd_status) << ", rssi "
+                 << rssi << " dBm, error " << ret;
+  }
+}
+
+void LogReadFailedContactCounterResult(const RawAddress& address,
+                                       uint16_t handle, uint32_t cmd_status,
+                                       int32_t failed_contact_counter) {
+  std::string obfuscated_id;
+  if (!address.IsEmpty()) {
+    obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(address);
+  }
+  // nullptr and size 0 represent missing value for obfuscated_id
+  android::util::BytesField bytes_field(
+      address.IsEmpty() ? nullptr : obfuscated_id.c_str(),
+      address.IsEmpty() ? 0 : obfuscated_id.size());
+  int ret = android::util::stats_write(
+      android::util::BLUETOOTH_DEVICE_FAILED_CONTACT_COUNTER_REPORTED,
+      bytes_field, handle, cmd_status, failed_contact_counter);
+  if (ret < 0) {
+    LOG(WARNING) << __func__ << ": failed for " << address << ", handle "
+                 << handle << ", status " << loghex(cmd_status)
+                 << ", failed_contact_counter " << failed_contact_counter
+                 << " packets, error " << ret;
+  }
+}
+
+void LogReadTxPowerLevelResult(const RawAddress& address, uint16_t handle,
+                               uint32_t cmd_status,
+                               int32_t transmit_power_level) {
+  std::string obfuscated_id;
+  if (!address.IsEmpty()) {
+    obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(address);
+  }
+  // nullptr and size 0 represent missing value for obfuscated_id
+  android::util::BytesField bytes_field(
+      address.IsEmpty() ? nullptr : obfuscated_id.c_str(),
+      address.IsEmpty() ? 0 : obfuscated_id.size());
+  int ret = android::util::stats_write(
+      android::util::BLUETOOTH_DEVICE_TX_POWER_LEVEL_REPORTED, bytes_field,
+      handle, cmd_status, transmit_power_level);
+  if (ret < 0) {
+    LOG(WARNING) << __func__ << ": failed for " << address << ", handle "
+                 << handle << ", status " << loghex(cmd_status)
+                 << ", transmit_power_level " << transmit_power_level
+                 << " packets, error " << ret;
+  }
+}
+
 }  // namespace common
 
 }  // namespace bluetooth
