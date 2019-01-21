@@ -1191,6 +1191,14 @@ BT_HDR* avdt_msg_asmbl(AvdtpCcb* p_ccb, BT_HDR* p_buf) {
 
   /* parse the message header */
   p = (uint8_t*)(p_buf + 1) + p_buf->offset;
+
+  /* Check if is valid length */
+  if (p_buf->len < 1) {
+    android_errorWriteLog(0x534e4554, "78287084");
+    osi_free(p_buf);
+    p_ret = NULL;
+    return p_ret;
+  }
   AVDT_MSG_PRS_PKT_TYPE(p, pkt_type);
 
   /* quick sanity check on length */
