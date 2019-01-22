@@ -39,7 +39,7 @@
 
 #define A2DP_RT_PRIORITY 1
 #ifndef OS_GENERIC
-#include <cutils/sched_policy.h>
+#include <processgroup/sched_policy.h>
 #endif
 
 #include "bt_types.h"
