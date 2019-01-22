@@ -94,7 +94,8 @@ tBNEP_RESULT bnep_register_with_l2cap(void) {
   bnep_cb.reg_info.pL2CA_CongestionStatus_Cb = bnep_congestion_ind;
 
   /* Now, register with L2CAP */
-  if (!L2CA_Register(BT_PSM_BNEP, &bnep_cb.reg_info)) {
+  if (!L2CA_Register(BT_PSM_BNEP, &bnep_cb.reg_info,
+                     false /* enable_snoop */)) {
     BNEP_TRACE_ERROR("BNEP - Registration failed");
     return BNEP_SECURITY_FAIL;
   }

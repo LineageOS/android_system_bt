@@ -97,11 +97,13 @@ tHID_STATUS hidh_conn_reg(void) {
   hh_cb.l2cap_cfg.flush_to = HID_HOST_FLUSH_TO;
 
   /* Now, register with L2CAP */
-  if (!L2CA_Register(HID_PSM_CONTROL, (tL2CAP_APPL_INFO*)&hst_reg_info)) {
+  if (!L2CA_Register(HID_PSM_CONTROL, (tL2CAP_APPL_INFO*)&hst_reg_info,
+                     false /* enable_snoop */)) {
     HIDH_TRACE_ERROR("HID-Host Control Registration failed");
     return (HID_ERR_L2CAP_FAILED);
   }
-  if (!L2CA_Register(HID_PSM_INTERRUPT, (tL2CAP_APPL_INFO*)&hst_reg_info)) {
+  if (!L2CA_Register(HID_PSM_INTERRUPT, (tL2CAP_APPL_INFO*)&hst_reg_info,
+                     false /* enable_snoop */)) {
     L2CA_Deregister(HID_PSM_CONTROL);
     HIDH_TRACE_ERROR("HID-Host Interrupt Registration failed");
     return (HID_ERR_L2CAP_FAILED);

@@ -27,12 +27,30 @@
 #include "port_api.h"
 
 #include "btm_int.h"
+#include "hci/include/btsnoop.h"
 #include "rfc_int.h"
 
 #include "mock_btm_layer.h"
 #include "mock_l2cap_layer.h"
 #include "stack_rfcomm_test_utils.h"
 #include "stack_test_packet_utils.h"
+
+static void capture(const BT_HDR*, bool) { /* do nothing */
+}
+static void whitelist_l2c_channel(uint16_t, uint16_t,
+                                  uint16_t) { /* do nothing */
+}
+static void whitelist_rfc_dlci(uint16_t, uint8_t) { /* do nothing */
+}
+static void add_rfc_l2c_channel(uint16_t, uint16_t, uint16_t) { /* do nothing */
+}
+static void clear_l2cap_whitelist(uint16_t, uint16_t,
+                                  uint16_t) { /* do nothing */
+}
+static const btsnoop_t fake_snoop = {capture, whitelist_l2c_channel,
+                                     whitelist_rfc_dlci, add_rfc_l2c_channel,
+                                     clear_l2cap_whitelist};
+const btsnoop_t* btsnoop_get_interface() { return &fake_snoop; }
 
 std::string DumpByteBufferToString(uint8_t* p_data, size_t len) {
   std::stringstream str;
@@ -45,6 +63,8 @@ std::string DumpByteBufferToString(uint8_t* p_data, size_t len) {
   }
   return str.str();
 }
+
+uint16_t L2CA_Register(unsigned short, tL2CAP_APPL_INFO*, bool) { return 0; }
 
 std::string DumpBtHdrToString(BT_HDR* p_hdr) {
   uint8_t* p_hdr_data = p_hdr->data + p_hdr->offset;

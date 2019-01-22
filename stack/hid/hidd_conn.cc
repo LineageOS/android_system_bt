@@ -756,12 +756,14 @@ tHID_STATUS hidd_conn_reg(void) {
   hd_cb.l2cap_intr_cfg.flush_to_present = TRUE;
   hd_cb.l2cap_intr_cfg.flush_to = HID_DEV_FLUSH_TO;
 
-  if (!L2CA_Register(HID_PSM_CONTROL, (tL2CAP_APPL_INFO*)&dev_reg_info)) {
+  if (!L2CA_Register(HID_PSM_CONTROL, (tL2CAP_APPL_INFO*)&dev_reg_info,
+                     false /* enable_snoop */)) {
     HIDD_TRACE_ERROR("HID Control (device) registration failed");
     return (HID_ERR_L2CAP_FAILED);
   }
 
-  if (!L2CA_Register(HID_PSM_INTERRUPT, (tL2CAP_APPL_INFO*)&dev_reg_info)) {
+  if (!L2CA_Register(HID_PSM_INTERRUPT, (tL2CAP_APPL_INFO*)&dev_reg_info,
+                     false /* enable_snoop */)) {
     L2CA_Deregister(HID_PSM_CONTROL);
     HIDD_TRACE_ERROR("HID Interrupt (device) registration failed");
     return (HID_ERR_L2CAP_FAILED);
