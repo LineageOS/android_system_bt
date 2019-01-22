@@ -241,6 +241,7 @@ typedef struct {
 
 typedef struct {
   bool in_use;
+  bool log_packets;
   uint16_t psm;
   uint16_t real_psm; /* This may be a dummy RCB for an o/b connection but */
                      /* this is the real PSM that we need to connect to */

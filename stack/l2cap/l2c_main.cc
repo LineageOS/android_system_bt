@@ -33,6 +33,7 @@
 #include "btm_int.h"
 #include "btu.h"
 #include "device/include/controller.h"
+#include "hci/include/btsnoop.h"
 #include "hcimsgs.h"
 #include "l2c_api.h"
 #include "l2c_int.h"
@@ -396,6 +397,14 @@ static void process_l2cap_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
         p_ccb->p_rcb = p_rcb;
         p_ccb->remote_cid = rcid;
 
+        if (p_rcb->psm == BT_PSM_RFCOMM) {
+          btsnoop_get_interface()->add_rfc_l2c_channel(
+              p_lcb->handle, p_ccb->local_cid, p_ccb->remote_cid);
+        } else if (p_rcb->log_packets) {
+          btsnoop_get_interface()->whitelist_l2c_channel(
+              p_lcb->handle, p_ccb->local_cid, p_ccb->remote_cid);
+        }
+
         l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_REQ, &con_info);
         break;
       }
@@ -426,6 +435,15 @@ static void process_l2cap_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
           l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_PND, &con_info);
         else
           l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_NEG, &con_info);
+
+        tL2C_RCB* p_rcb = p_ccb->p_rcb;
+        if (p_rcb->psm == BT_PSM_RFCOMM) {
+          btsnoop_get_interface()->add_rfc_l2c_channel(
+              p_lcb->handle, p_ccb->local_cid, p_ccb->remote_cid);
+        } else if (p_rcb->log_packets) {
+          btsnoop_get_interface()->whitelist_l2c_channel(
+              p_lcb->handle, p_ccb->local_cid, p_ccb->remote_cid);
+        }
 
         break;
       }
