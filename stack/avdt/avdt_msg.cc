@@ -1499,8 +1499,8 @@ void avdt_msg_ind(AvdtpCcb* p_ccb, BT_HDR* p_buf) {
   uint8_t pkt_type;
   uint8_t msg_type;
   uint8_t sig = 0;
-  tAVDT_MSG msg;
-  AvdtpSepConfig cfg;
+  tAVDT_MSG msg{};
+  AvdtpSepConfig cfg{};
   uint8_t err;
   uint8_t evt = 0;
   uint8_t scb_hdl;
