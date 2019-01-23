@@ -586,6 +586,10 @@ static uint8_t avdt_msg_prs_cfg(AvdtpSepConfig* p_cfg, uint8_t* p, uint16_t len,
     /* parse individual information elements with additional parameters */
     switch (elem) {
       case AVDT_CAT_RECOV:
+        if ((p_end - p) < 3) {
+          err = AVDT_ERR_PAYLOAD;
+          break;
+        }
         p_cfg->recov_type = *p++;
         p_cfg->recov_mrws = *p++;
         p_cfg->recov_mnmp = *p++;
@@ -617,6 +621,10 @@ static uint8_t avdt_msg_prs_cfg(AvdtpSepConfig* p_cfg, uint8_t* p, uint16_t len,
         break;
 
       case AVDT_CAT_HDRCMP:
+        if ((p_end - p) < 1) {
+          err = AVDT_ERR_PAYLOAD;
+          break;
+        }
         p_cfg->hdrcmp_mask = *p++;
         break;
 
