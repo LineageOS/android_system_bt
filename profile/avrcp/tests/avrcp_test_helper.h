@@ -76,6 +76,7 @@ class MockA2dpInterface : public A2dpInterface {
   MOCK_METHOD1(event_open, void(const RawAddress&));
   MOCK_METHOD1(event_close, void(const RawAddress&));
   MOCK_METHOD0(active_peer, RawAddress());
+  MOCK_METHOD1(is_peer_in_silence_mode, bool(const RawAddress&));
 };
 
 class MockSdpInterface : public SdpInterface {

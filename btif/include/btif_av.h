@@ -186,4 +186,13 @@ void btif_av_src_disconnect_sink(const RawAddress& peer_address);
  *  @param  none
  */
 bool btif_av_is_a2dp_offload_enabled(void);
+
+/**
+ * Check whether peer device is silenced
+ *
+ * @param peer_address to check
+ *
+ */
+bool btif_av_is_peer_silenced(const RawAddress& peer_address);
+
 #endif /* BTIF_AV_H */

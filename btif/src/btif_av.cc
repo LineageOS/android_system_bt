@@ -276,6 +276,9 @@ class BtifAvPeer {
 
   bool IsConnected() const;
   bool IsStreaming() const;
+  bool IsInSilenceMode() const { return is_silenced_; };
+
+  void SetSilence(bool silence) { is_silenced_ = silence; };
 
   /**
    * Check whether any of the flags specified by the bitlags mask is set.
@@ -324,6 +327,7 @@ class BtifAvPeer {
   tBTA_AV_EDR edr_;
   uint8_t flags_;
   bool self_initiated_connection_;
+  bool is_silenced_;
 };
 
 class BtifAvSource {
@@ -383,6 +387,54 @@ class BtifAvSource {
    * @return the active peer
    */
   const RawAddress& ActivePeer() const { return active_peer_; }
+
+  /**
+   * Check whether peer is silenced
+   *
+   * @param peer_address the peer to check
+   * @return true on silence mode enabled, otherwise false
+   */
+  bool IsPeerSilenced(const RawAddress& peer_address) {
+    if (peer_address.IsEmpty()) {
+      return false;
+    }
+    BtifAvPeer* peer = FindPeer(peer_address);
+    if (peer == nullptr) {
+      BTIF_TRACE_WARNING("%s: peer is null", __func__);
+      return false;
+    }
+    if (!peer->IsConnected()) {
+      BTIF_TRACE_WARNING("%s: peer is not connected", __func__);
+      return false;
+    }
+    return peer->IsInSilenceMode();
+  }
+
+  /**
+   * Set peer silence mode
+   *
+   * @param peer_address the peer to set
+   * @param silence true on enable silence mode, false on disable
+   * @return true on success, otherwise false
+   */
+  bool SetSilencePeer(const RawAddress& peer_address, const bool silence) {
+    if (peer_address.IsEmpty()) {
+      return false;
+    }
+    LOG_INFO(LOG_TAG, "%s: peer: %s", __PRETTY_FUNCTION__,
+             peer_address.ToString().c_str());
+    BtifAvPeer* peer = FindPeer(peer_address);
+    if (peer == nullptr) {
+      BTIF_TRACE_WARNING("%s: peer is null", __func__);
+      return false;
+    }
+    if (!peer->IsConnected()) {
+      BTIF_TRACE_WARNING("%s: peer is not connected", __func__);
+      return false;
+    }
+    peer->SetSilence(silence);
+    return true;
+  }
 
   /**
    * Set the active peer.
@@ -463,6 +515,7 @@ class BtifAvSource {
   bool a2dp_offload_enabled_;
   int max_connected_peers_;
   std::map<RawAddress, BtifAvPeer*> peers_;
+  std::set<RawAddress> silenced_peers_;
   RawAddress active_peer_;
   std::map<uint8_t, tBTA_AV_HNDL> peer_id2bta_handle_;
 };
@@ -829,6 +882,7 @@ std::string BtifAvPeer::FlagsToString() const {
 bt_status_t BtifAvPeer::Init() {
   alarm_free(av_open_on_rc_timer_);
   av_open_on_rc_timer_ = alarm_new("btif_av_peer.av_open_on_rc_timer");
+  is_silenced_ = false;
 
   state_machine_.Start();
   return BT_STATUS_SUCCESS;
@@ -2586,6 +2640,16 @@ static bt_status_t connect_int(RawAddress* peer_address, uint16_t uuid) {
   return BT_STATUS_SUCCESS;
 }
 
+static void set_source_silence_peer_int(const RawAddress& peer_address,
+                                        bool silence) {
+  BTIF_TRACE_EVENT("%s: peer_address=%s, silence=%s", __func__,
+                   peer_address.ToString().c_str(), silence ? "true" : "false");
+  if (!btif_av_source.SetSilencePeer(peer_address, silence)) {
+    BTIF_TRACE_ERROR("%s: Error setting silence state to %s", __func__,
+                     peer_address.ToString().c_str());
+  }
+}
+
 // Set the active peer
 static void set_active_peer_int(uint8_t peer_sep,
                                 const RawAddress& peer_address) {
@@ -2672,6 +2736,18 @@ static bt_status_t sink_disconnect_src(const RawAddress& peer_address) {
                             peer_address, kBtaHandleUnknown, btif_av_event));
 }
 
+static bt_status_t src_set_silence_sink(const RawAddress& peer_address,
+                                        bool silence) {
+  BTIF_TRACE_EVENT("%s: Peer %s", __func__, peer_address.ToString().c_str());
+  if (!btif_av_source.Enabled()) {
+    BTIF_TRACE_WARNING("%s: BTIF AV Source is not enabled", __func__);
+    return BT_STATUS_NOT_READY;
+  }
+
+  return do_in_main_thread(FROM_HERE, base::Bind(&set_source_silence_peer_int,
+                                                 peer_address, silence));
+}
+
 static bt_status_t src_set_active_sink(const RawAddress& peer_address) {
   BTIF_TRACE_EVENT("%s: Peer %s", __func__, peer_address.ToString().c_str());
 
@@ -2718,6 +2794,7 @@ static const btav_source_interface_t bt_av_src_interface = {
     init_src,
     src_connect_sink,
     src_disconnect_sink,
+    src_set_silence_sink,
     src_set_active_sink,
     codec_config_src,
     cleanup_src,
@@ -3096,4 +3173,8 @@ void btif_av_reset_audio_delay(void) { btif_a2dp_control_reset_audio_delay(); }
 
 bool btif_av_is_a2dp_offload_enabled() {
   return btif_av_source.A2dpOffloadEnabled();
+}
+
+bool btif_av_is_peer_silenced(const RawAddress& peer_address) {
+  return btif_av_source.IsPeerSilenced(peer_address);
 }

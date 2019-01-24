@@ -82,6 +82,7 @@ class SdpInterface {
 class A2dpInterface {
  public:
   virtual RawAddress active_peer() = 0;
+  virtual bool is_peer_in_silence_mode(const RawAddress& peer_address) = 0;
 
   virtual ~A2dpInterface() = default;
 };
