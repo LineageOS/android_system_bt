@@ -47,7 +47,6 @@ cc_library_shared {
         "libhidltransport",
         "libhwbinder",
         "liblog",
-        "libprocessgroup",
         "libprotobuf-cpp-lite",
         "libutils",
         "libtinyxml2",
