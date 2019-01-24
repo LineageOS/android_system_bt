@@ -790,6 +790,9 @@ void l2cu_send_peer_config_rej(tL2C_CCB* p_ccb, uint8_t* p_data,
       case L2CAP_CFG_TYPE_MTU:
       case L2CAP_CFG_TYPE_FLUSH_TOUT:
       case L2CAP_CFG_TYPE_QOS:
+      case L2CAP_CFG_TYPE_FCR:
+      case L2CAP_CFG_TYPE_FCS:
+      case L2CAP_CFG_TYPE_EXT_FLOW:
         p_data += cfg_len + L2CAP_CFG_OPTION_OVERHEAD;
         break;
 

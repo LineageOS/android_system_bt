@@ -614,6 +614,12 @@ static void hidd_l2cif_data_ind(uint16_t cid, BT_HDR* p_msg) {
 
   HIDD_TRACE_EVENT("%s: cid=%04x", __func__, cid);
 
+  if (p_msg->len < 1) {
+    HIDD_TRACE_ERROR("Invalid data length, ignore");
+    osi_free(p_msg);
+    return;
+  }
+
   p_hcon = &hd_cb.device.conn;
 
   if (p_hcon->conn_state == HID_CONN_STATE_UNUSED ||

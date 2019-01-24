@@ -533,6 +533,11 @@ uint8_t rfc_parse_data(tRFC_MCB* p_mcb, MX_FRAME* p_frame, BT_HDR* p_buf) {
     return RFC_EVENT_BAD_FRAME;
   }
 
+  if (p_buf->len < (3 + !ead + !eal + 1)) {
+    android_errorWriteLog(0x534e4554, "120255805");
+    RFCOMM_TRACE_ERROR("Bad Length: %d", p_buf->len);
+    return RFC_EVENT_BAD_FRAME;
+  }
   p_buf->len -= (3 + !ead + !eal + 1); /* Additional 1 for FCS */
   p_buf->offset += (3 + !ead + !eal);
 
