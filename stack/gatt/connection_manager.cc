@@ -167,11 +167,11 @@ void on_app_deregistered(uint8_t app_id) {
 void on_connection_complete(const RawAddress& address) {
   VLOG(2) << __func__;
   auto it = bgconn_dev.find(address);
-  if (it == bgconn_dev.end()) return;
 
-  while (!it->second.doing_direct_conn.empty()) {
+  while (it != bgconn_dev.end() && !it->second.doing_direct_conn.empty()) {
     uint8_t app_id = it->second.doing_direct_conn.begin()->first;
     direct_connect_remove(app_id, address);
+    it = bgconn_dev.find(address);
   }
 }
 
