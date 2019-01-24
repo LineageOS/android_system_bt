@@ -67,6 +67,10 @@ bool Device::IsActive() const {
   return address_ == a2dp_interface_->active_peer();
 }
 
+bool Device::IsInSilenceMode() const {
+  return a2dp_interface_->is_peer_in_silence_mode(address_);
+}
+
 void Device::VendorPacketHandler(uint8_t label,
                                  std::shared_ptr<VendorPacket> pkt) {
   CHECK(media_interface_);
@@ -466,7 +470,7 @@ void Device::PlaybackPosNotificationResponse(uint8_t label, bool interim,
   // We still try to send updates while music is playing to the non active
   // device even though the device thinks the music is paused. This makes
   // the status bar on the remote device move.
-  if (status.state == PlayState::PLAYING) {
+  if (status.state == PlayState::PLAYING && !IsInSilenceMode()) {
     DEVICE_VLOG(0) << __func__ << ": Queue next play position update";
     play_pos_update_cb_.Reset(base::Bind(&Device::HandlePlayPosUpdate,
                                          weak_ptr_factory_.GetWeakPtr()));
@@ -1145,9 +1149,12 @@ void Device::SetBrowsedPlayerResponse(
 }
 
 void Device::SendMediaUpdate(bool metadata, bool play_status, bool queue) {
+  bool is_silence = IsInSilenceMode();
+
   CHECK(media_interface_);
   DEVICE_VLOG(4) << __func__ << ": Metadata=" << metadata
-                 << " : play_status= " << play_status << " : queue=" << queue;
+                 << " : play_status= " << play_status << " : queue=" << queue
+                 << " ; is_silence=" << is_silence;
 
   if (queue) {
     HandleNowPlayingUpdate();
@@ -1155,7 +1162,9 @@ void Device::SendMediaUpdate(bool metadata, bool play_status, bool queue) {
 
   if (play_status) {
     HandlePlayStatusUpdate();
-    HandlePlayPosUpdate();
+    if (!is_silence) {
+      HandlePlayPosUpdate();
+    }
   }
 
   if (metadata) HandleTrackUpdate();
