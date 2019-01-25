@@ -192,6 +192,8 @@ extern void btm_inq_db_reset(void);
 extern void btm_vendor_specific_evt(uint8_t* p, uint8_t evt_len);
 extern void btm_delete_stored_link_key_complete(uint8_t* p);
 extern void btm_report_device_status(tBTM_DEV_STATUS status);
+extern tBTM_STATUS BTM_BT_Quality_Report_VSE_Register(
+    bool is_register, tBTM_BT_QUALITY_REPORT_RECEIVER* p_bqr_report_receiver);
 
 /* Internal functions provided by btm_dev.cc
  *********************************************
