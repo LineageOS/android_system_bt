@@ -18,6 +18,7 @@
 #ifndef BTM_INT_TYPES_H
 #define BTM_INT_TYPES_H
 
+#include "btif/include/btif_bqr.h"
 #include "btm_api_types.h"
 #include "btm_ble_api_types.h"
 #include "btm_ble_int_types.h"
@@ -724,6 +725,9 @@ typedef struct {
 #define CONN_ORIENT_ORIG true
 typedef bool CONNECTION_TYPE;
 
+// Bluetooth Quality Report - Report receiver
+typedef void(tBTM_BT_QUALITY_REPORT_RECEIVER)(uint8_t len, uint8_t* p_stream);
+
 /* Define a structure to hold all the BTM data
 */
 
@@ -828,6 +832,8 @@ typedef struct {
                                    tBTM_SEC_QUEUE_ENTRY format */
 
   char state_temp_buffer[BTM_STATE_BUFFER_SIZE];
+  // BQR Receiver
+  tBTM_BT_QUALITY_REPORT_RECEIVER* p_bqr_report_receiver;
 } tBTM_CB;
 
 /* security action for L2CAP COC channels */

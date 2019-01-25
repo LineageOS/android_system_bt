@@ -53,6 +53,7 @@
 #include "btif_a2dp.h"
 #include "btif_api.h"
 #include "btif_av.h"
+#include "btif_bqr.h"
 #include "btif_config.h"
 #include "btif_debug.h"
 #include "btif_debug_btsnoop.h"
@@ -317,6 +318,7 @@ static void dump(int fd, const char** arguments) {
   alarm_debug_dump(fd);
   HearingAid::DebugDump(fd);
   connection_manager::dump(fd);
+  bluetooth::bqr::DebugDump(fd);
 #if (BTSNOOP_MEM == TRUE)
   btif_debug_btsnoop_dump(fd);
 #endif
