@@ -126,6 +126,11 @@ static void reassemble_and_dispatch(UNUSED_ATTR BT_HDR* packet) {
     uint16_t l2cap_length;
     uint16_t acl_length;
 
+    if (packet->len < 6) {
+      LOG_WARN(LOG_TAG, "%s invalid packet length %d", __func__, packet->len);
+      return;
+    }
+
     STREAM_TO_UINT16(handle, stream);
     STREAM_TO_UINT16(acl_length, stream);
     STREAM_TO_UINT16(l2cap_length, stream);
