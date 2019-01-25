@@ -130,6 +130,7 @@ cc_test {
         "liblog",
         "libprotobuf-cpp-lite",
         "libcutils",
+        "libprocessgroup",
         "libutils",
         "libcrypto",
     ],

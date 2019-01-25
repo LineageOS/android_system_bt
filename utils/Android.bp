@@ -12,4 +12,7 @@ cc_library_static {
         "system/bt/stack/include",
     ],
     srcs: ["src/bt_utils.cc"],
+    shared_libs: [
+        "libprocessgroup",
+    ],
 }
