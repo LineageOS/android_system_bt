@@ -69,10 +69,10 @@ static constexpr uint8_t kCriWarnUnusedCh = 55;
 static constexpr uint8_t kBqrEventQueueSize = 25;
 // The Property of BQR event mask configuration.
 static constexpr const char* kpPropertyEventMask =
-    "persist.bluetooth.bqr.eventmask";
+    "persist.bluetooth.bqr.event_mask";
 // The Property of BQR minimum report interval configuration.
-static constexpr const char* kpPropertyReportInt =
-    "persist.bluetooth.bqr.interval";
+static constexpr const char* kpPropertyMinReportIntervalMs =
+    "persist.bluetooth.bqr.min_interval_ms";
 
 // Action definition
 //
@@ -129,7 +129,7 @@ enum BqrPacketType : uint8_t {
 typedef struct {
   BqrReportAction report_action;
   uint32_t quality_event_mask;
-  uint16_t minimum_report_interval;
+  uint16_t minimum_report_interval_ms;
 } BqrConfiguration;
 
 // BQR sub-event of Vendor Specific Event
@@ -155,52 +155,56 @@ class BqrVseSubEvt {
   virtual ~BqrVseSubEvt() = default;
 
   // Quality report ID.
-  uint8_t quality_report_id_;
+  uint8_t quality_report_id_ = 0;
   // Packet type of the connection.
-  uint8_t packet_types_;
+  uint8_t packet_types_ = 0;
   // Connection handle of the connection.
-  uint16_t connection_handle_;
+  uint16_t connection_handle_ = 0;
   // Performing Role for the connection.
-  uint8_t connection_role_;
+  uint8_t connection_role_ = 0;
   // Current Transmit Power Level for the connection. This value is the same as
   // the controller's response to the HCI_Read_Transmit_Power_Level HCI command.
-  uint8_t tx_power_level_;
+  uint8_t tx_power_level_ = 0;
   // Received Signal Strength Indication (RSSI) value for the connection. This
   // value is an absolute receiver signal strength value.
-  int8_t rssi_;
+  int8_t rssi_ = 0;
   // Signal-to-Noise Ratio (SNR) value for the connection. It is the average
   // SNR of all the channels used by the link currently.
-  uint8_t snr_;
+  uint8_t snr_ = 0;
   // Indicates the number of unused channels in AFH_channel_map.
-  uint8_t unused_afh_channel_count_;
+  uint8_t unused_afh_channel_count_ = 0;
   // Indicates the number of the channels which are interfered and quality is
   // bad but are still selected for AFH.
-  uint8_t afh_select_unideal_channel_count_;
+  uint8_t afh_select_unideal_channel_count_ = 0;
   // Current Link Supervision Timeout Setting.
-  uint16_t lsto_;
+  // Unit: N * 0.3125 ms (1 Bluetooth Clock)
+  uint16_t lsto_ = 0;
   // Piconet Clock for the specified Connection_Handle. This value is the same
   // as the controller's response to HCI_Read_Clock HCI command with the
   // parameter "Which_Clock" of 0x01 (Piconet Clock).
-  uint32_t connection_piconet_clock_;
+  // Unit: N * 0.3125 ms (1 Bluetooth Clock)
+  uint32_t connection_piconet_clock_ = 0;
   // The count of retransmission.
-  uint32_t retransmission_count_;
+  uint32_t retransmission_count_ = 0;
   // The count of no RX.
-  uint32_t no_rx_count_;
+  uint32_t no_rx_count_ = 0;
   // The count of NAK (Negative Acknowledge).
-  uint32_t nak_count_;
+  uint32_t nak_count_ = 0;
   // Timestamp of last TX ACK.
-  uint32_t last_tx_ack_timestamp_;
+  // Unit: N * 0.3125 ms (1 Bluetooth Clock)
+  uint32_t last_tx_ack_timestamp_ = 0;
   // The count of Flow-off (STOP).
-  uint32_t flow_off_count_;
+  uint32_t flow_off_count_ = 0;
   // Timestamp of last Flow-on (GO).
-  uint32_t last_flow_on_timestamp_;
+  // Unit: N * 0.3125 ms (1 Bluetooth Clock)
+  uint32_t last_flow_on_timestamp_ = 0;
   // Buffer overflow count (how many bytes of TX data are dropped) since the
   // last event.
-  uint32_t buffer_overflow_bytes_;
+  uint32_t buffer_overflow_bytes_ = 0;
   // Buffer underflow count (in byte).
-  uint32_t buffer_underflow_bytes_;
-  // Timestamp of receiving BQR VSE sub-event
-  std::tm tm_timestamp_;
+  uint32_t buffer_underflow_bytes_ = 0;
+  // Local wall clock timestamp of receiving BQR VSE sub-event
+  std::tm tm_timestamp_ = {};
 };
 
 // Get a string representation of the Quality Report ID.
@@ -218,9 +222,9 @@ std::string PacketTypeToString(uint8_t packet_type);
 // Enable/Disable Bluetooth Quality Report mechanism.
 //
 // Which Quality event will be enabled is according to the setting of the
-// property "persist.bluetooth.bqr.eventmask".
+// property "persist.bluetooth.bqr.event_mask".
 // And the minimum time interval of quality event reporting depends on the
-// setting of property "persist.bluetooth.bqr.interval".
+// setting of property "persist.bluetooth.bqr.min_interval_ms".
 //
 // @param is_enable True/False to enable/disable Bluetooth Quality Report
 //   mechanism in the Bluetooth controller.
