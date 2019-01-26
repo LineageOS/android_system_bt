@@ -191,14 +191,14 @@ void EnableBtQualityReport(bool is_enable) {
   LOG(INFO) << __func__ << ": is_enable: " << logbool(is_enable);
 
   char bqr_prop_evtmask[PROPERTY_VALUE_MAX] = {0};
-  char bqr_prop_interval[PROPERTY_VALUE_MAX] = {0};
+  char bqr_prop_interval_ms[PROPERTY_VALUE_MAX] = {0};
   osi_property_get(kpPropertyEventMask, bqr_prop_evtmask, "");
-  osi_property_get(kpPropertyReportInt, bqr_prop_interval, "");
+  osi_property_get(kpPropertyMinReportIntervalMs, bqr_prop_interval_ms, "");
 
-  if (strlen(bqr_prop_evtmask) == 0 || strlen(bqr_prop_interval) == 0) {
+  if (strlen(bqr_prop_evtmask) == 0 || strlen(bqr_prop_interval_ms) == 0) {
     LOG(WARNING) << __func__ << ": Bluetooth Quality Report is disabled."
                  << " bqr_prop_evtmask: " << bqr_prop_evtmask
-                 << ", bqr_prop_interval: " << bqr_prop_interval;
+                 << ", bqr_prop_interval_ms: " << bqr_prop_interval_ms;
     return;
   }
 
@@ -208,17 +208,17 @@ void EnableBtQualityReport(bool is_enable) {
     bqr_config.report_action = REPORT_ACTION_ADD;
     bqr_config.quality_event_mask =
         static_cast<uint32_t>(atoi(bqr_prop_evtmask));
-    bqr_config.minimum_report_interval =
-        static_cast<uint16_t>(atoi(bqr_prop_interval));
+    bqr_config.minimum_report_interval_ms =
+        static_cast<uint16_t>(atoi(bqr_prop_interval_ms));
   } else {
     bqr_config.report_action = REPORT_ACTION_CLEAR;
     bqr_config.quality_event_mask = kQualityEventMaskAllOff;
-    bqr_config.minimum_report_interval = kMinReportIntervalNoLimit;
+    bqr_config.minimum_report_interval_ms = kMinReportIntervalNoLimit;
   }
 
   LOG(INFO) << __func__
             << ": Event Mask: " << loghex(bqr_config.quality_event_mask)
-            << ", Interval: " << bqr_config.minimum_report_interval;
+            << ", Interval: " << bqr_config.minimum_report_interval_ms;
   ConfigureBqr(bqr_config);
 }
 
@@ -259,23 +259,23 @@ void BqrVscCompleteCallback(tBTM_VSC_CMPL* p_vsc_cmpl_params) {
 void ConfigureBqr(const BqrConfiguration& bqr_config) {
   if (bqr_config.report_action > REPORT_ACTION_CLEAR ||
       bqr_config.quality_event_mask > kQualityEventMaskAll ||
-      bqr_config.minimum_report_interval > kMinReportIntervalMaxMs) {
+      bqr_config.minimum_report_interval_ms > kMinReportIntervalMaxMs) {
     LOG(FATAL) << __func__ << ": Invalid Parameter"
                << ", Action: " << bqr_config.report_action
                << ", Mask: " << loghex(bqr_config.quality_event_mask)
-               << ", Interval: " << bqr_config.minimum_report_interval;
+               << ", Interval: " << bqr_config.minimum_report_interval_ms;
     return;
   }
 
   LOG(INFO) << __func__ << ": Action: " << bqr_config.report_action
             << ", Mask: " << loghex(bqr_config.quality_event_mask)
-            << ", Interval: " << bqr_config.minimum_report_interval;
+            << ", Interval: " << bqr_config.minimum_report_interval_ms;
 
   uint8_t param[sizeof(BqrConfiguration)];
   uint8_t* p_param = param;
   UINT8_TO_STREAM(p_param, bqr_config.report_action);
   UINT32_TO_STREAM(p_param, bqr_config.quality_event_mask);
-  UINT16_TO_STREAM(p_param, bqr_config.minimum_report_interval);
+  UINT16_TO_STREAM(p_param, bqr_config.minimum_report_interval_ms);
 
   BTM_VendorSpecificCommand(HCI_CONTROLLER_BQR_OPCODE_OCF, p_param - param,
                             param, BqrVscCompleteCallback);
