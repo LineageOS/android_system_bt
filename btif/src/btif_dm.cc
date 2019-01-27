@@ -50,6 +50,7 @@
 #include "bta_gatt_api.h"
 #include "btif_api.h"
 #include "btif_av.h"
+#include "btif_bqr.h"
 #include "btif_config.h"
 #include "btif_dm.h"
 #include "btif_hd.h"
@@ -1606,7 +1607,7 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
       ** and bonded_devices_info_cb
       */
       btif_storage_load_bonded_devices();
-
+      bluetooth::bqr::EnableBtQualityReport(true);
       btif_enable_bluetooth_evt(p_data->enable.status);
     } break;
 
@@ -1620,6 +1621,7 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
           btif_in_execute_service_request(i, false);
         }
       }
+      bluetooth::bqr::EnableBtQualityReport(false);
       btif_disable_bluetooth_evt();
       break;
 

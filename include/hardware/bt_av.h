@@ -313,6 +313,9 @@ typedef struct {
   /** dis-connect from headset */
   bt_status_t (*disconnect)(const RawAddress& bd_addr);
 
+  /** sets the connected device silence state */
+  bt_status_t (*set_silence_device)(const RawAddress& bd_addr, bool silence);
+
   /** sets the connected device as active */
   bt_status_t (*set_active_device)(const RawAddress& bd_addr);
 
