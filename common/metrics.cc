@@ -607,6 +607,18 @@ void LogHciTimeoutEvent(uint32_t hci_cmd) {
   }
 }
 
+void LogRemoteVersionInfo(uint16_t handle, uint8_t status, uint8_t version,
+                          uint16_t manufacturer_name, uint16_t subversion) {
+  int ret = android::util::stats_write(
+      android::util::BLUETOOTH_REMOTE_VERSION_INFO_REPORTED, handle, status,
+      version, manufacturer_name, subversion);
+  if (ret < 0) {
+    LOG(WARNING) << __func__ << ": failed for handle " << handle << ", status "
+                 << loghex(status) << ", version " << loghex(version)
+                 << ", manufacturer_name " << loghex(manufacturer_name)
+                 << ", subversion " << loghex(subversion) << ", error " << ret;
+  }
+}
 }  // namespace common
 
 }  // namespace bluetooth
