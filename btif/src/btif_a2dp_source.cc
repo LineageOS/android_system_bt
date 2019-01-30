@@ -229,7 +229,7 @@ static BtifA2dpSource btif_a2dp_source_cb;
 static void btif_a2dp_source_init_delayed(void);
 static void btif_a2dp_source_startup_delayed(void);
 static void btif_a2dp_source_start_session_delayed(
-    const RawAddress& peer_address);
+    const RawAddress& peer_address, std::promise<void> start_session_promise);
 static void btif_a2dp_source_end_session_delayed(
     const RawAddress& peer_address);
 static void btif_a2dp_source_shutdown_delayed(void);
@@ -359,24 +359,32 @@ static void btif_a2dp_source_startup_delayed() {
   btif_a2dp_source_cb.SetState(BtifA2dpSource::kStateRunning);
 }
 
-bool btif_a2dp_source_start_session(const RawAddress& peer_address) {
-  LOG_INFO(LOG_TAG, "%s: peer_address=%s state=%s", __func__,
-           peer_address.ToString().c_str(),
-           btif_a2dp_source_cb.StateStr().c_str());
+bool btif_a2dp_source_start_session(const RawAddress& peer_address,
+                                    std::promise<void> peer_ready_promise) {
+  LOG(INFO) << __func__ << ": peer_address=" << peer_address
+            << " state=" << btif_a2dp_source_cb.StateStr();
   btif_a2dp_source_setup_codec(peer_address);
-  btif_a2dp_source_thread.DoInThread(
-      FROM_HERE,
-      base::Bind(&btif_a2dp_source_start_session_delayed, peer_address));
-  return true;
+  if (btif_a2dp_source_thread.DoInThread(
+          FROM_HERE,
+          base::BindOnce(&btif_a2dp_source_start_session_delayed, peer_address,
+                         std::move(peer_ready_promise)))) {
+    return true;
+  } else {
+    // cannot set promise but triggers crash
+    LOG(FATAL) << __func__ << ": peer_address=" << peer_address
+               << " state=" << btif_a2dp_source_cb.StateStr()
+               << " fails to context switch";
+    return false;
+  }
 }
 
 static void btif_a2dp_source_start_session_delayed(
-    const RawAddress& peer_address) {
-  LOG_INFO(LOG_TAG, "%s: peer_address=%s state=%s", __func__,
-           peer_address.ToString().c_str(),
-           btif_a2dp_source_cb.StateStr().c_str());
+    const RawAddress& peer_address, std::promise<void> peer_ready_promise) {
+  LOG(INFO) << __func__ << ": peer_address=" << peer_address
+            << " state=" << btif_a2dp_source_cb.StateStr();
   if (btif_a2dp_source_cb.State() != BtifA2dpSource::kStateRunning) {
-    LOG_ERROR(LOG_TAG, "%s: A2DP Source media task is not running", __func__);
+    LOG(ERROR) << __func__ << ": A2DP Source media task is not running";
+    peer_ready_promise.set_value();
     return;
   }
   if (btif_av_is_a2dp_offload_enabled()) {
@@ -385,17 +393,17 @@ static void btif_a2dp_source_start_session_delayed(
     BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionStart(
         bluetooth::common::CONNECTION_TECHNOLOGY_TYPE_BREDR, 0);
   }
+  peer_ready_promise.set_value();
 }
 
 bool btif_a2dp_source_restart_session(const RawAddress& old_peer_address,
-                                      const RawAddress& new_peer_address) {
+                                      const RawAddress& new_peer_address,
+                                      std::promise<void> peer_ready_promise) {
   bool is_streaming = btif_a2dp_source_cb.media_alarm.IsScheduled();
-  LOG_INFO(LOG_TAG,
-           "%s: old_peer_address=%s new_peer_address=%s is_streaming=%s "
-           "state=%s",
-           __func__, old_peer_address.ToString().c_str(),
-           new_peer_address.ToString().c_str(), logbool(is_streaming).c_str(),
-           btif_a2dp_source_cb.StateStr().c_str());
+  LOG(INFO) << __func__ << ": old_peer_address=" << old_peer_address
+            << " new_peer_address=" << new_peer_address
+            << " is_streaming=" << logbool(is_streaming)
+            << " state=" << btif_a2dp_source_cb.StateStr();
 
   CHECK(!new_peer_address.IsEmpty());
 
@@ -414,7 +422,8 @@ bool btif_a2dp_source_restart_session(const RawAddress& old_peer_address,
 
   // Start the session.
   // If audio was streaming before, start audio streaming as well.
-  btif_a2dp_source_start_session(new_peer_address);
+  btif_a2dp_source_start_session(new_peer_address,
+                                 std::move(peer_ready_promise));
   if (is_streaming) {
     btif_a2dp_source_start_audio_req();
   }
