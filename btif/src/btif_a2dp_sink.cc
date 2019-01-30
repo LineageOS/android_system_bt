@@ -129,7 +129,8 @@ static std::atomic<int> btif_a2dp_sink_state{BTIF_A2DP_SINK_STATE_OFF};
 
 static void btif_a2dp_sink_init_delayed();
 static void btif_a2dp_sink_startup_delayed();
-static void btif_a2dp_sink_start_session_delayed();
+static void btif_a2dp_sink_start_session_delayed(
+    std::promise<void> peer_ready_promise);
 static void btif_a2dp_sink_end_session_delayed();
 static void btif_a2dp_sink_shutdown_delayed();
 static void btif_a2dp_sink_cleanup_delayed();
@@ -211,25 +212,34 @@ static void btif_a2dp_sink_startup_delayed() {
   // Nothing to do
 }
 
-bool btif_a2dp_sink_start_session(const RawAddress& peer_address) {
-  LOG_INFO(LOG_TAG, "%s: peer_address=%s", __func__,
-           peer_address.ToString().c_str());
-  btif_a2dp_sink_cb.worker_thread.DoInThread(
-      FROM_HERE, base::BindOnce(btif_a2dp_sink_start_session_delayed));
-  return true;
+bool btif_a2dp_sink_start_session(const RawAddress& peer_address,
+                                  std::promise<void> peer_ready_promise) {
+  LOG(INFO) << __func__ << ": peer_address=" << peer_address;
+  if (btif_a2dp_sink_cb.worker_thread.DoInThread(
+          FROM_HERE, base::BindOnce(btif_a2dp_sink_start_session_delayed,
+                                    std::move(peer_ready_promise)))) {
+    return true;
+  } else {
+    // cannot set promise but triggers crash
+    LOG(FATAL) << __func__ << ": peer_address=" << peer_address
+               << " fails to context switch";
+    return false;
+  }
 }
 
-static void btif_a2dp_sink_start_session_delayed() {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+static void btif_a2dp_sink_start_session_delayed(
+    std::promise<void> peer_ready_promise) {
+  LOG(INFO) << __func__;
   LockGuard lock(g_mutex);
+  peer_ready_promise.set_value();
   // Nothing to do
 }
 
 bool btif_a2dp_sink_restart_session(const RawAddress& old_peer_address,
-                                    const RawAddress& new_peer_address) {
-  LOG_INFO(LOG_TAG, "%s: old_peer_address=%s new_peer_address=%s", __func__,
-           old_peer_address.ToString().c_str(),
-           new_peer_address.ToString().c_str());
+                                    const RawAddress& new_peer_address,
+                                    std::promise<void> peer_ready_promise) {
+  LOG(INFO) << __func__ << ": old_peer_address=" << old_peer_address
+            << " new_peer_address=" << new_peer_address;
 
   CHECK(!new_peer_address.IsEmpty());
 
@@ -238,15 +248,17 @@ bool btif_a2dp_sink_restart_session(const RawAddress& old_peer_address,
   }
 
   if (!bta_av_co_set_active_peer(new_peer_address)) {
-    LOG_ERROR(LOG_TAG, "%s: Cannot stream audio: cannot set active peer to %s",
-              __func__, new_peer_address.ToString().c_str());
+    LOG(ERROR) << __func__
+               << ": Cannot stream audio: cannot set active peer to "
+               << new_peer_address;
+    peer_ready_promise.set_value();
     return false;
   }
 
   if (old_peer_address.IsEmpty()) {
     btif_a2dp_sink_startup();
   }
-  btif_a2dp_sink_start_session(new_peer_address);
+  btif_a2dp_sink_start_session(new_peer_address, std::move(peer_ready_promise));
 
   return true;
 }
