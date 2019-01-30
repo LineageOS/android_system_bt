@@ -374,9 +374,15 @@ tBNEP_RESULT BNEP_WriteBuf (UINT16 handle,
     /* Check MTU size */
     if (p_buf->len > BNEP_MTU_SIZE)
     {
-        BNEP_TRACE_ERROR ("BNEP_Write() length %d exceeded MTU %d", p_buf->len, BNEP_MTU_SIZE);
+        BNEP_TRACE_ERROR ("%s length %d exceeded MTU %d", __func__, p_buf->len, BNEP_MTU_SIZE);
         osi_free(p_buf);
         return (BNEP_MTU_EXCEDED);
+    }
+    else if (p_buf->len < 2)
+    {
+        BNEP_TRACE_ERROR ("%s length %d too short, must be at least 2", __func__, p_buf->len);
+        osi_free(p_buf);
+        return BNEP_IGNORE_CMD;
     }
 
     /* Check if the packet should be filtered out */
@@ -484,8 +490,13 @@ tBNEP_RESULT  BNEP_Write (UINT16 handle,
     /* Check MTU size. Consider the possibility of having extension headers */
     if (len > BNEP_MTU_SIZE)
     {
-        BNEP_TRACE_ERROR ("BNEP_Write() length %d exceeded MTU %d", len, BNEP_MTU_SIZE);
+        BNEP_TRACE_ERROR ("%s length %d exceeded MTU %d", __func__, len, BNEP_MTU_SIZE);
         return (BNEP_MTU_EXCEDED);
+    }
+    else if (len < 2)
+    {
+        BNEP_TRACE_ERROR ("%s length %d too short, must be at least 2", __func__, len);
+        return BNEP_IGNORE_CMD;
     }
 
     if ((!handle) || (handle > BNEP_MAX_CONNECTIONS))
