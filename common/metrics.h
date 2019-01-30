@@ -304,6 +304,30 @@ void LogLinkLayerConnectionEvent(const RawAddress* address,
                                  uint32_t hci_event, uint32_t hci_ble_event,
                                  uint32_t cmd_status, uint32_t reason_code);
 
+/**
+ * Logs when Bluetooth controller failed to reply with command status within
+ * a timeout period after receiving an HCI command from the host
+ *
+ * @param hci_cmd opcode of HCI command that caused this timeout
+ */
+void LogHciTimeoutEvent(uint32_t hci_cmd);
+
+/**
+ * Logs when we receive Bluetooth Read Remote Version Information Complete
+ * Event from the remote device, as documented by the Bluetooth Core HCI
+ * specification
+ *
+ * Reference: 5.0 Core Specification, Vol 2, Part E, Page 1118
+ *
+ * @param handle handle of associated ACL connection
+ * @param status HCI command status of this event
+ * @param version version code from read remote version complete event
+ * @param manufacturer_name manufacturer code from read remote version complete
+ *                          event
+ * @param subversion subversion code from read remote version complete event
+ */
+void LogRemoteVersionInfo(uint16_t handle, uint8_t status, uint8_t version,
+                          uint16_t manufacturer_name, uint16_t subversion);
 }  // namespace common
 
 }  // namespace bluetooth
