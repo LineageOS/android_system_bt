@@ -739,7 +739,7 @@ tGATT_STATUS GATTC_Read(uint16_t conn_id, tGATT_READ_TYPE type,
   }
 
   /* start security check */
-  gatt_security_check_start(p_clcb);
+  if (gatt_security_check_start(p_clcb)) p_tcb->pending_enc_clcb.push(p_clcb);
   return GATT_SUCCESS;
 }
 
@@ -793,7 +793,7 @@ tGATT_STATUS GATTC_Write(uint16_t conn_id, tGATT_WRITE_TYPE type,
     p->offset = 0;
   }
 
-  gatt_security_check_start(p_clcb);
+  if (gatt_security_check_start(p_clcb)) p_tcb->pending_enc_clcb.push(p_clcb);
   return GATT_SUCCESS;
 }
 

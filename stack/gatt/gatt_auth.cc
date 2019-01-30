@@ -188,11 +188,13 @@ void gatt_enc_cmpl_cback(const RawAddress* bd_addr, tBT_TRANSPORT transport,
   gatt_sec_check_complete(status, p_clcb, p_tcb->sec_act);
 
   /* start all other pending operation in queue */
+  std::queue<tGATT_CLCB*> new_pending_clcbs;
   while (!p_tcb->pending_enc_clcb.empty()) {
     tGATT_CLCB* p_clcb = p_tcb->pending_enc_clcb.front();
     p_tcb->pending_enc_clcb.pop();
-    gatt_security_check_start(p_clcb);
+    if (gatt_security_check_start(p_clcb)) new_pending_clcbs.push(p_clcb);
   }
+  p_tcb->pending_enc_clcb = new_pending_clcbs;
 }
 
 /*******************************************************************************
@@ -223,11 +225,13 @@ void gatt_notify_enc_cmpl(const RawAddress& bd_addr) {
   if (gatt_get_sec_act(p_tcb) == GATT_SEC_ENC_PENDING) {
     gatt_set_sec_act(p_tcb, GATT_SEC_NONE);
 
+    std::queue<tGATT_CLCB*> new_pending_clcbs;
     while (!p_tcb->pending_enc_clcb.empty()) {
       tGATT_CLCB* p_clcb = p_tcb->pending_enc_clcb.front();
       p_tcb->pending_enc_clcb.pop();
-      gatt_security_check_start(p_clcb);
+      if (gatt_security_check_start(p_clcb)) new_pending_clcbs.push(p_clcb);
     }
+    p_tcb->pending_enc_clcb = new_pending_clcbs;
   }
 }
 /*******************************************************************************
@@ -397,8 +401,8 @@ static bool gatt_convert_sec_action(tGATT_SEC_ACTION gatt_sec_act,
   return status;
 }
 
-/** check link security */
-void gatt_security_check_start(tGATT_CLCB* p_clcb) {
+/** check link security, return true if p_clcb should be added back to queue */
+bool gatt_security_check_start(tGATT_CLCB* p_clcb) {
   tGATT_TCB* p_tcb = p_clcb->p_tcb;
   tGATT_SEC_ACTION sec_act_old = gatt_get_sec_act(p_tcb);
 
@@ -430,17 +434,17 @@ void gatt_security_check_start(tGATT_CLCB* p_clcb) {
           gatt_set_ch_state(p_tcb, GATT_CH_OPEN);
 
           gatt_end_operation(p_clcb, GATT_INSUF_ENCRYPTION, NULL);
-          return;
+          return false;
         }
       }
-      p_tcb->pending_enc_clcb.push(p_clcb);
-      break;
+      return true;
     case GATT_SEC_ENC_PENDING:
-      p_tcb->pending_enc_clcb.push(p_clcb);
       /* wait for link encrypotion to finish */
-      break;
+      return true;
     default:
       gatt_sec_check_complete(true, p_clcb, gatt_sec_act);
       break;
   }
+
+  return false;
 }
