@@ -413,6 +413,12 @@ bool btif_config_set_bin(const std::string& section, const std::string& key,
 
   if (length > 0) CHECK(value != NULL);
 
+  size_t max_value = ((size_t)-1);
+  if (((max_value - 1) / 2) < length) {
+    LOG(ERROR) << __func__ << ": length too long";
+    return false;
+  }
+
   char* str = (char*)osi_calloc(length * 2 + 1);
 
   for (size_t i = 0; i < length; ++i) {
