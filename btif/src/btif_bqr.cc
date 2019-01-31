@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <statslog.h>
+
 #include "btif_bqr.h"
 #include "btif_dm.h"
 #include "common/leaky_bonded_queue.h"
@@ -172,6 +174,23 @@ void AddBqrEventToQueue(uint8_t length, uint8_t* p_stream) {
   }
 
   LOG(WARNING) << *p_bqr_event;
+  int ret = android::util::stats_write(
+      android::util::BLUETOOTH_QUALITY_REPORT_REPORTED,
+      p_bqr_event->quality_report_id_, p_bqr_event->packet_types_,
+      p_bqr_event->connection_handle_, p_bqr_event->connection_role_,
+      p_bqr_event->tx_power_level_, p_bqr_event->rssi_, p_bqr_event->snr_,
+      p_bqr_event->unused_afh_channel_count_,
+      p_bqr_event->afh_select_unideal_channel_count_, p_bqr_event->lsto_,
+      p_bqr_event->connection_piconet_clock_,
+      p_bqr_event->retransmission_count_, p_bqr_event->no_rx_count_,
+      p_bqr_event->nak_count_, p_bqr_event->last_tx_ack_timestamp_,
+      p_bqr_event->flow_off_count_, p_bqr_event->last_flow_on_timestamp_,
+      p_bqr_event->buffer_overflow_bytes_,
+      p_bqr_event->buffer_underflow_bytes_);
+  if (ret < 0) {
+    LOG(WARNING) << __func__ << ": failed to log BQR event to statsd, error "
+                 << ret;
+  }
   kpBqrEventQueue->Enqueue(p_bqr_event.release());
 }
 
