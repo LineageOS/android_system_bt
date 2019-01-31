@@ -1251,8 +1251,8 @@ class HearingAidImpl : public HearingAid {
       BTA_GATTC_CancelOpen(gatt_if, address, true);
     }
 
-    // cancel autoconnect
-    BTA_GATTC_CancelOpen(gatt_if, address, false);
+    // Removes all registrations for connection.
+    BTA_GATTC_CancelOpen(0, address, false);
 
     // Inform the other side (if any) of this disconnection
     std::vector<uint8_t> inform_disconn_state(
