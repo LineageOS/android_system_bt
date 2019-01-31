@@ -40,7 +40,7 @@ using tAPP_ID = uint8_t;
 extern bool background_connect_add(tAPP_ID app_id, const RawAddress& address);
 extern bool background_connect_remove(tAPP_ID app_id,
                                       const RawAddress& address);
-extern bool background_connect_remove_unconditional(const RawAddress& address);
+extern bool remove_unconditional(const RawAddress& address);
 
 extern void reset(bool after_reset);
 
