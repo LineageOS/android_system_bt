@@ -837,6 +837,9 @@ static uint32_t btif_a2dp_source_read_callback(uint8_t* p_buf, uint32_t len) {
     btif_a2dp_source_cb.stats.media_read_total_underflow_count++;
     btif_a2dp_source_cb.stats.media_read_last_underflow_us =
         bluetooth::common::time_get_os_boottime_us();
+    bluetooth::common::LogA2dpAudioUnderrunEvent(
+        btif_av_source_active_peer(), btif_a2dp_source_cb.encoder_interval_ms,
+        len - bytes_read);
   }
 
   return bytes_read;
@@ -882,10 +885,23 @@ static bool btif_a2dp_source_enqueue_callback(BT_HDR* p_buf, size_t frames_n,
     size_t drop_n = fixed_queue_length(btif_a2dp_source_cb.tx_audio_queue);
     btif_a2dp_source_cb.stats.tx_queue_max_dropped_messages = std::max(
         drop_n, btif_a2dp_source_cb.stats.tx_queue_max_dropped_messages);
+    int num_dropped_encoded_bytes = 0;
+    int num_dropped_encoded_frames = 0;
     while (fixed_queue_length(btif_a2dp_source_cb.tx_audio_queue)) {
       btif_a2dp_source_cb.stats.tx_queue_total_dropped_messages++;
-      osi_free(fixed_queue_try_dequeue(btif_a2dp_source_cb.tx_audio_queue));
+      void* p_data =
+          fixed_queue_try_dequeue(btif_a2dp_source_cb.tx_audio_queue);
+      if (p_data != nullptr) {
+        auto p_dropped_buf = static_cast<BT_HDR*>(p_data);
+        num_dropped_encoded_bytes += p_dropped_buf->len;
+        num_dropped_encoded_frames += p_dropped_buf->layer_specific;
+        osi_free(p_data);
+      }
     }
+    bluetooth::common::LogA2dpAudioOverrunEvent(
+        btif_av_source_active_peer(), drop_n,
+        btif_a2dp_source_cb.encoder_interval_ms, num_dropped_encoded_frames,
+        num_dropped_encoded_bytes);
 
     // Request additional debug info if we had to flush buffers
     RawAddress peer_bda = btif_av_source_active_peer();
@@ -1240,6 +1256,9 @@ static void btm_read_rssi_cb(void* data) {
               result->status);
     return;
   }
+  bluetooth::common::LogReadRssiResult(
+      result->rem_bda, bluetooth::common::kUnknownConnectionHandle,
+      result->hci_status, result->rssi);
 
   LOG_WARN(LOG_TAG, "%s: device: %s, rssi: %d", __func__,
            result->rem_bda.ToString().c_str(), result->rssi);
@@ -1259,6 +1278,9 @@ static void btm_read_failed_contact_counter_cb(void* data) {
               __func__, result->status);
     return;
   }
+  bluetooth::common::LogReadFailedContactCounterResult(
+      result->rem_bda, bluetooth::common::kUnknownConnectionHandle,
+      result->hci_status, result->failed_contact_counter);
 
   LOG_WARN(LOG_TAG, "%s: device: %s, Failed Contact Counter: %u", __func__,
            result->rem_bda.ToString().c_str(), result->failed_contact_counter);
@@ -1295,6 +1317,9 @@ static void btm_read_tx_power_cb(void* data) {
               result->status);
     return;
   }
+  bluetooth::common::LogReadTxPowerLevelResult(
+      result->rem_bda, bluetooth::common::kUnknownConnectionHandle,
+      result->hci_status, result->tx_power);
 
   LOG_WARN(LOG_TAG, "%s: device: %s, Tx Power: %d", __func__,
            result->rem_bda.ToString().c_str(), result->tx_power);
