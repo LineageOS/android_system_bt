@@ -392,6 +392,12 @@ static void process_service_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
 
   /* If p_reply is NULL, we were called after the records handles were read */
   if (p_reply) {
+    if (p_reply + 4 /* transaction ID and length */ + sizeof(list_byte_count) >
+        p_reply_end) {
+      sdp_disconnect(p_ccb, SDP_INVALID_PDU_SIZE);
+      return;
+    }
+
     /* Skip transaction ID and length */
     p_reply += 4;
 
