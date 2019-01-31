@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <android/bluetooth/hci/enums.pb.h>
 #include <bta/include/bta_api.h>
 #include <frameworks/base/core/proto/android/bluetooth/enums.pb.h>
 #include <stdint.h>
@@ -328,6 +329,76 @@ void LogHciTimeoutEvent(uint32_t hci_cmd);
  */
 void LogRemoteVersionInfo(uint16_t handle, uint8_t status, uint8_t version,
                           uint16_t manufacturer_name, uint16_t subversion);
+
+/**
+ * Log A2DP audio buffer underrun event
+ *
+ * @param address A2DP device associated with this event
+ * @param encoding_interval_millis encoding interval in milliseconds
+ * @param num_missing_pcm_bytes number of PCM bytes that cannot be read from
+ *                              the source
+ */
+void LogA2dpAudioUnderrunEvent(const RawAddress& address,
+                               uint64_t encoding_interval_millis,
+                               int num_missing_pcm_bytes);
+
+/**
+ * Log A2DP audio buffer overrun event
+ *
+ * @param address A2DP device associated with this event
+ * @param encoding_interval_millis encoding interval in milliseconds
+ * @param num_dropped_buffers number of encoded buffers dropped from Tx queue
+ * @param num_dropped_encoded_frames number of encoded frames dropped from Tx
+ *                                   queue
+ * @param num_dropped_encoded_bytes number of encoded bytes dropped from Tx
+ *                                  queue
+ */
+void LogA2dpAudioOverrunEvent(const RawAddress& address,
+                              uint64_t encoding_interval_millis,
+                              int num_dropped_buffers,
+                              int num_dropped_encoded_frames,
+                              int num_dropped_encoded_bytes);
+
+/**
+ * Log read RSSI result
+ *
+ * @param address device associated with this event
+ * @param handle connection handle of this event,
+ *               {@link kUnknownConnectionHandle} if unknown
+ * @param cmd_status command status from read RSSI command
+ * @param rssi rssi value in dBm
+ */
+void LogReadRssiResult(const RawAddress& address, uint16_t handle,
+                       uint32_t cmd_status, int8_t rssi);
+
+/**
+ * Log failed contact counter report
+ *
+ * @param address device associated with this event
+ * @param handle connection handle of this event,
+ *               {@link kUnknownConnectionHandle} if unknown
+ * @param cmd_status command status from read failed contact counter command
+ * @param failed_contact_counter Number of consecutive failed contacts for a
+ *                               connection corresponding to the Handle
+ */
+void LogReadFailedContactCounterResult(const RawAddress& address,
+                                       uint16_t handle, uint32_t cmd_status,
+                                       int32_t failed_contact_counter);
+
+/**
+ * Log transmit power level for a particular device after read
+ *
+ * @param address device associated with this event
+ * @param handle connection handle of this event,
+ *               {@link kUnknownConnectionHandle} if unknown
+ * @param cmd_status command status from read failed contact counter command
+ * @param transmit_power_level transmit power level for connection to this
+ *                             device
+ */
+void LogReadTxPowerLevelResult(const RawAddress& address, uint16_t handle,
+                               uint32_t cmd_status,
+                               int32_t transmit_power_level);
+
 }  // namespace common
 
 }  // namespace bluetooth
