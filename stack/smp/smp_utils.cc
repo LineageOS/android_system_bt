@@ -29,6 +29,7 @@
 #include "bt_utils.h"
 #include "btm_ble_api.h"
 #include "btm_int.h"
+#include "common/metrics.h"
 #include "device/include/controller.h"
 #include "hcidefs.h"
 #include "l2c_api.h"
@@ -295,6 +296,34 @@ static tSMP_ASSO_MODEL smp_select_legacy_association_model(tSMP_CB* p_cb);
 static tSMP_ASSO_MODEL smp_select_association_model_secure_connections(
     tSMP_CB* p_cb);
 
+/**
+ * Log metrics data for SMP command
+ *
+ * @param bd_addr current pairing address
+ * @param is_outgoing whether this command is outgoing
+ * @param p_buf buffer to the beginning of SMP command
+ * @param buf_len length available to read for p_buf
+ */
+void smp_log_metrics(const RawAddress& bd_addr, bool is_outgoing,
+                     const uint8_t* p_buf, size_t buf_len) {
+  if (buf_len < 1) {
+    LOG(WARNING) << __func__ << ": buffer is too small, size is " << buf_len;
+    return;
+  }
+  uint8_t cmd;
+  STREAM_TO_UINT8(cmd, p_buf);
+  buf_len--;
+  uint8_t failure_reason = 0;
+  if (cmd == SMP_OPCODE_PAIRING_FAILED && buf_len >= 1) {
+    STREAM_TO_UINT8(failure_reason, p_buf);
+  }
+  android::bluetooth::DirectionEnum direction =
+      is_outgoing ? android::bluetooth::DirectionEnum::DIRECTION_OUTGOING
+                  : android::bluetooth::DirectionEnum::DIRECTION_INCOMING;
+  bluetooth::common::LogSmpPairingEvent(bd_addr, cmd, direction,
+                                        failure_reason);
+}
+
 /*******************************************************************************
  *
  * Function         smp_send_msg_to_L2CAP
@@ -312,6 +341,9 @@ bool smp_send_msg_to_L2CAP(const RawAddress& rem_bda, BT_HDR* p_toL2CAP) {
 
   SMP_TRACE_EVENT("%s", __func__);
   smp_cb.total_tx_unacked += 1;
+
+  smp_log_metrics(rem_bda, true /* outgoing */,
+                  p_toL2CAP->data + p_toL2CAP->offset, p_toL2CAP->len);
 
   l2cap_ret = L2CA_SendFixedChnlData(fixed_cid, rem_bda, p_toL2CAP);
   if (l2cap_ret == L2CAP_DW_FAILED) {
