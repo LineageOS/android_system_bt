@@ -24,6 +24,8 @@ btifCommonIncludes = [
     "system/bt/utils/include",
     "system/bt/include",
     "system/libhwbinder/include",
+    "system/security/keystore/include",
+    "hardware/interfaces/keymaster/4.0/support/include",
 ]
 
 // libbtif static library for target
@@ -72,6 +74,7 @@ cc_library_static {
         "src/btif_hh.cc",
         "src/btif_hd.cc",
         "src/btif_hl.cc",
+        "src/btif_keystore.cc",
         "src/btif_mce.cc",
         "src/btif_pan.cc",
         "src/btif_profile_queue.cc",
@@ -101,6 +104,13 @@ cc_library_static {
         "libhidltransport",
         "libhwbinder",
         "libutils",
+        "libcrypto",
+        "android.hardware.keymaster@4.0",
+        "android.hardware.keymaster@3.0",
+        "libkeymaster4support",
+        "libkeystore_aidl",
+        "libkeystore_binder",
+        "libkeystore_parcelables",
     ],
     whole_static_libs: [
         "avrcp-target-service",
@@ -127,6 +137,13 @@ cc_test {
         "libprotobuf-cpp-lite",
         "libcutils",
         "libutils",
+        "libcrypto",
+        "android.hardware.keymaster@4.0",
+        "android.hardware.keymaster@3.0",
+        "libkeymaster4support",
+        "libkeystore_aidl",
+        "libkeystore_binder",
+        "libkeystore_parcelables",
     ],
     static_libs: [
         "libbt-bta",
