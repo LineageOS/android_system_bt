@@ -80,8 +80,8 @@ void l2c_rcv_acl_data(BT_HDR* p_msg) {
 
   uint16_t hci_len;
   STREAM_TO_UINT16(hci_len, p);
-  if (hci_len < L2CAP_PKT_OVERHEAD) {
-    /* Must receive at least the L2CAP length and CID */
+  if (hci_len < L2CAP_PKT_OVERHEAD || hci_len != p_msg->len - 4) {
+    /* Remote-declared packet size must match HCI_ACL size - ACL header (4) */
     L2CAP_TRACE_WARNING("L2CAP - got incorrect hci header");
     osi_free(p_msg);
     return;
