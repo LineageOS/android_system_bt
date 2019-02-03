@@ -440,6 +440,8 @@ extern void smp_l2cap_if_init(void);
 extern void smp_data_ind(const RawAddress& bd_addr, BT_HDR* p_buf);
 
 /* smp_util.cc */
+extern void smp_log_metrics(const RawAddress& bd_addr, bool is_outgoing,
+                            const uint8_t* p_buf, size_t buf_len);
 extern bool smp_send_cmd(uint8_t cmd_code, tSMP_CB* p_cb);
 extern void smp_cb_cleanup(tSMP_CB* p_cb);
 extern void smp_reset_control_value(tSMP_CB* p_cb);

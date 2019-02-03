@@ -735,6 +735,50 @@ void LogReadTxPowerLevelResult(const RawAddress& address, uint16_t handle,
   }
 }
 
+void LogSmpPairingEvent(const RawAddress& address, uint8_t smp_cmd,
+                        android::bluetooth::DirectionEnum direction,
+                        uint8_t smp_fail_reason) {
+  std::string obfuscated_id;
+  if (!address.IsEmpty()) {
+    obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(address);
+  }
+  // nullptr and size 0 represent missing value for obfuscated_id
+  android::util::BytesField obfuscated_id_field(
+      address.IsEmpty() ? nullptr : obfuscated_id.c_str(),
+      address.IsEmpty() ? 0 : obfuscated_id.size());
+  int ret = android::util::stats_write(
+      android::util::BLUETOOTH_SMP_PAIRING_EVENT_REPORTED, obfuscated_id_field,
+      smp_cmd, direction, smp_fail_reason);
+  if (ret < 0) {
+    LOG(WARNING) << __func__ << ": failed for " << address << ", smp_cmd "
+                 << loghex(smp_cmd) << ", direction " << direction
+                 << ", smp_fail_reason " << loghex(smp_fail_reason)
+                 << ", error " << ret;
+  }
+}
+
+void LogClassicPairingEvent(const RawAddress& address, uint16_t handle,
+                            uint32_t hci_cmd, uint16_t hci_event,
+                            uint16_t cmd_status, uint16_t reason_code) {
+  std::string obfuscated_id;
+  if (!address.IsEmpty()) {
+    obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(address);
+  }
+  // nullptr and size 0 represent missing value for obfuscated_id
+  android::util::BytesField obfuscated_id_field(
+      address.IsEmpty() ? nullptr : obfuscated_id.c_str(),
+      address.IsEmpty() ? 0 : obfuscated_id.size());
+  int ret = android::util::stats_write(
+      android::util::BLUETOOTH_CLASSIC_PAIRING_EVENT_REPORTED,
+      obfuscated_id_field, handle, hci_cmd, hci_event, cmd_status, reason_code);
+  if (ret < 0) {
+    LOG(WARNING) << __func__ << ": failed for " << address << ", handle "
+                 << handle << ", hci_cmd " << loghex(hci_cmd) << ", hci_event "
+                 << loghex(hci_event) << ", cmd_status " << loghex(cmd_status)
+                 << ", reason " << loghex(reason_code) << ", error " << ret;
+  }
+}
+
 }  // namespace common
 
 }  // namespace bluetooth

@@ -399,6 +399,32 @@ void LogReadTxPowerLevelResult(const RawAddress& address, uint16_t handle,
                                uint32_t cmd_status,
                                int32_t transmit_power_level);
 
+/**
+ * Logs when there is an event related to Bluetooth Security Manager Protocol
+ *
+ * @param address address of associated device
+ * @param smp_cmd SMP command code associated with this event
+ * @param direction direction of this SMP command
+ * @param smp_fail_reason SMP pairing failure reason code from SMP spec
+ */
+void LogSmpPairingEvent(const RawAddress& address, uint8_t smp_cmd,
+                        android::bluetooth::DirectionEnum direction,
+                        uint8_t smp_fail_reason);
+
+/**
+ * Logs there is an event related Bluetooth classic pairing
+ *
+ * @param address address of associated device
+ * @param handle connection handle of this event,
+ *               {@link kUnknownConnectionHandle} if unknown
+ * @param hci_cmd HCI command associated with this event
+ * @param hci_event HCI event associated with this event
+ * @param cmd_status Command status associated with this event
+ * @param reason_code Reason code associated with this event
+ */
+void LogClassicPairingEvent(const RawAddress& address, uint16_t handle,
+                            uint32_t hci_cmd, uint16_t hci_event,
+                            uint16_t cmd_status, uint16_t reason_code);
 }  // namespace common
 
 }  // namespace bluetooth

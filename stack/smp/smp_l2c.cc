@@ -27,6 +27,7 @@
 
 #include <string.h>
 #include "btm_ble_api.h"
+#include "common/metrics.h"
 #include "l2c_api.h"
 
 #include "smp_int.h"
@@ -181,6 +182,9 @@ static void smp_data_received(uint16_t channel, const RawAddress& bd_addr,
     alarm_set_on_mloop(p_cb->smp_rsp_timer_ent, SMP_WAIT_FOR_RSP_TIMEOUT_MS,
                        smp_rsp_timeout, NULL);
 
+    smp_log_metrics(p_cb->pairing_bda, false /* incoming */,
+                    p_buf->data + p_buf->offset, p_buf->len);
+
     if (cmd == SMP_OPCODE_CONFIRM) {
       SMP_TRACE_DEBUG(
           "in %s cmd = 0x%02x, peer_auth_req = 0x%02x,"
@@ -326,6 +330,9 @@ static void smp_br_data_received(uint16_t channel, const RawAddress& bd_addr,
   if (bd_addr == p_cb->pairing_bda) {
     alarm_set_on_mloop(p_cb->smp_rsp_timer_ent, SMP_WAIT_FOR_RSP_TIMEOUT_MS,
                        smp_rsp_timeout, NULL);
+
+    smp_log_metrics(p_cb->pairing_bda, false /* incoming */,
+                    p_buf->data + p_buf->offset, p_buf->len);
 
     p_cb->rcvd_cmd_code = cmd;
     p_cb->rcvd_cmd_len = (uint8_t)p_buf->len;
