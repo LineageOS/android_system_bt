@@ -34,5 +34,7 @@
  */
 bt_status_t do_in_bta_thread(const tracked_objects::Location& from_here,
                              const base::Closure& task);
+bt_status_t do_in_bta_thread_once(const tracked_objects::Location& from_here,
+                                  base::OnceClosure task);
 
 #endif /* BTA_CLOSURE_API_H */
