@@ -16,20 +16,28 @@
 
 #pragma once
 
-#include "fields/array_field.h"
-#include "fields/body_field.h"
-#include "fields/checksum_field.h"
-#include "fields/checksum_start_field.h"
-#include "fields/count_field.h"
-#include "fields/custom_field.h"
-#include "fields/custom_field_fixed_size.h"
-#include "fields/enum_field.h"
-#include "fields/fixed_enum_field.h"
-#include "fields/fixed_scalar_field.h"
-#include "fields/group_field.h"
-#include "fields/payload_field.h"
-#include "fields/reserved_field.h"
-#include "fields/scalar_field.h"
-#include "fields/size_field.h"
-#include "fields/struct_field.h"
-#include "fields/vector_field.h"
+#include <map>
+#include <variant>
+
+#include "enum_def.h"
+#include "field_list.h"
+#include "fields/all_fields.h"
+#include "fields/packet_field.h"
+#include "parent_def.h"
+#include "parse_location.h"
+
+class StructDef : public ParentDef {
+ public:
+  StructDef(std::string name, FieldList fields);
+  StructDef(std::string name, FieldList fields, StructDef* parent);
+
+  PacketField* GetNewField(const std::string& name, ParseLocation loc) const;
+
+  TypeDef::Type GetDefinitionType() const;
+
+  void GenParse(std::ostream& s) const;
+
+  void GenDefinition(std::ostream& s) const;
+
+  void GenConstructor(std::ostream& s) const;
+};

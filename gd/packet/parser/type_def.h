@@ -39,6 +39,7 @@ class TypeDef {
     CHECKSUM,
     CUSTOM,
     PACKET,
+    STRUCT,
   };
 
   virtual Type GetDefinitionType() const = 0;

@@ -165,3 +165,71 @@ packet CountArrayVariable {
   _count_(variable_array) : 8,
   variable_array : Variable[],
 }
+
+struct TwoRelatedNumbers {
+  id : 8,
+  count : 16,
+}
+
+packet OneStruct {
+  one : TwoRelatedNumbers,
+}
+
+packet TwoStructs {
+  one : TwoRelatedNumbers,
+  two : TwoRelatedNumbers,
+}
+
+packet ArrayOfStruct {
+  _count_(array) : 8,
+  array : TwoRelatedNumbers[],
+}
+
+packet ArrayOfStructAndAnother {
+  _count_(array) : 8,
+  array : TwoRelatedNumbers[],
+  another : TwoRelatedNumbers,
+}
+
+group BitFieldGroup {
+  seven_bits : 7,
+  straddle : 4,
+  five_bits : 5,
+}
+
+packet BitFieldGroupPacket {
+  BitFieldGroup,
+}
+
+packet BitFieldGroupAfterPayloadPacket {
+  _payload_,
+  BitFieldGroup,
+}
+
+packet BitFieldGroupAfterUnsizedArrayPacket : BitFieldGroupAfterPayloadPacket {
+  array : 8[],
+}
+
+struct BitField {
+  seven_bits : 7,
+  straddle : 4,
+  five_bits : 5,
+}
+
+packet BitFieldPacket {
+  bit_field : BitField,
+}
+
+packet BitFieldAfterPayloadPacket {
+  _payload_,
+  bit_field : BitField,
+}
+
+packet BitFieldAfterUnsizedArrayPacket : BitFieldAfterPayloadPacket {
+  array : 8[],
+}
+
+packet BitFieldArrayPacket {
+  _size_(array): 8,
+  array : BitField[],
+}

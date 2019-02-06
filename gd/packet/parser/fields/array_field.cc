@@ -136,6 +136,8 @@ void ArrayField::GenInserter(std::ostream& s) const {
     } else {
       s << "insert(val, i);";
     }
+  } else if (IsStructArray()) {
+    s << "val.Serialize(i);";
   } else {
     s << "insert(val, i, " << element_size_ << ");";
   }
@@ -156,4 +158,8 @@ bool ArrayField::IsEnumArray() const {
 
 bool ArrayField::IsCustomFieldArray() const {
   return type_def_ != nullptr && type_def_->GetDefinitionType() == TypeDef::Type::CUSTOM;
+}
+
+bool ArrayField::IsStructArray() const {
+  return type_def_ != nullptr && type_def_->GetDefinitionType() == TypeDef::Type::STRUCT;
 }
