@@ -529,7 +529,8 @@ static void btif_a2dp_source_end_session_delayed(
     BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionEnd(
         system_bt_osi::DISCONNECT_REASON_UNKNOWN, 0);
   }
-  if (btif_a2dp_source_cb.State() == BtifA2dpSource::kStateRunning) {
+  if ((btif_a2dp_source_cb.State() == BtifA2dpSource::kStateRunning) ||
+      (btif_a2dp_source_cb.State() == BtifA2dpSource::kStateShuttingDown)) {
     btif_av_stream_stop(peer_address);
   } else {
     LOG_ERROR(LOG_TAG, "%s: A2DP Source media task is not running", __func__);

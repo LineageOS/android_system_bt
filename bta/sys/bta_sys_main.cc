@@ -574,6 +574,37 @@ bt_status_t do_in_bta_thread(const tracked_objects::Location& from_here,
 
 /*******************************************************************************
  *
+ * Function         do_in_bta_thread_once
+ *
+ * Description      Post a closure to be ran in the bta thread once
+ *
+ * Returns          BT_STATUS_SUCCESS on success
+ *
+ ******************************************************************************/
+bt_status_t do_in_bta_thread_once(const tracked_objects::Location& from_here,
+                                  base::OnceClosure task) {
+  base::MessageLoop* bta_message_loop = get_message_loop();
+  if (!bta_message_loop) {
+    APPL_TRACE_ERROR("%s: MessageLooper not initialized", __func__);
+    return BT_STATUS_FAIL;
+  }
+
+  scoped_refptr<base::SingleThreadTaskRunner> task_runner =
+      bta_message_loop->task_runner();
+  if (!task_runner.get()) {
+    APPL_TRACE_ERROR("%s: task runner is dead", __func__);
+    return BT_STATUS_FAIL;
+  }
+
+  if (!task_runner->PostTask(from_here, std::move(task))) {
+    APPL_TRACE_ERROR("%s: Post task to task runner failed!", __func__);
+    return BT_STATUS_FAIL;
+  }
+  return BT_STATUS_SUCCESS;
+}
+
+/*******************************************************************************
+ *
  * Function         bta_sys_start_timer
  *
  * Description      Start a protocol timer for the specified amount
