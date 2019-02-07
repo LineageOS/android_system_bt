@@ -31,6 +31,7 @@
 #include <hardware/bt_rc.h>
 
 #include "audio_a2dp_hw/include/audio_a2dp_hw.h"
+#include "audio_hal_interface/a2dp_software_encoding.h"
 #include "bt_common.h"
 #include "bt_utils.h"
 #include "bta/include/bta_api.h"
@@ -3216,6 +3217,7 @@ void btif_debug_av_dump(int fd) {
 
 void btif_av_set_audio_delay(uint16_t delay) {
   btif_a2dp_control_set_audio_delay(delay);
+  bluetooth::audio::a2dp::set_remote_delay(delay);
 }
 
 void btif_av_reset_audio_delay(void) { btif_a2dp_control_reset_audio_delay(); }
