@@ -87,9 +87,9 @@ static std::unique_ptr<config_t> btif_config_open(const char* filename, const ch
 // Key attestation
 static std::string hash_file(const char* filename);
 static std::string read_checksum_file(const char* filename);
-static void write_checksum_file(const char* filename, const std::string hash);
-static bool verify_hash(const std::string current_hash,
-                        const std::string stored_hash);
+static void write_checksum_file(const char* filename, const std::string& hash);
+static bool verify_hash(const std::string& current_hash,
+                        const std::string& stored_hash);
 
 static enum ConfigSource {
   NOT_LOADED,
@@ -675,13 +675,15 @@ static std::string read_checksum_file(const char* checksum_filename) {
   return output;
 }
 
-static void write_checksum_file(const char* checksum_filename, std::string hash) {
+static void write_checksum_file(const char* checksum_filename,
+                                const std::string& hash) {
   int result = btifKeystore.Encrypt(hash, checksum_filename, 0);
   if (result != 0) {
     LOG(ERROR) << "Failed writing checksum!";
   }
 }
 
-static bool verify_hash(std::string current_hash, std::string stored_hash) {
+static bool verify_hash(const std::string& current_hash,
+                        const std::string& stored_hash) {
   return current_hash.compare(stored_hash) == 0;
 }
