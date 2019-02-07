@@ -92,10 +92,12 @@ cc_library_static {
     shared_libs: [
         "libaudioclient",
         "libcutils",
+        "libfmq",
         "liblog",
         "libz",
         "libtinyxml2",
         "android.hardware.bluetooth.a2dp@1.0",
+        "android.hardware.bluetooth.audio@2.0",
         "libhidlbase",
         "libhidltransport",
         "libhwbinder",
@@ -106,6 +108,7 @@ cc_library_static {
         "avrcp-target-service",
         "libaudio-a2dp-hw-utils",
         "lib-bt-packets",
+        "libbt-audio-hal-interface",
     ],
     cflags: [
         "-DBUILDCFG",
@@ -126,6 +129,8 @@ cc_test {
     shared_libs: [
         "libaudioclient",
         "android.hardware.bluetooth.a2dp@1.0",
+        "android.hardware.bluetooth.audio@2.0",
+        "libfmq",
         "libhidlbase",
         "liblog",
         "libprotobuf-cpp-lite",
