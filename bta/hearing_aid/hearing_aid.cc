@@ -901,9 +901,9 @@ class HearingAidImpl : public HearingAid {
     if (encoder_state_left != nullptr) {
       g722_encode_release(encoder_state_left);
       g722_encode_release(encoder_state_right);
-      encoder_state_left = g722_encode_init(nullptr, 64000, G722_PACKED);
-      encoder_state_right = g722_encode_init(nullptr, 64000, G722_PACKED);
     }
+    encoder_state_left = g722_encode_init(nullptr, 64000, G722_PACKED);
+    encoder_state_right = g722_encode_init(nullptr, 64000, G722_PACKED);
     seq_counter = 0;
 
     for (auto& device : hearingDevices.devices) {
@@ -991,6 +991,12 @@ class HearingAidImpl : public HearingAid {
 
     if (left == nullptr && right == nullptr) {
       HearingAidAudioSource::Stop();
+      if (encoder_state_left != nullptr) {
+        g722_encode_release(encoder_state_left);
+        encoder_state_left = nullptr;
+        g722_encode_release(encoder_state_right);
+        encoder_state_right = nullptr;
+      }
       current_volume = VOLUME_UNKNOWN;
       return;
     }

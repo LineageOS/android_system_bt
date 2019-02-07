@@ -12,6 +12,7 @@ cc_library_static {
     srcs: [
         "a2dp_software_encoding.cc",
         "client_interface.cc",
+        "hearing_aid_software_encoding.cc",
     ],
     shared_libs: [
         "android.hardware.bluetooth.audio@2.0",
