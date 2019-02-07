@@ -28,6 +28,7 @@
 
 #include <mutex>
 
+#include <frameworks/base/core/proto/android/bluetooth/enums.pb.h>
 #include <hardware/bt_sock.h>
 
 #include "osi/include/allocator.h"
@@ -46,6 +47,7 @@
 #include "btm_api.h"
 #include "btm_int.h"
 #include "btu.h"
+#include "common/metrics.h"
 #include "hcimsgs.h"
 #include "l2c_api.h"
 #include "l2c_int.h"
@@ -84,6 +86,10 @@ typedef struct l2cap_socket {
   bool is_le_coc;                 // is le connection oriented channel?
   uint16_t rx_mtu;
   uint16_t tx_mtu;
+  // Cumulative number of bytes transmitted on this socket
+  int64_t tx_bytes;
+  // Cumulative number of bytes received on this socket
+  int64_t rx_bytes;
 } l2cap_socket;
 
 static void btsock_l2cap_server_listen(l2cap_socket* sock);
@@ -215,6 +221,14 @@ static void btsock_l2cap_free_l(l2cap_socket* sock) {
 
   if (!t) /* prever double-frees */
     return;
+
+  // Whenever a socket is freed, the connection must be dropped
+  bluetooth::common::LogSocketConnectionState(
+      sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
+      android::bluetooth::SOCKET_CONNECTION_STATE_DISCONNECTED, sock->tx_bytes,
+      sock->rx_bytes, sock->app_uid, sock->channel,
+      sock->server ? android::bluetooth::SOCKET_ROLE_LISTEN
+                   : android::bluetooth::SOCKET_ROLE_CONNECTION);
 
   if (sock->next) sock->next->prev = sock->prev;
 
@@ -405,6 +419,14 @@ static void on_srv_l2cap_listen_started(tBTA_JV_L2CAP_START* p_start,
   DVLOG(2) << __func__ << ": sock->handle: " << sock->handle
            << ", id: " << sock->id;
 
+  bluetooth::common::LogSocketConnectionState(
+      sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
+      android::bluetooth::SocketConnectionstateEnum::
+          SOCKET_CONNECTION_STATE_LISTENING,
+      0, 0, sock->app_uid, sock->channel,
+      sock->server ? android::bluetooth::SOCKET_ROLE_LISTEN
+                   : android::bluetooth::SOCKET_ROLE_CONNECTION);
+
   if (!sock->server_psm_sent) {
     if (!send_app_psm_or_chan_l(sock)) {
       // closed
@@ -457,6 +479,14 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
   accept_rs->id = sock->id;
   sock->id = new_listen_id;
 
+  bluetooth::common::LogSocketConnectionState(
+      accept_rs->addr, accept_rs->id,
+      accept_rs->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
+      android::bluetooth::SOCKET_CONNECTION_STATE_CONNECTED, 0, 0,
+      accept_rs->app_uid, accept_rs->channel,
+      accept_rs->server ? android::bluetooth::SOCKET_ROLE_LISTEN
+                        : android::bluetooth::SOCKET_ROLE_CONNECTION);
+
   // start monitor the socket
   btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP,
                        SOCK_THREAD_FD_EXCEPTION, sock->id);
@@ -498,6 +528,14 @@ static void on_srv_l2cap_le_connect_l(tBTA_JV_L2CAP_LE_OPEN* p_open,
   *(p_open->p_p_cback) = (void*)btsock_l2cap_cbk;
   *(p_open->p_user_data) = UINT_TO_PTR(accept_rs->id);
 
+  bluetooth::common::LogSocketConnectionState(
+      accept_rs->addr, accept_rs->id,
+      accept_rs->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
+      android::bluetooth::SOCKET_CONNECTION_STATE_CONNECTED, 0, 0,
+      accept_rs->app_uid, accept_rs->channel,
+      accept_rs->server ? android::bluetooth::SOCKET_ROLE_LISTEN
+                        : android::bluetooth::SOCKET_ROLE_CONNECTION);
+
   // start monitor the socket
   btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP,
                        SOCK_THREAD_FD_EXCEPTION, sock->id);
@@ -527,6 +565,13 @@ static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
     return;
   }
 
+  bluetooth::common::LogSocketConnectionState(
+      sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
+      android::bluetooth::SOCKET_CONNECTION_STATE_CONNECTED, 0, 0,
+      sock->app_uid, sock->channel,
+      sock->server ? android::bluetooth::SOCKET_ROLE_LISTEN
+                   : android::bluetooth::SOCKET_ROLE_CONNECTION);
+
   // start monitoring the socketpair to get call back when app writing data
   DVLOG(2) << " connect signal sent, slot id: " << sock->id
            << ", chan: " << sock->channel << ", server: " << sock->server;
@@ -551,6 +596,13 @@ static void on_cl_l2cap_le_connect_l(tBTA_JV_L2CAP_LE_OPEN* p_open,
     return;
   }
 
+  bluetooth::common::LogSocketConnectionState(
+      sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
+      android::bluetooth::SOCKET_CONNECTION_STATE_CONNECTED, 0, 0,
+      sock->app_uid, sock->channel,
+      sock->server ? android::bluetooth::SOCKET_ROLE_LISTEN
+                   : android::bluetooth::SOCKET_ROLE_CONNECTION);
+
   // start monitoring the socketpair to get call back when app writing data
   DVLOG(2) << " connect signal sent, slot id: " << sock->id
            << ", chan: " << sock->channel << ", server: " << sock->server;
@@ -573,17 +625,20 @@ static void on_l2cap_connect(tBTA_JV* p_data, uint32_t id) {
 
   sock->tx_mtu = le_open->tx_mtu;
   if (sock->fixed_chan && le_open->status == BTA_JV_SUCCESS) {
-    if (!sock->server)
+    if (!sock->server) {
       on_cl_l2cap_le_connect_l(le_open, sock);
-    else
+    } else {
       on_srv_l2cap_le_connect_l(le_open, sock);
+    }
   } else if (!sock->fixed_chan && psm_open->status == BTA_JV_SUCCESS) {
-    if (!sock->server)
+    if (!sock->server) {
       on_cl_l2cap_psm_connect_l(psm_open, sock);
-    else
+    } else {
       on_srv_l2cap_psm_connect_l(psm_open, sock);
-  } else
+    }
+  } else {
     btsock_l2cap_free_l(sock);
+  }
 }
 
 static void on_l2cap_close(tBTA_JV_L2CAP_CLOSE* p_close, uint32_t id) {
@@ -592,6 +647,13 @@ static void on_l2cap_close(tBTA_JV_L2CAP_CLOSE* p_close, uint32_t id) {
   std::unique_lock<std::mutex> lock(state_lock);
   sock = btsock_l2cap_find_by_id_l(id);
   if (!sock) return;
+
+  bluetooth::common::LogSocketConnectionState(
+      sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
+      android::bluetooth::SOCKET_CONNECTION_STATE_DISCONNECTING, 0, 0,
+      sock->app_uid, sock->channel,
+      sock->server ? android::bluetooth::SOCKET_ROLE_LISTEN
+                   : android::bluetooth::SOCKET_ROLE_CONNECTION);
 
   DVLOG(2) << __func__ << ": slot id: " << sock->id << ", fd: " << sock->our_fd
            << (sock->fixed_chan ? ", fixed_chan:" : ", PSM: ") << sock->channel
@@ -633,6 +695,7 @@ static void on_l2cap_write_done(uint16_t len, uint32_t id) {
                          sock->id);
   }
 
+  sock->tx_bytes += len;
   uid_set_add_tx(uid_set, app_uid, len);
 }
 
@@ -686,6 +749,7 @@ static void on_l2cap_data_ind(tBTA_JV* evt, uint32_t id) {
     }
   }
 
+  sock->rx_bytes += bytes_read;
   uid_set_add_rx(uid_set, app_uid, bytes_read);
 }
 
