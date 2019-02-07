@@ -460,6 +460,25 @@ void LogSocketConnectionState(
     android::bluetooth::SocketConnectionstateEnum connection_state,
     int64_t tx_bytes, int64_t rx_bytes, int uid, int server_port,
     android::bluetooth::SocketRoleEnum socket_role);
+
+/**
+ * Logs when a Bluetooth device's manufacturer information is learnt
+ *
+ * @param address address of associated device
+ * @param source_type where is this device info obtained from
+ * @param source_name name of the data source, internal or external
+ * @param manufacturer name of the manufacturer of this device
+ * @param model model of this device
+ * @param hardware_version hardware version of this device
+ * @param software_version software version of this device
+ */
+void LogManufacturerInfo(const RawAddress& address,
+                         android::bluetooth::DeviceInfoSrcEnum source_type,
+                         const std::string& source_name,
+                         const std::string& manufacturer,
+                         const std::string& model,
+                         const std::string& hardware_version,
+                         const std::string& software_version);
 }  // namespace common
 
 }  // namespace bluetooth
