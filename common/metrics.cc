@@ -779,6 +779,28 @@ void LogClassicPairingEvent(const RawAddress& address, uint16_t handle,
   }
 }
 
+void LogSdpAttribute(const RawAddress& address, uint16_t protocol_uuid,
+                     uint16_t attribute_id, size_t attribute_size,
+                     const char* attribute_value) {
+  std::string obfuscated_id;
+  if (!address.IsEmpty()) {
+    obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(address);
+  }
+  // nullptr and size 0 represent missing value for obfuscated_id
+  android::util::BytesField obfuscated_id_field(
+      address.IsEmpty() ? nullptr : obfuscated_id.c_str(),
+      address.IsEmpty() ? 0 : obfuscated_id.size());
+  android::util::BytesField attribute_field(attribute_value, attribute_size);
+  int ret = android::util::stats_write(
+      android::util::BLUETOOTH_SDP_ATTRIBUTE_REPORTED, obfuscated_id_field,
+      protocol_uuid, attribute_id, attribute_field);
+  if (ret < 0) {
+    LOG(WARNING) << __func__ << ": failed for " << address << ", protocol_uuid "
+                 << loghex(protocol_uuid) << ", attribute_id "
+                 << loghex(attribute_id) << ", error " << ret;
+  }
+}
+
 }  // namespace common
 
 }  // namespace bluetooth

@@ -425,6 +425,20 @@ void LogSmpPairingEvent(const RawAddress& address, uint8_t smp_cmd,
 void LogClassicPairingEvent(const RawAddress& address, uint16_t handle,
                             uint32_t hci_cmd, uint16_t hci_event,
                             uint16_t cmd_status, uint16_t reason_code);
+
+/**
+ * Logs when certain Bluetooth SDP attributes are discovered
+ *
+ * @param address address of associated device
+ * @param protocol_uuid 16 bit protocol UUID from Bluetooth Assigned Numbers
+ * @param attribute_id 16 bit attribute ID from Bluetooth Assigned Numbers
+ * @param attribute_size size of this attribute
+ * @param attribute_value pointer to the attribute data, must be larger than
+ *                        attribute_size
+ */
+void LogSdpAttribute(const RawAddress& address, uint16_t protocol_uuid,
+                     uint16_t attribute_id, size_t attribute_size,
+                     const char* attribute_value);
 }  // namespace common
 
 }  // namespace bluetooth
