@@ -17,6 +17,7 @@
  ******************************************************************************/
 
 #include "audio_hearing_aid_hw/include/audio_hearing_aid_hw.h"
+#include "bta_closure_api.h"
 #include "bta_hearing_aid_api.h"
 #include "osi/include/alarm.h"
 #include "uipc.h"
@@ -28,9 +29,9 @@ using base::FilePath;
 extern const char* audio_ha_hw_dump_ctrl_event(tHEARING_AID_CTRL_CMD event);
 
 namespace {
-int bit_rate = 16;
-int sample_rate = 16000;
-int data_interval_ms = 10 /* msec */;
+int bit_rate = -1;
+int sample_rate = -1;
+int data_interval_ms = -1;
 int num_channels = 2;
 alarm_t* audio_timer = nullptr;
 
@@ -94,6 +95,11 @@ void hearing_aid_data_cb(tUIPC_CH_ID, tUIPC_EVENT event) {
       UIPC_Ioctl(*uipc_hearing_aid, UIPC_CH_ID_AV_AUDIO, UIPC_SET_READ_POLL_TMO,
                  reinterpret_cast<void*>(0));
 
+      if (data_interval_ms != HA_INTERVAL_10_MS &&
+          data_interval_ms != HA_INTERVAL_20_MS) {
+        LOG(FATAL) << " Unsupported data interval: " << data_interval_ms;
+      }
+
       audio_timer = alarm_new_periodic("hearing_aid_data_timer");
       alarm_set_on_mloop(audio_timer, data_interval_ms, send_audio_data,
                          nullptr);
@@ -124,7 +130,7 @@ void hearing_aid_recv_ctrl_data() {
     return;
   }
 
-  VLOG(2) << __func__ << " " << audio_ha_hw_dump_ctrl_event(cmd);
+  LOG(INFO) << __func__ << " " << audio_ha_hw_dump_ctrl_event(cmd);
   //  a2dp_cmd_pending = cmd;
 
   switch (cmd) {
@@ -133,7 +139,17 @@ void hearing_aid_recv_ctrl_data() {
       break;
 
     case HEARING_AID_CTRL_CMD_START:
-      if (localAudioReceiver) localAudioReceiver->OnAudioResume();
+      if (localAudioReceiver) {
+        // Call OnAudioResume and block till it returns.
+        std::promise<void> do_resume_promise;
+        std::future<void> do_resume_future = do_resume_promise.get_future();
+        do_in_bta_thread_once(
+            FROM_HERE, base::BindOnce(&HearingAidAudioReceiver::OnAudioResume,
+                                      base::Unretained(localAudioReceiver),
+                                      std::move(do_resume_promise)));
+        do_resume_future.wait();
+      }
+
       // timer is restarted in UIPC_Open
       UIPC_Open(*uipc_hearing_aid, UIPC_CH_ID_AV_AUDIO, hearing_aid_data_cb,
                 HEARING_AID_DATA_PATH);
@@ -146,7 +162,16 @@ void hearing_aid_recv_ctrl_data() {
 
     case HEARING_AID_CTRL_CMD_SUSPEND:
       if (audio_timer) alarm_cancel(audio_timer);
-      if (localAudioReceiver) localAudioReceiver->OnAudioSuspend();
+      if (localAudioReceiver) {
+        // Call OnAudioSuspend and block till it returns.
+        std::promise<void> do_suspend_promise;
+        std::future<void> do_suspend_future = do_suspend_promise.get_future();
+        do_in_bta_thread_once(
+            FROM_HERE, base::BindOnce(&HearingAidAudioReceiver::OnAudioSuspend,
+                                      base::Unretained(localAudioReceiver),
+                                      std::move(do_suspend_promise)));
+        do_suspend_future.wait();
+      }
       hearing_aid_send_ack(HEARING_AID_CTRL_ACK_SUCCESS);
       break;
 
@@ -240,8 +265,9 @@ void hearing_aid_recv_ctrl_data() {
       hearing_aid_send_ack(HEARING_AID_CTRL_ACK_FAILURE);
       break;
   }
-  VLOG(2) << __func__ << " a2dp-ctrl-cmd : " << audio_ha_hw_dump_ctrl_event(cmd)
-          << " DONE";
+  LOG(INFO) << __func__
+            << " a2dp-ctrl-cmd : " << audio_ha_hw_dump_ctrl_event(cmd)
+            << " DONE";
 }
 
 void hearing_aid_ctrl_cb(tUIPC_CH_ID, tUIPC_EVENT event) {
@@ -266,6 +292,11 @@ void HearingAidAudioSource::Start(const CodecConfiguration& codecConfiguration,
                                   HearingAidAudioReceiver* audioReceiver) {
   localAudioReceiver = audioReceiver;
   VLOG(2) << "Hearing Aid UIPC Open";
+
+  bit_rate = codecConfiguration.bit_rate;
+  sample_rate = codecConfiguration.sample_rate;
+  data_interval_ms = codecConfiguration.data_interval_ms;
+
   stats.Reset();
 }
 
