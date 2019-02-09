@@ -301,9 +301,9 @@ static const uint32_t kUnknownConnectionHandle = 0xFFFF;
 void LogLinkLayerConnectionEvent(const RawAddress* address,
                                  uint32_t connection_handle,
                                  android::bluetooth::DirectionEnum direction,
-                                 uint32_t link_type, uint32_t hci_cmd,
-                                 uint32_t hci_event, uint32_t hci_ble_event,
-                                 uint32_t cmd_status, uint32_t reason_code);
+                                 uint16_t link_type, uint32_t hci_cmd,
+                                 uint16_t hci_event, uint16_t hci_ble_event,
+                                 uint16_t cmd_status, uint16_t reason_code);
 
 /**
  * Logs when Bluetooth controller failed to reply with command status within
@@ -439,6 +439,27 @@ void LogClassicPairingEvent(const RawAddress& address, uint16_t handle,
 void LogSdpAttribute(const RawAddress& address, uint16_t protocol_uuid,
                      uint16_t attribute_id, size_t attribute_size,
                      const char* attribute_value);
+
+/**
+ * Logs when there is a change in Bluetooth socket connection state
+ *
+ * @param address address of associated device, empty if this is a server port
+ * @param port port of this socket connection
+ * @param type type of socket
+ * @param connection_state socket connection state
+ * @param tx_bytes number of bytes transmitted
+ * @param rx_bytes number of bytes received
+ * @param server_port server port of this socket, if any. When both
+ *        |server_port| and |port| fields are populated, |port| must be spawned
+ *        by |server_port|
+ * @param socket_role role of this socket, server or connection
+ * @param uid socket owner's uid
+ */
+void LogSocketConnectionState(
+    const RawAddress& address, int port, int type,
+    android::bluetooth::SocketConnectionstateEnum connection_state,
+    int64_t tx_bytes, int64_t rx_bytes, int uid, int server_port,
+    android::bluetooth::SocketRoleEnum socket_role);
 }  // namespace common
 
 }  // namespace bluetooth
