@@ -77,6 +77,8 @@ void btu_hci_msg_process(BT_HDR* p_msg) {
   }
 }
 
+bluetooth::common::MessageLoopThread* get_main_thread() { return &main_thread; }
+
 base::MessageLoop* get_main_message_loop() {
   return main_thread.message_loop();
 }

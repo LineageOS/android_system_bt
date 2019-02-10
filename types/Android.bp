@@ -16,6 +16,7 @@ cc_library_static {
     ],
     host_supported: true,
     srcs: [
+        "class_of_device.cc",
         "raw_address.cc",
         "bluetooth/uuid.cc",
     ],
@@ -30,6 +31,7 @@ cc_test {
     defaults: ["fluoride_defaults"],
     host_supported: true,
     srcs: [
+        "test/class_of_device_unittest.cc",
         "test/raw_address_unittest.cc",
         "test/bluetooth/uuid_unittest.cc",
     ],

@@ -26,6 +26,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <utility>
+#include <vector>
 
 #include "bt_common.h"
 #include "bt_types.h"
@@ -38,11 +40,250 @@
 #include "sdpint.h"
 
 #include "btu.h"
+#include "common/metrics.h"
 
 using bluetooth::Uuid;
 static const uint8_t sdp_base_uuid[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                         0x10, 0x00, 0x80, 0x00, 0x00, 0x80,
                                         0x5F, 0x9B, 0x34, 0xFB};
+
+template <typename T>
+static std::array<char, sizeof(T)> to_little_endian_array(T x) {
+  static_assert(std::is_integral<T>::value,
+                "to_little_endian_array parameter must be integral.");
+  std::array<char, sizeof(T)> array = {};
+  for (size_t i = 0; i < array.size(); i++) {
+    array[i] = static_cast<char>((x >> (8 * i)) & 0xFF);
+  }
+  return array;
+}
+
+/**
+ * Find the list of profile versions from Bluetooth Profile Descriptor list
+ * attribute in a SDP record
+ *
+ * @param p_rec SDP record to search
+ * @return a vector of <UUID, VERSION> pairs, empty if not found
+ */
+static std::vector<std::pair<uint16_t, uint16_t>> sdpu_find_profile_version(
+    tSDP_DISC_REC* p_rec) {
+  std::vector<std::pair<uint16_t, uint16_t>> result;
+  for (tSDP_DISC_ATTR* p_attr = p_rec->p_first_attr; p_attr != nullptr;
+       p_attr = p_attr->p_next_attr) {
+    // Find the profile descriptor list */
+    if (p_attr->attr_id != ATTR_ID_BT_PROFILE_DESC_LIST ||
+        SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) != DATA_ELE_SEQ_DESC_TYPE) {
+      continue;
+    }
+    // Walk through the protocol descriptor list
+    for (tSDP_DISC_ATTR* p_sattr = p_attr->attr_value.v.p_sub_attr;
+         p_sattr != nullptr; p_sattr = p_sattr->p_next_attr) {
+      // Safety check - each entry should itself be a sequence
+      if (SDP_DISC_ATTR_TYPE(p_sattr->attr_len_type) !=
+          DATA_ELE_SEQ_DESC_TYPE) {
+        LOG(WARNING) << __func__ << ": Descriptor type is not sequence: "
+                     << loghex(SDP_DISC_ATTR_TYPE(p_sattr->attr_len_type));
+        return std::vector<std::pair<uint16_t, uint16_t>>();
+      }
+      // Now, see if the entry contains the profile UUID we are interested in
+      for (tSDP_DISC_ATTR* p_ssattr = p_sattr->attr_value.v.p_sub_attr;
+           p_ssattr != nullptr; p_ssattr = p_ssattr->p_next_attr) {
+        if (SDP_DISC_ATTR_TYPE(p_ssattr->attr_len_type) != UUID_DESC_TYPE ||
+            SDP_DISC_ATTR_LEN(p_ssattr->attr_len_type) != 2) {
+          continue;
+        }
+        uint16_t uuid = p_ssattr->attr_value.v.u16;
+        // Next attribute should be the version attribute
+        tSDP_DISC_ATTR* version_attr = p_ssattr->p_next_attr;
+        if (SDP_DISC_ATTR_TYPE(version_attr->attr_len_type) != UINT_DESC_TYPE ||
+            SDP_DISC_ATTR_LEN(version_attr->attr_len_type) != 2) {
+          LOG(WARNING) << __func__ << ": Bad version type "
+                       << loghex(
+                              SDP_DISC_ATTR_TYPE(version_attr->attr_len_type))
+                       << ", or length "
+                       << SDP_DISC_ATTR_LEN(version_attr->attr_len_type);
+          return std::vector<std::pair<uint16_t, uint16_t>>();
+        }
+        // High order 8 bits is the major number, low order is the
+        // minor number (big endian)
+        uint16_t version = version_attr->attr_value.v.u16;
+        result.emplace_back(uuid, version);
+      }
+    }
+  }
+  return result;
+}
+
+/**
+ * Find the most specific 16-bit service uuid represented by a SDP record
+ *
+ * @param p_rec pointer to a SDP record
+ * @return most specific 16-bit service uuid, 0 if not found
+ */
+static uint16_t sdpu_find_most_specific_service_uuid(tSDP_DISC_REC* p_rec) {
+  for (tSDP_DISC_ATTR* p_attr = p_rec->p_first_attr; p_attr != nullptr;
+       p_attr = p_attr->p_next_attr) {
+    if (p_attr->attr_id == ATTR_ID_SERVICE_CLASS_ID_LIST &&
+        SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == DATA_ELE_SEQ_DESC_TYPE) {
+      tSDP_DISC_ATTR* p_first_attr = p_attr->attr_value.v.p_sub_attr;
+      if (SDP_DISC_ATTR_TYPE(p_first_attr->attr_len_type) == UUID_DESC_TYPE &&
+          SDP_DISC_ATTR_LEN(p_first_attr->attr_len_type) == 2) {
+        return p_first_attr->attr_value.v.u16;
+      } else if (SDP_DISC_ATTR_TYPE(p_first_attr->attr_len_type) ==
+                 DATA_ELE_SEQ_DESC_TYPE) {
+        // Workaround for Toyota G Block car kit:
+        // It incorrectly puts an extra data element sequence in this attribute
+        for (tSDP_DISC_ATTR* p_extra_sattr =
+                 p_first_attr->attr_value.v.p_sub_attr;
+             p_extra_sattr != nullptr;
+             p_extra_sattr = p_extra_sattr->p_next_attr) {
+          // Return the first UUID data element
+          if (SDP_DISC_ATTR_TYPE(p_extra_sattr->attr_len_type) ==
+                  UUID_DESC_TYPE &&
+              SDP_DISC_ATTR_LEN(p_extra_sattr->attr_len_type) == 2) {
+            return p_extra_sattr->attr_value.v.u16;
+          }
+        }
+      } else {
+        LOG(WARNING) << __func__ << ": Bad Service Class ID list attribute";
+        return 0;
+      }
+    } else if (p_attr->attr_id == ATTR_ID_SERVICE_ID) {
+      if (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == UUID_DESC_TYPE &&
+          SDP_DISC_ATTR_LEN(p_attr->attr_len_type) == 2) {
+        return p_attr->attr_value.v.u16;
+      }
+    }
+  }
+  return 0;
+}
+
+void sdpu_log_attribute_metrics(const RawAddress& bda,
+                                tSDP_DISCOVERY_DB* p_db) {
+  CHECK_NE(p_db, nullptr);
+  bool has_di_record = false;
+  for (tSDP_DISC_REC* p_rec = p_db->p_first_rec; p_rec != nullptr;
+       p_rec = p_rec->p_next_rec) {
+    uint16_t service_uuid = sdpu_find_most_specific_service_uuid(p_rec);
+    if (service_uuid == 0) {
+      LOG(INFO) << __func__ << ": skipping record without service uuid " << bda;
+      continue;
+    }
+    // Log the existence of a profile role
+    // This can be different from Bluetooth Profile Descriptor List
+    bluetooth::common::LogSdpAttribute(bda, service_uuid, 0, 0, nullptr);
+    // Log profile version from Bluetooth Profile Descriptor List
+    auto uuid_version_array = sdpu_find_profile_version(p_rec);
+    for (const auto& uuid_version_pair : uuid_version_array) {
+      uint16_t profile_uuid = uuid_version_pair.first;
+      uint16_t version = uuid_version_pair.second;
+      auto version_array = to_little_endian_array(version);
+      bluetooth::common::LogSdpAttribute(
+          bda, profile_uuid, ATTR_ID_BT_PROFILE_DESC_LIST, version_array.size(),
+          version_array.data());
+    }
+    // Log protocol version from Protocol Descriptor List
+    uint16_t protocol_uuid = 0;
+    switch (service_uuid) {
+      case UUID_SERVCLASS_AUDIO_SOURCE:
+      case UUID_SERVCLASS_AUDIO_SINK:
+        protocol_uuid = UUID_PROTOCOL_AVDTP;
+        break;
+      case UUID_SERVCLASS_AV_REMOTE_CONTROL:
+      case UUID_SERVCLASS_AV_REM_CTRL_CONTROL:
+      case UUID_SERVCLASS_AV_REM_CTRL_TARGET:
+        protocol_uuid = UUID_PROTOCOL_AVCTP;
+        break;
+      case UUID_SERVCLASS_PANU:
+      case UUID_SERVCLASS_GN:
+        protocol_uuid = UUID_PROTOCOL_BNEP;
+        break;
+    }
+    if (protocol_uuid != 0) {
+      tSDP_PROTOCOL_ELEM protocol_elements = {};
+      if (SDP_FindProtocolListElemInRec(p_rec, protocol_uuid,
+                                        &protocol_elements)) {
+        if (protocol_elements.num_params >= 1) {
+          uint16_t version = protocol_elements.params[0];
+          auto version_array = to_little_endian_array(version);
+          bluetooth::common::LogSdpAttribute(
+              bda, protocol_uuid, ATTR_ID_PROTOCOL_DESC_LIST,
+              version_array.size(), version_array.data());
+        }
+      }
+    }
+    // Log profile supported features from various supported feature attributes
+    switch (service_uuid) {
+      case UUID_SERVCLASS_AG_HANDSFREE:
+      case UUID_SERVCLASS_HF_HANDSFREE:
+      case UUID_SERVCLASS_AV_REMOTE_CONTROL:
+      case UUID_SERVCLASS_AV_REM_CTRL_CONTROL:
+      case UUID_SERVCLASS_AV_REM_CTRL_TARGET:
+      case UUID_SERVCLASS_AUDIO_SOURCE:
+      case UUID_SERVCLASS_AUDIO_SINK: {
+        tSDP_DISC_ATTR* p_attr =
+            SDP_FindAttributeInRec(p_rec, ATTR_ID_SUPPORTED_FEATURES);
+        if (p_attr == nullptr) {
+          break;
+        }
+        uint16_t supported_features = p_attr->attr_value.v.u16;
+        auto version_array = to_little_endian_array(supported_features);
+        bluetooth::common::LogSdpAttribute(
+            bda, service_uuid, ATTR_ID_SUPPORTED_FEATURES, version_array.size(),
+            version_array.data());
+        break;
+      }
+      case UUID_SERVCLASS_MESSAGE_NOTIFICATION:
+      case UUID_SERVCLASS_MESSAGE_ACCESS: {
+        tSDP_DISC_ATTR* p_attr =
+            SDP_FindAttributeInRec(p_rec, ATTR_ID_MAP_SUPPORTED_FEATURES);
+        if (p_attr == nullptr) {
+          break;
+        }
+        uint32_t map_supported_features = p_attr->attr_value.v.u32;
+        auto features_array = to_little_endian_array(map_supported_features);
+        bluetooth::common::LogSdpAttribute(
+            bda, service_uuid, ATTR_ID_MAP_SUPPORTED_FEATURES,
+            features_array.size(), features_array.data());
+        break;
+      }
+      case UUID_SERVCLASS_PBAP_PCE:
+      case UUID_SERVCLASS_PBAP_PSE: {
+        tSDP_DISC_ATTR* p_attr =
+            SDP_FindAttributeInRec(p_rec, ATTR_ID_PBAP_SUPPORTED_FEATURES);
+        if (p_attr == nullptr) {
+          break;
+        }
+        uint32_t pbap_supported_features = p_attr->attr_value.v.u32;
+        auto features_array = to_little_endian_array(pbap_supported_features);
+        bluetooth::common::LogSdpAttribute(
+            bda, service_uuid, ATTR_ID_PBAP_SUPPORTED_FEATURES,
+            features_array.size(), features_array.data());
+        break;
+      }
+    }
+    if (service_uuid == UUID_SERVCLASS_PNP_INFORMATION) {
+      has_di_record = true;
+    }
+  }
+  // Log the first DI record if there is one
+  if (has_di_record) {
+    tSDP_DI_GET_RECORD di_record = {};
+    if (SDP_GetDiRecord(1, &di_record, p_db) == SDP_SUCCESS) {
+      auto version_array = to_little_endian_array(di_record.spec_id);
+      bluetooth::common::LogSdpAttribute(
+          bda, UUID_SERVCLASS_PNP_INFORMATION, ATTR_ID_SPECIFICATION_ID,
+          version_array.size(), version_array.data());
+      std::stringstream ss;
+      // [N - native]::SDP::[DIP - Device ID Profile]
+      ss << "N:SDP::DIP::" << loghex(di_record.rec.vendor_id_source);
+      bluetooth::common::LogManufacturerInfo(
+          bda, android::bluetooth::DeviceInfoSrcEnum::DEVICE_INFO_INTERNAL,
+          ss.str(), loghex(di_record.rec.vendor), loghex(di_record.rec.product),
+          loghex(di_record.rec.version), "");
+    }
+  }
+}
 
 /*******************************************************************************
  *

@@ -87,9 +87,9 @@ static std::unique_ptr<config_t> btif_config_open(const char* filename, const ch
 // Key attestation
 static std::string hash_file(const char* filename);
 static std::string read_checksum_file(const char* filename);
-static void write_checksum_file(const char* filename, const std::string hash);
-static bool verify_hash(const std::string current_hash,
-                        const std::string stored_hash);
+static void write_checksum_file(const char* filename, const std::string& hash);
+static bool verify_hash(const std::string& current_hash,
+                        const std::string& stored_hash);
 
 static enum ConfigSource {
   NOT_LOADED,
@@ -646,7 +646,10 @@ static std::string hash_file(const char* filename) {
   const int bufSize = 400 * 10;  // initial file is ~400B
   std::byte* buffer = (std::byte*) osi_calloc(bufSize);
   int bytesRead = 0;
-  if (!buffer) return "";
+  if (!buffer) {
+    fclose(fp);
+    return "";
+  }
   while ((bytesRead = fread(buffer, 1, bufSize, fp))) {
     SHA256_Update(&sha256, buffer, bytesRead);
   }
@@ -662,23 +665,22 @@ static std::string hash_file(const char* filename) {
 
 static std::string read_checksum_file(const char* checksum_filename) {
   // Ensure file exists
-  FILE* fp = fopen(checksum_filename, "rb");
-  if (!fp) {
+  if (access(checksum_filename, R_OK) != 0) {
     return "";
-  } else {
-    fclose(fp);
   }
   std::string output = btifKeystore.Decrypt(checksum_filename);
   return output;
 }
 
-static void write_checksum_file(const char* checksum_filename, std::string hash) {
+static void write_checksum_file(const char* checksum_filename,
+                                const std::string& hash) {
   int result = btifKeystore.Encrypt(hash, checksum_filename, 0);
   if (result != 0) {
     LOG(ERROR) << "Failed writing checksum!";
   }
 }
 
-static bool verify_hash(std::string current_hash, std::string stored_hash) {
+static bool verify_hash(const std::string& current_hash,
+                        const std::string& stored_hash) {
   return current_hash.compare(stored_hash) == 0;
 }

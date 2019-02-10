@@ -485,6 +485,7 @@ static void process_service_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
     alarm_set_on_mloop(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
                        sdp_conn_timer_timeout, p_ccb);
   } else {
+    sdpu_log_attribute_metrics(p_ccb->device_address, p_ccb->p_db);
     sdp_disconnect(p_ccb, SDP_SUCCESS);
     return;
   }
@@ -649,6 +650,7 @@ static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
   }
 
   /* Since we got everything we need, disconnect the call */
+  sdpu_log_attribute_metrics(p_ccb->device_address, p_ccb->p_db);
   sdp_disconnect(p_ccb, SDP_SUCCESS);
 }
 
