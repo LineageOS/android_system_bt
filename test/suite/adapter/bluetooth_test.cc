@@ -17,6 +17,8 @@
  ******************************************************************************/
 
 #include "adapter/bluetooth_test.h"
+#include <binder/ProcessState.h>
+#include <stdio.h>
 #include <mutex>
 #include "btcore/include/property.h"
 #include "osi/include/properties.h"
@@ -32,6 +34,7 @@ std::mutex callback_lock;
 namespace bttest {
 
 void BluetoothTest::SetUp() {
+  android::ProcessState::self()->startThreadPool();
   bt_interface_ = nullptr;
   state_ = BT_STATE_OFF;
   properties_changed_count_ = 0;
@@ -47,7 +50,8 @@ void BluetoothTest::SetUp() {
   adapter_state_changed_callback_sem_ = semaphore_new(0);
   discovery_state_changed_callback_sem_ = semaphore_new(0);
 
-  osi_property_set("debug.bluetooth.unittest", "true");
+  remove("/data/misc/bluedroid/bt_config.conf.encrypted-checksum");
+  remove("/data/misc/bluedroid/bt_config.bak.encrypted-checksum");
 
   bluetooth::hal::BluetoothInterface::Initialize();
   ASSERT_TRUE(bluetooth::hal::BluetoothInterface::IsInitialized());

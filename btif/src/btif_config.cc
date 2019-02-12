@@ -60,6 +60,9 @@ static const char* TIME_STRING_FORMAT = "%Y-%m-%d %H:%M:%S";
 #define BT_CONFIG_METRICS_SECTION "Metrics"
 #define BT_CONFIG_METRICS_SALT_256BIT "Salt256Bit"
 using bluetooth::common::AddressObfuscator;
+constexpr int kBufferSize = 400 * 10;  // initial file is ~400B
+
+using bluetooth::BtifKeystore;
 
 // TODO(armansito): Find a better way than searching by a hardcoded path.
 #if defined(OS_GENERIC)
@@ -87,9 +90,7 @@ static std::unique_ptr<config_t> btif_config_open(const char* filename, const ch
 // Key attestation
 static std::string hash_file(const char* filename);
 static std::string read_checksum_file(const char* filename);
-static void write_checksum_file(const char* filename, const std::string hash);
-static bool verify_hash(const std::string current_hash,
-                        const std::string stored_hash);
+static void write_checksum_file(const char* filename, const std::string& hash);
 
 static enum ConfigSource {
   NOT_LOADED,
@@ -169,7 +170,8 @@ static void read_or_set_metrics_salt() {
 static std::recursive_mutex config_lock;  // protects operations on |config|.
 static std::unique_ptr<config_t> config;
 static alarm_t* config_timer;
-static BtifKeystore btifKeystore;
+
+static BtifKeystore btif_keystore(new keystore::KeystoreClientImpl);
 
 // Module lifecycle functions
 
@@ -268,7 +270,7 @@ static std::unique_ptr<config_t> btif_config_open(const char* filename, const ch
     }
   }
   // Compare hashes
-  if (!verify_hash(current_hash, stored_hash)) {
+  if (current_hash != stored_hash) {
     return nullptr;
   }
   // END KEY ATTESTATION
@@ -634,15 +636,13 @@ static std::string hash_file(const char* filename) {
                << "': " << strerror(errno);
     return "";
   }
-  unsigned char hash[SHA256_DIGEST_LENGTH];
+  uint8_t hash[SHA256_DIGEST_LENGTH];
   SHA256_CTX sha256;
   SHA256_Init(&sha256);
-  const int bufSize = 400 * 10;  // initial file is ~400B
-  std::byte* buffer = (std::byte*) osi_calloc(bufSize);
-  int bytesRead = 0;
-  if (!buffer) return "";
-  while ((bytesRead = fread(buffer, 1, bufSize, fp))) {
-    SHA256_Update(&sha256, buffer, bytesRead);
+  std::array<unsigned char, kBufferSize> buffer;
+  int bytes_read = 0;
+  while ((bytes_read = fread(buffer.data(), 1, buffer.size(), fp))) {
+    SHA256_Update(&sha256, buffer.data(), bytes_read);
   }
   SHA256_Final(hash, &sha256);
   std::stringstream ss;
@@ -650,7 +650,6 @@ static std::string hash_file(const char* filename) {
     ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
   }
   fclose(fp);
-  osi_free(buffer);
   return ss.str();
 }
 
@@ -659,17 +658,11 @@ static std::string read_checksum_file(const char* checksum_filename) {
   if (access(checksum_filename, R_OK) != 0) {
     return "";
   }
-  std::string output = btifKeystore.Decrypt(checksum_filename);
-  return output;
+  return btif_keystore.Decrypt(checksum_filename);
 }
 
-static void write_checksum_file(const char* checksum_filename, std::string hash) {
-  int result = btifKeystore.Encrypt(hash, checksum_filename, 0);
-  if (result != 0) {
-    LOG(ERROR) << "Failed writing checksum!";
-  }
-}
-
-static bool verify_hash(std::string current_hash, std::string stored_hash) {
-  return current_hash.compare(stored_hash) == 0;
+static void write_checksum_file(const char* checksum_filename,
+                                const std::string& hash) {
+  bool result = btif_keystore.Encrypt(hash, checksum_filename, 0);
+  CHECK(result) << "Failed writing checksum";
 }
