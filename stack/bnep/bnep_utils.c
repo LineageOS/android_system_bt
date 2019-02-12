@@ -1336,7 +1336,7 @@ tBNEP_RESULT bnep_is_packet_allowed (tBNEP_CONN *p_bcb,
                                      BD_ADDR p_dest_addr,
                                      UINT16 protocol,
                                      BOOLEAN fw_ext_present,
-                                     UINT8 *p_data)
+                                     UINT8 *p_data, UINT16 org_len)
 {
     if (p_bcb->rcvd_num_filters)
     {
@@ -1346,17 +1346,28 @@ tBNEP_RESULT bnep_is_packet_allowed (tBNEP_CONN *p_bcb,
         proto = protocol;
         if (proto == BNEP_802_1_P_PROTOCOL)
         {
+            UINT16 new_len = 0;
             if (fw_ext_present)
             {
                 UINT8       len, ext;
                 /* parse the extension headers and findout actual protocol */
                 do {
+                    if ((new_len + 2) > org_len)
+                    {
+                      return BNEP_IGNORE_CMD;
+                    }
 
                     ext     = *p_data++;
                     len     = *p_data++;
                     p_data += len;
 
+                    new_len += (len + 2);
+
                 } while (ext & 0x80);
+            }
+            if ((new_len + 4) > org_len)
+            {
+              return BNEP_IGNORE_CMD;
             }
             p_data += 2;
             BE_STREAM_TO_UINT16 (proto, p_data);
