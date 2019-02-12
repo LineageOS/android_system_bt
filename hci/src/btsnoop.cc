@@ -184,7 +184,7 @@ static future_t* start_up() {
   std::string default_mode = BTSNOOP_MODE_DISABLED;
   if (is_debuggable) {
     int len = osi_property_get(BTSNOOP_DEFAULT_MODE_PROPERTY, property.data(),
-                               BTSNOOP_MODE_FILTERED);
+                               BTSNOOP_MODE_DISABLED);
     default_mode = std::string(property.data(), len);
   }
 
