@@ -127,7 +127,10 @@ cc_test {
     name: "net_test_btif",
     defaults: ["fluoride_defaults"],
     include_dirs: btifCommonIncludes,
-    srcs: ["test/btif_storage_test.cc"],
+    srcs: [
+        "test/btif_storage_test.cc",
+        "test/btif_keystore_test.cc"
+    ],
     header_libs: ["libbluetooth_headers"],
     shared_libs: [
         "libaudioclient",
@@ -144,6 +147,7 @@ cc_test {
         "libkeystore_aidl",
         "libkeystore_binder",
         "libkeystore_parcelables",
+        "libbinder",
     ],
     static_libs: [
         "libbt-bta",
@@ -165,6 +169,9 @@ cc_test {
         "libbluetooth-for-tests",
     ],
     cflags: ["-DBUILDCFG"],
+    sanitize: {
+        integer_overflow: true,
+    },
 }
 
 // btif profile queue unit tests for target
