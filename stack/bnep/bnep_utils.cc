@@ -1259,22 +1259,32 @@ void bnep_sec_check_complete(UNUSED_ATTR const RawAddress* bd_addr,
 tBNEP_RESULT bnep_is_packet_allowed(tBNEP_CONN* p_bcb,
                                     const RawAddress& p_dest_addr,
                                     uint16_t protocol, bool fw_ext_present,
-                                    uint8_t* p_data) {
+                                    uint8_t* p_data, uint16_t org_len) {
   if (p_bcb->rcvd_num_filters) {
     uint16_t i, proto;
 
     /* Findout the actual protocol to check for the filtering */
     proto = protocol;
     if (proto == BNEP_802_1_P_PROTOCOL) {
+      uint16_t new_len = 0;
       if (fw_ext_present) {
         uint8_t len, ext;
         /* parse the extension headers and findout actual protocol */
         do {
+          if ((new_len + 2) > org_len) {
+            return BNEP_IGNORE_CMD;
+          }
+
           ext = *p_data++;
           len = *p_data++;
           p_data += len;
 
+          new_len += (len + 2);
+
         } while (ext & 0x80);
+      }
+      if ((new_len + 4) > org_len) {
+        return BNEP_IGNORE_CMD;
       }
       p_data += 2;
       BE_STREAM_TO_UINT16(proto, p_data);
