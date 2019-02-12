@@ -229,8 +229,8 @@ extern void bnep_sec_check_complete(const RawAddress* bd_addr,
 extern tBNEP_RESULT bnep_is_packet_allowed(tBNEP_CONN* p_bcb,
                                            const RawAddress& p_dest_addr,
                                            uint16_t protocol,
-                                           bool fw_ext_present,
-                                           uint8_t* p_data);
+                                           bool fw_ext_present, uint8_t* p_data,
+                                           uint16_t org_len);
 extern uint32_t bnep_get_uuid32(tBT_UUID* src_uuid);
 
 #endif
