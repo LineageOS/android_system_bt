@@ -236,7 +236,7 @@ extern UINT8       *bnep_process_control_packet (tBNEP_CONN *p_bcb, UINT8 *p, UI
 extern void        bnep_sec_check_complete (BD_ADDR bd_addr, tBT_TRANSPORT trasnport,
                                                     void *p_ref_data, UINT8 result);
 extern tBNEP_RESULT bnep_is_packet_allowed (tBNEP_CONN *p_bcb, BD_ADDR p_dest_addr, UINT16 protocol,
-                                                    BOOLEAN fw_ext_present, UINT8 *p_data);
+                                            BOOLEAN fw_ext_present, UINT8 *p_data, UINT16 org_len);
 extern UINT32      bnep_get_uuid32 (tBT_UUID *src_uuid);
 
 
