@@ -107,3 +107,35 @@ cc_test_host {
         "-DLOG_NDEBUG=1",
     ],
 }
+
+// Linux RootCanal Executable
+// ========================================================
+cc_test_host {
+    name: "root-canal",
+    defaults: [
+        "libchrome_support_defaults",
+    ],
+    srcs: [
+        "desktop/root_canal_main.cc",
+        "desktop/test_environment.cc",
+    ],
+    header_libs: [
+        "libbluetooth_headers",
+    ],
+    local_include_dirs: [
+        "include",
+    ],
+    include_dirs: [
+        "system/bt",
+        "system/bt/utils/include",
+        "system/bt/hci/include",
+        "system/bt/stack/include",
+    ],
+    shared_libs: [
+        "liblog",
+    ],
+    static_libs: [
+        "libbt-rootcanal-types",
+        "libbt-rootcanal",
+    ],
+}
