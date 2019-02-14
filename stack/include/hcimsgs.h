@@ -603,6 +603,7 @@ extern BOOLEAN btsnd_hcic_write_cur_iac_lap (UINT8 num_cur_iac,
 
 extern BOOLEAN btsnd_hcic_get_link_quality (UINT16 handle);            /* Get Link Quality */
 extern BOOLEAN btsnd_hcic_read_rssi (UINT16 handle);                   /* Read RSSI */
+extern BOOLEAN btsnd_hcic_read_encryption_key_size (UINT16 handle);    /* Read encryption key size */
 extern BOOLEAN btsnd_hcic_enable_test_mode (void);                     /* Enable Device Under Test Mode */
 extern BOOLEAN btsnd_hcic_write_pagescan_type(UINT8 type);             /* Write Page Scan Type */
 extern BOOLEAN btsnd_hcic_write_inqscan_type(UINT8 type);              /* Write Inquiry Scan Type */
