@@ -30,7 +30,6 @@
 
 #include <mutex>
 
-#include <frameworks/base/core/proto/android/bluetooth/enums.pb.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_sock.h>
 
@@ -48,7 +47,6 @@
 #include "btm_api.h"
 #include "btm_int.h"
 #include "btu.h"
-#include "common/metrics.h"
 #include "hcimsgs.h"
 #include "osi/include/compat.h"
 #include "osi/include/list.h"
@@ -99,10 +97,6 @@ typedef struct {
   int rfc_port_handle;
   int role;
   list_t* incoming_queue;
-  // Cumulative number of bytes transmitted on this socket
-  int64_t tx_bytes;
-  // Cumulative number of bytes received on this socket
-  int64_t rx_bytes;
 } rfc_slot_t;
 
 static rfc_slot_t rfc_slots[MAX_RFC_CHANNEL];
@@ -231,15 +225,11 @@ static rfc_slot_t* alloc_rfc_slot(const RawAddress* addr, const char* name,
   } else {
     memset(slot->service_name, 0, sizeof(slot->service_name));
   }
-  if (addr) {
-    slot->addr = *addr;
-  } else {
-    slot->addr = RawAddress::kEmpty;
-  }
+  if (addr) slot->addr = *addr;
+
   slot->id = rfc_slot_id;
   slot->f.server = server;
-  slot->tx_bytes = 0;
-  slot->rx_bytes = 0;
+
   return slot;
 }
 
@@ -421,12 +411,6 @@ static void cleanup_rfc_slot(rfc_slot_t* slot) {
   if (slot->fd != INVALID_FD) {
     shutdown(slot->fd, SHUT_RDWR);
     close(slot->fd);
-    bluetooth::common::LogSocketConnectionState(
-        slot->addr, slot->id, BTSOCK_RFCOMM,
-        android::bluetooth::SOCKET_CONNECTION_STATE_DISCONNECTED,
-        slot->tx_bytes, slot->rx_bytes, slot->app_uid, slot->scn,
-        slot->f.server ? android::bluetooth::SOCKET_ROLE_LISTEN
-                       : android::bluetooth::SOCKET_ROLE_CONNECTION);
     slot->fd = INVALID_FD;
   }
 
@@ -452,8 +436,6 @@ static void cleanup_rfc_slot(rfc_slot_t* slot) {
   memset(&slot->f, 0, sizeof(slot->f));
   slot->id = 0;
   slot->scn_notified = false;
-  slot->tx_bytes = 0;
-  slot->rx_bytes = 0;
 }
 
 static bool send_app_scn(rfc_slot_t* slot) {
@@ -502,13 +484,6 @@ static void on_srv_rfc_listen_started(tBTA_JV_RFCOMM_START* p_start,
 
   if (p_start->status == BTA_JV_SUCCESS) {
     slot->rfc_handle = p_start->handle;
-    bluetooth::common::LogSocketConnectionState(
-        slot->addr, slot->id, BTSOCK_RFCOMM,
-        android::bluetooth::SocketConnectionstateEnum::
-            SOCKET_CONNECTION_STATE_LISTENING,
-        0, 0, slot->app_uid, slot->scn,
-        slot->f.server ? android::bluetooth::SOCKET_ROLE_LISTEN
-                       : android::bluetooth::SOCKET_ROLE_CONNECTION);
   } else {
     cleanup_rfc_slot(slot);
   }
@@ -524,13 +499,6 @@ static uint32_t on_srv_rfc_connect(tBTA_JV_RFCOMM_SRV_OPEN* p_open,
   accept_rs = create_srv_accept_rfc_slot(
       srv_rs, &p_open->rem_bda, p_open->handle, p_open->new_listen_handle);
   if (!accept_rs) return 0;
-
-  bluetooth::common::LogSocketConnectionState(
-      accept_rs->addr, accept_rs->id, BTSOCK_RFCOMM,
-      android::bluetooth::SOCKET_CONNECTION_STATE_CONNECTED, 0, 0,
-      accept_rs->app_uid, accept_rs->scn,
-      accept_rs->f.server ? android::bluetooth::SOCKET_ROLE_LISTEN
-                          : android::bluetooth::SOCKET_ROLE_CONNECTION);
 
   // Start monitoring the socket.
   btsock_thread_add_fd(pth, srv_rs->fd, BTSOCK_RFCOMM, SOCK_THREAD_FD_EXCEPTION,
@@ -557,13 +525,6 @@ static void on_cli_rfc_connect(tBTA_JV_RFCOMM_OPEN* p_open, uint32_t id) {
   slot->rfc_port_handle = BTA_JvRfcommGetPortHdl(p_open->handle);
   slot->addr = p_open->rem_bda;
 
-  bluetooth::common::LogSocketConnectionState(
-      slot->addr, slot->id, BTSOCK_RFCOMM,
-      android::bluetooth::SOCKET_CONNECTION_STATE_CONNECTED, 0, 0,
-      slot->app_uid, slot->scn,
-      slot->f.server ? android::bluetooth::SOCKET_ROLE_LISTEN
-                     : android::bluetooth::SOCKET_ROLE_CONNECTION);
-
   if (send_app_connect_signal(slot->fd, &slot->addr, slot->scn, 0, -1)) {
     slot->f.connected = true;
   } else {
@@ -578,15 +539,7 @@ static void on_rfc_close(UNUSED_ATTR tBTA_JV_RFCOMM_CLOSE* p_close,
 
   // rfc_handle already closed when receiving rfcomm close event from stack.
   rfc_slot_t* slot = find_rfc_slot_by_id(id);
-  if (slot) {
-    bluetooth::common::LogSocketConnectionState(
-        slot->addr, slot->id, BTSOCK_RFCOMM,
-        android::bluetooth::SOCKET_CONNECTION_STATE_DISCONNECTING, 0, 0,
-        slot->app_uid, slot->scn,
-        slot->f.server ? android::bluetooth::SOCKET_ROLE_LISTEN
-                       : android::bluetooth::SOCKET_ROLE_CONNECTION);
-    cleanup_rfc_slot(slot);
-  }
+  if (slot) cleanup_rfc_slot(slot);
 }
 
 static void on_rfc_write_done(tBTA_JV_RFCOMM_WRITE* p, uint32_t id) {
@@ -606,7 +559,6 @@ static void on_rfc_write_done(tBTA_JV_RFCOMM_WRITE* p, uint32_t id) {
       btsock_thread_add_fd(pth, slot->fd, BTSOCK_RFCOMM, SOCK_THREAD_FD_RD,
                            slot->id);
     }
-    slot->tx_bytes += p->len;
   }
 
   uid_set_add_tx(uid_set, app_uid, p->len);
@@ -925,7 +877,6 @@ int bta_co_rfc_data_incoming(uint32_t id, BT_HDR* p_buf) {
     list_append(slot->incoming_queue, p_buf);
   }
 
-  slot->rx_bytes += bytes_rx;
   uid_set_add_rx(uid_set, app_uid, bytes_rx);
 
   return ret;  // Return 0 to disable data flow.
