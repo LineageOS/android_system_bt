@@ -1304,7 +1304,17 @@ extern BOOLEAN BTM_BleVerifySignature (BD_ADDR bd_addr, UINT8 *p_orig,
 extern void BTM_ReadConnectionAddr (BD_ADDR remote_bda, BD_ADDR local_conn_addr,
                                             tBLE_ADDR_TYPE *p_addr_type);
 
-
+/*******************************************************************************
+ *
+ * Function         BTM_IsBleConnection
+ *
+ * Description      This function is called to check if the connection handle
+ *                  for an LE link
+ *
+ * Returns          true if connection is LE link, otherwise false.
+ *
+ ******************************************************************************/
+extern bool BTM_IsBleConnection(uint16_t conn_handle);
 
 /*******************************************************************************
 **
