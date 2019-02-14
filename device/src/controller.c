@@ -294,6 +294,8 @@ static future_t *start_up(void) {
         &number_of_local_supported_codecs, local_supported_codecs);
   }
 
+  assert(HCI_READ_ENCR_KEY_SIZE_SUPPORTED(supported_commands));
+
   readable = true;
   return future_new_immediate(FUTURE_SUCCESS);
 }
