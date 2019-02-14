@@ -161,7 +161,6 @@ static uint16_t sdpu_find_most_specific_service_uuid(tSDP_DISC_REC* p_rec) {
 void sdpu_log_attribute_metrics(const RawAddress& bda,
                                 tSDP_DISCOVERY_DB* p_db) {
   CHECK_NE(p_db, nullptr);
-  bool has_di_record = false;
   for (tSDP_DISC_REC* p_rec = p_db->p_first_rec; p_rec != nullptr;
        p_rec = p_rec->p_next_rec) {
     uint16_t service_uuid = sdpu_find_most_specific_service_uuid(p_rec);
@@ -261,26 +260,6 @@ void sdpu_log_attribute_metrics(const RawAddress& bda,
             features_array.size(), features_array.data());
         break;
       }
-    }
-    if (service_uuid == UUID_SERVCLASS_PNP_INFORMATION) {
-      has_di_record = true;
-    }
-  }
-  // Log the first DI record if there is one
-  if (has_di_record) {
-    tSDP_DI_GET_RECORD di_record = {};
-    if (SDP_GetDiRecord(1, &di_record, p_db) == SDP_SUCCESS) {
-      auto version_array = to_little_endian_array(di_record.spec_id);
-      bluetooth::common::LogSdpAttribute(
-          bda, UUID_SERVCLASS_PNP_INFORMATION, ATTR_ID_SPECIFICATION_ID,
-          version_array.size(), version_array.data());
-      std::stringstream ss;
-      // [N - native]::SDP::[DIP - Device ID Profile]
-      ss << "N:SDP::DIP::" << loghex(di_record.rec.vendor_id_source);
-      bluetooth::common::LogManufacturerInfo(
-          bda, android::bluetooth::DeviceInfoSrcEnum::DEVICE_INFO_INTERNAL,
-          ss.str(), loghex(di_record.rec.vendor), loghex(di_record.rec.product),
-          loghex(di_record.rec.version), "");
     }
   }
 }
