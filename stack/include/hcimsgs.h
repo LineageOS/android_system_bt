@@ -610,6 +610,8 @@ extern void btsnd_hcic_write_cur_iac_lap(
 
 extern void btsnd_hcic_get_link_quality(uint16_t handle); /* Get Link Quality */
 extern void btsnd_hcic_read_rssi(uint16_t handle);        /* Read RSSI */
+using ReadEncKeySizeCb = base::OnceCallback<void(uint8_t, uint16_t, uint8_t)>;
+extern void btsnd_hcic_read_encryption_key_size(uint16_t handle, ReadEncKeySizeCb cb);
 extern void btsnd_hcic_read_failed_contact_counter(uint16_t handle);
 extern void btsnd_hcic_read_automatic_flush_timeout(uint16_t handle);
 extern void btsnd_hcic_enable_test_mode(
