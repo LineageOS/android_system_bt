@@ -379,7 +379,6 @@ static ssize_t out_write(struct audio_stream_out* stream, const void* buffer,
     if (stream->resume(stream)) {
       LOG(ERROR) << __func__ << ": state=" << out->bluetooth_output_.GetState()
                  << " failed to resume";
-      lock.unlock();
       usleep(kBluetoothDefaultOutputBufferMs * 1000);
       return totalWritten;
     }
