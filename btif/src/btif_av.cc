@@ -31,7 +31,7 @@
 #include <hardware/bt_rc.h>
 
 #include "audio_a2dp_hw/include/audio_a2dp_hw.h"
-#include "audio_hal_interface/a2dp_software_encoding.h"
+#include "audio_hal_interface/a2dp_encoding.h"
 #include "bt_common.h"
 #include "bt_utils.h"
 #include "bta/include/bta_api.h"

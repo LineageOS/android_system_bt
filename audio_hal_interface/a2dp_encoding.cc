@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "a2dp_software_encoding.h"
+#include "a2dp_encoding.h"
 #include "client_interface.h"
 
 #include "btif_a2dp_source.h"
