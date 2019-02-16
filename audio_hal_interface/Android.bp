@@ -10,7 +10,7 @@ cc_library_static {
         "system/bt/stack/include",
     ],
     srcs: [
-        "a2dp_software_encoding.cc",
+        "a2dp_encoding.cc",
         "client_interface.cc",
         "hearing_aid_software_encoding.cc",
     ],
