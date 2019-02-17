@@ -344,17 +344,12 @@ tBNEP_RESULT BNEP_WriteBuf(uint16_t handle, const RawAddress& p_dest_addr,
                      BNEP_MTU_SIZE);
     osi_free(p_buf);
     return (BNEP_MTU_EXCEDED);
-  } else if (p_buf->len < 2) {
-    BNEP_TRACE_ERROR("%s length %d too short, must be at least 2", __func__,
-                     p_buf->len);
-    osi_free(p_buf);
-    return BNEP_IGNORE_CMD;
   }
 
   /* Check if the packet should be filtered out */
   p_data = (uint8_t*)(p_buf + 1) + p_buf->offset;
   if (bnep_is_packet_allowed(p_bcb, p_dest_addr, protocol, fw_ext_present,
-                             p_data) != BNEP_SUCCESS) {
+                             p_data, p_buf->len) != BNEP_SUCCESS) {
     /*
     ** If packet is filtered and ext headers are present
     ** drop the data and forward the ext headers
@@ -366,6 +361,11 @@ tBNEP_RESULT BNEP_WriteBuf(uint16_t handle, const RawAddress& p_dest_addr,
       org_len = p_buf->len;
       new_len = 0;
       do {
+        if ((new_len + 2) > org_len) {
+          osi_free(p_buf);
+          return BNEP_IGNORE_CMD;
+        }
+
         ext = *p_data++;
         length = *p_data++;
         p_data += length;
@@ -445,10 +445,6 @@ tBNEP_RESULT BNEP_Write(uint16_t handle, const RawAddress& p_dest_addr,
     BNEP_TRACE_ERROR("%s length %d exceeded MTU %d", __func__, len,
                      BNEP_MTU_SIZE);
     return (BNEP_MTU_EXCEDED);
-  } else if (len < 2) {
-    BNEP_TRACE_ERROR("%s length %d too short, must be at least 2", __func__,
-                     len);
-    return BNEP_IGNORE_CMD;
   }
 
   if ((!handle) || (handle > BNEP_MAX_CONNECTIONS)) return (BNEP_WRONG_HANDLE);
@@ -457,7 +453,7 @@ tBNEP_RESULT BNEP_Write(uint16_t handle, const RawAddress& p_dest_addr,
 
   /* Check if the packet should be filtered out */
   if (bnep_is_packet_allowed(p_bcb, p_dest_addr, protocol, fw_ext_present,
-                             p_data) != BNEP_SUCCESS) {
+                             p_data, len) != BNEP_SUCCESS) {
     /*
     ** If packet is filtered and ext headers are present
     ** drop the data and forward the ext headers
@@ -470,6 +466,10 @@ tBNEP_RESULT BNEP_Write(uint16_t handle, const RawAddress& p_dest_addr,
       new_len = 0;
       p = p_data;
       do {
+        if ((new_len + 2) > org_len) {
+          return BNEP_IGNORE_CMD;
+        }
+
         ext = *p_data++;
         length = *p_data++;
         p_data += length;
