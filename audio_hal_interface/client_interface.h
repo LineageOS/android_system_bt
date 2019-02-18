@@ -36,6 +36,8 @@ using ::android::hardware::bluetooth::audio::V2_0::AudioCapabilities;
 using ::android::hardware::bluetooth::audio::V2_0::AudioConfiguration;
 using ::android::hardware::bluetooth::audio::V2_0::BitsPerSample;
 using ::android::hardware::bluetooth::audio::V2_0::ChannelMode;
+using ::android::hardware::bluetooth::audio::V2_0::CodecConfiguration;
+using ::android::hardware::bluetooth::audio::V2_0::CodecType;
 using ::android::hardware::bluetooth::audio::V2_0::IBluetoothAudioProvider;
 using ::android::hardware::bluetooth::audio::V2_0::PcmParameters;
 using ::android::hardware::bluetooth::audio::V2_0::SampleRate;
