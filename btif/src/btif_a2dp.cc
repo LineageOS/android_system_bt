@@ -91,7 +91,7 @@ bool btif_a2dp_on_started(const RawAddress& peer_addr,
           } else if (bluetooth::audio::a2dp::is_hal_2_0_enabled()) {
             bluetooth::audio::a2dp::ack_stream_started(A2DP_CTRL_ACK_SUCCESS);
             if (btif_av_get_peer_sep() == AVDT_TSEP_SNK) {
-              /* Start the media task to encode the audio */
+              /* Start the media task to do the SW encode audio */
               btif_a2dp_source_start_audio_req();
             }
           } else {
@@ -111,10 +111,10 @@ bool btif_a2dp_on_started(const RawAddress& peer_addr,
   } else if (pending_start) {
     LOG_ERROR(LOG_TAG, "%s: peer %s A2DP start request failed: status = %d",
               __func__, peer_addr.ToString().c_str(), p_av_start->status);
-    if (btif_av_is_a2dp_offload_enabled()) {
-      btif_a2dp_audio_on_started(p_av_start->status);
-    } else if (bluetooth::audio::a2dp::is_hal_2_0_enabled()) {
+    if (bluetooth::audio::a2dp::is_hal_2_0_enabled()) {
       bluetooth::audio::a2dp::ack_stream_started(A2DP_CTRL_ACK_FAILURE);
+    } else if (btif_av_is_a2dp_offload_enabled()) {
+      btif_a2dp_audio_on_started(p_av_start->status);
     } else {
       btif_a2dp_command_ack(A2DP_CTRL_ACK_FAILURE);
     }
@@ -131,7 +131,8 @@ void btif_a2dp_on_stopped(tBTA_AV_SUSPEND* p_av_suspend) {
     btif_a2dp_sink_on_stopped(p_av_suspend);
     return;
   }
-  if (!btif_av_is_a2dp_offload_enabled()) {
+  if (bluetooth::audio::a2dp::is_hal_2_0_enabled() ||
+      !btif_av_is_a2dp_offload_enabled()) {
     btif_a2dp_source_on_stopped(p_av_suspend);
   } else if (p_av_suspend != NULL) {
     btif_a2dp_audio_on_stopped(p_av_suspend->status);
@@ -141,13 +142,14 @@ void btif_a2dp_on_stopped(tBTA_AV_SUSPEND* p_av_suspend) {
 void btif_a2dp_on_suspended(tBTA_AV_SUSPEND* p_av_suspend) {
   LOG_INFO(LOG_TAG, "%s: ## ON A2DP SUSPENDED ## p_av_suspend=%p", __func__,
            p_av_suspend);
-  if (!btif_av_is_a2dp_offload_enabled()) {
-    if (btif_av_get_peer_sep() == AVDT_TSEP_SRC) {
-      btif_a2dp_sink_on_suspended(p_av_suspend);
-    } else {
-      btif_a2dp_source_on_suspended(p_av_suspend);
-    }
-  } else {
+  if (btif_av_get_peer_sep() == AVDT_TSEP_SRC) {
+    btif_a2dp_sink_on_suspended(p_av_suspend);
+    return;
+  }
+  if (bluetooth::audio::a2dp::is_hal_2_0_enabled() ||
+      !btif_av_is_a2dp_offload_enabled()) {
+    btif_a2dp_source_on_suspended(p_av_suspend);
+  } else if (p_av_suspend != NULL) {
     btif_a2dp_audio_on_suspended(p_av_suspend->status);
   }
 }
@@ -174,7 +176,6 @@ void btif_a2dp_on_offload_started(const RawAddress& peer_addr,
       break;
   }
   if (btif_av_is_a2dp_offload_enabled()) {
-    btif_a2dp_audio_on_started(status);
     if (ack != BTA_AV_SUCCESS && btif_av_stream_started_ready()) {
       // Offload request will return with failure from btif_av sm if
       // suspend is triggered for remote start. Disconnect only if SoC
@@ -183,10 +184,12 @@ void btif_a2dp_on_offload_started(const RawAddress& peer_addr,
                 peer_addr.ToString().c_str());
       btif_av_src_disconnect_sink(peer_addr);
     }
-  } else if (bluetooth::audio::a2dp::is_hal_2_0_enabled()) {
+  }
+  if (bluetooth::audio::a2dp::is_hal_2_0_enabled()) {
     bluetooth::audio::a2dp::ack_stream_started(ack);
   } else {
     btif_a2dp_command_ack(ack);
+    btif_a2dp_audio_on_started(status);
   }
 }
 
