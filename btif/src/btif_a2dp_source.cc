@@ -454,10 +454,6 @@ static void btif_a2dp_source_end_session_delayed(
   LOG_INFO(LOG_TAG, "%s: peer_address=%s state=%s", __func__,
            peer_address.ToString().c_str(),
            btif_a2dp_source_cb.StateStr().c_str());
-  if (!btif_av_is_a2dp_offload_enabled()) {
-    BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionEnd(
-        bluetooth::common::DISCONNECT_REASON_UNKNOWN, 0);
-  }
   if ((btif_a2dp_source_cb.State() == BtifA2dpSource::kStateRunning) ||
       (btif_a2dp_source_cb.State() == BtifA2dpSource::kStateShuttingDown)) {
     btif_av_stream_stop(peer_address);
@@ -466,8 +462,13 @@ static void btif_a2dp_source_end_session_delayed(
   }
   if (bluetooth::audio::a2dp::is_hal_2_0_enabled()) {
     bluetooth::audio::a2dp::end_session();
+    BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionEnd(
+        bluetooth::common::DISCONNECT_REASON_UNKNOWN, 0);
   } else if (btif_av_is_a2dp_offload_enabled()) {
     btif_a2dp_audio_interface_end_session();
+  } else {
+    BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionEnd(
+        bluetooth::common::DISCONNECT_REASON_UNKNOWN, 0);
   }
 }
 
@@ -497,11 +498,11 @@ static void btif_a2dp_source_shutdown_delayed(void) {
 
   if (bluetooth::audio::a2dp::is_hal_2_0_enabled()) {
     bluetooth::audio::a2dp::cleanup();
+  } else if (btif_av_is_a2dp_offload_enabled()) {
+    btif_a2dp_audio_interface_end_session();
   } else {
     btif_a2dp_control_cleanup();
   }
-  if (btif_av_is_a2dp_offload_enabled())
-    btif_a2dp_audio_interface_end_session();
   fixed_queue_free(btif_a2dp_source_cb.tx_audio_queue, nullptr);
   btif_a2dp_source_cb.tx_audio_queue = nullptr;
 
@@ -685,7 +686,10 @@ void btif_a2dp_source_on_stopped(tBTA_AV_SUSPEND* p_av_suspend) {
       return;
     }
   }
-
+  if (btif_av_is_a2dp_offload_enabled()) {
+    bluetooth::audio::a2dp::ack_stream_suspended(A2DP_CTRL_ACK_SUCCESS);
+    return;
+  }
   /* ensure tx frames are immediately suspended */
   btif_a2dp_source_cb.tx_flush = true;
 
@@ -714,7 +718,10 @@ void btif_a2dp_source_on_suspended(tBTA_AV_SUSPEND* p_av_suspend) {
       }
     }
   }
-
+  if (btif_av_is_a2dp_offload_enabled()) {
+    bluetooth::audio::a2dp::ack_stream_suspended(A2DP_CTRL_ACK_SUCCESS);
+    return;
+  }
   /* once stream is fully stopped we will ack back */
 
   /* ensure tx frames are immediately flushed */

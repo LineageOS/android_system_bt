@@ -188,9 +188,11 @@ bool A2dpCodecConfig::getCodecSpecificConfig(tBT_A2DP_OFFLOAD* p_a2dp_offload) {
   switch (codec_type) {
     case A2DP_MEDIA_CT_SBC:
       p_a2dp_offload->codec_info[0] =
+          codec_config[3];  // samplefreq | channelmode
+      p_a2dp_offload->codec_info[1] =
           codec_config[4];  // blk_len | subbands | Alloc Method
-      p_a2dp_offload->codec_info[1] = codec_config[5];  // Min bit pool
-      p_a2dp_offload->codec_info[2] = codec_config[6];  // Max bit pool
+      p_a2dp_offload->codec_info[2] = codec_config[5];  // Min bit pool
+      p_a2dp_offload->codec_info[3] = codec_config[6];  // Max bit pool
       break;
     case A2DP_MEDIA_CT_AAC:
       p_a2dp_offload->codec_info[0] = codec_config[3];  // object type
@@ -231,6 +233,10 @@ bool A2dpCodecConfig::getCodecSpecificConfig(tBT_A2DP_OFFLOAD* p_a2dp_offload) {
               break;
           }
         }
+        p_a2dp_offload->codec_info[7] =
+            codec_config[10];  // LDAC specific channel mode
+        LOG_VERBOSE(LOG_TAG, "%s: Ldac specific channelmode =%d", __func__,
+                    p_a2dp_offload->codec_info[7]);
       }
       break;
     default:
