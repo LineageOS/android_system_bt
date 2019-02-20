@@ -58,7 +58,7 @@ void btm_send_hci_create_connection(
         std::bitset<std::numeric_limits<uint8_t>::digits>(initiating_phys)
             .count();
 
-    LOG_ASSERT(phy_cnt < 3) << "More than three phys provided";
+    LOG_ASSERT(phy_cnt <= 3) << "More than three phys provided";
     // TODO(jpawlowski): tune parameters for different transports
     for (int i = 0; i < phy_cnt; i++) {
       phy_cfg[i].scan_int = scan_int;
