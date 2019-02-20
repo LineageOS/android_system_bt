@@ -312,7 +312,8 @@ bool BluetoothAudioPortOut::CondwaitState(BluetoothStreamState state) {
                    << " waiting for STARTED";
       retval = internal_cv_.wait_for(
           port_lock, std::chrono::milliseconds(kMaxWaitingTimeMs),
-          [this] { return this->state_ == BluetoothStreamState::STARTED; });
+          [this] { return this->state_ != BluetoothStreamState::STARTING; });
+      retval = retval && state_ == BluetoothStreamState::STARTED;
       break;
     case BluetoothStreamState::SUSPENDING:
       LOG(VERBOSE) << __func__ << ": session_type=" << toString(session_type_)
@@ -321,7 +322,8 @@ bool BluetoothAudioPortOut::CondwaitState(BluetoothStreamState state) {
                    << " waiting for SUSPENDED";
       retval = internal_cv_.wait_for(
           port_lock, std::chrono::milliseconds(kMaxWaitingTimeMs),
-          [this] { return this->state_ == BluetoothStreamState::STANDBY; });
+          [this] { return this->state_ != BluetoothStreamState::SUSPENDING; });
+      retval = retval && state_ == BluetoothStreamState::STANDBY;
       break;
     default:
       LOG(WARNING) << __func__ << ": session_type=" << toString(session_type_)
