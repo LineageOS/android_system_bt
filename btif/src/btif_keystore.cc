@@ -16,10 +16,7 @@
  *
  ******************************************************************************/
 
-#define LOG_TAG "bt_btif_keystore"
-
 #include "btif_keystore.h"
-#include "osi/include/properties.h"
 
 #include <base/files/file_util.h>
 #include <base/logging.h>
@@ -30,83 +27,92 @@
 #include <sys/stat.h>
 
 using namespace keystore;
+using namespace bluetooth;
 
-static std::unique_ptr<keystore::KeystoreClient> CreateKeystoreInstance(void);
-static void WriteFile(const std::string& filename, const std::string& content);
-static std::string ReadFile(const std::string& filename);
-static int GenerateKey(const std::string& name, int32_t flags, bool auth_bound);
-static bool DoesKeyExist(const std::string& name);
-
-const std::string FILE_SUFFIX = ".encrypted-checksum";
-const std::string CIPHER_ALGORITHM = "AES/GCM/NoPadding";
-const std::string DIGEST_ALGORITHM = "SHA-256";
-const std::string KEY_STORE = "AndroidKeystore";
-
-std::unique_ptr<KeystoreClient> keystoreClient;
-
-BtifKeystore::BtifKeystore() { keystoreClient = CreateKeystoreInstance(); }
-
-BtifKeystore::~BtifKeystore() {
-  // Using a smart pointer, does it delete itself?
-  // delete keystoreClient;
-}
-
-int BtifKeystore::Encrypt(const std::string& hash,
-                          const std::string& output_filename, int32_t flags) {
-  std::string output;
-  if (!DoesKeyExist(KEY_STORE)) {
-    GenerateKey(KEY_STORE, 0, false);
-  }
-  char is_unittest[PROPERTY_VALUE_MAX] = {0};
-  osi_property_get("debug.bluetooth.unittest", is_unittest, "false");
-  if (strcmp(is_unittest, "false") == 0) {
-    if (!keystoreClient->encryptWithAuthentication(KEY_STORE, hash, flags,
-                                                   &output)) {
-      LOG(ERROR) << "EncryptWithAuthentication failed.\n";
-      return 1;
-    }
-  }
-  WriteFile(output_filename, output);
-  return 0;
-}
-
-std::string BtifKeystore::Decrypt(const std::string& input_filename) {
-  std::string input = ReadFile(input_filename);
-  std::string output;
-
-  char is_unittest[PROPERTY_VALUE_MAX] = {0};
-  osi_property_get("debug.bluetooth.unittest", is_unittest, "false");
-  if (strcmp(is_unittest, "false") == 0) {
-    if (!keystoreClient->decryptWithAuthentication(KEY_STORE, input, &output)) {
-      LOG(ERROR) << "DecryptWithAuthentication failed.\n";
-    }
-  }
-  return output;
-}
+constexpr char kKeyStore[] = "AndroidKeystore";
 
 static std::string ReadFile(const std::string& filename) {
+  CHECK(!filename.empty()) << __func__ << ": filename should not be empty";
+
   std::string content;
-  struct stat buffer;
-  if (stat(filename.c_str(), &buffer) == 0) {
-    base::FilePath path(filename);
-    if (!base::ReadFileToString(path, &content)) {
-      LOG(ERROR) << "ReadFile failed.\n" << filename.c_str();
-    }
+  base::FilePath path(filename);
+  if (!base::PathExists(path)) {
+    // Config file checksum file doesn't exist on first run after OTA.
+    LOG(ERROR) << "file '" << filename.c_str() << "'doesn't exists yet";
+  }
+  if (!base::ReadFileToString(path, &content)) {
+    LOG(ERROR) << "ReadFile failed: " << filename.c_str();
   }
   return content;
 }
 
 static void WriteFile(const std::string& filename, const std::string& content) {
+  CHECK(!filename.empty()) << __func__ << ": filename should not be empty";
+  CHECK(!content.empty()) << __func__ << ": content should not be empty";
+
   base::FilePath path(filename);
   int size = content.size();
   if (base::WriteFile(path, content.data(), size) != size) {
-    LOG(ERROR) << "WriteFile failed.\n" << filename.c_str();
+    LOG(FATAL) << "WriteFile failed.\n" << filename.c_str();
   }
 }
 
+namespace bluetooth {
+
+BtifKeystore::BtifKeystore(keystore::KeystoreClient* keystore_client)
+    : keystore_client_(keystore_client) {}
+
+bool BtifKeystore::Encrypt(const std::string& data,
+                           const std::string& output_filename, int32_t flags) {
+  std::lock_guard<std::mutex> lock(api_mutex_);
+  if (data.empty()) {
+    LOG(ERROR) << __func__ << ": empty data";
+    return false;
+  }
+  if (output_filename.empty()) {
+    LOG(ERROR) << __func__ << ": empty output filename";
+    return false;
+  }
+  std::string output;
+  if (!keystore_client_->doesKeyExist(kKeyStore)) {
+    auto gen_result = GenerateKey(kKeyStore, 0, false);
+    if (!gen_result.isOk()) {
+      LOG(FATAL) << "EncryptWithAuthentication Failed: generateKey response="
+                 << gen_result;
+      return false;
+    }
+  }
+  if (!keystore_client_->encryptWithAuthentication(kKeyStore, data, flags,
+                                                   &output)) {
+    LOG(FATAL) << "EncryptWithAuthentication failed.";
+    return false;
+  }
+  WriteFile(output_filename, output);
+  return true;
+}
+
+std::string BtifKeystore::Decrypt(const std::string& input_filename) {
+  std::lock_guard<std::mutex> lock(api_mutex_);
+  std::string output;
+  if (input_filename.empty()) {
+    LOG(ERROR) << __func__ << ": empty input filename";
+    return output;
+  }
+  std::string input = ReadFile(input_filename);
+  if (input.empty()) {
+    LOG(ERROR) << __func__ << ": empty input data";
+    return output;
+  }
+  if (!keystore_client_->decryptWithAuthentication(kKeyStore, input, &output)) {
+    LOG(FATAL) << "DecryptWithAuthentication failed.\n";
+  }
+  return output;
+}
+
 // Note: auth_bound keys created with this tool will not be usable.
-static int GenerateKey(const std::string& name, int32_t flags,
-                       bool auth_bound) {
+KeyStoreNativeReturnCode BtifKeystore::GenerateKey(const std::string& name,
+                                                   int32_t flags,
+                                                   bool auth_bound) {
   AuthorizationSetBuilder params;
   params.RsaSigningKey(2048, 65537)
       .Digest(Digest::SHA_2_224)
@@ -124,23 +130,9 @@ static int GenerateKey(const std::string& name, int32_t flags,
   }
   AuthorizationSet hardware_enforced_characteristics;
   AuthorizationSet software_enforced_characteristics;
-
-  char is_unittest[PROPERTY_VALUE_MAX] = {0};
-  osi_property_get("debug.bluetooth.unittest", is_unittest, "false");
-  if (strcmp(is_unittest, "false") != 0) {
-      return -1;
-  }
-  auto result = keystoreClient->generateKey(name, params, flags,
-                                            &hardware_enforced_characteristics,
-                                            &software_enforced_characteristics);
-  return result.getErrorCode();
+  return keystore_client_->generateKey(name, params, flags,
+                                       &hardware_enforced_characteristics,
+                                       &software_enforced_characteristics);
 }
 
-static bool DoesKeyExist(const std::string& name) {
-  return keystoreClient->doesKeyExist(name) ? true : false;
-}
-
-static std::unique_ptr<KeystoreClient> CreateKeystoreInstance(void) {
-  return std::unique_ptr<KeystoreClient>(
-      static_cast<KeystoreClient*>(new KeystoreClientImpl));
-}
+}  // namespace bluetooth

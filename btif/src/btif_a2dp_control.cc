@@ -48,7 +48,7 @@ static void btif_a2dp_ctrl_cb(tUIPC_CH_ID ch_id, tUIPC_EVENT event);
 
 /* We can have max one command pending */
 static tA2DP_CTRL_CMD a2dp_cmd_pending = A2DP_CTRL_CMD_NONE;
-std::unique_ptr<tUIPC_STATE> a2dp_uipc;
+std::unique_ptr<tUIPC_STATE> a2dp_uipc = nullptr;
 
 void btif_a2dp_control_init(void) {
   a2dp_uipc = UIPC_Init();
@@ -57,7 +57,9 @@ void btif_a2dp_control_init(void) {
 
 void btif_a2dp_control_cleanup(void) {
   /* This calls blocks until UIPC is fully closed */
-  UIPC_Close(*a2dp_uipc, UIPC_CH_ID_ALL);
+  if (a2dp_uipc != nullptr) {
+    UIPC_Close(*a2dp_uipc, UIPC_CH_ID_ALL);
+  }
 }
 
 static void btif_a2dp_recv_ctrl_data(void) {
@@ -419,7 +421,9 @@ void btif_a2dp_command_ack(tA2DP_CTRL_ACK status) {
   a2dp_cmd_pending = A2DP_CTRL_CMD_NONE;
 
   /* Acknowledge start request */
-  UIPC_Send(*a2dp_uipc, UIPC_CH_ID_AV_CTRL, 0, &ack, sizeof(ack));
+  if (a2dp_uipc != nullptr) {
+    UIPC_Send(*a2dp_uipc, UIPC_CH_ID_AV_CTRL, 0, &ack, sizeof(ack));
+  }
 }
 
 void btif_a2dp_control_log_bytes_read(uint32_t bytes_read) {
