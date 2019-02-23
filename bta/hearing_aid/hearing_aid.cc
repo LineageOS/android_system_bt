@@ -246,17 +246,6 @@ class HearingAidImpl : public HearingAid {
     BTA_GATTC_Open(gatt_if, address, true, GATT_TRANSPORT_LE, false);
   }
 
-  void AddToWhiteList(const RawAddress& address) override {
-    VLOG(2) << __func__ << " address: " << address;
-    hearingDevices.Add(HearingDevice(address, true));
-    BTA_GATTC_Open(gatt_if, address, false, GATT_TRANSPORT_LE, false);
-  }
-
-  void RemoveFromWhiteList(const RawAddress& address) override {
-    VLOG(2) << __func__ << " address: " << address;
-    BTA_GATTC_CancelOpen(gatt_if, address, false);
-  }
-
   void AddFromStorage(const HearingDevice& dev_info, uint16_t is_white_listed) {
     DVLOG(2) << __func__ << " " << dev_info.address
              << ", hiSyncId=" << loghex(dev_info.hi_sync_id)
@@ -1263,10 +1252,6 @@ class HearingAidImpl : public HearingAid {
     LOG(INFO) << "GAP_EVT_CONN_CLOSED: " << hearingDevice->address
               << ", playback_started=" << hearingDevice->playback_started;
 
-    LOG(INFO) << "GAP_EVT_CONN_CLOSED: " << hearingDevice->address
-              << ", playback_started=" << hearingDevice->playback_started;
-    hearingDevice->playback_started = false;
-
     if (hearingDevice->connecting_actively) {
       // cancel pending direct connect
       BTA_GATTC_CancelOpen(gatt_if, address, true);
@@ -1279,8 +1264,6 @@ class HearingAidImpl : public HearingAid {
     std::vector<uint8_t> inform_disconn_state(
         {CONTROL_POINT_OP_STATE_CHANGE, STATE_CHANGE_OTHER_SIDE_DISCONNECTED});
     send_state_change_to_other_side(hearingDevice, inform_disconn_state);
-
-    DoDisconnectCleanUp(hearingDevice);
 
     DoDisconnectCleanUp(hearingDevice);
 
