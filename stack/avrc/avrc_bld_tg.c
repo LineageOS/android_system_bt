@@ -976,8 +976,9 @@ static tAVRC_STS avrc_bld_get_attrs_rsp (tAVRC_GET_ATTRS_RSP *p_rsp, BT_HDR *p_p
     }
     /* get the existing length, if any, and also the num attributes */
     p_start = (uint8_t *)(p_pkt + 1) + p_pkt->offset;
-    p_data = p_len = p_start + 1; /* pdu */
-    /* the existing len */
+    p_data = p_start + 1; /* pdu */
+    p_len = p_start + 2;
+	/* the existing len */
     BE_STREAM_TO_UINT16(len, p_data);
     p_num = p_data + 1;
     if (len == 0)
