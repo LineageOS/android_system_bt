@@ -22,3 +22,4 @@
 BasedOnStyle: Google
 CommentPragmas: NOLINT:.*
 DerivePointerAlignment: false
+ColumnLimit: 120
