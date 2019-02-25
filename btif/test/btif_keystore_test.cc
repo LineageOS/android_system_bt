@@ -16,7 +16,6 @@
  *
  ******************************************************************************/
 
-#include <base/files/file_util.h>
 #include <base/logging.h>
 #include <binder/ProcessState.h>
 #include <gtest/gtest.h>
@@ -26,73 +25,40 @@
 
 using namespace bluetooth;
 
-constexpr char kFilename[] = "/data/misc/bluedroid/testfile.txt";
-
 class BtifKeystoreTest : public ::testing::Test {
  protected:
   std::unique_ptr<BtifKeystore> btif_keystore_;
-  base::FilePath file_path_;
-  BtifKeystoreTest() : file_path_(kFilename) {}
   void SetUp() override {
     android::ProcessState::self()->startThreadPool();
     btif_keystore_ =
         std::make_unique<BtifKeystore>(static_cast<keystore::KeystoreClient*>(
             new keystore::KeystoreClientImpl));
-    base::DeleteFile(file_path_, true);
   };
   void TearDown() override { btif_keystore_ = nullptr; };
 };
 
-// Encrypt
 TEST_F(BtifKeystoreTest, test_encrypt_decrypt) {
   std::string hash = "test";
 
-  EXPECT_TRUE(btif_keystore_->Encrypt(hash, kFilename, 0));
-  std::string decrypted_hash = btif_keystore_->Decrypt(kFilename);
+  std::string encrypted_hash = btif_keystore_->Encrypt(hash, 0);
+  std::string decrypted_hash = btif_keystore_->Decrypt(encrypted_hash);
 
-  EXPECT_TRUE(base::PathExists(file_path_));
+  EXPECT_FALSE(encrypted_hash.empty());
   EXPECT_EQ(hash, decrypted_hash);
 }
 
 TEST_F(BtifKeystoreTest, test_encrypt_empty_hash) {
   std::string hash = "";
 
-  EXPECT_FALSE(btif_keystore_->Encrypt(hash, kFilename, 0));
+  std::string encrypted_hash = btif_keystore_->Encrypt(hash, 0);
 
-  EXPECT_FALSE(base::PathExists(file_path_));
+  EXPECT_TRUE(encrypted_hash.empty());
 }
 
-TEST_F(BtifKeystoreTest, test_encrypt_empty_filename) {
-  std::string hash = "test";
-
-  EXPECT_FALSE(btif_keystore_->Encrypt(hash, "", 0));
-
-  EXPECT_FALSE(base::PathExists(file_path_));
-}
-
-// Decrypt
 TEST_F(BtifKeystoreTest, test_decrypt_empty_hash) {
-  // Only way to get the hash to decrypt is to read it from the file
-  // So make empty file manually
-  std::ofstream outfile(kFilename);
-  outfile.close();
+  std::string hash = "";
 
-  std::string decrypted_hash = btif_keystore_->Decrypt(kFilename);
-
-  EXPECT_TRUE(decrypted_hash.empty());
-}
-
-TEST_F(BtifKeystoreTest, test_decrypt_file_not_exist) {
-  // Ensure file doesn't exist, then decrypt
-  EXPECT_FALSE(base::PathExists(file_path_));
-
-  std::string decrypted_hash = btif_keystore_->Decrypt(kFilename);
-
-  EXPECT_TRUE(decrypted_hash.empty());
-}
-
-TEST_F(BtifKeystoreTest, test_decrypt_empty_filename) {
-  std::string decrypted_hash = btif_keystore_->Decrypt("");
+  std::string decrypted_hash = btif_keystore_->Decrypt(hash);
 
   EXPECT_TRUE(decrypted_hash.empty());
 }

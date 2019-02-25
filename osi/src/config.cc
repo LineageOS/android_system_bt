@@ -18,7 +18,7 @@
 
 #include "osi/include/config.h"
 
-#include <base/files/file_path.h>
+#include <base/files/file_util.h>
 #include <base/logging.h>
 #include <ctype.h>
 #include <errno.h>
@@ -82,6 +82,19 @@ std::unique_ptr<config_t> config_new(const char* filename) {
 
   fclose(fp);
   return config;
+}
+
+std::string checksum_read(const char* filename) {
+  base::FilePath path(filename);
+  if (!base::PathExists(path)) {
+    LOG(ERROR) << __func__ << ": unable to locate file '" << filename << "'";
+    return "";
+  }
+  std::string encrypted_hash;
+  if (!base::ReadFileToString(path, &encrypted_hash)) {
+    LOG(ERROR) << __func__ << ": unable to read file '" << filename << "'";
+  }
+  return encrypted_hash;
 }
 
 std::unique_ptr<config_t> config_new_clone(const config_t& src) {
@@ -324,6 +337,107 @@ bool config_save(const config_t& config, const std::string& filename) {
   return true;
 
 error:
+  // This indicates there is a write issue.  Unlink as partial data is not
+  // acceptable.
+  unlink(temp_filename.c_str());
+  if (fp) fclose(fp);
+  if (dir_fd != -1) close(dir_fd);
+  return false;
+}
+
+bool checksum_save(const std::string& checksum, const std::string& filename) {
+  CHECK(!checksum.empty()) << __func__ << ": checksum cannot be empty";
+  CHECK(!filename.empty()) << __func__ << ": filename cannot be empty";
+
+  // Steps to ensure content of config checksum file gets to disk:
+  //
+  // 1) Open and write to temp file (e.g.
+  // bt_config.conf.encrypted-checksum.new). 2) Sync the temp file to disk with
+  // fsync(). 3) Rename temp file to actual config checksum file (e.g.
+  // bt_config.conf.encrypted-checksum).
+  //    This ensures atomic update.
+  // 4) Sync directory that has the conf file with fsync().
+  //    This ensures directory entries are up-to-date.
+  FILE* fp = nullptr;
+  int dir_fd = -1;
+
+  // Build temp config checksum file based on config checksum file (e.g.
+  // bt_config.conf.encrypted-checksum.new).
+  const std::string temp_filename = filename + ".new";
+  base::FilePath path(temp_filename);
+
+  // Extract directory from file path (e.g. /data/misc/bluedroid).
+  const std::string directoryname = base::FilePath(filename).DirName().value();
+  if (directoryname.empty()) {
+    LOG(ERROR) << __func__ << ": error extracting directory from '" << filename
+               << "': " << strerror(errno);
+    goto error2;
+  }
+
+  dir_fd = open(directoryname.c_str(), O_RDONLY);
+  if (dir_fd < 0) {
+    LOG(ERROR) << __func__ << ": unable to open dir '" << directoryname
+               << "': " << strerror(errno);
+    goto error2;
+  }
+
+  if (base::WriteFile(path, checksum.data(), checksum.size()) !=
+      (int)checksum.size()) {
+    LOG(ERROR) << __func__ << ": unable to write file '" << filename.c_str();
+    goto error2;
+  }
+
+  fp = fopen(temp_filename.c_str(), "rb");
+  if (!fp) {
+    LOG(ERROR) << __func__ << ": unable to write to file '" << temp_filename
+               << "': " << strerror(errno);
+    goto error2;
+  }
+
+  // Sync written temp file out to disk. fsync() is blocking until data makes it
+  // to disk.
+  if (fsync(fileno(fp)) < 0) {
+    LOG(WARNING) << __func__ << ": unable to fsync file '" << temp_filename
+                 << "': " << strerror(errno);
+  }
+
+  if (fclose(fp) == EOF) {
+    LOG(ERROR) << __func__ << ": unable to close file '" << temp_filename
+               << "': " << strerror(errno);
+    goto error2;
+  }
+  fp = nullptr;
+
+  // Change the file's permissions to Read/Write by User and Group
+  if (chmod(temp_filename.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) ==
+      -1) {
+    LOG(ERROR) << __func__ << ": unable to change file permissions '"
+               << filename << "': " << strerror(errno);
+    goto error2;
+  }
+
+  // Rename written temp file to the actual config file.
+  if (rename(temp_filename.c_str(), filename.c_str()) == -1) {
+    LOG(ERROR) << __func__ << ": unable to commit file '" << filename
+               << "': " << strerror(errno);
+    goto error2;
+  }
+
+  // This should ensure the directory is updated as well.
+  if (fsync(dir_fd) < 0) {
+    LOG(WARNING) << __func__ << ": unable to fsync dir '" << directoryname
+                 << "': " << strerror(errno);
+  }
+
+  if (close(dir_fd) < 0) {
+    LOG(ERROR) << __func__ << ": unable to close dir '" << directoryname
+               << "': " << strerror(errno);
+    goto error2;
+  }
+
+  return true;
+
+error2:
   // This indicates there is a write issue.  Unlink as partial data is not
   // acceptable.
   unlink(temp_filename.c_str());
