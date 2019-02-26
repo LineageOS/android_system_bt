@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4c9f8221_ce244a1e",
+        "filename": "stack/avrc/avrc_bld_tg.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 979,
+      "author": {
+        "id": 12604
+      },
+      "writtenOn": "2019-02-26T18:51:31Z",
+      "side": 0,
+      "message": "This needs to be rebased. Current code matches 8.1.0_r61 and does not have this issue.",
+      "range": {
+        "startLine": 979,
+        "startChar": 4,
+        "endLine": 979,
+        "endChar": 32
+      },
+      "revId": "c80e1d388eafaab85149c65f3b80402245f7efd8",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    }
+  ]
+}
