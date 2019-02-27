@@ -38,7 +38,7 @@ static void p_256_copy_point(Point* q, Point* p) {
 }
 
 // q=2q
-static void ECC_Double(Point* q, Point* p, uint32_t keyLength) {
+static void ECC_Double(Point* q, Point* p) {
   uint32_t t1[KEY_LENGTH_DWORDS_P256];
   uint32_t t2[KEY_LENGTH_DWORDS_P256];
   uint32_t t3[KEY_LENGTH_DWORDS_P256];
@@ -49,8 +49,8 @@ static void ECC_Double(Point* q, Point* p, uint32_t keyLength) {
   uint32_t* z1;
   uint32_t* z3;
 
-  if (multiprecision_iszero(p->z, keyLength)) {
-    multiprecision_init(q->z, keyLength);
+  if (multiprecision_iszero(p->z)) {
+    multiprecision_init(q->z);
     return;  // return infinity
   }
 
@@ -61,33 +61,33 @@ static void ECC_Double(Point* q, Point* p, uint32_t keyLength) {
   y3 = q->y;
   z3 = q->z;
 
-  multiprecision_mersenns_squa_mod(t1, z1, keyLength);      // t1=z1^2
-  multiprecision_sub_mod(t2, x1, t1, keyLength);            // t2=x1-t1
-  multiprecision_add_mod(t1, x1, t1, keyLength);            // t1=x1+t1
-  multiprecision_mersenns_mult_mod(t2, t1, t2, keyLength);  // t2=t2*t1
-  multiprecision_lshift_mod(t3, t2, keyLength);
-  multiprecision_add_mod(t2, t3, t2, keyLength);  // t2=3t2
+  multiprecision_mersenns_squa_mod(t1, z1);      // t1=z1^2
+  multiprecision_sub_mod(t2, x1, t1);            // t2=x1-t1
+  multiprecision_add_mod(t1, x1, t1);            // t1=x1+t1
+  multiprecision_mersenns_mult_mod(t2, t1, t2);  // t2=t2*t1
+  multiprecision_lshift_mod(t3, t2);
+  multiprecision_add_mod(t2, t3, t2);  // t2=3t2
 
-  multiprecision_mersenns_mult_mod(z3, y1, z1, keyLength);  // z3=y1*z1
-  multiprecision_lshift_mod(z3, z3, keyLength);
+  multiprecision_mersenns_mult_mod(z3, y1, z1);  // z3=y1*z1
+  multiprecision_lshift_mod(z3, z3);
 
-  multiprecision_mersenns_squa_mod(y3, y1, keyLength);  // y3=y1^2
-  multiprecision_lshift_mod(y3, y3, keyLength);
-  multiprecision_mersenns_mult_mod(t3, y3, x1, keyLength);  // t3=y3*x1=x1*y1^2
-  multiprecision_lshift_mod(t3, t3, keyLength);
-  multiprecision_mersenns_squa_mod(y3, y3, keyLength);  // y3=y3^2=y1^4
-  multiprecision_lshift_mod(y3, y3, keyLength);
+  multiprecision_mersenns_squa_mod(y3, y1);  // y3=y1^2
+  multiprecision_lshift_mod(y3, y3);
+  multiprecision_mersenns_mult_mod(t3, y3, x1);  // t3=y3*x1=x1*y1^2
+  multiprecision_lshift_mod(t3, t3);
+  multiprecision_mersenns_squa_mod(y3, y3);  // y3=y3^2=y1^4
+  multiprecision_lshift_mod(y3, y3);
 
-  multiprecision_mersenns_squa_mod(x3, t2, keyLength);      // x3=t2^2
-  multiprecision_lshift_mod(t1, t3, keyLength);             // t1=2t3
-  multiprecision_sub_mod(x3, x3, t1, keyLength);            // x3=x3-t1
-  multiprecision_sub_mod(t1, t3, x3, keyLength);            // t1=t3-x3
-  multiprecision_mersenns_mult_mod(t1, t1, t2, keyLength);  // t1=t1*t2
-  multiprecision_sub_mod(y3, t1, y3, keyLength);            // y3=t1-y3
+  multiprecision_mersenns_squa_mod(x3, t2);      // x3=t2^2
+  multiprecision_lshift_mod(t1, t3);             // t1=2t3
+  multiprecision_sub_mod(x3, x3, t1);            // x3=x3-t1
+  multiprecision_sub_mod(t1, t3, x3);            // t1=t3-x3
+  multiprecision_mersenns_mult_mod(t1, t1, t2);  // t1=t1*t2
+  multiprecision_sub_mod(y3, t1, y3);            // y3=t1-y3
 }
 
 // q=q+p,     zp must be 1
-static void ECC_Add(Point* r, Point* p, Point* q, uint32_t keyLength) {
+static void ECC_Add(Point* r, Point* p, Point* q) {
   uint32_t t1[KEY_LENGTH_DWORDS_P256];
   uint32_t t2[KEY_LENGTH_DWORDS_P256];
   uint32_t* x1;
@@ -111,58 +111,57 @@ static void ECC_Add(Point* r, Point* p, Point* q, uint32_t keyLength) {
   z3 = r->z;
 
   // if Q=infinity, return p
-  if (multiprecision_iszero(z2, keyLength)) {
+  if (multiprecision_iszero(z2)) {
     p_256_copy_point(r, p);
     return;
   }
 
   // if P=infinity, return q
-  if (multiprecision_iszero(z1, keyLength)) {
+  if (multiprecision_iszero(z1)) {
     p_256_copy_point(r, q);
     return;
   }
 
-  multiprecision_mersenns_squa_mod(t1, z1, keyLength);      // t1=z1^2
-  multiprecision_mersenns_mult_mod(t2, z1, t1, keyLength);  // t2=t1*z1
-  multiprecision_mersenns_mult_mod(t1, x2, t1, keyLength);  // t1=t1*x2
-  multiprecision_mersenns_mult_mod(t2, y2, t2, keyLength);  // t2=t2*y2
+  multiprecision_mersenns_squa_mod(t1, z1);      // t1=z1^2
+  multiprecision_mersenns_mult_mod(t2, z1, t1);  // t2=t1*z1
+  multiprecision_mersenns_mult_mod(t1, x2, t1);  // t1=t1*x2
+  multiprecision_mersenns_mult_mod(t2, y2, t2);  // t2=t2*y2
 
-  multiprecision_sub_mod(t1, t1, x1, keyLength);  // t1=t1-x1
-  multiprecision_sub_mod(t2, t2, y1, keyLength);  // t2=t2-y1
+  multiprecision_sub_mod(t1, t1, x1);  // t1=t1-x1
+  multiprecision_sub_mod(t2, t2, y1);  // t2=t2-y1
 
-  if (multiprecision_iszero(t1, keyLength)) {
-    if (multiprecision_iszero(t2, keyLength)) {
-      ECC_Double(r, q, keyLength);
+  if (multiprecision_iszero(t1)) {
+    if (multiprecision_iszero(t2)) {
+      ECC_Double(r, q);
       return;
     } else {
-      multiprecision_init(z3, keyLength);
+      multiprecision_init(z3);
       return;  // return infinity
     }
   }
 
-  multiprecision_mersenns_mult_mod(z3, z1, t1, keyLength);  // z3=z1*t1
-  multiprecision_mersenns_squa_mod(y3, t1, keyLength);      // t3=t1^2
-  multiprecision_mersenns_mult_mod(z1, y3, t1, keyLength);  // t4=t3*t1
-  multiprecision_mersenns_mult_mod(y3, y3, x1, keyLength);  // t3=t3*x1
-  multiprecision_lshift_mod(t1, y3, keyLength);             // t1=2*t3
-  multiprecision_mersenns_squa_mod(x3, t2, keyLength);      // x3=t2^2
-  multiprecision_sub_mod(x3, x3, t1, keyLength);            // x3=x3-t1
-  multiprecision_sub_mod(x3, x3, z1, keyLength);            // x3=x3-t4
-  multiprecision_sub_mod(y3, y3, x3, keyLength);            // t3=t3-x3
-  multiprecision_mersenns_mult_mod(y3, y3, t2, keyLength);  // t3=t3*t2
-  multiprecision_mersenns_mult_mod(z1, z1, y1, keyLength);  // t4=t4*t1
-  multiprecision_sub_mod(y3, y3, z1, keyLength);
+  multiprecision_mersenns_mult_mod(z3, z1, t1);  // z3=z1*t1
+  multiprecision_mersenns_squa_mod(y3, t1);      // t3=t1^2
+  multiprecision_mersenns_mult_mod(z1, y3, t1);  // t4=t3*t1
+  multiprecision_mersenns_mult_mod(y3, y3, x1);  // t3=t3*x1
+  multiprecision_lshift_mod(t1, y3);             // t1=2*t3
+  multiprecision_mersenns_squa_mod(x3, t2);      // x3=t2^2
+  multiprecision_sub_mod(x3, x3, t1);            // x3=x3-t1
+  multiprecision_sub_mod(x3, x3, z1);            // x3=x3-t4
+  multiprecision_sub_mod(y3, y3, x3);            // t3=t3-x3
+  multiprecision_mersenns_mult_mod(y3, y3, t2);  // t3=t3*t2
+  multiprecision_mersenns_mult_mod(z1, z1, y1);  // t4=t4*t1
+  multiprecision_sub_mod(y3, y3, z1);
 }
 
 // Computing the Non-Adjacent Form of a positive integer
-static void ECC_NAF(uint8_t* naf, uint32_t* NumNAF, uint32_t* k,
-                    uint32_t keyLength) {
+static void ECC_NAF(uint8_t* naf, uint32_t* NumNAF, uint32_t* k) {
   uint32_t sign;
   int i = 0;
   int j;
   uint32_t var;
 
-  while ((var = multiprecision_most_signbits(k, keyLength)) >= 1) {
+  while ((var = multiprecision_most_signbits(k)) >= 1) {
     if (k[0] & 0x01)  // k is odd
     {
       sign = (k[0] & 0x03);  // 1 or 3
@@ -183,7 +182,7 @@ static void ECC_NAF(uint8_t* naf, uint32_t* NumNAF, uint32_t* k,
     } else
       sign = 0;
 
-    multiprecision_rshift(k, k, keyLength);
+    multiprecision_rshift(k, k);
     naf[i / 4] |= (sign) << ((i % 4) * 2);
     i++;
   }
@@ -192,8 +191,7 @@ static void ECC_NAF(uint8_t* naf, uint32_t* NumNAF, uint32_t* k,
 }
 
 // Binary Non-Adjacent Form for point multiplication
-void ECC_PointMult_Bin_NAF(Point* q, Point* p, uint32_t* n,
-                           uint32_t keyLength) {
+void ECC_PointMult_Bin_NAF(Point* q, Point* p, uint32_t* n) {
   uint32_t sign;
   uint8_t naf[256 / 4 + 1];
   uint32_t NumNaf;
@@ -201,69 +199,64 @@ void ECC_PointMult_Bin_NAF(Point* q, Point* p, uint32_t* n,
   Point r;
   uint32_t* modp;
 
-  if (keyLength == KEY_LENGTH_DWORDS_P256) {
-    modp = curve_p256.p;
-  } else {
-    modp = curve.p;
-  }
+  modp = curve_p256.p;
 
   p_256_init_point(&r);
-  multiprecision_init(p->z, keyLength);
+  multiprecision_init(p->z);
   p->z[0] = 1;
 
   // initialization
   p_256_init_point(q);
 
   // -p
-  multiprecision_copy(minus_p.x, p->x, keyLength);
-  multiprecision_sub(minus_p.y, modp, p->y, keyLength);
+  multiprecision_copy(minus_p.x, p->x);
+  multiprecision_sub(minus_p.y, modp, p->y);
 
-  multiprecision_init(minus_p.z, keyLength);
+  multiprecision_init(minus_p.z);
   minus_p.z[0] = 1;
 
   // NAF
   memset(naf, 0, sizeof(naf));
-  ECC_NAF(naf, &NumNaf, n, keyLength);
+  ECC_NAF(naf, &NumNaf, n);
 
   for (int i = NumNaf - 1; i >= 0; i--) {
     p_256_copy_point(&r, q);
-    ECC_Double(q, &r, keyLength);
+    ECC_Double(q, &r);
     sign = (naf[i / 4] >> ((i % 4) * 2)) & 0x03;
 
     if (sign == 1) {
       p_256_copy_point(&r, q);
-      ECC_Add(q, &r, p, keyLength);
+      ECC_Add(q, &r, p);
     } else if (sign == 3) {
       p_256_copy_point(&r, q);
-      ECC_Add(q, &r, &minus_p, keyLength);
+      ECC_Add(q, &r, &minus_p);
     }
   }
 
-  multiprecision_inv_mod(minus_p.x, q->z, keyLength);
-  multiprecision_mersenns_squa_mod(q->z, minus_p.x, keyLength);
-  multiprecision_mersenns_mult_mod(q->x, q->x, q->z, keyLength);
-  multiprecision_mersenns_mult_mod(q->z, q->z, minus_p.x, keyLength);
-  multiprecision_mersenns_mult_mod(q->y, q->y, q->z, keyLength);
+  multiprecision_inv_mod(minus_p.x, q->z);
+  multiprecision_mersenns_squa_mod(q->z, minus_p.x);
+  multiprecision_mersenns_mult_mod(q->x, q->x, q->z);
+  multiprecision_mersenns_mult_mod(q->z, q->z, minus_p.x);
+  multiprecision_mersenns_mult_mod(q->y, q->y, q->z);
 }
 
 bool ECC_ValidatePoint(const Point& pt) {
-  const size_t kl = KEY_LENGTH_DWORDS_P256;
-  p_256_init_curve(kl);
+  p_256_init_curve();
 
   // Ensure y^2 = x^3 + a*x + b (mod p); a = -3
 
   // y^2 mod p
-  uint32_t y2_mod[kl] = {0};
-  multiprecision_mersenns_squa_mod(y2_mod, (uint32_t*)pt.y, kl);
+  uint32_t y2_mod[KEY_LENGTH_DWORDS_P256] = {0};
+  multiprecision_mersenns_squa_mod(y2_mod, (uint32_t*)pt.y);
 
   // Right hand side calculation
-  uint32_t rhs[kl] = {0};
-  multiprecision_mersenns_squa_mod(rhs, (uint32_t*)pt.x, kl);
-  uint32_t three[kl] = {0};
+  uint32_t rhs[KEY_LENGTH_DWORDS_P256] = {0};
+  multiprecision_mersenns_squa_mod(rhs, (uint32_t*)pt.x);
+  uint32_t three[KEY_LENGTH_DWORDS_P256] = {0};
   three[0] = 3;
-  multiprecision_sub_mod(rhs, rhs, three, kl);
-  multiprecision_mersenns_mult_mod(rhs, rhs, (uint32_t*)pt.x, kl);
-  multiprecision_add_mod(rhs, rhs, curve_p256.b, kl);
+  multiprecision_sub_mod(rhs, rhs, three);
+  multiprecision_mersenns_mult_mod(rhs, rhs, (uint32_t*)pt.x);
+  multiprecision_add_mod(rhs, rhs, curve_p256.b);
 
-  return multiprecision_compare(rhs, y2_mod, kl) == 0;
+  return multiprecision_compare(rhs, y2_mod) == 0;
 }
