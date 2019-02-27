@@ -217,10 +217,10 @@ void BluetoothAudioClientInterface::fetch_audio_provider() {
 
   android::sp<IBluetoothAudioProvidersFactory> providersFactory =
       IBluetoothAudioProvidersFactory::getService();
+  CHECK(providersFactory != nullptr);
   LOG(INFO) << "IBluetoothAudioProvidersFactory::getService() returned "
             << providersFactory.get()
             << (providersFactory->isRemote() ? " (remote)" : " (local)");
-  CHECK(providersFactory != nullptr);
 
   std::promise<void> getProviderCapabilities_promise;
   auto getProviderCapabilities_future =
