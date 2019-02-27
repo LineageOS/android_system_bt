@@ -202,6 +202,7 @@ cc_test {
         "test/stack_a2dp_test.cc",
     ],
     shared_libs: [
+        "libcrypto",
         "libhidlbase",
         "liblog",
         "libprotobuf-cpp-lite",
