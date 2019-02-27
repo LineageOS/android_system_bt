@@ -1840,17 +1840,13 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
       bool should_suspend = false;
       if (peer_.IsSink() && !peer_.CheckFlags(BtifAvPeer::kFlagPendingStart |
                                               BtifAvPeer::kFlagRemoteSuspend)) {
-        BTIF_TRACE_WARNING("%s: Peer %s : trigger Suspend as remote initiated",
-                           __PRETTY_FUNCTION__,
-                           peer_.PeerAddress().ToString().c_str());
+        LOG(WARNING) << __PRETTY_FUNCTION__ << ": Peer " << peer_.PeerAddress()
+                     << " : trigger Suspend as remote initiated";
         should_suspend = true;
       }
 
-      // If peer is A2DP Source, we do not want to ACK commands on UIPC
-      if (peer_.IsSink() &&
-          btif_a2dp_on_started(
-              peer_.PeerAddress(), &p_av->start,
-              peer_.CheckFlags(BtifAvPeer::kFlagPendingStart))) {
+      // If peer is A2DP Source, do ACK commands to audio HAL and start media task
+      if (peer_.IsSink() && btif_a2dp_on_started(peer_.PeerAddress(), &p_av->start)) {
         // Only clear pending flag after acknowledgement
         peer_.ClearFlags(BtifAvPeer::kFlagPendingStart);
       }
@@ -1861,12 +1857,6 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
       if (peer_.IsSource() && peer_.IsActivePeer()) {
         // Remove flush state, ready for streaming
         btif_a2dp_sink_set_rx_flush(false);
-      }
-
-      // Change state to Started, send acknowledgement if start is pending
-      if (peer_.IsSink() && peer_.CheckFlags(BtifAvPeer::kFlagPendingStart)) {
-        btif_a2dp_on_started(peer_.PeerAddress(), nullptr, true);
-        // Pending start flag will be cleared when exit current state
       }
 
       if (should_suspend) {
@@ -2002,8 +1992,7 @@ bool BtifAvStateMachine::StateStarted::ProcessEvent(uint32_t event,
                BtifAvEvent::EventName(event).c_str(),
                peer_.FlagsToString().c_str());
       // We were started remotely, just ACK back the local request
-      if (peer_.IsSink())
-        btif_a2dp_on_started(peer_.PeerAddress(), nullptr, true);
+      if (peer_.IsSink()) btif_a2dp_on_started(peer_.PeerAddress(), nullptr);
       break;
 
     // FIXME -- use suspend = true always to work around issue with BTA AV
