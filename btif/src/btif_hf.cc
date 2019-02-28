@@ -412,7 +412,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
     case BTA_AG_AT_BLDN_EVT:
     case BTA_AG_AT_D_EVT:
       bt_hf_callbacks->DialCallCallback(
-          (event == BTA_AG_AT_D_EVT) ? p_data->val.str : nullptr,
+          (event == BTA_AG_AT_D_EVT) ? p_data->val.str : (char*)"",
           &btif_hf_cb[idx].connected_bda);
       break;
 
