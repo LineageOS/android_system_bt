@@ -26,8 +26,7 @@
 
 #include "common/message_loop_thread.h"
 
-#define BLUETOOTH_AUDIO_PROP_ENABLED \
-  "persist.bluetooth.bluetooth_audio_hal.enabled"
+#define BLUETOOTH_AUDIO_HAL_PROP_DISABLED "persist.bluetooth.bluetooth_audio_hal.disabled"
 
 namespace bluetooth {
 namespace audio {

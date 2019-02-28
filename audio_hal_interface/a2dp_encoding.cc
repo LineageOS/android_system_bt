@@ -552,8 +552,7 @@ namespace a2dp {
 // Checking if new bluetooth_audio is supported
 bool is_hal_2_0_supported() {
   if (!is_configured) {
-    btaudio_a2dp_supported =
-        osi_property_get_bool(BLUETOOTH_AUDIO_PROP_ENABLED, false);
+    btaudio_a2dp_supported = !osi_property_get_bool(BLUETOOTH_AUDIO_HAL_PROP_DISABLED, false);
     is_configured = true;
   }
   return btaudio_a2dp_supported;
