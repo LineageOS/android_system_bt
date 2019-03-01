@@ -194,9 +194,7 @@ tBTA_JV_RFC_CB* bta_jv_alloc_rfc_cb(uint16_t port_handle,
     }
   }
   if (p_cb == NULL) {
-    LOG(ERROR) << __func__ << "port_handle=" << port_handle
-               << " ctrl block exceeds limit:" << port_handle,
-        BTA_JV_MAX_RFC_CONN;
+    LOG(ERROR) << __func__ << "port_handle=" << port_handle << " ctrl block exceeds limit:" << BTA_JV_MAX_RFC_CONN;
   }
   return p_cb;
 }
@@ -789,7 +787,7 @@ void bta_jv_start_discovery(const RawAddress& bd_addr, uint16_t num_uuid,
   }
 
   /* init the database/set up the filter */
-  VLOG(2) << __func__ << ": call SDP_InitDiscoveryDb, num_uuid=", num_uuid;
+  VLOG(2) << __func__ << ": call SDP_InitDiscoveryDb, num_uuid=" << num_uuid;
   SDP_InitDiscoveryDb(p_bta_jv_cfg->p_sdp_db, p_bta_jv_cfg->sdp_db_size,
                       num_uuid, uuid_list, 0, NULL);
 

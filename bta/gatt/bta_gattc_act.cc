@@ -1186,7 +1186,7 @@ void bta_gattc_proc_other_indication(tBTA_GATTC_CLCB* p_clcb, uint8_t op,
           << StringPrintf(
                  ": check p_data->att_value.handle=%d p_data->handle=%d",
                  p_data->att_value.handle, p_data->handle);
-  VLOG(1) << "is_notify", p_notify->is_notify;
+  VLOG(1) << "is_notify " << p_notify->is_notify;
 
   p_notify->is_notify = (op == GATTC_OPTYPE_INDICATION) ? false : true;
   p_notify->len = p_data->att_value.len;
