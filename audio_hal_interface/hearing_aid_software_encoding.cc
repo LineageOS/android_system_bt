@@ -142,8 +142,7 @@ namespace hearing_aid {
 
 bool is_hal_2_0_supported() {
   if (!is_configured) {
-    btaudio_hearing_aid_supported =
-        osi_property_get_bool(BLUETOOTH_AUDIO_PROP_ENABLED, false);
+    btaudio_hearing_aid_supported = !osi_property_get_bool(BLUETOOTH_AUDIO_HAL_PROP_DISABLED, false);
     is_configured = true;
   }
   return btaudio_hearing_aid_supported;
