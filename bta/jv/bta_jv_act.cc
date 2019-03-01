@@ -2165,13 +2165,17 @@ void bta_jv_l2cap_connect_le(uint16_t remote_chan,
   // it could have been deleted/moved from under us, so re-find it */
   t = fcclient_find_by_id(id);
   if (t) {
-    if (evt.l2c_cl_init.status == BTA_JV_SUCCESS)
+    if (evt.l2c_cl_init.status == BTA_JV_SUCCESS) {
       call_init_f = !t->init_called;
-    else
+    } else {
       fcclient_free(t);
+      t = NULL;
+    }
   }
   if (call_init_f) p_cback(BTA_JV_L2CAP_CL_INIT_EVT, &evt, l2cap_socket_id);
-  t->init_called = true;
+  if (t) {
+    t->init_called = true;
+  }
 }
 
 /* stops an LE L2CAP server */
