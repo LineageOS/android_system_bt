@@ -99,6 +99,9 @@ struct ApcfCommand {
   uint16_t company_mask;
   std::vector<uint8_t> data;
   std::vector<uint8_t> data_mask;
+  uint8_t org_id;
+  uint8_t tds_flags;
+  uint8_t tds_flags_mask;
 };
 
 #endif /* ANDROID_INCLUDE_BT_COMMON_TYPES_H */
