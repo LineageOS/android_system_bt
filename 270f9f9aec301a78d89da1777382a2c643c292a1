@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d00670da_b80f1165",
+        "filename": "stack/avrc/avrc_bld_tg.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 981,
+      "author": {
+        "id": 12604
+      },
+      "writtenOn": "2019-03-04T19:54:47Z",
+      "side": 1,
+      "message": "Please remove indentation on this line.",
+      "range": {
+        "startLine": 981,
+        "startChar": 1,
+        "endLine": 981,
+        "endChar": 23
+      },
+      "revId": "270f9f9aec301a78d89da1777382a2c643c292a1",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    }
+  ]
+}
