@@ -2117,11 +2117,12 @@ static void fcchan_data_cbk(uint16_t chan, const RawAddress& bd_addr,
   if (tc) {
     // try to find an open socked for that addr and channel
     t = fcclient_find_by_addr(tc->clients, &bd_addr);
-    if (!t) {
-      // no socket -> drop it
-      return;
-    }
   }
+  if (!t) {
+    // no socket -> drop it
+    return;
+  }
+
 
   sock_cback = t->p_cback;
   sock_id = t->l2cap_socket_id;
