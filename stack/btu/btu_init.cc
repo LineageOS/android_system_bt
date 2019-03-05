@@ -80,11 +80,13 @@ void btu_init_core() {
  *****************************************************************************/
 void btu_free_core() {
   /* Free the mandatory core stack components */
+  gatt_free();
+
   l2c_free();
 
   sdp_free();
 
-  gatt_free();
+  btm_free();
 }
 
 /*****************************************************************************

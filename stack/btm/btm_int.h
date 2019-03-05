@@ -48,6 +48,7 @@ extern tBTM_CB btm_cb;
  *******************************************
 */
 extern void btm_init(void);
+extern void btm_free(void);
 
 /* Internal functions provided by btm_inq.cc
  ******************************************
