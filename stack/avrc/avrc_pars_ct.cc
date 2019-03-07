@@ -184,9 +184,16 @@ tAVRC_STS avrc_parse_notification_rsp(uint8_t* p_stream, uint16_t len,
       break;
 
     case AVRC_EVT_ADDR_PLAYER_CHANGE:
+      min_len += 4;
+      if (len < min_len) goto length_error;
       BE_STREAM_TO_UINT16(p_rsp->param.addr_player.player_id, p_stream);
       BE_STREAM_TO_UINT16(p_rsp->param.addr_player.uid_counter, p_stream);
+      break;
 
+    case AVRC_EVT_PLAY_POS_CHANGED:
+      min_len += 4;
+      if (len < min_len) goto length_error;
+      BE_STREAM_TO_UINT32(p_rsp->param.play_pos, p_stream);
       break;
 
     case AVRC_EVT_UIDS_CHANGE:
@@ -194,7 +201,6 @@ tAVRC_STS avrc_parse_notification_rsp(uint8_t* p_stream, uint16_t len,
 
     case AVRC_EVT_TRACK_REACHED_END:
     case AVRC_EVT_TRACK_REACHED_START:
-    case AVRC_EVT_PLAY_POS_CHANGED:
     case AVRC_EVT_BATTERY_STATUS_CHANGE:
     case AVRC_EVT_SYSTEM_STATUS_CHANGE:
     default:
