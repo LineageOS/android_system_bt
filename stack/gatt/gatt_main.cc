@@ -243,8 +243,9 @@ bool gatt_disconnect(tGATT_TCB* p_tcb) {
       /* only LCB exist between remote device and local */
       ret = L2CA_RemoveFixedChnl(L2CAP_ATT_CID, p_tcb->peer_bda);
     } else {
-      ret = L2CA_CancelBleConnectReq(p_tcb->peer_bda);
-      if (!ret) gatt_set_ch_state(p_tcb, GATT_CH_CLOSE);
+      L2CA_CancelBleConnectReq(p_tcb->peer_bda);
+      gatt_cleanup_upon_disc(p_tcb->peer_bda, HCI_ERR_CONN_CAUSE_LOCAL_HOST, p_tcb->transport);
+      return true;
     }
     gatt_set_ch_state(p_tcb, GATT_CH_CLOSING);
   } else {
@@ -357,6 +358,7 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr,
                         p_reg->gatt_if))
         return false;
     } else if (st == GATT_CH_CLOSING) {
+      LOG(INFO) << "Must finish disconnection before new connection";
       /* need to complete the closing first */
       return false;
     }
