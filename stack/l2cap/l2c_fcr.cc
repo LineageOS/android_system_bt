@@ -833,13 +833,25 @@ void l2c_lcc_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
   }
 
   if (p_ccb->is_first_seg) {
+    if (p_buf->len < sizeof(sdu_length)) {
+      L2CAP_TRACE_ERROR("%s: buffer length=%d too small. Need at least 2.",
+                        __func__, p_buf->len);
+      android_errorWriteWithInfoLog(0x534e4554, "120665616", -1, NULL, 0);
+      /* Discard the buffer */
+      osi_free(p_buf);
+      return;
+    }
     STREAM_TO_UINT16(sdu_length, p);
+
     /* Check the SDU Length with local MTU size */
     if (sdu_length > p_ccb->local_conn_cfg.mtu) {
       /* Discard the buffer */
       osi_free(p_buf);
       return;
     }
+
+    p_buf->len -= sizeof(sdu_length);
+    p_buf->offset += sizeof(sdu_length);
 
     if (sdu_length < p_buf->len) {
       L2CAP_TRACE_ERROR("%s: Invalid sdu_length: %d", __func__, sdu_length);
@@ -859,8 +871,6 @@ void l2c_lcc_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
     p_data->len = 0;
     p_ccb->ble_sdu_length = sdu_length;
     L2CAP_TRACE_DEBUG("%s SDU Length = %d", __func__, sdu_length);
-    p_buf->len -= sizeof(sdu_length);
-    p_buf->offset += sizeof(sdu_length);
     p_data->offset = 0;
 
   } else {
