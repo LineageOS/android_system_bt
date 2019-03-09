@@ -58,6 +58,10 @@ void Device::RegisterInterfaces(MediaInterface* media_interface,
   volume_interface_ = volume_interface;
 }
 
+base::WeakPtr<Device> Device::Get() {
+  return weak_ptr_factory_.GetWeakPtr();
+}
+
 void Device::SetBrowseMtu(uint16_t browse_mtu) {
   DEVICE_LOG(INFO) << __PRETTY_FUNCTION__ << ": browse_mtu = " << browse_mtu;
   browse_mtu_ = browse_mtu;
