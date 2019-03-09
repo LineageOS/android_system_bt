@@ -352,9 +352,8 @@ void AvrcpService::SendMediaUpdate(bool track_changed, bool play_state,
   // device update happens on the main thread.
   for (const auto& device :
        instance_->connection_handler_->GetListOfDevices()) {
-    do_in_main_thread(FROM_HERE, base::Bind(&Device::SendMediaUpdate,
-                                            base::Unretained(device.get()),
-                                            track_changed, play_state, queue));
+    do_in_main_thread(FROM_HERE,
+                      base::Bind(&Device::SendMediaUpdate, device.get()->Get(), track_changed, play_state, queue));
   }
 }
 
@@ -368,10 +367,8 @@ void AvrcpService::SendFolderUpdate(bool available_players,
   // Ensure that the update is posted to the correct thread
   for (const auto& device :
        instance_->connection_handler_->GetListOfDevices()) {
-    do_in_main_thread(
-        FROM_HERE,
-        base::Bind(&Device::SendFolderUpdate, base::Unretained(device.get()),
-                   available_players, addressed_players, uids));
+    do_in_main_thread(FROM_HERE, base::Bind(&Device::SendFolderUpdate, device.get()->Get(), available_players,
+                                            addressed_players, uids));
   }
 }
 
