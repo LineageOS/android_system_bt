@@ -52,6 +52,8 @@ void Device::RegisterInterfaces(MediaInterface* media_interface,
   volume_interface_ = volume_interface;
 }
 
+base::WeakPtr<Device> Device::Get() { return weak_ptr_factory_.GetWeakPtr(); }
+
 bool Device::IsActive() const {
   return address_ == a2dp_interface_->active_peer();
 }
