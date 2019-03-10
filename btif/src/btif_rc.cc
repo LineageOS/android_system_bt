@@ -2940,9 +2940,12 @@ static void register_for_event_notification(btif_rc_supported_event_t* p_event,
     BTIF_TRACE_ERROR("%s: no more transaction labels: %d", __func__, status);
     return;
   }
-
-  status = register_notification_cmd(p_transaction->lbl, p_event->event_id, 0,
-                                     p_dev);
+  // interval is only valid for AVRC_EVT_PLAY_POS_CHANGED
+  uint32_t interval = 0;
+  if (p_event->event_id == AVRC_EVT_PLAY_POS_CHANGED) {
+    interval = 2000;
+  }
+  status = register_notification_cmd(p_transaction->lbl, p_event->event_id, interval, p_dev);
   if (status != BT_STATUS_SUCCESS) {
     BTIF_TRACE_ERROR("%s: Error in Notification registration: %d", __func__,
                      status);
@@ -3050,6 +3053,7 @@ static void handle_get_capability_response(tBTA_AV_META_MSG* pmeta_msg,
       /* Skip registering for Play position change notification */
       if ((p_rsp->param.event_id[xx] == AVRC_EVT_PLAY_STATUS_CHANGE) ||
           (p_rsp->param.event_id[xx] == AVRC_EVT_TRACK_CHANGE) ||
+          (p_rsp->param.event_id[xx] == AVRC_EVT_PLAY_POS_CHANGED) ||
           (p_rsp->param.event_id[xx] == AVRC_EVT_APP_SETTING_CHANGE) ||
           (p_rsp->param.event_id[xx] == AVRC_EVT_NOW_PLAYING_CHANGE) ||
           (p_rsp->param.event_id[xx] == AVRC_EVT_ADDR_PLAYER_CHANGE) ||
@@ -3178,12 +3182,16 @@ static void handle_notification_response(tBTA_AV_META_MSG* pmeta_msg,
                        p_dev->rc_addr, p_rsp->param.addr_player.player_id));
         break;
 
+      case AVRC_EVT_PLAY_POS_CHANGED:
+        do_in_jni_thread(FROM_HERE, base::Bind(bt_rc_ctrl_callbacks->play_position_changed_cb, p_dev->rc_addr, 0,
+                                               p_rsp->param.play_pos));
+
+        break;
       case AVRC_EVT_UIDS_CHANGE:
         break;
 
       case AVRC_EVT_TRACK_REACHED_END:
       case AVRC_EVT_TRACK_REACHED_START:
-      case AVRC_EVT_PLAY_POS_CHANGED:
       case AVRC_EVT_BATTERY_STATUS_CHANGE:
       case AVRC_EVT_SYSTEM_STATUS_CHANGE:
       default:
@@ -3290,12 +3298,15 @@ static void handle_notification_response(tBTA_AV_META_MSG* pmeta_msg,
       case AVRC_EVT_ADDR_PLAYER_CHANGE:
         break;
 
+      case AVRC_EVT_PLAY_POS_CHANGED:
+        // handle on interim
+        break;
+
       case AVRC_EVT_UIDS_CHANGE:
         break;
 
       case AVRC_EVT_TRACK_REACHED_END:
       case AVRC_EVT_TRACK_REACHED_START:
-      case AVRC_EVT_PLAY_POS_CHANGED:
       case AVRC_EVT_BATTERY_STATUS_CHANGE:
       case AVRC_EVT_SYSTEM_STATUS_CHANGE:
       default:
