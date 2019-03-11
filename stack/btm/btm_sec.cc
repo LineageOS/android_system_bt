@@ -24,6 +24,7 @@
 
 #define LOG_TAG "bt_btm_sec"
 
+#include <log/log.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -47,6 +48,8 @@
 #ifdef APPL_AUTH_WRITE_EXCEPTION
 bool(APPL_AUTH_WRITE_EXCEPTION)(const RawAddress& bd_addr);
 #endif
+
+extern void bta_dm_remove_device(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *             L O C A L    F U N C T I O N     P R O T O T Y P E S            *
@@ -4528,6 +4531,18 @@ void btm_sec_disconnected(uint16_t handle, uint8_t reason) {
     // Remove temporary key.
     if (p_dev_rec->bond_type == BOND_TYPE_TEMPORARY)
       p_dev_rec->sec_flags &= ~(BTM_SEC_LINK_KEY_KNOWN);
+  }
+
+  /* Some devices hardcode sample LTK value from spec, instead of generating
+   * one. Treat such devices as insecure, and remove such bonds on
+   * disconnection.
+   */
+  if (is_sample_ltk(p_dev_rec->ble.keys.pltk)) {
+    android_errorWriteLog(0x534e4554, "128437297");
+    LOG(INFO) << __func__ << " removing bond to device that used sample LTK: "
+              << p_dev_rec->bd_addr;
+
+    bta_dm_remove_device(p_dev_rec->bd_addr);
   }
 
   BTM_TRACE_EVENT("%s after update sec_flags=0x%x", __func__,
