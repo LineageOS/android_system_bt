@@ -24,6 +24,7 @@
 
 #define LOG_TAG "bt_btm_sec"
 
+#include <log/log.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -41,6 +42,8 @@
 #include "l2c_int.h"
 
 #include "gatt_int.h"
+
+#include "bta/dm/bta_dm_int.h"
 
 #define BTM_SEC_MAX_COLLISION_DELAY (5000)
 
@@ -4659,6 +4662,19 @@ void btm_sec_disconnected(uint16_t handle, uint8_t reason) {
 
   BTM_TRACE_EVENT("%s after update sec_flags=0x%x", __func__,
                   p_dev_rec->sec_flags);
+
+  /* Some devices hardcode sample LTK value from spec, instead of generating
+   * one. Treat such devices as insecure, and remove such bonds on
+   * disconnection.
+   */
+  if (is_sample_ltk(p_dev_rec->ble.keys.pltk)) {
+    android_errorWriteLog(0x534e4554, "128437297");
+    LOG(INFO) << __func__ << " removing bond to device that used sample LTK";
+
+    tBTA_DM_MSG p_data;
+    p_data.remove_dev.bd_addr = p_dev_rec->bd_addr;
+    bta_dm_remove_device(&p_data);
+  }
 
   if (p_dev_rec->sec_state == BTM_SEC_STATE_DISCONNECTING_BOTH) {
     p_dev_rec->sec_state = (transport == BT_TRANSPORT_LE)
