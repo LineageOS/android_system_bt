@@ -30,6 +30,7 @@
  *
  */
 #include <assert.h>
+#include <log/log.h>
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
@@ -49,6 +50,7 @@
 #include "osi/include/compat.h"
 #include "osi/include/config.h"
 #include "gki.h"
+#include "osi/include/list.h"
 #include "osi/include/osi.h"
 #include "bta_hh_api.h"
 #include "btif_hh.h"
@@ -882,6 +884,47 @@ bt_status_t btif_storage_remove_bonded_device(bt_bdaddr_t *remote_bd_addr)
 
 }
 
+/* Some devices hardcode sample LTK value from spec, instead of generating one.
+ * Treat such devices as insecure, and remove such bonds when bluetooth restarts.
+ * Removing them after disconnection is handled separately.
+ *
+ * We still allow such devices to bond in order to give the user a chance to update
+ * firmware.
+ */
+static void remove_devices_with_sample_ltk() {
+    list_t *bad_ltk = list_new(osi_free);
+
+    for (const btif_config_section_iter_t *iter = btif_config_section_begin(); iter != btif_config_section_end(); iter = btif_config_section_next(iter)) {
+        const char *name = btif_config_section_name(iter);
+        if (!string_is_bdaddr(name)) {
+            continue;
+        }
+
+        bt_bdaddr_t *bda = osi_malloc(sizeof(bt_bdaddr_t));
+        string_to_bdaddr(name, bda);
+
+        tBTA_LE_KEY_VALUE key;
+        memset(&key, 0, sizeof(key));
+
+        if (btif_storage_get_ble_bonding_key(bda, BTIF_DM_LE_KEY_PENC, (char*)&key, sizeof(tBTM_LE_PENC_KEYS)) ==
+              BT_STATUS_SUCCESS) {
+              if (is_sample_ltk(key.penc_key.ltk)) {
+                  list_append(bad_ltk, (void*)bda);
+              }
+        }
+    }
+
+    for (list_node_t *sn = list_begin(bad_ltk); sn != list_end(bad_ltk); sn = list_next(sn)) {
+        android_errorWriteLog(0x534e4554, "128437297");
+        BTIF_TRACE_ERROR("%s: removing bond to device using test TLK", __func__);
+
+        bt_bdaddr_t *bda = (bt_bdaddr_t*)list_node(sn);
+        btif_storage_remove_bonded_device(bda);
+    }
+
+    list_free(bad_ltk);
+}
+
 /*******************************************************************************
 **
 ** Function         btif_storage_is_device_bonded
@@ -935,6 +978,8 @@ bt_status_t btif_storage_load_bonded_devices(void)
     bt_uuid_t local_uuids[BT_MAX_NUM_UUIDS];
     bt_uuid_t remote_uuids[BT_MAX_NUM_UUIDS];
     uint32_t cod, devtype;
+
+    remove_devices_with_sample_ltk();
 
     btif_in_fetch_bonded_devices(&bonded_devices, 1);
 
