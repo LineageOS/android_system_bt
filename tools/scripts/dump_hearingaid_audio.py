@@ -443,6 +443,11 @@ def set_config():
   argv_parser.add_argument("-c2", "--connection-handle2",
                            help="set a fake connection handle 2 to capture \
                            audio dump.", dest="connection_handle2", type=int)
+  argv_parser.add_argument("-ns", "--no-start", help="No audio 'Start' cmd is \
+                           needed before extracting audio data.",
+                           dest="no_start", default="False")
+  argv_parser.add_argument("-dc", "--default-codec", help="set a default \
+                           codec.", dest="codec", default="G722")
   argv_parser.add_argument("-a", "--attr-handle",
                            help="force to select audio control attr handle.",
                            dest="audio_control_attr_handle", type=int)
@@ -458,17 +463,33 @@ def set_config():
                           connection_handle2")
         exit(1)
 
+  if not (arg.no_start.lower() == "true" or arg.no_start.lower() == "false"):
+    argv_parser.error("-ns/--no-start arg is invalid, it should be true/false.")
+    exit(1)
+
   if arg.connection_handle1 is not None:
     fake_name = "ConnectionHandle" + str(arg.connection_handle1)
     update_audio_data("", "", PEER_ADDRESS, fake_name)
     update_audio_data(PEER_ADDRESS, fake_name, CONNECTION_HANDLE,
                       arg.connection_handle1)
+    if arg.no_start.lower() == "true":
+      update_audio_data(PEER_ADDRESS, fake_name, START, True)
+      update_audio_data(PEER_ADDRESS, fake_name, TIMESTAMP, "Unknown")
+      update_audio_data(PEER_ADDRESS, fake_name, CODEC, arg.codec)
+      update_audio_data(PEER_ADDRESS, fake_name, SAMPLE_RATE, "Unknown")
+      update_audio_data(PEER_ADDRESS, fake_name, AUDIO_TYPE, "Unknown")
 
   if arg.connection_handle2 is not None:
     fake_name = "ConnectionHandle" + str(arg.connection_handle2)
     update_audio_data("", "", PEER_ADDRESS, fake_name)
     update_audio_data(PEER_ADDRESS, fake_name, CONNECTION_HANDLE,
                       arg.connection_handle2)
+    if arg.no_start.lower() == "true":
+      update_audio_data(PEER_ADDRESS, fake_name, START, True)
+      update_audio_data(PEER_ADDRESS, fake_name, TIMESTAMP, "Unknown")
+      update_audio_data(PEER_ADDRESS, fake_name, CODEC, arg.codec)
+      update_audio_data(PEER_ADDRESS, fake_name, SAMPLE_RATE, "Unknown")
+      update_audio_data(PEER_ADDRESS, fake_name, AUDIO_TYPE, "Unknown")
 
   if arg.audio_control_attr_handle is not None:
     global force_audio_control_attr_handle
