@@ -19,6 +19,7 @@
 #include "adapter/bluetooth_test.h"
 #include <mutex>
 #include "btcore/include/property.h"
+#include "osi/include/properties.h"
 
 namespace {
 
@@ -46,6 +47,8 @@ void BluetoothTest::SetUp() {
   adapter_state_changed_callback_sem_ = semaphore_new(0);
   discovery_state_changed_callback_sem_ = semaphore_new(0);
 
+  osi_property_set("debug.bluetooth.unittest", "true");
+
   bluetooth::hal::BluetoothInterface::Initialize();
   ASSERT_TRUE(bluetooth::hal::BluetoothInterface::IsInitialized());
   auto bt_hal_interface = bluetooth::hal::BluetoothInterface::Get();
@@ -64,6 +67,8 @@ void BluetoothTest::TearDown() {
   bt_hal_interface->RemoveObserver(this);
   bt_hal_interface->CleanUp();
   ASSERT_FALSE(bt_hal_interface->IsInitialized());
+
+  osi_property_set("debug.bluetooth.unittest", "false");
 }
 
 void BluetoothTest::ClearSemaphore(semaphore_t* sem) {
