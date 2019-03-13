@@ -72,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "ef852e43_e8d67607",
+        "filename": "include/hardware/bt_av.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 20234
+      },
+      "writtenOn": "2019-03-13T20:38:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c216fe79_f0abdbc7",
+      "range": {
+        "startLine": 217,
+        "startChar": 22,
+        "endLine": 217,
+        "endChar": 33
+      },
+      "revId": "a683eaebfeb2f10900362dde8547b50d624a127f",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "487ba2bf_33278f9c",
         "filename": "stack/a2dp/a2dp_codec_config.cc",
         "patchSetId": 2
@@ -92,6 +116,30 @@
       "revId": "a683eaebfeb2f10900362dde8547b50d624a127f",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa76b71c_7a690179",
+        "filename": "stack/a2dp/a2dp_codec_config.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 495,
+      "author": {
+        "id": 20234
+      },
+      "writtenOn": "2019-03-13T20:38:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "487ba2bf_33278f9c",
+      "range": {
+        "startLine": 495,
+        "startChar": 15,
+        "endLine": 495,
+        "endChar": 26
+      },
+      "revId": "a683eaebfeb2f10900362dde8547b50d624a127f",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
     },
     {
       "key": {
@@ -142,6 +190,30 @@
     },
     {
       "key": {
+        "uuid": "eba2648b_0c81d719",
+        "filename": "stack/a2dp/a2dp_sbc.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 20234
+      },
+      "writtenOn": "2019-03-13T20:38:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0fb3ce2a_d80b872d",
+      "range": {
+        "startLine": 58,
+        "startChar": 4,
+        "endLine": 58,
+        "endChar": 47
+      },
+      "revId": "a683eaebfeb2f10900362dde8547b50d624a127f",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "568d3a8f_a33da853",
         "filename": "stack/a2dp/a2dp_sbc.cc",
         "patchSetId": 2
@@ -165,6 +237,30 @@
     },
     {
       "key": {
+        "uuid": "a66cf033_2d07fc11",
+        "filename": "stack/a2dp/a2dp_sbc.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 20234
+      },
+      "writtenOn": "2019-03-13T20:38:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "568d3a8f_a33da853",
+      "range": {
+        "startLine": 60,
+        "startChar": 30,
+        "endLine": 60,
+        "endChar": 43
+      },
+      "revId": "a683eaebfeb2f10900362dde8547b50d624a127f",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3156dd41_7d9a3026",
         "filename": "stack/a2dp/a2dp_sbc.cc",
         "patchSetId": 2
@@ -185,6 +281,30 @@
       "revId": "a683eaebfeb2f10900362dde8547b50d624a127f",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a961abf0_86f94b79",
+        "filename": "stack/a2dp/a2dp_sbc.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 1308,
+      "author": {
+        "id": 20234
+      },
+      "writtenOn": "2019-03-13T20:38:07Z",
+      "side": 1,
+      "message": "Had to use repo upload . --no-verify, because clang-format says this is not properly formatted code as the line is more than 80 characters long.",
+      "parentUuid": "3156dd41_7d9a3026",
+      "range": {
+        "startLine": 1307,
+        "startChar": 6,
+        "endLine": 1308,
+        "endChar": 52
+      },
+      "revId": "a683eaebfeb2f10900362dde8547b50d624a127f",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
     }
   ]
 }
