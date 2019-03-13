@@ -1365,8 +1365,6 @@ static uint8_t opcode_from_pdu(uint8_t pdu) {
 static uint8_t fill_attribute_id_array(
     uint8_t cmd_attribute_number, btrc_media_attr_t* cmd_attribute_id_array,
     size_t out_array_size, btrc_media_attr_t* out_attribute_id_array) {
-  /* Reset attribute array */
-  memset(out_attribute_id_array, 0, out_array_size);
   /* Default case for cmd_attribute_number == 0xFF, No attribute */
   uint8_t out_attribute_number = 0;
   if (cmd_attribute_number == 0) {
@@ -1438,7 +1436,7 @@ static void btif_rc_upstreams_evt(uint16_t event, tAVRC_COMMAND* pavrc_cmd,
                            AVRC_STS_BAD_CMD, pavrc_cmd->cmd.opcode);
     } break;
     case AVRC_PDU_GET_ELEMENT_ATTR: {
-      btrc_media_attr_t element_attrs[BTRC_MAX_ELEM_ATTR_SIZE];
+      btrc_media_attr_t element_attrs[BTRC_MAX_ELEM_ATTR_SIZE] = {};
       uint8_t num_attr = fill_attribute_id_array(
           pavrc_cmd->get_elem_attrs.num_attr,
           (btrc_media_attr_t*)pavrc_cmd->get_elem_attrs.attrs,
@@ -1485,7 +1483,7 @@ static void btif_rc_upstreams_evt(uint16_t event, tAVRC_COMMAND* pavrc_cmd,
     } break;
 
     case AVRC_PDU_GET_FOLDER_ITEMS: {
-      uint32_t attr_ids[BTRC_MAX_ELEM_ATTR_SIZE];
+      uint32_t attr_ids[BTRC_MAX_ELEM_ATTR_SIZE] = {0};
       uint8_t num_attr;
       num_attr = pavrc_cmd->get_items.attr_count;
 
@@ -1576,7 +1574,7 @@ static void btif_rc_upstreams_evt(uint16_t event, tAVRC_COMMAND* pavrc_cmd,
     } break;
 
     case AVRC_PDU_GET_ITEM_ATTRIBUTES: {
-      btrc_media_attr_t item_attrs[BTRC_MAX_ELEM_ATTR_SIZE];
+      btrc_media_attr_t item_attrs[BTRC_MAX_ELEM_ATTR_SIZE] = {};
       uint8_t num_attr = fill_attribute_id_array(
           pavrc_cmd->get_attrs.attr_count,
           (btrc_media_attr_t*)pavrc_cmd->get_attrs.p_attr_list,
@@ -2045,7 +2043,7 @@ static bt_status_t get_folder_items_list_rsp(const RawAddress& bd_addr,
         } break;
 
         case AVRC_ITEM_MEDIA: {
-          tAVRC_ATTR_ENTRY attr_vals[BTRC_MAX_ELEM_ATTR_SIZE];
+          tAVRC_ATTR_ENTRY attr_vals[BTRC_MAX_ELEM_ATTR_SIZE] = {};
 
           memcpy(item.u.media.uid, cur_item->media.uid, sizeof(tAVRC_UID));
           item.u.media.type = cur_item->media.type;
