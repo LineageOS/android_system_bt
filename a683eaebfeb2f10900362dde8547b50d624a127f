@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "bceeeb31_c11338c0",
+        "filename": "audio_a2dp_hw/src/audio_a2dp_hw.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 1292,
+      "author": {
+        "id": 20234
+      },
+      "writtenOn": "2019-03-13T20:13:28Z",
+      "side": 1,
+      "message": "I believe that was automatically fixed by clang-format. Should I change it and ignore format  \tnonconformance warnings on git push?",
+      "parentUuid": "df9a7b7f_81ae6b8c",
+      "range": {
+        "startLine": 1291,
+        "startChar": 8,
+        "endLine": 1292,
+        "endChar": 54
+      },
+      "revId": "a683eaebfeb2f10900362dde8547b50d624a127f",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c216fe79_f0abdbc7",
         "filename": "include/hardware/bt_av.h",
         "patchSetId": 2
@@ -82,6 +106,30 @@
       "writtenOn": "2019-03-13T10:00:45Z",
       "side": 1,
       "message": "Don\u0027t change this line for no reason. Keep the comments with the same alignment as the rest.",
+      "range": {
+        "startLine": 58,
+        "startChar": 4,
+        "endLine": 58,
+        "endChar": 47
+      },
+      "revId": "a683eaebfeb2f10900362dde8547b50d624a127f",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0fb3ce2a_d80b872d",
+        "filename": "stack/a2dp/a2dp_sbc.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 20234
+      },
+      "writtenOn": "2019-03-13T20:13:28Z",
+      "side": 1,
+      "message": "I believe that was automatically fixed by clang-format. Should I change it and ignore format nonconformance warnings on git push?",
+      "parentUuid": "b2480832_950e6978",
       "range": {
         "startLine": 58,
         "startChar": 4,
