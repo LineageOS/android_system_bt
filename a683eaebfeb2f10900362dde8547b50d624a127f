@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "df9a7b7f_81ae6b8c",
+        "filename": "audio_a2dp_hw/src/audio_a2dp_hw.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 1292,
+      "author": {
+        "id": 13648
+      },
+      "writtenOn": "2019-03-13T10:00:45Z",
+      "side": 1,
+      "message": "Fits in a single line, doesn\u0027t it?",
+      "range": {
+        "startLine": 1291,
+        "startChar": 8,
+        "endLine": 1292,
+        "endChar": 54
+      },
+      "revId": "a683eaebfeb2f10900362dde8547b50d624a127f",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c216fe79_f0abdbc7",
+        "filename": "include/hardware/bt_av.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 13648
+      },
+      "writtenOn": "2019-03-13T10:00:45Z",
+      "side": 1,
+      "message": "I\u0027d rather change to DUAL_CHANNEL.",
+      "range": {
+        "startLine": 217,
+        "startChar": 22,
+        "endLine": 217,
+        "endChar": 33
+      },
+      "revId": "a683eaebfeb2f10900362dde8547b50d624a127f",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "487ba2bf_33278f9c",
+        "filename": "stack/a2dp/a2dp_codec_config.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 495,
+      "author": {
+        "id": 13648
+      },
+      "writtenOn": "2019-03-13T10:00:45Z",
+      "side": 1,
+      "message": "Change to DUAL_CHANNEL, if you decide to change in the other place as well.",
+      "range": {
+        "startLine": 495,
+        "startChar": 15,
+        "endLine": 495,
+        "endChar": 26
+      },
+      "revId": "a683eaebfeb2f10900362dde8547b50d624a127f",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2480832_950e6978",
+        "filename": "stack/a2dp/a2dp_sbc.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 13648
+      },
+      "writtenOn": "2019-03-13T10:00:45Z",
+      "side": 1,
+      "message": "Don\u0027t change this line for no reason. Keep the comments with the same alignment as the rest.",
+      "range": {
+        "startLine": 58,
+        "startChar": 4,
+        "endLine": 58,
+        "endChar": 47
+      },
+      "revId": "a683eaebfeb2f10900362dde8547b50d624a127f",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "568d3a8f_a33da853",
+        "filename": "stack/a2dp/a2dp_sbc.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 13648
+      },
+      "writtenOn": "2019-03-13T10:00:45Z",
+      "side": 1,
+      "message": "Keep the comments with the same alignment as the rest.",
+      "range": {
+        "startLine": 60,
+        "startChar": 30,
+        "endLine": 60,
+        "endChar": 43
+      },
+      "revId": "a683eaebfeb2f10900362dde8547b50d624a127f",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3156dd41_7d9a3026",
+        "filename": "stack/a2dp/a2dp_sbc.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 1308,
+      "author": {
+        "id": 13648
+      },
+      "writtenOn": "2019-03-13T10:00:45Z",
+      "side": 1,
+      "message": "Fits in a single line.",
+      "range": {
+        "startLine": 1307,
+        "startChar": 6,
+        "endLine": 1308,
+        "endChar": 52
+      },
+      "revId": "a683eaebfeb2f10900362dde8547b50d624a127f",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    }
+  ]
+}
