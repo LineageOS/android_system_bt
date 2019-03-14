@@ -35,6 +35,7 @@ cc_test {
     "libgmock",
     "sdp_service",
     "lib-bt-packets",
+    "liblog",
     "libbluetooth-types",
   ],
 }
