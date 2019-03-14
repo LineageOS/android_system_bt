@@ -41,8 +41,7 @@ const uint8_t kSuccessStatus = 0;
 const uint8_t kUnknownHciCommand = 1;
 
 // The location of the config file loaded to populate controller attributes.
-const std::string kControllerPropertiesFile =
-    "/etc/bluetooth/controller_properties.json";
+const std::string kControllerPropertiesFile = "/vendor/etc/bluetooth/controller_properties.json";
 
 void LogCommand(const char* command) {
   LOG_INFO(LOG_TAG, "Controller performing command: %s", command);
