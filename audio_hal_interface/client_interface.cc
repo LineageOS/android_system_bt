@@ -75,7 +75,7 @@ class BluetoothAudioPortImpl : public IBluetoothAudioPort {
       auto hidl_retval =
           provider_->streamStarted(BluetoothAudioCtrlAckToHalStatus(ack));
       if (!hidl_retval.isOk()) {
-        LOG(FATAL) << __func__ << ": BluetoothAudioHal Failure";
+        LOG(ERROR) << __func__ << ": BluetoothAudioHal failure: " << hidl_retval.description();
       }
     }
     return Void();
@@ -87,7 +87,7 @@ class BluetoothAudioPortImpl : public IBluetoothAudioPort {
       auto hidl_retval =
           provider_->streamSuspended(BluetoothAudioCtrlAckToHalStatus(ack));
       if (!hidl_retval.isOk()) {
-        LOG(FATAL) << __func__ << ": BluetoothAudioHal Failure";
+        LOG(ERROR) << __func__ << ": BluetoothAudioHal failure: " << hidl_retval.description();
       }
     }
     return Void();
@@ -200,7 +200,7 @@ BluetoothAudioClientInterface::~BluetoothAudioClientInterface() {
   if (provider_ != nullptr) {
     auto hidl_retval = provider_->unlinkToDeath(death_recipient_);
     if (!hidl_retval.isOk()) {
-      LOG(ERROR) << __func__ << ": BluetoothAudioDeathRecipient Failure";
+      LOG(FATAL) << __func__ << ": BluetoothAudioDeathRecipient failure: " << hidl_retval.description();
     }
   }
 }
@@ -237,10 +237,10 @@ void BluetoothAudioClientInterface::fetch_audio_provider() {
       sink_->GetSessionType(), getProviderCapabilities_cb);
   getProviderCapabilities_future.get();
   if (!hidl_retval.isOk()) {
-    LOG(FATAL) << __func__
-               << ": BluetoothAudioHal::getProviderCapabilities Failure";
+    LOG(FATAL) << __func__ << ": BluetoothAudioHal::getProviderCapabilities failure: " << hidl_retval.description();
     return;
-  } else if (capabilities_.empty()) {
+  }
+  if (capabilities_.empty()) {
     LOG(WARNING) << __func__
                  << ": SessionType=" << toString(sink_->GetSessionType())
                  << " Not supported by BluetoothAudioHal";
@@ -267,12 +267,12 @@ void BluetoothAudioClientInterface::fetch_audio_provider() {
       providersFactory->openProvider(sink_->GetSessionType(), openProvider_cb);
   openProvider_future.get();
   if (!hidl_retval.isOk()) {
-    LOG(FATAL) << __func__ << ": BluetoothAudioHal::openProvider Failure";
+    LOG(FATAL) << __func__ << ": BluetoothAudioHal::openProvider failure: " << hidl_retval.description();
   }
   CHECK(provider_ != nullptr);
 
   if (!provider_->linkToDeath(death_recipient_, 0).isOk()) {
-    LOG(FATAL) << __func__ << ": BluetoothAudioDeathRecipient Failure";
+    LOG(FATAL) << __func__ << ": BluetoothAudioDeathRecipient failure: " << hidl_retval.description();
   }
 
   LOG(INFO) << "IBluetoothAudioProvidersFactory::openProvider() returned "
@@ -338,7 +338,7 @@ int BluetoothAudioClientInterface::StartSession() {
       stack_if, sink_->GetAudioConfiguration(), hidl_cb);
   hidl_startSession_future.get();
   if (!hidl_retval.isOk()) {
-    LOG(FATAL) << __func__ << ": BluetoothAudioHal Failure";
+    LOG(FATAL) << __func__ << ": BluetoothAudioHal failure: " << hidl_retval.description();
     return -EPROTO;
   }
 
@@ -368,14 +368,15 @@ void BluetoothAudioClientInterface::StreamStarted(
   if (provider_ == nullptr) {
     LOG(ERROR) << __func__ << ": BluetoothAudioHal nullptr";
     return;
-  } else if (ack == BluetoothAudioCtrlAck::PENDING) {
+  }
+  if (ack == BluetoothAudioCtrlAck::PENDING) {
     LOG(INFO) << __func__ << ": " << ack << " ignored";
     return;
   }
   BluetoothAudioStatus status = BluetoothAudioCtrlAckToHalStatus(ack);
   auto hidl_retval = provider_->streamStarted(status);
   if (!hidl_retval.isOk()) {
-    LOG(FATAL) << __func__ << ": BluetoothAudioHal Failure";
+    LOG(ERROR) << __func__ << ": BluetoothAudioHal failure: " << hidl_retval.description();
   }
 }
 
@@ -384,14 +385,15 @@ void BluetoothAudioClientInterface::StreamSuspended(
   if (provider_ == nullptr) {
     LOG(ERROR) << __func__ << ": BluetoothAudioHal nullptr";
     return;
-  } else if (ack == BluetoothAudioCtrlAck::PENDING) {
+  }
+  if (ack == BluetoothAudioCtrlAck::PENDING) {
     LOG(INFO) << __func__ << ": " << ack << " ignored";
     return;
   }
   BluetoothAudioStatus status = BluetoothAudioCtrlAckToHalStatus(ack);
   auto hidl_retval = provider_->streamSuspended(status);
   if (!hidl_retval.isOk()) {
-    LOG(FATAL) << __func__ << ": BluetoothAudioHal Failure";
+    LOG(ERROR) << __func__ << ": BluetoothAudioHal failure: " << hidl_retval.description();
   }
 }
 
@@ -410,7 +412,7 @@ int BluetoothAudioClientInterface::EndSession() {
   mDataMQ = nullptr;
   auto hidl_retval = provider_->endSession();
   if (!hidl_retval.isOk()) {
-    LOG(FATAL) << __func__ << ": BluetoothAudioHal Failure";
+    LOG(ERROR) << __func__ << ": BluetoothAudioHal failure: " << hidl_retval.description();
     return -EPROTO;
   }
   return 0;
