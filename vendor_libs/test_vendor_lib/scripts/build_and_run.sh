@@ -108,7 +108,7 @@ else
   adb push ${VENDOR_SYMBOLS_ABS}/${VENDOR_LIB} /vendor/lib
 
   echo "Pushing controller properties."
-  adb push ${TEST_VENDOR_LIB_ABS}/data/${CONTROLLER_PROPERTIES} /etc/bluetooth/
+  adb push ${TEST_VENDOR_LIB_ABS}/data/${CONTROLLER_PROPERTIES} /vendor/etc/bluetooth/
 
   echo "Pushing libevent."
   adb push ${DEVICE_TARGET_ABS}/${DEVICE}/system/lib/libevent.so /system/lib/
