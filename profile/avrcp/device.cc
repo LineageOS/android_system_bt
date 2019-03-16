@@ -80,6 +80,13 @@ void Device::VendorPacketHandler(uint8_t label,
   CHECK(media_interface_);
   DEVICE_VLOG(3) << __func__ << ": pdu=" << pkt->GetCommandPdu();
 
+  if (!pkt->IsValid()) {
+    DEVICE_LOG(WARNING) << __func__ << ": Request packet is not valid";
+    auto response = RejectBuilder::MakeBuilder(static_cast<CommandPdu>(0), Status::INVALID_COMMAND);
+    send_message(label, false, std::move(response));
+    return;
+  }
+
   // All CTypes at and above NOT_IMPLEMENTED are all response types.
   if (pkt->GetCType() == CType::NOT_IMPLEMENTED) {
     return;
@@ -125,9 +132,15 @@ void Device::VendorPacketHandler(uint8_t label,
     } break;
 
     case CommandPdu::GET_ELEMENT_ATTRIBUTES: {
-      media_interface_->GetSongInfo(base::Bind(
-          &Device::GetElementAttributesResponse, weak_ptr_factory_.GetWeakPtr(),
-          label, Packet::Specialize<GetElementAttributesRequest>(pkt)));
+      auto get_element_attributes_request_pkt = Packet::Specialize<GetElementAttributesRequest>(pkt);
+
+      if (!get_element_attributes_request_pkt->IsValid()) {
+        DEVICE_LOG(WARNING) << __func__ << ": Request packet is not valid";
+        auto response = RejectBuilder::MakeBuilder(pkt->GetCommandPdu(), Status::INVALID_PARAMETER);
+        send_message(label, false, std::move(response));
+      }
+      media_interface_->GetSongInfo(base::Bind(&Device::GetElementAttributesResponse, weak_ptr_factory_.GetWeakPtr(),
+                                               label, get_element_attributes_request_pkt));
     } break;
 
     case CommandPdu::GET_PLAY_STATUS: {
@@ -145,9 +158,17 @@ void Device::VendorPacketHandler(uint8_t label,
       // this currently since the current implementation only has one
       // player and the player will never change, but we need it for a
       // more complete implementation.
-      media_interface_->GetMediaPlayerList(base::Bind(
-          &Device::HandleSetAddressedPlayer, weak_ptr_factory_.GetWeakPtr(),
-          label, Packet::Specialize<SetAddressedPlayerRequest>(pkt)));
+      auto set_addressed_player_request = Packet::Specialize<SetAddressedPlayerRequest>(pkt);
+
+      if (!set_addressed_player_request->IsValid()) {
+        DEVICE_LOG(WARNING) << __func__ << ": Request packet is not valid";
+        auto response = RejectBuilder::MakeBuilder(pkt->GetCommandPdu(), Status::INVALID_PARAMETER);
+        send_message(label, false, std::move(response));
+        return;
+      }
+
+      media_interface_->GetMediaPlayerList(base::Bind(&Device::HandleSetAddressedPlayer, weak_ptr_factory_.GetWeakPtr(),
+                                                      label, set_addressed_player_request));
     } break;
 
     default: {
@@ -163,6 +184,13 @@ void Device::HandleGetCapabilities(
     uint8_t label, const std::shared_ptr<GetCapabilitiesRequest>& pkt) {
   DEVICE_VLOG(4) << __func__
                  << ": capability=" << pkt->GetCapabilityRequested();
+
+  if (!pkt->IsValid()) {
+    DEVICE_LOG(WARNING) << __func__ << ": Request packet is not valid";
+    auto response = RejectBuilder::MakeBuilder(pkt->GetCommandPdu(), Status::INVALID_PARAMETER);
+    send_message(label, false, std::move(response));
+    return;
+  }
 
   switch (pkt->GetCapabilityRequested()) {
     case Capability::COMPANY_ID: {
@@ -202,7 +230,7 @@ void Device::HandleGetCapabilities(
 void Device::HandleNotification(
     uint8_t label, const std::shared_ptr<RegisterNotificationRequest>& pkt) {
   if (!pkt->IsValid()) {
-    DEVICE_LOG(ERROR) << __func__ << ": Request packet is not valid";
+    DEVICE_LOG(WARNING) << __func__ << ": Request packet is not valid";
     auto response = RejectBuilder::MakeBuilder(pkt->GetCommandPdu(),
                                                Status::INVALID_PARAMETER);
     send_message(label, false, std::move(response));
@@ -307,6 +335,17 @@ void Device::RegisterVolumeChanged() {
 void Device::HandleVolumeChanged(
     uint8_t label, const std::shared_ptr<RegisterNotificationResponse>& pkt) {
   DEVICE_VLOG(1) << __func__ << ": interim=" << pkt->IsInterim();
+
+  if (!pkt->IsValid()) {
+    DEVICE_LOG(WARNING) << __func__ << ": Request packet is not valid";
+    auto response = RejectBuilder::MakeBuilder(pkt->GetCommandPdu(), Status::INVALID_PARAMETER);
+    send_message(label, false, std::move(response));
+    active_labels_.erase(label);
+    volume_interface_ = nullptr;
+    volume_ = VOL_REGISTRATION_FAILED;
+    return;
+  }
+
   if (volume_interface_ == nullptr) return;
 
   if (pkt->GetCType() == CType::REJECTED) {
@@ -546,6 +585,7 @@ void Device::GetElementAttributesResponse(
     uint8_t label, std::shared_ptr<GetElementAttributesRequest> pkt,
     SongInfo info) {
   DEVICE_VLOG(2) << __func__;
+
   auto get_element_attributes_pkt = pkt;
   auto attributes_requested =
       get_element_attributes_pkt->GetAttributesRequested();
@@ -570,10 +610,15 @@ void Device::GetElementAttributesResponse(
 }
 
 void Device::MessageReceived(uint8_t label, std::shared_ptr<Packet> pkt) {
+  if (!pkt->IsValid()) {
+    DEVICE_LOG(WARNING) << __func__ << ": Request packet is not valid";
+    auto response = RejectBuilder::MakeBuilder(static_cast<CommandPdu>(0), Status::INVALID_COMMAND);
+    send_message(label, false, std::move(response));
+    return;
+  }
+
   DEVICE_VLOG(4) << __func__ << ": opcode=" << pkt->GetOpcode();
-
   active_labels_.insert(label);
-
   switch (pkt->GetOpcode()) {
     // TODO (apanicke): Remove handling of UNIT_INFO and SUBUNIT_INFO from
     // the AVRC_API and instead handle it here to reduce fragmentation.
@@ -583,6 +628,14 @@ void Device::MessageReceived(uint8_t label, std::shared_ptr<Packet> pkt) {
     } break;
     case Opcode::PASS_THROUGH: {
       auto pass_through_packet = Packet::Specialize<PassThroughPacket>(pkt);
+
+      if (!pass_through_packet->IsValid()) {
+        DEVICE_LOG(WARNING) << __func__ << ": Request packet is not valid";
+        auto response = RejectBuilder::MakeBuilder(static_cast<CommandPdu>(0), Status::INVALID_COMMAND);
+        send_message(label, false, std::move(response));
+        return;
+      }
+
       auto response = PassThroughPacketBuilder::MakeBuilder(
           true, pass_through_packet->GetKeyState() == KeyState::PUSHED,
           pass_through_packet->GetOperationId());
@@ -633,6 +686,13 @@ void Device::HandlePlayItem(uint8_t label,
   DEVICE_VLOG(2) << __func__ << ": scope=" << pkt->GetScope()
                  << " uid=" << pkt->GetUid();
 
+  if (!pkt->IsValid()) {
+    DEVICE_LOG(WARNING) << __func__ << ": Request packet is not valid";
+    auto response = RejectBuilder::MakeBuilder(pkt->GetCommandPdu(), Status::INVALID_PARAMETER);
+    send_message(label, false, std::move(response));
+    return;
+  }
+
   std::string media_id = "";
   switch (pkt->GetScope()) {
     case Scope::NOW_PLAYING:
@@ -680,6 +740,13 @@ void Device::HandleSetAddressedPlayer(
 
 void Device::BrowseMessageReceived(uint8_t label,
                                    std::shared_ptr<BrowsePacket> pkt) {
+  if (!pkt->IsValid()) {
+    DEVICE_LOG(WARNING) << __func__ << ": Request packet is not valid";
+    auto response = GeneralRejectBuilder::MakeBuilder(Status::INVALID_COMMAND);
+    send_message(label, false, std::move(response));
+    return;
+  }
+
   DEVICE_VLOG(1) << __func__ << ": pdu=" << pkt->GetPdu();
 
   switch (pkt->GetPdu()) {
@@ -704,8 +771,7 @@ void Device::BrowseMessageReceived(uint8_t label,
       break;
     default:
       DEVICE_LOG(WARNING) << __func__ << ": " << pkt->GetPdu();
-      auto response = GeneralRejectBuilder::MakeBuilder(
-          BrowsePdu::GENERAL_REJECT, Status::INVALID_COMMAND);
+      auto response = GeneralRejectBuilder::MakeBuilder(Status::INVALID_COMMAND);
       send_message(label, true, std::move(response));
 
       break;
@@ -714,6 +780,15 @@ void Device::BrowseMessageReceived(uint8_t label,
 
 void Device::HandleGetFolderItems(uint8_t label,
                                   std::shared_ptr<GetFolderItemsRequest> pkt) {
+  if (!pkt->IsValid()) {
+    // The specific get folder items builder is unimportant on failure.
+    DEVICE_LOG(WARNING) << __func__ << ": Get folder items request packet is not valid";
+    auto response =
+        GetFolderItemsResponseBuilder::MakePlayerListBuilder(Status::INVALID_PARAMETER, 0x0000, browse_mtu_);
+    send_message(label, true, std::move(response));
+    return;
+  }
+
   DEVICE_VLOG(2) << __func__ << ": scope=" << pkt->GetScope();
 
   switch (pkt->GetScope()) {
@@ -735,12 +810,21 @@ void Device::HandleGetFolderItems(uint8_t label,
       break;
     default:
       DEVICE_LOG(ERROR) << __func__ << ": " << pkt->GetScope();
+      auto response = GetFolderItemsResponseBuilder::MakePlayerListBuilder(Status::INVALID_PARAMETER, 0, browse_mtu_);
+      send_message(label, true, std::move(response));
       break;
   }
 }
 
 void Device::HandleGetTotalNumberOfItems(
     uint8_t label, std::shared_ptr<GetTotalNumberOfItemsRequest> pkt) {
+  if (!pkt->IsValid()) {
+    DEVICE_LOG(WARNING) << __func__ << ": Request packet is not valid";
+    auto response = GetTotalNumberOfItemsResponseBuilder::MakeBuilder(Status::INVALID_PARAMETER, 0x0000, 0);
+    send_message(label, true, std::move(response));
+    return;
+  }
+
   DEVICE_VLOG(2) << __func__ << ": scope=" << pkt->GetScope();
 
   switch (pkt->GetScope()) {
@@ -796,6 +880,13 @@ void Device::GetTotalNumberOfItemsNowPlayingResponse(
 
 void Device::HandleChangePath(uint8_t label,
                               std::shared_ptr<ChangePathRequest> pkt) {
+  if (!pkt->IsValid()) {
+    DEVICE_LOG(WARNING) << __func__ << ": Request packet is not valid";
+    auto response = ChangePathResponseBuilder::MakeBuilder(Status::INVALID_PARAMETER, 0);
+    send_message(label, true, std::move(response));
+    return;
+  }
+
   DEVICE_VLOG(2) << __func__ << ": direction=" << pkt->GetDirection()
                  << " uid=" << loghex(pkt->GetUid());
 
@@ -846,6 +937,13 @@ void Device::ChangePathResponse(uint8_t label,
 
 void Device::HandleGetItemAttributes(
     uint8_t label, std::shared_ptr<GetItemAttributesRequest> pkt) {
+  if (!pkt->IsValid()) {
+    DEVICE_LOG(WARNING) << __func__ << ": Request packet is not valid";
+    auto builder = GetItemAttributesResponseBuilder::MakeBuilder(Status::INVALID_PARAMETER, browse_mtu_);
+    send_message(label, true, std::move(builder));
+    return;
+  }
+
   DEVICE_VLOG(2) << __func__ << ": scope=" << pkt->GetScope()
                  << " uid=" << loghex(pkt->GetUid())
                  << " uid counter=" << loghex(pkt->GetUidCounter());
@@ -856,6 +954,7 @@ void Device::HandleGetItemAttributes(
     send_message(label, true, std::move(builder));
     return;
   }
+
   switch (pkt->GetScope()) {
     case Scope::NOW_PLAYING: {
       media_interface_->GetNowPlayingList(
@@ -1121,6 +1220,13 @@ void Device::GetNowPlayingListResponse(
 
 void Device::HandleSetBrowsedPlayer(
     uint8_t label, std::shared_ptr<SetBrowsedPlayerRequest> pkt) {
+  if (!pkt->IsValid()) {
+    DEVICE_LOG(WARNING) << __func__ << ": Request packet is not valid";
+    auto response = SetBrowsedPlayerResponseBuilder::MakeBuilder(Status::INVALID_PARAMETER, 0x0000, 0, 0, "");
+    send_message(label, true, std::move(response));
+    return;
+  }
+
   DEVICE_VLOG(2) << __func__ << ": player_id=" << pkt->GetPlayerId();
   media_interface_->SetBrowsedPlayer(
       pkt->GetPlayerId(),
