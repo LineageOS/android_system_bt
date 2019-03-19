@@ -83,6 +83,7 @@ Uuid LE_PSM_UUID               = Uuid::FromString("2d410339-82b6-42aa-b34e-e2e01
 void hearingaid_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data);
 void encryption_callback(const RawAddress*, tGATT_TRANSPORT, void*,
                          tBTM_STATUS);
+void read_rssi_cb(void* p_void);
 
 inline BT_HDR* malloc_l2cap_buf(uint16_t len) {
   BT_HDR* msg = (BT_HDR*)osi_malloc(BT_HDR_SIZE + L2CAP_MIN_OFFSET +
@@ -153,6 +154,30 @@ class HearingDevices {
     }
 
     return false;
+  }
+
+  void StartRssiLog() {
+    int read_rssi_start_interval_count = 0;
+
+    for (auto& d : devices) {
+      VLOG(1) << __func__ << ": device=" << d.address << ", read_rssi_count=" << d.read_rssi_count;
+
+      // Reset the count
+      if (d.read_rssi_count <= 0) {
+        d.read_rssi_count = READ_RSSI_NUM_TRIES;
+        d.num_intervals_since_last_rssi_read = read_rssi_start_interval_count;
+
+        // Spaced apart the Read RSSI commands to the BT controller.
+        read_rssi_start_interval_count += PERIOD_TO_READ_RSSI_IN_INTERVALS / 2;
+        read_rssi_start_interval_count %= PERIOD_TO_READ_RSSI_IN_INTERVALS;
+
+        std::deque<rssi_log>& rssi_logs = d.audio_stats.rssi_history;
+        if (rssi_logs.size() >= MAX_RSSI_HISTORY) {
+          rssi_logs.pop_front();
+        }
+        rssi_logs.emplace_back();
+      }
+    }
   }
 
   size_t size() { return (devices.size()); }
@@ -448,6 +473,34 @@ class HearingAidImpl : public HearingAid {
         return;
       }
     }
+  }
+
+  // Completion Callback for the RSSI read operation.
+  void OnReadRssiComplete(const RawAddress& address, int8_t rssi_value) {
+    HearingDevice* hearingDevice = hearingDevices.FindByAddress(address);
+    if (!hearingDevice) {
+      LOG(INFO) << "Skipping unknown device" << address;
+      return;
+    }
+
+    VLOG(1) << __func__ << ": device=" << address << ", rssi=" << (int)rssi_value;
+
+    if (hearingDevice->read_rssi_count <= 0) {
+      LOG(ERROR) << __func__ << ": device=" << address
+                 << ", invalid read_rssi_count=" << hearingDevice->read_rssi_count;
+      return;
+    }
+
+    rssi_log& last_log_set = hearingDevice->audio_stats.rssi_history.back();
+
+    if (hearingDevice->read_rssi_count == READ_RSSI_NUM_TRIES) {
+      // Store the timestamp only for the first one after packet flush
+      clock_gettime(CLOCK_REALTIME, &last_log_set.timestamp);
+      LOG(INFO) << __func__ << ": store time. device=" << address << ", rssi=" << (int)rssi_value;
+    }
+
+    last_log_set.rssi.emplace_back(rssi_value);
+    hearingDevice->read_rssi_count--;
   }
 
   void OnEncryptionComplete(const RawAddress& address, bool success) {
@@ -1061,9 +1114,11 @@ class HearingAidImpl : public HearingAid {
                 << " packets";
         left->audio_stats.packet_flush_count += packets_to_flush;
         left->audio_stats.frame_flush_count++;
+        hearingDevices.StartRssiLog();
       }
       // flush all packets stuck in queue
       L2CA_FlushChannel(cid, 0xffff);
+      check_and_do_rssi_read(left);
     }
 
     std::vector<uint8_t> encoded_data_right;
@@ -1083,9 +1138,11 @@ class HearingAidImpl : public HearingAid {
                 << " packets";
         right->audio_stats.packet_flush_count += packets_to_flush;
         right->audio_stats.frame_flush_count++;
+        hearingDevices.StartRssiLog();
       }
       // flush all packets stuck in queue
       L2CA_FlushChannel(cid, 0xffff);
+      check_and_do_rssi_read(right);
     }
 
     size_t encoded_data_size =
@@ -1224,6 +1281,40 @@ class HearingAidImpl : public HearingAid {
     if (instance) instance->GapCallback(gap_handle, event, data);
   }
 
+  void DumpRssi(int fd, const HearingDevice& device) {
+    const struct AudioStats* stats = &device.audio_stats;
+
+    if (stats->rssi_history.size() <= 0) {
+      dprintf(fd, "  No RSSI history for %s:\n", device.address.ToString().c_str());
+      return;
+    }
+    dprintf(fd, "  RSSI history for %s:\n", device.address.ToString().c_str());
+
+    dprintf(fd, "    Time of RSSI    0.0  0.1  0.2  0.3  0.4  0.5  0.6  0.7  0.8  0.9\n");
+    for (auto& rssi_logs : stats->rssi_history) {
+      if (rssi_logs.rssi.size() <= 0) {
+        break;
+      }
+
+      char eventtime[20];
+      char temptime[20];
+      struct tm* tstamp = localtime(&rssi_logs.timestamp.tv_sec);
+      if (!strftime(temptime, sizeof(temptime), "%H:%M:%S", tstamp)) {
+        LOG(ERROR) << __func__ << ": strftime fails. tm_sec=" << tstamp->tm_sec << ", tm_min=" << tstamp->tm_min
+                   << ", tm_hour=" << tstamp->tm_hour;
+        strlcpy(temptime, "UNKNOWN TIME", sizeof(temptime));
+      }
+      snprintf(eventtime, sizeof(eventtime), "%s.%03ld", temptime, rssi_logs.timestamp.tv_nsec / 1000000);
+
+      dprintf(fd, "    %s: ", eventtime);
+
+      for (auto rssi_value : rssi_logs.rssi) {
+        dprintf(fd, " %04d", rssi_value);
+      }
+      dprintf(fd, "\n");
+    }
+  }
+
   void Dump(int fd) {
     std::stringstream stream;
     for (const auto& device : hearingDevices.devices) {
@@ -1241,6 +1332,8 @@ class HearingAidImpl : public HearingAid {
           << "\n    Frame counts (enqueued/flushed)                         : "
           << device.audio_stats.frame_send_count << " / "
           << device.audio_stats.frame_flush_count << std::endl;
+
+      DumpRssi(fd, device);
     }
     dprintf(fd, "%s", stream.str().c_str());
   }
@@ -1409,7 +1502,28 @@ class HearingAidImpl : public HearingAid {
       send_state_change(&device, payload);
     }
   }
+
+  void check_and_do_rssi_read(HearingDevice* device) {
+    if (device->read_rssi_count > 0) {
+      device->num_intervals_since_last_rssi_read++;
+      if (device->num_intervals_since_last_rssi_read >= PERIOD_TO_READ_RSSI_IN_INTERVALS) {
+        device->num_intervals_since_last_rssi_read = 0;
+        VLOG(1) << __func__ << ": device=" << device->address;
+        BTM_ReadRSSI(device->address, read_rssi_cb);
+      }
+    }
+  }
 };
+
+void read_rssi_cb(void* p_void) {
+  tBTM_RSSI_RESULT* p_result = (tBTM_RSSI_RESULT*)p_void;
+
+  if (!p_result) return;
+
+  if ((instance) && (p_result->status == BTM_SUCCESS)) {
+    instance->OnReadRssiComplete(p_result->rem_bda, p_result->rssi);
+  }
+}
 
 void hearingaid_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
   VLOG(2) << __func__ << " event = " << +event;
