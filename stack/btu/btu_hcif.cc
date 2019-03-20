@@ -792,6 +792,16 @@ static void btu_hcif_log_command_complete_metrics(uint16_t opcode,
       bluetooth::common::LogClassicPairingEvent(RawAddress::kEmpty, bluetooth::common::kUnknownConnectionHandle, opcode,
                                                 hci_event, status, reason, 0);
       break;
+    case HCI_READ_ENCR_KEY_SIZE: {
+      uint16_t handle;
+      uint8_t key_size;
+      STREAM_TO_UINT8(status, p_return_params);
+      STREAM_TO_UINT16(handle, p_return_params);
+      STREAM_TO_UINT8(key_size, p_return_params);
+      bluetooth::common::LogClassicPairingEvent(RawAddress::kEmpty, handle, opcode, hci_event, status, reason,
+                                                key_size);
+      break;
+    }
     case HCI_LINK_KEY_REQUEST_REPLY:
     case HCI_LINK_KEY_REQUEST_NEG_REPLY:
     case HCI_IO_CAPABILITY_REQUEST_REPLY:
