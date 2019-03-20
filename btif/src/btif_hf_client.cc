@@ -949,7 +949,7 @@ static void btif_hf_client_upstreams_evt(uint16_t event, char* p_param) {
                 (bthf_client_call_state_t)p_data->clcc.status,
                 p_data->clcc.mpty ? BTHF_CLIENT_CALL_MPTY_TYPE_MULTI
                                   : BTHF_CLIENT_CALL_MPTY_TYPE_SINGLE,
-                p_data->clcc.number_present ? p_data->clcc.number : NULL);
+                p_data->clcc.number_present ? p_data->clcc.number : "");
       break;
 
     case BTA_HF_CLIENT_CNUM_EVT:
