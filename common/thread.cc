@@ -42,7 +42,7 @@ void Thread::run(Priority priority) {
     int rc;
     RUN_NO_INTR(rc = sched_setscheduler(linux_tid, SCHED_FIFO, &rt_params));
     if (rc != 0) {
-      LOG(ERROR) << __func__ << ": unable to set SCHED_FIFO priority: " << strerror(errno);
+      PLOG(ERROR) << __func__ << ": unable to set SCHED_FIFO priority";
     }
   }
   reactor_.Run();
