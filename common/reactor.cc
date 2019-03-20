@@ -170,7 +170,7 @@ void Reactor::Unregister(Reactor::Reactable* reactable) {
     if (result == -1 && errno == ENOENT) {
       LOG(INFO) << __func__ << ": reactable is invalid or unregistered";
     } else if (result == -1) {
-      LOG(FATAL) << __func__ << ": failed: " << strerror(errno);
+      PLOG(FATAL) << __func__ << ": failed";
     }
     // If we are unregistering during the callback event from this reactable, we delete it after the callback is executed.
     // reactable->is_executing_ is protected by reactable->lock_, so it's thread safe.
