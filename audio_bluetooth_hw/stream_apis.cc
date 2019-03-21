@@ -644,6 +644,13 @@ int adev_open_output_stream(struct audio_hw_device* dev,
     LOG(ERROR) << __func__ << ": state=" << out->bluetooth_output_.GetState()
                << " failed to get audio config";
   }
+  // WAR to support Mono / 16 bits per sample as the Bluetooth stack required
+  if (config->channel_mask == AUDIO_CHANNEL_OUT_MONO && config->format == AUDIO_FORMAT_PCM_16_BIT) {
+    LOG(INFO) << __func__ << ": force channels=0x" << android::base::StringPrintf("%x", out->channel_mask_)
+              << " to be AUDIO_CHANNEL_OUT_STEREO";
+    out->bluetooth_output_.ForcePcmStereoToMono(true);
+    config->channel_mask = AUDIO_CHANNEL_OUT_STEREO;
+  }
   out->sample_rate_ = config->sample_rate;
   out->channel_mask_ = config->channel_mask;
   out->format_ = config->format;
