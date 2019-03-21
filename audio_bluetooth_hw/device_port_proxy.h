@@ -51,6 +51,11 @@ class BluetoothAudioPortOut {
   // Bluetooth stack
   bool LoadAudioConfig(audio_config_t* audio_cfg) const;
 
+  // WAR to support Mono mode / 16 bits per sample
+  void ForcePcmStereoToMono(bool force) {
+    is_stereo_to_mono_ = force;
+  }
+
   // When the Audio framework / HAL wants to change the stream state, it invokes
   // these 3 functions to control the Bluetooth stack (Audio Control Path).
   // Note: Both Start() and Suspend() will return ture when there are no errors.
@@ -85,6 +90,8 @@ class BluetoothAudioPortOut {
   uint16_t cookie_;
   mutable std::mutex cv_mutex_;
   std::condition_variable internal_cv_;
+  // WR to support Mono: True if fetching Stereo and mixing into Mono
+  bool is_stereo_to_mono_ = false;
 
   // Check and initialize session type for |devices| If failed, this
   // BluetoothAudioPortOut is not initialized and must be deleted.
