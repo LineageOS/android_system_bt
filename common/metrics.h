@@ -421,10 +421,10 @@ void LogSmpPairingEvent(const RawAddress& address, uint8_t smp_cmd,
  * @param hci_event HCI event associated with this event
  * @param cmd_status Command status associated with this event
  * @param reason_code Reason code associated with this event
+ * @param event_value A status value related to this specific event
  */
-void LogClassicPairingEvent(const RawAddress& address, uint16_t handle,
-                            uint32_t hci_cmd, uint16_t hci_event,
-                            uint16_t cmd_status, uint16_t reason_code);
+void LogClassicPairingEvent(const RawAddress& address, uint16_t handle, uint32_t hci_cmd, uint16_t hci_event,
+                            uint16_t cmd_status, uint16_t reason_code, int64_t event_value);
 
 /**
  * Logs when certain Bluetooth SDP attributes are discovered
