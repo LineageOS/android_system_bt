@@ -33,6 +33,7 @@
 #include <base/logging.h>
 #include <base/threading/thread.h>
 #include <log/log.h>
+#include <statslog.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -724,6 +725,14 @@ constexpr uint8_t MIN_KEY_SIZE = 7;
 
 static void read_encryption_key_size_complete_after_encryption_change(
     uint8_t status, uint16_t handle, uint8_t key_size) {
+  int ret = android::util::stats_write(
+      android::util::BLUETOOTH_CLASSIC_PAIRING_EVENT_REPORTED, "", handle,
+      HCI_READ_ENCR_KEY_SIZE, HCI_COMMAND_COMPLETE_EVT, status, 0, key_size);
+  if (ret < 0) {
+    LOG(WARNING) << __func__ << ": failed to log encryption key size "
+                 << std::to_string(key_size);
+  }
+
   if (status != HCI_SUCCESS) {
     LOG(INFO) << __func__ << ": disconnecting, status: " << loghex(status);
     btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
@@ -1677,6 +1686,14 @@ static void btu_hcif_enhanced_flush_complete_evt(void) {
 
 static void read_encryption_key_size_complete_after_key_refresh(
     uint8_t status, uint16_t handle, uint8_t key_size) {
+  int ret = android::util::stats_write(
+      android::util::BLUETOOTH_CLASSIC_PAIRING_EVENT_REPORTED, "", handle,
+      HCI_READ_ENCR_KEY_SIZE, HCI_COMMAND_COMPLETE_EVT, status, 0, key_size);
+  if (ret < 0) {
+    LOG(WARNING) << __func__ << ": failed to log encryption key size "
+                 << std::to_string(key_size);
+  }
+
   if (status != HCI_SUCCESS) {
     LOG(INFO) << __func__ << ": disconnecting, status: " << loghex(status);
     btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
