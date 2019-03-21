@@ -757,9 +757,8 @@ void LogSmpPairingEvent(const RawAddress& address, uint8_t smp_cmd,
   }
 }
 
-void LogClassicPairingEvent(const RawAddress& address, uint16_t handle,
-                            uint32_t hci_cmd, uint16_t hci_event,
-                            uint16_t cmd_status, uint16_t reason_code) {
+void LogClassicPairingEvent(const RawAddress& address, uint16_t handle, uint32_t hci_cmd, uint16_t hci_event,
+                            uint16_t cmd_status, uint16_t reason_code, int64_t event_value) {
   std::string obfuscated_id;
   if (!address.IsEmpty()) {
     obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(address);
@@ -768,14 +767,12 @@ void LogClassicPairingEvent(const RawAddress& address, uint16_t handle,
   android::util::BytesField obfuscated_id_field(
       address.IsEmpty() ? nullptr : obfuscated_id.c_str(),
       address.IsEmpty() ? 0 : obfuscated_id.size());
-  int ret = android::util::stats_write(
-      android::util::BLUETOOTH_CLASSIC_PAIRING_EVENT_REPORTED,
-      obfuscated_id_field, handle, hci_cmd, hci_event, cmd_status, reason_code);
+  int ret = android::util::stats_write(android::util::BLUETOOTH_CLASSIC_PAIRING_EVENT_REPORTED, obfuscated_id_field,
+                                       handle, hci_cmd, hci_event, cmd_status, reason_code, event_value);
   if (ret < 0) {
-    LOG(WARNING) << __func__ << ": failed for " << address << ", handle "
-                 << handle << ", hci_cmd " << loghex(hci_cmd) << ", hci_event "
-                 << loghex(hci_event) << ", cmd_status " << loghex(cmd_status)
-                 << ", reason " << loghex(reason_code) << ", error " << ret;
+    LOG(WARNING) << __func__ << ": failed for " << address << ", handle " << handle << ", hci_cmd " << loghex(hci_cmd)
+                 << ", hci_event " << loghex(hci_event) << ", cmd_status " << loghex(cmd_status) << ", reason "
+                 << loghex(reason_code) << ", event_value " << event_value << ", error " << ret;
   }
 }
 
