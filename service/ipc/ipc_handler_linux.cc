@@ -89,7 +89,7 @@ bool IPCHandlerLinux::Run() {
             sizeof(address.sun_path) - 1);
     if (bind(server_socket.get(), (struct sockaddr*)&address, sizeof(address)) <
         0) {
-      LOG(ERROR) << "Failed to bind IPC socket to address: " << strerror(errno);
+      PLOG(ERROR) << "Failed to bind IPC socket to address";
       return false;
     }
 
@@ -141,7 +141,7 @@ void IPCHandlerLinux::StartListeningOnThread() {
 
   int status = listen(socket_.get(), SOMAXCONN);
   if (status < 0) {
-    LOG(ERROR) << "Failed to listen on domain socket: " << strerror(errno);
+    PLOG(ERROR) << "Failed to listen on domain socket";
     origin_task_runner_->PostTask(
         FROM_HERE, base::Bind(&IPCHandlerLinux::ShutDownOnOriginThread, this));
     return;
@@ -158,7 +158,7 @@ void IPCHandlerLinux::StartListeningOnThread() {
   while (keep_running_.load()) {
     int client_socket = accept4(socket_.get(), nullptr, nullptr, SOCK_NONBLOCK);
     if (client_socket < 0) {
-      LOG(ERROR) << "Failed to accept client connection: " << strerror(errno);
+      PLOG(ERROR) << "Failed to accept client connection";
       continue;
     }
 
