@@ -18,6 +18,7 @@
 
 #include <android-base/logging.h>
 #include <android-base/stringprintf.h>
+#include <audio_utils/primitives.h>
 #include <inttypes.h>
 #include <log/log.h>
 #include <stdlib.h>
@@ -280,7 +281,8 @@ bool BluetoothAudioPortOut::LoadAudioConfig(audio_config_t* audio_cfg) const {
     return false;
   }
   audio_cfg->sample_rate = SampleRateToAudioFormat(pcm_cfg.sampleRate);
-  audio_cfg->channel_mask = ChannelModeToAudioFormat(pcm_cfg.channelMode);
+  audio_cfg->channel_mask =
+      (is_stereo_to_mono_ ? AUDIO_CHANNEL_OUT_STEREO : ChannelModeToAudioFormat(pcm_cfg.channelMode));
   audio_cfg->format = BitsPerSampleToAudioFormat(pcm_cfg.bitsPerSample);
   return true;
 }
@@ -321,7 +323,8 @@ bool BluetoothAudioPortOut::Start() {
   }
 
   LOG(INFO) << __func__ << ": session_type=" << toString(session_type_) << ", cookie=0x"
-            << StringPrintf("%04hx", cookie_) << ", state=" << state_ << " request";
+            << StringPrintf("%04hx", cookie_) << ", state=" << state_
+            << ", mono=" << (is_stereo_to_mono_ ? "true" : "false") << " request";
   bool retval = false;
   if (state_ == BluetoothStreamState::STANDBY) {
     state_ = BluetoothStreamState::STARTING;
@@ -335,7 +338,8 @@ bool BluetoothAudioPortOut::Start() {
 
   if (retval) {
     LOG(INFO) << __func__ << ": session_type=" << toString(session_type_) << ", cookie=0x"
-              << StringPrintf("%04hx", cookie_) << ", state=" << state_ << " done";
+              << StringPrintf("%04hx", cookie_) << ", state=" << state_
+              << ", mono=" << (is_stereo_to_mono_ ? "true" : "false") << " done";
   } else {
     LOG(ERROR) << __func__ << ": session_type=" << toString(session_type_) << ", cookie=0x"
                << StringPrintf("%04hx", cookie_) << ", state=" << state_ << " failure";
@@ -387,11 +391,20 @@ void BluetoothAudioPortOut::Stop() {
             << StringPrintf("%04hx", cookie_) << ", state=" << state_ << " done";
 }
 
-size_t BluetoothAudioPortOut::WriteData(const void* buffer,
-                                        size_t bytes) const {
+size_t BluetoothAudioPortOut::WriteData(const void* buffer, size_t bytes) const {
   if (!in_use()) return 0;
-  return BluetoothAudioSessionControl::OutWritePcmData(session_type_, buffer,
-                                                       bytes);
+  if (!is_stereo_to_mono_) {
+    return BluetoothAudioSessionControl::OutWritePcmData(session_type_, buffer, bytes);
+  }
+
+  // WAR to mix the stereo into Mono (16 bits per sample)
+  const size_t write_frames = bytes >> 2;
+  if (write_frames == 0) return 0;
+  auto src = static_cast<const int16_t*>(buffer);
+  std::unique_ptr<int16_t[]> dst{new int16_t[write_frames]};
+  downmix_to_mono_i16_from_stereo_i16(dst.get(), src, write_frames);
+  // a frame is 16 bits, and the size of a mono frame is equal to half a stereo.
+  return BluetoothAudioSessionControl::OutWritePcmData(session_type_, dst.get(), write_frames * 2) * 2;
 }
 
 bool BluetoothAudioPortOut::GetPresentationPosition(uint64_t* delay_ns,
