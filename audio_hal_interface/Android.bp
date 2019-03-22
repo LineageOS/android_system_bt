@@ -46,6 +46,7 @@ cc_test {
         "libcutils",
         "libfmq",
         "libhidlbase",
+        "libhidltransport",
         "liblog",
         "libutils",
     ],

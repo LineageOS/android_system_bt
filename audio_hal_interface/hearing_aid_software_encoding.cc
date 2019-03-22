@@ -131,8 +131,16 @@ HearingAidTransport* hearing_aid_sink = nullptr;
 // Common interface to call-out into Bluetooth Audio Hal
 bluetooth::audio::BluetoothAudioClientInterface*
     hearing_aid_hal_clientinterface = nullptr;
-bool btaudio_hearing_aid_supported = false;
+bool btaudio_hearing_aid_disabled = false;
 bool is_configured = false;
+
+bool is_hal_2_0_force_disabled() {
+  if (!is_configured) {
+    btaudio_hearing_aid_disabled = osi_property_get_bool(BLUETOOTH_AUDIO_HAL_PROP_DISABLED, false);
+    is_configured = true;
+  }
+  return btaudio_hearing_aid_disabled;
+}
 
 }  // namespace
 
@@ -140,26 +148,29 @@ namespace bluetooth {
 namespace audio {
 namespace hearing_aid {
 
-bool is_hal_2_0_supported() {
-  if (!is_configured) {
-    btaudio_hearing_aid_supported = !osi_property_get_bool(BLUETOOTH_AUDIO_HAL_PROP_DISABLED, false);
-    is_configured = true;
-  }
-  return btaudio_hearing_aid_supported;
-}
-
 bool is_hal_2_0_enabled() { return hearing_aid_hal_clientinterface != nullptr; }
 
 bool init(StreamCallbacks stream_cb,
           bluetooth::common::MessageLoopThread* message_loop) {
   LOG(INFO) << __func__;
 
-  if (!is_hal_2_0_supported()) return false;
+  if (is_hal_2_0_force_disabled()) {
+    LOG(ERROR) << __func__ << ": BluetoothAudio HAL is disabled";
+    return false;
+  }
 
   hearing_aid_sink = new HearingAidTransport(std::move(stream_cb));
   hearing_aid_hal_clientinterface =
       new bluetooth::audio::BluetoothAudioClientInterface(hearing_aid_sink,
                                                           message_loop);
+  if (!hearing_aid_hal_clientinterface->IsValid()) {
+    LOG(WARNING) << __func__ << ": BluetoothAudio HAL for Hearing Aid is invalid?!";
+    delete hearing_aid_hal_clientinterface;
+    hearing_aid_hal_clientinterface = nullptr;
+    delete hearing_aid_sink;
+    hearing_aid_sink = nullptr;
+    return false;
+  }
   return true;
 }
 
@@ -167,7 +178,9 @@ void cleanup() {
   LOG(INFO) << __func__;
   if (!is_hal_2_0_enabled()) return;
   end_session();
+  delete hearing_aid_hal_clientinterface;
   hearing_aid_hal_clientinterface = nullptr;
+  delete hearing_aid_sink;
   hearing_aid_sink = nullptr;
 }
 
