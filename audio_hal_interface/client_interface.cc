@@ -20,8 +20,10 @@
 
 #include <android/hardware/bluetooth/audio/2.0/IBluetoothAudioPort.h>
 #include <android/hardware/bluetooth/audio/2.0/IBluetoothAudioProvidersFactory.h>
+#include <android/hidl/manager/1.2/IServiceManager.h>
 #include <base/logging.h>
 #include <hidl/MQDescriptor.h>
+#include <hidl/ServiceManagement.h>
 #include <future>
 
 #include "osi/include/log.h"
@@ -41,6 +43,8 @@ using DataMQ = ::android::hardware::MessageQueue<
 
 static constexpr int kDefaultDataReadTimeoutMs = 10;      // 10 ms
 static constexpr int kDefaultDataReadPollIntervalMs = 1;  // non-blocking poll
+static constexpr char kFullyQualifiedInterfaceName[] =
+    "android.hardware.bluetooth.audio@2.0::IBluetoothAudioProvidersFactory";
 
 std::ostream& operator<<(std::ostream& os, const BluetoothAudioCtrlAck& ack) {
   switch (ack) {
@@ -186,14 +190,26 @@ class BluetoothAudioDeathRecipient
   }
 };
 
-BluetoothAudioClientInterface::BluetoothAudioClientInterface(
-    IBluetoothTransportInstance* sink,
-    bluetooth::common::MessageLoopThread* message_loop)
-    : sink_(sink),
-      session_started_(false),
-      mDataMQ(nullptr),
+BluetoothAudioClientInterface::BluetoothAudioClientInterface(IBluetoothTransportInstance* sink,
+                                                             bluetooth::common::MessageLoopThread* message_loop)
+    : sink_(sink), provider_(nullptr), session_started_(false), mDataMQ(nullptr),
       death_recipient_(new BluetoothAudioDeathRecipient(this, message_loop)) {
-  fetch_audio_provider();
+  auto service_manager = android::hardware::defaultServiceManager1_2();
+  CHECK(service_manager != nullptr);
+  size_t instance_count = 0;
+  auto listManifestByInterface_cb = [&instance_count](const hidl_vec<android::hardware::hidl_string>& instanceNames) {
+    instance_count = instanceNames.size();
+    LOG(INFO) << "listManifestByInterface_cb returns " << instance_count << " instance(s)";
+  };
+  auto hidl_retval = service_manager->listManifestByInterface(kFullyQualifiedInterfaceName, listManifestByInterface_cb);
+  if (!hidl_retval.isOk()) {
+    LOG(FATAL) << __func__ << ": IServiceManager::listByInterface failure: " << hidl_retval.description();
+  }
+  if (instance_count > 0) {
+    fetch_audio_provider();
+  } else {
+    LOG(WARNING) << "IBluetoothAudioProvidersFactory not declared";
+  }
 }
 
 BluetoothAudioClientInterface::~BluetoothAudioClientInterface() {
@@ -217,7 +233,7 @@ void BluetoothAudioClientInterface::fetch_audio_provider() {
 
   android::sp<IBluetoothAudioProvidersFactory> providersFactory =
       IBluetoothAudioProvidersFactory::getService();
-  CHECK(providersFactory != nullptr);
+  CHECK(providersFactory != nullptr) << "IBluetoothAudioProvidersFactory::getService() failed";
   LOG(INFO) << "IBluetoothAudioProvidersFactory::getService() returned "
             << providersFactory.get()
             << (providersFactory->isRemote() ? " (remote)" : " (local)");
