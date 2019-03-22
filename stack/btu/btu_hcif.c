@@ -28,6 +28,7 @@
 #define LOG_TAG "bt_btu_hcif"
 
 #include <assert.h>
+#include <log/log.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -601,6 +602,55 @@ static void btu_hcif_rmt_name_request_comp_evt (UINT8 *p, UINT16 evt_len)
     btm_sec_rmt_name_request_complete (bd_addr, p, status);
 }
 
+const uint8_t MIN_KEY_SIZE = 7;
+bool read_key_send_from_key_refresh = false;
+
+static void read_encryption_key_size_complete_after_key_refresh(
+    uint8_t status, uint16_t handle, uint8_t key_size) {
+  if (status != HCI_SUCCESS) {
+    HCI_TRACE_WARNING("%s: disconnecting, status: 0x%02x", __func__, status);
+    btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
+    return;
+  }
+
+  if (key_size < MIN_KEY_SIZE) {
+    android_errorWriteLog(0x534e4554, "124301137");
+    HCI_TRACE_ERROR(
+        "%s encryption key too short, disconnecting. handle: 0x%02x, key_size: "
+        "%d",
+        __func__, handle, key_size);
+
+    btsnd_hcic_disconnect(handle, HCI_ERR_HOST_REJECT_SECURITY);
+    return;
+  }
+
+  btm_sec_encrypt_change(handle, status, 1 /* enc_enable */);
+}
+
+static void read_encryption_key_size_complete_after_encryption_change(
+    uint8_t status, uint16_t handle, uint8_t key_size) {
+  if (status != HCI_SUCCESS) {
+    HCI_TRACE_WARNING("%s: disconnecting, status: 0x%02x", __func__, status);
+    btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
+    return;
+  }
+
+  if (key_size < MIN_KEY_SIZE) {
+    android_errorWriteLog(0x534e4554, "124301137");
+    HCI_TRACE_ERROR(
+        "%s encryption key too short, disconnecting. handle: 0x%02x, key_size: "
+        "%d",
+        __func__, handle, key_size);
+
+    btsnd_hcic_disconnect(handle, HCI_ERR_HOST_REJECT_SECURITY);
+    return;
+  }
+
+  // good key size - succeed
+  btm_acl_encrypt_change(handle, status, 1 /* enable */);
+  btm_sec_encrypt_change(handle, status, 1 /* enable */);
+}
+
 /*******************************************************************************
 **
 ** Function         btu_hcif_encryption_change_evt
@@ -620,8 +670,14 @@ static void btu_hcif_encryption_change_evt (UINT8 *p)
     STREAM_TO_UINT16 (handle, p);
     STREAM_TO_UINT8  (encr_enable, p);
 
-    btm_acl_encrypt_change (handle, status, encr_enable);
-    btm_sec_encrypt_change (handle, status, encr_enable);
+    if (status != HCI_SUCCESS || encr_enable == 0 ||
+        BTM_IsBleConnection(handle)) {
+        btm_acl_encrypt_change (handle, status, encr_enable);
+        btm_sec_encrypt_change (handle, status, encr_enable);
+    } else {
+        read_key_send_from_key_refresh = false;
+        btsnd_hcic_read_encryption_key_size(handle);
+    }
 }
 
 /*******************************************************************************
@@ -822,6 +878,26 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
 
         case HCI_READ_INQ_TX_POWER_LEVEL:
             btm_read_inq_tx_power_complete(p);
+            break;
+
+        case HCI_READ_ENCR_KEY_SIZE: {
+            UINT8 *pp = p;
+
+            UINT8   status;
+            UINT16  handle;
+            UINT8   key_size;
+
+            STREAM_TO_UINT8  (status, pp);
+            STREAM_TO_UINT16 (handle, pp);
+            STREAM_TO_UINT8  (key_size, pp);
+
+            if (read_key_send_from_key_refresh) {
+                read_encryption_key_size_complete_after_encryption_change(status, handle, key_size);
+            } else {
+                read_encryption_key_size_complete_after_key_refresh(status, handle, key_size);
+            }
+
+            }
             break;
 
 #if (BLE_INCLUDED == TRUE)
@@ -1595,6 +1671,7 @@ static void btu_hcif_enhanced_flush_complete_evt (void)
 ** BLE Events
 ***********************************************/
 #if (defined BLE_INCLUDED) && (BLE_INCLUDED == TRUE)
+
 static void btu_hcif_encryption_key_refresh_cmpl_evt (UINT8 *p)
 {
     UINT8   status;
@@ -1606,7 +1683,12 @@ static void btu_hcif_encryption_key_refresh_cmpl_evt (UINT8 *p)
 
     if (status == HCI_SUCCESS) enc_enable = 1;
 
-    btm_sec_encrypt_change (handle, status, enc_enable);
+    if (status != HCI_SUCCESS || BTM_IsBleConnection(handle)) {
+        btm_sec_encrypt_change (handle, status, enc_enable);
+    } else  {
+        read_key_send_from_key_refresh = true;
+        btsnd_hcic_read_encryption_key_size(handle);
+    }
 }
 
 static void btu_ble_process_adv_pkt (UINT8 *p)
