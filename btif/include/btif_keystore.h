@@ -42,22 +42,20 @@ class BtifKeystore {
   BtifKeystore(keystore::KeystoreClient* keystore_client);
 
   /**
-   * Stores encrypted data to disk.
+   * Encrypts given data
    *
-   * <p>Returns true on success.
+   * <p>Returns a string representation of the encrypted data
    *
    * @param data to be encrypted
-   * @param output_filename location to write the file
-   * @param flags
+   * @param flags for keystore
    */
-  bool Encrypt(const std::string& data, const std::string& output_filename,
-               int32_t flags);
+  std::string Encrypt(const std::string& data, int32_t flags);
 
   /**
    * Returns a decrypted string representation of the encrypted data or empty
    * string on error.
    *
-   * @param input_filename location of file to read and decrypt
+   * @param input encrypted data
    */
   std::string Decrypt(const std::string& input_filename);
 
