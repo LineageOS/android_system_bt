@@ -28,8 +28,6 @@ struct StreamCallbacks {
   std::function<bool(void)> on_suspend_;
 };
 
-bool is_hal_2_0_supported();
-
 // Check if new bluetooth_audio is enabled
 bool is_hal_2_0_enabled();
 
