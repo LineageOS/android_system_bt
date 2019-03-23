@@ -144,6 +144,7 @@ cc_test {
         "android.hardware.bluetooth.audio@2.0",
         "libfmq",
         "libhidlbase",
+        "libhidltransport",
         "liblog",
         "libprotobuf-cpp-lite",
         "libcutils",

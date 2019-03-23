@@ -29,6 +29,7 @@
 #include "stream_apis.h"
 #include "utils.h"
 
+using ::android::base::StringPrintf;
 using ::android::bluetooth::audio::BluetoothAudioPortOut;
 using ::android::bluetooth::audio::utils::GetAudioParamString;
 using ::android::bluetooth::audio::utils::ParseAudioParams;
@@ -41,9 +42,7 @@ constexpr int kExtraAudioSyncMs = 200;
 
 std::ostream& operator<<(std::ostream& os, const audio_config& config) {
   return os << "audio_config[sample_rate=" << config.sample_rate
-            << ", channels=0x"
-            << android::base::StringPrintf("%x", config.channel_mask)
-            << ", format=" << config.format << "]";
+            << ", channels=" << StringPrintf("%#x", config.channel_mask) << ", format=" << config.format << "]";
 }
 
 }  // namespace
@@ -63,7 +62,7 @@ std::ostream& operator<<(std::ostream& os, const BluetoothStreamState& state) {
     case BluetoothStreamState::UNKNOWN:
       return os << "UNKNOWN";
     default:
-      return os << "0x" + android::base::StringPrintf("%hhx", state);
+      return os << StringPrintf("%#hhx", state);
   }
 }
 
@@ -107,9 +106,7 @@ static audio_channel_mask_t out_get_channels(
     return audio_cfg.channel_mask;
   } else {
     LOG(WARNING) << __func__ << ": state=" << out->bluetooth_output_.GetState()
-                 << ", channels=0x"
-                 << android::base::StringPrintf("%x", out->channel_mask_)
-                 << " failure";
+                 << ", channels=" << StringPrintf("%#x", out->channel_mask_) << " failure";
     return out->channel_mask_;
   }
 }
@@ -194,10 +191,8 @@ static int out_set_parameters(struct audio_stream* stream,
       out->sample_rate_ = audio_cfg.sample_rate;
       out->channel_mask_ = audio_cfg.channel_mask;
       out->format_ = audio_cfg.format;
-      LOG(VERBOSE) << "state=" << out->bluetooth_output_.GetState()
-                   << ", sample_rate=" << out->sample_rate_ << ", channels=0x"
-                   << android::base::StringPrintf("%x", out->channel_mask_)
-                   << ", format=" << out->format_;
+      LOG(VERBOSE) << "state=" << out->bluetooth_output_.GetState() << ", sample_rate=" << out->sample_rate_
+                   << ", channels=" << StringPrintf("%#x", out->channel_mask_) << ", format=" << out->format_;
     } else {
       LOG(WARNING) << __func__
                    << ": state=" << out->bluetooth_output_.GetState()
@@ -554,12 +549,9 @@ static int out_get_presentation_position(const struct audio_stream_out* stream,
         timestamp->tv_sec += static_cast<int>(timestamp->tv_nsec / 1000000000);
         timestamp->tv_nsec %= 1000000000;
       }
-      LOG(VERBOSE) << __func__
-                   << ": state=" << out->bluetooth_output_.GetState()
-                   << ", frames=" << *frames << " (" << bytes
-                   << " bytes), timestamp=" << timestamp->tv_sec << "."
-                   << android::base::StringPrintf("%09ld", timestamp->tv_nsec)
-                   << "s";
+      LOG(VERBOSE) << __func__ << ": state=" << out->bluetooth_output_.GetState() << ", frames=" << *frames << " ("
+                   << bytes << " bytes), timestamp=" << timestamp->tv_sec << "."
+                   << StringPrintf("%09ld", timestamp->tv_nsec) << "s";
       return 0;
     } else if (delay_report_ns >= kMaximumDelayMs * 1000000) {
       LOG(WARNING) << __func__
@@ -572,11 +564,9 @@ static int out_get_presentation_position(const struct audio_stream_out* stream,
   if (out->frames_presented_ >= out->frames_count_) {
     clock_gettime(CLOCK_MONOTONIC, timestamp);
     *frames = out->frames_presented_ - out->frames_count_;
-    LOG(VERBOSE) << __func__ << ": state=" << out->bluetooth_output_.GetState()
-                 << ", frames=" << *frames << " (" << bytes
-                 << " bytes), timestamp=" << timestamp->tv_sec << "."
-                 << android::base::StringPrintf("%09ld", timestamp->tv_nsec)
-                 << "s";
+    LOG(VERBOSE) << __func__ << ": state=" << out->bluetooth_output_.GetState() << ", frames=" << *frames << " ("
+                 << bytes << " bytes), timestamp=" << timestamp->tv_sec << "."
+                 << StringPrintf("%09ld", timestamp->tv_nsec) << "s";
     return 0;
   }
 
@@ -615,8 +605,7 @@ int adev_open_output_stream(struct audio_hw_device* dev,
     delete out;
     return -EINVAL;
   }
-  LOG(VERBOSE) << __func__ << ": device=0x"
-               << android::base::StringPrintf("%08x", devices);
+  LOG(VERBOSE) << __func__ << ": device=" << StringPrintf("%#x", devices);
 
   out->stream_out_.common.get_sample_rate = out_get_sample_rate;
   out->stream_out_.common.set_sample_rate = out_set_sample_rate;
@@ -644,6 +633,13 @@ int adev_open_output_stream(struct audio_hw_device* dev,
     LOG(ERROR) << __func__ << ": state=" << out->bluetooth_output_.GetState()
                << " failed to get audio config";
   }
+  // WAR to support Mono / 16 bits per sample as the Bluetooth stack required
+  if (config->channel_mask == AUDIO_CHANNEL_OUT_MONO && config->format == AUDIO_FORMAT_PCM_16_BIT) {
+    LOG(INFO) << __func__ << ": force channels=" << StringPrintf("%#x", out->channel_mask_)
+              << " to be AUDIO_CHANNEL_OUT_STEREO";
+    out->bluetooth_output_.ForcePcmStereoToMono(true);
+    config->channel_mask = AUDIO_CHANNEL_OUT_STEREO;
+  }
   out->sample_rate_ = config->sample_rate;
   out->channel_mask_ = config->channel_mask;
   out->format_ = config->format;
@@ -654,10 +650,9 @@ int adev_open_output_stream(struct audio_hw_device* dev,
   out->frames_presented_ = 0;
 
   *stream_out = &out->stream_out_;
-  LOG(INFO) << __func__ << ": state=" << out->bluetooth_output_.GetState()
-            << ", sample_rate=" << out->sample_rate_ << ", channels="
-            << android::base::StringPrintf("%x", out->channel_mask_)
-            << ", format=" << out->format_ << ", frames=" << out->frames_count_;
+  LOG(INFO) << __func__ << ": state=" << out->bluetooth_output_.GetState() << ", sample_rate=" << out->sample_rate_
+            << ", channels=" << StringPrintf("%#x", out->channel_mask_) << ", format=" << out->format_
+            << ", frames=" << out->frames_count_;
   return 0;
 }
 

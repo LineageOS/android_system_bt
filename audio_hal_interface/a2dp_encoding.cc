@@ -209,7 +209,7 @@ auto session_type = SessionType::UNKNOWN;
 // initialized
 uint16_t remote_delay = 0;
 
-bool btaudio_a2dp_supported = false;
+bool btaudio_a2dp_disabled = false;
 bool is_configured = false;
 
 BluetoothAudioCtrlAck a2dp_ack_to_bt_audio_ctrl_ack(tA2DP_CTRL_ACK ack) {
@@ -543,20 +543,20 @@ bool a2dp_get_selected_hal_pcm_config(PcmParameters* pcm_config) {
           pcm_config->channelMode != ChannelMode::UNKNOWN);
 }
 
+// Checking if new bluetooth_audio is supported
+bool is_hal_2_0_force_disabled() {
+  if (!is_configured) {
+    btaudio_a2dp_disabled = osi_property_get_bool(BLUETOOTH_AUDIO_HAL_PROP_DISABLED, false);
+    is_configured = true;
+  }
+  return btaudio_a2dp_disabled;
+}
+
 }  // namespace
 
 namespace bluetooth {
 namespace audio {
 namespace a2dp {
-
-// Checking if new bluetooth_audio is supported
-bool is_hal_2_0_supported() {
-  if (!is_configured) {
-    btaudio_a2dp_supported = !osi_property_get_bool(BLUETOOTH_AUDIO_HAL_PROP_DISABLED, false);
-    is_configured = true;
-  }
-  return btaudio_a2dp_supported;
-}
 
 // Checking if new bluetooth_audio is enabled
 bool is_hal_2_0_enabled() { return a2dp_hal_clientif != nullptr; }
@@ -565,8 +565,8 @@ bool is_hal_2_0_enabled() { return a2dp_hal_clientif != nullptr; }
 bool init(bluetooth::common::MessageLoopThread* message_loop) {
   LOG(INFO) << __func__;
 
-  if (!is_hal_2_0_supported()) {
-    LOG(ERROR) << __func__ << ": BluetoothAudio HAL is not supported";
+  if (is_hal_2_0_force_disabled()) {
+    LOG(ERROR) << __func__ << ": BluetoothAudio HAL is disabled";
     return false;
   }
 
@@ -578,6 +578,15 @@ bool init(bluetooth::common::MessageLoopThread* message_loop) {
   a2dp_sink = new A2dpTransport(session_type);
   a2dp_hal_clientif = new bluetooth::audio::BluetoothAudioClientInterface(
       a2dp_sink, message_loop);
+  if (!a2dp_hal_clientif->IsValid()) {
+    LOG(WARNING) << __func__ << ": BluetoothAudio HAL for A2DP session=" << toString(session_type) << " is invalid?!";
+    delete a2dp_hal_clientif;
+    a2dp_hal_clientif = nullptr;
+    delete a2dp_sink;
+    a2dp_sink = nullptr;
+    return false;
+  }
+
   if (remote_delay != 0) {
     LOG(INFO) << __func__ << ": restore DELAY "
               << static_cast<float>(remote_delay / 10.0) << " ms";
