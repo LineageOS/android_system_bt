@@ -58,10 +58,35 @@ TEST_F(HandlerTest, post_task_cleared) {
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
   };
   handler_->Post(std::move(closure));
-  closure = []() { LOG(FATAL) << "Should not happen"; };
+  closure = []() { EXPECT_EQ(0, 1) << "Should not happen"; };
   std::this_thread::sleep_for(std::chrono::milliseconds(5));
   handler_->Post(std::move(closure));
   handler_->Clear();
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  EXPECT_EQ(val, 1);
+}
+
+TEST_F(HandlerTest, post_task_from_callback) {
+  int val = 0;
+  Closure closure = [&val, this] {
+    Closure inner_closure = [&val] { val++; };
+    handler_->Post(inner_closure);
+  };
+  handler_->Post(closure);
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  EXPECT_EQ(val, 1);
+}
+
+TEST_F(HandlerTest, clear_task_from_callback) {
+  int val = 0;
+  Closure closure = [&val, this] {
+    val++;
+    handler_->Clear();
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+  };
+  handler_->Post(std::move(closure));
+  closure = []() { EXPECT_EQ(0, 1) << "Should not happen"; };
+  handler_->Post(std::move(closure));
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
   EXPECT_EQ(val, 1);
 }
