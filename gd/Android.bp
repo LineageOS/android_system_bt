@@ -1,0 +1,38 @@
+cc_library_static {
+    name: "libbt-gd-os",
+    defaults: [
+        "fluoride_defaults",
+        "clang_file_coverage",
+    ],
+    host_supported: true,
+    srcs: [
+        "os/alarm.cc",
+        "os/handler.cc",
+        "os/reactor.cc",
+        "os/repeating_alarm.cc",
+        "os/thread.cc",
+    ],
+}
+
+cc_test {
+    name: "bluetooth_gd_test_os",
+    test_suites: ["device-tests"],
+    defaults: [
+        "fluoride_defaults",
+        "clang_coverage_bin",
+    ],
+    host_supported: true,
+    srcs : [
+        "os/alarm_unittest.cc",
+        "os/handler_unittest.cc",
+        "os/reactor_unittest.cc",
+        "os/repeating_alarm_unittest.cc",
+        "os/thread_unittest.cc",
+    ],
+    static_libs : [
+        "libbt-gd-os",
+    ],
+    sanitize: {
+        cfi: false,
+    },
+}

@@ -8,6 +8,7 @@ subdirs = [
     "audio_bluetooth_hw",
     "audio_hal_interface",
     "audio_hearing_aid_hw",
+    "gd",
     "hci",
     "utils",
     "device",
