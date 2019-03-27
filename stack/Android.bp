@@ -178,7 +178,6 @@ cc_library_static {
     shared_libs: [
         "libcutils",
         "liblog",
-        "libstatslog",
     ],
     required: [
         "libldacBT_enc",

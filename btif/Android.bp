@@ -158,7 +158,6 @@ cc_test {
         "libkeystore_binder",
         "libkeystore_parcelables",
         "libbinder",
-        "libstatslog",
     ],
     static_libs: [
         "libbt-bta",
