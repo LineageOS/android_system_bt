@@ -20,12 +20,13 @@
 #include "audio_hearing_aid_hw/include/audio_hearing_aid_hw.h"
 #include "bta_hearing_aid_api.h"
 #include "btu.h"
-#include "osi/include/alarm.h"
+#include "osi/include/wakelock.h"
 #include "uipc.h"
 
 #include <base/files/file_util.h>
 #include <include/hardware/bt_av.h>
 
+#include "common/repeating_timer.h"
 #include "common/time_util.h"
 
 using base::FilePath;
@@ -36,7 +37,7 @@ int bit_rate = -1;
 int sample_rate = -1;
 int data_interval_ms = -1;
 int num_channels = 2;
-alarm_t* audio_timer = nullptr;
+bluetooth::common::RepeatingTimer audio_timer;
 HearingAidAudioReceiver* localAudioReceiver;
 std::unique_ptr<tUIPC_STATE> uipc_hearing_aid;
 
@@ -59,7 +60,7 @@ AudioHalStats stats;
 bool hearing_aid_on_resume_req(bool start_media_task);
 bool hearing_aid_on_suspend_req();
 
-void send_audio_data(void*) {
+void send_audio_data() {
   uint32_t bytes_per_tick =
       (num_channels * sample_rate * data_interval_ms * (bit_rate / 8)) / 1000;
 
@@ -93,6 +94,17 @@ void hearing_aid_send_ack(tHEARING_AID_CTRL_ACK status) {
   UIPC_Send(*uipc_hearing_aid, UIPC_CH_ID_AV_CTRL, 0, &ack, sizeof(ack));
 }
 
+void start_audio_ticks() {
+  wakelock_acquire();
+  audio_timer.SchedulePeriodic(get_main_thread()->GetWeakPtr(), FROM_HERE, base::Bind(&send_audio_data),
+                               base::TimeDelta::FromMilliseconds(data_interval_ms));
+}
+
+void stop_audio_ticks() {
+  audio_timer.CancelAndWait();
+  wakelock_release();
+}
+
 void hearing_aid_data_cb(tUIPC_CH_ID, tUIPC_EVENT event) {
   DVLOG(2) << "Hearing Aid audio data event: " << event;
   switch (event) {
@@ -112,16 +124,12 @@ void hearing_aid_data_cb(tUIPC_CH_ID, tUIPC_EVENT event) {
         LOG(FATAL) << " Unsupported data interval: " << data_interval_ms;
       }
 
-      audio_timer = alarm_new_periodic("hearing_aid_data_timer");
-      alarm_set_on_mloop(audio_timer, data_interval_ms, send_audio_data,
-                         nullptr);
+      start_audio_ticks();
       break;
     case UIPC_CLOSE_EVT:
       LOG(INFO) << __func__ << ": UIPC_CLOSE_EVT";
       hearing_aid_send_ack(HEARING_AID_CTRL_ACK_SUCCESS);
-      if (audio_timer) {
-        alarm_cancel(audio_timer);
-      }
+      stop_audio_ticks();
       break;
     default:
       LOG(ERROR) << "Hearing Aid audio data event not recognized:" << event;
@@ -326,16 +334,14 @@ bool hearing_aid_on_resume_req(bool start_media_task) {
       LOG(FATAL) << " Unsupported data interval: " << data_interval_ms;
       data_interval_ms = HA_INTERVAL_10_MS;
     }
-    if (audio_timer == nullptr)
-      audio_timer = alarm_new_periodic("hearing_aid_data_timer");
-    alarm_set_on_mloop(audio_timer, data_interval_ms, send_audio_data, nullptr);
+    start_audio_ticks();
   }
   return true;
 }
 
 bool hearing_aid_on_suspend_req() {
   // hearing_aid_recv_ctrl_data(HEARING_AID_CTRL_CMD_SUSPEND): stop_media_task
-  if (audio_timer) alarm_cancel(audio_timer);
+  stop_audio_ticks();
   if (localAudioReceiver) {
     // Call OnAudioSuspend and block till it returns.
     std::promise<void> do_suspend_promise;
@@ -381,9 +387,7 @@ void HearingAidAudioSource::Stop() {
     bluetooth::audio::hearing_aid::end_session();
   }
 
-  if (audio_timer) {
-    alarm_cancel(audio_timer);
-  }
+  stop_audio_ticks();
 }
 
 void HearingAidAudioSource::Initialize() {
