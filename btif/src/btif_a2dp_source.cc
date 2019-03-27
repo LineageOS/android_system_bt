@@ -357,8 +357,12 @@ static void btif_a2dp_source_startup_delayed() {
     LOG(FATAL) << __func__ << ": unable to enable real time scheduling";
   }
   if (!bluetooth::audio::a2dp::init(&btif_a2dp_source_thread)) {
-    LOG(WARNING) << __func__ << ": Using legacy HAL";
-    btif_a2dp_control_init();
+    if (btif_av_is_a2dp_offload_enabled()) {
+      LOG(WARNING) << __func__ << ": Using BluetoothA2dp HAL";
+    } else {
+      LOG(WARNING) << __func__ << ": Using legacy HAL";
+      btif_a2dp_control_init();
+    }
   }
   btif_a2dp_source_cb.SetState(BtifA2dpSource::kStateRunning);
 }
