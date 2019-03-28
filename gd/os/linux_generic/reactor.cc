@@ -24,7 +24,7 @@
 #include <cerrno>
 #include <cstring>
 
-#include "base/logging.h"
+#include "os/log.h"
 
 namespace {
 
@@ -56,50 +56,48 @@ Reactor::Reactor()
     is_running_(false),
     reactable_removed_(false) {
   RUN_NO_INTR(epoll_fd_ = epoll_create1(EPOLL_CLOEXEC));
-  CHECK_NE(epoll_fd_, -1) << __func__ << ": cannot create epoll_fd: " << strerror(errno);
+  LOG_FATAL_WHEN(epoll_fd_ != -1, "could not create epoll fd: %s", strerror(errno));
 
   control_fd_ = eventfd(0, EFD_NONBLOCK);
-  CHECK_NE(control_fd_, -1) << __func__ << ": cannot create control_fd: " << strerror(errno);
+  FATAL_WHEN(control_fd_ != -1);
 
   epoll_event control_epoll_event = {EPOLLIN, {.ptr = nullptr}};
   int result;
   RUN_NO_INTR(result = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, control_fd_, &control_epoll_event));
-  CHECK_NE(result, -1) << __func__ << ": cannot register control_fd: " << strerror(errno);
+  FATAL_WHEN(result != -1);
 }
 
 Reactor::~Reactor() {
   int result;
   RUN_NO_INTR(result = epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, control_fd_, nullptr));
-  CHECK_NE(result, -1) << __func__ << ": cannot unregister control_fd: " << strerror(errno);
+  FATAL_WHEN(result != -1);
 
   RUN_NO_INTR(result = close(control_fd_));
-  CHECK_NE(result, -1) << __func__ << ": cannot close control_fd: " << strerror(errno);
+  FATAL_WHEN(result != -1);
 
   RUN_NO_INTR(result = close(epoll_fd_));
-  CHECK_NE(result, -1) << __func__ << ": cannot close epoll_fd: " << strerror(errno);
+  FATAL_WHEN(result != -1);
 }
 
 void Reactor::Run() {
   bool previously_running = is_running_.exchange(true);
-  CHECK_EQ(previously_running, false) << __func__ << ": already running";
-  LOG(INFO) << __func__ << ": started";
+  FATAL_WHEN(!previously_running);
 
   for (;;) {
     invalidation_list_.clear();
     epoll_event events[kEpollMaxEvents];
     int count;
     RUN_NO_INTR(count = epoll_wait(epoll_fd_, events, kEpollMaxEvents, -1));
-    CHECK_NE(count, -1) << __func__ << ": Error polling for fds: " << strerror(errno);
+    FATAL_WHEN(count != -1);
 
     for (int i = 0; i < count; ++i) {
       auto event = events[i];
-      CHECK_NE(event.events, 0u) << __func__ << ": no result in epoll result";
+      FATAL_WHEN(event.events != 0u);
 
       // If the ptr stored in epoll_event.data is nullptr, it means the control fd triggered
       if (event.data.ptr == nullptr) {
         uint64_t value;
         eventfd_read(control_fd_, &value);
-        LOG(INFO) << __func__ << ": stopped";
         is_running_ = false;
         return;
       }
@@ -132,10 +130,10 @@ void Reactor::Run() {
 
 void Reactor::Stop() {
   if (!is_running_) {
-    LOG(WARNING) << __func__ << ": not running, will stop once it's started";
+    LOG_WARN("not running, will stop once it's started");
   }
   auto control = eventfd_write(control_fd_, 1);
-  CHECK_NE(control, -1) << __func__ << ": failed: " << strerror(errno);
+  FATAL_WHEN(control != -1)
 }
 
 Reactor::Reactable* Reactor::Register(int fd, Closure on_read_ready, Closure on_write_ready) {
@@ -153,12 +151,12 @@ Reactor::Reactable* Reactor::Register(int fd, Closure on_read_ready, Closure on_
   };
   int register_fd;
   RUN_NO_INTR(register_fd = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &event));
-  CHECK_NE(register_fd, -1) << __func__ << ": failed: " << strerror(errno);
+  FATAL_WHEN(register_fd != -1)
   return reactable;
 }
 
 void Reactor::Unregister(Reactor::Reactable* reactable) {
-  CHECK_NE(reactable, nullptr);
+  FATAL_WHEN(reactable != nullptr);
   {
     std::lock_guard<std::mutex> lock(mutex_);
     invalidation_list_.push_back(reactable);
@@ -168,9 +166,9 @@ void Reactor::Unregister(Reactor::Reactable* reactable) {
     std::lock_guard<std::recursive_mutex> reactable_lock(reactable->lock_);
     RUN_NO_INTR(result = epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, reactable->fd_, nullptr));
     if (result == -1 && errno == ENOENT) {
-      LOG(INFO) << __func__ << ": reactable is invalid or unregistered";
-    } else if (result == -1) {
-      LOG(FATAL) << __func__ << ": failed: " << strerror(errno);
+      LOG_INFO("reactable is invalid or unregistered");
+    } else {
+      FATAL_WHEN(result != -1);
     }
     // If we are unregistering during the callback event from this reactable, we delete it after the callback is executed.
     // reactable->is_executing_ is protected by reactable->lock_, so it's thread safe.
@@ -185,7 +183,7 @@ void Reactor::Unregister(Reactor::Reactable* reactable) {
 }
 
 void Reactor::ModifyRegistration(Reactor::Reactable* reactable, Closure on_read_ready, Closure on_write_ready) {
-  CHECK_NE(reactable, nullptr);
+  FATAL_WHEN(reactable != nullptr);
 
   uint32_t poll_event_type = 0;
   if (on_read_ready != nullptr) {
@@ -205,7 +203,7 @@ void Reactor::ModifyRegistration(Reactor::Reactable* reactable, Closure on_read_
   };
   int modify_fd;
   RUN_NO_INTR(modify_fd = epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, reactable->fd_, &event));
-  CHECK_NE(modify_fd, -1) << __func__ << ": failed: " << strerror(errno);
+  FATAL_WHEN(modify_fd != -1);
 }
 
 }  // namespace os
