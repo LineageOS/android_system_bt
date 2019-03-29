@@ -69,8 +69,7 @@ class PacketStreamTest : public ::testing::Test {
     write(socketpair_fds_[1], &packet[1], packet.size());
 
     // Read the command packet.
-    std::unique_ptr<CommandPacket> command =
-        packet_stream_.ReceiveCommand(socketpair_fds_[0]);
+    std::unique_ptr<CommandPacket> command = packet_stream_.ReceiveCommand(socketpair_fds_[0]);
 
     const vector<uint8_t> received_payload = command->GetPayload();
 
@@ -81,8 +80,7 @@ class PacketStreamTest : public ::testing::Test {
     EXPECT_EQ(opcode, command->GetOpcode());
     EXPECT_EQ(static_cast<size_t>(payload_size + 1), command->GetPayloadSize());
     EXPECT_EQ(payload_size, received_payload[0]);
-    for (int i = 0; i < payload_size; ++i)
-      EXPECT_EQ(packet[4 + i], received_payload[i + 1]);
+    for (int i = 0; i < payload_size; ++i) EXPECT_EQ(packet[4 + i], received_payload[i + 1]);
   }
 
   void CheckedSendEvent(std::unique_ptr<EventPacket> event) {
@@ -108,10 +106,8 @@ class PacketStreamTest : public ::testing::Test {
     EXPECT_EQ(expected_size, sizeof(event_header) + return_parameters_size + 1);
     EXPECT_EQ(DATA_TYPE_EVENT, event_header[0]);
     EXPECT_EQ(expected_code, event_header[1]);
-    EXPECT_EQ(expected_payload_size,
-              static_cast<size_t>(return_parameters_size) + 1);
-    for (int i = 0; i < return_parameters_size; ++i)
-      EXPECT_EQ(expected_payload[i + 1], return_parameters[i]);
+    EXPECT_EQ(expected_payload_size, static_cast<size_t>(return_parameters_size) + 1);
+    for (int i = 0; i < return_parameters_size; ++i) EXPECT_EQ(expected_payload[i + 1], return_parameters[i]);
   }
 
  protected:
@@ -147,8 +143,7 @@ TEST_F(PacketStreamTest, ReceiveLargeCommand) {
 
 TEST_F(PacketStreamTest, SendEvent) {
   const vector<uint8_t> return_parameters = {0};
-  CheckedSendEvent(
-      EventPacket::CreateCommandCompleteEvent(HCI_RESET, return_parameters));
+  CheckedSendEvent(EventPacket::CreateCommandCompleteEvent(HCI_RESET, return_parameters));
 }
 
 }  // namespace test_vendor_lib

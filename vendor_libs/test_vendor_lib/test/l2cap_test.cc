@@ -30,13 +30,19 @@ namespace test_vendor_lib {
 
 class TestPacket : public HciPacket {
  public:
-  TestPacket(const std::vector<uint8_t>& packet) { complete_packet_ = packet; }
+  TestPacket(const std::vector<uint8_t>& packet) {
+    complete_packet_ = packet;
+  }
   TestPacket() = default;
 
  private:
   std::vector<uint8_t> complete_packet_;
-  size_t get_length() { return complete_packet_.size(); }
-  uint8_t& get_at_index(size_t index) { return complete_packet_[index]; }
+  size_t get_length() {
+    return complete_packet_.size();
+  }
+  uint8_t& get_at_index(size_t index) {
+    return complete_packet_[index];
+  }
 };
 
 class L2capTest : public ::testing::Test {
@@ -47,8 +53,7 @@ class L2capTest : public ::testing::Test {
     return L2capSdu::L2capSduBuilder(sdu);
   }
 
-  void compare_packets(shared_ptr<HciPacket> expected,
-                       shared_ptr<HciPacket> received) {
+  void compare_packets(shared_ptr<HciPacket> expected, shared_ptr<HciPacket> received) {
     Iterator expected_begin = expected->get_begin();
     Iterator expected_end = expected->get_end();
 
@@ -337,11 +342,10 @@ TEST_F(L2capTest, fragmentSmallSegmentTest) {
   sdu = l2cap_expected->fragment(16, 0x02, 0x41);
 
   l2cap_received = L2capPacket::assemble(sdu);
-  ASSERT_NE(l2cap_received, nullptr)
-      << "packet reassembly failed after fragment" << std::endl
-      << "Test1: Small Segment request" << std::endl
-      << "sdu used: good_sdu" << std::endl
-      << "function call: fragment(16, 0x02, 0x41)" << std::endl;
+  ASSERT_NE(l2cap_received, nullptr) << "packet reassembly failed after fragment" << std::endl
+                                     << "Test1: Small Segment request" << std::endl
+                                     << "sdu used: good_sdu" << std::endl
+                                     << "function call: fragment(16, 0x02, 0x41)" << std::endl;
 
   compare_packets(l2cap_expected, l2cap_received);
 
@@ -374,11 +378,10 @@ TEST_F(L2capTest, fragmentLargeSegmentTest) {
   sdu = l2cap_expected->fragment(1024, 0x02, 0x41);
 
   l2cap_received = L2capPacket::assemble(sdu);
-  ASSERT_NE(l2cap_received, nullptr)
-      << "packet reassembly failed after fragment" << std::endl
-      << "Test2: Large Segment request" << std::endl
-      << "sdu used: l2cap_test_packet[1-9]" << std::endl
-      << "function call: fragment(1024, 0x02, 0x41)" << std::endl;
+  ASSERT_NE(l2cap_received, nullptr) << "packet reassembly failed after fragment" << std::endl
+                                     << "Test2: Large Segment request" << std::endl
+                                     << "sdu used: l2cap_test_packet[1-9]" << std::endl
+                                     << "function call: fragment(1024, 0x02, 0x41)" << std::endl;
 
   compare_packets(l2cap_expected, l2cap_received);
 
@@ -405,11 +408,10 @@ TEST_F(L2capTest, fragmentTxSeqTest) {
   sdu = l2cap_expected->fragment(24, 0x08, 0x41);
 
   l2cap_received = L2capPacket::assemble(sdu);
-  ASSERT_NE(l2cap_received, nullptr)
-      << "packet reassembly failed after fragment" << std::endl
-      << "Test3: Non-zero starting TxSeq" << std::endl
-      << "sdu used: good_sdu" << std::endl
-      << "function call: fragment(24, 0x08, 0x41)" << std::endl;
+  ASSERT_NE(l2cap_received, nullptr) << "packet reassembly failed after fragment" << std::endl
+                                     << "Test3: Non-zero starting TxSeq" << std::endl
+                                     << "sdu used: good_sdu" << std::endl
+                                     << "function call: fragment(24, 0x08, 0x41)" << std::endl;
 
   compare_packets(l2cap_expected, l2cap_received);
 
@@ -435,11 +437,10 @@ TEST_F(L2capTest, fragmentPayloadTest) {
   sdu = l2cap_expected->fragment(16, 0x02, 0x41);
 
   l2cap_received = L2capPacket::assemble(sdu);
-  ASSERT_NE(l2cap_received, nullptr)
-      << "packet reassembly failed after fragment" << std::endl
-      << "Test4: Packet with no payload" << std::endl
-      << "sdu used: empty_sdu_payload" << std::endl
-      << "function call: fragment(16, 0x02, 0x41)" << std::endl;
+  ASSERT_NE(l2cap_received, nullptr) << "packet reassembly failed after fragment" << std::endl
+                                     << "Test4: Packet with no payload" << std::endl
+                                     << "sdu used: empty_sdu_payload" << std::endl
+                                     << "function call: fragment(16, 0x02, 0x41)" << std::endl;
 
   compare_packets(l2cap_expected, l2cap_received);
 
@@ -466,11 +467,10 @@ TEST_F(L2capTest, fragmentSegmentSizeTest) {
   sdu = l2cap_expected->fragment(256, 0x02, 0x41);
 
   l2cap_received = L2capPacket::assemble(sdu);
-  ASSERT_NE(l2cap_received, nullptr)
-      << "packet reassembly failed after fragment" << std::endl
-      << "Test5: Segment size > Payload" << std::endl
-      << "sdu used: good_sdu" << std::endl
-      << "function call: fragment(256, 0x02, 0x41)" << std::endl;
+  ASSERT_NE(l2cap_received, nullptr) << "packet reassembly failed after fragment" << std::endl
+                                     << "Test5: Segment size > Payload" << std::endl
+                                     << "sdu used: good_sdu" << std::endl
+                                     << "function call: fragment(256, 0x02, 0x41)" << std::endl;
 
   compare_packets(l2cap_expected, l2cap_received);
 
@@ -502,11 +502,10 @@ TEST_F(L2capTest, fragmentSegmentSizeTest2) {
   sdu = l2cap_expected->fragment(512, 0x02, 0x41);
 
   l2cap_received = L2capPacket::assemble(sdu);
-  ASSERT_NE(l2cap_received, nullptr)
-      << "packet reassembly failed after fragment" << std::endl
-      << "Test6: Small Segment request on large packet" << std::endl
-      << "sdu used: l2cap_test_packet_[1-9]" << std::endl
-      << "function call: fragment(64, 0x02, 0x41)" << std::endl;
+  ASSERT_NE(l2cap_received, nullptr) << "packet reassembly failed after fragment" << std::endl
+                                     << "Test6: Small Segment request on large packet" << std::endl
+                                     << "sdu used: l2cap_test_packet_[1-9]" << std::endl
+                                     << "function call: fragment(64, 0x02, 0x41)" << std::endl;
 
   compare_packets(l2cap_expected, l2cap_received);
 

@@ -19,7 +19,7 @@
 #include <cstdint>
 #include <forward_list>
 
-#include "types/raw_address.h"
+#include "types/address.h"
 #include "view.h"
 
 namespace test_vendor_lib {
@@ -27,8 +27,7 @@ namespace packets {
 
 // Templated Iterator for endianness
 template <bool little_endian>
-class Iterator
-    : public std::iterator<std::random_access_iterator_tag, uint8_t> {
+class Iterator : public std::iterator<std::random_access_iterator_tag, uint8_t> {
  public:
   Iterator(std::forward_list<View> data, size_t offset);
   Iterator(const Iterator& itr) = default;
@@ -65,8 +64,7 @@ class Iterator
   // Get the next sizeof(FixedWidthPODType) bytes and return the filled type
   template <typename FixedWidthPODType>
   FixedWidthPODType extract() {
-    static_assert(std::is_pod<FixedWidthPODType>::value,
-                  "Iterator::extract requires an fixed type.");
+    static_assert(std::is_pod<FixedWidthPODType>::value, "Iterator::extract requires an fixed type.");
     FixedWidthPODType extracted_value;
     uint8_t* value_ptr = (uint8_t*)&extracted_value;
 
