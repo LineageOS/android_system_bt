@@ -18,7 +18,6 @@
 
 #include <sys/eventfd.h>
 
-#include "base/logging.h"
 #include "gtest/gtest.h"
 #include "os/reactor.h"
 

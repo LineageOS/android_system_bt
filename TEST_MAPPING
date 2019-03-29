@@ -1,9 +1,6 @@
 {
   "postsubmit" : [
     {
-      "name" : "bluetooth_gd_test_os"
-    },
-    {
       "name" : "bluetooth_test_common"
     },
     {
