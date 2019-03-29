@@ -17,11 +17,12 @@
 #include "os/thread.h"
 
 #include <fcntl.h>
+#include <unistd.h>
 #include <sys/syscall.h>
 #include <cerrno>
 #include <cstring>
 
-#include "base/logging.h"
+#include "os/log.h"
 
 namespace bluetooth {
 namespace os {
@@ -42,7 +43,7 @@ void Thread::run(Priority priority) {
     int rc;
     RUN_NO_INTR(rc = sched_setscheduler(linux_tid, SCHED_FIFO, &rt_params));
     if (rc != 0) {
-      LOG(ERROR) << __func__ << ": unable to set SCHED_FIFO priority: " << strerror(errno);
+      LOG_ERROR("unable to set SCHED_FIFO priority: %s", strerror(errno));
     }
   }
   reactor_.Run();
@@ -54,7 +55,7 @@ Thread::~Thread() {
 
 bool Thread::Stop() {
   std::lock_guard<std::mutex> lock(mutex_);
-  CHECK_NE(std::this_thread::get_id(), running_thread_.get_id());
+  FATAL_WHEN(std::this_thread::get_id() != running_thread_.get_id());
 
   if (!running_thread_.joinable()) {
     return false;

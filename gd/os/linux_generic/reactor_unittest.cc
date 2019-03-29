@@ -21,7 +21,6 @@
 #include <future>
 #include <thread>
 
-#include "base/logging.h"
 #include "gtest/gtest.h"
 
 namespace bluetooth {
@@ -230,10 +229,8 @@ TEST_F(ReactorTest, hot_unregister_from_same_thread) {
   EXPECT_EQ(future.get(), kReadReadyValue);
   reactor_->Stop();
   reactor_thread.join();
-  LOG(INFO);
 
   reactor_->Unregister(reactable);
-  LOG(INFO);
 }
 
 TEST_F(ReactorTest, start_and_stop_multi_times) {

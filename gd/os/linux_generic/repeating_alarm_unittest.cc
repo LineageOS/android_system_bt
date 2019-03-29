@@ -18,7 +18,6 @@
 
 #include <future>
 
-#include "base/logging.h"
 #include "gtest/gtest.h"
 
 namespace bluetooth {
@@ -84,7 +83,7 @@ TEST_F(RepeatingAlarmTest, schedule) {
 }
 
 TEST_F(RepeatingAlarmTest, cancel_alarm) {
-  alarm_->Schedule([]() { LOG(FATAL) << "Should not happen"; }, std::chrono::milliseconds(1));
+  alarm_->Schedule([]() { ASSERT_TRUE(false); }, std::chrono::milliseconds(1));
   alarm_->Cancel();
   std::this_thread::sleep_for(std::chrono::milliseconds(5));
 }
@@ -95,7 +94,7 @@ TEST_F(RepeatingAlarmTest, cancel_alarm_from_callback) {
 }
 
 TEST_F(RepeatingAlarmTest, schedule_while_alarm_armed) {
-  alarm_->Schedule([]() { LOG(FATAL) << "Should not happen"; }, std::chrono::milliseconds(1));
+  alarm_->Schedule([]() { ASSERT_TRUE(false); }, std::chrono::milliseconds(1));
   std::promise<void> promise;
   auto future = promise.get_future();
   alarm_->Schedule([&promise]() { promise.set_value(); }, std::chrono::milliseconds(10));
@@ -104,7 +103,7 @@ TEST_F(RepeatingAlarmTest, schedule_while_alarm_armed) {
 }
 
 TEST_F(RepeatingAlarmTest, delete_while_alarm_armed) {
-  alarm_->Schedule([]() { LOG(FATAL) << "Should not happen"; }, std::chrono::milliseconds(1));
+  alarm_->Schedule([]() { ASSERT_TRUE(false); }, std::chrono::milliseconds(1));
   delete alarm_;
   alarm_ = nullptr;
   std::this_thread::sleep_for(std::chrono::milliseconds(1));
