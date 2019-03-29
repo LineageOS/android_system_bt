@@ -48,13 +48,13 @@
 
 #endif /* defined(OS_ANDROID) */
 
-#define FATAL_WHEN(condition) \
+#define ASSERT(condition) \
   if (!(condition)) { \
     LOG_ERROR("%s:%d assertion '" #condition "' failed", __FILE__, __LINE__); \
     abort(); \
   }
 
-#define LOG_FATAL_WHEN(condition, fmt, args...) \
+#define ASSERT_LOG(condition, fmt, args...) \
   if (!(condition)) { \
     LOG_ERROR("%s:%d assertion '" #condition "' failed - " fmt, __FILE__, __LINE__, ##args); \
     abort(); \
