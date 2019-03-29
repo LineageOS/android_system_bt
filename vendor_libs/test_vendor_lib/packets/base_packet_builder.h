@@ -34,8 +34,7 @@ class BasePacketBuilder {
   virtual size_t size() const = 0;
 
   // Write to the vector with the given iterator.
-  virtual void Serialize(
-      std::back_insert_iterator<std::vector<uint8_t>> it) const = 0;
+  virtual void Serialize(std::back_insert_iterator<std::vector<uint8_t>> it) const = 0;
 
  protected:
   BasePacketBuilder() = default;

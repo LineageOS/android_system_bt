@@ -45,7 +45,7 @@ cc_binary {
         "android.hardware.bluetooth-async",
         "android.hardware.bluetooth-hci",
         "libbt-rootcanal",
-        "libbluetooth-types",
+        "libbt-rootcanal-types",
     ],
     include_dirs: [
         "system/bt",
@@ -82,10 +82,10 @@ cc_library_shared {
         "-DHAS_NO_BDROID_BUILDCFG",
     ],
     static_libs: [
-        "libbluetooth-types",
         "android.hardware.bluetooth-async",
         "android.hardware.bluetooth-hci",
         "libbt-rootcanal",
+        "libbt-rootcanal-types",
     ],
     include_dirs: [
         "system/bt",
