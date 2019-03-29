@@ -23,11 +23,11 @@
 
 #include "bluetooth_hci.h"
 
+using ::android::sp;
 using ::android::hardware::configureRpcThreadpool;
+using ::android::hardware::joinRpcThreadpool;
 using ::android::hardware::bluetooth::V1_0::IBluetoothHci;
 using ::android::hardware::bluetooth::V1_0::sim::BluetoothHci;
-using ::android::hardware::joinRpcThreadpool;
-using ::android::sp;
 
 int main(int /* argc */, char** /* argv */) {
   sp<IBluetoothHci> bluetooth = new BluetoothHci;

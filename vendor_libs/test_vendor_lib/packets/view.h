@@ -25,8 +25,7 @@ namespace packets {
 // Base class that holds a shared pointer to data with bounds.
 class View {
  public:
-  View(std::shared_ptr<const std::vector<uint8_t>> data, size_t begin,
-       size_t end);
+  View(std::shared_ptr<const std::vector<uint8_t>> data, size_t begin, size_t end);
   View(const View& view, size_t begin, size_t end);
   View(const View& view) = default;
   virtual ~View() = default;
