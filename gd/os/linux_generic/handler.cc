@@ -18,9 +18,9 @@
 
 #include <sys/eventfd.h>
 #include <cstring>
+#include <unistd.h>
 
-#include "base/logging.h"
-
+#include "os/log.h"
 #include "os/reactor.h"
 #include "os/utils.h"
 
@@ -34,7 +34,7 @@ namespace os {
 Handler::Handler(Thread* thread)
   : thread_(thread),
     fd_(eventfd(0, EFD_SEMAPHORE | EFD_NONBLOCK)) {
-  CHECK_NE(fd_, -1) << __func__ << ": cannot create eventfd: " << strerror(errno);
+  FATAL_WHEN(fd_ != -1);
 
   reactable_ = thread_->GetReactor()->Register(fd_, [this] { this->handle_next_event(); }, nullptr);
 }
@@ -45,7 +45,7 @@ Handler::~Handler() {
 
   int close_status;
   RUN_NO_INTR(close_status = close(fd_));
-  CHECK_NE(close_status, -1) << __func__ << ": cannot close eventfd: " << strerror(errno);
+  FATAL_WHEN(close_status != -1);
 }
 
 void Handler::Post(Closure closure) {
@@ -55,7 +55,7 @@ void Handler::Post(Closure closure) {
   }
   uint64_t val = 1;
   auto write_result = eventfd_write(fd_, val);
-  CHECK_NE(write_result, -1) << __func__ << ": failed to write: " << strerror(errno);
+  FATAL_WHEN(write_result != -1);
 }
 
 void Handler::Clear() {
@@ -73,7 +73,13 @@ void Handler::handle_next_event() {
   Closure closure;
   uint64_t val = 0;
   auto read_result = eventfd_read(fd_, &val);
-  CHECK_NE(read_result, -1) << __func__ << ": failed to read fd: " << strerror(errno);
+  if (read_result == -1 && errno == EAGAIN) {
+    // We were told there was an item, but it was removed before we got there
+    // (aka the queue was cleared). Not a fatal error, so just bail.
+    return;
+  }
+
+  FATAL_WHEN(read_result != -1);
 
   {
     std::lock_guard<std::mutex> lock(mutex_);

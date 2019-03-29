@@ -20,7 +20,6 @@
 #include <thread>
 
 #include <gtest/gtest.h>
-#include "base/logging.h"
 
 namespace bluetooth {
 namespace os {
@@ -58,7 +57,9 @@ TEST_F(HandlerTest, post_task_cleared) {
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
   };
   handler_->Post(std::move(closure));
-  closure = []() { LOG(FATAL) << "Should not happen"; };
+  closure = []() {
+    ASSERT_TRUE(false);
+  };
   std::this_thread::sleep_for(std::chrono::milliseconds(5));
   handler_->Post(std::move(closure));
   handler_->Clear();

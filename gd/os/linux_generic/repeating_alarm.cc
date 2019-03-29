@@ -18,17 +18,24 @@
 
 #include <sys/timerfd.h>
 #include <cstring>
+#include <unistd.h>
 
-#include "base/logging.h"
+#include "os/log.h"
 #include "os/utils.h"
+
+#ifdef OS_ANDROID
+#define ALARM_CLOCK CLOCK_BOOTTIME_ALARM
+#else
+#define ALARM_CLOCK CLOCK_BOOTTIME
+#endif
 
 namespace bluetooth {
 namespace os {
 
 RepeatingAlarm::RepeatingAlarm(Thread* thread)
   : thread_(thread),
-    fd_(timerfd_create(CLOCK_BOOTTIME_ALARM, 0)) {
-  CHECK_NE(fd_, -1) << __func__ << ": cannot create timerfd: " << strerror(errno);
+    fd_(timerfd_create(ALARM_CLOCK, 0)) {
+  FATAL_WHEN(fd_ != -1);
 
   token_ = thread_->GetReactor()->Register(fd_, [this] { on_fire(); }, nullptr);
 }
@@ -38,7 +45,7 @@ RepeatingAlarm::~RepeatingAlarm() {
 
   int close_status;
   RUN_NO_INTR(close_status = close(fd_));
-  CHECK_NE(close_status, -1) << __func__ << ": cannot close timerfd: " << strerror(errno);
+  FATAL_WHEN(close_status != -1);
 }
 
 void RepeatingAlarm::Schedule(Closure task, std::chrono::milliseconds period) {
@@ -49,7 +56,7 @@ void RepeatingAlarm::Schedule(Closure task, std::chrono::milliseconds period) {
     {period_ms / 1000, period_ms % 1000 * 1000000}
   };
   int result = timerfd_settime(fd_, 0, &timer_itimerspec, nullptr);
-  CHECK_EQ(result, 0) << __func__ << ": failed, error=" << strerror(errno);
+  FATAL_WHEN(result == 0);
 
   task_ = std::move(task);
 }
@@ -58,7 +65,7 @@ void RepeatingAlarm::Cancel() {
   std::lock_guard<std::mutex> lock(mutex_);
   itimerspec disarm_itimerspec{/* disarm timer */};
   int result = timerfd_settime(fd_, 0, &disarm_itimerspec, nullptr);
-  CHECK_EQ(result, 0) << __func__ << ": failed, error=" << strerror(errno);
+  FATAL_WHEN(result == 0);
 }
 
 void RepeatingAlarm::on_fire() {
@@ -68,7 +75,7 @@ void RepeatingAlarm::on_fire() {
   auto bytes_read = read(fd_, &times_invoked, sizeof(uint64_t));
   lock.unlock();
   task();
-  CHECK_EQ(bytes_read, static_cast<ssize_t>(sizeof(uint64_t))) << __func__ << ": failed, error=" << strerror(errno);
+  FATAL_WHEN(bytes_read == static_cast<ssize_t>(sizeof(uint64_t)));
 }
 
 }  // namespace os

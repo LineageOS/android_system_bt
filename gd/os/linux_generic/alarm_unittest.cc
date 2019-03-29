@@ -18,7 +18,6 @@
 
 #include <future>
 
-#include "base/logging.h"
 #include "gtest/gtest.h"
 
 namespace bluetooth {
