@@ -57,7 +57,7 @@ const stack_config_t interface = {
 // Add more tests to increase code coverage.
 class AvrcpDeviceTest : public ::testing::Test {
  public:
-  virtual void SetUp() override {
+  void SetUp() override {
     // NOTE: We use a wrapper lambda for the MockFunction in order to
     // add a const qualifier to the response. Otherwise the MockFunction
     // type doesn't match the callback type and a compiler error occurs.
@@ -71,7 +71,7 @@ class AvrcpDeviceTest : public ::testing::Test {
     test_device = new Device(RawAddress::kAny, true, cb, 0xFFFF, 0xFFFF);
   }
 
-  virtual void TearDown() override {
+  void TearDown() override {
     delete test_device;
     Mock::VerifyAndClear(&response_cb);
   }

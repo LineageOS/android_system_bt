@@ -131,7 +131,7 @@ class AdvertiserHciMock : public BleAdvertiserHciInterface {
                    cmd_complete);
   };
 
-  bool QuirkAdvertiserZeroHandle() { return false; }
+  bool QuirkAdvertiserZeroHandle() override { return false; }
 
  private:
   DISALLOW_COPY_AND_ASSIGN(AdvertiserHciMock);
@@ -153,7 +153,7 @@ class BleAdvertisingManagerTest : public testing::Test {
 
   std::unique_ptr<AdvertiserHciMock> hci_mock;
 
-  virtual void SetUp() {
+  void SetUp() override {
     hci_mock.reset(new AdvertiserHciMock());
 
     base::Callback<void(uint8_t)> inst_cnt_Cb;
@@ -168,7 +168,7 @@ class BleAdvertisingManagerTest : public testing::Test {
     inst_cnt_Cb.Run(num_adv_instances);
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     BleAdvertisingManager::CleanUp();
     hci_mock.reset();
   }

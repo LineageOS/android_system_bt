@@ -220,7 +220,7 @@ class HearingAidImpl : public HearingAid {
   bool audio_running;
 
  public:
-  virtual ~HearingAidImpl() = default;
+  ~HearingAidImpl() override = default;
 
   HearingAidImpl(bluetooth::hearing_aid::HearingAidCallbacks* callbacks,
                  Closure initCb)

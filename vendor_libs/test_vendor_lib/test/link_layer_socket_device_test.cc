@@ -60,11 +60,11 @@ class LinkLayerSocketDeviceTest : public ::testing::Test {
    public:
     MockPhyLayer(const std::function<void(std::shared_ptr<LinkLayerPacketBuilder>)>& on_receive)
         : PhyLayer(Phy::Type::LOW_ENERGY, 0, [](LinkLayerPacketView) {}), on_receive_(on_receive) {}
-    virtual void Send(const std::shared_ptr<LinkLayerPacketBuilder> packet) override {
+    void Send(const std::shared_ptr<LinkLayerPacketBuilder> packet) override {
       on_receive_(packet);
     }
-    virtual void Receive(LinkLayerPacketView) override {}
-    virtual void TimerTick() override {}
+    void Receive(LinkLayerPacketView) override {}
+    void TimerTick() override {}
 
    private:
     std::function<void(std::shared_ptr<LinkLayerPacketBuilder>)> on_receive_;

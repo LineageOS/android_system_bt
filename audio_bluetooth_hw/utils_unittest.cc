@@ -25,8 +25,8 @@ using ::android::bluetooth::audio::utils::ParseAudioParams;
 
 class UtilsTest : public testing::Test {
  protected:
-  virtual void SetUp() {}
-  virtual void TearDown() { map_.clear(); }
+  void SetUp() override {}
+  void TearDown() override { map_.clear(); }
 
   std::unordered_map<std::string, std::string> map_;
 };
