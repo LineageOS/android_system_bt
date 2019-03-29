@@ -77,7 +77,6 @@ class CommandQueueEntry {
 namespace bluetooth {
 namespace hci {
 
-using common::Address;
 using common::BidiQueue;
 using common::BidiQueueEnd;
 using os::Alarm;

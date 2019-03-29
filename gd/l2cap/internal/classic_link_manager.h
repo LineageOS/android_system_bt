@@ -28,6 +28,7 @@
 #include "l2cap/internal/scheduler.h"
 
 #include "hci/acl_manager.h"
+#include "hci/address.h"
 
 namespace bluetooth {
 namespace l2cap {
@@ -50,13 +51,12 @@ class ClassicLinkManager : public hci::ConnectionCallbacks {
     std::vector<PendingFixedChannelConnection> pending_fixed_channel_connections_;
   };
 
-  void ConnectFixedChannelServices(common::Address device,
-                                   PendingFixedChannelConnection pending_fixed_channel_connection);
+  void ConnectFixedChannelServices(hci::Address device, PendingFixedChannelConnection pending_fixed_channel_connection);
 
-  ClassicLink* GetLink(common::Address device);
+  ClassicLink* GetLink(hci::Address device);
   void OnConnectSuccess(std::unique_ptr<hci::AclConnection> acl_connection) override;
-  void OnConnectFail(common::Address device, hci::ErrorCode reason) override;
-  void OnDisconnect(common::Address device, hci::ErrorCode status);
+  void OnConnectFail(hci::Address device, hci::ErrorCode reason) override;
+  void OnDisconnect(hci::Address device, hci::ErrorCode status);
 
  private:
   // Dependencies
@@ -65,8 +65,8 @@ class ClassicLinkManager : public hci::ConnectionCallbacks {
   ClassicFixedChannelServiceManagerImpl* service_manager_;
 
   // Internal states
-  std::unordered_map<common::Address, PendingLink> pending_links_;
-  std::unordered_map<common::Address, ClassicLink> links_;
+  std::unordered_map<hci::Address, PendingLink> pending_links_;
+  std::unordered_map<hci::Address, ClassicLink> links_;
   DISALLOW_COPY_AND_ASSIGN(ClassicLinkManager);
 };
 

@@ -481,8 +481,8 @@ TEST_F(HciTest, creditsTest) {
 TEST_F(HciTest, createConnectionTest) {
   // Send CreateConnection to the controller
   auto command_future = hal->GetSentCommandFuture();
-  common::Address bd_addr;
-  ASSERT_TRUE(common::Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr;
+  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
   uint16_t packet_type = 0x1234;
   PageScanRepetitionMode page_scan_repetition_mode = PageScanRepetitionMode::R0;
   uint16_t clock_offset = 0x3456;
@@ -583,8 +583,8 @@ TEST_F(HciTest, createConnectionTest) {
 }
 
 TEST_F(HciTest, receiveMultipleAclPackets) {
-  common::Address bd_addr;
-  ASSERT_TRUE(common::Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr;
+  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
   uint16_t handle = 0x0001;
   uint16_t num_packets = 100;
   PacketBoundaryFlag packet_boundary_flag = PacketBoundaryFlag::COMPLETE_PDU;

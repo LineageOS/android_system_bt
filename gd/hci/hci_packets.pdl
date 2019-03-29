@@ -1,7 +1,7 @@
 little_endian_packets
 
-custom_field Address : 48 "common/"
-custom_field ClassOfDevice : 24 "common/"
+custom_field Address : 48 "hci/"
+custom_field ClassOfDevice : 24 "hci/"
 
 enum Enable : 8 {
   DISABLED = 0x00,
