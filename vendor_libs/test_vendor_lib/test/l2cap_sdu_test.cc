@@ -25,24 +25,15 @@ using std::vector;
 
 namespace test_vendor_lib {
 
-std::shared_ptr<L2capSdu> packet_1 =
-    L2capSdu::L2capSduConstructor(l2cap_test_packet_1);
-std::shared_ptr<L2capSdu> packet_2 =
-    L2capSdu::L2capSduConstructor(l2cap_test_packet_2);
-std::shared_ptr<L2capSdu> packet_3 =
-    L2capSdu::L2capSduConstructor(l2cap_test_packet_3);
-std::shared_ptr<L2capSdu> packet_4 =
-    L2capSdu::L2capSduConstructor(l2cap_test_packet_4);
-std::shared_ptr<L2capSdu> packet_5 =
-    L2capSdu::L2capSduConstructor(l2cap_test_packet_5);
-std::shared_ptr<L2capSdu> packet_6 =
-    L2capSdu::L2capSduConstructor(l2cap_test_packet_6);
-std::shared_ptr<L2capSdu> packet_7 =
-    L2capSdu::L2capSduConstructor(l2cap_test_packet_7);
-std::shared_ptr<L2capSdu> packet_8 =
-    L2capSdu::L2capSduConstructor(l2cap_test_packet_8);
-std::shared_ptr<L2capSdu> packet_9 =
-    L2capSdu::L2capSduConstructor(l2cap_test_packet_9);
+std::shared_ptr<L2capSdu> packet_1 = L2capSdu::L2capSduConstructor(l2cap_test_packet_1);
+std::shared_ptr<L2capSdu> packet_2 = L2capSdu::L2capSduConstructor(l2cap_test_packet_2);
+std::shared_ptr<L2capSdu> packet_3 = L2capSdu::L2capSduConstructor(l2cap_test_packet_3);
+std::shared_ptr<L2capSdu> packet_4 = L2capSdu::L2capSduConstructor(l2cap_test_packet_4);
+std::shared_ptr<L2capSdu> packet_5 = L2capSdu::L2capSduConstructor(l2cap_test_packet_5);
+std::shared_ptr<L2capSdu> packet_6 = L2capSdu::L2capSduConstructor(l2cap_test_packet_6);
+std::shared_ptr<L2capSdu> packet_7 = L2capSdu::L2capSduConstructor(l2cap_test_packet_7);
+std::shared_ptr<L2capSdu> packet_8 = L2capSdu::L2capSduConstructor(l2cap_test_packet_8);
+std::shared_ptr<L2capSdu> packet_9 = L2capSdu::L2capSduConstructor(l2cap_test_packet_9);
 
 class L2capSduTest : public ::testing::Test {
  public:

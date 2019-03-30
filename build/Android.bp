@@ -79,8 +79,7 @@ fluoride_defaults {
 cc_defaults {
     name: "clang_file_coverage",
     target: {
-        linux: {
-            enabled: true,
+        host: {
             clang_cflags: [
                 "-fprofile-instr-generate",
                 "-fcoverage-mapping",
@@ -98,8 +97,7 @@ cc_defaults {
 cc_defaults {
     name: "clang_coverage_bin",
     target: {
-        linux: {
-            enabled: true,
+        host: {
             ldflags: [
                 "-fprofile-instr-generate",
                 "-fcoverage-mapping",
