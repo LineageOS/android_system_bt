@@ -60,6 +60,7 @@ cc_library_shared {
         "libkeystore_aidl",
         "libkeystore_binder",
         "libkeystore_parcelables",
+        "libstatslog",
     ],
     static_libs: [
         "libbt-sbc-decoder",
