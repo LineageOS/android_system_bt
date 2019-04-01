@@ -19,3 +19,11 @@ filegroup {
         "linux_generic/thread_unittest.cc",
     ]
 }
+
+filegroup {
+    name: "BluetoothOsBenchmarkSources",
+    srcs: [
+        "alarm_benchmark.cc",
+        "thread_benchmark.cc",
+    ]
+}
