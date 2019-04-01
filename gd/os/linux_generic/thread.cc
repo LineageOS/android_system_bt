@@ -55,7 +55,7 @@ Thread::~Thread() {
 
 bool Thread::Stop() {
   std::lock_guard<std::mutex> lock(mutex_);
-  FATAL_WHEN(std::this_thread::get_id() != running_thread_.get_id());
+  ASSERT(std::this_thread::get_id() != running_thread_.get_id());
 
   if (!running_thread_.joinable()) {
     return false;
