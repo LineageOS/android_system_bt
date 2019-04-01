@@ -34,7 +34,7 @@ namespace os {
 Handler::Handler(Thread* thread)
   : thread_(thread),
     fd_(eventfd(0, EFD_SEMAPHORE | EFD_NONBLOCK)) {
-  FATAL_WHEN(fd_ != -1);
+  ASSERT(fd_ != -1);
 
   reactable_ = thread_->GetReactor()->Register(fd_, [this] { this->handle_next_event(); }, nullptr);
 }
@@ -45,7 +45,7 @@ Handler::~Handler() {
 
   int close_status;
   RUN_NO_INTR(close_status = close(fd_));
-  FATAL_WHEN(close_status != -1);
+  ASSERT(close_status != -1);
 }
 
 void Handler::Post(Closure closure) {
@@ -55,7 +55,7 @@ void Handler::Post(Closure closure) {
   }
   uint64_t val = 1;
   auto write_result = eventfd_write(fd_, val);
-  FATAL_WHEN(write_result != -1);
+  ASSERT(write_result != -1);
 }
 
 void Handler::Clear() {
@@ -79,7 +79,7 @@ void Handler::handle_next_event() {
     return;
   }
 
-  FATAL_WHEN(read_result != -1);
+  ASSERT(read_result != -1);
 
   {
     std::lock_guard<std::mutex> lock(mutex_);
