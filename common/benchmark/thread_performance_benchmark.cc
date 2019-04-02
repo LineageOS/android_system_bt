@@ -23,16 +23,12 @@
 #include <memory>
 #include <thread>
 
-#include "common/handler.h"
 #include "common/message_loop_thread.h"
-#include "common/thread.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/thread.h"
 
 using ::benchmark::State;
-using bluetooth::common::Handler;
 using bluetooth::common::MessageLoopThread;
-using bluetooth::common::Thread;
 
 #define NUM_MESSAGES_TO_SEND 100000
 
@@ -418,54 +414,6 @@ BENCHMARK_F(BM_LibChromeThread, sequential_execution)(State& state) {
       std::future<void> counter_future = g_counter_promise->get_future();
       thread_->task_runner()->PostTask(
           FROM_HERE, base::BindOnce(&callback_sequential, nullptr));
-      counter_future.wait();
-    }
-  }
-};
-
-class BM_ReactorThread : public BM_ThreadPerformance {
- protected:
-  void SetUp(State& st) override {
-    BM_ThreadPerformance::SetUp(st);
-    std::future<void> set_up_future = set_up_promise_->get_future();
-    thread_ = new Thread("BM_ReactorThread thread", Thread::Priority::NORMAL);
-    handler_ = new Handler(thread_);
-    handler_->Post([this]() { set_up_promise_->set_value(); });
-    set_up_future.wait();
-  }
-
-  void TearDown(State& st) override {
-    delete handler_;
-    handler_ = nullptr;
-    thread_->Stop();
-    delete thread_;
-    thread_ = nullptr;
-    BM_ThreadPerformance::TearDown(st);
-  }
-
-  Thread* thread_ = nullptr;
-  Handler* handler_ = nullptr;
-};
-
-BENCHMARK_F(BM_ReactorThread, batch_enque_dequeue)(State& state) {
-  for (auto _ : state) {
-    g_counter = 0;
-    g_counter_promise = std::make_unique<std::promise<void>>();
-    std::future<void> counter_future = g_counter_promise->get_future();
-    for (int i = 0; i < NUM_MESSAGES_TO_SEND; i++) {
-      fixed_queue_enqueue(bt_msg_queue_, (void*)&g_counter);
-      handler_->Post([this]() { callback_batch(bt_msg_queue_, nullptr); });
-    }
-    counter_future.wait();
-  }
-};
-
-BENCHMARK_F(BM_ReactorThread, sequential_execution)(State& state) {
-  for (auto _ : state) {
-    for (int i = 0; i < NUM_MESSAGES_TO_SEND; i++) {
-      g_counter_promise = std::make_unique<std::promise<void>>();
-      std::future<void> counter_future = g_counter_promise->get_future();
-      handler_->Post([]() { callback_sequential(nullptr); });
       counter_future.wait();
     }
   }
