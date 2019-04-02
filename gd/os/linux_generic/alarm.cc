@@ -35,7 +35,7 @@ namespace os {
 Alarm::Alarm(Thread* thread)
   : thread_(thread),
     fd_(timerfd_create(ALARM_CLOCK, 0)) {
-  LOG_FATAL_WHEN(fd_ != -1, "cannot create timerfd: %s", strerror(errno));
+  ASSERT_LOG(fd_ != -1, "cannot create timerfd: %s", strerror(errno));
 
   token_ = thread_->GetReactor()->Register(fd_, [this] { on_fire(); }, nullptr);
 }
@@ -45,7 +45,7 @@ Alarm::~Alarm() {
 
   int close_status;
   RUN_NO_INTR(close_status = close(fd_));
-  FATAL_WHEN(close_status != -1);
+  ASSERT(close_status != -1);
 }
 
 void Alarm::Schedule(Closure task, std::chrono::milliseconds delay) {
@@ -56,7 +56,7 @@ void Alarm::Schedule(Closure task, std::chrono::milliseconds delay) {
     {delay_ms / 1000, delay_ms % 1000 * 1000000}
   };
   int result = timerfd_settime(fd_, 0, &timer_itimerspec, nullptr);
-  FATAL_WHEN(result == 0);
+  ASSERT(result == 0);
 
   task_ = std::move(task);
 }
@@ -65,7 +65,7 @@ void Alarm::Cancel() {
   std::lock_guard<std::mutex> lock(mutex_);
   itimerspec disarm_itimerspec{/* disarm timer */};
   int result = timerfd_settime(fd_, 0, &disarm_itimerspec, nullptr);
-  FATAL_WHEN(result == 0);
+  ASSERT(result == 0);
 }
 
 void Alarm::on_fire() {
@@ -75,8 +75,8 @@ void Alarm::on_fire() {
   auto bytes_read = read(fd_, &times_invoked, sizeof(uint64_t));
   lock.unlock();
   task();
-  FATAL_WHEN(bytes_read == static_cast<ssize_t>(sizeof(uint64_t)))
-  FATAL_WHEN(times_invoked == static_cast<uint64_t>(1));
+  ASSERT(bytes_read == static_cast<ssize_t>(sizeof(uint64_t)));
+  ASSERT(times_invoked == static_cast<uint64_t>(1));
 }
 
 }  // namespace os
