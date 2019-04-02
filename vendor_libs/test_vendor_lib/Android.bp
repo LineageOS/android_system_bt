@@ -81,7 +81,6 @@ cc_test_host {
     srcs: [
         "test/async_manager_unittest.cc",
         "test/security_manager_unittest.cc",
-        "test/link_layer_socket_device_test.cc",
     ],
     header_libs: [
         "libbluetooth_headers",
