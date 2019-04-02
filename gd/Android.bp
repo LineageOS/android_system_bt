@@ -104,3 +104,16 @@ cc_test {
         cfi: false,
     },
 }
+
+cc_benchmark {
+    name: "bluetooth_benchmark_gd",
+    defaults: ["gd_defaults"],
+    host_supported: true,
+    srcs: [
+        "benchmark.cc",
+        ":BluetoothOsBenchmarkSources",
+    ],
+    static_libs : [
+            "libbluetooth_gd",
+    ],
+}
