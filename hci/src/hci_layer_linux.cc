@@ -245,7 +245,7 @@ void hci_close() {
 }
 
 void hci_transmit(BT_HDR* packet) {
-  uint8_t type;
+  uint8_t type = 0;
 
   CHECK(bt_vendor_fd != -1);
 
