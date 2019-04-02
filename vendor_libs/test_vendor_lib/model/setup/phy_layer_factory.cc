@@ -39,9 +39,11 @@ std::shared_ptr<PhyLayer> PhyLayerFactory::GetPhyLayer(
 }
 
 void PhyLayerFactory::UnregisterPhyLayer(uint32_t id) {
-  for (auto it = phy_layers_.begin(); it != phy_layers_.end(); it++) {
+  for (auto it = phy_layers_.begin(); it != phy_layers_.end();) {
     if ((*it)->GetId() == id) {
-      phy_layers_.erase(it);
+      it = phy_layers_.erase(it);
+    } else {
+      it++;
     }
   }
 }
