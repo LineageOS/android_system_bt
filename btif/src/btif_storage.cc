@@ -486,8 +486,7 @@ static bt_status_t btif_in_fetch_bonded_devices(
         bt_linkkey_file_found = false;
       }
     }
-    if (!btif_in_fetch_bonded_ble_device(name.c_str(), add, p_bonded_devices) &&
-        !bt_linkkey_file_found) {
+    if (!btif_in_fetch_bonded_ble_device(name, add, p_bonded_devices) && !bt_linkkey_file_found) {
       BTIF_TRACE_DEBUG("Remote device:%s, no link key or ble key found",
                        name.c_str());
     }
@@ -1484,7 +1483,7 @@ void btif_storage_load_bonded_hearing_aids() {
     if (!btif_config_get_int(name, HEARING_AID_PSM, &value)) continue;
     uint16_t psm = value;
 
-    if (btif_in_fetch_bonded_device(name.c_str()) != BT_STATUS_SUCCESS) {
+    if (btif_in_fetch_bonded_device(name) != BT_STATUS_SUCCESS) {
       RawAddress bd_addr;
       RawAddress::FromString(name, bd_addr);
       btif_storage_remove_hearing_aid(bd_addr);
