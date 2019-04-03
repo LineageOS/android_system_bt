@@ -99,9 +99,9 @@ TEST(PacketBuilderEndianTest, insertTest) {
 template <typename T>
 class VectorBuilder : public PacketBuilder<true> {
  public:
-  VectorBuilder(std::vector<uint64_t> vect) {
+  VectorBuilder(const std::vector<uint64_t> vect) {
     for (uint64_t element : vect) {
-      vect.push_back(static_cast<T>(element));
+      vect_.push_back(static_cast<T>(element));
     }
   }
   ~VectorBuilder() = default;
@@ -129,9 +129,9 @@ class VectorBuilder : public PacketBuilder<true> {
 template <typename T>
 class InsertElementsBuilder : public PacketBuilder<true> {
  public:
-  InsertElementsBuilder(std::vector<uint64_t> vect) {
+  InsertElementsBuilder(const std::vector<uint64_t> vect) {
     for (uint64_t element : vect) {
-      vect.push_back(static_cast<T>(element));
+      vect_.push_back(static_cast<T>(element));
     }
   }
   virtual ~InsertElementsBuilder() = default;
