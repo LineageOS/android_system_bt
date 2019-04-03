@@ -262,6 +262,13 @@ void BluetoothHci::SetUpTestChannel(int port) {
   // Add some default devices for easier debugging
   test_channel_.AddDefaults();
 
+  // This should be configurable in the future.
+  ALOGI("Adding Beacons so the scan list is not empty.");
+  test_channel_.Add({"beacon", "be:ac:10:00:00:01", "1000"});
+  test_channel_.AddDeviceToPhy({"1", "0"});
+  test_channel_.Add({"beacon", "be:ac:10:00:00:02", "1000"});
+  test_channel_.AddDeviceToPhy({"2", "0"});
+
   if (socket_fd == -1) {
     ALOGE("Test channel SetUp(%d) failed.", port);
     return;
