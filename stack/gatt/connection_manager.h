@@ -53,4 +53,9 @@ extern bool direct_connect_add(tAPP_ID app_id, const RawAddress& address);
 extern bool direct_connect_remove(tAPP_ID app_id, const RawAddress& address);
 
 extern void dump(int fd);
+
+/* This callback will be executed when direct connect attempt fails due to
+ * timeout. It must be implemented by users of connection_manager */
+extern void on_connection_timed_out(uint8_t app_id, const RawAddress& address);
+
 }  // namespace connection_manager
