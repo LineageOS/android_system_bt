@@ -722,6 +722,12 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB* p_clcb,
      */
     if (p_q_cmd != p_clcb->p_q_cmd) osi_free_and_reset((void**)&p_q_cmd);
   }
+
+  if (p_clcb->p_rcb->p_cback) {
+    tBTA_GATTC bta_gattc;
+    bta_gattc.remote_bda = p_clcb->p_srcb->server_bda;
+    (*p_clcb->p_rcb->p_cback)(BTA_GATTC_SRVC_DISC_DONE_EVT, &bta_gattc);
+  }
 }
 
 /** Read an attribute */
