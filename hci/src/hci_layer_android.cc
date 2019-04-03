@@ -37,14 +37,15 @@
 #define LOG_PATH "/data/misc/bluetooth/logs/firmware_events.log"
 #define LAST_LOG_PATH "/data/misc/bluetooth/logs/firmware_events.log.last"
 
-using android::hardware::bluetooth::V1_0::IBluetoothHci;
-using android::hardware::bluetooth::V1_0::IBluetoothHciCallbacks;
-using android::hardware::bluetooth::V1_0::HciPacket;
-using android::hardware::bluetooth::V1_0::Status;
-using android::hardware::ProcessState;
+using ::android::hardware::hidl_death_recipient;
+using ::android::hardware::hidl_vec;
+using ::android::hardware::ProcessState;
 using ::android::hardware::Return;
 using ::android::hardware::Void;
-using ::android::hardware::hidl_vec;
+using ::android::hardware::bluetooth::V1_0::HciPacket;
+using ::android::hardware::bluetooth::V1_0::IBluetoothHci;
+using ::android::hardware::bluetooth::V1_0::IBluetoothHciCallbacks;
+using ::android::hardware::bluetooth::V1_0::Status;
 
 extern void initialization_complete();
 extern void hci_event_received(const base::Location& from_here, BT_HDR* packet);
@@ -52,6 +53,15 @@ extern void acl_event_received(BT_HDR* packet);
 extern void sco_data_received(BT_HDR* packet);
 
 android::sp<IBluetoothHci> btHci;
+
+class BluetoothHciDeathRecipient : public hidl_death_recipient {
+ public:
+  virtual void serviceDied(uint64_t /*cookie*/, const android::wp<::android::hidl::base::V1_0::IBase>& /*who*/) {
+    LOG_ERROR(LOG_TAG, "Bluetooth HAL service died!");
+    abort();
+  }
+};
+android::sp<BluetoothHciDeathRecipient> bluetoothHciDeathRecipient = new BluetoothHciDeathRecipient();
 
 class BluetoothHciCallbacks : public IBluetoothHciCallbacks {
  public:
@@ -106,6 +116,11 @@ void hci_initialize() {
   btHci = IBluetoothHci::getService();
   // If android.hardware.bluetooth* is not found, Bluetooth can not continue.
   CHECK(btHci != nullptr);
+  auto death_link = btHci->linkToDeath(bluetoothHciDeathRecipient, 0);
+  if (!death_link.isOk()) {
+    LOG_ERROR(LOG_TAG, "%s: Unable to set the death recipient for the Bluetooth HAL", __func__);
+    abort();
+  }
   LOG_INFO(LOG_TAG, "%s: IBluetoothHci::getService() returned %p (%s)",
            __func__, btHci.get(), (btHci->isRemote() ? "remote" : "local"));
 
@@ -117,6 +132,12 @@ void hci_initialize() {
 }
 
 void hci_close() {
+  if (btHci != nullptr) {
+    auto death_unlink = btHci->unlinkToDeath(bluetoothHciDeathRecipient);
+    if (!death_unlink.isOk()) {
+      LOG_ERROR(LOG_TAG, "%s: Error unlinking death recipient from the Bluetooth HAL", __func__);
+    }
+  }
   btHci->close();
   btHci = nullptr;
 }
