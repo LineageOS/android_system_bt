@@ -54,6 +54,7 @@ typedef struct {
 #define BTA_GATTC_CLOSE_EVT 5        /* GATTC  close request status event */
 #define BTA_GATTC_SEARCH_CMPL_EVT 6  /* GATT discovery complete event */
 #define BTA_GATTC_SEARCH_RES_EVT 7   /* GATT discovery result event */
+#define BTA_GATTC_SRVC_DISC_DONE_EVT 8 /* GATT service discovery done event */
 #define BTA_GATTC_NOTIF_EVT 10       /* GATT attribute notification event */
 #define BTA_GATTC_EXEC_EVT 12        /* execute write complete event */
 #define BTA_GATTC_ACL_EVT 13         /* ACL up event */
