@@ -123,6 +123,7 @@ void Reactor::Run() {
       }
       if (reactable_removed_) {
         delete reactable;
+        reactable_removed_ = false;
       }
     }
   }
@@ -161,6 +162,7 @@ void Reactor::Unregister(Reactor::Reactable* reactable) {
     std::lock_guard<std::mutex> lock(mutex_);
     invalidation_list_.push_back(reactable);
   }
+  bool delaying_delete_until_callback_finished = false;
   {
     int result;
     std::lock_guard<std::recursive_mutex> reactable_lock(reactable->lock_);
@@ -170,14 +172,16 @@ void Reactor::Unregister(Reactor::Reactable* reactable) {
     } else {
       ASSERT(result != -1);
     }
+
     // If we are unregistering during the callback event from this reactable, we delete it after the callback is executed.
     // reactable->is_executing_ is protected by reactable->lock_, so it's thread safe.
     if (reactable->is_executing_) {
       reactable_removed_ = true;
+      delaying_delete_until_callback_finished = true;
     }
   }
   // If we are unregistering outside of the callback event from this reactable, we delete it now
-  if (!reactable_removed_) {
+  if (!delaying_delete_until_callback_finished) {
     delete reactable;
   }
 }
