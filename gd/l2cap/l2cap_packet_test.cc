@@ -72,11 +72,11 @@ TEST(L2capPacketTest, extendedInformationStartFrameTest) {
   PacketView<true> packet_bytes_view(packet_bytes);
   ASSERT_EQ(extended_information_start_frame.size(), packet_bytes_view.size());
 
-  BasicFrameView basic_frame_view(packet_bytes_view);
+  BasicFrameView basic_frame_view = BasicFrameView::Create(packet_bytes_view);
   ASSERT_TRUE(basic_frame_view.IsValid());
   ASSERT_EQ(channel_id, basic_frame_view.GetChannelId());
 
-  StandardFrameView standard_frame_view(packet_bytes_view);
+  StandardFrameView standard_frame_view = StandardFrameView::Create(basic_frame_view);
   ASSERT_TRUE(standard_frame_view.IsValid());
   ASSERT_EQ(FrameType::I_FRAME, standard_frame_view.GetFrameType());
 }
