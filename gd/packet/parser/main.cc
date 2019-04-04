@@ -21,6 +21,7 @@
 #include <fstream>
 #include <iostream>
 #include <queue>
+#include <regex>
 #include <sstream>
 #include <vector>
 
@@ -32,6 +33,33 @@ void yylex_init(void**);
 void yylex_destroy(void*);
 void yyset_debug(int, void*);
 void yyset_in(FILE*, void*);
+
+namespace {
+
+const std::string kBluetoothTopNamespace = "bluetooth";
+
+void parse_namespace(std::filesystem::path input_file_relative_path, std::vector<std::string>& token) {
+  std::filesystem::path gen_namespace = kBluetoothTopNamespace / input_file_relative_path;
+  std::string gen_namespace_str = gen_namespace;
+  std::regex path_tokenizer("/");
+  auto it = std::sregex_token_iterator(gen_namespace_str.cbegin(), gen_namespace_str.cend(), path_tokenizer, -1);
+  std::sregex_token_iterator it_end;
+  for (; it != it_end; ++it) {
+    token.push_back(it->str());
+  }
+}
+
+void generate_namespace_open(const std::vector<std::string>& token, std::ostream& output) {
+  for (auto it = token.begin(); it != token.end(); ++it) {
+    output << "namespace " << *it << " {" << std::endl;
+  }
+}
+
+void generate_namespace_close(const std::vector<std::string>& token, std::ostream& output) {
+  for (auto it = token.rbegin(); it != token.rend(); ++it) {
+    output << "}  //namespace " << *it << std::endl;
+  }
+}
 
 bool parse_one_file(std::filesystem::path input_file, std::filesystem::path include_dir,
                     std::filesystem::path out_dir) {
@@ -83,11 +111,15 @@ bool parse_one_file(std::filesystem::path input_file, std::filesystem::path incl
   out_file << "#include \"packet/packet_view.h\"\n";
   out_file << "\n\n";
 
-  out_file << "using bluetooth::packet::BasePacketBuilder;";
-  out_file << "using bluetooth::packet::BitInserter;";
-  out_file << "using bluetooth::packet::kLittleEndian;";
-  out_file << "using bluetooth::packet::PacketBuilder;";
-  out_file << "using bluetooth::packet::PacketView;";
+  std::vector<std::string> namespace_list;
+  parse_namespace(gen_relative_path, namespace_list);
+  generate_namespace_open(namespace_list, out_file);
+
+  out_file << "using ::bluetooth::packet::BasePacketBuilder;";
+  out_file << "using ::bluetooth::packet::BitInserter;";
+  out_file << "using ::bluetooth::packet::kLittleEndian;";
+  out_file << "using ::bluetooth::packet::PacketBuilder;";
+  out_file << "using ::bluetooth::packet::PacketView;";
   out_file << "\n\n";
 
   for (const auto& e : decls.enum_defs_queue_) {
@@ -112,11 +144,15 @@ bool parse_one_file(std::filesystem::path input_file, std::filesystem::path incl
     out_file << "\n\n";
   }
 
+  generate_namespace_close(namespace_list, out_file);
+
   out_file.close();
   fclose(in_file);
 
   return true;
 }
+
+}  // namespace
 
 int main(int argc, const char** argv) {
   std::filesystem::path out_dir;

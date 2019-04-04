@@ -24,9 +24,9 @@
 #include "packet/bit_inserter.h"
 #include "packet/raw_builder.h"
 
-using bluetooth::packet::BitInserter;
-using bluetooth::packet::kLittleEndian;
-using bluetooth::packet::RawBuilder;
+using ::bluetooth::packet::BitInserter;
+using ::bluetooth::packet::kLittleEndian;
+using ::bluetooth::packet::RawBuilder;
 using std::vector;
 
 namespace {
@@ -49,6 +49,7 @@ vector<uint8_t> child = {
 namespace bluetooth {
 namespace packet {
 namespace parser {
+using namespace test;
 
 TEST(GeneratedPacketTest, testChildTwoTwoThree) {
   auto packet = ChildTwoTwoThreeBuilder::Create();
