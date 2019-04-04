@@ -109,7 +109,7 @@ cc_test {
         "libbluetooth_gd",
     ],
     sanitize: {
-        cfi: false,
+        address: true,
     },
 }
 
