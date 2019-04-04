@@ -183,6 +183,8 @@ void reset(bool after_reset) {
 }
 
 void wl_direct_connect_timeout_cb(uint8_t app_id, const RawAddress& address) {
+  on_connection_timed_out(app_id, address);
+
   // TODO: this would free the timer, from within the timer callback, which is
   // bad.
   direct_connect_remove(app_id, address);

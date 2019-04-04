@@ -321,6 +321,18 @@ extern void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
 
 /*******************************************************************************
  *
+ * Function         BTM_IsBleConnection
+ *
+ * Description      This function is called to check if the connection handle
+ *                  for an LE link
+ *
+ * Returns          true if connection is LE link, otherwise false.
+ *
+ ******************************************************************************/
+extern bool BTM_IsBleConnection(uint16_t conn_handle);
+
+/*******************************************************************************
+ *
  * Function         BTM_ReadRemoteConnectionAddr
  *
  * Description      Read the remote device address currently used.

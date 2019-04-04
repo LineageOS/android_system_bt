@@ -521,13 +521,16 @@ class HearingAidImpl : public HearingAid {
 
     DVLOG(2) << __func__ << " " << address;
 
-    if (!hearingDevice->first_connection) {
-      // Use cached data, jump to connecting socket
-      ConnectSocket(hearingDevice);
-      return;
+    if (hearingDevice->audio_control_point_handle &&
+        hearingDevice->audio_status_handle &&
+        hearingDevice->audio_status_ccc_handle &&
+        hearingDevice->volume_handle && hearingDevice->read_psm_handle) {
+      // Use cached data, jump to read PSM
+      ReadPSM(hearingDevice);
+    } else {
+      hearingDevice->first_connection = true;
+      BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, &HEARING_AID_UUID);
     }
-
-    BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, &HEARING_AID_UUID);
   }
 
   void OnServiceChangeEvent(const RawAddress& address) {
@@ -537,16 +540,23 @@ class HearingAidImpl : public HearingAid {
       return;
     }
     LOG(INFO) << __func__ << ": address=" << address;
+    hearingDevice->first_connection = true;
+    hearingDevice->service_changed_rcvd = true;
+    BtaGattQueue::Clean(hearingDevice->conn_id);
+    if (hearingDevice->gap_handle) {
+      GAP_ConnClose(hearingDevice->gap_handle);
+      hearingDevice->gap_handle = 0;
+    }
+  }
 
-    /* Re-register the Audio Status Notification since the Service Change will
-     * clear it */
-    tGATT_STATUS register_status;
-    register_status = BTA_GATTC_RegisterForNotifications(
-        gatt_if, address, hearingDevice->audio_status_handle);
-    if (register_status != GATT_SUCCESS) {
-      LOG(INFO) << __func__
-                << ": BTA_GATTC_RegisterForNotifications failed, status="
-                << loghex(register_status);
+  void OnServiceDiscDoneEvent(const RawAddress& address) {
+    HearingDevice* hearingDevice = hearingDevices.FindByAddress(address);
+    if (!hearingDevice) {
+      VLOG(2) << "Skipping unknown device" << address;
+      return;
+    }
+    if (hearingDevice->service_changed_rcvd) {
+      BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, &HEARING_AID_UUID);
     }
   }
 
@@ -574,10 +584,15 @@ class HearingAidImpl : public HearingAid {
 
     const gatt::Service* service = nullptr;
     for (const gatt::Service& tmp : *services) {
-      if (tmp.uuid != HEARING_AID_UUID) continue;
-      LOG(INFO) << "Found Hearing Aid service, handle=" << loghex(tmp.handle);
-      service = &tmp;
-      break;
+      if (tmp.uuid == Uuid::From16Bit(UUID_SERVCLASS_GATT_SERVER)) {
+        LOG(INFO) << "Found UUID_SERVCLASS_GATT_SERVER, handle="
+                  << loghex(tmp.handle);
+        const gatt::Service* service_changed_service = &tmp;
+        find_server_changed_ccc_handle(conn_id, service_changed_service);
+      } else if (tmp.uuid == HEARING_AID_UUID) {
+        LOG(INFO) << "Found Hearing Aid service, handle=" << loghex(tmp.handle);
+        service = &tmp;
+      }
     }
 
     if (!service) {
@@ -587,7 +602,6 @@ class HearingAidImpl : public HearingAid {
       return;
     }
 
-    uint16_t psm_handle = 0x0000;
     for (const gatt::Characteristic& charac : service->characteristics) {
       if (charac.uuid == READ_ONLY_PROPERTIES_UUID) {
         DVLOG(2) << "Reading read only properties "
@@ -614,16 +628,26 @@ class HearingAidImpl : public HearingAid {
       } else if (charac.uuid == VOLUME_UUID) {
         hearingDevice->volume_handle = charac.value_handle;
       } else if (charac.uuid == LE_PSM_UUID) {
-        psm_handle = charac.value_handle;
+        hearingDevice->read_psm_handle = charac.value_handle;
       } else {
         LOG(WARNING) << "Unknown characteristic found:" << charac.uuid;
       }
     }
 
-    if (psm_handle) {
-      DVLOG(2) << "Reading PSM " << loghex(psm_handle);
+    if (hearingDevice->service_changed_rcvd) {
+      hearingDevice->service_changed_rcvd = false;
+    }
+
+    ReadPSM(hearingDevice);
+  }
+
+  void ReadPSM(HearingDevice* hearingDevice) {
+    if (hearingDevice->read_psm_handle) {
+      LOG(INFO) << "Reading PSM " << loghex(hearingDevice->read_psm_handle)
+                << ", device=" << hearingDevice->address;
       BtaGattQueue::ReadCharacteristic(
-          conn_id, psm_handle, HearingAidImpl::OnPsmReadStatic, nullptr);
+          hearingDevice->conn_id, hearingDevice->read_psm_handle,
+          HearingAidImpl::OnPsmReadStatic, nullptr);
     }
   }
 
@@ -790,24 +814,25 @@ class HearingAidImpl : public HearingAid {
       return;
     }
 
-    uint16_t psm_val = *((uint16_t*)value);
-    hearingDevice->psm = psm_val;
-    VLOG(2) << "read psm:" << loghex(hearingDevice->psm);
+    uint16_t psm = *((uint16_t*)value);
+    VLOG(2) << "read psm:" << loghex(psm);
 
-    ConnectSocket(hearingDevice);
+    ConnectSocket(hearingDevice, psm);
   }
 
-  void ConnectSocket(HearingDevice* hearingDevice) {
+  void ConnectSocket(HearingDevice* hearingDevice, uint16_t psm) {
     tL2CAP_CFG_INFO cfg_info = tL2CAP_CFG_INFO{.mtu = 512};
+
+    SendEnableServiceChangedInd(hearingDevice);
 
     uint8_t service_id = hearingDevice->isLeft()
                              ? BTM_SEC_SERVICE_HEARING_AID_LEFT
                              : BTM_SEC_SERVICE_HEARING_AID_RIGHT;
     uint16_t gap_handle = GAP_ConnOpen(
-        "", service_id, false, &hearingDevice->address, hearingDevice->psm,
-        514 /* MPS */, &cfg_info, nullptr,
-        BTM_SEC_NONE /* TODO: request security ? */, L2CAP_FCR_LE_COC_MODE,
-        HearingAidImpl::GapCallbackStatic, BT_TRANSPORT_LE);
+        "", service_id, false, &hearingDevice->address, psm, 514 /* MPS */,
+        &cfg_info, nullptr, BTM_SEC_NONE /* TODO: request security ? */,
+        L2CAP_FCR_LE_COC_MODE, HearingAidImpl::GapCallbackStatic,
+        BT_TRANSPORT_LE);
     if (gap_handle == GAP_INVALID_HANDLE) {
       LOG(ERROR) << "UNABLE TO GET gap_handle";
       return;
@@ -991,6 +1016,17 @@ class HearingAidImpl : public HearingAid {
       }
     }
     return (OTHER_SIDE_NOT_STREAMING);
+  }
+
+  void SendEnableServiceChangedInd(HearingDevice* device) {
+    VLOG(2) << __func__ << " Enable " << device->address
+            << "service changed ind.";
+    std::vector<uint8_t> value(2);
+    uint8_t* ptr = value.data();
+    UINT16_TO_STREAM(ptr, GATT_CHAR_CLIENT_CONFIG_INDICTION);
+    BtaGattQueue::WriteDescriptor(
+        device->conn_id, device->service_changed_ccc_handle, std::move(value),
+        GATT_WRITE, nullptr, nullptr);
   }
 
   void SendStart(HearingDevice* device) {
@@ -1462,6 +1498,29 @@ class HearingAidImpl : public HearingAid {
 
   HearingDevices hearingDevices;
 
+  void find_server_changed_ccc_handle(uint16_t conn_id,
+                                      const gatt::Service* service) {
+    HearingDevice* hearingDevice = hearingDevices.FindByConnId(conn_id);
+    if (!hearingDevice) {
+      DVLOG(2) << "Skipping unknown device, conn_id=" << loghex(conn_id);
+      return;
+    }
+    for (const gatt::Characteristic& charac : service->characteristics) {
+      if (charac.uuid == Uuid::From16Bit(GATT_UUID_GATT_SRV_CHGD)) {
+        hearingDevice->service_changed_ccc_handle =
+            find_ccc_handle(conn_id, charac.value_handle);
+        if (!hearingDevice->service_changed_ccc_handle) {
+          LOG(ERROR) << __func__
+                     << ": cannot find service changed CCC descriptor";
+          continue;
+        }
+        LOG(INFO) << __func__ << " service_changed_ccc="
+                  << loghex(hearingDevice->service_changed_ccc_handle);
+        break;
+      }
+    }
+  }
+
   // Find the handle for the client characteristics configuration of a given
   // characteristics
   uint16_t find_ccc_handle(uint16_t conn_id, uint16_t char_handle) {
@@ -1483,6 +1542,12 @@ class HearingAidImpl : public HearingAid {
 
   void send_state_change(HearingDevice* device, std::vector<uint8_t> payload) {
     if (device->conn_id != 0) {
+      if (device->service_changed_rcvd) {
+        LOG(INFO)
+            << __func__
+            << ": service discover is in progress, skip send State Change cmd.";
+        return;
+      }
       // Send the data packet
       LOG(INFO) << __func__ << ": Send State Change. device=" << device->address
                 << ", status=" << loghex(payload[1]);
@@ -1581,6 +1646,11 @@ void hearingaid_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
     case BTA_GATTC_SRVC_CHG_EVT:
       if (!instance) return;
       instance->OnServiceChangeEvent(p_data->remote_bda);
+      break;
+
+    case BTA_GATTC_SRVC_DISC_DONE_EVT:
+      if (!instance) return;
+      instance->OnServiceDiscDoneEvent(p_data->remote_bda);
       break;
 
     default:

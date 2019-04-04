@@ -389,7 +389,7 @@ void ConnectionHandler::AcceptorControlCb(uint8_t handle, uint8_t event,
 
 void ConnectionHandler::MessageCb(uint8_t handle, uint8_t label, uint8_t opcode,
                                   tAVRC_MSG* p_msg) {
-  if (device_map_[handle] == nullptr) {
+  if (device_map_.find(handle) == device_map_.end()) {
     LOG(ERROR) << "Message received for unconnected device: handle="
                << loghex(handle);
     return;

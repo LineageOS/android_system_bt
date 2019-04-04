@@ -34,6 +34,7 @@
 #include <base/threading/thread.h>
 #include <frameworks/base/core/proto/android/bluetooth/enums.pb.h>
 #include <frameworks/base/core/proto/android/bluetooth/hci/enums.pb.h>
+#include <log/log.h>
 #include <statslog.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -141,6 +142,7 @@ void btu_hcif_log_event_metrics(uint8_t evt_code, uint8_t* p_event) {
   uint16_t status = android::bluetooth::hci::STATUS_UNKNOWN;
   uint16_t reason = android::bluetooth::hci::STATUS_UNKNOWN;
   uint16_t handle = bluetooth::common::kUnknownConnectionHandle;
+  int64_t value = 0;
 
   RawAddress bda = RawAddress::kEmpty;
   switch (evt_code) {
@@ -154,31 +156,26 @@ void btu_hcif_log_event_metrics(uint8_t evt_code, uint8_t* p_event) {
     case HCI_KEYPRESS_NOTIFY_EVT:
     case HCI_REMOTE_OOB_DATA_REQUEST_EVT:
       STREAM_TO_BDADDR(bda, p_event);
-      bluetooth::common::LogClassicPairingEvent(bda, handle, cmd, evt_code,
-                                                status, reason);
+      bluetooth::common::LogClassicPairingEvent(bda, handle, cmd, evt_code, status, reason, value);
       break;
     case HCI_SIMPLE_PAIRING_COMPLETE_EVT:
     case HCI_RMT_NAME_REQUEST_COMP_EVT:
       STREAM_TO_UINT8(status, p_event);
       STREAM_TO_BDADDR(bda, p_event);
-      bluetooth::common::LogClassicPairingEvent(bda, handle, cmd, evt_code,
-                                                status, reason);
+      bluetooth::common::LogClassicPairingEvent(bda, handle, cmd, evt_code, status, reason, value);
       break;
     case HCI_AUTHENTICATION_COMP_EVT:
       STREAM_TO_UINT8(status, p_event);
       STREAM_TO_UINT16(handle, p_event);
       handle = HCID_GET_HANDLE(handle);
-      bluetooth::common::LogClassicPairingEvent(bda, handle, cmd, evt_code,
-                                                status, reason);
+      bluetooth::common::LogClassicPairingEvent(bda, handle, cmd, evt_code, status, reason, value);
       break;
     case HCI_ENCRYPTION_CHANGE_EVT: {
       uint8_t encryption_enabled;
       STREAM_TO_UINT8(status, p_event);
       STREAM_TO_UINT16(handle, p_event);
       STREAM_TO_UINT8(encryption_enabled, p_event);
-      // Use reason field to store encryption enabled
-      bluetooth::common::LogClassicPairingEvent(bda, handle, cmd, evt_code,
-                                                status, encryption_enabled);
+      bluetooth::common::LogClassicPairingEvent(bda, handle, cmd, evt_code, status, reason, encryption_enabled);
       break;
     }
     case HCI_CONNECTION_COMP_EVT: {
@@ -644,53 +641,44 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, uint8_t* p_cmd,
       break;
     }
     case HCI_READ_LOCAL_OOB_DATA:
-      bluetooth::common::LogClassicPairingEvent(
-          RawAddress::kEmpty, bluetooth::common::kUnknownConnectionHandle,
-          opcode, hci_event, cmd_status,
-          android::bluetooth::hci::STATUS_UNKNOWN);
+      bluetooth::common::LogClassicPairingEvent(RawAddress::kEmpty, bluetooth::common::kUnknownConnectionHandle, opcode,
+                                                hci_event, cmd_status, android::bluetooth::hci::STATUS_UNKNOWN, 0);
       break;
     case HCI_WRITE_SIMPLE_PAIRING_MODE: {
       uint8_t simple_pairing_mode;
       STREAM_TO_UINT8(simple_pairing_mode, p_cmd);
-      // Use reason field to log simple pairing mode
-      bluetooth::common::LogClassicPairingEvent(
-          RawAddress::kEmpty, bluetooth::common::kUnknownConnectionHandle,
-          opcode, hci_event, cmd_status, simple_pairing_mode);
+      bluetooth::common::LogClassicPairingEvent(RawAddress::kEmpty, bluetooth::common::kUnknownConnectionHandle, opcode,
+                                                hci_event, cmd_status, android::bluetooth::hci::STATUS_UNKNOWN,
+                                                simple_pairing_mode);
       break;
     }
     case HCI_WRITE_SECURE_CONNS_SUPPORT: {
       uint8_t secure_conn_host_support;
       STREAM_TO_UINT8(secure_conn_host_support, p_cmd);
-      // Use reason field to log secure connection host support
-      bluetooth::common::LogClassicPairingEvent(
-          RawAddress::kEmpty, bluetooth::common::kUnknownConnectionHandle,
-          opcode, hci_event, cmd_status, secure_conn_host_support);
+      bluetooth::common::LogClassicPairingEvent(RawAddress::kEmpty, bluetooth::common::kUnknownConnectionHandle, opcode,
+                                                hci_event, cmd_status, android::bluetooth::hci::STATUS_UNKNOWN,
+                                                secure_conn_host_support);
       break;
     }
     case HCI_AUTHENTICATION_REQUESTED:
       STREAM_TO_UINT16(handle, p_cmd);
-      bluetooth::common::LogClassicPairingEvent(
-          RawAddress::kEmpty, handle, opcode, hci_event, cmd_status,
-          android::bluetooth::hci::STATUS_UNKNOWN);
+      bluetooth::common::LogClassicPairingEvent(RawAddress::kEmpty, handle, opcode, hci_event, cmd_status,
+                                                android::bluetooth::hci::STATUS_UNKNOWN, 0);
       break;
     case HCI_SET_CONN_ENCRYPTION: {
       STREAM_TO_UINT16(handle, p_cmd);
       uint8_t encryption_enable;
       STREAM_TO_UINT8(encryption_enable, p_cmd);
-      // Use reason field to log encryption enable
-      bluetooth::common::LogClassicPairingEvent(RawAddress::kEmpty, handle,
-                                                opcode, hci_event, cmd_status,
-                                                encryption_enable);
+      bluetooth::common::LogClassicPairingEvent(RawAddress::kEmpty, handle, opcode, hci_event, cmd_status,
+                                                android::bluetooth::hci::STATUS_UNKNOWN, encryption_enable);
       break;
     }
     case HCI_DELETE_STORED_LINK_KEY: {
       uint8_t delete_all_flag;
       STREAM_TO_BDADDR(bd_addr, p_cmd);
       STREAM_TO_UINT8(delete_all_flag, p_cmd);
-      // Use reason field to log delete_all_flag
-      bluetooth::common::LogClassicPairingEvent(
-          bd_addr, bluetooth::common::kUnknownConnectionHandle, opcode,
-          hci_event, cmd_status, delete_all_flag);
+      bluetooth::common::LogClassicPairingEvent(bd_addr, bluetooth::common::kUnknownConnectionHandle, opcode, hci_event,
+                                                cmd_status, android::bluetooth::hci::STATUS_UNKNOWN, delete_all_flag);
       break;
     }
     case HCI_RMT_NAME_REQUEST:
@@ -705,16 +693,14 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, uint8_t* p_cmd,
     case HCI_REM_OOB_DATA_REQ_REPLY:
     case HCI_REM_OOB_DATA_REQ_NEG_REPLY:
       STREAM_TO_BDADDR(bd_addr, p_cmd);
-      bluetooth::common::LogClassicPairingEvent(
-          bd_addr, bluetooth::common::kUnknownConnectionHandle, opcode,
-          hci_event, cmd_status, android::bluetooth::hci::STATUS_UNKNOWN);
+      bluetooth::common::LogClassicPairingEvent(bd_addr, bluetooth::common::kUnknownConnectionHandle, opcode, hci_event,
+                                                cmd_status, android::bluetooth::hci::STATUS_UNKNOWN, 0);
       break;
     case HCI_IO_CAP_REQ_NEG_REPLY:
       STREAM_TO_BDADDR(bd_addr, p_cmd);
       STREAM_TO_UINT8(reason, p_cmd);
-      bluetooth::common::LogClassicPairingEvent(
-          bd_addr, bluetooth::common::kUnknownConnectionHandle, opcode,
-          hci_event, cmd_status, reason);
+      bluetooth::common::LogClassicPairingEvent(bd_addr, bluetooth::common::kUnknownConnectionHandle, opcode, hci_event,
+                                                cmd_status, reason, 0);
       break;
   }
 }
@@ -803,10 +789,19 @@ static void btu_hcif_log_command_complete_metrics(uint16_t opcode,
     case HCI_WRITE_SIMPLE_PAIRING_MODE:
     case HCI_WRITE_SECURE_CONNS_SUPPORT:
       STREAM_TO_UINT8(status, p_return_params);
-      bluetooth::common::LogClassicPairingEvent(
-          RawAddress::kEmpty, bluetooth::common::kUnknownConnectionHandle,
-          opcode, hci_event, status, reason);
+      bluetooth::common::LogClassicPairingEvent(RawAddress::kEmpty, bluetooth::common::kUnknownConnectionHandle, opcode,
+                                                hci_event, status, reason, 0);
       break;
+    case HCI_READ_ENCR_KEY_SIZE: {
+      uint16_t handle;
+      uint8_t key_size;
+      STREAM_TO_UINT8(status, p_return_params);
+      STREAM_TO_UINT16(handle, p_return_params);
+      STREAM_TO_UINT8(key_size, p_return_params);
+      bluetooth::common::LogClassicPairingEvent(RawAddress::kEmpty, handle, opcode, hci_event, status, reason,
+                                                key_size);
+      break;
+    }
     case HCI_LINK_KEY_REQUEST_REPLY:
     case HCI_LINK_KEY_REQUEST_NEG_REPLY:
     case HCI_IO_CAPABILITY_REQUEST_REPLY:
@@ -819,9 +814,8 @@ static void btu_hcif_log_command_complete_metrics(uint16_t opcode,
     case HCI_REM_OOB_DATA_REQ_NEG_REPLY:
       STREAM_TO_UINT8(status, p_return_params);
       STREAM_TO_BDADDR(bd_addr, p_return_params);
-      bluetooth::common::LogClassicPairingEvent(
-          bd_addr, bluetooth::common::kUnknownConnectionHandle, opcode,
-          hci_event, status, reason);
+      bluetooth::common::LogClassicPairingEvent(bd_addr, bluetooth::common::kUnknownConnectionHandle, opcode, hci_event,
+                                                status, reason, 0);
       break;
   }
 }
@@ -1133,6 +1127,29 @@ static void btu_hcif_rmt_name_request_comp_evt(uint8_t* p, uint16_t evt_len) {
   btm_sec_rmt_name_request_complete(&bd_addr, p, status);
 }
 
+constexpr uint8_t MIN_KEY_SIZE = 7;
+
+static void read_encryption_key_size_complete_after_encryption_change(uint8_t status, uint16_t handle,
+                                                                      uint8_t key_size) {
+  if (status != HCI_SUCCESS) {
+    LOG(INFO) << __func__ << ": disconnecting, status: " << loghex(status);
+    btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
+    return;
+  }
+
+  if (key_size < MIN_KEY_SIZE) {
+    android_errorWriteLog(0x534e4554, "124301137");
+    LOG(ERROR) << __func__ << " encryption key too short, disconnecting. handle: " << loghex(handle)
+               << " key_size: " << +key_size;
+
+    btsnd_hcic_disconnect(handle, HCI_ERR_HOST_REJECT_SECURITY);
+    return;
+  }
+
+  // good key size - succeed
+  btm_acl_encrypt_change(handle, status, 1 /* enable */);
+  btm_sec_encrypt_change(handle, status, 1 /* enable */);
+}
 /*******************************************************************************
  *
  * Function         btu_hcif_encryption_change_evt
@@ -1151,13 +1168,17 @@ static void btu_hcif_encryption_change_evt(uint8_t* p) {
   STREAM_TO_UINT16(handle, p);
   STREAM_TO_UINT8(encr_enable, p);
 
-  if (status == HCI_ERR_CONNECTION_TOUT) {
-    smp_cancel_start_encryption_attempt();
-    return;
-  }
+  if (status != HCI_SUCCESS || encr_enable == 0 || BTM_IsBleConnection(handle)) {
+    if (status == HCI_ERR_CONNECTION_TOUT) {
+      smp_cancel_start_encryption_attempt();
+      return;
+    }
 
-  btm_acl_encrypt_change(handle, status, encr_enable);
-  btm_sec_encrypt_change(handle, status, encr_enable);
+    btm_acl_encrypt_change(handle, status, encr_enable);
+    btm_sec_encrypt_change(handle, status, encr_enable);
+  } else {
+    btsnd_hcic_read_encryption_key_size(handle, base::Bind(&read_encryption_key_size_complete_after_encryption_change));
+  }
 }
 
 /*******************************************************************************
@@ -2029,21 +2050,42 @@ static void btu_hcif_enhanced_flush_complete_evt(void) {
  * End of Simple Pairing Events
  **********************************************/
 
-/**********************************************
- * BLE Events
- **********************************************/
+static void read_encryption_key_size_complete_after_key_refresh(uint8_t status, uint16_t handle, uint8_t key_size) {
+  if (status != HCI_SUCCESS) {
+    LOG(INFO) << __func__ << ": disconnecting, status: " << loghex(status);
+    btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
+    return;
+  }
+
+  if (key_size < MIN_KEY_SIZE) {
+    android_errorWriteLog(0x534e4554, "124301137");
+    LOG(ERROR) << __func__ << " encryption key too short, disconnecting. handle: " << loghex(handle)
+               << " key_size: " << +key_size;
+
+    btsnd_hcic_disconnect(handle, HCI_ERR_HOST_REJECT_SECURITY);
+    return;
+  }
+
+  btm_sec_encrypt_change(handle, status, 1 /* enc_enable */);
+}
+
 static void btu_hcif_encryption_key_refresh_cmpl_evt(uint8_t* p) {
   uint8_t status;
-  uint8_t enc_enable = 0;
   uint16_t handle;
 
   STREAM_TO_UINT8(status, p);
   STREAM_TO_UINT16(handle, p);
 
-  if (status == HCI_SUCCESS) enc_enable = 1;
-
-  btm_sec_encrypt_change(handle, status, enc_enable);
+  if (status != HCI_SUCCESS || BTM_IsBleConnection(handle)) {
+    btm_sec_encrypt_change(handle, status, (status == HCI_SUCCESS) ? 1 : 0);
+  } else {
+    btsnd_hcic_read_encryption_key_size(handle, base::Bind(&read_encryption_key_size_complete_after_key_refresh));
+  }
 }
+
+/**********************************************
+ * BLE Events
+ **********************************************/
 
 static void btu_ble_ll_conn_complete_evt(uint8_t* p, uint16_t evt_len) {
   btm_ble_conn_complete(p, evt_len, false);

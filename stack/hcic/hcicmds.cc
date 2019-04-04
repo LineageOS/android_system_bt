@@ -1309,6 +1309,30 @@ void btsnd_hcic_read_rssi(uint16_t handle) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
+static void read_encryption_key_size_complete(ReadEncKeySizeCb cb, uint8_t* return_parameters,
+                                              uint16_t return_parameters_length) {
+  uint8_t status;
+  uint16_t handle;
+  uint8_t key_size;
+  STREAM_TO_UINT8(status, return_parameters);
+  STREAM_TO_UINT16(handle, return_parameters);
+  STREAM_TO_UINT8(key_size, return_parameters);
+
+  std::move(cb).Run(status, handle, key_size);
+}
+
+void btsnd_hcic_read_encryption_key_size(uint16_t handle, ReadEncKeySizeCb cb) {
+  constexpr uint8_t len = 2;
+  uint8_t param[len];
+  memset(param, 0, len);
+
+  uint8_t* p = param;
+  UINT16_TO_STREAM(p, handle);
+
+  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_READ_ENCR_KEY_SIZE, param, len,
+                            base::Bind(&read_encryption_key_size_complete, base::Passed(&cb)));
+}
+
 void btsnd_hcic_read_failed_contact_counter(uint16_t handle) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
