@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "packet/parser/test/generated_packets.h"
+#include "packet/parser/test/test_packets.h"
 
 #include <gtest/gtest.h>
 #include <forward_list>

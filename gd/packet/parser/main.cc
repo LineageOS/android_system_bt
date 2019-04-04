@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 
+#include <errno.h>
 #include <unistd.h>
+#include <cstdio>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <queue>
 #include <sstream>
 #include <vector>
 
@@ -26,54 +31,124 @@
 void yylex_init(void**);
 void yylex_destroy(void*);
 void yyset_debug(int, void*);
+void yyset_in(FILE*, void*);
 
-int main() {
+bool parse_one_file(std::filesystem::path input_file, std::filesystem::path include_dir,
+                    std::filesystem::path out_dir) {
+  auto gen_relative_path = input_file.lexically_relative(include_dir).parent_path();
+
+  auto input_filename = input_file.filename().string().substr(0, input_file.filename().string().find(".pdl"));
+  auto gen_path = out_dir / gen_relative_path;
+
+  std::filesystem::create_directories(gen_path);
+
+  auto gen_file = gen_path / (input_filename + ".h");
+
   void* scanner;
   yylex_init(&scanner);
+
+  FILE* in_file = fopen(input_file.string().c_str(), "r");
+  if (in_file == nullptr) {
+    std::cerr << "can't open " << input_file << ": " << strerror(errno) << std::endl;
+    return false;
+  }
+
+  yyset_in(in_file, scanner);
+
+  std::ofstream out_file;
+  out_file.open(gen_file);
+  if (!out_file.is_open()) {
+    std::cerr << "can't open " << gen_file << std::endl;
+    return false;
+  }
 
   Declarations decls;
   int ret = yy::parser(scanner, &decls).parse();
 
   yylex_destroy(scanner);
 
-  if (ret != 0) return ret;
+  if (ret != 0) {
+    std::cerr << "yylex parsing failed: returned " << ret << std::endl;
+    return false;
+  }
 
-  std::cout << "\n\n";
-  std::cout << "#include <stdint.h>\n";
-  std::cout << "#include <string>\n";
-  std::cout << "\n\n";
-  std::cout << "#include \"os/log.h\"\n";
-  std::cout << "#include \"packet/base_packet_builder.h\"\n";
-  std::cout << "#include \"packet/bit_inserter.h\"\n";
-  std::cout << "#include \"packet/packet_builder.h\"\n";
-  std::cout << "#include \"packet/packet_view.h\"\n";
-  std::cout << "\n\n";
-  std::cout << "using bluetooth::packet::BasePacketBuilder;";
-  std::cout << "using bluetooth::packet::BitInserter;";
-  std::cout << "using bluetooth::packet::kLittleEndian;";
-  std::cout << "using bluetooth::packet::PacketBuilder;";
-  std::cout << "using bluetooth::packet::PacketView;";
-  std::cout << "\n\n";
+  out_file << "\n\n";
+  out_file << "#include <stdint.h>\n";
+  out_file << "#include <string>\n";
+  out_file << "\n\n";
+  out_file << "#include \"os/log.h\"\n";
+  out_file << "#include \"packet/base_packet_builder.h\"\n";
+  out_file << "#include \"packet/bit_inserter.h\"\n";
+  out_file << "#include \"packet/packet_builder.h\"\n";
+  out_file << "#include \"packet/packet_view.h\"\n";
+  out_file << "\n\n";
+
+  out_file << "using bluetooth::packet::BasePacketBuilder;";
+  out_file << "using bluetooth::packet::BitInserter;";
+  out_file << "using bluetooth::packet::kLittleEndian;";
+  out_file << "using bluetooth::packet::PacketBuilder;";
+  out_file << "using bluetooth::packet::PacketView;";
+  out_file << "\n\n";
 
   for (const auto& e : decls.enum_defs_queue_) {
     EnumGen gen(e.second);
-    gen.GenDefinition(std::cout);
-    std::cout << "\n\n";
+    gen.GenDefinition(out_file);
+    out_file << "\n\n";
   }
   for (const auto& e : decls.enum_defs_queue_) {
     EnumGen gen(e.second);
-    gen.GenLogging(std::cout);
-    std::cout << "\n\n";
+    gen.GenLogging(out_file);
+    out_file << "\n\n";
   }
 
   for (size_t i = 0; i < decls.packet_defs_queue_.size(); i++) {
     decls.packet_defs_queue_[i].second.SetEndianness(decls.is_little_endian);
-    decls.packet_defs_queue_[i].second.GenParserDefinition(std::cout);
-    std::cout << "\n\n";
+    decls.packet_defs_queue_[i].second.GenParserDefinition(out_file);
+    out_file << "\n\n";
   }
 
   for (const auto p : decls.packet_defs_queue_) {
-    p.second.GenBuilderDefinition(std::cout);
-    std::cout << "\n\n";
+    p.second.GenBuilderDefinition(out_file);
+    out_file << "\n\n";
   }
+
+  out_file.close();
+  fclose(in_file);
+
+  return true;
+}
+
+int main(int argc, const char** argv) {
+  std::filesystem::path out_dir;
+  std::filesystem::path include_dir;
+  std::queue<std::filesystem::path> input_files;
+  const std::string arg_out = "--out=";
+  const std::string arg_include = "--include=";
+
+  for (int i = 1; i < argc; i++) {
+    std::string arg = argv[i];
+    if (arg.find(arg_out) == 0) {
+      auto out_path = std::filesystem::path(arg.substr(arg_out.size()));
+      out_dir = std::filesystem::current_path() / std::filesystem::path(arg.substr(arg_out.size()));
+    } else if (arg.find(arg_include) == 0) {
+      auto include_path = std::filesystem::path(arg.substr(arg_out.size()));
+      include_dir = std::filesystem::current_path() / std::filesystem::path(arg.substr(arg_include.size()));
+    } else {
+      input_files.emplace(std::filesystem::current_path() / std::filesystem::path(arg));
+    }
+  }
+  if (out_dir == std::filesystem::path() || include_dir == std::filesystem::path()) {
+    std::cerr << "Usage: bt-packetgen --out=OUT --include=INCLUDE input_files..." << std::endl;
+    return 1;
+  }
+
+  while (!input_files.empty()) {
+    if (!parse_one_file(input_files.front(), include_dir, out_dir)) {
+      std::cerr << "Didn't parse " << input_files.front() << " correctly" << std::endl;
+      return 2;
+    }
+    input_files.pop();
+  }
+
+  return 0;
 }
