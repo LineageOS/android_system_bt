@@ -2615,7 +2615,8 @@ static void bta_av_sink_media_callback(tBTA_AV_EVT event,
 // Initializes the AV interface for source mode
 static bt_status_t init_src(
     btav_source_callbacks_t* callbacks, int max_connected_audio_devices,
-    std::vector<btav_a2dp_codec_config_t> codec_priorities) {
+    std::vector<btav_a2dp_codec_config_t> codec_priorities,
+    std::vector<btav_a2dp_codec_config_t> __unused offload_enabled_codecs) {
   BTIF_TRACE_EVENT("%s", __func__);
   return btif_av_source.Init(callbacks, max_connected_audio_devices,
                              codec_priorities);
