@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "l2cap/generated_packets.h"
+#include "l2cap/l2cap_packets.h"
 
 #include <gtest/gtest.h>
 #include <forward_list>
