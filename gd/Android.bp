@@ -108,8 +108,7 @@ cc_test {
         ":BluetoothPacketTestSources",
     ],
     generated_headers : [
-        "BluetoothHciGeneratedPackets_h",
-        "BluetoothL2capGeneratedPackets_h",
+        "BluetoothGeneratedPackets_h",
     ],
     static_libs : [
         "libbluetooth_gd",
@@ -149,6 +148,22 @@ cc_benchmark {
         ":BluetoothOsBenchmarkSources",
     ],
     static_libs : [
-            "libbluetooth_gd",
+        "libbluetooth_gd",
+    ],
+}
+
+genrule {
+    name: "BluetoothGeneratedPackets_h",
+    tools: [
+        "bluetooth_packetgen",
+    ],
+    cmd: "$(location bluetooth_packetgen) --include=system/bt/gd --out=$(genDir) $(in)",
+    srcs: [
+        "hci/hci_packets.pdl",
+        "l2cap/l2cap_packets.pdl",
+    ],
+    out: [
+        "hci/hci_packets.h",
+        "l2cap/l2cap_packets.h",
     ],
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "hci/generated_packets.h"
+#include "hci/hci_packets.h"
 
 #include <gtest/gtest.h>
 #include <forward_list>

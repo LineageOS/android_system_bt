@@ -1,17 +1,3 @@
-genrule {
-    name: "BluetoothL2capGeneratedPackets_h",
-    tools: [
-        "bluetooth_packetgen",
-    ],
-    cmd: "mkdir -p $(genDir)/l2cap/; $(location bluetooth_packetgen) < $(in) > $(genDir)/l2cap/generated_packets.h 2>/dev/null",
-    srcs: [
-        "l2cap.pdl",
-    ],
-    out: [
-        "l2cap/generated_packets.h",
-    ],
-}
-
 filegroup {
     name: "BluetoothL2capTestSources",
     srcs: [
