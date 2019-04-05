@@ -1,0 +1,20 @@
+genrule {
+    name: "BluetoothHciGeneratedPackets_h",
+    tools: [
+        "bluetooth_packetgen",
+    ],
+    cmd: "mkdir -p $(genDir)/hci/; $(location bluetooth_packetgen) < $(in) > $(genDir)/hci/generated_packets.h 2>/dev/null",
+    srcs: [
+        "hci.pdl",
+    ],
+    out: [
+        "hci/generated_packets.h",
+    ],
+}
+
+filegroup {
+    name: "BluetoothHciTestSources",
+    srcs: [
+        "acl_builder_test.cc",
+    ],
+}
