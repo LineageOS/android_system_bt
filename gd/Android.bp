@@ -104,10 +104,12 @@ cc_test {
     srcs: [
         ":BluetoothCommonTestSources",
         ":BluetoothHciTestSources",
+        ":BluetoothL2capTestSources",
         ":BluetoothPacketTestSources",
     ],
     generated_headers : [
         "BluetoothHciGeneratedPackets_h",
+        "BluetoothL2capGeneratedPackets_h",
     ],
     static_libs : [
         "libbluetooth_gd",
