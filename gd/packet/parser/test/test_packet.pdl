@@ -1,0 +1,40 @@
+little_endian_packets
+
+packet Parent {
+  fixed = 0x12 : 8,
+  size(payload) : 8,
+  payload,
+  Footer : 8,
+  Fcs : 16,
+}
+
+packet Child : Parent {
+  FieldName : 16,
+}
+
+enum FourBits : 4 {
+  ONE = 1,
+  TWO = 2,
+  THREE = 3,
+  LAZY_ME = 15,
+}
+
+packet ParentTwo {
+  reserved : 4,
+  FourBits : FourBits,
+  payload,
+}
+
+packet ChildTwoThree : ParentTwo (FourBits = THREE) {
+  MoreBits : FourBits,
+  reserved : 4,
+  SixteenBits : 16
+}
+
+packet ChildTwoTwo : ParentTwo (FourBits = TWO) {
+  MoreBits : FourBits,
+  reserved : 4,
+}
+
+packet ChildTwoTwoThree :ChildTwoTwo (MoreBits = THREE) {
+}

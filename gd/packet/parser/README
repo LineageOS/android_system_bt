@@ -1,0 +1,43 @@
+This file just contains some notes about the design and usage of the PDL language.
+
+-------
+ TERMS
+-------
+.pdl
+  The file type that defines packet definitions. You may think of each pdl file
+  as its own translation unit.
+
+Packet Views and Builders
+  Generated from a packet definition. Views are used to validate packets and
+  extract the fields that are defined in the pdl file.  Builders check the input
+  arguments and can be serialized.
+
+-------------
+ LIMITATIONS
+-------------
+  - Size fields for a variable length field MUST come before the definition
+    of said field.
+
+  - Payload fields must be byte-aligned unless they have an unknown size.
+    Body fields are allowed to not be byte aligned.
+
+  - No conditionals
+
+  - Can not have to fields with the same name anywhere in the in an inheritence chain
+
+  - Can't handle size for Body type fields yet since they might not be byte aligned.
+
+-------
+ NOTES
+-------
+All Field names should be in CamelCase. Field names matching type names is supported.
+
+The payload keyword generates a getter but body doesn't. Therefore, a payload must be byte aligned.
+Supports constraints on grandparents
+Supports multiple constraints
+Every field handles its own generation.
+One pdl file will result in one header file with all the packets
+
+Things to cover -
+  Constraints
+  Inheritence vs Contains
