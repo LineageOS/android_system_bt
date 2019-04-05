@@ -75,7 +75,9 @@ typedef struct {
 } waiting_command_t;
 
 // Using a define here, because it can be stringified for the property lookup
-#define DEFAULT_STARTUP_TIMEOUT_MS 8000
+// Default timeout should be less than BLE_START_TIMEOUT and
+// having less than 3 sec would hold the wakelock for init
+#define DEFAULT_STARTUP_TIMEOUT_MS 2900
 #define STRING_VALUE_OF(x) #x
 
 // Abort if there is no response to an HCI command.
@@ -83,6 +85,7 @@ static const uint32_t COMMAND_PENDING_TIMEOUT_MS = 2000;
 static const uint32_t COMMAND_PENDING_MUTEX_ACQUIRE_TIMEOUT_MS = 500;
 static const uint32_t COMMAND_TIMEOUT_RESTART_MS = 5000;
 static const int HCI_UNKNOWN_COMMAND_TIMED_OUT = 0x00ffffff;
+static const int HCI_STARTUP_TIMED_OUT = 0x00eeeeee;
 
 // Our interface
 static bool interface_created;
@@ -351,20 +354,8 @@ static void event_finish_startup(UNUSED_ATTR void* context) {
 static void startup_timer_expired(UNUSED_ATTR void* context) {
   LOG_ERROR(LOG_TAG, "%s", __func__);
 
-  std::unique_lock<std::recursive_timed_mutex> lock(
-      commands_pending_response_mutex, std::defer_lock);
-  if (!lock.try_lock_for(std::chrono::milliseconds(
-          COMMAND_PENDING_MUTEX_ACQUIRE_TIMEOUT_MS))) {
-    LOG_ERROR(LOG_TAG, "%s: Cannot obtain the mutex", __func__);
-    // We cannot recover if the startup timer expired and we are deadlock,
-    // hence abort.
-    abort();
-  }
-  if (!startup_future) {
-    return;
-  }
-  future_ready(startup_future, FUTURE_FAIL);
-  startup_future = NULL;
+  LOG_EVENT_INT(BT_HCI_TIMEOUT_TAG_NUM, HCI_STARTUP_TIMED_OUT);
+  abort();
 }
 
 // Command/packet transmitting functions
