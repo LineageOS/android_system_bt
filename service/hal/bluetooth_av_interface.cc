@@ -144,11 +144,13 @@ class BluetoothAvInterfaceImpl : public BluetoothAvInterface {
       return true;
     }
 
+    std::vector<btav_a2dp_codec_config_t> offload_enabled_codecs_config;
     // Right now we only support one connected audio device.
     int max_connected_audio_devices = 1;
     if (hal_source_iface_->init(
             &av_source_callbacks, max_connected_audio_devices,
-            std::move(codec_priorities)) != BT_STATUS_SUCCESS) {
+            std::move(codec_priorities),
+            offload_enabled_codecs_config) != BT_STATUS_SUCCESS) {
       LOG(ERROR) << "Failed to initialize HAL A2DP source interface";
       return false;
     }
