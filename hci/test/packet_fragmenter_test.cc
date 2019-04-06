@@ -291,7 +291,7 @@ static void reset_for(TEST_MODES_T next) {
 
 class PacketFragmenterTest : public AllocationTestHarness {
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     AllocationTestHarness::SetUp();
     fragmenter =
         packet_fragmenter_get_test_interface(&controller, &allocator_malloc);
@@ -309,7 +309,7 @@ class PacketFragmenterTest : public AllocationTestHarness {
     fragmenter->init(&callbacks);
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     fragmenter->cleanup();
     AllocationTestHarness::TearDown();
   }

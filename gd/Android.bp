@@ -103,13 +103,39 @@ cc_test {
     },
     srcs: [
         ":BluetoothCommonTestSources",
+        ":BluetoothHciTestSources",
+        ":BluetoothL2capTestSources",
         ":BluetoothPacketTestSources",
+    ],
+    generated_headers : [
+        "BluetoothGeneratedPackets_h",
     ],
     static_libs : [
         "libbluetooth_gd",
     ],
     sanitize: {
-        cfi: false,
+        address: true,
+    },
+}
+
+cc_test {
+    name: "bluetooth_packet_parser_test",
+    test_suites: ["device-tests"],
+    defaults: [
+        "gd_defaults",
+        "gd_clang_coverage_bin",
+    ],
+    host_supported: true,
+    srcs: [
+        ":BluetoothPacketSources",
+        ":BluetoothPacketParserTestPacketTestSources",
+    ],
+    generated_headers : [
+        "BluetoothPacketParserTestPacketPdlGen_h",
+    ],
+    sanitize: {
+        address: true,
+        cfi: true,
     },
 }
 
@@ -122,6 +148,22 @@ cc_benchmark {
         ":BluetoothOsBenchmarkSources",
     ],
     static_libs : [
-            "libbluetooth_gd",
+        "libbluetooth_gd",
+    ],
+}
+
+genrule {
+    name: "BluetoothGeneratedPackets_h",
+    tools: [
+        "bluetooth_packetgen",
+    ],
+    cmd: "$(location bluetooth_packetgen) --include=system/bt/gd --out=$(genDir) $(in)",
+    srcs: [
+        "hci/hci_packets.pdl",
+        "l2cap/l2cap_packets.pdl",
+    ],
+    out: [
+        "hci/hci_packets.h",
+        "l2cap/l2cap_packets.h",
     ],
 }

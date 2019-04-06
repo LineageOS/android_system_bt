@@ -73,7 +73,7 @@ class BluetoothAudioPortImpl : public IBluetoothAudioPort {
                          const android::sp<IBluetoothAudioProvider>& provider)
       : sink_(sink), provider_(provider){};
 
-  Return<void> startStream() {
+  Return<void> startStream() override {
     BluetoothAudioCtrlAck ack = sink_->StartRequest();
     if (ack != BluetoothAudioCtrlAck::PENDING) {
       auto hidl_retval =
@@ -85,7 +85,7 @@ class BluetoothAudioPortImpl : public IBluetoothAudioPort {
     return Void();
   }
 
-  Return<void> suspendStream() {
+  Return<void> suspendStream() override {
     BluetoothAudioCtrlAck ack = sink_->SuspendRequest();
     if (ack != BluetoothAudioCtrlAck::PENDING) {
       auto hidl_retval =
@@ -97,12 +97,13 @@ class BluetoothAudioPortImpl : public IBluetoothAudioPort {
     return Void();
   }
 
-  Return<void> stopStream() {
+  Return<void> stopStream() override {
     sink_->StopRequest();
     return Void();
   }
 
-  Return<void> getPresentationPosition(getPresentationPosition_cb _hidl_cb) {
+  Return<void> getPresentationPosition(
+      getPresentationPosition_cb _hidl_cb) override {
     uint64_t remote_delay_report_ns;
     uint64_t total_bytes_read;
     timespec data_position;
@@ -128,7 +129,7 @@ class BluetoothAudioPortImpl : public IBluetoothAudioPort {
     return Void();
   }
 
-  Return<void> updateMetadata(const SourceMetadata& sourceMetadata) {
+  Return<void> updateMetadata(const SourceMetadata& sourceMetadata) override {
     LOG(INFO) << __func__ << ": " << sourceMetadata.tracks.size()
               << " track(s)";
     // refer to StreamOut.impl.h within Audio HAL (AUDIO_HAL_VERSION_5_0)
@@ -166,7 +167,8 @@ class BluetoothAudioDeathRecipient
       : bluetooth_audio_clientif_(clientif), message_loop_(message_loop) {}
   void serviceDied(
       uint64_t /*cookie*/,
-      const ::android::wp<::android::hidl::base::V1_0::IBase>& /*who*/) {
+      const ::android::wp<::android::hidl::base::V1_0::IBase>& /*who*/)
+      override {
     LOG(WARNING) << __func__ << ": restarting connection with new Audio Hal";
     if (bluetooth_audio_clientif_ != nullptr && message_loop_ != nullptr) {
       // restart the session on the correct thread

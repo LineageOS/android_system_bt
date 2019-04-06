@@ -1,0 +1,20 @@
+genrule {
+    name: "BluetoothPacketParserTestPacketPdlGen_h",
+    tools: [
+        "bluetooth_packetgen",
+    ],
+    cmd: "$(location bluetooth_packetgen) --include=system/bt/gd --out=$(genDir) $(in)",
+    srcs: [
+        "test_packets.pdl",
+    ],
+    out: [
+        "packet/parser/test/test_packets.h",
+    ],
+}
+
+filegroup {
+    name: "BluetoothPacketParserTestPacketTestSources",
+    srcs: [
+        "generated_packet_test.cc",
+    ],
+}

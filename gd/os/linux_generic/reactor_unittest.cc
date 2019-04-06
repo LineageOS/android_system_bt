@@ -51,7 +51,7 @@ class ReactorTest : public ::testing::Test {
 class SampleReactable {
  public:
   SampleReactable() : fd_(eventfd(0, EFD_NONBLOCK)) {
-    EXPECT_NE(fd_, 0);
+    EXPECT_NE(fd_, -1);
   }
 
   ~SampleReactable() {
@@ -74,11 +74,11 @@ class FakeReactable {
     kSampleOutputValue,
   };
   FakeReactable() : fd_(eventfd(0, 0)), reactor_(nullptr) {
-    EXPECT_NE(fd_, 0);
+    EXPECT_NE(fd_, -1);
   }
 
   FakeReactable(Reactor* reactor) : fd_(eventfd(0, 0)), reactor_(reactor) {
-    EXPECT_NE(fd_, 0);
+    EXPECT_NE(fd_, -1);
   }
 
   ~FakeReactable() {
@@ -107,6 +107,14 @@ class FakeReactable {
     auto write_result = eventfd_write(fd_, output_data_);
     output_data_ = 0;
     EXPECT_EQ(write_result, 0);
+  }
+
+  void UnregisterInCallback() {
+    uint64_t value = 0;
+    auto read_result = eventfd_read(fd_, &value);
+    EXPECT_EQ(read_result, 0);
+    g_promise->set_value(kReadReadyValue);
+    reactor_->Unregister(reactable_);
   }
 
   SampleReactable sample_reactable_;
@@ -205,6 +213,11 @@ TEST_F(ReactorTest, hot_register_from_same_thread) {
   auto write_result = eventfd_write(fake_reactable.fd_, FakeReactable::kRegisterSampleReactable);
   EXPECT_EQ(write_result, 0);
   EXPECT_EQ(future.get(), kReadReadyValue);
+  delete g_promise;
+  g_promise = new std::promise<int>;
+  future = g_promise->get_future();
+  write_result = eventfd_write(fake_reactable.fd_, FakeReactable::kUnregisterSampleReactable);
+  EXPECT_EQ(write_result, 0);
   reactor_->Stop();
   reactor_thread.join();
 
@@ -231,6 +244,46 @@ TEST_F(ReactorTest, hot_unregister_from_same_thread) {
   reactor_thread.join();
 
   reactor_->Unregister(reactable);
+}
+
+TEST_F(ReactorTest, hot_unregister_from_callback) {
+  auto reactor_thread = std::thread(&Reactor::Run, reactor_);
+
+  FakeReactable fake_reactable1(reactor_);
+  auto* reactable1 =
+      reactor_->Register(fake_reactable1.fd_, std::bind(&FakeReactable::OnReadReady, &fake_reactable1), nullptr);
+
+  FakeReactable fake_reactable2(reactor_);
+  auto* reactable2 = reactor_->Register(fake_reactable2.fd_,
+                                        std::bind(&FakeReactable::UnregisterInCallback, &fake_reactable2), nullptr);
+  fake_reactable2.reactable_ = reactable2;
+  auto write_result = eventfd_write(fake_reactable2.fd_, 1);
+  EXPECT_EQ(write_result, 0);
+  reactor_->Stop();
+  reactor_thread.join();
+
+  reactor_->Unregister(reactable1);
+}
+
+TEST_F(ReactorTest, hot_unregister_during_unregister_from_callback) {
+  auto reactor_thread = std::thread(&Reactor::Run, reactor_);
+  auto future = g_promise->get_future();
+
+  FakeReactable fake_reactable1(reactor_);
+  auto* reactable1 =
+      reactor_->Register(fake_reactable1.fd_, std::bind(&FakeReactable::OnReadReady, &fake_reactable1), nullptr);
+
+  FakeReactable fake_reactable2(reactor_);
+  auto* reactable2 = reactor_->Register(fake_reactable2.fd_,
+                                        std::bind(&FakeReactable::UnregisterInCallback, &fake_reactable2), nullptr);
+  fake_reactable2.reactable_ = reactable2;
+  auto write_result = eventfd_write(fake_reactable2.fd_, 1);
+  EXPECT_EQ(write_result, 0);
+  EXPECT_EQ(future.get(), kReadReadyValue);
+  reactor_->Unregister(reactable1);
+
+  reactor_->Stop();
+  reactor_thread.join();
 }
 
 TEST_F(ReactorTest, start_and_stop_multi_times) {
@@ -273,6 +326,8 @@ TEST_F(ReactorTest, modify_registration) {
 
   reactor_->Stop();
   reactor_thread.join();
+
+  reactor_->Unregister(reactable);
 }
 
 }  // namespace

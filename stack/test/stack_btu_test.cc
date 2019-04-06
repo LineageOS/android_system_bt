@@ -89,7 +89,7 @@ class BtuMessageLoopTest : public testing::Test {
   MOCK_METHOD0(TestCallback, void(void));
   base::MessageLoop* message_loop;
 
-  virtual void SetUp() {
+  void SetUp() override {
     // Initialize alarms to prevent btu_task_shut_down from crashing
     alarm_new("test alarm");
     bt_startup_thread.StartUp();
@@ -100,7 +100,7 @@ class BtuMessageLoopTest : public testing::Test {
                               "BTU startup timed out"));
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     btu_task_shut_down(nullptr);
     alarm_cleanup();
     bt_startup_thread.ShutDown();

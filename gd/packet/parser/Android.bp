@@ -1,0 +1,32 @@
+cc_binary_host  {
+  name: "bluetooth_packetgen",
+  srcs: [
+    "fields/body_field.cc",
+    "fields/enum_field.cc",
+    "fields/fixed_field.cc",
+    "fields/group_field.cc",
+    "fields/packet_field.cc",
+    "fields/payload_field.cc",
+    "fields/reserved_field.cc",
+    "fields/scalar_field.cc",
+    "fields/size_field.cc",
+    "enum_def.cc",
+    "enum_gen.cc",
+    "packet_def.cc",
+    "main.cc",
+    "language_y.yy",
+    "language_l.ll",
+  ],
+  static_libs: [
+    "libc++fs",
+  ],
+  cppflags: [
+    "-Wno-implicit-fallthrough",
+    "-fno-exceptions",
+    "-O0",
+  ],
+  ldflags: [
+    "-fuse-ld=ld",
+    "-O0",
+  ],
+}

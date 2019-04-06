@@ -42,7 +42,7 @@ class Item {
 class MockItem : public Item {
  public:
   MockItem(int i) : Item(i) {}
-  ~MockItem() { Destruct(); }
+  ~MockItem() override { Destruct(); }
   MOCK_METHOD0(Destruct, void());
 };
 

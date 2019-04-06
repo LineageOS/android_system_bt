@@ -1,0 +1,2574 @@
+little_endian_packets
+
+enum Enable : 8 {
+  DISABLED = 0x00,
+  ENABLED = 0x01,
+}
+
+// https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile
+enum GapDataTypes : 8 {
+  FLAGS = 0x01,
+  INCOMPLETE_LIST_16_BIT_UUIDS = 0x02,
+  COMPLETE_LIST_16_BIT_UUIDS = 0x03,
+  INCOMPLETE_LIST_32_BIT_UUIDS = 0x04,
+  COMPLETE_LIST_32_BIT_UUIDS = 0x05,
+  INCOMPLETE_LIST_128_BIT_UUIDS = 0x06,
+  COMPLETE_LIST_128_BIT_UUIDS = 0x07,
+  SHORTENED_LOCAL_NAME = 0x08,
+  COMPLETE_LOCAL_NAME = 0x09,
+  TX_POWER_LEVEL = 0x0A,
+  CLASS_OF_DEVICE = 0x0D,
+}
+
+// HCI ACL Packets
+
+enum PacketBoundaryFlag : 2 {
+  FIRST_NON_AUTOMATICALLY_FLUSHABLE = 0,
+  CONTINUING_FRAGMENT = 1,
+  FIRST_AUTOMATICALLY_FLUSHABLE = 2,
+  COMPLETE_PDU = 3,
+}
+
+enum BroadcastFlag : 2 {
+  POINT_TO_POINT = 0,
+  ACTIVE_SLAVE_BROADCAST = 1,
+}
+
+packet AclPacket {
+  Handle : 12,
+  PacketBoundaryFlag : PacketBoundaryFlag,
+  BroadcastFlag : BroadcastFlag,
+  size(payload) : 16,
+  payload,
+}
+
+// HCI SCO Packets
+
+enum PacketStatusFlag : 2 {
+  CORRECTLY_RECEIVED = 0,
+  POSSIBLY_INCOMPLETE = 1,
+  NO_DATA = 2,
+  PARTIALLY_LOST = 3,
+}
+
+packet ScoPacket {
+  Handle : 12,
+  PacketStatusFlag : PacketStatusFlag,
+  reserved : 2, // BroadcastFlag
+  size(payload) : 8,
+  payload,
+}
+
+// HCI Command Packets
+
+enum OpCode : 16 {
+  NONE = 0x0000,
+
+  // LINK_CONTROL
+  INQUIRY = 0x0401,
+  INQUIRY_CANCEL = 0x0402,
+  PERIODIC_INQUIRY_MODE = 0x0403,
+  EXIT_PERIODIC_INQUIRY_MODE = 0x0404,
+  CREATE_CONNECTION = 0x0405,
+  DISCONNECT = 0x0406,
+  CREATE_CONNECTION_CANCEL = 0x0408,
+  ACCEPT_CONNECTION_REQUEST = 0x0409,
+  REJECT_CONNECTION_REQUEST = 0x040A,
+  LINK_KEY_REQUEST_REPLY = 0x040B,
+  LINK_KEY_REQUEST_NEGATIVE_REPLY = 0x040C,
+  PIN_CODE_REQUEST_REPLY = 0x040D,
+  PIN_CODE_REQUEST_NEGATIVE_REPLY = 0x040E,
+  CHANGE_CONNECTION_PACKET_TYPE = 0x040F,
+  AUTHENTICATION_REQUESTED = 0x0411,
+  SET_CONNECTION_ENCRYPTION = 0x0413,
+  CHANGE_CONNECTION_LINK_KEY = 0x0415,
+  MASTER_LINK_KEY = 0x0417,
+  REMOTE_NAME_REQUEST = 0x0419,
+  REMOTE_NAME_REQUEST_CANCEL = 0x041A,
+  READ_REMOTE_SUPPORTED_FEATURES = 0x041B,
+  READ_REMOTE_EXTENDED_FEATURES = 0x041C,
+  READ_REMOTE_VERSION_INFORMATION = 0x041D,
+  READ_CLOCK_OFFSET = 0x041F,
+  READ_LMP_HANDLE = 0x0420,
+  SETUP_SYNCHRONOUS_CONNECTION = 0x0428,
+  ACCEPT_SYNCHRONOUS_CONNECTION = 0x0429,
+  REJECT_SYNCHRONOUS_CONNECTION = 0x042A,
+  IO_CAPABILITY_REQUEST_REPLY = 0x042B,
+  USER_CONFIRMATION_REQUEST_REPLY = 0x042C,
+  USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY = 0x042D,
+  USER_PASSKEY_REQUEST_REPLY = 0x042E,
+  USER_PASSKEY_REQUEST_NEGATIVE_REPLY = 0x042F,
+  REMOTE_OOB_DATA_REQUEST_REPLY = 0x0430,
+  REMOTE_OOB_DATA_REQUEST_NEGATIVE_REPLY = 0x0433,
+  IO_CAPABILITY_REQUEST_NEGATIVE_REPLY = 0x0434,
+  ENHANCED_SETUP_SYNCHRONOUS_CONNECTION = 0x043D,
+  ENHANCED_ACCEPT_SYNCHRONOUS_CONNECTION = 0x043E,
+
+  // LINK_POLICY
+  HOLD_MODE = 0x0801,
+  SNIFF_MODE = 0x0803,
+  EXIT_SNIFF_MODE = 0x0804,
+  QOS_SETUP = 0x0807,
+  ROLE_DISCOVERY = 0x0809,
+  SWITCH_ROLE = 0x080B,
+  READ_LINK_POLICY_SETTINGS = 0x080C,
+  WRITE_LINK_POLICY_SETTINGS = 0x080D,
+  READ_DEFAULT_LINK_POLICY_SETTINGS = 0x080E,
+  WRITE_DEFAULT_LINK_POLICY_SETTINGS = 0x080F,
+  FLOW_SPECIFICATION = 0x0810,
+  SNIFF_SUBRATING = 0x0811,
+
+  // CONTROLLER_AND_BASEBAND
+  SET_EVENT_MASK = 0x0C01,
+  RESET = 0x0C03,
+  SET_EVENT_FILTER = 0x0C05,
+  FLUSH = 0x0C08,
+  READ_PIN_TYPE = 0x0C09,
+  WRITE_PIN_TYPE = 0x0C0A,
+  CREATE_NEW_UNIT_KEY = 0x0C0B,
+  READ_STORED_LINK_KEY = 0x0C0D,
+  WRITE_STORED_LINK_KEY = 0x0C11,
+  DELETE_STORED_LINK_KEY = 0x0C12,
+  WRITE_LOCAL_NAME = 0x0C13,
+  READ_LOCAL_NAME = 0x0C14,
+  READ_CONNECTION_ACCEPT_TIMEOUT = 0x0C15,
+  WRITE_CONNECTION_ACCEPT_TIMEOUT = 0x0C16,
+  READ_PAGE_TIMEOUT = 0x0C17,
+  WRITE_PAGE_TIMEOUT = 0x0C18,
+  READ_SCAN_ENABLE = 0x0C19,
+  WRITE_SCAN_ENABLE = 0x0C1A,
+  READ_PAGE_SCAN_ACTIVITY = 0x0C1B,
+  WRITE_PAGE_SCAN_ACTIVITY = 0x0C1C,
+  READ_INQUIRY_SCAN_ACTIVITY = 0x0C1D,
+  WRITE_INQUIRY_SCAN_ACTIVITY = 0x0C1E,
+  READ_AUTHENTICATION_ENABLE = 0x0C1F,
+  WRITE_AUTHENTICATION_ENABLE = 0x0C20,
+  READ_CLASS_OF_DEVICE = 0x0C23,
+  WRITE_CLASS_OF_DEVICE = 0x0C24,
+  READ_VOICE_SETTING = 0x0C25,
+  WRITE_VOICE_SETTING = 0x0C26,
+  READ_AUTOMATIC_FLUSH_TIMEOUT = 0x0C27,
+  WRITE_AUTOMATIC_FLUSH_TIMEOUT = 0x0C28,
+  READ_NUM_BROADCAST_RETRANSMITS = 0x0C29,
+  WRITE_NUM_BROADCAST_RETRANSMITS = 0x0C2A,
+  READ_HOLD_MODE_ACTIVITY = 0x0C2B,
+  WRITE_HOLD_MODE_ACTIVITY = 0x0C2C,
+  READ_TRANSMIT_POWER_LEVEL = 0x0C2D,
+  READ_SYNCHRONOUS_FLOW_CONTROL_ENABLE = 0x0C2E,
+  WRITE_SYNCHRONOUS_FLOW_CONTROL_ENABLE = 0x0C2F,
+  SET_CONTROLLER_TO_HOST_FLOW_CONTROL = 0x0C31,
+  HOST_BUFFER_SIZE = 0x0C33,
+  HOST_NUM_COMPLETED_PACKETS = 0x0C35,
+  READ_LINK_SUPERVISION_TIMEOUT = 0x0C36,
+  WRITE_LINK_SUPERVISION_TIMEOUT = 0x0C37,
+  READ_NUMBER_OF_SUPPORTED_IAC = 0x0C38,
+  READ_CURRENT_IAC_LAP = 0x0C39,
+  WRITE_CURRENT_IAC_LAP = 0x0C3A,
+  SET_AFH_HOST_CHANNEL_CLASSIFICATION = 0x0C3F,
+  READ_INQUIRY_SCAN_TYPE = 0x0C42,
+  WRITE_INQUIRY_SCAN_TYPE = 0x0C43,
+  READ_INQUIRY_MODE = 0x0C44,
+  WRITE_INQUIRY_MODE = 0x0C45,
+  READ_PAGE_SCAN_TYPE = 0x0C46,
+  WRITE_PAGE_SCAN_TYPE = 0x0C47,
+  READ_AFH_CHANNEL_ASSESSMENT_MODE = 0x0C48,
+  WRITE_AFH_CHANNEL_ASSESSMENT_MODE = 0x0C49,
+  READ_EXTENDED_INQUIRY_RESPONSE = 0x0C51,
+  WRITE_EXTENDED_INQUIRY_RESPONSE = 0x0C52,
+  REFRESH_ENCRYPTION_KEY = 0x0C53,
+  READ_SIMPLE_PAIRING_MODE = 0x0C55,
+  WRITE_SIMPLE_PAIRING_MODE = 0x0C56,
+  READ_LOCAL_OOB_DATA = 0x0C57,
+  READ_INQUIRY_RESPONSE_TRANSMIT_POWER_LEVEL = 0x0C58,
+  WRITE_INQUIRY_TRANSMIT_POWER_LEVEL = 0x0C59,
+  SEND_KEYPRESS_NOTIFICATION = 0x0C60,
+
+  READ_LE_HOST_SUPPORT = 0x0C6C,
+  WRITE_LE_HOST_SUPPORT = 0x0C6D,
+
+  READ_SECURE_CONNECTIONS_HOST_SUPPORT = 0x0C79,
+  WRITE_SECURE_CONNECTIONS_HOST_SUPPORT = 0x0C7A,
+
+  // INFORMATIONAL_PARAMETERS
+  READ_LOCAL_VERSION_INFORMATION = 0x1001,
+  READ_LOCAL_SUPPORTED_COMMANDS = 0x1002,
+  READ_LOCAL_SUPPORTED_FEATURES = 0x1003,
+  READ_LOCAL_EXTENDED_FEATURES = 0x1004,
+  READ_BUFFER_SIZE = 0x1005,
+  READ_BD_ADDR = 0x1009,
+  READ_DATA_BLOCK_SIZE = 0x100A,
+  READ_LOCAL_SUPPORTED_CODECS = 0x100B,
+
+  // STATUS_PARAMETERS
+  READ_FAILED_CONTACT_COUNTER = 0x1401,
+  RESET_FAILED_CONTACT_COUNTER = 0x1402,
+  READ_LINK_QUALITY = 0x1403,
+  READ_RSSI = 0x1405,
+  READ_AFH_CHANNEL_MAP = 0x1406,
+  READ_CLOCK = 0x1407,
+  READ_ENCRYPTION_KEY_SIZE = 0x1408,
+
+  // TESTING
+  READ_LOOPBACK_MODE = 0x1801,
+  WRITE_LOOPBACK_MODE = 0x1802,
+  ENABLE_DEVICE_UNDER_TEST_MODE = 0x1803,
+  WRITE_SIMPLE_PAIRING_DEBUG_MODE = 0x1804,
+  WRITE_SECURE_CONNECTIONS_TEST_MODE = 0x180A,
+
+  // LE_CONTROLLER
+  LE_SET_EVENT_MASK = 0x2001,
+  LE_READ_BUFFER_SIZE = 0x2002,
+  LE_READ_LOCAL_SUPPORTED_FEATURES = 0x2003,
+  LE_SET_RANDOM_ADDRESS = 0x2005,
+  LE_SET_ADVERTISING_PARAMETERS = 0x2006,
+  LE_READ_ADVERTISING_CHANNEL_TX_POWER = 0x2007,
+  LE_SET_ADVERTISING_DATA = 0x2008,
+  LE_SET_SCAN_RESPONSE_DATA = 0x2009,
+  LE_SET_ADVERTISING_ENABLE = 0x200A,
+  LE_SET_SCAN_PARAMETERS = 0x200B,
+  LE_SET_SCAN_ENABLE = 0x200C,
+  LE_CREATE_CONNECTION = 0x200D,
+  LE_CREATE_CONNECTION_CANCEL = 0x200E,
+  LE_READ_WHITE_LIST_SIZE = 0x200F,
+  LE_CLEAR_WHITE_LIST = 0x2010,
+  LE_ADD_DEVICE_TO_WHITE_LIST = 0x2011,
+  LE_REMOVE_DEVICE_FROM_WHITE_LIST = 0x2012,
+  LE_CONNECTION_UPDATE = 0x2013,
+  LE_SET_HOST_CHANNEL_CLASSIFICATION = 0x2014,
+  LE_READ_CHANNEL_MAP = 0x2015,
+  LE_READ_REMOTE_FEATURES = 0x2016,
+  LE_ENCRYPT = 0x2017,
+  LE_RAND = 0x2018,
+  LE_START_ENCRYPTION = 0x2019,
+  LE_LONG_TERM_KEY_REQUEST_REPLY = 0x201A,
+  LE_LONG_TERM_KEY_REQUEST_NEGATIVE_REPLY = 0x201B,
+  LE_READ_SUPPORTED_STATES = 0x201C,
+  LE_RECEIVER_TEST = 0x201D,
+  LE_TRANSMITTER_TEST = 0x201E,
+  LE_TEST_END = 0x201F,
+  LE_REMOTE_CONNECTION_PARAMETER_REQUEST_REPLY = 0x2020,
+  LE_REMOTE_CONNECTION_PARAMETER_REQUEST_NEGATIVE_REPLY = 0x2021,
+
+  LE_SET_DATA_LENGTH = 0x2022,
+  LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH = 0x2023,
+  LE_WRITE_SUGGESTED_DEFAULT_DATA_LENGTH = 0x2024,
+  LE_READ_LOCAL_P_256_PUBLIC_KEY_COMMAND = 0x2025,
+  LE_GENERATE_DHKEY_COMMAND = 0x2026,
+  LE_ADD_DEVICE_TO_RESOLVING_LIST = 0x2027,
+  LE_REMOVE_DEVICE_FROM_RESOLVING_LIST = 0x2028,
+  LE_CLEAR_RESOLVING_LIST = 0x2029,
+  LE_READ_RESOLVING_LIST_SIZE = 0x202A,
+  LE_READ_PEER_RESOLVABLE_ADDRESS = 0x202B,
+  LE_READ_LOCAL_RESOLVABLE_ADDRESS = 0x202C,
+  LE_SET_ADDRESS_RESOLUTION_ENABLE = 0x202D,
+  LE_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT = 0x202E,
+  LE_READ_MAXIMUM_DATA_LENGTH = 0x202F,
+  LE_READ_PHY = 0x2030,
+  LE_SET_DEFAULT_PHY = 0x2031,
+  LE_SET_PHY = 0x2032,
+  LE_ENHANCED_RECEIVER_TEST = 0x2033,
+  LE_ENHANCED_TRANSMITTER_TEST = 0x2034,
+  LE_SET_EXTENDED_ADVERTISING_RANDOM_ADDRESS = 0x2035,
+  LE_SET_EXTENDED_ADVERTISING_PARAMETERS = 0x2036,
+  LE_SET_EXTENDED_ADVERTISING_DATA = 0x2037,
+  LE_SET_EXTENDED_ADVERTISING_SCAN_RESPONSE = 0x2038,
+  LE_SET_EXTENDED_ADVERTISING_ENABLE = 0x2039,
+  LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH = 0x203A,
+  LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS = 0x203B,
+  LE_REMOVE_ADVERTISING_SET = 0x203C,
+  LE_CLEAR_ADVERTISING_SETS = 0x203D,
+  LE_SET_PERIODIC_ADVERTISING_PARAM = 0x203E,
+  LE_SET_PERIODIC_ADVERTISING_DATA = 0x203F,
+  LE_SET_PERIODIC_ADVERTISING_ENABLE = 0x2040,
+  LE_SET_EXTENDED_SCAN_PARAMETERS = 0x2041,
+  LE_SET_EXTENDED_SCAN_ENABLE = 0x2042,
+  LE_EXTENDED_CREATE_CONNECTION = 0x2043,
+  LE_PERIODIC_ADVERTISING_CREATE_SYNC = 0x2044,
+  LE_PERIODIC_ADVERTISING_CREATE_SYNC_CANCEL = 0x2045,
+  LE_PERIODIC_ADVERTISING_TERMINATE_SYNC = 0x2046,
+  LE_ADD_DEVICE_TO_PERIODIC_ADVERTISING_LIST = 0x2047,
+  LE_REMOVE_DEVICE_FROM_PERIODIC_ADVERTISING_LIST = 0x2048,
+  LE_CLEAR_PERIODIC_ADVERTISING_LIST = 0x2049,
+  LE_READ_PERIODIC_ADVERTISING_LIST_SIZE = 0x204A,
+  LE_READ_TRANSMIT_POWER = 0x204B,
+  LE_READ_RF_PATH_COMPENSATION_POWER = 0x204C,
+  LE_WRITE_RF_PATH_COMPENSATION_POWER = 0x204D,
+  LE_SET_PRIVACY_MODE = 0x204E,
+
+  // VENDOR_SPECIFIC
+  LE_GET_VENDOR_CAPABILITIES = 0xFD53,
+  LE_MULTI_ADVT = 0xFD54,
+  LE_BATCH_SCAN = 0xFD56,
+  LE_ADV_FILTER = 0xFD57,
+  LE_TRACK_ADV = 0xFD58,
+  LE_ENERGY_INFO = 0xFD59,
+  LE_EXTENDED_SCAN_PARAMS = 0xFD5A,
+  CONTROLLER_DEBUG_INFO = 0xFD5B,
+  CONTROLLER_A2DP_OPCODE = 0xFD5D,
+}
+
+packet CommandPacket {
+  OpCode : OpCode,
+  size(payload) : 8,
+  payload,
+}
+
+// Packets for interfaces
+
+packet DiscoveryCommand : CommandPacket { payload, }
+packet CreateConnectionCommand : CommandPacket { payload, }
+packet ConnectionManagementCommand : CommandPacket { payload, }
+packet SecurityCommand : CommandPacket { payload, }
+packet ScoConnectionCommand : CommandPacket { payload, }
+packet LeAdvertisingCommand : CommandPacket { payload, }
+packet LeCreateConnectionCommand : CommandPacket { payload, }
+packet LeConnectionManagementCommand : CommandPacket { payload, }
+packet LeSecurityCommand : CommandPacket { payload, }
+packet VendorCommand : CommandPacket { payload, }
+
+// HCI Event Packets
+
+enum EventCode : 8 {
+  INQUIRY_COMPLETE = 0x01,
+  INQUIRY_RESULT = 0x02,
+  CONNECTION_COMPLETE = 0x03,
+  CONNECTION_REQUEST = 0x04,
+  DISCONNECTION_COMPLETE = 0x05,
+  AUTHENTICATION_COMPLETE = 0x06,
+  REMOTE_NAME_REQUEST_COMPLETE = 0x07,
+  ENCRYPTION_CHANGE = 0x08,
+  CHANGE_CONNECTION_LINK_KEY_COMPLETE = 0x09,
+  MASTER_LINK_KEY_COMPLETE = 0x0A,
+  READ_REMOTE_SUPPORTED_FEATURES_COMPLETE = 0x0B,
+  READ_REMOTE_VERSION_INFORMATION_COMPLETE = 0x0C,
+  QOS_SETUP_COMPLETE = 0x0D,
+  COMMAND_COMPLETE = 0x0E,
+  COMMAND_STATUS = 0x0F,
+  HARDWARE_ERROR = 0x10,
+  FLUSH_OCCURRED = 0x11,
+  ROLE_CHANGE = 0x12,
+  NUMBER_OF_COMPLETED_PACKETS = 0x13,
+  MODE_CHANGE = 0x14,
+  RETURN_LINK_KEYS = 0x15,
+  PIN_CODE_REQUEST = 0x16,
+  LINK_KEY_REQUEST = 0x17,
+  LINK_KEY_NOTIFICATION = 0x18,
+  LOOPBACK_COMMAND = 0x19,
+  DATA_BUFFER_OVERFLOW = 0x1A,
+  MAX_SLOTS_CHANGE = 0x1B,
+  READ_CLOCK_OFFSET_COMPLETE = 0x1C,
+  CONNECTION_PACKET_TYPE_CHANGE = 0x1D,
+  QOS_VIOLATION = 0x1E,
+  PAGE_SCAN_REPETITION_MODE_CHANGE = 0x20,
+  FLOW_SPECIFICATION_COMPLETE = 0x21,
+  INQUIRY_RESULT_WITH_RSSI = 0x22,
+  READ_REMOTE_EXTENDED_FEATURES_COMPLETE = 0x23,
+  SYNCHRONOUS_CONNECTION_COMPLETE = 0x2C,
+  SYNCHRONOUS_CONNECTION_CHANGED = 0x2D,
+  SNIFF_SUBRATING = 0x2E,
+  EXTENDED_INQUIRY_RESULT = 0x2F,
+  ENCRYPTION_KEY_REFRESH_COMPLETE = 0x30,
+  IO_CAPABILITY_REQUEST = 0x31,
+  IO_CAPABILITY_RESPONSE = 0x32,
+  USER_CONFIRMATION_REQUEST = 0x33,
+  USER_PASSKEY_REQUEST = 0x34,
+  REMOTE_OOB_DATA_REQUEST = 0x35,
+  SIMPLE_PAIRING_COMPLETE = 0x36,
+  LINK_SUPERVISION_TIMEOUT_CHANGED = 0x38,
+  ENHANCED_FLUSH_COMPLETE = 0x39,
+  USER_PASSKEY_NOTIFICATION = 0x3B,
+  KEYPRESS_NOTIFICATION = 0x3C,
+  REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION = 0x3D,
+  LE_META_EVENT = 0x3e,
+  NUMBER_OF_COMPLETED_DATA_BLOCKS = 0x48,
+}
+
+packet EventPacket {
+  EventCode : EventCode,
+  size(payload) : 8,
+  payload,
+}
+
+// LE Events
+
+enum SubeventCode : 8 {
+  CONNECTION_COMPLETE = 0x01,
+  ADVERTISING_REPORT = 0x02,
+  CONNECTION_UPDATE_COMPLETE = 0x03,
+  READ_REMOTE_FEATURES_COMPLETE = 0x04,
+  LONG_TERM_KEY_REQUEST = 0x05,
+  REMOTE_CONNECTION_PARAMETER_REQUEST = 0x06,
+  DATA_LENGTH_CHANGE = 0x07,
+  READ_LOCAL_P256_PUBLIC_KEY_COMPLETE = 0x08,
+  GENERATE_DHKEY_COMPLETE = 0x09,
+  ENHANCED_CONNECTION_COMPLETE = 0x0a,
+  DIRECTED_ADVERTISING_REPORT = 0x0b,
+  PHY_UPDATE_COMPLETE = 0x0c,
+  EXTENDED_ADVERTISING_REPORT = 0x0D,
+  PERIODIC_ADVERTISING_SYNC_ESTABLISHED = 0x0E,
+  PERIODIC_ADVERTISING_REPORT = 0x0F,
+  PERIODIC_ADVERTISING_SYNC_LOST = 0x10,
+  SCAN_TIMEOUT = 0x11,
+  ADVERTISING_SET_TERMINATED = 0x12,
+  SCAN_REQUEST_RECEIVED = 0x13,
+}
+
+// Common definitions for commands and events
+
+enum FeatureFlag : 1 {
+  UNSUPPORTED = 0,
+  SUPPORTED = 1,
+}
+
+enum ErrorCodes : 8 {
+  SUCCESS = 0x00,
+  UNKNOWN_HCI_COMMAND = 0x01,
+  UNKNOWN_CONNECTION = 0x02,
+  HARDWARE_FAILURE = 0x03,
+  PAGE_TIMEOUT = 0x04,
+  AUTHENTICATION_FAILURE = 0x05,
+  PIN_OR_KEY_MISSING = 0x06,
+  MEMORY_CAPACITY_EXCEEDED = 0x07,
+  CONNECTION_TIMEOUT = 0x08,
+  CONNECTION_LIMIT_EXCEEDED = 0x09,
+  SYNCHRONOUS_CONNECTION_LIMIT_EXCEEDED = 0x0A,
+  CONNECTION_ALREADY_EXISTS = 0x0B,
+  COMMAND_DISALLOWED = 0x0C,
+  CONNECTION_REJECTED_LIMITED_RESOURCES = 0x0D,
+  CONNECTION_REJECTED_SECURITY_REASONS = 0x0E,
+  CONNECTION_REJECTED_UNACCEPTABLE_BD_ADDR = 0x0F,
+  CONNECTION_ACCEPT_TIMEOUT = 0x10,
+  UNSUPORTED_FEATURE_OR_PARAMETER_VALUE = 0x11,
+  INVALID_HCI_COMMAND_PARAMETERS = 0x12,
+  REMOTE_USER_TERMINATED_CONNECTION = 0x13,
+  REMOTE_DEVICE_TERMINATED_CONNECTION_LOW_RESOURCES = 0x14,
+  REMOTE_DEVICE_TERMINATED_CONNECTION_POWER_OFF = 0x15,
+  CONNECTION_TERMINATED_BY_LOCAL_HOST = 0x16,
+  REPEATED_ATTEMPTS = 0x17,
+  PAIRING_NOT_ALLOWED = 0x18,
+  UNKNOWN_LMP_PDU = 0x19,
+  UNSUPPORTED_REMOTE_OR_LMP_FEATURE = 0x1A,
+  SCO_OFFSET_REJECTED = 0x1B,
+  SCO_INTERVAL_REJECTED = 0x1C,
+  SCO_AIR_MODE_REJECTED = 0x1D,
+  INVALID_LMP_OR_LL_PARAMETERS = 0x1E,
+  UNSPECIFIED_ERROR = 0x1F,
+  UNSUPPORTED_LMP_OR_LL_PARAMETER = 0x20,
+  ROLE_CHANGE_NOT_ALLOWED = 0x21,
+}
+
+// Events that are defined with their respective commands
+
+packet CommandComplete : EventPacket (EventCode = COMMAND_COMPLETE){
+  NumHciCommandPackets : 8,
+  CommandOpCode : OpCode,
+  payload,
+}
+
+packet CommandStatus : EventPacket (EventCode = COMMAND_STATUS){
+  Status : ErrorCodes, // SUCCESS means PENDING
+  NumHciCommandPackets : 8,
+  CommandOpCode : OpCode,
+  payload,
+}
+
+  // LINK_CONTROL
+packet Inquiry : DiscoveryCommand (OpCode = INQUIRY) {
+  Lap0 : 8, // 0x00 - 0x3F
+  fixed = 0x9E8B : 16, // LAP upper bits are fixed
+  InquiryLength : 8, // 0x1 - 0x30 (times 1.28s)
+  NumResponses : 8, // 0x00 unlimited
+}
+
+packet InquiryStatus : CommandStatus (CommandOpCode  = INQUIRY) {
+}
+
+packet InquiryCancel : DiscoveryCommand (OpCode = INQUIRY_CANCEL) {
+}
+
+packet InquiryCancelComplete : CommandComplete (CommandOpCode  = INQUIRY_CANCEL) {
+  Status : ErrorCodes,
+}
+
+packet PeriodicInquiryMode : DiscoveryCommand (OpCode = PERIODIC_INQUIRY_MODE) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet PeriodicInquiryModeComplete : CommandComplete (CommandOpCode  = PERIODIC_INQUIRY_MODE) {
+  Status : ErrorCodes,
+}
+
+packet ExitPeriodicInquiryMode : DiscoveryCommand (OpCode = EXIT_PERIODIC_INQUIRY_MODE) {
+}
+
+packet ExitPeriodicInquiryModeComplete : CommandComplete (CommandOpCode = EXIT_PERIODIC_INQUIRY_MODE) {
+  Status : ErrorCodes,
+}
+
+enum PageScanRepetitionMode : 8 {
+  R0 = 0x00,
+  R1 = 0x01,
+  R2 = 0x02,
+}
+
+enum ClockOffsetValid : 1 {
+  INVALID = 0,
+  VALID = 1,
+}
+
+enum CreateConnectionRoleSwitch : 1 {
+  REMAIN_MASTER = 0,
+  ALLOW_ROLE_SWITCH = 1,
+}
+
+packet CreateConnection : CreateConnectionCommand (OpCode = CREATE_CONNECTION) {
+  BdAddr : 48,
+  PacketType : 16,
+  PageScanRepetitionMode : PageScanRepetitionMode,
+  reserved : 8,
+  ClockOffset : 15,
+  ClockOffsetValid : ClockOffsetValid,
+  AllowRoleSwitch : CreateConnectionRoleSwitch,
+}
+
+packet CreateConnectionStatus : CommandStatus (CommandOpCode  = CREATE_CONNECTION) {
+}
+
+enum DisconnectReason : 8 {
+  AUTHENTICATION_FAILURE = 0x05,
+  REMOTE_USER_TERMINATED_CONNECTION = 0x13,
+  REMOTE_DEVICE_TERMINATED_CONNECTION_LOW_RESOURCES = 0x14,
+  REMOTE_DEVICE_TERMINATED_CONNECTION_POWER_OFF = 0x15,
+  UNSUPPORTED_REMOTE_FEATURE = 0x1A,
+  PAIRING_WITH_UNIT_KEY_NOT_SUPPORTED = 0x29,
+  UNACCEPTABLE_CONNECTION_PARAMETERS = 0x3B,
+}
+
+packet Disconnect : ConnectionManagementCommand (OpCode = DISCONNECT) {
+  ConnectionHandle : 12,
+  reserved : 4,
+  Reason : DisconnectReason,
+}
+
+packet DisconnectStatus : CommandStatus (CommandOpCode = DISCONNECT) {
+}
+
+packet CreateConnectionCancel : CreateConnectionCommand (OpCode = CREATE_CONNECTION_CANCEL) {
+  BdAddr : 48,
+}
+
+packet CreateConnectionCancelComplete : CommandComplete (CommandOpCode = CREATE_CONNECTION_CANCEL) {
+  Status : ErrorCodes,
+  BdAddr : 48,
+}
+
+enum AcceptConnectionRequestRole : 8 {
+  BECOME_MASTER = 0x00,
+  REMAIN_SLAVE = 0x01,
+}
+
+packet AcceptConnectionRequest : CreateConnectionCommand (OpCode = ACCEPT_CONNECTION_REQUEST) {
+  BdAddr : 48,
+  Role : AcceptConnectionRequestRole,
+}
+
+packet AcceptConnectionRequestStatus : CommandStatus (CommandOpCode = ACCEPT_CONNECTION_REQUEST) {
+}
+
+enum RejectConnectionReason : 8 {
+  LIMITED_RESOURCES = 0x0D,
+  SECURITY_REASONS = 0x0E,
+  UNACCEPTABLE_BD_ADDR = 0x0F,
+}
+
+packet RejectConnectionRequest : CreateConnectionCommand (OpCode = REJECT_CONNECTION_REQUEST) {
+  BdAddr : 48,
+  Reason : RejectConnectionReason,
+}
+
+packet RejectConnectionRequestStatus : CommandStatus (CommandOpCode = REJECT_CONNECTION_REQUEST) {
+}
+
+packet LinkKeyRequestReply : SecurityCommand (OpCode = LINK_KEY_REQUEST_REPLY) {
+  BdAddr : 48,
+  LinkKeyLo : 64,
+  LinkKeyHi : 64,
+}
+
+packet LinkKeyRequestReplyComplete : CommandComplete (CommandOpCode = LINK_KEY_REQUEST_REPLY) {
+  Status : ErrorCodes,
+}
+
+packet LinkKeyRequestNegativeReply : SecurityCommand (OpCode = LINK_KEY_REQUEST_NEGATIVE_REPLY) {
+  BdAddr : 48,
+}
+
+packet LinkKeyRequestNegativeReplyComplete : CommandComplete (CommandOpCode = LINK_KEY_REQUEST_NEGATIVE_REPLY) {
+  Status : ErrorCodes,
+  BdAddr : 48,
+}
+
+packet PinCodeRequestReply : SecurityCommand (OpCode = PIN_CODE_REQUEST_REPLY) {
+  BdAddr : 48,
+  PinCodeLength : 5, // 0x01 - 0x10
+  reserved : 3,
+  PinCode1 : 8, // string parameter, first octet first
+  PinCode2 : 8,
+  PinCode3 : 8,
+  PinCode4 : 8,
+  PinCode5 : 8,
+  PinCode6 : 8,
+  PinCode7 : 8,
+  PinCode8 : 8,
+  PinCode9 : 8,
+  PinCode10 : 8,
+  PinCode11 : 8,
+  PinCode12 : 8,
+  PinCode13 : 8,
+  PinCode14 : 8,
+  PinCode15 : 8,
+}
+
+packet PinCodeRequestReplyComplete : CommandComplete (CommandOpCode = PIN_CODE_REQUEST_REPLY) {
+  Status : ErrorCodes,
+  BdAddr : 48,
+}
+
+packet PinCodeRequestNegativeReply : SecurityCommand (OpCode = PIN_CODE_REQUEST_NEGATIVE_REPLY) {
+  BdAddr : 48,
+}
+
+packet PinCodeRequestNegativeReplyComplete : CommandComplete (CommandOpCode = PIN_CODE_REQUEST_NEGATIVE_REPLY) {
+  Status : ErrorCodes,
+  BdAddr : 48,
+}
+
+packet ChangeConnectionPacketType : ConnectionManagementCommand (OpCode = CHANGE_CONNECTION_PACKET_TYPE) {
+  ConnectionHandle : 12,
+  reserved : 4,
+  PacketType : 16,
+}
+
+packet ChangeConnectionPacketTypeStatus : CommandStatus (CommandOpCode = CHANGE_CONNECTION_PACKET_TYPE) {
+}
+
+packet AuthenticationRequested : ConnectionManagementCommand (OpCode = AUTHENTICATION_REQUESTED) {
+  ConnectionHandle : 12,
+  reserved : 4,
+}
+
+packet AuthenticationRequestedStatus : CommandStatus (CommandOpCode = AUTHENTICATION_REQUESTED) {
+}
+
+packet SetConnectionEncryption : ConnectionManagementCommand (OpCode = SET_CONNECTION_ENCRYPTION) {
+  ConnectionHandle : 12,
+  reserved : 4,
+  EncryptionEnable : Enable,
+}
+
+packet SetConnectionEncryptionStatus : CommandStatus (CommandOpCode = SET_CONNECTION_ENCRYPTION) {
+}
+
+packet ChangeConnectionLinkKey : ConnectionManagementCommand (OpCode = CHANGE_CONNECTION_LINK_KEY) {
+  ConnectionHandle : 12,
+  reserved : 4,
+}
+
+packet ChangeConnectionLinkKeyStatus : CommandStatus (CommandOpCode = CHANGE_CONNECTION_LINK_KEY) {
+}
+
+enum KeyFlag : 8 {
+  SEMI_PERMANENT = 0x00,
+  TEMPORARY = 0x01,
+}
+
+packet MasterLinkKey : ConnectionManagementCommand (OpCode = MASTER_LINK_KEY) {
+  KeyFlag : KeyFlag,
+}
+
+packet MasterLinkKeyStatus : CommandStatus (CommandOpCode = MASTER_LINK_KEY) {
+}
+
+packet RemoteNameRequest : DiscoveryCommand (OpCode = REMOTE_NAME_REQUEST) {
+  BdAddr : 48,
+  PageScanRepetitionMode : PageScanRepetitionMode,
+  reserved : 8,
+  ClockOffset : 15,
+  ClockOffsetValid : ClockOffsetValid,
+}
+
+packet RemoteNameRequestStatus : CommandStatus (CommandOpCode = REMOTE_NAME_REQUEST) {
+}
+
+packet RemoteNameRequestCancel : DiscoveryCommand (OpCode = REMOTE_NAME_REQUEST_CANCEL) {
+  BdAddr : 48,
+}
+
+packet RemoteNameRequestCancelComplete : CommandComplete (CommandOpCode = REMOTE_NAME_REQUEST_CANCEL) {
+  Status : ErrorCodes,
+  BdAddr : 48,
+}
+
+packet ReadRemoteSupportedFeatures : DiscoveryCommand (OpCode = READ_REMOTE_SUPPORTED_FEATURES) {
+  ConnectionHandle : 12,
+  reserved : 4,
+}
+
+packet ReadRemoteSupportedFeaturesStatus : CommandStatus (CommandOpCode = READ_REMOTE_SUPPORTED_FEATURES) {
+}
+
+packet ReadRemoteExtendedFeatures : DiscoveryCommand (OpCode = READ_REMOTE_EXTENDED_FEATURES) {
+  ConnectionHandle : 12,
+  reserved : 4,
+  PageNumber : 8,
+}
+
+packet ReadRemoteExtendedFeaturesStatus : CommandStatus (CommandOpCode = READ_REMOTE_EXTENDED_FEATURES) {
+}
+
+packet ReadRemoteVersionInformation : DiscoveryCommand (OpCode = READ_REMOTE_VERSION_INFORMATION) {
+  ConnectionHandle : 12,
+  reserved : 4,
+}
+
+packet ReadRemoteVersionInformationStatus : CommandStatus (CommandOpCode = READ_REMOTE_VERSION_INFORMATION) {
+}
+
+packet ReadClockOffset : ConnectionManagementCommand (OpCode = READ_CLOCK_OFFSET) {
+  ConnectionHandle : 12,
+  reserved : 4,
+}
+
+packet ReadClockOffsetStatus : CommandStatus (CommandOpCode = READ_CLOCK_OFFSET) {
+}
+
+packet ReadLmpHandle : ConnectionManagementCommand (OpCode = READ_LMP_HANDLE) {
+  ConnectionHandle : 12,
+  reserved : 4,
+}
+
+packet ReadLmpHandleComplete : CommandComplete (CommandOpCode = READ_LMP_HANDLE) {
+  Status : ErrorCodes,
+  ConnectionHandle : 12,
+  reserved : 4,
+  LmpHandle : 8,
+  reserved : 32,
+}
+
+packet SetupSynchronousConnection : ScoConnectionCommand (OpCode = SETUP_SYNCHRONOUS_CONNECTION) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet AcceptSynchronousConnection : ScoConnectionCommand (OpCode = ACCEPT_SYNCHRONOUS_CONNECTION) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet RejectSynchronousConnection : ScoConnectionCommand (OpCode = REJECT_SYNCHRONOUS_CONNECTION) {
+  payload,  // placeholder (unimplemented)
+}
+
+enum IoCapability : 8 {
+  DISPLAY_ONLY = 0x00,
+  DISPLAY_YES_NO = 0x01,
+  KEYBOARD_ONLY = 0x02,
+  NO_INPUT_NO_OUTPUT = 0x03,
+}
+
+enum OobDataPresent : 8 {
+  NOT_PRESENT = 0x00,
+  P_192_PRESENT = 0x01,
+  P_256_PRESENT = 0x02,
+  P_192_AND_256_PRESENT = 0x03,
+}
+
+enum AuthenticationRequirements : 8 {
+  NO_BONDING = 0x00,
+  NO_BONDING_MITM_PROTECTION = 0x01,
+  DEDICATED_BONDING = 0x02,
+  DEDICATED_BONDING_MITM_PROTECTION = 0x03,
+  GENERAL_BONDING = 0x04,
+  GENERAL_BONDING_MITM_PROTECTION = 0x05,
+}
+
+packet IoCapabilityRequestReply : SecurityCommand (OpCode = IO_CAPABILITY_REQUEST_REPLY) {
+  BdAddr : 48,
+  IoCapability : IoCapability,
+  OobPresent : OobDataPresent,
+  AuthenticationRequirements : AuthenticationRequirements,
+}
+
+packet IoCapabilityRequestReplyComplete : CommandComplete (CommandOpCode = IO_CAPABILITY_REQUEST_REPLY) {
+  Status : ErrorCodes,
+  BdAddr : 48,
+}
+
+packet UserConfirmationRequestReply : SecurityCommand (OpCode = USER_CONFIRMATION_REQUEST_REPLY) {
+  BdAddr : 48,
+}
+
+packet UserConfirmationRequestReplyComplete : CommandComplete (CommandOpCode = USER_CONFIRMATION_REQUEST_REPLY) {
+  Status : ErrorCodes,
+  BdAddr : 48,
+}
+
+packet UserConfirmationRequestNegativeReply : SecurityCommand (OpCode = USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY) {
+  BdAddr : 48,
+}
+
+packet UserConfirmationRequestNegativeReplyComplete : CommandComplete (CommandOpCode = USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY) {
+  Status : ErrorCodes,
+  BdAddr : 48,
+}
+
+packet UserPasskeyRequestReply : SecurityCommand (OpCode = USER_PASSKEY_REQUEST_REPLY) {
+  BdAddr : 48,
+  NumericValue : 32, // 000000-999999 decimal or 0x0-0xF423F
+}
+
+packet UserPasskeyReplyComplete : CommandComplete (CommandOpCode = USER_PASSKEY_REQUEST_REPLY) {
+  Status : ErrorCodes,
+  BdAddr : 48,
+}
+
+packet UserPasskeyRequestNegativeReply : SecurityCommand (OpCode = USER_PASSKEY_REQUEST_NEGATIVE_REPLY) {
+  BdAddr : 48,
+}
+
+packet UserPasskeyRequestNegativeReplyComplete : CommandComplete (CommandOpCode = USER_PASSKEY_REQUEST_NEGATIVE_REPLY) {
+  Status : ErrorCodes,
+  BdAddr : 48,
+}
+
+packet RemoteOobDataRequestReply : SecurityCommand (OpCode = REMOTE_OOB_DATA_REQUEST_REPLY) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet RemoteOobDataRequestReplyComplete : CommandComplete (CommandOpCode = REMOTE_OOB_DATA_REQUEST_REPLY) {
+  Status : ErrorCodes,
+  BdAddr : 48,
+}
+
+packet RemoteOobDataRequestNegativeReply : SecurityCommand (OpCode = REMOTE_OOB_DATA_REQUEST_NEGATIVE_REPLY) {
+  BdAddr : 48,
+}
+
+packet RemoteOobDataRequestNegativeReplyComplete : CommandComplete (CommandOpCode = REMOTE_OOB_DATA_REQUEST_NEGATIVE_REPLY) {
+  Status : ErrorCodes,
+  BdAddr : 48,
+}
+
+packet IoCapabilityRequestNegativeReply : SecurityCommand (OpCode = IO_CAPABILITY_REQUEST_NEGATIVE_REPLY) {
+  BdAddr : 48,
+  Reason : ErrorCodes,
+}
+
+packet IoCapabilityRequestNegativeReplyComplete : CommandComplete (CommandOpCode = IO_CAPABILITY_REQUEST_NEGATIVE_REPLY) {
+  Status : ErrorCodes,
+  BdAddr : 48,
+}
+
+packet EnhancedSetupSynchronousConnection : ScoConnectionCommand (OpCode = ENHANCED_SETUP_SYNCHRONOUS_CONNECTION) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet EnhancedAcceptSynchronousConnection : ScoConnectionCommand (OpCode = ENHANCED_ACCEPT_SYNCHRONOUS_CONNECTION) {
+  payload,  // placeholder (unimplemented)
+}
+
+
+  // LINK_POLICY
+packet HoldMode : ConnectionManagementCommand (OpCode = HOLD_MODE) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet SniffMode : ConnectionManagementCommand (OpCode = SNIFF_MODE) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet ExitSniffMode : ConnectionManagementCommand (OpCode = EXIT_SNIFF_MODE) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet QosSetup : ConnectionManagementCommand (OpCode = QOS_SETUP) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet RoleDiscovery : ConnectionManagementCommand (OpCode = ROLE_DISCOVERY) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet SwitchRole : ConnectionManagementCommand (OpCode = SWITCH_ROLE) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet ReadLinkPolicySettings : ConnectionManagementCommand (OpCode = READ_LINK_POLICY_SETTINGS) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet WriteLinkPolicySettings : ConnectionManagementCommand (OpCode = WRITE_LINK_POLICY_SETTINGS) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet ReadDefaultLinkPolicySettings : ConnectionManagementCommand (OpCode = READ_DEFAULT_LINK_POLICY_SETTINGS) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet WriteDefaultLinkPolicySettings : ConnectionManagementCommand (OpCode = WRITE_DEFAULT_LINK_POLICY_SETTINGS) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet FlowSpecification : ConnectionManagementCommand (OpCode = FLOW_SPECIFICATION) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet SniffSubrating : ConnectionManagementCommand (OpCode = SNIFF_SUBRATING) {
+  payload,  // placeholder (unimplemented)
+}
+
+
+  // CONTROLLER_AND_BASEBAND
+packet SetEventMask : CommandPacket (OpCode = SET_EVENT_MASK) {
+  EventMask : 64,
+}
+
+packet SetEventMaskComplete : CommandComplete (CommandOpCode = SET_EVENT_MASK) {
+  Status : ErrorCodes,
+}
+
+packet Reset : CommandPacket (OpCode = RESET) {
+}
+
+packet ResetComplete : CommandComplete (CommandOpCode = RESET) {
+  Status : ErrorCodes,
+}
+
+packet SetEventFilter : CommandPacket (OpCode = SET_EVENT_FILTER) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet Flush : ConnectionManagementCommand (OpCode = FLUSH) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet ReadPinType : CommandPacket (OpCode = READ_PIN_TYPE) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet WritePinType : CommandPacket (OpCode = WRITE_PIN_TYPE) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet CreateNewUnitKey : CommandPacket (OpCode = CREATE_NEW_UNIT_KEY) {
+  payload,  // placeholder (unimplemented)
+}
+
+enum ReadStoredLinkKeyReadAllFlag : 8 {
+  SPECIFIED_BD_ADDR = 0x00,
+  ALL = 0x01,
+}
+
+packet ReadStoredLinkKey : SecurityCommand (OpCode = READ_STORED_LINK_KEY) {
+  BdAddr : 48,
+  ReadAllFlag : ReadStoredLinkKeyReadAllFlag,
+}
+
+packet ReadStoredLinkKeyComplete : CommandComplete (CommandOpCode = READ_STORED_LINK_KEY) {
+  Status : ErrorCodes,
+  MaxNumKeys : 16,
+  NumKeysRead : 16,
+}
+
+packet WriteStoredLinkKey : SecurityCommand (OpCode = WRITE_STORED_LINK_KEY) {
+  payload,
+}
+
+packet WriteStoredLinkKeyComplete : CommandComplete (CommandOpCode = WRITE_STORED_LINK_KEY) {
+  Status : ErrorCodes,
+  NumKeysWritten : 8,
+}
+
+enum DeleteStoredLinkKeyDeleteAllFlag : 8 {
+  SPECIFIED_BD_ADDR = 0x00,
+  ALL = 0x01,
+}
+
+packet DeleteStoredLinkKey : SecurityCommand (OpCode = DELETE_STORED_LINK_KEY) {
+  BdAddr : 48,
+  DeleteAllFlag : DeleteStoredLinkKeyDeleteAllFlag,
+}
+
+packet DeleteStoredLinkKeyComplete : CommandComplete (CommandOpCode = DELETE_STORED_LINK_KEY) {
+  Status : ErrorCodes,
+  NumKeysDeleted : 8,
+}
+
+packet WriteLocalName : CommandPacket (OpCode = WRITE_LOCAL_NAME) {
+  payload,
+}
+
+packet WriteLocalNameComplete : CommandComplete (CommandOpCode = WRITE_LOCAL_NAME) {
+  Status : ErrorCodes,
+}
+
+packet ReadLocalName : CommandPacket (OpCode = READ_LOCAL_NAME) {
+}
+
+packet ReadLocalNameComplete : CommandComplete (CommandOpCode = READ_LOCAL_NAME) {
+  Status : ErrorCodes,
+  payload,
+}
+
+packet ReadConnectionAcceptTimeout : CreateConnectionCommand (OpCode = READ_CONNECTION_ACCEPT_TIMEOUT) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet WriteConnectionAcceptTimeout : CreateConnectionCommand (OpCode = WRITE_CONNECTION_ACCEPT_TIMEOUT) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet ReadPageTimeout : DiscoveryCommand (OpCode = READ_PAGE_TIMEOUT) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet WritePageTimeout : DiscoveryCommand (OpCode = WRITE_PAGE_TIMEOUT) {
+  payload,  // placeholder (unimplemented)
+}
+
+enum ScanEnable : 8 {
+  NO_SCANS = 0x00,
+  INQUIRY_SCAN_ONLY = 0x01,
+  PAGE_SCAN_ONLY = 0x02,
+  INQUIRY_AND_PAGE_SCAN = 0x03,
+}
+
+packet ReadScanEnable : DiscoveryCommand (OpCode = READ_SCAN_ENABLE) {
+}
+
+packet ReadScanEnableComplete : CommandComplete (CommandOpCode = READ_SCAN_ENABLE) {
+  Status : ErrorCodes,
+  ScanEnable : ScanEnable,
+}
+
+packet WriteScanEnable : DiscoveryCommand (OpCode = WRITE_SCAN_ENABLE) {
+  ScanEnable : ScanEnable,
+}
+
+packet WriteScanEnableComplete : CommandComplete (CommandOpCode = WRITE_SCAN_ENABLE) {
+  Status : ErrorCodes,
+}
+
+packet ReadPageScanActivity : DiscoveryCommand (OpCode = READ_PAGE_SCAN_ACTIVITY) {
+}
+
+packet ReadPageScanActivityComplete : CommandComplete (CommandOpCode = READ_PAGE_SCAN_ACTIVITY) {
+  Status : ErrorCodes,
+  PageScanInterval : 16, // Range: 0x0012 to 0x1000; only even values are valid * 0x625 ms
+  PageScanWindow : 16, // 0x0011 to PageScanInterval
+}
+
+packet WritePageScanActivity : DiscoveryCommand (OpCode = WRITE_PAGE_SCAN_ACTIVITY) {
+  PageScanInterval : 16, // Range: 0x0012 to 0x1000; only even values are valid * 0x625 ms
+  PageScanWindow : 16, // 0x0011 to PageScanInterval
+}
+
+packet WritePageScanActivityComplete : CommandComplete (CommandOpCode = WRITE_PAGE_SCAN_ACTIVITY) {
+  Status : ErrorCodes,
+}
+
+packet ReadInquiryScanActivity : DiscoveryCommand (OpCode = READ_INQUIRY_SCAN_ACTIVITY) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet WriteInquiryScanActivity : DiscoveryCommand (OpCode = WRITE_INQUIRY_SCAN_ACTIVITY) {
+  payload,  // placeholder (unimplemented)
+}
+
+enum AuthenticationEnable : 8 {
+  NOT_REQUIRED = 0x00,
+  REQUIRED = 0x01,
+}
+
+packet ReadAuthenticationEnable : CommandPacket (OpCode = READ_AUTHENTICATION_ENABLE) {
+}
+
+packet ReadAuthenticationEnableComplete : CommandComplete (CommandOpCode = READ_AUTHENTICATION_ENABLE) {
+  Status : ErrorCodes,
+  AuthenticationEnable : AuthenticationEnable,
+}
+
+packet WriteAuthenticationEnable : CommandPacket (OpCode = WRITE_AUTHENTICATION_ENABLE) {
+  AuthenticationEnable : AuthenticationEnable,
+}
+
+packet WriteAuthenticationEnableComplete : CommandComplete (CommandOpCode = WRITE_AUTHENTICATION_ENABLE) {
+  Status : ErrorCodes,
+}
+
+packet ReadClassOfDevice : DiscoveryCommand (OpCode = READ_CLASS_OF_DEVICE) {
+}
+
+packet ReadClassOfDeviceComplete : CommandComplete (CommandOpCode = READ_CLASS_OF_DEVICE) {
+  Status : ErrorCodes,
+  ClassOfDevice : 24, // ClassOfDevice,
+}
+
+packet WriteClassOfDevice : DiscoveryCommand (OpCode = WRITE_CLASS_OF_DEVICE) {
+  ClassOfDevice : 24, // ClassOfDevice,
+}
+
+packet WriteClassOfDeviceComplete : CommandComplete (CommandOpCode = WRITE_CLASS_OF_DEVICE) {
+  Status : ErrorCodes,
+}
+
+packet ReadVoiceSetting : CommandPacket (OpCode = READ_VOICE_SETTING) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet WriteVoiceSetting : CommandPacket (OpCode = WRITE_VOICE_SETTING) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet ReadAutomaticFlushTimeout : ConnectionManagementCommand (OpCode = READ_AUTOMATIC_FLUSH_TIMEOUT) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet WriteAutomaticFlushTimeout : ConnectionManagementCommand (OpCode = WRITE_AUTOMATIC_FLUSH_TIMEOUT) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet ReadNumBroadcastRetransmits : CommandPacket (OpCode = READ_NUM_BROADCAST_RETRANSMITS) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet WriteNumBroadcastRetransmits : CommandPacket (OpCode = WRITE_NUM_BROADCAST_RETRANSMITS) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet ReadHoldModeActivity : CommandPacket (OpCode = READ_HOLD_MODE_ACTIVITY) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet WriteHoldModeActivity : CommandPacket (OpCode = WRITE_HOLD_MODE_ACTIVITY) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet ReadTransmitPowerLevel : ConnectionManagementCommand (OpCode = READ_TRANSMIT_POWER_LEVEL) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet ReadSynchronousFlowControlEnable : CommandPacket (OpCode = READ_SYNCHRONOUS_FLOW_CONTROL_ENABLE) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet WriteSynchronousFlowControlEnable : CommandPacket (OpCode = WRITE_SYNCHRONOUS_FLOW_CONTROL_ENABLE) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet SetControllerToHostFlowControl : CommandPacket (OpCode = SET_CONTROLLER_TO_HOST_FLOW_CONTROL) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet HostBufferSize : CommandPacket (OpCode = HOST_BUFFER_SIZE) {
+  HostAclDataPacketLength : 16,
+  HostSynchronousDataPacketLength : 8,
+  HostTotalNumAclDataPackets : 16,
+  HostTotalNumSynchronousDataPackets : 16,
+}
+
+packet HostBufferSizeComplete : CommandComplete (CommandOpCode = HOST_BUFFER_SIZE) {
+  Status : ErrorCodes,
+}
+
+packet HostNumCompletedPackets : CommandPacket (OpCode = HOST_NUM_COMPLETED_PACKETS) {
+  payload,
+}
+
+packet HostNumCompletedPacketsError : CommandComplete (CommandOpCode = HOST_NUM_COMPLETED_PACKETS) {
+  ErrorCode : ErrorCodes,
+}
+
+packet ReadLinkSupervisionTimeout : ConnectionManagementCommand (OpCode = READ_LINK_SUPERVISION_TIMEOUT) {
+  ConnectionHandle : 12,
+  reserved : 4,
+}
+
+packet ReadLinkSupervisionTimeoutComplete : CommandComplete (CommandOpCode = READ_LINK_SUPERVISION_TIMEOUT) {
+  Status : ErrorCodes,
+  Handle : 12,
+  reserved : 4,
+  LinkSupervisionTimeout : 16, // 0x001-0xFFFF (0.625ms-40.9s)
+}
+
+packet WriteLinkSupervisionTimeout : ConnectionManagementCommand (OpCode = WRITE_LINK_SUPERVISION_TIMEOUT) {
+  Handle : 12,
+  reserved : 4,
+  LinkSupervisionTimeout : 16, // 0x001-0xFFFF (0.625ms-40.9s)
+}
+
+packet WriteLinkSupervisionTimeoutComplete : CommandComplete (CommandOpCode = WRITE_LINK_SUPERVISION_TIMEOUT) {
+  Status : ErrorCodes,
+  Handle : 12,
+  reserved : 4,
+}
+
+packet ReadNumberOfSupportedIac : DiscoveryCommand (OpCode = READ_NUMBER_OF_SUPPORTED_IAC) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet ReadCurrentIacLap : DiscoveryCommand (OpCode = READ_CURRENT_IAC_LAP) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet WriteCurrentIacLap : DiscoveryCommand (OpCode = WRITE_CURRENT_IAC_LAP) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet SetAfhHostChannelClassification : CommandPacket (OpCode = SET_AFH_HOST_CHANNEL_CLASSIFICATION) {
+  payload,  // placeholder (unimplemented)
+}
+
+enum InquiryScanType : 8 {
+  STANDARD = 0x00,
+  INTERLACED = 0x01,
+}
+
+packet ReadInquiryScanType : DiscoveryCommand (OpCode = READ_INQUIRY_SCAN_TYPE) {
+}
+
+packet ReadInquiryScanTypeComplete : CommandComplete (CommandOpCode = READ_INQUIRY_SCAN_TYPE) {
+  Status : ErrorCodes,
+  InquiryScanType : InquiryScanType,
+}
+
+packet WriteInquiryScanType : DiscoveryCommand (OpCode = WRITE_INQUIRY_SCAN_TYPE) {
+  InquiryScanType : InquiryScanType,
+}
+
+packet WriteInquiryScanTypeComplete : CommandComplete (CommandOpCode = WRITE_INQUIRY_SCAN_TYPE) {
+  Status : ErrorCodes,
+}
+
+enum InquiryMode : 8 {
+  STANDARD = 0x00,
+  RSSI = 0x01,
+  RSSI_OR_EXTENDED = 0x02,
+}
+
+packet ReadInquiryMode : DiscoveryCommand (OpCode = READ_INQUIRY_MODE) {
+}
+
+packet ReadInquiryModeComplete : CommandComplete (CommandOpCode = READ_INQUIRY_MODE) {
+  Status : ErrorCodes,
+  InquiryMode : InquiryMode,
+}
+
+packet WriteInquiryMode : DiscoveryCommand (OpCode = WRITE_INQUIRY_MODE) {
+  InquiryMode : InquiryMode,
+}
+
+packet WriteInquiryModeComplete : CommandComplete (CommandOpCode = WRITE_INQUIRY_MODE) {
+  Status : ErrorCodes,
+}
+
+enum PageScanType : 8 {
+  STANDARD = 0x00,
+  INTERLACED = 0x01,
+}
+
+packet ReadPageScanType : DiscoveryCommand (OpCode = READ_PAGE_SCAN_TYPE) {
+}
+
+packet ReadPageScanTypeComplete : CommandComplete (CommandOpCode = READ_PAGE_SCAN_TYPE) {
+  Status : ErrorCodes,
+  PageScanType : PageScanType,
+}
+
+packet WritePageScanType : DiscoveryCommand (OpCode = WRITE_PAGE_SCAN_TYPE) {
+  PageScanType : PageScanType,
+}
+
+packet WritePageScanTypeComplete : CommandComplete (CommandOpCode = WRITE_PAGE_SCAN_TYPE) {
+  Status : ErrorCodes,
+}
+
+packet ReadAfhChannelAssessmentMode : CommandPacket (OpCode = READ_AFH_CHANNEL_ASSESSMENT_MODE) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet WriteAfhChannelAssessmentMode : CommandPacket (OpCode = WRITE_AFH_CHANNEL_ASSESSMENT_MODE) {
+  payload,  // placeholder (unimplemented)
+}
+
+enum FecRequired : 8 {
+  NOT_REQUIRED = 0x00,
+  REQUIRED = 0x01,
+}
+
+packet ReadExtendedInquiryResponse : CommandPacket (OpCode = READ_EXTENDED_INQUIRY_RESPONSE) {
+}
+
+packet ReadExtendedInquiryResponseComplete : CommandComplete (CommandOpCode = READ_EXTENDED_INQUIRY_RESPONSE) {
+  Status : ErrorCodes,
+  FecRequired : FecRequired,
+  payload,
+}
+
+packet WriteExtendedInquiryResponse : CommandPacket (OpCode = WRITE_EXTENDED_INQUIRY_RESPONSE) {
+  FecRequired : FecRequired,
+  payload,
+}
+
+packet WriteExtendedInquiryResponseComplete : CommandComplete (CommandOpCode = WRITE_EXTENDED_INQUIRY_RESPONSE) {
+  Status : ErrorCodes,
+}
+
+packet RefreshEncryptionKey : SecurityCommand (OpCode = REFRESH_ENCRYPTION_KEY) {
+  ConnectionHandle : 12,
+  reserved : 4,
+}
+
+packet RefreshEncryptionKeyStatus : CommandStatus (CommandOpCode = REFRESH_ENCRYPTION_KEY) {
+}
+
+enum SimplePairingMode : 8 {
+  NOT_SET = 0x00,
+  ENABLED = 0x01,
+}
+
+packet ReadSimplePairingMode : SecurityCommand (OpCode = READ_SIMPLE_PAIRING_MODE) {
+}
+
+packet ReadSimplePairingModeComplete : CommandComplete (CommandOpCode = READ_SIMPLE_PAIRING_MODE) {
+  Status : ErrorCodes,
+  SimplePairingMode : SimplePairingMode,
+}
+
+packet WriteSimplePairingMode : SecurityCommand (OpCode = WRITE_SIMPLE_PAIRING_MODE) {
+  SimplePairingMode : SimplePairingMode,
+}
+
+packet WriteSimplePairingModeComplete : CommandComplete (CommandOpCode = WRITE_SIMPLE_PAIRING_MODE) {
+  Status : ErrorCodes,
+}
+
+packet ReadLocalOobData : SecurityCommand (OpCode = READ_LOCAL_OOB_DATA) {
+}
+
+packet ReadLocalOobDataComplete : CommandComplete (CommandOpCode = READ_LOCAL_OOB_DATA) {
+  Status : ErrorCodes,
+  Clo : 64,
+  Chi : 64,
+  Rlo : 64,
+  Rhi : 64,
+}
+
+packet ReadInquiryResponseTransmitPowerLevel : DiscoveryCommand (OpCode = READ_INQUIRY_RESPONSE_TRANSMIT_POWER_LEVEL) {
+}
+
+packet ReadInquiryResponseTransmitPowerLevelComplete : CommandComplete (CommandOpCode = READ_INQUIRY_RESPONSE_TRANSMIT_POWER_LEVEL) {
+  Status : ErrorCodes,
+  TxPower : 8, // (-70dBm to 20dBm)
+}
+
+packet WriteInquiryTransmitPowerLevel : DiscoveryCommand (OpCode = WRITE_INQUIRY_TRANSMIT_POWER_LEVEL) {
+  TxPower : 8,
+}
+
+packet WriteInquiryResponseTransmitPowerLevelComplete : CommandComplete (CommandOpCode = WRITE_INQUIRY_TRANSMIT_POWER_LEVEL) {
+  Status : ErrorCodes,
+}
+
+enum KeypressNotificationType : 8 {
+  ENTRY_STARTED = 0,
+  DIGIT_ENTERED = 1,
+  DIGIT_ERASED = 2,
+  CLEARED = 3,
+  ENTRY_COMPLETED = 4,
+}
+
+packet SendKeypressNotification : SecurityCommand (OpCode = SEND_KEYPRESS_NOTIFICATION) {
+  BdAddr : 48,
+  NotificationType : KeypressNotificationType,
+}
+
+packet SendKeypressNotificationComplete : CommandComplete (CommandOpCode = SEND_KEYPRESS_NOTIFICATION) {
+  Status : ErrorCodes,
+  BdAddr : 48,
+}
+
+enum LeSupportedHost : 8 {
+  DISABLED = 0x00, // Default
+  ENABLED = 0x01,
+}
+
+enum SimultaneousLeHost : 8 {
+  DISABLED = 0x00,
+}
+
+packet ReadLeHostSupport : CommandPacket (OpCode = READ_LE_HOST_SUPPORT) {
+}
+
+packet ReadLeHostSupportComplete : CommandComplete (CommandOpCode = READ_LE_HOST_SUPPORT) {
+  Status : ErrorCodes,
+  LeSupportedHost : LeSupportedHost,
+  SimultaneousLeHost : SimultaneousLeHost,
+}
+
+packet WriteLeHostSupport : CommandPacket (OpCode = WRITE_LE_HOST_SUPPORT) {
+  LeSupportedHost : LeSupportedHost,
+  SimultaneousLeHost : SimultaneousLeHost,
+}
+
+packet WriteLeHostSupportComplete : CommandComplete (CommandOpCode = WRITE_LE_HOST_SUPPORT) {
+  Status : ErrorCodes,
+}
+
+enum SecureConnectionsHostSupport : 8 {
+  DISABLED = 0x00, // Default
+  ENABLED = 0x01,
+}
+
+packet ReadSecureConnectionsHostSupport : CommandPacket (OpCode = READ_SECURE_CONNECTIONS_HOST_SUPPORT) {
+}
+
+packet ReadSecureConnectionsHostSupportComplete : CommandComplete (CommandOpCode = READ_SECURE_CONNECTIONS_HOST_SUPPORT) {
+  Status : ErrorCodes,
+  SecureConnectionsHostSupport : SecureConnectionsHostSupport,
+}
+
+packet WriteSecureConnectionsHostSupport : CommandPacket (OpCode = WRITE_SECURE_CONNECTIONS_HOST_SUPPORT) {
+  SecureConnectionsHostSupport : SecureConnectionsHostSupport,
+}
+
+packet WriteSecureConnectionsHostSupportComplete : CommandComplete (CommandOpCode = WRITE_SECURE_CONNECTIONS_HOST_SUPPORT) {
+  Status : ErrorCodes,
+}
+
+  // INFORMATIONAL_PARAMETERS
+packet ReadLocalVersionInformation : CommandPacket (OpCode = READ_LOCAL_VERSION_INFORMATION) {
+}
+
+packet ReadLocalSupportedCommands : CommandPacket (OpCode = READ_LOCAL_SUPPORTED_COMMANDS) {
+}
+
+packet ReadLocalSupportedFeatures : CommandPacket (OpCode = READ_LOCAL_SUPPORTED_FEATURES) {
+}
+
+packet ReadLocalExtendedFeatures : CommandPacket (OpCode = READ_LOCAL_EXTENDED_FEATURES) {
+  PageNumber : 8,
+}
+
+packet ReadBufferSize : CommandPacket (OpCode = READ_BUFFER_SIZE) {
+}
+
+packet ReadBdAddr : CommandPacket (OpCode = READ_BD_ADDR) {
+}
+
+packet ReadDataBlockSize : CommandPacket (OpCode = READ_DATA_BLOCK_SIZE) {
+}
+
+packet ReadLocalSupportedCodecs : CommandPacket (OpCode = READ_LOCAL_SUPPORTED_CODECS) {
+}
+
+
+  // STATUS_PARAMETERS
+packet ReadFailedContactCounter : ConnectionManagementCommand (OpCode = READ_FAILED_CONTACT_COUNTER) {
+  Handle : 12,
+  reserved : 4,
+}
+
+packet ResetFailedContactCounter : ConnectionManagementCommand (OpCode = RESET_FAILED_CONTACT_COUNTER) {
+  Handle : 12,
+  reserved : 4,
+}
+
+packet ReadLinkQuality : ConnectionManagementCommand (OpCode = READ_LINK_QUALITY) {
+  Handle : 12,
+  reserved : 4,
+}
+
+packet ReadRssi : ConnectionManagementCommand (OpCode = READ_RSSI) {
+  Handle : 12,
+  reserved : 4,
+}
+
+packet ReadAfhChannelMap : ConnectionManagementCommand (OpCode = READ_AFH_CHANNEL_MAP) {
+  ConnectionHandle : 12,
+  reserved : 4,
+}
+
+enum WhichClock : 8 {
+  LOCAL = 0x00,
+  PICONET = 0x01,
+}
+
+packet ReadClock : ConnectionManagementCommand (OpCode = READ_CLOCK) {
+  ConnectionHandle : 12,
+  reserved : 4,
+  WhichClock : WhichClock,
+}
+
+packet ReadEncryptionKeySize : SecurityCommand (OpCode = READ_ENCRYPTION_KEY_SIZE) {
+  ConnectionHandle : 12,
+  reserved : 4,
+}
+
+
+  // TESTING
+enum LoopbackMode : 8 {
+  NO_LOOPBACK = 0x00,
+  ENABLE_LOCAL = 0x01,
+  ENABLE_REMOTE = 0x02,
+}
+
+packet ReadLoopbackMode : CommandPacket (OpCode = READ_LOOPBACK_MODE) {
+}
+
+packet ReadLoopbackModeComplete : CommandComplete (CommandOpCode = READ_LOOPBACK_MODE) {
+  Status : ErrorCodes,
+  LoopbackMode : LoopbackMode,
+}
+
+packet WriteLoopbackMode : CommandPacket (OpCode = WRITE_LOOPBACK_MODE) {
+  LoopbackMode : LoopbackMode,
+}
+
+packet WriteLoopbackModeComplete : CommandComplete (CommandOpCode = WRITE_LOOPBACK_MODE) {
+  Status : ErrorCodes,
+}
+
+packet EnableDeviceUnderTestMode : CommandPacket (OpCode = ENABLE_DEVICE_UNDER_TEST_MODE) {
+}
+
+packet EnableDeviceUnderTestModeComplete : CommandComplete (CommandOpCode = ENABLE_DEVICE_UNDER_TEST_MODE) {
+  Status : ErrorCodes,
+}
+
+enum SimplePairingDebugMode : 8 {
+  DISABLED = 0x00,
+  ENABLED = 0x01,
+}
+
+packet WriteSimplePairingDebugMode : CommandPacket (OpCode = WRITE_SIMPLE_PAIRING_DEBUG_MODE) {
+  SimplePairingDebugMode : SimplePairingDebugMode,
+}
+
+packet WriteSimplePairingDebugModeComplete : CommandComplete (CommandOpCode = WRITE_SIMPLE_PAIRING_DEBUG_MODE) {
+  Status : ErrorCodes,
+}
+
+enum Dm1AcluMode : 8 {
+  DISABLED = 0x00,
+  ENABLED = 0x01,
+}
+
+enum EscoLoopbackMode : 8 {
+  DISABLED = 0x00,
+  ENABLED = 0x01,
+}
+
+packet WriteSecureConnectionsTestMode : CommandPacket (OpCode = WRITE_SECURE_CONNECTIONS_TEST_MODE) {
+  ConnectionHandle : 12,
+  reserved : 4,
+  Dm1AcluMode : Dm1AcluMode,
+  EscoLoopbackMode : EscoLoopbackMode,
+}
+
+packet WriteSecureConnectionsTestModeComplete : CommandComplete (CommandOpCode = WRITE_SECURE_CONNECTIONS_TEST_MODE) {
+  Status : ErrorCodes,
+}
+
+  // LE_CONTROLLER
+packet LeSetEventMask : CommandPacket (OpCode = LE_SET_EVENT_MASK) {
+  LeEventMask : 64,
+}
+
+packet LeSetEventMaskComplete : CommandComplete (CommandOpCode = LE_SET_EVENT_MASK) {
+  Status : ErrorCodes,
+}
+
+packet LeReadBufferSize : CommandPacket (OpCode = LE_READ_BUFFER_SIZE) {
+}
+
+packet LeReadBufferSizeComplete : CommandComplete (CommandOpCode = LE_READ_BUFFER_SIZE) {
+  Status : ErrorCodes,
+  HcLeDataPacketLength : 16,
+  HcTotalNumLePackets : 8,
+}
+
+packet LeReadLocalSupportedFeatures : CommandPacket (OpCode = LE_READ_LOCAL_SUPPORTED_FEATURES) {
+}
+
+packet LeReadLocalSupportedFeaturesComplete : CommandComplete (CommandOpCode = LE_READ_LOCAL_SUPPORTED_FEATURES) {
+  Status : ErrorCodes,
+  LeFeatures : 64,
+}
+
+packet LeSetRandomAddress : CommandPacket (OpCode = LE_SET_RANDOM_ADDRESS) {
+  RandomAddress : 48,
+}
+
+packet LeSetRandomAddressComplete : CommandComplete (CommandOpCode = LE_SET_RANDOM_ADDRESS) {
+  Status : ErrorCodes,
+}
+
+enum AdvertisingFilterPolicy : 1 {
+  ALL_DEVICES = 0, // Default
+  ONLY_WHITE_LISTED_DEVICES = 1,
+}
+
+enum PeerAddressType : 8 {
+  PUBLIC_DEVICE_OR_IDENTITY_ADDRESS = 0x00,
+  RANDOM_DEVICE_OR_IDENTITY_ADDRESS = 0x01,
+}
+
+enum AdvertisingEventType : 8 {
+  ADV_IND = 0x00,
+  ADV_DIRECT_IND = 0x01,
+  ADV_SCAN_IND = 0x02,
+  ADV_NONCONN_IND = 0x03,
+  SCAN_RSP = 0x04,
+}
+
+enum AddressType : 8 {
+  PUBLIC_DEVICE_ADDRESS = 0x00,
+  RANDOM_DEVICE_ADDRESS = 0x01,
+  PUBLIC_IDENTITY_ADDRESS = 0x02,
+  RANDOM_IDENTITY_ADDRESS = 0x03,
+}
+
+packet LeSetAdvertisingParameters : LeAdvertisingCommand (OpCode = LE_SET_ADVERTISING_PARAMETERS) {
+  AdvertisingIntervalMin : 16,
+  AdvertisingIntervalMax : 16,
+  AdvertisingType : AdvertisingEventType,
+  OwnAddressType : AddressType,
+  PeerAddressType : PeerAddressType,
+  PeerAddress : 48,
+  AdvertisingChannelMap : 8,
+  ConnectionFilterPolicy : AdvertisingFilterPolicy,
+  ScanFilterPolicy : AdvertisingFilterPolicy,
+  reserved : 6,
+}
+
+packet LeSetAdvertisingParametersComplete : CommandComplete (CommandOpCode = LE_SET_ADVERTISING_PARAMETERS) {
+  Status : ErrorCodes,
+}
+
+packet LeReadAdvertisingChannelTxPower : LeAdvertisingCommand (OpCode = LE_READ_ADVERTISING_CHANNEL_TX_POWER) {
+}
+
+packet LeReadAdvertisingChannelTxPowerComplete : CommandComplete (CommandOpCode = LE_READ_ADVERTISING_CHANNEL_TX_POWER) {
+  Status : ErrorCodes,
+  TransmitPowerLevel : 8, // (-20dBm to 10dBm) Accuracy: +/-4dB
+}
+
+packet LeSetAdvertisingData : LeAdvertisingCommand (OpCode = LE_SET_ADVERTISING_DATA) {
+  payload,
+}
+
+packet LeSetAdvertisingDataComplete : CommandComplete (CommandOpCode = LE_SET_ADVERTISING_DATA) {
+  Status : ErrorCodes,
+}
+
+packet LeSetScanResponseData : LeAdvertisingCommand (OpCode = LE_SET_SCAN_RESPONSE_DATA) {
+  payload,
+}
+
+packet LeSetScanResponseDataComplete : CommandComplete (CommandOpCode = LE_SET_SCAN_RESPONSE_DATA) {
+  Status : ErrorCodes,
+}
+
+packet LeSetAdvertisingEnable : LeAdvertisingCommand (OpCode = LE_SET_ADVERTISING_ENABLE) {
+  AdvertisingEnable : Enable, // Default DISABLED
+}
+
+packet LeSetAdvertisingEnableComplete : CommandComplete (CommandOpCode = LE_SET_ADVERTISING_ENABLE) {
+  Status : ErrorCodes,
+}
+
+enum LeScanType : 8 {
+  PASSIVE = 0x00, // Default
+  ACTIVE = 0x01,
+}
+
+enum LeSetScanningFilterPolicy : 8 {
+  ACCEPT_ALL = 0x00, // Default
+  WHITE_LIST_ONLY = 0x01,
+  CHECK_INITIATORS_IDENTITY = 0x02,
+  WHITE_LIST_AND_INITIATORS_IDENTITY = 0x03,
+}
+
+packet LeSetScanParameters : LeAdvertisingCommand (OpCode = LE_SET_SCAN_PARAMETERS) {
+  LeScanType : LeScanType,
+  LeScanInterval : 16, // 0x0004-0x4000 Default 0x10 (10ms)
+  LeScanWindow : 16, // Default 0x10 (10ms)
+  OwnAddressType : AddressType,
+  ScanningFilterPolicy : LeSetScanningFilterPolicy,
+}
+
+packet LeSetScanParametersComplete : CommandComplete (CommandOpCode = LE_SET_SCAN_PARAMETERS) {
+  Status : ErrorCodes,
+}
+
+packet LeSetScanEnable : LeAdvertisingCommand (OpCode = LE_SET_SCAN_ENABLE) {
+  LeScanEnable : Enable,
+  FilterDuplicates : Enable,
+}
+
+packet LeSetScanEnableComplete : CommandComplete (CommandOpCode = LE_SET_SCAN_ENABLE) {
+  Status : ErrorCodes,
+}
+
+enum InitiatorFilterPolicy : 8 {
+  USE_PEER_ADDRESS = 0x00,
+  USE_WHITE_LIST = 0x01,
+}
+
+enum OwnAddressType : 8 {
+  PUBLIC_DEVICE_ADDRESS = 0x00,
+  RANDOM_DEVICE_ADDRESS = 0x01,
+  RESOLVABLE_OR_PUBLIC_ADDRESS = 0x02,
+  RESOLVABLE_OR_RANDOM_ADDRESS = 0x03,
+}
+
+packet LeCreateConnection : LeCreateConnectionCommand (OpCode = LE_CREATE_CONNECTION) {
+  LeScanInterval : 16, // 0x0004-0x4000
+  LeScanWindow : 16, // < = LeScanInterval
+  InitiatorFilterPolicy : InitiatorFilterPolicy,
+  PeerAddressType : AddressType,
+  PeerAddress : 48,
+  OwnAddressType : OwnAddressType,
+  ConnIntervalMin : 16, // 0x0006-0x0C80 (7.5ms to 4s)
+  ConnIntervalMax : 16, // 0x0006-0x0C80 (7.5ms to 4s)
+  ConnLatency : 16, // 0x0006-0x01F3
+  SupervisionTimeout : 16, // 0x00A to 0x0C80 (100ms to 32s)
+  MinimumCeLength : 16, // 0.625ms
+  MaximumCeLength : 16, // 0.625ms
+}
+
+packet LeCreateConnectionStatus : CommandStatus (CommandOpCode = LE_CREATE_CONNECTION) {
+}
+
+packet LeCreateConnectionCancel : LeCreateConnectionCommand (OpCode = LE_CREATE_CONNECTION_CANCEL) {
+}
+
+packet LeCreateConnectionCancelComplete : CommandComplete (CommandOpCode = LE_CREATE_CONNECTION_CANCEL) {
+  Status : ErrorCodes,
+}
+
+packet LeReadWhiteListSize : LeCreateConnectionCommand (OpCode = LE_READ_WHITE_LIST_SIZE) {
+}
+
+packet LeReadWhiteListSizeComplete : CommandComplete (CommandOpCode = LE_READ_WHITE_LIST_SIZE) {
+  Status : ErrorCodes,
+  WhiteListSize : 8,
+}
+
+packet LeClearWhiteList : LeCreateConnectionCommand (OpCode = LE_CLEAR_WHITE_LIST) {
+}
+
+packet LeClearWhiteListComplete : CommandComplete (CommandOpCode = LE_CLEAR_WHITE_LIST) {
+  Status : ErrorCodes,
+}
+
+enum WhiteListAddressType : 8 {
+  PUBLIC = 0x00,
+  RANDOM = 0x01,
+  ANONYMOUS_ADVERTISERS = 0xFF,
+}
+
+packet LeAddDeviceToWhiteList : LeCreateConnectionCommand (OpCode = LE_ADD_DEVICE_TO_WHITE_LIST) {
+  AddressType : WhiteListAddressType,
+  Address : 48,
+}
+
+packet LeAddDeviceToWhiteListComplete : CommandComplete (CommandOpCode = LE_ADD_DEVICE_TO_WHITE_LIST) {
+  Status : ErrorCodes,
+}
+
+packet LeRemoveDeviceFromWhiteList : LeCreateConnectionCommand (OpCode = LE_REMOVE_DEVICE_FROM_WHITE_LIST) {
+  AddressType : WhiteListAddressType,
+  Address : 48,
+}
+
+packet LeRemoveDeviceFromWhiteListComplete : CommandComplete (CommandOpCode = LE_REMOVE_DEVICE_FROM_WHITE_LIST) {
+  Status : ErrorCodes,
+}
+
+packet LeConnectionUpdate : LeConnectionManagementCommand (OpCode = LE_CONNECTION_UPDATE) {
+  ConnectionHandle : 12,
+  reserved : 4,
+  ConnIntervalMin : 16, // 0x0006-0x0C80 (7.5ms to 4s)
+  ConnIntervalMax : 16, // 0x0006-0x0C80 (7.5ms to 4s)
+  ConnLatency : 16, // 0x0006-0x01F3
+  SupervisionTimeout : 16, // 0x00A to 0x0C80 (100ms to 32s)
+  MinimumCeLength : 16, // 0.625ms
+  MaximumCeLength : 16, // 0.625ms
+}
+
+packet LeConnectionUpdateStatus : CommandStatus (CommandOpCode = LE_CONNECTION_UPDATE) {
+}
+
+packet LeSetHostChannelClassification : LeConnectionManagementCommand (OpCode = LE_SET_HOST_CHANNEL_CLASSIFICATION) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeReadChannelMap : LeConnectionManagementCommand (OpCode = LE_READ_CHANNEL_MAP) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeReadRemoteFeatures : LeConnectionManagementCommand (OpCode = LE_READ_REMOTE_FEATURES) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeEncrypt : LeSecurityCommand (OpCode = LE_ENCRYPT) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeRand : LeSecurityCommand (OpCode = LE_RAND) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeStartEncryption : LeSecurityCommand (OpCode = LE_START_ENCRYPTION) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeLongTermKeyRequestReply : LeSecurityCommand (OpCode = LE_LONG_TERM_KEY_REQUEST_REPLY) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeLongTermKeyRequestNegativeReply : LeSecurityCommand (OpCode = LE_LONG_TERM_KEY_REQUEST_NEGATIVE_REPLY) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeReadSupportedStates : CommandPacket (OpCode = LE_READ_SUPPORTED_STATES) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeReceiverTest : CommandPacket (OpCode = LE_RECEIVER_TEST) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeTransmitterTest : CommandPacket (OpCode = LE_TRANSMITTER_TEST) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeTestEnd : CommandPacket (OpCode = LE_TEST_END) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeRemoteConnectionParameterRequestReply : LeConnectionManagementCommand (OpCode = LE_REMOTE_CONNECTION_PARAMETER_REQUEST_REPLY) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeRemoteConnectionParameterRequestNegativeReply : LeConnectionManagementCommand (OpCode = LE_REMOTE_CONNECTION_PARAMETER_REQUEST_NEGATIVE_REPLY) {
+  payload,  // placeholder (unimplemented)
+}
+
+
+packet LeSetDataLength : LeConnectionManagementCommand (OpCode = LE_SET_DATA_LENGTH) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeReadSuggestedDefaultDataLength : LeConnectionManagementCommand (OpCode = LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeWriteSuggestedDefaultDataLength : LeConnectionManagementCommand (OpCode = LE_WRITE_SUGGESTED_DEFAULT_DATA_LENGTH) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeReadLocalP256PublicKeyCommand : LeSecurityCommand (OpCode = LE_READ_LOCAL_P_256_PUBLIC_KEY_COMMAND) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeGenerateDhkeyCommand : LeSecurityCommand (OpCode = LE_GENERATE_DHKEY_COMMAND) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeAddDeviceToResolvingList : LeSecurityCommand (OpCode = LE_ADD_DEVICE_TO_RESOLVING_LIST) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeRemoveDeviceFromResolvingList : LeSecurityCommand (OpCode = LE_REMOVE_DEVICE_FROM_RESOLVING_LIST) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeClearResolvingList : LeSecurityCommand (OpCode = LE_CLEAR_RESOLVING_LIST) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeReadResolvingListSize : LeSecurityCommand (OpCode = LE_READ_RESOLVING_LIST_SIZE) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeReadPeerResolvableAddress : LeSecurityCommand (OpCode = LE_READ_PEER_RESOLVABLE_ADDRESS) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeReadLocalResolvableAddress : LeSecurityCommand (OpCode = LE_READ_LOCAL_RESOLVABLE_ADDRESS) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeSetAddressResolutionEnable : LeSecurityCommand (OpCode = LE_SET_ADDRESS_RESOLUTION_ENABLE) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeSetResolvablePrivateAddressTimeout : LeSecurityCommand (OpCode = LE_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeReadMaximumDataLength : CommandPacket (OpCode = LE_READ_MAXIMUM_DATA_LENGTH) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeReadPhy : LeConnectionManagementCommand (OpCode = LE_READ_PHY) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeSetDefaultPhy : LeConnectionManagementCommand (OpCode = LE_SET_DEFAULT_PHY) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeSetPhy : LeConnectionManagementCommand (OpCode = LE_SET_PHY) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeEnhancedReceiverTest : CommandPacket (OpCode = LE_ENHANCED_RECEIVER_TEST) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeEnhancedTransmitterTest : CommandPacket (OpCode = LE_ENHANCED_TRANSMITTER_TEST) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeSetExtendedAdvertisingRandomAddress : LeAdvertisingCommand (OpCode = LE_SET_EXTENDED_ADVERTISING_RANDOM_ADDRESS) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeSetExtendedAdvertisingParameters : LeAdvertisingCommand (OpCode = LE_SET_EXTENDED_ADVERTISING_PARAMETERS) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeSetExtendedAdvertisingData : LeAdvertisingCommand (OpCode = LE_SET_EXTENDED_ADVERTISING_DATA) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeSetExtendedAdvertisingScanResponse : LeAdvertisingCommand (OpCode = LE_SET_EXTENDED_ADVERTISING_SCAN_RESPONSE) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeSetExtendedAdvertisingEnable : LeAdvertisingCommand (OpCode = LE_SET_EXTENDED_ADVERTISING_ENABLE) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeReadMaximumAdvertisingDataLength : CommandPacket (OpCode = LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeReadNumberOfSupportedAdvertisingSets : CommandPacket (OpCode = LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeRemoveAdvertisingSet : LeAdvertisingCommand (OpCode = LE_REMOVE_ADVERTISING_SET) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeClearAdvertisingSets : LeAdvertisingCommand (OpCode = LE_CLEAR_ADVERTISING_SETS) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeSetPeriodicAdvertisingParam : LeAdvertisingCommand (OpCode = LE_SET_PERIODIC_ADVERTISING_PARAM) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeSetPeriodicAdvertisingData : LeAdvertisingCommand (OpCode = LE_SET_PERIODIC_ADVERTISING_DATA) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeSetPeriodicAdvertisingEnable : LeAdvertisingCommand (OpCode = LE_SET_PERIODIC_ADVERTISING_ENABLE) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeSetExtendedScanParameters : LeAdvertisingCommand (OpCode = LE_SET_EXTENDED_SCAN_PARAMETERS) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeSetExtendedScanEnable : LeAdvertisingCommand (OpCode = LE_SET_EXTENDED_SCAN_ENABLE) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeExtendedCreateConnection : LeCreateConnectionCommand (OpCode = LE_EXTENDED_CREATE_CONNECTION) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LePeriodicAdvertisingCreateSync : LeAdvertisingCommand (OpCode = LE_PERIODIC_ADVERTISING_CREATE_SYNC) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LePeriodicAdvertisingCreateSyncCancel : LeAdvertisingCommand (OpCode = LE_PERIODIC_ADVERTISING_CREATE_SYNC_CANCEL) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LePeriodicAdvertisingTerminateSync : LeAdvertisingCommand (OpCode = LE_PERIODIC_ADVERTISING_TERMINATE_SYNC) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeAddDeviceToPeriodicAdvertisingList : LeAdvertisingCommand (OpCode = LE_ADD_DEVICE_TO_PERIODIC_ADVERTISING_LIST) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeRemoveDeviceFromPeriodicAdvertisingList : LeAdvertisingCommand (OpCode = LE_REMOVE_DEVICE_FROM_PERIODIC_ADVERTISING_LIST) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeClearPeriodicAdvertisingList : LeAdvertisingCommand (OpCode = LE_CLEAR_PERIODIC_ADVERTISING_LIST) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeReadPeriodicAdvertisingListSize : LeAdvertisingCommand (OpCode = LE_READ_PERIODIC_ADVERTISING_LIST_SIZE) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeReadTransmitPower : LeAdvertisingCommand (OpCode = LE_READ_TRANSMIT_POWER) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeReadRfPathCompensationPower : LeAdvertisingCommand (OpCode = LE_READ_RF_PATH_COMPENSATION_POWER) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeWriteRfPathCompensationPower : LeAdvertisingCommand (OpCode = LE_WRITE_RF_PATH_COMPENSATION_POWER) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeSetPrivacyMode : LeSecurityCommand (OpCode = LE_SET_PRIVACY_MODE) {
+  payload,  // placeholder (unimplemented)
+}
+
+
+  // VENDOR_SPECIFIC
+packet LeGetVendorCapabilities : VendorCommand (OpCode = LE_GET_VENDOR_CAPABILITIES) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeMultiAdvt : VendorCommand (OpCode = LE_MULTI_ADVT) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeBatchScan : VendorCommand (OpCode = LE_BATCH_SCAN) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeAdvFilter : VendorCommand (OpCode = LE_ADV_FILTER) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeTrackAdv : VendorCommand (OpCode = LE_TRACK_ADV) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeEnergyInfo : VendorCommand (OpCode = LE_ENERGY_INFO) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet LeExtendedScanParams : VendorCommand (OpCode = LE_EXTENDED_SCAN_PARAMS) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet ControllerDebugInfo : VendorCommand (OpCode = CONTROLLER_DEBUG_INFO) {
+  payload,  // placeholder (unimplemented)
+}
+
+packet ControllerA2DPOpcode : VendorCommand (OpCode = CONTROLLER_A2DP_OPCODE) {
+  payload,  // placeholder (unimplemented)
+}
+
+// HCI Event Packets
+
+packet InquiryComplete : EventPacket (EventCode = INQUIRY_COMPLETE){
+  Status : ErrorCodes,
+}
+
+packet InquiryResult : EventPacket (EventCode = INQUIRY_RESULT){
+  NumResponses : 8,
+  BdAddr : 48,
+  PageScanRepetitionMode : PageScanRepetitionMode,
+  reserved : 8,
+  reserved : 8,
+  ClassOfDevice : 24, // ClassOfDevice,
+  ClockOffset : 15,
+  reserved : 1,
+}
+
+enum LinkType : 8 {
+  SCO = 0x00,
+  ACL = 0x01,
+}
+
+packet ConnectionComplete : EventPacket (EventCode = CONNECTION_COMPLETE){
+  Status : ErrorCodes,
+  ConnectionHandle : 12,
+  reserved : 4,
+  BdAddr : 48,
+  LinkType : LinkType,
+  EncryptionEnabled : Enable,
+}
+
+enum ConnectionRequestLinkType : 8 {
+  SCO = 0x00,
+  ACL = 0x01,
+  ESCO = 0x02,
+}
+
+packet ConnectionRequest : EventPacket (EventCode = CONNECTION_REQUEST){
+  BdAddr : 48,
+  ClassOfDevice : 24,
+  LinkType : ConnectionRequestLinkType,
+}
+
+packet DisconnectionComplete : EventPacket (EventCode = DISCONNECTION_COMPLETE){
+  Status : ErrorCodes,
+  ConnectionHandle : 12,
+  reserved : 4,
+  Reason : ErrorCodes,
+}
+
+packet AuthenticationComplete : EventPacket (EventCode = AUTHENTICATION_COMPLETE){
+  Status : ErrorCodes,
+  ConnectionHandle : 12,
+  reserved : 4,
+}
+
+packet RemoteNameRequestComplete : EventPacket (EventCode = REMOTE_NAME_REQUEST_COMPLETE){
+  Status : ErrorCodes,
+  BdAddr : 48,
+  payload,
+}
+
+enum EncryptionEnabled : 8 {
+  OFF = 0x00,
+  ON = 0x01, // E0 for BR/EDR and AES-CCM for LE
+  BR_EDR_AES_CCM = 0x02,
+}
+
+packet EncryptionChange : EventPacket (EventCode = ENCRYPTION_CHANGE){
+  Status : ErrorCodes,
+  ConnectionHandle : 12,
+  reserved : 4,
+  EncryptionEnabled : EncryptionEnabled,
+}
+
+packet ChangeConnectionLinkKeyComplete : EventPacket (EventCode = CHANGE_CONNECTION_LINK_KEY_COMPLETE){
+  Status : ErrorCodes,
+  ConnectionHandle : 12,
+  reserved : 4,
+}
+
+packet MasterLinkKeyComplete : EventPacket (EventCode = MASTER_LINK_KEY_COMPLETE){
+  Status : ErrorCodes,
+  ConnectionHandle : 12,
+  reserved : 4,
+  KeyFlag : KeyFlag,
+}
+
+packet ReadRemoteSupportedFeaturesComplete : EventPacket (EventCode = READ_REMOTE_SUPPORTED_FEATURES_COMPLETE){
+  Status : ErrorCodes,
+  ConnectionHandle : 12,
+  reserved : 4,
+  LmpFeatures : 64,
+}
+
+packet ReadRemoteVersionInformationComplete : EventPacket (EventCode = READ_REMOTE_VERSION_INFORMATION_COMPLETE){
+  Status : ErrorCodes,
+  ConnectionHandle : 12,
+  reserved : 4,
+  Version : 8,
+  ManufacturerName : 8,
+  SubVersion : 8,
+}
+
+enum ServiceType : 8 {
+  NO_TRAFFIC = 0x00,
+  BEST_EFFORT = 0x01,
+  GUARANTEED = 0x02,
+}
+
+packet QosSetupComplete : EventPacket (EventCode = QOS_SETUP_COMPLETE){
+  Status : ErrorCodes,
+  ConnectionHandle : 12,
+  reserved : 4,
+  reserved : 8,
+  ServiceType : ServiceType,
+  TokenRate : 32, // Octets/s
+  PeakBandwidth : 32, // Octets/s
+  Latency : 32, // Octets/s
+  DelayVariation : 32, // microseconds
+}
+
+// Command Complete and Command Status Events are implemented above Commands.
+
+packet HardwareError : EventPacket (EventCode = HARDWARE_ERROR){
+  HardwareCode : 8,
+}
+
+packet FlushOccured : EventPacket (EventCode = FLUSH_OCCURRED){
+  ConnectionHandle : 12,
+  reserved : 4,
+}
+
+enum Role : 8 {
+  MASTER = 0x00,
+  SLAVE = 0x01,
+}
+
+packet RoleChange : EventPacket (EventCode = ROLE_CHANGE){
+  Status : ErrorCodes,
+  BdAddr : 48,
+  NewRole : Role,
+}
+
+packet NumberOfCompletedPackets : EventPacket (EventCode = NUMBER_OF_COMPLETED_PACKETS){
+  payload,
+}
+
+enum Mode : 8 {
+  ACTIVE = 0x00,
+  HOLD = 0x01,
+  SNIFF = 0x02,
+}
+
+packet ModeChange : EventPacket (EventCode = MODE_CHANGE){
+  Status : ErrorCodes,
+  ConnectionHandle : 12,
+  reserved : 4,
+  CurrentMode : Mode,
+  Interval : 16, // 0x002 - 0xFFFE (1.25ms - 40.9s)
+}
+
+packet ReturnLinkKeys : EventPacket (EventCode = RETURN_LINK_KEYS){
+  payload, // placeholder (unimplemented)
+}
+
+packet PinCodeRequest : EventPacket (EventCode = PIN_CODE_REQUEST){
+  BdAddr : 48,
+}
+
+packet LinkKeyRequest : EventPacket (EventCode = LINK_KEY_REQUEST){
+  BdAddr : 48,
+}
+
+packet LinkKeyNotification : EventPacket (EventCode = LINK_KEY_NOTIFICATION){
+  payload, // placeholder (unimplemented)
+}
+
+packet LoopbackCommand : EventPacket (EventCode = LOOPBACK_COMMAND){
+  payload, // placeholder (unimplemented)
+}
+
+packet DataBufferOverflow : EventPacket (EventCode = DATA_BUFFER_OVERFLOW){
+  LinkType : LinkType,
+}
+
+packet MaxSlotsChange : EventPacket (EventCode = MAX_SLOTS_CHANGE){
+  ConnectionHandle : 12,
+  reserved : 4,
+  LmpMaxSlots : 8,
+}
+
+packet ReadClockOffsetComplete : EventPacket (EventCode = READ_CLOCK_OFFSET_COMPLETE){
+  Status : ErrorCodes,
+  ConnectionHandle : 12,
+  reserved : 4,
+  ClockOffset : 15,
+  reserved : 1,
+}
+
+packet ConnectionPacketTypeChange : EventPacket (EventCode = CONNECTION_PACKET_TYPE_CHANGE){
+  Status : ErrorCodes,
+  ConnectionHandle : 12,
+  reserved : 4,
+  PacketType : 16,
+}
+
+packet QosViolation : EventPacket (EventCode = QOS_VIOLATION){
+  payload, // placeholder (unimplemented)
+}
+
+packet PageScanRepetitionModeChange : EventPacket (EventCode = PAGE_SCAN_REPETITION_MODE_CHANGE){
+  payload, // placeholder (unimplemented)
+}
+
+packet FlowSpecificationComplete : EventPacket (EventCode = FLOW_SPECIFICATION_COMPLETE){
+  payload, // placeholder (unimplemented)
+}
+
+packet InquiryResultWithRssi : EventPacket (EventCode = INQUIRY_RESULT_WITH_RSSI){
+  NumResponses : 8,
+  Address : 48,
+  PageScanRepetitionMode : PageScanRepetitionMode,
+  reserved : 8,
+  ClassOfDevice : 24, // ClassOfDevice,
+  ClockOffset : 15,
+  reserved : 1,
+  Rssi : 8,
+}
+
+packet ReadRemoteExtendedFeaturesComplete : EventPacket (EventCode = READ_REMOTE_EXTENDED_FEATURES_COMPLETE){
+  Status : ErrorCodes,
+  ConnectionHandle : 12,
+  reserved : 4,
+  PageNumber : 8,
+  MaximumPageNumber : 8,
+  ExtendedLmpFeatures : 64,
+}
+
+packet SynchronousConnectionComplete : EventPacket (EventCode = SYNCHRONOUS_CONNECTION_COMPLETE){
+  payload, // placeholder (unimplemented)
+}
+
+packet SynchronousConnectionChanged : EventPacket (EventCode = SYNCHRONOUS_CONNECTION_CHANGED){
+  payload, // placeholder (unimplemented)
+}
+
+packet SniffSubratingEvent : EventPacket (EventCode = SNIFF_SUBRATING){
+  Status : ErrorCodes,
+  ConnectionHandle : 12,
+  reserved : 4,
+  MaximumTransmitLatency : 16, // 0x000 - 0xFFFE (0s - 40.9s)
+  MaximumReceiveLatency : 16, // 0x000 - 0xFFFE (0s - 40.9s)
+  MinimumRemoteTimeout : 16, // 0x000 - 0xFFFE (0s - 40.9s)
+  MInimumLocalTimeout : 16, // 0x000 - 0xFFFE (0s - 40.9s)
+}
+
+packet ExtendedInquiryResult : EventPacket (EventCode = EXTENDED_INQUIRY_RESULT) {
+  fixed = 0x01 : 8,
+  Address : 48,
+  PageScanRepetitionMode : PageScanRepetitionMode,
+  reserved : 8,
+  ClassOfDevice : 24, // ClassOfDevice,
+  ClockOffset : 15,
+  reserved : 1,
+  Rssi : 8,
+  payload,
+}
+
+packet EncryptionKeyRefreshComplete : EventPacket (EventCode = ENCRYPTION_KEY_REFRESH_COMPLETE){
+  Status : ErrorCodes,
+  ConnectionHandle : 12,
+  reserved : 4,
+}
+
+packet IoCapabilityRequest : EventPacket (EventCode = IO_CAPABILITY_REQUEST){
+  BdAddr : 48,
+}
+
+packet IoCapabilityResponse : EventPacket (EventCode = IO_CAPABILITY_RESPONSE){
+  BdAddr : 48,
+  IoCapability : IoCapability,
+  OobDataPresent : OobDataPresent,
+  AuthenticationRequirements : AuthenticationRequirements,
+}
+
+packet UserConfirmationRequest : EventPacket (EventCode = USER_CONFIRMATION_REQUEST){
+  BdAddr : 48,
+  NumericValue : 20, // 0x00000-0xF423F (000000 - 999999)
+  reserved : 12,
+}
+
+packet UserPasskeyRequest : EventPacket (EventCode = USER_PASSKEY_REQUEST){
+  BdAddr : 48,
+}
+
+packet RemoteOobDataRequest : EventPacket (EventCode = REMOTE_OOB_DATA_REQUEST){
+  BdAddr : 48,
+}
+
+packet SimplePairingComplete : EventPacket (EventCode = SIMPLE_PAIRING_COMPLETE){
+  Status : ErrorCodes,
+  BdAddr : 48,
+}
+
+packet LinkSupervisionTimeoutChanged : EventPacket (EventCode = LINK_SUPERVISION_TIMEOUT_CHANGED){
+  ConnectionHandle : 12,
+  reserved : 4,
+  LinkSupervisionTimeout : 16, // 0x001-0xFFFF (0.625ms-40.9s)
+}
+
+packet EnhancedFlushComplete : EventPacket (EventCode = ENHANCED_FLUSH_COMPLETE){
+  ConnectionHandle : 12,
+  reserved : 4,
+}
+
+packet UserPasskeyNotification : EventPacket (EventCode = USER_PASSKEY_NOTIFICATION){
+  BdAddr : 48,
+  Passkey : 20, // 0x00000-0xF423F (000000 - 999999)
+  reserved : 12,
+}
+
+packet KeypressNotification : EventPacket (EventCode = KEYPRESS_NOTIFICATION){
+  BdAddr : 48,
+  NotificationType : KeypressNotificationType,
+}
+
+packet RemoteHostSupportedFeaturesNotification : EventPacket (EventCode = REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION){
+  BdAddr : 48,
+  HostSupportedFeatures : 64,
+}
+
+packet LeMetaEvent : EventPacket (EventCode = LE_META_EVENT) {
+  SubeventCode : SubeventCode,
+  payload,
+}
+
+packet NumberOfCompletedDataBlocks : EventPacket (EventCode = NUMBER_OF_COMPLETED_DATA_BLOCKS){
+  payload, // placeholder (unimplemented)
+}
+
+// LE Events
+
+enum MasterClockAccuracy : 8 {
+  PPM_500 = 0x00,
+  PPM_250 = 0x01,
+  PPM_150 = 0x02,
+  PPM_100 = 0x03,
+  PPM_75 = 0x04,
+  PPM_50 = 0x05,
+  PPM_30 = 0x06,
+  PPM_20 = 0x07,
+}
+
+packet LeConnectionComplete : LeMetaEvent (SubeventCode = CONNECTION_COMPLETE) {
+  Status : ErrorCodes,
+  ConnectionHandle : 12,
+  reserved : 4,
+  Role : Role,
+  PeerAddressType : PeerAddressType,
+  PeerAddress : 48,
+  ConnInterval : 16, // 0x006 - 0x0C80 (7.5ms - 4000ms)
+  ConnLatency : 16,  // Number of connection events
+  SupervisionTimeout : 16,  // 0x000A to 0x0C80 (100ms to 32s)
+  MasterClockAccuracy : MasterClockAccuracy,
+}
+
+packet LeAdvertisingReport : LeMetaEvent (SubeventCode = ADVERTISING_REPORT) {
+  payload,
+}
+
+packet LeConnectionUpdateComplete : LeMetaEvent (SubeventCode = CONNECTION_UPDATE_COMPLETE) {
+  Status : ErrorCodes,
+  ConnectionHandle : 12,
+  reserved : 4,
+  ConnInterval : 16, // 0x006 - 0x0C80 (7.5ms - 4000ms)
+  ConnLatency : 16,  // Number of connection events
+  SupervisionTimeout : 16,  // 0x000A to 0x0C80 (100ms to 32s)
+}
+
+packet LeReadRemoteFeaturesComplete : LeMetaEvent (SubeventCode = READ_REMOTE_FEATURES_COMPLETE) {
+  Status : ErrorCodes,
+  ConnectionHandle : 12,
+  reserved : 4,
+  LeFeatures : 64,
+}
+
+packet LeLongTermKeyRequest : LeMetaEvent (SubeventCode = LONG_TERM_KEY_REQUEST) {
+  Status : ErrorCodes,
+  ConnectionHandle : 12,
+  reserved : 4,
+  RandomNumber : 64,
+  EncryptedDiversifier : 16,
+}
+
+packet LeRemoteConnectionParameterRequest : LeMetaEvent (SubeventCode = REMOTE_CONNECTION_PARAMETER_REQUEST) {
+  ConnectionHandle : 12,
+  reserved : 4,
+  IntervalMin : 16, // 0x006 - 0x0C80 (7.5ms - 4s)
+  IntervalMax : 16, // 0x006 - 0x0C80 (7.5ms - 4s)
+  Latency : 16,  // Number of connection events (0x0000 to 0x01f3 (499)
+  Timeout : 16,  // 0x000A to 0x0C80 (100ms to 32s)
+}
+
+packet LeDataLengthChange : LeMetaEvent (SubeventCode = DATA_LENGTH_CHANGE) {
+  ConnectionHandle : 12,
+  reserved : 4,
+  MaxTxOctets : 16, // 0x001B - 0x00FB
+  MaxTxTime : 16, // 0x0148 - 0x4290
+  MaxRxOctets : 16, // 0x001B - 0x00FB
+  MaxRxTime : 16, // 0x0148 - 0x4290
+}
+
+packet ReadLocalP256PublicKeyComplete : LeMetaEvent (SubeventCode = READ_LOCAL_P256_PUBLIC_KEY_COMPLETE) {
+  Status : ErrorCodes,
+  payload,
+}
+
+packet GenerateDhKeyComplete : LeMetaEvent (SubeventCode = GENERATE_DHKEY_COMPLETE) {
+  Status : ErrorCodes,
+  payload,
+}
+
+packet LeEnhancedConnectionComplete : LeMetaEvent (SubeventCode = ENHANCED_CONNECTION_COMPLETE) {
+  Status : ErrorCodes,
+  ConnectionHandle : 12,
+  reserved : 4,
+  Role : Role,
+  PeerAddressType : PeerAddressType,
+  PeerAddress : 48,
+  LocalResolvablePrivateAddress : 48,
+  PeerResolvablePrivateAddress : 48,
+  ConnInterval : 16, // 0x006 - 0x0C80 (7.5ms - 4000ms)
+  ConnLatency : 16,  // Number of connection events
+  SupervisionTimeout : 16,  // 0x000A to 0x0C80 (100ms to 32s)
+  MasterClockAccuracy : MasterClockAccuracy,
+}
+
+enum DirectAdvertisingAddressType : 8 {
+  PUBLIC_DEVICE_ADDRESS = 0x00,
+  RANDOM_DEVICE_ADDRESS = 0x01,
+  PUBLIC_IDENTITY_ADDRESS = 0x02,
+  RANDOM_IDENTITY_ADDRESS = 0x03,
+  NO_ADDRESS = 0xFF,
+}
+
+enum DirectAdvertisingEventType : 8 {
+  ADV_DIRECT_IND = 0x01,
+}
+
+enum DirectAddressType : 8 {
+  RANDOM_DEVICE_ADDRESS = 0x01,
+}
+
+packet LeDirectedAdvertisingReport : LeMetaEvent (SubeventCode = DIRECTED_ADVERTISING_REPORT) {
+  payload, // placeholder (unimplemented)
+}
+
+packet LePhyUpdateComplete : LeMetaEvent (SubeventCode = PHY_UPDATE_COMPLETE) {
+  payload, // placeholder (unimplemented)
+}
+
+packet LeExtendedAdvertisingReport : LeMetaEvent (SubeventCode = EXTENDED_ADVERTISING_REPORT) {
+  payload, // placeholder (unimplemented)
+}
+
+packet LePeriodicAdvertisingSyncEstablished : LeMetaEvent (SubeventCode = PERIODIC_ADVERTISING_SYNC_ESTABLISHED) {
+  payload, // placeholder (unimplemented)
+}
+
+packet LePeriodicAdvertisingReport : LeMetaEvent (SubeventCode = PERIODIC_ADVERTISING_REPORT) {
+  payload, // placeholder (unimplemented)
+}
+
+packet LePeriodicAdvertisingSyncLost : LeMetaEvent (SubeventCode = PERIODIC_ADVERTISING_SYNC_LOST) {
+  payload, // placeholder (unimplemented)
+}
+
+packet LeScanTimeout : LeMetaEvent (SubeventCode = SCAN_TIMEOUT) {
+}
+
+packet LeAdvertisingSetTerminated : LeMetaEvent (SubeventCode = ADVERTISING_SET_TERMINATED) {
+  payload, // placeholder (unimplemented)
+}
+
+packet LeScanRequestReceived : LeMetaEvent (SubeventCode = SCAN_REQUEST_RECEIVED) {
+  payload, // placeholder (unimplemented)
+}

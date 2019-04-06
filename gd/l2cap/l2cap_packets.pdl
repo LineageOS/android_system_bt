@@ -1,0 +1,622 @@
+little_endian_packets
+
+packet BasicFrame {
+  size(payload) : 16,
+  ChannelId : 16,
+  payload,
+}
+
+// ChannelId 2 is connectionless
+packet GroupFrame : BasicFrame (ChannelId = 0x02) {
+  Psm : 16,
+  payload,
+}
+
+enum FrameType : 1 {
+  I_FRAME = 0,
+  S_FRAME = 1,
+}
+
+enum SupervisoryFunction : 2 {
+  RECEIVER_READY = 0,
+  REJECT = 1,
+  RECEIVER_NOT_READY = 2,
+  SELECT_REJECT = 3,
+}
+
+enum RetransmissionDisable : 1 {
+  NORMAL = 0,
+  DISABLE = 1,
+}
+
+enum SegmentationAndReassembly : 2 {
+  UNSEGMENTED = 0,
+  START = 1,
+  END = 2,
+  CONTINUATION = 3,
+}
+
+packet StandardFrame : BasicFrame {
+  FrameType : FrameType,
+  body,
+}
+
+group StandardSupervisoryControl {
+  fixed = 0 : 1,
+  S : SupervisoryFunction,
+  reserved : 3,
+  R : RetransmissionDisable,
+  ReqSeq : 6,
+  reserved : 2,
+}
+
+group StandardInformationControl {
+  TxSeq : 6,
+  R : RetransmissionDisable,
+  ReqSeq : 6,
+  Sar : SegmentationAndReassembly,
+}
+
+packet StandardSupervisoryFrame : StandardFrame (FrameType = S_FRAME) {
+  StandardSupervisoryControl,
+}
+
+packet StandardSupervisoryFrameWithFcs : StandardFrame (FrameType = S_FRAME) {
+  StandardSupervisoryControl,
+  Fcs : 16,
+}
+
+packet StandardInformationFrame : StandardFrame (FrameType = I_FRAME) {
+  StandardInformationControl,
+  payload,
+}
+
+packet StandardInformationFrameWithFcs : StandardFrame (FrameType = I_FRAME) {
+  StandardInformationControl,
+  payload,
+  Fcs : 16,
+}
+
+packet StandardInformationStartFrame : StandardInformationFrame (Sar = START) {
+  L2capSduLength : 16,
+  payload,
+}
+
+packet StandardInformationStartFrameWithFcs : StandardInformationFrameWithFcs (Sar = START) {
+  L2capSduLength : 16,
+  payload,
+}
+
+enum Poll : 1 {
+  NOT_SET = 0,
+  POLL = 1,
+}
+
+enum Final : 1 {
+  NOT_SET = 0,
+  POLL_RESPONSE = 1,
+}
+
+group EnhancedSupervisoryControl {
+  fixed = 0 : 1,
+  S : SupervisoryFunction,
+  P : Poll,
+  reserved : 2,
+  F : Final,
+  ReqSeq : 6,
+  reserved : 2,
+}
+
+group EnhancedInformationControl {
+  TxSeq : 6,
+  F : Final,
+  ReqSeq : 6,
+  Sar : SegmentationAndReassembly,
+}
+
+packet EnhancedSupervisoryFrame : StandardFrame (FrameType = S_FRAME) {
+  EnhancedSupervisoryControl,
+}
+
+packet EnhancedSupervisoryFrameWithFcs : StandardFrame (FrameType = S_FRAME) {
+  EnhancedSupervisoryControl,
+  Fcs : 16,
+}
+
+packet EnhancedInformationFrame : StandardFrame (FrameType = I_FRAME) {
+  EnhancedInformationControl,
+  payload,
+}
+
+packet EnhancedInformationFrameWithFcs : StandardFrame (FrameType = I_FRAME) {
+  EnhancedInformationControl,
+  payload,
+  Fcs : 16,
+}
+
+packet EnhancedInformationStartFrame : EnhancedInformationFrame (Sar = START) {
+  L2capSduLength : 16,
+  payload,
+}
+
+packet EnhancedInformationStartFrameWithFcs : EnhancedInformationFrameWithFcs (Sar = START) {
+  L2capSduLength : 16,
+  payload,
+}
+
+group ExtendedSupervisoryControl {
+  F : Final,
+  ReqSeq : 14,
+  S : SupervisoryFunction,
+  P : Poll,
+  reserved : 5,
+  reserved : 8,
+}
+
+group ExtendedInformationControl {
+  F : Final,
+  ReqSeq : 14,
+  Sar : SegmentationAndReassembly,
+  TxSeq : 14,
+}
+
+packet ExtendedSupervisoryFrame : StandardFrame (FrameType = S_FRAME) {
+  ExtendedSupervisoryControl,
+}
+
+packet ExtendedSupervisoryFrameWithFcs : StandardFrame (FrameType = S_FRAME) {
+  ExtendedSupervisoryControl,
+  Fcs : 16,
+}
+
+packet ExtendedInformationFrame : StandardFrame (FrameType = I_FRAME) {
+  ExtendedInformationControl,
+  payload,
+}
+
+packet ExtendedInformationFrameWithFcs : StandardFrame (FrameType = I_FRAME) {
+  ExtendedInformationControl,
+  payload,
+  Fcs : 16,
+}
+
+packet ExtendedInformationStartFrame : ExtendedInformationFrame (Sar = START) {
+  L2capSduLength : 16,
+  payload,
+}
+
+packet ExtendedInformationStartFrameWithFcs : ExtendedInformationFrameWithFcs (Sar = START) {
+  L2capSduLength : 16,
+  payload,
+}
+
+packet FirstLeInformationFrame : BasicFrame {
+  L2capSduLength : 16,
+  payload,
+}
+
+enum CommandCode : 8 {
+  COMMAND_REJECT = 0x01,
+  CONNECTION_REQUEST = 0x02,
+  CONNECTION_RESPONSE = 0x03,
+  CONFIGURATION_REQUEST = 0x04,
+  CONFIGURATION_RESPONSE = 0x05,
+  DISCONNECTION_REQUEST = 0x06,
+  DISCONNECTION_RESPONSE = 0x07,
+  ECHO_REQUEST = 0x08,
+  ECHO_RESPONSE = 0x09,
+  INFORMATION_REQUEST = 0x0A,
+  INFORMATION_RESPONSE = 0x0B,
+  CREATE_CHANNEL_REQUEST = 0x0C,
+  CREATE_CHANNEL_RESPONSE = 0x0D,
+  MOVE_CHANNEL_REQUEST = 0x0E,
+  MOVE_CHANNEL_RESPONSE = 0x0F,
+  MOVE_CHANNEL_CONFIRMATION_REQUEST = 0x10,
+  MOVE_CHANNEL_CONFIRMATION_RESPONSE = 0x11,
+}
+
+packet ControlFrame : BasicFrame (ChannelId = 0x0001) {
+  Code : CommandCode,
+  Identifier : 8,
+  size(payload) : 16,
+  payload,
+}
+
+
+enum CommandRejectReason : 16 {
+  COMMAND_NOT_UNDERSTOOD = 0x0000,
+  SIGNALING_MTU_EXCEEDED = 0x0001,
+  INVALID_CID_IN_REQUEST = 0x0002,
+}
+
+packet CommandReject : ControlFrame (Code = COMMAND_REJECT) {
+  Reason : CommandRejectReason,
+  body,
+}
+
+packet CommandRejectNotUnderstood : CommandReject (Reason = COMMAND_NOT_UNDERSTOOD) {
+}
+
+packet CommandRejectMtuExceeded : CommandReject (Reason = SIGNALING_MTU_EXCEEDED) {
+  ActualMtu : 16,
+}
+
+packet CommandRejectInvalidCid : CommandReject (Reason = INVALID_CID_IN_REQUEST) {
+  LocalChannel : 16, // Relative to the sender of the CommandReject
+  RemoteChannel : 16,
+}
+
+packet ConnectionRequest : ControlFrame (Code = CONNECTION_REQUEST) {
+  Psm : 16,
+  SourceCid : 16,
+}
+
+enum ConnectionResponseResult : 16 {
+  SUCCESSFUL = 0x0000,
+  PENDING = 0x0001,
+  PSM_NOT_SUPPORTED = 0x0002,
+  SECURITY_BLOCK = 0x0003,
+  NO_RESOURCES_AVAILABLE = 0x0004,
+  INVALID_CID = 0x0006,
+  SOURCE_CID_ALREADY_ALLOCATED = 0x0007,
+}
+
+enum ConnectionResponseStatus : 16 {
+  NO_FURTHER_INFORMATION_AVAILABLE = 0x0000,
+  AUTHENTICATION_PENDING = 0x0001,
+  AUTHORIZATION_PENDING = 0x0002,
+}
+
+packet ConnectionResponse : ControlFrame (Code = CONNECTION_RESPONSE) {
+  DestinationCid : 16,
+  SourceCid : 16,
+  Result : ConnectionResponseResult,
+  Status : ConnectionResponseStatus,
+}
+
+enum ConfigurationContinuation : 1 {
+  END = 0,
+  CONTINUES = 1,
+}
+
+packet ConfigurationRequestBase : ControlFrame (Code = CONFIGURATION_REQUEST) {
+  DestinationCid : 16,
+  Continuation : ConfigurationContinuation,
+  reserved : 15,
+  payload,
+}
+
+enum ConfigurationOptionsType : 7 {
+  MTU = 0x01,
+  FLUSH_TIMEOUT = 0x02,
+  QUALITY_OF_SERVICE = 0x03,
+  RETRANSMISSION_AND_FLOW_CONTROL = 0x04,
+  FRAME_CHECK_SEQUENCE = 0x05,
+  EXTENDED_FLOW_SPECIFICATION = 0x06,
+  EXTENDED_WINDOW_SIZE = 0x07,
+}
+
+enum ConfigurationOptionIsHint : 1 {
+  OPTION_MUST_BE_RECOGNIZED = 0,
+  OPTION_IS_A_HINT = 1,
+}
+
+packet ConfigurationOptions {
+  Type : ConfigurationOptionsType,
+  IsHint : ConfigurationOptionIsHint,
+  size(payload) : 8,
+  payload,
+}
+
+packet MtuConfigurationOption : ConfigurationOptions (Type = MTU) {
+  Mtu : 16,
+}
+
+packet FlushTimeoutConfigurationOption : ConfigurationOptions (Type = FLUSH_TIMEOUT) {
+  FlushTimeout : 16,
+}
+
+enum QosServiceType : 8 {
+  NO_TRAFFIC = 0x00,
+  BEST_EFFORT = 0x01, // Default
+  GUARANTEED = 0x02,
+}
+
+packet QualityOfServiceConfigurationOption : ConfigurationOptions (Type = QUALITY_OF_SERVICE) {
+  reserved : 8, // Flags
+  ServiceType : QosServiceType,
+  TokenRate : 32,        // 0 = ignore, 0xffffffff = max available
+  TokenBucketSize : 32,  // 0 = ignore, 0xffffffff = max available
+  PeakBandwidth : 32,    // Octets/second 0 = ignore
+  Latency : 32,          // microseconds 0xffffffff = ignore
+  DelayVariation : 32,   // microseconds 0xffffffff = ignore
+}
+
+enum RetransmissionAndFlowControlModeOption : 8 {
+  L2CAP_BASIC = 0x00,
+  RETRANSMISSION = 0x01,
+  FLOW_CONTROL = 0x02,
+  ENHANCED_RETRANSMISSION = 0x03,
+  STREAMING = 0x04,
+}
+
+
+packet RetransmissionAndFlowControlConfigurationOption : ConfigurationOptions (Type = RETRANSMISSION_AND_FLOW_CONTROL) {
+  Mode : RetransmissionAndFlowControlModeOption,
+  TxWindowSize : 8, // 1-32 for Flow Control and Retransmission, 1-63 for Enhanced
+  MaxTransmit : 8,
+  RetransmissionTimeOut : 8,
+  MonitorTimeOut : 16,
+  MaximumPduSize : 16,
+}
+
+enum FcsType : 8 {
+  NO_FCS = 0,
+  DEFAULT = 1,  // 16-bit FCS
+}
+
+packet FrameCheckSequenceOption : ConfigurationOptions (Type = FRAME_CHECK_SEQUENCE) {
+  FcsType : FcsType,
+}
+
+
+packet ExtendedFlowSpecificationOption : ConfigurationOptions (Type = EXTENDED_FLOW_SPECIFICATION) {
+  Identifier : 8, // Default 0x01, must be 0x01 for Extended Flow-Best-Effort
+  ServiceType : QosServiceType,
+  MaximumSduSize : 16, // Octets
+  SduInterarrivalTime : 32, // in microseconds
+  AccessLatency : 32, // in microseconds, without HCI and stack overheads
+  FlushTimeout : 32, // in microseconds 0x0 = no retransmissions 0xFFFFFFFF = never flushed
+}
+
+packet ExtendedWindowSizeOption : ConfigurationOptions (Type = EXTENDED_WINDOW_SIZE) {
+  MaxWindowSize : 16, // 0x0000 = Valid for streaming, 0x0001-0x3FFF Valid for Enhanced Retransmission
+}
+
+packet ConfigurationRequest : ConfigurationRequestBase {
+  payload,
+}
+
+enum ConfigurationResponseResult : 16 {
+  SUCCESS = 0x0000,
+  UNACCEPTABLE_PARAMETERS = 0x0001,
+  REJECTED = 0x0002,
+  UNKNOWN_OPTIONS = 0x0003,
+  PENDING = 0x0004,
+  FLOW_SPEC_REJECTED = 0x0005,
+}
+
+packet ConfigurationResponseBase : ControlFrame (Code = CONFIGURATION_RESPONSE) {
+  SourceCid : 16,
+  Continuation : ConfigurationContinuation,
+  reserved : 15,
+  Result : ConfigurationResponseResult,
+  payload,
+}
+
+packet ConfigurationResponse : ConfigurationResponseBase {
+  payload,
+}
+
+packet DisconnectionRequest : ControlFrame (Code = DISCONNECTION_REQUEST) {
+  DestinationCid : 16,
+  SourceCid : 16,
+}
+
+packet DisconnectionResponse : ControlFrame (Code = DISCONNECTION_RESPONSE) {
+  DestinationCid : 16,
+  SourceCid : 16,
+}
+
+packet EchoRequest : ControlFrame (Code = ECHO_REQUEST) {
+  payload, // Optional and implementation specific
+}
+
+packet EchoResponse : ControlFrame (Code = ECHO_RESPONSE) {
+  payload, // Optional and implementation specific
+}
+
+enum InformationRequestInfoType : 16 {
+  CONNECTIONLESS_MTU = 0x0001,
+  EXTENDED_FEATURES_SUPPORTED = 0x0002,
+  FIXED_CHANNELS_SUPPORTED = 0x0003,
+}
+
+packet InformationRequest : ControlFrame (Code = INFORMATION_REQUEST) {
+  InfoType : InformationRequestInfoType,
+}
+
+enum InformationRequestResult : 16 {
+  SUCCESS = 0x0000,
+  NOT_SUPPORTED = 0x0001,
+}
+
+packet InformationResponse : ControlFrame (Code = INFORMATION_RESPONSE) {
+  InfoType : InformationRequestInfoType,
+  Result : InformationRequestResult,
+  body,
+}
+
+packet InformationResponseConnectionlessMtu : InformationResponse (InfoType = CONNECTIONLESS_MTU) {
+  ConnectionlessMtu : 16,
+}
+
+packet InformationResponseExtendedFeatures : InformationResponse (InfoType = EXTENDED_FEATURES_SUPPORTED) {
+  // ExtendedFeatureMask : 32,
+  FlowControlMode : 1,
+  RetransmissionMode : 1,
+  BiDirectionalQoS : 1,
+  EnhancedRetransmissionMode : 1,
+  StreamingMode : 1,
+  FcsOption : 1,
+  ExtendedFlowSpecificationForBrEdr : 1,
+  FixedChannels : 1,
+  ExtendedWindowSize : 1,
+  UnicastConnectionlessDataReception : 1,
+  reserved : 22,
+}
+
+packet InformationResponseFixedChannels : InformationResponse (InfoType = FIXED_CHANNELS_SUPPORTED) {
+  FixedChannels : 64, // bit 0 must be 0, bit 1 must be 1, all others 1 = supported
+}
+
+packet CreateChannelRequest : ControlFrame (Code = CREATE_CHANNEL_REQUEST) {
+  Psm : 16,
+  SourceCid : 16,
+  ControllerId : 8,
+}
+
+enum CreateChannelResponseResult : 16 {
+  SUCCESSFUL = 0x0000,
+  PENDING = 0x0001,
+  PSM_NOT_SUPPORTED = 0x0002,
+  SECURITY_BLOCK = 0x0003,
+  NO_RESOURCES_AVAILABLE = 0x0004,
+  CONTROLLER_ID_NOT_SUPPORTED = 0x0005,
+  INVALID_CID = 0x0006,
+  SOURCE_CID_ALREADY_ALLOCATED = 0x0007,
+}
+
+enum CreateChannelResponseStatus : 16 {
+  NO_FURTHER_INFORMATION_AVAILABLE = 0x0000,
+  AUTHENTICATION_PENDING = 0x0001,
+  AUTHORIZATION_PENDING = 0x0002,
+}
+
+packet CreateChannelResponse : ControlFrame (Code = CREATE_CHANNEL_RESPONSE) {
+  DestinationCid : 16,
+  SourceCid : 16,
+  Result : CreateChannelResponseResult,
+  Status : CreateChannelResponseStatus,
+}
+
+// AMP Only ?
+packet MoveChannelRequest : ControlFrame (Code = MOVE_CHANNEL_REQUEST) {
+  InitiatorCid : 16,
+  DestControllerId : 8,
+}
+
+enum MoveChannelResponseResult : 16 {
+  SUCCESS = 0x0000,
+  PENDING = 0x0001,
+  CONTROLLER_ID_NOT_SUPPORTED = 0x0002,
+  NEW_CONTROLLER_ID_IS_SAME = 0x0003,
+  CONFIGURATION_NOT_SUPPORTED = 0x0004,
+  CHANNEL_COLLISION = 0x0005,
+  CHANNEL_NOT_ALLOWED_TO_BE_MOVED = 0x0006,
+}
+
+packet MoveChannelResponse : ControlFrame (Code = MOVE_CHANNEL_RESPONSE) {
+  InitiatorCid : 16,
+  Result : MoveChannelResponseResult,
+}
+
+enum MoveChannelConfirmationResult : 16 {
+  SUCCESS = 0x0000,
+  FAILURE = 0x0001,
+}
+
+packet MoveChannelConfirmationRequest : ControlFrame (Code = MOVE_CHANNEL_CONFIRMATION_REQUEST) {
+  InitiatorCid : 16,
+  Result : MoveChannelConfirmationResult,
+}
+
+packet MoveChannelConfirmationResponse : ControlFrame (Code = MOVE_CHANNEL_CONFIRMATION_RESPONSE) {
+  InitiatorCid : 16,
+}
+
+enum LeCommandCode : 8 {
+  COMMAND_REJECT = 0x01,
+  DISCONNECTION_REQUEST = 0x06,
+  DISCONNECTION_RESPONSE = 0x07,
+  CONNECTION_PARAMETER_UPDATE_REQUEST = 0x12,
+  CONNECTION_PARAMETER_UPDATE_RESPONSE = 0x13,
+  LE_CREDIT_BASED_CONNECTION_REQUEST = 0x14,
+  LE_CREDIT_BASED_CONNECTION_RESPONSE = 0x15,
+  LE_FLOW_CONTROL_CREDIT = 0x16,
+}
+
+packet LeControlFrame : BasicFrame (ChannelId = 0x0005) {
+  Code : LeCommandCode,
+  Identifier : 8, // Must be non-zero
+  size(payload) : 16,
+  payload,
+}
+
+packet LeCommandReject : LeControlFrame (Code = COMMAND_REJECT) {
+  Reason : CommandRejectReason,
+  payload,
+}
+
+packet LeCommandRejectNotUnderstood : LeCommandReject (Reason = COMMAND_NOT_UNDERSTOOD) {
+}
+
+packet LeCommandRejectMtuExceeded : LeCommandReject (Reason = SIGNALING_MTU_EXCEEDED) {
+  ActualMtu : 16,
+}
+
+packet LeCommandRejectInvalidCid : LeCommandReject (Reason = INVALID_CID_IN_REQUEST) {
+  LocalChannel : 16, // Relative to the sender of the CommandReject
+  RemoteChannel : 16,
+}
+
+packet LeDisconnectionRequest : LeControlFrame (Code = DISCONNECTION_REQUEST) {
+  DestinationCid : 16,
+  SourceCid : 16,
+}
+
+packet LeDisconnectionResponse : LeControlFrame (Code = DISCONNECTION_RESPONSE) {
+  DestinationCid : 16,
+  SourceCid : 16,
+}
+
+packet ConnectionParameterUpdateRequest : LeControlFrame (Code = CONNECTION_PARAMETER_UPDATE_REQUEST) {
+  IntervalMin : 16,
+  IntervalMax : 16,
+  SlaveLatency : 16,
+  TimeoutMultiplier : 16,
+}
+
+enum ConnectionParameterUpdateResponseResult : 16 {
+  ACCEPTED = 0,
+  REJECTED = 1,
+}
+
+packet ConnectionParameterUpdateResponse : LeControlFrame (Code = CONNECTION_PARAMETER_UPDATE_RESPONSE) {
+  Result : ConnectionParameterUpdateResponseResult,
+}
+
+packet LeCreditBasedConnectionRequest : LeControlFrame (Code = LE_CREDIT_BASED_CONNECTION_REQUEST) {
+  LePsm : 16, // 0x0001-0x007F Fixed, 0x0080-0x00FF Dynamic
+  SourceCid : 16,
+  Mtu : 16,
+  Mps : 16,
+  InitialCredits : 16,
+}
+
+enum LeCreditBasedConnectionResponseResult : 16 {
+  SUCCESS = 0x0000,
+  LE_PSM_NOT_SUPPORTED = 0x0002,
+  NO_RESOURCES_AVAILABLE = 0x0004,
+  INSUFFICIENT_AUTHENTICATION = 0x0005,
+  INSUFFICIENT_AUTHORIZATION = 0x0006,
+  INSUFFICIENT_ENCRYPTION_KEY_SIZE = 0x0007,
+  INSUFFICIENT_ENCRYPTION = 0x0008,
+  INVALID_SOURCE_CID = 0x0009,
+  SOURCE_CID_ALREADY_ALLOCATED = 0x000A,
+  UNACCEPTABLE_PARAMETERS = 0x000B,
+}
+
+packet LeCreditBasedConnectionResponse : LeControlFrame (Code = LE_CREDIT_BASED_CONNECTION_RESPONSE) {
+  DestinationCid : 16,
+  Mtu : 16,
+  Mps : 16,
+  InitialCredits : 16,
+  Result : LeCreditBasedConnectionResponseResult,
+}
+
+packet LeFlowControlCredit : LeControlFrame (Code = LE_FLOW_CONTROL_CREDIT) {
+  Cid : 16, // Receiver's destination CID
+  Credits : 16,
+}
+

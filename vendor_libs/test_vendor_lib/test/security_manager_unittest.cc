@@ -39,7 +39,7 @@ namespace test_vendor_lib {
 class SecurityManagerTest : public ::testing::Test {
  public:
   SecurityManagerTest() {}
-  ~SecurityManagerTest() {}
+  ~SecurityManagerTest() override {}
 };
 
 TEST_F(SecurityManagerTest, WriteKey) {
