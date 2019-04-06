@@ -3,12 +3,12 @@ genrule {
     tools: [
         "bluetooth_packetgen",
     ],
-    cmd: "mkdir -p $(genDir)/packet/parser/test/; $(location bluetooth_packetgen) < $(in) > $(genDir)/packet/parser/test/generated_packets.h 2>/dev/null",
+    cmd: "$(location bluetooth_packetgen) --include=system/bt/gd --out=$(genDir) $(in)",
     srcs: [
-        "test_packet.pdl",
+        "test_packets.pdl",
     ],
     out: [
-        "packet/parser/test/generated_packets.h",
+        "packet/parser/test/test_packets.h",
     ],
 }
 
