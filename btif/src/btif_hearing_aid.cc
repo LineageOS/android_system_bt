@@ -53,7 +53,7 @@ std::unique_ptr<HearingAidInterface> hearingAidInstance;
 class HearingAidInterfaceImpl
     : public bluetooth::hearing_aid::HearingAidInterface,
       public HearingAidCallbacks {
-  ~HearingAidInterfaceImpl() = default;
+  ~HearingAidInterfaceImpl() override = default;
 
   void Init(HearingAidCallbacks* callbacks) override {
     DVLOG(2) << __func__;

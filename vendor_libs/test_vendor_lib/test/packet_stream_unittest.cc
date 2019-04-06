@@ -48,7 +48,7 @@ class PacketStreamTest : public ::testing::Test {
     CheckSocketpairInit();
   }
 
-  ~PacketStreamTest() {
+  ~PacketStreamTest() override {
     close(socketpair_fds_[0]);
     close(socketpair_fds_[1]);
   }
