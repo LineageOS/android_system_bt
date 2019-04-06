@@ -400,12 +400,12 @@ class BluetoothMetricsLoggerTest : public Test {
     bt_log_->Clear();
   }
 
-  void SetUp() {
+  void SetUp() override {
     bt_log_ = new BluetoothLog();
     // Clear existing metrics entries, if any
     BluetoothMetricsLogger::GetInstance()->Reset();
   }
-  void TearDown() {
+  void TearDown() override {
     // Clear remaining metrics entries, if any
     BluetoothMetricsLogger::GetInstance()->Reset();
     ClearLog();

@@ -38,7 +38,7 @@ namespace packets {
 class CountedBuilderTest : public ::testing::Test {
  public:
   CountedBuilderTest() = default;
-  ~CountedBuilderTest() = default;
+  ~CountedBuilderTest() override = default;
 };
 
 TEST(CountedBuilderTest, buildCountTest) {

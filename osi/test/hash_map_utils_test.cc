@@ -27,8 +27,8 @@
 
 class HashMapUtilsTest : public AllocationTestHarness {
  protected:
-  virtual void SetUp() { AllocationTestHarness::SetUp(); }
-  virtual void TearDown() {
+  void SetUp() override { AllocationTestHarness::SetUp(); }
+  void TearDown() override {
     map.clear();
     AllocationTestHarness::TearDown();
   }

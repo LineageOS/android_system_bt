@@ -83,7 +83,7 @@ void parsePeriodicParams(tBLE_PERIODIC_ADV_PARAMS* p_periodic_params,
 }
 
 class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface {
-  ~BleAdvertiserInterfaceImpl(){};
+  ~BleAdvertiserInterfaceImpl() override{};
 
   void RegisterAdvertiserCb(IdStatusCallback cb, uint8_t advertiser_id,
                             uint8_t status) {

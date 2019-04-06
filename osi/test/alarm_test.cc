@@ -46,7 +46,7 @@ base::MessageLoop* get_main_message_loop() { return message_loop_; }
 
 class AlarmTest : public AlarmTestHarness {
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     AlarmTestHarness::SetUp();
     cb_counter = 0;
     cb_misordered_counter = 0;
@@ -54,7 +54,7 @@ class AlarmTest : public AlarmTestHarness {
     semaphore = semaphore_new(0);
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     semaphore_free(semaphore);
     AlarmTestHarness::TearDown();
   }
