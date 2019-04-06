@@ -51,7 +51,7 @@ namespace packets {
 class LinkLayerPacketBuilderTest : public ::testing::Test {
  public:
   LinkLayerPacketBuilderTest() = default;
-  ~LinkLayerPacketBuilderTest() = default;
+  ~LinkLayerPacketBuilderTest() override = default;
 
   Address source_{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
   Address dest_{{0x11, 0x12, 0x13, 0x14, 0x15, 0x16}};

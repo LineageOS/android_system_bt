@@ -131,7 +131,7 @@ class SmpCalculateConfirmTest : public Test {
   Octet16 rand_{0x57, 0x83, 0xD5, 0x21, 0x56, 0xAD, 0x6F, 0x0E,
                 0x63, 0x88, 0x27, 0x4E, 0xC6, 0x70, 0x2E, 0xE0};
 
-  void SetUp() {
+  void SetUp() override {
     p_cb_.tk = {0};
     // Set pairing request packet to 0x070710000001(01)
     p_cb_.local_io_capability = 0x01;
@@ -151,7 +151,7 @@ class SmpCalculateConfirmTest : public Test {
     p_cb_.role = HCI_ROLE_MASTER;
     std::reverse(rand_.begin(), rand_.end());
   }
-  void TearDown() {}
+  void TearDown() override {}
 
  public:
 };

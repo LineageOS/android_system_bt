@@ -39,7 +39,7 @@ class L2capSduTest : public ::testing::Test {
  public:
   L2capSduTest(){};
 
-  ~L2capSduTest() = default;
+  ~L2capSduTest() override = default;
 
 };  // L2capSduTest
 

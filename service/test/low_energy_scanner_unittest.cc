@@ -72,12 +72,12 @@ class MockScannerHandler : public BleScannerInterface {
   MOCK_METHOD1(StopSync, void(uint16_t));
 
   void ScanFilterAdd(int filter_index, std::vector<ApcfCommand> filters,
-                     FilterConfigCallback cb){};
+                     FilterConfigCallback cb) override{};
 
   void ScanFilterParamSetup(
       uint8_t client_if, uint8_t action, uint8_t filt_index,
       std::unique_ptr<btgatt_filt_param_setup_t> filt_param,
-      FilterParamSetupCallback cb) {
+      FilterParamSetupCallback cb) override {
     ScanFilterParamSetupImpl(client_if, action, filt_index, filt_param.get(),
                              std::move(cb));
   }
@@ -92,7 +92,8 @@ class TestDelegate : public LowEnergyScanner::Delegate {
   int scan_result_count() const { return scan_result_count_; }
   const ScanResult& last_scan_result() const { return last_scan_result_; }
 
-  void OnScanResult(LowEnergyScanner* scanner, const ScanResult& scan_result) {
+  void OnScanResult(LowEnergyScanner* scanner,
+                    const ScanResult& scan_result) override {
     ASSERT_TRUE(scanner);
     scan_result_count_++;
     last_scan_result_ = scan_result;

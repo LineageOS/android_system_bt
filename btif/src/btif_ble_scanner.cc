@@ -203,7 +203,7 @@ void bta_track_adv_event_cb(tBTM_BLE_TRACK_ADV_DATA* p_track_adv_data) {
 void bta_cback(tBTA_GATTC_EVT, tBTA_GATTC*) {}
 
 class BleScannerInterfaceImpl : public BleScannerInterface {
-  ~BleScannerInterfaceImpl(){};
+  ~BleScannerInterfaceImpl() override{};
 
   void RegisterScanner(RegisterCallback cb) override {
     do_in_main_thread(FROM_HERE,

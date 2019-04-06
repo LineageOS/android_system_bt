@@ -46,7 +46,7 @@ namespace packets {
 class AclBuilderTest : public ::testing::Test {
  public:
   AclBuilderTest() = default;
-  ~AclBuilderTest() = default;
+  ~AclBuilderTest() override = default;
 };
 
 TEST(AclBuilderTest, buildAclCountTest) {

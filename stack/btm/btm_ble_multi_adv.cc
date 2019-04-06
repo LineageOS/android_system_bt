@@ -170,7 +170,7 @@ class BleAdvertisingManagerImpl
                    weak_factory_.GetWeakPtr()));
   }
 
-  ~BleAdvertisingManagerImpl() { adv_inst.clear(); }
+  ~BleAdvertisingManagerImpl() override { adv_inst.clear(); }
 
   void GetOwnAddress(uint8_t inst_id, GetAddressCallback cb) override {
     cb.Run(adv_inst[inst_id].own_address_type, adv_inst[inst_id].own_address);
