@@ -516,9 +516,9 @@ enum ClockOffsetValid : 1 {
   VALID = 1,
 }
 
-enum CreateConnectionRoleSwitch : 1 {
-  REMAIN_MASTER = 0,
-  ALLOW_ROLE_SWITCH = 1,
+enum CreateConnectionRoleSwitch : 8 {
+  REMAIN_MASTER = 0x00,
+  ALLOW_ROLE_SWITCH = 0x01,
 }
 
 packet CreateConnection : CreateConnectionCommand (OpCode = CREATE_CONNECTION) {
