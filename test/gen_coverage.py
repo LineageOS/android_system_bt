@@ -89,7 +89,7 @@ COVERAGE_TESTS = [
 
 WORKING_DIR = '/tmp/coverage'
 SOONG_UI_BASH = 'build/soong/soong_ui.bash'
-LLVM_DIR = 'prebuilts/clang/host/linux-x86/clang-r328903/bin'
+LLVM_DIR = 'prebuilts/clang/host/linux-x86/clang-r353983b/bin'
 LLVM_MERGE = LLVM_DIR + '/llvm-profdata'
 LLVM_COV = LLVM_DIR + '/llvm-cov'
 

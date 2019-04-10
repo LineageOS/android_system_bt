@@ -101,6 +101,8 @@ bool parse_one_file(std::filesystem::path input_file, std::filesystem::path incl
   }
 
   out_file << "\n\n";
+  out_file << "#pragma once\n";
+  out_file << "\n\n";
   out_file << "#include <stdint.h>\n";
   out_file << "#include <string>\n";
   out_file << "\n\n";

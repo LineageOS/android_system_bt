@@ -17,7 +17,6 @@
 #include "hci/hci_packets.h"
 
 #include <gtest/gtest.h>
-#include <forward_list>
 #include <memory>
 
 #include "os/log.h"
