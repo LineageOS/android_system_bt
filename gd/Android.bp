@@ -84,6 +84,18 @@ cc_library {
                 ":BluetoothHalSources_hci_rootcanal",
             ],
         },
+        android: {
+            srcs: [
+                ":BluetoothHalSources_hci_android_hidl",
+            ],
+            shared_libs: [
+                "android.hardware.bluetooth@1.0",
+                "libhwbinder",
+                "libhidlbase",
+                "libhidltransport",
+                "libutils",
+            ],
+        },
     },
     srcs: [
         ":BluetoothCommonSources",
@@ -108,6 +120,18 @@ cc_test {
         host: {
             srcs: [
                 ":BluetoothHalTestSources_hci_rootcanal",
+            ],
+        },
+        android: {
+            srcs: [
+                ":BluetoothHalTestSources_hci_android_hidl",
+            ],
+            shared_libs: [
+                "android.hardware.bluetooth@1.0",
+                "libhwbinder",
+                "libhidlbase",
+                "libhidltransport",
+                "libutils",
             ],
         },
     },
