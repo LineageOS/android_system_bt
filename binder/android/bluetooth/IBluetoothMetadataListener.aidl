@@ -24,5 +24,5 @@ import android.bluetooth.BluetoothDevice;
  * @hide
  */
 oneway interface IBluetoothMetadataListener {
-    void onMetadataChanged(in BluetoothDevice devices, in int key, in String value);
+    void onMetadataChanged(in BluetoothDevice devices, in int key, in byte[] value);
 }
