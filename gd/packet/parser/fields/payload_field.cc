@@ -59,7 +59,6 @@ std::string PayloadField::GetType() const {
 }
 
 void PayloadField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
-  // Write the Getter Function Body
   if (start_offset.empty()) {
     ERROR(this) << "Can not have a payload that has an ambiguous start offset. "
                 << "Is there a field with an unknown length before the "
@@ -76,6 +75,7 @@ void PayloadField::GenGetter(std::ostream& s, Size start_offset, Size end_offset
   }
 
   s << "PacketView<kLittleEndian> GetPayload() {";
+  s << "ASSERT(was_validated_);";
 
   s << "size_t payload_begin = " << start_offset.bits() / 8 << " + (" << start_offset.dynamic_string() << ");";
 
