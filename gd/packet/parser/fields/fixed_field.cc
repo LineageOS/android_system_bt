@@ -48,9 +48,9 @@ std::string FixedField::GetType() const {
 }
 
 void FixedField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
-  // Write the Getter Function Definiton
   s << GetType();
   s << " Get" << GetName() << "() const {";
+  s << "ASSERT(was_validated_);";
 
   // Write the Getter Function Body
   int num_leading_bits = 0;
