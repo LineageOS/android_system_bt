@@ -74,7 +74,8 @@ TEST(AclBuilderTest, buildAclCount) {
   count_packet->Serialize(it);
 
   PacketView<true> count_packet_bytes_view(count_packet_bytes);
-  AclPacketView count_packet_view(count_packet_bytes_view);
+  AclPacketView count_packet_view = AclPacketView::Create(count_packet_bytes_view);
+  ASSERT_TRUE(count_packet_view.IsValid());
 
   ASSERT_EQ(handle, count_packet_view.GetHandle());
   ASSERT_EQ(packet_boundary_flag, count_packet_view.GetPacketBoundaryFlag());
@@ -105,7 +106,8 @@ TEST(AclBuilderTest, buildAclCountInverted) {
   BitInserter it(*counting_down_bytes_packet_bytes);
   counting_down_bytes_packet->Serialize(it);
   PacketView<true> counting_down_bytes_packet_bytes_view(counting_down_bytes_packet_bytes);
-  AclPacketView counting_down_bytes_packet_view(counting_down_bytes_packet_bytes_view);
+  AclPacketView counting_down_bytes_packet_view = AclPacketView::Create(counting_down_bytes_packet_bytes_view);
+  ASSERT_TRUE(counting_down_bytes_packet_view.IsValid());
 
   ASSERT_EQ(handle, counting_down_bytes_packet_view.GetHandle());
   ASSERT_EQ(packet_boundary_flag, counting_down_bytes_packet_view.GetPacketBoundaryFlag());
@@ -137,7 +139,8 @@ TEST(AclBuilderTest, buildInformationRequest) {
   BitInserter it(*packet_bytes);
   packet->Serialize(it);
   PacketView<true> packet_bytes_view(packet_bytes);
-  AclPacketView packet_view(packet_bytes_view);
+  AclPacketView packet_view = AclPacketView::Create(packet_bytes_view);
+  ASSERT_TRUE(packet_view.IsValid());
 
   ASSERT_EQ(packet_bytes->size(), information_request.size());
   for (size_t i = 0; i < packet_bytes->size(); i++) {
