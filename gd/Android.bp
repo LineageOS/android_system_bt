@@ -98,6 +98,7 @@ cc_library {
         },
     },
     srcs: [
+        "stack_manager.cc",
         ":BluetoothCommonSources",
         ":BluetoothPacketSources",
     ]
