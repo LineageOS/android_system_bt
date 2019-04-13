@@ -190,15 +190,14 @@ void PacketDef::GenParserDefinition(std::ostream& s) const {
   }
   s << " public:";
 
-  // Constructor from a View
-  s << name_ << "View(PacketView<" << (is_little_endian_ ? "" : "!") << "kLittleEndian> packet) ";
+  // Specialize function
   if (parent_ != nullptr) {
-    s << " : " << parent_->name_ << "View(packet) {}";
+    s << "static " << name_ << "View Create(" << parent_->name_ << "View parent)";
+    s << "{ return " << name_ << "View(parent); }";
   } else {
-    s << " : PacketView<" << (is_little_endian_ ? "" : "!") << "kLittleEndian>(packet) {}";
+    s << "static " << name_ << "View Create(PacketView<" << (is_little_endian_ ? "" : "!") << "kLittleEndian> packet) ";
+    s << "{ return " << name_ << "View(packet); }";
   }
-
-  // TODO: Specialize function?
 
   std::set<PacketField::Type> fixed_types = {
       PacketField::Type::FIXED_SCALAR,
@@ -214,6 +213,16 @@ void PacketDef::GenParserDefinition(std::ostream& s) const {
   }
   GenValidator(s);
   s << "\n";
+
+  s << " protected:\n";
+  // Constructor from a View
+  if (parent_ != nullptr) {
+    s << name_ << "View(" << parent_->name_ << "View parent)";
+    s << " : " << parent_->name_ << "View(parent) { was_validated_ = false; }";
+  } else {
+    s << name_ << "View(PacketView<" << (is_little_endian_ ? "" : "!") << "kLittleEndian> packet) ";
+    s << " : PacketView<" << (is_little_endian_ ? "" : "!") << "kLittleEndian>(packet) { was_validated_ = false;}";
+  }
 
   // Print the private fields which are the fixed fields.
   if (has_fixed_fields) {
@@ -238,13 +247,7 @@ void PacketDef::GenParserFieldGetter(std::ostream& s, const PacketField* field) 
     abort();
   }
 
-  if (field->GetFieldType() == PacketField::Type::SIZE) {
-    s << "protected:";
-  }
   field->GenGetter(s, start_field_offset, end_field_offset);
-  if (field->GetFieldType() == PacketField::Type::SIZE) {
-    s << "public:";
-  }
 }
 
 void PacketDef::GenSerialize(std::ostream& s) const {
@@ -358,8 +361,13 @@ void PacketDef::GenValidator(std::ostream& s) const {
   }
 
   // Write the function declaration.
-  s << "virtual bool IsValid() const" << (parent_ != nullptr ? " override" : "") << " {";
+  s << "virtual bool IsValid() " << (parent_ != nullptr ? " override" : "") << " {";
+  s << "if (was_validated_) { return true; } ";
+  s << "else { was_validated_ = true; was_validated_ = IsValid_(); return was_validated_; }";
+  s << "}";
 
+  s << "protected:";
+  s << "virtual bool IsValid_() const {";
   if (parent_constraints_.size() > 0 && parent_ == nullptr) {
     ERROR() << "Can't have a constraint on a NULL parent";
   }
@@ -413,6 +421,9 @@ void PacketDef::GenValidator(std::ostream& s) const {
 
   s << "return true;";
   s << "}\n";
+  if (parent_ == nullptr) {
+    s << "bool was_validated_{false};\n";
+  }
 }
 
 void PacketDef::GenBuilderDefinition(std::ostream& s) const {

@@ -47,38 +47,55 @@ android::sp<BluetoothHciDeathRecipient> bluetooth_hci_death_recipient_ = new Blu
 
 class HciHalBluetoothHciCallbacks : public IBluetoothHciCallbacks {
  public:
-  HciHalBluetoothHciCallbacks(BluetoothHciHalCallbacks* callback) : callback_(callback) {}
+  HciHalBluetoothHciCallbacks(BluetoothInitializationCompleteCallback* initialization_callback)
+      : initialization_callback_(initialization_callback) {}
+
+  void SetCallback(BluetoothHciHalCallbacks* callback) {
+    ASSERT(callback_ == nullptr && callback != nullptr);
+    callback_ = callback;
+  }
+
+  void ResetCallback() {
+    callback_ = nullptr;
+  }
 
   Return<void> initializationComplete(HidlStatus status) {
     ASSERT(status == HidlStatus::SUCCESS);
-    callback_->initializationComplete(Status::SUCCESS);
+    initialization_callback_->initializationComplete(Status::SUCCESS);
     return Void();
   }
 
   Return<void> hciEventReceived(const hidl_vec<uint8_t>& event) {
-    callback_->hciEventReceived(std::vector<uint8_t>(event.begin(), event.end()));
+    if (callback_ != nullptr) {
+      callback_->hciEventReceived(std::vector<uint8_t>(event.begin(), event.end()));
+    }
     return Void();
   }
 
   Return<void> aclDataReceived(const hidl_vec<uint8_t>& data) {
-    callback_->aclDataReceived(std::vector<uint8_t>(data.begin(), data.end()));
+    if (callback_ != nullptr) {
+      callback_->aclDataReceived(std::vector<uint8_t>(data.begin(), data.end()));
+    }
     return Void();
   }
 
   Return<void> scoDataReceived(const hidl_vec<uint8_t>& data) {
-    callback_->scoDataReceived(std::vector<uint8_t>(data.begin(), data.end()));
+    if (callback_ != nullptr) {
+      callback_->scoDataReceived(std::vector<uint8_t>(data.begin(), data.end()));
+    }
     return Void();
   }
 
  private:
-  BluetoothHciHalCallbacks* callback_;
+  BluetoothInitializationCompleteCallback* initialization_callback_ = nullptr;
+  BluetoothHciHalCallbacks* callback_ = nullptr;
 };
 
 }  // namespace
 
 class BluetoothHciHalHidl : public BluetoothHciHal {
  public:
-  void initialize(BluetoothHciHalCallbacks* callback) override {
+  void initialize(BluetoothInitializationCompleteCallback* callback) override {
     bt_hci_ = IBluetoothHci::getService();
     ASSERT(bt_hci_ != nullptr);
     auto death_link = bt_hci_->linkToDeath(bluetooth_hci_death_recipient_, 0);
@@ -86,9 +103,13 @@ class BluetoothHciHalHidl : public BluetoothHciHal {
 
     // Block allows allocation of a variable that might be bypassed by goto.
     {
-      android::sp<IBluetoothHciCallbacks> callbacks = new HciHalBluetoothHciCallbacks(callback);
-      bt_hci_->initialize(callbacks);
+      callbacks_ = new HciHalBluetoothHciCallbacks(callback);
+      bt_hci_->initialize(callbacks_);
     }
+  }
+
+  void registerIncomingPacketCallback(BluetoothHciHalCallbacks* callback) override {
+    callbacks_->SetCallback(callback);
   }
 
   void sendHciCommand(HciPacket command) override {
@@ -110,10 +131,12 @@ class BluetoothHciHalHidl : public BluetoothHciHal {
       LOG_ERROR("Error unlinking death recipient from the Bluetooth HAL");
     }
     bt_hci_->close();
+    callbacks_->ResetCallback();
     bt_hci_ = nullptr;
   }
 
  private:
+  android::sp<HciHalBluetoothHciCallbacks> callbacks_;
   android::sp<IBluetoothHci> bt_hci_;
 };
 

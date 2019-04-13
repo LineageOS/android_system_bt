@@ -14,15 +14,25 @@
  * limitations under the License.
  */
 
-package android.bluetooth;
+#pragma once
 
-import android.os.ParcelUuid;
-import android.bluetooth.BluetoothDevice;
+namespace bluetooth {
 
-/**
- * Callback definitions for interacting with database change
- * @hide
- */
-oneway interface IBluetoothMetadataListener {
-    void onMetadataChanged(in BluetoothDevice devices, in int key, in byte[] value);
-}
+class StackManager {
+ public:
+  static StackManager* Get() {
+    static StackManager instance;
+    return &instance;
+  }
+
+  // Start up the stack, init HCI HAL
+  void StartUp();
+
+  // Shut down the stack, close HCI HAL
+  void ShutDown();
+
+ private:
+  StackManager() = default;
+};
+
+}  // namespace bluetooth

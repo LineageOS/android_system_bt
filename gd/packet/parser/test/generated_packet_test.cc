@@ -66,18 +66,18 @@ TEST(GeneratedPacketTest, testChildTwoTwoThree) {
   }
 
   PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
-  ParentView wrong_view(packet_bytes_view);
+  ParentView wrong_view = ParentView::Create(packet_bytes_view);
   ASSERT_FALSE(wrong_view.IsValid());
 
-  ParentTwoView parent_view(packet_bytes_view);
+  ParentTwoView parent_view = ParentTwoView::Create(packet_bytes_view);
   ASSERT_TRUE(parent_view.IsValid());
   ASSERT_EQ(FourBits::TWO, parent_view.GetFourBits());
 
-  ChildTwoTwoView child_view(packet_bytes_view);
+  ChildTwoTwoView child_view = ChildTwoTwoView::Create(parent_view);
   ASSERT_TRUE(child_view.IsValid());
   ASSERT_EQ(FourBits::THREE, child_view.GetMoreBits());
 
-  ChildTwoTwoThreeView grandchild_view(packet_bytes_view);
+  ChildTwoTwoThreeView grandchild_view = ChildTwoTwoThreeView::Create(child_view);
   ASSERT_TRUE(grandchild_view.IsValid());
 }
 
@@ -96,7 +96,7 @@ TEST(GeneratedPacketTest, testChild) {
   }
 
   PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
-  ParentView parent_view(packet_bytes_view);
+  ParentView parent_view = ParentView::Create(packet_bytes_view);
   ASSERT_TRUE(parent_view.IsValid());
   auto payload = parent_view.GetPayload();
 
@@ -105,10 +105,57 @@ TEST(GeneratedPacketTest, testChild) {
     ASSERT_EQ(child[i + 2 /* fixed & size */], payload[i]);
   }
 
-  ChildView child_view(packet_bytes_view);
+  ChildView child_view = ChildView::Create(parent_view);
   ASSERT_TRUE(child_view.IsValid());
 
   ASSERT_EQ(0xa2a1, child_view.GetFieldName());
+}
+
+TEST(GeneratedPacketTest, testValidateDeath) {
+  auto packet = ChildTwoTwoThreeBuilder::Create();
+
+  ASSERT_EQ(child_two_two_three.size(), packet->size());
+
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  BitInserter it(*packet_bytes);
+  packet->Serialize(it);
+
+  ASSERT_EQ(packet_bytes->size(), child_two_two_three.size());
+  for (size_t i = 0; i < child_two_two_three.size(); i++) {
+    ASSERT_EQ(packet_bytes->at(i), child_two_two_three[i]);
+  }
+
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  ParentView wrong_view = ParentView::Create(packet_bytes_view);
+  ASSERT_DEATH(wrong_view.GetPayload(), "validated");
+}
+
+TEST(GeneratedPacketTest, testValidatedParentDeath) {
+  auto packet = ChildBuilder::Create(0xa2a1 /* field_name */, 0xb1 /* footer */, 0xc2c1 /* fcs */);
+
+  ASSERT_EQ(child.size(), packet->size());
+
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  BitInserter it(*packet_bytes);
+  packet->Serialize(it);
+
+  ASSERT_EQ(packet_bytes->size(), child.size());
+  for (size_t i = 0; i < child.size(); i++) {
+    ASSERT_EQ(packet_bytes->at(i), child[i]);
+  }
+
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  ParentView parent_view = ParentView::Create(packet_bytes_view);
+  ASSERT_TRUE(parent_view.IsValid());
+  auto payload = parent_view.GetPayload();
+
+  ASSERT_EQ(child[1 /* skip fixed field */], payload.size());
+  for (size_t i = 0; i < payload.size(); i++) {
+    ASSERT_EQ(child[i + 2 /* fixed & size */], payload[i]);
+  }
+
+  ChildView child_view = ChildView::Create(parent_view);
+  ASSERT_DEATH(child_view.GetFieldName(), "validated");
 }
 
 }  // namespace parser

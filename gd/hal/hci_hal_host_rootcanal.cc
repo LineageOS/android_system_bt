@@ -19,20 +19,17 @@
 
 #include <fcntl.h>
 #include <netdb.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <mutex>
 #include <queue>
-#include <string>
 
 #include "os/log.h"
 #include "os/reactor.h"
 #include "os/thread.h"
 
 namespace {
+constexpr int INVALID_FD = -1;
+
 constexpr uint8_t kH4Command = 0x01;
 constexpr uint8_t kH4Acl = 0x02;
 constexpr uint8_t kH4Sco = 0x03;
@@ -48,14 +45,14 @@ int ConnectToRootCanal(const std::string& server, int port) {
   int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (socket_fd < 1) {
     LOG_ERROR("can't create socket: %s", strerror(errno));
-    return -1;
+    return INVALID_FD;
   }
 
   struct hostent* host;
   host = gethostbyname(server.c_str());
   if (host == nullptr) {
     LOG_ERROR("can't get server name");
-    return -1;
+    return INVALID_FD;
   }
 
   struct sockaddr_in serv_addr;
@@ -67,14 +64,14 @@ int ConnectToRootCanal(const std::string& server, int port) {
   int result = connect(socket_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
   if (result < 0) {
     LOG_ERROR("can't connect: %s", strerror(errno));
-    return -1;
+    return INVALID_FD;
   }
 
   int flags = fcntl(socket_fd, F_GETFL, NULL);
   int ret = fcntl(socket_fd, F_SETFL, flags | O_NONBLOCK);
   if (ret == -1) {
     LOG_ERROR("can't control socket fd: %s", strerror(errno));
-    return -1;
+    return INVALID_FD;
   }
   return socket_fd;
 }
@@ -85,20 +82,26 @@ namespace hal {
 
 class BluetoothHciHalHostRootcanal : public BluetoothHciHal {
  public:
-  void initialize(BluetoothHciHalCallbacks* callback) override {
+  void initialize(BluetoothInitializationCompleteCallback* callback) override {
     std::lock_guard<std::mutex> lock(mutex_);
-    ASSERT(callback_ == nullptr && callback != nullptr);
+    ASSERT(sock_fd_ == INVALID_FD && callback != nullptr);
     sock_fd_ = ConnectToRootCanal(config_->GetServerAddress(), config_->GetPort());
+    ASSERT(sock_fd_ != INVALID_FD);
     reactable_ =
         hci_incoming_thread_.GetReactor()->Register(sock_fd_, [this]() { this->incoming_packet_received(); }, nullptr);
-    callback_ = callback;
     callback->initializationComplete(Status::SUCCESS);
     LOG_INFO("Rootcanal HAL opened successfully");
   }
 
+  void registerIncomingPacketCallback(BluetoothHciHalCallbacks* callback) override {
+    std::lock_guard<std::mutex> lock(mutex_);
+    ASSERT(incoming_packet_callback_ == nullptr && callback != nullptr);
+    incoming_packet_callback_ = callback;
+  }
+
   void sendHciCommand(HciPacket command) override {
     std::lock_guard<std::mutex> lock(mutex_);
-    ASSERT(callback_ != nullptr);
+    ASSERT(sock_fd_ != INVALID_FD);
     std::vector<uint8_t> packet = std::move(command);
     packet.insert(packet.cbegin(), kH4Command);
     write_to_rootcanal_fd(packet);
@@ -106,7 +109,7 @@ class BluetoothHciHalHostRootcanal : public BluetoothHciHal {
 
   void sendAclData(HciPacket data) override {
     std::lock_guard<std::mutex> lock(mutex_);
-    ASSERT(callback_ != nullptr);
+    ASSERT(sock_fd_ != INVALID_FD);
     std::vector<uint8_t> packet = std::move(data);
     packet.insert(packet.cbegin(), kH4Acl);
     write_to_rootcanal_fd(packet);
@@ -114,7 +117,7 @@ class BluetoothHciHalHostRootcanal : public BluetoothHciHal {
 
   void sendScoData(HciPacket data) override {
     std::lock_guard<std::mutex> lock(mutex_);
-    ASSERT(callback_ != nullptr);
+    ASSERT(sock_fd_ != INVALID_FD);
     std::vector<uint8_t> packet = std::move(data);
     packet.insert(packet.cbegin(), kH4Sco);
     write_to_rootcanal_fd(packet);
@@ -122,19 +125,22 @@ class BluetoothHciHalHostRootcanal : public BluetoothHciHal {
 
   void close() override {
     std::lock_guard<std::mutex> lock(mutex_);
-    ASSERT(callback_ != nullptr);
-    hci_incoming_thread_.GetReactor()->Unregister(reactable_);
+    if (reactable_ != nullptr) {
+      hci_incoming_thread_.GetReactor()->Unregister(reactable_);
+      ASSERT(sock_fd_ != INVALID_FD);
+    }
     reactable_ = nullptr;
-    callback_ = nullptr;
+    incoming_packet_callback_ = nullptr;
     ::close(sock_fd_);
+    sock_fd_ = INVALID_FD;
     LOG_INFO("Rootcanal HAL is closed");
   }
 
  private:
   std::mutex mutex_;
   HciHalHostRootcanalConfig* config_ = HciHalHostRootcanalConfig::Get();
-  BluetoothHciHalCallbacks* callback_ = nullptr;
-  int sock_fd_ = 0;
+  BluetoothHciHalCallbacks* incoming_packet_callback_ = nullptr;
+  int sock_fd_ = INVALID_FD;
   bluetooth::os::Thread hci_incoming_thread_ =
       bluetooth::os::Thread("hci_incoming_thread", bluetooth::os::Thread::Priority::NORMAL);
   bluetooth::os::Reactor::Reactable* reactable_ = nullptr;
@@ -163,6 +169,8 @@ class BluetoothHciHalHostRootcanal : public BluetoothHciHal {
   }
 
   void incoming_packet_received() {
+    ASSERT(incoming_packet_callback_ != nullptr);
+
     uint8_t buf[kBufSize] = {};
 
     ssize_t received_size;
@@ -188,7 +196,7 @@ class BluetoothHciHalHostRootcanal : public BluetoothHciHal {
 
       HciPacket receivedHciPacket;
       receivedHciPacket.assign(buf + kH4HeaderSize, buf + kH4HeaderSize + kHciEvtHeaderSize + payload_size);
-      callback_->hciEventReceived(receivedHciPacket);
+      incoming_packet_callback_->hciEventReceived(receivedHciPacket);
     }
 
     if (buf[0] == kH4Acl) {
@@ -204,7 +212,7 @@ class BluetoothHciHalHostRootcanal : public BluetoothHciHal {
 
       HciPacket receivedHciPacket;
       receivedHciPacket.assign(buf + kH4HeaderSize, buf + kH4HeaderSize + kHciAclHeaderSize + payload_size);
-      callback_->aclDataReceived(receivedHciPacket);
+      incoming_packet_callback_->aclDataReceived(receivedHciPacket);
     }
 
     if (buf[0] == kH4Sco) {
@@ -217,7 +225,7 @@ class BluetoothHciHalHostRootcanal : public BluetoothHciHal {
 
       HciPacket receivedHciPacket;
       receivedHciPacket.assign(buf + kH4HeaderSize, buf + kH4HeaderSize + kHciScoHeaderSize + payload_size);
-      callback_->scoDataReceived(receivedHciPacket);
+      incoming_packet_callback_->scoDataReceived(receivedHciPacket);
     }
     memset(buf, 0, kBufSize);
   }
