@@ -15,18 +15,29 @@
  */
 
 #pragma once
-#include <errno.h>
 
-// A macro to re-try a syscall when it receives EINTR
-#ifndef RUN_NO_INTR
-#define RUN_NO_INTR(fn) \
-  do {                  \
-  } while ((fn) == -1 && errno == EINTR)
-#endif
+#include "os/utils.h"
 
-// A macro to disallow the copy constructor and operator= functions
-#ifndef DISALLOW_COPY_AND_ASSIGN
-#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
-  TypeName(const TypeName&) = delete;      \
-  void operator=(const TypeName&) = delete
-#endif
+namespace bluetooth {
+namespace os {
+
+// A event_fd work in non-blocking and Semaphore mode
+class ReactiveSemaphore {
+ public:
+  // Creates a new ReactiveSemaphore with an initial value of |value|.
+  explicit ReactiveSemaphore(unsigned int value);
+  ~ReactiveSemaphore();
+  // Decrements the value of |fd_|, this will cause a crash if |fd_| unreadable.
+  void Decrease();
+  // Increase the value of |fd_|, this will cause a crash if |fd_| unwritable.
+  void Increase();
+  int GetFd();
+
+  DISALLOW_COPY_AND_ASSIGN(ReactiveSemaphore);
+
+ private:
+  int fd_;
+};
+
+}  // namespace os
+}  // namespace bluetooth
