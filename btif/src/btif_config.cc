@@ -60,7 +60,16 @@ static const char* TIME_STRING_FORMAT = "%Y-%m-%d %H:%M:%S";
 
 constexpr int kBufferSize = 400 * 10;  // initial file is ~400B
 
-static bool use_key_attestation() { return getuid() == AID_BLUETOOTH; }
+static bool override_use_key_attestation() {
+  char key_attestation[PROPERTY_VALUE_MAX] = {0};
+  osi_property_get("persist.bluetooth.use_key_attestation", key_attestation, "false");
+  return strncmp(key_attestation, "true", 4) == 0;
+}
+
+static bool use_key_attestation() {
+  // Short circuiting until keystore issue is fixed
+  return getuid() == AID_BLUETOOTH /* remove if keystore fixed */ && override_use_key_attestation();
+}
 
 #define BT_CONFIG_METRICS_SECTION "Metrics"
 #define BT_CONFIG_METRICS_SALT_256BIT "Salt256Bit"
