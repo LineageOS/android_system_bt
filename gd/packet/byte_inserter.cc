@@ -14,33 +14,35 @@
  * limitations under the License.
  */
 
-#pragma once
-
-#include <cstdint>
-#include <iterator>
-#include <memory>
-#include <vector>
-
 #include "packet/byte_inserter.h"
+
+#include "os/log.h"
 
 namespace bluetooth {
 namespace packet {
 
-class BitInserter : public ByteInserter {
- public:
-  BitInserter(std::vector<uint8_t>& vector);
-  virtual ~BitInserter();
+ByteInserter::ByteInserter(std::vector<uint8_t>& vector) : std::back_insert_iterator<std::vector<uint8_t>>(vector) {}
 
-  void insert_bits(uint8_t byte, size_t num_bits);
+ByteInserter::~ByteInserter() {
+  ASSERT(registered_observers_.size() == 0);
+}
 
-  void insert_byte(uint8_t byte);
+void ByteInserter::RegisterObserver(ByteObserver observer) {
+  registered_observers_.push_back(observer);
+}
 
-  bool IsByteAligned();
+ByteObserver ByteInserter::UnregisterObserver() {
+  ByteObserver observer = registered_observers_.back();
+  registered_observers_.pop_back();
+  return observer;
+}
 
- private:
-  size_t num_saved_bits_{0};
-  uint8_t saved_bits_{0};
-};
+void ByteInserter::insert_byte(uint8_t byte) {
+  for (auto& observer : registered_observers_) {
+    observer.OnByte(byte);
+  }
+  std::back_insert_iterator<std::vector<uint8_t>>::operator=(byte);
+}
 
 }  // namespace packet
 }  // namespace bluetooth

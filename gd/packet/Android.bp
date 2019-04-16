@@ -2,6 +2,8 @@ filegroup {
     name: "BluetoothPacketSources",
     srcs: [
         "bit_inserter.cc",
+	"byte_inserter.cc",
+	"byte_observer.cc",
         "iterator.cc",
         "packet_view.cc",
         "raw_builder.cc",

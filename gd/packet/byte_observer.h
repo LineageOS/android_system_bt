@@ -17,29 +17,22 @@
 #pragma once
 
 #include <cstdint>
-#include <iterator>
-#include <memory>
-#include <vector>
-
-#include "packet/byte_inserter.h"
+#include <functional>
 
 namespace bluetooth {
 namespace packet {
 
-class BitInserter : public ByteInserter {
+class ByteObserver {
  public:
-  BitInserter(std::vector<uint8_t>& vector);
-  virtual ~BitInserter();
+  ByteObserver(const std::function<void(uint8_t)>& on_byte_, const std::function<uint64_t()>& get_value_);
 
-  void insert_bits(uint8_t byte, size_t num_bits);
+  void OnByte(uint8_t byte);
 
-  void insert_byte(uint8_t byte);
-
-  bool IsByteAligned();
+  uint64_t GetValue();
 
  private:
-  size_t num_saved_bits_{0};
-  uint8_t saved_bits_{0};
+  std::function<void(uint8_t)> on_byte_;
+  std::function<uint64_t()> get_value_;
 };
 
 }  // namespace packet
