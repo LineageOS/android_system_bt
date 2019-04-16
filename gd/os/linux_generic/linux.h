@@ -15,18 +15,7 @@
  */
 
 #pragma once
-#include <errno.h>
 
-// A macro to re-try a syscall when it receives EINTR
-#ifndef RUN_NO_INTR
-#define RUN_NO_INTR(fn) \
-  do {                  \
-  } while ((fn) == -1 && errno == EINTR)
-#endif
-
-// A macro to disallow the copy constructor and operator= functions
-#ifndef DISALLOW_COPY_AND_ASSIGN
-#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
-  TypeName(const TypeName&) = delete;      \
-  void operator=(const TypeName&) = delete
+#ifndef EFD_SEMAPHORE
+#define EFD_SEMAPHORE 1
 #endif
