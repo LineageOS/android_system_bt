@@ -1643,7 +1643,9 @@ void btm_ble_link_encrypted(BD_ADDR bd_addr, UINT8 encr_enable)
     {
         if (encr_enable)
             btm_sec_dev_rec_cback_event(p_dev_rec, BTM_SUCCESS, TRUE);
-        else if (p_dev_rec->role_master)
+        else if (p_dev_rec->sec_flags & ~BTM_SEC_LE_LINK_KEY_KNOWN) {
+            btm_sec_dev_rec_cback_event(p_dev_rec, BTM_FAILED_ON_SECURITY, TRUE);
+        } else if (p_dev_rec->role_master)
             btm_sec_dev_rec_cback_event(p_dev_rec, BTM_ERR_PROCESSING, TRUE);
 
     }
