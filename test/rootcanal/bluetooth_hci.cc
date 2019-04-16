@@ -122,9 +122,11 @@ Return<void> BluetoothHci::initialize(const sp<IBluetoothHciCallbacks>& cb) {
 
   if (BtTestConsoleEnabled()) {
     SetUpTestChannel(6111);
+    SetUpHciServer(6211,
+                   [this](int fd) { test_model_.IncomingHciConnection(fd); });
+    SetUpLinkLayerServer(
+        6311, [this](int fd) { test_model_.IncomingLinkLayerConnection(fd); });
   }
-  SetUpHciServer(6211, [this](int fd) { test_model_.IncomingHciConnection(fd); });
-  SetUpLinkLayerServer(6311, [this](int fd) { test_model_.IncomingLinkLayerConnection(fd); });
 
   unlink_cb_ = [cb](sp<BluetoothDeathRecipient>& death_recipient) {
     if (death_recipient->getHasDied())
