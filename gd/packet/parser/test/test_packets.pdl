@@ -7,7 +7,6 @@ packet Parent {
   size(payload) : 8,
   payload,
   Footer : 8,
-  Fcs : 16,
 }
 
 packet Child : Parent {
@@ -70,4 +69,14 @@ packet ChildWithNestedSum : ParentWithSum {
   checksum_start(NestedChecksum),
   MoreBytes : 32,
   NestedChecksum : SimpleSum,
+}
+
+packet ParentSizeModifier {
+  size(payload) : 8,
+  payload : [+2*8], // Include TwoBytes in the size
+  TwoBytes : 16,
+}
+
+packet ChildSizeModifier : ParentSizeModifier (TwoBytes = 0x1211) {
+  MoreBytes : 32,
 }

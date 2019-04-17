@@ -277,8 +277,13 @@ void PacketDef::GenSerialize(std::ostream& s) const {
         ERROR(field) << __func__ << "Can't find sized field named " << field_name;
       }
       if (sized_field->GetFieldType() == PacketField::Type::PAYLOAD) {
-        s << "size_t payload_bytes = size() - (BitsOfHeader() + BitsOfFooter()) / 8;";
-        s << "ASSERT(payload_bytes < (1 << " << field->GetSize().bits() << "));";
+        s << "size_t payload_bytes = GetPayloadSize();";
+        std::string modifier = ((PayloadField*)sized_field)->size_modifier_;
+        if (modifier != "") {
+          s << "static_assert((" << modifier << ")%8 == 0, \"Modifiers must be byte-aligned\");";
+          s << "payload_bytes = payload_bytes + (" << modifier << ") / 8;";
+        }
+        s << "ASSERT(payload_bytes < (static_cast<size_t>(1) << " << field->GetSize().bits() << "));";
         s << "insert(static_cast<" << field->GetType() << ">(payload_bytes), i," << field->GetSize().bits() << ");";
       } else {
         ERROR(field) << __func__ << "Unhandled sized field type for " << field_name;
@@ -360,6 +365,13 @@ void PacketDef::GenBuilderSize(std::ostream& s) const {
   }
   s << footer_bits << ";";
   s << "}\n\n";
+
+  if (fields_.HasPayload()) {
+    s << "size_t GetPayloadSize() const {";
+    s << "if (payload_ != nullptr) {return payload_->size();}";
+    s << "else { return size() - (BitsOfHeader() + BitsOfFooter()) / 8;}";
+    s << ";}\n\n";
+  }
 
   s << "public:";
   s << "virtual size_t size() const override {";
