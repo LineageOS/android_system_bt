@@ -31,6 +31,7 @@ interface IBluetoothHeadsetPhone {
   String getSubscriberNumber();
   boolean listCurrentCalls();
   boolean queryPhoneState();
+  boolean isHighDefCallInProgress();
 
   // Internal for phone app to call
   void updateBtHandsfreeAfterRadioTechnologyChange();
