@@ -409,9 +409,36 @@ void PacketDef::GenValidator(std::ostream& s) const {
       continue;
     }
 
-    s << "it += " << field_size.dynamic_string() << ";\n";
-    s << "if (it > end()) return false;\n";
-    s << "\n";
+    // Custom fields with dynamic size must have the offset for the field passed in as well
+    // as the end iterator so that they may ensure that they don't try to read past the end.
+    // Custom fields with fixed sizes will be handled in the static offset checking.
+    if (field->GetFieldType() == PacketField::Type::CUSTOM) {
+      const auto& custom_size_var = util::CamelCaseToUnderScore(field->GetName()) + "_size";
+
+      // Check if we can determine offset from begin(), otherwise error because by this point,
+      // the size of the custom field is unknown and can't be subtracted from end() to get the
+      // offset.
+      auto offset = GetOffsetForField(field->GetName(), false);
+      if (offset.empty()) {
+        ERROR(field) << "Custom Field offset can not be determined from begin().";
+      }
+
+      if (offset.bits() % 8 != 0) {
+        ERROR(field) << "Custom fields must be byte aligned.";
+      }
+
+      // Custom fields are special as their size field takes an argument.
+      s << "const auto& " << custom_size_var << " = " << field_size.dynamic_string();
+      s << "(begin() + " << offset.bytes() << " + (" << offset.dynamic_string() << "));";
+
+      s << "if (!" << custom_size_var << ".has_value()) { return false; }";
+      s << "it += *" << custom_size_var << ";";
+      s << "if (it > end()) return false;";
+      continue;
+    } else {
+      s << "it += " << field_size.dynamic_string() << ";";
+      s << "if (it > end()) return false;";
+    }
   }
 
   for (const auto& field : fields_) {
@@ -467,10 +494,8 @@ FieldList PacketDef::GetParamList() const {
   FieldList params;
 
   std::set<PacketField::Type> param_types = {
-      PacketField::Type::SCALAR,
-      PacketField::Type::ENUM,
-      PacketField::Type::BODY,
-      PacketField::Type::PAYLOAD,
+      PacketField::Type::SCALAR, PacketField::Type::ENUM,    PacketField::Type::CUSTOM,
+      PacketField::Type::BODY,   PacketField::Type::PAYLOAD,
   };
 
   if (parent_ != nullptr) {

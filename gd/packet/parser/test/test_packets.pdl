@@ -1,5 +1,7 @@
 little_endian_packets
 
+custom_field Address : 48 "common/"
+
 packet Parent {
   fixed = 0x12 : 8,
   size(payload) : 8,
@@ -37,4 +39,14 @@ packet ChildTwoTwo : ParentTwo (FourBits = TWO) {
 }
 
 packet ChildTwoTwoThree :ChildTwoTwo (MoreBits = THREE) {
+}
+
+packet ParentWithAddress {
+  TwoBytes : 16,
+  Address : Address,
+  payload,
+}
+
+packet ChildWithAddress : ParentWithAddress (TwoBytes = 0x1234) {
+  ChildAddress : Address,
 }
