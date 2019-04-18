@@ -51,6 +51,9 @@ std::string PacketField::GetDebugName() const {
     case Type::PAYLOAD:
       ret = "PAYLOAD";
       break;
+    case Type::CUSTOM:
+      ret = "CUSTOM";
+      break;
     default:
       std::cerr << "UNKNOWN DEBUG NAME TYPE\n";
       abort();

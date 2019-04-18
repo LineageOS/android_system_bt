@@ -20,6 +20,7 @@
 #include <map>
 #include <optional>
 
+#include "custom_field_def.h"
 #include "enum_def.h"
 #include "enum_gen.h"
 #include "packet_def.h"
@@ -66,11 +67,27 @@ class Declarations {
     return group_defs_.at(name);
   }
 
+  void AddCustomFieldDef(std::string name, CustomFieldDef def) {
+    custom_field_defs_.insert(std::pair(name, def));
+    custom_field_defs_queue_.push_back(std::pair(name, def));
+  }
+
+  CustomFieldDef* GetCustomFieldDef(std::string name) {
+    auto it = custom_field_defs_.find(name);
+    if (it == custom_field_defs_.end()) {
+      return nullptr;
+    }
+
+    return &(it->second);
+  }
+
   std::map<std::string, FieldList*> group_defs_;
 
   std::map<std::string, EnumDef> enum_defs_;
   std::deque<std::pair<std::string, EnumDef>> enum_defs_queue_;
   std::map<std::string, PacketDef> packet_defs_;
   std::deque<std::pair<std::string, PacketDef>> packet_defs_queue_;
+  std::map<std::string, CustomFieldDef> custom_field_defs_;
+  std::deque<std::pair<std::string, CustomFieldDef>> custom_field_defs_queue_;
   bool is_little_endian;
 };

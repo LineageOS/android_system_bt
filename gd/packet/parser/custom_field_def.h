@@ -16,12 +16,21 @@
 
 #pragma once
 
-#include "fields/body_field.h"
+#include <iostream>
+
 #include "fields/custom_field.h"
-#include "fields/enum_field.h"
-#include "fields/fixed_field.h"
-#include "fields/group_field.h"
-#include "fields/payload_field.h"
-#include "fields/reserved_field.h"
-#include "fields/scalar_field.h"
-#include "fields/size_field.h"
+#include "parse_location.h"
+#include "type_def.h"
+
+class CustomFieldDef : public TypeDef {
+ public:
+  CustomFieldDef(std::string name, std::string include, int size);
+
+  CustomField* GetCustomField(std::string name, ParseLocation loc) const;
+
+  void GenInclude(std::ostream& s) const;
+
+  void GenUsing(std::ostream& s) const;
+
+  const std::string include_;
+};
