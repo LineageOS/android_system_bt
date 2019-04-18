@@ -20,20 +20,27 @@
 #include <set>
 #include <string>
 
+#include "fields/packet_field.h"
+#include "type_def.h"
+
 // Holds the definition of an enum.
-class EnumDef {
+class EnumDef : public TypeDef {
  public:
   EnumDef(std::string name, int size);
+
+  virtual PacketField* GetNewField(const std::string& name, ParseLocation loc) const;
 
   void AddEntry(std::string name, uint32_t value);
 
   bool HasEntry(std::string name) const;
 
-  std::string GetTypeName() const;
+  virtual Type GetDefinitionType() const override;
+
+  virtual void GenInclude(std::ostream& s) const override;
+
+  virtual void GenUsing(std::ostream& s) const override;
 
   // data
-  const std::string name_;
-  int size_;
   std::map<uint32_t, std::string> constants_;
   std::set<std::string> entries_;
 };

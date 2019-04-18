@@ -18,15 +18,35 @@
 
 #include <iostream>
 
+#include "fields/packet_field.h"
+#include "fields/reserved_field.h"
+
 class TypeDef {
  public:
   TypeDef(std::string name) : name_(name) {}
 
   TypeDef(std::string name, int size) : name_(name), size_(size) {}
 
+  virtual ~TypeDef() = default;
+
   std::string GetTypeName() const {
     return name_;
   }
+
+  enum class Type {
+    INVALID,
+    ENUM,
+    CHECKSUM,
+    CUSTOM,
+  };
+
+  virtual Type GetDefinitionType() const = 0;
+
+  virtual PacketField* GetNewField(const std::string& name, ParseLocation loc) const = 0;
+
+  virtual void GenInclude(std::ostream& s) const = 0;
+
+  virtual void GenUsing(std::ostream& s) const = 0;
 
   const std::string name_;
   const int size_{-1};

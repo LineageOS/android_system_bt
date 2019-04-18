@@ -50,3 +50,24 @@ packet ParentWithAddress {
 packet ChildWithAddress : ParentWithAddress (TwoBytes = 0x1234) {
   ChildAddress : Address,
 }
+
+checksum SimpleSum : 16 "packet/parser/test/"
+
+packet ParentWithSum {
+  TwoBytes : 16,
+  checksum_start(ExampleChecksum),
+  SumBytes : 16,
+  payload,
+  ExampleChecksum : SimpleSum,
+}
+
+packet ChildWithSum : ParentWithSum {
+  MoreBytes : 32,
+  AnotherByte : 8,
+}
+
+packet ChildWithNestedSum : ParentWithSum {
+  checksum_start(NestedChecksum),
+  MoreBytes : 32,
+  NestedChecksum : SimpleSum,
+}
