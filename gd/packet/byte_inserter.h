@@ -21,25 +21,24 @@
 #include <memory>
 #include <vector>
 
-#include "packet/byte_inserter.h"
+#include "packet/byte_observer.h"
 
 namespace bluetooth {
 namespace packet {
 
-class BitInserter : public ByteInserter {
+class ByteInserter : public std::back_insert_iterator<std::vector<uint8_t>> {
  public:
-  BitInserter(std::vector<uint8_t>& vector);
-  virtual ~BitInserter();
-
-  void insert_bits(uint8_t byte, size_t num_bits);
+  ByteInserter(std::vector<uint8_t>& vector);
+  virtual ~ByteInserter();
 
   void insert_byte(uint8_t byte);
 
-  bool IsByteAligned();
+  void RegisterObserver(ByteObserver observer);
+
+  ByteObserver UnregisterObserver();
 
  private:
-  size_t num_saved_bits_{0};
-  uint8_t saved_bits_{0};
+  std::vector<ByteObserver> registered_observers_;
 };
 
 }  // namespace packet

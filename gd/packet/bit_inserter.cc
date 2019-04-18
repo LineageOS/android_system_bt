@@ -14,147 +14,40 @@
  * limitations under the License.
  */
 
-#include "packet/iterator.h"
+#include "packet/bit_inserter.h"
 
 #include "os/log.h"
 
 namespace bluetooth {
 namespace packet {
 
-template <bool little_endian>
-Iterator<little_endian>::Iterator(std::forward_list<View> data, size_t offset) {
-  data_ = data;
-  index_ = offset;
-  length_ = 0;
-  for (auto& view : data) {
-    length_ += view.size();
+BitInserter::BitInserter(std::vector<uint8_t>& vector) : ByteInserter(vector) {}
+
+BitInserter::~BitInserter() {
+  ASSERT(num_saved_bits_ == 0);
+}
+
+void BitInserter::insert_bits(uint8_t byte, size_t num_bits) {
+  size_t total_bits = num_bits + num_saved_bits_;
+  uint16_t new_value = saved_bits_ | (static_cast<uint16_t>(byte) << num_saved_bits_);
+  if (total_bits >= 8) {
+    uint8_t new_byte = static_cast<uint8_t>(new_value);
+    ByteInserter::insert_byte(new_byte);
+    total_bits -= 8;
+    new_value = new_value >> 8;
   }
+  num_saved_bits_ = total_bits;
+  uint8_t mask = 0xff >> (8 - num_saved_bits_);
+  saved_bits_ = static_cast<uint8_t>(new_value) & mask;
 }
 
-template <bool little_endian>
-Iterator<little_endian> Iterator<little_endian>::operator+(int offset) {
-  auto itr(*this);
-
-  return itr += offset;
+void BitInserter::insert_byte(uint8_t byte) {
+  insert_bits(byte, 8);
 }
 
-template <bool little_endian>
-Iterator<little_endian>& Iterator<little_endian>::operator+=(int offset) {
-  index_ += offset;
-  return *this;
+bool BitInserter::IsByteAligned() {
+  return num_saved_bits_ == 0;
 }
 
-template <bool little_endian>
-Iterator<little_endian> Iterator<little_endian>::operator++(int) {
-  auto itr(*this);
-  index_++;
-  return itr;
-}
-
-template <bool little_endian>
-Iterator<little_endian>& Iterator<little_endian>::operator++() {
-  index_++;
-  return *this;
-}
-
-template <bool little_endian>
-Iterator<little_endian> Iterator<little_endian>::operator-(int offset) {
-  auto itr(*this);
-
-  return itr -= offset;
-}
-
-template <bool little_endian>
-int Iterator<little_endian>::operator-(Iterator<little_endian>& itr) {
-  return index_ - itr.index_;
-}
-
-template <bool little_endian>
-Iterator<little_endian>& Iterator<little_endian>::operator-=(int offset) {
-  index_ -= offset;
-
-  return *this;
-}
-
-template <bool little_endian>
-Iterator<little_endian> Iterator<little_endian>::operator--(int) {
-  auto itr(*this);
-  if (index_ != 0) index_--;
-
-  return itr;
-}
-
-template <bool little_endian>
-Iterator<little_endian>& Iterator<little_endian>::operator--() {
-  if (index_ != 0) index_--;
-
-  return *this;
-}
-
-template <bool little_endian>
-Iterator<little_endian>& Iterator<little_endian>::operator=(const Iterator<little_endian>& itr) {
-  data_ = itr.data_;
-  index_ = itr.index_;
-
-  return *this;
-}
-
-template <bool little_endian>
-bool Iterator<little_endian>::operator==(const Iterator<little_endian>& itr) const {
-  return index_ == itr.index_;
-}
-
-template <bool little_endian>
-bool Iterator<little_endian>::operator!=(const Iterator<little_endian>& itr) const {
-  return !(*this == itr);
-}
-
-template <bool little_endian>
-bool Iterator<little_endian>::operator<(const Iterator<little_endian>& itr) const {
-  return index_ < itr.index_;
-}
-
-template <bool little_endian>
-bool Iterator<little_endian>::operator>(const Iterator<little_endian>& itr) const {
-  return index_ > itr.index_;
-}
-
-template <bool little_endian>
-bool Iterator<little_endian>::operator<=(const Iterator<little_endian>& itr) const {
-  return index_ <= itr.index_;
-}
-
-template <bool little_endian>
-bool Iterator<little_endian>::operator>=(const Iterator<little_endian>& itr) const {
-  return index_ >= itr.index_;
-}
-
-template <bool little_endian>
-uint8_t Iterator<little_endian>::operator*() const {
-  ASSERT_LOG(index_ < length_, "Index %zu out of bounds: %zu", index_, length_);
-  size_t index = index_;
-
-  for (auto view : data_) {
-    if (index < view.size()) {
-      return view[index];
-    }
-    index -= view.size();
-  }
-  ASSERT_LOG(false, "Out of fragments searching for index %zu", index_);
-  return 0;
-}
-
-template <bool little_endian>
-size_t Iterator<little_endian>::NumBytesRemaining() const {
-  if (length_ > index_) {
-    return length_ - index_;
-  } else {
-    return 0;
-  }
-}
-
-// Explicit instantiations for both types of Iterators.
-template class Iterator<true>;
-template class Iterator<false>;
 }  // namespace packet
 }  // namespace bluetooth
