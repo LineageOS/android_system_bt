@@ -20,10 +20,12 @@
 #include <forward_list>
 #include <memory>
 
+#include "common/address.h"
 #include "os/log.h"
 #include "packet/bit_inserter.h"
 #include "packet/raw_builder.h"
 
+using ::bluetooth::common::Address;
 using ::bluetooth::packet::BitInserter;
 using ::bluetooth::packet::kLittleEndian;
 using ::bluetooth::packet::RawBuilder;
@@ -42,6 +44,22 @@ vector<uint8_t> child = {
     0xb1 /* footer */,
     0xc1 /* First byte of the FCS */,
     0xc2,
+};
+vector<uint8_t> child_with_address = {
+    0x34 /* TwoBytes */,
+    0x12,
+    0xa6 /* First byte of the address */,
+    0xa5,
+    0xa4,
+    0xa3,
+    0xa2,
+    0xa1,
+    0xb6 /* Second address*/,
+    0xb5,
+    0xb4,
+    0xb3,
+    0xb2,
+    0xb1,
 };
 
 }  // namespace
@@ -156,6 +174,37 @@ TEST(GeneratedPacketTest, testValidatedParentDeath) {
 
   ChildView child_view = ChildView::Create(parent_view);
   ASSERT_DEATH(child_view.GetFieldName(), "validated");
+}
+
+TEST(GeneratedPacketTest, testChildWithAddress) {
+  Address address_a;
+  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", address_a));
+  Address address_b;
+  ASSERT_TRUE(Address::FromString("B1:B2:B3:B4:B5:B6", address_b));
+  auto packet = ChildWithAddressBuilder::Create(address_a, address_b);
+
+  ASSERT_EQ(child_with_address.size(), packet->size());
+
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  BitInserter it(*packet_bytes);
+  packet->Serialize(it);
+
+  ASSERT_EQ(packet_bytes->size(), child_with_address.size());
+  for (size_t i = 0; i < child_with_address.size(); i++) {
+    ASSERT_EQ(packet_bytes->at(i), child_with_address[i]);
+  }
+
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  ParentWithAddressView parent_view = ParentWithAddressView::Create(packet_bytes_view);
+  ASSERT_TRUE(parent_view.IsValid());
+  ASSERT_EQ(address_a, parent_view.GetAddress());
+
+  ChildWithAddressView child_view = ChildWithAddressView::Create(parent_view);
+  ASSERT_TRUE(child_view.IsValid());
+
+  ASSERT_EQ(address_a, child_view.GetAddress());
+  ASSERT_EQ(address_a, ((ParentWithAddressView)child_view).GetAddress());
+  ASSERT_EQ(address_b, child_view.GetChildAddress());
 }
 
 }  // namespace parser

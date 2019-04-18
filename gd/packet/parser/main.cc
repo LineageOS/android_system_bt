@@ -113,9 +113,20 @@ bool parse_one_file(std::filesystem::path input_file, std::filesystem::path incl
   out_file << "#include \"packet/packet_view.h\"\n";
   out_file << "\n\n";
 
+  for (const auto& c : decls.custom_field_defs_queue_) {
+    c.second.GenInclude(out_file);
+  }
+  out_file << "\n\n";
+
   std::vector<std::string> namespace_list;
   parse_namespace(gen_relative_path, namespace_list);
   generate_namespace_open(namespace_list, out_file);
+  out_file << "\n\n";
+
+  for (const auto& c : decls.custom_field_defs_queue_) {
+    c.second.GenUsing(out_file);
+  }
+  out_file << "\n\n";
 
   out_file << "using ::bluetooth::packet::BasePacketBuilder;";
   out_file << "using ::bluetooth::packet::BitInserter;";

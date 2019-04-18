@@ -121,7 +121,13 @@ void ScalarField::GenParameterValidator(std::ostream& s) const {
 }
 
 void ScalarField::GenInserter(std::ostream& s) const {
-  s << "insert(" << util::CamelCaseToUnderScore(GetName()) << "_, i," << GetSize().bits() << ");";
+  if (GetSize().bits() == 8) {
+    s << "i.insert_byte(" << util::CamelCaseToUnderScore(GetName()) << "_);";
+  } else if (GetSize().bits() % 8 == 0) {
+    s << "insert(" << util::CamelCaseToUnderScore(GetName()) << "_, i);";
+  } else {
+    s << "insert(" << util::CamelCaseToUnderScore(GetName()) << "_, i," << GetSize().bits() << ");";
+  }
 }
 
 void ScalarField::GenValidator(std::ostream&) const {
