@@ -16,23 +16,32 @@
 
 #pragma once
 
-#include <iostream>
+#include <cstdint>
 
-#include "fields/custom_field.h"
-#include "parse_location.h"
-#include "type_def.h"
+namespace bluetooth {
+namespace packet {
+namespace parser {
+namespace test {
 
-class CustomFieldDef : public TypeDef {
+class SimpleSum {
  public:
-  CustomFieldDef(std::string name, std::string include, int size);
+  static void Initialize(SimpleSum& s) {
+    s.sum = 0;
+  }
 
-  virtual PacketField* GetNewField(const std::string& name, ParseLocation loc) const override;
+  static void AddByte(SimpleSum& s, uint8_t byte) {
+    s.sum += byte;
+  }
 
-  virtual Type GetDefinitionType() const override;
+  static uint16_t GetChecksum(const SimpleSum& s) {
+    return s.sum;
+  }
 
-  virtual void GenInclude(std::ostream& s) const;
-
-  virtual void GenUsing(std::ostream& s) const;
-
-  const std::string include_;
+ private:
+  uint16_t sum;
 };
+
+}  // namespace test
+}  // namespace parser
+}  // namespace packet
+}  // namespace bluetooth

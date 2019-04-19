@@ -59,6 +59,8 @@ string_literal \".*\"
 "reserved"              { return(token::RESERVED); }
 "group"                 { return(token::GROUP); }
 "custom_field"          { return(token::CUSTOM_FIELD); }
+"checksum"              { return(token::CHECKSUM); }
+"checksum_start"        { return(token::CHECKSUM_START); }
 "little_endian_packets" {
                           yylval->integer = 1;
                           return token::IS_LITTLE_ENDIAN;
