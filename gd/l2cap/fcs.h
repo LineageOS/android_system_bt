@@ -16,23 +16,23 @@
 
 #pragma once
 
-#include <iostream>
+#include <cstdint>
 
-#include "fields/custom_field.h"
-#include "parse_location.h"
-#include "type_def.h"
+namespace bluetooth {
+namespace l2cap {
 
-class CustomFieldDef : public TypeDef {
+// Frame Check Sequence from the L2CAP spec.
+class Fcs {
  public:
-  CustomFieldDef(std::string name, std::string include, int size);
+  static void Initialize(Fcs& s);
 
-  virtual PacketField* GetNewField(const std::string& name, ParseLocation loc) const override;
+  static void AddByte(Fcs& s, uint8_t byte);
 
-  virtual Type GetDefinitionType() const override;
+  static uint16_t GetChecksum(const Fcs& s);
 
-  virtual void GenInclude(std::ostream& s) const;
-
-  virtual void GenUsing(std::ostream& s) const;
-
-  const std::string include_;
+ private:
+  uint16_t crc;
 };
+
+}  // namespace l2cap
+}  // namespace bluetooth

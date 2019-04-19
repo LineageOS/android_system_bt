@@ -20,6 +20,7 @@
 #include <map>
 #include <optional>
 
+#include "checksum_def.h"
 #include "custom_field_def.h"
 #include "enum_def.h"
 #include "enum_gen.h"
@@ -27,18 +28,18 @@
 
 class Declarations {
  public:
-  void AddEnumDef(std::string name, EnumDef def) {
-    enum_defs_.insert(std::pair(name, def));
-    enum_defs_queue_.push_back(std::pair(name, def));
+  void AddTypeDef(std::string name, TypeDef* def) {
+    type_defs_.insert(std::pair(name, def));
+    type_defs_queue_.push_back(std::pair(name, def));
   }
 
-  EnumDef* GetEnumDef(const std::string& name) {
-    auto it = enum_defs_.find(name);
-    if (it == enum_defs_.end()) {
+  TypeDef* GetTypeDef(const std::string& name) {
+    auto it = type_defs_.find(name);
+    if (it == type_defs_.end()) {
       return nullptr;
     }
 
-    return &(it->second);
+    return it->second;
   }
 
   void AddPacketDef(std::string name, PacketDef def) {
@@ -67,27 +68,11 @@ class Declarations {
     return group_defs_.at(name);
   }
 
-  void AddCustomFieldDef(std::string name, CustomFieldDef def) {
-    custom_field_defs_.insert(std::pair(name, def));
-    custom_field_defs_queue_.push_back(std::pair(name, def));
-  }
-
-  CustomFieldDef* GetCustomFieldDef(std::string name) {
-    auto it = custom_field_defs_.find(name);
-    if (it == custom_field_defs_.end()) {
-      return nullptr;
-    }
-
-    return &(it->second);
-  }
-
   std::map<std::string, FieldList*> group_defs_;
 
-  std::map<std::string, EnumDef> enum_defs_;
-  std::deque<std::pair<std::string, EnumDef>> enum_defs_queue_;
+  std::map<std::string, TypeDef*> type_defs_;
+  std::deque<std::pair<std::string, TypeDef*>> type_defs_queue_;
   std::map<std::string, PacketDef> packet_defs_;
   std::deque<std::pair<std::string, PacketDef>> packet_defs_queue_;
-  std::map<std::string, CustomFieldDef> custom_field_defs_;
-  std::deque<std::pair<std::string, CustomFieldDef>> custom_field_defs_queue_;
   bool is_little_endian;
 };

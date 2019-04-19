@@ -48,7 +48,7 @@ Size PayloadField::GetSize() const {
 
   std::string dynamic_size = "Get" + size_field_->GetName() + "()";
   if (!size_modifier_.empty()) {
-    dynamic_size += size_modifier_;
+    dynamic_size += "- (" + size_modifier_ + ") / 8";
   }
 
   return dynamic_size;

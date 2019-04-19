@@ -19,9 +19,10 @@
 #include <iostream>
 #include <map>
 
+#include "fields/enum_field.h"
 #include "util.h"
 
-EnumDef::EnumDef(std::string name, int size) : name_(name), size_(size){};
+EnumDef::EnumDef(std::string name, int size) : TypeDef(name, size){};
 
 void EnumDef::AddEntry(std::string name, uint32_t value) {
   if (value > util::GetMaxValueForBits(size_)) {
@@ -33,10 +34,18 @@ void EnumDef::AddEntry(std::string name, uint32_t value) {
   entries_.insert(name);
 }
 
+PacketField* EnumDef::GetNewField(const std::string& name, ParseLocation loc) const {
+  return new EnumField(name, *this, "What is this for", loc);
+}
+
 bool EnumDef::HasEntry(std::string name) const {
   return entries_.count(name) != 0;
 }
 
-std::string EnumDef::GetTypeName() const {
-  return name_;
+TypeDef::Type EnumDef::GetDefinitionType() const {
+  return TypeDef::Type::ENUM;
 }
+
+void EnumDef::GenInclude(std::ostream&) const {}
+
+void EnumDef::GenUsing(std::ostream&) const {}
