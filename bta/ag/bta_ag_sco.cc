@@ -564,6 +564,13 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
   uint8_t* p_rem_feat = BTM_ReadRemoteFeatures(p_scb->peer_addr);
   bool sdp_wbs_support = p_scb->peer_sdp_features & BTA_AG_FEAT_WBS_SUPPORT;
 
+  if (p_rem_feat == nullptr) {
+    LOG(WARNING) << __func__
+                 << ": Fail to read remote feature, skip codec negotiation";
+    bta_ag_sco_codec_nego(p_scb, false);
+    return;
+  }
+
   // Workaround for misbehaving HFs, which indicate which one is not support on
   // Transparent Synchronous Data in Remote Supported Features, WBS in SDP and
   // and Codec Negotiation in BRSF. Fluoride will assume CVSD codec by default.
@@ -572,7 +579,7 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
   // support, using mSBC codec can result background noise or no audio.
   // In Skullcandy JIB case, which indicate WBS and codec negotiation support,
   // but no Transparent Synchronous Data support, using mSBC codec can result
-  // SCO setup fail by Firmware rejest.
+  // SCO setup fail by Firmware reject.
   if (!HCI_LMP_TRANSPNT_SUPPORTED(p_rem_feat) || !sdp_wbs_support ||
       !(p_scb->peer_features & BTA_AG_PEER_FEAT_CODEC)) {
     p_scb->sco_codec = UUID_CODEC_CVSD;
