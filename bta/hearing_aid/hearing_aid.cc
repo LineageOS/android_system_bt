@@ -1551,9 +1551,9 @@ class HearingAidImpl : public HearingAid {
       // Send the data packet
       LOG(INFO) << __func__ << ": Send State Change. device=" << device->address
                 << ", status=" << loghex(payload[1]);
-      BtaGattQueue::WriteCharacteristic(device->conn_id,
-                                        device->audio_control_point_handle,
-                                        payload, GATT_WRITE, nullptr, nullptr);
+      BtaGattQueue::WriteCharacteristic(
+          device->conn_id, device->audio_control_point_handle, payload,
+          GATT_WRITE_NO_RSP, nullptr, nullptr);
     }
   }
 
