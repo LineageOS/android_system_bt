@@ -91,7 +91,7 @@ struct alarm_t {
   // potentially long-running callback is executing. |alarm_cancel| uses this
   // mutex to provide a guarantee to its caller that the callback will not be
   // in progress when it returns.
-  std::shared_ptr<std::recursive_mutex> callback_mutex;
+  std::recursive_mutex* callback_mutex;
   uint64_t creation_time_ms;
   uint64_t period_ms;
   uint64_t deadline_ms;
@@ -174,8 +174,7 @@ static alarm_t* alarm_new_internal(const char* name, bool is_periodic) {
 
   alarm_t* ret = static_cast<alarm_t*>(osi_calloc(sizeof(alarm_t)));
 
-  std::shared_ptr<std::recursive_mutex> ptr(new std::recursive_mutex());
-  ret->callback_mutex = ptr;
+  ret->callback_mutex = new std::recursive_mutex;
   ret->is_periodic = is_periodic;
   ret->stats.name = osi_strdup(name);
 
@@ -192,7 +191,7 @@ void alarm_free(alarm_t* alarm) {
   if (!alarm) return;
 
   alarm_cancel(alarm);
-
+  delete alarm->callback_mutex;
   osi_free((void*)alarm->stats.name);
   alarm->closure.~CancelableClosureInStruct();
   osi_free(alarm);
@@ -246,15 +245,13 @@ void alarm_cancel(alarm_t* alarm) {
   CHECK(alarms != NULL);
   if (!alarm) return;
 
-  std::shared_ptr<std::recursive_mutex> local_mutex_ref;
   {
     std::lock_guard<std::mutex> lock(alarms_mutex);
-    local_mutex_ref = alarm->callback_mutex;
     alarm_cancel_internal(alarm);
   }
 
   // If the callback for |alarm| is in progress, wait here until it completes.
-  std::lock_guard<std::recursive_mutex> lock(*local_mutex_ref);
+  std::lock_guard<std::recursive_mutex> lock(*alarm->callback_mutex);
 }
 
 // Internal implementation of canceling an alarm.
@@ -268,7 +265,6 @@ static void alarm_cancel_internal(alarm_t* alarm) {
   alarm->deadline_ms = 0;
   alarm->prev_deadline_ms = 0;
   alarm->callback = NULL;
-  alarm->callback_mutex.reset();
   alarm->data = NULL;
   alarm->stats.canceled_count++;
   alarm->queue = NULL;
@@ -587,10 +583,7 @@ static void alarm_ready_generic(alarm_t* alarm,
     alarm->queue = NULL;
   }
 
-  // Increment the reference count of the mutex so it doesn't get freed
-  // before the callback gets finished executing.
-  std::shared_ptr<std::recursive_mutex> local_mutex_ref = alarm->callback_mutex;
-  std::lock_guard<std::recursive_mutex> cb_lock(*local_mutex_ref);
+  std::lock_guard<std::recursive_mutex> cb_lock(*alarm->callback_mutex);
   lock.unlock();
 
   // Update the statistics
