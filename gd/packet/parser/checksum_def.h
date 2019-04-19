@@ -18,21 +18,25 @@
 
 #include <iostream>
 
-#include "fields/custom_field.h"
+#include "checksum_type_checker.h"
+#include "custom_field_def.h"
+#include "fields/checksum_field.h"
 #include "parse_location.h"
 #include "type_def.h"
 
-class CustomFieldDef : public TypeDef {
+class ChecksumDef : public CustomFieldDef {
  public:
-  CustomFieldDef(std::string name, std::string include, int size);
+  ChecksumDef(std::string name, std::string include, int size);
 
   virtual PacketField* GetNewField(const std::string& name, ParseLocation loc) const override;
 
-  virtual Type GetDefinitionType() const override;
+  virtual TypeDef::Type GetDefinitionType() const override;
 
-  virtual void GenInclude(std::ostream& s) const;
+  virtual void GenInclude(std::ostream& s) const override;
 
-  virtual void GenUsing(std::ostream& s) const;
+  virtual void GenUsing(std::ostream& s) const override;
+
+  void GenChecksumCheck(std::ostream& s) const;
 
   const std::string include_;
 };

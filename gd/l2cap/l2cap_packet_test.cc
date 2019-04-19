@@ -81,5 +81,86 @@ TEST(L2capPacketTest, extendedInformationStartFrameTest) {
   ASSERT_EQ(FrameType::I_FRAME, standard_frame_view.GetFrameType());
 }
 
+vector<uint8_t> i_frame_with_fcs = {
+    0x0E, 0x00, 0x40, 0x00, 0x02, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x38, 0x61,
+};
+TEST(L2capPacketTest, iFrameWithFcsTest) {
+  uint16_t channel_id = 0x0040;
+  SegmentationAndReassembly sar = SegmentationAndReassembly::UNSEGMENTED;  // 0
+  uint16_t req_seq = 0;
+  uint16_t tx_seq = 1;
+  RetransmissionDisable r = RetransmissionDisable::NORMAL;  // 0
+
+  std::unique_ptr<RawBuilder> payload = std::make_unique<RawBuilder>();
+  vector<uint8_t> payload_bytes = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09};
+  payload->AddOctets(payload_bytes);
+
+  auto packet = StandardInformationFrameWithFcsBuilder::Create(channel_id, tx_seq, r, req_seq, sar, std::move(payload));
+
+  ASSERT_EQ(i_frame_with_fcs.size(), packet->size());
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  BitInserter it(*packet_bytes);
+  packet->Serialize(it);
+  PacketView<true> packet_bytes_view(packet_bytes);
+  ASSERT_EQ(i_frame_with_fcs.size(), packet_bytes_view.size());
+
+  for (size_t i = 0; i < i_frame_with_fcs.size(); i++) {
+    ASSERT_EQ(i_frame_with_fcs[i], packet_bytes_view[i]);
+  }
+
+  BasicFrameWithFcsView basic_frame_view = BasicFrameWithFcsView::Create(packet_bytes_view);
+  ASSERT_TRUE(basic_frame_view.IsValid());
+  ASSERT_EQ(channel_id, basic_frame_view.GetChannelId());
+
+  StandardFrameWithFcsView standard_frame_view = StandardFrameWithFcsView::Create(basic_frame_view);
+  ASSERT_TRUE(standard_frame_view.IsValid());
+  ASSERT_EQ(FrameType::I_FRAME, standard_frame_view.GetFrameType());
+
+  StandardInformationFrameWithFcsView information_frame_view =
+      StandardInformationFrameWithFcsView::Create(standard_frame_view);
+  ASSERT_TRUE(information_frame_view.IsValid());
+  ASSERT_EQ(sar, information_frame_view.GetSar());
+  ASSERT_EQ(req_seq, information_frame_view.GetReqSeq());
+  ASSERT_EQ(tx_seq, information_frame_view.GetTxSeq());
+  ASSERT_EQ(r, information_frame_view.GetR());
+}
+
+vector<uint8_t> rr_frame_with_fcs = {
+    0x04, 0x00, 0x40, 0x00, 0x01, 0x01, 0xD4, 0x14,
+};
+TEST(L2capPacketTest, rrFrameWithFcsTest) {
+  uint16_t channel_id = 0x0040;
+  SupervisoryFunction s = SupervisoryFunction::RECEIVER_READY;  // 0
+  RetransmissionDisable r = RetransmissionDisable::NORMAL;      // 0
+  uint16_t req_seq = 1;
+
+  auto packet = StandardSupervisoryFrameWithFcsBuilder::Create(channel_id, s, r, req_seq);
+
+  ASSERT_EQ(rr_frame_with_fcs.size(), packet->size());
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  BitInserter it(*packet_bytes);
+  packet->Serialize(it);
+  PacketView<true> packet_bytes_view(packet_bytes);
+  ASSERT_EQ(rr_frame_with_fcs.size(), packet_bytes_view.size());
+
+  for (size_t i = 0; i < rr_frame_with_fcs.size(); i++) {
+    ASSERT_EQ(rr_frame_with_fcs[i], packet_bytes_view[i]);
+  }
+
+  BasicFrameWithFcsView basic_frame_view = BasicFrameWithFcsView::Create(packet_bytes_view);
+  ASSERT_TRUE(basic_frame_view.IsValid());
+  ASSERT_EQ(channel_id, basic_frame_view.GetChannelId());
+
+  StandardFrameWithFcsView standard_frame_view = StandardFrameWithFcsView::Create(basic_frame_view);
+  ASSERT_TRUE(standard_frame_view.IsValid());
+  ASSERT_EQ(FrameType::S_FRAME, standard_frame_view.GetFrameType());
+
+  StandardSupervisoryFrameWithFcsView supervisory_frame_view =
+      StandardSupervisoryFrameWithFcsView::Create(standard_frame_view);
+  ASSERT_TRUE(supervisory_frame_view.IsValid());
+  ASSERT_EQ(s, supervisory_frame_view.GetS());
+  ASSERT_EQ(r, supervisory_frame_view.GetR());
+  ASSERT_EQ(req_seq, supervisory_frame_view.GetReqSeq());
+}
 }  // namespace l2cap
 }  // namespace bluetooth
