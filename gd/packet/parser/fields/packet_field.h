@@ -41,6 +41,9 @@ class PacketField : public Loggable {
     COUNT,
     BODY,
     PAYLOAD,
+    CUSTOM,
+    CHECKSUM,
+    CHECKSUM_START,
   };
 
   // Get the field type for the field.

@@ -2,6 +2,9 @@ cc_binary_host  {
   name: "bluetooth_packetgen",
   srcs: [
     "fields/body_field.cc",
+    "fields/checksum_field.cc",
+    "fields/checksum_start_field.cc",
+    "fields/custom_field.cc",
     "fields/enum_field.cc",
     "fields/fixed_field.cc",
     "fields/group_field.cc",
@@ -10,6 +13,8 @@ cc_binary_host  {
     "fields/reserved_field.cc",
     "fields/scalar_field.cc",
     "fields/size_field.cc",
+    "checksum_def.cc",
+    "custom_field_def.cc",
     "enum_def.cc",
     "enum_gen.cc",
     "packet_def.cc",

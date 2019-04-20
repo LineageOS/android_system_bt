@@ -1,5 +1,8 @@
 little_endian_packets
 
+custom_field Address : 48 "common/"
+custom_field ClassOfDevice : 24 "common/"
+
 enum Enable : 8 {
   DISABLED = 0x00,
   ENABLED = 0x01,
@@ -522,7 +525,7 @@ enum CreateConnectionRoleSwitch : 8 {
 }
 
 packet CreateConnection : CreateConnectionCommand (OpCode = CREATE_CONNECTION) {
-  BdAddr : 48,
+  BdAddr : Address,
   PacketType : 16,
   PageScanRepetitionMode : PageScanRepetitionMode,
   reserved : 8,
@@ -554,12 +557,12 @@ packet DisconnectStatus : CommandStatus (CommandOpCode = DISCONNECT) {
 }
 
 packet CreateConnectionCancel : CreateConnectionCommand (OpCode = CREATE_CONNECTION_CANCEL) {
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet CreateConnectionCancelComplete : CommandComplete (CommandOpCode = CREATE_CONNECTION_CANCEL) {
   Status : ErrorCodes,
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 enum AcceptConnectionRequestRole : 8 {
@@ -568,7 +571,7 @@ enum AcceptConnectionRequestRole : 8 {
 }
 
 packet AcceptConnectionRequest : CreateConnectionCommand (OpCode = ACCEPT_CONNECTION_REQUEST) {
-  BdAddr : 48,
+  BdAddr : Address,
   Role : AcceptConnectionRequestRole,
 }
 
@@ -582,7 +585,7 @@ enum RejectConnectionReason : 8 {
 }
 
 packet RejectConnectionRequest : CreateConnectionCommand (OpCode = REJECT_CONNECTION_REQUEST) {
-  BdAddr : 48,
+  BdAddr : Address,
   Reason : RejectConnectionReason,
 }
 
@@ -590,7 +593,7 @@ packet RejectConnectionRequestStatus : CommandStatus (CommandOpCode = REJECT_CON
 }
 
 packet LinkKeyRequestReply : SecurityCommand (OpCode = LINK_KEY_REQUEST_REPLY) {
-  BdAddr : 48,
+  BdAddr : Address,
   LinkKeyLo : 64,
   LinkKeyHi : 64,
 }
@@ -600,16 +603,16 @@ packet LinkKeyRequestReplyComplete : CommandComplete (CommandOpCode = LINK_KEY_R
 }
 
 packet LinkKeyRequestNegativeReply : SecurityCommand (OpCode = LINK_KEY_REQUEST_NEGATIVE_REPLY) {
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet LinkKeyRequestNegativeReplyComplete : CommandComplete (CommandOpCode = LINK_KEY_REQUEST_NEGATIVE_REPLY) {
   Status : ErrorCodes,
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet PinCodeRequestReply : SecurityCommand (OpCode = PIN_CODE_REQUEST_REPLY) {
-  BdAddr : 48,
+  BdAddr : Address,
   PinCodeLength : 5, // 0x01 - 0x10
   reserved : 3,
   PinCode1 : 8, // string parameter, first octet first
@@ -631,16 +634,16 @@ packet PinCodeRequestReply : SecurityCommand (OpCode = PIN_CODE_REQUEST_REPLY) {
 
 packet PinCodeRequestReplyComplete : CommandComplete (CommandOpCode = PIN_CODE_REQUEST_REPLY) {
   Status : ErrorCodes,
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet PinCodeRequestNegativeReply : SecurityCommand (OpCode = PIN_CODE_REQUEST_NEGATIVE_REPLY) {
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet PinCodeRequestNegativeReplyComplete : CommandComplete (CommandOpCode = PIN_CODE_REQUEST_NEGATIVE_REPLY) {
   Status : ErrorCodes,
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet ChangeConnectionPacketType : ConnectionManagementCommand (OpCode = CHANGE_CONNECTION_PACKET_TYPE) {
@@ -690,7 +693,7 @@ packet MasterLinkKeyStatus : CommandStatus (CommandOpCode = MASTER_LINK_KEY) {
 }
 
 packet RemoteNameRequest : DiscoveryCommand (OpCode = REMOTE_NAME_REQUEST) {
-  BdAddr : 48,
+  BdAddr : Address,
   PageScanRepetitionMode : PageScanRepetitionMode,
   reserved : 8,
   ClockOffset : 15,
@@ -701,12 +704,12 @@ packet RemoteNameRequestStatus : CommandStatus (CommandOpCode = REMOTE_NAME_REQU
 }
 
 packet RemoteNameRequestCancel : DiscoveryCommand (OpCode = REMOTE_NAME_REQUEST_CANCEL) {
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet RemoteNameRequestCancelComplete : CommandComplete (CommandOpCode = REMOTE_NAME_REQUEST_CANCEL) {
   Status : ErrorCodes,
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet ReadRemoteSupportedFeatures : DiscoveryCommand (OpCode = READ_REMOTE_SUPPORTED_FEATURES) {
@@ -791,7 +794,7 @@ enum AuthenticationRequirements : 8 {
 }
 
 packet IoCapabilityRequestReply : SecurityCommand (OpCode = IO_CAPABILITY_REQUEST_REPLY) {
-  BdAddr : 48,
+  BdAddr : Address,
   IoCapability : IoCapability,
   OobPresent : OobDataPresent,
   AuthenticationRequirements : AuthenticationRequirements,
@@ -799,44 +802,44 @@ packet IoCapabilityRequestReply : SecurityCommand (OpCode = IO_CAPABILITY_REQUES
 
 packet IoCapabilityRequestReplyComplete : CommandComplete (CommandOpCode = IO_CAPABILITY_REQUEST_REPLY) {
   Status : ErrorCodes,
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet UserConfirmationRequestReply : SecurityCommand (OpCode = USER_CONFIRMATION_REQUEST_REPLY) {
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet UserConfirmationRequestReplyComplete : CommandComplete (CommandOpCode = USER_CONFIRMATION_REQUEST_REPLY) {
   Status : ErrorCodes,
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet UserConfirmationRequestNegativeReply : SecurityCommand (OpCode = USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY) {
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet UserConfirmationRequestNegativeReplyComplete : CommandComplete (CommandOpCode = USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY) {
   Status : ErrorCodes,
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet UserPasskeyRequestReply : SecurityCommand (OpCode = USER_PASSKEY_REQUEST_REPLY) {
-  BdAddr : 48,
+  BdAddr : Address,
   NumericValue : 32, // 000000-999999 decimal or 0x0-0xF423F
 }
 
 packet UserPasskeyReplyComplete : CommandComplete (CommandOpCode = USER_PASSKEY_REQUEST_REPLY) {
   Status : ErrorCodes,
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet UserPasskeyRequestNegativeReply : SecurityCommand (OpCode = USER_PASSKEY_REQUEST_NEGATIVE_REPLY) {
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet UserPasskeyRequestNegativeReplyComplete : CommandComplete (CommandOpCode = USER_PASSKEY_REQUEST_NEGATIVE_REPLY) {
   Status : ErrorCodes,
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet RemoteOobDataRequestReply : SecurityCommand (OpCode = REMOTE_OOB_DATA_REQUEST_REPLY) {
@@ -845,26 +848,26 @@ packet RemoteOobDataRequestReply : SecurityCommand (OpCode = REMOTE_OOB_DATA_REQ
 
 packet RemoteOobDataRequestReplyComplete : CommandComplete (CommandOpCode = REMOTE_OOB_DATA_REQUEST_REPLY) {
   Status : ErrorCodes,
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet RemoteOobDataRequestNegativeReply : SecurityCommand (OpCode = REMOTE_OOB_DATA_REQUEST_NEGATIVE_REPLY) {
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet RemoteOobDataRequestNegativeReplyComplete : CommandComplete (CommandOpCode = REMOTE_OOB_DATA_REQUEST_NEGATIVE_REPLY) {
   Status : ErrorCodes,
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet IoCapabilityRequestNegativeReply : SecurityCommand (OpCode = IO_CAPABILITY_REQUEST_NEGATIVE_REPLY) {
-  BdAddr : 48,
+  BdAddr : Address,
   Reason : ErrorCodes,
 }
 
 packet IoCapabilityRequestNegativeReplyComplete : CommandComplete (CommandOpCode = IO_CAPABILITY_REQUEST_NEGATIVE_REPLY) {
   Status : ErrorCodes,
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet EnhancedSetupSynchronousConnection : ScoConnectionCommand (OpCode = ENHANCED_SETUP_SYNCHRONOUS_CONNECTION) {
@@ -968,7 +971,7 @@ enum ReadStoredLinkKeyReadAllFlag : 8 {
 }
 
 packet ReadStoredLinkKey : SecurityCommand (OpCode = READ_STORED_LINK_KEY) {
-  BdAddr : 48,
+  BdAddr : Address,
   ReadAllFlag : ReadStoredLinkKeyReadAllFlag,
 }
 
@@ -993,7 +996,7 @@ enum DeleteStoredLinkKeyDeleteAllFlag : 8 {
 }
 
 packet DeleteStoredLinkKey : SecurityCommand (OpCode = DELETE_STORED_LINK_KEY) {
-  BdAddr : 48,
+  BdAddr : Address,
   DeleteAllFlag : DeleteStoredLinkKeyDeleteAllFlag,
 }
 
@@ -1109,11 +1112,11 @@ packet ReadClassOfDevice : DiscoveryCommand (OpCode = READ_CLASS_OF_DEVICE) {
 
 packet ReadClassOfDeviceComplete : CommandComplete (CommandOpCode = READ_CLASS_OF_DEVICE) {
   Status : ErrorCodes,
-  ClassOfDevice : 24, // ClassOfDevice,
+  ClassOfDevice : ClassOfDevice,
 }
 
 packet WriteClassOfDevice : DiscoveryCommand (OpCode = WRITE_CLASS_OF_DEVICE) {
-  ClassOfDevice : 24, // ClassOfDevice,
+  ClassOfDevice : ClassOfDevice,
 }
 
 packet WriteClassOfDeviceComplete : CommandComplete (CommandOpCode = WRITE_CLASS_OF_DEVICE) {
@@ -1387,13 +1390,13 @@ enum KeypressNotificationType : 8 {
 }
 
 packet SendKeypressNotification : SecurityCommand (OpCode = SEND_KEYPRESS_NOTIFICATION) {
-  BdAddr : 48,
+  BdAddr : Address,
   NotificationType : KeypressNotificationType,
 }
 
 packet SendKeypressNotificationComplete : CommandComplete (CommandOpCode = SEND_KEYPRESS_NOTIFICATION) {
   Status : ErrorCodes,
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 enum LeSupportedHost : 8 {
@@ -1605,7 +1608,7 @@ packet LeReadLocalSupportedFeaturesComplete : CommandComplete (CommandOpCode = L
 }
 
 packet LeSetRandomAddress : CommandPacket (OpCode = LE_SET_RANDOM_ADDRESS) {
-  RandomAddress : 48,
+  RandomAddress : Address,
 }
 
 packet LeSetRandomAddressComplete : CommandComplete (CommandOpCode = LE_SET_RANDOM_ADDRESS) {
@@ -1643,7 +1646,7 @@ packet LeSetAdvertisingParameters : LeAdvertisingCommand (OpCode = LE_SET_ADVERT
   AdvertisingType : AdvertisingEventType,
   OwnAddressType : AddressType,
   PeerAddressType : PeerAddressType,
-  PeerAddress : 48,
+  PeerAddress : Address,
   AdvertisingChannelMap : 8,
   ConnectionFilterPolicy : AdvertisingFilterPolicy,
   ScanFilterPolicy : AdvertisingFilterPolicy,
@@ -1736,7 +1739,7 @@ packet LeCreateConnection : LeCreateConnectionCommand (OpCode = LE_CREATE_CONNEC
   LeScanWindow : 16, // < = LeScanInterval
   InitiatorFilterPolicy : InitiatorFilterPolicy,
   PeerAddressType : AddressType,
-  PeerAddress : 48,
+  PeerAddress : Address,
   OwnAddressType : OwnAddressType,
   ConnIntervalMin : 16, // 0x0006-0x0C80 (7.5ms to 4s)
   ConnIntervalMax : 16, // 0x0006-0x0C80 (7.5ms to 4s)
@@ -1779,7 +1782,7 @@ enum WhiteListAddressType : 8 {
 
 packet LeAddDeviceToWhiteList : LeCreateConnectionCommand (OpCode = LE_ADD_DEVICE_TO_WHITE_LIST) {
   AddressType : WhiteListAddressType,
-  Address : 48,
+  Address : Address,
 }
 
 packet LeAddDeviceToWhiteListComplete : CommandComplete (CommandOpCode = LE_ADD_DEVICE_TO_WHITE_LIST) {
@@ -1788,7 +1791,7 @@ packet LeAddDeviceToWhiteListComplete : CommandComplete (CommandOpCode = LE_ADD_
 
 packet LeRemoveDeviceFromWhiteList : LeCreateConnectionCommand (OpCode = LE_REMOVE_DEVICE_FROM_WHITE_LIST) {
   AddressType : WhiteListAddressType,
-  Address : 48,
+  Address : Address,
 }
 
 packet LeRemoveDeviceFromWhiteListComplete : CommandComplete (CommandOpCode = LE_REMOVE_DEVICE_FROM_WHITE_LIST) {
@@ -2092,11 +2095,11 @@ packet InquiryComplete : EventPacket (EventCode = INQUIRY_COMPLETE){
 
 packet InquiryResult : EventPacket (EventCode = INQUIRY_RESULT){
   NumResponses : 8,
-  BdAddr : 48,
+  BdAddr : Address,
   PageScanRepetitionMode : PageScanRepetitionMode,
   reserved : 8,
   reserved : 8,
-  ClassOfDevice : 24, // ClassOfDevice,
+  ClassOfDevice : ClassOfDevice,
   ClockOffset : 15,
   reserved : 1,
 }
@@ -2110,7 +2113,7 @@ packet ConnectionComplete : EventPacket (EventCode = CONNECTION_COMPLETE){
   Status : ErrorCodes,
   ConnectionHandle : 12,
   reserved : 4,
-  BdAddr : 48,
+  BdAddr : Address,
   LinkType : LinkType,
   EncryptionEnabled : Enable,
 }
@@ -2122,8 +2125,8 @@ enum ConnectionRequestLinkType : 8 {
 }
 
 packet ConnectionRequest : EventPacket (EventCode = CONNECTION_REQUEST){
-  BdAddr : 48,
-  ClassOfDevice : 24,
+  BdAddr : Address,
+  ClassOfDevice : ClassOfDevice,
   LinkType : ConnectionRequestLinkType,
 }
 
@@ -2142,7 +2145,7 @@ packet AuthenticationComplete : EventPacket (EventCode = AUTHENTICATION_COMPLETE
 
 packet RemoteNameRequestComplete : EventPacket (EventCode = REMOTE_NAME_REQUEST_COMPLETE){
   Status : ErrorCodes,
-  BdAddr : 48,
+  BdAddr : Address,
   payload,
 }
 
@@ -2224,7 +2227,7 @@ enum Role : 8 {
 
 packet RoleChange : EventPacket (EventCode = ROLE_CHANGE){
   Status : ErrorCodes,
-  BdAddr : 48,
+  BdAddr : Address,
   NewRole : Role,
 }
 
@@ -2251,11 +2254,11 @@ packet ReturnLinkKeys : EventPacket (EventCode = RETURN_LINK_KEYS){
 }
 
 packet PinCodeRequest : EventPacket (EventCode = PIN_CODE_REQUEST){
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet LinkKeyRequest : EventPacket (EventCode = LINK_KEY_REQUEST){
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet LinkKeyNotification : EventPacket (EventCode = LINK_KEY_NOTIFICATION){
@@ -2305,10 +2308,10 @@ packet FlowSpecificationComplete : EventPacket (EventCode = FLOW_SPECIFICATION_C
 
 packet InquiryResultWithRssi : EventPacket (EventCode = INQUIRY_RESULT_WITH_RSSI){
   NumResponses : 8,
-  Address : 48,
+  Address : Address,
   PageScanRepetitionMode : PageScanRepetitionMode,
   reserved : 8,
-  ClassOfDevice : 24, // ClassOfDevice,
+  ClassOfDevice : ClassOfDevice,
   ClockOffset : 15,
   reserved : 1,
   Rssi : 8,
@@ -2343,10 +2346,10 @@ packet SniffSubratingEvent : EventPacket (EventCode = SNIFF_SUBRATING){
 
 packet ExtendedInquiryResult : EventPacket (EventCode = EXTENDED_INQUIRY_RESULT) {
   fixed = 0x01 : 8,
-  Address : 48,
+  Address : Address,
   PageScanRepetitionMode : PageScanRepetitionMode,
   reserved : 8,
-  ClassOfDevice : 24, // ClassOfDevice,
+  ClassOfDevice : ClassOfDevice,
   ClockOffset : 15,
   reserved : 1,
   Rssi : 8,
@@ -2360,33 +2363,33 @@ packet EncryptionKeyRefreshComplete : EventPacket (EventCode = ENCRYPTION_KEY_RE
 }
 
 packet IoCapabilityRequest : EventPacket (EventCode = IO_CAPABILITY_REQUEST){
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet IoCapabilityResponse : EventPacket (EventCode = IO_CAPABILITY_RESPONSE){
-  BdAddr : 48,
+  BdAddr : Address,
   IoCapability : IoCapability,
   OobDataPresent : OobDataPresent,
   AuthenticationRequirements : AuthenticationRequirements,
 }
 
 packet UserConfirmationRequest : EventPacket (EventCode = USER_CONFIRMATION_REQUEST){
-  BdAddr : 48,
+  BdAddr : Address,
   NumericValue : 20, // 0x00000-0xF423F (000000 - 999999)
   reserved : 12,
 }
 
 packet UserPasskeyRequest : EventPacket (EventCode = USER_PASSKEY_REQUEST){
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet RemoteOobDataRequest : EventPacket (EventCode = REMOTE_OOB_DATA_REQUEST){
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet SimplePairingComplete : EventPacket (EventCode = SIMPLE_PAIRING_COMPLETE){
   Status : ErrorCodes,
-  BdAddr : 48,
+  BdAddr : Address,
 }
 
 packet LinkSupervisionTimeoutChanged : EventPacket (EventCode = LINK_SUPERVISION_TIMEOUT_CHANGED){
@@ -2401,18 +2404,18 @@ packet EnhancedFlushComplete : EventPacket (EventCode = ENHANCED_FLUSH_COMPLETE)
 }
 
 packet UserPasskeyNotification : EventPacket (EventCode = USER_PASSKEY_NOTIFICATION){
-  BdAddr : 48,
+  BdAddr : Address,
   Passkey : 20, // 0x00000-0xF423F (000000 - 999999)
   reserved : 12,
 }
 
 packet KeypressNotification : EventPacket (EventCode = KEYPRESS_NOTIFICATION){
-  BdAddr : 48,
+  BdAddr : Address,
   NotificationType : KeypressNotificationType,
 }
 
 packet RemoteHostSupportedFeaturesNotification : EventPacket (EventCode = REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION){
-  BdAddr : 48,
+  BdAddr : Address,
   HostSupportedFeatures : 64,
 }
 
@@ -2444,7 +2447,7 @@ packet LeConnectionComplete : LeMetaEvent (SubeventCode = CONNECTION_COMPLETE) {
   reserved : 4,
   Role : Role,
   PeerAddressType : PeerAddressType,
-  PeerAddress : 48,
+  PeerAddress : Address,
   ConnInterval : 16, // 0x006 - 0x0C80 (7.5ms - 4000ms)
   ConnLatency : 16,  // Number of connection events
   SupervisionTimeout : 16,  // 0x000A to 0x0C80 (100ms to 32s)
@@ -2513,9 +2516,9 @@ packet LeEnhancedConnectionComplete : LeMetaEvent (SubeventCode = ENHANCED_CONNE
   reserved : 4,
   Role : Role,
   PeerAddressType : PeerAddressType,
-  PeerAddress : 48,
-  LocalResolvablePrivateAddress : 48,
-  PeerResolvablePrivateAddress : 48,
+  PeerAddress : Address,
+  LocalResolvablePrivateAddress : Address,
+  PeerResolvablePrivateAddress : Address,
   ConnInterval : 16, // 0x006 - 0x0C80 (7.5ms - 4000ms)
   ConnLatency : 16,  // Number of connection events
   SupervisionTimeout : 16,  // 0x000A to 0x0C80 (100ms to 32s)

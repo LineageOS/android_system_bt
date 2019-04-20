@@ -63,6 +63,9 @@
 %token FIXED "fixed"
 %token RESERVED "reserved"
 %token GROUP "group"
+%token CUSTOM_FIELD "custom_field"
+%token CHECKSUM "checksum"
+%token CHECKSUM_START "checksum_start"
 
 %type<enum_definition> enum_definition
 %type<enumeration_values> enumeration_list
@@ -72,8 +75,9 @@
 %type<packet_field_definitions> field_definition_list;
 %type<packet_field_type> field_definition;
 %type<packet_field_type> group_field_definition;
-%type<packet_field_type> special_field_definition;
+%type<packet_field_type> type_def_field_definition;
 %type<packet_field_type> scalar_field_definition;
+%type<packet_field_type> checksum_start_field_definition;
 %type<packet_field_type> size_field_definition;
 %type<packet_field_type> payload_field_definition;
 %type<packet_field_type> body_field_definition;
@@ -105,8 +109,7 @@ declaration
   : enum_definition
     {
       std::cerr << "FOUND ENUM\n\n";
-      decls->AddEnumDef($1->name_, std::move(*$1));
-      delete $1;
+      decls->AddTypeDef($1->name_, $1);
     }
   | packet_definition
     {
@@ -117,6 +120,14 @@ declaration
   | group_definition
     {
       // All actions are handled in group_definition
+    }
+  | checksum_definition
+    {
+      // All actions are handled in checksum_definition
+    }
+  | custom_field_definition
+    {
+      // All actions are handled in custom_field_definition
     }
 
 enum_definition
@@ -163,6 +174,23 @@ group_definition
     {
       decls->AddGroupDef(*$2, $4);
       delete $2;
+    }
+
+checksum_definition
+  : CHECKSUM IDENTIFIER ':' INTEGER STRING
+    {
+      std::cerr << "Checksum field defined\n";
+      decls->AddTypeDef(*$2, new ChecksumDef(*$2, *$5, $4));
+      delete $2;
+      delete $5;
+    }
+
+custom_field_definition
+  : CUSTOM_FIELD IDENTIFIER ':' INTEGER STRING
+    {
+      decls->AddTypeDef(*$2, new CustomFieldDef(*$2, *$5, $4));
+      delete $2;
+      delete $5;
     }
 
 packet_definition
@@ -285,14 +313,19 @@ field_definition
       DEBUG() << "Group Field";
       $$ = $1;
     }
-  | special_field_definition
+  | type_def_field_definition
     {
-      std::cerr << "Special field\n";
+      std::cerr << "Field with a pre-defined type\n";
       $$ = $1;
     }
   | scalar_field_definition
     {
       std::cerr << "Scalar field\n";
+      $$ = $1;
+    }
+  | checksum_start_field_definition
+    {
+      std::cerr << "Checksum start field\n";
       $$ = $1;
     }
   | size_field_definition
@@ -352,7 +385,8 @@ group_field_definition
           } else if (field->GetFieldType() == PacketField::Type::ENUM) {
             std::cerr << "Fixing group enum value\n";
 
-            auto enum_def = decls->GetEnumDef(field->GetType());
+            auto type_def = decls->GetTypeDef(field->GetType());
+            EnumDef* enum_def = (type_def->GetDefinitionType() == TypeDef::Type::ENUM ? (EnumDef*)type_def : nullptr);
             if (enum_def == nullptr) {
               ERRORLOC(LOC) << "No enum found of type " << field->GetType();
             }
@@ -411,14 +445,14 @@ constraint
       delete $3;
     }
 
-special_field_definition
+type_def_field_definition
   : IDENTIFIER ':' IDENTIFIER
     {
-      std::cerr << "Special field " << *$1 << " : " << *$3 << "\n";
-      if (auto enum_def = decls->GetEnumDef(*$3)) {
-          $$ = new EnumField(*$1, *enum_def, "", LOC);
+      std::cerr << "Predefined type field " << *$1 << " : " << *$3 << "\n";
+      if (auto type_def = decls->GetTypeDef(*$3)) {
+        $$ = type_def->GetNewField(*$1, LOC);
       } else {
-          ERRORLOC(LOC) << "No type with this name\n";
+        ERRORLOC(LOC) << "No type with this name\n";
       }
       delete $1;
       delete $3;
@@ -456,6 +490,14 @@ payload_field_definition
       $$ = new PayloadField("", LOC);
     }
 
+checksum_start_field_definition
+  : CHECKSUM_START '(' IDENTIFIER ')'
+    {
+      std::cerr << "ChecksumStart field defined\n";
+      $$ = new ChecksumStartField(*$3, LOC);
+      delete $3;
+    }
+
 size_field_definition
   : SIZE '(' IDENTIFIER ')' ':' INTEGER
     {
@@ -476,8 +518,6 @@ size_field_definition
     }
   | COUNT '(' PAYLOAD ')' ':' INTEGER
     {
-      std::cerr << "Count for payload defined\n";
-      $$ = new SizeField("Payload", $6, true, LOC);
       ERRORLOC(LOC) << "Can not use count to describe payload fields.";
     }
 
@@ -490,7 +530,9 @@ fixed_field_definition
   | FIXED '=' IDENTIFIER ':' IDENTIFIER
     {
       DEBUG() << "Fixed enum field defined value=" << *$3 << " enum=" << *$5;
-      if (auto enum_def = decls->GetEnumDef(*$5)) {
+      auto type_def = decls->GetTypeDef(*$5);
+      if (type_def != nullptr) {
+        EnumDef* enum_def = (type_def->GetDefinitionType() == TypeDef::Type::ENUM ? (EnumDef*)type_def : nullptr);
         if (!enum_def->HasEntry(*$3)) {
           ERRORLOC(LOC) << "Previously defined enum " << enum_def->GetTypeName() << " has no entry for " << *$3;
         }

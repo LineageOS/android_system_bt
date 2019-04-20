@@ -58,6 +58,9 @@ string_literal \".*\"
 "fixed"                 { return(token::FIXED); }
 "reserved"              { return(token::RESERVED); }
 "group"                 { return(token::GROUP); }
+"custom_field"          { return(token::CUSTOM_FIELD); }
+"checksum"              { return(token::CHECKSUM); }
+"checksum_start"        { return(token::CHECKSUM_START); }
 "little_endian_packets" {
                           yylval->integer = 1;
                           return token::IS_LITTLE_ENDIAN;
@@ -69,7 +72,8 @@ string_literal \".*\"
 
   /* Begin identifier definitions */
 {string_literal}        {
-                          yylval->string = new std::string(yytext);
+                          std::string with_quotes = std::string(yytext);
+                          yylval->string = new std::string(with_quotes.begin() + 1, with_quotes.end() - 1);
                           return token::STRING;
                         }
 

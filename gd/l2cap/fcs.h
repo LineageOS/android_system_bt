@@ -17,30 +17,22 @@
 #pragma once
 
 #include <cstdint>
-#include <iterator>
-#include <memory>
-#include <vector>
-
-#include "packet/byte_inserter.h"
 
 namespace bluetooth {
-namespace packet {
+namespace l2cap {
 
-class BitInserter : public ByteInserter {
+// Frame Check Sequence from the L2CAP spec.
+class Fcs {
  public:
-  BitInserter(std::vector<uint8_t>& vector);
-  virtual ~BitInserter();
+  static void Initialize(Fcs& s);
 
-  void insert_bits(uint8_t byte, size_t num_bits);
+  static void AddByte(Fcs& s, uint8_t byte);
 
-  void insert_byte(uint8_t byte);
-
-  bool IsByteAligned();
+  static uint16_t GetChecksum(const Fcs& s);
 
  private:
-  size_t num_saved_bits_{0};
-  uint8_t saved_bits_{0};
+  uint16_t crc;
 };
 
-}  // namespace packet
+}  // namespace l2cap
 }  // namespace bluetooth

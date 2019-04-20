@@ -105,34 +105,58 @@ bool parse_one_file(std::filesystem::path input_file, std::filesystem::path incl
   out_file << "\n\n";
   out_file << "#include <stdint.h>\n";
   out_file << "#include <string>\n";
+  out_file << "#include <functional>\n";
   out_file << "\n\n";
   out_file << "#include \"os/log.h\"\n";
   out_file << "#include \"packet/base_packet_builder.h\"\n";
   out_file << "#include \"packet/bit_inserter.h\"\n";
   out_file << "#include \"packet/packet_builder.h\"\n";
   out_file << "#include \"packet/packet_view.h\"\n";
+  out_file << "#include \"packet/parser/checksum_type_checker.h\"\n";
+  out_file << "\n\n";
+
+  for (const auto& c : decls.type_defs_queue_) {
+    c.second->GenInclude(out_file);
+  }
   out_file << "\n\n";
 
   std::vector<std::string> namespace_list;
   parse_namespace(gen_relative_path, namespace_list);
   generate_namespace_open(namespace_list, out_file);
+  out_file << "\n\n";
+
+  for (const auto& c : decls.type_defs_queue_) {
+    c.second->GenUsing(out_file);
+  }
+  out_file << "\n\n";
 
   out_file << "using ::bluetooth::packet::BasePacketBuilder;";
   out_file << "using ::bluetooth::packet::BitInserter;";
   out_file << "using ::bluetooth::packet::kLittleEndian;";
   out_file << "using ::bluetooth::packet::PacketBuilder;";
   out_file << "using ::bluetooth::packet::PacketView;";
+  out_file << "using ::bluetooth::packet::parser::ChecksumTypeChecker;";
   out_file << "\n\n";
 
-  for (const auto& e : decls.enum_defs_queue_) {
-    EnumGen gen(e.second);
-    gen.GenDefinition(out_file);
-    out_file << "\n\n";
+  for (const auto& e : decls.type_defs_queue_) {
+    if (e.second->GetDefinitionType() == TypeDef::Type::ENUM) {
+      EnumGen gen(*(EnumDef*)e.second);
+      gen.GenDefinition(out_file);
+      out_file << "\n\n";
+    }
   }
-  for (const auto& e : decls.enum_defs_queue_) {
-    EnumGen gen(e.second);
-    gen.GenLogging(out_file);
-    out_file << "\n\n";
+  for (const auto& e : decls.type_defs_queue_) {
+    if (e.second->GetDefinitionType() == TypeDef::Type::ENUM) {
+      EnumGen gen(*(EnumDef*)e.second);
+      gen.GenLogging(out_file);
+      out_file << "\n\n";
+    }
+  }
+  for (const auto& ch : decls.type_defs_queue_) {
+    if (ch.second->GetDefinitionType() == TypeDef::Type::CHECKSUM) {
+      ((ChecksumDef*)ch.second)->GenChecksumCheck(out_file);
+    }
+    out_file << "\n/* Done ChecksumChecks */\n";
   }
 
   for (size_t i = 0; i < decls.packet_defs_queue_.size(); i++) {

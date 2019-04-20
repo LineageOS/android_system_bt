@@ -1,11 +1,12 @@
 little_endian_packets
 
+custom_field Address : 48 "common/"
+
 packet Parent {
   fixed = 0x12 : 8,
   size(payload) : 8,
   payload,
   Footer : 8,
-  Fcs : 16,
 }
 
 packet Child : Parent {
@@ -37,4 +38,45 @@ packet ChildTwoTwo : ParentTwo (FourBits = TWO) {
 }
 
 packet ChildTwoTwoThree :ChildTwoTwo (MoreBits = THREE) {
+}
+
+packet ParentWithAddress {
+  TwoBytes : 16,
+  Address : Address,
+  payload,
+}
+
+packet ChildWithAddress : ParentWithAddress (TwoBytes = 0x1234) {
+  ChildAddress : Address,
+}
+
+checksum SimpleSum : 16 "packet/parser/test/"
+
+packet ParentWithSum {
+  TwoBytes : 16,
+  checksum_start(ExampleChecksum),
+  SumBytes : 16,
+  payload,
+  ExampleChecksum : SimpleSum,
+}
+
+packet ChildWithSum : ParentWithSum {
+  MoreBytes : 32,
+  AnotherByte : 8,
+}
+
+packet ChildWithNestedSum : ParentWithSum {
+  checksum_start(NestedChecksum),
+  MoreBytes : 32,
+  NestedChecksum : SimpleSum,
+}
+
+packet ParentSizeModifier {
+  size(payload) : 8,
+  payload : [+2*8], // Include TwoBytes in the size
+  TwoBytes : 16,
+}
+
+packet ChildSizeModifier : ParentSizeModifier (TwoBytes = 0x1211) {
+  MoreBytes : 32,
 }

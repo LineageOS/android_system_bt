@@ -17,30 +17,31 @@
 #pragma once
 
 #include <cstdint>
-#include <iterator>
-#include <memory>
-#include <vector>
-
-#include "packet/byte_inserter.h"
 
 namespace bluetooth {
 namespace packet {
+namespace parser {
+namespace test {
 
-class BitInserter : public ByteInserter {
+class SimpleSum {
  public:
-  BitInserter(std::vector<uint8_t>& vector);
-  virtual ~BitInserter();
+  static void Initialize(SimpleSum& s) {
+    s.sum = 0;
+  }
 
-  void insert_bits(uint8_t byte, size_t num_bits);
+  static void AddByte(SimpleSum& s, uint8_t byte) {
+    s.sum += byte;
+  }
 
-  void insert_byte(uint8_t byte);
-
-  bool IsByteAligned();
+  static uint16_t GetChecksum(const SimpleSum& s) {
+    return s.sum;
+  }
 
  private:
-  size_t num_saved_bits_{0};
-  uint8_t saved_bits_{0};
+  uint16_t sum;
 };
 
+}  // namespace test
+}  // namespace parser
 }  // namespace packet
 }  // namespace bluetooth

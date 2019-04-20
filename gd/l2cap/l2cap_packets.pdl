@@ -1,9 +1,19 @@
 little_endian_packets
 
+checksum Fcs : 16 "l2cap/"
+
 packet BasicFrame {
   size(payload) : 16,
   ChannelId : 16,
   payload,
+}
+
+packet BasicFrameWithFcs {
+  checksum_start(Fcs),
+  size(payload) : 16,
+  ChannelId : 16,
+  payload : [+2*8], // Include Fcs in the size
+  Fcs : Fcs,
 }
 
 // ChannelId 2 is connectionless
@@ -41,6 +51,11 @@ packet StandardFrame : BasicFrame {
   body,
 }
 
+packet StandardFrameWithFcs : BasicFrameWithFcs {
+  FrameType : FrameType,
+  body,
+}
+
 group StandardSupervisoryControl {
   fixed = 0 : 1,
   S : SupervisoryFunction,
@@ -61,9 +76,8 @@ packet StandardSupervisoryFrame : StandardFrame (FrameType = S_FRAME) {
   StandardSupervisoryControl,
 }
 
-packet StandardSupervisoryFrameWithFcs : StandardFrame (FrameType = S_FRAME) {
+packet StandardSupervisoryFrameWithFcs : StandardFrameWithFcs (FrameType = S_FRAME) {
   StandardSupervisoryControl,
-  Fcs : 16,
 }
 
 packet StandardInformationFrame : StandardFrame (FrameType = I_FRAME) {
@@ -71,10 +85,9 @@ packet StandardInformationFrame : StandardFrame (FrameType = I_FRAME) {
   payload,
 }
 
-packet StandardInformationFrameWithFcs : StandardFrame (FrameType = I_FRAME) {
+packet StandardInformationFrameWithFcs : StandardFrameWithFcs (FrameType = I_FRAME) {
   StandardInformationControl,
   payload,
-  Fcs : 16,
 }
 
 packet StandardInformationStartFrame : StandardInformationFrame (Sar = START) {
@@ -118,9 +131,8 @@ packet EnhancedSupervisoryFrame : StandardFrame (FrameType = S_FRAME) {
   EnhancedSupervisoryControl,
 }
 
-packet EnhancedSupervisoryFrameWithFcs : StandardFrame (FrameType = S_FRAME) {
+packet EnhancedSupervisoryFrameWithFcs : StandardFrameWithFcs (FrameType = S_FRAME) {
   EnhancedSupervisoryControl,
-  Fcs : 16,
 }
 
 packet EnhancedInformationFrame : StandardFrame (FrameType = I_FRAME) {
@@ -128,10 +140,9 @@ packet EnhancedInformationFrame : StandardFrame (FrameType = I_FRAME) {
   payload,
 }
 
-packet EnhancedInformationFrameWithFcs : StandardFrame (FrameType = I_FRAME) {
+packet EnhancedInformationFrameWithFcs : StandardFrameWithFcs (FrameType = I_FRAME) {
   EnhancedInformationControl,
   payload,
-  Fcs : 16,
 }
 
 packet EnhancedInformationStartFrame : EnhancedInformationFrame (Sar = START) {
@@ -164,9 +175,8 @@ packet ExtendedSupervisoryFrame : StandardFrame (FrameType = S_FRAME) {
   ExtendedSupervisoryControl,
 }
 
-packet ExtendedSupervisoryFrameWithFcs : StandardFrame (FrameType = S_FRAME) {
+packet ExtendedSupervisoryFrameWithFcs : StandardFrameWithFcs (FrameType = S_FRAME) {
   ExtendedSupervisoryControl,
-  Fcs : 16,
 }
 
 packet ExtendedInformationFrame : StandardFrame (FrameType = I_FRAME) {
@@ -174,10 +184,9 @@ packet ExtendedInformationFrame : StandardFrame (FrameType = I_FRAME) {
   payload,
 }
 
-packet ExtendedInformationFrameWithFcs : StandardFrame (FrameType = I_FRAME) {
+packet ExtendedInformationFrameWithFcs : StandardFrameWithFcs (FrameType = I_FRAME) {
   ExtendedInformationControl,
   payload,
-  Fcs : 16,
 }
 
 packet ExtendedInformationStartFrame : ExtendedInformationFrame (Sar = START) {

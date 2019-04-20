@@ -12,6 +12,13 @@ Packet Views and Builders
   extract the fields that are defined in the pdl file.  Builders check the input
   arguments and can be serialized.
 
+Checksum types
+  checksum MyChecksumClass : 16 "path/to/the/class/"
+  Checksum fields need to implement the following three static methods:
+    static void Initialize(MyChecksumClass&);
+    static void AddByte(MyChecksumClass&, uint8_t);
+    // Assuming a 16-bit (uint16_t) checksum:
+    static uint16_t GetChecksum(MyChecksumClass&);
 -------------
  LIMITATIONS
 -------------
@@ -26,6 +33,7 @@ Packet Views and Builders
   - Can not have to fields with the same name anywhere in the in an inheritence chain
 
   - Can't handle size for Body type fields yet since they might not be byte aligned.
+
 
 -------
  NOTES

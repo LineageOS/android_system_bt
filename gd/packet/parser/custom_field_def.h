@@ -16,31 +16,23 @@
 
 #pragma once
 
-#include <cstdint>
-#include <iterator>
-#include <memory>
-#include <vector>
+#include <iostream>
 
-#include "packet/byte_inserter.h"
+#include "fields/custom_field.h"
+#include "parse_location.h"
+#include "type_def.h"
 
-namespace bluetooth {
-namespace packet {
-
-class BitInserter : public ByteInserter {
+class CustomFieldDef : public TypeDef {
  public:
-  BitInserter(std::vector<uint8_t>& vector);
-  virtual ~BitInserter();
+  CustomFieldDef(std::string name, std::string include, int size);
 
-  void insert_bits(uint8_t byte, size_t num_bits);
+  virtual PacketField* GetNewField(const std::string& name, ParseLocation loc) const override;
 
-  void insert_byte(uint8_t byte);
+  virtual Type GetDefinitionType() const override;
 
-  bool IsByteAligned();
+  virtual void GenInclude(std::ostream& s) const;
 
- private:
-  size_t num_saved_bits_{0};
-  uint8_t saved_bits_{0};
+  virtual void GenUsing(std::ostream& s) const;
+
+  const std::string include_;
 };
-
-}  // namespace packet
-}  // namespace bluetooth

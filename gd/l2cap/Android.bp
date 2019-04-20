@@ -2,5 +2,6 @@ filegroup {
     name: "BluetoothL2capTestSources",
     srcs: [
         "l2cap_packet_test.cc",
+        "fcs.cc",
     ],
 }
