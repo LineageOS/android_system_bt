@@ -138,9 +138,7 @@ bool ConnectionHandler::ConnectDevice(const RawAddress& bdaddr) {
 bool ConnectionHandler::DisconnectDevice(const RawAddress& bdaddr) {
   for (auto it = device_map_.begin(); it != device_map_.end(); it++) {
     if (bdaddr == it->second->GetAddress()) {
-      it->second->DeviceDisconnected();
       uint8_t handle = it->first;
-      device_map_.erase(handle);
       return avrc_->Close(handle) == AVRC_SUCCESS;
     }
   }
