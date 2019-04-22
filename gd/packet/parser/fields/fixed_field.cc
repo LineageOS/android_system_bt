@@ -49,7 +49,7 @@ std::string FixedField::GetType() const {
 
 void FixedField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
   s << GetType();
-  s << " Get" << GetName() << "() const {";
+  s << " Get" << util::UnderscoreToCamelCase(GetName()) << "() const {";
   s << "ASSERT(was_validated_);";
 
   // Write the Getter Function Body
@@ -134,7 +134,7 @@ void FixedField::GenInserter(std::ostream& s) const {
 }
 
 void FixedField::GenValidator(std::ostream& s) const {
-  s << "if (Get" << GetName() << "() != ";
+  s << "if (Get" << util::UnderscoreToCamelCase(GetName()) << "() != ";
   GenValue(s);
   s << ") return false;";
 }

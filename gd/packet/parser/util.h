@@ -81,4 +81,23 @@ inline std::string CamelCaseToUnderScore(std::string value) {
   return value;
 }
 
+inline std::string UnderscoreToCamelCase(std::string value) {
+  std::ostringstream camel_case;
+
+  bool capitalize = true;
+  for (unsigned char c : value) {
+    if (c == '_') {
+      capitalize = true;
+    } else {
+      if (capitalize) {
+        c = std::toupper(c);
+        capitalize = false;
+      }
+      camel_case << c;
+    }
+  }
+
+  return camel_case.str();
+}
+
 }  // namespace util
