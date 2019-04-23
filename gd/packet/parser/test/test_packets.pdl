@@ -3,14 +3,14 @@ little_endian_packets
 custom_field Address : 48 "common/"
 
 packet Parent {
-  fixed = 0x12 : 8,
-  size(payload) : 8,
-  payload,
-  Footer : 8,
+  _fixed_ = 0x12 : 8,
+  _size_(_payload_) : 8,
+  _payload_,
+  footer : 8,
 }
 
 packet Child : Parent {
-  FieldName : 16,
+  field_name : 16,
 }
 
 enum FourBits : 4 {
@@ -21,62 +21,69 @@ enum FourBits : 4 {
 }
 
 packet ParentTwo {
-  reserved : 4,
-  FourBits : FourBits,
-  payload,
+  _reserved_ : 4,
+  four_bits : FourBits,
+  _payload_,
 }
 
-packet ChildTwoThree : ParentTwo (FourBits = THREE) {
-  MoreBits : FourBits,
-  reserved : 4,
-  SixteenBits : 16
+packet ChildTwoThree : ParentTwo (four_bits = THREE) {
+  more_bits : FourBits,
+  _reserved_ : 4,
+  sixteen_bits : 16
 }
 
-packet ChildTwoTwo : ParentTwo (FourBits = TWO) {
-  MoreBits : FourBits,
-  reserved : 4,
+packet ChildTwoTwo : ParentTwo (four_bits = TWO) {
+  more_bits : FourBits,
+  _reserved_ : 4,
 }
 
-packet ChildTwoTwoThree :ChildTwoTwo (MoreBits = THREE) {
+packet ChildTwoTwoThree :ChildTwoTwo (more_bits = THREE) {
 }
 
 packet ParentWithAddress {
-  TwoBytes : 16,
-  Address : Address,
-  payload,
+  two_bytes : 16,
+  address : Address,
+  _payload_,
 }
 
-packet ChildWithAddress : ParentWithAddress (TwoBytes = 0x1234) {
-  ChildAddress : Address,
+packet ChildWithAddress : ParentWithAddress (two_bytes = 0x1234) {
+  child_address : Address,
 }
 
 checksum SimpleSum : 16 "packet/parser/test/"
 
 packet ParentWithSum {
-  TwoBytes : 16,
-  checksum_start(ExampleChecksum),
-  SumBytes : 16,
-  payload,
-  ExampleChecksum : SimpleSum,
+  two_bytes : 16,
+  _checksum_start_(example_checksum),
+  sum_bytes : 16,
+  _payload_,
+  example_checksum : SimpleSum,
 }
 
 packet ChildWithSum : ParentWithSum {
-  MoreBytes : 32,
-  AnotherByte : 8,
+  more_bytes : 32,
+  another_byte : 8,
 }
 
 packet ChildWithNestedSum : ParentWithSum {
-  checksum_start(NestedChecksum),
-  MoreBytes : 32,
-  NestedChecksum : SimpleSum,
+  _checksum_start_(nested_checksum),
+  more_bytes : 32,
+  nested_checksum : SimpleSum,
 }
 
 packet ParentSizeModifier {
-  size(payload) : 8,
-  payload : [+2*8], // Include TwoBytes in the size
-  TwoBytes : 16,
+  _size_(_payload_) : 8,
+  _payload_ : [+2*8], // Include two_bytes in the size
+  two_bytes : 16,
 }
 
-packet ChildSizeModifier : ParentSizeModifier (TwoBytes = 0x1211) {
-  MoreBytes : 32,
+packet ChildSizeModifier : ParentSizeModifier (two_bytes = 0x1211) {
+  more_bytes : 32,
+}
+
+packet FieldsEndWithNumbers {
+  field_1 : 16,
+  field_2 : 16,
+  field_10 : 16,
+  field_11 : 16,
 }

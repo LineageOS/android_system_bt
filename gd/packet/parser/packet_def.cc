@@ -403,7 +403,7 @@ void PacketDef::GenValidator(std::ostream& s) const {
   }
 
   for (const auto& constraint : parent_constraints_) {
-    s << "if (Get" << constraint.first << "() != ";
+    s << "if (Get" << util::UnderscoreToCamelCase(constraint.first) << "() != ";
     const auto& field = parent_->GetParamList().GetField(constraint.first);
     if (field->GetFieldType() == PacketField::Type::SCALAR) {
       s << std::get<int64_t>(constraint.second);
@@ -486,7 +486,7 @@ void PacketDef::GenValidator(std::ostream& s) const {
     // as the end iterator so that they may ensure that they don't try to read past the end.
     // Custom fields with fixed sizes will be handled in the static offset checking.
     if (field->GetFieldType() == PacketField::Type::CUSTOM) {
-      const auto& custom_size_var = util::CamelCaseToUnderScore(field->GetName()) + "_size";
+      const auto& custom_size_var = field->GetName() + "_size";
 
       // Check if we can determine offset from begin(), otherwise error because by this point,
       // the size of the custom field is unknown and can't be subtracted from end() to get the
@@ -617,7 +617,7 @@ void PacketDef::GenBuilderCreate(std::ostream& s) const {
   });
   // Add the parameters.
   for (int i = 0; i < params.size(); i++) {
-    s << util::CamelCaseToUnderScore(params[i]->GetName());
+    s << params[i]->GetName();
     if (i != params.size() - 1) {
       s << ", ";
     }
@@ -696,9 +696,9 @@ void PacketDef::GenBuilderConstructor(std::ostream& s) const {
           ERROR(field) << "Constraints on non enum/scalar fields should be impossible.";
         }
 
-        s << "/* " << util::CamelCaseToUnderScore(field->GetName()) << "_ */";
+        s << "/* " << field->GetName() << "_ */";
       } else {
-        s << util::CamelCaseToUnderScore(field->GetName());
+        s << field->GetName();
       }
 
       if (i != parent_params.size() - 1) {
@@ -719,7 +719,7 @@ void PacketDef::GenBuilderConstructor(std::ostream& s) const {
     s << ",";
   }
   for (int i = 0; i < saved_params.size(); i++) {
-    const auto& saved_param_name = util::CamelCaseToUnderScore(saved_params[i]->GetName());
+    const auto& saved_param_name = saved_params[i]->GetName();
     s << saved_param_name << "_(" << saved_param_name << ")";
     if (i != saved_params.size() - 1) {
       s << ",";
@@ -732,7 +732,7 @@ void PacketDef::GenBuilderConstructor(std::ostream& s) const {
   if (params_to_validate.size() > 0) {
     s << "CheckParameterValues(";
     for (int i = 0; i < params_to_validate.size(); i++) {
-      s << util::CamelCaseToUnderScore(params_to_validate[i]->GetName()) << "_";
+      s << params_to_validate[i]->GetName() << "_";
       if (i != params_to_validate.size() - 1) {
         s << ", ";
       }
