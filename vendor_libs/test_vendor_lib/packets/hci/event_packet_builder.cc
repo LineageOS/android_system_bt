@@ -412,6 +412,7 @@ std::unique_ptr<EventPacketBuilder> EventPacketBuilder::CreateLoopbackCommandEve
   std::unique_ptr<EventPacketBuilder> evt_ptr =
       std::unique_ptr<EventPacketBuilder>(new EventPacketBuilder(EventCode::LOOPBACK_COMMAND));
   CHECK(evt_ptr->AddPayloadOctets2(static_cast<uint16_t>(opcode)));
+  CHECK(evt_ptr->AddPayloadOctets1(static_cast<uint8_t>(payload.size())));
   for (const auto& payload_byte : payload)  // Fill the packet.
     evt_ptr->AddPayloadOctets1(payload_byte);
   return evt_ptr;
