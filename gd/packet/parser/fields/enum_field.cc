@@ -39,7 +39,7 @@ std::string EnumField::GetType() const {
 
 void EnumField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
   s << GetType();
-  s << " Get" << GetName() << "() const {";
+  s << " Get" << util::UnderscoreToCamelCase(GetName()) << "() const {";
   s << "ASSERT(was_validated_);";
 
   // Write the Getter Function Body
@@ -94,7 +94,7 @@ void EnumField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) c
 }
 
 bool EnumField::GenBuilderParameter(std::ostream& s) const {
-  s << GetType() << " " << util::CamelCaseToUnderScore(GetName());
+  s << GetType() << " " << GetName();
   return true;
 }
 
@@ -107,8 +107,8 @@ void EnumField::GenParameterValidator(std::ostream&) const {
 }
 
 void EnumField::GenInserter(std::ostream& s) const {
-  s << "insert(static_cast<" << util::GetTypeForSize(GetSize().bits()) << ">(" << util::CamelCaseToUnderScore(GetName())
-    << "_), i, " << GetSize().bits() << ");";
+  s << "insert(static_cast<" << util::GetTypeForSize(GetSize().bits()) << ">(";
+  s << GetName() << "_), i, " << GetSize().bits() << ");";
 }
 
 void EnumField::GenValidator(std::ostream&) const {

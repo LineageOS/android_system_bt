@@ -38,7 +38,7 @@ std::string CustomField::GetType() const {
 
 void CustomField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
   s << GetType();
-  s << " Get" << GetName() << "() const {";
+  s << " Get" << util::UnderscoreToCamelCase(GetName()) << "() const {";
 
   s << "auto it = ";
   if (!start_offset.empty()) {
@@ -72,7 +72,7 @@ void CustomField::GenGetter(std::ostream& s, Size start_offset, Size end_offset)
 }
 
 bool CustomField::GenBuilderParameter(std::ostream& s) const {
-  s << GetType() << " " << util::CamelCaseToUnderScore(GetName());
+  s << GetType() << " " << GetName();
   return true;
 }
 
@@ -85,7 +85,7 @@ void CustomField::GenParameterValidator(std::ostream&) const {
 }
 
 void CustomField::GenInserter(std::ostream& s) const {
-  s << "insert(" << util::CamelCaseToUnderScore(GetName()) << "_, i);";
+  s << "insert(" << GetName() << "_, i);";
 }
 
 void CustomField::GenValidator(std::ostream&) const {

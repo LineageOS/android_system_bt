@@ -46,7 +46,7 @@ Size PayloadField::GetSize() const {
     return Size();
   }
 
-  std::string dynamic_size = "Get" + size_field_->GetName() + "()";
+  std::string dynamic_size = "Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "()";
   if (!size_modifier_.empty()) {
     dynamic_size += "- (" + size_modifier_ + ") / 8";
   }
@@ -107,7 +107,7 @@ void PayloadField::GenGetter(std::ostream& s, Size start_offset, Size end_offset
 }
 
 bool PayloadField::GenBuilderParameter(std::ostream& s) const {
-  s << "std::unique_ptr<BasePacketBuilder> " << util::CamelCaseToUnderScore(GetName());
+  s << "std::unique_ptr<BasePacketBuilder> payload";
   return true;
 }
 
