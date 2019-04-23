@@ -18,7 +18,7 @@
 #include "util.h"
 
 SizeField::SizeField(std::string name, int size, bool is_count, ParseLocation loc)
-    : PacketField(loc, name + (is_count ? "Count" : "Size")), size_(size), is_count_(is_count),
+    : PacketField(loc, name + (is_count ? "_count" : "_size")), size_(size), is_count_(is_count),
       sized_field_name_(name) {}
 
 PacketField::Type SizeField::GetFieldType() const {
@@ -36,7 +36,7 @@ std::string SizeField::GetType() const {
 void SizeField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
   s << "protected:";
   s << GetType();
-  s << " Get" << GetName() << "() const {";
+  s << " Get" << util::UnderscoreToCamelCase(GetName()) << "() const {";
   s << "ASSERT(was_validated_);";
 
   // Write the Getter Function Body
