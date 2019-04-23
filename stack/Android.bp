@@ -257,6 +257,7 @@ cc_test {
         "rfcomm/rfc_ts_frames.cc",
         "rfcomm/rfc_utils.cc",
         "test/common/mock_btm_layer.cc",
+        "test/common/mock_btsnoop_module.cc",
         "test/common/mock_btu_layer.cc",
         "test/common/mock_l2cap_layer.cc",
         "test/common/stack_test_packet_utils.cc",
