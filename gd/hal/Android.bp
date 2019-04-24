@@ -25,3 +25,17 @@ filegroup {
         "hci_hal_android_hidl_test.cc",
     ],
 }
+
+filegroup {
+    name: "BluetoothCertFacade_hci_hal",
+    srcs: [
+        "facade/facade.cc",
+    ],
+}
+
+filegroup {
+    name: "BluetoothCertCppClient_hci_hal",
+    srcs: [
+        "cert/simple_hal_test.cc",
+    ],
+}
