@@ -49,18 +49,20 @@ string_literal \".*\"
 "//"[^\r\n]*            { /* do nothing */ }
 
   /* Begin reserved keyword definitions */
-"enum"                  { return(token::ENUM); }
-"packet"                { return(token::PACKET); }
-"body"                  { return(token::BODY); }
-"payload"               { return(token::PAYLOAD); }
-"size"                  { return(token::SIZE); }
-"count"                 { return(token::COUNT); }
-"fixed"                 { return(token::FIXED); }
-"reserved"              { return(token::RESERVED); }
-"group"                 { return(token::GROUP); }
-"custom_field"          { return(token::CUSTOM_FIELD); }
+  /* Fields */
+"_body_"                { return(token::BODY); }
+"_payload_"             { return(token::PAYLOAD); }
+"_size_"                { return(token::SIZE); }
+"_count_"               { return(token::COUNT); }
+"_fixed_"               { return(token::FIXED); }
+"_reserved_"            { return(token::RESERVED); }
+"_checksum_start_"      { return(token::CHECKSUM_START); }
+  /* Types */
 "checksum"              { return(token::CHECKSUM); }
-"checksum_start"        { return(token::CHECKSUM_START); }
+"custom_field"          { return(token::CUSTOM_FIELD); }
+"enum"                  { return(token::ENUM); }
+"group"                 { return(token::GROUP); }
+"packet"                { return(token::PACKET); }
 "little_endian_packets" {
                           yylval->integer = 1;
                           return token::IS_LITTLE_ENDIAN;
