@@ -206,6 +206,7 @@ class HearingAid {
 
   virtual void Connect(const RawAddress& address) = 0;
   virtual void Disconnect(const RawAddress& address) = 0;
+  virtual void AddToWhiteList(const RawAddress& address) = 0;
   virtual void SetVolume(int8_t volume) = 0;
 };
 
