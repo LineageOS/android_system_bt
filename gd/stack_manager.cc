@@ -63,7 +63,6 @@ void StackManager::StartUp() {
 void StackManager::ShutDown() {
   // Delete HCI layer
   delete main_thread_;
-  main_thread_ = nullptr;
   ::bluetooth::hal::GetBluetoothHciHal()->close();
 }
 }  // namespace bluetooth
