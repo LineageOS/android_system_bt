@@ -1077,7 +1077,7 @@ void gatts_process_attribute_req(tGATT_TCB& tcb, uint8_t op_code, uint16_t len,
  * Returns          void
  *
  ******************************************************************************/
-static void gatts_proc_srv_chg_ind_ack(tGATT_TCB tcb) {
+void gatts_proc_srv_chg_ind_ack(tGATT_TCB tcb) {
   tGATTS_SRV_CHG_REQ req;
   tGATTS_SRV_CHG* p_buf = NULL;
 
