@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package bluetooth.facade;
+
+enum EventSubscriptionMode {
+  UNCHANGED = 0;
+  SUBSCRIBE = 1;
+  UNSUBSCRIBE = 2;
+}
+
+enum EventFetchMode {
+  NONE = 0;
+  ALL_CURRENT = 1;
+  AT_LEAST_ONE = 2;
+}
+
+message EventStreamRequest {
+  EventSubscriptionMode subscription_mode = 1;
+  EventFetchMode fetch_mode = 2;
+}
