@@ -38,11 +38,11 @@ enum BroadcastFlag : 2 {
 }
 
 packet AclPacket {
-  Handle : 12,
-  PacketBoundaryFlag : PacketBoundaryFlag,
-  BroadcastFlag : BroadcastFlag,
-  size(payload) : 16,
-  payload,
+  handle : 12,
+  packet_boundary_flag : PacketBoundaryFlag,
+  broadcast_flag : BroadcastFlag,
+  _size_(_payload_) : 16,
+  _payload_,
 }
 
 // HCI SCO Packets
@@ -55,11 +55,11 @@ enum PacketStatusFlag : 2 {
 }
 
 packet ScoPacket {
-  Handle : 12,
-  PacketStatusFlag : PacketStatusFlag,
-  reserved : 2, // BroadcastFlag
-  size(payload) : 8,
-  payload,
+  handle : 12,
+  packet_status_flag : PacketStatusFlag,
+  _reserved_ : 2, // BroadcastFlag
+  _size_(_payload_) : 8,
+  _payload_,
 }
 
 // HCI Command Packets
@@ -311,23 +311,23 @@ enum OpCode : 16 {
 }
 
 packet CommandPacket {
-  OpCode : OpCode,
-  size(payload) : 8,
-  payload,
+  op_code : OpCode,
+  _size_(_payload_) : 8,
+  _payload_,
 }
 
 // Packets for interfaces
 
-packet DiscoveryCommand : CommandPacket { payload, }
-packet CreateConnectionCommand : CommandPacket { payload, }
-packet ConnectionManagementCommand : CommandPacket { payload, }
-packet SecurityCommand : CommandPacket { payload, }
-packet ScoConnectionCommand : CommandPacket { payload, }
-packet LeAdvertisingCommand : CommandPacket { payload, }
-packet LeCreateConnectionCommand : CommandPacket { payload, }
-packet LeConnectionManagementCommand : CommandPacket { payload, }
-packet LeSecurityCommand : CommandPacket { payload, }
-packet VendorCommand : CommandPacket { payload, }
+packet DiscoveryCommand : CommandPacket { _payload_, }
+packet CreateConnectionCommand : CommandPacket { _payload_, }
+packet ConnectionManagementCommand : CommandPacket { _payload_, }
+packet SecurityCommand : CommandPacket { _payload_, }
+packet ScoConnectionCommand : CommandPacket { _payload_, }
+packet LeAdvertisingCommand : CommandPacket { _payload_, }
+packet LeCreateConnectionCommand : CommandPacket { _payload_, }
+packet LeConnectionManagementCommand : CommandPacket { _payload_, }
+packet LeSecurityCommand : CommandPacket { _payload_, }
+packet VendorCommand : CommandPacket { _payload_, }
 
 // HCI Event Packets
 
@@ -387,9 +387,9 @@ enum EventCode : 8 {
 }
 
 packet EventPacket {
-  EventCode : EventCode,
-  size(payload) : 8,
-  payload,
+  event_code : EventCode,
+  _size_(_payload_) : 8,
+  _payload_,
 }
 
 // LE Events
@@ -462,50 +462,50 @@ enum ErrorCodes : 8 {
 
 // Events that are defined with their respective commands
 
-packet CommandComplete : EventPacket (EventCode = COMMAND_COMPLETE){
-  NumHciCommandPackets : 8,
-  CommandOpCode : OpCode,
-  payload,
+packet CommandComplete : EventPacket (event_code = COMMAND_COMPLETE){
+  num_hci_command_packets : 8,
+  command_op_code : OpCode,
+  _payload_,
 }
 
-packet CommandStatus : EventPacket (EventCode = COMMAND_STATUS){
-  Status : ErrorCodes, // SUCCESS means PENDING
-  NumHciCommandPackets : 8,
-  CommandOpCode : OpCode,
-  payload,
+packet CommandStatus : EventPacket (event_code = COMMAND_STATUS){
+  status : ErrorCodes, // SUCCESS means PENDING
+  num_hci_command_packets : 8,
+  command_op_code : OpCode,
+  _payload_,
 }
 
   // LINK_CONTROL
-packet Inquiry : DiscoveryCommand (OpCode = INQUIRY) {
-  Lap0 : 8, // 0x00 - 0x3F
-  fixed = 0x9E8B : 16, // LAP upper bits are fixed
-  InquiryLength : 8, // 0x1 - 0x30 (times 1.28s)
-  NumResponses : 8, // 0x00 unlimited
+packet Inquiry : DiscoveryCommand (op_code = INQUIRY) {
+  lap0 : 8, // 0x00 - 0x3F
+  _fixed_ = 0x9E8B : 16, // LAP upper bits are _fixed_
+  inquiry_length : 8, // 0x1 - 0x30 (times 1.28s)
+  num_responses : 8, // 0x00 unlimited
 }
 
-packet InquiryStatus : CommandStatus (CommandOpCode  = INQUIRY) {
+packet InquiryStatus : CommandStatus (command_op_code = INQUIRY) {
 }
 
-packet InquiryCancel : DiscoveryCommand (OpCode = INQUIRY_CANCEL) {
+packet InquiryCancel : DiscoveryCommand (op_code = INQUIRY_CANCEL) {
 }
 
-packet InquiryCancelComplete : CommandComplete (CommandOpCode  = INQUIRY_CANCEL) {
-  Status : ErrorCodes,
+packet InquiryCancelComplete : CommandComplete (command_op_code = INQUIRY_CANCEL) {
+  status : ErrorCodes,
 }
 
-packet PeriodicInquiryMode : DiscoveryCommand (OpCode = PERIODIC_INQUIRY_MODE) {
-  payload,  // placeholder (unimplemented)
+packet PeriodicInquiryMode : DiscoveryCommand (op_code = PERIODIC_INQUIRY_MODE) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet PeriodicInquiryModeComplete : CommandComplete (CommandOpCode  = PERIODIC_INQUIRY_MODE) {
-  Status : ErrorCodes,
+packet PeriodicInquiryModeComplete : CommandComplete (command_op_code = PERIODIC_INQUIRY_MODE) {
+  status : ErrorCodes,
 }
 
-packet ExitPeriodicInquiryMode : DiscoveryCommand (OpCode = EXIT_PERIODIC_INQUIRY_MODE) {
+packet ExitPeriodicInquiryMode : DiscoveryCommand (op_code = EXIT_PERIODIC_INQUIRY_MODE) {
 }
 
-packet ExitPeriodicInquiryModeComplete : CommandComplete (CommandOpCode = EXIT_PERIODIC_INQUIRY_MODE) {
-  Status : ErrorCodes,
+packet ExitPeriodicInquiryModeComplete : CommandComplete (command_op_code = EXIT_PERIODIC_INQUIRY_MODE) {
+  status : ErrorCodes,
 }
 
 enum PageScanRepetitionMode : 8 {
@@ -524,17 +524,17 @@ enum CreateConnectionRoleSwitch : 8 {
   ALLOW_ROLE_SWITCH = 0x01,
 }
 
-packet CreateConnection : CreateConnectionCommand (OpCode = CREATE_CONNECTION) {
-  BdAddr : Address,
-  PacketType : 16,
-  PageScanRepetitionMode : PageScanRepetitionMode,
-  reserved : 8,
-  ClockOffset : 15,
-  ClockOffsetValid : ClockOffsetValid,
-  AllowRoleSwitch : CreateConnectionRoleSwitch,
+packet CreateConnection : CreateConnectionCommand (op_code = CREATE_CONNECTION) {
+  bd_addr : Address,
+  packet_type : 16,
+  page_scan_repetition_mode : PageScanRepetitionMode,
+  _reserved_ : 8,
+  clock_offset : 15,
+  clock_offset_valid : ClockOffsetValid,
+  allow_role_switch : CreateConnectionRoleSwitch,
 }
 
-packet CreateConnectionStatus : CommandStatus (CommandOpCode  = CREATE_CONNECTION) {
+packet CreateConnectionStatus : CommandStatus (command_op_code = CREATE_CONNECTION) {
 }
 
 enum DisconnectReason : 8 {
@@ -547,22 +547,22 @@ enum DisconnectReason : 8 {
   UNACCEPTABLE_CONNECTION_PARAMETERS = 0x3B,
 }
 
-packet Disconnect : ConnectionManagementCommand (OpCode = DISCONNECT) {
-  ConnectionHandle : 12,
-  reserved : 4,
-  Reason : DisconnectReason,
+packet Disconnect : ConnectionManagementCommand (op_code = DISCONNECT) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  reason : DisconnectReason,
 }
 
-packet DisconnectStatus : CommandStatus (CommandOpCode = DISCONNECT) {
+packet DisconnectStatus : CommandStatus (command_op_code = DISCONNECT) {
 }
 
-packet CreateConnectionCancel : CreateConnectionCommand (OpCode = CREATE_CONNECTION_CANCEL) {
-  BdAddr : Address,
+packet CreateConnectionCancel : CreateConnectionCommand (op_code = CREATE_CONNECTION_CANCEL) {
+  bd_addr : Address,
 }
 
-packet CreateConnectionCancelComplete : CommandComplete (CommandOpCode = CREATE_CONNECTION_CANCEL) {
-  Status : ErrorCodes,
-  BdAddr : Address,
+packet CreateConnectionCancelComplete : CommandComplete (command_op_code = CREATE_CONNECTION_CANCEL) {
+  status : ErrorCodes,
+  bd_addr : Address,
 }
 
 enum AcceptConnectionRequestRole : 8 {
@@ -570,12 +570,12 @@ enum AcceptConnectionRequestRole : 8 {
   REMAIN_SLAVE = 0x01,
 }
 
-packet AcceptConnectionRequest : CreateConnectionCommand (OpCode = ACCEPT_CONNECTION_REQUEST) {
-  BdAddr : Address,
-  Role : AcceptConnectionRequestRole,
+packet AcceptConnectionRequest : CreateConnectionCommand (op_code = ACCEPT_CONNECTION_REQUEST) {
+  bd_addr : Address,
+  role : AcceptConnectionRequestRole,
 }
 
-packet AcceptConnectionRequestStatus : CommandStatus (CommandOpCode = ACCEPT_CONNECTION_REQUEST) {
+packet AcceptConnectionRequestStatus : CommandStatus (command_op_code = ACCEPT_CONNECTION_REQUEST) {
 }
 
 enum RejectConnectionReason : 8 {
@@ -584,100 +584,100 @@ enum RejectConnectionReason : 8 {
   UNACCEPTABLE_BD_ADDR = 0x0F,
 }
 
-packet RejectConnectionRequest : CreateConnectionCommand (OpCode = REJECT_CONNECTION_REQUEST) {
-  BdAddr : Address,
-  Reason : RejectConnectionReason,
+packet RejectConnectionRequest : CreateConnectionCommand (op_code = REJECT_CONNECTION_REQUEST) {
+  bd_addr : Address,
+  reason : RejectConnectionReason,
 }
 
-packet RejectConnectionRequestStatus : CommandStatus (CommandOpCode = REJECT_CONNECTION_REQUEST) {
+packet RejectConnectionRequestStatus : CommandStatus (command_op_code = REJECT_CONNECTION_REQUEST) {
 }
 
-packet LinkKeyRequestReply : SecurityCommand (OpCode = LINK_KEY_REQUEST_REPLY) {
-  BdAddr : Address,
-  LinkKeyLo : 64,
-  LinkKeyHi : 64,
+packet LinkKeyRequestReply : SecurityCommand (op_code = LINK_KEY_REQUEST_REPLY) {
+  bd_addr : Address,
+  link_key_lo : 64,
+  link_key_hi : 64,
 }
 
-packet LinkKeyRequestReplyComplete : CommandComplete (CommandOpCode = LINK_KEY_REQUEST_REPLY) {
-  Status : ErrorCodes,
+packet LinkKeyRequestReplyComplete : CommandComplete (command_op_code = LINK_KEY_REQUEST_REPLY) {
+  status : ErrorCodes,
 }
 
-packet LinkKeyRequestNegativeReply : SecurityCommand (OpCode = LINK_KEY_REQUEST_NEGATIVE_REPLY) {
-  BdAddr : Address,
+packet LinkKeyRequestNegativeReply : SecurityCommand (op_code = LINK_KEY_REQUEST_NEGATIVE_REPLY) {
+  bd_addr : Address,
 }
 
-packet LinkKeyRequestNegativeReplyComplete : CommandComplete (CommandOpCode = LINK_KEY_REQUEST_NEGATIVE_REPLY) {
-  Status : ErrorCodes,
-  BdAddr : Address,
+packet LinkKeyRequestNegativeReplyComplete : CommandComplete (command_op_code = LINK_KEY_REQUEST_NEGATIVE_REPLY) {
+  status : ErrorCodes,
+  bd_addr : Address,
 }
 
-packet PinCodeRequestReply : SecurityCommand (OpCode = PIN_CODE_REQUEST_REPLY) {
-  BdAddr : Address,
-  PinCodeLength : 5, // 0x01 - 0x10
-  reserved : 3,
-  PinCode1 : 8, // string parameter, first octet first
-  PinCode2 : 8,
-  PinCode3 : 8,
-  PinCode4 : 8,
-  PinCode5 : 8,
-  PinCode6 : 8,
-  PinCode7 : 8,
-  PinCode8 : 8,
-  PinCode9 : 8,
-  PinCode10 : 8,
-  PinCode11 : 8,
-  PinCode12 : 8,
-  PinCode13 : 8,
-  PinCode14 : 8,
-  PinCode15 : 8,
+packet PinCodeRequestReply : SecurityCommand (op_code = PIN_CODE_REQUEST_REPLY) {
+  bd_addr : Address,
+  pin_code_length : 5, // 0x01 - 0x10
+  _reserved_ : 3,
+  pin_code_1 : 8, // string parameter, first octet first
+  pin_code_2 : 8,
+  pin_code_3 : 8,
+  pin_code_4 : 8,
+  pin_code_5 : 8,
+  pin_code_6 : 8,
+  pin_code_7 : 8,
+  pin_code_8 : 8,
+  pin_code_9 : 8,
+  pin_code_10 : 8,
+  pin_code_11 : 8,
+  pin_code_12 : 8,
+  pin_code_13 : 8,
+  pin_code_14 : 8,
+  pin_code_15 : 8,
 }
 
-packet PinCodeRequestReplyComplete : CommandComplete (CommandOpCode = PIN_CODE_REQUEST_REPLY) {
-  Status : ErrorCodes,
-  BdAddr : Address,
+packet PinCodeRequestReplyComplete : CommandComplete (command_op_code = PIN_CODE_REQUEST_REPLY) {
+  status : ErrorCodes,
+  bd_addr : Address,
 }
 
-packet PinCodeRequestNegativeReply : SecurityCommand (OpCode = PIN_CODE_REQUEST_NEGATIVE_REPLY) {
-  BdAddr : Address,
+packet PinCodeRequestNegativeReply : SecurityCommand (op_code = PIN_CODE_REQUEST_NEGATIVE_REPLY) {
+  bd_addr : Address,
 }
 
-packet PinCodeRequestNegativeReplyComplete : CommandComplete (CommandOpCode = PIN_CODE_REQUEST_NEGATIVE_REPLY) {
-  Status : ErrorCodes,
-  BdAddr : Address,
+packet PinCodeRequestNegativeReplyComplete : CommandComplete (command_op_code = PIN_CODE_REQUEST_NEGATIVE_REPLY) {
+  status : ErrorCodes,
+  bd_addr : Address,
 }
 
-packet ChangeConnectionPacketType : ConnectionManagementCommand (OpCode = CHANGE_CONNECTION_PACKET_TYPE) {
-  ConnectionHandle : 12,
-  reserved : 4,
-  PacketType : 16,
+packet ChangeConnectionPacketType : ConnectionManagementCommand (op_code = CHANGE_CONNECTION_PACKET_TYPE) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  packet_type : 16,
 }
 
-packet ChangeConnectionPacketTypeStatus : CommandStatus (CommandOpCode = CHANGE_CONNECTION_PACKET_TYPE) {
+packet ChangeConnectionPacketTypeStatus : CommandStatus (command_op_code = CHANGE_CONNECTION_PACKET_TYPE) {
 }
 
-packet AuthenticationRequested : ConnectionManagementCommand (OpCode = AUTHENTICATION_REQUESTED) {
-  ConnectionHandle : 12,
-  reserved : 4,
+packet AuthenticationRequested : ConnectionManagementCommand (op_code = AUTHENTICATION_REQUESTED) {
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
-packet AuthenticationRequestedStatus : CommandStatus (CommandOpCode = AUTHENTICATION_REQUESTED) {
+packet AuthenticationRequestedStatus : CommandStatus (command_op_code = AUTHENTICATION_REQUESTED) {
 }
 
-packet SetConnectionEncryption : ConnectionManagementCommand (OpCode = SET_CONNECTION_ENCRYPTION) {
-  ConnectionHandle : 12,
-  reserved : 4,
-  EncryptionEnable : Enable,
+packet SetConnectionEncryption : ConnectionManagementCommand (op_code = SET_CONNECTION_ENCRYPTION) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  encryption_enable : Enable,
 }
 
-packet SetConnectionEncryptionStatus : CommandStatus (CommandOpCode = SET_CONNECTION_ENCRYPTION) {
+packet SetConnectionEncryptionStatus : CommandStatus (command_op_code = SET_CONNECTION_ENCRYPTION) {
 }
 
-packet ChangeConnectionLinkKey : ConnectionManagementCommand (OpCode = CHANGE_CONNECTION_LINK_KEY) {
-  ConnectionHandle : 12,
-  reserved : 4,
+packet ChangeConnectionLinkKey : ConnectionManagementCommand (op_code = CHANGE_CONNECTION_LINK_KEY) {
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
-packet ChangeConnectionLinkKeyStatus : CommandStatus (CommandOpCode = CHANGE_CONNECTION_LINK_KEY) {
+packet ChangeConnectionLinkKeyStatus : CommandStatus (command_op_code = CHANGE_CONNECTION_LINK_KEY) {
 }
 
 enum KeyFlag : 8 {
@@ -685,89 +685,89 @@ enum KeyFlag : 8 {
   TEMPORARY = 0x01,
 }
 
-packet MasterLinkKey : ConnectionManagementCommand (OpCode = MASTER_LINK_KEY) {
-  KeyFlag : KeyFlag,
+packet MasterLinkKey : ConnectionManagementCommand (op_code = MASTER_LINK_KEY) {
+  key_flag : KeyFlag,
 }
 
-packet MasterLinkKeyStatus : CommandStatus (CommandOpCode = MASTER_LINK_KEY) {
+packet MasterLinkKeyStatus : CommandStatus (command_op_code = MASTER_LINK_KEY) {
 }
 
-packet RemoteNameRequest : DiscoveryCommand (OpCode = REMOTE_NAME_REQUEST) {
-  BdAddr : Address,
-  PageScanRepetitionMode : PageScanRepetitionMode,
-  reserved : 8,
-  ClockOffset : 15,
-  ClockOffsetValid : ClockOffsetValid,
+packet RemoteNameRequest : DiscoveryCommand (op_code = REMOTE_NAME_REQUEST) {
+  bd_addr : Address,
+  page_scan_repetition_mode : PageScanRepetitionMode,
+  _reserved_ : 8,
+  clock_offset : 15,
+  clock_offset_valid : ClockOffsetValid,
 }
 
-packet RemoteNameRequestStatus : CommandStatus (CommandOpCode = REMOTE_NAME_REQUEST) {
+packet RemoteNameRequestStatus : CommandStatus (command_op_code = REMOTE_NAME_REQUEST) {
 }
 
-packet RemoteNameRequestCancel : DiscoveryCommand (OpCode = REMOTE_NAME_REQUEST_CANCEL) {
-  BdAddr : Address,
+packet RemoteNameRequestCancel : DiscoveryCommand (op_code = REMOTE_NAME_REQUEST_CANCEL) {
+  bd_addr : Address,
 }
 
-packet RemoteNameRequestCancelComplete : CommandComplete (CommandOpCode = REMOTE_NAME_REQUEST_CANCEL) {
-  Status : ErrorCodes,
-  BdAddr : Address,
+packet RemoteNameRequestCancelComplete : CommandComplete (command_op_code = REMOTE_NAME_REQUEST_CANCEL) {
+  status : ErrorCodes,
+  bd_addr : Address,
 }
 
-packet ReadRemoteSupportedFeatures : DiscoveryCommand (OpCode = READ_REMOTE_SUPPORTED_FEATURES) {
-  ConnectionHandle : 12,
-  reserved : 4,
+packet ReadRemoteSupportedFeatures : DiscoveryCommand (op_code = READ_REMOTE_SUPPORTED_FEATURES) {
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
-packet ReadRemoteSupportedFeaturesStatus : CommandStatus (CommandOpCode = READ_REMOTE_SUPPORTED_FEATURES) {
+packet ReadRemoteSupportedFeaturesStatus : CommandStatus (command_op_code = READ_REMOTE_SUPPORTED_FEATURES) {
 }
 
-packet ReadRemoteExtendedFeatures : DiscoveryCommand (OpCode = READ_REMOTE_EXTENDED_FEATURES) {
-  ConnectionHandle : 12,
-  reserved : 4,
-  PageNumber : 8,
+packet ReadRemoteExtendedFeatures : DiscoveryCommand (op_code = READ_REMOTE_EXTENDED_FEATURES) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  page_number : 8,
 }
 
-packet ReadRemoteExtendedFeaturesStatus : CommandStatus (CommandOpCode = READ_REMOTE_EXTENDED_FEATURES) {
+packet ReadRemoteExtendedFeaturesStatus : CommandStatus (command_op_code = READ_REMOTE_EXTENDED_FEATURES) {
 }
 
-packet ReadRemoteVersionInformation : DiscoveryCommand (OpCode = READ_REMOTE_VERSION_INFORMATION) {
-  ConnectionHandle : 12,
-  reserved : 4,
+packet ReadRemoteVersionInformation : DiscoveryCommand (op_code = READ_REMOTE_VERSION_INFORMATION) {
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
-packet ReadRemoteVersionInformationStatus : CommandStatus (CommandOpCode = READ_REMOTE_VERSION_INFORMATION) {
+packet ReadRemoteVersionInformationStatus : CommandStatus (command_op_code = READ_REMOTE_VERSION_INFORMATION) {
 }
 
-packet ReadClockOffset : ConnectionManagementCommand (OpCode = READ_CLOCK_OFFSET) {
-  ConnectionHandle : 12,
-  reserved : 4,
+packet ReadClockOffset : ConnectionManagementCommand (op_code = READ_CLOCK_OFFSET) {
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
-packet ReadClockOffsetStatus : CommandStatus (CommandOpCode = READ_CLOCK_OFFSET) {
+packet ReadClockOffsetStatus : CommandStatus (command_op_code = READ_CLOCK_OFFSET) {
 }
 
-packet ReadLmpHandle : ConnectionManagementCommand (OpCode = READ_LMP_HANDLE) {
-  ConnectionHandle : 12,
-  reserved : 4,
+packet ReadLmpHandle : ConnectionManagementCommand (op_code = READ_LMP_HANDLE) {
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
-packet ReadLmpHandleComplete : CommandComplete (CommandOpCode = READ_LMP_HANDLE) {
-  Status : ErrorCodes,
-  ConnectionHandle : 12,
-  reserved : 4,
-  LmpHandle : 8,
-  reserved : 32,
+packet ReadLmpHandleComplete : CommandComplete (command_op_code = READ_LMP_HANDLE) {
+  status : ErrorCodes,
+  connection_handle : 12,
+  _reserved_ : 4,
+  lmp_handle : 8,
+  _reserved_ : 32,
 }
 
-packet SetupSynchronousConnection : ScoConnectionCommand (OpCode = SETUP_SYNCHRONOUS_CONNECTION) {
-  payload,  // placeholder (unimplemented)
+packet SetupSynchronousConnection : ScoConnectionCommand (op_code = SETUP_SYNCHRONOUS_CONNECTION) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet AcceptSynchronousConnection : ScoConnectionCommand (OpCode = ACCEPT_SYNCHRONOUS_CONNECTION) {
-  payload,  // placeholder (unimplemented)
+packet AcceptSynchronousConnection : ScoConnectionCommand (op_code = ACCEPT_SYNCHRONOUS_CONNECTION) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet RejectSynchronousConnection : ScoConnectionCommand (OpCode = REJECT_SYNCHRONOUS_CONNECTION) {
-  payload,  // placeholder (unimplemented)
+packet RejectSynchronousConnection : ScoConnectionCommand (op_code = REJECT_SYNCHRONOUS_CONNECTION) {
+  _payload_,  // placeholder (unimplemented)
 }
 
 enum IoCapability : 8 {
@@ -793,176 +793,176 @@ enum AuthenticationRequirements : 8 {
   GENERAL_BONDING_MITM_PROTECTION = 0x05,
 }
 
-packet IoCapabilityRequestReply : SecurityCommand (OpCode = IO_CAPABILITY_REQUEST_REPLY) {
-  BdAddr : Address,
-  IoCapability : IoCapability,
-  OobPresent : OobDataPresent,
-  AuthenticationRequirements : AuthenticationRequirements,
+packet IoCapabilityRequestReply : SecurityCommand (op_code = IO_CAPABILITY_REQUEST_REPLY) {
+  bd_addr : Address,
+  io_capability : IoCapability,
+  oob_present : OobDataPresent,
+  authentication_requirements : AuthenticationRequirements,
 }
 
-packet IoCapabilityRequestReplyComplete : CommandComplete (CommandOpCode = IO_CAPABILITY_REQUEST_REPLY) {
-  Status : ErrorCodes,
-  BdAddr : Address,
+packet IoCapabilityRequestReplyComplete : CommandComplete (command_op_code = IO_CAPABILITY_REQUEST_REPLY) {
+  status : ErrorCodes,
+  bd_addr : Address,
 }
 
-packet UserConfirmationRequestReply : SecurityCommand (OpCode = USER_CONFIRMATION_REQUEST_REPLY) {
-  BdAddr : Address,
+packet UserConfirmationRequestReply : SecurityCommand (op_code = USER_CONFIRMATION_REQUEST_REPLY) {
+  bd_addr : Address,
 }
 
-packet UserConfirmationRequestReplyComplete : CommandComplete (CommandOpCode = USER_CONFIRMATION_REQUEST_REPLY) {
-  Status : ErrorCodes,
-  BdAddr : Address,
+packet UserConfirmationRequestReplyComplete : CommandComplete (command_op_code = USER_CONFIRMATION_REQUEST_REPLY) {
+  status : ErrorCodes,
+  bd_addr : Address,
 }
 
-packet UserConfirmationRequestNegativeReply : SecurityCommand (OpCode = USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY) {
-  BdAddr : Address,
+packet UserConfirmationRequestNegativeReply : SecurityCommand (op_code = USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY) {
+  bd_addr : Address,
 }
 
-packet UserConfirmationRequestNegativeReplyComplete : CommandComplete (CommandOpCode = USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY) {
-  Status : ErrorCodes,
-  BdAddr : Address,
+packet UserConfirmationRequestNegativeReplyComplete : CommandComplete (command_op_code = USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY) {
+  status : ErrorCodes,
+  bd_addr : Address,
 }
 
-packet UserPasskeyRequestReply : SecurityCommand (OpCode = USER_PASSKEY_REQUEST_REPLY) {
-  BdAddr : Address,
-  NumericValue : 32, // 000000-999999 decimal or 0x0-0xF423F
+packet UserPasskeyRequestReply : SecurityCommand (op_code = USER_PASSKEY_REQUEST_REPLY) {
+  bd_addr : Address,
+  numeric_value : 32, // 000000-999999 decimal or 0x0-0xF423F
 }
 
-packet UserPasskeyReplyComplete : CommandComplete (CommandOpCode = USER_PASSKEY_REQUEST_REPLY) {
-  Status : ErrorCodes,
-  BdAddr : Address,
+packet UserPasskeyReplyComplete : CommandComplete (command_op_code = USER_PASSKEY_REQUEST_REPLY) {
+  status : ErrorCodes,
+  bd_addr : Address,
 }
 
-packet UserPasskeyRequestNegativeReply : SecurityCommand (OpCode = USER_PASSKEY_REQUEST_NEGATIVE_REPLY) {
-  BdAddr : Address,
+packet UserPasskeyRequestNegativeReply : SecurityCommand (op_code = USER_PASSKEY_REQUEST_NEGATIVE_REPLY) {
+  bd_addr : Address,
 }
 
-packet UserPasskeyRequestNegativeReplyComplete : CommandComplete (CommandOpCode = USER_PASSKEY_REQUEST_NEGATIVE_REPLY) {
-  Status : ErrorCodes,
-  BdAddr : Address,
+packet UserPasskeyRequestNegativeReplyComplete : CommandComplete (command_op_code = USER_PASSKEY_REQUEST_NEGATIVE_REPLY) {
+  status : ErrorCodes,
+  bd_addr : Address,
 }
 
-packet RemoteOobDataRequestReply : SecurityCommand (OpCode = REMOTE_OOB_DATA_REQUEST_REPLY) {
-  payload,  // placeholder (unimplemented)
+packet RemoteOobDataRequestReply : SecurityCommand (op_code = REMOTE_OOB_DATA_REQUEST_REPLY) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet RemoteOobDataRequestReplyComplete : CommandComplete (CommandOpCode = REMOTE_OOB_DATA_REQUEST_REPLY) {
-  Status : ErrorCodes,
-  BdAddr : Address,
+packet RemoteOobDataRequestReplyComplete : CommandComplete (command_op_code = REMOTE_OOB_DATA_REQUEST_REPLY) {
+  status : ErrorCodes,
+  bd_addr : Address,
 }
 
-packet RemoteOobDataRequestNegativeReply : SecurityCommand (OpCode = REMOTE_OOB_DATA_REQUEST_NEGATIVE_REPLY) {
-  BdAddr : Address,
+packet RemoteOobDataRequestNegativeReply : SecurityCommand (op_code = REMOTE_OOB_DATA_REQUEST_NEGATIVE_REPLY) {
+  bd_addr : Address,
 }
 
-packet RemoteOobDataRequestNegativeReplyComplete : CommandComplete (CommandOpCode = REMOTE_OOB_DATA_REQUEST_NEGATIVE_REPLY) {
-  Status : ErrorCodes,
-  BdAddr : Address,
+packet RemoteOobDataRequestNegativeReplyComplete : CommandComplete (command_op_code = REMOTE_OOB_DATA_REQUEST_NEGATIVE_REPLY) {
+  status : ErrorCodes,
+  bd_addr : Address,
 }
 
-packet IoCapabilityRequestNegativeReply : SecurityCommand (OpCode = IO_CAPABILITY_REQUEST_NEGATIVE_REPLY) {
-  BdAddr : Address,
-  Reason : ErrorCodes,
+packet IoCapabilityRequestNegativeReply : SecurityCommand (op_code = IO_CAPABILITY_REQUEST_NEGATIVE_REPLY) {
+  bd_addr : Address,
+  reason : ErrorCodes,
 }
 
-packet IoCapabilityRequestNegativeReplyComplete : CommandComplete (CommandOpCode = IO_CAPABILITY_REQUEST_NEGATIVE_REPLY) {
-  Status : ErrorCodes,
-  BdAddr : Address,
+packet IoCapabilityRequestNegativeReplyComplete : CommandComplete (command_op_code = IO_CAPABILITY_REQUEST_NEGATIVE_REPLY) {
+  status : ErrorCodes,
+  bd_addr : Address,
 }
 
-packet EnhancedSetupSynchronousConnection : ScoConnectionCommand (OpCode = ENHANCED_SETUP_SYNCHRONOUS_CONNECTION) {
-  payload,  // placeholder (unimplemented)
+packet EnhancedSetupSynchronousConnection : ScoConnectionCommand (op_code = ENHANCED_SETUP_SYNCHRONOUS_CONNECTION) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet EnhancedAcceptSynchronousConnection : ScoConnectionCommand (OpCode = ENHANCED_ACCEPT_SYNCHRONOUS_CONNECTION) {
-  payload,  // placeholder (unimplemented)
+packet EnhancedAcceptSynchronousConnection : ScoConnectionCommand (op_code = ENHANCED_ACCEPT_SYNCHRONOUS_CONNECTION) {
+  _payload_,  // placeholder (unimplemented)
 }
 
 
   // LINK_POLICY
-packet HoldMode : ConnectionManagementCommand (OpCode = HOLD_MODE) {
-  payload,  // placeholder (unimplemented)
+packet HoldMode : ConnectionManagementCommand (op_code = HOLD_MODE) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet SniffMode : ConnectionManagementCommand (OpCode = SNIFF_MODE) {
-  payload,  // placeholder (unimplemented)
+packet SniffMode : ConnectionManagementCommand (op_code = SNIFF_MODE) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet ExitSniffMode : ConnectionManagementCommand (OpCode = EXIT_SNIFF_MODE) {
-  payload,  // placeholder (unimplemented)
+packet ExitSniffMode : ConnectionManagementCommand (op_code = EXIT_SNIFF_MODE) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet QosSetup : ConnectionManagementCommand (OpCode = QOS_SETUP) {
-  payload,  // placeholder (unimplemented)
+packet QosSetup : ConnectionManagementCommand (op_code = QOS_SETUP) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet RoleDiscovery : ConnectionManagementCommand (OpCode = ROLE_DISCOVERY) {
-  payload,  // placeholder (unimplemented)
+packet RoleDiscovery : ConnectionManagementCommand (op_code = ROLE_DISCOVERY) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet SwitchRole : ConnectionManagementCommand (OpCode = SWITCH_ROLE) {
-  payload,  // placeholder (unimplemented)
+packet SwitchRole : ConnectionManagementCommand (op_code = SWITCH_ROLE) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet ReadLinkPolicySettings : ConnectionManagementCommand (OpCode = READ_LINK_POLICY_SETTINGS) {
-  payload,  // placeholder (unimplemented)
+packet ReadLinkPolicySettings : ConnectionManagementCommand (op_code = READ_LINK_POLICY_SETTINGS) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet WriteLinkPolicySettings : ConnectionManagementCommand (OpCode = WRITE_LINK_POLICY_SETTINGS) {
-  payload,  // placeholder (unimplemented)
+packet WriteLinkPolicySettings : ConnectionManagementCommand (op_code = WRITE_LINK_POLICY_SETTINGS) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet ReadDefaultLinkPolicySettings : ConnectionManagementCommand (OpCode = READ_DEFAULT_LINK_POLICY_SETTINGS) {
-  payload,  // placeholder (unimplemented)
+packet ReadDefaultLinkPolicySettings : ConnectionManagementCommand (op_code = READ_DEFAULT_LINK_POLICY_SETTINGS) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet WriteDefaultLinkPolicySettings : ConnectionManagementCommand (OpCode = WRITE_DEFAULT_LINK_POLICY_SETTINGS) {
-  payload,  // placeholder (unimplemented)
+packet WriteDefaultLinkPolicySettings : ConnectionManagementCommand (op_code = WRITE_DEFAULT_LINK_POLICY_SETTINGS) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet FlowSpecification : ConnectionManagementCommand (OpCode = FLOW_SPECIFICATION) {
-  payload,  // placeholder (unimplemented)
+packet FlowSpecification : ConnectionManagementCommand (op_code = FLOW_SPECIFICATION) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet SniffSubrating : ConnectionManagementCommand (OpCode = SNIFF_SUBRATING) {
-  payload,  // placeholder (unimplemented)
+packet SniffSubrating : ConnectionManagementCommand (op_code = SNIFF_SUBRATING) {
+  _payload_,  // placeholder (unimplemented)
 }
 
 
   // CONTROLLER_AND_BASEBAND
-packet SetEventMask : CommandPacket (OpCode = SET_EVENT_MASK) {
-  EventMask : 64,
+packet SetEventMask : CommandPacket (op_code = SET_EVENT_MASK) {
+  event_mask : 64,
 }
 
-packet SetEventMaskComplete : CommandComplete (CommandOpCode = SET_EVENT_MASK) {
-  Status : ErrorCodes,
+packet SetEventMaskComplete : CommandComplete (command_op_code = SET_EVENT_MASK) {
+  status : ErrorCodes,
 }
 
-packet Reset : CommandPacket (OpCode = RESET) {
+packet Reset : CommandPacket (op_code = RESET) {
 }
 
-packet ResetComplete : CommandComplete (CommandOpCode = RESET) {
-  Status : ErrorCodes,
+packet ResetComplete : CommandComplete (command_op_code = RESET) {
+  status : ErrorCodes,
 }
 
-packet SetEventFilter : CommandPacket (OpCode = SET_EVENT_FILTER) {
-  payload,  // placeholder (unimplemented)
+packet SetEventFilter : CommandPacket (op_code = SET_EVENT_FILTER) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet Flush : ConnectionManagementCommand (OpCode = FLUSH) {
-  payload,  // placeholder (unimplemented)
+packet Flush : ConnectionManagementCommand (op_code = FLUSH) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet ReadPinType : CommandPacket (OpCode = READ_PIN_TYPE) {
-  payload,  // placeholder (unimplemented)
+packet ReadPinType : CommandPacket (op_code = READ_PIN_TYPE) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet WritePinType : CommandPacket (OpCode = WRITE_PIN_TYPE) {
-  payload,  // placeholder (unimplemented)
+packet WritePinType : CommandPacket (op_code = WRITE_PIN_TYPE) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet CreateNewUnitKey : CommandPacket (OpCode = CREATE_NEW_UNIT_KEY) {
-  payload,  // placeholder (unimplemented)
+packet CreateNewUnitKey : CommandPacket (op_code = CREATE_NEW_UNIT_KEY) {
+  _payload_,  // placeholder (unimplemented)
 }
 
 enum ReadStoredLinkKeyReadAllFlag : 8 {
@@ -970,24 +970,24 @@ enum ReadStoredLinkKeyReadAllFlag : 8 {
   ALL = 0x01,
 }
 
-packet ReadStoredLinkKey : SecurityCommand (OpCode = READ_STORED_LINK_KEY) {
-  BdAddr : Address,
-  ReadAllFlag : ReadStoredLinkKeyReadAllFlag,
+packet ReadStoredLinkKey : SecurityCommand (op_code = READ_STORED_LINK_KEY) {
+  bd_addr : Address,
+  read_all_flag : ReadStoredLinkKeyReadAllFlag,
 }
 
-packet ReadStoredLinkKeyComplete : CommandComplete (CommandOpCode = READ_STORED_LINK_KEY) {
-  Status : ErrorCodes,
-  MaxNumKeys : 16,
-  NumKeysRead : 16,
+packet ReadStoredLinkKeyComplete : CommandComplete (command_op_code = READ_STORED_LINK_KEY) {
+  status : ErrorCodes,
+  max_num_keys : 16,
+  num_keys_read : 16,
 }
 
-packet WriteStoredLinkKey : SecurityCommand (OpCode = WRITE_STORED_LINK_KEY) {
-  payload,
+packet WriteStoredLinkKey : SecurityCommand (op_code = WRITE_STORED_LINK_KEY) {
+  _payload_,
 }
 
-packet WriteStoredLinkKeyComplete : CommandComplete (CommandOpCode = WRITE_STORED_LINK_KEY) {
-  Status : ErrorCodes,
-  NumKeysWritten : 8,
+packet WriteStoredLinkKeyComplete : CommandComplete (command_op_code = WRITE_STORED_LINK_KEY) {
+  status : ErrorCodes,
+  num_keys_written : 8,
 }
 
 enum DeleteStoredLinkKeyDeleteAllFlag : 8 {
@@ -995,46 +995,46 @@ enum DeleteStoredLinkKeyDeleteAllFlag : 8 {
   ALL = 0x01,
 }
 
-packet DeleteStoredLinkKey : SecurityCommand (OpCode = DELETE_STORED_LINK_KEY) {
-  BdAddr : Address,
-  DeleteAllFlag : DeleteStoredLinkKeyDeleteAllFlag,
+packet DeleteStoredLinkKey : SecurityCommand (op_code = DELETE_STORED_LINK_KEY) {
+  bd_addr : Address,
+  delete_all_flag : DeleteStoredLinkKeyDeleteAllFlag,
 }
 
-packet DeleteStoredLinkKeyComplete : CommandComplete (CommandOpCode = DELETE_STORED_LINK_KEY) {
-  Status : ErrorCodes,
-  NumKeysDeleted : 8,
+packet DeleteStoredLinkKeyComplete : CommandComplete (command_op_code = DELETE_STORED_LINK_KEY) {
+  status : ErrorCodes,
+  num_keys_deleted : 8,
 }
 
-packet WriteLocalName : CommandPacket (OpCode = WRITE_LOCAL_NAME) {
-  payload,
+packet WriteLocalName : CommandPacket (op_code = WRITE_LOCAL_NAME) {
+  _payload_,
 }
 
-packet WriteLocalNameComplete : CommandComplete (CommandOpCode = WRITE_LOCAL_NAME) {
-  Status : ErrorCodes,
+packet WriteLocalNameComplete : CommandComplete (command_op_code = WRITE_LOCAL_NAME) {
+  status : ErrorCodes,
 }
 
-packet ReadLocalName : CommandPacket (OpCode = READ_LOCAL_NAME) {
+packet ReadLocalName : CommandPacket (op_code = READ_LOCAL_NAME) {
 }
 
-packet ReadLocalNameComplete : CommandComplete (CommandOpCode = READ_LOCAL_NAME) {
-  Status : ErrorCodes,
-  payload,
+packet ReadLocalNameComplete : CommandComplete (command_op_code = READ_LOCAL_NAME) {
+  status : ErrorCodes,
+  _payload_,
 }
 
-packet ReadConnectionAcceptTimeout : CreateConnectionCommand (OpCode = READ_CONNECTION_ACCEPT_TIMEOUT) {
-  payload,  // placeholder (unimplemented)
+packet ReadConnectionAcceptTimeout : CreateConnectionCommand (op_code = READ_CONNECTION_ACCEPT_TIMEOUT) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet WriteConnectionAcceptTimeout : CreateConnectionCommand (OpCode = WRITE_CONNECTION_ACCEPT_TIMEOUT) {
-  payload,  // placeholder (unimplemented)
+packet WriteConnectionAcceptTimeout : CreateConnectionCommand (op_code = WRITE_CONNECTION_ACCEPT_TIMEOUT) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet ReadPageTimeout : DiscoveryCommand (OpCode = READ_PAGE_TIMEOUT) {
-  payload,  // placeholder (unimplemented)
+packet ReadPageTimeout : DiscoveryCommand (op_code = READ_PAGE_TIMEOUT) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet WritePageTimeout : DiscoveryCommand (OpCode = WRITE_PAGE_TIMEOUT) {
-  payload,  // placeholder (unimplemented)
+packet WritePageTimeout : DiscoveryCommand (op_code = WRITE_PAGE_TIMEOUT) {
+  _payload_,  // placeholder (unimplemented)
 }
 
 enum ScanEnable : 8 {
@@ -1044,46 +1044,46 @@ enum ScanEnable : 8 {
   INQUIRY_AND_PAGE_SCAN = 0x03,
 }
 
-packet ReadScanEnable : DiscoveryCommand (OpCode = READ_SCAN_ENABLE) {
+packet ReadScanEnable : DiscoveryCommand (op_code = READ_SCAN_ENABLE) {
 }
 
-packet ReadScanEnableComplete : CommandComplete (CommandOpCode = READ_SCAN_ENABLE) {
-  Status : ErrorCodes,
-  ScanEnable : ScanEnable,
+packet ReadScanEnableComplete : CommandComplete (command_op_code = READ_SCAN_ENABLE) {
+  status : ErrorCodes,
+  scan_enable : ScanEnable,
 }
 
-packet WriteScanEnable : DiscoveryCommand (OpCode = WRITE_SCAN_ENABLE) {
-  ScanEnable : ScanEnable,
+packet WriteScanEnable : DiscoveryCommand (op_code = WRITE_SCAN_ENABLE) {
+  scan_enable : ScanEnable,
 }
 
-packet WriteScanEnableComplete : CommandComplete (CommandOpCode = WRITE_SCAN_ENABLE) {
-  Status : ErrorCodes,
+packet WriteScanEnableComplete : CommandComplete (command_op_code = WRITE_SCAN_ENABLE) {
+  status : ErrorCodes,
 }
 
-packet ReadPageScanActivity : DiscoveryCommand (OpCode = READ_PAGE_SCAN_ACTIVITY) {
+packet ReadPageScanActivity : DiscoveryCommand (op_code = READ_PAGE_SCAN_ACTIVITY) {
 }
 
-packet ReadPageScanActivityComplete : CommandComplete (CommandOpCode = READ_PAGE_SCAN_ACTIVITY) {
-  Status : ErrorCodes,
-  PageScanInterval : 16, // Range: 0x0012 to 0x1000; only even values are valid * 0x625 ms
-  PageScanWindow : 16, // 0x0011 to PageScanInterval
+packet ReadPageScanActivityComplete : CommandComplete (command_op_code = READ_PAGE_SCAN_ACTIVITY) {
+  status : ErrorCodes,
+  page_scan_interval : 16, // Range: 0x0012 to 0x1000; only even values are valid * 0x625 ms
+  page_scan_window : 16, // 0x0011 to PageScanInterval
 }
 
-packet WritePageScanActivity : DiscoveryCommand (OpCode = WRITE_PAGE_SCAN_ACTIVITY) {
-  PageScanInterval : 16, // Range: 0x0012 to 0x1000; only even values are valid * 0x625 ms
-  PageScanWindow : 16, // 0x0011 to PageScanInterval
+packet WritePageScanActivity : DiscoveryCommand (op_code = WRITE_PAGE_SCAN_ACTIVITY) {
+  page_scan_interval : 16, // Range: 0x0012 to 0x1000; only even values are valid * 0x625 ms
+  page_scan_window : 16, // 0x0011 to PageScanInterval
 }
 
-packet WritePageScanActivityComplete : CommandComplete (CommandOpCode = WRITE_PAGE_SCAN_ACTIVITY) {
-  Status : ErrorCodes,
+packet WritePageScanActivityComplete : CommandComplete (command_op_code = WRITE_PAGE_SCAN_ACTIVITY) {
+  status : ErrorCodes,
 }
 
-packet ReadInquiryScanActivity : DiscoveryCommand (OpCode = READ_INQUIRY_SCAN_ACTIVITY) {
-  payload,  // placeholder (unimplemented)
+packet ReadInquiryScanActivity : DiscoveryCommand (op_code = READ_INQUIRY_SCAN_ACTIVITY) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet WriteInquiryScanActivity : DiscoveryCommand (OpCode = WRITE_INQUIRY_SCAN_ACTIVITY) {
-  payload,  // placeholder (unimplemented)
+packet WriteInquiryScanActivity : DiscoveryCommand (op_code = WRITE_INQUIRY_SCAN_ACTIVITY) {
+  _payload_,  // placeholder (unimplemented)
 }
 
 enum AuthenticationEnable : 8 {
@@ -1091,143 +1091,143 @@ enum AuthenticationEnable : 8 {
   REQUIRED = 0x01,
 }
 
-packet ReadAuthenticationEnable : CommandPacket (OpCode = READ_AUTHENTICATION_ENABLE) {
+packet ReadAuthenticationEnable : CommandPacket (op_code = READ_AUTHENTICATION_ENABLE) {
 }
 
-packet ReadAuthenticationEnableComplete : CommandComplete (CommandOpCode = READ_AUTHENTICATION_ENABLE) {
-  Status : ErrorCodes,
-  AuthenticationEnable : AuthenticationEnable,
+packet ReadAuthenticationEnableComplete : CommandComplete (command_op_code = READ_AUTHENTICATION_ENABLE) {
+  status : ErrorCodes,
+  authentication_enable : AuthenticationEnable,
 }
 
-packet WriteAuthenticationEnable : CommandPacket (OpCode = WRITE_AUTHENTICATION_ENABLE) {
-  AuthenticationEnable : AuthenticationEnable,
+packet WriteAuthenticationEnable : CommandPacket (op_code = WRITE_AUTHENTICATION_ENABLE) {
+  authentication_enable : AuthenticationEnable,
 }
 
-packet WriteAuthenticationEnableComplete : CommandComplete (CommandOpCode = WRITE_AUTHENTICATION_ENABLE) {
-  Status : ErrorCodes,
+packet WriteAuthenticationEnableComplete : CommandComplete (command_op_code = WRITE_AUTHENTICATION_ENABLE) {
+  status : ErrorCodes,
 }
 
-packet ReadClassOfDevice : DiscoveryCommand (OpCode = READ_CLASS_OF_DEVICE) {
+packet ReadClassOfDevice : DiscoveryCommand (op_code = READ_CLASS_OF_DEVICE) {
 }
 
-packet ReadClassOfDeviceComplete : CommandComplete (CommandOpCode = READ_CLASS_OF_DEVICE) {
-  Status : ErrorCodes,
-  ClassOfDevice : ClassOfDevice,
+packet ReadClassOfDeviceComplete : CommandComplete (command_op_code = READ_CLASS_OF_DEVICE) {
+  status : ErrorCodes,
+  class_of_device : ClassOfDevice,
 }
 
-packet WriteClassOfDevice : DiscoveryCommand (OpCode = WRITE_CLASS_OF_DEVICE) {
-  ClassOfDevice : ClassOfDevice,
+packet WriteClassOfDevice : DiscoveryCommand (op_code = WRITE_CLASS_OF_DEVICE) {
+  class_of_device : ClassOfDevice,
 }
 
-packet WriteClassOfDeviceComplete : CommandComplete (CommandOpCode = WRITE_CLASS_OF_DEVICE) {
-  Status : ErrorCodes,
+packet WriteClassOfDeviceComplete : CommandComplete (command_op_code = WRITE_CLASS_OF_DEVICE) {
+  status : ErrorCodes,
 }
 
-packet ReadVoiceSetting : CommandPacket (OpCode = READ_VOICE_SETTING) {
-  payload,  // placeholder (unimplemented)
+packet ReadVoiceSetting : CommandPacket (op_code = READ_VOICE_SETTING) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet WriteVoiceSetting : CommandPacket (OpCode = WRITE_VOICE_SETTING) {
-  payload,  // placeholder (unimplemented)
+packet WriteVoiceSetting : CommandPacket (op_code = WRITE_VOICE_SETTING) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet ReadAutomaticFlushTimeout : ConnectionManagementCommand (OpCode = READ_AUTOMATIC_FLUSH_TIMEOUT) {
-  payload,  // placeholder (unimplemented)
+packet ReadAutomaticFlushTimeout : ConnectionManagementCommand (op_code = READ_AUTOMATIC_FLUSH_TIMEOUT) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet WriteAutomaticFlushTimeout : ConnectionManagementCommand (OpCode = WRITE_AUTOMATIC_FLUSH_TIMEOUT) {
-  payload,  // placeholder (unimplemented)
+packet WriteAutomaticFlushTimeout : ConnectionManagementCommand (op_code = WRITE_AUTOMATIC_FLUSH_TIMEOUT) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet ReadNumBroadcastRetransmits : CommandPacket (OpCode = READ_NUM_BROADCAST_RETRANSMITS) {
-  payload,  // placeholder (unimplemented)
+packet ReadNumBroadcastRetransmits : CommandPacket (op_code = READ_NUM_BROADCAST_RETRANSMITS) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet WriteNumBroadcastRetransmits : CommandPacket (OpCode = WRITE_NUM_BROADCAST_RETRANSMITS) {
-  payload,  // placeholder (unimplemented)
+packet WriteNumBroadcastRetransmits : CommandPacket (op_code = WRITE_NUM_BROADCAST_RETRANSMITS) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet ReadHoldModeActivity : CommandPacket (OpCode = READ_HOLD_MODE_ACTIVITY) {
-  payload,  // placeholder (unimplemented)
+packet ReadHoldModeActivity : CommandPacket (op_code = READ_HOLD_MODE_ACTIVITY) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet WriteHoldModeActivity : CommandPacket (OpCode = WRITE_HOLD_MODE_ACTIVITY) {
-  payload,  // placeholder (unimplemented)
+packet WriteHoldModeActivity : CommandPacket (op_code = WRITE_HOLD_MODE_ACTIVITY) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet ReadTransmitPowerLevel : ConnectionManagementCommand (OpCode = READ_TRANSMIT_POWER_LEVEL) {
-  payload,  // placeholder (unimplemented)
+packet ReadTransmitPowerLevel : ConnectionManagementCommand (op_code = READ_TRANSMIT_POWER_LEVEL) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet ReadSynchronousFlowControlEnable : CommandPacket (OpCode = READ_SYNCHRONOUS_FLOW_CONTROL_ENABLE) {
-  payload,  // placeholder (unimplemented)
+packet ReadSynchronousFlowControlEnable : CommandPacket (op_code = READ_SYNCHRONOUS_FLOW_CONTROL_ENABLE) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet WriteSynchronousFlowControlEnable : CommandPacket (OpCode = WRITE_SYNCHRONOUS_FLOW_CONTROL_ENABLE) {
-  payload,  // placeholder (unimplemented)
+packet WriteSynchronousFlowControlEnable : CommandPacket (op_code = WRITE_SYNCHRONOUS_FLOW_CONTROL_ENABLE) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet SetControllerToHostFlowControl : CommandPacket (OpCode = SET_CONTROLLER_TO_HOST_FLOW_CONTROL) {
-  payload,  // placeholder (unimplemented)
+packet SetControllerToHostFlowControl : CommandPacket (op_code = SET_CONTROLLER_TO_HOST_FLOW_CONTROL) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet HostBufferSize : CommandPacket (OpCode = HOST_BUFFER_SIZE) {
-  HostAclDataPacketLength : 16,
-  HostSynchronousDataPacketLength : 8,
-  HostTotalNumAclDataPackets : 16,
-  HostTotalNumSynchronousDataPackets : 16,
+packet HostBufferSize : CommandPacket (op_code = HOST_BUFFER_SIZE) {
+  host_acl_data_packet_length : 16,
+  host_synchronous_data_packet_length : 8,
+  host_total_num_acl_data_packets : 16,
+  host_total_num_synchronous_data_packets : 16,
 }
 
-packet HostBufferSizeComplete : CommandComplete (CommandOpCode = HOST_BUFFER_SIZE) {
-  Status : ErrorCodes,
+packet HostBufferSizeComplete : CommandComplete (command_op_code = HOST_BUFFER_SIZE) {
+  status : ErrorCodes,
 }
 
-packet HostNumCompletedPackets : CommandPacket (OpCode = HOST_NUM_COMPLETED_PACKETS) {
-  payload,
+packet HostNumCompletedPackets : CommandPacket (op_code = HOST_NUM_COMPLETED_PACKETS) {
+  _payload_,
 }
 
-packet HostNumCompletedPacketsError : CommandComplete (CommandOpCode = HOST_NUM_COMPLETED_PACKETS) {
-  ErrorCode : ErrorCodes,
+packet HostNumCompletedPacketsError : CommandComplete (command_op_code = HOST_NUM_COMPLETED_PACKETS) {
+  error_code : ErrorCodes,
 }
 
-packet ReadLinkSupervisionTimeout : ConnectionManagementCommand (OpCode = READ_LINK_SUPERVISION_TIMEOUT) {
-  ConnectionHandle : 12,
-  reserved : 4,
+packet ReadLinkSupervisionTimeout : ConnectionManagementCommand (op_code = READ_LINK_SUPERVISION_TIMEOUT) {
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
-packet ReadLinkSupervisionTimeoutComplete : CommandComplete (CommandOpCode = READ_LINK_SUPERVISION_TIMEOUT) {
-  Status : ErrorCodes,
-  Handle : 12,
-  reserved : 4,
-  LinkSupervisionTimeout : 16, // 0x001-0xFFFF (0.625ms-40.9s)
+packet ReadLinkSupervisionTimeoutComplete : CommandComplete (command_op_code = READ_LINK_SUPERVISION_TIMEOUT) {
+  status : ErrorCodes,
+  handle : 12,
+  _reserved_ : 4,
+  link_supervision_timeout : 16, // 0x001-0xFFFF (0.625ms-40.9s)
 }
 
-packet WriteLinkSupervisionTimeout : ConnectionManagementCommand (OpCode = WRITE_LINK_SUPERVISION_TIMEOUT) {
-  Handle : 12,
-  reserved : 4,
-  LinkSupervisionTimeout : 16, // 0x001-0xFFFF (0.625ms-40.9s)
+packet WriteLinkSupervisionTimeout : ConnectionManagementCommand (op_code = WRITE_LINK_SUPERVISION_TIMEOUT) {
+  handle : 12,
+  _reserved_ : 4,
+  link_supervision_timeout : 16, // 0x001-0xFFFF (0.625ms-40.9s)
 }
 
-packet WriteLinkSupervisionTimeoutComplete : CommandComplete (CommandOpCode = WRITE_LINK_SUPERVISION_TIMEOUT) {
-  Status : ErrorCodes,
-  Handle : 12,
-  reserved : 4,
+packet WriteLinkSupervisionTimeoutComplete : CommandComplete (command_op_code = WRITE_LINK_SUPERVISION_TIMEOUT) {
+  status : ErrorCodes,
+  handle : 12,
+  _reserved_ : 4,
 }
 
-packet ReadNumberOfSupportedIac : DiscoveryCommand (OpCode = READ_NUMBER_OF_SUPPORTED_IAC) {
-  payload,  // placeholder (unimplemented)
+packet ReadNumberOfSupportedIac : DiscoveryCommand (op_code = READ_NUMBER_OF_SUPPORTED_IAC) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet ReadCurrentIacLap : DiscoveryCommand (OpCode = READ_CURRENT_IAC_LAP) {
-  payload,  // placeholder (unimplemented)
+packet ReadCurrentIacLap : DiscoveryCommand (op_code = READ_CURRENT_IAC_LAP) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet WriteCurrentIacLap : DiscoveryCommand (OpCode = WRITE_CURRENT_IAC_LAP) {
-  payload,  // placeholder (unimplemented)
+packet WriteCurrentIacLap : DiscoveryCommand (op_code = WRITE_CURRENT_IAC_LAP) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet SetAfhHostChannelClassification : CommandPacket (OpCode = SET_AFH_HOST_CHANNEL_CLASSIFICATION) {
-  payload,  // placeholder (unimplemented)
+packet SetAfhHostChannelClassification : CommandPacket (op_code = SET_AFH_HOST_CHANNEL_CLASSIFICATION) {
+  _payload_,  // placeholder (unimplemented)
 }
 
 enum InquiryScanType : 8 {
@@ -1235,20 +1235,20 @@ enum InquiryScanType : 8 {
   INTERLACED = 0x01,
 }
 
-packet ReadInquiryScanType : DiscoveryCommand (OpCode = READ_INQUIRY_SCAN_TYPE) {
+packet ReadInquiryScanType : DiscoveryCommand (op_code = READ_INQUIRY_SCAN_TYPE) {
 }
 
-packet ReadInquiryScanTypeComplete : CommandComplete (CommandOpCode = READ_INQUIRY_SCAN_TYPE) {
-  Status : ErrorCodes,
-  InquiryScanType : InquiryScanType,
+packet ReadInquiryScanTypeComplete : CommandComplete (command_op_code = READ_INQUIRY_SCAN_TYPE) {
+  status : ErrorCodes,
+  inquiry_scan_type : InquiryScanType,
 }
 
-packet WriteInquiryScanType : DiscoveryCommand (OpCode = WRITE_INQUIRY_SCAN_TYPE) {
-  InquiryScanType : InquiryScanType,
+packet WriteInquiryScanType : DiscoveryCommand (op_code = WRITE_INQUIRY_SCAN_TYPE) {
+  inquiry_scan_type : InquiryScanType,
 }
 
-packet WriteInquiryScanTypeComplete : CommandComplete (CommandOpCode = WRITE_INQUIRY_SCAN_TYPE) {
-  Status : ErrorCodes,
+packet WriteInquiryScanTypeComplete : CommandComplete (command_op_code = WRITE_INQUIRY_SCAN_TYPE) {
+  status : ErrorCodes,
 }
 
 enum InquiryMode : 8 {
@@ -1257,20 +1257,20 @@ enum InquiryMode : 8 {
   RSSI_OR_EXTENDED = 0x02,
 }
 
-packet ReadInquiryMode : DiscoveryCommand (OpCode = READ_INQUIRY_MODE) {
+packet ReadInquiryMode : DiscoveryCommand (op_code = READ_INQUIRY_MODE) {
 }
 
-packet ReadInquiryModeComplete : CommandComplete (CommandOpCode = READ_INQUIRY_MODE) {
-  Status : ErrorCodes,
-  InquiryMode : InquiryMode,
+packet ReadInquiryModeComplete : CommandComplete (command_op_code = READ_INQUIRY_MODE) {
+  status : ErrorCodes,
+  inquiry_mode : InquiryMode,
 }
 
-packet WriteInquiryMode : DiscoveryCommand (OpCode = WRITE_INQUIRY_MODE) {
-  InquiryMode : InquiryMode,
+packet WriteInquiryMode : DiscoveryCommand (op_code = WRITE_INQUIRY_MODE) {
+  inquiry_mode : InquiryMode,
 }
 
-packet WriteInquiryModeComplete : CommandComplete (CommandOpCode = WRITE_INQUIRY_MODE) {
-  Status : ErrorCodes,
+packet WriteInquiryModeComplete : CommandComplete (command_op_code = WRITE_INQUIRY_MODE) {
+  status : ErrorCodes,
 }
 
 enum PageScanType : 8 {
@@ -1278,28 +1278,28 @@ enum PageScanType : 8 {
   INTERLACED = 0x01,
 }
 
-packet ReadPageScanType : DiscoveryCommand (OpCode = READ_PAGE_SCAN_TYPE) {
+packet ReadPageScanType : DiscoveryCommand (op_code = READ_PAGE_SCAN_TYPE) {
 }
 
-packet ReadPageScanTypeComplete : CommandComplete (CommandOpCode = READ_PAGE_SCAN_TYPE) {
-  Status : ErrorCodes,
-  PageScanType : PageScanType,
+packet ReadPageScanTypeComplete : CommandComplete (command_op_code = READ_PAGE_SCAN_TYPE) {
+  status : ErrorCodes,
+  page_scan_type : PageScanType,
 }
 
-packet WritePageScanType : DiscoveryCommand (OpCode = WRITE_PAGE_SCAN_TYPE) {
-  PageScanType : PageScanType,
+packet WritePageScanType : DiscoveryCommand (op_code = WRITE_PAGE_SCAN_TYPE) {
+  page_scan_type : PageScanType,
 }
 
-packet WritePageScanTypeComplete : CommandComplete (CommandOpCode = WRITE_PAGE_SCAN_TYPE) {
-  Status : ErrorCodes,
+packet WritePageScanTypeComplete : CommandComplete (command_op_code = WRITE_PAGE_SCAN_TYPE) {
+  status : ErrorCodes,
 }
 
-packet ReadAfhChannelAssessmentMode : CommandPacket (OpCode = READ_AFH_CHANNEL_ASSESSMENT_MODE) {
-  payload,  // placeholder (unimplemented)
+packet ReadAfhChannelAssessmentMode : CommandPacket (op_code = READ_AFH_CHANNEL_ASSESSMENT_MODE) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet WriteAfhChannelAssessmentMode : CommandPacket (OpCode = WRITE_AFH_CHANNEL_ASSESSMENT_MODE) {
-  payload,  // placeholder (unimplemented)
+packet WriteAfhChannelAssessmentMode : CommandPacket (op_code = WRITE_AFH_CHANNEL_ASSESSMENT_MODE) {
+  _payload_,  // placeholder (unimplemented)
 }
 
 enum FecRequired : 8 {
@@ -1307,30 +1307,30 @@ enum FecRequired : 8 {
   REQUIRED = 0x01,
 }
 
-packet ReadExtendedInquiryResponse : CommandPacket (OpCode = READ_EXTENDED_INQUIRY_RESPONSE) {
+packet ReadExtendedInquiryResponse : CommandPacket (op_code = READ_EXTENDED_INQUIRY_RESPONSE) {
 }
 
-packet ReadExtendedInquiryResponseComplete : CommandComplete (CommandOpCode = READ_EXTENDED_INQUIRY_RESPONSE) {
-  Status : ErrorCodes,
-  FecRequired : FecRequired,
-  payload,
+packet ReadExtendedInquiryResponseComplete : CommandComplete (command_op_code = READ_EXTENDED_INQUIRY_RESPONSE) {
+  status : ErrorCodes,
+  fec_required : FecRequired,
+  _payload_,
 }
 
-packet WriteExtendedInquiryResponse : CommandPacket (OpCode = WRITE_EXTENDED_INQUIRY_RESPONSE) {
-  FecRequired : FecRequired,
-  payload,
+packet WriteExtendedInquiryResponse : CommandPacket (op_code = WRITE_EXTENDED_INQUIRY_RESPONSE) {
+  fec_required : FecRequired,
+  _payload_,
 }
 
-packet WriteExtendedInquiryResponseComplete : CommandComplete (CommandOpCode = WRITE_EXTENDED_INQUIRY_RESPONSE) {
-  Status : ErrorCodes,
+packet WriteExtendedInquiryResponseComplete : CommandComplete (command_op_code = WRITE_EXTENDED_INQUIRY_RESPONSE) {
+  status : ErrorCodes,
 }
 
-packet RefreshEncryptionKey : SecurityCommand (OpCode = REFRESH_ENCRYPTION_KEY) {
-  ConnectionHandle : 12,
-  reserved : 4,
+packet RefreshEncryptionKey : SecurityCommand (op_code = REFRESH_ENCRYPTION_KEY) {
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
-packet RefreshEncryptionKeyStatus : CommandStatus (CommandOpCode = REFRESH_ENCRYPTION_KEY) {
+packet RefreshEncryptionKeyStatus : CommandStatus (command_op_code = REFRESH_ENCRYPTION_KEY) {
 }
 
 enum SimplePairingMode : 8 {
@@ -1338,47 +1338,47 @@ enum SimplePairingMode : 8 {
   ENABLED = 0x01,
 }
 
-packet ReadSimplePairingMode : SecurityCommand (OpCode = READ_SIMPLE_PAIRING_MODE) {
+packet ReadSimplePairingMode : SecurityCommand (op_code = READ_SIMPLE_PAIRING_MODE) {
 }
 
-packet ReadSimplePairingModeComplete : CommandComplete (CommandOpCode = READ_SIMPLE_PAIRING_MODE) {
-  Status : ErrorCodes,
-  SimplePairingMode : SimplePairingMode,
+packet ReadSimplePairingModeComplete : CommandComplete (command_op_code = READ_SIMPLE_PAIRING_MODE) {
+  status : ErrorCodes,
+  simple_pairing_mode : SimplePairingMode,
 }
 
-packet WriteSimplePairingMode : SecurityCommand (OpCode = WRITE_SIMPLE_PAIRING_MODE) {
-  SimplePairingMode : SimplePairingMode,
+packet WriteSimplePairingMode : SecurityCommand (op_code = WRITE_SIMPLE_PAIRING_MODE) {
+  simple_pairing_mode : SimplePairingMode,
 }
 
-packet WriteSimplePairingModeComplete : CommandComplete (CommandOpCode = WRITE_SIMPLE_PAIRING_MODE) {
-  Status : ErrorCodes,
+packet WriteSimplePairingModeComplete : CommandComplete (command_op_code = WRITE_SIMPLE_PAIRING_MODE) {
+  status : ErrorCodes,
 }
 
-packet ReadLocalOobData : SecurityCommand (OpCode = READ_LOCAL_OOB_DATA) {
+packet ReadLocalOobData : SecurityCommand (op_code = READ_LOCAL_OOB_DATA) {
 }
 
-packet ReadLocalOobDataComplete : CommandComplete (CommandOpCode = READ_LOCAL_OOB_DATA) {
-  Status : ErrorCodes,
-  Clo : 64,
-  Chi : 64,
-  Rlo : 64,
-  Rhi : 64,
+packet ReadLocalOobDataComplete : CommandComplete (command_op_code = READ_LOCAL_OOB_DATA) {
+  status : ErrorCodes,
+  clo : 64,
+  chi : 64,
+  rlo : 64,
+  rhi : 64,
 }
 
-packet ReadInquiryResponseTransmitPowerLevel : DiscoveryCommand (OpCode = READ_INQUIRY_RESPONSE_TRANSMIT_POWER_LEVEL) {
+packet ReadInquiryResponseTransmitPowerLevel : DiscoveryCommand (op_code = READ_INQUIRY_RESPONSE_TRANSMIT_POWER_LEVEL) {
 }
 
-packet ReadInquiryResponseTransmitPowerLevelComplete : CommandComplete (CommandOpCode = READ_INQUIRY_RESPONSE_TRANSMIT_POWER_LEVEL) {
-  Status : ErrorCodes,
-  TxPower : 8, // (-70dBm to 20dBm)
+packet ReadInquiryResponseTransmitPowerLevelComplete : CommandComplete (command_op_code = READ_INQUIRY_RESPONSE_TRANSMIT_POWER_LEVEL) {
+  status : ErrorCodes,
+  tx_power : 8, // (-70dBm to 20dBm)
 }
 
-packet WriteInquiryTransmitPowerLevel : DiscoveryCommand (OpCode = WRITE_INQUIRY_TRANSMIT_POWER_LEVEL) {
-  TxPower : 8,
+packet WriteInquiryTransmitPowerLevel : DiscoveryCommand (op_code = WRITE_INQUIRY_TRANSMIT_POWER_LEVEL) {
+  tx_power : 8,
 }
 
-packet WriteInquiryResponseTransmitPowerLevelComplete : CommandComplete (CommandOpCode = WRITE_INQUIRY_TRANSMIT_POWER_LEVEL) {
-  Status : ErrorCodes,
+packet WriteInquiryResponseTransmitPowerLevelComplete : CommandComplete (command_op_code = WRITE_INQUIRY_TRANSMIT_POWER_LEVEL) {
+  status : ErrorCodes,
 }
 
 enum KeypressNotificationType : 8 {
@@ -1389,14 +1389,14 @@ enum KeypressNotificationType : 8 {
   ENTRY_COMPLETED = 4,
 }
 
-packet SendKeypressNotification : SecurityCommand (OpCode = SEND_KEYPRESS_NOTIFICATION) {
-  BdAddr : Address,
-  NotificationType : KeypressNotificationType,
+packet SendKeypressNotification : SecurityCommand (op_code = SEND_KEYPRESS_NOTIFICATION) {
+  bd_addr : Address,
+  notification_type : KeypressNotificationType,
 }
 
-packet SendKeypressNotificationComplete : CommandComplete (CommandOpCode = SEND_KEYPRESS_NOTIFICATION) {
-  Status : ErrorCodes,
-  BdAddr : Address,
+packet SendKeypressNotificationComplete : CommandComplete (command_op_code = SEND_KEYPRESS_NOTIFICATION) {
+  status : ErrorCodes,
+  bd_addr : Address,
 }
 
 enum LeSupportedHost : 8 {
@@ -1408,22 +1408,22 @@ enum SimultaneousLeHost : 8 {
   DISABLED = 0x00,
 }
 
-packet ReadLeHostSupport : CommandPacket (OpCode = READ_LE_HOST_SUPPORT) {
+packet ReadLeHostSupport : CommandPacket (op_code = READ_LE_HOST_SUPPORT) {
 }
 
-packet ReadLeHostSupportComplete : CommandComplete (CommandOpCode = READ_LE_HOST_SUPPORT) {
-  Status : ErrorCodes,
-  LeSupportedHost : LeSupportedHost,
-  SimultaneousLeHost : SimultaneousLeHost,
+packet ReadLeHostSupportComplete : CommandComplete (command_op_code = READ_LE_HOST_SUPPORT) {
+  status : ErrorCodes,
+  le_supported_host : LeSupportedHost,
+  simultaneous_le_host : SimultaneousLeHost,
 }
 
-packet WriteLeHostSupport : CommandPacket (OpCode = WRITE_LE_HOST_SUPPORT) {
-  LeSupportedHost : LeSupportedHost,
-  SimultaneousLeHost : SimultaneousLeHost,
+packet WriteLeHostSupport : CommandPacket (op_code = WRITE_LE_HOST_SUPPORT) {
+  le_supported_host : LeSupportedHost,
+  simultaneous_le_host : SimultaneousLeHost,
 }
 
-packet WriteLeHostSupportComplete : CommandComplete (CommandOpCode = WRITE_LE_HOST_SUPPORT) {
-  Status : ErrorCodes,
+packet WriteLeHostSupportComplete : CommandComplete (command_op_code = WRITE_LE_HOST_SUPPORT) {
+  status : ErrorCodes,
 }
 
 enum SecureConnectionsHostSupport : 8 {
@@ -1431,73 +1431,73 @@ enum SecureConnectionsHostSupport : 8 {
   ENABLED = 0x01,
 }
 
-packet ReadSecureConnectionsHostSupport : CommandPacket (OpCode = READ_SECURE_CONNECTIONS_HOST_SUPPORT) {
+packet ReadSecureConnectionsHostSupport : CommandPacket (op_code = READ_SECURE_CONNECTIONS_HOST_SUPPORT) {
 }
 
-packet ReadSecureConnectionsHostSupportComplete : CommandComplete (CommandOpCode = READ_SECURE_CONNECTIONS_HOST_SUPPORT) {
-  Status : ErrorCodes,
-  SecureConnectionsHostSupport : SecureConnectionsHostSupport,
+packet ReadSecureConnectionsHostSupportComplete : CommandComplete (command_op_code = READ_SECURE_CONNECTIONS_HOST_SUPPORT) {
+  status : ErrorCodes,
+  secure_connections_host_support : SecureConnectionsHostSupport,
 }
 
-packet WriteSecureConnectionsHostSupport : CommandPacket (OpCode = WRITE_SECURE_CONNECTIONS_HOST_SUPPORT) {
-  SecureConnectionsHostSupport : SecureConnectionsHostSupport,
+packet WriteSecureConnectionsHostSupport : CommandPacket (op_code = WRITE_SECURE_CONNECTIONS_HOST_SUPPORT) {
+  secure_connections_host_support : SecureConnectionsHostSupport,
 }
 
-packet WriteSecureConnectionsHostSupportComplete : CommandComplete (CommandOpCode = WRITE_SECURE_CONNECTIONS_HOST_SUPPORT) {
-  Status : ErrorCodes,
+packet WriteSecureConnectionsHostSupportComplete : CommandComplete (command_op_code = WRITE_SECURE_CONNECTIONS_HOST_SUPPORT) {
+  status : ErrorCodes,
 }
 
   // INFORMATIONAL_PARAMETERS
-packet ReadLocalVersionInformation : CommandPacket (OpCode = READ_LOCAL_VERSION_INFORMATION) {
+packet ReadLocalVersionInformation : CommandPacket (op_code = READ_LOCAL_VERSION_INFORMATION) {
 }
 
-packet ReadLocalSupportedCommands : CommandPacket (OpCode = READ_LOCAL_SUPPORTED_COMMANDS) {
+packet ReadLocalSupportedCommands : CommandPacket (op_code = READ_LOCAL_SUPPORTED_COMMANDS) {
 }
 
-packet ReadLocalSupportedFeatures : CommandPacket (OpCode = READ_LOCAL_SUPPORTED_FEATURES) {
+packet ReadLocalSupportedFeatures : CommandPacket (op_code = READ_LOCAL_SUPPORTED_FEATURES) {
 }
 
-packet ReadLocalExtendedFeatures : CommandPacket (OpCode = READ_LOCAL_EXTENDED_FEATURES) {
-  PageNumber : 8,
+packet ReadLocalExtendedFeatures : CommandPacket (op_code = READ_LOCAL_EXTENDED_FEATURES) {
+  page_number : 8,
 }
 
-packet ReadBufferSize : CommandPacket (OpCode = READ_BUFFER_SIZE) {
+packet ReadBufferSize : CommandPacket (op_code = READ_BUFFER_SIZE) {
 }
 
-packet ReadBdAddr : CommandPacket (OpCode = READ_BD_ADDR) {
+packet ReadBdAddr : CommandPacket (op_code = READ_BD_ADDR) {
 }
 
-packet ReadDataBlockSize : CommandPacket (OpCode = READ_DATA_BLOCK_SIZE) {
+packet ReadDataBlockSize : CommandPacket (op_code = READ_DATA_BLOCK_SIZE) {
 }
 
-packet ReadLocalSupportedCodecs : CommandPacket (OpCode = READ_LOCAL_SUPPORTED_CODECS) {
+packet ReadLocalSupportedCodecs : CommandPacket (op_code = READ_LOCAL_SUPPORTED_CODECS) {
 }
 
 
   // STATUS_PARAMETERS
-packet ReadFailedContactCounter : ConnectionManagementCommand (OpCode = READ_FAILED_CONTACT_COUNTER) {
-  Handle : 12,
-  reserved : 4,
+packet ReadFailedContactCounter : ConnectionManagementCommand (op_code = READ_FAILED_CONTACT_COUNTER) {
+  handle : 12,
+  _reserved_ : 4,
 }
 
-packet ResetFailedContactCounter : ConnectionManagementCommand (OpCode = RESET_FAILED_CONTACT_COUNTER) {
-  Handle : 12,
-  reserved : 4,
+packet ResetFailedContactCounter : ConnectionManagementCommand (op_code = RESET_FAILED_CONTACT_COUNTER) {
+  handle : 12,
+  _reserved_ : 4,
 }
 
-packet ReadLinkQuality : ConnectionManagementCommand (OpCode = READ_LINK_QUALITY) {
-  Handle : 12,
-  reserved : 4,
+packet ReadLinkQuality : ConnectionManagementCommand (op_code = READ_LINK_QUALITY) {
+  handle : 12,
+  _reserved_ : 4,
 }
 
-packet ReadRssi : ConnectionManagementCommand (OpCode = READ_RSSI) {
-  Handle : 12,
-  reserved : 4,
+packet ReadRssi : ConnectionManagementCommand (op_code = READ_RSSI) {
+  handle : 12,
+  _reserved_ : 4,
 }
 
-packet ReadAfhChannelMap : ConnectionManagementCommand (OpCode = READ_AFH_CHANNEL_MAP) {
-  ConnectionHandle : 12,
-  reserved : 4,
+packet ReadAfhChannelMap : ConnectionManagementCommand (op_code = READ_AFH_CHANNEL_MAP) {
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
 enum WhichClock : 8 {
@@ -1505,15 +1505,15 @@ enum WhichClock : 8 {
   PICONET = 0x01,
 }
 
-packet ReadClock : ConnectionManagementCommand (OpCode = READ_CLOCK) {
-  ConnectionHandle : 12,
-  reserved : 4,
-  WhichClock : WhichClock,
+packet ReadClock : ConnectionManagementCommand (op_code = READ_CLOCK) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  which_clock : WhichClock,
 }
 
-packet ReadEncryptionKeySize : SecurityCommand (OpCode = READ_ENCRYPTION_KEY_SIZE) {
-  ConnectionHandle : 12,
-  reserved : 4,
+packet ReadEncryptionKeySize : SecurityCommand (op_code = READ_ENCRYPTION_KEY_SIZE) {
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
 
@@ -1524,27 +1524,27 @@ enum LoopbackMode : 8 {
   ENABLE_REMOTE = 0x02,
 }
 
-packet ReadLoopbackMode : CommandPacket (OpCode = READ_LOOPBACK_MODE) {
+packet ReadLoopbackMode : CommandPacket (op_code = READ_LOOPBACK_MODE) {
 }
 
-packet ReadLoopbackModeComplete : CommandComplete (CommandOpCode = READ_LOOPBACK_MODE) {
-  Status : ErrorCodes,
-  LoopbackMode : LoopbackMode,
+packet ReadLoopbackModeComplete : CommandComplete (command_op_code = READ_LOOPBACK_MODE) {
+  status : ErrorCodes,
+  loopback_mode : LoopbackMode,
 }
 
-packet WriteLoopbackMode : CommandPacket (OpCode = WRITE_LOOPBACK_MODE) {
-  LoopbackMode : LoopbackMode,
+packet WriteLoopbackMode : CommandPacket (op_code = WRITE_LOOPBACK_MODE) {
+  loopback_mode : LoopbackMode,
 }
 
-packet WriteLoopbackModeComplete : CommandComplete (CommandOpCode = WRITE_LOOPBACK_MODE) {
-  Status : ErrorCodes,
+packet WriteLoopbackModeComplete : CommandComplete (command_op_code = WRITE_LOOPBACK_MODE) {
+  status : ErrorCodes,
 }
 
-packet EnableDeviceUnderTestMode : CommandPacket (OpCode = ENABLE_DEVICE_UNDER_TEST_MODE) {
+packet EnableDeviceUnderTestMode : CommandPacket (op_code = ENABLE_DEVICE_UNDER_TEST_MODE) {
 }
 
-packet EnableDeviceUnderTestModeComplete : CommandComplete (CommandOpCode = ENABLE_DEVICE_UNDER_TEST_MODE) {
-  Status : ErrorCodes,
+packet EnableDeviceUnderTestModeComplete : CommandComplete (command_op_code = ENABLE_DEVICE_UNDER_TEST_MODE) {
+  status : ErrorCodes,
 }
 
 enum SimplePairingDebugMode : 8 {
@@ -1552,12 +1552,12 @@ enum SimplePairingDebugMode : 8 {
   ENABLED = 0x01,
 }
 
-packet WriteSimplePairingDebugMode : CommandPacket (OpCode = WRITE_SIMPLE_PAIRING_DEBUG_MODE) {
-  SimplePairingDebugMode : SimplePairingDebugMode,
+packet WriteSimplePairingDebugMode : CommandPacket (op_code = WRITE_SIMPLE_PAIRING_DEBUG_MODE) {
+  simple_pairing_debug_mode : SimplePairingDebugMode,
 }
 
-packet WriteSimplePairingDebugModeComplete : CommandComplete (CommandOpCode = WRITE_SIMPLE_PAIRING_DEBUG_MODE) {
-  Status : ErrorCodes,
+packet WriteSimplePairingDebugModeComplete : CommandComplete (command_op_code = WRITE_SIMPLE_PAIRING_DEBUG_MODE) {
+  status : ErrorCodes,
 }
 
 enum Dm1AcluMode : 8 {
@@ -1570,49 +1570,49 @@ enum EscoLoopbackMode : 8 {
   ENABLED = 0x01,
 }
 
-packet WriteSecureConnectionsTestMode : CommandPacket (OpCode = WRITE_SECURE_CONNECTIONS_TEST_MODE) {
-  ConnectionHandle : 12,
-  reserved : 4,
-  Dm1AcluMode : Dm1AcluMode,
-  EscoLoopbackMode : EscoLoopbackMode,
+packet WriteSecureConnectionsTestMode : CommandPacket (op_code = WRITE_SECURE_CONNECTIONS_TEST_MODE) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  dm1_aclu_mode : Dm1AcluMode,
+  esco_loopback_mode : EscoLoopbackMode,
 }
 
-packet WriteSecureConnectionsTestModeComplete : CommandComplete (CommandOpCode = WRITE_SECURE_CONNECTIONS_TEST_MODE) {
-  Status : ErrorCodes,
+packet WriteSecureConnectionsTestModeComplete : CommandComplete (command_op_code = WRITE_SECURE_CONNECTIONS_TEST_MODE) {
+  status : ErrorCodes,
 }
 
   // LE_CONTROLLER
-packet LeSetEventMask : CommandPacket (OpCode = LE_SET_EVENT_MASK) {
-  LeEventMask : 64,
+packet LeSetEventMask : CommandPacket (op_code = LE_SET_EVENT_MASK) {
+  le_event_mask : 64,
 }
 
-packet LeSetEventMaskComplete : CommandComplete (CommandOpCode = LE_SET_EVENT_MASK) {
-  Status : ErrorCodes,
+packet LeSetEventMaskComplete : CommandComplete (command_op_code = LE_SET_EVENT_MASK) {
+  status : ErrorCodes,
 }
 
-packet LeReadBufferSize : CommandPacket (OpCode = LE_READ_BUFFER_SIZE) {
+packet LeReadBufferSize : CommandPacket (op_code = LE_READ_BUFFER_SIZE) {
 }
 
-packet LeReadBufferSizeComplete : CommandComplete (CommandOpCode = LE_READ_BUFFER_SIZE) {
-  Status : ErrorCodes,
-  HcLeDataPacketLength : 16,
-  HcTotalNumLePackets : 8,
+packet LeReadBufferSizeComplete : CommandComplete (command_op_code = LE_READ_BUFFER_SIZE) {
+  status : ErrorCodes,
+  hc_le_data_packet_length : 16,
+  hc_total_num_le_packets : 8,
 }
 
-packet LeReadLocalSupportedFeatures : CommandPacket (OpCode = LE_READ_LOCAL_SUPPORTED_FEATURES) {
+packet LeReadLocalSupportedFeatures : CommandPacket (op_code = LE_READ_LOCAL_SUPPORTED_FEATURES) {
 }
 
-packet LeReadLocalSupportedFeaturesComplete : CommandComplete (CommandOpCode = LE_READ_LOCAL_SUPPORTED_FEATURES) {
-  Status : ErrorCodes,
-  LeFeatures : 64,
+packet LeReadLocalSupportedFeaturesComplete : CommandComplete (command_op_code = LE_READ_LOCAL_SUPPORTED_FEATURES) {
+  status : ErrorCodes,
+  le_features : 64,
 }
 
-packet LeSetRandomAddress : CommandPacket (OpCode = LE_SET_RANDOM_ADDRESS) {
-  RandomAddress : Address,
+packet LeSetRandomAddress : CommandPacket (op_code = LE_SET_RANDOM_ADDRESS) {
+  random_address : Address,
 }
 
-packet LeSetRandomAddressComplete : CommandComplete (CommandOpCode = LE_SET_RANDOM_ADDRESS) {
-  Status : ErrorCodes,
+packet LeSetRandomAddressComplete : CommandComplete (command_op_code = LE_SET_RANDOM_ADDRESS) {
+  status : ErrorCodes,
 }
 
 enum AdvertisingFilterPolicy : 1 {
@@ -1640,53 +1640,53 @@ enum AddressType : 8 {
   RANDOM_IDENTITY_ADDRESS = 0x03,
 }
 
-packet LeSetAdvertisingParameters : LeAdvertisingCommand (OpCode = LE_SET_ADVERTISING_PARAMETERS) {
-  AdvertisingIntervalMin : 16,
-  AdvertisingIntervalMax : 16,
-  AdvertisingType : AdvertisingEventType,
-  OwnAddressType : AddressType,
-  PeerAddressType : PeerAddressType,
-  PeerAddress : Address,
-  AdvertisingChannelMap : 8,
-  ConnectionFilterPolicy : AdvertisingFilterPolicy,
-  ScanFilterPolicy : AdvertisingFilterPolicy,
-  reserved : 6,
+packet LeSetAdvertisingParameters : LeAdvertisingCommand (op_code = LE_SET_ADVERTISING_PARAMETERS) {
+  advertising_interval_min : 16,
+  advertising_interval_max : 16,
+  advertising_type : AdvertisingEventType,
+  own_address_type : AddressType,
+  peer_address_type : PeerAddressType,
+  peer_address : Address,
+  advertising_channel_map : 8,
+  connection_filter_policy : AdvertisingFilterPolicy,
+  scan_filter_policy : AdvertisingFilterPolicy,
+  _reserved_ : 6,
 }
 
-packet LeSetAdvertisingParametersComplete : CommandComplete (CommandOpCode = LE_SET_ADVERTISING_PARAMETERS) {
-  Status : ErrorCodes,
+packet LeSetAdvertisingParametersComplete : CommandComplete (command_op_code = LE_SET_ADVERTISING_PARAMETERS) {
+  status : ErrorCodes,
 }
 
-packet LeReadAdvertisingChannelTxPower : LeAdvertisingCommand (OpCode = LE_READ_ADVERTISING_CHANNEL_TX_POWER) {
+packet LeReadAdvertisingChannelTxPower : LeAdvertisingCommand (op_code = LE_READ_ADVERTISING_CHANNEL_TX_POWER) {
 }
 
-packet LeReadAdvertisingChannelTxPowerComplete : CommandComplete (CommandOpCode = LE_READ_ADVERTISING_CHANNEL_TX_POWER) {
-  Status : ErrorCodes,
-  TransmitPowerLevel : 8, // (-20dBm to 10dBm) Accuracy: +/-4dB
+packet LeReadAdvertisingChannelTxPowerComplete : CommandComplete (command_op_code = LE_READ_ADVERTISING_CHANNEL_TX_POWER) {
+  status : ErrorCodes,
+  transmit_power_level : 8, // (-20dBm to 10dBm) Accuracy: +/-4dB
 }
 
-packet LeSetAdvertisingData : LeAdvertisingCommand (OpCode = LE_SET_ADVERTISING_DATA) {
-  payload,
+packet LeSetAdvertisingData : LeAdvertisingCommand (op_code = LE_SET_ADVERTISING_DATA) {
+  _payload_,
 }
 
-packet LeSetAdvertisingDataComplete : CommandComplete (CommandOpCode = LE_SET_ADVERTISING_DATA) {
-  Status : ErrorCodes,
+packet LeSetAdvertisingDataComplete : CommandComplete (command_op_code = LE_SET_ADVERTISING_DATA) {
+  status : ErrorCodes,
 }
 
-packet LeSetScanResponseData : LeAdvertisingCommand (OpCode = LE_SET_SCAN_RESPONSE_DATA) {
-  payload,
+packet LeSetScanResponseData : LeAdvertisingCommand (op_code = LE_SET_SCAN_RESPONSE_DATA) {
+  _payload_,
 }
 
-packet LeSetScanResponseDataComplete : CommandComplete (CommandOpCode = LE_SET_SCAN_RESPONSE_DATA) {
-  Status : ErrorCodes,
+packet LeSetScanResponseDataComplete : CommandComplete (command_op_code = LE_SET_SCAN_RESPONSE_DATA) {
+  status : ErrorCodes,
 }
 
-packet LeSetAdvertisingEnable : LeAdvertisingCommand (OpCode = LE_SET_ADVERTISING_ENABLE) {
-  AdvertisingEnable : Enable, // Default DISABLED
+packet LeSetAdvertisingEnable : LeAdvertisingCommand (op_code = LE_SET_ADVERTISING_ENABLE) {
+  advertising_enable : Enable, // Default DISABLED
 }
 
-packet LeSetAdvertisingEnableComplete : CommandComplete (CommandOpCode = LE_SET_ADVERTISING_ENABLE) {
-  Status : ErrorCodes,
+packet LeSetAdvertisingEnableComplete : CommandComplete (command_op_code = LE_SET_ADVERTISING_ENABLE) {
+  status : ErrorCodes,
 }
 
 enum LeScanType : 8 {
@@ -1701,25 +1701,25 @@ enum LeSetScanningFilterPolicy : 8 {
   WHITE_LIST_AND_INITIATORS_IDENTITY = 0x03,
 }
 
-packet LeSetScanParameters : LeAdvertisingCommand (OpCode = LE_SET_SCAN_PARAMETERS) {
-  LeScanType : LeScanType,
-  LeScanInterval : 16, // 0x0004-0x4000 Default 0x10 (10ms)
-  LeScanWindow : 16, // Default 0x10 (10ms)
-  OwnAddressType : AddressType,
-  ScanningFilterPolicy : LeSetScanningFilterPolicy,
+packet LeSetScanParameters : LeAdvertisingCommand (op_code = LE_SET_SCAN_PARAMETERS) {
+  le_scan_type : LeScanType,
+  le_scan_interval : 16, // 0x0004-0x4000 Default 0x10 (10ms)
+  le_scan_window : 16, // Default 0x10 (10ms)
+  own_address_type : AddressType,
+  scanning_filter_policy : LeSetScanningFilterPolicy,
 }
 
-packet LeSetScanParametersComplete : CommandComplete (CommandOpCode = LE_SET_SCAN_PARAMETERS) {
-  Status : ErrorCodes,
+packet LeSetScanParametersComplete : CommandComplete (command_op_code = LE_SET_SCAN_PARAMETERS) {
+  status : ErrorCodes,
 }
 
-packet LeSetScanEnable : LeAdvertisingCommand (OpCode = LE_SET_SCAN_ENABLE) {
-  LeScanEnable : Enable,
-  FilterDuplicates : Enable,
+packet LeSetScanEnable : LeAdvertisingCommand (op_code = LE_SET_SCAN_ENABLE) {
+  le_scan_enable : Enable,
+  filter_duplicates : Enable,
 }
 
-packet LeSetScanEnableComplete : CommandComplete (CommandOpCode = LE_SET_SCAN_ENABLE) {
-  Status : ErrorCodes,
+packet LeSetScanEnableComplete : CommandComplete (command_op_code = LE_SET_SCAN_ENABLE) {
+  status : ErrorCodes,
 }
 
 enum InitiatorFilterPolicy : 8 {
@@ -1734,44 +1734,44 @@ enum OwnAddressType : 8 {
   RESOLVABLE_OR_RANDOM_ADDRESS = 0x03,
 }
 
-packet LeCreateConnection : LeCreateConnectionCommand (OpCode = LE_CREATE_CONNECTION) {
-  LeScanInterval : 16, // 0x0004-0x4000
-  LeScanWindow : 16, // < = LeScanInterval
-  InitiatorFilterPolicy : InitiatorFilterPolicy,
-  PeerAddressType : AddressType,
-  PeerAddress : Address,
-  OwnAddressType : OwnAddressType,
-  ConnIntervalMin : 16, // 0x0006-0x0C80 (7.5ms to 4s)
-  ConnIntervalMax : 16, // 0x0006-0x0C80 (7.5ms to 4s)
-  ConnLatency : 16, // 0x0006-0x01F3
-  SupervisionTimeout : 16, // 0x00A to 0x0C80 (100ms to 32s)
-  MinimumCeLength : 16, // 0.625ms
-  MaximumCeLength : 16, // 0.625ms
+packet LeCreateConnection : LeCreateConnectionCommand (op_code = LE_CREATE_CONNECTION) {
+  le_scan_interval : 16, // 0x0004-0x4000
+  le_scan_window : 16, // < = LeScanInterval
+  initiator_filter_policy : InitiatorFilterPolicy,
+  peer_address_type : AddressType,
+  peer_address : Address,
+  own_address_type : OwnAddressType,
+  conn_interval_min : 16, // 0x0006-0x0C80 (7.5ms to 4s)
+  conn_interval_max : 16, // 0x0006-0x0C80 (7.5ms to 4s)
+  conn_latency : 16, // 0x0006-0x01F3
+  supervision_timeout : 16, // 0x00A to 0x0C80 (100ms to 32s)
+  minimum_ce_length : 16, // 0.625ms
+  maximum_ce_length : 16, // 0.625ms
 }
 
-packet LeCreateConnectionStatus : CommandStatus (CommandOpCode = LE_CREATE_CONNECTION) {
+packet LeCreateConnectionStatus : CommandStatus (command_op_code = LE_CREATE_CONNECTION) {
 }
 
-packet LeCreateConnectionCancel : LeCreateConnectionCommand (OpCode = LE_CREATE_CONNECTION_CANCEL) {
+packet LeCreateConnectionCancel : LeCreateConnectionCommand (op_code = LE_CREATE_CONNECTION_CANCEL) {
 }
 
-packet LeCreateConnectionCancelComplete : CommandComplete (CommandOpCode = LE_CREATE_CONNECTION_CANCEL) {
-  Status : ErrorCodes,
+packet LeCreateConnectionCancelComplete : CommandComplete (command_op_code = LE_CREATE_CONNECTION_CANCEL) {
+  status : ErrorCodes,
 }
 
-packet LeReadWhiteListSize : LeCreateConnectionCommand (OpCode = LE_READ_WHITE_LIST_SIZE) {
+packet LeReadWhiteListSize : LeCreateConnectionCommand (op_code = LE_READ_WHITE_LIST_SIZE) {
 }
 
-packet LeReadWhiteListSizeComplete : CommandComplete (CommandOpCode = LE_READ_WHITE_LIST_SIZE) {
-  Status : ErrorCodes,
-  WhiteListSize : 8,
+packet LeReadWhiteListSizeComplete : CommandComplete (command_op_code = LE_READ_WHITE_LIST_SIZE) {
+  status : ErrorCodes,
+  white_list_size : 8,
 }
 
-packet LeClearWhiteList : LeCreateConnectionCommand (OpCode = LE_CLEAR_WHITE_LIST) {
+packet LeClearWhiteList : LeCreateConnectionCommand (op_code = LE_CLEAR_WHITE_LIST) {
 }
 
-packet LeClearWhiteListComplete : CommandComplete (CommandOpCode = LE_CLEAR_WHITE_LIST) {
-  Status : ErrorCodes,
+packet LeClearWhiteListComplete : CommandComplete (command_op_code = LE_CLEAR_WHITE_LIST) {
+  status : ErrorCodes,
 }
 
 enum WhiteListAddressType : 8 {
@@ -1780,328 +1780,328 @@ enum WhiteListAddressType : 8 {
   ANONYMOUS_ADVERTISERS = 0xFF,
 }
 
-packet LeAddDeviceToWhiteList : LeCreateConnectionCommand (OpCode = LE_ADD_DEVICE_TO_WHITE_LIST) {
-  AddressType : WhiteListAddressType,
-  Address : Address,
+packet LeAddDeviceToWhiteList : LeCreateConnectionCommand (op_code = LE_ADD_DEVICE_TO_WHITE_LIST) {
+  address_type : WhiteListAddressType,
+  address : Address,
 }
 
-packet LeAddDeviceToWhiteListComplete : CommandComplete (CommandOpCode = LE_ADD_DEVICE_TO_WHITE_LIST) {
-  Status : ErrorCodes,
+packet LeAddDeviceToWhiteListComplete : CommandComplete (command_op_code = LE_ADD_DEVICE_TO_WHITE_LIST) {
+  status : ErrorCodes,
 }
 
-packet LeRemoveDeviceFromWhiteList : LeCreateConnectionCommand (OpCode = LE_REMOVE_DEVICE_FROM_WHITE_LIST) {
-  AddressType : WhiteListAddressType,
-  Address : Address,
+packet LeRemoveDeviceFromWhiteList : LeCreateConnectionCommand (op_code = LE_REMOVE_DEVICE_FROM_WHITE_LIST) {
+  address_type : WhiteListAddressType,
+  address : Address,
 }
 
-packet LeRemoveDeviceFromWhiteListComplete : CommandComplete (CommandOpCode = LE_REMOVE_DEVICE_FROM_WHITE_LIST) {
-  Status : ErrorCodes,
+packet LeRemoveDeviceFromWhiteListComplete : CommandComplete (command_op_code = LE_REMOVE_DEVICE_FROM_WHITE_LIST) {
+  status : ErrorCodes,
 }
 
-packet LeConnectionUpdate : LeConnectionManagementCommand (OpCode = LE_CONNECTION_UPDATE) {
-  ConnectionHandle : 12,
-  reserved : 4,
-  ConnIntervalMin : 16, // 0x0006-0x0C80 (7.5ms to 4s)
-  ConnIntervalMax : 16, // 0x0006-0x0C80 (7.5ms to 4s)
-  ConnLatency : 16, // 0x0006-0x01F3
-  SupervisionTimeout : 16, // 0x00A to 0x0C80 (100ms to 32s)
-  MinimumCeLength : 16, // 0.625ms
-  MaximumCeLength : 16, // 0.625ms
+packet LeConnectionUpdate : LeConnectionManagementCommand (op_code = LE_CONNECTION_UPDATE) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  conn_interval_min : 16, // 0x0006-0x0C80 (7.5ms to 4s)
+  conn_interval_max : 16, // 0x0006-0x0C80 (7.5ms to 4s)
+  conn_latency : 16, // 0x0006-0x01F3
+  supervision_timeout : 16, // 0x00A to 0x0C80 (100ms to 32s)
+  minimum_ce_length : 16, // 0.625ms
+  maximum_ce_length : 16, // 0.625ms
 }
 
-packet LeConnectionUpdateStatus : CommandStatus (CommandOpCode = LE_CONNECTION_UPDATE) {
+packet LeConnectionUpdateStatus : CommandStatus (command_op_code = LE_CONNECTION_UPDATE) {
 }
 
-packet LeSetHostChannelClassification : LeConnectionManagementCommand (OpCode = LE_SET_HOST_CHANNEL_CLASSIFICATION) {
-  payload,  // placeholder (unimplemented)
+packet LeSetHostChannelClassification : LeConnectionManagementCommand (op_code = LE_SET_HOST_CHANNEL_CLASSIFICATION) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeReadChannelMap : LeConnectionManagementCommand (OpCode = LE_READ_CHANNEL_MAP) {
-  payload,  // placeholder (unimplemented)
+packet LeReadChannelMap : LeConnectionManagementCommand (op_code = LE_READ_CHANNEL_MAP) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeReadRemoteFeatures : LeConnectionManagementCommand (OpCode = LE_READ_REMOTE_FEATURES) {
-  payload,  // placeholder (unimplemented)
+packet LeReadRemoteFeatures : LeConnectionManagementCommand (op_code = LE_READ_REMOTE_FEATURES) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeEncrypt : LeSecurityCommand (OpCode = LE_ENCRYPT) {
-  payload,  // placeholder (unimplemented)
+packet LeEncrypt : LeSecurityCommand (op_code = LE_ENCRYPT) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeRand : LeSecurityCommand (OpCode = LE_RAND) {
-  payload,  // placeholder (unimplemented)
+packet LeRand : LeSecurityCommand (op_code = LE_RAND) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeStartEncryption : LeSecurityCommand (OpCode = LE_START_ENCRYPTION) {
-  payload,  // placeholder (unimplemented)
+packet LeStartEncryption : LeSecurityCommand (op_code = LE_START_ENCRYPTION) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeLongTermKeyRequestReply : LeSecurityCommand (OpCode = LE_LONG_TERM_KEY_REQUEST_REPLY) {
-  payload,  // placeholder (unimplemented)
+packet LeLongTermKeyRequestReply : LeSecurityCommand (op_code = LE_LONG_TERM_KEY_REQUEST_REPLY) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeLongTermKeyRequestNegativeReply : LeSecurityCommand (OpCode = LE_LONG_TERM_KEY_REQUEST_NEGATIVE_REPLY) {
-  payload,  // placeholder (unimplemented)
+packet LeLongTermKeyRequestNegativeReply : LeSecurityCommand (op_code = LE_LONG_TERM_KEY_REQUEST_NEGATIVE_REPLY) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeReadSupportedStates : CommandPacket (OpCode = LE_READ_SUPPORTED_STATES) {
-  payload,  // placeholder (unimplemented)
+packet LeReadSupportedStates : CommandPacket (op_code = LE_READ_SUPPORTED_STATES) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeReceiverTest : CommandPacket (OpCode = LE_RECEIVER_TEST) {
-  payload,  // placeholder (unimplemented)
+packet LeReceiverTest : CommandPacket (op_code = LE_RECEIVER_TEST) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeTransmitterTest : CommandPacket (OpCode = LE_TRANSMITTER_TEST) {
-  payload,  // placeholder (unimplemented)
+packet LeTransmitterTest : CommandPacket (op_code = LE_TRANSMITTER_TEST) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeTestEnd : CommandPacket (OpCode = LE_TEST_END) {
-  payload,  // placeholder (unimplemented)
+packet LeTestEnd : CommandPacket (op_code = LE_TEST_END) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeRemoteConnectionParameterRequestReply : LeConnectionManagementCommand (OpCode = LE_REMOTE_CONNECTION_PARAMETER_REQUEST_REPLY) {
-  payload,  // placeholder (unimplemented)
+packet LeRemoteConnectionParameterRequestReply : LeConnectionManagementCommand (op_code = LE_REMOTE_CONNECTION_PARAMETER_REQUEST_REPLY) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeRemoteConnectionParameterRequestNegativeReply : LeConnectionManagementCommand (OpCode = LE_REMOTE_CONNECTION_PARAMETER_REQUEST_NEGATIVE_REPLY) {
-  payload,  // placeholder (unimplemented)
+packet LeRemoteConnectionParameterRequestNegativeReply : LeConnectionManagementCommand (op_code = LE_REMOTE_CONNECTION_PARAMETER_REQUEST_NEGATIVE_REPLY) {
+  _payload_,  // placeholder (unimplemented)
 }
 
 
-packet LeSetDataLength : LeConnectionManagementCommand (OpCode = LE_SET_DATA_LENGTH) {
-  payload,  // placeholder (unimplemented)
+packet LeSetDataLength : LeConnectionManagementCommand (op_code = LE_SET_DATA_LENGTH) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeReadSuggestedDefaultDataLength : LeConnectionManagementCommand (OpCode = LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH) {
-  payload,  // placeholder (unimplemented)
+packet LeReadSuggestedDefaultDataLength : LeConnectionManagementCommand (op_code = LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeWriteSuggestedDefaultDataLength : LeConnectionManagementCommand (OpCode = LE_WRITE_SUGGESTED_DEFAULT_DATA_LENGTH) {
-  payload,  // placeholder (unimplemented)
+packet LeWriteSuggestedDefaultDataLength : LeConnectionManagementCommand (op_code = LE_WRITE_SUGGESTED_DEFAULT_DATA_LENGTH) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeReadLocalP256PublicKeyCommand : LeSecurityCommand (OpCode = LE_READ_LOCAL_P_256_PUBLIC_KEY_COMMAND) {
-  payload,  // placeholder (unimplemented)
+packet LeReadLocalP256PublicKeyCommand : LeSecurityCommand (op_code = LE_READ_LOCAL_P_256_PUBLIC_KEY_COMMAND) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeGenerateDhkeyCommand : LeSecurityCommand (OpCode = LE_GENERATE_DHKEY_COMMAND) {
-  payload,  // placeholder (unimplemented)
+packet LeGenerateDhkeyCommand : LeSecurityCommand (op_code = LE_GENERATE_DHKEY_COMMAND) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeAddDeviceToResolvingList : LeSecurityCommand (OpCode = LE_ADD_DEVICE_TO_RESOLVING_LIST) {
-  payload,  // placeholder (unimplemented)
+packet LeAddDeviceToResolvingList : LeSecurityCommand (op_code = LE_ADD_DEVICE_TO_RESOLVING_LIST) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeRemoveDeviceFromResolvingList : LeSecurityCommand (OpCode = LE_REMOVE_DEVICE_FROM_RESOLVING_LIST) {
-  payload,  // placeholder (unimplemented)
+packet LeRemoveDeviceFromResolvingList : LeSecurityCommand (op_code = LE_REMOVE_DEVICE_FROM_RESOLVING_LIST) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeClearResolvingList : LeSecurityCommand (OpCode = LE_CLEAR_RESOLVING_LIST) {
-  payload,  // placeholder (unimplemented)
+packet LeClearResolvingList : LeSecurityCommand (op_code = LE_CLEAR_RESOLVING_LIST) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeReadResolvingListSize : LeSecurityCommand (OpCode = LE_READ_RESOLVING_LIST_SIZE) {
-  payload,  // placeholder (unimplemented)
+packet LeReadResolvingListSize : LeSecurityCommand (op_code = LE_READ_RESOLVING_LIST_SIZE) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeReadPeerResolvableAddress : LeSecurityCommand (OpCode = LE_READ_PEER_RESOLVABLE_ADDRESS) {
-  payload,  // placeholder (unimplemented)
+packet LeReadPeerResolvableAddress : LeSecurityCommand (op_code = LE_READ_PEER_RESOLVABLE_ADDRESS) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeReadLocalResolvableAddress : LeSecurityCommand (OpCode = LE_READ_LOCAL_RESOLVABLE_ADDRESS) {
-  payload,  // placeholder (unimplemented)
+packet LeReadLocalResolvableAddress : LeSecurityCommand (op_code = LE_READ_LOCAL_RESOLVABLE_ADDRESS) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeSetAddressResolutionEnable : LeSecurityCommand (OpCode = LE_SET_ADDRESS_RESOLUTION_ENABLE) {
-  payload,  // placeholder (unimplemented)
+packet LeSetAddressResolutionEnable : LeSecurityCommand (op_code = LE_SET_ADDRESS_RESOLUTION_ENABLE) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeSetResolvablePrivateAddressTimeout : LeSecurityCommand (OpCode = LE_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT) {
-  payload,  // placeholder (unimplemented)
+packet LeSetResolvablePrivateAddressTimeout : LeSecurityCommand (op_code = LE_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeReadMaximumDataLength : CommandPacket (OpCode = LE_READ_MAXIMUM_DATA_LENGTH) {
-  payload,  // placeholder (unimplemented)
+packet LeReadMaximumDataLength : CommandPacket (op_code = LE_READ_MAXIMUM_DATA_LENGTH) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeReadPhy : LeConnectionManagementCommand (OpCode = LE_READ_PHY) {
-  payload,  // placeholder (unimplemented)
+packet LeReadPhy : LeConnectionManagementCommand (op_code = LE_READ_PHY) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeSetDefaultPhy : LeConnectionManagementCommand (OpCode = LE_SET_DEFAULT_PHY) {
-  payload,  // placeholder (unimplemented)
+packet LeSetDefaultPhy : LeConnectionManagementCommand (op_code = LE_SET_DEFAULT_PHY) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeSetPhy : LeConnectionManagementCommand (OpCode = LE_SET_PHY) {
-  payload,  // placeholder (unimplemented)
+packet LeSetPhy : LeConnectionManagementCommand (op_code = LE_SET_PHY) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeEnhancedReceiverTest : CommandPacket (OpCode = LE_ENHANCED_RECEIVER_TEST) {
-  payload,  // placeholder (unimplemented)
+packet LeEnhancedReceiverTest : CommandPacket (op_code = LE_ENHANCED_RECEIVER_TEST) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeEnhancedTransmitterTest : CommandPacket (OpCode = LE_ENHANCED_TRANSMITTER_TEST) {
-  payload,  // placeholder (unimplemented)
+packet LeEnhancedTransmitterTest : CommandPacket (op_code = LE_ENHANCED_TRANSMITTER_TEST) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeSetExtendedAdvertisingRandomAddress : LeAdvertisingCommand (OpCode = LE_SET_EXTENDED_ADVERTISING_RANDOM_ADDRESS) {
-  payload,  // placeholder (unimplemented)
+packet LeSetExtendedAdvertisingRandomAddress : LeAdvertisingCommand (op_code = LE_SET_EXTENDED_ADVERTISING_RANDOM_ADDRESS) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeSetExtendedAdvertisingParameters : LeAdvertisingCommand (OpCode = LE_SET_EXTENDED_ADVERTISING_PARAMETERS) {
-  payload,  // placeholder (unimplemented)
+packet LeSetExtendedAdvertisingParameters : LeAdvertisingCommand (op_code = LE_SET_EXTENDED_ADVERTISING_PARAMETERS) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeSetExtendedAdvertisingData : LeAdvertisingCommand (OpCode = LE_SET_EXTENDED_ADVERTISING_DATA) {
-  payload,  // placeholder (unimplemented)
+packet LeSetExtendedAdvertisingData : LeAdvertisingCommand (op_code = LE_SET_EXTENDED_ADVERTISING_DATA) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeSetExtendedAdvertisingScanResponse : LeAdvertisingCommand (OpCode = LE_SET_EXTENDED_ADVERTISING_SCAN_RESPONSE) {
-  payload,  // placeholder (unimplemented)
+packet LeSetExtendedAdvertisingScanResponse : LeAdvertisingCommand (op_code = LE_SET_EXTENDED_ADVERTISING_SCAN_RESPONSE) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeSetExtendedAdvertisingEnable : LeAdvertisingCommand (OpCode = LE_SET_EXTENDED_ADVERTISING_ENABLE) {
-  payload,  // placeholder (unimplemented)
+packet LeSetExtendedAdvertisingEnable : LeAdvertisingCommand (op_code = LE_SET_EXTENDED_ADVERTISING_ENABLE) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeReadMaximumAdvertisingDataLength : CommandPacket (OpCode = LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH) {
-  payload,  // placeholder (unimplemented)
+packet LeReadMaximumAdvertisingDataLength : CommandPacket (op_code = LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeReadNumberOfSupportedAdvertisingSets : CommandPacket (OpCode = LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS) {
-  payload,  // placeholder (unimplemented)
+packet LeReadNumberOfSupportedAdvertisingSets : CommandPacket (op_code = LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeRemoveAdvertisingSet : LeAdvertisingCommand (OpCode = LE_REMOVE_ADVERTISING_SET) {
-  payload,  // placeholder (unimplemented)
+packet LeRemoveAdvertisingSet : LeAdvertisingCommand (op_code = LE_REMOVE_ADVERTISING_SET) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeClearAdvertisingSets : LeAdvertisingCommand (OpCode = LE_CLEAR_ADVERTISING_SETS) {
-  payload,  // placeholder (unimplemented)
+packet LeClearAdvertisingSets : LeAdvertisingCommand (op_code = LE_CLEAR_ADVERTISING_SETS) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeSetPeriodicAdvertisingParam : LeAdvertisingCommand (OpCode = LE_SET_PERIODIC_ADVERTISING_PARAM) {
-  payload,  // placeholder (unimplemented)
+packet LeSetPeriodicAdvertisingParam : LeAdvertisingCommand (op_code = LE_SET_PERIODIC_ADVERTISING_PARAM) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeSetPeriodicAdvertisingData : LeAdvertisingCommand (OpCode = LE_SET_PERIODIC_ADVERTISING_DATA) {
-  payload,  // placeholder (unimplemented)
+packet LeSetPeriodicAdvertisingData : LeAdvertisingCommand (op_code = LE_SET_PERIODIC_ADVERTISING_DATA) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeSetPeriodicAdvertisingEnable : LeAdvertisingCommand (OpCode = LE_SET_PERIODIC_ADVERTISING_ENABLE) {
-  payload,  // placeholder (unimplemented)
+packet LeSetPeriodicAdvertisingEnable : LeAdvertisingCommand (op_code = LE_SET_PERIODIC_ADVERTISING_ENABLE) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeSetExtendedScanParameters : LeAdvertisingCommand (OpCode = LE_SET_EXTENDED_SCAN_PARAMETERS) {
-  payload,  // placeholder (unimplemented)
+packet LeSetExtendedScanParameters : LeAdvertisingCommand (op_code = LE_SET_EXTENDED_SCAN_PARAMETERS) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeSetExtendedScanEnable : LeAdvertisingCommand (OpCode = LE_SET_EXTENDED_SCAN_ENABLE) {
-  payload,  // placeholder (unimplemented)
+packet LeSetExtendedScanEnable : LeAdvertisingCommand (op_code = LE_SET_EXTENDED_SCAN_ENABLE) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeExtendedCreateConnection : LeCreateConnectionCommand (OpCode = LE_EXTENDED_CREATE_CONNECTION) {
-  payload,  // placeholder (unimplemented)
+packet LeExtendedCreateConnection : LeCreateConnectionCommand (op_code = LE_EXTENDED_CREATE_CONNECTION) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LePeriodicAdvertisingCreateSync : LeAdvertisingCommand (OpCode = LE_PERIODIC_ADVERTISING_CREATE_SYNC) {
-  payload,  // placeholder (unimplemented)
+packet LePeriodicAdvertisingCreateSync : LeAdvertisingCommand (op_code = LE_PERIODIC_ADVERTISING_CREATE_SYNC) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LePeriodicAdvertisingCreateSyncCancel : LeAdvertisingCommand (OpCode = LE_PERIODIC_ADVERTISING_CREATE_SYNC_CANCEL) {
-  payload,  // placeholder (unimplemented)
+packet LePeriodicAdvertisingCreateSyncCancel : LeAdvertisingCommand (op_code = LE_PERIODIC_ADVERTISING_CREATE_SYNC_CANCEL) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LePeriodicAdvertisingTerminateSync : LeAdvertisingCommand (OpCode = LE_PERIODIC_ADVERTISING_TERMINATE_SYNC) {
-  payload,  // placeholder (unimplemented)
+packet LePeriodicAdvertisingTerminateSync : LeAdvertisingCommand (op_code = LE_PERIODIC_ADVERTISING_TERMINATE_SYNC) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeAddDeviceToPeriodicAdvertisingList : LeAdvertisingCommand (OpCode = LE_ADD_DEVICE_TO_PERIODIC_ADVERTISING_LIST) {
-  payload,  // placeholder (unimplemented)
+packet LeAddDeviceToPeriodicAdvertisingList : LeAdvertisingCommand (op_code = LE_ADD_DEVICE_TO_PERIODIC_ADVERTISING_LIST) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeRemoveDeviceFromPeriodicAdvertisingList : LeAdvertisingCommand (OpCode = LE_REMOVE_DEVICE_FROM_PERIODIC_ADVERTISING_LIST) {
-  payload,  // placeholder (unimplemented)
+packet LeRemoveDeviceFromPeriodicAdvertisingList : LeAdvertisingCommand (op_code = LE_REMOVE_DEVICE_FROM_PERIODIC_ADVERTISING_LIST) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeClearPeriodicAdvertisingList : LeAdvertisingCommand (OpCode = LE_CLEAR_PERIODIC_ADVERTISING_LIST) {
-  payload,  // placeholder (unimplemented)
+packet LeClearPeriodicAdvertisingList : LeAdvertisingCommand (op_code = LE_CLEAR_PERIODIC_ADVERTISING_LIST) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeReadPeriodicAdvertisingListSize : LeAdvertisingCommand (OpCode = LE_READ_PERIODIC_ADVERTISING_LIST_SIZE) {
-  payload,  // placeholder (unimplemented)
+packet LeReadPeriodicAdvertisingListSize : LeAdvertisingCommand (op_code = LE_READ_PERIODIC_ADVERTISING_LIST_SIZE) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeReadTransmitPower : LeAdvertisingCommand (OpCode = LE_READ_TRANSMIT_POWER) {
-  payload,  // placeholder (unimplemented)
+packet LeReadTransmitPower : LeAdvertisingCommand (op_code = LE_READ_TRANSMIT_POWER) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeReadRfPathCompensationPower : LeAdvertisingCommand (OpCode = LE_READ_RF_PATH_COMPENSATION_POWER) {
-  payload,  // placeholder (unimplemented)
+packet LeReadRfPathCompensationPower : LeAdvertisingCommand (op_code = LE_READ_RF_PATH_COMPENSATION_POWER) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeWriteRfPathCompensationPower : LeAdvertisingCommand (OpCode = LE_WRITE_RF_PATH_COMPENSATION_POWER) {
-  payload,  // placeholder (unimplemented)
+packet LeWriteRfPathCompensationPower : LeAdvertisingCommand (op_code = LE_WRITE_RF_PATH_COMPENSATION_POWER) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeSetPrivacyMode : LeSecurityCommand (OpCode = LE_SET_PRIVACY_MODE) {
-  payload,  // placeholder (unimplemented)
+packet LeSetPrivacyMode : LeSecurityCommand (op_code = LE_SET_PRIVACY_MODE) {
+  _payload_,  // placeholder (unimplemented)
 }
 
 
   // VENDOR_SPECIFIC
-packet LeGetVendorCapabilities : VendorCommand (OpCode = LE_GET_VENDOR_CAPABILITIES) {
-  payload,  // placeholder (unimplemented)
+packet LeGetVendorCapabilities : VendorCommand (op_code = LE_GET_VENDOR_CAPABILITIES) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeMultiAdvt : VendorCommand (OpCode = LE_MULTI_ADVT) {
-  payload,  // placeholder (unimplemented)
+packet LeMultiAdvt : VendorCommand (op_code = LE_MULTI_ADVT) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeBatchScan : VendorCommand (OpCode = LE_BATCH_SCAN) {
-  payload,  // placeholder (unimplemented)
+packet LeBatchScan : VendorCommand (op_code = LE_BATCH_SCAN) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeAdvFilter : VendorCommand (OpCode = LE_ADV_FILTER) {
-  payload,  // placeholder (unimplemented)
+packet LeAdvFilter : VendorCommand (op_code = LE_ADV_FILTER) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeTrackAdv : VendorCommand (OpCode = LE_TRACK_ADV) {
-  payload,  // placeholder (unimplemented)
+packet LeTrackAdv : VendorCommand (op_code = LE_TRACK_ADV) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeEnergyInfo : VendorCommand (OpCode = LE_ENERGY_INFO) {
-  payload,  // placeholder (unimplemented)
+packet LeEnergyInfo : VendorCommand (op_code = LE_ENERGY_INFO) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeExtendedScanParams : VendorCommand (OpCode = LE_EXTENDED_SCAN_PARAMS) {
-  payload,  // placeholder (unimplemented)
+packet LeExtendedScanParams : VendorCommand (op_code = LE_EXTENDED_SCAN_PARAMS) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet ControllerDebugInfo : VendorCommand (OpCode = CONTROLLER_DEBUG_INFO) {
-  payload,  // placeholder (unimplemented)
+packet ControllerDebugInfo : VendorCommand (op_code = CONTROLLER_DEBUG_INFO) {
+  _payload_,  // placeholder (unimplemented)
 }
 
-packet ControllerA2DPOpcode : VendorCommand (OpCode = CONTROLLER_A2DP_OPCODE) {
-  payload,  // placeholder (unimplemented)
+packet ControllerA2DPOpcode : VendorCommand (op_code = CONTROLLER_A2DP_OPCODE) {
+  _payload_,  // placeholder (unimplemented)
 }
 
 // HCI Event Packets
 
-packet InquiryComplete : EventPacket (EventCode = INQUIRY_COMPLETE){
-  Status : ErrorCodes,
+packet InquiryComplete : EventPacket (event_code = INQUIRY_COMPLETE){
+  status : ErrorCodes,
 }
 
-packet InquiryResult : EventPacket (EventCode = INQUIRY_RESULT){
-  NumResponses : 8,
-  BdAddr : Address,
-  PageScanRepetitionMode : PageScanRepetitionMode,
-  reserved : 8,
-  reserved : 8,
-  ClassOfDevice : ClassOfDevice,
-  ClockOffset : 15,
-  reserved : 1,
+packet InquiryResult : EventPacket (event_code = INQUIRY_RESULT){
+  num_responses : 8,
+  bd_addr : Address,
+  page_scan_repetition_mode : PageScanRepetitionMode,
+  _reserved_ : 8,
+  _reserved_ : 8,
+  class_of_device : ClassOfDevice,
+  clock_offset : 15,
+  _reserved_ : 1,
 }
 
 enum LinkType : 8 {
@@ -2109,13 +2109,13 @@ enum LinkType : 8 {
   ACL = 0x01,
 }
 
-packet ConnectionComplete : EventPacket (EventCode = CONNECTION_COMPLETE){
-  Status : ErrorCodes,
-  ConnectionHandle : 12,
-  reserved : 4,
-  BdAddr : Address,
-  LinkType : LinkType,
-  EncryptionEnabled : Enable,
+packet ConnectionComplete : EventPacket (event_code = CONNECTION_COMPLETE){
+  status : ErrorCodes,
+  connection_handle : 12,
+  _reserved_ : 4,
+  bd_addr : Address,
+  link_type : LinkType,
+  encryption_enabled : Enable,
 }
 
 enum ConnectionRequestLinkType : 8 {
@@ -2124,29 +2124,29 @@ enum ConnectionRequestLinkType : 8 {
   ESCO = 0x02,
 }
 
-packet ConnectionRequest : EventPacket (EventCode = CONNECTION_REQUEST){
-  BdAddr : Address,
-  ClassOfDevice : ClassOfDevice,
-  LinkType : ConnectionRequestLinkType,
+packet ConnectionRequest : EventPacket (event_code = CONNECTION_REQUEST){
+  bd_addr : Address,
+  class_of_device : ClassOfDevice,
+  link_type : ConnectionRequestLinkType,
 }
 
-packet DisconnectionComplete : EventPacket (EventCode = DISCONNECTION_COMPLETE){
-  Status : ErrorCodes,
-  ConnectionHandle : 12,
-  reserved : 4,
-  Reason : ErrorCodes,
+packet DisconnectionComplete : EventPacket (event_code = DISCONNECTION_COMPLETE){
+  status : ErrorCodes,
+  connection_handle : 12,
+  _reserved_ : 4,
+  reason : ErrorCodes,
 }
 
-packet AuthenticationComplete : EventPacket (EventCode = AUTHENTICATION_COMPLETE){
-  Status : ErrorCodes,
-  ConnectionHandle : 12,
-  reserved : 4,
+packet AuthenticationComplete : EventPacket (event_code = AUTHENTICATION_COMPLETE){
+  status : ErrorCodes,
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
-packet RemoteNameRequestComplete : EventPacket (EventCode = REMOTE_NAME_REQUEST_COMPLETE){
-  Status : ErrorCodes,
-  BdAddr : Address,
-  payload,
+packet RemoteNameRequestComplete : EventPacket (event_code = REMOTE_NAME_REQUEST_COMPLETE){
+  status : ErrorCodes,
+  bd_addr : Address,
+  _payload_,
 }
 
 enum EncryptionEnabled : 8 {
@@ -2155,40 +2155,40 @@ enum EncryptionEnabled : 8 {
   BR_EDR_AES_CCM = 0x02,
 }
 
-packet EncryptionChange : EventPacket (EventCode = ENCRYPTION_CHANGE){
-  Status : ErrorCodes,
-  ConnectionHandle : 12,
-  reserved : 4,
-  EncryptionEnabled : EncryptionEnabled,
+packet EncryptionChange : EventPacket (event_code = ENCRYPTION_CHANGE){
+  status : ErrorCodes,
+  connection_handle : 12,
+  _reserved_ : 4,
+  encryption_enabled : EncryptionEnabled,
 }
 
-packet ChangeConnectionLinkKeyComplete : EventPacket (EventCode = CHANGE_CONNECTION_LINK_KEY_COMPLETE){
-  Status : ErrorCodes,
-  ConnectionHandle : 12,
-  reserved : 4,
+packet ChangeConnectionLinkKeyComplete : EventPacket (event_code = CHANGE_CONNECTION_LINK_KEY_COMPLETE){
+  status : ErrorCodes,
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
-packet MasterLinkKeyComplete : EventPacket (EventCode = MASTER_LINK_KEY_COMPLETE){
-  Status : ErrorCodes,
-  ConnectionHandle : 12,
-  reserved : 4,
-  KeyFlag : KeyFlag,
+packet MasterLinkKeyComplete : EventPacket (event_code = MASTER_LINK_KEY_COMPLETE){
+  status : ErrorCodes,
+  connection_handle : 12,
+  _reserved_ : 4,
+  key_flag : KeyFlag,
 }
 
-packet ReadRemoteSupportedFeaturesComplete : EventPacket (EventCode = READ_REMOTE_SUPPORTED_FEATURES_COMPLETE){
-  Status : ErrorCodes,
-  ConnectionHandle : 12,
-  reserved : 4,
-  LmpFeatures : 64,
+packet ReadRemoteSupportedFeaturesComplete : EventPacket (event_code = READ_REMOTE_SUPPORTED_FEATURES_COMPLETE){
+  status : ErrorCodes,
+  connection_handle : 12,
+  _reserved_ : 4,
+  lmp_features : 64,
 }
 
-packet ReadRemoteVersionInformationComplete : EventPacket (EventCode = READ_REMOTE_VERSION_INFORMATION_COMPLETE){
-  Status : ErrorCodes,
-  ConnectionHandle : 12,
-  reserved : 4,
-  Version : 8,
-  ManufacturerName : 8,
-  SubVersion : 8,
+packet ReadRemoteVersionInformationComplete : EventPacket (event_code = READ_REMOTE_VERSION_INFORMATION_COMPLETE){
+  status : ErrorCodes,
+  connection_handle : 12,
+  _reserved_ : 4,
+  version : 8,
+  manufacturer_name : 8,
+  sub_version : 8,
 }
 
 enum ServiceType : 8 {
@@ -2197,27 +2197,27 @@ enum ServiceType : 8 {
   GUARANTEED = 0x02,
 }
 
-packet QosSetupComplete : EventPacket (EventCode = QOS_SETUP_COMPLETE){
-  Status : ErrorCodes,
-  ConnectionHandle : 12,
-  reserved : 4,
-  reserved : 8,
-  ServiceType : ServiceType,
-  TokenRate : 32, // Octets/s
-  PeakBandwidth : 32, // Octets/s
-  Latency : 32, // Octets/s
-  DelayVariation : 32, // microseconds
+packet QosSetupComplete : EventPacket (event_code = QOS_SETUP_COMPLETE){
+  status : ErrorCodes,
+  connection_handle : 12,
+  _reserved_ : 4,
+  _reserved_ : 8,
+  service_type : ServiceType,
+  token_rate : 32, // Octets/s
+  peak_bandwidth : 32, // Octets/s
+  latency : 32, // Octets/s
+  delay_variation : 32, // microseconds
 }
 
 // Command Complete and Command Status Events are implemented above Commands.
 
-packet HardwareError : EventPacket (EventCode = HARDWARE_ERROR){
-  HardwareCode : 8,
+packet HardwareError : EventPacket (event_code = HARDWARE_ERROR){
+  hardware_code : 8,
 }
 
-packet FlushOccured : EventPacket (EventCode = FLUSH_OCCURRED){
-  ConnectionHandle : 12,
-  reserved : 4,
+packet FlushOccurred : EventPacket (event_code = FLUSH_OCCURRED){
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
 enum Role : 8 {
@@ -2225,14 +2225,14 @@ enum Role : 8 {
   SLAVE = 0x01,
 }
 
-packet RoleChange : EventPacket (EventCode = ROLE_CHANGE){
-  Status : ErrorCodes,
-  BdAddr : Address,
-  NewRole : Role,
+packet RoleChange : EventPacket (event_code = ROLE_CHANGE){
+  status : ErrorCodes,
+  bd_addr : Address,
+  new_role : Role,
 }
 
-packet NumberOfCompletedPackets : EventPacket (EventCode = NUMBER_OF_COMPLETED_PACKETS){
-  payload,
+packet NumberOfCompletedPackets : EventPacket (event_code = NUMBER_OF_COMPLETED_PACKETS){
+  _payload_,
 }
 
 enum Mode : 8 {
@@ -2241,191 +2241,191 @@ enum Mode : 8 {
   SNIFF = 0x02,
 }
 
-packet ModeChange : EventPacket (EventCode = MODE_CHANGE){
-  Status : ErrorCodes,
-  ConnectionHandle : 12,
-  reserved : 4,
-  CurrentMode : Mode,
-  Interval : 16, // 0x002 - 0xFFFE (1.25ms - 40.9s)
+packet ModeChange : EventPacket (event_code = MODE_CHANGE){
+  status : ErrorCodes,
+  connection_handle : 12,
+  _reserved_ : 4,
+  current_mode : Mode,
+  interval : 16, // 0x002 - 0xFFFE (1.25ms - 40.9s)
 }
 
-packet ReturnLinkKeys : EventPacket (EventCode = RETURN_LINK_KEYS){
-  payload, // placeholder (unimplemented)
+packet ReturnLinkKeys : EventPacket (event_code = RETURN_LINK_KEYS){
+  _payload_, // placeholder (unimplemented)
 }
 
-packet PinCodeRequest : EventPacket (EventCode = PIN_CODE_REQUEST){
-  BdAddr : Address,
+packet PinCodeRequest : EventPacket (event_code = PIN_CODE_REQUEST){
+  bd_addr : Address,
 }
 
-packet LinkKeyRequest : EventPacket (EventCode = LINK_KEY_REQUEST){
-  BdAddr : Address,
+packet LinkKeyRequest : EventPacket (event_code = LINK_KEY_REQUEST){
+  bd_addr : Address,
 }
 
-packet LinkKeyNotification : EventPacket (EventCode = LINK_KEY_NOTIFICATION){
-  payload, // placeholder (unimplemented)
+packet LinkKeyNotification : EventPacket (event_code = LINK_KEY_NOTIFICATION){
+  _payload_, // placeholder (unimplemented)
 }
 
-packet LoopbackCommand : EventPacket (EventCode = LOOPBACK_COMMAND){
-  payload, // placeholder (unimplemented)
+packet LoopbackCommand : EventPacket (event_code = LOOPBACK_COMMAND){
+  _payload_, // placeholder (unimplemented)
 }
 
-packet DataBufferOverflow : EventPacket (EventCode = DATA_BUFFER_OVERFLOW){
-  LinkType : LinkType,
+packet DataBufferOverflow : EventPacket (event_code = DATA_BUFFER_OVERFLOW){
+  link_type : LinkType,
 }
 
-packet MaxSlotsChange : EventPacket (EventCode = MAX_SLOTS_CHANGE){
-  ConnectionHandle : 12,
-  reserved : 4,
-  LmpMaxSlots : 8,
+packet MaxSlotsChange : EventPacket (event_code = MAX_SLOTS_CHANGE){
+  connection_handle : 12,
+  _reserved_ : 4,
+  lmp_max_slots : 8,
 }
 
-packet ReadClockOffsetComplete : EventPacket (EventCode = READ_CLOCK_OFFSET_COMPLETE){
-  Status : ErrorCodes,
-  ConnectionHandle : 12,
-  reserved : 4,
-  ClockOffset : 15,
-  reserved : 1,
+packet ReadClockOffsetComplete : EventPacket (event_code = READ_CLOCK_OFFSET_COMPLETE){
+  status : ErrorCodes,
+  connection_handle : 12,
+  _reserved_ : 4,
+  clock_offset : 15,
+  _reserved_ : 1,
 }
 
-packet ConnectionPacketTypeChange : EventPacket (EventCode = CONNECTION_PACKET_TYPE_CHANGE){
-  Status : ErrorCodes,
-  ConnectionHandle : 12,
-  reserved : 4,
-  PacketType : 16,
+packet ConnectionPacketTypeChange : EventPacket (event_code = CONNECTION_PACKET_TYPE_CHANGE){
+  status : ErrorCodes,
+  connection_handle : 12,
+  _reserved_ : 4,
+  packet_type : 16,
 }
 
-packet QosViolation : EventPacket (EventCode = QOS_VIOLATION){
-  payload, // placeholder (unimplemented)
+packet QosViolation : EventPacket (event_code = QOS_VIOLATION){
+  _payload_, // placeholder (unimplemented)
 }
 
-packet PageScanRepetitionModeChange : EventPacket (EventCode = PAGE_SCAN_REPETITION_MODE_CHANGE){
-  payload, // placeholder (unimplemented)
+packet PageScanRepetitionModeChange : EventPacket (event_code = PAGE_SCAN_REPETITION_MODE_CHANGE){
+  _payload_, // placeholder (unimplemented)
 }
 
-packet FlowSpecificationComplete : EventPacket (EventCode = FLOW_SPECIFICATION_COMPLETE){
-  payload, // placeholder (unimplemented)
+packet FlowSpecificationComplete : EventPacket (event_code = FLOW_SPECIFICATION_COMPLETE){
+  _payload_, // placeholder (unimplemented)
 }
 
-packet InquiryResultWithRssi : EventPacket (EventCode = INQUIRY_RESULT_WITH_RSSI){
-  NumResponses : 8,
-  Address : Address,
-  PageScanRepetitionMode : PageScanRepetitionMode,
-  reserved : 8,
-  ClassOfDevice : ClassOfDevice,
-  ClockOffset : 15,
-  reserved : 1,
-  Rssi : 8,
+packet InquiryResultWithRssi : EventPacket (event_code = INQUIRY_RESULT_WITH_RSSI){
+  num_responses : 8,
+  address : Address,
+  page_scan_repetition_mode : PageScanRepetitionMode,
+  _reserved_ : 8,
+  class_of_device : ClassOfDevice,
+  clock_offset : 15,
+  _reserved_ : 1,
+  rssi : 8,
 }
 
-packet ReadRemoteExtendedFeaturesComplete : EventPacket (EventCode = READ_REMOTE_EXTENDED_FEATURES_COMPLETE){
-  Status : ErrorCodes,
-  ConnectionHandle : 12,
-  reserved : 4,
-  PageNumber : 8,
-  MaximumPageNumber : 8,
-  ExtendedLmpFeatures : 64,
+packet ReadRemoteExtendedFeaturesComplete : EventPacket (event_code = READ_REMOTE_EXTENDED_FEATURES_COMPLETE){
+  status : ErrorCodes,
+  connection_handle : 12,
+  _reserved_ : 4,
+  page_number : 8,
+  maximum_page_number : 8,
+  extended_lmp_features : 64,
 }
 
-packet SynchronousConnectionComplete : EventPacket (EventCode = SYNCHRONOUS_CONNECTION_COMPLETE){
-  payload, // placeholder (unimplemented)
+packet SynchronousConnectionComplete : EventPacket (event_code = SYNCHRONOUS_CONNECTION_COMPLETE){
+  _payload_, // placeholder (unimplemented)
 }
 
-packet SynchronousConnectionChanged : EventPacket (EventCode = SYNCHRONOUS_CONNECTION_CHANGED){
-  payload, // placeholder (unimplemented)
+packet SynchronousConnectionChanged : EventPacket (event_code = SYNCHRONOUS_CONNECTION_CHANGED){
+  _payload_, // placeholder (unimplemented)
 }
 
-packet SniffSubratingEvent : EventPacket (EventCode = SNIFF_SUBRATING){
-  Status : ErrorCodes,
-  ConnectionHandle : 12,
-  reserved : 4,
-  MaximumTransmitLatency : 16, // 0x000 - 0xFFFE (0s - 40.9s)
-  MaximumReceiveLatency : 16, // 0x000 - 0xFFFE (0s - 40.9s)
-  MinimumRemoteTimeout : 16, // 0x000 - 0xFFFE (0s - 40.9s)
+packet SniffSubratingEvent : EventPacket (event_code = SNIFF_SUBRATING){
+  status : ErrorCodes,
+  connection_handle : 12,
+  _reserved_ : 4,
+  maximum_transmit_latency : 16, // 0x000 - 0xFFFE (0s - 40.9s)
+  maximum_receive_latency : 16, // 0x000 - 0xFFFE (0s - 40.9s)
+  minimum_remote_timeout : 16, // 0x000 - 0xFFFE (0s - 40.9s)
   MInimumLocalTimeout : 16, // 0x000 - 0xFFFE (0s - 40.9s)
 }
 
-packet ExtendedInquiryResult : EventPacket (EventCode = EXTENDED_INQUIRY_RESULT) {
-  fixed = 0x01 : 8,
-  Address : Address,
-  PageScanRepetitionMode : PageScanRepetitionMode,
-  reserved : 8,
-  ClassOfDevice : ClassOfDevice,
-  ClockOffset : 15,
-  reserved : 1,
-  Rssi : 8,
-  payload,
+packet ExtendedInquiryResult : EventPacket (event_code = EXTENDED_INQUIRY_RESULT) {
+  _fixed_ = 0x01 : 8,
+  address : Address,
+  page_scan_repetition_mode : PageScanRepetitionMode,
+  _reserved_ : 8,
+  class_of_device : ClassOfDevice,
+  clock_offset : 15,
+  _reserved_ : 1,
+  rssi : 8,
+  _payload_,
 }
 
-packet EncryptionKeyRefreshComplete : EventPacket (EventCode = ENCRYPTION_KEY_REFRESH_COMPLETE){
-  Status : ErrorCodes,
-  ConnectionHandle : 12,
-  reserved : 4,
+packet EncryptionKeyRefreshComplete : EventPacket (event_code = ENCRYPTION_KEY_REFRESH_COMPLETE){
+  status : ErrorCodes,
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
-packet IoCapabilityRequest : EventPacket (EventCode = IO_CAPABILITY_REQUEST){
-  BdAddr : Address,
+packet IoCapabilityRequest : EventPacket (event_code = IO_CAPABILITY_REQUEST){
+  bd_addr : Address,
 }
 
-packet IoCapabilityResponse : EventPacket (EventCode = IO_CAPABILITY_RESPONSE){
-  BdAddr : Address,
-  IoCapability : IoCapability,
-  OobDataPresent : OobDataPresent,
-  AuthenticationRequirements : AuthenticationRequirements,
+packet IoCapabilityResponse : EventPacket (event_code = IO_CAPABILITY_RESPONSE){
+  bd_addr : Address,
+  io_capability : IoCapability,
+  oob_data_present : OobDataPresent,
+  authentication_requirements : AuthenticationRequirements,
 }
 
-packet UserConfirmationRequest : EventPacket (EventCode = USER_CONFIRMATION_REQUEST){
-  BdAddr : Address,
-  NumericValue : 20, // 0x00000-0xF423F (000000 - 999999)
-  reserved : 12,
+packet UserConfirmationRequest : EventPacket (event_code = USER_CONFIRMATION_REQUEST){
+  bd_addr : Address,
+  numeric_value : 20, // 0x00000-0xF423F (000000 - 999999)
+  _reserved_ : 12,
 }
 
-packet UserPasskeyRequest : EventPacket (EventCode = USER_PASSKEY_REQUEST){
-  BdAddr : Address,
+packet UserPasskeyRequest : EventPacket (event_code = USER_PASSKEY_REQUEST){
+  bd_addr : Address,
 }
 
-packet RemoteOobDataRequest : EventPacket (EventCode = REMOTE_OOB_DATA_REQUEST){
-  BdAddr : Address,
+packet RemoteOobDataRequest : EventPacket (event_code = REMOTE_OOB_DATA_REQUEST){
+  bd_addr : Address,
 }
 
-packet SimplePairingComplete : EventPacket (EventCode = SIMPLE_PAIRING_COMPLETE){
-  Status : ErrorCodes,
-  BdAddr : Address,
+packet SimplePairingComplete : EventPacket (event_code = SIMPLE_PAIRING_COMPLETE){
+  status : ErrorCodes,
+  bd_addr : Address,
 }
 
-packet LinkSupervisionTimeoutChanged : EventPacket (EventCode = LINK_SUPERVISION_TIMEOUT_CHANGED){
-  ConnectionHandle : 12,
-  reserved : 4,
-  LinkSupervisionTimeout : 16, // 0x001-0xFFFF (0.625ms-40.9s)
+packet LinkSupervisionTimeoutChanged : EventPacket (event_code = LINK_SUPERVISION_TIMEOUT_CHANGED){
+  connection_handle : 12,
+  _reserved_ : 4,
+  link_supervision_timeout : 16, // 0x001-0xFFFF (0.625ms-40.9s)
 }
 
-packet EnhancedFlushComplete : EventPacket (EventCode = ENHANCED_FLUSH_COMPLETE){
-  ConnectionHandle : 12,
-  reserved : 4,
+packet EnhancedFlushComplete : EventPacket (event_code = ENHANCED_FLUSH_COMPLETE){
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
-packet UserPasskeyNotification : EventPacket (EventCode = USER_PASSKEY_NOTIFICATION){
-  BdAddr : Address,
-  Passkey : 20, // 0x00000-0xF423F (000000 - 999999)
-  reserved : 12,
+packet UserPasskeyNotification : EventPacket (event_code = USER_PASSKEY_NOTIFICATION){
+  bd_addr : Address,
+  passkey : 20, // 0x00000-0xF423F (000000 - 999999)
+  _reserved_ : 12,
 }
 
-packet KeypressNotification : EventPacket (EventCode = KEYPRESS_NOTIFICATION){
-  BdAddr : Address,
-  NotificationType : KeypressNotificationType,
+packet KeypressNotification : EventPacket (event_code = KEYPRESS_NOTIFICATION){
+  bd_addr : Address,
+  notification_type : KeypressNotificationType,
 }
 
-packet RemoteHostSupportedFeaturesNotification : EventPacket (EventCode = REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION){
-  BdAddr : Address,
-  HostSupportedFeatures : 64,
+packet RemoteHostSupportedFeaturesNotification : EventPacket (event_code = REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION){
+  bd_addr : Address,
+  host_supported_features : 64,
 }
 
-packet LeMetaEvent : EventPacket (EventCode = LE_META_EVENT) {
-  SubeventCode : SubeventCode,
-  payload,
+packet LeMetaEvent : EventPacket (event_code = LE_META_EVENT) {
+  subevent_code : SubeventCode,
+  _payload_,
 }
 
-packet NumberOfCompletedDataBlocks : EventPacket (EventCode = NUMBER_OF_COMPLETED_DATA_BLOCKS){
-  payload, // placeholder (unimplemented)
+packet NumberOfCompletedDataBlocks : EventPacket (event_code = NUMBER_OF_COMPLETED_DATA_BLOCKS){
+  _payload_, // placeholder (unimplemented)
 }
 
 // LE Events
@@ -2441,88 +2441,88 @@ enum MasterClockAccuracy : 8 {
   PPM_20 = 0x07,
 }
 
-packet LeConnectionComplete : LeMetaEvent (SubeventCode = CONNECTION_COMPLETE) {
-  Status : ErrorCodes,
-  ConnectionHandle : 12,
-  reserved : 4,
-  Role : Role,
-  PeerAddressType : PeerAddressType,
-  PeerAddress : Address,
-  ConnInterval : 16, // 0x006 - 0x0C80 (7.5ms - 4000ms)
-  ConnLatency : 16,  // Number of connection events
-  SupervisionTimeout : 16,  // 0x000A to 0x0C80 (100ms to 32s)
-  MasterClockAccuracy : MasterClockAccuracy,
+packet LeConnectionComplete : LeMetaEvent (subevent_code = CONNECTION_COMPLETE) {
+  status : ErrorCodes,
+  connection_handle : 12,
+  _reserved_ : 4,
+  role : Role,
+  peer_address_type : PeerAddressType,
+  peer_address : Address,
+  conn_interval : 16, // 0x006 - 0x0C80 (7.5ms - 4000ms)
+  conn_latency : 16,  // Number of connection events
+  supervision_timeout : 16,  // 0x000A to 0x0C80 (100ms to 32s)
+  master_clock_accuracy : MasterClockAccuracy,
 }
 
-packet LeAdvertisingReport : LeMetaEvent (SubeventCode = ADVERTISING_REPORT) {
-  payload,
+packet LeAdvertisingReport : LeMetaEvent (subevent_code = ADVERTISING_REPORT) {
+  _payload_,
 }
 
-packet LeConnectionUpdateComplete : LeMetaEvent (SubeventCode = CONNECTION_UPDATE_COMPLETE) {
-  Status : ErrorCodes,
-  ConnectionHandle : 12,
-  reserved : 4,
-  ConnInterval : 16, // 0x006 - 0x0C80 (7.5ms - 4000ms)
-  ConnLatency : 16,  // Number of connection events
-  SupervisionTimeout : 16,  // 0x000A to 0x0C80 (100ms to 32s)
+packet LeConnectionUpdateComplete : LeMetaEvent (subevent_code = CONNECTION_UPDATE_COMPLETE) {
+  status : ErrorCodes,
+  connection_handle : 12,
+  _reserved_ : 4,
+  conn_interval : 16, // 0x006 - 0x0C80 (7.5ms - 4000ms)
+  conn_latency : 16,  // Number of connection events
+  supervision_timeout : 16,  // 0x000A to 0x0C80 (100ms to 32s)
 }
 
-packet LeReadRemoteFeaturesComplete : LeMetaEvent (SubeventCode = READ_REMOTE_FEATURES_COMPLETE) {
-  Status : ErrorCodes,
-  ConnectionHandle : 12,
-  reserved : 4,
-  LeFeatures : 64,
+packet LeReadRemoteFeaturesComplete : LeMetaEvent (subevent_code = READ_REMOTE_FEATURES_COMPLETE) {
+  status : ErrorCodes,
+  connection_handle : 12,
+  _reserved_ : 4,
+  le_features : 64,
 }
 
-packet LeLongTermKeyRequest : LeMetaEvent (SubeventCode = LONG_TERM_KEY_REQUEST) {
-  Status : ErrorCodes,
-  ConnectionHandle : 12,
-  reserved : 4,
-  RandomNumber : 64,
-  EncryptedDiversifier : 16,
+packet LeLongTermKeyRequest : LeMetaEvent (subevent_code = LONG_TERM_KEY_REQUEST) {
+  status : ErrorCodes,
+  connection_handle : 12,
+  _reserved_ : 4,
+  random_number : 64,
+  encrypted_diversifier : 16,
 }
 
-packet LeRemoteConnectionParameterRequest : LeMetaEvent (SubeventCode = REMOTE_CONNECTION_PARAMETER_REQUEST) {
-  ConnectionHandle : 12,
-  reserved : 4,
-  IntervalMin : 16, // 0x006 - 0x0C80 (7.5ms - 4s)
-  IntervalMax : 16, // 0x006 - 0x0C80 (7.5ms - 4s)
-  Latency : 16,  // Number of connection events (0x0000 to 0x01f3 (499)
-  Timeout : 16,  // 0x000A to 0x0C80 (100ms to 32s)
+packet LeRemoteConnectionParameterRequest : LeMetaEvent (subevent_code = REMOTE_CONNECTION_PARAMETER_REQUEST) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  interval_min : 16, // 0x006 - 0x0C80 (7.5ms - 4s)
+  interval_max : 16, // 0x006 - 0x0C80 (7.5ms - 4s)
+  latency : 16,  // Number of connection events (0x0000 to 0x01f3 (499)
+  timeout : 16,  // 0x000A to 0x0C80 (100ms to 32s)
 }
 
-packet LeDataLengthChange : LeMetaEvent (SubeventCode = DATA_LENGTH_CHANGE) {
-  ConnectionHandle : 12,
-  reserved : 4,
-  MaxTxOctets : 16, // 0x001B - 0x00FB
-  MaxTxTime : 16, // 0x0148 - 0x4290
-  MaxRxOctets : 16, // 0x001B - 0x00FB
-  MaxRxTime : 16, // 0x0148 - 0x4290
+packet LeDataLengthChange : LeMetaEvent (subevent_code = DATA_LENGTH_CHANGE) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  max_tx_octets : 16, // 0x001B - 0x00FB
+  max_tx_time : 16, // 0x0148 - 0x4290
+  max_rx_octets : 16, // 0x001B - 0x00FB
+  max_rx_time : 16, // 0x0148 - 0x4290
 }
 
-packet ReadLocalP256PublicKeyComplete : LeMetaEvent (SubeventCode = READ_LOCAL_P256_PUBLIC_KEY_COMPLETE) {
-  Status : ErrorCodes,
-  payload,
+packet ReadLocalP256PublicKeyComplete : LeMetaEvent (subevent_code = READ_LOCAL_P256_PUBLIC_KEY_COMPLETE) {
+  status : ErrorCodes,
+  _payload_,
 }
 
-packet GenerateDhKeyComplete : LeMetaEvent (SubeventCode = GENERATE_DHKEY_COMPLETE) {
-  Status : ErrorCodes,
-  payload,
+packet GenerateDhKeyComplete : LeMetaEvent (subevent_code = GENERATE_DHKEY_COMPLETE) {
+  status : ErrorCodes,
+  _payload_,
 }
 
-packet LeEnhancedConnectionComplete : LeMetaEvent (SubeventCode = ENHANCED_CONNECTION_COMPLETE) {
-  Status : ErrorCodes,
-  ConnectionHandle : 12,
-  reserved : 4,
-  Role : Role,
-  PeerAddressType : PeerAddressType,
-  PeerAddress : Address,
-  LocalResolvablePrivateAddress : Address,
-  PeerResolvablePrivateAddress : Address,
-  ConnInterval : 16, // 0x006 - 0x0C80 (7.5ms - 4000ms)
-  ConnLatency : 16,  // Number of connection events
-  SupervisionTimeout : 16,  // 0x000A to 0x0C80 (100ms to 32s)
-  MasterClockAccuracy : MasterClockAccuracy,
+packet LeEnhancedConnectionComplete : LeMetaEvent (subevent_code = ENHANCED_CONNECTION_COMPLETE) {
+  status : ErrorCodes,
+  connection_handle : 12,
+  _reserved_ : 4,
+  role : Role,
+  peer_address_type : PeerAddressType,
+  peer_address : Address,
+  local_resolvable_private_address : Address,
+  peer_resolvable_private_address : Address,
+  conn_interval : 16, // 0x006 - 0x0C80 (7.5ms - 4000ms)
+  conn_latency : 16,  // Number of connection events
+  supervision_timeout : 16,  // 0x000A to 0x0C80 (100ms to 32s)
+  master_clock_accuracy : MasterClockAccuracy,
 }
 
 enum DirectAdvertisingAddressType : 8 {
@@ -2541,37 +2541,37 @@ enum DirectAddressType : 8 {
   RANDOM_DEVICE_ADDRESS = 0x01,
 }
 
-packet LeDirectedAdvertisingReport : LeMetaEvent (SubeventCode = DIRECTED_ADVERTISING_REPORT) {
-  payload, // placeholder (unimplemented)
+packet LeDirectedAdvertisingReport : LeMetaEvent (subevent_code = DIRECTED_ADVERTISING_REPORT) {
+  _payload_, // placeholder (unimplemented)
 }
 
-packet LePhyUpdateComplete : LeMetaEvent (SubeventCode = PHY_UPDATE_COMPLETE) {
-  payload, // placeholder (unimplemented)
+packet LePhyUpdateComplete : LeMetaEvent (subevent_code = PHY_UPDATE_COMPLETE) {
+  _payload_, // placeholder (unimplemented)
 }
 
-packet LeExtendedAdvertisingReport : LeMetaEvent (SubeventCode = EXTENDED_ADVERTISING_REPORT) {
-  payload, // placeholder (unimplemented)
+packet LeExtendedAdvertisingReport : LeMetaEvent (subevent_code = EXTENDED_ADVERTISING_REPORT) {
+  _payload_, // placeholder (unimplemented)
 }
 
-packet LePeriodicAdvertisingSyncEstablished : LeMetaEvent (SubeventCode = PERIODIC_ADVERTISING_SYNC_ESTABLISHED) {
-  payload, // placeholder (unimplemented)
+packet LePeriodicAdvertisingSyncEstablished : LeMetaEvent (subevent_code = PERIODIC_ADVERTISING_SYNC_ESTABLISHED) {
+  _payload_, // placeholder (unimplemented)
 }
 
-packet LePeriodicAdvertisingReport : LeMetaEvent (SubeventCode = PERIODIC_ADVERTISING_REPORT) {
-  payload, // placeholder (unimplemented)
+packet LePeriodicAdvertisingReport : LeMetaEvent (subevent_code = PERIODIC_ADVERTISING_REPORT) {
+  _payload_, // placeholder (unimplemented)
 }
 
-packet LePeriodicAdvertisingSyncLost : LeMetaEvent (SubeventCode = PERIODIC_ADVERTISING_SYNC_LOST) {
-  payload, // placeholder (unimplemented)
+packet LePeriodicAdvertisingSyncLost : LeMetaEvent (subevent_code = PERIODIC_ADVERTISING_SYNC_LOST) {
+  _payload_, // placeholder (unimplemented)
 }
 
-packet LeScanTimeout : LeMetaEvent (SubeventCode = SCAN_TIMEOUT) {
+packet LeScanTimeout : LeMetaEvent (subevent_code = SCAN_TIMEOUT) {
 }
 
-packet LeAdvertisingSetTerminated : LeMetaEvent (SubeventCode = ADVERTISING_SET_TERMINATED) {
-  payload, // placeholder (unimplemented)
+packet LeAdvertisingSetTerminated : LeMetaEvent (subevent_code = ADVERTISING_SET_TERMINATED) {
+  _payload_, // placeholder (unimplemented)
 }
 
-packet LeScanRequestReceived : LeMetaEvent (SubeventCode = SCAN_REQUEST_RECEIVED) {
-  payload, // placeholder (unimplemented)
+packet LeScanRequestReceived : LeMetaEvent (subevent_code = SCAN_REQUEST_RECEIVED) {
+  _payload_, // placeholder (unimplemented)
 }

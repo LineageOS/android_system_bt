@@ -18,7 +18,7 @@
 #include "util.h"
 
 ChecksumStartField::ChecksumStartField(std::string name, ParseLocation loc)
-    : PacketField(loc, name + "Start"), started_field_name_(name) {}
+    : PacketField(loc, name + "_start"), started_field_name_(name) {}
 
 PacketField::Type ChecksumStartField::GetFieldType() const {
   return PacketField::Type::CHECKSUM_START;

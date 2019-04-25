@@ -38,9 +38,11 @@ Checksum types
 -------
  NOTES
 -------
-All Field names should be in CamelCase. Field names matching type names is supported.
+All field names should be in snake_case.  Types should be in CamelCase.
 
-The payload keyword generates a getter but body doesn't. Therefore, a payload must be byte aligned.
+The _payload_ keyword generates a getter but _body_ doesn't. Therefore, a
+_payload_ must be byte aligned.
+
 Supports constraints on grandparents
 Supports multiple constraints
 Every field handles its own generation.

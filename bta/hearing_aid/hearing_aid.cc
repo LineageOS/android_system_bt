@@ -289,6 +289,12 @@ class HearingAidImpl : public HearingAid {
     BTA_GATTC_Open(gatt_if, address, true, GATT_TRANSPORT_LE, false);
   }
 
+  void AddToWhiteList(const RawAddress& address) override {
+    VLOG(2) << __func__ << " address: " << address;
+    hearingDevices.Add(HearingDevice(address, true));
+    BTA_GATTC_Open(gatt_if, address, false, GATT_TRANSPORT_LE, false);
+  }
+
   void AddFromStorage(const HearingDevice& dev_info, uint16_t is_white_listed) {
     DVLOG(2) << __func__ << " " << dev_info.address
              << ", hiSyncId=" << loghex(dev_info.hi_sync_id)

@@ -23,6 +23,7 @@
 #include <mutex>
 #include <queue>
 
+#include "hal/bluetooth_snoop_logger.h"
 #include "os/log.h"
 #include "os/reactor.h"
 #include "os/thread.h"
@@ -40,6 +41,8 @@ constexpr uint8_t kHciAclHeaderSize = 4;
 constexpr uint8_t kHciScoHeaderSize = 3;
 constexpr uint8_t kHciEvtHeaderSize = 2;
 constexpr int kBufSize = 1024;
+
+constexpr char kDefaultBtsnoopPath[] = "/tmp/btsnoop_hci.log";
 
 int ConnectToRootCanal(const std::string& server, int port) {
   int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -90,6 +93,7 @@ class BluetoothHciHalHostRootcanal : public BluetoothHciHal {
     reactable_ =
         hci_incoming_thread_.GetReactor()->Register(sock_fd_, [this]() { this->incoming_packet_received(); }, nullptr);
     callback->initializationComplete(Status::SUCCESS);
+    btsnoop_logger_ = new BluetoothSnoopLogger(kDefaultBtsnoopPath);
     LOG_INFO("Rootcanal HAL opened successfully");
   }
 
@@ -103,6 +107,7 @@ class BluetoothHciHalHostRootcanal : public BluetoothHciHal {
     std::lock_guard<std::mutex> lock(mutex_);
     ASSERT(sock_fd_ != INVALID_FD);
     std::vector<uint8_t> packet = std::move(command);
+    btsnoop_logger_->capture(packet, BluetoothSnoopLogger::Direction::OUTGOING, BluetoothSnoopLogger::PacketType::CMD);
     packet.insert(packet.cbegin(), kH4Command);
     write_to_rootcanal_fd(packet);
   }
@@ -111,6 +116,7 @@ class BluetoothHciHalHostRootcanal : public BluetoothHciHal {
     std::lock_guard<std::mutex> lock(mutex_);
     ASSERT(sock_fd_ != INVALID_FD);
     std::vector<uint8_t> packet = std::move(data);
+    btsnoop_logger_->capture(packet, BluetoothSnoopLogger::Direction::OUTGOING, BluetoothSnoopLogger::PacketType::ACL);
     packet.insert(packet.cbegin(), kH4Acl);
     write_to_rootcanal_fd(packet);
   }
@@ -119,12 +125,15 @@ class BluetoothHciHalHostRootcanal : public BluetoothHciHal {
     std::lock_guard<std::mutex> lock(mutex_);
     ASSERT(sock_fd_ != INVALID_FD);
     std::vector<uint8_t> packet = std::move(data);
+    btsnoop_logger_->capture(packet, BluetoothSnoopLogger::Direction::OUTGOING, BluetoothSnoopLogger::PacketType::SCO);
     packet.insert(packet.cbegin(), kH4Sco);
     write_to_rootcanal_fd(packet);
   }
 
   void close() override {
     std::lock_guard<std::mutex> lock(mutex_);
+    delete btsnoop_logger_;
+    btsnoop_logger_ = nullptr;
     if (reactable_ != nullptr) {
       hci_incoming_thread_.GetReactor()->Unregister(reactable_);
       ASSERT(sock_fd_ != INVALID_FD);
@@ -145,6 +154,7 @@ class BluetoothHciHalHostRootcanal : public BluetoothHciHal {
       bluetooth::os::Thread("hci_incoming_thread", bluetooth::os::Thread::Priority::NORMAL);
   bluetooth::os::Reactor::Reactable* reactable_ = nullptr;
   std::queue<std::vector<uint8_t>> hci_outgoing_queue_;
+  BluetoothSnoopLogger* btsnoop_logger_;
 
   void write_to_rootcanal_fd(HciPacket packet) {
     // TODO: replace this with new queue when it's ready
@@ -196,6 +206,8 @@ class BluetoothHciHalHostRootcanal : public BluetoothHciHal {
 
       HciPacket receivedHciPacket;
       receivedHciPacket.assign(buf + kH4HeaderSize, buf + kH4HeaderSize + kHciEvtHeaderSize + payload_size);
+      btsnoop_logger_->capture(receivedHciPacket, BluetoothSnoopLogger::Direction::INCOMING,
+                               BluetoothSnoopLogger::PacketType::EVT);
       incoming_packet_callback_->hciEventReceived(receivedHciPacket);
     }
 
@@ -212,6 +224,8 @@ class BluetoothHciHalHostRootcanal : public BluetoothHciHal {
 
       HciPacket receivedHciPacket;
       receivedHciPacket.assign(buf + kH4HeaderSize, buf + kH4HeaderSize + kHciAclHeaderSize + payload_size);
+      btsnoop_logger_->capture(receivedHciPacket, BluetoothSnoopLogger::Direction::INCOMING,
+                               BluetoothSnoopLogger::PacketType::ACL);
       incoming_packet_callback_->aclDataReceived(receivedHciPacket);
     }
 
@@ -225,6 +239,8 @@ class BluetoothHciHalHostRootcanal : public BluetoothHciHal {
 
       HciPacket receivedHciPacket;
       receivedHciPacket.assign(buf + kH4HeaderSize, buf + kH4HeaderSize + kHciScoHeaderSize + payload_size);
+      btsnoop_logger_->capture(receivedHciPacket, BluetoothSnoopLogger::Direction::INCOMING,
+                               BluetoothSnoopLogger::PacketType::SCO);
       incoming_packet_callback_->scoDataReceived(receivedHciPacket);
     }
     memset(buf, 0, kBufSize);
