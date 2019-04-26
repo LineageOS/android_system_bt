@@ -27,19 +27,23 @@ bool ModuleRegistry::IsStarted(const ModuleFactory* factory) const {
 
 void ModuleRegistry::Start(ModuleList* modules) {
   for (auto it = modules->list_.begin(); it != modules->list_.end(); it++) {
-    if (IsStarted(*it)) {
-      continue;
-    }
-
-    Module* instance = (*it)->ctor_();
-    ModuleList dependencies;
-    instance->ListDependencies(&dependencies);
-    Start(&dependencies);
-
-    instance->Start(this);
-    start_order_.push_back(*it);
-    started_modules_[*it] = instance;
+    Start(*it);
   }
+}
+
+void ModuleRegistry::Start(const ModuleFactory* module) {
+  if (IsStarted(module)) {
+    return;
+  }
+
+  Module* instance = module->ctor_();
+  ModuleList dependencies;
+  instance->ListDependencies(&dependencies);
+  Start(&dependencies);
+
+  instance->Start(this);
+  start_order_.push_back(module);
+  started_modules_[module] = instance;
 }
 
 void ModuleRegistry::StopAll() {

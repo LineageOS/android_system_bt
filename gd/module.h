@@ -90,6 +90,13 @@ class ModuleRegistry {
   // in dependency order
   void Start(ModuleList* modules);
 
+  template <class T>
+  void Start() {
+    Start(&T::Factory);
+  }
+
+  void Start(const ModuleFactory* id);
+
   // Stop all running modules in reverse order of start
   void StopAll();
 
