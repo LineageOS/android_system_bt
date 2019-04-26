@@ -99,6 +99,7 @@ cc_library {
     },
     srcs: [
         "stack_manager.cc",
+        "module.cc",
         ":BluetoothCommonSources",
         ":BluetoothHalSources",
         ":BluetoothPacketSources",
@@ -221,10 +222,16 @@ cc_test {
         },
     },
     srcs: [
+        "module_unittest.cc",
         ":BluetoothCommonTestSources",
         ":BluetoothHciTestSources",
         ":BluetoothL2capTestSources",
         ":BluetoothPacketTestSources",
+    ],
+    cflags: [
+        "-Wno-unused-parameter",
+        "-Wno-implicit-fallthrough",
+        "-Wno-unused-result",
     ],
     generated_headers : [
         "BluetoothGeneratedPackets_h",
