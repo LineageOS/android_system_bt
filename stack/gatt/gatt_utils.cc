@@ -597,6 +597,8 @@ void gatt_rsp_timeout(void* data) {
   gatt_disconnect(p_clcb->p_tcb);
 }
 
+extern void gatts_proc_srv_chg_ind_ack(tGATT_TCB tcb);
+
 /*******************************************************************************
  *
  * Function         gatt_indication_confirmation_timeout
@@ -608,6 +610,26 @@ void gatt_rsp_timeout(void* data) {
  ******************************************************************************/
 void gatt_indication_confirmation_timeout(void* data) {
   tGATT_TCB* p_tcb = (tGATT_TCB*)data;
+
+  if (p_tcb->indicate_handle == gatt_cb.handle_of_h_r) {
+    /* There are some GATT Server only devices, that don't implement GATT client
+     * functionalities, and ignore "Service Changed" indication. Android does
+     * not have CCC in "Service Changed" characteristic, and sends it to all
+     * bonded devices. This leads to situation where remote can ignore the
+     * indication, and trigger 30s timeout, then reconnection in a loop.
+     *
+     * Since chances of healthy Client device keeping connection for 30 seconds
+     * and not responding to "Service Changed" indication are very low, assume
+     * we are dealing with Server only device, and don't trigger disconnection.
+     *
+     * TODO: In future, we should properly expose CCC, and send indication only
+     * to devices that register for it.
+     */
+    LOG(WARNING) << " Service Changed notification timed out in 30 "
+                    "seconds, assuming server-only remote, not disconnecting";
+    gatts_proc_srv_chg_ind_ack(*p_tcb);
+    return;
+  }
 
   LOG(WARNING) << __func__ << " disconnecting...";
   gatt_disconnect(p_tcb);
