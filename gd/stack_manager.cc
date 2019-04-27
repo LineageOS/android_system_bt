@@ -21,48 +21,47 @@
 #include <queue>
 
 #include "hal/hci_hal.h"
+#include "os/thread.h"
 #include "os/handler.h"
 #include "os/log.h"
+#include "module.h"
 
-using ::bluetooth::hal::BluetoothHciHalCallbacks;
-using ::bluetooth::hal::BluetoothInitializationCompleteCallback;
-using ::bluetooth::hal::HciPacket;
-using ::bluetooth::hal::Status;
 using ::bluetooth::os::Handler;
 using ::bluetooth::os::Thread;
 
 namespace bluetooth {
-namespace {
-std::promise<void>* startup_promise;
 
-class InitCallback : public BluetoothInitializationCompleteCallback {
- public:
-  void initializationComplete(Status status) override {
-    ASSERT(status == Status::SUCCESS);
-    startup_promise->set_value();
-  }
-} init_callback;
+void StackManager::StartUp(ModuleList* modules) {
+  management_thread_ = new Thread("management_thread", Thread::Priority::NORMAL);
+  handler_ = new Handler(management_thread_);
 
-Thread* main_thread_;
+  std::promise<void>* promise = new std::promise<void>();
+  handler_->Post([this, promise, modules]() {
+    registry_.Start(modules);
+    promise->set_value();
+  });
 
-}  // namespace
-
-void StackManager::StartUp() {
-  startup_promise = new std::promise<void>;
-  ::bluetooth::hal::GetBluetoothHciHal()->initialize(&init_callback);
-  auto init_status = startup_promise->get_future().wait_for(std::chrono::seconds(3));
-  ASSERT_LOG(init_status == std::future_status::ready, "Can't initialize HCI HAL");
-  delete startup_promise;
-
-  main_thread_ = new Thread("main_thread", Thread::Priority::NORMAL);
+  auto future = promise->get_future();
+  auto init_status = future.wait_for(std::chrono::seconds(3));
+  ASSERT_LOG(init_status == std::future_status::ready, "Can't start stack");
+  delete promise;
 
   LOG_INFO("init complete");
-  // Bring up HCI layer
 }
 
 void StackManager::ShutDown() {
-  // Delete HCI layer
-  delete main_thread_;
-  ::bluetooth::hal::GetBluetoothHciHal()->close();
+  std::promise<void>* promise = new std::promise<void>();
+  handler_->Post([this, promise]() {
+    registry_.StopAll();
+    promise->set_value();
+  });
+
+  auto future = promise->get_future();
+  auto stop_status = future.wait_for(std::chrono::seconds(3));
+  ASSERT_LOG(stop_status == std::future_status::ready, "Can't stop stack");
+
+  delete promise;
+  delete handler_;
+  delete management_thread_;
 }
 }  // namespace bluetooth

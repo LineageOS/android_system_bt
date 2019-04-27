@@ -14,32 +14,38 @@
  * limitations under the License.
  */
 
+#pragma once
+
+#include <list>
+#include <mutex>
+
+#include <grpc++/grpc++.h>
+
+#include "grpc/grpc_module.h"
 #include "hal/hci_hal.h"
-
-#include <chrono>
-#include <future>
-
-#include <gtest/gtest.h>
 
 namespace bluetooth {
 namespace hal {
-namespace {
+namespace facade {
 
-class HciHalHidlTest : public ::testing::Test {
- protected:
-  void SetUp() override {
-  }
+class HciTransportationService;
 
-  void TearDown() override {
-  }
+class HalFacadeModule : public ::bluetooth::grpc::GrpcFacadeModule {
+ public:
+  static const ModuleFactory Factory;
 
-  ModuleRegistry fake_registry_;
+  void ListDependencies(ModuleList* list) override;
+
+  void Start(const ModuleRegistry* registry) override;
+  void Stop(const ModuleRegistry* registry) override;
+
+  ::grpc::Service* GetService() const override;
+
+ private:
+  HciTransportationService* service_;
+  friend class IncomingPacketCallback;
 };
 
-TEST_F(HciHalHidlTest, init_and_close) {
-  fake_registry_.Start<BluetoothHciHal>();
-  fake_registry_.StopAll();
-}
-}  // namespace
+}  // namespace facade
 }  // namespace hal
 }  // namespace bluetooth

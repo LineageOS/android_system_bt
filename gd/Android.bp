@@ -24,6 +24,9 @@ cc_defaults {
         "-fvisibility=hidden",
         "-DLOG_NDEBUG=1",
         "-DGOOGLE_PROTOBUF_NO_RTTI",
+        "-Wno-unused-parameter",
+        "-Wno-implicit-fallthrough",
+        "-Wno-unused-result",
     ],
     conlyflags: [
         "-std=c99",
@@ -99,10 +102,83 @@ cc_library {
     },
     srcs: [
         "stack_manager.cc",
+        "module.cc",
         ":BluetoothCommonSources",
         ":BluetoothHalSources",
         ":BluetoothPacketSources",
-    ]
+    ],
+    generated_headers: [
+        "BluetoothGeneratedPackets_h",
+    ],
+}
+
+cc_binary {
+    name: "stack_with_facade",
+    defaults: [
+        "gd_defaults",
+    ],
+    host_supported: true,
+    srcs: [
+        "facade/stack_with_grpc_main.cc",
+        "grpc/grpc_module.cc",
+        ":BluetoothCertFacade_hci_hal",
+    ],
+    generated_headers: [
+        "BluetoothGeneratedPackets_h",
+        "BluetoothCertFacadeGeneratedStub_h",
+    ],
+    generated_sources: [
+        "BluetoothCertFacadeGeneratedStub_cc",
+    ],
+    static_libs: [
+        "libbluetooth_gd",
+    ],
+    shared_libs: [
+        "libgrpc++_unsecure",
+        "libprotobuf-cpp-full",
+    ],
+    target: {
+        android: {
+            shared_libs: [
+                "android.hardware.bluetooth@1.0",
+                "libhwbinder",
+                "libhidlbase",
+                "libhidltransport",
+                "libutils",
+            ],
+        },
+    },
+    sanitize: {
+        address: true,
+    },
+}
+
+cc_test {
+    name: "bluetooth_cert_test",
+    defaults: [
+        "gd_defaults",
+    ],
+    host_supported: true,
+    srcs: [
+        ":BluetoothCertCppClient_hci_hal",
+    ],
+    static_libs : [
+        "libbluetooth_gd",
+    ],
+    shared_libs: [
+        "libgrpc++_unsecure",
+        "libprotobuf-cpp-full",
+    ],
+    generated_headers: [
+        "BluetoothGeneratedPackets_h",
+        "BluetoothCertFacadeGeneratedStub_h",
+    ],
+    generated_sources: [
+        "BluetoothCertFacadeGeneratedStub_cc",
+    ],
+    sanitize: {
+        address: true,
+    },
 }
 
 cc_test {
@@ -138,6 +214,7 @@ cc_test {
         },
     },
     srcs: [
+        "module_unittest.cc",
         ":BluetoothCommonTestSources",
         ":BluetoothHciTestSources",
         ":BluetoothL2capTestSources",
@@ -202,5 +279,66 @@ genrule {
     out: [
         "hci/hci_packets.h",
         "l2cap/l2cap_packets.h",
+    ],
+}
+
+filegroup {
+    name: "BluetoothCertFacadeProto",
+    srcs: [
+        "hal/facade/api.proto",
+    ],
+}
+
+genrule {
+    name: "BluetoothCertFacadeGeneratedStub_h",
+    tools: [
+        "aprotoc",
+        "protoc-gen-grpc-cpp-plugin",
+    ],
+    cmd: "$(location aprotoc) -Isystem/bt/gd -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-cpp-plugin) $(in) --grpc_out=$(genDir) --cpp_out=$(genDir)",
+    srcs: [
+        ":BluetoothCertFacadeProto",
+    ],
+    out: [
+        "hal/facade/api.grpc.pb.h",
+        "hal/facade/api.pb.h",
+    ],
+}
+
+genrule {
+    name: "BluetoothCertFacadeGeneratedStub_cc",
+    tools: [
+        "aprotoc",
+        "protoc-gen-grpc-cpp-plugin",
+    ],
+    cmd: "$(location aprotoc) -Isystem/bt/gd -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-cpp-plugin) $(in) --grpc_out=$(genDir) --cpp_out=$(genDir)",
+    srcs: [
+        ":BluetoothCertFacadeProto",
+    ],
+    out: [
+        "hal/facade/api.grpc.pb.cc",
+        "hal/facade/api.pb.cc",
+    ],
+}
+
+genrule {
+    name: "BluetoothCertFacadeGeneratedStub_py",
+    tools: [
+        "aprotoc",
+        "protoc-gen-grpc-python-plugin",
+    ],
+    cmd: "$(location aprotoc) -Isystem/bt/gd -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-python-plugin) $(in) --grpc_out=$(genDir) --python_out=$(genDir); " +
+        "touch $(genDir)/__init__.py; " +
+        "touch $(genDir)/hal/__init__.py; " +
+        "touch $(genDir)/hal/facade/__init__.py; ",
+    srcs: [
+        ":BluetoothCertFacadeProto",
+    ],
+    out: [
+        "__init__.py",
+        "hal/__init__.py",
+        "hal/facade/__init__.py",
+        "hal/facade/api_pb2_grpc.py",
+        "hal/facade/api_pb2.py",
     ],
 }
