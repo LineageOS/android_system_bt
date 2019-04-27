@@ -24,6 +24,9 @@ cc_defaults {
         "-fvisibility=hidden",
         "-DLOG_NDEBUG=1",
         "-DGOOGLE_PROTOBUF_NO_RTTI",
+        "-Wno-unused-parameter",
+        "-Wno-implicit-fallthrough",
+        "-Wno-unused-result",
     ],
     conlyflags: [
         "-std=c99",
@@ -99,6 +102,7 @@ cc_library {
     },
     srcs: [
         "stack_manager.cc",
+        "module.cc",
         ":BluetoothCommonSources",
         ":BluetoothHalSources",
         ":BluetoothPacketSources",
@@ -115,9 +119,8 @@ cc_binary {
     ],
     host_supported: true,
     srcs: [
-        "stack_manager.cc",
         "facade/stack_with_grpc_main.cc",
-        "facade/facade_manager.cc",
+        "grpc/grpc_module.cc",
         ":BluetoothCertFacade_hci_hal",
     ],
     generated_headers: [
@@ -145,11 +148,6 @@ cc_binary {
             ],
         },
     },
-    cflags: [
-        "-Wno-unused-parameter",
-        "-Wno-implicit-fallthrough",
-        "-Wno-unused-result",
-    ],
     sanitize: {
         address: true,
     },
@@ -181,11 +179,6 @@ cc_test {
     sanitize: {
         address: true,
     },
-    cflags: [
-        "-Wno-unused-parameter",
-        "-Wno-implicit-fallthrough",
-        "-Wno-unused-result",
-    ],
 }
 
 cc_test {
@@ -221,6 +214,7 @@ cc_test {
         },
     },
     srcs: [
+        "module_unittest.cc",
         ":BluetoothCommonTestSources",
         ":BluetoothHciTestSources",
         ":BluetoothL2capTestSources",

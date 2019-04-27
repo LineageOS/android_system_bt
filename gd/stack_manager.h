@@ -16,23 +16,26 @@
 
 #pragma once
 
+#include "module.h"
+#include "os/thread.h"
+#include "os/handler.h"
+
 namespace bluetooth {
 
 class StackManager {
  public:
-  static StackManager* Get() {
-    static StackManager instance;
-    return &instance;
-  }
-
-  // Start up the stack, init HCI HAL
-  void StartUp();
-
-  // Shut down the stack, close HCI HAL
+  void StartUp(ModuleList *modules);
   void ShutDown();
 
+  template <class T>
+  T* GetInstance() const {
+    return registry_.GetInstance<T>();
+  }
+
  private:
-  StackManager() = default;
+  os::Thread* management_thread_;
+  os::Handler* handler_;
+  ModuleRegistry registry_;
 };
 
 }  // namespace bluetooth
