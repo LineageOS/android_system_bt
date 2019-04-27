@@ -14,26 +14,33 @@
  * limitations under the License.
  */
 
-#include "facade/facade_manager.h"
+#include "grpc/grpc_module.h"
 #include "hal/hci_hal_host_rootcanal.h"
+#include "hal/facade/facade.h"
 
 #include <csignal>
 #include <string>
 #include <thread>
 
-using ::bluetooth::facade::FacadeConfig;
-using ::bluetooth::facade::FacadeManager;
+#include "stack_manager.h"
+
 using ::bluetooth::hal::HciHalHostRootcanalConfig;
+using ::bluetooth::StackManager;
+using ::bluetooth::grpc::GrpcModule;
+using ::bluetooth::ModuleList;
 
 namespace {
+static StackManager* stack;
+
 void interrupt_handler(int) {
-  FacadeManager::Get()->ShutDown();
+  stack->GetInstance<GrpcModule>()->StopServer();
 }
 }  // namespace
 
 // The entry point for the binary with libbluetooth + facades
 int main(int argc, const char** argv) {
-  signal(SIGINT, interrupt_handler);
+
+  int port = 8899;
 
   const std::string arg_grpc_port = "--port=";
   const std::string arg_rootcanal_port = "--rootcanal-port=";
@@ -41,7 +48,7 @@ int main(int argc, const char** argv) {
     std::string arg = argv[i];
     if (arg.find(arg_grpc_port) == 0) {
       auto port_number = arg.substr(arg_grpc_port.size());
-      FacadeConfig::Get()->SetGrpcPort(std::stoi(port_number));
+      port = std::stoi(port_number);
     }
     if (arg.find(arg_rootcanal_port) == 0) {
       auto port_number = arg.substr(arg_rootcanal_port.size());
@@ -49,13 +56,22 @@ int main(int argc, const char** argv) {
     }
   }
 
-  // TODO: This should be run-time configurable
-  FacadeManager::Get()->EnableModule(FacadeManager::Module::HciHal);
+  ModuleList modules;
+  modules.add<::bluetooth::hal::facade::HalFacadeModule>();
 
-  FacadeManager::Get()->StartUp();
-  auto wait_thread = std::thread([] { FacadeManager::Get()->GrpcMainLoop(); });
+  stack = new StackManager();
+  stack->StartUp(&modules);
+
+  GrpcModule* grpc_module = stack->GetInstance<GrpcModule>();
+  grpc_module->StartServer("0.0.0.0", port);
+
+  signal(SIGINT, interrupt_handler);
+  auto wait_thread = std::thread([grpc_module] { grpc_module->RunGrpcLoop(); });
   wait_thread.join();
-  FacadeManager::Get()->ShutDown();
+
+  grpc_module->StopServer();
+  stack->ShutDown();
+  delete stack;
 
   return 0;
 }

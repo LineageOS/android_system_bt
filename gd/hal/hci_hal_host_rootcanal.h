@@ -55,8 +55,5 @@ class HciHalHostRootcanalConfig {
   std::string server_address_ = "127.0.0.1";  // Default server address
 };
 
-// Destroy and construct a new rootcanal HAL to clear all internal states
-void ResetRootcanalHal();
-
 }  // namespace hal
 }  // namespace bluetooth
