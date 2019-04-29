@@ -37,7 +37,7 @@ class HciHalHidlTest : public ::testing::Test {
 };
 
 TEST_F(HciHalHidlTest, init_and_close) {
-  fake_registry_.Start<BluetoothHciHal>();
+  fake_registry_.Start<HciHal>();
   fake_registry_.StopAll();
 }
 }  // namespace
