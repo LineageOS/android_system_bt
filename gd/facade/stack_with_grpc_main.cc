@@ -28,6 +28,7 @@ using ::bluetooth::hal::HciHalHostRootcanalConfig;
 using ::bluetooth::StackManager;
 using ::bluetooth::grpc::GrpcModule;
 using ::bluetooth::ModuleList;
+using ::bluetooth::os::Thread;
 
 namespace {
 static StackManager* stack;
@@ -59,8 +60,9 @@ int main(int argc, const char** argv) {
   ModuleList modules;
   modules.add<::bluetooth::hal::facade::HalFacadeModule>();
 
+  Thread* stack_thread = new Thread("stack_thread", Thread::Priority::NORMAL);
   stack = new StackManager();
-  stack->StartUp(&modules);
+  stack->StartUp(&modules, stack_thread);
 
   GrpcModule* grpc_module = stack->GetInstance<GrpcModule>();
   grpc_module->StartServer("0.0.0.0", port);
