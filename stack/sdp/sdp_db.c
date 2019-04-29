@@ -129,7 +129,12 @@ static BOOLEAN find_uuid_in_seq (UINT8 *p , UINT32 seq_len, UINT8 *p_uuid,
     while (p < p_end)
     {
         type = *p++;
-        p = sdpu_get_len_from_type (p, type, &len);
+        p = sdpu_get_len_from_type(p, p_end, type, &len);
+        if (p == NULL || (p + len) > p_end)
+        {
+            SDP_TRACE_WARNING("%s: bad length", __func__);
+            break;
+        }
         type = type >> 3;
         if (type == UUID_DESC_TYPE)
         {
