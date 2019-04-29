@@ -1,19 +1,17 @@
 syntax = "proto3";
 
-package bluetooth.hal.facade;
+package bluetooth.hal;
 
 import "google/protobuf/empty.proto";
 import "facade/common.proto";
 
-// The HCI HAL transportation layer certification API surface definition
-
-service HciTransportation {
+service HciHalFacade {
   rpc SetLoopbackMode(LoopbackModeSettings) returns (google.protobuf.Empty) {}
-  rpc SendHciCommand(HciCmdPacket) returns (google.protobuf.Empty) {}
+  rpc SendHciCommand(HciCommandPacket) returns (google.protobuf.Empty) {}
   rpc SendHciAcl(HciAclPacket) returns (google.protobuf.Empty) {}
   rpc SendHciSco(HciScoPacket) returns (google.protobuf.Empty) {}
 
-  rpc FetchHciEvent(bluetooth.facade.EventStreamRequest) returns (stream HciEvtPacket) {}
+  rpc FetchHciEvent(bluetooth.facade.EventStreamRequest) returns (stream HciEventPacket) {}
   rpc FetchHciAcl(bluetooth.facade.EventStreamRequest) returns (stream HciAclPacket) {}
   rpc FetchHciSco(bluetooth.facade.EventStreamRequest) returns (stream HciScoPacket) {}
 }
@@ -22,11 +20,11 @@ message LoopbackModeSettings {
   bool enable = 1;
 }
 
-message HciEvtPacket {
+message HciEventPacket {
   bytes payload = 1;
 }
 
-message HciCmdPacket {
+message HciCommandPacket {
   bytes payload = 1;
 }
 
