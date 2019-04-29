@@ -39,10 +39,3 @@ filegroup {
         "facade/facade.cc",
     ],
 }
-
-filegroup {
-    name: "BluetoothCertCppClient_hci_hal",
-    srcs: [
-        "cert/simple_hal_test.cc",
-    ],
-}

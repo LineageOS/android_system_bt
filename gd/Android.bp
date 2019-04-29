@@ -154,34 +154,6 @@ cc_binary {
 }
 
 cc_test {
-    name: "bluetooth_cert_test",
-    defaults: [
-        "gd_defaults",
-    ],
-    host_supported: true,
-    srcs: [
-        ":BluetoothCertCppClient_hci_hal",
-    ],
-    static_libs : [
-        "libbluetooth_gd",
-    ],
-    shared_libs: [
-        "libgrpc++_unsecure",
-        "libprotobuf-cpp-full",
-    ],
-    generated_headers: [
-        "BluetoothGeneratedPackets_h",
-        "BluetoothCertFacadeGeneratedStub_h",
-    ],
-    generated_sources: [
-        "BluetoothCertFacadeGeneratedStub_cc",
-    ],
-    sanitize: {
-        address: true,
-    },
-}
-
-cc_test {
     name: "bluetooth_test_gd",
     test_suites: ["device-tests"],
     defaults: [
@@ -285,6 +257,7 @@ genrule {
 filegroup {
     name: "BluetoothCertFacadeProto",
     srcs: [
+        "facade/common.proto",
         "hal/facade/api.proto",
     ],
 }
@@ -300,6 +273,8 @@ genrule {
         ":BluetoothCertFacadeProto",
     ],
     out: [
+        "facade/common.grpc.pb.h",
+        "facade/common.pb.h",
         "hal/facade/api.grpc.pb.h",
         "hal/facade/api.pb.h",
     ],
@@ -316,6 +291,8 @@ genrule {
         ":BluetoothCertFacadeProto",
     ],
     out: [
+        "facade/common.grpc.pb.cc",
+        "facade/common.pb.cc",
         "hal/facade/api.grpc.pb.cc",
         "hal/facade/api.pb.cc",
     ],
@@ -329,6 +306,7 @@ genrule {
     ],
     cmd: "$(location aprotoc) -Isystem/bt/gd -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-python-plugin) $(in) --grpc_out=$(genDir) --python_out=$(genDir); " +
         "touch $(genDir)/__init__.py; " +
+        "touch $(genDir)/facade/__init__.py; " +
         "touch $(genDir)/hal/__init__.py; " +
         "touch $(genDir)/hal/facade/__init__.py; ",
     srcs: [
@@ -336,6 +314,9 @@ genrule {
     ],
     out: [
         "__init__.py",
+        "facade/__init__.py",
+        "facade/common_pb2_grpc.py",
+        "facade/common_pb2.py",
         "hal/__init__.py",
         "hal/facade/__init__.py",
         "hal/facade/api_pb2_grpc.py",
