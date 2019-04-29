@@ -218,6 +218,8 @@ class HearingAidImpl : public HearingAid {
  private:
   // Keep track of whether the Audio Service has resumed audio playback
   bool audio_running;
+  // For Testing: overwrite the MIN_CE_LEN during connection parameter updates
+  uint16_t overwrite_min_ce_len;
 
  public:
   virtual ~HearingAidImpl() = default;
@@ -225,6 +227,7 @@ class HearingAidImpl : public HearingAid {
   HearingAidImpl(bluetooth::hearing_aid::HearingAidCallbacks* callbacks,
                  Closure initCb)
       : audio_running(false),
+        overwrite_min_ce_len(0),
         gatt_if(0),
         seq_counter(0),
         current_volume(VOLUME_UNKNOWN),
@@ -241,6 +244,13 @@ class HearingAidImpl : public HearingAid {
     }
     VLOG(2) << __func__
             << ", default_data_interval_ms=" << default_data_interval_ms;
+
+    overwrite_min_ce_len = (uint16_t)osi_property_get_int32(
+        "persist.bluetooth.hearingaidmincelen", 0);
+    if (overwrite_min_ce_len) {
+      LOG(INFO) << __func__
+                << ": Overwrites MIN_CE_LEN=" << overwrite_min_ce_len;
+    }
 
     BTA_GATTC_AppRegister(
         hearingaid_gattc_callback,
@@ -276,6 +286,12 @@ class HearingAidImpl : public HearingAid {
                    << default_data_interval_ms;
         min_ce_len = MIN_CE_LEN_10MS_CI;
         connection_interval = CONNECTION_INTERVAL_10MS_PARAM;
+    }
+
+    if (overwrite_min_ce_len != 0) {
+      VLOG(2) << __func__ << ": min_ce_len=" << min_ce_len
+              << " is overwritten to " << overwrite_min_ce_len;
+      min_ce_len = overwrite_min_ce_len;
     }
 
     L2CA_UpdateBleConnParams(address, connection_interval, connection_interval,
