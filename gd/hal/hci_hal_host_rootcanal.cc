@@ -124,7 +124,7 @@ class HciHalHostRootcanal : public HciHal {
     // We have no dependencies
   }
 
-  void Start(const ModuleRegistry* registry) override {
+  void Start() override {
     std::lock_guard<std::mutex> lock(mutex_);
     ASSERT(sock_fd_ == INVALID_FD);
     sock_fd_ = ConnectToRootCanal(config_->GetServerAddress(), config_->GetPort());
@@ -135,7 +135,7 @@ class HciHalHostRootcanal : public HciHal {
     LOG_INFO("Rootcanal HAL opened successfully");
   }
 
-  void Stop(const ModuleRegistry* registry) override {
+  void Stop() override {
     std::lock_guard<std::mutex> lock(mutex_);
     delete btsnoop_logger_;
     btsnoop_logger_ = nullptr;

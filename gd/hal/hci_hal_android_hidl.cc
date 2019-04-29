@@ -139,7 +139,7 @@ class HciHalHidl : public HciHal {
     // We have no dependencies
   }
 
-  void Start(const ModuleRegistry* registry) override {
+  void Start() override {
     btsnoop_logger_ = new SnoopLogger(kDefaultBtsnoopPath);
     bt_hci_ = IBluetoothHci::getService();
     ASSERT(bt_hci_ != nullptr);
@@ -154,7 +154,7 @@ class HciHalHidl : public HciHal {
     }
   }
 
-  void Stop(const ModuleRegistry* registry) override {
+  void Stop() override {
     ASSERT(bt_hci_ != nullptr);
     auto death_unlink = bt_hci_->unlinkToDeath(hci_death_recipient_);
     if (!death_unlink.isOk()) {

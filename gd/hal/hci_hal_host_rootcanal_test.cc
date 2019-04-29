@@ -139,8 +139,7 @@ class HciHalRootcanalTest : public ::testing::Test {
 
     HciHalHostRootcanalConfig::Get()->SetPort(kTestPort);
     fake_server_ = new FakeRootcanalDesktopHciServer;
-    fake_registry_.Start<HciHal>(thread_);
-    hal_ = fake_registry_.GetInstance<HciHal>();
+    hal_ = fake_registry_.Start<HciHal>(thread_);
     hal_->registerIncomingPacketCallback(&callbacks_);
     fake_server_socket_ = fake_server_->Accept();  // accept() after client is connected to avoid blocking
     std::queue<std::pair<uint8_t, HciPacket>> empty;
