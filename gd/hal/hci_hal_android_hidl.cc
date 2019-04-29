@@ -24,7 +24,7 @@
 #include <android/hardware/bluetooth/1.0/IBluetoothHciCallbacks.h>
 #include <android/hardware/bluetooth/1.0/types.h>
 
-#include "hal/bluetooth_snoop_logger.h"
+#include "hal/snoop_logger.h"
 #include "os/log.h"
 
 using ::android::hardware::hidl_vec;
@@ -39,7 +39,7 @@ namespace hal {
 namespace {
 constexpr char kDefaultBtsnoopPath[] = "/data/misc/bluetooth/logs/btsnoop_hci.log";
 
-class BluetoothHciDeathRecipient : public ::android::hardware::hidl_death_recipient {
+class HciDeathRecipient : public ::android::hardware::hidl_death_recipient {
  public:
   virtual void serviceDied(uint64_t /*cookie*/, const android::wp<::android::hidl::base::V1_0::IBase>& /*who*/) {
     LOG_ERROR("Bluetooth HAL service died!");
@@ -47,16 +47,16 @@ class BluetoothHciDeathRecipient : public ::android::hardware::hidl_death_recipi
   }
 };
 
-android::sp<BluetoothHciDeathRecipient> bluetooth_hci_death_recipient_ = new BluetoothHciDeathRecipient();
+android::sp<HciDeathRecipient> hci_death_recipient_ = new HciDeathRecipient();
 
-class HciHalBluetoothHciCallbacks : public IBluetoothHciCallbacks {
+class InternalHciCallbacks : public IBluetoothHciCallbacks {
  public:
-  HciHalBluetoothHciCallbacks(BluetoothSnoopLogger* btsnoop_logger)
+  InternalHciCallbacks(SnoopLogger* btsnoop_logger)
       : btsnoop_logger_(btsnoop_logger) {
     init_promise_ = new std::promise<void>();
   }
 
-  void SetCallback(BluetoothHciHalCallbacks* callback) {
+  void SetCallback(HciHalCallbacks* callback) {
     ASSERT(callback_ == nullptr && callback != nullptr);
     callback_ = callback;
   }
@@ -77,8 +77,8 @@ class HciHalBluetoothHciCallbacks : public IBluetoothHciCallbacks {
 
   Return<void> hciEventReceived(const hidl_vec<uint8_t>& event) {
     std::vector<uint8_t> received_hci_packet(event.begin(), event.end());
-    btsnoop_logger_->capture(received_hci_packet, BluetoothSnoopLogger::Direction::INCOMING,
-                             BluetoothSnoopLogger::PacketType::EVT);
+    btsnoop_logger_->capture(received_hci_packet, SnoopLogger::Direction::INCOMING,
+                             SnoopLogger::PacketType::EVT);
     if (callback_ != nullptr) {
       callback_->hciEventReceived(std::move(received_hci_packet));
     }
@@ -87,8 +87,8 @@ class HciHalBluetoothHciCallbacks : public IBluetoothHciCallbacks {
 
   Return<void> aclDataReceived(const hidl_vec<uint8_t>& data) {
     std::vector<uint8_t> received_hci_packet(data.begin(), data.end());
-    btsnoop_logger_->capture(received_hci_packet, BluetoothSnoopLogger::Direction::INCOMING,
-                             BluetoothSnoopLogger::PacketType::ACL);
+    btsnoop_logger_->capture(received_hci_packet, SnoopLogger::Direction::INCOMING,
+                             SnoopLogger::PacketType::ACL);
     if (callback_ != nullptr) {
       callback_->aclDataReceived(std::move(received_hci_packet));
     }
@@ -97,8 +97,8 @@ class HciHalBluetoothHciCallbacks : public IBluetoothHciCallbacks {
 
   Return<void> scoDataReceived(const hidl_vec<uint8_t>& data) {
     std::vector<uint8_t> received_hci_packet(data.begin(), data.end());
-    btsnoop_logger_->capture(received_hci_packet, BluetoothSnoopLogger::Direction::INCOMING,
-                             BluetoothSnoopLogger::PacketType::SCO);
+    btsnoop_logger_->capture(received_hci_packet, SnoopLogger::Direction::INCOMING,
+                             SnoopLogger::PacketType::SCO);
     if (callback_ != nullptr) {
       callback_->scoDataReceived(std::move(received_hci_packet));
     }
@@ -107,30 +107,30 @@ class HciHalBluetoothHciCallbacks : public IBluetoothHciCallbacks {
 
  private:
   std::promise<void>* init_promise_ = nullptr;
-  BluetoothHciHalCallbacks* callback_ = nullptr;
-  BluetoothSnoopLogger* btsnoop_logger_ = nullptr;
+  HciHalCallbacks* callback_ = nullptr;
+  SnoopLogger* btsnoop_logger_ = nullptr;
 };
 
 }  // namespace
 
-class BluetoothHciHalHidl : public BluetoothHciHal {
+class HciHalHidl : public HciHal {
  public:
-  void registerIncomingPacketCallback(BluetoothHciHalCallbacks* callback) override {
+  void registerIncomingPacketCallback(HciHalCallbacks* callback) override {
     callbacks_->SetCallback(callback);
   }
 
   void sendHciCommand(HciPacket command) override {
-    btsnoop_logger_->capture(command, BluetoothSnoopLogger::Direction::OUTGOING, BluetoothSnoopLogger::PacketType::CMD);
+    btsnoop_logger_->capture(command, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::CMD);
     bt_hci_->sendHciCommand(command);
   }
 
   void sendAclData(HciPacket packet) override {
-    btsnoop_logger_->capture(packet, BluetoothSnoopLogger::Direction::OUTGOING, BluetoothSnoopLogger::PacketType::ACL);
+    btsnoop_logger_->capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::ACL);
     bt_hci_->sendAclData(packet);
   }
 
   void sendScoData(HciPacket packet) override {
-    btsnoop_logger_->capture(packet, BluetoothSnoopLogger::Direction::OUTGOING, BluetoothSnoopLogger::PacketType::SCO);
+    btsnoop_logger_->capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::SCO);
     bt_hci_->sendScoData(packet);
   }
 
@@ -140,14 +140,14 @@ class BluetoothHciHalHidl : public BluetoothHciHal {
   }
 
   void Start(const ModuleRegistry* registry) override {
-    btsnoop_logger_ = new BluetoothSnoopLogger(kDefaultBtsnoopPath);
+    btsnoop_logger_ = new SnoopLogger(kDefaultBtsnoopPath);
     bt_hci_ = IBluetoothHci::getService();
     ASSERT(bt_hci_ != nullptr);
-    auto death_link = bt_hci_->linkToDeath(bluetooth_hci_death_recipient_, 0);
+    auto death_link = bt_hci_->linkToDeath(hci_death_recipient_, 0);
     ASSERT_LOG(death_link.isOk(), "Unable to set the death recipient for the Bluetooth HAL");
     // Block allows allocation of a variable that might be bypassed by goto.
     {
-      callbacks_ = new HciHalBluetoothHciCallbacks(btsnoop_logger_);
+      callbacks_ = new InternalHciCallbacks(btsnoop_logger_);
       bt_hci_->initialize(callbacks_);
       // Don't timeout here, time out at a higher layer
       callbacks_->GetInitPromise()->get_future().wait();
@@ -156,7 +156,7 @@ class BluetoothHciHalHidl : public BluetoothHciHal {
 
   void Stop(const ModuleRegistry* registry) override {
     ASSERT(bt_hci_ != nullptr);
-    auto death_unlink = bt_hci_->unlinkToDeath(bluetooth_hci_death_recipient_);
+    auto death_unlink = bt_hci_->unlinkToDeath(hci_death_recipient_);
     if (!death_unlink.isOk()) {
       LOG_ERROR("Error unlinking death recipient from the Bluetooth HAL");
     }
@@ -168,13 +168,13 @@ class BluetoothHciHalHidl : public BluetoothHciHal {
   }
 
  private:
-  android::sp<HciHalBluetoothHciCallbacks> callbacks_;
+  android::sp<InternalHciCallbacks> callbacks_;
   android::sp<IBluetoothHci> bt_hci_;
-  BluetoothSnoopLogger* btsnoop_logger_;
+  SnoopLogger* btsnoop_logger_;
 };
 
-const ModuleFactory BluetoothHciHal::Factory = ModuleFactory([]() {
-  return new BluetoothHciHalHidl();
+const ModuleFactory HciHal::Factory = ModuleFactory([]() {
+  return new HciHalHidl();
 });
 
 }  // namespace hal
