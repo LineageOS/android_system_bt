@@ -50,6 +50,7 @@ void GrpcModule::StartServer(const std::string& address, int port) {
   builder.AddListeningPort(listening_port, ::grpc::InsecureServerCredentials());
   completion_queue_ = builder.AddCompletionQueue();
   server_ = builder.BuildAndStart();
+  ASSERT(server_ != nullptr);
 
   for (const auto& facade : facades_) {
     facade->OnServerStarted(completion_queue_.get());
