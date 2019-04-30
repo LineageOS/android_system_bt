@@ -37,9 +37,9 @@ namespace facade {
 
 class HciTransportationService
     : public HciTransportation::Service,
-      public ::bluetooth::hal::BluetoothHciHalCallbacks {
+      public ::bluetooth::hal::HciHalCallbacks {
  public:
-  HciTransportationService(BluetoothHciHal* hal) : hal_(hal) {
+  HciTransportationService(HciHal* hal) : hal_(hal) {
   }
 
   ::grpc::Status SetLoopbackMode(::grpc::ServerContext* context,
@@ -88,17 +88,17 @@ class HciTransportationService
     // TODO
   }
  private:
-  BluetoothHciHal* hal_;
+  HciHal* hal_;
 };
 
 void HalFacadeModule::ListDependencies(ModuleList* list) {
   ::bluetooth::grpc::GrpcFacadeModule::ListDependencies(list);
-  list->add<BluetoothHciHal>();
+  list->add<HciHal>();
 }
 
 void HalFacadeModule::Start(const ModuleRegistry* registry) {
   ::bluetooth::grpc::GrpcFacadeModule::Start(registry);
-  auto hal = registry->GetInstance<BluetoothHciHal>();
+  auto hal = registry->GetInstance<HciHal>();
 
   service_ = new HciTransportationService(hal);
   hal->registerIncomingPacketCallback(service_);

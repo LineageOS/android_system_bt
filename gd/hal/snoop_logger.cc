@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "hal/bluetooth_snoop_logger.h"
+#include "hal/snoop_logger.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -67,7 +67,7 @@ constexpr btsnoop_file_header_t BTSNOOP_FILE_HEADER = {
     .datalink_type = BTSNOOP_DATALINK_TYPE};
 }  // namespace
 
-BluetoothSnoopLogger::BluetoothSnoopLogger(const std::string& filename) {
+SnoopLogger::SnoopLogger(const std::string& filename) {
   {
     std::ifstream btsnoop_istream(filename);
     file_exists_ = btsnoop_istream.is_open();
@@ -81,7 +81,7 @@ BluetoothSnoopLogger::BluetoothSnoopLogger(const std::string& filename) {
   }
 }
 
-void BluetoothSnoopLogger::capture(const HciPacket& packet, Direction direction, PacketType type) {
+void SnoopLogger::capture(const HciPacket& packet, Direction direction, PacketType type) {
   uint64_t timestamp_us =
       std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch())
           .count();
