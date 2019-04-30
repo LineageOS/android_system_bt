@@ -125,6 +125,44 @@ TEST(GeneratedPacketTest, testChild) {
   ASSERT_EQ(field_name, child_view.GetFieldName());
 }
 
+TEST(GeneratedPacketTest, testValidateWayTooSmall) {
+  std::vector<uint8_t> too_small_bytes = {0x34};
+  auto too_small = std::make_shared<std::vector<uint8_t>>(too_small_bytes.begin(), too_small_bytes.end());
+
+  ParentWithAddressView invalid_parent = ParentWithAddressView::Create(too_small);
+  ASSERT_FALSE(invalid_parent.IsValid());
+  ChildWithAddressView invalid = ChildWithAddressView::Create(ParentWithAddressView::Create(too_small));
+  ASSERT_FALSE(invalid.IsValid());
+}
+
+TEST(GeneratedPacketTest, testValidateTooSmall) {
+  std::vector<uint8_t> too_small_bytes = {0x34, 0x12, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x11};
+  auto too_small = std::make_shared<std::vector<uint8_t>>(too_small_bytes.begin(), too_small_bytes.end());
+
+  ParentWithAddressView valid_parent = ParentWithAddressView::Create(too_small);
+  ASSERT_TRUE(valid_parent.IsValid());
+  ChildWithAddressView invalid = ChildWithAddressView::Create(ParentWithAddressView::Create(too_small));
+  ASSERT_FALSE(invalid.IsValid());
+}
+
+TEST(GeneratedPacketTest, testValidateJustRight) {
+  std::vector<uint8_t> just_right_bytes = {0x34, 0x12, 0x01, 0x02, 0x03, 0x04, 0x05,
+                                           0x06, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16};
+  auto just_right = std::make_shared<std::vector<uint8_t>>(just_right_bytes.begin(), just_right_bytes.end());
+
+  ChildWithAddressView valid = ChildWithAddressView::Create(ParentWithAddressView::Create(just_right));
+  ASSERT_TRUE(valid.IsValid());
+}
+
+TEST(GeneratedPacketTest, testValidateTooBig) {
+  std::vector<uint8_t> too_big_bytes = {0x34, 0x12, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
+                                        0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x20};
+  auto too_big = std::make_shared<std::vector<uint8_t>>(too_big_bytes.begin(), too_big_bytes.end());
+
+  ChildWithAddressView lenient = ChildWithAddressView::Create(ParentWithAddressView::Create(too_big));
+  ASSERT_TRUE(lenient.IsValid());
+}
+
 TEST(GeneratedPacketTest, testValidateDeath) {
   auto packet = ChildTwoTwoThreeBuilder::Create();
 

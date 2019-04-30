@@ -398,20 +398,6 @@ void PacketDef::GenValidator(std::ostream& s) const {
 
   s << "protected:";
   s << "virtual bool IsValid_() const {";
-  if (parent_constraints_.size() > 0 && parent_ == nullptr) {
-    ERROR() << "Can't have a constraint on a NULL parent";
-  }
-
-  for (const auto& constraint : parent_constraints_) {
-    s << "if (Get" << util::UnderscoreToCamelCase(constraint.first) << "() != ";
-    const auto& field = parent_->GetParamList().GetField(constraint.first);
-    if (field->GetFieldType() == PacketField::Type::SCALAR) {
-      s << std::get<int64_t>(constraint.second);
-    } else {
-      s << std::get<std::string>(constraint.second);
-    }
-    s << ") return false;";
-  }
 
   // Offset by the parents known size. We know that any dynamic fields can
   // already be called since the parent must have already been validated by
@@ -514,6 +500,23 @@ void PacketDef::GenValidator(std::ostream& s) const {
     }
   }
 
+  // Validate constraints after validating the size
+  if (parent_constraints_.size() > 0 && parent_ == nullptr) {
+    ERROR() << "Can't have a constraint on a NULL parent";
+  }
+
+  for (const auto& constraint : parent_constraints_) {
+    s << "if (Get" << util::UnderscoreToCamelCase(constraint.first) << "() != ";
+    const auto& field = parent_->GetParamList().GetField(constraint.first);
+    if (field->GetFieldType() == PacketField::Type::SCALAR) {
+      s << std::get<int64_t>(constraint.second);
+    } else {
+      s << std::get<std::string>(constraint.second);
+    }
+    s << ") return false;";
+  }
+
+  // Validate the packets fields last
   for (const auto& field : fields_) {
     field->GenValidator(s);
     s << "\n";
