@@ -21,6 +21,8 @@
 #include <map>
 
 #include "os/log.h"
+#include "os/handler.h"
+#include "os/thread.h"
 
 namespace bluetooth {
 
@@ -53,7 +55,7 @@ class ModuleList {
 // static const ModuleFactory Factory;
 //
 // which will provide a constructor for the module registry to call.
-// The module registry will also use the Factory as the identifier
+// The module registry will also use the factory as the identifier
 // for that module.
 class Module {
  friend ModuleRegistry;
@@ -68,6 +70,11 @@ class Module {
 
   // Release all resources, you're about to be deleted
   virtual void Stop(const ModuleRegistry* registry) = 0;
+
+  ::bluetooth::os::Handler* GetHandler();
+
+ private:
+  ::bluetooth::os::Handler* handler_;
 };
 
 class ModuleRegistry {
@@ -88,14 +95,14 @@ class ModuleRegistry {
 
   // Start all the modules on this list and their dependencies
   // in dependency order
-  void Start(ModuleList* modules);
+  void Start(ModuleList* modules, ::bluetooth::os::Thread* thread);
 
   template <class T>
-  void Start() {
-    Start(&T::Factory);
+  void Start(::bluetooth::os::Thread* thread) {
+    Start(&T::Factory, thread);
   }
 
-  void Start(const ModuleFactory* id);
+  void Start(const ModuleFactory* id, ::bluetooth::os::Thread* thread);
 
   // Stop all running modules in reverse order of start
   void StopAll();
