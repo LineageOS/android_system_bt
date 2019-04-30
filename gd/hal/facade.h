@@ -26,26 +26,24 @@
 
 namespace bluetooth {
 namespace hal {
-namespace facade {
 
-class HciTransportationService;
+class HciHalFacadeService;
 
-class HalFacadeModule : public ::bluetooth::grpc::GrpcFacadeModule {
+class HciHalFacadeModule : public ::bluetooth::grpc::GrpcFacadeModule {
  public:
   static const ModuleFactory Factory;
 
   void ListDependencies(ModuleList* list) override;
 
-  void Start(const ModuleRegistry* registry) override;
-  void Stop(const ModuleRegistry* registry) override;
+  void Start() override;
+  void Stop() override;
 
   ::grpc::Service* GetService() const override;
 
  private:
-  HciTransportationService* service_;
+  HciHalFacadeService* service_;
   friend class IncomingPacketCallback;
 };
 
-}  // namespace facade
 }  // namespace hal
 }  // namespace bluetooth

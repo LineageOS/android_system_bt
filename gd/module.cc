@@ -28,8 +28,28 @@ Handler* Module::GetHandler() {
   return handler_;
 }
 
-bool ModuleRegistry::IsStarted(const ModuleFactory* factory) const {
-  return started_modules_.find(factory) != started_modules_.end();
+ModuleRegistry* Module::GetModuleRegistry() {
+  return registry_;
+}
+
+Module* Module::GetDependency(const ModuleFactory* module) const {
+  for (auto& dependency : dependencies_.list_) {
+    if (dependency == module) {
+      return registry_->Get(module);
+    }
+  }
+
+  ASSERT_LOG(false, "Module was not listed as a dependency in ListDependencies");
+}
+
+Module* ModuleRegistry::Get(const ModuleFactory* module) const {
+  auto instance = started_modules_.find(module);
+  ASSERT(instance != started_modules_.end());
+  return instance->second;
+}
+
+bool ModuleRegistry::IsStarted(const ModuleFactory* module) const {
+  return started_modules_.find(module) != started_modules_.end();
 }
 
 void ModuleRegistry::Start(ModuleList* modules, Thread* thread) {
@@ -38,21 +58,23 @@ void ModuleRegistry::Start(ModuleList* modules, Thread* thread) {
   }
 }
 
-void ModuleRegistry::Start(const ModuleFactory* module, Thread* thread) {
-  if (IsStarted(module)) {
-    return;
+Module* ModuleRegistry::Start(const ModuleFactory* module, Thread* thread) {
+  auto started_instance = started_modules_.find(module);
+  if (started_instance != started_modules_.end()) {
+    return started_instance->second;
   }
 
   Module* instance = module->ctor_();
+  instance->registry_ = this;
   instance->handler_ = new Handler(thread);
+  instance->ListDependencies(&instance->dependencies_);
 
-  ModuleList dependencies;
-  instance->ListDependencies(&dependencies);
-  Start(&dependencies, thread);
+  Start(&instance->dependencies_, thread);
 
-  instance->Start(this);
+  instance->Start();
   start_order_.push_back(module);
   started_modules_[module] = instance;
+  return instance;
 }
 
 void ModuleRegistry::StopAll() {
@@ -61,7 +83,8 @@ void ModuleRegistry::StopAll() {
   for (auto it = start_order_.rbegin(); it != start_order_.rend(); it++) {
     auto instance = started_modules_.find(*it);
     ASSERT(instance != started_modules_.end());
-    instance->second->Stop(this);
+
+    instance->second->Stop();
 
     delete instance->second->handler_;
     delete instance->second;
