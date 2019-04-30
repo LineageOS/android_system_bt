@@ -16,7 +16,7 @@
 
 #include "grpc/grpc_module.h"
 #include "hal/hci_hal_host_rootcanal.h"
-#include "hal/facade/facade.h"
+#include "hal/facade.h"
 
 #include <csignal>
 #include <string>
@@ -58,7 +58,7 @@ int main(int argc, const char** argv) {
   }
 
   ModuleList modules;
-  modules.add<::bluetooth::hal::facade::HalFacadeModule>();
+  modules.add<::bluetooth::hal::HciHalFacadeModule>();
 
   Thread* stack_thread = new Thread("stack_thread", Thread::Priority::NORMAL);
   stack = new StackManager();
