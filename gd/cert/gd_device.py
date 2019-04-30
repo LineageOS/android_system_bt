@@ -35,8 +35,7 @@ from acts.libs.proc import job
 
 import grpc
 
-from hal.facade import api_pb2
-from hal.facade import api_pb2_grpc
+from hal import facade_pb2_grpc as hal_facade_pb2_grpc
 
 ANDROID_BUILD_TOP = os.environ.get('ANDROID_BUILD_TOP')
 ANDROID_HOST_OUT = os.environ.get('ANDROID_HOST_OUT')
@@ -112,7 +111,7 @@ class GdDevice:
             stderr=self.backing_process_logs)
 
         self.grpc_channel = grpc.insecure_channel("localhost:" + grpc_port)
-        self.hal = api_pb2_grpc.HciTransportationStub(self.grpc_channel)
+        self.hal = hal_facade_pb2_grpc.HciHalFacadeStub(self.grpc_channel)
 
     def clean_up(self):
         self.grpc_channel.close()
