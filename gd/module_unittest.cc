@@ -18,20 +18,25 @@
 
 #include "gtest/gtest.h"
 
+using ::bluetooth::os::Thread;
+
 namespace bluetooth {
 namespace {
 
 class ModuleTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    thread_ = new Thread("test_thread", Thread::Priority::NORMAL);
     registry_ = new ModuleRegistry();
   }
 
   void TearDown() override {
     delete registry_;
+    delete thread_;
   }
 
   ModuleRegistry* registry_;
+  Thread* thread_;
 };
 
 class TestModuleNoDependency : public Module {
@@ -143,7 +148,7 @@ const ModuleFactory TestModuleTwoDependencies::Factory = ModuleFactory([]() {
 TEST_F(ModuleTest, no_dependency) {
   ModuleList list;
   list.add<TestModuleNoDependency>();
-  registry_->Start(&list);
+  registry_->Start(&list, thread_);
 
   EXPECT_TRUE(registry_->IsStarted<TestModuleNoDependency>());
   EXPECT_FALSE(registry_->IsStarted<TestModuleOneDependency>());
@@ -161,7 +166,7 @@ TEST_F(ModuleTest, no_dependency) {
 TEST_F(ModuleTest, one_dependency) {
   ModuleList list;
   list.add<TestModuleOneDependency>();
-  registry_->Start(&list);
+  registry_->Start(&list, thread_);
 
   EXPECT_TRUE(registry_->IsStarted<TestModuleNoDependency>());
   EXPECT_TRUE(registry_->IsStarted<TestModuleOneDependency>());
@@ -179,7 +184,7 @@ TEST_F(ModuleTest, one_dependency) {
 TEST_F(ModuleTest, two_dependencies) {
   ModuleList list;
   list.add<TestModuleTwoDependencies>();
-  registry_->Start(&list);
+  registry_->Start(&list, thread_);
 
   EXPECT_TRUE(registry_->IsStarted<TestModuleNoDependency>());
   EXPECT_TRUE(registry_->IsStarted<TestModuleOneDependency>());
