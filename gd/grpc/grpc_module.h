@@ -45,9 +45,9 @@ class GrpcModule : public ::bluetooth::Module {
  protected:
   void ListDependencies(ModuleList* list) override;
 
-  void Start(const ModuleRegistry* registry) override;
+  void Start() override;
 
-  void Stop(const ModuleRegistry* registry) override;
+  void Stop() override;
 
  private:
   bool started_;
@@ -61,9 +61,9 @@ class GrpcFacadeModule : public ::bluetooth::Module {
  protected:
   void ListDependencies(ModuleList* list) override;
 
-  void Start(const ModuleRegistry* registry) override;
+  void Start() override;
 
-  void Stop(const ModuleRegistry* registry) override;
+  void Stop() override;
 
   virtual ::grpc::Service* GetService() const = 0;
 

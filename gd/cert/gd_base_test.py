@@ -24,7 +24,7 @@ import subprocess
 
 ANDROID_BUILD_TOP = os.environ.get('ANDROID_BUILD_TOP')
 
-sys.path.append(ANDROID_BUILD_TOP + '/out/soong/.intermediates/system/bt/gd/BluetoothCertFacadeGeneratedStub_py/gen')
+sys.path.append(ANDROID_BUILD_TOP + '/out/soong/.intermediates/system/bt/gd/BluetoothFacadeGeneratedStub_py/gen')
 
 ANDROID_HOST_OUT = os.environ.get('ANDROID_HOST_OUT')
 ROOTCANAL = ANDROID_HOST_OUT + "/nativetest64/root-canal/root-canal"
