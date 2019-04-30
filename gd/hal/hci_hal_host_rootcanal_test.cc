@@ -33,7 +33,10 @@
 #include <gtest/gtest.h>
 
 #include "os/log.h"
+#include "os/thread.h"
 #include "os/utils.h"
+
+using ::bluetooth::os::Thread;
 
 namespace bluetooth {
 namespace hal {
@@ -132,9 +135,11 @@ class FakeRootcanalDesktopHciServer {
 class HciHalRootcanalTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    thread_ = new Thread("test_thread", Thread::Priority::NORMAL);
+
     HciHalHostRootcanalConfig::Get()->SetPort(kTestPort);
     fake_server_ = new FakeRootcanalDesktopHciServer;
-    fake_registry_.Start<HciHal>();
+    fake_registry_.Start<HciHal>(thread_);
     hal_ = fake_registry_.GetInstance<HciHal>();
     hal_->registerIncomingPacketCallback(&callbacks_);
     fake_server_socket_ = fake_server_->Accept();  // accept() after client is connected to avoid blocking
@@ -146,6 +151,7 @@ class HciHalRootcanalTest : public ::testing::Test {
     fake_registry_.StopAll();
     close(fake_server_socket_);
     delete fake_server_;
+    delete thread_;
   }
 
   void SetFakeServerSocketToBlocking() {
@@ -159,6 +165,7 @@ class HciHalRootcanalTest : public ::testing::Test {
   ModuleRegistry fake_registry_;
   TestHciHalCallbacks callbacks_;
   int fake_server_socket_ = -1;
+  Thread* thread_;
 };
 
 void check_packet_equal(std::pair<uint8_t, HciPacket> hci_packet1_type_data_pair, H4Packet h4_packet2) {
