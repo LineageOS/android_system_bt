@@ -103,6 +103,8 @@ class GdDevice:
             log_path_base, 'GdDevice_%s_backing_logs.txt' % label)
         self.backing_process_logs = open(backing_process_logpath, 'w')
 
+        btsnoop_path = os.path.join(log_path_base, '%s_btsnoop_hci.log' % label)
+        cmd.append("--btsnoop=" + btsnoop_path)
         self.backing_process = subprocess.Popen(
             cmd,
             cwd=ANDROID_BUILD_TOP,
@@ -116,8 +118,12 @@ class GdDevice:
     def clean_up(self):
         self.grpc_channel.close()
         self.backing_process.send_signal(signal.SIGINT)
-        self.backing_process.wait()
+        backing_process_return_code = self.backing_process.wait()
         self.backing_process_logs.close()
+        if backing_process_return_code != 0:
+            logging.error("backing process stopped with code: %d" %
+                          backing_process_return_code)
+            return False
 
 class GdDeviceLoggerAdapter(logging.LoggerAdapter):
     def process(self, msg, kwargs):
