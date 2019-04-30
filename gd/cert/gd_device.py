@@ -117,6 +117,7 @@ class GdDevice:
     def clean_up(self):
         self.grpc_channel.close()
         self.backing_process.send_signal(signal.SIGINT)
+        self.backing_process.wait()
         self.backing_process_logs.close()
 
 class GdDeviceLoggerAdapter(logging.LoggerAdapter):

@@ -69,7 +69,6 @@ int main(int argc, const char** argv) {
   auto wait_thread = std::thread([grpc_module] { grpc_module->RunGrpcLoop(); });
   wait_thread.join();
 
-  grpc_module->StopServer();
   stack->ShutDown();
   delete stack;
 
