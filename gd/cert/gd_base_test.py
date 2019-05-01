@@ -17,6 +17,7 @@
 from acts.base_test import BaseTestClass
 
 import importlib
+import logging
 import os
 import signal
 import sys
@@ -63,6 +64,9 @@ class GdBaseTestClass(BaseTestClass):
     def teardown_class(self):
         self.unregister_controllers()
         self.rootcanal_process.send_signal(signal.SIGINT)
-        self.rootcanal_process.wait()
+        rootcanal_return_code = self.rootcanal_process.wait()
         self.rootcanal_logs.close()
-
+        if rootcanal_return_code != 0:
+            logging.error("rootcanal stopped with code: %d" %
+                          rootcanal_return_code)
+            return False
