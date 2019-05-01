@@ -305,6 +305,9 @@ void DualModeController::RegisterScoChannel(
 void DualModeController::HciReset(packets::PacketView<true> args) {
   CHECK(args.size() == 0) << __func__ << " size=" << args.size();
   link_layer_controller_.Reset();
+  if (loopback_mode_ == hci::LoopbackMode::LOCAL) {
+    loopback_mode_ = hci::LoopbackMode::NO;
+  }
 
   SendCommandCompleteSuccess(OpCode::RESET);
 }
