@@ -21,6 +21,8 @@
 #include <map>
 
 #include "os/log.h"
+#include "os/handler.h"
+#include "os/thread.h"
 
 namespace bluetooth {
 
@@ -38,6 +40,7 @@ class ModuleFactory {
 
 class ModuleList {
  friend ModuleRegistry;
+ friend Module;
  public:
   template <class T>
   void add() {
@@ -53,7 +56,7 @@ class ModuleList {
 // static const ModuleFactory Factory;
 //
 // which will provide a constructor for the module registry to call.
-// The module registry will also use the Factory as the identifier
+// The module registry will also use the factory as the identifier
 // for that module.
 class Module {
  friend ModuleRegistry;
@@ -63,22 +66,34 @@ class Module {
   // Populate the provided list with modules that must start before yours
   virtual void ListDependencies(ModuleList* list) = 0;
 
-  // You can grab your started dependencies from the registry in this call
-  virtual void Start(const ModuleRegistry* registry) = 0;
+  // You can grab your started dependencies during or after this call
+  // using GetDependency(), or access the module registry via GetModuleRegistry()
+  virtual void Start() = 0;
 
   // Release all resources, you're about to be deleted
-  virtual void Stop(const ModuleRegistry* registry) = 0;
+  virtual void Stop() = 0;
+
+  ::bluetooth::os::Handler* GetHandler();
+
+  ModuleRegistry* GetModuleRegistry();
+
+  template <class T>
+  T* GetDependency() const {
+    return static_cast<T*>(GetDependency(&T::Factory));
+  }
+
+ private:
+  Module* GetDependency(const ModuleFactory* module) const;
+
+  ::bluetooth::os::Handler* handler_;
+  ModuleList dependencies_;
+  ModuleRegistry* registry_;
 };
 
 class ModuleRegistry {
+ friend Module;
+ friend class StackManager;
  public:
-  template <class T>
-  T* GetInstance() const {
-    auto instance = started_modules_.find(&T::Factory);
-    ASSERT(instance != started_modules_.end());
-    return static_cast<T *>(instance->second);
-  };
-
   template <class T>
   bool IsStarted() const {
     return IsStarted(&T::Factory);
@@ -88,19 +103,21 @@ class ModuleRegistry {
 
   // Start all the modules on this list and their dependencies
   // in dependency order
-  void Start(ModuleList* modules);
+  void Start(ModuleList* modules, ::bluetooth::os::Thread* thread);
 
   template <class T>
-  void Start() {
-    Start(&T::Factory);
+  T* Start(::bluetooth::os::Thread* thread) {
+    return static_cast<T*>(Start(&T::Factory, thread));
   }
 
-  void Start(const ModuleFactory* id);
+  Module* Start(const ModuleFactory* id, ::bluetooth::os::Thread* thread);
 
   // Stop all running modules in reverse order of start
   void StopAll();
 
  private:
+  Module* Get(const ModuleFactory* module) const;
+
   std::map<const ModuleFactory*, Module*> started_modules_;
   std::vector<const ModuleFactory*> start_order_;
 };

@@ -24,12 +24,12 @@ namespace bluetooth {
 
 class StackManager {
  public:
-  void StartUp(ModuleList *modules);
+  void StartUp(ModuleList *modules, os::Thread* stack_thread);
   void ShutDown();
 
   template <class T>
   T* GetInstance() const {
-    return registry_.GetInstance<T>();
+    return static_cast<T*>(registry_.Get(&T::Factory));
   }
 
  private:

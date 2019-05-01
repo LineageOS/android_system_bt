@@ -33,7 +33,10 @@
 #include <gtest/gtest.h>
 
 #include "os/log.h"
+#include "os/thread.h"
 #include "os/utils.h"
+
+using ::bluetooth::os::Thread;
 
 namespace bluetooth {
 namespace hal {
@@ -50,7 +53,7 @@ using H4Packet = std::vector<uint8_t>;
 
 std::queue<std::pair<uint8_t, HciPacket>> incoming_packets_queue_;
 
-class TestBluetoothHciHalCallbacks : public BluetoothHciHalCallbacks {
+class TestHciHalCallbacks : public HciHalCallbacks {
  public:
   void hciEventReceived(HciPacket packet) override {
     incoming_packets_queue_.emplace(kH4Event, packet);
@@ -132,10 +135,11 @@ class FakeRootcanalDesktopHciServer {
 class HciHalRootcanalTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    thread_ = new Thread("test_thread", Thread::Priority::NORMAL);
+
     HciHalHostRootcanalConfig::Get()->SetPort(kTestPort);
     fake_server_ = new FakeRootcanalDesktopHciServer;
-    fake_registry_.Start<BluetoothHciHal>();
-    hal_ = fake_registry_.GetInstance<BluetoothHciHal>();
+    hal_ = fake_registry_.Start<HciHal>(thread_);
     hal_->registerIncomingPacketCallback(&callbacks_);
     fake_server_socket_ = fake_server_->Accept();  // accept() after client is connected to avoid blocking
     std::queue<std::pair<uint8_t, HciPacket>> empty;
@@ -146,6 +150,7 @@ class HciHalRootcanalTest : public ::testing::Test {
     fake_registry_.StopAll();
     close(fake_server_socket_);
     delete fake_server_;
+    delete thread_;
   }
 
   void SetFakeServerSocketToBlocking() {
@@ -155,10 +160,11 @@ class HciHalRootcanalTest : public ::testing::Test {
   }
 
   FakeRootcanalDesktopHciServer* fake_server_ = nullptr;
-  BluetoothHciHal* hal_ = nullptr;
+  HciHal* hal_ = nullptr;
   ModuleRegistry fake_registry_;
-  TestBluetoothHciHalCallbacks callbacks_;
+  TestHciHalCallbacks callbacks_;
   int fake_server_socket_ = -1;
+  Thread* thread_;
 };
 
 void check_packet_equal(std::pair<uint8_t, HciPacket> hci_packet1_type_data_pair, H4Packet h4_packet2) {

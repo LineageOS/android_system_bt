@@ -16,36 +16,39 @@
 
 #pragma once
 
-#include <list>
+#include <fstream>
+#include <iostream>
 #include <mutex>
+#include <string>
 
-#include <grpc++/grpc++.h>
-
-#include "grpc/grpc_module.h"
 #include "hal/hci_hal.h"
 
 namespace bluetooth {
 namespace hal {
-namespace facade {
 
-class HciTransportationService;
-
-class HalFacadeModule : public ::bluetooth::grpc::GrpcFacadeModule {
+class SnoopLogger {
  public:
-  static const ModuleFactory Factory;
+  explicit SnoopLogger(const std::string& filename);
 
-  void ListDependencies(ModuleList* list) override;
+  enum class PacketType {
+    CMD = 1,
+    ACL = 2,
+    SCO = 3,
+    EVT = 4,
+  };
 
-  void Start(const ModuleRegistry* registry) override;
-  void Stop(const ModuleRegistry* registry) override;
+  enum class Direction {
+    INCOMING,
+    OUTGOING,
+  };
 
-  ::grpc::Service* GetService() const override;
+  void capture(const HciPacket& packet, Direction direction, PacketType type);
 
  private:
-  HciTransportationService* service_;
-  friend class IncomingPacketCallback;
+  bool file_exists_;
+  std::ofstream btsnoop_ostream_;
+  std::mutex file_mutex_;
 };
 
-}  // namespace facade
 }  // namespace hal
 }  // namespace bluetooth

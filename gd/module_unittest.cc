@@ -18,20 +18,25 @@
 
 #include "gtest/gtest.h"
 
+using ::bluetooth::os::Thread;
+
 namespace bluetooth {
 namespace {
 
 class ModuleTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    thread_ = new Thread("test_thread", Thread::Priority::NORMAL);
     registry_ = new ModuleRegistry();
   }
 
   void TearDown() override {
     delete registry_;
+    delete thread_;
   }
 
   ModuleRegistry* registry_;
+  Thread* thread_;
 };
 
 class TestModuleNoDependency : public Module {
@@ -42,14 +47,14 @@ class TestModuleNoDependency : public Module {
   void ListDependencies(ModuleList* list) override {
   }
 
-  void Start(const ModuleRegistry* registry) override {
+  void Start() override {
     // A module is not considered started until Start() finishes
-    EXPECT_FALSE(registry->IsStarted<TestModuleNoDependency>());
+    EXPECT_FALSE(GetModuleRegistry()->IsStarted<TestModuleNoDependency>());
   }
 
-  void Stop(const ModuleRegistry* registry) override {
+  void Stop() override {
     // A module is not considered stopped until after Stop() finishes
-    EXPECT_TRUE(registry->IsStarted<TestModuleNoDependency>());
+    EXPECT_TRUE(GetModuleRegistry()->IsStarted<TestModuleNoDependency>());
   }
 };
 
@@ -66,18 +71,18 @@ class TestModuleOneDependency : public Module {
     list->add<TestModuleNoDependency>();
   }
 
-  void Start(const ModuleRegistry* registry) override {
-    EXPECT_TRUE(registry->IsStarted<TestModuleNoDependency>());
+  void Start() override {
+    EXPECT_TRUE(GetModuleRegistry()->IsStarted<TestModuleNoDependency>());
 
     // A module is not considered started until Start() finishes
-    EXPECT_FALSE(registry->IsStarted<TestModuleOneDependency>());
+    EXPECT_FALSE(GetModuleRegistry()->IsStarted<TestModuleOneDependency>());
   }
 
-  void Stop(const ModuleRegistry* registry) override {
-    EXPECT_TRUE(registry->IsStarted<TestModuleNoDependency>());
+  void Stop() override {
+    EXPECT_TRUE(GetModuleRegistry()->IsStarted<TestModuleNoDependency>());
 
     // A module is not considered stopped until after Stop() finishes
-    EXPECT_TRUE(registry->IsStarted<TestModuleOneDependency>());
+    EXPECT_TRUE(GetModuleRegistry()->IsStarted<TestModuleOneDependency>());
   }
 };
 
@@ -94,14 +99,14 @@ class TestModuleNoDependencyTwo : public Module {
   void ListDependencies(ModuleList* list) override {
   }
 
-  void Start(const ModuleRegistry* registry) override {
+  void Start() override {
     // A module is not considered started until Start() finishes
-    EXPECT_FALSE(registry->IsStarted<TestModuleNoDependencyTwo>());
+    EXPECT_FALSE(GetModuleRegistry()->IsStarted<TestModuleNoDependencyTwo>());
   }
 
-  void Stop(const ModuleRegistry* registry) override {
+  void Stop() override {
     // A module is not considered stopped until after Stop() finishes
-    EXPECT_TRUE(registry->IsStarted<TestModuleNoDependencyTwo>());
+    EXPECT_TRUE(GetModuleRegistry()->IsStarted<TestModuleNoDependencyTwo>());
   }
 };
 
@@ -119,20 +124,20 @@ class TestModuleTwoDependencies : public Module {
     list->add<TestModuleNoDependencyTwo>();
   }
 
-  void Start(const ModuleRegistry* registry) override {
-    EXPECT_TRUE(registry->IsStarted<TestModuleOneDependency>());
-    EXPECT_TRUE(registry->IsStarted<TestModuleNoDependencyTwo>());
+  void Start() override {
+    EXPECT_TRUE(GetModuleRegistry()->IsStarted<TestModuleOneDependency>());
+    EXPECT_TRUE(GetModuleRegistry()->IsStarted<TestModuleNoDependencyTwo>());
 
     // A module is not considered started until Start() finishes
-    EXPECT_FALSE(registry->IsStarted<TestModuleTwoDependencies>());
+    EXPECT_FALSE(GetModuleRegistry()->IsStarted<TestModuleTwoDependencies>());
   }
 
-  void Stop(const ModuleRegistry* registry) override {
-    EXPECT_TRUE(registry->IsStarted<TestModuleOneDependency>());
-    EXPECT_TRUE(registry->IsStarted<TestModuleNoDependencyTwo>());
+  void Stop() override {
+    EXPECT_TRUE(GetModuleRegistry()->IsStarted<TestModuleOneDependency>());
+    EXPECT_TRUE(GetModuleRegistry()->IsStarted<TestModuleNoDependencyTwo>());
 
     // A module is not considered stopped until after Stop() finishes
-    EXPECT_TRUE(registry->IsStarted<TestModuleTwoDependencies>());
+    EXPECT_TRUE(GetModuleRegistry()->IsStarted<TestModuleTwoDependencies>());
   }
 };
 
@@ -143,7 +148,7 @@ const ModuleFactory TestModuleTwoDependencies::Factory = ModuleFactory([]() {
 TEST_F(ModuleTest, no_dependency) {
   ModuleList list;
   list.add<TestModuleNoDependency>();
-  registry_->Start(&list);
+  registry_->Start(&list, thread_);
 
   EXPECT_TRUE(registry_->IsStarted<TestModuleNoDependency>());
   EXPECT_FALSE(registry_->IsStarted<TestModuleOneDependency>());
@@ -161,7 +166,7 @@ TEST_F(ModuleTest, no_dependency) {
 TEST_F(ModuleTest, one_dependency) {
   ModuleList list;
   list.add<TestModuleOneDependency>();
-  registry_->Start(&list);
+  registry_->Start(&list, thread_);
 
   EXPECT_TRUE(registry_->IsStarted<TestModuleNoDependency>());
   EXPECT_TRUE(registry_->IsStarted<TestModuleOneDependency>());
@@ -179,7 +184,7 @@ TEST_F(ModuleTest, one_dependency) {
 TEST_F(ModuleTest, two_dependencies) {
   ModuleList list;
   list.add<TestModuleTwoDependencies>();
-  registry_->Start(&list);
+  registry_->Start(&list, thread_);
 
   EXPECT_TRUE(registry_->IsStarted<TestModuleNoDependency>());
   EXPECT_TRUE(registry_->IsStarted<TestModuleOneDependency>());

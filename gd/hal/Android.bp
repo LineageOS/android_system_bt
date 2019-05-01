@@ -1,7 +1,7 @@
 filegroup {
     name: "BluetoothHalSources",
     srcs: [
-        "bluetooth_snoop_logger.cc",
+        "snoop_logger.cc",
     ],
 }
 
@@ -34,15 +34,8 @@ filegroup {
 }
 
 filegroup {
-    name: "BluetoothCertFacade_hci_hal",
+    name: "BluetoothFacade_hci_hal",
     srcs: [
-        "facade/facade.cc",
-    ],
-}
-
-filegroup {
-    name: "BluetoothCertCppClient_hci_hal",
-    srcs: [
-        "cert/simple_hal_test.cc",
+        "facade.cc",
     ],
 }

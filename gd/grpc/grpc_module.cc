@@ -28,11 +28,11 @@ namespace grpc {
 void GrpcModule::ListDependencies(ModuleList* list) {
 }
 
-void GrpcModule::Start(const ModuleRegistry* registry) {
+void GrpcModule::Start() {
   ASSERT(!started_);
 }
 
-void GrpcModule::Stop(const ModuleRegistry* registry) {
+void GrpcModule::Stop() {
   ASSERT(!started_);
 }
 
@@ -50,6 +50,7 @@ void GrpcModule::StartServer(const std::string& address, int port) {
   builder.AddListeningPort(listening_port, ::grpc::InsecureServerCredentials());
   completion_queue_ = builder.AddCompletionQueue();
   server_ = builder.BuildAndStart();
+  ASSERT(server_ != nullptr);
 
   for (const auto& facade : facades_) {
     facade->OnServerStarted(completion_queue_.get());
@@ -110,12 +111,12 @@ void GrpcFacadeModule::ListDependencies(ModuleList* list) {
   list->add<GrpcModule>();
 }
 
-void GrpcFacadeModule::Start(const ModuleRegistry* registry) {
-  registry->GetInstance<GrpcModule>()->Register(this);
+void GrpcFacadeModule::Start() {
+  GetDependency<GrpcModule>()->Register(this);
 }
 
-void GrpcFacadeModule::Stop(const ModuleRegistry* registry) {
-  registry->GetInstance<GrpcModule>()->Unregister(this);
+void GrpcFacadeModule::Stop() {
+  GetDependency<GrpcModule>()->Unregister(this);
 }
 
 }  // namespace grpc

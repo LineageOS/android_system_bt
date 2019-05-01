@@ -16,7 +16,7 @@
 
 #include "grpc/grpc_module.h"
 #include "hal/hci_hal_host_rootcanal.h"
-#include "hal/facade/facade.h"
+#include "hal/facade.h"
 
 #include <csignal>
 #include <string>
@@ -28,6 +28,7 @@ using ::bluetooth::hal::HciHalHostRootcanalConfig;
 using ::bluetooth::StackManager;
 using ::bluetooth::grpc::GrpcModule;
 using ::bluetooth::ModuleList;
+using ::bluetooth::os::Thread;
 
 namespace {
 static StackManager* stack;
@@ -57,10 +58,11 @@ int main(int argc, const char** argv) {
   }
 
   ModuleList modules;
-  modules.add<::bluetooth::hal::facade::HalFacadeModule>();
+  modules.add<::bluetooth::hal::HciHalFacadeModule>();
 
+  Thread* stack_thread = new Thread("stack_thread", Thread::Priority::NORMAL);
   stack = new StackManager();
-  stack->StartUp(&modules);
+  stack->StartUp(&modules, stack_thread);
 
   GrpcModule* grpc_module = stack->GetInstance<GrpcModule>();
   grpc_module->StartServer("0.0.0.0", port);
@@ -69,7 +71,6 @@ int main(int argc, const char** argv) {
   auto wait_thread = std::thread([grpc_module] { grpc_module->RunGrpcLoop(); });
   wait_thread.join();
 
-  grpc_module->StopServer();
   stack->ShutDown();
   delete stack;
 

@@ -99,6 +99,28 @@ TEST_F(BlockingQueueTest, wait_for_non_empty_batch) {
   EXPECT_TRUE(queue_.empty());
 }
 
+class VectorBlockingQueueTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    EXPECT_TRUE(queue_.empty());
+  }
+
+  // Postcondition for each test case: clear the blocking queue
+  void TearDown() override {
+    EXPECT_TRUE(queue_.empty());
+  }
+
+  BlockingQueue<std::vector<uint8_t>> queue_;
+};
+
+TEST_F(VectorBlockingQueueTest, same_thread_push_and_pop) {
+  std::vector<uint8_t> data = {1, 2, 3, 4, 5, 6};
+  queue_.push(data);
+  EXPECT_FALSE(queue_.empty());
+  EXPECT_EQ(queue_.take(), data);
+  EXPECT_TRUE(queue_.empty());
+}
+
 }  // namespace
 }  // namespace common
 }  // namespace bluetooth

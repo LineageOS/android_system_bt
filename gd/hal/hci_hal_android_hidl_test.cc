@@ -21,6 +21,10 @@
 
 #include <gtest/gtest.h>
 
+#include "os/thread.h"
+
+using ::bluetooth::os::Thread;
+
 namespace bluetooth {
 namespace hal {
 namespace {
@@ -28,16 +32,19 @@ namespace {
 class HciHalHidlTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    thread_ = new Thread("test_thread", Thread::Priority::NORMAL);
   }
 
   void TearDown() override {
+    delete thread_;
   }
 
   ModuleRegistry fake_registry_;
+  Thread* thread_;
 };
 
 TEST_F(HciHalHidlTest, init_and_close) {
-  fake_registry_.Start<BluetoothHciHal>();
+  fake_registry_.Start<HciHal>(thread_);
   fake_registry_.StopAll();
 }
 }  // namespace
