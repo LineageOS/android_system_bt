@@ -67,18 +67,23 @@ constexpr btsnoop_file_header_t BTSNOOP_FILE_HEADER = {
     .datalink_type = BTSNOOP_DATALINK_TYPE};
 }  // namespace
 
-SnoopLogger::SnoopLogger(const std::string& filename) {
+SnoopLogger::SnoopLogger() {
+  bool file_exists;
   {
-    std::ifstream btsnoop_istream(filename);
-    file_exists_ = btsnoop_istream.is_open();
+    std::ifstream btsnoop_istream(file_path);
+    file_exists = btsnoop_istream.is_open();
   }
-  btsnoop_ostream_.open(filename, std::ios::binary | std::ios::app | std::ios::out);
-  if (!file_exists_) {
+  btsnoop_ostream_.open(file_path, std::ios::binary | std::ios::app | std::ios::out);
+  if (!file_exists) {
     LOG_INFO("Creating new BTSNOOP");
     btsnoop_ostream_.write(reinterpret_cast<const char*>(&BTSNOOP_FILE_HEADER), sizeof(btsnoop_file_header_t));
   } else {
     LOG_INFO("Appending to old BTSNOOP");
   }
+}
+
+void SnoopLogger::SetFilePath(const std::string& filename) {
+  file_path = filename;
 }
 
 void SnoopLogger::capture(const HciPacket& packet, Direction direction, PacketType type) {
@@ -115,6 +120,20 @@ void SnoopLogger::capture(const HciPacket& packet, Direction direction, PacketTy
   btsnoop_ostream_.write(reinterpret_cast<const char*>(&header), sizeof(btsnoop_packet_header_t));
   btsnoop_ostream_.write(reinterpret_cast<const char*>(packet.data()), packet.size());
 }
+
+void SnoopLogger::ListDependencies(ModuleList* list) {
+  // We have no dependencies
+}
+
+void SnoopLogger::Start() {}
+
+void SnoopLogger::Stop() {}
+
+std::string SnoopLogger::file_path = SnoopLogger::DefaultFilePath;
+
+const ModuleFactory SnoopLogger::Factory = ModuleFactory([]() {
+  return new SnoopLogger();
+});
 
 }  // namespace hal
 }  // namespace bluetooth
