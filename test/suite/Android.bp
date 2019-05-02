@@ -15,8 +15,6 @@ cc_test {
     shared_libs: [
         "liblog",
         "libcutils",
-        "libbinder",
-        "libutils",
     ],
     static_libs: [
         "libbtcore",
@@ -42,8 +40,6 @@ cc_test {
     shared_libs: [
         "liblog",
         "libcutils",
-        "libbinder",
-        "libutils",
     ],
     static_libs: [
         "libbtcore",

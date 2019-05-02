@@ -18,7 +18,6 @@
 
 #include <base/logging.h>
 #include <keystore/keystore_client_impl.h>
-#include <mutex>
 
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
@@ -28,45 +27,13 @@
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
 
-namespace bluetooth {
-/**
- * Client wrapper to access AndroidKeystore.
- *
- * <p>Use to encrypt/decrypt data and store to disk.
- */
+using namespace keystore;
+
 class BtifKeystore {
  public:
-  /**
-   * @param keystore_client injected pre-created client object for keystore
-   */
-  BtifKeystore(keystore::KeystoreClient* keystore_client);
-
-  /**
-   * Stores encrypted data to disk.
-   *
-   * <p>Returns true on success.
-   *
-   * @param data to be encrypted
-   * @param output_filename location to write the file
-   * @param flags
-   */
-  bool Encrypt(const std::string& data, const std::string& output_filename,
-               int32_t flags);
-
-  /**
-   * Returns a decrypted string representation of the encrypted data or empty
-   * string on error.
-   *
-   * @param input_filename location of file to read and decrypt
-   */
+  BtifKeystore();
+  ~BtifKeystore();
+  int Encrypt(const std::string& hash, const std::string& output_filename,
+              int32_t flags);
   std::string Decrypt(const std::string& input_filename);
-
- private:
-  std::unique_ptr<keystore::KeystoreClient> keystore_client_;
-  std::mutex api_mutex_;
-  keystore::KeyStoreNativeReturnCode GenerateKey(const std::string& name,
-                                                 int32_t flags,
-                                                 bool auth_bound);
 };
-
-}  // namespace bluetooth
