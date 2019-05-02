@@ -604,8 +604,11 @@ static std::string hash_file(const char* filename) {
 
 static std::string read_checksum_file(const char* checksum_filename) {
   // Ensure file exists
-  if (access(checksum_filename, R_OK) != 0) {
+  FILE* fp = fopen(checksum_filename, "rb");
+  if (!fp) {
     return "";
+  } else {
+    fclose(fp);
   }
   std::string output = btifKeystore.Decrypt(checksum_filename);
   return output;
