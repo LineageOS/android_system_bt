@@ -588,10 +588,7 @@ static std::string hash_file(const char* filename) {
   const int bufSize = 400 * 10;  // initial file is ~400B
   std::byte* buffer = (std::byte*) osi_calloc(bufSize);
   int bytesRead = 0;
-  if (!buffer) {
-    fclose(fp);
-    return "";
-  }
+  if (!buffer) return "";
   while ((bytesRead = fread(buffer, 1, bufSize, fp))) {
     SHA256_Update(&sha256, buffer, bytesRead);
   }
