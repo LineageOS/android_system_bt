@@ -18,14 +18,14 @@ from __future__ import print_function
 
 import os
 import sys
-import time
 sys.path.append(os.environ['ANDROID_BUILD_TOP'] + '/system/bt/gd')
 
 from cert.gd_base_test import GdBaseTestClass
 from cert.event_stream import EventStream
+from cert import rootservice_pb2 as cert_rootservice_pb2
 from facade import common_pb2
 from google.protobuf import empty_pb2
-
+from facade import rootservice_pb2 as facade_rootservice_pb2
 from hal.cert import api_pb2 as hal_cert_pb2
 from hal import facade_pb2 as hal_facade_pb2
 
@@ -35,8 +35,27 @@ class SimpleHalTest(GdBaseTestClass):
         self.device_under_test = self.gd_devices[0]
         self.cert_device = self.gd_cert_devices[0]
 
+        self.device_under_test.rootservice.StartStack(
+            facade_rootservice_pb2.StartStackRequest(
+                module_under_test=facade_rootservice_pb2.BluetoothModule.Value('HAL'),
+            )
+        )
+        self.cert_device.rootservice.StartStack(
+            cert_rootservice_pb2.StartStackRequest(
+                module_to_test=cert_rootservice_pb2.BluetoothModule.Value('HAL'),
+            )
+        )
+
         self.device_under_test.hal.SendHciResetCommand(empty_pb2.Empty())
         self.cert_device.hal.SendHciResetCommand(empty_pb2.Empty())
+
+    def teardown_test(self):
+        self.device_under_test.rootservice.StopStack(
+            facade_rootservice_pb2.StopStackRequest()
+        )
+        self.cert_device.rootservice.StopStack(
+            cert_rootservice_pb2.StopStackRequest()
+        )
 
     def test_none_event(self):
         self.device_under_test.hal.hci_event_stream.clear_event_buffer()

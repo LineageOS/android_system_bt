@@ -19,6 +19,7 @@ import os
 from builtins import open
 import signal
 import subprocess
+import time
 
 from acts import error
 from acts import tracelogger
@@ -31,10 +32,11 @@ ANDROID_HOST_OUT = os.environ.get('ANDROID_HOST_OUT')
 def replace_vars(string, config):
     return string.replace("$ANDROID_HOST_OUT", ANDROID_HOST_OUT) \
                  .replace("$(grpc_port)", config.get("grpc_port")) \
+                 .replace("$(grpc_root_server_port)", config.get("grpc_root_server_port")) \
                  .replace("$(rootcanal_port)", config.get("rootcanal_port"))
 
 class GdDeviceBase:
-    def __init__(self, grpc_port, cmd, label, type_identifier):
+    def __init__(self, grpc_port, grpc_root_server_port, cmd, label, type_identifier):
         self.label = label if label is not None else grpc_port
         # logging.log_path only exists when this is used in an ACTS test run.
         log_path_base = getattr(logging, 'log_path', '/tmp/logs')
@@ -56,11 +58,15 @@ class GdDeviceBase:
             env=os.environ.copy(),
             stdout=self.backing_process_logs,
             stderr=self.backing_process_logs)
-
+        time.sleep(1)  # We need some time for backing_process to start server
+        # TODO: pass a fd that can be signaled when the process is ready
+        self.grpc_root_server_channel = grpc.insecure_channel("localhost:" + grpc_root_server_port)
+        self.grpc_port = int(grpc_port)
         self.grpc_channel = grpc.insecure_channel("localhost:" + grpc_port)
 
     def clean_up(self):
         self.grpc_channel.close()
+        self.grpc_root_server_channel.close()
         self.backing_process.send_signal(signal.SIGINT)
         backing_process_return_code = self.backing_process.wait()
         self.backing_process_logs.close()
