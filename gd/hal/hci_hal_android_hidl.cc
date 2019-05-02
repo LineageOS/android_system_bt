@@ -37,7 +37,6 @@ using HidlStatus = ::android::hardware::bluetooth::V1_0::Status;
 namespace bluetooth {
 namespace hal {
 namespace {
-constexpr char kDefaultBtsnoopPath[] = "/data/misc/bluetooth/logs/btsnoop_hci.log";
 
 class HciDeathRecipient : public ::android::hardware::hidl_death_recipient {
  public:
@@ -113,6 +112,8 @@ class InternalHciCallbacks : public IBluetoothHciCallbacks {
 
 }  // namespace
 
+const std::string SnoopLogger::DefaultFilePath = "/data/misc/bluetooth/logs/btsnoop_hci.log";
+
 class HciHalHidl : public HciHal {
  public:
   void registerIncomingPacketCallback(HciHalCallbacks* callback) override {
@@ -136,11 +137,11 @@ class HciHalHidl : public HciHal {
 
  protected:
   void ListDependencies(ModuleList* list) override {
-    // We have no dependencies
+    list->add<SnoopLogger>();
   }
 
   void Start() override {
-    btsnoop_logger_ = new SnoopLogger(kDefaultBtsnoopPath);
+    btsnoop_logger_ = GetDependency<SnoopLogger>();
     bt_hci_ = IBluetoothHci::getService();
     ASSERT(bt_hci_ != nullptr);
     auto death_link = bt_hci_->linkToDeath(hci_death_recipient_, 0);
@@ -163,8 +164,6 @@ class HciHalHidl : public HciHal {
     bt_hci_->close();
     callbacks_->ResetCallback();
     bt_hci_ = nullptr;
-    delete btsnoop_logger_;
-    btsnoop_logger_ = nullptr;
   }
 
  private:
