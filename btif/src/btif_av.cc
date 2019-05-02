@@ -1244,6 +1244,9 @@ BtifAvPeer* BtifAvSink::FindOrCreatePeer(const RawAddress& peer_address,
   peer = new BtifAvPeer(peer_address, AVDT_TSEP_SRC, bta_handle, peer_id);
   peers_.insert(std::make_pair(peer_address, peer));
   peer->Init();
+  if (active_peer_.IsEmpty()) {
+    active_peer_ = peer_address;
+  }
   return peer;
 }
 
