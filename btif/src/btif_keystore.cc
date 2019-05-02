@@ -31,41 +31,78 @@ using namespace bluetooth;
 
 constexpr char kKeyStore[] = "AndroidKeystore";
 
+static std::string ReadFile(const std::string& filename) {
+  CHECK(!filename.empty()) << __func__ << ": filename should not be empty";
+
+  std::string content;
+  base::FilePath path(filename);
+  if (!base::PathExists(path)) {
+    // Config file checksum file doesn't exist on first run after OTA.
+    LOG(ERROR) << "file '" << filename.c_str() << "'doesn't exists yet";
+  }
+  if (!base::ReadFileToString(path, &content)) {
+    LOG(ERROR) << "ReadFile failed: " << filename.c_str();
+  }
+  return content;
+}
+
+static void WriteFile(const std::string& filename, const std::string& content) {
+  CHECK(!filename.empty()) << __func__ << ": filename should not be empty";
+  CHECK(!content.empty()) << __func__ << ": content should not be empty";
+
+  base::FilePath path(filename);
+  int size = content.size();
+  if (base::WriteFile(path, content.data(), size) != size) {
+    LOG(FATAL) << "WriteFile failed.\n" << filename.c_str();
+  }
+}
+
 namespace bluetooth {
 
 BtifKeystore::BtifKeystore(keystore::KeystoreClient* keystore_client)
     : keystore_client_(keystore_client) {}
 
-std::string BtifKeystore::Encrypt(const std::string& data, int32_t flags) {
+bool BtifKeystore::Encrypt(const std::string& data,
+                           const std::string& output_filename, int32_t flags) {
   std::lock_guard<std::mutex> lock(api_mutex_);
-  std::string output;
   if (data.empty()) {
     LOG(ERROR) << __func__ << ": empty data";
-    return output;
+    return false;
   }
+  if (output_filename.empty()) {
+    LOG(ERROR) << __func__ << ": empty output filename";
+    return false;
+  }
+  std::string output;
   if (!keystore_client_->doesKeyExist(kKeyStore)) {
     auto gen_result = GenerateKey(kKeyStore, 0, false);
     if (!gen_result.isOk()) {
       LOG(FATAL) << "EncryptWithAuthentication Failed: generateKey response="
                  << gen_result;
-      return output;
+      return false;
     }
   }
   if (!keystore_client_->encryptWithAuthentication(kKeyStore, data, flags,
                                                    &output)) {
     LOG(FATAL) << "EncryptWithAuthentication failed.";
-    return output;
+    return false;
   }
-  return output;
+  WriteFile(output_filename, output);
+  return true;
 }
 
-std::string BtifKeystore::Decrypt(const std::string& input) {
+std::string BtifKeystore::Decrypt(const std::string& input_filename) {
   std::lock_guard<std::mutex> lock(api_mutex_);
+  std::string output;
+  if (input_filename.empty()) {
+    LOG(ERROR) << __func__ << ": empty input filename";
+    return output;
+  }
+  std::string input = ReadFile(input_filename);
   if (input.empty()) {
     LOG(ERROR) << __func__ << ": empty input data";
-    return "";
+    return output;
   }
-  std::string output;
   if (!keystore_client_->decryptWithAuthentication(kKeyStore, input, &output)) {
     LOG(FATAL) << "DecryptWithAuthentication failed.\n";
   }

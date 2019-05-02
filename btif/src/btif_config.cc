@@ -24,14 +24,14 @@
 #include <ctype.h>
 #include <openssl/rand.h>
 #include <openssl/sha.h>
-#include <private/android_filesystem_config.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-#include <mutex>
 #include <sstream>
 #include <string>
+
+#include <mutex>
 
 #include "bt_types.h"
 #include "btcore/include/module.h"
@@ -54,12 +54,9 @@
 #define FILE_TIMESTAMP "TimeCreated"
 #define FILE_SOURCE "FileSource"
 #define TIME_STRING_LENGTH sizeof("YYYY-MM-DD HH:MM:SS")
-#define DISABLED "disabled"
 static const char* TIME_STRING_FORMAT = "%Y-%m-%d %H:%M:%S";
 
 constexpr int kBufferSize = 400 * 10;  // initial file is ~400B
-
-static bool use_key_attestation() { return getuid() == AID_BLUETOOTH; }
 
 using bluetooth::BtifKeystore;
 
@@ -582,10 +579,6 @@ static void delete_config_files(void) {
 }
 
 static std::string hash_file(const char* filename) {
-  if (!use_key_attestation()) {
-    LOG(INFO) << __func__ << ": Disabled for multi-user";
-    return DISABLED;
-  }
   FILE* fp = fopen(filename, "rb");
   if (!fp) {
     LOG(ERROR) << __func__ << ": unable to open config file: '" << filename
@@ -610,31 +603,15 @@ static std::string hash_file(const char* filename) {
 }
 
 static std::string read_checksum_file(const char* checksum_filename) {
-  if (!use_key_attestation()) {
-    LOG(INFO) << __func__ << ": Disabled for multi-user";
-    return DISABLED;
-  }
-  std::string encrypted_hash = checksum_read(checksum_filename);
-  if (encrypted_hash.empty()) {
-    LOG(INFO) << __func__ << ": read empty hash.";
+  // Ensure file exists
+  if (access(checksum_filename, R_OK) != 0) {
     return "";
   }
-  return btif_keystore.Decrypt(encrypted_hash);
+  return btif_keystore.Decrypt(checksum_filename);
 }
 
 static void write_checksum_file(const char* checksum_filename,
                                 const std::string& hash) {
-  if (!use_key_attestation()) {
-    LOG(INFO) << __func__
-              << ": Disabled for multi-user, since config changed removing "
-                 "checksums.";
-    remove(CONFIG_FILE_CHECKSUM_PATH);
-    remove(CONFIG_BACKUP_CHECKSUM_PATH);
-    return;
-  }
-  std::string encrypted_checksum = btif_keystore.Encrypt(hash, 0);
-  CHECK(!encrypted_checksum.empty())
-      << __func__ << ": Failed encrypting checksum";
-  CHECK(checksum_save(encrypted_checksum, checksum_filename))
-      << __func__ << ": Failed to save checksum!";
+  bool result = btif_keystore.Encrypt(hash, checksum_filename, 0);
+  CHECK(result) << "Failed writing checksum";
 }
