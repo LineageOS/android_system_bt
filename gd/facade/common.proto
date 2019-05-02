@@ -17,4 +17,5 @@ enum EventFetchMode {
 message EventStreamRequest {
   EventSubscriptionMode subscription_mode = 1;
   EventFetchMode fetch_mode = 2;
+  uint32 timeout_ms = 3;
 }

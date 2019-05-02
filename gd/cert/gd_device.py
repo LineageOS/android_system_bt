@@ -36,6 +36,7 @@ from acts.libs.proc import job
 import grpc
 
 from hal import facade_pb2_grpc as hal_facade_pb2_grpc
+from cert.event_stream import EventStream
 
 ANDROID_BUILD_TOP = os.environ.get('ANDROID_BUILD_TOP')
 ANDROID_HOST_OUT = os.environ.get('ANDROID_HOST_OUT')
@@ -114,6 +115,10 @@ class GdDevice:
 
         self.grpc_channel = grpc.insecure_channel("localhost:" + grpc_port)
         self.hal = hal_facade_pb2_grpc.HciHalFacadeStub(self.grpc_channel)
+        self.hal.hci_event_stream = EventStream(self.hal.FetchHciEvent)
+        self.hal.hci_acl_stream = EventStream(self.hal.FetchHciAcl)
+        self.hal.hci_sco_stream = EventStream(self.hal.FetchHciSco)
+
 
     def clean_up(self):
         self.grpc_channel.close()

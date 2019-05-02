@@ -18,6 +18,8 @@
 
 #include <grpc++/grpc++.h>
 
+#include <chrono>
+
 #include "common/blocking_queue.h"
 #include "facade/common.pb.h"
 #include "os/log.h"
@@ -49,15 +51,23 @@ class GrpcEventStream {
                                ::grpc::ServerWriter<RES>* writer) {
     ::bluetooth::facade::EventSubscriptionMode subscription_mode = request->subscription_mode();
     ::bluetooth::facade::EventFetchMode fetch_mode = request->fetch_mode();
+    uint32_t timeout_ms = request->timeout_ms();
+    if (timeout_ms == 0) {
+      timeout_ms = 3000;
+    }
 
     if (subscription_mode == ::bluetooth::facade::SUBSCRIBE) {
+      event_queue_.clear();
       callback_->OnSubscribe();
       subscribed_ = true;
     }
 
     if (fetch_mode == ::bluetooth::facade::AT_LEAST_ONE) {
       RES response;
-      EVENT event = event_queue_.take();
+      EVENT event;
+      if (!event_queue_.take_for(std::chrono::milliseconds(timeout_ms), event)) {
+        return ::grpc::Status(::grpc::StatusCode::DEADLINE_EXCEEDED, "timeout exceeded");
+      }
       callback_->OnWriteResponse(&response, event);
       writer->Write(response);
     }
