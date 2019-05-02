@@ -177,6 +177,11 @@ struct HearingDevice {
         audio_status_ccc_handle(0),
         service_changed_ccc_handle(0),
         read_psm_handle(0),
+        capabilities(0),
+        hi_sync_id(0),
+        render_delay(0),
+        preparation_delay(0),
+        codecs(0),
         playback_started(false),
         command_acked(false),
         read_rssi_count(0) {}
