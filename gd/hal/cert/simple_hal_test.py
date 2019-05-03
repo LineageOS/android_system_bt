@@ -25,6 +25,15 @@ from hal import facade_pb2 as hal_facade_pb2
 
 class SimpleHalTest(GdBaseTestClass):
 
+    def test_none_event(self):
+        self.gd_devices[0].hal.hci_event_stream.clear_event_buffer()
+
+        self.gd_devices[0].hal.hci_event_stream.subscribe()
+
+        self.gd_devices[0].hal.hci_event_stream.assert_none()
+
+        self.gd_devices[0].hal.hci_event_stream.unsubscribe()
+
     def test_fetch_hci_event(self):
         self.gd_devices[0].hal.SetLoopbackMode(
             hal_facade_pb2.LoopbackModeSettings(enable=True)
