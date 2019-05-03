@@ -35,8 +35,6 @@ cc_library_shared {
         "system/bt/embdrv/sbc/encoder/include",
         "system/bt/embdrv/sbc/decoder/include",
         "system/bt/utils/include",
-        "system/security/keystore/include",
-        "hardware/interfaces/keymaster/4.0/support/include",
     ],
     logtags: ["../EventLogTags.logtags"],
     shared_libs: [
