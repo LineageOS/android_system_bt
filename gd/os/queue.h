@@ -30,8 +30,29 @@
 namespace bluetooth {
 namespace os {
 
+// See documentation for |Queue|
 template <typename T>
-class Queue {
+class IQueueEnqueue {
+ public:
+  using EnqueueCallback = std::function<std::unique_ptr<T>()>;
+  virtual ~IQueueEnqueue() = default;
+  virtual void RegisterEnqueue(Handler* handler, EnqueueCallback callback) = 0;
+  virtual void UnregisterEnqueue() = 0;
+};
+
+// See documentation for |Queue|
+template <typename T>
+class IQueueDequeue {
+ public:
+  using DequeueCallback = std::function<void()>;
+  virtual ~IQueueDequeue() = default;
+  virtual void RegisterDequeue(Handler* handler, DequeueCallback callback) = 0;
+  virtual void UnregisterDequeue() = 0;
+  virtual std::unique_ptr<T> TryDequeue() = 0;
+};
+
+template <typename T>
+class Queue : public IQueueEnqueue<T>, public IQueueDequeue<T> {
  public:
   // A function moving data from enqueue end buffer to queue, it will be continually be invoked until queue
   // is full. Enqueue end should make sure buffer isn't empty and UnregisterEnqueue when buffer become empty.
@@ -44,17 +65,17 @@ class Queue {
   ~Queue();
   // Register |callback| that will be called on |handler| when the queue is able to enqueue one piece of data.
   // This will cause a crash if handler or callback has already been registered before.
-  void RegisterEnqueue(Handler* handler, EnqueueCallback callback);
+  void RegisterEnqueue(Handler* handler, EnqueueCallback callback) override;
   // Unregister current EnqueueCallback from this queue, this will cause a crash if not registered yet.
-  void UnregisterEnqueue();
+  void UnregisterEnqueue() override;
   // Register |callback| that will be called on |handler| when the queue has at least one piece of data ready
   // for dequeue. This will cause a crash if handler or callback has already been registered before.
-  void RegisterDequeue(Handler* handler, DequeueCallback callback);
+  void RegisterDequeue(Handler* handler, DequeueCallback callback) override;
   // Unregister current DequeueCallback from this queue, this will cause a crash if not registered yet.
-  void UnregisterDequeue();
+  void UnregisterDequeue() override;
 
   // Try to dequeue an item from this queue. Return nullptr when there is nothing in the queue.
-  std::unique_ptr<T> TryDequeue();
+  std::unique_ptr<T> TryDequeue() override;
 
  private:
   void EnqueueCallbackInternal();
