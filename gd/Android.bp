@@ -119,7 +119,7 @@ cc_binary {
     ],
     host_supported: true,
     srcs: [
-        "facade/stack_with_grpc_main.cc",
+        "facade/facade_main.cc",
         "grpc/grpc_module.cc",
         ":BluetoothFacade_hci_hal",
     ],
@@ -160,7 +160,7 @@ cc_binary {
     ],
     host_supported: true,
     srcs: [
-        "cert/stack_main.cc",
+        "cert/cert_main.cc",
         "grpc/grpc_module.cc",
         ":BluetoothCertSource_hci_hal",
     ],
