@@ -56,9 +56,15 @@ class GdBaseTestClass(BaseTestClass):
         gd_devices = self.testbed_configs.get("GdDevice")
         for gd_device in gd_devices:
             gd_device["rootcanal_port"] = rootcanal_hci_port
+        gd_cert_devices = self.testbed_configs.get("GdCertDevice")
+        for gd_cert_device in gd_cert_devices:
+            gd_cert_device["rootcanal_port"] = rootcanal_hci_port
 
         self.register_controller(
             importlib.import_module('cert.gd_device'),
+            builtin=True)
+        self.register_controller(
+            importlib.import_module('cert.gd_cert_device'),
             builtin=True)
 
     def teardown_class(self):
@@ -66,7 +72,7 @@ class GdBaseTestClass(BaseTestClass):
         self.rootcanal_process.send_signal(signal.SIGINT)
         rootcanal_return_code = self.rootcanal_process.wait()
         self.rootcanal_logs.close()
-        if rootcanal_return_code != 0:
+        if rootcanal_return_code != 0 and rootcanal_return_code != -signal.SIGINT:
             logging.error("rootcanal stopped with code: %d" %
                           rootcanal_return_code)
             return False
