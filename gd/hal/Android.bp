@@ -39,3 +39,10 @@ filegroup {
         "facade.cc",
     ],
 }
+
+filegroup {
+    name: "BluetoothCertSource_hci_hal",
+    srcs: [
+        "cert/cert.cc",
+    ],
+}
