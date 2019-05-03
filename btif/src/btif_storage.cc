@@ -1643,6 +1643,47 @@ void btif_storage_set_hearing_aid_white_list(const RawAddress& address,
   btif_config_save();
 }
 
+/** Get the hearing aid device properties. */
+bool btif_storage_get_hearing_aid_prop(
+    const RawAddress& address, uint8_t* capabilities, uint64_t* hi_sync_id,
+    uint16_t* render_delay, uint16_t* preparation_delay, uint16_t* codecs) {
+  std::string addrstr = address.ToString();
+
+  int value;
+  if (btif_config_get_int(addrstr, HEARING_AID_CAPABILITIES, &value)) {
+    *capabilities = value;
+  } else {
+    return false;
+  }
+
+  if (btif_config_get_int(addrstr, HEARING_AID_CODECS, &value)) {
+    *codecs = value;
+  } else {
+    return false;
+  }
+
+  if (btif_config_get_int(addrstr, HEARING_AID_RENDER_DELAY, &value)) {
+    *render_delay = value;
+  } else {
+    return false;
+  }
+
+  if (btif_config_get_int(addrstr, HEARING_AID_PREPARATION_DELAY, &value)) {
+    *preparation_delay = value;
+  } else {
+    return false;
+  }
+
+  uint64_t lvalue;
+  if (btif_config_get_uint64(addrstr, HEARING_AID_SYNC_ID, &lvalue)) {
+    *hi_sync_id = lvalue;
+  } else {
+    return false;
+  }
+
+  return true;
+}
+
 /*******************************************************************************
  *
  * Function         btif_storage_is_restricted_device
