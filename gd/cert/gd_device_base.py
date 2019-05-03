@@ -18,6 +18,7 @@ import logging
 import os
 from builtins import open
 import signal
+import socket
 import subprocess
 import time
 
@@ -52,14 +53,24 @@ class GdDeviceBase:
 
         btsnoop_path = os.path.join(log_path_base, '%s_btsnoop_hci.log' % label)
         cmd.append("--btsnoop=" + btsnoop_path)
+
+        tester_signal_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        socket_address = os.path.join(
+            log_path_base, '%s_socket' % type_identifier)
+        tester_signal_socket.bind(socket_address)
+        tester_signal_socket.listen(1)
+
+        cmd.append("--tester-signal-socket=" + socket_address)
+
         self.backing_process = subprocess.Popen(
             cmd,
             cwd=ANDROID_BUILD_TOP,
             env=os.environ.copy(),
             stdout=self.backing_process_logs,
             stderr=self.backing_process_logs)
-        time.sleep(1)  # We need some time for backing_process to start server
-        # TODO: pass a fd that can be signaled when the process is ready
+        tester_signal_socket.accept()
+        tester_signal_socket.close()
+
         self.grpc_root_server_channel = grpc.insecure_channel("localhost:" + grpc_root_server_port)
         self.grpc_port = int(grpc_port)
         self.grpc_channel = grpc.insecure_channel("localhost:" + grpc_port)
