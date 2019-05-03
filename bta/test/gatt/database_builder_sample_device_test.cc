@@ -19,6 +19,7 @@
 #include <gtest/gtest.h>
 
 #include <base/logging.h>
+#include <iterator>
 #include <utility>
 
 #include "gatt/database_builder.h"
@@ -223,64 +224,51 @@ TEST(DatabaseBuilderSampleDeviceTest, DoDiscovery) {
   EXPECT_FALSE(builder.InProgress());
 
   // verify that the returned database matches what was discovered
-  EXPECT_EQ(result.Services()[0].handle, 0x0001);
-  EXPECT_EQ(result.Services()[0].uuid, SERVICE_1_UUID);
-  EXPECT_EQ(result.Services()[1].uuid, SERVICE_2_UUID);
-  EXPECT_EQ(result.Services()[2].uuid, SERVICE_3_UUID);
-  EXPECT_EQ(result.Services()[3].uuid, SERVICE_4_UUID);
-  EXPECT_EQ(result.Services()[4].uuid, SERVICE_5_UUID);
-  EXPECT_EQ(result.Services()[5].uuid, SERVICE_6_UUID);
+  auto service = result.Services().begin();
+  EXPECT_EQ(service->handle, 0x0001);
+  EXPECT_EQ(service->uuid, SERVICE_1_UUID);
 
-  EXPECT_EQ(result.Services()[0].characteristics[0].uuid,
-            SERVICE_1_CHAR_1_UUID);
-  EXPECT_EQ(result.Services()[0].characteristics[1].uuid,
-            SERVICE_1_CHAR_2_UUID);
-  EXPECT_EQ(result.Services()[0].characteristics[2].uuid,
-            SERVICE_1_CHAR_3_UUID);
+  EXPECT_EQ(service->characteristics[0].uuid, SERVICE_1_CHAR_1_UUID);
+  EXPECT_EQ(service->characteristics[1].uuid, SERVICE_1_CHAR_2_UUID);
+  EXPECT_EQ(service->characteristics[2].uuid, SERVICE_1_CHAR_3_UUID);
 
-  EXPECT_EQ(result.Services()[2].characteristics[0].uuid,
-            SERVICE_3_CHAR_1_UUID);
-  EXPECT_EQ(result.Services()[2].characteristics[0].descriptors[0].uuid,
+  service++;
+  EXPECT_EQ(service->uuid, SERVICE_2_UUID);
+
+  service++;
+  EXPECT_EQ(service->uuid, SERVICE_3_UUID);
+  EXPECT_EQ(service->characteristics[0].uuid, SERVICE_3_CHAR_1_UUID);
+  EXPECT_EQ(service->characteristics[0].descriptors[0].uuid,
             SERVICE_3_CHAR_1_DESC_1_UUID);
 
-  EXPECT_EQ(result.Services()[3].characteristics[0].uuid,
-            SERVICE_4_CHAR_1_UUID);
-  EXPECT_EQ(result.Services()[3].characteristics[1].uuid,
-            SERVICE_4_CHAR_2_UUID);
-  EXPECT_EQ(result.Services()[3].characteristics[2].uuid,
-            SERVICE_4_CHAR_3_UUID);
-  EXPECT_EQ(result.Services()[3].characteristics[3].uuid,
-            SERVICE_4_CHAR_4_UUID);
-  EXPECT_EQ(result.Services()[3].characteristics[4].uuid,
-            SERVICE_4_CHAR_5_UUID);
-  EXPECT_EQ(result.Services()[3].characteristics[5].uuid,
-            SERVICE_4_CHAR_6_UUID);
-  EXPECT_EQ(result.Services()[3].characteristics[5].descriptors[0].uuid,
+  service++;
+  EXPECT_EQ(service->uuid, SERVICE_4_UUID);
+  EXPECT_EQ(service->characteristics[0].uuid, SERVICE_4_CHAR_1_UUID);
+  EXPECT_EQ(service->characteristics[1].uuid, SERVICE_4_CHAR_2_UUID);
+  EXPECT_EQ(service->characteristics[2].uuid, SERVICE_4_CHAR_3_UUID);
+  EXPECT_EQ(service->characteristics[3].uuid, SERVICE_4_CHAR_4_UUID);
+  EXPECT_EQ(service->characteristics[4].uuid, SERVICE_4_CHAR_5_UUID);
+  EXPECT_EQ(service->characteristics[5].uuid, SERVICE_4_CHAR_6_UUID);
+  EXPECT_EQ(service->characteristics[5].descriptors[0].uuid,
             SERVICE_4_CHAR_6_DESC_1_UUID);
 
-  EXPECT_EQ(result.Services()[4].characteristics[0].uuid,
-            SERVICE_5_CHAR_1_UUID);
-  EXPECT_EQ(result.Services()[4].characteristics[1].uuid,
-            SERVICE_5_CHAR_2_UUID);
-  EXPECT_EQ(result.Services()[4].characteristics[2].uuid,
-            SERVICE_5_CHAR_3_UUID);
-  EXPECT_EQ(result.Services()[4].characteristics[3].uuid,
-            SERVICE_5_CHAR_4_UUID);
-  EXPECT_EQ(result.Services()[4].characteristics[4].uuid,
-            SERVICE_5_CHAR_5_UUID);
-  EXPECT_EQ(result.Services()[4].characteristics[5].uuid,
-            SERVICE_5_CHAR_6_UUID);
-  EXPECT_EQ(result.Services()[4].characteristics[6].uuid,
-            SERVICE_5_CHAR_7_UUID);
+  service++;
+  EXPECT_EQ(service->uuid, SERVICE_5_UUID);
+  EXPECT_EQ(service->characteristics[0].uuid, SERVICE_5_CHAR_1_UUID);
+  EXPECT_EQ(service->characteristics[1].uuid, SERVICE_5_CHAR_2_UUID);
+  EXPECT_EQ(service->characteristics[2].uuid, SERVICE_5_CHAR_3_UUID);
+  EXPECT_EQ(service->characteristics[3].uuid, SERVICE_5_CHAR_4_UUID);
+  EXPECT_EQ(service->characteristics[4].uuid, SERVICE_5_CHAR_5_UUID);
+  EXPECT_EQ(service->characteristics[5].uuid, SERVICE_5_CHAR_6_UUID);
+  EXPECT_EQ(service->characteristics[6].uuid, SERVICE_5_CHAR_7_UUID);
 
-  EXPECT_EQ(result.Services()[5].characteristics[0].uuid,
-            SERVICE_6_CHAR_1_UUID);
-  EXPECT_EQ(result.Services()[5].characteristics[0].descriptors[0].uuid,
+  service++;
+  EXPECT_EQ(service->uuid, SERVICE_6_UUID);
+  EXPECT_EQ(service->characteristics[0].uuid, SERVICE_6_CHAR_1_UUID);
+  EXPECT_EQ(service->characteristics[0].descriptors[0].uuid,
             SERVICE_6_CHAR_1_DESC_1_UUID);
-  EXPECT_EQ(result.Services()[5].characteristics[1].uuid,
-            SERVICE_6_CHAR_2_UUID);
-  EXPECT_EQ(result.Services()[5].characteristics[2].uuid,
-            SERVICE_6_CHAR_3_UUID);
+  EXPECT_EQ(service->characteristics[1].uuid, SERVICE_6_CHAR_2_UUID);
+  EXPECT_EQ(service->characteristics[2].uuid, SERVICE_6_CHAR_3_UUID);
 }
 
 }  // namespace gatt
