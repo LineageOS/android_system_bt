@@ -14,35 +14,34 @@
  * limitations under the License.
  */
 
-#include "grpc/grpc_module.h"
-#include "hal/facade.h"
-#include "hal/hci_hal_host_rootcanal.h"
-#include "hal/snoop_logger.h"
-
-#include <csignal>
-#include <string>
-#include <thread>
-
 #include "stack_manager.h"
 
-using ::bluetooth::hal::HciHalHostRootcanalConfig;
+#include <csignal>
+
+#include "grpc/grpc_module.h"
+#include "hal/cert/cert.h"
+#include "hal/hci_hal.h"
+#include "hal/hci_hal_host_rootcanal.h"
+#include "hal/snoop_logger.h"
+#include "module.h"
+#include "os/thread.h"
+
+using ::bluetooth::Module;
+using ::bluetooth::ModuleList;
 using ::bluetooth::StackManager;
 using ::bluetooth::grpc::GrpcModule;
-using ::bluetooth::ModuleList;
 using ::bluetooth::os::Thread;
 
 namespace {
-static StackManager* stack;
+StackManager* stack;
 
 void interrupt_handler(int) {
   stack->GetInstance<GrpcModule>()->StopServer();
 }
 }  // namespace
 
-// The entry point for the binary with libbluetooth + facades
 int main(int argc, const char** argv) {
-
-  int port = 8899;
+  int port = 8898;
 
   const std::string arg_grpc_port = "--port=";
   const std::string arg_rootcanal_port = "--rootcanal-port=";
@@ -56,7 +55,7 @@ int main(int argc, const char** argv) {
     }
     if (arg.find(arg_rootcanal_port) == 0) {
       auto port_number = arg.substr(arg_rootcanal_port.size());
-      HciHalHostRootcanalConfig::Get()->SetPort(std::stoi(port_number));
+      ::bluetooth::hal::HciHalHostRootcanalConfig::Get()->SetPort(std::stoi(port_number));
     }
     if (arg.find(arg_btsnoop_path) == 0) {
       btsnoop_path = arg.substr(arg_btsnoop_path.size());
@@ -65,9 +64,12 @@ int main(int argc, const char** argv) {
   }
 
   ModuleList modules;
-  modules.add<::bluetooth::hal::HciHalFacadeModule>();
+  modules.add<::bluetooth::hal::HciHal>();
+  modules.add<GrpcModule>();
+  modules.add<::bluetooth::hal::cert::HalCertModule>();
 
-  Thread* stack_thread = new Thread("stack_thread", Thread::Priority::NORMAL);
+  Thread* stack_thread = new Thread("cert_stack_thread", Thread::Priority::NORMAL);
+
   stack = new StackManager();
   stack->StartUp(&modules, stack_thread);
 

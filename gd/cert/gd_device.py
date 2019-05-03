@@ -35,8 +35,11 @@ from acts.libs.proc import job
 
 import grpc
 
-from hal import facade_pb2_grpc as hal_facade_pb2_grpc
 from cert.event_stream import EventStream
+from hal.cert import api_pb2 as hal_cert_pb2
+from hal.cert import api_pb2_grpc as hal_cert_pb2_grpc
+from hal import facade_pb2 as hal_facade_pb2
+from hal import facade_pb2_grpc as hal_facade_pb2_grpc
 
 ANDROID_BUILD_TOP = os.environ.get('ANDROID_BUILD_TOP')
 ANDROID_HOST_OUT = os.environ.get('ANDROID_HOST_OUT')
@@ -79,8 +82,10 @@ def get_instances_with_configs(configs):
         resolved_cmd = []
         for entry in config["cmd"]:
             resolved_cmd.append(replace_vars(entry, config))
-
-        device = GdDevice(config["grpc_port"], resolved_cmd, config["label"])
+        if config["is_cert_device"] == "true":
+            device = GdCertDevice(config["grpc_port"], resolved_cmd, config["label"])
+        else:
+            device = GdDevice(config["grpc_port"], resolved_cmd, config["label"])
         devices.append(device)
     return devices
 
@@ -89,7 +94,7 @@ def replace_vars(string, config):
                  .replace("$(grpc_port)", config.get("grpc_port")) \
                  .replace("$(rootcanal_port)", config.get("rootcanal_port"))
 
-class GdDevice:
+class GdDeviceBase:
     def __init__(self, grpc_port, cmd, label):
         print(cmd)
         self.label = label if label is not None else grpc_port
@@ -114,11 +119,6 @@ class GdDevice:
             stderr=self.backing_process_logs)
 
         self.grpc_channel = grpc.insecure_channel("localhost:" + grpc_port)
-        self.hal = hal_facade_pb2_grpc.HciHalFacadeStub(self.grpc_channel)
-        self.hal.hci_event_stream = EventStream(self.hal.FetchHciEvent)
-        self.hal.hci_acl_stream = EventStream(self.hal.FetchHciAcl)
-        self.hal.hci_sco_stream = EventStream(self.hal.FetchHciSco)
-
 
     def clean_up(self):
         self.grpc_channel.close()
@@ -129,6 +129,22 @@ class GdDevice:
             logging.error("backing process stopped with code: %d" %
                           backing_process_return_code)
             return False
+
+
+class GdDevice(GdDeviceBase):
+    def __init__(self, grpc_port, cmd, label):
+        super().__init__(grpc_port, cmd, label)
+        self.hal = hal_facade_pb2_grpc.HciHalFacadeStub(self.grpc_channel)
+        self.hal.hci_event_stream = EventStream(self.hal.FetchHciEvent)
+        self.hal.hci_acl_stream = EventStream(self.hal.FetchHciAcl)
+        self.hal.hci_sco_stream = EventStream(self.hal.FetchHciSco)
+
+
+class GdCertDevice(GdDeviceBase):
+    def __init__(self, grpc_port, cmd, label):
+        super().__init__(grpc_port, cmd, label)
+        self.hal = hal_cert_pb2_grpc.HciHalCertStub(self.grpc_channel)
+
 
 class GdDeviceLoggerAdapter(logging.LoggerAdapter):
     def process(self, msg, kwargs):

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "hal/facade.h"
+#include "hal/cert/cert.h"
 
 #include <condition_variable>
 #include <memory>
@@ -22,24 +22,17 @@
 
 #include "common/blocking_queue.h"
 #include "grpc/grpc_event_stream.h"
-#include "hal/facade.grpc.pb.h"
+#include "hal/cert/api.grpc.pb.h"
 #include "hal/hci_hal.h"
 #include "hci/hci_packets.h"
 
-using ::grpc::ServerAsyncResponseWriter;
-using ::grpc::ServerAsyncWriter;
-using ::grpc::ServerContext;
-
-using ::bluetooth::facade::EventStreamRequest;
-
 namespace bluetooth {
 namespace hal {
+namespace cert {
 
-class HciHalFacadeService
-    : public HciHalFacade::Service,
-      public ::bluetooth::hal::HciHalCallbacks {
+class HciHalCertService : public HciHalCert::Service, public ::bluetooth::hal::HciHalCallbacks {
  public:
-  HciHalFacadeService(HciHal* hal)
+  HciHalCertService(HciHal* hal)
       : hal_(hal), hci_event_stream_(&hci_event_stream_callback_), hci_acl_stream_(&hci_acl_stream_callback_),
         hci_sco_stream_(&hci_sco_stream_callback_) {
     hal->registerIncomingPacketCallback(this);
@@ -54,47 +47,47 @@ class HciHalFacadeService
     hci::BitInserter it(*packet_bytes);
     packet->Serialize(it);
     hal_->sendHciCommand(*packet_bytes);
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
     while (!can_send_hci_command_) {
       cv_.wait(lock);
     }
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status SetLoopbackMode(::grpc::ServerContext* context,
-                                 const ::bluetooth::hal::LoopbackModeSettings* request,
-                                 ::google::protobuf::Empty* response) override {
+  ::grpc::Status SetScanMode(::grpc::ServerContext* context, const ScanModeSettings* request,
+                             ::google::protobuf::Empty* response) override {
     std::unique_lock<std::mutex> lock(mutex_);
     can_send_hci_command_ = false;
-    bool enable = request->enable();
-    auto packet = hci::WriteLoopbackModeBuilder::Create(enable ? hci::LoopbackMode::ENABLE_LOCAL
-                                                               : hci::LoopbackMode::NO_LOOPBACK);
+    unsigned int mode = request->mode();
+    hci::ScanEnable scan_enable;
+    switch (mode) {
+      case 0x00:
+        scan_enable = hci::ScanEnable::NO_SCANS;
+        break;
+      case 0x01:
+        scan_enable = hci::ScanEnable::INQUIRY_SCAN_ONLY;
+        break;
+      case 0x02:
+        scan_enable = hci::ScanEnable::PAGE_SCAN_ONLY;
+        break;
+      case 0x03:
+        scan_enable = hci::ScanEnable::INQUIRY_AND_PAGE_SCAN;
+        break;
+    }
+
+    auto packet = hci::WriteScanEnableBuilder::Create(scan_enable);
     std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
     hci::BitInserter it(*packet_bytes);
     packet->Serialize(it);
     hal_->sendHciCommand(*packet_bytes);
+
     while (!can_send_hci_command_) {
       cv_.wait(lock);
     }
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status SetInquiry(::grpc::ServerContext* context, const ::bluetooth::hal::InquirySettings* request,
-                            ::google::protobuf::Empty* response) override {
-    std::unique_lock<std::mutex> lock(mutex_);
-    can_send_hci_command_ = false;
-    auto packet = hci::InquiryBuilder::Create(0x33 /* LAP=0x9e8b33 */, static_cast<uint8_t>(request->length()),
-                                              static_cast<uint8_t>(request->num_responses()));
-    std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
-    hci::BitInserter it(*packet_bytes);
-    packet->Serialize(it);
-    hal_->sendHciCommand(*packet_bytes);
-    while (!can_send_hci_command_) {
-      cv_.wait(lock);
-    }
-    return ::grpc::Status::OK;
-  }
-
-  ::grpc::Status SendHciCommand(::grpc::ServerContext* context, const ::bluetooth::hal::HciCommandPacket* request,
+  ::grpc::Status SendHciCommand(::grpc::ServerContext* context, const ::bluetooth::hal::cert::HciCommandPacket* request,
                                 ::google::protobuf::Empty* response) override {
     std::unique_lock<std::mutex> lock(mutex_);
     can_send_hci_command_ = false;
@@ -106,31 +99,31 @@ class HciHalFacadeService
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status SendHciAcl(::grpc::ServerContext* context, const ::bluetooth::hal::HciAclPacket* request,
+  ::grpc::Status SendHciAcl(::grpc::ServerContext* context, const ::bluetooth::hal::cert::HciAclPacket* request,
                             ::google::protobuf::Empty* response) override {
     std::string req_string = request->payload();
     hal_->sendAclData(std::vector<uint8_t>(req_string.begin(), req_string.end()));
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status SendHciSco(::grpc::ServerContext* context, const ::bluetooth::hal::HciScoPacket* request,
+  ::grpc::Status SendHciSco(::grpc::ServerContext* context, const ::bluetooth::hal::cert::HciScoPacket* request,
                             ::google::protobuf::Empty* response) override {
     std::string req_string = request->payload();
     hal_->sendScoData(std::vector<uint8_t>(req_string.begin(), req_string.end()));
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status FetchHciEvent(::grpc::ServerContext* context, const EventStreamRequest* request,
+  ::grpc::Status FetchHciEvent(::grpc::ServerContext* context, const ::bluetooth::facade::EventStreamRequest* request,
                                ::grpc::ServerWriter<HciEventPacket>* writer) override {
     return hci_event_stream_.HandleRequest(context, request, writer);
   };
 
-  ::grpc::Status FetchHciAcl(::grpc::ServerContext* context, const EventStreamRequest* request,
+  ::grpc::Status FetchHciAcl(::grpc::ServerContext* context, const ::bluetooth::facade::EventStreamRequest* request,
                              ::grpc::ServerWriter<HciAclPacket>* writer) override {
     return hci_acl_stream_.HandleRequest(context, request, writer);
   };
 
-  ::grpc::Status FetchHciSco(::grpc::ServerContext* context, const EventStreamRequest* request,
+  ::grpc::Status FetchHciSco(::grpc::ServerContext* context, const ::bluetooth::facade::EventStreamRequest* request,
                              ::grpc::ServerWriter<HciScoPacket>* writer) override {
     return hci_sco_stream_.HandleRequest(context, request, writer);
   };
@@ -182,28 +175,29 @@ class HciHalFacadeService
   ::bluetooth::grpc::GrpcEventStream<HciScoPacket, HciPacket> hci_sco_stream_;
 };
 
-void HciHalFacadeModule::ListDependencies(ModuleList* list) {
+void HalCertModule::ListDependencies(ModuleList* list) {
   ::bluetooth::grpc::GrpcFacadeModule::ListDependencies(list);
   list->add<HciHal>();
 }
 
-void HciHalFacadeModule::Start() {
+void HalCertModule::Start() {
   ::bluetooth::grpc::GrpcFacadeModule::Start();
-  service_ = new HciHalFacadeService(GetDependency<HciHal>());
+  service_ = new HciHalCertService(GetDependency<HciHal>());
 }
 
-void HciHalFacadeModule::Stop() {
+void HalCertModule::Stop() {
   delete service_;
   ::bluetooth::grpc::GrpcFacadeModule::Stop();
 }
 
-::grpc::Service* HciHalFacadeModule::GetService() const {
+::grpc::Service* HalCertModule::GetService() const {
   return service_;
 }
 
-const ModuleFactory HciHalFacadeModule::Factory = ::bluetooth::ModuleFactory([]() {
-  return new HciHalFacadeModule();
+const ModuleFactory HalCertModule::Factory = ::bluetooth::ModuleFactory([]() {
+  return new HalCertModule();
 });
 
+}  // namespace cert
 }  // namespace hal
 }  // namespace bluetooth
