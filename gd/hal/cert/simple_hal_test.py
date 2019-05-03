@@ -25,17 +25,15 @@ from cert.gd_base_test import GdBaseTestClass
 from cert.event_stream import EventStream
 from facade import common_pb2
 from google.protobuf import empty_pb2
-from hal.cert import api_pb2 as hal_cert_pb2
-from hal.cert import api_pb2_grpc as hal_cert_pb2_grpc
-from hal import facade_pb2 as hal_facade_pb2
-from hal import facade_pb2_grpc as hal_facade_pb2_grpc
 
+from hal.cert import api_pb2 as hal_cert_pb2
+from hal import facade_pb2 as hal_facade_pb2
 
 class SimpleHalTest(GdBaseTestClass):
 
     def setup_test(self):
         self.device_under_test = self.gd_devices[0]
-        self.cert_device = self.gd_devices[1]
+        self.cert_device = self.gd_cert_devices[0]
 
         self.device_under_test.hal.SendHciResetCommand(empty_pb2.Empty())
         self.cert_device.hal.SendHciResetCommand(empty_pb2.Empty())
@@ -44,16 +42,13 @@ class SimpleHalTest(GdBaseTestClass):
         self.device_under_test.hal.hci_event_stream.clear_event_buffer()
 
         self.device_under_test.hal.hci_event_stream.subscribe()
-
         self.device_under_test.hal.hci_event_stream.assert_none()
-
         self.device_under_test.hal.hci_event_stream.unsubscribe()
 
     def test_example(self):
         response = self.device_under_test.hal.SetLoopbackMode(
             hal_facade_pb2.LoopbackModeSettings(enable=True)
         )
-        print("Response " + str(response))
 
     def test_fetch_hci_event(self):
         self.device_under_test.hal.SetLoopbackMode(
