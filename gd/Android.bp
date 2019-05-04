@@ -120,6 +120,7 @@ cc_binary {
     host_supported: true,
     srcs: [
         "facade/facade_main.cc",
+        "facade/grpc_root_server.cc",
         "grpc/grpc_module.cc",
         ":BluetoothFacade_hci_hal",
     ],
@@ -161,6 +162,7 @@ cc_binary {
     host_supported: true,
     srcs: [
         "cert/cert_main.cc",
+        "cert/grpc_root_server.cc",
         "grpc/grpc_module.cc",
         ":BluetoothCertSource_hci_hal",
     ],
@@ -299,6 +301,7 @@ filegroup {
     name: "BluetoothFacadeProto",
     srcs: [
         "facade/common.proto",
+        "facade/rootservice.proto",
         "hal/facade.proto",
     ],
 }
@@ -316,6 +319,8 @@ genrule {
     out: [
         "facade/common.grpc.pb.h",
         "facade/common.pb.h",
+        "facade/rootservice.grpc.pb.h",
+        "facade/rootservice.pb.h",
         "hal/facade.grpc.pb.h",
         "hal/facade.pb.h",
     ],
@@ -334,6 +339,8 @@ genrule {
     out: [
         "facade/common.grpc.pb.cc",
         "facade/common.pb.cc",
+        "facade/rootservice.grpc.pb.cc",
+        "facade/rootservice.pb.cc",
         "hal/facade.grpc.pb.cc",
         "hal/facade.pb.cc",
     ],
@@ -346,7 +353,6 @@ genrule {
         "protoc-gen-grpc-python-plugin",
     ],
     cmd: "$(location aprotoc) -Isystem/bt/gd -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-python-plugin) $(in) --grpc_out=$(genDir) --python_out=$(genDir); " +
-        "touch $(genDir)/__init__.py; " +
         "touch $(genDir)/facade/__init__.py; " +
         "touch $(genDir)/hal/__init__.py; " +
         "touch $(genDir)/hal/cert/__init__.py; ",
@@ -355,10 +361,13 @@ genrule {
         ":BluetoothCertStackProto",
     ],
     out: [
-        "__init__.py",
+        "cert/rootservice_pb2_grpc.py",
+        "cert/rootservice_pb2.py",
         "facade/__init__.py",
         "facade/common_pb2_grpc.py",
         "facade/common_pb2.py",
+        "facade/rootservice_pb2_grpc.py",
+        "facade/rootservice_pb2.py",
         "hal/__init__.py",
         "hal/facade_pb2_grpc.py",
         "hal/facade_pb2.py",
@@ -371,6 +380,7 @@ genrule {
 filegroup {
     name: "BluetoothCertStackProto",
     srcs: [
+        "cert/rootservice.proto",
         "hal/cert/api.proto",
     ],
 }
@@ -387,6 +397,8 @@ genrule {
         ":BluetoothFacadeProto",  // we need to use facade/common.proto
     ],
     out: [
+        "cert/rootservice.grpc.pb.h",
+        "cert/rootservice.pb.h",
         "facade/common.grpc.pb.h",
         "facade/common.pb.h",
         "hal/cert/api.grpc.pb.h",
@@ -406,6 +418,8 @@ genrule {
         ":BluetoothFacadeProto",  // we need to use facade/common.proto
     ],
     out: [
+        "cert/rootservice.grpc.pb.cc",
+        "cert/rootservice.pb.cc",
         "facade/common.grpc.pb.cc",
         "facade/common.pb.cc",
         "hal/cert/api.grpc.pb.cc",
