@@ -16,20 +16,17 @@
 
 #pragma once
 
-#include <list>
-#include <mutex>
-
 #include <grpc++/grpc++.h>
 
 #include "grpc/grpc_module.h"
-#include "hal/hci_hal.h"
 
 namespace bluetooth {
 namespace hal {
+namespace cert {
 
-class HciHalFacadeService;
+class HciHalCertService;
 
-class HciHalFacadeModule : public ::bluetooth::grpc::GrpcFacadeModule {
+class HalCertModule : public ::bluetooth::grpc::GrpcFacadeModule {
  public:
   static const ModuleFactory Factory;
 
@@ -41,8 +38,9 @@ class HciHalFacadeModule : public ::bluetooth::grpc::GrpcFacadeModule {
   ::grpc::Service* GetService() const override;
 
  private:
-  HciHalFacadeService* service_;
+  HciHalCertService* service_;
 };
 
+}  // namespace cert
 }  // namespace hal
 }  // namespace bluetooth

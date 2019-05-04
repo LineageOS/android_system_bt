@@ -14,16 +14,22 @@
  * limitations under the License.
  */
 
-#include "grpc/grpc_module.h"
-#include "hal/facade.h"
-#include "hal/hci_hal_host_rootcanal.h"
-#include "hal/snoop_logger.h"
+#include "stack_manager.h"
 
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/un.h>
+#include <unistd.h>
 #include <csignal>
+#include <cstring>
 #include <string>
 #include <thread>
 
-#include "stack_manager.h"
+#include "facade/grpc_root_server.h"
+#include "grpc/grpc_module.h"
+#include "hal/hci_hal.h"
+#include "hal/hci_hal_host_rootcanal.h"
+#include "hal/snoop_logger.h"
 
 using ::bluetooth::hal::HciHalHostRootcanalConfig;
 using ::bluetooth::StackManager;
@@ -32,27 +38,34 @@ using ::bluetooth::ModuleList;
 using ::bluetooth::os::Thread;
 
 namespace {
-static StackManager* stack;
+::bluetooth::facade::GrpcRootServer grpc_root_server;
 
 void interrupt_handler(int) {
-  stack->GetInstance<GrpcModule>()->StopServer();
+  grpc_root_server.StopServer();
 }
 }  // namespace
 
 // The entry point for the binary with libbluetooth + facades
 int main(int argc, const char** argv) {
+  int root_server_port = 8897;
+  int grpc_port = 8899;
 
-  int port = 8899;
-
-  const std::string arg_grpc_port = "--port=";
+  const std::string arg_grpc_root_server_port = "--root-server-port=";
+  const std::string arg_grpc_server_port = "--grpc-port=";
   const std::string arg_rootcanal_port = "--rootcanal-port=";
   const std::string arg_btsnoop_path = "--btsnoop=";
   std::string btsnoop_path;
+  const std::string arg_tester_signal_socket = "--tester-signal-socket=";
+  std::string tester_signal_path;
   for (int i = 1; i < argc; i++) {
     std::string arg = argv[i];
-    if (arg.find(arg_grpc_port) == 0) {
-      auto port_number = arg.substr(arg_grpc_port.size());
-      port = std::stoi(port_number);
+    if (arg.find(arg_grpc_root_server_port) == 0) {
+      auto port_number = arg.substr(arg_grpc_root_server_port.size());
+      root_server_port = std::stoi(port_number);
+    }
+    if (arg.find(arg_grpc_server_port) == 0) {
+      auto port_number = arg.substr(arg_grpc_server_port.size());
+      grpc_port = std::stoi(port_number);
     }
     if (arg.find(arg_rootcanal_port) == 0) {
       auto port_number = arg.substr(arg_rootcanal_port.size());
@@ -62,24 +75,22 @@ int main(int argc, const char** argv) {
       btsnoop_path = arg.substr(arg_btsnoop_path.size());
       ::bluetooth::hal::SnoopLogger::SetFilePath(btsnoop_path);
     }
+    if (arg.find(arg_tester_signal_socket) == 0) {
+      tester_signal_path = arg.substr(arg_tester_signal_socket.size());
+    }
   }
 
-  ModuleList modules;
-  modules.add<::bluetooth::hal::HciHalFacadeModule>();
-
-  Thread* stack_thread = new Thread("stack_thread", Thread::Priority::NORMAL);
-  stack = new StackManager();
-  stack->StartUp(&modules, stack_thread);
-
-  GrpcModule* grpc_module = stack->GetInstance<GrpcModule>();
-  grpc_module->StartServer("0.0.0.0", port);
-
   signal(SIGINT, interrupt_handler);
-  auto wait_thread = std::thread([grpc_module] { grpc_module->RunGrpcLoop(); });
+  grpc_root_server.StartServer("0.0.0.0", root_server_port, grpc_port);
+  int tester_signal_socket = socket(AF_UNIX, SOCK_STREAM, 0);
+  struct sockaddr_un addr;
+  memset(&addr, 0, sizeof(addr));
+  addr.sun_family = AF_UNIX;
+  strncpy(addr.sun_path, tester_signal_path.c_str(), tester_signal_path.size() + 1);
+  connect(tester_signal_socket, (sockaddr*)&addr, sizeof(addr));
+  close(tester_signal_socket);
+  auto wait_thread = std::thread([] { grpc_root_server.RunGrpcLoop(); });
   wait_thread.join();
-
-  stack->ShutDown();
-  delete stack;
 
   return 0;
 }

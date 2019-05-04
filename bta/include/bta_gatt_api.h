@@ -491,8 +491,7 @@ extern void BTA_GATTC_DiscoverServiceByUuid(uint16_t conn_id,
  * Returns          returns list of gatt::Service or NULL.
  *
  ******************************************************************************/
-extern const std::vector<gatt::Service>* BTA_GATTC_GetServices(
-    uint16_t conn_id);
+extern const std::list<gatt::Service>* BTA_GATTC_GetServices(uint16_t conn_id);
 
 /*******************************************************************************
  *

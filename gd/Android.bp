@@ -119,7 +119,8 @@ cc_binary {
     ],
     host_supported: true,
     srcs: [
-        "facade/stack_with_grpc_main.cc",
+        "facade/facade_main.cc",
+        "facade/grpc_root_server.cc",
         "grpc/grpc_module.cc",
         ":BluetoothFacade_hci_hal",
     ],
@@ -129,6 +130,48 @@ cc_binary {
     ],
     generated_sources: [
         "BluetoothFacadeGeneratedStub_cc",
+    ],
+    static_libs: [
+        "libbluetooth_gd",
+    ],
+    shared_libs: [
+        "libgrpc++_unsecure",
+        "libprotobuf-cpp-full",
+    ],
+    target: {
+        android: {
+            shared_libs: [
+                "android.hardware.bluetooth@1.0",
+                "libhwbinder",
+                "libhidlbase",
+                "libhidltransport",
+                "libutils",
+            ],
+        },
+    },
+    sanitize: {
+        address: true,
+    },
+}
+
+cc_binary {
+    name: "bluetooth_cert_stack",
+    defaults: [
+        "gd_defaults",
+    ],
+    host_supported: true,
+    srcs: [
+        "cert/cert_main.cc",
+        "cert/grpc_root_server.cc",
+        "grpc/grpc_module.cc",
+        ":BluetoothCertSource_hci_hal",
+    ],
+    generated_headers: [
+        "BluetoothGeneratedPackets_h",
+        "BluetoothCertStackGeneratedStub_h",
+    ],
+    generated_sources: [
+        "BluetoothCertStackGeneratedStub_cc",
     ],
     static_libs: [
         "libbluetooth_gd",
@@ -258,6 +301,7 @@ filegroup {
     name: "BluetoothFacadeProto",
     srcs: [
         "facade/common.proto",
+        "facade/rootservice.proto",
         "hal/facade.proto",
     ],
 }
@@ -275,6 +319,8 @@ genrule {
     out: [
         "facade/common.grpc.pb.h",
         "facade/common.pb.h",
+        "facade/rootservice.grpc.pb.h",
+        "facade/rootservice.pb.h",
         "hal/facade.grpc.pb.h",
         "hal/facade.pb.h",
     ],
@@ -293,31 +339,90 @@ genrule {
     out: [
         "facade/common.grpc.pb.cc",
         "facade/common.pb.cc",
+        "facade/rootservice.grpc.pb.cc",
+        "facade/rootservice.pb.cc",
         "hal/facade.grpc.pb.cc",
         "hal/facade.pb.cc",
     ],
 }
 
 genrule {
-    name: "BluetoothFacadeGeneratedStub_py",
+    name: "BluetoothFacadeAndCertGeneratedStub_py",
     tools: [
         "aprotoc",
         "protoc-gen-grpc-python-plugin",
     ],
     cmd: "$(location aprotoc) -Isystem/bt/gd -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-python-plugin) $(in) --grpc_out=$(genDir) --python_out=$(genDir); " +
-        "touch $(genDir)/__init__.py; " +
         "touch $(genDir)/facade/__init__.py; " +
-        "touch $(genDir)/hal/__init__.py; ",
+        "touch $(genDir)/hal/__init__.py; " +
+        "touch $(genDir)/hal/cert/__init__.py; ",
     srcs: [
         ":BluetoothFacadeProto",
+        ":BluetoothCertStackProto",
     ],
     out: [
-        "__init__.py",
+        "cert/rootservice_pb2_grpc.py",
+        "cert/rootservice_pb2.py",
         "facade/__init__.py",
         "facade/common_pb2_grpc.py",
         "facade/common_pb2.py",
+        "facade/rootservice_pb2_grpc.py",
+        "facade/rootservice_pb2.py",
         "hal/__init__.py",
         "hal/facade_pb2_grpc.py",
         "hal/facade_pb2.py",
+        "hal/cert/__init__.py",
+        "hal/cert/api_pb2_grpc.py",
+        "hal/cert/api_pb2.py",
+    ],
+}
+
+filegroup {
+    name: "BluetoothCertStackProto",
+    srcs: [
+        "cert/rootservice.proto",
+        "hal/cert/api.proto",
+    ],
+}
+
+genrule {
+    name: "BluetoothCertStackGeneratedStub_h",
+    tools: [
+        "aprotoc",
+        "protoc-gen-grpc-cpp-plugin",
+    ],
+    cmd: "$(location aprotoc) -Isystem/bt/gd -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-cpp-plugin) $(in) --grpc_out=$(genDir) --cpp_out=$(genDir)",
+    srcs: [
+        ":BluetoothCertStackProto",
+        ":BluetoothFacadeProto",  // we need to use facade/common.proto
+    ],
+    out: [
+        "cert/rootservice.grpc.pb.h",
+        "cert/rootservice.pb.h",
+        "facade/common.grpc.pb.h",
+        "facade/common.pb.h",
+        "hal/cert/api.grpc.pb.h",
+        "hal/cert/api.pb.h",
+    ],
+}
+
+genrule {
+    name: "BluetoothCertStackGeneratedStub_cc",
+    tools: [
+        "aprotoc",
+        "protoc-gen-grpc-cpp-plugin",
+    ],
+    cmd: "$(location aprotoc) -Isystem/bt/gd -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-cpp-plugin) $(in) --grpc_out=$(genDir) --cpp_out=$(genDir)",
+    srcs: [
+        ":BluetoothCertStackProto",
+        ":BluetoothFacadeProto",  // we need to use facade/common.proto
+    ],
+    out: [
+        "cert/rootservice.grpc.pb.cc",
+        "cert/rootservice.pb.cc",
+        "facade/common.grpc.pb.cc",
+        "facade/common.pb.cc",
+        "hal/cert/api.grpc.pb.cc",
+        "hal/cert/api.pb.cc",
     ],
 }

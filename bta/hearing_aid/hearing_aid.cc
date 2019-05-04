@@ -45,6 +45,9 @@ constexpr uint16_t CONNECTION_INTERVAL_10MS_PARAM = 0x0008;
 constexpr uint16_t CONNECTION_INTERVAL_20MS_PARAM = 0x0010;
 
 void btif_storage_add_hearing_aid(const HearingDevice& dev_info);
+bool btif_storage_get_hearing_aid_prop(
+    const RawAddress& address, uint8_t* capabilities, uint64_t* hi_sync_id,
+    uint16_t* render_delay, uint16_t* preparation_delay, uint16_t* codecs);
 
 constexpr uint8_t CODEC_G722_16KHZ = 0x01;
 constexpr uint8_t CODEC_G722_24KHZ = 0x02;
@@ -602,7 +605,7 @@ class HearingAidImpl : public HearingAid {
       return;
     }
 
-    const std::vector<gatt::Service>* services = BTA_GATTC_GetServices(conn_id);
+    const std::list<gatt::Service>* services = BTA_GATTC_GetServices(conn_id);
 
     const gatt::Service* service = nullptr;
     for (const gatt::Service& tmp : *services) {
@@ -626,11 +629,16 @@ class HearingAidImpl : public HearingAid {
 
     for (const gatt::Characteristic& charac : service->characteristics) {
       if (charac.uuid == READ_ONLY_PROPERTIES_UUID) {
-        DVLOG(2) << "Reading read only properties "
-                 << loghex(charac.value_handle);
-        BtaGattQueue::ReadCharacteristic(
-            conn_id, charac.value_handle,
-            HearingAidImpl::OnReadOnlyPropertiesReadStatic, nullptr);
+        if (!btif_storage_get_hearing_aid_prop(
+                hearingDevice->address, &hearingDevice->capabilities,
+                &hearingDevice->hi_sync_id, &hearingDevice->render_delay,
+                &hearingDevice->preparation_delay, &hearingDevice->codecs)) {
+          VLOG(2) << "Reading read only properties "
+                  << loghex(charac.value_handle);
+          BtaGattQueue::ReadCharacteristic(
+              conn_id, charac.value_handle,
+              HearingAidImpl::OnReadOnlyPropertiesReadStatic, nullptr);
+        }
       } else if (charac.uuid == AUDIO_CONTROL_POINT_UUID) {
         hearingDevice->audio_control_point_handle = charac.value_handle;
         // store audio control point!

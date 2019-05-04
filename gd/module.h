@@ -115,11 +115,23 @@ class ModuleRegistry {
   // Stop all running modules in reverse order of start
   void StopAll();
 
- private:
+ protected:
   Module* Get(const ModuleFactory* module) const;
 
   std::map<const ModuleFactory*, Module*> started_modules_;
   std::vector<const ModuleFactory*> start_order_;
+};
+
+class TestModuleRegistry : public ModuleRegistry {
+ public:
+  void InjectTestModule(const ModuleFactory* module, Module* instance) {
+    start_order_.push_back(module);
+    started_modules_[module] = instance;
+  }
+
+  Module* GetModuleUnderTest(const ModuleFactory* module) const {
+    return Get(module);
+  }
 };
 
 }  // namespace bluetooth

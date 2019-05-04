@@ -16,33 +16,26 @@
 
 #pragma once
 
-#include <list>
-#include <mutex>
+#include <memory>
+#include <string>
 
 #include <grpc++/grpc++.h>
 
-#include "grpc/grpc_module.h"
-#include "hal/hci_hal.h"
-
 namespace bluetooth {
-namespace hal {
+namespace facade {
 
-class HciHalFacadeService;
-
-class HciHalFacadeModule : public ::bluetooth::grpc::GrpcFacadeModule {
+class GrpcRootServer {
  public:
-  static const ModuleFactory Factory;
+  void StartServer(const std::string& address, int grpc_root_server_port, int grpc_port);
 
-  void ListDependencies(ModuleList* list) override;
+  void StopServer();
 
-  void Start() override;
-  void Stop() override;
-
-  ::grpc::Service* GetService() const override;
+  void RunGrpcLoop();
 
  private:
-  HciHalFacadeService* service_;
+  bool started_ = false;
+  std::unique_ptr<::grpc::Server> server_ = nullptr;
 };
 
-}  // namespace hal
+}  // namespace facade
 }  // namespace bluetooth

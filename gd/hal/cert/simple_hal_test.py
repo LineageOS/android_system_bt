@@ -21,32 +21,83 @@ import sys
 sys.path.append(os.environ['ANDROID_BUILD_TOP'] + '/system/bt/gd')
 
 from cert.gd_base_test import GdBaseTestClass
-
+from cert.event_stream import EventStream
+from cert import rootservice_pb2 as cert_rootservice_pb2
 from facade import common_pb2
+from google.protobuf import empty_pb2
+from facade import rootservice_pb2 as facade_rootservice_pb2
+from hal.cert import api_pb2 as hal_cert_pb2
 from hal import facade_pb2 as hal_facade_pb2
 
 class SimpleHalTest(GdBaseTestClass):
+
+    def setup_test(self):
+        self.device_under_test = self.gd_devices[0]
+        self.cert_device = self.gd_cert_devices[0]
+
+        self.device_under_test.rootservice.StartStack(
+            facade_rootservice_pb2.StartStackRequest(
+                module_under_test=facade_rootservice_pb2.BluetoothModule.Value('HAL'),
+            )
+        )
+        self.cert_device.rootservice.StartStack(
+            cert_rootservice_pb2.StartStackRequest(
+                module_to_test=cert_rootservice_pb2.BluetoothModule.Value('HAL'),
+            )
+        )
+
+        self.device_under_test.hal.SendHciResetCommand(empty_pb2.Empty())
+        self.cert_device.hal.SendHciResetCommand(empty_pb2.Empty())
+
+    def teardown_test(self):
+        self.device_under_test.rootservice.StopStack(
+            facade_rootservice_pb2.StopStackRequest()
+        )
+        self.cert_device.rootservice.StopStack(
+            cert_rootservice_pb2.StopStackRequest()
+        )
+
+    def test_none_event(self):
+        self.device_under_test.hal.hci_event_stream.clear_event_buffer()
+
+        self.device_under_test.hal.hci_event_stream.subscribe()
+        self.device_under_test.hal.hci_event_stream.assert_none()
+        self.device_under_test.hal.hci_event_stream.unsubscribe()
+
     def test_example(self):
-        response = self.gd_devices[0].hal.SetLoopbackMode(hal_facade_pb2.LoopbackModeSettings(enable=True))
-        print("Response " + str(response))
+        response = self.device_under_test.hal.SetLoopbackMode(
+            hal_facade_pb2.LoopbackModeSettings(enable=True)
+        )
 
     def test_fetch_hci_event(self):
-        response = self.gd_devices[0].hal.SetLoopbackMode(hal_facade_pb2.LoopbackModeSettings(enable=True))
+        self.device_under_test.hal.SetLoopbackMode(
+            hal_facade_pb2.LoopbackModeSettings(enable=True)
+        )
 
-        request = common_pb2.EventStreamRequest(subscription_mode=common_pb2.SUBSCRIBE,
-                                                fetch_mode=common_pb2.NONE)
-        response = self.gd_devices[0].hal.FetchHciEvent(request)
+        self.device_under_test.hal.hci_event_stream.subscribe()
 
-        inquiry_string = b'\x01\x04\x05\x33\x8b\x9e\x30\x01'
-        response = self.gd_devices[0].hal.SendHciCommand(hal_facade_pb2.HciCommandPacket(payload=inquiry_string))
+        self.device_under_test.hal.SendHciCommand(
+            hal_facade_pb2.HciCommandPacket(
+                payload=b'\x01\x04\x053\x8b\x9e0\x01'
+            )
+        )
 
-        request = common_pb2.EventStreamRequest(subscription_mode=common_pb2.UNCHANGED,
-                                                fetch_mode=common_pb2.AT_LEAST_ONE)
-        response = self.gd_devices[0].hal.FetchHciEvent(request)
+        self.device_under_test.hal.hci_event_stream.assert_event_occurs(
+            lambda packet: packet.payload == b'\x19\x08\x01\x04\x053\x8b\x9e0\x01'
+        )
+        self.device_under_test.hal.hci_event_stream.unsubscribe()
 
-        for event in response:
-            print(event.payload)
+    def test_inquiry_from_dut(self):
+        self.device_under_test.hal.hci_event_stream.subscribe()
 
-        request = common_pb2.EventStreamRequest(subscription_mode=common_pb2.UNSUBSCRIBE,
-                                                fetch_mode=common_pb2.NONE)
-        response = self.gd_devices[0].hal.FetchHciEvent(request)
+        self.cert_device.hal.SetScanMode(
+            hal_cert_pb2.ScanModeSettings(mode=3)
+        )
+        self.device_under_test.hal.SetInquiry(
+            hal_facade_pb2.InquirySettings(length=0x30, num_responses=0xff)
+        )
+        self.device_under_test.hal.hci_event_stream.assert_event_occurs(
+            lambda packet: b'\x02\x0f' in packet.payload
+            # Expecting an HCI Event (code 0x02, length 0x0f)
+        )
+        self.device_under_test.hal.hci_event_stream.unsubscribe()
