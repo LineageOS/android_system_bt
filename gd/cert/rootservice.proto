@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package bluetooth.cert;
+
+service RootCert {
+  rpc StartStack(StartStackRequest) returns (StartStackResponse) {}
+  rpc StopStack(StopStackRequest) returns (StopStackResponse) {}
+}
+
+enum BluetoothModule {
+  HAL = 0;
+  HCI = 1;
+  L2CAP = 2;
+  SECURITY = 3;
+}
+
+message StartStackRequest {
+  BluetoothModule module_to_test = 1;
+}
+
+message StartStackResponse {}
+
+message StopStackRequest {}
+
+message StopStackResponse {}

@@ -17,14 +17,15 @@
 #include "stack_manager.h"
 
 #include <csignal>
+#include <string>
+#include <thread>
 
+#include "cert/grpc_root_server.h"
 #include "grpc/grpc_module.h"
 #include "hal/cert/cert.h"
 #include "hal/hci_hal.h"
 #include "hal/hci_hal_host_rootcanal.h"
 #include "hal/snoop_logger.h"
-#include "module.h"
-#include "os/thread.h"
 
 using ::bluetooth::Module;
 using ::bluetooth::ModuleList;
@@ -33,25 +34,31 @@ using ::bluetooth::grpc::GrpcModule;
 using ::bluetooth::os::Thread;
 
 namespace {
-StackManager* stack;
+::bluetooth::cert::GrpcRootServer grpc_root_server;
 
 void interrupt_handler(int) {
-  stack->GetInstance<GrpcModule>()->StopServer();
+  grpc_root_server.StopServer();
 }
 }  // namespace
 
 int main(int argc, const char** argv) {
-  int port = 8898;
+  int root_server_port = 8897;
+  int grpc_port = 8899;
 
-  const std::string arg_grpc_port = "--port=";
+  const std::string arg_grpc_root_server_port = "--root-server-port=";
+  const std::string arg_grpc_server_port = "--grpc-port=";
   const std::string arg_rootcanal_port = "--rootcanal-port=";
   const std::string arg_btsnoop_path = "--btsnoop=";
   std::string btsnoop_path;
   for (int i = 1; i < argc; i++) {
     std::string arg = argv[i];
-    if (arg.find(arg_grpc_port) == 0) {
-      auto port_number = arg.substr(arg_grpc_port.size());
-      port = std::stoi(port_number);
+    if (arg.find(arg_grpc_root_server_port) == 0) {
+      auto port_number = arg.substr(arg_grpc_root_server_port.size());
+      root_server_port = std::stoi(port_number);
+    }
+    if (arg.find(arg_grpc_server_port) == 0) {
+      auto port_number = arg.substr(arg_grpc_server_port.size());
+      grpc_port = std::stoi(port_number);
     }
     if (arg.find(arg_rootcanal_port) == 0) {
       auto port_number = arg.substr(arg_rootcanal_port.size());
@@ -63,26 +70,10 @@ int main(int argc, const char** argv) {
     }
   }
 
-  ModuleList modules;
-  modules.add<::bluetooth::hal::HciHal>();
-  modules.add<GrpcModule>();
-  modules.add<::bluetooth::hal::cert::HalCertModule>();
-
-  Thread* stack_thread = new Thread("cert_stack_thread", Thread::Priority::NORMAL);
-
-  stack = new StackManager();
-  stack->StartUp(&modules, stack_thread);
-
-  GrpcModule* grpc_module = stack->GetInstance<GrpcModule>();
-  grpc_module->StartServer("0.0.0.0", port);
-
   signal(SIGINT, interrupt_handler);
-  auto wait_thread = std::thread([grpc_module] { grpc_module->RunGrpcLoop(); });
+  grpc_root_server.StartServer("0.0.0.0", root_server_port, grpc_port);
+  auto wait_thread = std::thread([] { grpc_root_server.RunGrpcLoop(); });
   wait_thread.join();
-
-  stack->ShutDown();
-  delete stack;
-  delete stack_thread;
 
   return 0;
 }

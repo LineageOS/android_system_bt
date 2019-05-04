@@ -18,6 +18,7 @@ from gd_device_base import GdDeviceBase
 from gd_device_base import replace_vars
 
 from cert.event_stream import EventStream
+from facade import rootservice_pb2_grpc as facade_rootservice_pb2_grpc
 from hal import facade_pb2_grpc as hal_facade_pb2_grpc
 
 ACTS_CONTROLLER_CONFIG_NAME = "GdDevice"
@@ -50,12 +51,13 @@ def get_instances_with_configs(configs):
         resolved_cmd = []
         for entry in config["cmd"]:
             resolved_cmd.append(replace_vars(entry, config))
-        devices.append(GdDevice(config["grpc_port"], resolved_cmd, config["label"]))
+        devices.append(GdDevice(config["grpc_port"], config["grpc_root_server_port"], resolved_cmd, config["label"]))
     return devices
 
 class GdDevice(GdDeviceBase):
-    def __init__(self, grpc_port, cmd, label):
-        super().__init__(grpc_port, cmd, label, ACTS_CONTROLLER_CONFIG_NAME)
+    def __init__(self, grpc_port, grpc_root_server_port, cmd, label):
+        super().__init__(grpc_port, grpc_root_server_port, cmd, label, ACTS_CONTROLLER_CONFIG_NAME)
+        self.rootservice = facade_rootservice_pb2_grpc.RootFacadeStub(self.grpc_root_server_channel)
         self.hal = hal_facade_pb2_grpc.HciHalFacadeStub(self.grpc_channel)
         self.hal.hci_event_stream = EventStream(self.hal.FetchHciEvent)
         self.hal.hci_acl_stream = EventStream(self.hal.FetchHciAcl)
