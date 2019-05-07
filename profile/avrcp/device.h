@@ -55,6 +55,12 @@ class Device {
       uint16_t ctrl_mtu, uint16_t browse_mtu);
   virtual ~Device() = default;
 
+  /**
+   * Gets a weak pointer to this device that is invalidated when the device is
+   * disconnected.
+   */
+  base::WeakPtr<Device> Get();
+
   const RawAddress& GetAddress() const { return address_; };
 
   /**
