@@ -27,5 +27,6 @@ filegroup {
     srcs: [
         "alarm_benchmark.cc",
         "thread_benchmark.cc",
+        "queue_benchmark.cc",
     ]
 }
