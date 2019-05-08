@@ -94,4 +94,13 @@ void ModuleRegistry::StopAll() {
   ASSERT(started_modules_.empty());
   start_order_.clear();
 }
+
+void ModuleRegistry::inject_test_module(const ModuleFactory* module, Module* instance, os::Thread* thread) {
+  instance->registry_ = this;
+  instance->handler_ = new Handler(thread);
+  start_order_.push_back(module);
+  started_modules_[module] = instance;
+  instance->Start();
+}
+
 }  // namespace bluetooth
