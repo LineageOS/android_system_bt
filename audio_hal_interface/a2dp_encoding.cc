@@ -17,6 +17,7 @@
 #include "a2dp_encoding.h"
 #include "client_interface.h"
 
+#include "a2dp_aac_constants.h"
 #include "a2dp_sbc_constants.h"
 #include "a2dp_vendor_ldac_constants.h"
 #include "bta/av/bta_av_int.h"
@@ -304,7 +305,7 @@ bool a2dp_get_selected_hal_codec_config(CodecConfiguration* codec_config) {
                    << ": Unknown SBC sample_rate=" << current_codec.sample_rate;
         return false;
       }
-      uint8_t channel_mode = a2dp_offload.codec_info[0] & A2DP_SBC_IE_CH_MD_MSK;
+      uint8_t channel_mode = a2dp_offload.codec_info[3] & A2DP_SBC_IE_CH_MD_MSK;
       switch (channel_mode) {
         case A2DP_SBC_IE_CH_MD_JOINT:
           sbc_config.channelMode = SbcChannelMode::JOINT_STEREO;
@@ -325,7 +326,7 @@ bool a2dp_get_selected_hal_codec_config(CodecConfiguration* codec_config) {
           return false;
       }
       uint8_t block_length =
-          a2dp_offload.codec_info[1] & A2DP_SBC_IE_BLOCKS_MSK;
+          a2dp_offload.codec_info[0] & A2DP_SBC_IE_BLOCKS_MSK;
       switch (block_length) {
         case A2DP_SBC_IE_BLOCKS_4:
           sbc_config.blockLength = SbcBlockLength::BLOCKS_4;
@@ -344,7 +345,7 @@ bool a2dp_get_selected_hal_codec_config(CodecConfiguration* codec_config) {
                      << ": Unknown SBC block_length=" << block_length;
           return false;
       }
-      uint8_t sub_bands = a2dp_offload.codec_info[1] & A2DP_SBC_IE_SUBBAND_MSK;
+      uint8_t sub_bands = a2dp_offload.codec_info[0] & A2DP_SBC_IE_SUBBAND_MSK;
       switch (sub_bands) {
         case A2DP_SBC_IE_SUBBAND_4:
           sbc_config.numSubbands = SbcNumSubbands::SUBBAND_4;
@@ -357,7 +358,7 @@ bool a2dp_get_selected_hal_codec_config(CodecConfiguration* codec_config) {
           return false;
       }
       uint8_t alloc_method =
-          a2dp_offload.codec_info[1] & A2DP_SBC_IE_ALLOC_MD_MSK;
+          a2dp_offload.codec_info[0] & A2DP_SBC_IE_ALLOC_MD_MSK;
       switch (alloc_method) {
         case A2DP_SBC_IE_ALLOC_MD_S:
           sbc_config.allocMethod = SbcAllocMethod::ALLOC_MD_S;
@@ -370,8 +371,8 @@ bool a2dp_get_selected_hal_codec_config(CodecConfiguration* codec_config) {
                      << ": Unknown SBC alloc_method=" << alloc_method;
           return false;
       }
-      sbc_config.minBitpool = a2dp_offload.codec_info[2];
-      sbc_config.maxBitpool = a2dp_offload.codec_info[3];
+      sbc_config.minBitpool = a2dp_offload.codec_info[1];
+      sbc_config.maxBitpool = a2dp_offload.codec_info[2];
       sbc_config.bitsPerSample =
           a2dp_codec_to_hal_bits_per_sample(current_codec);
       if (sbc_config.bitsPerSample == BitsPerSample::BITS_UNKNOWN) {
@@ -388,8 +389,25 @@ bool a2dp_get_selected_hal_codec_config(CodecConfiguration* codec_config) {
       codec_config->codecType = CodecType::AAC;
       codec_config->config.aacConfig({});
       auto aac_config = codec_config->config.aacConfig();
-      // TODO(cheneyni): add more supported types.
-      aac_config.objectType = AacObjectType::MPEG2_LC;
+      uint8_t object_type = a2dp_offload.codec_info[0];
+      switch (object_type) {
+        case A2DP_AAC_OBJECT_TYPE_MPEG2_LC:
+          aac_config.objectType = AacObjectType::MPEG2_LC;
+          break;
+        case A2DP_AAC_OBJECT_TYPE_MPEG4_LC:
+          aac_config.objectType = AacObjectType::MPEG4_LC;
+          break;
+        case A2DP_AAC_OBJECT_TYPE_MPEG4_LTP:
+          aac_config.objectType = AacObjectType::MPEG4_LTP;
+          break;
+        case A2DP_AAC_OBJECT_TYPE_MPEG4_SCALABLE:
+          aac_config.objectType = AacObjectType::MPEG4_SCALABLE;
+          break;
+        default:
+          LOG(ERROR) << __func__
+                     << ": Unknown AAC object_type=" << +object_type;
+          return false;
+      }
       aac_config.sampleRate = a2dp_codec_to_hal_sample_rate(current_codec);
       if (aac_config.sampleRate == SampleRate::RATE_UNKNOWN) {
         LOG(ERROR) << __func__
@@ -402,8 +420,19 @@ bool a2dp_get_selected_hal_codec_config(CodecConfiguration* codec_config) {
                    << current_codec.channel_mode;
         return false;
       }
-      // TODO(cheneyni): refine to support VBR.
-      aac_config.variableBitRateEnabled = AacVariableBitRate::DISABLED;
+      uint8_t vbr_enabled =
+          a2dp_offload.codec_info[1] & A2DP_AAC_VARIABLE_BIT_RATE_MASK;
+      switch (vbr_enabled) {
+        case A2DP_AAC_VARIABLE_BIT_RATE_ENABLED:
+          aac_config.variableBitRateEnabled = AacVariableBitRate::ENABLED;
+          break;
+        case A2DP_AAC_VARIABLE_BIT_RATE_DISABLED:
+          aac_config.variableBitRateEnabled = AacVariableBitRate::DISABLED;
+          break;
+        default:
+          LOG(ERROR) << __func__ << ": Unknown AAC VBR=" << +vbr_enabled;
+          return false;
+      }
       aac_config.bitsPerSample =
           a2dp_codec_to_hal_bits_per_sample(current_codec);
       if (aac_config.bitsPerSample == BitsPerSample::BITS_UNKNOWN) {
