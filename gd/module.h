@@ -115,23 +115,20 @@ class ModuleRegistry {
   // Stop all running modules in reverse order of start
   void StopAll();
 
- protected:
-  Module* Get(const ModuleFactory* module) const;
+  // Helper for dependency injection in test code. DO NOT USE in prod code!
+  // Ownership of |instance| is transferred to the registry.
+  void inject_test_module(const ModuleFactory* module, Module* instance, os::Thread* thread);
 
+  // Helper for dependency injection in test code. DO NOT USE in prod code!
+  template <class T>
+  T* get_module_under_test() const {
+    return static_cast<T*>(Get(&T::Factory));
+  }
+
+ private:
+  Module* Get(const ModuleFactory* module) const;
   std::map<const ModuleFactory*, Module*> started_modules_;
   std::vector<const ModuleFactory*> start_order_;
-};
-
-class TestModuleRegistry : public ModuleRegistry {
- public:
-  void InjectTestModule(const ModuleFactory* module, Module* instance) {
-    start_order_.push_back(module);
-    started_modules_[module] = instance;
-  }
-
-  Module* GetModuleUnderTest(const ModuleFactory* module) const {
-    return Get(module);
-  }
 };
 
 }  // namespace bluetooth
