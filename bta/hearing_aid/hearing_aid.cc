@@ -1438,8 +1438,6 @@ class HearingAidImpl : public HearingAid {
               << ", playback_started=" << hearingDevice->playback_started
               << ", accepting_audio=" << hearingDevice->accepting_audio;
 
-    hearingDevice->playback_started = false;
-
     if (hearingDevice->connecting_actively) {
       // cancel pending direct connect
       BTA_GATTC_CancelOpen(gatt_if, address, true);
