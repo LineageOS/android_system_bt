@@ -94,4 +94,12 @@ void ModuleRegistry::StopAll() {
   ASSERT(started_modules_.empty());
   start_order_.clear();
 }
+
+os::Handler* ModuleRegistry::GetModuleHandler(const ModuleFactory* module) const {
+  auto started_instance = started_modules_.find(module);
+  if (started_instance != started_modules_.end()) {
+    return started_instance->second->GetHandler();
+  }
+  return nullptr;
+}
 }  // namespace bluetooth

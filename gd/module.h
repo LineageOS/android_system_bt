@@ -17,8 +17,9 @@
 #pragma once
 
 #include <functional>
-#include <vector>
+#include <future>
 #include <map>
+#include <vector>
 
 #include "os/log.h"
 #include "os/handler.h"
@@ -118,6 +119,8 @@ class ModuleRegistry {
  protected:
   Module* Get(const ModuleFactory* module) const;
 
+  os::Handler* GetModuleHandler(const ModuleFactory* module) const;
+
   std::map<const ModuleFactory*, Module*> started_modules_;
   std::vector<const ModuleFactory*> start_order_;
 };
@@ -133,8 +136,8 @@ class TestModuleRegistry : public ModuleRegistry {
     return Get(module);
   }
 
-  os::Handler* GetTestModuleHandler() {
-    return new os::Handler(&test_thread);
+  os::Handler* GetTestModuleHandler(const ModuleFactory* module) const {
+    return GetModuleHandler(module);
   }
 
   os::Thread& GetTestThread() {
@@ -144,6 +147,13 @@ class TestModuleRegistry : public ModuleRegistry {
   template <class T>
   T* StartTestModule() {
     return Start<T>(&test_thread);
+  }
+
+  bool SynchronizeModuleHandler(const ModuleFactory* module, std::chrono::milliseconds timeout) const {
+    std::promise<void> promise;
+    os::Handler* handler = GetTestModuleHandler(module);
+    handler->Post([&promise] { promise.set_value(); });
+    return promise.get_future().wait_for(timeout) == std::future_status::ready;
   }
 
   os::Thread test_thread{"test_thread", os::Thread::Priority::NORMAL};
