@@ -241,7 +241,8 @@ struct CodecConfiguration {
 class HearingAidAudioSource {
  public:
   static void Start(const CodecConfiguration& codecConfiguration,
-                    HearingAidAudioReceiver* audioReceiver);
+                    HearingAidAudioReceiver* audioReceiver,
+                    uint16_t remote_delay_ms);
   static void Stop();
   static void Initialize();
   static void CleanUp();
