@@ -230,7 +230,7 @@ class AdapterImpl : public Adapter, public hal::BluetoothInterface::Observer {
 
   bool IsEnabled() const override { return state_.load() == ADAPTER_STATE_ON; }
 
-  bool Enable(bool start_restricted) override {
+  bool Enable() override {
     AdapterState current_state = GetState();
     if (current_state != ADAPTER_STATE_OFF) {
       LOG(INFO) << "Adapter not disabled - state: "
@@ -243,8 +243,7 @@ class AdapterImpl : public Adapter, public hal::BluetoothInterface::Observer {
     state_ = ADAPTER_STATE_TURNING_ON;
     NotifyAdapterStateChanged(current_state, state_);
 
-    int status = hal::BluetoothInterface::Get()->GetHALInterface()->enable(
-        start_restricted);
+    int status = hal::BluetoothInterface::Get()->GetHALInterface()->enable();
     if (status != BT_STATUS_SUCCESS) {
       LOG(ERROR) << "Failed to enable Bluetooth - status: "
                  << BtStatusText((const bt_status_t)status);
