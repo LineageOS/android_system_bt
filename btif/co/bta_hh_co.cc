@@ -163,7 +163,29 @@ static int uhid_read_event(btif_hh_device_t* p_dev) {
         APPL_TRACE_ERROR("%s: UHID_FEATURE: Invalid report type = %d", __func__,
                          ev.u.feature.rtype);
       break;
+    case UHID_SET_REPORT:
+      if (ret < (ssize_t)(sizeof(ev.type) + sizeof(ev.u.set_report))) {
+          APPL_TRACE_ERROR("%s: Invalid size read from uhid-dev: %zd < %zu",
+                           __func__, ret, sizeof(ev.type) + sizeof(ev.u.set_report));
+            return -EFAULT;
+        }
 
+        APPL_TRACE_DEBUG("UHID_SET_REPORT: Report type = %d, report_size = %d"
+                          , ev.u.set_report.rtype, ev.u.set_report.size);
+
+        if (ev.u.set_report.rtype == UHID_FEATURE_REPORT)
+            btif_hh_setreport(p_dev, BTHH_FEATURE_REPORT,
+                              ev.u.set_report.size, ev.u.set_report.data);
+        else if (ev.u.set_report.rtype == UHID_OUTPUT_REPORT)
+            btif_hh_setreport(p_dev, BTHH_OUTPUT_REPORT,
+                              ev.u.set_report.size, ev.u.set_report.data);
+        else if(ev.u.set_report.rtype == UHID_INPUT_REPORT)
+            btif_hh_setreport(p_dev, BTHH_INPUT_REPORT,
+                              ev.u.set_report.size, ev.u.set_report.data);
+        else
+            APPL_TRACE_ERROR("%s:UHID_SET_REPORT: Invalid Report type = %d"
+                          , __func__, ev.u.set_report.rtype);
+        break;
     default:
       APPL_TRACE_DEBUG("Invalid event from uhid-dev: %u\n", ev.type);
   }
