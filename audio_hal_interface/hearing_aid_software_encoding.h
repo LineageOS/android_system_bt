@@ -42,6 +42,8 @@ void cleanup();
 void start_session();
 void end_session();
 
+void set_remote_delay(uint16_t delay_report_ms);
+
 // Read from the FMQ of BluetoothAudio HAL
 size_t read(uint8_t* p_buf, uint32_t len);
 
