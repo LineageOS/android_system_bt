@@ -134,7 +134,7 @@ void Reactor::Stop() {
     LOG_WARN("not running, will stop once it's started");
   }
   auto control = eventfd_write(control_fd_, 1);
-  ASSERT(control != -1)
+  ASSERT(control != -1);
 }
 
 Reactor::Reactable* Reactor::Register(int fd, Closure on_read_ready, Closure on_write_ready) {
@@ -152,7 +152,7 @@ Reactor::Reactable* Reactor::Register(int fd, Closure on_read_ready, Closure on_
   };
   int register_fd;
   RUN_NO_INTR(register_fd = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &event));
-  ASSERT(register_fd != -1)
+  ASSERT(register_fd != -1);
   return reactable;
 }
 
