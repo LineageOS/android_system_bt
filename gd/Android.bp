@@ -105,6 +105,7 @@ cc_library {
         "module.cc",
         ":BluetoothCommonSources",
         ":BluetoothHalSources",
+        ":BluetoothHciSources",
         ":BluetoothPacketSources",
     ],
     generated_headers: [
