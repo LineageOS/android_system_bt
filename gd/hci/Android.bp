@@ -1,6 +1,14 @@
 filegroup {
+    name: "BluetoothHciSources",
+    srcs: [
+        "hci_layer.cc",
+    ],
+}
+
+filegroup {
     name: "BluetoothHciTestSources",
     srcs: [
         "acl_builder_test.cc",
+        "hci_layer_test.cc",
     ],
 }
