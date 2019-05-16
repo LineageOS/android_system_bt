@@ -28,7 +28,7 @@ const Uuid RFCommTest::HFP_UUID = Uuid::From16Bit(0x111E);
 void RFCommTest::SetUp() {
   BluetoothTest::SetUp();
 
-  ASSERT_EQ(bt_interface()->enable(false), BT_STATUS_SUCCESS);
+  ASSERT_EQ(bt_interface()->enable(), BT_STATUS_SUCCESS);
   semaphore_wait(adapter_state_changed_callback_sem_);
   ASSERT_TRUE(GetState() == BT_STATE_ON);
   socket_interface_ =
