@@ -38,7 +38,7 @@ typedef struct {
   uint16_t round;
 } tCMAC_CB;
 
-tCMAC_CB cmac_cb;
+thread_local tCMAC_CB cmac_cb;
 
 /* Rb for AES-128 as block cipher, LSB as [0] */
 Octet16 const_Rb{0x87, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
