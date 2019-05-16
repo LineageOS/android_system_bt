@@ -34,7 +34,7 @@ Octet16 h7(const Octet16& salt, const Octet16& w) {
   return aes_cmac(salt, w.data(), w.size());
 }
 
-Octet16 f4(uint8_t* u, uint8_t* v, const Octet16& x, uint8_t z) {
+Octet16 f4(const uint8_t* u, const uint8_t* v, const Octet16& x, uint8_t z) {
   constexpr size_t msg_len = BT_OCTET32_LEN /* U size */ +
                              BT_OCTET32_LEN /* V size */ + 1 /* Z size */;
 
@@ -73,7 +73,7 @@ static Octet16 calculate_mac_key_or_ltk(const Octet16& t, uint8_t counter,
   return aes_cmac(t, msg.data(), msg.size());
 }
 
-void f5(uint8_t* w, const Octet16& n1, const Octet16& n2, uint8_t* a1,
+void f5(const uint8_t* w, const Octet16& n1, const Octet16& n2, uint8_t* a1,
         uint8_t* a2, Octet16* mac_key, Octet16* ltk) {
   DVLOG(2) << __func__ << "W=" << HexEncode(w, BT_OCTET32_LEN)
            << ", N1=" << HexEncode(n1.data(), n1.size())
@@ -123,7 +123,8 @@ Octet16 f6(const Octet16& w, const Octet16& n1, const Octet16& n2,
   return aes_cmac(w, msg.data(), msg.size());
 }
 
-uint32_t g2(uint8_t* u, uint8_t* v, const Octet16& x, const Octet16& y) {
+uint32_t g2(const uint8_t* u, const uint8_t* v, const Octet16& x,
+            const Octet16& y) {
   constexpr size_t msg_len = BT_OCTET32_LEN /* U size */ +
                              BT_OCTET32_LEN /* V size */
                              + OCTET16_LEN /* Y size */;
