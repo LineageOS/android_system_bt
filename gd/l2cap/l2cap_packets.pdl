@@ -261,7 +261,7 @@ packet ConnectionRequest : ControlFrame (code = CONNECTION_REQUEST) {
 }
 
 enum ConnectionResponseResult : 16 {
-  SUCCESSFUL = 0x0000,
+  SUCCESS = 0x0000,
   PENDING = 0x0001,
   PSM_NOT_SUPPORTED = 0x0002,
   SECURITY_BLOCK = 0x0003,
@@ -476,7 +476,7 @@ packet CreateChannelRequest : ControlFrame (code = CREATE_CHANNEL_REQUEST) {
 }
 
 enum CreateChannelResponseResult : 16 {
-  SUCCESSFUL = 0x0000,
+  SUCCESS = 0x0000,
   PENDING = 0x0001,
   PSM_NOT_SUPPORTED = 0x0002,
   SECURITY_BLOCK = 0x0003,
