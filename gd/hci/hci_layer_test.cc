@@ -173,18 +173,16 @@ class HciTest : public ::testing::Test {
       counting_bytes.push_back(i);
       counting_down_bytes.push_back(~i);
     }
-    thread_ = new Thread("test_thread", Thread::Priority::NORMAL);
     hal = new TestHciHal();
-    fake_registry_.inject_test_module(&hal::HciHal::Factory, hal, thread_);
-    fake_registry_.Start<DependsOnHci>(thread_);
-    hci = fake_registry_.get_module_under_test<HciLayer>();
-    upper = fake_registry_.get_module_under_test<DependsOnHci>();
+    fake_registry_.InjectTestModule(&hal::HciHal::Factory, hal);
+    fake_registry_.StartTestModule<DependsOnHci>();
+    hci = static_cast<HciLayer*>(fake_registry_.GetModuleUnderTest(&HciLayer::Factory));
+    upper = static_cast<DependsOnHci*>(fake_registry_.GetModuleUnderTest(&DependsOnHci::Factory));
     ASSERT(fake_registry_.IsStarted<HciLayer>());
   }
 
   void TearDown() override {
     fake_registry_.StopAll();
-    delete thread_;
   }
 
   std::vector<uint8_t> GetPacketBytes(std::unique_ptr<packet::BasePacketBuilder> packet) {
@@ -198,8 +196,7 @@ class HciTest : public ::testing::Test {
   DependsOnHci* upper = nullptr;
   TestHciHal* hal = nullptr;
   HciLayer* hci = nullptr;
-  ModuleRegistry fake_registry_;
-  Thread* thread_ = nullptr;
+  TestModuleRegistry fake_registry_;
 };
 
 TEST_F(HciTest, initAndClose) {}
