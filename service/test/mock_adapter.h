@@ -32,7 +32,7 @@ class MockAdapter : public Adapter {
   MOCK_METHOD1(RemoveObserver, void(Observer*));
   MOCK_CONST_METHOD0(GetState, AdapterState());
   MOCK_CONST_METHOD0(IsEnabled, bool());
-  MOCK_METHOD1(Enable, bool(bool));
+  MOCK_METHOD0(Enable, bool());
   MOCK_METHOD0(Disable, bool());
   MOCK_CONST_METHOD0(GetName, std::string());
   MOCK_METHOD1(SetName, bool(const std::string&));
