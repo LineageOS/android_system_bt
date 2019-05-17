@@ -17,8 +17,9 @@
 #pragma once
 
 #include <functional>
-#include <vector>
+#include <future>
 #include <map>
+#include <vector>
 
 #include "os/log.h"
 #include "os/handler.h"
@@ -115,20 +116,47 @@ class ModuleRegistry {
   // Stop all running modules in reverse order of start
   void StopAll();
 
-  // Helper for dependency injection in test code. DO NOT USE in prod code!
-  // Ownership of |instance| is transferred to the registry.
-  void inject_test_module(const ModuleFactory* module, Module* instance, os::Thread* thread);
-
-  // Helper for dependency injection in test code. DO NOT USE in prod code!
-  template <class T>
-  T* get_module_under_test() const {
-    return static_cast<T*>(Get(&T::Factory));
-  }
-
- private:
+ protected:
   Module* Get(const ModuleFactory* module) const;
+
+  os::Handler* GetModuleHandler(const ModuleFactory* module) const;
+
   std::map<const ModuleFactory*, Module*> started_modules_;
   std::vector<const ModuleFactory*> start_order_;
+};
+
+class TestModuleRegistry : public ModuleRegistry {
+ public:
+  void InjectTestModule(const ModuleFactory* module, Module* instance) {
+    start_order_.push_back(module);
+    started_modules_[module] = instance;
+  }
+
+  Module* GetModuleUnderTest(const ModuleFactory* module) const {
+    return Get(module);
+  }
+
+  os::Handler* GetTestModuleHandler(const ModuleFactory* module) const {
+    return GetModuleHandler(module);
+  }
+
+  os::Thread& GetTestThread() {
+    return test_thread;
+  }
+
+  template <class T>
+  T* StartTestModule() {
+    return Start<T>(&test_thread);
+  }
+
+  bool SynchronizeModuleHandler(const ModuleFactory* module, std::chrono::milliseconds timeout) const {
+    std::promise<void> promise;
+    os::Handler* handler = GetTestModuleHandler(module);
+    handler->Post([&promise] { promise.set_value(); });
+    return promise.get_future().wait_for(timeout) == std::future_status::ready;
+  }
+
+  os::Thread test_thread{"test_thread", os::Thread::Priority::NORMAL};
 };
 
 }  // namespace bluetooth
