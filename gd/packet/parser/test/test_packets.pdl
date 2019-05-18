@@ -1,6 +1,6 @@
 little_endian_packets
 
-custom_field Address : 48 "common/"
+custom_field SixBytes : 48 "packet/parser/test/"
 
 packet Parent {
   _fixed_ = 0x12 : 8,
@@ -40,14 +40,14 @@ packet ChildTwoTwo : ParentTwo (four_bits = TWO) {
 packet ChildTwoTwoThree :ChildTwoTwo (more_bits = THREE) {
 }
 
-packet ParentWithAddress {
+packet ParentWithSixBytes {
   two_bytes : 16,
-  address : Address,
+  six_bytes : SixBytes,
   _payload_,
 }
 
-packet ChildWithAddress : ParentWithAddress (two_bytes = 0x1234) {
-  child_address : Address,
+packet ChildWithSixBytes : ParentWithSixBytes (two_bytes = 0x1234) {
+  child_six_bytes : SixBytes,
 }
 
 checksum SimpleSum : 16 "packet/parser/test/"
