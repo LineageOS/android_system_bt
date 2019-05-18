@@ -20,15 +20,15 @@
 #include <forward_list>
 #include <memory>
 
-#include "common/address.h"
 #include "os/log.h"
 #include "packet/bit_inserter.h"
+#include "packet/parser/test/six_bytes.h"
 #include "packet/raw_builder.h"
 
-using ::bluetooth::common::Address;
 using ::bluetooth::packet::BitInserter;
 using ::bluetooth::packet::kLittleEndian;
 using ::bluetooth::packet::RawBuilder;
+using ::bluetooth::packet::parser::test::SixBytes;
 using std::vector;
 
 namespace {
@@ -39,21 +39,21 @@ vector<uint8_t> child_two_two_three = {
 vector<uint8_t> child = {
     0x12 /* fixed */, 0x02 /* Size of the payload */, 0xa1 /* First byte of the payload */, 0xa2, 0xb1 /* footer */,
 };
-vector<uint8_t> child_with_address = {
+vector<uint8_t> child_with_six_bytes = {
     0x34 /* TwoBytes */,
     0x12,
-    0xa6 /* First byte of the address */,
-    0xa5,
-    0xa4,
-    0xa3,
+    0xa1 /* First byte of the six_bytes */,
     0xa2,
-    0xa1,
-    0xb6 /* Second address*/,
-    0xb5,
-    0xb4,
-    0xb3,
+    0xa3,
+    0xa4,
+    0xa5,
+    0xa6,
+    0xb1 /* Second six_bytes*/,
     0xb2,
-    0xb1,
+    0xb3,
+    0xb4,
+    0xb5,
+    0xb6,
 };
 
 }  // namespace
@@ -129,9 +129,9 @@ TEST(GeneratedPacketTest, testValidateWayTooSmall) {
   std::vector<uint8_t> too_small_bytes = {0x34};
   auto too_small = std::make_shared<std::vector<uint8_t>>(too_small_bytes.begin(), too_small_bytes.end());
 
-  ParentWithAddressView invalid_parent = ParentWithAddressView::Create(too_small);
+  ParentWithSixBytesView invalid_parent = ParentWithSixBytesView::Create(too_small);
   ASSERT_FALSE(invalid_parent.IsValid());
-  ChildWithAddressView invalid = ChildWithAddressView::Create(ParentWithAddressView::Create(too_small));
+  ChildWithSixBytesView invalid = ChildWithSixBytesView::Create(ParentWithSixBytesView::Create(too_small));
   ASSERT_FALSE(invalid.IsValid());
 }
 
@@ -139,9 +139,9 @@ TEST(GeneratedPacketTest, testValidateTooSmall) {
   std::vector<uint8_t> too_small_bytes = {0x34, 0x12, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x11};
   auto too_small = std::make_shared<std::vector<uint8_t>>(too_small_bytes.begin(), too_small_bytes.end());
 
-  ParentWithAddressView valid_parent = ParentWithAddressView::Create(too_small);
+  ParentWithSixBytesView valid_parent = ParentWithSixBytesView::Create(too_small);
   ASSERT_TRUE(valid_parent.IsValid());
-  ChildWithAddressView invalid = ChildWithAddressView::Create(ParentWithAddressView::Create(too_small));
+  ChildWithSixBytesView invalid = ChildWithSixBytesView::Create(ParentWithSixBytesView::Create(too_small));
   ASSERT_FALSE(invalid.IsValid());
 }
 
@@ -150,7 +150,7 @@ TEST(GeneratedPacketTest, testValidateJustRight) {
                                            0x06, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16};
   auto just_right = std::make_shared<std::vector<uint8_t>>(just_right_bytes.begin(), just_right_bytes.end());
 
-  ChildWithAddressView valid = ChildWithAddressView::Create(ParentWithAddressView::Create(just_right));
+  ChildWithSixBytesView valid = ChildWithSixBytesView::Create(ParentWithSixBytesView::Create(just_right));
   ASSERT_TRUE(valid.IsValid());
 }
 
@@ -159,7 +159,7 @@ TEST(GeneratedPacketTest, testValidateTooBig) {
                                         0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x20};
   auto too_big = std::make_shared<std::vector<uint8_t>>(too_big_bytes.begin(), too_big_bytes.end());
 
-  ChildWithAddressView lenient = ChildWithAddressView::Create(ParentWithAddressView::Create(too_big));
+  ChildWithSixBytesView lenient = ChildWithSixBytesView::Create(ParentWithSixBytesView::Create(too_big));
   ASSERT_TRUE(lenient.IsValid());
 }
 
@@ -212,35 +212,33 @@ TEST(GeneratedPacketTest, testValidatedParentDeath) {
   ASSERT_DEATH(child_view.GetFieldName(), "validated");
 }
 
-TEST(GeneratedPacketTest, testChildWithAddress) {
-  Address address_a;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", address_a));
-  Address address_b;
-  ASSERT_TRUE(Address::FromString("B1:B2:B3:B4:B5:B6", address_b));
-  auto packet = ChildWithAddressBuilder::Create(address_a, address_b);
+TEST(GeneratedPacketTest, testChildWithSixBytes) {
+  SixBytes six_bytes_a{{0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6}};
+  SixBytes six_bytes_b{{0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6}};
+  auto packet = ChildWithSixBytesBuilder::Create(six_bytes_a, six_bytes_b);
 
-  ASSERT_EQ(child_with_address.size(), packet->size());
+  ASSERT_EQ(child_with_six_bytes.size(), packet->size());
 
   std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
   BitInserter it(*packet_bytes);
   packet->Serialize(it);
 
-  ASSERT_EQ(packet_bytes->size(), child_with_address.size());
-  for (size_t i = 0; i < child_with_address.size(); i++) {
-    ASSERT_EQ(packet_bytes->at(i), child_with_address[i]);
+  ASSERT_EQ(packet_bytes->size(), child_with_six_bytes.size());
+  for (size_t i = 0; i < child_with_six_bytes.size(); i++) {
+    ASSERT_EQ(packet_bytes->at(i), child_with_six_bytes[i]);
   }
 
   PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
-  ParentWithAddressView parent_view = ParentWithAddressView::Create(packet_bytes_view);
+  ParentWithSixBytesView parent_view = ParentWithSixBytesView::Create(packet_bytes_view);
   ASSERT_TRUE(parent_view.IsValid());
-  ASSERT_EQ(address_a, parent_view.GetAddress());
+  ASSERT_EQ(six_bytes_a, parent_view.GetSixBytes());
 
-  ChildWithAddressView child_view = ChildWithAddressView::Create(parent_view);
+  ChildWithSixBytesView child_view = ChildWithSixBytesView::Create(parent_view);
   ASSERT_TRUE(child_view.IsValid());
 
-  ASSERT_EQ(address_a, child_view.GetAddress());
-  ASSERT_EQ(address_a, ((ParentWithAddressView)child_view).GetAddress());
-  ASSERT_EQ(address_b, child_view.GetChildAddress());
+  ASSERT_EQ(six_bytes_a, child_view.GetSixBytes());
+  ASSERT_EQ(six_bytes_a, ((ParentWithSixBytesView)child_view).GetSixBytes());
+  ASSERT_EQ(six_bytes_b, child_view.GetChildSixBytes());
 }
 
 namespace {
