@@ -105,6 +105,19 @@ bool is_restricted_mode(void);
 
 /*******************************************************************************
  *
+ * Function         is_single_user_mode_
+ *
+ * Description      Checks if BT was enabled in single user mode. In this
+ *                  mode, use of keystore for key attestation of LTK is limitee
+ *                  to this mode defined by UserManager.
+ *
+ * Returns          bool
+ *
+ ******************************************************************************/
+bool is_single_user_mode(void);
+
+/*******************************************************************************
+ *
  * Function         btif_get_adapter_properties
  *
  * Description      Fetches all local adapter properties
