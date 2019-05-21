@@ -159,15 +159,15 @@ class TestDequeueEnd {
     buffer_.push(std::move(data));
     LOG_INFO("push %s, size %d", copy.c_str(), (int)buffer_.size());  // Debug log, will be removed
 
+    if (buffer_.size() == capacity_) {
+      queue_->UnregisterDequeue();
+    }
+
     auto pair = promise_map_->find(buffer_.size());
     if (pair != promise_map_->end()) {
       LOG_INFO("promises : %d", pair->first);  // Debug log, will be removed
       pair->second.set_value(pair->first);
       promise_map_->erase(pair->first);
-    }
-
-    if (buffer_.size() == capacity_) {
-      queue_->UnregisterDequeue();
     }
   }
 
