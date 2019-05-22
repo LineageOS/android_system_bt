@@ -265,6 +265,7 @@ TEST_F(ReactorPerformanceTest, reactor_thread_speed_test) {
   std::chrono::milliseconds duration =
       std::chrono::duration_cast<std::chrono::milliseconds>(end_time -
                                                             start_time);
+  fixed_queue_unregister_dequeue(bt_msg_queue_);
 
   LOG(INFO) << "ReactorPerformanceTest, " << duration.count() << " ms, "
             << NUM_MESSAGES_TO_SEND << " messages";
