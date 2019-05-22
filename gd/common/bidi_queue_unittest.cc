@@ -83,8 +83,8 @@ class TestBidiQueueEnd {
     std::promise<TB*>* promise = new std::promise<TB*>();
     handler_->Post([this, promise] {
       end_->RegisterDequeue(handler_, [this, promise] {
-        promise->set_value(end_->TryDequeue().get());
         end_->UnregisterDequeue();
+        promise->set_value(end_->TryDequeue().get());
       });
     });
 
