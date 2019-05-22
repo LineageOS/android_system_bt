@@ -256,7 +256,6 @@ cc_test {
     ],
     host_supported: true,
     srcs: [
-        ":BluetoothCommonSources",
         ":BluetoothPacketSources",
         ":BluetoothPacketParserTestPacketTestSources",
     ],

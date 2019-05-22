@@ -20,11 +20,11 @@
 int FixedField::unique_id_ = 0;
 
 FixedField::FixedField(int size, int64_t value, ParseLocation loc)
-    : PacketField(loc, "FixedScalar" + std::to_string(unique_id_++)), type_(Type::FIXED_SCALAR), size_(size),
+    : PacketField(loc, "fixed_scalar" + std::to_string(unique_id_++)), type_(Type::FIXED_SCALAR), size_(size),
       value_(value) {}
 
 FixedField::FixedField(EnumDef* enum_def, std::string value, ParseLocation loc)
-    : PacketField(loc, "FixedScalar" + std::to_string(unique_id_++)), type_(Type::FIXED_ENUM), enum_(enum_def),
+    : PacketField(loc, "fixed_scalar" + std::to_string(unique_id_++)), type_(Type::FIXED_ENUM), enum_(enum_def),
       value_(value) {}
 
 PacketField::Type FixedField::GetFieldType() const {
