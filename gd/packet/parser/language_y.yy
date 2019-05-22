@@ -508,7 +508,7 @@ size_field_definition
   | SIZE '(' PAYLOAD ')' ':' INTEGER
     {
       std::cerr << "Size for payload defined\n";
-      $$ = new SizeField("Payload", $6, false, LOC);
+      $$ = new SizeField("payload", $6, false, LOC);
     }
   | COUNT '(' IDENTIFIER ')' ':' INTEGER
     {

@@ -2309,7 +2309,7 @@ packet SniffSubratingEvent : EventPacket (event_code = SNIFF_SUBRATING){
   maximum_transmit_latency : 16, // 0x000 - 0xFFFE (0s - 40.9s)
   maximum_receive_latency : 16, // 0x000 - 0xFFFE (0s - 40.9s)
   minimum_remote_timeout : 16, // 0x000 - 0xFFFE (0s - 40.9s)
-  MInimumLocalTimeout : 16, // 0x000 - 0xFFFE (0s - 40.9s)
+  minimum_local_timeout : 16, // 0x000 - 0xFFFE (0s - 40.9s)
 }
 
 packet ExtendedInquiryResult : EventPacket (event_code = EXTENDED_INQUIRY_RESULT) {
