@@ -140,6 +140,9 @@ static const interop_addr_entry_t interop_addr_database[] = {
 
     // deepblue2 - cannot change smoothly the volume: b/37834035
     {{{0x0c, 0xa6, 0x94, 0, 0, 0}}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
+
+    // AirPods 2 - unacceptably loud volume
+    {{{0x94, 0x16, 0x25, 0, 0, 0}}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
 };
 
 typedef struct {
