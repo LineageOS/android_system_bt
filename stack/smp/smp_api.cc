@@ -62,7 +62,7 @@ void SMP_Init(void) {
 
   smp_l2cap_if_init();
   /* initialization of P-256 parameters */
-  p_256_init_curve(KEY_LENGTH_DWORDS_P256);
+  p_256_init_curve();
 
   /* Initialize failure case for certification */
   smp_cb.cert_failure =
