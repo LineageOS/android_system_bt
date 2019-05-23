@@ -62,26 +62,22 @@ class TestEnqueueEnd {
   explicit TestEnqueueEnd(Queue<std::string>* queue, Handler* handler)
       : count(0), handler_(handler), queue_(queue), delay_(0) {}
 
-  ~TestEnqueueEnd() {
-    LOG_INFO("~TestEnqueueEnd");  // Debug log, will be removed
-  }
+  ~TestEnqueueEnd() {}
 
   void RegisterEnqueue(std::unordered_map<int, std::promise<int>>* promise_map) {
-    LOG_INFO("RegisterEnqueue");  // Debug log, will be removed
     promise_map_ = promise_map;
     handler_->Post([this] { queue_->RegisterEnqueue(handler_, [this] { return EnqueueCallbackForTest(); }); });
   }
 
   void UnregisterEnqueue() {
-    LOG_INFO("UnregisterEnqueue");  // Debug log, will be removed
     std::promise<void> promise;
-    auto feature = promise.get_future();
+    auto future = promise.get_future();
 
     handler_->Post([this, &promise] {
       queue_->UnregisterEnqueue();
       promise.set_value();
     });
-    feature.wait();
+    future.wait();
   }
 
   std::unique_ptr<std::string> EnqueueCallbackForTest() {
@@ -93,14 +89,12 @@ class TestEnqueueEnd {
     std::unique_ptr<std::string> data = std::move(buffer_.front());
     buffer_.pop();
     std::string copy = *data;
-    LOG_INFO(": pop %s, size %d", copy.c_str(), (int)buffer_.size());  // Debug log, will be removed
     if (buffer_.empty()) {
       queue_->UnregisterEnqueue();
     }
 
     auto pair = promise_map_->find(buffer_.size());
     if (pair != promise_map_->end()) {
-      LOG_INFO("promises : %d", pair->first);  // Debug log, will be removed
       pair->second.set_value(pair->first);
       promise_map_->erase(pair->first);
     }
@@ -126,26 +120,22 @@ class TestDequeueEnd {
   explicit TestDequeueEnd(Queue<std::string>* queue, Handler* handler, int capacity)
       : count(0), handler_(handler), queue_(queue), capacity_(capacity), delay_(0) {}
 
-  ~TestDequeueEnd() {
-    LOG_INFO("~TestDequeueEnd");  // Debug log, will be removed
-  }
+  ~TestDequeueEnd() {}
 
   void RegisterDequeue(std::unordered_map<int, std::promise<int>>* promise_map) {
-    LOG_INFO("RegisterDequeue");  // Debug log, will be removed
     promise_map_ = promise_map;
     handler_->Post([this] { queue_->RegisterDequeue(handler_, [this] { DequeueCallbackForTest(); }); });
   }
 
   void UnregisterDequeue() {
-    LOG_INFO("UnregisterDequeue");  // Debug log, will be removed
     std::promise<void> promise;
-    auto feature = promise.get_future();
+    auto future = promise.get_future();
 
     handler_->Post([this, &promise] {
       queue_->UnregisterDequeue();
       promise.set_value();
     });
-    feature.wait();
+    future.wait();
   }
 
   void DequeueCallbackForTest() {
@@ -155,9 +145,7 @@ class TestDequeueEnd {
 
     count++;
     std::unique_ptr<std::string> data = queue_->TryDequeue();
-    std::string copy = *data;  // Debug log, will be removed
     buffer_.push(std::move(data));
-    LOG_INFO("push %s, size %d", copy.c_str(), (int)buffer_.size());  // Debug log, will be removed
 
     if (buffer_.size() == capacity_) {
       queue_->UnregisterDequeue();
@@ -165,7 +153,6 @@ class TestDequeueEnd {
 
     auto pair = promise_map_->find(buffer_.size());
     if (pair != promise_map_->end()) {
-      LOG_INFO("promises : %d", pair->first);  // Debug log, will be removed
       pair->second.set_value(pair->first);
       promise_map_->erase(pair->first);
     }
@@ -678,6 +665,36 @@ TEST_F(QueueTest, queue_becomes_non_empty_during_test) {
   EXPECT_EQ(dequeue_future.get(), kQueueSize);
 }
 
+TEST_F(QueueTest, pass_smart_pointer_and_unregister) {
+  Queue<std::string>* queue = new Queue<std::string>(kQueueSize);
+
+  // Enqueue a string
+  std::string valid = "Valid String";
+  std::shared_ptr<std::string> shared = std::make_shared<std::string>(valid);
+  queue->RegisterEnqueue(enqueue_handler_, [queue, shared]() {
+    queue->UnregisterEnqueue();
+    return std::make_unique<std::string>(*shared);
+  });
+
+  // Dequeue the string
+  queue->RegisterDequeue(dequeue_handler_, [queue, valid]() {
+    queue->UnregisterDequeue();
+    auto answer = *queue->TryDequeue();
+    ASSERT_EQ(answer, valid);
+  });
+
+  // Wait for both handlers to finish and delete the Queue
+  std::promise<void> promise;
+  auto future = promise.get_future();
+
+  enqueue_handler_->Post([this, queue, &promise]() {
+    dequeue_handler_->Post([queue, &promise] {
+      delete queue;
+      promise.set_value();
+    });
+  });
+  future.wait();
+}
 }  // namespace
 }  // namespace os
 }  // namespace bluetooth
