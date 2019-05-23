@@ -17,6 +17,9 @@ cc_defaults {
                 "-DOS_LINUX_GENERIC",
             ],
         },
+        darwin: {
+            enabled: false,
+        },
     },
     cpp_std: "c++17",
     cflags: [
