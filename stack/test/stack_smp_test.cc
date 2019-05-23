@@ -261,8 +261,8 @@ TEST(SmpEccValidationTest, test_valid_points) {
 
 TEST(SmpEccValidationTest, test_invalid_points) {
   Point p;
-  multiprecision_init(p.x, 8);
-  multiprecision_init(p.y, 8);
+  multiprecision_init(p.x);
+  multiprecision_init(p.y);
 
   EXPECT_FALSE(ECC_ValidatePoint(p));
 
