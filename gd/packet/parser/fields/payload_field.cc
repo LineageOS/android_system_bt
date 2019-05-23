@@ -18,7 +18,7 @@
 #include "util.h"
 
 PayloadField::PayloadField(std::string modifier, ParseLocation loc)
-    : PacketField(loc, "Payload"), size_field_(nullptr), size_modifier_(modifier) {}
+    : PacketField(loc, "payload"), size_field_(nullptr), size_modifier_(modifier) {}
 
 void PayloadField::SetSizeField(const SizeField* size_field) {
   if (size_field_ != nullptr) {
