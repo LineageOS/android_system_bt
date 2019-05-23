@@ -8,15 +8,15 @@ cc_defaults {
                 "-DOS_LINUX_GENERIC",
             ],
             shared_libs: [
-                "liblog"
-            ]
+                "liblog",
+            ],
         },
         host: {
             cflags: [
                 "-DOS_LINUX",
                 "-DOS_LINUX_GENERIC",
-            ]
-        }
+            ],
+        },
     },
     cpp_std: "c++17",
     cflags: [
@@ -236,10 +236,10 @@ cc_test {
         ":BluetoothL2capTestSources",
         ":BluetoothPacketTestSources",
     ],
-    generated_headers : [
+    generated_headers: [
         "BluetoothGeneratedPackets_h",
     ],
-    static_libs : [
+    static_libs: [
         "libbluetooth_gd",
     ],
     sanitize: {
@@ -260,7 +260,7 @@ cc_test {
         ":BluetoothPacketSources",
         ":BluetoothPacketParserTestPacketTestSources",
     ],
-    generated_headers : [
+    generated_headers: [
         "BluetoothPacketParserTestPacketPdlGen_h",
     ],
     sanitize: {
@@ -277,7 +277,7 @@ cc_benchmark {
         "benchmark.cc",
         ":BluetoothOsBenchmarkSources",
     ],
-    static_libs : [
+    static_libs: [
         "libbluetooth_gd",
     ],
 }
@@ -395,7 +395,7 @@ genrule {
     cmd: "$(location aprotoc) -Isystem/bt/gd -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-cpp-plugin) $(in) --grpc_out=$(genDir) --cpp_out=$(genDir)",
     srcs: [
         ":BluetoothCertStackProto",
-        ":BluetoothFacadeProto",  // we need to use facade/common.proto
+        ":BluetoothFacadeProto", // we need to use facade/common.proto
     ],
     out: [
         "cert/rootservice.grpc.pb.h",
@@ -416,7 +416,7 @@ genrule {
     cmd: "$(location aprotoc) -Isystem/bt/gd -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-cpp-plugin) $(in) --grpc_out=$(genDir) --cpp_out=$(genDir)",
     srcs: [
         ":BluetoothCertStackProto",
-        ":BluetoothFacadeProto",  // we need to use facade/common.proto
+        ":BluetoothFacadeProto", // we need to use facade/common.proto
     ],
     out: [
         "cert/rootservice.grpc.pb.cc",

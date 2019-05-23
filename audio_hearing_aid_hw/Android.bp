@@ -5,7 +5,7 @@ cc_defaults {
         "system/bt",
         "system/bt/include",
         "system/bt/audio_hearing_aid_hw/include",
-    ]
+    ],
 }
 
 // Audio A2DP shared library for target
