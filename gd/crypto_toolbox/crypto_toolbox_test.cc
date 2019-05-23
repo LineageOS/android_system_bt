@@ -40,7 +40,7 @@ TEST(CryptoToolboxTest, bt_spec_test_d_1_test) {
   aes_set_key(k, sizeof(k), &ctx);
   aes_encrypt(m, output, &ctx); /* outputs in byte 48 to byte 63 */
 
-  EXPECT_TRUE(memcmp(output, aes_cmac_k_m, OCTET16_LEN));
+  EXPECT_TRUE(memcmp(output, aes_cmac_k_m, OCTET16_LEN) == 0);
 
   // useful for debugging
   // LOG(INFO) << "k " << base::HexEncode(k, OCTET16_LEN);
