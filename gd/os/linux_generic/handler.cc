@@ -31,16 +31,16 @@
 namespace bluetooth {
 namespace os {
 
-Handler::Handler(Thread* thread)
-  : thread_(thread),
-    fd_(eventfd(0, EFD_SEMAPHORE | EFD_NONBLOCK)) {
+Handler::Handler(Reactor* reactor) : reactor_(reactor), fd_(eventfd(0, EFD_SEMAPHORE | EFD_NONBLOCK)) {
   ASSERT(fd_ != -1);
 
-  reactable_ = thread_->GetReactor()->Register(fd_, [this] { this->handle_next_event(); }, nullptr);
+  reactable_ = reactor_->Register(fd_, [this] { this->handle_next_event(); }, nullptr);
 }
 
+Handler::Handler(Thread* thread) : Handler(thread->GetReactor()) {}
+
 Handler::~Handler() {
-  thread_->GetReactor()->Unregister(reactable_);
+  reactor_->Unregister(reactable_);
   reactable_ = nullptr;
 
   int close_status;

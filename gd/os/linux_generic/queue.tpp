@@ -30,7 +30,7 @@ void Queue<T>::RegisterEnqueue(Handler* handler, EnqueueCallback callback) {
   ASSERT(enqueue_.handler_ == nullptr);
   ASSERT(enqueue_.reactable_ == nullptr);
   enqueue_.handler_ = handler;
-  enqueue_.reactable_ = enqueue_.handler_->thread_->GetReactor()->Register(
+  enqueue_.reactable_ = enqueue_.handler_->reactor_->Register(
       enqueue_.reactive_semaphore_.GetFd(), [this, callback] { EnqueueCallbackInternal(callback); }, nullptr);
 }
 
@@ -38,7 +38,7 @@ template <typename T>
 void Queue<T>::UnregisterEnqueue() {
   std::lock_guard<std::mutex> lock(mutex_);
   ASSERT(enqueue_.reactable_ != nullptr);
-  enqueue_.handler_->thread_->GetReactor()->Unregister(enqueue_.reactable_);
+  enqueue_.handler_->reactor_->Unregister(enqueue_.reactable_);
   enqueue_.reactable_ = nullptr;
   enqueue_.handler_ = nullptr;
 }
@@ -49,7 +49,7 @@ void Queue<T>::RegisterDequeue(Handler* handler, DequeueCallback callback) {
   ASSERT(dequeue_.handler_ == nullptr);
   ASSERT(dequeue_.reactable_ == nullptr);
   dequeue_.handler_ = handler;
-  dequeue_.reactable_ = dequeue_.handler_->thread_->GetReactor()->Register(dequeue_.reactive_semaphore_.GetFd(),
+  dequeue_.reactable_ = dequeue_.handler_->reactor_->Register(dequeue_.reactive_semaphore_.GetFd(),
                                                                            [callback] { callback(); }, nullptr);
 }
 
@@ -57,7 +57,7 @@ template <typename T>
 void Queue<T>::UnregisterDequeue() {
   std::lock_guard<std::mutex> lock(mutex_);
   ASSERT(dequeue_.reactable_ != nullptr);
-  dequeue_.handler_->thread_->GetReactor()->Unregister(dequeue_.reactable_);
+  dequeue_.handler_->reactor_->Unregister(dequeue_.reactable_);
   dequeue_.reactable_ = nullptr;
   dequeue_.handler_ = nullptr;
 }
