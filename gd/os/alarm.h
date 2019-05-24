@@ -34,6 +34,9 @@ class Alarm {
   // Create and register a single-shot alarm on given thread
   explicit Alarm(Thread* thread);
 
+  // Create and register a single-shot alarm with a given reactor
+  explicit Alarm(Reactor* reactor);
+
   // Unregister this alarm from the thread and release resource
   ~Alarm();
 
@@ -47,7 +50,7 @@ class Alarm {
 
  private:
   Closure task_;
-  Thread* thread_;
+  Reactor* reactor_;
   int fd_ = 0;
   Reactor::Reactable* token_;
   mutable std::mutex mutex_;
