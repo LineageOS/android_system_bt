@@ -58,16 +58,16 @@ packet StandardFrameWithFcs : BasicFrameWithFcs {
 
 group StandardSupervisoryControl {
   _fixed_ = 0 : 1,
-  S : SupervisoryFunction,
+  s : SupervisoryFunction,
   _reserved_ : 3,
-  R : RetransmissionDisable,
+  r : RetransmissionDisable,
   req_seq : 6,
   _reserved_ : 2,
 }
 
 group StandardInformationControl {
   tx_seq : 6,
-  R : RetransmissionDisable,
+  r : RetransmissionDisable,
   req_seq : 6,
   sar : SegmentationAndReassembly,
 }
@@ -91,12 +91,12 @@ packet StandardInformationFrameWithFcs : StandardFrameWithFcs (frame_type = I_FR
 }
 
 packet StandardInformationStartFrame : StandardInformationFrame (sar = START) {
-  L2capSduLength : 16,
+  l2cap_sdu_length : 16,
   _payload_,
 }
 
 packet StandardInformationStartFrameWithFcs : StandardInformationFrameWithFcs (sar = START) {
-  L2capSduLength : 16,
+  l2cap_sdu_length : 16,
   _payload_,
 }
 
@@ -112,17 +112,17 @@ enum Final : 1 {
 
 group EnhancedSupervisoryControl {
   _fixed_ = 0 : 1,
-  S : SupervisoryFunction,
-  P : Poll,
+  s : SupervisoryFunction,
+  p : Poll,
   _reserved_ : 2,
-  F : Final,
+  f : Final,
   req_seq : 6,
   _reserved_ : 2,
 }
 
 group EnhancedInformationControl {
   tx_seq : 6,
-  F : Final,
+  f : Final,
   req_seq : 6,
   sar : SegmentationAndReassembly,
 }
@@ -146,26 +146,26 @@ packet EnhancedInformationFrameWithFcs : StandardFrameWithFcs (frame_type = I_FR
 }
 
 packet EnhancedInformationStartFrame : EnhancedInformationFrame (sar = START) {
-  L2capSduLength : 16,
+  l2cap_sdu_length : 16,
   _payload_,
 }
 
 packet EnhancedInformationStartFrameWithFcs : EnhancedInformationFrameWithFcs (sar = START) {
-  L2capSduLength : 16,
+  l2cap_sdu_length : 16,
   _payload_,
 }
 
 group ExtendedSupervisoryControl {
-  F : Final,
+  f : Final,
   req_seq : 14,
-  S : SupervisoryFunction,
-  P : Poll,
+  s : SupervisoryFunction,
+  p : Poll,
   _reserved_ : 5,
   _reserved_ : 8,
 }
 
 group ExtendedInformationControl {
-  F : Final,
+  f : Final,
   req_seq : 14,
   sar : SegmentationAndReassembly,
   tx_seq : 14,
@@ -190,17 +190,17 @@ packet ExtendedInformationFrameWithFcs : StandardFrameWithFcs (frame_type = I_FR
 }
 
 packet ExtendedInformationStartFrame : ExtendedInformationFrame (sar = START) {
-  L2capSduLength : 16,
+  l2cap_sdu_length : 16,
   _payload_,
 }
 
 packet ExtendedInformationStartFrameWithFcs : ExtendedInformationFrameWithFcs (sar = START) {
-  L2capSduLength : 16,
+  l2cap_sdu_length : 16,
   _payload_,
 }
 
 packet FirstLeInformationFrame : BasicFrame {
-  L2capSduLength : 16,
+  l2cap_sdu_length : 16,
   _payload_,
 }
 
