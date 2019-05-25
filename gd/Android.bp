@@ -116,6 +116,7 @@ cc_library {
         ":BluetoothHalSources",
         ":BluetoothHciSources",
         ":BluetoothPacketSources",
+        ":BluetoothSmpSources",
     ],
     generated_headers: [
         "BluetoothGeneratedPackets_h",
@@ -245,6 +246,7 @@ cc_test {
         ":BluetoothHciTestSources",
         ":BluetoothL2capTestSources",
         ":BluetoothPacketTestSources",
+        ":BluetoothSmpTestSources",
     ],
     generated_headers : [
         "BluetoothGeneratedPackets_h",

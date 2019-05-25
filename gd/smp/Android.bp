@@ -1,0 +1,15 @@
+filegroup {
+    name: "BluetoothSmpSources",
+    srcs: [
+        "ecc/p_256_curvepara.cc",
+        "ecc/p_256_multprecision.cc",
+        "ecc/p_256_ecc_pp.cc",
+    ]
+}
+
+filegroup {
+    name: "BluetoothSmpTestSources",
+    srcs: [
+        "ecc/multipoint_test.cc",
+    ]
+}
