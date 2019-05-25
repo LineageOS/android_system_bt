@@ -16,7 +16,7 @@
 
 #include "fields/body_field.h"
 
-BodyField::BodyField(ParseLocation loc) : PacketField(loc, "Body") {}
+BodyField::BodyField(ParseLocation loc) : PacketField(loc, "body") {}
 
 PacketField::Type BodyField::GetFieldType() const {
   return PacketField::Type::BODY;

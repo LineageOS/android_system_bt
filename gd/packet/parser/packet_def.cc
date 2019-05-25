@@ -134,7 +134,7 @@ Size PacketDef::GetSize(bool without_payload) const {
 Size PacketDef::GetOffsetForField(std::string field_name, bool from_end) const {
   // Check first if the field exists.
   if (fields_.GetField(field_name) == nullptr) {
-    if (field_name != "Payload" && field_name != "Body") {
+    if (field_name != "payload" && field_name != "body") {
       ERROR() << "Can't find a field offset for nonexistent field named: " << field_name;
     } else {
       return Size();
@@ -169,11 +169,11 @@ Size PacketDef::GetOffsetForField(std::string field_name, bool from_end) const {
 
   // For parent packets we need the offset until a payload or body field.
   if (parent_ != nullptr) {
-    auto parent_payload_offset = parent_->GetOffsetForField("Payload", from_end);
+    auto parent_payload_offset = parent_->GetOffsetForField("payload", from_end);
     if (!parent_payload_offset.empty()) {
       size += parent_payload_offset;
     } else {
-      parent_payload_offset = parent_->GetOffsetForField("Body", from_end);
+      parent_payload_offset = parent_->GetOffsetForField("body", from_end);
       if (!parent_payload_offset.empty()) {
         size += parent_payload_offset;
       } else {
