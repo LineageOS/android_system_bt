@@ -1,8 +1,7 @@
 filegroup {
     name: "BluetoothSmpSources",
     srcs: [
-        "ecc/p_256_curvepara.cc",
-        "ecc/p_256_multprecision.cc",
+        "ecc/multprecision.cc",
         "ecc/p_256_ecc_pp.cc",
     ]
 }
