@@ -691,8 +691,7 @@ void smp_process_private_key(tSMP_CB* p_cb) {
   SMP_TRACE_DEBUG("%s", __func__);
 
   memcpy(private_key, p_cb->private_key, BT_OCTET32_LEN);
-  ECC_PointMult(&public_key, &(curve_p256.G), (uint32_t*)private_key,
-                KEY_LENGTH_DWORDS_P256);
+  ECC_PointMult(&public_key, &(curve_p256.G), (uint32_t*)private_key);
   memcpy(p_cb->loc_publ_key.x, public_key.x, BT_OCTET32_LEN);
   memcpy(p_cb->loc_publ_key.y, public_key.y, BT_OCTET32_LEN);
 
@@ -728,8 +727,7 @@ void smp_compute_dhkey(tSMP_CB* p_cb) {
   memcpy(peer_publ_key.x, p_cb->peer_publ_key.x, BT_OCTET32_LEN);
   memcpy(peer_publ_key.y, p_cb->peer_publ_key.y, BT_OCTET32_LEN);
 
-  ECC_PointMult(&new_publ_key, &peer_publ_key, (uint32_t*)private_key,
-                KEY_LENGTH_DWORDS_P256);
+  ECC_PointMult(&new_publ_key, &peer_publ_key, (uint32_t*)private_key);
 
   memcpy(p_cb->dhkey, new_publ_key.x, BT_OCTET32_LEN);
 
