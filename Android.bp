@@ -28,8 +28,8 @@ subdirs = [
 ]
 
 filegroup {
-  name: "BluetoothTestConfigTemplate",
-  srcs: [
-    "AndroidTestTemplate.xml"
-  ]
+    name: "BluetoothTestConfigTemplate",
+    srcs: [
+        "AndroidTestTemplate.xml",
+    ],
 }

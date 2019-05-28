@@ -5,15 +5,15 @@ cc_library_static {
         "ulinux/uipc.cc",
     ],
     include_dirs: [
-      "system/bt",
-      "system/bt/internal_include",
-      "system/bt/utils/include",
-      "system/bt/stack/include",
+        "system/bt",
+        "system/bt/internal_include",
+        "system/bt/utils/include",
+        "system/bt/stack/include",
     ],
     local_include_dirs: [
-      "include",
+        "include",
     ],
     shared_libs: [
-      "liblog",
+        "liblog",
     ],
 }
