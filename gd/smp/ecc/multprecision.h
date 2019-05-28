@@ -36,23 +36,20 @@ int multiprecision_iszero(const uint32_t* a);
 void multiprecision_init(uint32_t* c);
 void multiprecision_copy(uint32_t* c, const uint32_t* a);
 uint32_t multiprecision_dword_bits(uint32_t a);
-uint32_t multiprecision_most_signdwords(uint32_t* a);
-uint32_t multiprecision_most_signbits(uint32_t* a);
+uint32_t multiprecision_most_signdwords(const uint32_t* a);
+uint32_t multiprecision_most_signbits(const uint32_t* a);
 void multiprecision_inv_mod(uint32_t* aminus, uint32_t* a, const uint32_t* modp);
 uint32_t multiprecision_add(uint32_t* c, const uint32_t* a, const uint32_t* b);  // c=a+b
 void multiprecision_add_mod(uint32_t* c, const uint32_t* a, const uint32_t* b, const uint32_t* modp);
 uint32_t multiprecision_sub(uint32_t* c, const uint32_t* a, const uint32_t* b);  // c=a-b
-void multiprecision_sub_mod(uint32_t* c, uint32_t* a, uint32_t* b, const uint32_t* modp);
-void multiprecision_rshift(uint32_t* c, uint32_t* a);                            // c=a>>1, return carrier
-void multiprecision_lshift_mod(uint32_t* c, uint32_t* a, const uint32_t* modp);  // c=a<<b, return carrier
-uint32_t multiprecision_lshift(uint32_t* c,
-                               uint32_t* a);                      // c=a<<b, return carrier
-void multiprecision_mult(uint32_t* c, uint32_t* a, uint32_t* b);  // c=a*b
-void multiprecision_mersenns_mult_mod(uint32_t* c, uint32_t* a, uint32_t* b, const uint32_t* modp);
-void multiprecision_mersenns_squa_mod(uint32_t* c, uint32_t* a, const uint32_t* modp);
-uint32_t multiprecision_lshift(uint32_t* c, uint32_t* a);
-void multiprecision_mult(uint32_t* c, uint32_t* a, uint32_t* b);
-void multiprecision_fast_mod_P256(uint32_t* c, uint32_t* a, const uint32_t* modp);
+void multiprecision_sub_mod(uint32_t* c, const uint32_t* a, const uint32_t* b, const uint32_t* modp);
+void multiprecision_rshift(uint32_t* c, const uint32_t* a);                            // c=a>>1, return carrier
+void multiprecision_lshift_mod(uint32_t* c, const uint32_t* a, const uint32_t* modp);  // c=a<<b, return carrier
+uint32_t multiprecision_lshift(uint32_t* c, const uint32_t* a);
+void multiprecision_mult(uint32_t* c, const uint32_t* a, const uint32_t* b);  // c=a*b
+void multiprecision_mersenns_mult_mod(uint32_t* c, const uint32_t* a, const uint32_t* b, const uint32_t* modp);
+void multiprecision_mersenns_squa_mod(uint32_t* c, const uint32_t* a, const uint32_t* modp);
+void multiprecision_fast_mod_P256(uint32_t* c, const uint32_t* a, const uint32_t* modp);
 
 }  // namespace ecc
 }  // namespace smp
