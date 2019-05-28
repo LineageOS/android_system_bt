@@ -58,7 +58,7 @@ fluoride_defaults {
     target: {
         android: {
             test_config_template: ":BluetoothTestConfigTemplate",
-        }
+        },
     },
     defaults: ["fluoride_types_defaults"],
     header_libs: ["libbluetooth_headers"],

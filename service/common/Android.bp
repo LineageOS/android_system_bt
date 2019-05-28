@@ -7,7 +7,7 @@ cc_library_static {
         "-fvisibility=default",
     ],
     host_supported: true,
-    header_libs: [ "libbluetooth_headers" ],
+    header_libs: ["libbluetooth_headers"],
     srcs: [
         "bluetooth/a2dp_codec_config.cc",
         "bluetooth/adapter_state.cc",
@@ -40,7 +40,7 @@ cc_library_static {
         /* we export all classes, so change default visibility, instead of having EXPORT_SYMBOL on each class*/
         "-fvisibility=default",
     ],
-    header_libs: [ "libbluetooth_headers" ],
+    header_libs: ["libbluetooth_headers"],
     srcs: [
         "android/bluetooth/IBluetooth.aidl",
         "android/bluetooth/IBluetoothA2dpSink.aidl",
@@ -94,5 +94,5 @@ cc_library_static {
     ],
     static_libs: [
         "libbluetooth-types",
-    ]
+    ],
 }
