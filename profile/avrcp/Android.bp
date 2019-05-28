@@ -2,7 +2,7 @@ cc_library_static {
     name: "avrcp-target-service",
     defaults: [
         "fluoride_defaults",
-        "clang_file_coverage"
+        "clang_file_coverage",
     ],
     host_supported: true,
     include_dirs: [

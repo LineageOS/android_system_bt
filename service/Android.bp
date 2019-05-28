@@ -8,7 +8,7 @@ cc_defaults {
     include_dirs: [
         "system/bt",
     ],
-    header_libs: [ "libbluetooth_headers" ],
+    header_libs: ["libbluetooth_headers"],
 }
 
 // Source variables
@@ -80,9 +80,9 @@ cc_binary {
     name: "bluetoothtbd",
     defaults: ["fluoride_service_defaults"],
     srcs: btserviceBinderDaemonSrc +
-    btserviceLinuxSrc +
-    btserviceDaemonSrc +
-    ["main.cc"],
+        btserviceLinuxSrc +
+        btserviceDaemonSrc +
+        ["main.cc"],
     static_libs: [
         "libbluetooth-binder-common",
         "libbtcore",
@@ -108,9 +108,9 @@ cc_test {
     test_suites: ["device-tests"],
     defaults: ["fluoride_service_defaults"],
     srcs: btserviceBaseTestSrc +
-    btserviceDaemonSrc + [
-        "test/main.cc",
-    ],
+        btserviceDaemonSrc + [
+            "test/main.cc",
+        ],
     aidl: {
         include_dirs: [
             "system/bt/service/common",
