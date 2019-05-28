@@ -38,20 +38,20 @@ static void p_256_init_point(Point* q) {
   memset(q, 0, sizeof(Point));
 }
 
-static void p_256_copy_point(Point* q, Point* p) {
+static void p_256_copy_point(Point* q, const Point* p) {
   memcpy(q, p, sizeof(Point));
 }
 
 // q=2q
-static void ECC_Double(Point* q, Point* p) {
+static void ECC_Double(Point* q, const Point* p) {
   uint32_t t1[KEY_LENGTH_DWORDS_P256];
   uint32_t t2[KEY_LENGTH_DWORDS_P256];
   uint32_t t3[KEY_LENGTH_DWORDS_P256];
-  uint32_t* x1;
+  const uint32_t* x1;
   uint32_t* x3;
-  uint32_t* y1;
+  const uint32_t* y1;
   uint32_t* y3;
-  uint32_t* z1;
+  const uint32_t* z1;
   uint32_t* z3;
 
   if (multiprecision_iszero(p->z)) {
@@ -92,17 +92,17 @@ static void ECC_Double(Point* q, Point* p) {
 }
 
 // q=q+p,     zp must be 1
-static void ECC_Add(Point* r, Point* p, Point* q) {
+static void ECC_Add(Point* r, Point* p, const Point* q) {
   uint32_t t1[KEY_LENGTH_DWORDS_P256];
   uint32_t t2[KEY_LENGTH_DWORDS_P256];
   uint32_t* x1;
-  uint32_t* x2;
+  const uint32_t* x2;
   uint32_t* x3;
   uint32_t* y1;
-  uint32_t* y2;
+  const uint32_t* y2;
   uint32_t* y3;
   uint32_t* z1;
-  uint32_t* z2;
+  const uint32_t* z2;
   uint32_t* z3;
 
   x1 = p->x;
