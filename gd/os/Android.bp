@@ -7,7 +7,7 @@ filegroup {
         "linux_generic/repeating_alarm.cc",
         "linux_generic/reactive_semaphore.cc",
         "linux_generic/thread.cc",
-    ]
+    ],
 }
 
 filegroup {
@@ -19,7 +19,7 @@ filegroup {
         "linux_generic/reactor_unittest.cc",
         "linux_generic/repeating_alarm_unittest.cc",
         "linux_generic/thread_unittest.cc",
-    ]
+    ],
 }
 
 filegroup {
@@ -28,5 +28,5 @@ filegroup {
         "alarm_benchmark.cc",
         "thread_benchmark.cc",
         "queue_benchmark.cc",
-    ]
+    ],
 }
