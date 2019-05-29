@@ -1240,6 +1240,20 @@ void bta_gattc_process_indicate(uint16_t conn_id, tGATTC_OPTYPE op,
   }
 
   tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
+  /* connection not open yet */
+  if (p_clcb == NULL) {
+    p_clcb = bta_gattc_clcb_alloc(gatt_if, remote_bda, transport);
+
+    if (p_clcb == NULL) {
+      LOG(ERROR) << __func__ << ": No resources";
+      return;
+    }
+
+    p_clcb->bta_conn_id = conn_id;
+    p_clcb->transport = transport;
+
+    bta_gattc_sm_execute(p_clcb, BTA_GATTC_INT_CONN_EVT, NULL);
+  }
 
   notify.handle = handle;
 
@@ -1250,21 +1264,6 @@ void bta_gattc_process_indicate(uint16_t conn_id, tGATTC_OPTYPE op,
 
   /* if app registered for the notification */
   if (bta_gattc_check_notif_registry(p_clrcb, p_srcb, &notify)) {
-    /* connection not open yet */
-    if (p_clcb == NULL) {
-      p_clcb = bta_gattc_clcb_alloc(gatt_if, remote_bda, transport);
-
-      if (p_clcb == NULL) {
-        LOG(ERROR) << "No resources";
-        return;
-      }
-
-      p_clcb->bta_conn_id = conn_id;
-      p_clcb->transport = transport;
-
-      bta_gattc_sm_execute(p_clcb, BTA_GATTC_INT_CONN_EVT, NULL);
-    }
-
     if (p_clcb != NULL)
       bta_gattc_proc_other_indication(p_clcb, op, p_data, &notify);
   }
