@@ -3,7 +3,7 @@ filegroup {
     srcs: [
         "address.cc",
         "class_of_device.cc",
-    ]
+    ],
 }
 
 filegroup {
@@ -12,6 +12,6 @@ filegroup {
         "address_unittest.cc",
         "blocking_queue_unittest.cc",
         "class_of_device_unittest.cc",
-        "bidi_queue_unittest.cc"
-    ]
+        "bidi_queue_unittest.cc",
+    ],
 }

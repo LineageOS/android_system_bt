@@ -84,7 +84,10 @@ void Reactor::Run() {
   ASSERT(!previously_running);
 
   for (;;) {
-    invalidation_list_.clear();
+    {
+      std::unique_lock<std::mutex> lock(mutex_);
+      invalidation_list_.clear();
+    }
     epoll_event events[kEpollMaxEvents];
     int count;
     RUN_NO_INTR(count = epoll_wait(epoll_fd_, events, kEpollMaxEvents, -1));
