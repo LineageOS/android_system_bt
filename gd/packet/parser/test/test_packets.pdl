@@ -87,3 +87,40 @@ packet FieldsEndWithNumbers {
   field_10 : 16,
   field_11 : 16,
 }
+
+enum ForArrays : 16 {
+  ONE = 0x0001,
+  TWO = 0x0002,
+  ONE_TWO = 0x0201,
+  TWO_THREE = 0x0302,
+  FFFF = 0xffff,
+}
+
+packet FixedArrayEnum {
+  enum_array : ForArrays[5],
+}
+
+packet SizedArrayEnum {
+  _size_(enum_array) : 16,
+  enum_array : ForArrays[],
+}
+
+packet CountArrayEnum {
+  _count_(enum_array) : 8,
+  enum_array : ForArrays[],
+}
+
+packet SizedArrayCustom {
+  _size_(six_bytes_array) : 8,
+  an_extra_byte : 8,
+  six_bytes_array : SixBytes[+1],
+}
+
+packet FixedArrayCustom {
+  six_bytes_array : SixBytes[5],
+}
+
+packet CountArrayCustom {
+  _count_(six_bytes_array) : 8,
+  six_bytes_array : SixBytes[],
+}
