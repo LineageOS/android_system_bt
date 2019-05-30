@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include "fields/array_field.h"
 #include "fields/body_field.h"
 #include "fields/checksum_field.h"
 #include "fields/checksum_start_field.h"
