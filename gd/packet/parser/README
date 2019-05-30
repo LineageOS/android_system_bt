@@ -34,6 +34,7 @@ Checksum types
 
   - Can't handle size for Body type fields yet since they might not be byte aligned.
 
+  - Currently no arrays of custom types (might change later)
 
 -------
  NOTES
@@ -51,3 +52,8 @@ One pdl file will result in one header file with all the packets
 Things to cover -
   Constraints
   Inheritence vs Contains
+
+Custom fields need the folowing functions:
+  static void Serialize(const Type&, MutableView&);
+  static std::optional<size_t> Size(Iterator);
+  static Type Parse(Iterator);
