@@ -96,6 +96,16 @@ void PacketDef::AssignSizeFields() {
       continue;
     }
 
+    if (var_len_field->GetFieldType() == PacketField::Type::ARRAY) {
+      const auto& array_field = static_cast<ArrayField*>(var_len_field);
+      array_field->SetSizeField(size_field);
+      continue;
+    }
+
+    // TODO: If there is an array field without a size field, check to see if the
+    // parent has a size(payload) field. Or maybe we can just figure it out based
+    // on the offsets fo the packet.
+
     // If we've reached this point then the field wasn't a variable length field.
     // Check to see if the field is a variable length field
     std::cerr << "Can not use size/count in reference to a fixed size field.\n";
@@ -286,7 +296,21 @@ void PacketDef::GenSerialize(std::ostream& s) const {
         s << "ASSERT(payload_bytes < (static_cast<size_t>(1) << " << field->GetSize().bits() << "));";
         s << "insert(static_cast<" << field->GetType() << ">(payload_bytes), i," << field->GetSize().bits() << ");";
       } else {
-        ERROR(field) << __func__ << "Unhandled sized field type for " << field_name;
+        if (sized_field->GetFieldType() != PacketField::Type::ARRAY) {
+          ERROR(field) << __func__ << "Unhandled sized field type for " << field_name;
+        }
+        const auto& array_name = field_name + "_";
+        const ArrayField* array = (ArrayField*)sized_field;
+        if (array->element_size_ == -1) {
+          ERROR(field) << __func__ << "Unhandled dynamically sized field type for " << field_name;
+        } else {
+          s << "size_t " << array_name + "bytes = ";
+          s << array_name << ".size() * (" << array->element_size_ << " / 8);";
+          s << "ASSERT(" << array_name + "bytes < (1 << " << field->GetSize().bits() << "));";
+          s << "insert(" << array_name << "bytes";
+          s << array->GetSizeModifier() << ", i, ";
+          s << field->GetSize().bits() << ");";
+        }
       }
     } else if (field->GetFieldType() == PacketField::Type::CHECKSUM_START) {
       const auto& field_name = ((ChecksumStartField*)field)->GetStartedFieldName();
@@ -302,6 +326,9 @@ void PacketDef::GenSerialize(std::ostream& s) const {
         << "::AddByte(*shared_checksum_ptr, byte);},";
       s << "[shared_checksum_ptr](){ return static_cast<uint64_t>(" << started_field->GetType()
         << "::GetChecksum(*shared_checksum_ptr));}));";
+    } else if (field->GetFieldType() == PacketField::Type::COUNT) {
+      const auto& array_name = ((SizeField*)field)->GetSizedFieldName() + "_";
+      s << "insert(" << array_name << ".size(), i, " << field->GetSize().bits() << ");";
     } else {
       field->GenInserter(s);
     }
@@ -570,8 +597,8 @@ FieldList PacketDef::GetParamList() const {
   FieldList params;
 
   std::set<PacketField::Type> param_types = {
-      PacketField::Type::SCALAR, PacketField::Type::ENUM,    PacketField::Type::CUSTOM,
-      PacketField::Type::BODY,   PacketField::Type::PAYLOAD,
+      PacketField::Type::SCALAR, PacketField::Type::ENUM, PacketField::Type::ARRAY,
+      PacketField::Type::CUSTOM, PacketField::Type::BODY, PacketField::Type::PAYLOAD,
   };
 
   if (parent_ != nullptr) {
@@ -584,7 +611,6 @@ FieldList PacketDef::GetParamList() const {
       }
     }
   }
-
   // Add the parameters for this packet.
   return params.Merge(fields_.GetFieldsWithTypes(param_types));
 }
