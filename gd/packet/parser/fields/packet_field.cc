@@ -51,6 +51,9 @@ std::string PacketField::GetDebugName() const {
     case Type::PAYLOAD:
       ret = "PAYLOAD";
       break;
+    case Type::ARRAY:
+      ret = "ARRAY";
+      break;
     case Type::CUSTOM:
       ret = "CUSTOM";
       break;
