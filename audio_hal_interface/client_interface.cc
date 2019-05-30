@@ -174,8 +174,9 @@ class BluetoothAudioDeathRecipient
       // restart the session on the correct thread
       message_loop_->DoInThread(
           FROM_HERE,
-          base::BindOnce(&RenewAudioProviderAndSession,
-                         base::Unretained(bluetooth_audio_clientif_)));
+          base::BindOnce(
+              &BluetoothAudioClientInterface::RenewAudioProviderAndSession,
+              base::Unretained(bluetooth_audio_clientif_)));
     } else {
       LOG(ERROR) << __func__ << ": BluetoothAudioClientInterface corrupted";
     }
@@ -184,12 +185,6 @@ class BluetoothAudioDeathRecipient
  private:
   BluetoothAudioClientInterface* bluetooth_audio_clientif_;
   bluetooth::common::MessageLoopThread* message_loop_;
-  static void RenewAudioProviderAndSession(
-      BluetoothAudioClientInterface* bluetooth_audio_clientif) {
-    if (bluetooth_audio_clientif != nullptr) {
-      bluetooth_audio_clientif->RenewAudioProviderAndSession();
-    }
-  }
 };
 
 BluetoothAudioClientInterface::BluetoothAudioClientInterface(IBluetoothTransportInstance* sink,
