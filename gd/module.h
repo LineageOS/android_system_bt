@@ -86,7 +86,7 @@ class Module {
  private:
   Module* GetDependency(const ModuleFactory* module) const;
 
-  ::bluetooth::os::Handler* handler_;
+  ::bluetooth::os::Handler* handler_ = nullptr;
   ModuleList dependencies_;
   ModuleRegistry* registry_;
 };

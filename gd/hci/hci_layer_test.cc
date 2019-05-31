@@ -231,11 +231,18 @@ TEST_F(HciTest, createConnectionTest) {
   uint16_t handle = 0x123;
   LinkType link_type = LinkType::ACL;
   Enable encryption_enabled = Enable::DISABLED;
+  hal->callbacks->hciEventReceived(GetPacketBytes(CreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 1)));
+
+  // Verify the event
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.IsValid());
+  ASSERT_EQ(EventCode::COMMAND_STATUS, event.GetEventCode());
+
   hal->callbacks->hciEventReceived(
       GetPacketBytes(ConnectionCompleteBuilder::Create(status, handle, bd_addr, link_type, encryption_enabled)));
 
   // Verify the event
-  auto event = upper->GetReceivedEvent();
+  event = upper->GetReceivedEvent();
   ASSERT_TRUE(event.IsValid());
   ASSERT_EQ(EventCode::CONNECTION_COMPLETE, event.GetEventCode());
   ConnectionCompleteView connection_complete_view = ConnectionCompleteView::Create(event);
