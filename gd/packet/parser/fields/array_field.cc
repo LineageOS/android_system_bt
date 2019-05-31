@@ -113,7 +113,7 @@ void ArrayField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) 
 
   // Add the element size so that we will extract as many elements as we can.
   s << GetType() << " ret;";
-  std::string type = type_def_->name_;
+  std::string type = (type_def_ != nullptr) ? type_def_->name_ : util::GetTypeForSize(element_size_);
   s << "while (it + sizeof(" << type << ") <= array_end) {";
   s << "ret.push_back(it.extract<" << type << ">());";
   s << "}";
