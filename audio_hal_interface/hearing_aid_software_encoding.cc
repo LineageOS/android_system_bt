@@ -68,11 +68,11 @@ class HearingAidTransport
 
   void StopRequest() override {
     LOG(INFO) << __func__;
-    stream_cb_.on_suspend_();
-
-    // flush
-    uint8_t p_buf[AUDIO_STREAM_OUTPUT_BUFFER_SZ * 2];
-    ::bluetooth::audio::hearing_aid::read(p_buf, sizeof(p_buf));
+    if (stream_cb_.on_suspend_()) {
+      // flush
+      uint8_t p_buf[AUDIO_STREAM_OUTPUT_BUFFER_SZ * 2];
+      ::bluetooth::audio::hearing_aid::read(p_buf, sizeof(p_buf));
+    }
   }
 
   bool GetPresentationPosition(uint64_t* remote_delay_report_ns,
