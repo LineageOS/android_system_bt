@@ -58,16 +58,10 @@ using common::BidiQueueEnd;
 using os::Handler;
 
 struct HciLayer::impl : public hal::HciHalCallbacks {
-  impl(HciLayer& module) : hal_(nullptr), module_(module) {
-    RegisterEventHandler(EventCode::COMMAND_COMPLETE, [this](EventPacketView event) { CommandCompleteCallback(event); },
-                         module_.GetHandler());
-    RegisterEventHandler(EventCode::COMMAND_STATUS, [this](EventPacketView event) { CommandStatusCallback(event); },
-                         module_.GetHandler());
-  }
+  impl(HciLayer& module) : hal_(nullptr), module_(module) {}
 
   void Start(hal::HciHal* hal) {
     hal_ = hal;
-    hal_->registerIncomingPacketCallback(this);
 
     send_acl_ = [this](std::unique_ptr<hci::BasePacketBuilder> packet) {
       std::vector<uint8_t> bytes;
@@ -84,6 +78,11 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
     auto queue_end = acl_queue_.GetDownEnd();
     Handler* handler = module_.GetHandler();
     queue_end->RegisterDequeue(handler, [queue_end, this]() { send_acl_(queue_end->TryDequeue()); });
+    RegisterEventHandler(EventCode::COMMAND_COMPLETE, [this](EventPacketView event) { CommandCompleteCallback(event); },
+                         handler);
+    RegisterEventHandler(EventCode::COMMAND_STATUS, [this](EventPacketView event) { CommandStatusCallback(event); },
+                         handler);
+    hal_->registerIncomingPacketCallback(this);
   }
 
   void Stop() {
