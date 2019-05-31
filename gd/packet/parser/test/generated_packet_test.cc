@@ -511,6 +511,44 @@ TEST(GeneratedPacketTest, testCountArrayEnum) {
     ASSERT_EQ(array[i], count_array[i]);
   }
 }
+
+TEST(GeneratedPacketTest, testFixedSizeByteArray) {
+  constexpr int byte_array_size = 32;
+  std::vector<uint8_t> byte_array(byte_array_size);
+  for (uint8_t i = 0; i < byte_array_size; i++) byte_array[i] = i;
+
+  constexpr int word_array_size = 8;
+  std::vector<uint32_t> word_array(word_array_size);
+  for (uint32_t i = 0; i < word_array_size; i++) word_array[i] = i;
+
+  auto packet = PacketWithFixedArraysOFBytesBuilder::Create(byte_array, word_array);
+
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  BitInserter it(*packet_bytes);
+  packet->Serialize(it);
+
+  ASSERT_EQ(byte_array_size + word_array_size * sizeof(uint32_t), packet_bytes->size());
+
+  for (size_t i = 0; i < byte_array_size; i++) {
+    ASSERT_EQ(byte_array[i], packet_bytes->at(i));
+  }
+
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = PacketWithFixedArraysOFBytesView::Create(packet_bytes_view);
+  ASSERT_TRUE(view.IsValid());
+  auto array = view.GetFixed256bitInBytes();
+  ASSERT_EQ(byte_array.size(), array.size());
+  for (size_t i = 0; i < array.size(); i++) {
+    ASSERT_EQ(array[i], byte_array[i]);
+  }
+
+  auto decoded_word_array = view.GetFixed256bitInWords();
+  ASSERT_EQ(word_array.size(), decoded_word_array.size());
+  for (size_t i = 0; i < decoded_word_array.size(); i++) {
+    ASSERT_EQ(word_array[i], decoded_word_array[i]);
+  }
+}
+
 }  // namespace parser
 }  // namespace packet
 }  // namespace bluetooth
