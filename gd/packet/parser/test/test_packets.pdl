@@ -124,3 +124,8 @@ packet CountArrayCustom {
   _count_(six_bytes_array) : 8,
   six_bytes_array : SixBytes[],
 }
+
+packet PacketWithFixedArraysOFBytes {
+   fixed_256bit_in_bytes : 8[32],
+   fixed_256bit_in_words : 32[8],
+}
