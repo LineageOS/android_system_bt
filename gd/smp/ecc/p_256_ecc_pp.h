@@ -66,7 +66,7 @@ static constexpr elliptic_curve_t curve_p256{
 /* This function checks that point is on the elliptic curve*/
 bool ECC_ValidatePoint(const Point& point);
 
-void ECC_PointMult_Bin_NAF(Point* q, Point* p, uint32_t* n);
+void ECC_PointMult_Bin_NAF(Point* q, const Point* p, uint32_t* n);
 
 #define ECC_PointMult(q, p, n) ECC_PointMult_Bin_NAF(q, p, n)
 

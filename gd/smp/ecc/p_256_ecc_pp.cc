@@ -196,7 +196,7 @@ static void ECC_NAF(uint8_t* naf, uint32_t* NumNAF, uint32_t* k) {
 }
 
 // Binary Non-Adjacent Form for point multiplication
-void ECC_PointMult_Bin_NAF(Point* q, Point* p, uint32_t* n) {
+void ECC_PointMult_Bin_NAF(Point* q, const Point* p, uint32_t* n) {
   uint32_t sign;
   uint8_t naf[256 / 4 + 1];
   uint32_t NumNaf;
@@ -204,8 +204,6 @@ void ECC_PointMult_Bin_NAF(Point* q, Point* p, uint32_t* n) {
   Point r;
 
   p_256_init_point(&r);
-  multiprecision_init(p->z);
-  p->z[0] = 1;
 
   // initialization
   p_256_init_point(q);
