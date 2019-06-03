@@ -34,9 +34,6 @@ class RepeatingAlarm {
   // Create and register a repeating alarm on given thread
   explicit RepeatingAlarm(Thread* thread);
 
-  // Create and register a repeating alarm on the given reactor
-  explicit RepeatingAlarm(Reactor* reactor);
-
   // Unregister this alarm from the thread and release resource
   ~RepeatingAlarm();
 
@@ -50,7 +47,7 @@ class RepeatingAlarm {
 
  private:
   Closure task_;
-  Reactor* reactor_;
+  Thread* thread_;
   int fd_ = 0;
   Reactor::Reactable* token_;
   mutable std::mutex mutex_;

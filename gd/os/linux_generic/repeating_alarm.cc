@@ -32,16 +32,14 @@
 namespace bluetooth {
 namespace os {
 
-RepeatingAlarm::RepeatingAlarm(Reactor* reactor) : reactor_(reactor), fd_(timerfd_create(ALARM_CLOCK, 0)) {
+RepeatingAlarm::RepeatingAlarm(Thread* thread) : thread_(thread), fd_(timerfd_create(ALARM_CLOCK, 0)) {
   ASSERT(fd_ != -1);
 
-  token_ = reactor_->Register(fd_, [this] { on_fire(); }, nullptr);
+  token_ = thread_->GetReactor()->Register(fd_, [this] { on_fire(); }, nullptr);
 }
 
-RepeatingAlarm::RepeatingAlarm(Thread* thread) : RepeatingAlarm(thread->GetReactor()) {}
-
 RepeatingAlarm::~RepeatingAlarm() {
-  reactor_->Unregister(token_);
+  thread_->GetReactor()->Unregister(token_);
 
   int close_status;
   RUN_NO_INTR(close_status = close(fd_));
