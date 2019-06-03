@@ -695,6 +695,35 @@ TEST_F(QueueTest, pass_smart_pointer_and_unregister) {
   });
   future.wait();
 }
+
+// Create all threads for death tests in the function that dies
+class QueueDeathTest : public ::testing::Test {
+ public:
+  void RegisterEnqueueAndDelete() {
+    Thread* enqueue_thread = new Thread("enqueue_thread", Thread::Priority::NORMAL);
+    Handler* enqueue_handler = new Handler(enqueue_thread);
+    Queue<std::string>* queue = new Queue<std::string>(kQueueSizeOne);
+    queue->RegisterEnqueue(enqueue_handler,
+                           []() { return std::make_unique<std::string>("A string to fill the queue"); });
+    delete queue;
+  }
+
+  void RegisterDequeueAndDelete() {
+    Thread* dequeue_thread = new Thread("dequeue_thread", Thread::Priority::NORMAL);
+    Handler* dequeue_handler = new Handler(dequeue_thread);
+    Queue<std::string>* queue = new Queue<std::string>(kQueueSizeOne);
+    queue->RegisterDequeue(dequeue_handler, [queue]() { queue->TryDequeue(); });
+    delete queue;
+  }
+};
+
+TEST_F(QueueDeathTest, die_if_enqueue_not_unregistered) {
+  EXPECT_DEATH(RegisterEnqueueAndDelete(), "nqueue");
+}
+
+TEST_F(QueueDeathTest, die_if_dequeue_not_unregistered) {
+  EXPECT_DEATH(RegisterDequeueAndDelete(), "equeue");
+}
 }  // namespace
 }  // namespace os
 }  // namespace bluetooth
