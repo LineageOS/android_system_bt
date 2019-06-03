@@ -57,30 +57,12 @@ class QueueTest : public ::testing::Test {
   Handler* dequeue_handler_;
 };
 
-class QueueTestSingleThread : public ::testing::Test {
- protected:
-  void SetUp() override {
-    reactor_ = new Reactor();
-    enqueue_handler_ = new Handler(reactor_);
-    dequeue_handler_ = new Handler(reactor_);
-  }
-  void TearDown() override {
-    delete enqueue_handler_;
-    delete dequeue_handler_;
-    delete reactor_;
-    enqueue_handler_ = nullptr;
-    dequeue_handler_ = nullptr;
-    reactor_ = nullptr;
-  }
-  Reactor* reactor_;
-  Handler* enqueue_handler_;
-  Handler* dequeue_handler_;
-};
-
 class TestEnqueueEnd {
  public:
   explicit TestEnqueueEnd(Queue<std::string>* queue, Handler* handler)
       : count(0), handler_(handler), queue_(queue), delay_(0) {}
+
+  ~TestEnqueueEnd() {}
 
   void RegisterEnqueue(std::unordered_map<int, std::promise<int>>* promise_map) {
     promise_map_ = promise_map;
@@ -137,6 +119,8 @@ class TestDequeueEnd {
  public:
   explicit TestDequeueEnd(Queue<std::string>* queue, Handler* handler, int capacity)
       : count(0), handler_(handler), queue_(queue), capacity_(capacity), delay_(0) {}
+
+  ~TestDequeueEnd() {}
 
   void RegisterDequeue(std::unordered_map<int, std::promise<int>>* promise_map) {
     promise_map_ = promise_map;
@@ -710,23 +694,6 @@ TEST_F(QueueTest, pass_smart_pointer_and_unregister) {
     });
   });
   future.wait();
-}
-
-TEST_F(QueueTestSingleThread, no_unregister_enqueue_death_test) {
-  Queue<std::string>* queue = new Queue<std::string>(kQueueSizeOne);
-
-  queue->RegisterEnqueue(enqueue_handler_,
-                         []() { return std::make_unique<std::string>("A string to fill the queue"); });
-
-  EXPECT_DEATH(delete queue, "nqueue");
-}
-
-TEST_F(QueueTestSingleThread, no_unregister_dequeue_death_test) {
-  Queue<std::string>* queue = new Queue<std::string>(kQueueSize);
-
-  queue->RegisterDequeue(dequeue_handler_, []() {});
-
-  EXPECT_DEATH(delete queue, "equeue");
 }
 }  // namespace
 }  // namespace os
