@@ -35,9 +35,6 @@ class Handler {
   // Create and register a handler on given thread
   explicit Handler(Thread* thread);
 
-  // Create and register a handler with a given reactor
-  explicit Handler(Reactor* reactor);
-
   // Unregister this handler from the thread and release resource. Unhandled events will be discarded and not executed.
   ~Handler();
 
@@ -54,7 +51,7 @@ class Handler {
 
  private:
   std::queue<Closure> tasks_;
-  Reactor* reactor_;
+  Thread* thread_;
   int fd_;
   Reactor::Reactable* reactable_;
   mutable std::mutex mutex_;
