@@ -32,6 +32,8 @@
 #include <base/location.h>
 #include <base/logging.h>
 #include <base/threading/thread.h>
+#include <log/log.h>
+#include <statslog.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -719,6 +721,38 @@ static void btu_hcif_rmt_name_request_comp_evt(uint8_t* p, uint16_t evt_len) {
   btm_sec_rmt_name_request_complete(&bd_addr, p, status);
 }
 
+constexpr uint8_t MIN_KEY_SIZE = 7;
+
+static void read_encryption_key_size_complete_after_encryption_change(
+    uint8_t status, uint16_t handle, uint8_t key_size) {
+  int ret = android::util::stats_write(
+      android::util::BLUETOOTH_CLASSIC_PAIRING_EVENT_REPORTED, "", handle,
+      HCI_READ_ENCR_KEY_SIZE, HCI_COMMAND_COMPLETE_EVT, status, 0, key_size);
+  if (ret < 0) {
+    LOG(WARNING) << __func__ << ": failed to log encryption key size "
+                 << std::to_string(key_size);
+  }
+
+  if (status != HCI_SUCCESS) {
+    LOG(INFO) << __func__ << ": disconnecting, status: " << loghex(status);
+    btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
+    return;
+  }
+
+  if (key_size < MIN_KEY_SIZE) {
+    android_errorWriteLog(0x534e4554, "124301137");
+    LOG(ERROR) << __func__
+               << " encryption key too short, disconnecting. handle: "
+               << loghex(handle) << " key_size: " << +key_size;
+
+    btsnd_hcic_disconnect(handle, HCI_ERR_HOST_REJECT_SECURITY);
+    return;
+  }
+
+  // good key size - succeed
+  btm_acl_encrypt_change(handle, status, 1 /* enable */);
+  btm_sec_encrypt_change(handle, status, 1 /* enable */);
+}
 /*******************************************************************************
  *
  * Function         btu_hcif_encryption_change_evt
@@ -737,8 +771,15 @@ static void btu_hcif_encryption_change_evt(uint8_t* p) {
   STREAM_TO_UINT16(handle, p);
   STREAM_TO_UINT8(encr_enable, p);
 
-  btm_acl_encrypt_change(handle, status, encr_enable);
-  btm_sec_encrypt_change(handle, status, encr_enable);
+  if (status != HCI_SUCCESS || encr_enable == 0 ||
+      BTM_IsBleConnection(handle)) {
+    btm_acl_encrypt_change(handle, status, encr_enable);
+    btm_sec_encrypt_change(handle, status, encr_enable);
+  } else {
+    btsnd_hcic_read_encryption_key_size(
+        handle,
+        base::Bind(&read_encryption_key_size_complete_after_encryption_change));
+  }
 }
 
 /*******************************************************************************
@@ -1643,21 +1684,54 @@ static void btu_hcif_enhanced_flush_complete_evt(void) {
  * End of Simple Pairing Events
  **********************************************/
 
-/**********************************************
- * BLE Events
- **********************************************/
+static void read_encryption_key_size_complete_after_key_refresh(
+    uint8_t status, uint16_t handle, uint8_t key_size) {
+  int ret = android::util::stats_write(
+      android::util::BLUETOOTH_CLASSIC_PAIRING_EVENT_REPORTED, "", handle,
+      HCI_READ_ENCR_KEY_SIZE, HCI_COMMAND_COMPLETE_EVT, status, 0, key_size);
+  if (ret < 0) {
+    LOG(WARNING) << __func__ << ": failed to log encryption key size "
+                 << std::to_string(key_size);
+  }
+
+  if (status != HCI_SUCCESS) {
+    LOG(INFO) << __func__ << ": disconnecting, status: " << loghex(status);
+    btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
+    return;
+  }
+
+  if (key_size < MIN_KEY_SIZE) {
+    android_errorWriteLog(0x534e4554, "124301137");
+    LOG(ERROR) << __func__
+               << " encryption key too short, disconnecting. handle: "
+               << loghex(handle) << " key_size: " << +key_size;
+
+    btsnd_hcic_disconnect(handle, HCI_ERR_HOST_REJECT_SECURITY);
+    return;
+  }
+
+  btm_sec_encrypt_change(handle, status, 1 /* enc_enable */);
+}
+
 static void btu_hcif_encryption_key_refresh_cmpl_evt(uint8_t* p) {
   uint8_t status;
-  uint8_t enc_enable = 0;
   uint16_t handle;
 
   STREAM_TO_UINT8(status, p);
   STREAM_TO_UINT16(handle, p);
 
-  if (status == HCI_SUCCESS) enc_enable = 1;
-
-  btm_sec_encrypt_change(handle, status, enc_enable);
+  if (status != HCI_SUCCESS || BTM_IsBleConnection(handle)) {
+    btm_sec_encrypt_change(handle, status, (status == HCI_SUCCESS) ? 1 : 0);
+  } else {
+    btsnd_hcic_read_encryption_key_size(
+        handle,
+        base::Bind(&read_encryption_key_size_complete_after_key_refresh));
+  }
 }
+
+/**********************************************
+ * BLE Events
+ **********************************************/
 
 static void btu_ble_ll_conn_complete_evt(uint8_t* p, uint16_t evt_len) {
   btm_ble_conn_complete(p, evt_len, false);
