@@ -127,6 +127,7 @@ cc_test {
         "libprotobuf-cpp-lite",
         "libcutils",
         "libutils",
+        "libstatslog",
     ],
     static_libs: [
         "libbt-bta",

@@ -35,6 +35,7 @@
 #include <alloca.h>
 #include <base/logging.h>
 #include <ctype.h>
+#include <log/log.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -794,6 +795,45 @@ bt_status_t btif_storage_remove_bonded_device(
   return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
+/* Some devices hardcode sample LTK value from spec, instead of generating one.
+ * Treat such devices as insecure, and remove such bonds when bluetooth
+ * restarts. Removing them after disconnection is handled separately.
+ *
+ * We still allow such devices to bond in order to give the user a chance to
+ * update firmware.
+ */
+static void remove_devices_with_sample_ltk() {
+  std::vector<RawAddress> bad_ltk;
+  for (const section_t& section : btif_config_sections()) {
+    const std::string& name = section.name;
+    if (!RawAddress::IsValidAddress(name)) {
+      continue;
+    }
+
+    RawAddress bd_addr;
+    RawAddress::FromString(name, bd_addr);
+
+    tBTA_LE_KEY_VALUE key;
+    memset(&key, 0, sizeof(key));
+
+    if (btif_storage_get_ble_bonding_key(
+            &bd_addr, BTIF_DM_LE_KEY_PENC, (uint8_t*)&key,
+            sizeof(tBTM_LE_PENC_KEYS)) == BT_STATUS_SUCCESS) {
+      if (is_sample_ltk(key.penc_key.ltk)) {
+        bad_ltk.push_back(bd_addr);
+      }
+    }
+  }
+
+  for (RawAddress address : bad_ltk) {
+    android_errorWriteLog(0x534e4554, "128437297");
+    LOG(ERROR) << __func__
+               << ": removing bond to device using test TLK: " << address;
+
+    btif_storage_remove_bonded_device(&address);
+  }
+}
+
 /*******************************************************************************
  *
  * Function         btif_storage_load_bonded_devices
@@ -820,6 +860,8 @@ bt_status_t btif_storage_load_bonded_devices(void) {
   Uuid local_uuids[BT_MAX_NUM_UUIDS];
   Uuid remote_uuids[BT_MAX_NUM_UUIDS];
   bt_status_t status;
+
+  remove_devices_with_sample_ltk();
 
   btif_in_fetch_bonded_devices(&bonded_devices, 1);
 
