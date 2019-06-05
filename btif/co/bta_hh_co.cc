@@ -43,6 +43,8 @@ const char* dev_path = "/dev/uhid";
 static tBTA_HH_RPT_CACHE_ENTRY sReportCache[BTA_HH_NV_LOAD_MAX];
 #endif
 #define GET_RPT_RSP_OFFSET 9
+#define THREAD_NORMAL_PRIORITY 0
+#define BT_HH_THREAD "bt_hh_thread"
 
 void uhid_set_non_blocking(int fd) {
   int opts = fcntl(fd, F_GETFL);
@@ -207,6 +209,17 @@ static void* btif_hh_poll_event_thread(void* arg) {
   btif_hh_device_t* p_dev = (btif_hh_device_t*)arg;
   APPL_TRACE_DEBUG("%s: Thread created fd = %d", __func__, p_dev->fd);
   struct pollfd pfds[1];
+
+  // This thread is created by bt_main_thread with RT priority. Lower the thread
+  // priority here since the tasks in this thread is not timing critical.
+  struct sched_param sched_params;
+  sched_params.sched_priority = THREAD_NORMAL_PRIORITY;
+  if (sched_setscheduler(gettid(), SCHED_OTHER, &sched_params)) {
+    APPL_TRACE_ERROR("%s: Failed to set thread priority to normal", __func__);
+    p_dev->hh_poll_thread_id = -1;
+    return 0;
+  }
+  pthread_setname_np(pthread_self(), BT_HH_THREAD);
 
   pfds[0].fd = p_dev->fd;
   pfds[0].events = POLLIN;
