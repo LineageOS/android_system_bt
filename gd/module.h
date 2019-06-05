@@ -27,6 +27,8 @@
 
 namespace bluetooth {
 
+const std::chrono::milliseconds kModuleStopTimeout = std::chrono::milliseconds(20);
+
 class Module;
 class ModuleRegistry;
 
@@ -76,7 +78,7 @@ class Module {
 
   ::bluetooth::os::Handler* GetHandler();
 
-  ModuleRegistry* GetModuleRegistry();
+  const ModuleRegistry* GetModuleRegistry();
 
   template <class T>
   T* GetDependency() const {
@@ -88,7 +90,7 @@ class Module {
 
   ::bluetooth::os::Handler* handler_ = nullptr;
   ModuleList dependencies_;
-  ModuleRegistry* registry_;
+  const ModuleRegistry* registry_;
 };
 
 class ModuleRegistry {
@@ -119,6 +121,8 @@ class ModuleRegistry {
  protected:
   Module* Get(const ModuleFactory* module) const;
 
+  void set_registry_and_handler(Module* instance, ::bluetooth::os::Thread* thread) const;
+
   os::Handler* GetModuleHandler(const ModuleFactory* module) const;
 
   std::map<const ModuleFactory*, Module*> started_modules_;
@@ -130,6 +134,7 @@ class TestModuleRegistry : public ModuleRegistry {
   void InjectTestModule(const ModuleFactory* module, Module* instance) {
     start_order_.push_back(module);
     started_modules_[module] = instance;
+    set_registry_and_handler(instance, &test_thread);
   }
 
   Module* GetModuleUnderTest(const ModuleFactory* module) const {
@@ -142,11 +147,6 @@ class TestModuleRegistry : public ModuleRegistry {
 
   os::Thread& GetTestThread() {
     return test_thread;
-  }
-
-  template <class T>
-  T* StartTestModule() {
-    return Start<T>(&test_thread);
   }
 
   bool SynchronizeModuleHandler(const ModuleFactory* module, std::chrono::milliseconds timeout) const {
