@@ -29,7 +29,7 @@ Handler* Module::GetHandler() {
   return handler_;
 }
 
-ModuleRegistry* Module::GetModuleRegistry() {
+const ModuleRegistry* Module::GetModuleRegistry() {
   return registry_;
 }
 
@@ -59,6 +59,11 @@ void ModuleRegistry::Start(ModuleList* modules, Thread* thread) {
   }
 }
 
+void ModuleRegistry::set_registry_and_handler(Module* instance, Thread* thread) const {
+  instance->registry_ = this;
+  instance->handler_ = new Handler(thread);
+}
+
 Module* ModuleRegistry::Start(const ModuleFactory* module, Thread* thread) {
   auto started_instance = started_modules_.find(module);
   if (started_instance != started_modules_.end()) {
@@ -66,10 +71,9 @@ Module* ModuleRegistry::Start(const ModuleFactory* module, Thread* thread) {
   }
 
   Module* instance = module->ctor_();
-  instance->registry_ = this;
-  instance->handler_ = new Handler(thread);
-  instance->ListDependencies(&instance->dependencies_);
+  set_registry_and_handler(instance, thread);
 
+  instance->ListDependencies(&instance->dependencies_);
   Start(&instance->dependencies_, thread);
 
   instance->Start();
