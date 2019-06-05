@@ -49,6 +49,10 @@ class Handler {
   template <typename T>
   friend class Queue;
 
+  friend class Alarm;
+
+  friend class RepeatingAlarm;
+
  private:
   std::queue<Closure> tasks_;
   Thread* thread_;
