@@ -175,7 +175,7 @@ class HciTest : public ::testing::Test {
     }
     hal = new TestHciHal();
     fake_registry_.InjectTestModule(&hal::HciHal::Factory, hal);
-    fake_registry_.StartTestModule<DependsOnHci>();
+    fake_registry_.Start<DependsOnHci>(&fake_registry_.GetTestThread());
     hci = static_cast<HciLayer*>(fake_registry_.GetModuleUnderTest(&HciLayer::Factory));
     upper = static_cast<DependsOnHci*>(fake_registry_.GetModuleUnderTest(&DependsOnHci::Factory));
     ASSERT(fake_registry_.IsStarted<HciLayer>());
