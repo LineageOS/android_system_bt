@@ -30,11 +30,13 @@ class RepeatingAlarmTest : public ::testing::Test {
  protected:
   void SetUp() override {
     thread_ = new Thread("test_thread", Thread::Priority::NORMAL);
-    alarm_ = new RepeatingAlarm(thread_);
+    handler_ = new Handler(thread_);
+    alarm_ = new RepeatingAlarm(handler_);
   }
 
   void TearDown() override {
     delete alarm_;
+    delete handler_;
     delete thread_;
   }
 
@@ -63,6 +65,7 @@ class RepeatingAlarmTest : public ::testing::Test {
 
  private:
   Thread* thread_;
+  Handler* handler_;
 };
 
 TEST_F(RepeatingAlarmTest, cancel_while_not_armed) {
