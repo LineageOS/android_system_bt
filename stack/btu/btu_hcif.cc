@@ -733,6 +733,14 @@ static void read_encryption_key_size_complete_after_encryption_change(
                  << std::to_string(key_size);
   }
 
+  if (status == HCI_ERR_INSUFFCIENT_SECURITY) {
+    /* If remote device stop the encryption before we call "Read Encryption Key
+     * Size", we might receive Insufficient Security, which means that link is
+     * no longer encrypted. */
+    LOG(INFO) << __func__ << ": encryption stopped on link: " << loghex(handle);
+    return;
+  }
+
   if (status != HCI_SUCCESS) {
     LOG(INFO) << __func__ << ": disconnecting, status: " << loghex(status);
     btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
@@ -1692,6 +1700,14 @@ static void read_encryption_key_size_complete_after_key_refresh(
   if (ret < 0) {
     LOG(WARNING) << __func__ << ": failed to log encryption key size "
                  << std::to_string(key_size);
+  }
+
+  if (status == HCI_ERR_INSUFFCIENT_SECURITY) {
+    /* If remote device stop the encryption before we call "Read Encryption Key
+     * Size", we might receive Insufficient Security, which means that link is
+     * no longer encrypted. */
+    LOG(INFO) << __func__ << ": encryption stopped on link: " << loghex(handle);
+    return;
   }
 
   if (status != HCI_SUCCESS) {
