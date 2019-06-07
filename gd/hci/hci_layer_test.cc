@@ -112,17 +112,15 @@ class DependsOnHci : public Module {
   DependsOnHci() : Module() {}
 
   void SendHciCommand(std::unique_ptr<CommandPacketBuilder> command) {
-    hci_->EnqueueCommand(std::move(command), [this](CommandStatusView status) { incoming_events_.push_back(status); },
-                         [this](CommandCompleteView complete) { incoming_events_.push_back(complete); }, GetHandler());
+    hci_->EnqueueCommand(
+        std::move(command), common::Bind(&DependsOnHci::handle_event<CommandStatusView>, common::Unretained(this)),
+        common::Bind(&DependsOnHci::handle_event<CommandCompleteView>, common::Unretained(this)), GetHandler());
   }
 
   void SendAclData(std::unique_ptr<AclPacketBuilder> acl) {
-    AclPacketBuilder* raw_acl_pointer = acl.release();
+    outgoing_acl_.push(std::move(acl));
     auto queue_end = hci_->GetAclQueueEnd();
-    queue_end->RegisterEnqueue(GetHandler(), [queue_end, raw_acl_pointer]() -> std::unique_ptr<AclPacketBuilder> {
-      queue_end->UnregisterEnqueue();
-      return std::unique_ptr<AclPacketBuilder>(raw_acl_pointer);
-    });
+    queue_end->RegisterEnqueue(GetHandler(), common::Bind(&DependsOnHci::handle_enqueue, common::Unretained(this)));
   }
 
   EventPacketView GetReceivedEvent() {
@@ -146,7 +144,8 @@ class DependsOnHci : public Module {
   void Start() {
     hci_ = GetDependency<HciLayer>();
     hci_->RegisterEventHandler(EventCode::CONNECTION_COMPLETE,
-                               [this](EventPacketView event) { incoming_events_.push_back(event); }, GetHandler());
+                               common::Bind(&DependsOnHci::handle_event<EventPacketView>, common::Unretained(this)),
+                               GetHandler());
   }
 
   void Stop() {}
@@ -160,6 +159,20 @@ class DependsOnHci : public Module {
  private:
   HciLayer* hci_ = nullptr;
   std::list<EventPacketView> incoming_events_;
+
+  template <typename T>
+  void handle_event(T event) {
+    incoming_events_.push_back(event);
+  }
+
+  std::queue<std::unique_ptr<AclPacketBuilder>> outgoing_acl_;
+
+  std::unique_ptr<AclPacketBuilder> handle_enqueue() {
+    hci_->GetAclQueueEnd()->UnregisterEnqueue();
+    auto acl = std::move(outgoing_acl_.front());
+    outgoing_acl_.pop();
+    return acl;
+  }
 };
 
 const ModuleFactory DependsOnHci::Factory = ModuleFactory([]() { return new DependsOnHci(); });

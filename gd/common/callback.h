@@ -16,29 +16,15 @@
 
 #pragma once
 
-#include "module.h"
-#include "os/thread.h"
-#include "os/handler.h"
+#include "base/callback.h"
 
 namespace bluetooth {
+namespace common {
 
-class StackManager {
- public:
-  void StartUp(ModuleList *modules, os::Thread* stack_thread);
-  void ShutDown();
+using base::Callback;
+using base::Closure;
+using base::OnceCallback;
+using base::OnceClosure;
 
-  template <class T>
-  T* GetInstance() const {
-    return static_cast<T*>(registry_.Get(&T::Factory));
-  }
-
- private:
-  os::Thread* management_thread_ = nullptr;
-  os::Handler* handler_ = nullptr;
-  ModuleRegistry registry_;
-
-  void handle_start_up(ModuleList* modules, os::Thread* stack_thread, std::promise<void>* promise);
-  void handle_shut_down(std::promise<void>* promise);
-};
-
+}  // namespace common
 }  // namespace bluetooth

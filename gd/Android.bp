@@ -124,6 +124,9 @@ cc_library {
     generated_headers: [
         "BluetoothGeneratedPackets_h",
     ],
+    shared_libs: [
+        "libchrome",
+    ],
 }
 
 cc_binary {
@@ -149,6 +152,7 @@ cc_binary {
         "libbluetooth_gd",
     ],
     shared_libs: [
+        "libchrome",
         "libgrpc++_unsecure",
         "libprotobuf-cpp-full",
     ],
@@ -191,6 +195,7 @@ cc_binary {
         "libbluetooth_gd",
     ],
     shared_libs: [
+        "libchrome",
         "libgrpc++_unsecure",
         "libprotobuf-cpp-full",
     ],
@@ -257,6 +262,9 @@ cc_test {
     static_libs: [
         "libbluetooth_gd",
     ],
+    shared_libs: [
+        "libchrome",
+    ],
     sanitize: {
         address: true,
     },
@@ -293,6 +301,9 @@ cc_benchmark {
     ],
     static_libs: [
         "libbluetooth_gd",
+    ],
+    shared_libs: [
+        "libchrome",
     ],
 }
 

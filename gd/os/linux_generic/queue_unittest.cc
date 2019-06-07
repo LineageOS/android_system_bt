@@ -20,6 +20,7 @@
 #include <future>
 #include <unordered_map>
 
+#include "common/bind.h"
 #include "gtest/gtest.h"
 #include "os/reactor.h"
 
@@ -68,17 +69,15 @@ class TestEnqueueEnd {
 
   void RegisterEnqueue(std::unordered_map<int, std::promise<int>>* promise_map) {
     promise_map_ = promise_map;
-    handler_->Post([this] { queue_->RegisterEnqueue(handler_, [this] { return EnqueueCallbackForTest(); }); });
+    handler_->Post(common::BindOnce(&TestEnqueueEnd::handle_register_enqueue, common::Unretained(this)));
   }
 
   void UnregisterEnqueue() {
     std::promise<void> promise;
     auto future = promise.get_future();
 
-    handler_->Post([this, &promise] {
-      queue_->UnregisterEnqueue();
-      promise.set_value();
-    });
+    handler_->Post(
+        common::BindOnce(&TestEnqueueEnd::handle_unregister_enqueue, common::Unretained(this), std::move(promise)));
     future.wait();
   }
 
@@ -115,6 +114,15 @@ class TestEnqueueEnd {
   Queue<std::string>* queue_;
   std::unordered_map<int, std::promise<int>>* promise_map_;
   int delay_;
+
+  void handle_register_enqueue() {
+    queue_->RegisterEnqueue(handler_, common::Bind(&TestEnqueueEnd::EnqueueCallbackForTest, common::Unretained(this)));
+  }
+
+  void handle_unregister_enqueue(std::promise<void> promise) {
+    queue_->UnregisterEnqueue();
+    promise.set_value();
+  }
 };
 
 class TestDequeueEnd {
@@ -126,17 +134,15 @@ class TestDequeueEnd {
 
   void RegisterDequeue(std::unordered_map<int, std::promise<int>>* promise_map) {
     promise_map_ = promise_map;
-    handler_->Post([this] { queue_->RegisterDequeue(handler_, [this] { DequeueCallbackForTest(); }); });
+    handler_->Post(common::BindOnce(&TestDequeueEnd::handle_register_dequeue, common::Unretained(this)));
   }
 
   void UnregisterDequeue() {
     std::promise<void> promise;
     auto future = promise.get_future();
 
-    handler_->Post([this, &promise] {
-      queue_->UnregisterDequeue();
-      promise.set_value();
-    });
+    handler_->Post(
+        common::BindOnce(&TestDequeueEnd::handle_unregister_dequeue, common::Unretained(this), std::move(promise)));
     future.wait();
   }
 
@@ -173,6 +179,15 @@ class TestDequeueEnd {
   std::unordered_map<int, std::promise<int>>* promise_map_;
   int capacity_;
   int delay_;
+
+  void handle_register_dequeue() {
+    queue_->RegisterDequeue(handler_, common::Bind(&TestDequeueEnd::DequeueCallbackForTest, common::Unretained(this)));
+  }
+
+  void handle_unregister_dequeue(std::promise<void> promise) {
+    queue_->UnregisterDequeue();
+    promise.set_value();
+  }
 };
 
 // Enqueue end level : 0 -> queue is full, 1 - >  queue isn't full
@@ -673,28 +688,36 @@ TEST_F(QueueTest, pass_smart_pointer_and_unregister) {
   // Enqueue a string
   std::string valid = "Valid String";
   std::shared_ptr<std::string> shared = std::make_shared<std::string>(valid);
-  queue->RegisterEnqueue(enqueue_handler_, [queue, shared]() {
-    queue->UnregisterEnqueue();
-    return std::make_unique<std::string>(*shared);
-  });
+  queue->RegisterEnqueue(enqueue_handler_, common::Bind(
+                                               [](Queue<std::string>* queue, std::shared_ptr<std::string> shared) {
+                                                 queue->UnregisterEnqueue();
+                                                 return std::make_unique<std::string>(*shared);
+                                               },
+                                               common::Unretained(queue), shared));
 
   // Dequeue the string
-  queue->RegisterDequeue(dequeue_handler_, [queue, valid]() {
-    queue->UnregisterDequeue();
-    auto answer = *queue->TryDequeue();
-    ASSERT_EQ(answer, valid);
-  });
+  queue->RegisterDequeue(dequeue_handler_, common::Bind(
+                                               [](Queue<std::string>* queue, std::string valid) {
+                                                 queue->UnregisterDequeue();
+                                                 auto answer = *queue->TryDequeue();
+                                                 ASSERT_EQ(answer, valid);
+                                               },
+                                               common::Unretained(queue), valid));
 
   // Wait for both handlers to finish and delete the Queue
   std::promise<void> promise;
   auto future = promise.get_future();
 
-  enqueue_handler_->Post([this, queue, &promise]() {
-    dequeue_handler_->Post([queue, &promise] {
-      delete queue;
-      promise.set_value();
-    });
-  });
+  enqueue_handler_->Post(common::BindOnce(
+      [](os::Handler* dequeue_handler, Queue<std::string>* queue, std::promise<void>* promise) {
+        dequeue_handler->Post(common::BindOnce(
+            [](Queue<std::string>* queue, std::promise<void>* promise) {
+              delete queue;
+              promise->set_value();
+            },
+            common::Unretained(queue), common::Unretained(promise)));
+      },
+      common::Unretained(dequeue_handler_), common::Unretained(queue), common::Unretained(&promise)));
   future.wait();
 }
 
@@ -706,7 +729,7 @@ class QueueDeathTest : public ::testing::Test {
     Handler* enqueue_handler = new Handler(enqueue_thread);
     Queue<std::string>* queue = new Queue<std::string>(kQueueSizeOne);
     queue->RegisterEnqueue(enqueue_handler,
-                           []() { return std::make_unique<std::string>("A string to fill the queue"); });
+                           common::Bind([]() { return std::make_unique<std::string>("A string to fill the queue"); }));
     delete queue;
   }
 
@@ -714,7 +737,8 @@ class QueueDeathTest : public ::testing::Test {
     Thread* dequeue_thread = new Thread("dequeue_thread", Thread::Priority::NORMAL);
     Handler* dequeue_handler = new Handler(dequeue_thread);
     Queue<std::string>* queue = new Queue<std::string>(kQueueSizeOne);
-    queue->RegisterDequeue(dequeue_handler, [queue]() { queue->TryDequeue(); });
+    queue->RegisterDequeue(dequeue_handler, common::Bind([](Queue<std::string>* queue) { queue->TryDequeue(); },
+                                                         common::Unretained(queue)));
     delete queue;
   }
 };
