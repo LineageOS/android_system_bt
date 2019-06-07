@@ -43,7 +43,9 @@ class HandlerTest : public ::testing::Test {
   Thread* thread_;
 };
 
-TEST_F(HandlerTest, empty) {}
+TEST_F(HandlerTest, empty) {
+  handler_->Clear();
+}
 
 TEST_F(HandlerTest, post_task_invoked) {
   int val = 0;
@@ -55,6 +57,7 @@ TEST_F(HandlerTest, post_task_invoked) {
   handler_->Post(closure);
   closure_ran.get_future().wait();
   ASSERT_EQ(val, 1);
+  handler_->Clear();
 }
 
 TEST_F(HandlerTest, post_task_cleared) {
@@ -72,6 +75,43 @@ TEST_F(HandlerTest, post_task_cleared) {
   handler_->Clear();
   closure_can_continue.set_value();
   ASSERT_EQ(val, 1);
+}
+
+// For Death tests, all the threading needs to be done in the ASSERT_DEATH call
+class HandlerDeathTest : public ::testing::Test {
+ protected:
+  void ThreadSetUp() {
+    thread_ = new Thread("test_thread", Thread::Priority::NORMAL);
+    handler_ = new Handler(thread_);
+  }
+
+  void ThreadTearDown() {
+    delete handler_;
+    delete thread_;
+  }
+
+  void ClearTwice() {
+    ThreadSetUp();
+    handler_->Clear();
+    handler_->Clear();
+    ThreadTearDown();
+  }
+
+  void NotCleared() {
+    ThreadSetUp();
+    ThreadTearDown();
+  }
+
+  Handler* handler_;
+  Thread* thread_;
+};
+
+TEST_F(HandlerDeathTest, clear_after_handler_cleared) {
+  ASSERT_DEATH(ClearTwice(), "Handlers must only be cleared once");
+}
+
+TEST_F(HandlerDeathTest, not_cleared_before_destruction) {
+  ASSERT_DEATH(NotCleared(), "Handlers must be cleared");
 }
 
 }  // namespace

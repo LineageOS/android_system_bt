@@ -64,6 +64,7 @@ class TestBidiQueueEnd {
       : handler_(handler), end_(end) {}
 
   ~TestBidiQueueEnd() {
+    handler_->Clear();
   }
 
   std::promise<void>* Send(TA* value) {
