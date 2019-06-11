@@ -42,19 +42,20 @@ class Reactor::Reactable {
       : fd_(fd),
         on_read_ready_(std::move(on_read_ready)),
         on_write_ready_(std::move(on_write_ready)),
-        is_executing_(false) {}
+        is_executing_(false),
+        removed_(false) {}
   const int fd_;
   Closure on_read_ready_;
   Closure on_write_ready_;
   bool is_executing_;
-  std::recursive_mutex lock_;
+  bool removed_;
+  std::mutex mutex_;
 };
 
 Reactor::Reactor()
   : epoll_fd_(0),
     control_fd_(0),
-    is_running_(false),
-    reactable_removed_(false) {
+    is_running_(false) {
   RUN_NO_INTR(epoll_fd_ = epoll_create1(EPOLL_CLOEXEC));
   ASSERT_LOG(epoll_fd_ != -1, "could not create epoll fd: %s", strerror(errno));
 
@@ -105,28 +106,27 @@ void Reactor::Run() {
         return;
       }
       auto* reactable = static_cast<Reactor::Reactable*>(event.data.ptr);
-      {
-        std::unique_lock<std::mutex> lock(mutex_);
-        // See if this reactable has been removed in the meantime.
-        if (std::find(invalidation_list_.begin(), invalidation_list_.end(), reactable) != invalidation_list_.end()) {
-          continue;
-        }
-
-        std::lock_guard<std::recursive_mutex> reactable_lock(reactable->lock_);
-        lock.unlock();
-        reactable_removed_ = false;
-        reactable->is_executing_ = true;
-        if (event.events & (EPOLLIN | EPOLLHUP | EPOLLRDHUP | EPOLLERR) && reactable->on_read_ready_ != nullptr) {
-          reactable->on_read_ready_();
-        }
-        if (!reactable_removed_ && event.events & EPOLLOUT && reactable->on_write_ready_ != nullptr) {
-          reactable->on_write_ready_();
-        }
-        reactable->is_executing_ = false;
+      std::unique_lock<std::mutex> lock(mutex_);
+      // See if this reactable has been removed in the meantime.
+      if (std::find(invalidation_list_.begin(), invalidation_list_.end(), reactable) != invalidation_list_.end()) {
+        continue;
       }
-      if (reactable_removed_) {
+
+      {
+        std::unique_lock<std::mutex> reactable_lock(reactable->mutex_);
+        lock.unlock();
+        reactable->is_executing_ = true;
+      }
+      if (event.events & (EPOLLIN | EPOLLHUP | EPOLLRDHUP | EPOLLERR) && reactable->on_read_ready_ != nullptr) {
+        reactable->on_read_ready_();
+      }
+      if (event.events & EPOLLOUT && reactable->on_write_ready_ != nullptr) {
+        reactable->on_write_ready_();
+      }
+      std::lock_guard<std::mutex> reactable_lock(reactable->mutex_);
+      reactable->is_executing_ = false;
+      if (reactable->removed_) {
         delete reactable;
-        reactable_removed_ = false;
       }
     }
   }
@@ -168,7 +168,7 @@ void Reactor::Unregister(Reactor::Reactable* reactable) {
   bool delaying_delete_until_callback_finished = false;
   {
     int result;
-    std::lock_guard<std::recursive_mutex> reactable_lock(reactable->lock_);
+    std::lock_guard<std::mutex> reactable_lock(reactable->mutex_);
     RUN_NO_INTR(result = epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, reactable->fd_, nullptr));
     if (result == -1 && errno == ENOENT) {
       LOG_INFO("reactable is invalid or unregistered");
@@ -176,10 +176,10 @@ void Reactor::Unregister(Reactor::Reactable* reactable) {
       ASSERT(result != -1);
     }
 
-    // If we are unregistering during the callback event from this reactable, we delete it after the callback is executed.
-    // reactable->is_executing_ is protected by reactable->lock_, so it's thread safe.
+    // If we are unregistering during the callback event from this reactable, we delete it after the callback is
+    // executed. reactable->is_executing_ is protected by reactable->mutex_, so it's thread safe.
     if (reactable->is_executing_) {
-      reactable_removed_ = true;
+      reactable->removed_ = true;
       delaying_delete_until_callback_finished = true;
     }
   }
@@ -200,7 +200,7 @@ void Reactor::ModifyRegistration(Reactor::Reactable* reactable, Closure on_read_
     poll_event_type |= EPOLLOUT;
   }
   {
-    std::lock_guard<std::recursive_mutex> reactable_lock(reactable->lock_);
+    std::lock_guard<std::mutex> reactable_lock(reactable->mutex_);
     reactable->on_read_ready_ = std::move(on_read_ready);
     reactable->on_write_ready_ = std::move(on_write_ready);
   }
