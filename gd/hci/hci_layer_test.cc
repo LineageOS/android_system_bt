@@ -52,19 +52,27 @@ class TestHciHal : public hal::HciHal {
  public:
   TestHciHal() : hal::HciHal() {}
 
-  virtual void registerIncomingPacketCallback(hal::HciHalCallbacks* callback) {
+  ~TestHciHal() {
+    ASSERT_LOG(callbacks == nullptr, "unregisterIncomingPacketCallback() must be called");
+  }
+
+  void registerIncomingPacketCallback(hal::HciHalCallbacks* callback) override {
     callbacks = callback;
   }
 
-  virtual void sendHciCommand(hal::HciPacket command) {
+  void unregisterIncomingPacketCallback() override {
+    callbacks = nullptr;
+  }
+
+  void sendHciCommand(hal::HciPacket command) override {
     outgoing_commands_.push_back(std::move(command));
   }
 
-  virtual void sendAclData(hal::HciPacket data) {
+  void sendAclData(hal::HciPacket data) override {
     outgoing_acl_.push_front(std::move(data));
   }
 
-  virtual void sendScoData(hal::HciPacket data) {
+  void sendScoData(hal::HciPacket data) override {
     outgoing_sco_.push_front(std::move(data));
   }
 
