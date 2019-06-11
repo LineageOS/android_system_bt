@@ -17,9 +17,12 @@
 #include "os/handler.h"
 
 #include <sys/eventfd.h>
+
+#include <future>
 #include <thread>
 
 #include "gtest/gtest.h"
+#include "os/log.h"
 
 namespace bluetooth {
 namespace os {
@@ -44,27 +47,31 @@ TEST_F(HandlerTest, empty) {}
 
 TEST_F(HandlerTest, post_task_invoked) {
   int val = 0;
-  Closure closure = [&val]() { val++; };
+  std::promise<void> closure_ran;
+  Closure closure = [&val, &closure_ran]() {
+    val++;
+    closure_ran.set_value();
+  };
   handler_->Post(closure);
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  EXPECT_EQ(val, 1);
+  closure_ran.get_future().wait();
+  ASSERT_EQ(val, 1);
 }
 
 TEST_F(HandlerTest, post_task_cleared) {
   int val = 0;
-  Closure closure = [&val]() {
+  std::promise<void> closure_started;
+  std::promise<void> closure_can_continue;
+  auto can_continue_future = closure_can_continue.get_future();
+  handler_->Post([&val, &can_continue_future, &closure_started]() {
+    closure_started.set_value();
     val++;
-    std::this_thread::sleep_for(std::chrono::milliseconds(5));
-  };
-  handler_->Post(std::move(closure));
-  closure = []() {
-    ASSERT_TRUE(false);
-  };
-  std::this_thread::sleep_for(std::chrono::milliseconds(5));
-  handler_->Post(std::move(closure));
+    can_continue_future.wait();
+  });
+  handler_->Post([]() { ASSERT_TRUE(false); });
+  closure_started.get_future().wait();
   handler_->Clear();
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  EXPECT_EQ(val, 1);
+  closure_can_continue.set_value();
+  ASSERT_EQ(val, 1);
 }
 
 }  // namespace
