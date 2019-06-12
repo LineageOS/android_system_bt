@@ -19,6 +19,7 @@
 #include <sys/epoll.h>
 #include <atomic>
 #include <functional>
+#include <future>
 #include <list>
 #include <mutex>
 #include <thread>
@@ -62,6 +63,9 @@ class Reactor {
   // Unregister a reactable from this reactor
   void Unregister(Reactable* reactable);
 
+  // Wait for up to timeout milliseconds, and return true if the reactable finished executing.
+  bool WaitForUnregisteredReactable(std::chrono::milliseconds timeout);
+
   // Modify the registration for a reactable with given reactable
   void ModifyRegistration(Reactable* reactable, Closure on_read_ready, Closure on_write_ready);
 
@@ -71,6 +75,7 @@ class Reactor {
   int control_fd_;
   std::atomic<bool> is_running_;
   std::list<Reactable*> invalidation_list_;
+  std::unique_ptr<std::future<void>> executing_reactable_finished_;
 };
 
 }  // namespace os
