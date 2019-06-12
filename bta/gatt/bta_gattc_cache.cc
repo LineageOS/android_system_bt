@@ -703,15 +703,14 @@ void bta_gattc_get_gatt_db(uint16_t conn_id, uint16_t start_handle,
  *
  * Description      Load GATT cache from storage for server.
  *
- * Parameter        p_clcb: pointer to server clcb, that will
+ * Parameter        p_srcb: pointer to server cache, that will
  *                          be filled from storage
  * Returns          true on success, false otherwise
  *
  ******************************************************************************/
-bool bta_gattc_cache_load(tBTA_GATTC_CLCB* p_clcb) {
+bool bta_gattc_cache_load(tBTA_GATTC_SERV* p_srcb) {
   char fname[255] = {0};
-  bta_gattc_generate_cache_file_name(fname, sizeof(fname),
-                                     p_clcb->p_srcb->server_bda);
+  bta_gattc_generate_cache_file_name(fname, sizeof(fname), p_srcb->server_bda);
 
   FILE* fd = fopen(fname, "rb");
   if (!fd) {
@@ -748,7 +747,7 @@ bool bta_gattc_cache_load(tBTA_GATTC_CLCB* p_clcb) {
       goto done;
     }
 
-    p_clcb->p_srcb->gatt_database = gatt::Database::Deserialize(attr, &success);
+    p_srcb->gatt_database = gatt::Database::Deserialize(attr, &success);
   }
 
 done:
