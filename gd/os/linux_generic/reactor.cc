@@ -50,6 +50,7 @@ class Reactor::Reactable {
   bool is_executing_;
   bool removed_;
   std::mutex mutex_;
+  std::unique_ptr<std::promise<void>> finished_promise_;
 };
 
 Reactor::Reactor()
@@ -81,8 +82,8 @@ Reactor::~Reactor() {
 }
 
 void Reactor::Run() {
-  bool previously_running = is_running_.exchange(true);
-  ASSERT(!previously_running);
+  bool already_running = is_running_.exchange(true);
+  ASSERT(!already_running);
 
   for (;;) {
     {
@@ -113,7 +114,7 @@ void Reactor::Run() {
       }
 
       {
-        std::unique_lock<std::mutex> reactable_lock(reactable->mutex_);
+        std::lock_guard<std::mutex> reactable_lock(reactable->mutex_);
         lock.unlock();
         reactable->is_executing_ = true;
       }
@@ -123,9 +124,12 @@ void Reactor::Run() {
       if (event.events & EPOLLOUT && reactable->on_write_ready_ != nullptr) {
         reactable->on_write_ready_();
       }
-      std::lock_guard<std::mutex> reactable_lock(reactable->mutex_);
-      reactable->is_executing_ = false;
+      {
+        std::lock_guard<std::mutex> reactable_lock(reactable->mutex_);
+        reactable->is_executing_ = false;
+      }
       if (reactable->removed_) {
+        reactable->finished_promise_->set_value();
         delete reactable;
       }
     }
@@ -180,6 +184,8 @@ void Reactor::Unregister(Reactor::Reactable* reactable) {
     // executed. reactable->is_executing_ is protected by reactable->mutex_, so it's thread safe.
     if (reactable->is_executing_) {
       reactable->removed_ = true;
+      reactable->finished_promise_ = std::make_unique<std::promise<void>>();
+      executing_reactable_finished_ = std::make_unique<std::future<void>>(reactable->finished_promise_->get_future());
       delaying_delete_until_callback_finished = true;
     }
   }
@@ -187,6 +193,14 @@ void Reactor::Unregister(Reactor::Reactable* reactable) {
   if (!delaying_delete_until_callback_finished) {
     delete reactable;
   }
+}
+
+bool Reactor::WaitForUnregisteredReactable(std::chrono::milliseconds timeout) {
+  if (executing_reactable_finished_ == nullptr) {
+    return true;
+  }
+  auto stop_status = executing_reactable_finished_->wait_for(timeout);
+  return stop_status == std::future_status::ready;
 }
 
 void Reactor::ModifyRegistration(Reactor::Reactable* reactable, Closure on_read_ready, Closure on_write_ready) {

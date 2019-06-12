@@ -229,6 +229,40 @@ TEST_F(ReactorTest, unregister_from_different_thread_while_task_is_executing_) {
   reactor_thread.join();
 }
 
+TEST_F(ReactorTest, unregister_from_different_thread_while_task_is_executing_wait_fails) {
+  FakeRunningReactable fake_reactable;
+  auto* reactable =
+      reactor_->Register(fake_reactable.fd_, std::bind(&FakeRunningReactable::OnReadReady, &fake_reactable), nullptr);
+  auto reactor_thread = std::thread(&Reactor::Run, reactor_);
+  auto write_result = eventfd_write(fake_reactable.fd_, 1);
+  ASSERT_EQ(write_result, 0);
+  fake_reactable.started.get_future().wait();
+  reactor_->Unregister(reactable);
+  ASSERT_FALSE(reactor_->WaitForUnregisteredReactable(std::chrono::milliseconds(1)));
+  fake_reactable.can_finish.set_value();
+  fake_reactable.finished.get_future().wait();
+
+  reactor_->Stop();
+  reactor_thread.join();
+}
+
+TEST_F(ReactorTest, unregister_from_different_thread_while_task_is_executing_wait_succeeds) {
+  FakeRunningReactable fake_reactable;
+  auto* reactable =
+      reactor_->Register(fake_reactable.fd_, std::bind(&FakeRunningReactable::OnReadReady, &fake_reactable), nullptr);
+  auto reactor_thread = std::thread(&Reactor::Run, reactor_);
+  auto write_result = eventfd_write(fake_reactable.fd_, 1);
+  ASSERT_EQ(write_result, 0);
+  fake_reactable.started.get_future().wait();
+  reactor_->Unregister(reactable);
+  fake_reactable.can_finish.set_value();
+  fake_reactable.finished.get_future().wait();
+  ASSERT_TRUE(reactor_->WaitForUnregisteredReactable(std::chrono::milliseconds(1)));
+
+  reactor_->Stop();
+  reactor_thread.join();
+}
+
 TEST_F(ReactorTest, hot_unregister_from_different_thread) {
   FakeReactable fake_reactable;
   auto* reactable =
