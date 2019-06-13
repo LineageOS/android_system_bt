@@ -20,6 +20,7 @@
 #include <cstring>
 #include <unistd.h>
 
+#include "common/bind.h"
 #include "os/log.h"
 #include "os/utils.h"
 
@@ -35,7 +36,8 @@ namespace os {
 Alarm::Alarm(Handler* handler) : handler_(handler), fd_(timerfd_create(ALARM_CLOCK, 0)) {
   ASSERT_LOG(fd_ != -1, "cannot create timerfd: %s", strerror(errno));
 
-  token_ = handler_->thread_->GetReactor()->Register(fd_, [this] { on_fire(); }, nullptr);
+  token_ = handler_->thread_->GetReactor()->Register(fd_, common::Bind(&Alarm::on_fire, common::Unretained(this)),
+                                                     Closure());
 }
 
 Alarm::~Alarm() {
@@ -46,7 +48,7 @@ Alarm::~Alarm() {
   ASSERT(close_status != -1);
 }
 
-void Alarm::Schedule(Closure task, std::chrono::milliseconds delay) {
+void Alarm::Schedule(OnceClosure task, std::chrono::milliseconds delay) {
   std::lock_guard<std::mutex> lock(mutex_);
   long delay_ms = delay.count();
   itimerspec timer_itimerspec{
@@ -72,7 +74,7 @@ void Alarm::on_fire() {
   uint64_t times_invoked;
   auto bytes_read = read(fd_, &times_invoked, sizeof(uint64_t));
   lock.unlock();
-  task();
+  std::move(task).Run();
   ASSERT(bytes_read == static_cast<ssize_t>(sizeof(uint64_t)));
   ASSERT(times_invoked == static_cast<uint64_t>(1));
 }

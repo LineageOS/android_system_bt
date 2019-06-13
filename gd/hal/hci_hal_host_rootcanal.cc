@@ -133,8 +133,9 @@ class HciHalHostRootcanal : public HciHal {
     ASSERT(sock_fd_ == INVALID_FD);
     sock_fd_ = ConnectToRootCanal(config_->GetServerAddress(), config_->GetPort());
     ASSERT(sock_fd_ != INVALID_FD);
-    reactable_ =
-        hci_incoming_thread_.GetReactor()->Register(sock_fd_, [this]() { this->incoming_packet_received(); }, nullptr);
+    reactable_ = hci_incoming_thread_.GetReactor()->Register(
+        sock_fd_, common::Bind(&HciHalHostRootcanal::incoming_packet_received, common::Unretained(this)),
+        common::Closure());
     btsnoop_logger_ = GetDependency<SnoopLogger>();
     LOG_INFO("Rootcanal HAL opened successfully");
   }
@@ -168,20 +169,23 @@ class HciHalHostRootcanal : public HciHal {
     hci_outgoing_queue_.emplace(packet);
     if (hci_outgoing_queue_.size() == 1) {
       hci_incoming_thread_.GetReactor()->ModifyRegistration(
-          reactable_, [this] { this->incoming_packet_received(); },
-          [this] {
-            std::lock_guard<std::mutex> lock(this->mutex_);
-            auto packet_to_send = this->hci_outgoing_queue_.front();
-            auto bytes_written = write(this->sock_fd_, (void*)packet_to_send.data(), packet_to_send.size());
-            this->hci_outgoing_queue_.pop();
-            if (bytes_written == -1) {
-              abort();
-            }
-            if (hci_outgoing_queue_.empty()) {
-              this->hci_incoming_thread_.GetReactor()->ModifyRegistration(
-                  this->reactable_, [this] { this->incoming_packet_received(); }, nullptr);
-            }
-          });
+          reactable_, common::Bind(&HciHalHostRootcanal::incoming_packet_received, common::Unretained(this)),
+          common::Bind(&HciHalHostRootcanal::send_packet_ready, common::Unretained(this)));
+    }
+  }
+
+  void send_packet_ready() {
+    std::lock_guard<std::mutex> lock(this->mutex_);
+    auto packet_to_send = this->hci_outgoing_queue_.front();
+    auto bytes_written = write(this->sock_fd_, (void*)packet_to_send.data(), packet_to_send.size());
+    this->hci_outgoing_queue_.pop();
+    if (bytes_written == -1) {
+      abort();
+    }
+    if (hci_outgoing_queue_.empty()) {
+      this->hci_incoming_thread_.GetReactor()->ModifyRegistration(
+          this->reactable_, common::Bind(&HciHalHostRootcanal::incoming_packet_received, common::Unretained(this)),
+          common::Closure());
     }
   }
 

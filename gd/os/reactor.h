@@ -24,13 +24,16 @@
 #include <mutex>
 #include <thread>
 
+#include "common/callback.h"
 #include "os/utils.h"
 
 namespace bluetooth {
 namespace os {
 
-// Format of closure to be used in the entire stack
-using Closure = std::function<void()>;
+using common::Callback;
+using common::Closure;
+using common::OnceCallback;
+using common::OnceClosure;
 
 // A simple implementation of reactor-style looper.
 // When a reactor is running, the main loop is polling and blocked until at least one registered reactable is ready to
