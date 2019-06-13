@@ -205,25 +205,9 @@ bool gatt_connect(const RawAddress& rem_bda, tGATT_TCB* p_tcb,
     return p_tcb->att_lcid != 0;
   }
 
-  // Already connected, send the callback, mark the link as used
+  // Already connected, mark the link as used
   if (gatt_get_ch_state(p_tcb) == GATT_CH_OPEN) {
-    /*  very similar to gatt_send_conn_cback, but no good way to reuse the code
-     */
-
-    /* notifying application about the connection up event */
-    for (int i = 0; i < GATT_MAX_APPS; i++) {
-      tGATT_REG* p_reg = &gatt_cb.cl_rcb[i];
-
-      if (!p_reg->in_use || p_reg->gatt_if != gatt_if) continue;
-
-      gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, true);
-      if (p_reg->app_cb.p_conn_cb) {
-        uint16_t conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, p_reg->gatt_if);
-        (*p_reg->app_cb.p_conn_cb)(p_reg->gatt_if, p_tcb->peer_bda, conn_id,
-                                   true, 0, p_tcb->transport);
-      }
-    }
-
+    gatt_update_app_use_link_flag(gatt_if, p_tcb, true, true);
     return true;
   }
 
