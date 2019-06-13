@@ -17,10 +17,11 @@
 #include "os/handler.h"
 
 #include <sys/eventfd.h>
-
 #include <future>
 #include <thread>
 
+#include "common/bind.h"
+#include "common/callback.h"
 #include "gtest/gtest.h"
 #include "os/log.h"
 
@@ -50,12 +51,15 @@ TEST_F(HandlerTest, empty) {
 TEST_F(HandlerTest, post_task_invoked) {
   int val = 0;
   std::promise<void> closure_ran;
-  Closure closure = [&val, &closure_ran]() {
-    val++;
-    closure_ran.set_value();
-  };
-  handler_->Post(closure);
-  closure_ran.get_future().wait();
+  auto future = closure_ran.get_future();
+  OnceClosure closure = common::BindOnce(
+      [](int* val, std::promise<void> closure_ran) {
+        *val = *val + 1;
+        closure_ran.set_value();
+      },
+      common::Unretained(&val), std::move(closure_ran));
+  handler_->Post(std::move(closure));
+  future.wait();
   ASSERT_EQ(val, 1);
   handler_->Clear();
 }
@@ -63,18 +67,43 @@ TEST_F(HandlerTest, post_task_invoked) {
 TEST_F(HandlerTest, post_task_cleared) {
   int val = 0;
   std::promise<void> closure_started;
+  auto closure_started_future = closure_started.get_future();
   std::promise<void> closure_can_continue;
   auto can_continue_future = closure_can_continue.get_future();
-  handler_->Post([&val, &can_continue_future, &closure_started]() {
-    closure_started.set_value();
-    val++;
-    can_continue_future.wait();
-  });
-  handler_->Post([]() { ASSERT_TRUE(false); });
-  closure_started.get_future().wait();
+  handler_->Post(common::BindOnce(
+      [](int* val, std::promise<void> closure_started, std::future<void> can_continue_future) {
+        closure_started.set_value();
+        *val = *val + 1;
+        can_continue_future.wait();
+      },
+      common::Unretained(&val), std::move(closure_started), std::move(can_continue_future)));
+  handler_->Post(common::BindOnce([]() { ASSERT_TRUE(false); }));
+  closure_started_future.wait();
   handler_->Clear();
   closure_can_continue.set_value();
   ASSERT_EQ(val, 1);
+}
+
+void check_int(std::unique_ptr<int> number, std::shared_ptr<int> to_change) {
+  *to_change = *number;
+}
+
+TEST_F(HandlerTest, once_callback) {
+  auto number = std::make_unique<int>(1);
+  auto to_change = std::make_shared<int>(0);
+  auto once_callback = common::BindOnce(&check_int, std::move(number), to_change);
+  std::move(once_callback).Run();
+  EXPECT_EQ(*to_change, 1);
+  handler_->Clear();
+}
+
+TEST_F(HandlerTest, callback_with_promise) {
+  std::promise<void> promise;
+  auto future = promise.get_future();
+  auto once_callback = common::BindOnce(&std::promise<void>::set_value, common::Unretained(&promise));
+  std::move(once_callback).Run();
+  future.wait();
+  handler_->Clear();
 }
 
 // For Death tests, all the threading needs to be done in the ASSERT_DEATH call

@@ -18,9 +18,10 @@
 
 #include <future>
 
+#include "common/bind.h"
 #include "gtest/gtest.h"
-#include "os/thread.h"
 #include "os/handler.h"
+#include "os/thread.h"
 
 using ::bluetooth::os::Thread;
 using ::bluetooth::os::Handler;
@@ -69,27 +70,38 @@ class TestBidiQueueEnd {
 
   std::promise<void>* Send(TA* value) {
     std::promise<void>* promise = new std::promise<void>();
-    handler_->Post([this, value, promise] {
-      end_->RegisterEnqueue(handler_, [this, value, promise]() -> std::unique_ptr<TA> {
-        end_->UnregisterEnqueue();
-        promise->set_value();
-        return std::unique_ptr<TA>(value);
-      });
-    });
-
+    handler_->Post(BindOnce(&TestBidiQueueEnd<TA, TB>::handle_send, common::Unretained(this), common::Unretained(value),
+                            common::Unretained(promise)));
     return promise;
   }
 
   std::promise<TB*>* Receive() {
     std::promise<TB*>* promise = new std::promise<TB*>();
-    handler_->Post([this, promise] {
-      end_->RegisterDequeue(handler_, [this, promise] {
-        end_->UnregisterDequeue();
-        promise->set_value(end_->TryDequeue().get());
-      });
-    });
+    handler_->Post(
+        BindOnce(&TestBidiQueueEnd<TA, TB>::handle_receive, common::Unretained(this), common::Unretained(promise)));
 
     return promise;
+  }
+
+  void handle_send(TA* value, std::promise<void>* promise) {
+    end_->RegisterEnqueue(handler_, Bind(&TestBidiQueueEnd<TA, TB>::handle_register_enqueue, common::Unretained(this),
+                                         common::Unretained(value), common::Unretained(promise)));
+  }
+
+  std::unique_ptr<TA> handle_register_enqueue(TA* value, std::promise<void>* promise) {
+    end_->UnregisterEnqueue();
+    promise->set_value();
+    return std::unique_ptr<TA>(value);
+  }
+
+  void handle_receive(std::promise<TB*>* promise) {
+    end_->RegisterDequeue(handler_, Bind(&TestBidiQueueEnd<TA, TB>::handle_register_dequeue, common::Unretained(this),
+                                         common::Unretained(promise)));
+  }
+
+  void handle_register_dequeue(std::promise<TB*>* promise) {
+    end_->UnregisterDequeue();
+    promise->set_value(end_->TryDequeue().get());
   }
 
  private:

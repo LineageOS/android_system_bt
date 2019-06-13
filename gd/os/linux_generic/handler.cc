@@ -20,6 +20,8 @@
 #include <unistd.h>
 #include <cstring>
 
+#include "common/bind.h"
+#include "common/callback.h"
 #include "os/log.h"
 #include "os/reactor.h"
 #include "os/utils.h"
@@ -32,9 +34,10 @@ namespace bluetooth {
 namespace os {
 
 Handler::Handler(Thread* thread)
-    : tasks_(new std::queue<Closure>()), thread_(thread), fd_(eventfd(0, EFD_SEMAPHORE | EFD_NONBLOCK)) {
+    : tasks_(new std::queue<OnceClosure>()), thread_(thread), fd_(eventfd(0, EFD_SEMAPHORE | EFD_NONBLOCK)) {
   ASSERT(fd_ != -1);
-  reactable_ = thread_->GetReactor()->Register(fd_, [this] { this->handle_next_event(); }, nullptr);
+  reactable_ = thread_->GetReactor()->Register(fd_, common::Bind(&Handler::handle_next_event, common::Unretained(this)),
+                                               common::Closure());
 }
 
 Handler::~Handler() {
@@ -48,7 +51,7 @@ Handler::~Handler() {
   ASSERT(close_status != -1);
 }
 
-void Handler::Post(Closure closure) {
+void Handler::Post(OnceClosure closure) {
   {
     std::lock_guard<std::mutex> lock(mutex_);
     if (was_cleared()) {
@@ -62,7 +65,7 @@ void Handler::Post(Closure closure) {
 }
 
 void Handler::Clear() {
-  std::queue<Closure>* tmp = nullptr;
+  std::queue<OnceClosure>* tmp = nullptr;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     ASSERT_LOG(!was_cleared(), "Handlers must only be cleared once");
@@ -84,7 +87,7 @@ void Handler::WaitUntilStopped(std::chrono::milliseconds timeout) {
 }
 
 void Handler::handle_next_event() {
-  Closure closure;
+  common::OnceClosure closure;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     uint64_t val = 0;
@@ -98,7 +101,7 @@ void Handler::handle_next_event() {
     closure = std::move(tasks_->front());
     tasks_->pop();
   }
-  closure();
+  std::move(closure).Run();
 }
 
 }  // namespace os

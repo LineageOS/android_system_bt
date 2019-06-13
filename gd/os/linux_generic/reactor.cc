@@ -39,11 +39,8 @@ namespace os {
 class Reactor::Reactable {
  public:
   Reactable(int fd, Closure on_read_ready, Closure on_write_ready)
-      : fd_(fd),
-        on_read_ready_(std::move(on_read_ready)),
-        on_write_ready_(std::move(on_write_ready)),
-        is_executing_(false),
-        removed_(false) {}
+      : fd_(fd), on_read_ready_(std::move(on_read_ready)), on_write_ready_(std::move(on_write_ready)),
+        is_executing_(false), removed_(false) {}
   const int fd_;
   Closure on_read_ready_;
   Closure on_write_ready_;
@@ -118,11 +115,11 @@ void Reactor::Run() {
         lock.unlock();
         reactable->is_executing_ = true;
       }
-      if (event.events & (EPOLLIN | EPOLLHUP | EPOLLRDHUP | EPOLLERR) && reactable->on_read_ready_ != nullptr) {
-        reactable->on_read_ready_();
+      if (event.events & (EPOLLIN | EPOLLHUP | EPOLLRDHUP | EPOLLERR) && !reactable->on_read_ready_.is_null()) {
+        reactable->on_read_ready_.Run();
       }
-      if (event.events & EPOLLOUT && reactable->on_write_ready_ != nullptr) {
-        reactable->on_write_ready_();
+      if (event.events & EPOLLOUT && !reactable->on_write_ready_.is_null()) {
+        reactable->on_write_ready_.Run();
       }
       {
         std::lock_guard<std::mutex> reactable_lock(reactable->mutex_);
@@ -146,10 +143,10 @@ void Reactor::Stop() {
 
 Reactor::Reactable* Reactor::Register(int fd, Closure on_read_ready, Closure on_write_ready) {
   uint32_t poll_event_type = 0;
-  if (on_read_ready != nullptr) {
+  if (!on_read_ready.is_null()) {
     poll_event_type |= (EPOLLIN | EPOLLRDHUP);
   }
-  if (on_write_ready != nullptr) {
+  if (!on_write_ready.is_null()) {
     poll_event_type |= EPOLLOUT;
   }
   auto* reactable = new Reactable(fd, on_read_ready, on_write_ready);
@@ -207,10 +204,10 @@ void Reactor::ModifyRegistration(Reactor::Reactable* reactable, Closure on_read_
   ASSERT(reactable != nullptr);
 
   uint32_t poll_event_type = 0;
-  if (on_read_ready != nullptr) {
+  if (!on_read_ready.is_null()) {
     poll_event_type |= (EPOLLIN | EPOLLRDHUP);
   }
-  if (on_write_ready != nullptr) {
+  if (!on_write_ready.is_null()) {
     poll_event_type |= EPOLLOUT;
   }
   {
