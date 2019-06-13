@@ -46,6 +46,9 @@ class Handler {
   // Remove all pending events from the queue of this handler
   void Clear();
 
+  // Die if the current reactable doesn't stop before the timeout.  Must be called after Clear()
+  void WaitUntilStopped(std::chrono::milliseconds timeout);
+
   template <typename T>
   friend class Queue;
 
@@ -54,7 +57,10 @@ class Handler {
   friend class RepeatingAlarm;
 
  private:
-  std::queue<Closure> tasks_;
+  inline bool was_cleared() const {
+    return tasks_ == nullptr;
+  };
+  std::queue<Closure>* tasks_;
   Thread* thread_;
   int fd_;
   Reactor::Reactable* reactable_;

@@ -83,12 +83,14 @@ Module* ModuleRegistry::Start(const ModuleFactory* module, Thread* thread) {
 }
 
 void ModuleRegistry::StopAll() {
-  // Since modules were brought up in dependency order,
-  // it is safe to tear down by going in reverse order.
+  // Since modules were brought up in dependency order, it is safe to tear down by going in reverse order.
   for (auto it = start_order_.rbegin(); it != start_order_.rend(); it++) {
     auto instance = started_modules_.find(*it);
     ASSERT(instance != started_modules_.end());
 
+    // Clear the handler before stopping the module to allow it to shut down gracefully.
+    instance->second->handler_->Clear();
+    instance->second->handler_->WaitUntilStopped(kModuleStopTimeout);
     instance->second->Stop();
 
     delete instance->second->handler_;

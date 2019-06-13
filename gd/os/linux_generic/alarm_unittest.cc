@@ -34,6 +34,7 @@ class AlarmTest : public ::testing::Test {
 
   void TearDown() override {
     delete alarm_;
+    handler_->Clear();
     delete handler_;
     delete thread_;
   }
