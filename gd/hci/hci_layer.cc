@@ -71,35 +71,33 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
   void Start(hal::HciHal* hal) {
     hal_ = hal;
 
-    send_acl_ = Bind(
-        [](hal::HciHal* hal, std::unique_ptr<hci::BasePacketBuilder> packet) {
-          std::vector<uint8_t> bytes;
-          BitInserter bi(bytes);
-          packet->Serialize(bi);
-          hal->sendAclData(bytes);
-        },
-        common::Unretained(hal_));
-    send_sco_ = Bind(
-        [](hal::HciHal* hal, std::unique_ptr<hci::BasePacketBuilder> packet) {
-          std::vector<uint8_t> bytes;
-          BitInserter bi(bytes);
-          packet->Serialize(bi);
-          hal->sendScoData(bytes);
-        },
-        common::Unretained(hal_));
     auto queue_end = acl_queue_.GetDownEnd();
     Handler* handler = module_.GetHandler();
     queue_end->RegisterDequeue(handler, Bind(&impl::dequeue_and_send_acl, common::Unretained(this)));
-    RegisterEventHandler(EventCode::COMMAND_COMPLETE, Bind(&impl::CommandCompleteCallback, common::Unretained(this)),
+    RegisterEventHandler(EventCode::COMMAND_COMPLETE, Bind(&impl::command_complete_callback, common::Unretained(this)),
                          handler);
-    RegisterEventHandler(EventCode::COMMAND_STATUS, Bind(&impl::CommandStatusCallback, common::Unretained(this)),
+    RegisterEventHandler(EventCode::COMMAND_STATUS, Bind(&impl::command_status_callback, common::Unretained(this)),
                          handler);
     hal_->registerIncomingPacketCallback(this);
   }
 
   void dequeue_and_send_acl() {
     auto packet = acl_queue_.GetDownEnd()->TryDequeue();
-    send_acl_.Run(std::move(packet));
+    send_acl(std::move(packet));
+  }
+
+  void send_acl(std::unique_ptr<hci::BasePacketBuilder> packet) {
+    std::vector<uint8_t> bytes;
+    BitInserter bi(bytes);
+    packet->Serialize(bi);
+    hal_->sendAclData(bytes);
+  }
+
+  void send_sco(std::unique_ptr<hci::BasePacketBuilder> packet) {
+    std::vector<uint8_t> bytes;
+    BitInserter bi(bytes);
+    packet->Serialize(bi);
+    hal_->sendScoData(bytes);
   }
 
   void Stop() {
@@ -107,7 +105,7 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
     hal_ = nullptr;
   }
 
-  void CommandStatusCallback(EventPacketView event) {
+  void command_status_callback(EventPacketView event) {
     CommandStatusView status_view = CommandStatusView::Create(event);
     ASSERT(status_view.IsValid());
     if (command_queue_.size() == 0) {
@@ -121,7 +119,7 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
     command_queue_.pop();
   }
 
-  void CommandCompleteCallback(EventPacketView event) {
+  void command_complete_callback(EventPacketView event) {
     CommandCompleteView complete_view = CommandCompleteView::Create(event);
     ASSERT(complete_view.IsValid());
     if (command_queue_.size() == 0) {
@@ -178,6 +176,14 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
 
   void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command, OnceCallback<void(CommandStatusView)> on_status,
                       OnceCallback<void(CommandCompleteView)> on_complete, os::Handler* handler) {
+    module_.GetHandler()->Post(common::BindOnce(&impl::handle_enqueue_command, common::Unretained(this),
+                                                std::move(command), std::move(on_status), std::move(on_complete),
+                                                common::Unretained(handler)));
+  }
+
+  void handle_enqueue_command(std::unique_ptr<CommandPacketBuilder> command,
+                              OnceCallback<void(CommandStatusView)> on_status,
+                              OnceCallback<void(CommandCompleteView)> on_complete, os::Handler* handler) {
     command_queue_.emplace(std::move(command), std::move(on_status), std::move(on_complete), handler);
 
     if (command_queue_.size() == 1) {
@@ -193,6 +199,12 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
   }
 
   void RegisterEventHandler(EventCode event_code, Callback<void(EventPacketView)> event_handler, os::Handler* handler) {
+    module_.GetHandler()->Post(common::BindOnce(&impl::handle_register_event_handler, common::Unretained(this),
+                                                event_code, event_handler, common::Unretained(handler)));
+  }
+
+  void handle_register_event_handler(EventCode event_code, Callback<void(EventPacketView)> event_handler,
+                                     os::Handler* handler) {
     ASSERT_LOG(event_handlers_.count(event_code) == 0, "Can not register a second handler for event_code %02hhx",
                event_code);
     EventHandler to_save(event_handler, handler);
@@ -200,6 +212,11 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
   }
 
   void UnregisterEventHandler(EventCode event_code) {
+    module_.GetHandler()->Post(
+        common::BindOnce(&impl::handle_unregister_event_handler, common::Unretained(this), event_code));
+  }
+
+  void handle_unregister_event_handler(EventCode event_code) {
     event_handlers_.erase(event_code);
   }
 
@@ -209,15 +226,10 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
   // A reference to the HciLayer module
   HciLayer& module_;
 
-  // Conversion functions for sending bytes from Builders
-  Callback<void(std::unique_ptr<hci::BasePacketBuilder>)> send_acl_;
-  Callback<void(std::unique_ptr<hci::BasePacketBuilder>)> send_sco_;
-
   // Command Handling
   std::queue<CommandQueueEntry> command_queue_;
 
   std::map<EventCode, EventHandler> event_handlers_;
-  OpCode waiting_command_;
 
   // Acl packets
   BidiQueue<AclPacketView, AclPacketBuilder> acl_queue_{3 /* TODO: Set queue depth */};
