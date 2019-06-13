@@ -137,6 +137,10 @@ static const interop_addr_entry_t interop_addr_database[] = {
 
     // Jeep Uconnect
     {{{0x00, 0x54, 0xaf, 0, 0, 0}}, 3, INTEROP_DISABLE_ROLE_SWITCH},
+
+    // Nintendo Switch Pro Controller - does not set sniff interval dynamically.
+    // Requires custom HID report command to change mode.
+    {{{0x98, 0xB6, 0xE9, 0, 0, 0}}, 3, INTEROP_HID_HOST_LIMIT_SNIFF_INTERVAL},
 };
 
 typedef struct {
