@@ -61,7 +61,7 @@ class TestEnqueueEnd {
       : count_(count), handler_(handler), queue_(queue), promise_(promise) {}
 
   void RegisterEnqueue() {
-    handler_->Post([this] { queue_->RegisterEnqueue(handler_, [this] { return EnqueueCallbackForTest(); }); });
+    handler_->Post(common::BindOnce(&TestEnqueueEnd::handle_register_enqueue, common::Unretained(this)));
   }
 
   void push(std::string data) {
@@ -99,6 +99,10 @@ class TestEnqueueEnd {
   Queue<std::string>* queue_;
   std::promise<void>* promise_;
   std::mutex mutex_;
+
+  void handle_register_enqueue() {
+    queue_->RegisterEnqueue(handler_, common::Bind(&TestEnqueueEnd::EnqueueCallbackForTest, common::Unretained(this)));
+  }
 };
 
 class TestDequeueEnd {
@@ -107,7 +111,7 @@ class TestDequeueEnd {
       : count_(count), handler_(handler), queue_(queue), promise_(promise) {}
 
   void RegisterDequeue() {
-    handler_->Post([this] { queue_->RegisterDequeue(handler_, [this] { DequeueCallbackForTest(); }); });
+    handler_->Post(common::BindOnce(&TestDequeueEnd::handle_register_dequeue, common::Unretained(this)));
   }
 
   void DequeueCallbackForTest() {
@@ -128,6 +132,10 @@ class TestDequeueEnd {
   Handler* handler_;
   Queue<std::string>* queue_;
   std::promise<void>* promise_;
+
+  void handle_register_dequeue() {
+    queue_->RegisterDequeue(handler_, common::Bind(&TestDequeueEnd::DequeueCallbackForTest, common::Unretained(this)));
+  }
 };
 
 BENCHMARK_DEFINE_F(BM_QueuePerformance, send_packet_vary_by_packet_num)(State& state) {

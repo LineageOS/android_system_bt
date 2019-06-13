@@ -18,6 +18,7 @@
 
 #include <sys/eventfd.h>
 
+#include "common/bind.h"
 #include "gtest/gtest.h"
 #include "os/reactor.h"
 
@@ -85,7 +86,8 @@ TEST_F(ThreadTest, same_thread) {
   Reactor* reactor = thread->GetReactor();
   SampleReactable sample_reactable(thread);
   auto* reactable =
-      reactor->Register(sample_reactable.fd_, std::bind(&SampleReactable::OnReadReady, &sample_reactable), nullptr);
+      reactor->Register(sample_reactable.fd_,
+                        common::Bind(&SampleReactable::OnReadReady, common::Unretained(&sample_reactable)), Closure());
   int fd = sample_reactable.fd_;
   int write_result = eventfd_write(fd, kCheckIsSameThread);
   EXPECT_EQ(write_result, 0);
