@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <chrono>
 #include <map>
 
 #include "common/address.h"
@@ -37,8 +38,10 @@ class HciLayer : public Module {
   DISALLOW_COPY_AND_ASSIGN(HciLayer);
 
   virtual void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
-                              common::OnceCallback<void(CommandStatusView)> on_status,
                               common::OnceCallback<void(CommandCompleteView)> on_complete, os::Handler* handler);
+
+  virtual void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
+                              common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler);
 
   virtual common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* GetAclQueueEnd();
 
@@ -54,6 +57,7 @@ class HciLayer : public Module {
   void Start() override;
 
   void Stop() override;
+  static constexpr std::chrono::milliseconds kHciTimeoutMs = std::chrono::milliseconds(2000);
 
  private:
   struct impl;
