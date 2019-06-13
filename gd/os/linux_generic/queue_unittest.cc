@@ -41,8 +41,10 @@ class QueueTest : public ::testing::Test {
     dequeue_handler_ = new Handler(dequeue_thread_);
   }
   void TearDown() override {
+    enqueue_handler_->Clear();
     delete enqueue_handler_;
     delete enqueue_thread_;
+    dequeue_handler_->Clear();
     delete dequeue_handler_;
     delete dequeue_thread_;
     enqueue_handler_ = nullptr;
