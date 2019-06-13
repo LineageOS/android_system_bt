@@ -473,6 +473,10 @@ packet CommandStatus : EventPacket (event_code = COMMAND_STATUS){
   _payload_,
 }
 
+  // Credits
+packet NoCommandComplete : CommandComplete (command_op_code = NONE){
+}
+
   // LINK_CONTROL
 packet Inquiry : DiscoveryCommand (op_code = INQUIRY) {
   lap0 : 8, // 0x00 - 0x3F
@@ -1434,10 +1438,57 @@ packet WriteSecureConnectionsHostSupportComplete : CommandComplete (command_op_c
 packet ReadLocalVersionInformation : CommandPacket (op_code = READ_LOCAL_VERSION_INFORMATION) {
 }
 
+enum HciVersion : 8 {
+  V_1_0b = 0x00,
+  V_1_1 = 0x01,
+  V_1_2 = 0x02,
+  V_2_0 = 0x03, //  + EDR
+  V_2_1 = 0x04, //  + EDR
+  V_3_0 = 0x05, //  + HS
+  V_4_0 = 0x06,
+  V_4_1 = 0x07,
+  V_4_2 = 0x08,
+  V_5_0 = 0x09,
+  V_5_1 = 0x0a,
+}
+
+enum LmpVersion : 8 {
+  V_1_0b = 0x00, // withdrawn
+  V_1_1 = 0x01, // withdrawn
+  V_1_2 = 0x02, // withdrawn
+  V_2_0 = 0x03, //  + EDR
+  V_2_1 = 0x04, //  + EDR
+  V_3_0 = 0x05, //  + HS
+  V_4_0 = 0x06,
+  V_4_1 = 0x07,
+  V_4_2 = 0x08,
+  V_5_0 = 0x09,
+  V_5_1 = 0x0a,
+}
+
+packet ReadLocalVersionInformationComplete : CommandComplete (command_op_code = READ_LOCAL_VERSION_INFORMATION) {
+  status : ErrorCode,
+  hci_version : HciVersion,
+  hci_revision : 16,
+  lmp_version : LmpVersion,
+  manufacturer_name : 16,
+  lmp_subversion : 16,
+}
+
 packet ReadLocalSupportedCommands : CommandPacket (op_code = READ_LOCAL_SUPPORTED_COMMANDS) {
 }
 
+packet ReadLocalSupportedCommandsComplete : CommandComplete (command_op_code = READ_LOCAL_SUPPORTED_COMMANDS) {
+  status : ErrorCode,
+  supported_commands : 8[64],
+}
+
 packet ReadLocalSupportedFeatures : CommandPacket (op_code = READ_LOCAL_SUPPORTED_FEATURES) {
+}
+
+packet ReadLocalSupportedFeaturesComplete : CommandComplete (command_op_code = READ_LOCAL_SUPPORTED_FEATURES) {
+  status : ErrorCode,
+  lmp_features : 64,
 }
 
 packet ReadLocalExtendedFeatures : CommandPacket (op_code = READ_LOCAL_EXTENDED_FEATURES) {
@@ -1445,6 +1496,14 @@ packet ReadLocalExtendedFeatures : CommandPacket (op_code = READ_LOCAL_EXTENDED_
 }
 
 packet ReadBufferSize : CommandPacket (op_code = READ_BUFFER_SIZE) {
+}
+
+packet ReadBufferSizeComplete : CommandComplete (command_op_code = READ_BUFFER_SIZE) {
+  status : ErrorCode,
+  acl_data_packet_length : 16,
+  synchronous_data_packet_length : 8,
+  total_num_acl_data_packets : 16,
+  total_num_synchronous_data_packets : 16,
 }
 
 packet ReadBdAddr : CommandPacket (op_code = READ_BD_ADDR) {
@@ -2200,7 +2259,8 @@ packet RoleChange : EventPacket (event_code = ROLE_CHANGE){
 }
 
 packet NumberOfCompletedPackets : EventPacket (event_code = NUMBER_OF_COMPLETED_PACKETS){
-  _payload_,
+  _count_(handles_and_completed_packets) : 8,
+  handles_and_completed_packets : 32[], // connection_handle[i] : 12, _reserved_[i] : 4, hc_num_of_completed_packets[i] : 16
 }
 
 enum Mode : 8 {
