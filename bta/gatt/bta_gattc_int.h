@@ -451,7 +451,7 @@ extern tBTA_GATTC_CONN* bta_gattc_conn_find(const RawAddress& remote_bda);
 extern tBTA_GATTC_CONN* bta_gattc_conn_find_alloc(const RawAddress& remote_bda);
 extern bool bta_gattc_conn_dealloc(const RawAddress& remote_bda);
 
-extern bool bta_gattc_cache_load(tBTA_GATTC_CLCB* p_clcb);
+extern bool bta_gattc_cache_load(tBTA_GATTC_SERV* p_srcb);
 extern void bta_gattc_cache_reset(const RawAddress& server_bda);
 
 #endif /* BTA_GATTC_INT_H */
