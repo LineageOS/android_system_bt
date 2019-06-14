@@ -147,6 +147,7 @@ class HciHalRootcanalTest : public ::testing::Test {
   }
 
   void TearDown() override {
+    hal_->unregisterIncomingPacketCallback();
     fake_registry_.StopAll();
     close(fake_server_socket_);
     delete fake_server_;

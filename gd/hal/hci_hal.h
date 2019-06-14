@@ -63,15 +63,15 @@ class HciHal : public ::bluetooth::Module {
   virtual ~HciHal() = default;
 
   // Register the callback for incoming packets. All incoming packets are dropped before
-  // this callback is registered. Callback can only be registered once, but will be reset
-  // after close().
-  //
-  // Call this function before initialize() to guarantee all incoming packets are received.
+  // this callback is registered. Callback can only be registered once.
   //
   // @param callback implements BluetoothHciHalCallbacks which will
   //    receive callbacks when incoming HCI packets are received
   //    from the controller to be sent to the host.
   virtual void registerIncomingPacketCallback(HciHalCallbacks* callback) = 0;
+
+  // Unregister the callback for incoming packets. Drop all further incoming packets.
+  virtual void unregisterIncomingPacketCallback() = 0;
 
   // Send an HCI command (as specified in the Bluetooth Specification
   // V4.2, Vol 2, Part 5, Section 5.4.1) to the Bluetooth controller.
