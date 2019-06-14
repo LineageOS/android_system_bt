@@ -20,6 +20,7 @@
 #include <memory>
 #include <mutex>
 
+#include "common/callback.h"
 #include "os/handler.h"
 #include "os/thread.h"
 #include "os/utils.h"
@@ -41,13 +42,13 @@ class Alarm {
   DISALLOW_COPY_AND_ASSIGN(Alarm);
 
   // Schedule the alarm with given delay
-  void Schedule(Closure task, std::chrono::milliseconds delay);
+  void Schedule(OnceClosure task, std::chrono::milliseconds delay);
 
   // Cancel the alarm. No-op if it's not armed.
   void Cancel();
 
  private:
-  Closure task_;
+  OnceClosure task_;
   Handler* handler_;
   int fd_ = 0;
   Reactor::Reactable* token_;

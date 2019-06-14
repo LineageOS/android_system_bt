@@ -75,12 +75,16 @@ class TestHciHal : public hal::HciHal {
     return PacketView<kLittleEndian>(shared);
   }
 
-  PacketView<kLittleEndian> GetSentCommand() {
+  size_t GetNumSentCommands() {
+    return outgoing_commands_.size();
+  }
+
+  CommandPacketView GetSentCommand() {
     while (outgoing_commands_.size() == 0)
       ;
     auto packetview = GetPacketView(std::move(outgoing_commands_.front()));
     outgoing_commands_.pop_front();
-    return packetview;
+    return CommandPacketView::Create(packetview);
   }
 
   PacketView<kLittleEndian> GetSentAcl() {
@@ -111,18 +115,22 @@ class DependsOnHci : public Module {
  public:
   DependsOnHci() : Module() {}
 
-  void SendHciCommand(std::unique_ptr<CommandPacketBuilder> command) {
-    hci_->EnqueueCommand(std::move(command), [this](CommandStatusView status) { incoming_events_.push_back(status); },
-                         [this](CommandCompleteView complete) { incoming_events_.push_back(complete); }, GetHandler());
+  void SendHciCommandExpectingStatus(std::unique_ptr<CommandPacketBuilder> command) {
+    hci_->EnqueueCommand(std::move(command),
+                         common::Bind(&DependsOnHci::handle_event<CommandStatusView>, common::Unretained(this)),
+                         GetHandler());
+  }
+
+  void SendHciCommandExpectingComplete(std::unique_ptr<CommandPacketBuilder> command) {
+    hci_->EnqueueCommand(std::move(command),
+                         common::Bind(&DependsOnHci::handle_event<CommandCompleteView>, common::Unretained(this)),
+                         GetHandler());
   }
 
   void SendAclData(std::unique_ptr<AclPacketBuilder> acl) {
-    AclPacketBuilder* raw_acl_pointer = acl.release();
+    outgoing_acl_.push(std::move(acl));
     auto queue_end = hci_->GetAclQueueEnd();
-    queue_end->RegisterEnqueue(GetHandler(), [queue_end, raw_acl_pointer]() -> std::unique_ptr<AclPacketBuilder> {
-      queue_end->UnregisterEnqueue();
-      return std::unique_ptr<AclPacketBuilder>(raw_acl_pointer);
-    });
+    queue_end->RegisterEnqueue(GetHandler(), common::Bind(&DependsOnHci::handle_enqueue, common::Unretained(this)));
   }
 
   EventPacketView GetReceivedEvent() {
@@ -146,7 +154,8 @@ class DependsOnHci : public Module {
   void Start() {
     hci_ = GetDependency<HciLayer>();
     hci_->RegisterEventHandler(EventCode::CONNECTION_COMPLETE,
-                               [this](EventPacketView event) { incoming_events_.push_back(event); }, GetHandler());
+                               common::Bind(&DependsOnHci::handle_event<EventPacketView>, common::Unretained(this)),
+                               GetHandler());
   }
 
   void Stop() {}
@@ -160,6 +169,20 @@ class DependsOnHci : public Module {
  private:
   HciLayer* hci_ = nullptr;
   std::list<EventPacketView> incoming_events_;
+
+  template <typename T>
+  void handle_event(T event) {
+    incoming_events_.push_back(event);
+  }
+
+  std::queue<std::unique_ptr<AclPacketBuilder>> outgoing_acl_;
+
+  std::unique_ptr<AclPacketBuilder> handle_enqueue() {
+    hci_->GetAclQueueEnd()->UnregisterEnqueue();
+    auto acl = std::move(outgoing_acl_.front());
+    outgoing_acl_.pop();
+    return acl;
+  }
 };
 
 const ModuleFactory DependsOnHci::Factory = ModuleFactory([]() { return new DependsOnHci(); });
@@ -179,6 +202,23 @@ class HciTest : public ::testing::Test {
     hci = static_cast<HciLayer*>(fake_registry_.GetModuleUnderTest(&HciLayer::Factory));
     upper = static_cast<DependsOnHci*>(fake_registry_.GetModuleUnderTest(&DependsOnHci::Factory));
     ASSERT(fake_registry_.IsStarted<HciLayer>());
+    // Wait for the reset
+    while (hal->GetNumSentCommands() == 0)
+      ;
+    // Verify that reset was received
+    ASSERT_EQ(1, hal->GetNumSentCommands());
+
+    auto sent_command = hal->GetSentCommand();
+    auto reset_view = ResetView::Create(CommandPacketView::Create(sent_command));
+    ASSERT_TRUE(reset_view.IsValid());
+
+    // Verify that only one was sent
+    ASSERT_EQ(0, hal->GetNumSentCommands());
+
+    // Send the response event
+    uint8_t num_packets = 1;
+    ErrorCode error_code = ErrorCode::SUCCESS;
+    hal->callbacks->hciEventReceived(GetPacketBytes(ResetCompleteBuilder::Create(num_packets, error_code)));
   }
 
   void TearDown() override {
@@ -201,6 +241,118 @@ class HciTest : public ::testing::Test {
 
 TEST_F(HciTest, initAndClose) {}
 
+TEST_F(HciTest, noOpCredits) {
+  ASSERT_EQ(0, hal->GetNumSentCommands());
+
+  // Send 0 credits
+  uint8_t num_packets = 0;
+  hal->callbacks->hciEventReceived(GetPacketBytes(NoCommandCompleteBuilder::Create(num_packets)));
+
+  upper->SendHciCommandExpectingComplete(ReadLocalVersionInformationBuilder::Create());
+
+  // Verify that nothing was sent
+  ASSERT_EQ(0, hal->GetNumSentCommands());
+
+  num_packets = 1;
+  hal->callbacks->hciEventReceived(GetPacketBytes(NoCommandCompleteBuilder::Create(num_packets)));
+  // Verify that one was sent
+  while (hal->GetNumSentCommands() == 0)
+    ;
+  ASSERT_EQ(1, hal->GetNumSentCommands());
+
+  // Send the response event
+  ErrorCode error_code = ErrorCode::SUCCESS;
+  HciVersion hci_version = HciVersion::V_5_0;
+  uint16_t hci_subversion = 0x1234;
+  LmpVersion lmp_version = LmpVersion::V_4_2;
+  uint16_t manufacturer_name = 0xBAD;
+  uint16_t lmp_subversion = 0x5678;
+  hal->callbacks->hciEventReceived(GetPacketBytes(ReadLocalVersionInformationCompleteBuilder::Create(
+      num_packets, error_code, hci_version, hci_subversion, lmp_version, manufacturer_name, lmp_subversion)));
+  auto event = upper->GetReceivedEvent();
+  ASSERT(ReadLocalVersionInformationCompleteView::Create(CommandCompleteView::Create(EventPacketView::Create(event)))
+             .IsValid());
+}
+
+TEST_F(HciTest, creditsTest) {
+  ASSERT_EQ(0, hal->GetNumSentCommands());
+
+  // Send all three commands
+  upper->SendHciCommandExpectingComplete(ReadLocalVersionInformationBuilder::Create());
+  upper->SendHciCommandExpectingComplete(ReadLocalSupportedCommandsBuilder::Create());
+  upper->SendHciCommandExpectingComplete(ReadLocalSupportedFeaturesBuilder::Create());
+
+  while (hal->GetNumSentCommands() == 0)
+    ;
+
+  // Verify that the first one is sent
+  ASSERT_EQ(1, hal->GetNumSentCommands());
+
+  auto sent_command = hal->GetSentCommand();
+  auto version_view = ReadLocalVersionInformationView::Create(CommandPacketView::Create(sent_command));
+  ASSERT_TRUE(version_view.IsValid());
+
+  // Verify that only one was sent
+  ASSERT_EQ(0, hal->GetNumSentCommands());
+
+  // Send the response event
+  uint8_t num_packets = 1;
+  ErrorCode error_code = ErrorCode::SUCCESS;
+  HciVersion hci_version = HciVersion::V_5_0;
+  uint16_t hci_subversion = 0x1234;
+  LmpVersion lmp_version = LmpVersion::V_4_2;
+  uint16_t manufacturer_name = 0xBAD;
+  uint16_t lmp_subversion = 0x5678;
+  hal->callbacks->hciEventReceived(GetPacketBytes(ReadLocalVersionInformationCompleteBuilder::Create(
+      num_packets, error_code, hci_version, hci_subversion, lmp_version, manufacturer_name, lmp_subversion)));
+  auto event = upper->GetReceivedEvent();
+  ASSERT(ReadLocalVersionInformationCompleteView::Create(CommandCompleteView::Create(EventPacketView::Create(event)))
+             .IsValid());
+
+  // Verify that the second one is sent
+  while (hal->GetNumSentCommands() == 0)
+    ;
+  ASSERT_EQ(1, hal->GetNumSentCommands());
+
+  sent_command = hal->GetSentCommand();
+  auto supported_commands_view = ReadLocalSupportedCommandsView::Create(CommandPacketView::Create(sent_command));
+  ASSERT_TRUE(supported_commands_view.IsValid());
+
+  // Verify that only one was sent
+  ASSERT_EQ(0, hal->GetNumSentCommands());
+
+  // Send the response event
+  std::vector<uint8_t> supported_commands;
+  for (uint8_t i = 0; i < 64; i++) {
+    supported_commands.push_back(i);
+  }
+  hal->callbacks->hciEventReceived(
+      GetPacketBytes(ReadLocalSupportedCommandsCompleteBuilder::Create(num_packets, error_code, supported_commands)));
+  event = upper->GetReceivedEvent();
+  ASSERT(ReadLocalSupportedCommandsCompleteView::Create(CommandCompleteView::Create(EventPacketView::Create(event)))
+             .IsValid());
+
+  // Verify that the third one is sent
+  while (hal->GetNumSentCommands() == 0)
+    ;
+  ASSERT_EQ(1, hal->GetNumSentCommands());
+
+  sent_command = hal->GetSentCommand();
+  auto supported_features_view = ReadLocalSupportedFeaturesView::Create(CommandPacketView::Create(sent_command));
+  ASSERT_TRUE(supported_features_view.IsValid());
+
+  // Verify that only one was sent
+  ASSERT_EQ(0, hal->GetNumSentCommands());
+
+  // Send the response event
+  uint64_t lmp_features = 0x012345678abcdef;
+  hal->callbacks->hciEventReceived(
+      GetPacketBytes(ReadLocalSupportedFeaturesCompleteBuilder::Create(num_packets, error_code, lmp_features)));
+  event = upper->GetReceivedEvent();
+  ASSERT(ReadLocalSupportedFeaturesCompleteView::Create(CommandCompleteView::Create(EventPacketView::Create(event)))
+             .IsValid());
+}
+
 TEST_F(HciTest, createConnectionTest) {
   // Send CreateConnection to the controller
   common::Address bd_addr;
@@ -210,8 +362,8 @@ TEST_F(HciTest, createConnectionTest) {
   uint16_t clock_offset = 0x3456;
   ClockOffsetValid clock_offset_valid = ClockOffsetValid::VALID;
   CreateConnectionRoleSwitch allow_role_switch = CreateConnectionRoleSwitch::ALLOW_ROLE_SWITCH;
-  upper->SendHciCommand(CreateConnectionBuilder::Create(bd_addr, packet_type, page_scan_repetition_mode, clock_offset,
-                                                        clock_offset_valid, allow_role_switch));
+  upper->SendHciCommandExpectingStatus(CreateConnectionBuilder::Create(
+      bd_addr, packet_type, page_scan_repetition_mode, clock_offset, clock_offset_valid, allow_role_switch));
 
   // Check the command
   auto sent_command = hal->GetSentCommand();
@@ -226,7 +378,7 @@ TEST_F(HciTest, createConnectionTest) {
   ASSERT_EQ(clock_offset_valid, view.GetClockOffsetValid());
   ASSERT_EQ(allow_role_switch, view.GetAllowRoleSwitch());
 
-  // Send a ConnectionComplete to the host
+  // Send a Command Status to the host
   ErrorCode status = ErrorCode::SUCCESS;
   uint16_t handle = 0x123;
   LinkType link_type = LinkType::ACL;
@@ -238,6 +390,7 @@ TEST_F(HciTest, createConnectionTest) {
   ASSERT_TRUE(event.IsValid());
   ASSERT_EQ(EventCode::COMMAND_STATUS, event.GetEventCode());
 
+  // Send a ConnectionComplete to the host
   hal->callbacks->hciEventReceived(
       GetPacketBytes(ConnectionCompleteBuilder::Create(status, handle, bd_addr, link_type, encryption_enabled)));
 

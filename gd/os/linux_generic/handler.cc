@@ -17,9 +17,11 @@
 #include "os/handler.h"
 
 #include <sys/eventfd.h>
-#include <cstring>
 #include <unistd.h>
+#include <cstring>
 
+#include "common/bind.h"
+#include "common/callback.h"
 #include "os/log.h"
 #include "os/reactor.h"
 #include "os/utils.h"
@@ -31,25 +33,31 @@
 namespace bluetooth {
 namespace os {
 
-Handler::Handler(Thread* thread) : thread_(thread), fd_(eventfd(0, EFD_SEMAPHORE | EFD_NONBLOCK)) {
+Handler::Handler(Thread* thread)
+    : tasks_(new std::queue<OnceClosure>()), thread_(thread), fd_(eventfd(0, EFD_SEMAPHORE | EFD_NONBLOCK)) {
   ASSERT(fd_ != -1);
-
-  reactable_ = thread_->GetReactor()->Register(fd_, [this] { this->handle_next_event(); }, nullptr);
+  reactable_ = thread_->GetReactor()->Register(fd_, common::Bind(&Handler::handle_next_event, common::Unretained(this)),
+                                               common::Closure());
 }
 
 Handler::~Handler() {
-  thread_->GetReactor()->Unregister(reactable_);
-  reactable_ = nullptr;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    ASSERT_LOG(was_cleared(), "Handlers must be cleared before they are destroyed");
+  }
 
   int close_status;
   RUN_NO_INTR(close_status = close(fd_));
   ASSERT(close_status != -1);
 }
 
-void Handler::Post(Closure closure) {
+void Handler::Post(OnceClosure closure) {
   {
     std::lock_guard<std::mutex> lock(mutex_);
-    tasks_.emplace(std::move(closure));
+    if (was_cleared()) {
+      return;
+    }
+    tasks_->emplace(std::move(closure));
   }
   uint64_t val = 1;
   auto write_result = eventfd_write(fd_, val);
@@ -57,34 +65,43 @@ void Handler::Post(Closure closure) {
 }
 
 void Handler::Clear() {
-  std::lock_guard<std::mutex> lock(mutex_);
-
-  std::queue<Closure> empty;
-  std::swap(tasks_, empty);
+  std::queue<OnceClosure>* tmp = nullptr;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    ASSERT_LOG(!was_cleared(), "Handlers must only be cleared once");
+    std::swap(tasks_, tmp);
+  }
+  delete tmp;
 
   uint64_t val;
   while (eventfd_read(fd_, &val) == 0) {
   }
+
+  thread_->GetReactor()->Unregister(reactable_);
+  reactable_ = nullptr;
+}
+
+void Handler::WaitUntilStopped(std::chrono::milliseconds timeout) {
+  ASSERT(reactable_ == nullptr);
+  ASSERT(thread_->GetReactor()->WaitForUnregisteredReactable(timeout));
 }
 
 void Handler::handle_next_event() {
-  Closure closure;
-  uint64_t val = 0;
-  auto read_result = eventfd_read(fd_, &val);
-  if (read_result == -1 && errno == EAGAIN) {
-    // We were told there was an item, but it was removed before we got there
-    // (aka the queue was cleared). Not a fatal error, so just bail.
-    return;
-  }
-
-  ASSERT(read_result != -1);
-
+  common::OnceClosure closure;
   {
     std::lock_guard<std::mutex> lock(mutex_);
-    closure = std::move(tasks_.front());
-    tasks_.pop();
+    uint64_t val = 0;
+    auto read_result = eventfd_read(fd_, &val);
+
+    if (was_cleared()) {
+      return;
+    }
+    ASSERT_LOG(read_result != -1, "eventfd read error %d %s", errno, strerror(errno));
+
+    closure = std::move(tasks_->front());
+    tasks_->pop();
   }
-  closure();
+  std::move(closure).Run();
 }
 
 }  // namespace os

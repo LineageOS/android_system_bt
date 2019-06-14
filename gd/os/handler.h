@@ -21,6 +21,7 @@
 #include <mutex>
 #include <queue>
 
+#include "common/callback.h"
 #include "os/thread.h"
 #include "os/utils.h"
 
@@ -41,10 +42,13 @@ class Handler {
   DISALLOW_COPY_AND_ASSIGN(Handler);
 
   // Enqueue a closure to the queue of this handler
-  void Post(Closure closure);
+  void Post(OnceClosure closure);
 
   // Remove all pending events from the queue of this handler
   void Clear();
+
+  // Die if the current reactable doesn't stop before the timeout.  Must be called after Clear()
+  void WaitUntilStopped(std::chrono::milliseconds timeout);
 
   template <typename T>
   friend class Queue;
@@ -54,7 +58,10 @@ class Handler {
   friend class RepeatingAlarm;
 
  private:
-  std::queue<Closure> tasks_;
+  inline bool was_cleared() const {
+    return tasks_ == nullptr;
+  };
+  std::queue<OnceClosure>* tasks_;
   Thread* thread_;
   int fd_;
   Reactor::Reactable* reactable_;

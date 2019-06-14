@@ -20,6 +20,7 @@
 #include <memory>
 #include <mutex>
 
+#include "common/callback.h"
 #include "os/handler.h"
 #include "os/thread.h"
 #include "os/utils.h"

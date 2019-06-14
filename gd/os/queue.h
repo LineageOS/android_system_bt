@@ -21,6 +21,8 @@
 #include <mutex>
 #include <queue>
 
+#include "common/bind.h"
+#include "common/callback.h"
 #include "os/handler.h"
 #ifdef OS_LINUX_GENERIC
 #include "os/linux_generic/reactive_semaphore.h"
@@ -34,7 +36,7 @@ namespace os {
 template <typename T>
 class IQueueEnqueue {
  public:
-  using EnqueueCallback = std::function<std::unique_ptr<T>()>;
+  using EnqueueCallback = Callback<std::unique_ptr<T>()>;
   virtual ~IQueueEnqueue() = default;
   virtual void RegisterEnqueue(Handler* handler, EnqueueCallback callback) = 0;
   virtual void UnregisterEnqueue() = 0;
@@ -44,7 +46,7 @@ class IQueueEnqueue {
 template <typename T>
 class IQueueDequeue {
  public:
-  using DequeueCallback = std::function<void()>;
+  using DequeueCallback = Callback<void()>;
   virtual ~IQueueDequeue() = default;
   virtual void RegisterDequeue(Handler* handler, DequeueCallback callback) = 0;
   virtual void UnregisterDequeue() = 0;
@@ -56,10 +58,10 @@ class Queue : public IQueueEnqueue<T>, public IQueueDequeue<T> {
  public:
   // A function moving data from enqueue end buffer to queue, it will be continually be invoked until queue
   // is full. Enqueue end should make sure buffer isn't empty and UnregisterEnqueue when buffer become empty.
-  using EnqueueCallback = std::function<std::unique_ptr<T>()>;
+  using EnqueueCallback = Callback<std::unique_ptr<T>()>;
   // A function moving data form queue to dequeue end buffer, it will be continually be invoked until queue
   // is empty. TryDequeue should be use in this function to get data from queue.
-  using DequeueCallback = std::function<void()>;
+  using DequeueCallback = Callback<void()>;
   // Create a queue with |capacity| is the maximum number of messages a queue can contain
   explicit Queue(size_t capacity);
   ~Queue();
