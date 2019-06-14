@@ -74,7 +74,7 @@ void PayloadField::GenGetter(std::ostream& s, Size start_offset, Size end_offset
     ERROR(this) << "Ambiguous end offset for payload with no defined size.";
   }
 
-  s << "PacketView<kLittleEndian> GetPayload() {";
+  s << "PacketView<kLittleEndian> GetPayload() const {";
   s << "ASSERT(was_validated_);";
 
   s << "size_t payload_begin = " << start_offset.bits() / 8 << " + (" << start_offset.dynamic_string() << ");";
@@ -90,7 +90,7 @@ void PayloadField::GenGetter(std::ostream& s, Size start_offset, Size end_offset
   s << "return GetLittleEndianSubview(payload_begin, payload_end);";
   s << "}\n\n";
 
-  s << "PacketView<!kLittleEndian> GetPayloadBigEndian() {";
+  s << "PacketView<!kLittleEndian> GetPayloadBigEndian() const {";
 
   s << "size_t payload_begin = " << start_offset.bits() / 8 << " + (" << start_offset.dynamic_string() << ");";
 
