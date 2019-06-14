@@ -113,6 +113,7 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
   }
 
   void Stop() {
+    hal_->unregisterIncomingPacketCallback();
     acl_queue_.GetDownEnd()->UnregisterDequeue();
     delete hci_timeout_alarm_;
     command_queue_.clear();
