@@ -120,6 +120,10 @@ class HciHalHidl : public HciHal {
     callbacks_->SetCallback(callback);
   }
 
+  void unregisterIncomingPacketCallback() override {
+    callbacks_->ResetCallback();
+  }
+
   void sendHciCommand(HciPacket command) override {
     btsnoop_logger_->capture(command, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::CMD);
     bt_hci_->sendHciCommand(command);
