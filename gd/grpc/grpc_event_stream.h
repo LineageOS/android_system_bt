@@ -64,10 +64,10 @@ class GrpcEventStream {
 
     if (fetch_mode == ::bluetooth::facade::AT_LEAST_ONE) {
       RES response;
-      EVENT event;
-      if (!event_queue_.take_for(std::chrono::milliseconds(timeout_ms), event)) {
+      if (!event_queue_.wait_to_take(std::chrono::milliseconds(timeout_ms))) {
         return ::grpc::Status(::grpc::StatusCode::DEADLINE_EXCEEDED, "timeout exceeded");
       }
+      EVENT event = event_queue_.take();
       callback_->OnWriteResponse(&response, event);
       writer->Write(response);
     }
