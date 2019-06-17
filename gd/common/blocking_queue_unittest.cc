@@ -86,6 +86,25 @@ TEST_F(BlockingQueueTest, wait_for_non_empty) {
   EXPECT_TRUE(queue_.empty());
 }
 
+TEST_F(BlockingQueueTest, wait_to_take_fail) {
+  EXPECT_FALSE(queue_.wait_to_take(std::chrono::milliseconds(3)));
+}
+
+TEST_F(BlockingQueueTest, wait_to_take_after_non_empty) {
+  int data = 1;
+  queue_.push(data);
+  EXPECT_TRUE(queue_.wait_to_take(std::chrono::milliseconds(3)));
+  queue_.clear();
+}
+
+TEST_F(BlockingQueueTest, wait_to_take_before_non_empty) {
+  int data = 1;
+  std::thread waiter_thread([this] { EXPECT_TRUE(queue_.wait_to_take(std::chrono::milliseconds(3))); });
+  queue_.push(data);
+  waiter_thread.join();
+  queue_.clear();
+}
+
 TEST_F(BlockingQueueTest, wait_for_non_empty_batch) {
   std::thread waiter_thread([this] {
     for (int data = 0; data < 10; data++) {

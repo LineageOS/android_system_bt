@@ -45,16 +45,14 @@ class BlockingQueue {
     return data;
   };
 
-  bool take_for(std::chrono::milliseconds time, T& data) {
+  // Returns true if take() will not block within a time period
+  bool wait_to_take(std::chrono::milliseconds time) {
     std::unique_lock<std::mutex> lock(mutex_);
     while (queue_.empty()) {
       if (not_empty_.wait_for(lock, time) == std::cv_status::timeout) {
         return false;
       }
     }
-    data = queue_.front();
-    queue_.pop();
-
     return true;
   }
 
