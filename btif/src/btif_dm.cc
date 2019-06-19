@@ -926,6 +926,7 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
 static void btif_dm_ssp_cfm_req_evt(tBTA_DM_SP_CFM_REQ* p_ssp_cfm_req) {
   bt_bdname_t bd_name;
   uint32_t cod;
+  bool is_incoming = !(pairing_cb.state == BT_BOND_STATE_BONDING);
   int dev_type;
 
   BTIF_TRACE_DEBUG("%s", __func__);
@@ -969,6 +970,28 @@ static void btif_dm_ssp_cfm_req_evt(tBTA_DM_SP_CFM_REQ* p_ssp_cfm_req) {
   btm_set_bond_type_dev(p_ssp_cfm_req->bd_addr, pairing_cb.bond_type);
 
   pairing_cb.is_ssp = true;
+
+  /* If JustWorks auto-accept */
+  if (p_ssp_cfm_req->just_works) {
+    /* Pairing consent for JustWorks needed if:
+     * 1. Incoming (non-temporary) pairing is detected AND
+     * 2. local IO capabilities are DisplayYesNo AND
+     * 3. remote IO capabiltiies are DisplayOnly or NoInputNoOutput;
+     */
+    if (is_incoming && pairing_cb.bond_type != BOND_TYPE_TEMPORARY &&
+        ((p_ssp_cfm_req->loc_io_caps == HCI_IO_CAP_DISPLAY_YESNO) &&
+         (p_ssp_cfm_req->rmt_io_caps == HCI_IO_CAP_DISPLAY_ONLY ||
+          p_ssp_cfm_req->rmt_io_caps == HCI_IO_CAP_NO_IO))) {
+      BTIF_TRACE_EVENT(
+          "%s: User consent needed for incoming pairing request. loc_io_caps: "
+          "%d, rmt_io_caps: %d",
+          __func__, p_ssp_cfm_req->loc_io_caps, p_ssp_cfm_req->rmt_io_caps);
+    } else {
+      BTIF_TRACE_EVENT("%s: Auto-accept JustWorks pairing", __func__);
+      btif_dm_ssp_reply(&bd_addr, BT_SSP_VARIANT_CONSENT, true, 0);
+      return;
+    }
+  }
 
   cod = devclass2uint(p_ssp_cfm_req->dev_class);
 
