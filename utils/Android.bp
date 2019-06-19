@@ -13,6 +13,6 @@ cc_library_static {
     ],
     srcs: ["src/bt_utils.cc"],
     shared_libs: [
-        "libprocessgroup",
+        "libcutils",
     ],
 }
