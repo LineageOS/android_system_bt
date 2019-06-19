@@ -750,6 +750,85 @@ TEST_F(QueueDeathTest, die_if_enqueue_not_unregistered) {
 TEST_F(QueueDeathTest, die_if_dequeue_not_unregistered) {
   EXPECT_DEATH(RegisterDequeueAndDelete(), "equeue");
 }
+
+class MockIQueueEnqueue : public IQueueEnqueue<int> {
+ public:
+  void RegisterEnqueue(Handler* handler, EnqueueCallback callback) override {
+    EXPECT_FALSE(registered_);
+    registered_ = true;
+    handler->Post(common::BindOnce(&MockIQueueEnqueue::handle_register_enqueue, common::Unretained(this), callback));
+  }
+
+  void handle_register_enqueue(EnqueueCallback callback) {
+    if (dont_handle_register_enqueue_) {
+      return;
+    }
+    while (registered_) {
+      std::unique_ptr<int> front = callback.Run();
+      queue_.push(*front);
+    }
+  }
+
+  void UnregisterEnqueue() override {
+    EXPECT_TRUE(registered_);
+    registered_ = false;
+  }
+
+  bool dont_handle_register_enqueue_ = false;
+  bool registered_ = false;
+  std::queue<int> queue_;
+};
+
+class EnqueueBufferTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    thread_ = new Thread("test_thread", Thread::Priority::NORMAL);
+    handler_ = new Handler(thread_);
+  }
+
+  void TearDown() override {
+    handler_->Clear();
+    delete handler_;
+    delete thread_;
+  }
+
+  void SynchronizeHandler() {
+    std::promise<void> promise;
+    auto future = promise.get_future();
+    handler_->Post(common::BindOnce([](std::promise<void> promise) { promise.set_value(); }, std::move(promise)));
+    future.wait();
+  }
+
+  MockIQueueEnqueue enqueue_;
+  EnqueueBuffer<int> enqueue_buffer_{&enqueue_};
+  Thread* thread_;
+  Handler* handler_;
+};
+
+TEST_F(EnqueueBufferTest, enqueue) {
+  int num_items = 10;
+  for (int i = 0; i < num_items; i++) {
+    enqueue_buffer_.Enqueue(i, handler_);
+  }
+  SynchronizeHandler();
+  for (int i = 0; i < num_items; i++) {
+    ASSERT_EQ(enqueue_.queue_.front(), i);
+    enqueue_.queue_.pop();
+  }
+  ASSERT_FALSE(enqueue_.registered_);
+}
+
+TEST_F(EnqueueBufferTest, clear) {
+  enqueue_.dont_handle_register_enqueue_ = true;
+  int num_items = 10;
+  for (int i = 0; i < num_items; i++) {
+    enqueue_buffer_.Enqueue(i, handler_);
+  }
+  ASSERT_TRUE(enqueue_.registered_);
+  enqueue_buffer_.Clear();
+  ASSERT_FALSE(enqueue_.registered_);
+}
+
 }  // namespace
 }  // namespace os
 }  // namespace bluetooth
