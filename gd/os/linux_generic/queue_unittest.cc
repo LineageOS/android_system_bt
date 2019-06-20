@@ -808,7 +808,7 @@ class EnqueueBufferTest : public ::testing::Test {
 TEST_F(EnqueueBufferTest, enqueue) {
   int num_items = 10;
   for (int i = 0; i < num_items; i++) {
-    enqueue_buffer_.Enqueue(i, handler_);
+    enqueue_buffer_.Enqueue(std::make_unique<int>(i), handler_);
   }
   SynchronizeHandler();
   for (int i = 0; i < num_items; i++) {
@@ -822,7 +822,7 @@ TEST_F(EnqueueBufferTest, clear) {
   enqueue_.dont_handle_register_enqueue_ = true;
   int num_items = 10;
   for (int i = 0; i < num_items; i++) {
-    enqueue_buffer_.Enqueue(i, handler_);
+    enqueue_buffer_.Enqueue(std::make_unique<int>(i), handler_);
   }
   ASSERT_TRUE(enqueue_.registered_);
   enqueue_buffer_.Clear();
