@@ -72,11 +72,11 @@ class TestController : public Controller {
     acl_cb_handler_ = handler;
   }
 
-  uint16_t ReadControllerAclPacketLength() override {
+  uint16_t GetControllerAclPacketLength() override {
     return acl_buffer_length_;
   }
 
-  uint16_t ReadControllerNumAclPacketBuffers() override {
+  uint16_t GetControllerNumAclPacketBuffers() override {
     return total_acl_buffers_;
   }
 
