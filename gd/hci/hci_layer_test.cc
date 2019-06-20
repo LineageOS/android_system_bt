@@ -448,5 +448,20 @@ TEST_F(HciTest, createConnectionTest) {
   ASSERT_EQ(handle, sent_itr.extract<uint16_t>());
   ASSERT_EQ(bd_addr, sent_itr.extract<Address>());
 }
+
+TEST_F(HciTest, receiveMultipleAclPacket) {
+  common::Address bd_addr;
+  ASSERT_TRUE(common::Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  uint16_t handle = 0x0001;
+  PacketBoundaryFlag packet_boundary_flag = PacketBoundaryFlag::COMPLETE_PDU;
+  BroadcastFlag broadcast_flag = BroadcastFlag::POINT_TO_POINT;
+  for (int i = 0; i < 100; i++) {
+    auto acl_payload = std::make_unique<RawBuilder>();
+    acl_payload->AddAddress(bd_addr);
+    acl_payload->AddOctets2(handle);
+    hal->callbacks->aclDataReceived(
+        GetPacketBytes(AclPacketBuilder::Create(handle, packet_boundary_flag, broadcast_flag, std::move(acl_payload))));
+  }
+}
 }  // namespace hci
 }  // namespace bluetooth

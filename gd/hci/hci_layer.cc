@@ -15,10 +15,11 @@
  */
 
 #include "hci/hci_layer.h"
-#include "os/alarm.h"
 
 #include "common/bind.h"
 #include "common/callback.h"
+#include "os/alarm.h"
+#include "os/queue.h"
 #include "packet/packet_builder.h"
 
 namespace {
@@ -115,6 +116,7 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
   void Stop() {
     hal_->unregisterIncomingPacketCallback();
     acl_queue_.GetDownEnd()->UnregisterDequeue();
+    incoming_acl_packet_buffer_.Clear();
     delete hci_timeout_alarm_;
     command_queue_.clear();
     hal_ = nullptr;
@@ -199,22 +201,10 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
   }
 
   void aclDataReceived(hal::HciPacket data_bytes) override {
-    module_.GetHandler()->Post(
-        BindOnce(&HciLayer::impl::acl_data_received_handler, common::Unretained(this), std::move(data_bytes)));
-  }
-
-  void acl_data_received_handler(hal::HciPacket data_bytes) {
-    auto queue_end = acl_queue_.GetDownEnd();
-    Handler* hci_handler = module_.GetHandler();
-    queue_end->RegisterEnqueue(hci_handler,
-                               Bind(&impl::acl_down_queue_enqueue, common::Unretained(this), std::move(data_bytes)));
-  }
-
-  std::unique_ptr<AclPacketView> acl_down_queue_enqueue(hal::HciPacket data_bytes) {
-    auto packet = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(data_bytes));
-    AclPacketView acl2 = AclPacketView::Create(packet);
-    acl_queue_.GetDownEnd()->UnregisterEnqueue();
-    return std::make_unique<AclPacketView>(acl2);
+    auto packet =
+        packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(std::move(data_bytes)));
+    AclPacketView acl = AclPacketView::Create(packet);
+    incoming_acl_packet_buffer_.Enqueue(std::move(acl), module_.GetHandler());
   }
 
   void scoDataReceived(hal::HciPacket data_bytes) override {
@@ -313,6 +303,7 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
 
   // Acl packets
   BidiQueue<AclPacketView, AclPacketBuilder> acl_queue_{3 /* TODO: Set queue depth */};
+  os::EnqueueBuffer<AclPacketView> incoming_acl_packet_buffer_{acl_queue_.GetDownEnd()};
 };
 
 HciLayer::HciLayer() : impl_(std::make_unique<impl>(*this)) {}
