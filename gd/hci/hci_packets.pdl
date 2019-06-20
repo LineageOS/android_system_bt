@@ -1509,6 +1509,11 @@ packet ReadBufferSizeComplete : CommandComplete (command_op_code = READ_BUFFER_S
 packet ReadBdAddr : CommandPacket (op_code = READ_BD_ADDR) {
 }
 
+packet ReadBdAddrComplete : CommandComplete (command_op_code = READ_BD_ADDR) {
+  status : ErrorCode,
+  bd_addr : Address,
+}
+
 packet ReadDataBlockSize : CommandPacket (op_code = READ_DATA_BLOCK_SIZE) {
 }
 

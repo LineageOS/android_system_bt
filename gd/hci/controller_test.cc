@@ -41,6 +41,11 @@ using packet::kLittleEndian;
 using packet::PacketView;
 using packet::RawBuilder;
 
+constexpr uint16_t kHandle1 = 0x123;
+constexpr uint16_t kCredits1 = 0x78;
+constexpr uint16_t kHandle2 = 0x456;
+constexpr uint16_t kCredits2 = 0x9a;
+
 PacketView<kLittleEndian> GetPacketView(std::unique_ptr<packet::BasePacketBuilder> packet) {
   auto bytes = std::make_shared<std::vector<uint8_t>>();
   BitInserter i(*bytes);
@@ -53,104 +58,80 @@ class TestHciLayer : public HciLayer {
  public:
   void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
                       common::OnceCallback<void(CommandCompleteView)> on_complete, os::Handler* handler) override {
-    last_command_ = std::move(command);
-    last_command_handler_ = handler;
-    last_command_on_complete_ = std::move(on_complete);
-    last_command_on_status_ = common::OnceCallback<void(CommandStatusView)>();
-    GetHandler()->Post(common::BindOnce(&TestHciLayer::HandleCommand, common::Unretained(this)));
+    GetHandler()->Post(common::BindOnce(&TestHciLayer::HandleCommand, common::Unretained(this), std::move(command),
+                                        std::move(on_complete), common::Unretained(handler)));
   }
 
   void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
                       common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) override {
-    last_command_ = std::move(command);
-    last_command_handler_ = handler;
-    last_command_on_complete_ = common::OnceCallback<void(CommandCompleteView)>();
-    last_command_on_status_ = std::move(on_status);
-    GetHandler()->Post(common::BindOnce(&TestHciLayer::HandleCommand, common::Unretained(this)));
+    EXPECT_TRUE(false) << "Controller properties should not generate Command Status";
   }
 
-  void HandleCommand() {
-    auto packet_view = GetPacketView(std::move(last_command_));
+  void HandleCommand(std::unique_ptr<CommandPacketBuilder> command_builder,
+                     common::OnceCallback<void(CommandCompleteView)> on_complete, os::Handler* handler) {
+    auto packet_view = GetPacketView(std::move(command_builder));
     CommandPacketView command = CommandPacketView::Create(packet_view);
     ASSERT(command.IsValid());
 
     uint8_t num_packets = 1;
+    std::unique_ptr<packet::BasePacketBuilder> event_builder;
     switch (command.GetOpCode()) {
       case (OpCode::READ_BUFFER_SIZE): {
-        IncomingEvent(ReadBufferSizeCompleteBuilder::Create(
-            num_packets, ErrorCode::SUCCESS, acl_data_packet_length_, synchronous_data_packet_length_,
-            total_num_acl_data_packets_, total_num_synchronous_data_packets_));
+        event_builder = ReadBufferSizeCompleteBuilder::Create(
+            num_packets, ErrorCode::SUCCESS, acl_data_packet_length, synchronous_data_packet_length,
+            total_num_acl_data_packets, total_num_synchronous_data_packets);
+      } break;
+      case (OpCode::READ_BD_ADDR): {
+        event_builder = ReadBdAddrCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, common::Address::kAny);
       } break;
       default:
         LOG_INFO("Dropping unhandled packet");
+        return;
     }
+    auto packet = GetPacketView(std::move(event_builder));
+    EventPacketView event = EventPacketView::Create(packet);
+    ASSERT(event.IsValid());
+    CommandCompleteView command_complete = CommandCompleteView::Create(event);
+    ASSERT(command_complete.IsValid());
+    handler->Post(common::BindOnce(std::move(on_complete), std::move(command_complete)));
   }
 
   void RegisterEventHandler(EventCode event_code, common::Callback<void(EventPacketView)> event_handler,
                             os::Handler* handler) override {
-    registered_events_[event_code] = std::move(event_handler);
-    registered_event_handlers_[event_code] = handler;
+    EXPECT_EQ(event_code, EventCode::NUMBER_OF_COMPLETED_PACKETS) << "Only NUMBER_OF_COMPLETED_PACKETS is needed";
+    number_of_completed_packets_callback_ = event_handler;
+    client_handler_ = handler;
   }
 
   void UnregisterEventHandler(EventCode event_code) override {
-    registered_events_.erase(event_code);
-    registered_event_handlers_.erase(event_code);
+    EXPECT_EQ(event_code, EventCode::NUMBER_OF_COMPLETED_PACKETS) << "Only NUMBER_OF_COMPLETED_PACKETS is needed";
+    number_of_completed_packets_callback_ = {};
+    client_handler_ = nullptr;
   }
 
-  void IncomingEvent(std::unique_ptr<EventPacketBuilder> event_builder) {
+  void IncomingCredit() {
+    std::vector<uint32_t> handles_and_completed_packets;
+    handles_and_completed_packets.push_back(kCredits1 << 16 | kHandle1);
+    handles_and_completed_packets.push_back(kCredits2 << 16 | kHandle2);
+    auto event_builder = NumberOfCompletedPacketsBuilder::Create(handles_and_completed_packets);
     auto packet = GetPacketView(std::move(event_builder));
     EventPacketView event = EventPacketView::Create(packet);
     ASSERT(event.IsValid());
-    EventCode event_code = event.GetEventCode();
-    ASSERT_LOG(registered_events_.find(event_code) != registered_events_.end(), "Unhandled event 0x%0hhx %s",
-               event_code, EventCodeText(event_code).c_str());
-    registered_event_handlers_[event_code]->Post(common::BindOnce(registered_events_[event_code], event));
-  }
-
-  void HandleIncomingCommandComplete(EventPacketView event) {
-    auto complete_event = CommandCompleteView::Create(event);
-    ASSERT(complete_event.IsValid());
-    last_command_handler_->Post(common::BindOnce(std::move(last_command_on_complete_), complete_event));
-  }
-
-  void IncomingCommandComplete(EventPacketView event) {
-    last_command_handler_->Post(
-        common::BindOnce(&TestHciLayer::HandleIncomingCommandComplete, common::Unretained(this), event));
-  }
-
-  void HandleIncomingCommandStatus(EventPacketView event) {
-    auto status_event = CommandStatusView::Create(event);
-    ASSERT(status_event.IsValid());
-    last_command_handler_->Post(common::BindOnce(std::move(last_command_on_status_), status_event));
-  }
-
-  void IncomingCommandStatus(EventPacketView event) {
-    last_command_handler_->Post(
-        common::BindOnce(&TestHciLayer::HandleIncomingCommandStatus, common::Unretained(this), event));
-  }
-  void FakeStart(os::Handler* handler) {
-    RegisterEventHandler(EventCode::COMMAND_COMPLETE,
-                         common::Bind(&TestHciLayer::IncomingCommandComplete, common::Unretained(this)), handler);
-    RegisterEventHandler(EventCode::COMMAND_STATUS,
-                         common::Bind(&TestHciLayer::IncomingCommandStatus, common::Unretained(this)), handler);
+    client_handler_->Post(common::BindOnce(number_of_completed_packets_callback_, event));
   }
 
   void ListDependencies(ModuleList* list) override {}
   void Start() override {}
   void Stop() override {}
 
-  uint16_t acl_data_packet_length_ = 1024;
-  uint8_t synchronous_data_packet_length_ = 60;
-  uint16_t total_num_acl_data_packets_ = 10;
-  uint16_t total_num_synchronous_data_packets_ = 12;
+  constexpr static uint16_t acl_data_packet_length = 1024;
+  constexpr static uint8_t synchronous_data_packet_length = 60;
+  constexpr static uint16_t total_num_acl_data_packets = 10;
+  constexpr static uint16_t total_num_synchronous_data_packets = 12;
 
  private:
-  std::map<EventCode, common::Callback<void(EventPacketView)>> registered_events_;
-  std::map<EventCode, os::Handler*> registered_event_handlers_;
-  std::unique_ptr<CommandPacketBuilder> last_command_;
-  os::Handler* last_command_handler_;
-  common::OnceCallback<void(CommandStatusView)> last_command_on_status_;
-  common::OnceCallback<void(CommandCompleteView)> last_command_on_complete_;
+  common::Callback<void(EventPacketView)> number_of_completed_packets_callback_;
+  os::Handler* client_handler_;
 };
 
 class ControllerTest : public ::testing::Test {
@@ -159,7 +140,6 @@ class ControllerTest : public ::testing::Test {
     test_hci_layer_ = new TestHciLayer;
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
-    test_hci_layer_->FakeStart(client_handler_);
     fake_registry_.Start<Controller>(&thread_);
     controller_ = static_cast<Controller*>(fake_registry_.GetModuleUnderTest(&Controller::Factory));
   }
@@ -179,16 +159,13 @@ TEST_F(ControllerTest, startup_teardown) {}
 
 TEST_F(ControllerTest, read_controller_info) {
   std::promise<void> callback_completed;
-  ASSERT_EQ(controller_->ReadControllerAclPacketLength(), test_hci_layer_->acl_data_packet_length_);
-  ASSERT_EQ(controller_->ReadControllerNumAclPacketBuffers(), test_hci_layer_->total_num_acl_data_packets_);
-  ASSERT_EQ(controller_->ReadControllerScoPacketLength(), test_hci_layer_->synchronous_data_packet_length_);
-  ASSERT_EQ(controller_->ReadControllerNumScoPacketBuffers(), test_hci_layer_->total_num_synchronous_data_packets_);
+  ASSERT_EQ(controller_->GetControllerAclPacketLength(), test_hci_layer_->acl_data_packet_length);
+  ASSERT_EQ(controller_->GetControllerNumAclPacketBuffers(), test_hci_layer_->total_num_acl_data_packets);
+  ASSERT_EQ(controller_->GetControllerScoPacketLength(), test_hci_layer_->synchronous_data_packet_length);
+  ASSERT_EQ(controller_->GetControllerNumScoPacketBuffers(), test_hci_layer_->total_num_synchronous_data_packets);
+  ASSERT_EQ(controller_->GetControllerMacAddress(), common::Address::kAny);
 }
 
-const uint16_t kHandle1 = 0x123;
-const uint16_t kCredits1 = 0x78;
-const uint16_t kHandle2 = 0x456;
-const uint16_t kCredits2 = 0x9a;
 std::promise<void> credits1_set;
 std::promise<void> credits2_set;
 
@@ -210,10 +187,7 @@ void CheckReceivedCredits(uint16_t handle, uint16_t credits) {
 TEST_F(ControllerTest, aclCreditCallbacksTest) {
   controller_->RegisterCompletedAclPacketsCallback(common::Bind(&CheckReceivedCredits), client_handler_);
 
-  std::vector<uint32_t> handles_and_completed_packets;
-  handles_and_completed_packets.push_back(kCredits1 << 16 | kHandle1);
-  handles_and_completed_packets.push_back(kCredits2 << 16 | kHandle2);
-  test_hci_layer_->IncomingEvent(NumberOfCompletedPacketsBuilder::Create(handles_and_completed_packets));
+  test_hci_layer_->IncomingCredit();
 
   credits1_set.get_future().wait();
   credits2_set.get_future().wait();
