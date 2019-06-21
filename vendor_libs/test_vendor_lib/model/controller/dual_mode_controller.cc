@@ -60,7 +60,11 @@ void DualModeController::Initialize(const std::vector<std::string>& args) {
   if (args.size() < 2) return;
 
   Address addr;
-  if (Address::FromString(args[1], addr)) properties_.SetAddress(addr);
+  if (Address::FromString(args[1], addr)) {
+    properties_.SetAddress(addr);
+  } else {
+    LOG_FATAL(LOG_TAG, "Invalid address: %s", args[1].c_str());
+  }
 };
 
 std::string DualModeController::GetTypeString() const {
