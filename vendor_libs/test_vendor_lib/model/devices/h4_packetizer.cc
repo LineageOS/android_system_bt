@@ -52,9 +52,16 @@ size_t H4Packetizer::HciGetPacketLengthForType(hci::PacketType type, const uint8
   return (((preamble[offset + 1]) << 8) | preamble[offset]);
 }
 
-H4Packetizer::H4Packetizer(int fd, PacketReadCallback command_cb, PacketReadCallback event_cb,
-                           PacketReadCallback acl_cb, PacketReadCallback sco_cb)
-    : uart_fd_(fd), command_cb_(command_cb), event_cb_(event_cb), acl_cb_(acl_cb), sco_cb_(sco_cb) {}
+H4Packetizer::H4Packetizer(int fd, PacketReadCallback command_cb,
+                           PacketReadCallback event_cb,
+                           PacketReadCallback acl_cb, PacketReadCallback sco_cb,
+                           ClientDisconnectCallback disconnect_cb)
+    : uart_fd_(fd),
+      command_cb_(command_cb),
+      event_cb_(event_cb),
+      acl_cb_(acl_cb),
+      sco_cb_(sco_cb),
+      disconnect_cb_(disconnect_cb) {}
 
 size_t H4Packetizer::Send(uint8_t type, const uint8_t* data, size_t length) {
   struct iovec iov[] = {{&type, sizeof(type)}, {const_cast<uint8_t*>(data), length}};
@@ -98,20 +105,22 @@ void H4Packetizer::OnDataReady(int fd) {
   if (hci_packet_type_ == hci::PacketType::UNKNOWN) {
     uint8_t buffer[1] = {0};
     ssize_t bytes_read = TEMP_FAILURE_RETRY(read(fd, buffer, 1));
-    if (bytes_read != 1) {
-      if (bytes_read == 0) {
-        ALOGI("%s: Nothing ready, will retry!", __func__);
+    if (bytes_read == 0) {
+      ALOGI("%s: remote disconnected!", __func__);
+      disconnect_cb_();
+      return;
+    } else if (bytes_read < 0) {
+      if (errno == EAGAIN) {
+        // No data, try again later.
+        ALOGV("%s: Nothing ready, will retry!", __func__);
         return;
-      } else if (bytes_read < 0) {
-        if (errno == EAGAIN) {
-          // No data, try again later.
-          return;
-        } else {
-          LOG_ALWAYS_FATAL("%s: Read packet type error: %s", __func__, strerror(errno));
-        }
       } else {
-        LOG_ALWAYS_FATAL("%s: More bytes read than expected (%u)!", __func__, static_cast<unsigned int>(bytes_read));
+        LOG_ALWAYS_FATAL("%s: Read packet type error: %s", __func__,
+                         strerror(errno));
       }
+    } else if (bytes_read > 1) {
+      LOG_ALWAYS_FATAL("%s: More bytes read than expected (%u)!", __func__,
+                       static_cast<unsigned int>(bytes_read));
     }
     hci_packet_type_ = static_cast<hci::PacketType>(buffer[0]);
     if (hci_packet_type_ != hci::PacketType::ACL && hci_packet_type_ != hci::PacketType::SCO &&
