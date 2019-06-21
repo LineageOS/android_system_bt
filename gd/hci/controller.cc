@@ -40,14 +40,19 @@ struct Controller::impl {
 
   void Start(hci::HciLayer* hci) {
     hci_ = hci;
-    std::promise<void> promise;
-    auto future = promise.get_future();
     hci_->RegisterEventHandler(EventCode::NUMBER_OF_COMPLETED_PACKETS,
                                Bind(&Controller::impl::NumberOfCompletedPackets, common::Unretained(this)),
                                module_.GetHandler());
+    hci_->EnqueueCommand(ReadBufferSizeBuilder::Create(),
+                         BindOnce(&Controller::impl::read_buffer_size_complete_handler, common::Unretained(this)),
+                         module_.GetHandler());
+
+    // We only need to synchronize the last read. Make BD_ADDR to be the last one.
+    std::promise<void> promise;
+    auto future = promise.get_future();
     hci_->EnqueueCommand(
-        ReadBufferSizeBuilder::Create(),
-        BindOnce(&Controller::impl::read_buffer_size_complete_handler, common::Unretained(this), std::move(promise)),
+        ReadBdAddrBuilder::Create(),
+        BindOnce(&Controller::impl::read_controller_mac_address_handler, common::Unretained(this), std::move(promise)),
         module_.GetHandler());
     future.wait();
   }
@@ -75,7 +80,7 @@ struct Controller::impl {
     acl_credits_handler_ = handler;
   }
 
-  void read_buffer_size_complete_handler(std::promise<void> promise, CommandCompleteView view) {
+  void read_buffer_size_complete_handler(CommandCompleteView view) {
     auto complete_view = ReadBufferSizeCompleteView::Create(view);
     ASSERT(complete_view.IsValid());
     ErrorCode status = complete_view.GetStatus();
@@ -85,23 +90,15 @@ struct Controller::impl {
 
     sco_buffer_length_ = complete_view.GetSynchronousDataPacketLength();
     sco_buffers_ = complete_view.GetTotalNumSynchronousDataPackets();
+  }
+
+  void read_controller_mac_address_handler(std::promise<void> promise, CommandCompleteView view) {
+    auto complete_view = ReadBdAddrCompleteView::Create(view);
+    ASSERT(complete_view.IsValid());
+    ErrorCode status = complete_view.GetStatus();
+    ASSERT_LOG(status == ErrorCode::SUCCESS, "Status 0x%02hhx, %s", status, ErrorCodeText(status).c_str());
+    mac_address_ = complete_view.GetBdAddr();
     promise.set_value();
-  }
-
-  uint16_t ReadControllerAclPacketLength() {
-    return acl_buffer_length_;
-  }
-
-  uint16_t ReadControllerNumAclPacketBuffers() {
-    return acl_buffers_;
-  }
-
-  uint8_t ReadControllerScoPacketLength() {
-    return sco_buffer_length_;
-  }
-
-  uint16_t ReadControllerNumScoPacketBuffers() {
-    return sco_buffers_;
   }
 
   Controller& module_;
@@ -112,9 +109,10 @@ struct Controller::impl {
   Handler* acl_credits_handler_ = nullptr;
 
   uint16_t acl_buffer_length_ = 0;
-  uint16_t acl_buffers_;
-  uint8_t sco_buffer_length_;
-  uint16_t sco_buffers_;
+  uint16_t acl_buffers_ = 0;
+  uint8_t sco_buffer_length_ = 0;
+  uint16_t sco_buffers_ = 0;
+  common::Address mac_address_;
 };  // namespace hci
 
 Controller::Controller() : impl_(std::make_unique<impl>(*this)) {}
@@ -126,20 +124,24 @@ void Controller::RegisterCompletedAclPacketsCallback(Callback<void(uint16_t /* h
   impl_->RegisterCompletedAclPacketsCallback(cb, handler);
 }
 
-uint16_t Controller::ReadControllerAclPacketLength() {
-  return impl_->ReadControllerAclPacketLength();
+uint16_t Controller::GetControllerAclPacketLength() {
+  return impl_->acl_buffer_length_;
 }
 
-uint16_t Controller::ReadControllerNumAclPacketBuffers() {
-  return impl_->ReadControllerNumAclPacketBuffers();
+uint16_t Controller::GetControllerNumAclPacketBuffers() {
+  return impl_->acl_buffers_;
 }
 
-uint8_t Controller::ReadControllerScoPacketLength() {
-  return impl_->ReadControllerScoPacketLength();
+uint8_t Controller::GetControllerScoPacketLength() {
+  return impl_->sco_buffer_length_;
 }
 
-uint16_t Controller::ReadControllerNumScoPacketBuffers() {
-  return impl_->ReadControllerNumScoPacketBuffers();
+uint16_t Controller::GetControllerNumScoPacketBuffers() {
+  return impl_->sco_buffers_;
+}
+
+common::Address Controller::GetControllerMacAddress() {
+  return impl_->mac_address_;
 }
 
 const ModuleFactory Controller::Factory = ModuleFactory([]() { return new Controller(); });

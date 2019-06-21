@@ -54,9 +54,9 @@ struct AclManager::impl {
     hci_layer_ = acl_manager_.GetDependency<HciLayer>();
     handler_ = acl_manager_.GetHandler();
     controller_ = acl_manager_.GetDependency<Controller>();
-    max_acl_packet_credits_ = controller_->ReadControllerNumAclPacketBuffers();
+    max_acl_packet_credits_ = controller_->GetControllerNumAclPacketBuffers();
     acl_packet_credits_ = max_acl_packet_credits_;
-    acl_buffer_length_ = controller_->ReadControllerAclPacketLength();
+    acl_buffer_length_ = controller_->GetControllerAclPacketLength();
     controller_->RegisterCompletedAclPacketsCallback(
         common::Bind(&impl::incoming_acl_credits, common::Unretained(this)), handler_);
 

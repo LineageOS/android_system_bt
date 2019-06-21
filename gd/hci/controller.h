@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include "common/address.h"
 #include "common/callback.h"
 #include "hci/hci_packets.h"
 #include "module.h"
@@ -33,13 +34,15 @@ class Controller : public Module {
   virtual void RegisterCompletedAclPacketsCallback(
       common::Callback<void(uint16_t /* handle */, uint16_t /* num_packets */)> cb, os::Handler* handler);
 
-  virtual uint16_t ReadControllerAclPacketLength();
+  virtual uint16_t GetControllerAclPacketLength();
 
-  virtual uint16_t ReadControllerNumAclPacketBuffers();
+  virtual uint16_t GetControllerNumAclPacketBuffers();
 
-  virtual uint8_t ReadControllerScoPacketLength();
+  virtual uint8_t GetControllerScoPacketLength();
 
-  virtual uint16_t ReadControllerNumScoPacketBuffers();
+  virtual uint16_t GetControllerNumScoPacketBuffers();
+
+  virtual common::Address GetControllerMacAddress();
 
   static const ModuleFactory Factory;
 
