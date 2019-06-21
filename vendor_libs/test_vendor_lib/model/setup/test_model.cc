@@ -90,51 +90,62 @@ void TestModel::StopTimer() {
 }
 
 size_t TestModel::Add(std::shared_ptr<Device> new_dev) {
-  devices_.push_back(new_dev);
-  return devices_.size() - 1;
+  devices_counter_++;
+  devices_[devices_counter_] = new_dev;
+  return devices_counter_;
 }
 
 void TestModel::Del(size_t dev_index) {
-  if (dev_index >= devices_.size()) {
-    LOG_WARN(LOG_TAG, "del: index out of range!");
+  auto device = devices_.find(dev_index);
+  if (device == devices_.end()) {
+    LOG_WARN(LOG_TAG, "Del: can't find device!");
     return;
   }
-  devices_.erase(devices_.begin() + dev_index);
+  devices_.erase(dev_index);
 }
 
 size_t TestModel::AddPhy(std::shared_ptr<PhyLayerFactory> new_phy) {
-  phys_.push_back(new_phy);
-  return phys_.size() - 1;
+  phys_counter_++;
+  phys_[phys_counter_] = new_phy;
+  return phys_counter_;
 }
 
 void TestModel::DelPhy(size_t phy_index) {
-  if (phy_index >= phys_.size()) {
-    LOG_WARN(LOG_TAG, "del_phy: index %d out of range: ", static_cast<int>(phy_index));
+  auto phy = phys_.find(phy_index);
+  if (phy == phys_.end()) {
+    LOG_WARN(LOG_TAG, "DelPhy: can't find device!");
     return;
   }
+  phys_.erase(phy_index);
 }
 
 void TestModel::AddDeviceToPhy(size_t dev_index, size_t phy_index) {
-  if (dev_index >= devices_.size()) {
-    LOG_WARN(LOG_TAG, "add_device_to_phy: device out of range: ");
+  auto device = devices_.find(dev_index);
+  if (device == devices_.end()) {
+    LOG_WARN(LOG_TAG, "AddDeviceToPhy: can't find device!");
     return;
   }
-  if (phy_index >= phys_.size()) {
-    LOG_WARN(LOG_TAG, "add_device_to_phy: phy out of range: ");
+  auto phy = phys_.find(phy_index);
+  if (phy == phys_.end()) {
+    LOG_WARN(LOG_TAG, "AddDeviceToPhy: can't find phy!");
     return;
   }
-  std::shared_ptr<Device> dev = devices_[dev_index];
+  auto dev = device->second;
   dev->RegisterPhyLayer(
-      phys_[phy_index]->GetPhyLayer([dev](packets::LinkLayerPacketView packet) { dev->IncomingPacket(packet); }));
+      phy->second->GetPhyLayer([dev](packets::LinkLayerPacketView packet) {
+        dev->IncomingPacket(packet);
+      }));
 }
 
 void TestModel::DelDeviceFromPhy(size_t dev_index, size_t phy_index) {
-  if (dev_index >= devices_.size()) {
-    LOG_WARN(LOG_TAG, "del_device_from_phy: device out of range: ");
+  auto device = devices_.find(dev_index);
+  if (device == devices_.end()) {
+    LOG_WARN(LOG_TAG, "AddDeviceToPhy: can't find device!");
     return;
   }
-  if (phy_index >= phys_.size()) {
-    LOG_WARN(LOG_TAG, "del_device_from_phy: phy out of range: ");
+  auto phy = phys_.find(phy_index);
+  if (phy == phys_.end()) {
+    LOG_WARN(LOG_TAG, "AddDeviceToPhy: can't find phy!");
     return;
   }
 }
@@ -142,9 +153,9 @@ void TestModel::DelDeviceFromPhy(size_t dev_index, size_t phy_index) {
 void TestModel::AddLinkLayerConnection(int socket_fd, Phy::Type phy_type) {
   std::shared_ptr<Device> dev = LinkLayerSocketDevice::Create(socket_fd, phy_type);
   int index = Add(dev);
-  for (size_t phy_index = 0; phy_index < phys_.size(); phy_index++) {
-    if (phy_type == phys_[phy_index]->GetType()) {
-      AddDeviceToPhy(index, phy_index);
+  for (auto& phy : phys_) {
+    if (phy_type == phy.second->GetType()) {
+      AddDeviceToPhy(index, phy.first);
     }
   }
 }
@@ -163,40 +174,56 @@ void TestModel::AddRemote(const std::string& server, int port, Phy::Type phy_typ
 }
 
 void TestModel::IncomingHciConnection(int socket_fd) {
-  std::shared_ptr<HciSocketDevice> dev = HciSocketDevice::Create(socket_fd);
-  // TODO: Auto-increment addresses?
-  static int hci_devs = 0;
-  int index = Add(std::static_pointer_cast<Device>(dev));
-  std::string addr = "da:4c:10:de:17:0";  // Da HCI dev
-  CHECK(hci_devs < 10) << "Why do you need more than 9?";
-  addr += '0' + hci_devs++;
+  auto dev = HciSocketDevice::Create(socket_fd);
+  size_t index = Add(std::static_pointer_cast<Device>(dev));
+  std::string addr = "da:4c:10:de:17:";  // Da HCI dev
+  CHECK(index < 256) << "Why do you need more than 256?";
+  std::stringstream stream;
+  stream << std::setfill ('0') << std::setw(2) << std::hex << index;
+  addr += stream.str();
+
   dev->Initialize({"IgnoredTypeName", addr});
-  // TODO: Add device to all phys?  For now, just the first two.
-  for (size_t phy = 0; phy < 2 && phy < phys_.size(); phy++) {
-    AddDeviceToPhy(index, phy);
+  LOG_INFO(LOG_TAG, "initialized %s", addr.c_str());
+  for (auto& phy : phys_) {
+    AddDeviceToPhy(index, phy.first);
   }
   dev->RegisterTaskScheduler(schedule_task_);
   dev->RegisterTaskCancel(cancel_task_);
+  dev->RegisterCloseCallback(
+      [this, socket_fd, index] { OnHciConnectionClosed(socket_fd, index); });
+}
+
+void TestModel::OnHciConnectionClosed(int socket_fd, size_t index) {
+  auto device = devices_.find(index);
+  if (device == devices_.end()) {
+    LOG_WARN(LOG_TAG, "OnHciConnectionClosed: can't find device!");
+    return;
+  }
+  int close_result = close(socket_fd);
+  CHECK(close_result == 0) << "can't close: " << strerror(errno);
+  devices_.erase(index);
 }
 
 const std::string& TestModel::List() {
   list_string_ = "";
   list_string_ += " Devices: \r\n";
-  for (size_t dev = 0; dev < devices_.size(); dev++) {
-    list_string_ += "  " + std::to_string(dev) + ":";
-    list_string_ += devices_[dev]->ToString() + " \r\n";
+  for (auto& dev : devices_) {
+    list_string_ += "  " + std::to_string(dev.first) + ":";
+    list_string_ += dev.second->ToString() + " \r\n";
   }
   list_string_ += " Phys: \r\n";
-  for (size_t phy = 0; phy < phys_.size(); phy++) {
-    list_string_ += "  " + std::to_string(phy) + ":";
-    list_string_ += phys_[phy]->ToString() + " \r\n";
+  for (auto& phy : phys_) {
+    list_string_ += "  " + std::to_string(phy.first) + ":";
+    list_string_ += phy.second->ToString() + " \r\n";
   }
   return list_string_;
 }
 
 void TestModel::TimerTick() {
-  for (size_t dev = 0; dev < devices_.size(); dev++) {
-    devices_[dev]->TimerTick();
+  for (auto dev = devices_.begin(); dev != devices_.end();) {
+    auto tmp = dev;
+    dev++;
+    tmp->second->TimerTick();
   }
 }
 
