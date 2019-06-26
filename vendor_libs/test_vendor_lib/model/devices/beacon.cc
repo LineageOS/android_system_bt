@@ -63,9 +63,7 @@ void Beacon::Initialize(const vector<std::string>& args) {
 }
 
 void Beacon::TimerTick() {
-  LOG_INFO(LOG_TAG, "TimerTick()");
   if (IsAdvertisementAvailable(std::chrono::milliseconds(5000))) {
-    LOG_INFO(LOG_TAG, "Generating Advertisement %d", static_cast<int>(properties_.GetLeAdvertisement().size()));
     std::unique_ptr<packets::LeAdvertisementBuilder> ad = packets::LeAdvertisementBuilder::Create(
         LeAdvertisement::AddressType::PUBLIC,
         static_cast<LeAdvertisement::AdvertisementType>(properties_.GetLeAdvertisementType()),
@@ -74,16 +72,13 @@ void Beacon::TimerTick() {
         packets::LinkLayerPacketBuilder::WrapLeAdvertisement(std::move(ad), properties_.GetLeAddress());
     std::vector<std::shared_ptr<PhyLayer>> le_phys = phy_layers_[Phy::Type::LOW_ENERGY];
     for (std::shared_ptr<PhyLayer> phy : le_phys) {
-      LOG_INFO(LOG_TAG, "Sending Advertisement on a Phy");
       phy->Send(to_send);
     }
   }
 }
 
 void Beacon::IncomingPacket(packets::LinkLayerPacketView packet) {
-  LOG_INFO(LOG_TAG, "Got a packet of type %d", static_cast<int>(packet.GetType()));
   if (packet.GetDestinationAddress() == properties_.GetLeAddress() && packet.GetType() == Link::PacketType::LE_SCAN) {
-    LOG_INFO(LOG_TAG, "Got a scan");
     std::unique_ptr<packets::LeAdvertisementBuilder> scan_response = packets::LeAdvertisementBuilder::Create(
         LeAdvertisement::AddressType::PUBLIC, LeAdvertisement::AdvertisementType::SCAN_RESPONSE,
         properties_.GetLeScanResponse());
@@ -91,7 +86,6 @@ void Beacon::IncomingPacket(packets::LinkLayerPacketView packet) {
         std::move(scan_response), properties_.GetLeAddress(), packet.GetSourceAddress());
     std::vector<std::shared_ptr<PhyLayer>> le_phys = phy_layers_[Phy::Type::LOW_ENERGY];
     for (auto phy : le_phys) {
-      LOG_INFO(LOG_TAG, "Sending a Scan Response on a Phy");
       phy->Send(to_send);
     }
   }
