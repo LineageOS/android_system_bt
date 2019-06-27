@@ -106,6 +106,7 @@ interface IBluetooth
     boolean removeBond(in BluetoothDevice device);
     int getBondState(in BluetoothDevice device);
     boolean isBondingInitiatedLocally(in BluetoothDevice device);
+    void setBondingInitiatedLocally(in BluetoothDevice devicei, in boolean localInitiated);
     long getSupportedProfiles();
     int getConnectionState(in BluetoothDevice device);
 
