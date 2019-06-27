@@ -143,6 +143,7 @@ interface IBluetooth
     int getBondState(in BluetoothDevice device, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     boolean isBondingInitiatedLocally(in BluetoothDevice device, in AttributionSource attributionSource);
+    void setBondingInitiatedLocally(in BluetoothDevice devicei, in boolean localInitiated);
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     long getSupportedProfiles();
     @UnsupportedAppUsage
