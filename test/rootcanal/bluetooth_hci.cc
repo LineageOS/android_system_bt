@@ -143,6 +143,11 @@ Return<void> BluetoothHci::initialize(const sp<IBluetoothHciCallbacks>& cb) {
   // Add the controller as a device in the model.
   test_model_.Add(controller_);
 
+  // Send responses to logcat if the test channel is not configured.
+  test_channel_.RegisterSendResponse([](const std::string& response) {
+    ALOGI("No test channel yet: %s", response.c_str());
+  });
+
   if (BtTestConsoleEnabled()) {
     SetUpTestChannel(6111);
     SetUpHciServer(6211,
@@ -150,6 +155,16 @@ Return<void> BluetoothHci::initialize(const sp<IBluetoothHciCallbacks>& cb) {
     SetUpLinkLayerServer(
         6311, [this](int fd) { test_model_.IncomingLinkLayerConnection(fd); });
   }
+
+  // Add some default devices for easier debugging
+  test_channel_.AddDefaults();
+
+  // This should be configurable in the future.
+  ALOGI("Adding Beacons so the scan list is not empty.");
+  test_channel_.Add({"beacon", "be:ac:10:00:00:01", "1000"});
+  test_channel_.AddDeviceToPhy({"2", "1"});
+  test_channel_.Add({"beacon", "be:ac:10:00:00:02", "1000"});
+  test_channel_.AddDeviceToPhy({"3", "1"});
 
   unlink_cb_ = [this, cb](sp<BluetoothDeathRecipient>& death_recipient) {
     if (death_recipient->getHasDied())
@@ -292,16 +307,6 @@ void BluetoothHci::SetUpTestChannel(int port) {
 
   test_channel_.RegisterSendResponse(
       [](const std::string& response) { ALOGI("No test channel: %s", response.c_str()); });
-
-  // Add some default devices for easier debugging
-  test_channel_.AddDefaults();
-
-  // This should be configurable in the future.
-  ALOGI("Adding Beacons so the scan list is not empty.");
-  test_channel_.Add({"beacon", "be:ac:10:00:00:01", "1000"});
-  test_channel_.AddDeviceToPhy({"1", "0"});
-  test_channel_.Add({"beacon", "be:ac:10:00:00:02", "1000"});
-  test_channel_.AddDeviceToPhy({"2", "0"});
 
   if (socket_fd == -1) {
     ALOGE("Test channel SetUp(%d) failed.", port);
