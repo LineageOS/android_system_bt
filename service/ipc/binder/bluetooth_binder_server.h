@@ -71,7 +71,7 @@ class BluetoothBinderServer : public BnBluetooth,
   // IBluetooth overrides:
   Status IsEnabled(bool* _aidl_return) override;
   Status GetState(int32_t* _aidl_return) override;
-  Status Enable(bool start_restricted, bool* _aidl_return) override;
+  Status Enable(bool* _aidl_return) override;
   Status EnableNoAutoConnect(bool* _aidl_return) override;
   Status Disable(bool* _aidl_return) override;
 

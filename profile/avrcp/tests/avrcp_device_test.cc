@@ -1358,6 +1358,126 @@ TEST_F(AvrcpDeviceTest, invalidRegisterNotificationTest) {
   SendMessage(1, reg_notif_request);
 }
 
+TEST_F(AvrcpDeviceTest, invalidVendorPacketTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  auto rsp = RejectBuilder::MakeBuilder(static_cast<CommandPdu>(0), Status::INVALID_COMMAND);
+  EXPECT_CALL(response_cb, Call(1, false, matchPacket(std::move(rsp)))).Times(1);
+  auto short_packet = TestAvrcpPacket::Make(short_vendor_packet);
+  SendMessage(1, short_packet);
+}
+
+TEST_F(AvrcpDeviceTest, invalidCapabilitiesPacketTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  auto rsp = RejectBuilder::MakeBuilder(CommandPdu::GET_CAPABILITIES, Status::INVALID_PARAMETER);
+  EXPECT_CALL(response_cb, Call(1, false, matchPacket(std::move(rsp)))).Times(1);
+  auto short_packet = TestAvrcpPacket::Make(short_get_capabilities_request);
+  SendMessage(1, short_packet);
+}
+
+TEST_F(AvrcpDeviceTest, invalidGetElementAttributesPacketTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  auto rsp = RejectBuilder::MakeBuilder(CommandPdu::GET_ELEMENT_ATTRIBUTES, Status::INVALID_PARAMETER);
+  EXPECT_CALL(response_cb, Call(1, false, matchPacket(std::move(rsp)))).Times(1);
+  auto short_packet = TestAvrcpPacket::Make(short_get_element_attributes_request);
+  SendMessage(1, short_packet);
+}
+
+TEST_F(AvrcpDeviceTest, invalidPlayItemPacketTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  auto rsp = RejectBuilder::MakeBuilder(CommandPdu::PLAY_ITEM, Status::INVALID_PARAMETER);
+  EXPECT_CALL(response_cb, Call(1, false, matchPacket(std::move(rsp)))).Times(1);
+  auto short_packet = TestAvrcpPacket::Make(short_play_item_request);
+  SendMessage(1, short_packet);
+}
+
+TEST_F(AvrcpDeviceTest, invalidSetAddressedPlayerPacketTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  auto rsp = RejectBuilder::MakeBuilder(CommandPdu::SET_ADDRESSED_PLAYER, Status::INVALID_PARAMETER);
+  EXPECT_CALL(response_cb, Call(1, false, matchPacket(std::move(rsp)))).Times(1);
+  auto short_packet = TestAvrcpPacket::Make(short_set_addressed_player_request);
+  SendMessage(1, short_packet);
+}
+
+TEST_F(AvrcpDeviceTest, invalidBrowsePacketTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  auto rsp = GeneralRejectBuilder::MakeBuilder(Status::INVALID_COMMAND);
+  EXPECT_CALL(response_cb, Call(1, false, matchPacket(std::move(rsp)))).Times(1);
+  auto short_packet = TestBrowsePacket::Make(short_browse_packet);
+  SendBrowseMessage(1, short_packet);
+}
+
+TEST_F(AvrcpDeviceTest, invalidGetFolderItemsPacketTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  auto rsp = GetFolderItemsResponseBuilder::MakePlayerListBuilder(Status::INVALID_PARAMETER, 0x0000, 0xFFFF);
+  EXPECT_CALL(response_cb, Call(1, true, matchPacket(std::move(rsp)))).Times(1);
+  auto short_packet = TestBrowsePacket::Make(short_get_folder_items_request);
+  SendBrowseMessage(1, short_packet);
+}
+
+TEST_F(AvrcpDeviceTest, invalidGetTotalNumberOfItemsPacketTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  auto rsp = GetTotalNumberOfItemsResponseBuilder::MakeBuilder(Status::INVALID_PARAMETER, 0x0000, 0xFFFF);
+  EXPECT_CALL(response_cb, Call(1, true, matchPacket(std::move(rsp)))).Times(1);
+  auto short_packet = TestBrowsePacket::Make(short_get_total_number_of_items_request);
+  SendBrowseMessage(1, short_packet);
+}
+
+TEST_F(AvrcpDeviceTest, invalidChangePathPacketTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  auto rsp = ChangePathResponseBuilder::MakeBuilder(Status::INVALID_PARAMETER, 0);
+  EXPECT_CALL(response_cb, Call(1, true, matchPacket(std::move(rsp)))).Times(1);
+  auto short_packet = TestBrowsePacket::Make(short_change_path_request);
+  SendBrowseMessage(1, short_packet);
+}
+
+TEST_F(AvrcpDeviceTest, invalidGetItemAttributesPacketTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  auto rsp = GetItemAttributesResponseBuilder::MakeBuilder(Status::INVALID_PARAMETER, 0xFFFF);
+  EXPECT_CALL(response_cb, Call(1, true, matchPacket(std::move(rsp)))).Times(1);
+  auto short_packet = TestBrowsePacket::Make(short_get_item_attributes_request);
+  SendBrowseMessage(1, short_packet);
+}
+
 }  // namespace avrcp
 }  // namespace bluetooth
 

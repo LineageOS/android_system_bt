@@ -614,6 +614,12 @@ static void hidd_l2cif_data_ind(uint16_t cid, BT_HDR* p_msg) {
 
   HIDD_TRACE_EVENT("%s: cid=%04x", __func__, cid);
 
+  if (p_msg->len < 1) {
+    HIDD_TRACE_ERROR("Invalid data length, ignore");
+    osi_free(p_msg);
+    return;
+  }
+
   p_hcon = &hd_cb.device.conn;
 
   if (p_hcon->conn_state == HID_CONN_STATE_UNUSED ||
@@ -756,12 +762,14 @@ tHID_STATUS hidd_conn_reg(void) {
   hd_cb.l2cap_intr_cfg.flush_to_present = TRUE;
   hd_cb.l2cap_intr_cfg.flush_to = HID_DEV_FLUSH_TO;
 
-  if (!L2CA_Register(HID_PSM_CONTROL, (tL2CAP_APPL_INFO*)&dev_reg_info)) {
+  if (!L2CA_Register(HID_PSM_CONTROL, (tL2CAP_APPL_INFO*)&dev_reg_info,
+                     false /* enable_snoop */)) {
     HIDD_TRACE_ERROR("HID Control (device) registration failed");
     return (HID_ERR_L2CAP_FAILED);
   }
 
-  if (!L2CA_Register(HID_PSM_INTERRUPT, (tL2CAP_APPL_INFO*)&dev_reg_info)) {
+  if (!L2CA_Register(HID_PSM_INTERRUPT, (tL2CAP_APPL_INFO*)&dev_reg_info,
+                     false /* enable_snoop */)) {
     L2CA_Deregister(HID_PSM_CONTROL);
     HIDD_TRACE_ERROR("HID Interrupt (device) registration failed");
     return (HID_ERR_L2CAP_FAILED);

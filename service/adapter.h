@@ -119,10 +119,7 @@ class Adapter {
   // to the controller, otherwise returns false. A successful call to this
   // method only means that the enable request has been sent to the Bluetooth
   // controller and does not imply that the operation itself succeeded.
-  // The |start_restricted| flag enables the adapter in restricted mode. In
-  // restricted mode, bonds that are created are marked as restricted in the
-  // config file. These devices are deleted upon leaving restricted mode.
-  virtual bool Enable(bool start_restricted) = 0;
+  virtual bool Enable() = 0;
 
   // Powers off the Bluetooth radio. Returns true, if the disable request was
   // successfully sent to the Bluetooth controller.

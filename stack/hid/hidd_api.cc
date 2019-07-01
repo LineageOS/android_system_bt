@@ -33,7 +33,6 @@
 #include "hidd_api.h"
 #include "hidd_int.h"
 #include "hiddefs.h"
-#include "log/log.h"
 
 tHID_DEV_CTB hd_cb;
 
@@ -320,10 +319,6 @@ tHID_STATUS HID_DevAddRecord(uint32_t handle, char* p_name, char* p_description,
       UINT8_TO_BE_STREAM(p, (TEXT_STR_DESC_TYPE << 3) | SIZE_IN_NEXT_BYTE);
       UINT8_TO_BE_STREAM(p, desc_len);
       ARRAY_TO_BE_STREAM(p, p_desc_data, (int)desc_len);
-
-      if (desc_len > HIDD_APP_DESCRIPTOR_LEN - 6) {
-        android_errorWriteLog(0x534e4554, "113572366");
-      }
 
       result &= SDP_AddAttribute(handle, ATTR_ID_HID_DESCRIPTOR_LIST,
                                  DATA_ELE_SEQ_DESC_TYPE, p - p_buf, p_buf);
