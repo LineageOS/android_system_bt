@@ -48,7 +48,7 @@ void PacketDef::AddParentConstraint(std::string field_name, std::variant<int64_t
     const auto& enum_def = static_cast<EnumField*>(constrained_field)->GetEnumDef();
     if (!enum_def.HasEntry(std::get<std::string>(value))) {
       ERROR(constrained_field) << "No matching enumeration \"" << std::get<std::string>(value)
-                               << "for constraint on enum in parent packet " << parent_->name_ << ".";
+                               << "\" for constraint on enum in parent packet " << parent_->name_ << ".";
     }
 
     // For enums, we have to qualify the value using the enum type name.
