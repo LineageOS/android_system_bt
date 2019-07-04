@@ -142,6 +142,7 @@ Return<void> BluetoothHci::initialize(const sp<IBluetoothHciCallbacks>& cb) {
   test_channel_.AddDeviceToPhy({"1", "0"});
   test_channel_.Add({"beacon", "be:ac:10:00:00:02", "1000"});
   test_channel_.AddDeviceToPhy({"2", "0"});
+  test_channel_.SetTimerPeriod({"1000"});
 
   unlink_cb_ = [cb](sp<BluetoothDeathRecipient>& death_recipient) {
     if (death_recipient->getHasDied())
