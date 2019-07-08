@@ -51,6 +51,13 @@ cc_library_shared {
         "libutils",
         "libtinyxml2",
         "libz",
+        "libcrypto",
+        "android.hardware.keymaster@4.0",
+        "android.hardware.keymaster@3.0",
+        "libkeymaster4support",
+        "libkeystore_aidl",
+        "libkeystore_binder",
+        "libkeystore_parcelables",
         "libstatslog",
     ],
     static_libs: [
