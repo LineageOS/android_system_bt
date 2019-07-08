@@ -29,6 +29,7 @@ import grpc
 
 ANDROID_BUILD_TOP = os.environ.get('ANDROID_BUILD_TOP')
 ANDROID_HOST_OUT = os.environ.get('ANDROID_HOST_OUT')
+_WAIT_CHANNEL_READY_TIMEOUT = 10
 
 def replace_vars(string, config):
     return string.replace("$ANDROID_HOST_OUT", ANDROID_HOST_OUT) \
@@ -85,6 +86,14 @@ class GdDeviceBase:
             logging.error("backing process stopped with code: %d" %
                           backing_process_return_code)
             return False
+
+    def wait_channel_ready(self):
+        future = grpc.channel_ready_future(self.grpc_channel)
+        try:
+          future.result(timeout=_WAIT_CHANNEL_READY_TIMEOUT)
+        except grpc.FutureTimeoutError:
+          logging.error("wait channel ready timeout")
+
 
 
 class GdDeviceBaseLoggerAdapter(logging.LoggerAdapter):
