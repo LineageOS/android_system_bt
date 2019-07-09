@@ -364,3 +364,17 @@ TEST_F(AlarmTest, test_callback_free_race) {
   }
   alarm_cleanup();
 }
+
+static void remove_cb(void* data) {
+  alarm_free((alarm_t*)data);
+  semaphore_post(semaphore);
+}
+
+TEST_F(AlarmTest, test_delete_during_callback) {
+  for (int i = 0; i < 1000; ++i) {
+    alarm_t* alarm = alarm_new("alarm_test.test_delete_during_callback");
+    alarm_set(alarm, 0, remove_cb, alarm);
+    semaphore_wait(semaphore);
+  }
+  alarm_cleanup();
+}
