@@ -19,6 +19,7 @@ cc_binary_host {
         "enum_def.cc",
         "enum_gen.cc",
         "packet_def.cc",
+        "parent_def.cc",
         "main.cc",
         "language_y.yy",
         "language_l.ll",

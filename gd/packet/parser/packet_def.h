@@ -22,32 +22,14 @@
 #include "enum_def.h"
 #include "field_list.h"
 #include "fields/packet_field.h"
+#include "parent_def.h"
 
-class PacketDef {
+class PacketDef : public ParentDef {
  public:
   PacketDef(std::string name, FieldList fields);
   PacketDef(std::string name, FieldList fields, PacketDef* parent);
 
-  void AddParentConstraint(std::string field_name, std::variant<int64_t, std::string> value);
-
-  // Assign all size fields to their corresponding variable length fields.
-  // Will crash if
-  //  - there aren't any fields that don't match up to a field.
-  //  - the size field points to a fixed size field.
-  //  - if the size field comes after the variable length field.
-  void AssignSizeFields();
-
-  void SetEndianness(bool is_little_endian);
-
-  // Get the size for the packet. You scan specify without_payload in order
-  // to exclude payload fields as child packets will be overriding it.
-  Size GetSize(bool without_payload = false) const;
-
-  // Get the offset until the field is reached, if there is no field
-  // returns an empty Size. from_end requests the offset to the field
-  // starting from the end() iterator. If there is a field with an unknown
-  // size along the traversal, then an empty size is returned.
-  Size GetOffsetForField(std::string field_name, bool from_end = false) const;
+  PacketField* GetNewField(const std::string& name, ParseLocation loc) const;
 
   void GenParserDefinition(std::ostream& s) const;
 
@@ -59,9 +41,9 @@ class PacketDef {
 
   void GenValidator(std::ostream& s) const;
 
-  void GenBuilderDefinition(std::ostream& s) const;
+  TypeDef::Type GetDefinitionType() const;
 
-  FieldList GetParamList() const;
+  void GenBuilderDefinition(std::ostream& s) const;
 
   FieldList GetParametersToValidate() const;
 
@@ -70,17 +52,4 @@ class PacketDef {
   void GenBuilderParameterChecker(std::ostream& s) const;
 
   void GenBuilderConstructor(std::ostream& s) const;
-
-  void GenBuilderMembers(std::ostream& s) const;
-
-  std::string name_;
-  FieldList fields_;
-
-  std::variant<std::monostate, std::string, EnumDef*> specialize_on_;
-  std::variant<std::monostate, int, std::string> specialization_value_;
-
-  PacketDef* parent_;  // Parent packet type
-
-  std::map<std::string, std::variant<int64_t, std::string>> parent_constraints_;
-  bool is_little_endian_;
 };
