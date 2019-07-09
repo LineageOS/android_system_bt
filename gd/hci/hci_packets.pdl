@@ -9,7 +9,8 @@ enum Enable : 8 {
 }
 
 // https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile
-enum GapDataTypes : 8 {
+enum GapDataType : 8 {
+  INVALID = 0x00,
   FLAGS = 0x01,
   INCOMPLETE_LIST_16_BIT_UUIDS = 0x02,
   COMPLETE_LIST_16_BIT_UUIDS = 0x03,
@@ -21,6 +22,12 @@ enum GapDataTypes : 8 {
   COMPLETE_LOCAL_NAME = 0x09,
   TX_POWER_LEVEL = 0x0A,
   CLASS_OF_DEVICE = 0x0D,
+}
+
+struct GapData {
+  _size_(data) : 8, // Including one byte for data_type
+  data_type : GapDataType,
+  data : 8[+1*8],
 }
 
 // HCI ACL Packets
@@ -1771,12 +1778,14 @@ packet ReadExtendedInquiryResponse : CommandPacket (op_code = READ_EXTENDED_INQU
 packet ReadExtendedInquiryResponseComplete : CommandComplete (command_op_code = READ_EXTENDED_INQUIRY_RESPONSE) {
   status : ErrorCode,
   fec_required : FecRequired,
-  _payload_,
+  extended_inquiry_response : GapData[],
 }
 
 packet WriteExtendedInquiryResponse : CommandPacket (op_code = WRITE_EXTENDED_INQUIRY_RESPONSE) {
   fec_required : FecRequired,
-  _payload_,
+  extended_inquiry_response : GapData[],
+  //_payload_, // Zero padding to be 240 octets
+  // Should it be GapData[240] ?
 }
 
 packet WriteExtendedInquiryResponseComplete : CommandComplete (command_op_code = WRITE_EXTENDED_INQUIRY_RESPONSE) {
@@ -2229,7 +2238,9 @@ packet LeReadAdvertisingChannelTxPowerComplete : CommandComplete (command_op_cod
 }
 
 packet LeSetAdvertisingData : LeAdvertisingCommand (op_code = LE_SET_ADVERTISING_DATA) {
-  _payload_,
+  _size_(advertising_data) : 8,
+  advertising_data : GapData[],
+  _payload_, // Zero padding to 31 bytes of advertising_data
 }
 
 packet LeSetAdvertisingDataComplete : CommandComplete (command_op_code = LE_SET_ADVERTISING_DATA) {
@@ -2237,7 +2248,9 @@ packet LeSetAdvertisingDataComplete : CommandComplete (command_op_code = LE_SET_
 }
 
 packet LeSetScanResponseData : LeAdvertisingCommand (op_code = LE_SET_SCAN_RESPONSE_DATA) {
-  _payload_,
+  _size_(advertising_data) : 8,
+  advertising_data : GapData[],
+  _payload_, // Zero padding to 31 bytes of advertising_data
 }
 
 packet LeSetScanResponseDataComplete : CommandComplete (command_op_code = LE_SET_SCAN_RESPONSE_DATA) {
@@ -2996,7 +3009,7 @@ packet ExtendedInquiryResult : EventPacket (event_code = EXTENDED_INQUIRY_RESULT
   clock_offset : 15,
   _reserved_ : 1,
   rssi : 8,
-  _payload_,
+  extended_inquiry_response : GapData[],
 }
 
 packet EncryptionKeyRefreshComplete : EventPacket (event_code = ENCRYPTION_KEY_REFRESH_COMPLETE){
@@ -3097,8 +3110,18 @@ packet LeConnectionComplete : LeMetaEvent (subevent_code = CONNECTION_COMPLETE) 
   master_clock_accuracy : MasterClockAccuracy,
 }
 
+struct LeAdvertisingReport {
+  event_type : AdvertisingEventType,
+  address_type : AddressType,
+  address : Address,
+  _size_(advertising_data) : 8,
+  advertising_data : GapData[],
+  rssi : 8,
+}
+
 packet LeAdvertisingReport : LeMetaEvent (subevent_code = ADVERTISING_REPORT) {
-  _payload_,
+  _count_(le_advertising_reports) : 8,
+  le_advertising_reports : LeAdvertisingReport[],
 }
 
 packet LeConnectionUpdateComplete : LeMetaEvent (subevent_code = CONNECTION_UPDATE_COMPLETE) {
