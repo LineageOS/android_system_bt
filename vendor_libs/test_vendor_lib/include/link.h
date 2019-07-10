@@ -40,6 +40,7 @@ class Link {
     LE_SCAN_RESPONSE,
     PAGE,
     PAGE_RESPONSE,
+    PAGE_REJECT,
     RESPONSE,
     SCO,
   };

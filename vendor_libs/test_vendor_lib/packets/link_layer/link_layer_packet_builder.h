@@ -30,6 +30,7 @@
 #include "packets/link_layer/io_capability_negative_response_builder.h"
 #include "packets/link_layer/le_advertisement_builder.h"
 #include "packets/link_layer/page_builder.h"
+#include "packets/link_layer/page_reject_builder.h"
 #include "packets/link_layer/page_response_builder.h"
 #include "packets/link_layer/response_builder.h"
 #include "packets/link_layer/view_forwarder_builder.h"
@@ -72,6 +73,8 @@ class LinkLayerPacketBuilder : PacketBuilder<true> {
       std::unique_ptr<LeAdvertisementBuilder> scan_response, const Address& source, const Address& dest);
   static std::shared_ptr<LinkLayerPacketBuilder> WrapPage(std::unique_ptr<PageBuilder> page, const Address& source,
                                                           const Address& dest);
+  static std::shared_ptr<LinkLayerPacketBuilder> WrapPageReject(std::unique_ptr<PageRejectBuilder> page_response,
+                                                                const Address& source, const Address& dest);
   static std::shared_ptr<LinkLayerPacketBuilder> WrapPageResponse(std::unique_ptr<PageResponseBuilder> page_response,
                                                                   const Address& source, const Address& dest);
   static std::shared_ptr<LinkLayerPacketBuilder> WrapResponse(const std::unique_ptr<ResponseBuilder> response,
