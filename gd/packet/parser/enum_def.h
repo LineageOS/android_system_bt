@@ -36,10 +36,6 @@ class EnumDef : public TypeDef {
 
   virtual Type GetDefinitionType() const override;
 
-  virtual void GenInclude(std::ostream& s) const override;
-
-  virtual void GenUsing(std::ostream& s) const override;
-
   // data
   std::map<uint32_t, std::string> constants_;
   std::set<std::string> entries_;
