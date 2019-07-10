@@ -54,6 +54,10 @@ class PacketField : public Loggable {
   // bytes for dynamically sized arrays.
   virtual Size GetSize() const = 0;
 
+  // Returns the size of the field in bits given the information in the builder.
+  // For most field types, this will be the same as GetSize();
+  virtual Size GetBuilderSize() const;
+
   // Get the type of the field to be used in the builders constructor and
   // variables.
   virtual std::string GetType() const = 0;
