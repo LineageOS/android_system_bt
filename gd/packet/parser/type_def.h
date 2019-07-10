@@ -38,6 +38,7 @@ class TypeDef {
     ENUM,
     CHECKSUM,
     CUSTOM,
+    PACKET,
   };
 
   virtual Type GetDefinitionType() const = 0;
