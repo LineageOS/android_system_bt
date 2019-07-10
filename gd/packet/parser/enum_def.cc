@@ -45,7 +45,3 @@ bool EnumDef::HasEntry(std::string name) const {
 TypeDef::Type EnumDef::GetDefinitionType() const {
   return TypeDef::Type::ENUM;
 }
-
-void EnumDef::GenInclude(std::ostream&) const {}
-
-void EnumDef::GenUsing(std::ostream&) const {}
