@@ -28,14 +28,6 @@ TypeDef::Type ChecksumDef::GetDefinitionType() const {
   return TypeDef::Type::CHECKSUM;
 }
 
-void ChecksumDef::GenInclude(std::ostream& s) const {
-  CustomFieldDef::GenInclude(s);
-}
-
-void ChecksumDef::GenUsing(std::ostream& s) const {
-  CustomFieldDef::GenUsing(s);
-}
-
 void ChecksumDef::GenChecksumCheck(std::ostream& s) const {
   s << "static_assert(ChecksumTypeChecker<" << name_ << "," << util::GetTypeForSize(size_) << ">::value, \"";
   s << name_ << " is not a valid checksum type. Please see README for more details.\");";

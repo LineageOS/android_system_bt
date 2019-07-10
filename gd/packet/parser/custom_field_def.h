@@ -30,9 +30,9 @@ class CustomFieldDef : public TypeDef {
 
   virtual Type GetDefinitionType() const override;
 
-  virtual void GenInclude(std::ostream& s) const;
+  void GenInclude(std::ostream& s) const;
 
-  virtual void GenUsing(std::ostream& s) const;
+  void GenUsing(std::ostream& s) const;
 
   const std::string include_;
 };
