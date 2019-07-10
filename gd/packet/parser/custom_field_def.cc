@@ -18,6 +18,8 @@
 
 #include "util.h"
 
+CustomFieldDef::CustomFieldDef(std::string name, std::string include) : TypeDef(name), include_(include) {}
+
 CustomFieldDef::CustomFieldDef(std::string name, std::string include, int size)
     : TypeDef(name, size), include_(include) {
   if (size % 8 != 0) {
@@ -49,4 +51,9 @@ void CustomFieldDef::GenUsing(std::ostream& s) const {
     }
   }
   s << GetTypeName() << ";";
+}
+
+void CustomFieldDef::GenCustomFieldCheck(std::ostream& s) const {
+  s << "static_assert(CustomTypeChecker<" << name_ << ">::value, \"";
+  s << name_ << " is not a valid custom field type. Please see README for more details.\");";
 }

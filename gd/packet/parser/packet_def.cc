@@ -118,7 +118,7 @@ void PacketDef::GenSerialize(std::ostream& s) const {
       const auto& field_name = ((SizeField*)field)->GetSizedFieldName();
       const auto& sized_field = fields_.GetField(field_name);
       if (sized_field == nullptr) {
-        ERROR(field) << __func__ << "Can't find sized field named " << field_name;
+        ERROR(field) << __func__ << ": Can't find sized field named " << field_name;
       }
       if (sized_field->GetFieldType() == PacketField::Type::PAYLOAD) {
         s << "size_t payload_bytes = GetPayloadSize();";
@@ -131,20 +131,22 @@ void PacketDef::GenSerialize(std::ostream& s) const {
         s << "insert(static_cast<" << field->GetType() << ">(payload_bytes), i," << field->GetSize().bits() << ");";
       } else {
         if (sized_field->GetFieldType() != PacketField::Type::ARRAY) {
-          ERROR(field) << __func__ << "Unhandled sized field type for " << field_name;
+          ERROR(field) << __func__ << ": Unhandled sized field type for " << field_name;
         }
         const auto& array_name = field_name + "_";
         const ArrayField* array = (ArrayField*)sized_field;
+        s << "size_t " << array_name + "bytes =  0;";
         if (array->element_size_ == -1) {
-          ERROR(field) << __func__ << "Unhandled dynamically sized field type for " << field_name;
+          s << "for (auto elem : " << array_name << ") {";
+          s << array_name + "bytes += elem.size(); }";
         } else {
-          s << "size_t " << array_name + "bytes = ";
+          s << array_name + "bytes = ";
           s << array_name << ".size() * (" << array->element_size_ << " / 8);";
-          s << "ASSERT(" << array_name + "bytes < (1 << " << field->GetSize().bits() << "));";
-          s << "insert(" << array_name << "bytes";
-          s << array->GetSizeModifier() << ", i, ";
-          s << field->GetSize().bits() << ");";
         }
+        s << "ASSERT(" << array_name + "bytes < (1 << " << field->GetSize().bits() << "));";
+        s << "insert(" << array_name << "bytes";
+        s << array->GetSizeModifier() << ", i, ";
+        s << field->GetSize().bits() << ");";
       }
     } else if (field->GetFieldType() == PacketField::Type::CHECKSUM_START) {
       const auto& field_name = ((ChecksumStartField*)field)->GetStartedFieldName();
@@ -200,31 +202,41 @@ void PacketDef::GenBuilderSize(std::ostream& s) const {
 
   s << "protected:";
   s << "size_t BitsOfHeader() const {";
-  s << "return ";
+  s << "return 0";
 
   if (parent_ != nullptr) {
-    s << parent_->name_ << "Builder::BitsOfHeader() + ";
+    s << " + " << parent_->name_ << "Builder::BitsOfHeader() ";
   }
 
-  size_t header_bits = 0;
   for (const auto& field : header_fields) {
-    header_bits += field->GetSize().bits();
+    Size field_size = field->GetBuilderSize();
+    if (field_size.has_bits()) {
+      s << " + " << field_size.bits();
+    }
+    if (field_size.has_dynamic()) {
+      s << " + " << field_size.dynamic_string();
+    }
   }
-  s << header_bits << ";";
+  s << ";";
 
   s << "}\n\n";
 
   s << "size_t BitsOfFooter() const {";
-  s << "return ";
-  size_t footer_bits = 0;
+  s << "return 0";
   for (const auto& field : footer_fields) {
-    footer_bits += field->GetSize().bits();
+    Size field_size = field->GetBuilderSize();
+    if (field_size.has_bits()) {
+      s << " + " << field_size.bits();
+    }
+    if (field_size.has_dynamic()) {
+      s << " + " << field_size.dynamic_string();
+    }
   }
 
   if (parent_ != nullptr) {
-    s << parent_->name_ << "Builder::BitsOfFooter() + ";
+    s << " + " << parent_->name_ << "Builder::BitsOfFooter()";
   }
-  s << footer_bits << ";";
+  s << ";";
   s << "}\n\n";
 
   if (fields_.HasPayload()) {

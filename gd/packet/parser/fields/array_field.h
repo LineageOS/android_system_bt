@@ -37,6 +37,8 @@ class ArrayField : public PacketField {
 
   virtual Size GetSize() const override;
 
+  virtual Size GetBuilderSize() const override;
+
   virtual std::string GetType() const override;
 
   virtual void GenGetter(std::ostream& s, Size start_offset, Size end_offset) const override;
@@ -63,7 +65,7 @@ class ArrayField : public PacketField {
 
   const std::string name_;
 
-  const int element_size_{-1};  // units is bits
+  const int element_size_{-1};  // in bits
   const TypeDef* type_def_{nullptr};
 
   // Fixed size array or dynamic size, size is always in bytes, unless it is count.
