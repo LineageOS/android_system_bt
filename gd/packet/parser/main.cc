@@ -116,7 +116,10 @@ bool parse_one_file(std::filesystem::path input_file, std::filesystem::path incl
   out_file << "\n\n";
 
   for (const auto& c : decls.type_defs_queue_) {
-    c.second->GenInclude(out_file);
+    if (c.second->GetDefinitionType() == TypeDef::Type::CUSTOM ||
+        c.second->GetDefinitionType() == TypeDef::Type::CHECKSUM) {
+      ((CustomFieldDef*)c.second)->GenInclude(out_file);
+    }
   }
   out_file << "\n\n";
 
@@ -126,7 +129,10 @@ bool parse_one_file(std::filesystem::path input_file, std::filesystem::path incl
   out_file << "\n\n";
 
   for (const auto& c : decls.type_defs_queue_) {
-    c.second->GenUsing(out_file);
+    if (c.second->GetDefinitionType() == TypeDef::Type::CUSTOM ||
+        c.second->GetDefinitionType() == TypeDef::Type::CHECKSUM) {
+      ((CustomFieldDef*)c.second)->GenUsing(out_file);
+    }
   }
   out_file << "\n\n";
 
