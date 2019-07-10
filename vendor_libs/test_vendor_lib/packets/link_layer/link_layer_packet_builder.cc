@@ -120,6 +120,12 @@ std::shared_ptr<LinkLayerPacketBuilder> LinkLayerPacketBuilder::WrapPage(std::un
       new LinkLayerPacketBuilder(Link::PacketType::PAGE, std::move(page), source, dest));
 }
 
+std::shared_ptr<LinkLayerPacketBuilder> LinkLayerPacketBuilder::WrapPageReject(
+    std::unique_ptr<PageRejectBuilder> page_reject, const Address& source, const Address& dest) {
+  return std::shared_ptr<LinkLayerPacketBuilder>(
+      new LinkLayerPacketBuilder(Link::PacketType::PAGE_REJECT, std::move(page_reject), source, dest));
+}
+
 std::shared_ptr<LinkLayerPacketBuilder> LinkLayerPacketBuilder::WrapPageResponse(
     std::unique_ptr<PageResponseBuilder> page_response, const Address& source, const Address& dest) {
   return std::shared_ptr<LinkLayerPacketBuilder>(
