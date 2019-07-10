@@ -71,6 +71,7 @@ class GdDeviceBase:
             stderr=self.backing_process_logs)
         tester_signal_socket.accept()
         tester_signal_socket.close()
+        os.unlink(socket_address)
 
         self.grpc_root_server_channel = grpc.insecure_channel("localhost:" + grpc_root_server_port)
         self.grpc_port = int(grpc_port)
@@ -83,8 +84,8 @@ class GdDeviceBase:
         backing_process_return_code = self.backing_process.wait()
         self.backing_process_logs.close()
         if backing_process_return_code != 0:
-            logging.error("backing process stopped with code: %d" %
-                          backing_process_return_code)
+            logging.error("backing process %s stopped with code: %d" %
+                          (self.label, backing_process_return_code))
             return False
 
     def wait_channel_ready(self):

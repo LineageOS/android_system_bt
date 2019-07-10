@@ -21,6 +21,7 @@
 #include "cert/rootservice.grpc.pb.h"
 #include "grpc/grpc_module.h"
 #include "hal/cert/cert.h"
+#include "hci/cert/cert.h"
 #include "os/log.h"
 #include "os/thread.h"
 #include "stack_manager.h"
@@ -49,6 +50,9 @@ class RootCertService : public ::bluetooth::cert::RootCert::Service {
     switch (module_to_test) {
       case BluetoothModule::HAL:
         modules.add<::bluetooth::hal::cert::HalCertModule>();
+        break;
+      case BluetoothModule::HCI:
+        modules.add<::bluetooth::hci::cert::AclManagerCertModule>();
         break;
       default:
         return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "invalid module under test");
