@@ -38,15 +38,12 @@ class TypeDef {
     ENUM,
     CHECKSUM,
     CUSTOM,
+    PACKET,
   };
 
   virtual Type GetDefinitionType() const = 0;
 
   virtual PacketField* GetNewField(const std::string& name, ParseLocation loc) const = 0;
-
-  virtual void GenInclude(std::ostream& s) const = 0;
-
-  virtual void GenUsing(std::ostream& s) const = 0;
 
   const std::string name_;
   const int size_{-1};

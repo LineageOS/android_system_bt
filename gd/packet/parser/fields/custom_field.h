@@ -29,6 +29,8 @@ class CustomField : public PacketField {
 
   virtual Size GetSize() const override;
 
+  virtual Size GetBuilderSize() const override;
+
   virtual std::string GetType() const override;
 
   virtual void GenGetter(std::ostream& s, Size start_offset, Size end_offset) const override;

@@ -198,6 +198,7 @@ class LinkLayerController {
   void IncomingLeScanPacket(packets::LinkLayerPacketView packet);
   void IncomingLeScanResponsePacket(packets::LinkLayerPacketView packet);
   void IncomingPagePacket(packets::LinkLayerPacketView packet);
+  void IncomingPageRejectPacket(packets::LinkLayerPacketView packet);
   void IncomingPageResponsePacket(packets::LinkLayerPacketView packet);
   void IncomingResponsePacket(packets::LinkLayerPacketView packet);
 

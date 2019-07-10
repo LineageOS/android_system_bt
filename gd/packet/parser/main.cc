@@ -110,13 +110,17 @@ bool parse_one_file(std::filesystem::path input_file, std::filesystem::path incl
   out_file << "#include \"os/log.h\"\n";
   out_file << "#include \"packet/base_packet_builder.h\"\n";
   out_file << "#include \"packet/bit_inserter.h\"\n";
+  out_file << "#include \"packet/custom_type_checker.h\"\n";
   out_file << "#include \"packet/packet_builder.h\"\n";
   out_file << "#include \"packet/packet_view.h\"\n";
   out_file << "#include \"packet/parser/checksum_type_checker.h\"\n";
   out_file << "\n\n";
 
   for (const auto& c : decls.type_defs_queue_) {
-    c.second->GenInclude(out_file);
+    if (c.second->GetDefinitionType() == TypeDef::Type::CUSTOM ||
+        c.second->GetDefinitionType() == TypeDef::Type::CHECKSUM) {
+      ((CustomFieldDef*)c.second)->GenInclude(out_file);
+    }
   }
   out_file << "\n\n";
 
@@ -126,12 +130,16 @@ bool parse_one_file(std::filesystem::path input_file, std::filesystem::path incl
   out_file << "\n\n";
 
   for (const auto& c : decls.type_defs_queue_) {
-    c.second->GenUsing(out_file);
+    if (c.second->GetDefinitionType() == TypeDef::Type::CUSTOM ||
+        c.second->GetDefinitionType() == TypeDef::Type::CHECKSUM) {
+      ((CustomFieldDef*)c.second)->GenUsing(out_file);
+    }
   }
   out_file << "\n\n";
 
   out_file << "using ::bluetooth::packet::BasePacketBuilder;";
   out_file << "using ::bluetooth::packet::BitInserter;";
+  out_file << "using ::bluetooth::packet::CustomTypeChecker;";
   out_file << "using ::bluetooth::packet::kLittleEndian;";
   out_file << "using ::bluetooth::packet::PacketBuilder;";
   out_file << "using ::bluetooth::packet::PacketView;";
@@ -156,8 +164,15 @@ bool parse_one_file(std::filesystem::path input_file, std::filesystem::path incl
     if (ch.second->GetDefinitionType() == TypeDef::Type::CHECKSUM) {
       ((ChecksumDef*)ch.second)->GenChecksumCheck(out_file);
     }
-    out_file << "\n/* Done ChecksumChecks */\n";
   }
+  out_file << "\n/* Done ChecksumChecks */\n";
+
+  for (const auto& c : decls.type_defs_queue_) {
+    if (c.second->GetDefinitionType() == TypeDef::Type::CUSTOM && c.second->size_ == -1 /* Variable Size */) {
+      ((CustomFieldDef*)c.second)->GenCustomFieldCheck(out_file);
+    }
+  }
+  out_file << "\n";
 
   for (size_t i = 0; i < decls.packet_defs_queue_.size(); i++) {
     decls.packet_defs_queue_[i].second.SetEndianness(decls.is_little_endian);
