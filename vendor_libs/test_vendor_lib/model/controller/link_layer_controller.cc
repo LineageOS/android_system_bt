@@ -34,6 +34,7 @@
 #include "packets/link_layer/inquiry_view.h"
 #include "packets/link_layer/io_capability_view.h"
 #include "packets/link_layer/le_advertisement_view.h"
+#include "packets/link_layer/page_reject_view.h"
 #include "packets/link_layer/page_response_view.h"
 #include "packets/link_layer/page_view.h"
 #include "packets/link_layer/response_view.h"
@@ -177,6 +178,9 @@ void LinkLayerController::IncomingPacket(LinkLayerPacketView incoming) {
       if (page_scans_enabled_) {
         IncomingPagePacket(incoming);
       }
+      break;
+    case Link::PacketType::PAGE_REJECT:
+      IncomingPageRejectPacket(incoming);
       break;
     case Link::PacketType::PAGE_RESPONSE:
       IncomingPageResponsePacket(incoming);
@@ -568,6 +572,15 @@ void LinkLayerController::IncomingPagePacket(LinkLayerPacketView incoming) {
                   ->ToVector());
 }
 
+void LinkLayerController::IncomingPageRejectPacket(LinkLayerPacketView incoming) {
+  LOG_INFO(LOG_TAG, "%s: %s", __func__, incoming.GetSourceAddress().ToString().c_str());
+  PageRejectView reject = PageRejectView::GetPageReject(incoming);
+  LOG_INFO(LOG_TAG, "%s: Sending CreateConnectionComplete", __func__);
+  send_event_(EventPacketBuilder::CreateConnectionCompleteEvent(static_cast<hci::Status>(reject.GetReason()), 0x0eff,
+                                                                incoming.GetSourceAddress(), hci::LinkType::ACL, false)
+                  ->ToVector());
+}
+
 void LinkLayerController::IncomingPageResponsePacket(LinkLayerPacketView incoming) {
   LOG_INFO(LOG_TAG, "%s: %s", __func__, incoming.GetSourceAddress().ToString().c_str());
   uint16_t handle = classic_connections_.CreateConnection(incoming.GetSourceAddress());
@@ -947,6 +960,11 @@ hci::Status LinkLayerController::RejectConnectionRequest(const Address& addr, ui
 }
 
 void LinkLayerController::RejectSlaveConnection(const Address& addr, uint8_t reason) {
+  std::shared_ptr<LinkLayerPacketBuilder> to_send = LinkLayerPacketBuilder::WrapPageReject(
+      PageRejectBuilder::Create(reason), properties_.GetAddress(), addr);
+  LOG_INFO(LOG_TAG, "%s sending page reject to %s", __func__, addr.ToString().c_str());
+  SendLinkLayerPacket(to_send);
+
   CHECK(reason >= 0x0d && reason <= 0x0f);
   send_event_(EventPacketBuilder::CreateConnectionCompleteEvent(static_cast<hci::Status>(reason), 0xeff, addr,
                                                                 hci::LinkType::ACL, false)
