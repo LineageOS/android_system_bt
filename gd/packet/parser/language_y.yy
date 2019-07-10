@@ -193,6 +193,12 @@ custom_field_definition
       delete $2;
       delete $5;
     }
+  | CUSTOM_FIELD IDENTIFIER STRING
+    {
+      decls->AddTypeDef(*$2, new CustomFieldDef(*$2, *$3));
+      delete $2;
+      delete $3;
+    }
 
 packet_definition
   : PACKET IDENTIFIER '{' field_definition_list '}'  /* Packet with no parent */
