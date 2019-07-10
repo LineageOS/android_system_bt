@@ -106,9 +106,9 @@ class EnqueueBuffer {
  public:
   EnqueueBuffer(IQueueEnqueue<T>* queue) : queue_(queue) {}
 
-  void Enqueue(T t, os::Handler* handler) {
+  void Enqueue(std::unique_ptr<T> t, os::Handler* handler) {
     std::lock_guard<std::mutex> lock(mutex_);
-    buffer_.push(t);
+    buffer_.push(std::move(t));
     if (buffer_.size() == 1) {
       queue_->RegisterEnqueue(handler, common::Bind(&EnqueueBuffer<T>::enqueue_callback, common::Unretained(this)));
     }
@@ -118,7 +118,7 @@ class EnqueueBuffer {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!buffer_.empty()) {
       queue_->UnregisterEnqueue();
-      std::queue<T> empty;
+      std::queue<std::unique_ptr<T>> empty;
       std::swap(buffer_, empty);
     }
   }
@@ -126,17 +126,17 @@ class EnqueueBuffer {
  private:
   std::unique_ptr<T> enqueue_callback() {
     std::lock_guard<std::mutex> lock(mutex_);
-    auto t = std::move(buffer_.front());
+    std::unique_ptr<T> enqueued_t = std::move(buffer_.front());
     buffer_.pop();
     if (buffer_.empty()) {
       queue_->UnregisterEnqueue();
     }
-    return std::make_unique<T>(t);
+    return enqueued_t;
   }
 
   mutable std::mutex mutex_;
   IQueueEnqueue<T>* queue_;
-  std::queue<T> buffer_;
+  std::queue<std::unique_ptr<T>> buffer_;
 };
 
 #ifdef OS_LINUX_GENERIC
