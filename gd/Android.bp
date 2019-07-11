@@ -140,6 +140,7 @@ cc_binary {
         "facade/grpc_root_server.cc",
         "grpc/grpc_module.cc",
         ":BluetoothFacade_hci_hal",
+        ":BluetoothFacade_hci_layer",
     ],
     generated_headers: [
         "BluetoothGeneratedPackets_h",
@@ -183,6 +184,7 @@ cc_binary {
         "cert/grpc_root_server.cc",
         "grpc/grpc_module.cc",
         ":BluetoothCertSource_hci_hal",
+        ":BluetoothCertSource_hci_layer",
     ],
     generated_headers: [
         "BluetoothGeneratedPackets_h",
@@ -331,6 +333,7 @@ filegroup {
         "facade/common.proto",
         "facade/rootservice.proto",
         "hal/facade.proto",
+        "hci/facade.proto",
     ],
 }
 
@@ -351,6 +354,8 @@ genrule {
         "facade/rootservice.pb.h",
         "hal/facade.grpc.pb.h",
         "hal/facade.pb.h",
+        "hci/facade.grpc.pb.h",
+        "hci/facade.pb.h",
     ],
 }
 
@@ -371,6 +376,8 @@ genrule {
         "facade/rootservice.pb.cc",
         "hal/facade.grpc.pb.cc",
         "hal/facade.pb.cc",
+        "hci/facade.grpc.pb.cc",
+        "hci/facade.pb.cc",
     ],
 }
 
@@ -383,7 +390,9 @@ genrule {
     cmd: "$(location aprotoc) -Isystem/bt/gd -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-python-plugin) $(in) --grpc_out=$(genDir) --python_out=$(genDir); " +
         "touch $(genDir)/facade/__init__.py; " +
         "touch $(genDir)/hal/__init__.py; " +
-        "touch $(genDir)/hal/cert/__init__.py; ",
+        "touch $(genDir)/hal/cert/__init__.py; " +
+        "touch $(genDir)/hci/__init__.py; " +
+        "touch $(genDir)/hci/cert/__init__.py; ",
     srcs: [
         ":BluetoothFacadeProto",
         ":BluetoothCertStackProto",
@@ -399,9 +408,15 @@ genrule {
         "hal/__init__.py",
         "hal/facade_pb2_grpc.py",
         "hal/facade_pb2.py",
+        "hci/__init__.py",
+        "hci/facade_pb2_grpc.py",
+        "hci/facade_pb2.py",
         "hal/cert/__init__.py",
         "hal/cert/api_pb2_grpc.py",
         "hal/cert/api_pb2.py",
+        "hci/cert/__init__.py",
+        "hci/cert/api_pb2_grpc.py",
+        "hci/cert/api_pb2.py",
     ],
 }
 
@@ -410,6 +425,7 @@ filegroup {
     srcs: [
         "cert/rootservice.proto",
         "hal/cert/api.proto",
+        "hci/cert/api.proto",
     ],
 }
 
@@ -431,6 +447,8 @@ genrule {
         "facade/common.pb.h",
         "hal/cert/api.grpc.pb.h",
         "hal/cert/api.pb.h",
+        "hci/cert/api.grpc.pb.h",
+        "hci/cert/api.pb.h",
     ],
 }
 
@@ -452,5 +470,7 @@ genrule {
         "facade/common.pb.cc",
         "hal/cert/api.grpc.pb.cc",
         "hal/cert/api.pb.cc",
+        "hci/cert/api.grpc.pb.cc",
+        "hci/cert/api.pb.cc",
     ],
 }

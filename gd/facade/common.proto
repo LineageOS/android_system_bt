@@ -19,3 +19,7 @@ message EventStreamRequest {
   EventFetchMode fetch_mode = 2;
   uint32 timeout_ms = 3;
 }
+
+message BluetoothAddress {
+  bytes address = 1;
+}

@@ -204,7 +204,7 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
     auto packet =
         packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(std::move(data_bytes)));
     AclPacketView acl = AclPacketView::Create(packet);
-    incoming_acl_packet_buffer_.Enqueue(std::move(acl), module_.GetHandler());
+    incoming_acl_packet_buffer_.Enqueue(std::make_unique<AclPacketView>(acl), module_.GetHandler());
   }
 
   void scoDataReceived(hal::HciPacket data_bytes) override {

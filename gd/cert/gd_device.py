@@ -20,6 +20,7 @@ from gd_device_base import replace_vars
 from cert.event_stream import EventStream
 from facade import rootservice_pb2_grpc as facade_rootservice_pb2_grpc
 from hal import facade_pb2_grpc as hal_facade_pb2_grpc
+from hci import facade_pb2_grpc as hci_facade_pb2_grpc
 
 ACTS_CONTROLLER_CONFIG_NAME = "GdDevice"
 ACTS_CONTROLLER_REFERENCE_NAME = "gd_devices"
@@ -57,8 +58,17 @@ def get_instances_with_configs(configs):
 class GdDevice(GdDeviceBase):
     def __init__(self, grpc_port, grpc_root_server_port, cmd, label):
         super().__init__(grpc_port, grpc_root_server_port, cmd, label, ACTS_CONTROLLER_CONFIG_NAME)
+
+        # Facade stubs
         self.rootservice = facade_rootservice_pb2_grpc.RootFacadeStub(self.grpc_root_server_channel)
         self.hal = hal_facade_pb2_grpc.HciHalFacadeStub(self.grpc_channel)
+        self.hci = hci_facade_pb2_grpc.AclManagerFacadeStub(self.grpc_channel)
+
+        # Event streams
         self.hal.hci_event_stream = EventStream(self.hal.FetchHciEvent)
         self.hal.hci_acl_stream = EventStream(self.hal.FetchHciAcl)
         self.hal.hci_sco_stream = EventStream(self.hal.FetchHciSco)
+        self.hci.connection_complete_stream = EventStream(self.hci.FetchConnectionComplete)
+        self.hci.disconnection_stream = EventStream(self.hci.FetchDisconnection)
+        self.hci.connection_failed_stream = EventStream(self.hci.FetchConnectionFailed)
+        self.hci.acl_stream = EventStream(self.hci.FetchAclData)

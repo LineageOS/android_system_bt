@@ -21,6 +21,7 @@
 #include "facade/rootservice.grpc.pb.h"
 #include "grpc/grpc_module.h"
 #include "hal/facade.h"
+#include "hci/facade.h"
 #include "os/log.h"
 #include "os/thread.h"
 #include "stack_manager.h"
@@ -49,6 +50,9 @@ class RootFacadeService : public ::bluetooth::facade::RootFacade::Service {
     switch (module_under_test) {
       case BluetoothModule::HAL:
         modules.add<::bluetooth::hal::HciHalFacadeModule>();
+        break;
+      case BluetoothModule::HCI:
+        modules.add<::bluetooth::hci::AclManagerFacadeModule>();
         break;
       default:
         return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "invalid module under test");

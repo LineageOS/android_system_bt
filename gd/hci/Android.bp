@@ -16,3 +16,17 @@ filegroup {
         "hci_layer_test.cc",
     ],
 }
+
+filegroup {
+    name: "BluetoothFacade_hci_layer",
+    srcs: [
+        "facade.cc",
+    ],
+}
+
+filegroup {
+    name: "BluetoothCertSource_hci_layer",
+    srcs: [
+        "cert/cert.cc",
+    ],
+}
