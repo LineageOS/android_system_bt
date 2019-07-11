@@ -265,7 +265,7 @@ extern uint8_t* sdpu_extract_attr_seq(uint8_t* p, uint16_t param_len,
 extern uint8_t* sdpu_extract_uid_seq(uint8_t* p, uint16_t param_len,
                                      tSDP_UUID_SEQ* p_seq);
 
-extern uint8_t* sdpu_get_len_from_type(uint8_t* p, uint8_t type,
+extern uint8_t* sdpu_get_len_from_type(uint8_t* p, uint8_t* p_end, uint8_t type,
                                        uint32_t* p_len);
 extern bool sdpu_is_base_uuid(uint8_t* p_uuid);
 extern bool sdpu_compare_uuid_arrays(uint8_t* p_uuid1, uint32_t len1,
