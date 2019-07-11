@@ -47,6 +47,9 @@ class SimpleHciTest(GdBaseTestClass):
             )
         )
 
+        self.device_under_test.wait_channel_ready()
+        self.cert_device.wait_channel_ready()
+
         self.device_under_test.hci.SetPageScanMode(
             hci_facade_pb2.PageScanMode(enabled=True)
         )
