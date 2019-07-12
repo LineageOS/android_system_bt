@@ -23,23 +23,20 @@
 #include <vector>
 
 #include "os/log.h"
-#include "packet/base_packet_builder.h"
+#include "packet/base_struct.h"
 #include "packet/bit_inserter.h"
 #include "packet/endian_inserter.h"
 
 namespace bluetooth {
 namespace packet {
 
-// Abstract base class that is subclassed to build specifc packets.
+// Abstract base class that is subclassed to build specifc structs.
 // The template parameter little_endian controls the generation of insert().
 template <bool little_endian>
-class PacketBuilder : public BasePacketBuilder, protected EndianInserter<little_endian> {
+class PacketStruct : public BaseStruct, protected EndianInserter<little_endian> {
  public:
-  PacketBuilder() = default;
-  virtual ~PacketBuilder() = default;
-
-  // Classes which need fragmentation should define a function like this:
-  // std::forward_list<DerivedBuilder>& Fragment(size_t max_size);
+  PacketStruct() = default;
+  virtual ~PacketStruct() = default;
 };
 
 }  // namespace packet
