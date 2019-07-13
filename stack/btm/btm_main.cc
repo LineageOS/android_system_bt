@@ -83,6 +83,16 @@ void btm_free(void) {
   fixed_queue_free(btm_cb.sec_pending_q, NULL);
   btm_cb.sec_pending_q = NULL;
 
+  list_node_t* end = list_end(btm_cb.sec_dev_rec);
+  list_node_t* node = list_begin(btm_cb.sec_dev_rec);
+  while (node != end) {
+    tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(list_node(node));
+
+    // we do list_remove in, must grab next before removing
+    node = list_next(node);
+    wipe_secrets_and_remove(p_dev_rec);
+  }
+
   list_free(btm_cb.sec_dev_rec);
   btm_cb.sec_dev_rec = NULL;
 

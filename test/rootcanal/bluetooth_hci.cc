@@ -19,6 +19,7 @@
 #include "bluetooth_hci.h"
 
 #include <base/logging.h>
+#include <cutils/properties.h>
 #include <string.h>
 #include <utils/Log.h>
 
@@ -43,6 +44,15 @@ using test_vendor_lib::EventPacket;
 using test_vendor_lib::ScoPacket;
 using test_vendor_lib::TaskCallback;
 using test_vendor_lib::TestChannelTransport;
+
+namespace {
+
+bool BtTestConsoleEnabled() {
+  // Assume enabled by default.
+  return property_get_bool("bt.rootcanal_test_console", true);
+}
+
+}  // namespace
 
 class BluetoothDeathRecipient : public hidl_death_recipient {
  public:
@@ -130,7 +140,9 @@ Return<void> BluetoothHci::initialize(const sp<IBluetoothHciCallbacks>& cb) {
   controller_.RegisterTaskCancel(
       [this](AsyncTaskId task) { async_manager_.CancelAsyncTask(task); });
 
-  SetUpTestChannel(6111);
+  if (BtTestConsoleEnabled()) {
+    SetUpTestChannel(6111);
+  }
 
   unlink_cb_ = [cb](sp<BluetoothDeathRecipient>& death_recipient) {
     if (death_recipient->getHasDied())
