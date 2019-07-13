@@ -52,6 +52,8 @@ class SimpleHalTest(GdBaseTestClass):
         self.device_under_test.hal.SendHciResetCommand(empty_pb2.Empty())
         self.cert_device.hal.SendHciResetCommand(empty_pb2.Empty())
 
+        self.hci_event_stream = self.device_under_test.hal.hci_event_stream
+
     def teardown_test(self):
         self.device_under_test.rootservice.StopStack(
             facade_rootservice_pb2.StopStackRequest()
@@ -61,11 +63,11 @@ class SimpleHalTest(GdBaseTestClass):
         )
 
     def test_none_event(self):
-        self.device_under_test.hal.hci_event_stream.clear_event_buffer()
+        self.hci_event_stream.clear_event_buffer()
 
-        self.device_under_test.hal.hci_event_stream.subscribe()
-        self.device_under_test.hal.hci_event_stream.assert_none()
-        self.device_under_test.hal.hci_event_stream.unsubscribe()
+        self.hci_event_stream.subscribe()
+        self.hci_event_stream.assert_none()
+        self.hci_event_stream.unsubscribe()
 
     def test_example(self):
         response = self.device_under_test.hal.SetLoopbackMode(
@@ -77,7 +79,7 @@ class SimpleHalTest(GdBaseTestClass):
             hal_facade_pb2.LoopbackModeSettings(enable=True)
         )
 
-        self.device_under_test.hal.hci_event_stream.subscribe()
+        self.hci_event_stream.subscribe()
 
         self.device_under_test.hal.SendHciCommand(
             hal_facade_pb2.HciCommandPacket(
@@ -85,13 +87,13 @@ class SimpleHalTest(GdBaseTestClass):
             )
         )
 
-        self.device_under_test.hal.hci_event_stream.assert_event_occurs(
+        self.hci_event_stream.assert_event_occurs(
             lambda packet: packet.payload == b'\x19\x08\x01\x04\x053\x8b\x9e0\x01'
         )
-        self.device_under_test.hal.hci_event_stream.unsubscribe()
+        self.hci_event_stream.unsubscribe()
 
     def test_inquiry_from_dut(self):
-        self.device_under_test.hal.hci_event_stream.subscribe()
+        self.hci_event_stream.subscribe()
 
         self.cert_device.hal.SetScanMode(
             hal_cert_pb2.ScanModeSettings(mode=3)
@@ -99,8 +101,8 @@ class SimpleHalTest(GdBaseTestClass):
         self.device_under_test.hal.SetInquiry(
             hal_facade_pb2.InquirySettings(length=0x30, num_responses=0xff)
         )
-        self.device_under_test.hal.hci_event_stream.assert_event_occurs(
+        self.hci_event_stream.assert_event_occurs(
             lambda packet: b'\x02\x0f' in packet.payload
             # Expecting an HCI Event (code 0x02, length 0x0f)
         )
-        self.device_under_test.hal.hci_event_stream.unsubscribe()
+        self.hci_event_stream.unsubscribe()
