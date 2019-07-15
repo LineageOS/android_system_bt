@@ -28,13 +28,13 @@ namespace test {
 
 Variable::Variable(const std::string& str) : data(str) {}
 
-void Variable::Serialize(const Variable& v, BitInserter& bi) {
-  if (v.data.size() > 255) {
-    fprintf(stderr, "v.data.size() > 255: (%zu)", v.data.size());
+void Variable::Serialize(BitInserter& bi) const {
+  if (data.size() > 255) {
+    fprintf(stderr, "data.size() > 255: (%zu)", data.size());
     abort();
   }
-  bi.insert_byte((uint8_t)v.data.size());
-  for (auto byte : v.data) {
+  bi.insert_byte((uint8_t)data.size());
+  for (auto byte : data) {
     bi.insert_byte(byte);
   }
 }
