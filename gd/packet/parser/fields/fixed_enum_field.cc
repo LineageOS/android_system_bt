@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-#include "fields/packet_field.h"
+#include "fields/fixed_enum_field.h"
+#include "util.h"
 
-PacketField::PacketField(std::string name, ParseLocation loc) : loc_(loc), name_(name) {}
+const std::string FixedEnumField::kFieldType = "FixedEnumField";
 
-std::string PacketField::GetDebugName() const {
-  return "Field{Type:" + GetFieldType() + ", Name:" + GetName() + "}";
+FixedEnumField::FixedEnumField(EnumDef* enum_def, std::string value, ParseLocation loc)
+    : FixedField("fixed_enum", enum_def->size_, loc), enum_(enum_def), value_(value) {}
+
+const std::string& FixedEnumField::GetFieldType() const {
+  return FixedEnumField::kFieldType;
 }
 
-ParseLocation PacketField::GetLocation() const {
-  return loc_;
+std::string FixedEnumField::GetDataType() const {
+  return enum_->name_;
 }
 
-std::string PacketField::GetName() const {
-  return name_;
-}
-
-Size PacketField::GetBuilderSize() const {
-  return GetSize();
+void FixedEnumField::GenValue(std::ostream& s) const {
+  s << enum_->name_ << "::" << value_;
 }

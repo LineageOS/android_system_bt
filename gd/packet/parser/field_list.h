@@ -20,6 +20,7 @@
 #include <set>
 #include <vector>
 
+#include "fields/all_fields.h"
 #include "fields/packet_field.h"
 
 using FieldListIterator = std::vector<PacketField*>::const_iterator;
@@ -70,7 +71,7 @@ class FieldList {
     FieldList ret;
     for (auto it = begin(); it != end(); it++) {
       const auto& field = *it;
-      if (field->GetFieldType() == PacketField::Type::PAYLOAD || field->GetFieldType() == PacketField::Type::BODY) {
+      if (field->GetFieldType() == PayloadField::kFieldType || field->GetFieldType() == BodyField::kFieldType) {
         break;
       }
       ret.AppendField(*it);
@@ -83,7 +84,7 @@ class FieldList {
     FieldListIterator it;
     for (it = begin(); it != end(); it++) {
       const auto& field = *it;
-      if (field->GetFieldType() == PacketField::Type::PAYLOAD || field->GetFieldType() == PacketField::Type::BODY) {
+      if (field->GetFieldType() == PayloadField::kFieldType || field->GetFieldType() == BodyField::kFieldType) {
         // Increment it once to get first field after payload/body.
         it++;
         break;
@@ -93,7 +94,7 @@ class FieldList {
     return FieldList(it, end());
   }
 
-  FieldList GetFieldsWithTypes(std::set<PacketField::Type> field_types) const {
+  FieldList GetFieldsWithTypes(std::set<std::string> field_types) const {
     FieldList ret;
 
     for (const auto& field : field_list_) {
@@ -105,7 +106,7 @@ class FieldList {
     return ret;
   }
 
-  FieldList GetFieldsWithoutTypes(std::set<PacketField::Type> field_types) const {
+  FieldList GetFieldsWithoutTypes(std::set<std::string> field_types) const {
     FieldList ret;
 
     for (const auto& field : field_list_) {
@@ -182,20 +183,19 @@ class FieldList {
  private:
   void AddField(PacketField* field) {
     if (field_map_.find(field->GetName()) != field_map_.end()) {
-      ERROR(field) << "Field with name \"" << field->GetName() << "\" was "
-                   << "previously defined.\n";
+      ERROR(field) << "Field with name \"" << field->GetName() << "\" was previously defined.\n";
     }
 
-    if (field->GetFieldType() == PacketField::Type::PAYLOAD) {
-      if (HasBody()) {
-        ERROR(field) << "Can not have payload field in packet that already has a body.";
+    if (field->GetFieldType() == PayloadField::kFieldType) {
+      if (has_body_) {
+        ERROR(field) << "Packet already has a body.";
       }
       has_payload_ = true;
     }
 
-    if (field->GetFieldType() == PacketField::Type::BODY) {
-      if (HasPayload()) {
-        ERROR(field) << "Can not have body field in packet that already has a payload.";
+    if (field->GetFieldType() == BodyField::kFieldType) {
+      if (has_payload_) {
+        ERROR(field) << "Packet already has a payload.";
       }
       has_body_ = true;
     }

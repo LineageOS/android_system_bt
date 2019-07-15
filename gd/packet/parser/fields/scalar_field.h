@@ -23,11 +23,13 @@ class ScalarField : public PacketField {
  public:
   ScalarField(std::string name, int size, ParseLocation loc);
 
-  virtual PacketField::Type GetFieldType() const override;
+  static const std::string kFieldType;
+
+  virtual const std::string& GetFieldType() const override;
 
   virtual Size GetSize() const override;
 
-  virtual std::string GetType() const override;
+  virtual std::string GetDataType() const override;
 
   virtual void GenGetter(std::ostream& s, Size start_offset, Size end_offset) const override;
 

@@ -284,7 +284,7 @@ field_definition_list
       std::cerr << "Field definition\n";
       $$ = new FieldList();
 
-      if ($1->GetFieldType() == PacketField::Type::GROUP) {
+      if ($1->GetFieldType() == GroupField::kFieldType) {
         auto group_fields = static_cast<GroupField*>($1)->GetFields();
 	FieldList reversed_fields(group_fields->rbegin(), group_fields->rend());
         for (auto& field : reversed_fields) {
@@ -301,7 +301,7 @@ field_definition_list
       std::cerr << "Field definition with list\n";
       $$ = $3;
 
-      if ($1->GetFieldType() == PacketField::Type::GROUP) {
+      if ($1->GetFieldType() == GroupField::kFieldType) {
         auto group_fields = static_cast<GroupField*>($1)->GetFields();
 	FieldList reversed_fields(group_fields->rbegin(), group_fields->rend());
         for (auto& field : reversed_fields) {
@@ -391,24 +391,24 @@ group_field_definition
       for (const auto field : *group) {
         const auto constraint = $3->find(field->GetName());
         if (constraint != $3->end()) {
-          if (field->GetFieldType() == PacketField::Type::SCALAR) {
+          if (field->GetFieldType() == ScalarField::kFieldType) {
             std::cerr << "Fixing group scalar value\n";
-            expanded_fields->push_back(new FixedField(field->GetSize().bits(), std::get<int64_t>(constraint->second), LOC));
-          } else if (field->GetFieldType() == PacketField::Type::ENUM) {
+            expanded_fields->push_back(new FixedScalarField(field->GetSize().bits(), std::get<int64_t>(constraint->second), LOC));
+          } else if (field->GetFieldType() == EnumField::kFieldType) {
             std::cerr << "Fixing group enum value\n";
 
-            auto type_def = decls->GetTypeDef(field->GetType());
+            auto type_def = decls->GetTypeDef(field->GetDataType());
             EnumDef* enum_def = (type_def->GetDefinitionType() == TypeDef::Type::ENUM ? (EnumDef*)type_def : nullptr);
             if (enum_def == nullptr) {
-              ERRORLOC(LOC) << "No enum found of type " << field->GetType();
+              ERRORLOC(LOC) << "No enum found of type " << field->GetDataType();
             }
             if (!enum_def->HasEntry(std::get<std::string>(constraint->second))) {
-              ERRORLOC(LOC) << "Enum " << field->GetType() << " has no enumeration " << std::get<std::string>(constraint->second);
+              ERRORLOC(LOC) << "Enum " << field->GetDataType() << " has no enumeration " << std::get<std::string>(constraint->second);
             }
 
-            expanded_fields->push_back(new FixedField(enum_def, std::get<std::string>(constraint->second), LOC));
+            expanded_fields->push_back(new FixedEnumField(enum_def, std::get<std::string>(constraint->second), LOC));
           } else {
-            ERRORLOC(LOC) << "Unimplemented constraint of type " << field->GetType();
+            ERRORLOC(LOC) << "Unimplemented constraint of type " << field->GetFieldType();
           }
           $3->erase(constraint);
         } else {
@@ -514,18 +514,18 @@ size_field_definition
   : SIZE '(' IDENTIFIER ')' ':' INTEGER
     {
       std::cerr << "Size field defined\n";
-      $$ = new SizeField(*$3, $6, false, LOC);
+      $$ = new SizeField(*$3, $6, LOC);
       delete $3;
     }
   | SIZE '(' PAYLOAD ')' ':' INTEGER
     {
       std::cerr << "Size for payload defined\n";
-      $$ = new SizeField("payload", $6, false, LOC);
+      $$ = new SizeField("payload", $6, LOC);
     }
   | COUNT '(' IDENTIFIER ')' ':' INTEGER
     {
       std::cerr << "Count field defined\n";
-      $$ = new SizeField(*$3, $6, true, LOC);
+      $$ = new CountField(*$3, $6, LOC);
       delete $3;
     }
   | COUNT '(' PAYLOAD ')' ':' INTEGER
@@ -537,7 +537,7 @@ fixed_field_definition
   : FIXED '=' INTEGER ':' INTEGER
     {
       std::cerr << "Fixed field defined value=" << $3 << " size=" << $5 << "\n";
-      $$ = new FixedField($5, $3, LOC);
+      $$ = new FixedScalarField($5, $3, LOC);
     }
   | FIXED '=' IDENTIFIER ':' IDENTIFIER
     {
@@ -549,7 +549,7 @@ fixed_field_definition
           ERRORLOC(LOC) << "Previously defined enum " << enum_def->GetTypeName() << " has no entry for " << *$3;
         }
 
-        $$ = new FixedField(enum_def, *$3, LOC);
+        $$ = new FixedEnumField(enum_def, *$3, LOC);
       } else {
         ERRORLOC(LOC) << "No enum found with name " << *$5;
       }
