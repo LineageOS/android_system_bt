@@ -33,6 +33,8 @@ std::string BodyField::GetDataType() const {
   return "BodyType";
 }
 
+void BodyField::GenExtractor(std::ostream&, Size, Size) const {}
+
 void BodyField::GenGetter(std::ostream&, Size, Size) const {}
 
 bool BodyField::GenBuilderParameter(std::ostream&) const {

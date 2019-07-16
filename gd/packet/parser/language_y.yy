@@ -492,10 +492,6 @@ payload_field_definition
       $$ = new PayloadField(*$4, LOC);
       delete $4;
     }
-  | PAYLOAD ':' '[' INTEGER ']'
-    {
-      ERRORLOC(LOC) << "Payload fields can only be dynamically sized.";
-    }
   | PAYLOAD
     {
       std::cerr << "Payload field\n";
@@ -527,10 +523,6 @@ size_field_definition
       std::cerr << "Count field defined\n";
       $$ = new CountField(*$3, $6, LOC);
       delete $3;
-    }
-  | COUNT '(' PAYLOAD ')' ':' INTEGER
-    {
-      ERRORLOC(LOC) << "Can not use count to describe payload fields.";
     }
 
 fixed_field_definition

@@ -126,7 +126,7 @@ void PacketDef::GenValidator(std::ostream& s) const {
     parent_size = parent_->GetSize(true);
   }
 
-  s << "auto it = begin() + " << parent_size.bytes() << " + (" << parent_size.dynamic_string() << ");";
+  s << "auto it = begin() + (" << parent_size << ") / 8;";
 
   // Check if you can extract the static fields.
   // At this point you know you can use the size getters without crashing
@@ -140,13 +140,13 @@ void PacketDef::GenValidator(std::ostream& s) const {
     if (field->GetFieldType() == ChecksumStartField::kFieldType) {
       auto offset = GetOffsetForField(field->GetName(), false);
       if (!offset.empty()) {
-        s << "size_t sum_index = " << offset.bytes() << " + (" << offset.dynamic_string() << ");";
+        s << "size_t sum_index = (" << offset << ") / 8;";
       } else {
         offset = GetOffsetForField(field->GetName(), true);
         if (offset.empty()) {
           ERROR(field) << "Checksum Start Field offset can not be determined.";
         }
-        s << "size_t sum_index = size() - " << offset.bytes() << " - (" << offset.dynamic_string() << ");";
+        s << "size_t sum_index = size() - (" << offset << ") / 8;";
       }
 
       const auto& field_name = ((ChecksumStartField*)field)->GetStartedFieldName();
@@ -157,14 +157,13 @@ void PacketDef::GenValidator(std::ostream& s) const {
       }
       auto end_offset = GetOffsetForField(started_field->GetName(), false);
       if (!end_offset.empty()) {
-        s << "size_t end_sum_index = " << end_offset.bytes() << " + (" << end_offset.dynamic_string() << ");";
+        s << "size_t end_sum_index = (" << end_offset << ") / 8;";
       } else {
         end_offset = GetOffsetForField(started_field->GetName(), true);
         if (end_offset.empty()) {
           ERROR(started_field) << "Checksum Field end_offset can not be determined.";
         }
-        s << "size_t end_sum_index = size() - " << started_field->GetSize().bytes() << " - " << end_offset.bytes()
-          << " - (" << end_offset.dynamic_string() << ");";
+        s << "size_t end_sum_index = size() - (" << started_field->GetSize() << " - " << end_offset << ") / 8;";
       }
       if (is_little_endian_) {
         s << "auto checksum_view = GetLittleEndianSubview(sum_index, end_sum_index);";
@@ -191,8 +190,6 @@ void PacketDef::GenValidator(std::ostream& s) const {
     // as the end iterator so that they may ensure that they don't try to read past the end.
     // Custom fields with fixed sizes will be handled in the static offset checking.
     if (field->GetFieldType() == CustomField::kFieldType) {
-      const auto& custom_size_var = field->GetName() + "_size";
-
       // Check if we can determine offset from begin(), otherwise error because by this point,
       // the size of the custom field is unknown and can't be subtracted from end() to get the
       // offset.
@@ -206,15 +203,16 @@ void PacketDef::GenValidator(std::ostream& s) const {
       }
 
       // Custom fields are special as their size field takes an argument.
+      const auto& custom_size_var = field->GetName() + "_size";
       s << "const auto& " << custom_size_var << " = " << field_size.dynamic_string();
-      s << "(begin() + " << offset.bytes() << " + (" << offset.dynamic_string() << "));";
+      s << "(begin() + (" << offset << ") / 8);";
 
       s << "if (!" << custom_size_var << ".has_value()) { return false; }";
       s << "it += *" << custom_size_var << ";";
       s << "if (it > end()) return false;";
       continue;
     } else {
-      s << "it += " << field_size.dynamic_string() << ";";
+      s << "it += (" << field_size.dynamic_string() << ") / 8;";
       s << "if (it > end()) return false;";
     }
   }
