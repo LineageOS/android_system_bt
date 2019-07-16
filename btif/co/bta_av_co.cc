@@ -1385,7 +1385,20 @@ void BtaAvCo::UpdateMtu(tBTA_AV_HNDL bta_av_handle,
         __func__, bta_av_handle, peer_address.ToString().c_str());
     return;
   }
+
+  if (p_peer->mtu == mtu) return;
+
   p_peer->mtu = mtu;
+  if (active_peer_ == p_peer) {
+    LOG(INFO) << __func__ << ": update the codec encoder with peer "
+              << peer_address << " bta_av_handle: " << loghex(bta_av_handle)
+              << ", new MTU: " << mtu;
+    // Send a request with NONE config values to update only the MTU.
+    SetCodecAudioConfig(
+        {.sample_rate = BTAV_A2DP_CODEC_SAMPLE_RATE_NONE,
+         .bits_per_sample = BTAV_A2DP_CODEC_BITS_PER_SAMPLE_NONE,
+         .channel_mode = BTAV_A2DP_CODEC_CHANNEL_MODE_NONE});
+  }
 }
 
 bool BtaAvCo::SetActivePeer(const RawAddress& peer_address) {
