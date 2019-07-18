@@ -13,5 +13,6 @@ filegroup {
         "blocking_queue_unittest.cc",
         "class_of_device_unittest.cc",
         "bidi_queue_unittest.cc",
+        "observer_registry_test.cc",
     ],
 }
