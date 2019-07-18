@@ -225,12 +225,15 @@ enum CommandCode : 8 {
 }
 
 packet ControlFrame : BasicFrame (channel_id = 0x0001) {
+  _payload_,
+}
+
+packet Control {
   code : CommandCode,
   identifier : 8,
   _size_(_payload_) : 16,
   _payload_,
 }
-
 
 enum CommandRejectReason : 16 {
   COMMAND_NOT_UNDERSTOOD = 0x0000,
@@ -238,7 +241,7 @@ enum CommandRejectReason : 16 {
   INVALID_CID_IN_REQUEST = 0x0002,
 }
 
-packet CommandReject : ControlFrame (code = COMMAND_REJECT) {
+packet CommandReject : Control (code = COMMAND_REJECT) {
   reason : CommandRejectReason,
   _body_,
 }
@@ -255,7 +258,7 @@ packet CommandRejectInvalidCid : CommandReject (reason = INVALID_CID_IN_REQUEST)
   remote_channel : 16,
 }
 
-packet ConnectionRequest : ControlFrame (code = CONNECTION_REQUEST) {
+packet ConnectionRequest : Control (code = CONNECTION_REQUEST) {
   psm : 16,
   source_cid : 16,
 }
@@ -276,7 +279,7 @@ enum ConnectionResponseStatus : 16 {
   AUTHORIZATION_PENDING = 0x0002,
 }
 
-packet ConnectionResponse : ControlFrame (code = CONNECTION_RESPONSE) {
+packet ConnectionResponse : Control (code = CONNECTION_RESPONSE) {
   destination_cid : 16,
   source_cid : 16,
   result : ConnectionResponseResult,
@@ -288,7 +291,7 @@ enum ConfigurationContinuation : 1 {
   CONTINUES = 1,
 }
 
-packet ConfigurationRequestBase : ControlFrame (code = CONFIGURATION_REQUEST) {
+packet ConfigurationRequestBase : Control (code = CONFIGURATION_REQUEST) {
   destination_cid : 16,
   continuation : ConfigurationContinuation,
   _reserved_ : 15,
@@ -395,7 +398,7 @@ enum ConfigurationResponseResult : 16 {
   FLOW_SPEC_REJECTED = 0x0005,
 }
 
-packet ConfigurationResponseBase : ControlFrame (code = CONFIGURATION_RESPONSE) {
+packet ConfigurationResponseBase : Control (code = CONFIGURATION_RESPONSE) {
   source_cid : 16,
   continuation : ConfigurationContinuation,
   _reserved_ : 15,
@@ -407,21 +410,21 @@ packet ConfigurationResponse : ConfigurationResponseBase {
   _payload_,
 }
 
-packet DisconnectionRequest : ControlFrame (code = DISCONNECTION_REQUEST) {
+packet DisconnectionRequest : Control (code = DISCONNECTION_REQUEST) {
   destination_cid : 16,
   source_cid : 16,
 }
 
-packet DisconnectionResponse : ControlFrame (code = DISCONNECTION_RESPONSE) {
+packet DisconnectionResponse : Control (code = DISCONNECTION_RESPONSE) {
   destination_cid : 16,
   source_cid : 16,
 }
 
-packet EchoRequest : ControlFrame (code = ECHO_REQUEST) {
+packet EchoRequest : Control (code = ECHO_REQUEST) {
   _payload_, // Optional and implementation specific
 }
 
-packet EchoResponse : ControlFrame (code = ECHO_RESPONSE) {
+packet EchoResponse : Control (code = ECHO_RESPONSE) {
   _payload_, // Optional and implementation specific
 }
 
@@ -431,7 +434,7 @@ enum InformationRequestInfoType : 16 {
   FIXED_CHANNELS_SUPPORTED = 0x0003,
 }
 
-packet InformationRequest : ControlFrame (code = INFORMATION_REQUEST) {
+packet InformationRequest : Control (code = INFORMATION_REQUEST) {
   info_type : InformationRequestInfoType,
 }
 
@@ -440,7 +443,7 @@ enum InformationRequestResult : 16 {
   NOT_SUPPORTED = 0x0001,
 }
 
-packet InformationResponse : ControlFrame (code = INFORMATION_RESPONSE) {
+packet InformationResponse : Control (code = INFORMATION_RESPONSE) {
   info_type : InformationRequestInfoType,
   result : InformationRequestResult,
   _body_,
@@ -469,7 +472,7 @@ packet InformationResponseFixedChannels : InformationResponse (info_type = FIXED
   fixed_channels : 64, // bit 0 must be 0, bit 1 must be 1, all others 1 = supported
 }
 
-packet CreateChannelRequest : ControlFrame (code = CREATE_CHANNEL_REQUEST) {
+packet CreateChannelRequest : Control (code = CREATE_CHANNEL_REQUEST) {
   psm : 16,
   source_cid : 16,
   controller_id : 8,
@@ -492,7 +495,7 @@ enum CreateChannelResponseStatus : 16 {
   AUTHORIZATION_PENDING = 0x0002,
 }
 
-packet CreateChannelResponse : ControlFrame (code = CREATE_CHANNEL_RESPONSE) {
+packet CreateChannelResponse : Control (code = CREATE_CHANNEL_RESPONSE) {
   destination_cid : 16,
   source_cid : 16,
   result : CreateChannelResponseResult,
@@ -500,7 +503,7 @@ packet CreateChannelResponse : ControlFrame (code = CREATE_CHANNEL_RESPONSE) {
 }
 
 // AMP Only ?
-packet MoveChannelRequest : ControlFrame (code = MOVE_CHANNEL_REQUEST) {
+packet MoveChannelRequest : Control (code = MOVE_CHANNEL_REQUEST) {
   initiator_cid : 16,
   dest_controller_id : 8,
 }
@@ -515,7 +518,7 @@ enum MoveChannelResponseResult : 16 {
   CHANNEL_NOT_ALLOWED_TO_BE_MOVED = 0x0006,
 }
 
-packet MoveChannelResponse : ControlFrame (code = MOVE_CHANNEL_RESPONSE) {
+packet MoveChannelResponse : Control (code = MOVE_CHANNEL_RESPONSE) {
   initiator_cid : 16,
   result : MoveChannelResponseResult,
 }
@@ -525,12 +528,12 @@ enum MoveChannelConfirmationResult : 16 {
   FAILURE = 0x0001,
 }
 
-packet MoveChannelConfirmationRequest : ControlFrame (code = MOVE_CHANNEL_CONFIRMATION_REQUEST) {
+packet MoveChannelConfirmationRequest : Control (code = MOVE_CHANNEL_CONFIRMATION_REQUEST) {
   initiator_cid : 16,
   result : MoveChannelConfirmationResult,
 }
 
-packet MoveChannelConfirmationResponse : ControlFrame (code = MOVE_CHANNEL_CONFIRMATION_RESPONSE) {
+packet MoveChannelConfirmationResponse : Control (code = MOVE_CHANNEL_CONFIRMATION_RESPONSE) {
   initiator_cid : 16,
 }
 
@@ -546,13 +549,18 @@ enum LeCommandCode : 8 {
 }
 
 packet LeControlFrame : BasicFrame (channel_id = 0x0005) {
+  _payload_,
+}
+
+packet LeControl {
   code : LeCommandCode,
   identifier : 8, // Must be non-zero
   _size_(_payload_) : 16,
   _payload_,
 }
 
-packet LeCommandReject : LeControlFrame (code = COMMAND_REJECT) {
+
+packet LeCommandReject : LeControl (code = COMMAND_REJECT) {
   reason : CommandRejectReason,
   _payload_,
 }
@@ -569,17 +577,17 @@ packet LeCommandRejectInvalidCid : LeCommandReject (reason = INVALID_CID_IN_REQU
   remote_channel : 16,
 }
 
-packet LeDisconnectionRequest : LeControlFrame (code = DISCONNECTION_REQUEST) {
+packet LeDisconnectionRequest : LeControl (code = DISCONNECTION_REQUEST) {
   destination_cid : 16,
   source_cid : 16,
 }
 
-packet LeDisconnectionResponse : LeControlFrame (code = DISCONNECTION_RESPONSE) {
+packet LeDisconnectionResponse : LeControl (code = DISCONNECTION_RESPONSE) {
   destination_cid : 16,
   source_cid : 16,
 }
 
-packet ConnectionParameterUpdateRequest : LeControlFrame (code = CONNECTION_PARAMETER_UPDATE_REQUEST) {
+packet ConnectionParameterUpdateRequest : LeControl (code = CONNECTION_PARAMETER_UPDATE_REQUEST) {
   interval_min : 16,
   interval_max : 16,
   slave_latency : 16,
@@ -591,11 +599,11 @@ enum ConnectionParameterUpdateResponseResult : 16 {
   REJECTED = 1,
 }
 
-packet ConnectionParameterUpdateResponse : LeControlFrame (code = CONNECTION_PARAMETER_UPDATE_RESPONSE) {
+packet ConnectionParameterUpdateResponse : LeControl (code = CONNECTION_PARAMETER_UPDATE_RESPONSE) {
   result : ConnectionParameterUpdateResponseResult,
 }
 
-packet LeCreditBasedConnectionRequest : LeControlFrame (code = LE_CREDIT_BASED_CONNECTION_REQUEST) {
+packet LeCreditBasedConnectionRequest : LeControl (code = LE_CREDIT_BASED_CONNECTION_REQUEST) {
   le_psm : 16, // 0x0001-0x007F Fixed, 0x0080-0x00FF Dynamic
   source_cid : 16,
   mtu : 16,
@@ -616,7 +624,7 @@ enum LeCreditBasedConnectionResponseResult : 16 {
   UNACCEPTABLE_PARAMETERS = 0x000B,
 }
 
-packet LeCreditBasedConnectionResponse : LeControlFrame (code = LE_CREDIT_BASED_CONNECTION_RESPONSE) {
+packet LeCreditBasedConnectionResponse : LeControl (code = LE_CREDIT_BASED_CONNECTION_RESPONSE) {
   destination_cid : 16,
   mtu : 16,
   mps : 16,
@@ -624,7 +632,7 @@ packet LeCreditBasedConnectionResponse : LeControlFrame (code = LE_CREDIT_BASED_
   result : LeCreditBasedConnectionResponseResult,
 }
 
-packet LeFlowControlCredit : LeControlFrame (code = LE_FLOW_CONTROL_CREDIT) {
+packet LeFlowControlCredit : LeControl (code = LE_FLOW_CONTROL_CREDIT) {
   cid : 16, // Receiver's destination CID
   credits : 16,
 }
