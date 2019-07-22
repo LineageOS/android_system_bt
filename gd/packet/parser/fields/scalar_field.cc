@@ -38,24 +38,27 @@ std::string ScalarField::GetDataType() const {
   return util::GetTypeForSize(size_);
 }
 
-void ScalarField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
-  s << GetDataType();
-  s << " Get" << util::UnderscoreToCamelCase(GetName()) << "() const {";
-  s << "ASSERT(was_validated_);";
+int GetShiftBits(int i) {
+  int bits_past_byte_boundary = i % 8;
+  if (bits_past_byte_boundary == 0) {
+    return 0;
+  } else {
+    return 8 - bits_past_byte_boundary;
+  }
+}
 
-  // Write the Getter Function Body
+void ScalarField::GenExtractor(std::ostream& s, Size start_offset, Size end_offset) const {
   int num_leading_bits = 0;
   int field_size = GetSize().bits();
 
   if (!start_offset.empty()) {
     // Default to start if available.
     num_leading_bits = start_offset.bits() % 8;
-    s << "auto it = begin() + " << start_offset.bytes() << " + (" << start_offset.dynamic_string() << ");";
+    s << "auto it = begin_it + (" << start_offset << ") / 8;";
   } else if (!end_offset.empty()) {
-    int offset_from_end = end_offset.bits() + field_size;
-    num_leading_bits = 8 - (offset_from_end % 8);
-    int byte_offset = (7 + offset_from_end) / 8;
-    s << "auto it = end() - " << byte_offset << " - (" << end_offset.dynamic_string() << ");";
+    num_leading_bits = GetShiftBits(end_offset.bits() + field_size);
+    Size byte_offset = Size(num_leading_bits + field_size) + end_offset;
+    s << "auto it = end_it - (" << byte_offset << ") / 8;";
   } else {
     ERROR(this) << "Ambiguous offset for field.";
   }
@@ -64,11 +67,11 @@ void ScalarField::GenGetter(std::ostream& s, Size start_offset, Size end_offset)
   // from the extract type if an earlier field causes the beginning of the
   // current field to start in the middle of a byte.
   std::string extract_type = util::GetTypeForSize(field_size + num_leading_bits);
-  s << "auto value = it.extract<" << extract_type << ">();";
+  s << "auto extracted_value = it.extract<" << extract_type << ">();";
 
   // Right shift the result to remove leading bits.
   if (num_leading_bits != 0) {
-    s << "value >>= " << num_leading_bits << ";";
+    s << "extracted_value >>= " << num_leading_bits << ";";
   }
 
   // Mask the result if necessary.
@@ -78,11 +81,25 @@ void ScalarField::GenGetter(std::ostream& s, Size start_offset, Size end_offset)
       mask <<= 1;
       mask |= 1;
     }
-    s << "value &= 0x" << std::hex << mask << std::dec << ";";
+    s << "extracted_value &= 0x" << std::hex << mask << std::dec << ";";
   }
+  s << GetDataType() << " value = static_cast<" << GetDataType() << ">(extracted_value);";
+}
 
-  s << "return static_cast<" << GetDataType() << ">(value);";
-  s << "}\n";
+void ScalarField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
+  s << GetDataType();
+  s << " Get" << util::UnderscoreToCamelCase(GetName()) << "() const {";
+  s << "ASSERT(was_validated_);";
+
+  if (!start_offset.empty()) {
+    s << "auto begin_it = begin();";
+  } else {
+    s << "auto end_it = end();";
+  }
+  GenExtractor(s, start_offset, end_offset);
+  s << "\n";
+  s << "return value;";
+  s << "}";
 }
 
 bool ScalarField::GenBuilderParameter(std::ostream& s) const {
@@ -95,8 +112,7 @@ bool ScalarField::HasParameterValidator() const {
 }
 
 void ScalarField::GenParameterValidator(std::ostream& s) const {
-  s << "ASSERT(" << GetName() << " < "
-    << "(static_cast<uint64_t>(1) << " << GetSize().bits() << "));";
+  s << "ASSERT(" << GetName() << " < (static_cast<uint64_t>(1) << " << GetSize().bits() << "));";
 }
 
 void ScalarField::GenInserter(std::ostream& s) const {

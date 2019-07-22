@@ -36,17 +36,15 @@ const std::string& PayloadField::GetFieldType() const {
 
 Size PayloadField::GetSize() const {
   if (size_field_ == nullptr) {
-    // Require a size field if there is a modifier.
     if (!size_modifier_.empty()) {
       ERROR(this) << "Missing size field for payload with size modifier.";
     }
-
     return Size();
   }
 
-  std::string dynamic_size = "Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "()";
+  std::string dynamic_size = "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * 8)";
   if (!size_modifier_.empty()) {
-    dynamic_size += "- (" + size_modifier_ + ") / 8";
+    dynamic_size += "- (" + size_modifier_ + ")";
   }
 
   return dynamic_size;
@@ -56,51 +54,19 @@ std::string PayloadField::GetDataType() const {
   return "PacketView";
 }
 
+void PayloadField::GenExtractor(std::ostream&, Size, Size) const {
+  ERROR(this) << __func__ << " should never be called. ";
+}
+
 void PayloadField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
-  if (start_offset.empty()) {
-    ERROR(this) << "Can not have a payload that has an ambiguous start offset. "
-                << "Is there a field with an unknown length before the "
-                << "payload?\n";
-  }
-
-  if (start_offset.bits() % 8 != 0 && !GetSize().empty()) {
-    ERROR(this) << "Can not have a sized payload field "
-                << "at a non byte-aligned offset.\n";
-  }
-
-  if (GetSize().empty() && end_offset.empty()) {
-    ERROR(this) << "Ambiguous end offset for payload with no defined size.";
-  }
-
   s << "PacketView<kLittleEndian> GetPayload() const {";
-  s << "ASSERT(was_validated_);";
-
-  s << "size_t payload_begin = " << start_offset.bits() / 8 << " + (" << start_offset.dynamic_string() << ");";
-
-  // If the payload is sized, use the size + payload_begin for payload_end, otherwise use the end_offset.
-  if (!GetSize().empty()) {
-    // If the size isn't empty then it must have a dynamic string only.
-    s << "size_t payload_end = payload_begin + (" << GetSize().dynamic_string() << ");";
-  } else {
-    s << "size_t payload_end = size() - " << end_offset.bits() / 8 << " - (" << end_offset.dynamic_string() << ");";
-  }
-
-  s << "return GetLittleEndianSubview(payload_begin, payload_end);";
+  GenBounds(s, start_offset, end_offset, GetSize());
+  s << "return GetLittleEndianSubview(field_begin, field_end);";
   s << "}\n\n";
 
   s << "PacketView<!kLittleEndian> GetPayloadBigEndian() const {";
-
-  s << "size_t payload_begin = " << start_offset.bits() / 8 << " + (" << start_offset.dynamic_string() << ");";
-
-  // If the payload is sized, use the size + payload_begin for payload_end, otherwise use the end_offset.
-  if (!GetSize().empty()) {
-    // If the size isn't empty then it must have a dynamic string only.
-    s << "size_t payload_end = payload_begin + (" << GetSize().dynamic_string() << ");";
-  } else {
-    s << "size_t payload_end = size() - " << end_offset.bits() / 8 << " - (" << end_offset.dynamic_string() << ");";
-  }
-
-  s << "return GetBigEndianSubview(payload_begin, payload_end);";
+  GenBounds(s, start_offset, end_offset, GetSize());
+  s << "return GetBigEndianSubview(field_begin, field_end);";
   s << "}\n";
 }
 
