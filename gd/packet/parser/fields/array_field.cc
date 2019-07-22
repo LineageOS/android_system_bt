@@ -22,6 +22,8 @@ const std::string ArrayField::kFieldType = "ArrayField";
 ArrayField::ArrayField(std::string name, int element_size, std::string size_modifier, ParseLocation loc)
     : PacketField(name, loc), element_size_(element_size), size_modifier_(size_modifier) {
   // Make sure the element_size is a multiple of 8.
+  if (element_size_ > 64 || element_size_ < 0)
+    ERROR(this) << __func__ << ": Not implemented for element size = " << element_size_;
   if (element_size % 8 != 0) {
     ERROR(this) << "Can only have arrays with elements that are byte aligned (" << element_size << ")";
   }
@@ -29,6 +31,8 @@ ArrayField::ArrayField(std::string name, int element_size, std::string size_modi
 
 ArrayField::ArrayField(std::string name, int element_size, int fixed_size, ParseLocation loc)
     : PacketField(name, loc), element_size_(element_size), fixed_size_(fixed_size) {
+  if (element_size_ > 64 || element_size_ < 0)
+    ERROR(this) << __func__ << ": Not implemented for element size = " << element_size_;
   // Make sure the element_size is a multiple of 8.
   if (element_size % 8 != 0) {
     ERROR(this) << "Can only have arrays with elements that are byte aligned (" << element_size << ")";
@@ -154,16 +158,20 @@ void ArrayField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) 
 }
 
 bool ArrayField::GenBuilderParameter(std::ostream& s) const {
-  std::string element_type = "";
   if (type_def_ != nullptr) {
-    element_type = type_def_->GetTypeName();
+    s << "const std::vector<" << type_def_->GetTypeName() << ">& " << GetName();
   } else {
-    if (element_size_ > 64 || element_size_ < 0)
-      ERROR(this) << __func__ << ": Not implemented for element size = " << element_size_;
-    element_type = util::GetTypeForSize(element_size_);
+    s << "const std::vector<" << util::GetTypeForSize(element_size_) << ">& " << GetName();
   }
+  return true;
+}
 
-  s << "const std::vector<" << element_type << ">& " << GetName();
+bool ArrayField::GenBuilderMember(std::ostream& s) const {
+  if (type_def_ != nullptr) {
+    s << "std::vector<" << type_def_->GetTypeName() << "> " << GetName();
+  } else {
+    s << "std::vector<" << util::GetTypeForSize(element_size_) << "> " << GetName();
+  }
   return true;
 }
 
