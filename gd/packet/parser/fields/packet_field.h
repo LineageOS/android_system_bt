@@ -28,27 +28,10 @@ class PacketField : public Loggable {
  public:
   virtual ~PacketField() = default;
 
-  PacketField(ParseLocation loc, std::string name);
+  PacketField(std::string name, ParseLocation loc);
 
-  enum class Type {
-    GROUP,
-    FIXED_SCALAR,
-    FIXED_ENUM,
-    RESERVED_SCALAR,
-    SCALAR,
-    ENUM,
-    SIZE,
-    COUNT,
-    BODY,
-    PAYLOAD,
-    ARRAY,
-    CUSTOM,
-    CHECKSUM,
-    CHECKSUM_START,
-  };
-
-  // Get the field type for the field.
-  virtual Type GetFieldType() const = 0;
+  // Get the type for this field.
+  virtual const std::string& GetFieldType() const = 0;
 
   // Returns the size of the field in bits and a string that evaluates into
   // bytes for dynamically sized arrays.
@@ -60,7 +43,7 @@ class PacketField : public Loggable {
 
   // Get the type of the field to be used in the builders constructor and
   // variables.
-  virtual std::string GetType() const = 0;
+  virtual std::string GetDataType() const = 0;
 
   // Get parser getter definition. Start_offset points to the first bit of the
   // field. end_offset is the first bit after the field. If an offset is empty

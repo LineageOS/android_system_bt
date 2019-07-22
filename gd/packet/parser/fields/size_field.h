@@ -17,19 +17,18 @@
 #pragma once
 
 #include "fields/packet_field.h"
+#include "fields/scalar_field.h"
 #include "parse_location.h"
 
-class SizeField : public PacketField {
+class SizeField : public ScalarField {
  public:
-  SizeField(std::string name, int size, bool is_count, ParseLocation loc);
+  SizeField(std::string name, int size, ParseLocation loc);
+
+  static const std::string kFieldType;
 
   std::string GetField() const;
 
-  virtual PacketField::Type GetFieldType() const override;
-
-  virtual Size GetSize() const override;
-
-  virtual std::string GetType() const override;
+  virtual const std::string& GetFieldType() const override;
 
   virtual void GenGetter(std::ostream& s, Size start_offset, Size end_offset) const override;
 
@@ -47,6 +46,5 @@ class SizeField : public PacketField {
 
  private:
   int size_;
-  bool is_count_;
   std::string sized_field_name_;
 };

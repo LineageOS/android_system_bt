@@ -32,11 +32,11 @@ void ParentDef::AddParentConstraint(std::string field_name, std::variant<int64_t
             << ", but no such field exists.";
   }
 
-  if (constrained_field->GetFieldType() == PacketField::Type::SCALAR) {
+  if (constrained_field->GetFieldType() == ScalarField::kFieldType) {
     if (!std::holds_alternative<int64_t>(value)) {
       ERROR(constrained_field) << "Attemting to constrain a scalar field to an enum value in " << parent_->name_;
     }
-  } else if (constrained_field->GetFieldType() == PacketField::Type::ENUM) {
+  } else if (constrained_field->GetFieldType() == EnumField::kFieldType) {
     if (!std::holds_alternative<std::string>(value)) {
       ERROR(constrained_field) << "Attemting to constrain an enum field to a scalar value in " << parent_->name_;
     }
@@ -64,7 +64,7 @@ void ParentDef::AssignSizeFields() {
   for (const auto& field : fields_) {
     DEBUG() << "field name: " << field->GetName();
 
-    if (field->GetFieldType() != PacketField::Type::SIZE && field->GetFieldType() != PacketField::Type::COUNT) {
+    if (field->GetFieldType() != SizeField::kFieldType && field->GetFieldType() != CountField::kFieldType) {
       continue;
     }
 
@@ -84,13 +84,13 @@ void ParentDef::AssignSizeFields() {
       }
     }
 
-    if (var_len_field->GetFieldType() == PacketField::Type::PAYLOAD) {
+    if (var_len_field->GetFieldType() == PayloadField::kFieldType) {
       const auto& payload_field = static_cast<PayloadField*>(var_len_field);
       payload_field->SetSizeField(size_field);
       continue;
     }
 
-    if (var_len_field->GetFieldType() == PacketField::Type::ARRAY) {
+    if (var_len_field->GetFieldType() == ArrayField::kFieldType) {
       const auto& array_field = static_cast<ArrayField*>(var_len_field);
       array_field->SetSizeField(size_field);
       continue;
@@ -113,12 +113,12 @@ Size ParentDef::GetSize(bool without_payload) const {
 
   for (const auto& field : fields_) {
     if (without_payload &&
-        (field->GetFieldType() == PacketField::Type::PAYLOAD || field->GetFieldType() == PacketField::Type::BODY)) {
+        (field->GetFieldType() == PayloadField::kFieldType || field->GetFieldType() == BodyField::kFieldType)) {
       continue;
     }
 
     // The offset to the field must be passed in as an argument for dynamically sized custom fields.
-    if (field->GetFieldType() == PacketField::Type::CUSTOM && field->GetSize().has_dynamic()) {
+    if (field->GetFieldType() == CustomField::kFieldType && field->GetSize().has_dynamic()) {
       std::stringstream custom_field_size;
 
       // Custom fields are special as their size field takes an argument.
@@ -214,9 +214,9 @@ Size ParentDef::GetOffsetForField(std::string field_name, bool from_end) const {
 FieldList ParentDef::GetParamList() const {
   FieldList params;
 
-  std::set<PacketField::Type> param_types = {
-      PacketField::Type::SCALAR, PacketField::Type::ENUM, PacketField::Type::ARRAY,
-      PacketField::Type::CUSTOM, PacketField::Type::BODY, PacketField::Type::PAYLOAD,
+  std::set<std::string> param_types = {
+      ScalarField::kFieldType, EnumField::kFieldType,    ArrayField::kFieldType,
+      CustomField::kFieldType, PayloadField::kFieldType,
   };
 
   if (parent_ != nullptr) {
@@ -330,13 +330,13 @@ void ParentDef::GenSerialize(std::ostream& s) const {
   }
 
   for (const auto& field : header_fields) {
-    if (field->GetFieldType() == PacketField::Type::SIZE) {
+    if (field->GetFieldType() == SizeField::kFieldType) {
       const auto& field_name = ((SizeField*)field)->GetSizedFieldName();
       const auto& sized_field = fields_.GetField(field_name);
       if (sized_field == nullptr) {
         ERROR(field) << __func__ << ": Can't find sized field named " << field_name;
       }
-      if (sized_field->GetFieldType() == PacketField::Type::PAYLOAD) {
+      if (sized_field->GetFieldType() == PayloadField::kFieldType) {
         s << "size_t payload_bytes = GetPayloadSize();";
         std::string modifier = ((PayloadField*)sized_field)->size_modifier_;
         if (modifier != "") {
@@ -344,9 +344,9 @@ void ParentDef::GenSerialize(std::ostream& s) const {
           s << "payload_bytes = payload_bytes + (" << modifier << ") / 8;";
         }
         s << "ASSERT(payload_bytes < (static_cast<size_t>(1) << " << field->GetSize().bits() << "));";
-        s << "insert(static_cast<" << field->GetType() << ">(payload_bytes), i," << field->GetSize().bits() << ");";
+        s << "insert(static_cast<" << field->GetDataType() << ">(payload_bytes), i," << field->GetSize().bits() << ");";
       } else {
-        if (sized_field->GetFieldType() != PacketField::Type::ARRAY) {
+        if (sized_field->GetFieldType() != ArrayField::kFieldType) {
           ERROR(field) << __func__ << ": Unhandled sized field type for " << field_name;
         }
         const auto& array_name = field_name + "_";
@@ -364,21 +364,21 @@ void ParentDef::GenSerialize(std::ostream& s) const {
         s << array->GetSizeModifier() << ", i, ";
         s << field->GetSize().bits() << ");";
       }
-    } else if (field->GetFieldType() == PacketField::Type::CHECKSUM_START) {
+    } else if (field->GetFieldType() == ChecksumStartField::kFieldType) {
       const auto& field_name = ((ChecksumStartField*)field)->GetStartedFieldName();
       const auto& started_field = fields_.GetField(field_name);
       if (started_field == nullptr) {
         ERROR(field) << __func__ << ": Can't find checksum field named " << field_name << "(" << field->GetName()
                      << ")";
       }
-      s << "auto shared_checksum_ptr = std::make_shared<" << started_field->GetType() << ">();";
-      s << started_field->GetType() << "::Initialize(*shared_checksum_ptr);";
+      s << "auto shared_checksum_ptr = std::make_shared<" << started_field->GetDataType() << ">();";
+      s << started_field->GetDataType() << "::Initialize(*shared_checksum_ptr);";
       s << "i.RegisterObserver(packet::ByteObserver(";
-      s << "[shared_checksum_ptr](uint8_t byte){" << started_field->GetType()
+      s << "[shared_checksum_ptr](uint8_t byte){" << started_field->GetDataType()
         << "::AddByte(*shared_checksum_ptr, byte);},";
-      s << "[shared_checksum_ptr](){ return static_cast<uint64_t>(" << started_field->GetType()
+      s << "[shared_checksum_ptr](){ return static_cast<uint64_t>(" << started_field->GetDataType()
         << "::GetChecksum(*shared_checksum_ptr));}));";
-    } else if (field->GetFieldType() == PacketField::Type::COUNT) {
+    } else if (field->GetFieldType() == CountField::kFieldType) {
       const auto& array_name = ((SizeField*)field)->GetSizedFieldName() + "_";
       s << "insert(" << array_name << ".size(), i, " << field->GetSize().bits() << ");";
     } else {
