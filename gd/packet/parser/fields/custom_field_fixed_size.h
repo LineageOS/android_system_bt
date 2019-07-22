@@ -16,18 +16,26 @@
 
 #pragma once
 
-#include "fields/array_field.h"
-#include "fields/body_field.h"
-#include "fields/checksum_field.h"
-#include "fields/checksum_start_field.h"
-#include "fields/count_field.h"
-#include "fields/custom_field.h"
-#include "fields/custom_field_fixed_size.h"
-#include "fields/enum_field.h"
-#include "fields/fixed_enum_field.h"
-#include "fields/fixed_scalar_field.h"
-#include "fields/group_field.h"
-#include "fields/payload_field.h"
-#include "fields/reserved_field.h"
 #include "fields/scalar_field.h"
-#include "fields/size_field.h"
+#include "parse_location.h"
+
+class CustomFieldFixedSize : public ScalarField {
+ public:
+  CustomFieldFixedSize(std::string name, std::string type_name, int size, ParseLocation loc);
+
+  static const std::string kFieldType;
+
+  virtual const std::string& GetFieldType() const override;
+
+  virtual std::string GetDataType() const override;
+
+  virtual void GenExtractor(std::ostream& s, Size start_offset, Size end_offset) const override;
+
+  virtual bool HasParameterValidator() const override;
+
+  virtual void GenParameterValidator(std::ostream&) const override;
+
+  virtual void GenValidator(std::ostream&) const override;
+
+  std::string type_name_;
+};
