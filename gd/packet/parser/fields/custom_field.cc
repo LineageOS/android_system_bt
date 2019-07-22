@@ -105,7 +105,7 @@ void CustomField::GenInserter(std::ostream& s) const {
   if (size_ != -1) {
     s << "insert(" << GetName() << "_, i);";
   } else {
-    s << GetName() << "_.Serialize(" << GetName() << "_, i);";
+    s << GetName() << "_.Serialize(i);";
   }
 }
 

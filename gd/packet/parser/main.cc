@@ -110,10 +110,10 @@ bool parse_one_file(std::filesystem::path input_file, std::filesystem::path incl
   out_file << "#include \"os/log.h\"\n";
   out_file << "#include \"packet/base_packet_builder.h\"\n";
   out_file << "#include \"packet/bit_inserter.h\"\n";
-  out_file << "#include \"packet/custom_type_checker.h\"\n";
   out_file << "#include \"packet/packet_builder.h\"\n";
   out_file << "#include \"packet/packet_view.h\"\n";
   out_file << "#include \"packet/parser/checksum_type_checker.h\"\n";
+  out_file << "#include \"packet/parser/custom_type_checker.h\"\n";
   out_file << "\n\n";
 
   for (const auto& c : decls.type_defs_queue_) {

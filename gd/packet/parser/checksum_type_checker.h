@@ -28,13 +28,13 @@ namespace parser {
 template <typename T, typename TRET>
 class ChecksumTypeChecker {
  public:
-  template <class C, void (*)(C&)>
+  template <class C, void (C::*)()>
   struct InitializeChecker {};
 
-  template <class C, void (*)(C&, uint8_t byte)>
+  template <class C, void (C::*)(uint8_t byte)>
   struct AddByteChecker {};
 
-  template <class C, typename CRET, CRET (*)(const C&)>
+  template <class C, typename CRET, CRET (C::*)() const>
   struct GetChecksumChecker {};
 
   // If all the methods are defined, this one matches
