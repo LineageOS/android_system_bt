@@ -21,7 +21,7 @@
 
 class CustomField : public PacketField {
  public:
-  CustomField(std::string name, std::string type_name, int size, ParseLocation loc);
+  CustomField(std::string name, std::string type_name, ParseLocation loc);
 
   static const std::string kFieldType;
 
@@ -49,7 +49,4 @@ class CustomField : public PacketField {
 
  private:
   std::string type_name_;
-
- public:
-  const int size_{-1};
 };
