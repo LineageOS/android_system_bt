@@ -62,23 +62,23 @@ class Size {
     return dynamic_;
   }
 
-  bool empty() {
+  bool empty() const {
     return !is_valid_;
   }
 
-  bool has_bits() {
+  bool has_bits() const {
     return bits_ != 0;
   }
 
-  bool has_dynamic() {
+  bool has_dynamic() const {
     return !dynamic_.empty();
   }
 
-  int bits() {
+  int bits() const {
     return bits_;
   }
 
-  int bytes() {
+  int bytes() const {
     return bits_ / 8;
   }
 

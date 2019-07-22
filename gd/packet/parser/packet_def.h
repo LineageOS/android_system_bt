@@ -35,10 +35,6 @@ class PacketDef : public ParentDef {
 
   void GenParserFieldGetter(std::ostream& s, const PacketField* field) const;
 
-  void GenSerialize(std::ostream& s) const;
-
-  void GenBuilderSize(std::ostream& s) const;
-
   void GenValidator(std::ostream& s) const;
 
   TypeDef::Type GetDefinitionType() const;

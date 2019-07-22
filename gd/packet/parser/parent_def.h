@@ -55,6 +55,10 @@ class ParentDef : public TypeDef {
 
   void GenMembers(std::ostream& s) const;
 
+  void GenSize(std::ostream& s) const;
+
+  void GenSerialize(std::ostream& s) const;
+
   FieldList fields_;
 
   ParentDef* parent_{nullptr};
