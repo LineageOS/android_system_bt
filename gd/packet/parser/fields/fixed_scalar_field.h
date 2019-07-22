@@ -14,22 +14,29 @@
  * limitations under the License.
  */
 
+#pragma once
+
+#include <variant>
+
+#include "enum_def.h"
+#include "fields/fixed_field.h"
 #include "fields/packet_field.h"
+#include "parse_location.h"
 
-PacketField::PacketField(std::string name, ParseLocation loc) : loc_(loc), name_(name) {}
+class FixedScalarField : public FixedField {
+ public:
+  FixedScalarField(int size, int64_t value, ParseLocation loc);
 
-std::string PacketField::GetDebugName() const {
-  return "Field{Type:" + GetFieldType() + ", Name:" + GetName() + "}";
-}
+  static const std::string kFieldType;
 
-ParseLocation PacketField::GetLocation() const {
-  return loc_;
-}
+  virtual const std::string& GetFieldType() const override;
 
-std::string PacketField::GetName() const {
-  return name_;
-}
+  virtual std::string GetDataType() const override;
 
-Size PacketField::GetBuilderSize() const {
-  return GetSize();
-}
+  static const std::string field_type;
+
+ private:
+  void GenValue(std::ostream& s) const;
+
+  const int64_t value_;
+};

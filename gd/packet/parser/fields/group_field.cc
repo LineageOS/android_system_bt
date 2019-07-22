@@ -17,19 +17,21 @@
 #include "fields/group_field.h"
 
 GroupField::GroupField(ParseLocation loc, std::list<PacketField*>* fields)
-    : PacketField(loc, "Groups have no name"), fields_(fields) {}
+    : PacketField("Groups have no name", loc), fields_(fields) {}
 
 GroupField::~GroupField() {
   delete fields_;
 }
 
-PacketField::Type GroupField::GetFieldType() const {
-  return PacketField::Type::GROUP;
-}
+const std::string GroupField::kFieldType = "GroupField";
 
 std::string GroupField::GetName() const {
   ERROR(this) << "GetName should never be called.";
   return "";
+}
+
+const std::string& GroupField::GetFieldType() const {
+  return GroupField::kFieldType;
 }
 
 Size GroupField::GetSize() const {
@@ -37,7 +39,7 @@ Size GroupField::GetSize() const {
   return Size();
 }
 
-std::string GroupField::GetType() const {
+std::string GroupField::GetDataType() const {
   ERROR(this) << "GetType should never be called.";
   return "";
 }

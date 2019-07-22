@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-#include "fields/packet_field.h"
+#include "fields/fixed_scalar_field.h"
+#include "util.h"
 
-PacketField::PacketField(std::string name, ParseLocation loc) : loc_(loc), name_(name) {}
+const std::string FixedScalarField::kFieldType = "FixedScalarField";
 
-std::string PacketField::GetDebugName() const {
-  return "Field{Type:" + GetFieldType() + ", Name:" + GetName() + "}";
+FixedScalarField::FixedScalarField(int size, int64_t value, ParseLocation loc)
+    : FixedField("fixed_scalar", size, loc), value_(value) {}
+
+const std::string& FixedScalarField::GetFieldType() const {
+  return FixedScalarField::kFieldType;
 }
 
-ParseLocation PacketField::GetLocation() const {
-  return loc_;
+std::string FixedScalarField::GetDataType() const {
+  return util::GetTypeForSize(GetSize().bits());
 }
 
-std::string PacketField::GetName() const {
-  return name_;
-}
-
-Size PacketField::GetBuilderSize() const {
-  return GetSize();
+void FixedScalarField::GenValue(std::ostream& s) const {
+  s << value_;
 }

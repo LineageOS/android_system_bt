@@ -18,21 +18,20 @@
 
 #include "enum_def.h"
 #include "fields/packet_field.h"
+#include "fields/scalar_field.h"
 #include "parse_location.h"
 
-class EnumField : public PacketField {
+class EnumField : public ScalarField {
  public:
   EnumField(std::string name, EnumDef enum_def, std::string value, ParseLocation loc);
 
   EnumDef GetEnumDef();
 
-  virtual PacketField::Type GetFieldType() const override;
+  static const std::string kFieldType;
 
-  virtual Size GetSize() const override;
+  virtual const std::string& GetFieldType() const override;
 
-  virtual std::string GetType() const override;
-
-  virtual void GenGetter(std::ostream& s, Size start_offset, Size end_offset) const override;
+  virtual std::string GetDataType() const override;
 
   virtual bool GenBuilderParameter(std::ostream& s) const override;
 

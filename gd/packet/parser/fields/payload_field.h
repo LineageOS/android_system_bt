@@ -24,13 +24,15 @@ class PayloadField : public PacketField {
  public:
   PayloadField(std::string modifier, ParseLocation loc);
 
-  void SetSizeField(const SizeField* size_field);
+  static const std::string kFieldType;
 
-  virtual PacketField::Type GetFieldType() const override;
+  virtual const std::string& GetFieldType() const override;
+
+  void SetSizeField(const SizeField* size_field);
 
   virtual Size GetSize() const override;
 
-  virtual std::string GetType() const override;
+  virtual std::string GetDataType() const override;
 
   virtual void GenGetter(std::ostream& s, Size start_offset, Size end_offset) const override;
 
