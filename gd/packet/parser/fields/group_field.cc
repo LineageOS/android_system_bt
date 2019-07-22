@@ -44,6 +44,10 @@ std::string GroupField::GetDataType() const {
   return "";
 }
 
+void GroupField::GenExtractor(std::ostream&, Size, Size) const {
+  ERROR(this) << "GenExtractor should never be called.";
+}
+
 void GroupField::GenGetter(std::ostream&, Size, Size) const {
   ERROR(this) << "GenGetter should never be called.";
 }

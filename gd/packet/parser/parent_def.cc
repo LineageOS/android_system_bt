@@ -109,7 +109,7 @@ void ParentDef::SetEndianness(bool is_little_endian) {
 
 // Get the size. You scan specify without_payload in order to exclude payload fields as children will be overriding it.
 Size ParentDef::GetSize(bool without_payload) const {
-  auto size = Size();
+  auto size = Size(0);
 
   for (const auto& field : fields_) {
     if (without_payload &&
@@ -163,6 +163,7 @@ Size ParentDef::GetOffsetForField(std::string field_name, bool from_end) const {
     if (field_name != "payload" && field_name != "body") {
       ERROR() << "Can't find a field offset for nonexistent field named: " << field_name;
     } else {
+      // TODO: Why is this a good idea?
       return Size();
     }
   }
@@ -259,13 +260,7 @@ void ParentDef::GenSize(std::ostream& s) const {
   }
 
   for (const auto& field : header_fields) {
-    Size field_size = field->GetBuilderSize();
-    if (field_size.has_bits()) {
-      s << " + " << field_size.bits();
-    }
-    if (field_size.has_dynamic()) {
-      s << " + " << field_size.dynamic_string();
-    }
+    s << " + " << field->GetBuilderSize();
   }
   s << ";";
 
@@ -274,13 +269,7 @@ void ParentDef::GenSize(std::ostream& s) const {
   s << "size_t BitsOfFooter() const {";
   s << "return 0";
   for (const auto& field : footer_fields) {
-    Size field_size = field->GetBuilderSize();
-    if (field_size.has_bits()) {
-      s << " + " << field_size.bits();
-    }
-    if (field_size.has_dynamic()) {
-      s << " + " << field_size.dynamic_string();
-    }
+    s << " + " << field->GetBuilderSize();
   }
 
   if (parent_ != nullptr) {

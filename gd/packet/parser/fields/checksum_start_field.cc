@@ -34,6 +34,8 @@ std::string ChecksumStartField::GetDataType() const {
   return "There's no type for Checksum Start fields";
 }
 
+void ChecksumStartField::GenExtractor(std::ostream&, Size, Size) const {}
+
 void ChecksumStartField::GenGetter(std::ostream&, Size, Size) const {}
 
 bool ChecksumStartField::GenBuilderParameter(std::ostream&) const {

@@ -71,28 +71,27 @@ Size ArrayField::GetSize() const {
 
   // size_field_ is of type SIZE
   if (size_field_->GetFieldType() == SizeField::kFieldType) {
-    std::string ret = "Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "()";
+    std::string ret = "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * 8)";
     if (!size_modifier_.empty()) ret += size_modifier_;
     return ret;
   }
 
   // size_field_ is of type COUNT and it is a scalar array
-  if (!IsEnumArray() && !IsCustomFieldArray()) {
-    return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " + std::to_string(element_size_ / 8) +
-           ")";
+  if (type_def_ == nullptr) {
+    return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " + std::to_string(element_size_) + ")";
   }
 
   if (IsCustomFieldArray()) {
     if (type_def_->size_ != -1) {
-      return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " +
-             std::to_string(type_def_->size_ / 8) + ")";
+      return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " + std::to_string(type_def_->size_) +
+             ")";
     } else {
       return Size();
     }
   }
 
   // size_field_ is of type COUNT and it is an enum array
-  return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " + std::to_string(type_def_->size_ / 8) +
+  return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " + std::to_string(type_def_->size_) +
          ")";
 }
 
@@ -114,46 +113,34 @@ std::string ArrayField::GetDataType() const {
   return "std::vector<" + util::GetTypeForSize(element_size_) + ">";
 }
 
+void ArrayField::GenExtractor(std::ostream& s, Size start_offset, Size end_offset) const {
+  GenBounds(s, start_offset, end_offset, GetSize());
+
+  s << " auto subview = GetLittleEndianSubview(field_begin, field_end); ";
+  s << "auto it = subview.begin();";
+
+  // Add the element size so that we will extract as many elements as we can.
+  s << GetDataType() << " vec;";
+  if (element_size_ != -1) {
+    std::string type = (type_def_ != nullptr) ? type_def_->name_ : util::GetTypeForSize(element_size_);
+    s << "while (it + sizeof(" << type << ") <= subview.end()) {";
+    s << "vec.push_back(it.extract<" << type << ">());";
+    s << "}";
+  } else {
+    s << "while (it < subview.end()) {";
+    s << "it = " << type_def_->name_ << "::Parse(vec, it);";
+    s << "}";
+  }
+}
+
 void ArrayField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
-  if (start_offset.empty()) {
-    ERROR(this) << "Can not have an array with an ambiguous start offset.";
-  }
-
-  if (start_offset.bits() % 8 != 0) {
-    ERROR(this) << "Can not have an array that isn't byte aligned.";
-  }
-
-  if (GetSize().empty() && end_offset.empty()) {
-    ERROR(this) << "Ambiguous end offset for array with no defined size.";
-  }
-
   s << GetDataType();
   s << " Get" << util::UnderscoreToCamelCase(GetName()) << "() {";
   s << "ASSERT(was_validated_);";
 
-  s << "auto it = begin() + " << start_offset.bytes() << " + " << start_offset.dynamic_string() << ";";
+  GenExtractor(s, start_offset, end_offset);
 
-  if (!GetSize().empty()) {
-    auto size = GetSize();
-    s << "auto array_end = it + " << size.bytes() << " /* bytes */ + " << size.dynamic_string() << ";";
-  } else {
-    s << "auto array_end = end() - " << end_offset.bytes() << " /* bytes */ - " << end_offset.dynamic_string() << ";";
-  }
-
-  // Add the element size so that we will extract as many elements as we can.
-  s << GetDataType() << " ret;";
-  if (element_size_ != -1) {
-    std::string type = (type_def_ != nullptr) ? type_def_->name_ : util::GetTypeForSize(element_size_);
-    s << "while (it + sizeof(" << type << ") <= array_end) {";
-    s << "ret.push_back(it.extract<" << type << ">());";
-    s << "}";
-  } else {
-    s << "while (it < array_end) {";
-    s << "it = " << type_def_->name_ << "::Parse(ret, it);";
-    s << "}";
-  }
-
-  s << "return ret;";
+  s << "return vec;";
   s << "}\n";
 }
 
