@@ -18,6 +18,8 @@ enum FourBits : 4 {
   ONE = 1,
   TWO = 2,
   THREE = 3,
+  FIVE = 5,
+  TEN = 10,
   LAZY_ME = 15,
 }
 
@@ -39,6 +41,21 @@ packet ChildTwoTwo : ParentTwo (four_bits = TWO) {
 }
 
 packet ChildTwoTwoThree :ChildTwoTwo (more_bits = THREE) {
+}
+
+enum TwoBits : 2 {
+  ZERO = 0,
+  ONE = 1,
+  TWO = 2,
+  THREE = 3,
+}
+
+packet MiddleFourBits {
+  low_two : TwoBits,
+  next_four : FourBits,
+  straddle : FourBits,
+  four_more : FourBits,
+  high_two : TwoBits,
 }
 
 packet ParentWithSixBytes {
@@ -114,7 +131,7 @@ packet CountArrayEnum {
 packet SizedArrayCustom {
   _size_(six_bytes_array) : 8,
   an_extra_byte : 8,
-  six_bytes_array : SixBytes[+1],
+  six_bytes_array : SixBytes[+1*8],
 }
 
 packet FixedArrayCustom {

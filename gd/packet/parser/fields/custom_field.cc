@@ -43,6 +43,14 @@ std::string CustomField::GetDataType() const {
   return type_name_;
 }
 
+void CustomField::GenExtractor(std::ostream& s, Size start_offset, Size end_offset) const {
+  GenBounds(s, start_offset, end_offset, Size());
+  s << " auto subview = GetLittleEndianSubview(field_begin, field_end); ";
+  s << "auto it = subview.begin();";
+  s << "std::vector<" << GetDataType() << "> vec;";
+  s << GetDataType() << "::Parse(vec, it);";
+}
+
 void CustomField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
   if (size_ != -1) {
     s << GetDataType();
@@ -57,9 +65,7 @@ void CustomField::GenGetter(std::ostream& s, Size start_offset, Size end_offset)
     if (start_offset.bits() % 8 != 0) {
       ERROR(this) << "Custom field must be byte aligned. start_offset.bits = " << start_offset.bits();
     }
-    s << "begin()";
-    if (start_offset.bits() / 8 != 0) s << " + " << start_offset.bits() / 8;
-    if (start_offset.has_dynamic()) s << " + " << start_offset.dynamic_string();
+    s << "begin() + (" << start_offset << ") / 8;";
   } else if (size_ != -1) {
     // If the size of the custom field is already known, we can determine it's offset based on end().
     if (!end_offset.empty()) {
@@ -67,16 +73,13 @@ void CustomField::GenGetter(std::ostream& s, Size start_offset, Size end_offset)
         ERROR(this) << "Custom field must be byte aligned. end_offset.bits = " << end_offset.bits();
       }
 
-      int byte_offset = (end_offset.bits() + size_) / 8;
-      s << "end() - " << byte_offset;
-      if (end_offset.has_dynamic()) s << " - (" << end_offset.dynamic_string() << ")";
+      s << "end() - (" << size_ << " + " << end_offset << ") / 8;";
     } else {
       ERROR(this) << "Ambiguous offset for fixed size custom field.";
     }
   } else {
     ERROR(this) << "Custom Field offset can not be determined from begin().";
   }
-  s << ";";
 
   if (size_ != -1) {
     s << "return it.extract<" << GetDataType() << ">();";
