@@ -17,23 +17,21 @@
 #include "fields/payload_field.h"
 #include "util.h"
 
+const std::string PayloadField::kFieldType = "PayloadField";
+
 PayloadField::PayloadField(std::string modifier, ParseLocation loc)
-    : PacketField(loc, "payload"), size_field_(nullptr), size_modifier_(modifier) {}
+    : PacketField("payload", loc), size_field_(nullptr), size_modifier_(modifier) {}
 
 void PayloadField::SetSizeField(const SizeField* size_field) {
   if (size_field_ != nullptr) {
     ERROR(this, size_field_, size_field) << "The size field for the payload has already been assigned.";
   }
 
-  if (size_field->GetFieldType() == PacketField::Type::COUNT) {
-    ERROR(this, size_field) << "Can not use count field to describe a payload.";
-  }
-
   size_field_ = size_field;
 }
 
-PacketField::Type PayloadField::GetFieldType() const {
-  return PacketField::Type::PAYLOAD;
+const std::string& PayloadField::GetFieldType() const {
+  return PayloadField::kFieldType;
 }
 
 Size PayloadField::GetSize() const {
@@ -54,7 +52,7 @@ Size PayloadField::GetSize() const {
   return dynamic_size;
 }
 
-std::string PayloadField::GetType() const {
+std::string PayloadField::GetDataType() const {
   return "PacketView";
 }
 

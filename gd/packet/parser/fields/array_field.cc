@@ -17,8 +17,10 @@
 #include "fields/array_field.h"
 #include "util.h"
 
+const std::string ArrayField::kFieldType = "ArrayField";
+
 ArrayField::ArrayField(std::string name, int element_size, std::string size_modifier, ParseLocation loc)
-    : PacketField(loc, name), element_size_(element_size), size_modifier_(size_modifier) {
+    : PacketField(name, loc), element_size_(element_size), size_modifier_(size_modifier) {
   // Make sure the element_size is a multiple of 8.
   if (element_size % 8 != 0) {
     ERROR(this) << "Can only have arrays with elements that are byte aligned (" << element_size << ")";
@@ -26,7 +28,7 @@ ArrayField::ArrayField(std::string name, int element_size, std::string size_modi
 }
 
 ArrayField::ArrayField(std::string name, int element_size, int fixed_size, ParseLocation loc)
-    : PacketField(loc, name), element_size_(element_size), fixed_size_(fixed_size) {
+    : PacketField(name, loc), element_size_(element_size), fixed_size_(fixed_size) {
   // Make sure the element_size is a multiple of 8.
   if (element_size % 8 != 0) {
     ERROR(this) << "Can only have arrays with elements that are byte aligned (" << element_size << ")";
@@ -34,7 +36,7 @@ ArrayField::ArrayField(std::string name, int element_size, int fixed_size, Parse
 }
 
 ArrayField::ArrayField(std::string name, TypeDef* type_def, std::string size_modifier, ParseLocation loc)
-    : PacketField(loc, name), element_size_(type_def->size_), type_def_(type_def), size_modifier_(size_modifier) {
+    : PacketField(name, loc), element_size_(type_def->size_), type_def_(type_def), size_modifier_(size_modifier) {
   // If the element type is not variable sized, make sure that it is byte aligned.
   if (type_def_->size_ != -1 && type_def_->size_ % 8 != 0) {
     ERROR(this) << "Can only have arrays with elements that are byte aligned (" << type_def_->size_ << ")";
@@ -42,15 +44,15 @@ ArrayField::ArrayField(std::string name, TypeDef* type_def, std::string size_mod
 }
 
 ArrayField::ArrayField(std::string name, TypeDef* type_def, int fixed_size, ParseLocation loc)
-    : PacketField(loc, name), element_size_(type_def->size_), type_def_(type_def), fixed_size_(fixed_size) {
+    : PacketField(name, loc), element_size_(type_def->size_), type_def_(type_def), fixed_size_(fixed_size) {
   // If the element type is not variable sized, make sure that it is byte aligned.
   if (type_def_->size_ != -1 && type_def_->size_ % 8 != 0) {
     ERROR(this) << "Can only have arrays with elements that are byte aligned (" << type_def_->size_ << ")";
   }
 }
 
-PacketField::Type ArrayField::GetFieldType() const {
-  return PacketField::Type::ARRAY;
+const std::string& ArrayField::GetFieldType() const {
+  return ArrayField::kFieldType;
 }
 
 Size ArrayField::GetSize() const {
@@ -64,7 +66,7 @@ Size ArrayField::GetSize() const {
   }
 
   // size_field_ is of type SIZE
-  if (size_field_->GetFieldType() == PacketField::Type::SIZE) {
+  if (size_field_->GetFieldType() == SizeField::kFieldType) {
     std::string ret = "Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "()";
     if (!size_modifier_.empty()) ret += size_modifier_;
     return ret;
@@ -101,7 +103,7 @@ Size ArrayField::GetBuilderSize() const {
   }
 }
 
-std::string ArrayField::GetType() const {
+std::string ArrayField::GetDataType() const {
   if (type_def_ != nullptr) {
     return "std::vector<" + type_def_->name_ + ">";
   }
@@ -121,7 +123,7 @@ void ArrayField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) 
     ERROR(this) << "Ambiguous end offset for array with no defined size.";
   }
 
-  s << GetType();
+  s << GetDataType();
   s << " Get" << util::UnderscoreToCamelCase(GetName()) << "() {";
   s << "ASSERT(was_validated_);";
 
@@ -135,7 +137,7 @@ void ArrayField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) 
   }
 
   // Add the element size so that we will extract as many elements as we can.
-  s << GetType() << " ret;";
+  s << GetDataType() << " ret;";
   if (element_size_ != -1) {
     std::string type = (type_def_ != nullptr) ? type_def_->name_ : util::GetTypeForSize(element_size_);
     s << "while (it + sizeof(" << type << ") <= array_end) {";
@@ -221,7 +223,7 @@ bool ArrayField::IsFixedSize() const {
 }
 
 void ArrayField::SetSizeField(const SizeField* size_field) {
-  if (size_field->GetFieldType() == PacketField::Type::COUNT && !size_modifier_.empty()) {
+  if (size_field->GetFieldType() == CountField::kFieldType && !size_modifier_.empty()) {
     ERROR(this, size_field) << "Can not use count field to describe array with a size modifier."
                             << " Use size instead";
   }

@@ -17,17 +17,18 @@
 #pragma once
 
 #include "fields/packet_field.h"
+#include "fields/scalar_field.h"
 #include "parse_location.h"
 
-class ChecksumField : public PacketField {
+class ChecksumField : public ScalarField {
  public:
   ChecksumField(std::string name, std::string type_name, int size, ParseLocation loc);
 
-  virtual PacketField::Type GetFieldType() const override;
+  static const std::string kFieldType;
 
-  virtual Size GetSize() const override;
+  virtual const std::string& GetFieldType() const override;
 
-  virtual std::string GetType() const override;
+  virtual std::string GetDataType() const override;
 
   virtual void GenGetter(std::ostream& s, Size start_offset, Size end_offset) const override;
 
@@ -43,7 +44,4 @@ class ChecksumField : public PacketField {
 
  private:
   std::string type_name_;
-
- public:
-  const int size_{-1};
 };

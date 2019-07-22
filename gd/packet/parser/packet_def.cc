@@ -47,9 +47,9 @@ void PacketDef::GenParserDefinition(std::ostream& s) const {
     s << "{ return " << name_ << "View(packet); }";
   }
 
-  std::set<PacketField::Type> fixed_types = {
-      PacketField::Type::FIXED_SCALAR,
-      PacketField::Type::FIXED_ENUM,
+  std::set<std::string> fixed_types = {
+      FixedScalarField::kFieldType,
+      FixedEnumField::kFieldType,
   };
 
   // Print all of the public fields which are all the fields minus the fixed fields.
@@ -137,7 +137,7 @@ void PacketDef::GenValidator(std::ostream& s) const {
 
   // For any variable length fields, use their size check.
   for (const auto& field : fields_) {
-    if (field->GetFieldType() == PacketField::Type::CHECKSUM_START) {
+    if (field->GetFieldType() == ChecksumStartField::kFieldType) {
       auto offset = GetOffsetForField(field->GetName(), false);
       if (!offset.empty()) {
         s << "size_t sum_index = " << offset.bytes() << " + (" << offset.dynamic_string() << ");";
@@ -171,11 +171,11 @@ void PacketDef::GenValidator(std::ostream& s) const {
       } else {
         s << "auto checksum_view = GetBigEndianSubview(sum_index, end_sum_index);";
       }
-      s << started_field->GetType() << " checksum;";
-      s << started_field->GetType() << "::Initialize(checksum);";
+      s << started_field->GetDataType() << " checksum;";
+      s << started_field->GetDataType() << "::Initialize(checksum);";
       s << "for (uint8_t byte : checksum_view) { ";
-      s << started_field->GetType() << "::AddByte(checksum, byte);}";
-      s << "if (" << started_field->GetType() << "::GetChecksum(checksum) != (begin() + end_sum_index).extract<"
+      s << started_field->GetDataType() << "::AddByte(checksum, byte);}";
+      s << "if (" << started_field->GetDataType() << "::GetChecksum(checksum) != (begin() + end_sum_index).extract<"
         << util::GetTypeForSize(started_field->GetSize().bits()) << ">()) { return false; }";
 
       continue;
@@ -190,7 +190,7 @@ void PacketDef::GenValidator(std::ostream& s) const {
     // Custom fields with dynamic size must have the offset for the field passed in as well
     // as the end iterator so that they may ensure that they don't try to read past the end.
     // Custom fields with fixed sizes will be handled in the static offset checking.
-    if (field->GetFieldType() == PacketField::Type::CUSTOM) {
+    if (field->GetFieldType() == CustomField::kFieldType) {
       const auto& custom_size_var = field->GetName() + "_size";
 
       // Check if we can determine offset from begin(), otherwise error because by this point,
@@ -227,7 +227,7 @@ void PacketDef::GenValidator(std::ostream& s) const {
   for (const auto& constraint : parent_constraints_) {
     s << "if (Get" << util::UnderscoreToCamelCase(constraint.first) << "() != ";
     const auto& field = parent_->GetParamList().GetField(constraint.first);
-    if (field->GetFieldType() == PacketField::Type::SCALAR) {
+    if (field->GetFieldType() == ScalarField::kFieldType) {
       s << std::get<int64_t>(constraint.second);
     } else {
       s << std::get<std::string>(constraint.second);
@@ -311,8 +311,8 @@ void PacketDef::GenBuilderCreate(std::ostream& s) const {
   s << "auto builder = std::unique_ptr<" << name_ << "Builder>(new " << name_ << "Builder(";
 
   params = params.GetFieldsWithoutTypes({
-      PacketField::Type::PAYLOAD,
-      PacketField::Type::BODY,
+      PayloadField::kFieldType,
+      BodyField::kFieldType,
   });
   // Add the parameters.
   for (int i = 0; i < params.size(); i++) {
@@ -360,8 +360,8 @@ void PacketDef::GenBuilderConstructor(std::ostream& s) const {
 
   // Generate the constructor parameters.
   auto params = GetParamList().GetFieldsWithoutTypes({
-      PacketField::Type::PAYLOAD,
-      PacketField::Type::BODY,
+      PayloadField::kFieldType,
+      BodyField::kFieldType,
   });
   for (int i = 0; i < params.size(); i++) {
     params[i]->GenBuilderParameter(s);
@@ -377,8 +377,8 @@ void PacketDef::GenBuilderConstructor(std::ostream& s) const {
     // Pass parameters to the parent constructor
     s << parent_->name_ << "Builder(";
     parent_params = parent_->GetParamList().GetFieldsWithoutTypes({
-        PacketField::Type::PAYLOAD,
-        PacketField::Type::BODY,
+        PayloadField::kFieldType,
+        BodyField::kFieldType,
     });
 
     // Go through all the fields and replace constrained fields with fixed values
@@ -387,9 +387,9 @@ void PacketDef::GenBuilderConstructor(std::ostream& s) const {
       const auto& field = parent_params[i];
       const auto& constraint = parent_constraints_.find(field->GetName());
       if (constraint != parent_constraints_.end()) {
-        if (field->GetFieldType() == PacketField::Type::SCALAR) {
+        if (field->GetFieldType() == ScalarField::kFieldType) {
           s << std::get<int64_t>(constraint->second);
-        } else if (field->GetFieldType() == PacketField::Type::ENUM) {
+        } else if (field->GetFieldType() == EnumField::kFieldType) {
           s << std::get<std::string>(constraint->second);
         } else {
           ERROR(field) << "Constraints on non enum/scalar fields should be impossible.";

@@ -17,18 +17,16 @@
 #include "fields/checksum_field.h"
 #include "util.h"
 
+const std::string ChecksumField::kFieldType = "ChecksumField";
+
 ChecksumField::ChecksumField(std::string name, std::string type_name, int size, ParseLocation loc)
-    : PacketField(loc, name), type_name_(type_name), size_(size) {}
+    : ScalarField(name, size, loc), type_name_(type_name) {}
 
-PacketField::Type ChecksumField::GetFieldType() const {
-  return PacketField::Type::CHECKSUM;
+const std::string& ChecksumField::GetFieldType() const {
+  return ChecksumField::kFieldType;
 }
 
-Size ChecksumField::GetSize() const {
-  return size_;
-}
-
-std::string ChecksumField::GetType() const {
+std::string ChecksumField::GetDataType() const {
   return type_name_;
 }
 
@@ -48,7 +46,7 @@ void ChecksumField::GenParameterValidator(std::ostream&) const {
 
 void ChecksumField::GenInserter(std::ostream& s) const {
   s << "packet::ByteObserver observer = i.UnregisterObserver();";
-  s << "insert(static_cast<" << util::GetTypeForSize(size_) << ">(observer.GetValue()), i);";
+  s << "insert(static_cast<" << util::GetTypeForSize(GetSize().bits()) << ">(observer.GetValue()), i);";
 }
 
 void ChecksumField::GenValidator(std::ostream&) const {
