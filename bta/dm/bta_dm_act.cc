@@ -2767,6 +2767,9 @@ static void bta_dm_acl_change(bool is_new, const RawAddress& bd_addr,
                 bta_dm_cb.device_list.peer_device[i].peer_bdaddr))
           issue_unpair_cb = true;
 
+        /* remove all cached GATT information */
+        BTA_GATTC_Refresh(bd_addr);
+
         APPL_TRACE_DEBUG("%s: Unpairing: issue unpair CB = %d ", __func__,
                          issue_unpair_cb);
       }
