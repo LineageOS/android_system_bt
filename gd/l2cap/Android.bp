@@ -3,5 +3,6 @@ filegroup {
     srcs: [
         "l2cap_packet_test.cc",
         "fcs.cc",
+        "signal_id_test.cc",
     ],
 }
