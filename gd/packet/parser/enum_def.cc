@@ -26,8 +26,8 @@ EnumDef::EnumDef(std::string name, int size) : TypeDef(name, size){};
 
 void EnumDef::AddEntry(std::string name, uint32_t value) {
   if (value > util::GetMaxValueForBits(size_)) {
-    std::cerr << __func__ << ": Value provided is greater than max possible value for enum. " << name_ << "\n";
-    abort();
+    ERROR() << __func__ << ": Value of " << name << "(" << value << ") is greater than the max possible value for enum "
+            << name_ << "(" << util::GetMaxValueForBits(size_) << ")\n";
   }
 
   constants_.insert(std::pair(value, name));
