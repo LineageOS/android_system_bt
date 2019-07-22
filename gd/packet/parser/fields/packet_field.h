@@ -54,6 +54,8 @@ class PacketField : public Loggable {
   // Generate the parameter for Create(), return true if a parameter was added.
   virtual bool GenBuilderParameter(std::ostream& s) const = 0;
 
+  virtual bool GenBuilderMember(std::ostream& s) const;
+
   // Returns whether or not the field must be validated.
   virtual bool HasParameterValidator() const = 0;
 
