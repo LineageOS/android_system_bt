@@ -19,19 +19,20 @@
 
 int ReservedField::unique_id_ = 0;
 
-ReservedField::ReservedField(int size, ParseLocation loc)
-    : PacketField(loc, "ReservedScalar" + std::to_string(unique_id_++)), type_(PacketField::Type::RESERVED_SCALAR),
-      size_(size) {}
+const std::string ReservedField::kFieldType = "ReservedField";
 
-PacketField::Type ReservedField::GetFieldType() const {
-  return type_;
+ReservedField::ReservedField(int size, ParseLocation loc)
+    : PacketField("ReservedScalar" + std::to_string(unique_id_++), loc), size_(size) {}
+
+const std::string& ReservedField::GetFieldType() const {
+  return ReservedField::kFieldType;
 }
 
 Size ReservedField::GetSize() const {
   return size_;
 }
 
-std::string ReservedField::GetType() const {
+std::string ReservedField::GetDataType() const {
   return util::GetTypeForSize(size_);
 }
 
