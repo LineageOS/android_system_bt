@@ -34,6 +34,29 @@ Size PacketField::GetBuilderSize() const {
   return GetSize();
 }
 
+void PacketField::GenBounds(std::ostream& s, Size start_offset, Size end_offset, Size field_size) const {
+  // In order to find field_begin and field_end, we must have two of the three Sizes.
+  if ((start_offset.empty() && field_size.empty()) || (start_offset.empty() && end_offset.empty()) ||
+      (end_offset.empty() && field_size.empty())) {
+    ERROR(this) << "GenBounds called without enough information. " << start_offset << end_offset << field_size;
+  }
+
+  if (start_offset.bits() % 8 != 0 || end_offset.bits() % 8 != 0) {
+    ERROR(this) << "Can not find the bounds of a field at a non byte-aligned offset." << start_offset << end_offset;
+  }
+
+  s << "ASSERT(was_validated_);";
+
+  s << "size_t field_begin = (" << start_offset << ") / 8;";
+
+  // If the field has a known size, use the size + field_begin for field_end, otherwise use the end_offset.
+  s << "size_t field_end = size() - (" << end_offset << ") / 8;";
+  if (!field_size.empty()) {
+    s << "size_t field_sized_end = field_begin + (" << field_size << ") / 8;";
+    s << "if (field_sized_end < field_end) { field_end = field_sized_end; }";
+  }
+}
+
 bool PacketField::GenBuilderMember(std::ostream& s) const {
   return GenBuilderParameter(s);
 }
