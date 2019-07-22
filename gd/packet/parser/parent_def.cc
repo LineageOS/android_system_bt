@@ -372,12 +372,10 @@ void ParentDef::GenSerialize(std::ostream& s) const {
                      << ")";
       }
       s << "auto shared_checksum_ptr = std::make_shared<" << started_field->GetDataType() << ">();";
-      s << started_field->GetDataType() << "::Initialize(*shared_checksum_ptr);";
+      s << "shared_checksum_ptr->Initialize();";
       s << "i.RegisterObserver(packet::ByteObserver(";
-      s << "[shared_checksum_ptr](uint8_t byte){" << started_field->GetDataType()
-        << "::AddByte(*shared_checksum_ptr, byte);},";
-      s << "[shared_checksum_ptr](){ return static_cast<uint64_t>(" << started_field->GetDataType()
-        << "::GetChecksum(*shared_checksum_ptr));}));";
+      s << "[shared_checksum_ptr](uint8_t byte){ shared_checksum_ptr->AddByte(byte);},";
+      s << "[shared_checksum_ptr](){ return static_cast<uint64_t>(shared_checksum_ptr->GetChecksum());}));";
     } else if (field->GetFieldType() == CountField::kFieldType) {
       const auto& array_name = ((SizeField*)field)->GetSizedFieldName() + "_";
       s << "insert(" << array_name << ".size(), i, " << field->GetSize().bits() << ");";

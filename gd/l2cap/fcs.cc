@@ -44,16 +44,16 @@ static const uint16_t crctab[256] = {
 namespace bluetooth {
 namespace l2cap {
 
-void Fcs::Initialize(Fcs& s) {
-  s.crc = 0;
+void Fcs::Initialize() {
+  crc = 0;
 }
 
-void Fcs::AddByte(Fcs& s, uint8_t byte) {
-  s.crc = ((s.crc >> 8) & 0x00ff) ^ crctab[(s.crc & 0x00ff) ^ byte];
+void Fcs::AddByte(uint8_t byte) {
+  crc = ((crc >> 8) & 0x00ff) ^ crctab[(crc & 0x00ff) ^ byte];
 }
 
-uint16_t Fcs::GetChecksum(const Fcs& s) {
-  return s.crc;
+uint16_t Fcs::GetChecksum() const {
+  return crc;
 }
 
 }  // namespace l2cap
