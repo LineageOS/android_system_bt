@@ -19,6 +19,7 @@
 #include <iostream>
 
 #include "fields/custom_field.h"
+#include "fields/custom_field_fixed_size.h"
 #include "parse_location.h"
 #include "type_def.h"
 

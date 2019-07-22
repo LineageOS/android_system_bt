@@ -28,7 +28,11 @@ CustomFieldDef::CustomFieldDef(std::string name, std::string include, int size)
 }
 
 PacketField* CustomFieldDef::GetNewField(const std::string& name, ParseLocation loc) const {
-  return new CustomField(name, name_, size_, loc);
+  if (size_ == -1) {
+    return new CustomField(name, name_, loc);
+  } else {
+    return new CustomFieldFixedSize(name, name_, size_, loc);
+  }
 }
 
 TypeDef::Type CustomFieldDef::GetDefinitionType() const {
