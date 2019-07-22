@@ -33,3 +33,7 @@ std::string PacketField::GetName() const {
 Size PacketField::GetBuilderSize() const {
   return GetSize();
 }
+
+bool PacketField::GenBuilderMember(std::ostream& s) const {
+  return GenBuilderParameter(s);
+}
