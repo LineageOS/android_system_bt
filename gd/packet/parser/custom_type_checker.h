@@ -23,14 +23,14 @@
 
 namespace bluetooth {
 namespace packet {
-// Checks a custom type has all the necessary static functions with the correct signatures.
+// Checks a custom type has all the necessary functions with the correct signatures.
 template <typename T>
 class CustomTypeChecker {
  public:
-  template <class C, void (*)(const C&, BitInserter&)>
+  template <class C, void (C::*)(BitInserter&) const>
   struct SerializeChecker {};
 
-  template <class C, size_t (*)(const C&)>
+  template <class C, size_t (C::*)() const>
   struct SizeChecker {};
 
   template <class C, Iterator<true> (*)(std::vector<C>& vec, Iterator<true> it)>
@@ -40,10 +40,10 @@ class CustomTypeChecker {
   struct ParseCheckerBigEndian {};
 
   template <class C>
-  static int Test(SerializeChecker<C, &C::Serialize>*, SizeChecker<C, &C::Size>*, ParseChecker<C, &C::Parse>*);
+  static int Test(SerializeChecker<C, &C::Serialize>*, SizeChecker<C, &C::size>*, ParseChecker<C, &C::Parse>*);
 
   template <class C>
-  static int Test(SerializeChecker<C, &C::Serialize>*, SizeChecker<C, &C::Size>*, ParseCheckerBigEndian<C, &C::Parse>*);
+  static int Test(SerializeChecker<C, &C::Serialize>*, SizeChecker<C, &C::size>*, ParseCheckerBigEndian<C, &C::Parse>*);
 
   template <class C>
   static char Test(...);

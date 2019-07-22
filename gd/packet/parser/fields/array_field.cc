@@ -192,7 +192,7 @@ void ArrayField::GenInserter(std::ostream& s) const {
     s << "insert(static_cast<" << util::GetTypeForSize(type_def_->size_) << ">(val), i, " << type_def_->size_ << ");";
   } else if (IsCustomFieldArray()) {
     if (type_def_->size_ == -1) {
-      s << type_def_->name_ << "::Serialize(val, i);";
+      s << "val.Serialize(i);";
     } else {
       s << "insert(val, i);";
     }

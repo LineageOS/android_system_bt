@@ -38,11 +38,7 @@ class Variable final {
   Variable(const Variable&) = default;
   Variable(const std::string& str);
 
-  static void Serialize(const Variable& v, BitInserter& bi);
-
-  static size_t Size(const Variable& v) {
-    return v.size();
-  }
+  void Serialize(BitInserter& bi) const;
 
   size_t size() const;
 

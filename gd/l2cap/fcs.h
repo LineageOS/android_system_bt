@@ -24,11 +24,11 @@ namespace l2cap {
 // Frame Check Sequence from the L2CAP spec.
 class Fcs {
  public:
-  static void Initialize(Fcs& s);
+  void Initialize();
 
-  static void AddByte(Fcs& s, uint8_t byte);
+  void AddByte(uint8_t byte);
 
-  static uint16_t GetChecksum(const Fcs& s);
+  uint16_t GetChecksum() const;
 
  private:
   uint16_t crc;
