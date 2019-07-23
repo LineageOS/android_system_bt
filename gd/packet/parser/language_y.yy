@@ -560,15 +560,15 @@ reserved_field_definition
 array_field_definition
   : IDENTIFIER ':' INTEGER '[' ']'
     {
-      DEBUG() << "Array field defined name=" << *$1 << " element_size=" << $3;
-      $$ = new ArrayField(*$1, $3, "", LOC);
+      DEBUG() << "Vector field defined name=" << *$1 << " element_size=" << $3;
+      $$ = new VectorField(*$1, $3, "", LOC);
       delete $1;
     }
   | IDENTIFIER ':' INTEGER '[' SIZE_MODIFIER ']'
     {
-      DEBUG() << "Array field defined name=" << *$1 << " element_size=" << $3
+      DEBUG() << "Vector field defined name=" << *$1 << " element_size=" << $3
              << " size_modifier=" << *$5;
-      $$ = new ArrayField(*$1, $3, *$5, LOC);
+      $$ = new VectorField(*$1, $3, *$5, LOC);
       delete $1;
       delete $5;
     }
@@ -581,9 +581,9 @@ array_field_definition
     }
   | IDENTIFIER ':' IDENTIFIER '[' ']'
     {
-      DEBUG() << "Array field defined name=" << *$1 << " type=" << *$3;
+      DEBUG() << "Vector field defined name=" << *$1 << " type=" << *$3;
       if (auto type_def = decls->GetTypeDef(*$3)) {
-        $$ = new ArrayField(*$1, type_def, "", LOC);
+        $$ = new VectorField(*$1, type_def, "", LOC);
       } else {
         ERRORLOC(LOC) << "Can't find type used in array field.";
       }
@@ -592,10 +592,10 @@ array_field_definition
     }
   | IDENTIFIER ':' IDENTIFIER '[' SIZE_MODIFIER ']'
     {
-      DEBUG() << "Array field defined name=" << *$1 << " type=" << *$3
+      DEBUG() << "Vector field defined name=" << *$1 << " type=" << *$3
              << " size_modifier=" << *$5;
       if (auto type_def = decls->GetTypeDef(*$3)) {
-        $$ = new ArrayField(*$1, type_def, *$5, LOC);
+        $$ = new VectorField(*$1, type_def, *$5, LOC);
       } else {
         ERRORLOC(LOC) << "Can't find type used in array field.";
       }

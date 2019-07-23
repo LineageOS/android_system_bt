@@ -443,7 +443,7 @@ vector<uint8_t> fixed_array_enum{
 }
 
 TEST(GeneratedPacketTest, testFixedArrayEnum) {
-  std::vector<ForArrays> fixed_array{
+  std::array<ForArrays, 5> fixed_array{
       {ForArrays::ONE, ForArrays::TWO, ForArrays::ONE_TWO, ForArrays::TWO_THREE, ForArrays::FFFF}};
   auto packet = FixedArrayEnumBuilder::Create(fixed_array);
   ASSERT_EQ(fixed_array_enum.size(), packet->size());
@@ -546,12 +546,12 @@ TEST(GeneratedPacketTest, testCountArrayEnum) {
 }
 
 TEST(GeneratedPacketTest, testFixedSizeByteArray) {
-  constexpr int byte_array_size = 32;
-  std::vector<uint8_t> byte_array(byte_array_size);
+  constexpr std::size_t byte_array_size = 32;
+  std::array<uint8_t, byte_array_size> byte_array;
   for (uint8_t i = 0; i < byte_array_size; i++) byte_array[i] = i;
 
   constexpr int word_array_size = 8;
-  std::vector<uint32_t> word_array(word_array_size);
+  std::array<uint32_t, word_array_size> word_array;
   for (uint32_t i = 0; i < word_array_size; i++) word_array[i] = i;
 
   auto packet = PacketWithFixedArraysOfBytesBuilder::Create(byte_array, word_array);
@@ -581,19 +581,6 @@ TEST(GeneratedPacketTest, testFixedSizeByteArray) {
   for (size_t i = 0; i < decoded_word_array.size(); i++) {
     ASSERT_EQ(word_array[i], decoded_word_array[i]);
   }
-}
-
-TEST(GeneratedPacketTest, testFixedSizeArrayValidatorDeath) {
-  constexpr int byte_array_size = 33;
-  std::vector<uint8_t> byte_array(byte_array_size);
-  for (uint8_t i = 0; i < byte_array_size; i++) byte_array[i] = i;
-
-  constexpr int word_array_size = 8;
-  std::vector<uint32_t> word_array(word_array_size);
-  for (uint32_t i = 0; i < word_array_size; i++) word_array[i] = i;
-
-  std::unique_ptr<PacketWithFixedArraysOfBytesBuilder> packet;
-  ASSERT_DEATH(packet = PacketWithFixedArraysOfBytesBuilder::Create(byte_array, word_array), "size");
 }
 
 vector<uint8_t> one_variable{
@@ -670,12 +657,8 @@ vector<uint8_t> fixed_array_variable{
 };
 
 TEST(GeneratedPacketTest, testFixedArrayVariableLength) {
-  std::vector<Variable> fixed_array;
-  fixed_array.emplace_back("one");
-  fixed_array.emplace_back("two");
-  fixed_array.emplace_back("three");
-  fixed_array.emplace_back("four");
-  fixed_array.emplace_back("five");
+  std::array<Variable, 5> fixed_array{std::string("one"), std::string("two"), std::string("three"), std::string("four"),
+                                      std::string("five")};
 
   auto packet = FixedArrayVariableBuilder::Create(fixed_array);
   ASSERT_EQ(fixed_array_variable.size(), packet->size());
