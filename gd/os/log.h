@@ -46,21 +46,24 @@
 #define LOG_INFO(...) LOGWRAPPER(__VA_ARGS__)
 #define LOG_WARN(...) LOGWRAPPER(__VA_ARGS__)
 #define LOG_ERROR(...) LOGWRAPPER(__VA_ARGS__)
+#define LOG_ALWAYS_FATAL(...) \
+  do {                        \
+    LOGWRAPPER(__VA_ARGS__);  \
+    abort();                  \
+  } while (false)
 
 #endif /* defined(OS_ANDROID) */
 
-#define ASSERT(condition)                                                       \
-  do {                                                                          \
-    if (!(condition)) {                                                         \
-      LOG_ERROR("%s:%d assertion '" #condition "' failed", __FILE__, __LINE__); \
-      abort();                                                                  \
-    }                                                                           \
+#define ASSERT(condition)                                                              \
+  do {                                                                                 \
+    if (!(condition)) {                                                                \
+      LOG_ALWAYS_FATAL("%s:%d assertion '" #condition "' failed", __FILE__, __LINE__); \
+    }                                                                                  \
   } while (false)
 
-#define ASSERT_LOG(condition, fmt, args...)                                                    \
-  do {                                                                                         \
-    if (!(condition)) {                                                                        \
-      LOG_ERROR("%s:%d assertion '" #condition "' failed - " fmt, __FILE__, __LINE__, ##args); \
-      abort();                                                                                 \
-    }                                                                                          \
+#define ASSERT_LOG(condition, fmt, args...)                                                           \
+  do {                                                                                                \
+    if (!(condition)) {                                                                               \
+      LOG_ALWAYS_FATAL("%s:%d assertion '" #condition "' failed - " fmt, __FILE__, __LINE__, ##args); \
+    }                                                                                                 \
   } while (false)
