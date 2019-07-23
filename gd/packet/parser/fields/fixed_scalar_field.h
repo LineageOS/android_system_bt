@@ -16,16 +16,16 @@
 
 #pragma once
 
+#include <variant>
+
 #include "enum_def.h"
+#include "fields/fixed_field.h"
 #include "fields/packet_field.h"
-#include "fields/scalar_field.h"
 #include "parse_location.h"
 
-class EnumField : public ScalarField {
+class FixedScalarField : public FixedField {
  public:
-  EnumField(std::string name, EnumDef enum_def, std::string value, ParseLocation loc);
-
-  EnumDef GetEnumDef();
+  FixedScalarField(int size, int64_t value, ParseLocation loc);
 
   static const std::string kFieldType;
 
@@ -33,15 +33,10 @@ class EnumField : public ScalarField {
 
   virtual std::string GetDataType() const override;
 
-  virtual bool HasParameterValidator() const override;
-
-  virtual void GenParameterValidator(std::ostream&) const override;
-
-  virtual void GenInserter(std::ostream& s) const override;
-
-  virtual void GenValidator(std::ostream&) const override;
+  static const std::string field_type;
 
  private:
-  EnumDef enum_def_;
-  std::string value_;
+  void GenValue(std::ostream& s) const;
+
+  const int64_t value_;
 };

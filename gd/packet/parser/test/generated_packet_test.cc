@@ -212,6 +212,41 @@ TEST(GeneratedPacketTest, testValidatedParentDeath) {
   ASSERT_DEATH(child_view.GetFieldName(), "validated");
 }
 
+vector<uint8_t> middle_four_bits = {
+    0x95,  // low_two = ONE, next_four = FIVE, straddle = TEN
+    0x8a,  // straddle = TEN, four_more = TWO, high_two = TWO
+};
+
+TEST(GeneratedPacketTest, testMiddleFourBitsPacket) {
+  TwoBits low_two = TwoBits::ONE;
+  FourBits next_four = FourBits::FIVE;
+  FourBits straddle = FourBits::TEN;
+  FourBits four_more = FourBits::TWO;
+  TwoBits high_two = TwoBits::TWO;
+
+  auto packet = MiddleFourBitsBuilder::Create(low_two, next_four, straddle, four_more, high_two);
+
+  ASSERT_EQ(middle_four_bits.size(), packet->size());
+
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  BitInserter it(*packet_bytes);
+  packet->Serialize(it);
+
+  ASSERT_EQ(packet_bytes->size(), middle_four_bits.size());
+  for (size_t i = 0; i < middle_four_bits.size(); i++) {
+    ASSERT_EQ(packet_bytes->at(i), middle_four_bits[i]);
+  }
+
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  MiddleFourBitsView view = MiddleFourBitsView::Create(packet_bytes_view);
+  ASSERT_TRUE(view.IsValid());
+  ASSERT_EQ(low_two, view.GetLowTwo());
+  ASSERT_EQ(next_four, view.GetNextFour());
+  ASSERT_EQ(straddle, view.GetStraddle());
+  ASSERT_EQ(four_more, view.GetFourMore());
+  ASSERT_EQ(high_two, view.GetHighTwo());
+}
+
 TEST(GeneratedPacketTest, testChildWithSixBytes) {
   SixBytes six_bytes_a{{0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6}};
   SixBytes six_bytes_b{{0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6}};

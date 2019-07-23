@@ -14,25 +14,22 @@
  * limitations under the License.
  */
 
-#pragma once
+#include "fields/fixed_enum_field.h"
+#include "util.h"
 
-#include <cstdint>
+const std::string FixedEnumField::kFieldType = "FixedEnumField";
 
-namespace bluetooth {
-namespace l2cap {
+FixedEnumField::FixedEnumField(EnumDef* enum_def, std::string value, ParseLocation loc)
+    : FixedField("fixed_enum", enum_def->size_, loc), enum_(enum_def), value_(value) {}
 
-// Frame Check Sequence from the L2CAP spec.
-class Fcs {
- public:
-  void Initialize();
+const std::string& FixedEnumField::GetFieldType() const {
+  return FixedEnumField::kFieldType;
+}
 
-  void AddByte(uint8_t byte);
+std::string FixedEnumField::GetDataType() const {
+  return enum_->name_;
+}
 
-  uint16_t GetChecksum() const;
-
- private:
-  uint16_t crc;
-};
-
-}  // namespace l2cap
-}  // namespace bluetooth
+void FixedEnumField::GenValue(std::ostream& s) const {
+  s << enum_->name_ << "::" << value_;
+}

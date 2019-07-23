@@ -17,22 +17,29 @@
 #pragma once
 
 #include <cstdint>
+#include <forward_list>
+#include <iterator>
+#include <memory>
+#include <vector>
+
+#include "packet/bit_inserter.h"
 
 namespace bluetooth {
-namespace l2cap {
+namespace packet {
 
-// Frame Check Sequence from the L2CAP spec.
-class Fcs {
+// A base struct to provide Serialize() and size() to be overridden.
+class BaseStruct {
  public:
-  void Initialize();
+  virtual ~BaseStruct() = default;
 
-  void AddByte(uint8_t byte);
+  virtual size_t size() const = 0;
 
-  uint16_t GetChecksum() const;
+  // Write to the vector with the given iterator.
+  virtual void Serialize(BitInserter& it) const = 0;
 
- private:
-  uint16_t crc;
+ protected:
+  BaseStruct() = default;
 };
 
-}  // namespace l2cap
+}  // namespace packet
 }  // namespace bluetooth

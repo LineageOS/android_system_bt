@@ -47,9 +47,9 @@ void PacketDef::GenParserDefinition(std::ostream& s) const {
     s << "{ return " << name_ << "View(packet); }";
   }
 
-  std::set<PacketField::Type> fixed_types = {
-      PacketField::Type::FIXED_SCALAR,
-      PacketField::Type::FIXED_ENUM,
+  std::set<std::string> fixed_types = {
+      FixedScalarField::kFieldType,
+      FixedEnumField::kFieldType,
   };
 
   // Print all of the public fields which are all the fields minus the fixed fields.
@@ -98,164 +98,6 @@ void PacketDef::GenParserFieldGetter(std::ostream& s, const PacketField* field) 
   field->GenGetter(s, start_field_offset, end_field_offset);
 }
 
-void PacketDef::GenSerialize(std::ostream& s) const {
-  auto header_fields = fields_.GetFieldsBeforePayloadOrBody();
-  auto footer_fields = fields_.GetFieldsAfterPayloadOrBody();
-
-  s << "protected:";
-  s << "void SerializeHeader(BitInserter&";
-  if (parent_ != nullptr || header_fields.size() != 0) {
-    s << " i ";
-  }
-  s << ") const {";
-
-  if (parent_ != nullptr) {
-    s << parent_->name_ << "Builder::SerializeHeader(i);";
-  }
-
-  for (const auto& field : header_fields) {
-    if (field->GetFieldType() == PacketField::Type::SIZE) {
-      const auto& field_name = ((SizeField*)field)->GetSizedFieldName();
-      const auto& sized_field = fields_.GetField(field_name);
-      if (sized_field == nullptr) {
-        ERROR(field) << __func__ << ": Can't find sized field named " << field_name;
-      }
-      if (sized_field->GetFieldType() == PacketField::Type::PAYLOAD) {
-        s << "size_t payload_bytes = GetPayloadSize();";
-        std::string modifier = ((PayloadField*)sized_field)->size_modifier_;
-        if (modifier != "") {
-          s << "static_assert((" << modifier << ")%8 == 0, \"Modifiers must be byte-aligned\");";
-          s << "payload_bytes = payload_bytes + (" << modifier << ") / 8;";
-        }
-        s << "ASSERT(payload_bytes < (static_cast<size_t>(1) << " << field->GetSize().bits() << "));";
-        s << "insert(static_cast<" << field->GetType() << ">(payload_bytes), i," << field->GetSize().bits() << ");";
-      } else {
-        if (sized_field->GetFieldType() != PacketField::Type::ARRAY) {
-          ERROR(field) << __func__ << ": Unhandled sized field type for " << field_name;
-        }
-        const auto& array_name = field_name + "_";
-        const ArrayField* array = (ArrayField*)sized_field;
-        s << "size_t " << array_name + "bytes =  0;";
-        if (array->element_size_ == -1) {
-          s << "for (auto elem : " << array_name << ") {";
-          s << array_name + "bytes += elem.size(); }";
-        } else {
-          s << array_name + "bytes = ";
-          s << array_name << ".size() * (" << array->element_size_ << " / 8);";
-        }
-        s << "ASSERT(" << array_name + "bytes < (1 << " << field->GetSize().bits() << "));";
-        s << "insert(" << array_name << "bytes";
-        s << array->GetSizeModifier() << ", i, ";
-        s << field->GetSize().bits() << ");";
-      }
-    } else if (field->GetFieldType() == PacketField::Type::CHECKSUM_START) {
-      const auto& field_name = ((ChecksumStartField*)field)->GetStartedFieldName();
-      const auto& started_field = fields_.GetField(field_name);
-      if (started_field == nullptr) {
-        ERROR(field) << __func__ << ": Can't find checksum field named " << field_name << "(" << field->GetName()
-                     << ")";
-      }
-      s << "auto shared_checksum_ptr = std::make_shared<" << started_field->GetType() << ">();";
-      s << started_field->GetType() << "::Initialize(*shared_checksum_ptr);";
-      s << "i.RegisterObserver(packet::ByteObserver(";
-      s << "[shared_checksum_ptr](uint8_t byte){" << started_field->GetType()
-        << "::AddByte(*shared_checksum_ptr, byte);},";
-      s << "[shared_checksum_ptr](){ return static_cast<uint64_t>(" << started_field->GetType()
-        << "::GetChecksum(*shared_checksum_ptr));}));";
-    } else if (field->GetFieldType() == PacketField::Type::COUNT) {
-      const auto& array_name = ((SizeField*)field)->GetSizedFieldName() + "_";
-      s << "insert(" << array_name << ".size(), i, " << field->GetSize().bits() << ");";
-    } else {
-      field->GenInserter(s);
-    }
-  }
-  s << "}\n\n";
-
-  s << "void SerializeFooter(BitInserter&";
-  if (parent_ != nullptr || footer_fields.size() != 0) {
-    s << " i ";
-  }
-  s << ") const {";
-
-  for (const auto& field : footer_fields) {
-    field->GenInserter(s);
-  }
-  if (parent_ != nullptr) {
-    s << parent_->name_ << "Builder::SerializeFooter(i);";
-  }
-  s << "}\n\n";
-
-  s << "public:";
-  s << "virtual void Serialize(BitInserter& i) const override {";
-  s << "SerializeHeader(i);";
-  if (fields_.HasPayload()) {
-    s << "payload_->Serialize(i);";
-  }
-  s << "SerializeFooter(i);";
-
-  s << "}\n";
-}
-
-void PacketDef::GenBuilderSize(std::ostream& s) const {
-  auto header_fields = fields_.GetFieldsBeforePayloadOrBody();
-  auto footer_fields = fields_.GetFieldsAfterPayloadOrBody();
-
-  s << "protected:";
-  s << "size_t BitsOfHeader() const {";
-  s << "return 0";
-
-  if (parent_ != nullptr) {
-    s << " + " << parent_->name_ << "Builder::BitsOfHeader() ";
-  }
-
-  for (const auto& field : header_fields) {
-    Size field_size = field->GetBuilderSize();
-    if (field_size.has_bits()) {
-      s << " + " << field_size.bits();
-    }
-    if (field_size.has_dynamic()) {
-      s << " + " << field_size.dynamic_string();
-    }
-  }
-  s << ";";
-
-  s << "}\n\n";
-
-  s << "size_t BitsOfFooter() const {";
-  s << "return 0";
-  for (const auto& field : footer_fields) {
-    Size field_size = field->GetBuilderSize();
-    if (field_size.has_bits()) {
-      s << " + " << field_size.bits();
-    }
-    if (field_size.has_dynamic()) {
-      s << " + " << field_size.dynamic_string();
-    }
-  }
-
-  if (parent_ != nullptr) {
-    s << " + " << parent_->name_ << "Builder::BitsOfFooter()";
-  }
-  s << ";";
-  s << "}\n\n";
-
-  if (fields_.HasPayload()) {
-    s << "size_t GetPayloadSize() const {";
-    s << "if (payload_ != nullptr) {return payload_->size();}";
-    s << "else { return size() - (BitsOfHeader() + BitsOfFooter()) / 8;}";
-    s << ";}\n\n";
-  }
-
-  s << "public:";
-  s << "virtual size_t size() const override {";
-  s << "return (BitsOfHeader() / 8)";
-  if (fields_.HasPayload()) {
-    s << "+ payload_->size()";
-  }
-  s << " + (BitsOfFooter() / 8);";
-  s << "}\n";
-}
-
 TypeDef::Type PacketDef::GetDefinitionType() const {
   return TypeDef::Type::PACKET;
 }
@@ -279,12 +121,12 @@ void PacketDef::GenValidator(std::ostream& s) const {
   // Offset by the parents known size. We know that any dynamic fields can
   // already be called since the parent must have already been validated by
   // this point.
-  auto parent_size = Size();
+  auto parent_size = Size(0);
   if (parent_ != nullptr) {
     parent_size = parent_->GetSize(true);
   }
 
-  s << "auto it = begin() + " << parent_size.bytes() << " + (" << parent_size.dynamic_string() << ");";
+  s << "auto it = begin() + (" << parent_size << ") / 8;";
 
   // Check if you can extract the static fields.
   // At this point you know you can use the size getters without crashing
@@ -295,16 +137,16 @@ void PacketDef::GenValidator(std::ostream& s) const {
 
   // For any variable length fields, use their size check.
   for (const auto& field : fields_) {
-    if (field->GetFieldType() == PacketField::Type::CHECKSUM_START) {
+    if (field->GetFieldType() == ChecksumStartField::kFieldType) {
       auto offset = GetOffsetForField(field->GetName(), false);
       if (!offset.empty()) {
-        s << "size_t sum_index = " << offset.bytes() << " + (" << offset.dynamic_string() << ");";
+        s << "size_t sum_index = (" << offset << ") / 8;";
       } else {
         offset = GetOffsetForField(field->GetName(), true);
         if (offset.empty()) {
           ERROR(field) << "Checksum Start Field offset can not be determined.";
         }
-        s << "size_t sum_index = size() - " << offset.bytes() << " - (" << offset.dynamic_string() << ");";
+        s << "size_t sum_index = size() - (" << offset << ") / 8;";
       }
 
       const auto& field_name = ((ChecksumStartField*)field)->GetStartedFieldName();
@@ -315,25 +157,24 @@ void PacketDef::GenValidator(std::ostream& s) const {
       }
       auto end_offset = GetOffsetForField(started_field->GetName(), false);
       if (!end_offset.empty()) {
-        s << "size_t end_sum_index = " << end_offset.bytes() << " + (" << end_offset.dynamic_string() << ");";
+        s << "size_t end_sum_index = (" << end_offset << ") / 8;";
       } else {
         end_offset = GetOffsetForField(started_field->GetName(), true);
         if (end_offset.empty()) {
           ERROR(started_field) << "Checksum Field end_offset can not be determined.";
         }
-        s << "size_t end_sum_index = size() - " << started_field->GetSize().bytes() << " - " << end_offset.bytes()
-          << " - (" << end_offset.dynamic_string() << ");";
+        s << "size_t end_sum_index = size() - (" << started_field->GetSize() << " - " << end_offset << ") / 8;";
       }
       if (is_little_endian_) {
         s << "auto checksum_view = GetLittleEndianSubview(sum_index, end_sum_index);";
       } else {
         s << "auto checksum_view = GetBigEndianSubview(sum_index, end_sum_index);";
       }
-      s << started_field->GetType() << " checksum;";
-      s << started_field->GetType() << "::Initialize(checksum);";
+      s << started_field->GetDataType() << " checksum;";
+      s << "checksum.Initialize();";
       s << "for (uint8_t byte : checksum_view) { ";
-      s << started_field->GetType() << "::AddByte(checksum, byte);}";
-      s << "if (" << started_field->GetType() << "::GetChecksum(checksum) != (begin() + end_sum_index).extract<"
+      s << "checksum.AddByte(byte);}";
+      s << "if (checksum.GetChecksum() != (begin() + end_sum_index).extract<"
         << util::GetTypeForSize(started_field->GetSize().bits()) << ">()) { return false; }";
 
       continue;
@@ -348,9 +189,7 @@ void PacketDef::GenValidator(std::ostream& s) const {
     // Custom fields with dynamic size must have the offset for the field passed in as well
     // as the end iterator so that they may ensure that they don't try to read past the end.
     // Custom fields with fixed sizes will be handled in the static offset checking.
-    if (field->GetFieldType() == PacketField::Type::CUSTOM) {
-      const auto& custom_size_var = field->GetName() + "_size";
-
+    if (field->GetFieldType() == CustomField::kFieldType) {
       // Check if we can determine offset from begin(), otherwise error because by this point,
       // the size of the custom field is unknown and can't be subtracted from end() to get the
       // offset.
@@ -364,15 +203,16 @@ void PacketDef::GenValidator(std::ostream& s) const {
       }
 
       // Custom fields are special as their size field takes an argument.
+      const auto& custom_size_var = field->GetName() + "_size";
       s << "const auto& " << custom_size_var << " = " << field_size.dynamic_string();
-      s << "(begin() + " << offset.bytes() << " + (" << offset.dynamic_string() << "));";
+      s << "(begin() + (" << offset << ") / 8);";
 
       s << "if (!" << custom_size_var << ".has_value()) { return false; }";
       s << "it += *" << custom_size_var << ";";
       s << "if (it > end()) return false;";
       continue;
     } else {
-      s << "it += " << field_size.dynamic_string() << ";";
+      s << "it += (" << field_size.dynamic_string() << ") / 8;";
       s << "if (it > end()) return false;";
     }
   }
@@ -385,7 +225,7 @@ void PacketDef::GenValidator(std::ostream& s) const {
   for (const auto& constraint : parent_constraints_) {
     s << "if (Get" << util::UnderscoreToCamelCase(constraint.first) << "() != ";
     const auto& field = parent_->GetParamList().GetField(constraint.first);
-    if (field->GetFieldType() == PacketField::Type::SCALAR) {
+    if (field->GetFieldType() == ScalarField::kFieldType) {
       s << std::get<int64_t>(constraint.second);
     } else {
       s << std::get<std::string>(constraint.second);
@@ -429,7 +269,7 @@ void PacketDef::GenBuilderDefinition(std::ostream& s) const {
   GenSerialize(s);
   s << "\n";
 
-  GenBuilderSize(s);
+  GenSize(s);
   s << "\n";
 
   s << " protected:\n";
@@ -469,8 +309,8 @@ void PacketDef::GenBuilderCreate(std::ostream& s) const {
   s << "auto builder = std::unique_ptr<" << name_ << "Builder>(new " << name_ << "Builder(";
 
   params = params.GetFieldsWithoutTypes({
-      PacketField::Type::PAYLOAD,
-      PacketField::Type::BODY,
+      PayloadField::kFieldType,
+      BodyField::kFieldType,
   });
   // Add the parameters.
   for (int i = 0; i < params.size(); i++) {
@@ -518,8 +358,8 @@ void PacketDef::GenBuilderConstructor(std::ostream& s) const {
 
   // Generate the constructor parameters.
   auto params = GetParamList().GetFieldsWithoutTypes({
-      PacketField::Type::PAYLOAD,
-      PacketField::Type::BODY,
+      PayloadField::kFieldType,
+      BodyField::kFieldType,
   });
   for (int i = 0; i < params.size(); i++) {
     params[i]->GenBuilderParameter(s);
@@ -535,8 +375,8 @@ void PacketDef::GenBuilderConstructor(std::ostream& s) const {
     // Pass parameters to the parent constructor
     s << parent_->name_ << "Builder(";
     parent_params = parent_->GetParamList().GetFieldsWithoutTypes({
-        PacketField::Type::PAYLOAD,
-        PacketField::Type::BODY,
+        PayloadField::kFieldType,
+        BodyField::kFieldType,
     });
 
     // Go through all the fields and replace constrained fields with fixed values
@@ -545,9 +385,9 @@ void PacketDef::GenBuilderConstructor(std::ostream& s) const {
       const auto& field = parent_params[i];
       const auto& constraint = parent_constraints_.find(field->GetName());
       if (constraint != parent_constraints_.end()) {
-        if (field->GetFieldType() == PacketField::Type::SCALAR) {
+        if (field->GetFieldType() == ScalarField::kFieldType) {
           s << std::get<int64_t>(constraint->second);
-        } else if (field->GetFieldType() == PacketField::Type::ENUM) {
+        } else if (field->GetFieldType() == EnumField::kFieldType) {
           s << std::get<std::string>(constraint->second);
         } else {
           ERROR(field) << "Constraints on non enum/scalar fields should be impossible.";

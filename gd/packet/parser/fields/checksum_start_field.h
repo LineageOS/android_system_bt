@@ -23,13 +23,17 @@ class ChecksumStartField : public PacketField {
  public:
   ChecksumStartField(std::string name, ParseLocation loc);
 
+  static const std::string kFieldType;
+
   std::string GetField() const;
 
-  virtual PacketField::Type GetFieldType() const override;
+  virtual const std::string& GetFieldType() const override;
 
   virtual Size GetSize() const override;
 
-  virtual std::string GetType() const override;
+  virtual std::string GetDataType() const override;
+
+  virtual void GenExtractor(std::ostream& s, Size start_offset, Size end_offset) const override;
 
   virtual void GenGetter(std::ostream& s, Size start_offset, Size end_offset) const override;
 

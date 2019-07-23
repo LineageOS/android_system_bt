@@ -14,25 +14,22 @@
  * limitations under the License.
  */
 
-#pragma once
+#include "fields/fixed_scalar_field.h"
+#include "util.h"
 
-#include <cstdint>
+const std::string FixedScalarField::kFieldType = "FixedScalarField";
 
-namespace bluetooth {
-namespace l2cap {
+FixedScalarField::FixedScalarField(int size, int64_t value, ParseLocation loc)
+    : FixedField("fixed_scalar", size, loc), value_(value) {}
 
-// Frame Check Sequence from the L2CAP spec.
-class Fcs {
- public:
-  void Initialize();
+const std::string& FixedScalarField::GetFieldType() const {
+  return FixedScalarField::kFieldType;
+}
 
-  void AddByte(uint8_t byte);
+std::string FixedScalarField::GetDataType() const {
+  return util::GetTypeForSize(GetSize().bits());
+}
 
-  uint16_t GetChecksum() const;
-
- private:
-  uint16_t crc;
-};
-
-}  // namespace l2cap
-}  // namespace bluetooth
+void FixedScalarField::GenValue(std::ostream& s) const {
+  s << value_;
+}

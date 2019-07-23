@@ -20,19 +20,16 @@
 
 #include "enum_def.h"
 #include "fields/packet_field.h"
+#include "fields/scalar_field.h"
 #include "parse_location.h"
 
-class FixedField : public PacketField {
+class FixedField : public ScalarField {
  public:
-  FixedField(int size, int64_t value, ParseLocation loc);
+  FixedField(std::string name, int size, ParseLocation loc);
 
-  FixedField(EnumDef* enum_def, std::string value, ParseLocation loc);
+  static const std::string kFieldType;
 
-  virtual PacketField::Type GetFieldType() const override;
-
-  virtual Size GetSize() const override;
-
-  virtual std::string GetType() const override;
+  virtual std::string GetDataType() const override = 0;
 
   virtual void GenGetter(std::ostream& s, Size start_offset, Size end_offset) const override;
 
@@ -47,12 +44,7 @@ class FixedField : public PacketField {
   virtual void GenValidator(std::ostream& s) const override;
 
  private:
-  void GenValue(std::ostream& s) const;
-
-  PacketField::Type type_;
-  int size_;
-  EnumDef* enum_;
-  std::variant<int64_t, std::string> value_;
+  virtual void GenValue(std::ostream& s) const = 0;
 
   static int unique_id_;
 };

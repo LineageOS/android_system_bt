@@ -17,20 +17,24 @@
 #include "fields/checksum_start_field.h"
 #include "util.h"
 
-ChecksumStartField::ChecksumStartField(std::string name, ParseLocation loc)
-    : PacketField(loc, name + "_start"), started_field_name_(name) {}
+const std::string ChecksumStartField::kFieldType = "ChecksumStartField";
 
-PacketField::Type ChecksumStartField::GetFieldType() const {
-  return PacketField::Type::CHECKSUM_START;
+ChecksumStartField::ChecksumStartField(std::string name, ParseLocation loc)
+    : PacketField(name + "_start", loc), started_field_name_(name) {}
+
+const std::string& ChecksumStartField::GetFieldType() const {
+  return ChecksumStartField::kFieldType;
 }
 
 Size ChecksumStartField::GetSize() const {
   return Size(0);
 }
 
-std::string ChecksumStartField::GetType() const {
+std::string ChecksumStartField::GetDataType() const {
   return "There's no type for Checksum Start fields";
 }
+
+void ChecksumStartField::GenExtractor(std::ostream&, Size, Size) const {}
 
 void ChecksumStartField::GenGetter(std::ostream&, Size, Size) const {}
 

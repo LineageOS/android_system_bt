@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #pragma once
 
 #include <cstdint>
@@ -21,18 +20,13 @@
 namespace bluetooth {
 namespace l2cap {
 
-// Frame Check Sequence from the L2CAP spec.
-class Fcs {
- public:
-  void Initialize();
+using mtu_t = uint16_t;
 
-  void AddByte(uint8_t byte);
-
-  uint16_t GetChecksum() const;
-
- private:
-  uint16_t crc;
-};
+constexpr mtu_t kDefaultMinimumClassicMtu = 48;
+constexpr mtu_t kDefaultMinimumLeMtu = 23;
+constexpr mtu_t kMinimumClassicMtu = 48;
+constexpr mtu_t kDefaultClassicMtu = 672;
+constexpr mtu_t kMinimumLeMtu = 23;
 
 }  // namespace l2cap
 }  // namespace bluetooth

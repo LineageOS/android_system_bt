@@ -21,18 +21,13 @@
 namespace bluetooth {
 namespace l2cap {
 
-// Frame Check Sequence from the L2CAP spec.
-class Fcs {
- public:
-  void Initialize();
+using Cid = uint16_t;
 
-  void AddByte(uint8_t byte);
-
-  uint16_t GetChecksum() const;
-
- private:
-  uint16_t crc;
-};
+constexpr Cid kInvalidCid = 0;
+constexpr Cid kFirstFixedChannel = 1;
+constexpr Cid kLastFixedChannel = 63;
+constexpr Cid kFirstDynamicChannel = kLastFixedChannel + 1;
+constexpr Cid kLastDynamicChannel = (uint16_t)(0xffff + 1);
 
 }  // namespace l2cap
 }  // namespace bluetooth

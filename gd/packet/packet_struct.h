@@ -17,22 +17,27 @@
 #pragma once
 
 #include <cstdint>
+#include <forward_list>
+#include <iterator>
+#include <memory>
+#include <vector>
+
+#include "os/log.h"
+#include "packet/base_struct.h"
+#include "packet/bit_inserter.h"
+#include "packet/endian_inserter.h"
 
 namespace bluetooth {
-namespace l2cap {
+namespace packet {
 
-// Frame Check Sequence from the L2CAP spec.
-class Fcs {
+// Abstract base class that is subclassed to build specifc structs.
+// The template parameter little_endian controls the generation of insert().
+template <bool little_endian>
+class PacketStruct : public BaseStruct, protected EndianInserter<little_endian> {
  public:
-  void Initialize();
-
-  void AddByte(uint8_t byte);
-
-  uint16_t GetChecksum() const;
-
- private:
-  uint16_t crc;
+  PacketStruct() = default;
+  virtual ~PacketStruct() = default;
 };
 
-}  // namespace l2cap
+}  // namespace packet
 }  // namespace bluetooth

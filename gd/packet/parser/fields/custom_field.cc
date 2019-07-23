@@ -17,81 +17,47 @@
 #include "fields/custom_field.h"
 #include "util.h"
 
+const std::string CustomField::kFieldType = "CustomField";
+
 CustomField::CustomField(std::string name, std::string type_name, ParseLocation loc)
-    : PacketField(loc, name), type_name_(type_name) {}
+    : PacketField(name, loc), type_name_(type_name) {}
 
-// Fixed size custom fields.
-CustomField::CustomField(std::string name, std::string type_name, int size, ParseLocation loc)
-    : PacketField(loc, name), type_name_(type_name), size_(size) {}
-
-PacketField::Type CustomField::GetFieldType() const {
-  return PacketField::Type::CUSTOM;
+const std::string& CustomField::GetFieldType() const {
+  return CustomField::kFieldType;
 }
 
 Size CustomField::GetSize() const {
-  return size_;
+  return Size();
 }
 
 Size CustomField::GetBuilderSize() const {
-  if (size_ != -1) {
-    return size_;
-  } else {
-    std::string ret = "(" + GetName() + "_.size() * 8) ";
-    return ret;
-  }
+  std::string ret = "(" + GetName() + "_.size() * 8) ";
+  return ret;
 }
 
-std::string CustomField::GetType() const {
+std::string CustomField::GetDataType() const {
   return type_name_;
 }
 
+void CustomField::GenExtractor(std::ostream& s, Size start_offset, Size end_offset) const {
+  GenBounds(s, start_offset, end_offset, Size());
+  s << " auto subview = GetLittleEndianSubview(field_begin, field_end); ";
+  s << "auto it = subview.begin();";
+  s << "std::vector<" << GetDataType() << "> vec;";
+  s << GetDataType() << "::Parse(vec, it);";
+}
+
 void CustomField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
-  if (size_ != -1) {
-    s << GetType();
-  } else {
-    s << "std::vector<" << GetType() << ">";
-  }
+  s << "std::vector<" << GetDataType() << ">";
   s << " Get" << util::UnderscoreToCamelCase(GetName()) << "() const {";
 
-  s << "auto it = ";
-  if (!start_offset.empty()) {
-    // Default to start if available.
-    if (start_offset.bits() % 8 != 0) {
-      ERROR(this) << "Custom Field must be byte aligned.";
-    }
-    s << "begin()";
-    if (start_offset.bits() / 8 != 0) s << " + " << start_offset.bits() / 8;
-    if (start_offset.has_dynamic()) s << " + " << start_offset.dynamic_string();
-  } else if (size_ != -1) {
-    // If the size of the custom field is already known, we can determine it's offset based on end().
-    if (!end_offset.empty()) {
-      if (end_offset.bits() % 8) {
-        ERROR(this) << "Custom Field must be byte aligned.";
-      }
-
-      int byte_offset = (end_offset.bits() + size_) / 8;
-      s << "end() - " << byte_offset;
-      if (end_offset.has_dynamic()) s << " - (" << end_offset.dynamic_string() << ")";
-    } else {
-      ERROR(this) << "Ambiguous offset for fixed size custom field.";
-    }
-  } else {
-    ERROR(this) << "Custom Field offset can not be determined from begin().";
-  }
-  s << ";";
-
-  if (size_ != -1) {
-    s << "return it.extract<" << GetType() << ">();";
-  } else {
-    s << "std::vector<" << GetType() << "> to_return;";
-    s << GetType() << "::Parse(to_return, it);";
-    s << "return to_return;";
-  }
+  GenExtractor(s, start_offset, end_offset);
+  s << "return vec;";
   s << "}\n";
 }
 
 bool CustomField::GenBuilderParameter(std::ostream& s) const {
-  s << GetType() << " " << GetName();
+  s << GetDataType() << " " << GetName();
   return true;
 }
 
@@ -104,11 +70,7 @@ void CustomField::GenParameterValidator(std::ostream&) const {
 }
 
 void CustomField::GenInserter(std::ostream& s) const {
-  if (size_ != -1) {
-    s << "insert(" << GetName() << "_, i);";
-  } else {
-    s << GetType() << "::Serialize(" << GetName() << "_, i);";
-  }
+  s << GetName() << "_.Serialize(i);";
 }
 
 void CustomField::GenValidator(std::ostream&) const {

@@ -28,30 +28,12 @@ class PacketField : public Loggable {
  public:
   virtual ~PacketField() = default;
 
-  PacketField(ParseLocation loc, std::string name);
+  PacketField(std::string name, ParseLocation loc);
 
-  enum class Type {
-    GROUP,
-    FIXED_SCALAR,
-    FIXED_ENUM,
-    RESERVED_SCALAR,
-    SCALAR,
-    ENUM,
-    SIZE,
-    COUNT,
-    BODY,
-    PAYLOAD,
-    ARRAY,
-    CUSTOM,
-    CHECKSUM,
-    CHECKSUM_START,
-  };
+  // Get the type for this field.
+  virtual const std::string& GetFieldType() const = 0;
 
-  // Get the field type for the field.
-  virtual Type GetFieldType() const = 0;
-
-  // Returns the size of the field in bits and a string that evaluates into
-  // bytes for dynamically sized arrays.
+  // Returns the size of the field in bits.
   virtual Size GetSize() const = 0;
 
   // Returns the size of the field in bits given the information in the builder.
@@ -60,7 +42,13 @@ class PacketField : public Loggable {
 
   // Get the type of the field to be used in the builders constructor and
   // variables.
-  virtual std::string GetType() const = 0;
+  virtual std::string GetDataType() const = 0;
+
+  // Given an iterator it, extract the type.
+  virtual void GenExtractor(std::ostream& s, Size start_offset, Size end_offset) const = 0;
+
+  // Calculate field_begin and field_end using the given offsets and size.
+  virtual void GenBounds(std::ostream& s, Size start_offset, Size end_offset, Size field_size) const;
 
   // Get parser getter definition. Start_offset points to the first bit of the
   // field. end_offset is the first bit after the field. If an offset is empty
@@ -70,6 +58,8 @@ class PacketField : public Loggable {
 
   // Generate the parameter for Create(), return true if a parameter was added.
   virtual bool GenBuilderParameter(std::ostream& s) const = 0;
+
+  virtual bool GenBuilderMember(std::ostream& s) const;
 
   // Returns whether or not the field must be validated.
   virtual bool HasParameterValidator() const = 0;

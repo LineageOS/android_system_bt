@@ -23,11 +23,15 @@ class ReservedField : public PacketField {
  public:
   ReservedField(int size, ParseLocation loc);
 
-  virtual PacketField::Type GetFieldType() const override;
+  static const std::string kFieldType;
+
+  virtual const std::string& GetFieldType() const override;
 
   virtual Size GetSize() const override;
 
-  virtual std::string GetType() const override;
+  virtual std::string GetDataType() const override;
+
+  virtual void GenExtractor(std::ostream& s, Size start_offset, Size end_offset) const override;
 
   virtual void GenGetter(std::ostream&, Size, Size) const override;
 
@@ -42,7 +46,6 @@ class ReservedField : public PacketField {
   virtual void GenValidator(std::ostream&) const override;
 
  private:
-  PacketField::Type type_;
   std::string name_;
   int size_;
   static int unique_id_;

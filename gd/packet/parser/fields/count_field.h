@@ -17,28 +17,22 @@
 #pragma once
 
 #include "fields/packet_field.h"
-#include "fields/size_field.h"
+#include "fields/scalar_field.h"
 #include "parse_location.h"
 
-class PayloadField : public PacketField {
+class CountField : public ScalarField {
  public:
-  PayloadField(std::string modifier, ParseLocation loc);
+  CountField(std::string name, int size, ParseLocation loc);
 
   static const std::string kFieldType;
 
+  std::string GetField() const;
+
   virtual const std::string& GetFieldType() const override;
-
-  void SetSizeField(const SizeField* size_field);
-
-  virtual Size GetSize() const override;
-
-  virtual std::string GetDataType() const override;
-
-  virtual void GenExtractor(std::ostream& s, Size start_offset, Size end_offset) const override;
 
   virtual void GenGetter(std::ostream& s, Size start_offset, Size end_offset) const override;
 
-  virtual bool GenBuilderParameter(std::ostream& s) const override;
+  virtual bool GenBuilderParameter(std::ostream&) const override;
 
   virtual bool HasParameterValidator() const override;
 
@@ -48,8 +42,9 @@ class PayloadField : public PacketField {
 
   virtual void GenValidator(std::ostream&) const override;
 
-  // Payload fields can only be dynamically sized.
-  const SizeField* size_field_;
-  // Only used if the size of the payload is based on another field.
-  std::string size_modifier_;
+  virtual std::string GetSizedFieldName() const;
+
+ private:
+  int size_;
+  std::string sized_field_name_;
 };

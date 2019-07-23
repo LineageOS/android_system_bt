@@ -16,20 +16,24 @@
 
 #include "fields/body_field.h"
 
-BodyField::BodyField(ParseLocation loc) : PacketField(loc, "body") {}
+const std::string BodyField::kFieldType = "BodyField";
 
-PacketField::Type BodyField::GetFieldType() const {
-  return PacketField::Type::BODY;
+BodyField::BodyField(ParseLocation loc) : PacketField("body", loc) {}
+
+const std::string& BodyField::GetFieldType() const {
+  return BodyField::kFieldType;
 }
 
 Size BodyField::GetSize() const {
   return Size(0);
 }
 
-std::string BodyField::GetType() const {
+std::string BodyField::GetDataType() const {
   ERROR(this) << "No need to know the type of a body field.";
   return "BodyType";
 }
+
+void BodyField::GenExtractor(std::ostream&, Size, Size) const {}
 
 void BodyField::GenGetter(std::ostream&, Size, Size) const {}
 

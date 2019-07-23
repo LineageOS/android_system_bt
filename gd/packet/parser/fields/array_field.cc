@@ -17,16 +17,22 @@
 #include "fields/array_field.h"
 #include "util.h"
 
+const std::string ArrayField::kFieldType = "ArrayField";
+
 ArrayField::ArrayField(std::string name, int element_size, std::string size_modifier, ParseLocation loc)
-    : PacketField(loc, name), element_size_(element_size), size_modifier_(size_modifier) {
+    : PacketField(name, loc), element_size_(element_size), size_modifier_(size_modifier) {
   // Make sure the element_size is a multiple of 8.
+  if (element_size_ > 64 || element_size_ < 0)
+    ERROR(this) << __func__ << ": Not implemented for element size = " << element_size_;
   if (element_size % 8 != 0) {
     ERROR(this) << "Can only have arrays with elements that are byte aligned (" << element_size << ")";
   }
 }
 
 ArrayField::ArrayField(std::string name, int element_size, int fixed_size, ParseLocation loc)
-    : PacketField(loc, name), element_size_(element_size), fixed_size_(fixed_size) {
+    : PacketField(name, loc), element_size_(element_size), fixed_size_(fixed_size) {
+  if (element_size_ > 64 || element_size_ < 0)
+    ERROR(this) << __func__ << ": Not implemented for element size = " << element_size_;
   // Make sure the element_size is a multiple of 8.
   if (element_size % 8 != 0) {
     ERROR(this) << "Can only have arrays with elements that are byte aligned (" << element_size << ")";
@@ -34,7 +40,7 @@ ArrayField::ArrayField(std::string name, int element_size, int fixed_size, Parse
 }
 
 ArrayField::ArrayField(std::string name, TypeDef* type_def, std::string size_modifier, ParseLocation loc)
-    : PacketField(loc, name), element_size_(type_def->size_), type_def_(type_def), size_modifier_(size_modifier) {
+    : PacketField(name, loc), element_size_(type_def->size_), type_def_(type_def), size_modifier_(size_modifier) {
   // If the element type is not variable sized, make sure that it is byte aligned.
   if (type_def_->size_ != -1 && type_def_->size_ % 8 != 0) {
     ERROR(this) << "Can only have arrays with elements that are byte aligned (" << type_def_->size_ << ")";
@@ -42,15 +48,15 @@ ArrayField::ArrayField(std::string name, TypeDef* type_def, std::string size_mod
 }
 
 ArrayField::ArrayField(std::string name, TypeDef* type_def, int fixed_size, ParseLocation loc)
-    : PacketField(loc, name), element_size_(type_def->size_), type_def_(type_def), fixed_size_(fixed_size) {
+    : PacketField(name, loc), element_size_(type_def->size_), type_def_(type_def), fixed_size_(fixed_size) {
   // If the element type is not variable sized, make sure that it is byte aligned.
   if (type_def_->size_ != -1 && type_def_->size_ % 8 != 0) {
     ERROR(this) << "Can only have arrays with elements that are byte aligned (" << type_def_->size_ << ")";
   }
 }
 
-PacketField::Type ArrayField::GetFieldType() const {
-  return PacketField::Type::ARRAY;
+const std::string& ArrayField::GetFieldType() const {
+  return ArrayField::kFieldType;
 }
 
 Size ArrayField::GetSize() const {
@@ -64,29 +70,28 @@ Size ArrayField::GetSize() const {
   }
 
   // size_field_ is of type SIZE
-  if (size_field_->GetFieldType() == PacketField::Type::SIZE) {
-    std::string ret = "Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "()";
+  if (size_field_->GetFieldType() == SizeField::kFieldType) {
+    std::string ret = "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * 8)";
     if (!size_modifier_.empty()) ret += size_modifier_;
     return ret;
   }
 
   // size_field_ is of type COUNT and it is a scalar array
-  if (!IsEnumArray() && !IsCustomFieldArray()) {
-    return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " + std::to_string(element_size_ / 8) +
-           ")";
+  if (type_def_ == nullptr) {
+    return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " + std::to_string(element_size_) + ")";
   }
 
   if (IsCustomFieldArray()) {
     if (type_def_->size_ != -1) {
-      return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " +
-             std::to_string(type_def_->size_ / 8) + ")";
+      return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " + std::to_string(type_def_->size_) +
+             ")";
     } else {
       return Size();
     }
   }
 
   // size_field_ is of type COUNT and it is an enum array
-  return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " + std::to_string(type_def_->size_ / 8) +
+  return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " + std::to_string(type_def_->size_) +
          ")";
 }
 
@@ -101,67 +106,59 @@ Size ArrayField::GetBuilderSize() const {
   }
 }
 
-std::string ArrayField::GetType() const {
+std::string ArrayField::GetDataType() const {
   if (type_def_ != nullptr) {
     return "std::vector<" + type_def_->name_ + ">";
   }
   return "std::vector<" + util::GetTypeForSize(element_size_) + ">";
 }
 
+void ArrayField::GenExtractor(std::ostream& s, Size start_offset, Size end_offset) const {
+  GenBounds(s, start_offset, end_offset, GetSize());
+
+  s << " auto subview = GetLittleEndianSubview(field_begin, field_end); ";
+  s << "auto it = subview.begin();";
+
+  // Add the element size so that we will extract as many elements as we can.
+  s << GetDataType() << " vec;";
+  if (element_size_ != -1) {
+    std::string type = (type_def_ != nullptr) ? type_def_->name_ : util::GetTypeForSize(element_size_);
+    s << "while (it + sizeof(" << type << ") <= subview.end()) {";
+    s << "vec.push_back(it.extract<" << type << ">());";
+    s << "}";
+  } else {
+    s << "while (it < subview.end()) {";
+    s << "it = " << type_def_->name_ << "::Parse(vec, it);";
+    s << "}";
+  }
+}
+
 void ArrayField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
-  if (start_offset.empty()) {
-    ERROR(this) << "Can not have an array with an ambiguous start offset.";
-  }
-
-  if (start_offset.bits() % 8 != 0) {
-    ERROR(this) << "Can not have an array that isn't byte aligned.";
-  }
-
-  if (GetSize().empty() && end_offset.empty()) {
-    ERROR(this) << "Ambiguous end offset for array with no defined size.";
-  }
-
-  s << GetType();
+  s << GetDataType();
   s << " Get" << util::UnderscoreToCamelCase(GetName()) << "() {";
   s << "ASSERT(was_validated_);";
 
-  s << "auto it = begin() + " << start_offset.bytes() << " + " << start_offset.dynamic_string() << ";";
+  GenExtractor(s, start_offset, end_offset);
 
-  if (!GetSize().empty()) {
-    auto size = GetSize();
-    s << "auto array_end = it + " << size.bytes() << " /* bytes */ + " << size.dynamic_string() << ";";
-  } else {
-    s << "auto array_end = end() - " << end_offset.bytes() << " /* bytes */ - " << end_offset.dynamic_string() << ";";
-  }
-
-  // Add the element size so that we will extract as many elements as we can.
-  s << GetType() << " ret;";
-  if (element_size_ != -1) {
-    std::string type = (type_def_ != nullptr) ? type_def_->name_ : util::GetTypeForSize(element_size_);
-    s << "while (it + sizeof(" << type << ") <= array_end) {";
-    s << "ret.push_back(it.extract<" << type << ">());";
-    s << "}";
-  } else {
-    s << "while (it < array_end) {";
-    s << "it = " << type_def_->name_ << "::Parse(ret, it);";
-    s << "}";
-  }
-
-  s << "return ret;";
+  s << "return vec;";
   s << "}\n";
 }
 
 bool ArrayField::GenBuilderParameter(std::ostream& s) const {
-  std::string element_type = "";
   if (type_def_ != nullptr) {
-    element_type = type_def_->GetTypeName();
+    s << "const std::vector<" << type_def_->GetTypeName() << ">& " << GetName();
   } else {
-    if (element_size_ > 64 || element_size_ < 0)
-      ERROR(this) << __func__ << ": Not implemented for element size = " << element_size_;
-    element_type = util::GetTypeForSize(element_size_);
+    s << "const std::vector<" << util::GetTypeForSize(element_size_) << ">& " << GetName();
   }
+  return true;
+}
 
-  s << "const std::vector<" << element_type << ">& " << GetName();
+bool ArrayField::GenBuilderMember(std::ostream& s) const {
+  if (type_def_ != nullptr) {
+    s << "std::vector<" << type_def_->GetTypeName() << "> " << GetName();
+  } else {
+    s << "std::vector<" << util::GetTypeForSize(element_size_) << "> " << GetName();
+  }
   return true;
 }
 
@@ -190,7 +187,7 @@ void ArrayField::GenInserter(std::ostream& s) const {
     s << "insert(static_cast<" << util::GetTypeForSize(type_def_->size_) << ">(val), i, " << type_def_->size_ << ");";
   } else if (IsCustomFieldArray()) {
     if (type_def_->size_ == -1) {
-      s << type_def_->name_ << "::Serialize(val, i);";
+      s << "val.Serialize(i);";
     } else {
       s << "insert(val, i);";
     }
@@ -221,7 +218,7 @@ bool ArrayField::IsFixedSize() const {
 }
 
 void ArrayField::SetSizeField(const SizeField* size_field) {
-  if (size_field->GetFieldType() == PacketField::Type::COUNT && !size_modifier_.empty()) {
+  if (size_field->GetFieldType() == CountField::kFieldType && !size_modifier_.empty()) {
     ERROR(this, size_field) << "Can not use count field to describe array with a size modifier."
                             << " Use size instead";
   }

@@ -47,8 +47,8 @@ class Size {
     dynamic_ = size.dynamic_;
   }
 
-  std::string dynamic_string() {
-    if (dynamic_.empty()) return " 0 /* dynamic */ ";
+  std::string dynamic_string() const {
+    if (dynamic_.empty()) return "0";
 
     std::stringstream result;
     // Print everything but the last element then append it manually to avoid
@@ -62,23 +62,23 @@ class Size {
     return dynamic_;
   }
 
-  bool empty() {
+  bool empty() const {
     return !is_valid_;
   }
 
-  bool has_bits() {
+  bool has_bits() const {
     return bits_ != 0;
   }
 
-  bool has_dynamic() {
+  bool has_dynamic() const {
     return !dynamic_.empty();
   }
 
-  int bits() {
+  int bits() const {
     return bits_;
   }
 
-  int bytes() {
+  int bytes() const {
     return bits_ / 8;
   }
 
@@ -95,8 +95,8 @@ class Size {
   }
 
   Size operator+(const Size& rhs) {
-    auto ret = Size(bits_ += rhs.bits_);
-    ret.is_valid_ = true;
+    auto ret = Size(bits_ + rhs.bits_);
+    ret.is_valid_ = is_valid_ && rhs.is_valid_;
     ret.dynamic_.insert(ret.dynamic_.end(), dynamic_.begin(), dynamic_.end());
     ret.dynamic_.insert(ret.dynamic_.end(), rhs.dynamic_.begin(), rhs.dynamic_.end());
     return ret;
@@ -115,17 +115,23 @@ class Size {
   }
 
   Size& operator+=(const Size& rhs) {
-    is_valid_ = true;
+    is_valid_ = is_valid_ && rhs.is_valid_;
     bits_ += rhs.bits_;
     dynamic_.insert(dynamic_.end(), rhs.dynamic_.begin(), rhs.dynamic_.end());
     return *this;
   }
 
-  std::string ToString() {
+  std::string ToString() const {
     std::stringstream str;
-    str << "Bits: " << bits_ << " | "
-        << "Dynamic: " << dynamic_string();
+    str << "/* Bits: */ " << bits_ << " + /* Dynamic: */ " << dynamic_string();
+    if (!is_valid_) {
+      str << " (invalid) ";
+    }
     return str.str();
+  }
+
+  friend std::ostream& operator<<(std::ostream& os, const Size& rhs) {
+    return os << rhs.ToString();
   }
 
  private:
