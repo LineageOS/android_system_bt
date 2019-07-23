@@ -23,11 +23,11 @@
 #include "fields/size_field.h"
 #include "parse_location.h"
 
-class ArrayField : public PacketField {
+class VectorField : public PacketField {
  public:
-  ArrayField(std::string name, int element_size, int fixed_size, ParseLocation loc);
+  VectorField(std::string name, int element_size, std::string size_modifier, ParseLocation loc);
 
-  ArrayField(std::string name, TypeDef* type_def, int fixed_size, ParseLocation loc);
+  VectorField(std::string name, TypeDef* type_def, std::string size_modifier, ParseLocation loc);
 
   static const std::string kFieldType;
 
@@ -45,8 +45,6 @@ class ArrayField : public PacketField {
 
   virtual bool GenBuilderParameter(std::ostream& s) const override;
 
-  virtual bool GenBuilderMember(std::ostream& s) const override;
-
   virtual bool HasParameterValidator() const override;
 
   virtual void GenParameterValidator(std::ostream& s) const override;
@@ -59,11 +57,18 @@ class ArrayField : public PacketField {
 
   bool IsCustomFieldArray() const;
 
+  void SetSizeField(const SizeField* size_field);
+
+  const std::string& GetSizeModifier() const;
+
   const std::string name_;
 
   const int element_size_{-1};  // in bits
   const TypeDef* type_def_{nullptr};
 
   // Fixed size array or dynamic size, size is always in bytes, unless it is count.
-  const int fixed_size_{-1};
+  const SizeField* size_field_{nullptr};
+
+  // Size modifier is only used when size_field_ is of type SIZE and is not used with COUNT.
+  std::string size_modifier_{""};
 };

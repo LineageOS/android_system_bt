@@ -90,9 +90,9 @@ void ParentDef::AssignSizeFields() {
       continue;
     }
 
-    if (var_len_field->GetFieldType() == ArrayField::kFieldType) {
-      const auto& array_field = static_cast<ArrayField*>(var_len_field);
-      array_field->SetSizeField(size_field);
+    if (var_len_field->GetFieldType() == VectorField::kFieldType) {
+      const auto& vector_field = static_cast<VectorField*>(var_len_field);
+      vector_field->SetSizeField(size_field);
       continue;
     }
 
@@ -216,8 +216,8 @@ FieldList ParentDef::GetParamList() const {
   FieldList params;
 
   std::set<std::string> param_types = {
-      ScalarField::kFieldType, EnumField::kFieldType,    ArrayField::kFieldType,
-      CustomField::kFieldType, PayloadField::kFieldType,
+      ScalarField::kFieldType, EnumField::kFieldType,   ArrayField::kFieldType,
+      VectorField::kFieldType, CustomField::kFieldType, PayloadField::kFieldType,
   };
 
   if (parent_ != nullptr) {
@@ -335,22 +335,22 @@ void ParentDef::GenSerialize(std::ostream& s) const {
         s << "ASSERT(payload_bytes < (static_cast<size_t>(1) << " << field->GetSize().bits() << "));";
         s << "insert(static_cast<" << field->GetDataType() << ">(payload_bytes), i," << field->GetSize().bits() << ");";
       } else {
-        if (sized_field->GetFieldType() != ArrayField::kFieldType) {
+        if (sized_field->GetFieldType() != VectorField::kFieldType) {
           ERROR(field) << __func__ << ": Unhandled sized field type for " << field_name;
         }
-        const auto& array_name = field_name + "_";
-        const ArrayField* array = (ArrayField*)sized_field;
-        s << "size_t " << array_name + "bytes =  0;";
-        if (array->element_size_ == -1) {
-          s << "for (auto elem : " << array_name << ") {";
-          s << array_name + "bytes += elem.size(); }";
+        const auto& vector_name = field_name + "_";
+        const VectorField* vector = (VectorField*)sized_field;
+        s << "size_t " << vector_name + "bytes =  0;";
+        if (vector->element_size_ == -1) {
+          s << "for (auto elem : " << vector_name << ") {";
+          s << vector_name + "bytes += elem.size(); }";
         } else {
-          s << array_name + "bytes = ";
-          s << array_name << ".size() * (" << array->element_size_ << " / 8);";
+          s << vector_name + "bytes = ";
+          s << vector_name << ".size() * (" << vector->element_size_ << " / 8);";
         }
-        s << "ASSERT(" << array_name + "bytes < (1 << " << field->GetSize().bits() << "));";
-        s << "insert(" << array_name << "bytes";
-        s << array->GetSizeModifier() << ", i, ";
+        s << "ASSERT(" << vector_name + "bytes < (1 << " << field->GetSize().bits() << "));";
+        s << "insert(" << vector_name << "bytes";
+        s << vector->GetSizeModifier() << ", i, ";
         s << field->GetSize().bits() << ");";
       }
     } else if (field->GetFieldType() == ChecksumStartField::kFieldType) {
@@ -366,8 +366,8 @@ void ParentDef::GenSerialize(std::ostream& s) const {
       s << "[shared_checksum_ptr](uint8_t byte){ shared_checksum_ptr->AddByte(byte);},";
       s << "[shared_checksum_ptr](){ return static_cast<uint64_t>(shared_checksum_ptr->GetChecksum());}));";
     } else if (field->GetFieldType() == CountField::kFieldType) {
-      const auto& array_name = ((SizeField*)field)->GetSizedFieldName() + "_";
-      s << "insert(" << array_name << ".size(), i, " << field->GetSize().bits() << ");";
+      const auto& vector_name = ((SizeField*)field)->GetSizedFieldName() + "_";
+      s << "insert(" << vector_name << ".size(), i, " << field->GetSize().bits() << ");";
     } else {
       field->GenInserter(s);
     }
