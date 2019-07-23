@@ -31,3 +31,4 @@
 #include "fields/reserved_field.h"
 #include "fields/scalar_field.h"
 #include "fields/size_field.h"
+#include "fields/vector_field.h"

@@ -330,9 +330,9 @@ TEST_F(HciTest, creditsTest) {
   ASSERT_EQ(0, hal->GetNumSentCommands());
 
   // Send the response event
-  std::vector<uint8_t> supported_commands;
+  std::array<uint8_t, 64> supported_commands;
   for (uint8_t i = 0; i < 64; i++) {
-    supported_commands.push_back(i);
+    supported_commands[i] = i;
   }
   hal->callbacks->hciEventReceived(
       GetPacketBytes(ReadLocalSupportedCommandsCompleteBuilder::Create(num_packets, error_code, supported_commands)));
