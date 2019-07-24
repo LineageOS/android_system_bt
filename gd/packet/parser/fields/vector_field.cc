@@ -59,7 +59,7 @@ Size VectorField::GetSize() const {
     return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " + std::to_string(element_size_) + ")";
   }
 
-  if (IsCustomFieldArray()) {
+  if (IsCustomFieldArray() || IsStructArray()) {
     if (type_def_->size_ != -1) {
       return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " + std::to_string(type_def_->size_) +
              ")";
@@ -152,6 +152,8 @@ void VectorField::GenInserter(std::ostream& s) const {
     } else {
       s << "insert(val, i);";
     }
+  } else if (IsStructArray()) {
+    s << "val.Serialize(i);";
   } else {
     s << "insert(val, i, " << element_size_ << ");";
   }
@@ -172,6 +174,10 @@ bool VectorField::IsEnumArray() const {
 
 bool VectorField::IsCustomFieldArray() const {
   return type_def_ != nullptr && type_def_->GetDefinitionType() == TypeDef::Type::CUSTOM;
+}
+
+bool VectorField::IsStructArray() const {
+  return type_def_ != nullptr && type_def_->GetDefinitionType() == TypeDef::Type::STRUCT;
 }
 
 void VectorField::SetSizeField(const SizeField* size_field) {

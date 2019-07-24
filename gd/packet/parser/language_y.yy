@@ -44,6 +44,8 @@
   FieldList* packet_field_definitions;
   PacketField* packet_field_type;
 
+  StructDef* struct_definition_value;
+
   std::map<std::string, std::variant<int64_t, std::string>>* constraint_list_t;
   std::pair<std::string, std::variant<int64_t, std::string>>* constraint_t;
 }
@@ -58,6 +60,7 @@
 %token PACKET "packet"
 %token PAYLOAD "payload"
 %token BODY "body"
+%token STRUCT "struct"
 %token SIZE "size"
 %token COUNT "count"
 %token FIXED "fixed"
@@ -84,6 +87,8 @@
 %type<packet_field_type> fixed_field_definition;
 %type<packet_field_type> reserved_field_definition;
 %type<packet_field_type> array_field_definition;
+
+%type<struct_definition_value> struct_definition;
 
 %type<constraint_list_t> constraint_list;
 %type<constraint_t> constraint;
@@ -117,6 +122,11 @@ declaration
       std::cerr << "FOUND PACKET\n\n";
       decls->AddPacketDef($1->name_, std::move(*$1));
       delete $1;
+    }
+  | struct_definition
+    {
+      std::cerr << "FOUND STRUCT\n\n";
+      decls->AddTypeDef($1->name_, $1);
     }
   | group_definition
     {
@@ -198,6 +208,82 @@ custom_field_definition
       decls->AddTypeDef(*$2, new CustomFieldDef(*$2, *$3));
       delete $2;
       delete $3;
+    }
+
+struct_definition
+  : STRUCT IDENTIFIER '{' field_definition_list '}'
+    {
+      auto&& struct_name = *$2;
+      auto&& field_definition_list = *$4;
+
+      DEBUG() << "Struct " << struct_name << " with no parent";
+      DEBUG() << "STRUCT FIELD LIST SIZE: " << field_definition_list.size();
+      auto struct_definition = new StructDef(std::move(struct_name), std::move(field_definition_list));
+      struct_definition->AssignSizeFields();
+
+      $$ = struct_definition;
+      delete $2;
+      delete $4;
+    }
+  | STRUCT IDENTIFIER ':' IDENTIFIER '{' field_definition_list '}'
+    {
+      auto&& struct_name = *$2;
+      auto&& parent_struct_name = *$4;
+      auto&& field_definition_list = *$6;
+
+      std::cerr << "Struct " << struct_name << " with parent " << parent_struct_name << "\n";
+      std::cerr << "STRUCT FIELD LIST SIZE: " << field_definition_list.size() << "\n";
+
+      auto parent_struct = decls->GetTypeDef(parent_struct_name);
+      if (parent_struct == nullptr) {
+        ERRORLOC(LOC) << "Could not find struct " << parent_struct_name
+                  << " used as parent for " << struct_name;
+      }
+
+      if (parent_struct->GetDefinitionType() != TypeDef::Type::STRUCT) {
+        ERRORLOC(LOC) << parent_struct_name << " is not a struct";
+      }
+      auto struct_definition = new StructDef(std::move(struct_name), std::move(field_definition_list), (StructDef*)parent_struct);
+      struct_definition->AssignSizeFields();
+
+      $$ = struct_definition;
+      delete $2;
+      delete $4;
+      delete $6;
+    }
+  | STRUCT IDENTIFIER ':' IDENTIFIER '(' constraint_list ')' '{' field_definition_list '}'
+    {
+      auto&& struct_name = *$2;
+      auto&& parent_struct_name = *$4;
+      auto&& constraints = *$6;
+      auto&& field_definition_list = *$9;
+
+      auto parent_struct = decls->GetTypeDef(parent_struct_name);
+      if (parent_struct == nullptr) {
+        ERRORLOC(LOC) << "Could not find struct " << parent_struct_name
+                  << " used as parent for " << struct_name;
+      }
+
+      if (parent_struct->GetDefinitionType() != TypeDef::Type::STRUCT) {
+        ERRORLOC(LOC) << parent_struct_name << " is not a struct";
+      }
+
+      auto struct_definition = new StructDef(std::move(struct_name), std::move(field_definition_list), (StructDef*)parent_struct);
+      struct_definition->AssignSizeFields();
+
+      for (const auto& constraint : constraints) {
+        const auto& constraint_name = constraint.first;
+        const auto& constraint_value = constraint.second;
+        DEBUG() << "Parent constraint on " << constraint_name;
+        struct_definition->AddParentConstraint(constraint_name, constraint_value);
+      }
+
+      $$ = struct_definition;
+
+      delete $2;
+      delete $4;
+      delete $6;
+      delete $9;
     }
 
 packet_definition
