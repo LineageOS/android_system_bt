@@ -216,8 +216,8 @@ FieldList ParentDef::GetParamList() const {
   FieldList params;
 
   std::set<std::string> param_types = {
-      ScalarField::kFieldType, EnumField::kFieldType,   ArrayField::kFieldType,
-      VectorField::kFieldType, CustomField::kFieldType, PayloadField::kFieldType,
+      ScalarField::kFieldType, EnumField::kFieldType,   ArrayField::kFieldType,   VectorField::kFieldType,
+      CustomField::kFieldType, StructField::kFieldType, PayloadField::kFieldType,
   };
 
   if (parent_ != nullptr) {
