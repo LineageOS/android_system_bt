@@ -1,10 +1,10 @@
 // Bluetooth bt_stack.conf config file
 // ========================================================
-prebuilt_etc {
-    name: "bt_stack.conf",
-    src: "bt_stack.conf",
-    sub_dir: "bluetooth",
-}
+//prebuilt_etc {
+//    name: "bt_stack.conf",
+//    src: "bt_stack.conf",
+//    sub_dir: "bluetooth",
+//}
 
 // Bluetooth bt_did.conf config file
 // ========================================================
