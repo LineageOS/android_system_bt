@@ -38,6 +38,10 @@ class HciHalCertService : public HciHalCert::Service, public ::bluetooth::hal::H
     hal->registerIncomingPacketCallback(this);
   }
 
+  ~HciHalCertService() {
+    hal_->unregisterIncomingPacketCallback();
+  }
+
   ::grpc::Status SendHciResetCommand(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
                                      ::google::protobuf::Empty* response) override {
     std::unique_lock<std::mutex> lock(mutex_);
