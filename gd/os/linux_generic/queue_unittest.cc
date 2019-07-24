@@ -212,8 +212,8 @@ TEST_F(QueueTest, register_enqueue_with_empty_queue) {
   // Register enqueue and expect data move to Queue
   std::unordered_map<int, std::promise<int>> enqueue_promise_map;
   enqueue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(0), std::forward_as_tuple());
-  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   auto enqueue_future = enqueue_promise_map[0].get_future();
+  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   enqueue_future.wait();
   EXPECT_EQ(enqueue_future.get(), 0);
   std::this_thread::sleep_for(std::chrono::milliseconds(20));
@@ -251,8 +251,8 @@ TEST_F(QueueTest, register_enqueue_with_full_queue) {
   }
   std::unordered_map<int, std::promise<int>> enqueue_promise_map;
   enqueue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(0), std::forward_as_tuple());
-  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   auto enqueue_future = enqueue_promise_map[0].get_future();
+  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   enqueue_future.wait();
   EXPECT_EQ(enqueue_future.get(), 0);
 
@@ -286,16 +286,16 @@ TEST_F(QueueTest, register_dequeue_with_full_queue) {
   }
   std::unordered_map<int, std::promise<int>> enqueue_promise_map;
   enqueue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(0), std::forward_as_tuple());
-  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   auto enqueue_future = enqueue_promise_map[0].get_future();
+  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   enqueue_future.wait();
   EXPECT_EQ(enqueue_future.get(), 0);
 
   // Register dequeue and expect data move to dequeue end buffer
   std::unordered_map<int, std::promise<int>> dequeue_promise_map;
   dequeue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(kQueueSize), std::forward_as_tuple());
-  test_dequeue_end.RegisterDequeue(&dequeue_promise_map);
   auto dequeue_future = dequeue_promise_map[kQueueSize].get_future();
+  test_dequeue_end.RegisterDequeue(&dequeue_promise_map);
   dequeue_future.wait();
   EXPECT_EQ(dequeue_future.get(), kQueueSize);
 
@@ -318,8 +318,8 @@ TEST_F(QueueTest, register_enqueue_with_half_empty_queue) {
   }
   std::unordered_map<int, std::promise<int>> enqueue_promise_map;
   enqueue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(0), std::forward_as_tuple());
-  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   auto enqueue_future = enqueue_promise_map[0].get_future();
+  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   enqueue_future.wait();
   EXPECT_EQ(enqueue_future.get(), 0);
 
@@ -331,8 +331,8 @@ TEST_F(QueueTest, register_enqueue_with_half_empty_queue) {
 
   // Register enqueue and expect data move to Queue
   enqueue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(0), std::forward_as_tuple());
-  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   enqueue_future = enqueue_promise_map[0].get_future();
+  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   enqueue_future.wait();
   EXPECT_EQ(enqueue_future.get(), 0);
 }
@@ -352,8 +352,8 @@ TEST_F(QueueTest, register_dequeue_with_half_empty_queue) {
   }
   std::unordered_map<int, std::promise<int>> enqueue_promise_map;
   enqueue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(0), std::forward_as_tuple());
-  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   auto enqueue_future = enqueue_promise_map[0].get_future();
+  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   enqueue_future.wait();
   EXPECT_EQ(enqueue_future.get(), 0);
 
@@ -361,8 +361,8 @@ TEST_F(QueueTest, register_dequeue_with_half_empty_queue) {
   std::unordered_map<int, std::promise<int>> dequeue_promise_map;
   dequeue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(kHalfOfQueueSize),
                               std::forward_as_tuple());
-  test_dequeue_end.RegisterDequeue(&dequeue_promise_map);
   auto dequeue_future = dequeue_promise_map[kHalfOfQueueSize].get_future();
+  test_dequeue_end.RegisterDequeue(&dequeue_promise_map);
   dequeue_future.wait();
   EXPECT_EQ(dequeue_future.get(), kHalfOfQueueSize);
 
@@ -389,8 +389,8 @@ TEST_F(QueueTest, queue_becomes_full_enqueue_callback_only) {
   // Register enqueue and expect kQueueSize data move to Queue
   std::unordered_map<int, std::promise<int>> enqueue_promise_map;
   enqueue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(kQueueSize), std::forward_as_tuple());
-  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   auto enqueue_future = enqueue_promise_map[kQueueSize].get_future();
+  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   enqueue_future.wait();
   EXPECT_EQ(enqueue_future.get(), kQueueSize);
 
@@ -420,15 +420,15 @@ TEST_F(QueueTest, queue_becomes_full_dequeue_callback_unregister) {
   std::unordered_map<int, std::promise<int>> dequeue_promise_map;
   dequeue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(kHalfOfQueueSize),
                               std::forward_as_tuple());
-  test_dequeue_end.RegisterDequeue(&dequeue_promise_map);
   auto dequeue_future = dequeue_promise_map[kHalfOfQueueSize].get_future();
+  test_dequeue_end.RegisterDequeue(&dequeue_promise_map);
 
   // Register enqueue
   std::unordered_map<int, std::promise<int>> enqueue_promise_map;
   enqueue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(kHalfOfQueueSize),
                               std::forward_as_tuple());
-  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   auto enqueue_future = enqueue_promise_map[kHalfOfQueueSize].get_future();
+  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
 
   // Dequeue end will unregister when buffer size is kHalfOfQueueSize
   dequeue_future.wait();
@@ -461,14 +461,14 @@ TEST_F(QueueTest, queue_becomes_full_dequeue_callback_slower) {
   // Set 20 ms delay for callback and register dequeue
   std::unordered_map<int, std::promise<int>> dequeue_promise_map;
   test_dequeue_end.setDelay(20);
-  test_dequeue_end.RegisterDequeue(&dequeue_promise_map);
   auto dequeue_future = dequeue_promise_map[kHalfOfQueueSize].get_future();
+  test_dequeue_end.RegisterDequeue(&dequeue_promise_map);
 
   // Register enqueue
   std::unordered_map<int, std::promise<int>> enqueue_promise_map;
   enqueue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(0), std::forward_as_tuple());
-  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   auto enqueue_future = enqueue_promise_map[0].get_future();
+  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
 
   // Wait for enqueue buffer empty and expect queue is full
   enqueue_future.wait();
@@ -495,13 +495,13 @@ TEST_F(QueueTest, queue_becomes_full_and_non_empty_at_same_time) {
   // Register dequeue
   std::unordered_map<int, std::promise<int>> dequeue_promise_map;
   dequeue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(kQueueSize), std::forward_as_tuple());
-  test_dequeue_end.RegisterDequeue(&dequeue_promise_map);
   auto dequeue_future = dequeue_promise_map[kQueueSize].get_future();
+  test_dequeue_end.RegisterDequeue(&dequeue_promise_map);
 
   // Register enqueue
   std::unordered_map<int, std::promise<int>> enqueue_promise_map;
-  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   auto enqueue_future = enqueue_promise_map[0].get_future();
+  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
 
   // Wait for all data move from enqueue end buffer to dequeue end buffer
   dequeue_future.wait();
@@ -526,8 +526,8 @@ TEST_F(QueueTest, queue_becomes_non_full_during_test) {
   std::unordered_map<int, std::promise<int>> enqueue_promise_map;
   enqueue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(kQueueSize), std::forward_as_tuple());
   enqueue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(0), std::forward_as_tuple());
-  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   auto enqueue_future = enqueue_promise_map[kQueueSize].get_future();
+  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   enqueue_future.wait();
   EXPECT_EQ(enqueue_future.get(), kQueueSize);
 
@@ -564,13 +564,13 @@ TEST_F(QueueTest, queue_becomes_non_full_and_empty_at_same_time) {
   // Register dequeue
   std::unordered_map<int, std::promise<int>> dequeue_promise_map;
   dequeue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(kQueueSize), std::forward_as_tuple());
-  test_dequeue_end.RegisterDequeue(&dequeue_promise_map);
   auto dequeue_future = dequeue_promise_map[kQueueSize].get_future();
+  test_dequeue_end.RegisterDequeue(&dequeue_promise_map);
 
   // Register enqueue
   std::unordered_map<int, std::promise<int>> enqueue_promise_map;
-  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   auto enqueue_future = enqueue_promise_map[0].get_future();
+  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
 
   // Wait for all data move from enqueue end buffer to dequeue end buffer
   dequeue_future.wait();
@@ -596,8 +596,8 @@ TEST_F(QueueTest, queue_becomes_empty_dequeue_callback_only) {
   }
   std::unordered_map<int, std::promise<int>> enqueue_promise_map;
   enqueue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(0), std::forward_as_tuple());
-  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   auto enqueue_future = enqueue_promise_map[0].get_future();
+  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   enqueue_future.wait();
   EXPECT_EQ(enqueue_future.get(), 0);
 
@@ -605,8 +605,8 @@ TEST_F(QueueTest, queue_becomes_empty_dequeue_callback_only) {
   std::unordered_map<int, std::promise<int>> dequeue_promise_map;
   dequeue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(kHalfOfQueueSize),
                               std::forward_as_tuple());
-  test_dequeue_end.RegisterDequeue(&dequeue_promise_map);
   auto dequeue_future = dequeue_promise_map[kHalfOfQueueSize].get_future();
+  test_dequeue_end.RegisterDequeue(&dequeue_promise_map);
   dequeue_future.wait();
   EXPECT_EQ(dequeue_future.get(), kHalfOfQueueSize);
 
@@ -630,8 +630,8 @@ TEST_F(QueueTest, queue_becomes_empty_enqueue_callback_unregister) {
   }
   std::unordered_map<int, std::promise<int>> enqueue_promise_map;
   enqueue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(0), std::forward_as_tuple());
-  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   auto enqueue_future = enqueue_promise_map[0].get_future();
+  test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
   enqueue_future.wait();
   EXPECT_EQ(enqueue_future.get(), 0);
 
@@ -645,8 +645,8 @@ TEST_F(QueueTest, queue_becomes_empty_enqueue_callback_unregister) {
   // Register dequeue, expect kQueueSize move to dequeue end buffer
   std::unordered_map<int, std::promise<int>> dequeue_promise_map;
   dequeue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(kQueueSize), std::forward_as_tuple());
-  test_dequeue_end.RegisterDequeue(&dequeue_promise_map);
   auto dequeue_future = dequeue_promise_map[kQueueSize].get_future();
+  test_dequeue_end.RegisterDequeue(&dequeue_promise_map);
   dequeue_future.wait();
   EXPECT_EQ(dequeue_future.get(), kQueueSize);
 
