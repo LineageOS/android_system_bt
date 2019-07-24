@@ -292,6 +292,12 @@ typedef void (*bthf_client_last_voice_tag_number_callback)(
  */
 typedef void (*bthf_client_ring_indication_callback)(const RawAddress* bd_addr);
 
+/**
+ * Callback for sending unknown (vendor specific) event
+ */
+typedef void (*bthf_client_unknown_event_callback)(const RawAddress* bd_addr,
+                                                   const char* unknow_event);
+
 /** BT-HF callback structure. */
 typedef struct {
   /** set to sizeof(BtHfClientCallbacks) */
@@ -317,6 +323,7 @@ typedef struct {
   bthf_client_in_band_ring_tone_callback in_band_ring_tone_cb;
   bthf_client_last_voice_tag_number_callback last_voice_tag_number_callback;
   bthf_client_ring_indication_callback ring_indication_cb;
+  bthf_client_unknown_event_callback unknown_event_cb;
 } bthf_client_callbacks_t;
 
 /** Represents the standard BT-HF interface. */
