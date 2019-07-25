@@ -19,12 +19,11 @@
 #include <map>
 #include <variant>
 
-#include "enum_def.h"
 #include "field_list.h"
-#include "fields/all_fields.h"
 #include "fields/packet_field.h"
 #include "parent_def.h"
 #include "parse_location.h"
+#include "type_def.h"
 
 class StructDef : public ParentDef {
  public:

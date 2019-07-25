@@ -45,15 +45,21 @@ void PacketField::GenBounds(std::ostream& s, Size start_offset, Size end_offset,
     ERROR(this) << "Can not find the bounds of a field at a non byte-aligned offset." << start_offset << end_offset;
   }
 
-  s << "ASSERT(was_validated_);";
+  if (!start_offset.empty()) {
+    s << "size_t field_begin = (" << start_offset << ") / 8;";
+  } else {
+    s << "size_t field_begin = size() - (" << end_offset << " + " << field_size << ") / 8;";
+  }
 
-  s << "size_t field_begin = (" << start_offset << ") / 8;";
-
-  // If the field has a known size, use the size + field_begin for field_end, otherwise use the end_offset.
-  s << "size_t field_end = size() - (" << end_offset << ") / 8;";
-  if (!field_size.empty()) {
-    s << "size_t field_sized_end = field_begin + (" << field_size << ") / 8;";
-    s << "if (field_sized_end < field_end) { field_end = field_sized_end; }";
+  if (!end_offset.empty()) {
+    s << "size_t field_end = size() - (" << end_offset << ") / 8;";
+    // If the field has a known size, use the minimum for the end
+    if (!field_size.empty()) {
+      s << "size_t field_sized_end = field_begin + (" << field_size << ") / 8;";
+      s << "if (field_sized_end < field_end) { field_end = field_sized_end; }";
+    }
+  } else {
+    s << "size_t field_end = field_begin + (" << field_size << ") / 8;";
   }
 }
 
