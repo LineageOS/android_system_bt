@@ -51,12 +51,7 @@ void StructDef::GenParse(std::ostream& s) const {
   }
   Size field_offset = Size(0);
   for (const auto& field : fields_) {
-    // TODO: DON'T commit this logging
-    s << "\n/* (before adding) field_offset " << field_offset.bits() << " */\n ";
-    s << "\n/* (before adding) field->GetSize() " << field->GetSize().bits() << " */\n ";
-    // Size next_field_offset = field_offset + field->GetSize();
     Size next_field_offset = field->GetSize() + field_offset.bits();
-    s << "\n/* field_offset " << field_offset.bits() << " */\n ";
     if (field->GetFieldType() != ReservedField::kFieldType && field->GetFieldType() != BodyField::kFieldType &&
         field->GetFieldType() != FixedScalarField::kFieldType && field->GetFieldType() != SizeField::kFieldType &&
         field->GetFieldType() != CountField::kFieldType) {
@@ -93,24 +88,6 @@ void StructDef::GenDefinition(std::ostream& s) const {
       FixedEnumField::kFieldType,
   };
 
-  // Print all of the public fields which are all the fields minus the fixed fields.
-  const auto& public_fields = fields_.GetFieldsWithoutTypes(fixed_types);
-  bool has_fixed_fields = public_fields.size() != fields_.size();
-  for (const auto& field : public_fields) {
-    // GenParserFieldGetter(s, field);
-    s << "/*FieldGetter for " << field->GetName() << "*/\n";
-    s << "\n";
-  }
-
-  // Print the private fields which are the fixed fields.
-  if (has_fixed_fields) {
-    const auto& private_fields = fields_.GetFieldsWithTypes(fixed_types);
-    s << "/* private: */\n";
-    for (const auto& field : private_fields) {
-      // GenParserFieldGetter(s, field);
-      s << "/* FieldGetter for " << field->GetName() << "*/\n";
-    }
-  }
   s << " public:\n";
   s << "  virtual ~" << name_ << "() override = default;\n";
 
@@ -159,26 +136,5 @@ void StructDef::GenConstructor(std::ostream& s) const {
     }
   }
 
-  /*
-    // Build a list of parameters that excludes all parent parameters.
-    FieldList saved_params;
-    for (const auto& field : params) {
-      if (parent_params.GetField(field->GetName()) == nullptr) {
-        saved_params.AppendField(field);
-      }
-    }
-    if (parent_ != nullptr && saved_params.size() > 0) {
-      s << ",";
-    }
-    for (int i = 0; i < saved_params.size(); i++) {
-      const auto& saved_param_name = saved_params[i]->GetName();
-      s << saved_param_name << "_(" << saved_param_name << ")";
-      if (i != saved_params.size() - 1) {
-        s << ",";
-      }
-    }
-    s << " {";
-
-  */
   s << "}\n";
 }
