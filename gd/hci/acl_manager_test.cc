@@ -42,6 +42,8 @@ using packet::kLittleEndian;
 using packet::PacketView;
 using packet::RawBuilder;
 
+constexpr std::chrono::seconds kTimeout = std::chrono::seconds(2);
+
 PacketView<kLittleEndian> GetPacketView(std::unique_ptr<packet::BasePacketBuilder> packet) {
   auto bytes = std::make_shared<std::vector<uint8_t>>();
   BitInserter i(*bytes);
@@ -108,6 +110,9 @@ class TestHciLayer : public HciLayer {
   }
 
   std::unique_ptr<CommandPacketBuilder> GetLastCommand() {
+    if (command_queue_.size() == 0) {
+      return nullptr;
+    }
     auto last = std::move(command_queue_.front());
     command_queue_.pop();
     return last;
@@ -146,7 +151,8 @@ class TestHciLayer : public HciLayer {
                                      return std::make_unique<AclPacketView>(acl2);
                                    },
                                    queue_end, handle, common::Passed(std::move(promise))));
-    future.wait();
+    auto status = future.wait_for(kTimeout);
+    ASSERT_EQ(status, std::future_status::ready);
   }
 
   void AssertNoOutgoingAclData() {
@@ -206,8 +212,10 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
   os::Handler* client_handler_ = nullptr;
   Address remote;
 
-  size_t GetNumConnections() {
-    return mock_connection_callback_.connections_.size();
+  std::future<void> GetConnectionFuture() {
+    ASSERT_LOG(mock_connection_callback_.connection_promise_ == nullptr, "Promises promises ... Only one at a time");
+    mock_connection_callback_.connection_promise_ = std::make_unique<std::promise<void>>();
+    return mock_connection_callback_.connection_promise_->get_future();
   }
 
   AclConnection& GetLastConnection() {
@@ -226,18 +234,23 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
                                      return NextPayload(handle);
                                    },
                                    queue_end, handle, common::Passed(std::move(promise))));
-    future.wait();
+    auto status = future.wait_for(kTimeout);
+    ASSERT_EQ(status, std::future_status::ready);
   }
 
   class MockConnectionCallback : public ConnectionCallbacks {
    public:
     void OnConnectSuccess(AclConnection connection) override {
       connections_.push_back(connection);
+      if (connection_promise_ != nullptr) {
+        connection_promise_->set_value();
+        connection_promise_.reset();
+      }
     }
     MOCK_METHOD2(OnConnectFail, void(Address, ErrorCode reason));
 
     std::list<AclConnection> connections_;
-
+    std::unique_ptr<std::promise<void>> connection_promise_;
   } mock_connection_callback_;
 };
 
@@ -272,12 +285,20 @@ TEST_F(AclManagerTest, invoke_registered_callback_connection_complete_success) {
 
   acl_manager_->CreateConnection(remote);
 
-  size_t num_connections = GetNumConnections();
+  // Wait for the connection request
+  std::unique_ptr<CommandPacketBuilder> last_command;
+  do {
+    last_command = test_hci_layer_->GetLastCommand();
+  } while (last_command == nullptr);
+
+  auto first_connection = GetConnectionFuture();
+
   test_hci_layer_->IncomingEvent(
       ConnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle, remote, LinkType::ACL, Enable::DISABLED));
 
-  while (GetNumConnections() == num_connections)
-    ;
+  auto first_connection_status = first_connection.wait_for(kTimeout);
+  ASSERT_EQ(first_connection_status, std::future_status::ready);
+
   AclConnection& connection = GetLastConnection();
   ASSERT_EQ(connection.GetAddress(), remote);
 }
@@ -286,6 +307,12 @@ TEST_F(AclManagerTest, invoke_registered_callback_connection_complete_fail) {
   uint16_t handle = 0x123;
 
   acl_manager_->CreateConnection(remote);
+
+  // Wait for the connection request
+  std::unique_ptr<CommandPacketBuilder> last_command;
+  do {
+    last_command = test_hci_layer_->GetLastCommand();
+  } while (last_command == nullptr);
 
   EXPECT_CALL(mock_connection_callback_, OnConnectFail(remote, ErrorCode::PAGE_TIMEOUT));
   test_hci_layer_->IncomingEvent(
@@ -300,12 +327,19 @@ TEST_F(AclManagerTest, invoke_registered_callback_disconnection_complete) {
 
   acl_manager_->CreateConnection(remote);
 
-  size_t num_connections = GetNumConnections();
+  // Wait for the connection request
+  std::unique_ptr<CommandPacketBuilder> last_command;
+  do {
+    last_command = test_hci_layer_->GetLastCommand();
+  } while (last_command == nullptr);
+
+  auto first_connection = GetConnectionFuture();
+
   test_hci_layer_->IncomingEvent(
       ConnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle, remote, LinkType::ACL, Enable::DISABLED));
 
-  while (GetNumConnections() == num_connections)
-    ;
+  auto first_connection_status = first_connection.wait_for(kTimeout);
+  ASSERT_EQ(first_connection_status, std::future_status::ready);
 
   AclConnection& connection = GetLastConnection();
 
@@ -320,7 +354,8 @@ TEST_F(AclManagerTest, invoke_registered_callback_disconnection_complete) {
   test_hci_layer_->IncomingEvent(
       DisconnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle, ErrorCode::REMOTE_USER_TERMINATED_CONNECTION));
 
-  future.wait();
+  auto disconnection_status = future.wait_for(kTimeout);
+  ASSERT_EQ(disconnection_status, std::future_status::ready);
   ASSERT_EQ(ErrorCode::REMOTE_USER_TERMINATED_CONNECTION, future.get());
 
   fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
@@ -331,12 +366,19 @@ TEST_F(AclManagerTest, acl_connection_finish_after_disconnected) {
 
   acl_manager_->CreateConnection(remote);
 
-  size_t num_connections = GetNumConnections();
+  // Wait for the connection request
+  std::unique_ptr<CommandPacketBuilder> last_command;
+  do {
+    last_command = test_hci_layer_->GetLastCommand();
+  } while (last_command == nullptr);
+
+  auto first_connection = GetConnectionFuture();
+
   test_hci_layer_->IncomingEvent(
       ConnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle, remote, LinkType::ACL, Enable::DISABLED));
 
-  while (GetNumConnections() == num_connections)
-    ;
+  auto first_connection_status = first_connection.wait_for(kTimeout);
+  ASSERT_EQ(first_connection_status, std::future_status::ready);
 
   AclConnection& connection = GetLastConnection();
 
@@ -351,7 +393,8 @@ TEST_F(AclManagerTest, acl_connection_finish_after_disconnected) {
   test_hci_layer_->IncomingEvent(DisconnectionCompleteBuilder::Create(
       ErrorCode::SUCCESS, handle, ErrorCode::REMOTE_DEVICE_TERMINATED_CONNECTION_POWER_OFF));
 
-  future.wait();
+  auto disconnection_status = future.wait_for(kTimeout);
+  ASSERT_EQ(disconnection_status, std::future_status::ready);
   ASSERT_EQ(ErrorCode::REMOTE_DEVICE_TERMINATED_CONNECTION_POWER_OFF, future.get());
 
   connection.Finish();
@@ -362,12 +405,19 @@ TEST_F(AclManagerTest, acl_send_data_one_connection) {
 
   acl_manager_->CreateConnection(remote);
 
-  size_t num_connections = GetNumConnections();
+  // Wait for the connection request
+  std::unique_ptr<CommandPacketBuilder> last_command;
+  do {
+    last_command = test_hci_layer_->GetLastCommand();
+  } while (last_command == nullptr);
+
+  auto first_connection = GetConnectionFuture();
+
   test_hci_layer_->IncomingEvent(
       ConnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle, remote, LinkType::ACL, Enable::DISABLED));
 
-  while (GetNumConnections() == num_connections)
-    ;
+  auto first_connection_status = first_connection.wait_for(kTimeout);
+  ASSERT_EQ(first_connection_status, std::future_status::ready);
 
   AclConnection& connection = GetLastConnection();
 
@@ -403,12 +453,18 @@ TEST_F(AclManagerTest, acl_send_data_credits) {
 
   acl_manager_->CreateConnection(remote);
 
-  size_t num_connections = GetNumConnections();
+  // Wait for the connection request
+  std::unique_ptr<CommandPacketBuilder> last_command;
+  do {
+    last_command = test_hci_layer_->GetLastCommand();
+  } while (last_command == nullptr);
+
+  auto first_connection = GetConnectionFuture();
   test_hci_layer_->IncomingEvent(
       ConnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle, remote, LinkType::ACL, Enable::DISABLED));
 
-  while (GetNumConnections() == num_connections)
-    ;
+  auto first_connection_status = first_connection.wait_for(kTimeout);
+  ASSERT_EQ(first_connection_status, std::future_status::ready);
 
   AclConnection& connection = GetLastConnection();
 
