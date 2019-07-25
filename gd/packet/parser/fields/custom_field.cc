@@ -48,8 +48,8 @@ void CustomField::GenExtractor(std::ostream& s, Size start_offset, Size end_offs
 }
 
 void CustomField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
-  s << "std::vector<" << GetDataType() << ">";
-  s << " Get" << util::UnderscoreToCamelCase(GetName()) << "() const {";
+  s << "std::vector<" << GetDataType() << "> Get" << util::UnderscoreToCamelCase(GetName()) << "() const {";
+  s << "ASSERT(was_validated_);";
 
   GenExtractor(s, start_offset, end_offset);
   s << "return vec;";
