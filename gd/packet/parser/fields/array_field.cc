@@ -19,16 +19,6 @@
 
 const std::string ArrayField::kFieldType = "ArrayField";
 
-ArrayField::ArrayField(std::string name, int element_size, std::string size_modifier, ParseLocation loc)
-    : PacketField(name, loc), element_size_(element_size), size_modifier_(size_modifier) {
-  // Make sure the element_size is a multiple of 8.
-  if (element_size_ > 64 || element_size_ < 0)
-    ERROR(this) << __func__ << ": Not implemented for element size = " << element_size_;
-  if (element_size % 8 != 0) {
-    ERROR(this) << "Can only have arrays with elements that are byte aligned (" << element_size << ")";
-  }
-}
-
 ArrayField::ArrayField(std::string name, int element_size, int fixed_size, ParseLocation loc)
     : PacketField(name, loc), element_size_(element_size), fixed_size_(fixed_size) {
   if (element_size_ > 64 || element_size_ < 0)
@@ -36,14 +26,6 @@ ArrayField::ArrayField(std::string name, int element_size, int fixed_size, Parse
   // Make sure the element_size is a multiple of 8.
   if (element_size % 8 != 0) {
     ERROR(this) << "Can only have arrays with elements that are byte aligned (" << element_size << ")";
-  }
-}
-
-ArrayField::ArrayField(std::string name, TypeDef* type_def, std::string size_modifier, ParseLocation loc)
-    : PacketField(name, loc), element_size_(type_def->size_), type_def_(type_def), size_modifier_(size_modifier) {
-  // If the element type is not variable sized, make sure that it is byte aligned.
-  if (type_def_->size_ != -1 && type_def_->size_ % 8 != 0) {
-    ERROR(this) << "Can only have arrays with elements that are byte aligned (" << type_def_->size_ << ")";
   }
 }
 
@@ -60,44 +42,15 @@ const std::string& ArrayField::GetFieldType() const {
 }
 
 Size ArrayField::GetSize() const {
-  if (IsFixedSize() && element_size_ != -1) {
+  if (element_size_ != -1) {
     return Size(fixed_size_ * element_size_);
   }
-
-  // If there is no size field, then it is of unknown size.
-  if (size_field_ == nullptr) {
-    return Size();
-  }
-
-  // size_field_ is of type SIZE
-  if (size_field_->GetFieldType() == SizeField::kFieldType) {
-    std::string ret = "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * 8)";
-    if (!size_modifier_.empty()) ret += size_modifier_;
-    return ret;
-  }
-
-  // size_field_ is of type COUNT and it is a scalar array
-  if (type_def_ == nullptr) {
-    return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " + std::to_string(element_size_) + ")";
-  }
-
-  if (IsCustomFieldArray()) {
-    if (type_def_->size_ != -1) {
-      return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " + std::to_string(type_def_->size_) +
-             ")";
-    } else {
-      return Size();
-    }
-  }
-
-  // size_field_ is of type COUNT and it is an enum array
-  return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " + std::to_string(type_def_->size_) +
-         ")";
+  return Size();
 }
 
 Size ArrayField::GetBuilderSize() const {
   if (element_size_ != -1) {
-    std::string ret = "(" + GetName() + "_.size() * " + std::to_string(element_size_) + ")";
+    std::string ret = "(" + std::to_string(fixed_size_) + " * " + std::to_string(element_size_) + ")";
     return ret;
   } else {
     std::string ret = "[this](){ size_t length = 0; for (const auto& elem : " + GetName() +
@@ -108,9 +61,9 @@ Size ArrayField::GetBuilderSize() const {
 
 std::string ArrayField::GetDataType() const {
   if (type_def_ != nullptr) {
-    return "std::vector<" + type_def_->name_ + ">";
+    return "std::array<" + type_def_->name_ + "," + std::to_string(fixed_size_) + ">";
   }
-  return "std::vector<" + util::GetTypeForSize(element_size_) + ">";
+  return "std::array<" + util::GetTypeForSize(element_size_) + "," + std::to_string(fixed_size_) + ">";
 }
 
 void ArrayField::GenExtractor(std::ostream& s, Size start_offset, Size end_offset) const {
@@ -120,15 +73,19 @@ void ArrayField::GenExtractor(std::ostream& s, Size start_offset, Size end_offse
   s << "auto it = subview.begin();";
 
   // Add the element size so that we will extract as many elements as we can.
-  s << GetDataType() << " vec;";
+  s << GetDataType() << " ret;";
   if (element_size_ != -1) {
     std::string type = (type_def_ != nullptr) ? type_def_->name_ : util::GetTypeForSize(element_size_);
+    s << GetDataType() << "::iterator ret_it = ret.begin();";
     s << "while (it + sizeof(" << type << ") <= subview.end()) {";
-    s << "vec.push_back(it.extract<" << type << ">());";
+    s << "*ret_it = it.extract<" << type << ">();";
+    s << "ret_it++;";
     s << "}";
   } else {
+    s << "std::size_t ret_idx = 0;";
     s << "while (it < subview.end()) {";
-    s << "it = " << type_def_->name_ << "::Parse(vec, it);";
+    s << "it = " << type_def_->name_ << "::ParseArray(ret, &ret_idx, it);";
+    s << "ret_idx++;";
     s << "}";
   }
 }
@@ -136,49 +93,37 @@ void ArrayField::GenExtractor(std::ostream& s, Size start_offset, Size end_offse
 void ArrayField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
   s << GetDataType();
   s << " Get" << util::UnderscoreToCamelCase(GetName()) << "() {";
-  s << "ASSERT(was_validated_);";
 
   GenExtractor(s, start_offset, end_offset);
 
-  s << "return vec;";
+  s << "return ret;";
   s << "}\n";
 }
 
 bool ArrayField::GenBuilderParameter(std::ostream& s) const {
   if (type_def_ != nullptr) {
-    s << "const std::vector<" << type_def_->GetTypeName() << ">& " << GetName();
+    s << "const std::array<" << type_def_->GetTypeName() << "," << fixed_size_ << ">& " << GetName();
   } else {
-    s << "const std::vector<" << util::GetTypeForSize(element_size_) << ">& " << GetName();
+    s << "const std::array<" << util::GetTypeForSize(element_size_) << "," << fixed_size_ << ">& " << GetName();
   }
   return true;
 }
 
 bool ArrayField::GenBuilderMember(std::ostream& s) const {
   if (type_def_ != nullptr) {
-    s << "std::vector<" << type_def_->GetTypeName() << "> " << GetName();
+    s << "std::array<" << type_def_->GetTypeName() << "," << fixed_size_ << "> " << GetName();
   } else {
-    s << "std::vector<" << util::GetTypeForSize(element_size_) << "> " << GetName();
+    s << "std::array<" << util::GetTypeForSize(element_size_) << "," << fixed_size_ << "> " << GetName();
   }
   return true;
 }
 
 bool ArrayField::HasParameterValidator() const {
-  if (fixed_size_ == -1) {
-    // Does not have parameter validator yet.
-    // TODO: See comment in GenParameterValidator
-    return false;
-  }
-  return true;
+  return false;
 }
 
-void ArrayField::GenParameterValidator(std::ostream& s) const {
-  if (fixed_size_ == -1) {
-    // No Parameter validator if its dynamically size.
-    // TODO: Maybe add a validator to ensure that the size isn't larger than what the size field can hold.
-    return;
-  }
-
-  s << "ASSERT(" << GetName() << "_.size() == " << fixed_size_ << ");";
+void ArrayField::GenParameterValidator(std::ostream&) const {
+  // Array length is validated by the compiler
 }
 
 void ArrayField::GenInserter(std::ostream& s) const {
@@ -191,6 +136,8 @@ void ArrayField::GenInserter(std::ostream& s) const {
     } else {
       s << "insert(val, i);";
     }
+  } else if (IsStructArray()) {
+    s << "val.Serialize(i);";
   } else {
     s << "insert(val, i, " << element_size_ << ");";
   }
@@ -213,23 +160,6 @@ bool ArrayField::IsCustomFieldArray() const {
   return type_def_ != nullptr && type_def_->GetDefinitionType() == TypeDef::Type::CUSTOM;
 }
 
-bool ArrayField::IsFixedSize() const {
-  return fixed_size_ != -1;
-}
-
-void ArrayField::SetSizeField(const SizeField* size_field) {
-  if (size_field->GetFieldType() == CountField::kFieldType && !size_modifier_.empty()) {
-    ERROR(this, size_field) << "Can not use count field to describe array with a size modifier."
-                            << " Use size instead";
-  }
-
-  if (IsFixedSize()) {
-    ERROR(this, size_field) << "Can not use size field with a fixed size array.";
-  }
-
-  size_field_ = size_field;
-}
-
-const std::string& ArrayField::GetSizeModifier() const {
-  return size_modifier_;
+bool ArrayField::IsStructArray() const {
+  return type_def_ != nullptr && type_def_->GetDefinitionType() == TypeDef::Type::STRUCT;
 }

@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 #include <optional>
+#include <sstream>
 #include <string>
 
 #include "packet/bit_inserter.h"
@@ -43,7 +44,29 @@ class Variable final {
   size_t size() const;
 
   static Iterator<true> Parse(std::vector<Variable>& vec, Iterator<true> it);
+  template <std::size_t arr_size>
+  static Iterator<true> ParseArray(std::array<Variable, arr_size>& arr, std::size_t* arr_idx, Iterator<true> it);
 };
+
+template <std::size_t arr_size>
+Iterator<true> Variable::ParseArray(std::array<Variable, arr_size>& arr, std::size_t* arr_idx, Iterator<true> it) {
+  if (it.NumBytesRemaining() < 1) {
+    return it;
+  }
+  size_t data_length = it.extract<uint8_t>();
+  if (data_length > 255) {
+    return it + it.NumBytesRemaining();
+  }
+  if (it.NumBytesRemaining() < data_length) {
+    return it + it.NumBytesRemaining();
+  }
+  std::stringstream ss;
+  for (size_t i = 0; i < data_length; i++) {
+    ss << it.extract<char>();
+  }
+  arr[*arr_idx] = ss.str();
+  return it;
+}
 
 }  // namespace test
 }  // namespace parser

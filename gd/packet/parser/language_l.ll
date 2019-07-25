@@ -63,6 +63,7 @@ string_literal \".*\"
 "enum"                  { return(token::ENUM); }
 "group"                 { return(token::GROUP); }
 "packet"                { return(token::PACKET); }
+"struct"                { return(token::STRUCT); }
 "little_endian_packets" {
                           yylval->integer = 1;
                           return token::IS_LITTLE_ENDIAN;

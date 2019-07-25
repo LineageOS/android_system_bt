@@ -25,6 +25,7 @@
 #include "enum_def.h"
 #include "enum_gen.h"
 #include "packet_def.h"
+#include "struct_def.h"
 
 class Declarations {
  public:
