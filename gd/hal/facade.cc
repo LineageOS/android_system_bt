@@ -45,6 +45,10 @@ class HciHalFacadeService
     hal->registerIncomingPacketCallback(this);
   }
 
+  ~HciHalFacadeService() {
+    hal_->unregisterIncomingPacketCallback();
+  }
+
   ::grpc::Status SendHciResetCommand(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
                                      ::google::protobuf::Empty* response) override {
     std::unique_lock<std::mutex> lock(mutex_);
