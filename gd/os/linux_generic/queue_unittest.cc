@@ -473,7 +473,7 @@ TEST_F(QueueTest, queue_becomes_full_dequeue_callback_slower) {
   // Wait for enqueue buffer empty and expect queue is full
   enqueue_future.wait();
   EXPECT_EQ(enqueue_future.get(), 0);
-  EXPECT_EQ(test_dequeue_end.buffer_.size(), kQueueSize);
+  EXPECT_GE(test_dequeue_end.buffer_.size(), kQueueSize - 1);
 
   test_dequeue_end.UnregisterDequeue();
 }
