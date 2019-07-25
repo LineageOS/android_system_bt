@@ -44,46 +44,30 @@ std::string StructField::GetDataType() const {
 }
 
 void StructField::GenExtractor(std::ostream& s, Size start_offset, Size end_offset) const {
-  s << " // start_offset = " << start_offset.ToString() << "\n";
-  s << " // end_offset = " << end_offset.ToString() << "\n";
+  if (size_ != -1) {
+    GenBounds(s, start_offset, end_offset, Size(size_));
+  } else {
+    GenBounds(s, start_offset, end_offset, Size());
+  }
+  s << " auto subview = GetLittleEndianSubview(field_begin, field_end); ";
+  s << "auto it = subview.begin();";
+  s << "std::vector<" << GetDataType() << "> vec;";
+  s << GetDataType() << "::Parse(vec, it);";
 }
 
 void StructField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
   if (size_ != -1) {
-    s << GetDataType();
+    s << GetDataType() << " Get" << util::UnderscoreToCamelCase(GetName()) << "() const {";
   } else {
-    s << "std::vector<" << GetDataType() << ">";
+    s << "std::vector<" << GetDataType() << "> Get" << util::UnderscoreToCamelCase(GetName()) << "() const {";
   }
-  s << " Get" << util::UnderscoreToCamelCase(GetName()) << "() const {";
+  s << "ASSERT(was_validated_);";
+  GenExtractor(s, start_offset, end_offset);
 
-  s << "auto it = ";
-  if (!start_offset.empty()) {
-    // Default to start if available.
-    if (start_offset.bits() % 8 != 0) {
-      ERROR(this) << "Struct Field must be byte aligned. start_offset.bits = " << start_offset.bits();
-    }
-    s << "begin() + (" << start_offset << ") / 8;";
-  } else if (size_ != -1) {
-    // If the size of the field is already known, we can determine it's offset based on end().
-    if (!end_offset.empty()) {
-      if (end_offset.bits() % 8) {
-        ERROR(this) << "Struct Field must be byte aligned. end_offset.bits = " << end_offset.bits();
-      }
-
-      s << "end() - (" << size_ << " + " << end_offset << ") / 8;";
-    } else {
-      ERROR(this) << "Ambiguous offset for fixed size custom field.";
-    }
-  } else {
-    ERROR(this) << "Struct Field offset can not be determined from begin().";
-  }
-
-  s << "std::vector<" << GetDataType() << "> to_return;";
-  s << GetDataType() << "::Parse(to_return, it);";
   if (size_ != -1) {
-    s << "return to_return[0];";
+    s << "return vec[0];";
   } else {
-    s << "return to_return;";
+    s << "return vec;";
   }
   s << "}\n";
 }

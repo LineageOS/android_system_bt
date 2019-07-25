@@ -93,6 +93,7 @@ void ArrayField::GenExtractor(std::ostream& s, Size start_offset, Size end_offse
 void ArrayField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
   s << GetDataType();
   s << " Get" << util::UnderscoreToCamelCase(GetName()) << "() {";
+  s << "ASSERT(was_validated_);";
 
   GenExtractor(s, start_offset, end_offset);
 
