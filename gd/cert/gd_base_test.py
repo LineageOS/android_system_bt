@@ -37,28 +37,30 @@ class GdBaseTestClass(BaseTestClass):
         log_path_base = configs.get('log_path', '/tmp/logs')
         rootcanal_logpath = os.path.join(log_path_base, 'rootcanal_logs.txt')
         self.rootcanal_logs = open(rootcanal_logpath, 'w')
-
-        rootcanal_config = configs["testbed_configs"]['rootcanal']
-        rootcanal_hci_port = str(rootcanal_config.get("hci_port", "6402"))
-        self.rootcanal_process = subprocess.Popen(
-            [
-                ROOTCANAL,
-                str(rootcanal_config.get("test_port", "6401")),
-                rootcanal_hci_port,
-                str(rootcanal_config.get("link_layer_port", "6403"))
-            ],
-            cwd=ANDROID_BUILD_TOP,
-            env=os.environ.copy(),
-            stdout=self.rootcanal_logs,
-            stderr=self.rootcanal_logs
-        )
-
         gd_devices = self.testbed_configs.get("GdDevice")
-        for gd_device in gd_devices:
-            gd_device["rootcanal_port"] = rootcanal_hci_port
         gd_cert_devices = self.testbed_configs.get("GdCertDevice")
-        for gd_cert_device in gd_cert_devices:
-            gd_cert_device["rootcanal_port"] = rootcanal_hci_port
+
+        self.rootcanal_running = False
+        if 'rootcanal' in configs["testbed_configs"]:
+            self.rootcanal_running = True
+            rootcanal_config = configs["testbed_configs"]['rootcanal']
+            rootcanal_hci_port = str(rootcanal_config.get("hci_port", "6402"))
+            self.rootcanal_process = subprocess.Popen(
+                [
+                    ROOTCANAL,
+                    str(rootcanal_config.get("test_port", "6401")),
+                    rootcanal_hci_port,
+                    str(rootcanal_config.get("link_layer_port", "6403"))
+                ],
+                cwd=ANDROID_BUILD_TOP,
+                env=os.environ.copy(),
+                stdout=self.rootcanal_logs,
+                stderr=self.rootcanal_logs
+            )
+            for gd_device in gd_devices:
+                gd_device["rootcanal_port"] = rootcanal_hci_port
+            for gd_cert_device in gd_cert_devices:
+                gd_cert_device["rootcanal_port"] = rootcanal_hci_port
 
         self.register_controller(
             importlib.import_module('cert.gd_device'),
@@ -69,10 +71,12 @@ class GdBaseTestClass(BaseTestClass):
 
     def teardown_class(self):
         self.unregister_controllers()
-        self.rootcanal_process.send_signal(signal.SIGINT)
-        rootcanal_return_code = self.rootcanal_process.wait()
-        self.rootcanal_logs.close()
-        if rootcanal_return_code != 0 and rootcanal_return_code != -signal.SIGINT:
-            logging.error("rootcanal stopped with code: %d" %
-                          rootcanal_return_code)
-            return False
+        if self.rootcanal_running:
+            self.rootcanal_process.send_signal(signal.SIGINT)
+            rootcanal_return_code = self.rootcanal_process.wait()
+            self.rootcanal_logs.close()
+            if rootcanal_return_code != 0 and\
+                rootcanal_return_code != -signal.SIGINT:
+                logging.error("rootcanal stopped with code: %d" %
+                              rootcanal_return_code)
+                return False
