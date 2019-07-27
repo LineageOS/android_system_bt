@@ -194,8 +194,8 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
 
   void hci_event_received_handler(EventPacketView event) {
     EventCode event_code = event.GetEventCode();
-    ASSERT_LOG(event_handlers_.find(event_code) != event_handlers_.end(), "Unhandled event of type 0x%02hhx",
-               event.GetEventCode());
+    ASSERT_LOG(event_handlers_.find(event_code) != event_handlers_.end(), "Unhandled event of type 0x%02hhx (%s)",
+               event.GetEventCode(), EventCodeText(event.GetEventCode()).c_str());
     auto& registered_handler = event_handlers_[event_code].event_handler;
     event_handlers_[event_code].handler->Post(BindOnce(registered_handler, std::move(event)));
   }
