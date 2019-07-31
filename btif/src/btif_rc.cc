@@ -3336,6 +3336,8 @@ static void handle_app_attr_response(tBTA_AV_META_MSG* pmeta_msg,
     rc_ctrl_procedure_complete(p_dev);
     return;
   }
+  p_dev->rc_app_settings.num_attrs = 0;
+  p_dev->rc_app_settings.num_ext_attrs = 0;
 
   for (xx = 0; xx < p_rsp->num_attr; xx++) {
     uint8_t st_index;
@@ -3907,6 +3909,12 @@ static void handle_get_folder_items_response(tBTA_AV_META_MSG* pmeta_msg,
                    /* We want to make the ownership explicit in native */
                    btrc_items, item_count));
 
+    if (item_count > 0) {
+      if (btrc_items[0].item_type == AVRC_ITEM_PLAYER &&
+          (p_dev->rc_features & BTA_AV_FEAT_APP_SETTING)) {
+        list_player_app_setting_attrib_cmd(p_dev);
+      }
+    }
     /* Release the memory block for items and attributes allocated here.
      * Since the executor for do_in_jni_thread is a Single Thread Task Runner it
      * is okay to queue up the cleanup of btrc_items */
