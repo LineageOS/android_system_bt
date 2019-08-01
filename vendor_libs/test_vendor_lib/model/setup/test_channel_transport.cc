@@ -41,6 +41,12 @@ int TestChannelTransport::SetUp(int port) {
     return -1;
   }
 
+  int enable = 1;
+  if (setsockopt(
+      listen_fd_, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0) {
+    LOG_ERROR(LOG_TAG, "setsockopt(SO_REUSEADDR) failed");
+  }
+
   LOG_INFO(LOG_TAG, "port: %d", port);
   listen_address.sin_family = AF_INET;
   listen_address.sin_port = htons(port);
