@@ -21,6 +21,7 @@ from cert.event_stream import EventStream
 from facade import rootservice_pb2_grpc as facade_rootservice_pb2_grpc
 from hal import facade_pb2_grpc as hal_facade_pb2_grpc
 from hci import facade_pb2_grpc as hci_facade_pb2_grpc
+from l2cap import facade_pb2_grpc as l2cap_facade_pb2_grpc
 
 ACTS_CONTROLLER_CONFIG_NAME = "GdDevice"
 ACTS_CONTROLLER_REFERENCE_NAME = "gd_devices"
@@ -67,6 +68,7 @@ class GdDevice(GdDeviceBase):
         self.rootservice = facade_rootservice_pb2_grpc.RootFacadeStub(self.grpc_root_server_channel)
         self.hal = hal_facade_pb2_grpc.HciHalFacadeStub(self.grpc_channel)
         self.hci = hci_facade_pb2_grpc.AclManagerFacadeStub(self.grpc_channel)
+        self.l2cap = l2cap_facade_pb2_grpc.L2capModuleFacadeStub(self.grpc_channel)
 
         # Event streams
         self.hal.hci_event_stream = EventStream(self.hal.FetchHciEvent)
