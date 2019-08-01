@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package bluetooth.l2cap.cert;
+
+import "google/protobuf/empty.proto";
+import "facade/common.proto";
+
+service L2capModuleCert {
+  rpc NoOp(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+}
