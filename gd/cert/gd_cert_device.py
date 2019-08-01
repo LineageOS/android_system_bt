@@ -21,6 +21,7 @@ from cert.event_stream import EventStream
 from cert import rootservice_pb2_grpc as cert_rootservice_pb2_grpc
 from hal.cert import api_pb2_grpc as hal_cert_pb2_grpc
 from hci.cert import api_pb2_grpc as hci_cert_pb2_grpc
+from l2cap.cert import api_pb2_grpc as l2cap_cert_pb2_grpc
 
 ACTS_CONTROLLER_CONFIG_NAME = "GdCertDevice"
 ACTS_CONTROLLER_REFERENCE_NAME = "gd_cert_devices"
@@ -67,6 +68,7 @@ class GdCertDevice(GdDeviceBase):
         self.rootservice = cert_rootservice_pb2_grpc.RootCertStub(self.grpc_root_server_channel)
         self.hal = hal_cert_pb2_grpc.HciHalCertStub(self.grpc_channel)
         self.hci = hci_cert_pb2_grpc.AclManagerCertStub(self.grpc_channel)
+        self.l2cap = l2cap_cert_pb2_grpc.L2capModuleCertStub(self.grpc_channel)
 
         # Event streams
         self.hci.connection_complete_stream = EventStream(self.hci.FetchConnectionComplete)
