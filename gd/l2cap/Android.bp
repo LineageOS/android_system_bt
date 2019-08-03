@@ -1,8 +1,29 @@
 filegroup {
+    name: "BluetoothL2capSources",
+    srcs: [
+        "l2cap_layer.cc",
+    ],
+}
+
+filegroup {
     name: "BluetoothL2capTestSources",
     srcs: [
         "l2cap_packet_test.cc",
         "fcs.cc",
         "signal_id_test.cc",
+    ],
+}
+
+filegroup {
+    name: "BluetoothFacade_l2cap_layer",
+    srcs: [
+        "facade.cc",
+    ],
+}
+
+filegroup {
+    name: "BluetoothCertSource_l2cap_layer",
+    srcs: [
+        "cert/cert.cc",
     ],
 }
