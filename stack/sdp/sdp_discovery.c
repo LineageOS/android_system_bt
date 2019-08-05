@@ -364,11 +364,13 @@ static void process_service_search_rsp (tCONN_CB* p_ccb, uint8_t* p_reply,
 ** Description      copy the raw data
 **
 **
-** Returns          void
+** Returns          BOOLEAN
+**                          true if successful
+**                          false if not copied
 **
 *******************************************************************************/
 #if (SDP_RAW_DATA_INCLUDED == TRUE)
-static void sdp_copy_raw_data (tCONN_CB *p_ccb, BOOLEAN offset)
+static BOOLEAN sdp_copy_raw_data (tCONN_CB *p_ccb, BOOLEAN offset)
 {
     unsigned int    cpy_len, rem_len;
     UINT32          list_len;
@@ -403,12 +405,12 @@ static void sdp_copy_raw_data (tCONN_CB *p_ccb, BOOLEAN offset)
             if (p == NULL || (p + list_len) > p_end)
             {
                 SDP_TRACE_WARNING("%s: bad length", __func__);
-                return;
+                return FALSE;
             }
             if ((int)cpy_len < (p - old_p))
             {
                 SDP_TRACE_WARNING("%s: no bytes left for data", __func__);
-                return;
+                return FALSE;
             }
             cpy_len -= (p - old_p);
         }
@@ -430,6 +432,7 @@ static void sdp_copy_raw_data (tCONN_CB *p_ccb, BOOLEAN offset)
         memcpy (&p_ccb->p_db->raw_data[p_ccb->p_db->raw_used], p, cpy_len);
         p_ccb->p_db->raw_used += cpy_len;
     }
+    return TRUE;
 }
 #endif
 
@@ -505,7 +508,10 @@ static void process_service_attr_rsp (tCONN_CB* p_ccb, uint8_t* p_reply,
 
 #if (SDP_RAW_DATA_INCLUDED == TRUE)
             SDP_TRACE_WARNING("process_service_attr_rsp");
-            sdp_copy_raw_data (p_ccb, FALSE);
+            if (!sdp_copy_raw_data(p_ccb, FALSE)) {
+                SDP_TRACE_ERROR("sdp_copy_raw_data failed");
+                sdp_disconnect(p_ccb, SDP_ILLEGAL_PARAMETER);
+            }
 #endif
 
             /* Save the response in the database. Stop on any error */
@@ -746,7 +752,10 @@ static void process_service_search_attr_rsp (tCONN_CB* p_ccb, uint8_t* p_reply,
 
 #if (SDP_RAW_DATA_INCLUDED == TRUE)
     SDP_TRACE_WARNING("process_service_search_attr_rsp");
-    sdp_copy_raw_data (p_ccb, TRUE);
+    if (!sdp_copy_raw_data (p_ccb, TRUE)) {
+        SDP_TRACE_ERROR("sdp_copy_raw_data failed");
+        sdp_disconnect(p_ccb, SDP_ILLEGAL_PARAMETER);
+    }
 #endif
 
     p = &p_ccb->rsp_list[0];
