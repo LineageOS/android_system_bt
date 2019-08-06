@@ -28,6 +28,7 @@
 
 #include "bta_api.h"
 #include "btif_common.h"
+#include "btif_config.h"
 #include "btif_sock_l2cap.h"
 #include "btif_sock_rfc.h"
 #include "btif_sock_sco.h"
@@ -215,12 +216,24 @@ static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type,
       status = btsock_l2cap_connect(bd_addr, channel, sock_fd, flags, app_uid);
       break;
 
-    case BTSOCK_L2CAP_LE:
+    case BTSOCK_L2CAP_LE: {
       flags |= BTSOCK_FLAG_LE_COC;
+
+      // Ensure device is in inquiry database
+      int addr_type = 0;
+      int device_type = 0;
+
+      if (btif_get_address_type(*bd_addr, &addr_type) &&
+          btif_get_device_type(*bd_addr, &device_type) &&
+          device_type != BT_DEVICE_TYPE_BREDR) {
+        BTA_DmAddBleDevice(*bd_addr, addr_type, device_type);
+      }
+
       LOG_DEBUG(LOG_TAG, "%s: type=BTSOCK_L2CAP_LE, channel=0x%x, flags=0x%x",
                 __func__, channel, flags);
       status = btsock_l2cap_connect(bd_addr, channel, sock_fd, flags, app_uid);
       break;
+    }
 
     case BTSOCK_SCO:
       status = btsock_sco_connect(bd_addr, sock_fd, flags);
