@@ -62,6 +62,7 @@ void StructField::GenGetter(std::ostream& s, Size start_offset, Size end_offset)
     s << "std::vector<" << GetDataType() << "> Get" << util::UnderscoreToCamelCase(GetName()) << "() const {";
   }
   s << "ASSERT(was_validated_);";
+  s << "size_t end_index = size();";
   GenExtractor(s, start_offset, end_offset);
 
   if (size_ != -1) {

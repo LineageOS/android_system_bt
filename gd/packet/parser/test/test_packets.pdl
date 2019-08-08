@@ -185,6 +185,21 @@ packet ArrayOfStruct {
   array : TwoRelatedNumbers[],
 }
 
+struct StructWithFixedTypes {
+  four_bits : FourBits,
+  _reserved_ : 4,
+  _checksum_start_(example_checksum),
+  _fixed_ = 0xf3 : 8,
+  id : 8,
+  array : 8[3],
+  example_checksum : SimpleSum,
+  six_bytes : SixBytes,
+}
+
+packet OneFixedTypesStruct {
+  one : StructWithFixedTypes,
+}
+
 packet ArrayOfStructAndAnother {
   _count_(array) : 8,
   array : TwoRelatedNumbers[],
