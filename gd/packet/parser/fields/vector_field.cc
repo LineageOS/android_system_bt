@@ -115,6 +115,7 @@ void VectorField::GenGetter(std::ostream& s, Size start_offset, Size end_offset)
   s << GetDataType();
   s << " Get" << util::UnderscoreToCamelCase(GetName()) << "() {";
   s << "ASSERT(was_validated_);";
+  s << "size_t end_index = size();";
 
   GenExtractor(s, start_offset, end_offset);
 
