@@ -823,6 +823,44 @@ TEST(GeneratedPacketTest, testArrayOfStruct) {
   }
 }
 
+vector<uint8_t> one_fixed_types_struct{
+    0x05,                                // four_bits = FIVE, reserved
+    0xf3,                                // _fixed_
+    0x0d,                                // id = 0x0d
+    0x01, 0x02, 0x03,                    // array = { 1, 2, 3}
+    0x06, 0x01,                          // example_checksum
+    0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6,  // six_bytes
+};
+
+TEST(GeneratedPacketTest, testOneFixedTypesStruct) {
+  StructWithFixedTypes swf;
+  swf.four_bits_ = FourBits::FIVE;
+  swf.id_ = 0x0d;
+  swf.array_ = {{0x01, 0x02, 0x03}};
+  swf.six_bytes_ = SixBytes{{0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6}};
+
+  auto packet = OneFixedTypesStructBuilder::Create(swf);
+  ASSERT_EQ(one_fixed_types_struct.size(), packet->size());
+
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  BitInserter it(*packet_bytes);
+  packet->Serialize(it);
+
+  ASSERT_EQ(one_fixed_types_struct.size(), packet_bytes->size());
+  for (size_t i = 0; i < one_fixed_types_struct.size(); i++) {
+    ASSERT_EQ(one_fixed_types_struct[i], packet_bytes->at(i));
+  }
+
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = OneFixedTypesStructView::Create(packet_bytes_view);
+  ASSERT_TRUE(view.IsValid());
+  auto one = view.GetOne();
+  ASSERT_EQ(one.four_bits_, swf.four_bits_);
+  ASSERT_EQ(one.id_, swf.id_);
+  ASSERT_EQ(one.array_, swf.array_);
+  ASSERT_EQ(one.six_bytes_, swf.six_bytes_);
+}
+
 vector<uint8_t> array_of_struct_and_another{
     0x03,              // _count_
     0x01, 0x01, 0x02,  // id, id * 0x0201
