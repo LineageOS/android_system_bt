@@ -61,12 +61,14 @@ void PayloadField::GenExtractor(std::ostream&, Size, Size) const {
 void PayloadField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
   s << "PacketView<kLittleEndian> GetPayload() const {";
   s << "ASSERT(was_validated_);";
+  s << "size_t end_index = size();";
   GenBounds(s, start_offset, end_offset, GetSize());
   s << "return GetLittleEndianSubview(field_begin, field_end);";
   s << "}\n\n";
 
   s << "PacketView<!kLittleEndian> GetPayloadBigEndian() const {";
   s << "ASSERT(was_validated_);";
+  s << "size_t end_index = size();";
   GenBounds(s, start_offset, end_offset, GetSize());
   s << "return GetBigEndianSubview(field_begin, field_end);";
   s << "}\n";

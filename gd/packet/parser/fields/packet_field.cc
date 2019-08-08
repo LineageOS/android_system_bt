@@ -48,11 +48,11 @@ void PacketField::GenBounds(std::ostream& s, Size start_offset, Size end_offset,
   if (!start_offset.empty()) {
     s << "size_t field_begin = (" << start_offset << ") / 8;";
   } else {
-    s << "size_t field_begin = size() - (" << end_offset << " + " << field_size << ") / 8;";
+    s << "size_t field_begin = end_index - (" << end_offset << " + " << field_size << ") / 8;";
   }
 
   if (!end_offset.empty()) {
-    s << "size_t field_end = size() - (" << end_offset << ") / 8;";
+    s << "size_t field_end = end_index - (" << end_offset << ") / 8;";
     // If the field has a known size, use the minimum for the end
     if (!field_size.empty()) {
       s << "size_t field_sized_end = field_begin + (" << field_size << ") / 8;";
