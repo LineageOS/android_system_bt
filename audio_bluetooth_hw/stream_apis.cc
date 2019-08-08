@@ -36,13 +36,95 @@ using ::android::bluetooth::audio::utils::ParseAudioParams;
 
 namespace {
 
-constexpr unsigned int kMinimumDelayMs = 100;
+constexpr unsigned int kMinimumDelayMs = 50;
 constexpr unsigned int kMaximumDelayMs = 1000;
 constexpr int kExtraAudioSyncMs = 200;
 
 std::ostream& operator<<(std::ostream& os, const audio_config& config) {
   return os << "audio_config[sample_rate=" << config.sample_rate
-            << ", channels=" << StringPrintf("%#x", config.channel_mask) << ", format=" << config.format << "]";
+            << ", channels=" << StringPrintf("%#x", config.channel_mask)
+            << ", format=" << config.format << "]";
+}
+
+void out_calculate_feeding_delay_ms(const BluetoothStreamOut* out,
+                                    uint32_t* latency_ms,
+                                    uint64_t* frames = nullptr,
+                                    struct timespec* timestamp = nullptr) {
+  if (latency_ms == nullptr && frames == nullptr && timestamp == nullptr) {
+    return;
+  }
+
+  // delay_report is the audio delay from the remote headset receiving data to
+  // the headset playing sound in units of nanoseconds
+  uint64_t delay_report_ns = 0;
+  uint64_t delay_report_ms = 0;
+  // absorbed_bytes is the total number of bytes sent by the Bluetooth stack to
+  // a remote headset
+  uint64_t absorbed_bytes = 0;
+  // absorbed_timestamp is the ...
+  struct timespec absorbed_timestamp = {};
+  bool timestamp_fetched = false;
+
+  std::unique_lock<std::mutex> lock(out->mutex_);
+  if (out->bluetooth_output_.GetPresentationPosition(
+          &delay_report_ns, &absorbed_bytes, &absorbed_timestamp)) {
+    delay_report_ms = delay_report_ns / 1000000;
+    // assume kMinimumDelayMs (50ms) < delay_report_ns < kMaximumDelayMs
+    // (1000ms), or it is invalid / ignored and use old delay calculated
+    // by ourselves.
+    if (delay_report_ms > kMinimumDelayMs &&
+        delay_report_ms < kMaximumDelayMs) {
+      timestamp_fetched = true;
+    } else if (delay_report_ms >= kMaximumDelayMs) {
+      LOG(INFO) << __func__ << ": state=" << out->bluetooth_output_.GetState()
+                << ", delay_report=" << delay_report_ns << "ns abnormal";
+    }
+  }
+  if (!timestamp_fetched) {
+    // default to old delay if any failure is found when fetching from ports
+    // audio_a2dp_hw:
+    //   frames_count = buffer_size / frame_size
+    //   latency (sec.) = frames_count / samples_per_second (sample_rate)
+    // Sync from audio_a2dp_hw to add extra delay kExtraAudioSyncMs(+200ms)
+    delay_report_ms =
+        out->frames_count_ * 1000 / out->sample_rate_ + kExtraAudioSyncMs;
+    if (timestamp != nullptr) {
+      clock_gettime(CLOCK_MONOTONIC, &absorbed_timestamp);
+    }
+    LOG(VERBOSE) << __func__ << ": state=" << out->bluetooth_output_.GetState()
+                 << " uses the legacy delay " << delay_report_ms << " ms";
+  }
+  LOG(VERBOSE) << __func__ << ": state=" << out->bluetooth_output_.GetState()
+               << ", delay=" << delay_report_ms << "ms, data=" << absorbed_bytes
+               << " bytes, timestamp=" << absorbed_timestamp.tv_sec << "."
+               << StringPrintf("%09ld", absorbed_timestamp.tv_nsec) << "s";
+
+  if (latency_ms != nullptr) {
+    *latency_ms = delay_report_ms;
+  }
+  if (frames != nullptr) {
+    const uint64_t latency_frames = delay_report_ms * out->sample_rate_ / 1000;
+    *frames = absorbed_bytes / audio_stream_out_frame_size(&out->stream_out_);
+    if (out->frames_presented_ < *frames) {
+      // Are we (the audio HAL) reset?! The stack counter is obsoleted.
+      *frames = out->frames_presented_;
+    } else if ((out->frames_presented_ - *frames) > latency_frames) {
+      // Is the Bluetooth output reset / restarted by AVDTP reconfig?! Its
+      // counter was reset but could not be used.
+      *frames = out->frames_presented_;
+    }
+    // suppose frames would be queued in the headset buffer for delay_report
+    // period, so those frames in buffers should not be included in the number
+    // of presented frames at the timestamp.
+    if (*frames > latency_frames) {
+      *frames -= latency_frames;
+    } else {
+      *frames = 0;
+    }
+  }
+  if (timestamp != nullptr) {
+    *timestamp = absorbed_timestamp;
+  }
 }
 
 }  // namespace
@@ -340,17 +422,11 @@ static char* out_get_parameters(const struct audio_stream* stream,
 
 static uint32_t out_get_latency_ms(const struct audio_stream_out* stream) {
   const auto* out = reinterpret_cast<const BluetoothStreamOut*>(stream);
-  std::unique_lock<std::mutex> lock(out->mutex_);
-  /***
-   * audio_a2dp_hw:
-   *   frames_count = buffer_size / frame_size
-   *   latency (sec.) = frames_count / sample_rate
-   */
-  uint32_t latency_ms = out->frames_count_ * 1000 / out->sample_rate_;
+  uint32_t latency_ms = 0;
+  out_calculate_feeding_delay_ms(out, &latency_ms);
   LOG(VERBOSE) << __func__ << ": state=" << out->bluetooth_output_.GetState()
-               << ", latency_ms=" << latency_ms;
-  // Sync from audio_a2dp_hw to add extra +200ms
-  return latency_ms + kExtraAudioSyncMs;
+               << ", latency=" << latency_ms << "ms";
+  return latency_ms;
 }
 
 static int out_set_volume(struct audio_stream_out* stream, float left,
@@ -419,13 +495,11 @@ static ssize_t out_write(struct audio_stream_out* stream, const void* buffer,
 
 static int out_get_render_position(const struct audio_stream_out* stream,
                                    uint32_t* dsp_frames) {
-  const auto* out = reinterpret_cast<const BluetoothStreamOut*>(stream);
-  std::unique_lock<std::mutex> lock(out->mutex_);
-
   if (dsp_frames == nullptr) return -EINVAL;
 
-  /* frames = (latency (ms) / 1000) * sample_per_seconds */
-  uint64_t latency_frames =
+  const auto* out = reinterpret_cast<const BluetoothStreamOut*>(stream);
+  // frames = (latency (ms) / 1000) * samples_per_second (sample_rate)
+  const uint64_t latency_frames =
       (uint64_t)out_get_latency_ms(stream) * out->sample_rate_ / 1000;
   if (out->frames_rendered_ >= latency_frames) {
     *dsp_frames = (uint32_t)(out->frames_rendered_ - latency_frames);
@@ -527,52 +601,12 @@ static int out_get_presentation_position(const struct audio_stream_out* stream,
     return -EINVAL;
   }
 
-  // bytes is the total number of bytes sent by the Bluetooth stack to a
-  // remote headset
-  uint64_t bytes = 0;
-  // delay_report is the audio delay from the remote headset receiving data to
-  // the headset playing sound in units of nanoseconds
-  uint64_t delay_report_ns = 0;
   const auto* out = reinterpret_cast<const BluetoothStreamOut*>(stream);
-  std::unique_lock<std::mutex> lock(out->mutex_);
-
-  if (out->bluetooth_output_.GetPresentationPosition(&delay_report_ns, &bytes,
-                                                     timestamp)) {
-    // assume kMinimumDelayMs (100ms) < delay_report_ns < kMaximumDelayMs
-    // (1000ms), or it is invalid / ignored and use old delay calculated
-    // by ourselves.
-    if (delay_report_ns > kMinimumDelayMs * 1000000 &&
-        delay_report_ns < kMaximumDelayMs * 1000000) {
-      *frames = bytes / audio_stream_out_frame_size(stream);
-      timestamp->tv_nsec += delay_report_ns;
-      if (timestamp->tv_nsec > 1000000000) {
-        timestamp->tv_sec += static_cast<int>(timestamp->tv_nsec / 1000000000);
-        timestamp->tv_nsec %= 1000000000;
-      }
-      LOG(VERBOSE) << __func__ << ": state=" << out->bluetooth_output_.GetState() << ", frames=" << *frames << " ("
-                   << bytes << " bytes), timestamp=" << timestamp->tv_sec << "."
-                   << StringPrintf("%09ld", timestamp->tv_nsec) << "s";
-      return 0;
-    } else if (delay_report_ns >= kMaximumDelayMs * 1000000) {
-      LOG(WARNING) << __func__
-                   << ": state=" << out->bluetooth_output_.GetState()
-                   << ", delay_report=" << delay_report_ns << "ns abnormal";
-    }
-  }
-
-  // default to old delay if any failure is found when fetching from ports
-  if (out->frames_presented_ >= out->frames_count_) {
-    clock_gettime(CLOCK_MONOTONIC, timestamp);
-    *frames = out->frames_presented_ - out->frames_count_;
-    LOG(VERBOSE) << __func__ << ": state=" << out->bluetooth_output_.GetState() << ", frames=" << *frames << " ("
-                 << bytes << " bytes), timestamp=" << timestamp->tv_sec << "."
-                 << StringPrintf("%09ld", timestamp->tv_nsec) << "s";
-    return 0;
-  }
-
-  *frames = 0;
-  *timestamp = {};
-  return -EWOULDBLOCK;
+  out_calculate_feeding_delay_ms(out, nullptr, frames, timestamp);
+  LOG(VERBOSE) << __func__ << ": state=" << out->bluetooth_output_.GetState()
+               << ", frames=" << *frames << ", timestamp=" << timestamp->tv_sec
+               << "." << StringPrintf("%09ld", timestamp->tv_nsec) << "s";
+  return 0;
 }
 
 static void out_update_source_metadata(
