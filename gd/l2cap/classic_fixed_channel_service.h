@@ -1,3 +1,4 @@
+
 /*
  * Copyright 2019 The Android Open Source Project
  *
@@ -13,28 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #pragma once
 
-#include <cstdint>
+#include "common/address.h"
+#include "common/callback.h"
 
 namespace bluetooth {
 namespace l2cap {
 
-using Cid = uint16_t;
+class ClassicFixedChannelService {
+ public:
+  using OnUnregisteredCallback = common::OnceCallback<void()>;
 
-constexpr Cid kInvalidCid = 0;
-constexpr Cid kFirstFixedChannel = 1;
-constexpr Cid kLastFixedChannel = 63;
-constexpr Cid kFirstDynamicChannel = kLastFixedChannel + 1;
-constexpr Cid kLastDynamicChannel = (uint16_t)(0xffff + 1);
-
-constexpr Cid kClassicSignallingCid = 1;
-constexpr Cid kConnectionlessCid = 2;
-constexpr Cid kLeAttributeCid = 4;
-constexpr Cid kLeSignallingCid = 5;
-constexpr Cid kSmpCid = 6;
-constexpr Cid kSmpBrCid = 7;
+  /**
+   * Unregister a service from L2CAP module. This operation cannot fail.
+   * All channels opened for this service will be invalidated.
+   *
+   * @param on_unregistered will be triggered when unregistration is complete
+   */
+  void Unregister(OnUnregisteredCallback on_unregistered);
+};
 
 }  // namespace l2cap
 }  // namespace bluetooth
