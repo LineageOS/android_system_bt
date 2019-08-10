@@ -39,5 +39,11 @@ void L2capLayer::Start() {}
 
 void L2capLayer::Stop() {}
 
+std::unique_ptr<ClassicFixedChannelManager> L2capLayer::GetClassicFixedChannelManager() {
+  return std::make_unique<ClassicFixedChannelManager>();
+}
+
+struct L2capLayer::impl {};
+
 }  // namespace l2cap
 }  // namespace bluetooth
