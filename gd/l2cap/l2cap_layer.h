@@ -17,6 +17,7 @@
 
 #include <memory>
 
+#include "l2cap/classic_fixed_channel_manager.h"
 #include "module.h"
 
 namespace bluetooth {
@@ -36,7 +37,14 @@ class L2capLayer : public bluetooth::Module {
 
   void Stop() override;
 
+  /**
+   * Get the api to the classic channel l2cap module
+   */
+  std::unique_ptr<ClassicFixedChannelManager> GetClassicFixedChannelManager();
+
  private:
+  struct impl;
+  std::unique_ptr<impl> impl_;
   DISALLOW_COPY_AND_ASSIGN(L2capLayer);
 };
 

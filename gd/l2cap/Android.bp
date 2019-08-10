@@ -2,6 +2,9 @@ filegroup {
     name: "BluetoothL2capSources",
     srcs: [
         "l2cap_layer.cc",
+        "classic_fixed_channel.cc",
+        "classic_fixed_channel_manager.cc",
+        "classic_fixed_channel_service.cc",
     ],
 }
 
