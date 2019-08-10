@@ -30,13 +30,6 @@ constexpr std::chrono::milliseconds bogus_link_wakeup_time = std::chrono::millis
 
 constexpr SignalId kInitialSignalId = SignalId(0x80);
 
-constexpr Cid kClassicSignallingCid = 1;
-constexpr Cid kConnectionlessCid = 2;
-constexpr Cid kLeAttributeCid = 4;
-constexpr Cid kLeSignallingCid = 5;
-constexpr Cid kSmpCid = 6;
-constexpr Cid kSmpBrCid = 7;
-
 // Time after last channels closes before link is torn down
 constexpr auto kLinkDisconnectTimeout = std::chrono::seconds(30);
 
