@@ -45,6 +45,8 @@ class VectorField : public PacketField {
 
   virtual bool GenBuilderParameter(std::ostream& s) const override;
 
+  virtual bool GenBuilderMember(std::ostream& s) const override;
+
   virtual bool HasParameterValidator() const override;
 
   virtual void GenParameterValidator(std::ostream& s) const override;
