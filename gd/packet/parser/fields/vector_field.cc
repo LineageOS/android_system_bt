@@ -132,6 +132,15 @@ bool VectorField::GenBuilderParameter(std::ostream& s) const {
   return true;
 }
 
+bool VectorField::GenBuilderMember(std::ostream& s) const {
+  if (type_def_ != nullptr) {
+    s << "const std::vector<" << type_def_->GetTypeName() << "> " << GetName();
+  } else {
+    s << "const std::vector<" << util::GetTypeForSize(element_size_) << "> " << GetName();
+  }
+  return true;
+}
+
 bool VectorField::HasParameterValidator() const {
   // Does not have parameter validator yet.
   // TODO: See comment in GenParameterValidator
