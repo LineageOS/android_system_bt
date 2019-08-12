@@ -448,6 +448,10 @@ TEST(GeneratedPacketTest, testFixedArrayEnum) {
   auto packet = FixedArrayEnumBuilder::Create(fixed_array);
   ASSERT_EQ(fixed_array_enum.size(), packet->size());
 
+  // Verify that the packet is independent from the array.
+  std::array<ForArrays, 5> copy_array(fixed_array);
+  fixed_array[1] = ForArrays::ONE;
+
   std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
   BitInserter it(*packet_bytes);
   packet->Serialize(it);
@@ -461,9 +465,9 @@ TEST(GeneratedPacketTest, testFixedArrayEnum) {
   auto view = FixedArrayEnumView::Create(packet_bytes_view);
   ASSERT_TRUE(view.IsValid());
   auto array = view.GetEnumArray();
-  ASSERT_EQ(fixed_array.size(), array.size());
-  for (size_t i = 0; i < fixed_array.size(); i++) {
-    ASSERT_EQ(array[i], fixed_array[i]);
+  ASSERT_EQ(copy_array.size(), array.size());
+  for (size_t i = 0; i < copy_array.size(); i++) {
+    ASSERT_EQ(array[i], copy_array[i]);
   }
 }
 
@@ -490,6 +494,10 @@ TEST(GeneratedPacketTest, testSizedArrayEnum) {
   auto packet = SizedArrayEnumBuilder::Create(sized_array);
   ASSERT_EQ(sized_array_enum.size(), packet->size());
 
+  // Copy the original vector and modify it to make sure the packet is independent.
+  std::vector<ForArrays> copy_array(sized_array);
+  sized_array[1] = ForArrays::ONE;
+
   std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
   BitInserter it(*packet_bytes);
   packet->Serialize(it);
@@ -503,9 +511,9 @@ TEST(GeneratedPacketTest, testSizedArrayEnum) {
   auto view = SizedArrayEnumView::Create(packet_bytes_view);
   ASSERT_TRUE(view.IsValid());
   auto array = view.GetEnumArray();
-  ASSERT_EQ(sized_array.size(), array.size());
-  for (size_t i = 0; i < sized_array.size(); i++) {
-    ASSERT_EQ(array[i], sized_array[i]);
+  ASSERT_EQ(copy_array.size(), array.size());
+  for (size_t i = 0; i < copy_array.size(); i++) {
+    ASSERT_EQ(array[i], copy_array[i]);
   }
 }
 
@@ -731,6 +739,10 @@ TEST(GeneratedPacketTest, testOneStruct) {
   auto packet = OneStructBuilder::Create(trn);
   ASSERT_EQ(one_struct.size(), packet->size());
 
+  // Copy the original struct, then modify it to verify independence from the packet.
+  TwoRelatedNumbers copy_trn(trn);
+  trn.id_ = 2;
+
   std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
   BitInserter it(*packet_bytes);
   packet->Serialize(it);
@@ -744,8 +756,8 @@ TEST(GeneratedPacketTest, testOneStruct) {
   auto view = OneStructView::Create(packet_bytes_view);
   ASSERT_TRUE(view.IsValid());
   auto one = view.GetOne();
-  ASSERT_EQ(one.id_, trn.id_);
-  ASSERT_EQ(one.count_, trn.count_);
+  ASSERT_EQ(one.id_, copy_trn.id_);
+  ASSERT_EQ(one.count_, copy_trn.count_);
 }
 
 vector<uint8_t> two_structs{
@@ -800,7 +812,14 @@ TEST(GeneratedPacketTest, testArrayOfStruct) {
     count_array.push_back(trn);
   }
 
+  // Make a copy
+  std::vector<TwoRelatedNumbers> copy_array(count_array);
+
   auto packet = ArrayOfStructBuilder::Create(count_array);
+
+  // Change the original vector to make sure a copy was made.
+  count_array[0].id_ = count_array[0].id_ + 1;
+
   ASSERT_EQ(array_of_struct.size(), packet->size());
 
   std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
@@ -816,10 +835,10 @@ TEST(GeneratedPacketTest, testArrayOfStruct) {
   auto view = ArrayOfStructView::Create(packet_bytes_view);
   ASSERT_TRUE(view.IsValid());
   auto array = view.GetArray();
-  ASSERT_EQ(count_array.size(), array.size());
-  for (size_t i = 0; i < count_array.size(); i++) {
-    ASSERT_EQ(array[i].id_, count_array[i].id_);
-    ASSERT_EQ(array[i].count_, count_array[i].count_);
+  ASSERT_EQ(copy_array.size(), array.size());
+  for (size_t i = 0; i < copy_array.size(); i++) {
+    ASSERT_EQ(array[i].id_, copy_array[i].id_);
+    ASSERT_EQ(array[i].count_, copy_array[i].count_);
   }
 }
 
