@@ -7,6 +7,7 @@ filegroup {
         "classic_fixed_channel_manager.cc",
         "classic_fixed_channel_service.cc",
         "internal/classic_fixed_channel_service_manager_impl.cc",
+        "internal/classic_fixed_channel_allocator.cc",
     ],
 }
 
@@ -15,6 +16,7 @@ filegroup {
     srcs: [
         "l2cap_packet_test.cc",
         "internal/classic_fixed_channel_service_manager_test.cc",
+        "internal/classic_fixed_channel_allocator_test.cc",
         "signal_id_test.cc",
     ],
 }
