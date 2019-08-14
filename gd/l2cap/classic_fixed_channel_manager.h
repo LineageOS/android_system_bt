@@ -27,18 +27,23 @@
 namespace bluetooth {
 namespace l2cap {
 
+namespace internal {
+class ClassicFixedChannelServiceManagerImpl;
+}
+
 class ClassicFixedChannelManager {
+ public:
   /**
    * OnConnectionFailureCallback(std::string failure_reason);
    */
-  using OnConnectionFailureCallback = common::OnceCallback<void(std::string)>;
+  using OnConnectionFailureCallback = common::Callback<void(std::string)>;
 
   /**
    * OnConnectionOpenCallback(ClassicFixedChannel channel);
    */
-  using OnConnectionOpenCallback = common::OnceCallback<void(ClassicFixedChannel)>;
+  using OnConnectionOpenCallback = common::Callback<void(ClassicFixedChannel)>;
 
-  enum RegistrationResult { SUCCESS, FAIL };
+  enum class RegistrationResult { SUCCESS, FAIL };
 
   /**
    * OnRegistrationFailureCallback(RegistrationResult result, ClassicFixedChannelService service);
@@ -97,6 +102,14 @@ class ClassicFixedChannelManager {
   bool RegisterService(Cid cid, const SecurityPolicy& security_policy,
                        OnRegistrationCompleteCallback on_registration_complete,
                        OnConnectionOpenCallback on_connection_open, os::Handler* handler);
+
+  // The constructor is not to be used by user code
+  ClassicFixedChannelManager(internal::ClassicFixedChannelServiceManagerImpl* manager, os::Handler* l2cap_layer_handler)
+      : manager_(manager), l2cap_layer_handler_(l2cap_layer_handler) {}
+
+ private:
+  internal::ClassicFixedChannelServiceManagerImpl* manager_ = nullptr;
+  os::Handler* l2cap_layer_handler_ = nullptr;
 };
 
 }  // namespace l2cap

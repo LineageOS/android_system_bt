@@ -1,10 +1,12 @@
 filegroup {
     name: "BluetoothL2capSources",
     srcs: [
+        "fcs.cc",
         "l2cap_layer.cc",
         "classic_fixed_channel.cc",
         "classic_fixed_channel_manager.cc",
         "classic_fixed_channel_service.cc",
+        "internal/classic_fixed_channel_service_manager_impl.cc",
     ],
 }
 
@@ -12,7 +14,7 @@ filegroup {
     name: "BluetoothL2capTestSources",
     srcs: [
         "l2cap_packet_test.cc",
-        "fcs.cc",
+        "internal/classic_fixed_channel_service_manager_test.cc",
         "signal_id_test.cc",
     ],
 }
