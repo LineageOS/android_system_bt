@@ -14,19 +14,28 @@
  * limitations under the License.
  */
 
-#include "l2cap/classic_fixed_channel_service.h"
-#include "l2cap/internal/classic_fixed_channel_service_manager_impl.h"
+#pragma once
+
+#include "l2cap/cid.h"
+#include "os/handler.h"
+#include "os/log.h"
 
 namespace bluetooth {
 namespace l2cap {
+namespace internal {
 
-void ClassicFixedChannelService::Unregister(OnUnregisteredCallback on_unregistered,
-                                            os::Handler* on_unregistered_handler) {
-  ASSERT_LOG(manager_ != nullptr, "this service is invalid");
-  l2cap_layer_handler_->Post(common::BindOnce(&internal::ClassicFixedChannelServiceManagerImpl::Unregister,
-                                              common::Unretained(manager_), cid_, std::move(on_unregistered),
-                                              on_unregistered_handler));
-}
+class ClassicFixedChannelImpl {
+ public:
+  ClassicFixedChannelImpl(Cid cid, os::Handler* handler) : cid_(cid), handler_(handler) {
+    ASSERT_LOG(cid_ >= kFirstFixedChannel && cid_ <= kLastFixedChannel, "Invalid cid: %d", cid_);
+    ASSERT(handler_ != nullptr);
+  }
 
+ private:
+  Cid cid_;
+  os::Handler* handler_;
+};
+
+}  // namespace internal
 }  // namespace l2cap
 }  // namespace bluetooth

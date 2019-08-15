@@ -18,12 +18,20 @@
 
 #include "common/address.h"
 #include "common/callback.h"
+#include "l2cap/cid.h"
+#include "os/handler.h"
 
 namespace bluetooth {
 namespace l2cap {
 
+namespace internal {
+class ClassicFixedChannelServiceManagerImpl;
+}
+
 class ClassicFixedChannelService {
  public:
+  ClassicFixedChannelService() = default;
+
   using OnUnregisteredCallback = common::OnceCallback<void()>;
 
   /**
@@ -32,7 +40,16 @@ class ClassicFixedChannelService {
    *
    * @param on_unregistered will be triggered when unregistration is complete
    */
-  void Unregister(OnUnregisteredCallback on_unregistered);
+  void Unregister(OnUnregisteredCallback on_unregistered, os::Handler* on_unregistered_handler);
+
+  friend internal::ClassicFixedChannelServiceManagerImpl;
+
+ private:
+  ClassicFixedChannelService(Cid cid, internal::ClassicFixedChannelServiceManagerImpl* manager, os::Handler* handler)
+      : cid_(cid), manager_(manager), l2cap_layer_handler_(handler) {}
+  Cid cid_ = kInvalidCid;
+  internal::ClassicFixedChannelServiceManagerImpl* manager_ = nullptr;
+  os::Handler* l2cap_layer_handler_;
 };
 
 }  // namespace l2cap

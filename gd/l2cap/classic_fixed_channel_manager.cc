@@ -15,6 +15,8 @@
  */
 
 #include "l2cap/classic_fixed_channel_manager.h"
+#include "l2cap/internal/classic_fixed_channel_service.h"
+#include "l2cap/internal/classic_fixed_channel_service_manager_impl.h"
 
 namespace bluetooth {
 namespace l2cap {
@@ -28,6 +30,13 @@ bool ClassicFixedChannelManager::ConnectServices(common::Address device,
 bool ClassicFixedChannelManager::RegisterService(Cid cid, const SecurityPolicy& security_policy,
                                                  OnRegistrationCompleteCallback on_registration_complete,
                                                  OnConnectionOpenCallback on_connection_open, os::Handler* handler) {
+  internal::ClassicFixedChannelServiceImpl::Builder builder;
+  builder.SetUserHandler(handler)
+      .SetOnRegister(std::move(on_registration_complete))
+      .SetOnChannelOpen(std::move(on_connection_open));
+
+  l2cap_layer_handler_->Post(common::BindOnce(&internal::ClassicFixedChannelServiceManagerImpl::Register,
+                                              common::Unretained(manager_), cid, std::move(builder)));
   return true;
 }
 
