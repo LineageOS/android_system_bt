@@ -384,13 +384,14 @@ TEST_F(HciTest, noOpCredits) {
 
   // Send the response event
   ErrorCode error_code = ErrorCode::SUCCESS;
-  HciVersion hci_version = HciVersion::V_5_0;
-  uint16_t hci_subversion = 0x1234;
-  LmpVersion lmp_version = LmpVersion::V_4_2;
-  uint16_t manufacturer_name = 0xBAD;
-  uint16_t lmp_subversion = 0x5678;
-  hal->callbacks->hciEventReceived(GetPacketBytes(ReadLocalVersionInformationCompleteBuilder::Create(
-      num_packets, error_code, hci_version, hci_subversion, lmp_version, manufacturer_name, lmp_subversion)));
+  LocalVersionInformation local_version_information;
+  local_version_information.hci_version_ = HciVersion::V_5_0;
+  local_version_information.hci_revision_ = 0x1234;
+  local_version_information.lmp_version_ = LmpVersion::V_4_2;
+  local_version_information.manufacturer_name_ = 0xBAD;
+  local_version_information.lmp_subversion_ = 0x5678;
+  hal->callbacks->hciEventReceived(GetPacketBytes(
+      ReadLocalVersionInformationCompleteBuilder::Create(num_packets, error_code, local_version_information)));
 
   // Wait for the event
   auto event_status = event_future.wait_for(kTimeout);
@@ -430,13 +431,14 @@ TEST_F(HciTest, creditsTest) {
   // Send the response event
   uint8_t num_packets = 1;
   ErrorCode error_code = ErrorCode::SUCCESS;
-  HciVersion hci_version = HciVersion::V_5_0;
-  uint16_t hci_subversion = 0x1234;
-  LmpVersion lmp_version = LmpVersion::V_4_2;
-  uint16_t manufacturer_name = 0xBAD;
-  uint16_t lmp_subversion = 0x5678;
-  hal->callbacks->hciEventReceived(GetPacketBytes(ReadLocalVersionInformationCompleteBuilder::Create(
-      num_packets, error_code, hci_version, hci_subversion, lmp_version, manufacturer_name, lmp_subversion)));
+  LocalVersionInformation local_version_information;
+  local_version_information.hci_version_ = HciVersion::V_5_0;
+  local_version_information.hci_revision_ = 0x1234;
+  local_version_information.lmp_version_ = LmpVersion::V_4_2;
+  local_version_information.manufacturer_name_ = 0xBAD;
+  local_version_information.lmp_subversion_ = 0x5678;
+  hal->callbacks->hciEventReceived(GetPacketBytes(
+      ReadLocalVersionInformationCompleteBuilder::Create(num_packets, error_code, local_version_information)));
 
   // Wait for the event
   auto event_status = event_future.wait_for(kTimeout);
