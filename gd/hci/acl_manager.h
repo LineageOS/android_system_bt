@@ -47,7 +47,7 @@ class AclConnection {
   using Queue = common::BidiQueue<PacketView<kLittleEndian>, BasePacketBuilder>;
   using QueueUpEnd = common::BidiQueueEnd<BasePacketBuilder, PacketView<kLittleEndian>>;
   using QueueDownEnd = common::BidiQueueEnd<PacketView<kLittleEndian>, BasePacketBuilder>;
-  QueueUpEnd* GetAclQueueEnd() const;
+  virtual QueueUpEnd* GetAclQueueEnd() const;
   virtual void RegisterDisconnectCallback(common::OnceCallback<void(ErrorCode)> on_disconnect, os::Handler* handler);
   virtual bool Disconnect(DisconnectReason reason);
   // Ask AclManager to clean me up. Must invoke after on_disconnect is called
