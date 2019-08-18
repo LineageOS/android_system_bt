@@ -54,6 +54,7 @@ class RootFacadeService : public ::bluetooth::facade::RootFacade::Service {
         break;
       case BluetoothModule::HCI:
         modules.add<::bluetooth::hci::AclManagerFacadeModule>();
+        modules.add<::bluetooth::hci::ClassicSecurityManagerFacadeModule>();
         break;
       case BluetoothModule::L2CAP:
         modules.add<::bluetooth::l2cap::L2capModuleFacadeModule>();

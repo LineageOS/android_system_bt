@@ -39,6 +39,10 @@ class AclConnection {
     return address_;
   }
 
+  uint16_t GetHandle() const {
+    return handle_;
+  }
+
   using Queue = common::BidiQueue<PacketView<kLittleEndian>, BasePacketBuilder>;
   using QueueUpEnd = common::BidiQueueEnd<BasePacketBuilder, PacketView<kLittleEndian>>;
   using QueueDownEnd = common::BidiQueueEnd<PacketView<kLittleEndian>, BasePacketBuilder>;
