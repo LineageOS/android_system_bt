@@ -39,5 +39,20 @@ class AclManagerFacadeModule : public ::bluetooth::grpc::GrpcFacadeModule {
   AclManagerFacadeService* service_;
 };
 
+class ClassicSecurityManagerFacadeService;
+
+class ClassicSecurityManagerFacadeModule : public ::bluetooth::grpc::GrpcFacadeModule {
+ public:
+  static const ModuleFactory Factory;
+
+  void ListDependencies(ModuleList* list) override;
+  void Start() override;
+  void Stop() override;
+  ::grpc::Service* GetService() const override;
+
+ private:
+  ClassicSecurityManagerFacadeService* service_;
+};
+
 }  // namespace hci
 }  // namespace bluetooth
