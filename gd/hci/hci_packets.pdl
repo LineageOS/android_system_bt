@@ -191,6 +191,7 @@ enum OpCode : 16 {
 
   READ_SECURE_CONNECTIONS_HOST_SUPPORT = 0x0C79,
   WRITE_SECURE_CONNECTIONS_HOST_SUPPORT = 0x0C7A,
+  READ_LOCAL_OOB_EXTENDED_DATA = 0x0C7D,
 
   // INFORMATIONAL_PARAMETERS
   READ_LOCAL_VERSION_INFORMATION = 0x1001,
@@ -597,8 +598,7 @@ packet RejectConnectionRequestStatus : CommandStatus (command_op_code = REJECT_C
 
 packet LinkKeyRequestReply : SecurityCommand (op_code = LINK_KEY_REQUEST_REPLY) {
   bd_addr : Address,
-  link_key_lo : 64,
-  link_key_hi : 64,
+  link_key : 8[16],
 }
 
 packet LinkKeyRequestReplyComplete : CommandComplete (command_op_code = LINK_KEY_REQUEST_REPLY) {
@@ -618,21 +618,7 @@ packet PinCodeRequestReply : SecurityCommand (op_code = PIN_CODE_REQUEST_REPLY) 
   bd_addr : Address,
   pin_code_length : 5, // 0x01 - 0x10
   _reserved_ : 3,
-  pin_code_1 : 8, // string parameter, first octet first
-  pin_code_2 : 8,
-  pin_code_3 : 8,
-  pin_code_4 : 8,
-  pin_code_5 : 8,
-  pin_code_6 : 8,
-  pin_code_7 : 8,
-  pin_code_8 : 8,
-  pin_code_9 : 8,
-  pin_code_10 : 8,
-  pin_code_11 : 8,
-  pin_code_12 : 8,
-  pin_code_13 : 8,
-  pin_code_14 : 8,
-  pin_code_15 : 8,
+  pin_code : 8[16], // string parameter, first octet first
 }
 
 packet PinCodeRequestReplyComplete : CommandComplete (command_op_code = PIN_CODE_REQUEST_REPLY) {
@@ -846,7 +832,9 @@ packet UserPasskeyRequestNegativeReplyComplete : CommandComplete (command_op_cod
 }
 
 packet RemoteOobDataRequestReply : SecurityCommand (op_code = REMOTE_OOB_DATA_REQUEST_REPLY) {
-  _payload_,  // placeholder (unimplemented)
+  bd_addr : Address,
+  c : 8[16],
+  r : 8[16],
 }
 
 packet RemoteOobDataRequestReplyComplete : CommandComplete (command_op_code = REMOTE_OOB_DATA_REQUEST_REPLY) {
@@ -985,7 +973,9 @@ packet ReadStoredLinkKeyComplete : CommandComplete (command_op_code = READ_STORE
 }
 
 packet WriteStoredLinkKey : SecurityCommand (op_code = WRITE_STORED_LINK_KEY) {
-  _payload_,
+  num_keys_to_write : 8,
+  bd_addr : Address,
+  link_key : 8[16],
 }
 
 packet WriteStoredLinkKeyComplete : CommandComplete (command_op_code = WRITE_STORED_LINK_KEY) {
@@ -1434,6 +1424,22 @@ packet WriteSecureConnectionsHostSupport : CommandPacket (op_code = WRITE_SECURE
 packet WriteSecureConnectionsHostSupportComplete : CommandComplete (command_op_code = WRITE_SECURE_CONNECTIONS_HOST_SUPPORT) {
   status : ErrorCode,
 }
+
+packet ReadLocalOobExtendedData : SecurityCommand (op_code = READ_LOCAL_OOB_EXTENDED_DATA) {
+}
+
+packet ReadLocalOobExtendedDataComplete : CommandComplete (command_op_code = READ_LOCAL_OOB_EXTENDED_DATA) {
+  status : ErrorCode,
+  c_192_lo : 64,
+  c_192_hi : 64,
+  r_192_lo : 64,
+  r_192_hi : 64,
+  c_256_lo : 64,
+  c_256_hi : 64,
+  r_256_lo : 64,
+  r_256_hi : 64,
+}
+
 
   // INFORMATIONAL_PARAMETERS
 packet ReadLocalVersionInformation : CommandPacket (op_code = READ_LOCAL_VERSION_INFORMATION) {
