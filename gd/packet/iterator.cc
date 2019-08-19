@@ -25,9 +25,10 @@ template <bool little_endian>
 Iterator<little_endian>::Iterator(std::forward_list<View> data, size_t offset) {
   data_ = data;
   index_ = offset;
-  length_ = 0;
+  begin_ = 0;
+  end_ = 0;
   for (auto& view : data) {
-    length_ += view.size();
+    end_ += view.size();
   }
 }
 
@@ -93,9 +94,10 @@ Iterator<little_endian>& Iterator<little_endian>::operator--() {
 
 template <bool little_endian>
 Iterator<little_endian>& Iterator<little_endian>::operator=(const Iterator<little_endian>& itr) {
-  data_ = itr.data_;
-  index_ = itr.index_;
-
+  this->data_ = itr.data_;
+  this->begin_ = itr.begin_;
+  this->end_ = itr.end_;
+  this->index_ = itr.index_;
   return *this;
 }
 
@@ -131,7 +133,7 @@ bool Iterator<little_endian>::operator>=(const Iterator<little_endian>& itr) con
 
 template <bool little_endian>
 uint8_t Iterator<little_endian>::operator*() const {
-  ASSERT_LOG(index_ < length_, "Index %zu out of bounds: %zu", index_, length_);
+  ASSERT_LOG(index_ < end_ && !(begin_ > index_), "Index %zu out of bounds: [%zu,%zu)", index_, begin_, end_);
   size_t index = index_;
 
   for (auto view : data_) {
@@ -146,11 +148,27 @@ uint8_t Iterator<little_endian>::operator*() const {
 
 template <bool little_endian>
 size_t Iterator<little_endian>::NumBytesRemaining() const {
-  if (length_ > index_) {
-    return length_ - index_;
+  if (end_ > index_ && !(begin_ > index_)) {
+    return end_ - index_;
   } else {
     return 0;
   }
+}
+
+template <bool little_endian>
+Iterator<little_endian> Iterator<little_endian>::Subrange(size_t index, size_t length) const {
+  Iterator<little_endian> to_return(*this);
+  if (to_return.NumBytesRemaining() > index) {
+    to_return.index_ = to_return.index_ + index;
+    to_return.begin_ = to_return.index_;
+    if (to_return.NumBytesRemaining() >= length) {
+      to_return.end_ = to_return.index_ + length;
+    }
+  } else {
+    to_return.end_ = 0;
+  }
+
+  return to_return;
 }
 
 // Explicit instantiations for both types of Iterators.
