@@ -23,6 +23,7 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 
+#include <errno.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 
@@ -44,7 +45,7 @@ int TestChannelTransport::SetUp(int port) {
   int enable = 1;
   if (setsockopt(
       listen_fd_, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0) {
-    LOG_ERROR(LOG_TAG, "setsockopt(SO_REUSEADDR) failed");
+    LOG_ERROR(LOG_TAG, "setsockopt(SO_REUSEADDR) failed: %s", strerror(errno));
   }
 
   LOG_INFO(LOG_TAG, "port: %d", port);
@@ -53,13 +54,15 @@ int TestChannelTransport::SetUp(int port) {
   listen_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
   if (bind(listen_fd_, reinterpret_cast<sockaddr*>(&listen_address), sockaddr_in_size) < 0) {
-    LOG_INFO(LOG_TAG, "Error binding test channel listener socket to address.");
+    LOG_INFO(LOG_TAG,
+             "Error binding test channel listener socket to address: %s",
+             strerror(errno));
     close(listen_fd_);
     return -1;
   }
 
   if (listen(listen_fd_, 1) < 0) {
-    LOG_INFO(LOG_TAG, "Error listening for test channel.");
+    LOG_INFO(LOG_TAG, "Error listening for test channel: %s", strerror(errno));
     close(listen_fd_);
     return -1;
   }
