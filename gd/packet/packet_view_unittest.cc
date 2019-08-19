@@ -273,7 +273,7 @@ TYPED_TEST(PacketViewTest, arrayOperatorTest) {
   ASSERT_EQ(0x1f, (*(this->packet))[working_index]);
 }
 
-TYPED_TEST(PacketViewTest, numBytesRemainingTest) {
+TYPED_TEST(IteratorTest, numBytesRemainingTest) {
   auto all = this->packet->begin();
   size_t remaining = all.NumBytesRemaining();
   for (size_t n = remaining; n > 0; n--) {
@@ -286,6 +286,81 @@ TYPED_TEST(PacketViewTest, numBytesRemainingTest) {
   all++;
   ASSERT_EQ(static_cast<size_t>(0), all.NumBytesRemaining());
   ASSERT_DEATH(*(all++), "");
+}
+
+TYPED_TEST(IteratorTest, subrangeTest) {
+  auto empty = this->packet->begin().Subrange(0, 0);
+  ASSERT_EQ(static_cast<size_t>(0), empty.NumBytesRemaining());
+  ASSERT_DEATH(*empty, "");
+
+  empty = this->packet->begin().Subrange(this->packet->size(), 1);
+  ASSERT_EQ(static_cast<size_t>(0), empty.NumBytesRemaining());
+  ASSERT_DEATH(*empty, "");
+
+  auto all = this->packet->begin();
+  auto fullrange = all.Subrange(0, all.NumBytesRemaining());
+  ASSERT_EQ(all.NumBytesRemaining(), fullrange.NumBytesRemaining());
+  ASSERT_EQ(*(all + 1), 1);
+
+  fullrange = all.Subrange(0, all.NumBytesRemaining() + 1);
+  ASSERT_EQ(all.NumBytesRemaining(), fullrange.NumBytesRemaining());
+  ASSERT_EQ(*(all + 1), 1);
+
+  fullrange = all.Subrange(0, all.NumBytesRemaining() + 10);
+  ASSERT_EQ(all.NumBytesRemaining(), fullrange.NumBytesRemaining());
+  ASSERT_EQ(*(all + 1), 1);
+
+  auto subrange = all.Subrange(0, 1);
+  ASSERT_EQ(1, subrange.NumBytesRemaining());
+  ASSERT_EQ(*(subrange), 0);
+
+  subrange = this->packet->begin().Subrange(0, 4);
+  ASSERT_EQ(4, subrange.NumBytesRemaining());
+  ASSERT_EQ(*(subrange + 1), 1);
+
+  subrange = all.Subrange(0, 3);
+  ASSERT_EQ(3, subrange.NumBytesRemaining());
+  ASSERT_EQ(*(subrange + 1), 1);
+
+  subrange = all.Subrange(0, all.NumBytesRemaining() - 1);
+  ASSERT_EQ(all.NumBytesRemaining() - 1, subrange.NumBytesRemaining());
+  ASSERT_EQ(*(subrange + 1), 1);
+
+  subrange = all.Subrange(0, all.NumBytesRemaining() - 2);
+  ASSERT_EQ(all.NumBytesRemaining() - 2, subrange.NumBytesRemaining());
+  ASSERT_EQ(*(subrange + 1), 1);
+
+  subrange = all.Subrange(1, all.NumBytesRemaining());
+  ASSERT_EQ(all.NumBytesRemaining() - 1, subrange.NumBytesRemaining());
+  ASSERT_EQ(*subrange, 1);
+
+  subrange = all.Subrange(2, all.NumBytesRemaining());
+  ASSERT_EQ(all.NumBytesRemaining() - 2, subrange.NumBytesRemaining());
+  ASSERT_EQ(*subrange, 2);
+
+  subrange = all.Subrange(1, all.NumBytesRemaining() - 1);
+  ASSERT_EQ(all.NumBytesRemaining() - 1, subrange.NumBytesRemaining());
+  ASSERT_EQ(*subrange, 1);
+
+  subrange = all.Subrange(2, all.NumBytesRemaining() - 2);
+  ASSERT_EQ(all.NumBytesRemaining() - 2, subrange.NumBytesRemaining());
+  ASSERT_EQ(*subrange, 2);
+
+  subrange = all.Subrange(1, 1);
+  ASSERT_EQ(1, subrange.NumBytesRemaining());
+  ASSERT_EQ(*(subrange), 1);
+
+  subrange = all.Subrange(1, 2);
+  ASSERT_EQ(2, subrange.NumBytesRemaining());
+  ASSERT_EQ(*(subrange), 1);
+
+  subrange = all.Subrange(2, 1);
+  ASSERT_EQ(1, subrange.NumBytesRemaining());
+  ASSERT_EQ(*(subrange), 2);
+
+  subrange = this->packet->begin().Subrange(this->packet->size() - 1, 2);
+  ASSERT_EQ(static_cast<size_t>(1), subrange.NumBytesRemaining());
+  ASSERT_EQ(*(subrange), this->packet->size() - 1);
 }
 
 using SubviewTestParam = std::pair<size_t, size_t>;
