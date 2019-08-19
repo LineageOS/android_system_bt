@@ -823,6 +823,9 @@ static void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
     }
   }
 
+  /* Remove the direct connection */
+  connection_manager::on_connection_complete(p_tcb->peer_bda);
+
   if (!p_tcb->app_hold_link.empty() && p_tcb->att_lcid == L2CAP_ATT_CID) {
     /* disable idle timeout if one or more clients are holding the link disable
      * the idle timer */
