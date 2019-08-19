@@ -476,6 +476,18 @@ std::unique_ptr<EventPacketBuilder> EventPacketBuilder::CreateExtendedInquiryRes
   return evt_ptr;
 }
 
+// Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.7.38
+std::unique_ptr<EventPacketBuilder>
+EventPacketBuilder::CreateEncryptionKeyRefreshCompleteEvent(hci::Status status,
+                                                            uint16_t handle) {
+  std::unique_ptr<EventPacketBuilder> evt_ptr =
+      std::unique_ptr<EventPacketBuilder>(
+          new EventPacketBuilder(EventCode::ENCRYPTION_KEY_REFRESH_COMPLETE));
+  CHECK(evt_ptr->AddPayloadOctets1(static_cast<uint8_t>(status)));
+  CHECK(evt_ptr->AddPayloadOctets2(handle));
+  return evt_ptr;
+}
+
 // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.7.40
 std::unique_ptr<EventPacketBuilder> EventPacketBuilder::CreateIoCapabilityRequestEvent(const Address& peer) {
   std::unique_ptr<EventPacketBuilder> evt_ptr =
