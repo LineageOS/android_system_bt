@@ -553,7 +553,6 @@ void LinkLayerController::IncomingLeScanResponsePacket(LinkLayerPacketView incom
                                           incoming.GetSourceAddress(), ad, GetRssi())) {
     LOG_INFO(LOG_TAG, "Couldn't add the scan response.");
   } else {
-    LOG_INFO(LOG_TAG, "Sending scan response");
     send_event_(le_adverts->ToVector());
   }
 }
@@ -588,7 +587,6 @@ void LinkLayerController::IncomingPageResponsePacket(LinkLayerPacketView incomin
     LOG_WARN(LOG_TAG, "%s: No free handles", __func__);
     return;
   }
-  LOG_INFO(LOG_TAG, "%s: Sending CreateConnectionComplete", __func__);
   send_event_(EventPacketBuilder::CreateConnectionCompleteEvent(hci::Status::SUCCESS, handle,
                                                                 incoming.GetSourceAddress(), hci::LinkType::ACL, false)
                   ->ToVector());
