@@ -457,12 +457,17 @@ class ClassicSecurityManagerFacadeService : public ClassicSecurityManagerFacade:
                                     ::google::protobuf::Empty* response) {
     std::unique_lock<std::mutex> lock(mutex_);
     uint8_t num_keys_to_write = request->num_keys_to_write();
-    Address peer;
-    common::LinkKey link_key;
-    ASSERT(Address::FromString(request->remote().address(), peer));
-    ASSERT(common::LinkKey::FromString(request->link_keys(), link_key));
+    std::vector<KeyAndAddress> keys;
+    for (size_t i = 0; i < num_keys_to_write; i++) {
+      KeyAndAddress key;
+      common::LinkKey link_key;
+      ASSERT(Address::FromString(request->remote().address(), key.address_));
+      ASSERT(common::LinkKey::FromString(request->link_keys(), link_key));
+      std::copy(std::begin(link_key.link_key), std::end(link_key.link_key), std::begin(key.link_key_));
+      keys.push_back(key);
+    }
 
-    classic_security_manager_->WriteStoredLinkKey(num_keys_to_write, peer, link_key);
+    classic_security_manager_->WriteStoredLinkKey(keys);
     return ::grpc::Status::OK;
   };
 

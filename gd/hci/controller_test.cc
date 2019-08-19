@@ -109,10 +109,15 @@ class TestHciLayer : public HciLayer {
   }
 
   void IncomingCredit() {
-    std::vector<uint32_t> handles_and_completed_packets;
-    handles_and_completed_packets.push_back(kCredits1 << 16 | kHandle1);
-    handles_and_completed_packets.push_back(kCredits2 << 16 | kHandle2);
-    auto event_builder = NumberOfCompletedPacketsBuilder::Create(handles_and_completed_packets);
+    std::vector<CompletedPackets> completed_packets;
+    CompletedPackets cp;
+    cp.host_num_of_completed_packets_ = kCredits1;
+    cp.connection_handle_ = kHandle1;
+    completed_packets.push_back(cp);
+    cp.host_num_of_completed_packets_ = kCredits2;
+    cp.connection_handle_ = kHandle2;
+    completed_packets.push_back(cp);
+    auto event_builder = NumberOfCompletedPacketsBuilder::Create(completed_packets);
     auto packet = GetPacketView(std::move(event_builder));
     EventPacketView event = EventPacketView::Create(packet);
     ASSERT(event.IsValid());
