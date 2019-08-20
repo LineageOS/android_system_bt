@@ -33,9 +33,10 @@ class AclManager;
 
 class AclConnection {
  public:
-  AclConnection() : manager_(nullptr) {}
+  AclConnection() : manager_(nullptr), handle_(0), address_(common::Address::kEmpty){};
+  virtual ~AclConnection() = default;
 
-  common::Address GetAddress() const {
+  virtual common::Address GetAddress() const {
     return address_;
   }
 
@@ -47,10 +48,10 @@ class AclConnection {
   using QueueUpEnd = common::BidiQueueEnd<BasePacketBuilder, PacketView<kLittleEndian>>;
   using QueueDownEnd = common::BidiQueueEnd<PacketView<kLittleEndian>, BasePacketBuilder>;
   QueueUpEnd* GetAclQueueEnd() const;
-  void RegisterDisconnectCallback(common::OnceCallback<void(ErrorCode)> on_disconnect, os::Handler* handler);
-  bool Disconnect(DisconnectReason);
+  virtual void RegisterDisconnectCallback(common::OnceCallback<void(ErrorCode)> on_disconnect, os::Handler* handler);
+  virtual bool Disconnect(DisconnectReason reason);
   // Ask AclManager to clean me up. Must invoke after on_disconnect is called
-  void Finish();
+  virtual void Finish();
 
   // TODO: API to change link settings ... ?
 
@@ -61,13 +62,14 @@ class AclConnection {
   AclManager* manager_;
   uint16_t handle_;
   common::Address address_;
+  DISALLOW_COPY_AND_ASSIGN(AclConnection);
 };
 
 class ConnectionCallbacks {
  public:
   virtual ~ConnectionCallbacks() = default;
   // Invoked when controller sends Connection Complete event with Success error code
-  virtual void OnConnectSuccess(AclConnection /* , initiated_by_local ? */) = 0;
+  virtual void OnConnectSuccess(std::unique_ptr<AclConnection> /* , initiated_by_local ? */) = 0;
   // Invoked when controller sends Connection Complete event with non-Success error code
   virtual void OnConnectFail(common::Address, ErrorCode reason) = 0;
 };
@@ -75,17 +77,22 @@ class ConnectionCallbacks {
 class AclManager : public Module {
  public:
   AclManager();
+  // NOTE: It is necessary to forward declare a default destructor that overrides the base class one, because
+  // "struct impl" is forwarded declared in .cc and compiler needs a concrete definition of "struct impl" when
+  // compiling AclManager's destructor. Hence we need to forward declare the destructor for AclManager to delay
+  // compiling AclManager's destructor until it starts linking the .cc file.
+  ~AclManager() override;
 
   // Returns true if callbacks are successfully registered. Should register only once when user module starts.
   // Generates OnConnectSuccess when an incoming connection is established.
-  bool RegisterCallbacks(ConnectionCallbacks* callbacks, os::Handler* handler);
+  virtual bool RegisterCallbacks(ConnectionCallbacks* callbacks, os::Handler* handler);
 
   // Generates OnConnectSuccess if connected, or OnConnectFail otherwise
-  void CreateConnection(common::Address address);
+  virtual void CreateConnection(common::Address address);
 
   // Generates OnConnectFail with error code "terminated by local host 0x16" if cancelled, or OnConnectSuccess if not
   // successfully cancelled and already connected
-  void CancelConnect(common::Address address);
+  virtual void CancelConnect(common::Address address);
 
   static const ModuleFactory Factory;
 
@@ -103,6 +110,7 @@ class AclManager : public Module {
   std::unique_ptr<impl> pimpl_;
 
   struct acl_connection;
+  DISALLOW_COPY_AND_ASSIGN(AclManager);
 };
 
 }  // namespace hci

@@ -218,12 +218,12 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
     return mock_connection_callback_.connection_promise_->get_future();
   }
 
-  AclConnection& GetLastConnection() {
+  std::shared_ptr<AclConnection> GetLastConnection() {
     return mock_connection_callback_.connections_.back();
   }
 
-  void SendAclData(uint16_t handle, AclConnection connection) {
-    auto queue_end = connection.GetAclQueueEnd();
+  void SendAclData(uint16_t handle, std::shared_ptr<AclConnection> connection) {
+    auto queue_end = connection->GetAclQueueEnd();
     std::promise<void> promise;
     auto future = promise.get_future();
     queue_end->RegisterEnqueue(client_handler_,
@@ -240,8 +240,9 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
 
   class MockConnectionCallback : public ConnectionCallbacks {
    public:
-    void OnConnectSuccess(AclConnection connection) override {
-      connections_.push_back(connection);
+    void OnConnectSuccess(std::unique_ptr<AclConnection> connection) override {
+      // Convert to std::shared_ptr during push_back()
+      connections_.push_back(std::move(connection));
       if (connection_promise_ != nullptr) {
         connection_promise_->set_value();
         connection_promise_.reset();
@@ -249,7 +250,7 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
     }
     MOCK_METHOD2(OnConnectFail, void(Address, ErrorCode reason));
 
-    std::list<AclConnection> connections_;
+    std::list<std::shared_ptr<AclConnection>> connections_;
     std::unique_ptr<std::promise<void>> connection_promise_;
   } mock_connection_callback_;
 };
@@ -299,8 +300,8 @@ TEST_F(AclManagerTest, invoke_registered_callback_connection_complete_success) {
   auto first_connection_status = first_connection.wait_for(kTimeout);
   ASSERT_EQ(first_connection_status, std::future_status::ready);
 
-  AclConnection& connection = GetLastConnection();
-  ASSERT_EQ(connection.GetAddress(), remote);
+  std::shared_ptr<AclConnection> connection = GetLastConnection();
+  ASSERT_EQ(connection->GetAddress(), remote);
 }
 
 TEST_F(AclManagerTest, invoke_registered_callback_connection_complete_fail) {
@@ -341,12 +342,12 @@ TEST_F(AclManagerTest, invoke_registered_callback_disconnection_complete) {
   auto first_connection_status = first_connection.wait_for(kTimeout);
   ASSERT_EQ(first_connection_status, std::future_status::ready);
 
-  AclConnection& connection = GetLastConnection();
+  std::shared_ptr<AclConnection> connection = GetLastConnection();
 
   // Register the disconnect handler
   std::promise<ErrorCode> promise;
   auto future = promise.get_future();
-  connection.RegisterDisconnectCallback(
+  connection->RegisterDisconnectCallback(
       common::BindOnce([](std::promise<ErrorCode> promise, ErrorCode reason) { promise.set_value(reason); },
                        std::move(promise)),
       client_handler_);
@@ -380,12 +381,12 @@ TEST_F(AclManagerTest, acl_connection_finish_after_disconnected) {
   auto first_connection_status = first_connection.wait_for(kTimeout);
   ASSERT_EQ(first_connection_status, std::future_status::ready);
 
-  AclConnection& connection = GetLastConnection();
+  std::shared_ptr<AclConnection> connection = GetLastConnection();
 
   // Register the disconnect handler
   std::promise<ErrorCode> promise;
   auto future = promise.get_future();
-  connection.RegisterDisconnectCallback(
+  connection->RegisterDisconnectCallback(
       common::BindOnce([](std::promise<ErrorCode> promise, ErrorCode reason) { promise.set_value(reason); },
                        std::move(promise)),
       client_handler_);
@@ -397,7 +398,7 @@ TEST_F(AclManagerTest, acl_connection_finish_after_disconnected) {
   ASSERT_EQ(disconnection_status, std::future_status::ready);
   ASSERT_EQ(ErrorCode::REMOTE_DEVICE_TERMINATED_CONNECTION_POWER_OFF, future.get());
 
-  connection.Finish();
+  connection->Finish();
 }
 
 TEST_F(AclManagerTest, acl_send_data_one_connection) {
@@ -419,15 +420,16 @@ TEST_F(AclManagerTest, acl_send_data_one_connection) {
   auto first_connection_status = first_connection.wait_for(kTimeout);
   ASSERT_EQ(first_connection_status, std::future_status::ready);
 
-  AclConnection& connection = GetLastConnection();
+  std::shared_ptr<AclConnection> connection = GetLastConnection();
 
   // Register the disconnect handler
-  connection.RegisterDisconnectCallback(common::Bind([](AclConnection conn, ErrorCode) { conn.Finish(); }, connection),
-                                        client_handler_);
+  connection->RegisterDisconnectCallback(
+      common::Bind([](std::shared_ptr<AclConnection> conn, ErrorCode) { conn->Finish(); }, connection),
+      client_handler_);
 
   // Send a packet from HCI
   test_hci_layer_->IncomingAclData(handle);
-  auto queue_end = connection.GetAclQueueEnd();
+  auto queue_end = connection->GetAclQueueEnd();
 
   std::unique_ptr<PacketView<kLittleEndian>> received;
   do {
@@ -445,7 +447,7 @@ TEST_F(AclManagerTest, acl_send_data_one_connection) {
   SendAclData(handle, connection);
 
   sent_packet = test_hci_layer_->OutgoingAclData();
-  connection.Disconnect(DisconnectReason::AUTHENTICATION_FAILURE);
+  connection->Disconnect(DisconnectReason::AUTHENTICATION_FAILURE);
 }
 
 TEST_F(AclManagerTest, acl_send_data_credits) {
@@ -466,11 +468,12 @@ TEST_F(AclManagerTest, acl_send_data_credits) {
   auto first_connection_status = first_connection.wait_for(kTimeout);
   ASSERT_EQ(first_connection_status, std::future_status::ready);
 
-  AclConnection& connection = GetLastConnection();
+  std::shared_ptr<AclConnection> connection = GetLastConnection();
 
   // Register the disconnect handler
-  connection.RegisterDisconnectCallback(
-      common::BindOnce([](AclConnection conn, ErrorCode) { conn.Finish(); }, std::move(connection)), client_handler_);
+  connection->RegisterDisconnectCallback(
+      common::BindOnce([](std::shared_ptr<AclConnection> conn, ErrorCode) { conn->Finish(); }, connection),
+      client_handler_);
 
   // Use all the credits
   for (uint16_t credits = 0; credits < test_controller_->total_acl_buffers_; credits++) {
@@ -489,7 +492,7 @@ TEST_F(AclManagerTest, acl_send_data_credits) {
 
   auto after_credits_sent_packet = test_hci_layer_->OutgoingAclData();
 
-  connection.Disconnect(DisconnectReason::AUTHENTICATION_FAILURE);
+  connection->Disconnect(DisconnectReason::AUTHENTICATION_FAILURE);
 }
 
 }  // namespace
