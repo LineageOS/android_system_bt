@@ -15,28 +15,33 @@
  */
 
 #include "l2cap/classic_fixed_channel_manager.h"
-#include "l2cap/internal/classic_fixed_channel_service.h"
+#include "l2cap/internal/classic_fixed_channel_service_impl.h"
 #include "l2cap/internal/classic_fixed_channel_service_manager_impl.h"
+#include "l2cap/internal/classic_link_manager.h"
 
 namespace bluetooth {
 namespace l2cap {
 
-bool ClassicFixedChannelManager::ConnectServices(common::Address device,
-                                                 OnConnectionFailureCallback on_connection_failure,
+bool ClassicFixedChannelManager::ConnectServices(common::Address device, OnConnectionFailureCallback on_fail_callback,
                                                  os::Handler* handler) {
-  return false;
+  internal::ClassicLinkManager::PendingFixedChannelConnection pending_fixed_channel_connection{
+      .on_fail_callback_ = std::move(on_fail_callback), .handler_ = handler};
+  l2cap_layer_handler_->Post(common::BindOnce(&internal::ClassicLinkManager::ConnectFixedChannelServices,
+                                              common::Unretained(link_manager_), device,
+                                              std::move(pending_fixed_channel_connection)));
+  return true;
 }
 
 bool ClassicFixedChannelManager::RegisterService(Cid cid, const SecurityPolicy& security_policy,
                                                  OnRegistrationCompleteCallback on_registration_complete,
                                                  OnConnectionOpenCallback on_connection_open, os::Handler* handler) {
-  internal::ClassicFixedChannelServiceImpl::Builder builder;
-  builder.SetUserHandler(handler)
-      .SetOnRegister(std::move(on_registration_complete))
-      .SetOnChannelOpen(std::move(on_connection_open));
-
+  internal::ClassicFixedChannelServiceImpl::PendingRegistration pending_registration{
+      .user_handler_ = handler,
+      .on_registration_complete_callback_ = std::move(on_registration_complete),
+      .on_connection_open_callback_ = std::move(on_connection_open)};
   l2cap_layer_handler_->Post(common::BindOnce(&internal::ClassicFixedChannelServiceManagerImpl::Register,
-                                              common::Unretained(manager_), cid, std::move(builder)));
+                                              common::Unretained(service_manager_), cid,
+                                              std::move(pending_registration)));
   return true;
 }
 

@@ -20,7 +20,7 @@
 
 #include "l2cap/cid.h"
 #include "l2cap/classic_fixed_channel_service.h"
-#include "l2cap/internal/classic_fixed_channel_service.h"
+#include "l2cap/internal/classic_fixed_channel_service_impl.h"
 #include "os/handler.h"
 
 namespace bluetooth {
@@ -29,14 +29,17 @@ namespace internal {
 
 class ClassicFixedChannelServiceManagerImpl {
  public:
-  ClassicFixedChannelServiceManagerImpl(os::Handler* l2cap_layer_handler) : l2cap_layer_handler_(l2cap_layer_handler) {}
+  explicit ClassicFixedChannelServiceManagerImpl(os::Handler* l2cap_layer_handler)
+      : l2cap_layer_handler_(l2cap_layer_handler) {}
+  virtual ~ClassicFixedChannelServiceManagerImpl() = default;
 
   // All APIs must be invoked in L2CAP layer handler
 
-  void Register(Cid cid, ClassicFixedChannelServiceImpl::Builder builder);
-  void Unregister(Cid cid, ClassicFixedChannelService::OnUnregisteredCallback callback, os::Handler* handler);
-  bool IsServiceRegistered(Cid cid) const;
-  ClassicFixedChannelServiceImpl* GetService(Cid cid);
+  virtual void Register(Cid cid, ClassicFixedChannelServiceImpl::PendingRegistration pending_registration);
+  virtual void Unregister(Cid cid, ClassicFixedChannelService::OnUnregisteredCallback callback, os::Handler* handler);
+  virtual bool IsServiceRegistered(Cid cid) const;
+  virtual ClassicFixedChannelServiceImpl* GetService(Cid cid);
+  virtual std::vector<std::pair<Cid, ClassicFixedChannelServiceImpl*>> GetRegisteredServices();
 
  private:
   os::Handler* l2cap_layer_handler_ = nullptr;

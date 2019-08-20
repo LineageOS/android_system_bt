@@ -13,34 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #pragma once
 
-#include "l2cap/cid.h"
-#include "l2cap/classic_fixed_channel.h"
-#include "os/handler.h"
-#include "os/log.h"
+#include "l2cap/internal/classic_fixed_channel_impl.h"
+#include "l2cap/internal/classic_fixed_channel_service_manager_impl.h"
 
+#include <gmock/gmock.h>
+
+// Unit test interfaces
 namespace bluetooth {
 namespace l2cap {
 namespace internal {
+namespace testing {
 
-class ClassicFixedChannelImpl {
+class MockClassicFixedChannelServiceImpl : public ClassicFixedChannelServiceImpl {
  public:
-  ClassicFixedChannelImpl(Cid cid, os::Handler* handler) : cid_(cid), handler_(handler) {
-    ASSERT_LOG(cid_ >= kFirstFixedChannel && cid_ <= kLastFixedChannel, "Invalid cid: %d", cid_);
-    ASSERT(handler_ != nullptr);
-  }
-
-  std::unique_ptr<ClassicFixedChannel> GetChannelInterface() {
-    return std::unique_ptr<ClassicFixedChannel>(new ClassicFixedChannel(handler_, this));
-  }
-
- private:
-  Cid cid_;
-  os::Handler* handler_;
+  MockClassicFixedChannelServiceImpl()
+      : ClassicFixedChannelServiceImpl(nullptr, ClassicFixedChannelManager::OnConnectionOpenCallback()) {}
+  MOCK_METHOD(void, NotifyChannelCreation, (std::unique_ptr<ClassicFixedChannel> channel), (override));
 };
 
+}  // namespace testing
 }  // namespace internal
 }  // namespace l2cap
 }  // namespace bluetooth
