@@ -91,7 +91,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public ::bluet
       LOG_ERROR("Invalid address");
       return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Invalid address");
     } else {
-      connection->second.Disconnect(DisconnectReason::REMOTE_USER_TERMINATED_CONNECTION);
+      connection->second->Disconnect(DisconnectReason::REMOTE_USER_TERMINATED_CONNECTION);
       return ::grpc::Status::OK;
     }
   }
@@ -101,7 +101,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public ::bluet
     std::unique_lock<std::mutex> lock(mutex_);
     std::promise<void> promise;
     auto future = promise.get_future();
-    acl_connections_[request->remote().address()].GetAclQueueEnd()->RegisterEnqueue(
+    acl_connections_[request->remote().address()]->GetAclQueueEnd()->RegisterEnqueue(
         facade_handler_, common::Bind(&AclManagerFacadeService::enqueue_packet, common::Unretained(this),
                                       common::Unretained(request), common::Passed(std::move(promise))));
     future.wait();
@@ -109,7 +109,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public ::bluet
   }
 
   std::unique_ptr<BasePacketBuilder> enqueue_packet(const AclData* request, std::promise<void> promise) {
-    acl_connections_[request->remote().address()].GetAclQueueEnd()->UnregisterEnqueue();
+    acl_connections_[request->remote().address()]->GetAclQueueEnd()->UnregisterEnqueue();
     std::string req_string = request->payload();
     std::unique_ptr<RawBuilder> packet = std::make_unique<RawBuilder>();
     packet->AddOctets(std::vector<uint8_t>(req_string.begin(), req_string.end()));
@@ -130,7 +130,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public ::bluet
       return;
     }
 
-    auto packet = connection->second.GetAclQueueEnd()->TryDequeue();
+    auto packet = connection->second->GetAclQueueEnd()->TryDequeue();
     auto acl_packet = AclPacketView::Create(*packet);
     AclData acl_data;
     acl_data.mutable_remote()->set_address(address);
@@ -139,14 +139,15 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public ::bluet
     acl_stream_.OnIncomingEvent(acl_data);
   }
 
-  void OnConnectSuccess(::bluetooth::hci::AclConnection connection) override {
+  void OnConnectSuccess(std::unique_ptr<::bluetooth::hci::AclConnection> connection) override {
     std::unique_lock<std::mutex> lock(mutex_);
-    auto addr = connection.GetAddress();
-    acl_connections_.emplace(addr.ToString(), connection);
-    connection.RegisterDisconnectCallback(
+    auto addr = connection->GetAddress();
+    std::shared_ptr<::bluetooth::hci::AclConnection> shared_connection = std::move(connection);
+    acl_connections_.emplace(addr.ToString(), shared_connection);
+    shared_connection->RegisterDisconnectCallback(
         common::BindOnce(&AclManagerFacadeService::on_disconnect, common::Unretained(this), addr.ToString()),
         facade_handler_);
-    connection_complete_stream_.OnIncomingEvent(connection);
+    connection_complete_stream_.OnIncomingEvent(shared_connection);
   }
 
   void on_disconnect(std::string address, ErrorCode code) {
@@ -189,14 +190,14 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public ::bluet
   ::bluetooth::os::Handler* facade_handler_;
 
   class ConnectionCompleteStreamCallback
-      : public ::bluetooth::grpc::GrpcEventStreamCallback<ConnectionEvent, AclConnection> {
+      : public ::bluetooth::grpc::GrpcEventStreamCallback<ConnectionEvent, std::shared_ptr<AclConnection>> {
    public:
-    void OnWriteResponse(ConnectionEvent* response, AclConnection const& connection) override {
-      response->mutable_remote()->set_address(connection.GetAddress().ToString());
-      response->set_connection_handle(connection.GetHandle());
+    void OnWriteResponse(ConnectionEvent* response, const std::shared_ptr<AclConnection>& connection) override {
+      response->mutable_remote()->set_address(connection->GetAddress().ToString());
+      response->set_connection_handle(connection->GetHandle());
     }
   } connection_complete_stream_callback_;
-  ::bluetooth::grpc::GrpcEventStream<ConnectionEvent, AclConnection> connection_complete_stream_{
+  ::bluetooth::grpc::GrpcEventStream<ConnectionEvent, std::shared_ptr<AclConnection>> connection_complete_stream_{
       &connection_complete_stream_callback_};
 
   class ConnectionFailedStreamCallback
@@ -226,7 +227,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public ::bluet
     ~AclStreamCallback() {
       if (subscribed_) {
         for (const auto& connection : service_->acl_connections_) {
-          connection.second.GetAclQueueEnd()->UnregisterDequeue();
+          connection.second->GetAclQueueEnd()->UnregisterDequeue();
         }
         subscribed_ = false;
       }
@@ -238,8 +239,8 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public ::bluet
         return;
       }
       for (const auto& connection : service_->acl_connections_) {
-        auto remote_address = connection.second.GetAddress().ToString();
-        connection.second.GetAclQueueEnd()->RegisterDequeue(
+        auto remote_address = connection.second->GetAddress().ToString();
+        connection.second->GetAclQueueEnd()->RegisterDequeue(
             service_->facade_handler_,
             common::Bind(&AclManagerFacadeService::on_incoming_acl, common::Unretained(service_), remote_address));
       }
@@ -252,7 +253,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public ::bluet
         return;
       }
       for (const auto& connection : service_->acl_connections_) {
-        connection.second.GetAclQueueEnd()->UnregisterDequeue();
+        connection.second->GetAclQueueEnd()->UnregisterDequeue();
       }
       subscribed_ = false;
     }
@@ -267,7 +268,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public ::bluet
   } acl_stream_callback_{this};
   ::bluetooth::grpc::GrpcEventStream<AclData, AclData> acl_stream_{&acl_stream_callback_};
 
-  std::map<std::string, AclConnection> acl_connections_;
+  std::map<std::string, std::shared_ptr<AclConnection>> acl_connections_;
 };
 
 void AclManagerFacadeModule::ListDependencies(ModuleList* list) {

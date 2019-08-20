@@ -238,7 +238,7 @@ struct AclManager::impl {
       if (acl_connections_.size() == 1 && packet_to_send_ == nullptr) {
         start_round_robin();
       }
-      AclConnection connection_proxy{&acl_manager_, handle, address};
+      std::unique_ptr<AclConnection> connection_proxy(new AclConnection(&acl_manager_, handle, address));
       client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectSuccess,
                                              common::Unretained(client_callbacks_), std::move(connection_proxy)));
     } else {
@@ -450,6 +450,8 @@ void AclManager::Stop() {
 }
 
 const ModuleFactory AclManager::Factory = ModuleFactory([]() { return new AclManager(); });
+
+AclManager::~AclManager() = default;
 
 }  // namespace hci
 }  // namespace bluetooth
