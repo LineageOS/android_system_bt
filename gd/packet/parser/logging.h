@@ -58,6 +58,8 @@ class LogMessage {
   }
 
   ~LogMessage() {
+    if (debug_ && suppress_debug_) return;
+
     std::cerr << stream_.str() << "\n";
     for (const auto& token : tokens_) {
       // Bold line number
@@ -79,6 +81,7 @@ class LogMessage {
  private:
   std::ostringstream stream_;
   bool debug_;
+  bool suppress_debug_{true};
   ParseLocation loc_;
   std::vector<const Loggable*> tokens_;
 };
