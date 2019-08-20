@@ -60,6 +60,8 @@ class Iterator : public std::iterator<std::random_access_iterator_tag, uint8_t> 
 
   size_t NumBytesRemaining() const;
 
+  Iterator Subrange(size_t index, size_t length) const;
+
   // Get the next sizeof(FixedWidthPODType) bytes and return the filled type
   template <typename FixedWidthPODType>
   FixedWidthPODType extract() {
@@ -77,7 +79,8 @@ class Iterator : public std::iterator<std::random_access_iterator_tag, uint8_t> 
  private:
   std::forward_list<View> data_;
   size_t index_;
-  size_t length_;
+  size_t begin_;
+  size_t end_;
 };
 
 }  // namespace packet
