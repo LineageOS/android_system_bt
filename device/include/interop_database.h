@@ -146,6 +146,10 @@ static const interop_addr_entry_t interop_addr_database[] = {
 
     // AirPods 2 - unacceptably loud volume
     {{{0x9c, 0x64, 0x8b, 0, 0, 0}}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
+
+    // for skip name request,
+    // because BR/EDR address and ADV random address are the same
+    {{{0xd4, 0x7a, 0xe2, 0, 0, 0}}, 3, INTEROP_DISABLE_NAME_REQUEST},
 };
 
 typedef struct {
