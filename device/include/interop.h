@@ -94,6 +94,12 @@ typedef enum {
   // Set a very low initial sniff subrating for HID devices that do not
   // set their own sniff interval.
   INTEROP_HID_HOST_LIMIT_SNIFF_INTERVAL,
+
+  // Disable remote name requst for some devices.
+  // The public address of these devices are same as the Random address in ADV.
+  // Then will get name by LE_Create_connection, actually fails,
+  // but will block pairing.
+  INTEROP_DISABLE_NAME_REQUEST
 } interop_feature_t;
 
 // Check if a given |addr| matches a known interoperability workaround as

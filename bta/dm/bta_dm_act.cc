@@ -50,6 +50,7 @@
 #include "stack/gatt/connection_manager.h"
 #include "stack/include/gatt_api.h"
 #include "utl.h"
+#include "device/include/interop.h"
 
 #if (GAP_INCLUDED == TRUE)
 #include "gap_api.h"
@@ -1945,10 +1946,12 @@ static void bta_dm_discover_device(const RawAddress& remote_bd_addr) {
     APPL_TRACE_DEBUG("%s appl_knows_rem_name %d", __func__,
                      bta_dm_search_cb.p_btm_inq_info->appl_knows_rem_name);
   }
-  if ((bta_dm_search_cb.p_btm_inq_info) &&
-      (bta_dm_search_cb.p_btm_inq_info->results.device_type ==
-       BT_DEVICE_TYPE_BLE) &&
-      (bta_dm_search_cb.state == BTA_DM_SEARCH_ACTIVE)) {
+  if (((bta_dm_search_cb.p_btm_inq_info) &&
+       (bta_dm_search_cb.p_btm_inq_info->results.device_type ==
+        BT_DEVICE_TYPE_BLE) &&
+       (bta_dm_search_cb.state == BTA_DM_SEARCH_ACTIVE)) ||
+      (transport == BT_TRANSPORT_LE &&
+       interop_match_addr(INTEROP_DISABLE_NAME_REQUEST, &bta_dm_search_cb.peer_bdaddr))) {
     /* Do not perform RNR for LE devices at inquiry complete*/
     bta_dm_search_cb.name_discover_done = true;
   }
