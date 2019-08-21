@@ -8,6 +8,7 @@ filegroup {
         "classic_fixed_channel_service.cc",
         "internal/classic_fixed_channel_service_manager_impl.cc",
         "internal/classic_fixed_channel_allocator.cc",
+        "internal/classic_link_manager.cc",
     ],
 }
 
@@ -17,6 +18,7 @@ filegroup {
         "l2cap_packet_test.cc",
         "internal/classic_fixed_channel_service_manager_test.cc",
         "internal/classic_fixed_channel_allocator_test.cc",
+        "internal/classic_link_manager_test.cc",
         "signal_id_test.cc",
     ],
 }
