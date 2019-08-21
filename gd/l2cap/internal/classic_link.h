@@ -16,8 +16,32 @@
 
 #pragma once
 
+#include <memory>
+
+#include "hci/acl_manager.h"
+#include "l2cap/internal/classic_fixed_channel_allocator.h"
+#include "l2cap/internal/scheduler.h"
+
 namespace bluetooth {
 namespace l2cap {
-namespace internal {}
+namespace internal {
+
+class ClassicLink {
+ public:
+  ClassicLink(os::Handler* l2cap_layer_handler, std::unique_ptr<hci::AclConnection> acl_connection,
+              std::unique_ptr<Scheduler> scheduler)
+      : handler_(l2cap_layer_handler), acl_connection_(std::move(acl_connection)), scheduler_(std::move(scheduler)) {}
+
+  friend class ClassicLinkManager;
+
+ private:
+  os::Handler* handler_;
+  std::unique_ptr<hci::AclConnection> acl_connection_;
+  std::unique_ptr<Scheduler> scheduler_;
+  ClassicFixedChannelAllocator fixed_channel_allocator_{handler_};
+  DISALLOW_COPY_AND_ASSIGN(ClassicLink);
+};
+
+}  // namespace internal
 }  // namespace l2cap
 }  // namespace bluetooth
