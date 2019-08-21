@@ -203,6 +203,10 @@ class EventPacketBuilder : public HciPacketBuilder {
       const Address& bt_address, uint8_t page_scan_repetition_mode, ClassOfDevice class_of_device,
       uint16_t clock_offset, uint8_t rssi, const std::vector<uint8_t>& extended_inquiry_response);
 
+  // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.7.39
+  static std::unique_ptr<EventPacketBuilder>
+  CreateEncryptionKeyRefreshCompleteEvent(hci::Status status, uint16_t handle);
+
   // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.7.40
   static std::unique_ptr<EventPacketBuilder> CreateIoCapabilityRequestEvent(const Address& peer);
 
