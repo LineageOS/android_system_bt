@@ -24,6 +24,10 @@
 namespace bluetooth {
 namespace l2cap {
 
+namespace internal {
+class ClassicFixedChannelImpl;
+}  // namespace internal
+
 /**
  * L2CAP fixed channel object. When a new object is created, it must be
  * acquired through calling {@link FixedChannel#Acquire()} within X seconds.
@@ -65,6 +69,15 @@ class ClassicFixedChannel {
    * @return The upper end of a bi-directional queue.
    */
   common::BidiQueueEnd<packet::PacketView<packet::kLittleEndian>, packet::BasePacketBuilder>* GetQueueUpEnd() const;
+
+  friend class internal::ClassicFixedChannelImpl;
+
+ private:
+  ClassicFixedChannel(os::Handler* l2cap_handler, internal::ClassicFixedChannelImpl* classic_fixed_channel_impl)
+      : l2cap_handler_(l2cap_handler), classic_fixed_channel_impl_(classic_fixed_channel_impl) {}
+  os::Handler* l2cap_handler_;
+  internal::ClassicFixedChannelImpl* classic_fixed_channel_impl_;
+  DISALLOW_COPY_AND_ASSIGN(ClassicFixedChannel);
 };
 
 }  // namespace l2cap

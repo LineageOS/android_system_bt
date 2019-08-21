@@ -44,7 +44,7 @@ class L2capLayer : public bluetooth::Module {
 
  private:
   struct impl;
-  std::unique_ptr<impl> impl_;
+  std::unique_ptr<impl> pimpl_;
   DISALLOW_COPY_AND_ASSIGN(L2capLayer);
 };
 
