@@ -150,6 +150,8 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   SET_HANDLER(OpCode::READ_LOCAL_VERSION_INFORMATION, HciReadLocalVersionInformation);
   SET_HANDLER(OpCode::READ_BD_ADDR, HciReadBdAddr);
   SET_HANDLER(OpCode::READ_LOCAL_SUPPORTED_COMMANDS, HciReadLocalSupportedCommands);
+  SET_HANDLER(OpCode::READ_LOCAL_SUPPORTED_FEATURES,
+              HciReadLocalSupportedFeatures);
   SET_HANDLER(OpCode::READ_LOCAL_SUPPORTED_CODECS, HciReadLocalSupportedCodecs);
   SET_HANDLER(OpCode::READ_LOCAL_EXTENDED_FEATURES, HciReadLocalExtendedFeatures);
   SET_HANDLER(OpCode::READ_REMOTE_EXTENDED_FEATURES, HciReadRemoteExtendedFeatures);
@@ -364,6 +366,15 @@ void DualModeController::HciReadLocalSupportedCommands(packets::PacketView<true>
   std::shared_ptr<packets::EventPacketBuilder> command_complete =
       packets::EventPacketBuilder::CreateCommandCompleteReadLocalSupportedCommands(hci::Status::SUCCESS,
                                                                                    properties_.GetSupportedCommands());
+  send_event_(command_complete->ToVector());
+}
+
+void DualModeController::HciReadLocalSupportedFeatures(
+    packets::PacketView<true> args) {
+  CHECK(args.size() == 0) << __func__ << " size=" << args.size();
+  std::shared_ptr<packets::EventPacketBuilder> command_complete = packets::
+      EventPacketBuilder::CreateCommandCompleteReadLocalSupportedFeatures(
+          hci::Status::SUCCESS, properties_.GetSupportedFeatures());
   send_event_(command_complete->ToVector());
 }
 
