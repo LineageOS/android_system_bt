@@ -24,6 +24,7 @@
 #include "common/blocking_queue.h"
 #include "grpc/grpc_event_stream.h"
 #include "hci/cert/api.grpc.pb.h"
+#include "hci/classic_security_manager.h"
 #include "hci/controller.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
@@ -321,6 +322,7 @@ void AclManagerCertModule::ListDependencies(ModuleList* list) {
   ::bluetooth::grpc::GrpcFacadeModule::ListDependencies(list);
   list->add<Controller>();
   list->add<HciLayer>();
+  list->add<ClassicSecurityManager>();
 }
 
 void AclManagerCertModule::Start() {
