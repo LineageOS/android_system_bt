@@ -122,6 +122,9 @@ class ClassicSecurityManagerTest : public ::testing::Test, public ::bluetooth::h
     test_hci_layer_->RegisterEventHandler(
         EventCode::COMMAND_COMPLETE, base::Bind(&ClassicSecurityManagerTest::ExpectCommand, common::Unretained(this)),
         nullptr);
+    test_hci_layer_->RegisterEventHandler(
+        EventCode::COMMAND_STATUS,
+        base::Bind(&ClassicSecurityManagerTest::ExpectCommandStatus, common::Unretained(this)), nullptr);
 
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
   }
@@ -151,6 +154,21 @@ class ClassicSecurityManagerTest : public ::testing::Test, public ::bluetooth::h
     caller_handler->Post(BindOnce(std::move(last_command_queue_entry->on_complete), std::move(command_complete_view)));
     std::unique_lock<std::mutex> lock(mutex_);
     EXPECT_FALSE(callback_done.wait_for(lock, std::chrono::seconds(3)) == std::cv_status::timeout);
+
+    command_complete_ = true;
+  }
+
+  void ExpectCommandStatus(EventPacketView packet) {
+    CommandStatusView command_status_view = CommandStatusView::Create(std::move(packet));
+    auto last_command_queue_entry = test_hci_layer_->GetLastCommand();
+    auto last_command = std::move(last_command_queue_entry->command);
+    auto command_packet = GetPacketView(std::move(last_command));
+    CommandPacketView command_packet_view = CommandPacketView::Create(command_packet);
+
+    // verify command complete event match last command opcode
+    EXPECT_TRUE(command_packet_view.IsValid());
+    EXPECT_TRUE(command_status_view.IsValid());
+    EXPECT_EQ(command_packet_view.GetOpCode(), command_status_view.GetCommandOpCode());
 
     command_complete_ = true;
   }
@@ -332,7 +350,7 @@ TEST_F(ClassicSecurityManagerTest, send_refresh_encryption_key) {
 
   auto payload = std::make_unique<RawBuilder>();
   test_hci_layer_->IncomingEvent(
-      CommandCompleteBuilder::Create(0x01, OpCode::REFRESH_ENCRYPTION_KEY, std::move(payload)));
+      CommandStatusBuilder::Create(ErrorCode::SUCCESS, 0x01, OpCode::REFRESH_ENCRYPTION_KEY, std::move(payload)));
   EXPECT_TRUE(command_complete_);
 }
 
