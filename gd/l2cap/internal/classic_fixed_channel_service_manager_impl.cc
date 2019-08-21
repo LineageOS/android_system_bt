@@ -18,26 +18,34 @@
 
 #include "common/bind.h"
 #include "l2cap/cid.h"
-#include "l2cap/internal/classic_fixed_channel_service.h"
+#include "l2cap/internal/classic_fixed_channel_service_impl.h"
 #include "os/log.h"
 
 namespace bluetooth {
 namespace l2cap {
 namespace internal {
 
-void ClassicFixedChannelServiceManagerImpl::Register(Cid cid, ClassicFixedChannelServiceImpl::Builder builder) {
-  if (cid < kFirstFixedChannel || cid > kLastFixedChannel || cid == kClassicSignallingCid || IsServiceRegistered(cid)) {
-    ClassicFixedChannelService invalid_service;
-    builder.user_handler_->Post(common::BindOnce(std::move(builder.on_registration_complete_callback_),
-                                                 ClassicFixedChannelManager::RegistrationResult::FAIL,
-                                                 invalid_service));
+void ClassicFixedChannelServiceManagerImpl::Register(
+    Cid cid, ClassicFixedChannelServiceImpl::PendingRegistration pending_registration) {
+  if (cid < kFirstFixedChannel || cid > kLastFixedChannel || cid == kClassicSignallingCid) {
+    std::unique_ptr<ClassicFixedChannelService> invalid_service(new ClassicFixedChannelService());
+    pending_registration.user_handler_->Post(common::BindOnce(
+        std::move(pending_registration.on_registration_complete_callback_),
+        ClassicFixedChannelManager::RegistrationResult::FAIL_INVALID_SERVICE, std::move(invalid_service)));
+  } else if (IsServiceRegistered(cid)) {
+    std::unique_ptr<ClassicFixedChannelService> invalid_service(new ClassicFixedChannelService());
+    pending_registration.user_handler_->Post(common::BindOnce(
+        std::move(pending_registration.on_registration_complete_callback_),
+        ClassicFixedChannelManager::RegistrationResult::FAIL_DUPLICATE_SERVICE, std::move(invalid_service)));
   } else {
-    auto service = builder.Build();
-    service_map_.emplace(cid, std::move(service));
-    ClassicFixedChannelService user_service{cid, this, l2cap_layer_handler_};
-    builder.user_handler_->Post(common::BindOnce(std::move(builder.on_registration_complete_callback_),
-                                                 ClassicFixedChannelManager::RegistrationResult::SUCCESS,
-                                                 user_service));
+    service_map_.try_emplace(
+        cid, ClassicFixedChannelServiceImpl(pending_registration.user_handler_,
+                                            std::move(pending_registration.on_connection_open_callback_)));
+    std::unique_ptr<ClassicFixedChannelService> user_service(
+        new ClassicFixedChannelService(cid, this, l2cap_layer_handler_));
+    pending_registration.user_handler_->Post(
+        common::BindOnce(std::move(pending_registration.on_registration_complete_callback_),
+                         ClassicFixedChannelManager::RegistrationResult::SUCCESS, std::move(user_service)));
   }
 }
 
@@ -59,6 +67,15 @@ bool ClassicFixedChannelServiceManagerImpl::IsServiceRegistered(Cid cid) const {
 ClassicFixedChannelServiceImpl* ClassicFixedChannelServiceManagerImpl::GetService(Cid cid) {
   ASSERT(IsServiceRegistered(cid));
   return &service_map_.find(cid)->second;
+}
+
+std::vector<std::pair<Cid, ClassicFixedChannelServiceImpl*>>
+ClassicFixedChannelServiceManagerImpl::GetRegisteredServices() {
+  std::vector<std::pair<Cid, ClassicFixedChannelServiceImpl*>> results;
+  for (auto& elem : service_map_) {
+    results.emplace_back(elem.first, &elem.second);
+  }
+  return results;
 }
 
 }  // namespace internal
