@@ -107,6 +107,11 @@ class EventPacketBuilder : public HciPacketBuilder {
   static std::unique_ptr<EventPacketBuilder> CreateCommandCompleteReadLocalSupportedCommands(
       hci::Status status, const std::vector<uint8_t>& supported_commands);
 
+  // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.4.3
+  static std::unique_ptr<EventPacketBuilder>
+  CreateCommandCompleteReadLocalSupportedFeatures(hci::Status status,
+                                                  uint64_t supported_features);
+
   // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.4.4
   static std::unique_ptr<EventPacketBuilder> CreateCommandCompleteReadLocalExtendedFeatures(
       hci::Status status, uint8_t page_number, uint8_t maximum_page_number, uint64_t extended_lmp_features);
