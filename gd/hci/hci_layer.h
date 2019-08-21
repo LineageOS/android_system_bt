@@ -50,6 +50,11 @@ class HciLayer : public Module {
 
   virtual void UnregisterEventHandler(EventCode event_code);
 
+  virtual void RegisterLeEventHandler(SubeventCode subevent_code, common::Callback<void(LeMetaEventView)> event_handler,
+                                      os::Handler* handler);
+
+  virtual void UnregisterLeEventHandler(SubeventCode subevent_code);
+
   static const ModuleFactory Factory;
 
   void ListDependencies(ModuleList* list) override;
