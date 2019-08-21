@@ -205,6 +205,19 @@ std::unique_ptr<EventPacketBuilder> EventPacketBuilder::CreateCommandCompleteRea
   return evt_ptr;
 }
 
+// Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.4.3
+std::unique_ptr<EventPacketBuilder>
+EventPacketBuilder::CreateCommandCompleteReadLocalSupportedFeatures(
+    hci::Status status, uint64_t supported_features) {
+  std::unique_ptr<EventPacketBuilder> evt_ptr =
+      EventPacketBuilder::CreateCommandCompleteOnlyStatusEvent(
+          OpCode::READ_LOCAL_SUPPORTED_FEATURES, status);
+
+  CHECK(evt_ptr->AddPayloadOctets8(supported_features));
+
+  return evt_ptr;
+}
+
 // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.4.4
 std::unique_ptr<EventPacketBuilder> EventPacketBuilder::CreateCommandCompleteReadLocalExtendedFeatures(
     hci::Status status, uint8_t page_number, uint8_t maximum_page_number, uint64_t extended_lmp_features) {
