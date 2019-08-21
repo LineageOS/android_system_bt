@@ -265,6 +265,9 @@ class DualModeController : public Device {
   // 7.4.2
   void HciReadLocalSupportedCommands(packets::PacketView<true> args);
 
+  // 7.4.3
+  void HciReadLocalSupportedFeatures(packets::PacketView<true> args);
+
   // 7.4.4
   void HciReadLocalExtendedFeatures(packets::PacketView<true> args);
 
