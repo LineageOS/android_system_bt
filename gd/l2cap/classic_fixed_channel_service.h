@@ -50,6 +50,7 @@ class ClassicFixedChannelService {
   Cid cid_ = kInvalidCid;
   internal::ClassicFixedChannelServiceManagerImpl* manager_ = nullptr;
   os::Handler* l2cap_layer_handler_;
+  DISALLOW_COPY_AND_ASSIGN(ClassicFixedChannelService);
 };
 
 }  // namespace l2cap
