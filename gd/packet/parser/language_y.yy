@@ -114,18 +114,18 @@ declarations
 declaration
   : enum_definition
     {
-      std::cerr << "FOUND ENUM\n\n";
+      DEBUG() << "FOUND ENUM\n\n";
       decls->AddTypeDef($1->name_, $1);
     }
   | packet_definition
     {
-      std::cerr << "FOUND PACKET\n\n";
+      DEBUG() << "FOUND PACKET\n\n";
       decls->AddPacketDef($1->name_, std::move(*$1));
       delete $1;
     }
   | struct_definition
     {
-      std::cerr << "FOUND STRUCT\n\n";
+      DEBUG() << "FOUND STRUCT\n\n";
       decls->AddTypeDef($1->name_, $1);
     }
   | group_definition
@@ -144,7 +144,7 @@ declaration
 enum_definition
   : ENUM IDENTIFIER ':' INTEGER '{' enumeration_list ',' '}'
     {
-      std::cerr << "Enum Declared: name=" << *$2
+      DEBUG() << "Enum Declared: name=" << *$2
                 << " size=" << $4 << "\n";
 
       $$ = new EnumDef(std::move(*$2), $4);
@@ -158,14 +158,14 @@ enum_definition
 enumeration_list
   : enumeration
     {
-      std::cerr << "Enumerator with comma\n";
+      DEBUG() << "Enumerator with comma\n";
       $$ = new std::map<int, std::string>();
       $$->insert(std::move(*$1));
       delete $1;
     }
   | enumeration_list ',' enumeration
     {
-      std::cerr << "Enumerator with list\n";
+      DEBUG() << "Enumerator with list\n";
       $$ = $1;
       $$->insert(std::move(*$3));
       delete $3;
@@ -174,7 +174,7 @@ enumeration_list
 enumeration
   : IDENTIFIER '=' INTEGER
     {
-      std::cerr << "Enumerator: name=" << *$1
+      DEBUG() << "Enumerator: name=" << *$1
                 << " value=" << $3 << "\n";
       $$ = new std::pair($3, std::move(*$1));
       delete $1;
@@ -190,7 +190,7 @@ group_definition
 checksum_definition
   : CHECKSUM IDENTIFIER ':' INTEGER STRING
     {
-      std::cerr << "Checksum field defined\n";
+      DEBUG() << "Checksum field defined\n";
       decls->AddTypeDef(*$2, new ChecksumDef(*$2, *$5, $4));
       delete $2;
       delete $5;
@@ -231,8 +231,8 @@ struct_definition
       auto&& parent_struct_name = *$4;
       auto&& field_definition_list = *$6;
 
-      std::cerr << "Struct " << struct_name << " with parent " << parent_struct_name << "\n";
-      std::cerr << "STRUCT FIELD LIST SIZE: " << field_definition_list.size() << "\n";
+      DEBUG() << "Struct " << struct_name << " with parent " << parent_struct_name << "\n";
+      DEBUG() << "STRUCT FIELD LIST SIZE: " << field_definition_list.size() << "\n";
 
       auto parent_struct = decls->GetTypeDef(parent_struct_name);
       if (parent_struct == nullptr) {
@@ -362,12 +362,12 @@ packet_definition
 field_definition_list
   : /* empty */
     {
-      std::cerr << "Empty Field definition\n";
+      DEBUG() << "Empty Field definition\n";
       $$ = new FieldList();
     }
   | field_definition
     {
-      std::cerr << "Field definition\n";
+      DEBUG() << "Field definition\n";
       $$ = new FieldList();
 
       if ($1->GetFieldType() == GroupField::kFieldType) {
@@ -384,7 +384,7 @@ field_definition_list
     }
   | field_definition ',' field_definition_list
     {
-      std::cerr << "Field definition with list\n";
+      DEBUG() << "Field definition with list\n";
       $$ = $3;
 
       if ($1->GetFieldType() == GroupField::kFieldType) {
@@ -408,47 +408,47 @@ field_definition
     }
   | type_def_field_definition
     {
-      std::cerr << "Field with a pre-defined type\n";
+      DEBUG() << "Field with a pre-defined type\n";
       $$ = $1;
     }
   | scalar_field_definition
     {
-      std::cerr << "Scalar field\n";
+      DEBUG() << "Scalar field\n";
       $$ = $1;
     }
   | checksum_start_field_definition
     {
-      std::cerr << "Checksum start field\n";
+      DEBUG() << "Checksum start field\n";
       $$ = $1;
     }
   | size_field_definition
     {
-      std::cerr << "Size field\n";
+      DEBUG() << "Size field\n";
       $$ = $1;
     }
   | body_field_definition
     {
-      std::cerr << "Body field\n";
+      DEBUG() << "Body field\n";
       $$ = $1;
     }
   | payload_field_definition
     {
-      std::cerr << "Payload field\n";
+      DEBUG() << "Payload field\n";
       $$ = $1;
     }
   | fixed_field_definition
     {
-      std::cerr << "Fixed field\n";
+      DEBUG() << "Fixed field\n";
       $$ = $1;
     }
   | reserved_field_definition
     {
-      std::cerr << "Reserved field\n";
+      DEBUG() << "Reserved field\n";
       $$ = $1;
     }
   | array_field_definition
     {
-      std::cerr << "ARRAY field\n";
+      DEBUG() << "ARRAY field\n";
       $$ = $1;
     }
 
@@ -467,7 +467,7 @@ group_field_definition
     }
   | IDENTIFIER '{' constraint_list '}'
     {
-      std::cerr << "Group with fixed field(s) " << *$1 << "\n";
+      DEBUG() << "Group with fixed field(s) " << *$1 << "\n";
       auto group = decls->GetGroupDef(*$1);
       if (group == nullptr) {
         ERRORLOC(LOC) << "Could not find group with name " << *$1;
@@ -478,10 +478,10 @@ group_field_definition
         const auto constraint = $3->find(field->GetName());
         if (constraint != $3->end()) {
           if (field->GetFieldType() == ScalarField::kFieldType) {
-            std::cerr << "Fixing group scalar value\n";
+            DEBUG() << "Fixing group scalar value\n";
             expanded_fields->push_back(new FixedScalarField(field->GetSize().bits(), std::get<int64_t>(constraint->second), LOC));
           } else if (field->GetFieldType() == EnumField::kFieldType) {
-            std::cerr << "Fixing group enum value\n";
+            DEBUG() << "Fixing group enum value\n";
 
             auto type_def = decls->GetTypeDef(field->GetDataType());
             EnumDef* enum_def = (type_def->GetDefinitionType() == TypeDef::Type::ENUM ? (EnumDef*)type_def : nullptr);
@@ -513,14 +513,14 @@ group_field_definition
 constraint_list
   : constraint ',' constraint_list
     {
-      std::cerr << "Group field value list\n";
+      DEBUG() << "Group field value list\n";
       $3->insert(*$1);
       $$ = $3;
       delete($1);
     }
   | constraint
     {
-      std::cerr << "Group field value\n";
+      DEBUG() << "Group field value\n";
       $$ = new std::map<std::string, std::variant<int64_t, std::string>>();
       $$->insert(*$1);
       delete($1);
@@ -529,7 +529,7 @@ constraint_list
 constraint
   : IDENTIFIER '=' INTEGER
     {
-      std::cerr << "Group with a fixed integer value=" << $1 << " value=" << $3 << "\n";
+      DEBUG() << "Group with a fixed integer value=" << $1 << " value=" << $3 << "\n";
 
       $$ = new std::pair(*$1, std::variant<int64_t,std::string>($3));
       delete $1;
@@ -546,7 +546,7 @@ constraint
 type_def_field_definition
   : IDENTIFIER ':' IDENTIFIER
     {
-      std::cerr << "Predefined type field " << *$1 << " : " << *$3 << "\n";
+      DEBUG() << "Predefined type field " << *$1 << " : " << *$3 << "\n";
       if (auto type_def = decls->GetTypeDef(*$3)) {
         $$ = type_def->GetNewField(*$1, LOC);
       } else {
@@ -559,7 +559,7 @@ type_def_field_definition
 scalar_field_definition
   : IDENTIFIER ':' INTEGER
     {
-      std::cerr << "Scalar field " << *$1 << " : " << $3 << "\n";
+      DEBUG() << "Scalar field " << *$1 << " : " << $3 << "\n";
       $$ = new ScalarField(*$1, $3, LOC);
       delete $1;
     }
@@ -567,27 +567,27 @@ scalar_field_definition
 body_field_definition
   : BODY
     {
-      std::cerr << "Body field\n";
+      DEBUG() << "Body field\n";
       $$ = new BodyField(LOC);
     }
 
 payload_field_definition
   : PAYLOAD ':' '[' SIZE_MODIFIER ']'
     {
-      std::cerr << "Payload field with modifier " << *$4 << "\n";
+      DEBUG() << "Payload field with modifier " << *$4 << "\n";
       $$ = new PayloadField(*$4, LOC);
       delete $4;
     }
   | PAYLOAD
     {
-      std::cerr << "Payload field\n";
+      DEBUG() << "Payload field\n";
       $$ = new PayloadField("", LOC);
     }
 
 checksum_start_field_definition
   : CHECKSUM_START '(' IDENTIFIER ')'
     {
-      std::cerr << "ChecksumStart field defined\n";
+      DEBUG() << "ChecksumStart field defined\n";
       $$ = new ChecksumStartField(*$3, LOC);
       delete $3;
     }
@@ -595,18 +595,18 @@ checksum_start_field_definition
 size_field_definition
   : SIZE '(' IDENTIFIER ')' ':' INTEGER
     {
-      std::cerr << "Size field defined\n";
+      DEBUG() << "Size field defined\n";
       $$ = new SizeField(*$3, $6, LOC);
       delete $3;
     }
   | SIZE '(' PAYLOAD ')' ':' INTEGER
     {
-      std::cerr << "Size for payload defined\n";
+      DEBUG() << "Size for payload defined\n";
       $$ = new SizeField("payload", $6, LOC);
     }
   | COUNT '(' IDENTIFIER ')' ':' INTEGER
     {
-      std::cerr << "Count field defined\n";
+      DEBUG() << "Count field defined\n";
       $$ = new CountField(*$3, $6, LOC);
       delete $3;
     }
@@ -614,7 +614,7 @@ size_field_definition
 fixed_field_definition
   : FIXED '=' INTEGER ':' INTEGER
     {
-      std::cerr << "Fixed field defined value=" << $3 << " size=" << $5 << "\n";
+      DEBUG() << "Fixed field defined value=" << $3 << " size=" << $5 << "\n";
       $$ = new FixedScalarField($5, $3, LOC);
     }
   | FIXED '=' IDENTIFIER ':' IDENTIFIER
@@ -639,7 +639,7 @@ fixed_field_definition
 reserved_field_definition
   : RESERVED ':' INTEGER
     {
-      std::cerr << "Reserved field of size=" << $3 << "\n";
+      DEBUG() << "Reserved field of size=" << $3 << "\n";
       $$ = new ReservedField($3, LOC);
     }
 
@@ -706,6 +706,6 @@ array_field_definition
 
 
 void yy::parser::error(const yy::parser::location_type& loc, const std::string& error) {
-  std::cerr << error << " at location " << loc << "\n";
+  ERROR() << error << " at location " << loc << "\n";
   abort();
 }

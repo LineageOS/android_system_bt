@@ -936,8 +936,71 @@ packet ResetComplete : CommandComplete (command_op_code = RESET) {
   status : ErrorCode,
 }
 
+enum FilterType : 8 {
+  CLEAR_ALL_FILTERS = 0x00,
+  INQUIRY_RESULT = 0x01,
+  CONNECTION_SETUP = 0x02,
+}
+
 packet SetEventFilter : CommandPacket (op_code = SET_EVENT_FILTER) {
-  _payload_,  // placeholder (unimplemented)
+  filter_type : FilterType,
+  _body_,
+}
+
+packet SetEventFilterComplete : CommandComplete (command_op_code = SET_EVENT_FILTER) {
+  status : ErrorCode,
+}
+
+packet SetEventFilterClearAll : SetEventFilter (filter_type = CLEAR_ALL_FILTERS) {
+}
+
+enum FilterConditionType : 8 {
+  ALL_DEVICES = 0x00,
+  CLASS_OF_DEVICE = 0x01,
+  ADDRESS = 0x02,
+}
+
+packet SetEventFilterInquiryResult : SetEventFilter (filter_type = INQUIRY_RESULT) {
+  filter_condition_type : FilterConditionType,
+  _body_,
+}
+
+packet SetEventFilterInquiryResultAllDevices : SetEventFilterInquiryResult (filter_condition_type = ALL_DEVICES) {
+}
+
+packet SetEventFilterInquiryResultClassOfDevice : SetEventFilterInquiryResult (filter_condition_type = CLASS_OF_DEVICE) {
+  class_of_device : ClassOfDevice,
+  class_of_device_mask : ClassOfDevice,
+}
+
+packet SetEventFilterInquiryResultAddress : SetEventFilterInquiryResult (filter_condition_type = ADDRESS) {
+  address : Address,
+}
+
+packet SetEventFilterConnectionSetup : SetEventFilter (filter_type = CONNECTION_SETUP) {
+  filter_condition_type : FilterConditionType,
+  _body_,
+}
+
+enum AutoAcceptFlag : 8 {
+  AUTO_ACCEPT_OFF = 0x01,
+  AUTO_ACCEPT_ON_ROLE_SWITCH_DISABLED = 0x02,
+  AUTO_ACCEPT_ON_ROLE_SWITCH_ENABLED = 0x03,
+}
+
+packet SetEventFilterConnectionSetupAllDevices : SetEventFilterConnectionSetup (filter_condition_type = ALL_DEVICES) {
+  auto_accept_flag : AutoAcceptFlag,
+}
+
+packet SetEventFilterConnectionSetupClassOfDevice : SetEventFilterConnectionSetup (filter_condition_type = CLASS_OF_DEVICE) {
+  class_of_device : ClassOfDevice,
+  class_of_device_mask : ClassOfDevice,
+  auto_accept_flag : AutoAcceptFlag,
+}
+
+packet SetEventFilterConnectionSetupAddress : SetEventFilterConnectionSetup (filter_condition_type = ADDRESS) {
+  address : Address,
+  auto_accept_flag : AutoAcceptFlag,
 }
 
 packet Flush : ConnectionManagementCommand (op_code = FLUSH) {

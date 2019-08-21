@@ -16,6 +16,8 @@
  *
  ******************************************************************************/
 
+#include <unordered_map>
+
 #include <gtest/gtest.h>
 
 #include "common/address.h"
@@ -196,4 +198,35 @@ TEST(AddressTest, BdAddrFromStringToStringEquivalent) {
 
   EXPECT_TRUE(Address::FromString(address, addr));
   EXPECT_EQ(addr.ToString(), address);
+}
+
+TEST(AddressTest, BdAddrSameValueSameOrder) {
+  Address addr1{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
+  Address addr2{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
+  // Test if two addresses with same byte value have the same hash
+  struct std::hash<bluetooth::common::Address> hasher;
+  EXPECT_EQ(hasher(addr1), hasher(addr2));
+  // Test if two addresses with the same hash and the same value, they will
+  // still map to the same value
+  std::unordered_map<Address, int> data = {};
+  data[addr1] = 5;
+  data[addr2] = 8;
+  EXPECT_EQ(data[addr1], data[addr2]);
+}
+
+TEST(AddressTest, BdAddrHashDifferentForDifferentAddressesZeroAddr) {
+  Address addr1{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
+  struct std::hash<Address> hasher;
+  EXPECT_NE(hasher(addr1), hasher(Address::kEmpty));
+}
+
+TEST(AddressTest, BdAddrHashDifferentForDifferentAddressesFullAddr) {
+  Address addr1{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
+  struct std::hash<Address> hasher;
+  EXPECT_NE(hasher(addr1), hasher(Address::kAny));
+}
+
+TEST(AddressTest, BdAddrHashDifferentForDifferentAddressesZeroAndFullAddr) {
+  struct std::hash<Address> hasher;
+  EXPECT_NE(hasher(Address::kEmpty), hasher(Address::kAny));
 }
