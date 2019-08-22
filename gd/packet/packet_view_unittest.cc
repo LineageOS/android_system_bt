@@ -20,9 +20,9 @@
 #include <forward_list>
 #include <memory>
 
-#include "common/address.h"
+#include "hci/address.h"
 
-using bluetooth::common::Address;
+using bluetooth::hci::Address;
 using bluetooth::packet::PacketView;
 using bluetooth::packet::View;
 using std::vector;

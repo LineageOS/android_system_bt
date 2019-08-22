@@ -21,7 +21,7 @@
 #include <string>
 
 namespace bluetooth {
-namespace common {
+namespace hci {
 
 class Address final {
  public:
@@ -77,16 +77,16 @@ inline std::ostream& operator<<(std::ostream& os, const Address& a) {
   return os;
 }
 
-}  // namespace common
+}  // namespace hci
 }  // namespace bluetooth
 
 namespace std {
 template <>
-struct hash<bluetooth::common::Address> {
-  std::size_t operator()(const bluetooth::common::Address& val) const {
-    static_assert(sizeof(uint64_t) >= bluetooth::common::Address::kLength);
+struct hash<bluetooth::hci::Address> {
+  std::size_t operator()(const bluetooth::hci::Address& val) const {
+    static_assert(sizeof(uint64_t) >= bluetooth::hci::Address::kLength);
     uint64_t int_addr = 0;
-    memcpy(reinterpret_cast<uint8_t*>(&int_addr), val.address, bluetooth::common::Address::kLength);
+    memcpy(reinterpret_cast<uint8_t*>(&int_addr), val.address, bluetooth::hci::Address::kLength);
     return std::hash<uint64_t>{}(int_addr);
   }
 };

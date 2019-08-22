@@ -16,8 +16,8 @@
 
 #pragma once
 
-#include "common/address.h"
 #include "common/link_key.h"
+#include "hci/address.h"
 #include "hci/hci_packets.h"
 #include "module.h"
 
@@ -37,27 +37,27 @@ class ClassicSecurityManager : public Module {
 
   bool RegisterCallbacks(ClassicSecurityCommandCallbacks* callbacks, os::Handler* handler);
 
-  void LinkKeyRequestReply(common::Address address, common::LinkKey link_key);
-  void LinkKeyRequestNegativeReply(common::Address address);
-  void PinCodeRequestReply(common::Address address, uint8_t len, std::string pin_code);
-  void PinCodeRequestNegativeReply(common::Address address);
-  void IoCapabilityRequestReply(common::Address address, IoCapability io_capability, OobDataPresent oob_present,
+  void LinkKeyRequestReply(Address address, common::LinkKey link_key);
+  void LinkKeyRequestNegativeReply(Address address);
+  void PinCodeRequestReply(Address address, uint8_t len, std::string pin_code);
+  void PinCodeRequestNegativeReply(Address address);
+  void IoCapabilityRequestReply(Address address, IoCapability io_capability, OobDataPresent oob_present,
                                 AuthenticationRequirements authentication_requirements);
-  void IoCapabilityRequestNegativeReply(common::Address address, ErrorCode reason);
-  void UserConfirmationRequestReply(common::Address address);
-  void UserConfirmationRequestNegativeReply(common::Address address);
-  void UserPasskeyRequestReply(common::Address address, uint32_t passkey);
-  void UserPasskeyRequestNegativeReply(common::Address address);
-  void RemoteOobDataRequestReply(common::Address address, std::array<uint8_t, 16> c, std::array<uint8_t, 16> r);
-  void RemoteOobDataRequestNegativeReply(common::Address address);
-  void ReadStoredLinkKey(common::Address address, ReadStoredLinkKeyReadAllFlag read_all_flag);
-  void WriteStoredLinkKey(uint8_t num_keys_to_write, common::Address address, common::LinkKey link_key);
-  void DeleteStoredLinkKey(common::Address address, DeleteStoredLinkKeyDeleteAllFlag delete_all_flag);
+  void IoCapabilityRequestNegativeReply(Address address, ErrorCode reason);
+  void UserConfirmationRequestReply(Address address);
+  void UserConfirmationRequestNegativeReply(Address address);
+  void UserPasskeyRequestReply(Address address, uint32_t passkey);
+  void UserPasskeyRequestNegativeReply(Address address);
+  void RemoteOobDataRequestReply(Address address, std::array<uint8_t, 16> c, std::array<uint8_t, 16> r);
+  void RemoteOobDataRequestNegativeReply(Address address);
+  void ReadStoredLinkKey(Address address, ReadStoredLinkKeyReadAllFlag read_all_flag);
+  void WriteStoredLinkKey(uint8_t num_keys_to_write, Address address, common::LinkKey link_key);
+  void DeleteStoredLinkKey(Address address, DeleteStoredLinkKeyDeleteAllFlag delete_all_flag);
   void RefreshEncryptionKey(uint16_t connection_handle);
   void ReadSimplePairingMode();
   void WriteSimplePairingMode(Enable simple_pairing_mode);
   void ReadLocalOobData();
-  void SendKeypressNotification(common::Address address, KeypressNotificationType notification_type);
+  void SendKeypressNotification(Address address, KeypressNotificationType notification_type);
   void ReadLocalOobExtendedData();
   void ReadEncryptionKeySize(uint16_t connection_handle);
 

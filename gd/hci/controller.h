@@ -16,8 +16,8 @@
 
 #pragma once
 
-#include "common/address.h"
 #include "common/callback.h"
+#include "hci/address.h"
 #include "hci/hci_packets.h"
 #include "module.h"
 #include "os/handler.h"
@@ -42,7 +42,7 @@ class Controller : public Module {
 
   virtual uint16_t GetControllerNumScoPacketBuffers();
 
-  virtual common::Address GetControllerMacAddress();
+  virtual Address GetControllerMacAddress();
 
   static const ModuleFactory Factory;
 
