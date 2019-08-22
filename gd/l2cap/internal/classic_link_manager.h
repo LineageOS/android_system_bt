@@ -56,6 +56,7 @@ class ClassicLinkManager : public hci::ConnectionCallbacks {
   ClassicLink* GetLink(common::Address device);
   void OnConnectSuccess(std::unique_ptr<hci::AclConnection> acl_connection) override;
   void OnConnectFail(common::Address device, hci::ErrorCode reason) override;
+  void OnDisconnect(common::Address device, hci::ErrorCode status);
 
  private:
   // Dependencies
