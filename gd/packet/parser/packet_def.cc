@@ -281,6 +281,58 @@ void PacketDef::GenBuilderDefinition(std::ostream& s) const {
 
   GenMembers(s);
   s << "};\n";
+
+  GenTestDefine(s);
+  s << "\n";
+}
+
+void PacketDef::GenTestDefine(std::ostream& s) const {
+  s << "#ifdef PACKET_TESTING\n";
+  s << "#define DEFINE_AND_INSTANTIATE_" << name_ << "ReflectionTest(...)";
+  s << "class " << name_ << "ReflectionTest : public testing::TestWithParam<std::vector<uint8_t>> { ";
+  s << "public: ";
+  s << "void CompareBytes(std::vector<uint8_t> captured_packet) {";
+  s << "auto vec = std::make_shared<std::vector<uint8_t>>(captured_packet.begin(), captured_packet.end());";
+  s << name_ << "View view = " << name_ << "View::Create(";
+  auto ancestor_ptr = parent_;
+  size_t parent_parens = 0;
+  while (ancestor_ptr != nullptr) {
+    s << ancestor_ptr->name_ << "View::Create(";
+    parent_parens++;
+    ancestor_ptr = ancestor_ptr->parent_;
+  }
+  s << "vec";
+  for (size_t i = 0; i < parent_parens; i++) {
+    s << ")";
+  }
+  s << ");";
+  s << "if (!view.IsValid()) { LOG_INFO(\"Invalid Packet Bytes (size = %zu)\", view.size());";
+  s << "for (size_t i = 0; i < view.size(); i++) { LOG_DEBUG(\"%5zd:%02X\", i, *(view.begin() + i)); }}";
+  s << "ASSERT_TRUE(view.IsValid());";
+  s << "auto packet = " << name_ << "Builder::Create(";
+  FieldList params = GetParamList().GetFieldsWithoutTypes({
+      BodyField::kFieldType,
+  });
+  for (int i = 0; i < params.size(); i++) {
+    params[i]->GenBuilderParameterFromView(s);
+    if (i != params.size() - 1) {
+      s << ", ";
+    }
+  }
+  s << ");";
+  s << "std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();";
+  s << "packet_bytes->reserve(packet->size());";
+  s << "BitInserter it(*packet_bytes);";
+  s << "packet->Serialize(it);";
+  s << "ASSERT_EQ(*packet_bytes, *vec);";
+  s << "}";
+  s << "};";
+  s << "TEST_P(" << name_ << "ReflectionTest, generatedReflectionTest) {";
+  s << "CompareBytes(GetParam());";
+  s << "}";
+  s << "INSTANTIATE_TEST_SUITE_P(" << name_ << "_reflection, ";
+  s << name_ << "ReflectionTest, testing::Values(__VA_ARGS__))";
+  s << "\n#endif";
 }
 
 FieldList PacketDef::GetParametersToValidate() const {

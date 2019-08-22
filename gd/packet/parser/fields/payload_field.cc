@@ -79,6 +79,10 @@ bool PayloadField::GenBuilderParameter(std::ostream& s) const {
   return true;
 }
 
+void PayloadField::GenBuilderParameterFromView(std::ostream& s) const {
+  s << "std::make_unique<RawBuilder>(std::vector<uint8_t>(view.GetPayload().begin(), view.GetPayload().end()))";
+}
+
 bool PayloadField::HasParameterValidator() const {
   return false;
 }
