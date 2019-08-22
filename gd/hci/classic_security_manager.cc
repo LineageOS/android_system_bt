@@ -64,7 +64,7 @@ struct ClassicSecurityManager::impl {
     client_handler_ = handler;
   }
 
-  void link_key_request_reply(common::Address address, common::LinkKey link_key) {
+  void link_key_request_reply(Address address, common::LinkKey link_key) {
     std::array<uint8_t, 16> link_key_array;
     std::copy(std::begin(link_key.link_key), std::end(link_key.link_key), std::begin(link_key_array));
 
@@ -73,14 +73,14 @@ struct ClassicSecurityManager::impl {
                                common::BindOnce(&impl::on_command_complete, common::Unretained(this)), handler_);
   }
 
-  void link_key_request_negative_reply(common::Address address) {
+  void link_key_request_negative_reply(Address address) {
     std::unique_ptr<LinkKeyRequestNegativeReplyBuilder> packet = LinkKeyRequestNegativeReplyBuilder::Create(address);
 
     hci_layer_->EnqueueCommand(std::move(packet),
                                common::BindOnce(&impl::on_command_complete, common::Unretained(this)), handler_);
   }
 
-  void pin_code_request_reply(common::Address address, uint8_t len, std::string pin_code) {
+  void pin_code_request_reply(Address address, uint8_t len, std::string pin_code) {
     ASSERT(len > 0 && len <= 16 && pin_code.length() == len);
     // fill remaining char with 0
     pin_code.append(std::string(16 - len, '0'));
@@ -93,13 +93,13 @@ struct ClassicSecurityManager::impl {
                                common::BindOnce(&impl::on_command_complete, common::Unretained(this)), handler_);
   }
 
-  void pin_code_request_negative_reply(common::Address address) {
+  void pin_code_request_negative_reply(Address address) {
     std::unique_ptr<PinCodeRequestNegativeReplyBuilder> packet = PinCodeRequestNegativeReplyBuilder::Create(address);
     hci_layer_->EnqueueCommand(std::move(packet),
                                common::BindOnce(&impl::on_command_complete, common::Unretained(this)), handler_);
   }
 
-  void io_capability_request_reply(common::Address address, IoCapability io_capability, OobDataPresent oob_present,
+  void io_capability_request_reply(Address address, IoCapability io_capability, OobDataPresent oob_present,
                                    AuthenticationRequirements authentication_requirements) {
     std::unique_ptr<IoCapabilityRequestReplyBuilder> packet =
         IoCapabilityRequestReplyBuilder::Create(address, io_capability, oob_present, authentication_requirements);
@@ -107,60 +107,60 @@ struct ClassicSecurityManager::impl {
                                common::BindOnce(&impl::on_command_complete, common::Unretained(this)), handler_);
   }
 
-  void io_capability_request_negative_reply(common::Address address, ErrorCode reason) {
+  void io_capability_request_negative_reply(Address address, ErrorCode reason) {
     std::unique_ptr<IoCapabilityRequestNegativeReplyBuilder> packet =
         IoCapabilityRequestNegativeReplyBuilder::Create(address, reason);
     hci_layer_->EnqueueCommand(std::move(packet),
                                common::BindOnce(&impl::on_command_complete, common::Unretained(this)), handler_);
   }
 
-  void user_confirmation_request_reply(common::Address address) {
+  void user_confirmation_request_reply(Address address) {
     std::unique_ptr<UserConfirmationRequestReplyBuilder> packet = UserConfirmationRequestReplyBuilder::Create(address);
     hci_layer_->EnqueueCommand(std::move(packet),
                                common::BindOnce(&impl::on_command_complete, common::Unretained(this)), handler_);
   }
 
-  void user_confirmation_request_negative_reply(common::Address address) {
+  void user_confirmation_request_negative_reply(Address address) {
     std::unique_ptr<UserConfirmationRequestNegativeReplyBuilder> packet =
         UserConfirmationRequestNegativeReplyBuilder::Create(address);
     hci_layer_->EnqueueCommand(std::move(packet),
                                common::BindOnce(&impl::on_command_complete, common::Unretained(this)), handler_);
   }
 
-  void user_passkey_request_reply(common::Address address, uint32_t passkey) {
+  void user_passkey_request_reply(Address address, uint32_t passkey) {
     ASSERT(passkey <= 999999);
     std::unique_ptr<UserPasskeyRequestReplyBuilder> packet = UserPasskeyRequestReplyBuilder::Create(address, passkey);
     hci_layer_->EnqueueCommand(std::move(packet),
                                common::BindOnce(&impl::on_command_complete, common::Unretained(this)), handler_);
   }
 
-  void user_passkey_request_negative_reply(common::Address address) {
+  void user_passkey_request_negative_reply(Address address) {
     std::unique_ptr<UserPasskeyRequestNegativeReplyBuilder> packet =
         UserPasskeyRequestNegativeReplyBuilder::Create(address);
     hci_layer_->EnqueueCommand(std::move(packet),
                                common::BindOnce(&impl::on_command_complete, common::Unretained(this)), handler_);
   }
 
-  void remote_oob_data_request_reply(common::Address address, std::array<uint8_t, 16> c, std::array<uint8_t, 16> r) {
+  void remote_oob_data_request_reply(Address address, std::array<uint8_t, 16> c, std::array<uint8_t, 16> r) {
     std::unique_ptr<RemoteOobDataRequestReplyBuilder> packet = RemoteOobDataRequestReplyBuilder::Create(address, c, r);
     hci_layer_->EnqueueCommand(std::move(packet),
                                common::BindOnce(&impl::on_command_complete, common::Unretained(this)), handler_);
   }
 
-  void remote_oob_data_request_negative_reply(common::Address address) {
+  void remote_oob_data_request_negative_reply(Address address) {
     std::unique_ptr<RemoteOobDataRequestNegativeReplyBuilder> packet =
         RemoteOobDataRequestNegativeReplyBuilder::Create(address);
     hci_layer_->EnqueueCommand(std::move(packet),
                                common::BindOnce(&impl::on_command_complete, common::Unretained(this)), handler_);
   }
 
-  void read_stored_link_key(common::Address address, ReadStoredLinkKeyReadAllFlag read_all_flag) {
+  void read_stored_link_key(Address address, ReadStoredLinkKeyReadAllFlag read_all_flag) {
     std::unique_ptr<ReadStoredLinkKeyBuilder> packet = ReadStoredLinkKeyBuilder::Create(address, read_all_flag);
     hci_layer_->EnqueueCommand(std::move(packet),
                                common::BindOnce(&impl::on_command_complete, common::Unretained(this)), handler_);
   }
 
-  void write_stored_link_key(uint8_t num_keys_to_write, common::Address address, common::LinkKey link_key) {
+  void write_stored_link_key(uint8_t num_keys_to_write, Address address, common::LinkKey link_key) {
     // TODO send multi link key
     std::array<uint8_t, 16> link_key_array;
     std::copy(std::begin(link_key.link_key), std::end(link_key.link_key), std::begin(link_key_array));
@@ -171,7 +171,7 @@ struct ClassicSecurityManager::impl {
                                common::BindOnce(&impl::on_command_complete, common::Unretained(this)), handler_);
   }
 
-  void delete_stored_link_key(common::Address address, DeleteStoredLinkKeyDeleteAllFlag delete_all_flag) {
+  void delete_stored_link_key(Address address, DeleteStoredLinkKeyDeleteAllFlag delete_all_flag) {
     std::unique_ptr<DeleteStoredLinkKeyBuilder> packet = DeleteStoredLinkKeyBuilder::Create(address, delete_all_flag);
     hci_layer_->EnqueueCommand(std::move(packet),
                                common::BindOnce(&impl::on_command_complete, common::Unretained(this)), handler_);
@@ -201,7 +201,7 @@ struct ClassicSecurityManager::impl {
                                common::BindOnce(&impl::on_command_complete, common::Unretained(this)), handler_);
   }
 
-  void send_keypress_notification(common::Address address, KeypressNotificationType notification_type) {
+  void send_keypress_notification(Address address, KeypressNotificationType notification_type) {
     std::unique_ptr<SendKeypressNotificationBuilder> packet =
         SendKeypressNotificationBuilder::Create(address, notification_type);
     hci_layer_->EnqueueCommand(std::move(packet),
@@ -271,73 +271,71 @@ bool ClassicSecurityManager::RegisterCallbacks(ClassicSecurityCommandCallbacks* 
   return true;
 }
 
-void ClassicSecurityManager::LinkKeyRequestReply(common::Address address, common::LinkKey link_key) {
+void ClassicSecurityManager::LinkKeyRequestReply(Address address, common::LinkKey link_key) {
   GetHandler()->Post(BindOnce(&impl::link_key_request_reply, common::Unretained(pimpl_.get()), address, link_key));
 }
 
-void ClassicSecurityManager::LinkKeyRequestNegativeReply(common::Address address) {
+void ClassicSecurityManager::LinkKeyRequestNegativeReply(Address address) {
   GetHandler()->Post(BindOnce(&impl::link_key_request_negative_reply, common::Unretained(pimpl_.get()), address));
 }
 
-void ClassicSecurityManager::PinCodeRequestReply(common::Address address, uint8_t len, std::string pin_code) {
+void ClassicSecurityManager::PinCodeRequestReply(Address address, uint8_t len, std::string pin_code) {
   GetHandler()->Post(BindOnce(&impl::pin_code_request_reply, common::Unretained(pimpl_.get()), address, len, pin_code));
 }
 
-void ClassicSecurityManager::PinCodeRequestNegativeReply(common::Address address) {
+void ClassicSecurityManager::PinCodeRequestNegativeReply(Address address) {
   GetHandler()->Post(BindOnce(&impl::pin_code_request_negative_reply, common::Unretained(pimpl_.get()), address));
 }
 
-void ClassicSecurityManager::IoCapabilityRequestReply(common::Address address, IoCapability io_capability,
+void ClassicSecurityManager::IoCapabilityRequestReply(Address address, IoCapability io_capability,
                                                       OobDataPresent oob_present,
                                                       AuthenticationRequirements authentication_requirements) {
   GetHandler()->Post(BindOnce(&impl::io_capability_request_reply, common::Unretained(pimpl_.get()), address,
                               io_capability, oob_present, authentication_requirements));
 }
 
-void ClassicSecurityManager::IoCapabilityRequestNegativeReply(common::Address address, ErrorCode reason) {
+void ClassicSecurityManager::IoCapabilityRequestNegativeReply(Address address, ErrorCode reason) {
   GetHandler()->Post(
       BindOnce(&impl::io_capability_request_negative_reply, common::Unretained(pimpl_.get()), address, reason));
 }
 
-void ClassicSecurityManager::UserConfirmationRequestReply(common::Address address) {
+void ClassicSecurityManager::UserConfirmationRequestReply(Address address) {
   GetHandler()->Post(BindOnce(&impl::user_confirmation_request_reply, common::Unretained(pimpl_.get()), address));
 }
 
-void ClassicSecurityManager::UserConfirmationRequestNegativeReply(common::Address address) {
+void ClassicSecurityManager::UserConfirmationRequestNegativeReply(Address address) {
   GetHandler()->Post(
       BindOnce(&impl::user_confirmation_request_negative_reply, common::Unretained(pimpl_.get()), address));
 }
 
-void ClassicSecurityManager::UserPasskeyRequestReply(bluetooth::common::Address address, uint32_t passkey) {
+void ClassicSecurityManager::UserPasskeyRequestReply(bluetooth::hci::Address address, uint32_t passkey) {
   GetHandler()->Post(BindOnce(&impl::user_passkey_request_reply, common::Unretained(pimpl_.get()), address, passkey));
 }
 
-void ClassicSecurityManager::UserPasskeyRequestNegativeReply(common::Address address) {
+void ClassicSecurityManager::UserPasskeyRequestNegativeReply(Address address) {
   GetHandler()->Post(BindOnce(&impl::user_passkey_request_negative_reply, common::Unretained(pimpl_.get()), address));
 }
 
-void ClassicSecurityManager::RemoteOobDataRequestReply(common::Address address, std::array<uint8_t, 16> c,
+void ClassicSecurityManager::RemoteOobDataRequestReply(Address address, std::array<uint8_t, 16> c,
                                                        std::array<uint8_t, 16> r) {
   GetHandler()->Post(BindOnce(&impl::remote_oob_data_request_reply, common::Unretained(pimpl_.get()), address, c, r));
 }
 
-void ClassicSecurityManager::RemoteOobDataRequestNegativeReply(common::Address address) {
+void ClassicSecurityManager::RemoteOobDataRequestNegativeReply(Address address) {
   GetHandler()->Post(
       BindOnce(&impl::remote_oob_data_request_negative_reply, common::Unretained(pimpl_.get()), address));
 }
 
-void ClassicSecurityManager::ReadStoredLinkKey(common::Address address, ReadStoredLinkKeyReadAllFlag read_all_flag) {
+void ClassicSecurityManager::ReadStoredLinkKey(Address address, ReadStoredLinkKeyReadAllFlag read_all_flag) {
   GetHandler()->Post(BindOnce(&impl::read_stored_link_key, common::Unretained(pimpl_.get()), address, read_all_flag));
 }
 
-void ClassicSecurityManager::WriteStoredLinkKey(uint8_t num_keys_to_write, common::Address address,
-                                                common::LinkKey link_key) {
+void ClassicSecurityManager::WriteStoredLinkKey(uint8_t num_keys_to_write, Address address, common::LinkKey link_key) {
   GetHandler()->Post(
       BindOnce(&impl::write_stored_link_key, common::Unretained(pimpl_.get()), num_keys_to_write, address, link_key));
 }
 
-void ClassicSecurityManager::DeleteStoredLinkKey(common::Address address,
-                                                 DeleteStoredLinkKeyDeleteAllFlag delete_all_flag) {
+void ClassicSecurityManager::DeleteStoredLinkKey(Address address, DeleteStoredLinkKeyDeleteAllFlag delete_all_flag) {
   GetHandler()->Post(
       BindOnce(&impl::delete_stored_link_key, common::Unretained(pimpl_.get()), address, delete_all_flag));
 }
@@ -357,8 +355,7 @@ void ClassicSecurityManager::ReadLocalOobData() {
   GetHandler()->Post(BindOnce(&impl::read_local_oob_data, common::Unretained(pimpl_.get())));
 }
 
-void ClassicSecurityManager::SendKeypressNotification(common::Address address,
-                                                      KeypressNotificationType notification_type) {
+void ClassicSecurityManager::SendKeypressNotification(Address address, KeypressNotificationType notification_type) {
   GetHandler()->Post(
       BindOnce(&impl::send_keypress_notification, common::Unretained(pimpl_.get()), address, notification_type));
 }

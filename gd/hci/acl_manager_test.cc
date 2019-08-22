@@ -24,8 +24,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "common/address.h"
 #include "common/bind.h"
+#include "hci/address.h"
 #include "hci/controller.h"
 #include "hci/hci_layer.h"
 #include "os/thread.h"
@@ -35,7 +35,6 @@ namespace bluetooth {
 namespace hci {
 namespace {
 
-using common::Address;
 using common::BidiQueue;
 using common::BidiQueueEnd;
 using packet::kLittleEndian;
@@ -266,7 +265,7 @@ class AclManagerTest : public AclManagerNoCallbacksTest {
 TEST_F(AclManagerTest, startup_teardown) {}
 
 TEST_F(AclManagerNoCallbacksTest, acl_connection_before_registered_callbacks) {
-  common::ClassOfDevice class_of_device;
+  ClassOfDevice class_of_device;
 
   test_hci_layer_->IncomingEvent(
       ConnectionRequestBuilder::Create(remote, class_of_device, ConnectionRequestLinkType::ACL));

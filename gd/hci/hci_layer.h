@@ -19,10 +19,10 @@
 #include <chrono>
 #include <map>
 
-#include "common/address.h"
+#include "address.h"
+#include "class_of_device.h"
 #include "common/bidi_queue.h"
 #include "common/callback.h"
-#include "common/class_of_device.h"
 #include "hal/hci_hal.h"
 #include "hci/hci_packets.h"
 #include "module.h"
